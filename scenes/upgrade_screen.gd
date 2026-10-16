@@ -6,8 +6,11 @@ extends Control
 signal start_pressed
 signal bought(id: String)
 
-const CELL := Vector2(172, 150)
-const NODE_SIZE := Vector2(160, 116)
+const CELL := Vector2(172, 128)
+const NODE_SIZE := Vector2(160, 108)
+## The species' own branch (docs/SPECIES.md) sits on this row, on a band of its own.
+const BRANCH_ROW := 5
+const BRANCH_TINT := Color(0.85, 0.35, 0.15, 0.16)
 const STAT_LINES: Array[Array] = [
 	["Health", "hp", "%d"],
 	["Stomp power", "stomp_damage", "%.0f"],
@@ -68,8 +71,18 @@ func _ready() -> void:
 	var area := _TreeLines.new()
 	area.screen = self
 	area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	area.custom_minimum_size = Vector2(CELL.x * 8, CELL.y * 5)
+	area.custom_minimum_size = Vector2(CELL.x * 8, CELL.y * (BRANCH_ROW + 1))
 	body.add_child(area)
+	var band := ColorRect.new()
+	band.color = BRANCH_TINT
+	band.position = Vector2(-8, BRANCH_ROW * CELL.y - 10)
+	band.size = Vector2(CELL.x * 8, NODE_SIZE.y + 20)
+	area.add_child(band)
+	var branch := UiKit.label(
+		"%s\nBRANCH" % str(species["name"]).to_upper(), UiKit.SIZE_SMALL, UiKit.ACCENT
+	)
+	branch.position = Vector2(0, BRANCH_ROW * CELL.y + 18)
+	area.add_child(branch)
 	for id: String in tree.order:
 		var def: Dictionary = tree.defs[id]
 		var pos: Array = def["pos"]

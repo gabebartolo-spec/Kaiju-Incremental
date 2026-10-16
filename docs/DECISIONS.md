@@ -4,6 +4,31 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-17 · D-041 · Director · Kaiju render as voxel cubes on a smooth skin (look test C)
+Why: "its looking very rough so far, would this work better if our kaiju werent voxel?"; side-by-side
+docs/captures/2026-10-17-look-test/look_test_abc.mp4 (A per-bone voxels / B smooth skinned / C voxel cubes
+on a skinned lattice); picked C. Changes: one skinned mesh per kaiju, cubes move rigidly with their bone
+over a watertight lattice: no joint gaps or speckle, keeps the voxel look. A kept as a debug fallback.
+
+## 2026-10-17 · D-040 · Director · Ultimates get their own button
+Why: picked "own button" over replacing the signature. Changes: E / pad Y, long cooldown (18 s);
+the signature stays (the insect keeps Leap Slam for hold-to-glide). As built in PR #12.
+
+## 2026-10-16 · D-039 · Director · The city grows with each evolution
+Why: species-powers' pacing sim (tools/pacing.gd) clears the tree in 0.9 h because the one city is
+flattened by run 11; the director picked "bigger city each stage" over a new city per stage or raised
+costs. Changes: each evolution unlocks more districts, taller towers, harder defences; costs re-tuned
+after that (a follow-up task); species-powers paces only its branches against the current curve.
+
+## 2026-10-16 · D-038 · Director · Mantis skin = dark chitin, red eyes, rusty scythe tips; octopus baby 6176590f
+Why: approved docs/captures/2026-10-16-stages/mantis_skin_v2.png ("Yes, use it"); the cephalopod baby
+"i love him" (Tripo 6176590f, big round eyes). Changes: same mantis prompt on all three insect stages.
+
+## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
+Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
+hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
+in a per-species branch (data/upgrades.json), ultimate at the branch end.
+
 ## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
 Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
 over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".

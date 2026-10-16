@@ -1,0 +1,53 @@
+extends "res://tests/lib/runner.gd"
+## Shared scene-building for the power suites (run_powers_tests, run_tentacles_tests): a kaiju
+## with chosen branch levels in a small hand-made layout, stepped with fixed input.
+
+const DT := 1.0 / 30.0
+const NORTH := Vector2(0, -1)
+const EAST := Vector2(1, 0)
+## _run button flags.
+const PRESS := 1
+const HOLD := 2
+const ULT := 4
+
+
+## A building entry for a hand-made layout.
+## size = (width, depth, floors).
+func _b(x: float, z: float, size: Vector3i, tier: int = 1) -> Dictionary:
+	return {"x": x, "z": z, "w": size.x, "d": size.y, "h": size.z, "tier": tier, "style": 0}
+
+
+## A kaiju of `species_id` with `levels` (prerequisites not enforced: the sim reads stats) in
+## a hand-made layout, standing at `at`. A far building keeps the run from ending at once.
+func _sim(
+	species_id: String, levels: Dictionary, layout: Array[Dictionary], at: Vector2
+) -> RampageSim:
+	var species := Content.species_def(species_id)
+	var tree := UpgradeTree.new(Content.upgrades(), levels, species_id)
+	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
+	var all: Array[Dictionary] = []
+	all.append_array(layout)
+	all.append(_b(38.0, 38.0, Vector3i(2, 2, 2)))
+	var sim := RampageSim.new(stats, Content.tuning(), all, Seeds.make("army", 0))
+	var ability: Dictionary = species["ability"]
+	sim.ability_type = str(ability["type"])
+	sim.kaiju_pos = at
+	return sim
+
+
+## Steps for `seconds` with a fixed input (buttons: PRESS / ULT on the first step, HOLD on
+## every step); returns every event type seen, counted.
+func _run(sim: RampageSim, seconds: float, move: Vector2, buttons: int = 0) -> Dictionary:
+	var seen := {}
+	for i: int in roundi(seconds / DT):
+		var flags := RampageSim.HELD if buttons & HOLD else 0
+		if i == 0 and buttons & ULT:
+			flags |= RampageSim.ULTIMATE
+		for event: Dictionary in sim.step(DT, move, i == 0 and buttons & PRESS != 0, flags):
+			var kind := str(event["type"])
+			seen[kind] = Num.i(seen.get(kind, 0)) + 1
+	return seen
+
+
+func _alive(sim: RampageSim, index: int) -> int:
+	return sim.buildings[index].frame.alive_count
