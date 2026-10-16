@@ -1,4 +1,4 @@
-# Real-city handoff, 2026-10-16 21:30
+# Real-city handoff, 2026-10-16 21:32
 ## State: available (D-029 TABLED by the director; paused on a WIP branch, no PR)
 
 ## Task
@@ -37,12 +37,21 @@ No PR open.
 
 ## Evidence so far
 - Bake: 1,890 playable boxes from 2,553 footprints, 38,609 chunks, 3,091 nodes, 3,777 streets.
-- smoke 11 + sim 47 green locally (21:10). Flow was running at pause (see Running jobs).
+- smoke 11 + sim 47 green locally (21:10). Flow was NOT confirmed: the run was stopped at
+  the pause (this worktree's LFS fonts are pointers, so flow crawls: `git lfs pull` first).
 - Captures (lead review, not shown to the director): shared notes folder
   real-city-captures/ (bake_v1 preview, top_down, aerial, gameplay start/mid). Grid, Yarra,
   Flinders St yards, Fed Square, Birrarung Marr, Southbank skyline all read correctly.
 - Bench: NOT valid yet. Both runs shared the GPU with another agent's Godot (PID 290008,
   49%): generic and CBD both 18 frames in 30 s at 4K. Rerun on an idle GPU.
+
+## CityData interface (city-layout confirmed, PR #7 merged)
+CityGen.map(cfg) -> {nodes: Array[Vector2], streets: [{from, to, width, kind}], blocks:
+[{rect: Rect2, use}], diagonal, xs, zs}; Traffic, Police, StreetLife, CityGround and CityDecor
+read only that. CityDistrict.plan() already gives nodes/streets (+ name, oneway), blocks = []
+and extras (areas, rails, play, bounds, start, credit). Buildings: {x,z,w,d,h,tier,style}
+(+ osm, name) from both. Tuning city keys changed in PR #7 (grid/spacing gone; half,
+arena_margin, map_seed...): CitySource's generic branch must switch to them on rebase.
 
 ## Next (when resumed)
 1. Rebase onto look-options after PR #7: CityGen.map() now gives nodes/streets/blocks and
@@ -64,5 +73,6 @@ No PR open.
 - Ground built with SurfaceTool: disable culling or check winding; quads came out facing down.
 
 ## Running jobs
-None after this commit. override.cfg removed. tools/osm/cache/ holds the raw OSM pull (keep;
+None. override.cfg removed. My stopped flow run left an orphan headless Godot (one of PIDs
+12572/72764, cannot tell which; not on screen) that its `timeout 900` ends by ~21:30. tools/osm/cache/ holds the raw OSM pull (keep;
 re-fetching costs Overpass fair use).
