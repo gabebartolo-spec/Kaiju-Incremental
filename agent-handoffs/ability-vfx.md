@@ -1,4 +1,4 @@
-# Ability VFX/SFX handoff, 2026-10-16 21:35
+# Ability VFX/SFX handoff, 2026-10-16 23:30
 ## State: paused by the director ("pause vfx until the locomotion is done"); PR #8 on HOLD, do not merge
 
 ## Task
@@ -59,4 +59,4 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - Not done: creature roars (Sonniss); Freesound needs a login.
 
 ## Running jobs
-None. No override.cfg left.
+None. No override.cfg left. Last action: merged look-options into claude/ability-sfx (da0d7bb; register conflict kept both sides; 4 suites green), pushed.
