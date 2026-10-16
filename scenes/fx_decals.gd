@@ -73,11 +73,13 @@ static func _pixel(
 	elif shape == Shape.SCRAPE:
 		mask = smoothstep(0.62, 0.7, r + edge * 0.3) * (1.0 - smoothstep(0.9, 0.98, r))
 	var line := _scratch(r, n) if shape == Shape.SCRAPE else _crack(ang, r, cracks, noise)
+	if shape == Shape.WEDGE:  # a molten streak down the middle, where the beam ran
+		line = maxf(line, exp(-ang * ang * 40.0) * (1.0 - r) * 0.8)
 	line *= mask
 	if glow:
 		return Color(line, line, line, 1.0)
 	var soot := SOOT * (0.6 + 0.8 * n)
-	return Color(soot.r, soot.g, soot.b, clampf(mask * (0.45 + 0.4 * n) + line * 0.5, 0.0, 1.0))
+	return Color(soot.r, soot.g, soot.b, clampf(mask * (0.65 + 0.35 * n) + line * 0.5, 0.0, 1.0))
 
 
 ## Jagged radial cracks, wide enough to read from the gameplay camera.

@@ -31,7 +31,7 @@ Local commits not pushed yet (review fixes + merge + tuning); push after the boa
 Merged look-options (8cf4a16: no project-wide fullscreen; D-030 SFX decided). Recapture
 powers4 (scratchpad) passed for leap and breath impact, but showed: body overlay far too strong
 (kaiju turned solid pink/mint), lash streaks too faint, and the breath voxels washed out to peach.
-Tuned in the latest commit (rim strength/power, streak width, heat 2.0 + ramp 0.15).
+Tuned (rim strength, streak width, heat 2.0 + ramp 0.15). powers5: lash and ready OK; regen still washed the body mint -> now thin rising rings; scorch too dark -> molten centre streak + denser soot. Wedge orientation verified (dbg_breath, facing +X). Capture powers6 queued in background (bz3z0ndii).
 1. Once the GPU is free (watcher biuo13l46; other agents' Godot PIDs 21188/320188): run
    scratchpad dbg_breath.gd (kaiju at (4.5,30) facing +X) to confirm which way the scorch wedge
    points, then capture_powers.gd -> powers5, board.py (scratchpad) -> check with 2x crops.
