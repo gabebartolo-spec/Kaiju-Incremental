@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 02:40
+# Game-flow handoff, 2026-10-17 02:50
 ## State: running a check (flow suite, headless, local)
 
 ## Task
@@ -41,7 +41,15 @@ the working capture.yml). No PR yet.
 ## Attempts
 - This worktree had Git LFS pointers instead of fonts/models (font errors flooded the log);
   `git lfs install --local && git lfs pull` fixed it. Do this in every new worktree.
-- First flow run: one real failure (UI scale float compare) -> is_equal_approx; rerun pending.
+- First flow run: one real failure (UI scale float compare) -> is_equal_approx.
+- Rerun with real fonts: flow 66 checks, 0 failures, 51 s (was a 900 s timeout). Floor 26 -> 66
+  in tests/expected_checks.txt (uncommitted until the full run passes).
+
+## Findings for the lead (worker -> lead; lead decides what is recorded)
+- Proven 2026-10-17: a worktree without `git lfs pull` has 129-byte LFS pointers for fonts and
+  .glb; every UiKit label logs a FreeType error with a backtrace (22k errors, 8 MB log) and the
+  flow suite timed out at 900 s. After `git lfs install --local && git lfs pull`: 51 s, 18 errors.
+  Candidate for kaiju-godot-tests learnings ("pull LFS in every new worktree before a run").
 - Autoload names (SaveSystem, Settings) don't resolve in class_name scripts compiled under
   `--script` test runs -> moved logic to static classes SaveFile/PlayerSettings.
 
@@ -55,7 +63,7 @@ edits; my tests/capture read evolve1's cost from data. If tier_height becomes pe
 reveal's tower should read CityGrowth.tuning_for(...)["city"].
 
 ## Running jobs
-- Local flow suite (stale: started before LFS pull), logs in %TEMP%/gf_logs. Rerun after.
+- Local full run (all suites + self-test), logs in %TEMP%/gf_all.
 - CI capture dispatches: shots -> %TEMP%/gf_cap/shots, clip (--movie --clip) -> %TEMP%/gf_cap/clip.
 - Follow-up after city-growth merges: reveal reads CityGrowth.tuning_for(tuning, size)["city"]
   for max_height and adds "a city of half x half" (42/66/105/166).
