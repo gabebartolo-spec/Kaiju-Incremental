@@ -28,48 +28,45 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 			if fall <= 0.0:
 				continue
 			var h := maxi(1, roundi(peak * pow(fall, 0.8) + rng.randf_range(-1.5, 1.5)))
-			var near_core := Vector2(x, z).distance_to(hot) < RES * 0.8
+			var near_core := Vector2(x, z).distance_to(hot) < RES * 1.2
 			for y: int in maxi(0, h):
 				# Rubble comes down in chunks: one key per 2-4 cell block, not per voxel.
 				var block := Vector3i(floori(x / 3.0), floori(y / 2.0), floori(z / 3.0))
 				var key := keys[absi(hash(block + Vector3i(b.style, 0, 0))) % keys.size()]
 				if y == h - 1 and near_core and rng.randf() < 0.55:
 					key = "ember"  # one concentrated bed of glowing coals
-				elif y >= h - 1 and absi(hash(block)) % 3 == 0:
-					key = "char"  # scorched patches
+				elif y >= h - 1 and near_core and absi(hash(block)) % 2 == 0:
+					key = "char"  # scorch around the fire only
 				vox.put(Vector3i(x, y, z), key)
-	for side: int in 2:  # ragged wall stubs on two faces
-		var along_x := rng.randf() < 0.5
-		var fixed := 0 if side == 0 else (d - 1 if along_x else w - 1)
-		var length := w if along_x else d
-		for p: int in length:
-			var top := (
-				rng.randi_range(RES, RES * (1 + mini(b.height - 1, 3))) - absi(p - (length >> 1))
-			)
-			for y: int in maxi(0, top):
-				var cell := Vector3i(p, y, fixed) if along_x else Vector3i(fixed, y, p)
-				var key := "window" if y % RES in [1, 2] and p % 3 != 0 else "wall"
-				vox.put(cell, key)
-	for slab_n: int in 3:  # broken floor slabs leaning against the heap
-		var sx := rng.randi_range(0, w - 1)
-		var sz := rng.randi_range(0, d - 1)
-		var tilt := rng.randf_range(0.4, 0.9)
-		for t: int in RES * 3:
-			for side: int in RES:
-				var cell := Vector3i(sx + t, roundi(t * tilt) + 1, sz + side)
-				vox.put(cell, "slab")
+	for corner: int in 2:  # standing stumps: two corners keep 1-3 floors of wall
+		var cx0 := 0 if corner == 0 else w - RES * 2
+		var cz0 := 0 if corner == 0 else d - RES * 2
+		var floors := rng.randi_range(1, mini(3, b.height))
+		for x: int in range(cx0, mini(w, cx0 + RES * 2)):
+			for z: int in range(cz0, mini(d, cz0 + RES * 2)):
+				var edge := x == 0 or z == 0 or x == w - 1 or z == d - 1 or x == cx0 or z == cz0
+				if not edge:
+					continue
+				var top := RES * floors - rng.randi_range(0, RES)  # a ragged broken top
+				for y: int in maxi(RES, top):
+					var key := (
+						"stub_window" if y % RES in [1, 2] and (x + z) % 3 != 0 else "stub_wall"
+					)
+					vox.put(Vector3i(x, y, z), key)
 	vox.salt = b.style + 91
 	return vox.build(rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin())
 
 
-## The building's colours dulled to dusty, broken rubble, plus coals and scorch.
+## Rubble is mostly pale broken concrete with a little of the building's own colour; the stubs
+## keep the facade colours (keys starting "stub_"); coals and scorch only near the fire.
 static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 	var palette := {}
 	for key: String in voxels.palette:
 		var c: Color = voxels.palette[key]
-		palette[key] = Color(c.darkened(0.35).lerp(Color("4a4a48"), 0.35), 1.0)
+		palette[key] = Color(c.lerp(Color("9a9c9a"), 0.55), 1.0)
+		palette["stub_" + key] = c
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
-	palette["char"] = Color("201c1a")
+	palette["char"] = Color("2a2624")
 	return palette
 
 
