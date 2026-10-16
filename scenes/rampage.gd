@@ -19,6 +19,8 @@ var species: Dictionary
 var ability_fx: AbilityFx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
+## Capture hook: when set, called with the sim each physics frame for the player's input.
+var scripted: Callable
 var _city: CityView
 var _powers: PowersView
 var _was_ready := true
@@ -89,7 +91,13 @@ func _physics_process(delta: float) -> void:
 	var signature := Input.is_action_just_pressed("signature")
 	var held := Input.is_action_pressed("signature")
 	var ultimate := Input.is_action_just_pressed("ultimate")
-	if _autoplay:
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate"} per frame
+		var input: Dictionary = scripted.call(sim)
+		move = input.get("move", Vector2.ZERO)
+		signature = input.get("signature", false)
+		held = input.get("held", false)
+		ultimate = input.get("ultimate", false)
+	elif _autoplay:
 		move = _autoplay_move()
 		signature = autoplay_signature and sim.ability_ready_in <= 0.0
 		held = autoplay_signature and Engine.get_physics_frames() % 90 < 50
