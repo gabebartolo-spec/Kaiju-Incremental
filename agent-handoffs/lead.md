@@ -57,6 +57,8 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 
 18. Stages picked (D-033): reptile adolescent B f9cf6ba7 RIGGED (130 vox, 26 bones, walk/roar checked in-game); mantis 06ed8a12/0161ad14/9668b815 handed to kaiju-motion for the hexapod rig. Next for me: cephalopod 3 stages (Tripo), then military vehicles/landmarks (D-020).
 
+19. Reptile locomotion QA round 1: REJECT (motion-critic + lead), fix list sent; posture = medium Godzilla/T-rex lean (director). Insect/octo clips pending review.
+
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
 ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106). street-life PR #5 MERGED (ca2c65c),

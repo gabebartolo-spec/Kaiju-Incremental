@@ -17,7 +17,8 @@ recorded in PRs (so tuning has a baseline) but a slower frame is not a reason to
 pass comes after the look is locked.
 
 ## 2026-10-16 · D-031 · Director · Kaiju move like killing machines, each species its own way
-Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness;
+Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness (posture a
+medium between Godzilla and T-rex, ~20-30° lean: "my t-rex comparison was mostly the gracefulness");
 insectoid = disturbing skitter, twitches, exoskeletal motion; cephalopod = slides, pushes, pulls,
 grabs building edges with tentacles, never tip-toes. Changes: helper kaiju-motion rebuilds rig
 locomotion (foot IK, weight shift, tail counterbalance, hexapod and radial rigs).
