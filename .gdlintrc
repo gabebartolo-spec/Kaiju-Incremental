@@ -1,0 +1,27 @@
+# gdlint configuration (gdtoolkit 4.x). Limits from docs/05_STYLE_CODE.md.
+# Not checkable by gdlint 4.x: 40 lines per function, cyclomatic complexity 12,
+# snake_case file names (a shell step in lint.yml checks file names).
+max-file-lines: 400
+max-line-length: 100
+max-public-methods: 20
+function-arguments-number: 4
+# docs/05 sets no return-count limit; gdtoolkit's default is 6.
+max-returns: 8
+# Naming per docs/05: snake_case functions/variables, PascalCase classes,
+# UPPER_SNAKE constants, snake_case signals, PascalCase enums with UPPER_SNAKE members.
+class-name: ([A-Z][a-z0-9]*)+
+sub-class-name: _?([A-Z][a-z0-9]*)+
+function-name: (_on_([A-Z][a-z0-9]*)+(_[a-z0-9]+)*|_?[a-z][a-z0-9]*(_[a-z0-9]+)*)
+function-argument-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+function-variable-name: '[a-z][a-z0-9]*(_[a-z0-9]+)*'
+class-variable-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+loop-variable-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+constant-name: _?[A-Z][A-Z0-9]*(_[A-Z0-9]+)*
+signal-name: '[a-z][a-z0-9]*(_[a-z0-9]+)*'
+enum-name: ([A-Z][a-z0-9]*)+
+enum-element-name: '[A-Z][A-Z0-9]*(_[A-Z0-9]+)*'
+excluded_directories: !!set
+  .git: null
+  .godot: null
+  .claude: null
+  tests/fixtures/lint: null

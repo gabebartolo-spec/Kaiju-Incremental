@@ -1,0 +1,202 @@
+name: tests
+
+# Code, data and config pull requests and pushes to main run the Godot checks: the
+# project import, every test suite and the harness self-test. Documentation-only
+# changes skip them; a PR that changes docs and anything else still runs them. A draft
+# PR skips them too, until it is marked ready for review.
+#
+# The suites run as parallel shards (tools/ci_shards.txt); one more job runs the
+# harness self-test once. tools/run_tests.sh is the same script an agent runs locally,
+# on every suite or on some of them.
+#
+# "test" is the required check on main. It is the last job and passes when the plan,
+# every shard and the extras job passed. For a docs-only or draft PR the shards are
+# skipped and it passes in seconds. Pushes to main that only touch docs don't start
+# this workflow at all.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+# Each push to main gets its own group and is never cancelled (github-hygiene: back-to-back
+# merges cancelled each other's verdicts on AFL). PR runs still cancel when superseded.
+concurrency:
+  group: tests-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'pr' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  # Decides whether the Godot checks run, checks every suite is in a shard, and checks
+  # no floor in tests/expected_checks.txt went down against the base branch.
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      code: ${{ steps.changes.outputs.code }}
+      reason: ${{ steps.changes.outputs.reason }}
+      shards: ${{ steps.shards.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the PR merge commit, its base, and origin/<base> for the floors check
+
+      # Anything outside docs/ and *.md files counts as code.
+      - name: Check for code changes
+        id: changes
+        env:
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          code=true
+          reason=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ "$IS_DRAFT" = "true" ]; then
+              code=false
+              reason="draft pull request: the Godot checks run when it is marked ready for review"
+            elif ! git diff --name-only HEAD^1 HEAD | grep -qvE '^docs/|\.md$'; then
+              code=false
+              reason="documentation only"
+            fi
+          fi
+          if [ "$code" = false ]; then echo "Skipping the Godot checks ($reason)."; fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+
+      # Floors only go up (game-architecture §6): a floor in tests/expected_checks.txt
+      # only goes up. Fails, naming the suite, if the PR lowers a floor or drops a suite's
+      # line. Pushes to main have nothing to compare against.
+      - name: Check no floor in tests/expected_checks.txt went down
+        if: github.event_name == 'pull_request'
+        run: bash tools/check_floors.sh "origin/${{ github.base_ref }}"
+
+      # A suite missing from tools/ci_shards.txt would never run in CI.
+      - name: Check the shards cover every suite
+        id: shards
+        run: |
+          bash tools/check_ci_shards.sh
+          echo "matrix=$(bash tools/check_ci_shards.sh --matrix)" >> "$GITHUB_OUTPUT"
+
+  shard:
+    name: shard ${{ matrix.shard }}
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false # a red shard should not hide the others' results
+      matrix: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          name="Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          curl -fsSL --retry 3 -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${name}.zip" \
+          || curl -fsSL --retry 3 -o godot.zip \
+            "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=linux.x86_64.zip&platform=linux.64"
+          unzip -q godot.zip && rm godot.zip
+          mv "${name}" godot && chmod +x godot
+
+      - name: Run the suites in this shard
+        env:
+          SUITES: ${{ matrix.suites }}
+        run: SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/test-logs
+
+  # What run_tests.sh does after the suites: the harness self-test (floors bite, an
+  # untyped declaration does not compile).
+  extras:
+    name: harness self-test
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          name="Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          curl -fsSL --retry 3 -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${name}.zip" \
+          || curl -fsSL --retry 3 -o godot.zip \
+            "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=linux.x86_64.zip&platform=linux.64"
+          unzip -q godot.zip && rm godot.zip
+          mv "${name}" godot && chmod +x godot
+
+      - name: Run the harness self-test
+        run: EXTRAS_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-extras
+          path: ${{ runner.temp }}/test-logs
+
+  # The required check. Its name stays "test" so branch protection never changes.
+  test:
+    needs: [plan, shard, extras]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed
+        env:
+          PLAN: ${{ needs.plan.result }}
+          CODE: ${{ needs.plan.outputs.code }}
+          REASON: ${{ needs.plan.outputs.reason }}
+          SHARDS: ${{ needs.shard.result }}
+          EXTRAS: ${{ needs.extras.result }}
+        run: |
+          echo "plan=$PLAN code=$CODE shards=$SHARDS extras=$EXTRAS"
+          if [ "$PLAN" != success ]; then
+            echo "::error::the plan job failed: a floor in tests/expected_checks.txt went down, a suite is missing from tools/ci_shards.txt, or the checkout failed"
+            exit 1
+          fi
+          if [ "$CODE" = true ]; then
+            if [ "$SHARDS" != success ]; then
+              echo "::error::a test shard did not pass (shards: $SHARDS); the red shard's log names the suite and check"
+              exit 1
+            fi
+            if [ "$EXTRAS" != success ]; then
+              echo "::error::the harness self-test job did not pass (extras: $EXTRAS); its log names what failed"
+              exit 1
+            fi
+          else
+            echo "The Godot checks were skipped ($REASON)."
+          fi

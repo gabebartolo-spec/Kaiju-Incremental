@@ -1,0 +1,7 @@
+# How CI splits the Godot test suites across parallel jobs (.github/workflows/tests.yml).
+# One line per shard: its number, a colon, then the suites it runs. Every suite in
+# ALL_SUITES of tools/run_tests.sh must appear in exactly one shard;
+# tools/check_ci_shards.sh checks that on every CI run, so a new suite cannot quietly
+# skip CI. Put a new suite in the shortest shard; add a shard when one passes about
+# ten minutes of suite time, and say so in the PR.
+1: smoke sim flow

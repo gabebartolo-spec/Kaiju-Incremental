@@ -1,0 +1,14 @@
+# Godot
+.godot/
+
+# Local-only
+vault/
+.env
+__pycache__/
+out/
+review/
+
+# Claude Code worktrees and local settings
+.claude/worktrees/
+.claude/settings.local.json
+override.cfg
