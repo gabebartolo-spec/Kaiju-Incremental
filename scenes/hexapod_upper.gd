@@ -10,6 +10,12 @@ extends RefCounted
 ## Twitches: seconds between them, and how many parts twitch at once (at most).
 const TWITCH_EVERY := Vector2(0.12, 0.5)
 const TWITCH_PARTS := 3
+## At rest, a big move (a whole scythe raised, a jerk-turn of the body, a head snap) comes this
+## often (s), so the body never stands dead still for long; how far a scythe rises (rad) and the
+## body jerk-turns (rad).
+const BIG_EVERY := Vector2(0.25, 0.55)
+const RAISE := 0.55
+const JERK_TURN := 0.35
 ## At rest a leg taps (lifts and replants a little shifted) this often (s), on its own timer.
 const TAP_EVERY := Vector2(0.2, 0.6)
 ## The values that snap and hold.
@@ -24,6 +30,8 @@ const SNAPS: Array[String] = [
 	"flex_l",
 	"flex_r",
 	"mandibles",
+	"raise_l",
+	"raise_r",
 ]
 ## Snap spring (1/s) and damping for every twitched value; a twitch holds this long (s).
 const SNAP_OMEGA := 46.0
@@ -82,6 +90,7 @@ var _target := PackedFloat32Array()
 var _hold := PackedFloat32Array()
 var _twitch_in := 0.3
 var _tap_in := 0.4
+var _big_in := 0.2
 var _head_hold := 0.3
 var _head_target := Vector3.ZERO
 var _strike := 0.0
@@ -113,6 +122,11 @@ func update(dt: float, calm: float) -> void:
 		_twitch_in = rng.randf_range(TWITCH_EVERY.x, TWITCH_EVERY.y)
 		for _i: int in rng.randi_range(1, TWITCH_PARTS):
 			_twitch(rng.randi() % 6, calm)
+	_big_in -= dt
+	if _big_in <= 0.0:
+		_big_in = rng.randf_range(BIG_EVERY.x, BIG_EVERY.y)
+		if calm > 0.5:
+			_big_move(rng.randi() % 3)
 	_tap_in -= dt
 	if _tap_in <= 0.0:
 		_tap_in = rng.randf_range(TAP_EVERY.x, TAP_EVERY.y)
@@ -152,6 +166,23 @@ func update(dt: float, calm: float) -> void:
 		var flex := _v("flex_" + arm.right(1))
 		_pose_arm(arm, maxf(lash, perch * 0.35), flex, display)
 	_pose_mandibles(maxf(_v("mandibles"), display * MANDIBLE_FLARE))
+
+
+## A silhouette-sized move at rest: 0 a scythe raised high, 1 a jerk-turn of the whole body,
+## 2 a head snap with the mandibles parting.
+func _big_move(kind: int) -> void:
+	var rng := _gait.rng
+	var side := 1.0 if rng.randf() < 0.5 else -1.0
+	match kind:
+		0:
+			_snap_to("raise_l" if side > 0.0 else "raise_r", RAISE * rng.randf_range(0.8, 1.0))
+		1:
+			_snap_to("jerk_yaw", side * JERK_TURN * rng.randf_range(0.8, 1.0))
+			_snap_to("jerk_roll", -side * BODY_JERK.z)
+		_:
+			_snap_to("head_yaw", side * HEAD_YAW, rng.randf_range(0.3, 0.6))
+			_snap_to("mandibles", CHATTER)
+			_head_hold = 0.6
 
 
 ## One random part twitches to a new pose and holds it.
@@ -230,6 +261,7 @@ func _pose_arm(arm: String, lash: float, flex: float, display: float) -> void:
 	var dir := func(v: Vector3) -> Vector3: return (out * v.x + up * v.y + fwd * v.z).normalized()
 	var femur_v := FOLD_FEMUR.lerp(STRIKE_FEMUR, maxf(lash, flex * 0.5)).lerp(FLARE_FEMUR, display)
 	femur_v += Vector3(FLEX_OUT, 0, 0) * flex  # a twitch swings the scythe out: visible from above
+	femur_v = femur_v.rotated(Vector3.RIGHT, -_v("raise_" + arm.right(1)))  # raised whole, up and back
 	var tibia_v := FOLD_TIBIA.lerp(STRIKE_TIBIA, maxf(lash, flex)).lerp(FLARE_TIBIA, display)
 	var claw_v := FOLD_CLAW.lerp(STRIKE_TIBIA, lash).lerp(FLARE_CLAW, display)
 	var s := _gait.s
