@@ -1,35 +1,41 @@
 {
-	"default": "toy",
+	"default": "concrete",
 	"looks": [
 		{
-			"id": "toy", "label": "A", "name": "Toy Diorama",
-			"sky_top": "5fa8f0", "sky_horizon": "cfe8ff", "ambient": 0.95,
-			"sun_color": "fff4e0", "sun_energy": 1.35, "sun_pitch": -60,
-			"fog_color": "cfe8ff", "fog_density": 0.0, "saturation": 1.15, "contrast": 1.05, "glow": 0.0,
-			"voxel_inset": 0.9, "color_noise": 0.0, "window_lit": 0.0, "window_glow": 0.0, "accent_glow": 0.0, "kaiju_lift": 0.0,
-			"styles": ["f2866b", "7fd6b4", "ffd56b", "79b8f2", "c49bf2"],
-			"roof": "fafafa", "window": "4d6a8a", "window_lit_color": "ffe7a3",
-			"outskirts": "7cc65a", "asphalt": "5b6470", "lot": "e9e4da"
-		},
-		{
-			"id": "night", "label": "B", "name": "Monster Movie Night",
-			"sky_top": "070b1c", "sky_horizon": "3a2440", "ambient": 1.0, "ambient_color": "5a6a9a",
-			"sun_color": "9fb8ff", "sun_energy": 0.9, "sun_pitch": -45,
-			"fog_color": "2a1d3a", "fog_density": 0.003, "saturation": 1.1, "contrast": 1.1, "glow": 0.3, "debris_lift": 0.5,
-			"voxel_inset": 0.94, "color_noise": 0.04, "window_lit": 0.3, "window_glow": 0.9, "accent_glow": 1.6, "kaiju_lift": 0.45,
-			"styles": ["5a6275", "6a5a60", "4a6270", "585a70"],
-			"roof": "3a3e4c", "window": "263044", "window_lit_color": "ffc46b",
-			"outskirts": "24382a", "asphalt": "272a32", "lot": "4a4d56"
-		},
-		{
-			"id": "concrete", "label": "C", "name": "Concrete Realism",
-			"sky_top": "6f8296", "sky_horizon": "b4bfca", "ambient": 0.75,
-			"sun_color": "f2efe8", "sun_energy": 1.0, "sun_pitch": -50,
-			"fog_color": "a9b4bd", "fog_density": 0.0015, "saturation": 0.9, "contrast": 1.15, "glow": 0.0,
-			"voxel_inset": 0.99, "color_noise": 0.08, "window_lit": 0.06, "window_glow": 0.0, "accent_glow": 0.0, "kaiju_lift": 0.0,
-			"styles": ["9a9890", "8a6a58", "6f8590", "a8a49a", "5d6066"],
-			"roof": "6e6c66", "window": "2c3a44", "window_lit_color": "e8d9b0",
-			"outskirts": "5d6b4a", "asphalt": "3e4044", "lot": "8c8a84"
+			"id": "concrete",
+			"label": "C",
+			"name": "Concrete Realism (evening)",
+			"sky_top": "2e4466",
+			"sky_horizon": "e6a26e",
+			"ambient": 0.38,
+			"sun_color": "ffb27a",
+			"sun_energy": 1.15,
+			"sun_pitch": -14,
+			"fog_color": "8f98a8",
+			"fog_density": 0.002,
+			"saturation": 0.95,
+			"contrast": 1.12,
+			"glow": 0.6,
+			"voxel_inset": 0.99,
+			"color_noise": 0.08,
+			"window_lit": 0.22,
+			"window_glow": 1.0,
+			"accent_glow": 0.0,
+			"kaiju_lift": 0.0,
+			"styles": [
+				"9a9890",
+				"8a6a58",
+				"6f8590",
+				"a8a49a",
+				"5d6066"
+			],
+			"roof": "6e6c66",
+			"window": "2c3a44",
+			"window_lit_color": "e8d9b0",
+			"outskirts": "5d6b4a",
+			"asphalt": "3e4044",
+			"lot": "8c8a84",
+			"lamp_energy": 2.2
 		}
 	]
 }

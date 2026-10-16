@@ -4,28 +4,42 @@ extends Node3D
 ## bottom-up, so losing layers is a smaller visible_instance_count), tumbling debris, rings,
 ## flames and floating text. Draws only; RampageSim decides what breaks.
 
-const VOXEL := 1.0
-const MAX_DEBRIS := 220
-const DEBRIS_PER_LAYER := 5
+const MAX_DEBRIS := 320
+const DEBRIS_PER_LAYER := 9
+const MAX_FIRES := 30
 
 var sim: RampageSim
 var _rng: RandomNumberGenerator
-var _cube_mesh: BoxMesh
 var _building_mms: Array[MultiMeshInstance3D] = []
+var _building_voxels: Array[BuildingVoxels] = []
+var _decor: CityDecor
+var _fires: Array[Fire] = []
 var _debris: Array[RigidBody3D] = []
 
+var _with_decor := true
 
-func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
+
+## with_decor false: an empty stage (no streets, cars or trees), e.g. a model line-up.
+func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = true) -> void:
 	sim = p_sim
 	_rng = rng
+	_with_decor = with_decor
 
 
 func _ready() -> void:
-	_cube_mesh = Look.voxel_mesh(VOXEL, Look.value("window_glow"))
 	_build_environment()
 	_build_ground()
 	for b: RampageSim.Building in sim.buildings:
 		_build_building(b)
+	if _with_decor:
+		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
+		add_child(_decor)
+
+
+## Cars, trees and lights under a stomp go flat.
+func crush(at: Vector3, radius: float) -> void:
+	if _decor != null:
+		_decor.crush(at, radius)
 
 
 func _process(_delta: float) -> void:
@@ -50,13 +64,17 @@ func _build_environment() -> void:
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		env.ambient_light_color = Look.color("ambient_color")
 	env.ambient_light_energy = Look.value("ambient")
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.ssao_enabled = true
 	env.fog_enabled = Look.value("fog_density") > 0.0
 	env.fog_light_color = Look.color("fog_color")
 	env.fog_density = Look.value("fog_density")
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
+	env.glow_hdr_threshold = 0.85
+	# Light bounces: lamps, fires and the sun colour the streets and walls around them
+	# (screen-space; full SDFGI cost about a tenth of the frame for little gain here).
+	env.ssil_enabled = true
 	env.adjustment_enabled = true
 	env.adjustment_saturation = Look.value("saturation")
 	env.adjustment_contrast = Look.value("contrast")
@@ -68,7 +86,9 @@ func _build_environment() -> void:
 	sun.light_energy = Look.value("sun_energy")
 	sun.light_color = Look.color("sun_color")
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 140.0
+	sun.directional_shadow_max_distance = 160.0
+	sun.shadow_blur = 1.5
+	sun.light_angular_distance = 1.0
 	add_child(sun)
 
 
@@ -104,23 +124,13 @@ func slab(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 
 
 func _build_building(b: RampageSim.Building) -> void:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = _cube_mesh
-	mm.instance_count = b.w * b.d * b.height
-	var i := 0
-	for layer: int in b.height:
-		for ix: int in b.w:
-			for iz: int in b.d:
-				var cell := Vector3i(ix, layer, iz)
-				mm.set_instance_transform(i, Transform3D(Basis(), _cell_pos(b, cell)))
-				mm.set_instance_color(i, _cell_color(b, cell))
-				i += 1
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
+	var voxels := BuildingVoxels.new(b, _base_color(b))
+	voxels.vox.salt = b.style
+	var glow := Look.value("window_glow")
+	var mmi := voxels.vox.build(voxels.palette, BuildingVoxels.VOXEL, glow, voxels.origin())
 	add_child(mmi)
 	_building_mms.append(mmi)
+	_building_voxels.append(voxels)
 
 
 func _base_color(b: RampageSim.Building) -> Color:
@@ -128,42 +138,27 @@ func _base_color(b: RampageSim.Building) -> Color:
 	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
-## cell: (x across, layer, z across).
-func _cell_pos(b: RampageSim.Building, cell: Vector3i) -> Vector3:
-	return (
-		Vector3(b.x - b.w * 0.5 + cell.x + 0.5, cell.y + 0.5, b.z - b.d * 0.5 + cell.z + 0.5)
-		* VOXEL
-	)
-
-
-## Alpha 0 marks a lit window, which glows when the look says so.
-func _cell_color(b: RampageSim.Building, cell: Vector3i) -> Color:
-	if cell.y == b.height - 1:
-		return Look.jitter(Look.color("roof"), cell, b.style)
-	var outer := cell.x == 0 or cell.z == 0 or cell.x == b.w - 1 or cell.z == b.d - 1
-	if outer and cell.y % 2 == 1:
-		var roll := float(
-			absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(b.x * 7.0 + b.z)))) % 1000
-		)
-		if roll / 1000.0 < Look.value("window_lit"):
-			var lit := Look.color("window_lit_color")
-			lit.a = 0.0
-			return lit
-		return Look.jitter(Look.color("window"), cell, b.style)
-	return Look.jitter(_base_color(b), cell, b.style)
-
-
 ## A building lost `count` layers: hide them, throw voxels away from the kaiju, leave a
 ## rubble slab when nothing stands.
 func layers_destroyed(index: int, count: int, kaiju_at: Vector3) -> void:
 	var b := sim.buildings[index]
-	_building_mms[index].multimesh.visible_instance_count = b.layers * b.w * b.d
+	var voxels := _building_voxels[index]
+	_building_mms[index].multimesh.visible_instance_count = voxels.visible_for(b.layers)
 	var away := (Vector3(b.x, 0, b.z) - kaiju_at).normalized()
+	var res := BuildingVoxels.RES
 	for layer: int in range(b.layers, b.layers + count):
 		for _n: int in DEBRIS_PER_LAYER:
-			var cell := Vector3i(_rng.randi_range(0, b.w - 1), layer, _rng.randi_range(0, b.d - 1))
-			debris(_cell_pos(b, cell), _cell_color(b, cell), away)
+			var cell := Vector3i(
+				_rng.randi_range(0, b.w * res - 1),
+				layer * res + _rng.randi_range(0, res - 1),
+				_rng.randi_range(0, b.d * res - 1)
+			)
+			var key := voxels.vox.key_at(cell)
+			var color: Color = voxels.palette.get(key if key != "" else "wall", Color.GRAY)
+			var pos := voxels.origin() + Vector3(cell) * BuildingVoxels.VOXEL
+			debris(pos + Vector3(0, BuildingVoxels.VOXEL * 0.5, 0), color, away)
 	if b.layers == 0:
+		fire(Vector3(b.x, 0.4, b.z), clampf(b.w * b.d / 9.0, 0.6, 2.5))
 		slab(Vector3(b.w, 0.5, b.d), Vector3(b.x, 0.25, b.z), _base_color(b).darkened(0.35))
 
 
@@ -171,12 +166,12 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 	var body := RigidBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3.ONE * 0.8
+	box_shape.size = Vector3.ONE * 0.5
 	shape.shape = box_shape
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * 0.8
+	mesh.size = Vector3.ONE * 0.5
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(color, 1.0).lightened(Look.value("debris_lift"))
 	mesh.material = mat
@@ -201,6 +196,30 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 func _forget_debris(body: RigidBody3D) -> void:
 	_debris.erase(body)
 	body.queue_free()
+
+
+## A fire that keeps burning (ruins, wrecks); the oldest goes out past the cap.
+func fire(at: Vector3, size: float) -> void:
+	var f := Fire.new(size, _rng.randf() * 10.0)
+	f.position = at
+	add_child(f)
+	_fires.append(f)
+	if _fires.size() > MAX_FIRES:
+		var old: Fire = _fires.pop_front()
+		old.queue_free()
+
+
+## A short burst of real light (muzzle flash, explosion, breath).
+func flash(at: Vector3, color: Color, energy: float, seconds: float) -> void:
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = energy
+	light.omni_range = 3.0 + energy
+	light.position = at
+	add_child(light)
+	var tween := light.create_tween()
+	tween.tween_property(light, "light_energy", 0.0, seconds)
+	tween.tween_callback(light.queue_free)
 
 
 ## A burst of glowing voxels from `from` over a cone along `span` (direction times reach).

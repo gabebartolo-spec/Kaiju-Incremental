@@ -1,13 +1,19 @@
 class_name KaijuModel
 extends Node3D
-## A species' kaiju built from voxels (data colours, code shapes). Faces -Z. About 7 units
-## tall at body scale 1. Animation is presentation only: bob while walking, squash on stomp.
+## A species' kaiju built from fine voxels (data colours, code shapes). Faces -Z. Shapes are
+## written in design units and drawn at RES cells per unit, so detail (teeth, claws, scales,
+## suckers, compound eyes) has room. About 10 units tall at body scale 1. Animation is
+## presentation only: bob while walking, squash on stomp.
 
-const VOXEL := 0.6
+const RES := 5
+const DESIGN_UNIT := 0.6
+const VOXEL := DESIGN_UNIT / RES
+const IVORY := Color("e8e0c8")
+const PUPIL := Color("15130f")
 
 var species_id: String
 var _colors: Dictionary = {}
-var _cells: Dictionary = {}
+var _vox := VoxelBuilder.new()
 var _body: Node3D
 var _walk_phase := 0.0
 var _squash := 0.0
@@ -26,7 +32,8 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 			_cephalopod()
 		_:
 			_reptilian()
-	_build()
+	_vox.salt = 7
+	_body.add_child(_vox.build(_palette(), VOXEL, _glow(), Vector3.ZERO))
 
 
 ## moving: 0..1 how hard the kaiju is walking this frame.
@@ -43,155 +50,209 @@ func stomp() -> void:
 	_squash = 1.0
 
 
-## Species colour, lifted by the look so the kaiju reads against its city (night).
-func _c(key: String) -> Color:
-	var base: Color = _colors.get(key, Color.MAGENTA)
+func _glow() -> float:
+	return maxf(1.5, Look.value("accent_glow"))
+
+
+## Species colours plus the detail shades derived from them. Alpha 0 marks a glowing cell.
+func _palette() -> Dictionary:
 	var lift := Look.value("kaiju_lift")
-	if lift <= 0.0 or key == "accent" or key == "eye":
-		return base
-	return base.lightened(lift)
+	var body: Color = _colors.get("body", Color.MAGENTA)
+	var belly: Color = _colors.get("belly", Color.MAGENTA)
+	if lift > 0.0:
+		body = body.lightened(lift)
+		belly = belly.lightened(lift)
+	var accent: Color = _colors.get("accent", Color.MAGENTA)
+	var eye: Color = _colors.get("eye", Color.MAGENTA)
+	eye.a = 0.0
+	var glowing_accent := accent
+	if Look.value("accent_glow") > 0.0:
+		glowing_accent.a = 0.0
+	return {
+		"body": body,
+		"scale": body.darkened(0.18),
+		"belly": belly,
+		"belly_dark": belly.darkened(0.15),
+		"accent": glowing_accent,
+		"accent_edge": accent.lightened(0.3),
+		"eye": eye,
+		"pupil": PUPIL,
+		"ivory": IVORY,
+		"joint": accent.lightened(0.2),
+	}
 
 
-func _fill(from: Vector3i, to: Vector3i, key: String) -> void:
-	for x: int in range(mini(from.x, to.x), maxi(from.x, to.x) + 1):
-		for y: int in range(mini(from.y, to.y), maxi(from.y, to.y) + 1):
-			for z: int in range(mini(from.z, to.z), maxi(from.z, to.z) + 1):
-				_cells[Vector3i(x, y, z)] = key
+## Design units -> cells.
+func _u(v: Vector3) -> Vector3:
+	return v * RES
 
 
-## A one-voxel-thick line from `a` to `b` (cells), sampled finely so it stays face-connected.
-func _line(a: Vector3, b: Vector3, key: String) -> void:
-	var steps := ceili(a.distance_to(b) * 6.0) + 1
-	var last := Vector3i(roundi(a.x), roundi(a.y), roundi(a.z))
-	for i: int in steps + 1:
-		var p := a.lerp(b, float(i) / steps)
-		var cell := Vector3i(roundi(p.x), roundi(p.y), roundi(p.z))
-		# Step one axis at a time so neighbours share a face, never just an edge or corner.
-		var walk := last
-		for axis: int in 3:
-			if walk[axis] != cell[axis]:
-				walk[axis] = cell[axis]
-				_cells[walk] = key
-		_cells[cell] = key
-		last = cell
+func _blob(c: Vector3, r: Vector3, key: String) -> void:
+	_vox.blob(_u(c), r * RES, key)
 
 
-## Fills every cell inside the ellipsoid at `centre` with half-axes `radii` (cells).
-func _blob(centre: Vector3, radii: Vector3, key: String) -> void:
-	var lo := Vector3i((centre - radii).floor())
-	var hi := Vector3i((centre + radii).ceil())
-	for x: int in range(lo.x, hi.x + 1):
-		for y: int in range(lo.y, hi.y + 1):
-			for z: int in range(lo.z, hi.z + 1):
-				var d := (Vector3(x, y, z) - centre) / radii
-				if d.length_squared() <= 1.0:
-					_cells[Vector3i(x, y, z)] = key
+func _tube(a: Vector3, b: Vector3, r: Vector2, key: String) -> void:
+	_vox.tube(_u(a), _u(b), r * RES, key)
+
+
+## Pseudo-random 0..99 per cell, for scale and speckle patterns.
+func _roll(cell: Vector3i) -> int:
+	return absi(hash(cell)) % 100
 
 
 func _reptilian() -> void:
 	for side: int in [-1, 1]:
-		_blob(Vector3(side * 2.8, 3.0, 0.0), Vector3(1.7, 3.2, 1.9), "body")  # thighs
-		_fill(Vector3i(side * 3, 0, -2), Vector3i(side * 1, 0, -2), "accent")  # toes
-		_line(Vector3(side * 3, 11, -1), Vector3(side * 4, 9, -3), "body")  # upper arm
-		_line(Vector3(side * 4, 9, -3), Vector3(side * 4, 8, -5), "body")  # forearm
-		_cells[Vector3i(side * 4, 7, -5)] = "accent"  # claws
-		_cells[Vector3i(side * 4, 8, -6)] = "accent"
+		_blob(Vector3(side * 2.8, 3.2, 0.2), Vector3(1.8, 3.0, 2.0), "body")  # thighs
+		_tube(
+			Vector3(side * 2.9, 1.8, 0.4), Vector3(side * 3.0, 0.4, -0.8), Vector2(1.0, 0.8), "body"
+		)
+		for toe: int in 3:  # three clawed toes
+			var x := side * (2.3 + toe * 0.6)
+			_tube(Vector3(x, 0.3, -1.2), Vector3(x, 0.15, -2.3), Vector2(0.35, 0.25), "ivory")
+		_tube(
+			Vector3(side * 3.0, 11.0, -0.8),
+			Vector3(side * 4.0, 9.4, -2.8),
+			Vector2(0.85, 0.7),
+			"body"
+		)
+		_tube(
+			Vector3(side * 4.0, 9.4, -2.8),
+			Vector3(side * 4.1, 8.3, -4.5),
+			Vector2(0.7, 0.55),
+			"body"
+		)
+		for claw: int in 3:
+			var cx := side * (3.7 + claw * 0.35)
+			_tube(Vector3(cx, 8.1, -4.7), Vector3(cx, 7.4, -5.4), Vector2(0.25, 0.2), "ivory")
 	_blob(Vector3(0, 8.5, 0.5), Vector3(3.4, 5.0, 3.2), "body")  # torso
-	_blob(Vector3(0, 8.0, -2.2), Vector3(2.3, 3.8, 1.0), "belly")
-	_blob(Vector3(0, 14.0, -1.5), Vector3(1.8, 2.0, 1.8), "body")  # neck
-	_blob(Vector3(0, 15.5, -4.5), Vector3(2.0, 1.8, 3.0), "body")  # head
-	_fill(Vector3i(-1, 13, -7), Vector3i(1, 14, -3), "belly")  # jaw
-	_fill(Vector3i(-2, 16, -6), Vector3i(-2, 16, -6), "eye")
-	_fill(Vector3i(2, 16, -6), Vector3i(2, 16, -6), "eye")
-	for i: int in 7:  # tail, sweeping down to the ground
-		var r := 2.4 - i * 0.22
-		_blob(Vector3(0, maxf(r, 5.0 - i * 0.6), 4.0 + i * 1.6), Vector3(r, r, 1.2), "body")
-	for z: int in range(0, 15, 2):  # dorsal plates, rooted on the top of the spine
-		var top := _top(0, z)
-		if top < 0:
+	_blob(Vector3(0, 8.0, -2.3), Vector3(2.3, 3.8, 1.0), "belly")
+	_tube(Vector3(0, 12.0, -0.6), Vector3(0, 14.6, -3.0), Vector2(1.9, 1.6), "body")  # neck
+	_blob(Vector3(0, 15.6, -4.3), Vector3(1.9, 1.5, 2.2), "body")  # skull
+	_blob(Vector3(0, 15.0, -6.6), Vector3(1.4, 1.0, 1.7), "body")  # snout
+	_blob(Vector3(0, 13.9, -5.6), Vector3(1.3, 0.6, 2.0), "belly")  # lower jaw
+	_chain_tail()
+	_reptile_details()
+
+
+func _chain_tail() -> void:
+	var points: Array[Vector3] = [
+		_u(Vector3(0, 6.5, 3.0)),
+		_u(Vector3(0, 4.6, 6.8)),
+		_u(Vector3(0, 2.6, 10.2)),
+		_u(Vector3(0.6, 1.0, 13.4)),
+	]
+	var radii: Array[float] = [2.5 * RES, 1.8 * RES, 1.1 * RES, 0.35 * RES]
+	_vox.chain(points, radii, "body")
+
+
+func _reptile_details() -> void:
+	# Teeth along the mouth line, eyes with pupils, nostrils.
+	var mouth_y := roundi(14.45 * RES)
+	var z_front := roundi(-8.1 * RES)
+	var z_back := roundi(-4.4 * RES)
+	for z: int in range(z_front, z_back, 2):  # a row of teeth, the mouth narrowing to the front
+		var t := float(z - z_front) / (z_back - z_front)
+		for side: int in [-1, 1]:
+			var x := side * roundi(RES * lerpf(0.55, 1.2, t))
+			_vox.box(Vector3i(x, mouth_y - 1, z), Vector3i(x, mouth_y, z), "ivory")
+	for side: int in [-1, 1]:
+		var eye := Vector3i(side * roundi(1.75 * RES), roundi(16.0 * RES), roundi(-5.3 * RES))
+		_vox.box(eye, eye + Vector3i(0, 2, 2), "eye")
+		_vox.box(eye + Vector3i(side, 1, 1), eye + Vector3i(side, 1, 1), "pupil")
+		_vox.put(Vector3i(side * 2, roundi(15.6 * RES), roundi(-7.7 * RES)), "pupil")
+	# Scales on the hide, bands across the belly.
+	_vox.repaint(
+		func(cell: Vector3i, key: String) -> String:
+			if key == "body" and _roll(cell) < 22:
+				return "scale"
+			if key == "belly" and cell.y % 3 == 0:
+				return "belly_dark"
+			return key
+	)
+	# Dorsal plates: flat triangles rooted on the spine, biggest over the shoulders.
+	for i: int in 10:
+		var z := roundi((-1.0 + i * 1.4) * RES)
+		var root := _vox.top(0, z, ["accent", "accent_edge"])
+		if root < -999:
 			continue
-		var tall := 2 if z < 2 else (3 if z < 6 else (2 if z < 10 else 1))
-		_fill(Vector3i(0, top + 1, z), Vector3i(0, top + tall, z), "accent")
-
-
-## A cell with all six neighbours filled can never be seen; drawing it shows through the gaps.
-func _buried(cell: Vector3i) -> bool:
-	for d: Vector3i in [
-		Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
-	]:
-		if not _cells.has(cell + d):
-			return false
-	return true
-
-
-## Highest filled cell in the column (x, z), or -1.
-func _top(x: int, z: int) -> int:
-	var best := -1
-	for cell: Vector3i in _cells:
-		if cell.x == x and cell.z == z and _cells[cell] != "accent":
-			best = maxi(best, cell.y)
-	return best
+		var height := roundi((1.0 + 1.8 * sin(PI * clampf((i + 1) / 8.0, 0.0, 1.0))) * RES)
+		for h: int in height:
+			var half := maxi(0, roundi((height - h) * 0.45))
+			for dz: int in range(-half, half + 1):
+				var key := "accent_edge" if h == height - 1 or absi(dz) == half else "accent"
+				_vox.put(Vector3i(0, root + 1 + h, z + dz), key)
 
 
 func _insectoid() -> void:
-	_blob(Vector3(0, 4.5, 6.0), Vector3(2.8, 2.4, 3.8), "body")  # abdomen
-	for z: int in [4, 6, 8]:
-		_fill(Vector3i(-2, 6, z), Vector3i(2, 6, z), "belly")  # stripes
-	_blob(Vector3(0, 5.0, 0.5), Vector3(1.5, 1.6, 2.0), "body")  # thorax
-	_blob(Vector3(0, 5.5, -1.5), Vector3(1.0, 1.0, 1.0), "body")  # neck
-	_blob(Vector3(0, 6.0, -4.2), Vector3(2.3, 2.0, 2.0), "belly")  # head: its own colour, ahead
+	_blob(Vector3(0, 4.6, 6.0), Vector3(2.8, 2.4, 3.8), "body")  # abdomen
+	_blob(Vector3(0, 5.2, 0.6), Vector3(1.6, 1.6, 2.0), "body")  # thorax
+	_tube(Vector3(0, 5.6, -1.2), Vector3(0, 5.9, -2.4), Vector2(1.0, 0.9), "body")  # neck
+	_blob(Vector3(0, 6.0, -4.2), Vector3(2.2, 1.9, 2.0), "belly")  # head
 	for side: int in [-1, 1]:
-		_fill(Vector3i(side * 2, 6, -5), Vector3i(side * 2, 7, -5), "eye")  # eyes at the front
-		_line(Vector3(side * 2, 5, -6), Vector3(side, 5, -8), "accent")  # mandibles, held forward
-		_line(Vector3(side, 8, -5), Vector3(side * 3, 12, -8), "accent")  # antennae
+		_blob(Vector3(side * 1.8, 6.6, -4.8), Vector3(0.8, 0.9, 0.9), "eye")  # compound eyes
+		_tube(
+			Vector3(side * 1.3, 5.0, -5.8),
+			Vector3(side * 0.5, 4.8, -8.0),
+			Vector2(0.45, 0.25),
+			"accent"
+		)
+		_tube(
+			Vector3(side * 0.6, 4.8, -7.9),
+			Vector3(side * 0.1, 4.8, -8.4),
+			Vector2(0.2, 0.2),
+			"ivory"
+		)
+		var antenna: Array[Vector3] = [
+			_u(Vector3(side * 0.8, 7.6, -5.0)),
+			_u(Vector3(side * 2.4, 10.6, -7.0)),
+			_u(Vector3(side * 3.4, 11.6, -6.0)),
+		]
+		var thin: Array[float] = [0.4, 0.3, 0.3]
+		_vox.chain(antenna, thin, "accent")
 		for leg: int in 3:  # six legs: up to a high knee, splayed out and down to the ground
-			var hip := Vector3(side, 5, -0.5 + leg)
-			var knee := Vector3(side * 5, 8, -2.0 + leg * 2.5)
-			var foot := Vector3(side * 8, 0, -4.0 + leg * 4.0)
-			_line(hip, knee, "accent")
-			_line(knee, foot, "accent")
+			var hip := Vector3(side * 1.2, 5.0, -0.4 + leg)
+			var knee := Vector3(side * 5.0, 8.0, -2.0 + leg * 2.5)
+			var foot := Vector3(side * 8.0, 0.0, -4.0 + leg * 4.0)
+			_tube(hip, knee, Vector2(0.5, 0.45), "accent")
+			_tube(knee, foot, Vector2(0.45, 0.3), "accent")
+			_blob(knee, Vector3.ONE * 0.6, "joint")
+	_vox.repaint(
+		func(cell: Vector3i, key: String) -> String:
+			if key == "body" and cell.z > roundi(3.0 * RES) and cell.z % 4 == 0:
+				return "scale"  # abdomen segments
+			if key == "eye" and posmod(cell.x * 3 + cell.y * 5 + cell.z * 7, 6) == 0:
+				return "pupil"  # compound-eye facets
+			return key
+	)
 
 
 func _cephalopod() -> void:
 	_blob(Vector3(0, 10.0, 1.0), Vector3(3.6, 5.5, 3.6), "body")  # mantle
 	_blob(Vector3(0, 5.5, 0.0), Vector3(2.8, 1.8, 2.8), "body")  # head under the mantle
-	for side: int in [-1, 1]:  # eyes set into the sides of the head
-		_fill(Vector3i(side * 3, 6, -1), Vector3i(side * 3, 6, 0), "eye")
+	_tube(Vector3(0, 4.6, -2.4), Vector3(0, 4.0, -3.2), Vector2(0.6, 0.5), "belly")  # siphon
+	for side: int in [-1, 1]:
+		var eye := Vector3i(side * roundi(2.75 * RES), roundi(6.1 * RES), roundi(-0.6 * RES))
+		_vox.blob(Vector3(eye), Vector3(1.0, 0.75, 0.75) * RES, "eye")
+		_vox.box(eye + Vector3i(side * 2, 0, -2), eye + Vector3i(side * 2, 0, 2), "pupil")
 	for i: int in 8:  # tentacles: thick at the head, tapering over the ground
 		var angle := TAU * i / 8.0 + 0.2
 		var dir := Vector3(sin(angle), 0, -cos(angle))
-		var root := dir * 2.0 + Vector3(0, 4, 0)
-		var bend := dir * 6.0 + Vector3(0, 1, 0)
-		var tip := dir * 10.0 + dir.cross(Vector3.UP) * 1.5
-		_line(root, bend, "body")
-		_line(root + Vector3(0, 1, 0), bend + Vector3(0, 1, 0), "body")
-		_line(bend, tip, "body")
-		_cells[Vector3i(roundi(tip.x), 0, roundi(tip.z))] = "accent"
-
-
-## One MultiMesh for the whole body: every cell a cube with its colour. Eyes always glow; the
-## accent (spines, stripes) glows when the look says so.
-func _build() -> void:
-	var accent_glow := Look.value("accent_glow")
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = Look.voxel_mesh(VOXEL, maxf(1.5, accent_glow))
-	var shell: Array[Vector3i] = []
-	for cell: Vector3i in _cells:
-		if not _buried(cell):
-			shell.append(cell)
-	mm.instance_count = shell.size()
-	var i := 0
-	for cell: Vector3i in shell:
-		var key: String = _cells[cell]
-		var color := Look.jitter(_c(key), cell, 7)
-		if key == "eye" or (key == "accent" and accent_glow > 0.0):
-			color.a = 0.0
-		var pos := Vector3(cell) * VOXEL + Vector3(0, VOXEL * 0.5, 0)
-		mm.set_instance_transform(i, Transform3D(Basis(), pos))
-		mm.set_instance_color(i, color)
-		i += 1
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	_body.add_child(mmi)
+		var side := dir.cross(Vector3.UP)
+		var points: Array[Vector3] = [
+			_u(dir * 2.0 + Vector3(0, 4.2, 0)),
+			_u(dir * 4.5 + Vector3(0, 1.6, 0)),
+			_u(dir * 7.5 + Vector3(0, 0.6, 0) + side * 0.6),
+			_u(dir * 10.0 + side * 1.6),
+		]
+		var radii: Array[float] = [1.0 * RES, 0.8 * RES, 0.55 * RES, 0.2 * RES]
+		_vox.chain(points, radii, "body")
+	_vox.repaint(
+		func(cell: Vector3i, key: String) -> String:
+			if key != "body":
+				return key
+			if cell.y > roundi(6.0 * RES) and _roll(cell) < 12:
+				return "accent"  # mantle speckles
+			if cell.y <= 1 and (cell.x + cell.z) % 2 == 0:
+				return "belly"  # suckers on the undersides
+			return key
+	)

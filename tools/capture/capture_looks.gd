@@ -28,16 +28,18 @@ func _run() -> void:
 	await process_frame
 	for look: Dictionary in Content.looks():
 		Content.set_look(str(look["id"]))
-		await _city_shot(str(look["id"]))
+		await _city_shot(str(look["id"]) + "_young", {})
+		await _city_shot(
+			str(look["id"]) + "_evolved",
+			{"claws": 3, "hide": 3, "rage": 3, "stride": 2, "quake": 2, "evolve1": 1}
+		)
 		await _lineup_shot(str(look["id"]))
 	quit()
 
 
-func _city_shot(id: String) -> void:
+func _city_shot(id: String, levels: Dictionary) -> void:
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(
-		Content.upgrades(), {"claws": 1, "hide": 1, "rage": 1, "evolve1": 1}
-	)
+	var tree := UpgradeTree.new(Content.upgrades(), levels)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
@@ -60,13 +62,28 @@ func _city_shot(id: String) -> void:
 	cam.look_at(at + Vector3(0, 3.5 * sim.body_scale(), 0))
 	cam.current = true
 	await _frames(SETTLE)
-	for index: int in _nearest(sim, 4):
-		var lost := sim.damage_building(index, sim.buildings[index].layer_hp * 6.0)
+	var nearest := _nearest(sim, 4)
+	for n: int in nearest.size():  # two ruins burning, two buildings half down
+		var index := nearest[n]
+		var hits := 999.0 if n < 2 else 6.0
+		var lost := sim.damage_building(index, sim.buildings[index].layer_hp * hits)
 		if lost > 0:
 			city.layers_destroyed(index, lost, at)
+	for t: int in 2:  # tanks closing in, one firing
+		var tank := TankModel.new()
+		tank.position = at + Vector3(-7.0 + t * 12.0, 0, 9.0 - t * 3.0)
+		stage.add_child(tank)
+		tank.look_at_from_position(tank.position, at, Vector3.UP, true)
+	city.flash(at + Vector3(-7.0, 1.0, 9.0), Color("ffc070"), 4.0, 0.4)
 	city.ring(at, sim.stomp_radius(), Color(1, 0.85, 0.6, 0.7), 0.35)
 	await _frames(DEBRIS_FRAMES)
 	_shot("%s_city" % id)
+	await _frames(90)
+	var instances := 0
+	for node: Node in stage.find_children("*", "MultiMeshInstance3D", true, false):
+		var mmi: MultiMeshInstance3D = node
+		instances += mmi.multimesh.instance_count
+	print("fps ", id, " ", Engine.get_frames_per_second(), " voxels ", instances)
 	stage.queue_free()
 	await process_frame
 
@@ -75,7 +92,7 @@ func _lineup_shot(id: String) -> void:
 	var empty: Array[Dictionary] = []
 	var sim := RampageSim.new({}, Content.tuning(), empty, Seeds.make("army", 0))
 	var stage := Node3D.new()
-	stage.add_child(CityView.new(sim, Seeds.make("fx", 0)))
+	stage.add_child(CityView.new(sim, Seeds.make("fx", 0), false))
 	var x := -LINEUP_SPACING
 	for def: Dictionary in Content.species():
 		var colors: Dictionary = def["colors"]
@@ -93,6 +110,8 @@ func _lineup_shot(id: String) -> void:
 	cam.current = true
 	await _frames(SETTLE)
 	_shot("%s_lineup" % id)
+	await _frames(90)
+	print("fps lineup ", Engine.get_frames_per_second())
 	stage.queue_free()
 	await process_frame
 

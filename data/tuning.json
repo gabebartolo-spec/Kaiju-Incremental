@@ -12,6 +12,6 @@
 	"city": {
 		"grid": 11, "spacing": 9.0, "empty_chance": 0.15, "min_height": 3, "max_height": 26,
 		"max_footprint": 5, "tier_height": 7, "layer_hp": 6.0, "under_tier_mult": 0.08,
-		"size_scale_per_tier": 0.55, "leap_distance": 8.0, "cone_half_angle_deg": 30.0
+		"size_scale_per_tier": 0.8, "young_scale": 0.5, "growth_per_level": 0.02, "leap_distance": 8.0, "cone_half_angle_deg": 30.0
 	}
 }

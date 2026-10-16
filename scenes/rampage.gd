@@ -91,6 +91,7 @@ func _on_event(event: Dictionary) -> void:
 		"stomp":
 			_kaiju.stomp()
 			_city.ring(_kaiju_at, Num.f(event["radius"]), Color(1, 0.85, 0.6, 0.7), 0.35)
+			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
 			_ability_fx(event)
@@ -127,10 +128,13 @@ func _ability_fx(event: Dictionary) -> void:
 	_shake = maxf(_shake, 0.45)
 	var colors: Dictionary = species["colors"]
 	var eye := Color(str(colors["eye"]))
+	_city.crush(_to_world(sim.kaiju_pos), reach * (0.5 if str(event["kind"]) == "cone" else 1.0))
 	match str(event["kind"]):
 		"cone":
 			var mouth := _kaiju_at + Vector3(0, 6.0 * sim.body_scale(), 0)
 			_city.flame_cone(mouth, _kaiju_at, _to_world(sim.facing) * reach, eye)
+			var mid := _kaiju_at + _to_world(sim.facing) * reach * 0.5 + Vector3(0, 2, 0)
+			_city.flash(mid, eye, 8.0, 0.6)
 		"leap":
 			var from: Vector2 = event["from"]
 			_leap_from = _to_world(from)
@@ -159,10 +163,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 
 
 func _spawn_tank_node(id: int) -> void:
-	var tank := Node3D.new()
-	tank.add_child(_part(Vector3(1.6, 0.6, 2.2), Vector3(0, 0.3, 0), TANK_GREEN))
-	tank.add_child(_part(Vector3(1.0, 0.45, 1.0), Vector3(0, 0.82, 0.1), Color("6b7848")))
-	tank.add_child(_part(Vector3(0.22, 0.22, 1.3), Vector3(0, 0.85, -0.9), Color("3a4228")))
+	var tank := TankModel.new()
 	add_child(tank)
 	_tank_nodes[id] = tank
 
@@ -198,6 +199,7 @@ func _tank_fired(id: int) -> void:
 	var shell := _part(Vector3.ONE * 0.35, node.position + Vector3(0, 0.9, 0), UiKit.WARN)
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
+	_city.flash(node.position + Vector3(0, 1.0, 0), Color("ffc070"), 4.0, 0.12)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
 	tween.tween_callback(shell.queue_free)
@@ -213,6 +215,8 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 		_city.debris(
 			pos + Vector3(0, 0.5, 0), TANK_GREEN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
 		)
+	_city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
+	_city.fire(pos, 0.6)
 	var gained := Num.f(sim.army["tank_rubble"]) * sim.stat("rubble_mult")
 	_city.float_text("+%d" % Num.i(gained), pos + Vector3(0, 2, 0), UiKit.WARN)
 

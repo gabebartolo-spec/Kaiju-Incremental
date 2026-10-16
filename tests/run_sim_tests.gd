@@ -24,6 +24,7 @@ func run_checks() -> void:
 	_check_army()
 	_check_save_migrate()
 	_check_looks()
+	_check_growth()
 
 
 func _tree(levels: Dictionary = {}) -> UpgradeTree:
@@ -226,7 +227,11 @@ func _check_species_differ() -> void:
 	var leap := _sim("insectoid", {})
 	var before := leap.kaiju_pos
 	leap.step(DT, Vector2.ZERO, true)
-	check(leap.kaiju_pos.distance_to(before) > 5.0, "the insectoid's Leap Slam moves it forward")
+	var expected := Num.f(leap.city["leap_distance"]) * leap.body_scale()
+	check(
+		leap.kaiju_pos.distance_to(before) >= expected * 0.95,
+		"the insectoid's Leap Slam carries it its leap distance (%.1f)" % expected
+	)
 	var ring := _sim("cephalopod", {})
 	var reach_ok := ring.ability_reach() > ring.stomp_radius()
 	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
@@ -294,7 +299,29 @@ func _check_looks() -> void:
 			if not look.has(key):
 				missing.append("%s.%s" % [look["id"], key])
 	check(
-		Content.looks().size() == 3 and missing.is_empty(), "three complete looks: %s" % [missing]
+		Content.looks().size() >= 1 and missing.is_empty(), "every look is complete: %s" % [missing]
 	)
 	var default_id := str(Content.load_json("res://data/looks.json")["default"])
-	check(str(Content.look()["id"]) == default_id, "the default look %s is the one in use" % default_id)
+	check(
+		str(Content.look()["id"]) == default_id,
+		"the default look %s is the one in use" % default_id
+	)
+
+
+## The kaiju starts young, smaller than the city's towers, and grows with every upgrade level
+## and much more with each evolution (director, 2026-10-16).
+func _check_growth() -> void:
+	var young := _sim("reptilian", {}).body_scale()
+	var grown := _sim("reptilian", {"claws": 5, "hide": 5}).body_scale()
+	var evolved := _sim("reptilian", {"claws": 5, "hide": 5, "rage": 1, "evolve1": 1}).body_scale()
+	check(
+		young < 0.6 and young < grown and grown < evolved,
+		"growth: young %.2f < upgraded %.2f < evolved %.2f" % [young, grown, evolved]
+	)
+	var tallest := 0
+	for b: RampageSim.Building in _sim("reptilian", {}).buildings:
+		tallest = maxi(tallest, b.height)
+	check(
+		young * 10.0 < tallest * 0.5,
+		"a young kaiju (%.1f tall) is dwarfed by the towers (%d)" % [young * 10.0, tallest]
+	)

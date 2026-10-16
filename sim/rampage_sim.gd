@@ -89,9 +89,12 @@ func size_tier() -> int:
 	return Num.i(stat("size"))
 
 
-## How big the kaiju is drawn and how far its attacks reach, from its size tier.
+## How big the kaiju is drawn and how far its attacks reach. It starts young, dwarfed by the
+## city; every upgrade level grows it a little ("growth" = levels owned), every evolution a lot.
 func body_scale() -> float:
-	return 1.0 + Num.f(city["size_scale_per_tier"]) * (stat("size") - 1.0)
+	var tier := 1.0 + Num.f(city["size_scale_per_tier"]) * (stat("size") - 1.0)
+	var growth := 1.0 + Num.f(city["growth_per_level"]) * stat("growth")
+	return Num.f(city["young_scale"]) * tier * growth
 
 
 func stomp_radius() -> float:

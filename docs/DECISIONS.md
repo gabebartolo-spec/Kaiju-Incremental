@@ -4,6 +4,21 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-010 · Director · Real light sources; no sterile lighting
+Why: "lighting is very sterile too, should be real light sources in the game". Changes: evening sun
+with long shadows, streetlamps that light the street, lit windows, burning ruins and wrecks, muzzle
+flashes, explosion and breath light, screen-space bounce light. The evening setting is the lead's
+pick for making lights read; the director may move the time of day.
+
+## 2026-10-16 · D-009 · Director · The kaiju starts young, outscaled by the city, and grows as you play
+Changes: body scale = young 0.5 x evolution tier x (1 + 2% per upgrade level owned); reach grows with it.
+
+## 2026-10-16 · D-008 · Director · Look C (Concrete Realism), far more detailed; more voxels
+Why: chosen from A Toy / B Night / C Concrete on the labelled board; "theres not enough voxels".
+Changes: buildings at 4 voxels per floor with window grids, sills, balconies, awnings, roof gear;
+kaiju at 5 voxels per design unit with teeth, claws, scales, plates; streets with lane markings,
+cars, trees, streetlights that flatten underfoot. Looks A and B removed.
+
 ## 2026-10-16 · D-007 · Director · The third species is the Cephalopod
 Why: chosen from Cephalopod / Primate / Crystalline / Mechanical; the clearest contrast to a brawler
 lizard and a fast bug. Changes: data/species.json, Tentacle Lash (ring attack, huge reach, slow).

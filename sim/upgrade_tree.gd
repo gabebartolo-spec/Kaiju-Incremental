@@ -98,4 +98,6 @@ static func run_stats(base: Dictionary, species: Dictionary, tree: UpgradeTree) 
 	var own: Dictionary = species.get("stats", {})
 	for stat: String in own:
 		stats[stat] = Num.f(own[stat])
-	return tree.apply(stats)
+	var out := tree.apply(stats)
+	out["growth"] = float(tree.levels_owned())
+	return out
