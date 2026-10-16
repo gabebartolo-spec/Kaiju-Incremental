@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
+Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
+hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
+in a per-species branch (data/upgrades.json), ultimate at the branch end.
+
 ## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
 Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
 over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".

@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-16 23:05
+# Lead handoff, 2026-10-16 23:25
 ## State: working (next: cephalopod variants octo_3/octo_4 export + six-view; kaiju-motion on reptile round 3)
 
 ## Task
@@ -47,6 +47,8 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
   (focus-guard hook checks first); delete after. Never set fullscreen in project.godot.
 - After a merge that adds classes, run `godot --headless --import` once or scripts fail to parse.
 - Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
+
+7. Helpers started 23:20: species-powers (local_136df838-e381-4671-b237-5402935f837b, per-species upgrade branches + helicopters), ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d, xvfb capture workflow). Cephalopod baby generating; adolescent next.
 
 ## Running jobs
 None in Tripo. Sessions above. No override.cfg left.
