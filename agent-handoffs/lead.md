@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 20:45
-## State: working (kaiju stages via Tripo); helper city-layout running; street-life helper running
+# Lead handoff, 2026-10-16 20:48
+## State: working; helpers city-layout, real-city-cbd, ability-vfx (PR #6 FIX list) running
 
 ## Task
 Kaiju sculpts (3 species x baby/adolescent/adult, rigged voxels) + art direction. Director today:
@@ -47,6 +47,6 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 12. Fullscreen start moved to exported builds only (8cf4a16); focus-guard blocks fullscreen projects.
 
 ## Running jobs
-Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36, told to sync onto ca2c65c),
+Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
 ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106). street-life PR #5 MERGED (ca2c65c),
 flow floor 14. Tripo b1ddb234 generating. No override.cfg left behind.
