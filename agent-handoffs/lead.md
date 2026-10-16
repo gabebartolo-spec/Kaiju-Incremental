@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 00:50
+# Lead handoff, 2026-10-17 00:55
 ## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
 
 ## Task
@@ -25,6 +25,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 ## Director motion notes 00:44-00:46 (sent to kaiju-motion for round 5)
 - Arms flail like "limp scarves" on sharp turns: arms become posed muscle, not spring chains.
 - Shoulder plates swing left/right, "like hes dance walking": plates on arm bones + torso yaw; upper body one stable mass.
+- Reptile round 5 = REJECT (arm fling on turn 6.9-7.5 s; baby chest holes, roar plant, cadence; summary over-claimed). Round 6 = arms + plates first. Mantis textured bone sheet PASS.
 - Look test (kaiju-look-test, local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc): voxel vs smooth skinned vs voxel-snap shader; director picks from a clip.
 
 ## Helpers
