@@ -162,8 +162,8 @@ func _check_results_compare() -> void:
 	await _frames(1)
 
 
-## A save with Endless Rage owned and the first evolution's price plus 100 rubble: Continue goes to the tree; clicking the
-## first evolution buys it and plays the reveal (baby to adolescent, a bigger body, the tower
+## A save with Endless Rage owned and the first evolution's price plus LEFT_OVER rubble:
+## Continue goes to the tree; clicking the first evolution buys it and plays the reveal (baby to adolescent, a bigger body, the tower
 ## it now topples); Enter skips it without buying again. Quit, relaunch, Continue: same tree.
 func _check_evolution_and_continue() -> void:
 	var save := SaveFile.new_save("insectoid")
@@ -265,8 +265,11 @@ func _check_settings() -> void:
 	PlayerSettings.set_fullscreen(was_full)
 	await GuiInput.click(t, GuiInput.button(menu, "100%"))
 	check.call(
-		PlayerSettings.ui_scale == 1.15 and t.root.content_scale_factor == 1.15,
-		"clicking UI scale steps it to 115%% and scales the UI"
+		(
+			is_equal_approx(PlayerSettings.ui_scale, 1.15)
+			and is_equal_approx(t.root.content_scale_factor, 1.15)
+		),
+		"clicking UI scale steps it to 115%% and scales the UI (%s)" % t.root.content_scale_factor
 	)
 	var texts: Array[String] = []
 	for node: Node in menu.find_children("*", "Label", true, false):
@@ -279,7 +282,10 @@ func _check_settings() -> void:
 	check.call(not is_instance_valid(menu), "Esc closes the settings")
 	var cfg := ConfigFile.new()
 	check.call(
-		cfg.load(PlayerSettings.PATH) == OK and Num.f(cfg.get_value("display", "ui_scale")) == 1.15,
+		(
+			cfg.load(PlayerSettings.PATH) == OK
+			and is_equal_approx(Num.f(cfg.get_value("display", "ui_scale")), 1.15)
+		),
 		"the UI scale is saved to settings.cfg"
 	)
 	PlayerSettings.next_ui_scale()
