@@ -182,8 +182,17 @@ def biped_skeleton(v, lo, hi):
 
 
 def geodesic(v, tris, sources):
-    """Distance over the surface from the nearest source vertex, and each vertex's predecessor."""
+    """Distance over the surface from the nearest source vertex, and each vertex's predecessor.
+    Vertices at the same position are welded first: a textured export splits them at UV seams,
+    which would cut the surface into islands no walk can cross."""
     import heapq
+    _, weld = np.unique(np.round(v, 5), axis=0, return_inverse=True)
+    weld = weld.ravel()
+    first = {}
+    for i, w in enumerate(weld):
+        first.setdefault(int(w), i)
+    rep = np.array([first[int(w)] for w in weld])
+    tris = rep[np.asarray(tris)]
     adj = [[] for _ in range(len(v))]
     for a, b, c in tris:
         for p, q in ((a, b), (b, c), (c, a)):
@@ -206,7 +215,7 @@ def geodesic(v, tris, sources):
                 dist[y] = d + w
                 prev[y] = x
                 heapq.heappush(heap, (d + w, y))
-    return dist, prev
+    return dist[rep], prev[rep]
 
 
 def path_to_core(v, prev, tip):
