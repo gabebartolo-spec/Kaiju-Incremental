@@ -38,7 +38,7 @@ failing on the old code. Clips, stills and contact sheets are in the notes folde
 - D-039 city growth decided; cost re-tune is the lead's follow-up (projection in the PR body).
 - D-040: ultimates on E / pad Y and hold-to-glide confirmed. Nothing open on my side.
 - Rig hooks: tail_sweep/grab/throw/jaw_open/limb_tip pushed on #11 (338b880). climbing(on) asked
-  for, not yet built. Not tested against a combined build.
+  for and pushed on #11 too. Not tested against a combined build.
 
 ## Running jobs
 None. No override.cfg left.
