@@ -13,6 +13,7 @@ const DECK_Y := 7.0
 const DECK_WIDTH := 5.0
 const DETAIL_REACH := 200.0  # roof clutter and lamp heads only this close to the centre
 const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the expressway
+const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
 
@@ -23,8 +24,9 @@ var _near: Array[Dictionary] = []  # boxes: size, centre, colour, custom
 var _far: Array[Dictionary] = []
 var _plain: Array[Dictionary] = []  # concrete and hills: transform, colour
 var _lamps: Array[Vector3] = []
-var _planes: Array[Node3D] = []
-var _clock := 0.0
+## Elevated freeways as ground-plane polylines: the waterfront one and two that wind through
+## the east and west outskirts, breaking the long straight sightlines down the grid.
+var _freeways: Array[PackedVector2Array] = []
 
 
 func _init(p_ground: CityGround, rng: RandomNumberGenerator) -> void:
@@ -34,8 +36,10 @@ func _init(p_ground: CityGround, rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
+	_plan_freeways()
 	_outer_blocks()
-	_expressway()
+	for path: PackedVector2Array in _freeways:
+		_freeway(path)
 	_far_shore()
 	_outer_lamps()
 	add_child(_facades(_near, 0.0))
@@ -46,18 +50,7 @@ func _ready() -> void:
 	add_child(far)
 	add_child(_plain_boxes())
 	add_child(_lamp_heads())
-	_aircraft()
-
-
-func _process(delta: float) -> void:
-	_clock += delta
-	for plane: Node3D in _planes:
-		var speed := Num.f(plane.get_meta("speed"))
-		plane.position += plane.basis.z * -speed * delta
-		if absf(plane.position.x) > 900.0:
-			plane.position.x = -signf(plane.position.x) * 880.0
-		var light: MeshInstance3D = plane.get_child(0)
-		light.visible = fposmod(_clock + Num.f(plane.get_meta("phase")), 1.4) < 0.18
+	add_child(Aircraft.new(_rng))
 
 
 ## Stand-ins on every outer block: the same lots as the playable city, a little lower, with a
@@ -72,7 +65,11 @@ func _outer_blocks() -> void:
 		var rect: Rect2 = block["rect"]
 		if rect.position.y < ground.coast + EXPRESSWAY_CLEAR:
 			continue  # the waterfront: the expressway and the quay
-		for lot: Dictionary in CityLots.fill_block(_rng, ground.plan, block, outer_cfg, 0.85):
+		# Blocks differ: some rise, some sit low, so the skyline is never one flat field.
+		var scale := _rng.randf_range(0.5, 1.4)
+		for lot: Dictionary in CityLots.fill_block(_rng, ground.plan, block, outer_cfg, scale):
+			if _under_freeway(Vector2(Num.f(lot["x"]), Num.f(lot["z"]))):
+				continue
 			var h := Num.f(lot["h"])
 			var at := Vector3(Num.f(lot["x"]), h * 0.5, Num.f(lot["z"]))
 			var style := Num.i(lot["style"])
@@ -111,38 +108,58 @@ func _lit() -> float:
 	return Look.value("window_lit") * _rng.randf_range(0.6, 1.4)
 
 
-## An elevated expressway along the waterfront, curving gently, on pillars (Tokyo's Shuto).
-func _expressway() -> void:
+func _plan_freeways() -> void:
+	var outer := Num.f(cfg["outer_half"]) + 40.0
+	var shore := PackedVector2Array()
+	var x := -outer
+	while x <= outer:
+		shore.append(Vector2(x, ground.coast + 9.0 + sin(x / 47.0) * 5.0))
+		x += 6.0
+	_freeways.append(shore)
+	for side: float in [-1.0, 1.0]:  # inland, winding north to south past the city
+		var path := PackedVector2Array()
+		var z := ground.coast + 9.0
+		while z <= outer:
+			path.append(Vector2(_inland_x(side, z), z))
+			z += 6.0
+		_freeways.append(path)
+
+
+## Where the inland freeway on `side` (-1 west, 1 east) crosses latitude z.
+func _inland_x(side: float, z: float) -> float:
+	var swing := sin(z / 53.0 + side) * 22.0 + sin(z / 23.0) * 6.0
+	return side * (Num.f(cfg["half"]) + 62.0 + swing)
+
+
+## Whether p is under an inland freeway (no stand-ins there; the waterfront strip is kept
+## clear by block).
+func _under_freeway(p: Vector2) -> bool:
+	for side: float in [-1.0, 1.0]:
+		if absf(p.x - _inland_x(side, p.y)) < FREEWAY_CLEAR:
+			return true
+	return false
+
+
+## An elevated freeway on pillars along `path` (Tokyo's Shuto), with lamps.
+func _freeway(path: PackedVector2Array) -> void:
 	var concrete := Look.color("lot").darkened(0.1)
-	var x := -Num.f(cfg["outer_half"]) - 40.0
-	var step := 6.0
-	while x < Num.f(cfg["outer_half"]) + 40.0:
-		var a := _deck_at(x)
-		var b := _deck_at(x + step)
+	for i: int in path.size() - 1:
+		var a := path[i]
+		var b := path[i + 1]
 		var mid := (a + b) * 0.5
-		var angle := -(b - a).angle()
-		var basis := Basis(Vector3.UP, angle)
+		var basis := Basis(Vector3.UP, -(b - a).angle())
 		var length := a.distance_to(b) + 0.2
 		_box(basis, AABB(Vector3(mid.x, DECK_Y, mid.y), Vector3(length, 0.7, DECK_WIDTH)), concrete)
 		for side: float in [-1.0, 1.0]:  # parapets
 			var off := Vector2(-(b - a).normalized().y, (b - a).normalized().x) * side * 2.3
-			_box(
-				basis,
-				AABB(
-					Vector3(mid.x + off.x, DECK_Y + 0.65, mid.y + off.y), Vector3(length, 0.6, 0.3)
-				),
-				concrete.lightened(0.1)
-			)
-		if roundi(x / step) % 3 == 0:  # a pillar every 18 units, and a lamp on it
+			var at := Vector3(mid.x + off.x, DECK_Y + 0.65, mid.y + off.y)
+			_box(basis, AABB(at, Vector3(length, 0.6, 0.3)), concrete.lightened(0.1))
+		if i % 3 == 0:  # a pillar every 18 units, and a lamp on it
 			_box(
 				Basis(), AABB(Vector3(a.x, DECK_Y * 0.5, a.y), Vector3(1.2, DECK_Y, 1.6)), concrete
 			)
-			_lamps.append(Vector3(a.x, DECK_Y + 2.2, a.y))
-		x += step
-
-
-func _deck_at(x: float) -> Vector2:
-	return Vector2(x, ground.coast + 9.0 + sin(x / 47.0) * 5.0)
+			if a.length() < DETAIL_REACH * 1.5:
+				_lamps.append(Vector3(a.x, DECK_Y + 2.2, a.y))
 
 
 ## The skyline across the bay: a waterfront of towers, a lattice tower, hazy and lit.
@@ -256,29 +273,6 @@ func _outer_lamps() -> void:
 			if p.length() < DETAIL_REACH:
 				_lamps.append(Vector3(p.x, 2.6, p.y))
 			t += 9.0
-
-
-func _aircraft() -> void:
-	var red := CityView.glow(Color(1.0, 0.2, 0.15), 8.0)
-	var white := CityView.glow(Color(1.0, 0.95, 0.85), 8.0)
-	for i: int in 3:
-		var plane := Node3D.new()
-		plane.position = Vector3(
-			_rng.randf_range(-600, 600), _rng.randf_range(90, 150), -200 - i * 160
-		)
-		plane.rotation.y = PI * 0.5 if i % 2 == 0 else -PI * 0.5
-		plane.set_meta("speed", _rng.randf_range(18.0, 30.0))
-		plane.set_meta("phase", _rng.randf())
-		var light := MeshInstance3D.new()
-		var mesh := SphereMesh.new()
-		mesh.radius = 0.8
-		mesh.height = 1.6
-		mesh.material = red if i % 2 == 0 else white
-		light.mesh = mesh
-		light.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		plane.add_child(light)
-		add_child(plane)
-		_planes.append(plane)
 
 
 ## A plain box; box.position is its centre (not a corner), turned by `turn` about the vertical.

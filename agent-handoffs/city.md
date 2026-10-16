@@ -1,11 +1,13 @@
-# City handoff, 2026-10-16 21:05
-## State: awaiting lead (PR #7 open into claude/look-options, CI running, Auto-fix on; boards await lead review)
+# City handoff, 2026-10-16 21:40
+## State: awaiting lead (PR #9: D-028 + round 2 + east fix; clean bench pair queued)
 
 ## Task
 Director 2026-10-16: "our city exists in a void ... far too gridlike, it must look like an
 actual city not a grid of isolated buildings"; then "use tokyo and new york as inspiration".
-Scope: city layout (sim) + city edges/background + evidence. Not in scope: D-028 building
-fidelity (RES 8-12) and D-029 real OSM districts (another helper) - see Open decisions.
+Scope: city layout (sim) + city edges/background + evidence; round 2 (director: too many
+zebras, too much asphalt, edges must make sense); D-028 building fidelity (lead brief 20:58:
+RES 8-12, recessed facades, LOD if needed, side-by-side with the reptile adult; lead reviews).
+D-029 real OSM districts is real-city-cbd's (agreed: same CityGen.map() shape + optional mask).
 
 ## Branch and commit
 claude/city-layout-56adda (worktree .claude/worktrees/city-layout-56adda), merged with
@@ -47,9 +49,22 @@ folder city-captures/.
 - Flow suite took 535 s in a fresh worktree: LFS fonts were pointers (FreeType error spam
   per frame). `git lfs pull` then reimport: 14 s.
 
+## D-028 (PR #9, pushed 5004a70)
+- BuildingVoxels RES 8 re-authored (recesses, sills, lintels, keystones, pilasters, cornices,
+  balconies with rails, shop sign band + awning, stair huts, AC + ducts, vents, tank, mast).
+- BuildingMesher: one face-culled ArrayMesh per building (hollow = solid) + hidden slab mesh;
+  UV2 = (chunk, 2x2x2 clump hash). building_baked.gdshader: per-building R8 `alive` texture
+  (0 gone, 1 standing, between = bitten); back faces dark. BuildingView API unchanged.
+  build_all() on WorkerThreadPool: 2.35 s, 16 threads. party_walls -> side: floors covered.
+- Outskirts (lead review of east view): outer gaps from own seed with wide ranges, per-block
+  height scale, 9 outer cores, two winding inland freeways (CitySkyline._inland_x), slivers
+  stay road; Aircraft split into scenes/aircraft.gd.
+- Bench (contended, interleaved): 1080p 6.5 vs 6.6 ms; 4K 14.2 vs 14.2 ms (4K over budget
+  before this PR). Clean pair: background job waits for zero Godot processes, then runs
+  $scratch/r4 (a56acf8, RES 4) vs this worktree at 1080p and 4K; post it as a PR comment.
+- RES 12 / LOD: recommended not needed; lead to decide.
+
 ## Open decisions
-- D-028 (building RES 8-12) is assigned to "city-layout" in the lead handoff but no brief
-  reached this session; start only on the lead's word.
 - D-029 real OSM districts: if a baked district returns the same CityGen.map() shape,
   ground, traffic, people and police run on it unchanged.
 

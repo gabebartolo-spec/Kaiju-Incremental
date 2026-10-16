@@ -1,15 +1,17 @@
 class_name BuildingVoxels
 extends RefCounted
 ## Builds one building's fine voxels from its sim footprint: RES cells per sim unit, so each
-## sim layer (one floor) is RES cells tall: a slab line, two window rows, a lintel. Four
-## archetypes give the facades their read: office (ribbon windows, spandrel bands, AC units),
-## brick residential (punched windows, balconies, water tank), glass tower (curtain wall,
-## antenna with beacon), stone classic (deep-set windows with sills, cornices, stepped roof).
-## Hollow shell plus a floor slab per floor, so a broken building shows its floors. A side that
-## shares a party wall with a neighbour is blank brick or concrete, as in a real terrace; some
-## shops hang a vertical neon sign off a street face (Tokyo).
+## sim layer (one floor) is RES cells tall and each unit of facade is one bay RES cells wide.
+## Facades have depth: windows sit one cell back in their reveals behind proud sills and
+## lintels; piers, spandrels, mullions and transoms frame them. Four archetypes: office
+## (ribbon windows over spandrel bands, AC plant), brick residential (punched windows, balconies
+## with railings, water tank), glass tower (flush curtain wall, mast with beacon), stone classic
+## (pilasters, cornices and string courses, stepped roof). Ground floors are shopfronts under a
+## sign band and an awning. A side shared with a neighbour is a blank party wall; some shops hang
+## a vertical neon sign off a street face (Tokyo). Hollow shell plus a floor slab per floor, so a
+## broken building shows its floors.
 
-const RES := 4
+const RES := 8
 const VOXEL := 1.0 / RES
 const OFFICE := 0
 const BRICK := 1
@@ -17,6 +19,9 @@ const GLASS := 2
 const STONE := 3
 const AWNINGS: Array[Color] = [Color("7d4636"), Color("3f5a4a"), Color("6a5a3a"), Color("4a4f66")]
 const NEON: Array[Color] = [Color("ff4f8b"), Color("4fd8ff"), Color("ffb347"), Color("8dff6a")]
+const SIGN_BANDS: Array[Color] = [
+	Color("2a2f3a"), Color("5a2a26"), Color("2e4a3a"), Color("3a3a3a")
+]
 const SIGN_CHANCE := 0.3
 ## Sides, as the outward step in cells: -x, +x, -z, +z.
 const SIDES: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
@@ -28,11 +33,12 @@ var _w: int
 var _d: int
 var _h: int
 var _lit_chance: float
-var _party: Array[Vector2i] = []
+## Side -> floors of it a neighbour covers: blank party wall up to there, facade above.
+var _party: Dictionary = {}
 
 
-## party: the sides (from SIDES) that touch a neighbouring building.
-func _init(p_building: RampageSim.Building, base: Color, party: Array[Vector2i] = []) -> void:
+## party: side (from SIDES) -> floors of that side a touching neighbour covers.
+func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
 	b = p_building
 	_party = party
 	_w = b.w * RES
@@ -40,7 +46,8 @@ func _init(p_building: RampageSim.Building, base: Color, party: Array[Vector2i] 
 	_h = b.height * RES
 	_lit_chance = Look.value("window_lit")
 	_make_palette(base)
-	_shell()
+	for side: Vector2i in SIDES:
+		_face(side)
 	_slabs()
 	_roof()
 	_sign()
@@ -53,15 +60,6 @@ func archetype() -> int:
 ## World position of cell (0, 0, 0)'s centre column.
 func origin() -> Vector3:
 	return Vector3(b.x - b.w * 0.5 + VOXEL * 0.5, 0.0, b.z - b.d * 0.5 + VOXEL * 0.5)
-
-
-## World positions of lit windows (for real lights) on the building's lower floors.
-func lit_windows() -> Array[Vector3]:
-	var out: Array[Vector3] = []
-	for cell: Vector3i in vox.cells:
-		if vox.key_at(cell) == "lit":
-			out.append(origin() + Vector3(cell) * VOXEL)
-	return out
 
 
 func _make_palette(base: Color) -> void:
@@ -79,13 +77,18 @@ func _make_palette(base: Color) -> void:
 		"lit": lit,
 		"glass": Look.color("window").lerp(base, 0.3).lightened(0.1),
 		"mullion": base.darkened(0.45),
+		"spandrel": base.darkened(0.18),
+		"party": base.darkened(0.06),
 		"shop": Color("1e2429"),
 		"shop_lit": shop_lit,
 		"awning": AWNINGS[posmod(roundi(b.x + b.z * 3.0), AWNINGS.size())],
+		"band": SIGN_BANDS[posmod(roundi(b.x * 7.0 + b.z), SIGN_BANDS.size())],
+		"rail": Color("2a2c2e"),
 		"slab": Color("2b2d30"),
 		"roof": Look.color("roof"),
 		"gear": Color("a9aaa4"),
 		"vent": Color("3a3c3e"),
+		"pipe": Color("6b6f72"),
 		"tank": Color("6a5040"),
 		"beacon": Color(1.0, 0.25, 0.2, 0.0),
 		"sign_frame": Color("1c1e22"),
@@ -100,109 +103,141 @@ func _roll(cell: Vector3i, mod: int) -> int:
 	return absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(b.x * 13.0 + b.z)))) % mod
 
 
-func _maybe_lit(cell: Vector3i, key: String) -> String:
-	if _roll(Vector3i(cell.x >> 1, cell.y >> 2, cell.z >> 1), 1000) < _lit_chance * 1000.0:
-		return "lit"
+## The cell `layer` cells in from the face (0 = the wall plane, -1 proud, 1 recessed) at
+## position p along the face and height y.
+func _at(side: Vector2i, p: int, y: int, layer: int) -> Vector3i:
+	if side.x < 0:
+		return Vector3i(layer, y, p)
+	if side.x > 0:
+		return Vector3i(_w - 1 - layer, y, p)
+	if side.y < 0:
+		return Vector3i(p, y, layer)
+	return Vector3i(p, y, _d - 1 - layer)
+
+
+## One face: the wall plane, recessed glass, and what stands proud of it.
+func _face(side: Vector2i) -> void:
+	var length := _d if side.x != 0 else _w
+	var covered := Num.i(_party.get(side, 0)) * RES
+	for y: int in _h:
+		for p: int in length:
+			if p == 0 or p == length - 1:  # corner piers are shared by two faces
+				vox.put(_at(side, p, y, 0), "pillar")
+				continue
+			if y < covered:
+				vox.put(_at(side, p, y, 0), "party")
+				continue
+			var spec := _ground(y, p) if y < RES else _upper(y, p)
+			var plane: String = spec[0]
+			if plane == "recess":
+				vox.put(_at(side, p, y, 1), _lit_or(spec[1], side, p, y))
+			else:
+				vox.put(_at(side, p, y, 0), plane)
+			var proud: String = spec[2]
+			if proud != "":
+				vox.put(_at(side, p, y, -1), proud)
+			var further: String = spec[3]
+			if further != "":
+				vox.put(_at(side, p, y, -2), further)
+
+
+## A window lights as a whole: one roll per window (its bay and floor).
+func _lit_or(key: String, side: Vector2i, p: int, y: int) -> String:
+	var window := Vector3i(floori(float(p) / RES), floori(float(y) / RES), side.x * 3 + side.y)
+	if _roll(window, 1000) < _lit_chance * 1000.0:
+		return "shop_lit" if key == "shop" else "lit"
 	return key
 
 
-## Facade key for a perimeter cell; p runs along the face, y up the building.
-func _facade(cell: Vector3i, p: int, corner: bool) -> String:
-	if corner:
-		return "pillar"
-	if cell.y < RES:  # ground floor: shopfronts between piers, awning on top
-		if cell.y == RES - 1:
-			return "awning"
-		return "pillar" if p % 5 == 0 else ("shop_lit" if _roll(cell, 4) == 0 else "shop")
-	var key := _upper_facade(cell.y, p)
-	if key == "window" or key == "glass":
-		key = _maybe_lit(cell, key)
-	return key
+## Ground floor, as [plane, recessed key, proud, further proud]: shop windows between piers,
+## a sign band, an awning reaching out over the pavement.
+func _ground(y: int, p: int) -> Array[String]:
+	var q := p % RES
+	if y == RES - 1:
+		return ["trim", "", "awning", "awning"]
+	if y == RES - 2:
+		return ["band", "", "band", ""]
+	if q == 0:
+		return ["pillar", "", "", ""]
+	if y == 0:
+		return ["pillar", "", "", ""]  # the stall riser under the glass
+	return ["recess", "shop", "", ""]
 
 
-## Upper floors by archetype. row 0 is the slab line, 1-2 the windows, 3 the lintel.
-func _upper_facade(y: int, p: int) -> String:
-	var row := y % RES
-	var in_window := row == 1 or row == 2
-	var key := "wall"
+## Upper floors by archetype, as [plane, recessed key, proud, further proud].
+## r: row within the floor (0 = the slab line), q: column within the bay.
+func _upper(y: int, p: int) -> Array[String]:
+	var r := y % RES
+	var q := p % RES
+	var top_row := y >= _h - 2
 	match archetype():
 		OFFICE:
-			if row == 0:
-				key = "trim"
-			elif in_window and p % 4 != 0:
-				key = "window"
+			return _office(r, q, top_row)
 		BRICK:
-			if in_window and p % 3 != 0:
-				key = "window"
-			elif row == 3 and p % 3 != 0:
-				key = "frame"
+			return _brick(r, q, floori(float(y) / RES))
 		GLASS:
-			key = "mullion" if p % 4 == 0 or row == 0 else "glass"
-		_:
-			if y % (RES * 5) == 0:
-				key = "trim"
-			elif in_window and p % 4 in [1, 2]:
-				key = "window"
-	return key
+			if q == 0 or r == 0:
+				return ["mullion", "", "", ""]
+			if r == 4:
+				return ["frame", "", "", ""]  # transom
+			return ["lit" if _lit_cell(p, y) else "glass", "", "", ""]
+	return _stone(r, q, top_row or (r == 0 and floori(float(y) / RES) % 5 == 0), top_row)
 
 
-func _shell() -> void:
-	for y: int in _h:
-		for x: int in _w:
-			for z: int in _d:
-				var edge_x := x == 0 or x == _w - 1
-				var edge_z := z == 0 or z == _d - 1
-				if not edge_x and not edge_z:
-					continue
-				var p := x if edge_z else z
-				var key := _facade(Vector3i(x, y, z), p, edge_x and edge_z)
-				if _is_party(x, z) and not (edge_x and edge_z):
-					key = "wall"  # a party wall: no windows, no shopfront
-				vox.put(Vector3i(x, y, z), key)
-	_outside_details()
+## Ribbon windows over spandrels, slim mullions, a transom.
+func _office(r: int, q: int, top_row: bool) -> Array[String]:
+	if r <= 1:
+		return ["spandrel" if r == 1 else "trim", "", "", ""]
+	if top_row:
+		return ["trim", "", "trim", ""]
+	if q == 0:
+		return ["pillar", "", "", ""]
+	if r == 7:
+		return ["frame", "", "", ""]
+	return ["recess", "mullion" if q == 4 or r == 5 else "window", "", ""]
 
 
-## Things that stand proud of the wall: awnings, balconies, sills, cornices.
-func _outside_details() -> void:
-	for y: int in _h:
-		for x: int in range(-1, _w + 1):
-			for z: int in range(-1, _d + 1):
-				var out_x := x == -1 or x == _w
-				var out_z := z == -1 or z == _d
-				if out_x == out_z:  # skip the inside and the outer corners
-					continue
-				var p := x if out_z else z
-				if _is_party(x, z):
-					continue
-				var inner := Vector3i(clampi(x, 0, _w - 1), y, clampi(z, 0, _d - 1))
-				var key := _proud(y, p, vox.key_at(inner))
-				if key != "":
-					vox.put(Vector3i(x, y, z), key)
+## Punched windows with sills and lintels; a balcony with a railing every other floor.
+func _brick(r: int, q: int, floor_n: int) -> Array[String]:
+	var balcony := floor_n % 2 == 0 and q >= 1 and q <= 6
+	if q >= 2 and q <= 5 and r >= 2 and r <= 6:
+		return ["recess", "mullion" if r == 4 else "window", "", ""]
+	if r == 7 and q >= 2 and q <= 5:
+		return ["frame", "", "frame", ""]  # lintel
+	if r == 1 and q >= 1 and q <= 6:
+		return ["wall", "", "rail" if balcony else "sill", "rail" if balcony else ""]
+	if r == 0 and balcony:
+		return ["wall", "", "slab", "slab"]
+	return ["wall", "", "", ""]
 
 
-func _proud(y: int, p: int, behind: String) -> String:
-	if y == RES - 1 and behind == "awning":
-		return "awning"
-	if y < RES:
-		return ""
-	var row := y % RES
-	match archetype():
-		BRICK:  # balconies every other floor
-			if row == 0 and floori(float(y) / RES) % 2 == 0 and p % 6 in [1, 2, 3, 4]:
-				return "trim"
-		STONE:  # sills under windows, a cornice every five floors and at the top
-			if row == 0 and p % 4 in [1, 2]:
-				return "sill"
-			if y % (RES * 5) == 0 or y == _h - 1:
-				return "trim"
-	return ""
+## Pilasters, deep windows with sills and keystones, string courses and a cornice.
+func _stone(r: int, q: int, course: bool, top_row: bool) -> Array[String]:
+	if course:
+		return ["trim", "", "trim", "trim" if top_row else ""]
+	if q == 0:
+		return ["pillar", "", "pillar", ""]
+	if q >= 2 and q <= 5 and r >= 2 and r <= 6:
+		return ["recess", "window", "", ""]
+	if r == 1 and q >= 2 and q <= 5:
+		return ["wall", "", "sill", ""]
+	if r == 7 and q >= 3 and q <= 4:
+		return ["trim", "", "trim", ""]  # keystone
+	return ["wall", "", "", ""]
+
+
+## Curtain walls light per panel (two bays wide, half a floor tall).
+func _lit_cell(p: int, y: int) -> bool:
+	var panel := Vector3i(floori(float(p) / (RES * 2)), floori(float(y) / (RES / 2.0)), 77)
+	return _roll(panel, 1000) < _lit_chance * 1000.0
 
 
 func _slabs() -> void:
 	for floor_y: int in range(0, _h, RES):
 		for x: int in range(1, _w - 1):
 			for z: int in range(1, _d - 1):
-				vox.put(Vector3i(x, floor_y, z), "slab")
+				if not vox.has(Vector3i(x, floor_y, z)):
+					vox.put(Vector3i(x, floor_y, z), "slab")
 	for x: int in range(1, _w - 1):  # the roof deck
 		for z: int in range(1, _d - 1):
 			vox.put(Vector3i(x, _h - 1, z), "roof")
@@ -214,80 +249,91 @@ func _roof() -> void:
 		for z: int in _d:
 			if x == 0 or z == 0 or x == _w - 1 or z == _d - 1:
 				vox.box(Vector3i(x, top, z), Vector3i(x, top + 1, z), "trim")
+	_stair_hut(top)
 	match archetype():
-		OFFICE:  # air-conditioning units with fan grilles
+		OFFICE:  # air-conditioning units with fan grilles, ducts between them
 			for i: int in clampi(b.w, 1, 4):
 				var at := Vector3i(
-					2 + _roll(Vector3i(i, 1, 0), maxi(1, _w - 6)),
+					4 + _roll(Vector3i(i, 1, 0), maxi(1, _w - 12)),
 					top,
-					2 + _roll(Vector3i(i, 2, 0), maxi(1, _d - 6))
+					4 + _roll(Vector3i(i, 2, 0), maxi(1, _d - 12))
 				)
-				vox.box(at, at + Vector3i(2, 2, 2), "gear")
-				vox.put(at + Vector3i(1, 3, 1), "vent")
-		BRICK:  # a water tank on legs, and a stair hut
-			var c := Vector3(_w * 0.65, top + 6.0, _d * 0.4)
+				vox.box(at, at + Vector3i(4, 3, 3), "gear")
+				vox.box(at + Vector3i(1, 4, 1), at + Vector3i(3, 4, 2), "vent")
+				vox.box(at + Vector3i(5, 1, 1), at + Vector3i(8, 1, 1), "pipe")
+		BRICK:  # a water tank on legs
+			var c := Vector3(_w * 0.65, top + 11.0, _d * 0.4)
 			for leg: Vector3i in [
-				Vector3i(-2, 0, -2), Vector3i(2, 0, -2), Vector3i(-2, 0, 2), Vector3i(2, 0, 2)
+				Vector3i(-4, 0, -4), Vector3i(4, 0, -4), Vector3i(-4, 0, 4), Vector3i(4, 0, 4)
 			]:
 				var foot := Vector3i(roundi(c.x), top, roundi(c.z)) + leg
-				vox.box(foot, foot + Vector3i(0, 3, 0), "gear")
-			vox.blob(c, Vector3(2.8, 3.0, 2.8), "tank")
-			vox.box(Vector3i(2, top, 2), Vector3i(4, top + 3, 4), "wall")
-		GLASS:  # an antenna with a red beacon on the tall towers
+				vox.box(foot, foot + Vector3i(0, 6, 0), "gear")
+			vox.blob(c, Vector3(5.2, 5.6, 5.2), "tank")
+			vox.box(
+				Vector3i(roundi(c.x), roundi(c.y) + 6, roundi(c.z)),
+				Vector3i(roundi(c.x), roundi(c.y) + 7, roundi(c.z)),
+				"tank"
+			)
+		GLASS:  # a mast with a red beacon on the tall towers
 			if b.tier >= 2:
 				var mast := Vector3i(_w >> 1, top, _d >> 1)
-				var mast_h := 8 + b.tier * 4
+				var mast_h := 16 + b.tier * 8
 				vox.box(mast, mast + Vector3i(0, mast_h, 0), "gear")
-				vox.box(mast + Vector3i(-1, 0, -1), mast + Vector3i(1, 2, 1), "gear")
+				vox.box(mast + Vector3i(-2, 0, -2), mast + Vector3i(2, 4, 2), "gear")
+				for ring: int in range(8, mast_h, 8):
+					vox.box(mast + Vector3i(-1, ring, -1), mast + Vector3i(1, ring, 1), "pipe")
 				vox.put(mast + Vector3i(0, mast_h + 1, 0), "beacon")
 		_:  # stepped stone roof
 			for step: int in 3:
-				for x: int in range(1 + step * 2, _w - 1 - step * 2):
-					for z: int in range(1 + step * 2, _d - 1 - step * 2):
-						vox.put(Vector3i(x, top + step, z), "trim")
+				for x: int in range(2 + step * 4, _w - 2 - step * 4):
+					for z: int in range(2 + step * 4, _d - 2 - step * 4):
+						vox.box(
+							Vector3i(x, top + step * 2, z),
+							Vector3i(x, top + step * 2 + 1, z),
+							"trim"
+						)
+	for v: int in clampi(b.d, 1, 3):  # vent stacks
+		var at := Vector3i(
+			2 + _roll(Vector3i(v, 5, 1), maxi(1, _w - 4)),
+			top,
+			2 + _roll(Vector3i(v, 5, 2), maxi(1, _d - 4))
+		)
+		vox.box(at, at + Vector3i(0, 3, 0), "vent")
 
 
-## Whether cell column (x, z) lies on (or just outside) a side shared with a neighbour.
-func _is_party(x: int, z: int) -> bool:
-	for side: Vector2i in _party:
-		if (
-			(side.x < 0 and x <= 0)
-			or (side.x > 0 and x >= _w - 1)
-			or (side.y < 0 and z <= 0)
-			or (side.y > 0 and z >= _d - 1)
-		):
-			return true
-	return false
+## The stair and lift housing at a corner of the roof, with a door.
+func _stair_hut(top: int) -> void:
+	if _w < 20 or _d < 20:
+		return
+	var at := Vector3i(3, top, 3)
+	vox.box(at, at + Vector3i(7, 6, 6), "wall")
+	vox.box(at + Vector3i(2, 0, 7), at + Vector3i(4, 4, 7), "frame")
 
 
-## A vertical neon sign hung off a street face near a corner: a dark frame with glowing
-## bands, two cells wide, from above the awning up to five floors.
+## A vertical neon sign hung off a street face near a corner: a dark frame round glowing
+## bands, three cells wide, two deep, from above the awning up to five floors.
 func _sign() -> void:
 	if b.height < 3 or archetype() == GLASS or _roll(Vector3i(7, 7, 7), 1000) >= SIGN_CHANCE * 1000:
 		return
 	var open: Array[Vector2i] = []
 	for side: Vector2i in SIDES:
-		if not _party.has(side):
+		if not _party.has(side):  # signs hang only off faces with no neighbour at all
 			open.append(side)
 	if open.is_empty():
 		return
 	var side := open[_roll(Vector3i(3, 1, 4), open.size())]
-	var top := mini(_h - 3, RES * 5)
+	var top := mini(_h - 6, RES * 5)
 	var colour := _roll(Vector3i(5, 9, 2), NEON.size())
-	# Along the face, two cells in from a corner; out from the wall, two cells deep.
-	var along := 2 if _roll(Vector3i(1, 2, 3), 2) == 0 else (_w if side.y != 0 else _d) - 4
-	for y: int in range(RES + 1, top):
-		for a: int in 2:
-			for out: int in range(1, 3):
-				var cell := Vector3i.ZERO
-				if side.x != 0:
-					cell = Vector3i(-out if side.x < 0 else _w - 1 + out, y, along + a)
-				else:
-					cell = Vector3i(along + a, y, -out if side.y < 0 else _d - 1 + out)
-				var band := floori(y / 3.0) % 3
+	var length := _d if side.x != 0 else _w
+	var along := 4 if _roll(Vector3i(1, 2, 3), 2) == 0 else length - 8
+	for y: int in range(RES + 2, top):
+		for a: int in 4:
+			for out: int in range(-3, -1):
+				var edge := a == 0 or a == 3 or y == RES + 2 or y == top - 1
+				var band := floori((y - RES) / 3.0) % 4
 				var key := (
 					"sign_frame"
-					if y == RES + 1 or y == top - 1 or band == 2
-					else ("neon%d" % ((colour + band) % NEON.size()))
+					if edge or band == 3
+					else "neon%d" % ((colour + band) % NEON.size())
 				)
-				vox.put(cell, key)
+				vox.put(_at(side, along + a, y, out), key)

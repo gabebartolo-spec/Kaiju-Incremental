@@ -48,7 +48,9 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 				var top := roundi(peak) + RES * floors - rng.randi_range(0, RES * 2)  # jagged, above the pile
 				for y: int in maxi(RES, top):
 					var key := (
-						"stub_window" if y % RES in [1, 2] and (x + z) % 3 != 0 else "stub_wall"
+						"stub_window"
+						if y % RES in [2, 3, 4, 5] and (x + z) % 6 > 1
+						else "stub_wall"
 					)
 					vox.put(Vector3i(x, y, z), key)
 	for slab_n: int in 3:  # big wall panels with window frames lying on the pile
@@ -57,7 +59,7 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 		var lift := roundi(peak * 0.6)
 		for px: int in RES * 2:
 			for pz: int in roundi(RES * 1.5):
-				var key := "stub_window" if px % 3 != 0 and pz % 4 in [1, 2] else "stub_wall"
+				var key := "stub_window" if px % 6 > 1 and pz % 8 in [2, 3, 4, 5] else "stub_wall"
 				vox.put(Vector3i(sx + px, lift + roundi(pz * 0.3), sz + pz), key)
 	vox.salt = b.style + 91
 	return vox.build(rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin())

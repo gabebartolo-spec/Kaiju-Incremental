@@ -37,12 +37,10 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = tru
 func _ready() -> void:
 	_build_environment()
 	_build_ground()
-	var party := BuildingView.party_walls(sim.buildings)
-	for i: int in sim.buildings.size():
-		var b := sim.buildings[i]
-		var sides: Array[Vector2i] = []
-		sides.assign(party[i])
-		var view := BuildingView.new(b, _base_color(b), sides)
+	var colors: Array[Color] = []
+	for b: RampageSim.Building in sim.buildings:
+		colors.append(_base_color(b))
+	for view: BuildingView in BuildingView.build_all(sim.buildings, colors):
 		add_child(view)
 		_views.append(view)
 	fx = Fx.new()
