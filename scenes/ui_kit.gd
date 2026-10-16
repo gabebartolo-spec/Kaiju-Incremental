@@ -19,6 +19,29 @@ const SIZE_SMALL := 20
 const SIZE_HEAD := 36
 const SIZE_TITLE := 72
 
+## The game's own display face (tools/fonts/build_fonts.py) for headings, titles and big buttons.
+## The director's pick is this one line: kaiju_claw (B), kaiju_rubble (A) or kaiju_fault (C).
+const DISPLAY_FONT_PATH := "res://assets/fonts/kaiju_claw.ttf"
+## Below this size text keeps the engine's clean default font: the claw gashes turn to noise.
+const DISPLAY_MIN_SIZE := SIZE_HEAD
+
+static var _display_font: Font
+
+
+## The display font for headings at or above DISPLAY_MIN_SIZE, else null (theme default).
+static func font_for(size: int) -> Font:
+	if size < DISPLAY_MIN_SIZE:
+		return null
+	if _display_font == null:
+		_display_font = load(DISPLAY_FONT_PATH)
+	return _display_font
+
+
+static func _apply_font(control: Control, size: int) -> void:
+	var font := font_for(size)
+	if font != null:
+		control.add_theme_font_override("font", font)
+
 
 static func label(text: String, size: int = SIZE_BODY, color: Color = TEXT) -> Label:
 	var l := Label.new()
@@ -27,6 +50,7 @@ static func label(text: String, size: int = SIZE_BODY, color: Color = TEXT) -> L
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	l.add_theme_constant_override("outline_size", maxi(4, Num.i(size / 6.0)))
+	_apply_font(l, size)
 	return l
 
 
@@ -52,6 +76,7 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	var b := Button.new()
 	b.text = text
 	b.add_theme_font_size_override("font_size", size)
+	_apply_font(b, size)
 	b.add_theme_color_override("font_color", Color.WHITE)
 	b.add_theme_color_override("font_focus_color", Color.WHITE)
 	b.add_theme_color_override("font_hover_color", Color.WHITE)
