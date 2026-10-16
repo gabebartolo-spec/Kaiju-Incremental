@@ -45,6 +45,9 @@ var height_units: float
 var body_plan := "biped"
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
+## name -> how far that bone turns about its x axis to close (rig.json "close": the jaw of a
+## sculpt with an open snarl).
+var bone_close: Dictionary = {}
 var _bones: Dictionary = {}  # name -> Node3D
 var _rest: Dictionary = {}  # name -> Transform3D (local rest)
 var _dir: Dictionary = {}  # name -> rest head->tail vector, in the bone's own space
@@ -111,6 +114,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_rest[bone_name] = node.transform
 		_head[bone_name] = head
 		_parent[bone_name] = parent_name
+		bone_close[bone_name] = Num.f(d.get("close", 0.0))
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]

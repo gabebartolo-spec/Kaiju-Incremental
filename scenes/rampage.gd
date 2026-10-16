@@ -7,8 +7,8 @@ extends Node3D
 signal finished(result: Dictionary)
 
 ## Footfall dust size (per body scale) and camera nudge (at full strength).
-const FOOTFALL_DUST := 0.35
-const FOOTFALL_SHAKE := 0.06
+const FOOTFALL_DUST := 1.1
+const FOOTFALL_SHAKE := 0.14
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
 

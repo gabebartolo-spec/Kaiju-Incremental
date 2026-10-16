@@ -20,6 +20,8 @@ const STOMP_JOLT := 2.3
 ## pause, then a surge as the spring brings it back up to the sim's position.
 const SURGE_HOLD := 0.95
 const SURGE_OMEGA := 5.0
+## The plant's drop and hold build over this long (s), not in one frame.
+const PLANT_EASE := 0.07
 const PELVIS_OMEGA := 9.0
 const PELVIS_ZETA := 0.7
 ## Weight shift over the stance leg: sideways (hip heights), roll and hip yaw (rad).
@@ -29,10 +31,10 @@ const HIP_YAW := 0.16
 ## A stretched planted foot: the pelvis sinks at most this much (hip heights), easing back up.
 const MAX_SINK := 0.18
 const SINK_RECOVER := 1.5
-## The chest counters the hips' yaw, and rolls with them (so the shoulders read from above);
-## slow breathing (Hz, rad).
+## The chest counters the hips' yaw and takes out their roll, so the shoulders ride level
+## (director: the weight shows in the hips, not the shoulders); slow breathing (Hz, rad).
 const CHEST_COUNTER := 0.5
-const SHOULDER_ROLL := 0.45
+const SHOULDER_LEVEL := 1.0
 const BREATH_HZ := 0.22
 const BREATH := 0.022
 ## Youth: extra bounce and sway, and an overbalance every few seconds (s) of this size (rad).
@@ -40,6 +42,9 @@ const YOUTH_BOUNCE := 0.6
 const YOUTH_SWAY := 0.8
 const STUMBLE_EVERY := Vector2(3.0, 6.0)
 const STUMBLE := 0.22
+## A trip: how deep the pelvis dips (hip heights) and over how long (s).
+const TRIP_DIP := 0.35
+const TRIP_EASE := 0.15
 
 var g: BipedGait
 ## Hip yaw this frame (rad): the tail and arms swing against it.
@@ -54,6 +59,9 @@ var _yaw := Vector2.ZERO
 var _lean := Vector2.ZERO
 var _sink := 0.0
 var _stumble_in := 3.0
+var _ease_left := 0.0
+var _drop_rate := 0.0
+var _hold_rate := 0.0
 
 
 func _init(gait: BipedGait) -> void:
@@ -68,8 +76,9 @@ func hold_back() -> float:
 ## A foot came down (weight 0..1, 1 = a stomp): the body drops and hangs back for a beat.
 func plant(weight: float) -> void:
 	var jolt := lerpf(FOOTFALL_JOLT, STOMP_JOLT, weight) * (1.0 + YOUTH_BOUNCE * g.youth)
-	_pelvis.y -= jolt * g.hip_height
-	_surge.y += SURGE_HOLD * g.speed / maxf(0.001, g.s)
+	_ease_left = PLANT_EASE
+	_drop_rate = jolt * g.hip_height / PLANT_EASE
+	_hold_rate = SURGE_HOLD * g.speed / maxf(0.001, g.s) / PLANT_EASE
 
 
 func update(dt: float, root: Transform3D, roar_lean: float) -> void:
@@ -93,6 +102,11 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 	lean_target += clampf(forward_accel * LEAN_ACCEL, -0.08, 0.1) + roar_lean
 	_lean = KaijuGait.spring(_lean.x, _lean.y, lean_target, 4.0, 0.9, dt)
 	var crouch := lerpf(CROUCH_STAND, CROUCH_WALK, speed_k) * h
+	if _ease_left > 0.0:
+		var step := minf(dt, _ease_left)
+		_pelvis.y -= _drop_rate * step
+		_surge.y += _hold_rate * step
+		_ease_left -= step
 	_pelvis = KaijuGait.spring(_pelvis.x, _pelvis.y, -crouch, PELVIS_OMEGA, PELVIS_ZETA, dt)
 	_surge = KaijuGait.spring(_surge.x, _surge.y, 0.0, SURGE_OMEGA, 0.75, dt)
 	pelvis_speed = _pelvis.y
@@ -111,12 +125,13 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 		g.rig.pose("spine0", euler, offset - Vector3(0, _sink, 0))
 	var breath := sin(g.time * TAU * BREATH_HZ) * BREATH
 	var counter := -CHEST_COUNTER * _yaw.x
-	var shoulders := SHOULDER_ROLL * _roll.x
-	g.rig.pose("spine1", Vector3(breath + 0.03 * _lean.x, counter, shoulders))
-	g.rig.pose("spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, counter, shoulders * 0.6))
+	var level := -SHOULDER_LEVEL * _roll.x
+	g.rig.pose("spine1", Vector3(breath + 0.03 * _lean.x, counter, level * 0.65))
+	g.rig.pose("spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, counter, level * 0.35))
 
 
-## A young body overbalances now and then while walking: a lurch to one side it catches.
+## A young body trips now and then while walking: the pelvis dips and lurches to one side, the
+## body stalls, and the foot on that side swings out quickly to catch it; then it walks on.
 func _stumble(dt: float, speed_k: float) -> void:
 	if g.youth <= 0.0 or speed_k < 0.1 or absf(g.yaw_rate) > 0.4:
 		return  # only on a straight walk, so it reads as one clear stumble
@@ -125,6 +140,9 @@ func _stumble(dt: float, speed_k: float) -> void:
 		return
 	_stumble_in = g.rng.randf_range(STUMBLE_EVERY.x, STUMBLE_EVERY.y)
 	var side := 1.0 if g.rng.randf() < 0.5 else -1.0
-	_roll.y += side * STUMBLE * g.youth * 6.0
-	_sway.y += side * STUMBLE * g.youth * g.hip_height * 4.0
-	_pelvis.y -= 0.2 * g.youth * g.hip_height
+	_ease_left = TRIP_EASE
+	_drop_rate = TRIP_DIP * g.youth * g.hip_height / TRIP_EASE
+	_hold_rate = g.speed / maxf(0.001, g.s) / TRIP_EASE
+	_roll.y -= side * STUMBLE * g.youth * 8.0
+	_sway.y += side * STUMBLE * g.youth * g.hip_height * 5.0
+	g.catch_step(side)

@@ -390,6 +390,22 @@
     54.83
    ],
    "physics": true
+  },
+  {
+   "name": "jaw",
+   "parent": "head1",
+   "head": [
+    -0.79,
+    81.55,
+    -42.29
+   ],
+   "tail": [
+    -2.5,
+    76.5,
+    -53.5
+   ],
+   "physics": false,
+   "close": 0.225
   }
  ]
 }

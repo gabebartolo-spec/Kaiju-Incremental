@@ -9,7 +9,7 @@ extends RefCounted
 ## times the hip yaw), how fast that sweep travels down the tail (1/s), idle sway.
 const TAIL_LIFT := -0.08
 ## A young tail is carried higher, clear of the legs; the tail flicks against the pelvis drop.
-const TAIL_YOUTH_LIFT := -0.04
+const TAIL_YOUTH_LIFT := -0.02
 const TAIL_FLICK := 0.05
 const TAIL_STRAIGHTEN := 0.75
 const TAIL_STIFFNESS := 7.0
@@ -17,6 +17,8 @@ const TAIL_GRAVITY := 0.8
 const TAIL_SWEEP := 0.9
 const TAIL_DELAY := 4.0
 const TAIL_SWAY := 0.03
+## At most this much bend per tail bone (rad), so the voxel segments never part.
+const TAIL_BEND_MAX := 0.12
 ## Arms: tucked against the chest (down-curl, inward turn, elbow bend), extra curl at a roar,
 ## a little swing against the hips; soft chains so they jiggle with each step.
 const ARM_TUCK := 0.75
@@ -66,7 +68,8 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 			before = _sweep[i]
 			var k := float(i + 1) / n
 			var sway := sin(time * 0.9 - i * 0.45) * TAIL_SWAY
-			var yaw := -TAIL_SWEEP * _sweep[i] + sway + _straight[i]
+			var bend := clampf(-TAIL_SWEEP * _sweep[i] + sway, -TAIL_BEND_MAX, TAIL_BEND_MAX)
+			var yaw := bend + _straight[i]
 			var lift := (TAIL_LIFT + TAIL_YOUTH_LIFT * youth) * (1.0 - k * 0.5)
 			lift += TAIL_FLICK * hip_drop * k
 			tail.drive[i] = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, lift)

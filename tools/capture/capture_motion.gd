@@ -24,6 +24,9 @@ var _seconds := 15.0
 var _trace := ""
 var _shake := 0.0
 var _label: Label
+var _time := 0.0
+## Every footfall: time, which foot, where (world), strength (written next to the trace).
+var plants := PackedStringArray()
 
 
 func _initialize() -> void:
@@ -80,11 +83,13 @@ func _run() -> void:
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
 	kaiju.foot_planted.connect(
-		func(_side: String, strength: float, at: Vector3) -> void:
-			city.fx.dust(at + Vector3(0, 0.2, 0), 0.35 * body_scale * (0.5 + strength))
-			_shake = maxf(_shake, 0.06 * strength)
+		func(side: String, strength: float, at: Vector3) -> void:
+			plants.append("%.3f,%s,%.3f,%.3f,%.3f,%.2f" % [_time, side, at.x, at.y, at.z, strength])
+			city.fx.dust(at + Vector3(0, 0.2, 0), 1.1 * body_scale * (0.5 + strength))
+			_shake = maxf(_shake, 0.14 * strength)
 	)
 	var rows := PackedStringArray(["t,pelvis_y,forward_speed"])
+	plants.append("t,foot,x,y,z,strength")
 	var last_pelvis := Vector3.ZERO
 	var cam := Camera3D.new()
 	cam.fov = 55.0 if _cam == "game" else 40.0
@@ -101,6 +106,7 @@ func _run() -> void:
 	var dt := 1.0 / FPS
 	while frames < int(_seconds * FPS):
 		var t := frames / FPS
+		_time = t
 		var move := _input_at(t)
 		if move.length() > 0.05:
 			pos += move.limit_length(1.0) * speed * dt
@@ -138,6 +144,9 @@ func _run() -> void:
 		var f := FileAccess.open(_trace, FileAccess.WRITE)
 		f.store_string(String.chr(10).join(rows))
 		f.close()
+		f = FileAccess.open(_trace.get_basename() + "_plants.csv", FileAccess.WRITE)
+		f.store_string(String.chr(10).join(plants))
+		f.close()
 	var drift := kaiju.foot_drift()
 	var hip := kaiju.hip_height()
 	print(
@@ -160,8 +169,8 @@ func _run() -> void:
 
 func _place(cam: Camera3D, at: Vector3, body_scale: float) -> void:
 	if _cam == "fixed":
-		cam.position = Vector3(maxf(22.0 * body_scale, 20.0), 4.0 * body_scale, -9.0)
-		cam.look_at(Vector3(0, 3.5 * body_scale, -9.0))
+		cam.position = Vector3(34.0, 3.0 * body_scale + 3.0, -9.0)
+		cam.look_at(Vector3(0, 2.5 * body_scale, -9.0))
 		return
 	if _cam == "game":
 		var zoom := 0.75 + 0.4 * body_scale
