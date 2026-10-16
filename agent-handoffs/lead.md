@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-16 21:35
+# Lead handoff, 2026-10-16 21:45
 ## State: working; helpers city-layout, real-city-cbd, ability-vfx (PR #6 FIX list) running
 
 ## Task
@@ -51,6 +51,9 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 14. PR #7 merged at round 1 (74d9a28) by mistake: CI finished before round 2 (a56acf8) was pushed. Round 2 (quiet zebras, filled blocks, fog edges) ships in the D-028 PR with the east-filler fixes. Lesson: check the PR head SHA matches the reviewed board before merging.
 
 15. PR #6 ability VFX MERGED (round 2 passed). Follow-ups for the SFX PR: ready flash tints the whole body red (make it a rim/eye glow), breath hidden behind the body for ~0.25 s when facing away.
+
+16. PR #9 MERGED (b9c4d5d, at the reviewed head): RES 8 buildings, round-2 streets/edges, varied east outskirts. 4K GPU ~14 ms (over 120 Hz budget; under 60): perf pass needed before TV play.
+17. PR #8 SFX on HOLD: director says stomps sound like cellophane and out of sync with feet; ability-vfx reworking low-end stomps, synced to KaijuRig.foot_planted from kaiju-motion.
 
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
