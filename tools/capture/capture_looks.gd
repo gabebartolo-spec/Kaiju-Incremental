@@ -19,6 +19,8 @@ const LINEUP_SPACING := 13.0
 const EDGE_AT := Vector2(5.0, -40.0)  # on the north ring avenue, looking out over the edge
 const SKYLINE_CAMERA := Vector3(-30, 34, 30)
 const SKYLINE_LOOK := Vector3(10, 12, -140)
+const EAST_CAMERA := Vector3(30, 34, 10)  # out over the east edge, where the streets fade
+const EAST_LOOK := Vector3(180, 0, 40)
 const EVOLVED := {"claws": 3, "hide": 3, "rage": 3, "stride": 2, "quake": 2, "evolve1": 1}
 const STREET_FRAMES := 3000  # most frames to wait for a police blockade to open fire
 const CLOSE := Vector3(1.6, 1.3, 1.6)  # close-up camera offset from its subject
@@ -49,7 +51,8 @@ func _run() -> void:
 		await _city_shot(str(look["id"]) + "_young", {})
 		await _city_shot(str(look["id"]) + "_evolved", EVOLVED)
 		await _city_shot(str(look["id"]) + "_edge", EVOLVED, EDGE_AT)
-		await _skyline_shot(str(look["id"]))
+		await _skyline_shot(str(look["id"]) + "_skyline", SKYLINE_CAMERA, SKYLINE_LOOK)
+		await _skyline_shot(str(look["id"]) + "_east", EAST_CAMERA, EAST_LOOK)
 		await _lineup_shot(str(look["id"]))
 	quit()
 
@@ -125,9 +128,9 @@ func _city_shot(id: String, levels: Dictionary, stage_at: Vector2 = STAGE_AT) ->
 	await process_frame
 
 
-## A wide establishing view from above the city's south side over the towers, the bay and the
-## skyline beyond: what the playable edge opens onto.
-func _skyline_shot(id: String) -> void:
+## A wide establishing view from `from` toward `look_at`: north over the towers to the bay
+## and the far skyline, or east to where the streets fade into the fog.
+func _skyline_shot(id: String, from: Vector3, look_at: Vector3) -> void:
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var sim := RampageSim.new({}, Content.tuning(), layout, Seeds.make("army", 0))
 	var stage := Node3D.new()
@@ -135,13 +138,13 @@ func _skyline_shot(id: String) -> void:
 	var cam := Camera3D.new()
 	cam.fov = 55.0
 	stage.add_child(cam)
-	cam.position = SKYLINE_CAMERA
+	cam.position = from
 	root.add_child(stage)
-	cam.look_at(SKYLINE_LOOK)
+	cam.look_at(look_at)
 	cam.current = true
 	await _frames(SETTLE)
-	_shot("%s_skyline" % id)
-	print("perf skyline ", await _measure(), " voxels ", _count_voxels(stage))
+	_shot(id)
+	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
 	stage.queue_free()
 	await process_frame
 

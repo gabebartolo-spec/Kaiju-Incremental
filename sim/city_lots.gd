@@ -48,6 +48,9 @@ static func fill_block(
 		var west := w >> 1
 		rows.append({"r": Rect2i(x0, z0, west, d), "along_x": false, "front": -1})
 		rows.append({"r": Rect2i(x0 + west, z0, w - west, d), "along_x": false, "front": 1})
+	if rows.size() == 4:  # the courtyard: low buildings behind the street wall, no open pad
+		var yard := Rect2i(x0 + depth, z0 + depth, w - 2 * depth, d - 2 * depth)
+		rows.append({"r": yard, "along_x": yard.size.x >= yard.size.y, "front": 0, "back": true})
 	var out: Array[Dictionary] = []
 	for row: Dictionary in rows:
 		out.append_array(_fill_row(rng, row, downtown, height_scale, plan, cfg))
@@ -86,10 +89,13 @@ static func _fill_row(
 	var fmin := Num.i(cfg["frontage_min"])
 	var fmax := Num.i(cfg["frontage_max"]) + (2 if downtown > 0.5 else 0)
 	var min_h := Num.i(cfg["min_height"])
+	var back: bool = row.get("back", false)
 	var row_cap := _height_cap(downtown, cfg)
+	if back:
+		row_cap = min_h + 2
 	var terrace_h := rng.randi_range(min_h, maxi(min_h, (row_cap + min_h) >> 1))
 	var terrace_style := rng.randi_range(0, 3)
-	var yards := downtown < 0.15 and rng.randf() < Num.f(cfg["yard_chance"])
+	var yards := downtown < 0.15 and rng.randf() < Num.f(cfg["yard_chance"]) and not back
 	var out: Array[Dictionary] = []
 	var t := 0
 	while t < length:
@@ -105,10 +111,12 @@ static func _fill_row(
 			)
 		)
 		var town := town_share(mid, cfg)
-		var cap := _height_cap(town, cfg)
+		var cap := row_cap if back else _height_cap(town, cfg)
 		var h := mini(terrace_h + rng.randi_range(-1, 1), cap)
 		var roll := rng.randf()
-		if roll < sqrt(town) * Num.f(cfg["tower_chance"]):
+		if back:
+			pass
+		elif roll < sqrt(town) * Num.f(cfg["tower_chance"]):
 			h = rng.randi_range(maxi(min_h, roundi(cap * 0.6)), cap)
 		elif span <= 3 and roll > 1.0 - Num.f(cfg["pencil_chance"]):
 			# A Tokyo pencil building: one narrow lot shoots up among the low-rise.

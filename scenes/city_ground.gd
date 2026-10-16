@@ -2,7 +2,7 @@ class_name CityGround
 extends Node3D
 ## The ground of the street plan (CityGen.map): asphalt streets, raised pavement blocks, the
 ## park lawn, the plaza, parking lots with painted bays, the diagonal avenue laid across the
-## blocks, lane lines, zebra crossings, and the bay with its quay to the north. Flat boxes in a
+## blocks, quiet road paint, and the bay with its quay to the north. Flat boxes in a
 ## few MultiMeshes; presentation only.
 
 const PAVE_TOP := 0.1  # blocks stand a kerb above the street
@@ -10,6 +10,8 @@ const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
 const PAINT := 0.02
 const WATER_Y := -0.8
 const FAR := 1400.0
+const MID_BLOCK := 18.0  # an avenue this long between crossings gets a mid-block crossing
+const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
 
 var plan: Dictionary
 var cfg: Dictionary
@@ -94,43 +96,64 @@ func _diagonal(asphalt: Color) -> void:
 		_slab(Rect2(mid - span * 0.5, span), Vector2(DIAG_TOP, 0.3), asphalt, angle)
 
 
-## Dashed centre lines on streets and avenues, zebra crossings where streets meet.
+## Quiet road paint, as a real city has it: a dashed centre line on the avenues and the
+## diagonal only, and zebra crossings only at the signalled junctions where an avenue meets a
+## street (one per arm), plus one mid-block on a long avenue. Side streets and alleys get none.
 func _markings() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var reach := Num.f(cfg["half"]) + Num.f(cfg["markings_beyond"])
-	var crossings := {}
+	var signalled := {}  # crossings of two grid lines where an avenue runs through
+	var xs: Array[float] = plan["xs"]
+	var zs: Array[float] = plan["zs"]
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) != CityGen.AVENUE:
+			continue
+		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
+			if xs.has(nodes[end].x) and zs.has(nodes[end].y):
+				signalled[end] = true
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
 		if kind == CityGen.ALLEY:
 			continue
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
+		var ends: Array[int] = [Num.i(street["from"]), Num.i(street["to"])]
+		var a := nodes[ends[0]]
+		var b := nodes[ends[1]]
 		if maxf(maxf(absf(a.x), absf(a.y)), maxf(absf(b.x), absf(b.y))) > reach:
 			continue
 		if minf(a.y, b.y) < coast:
 			continue
 		var dir := (b - a).normalized()
-		var angle := -dir.angle() + PI * 0.5
-		var y := (DIAG_TOP if kind == CityGen.DIAGONAL else 0.0) + PAINT
-		var gap := Num.f(street["width"]) * 0.5 + 1.5  # no dashes inside the crossing
-		var t := gap
-		while t < a.distance_to(b) - gap:
-			var p := a + dir * t
-			_paint.append(
-				Transform3D(
-					Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(0.15, 0.04, 0.9)),
-					Vector3(p.x, y, p.y)
-				)
+		var width := Num.f(street["width"])
+		var length := a.distance_to(b)
+		if kind != CityGen.STREET:
+			var lift := DIAG_TOP + PAINT if kind == CityGen.DIAGONAL else PAINT
+			_dashes(a, dir * length, width, lift)
+		if kind == CityGen.DIAGONAL:
+			continue
+		for i: int in 2:
+			if signalled.has(ends[i]):
+				var toward := dir if i == 0 else -dir
+				_zebra(nodes[ends[i]] + toward * (width * 0.5 + 0.9), toward, width)
+		if kind == CityGen.AVENUE and length > MID_BLOCK:
+			_zebra(a + dir * length * 0.5, dir, width)
+
+
+## Dashes down the centre line from a along `span` (direction times length), at height y.
+func _dashes(a: Vector2, span: Vector2, width: float, y: float) -> void:
+	var dir := span.normalized()
+	var length := span.length()
+	var angle := -dir.angle() + PI * 0.5
+	var gap := width * 0.5 + 2.5  # none in or near the crossings
+	var t := gap
+	while t < length - gap:
+		var p := a + dir * t
+		_paint.append(
+			Transform3D(
+				Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(0.12, 0.04, 0.9)),
+				Vector3(p.x, y, p.y)
 			)
-			t += 2.0
-		if kind != CityGen.DIAGONAL:
-			for end: Vector2 in [a, b]:
-				var key := Vector2i(roundi(end.x), roundi(end.y))
-				var toward := dir if end == a else -dir
-				var stripe_at := end + toward * (Num.f(street["width"]) * 0.5 + 0.9)
-				if not crossings.has([key, toward]):
-					crossings[[key, toward]] = true
-					_zebra(stripe_at, toward, Num.f(street["width"]))
+		)
+		t += 3.0
 
 
 func _zebra(at: Vector2, along: Vector2, width: float) -> void:
@@ -197,7 +220,7 @@ func _build_paint() -> MultiMeshInstance3D:
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	var box := BoxMesh.new()
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color("d9d4c4")
+	mat.albedo_color = PAINT_COLOR
 	box.material = mat
 	mm.mesh = box
 	mm.instance_count = _paint.size()

@@ -1,15 +1,17 @@
 class_name CitySkyline
 extends Node3D
-## Everything past the playable edge, so the city never ends in a void: the street plan's outer
-## blocks filled with cheap stand-in buildings (one painted box each, facade.gdshader), an
-## elevated expressway along the waterfront, a second skyline across the bay with a lattice
-## tower and blinking aircraft beacons, streetlamps glowing down the outer streets, and a few
-## aircraft lights crossing the sky. Never destroyed; presentation only.
+## Everything past the playable edge, so the city has a believable end: to the north a quay,
+## the bay and a far skyline; east, west and south the streets run on until the fog takes them.
+## The street plan's outer blocks hold cheap stand-in buildings (one painted box each,
+## facade.gdshader); an elevated expressway runs along the waterfront; a second skyline across
+## the bay has a lattice tower and blinking beacons; lamps glow down the outer streets and a
+## few aircraft lights cross the sky. Never destroyed; presentation only.
 
 const FACADE := preload("res://scenes/facade.gdshader")
 const FACADE_FAR := preload("res://scenes/facade_far.gdshader")
 const DECK_Y := 7.0
 const DECK_WIDTH := 5.0
+const DETAIL_REACH := 200.0  # roof clutter and lamp heads only this close to the centre
 const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the expressway
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
@@ -85,7 +87,9 @@ func _outer_blocks() -> void:
 					}
 				)
 			)
-			_roof_clutter(at + Vector3(0, h * 0.5, 0), Vector2(Num.f(lot["w"]), Num.f(lot["d"])))
+			if Vector2(at.x, at.z).length() < DETAIL_REACH:  # past it the fog hides roofs
+				var top := at + Vector3(0, h * 0.5, 0)
+				_roof_clutter(top, Vector2(Num.f(lot["w"]), Num.f(lot["d"])))
 
 
 ## Rooftop stair huts, plant boxes and water tanks, so the stand-ins' roofs are not bare.
@@ -249,7 +253,8 @@ func _outer_lamps() -> void:
 		var t := 3.0
 		while t < a.distance_to(b):
 			var p := a + dir * t + side
-			_lamps.append(Vector3(p.x, 2.6, p.y))
+			if p.length() < DETAIL_REACH:
+				_lamps.append(Vector3(p.x, 2.6, p.y))
 			t += 9.0
 
 

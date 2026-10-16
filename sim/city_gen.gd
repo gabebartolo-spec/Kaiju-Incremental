@@ -55,8 +55,13 @@ static func map(cfg: Dictionary) -> Dictionary:
 	# Long blocks one way, short the other (Manhattan): x-lines far apart, z-lines close.
 	var long: Array = cfg["block_long"]
 	var short: Array = cfg["block_short"]
-	var xs := _lines(rng, half, outer, Num.i(long[0]), Num.i(long[1]))
-	var zs := _lines(rng, half, outer, Num.i(short[0]), Num.i(short[1]))
+	var xs := _lines(rng, half, Num.i(long[0]), Num.i(long[1]))
+	var zs := _lines(rng, half, Num.i(short[0]), Num.i(short[1]))
+	# The outskirts draw from their own stream, so tuning them never reshuffles the city.
+	var far := RandomNumberGenerator.new()
+	far.seed = Num.i(cfg["map_seed"]) + 1
+	_extend(far, xs, outer, Num.i(long[0]), Num.i(long[1]) + 4)
+	_extend(far, zs, outer, Num.i(short[0]), Num.i(short[1]) + 4)
 	var avenues_x := _avenues(rng, xs, half, cfg)
 	var avenues_z := _avenues(rng, zs, half, cfg)
 	# Which grid edges are alleys: x-line i between zs[j] and zs[j+1] is ax[Vector2i(i, j)].
@@ -125,10 +130,9 @@ static func map(cfg: Dictionary) -> Dictionary:
 	return plan
 
 
-## Street centre lines on one axis: random gaps, with lines exactly on the ring (+-half).
-static func _lines(
-	rng: RandomNumberGenerator, half: float, outer: float, lo: int, hi: int
-) -> Array[float]:
+## Street centre lines across the playable city on one axis: random gaps, with lines exactly
+## on the ring (+-half).
+static func _lines(rng: RandomNumberGenerator, half: float, lo: int, hi: int) -> Array[float]:
 	var out: Array[float] = [-half]
 	var p := -half
 	while half - p > hi + lo:
@@ -137,15 +141,21 @@ static func _lines(
 	if half - p > hi:  # split a long last gap in two
 		out.append(p + roundi((half - p) * 0.5))
 	out.append(half)
-	p = half
-	while p < outer:
-		p += rng.randi_range(lo, hi + 4)
-		out.append(p)
-	p = -half
-	while p > -outer:
-		p -= rng.randi_range(lo, hi + 4)
-		out.push_front(p)
 	return out
+
+
+## Carries the lines on out to +-outer, both ways.
+static func _extend(
+	rng: RandomNumberGenerator, lines: Array[float], outer: float, lo: int, hi: int
+) -> void:
+	var p := lines[lines.size() - 1]
+	while p < outer:
+		p += rng.randi_range(lo, hi)
+		lines.append(p)
+	p = lines[0]
+	while p > -outer:
+		p -= rng.randi_range(lo, hi)
+		lines.push_front(p)
 
 
 ## The ring lines and one or two lines through the playable city are avenues.
@@ -317,5 +327,5 @@ static func _blocks(
 			plaza_away = away
 	if best_park >= 0:
 		blocks[best_park]["use"] = "park"
-	if best_plaza >= 0 and best_plaza != best_park:
+	if best_plaza >= 0 and best_plaza != best_park and Num.f(cfg["plaza_blocks"]) > 0.0:
 		blocks[best_plaza]["use"] = "plaza"

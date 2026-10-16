@@ -48,6 +48,8 @@ func _check_city_layout(layout: Array[Dictionary]) -> void:
 		var a := nodes[Num.i(street["from"])]
 		var b := nodes[Num.i(street["to"])]
 		var trim := (b - a).normalized() * (Num.f(cfg["avenue_width"]) * 0.5 + 0.5)
+		if a.distance_to(b) <= trim.length() * 2.0 and str(street["kind"]) != CityGen.DIAGONAL:
+			continue  # all of it lies inside its two crossings
 		a += trim
 		b -= trim
 		for r: Rect2 in rects:
