@@ -15,7 +15,7 @@ worktree; more than four live is a violation (`bash tools/lint/worktrees.sh`):
 
 ```bash
 git fetch -q origin
-git worktree add -b claude/<topic> ../Kaiju Incremental-wt/<topic> origin/main
+git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main
 ```
 
 One PR per branch. Commit subjects take a prefix (`sim:` `ui:` `data:` `art:` `tools:` `docs:`

@@ -3,7 +3,7 @@
 #
 # Reads `git worktree list --porcelain`, or the file named by $WORKTREE_LIST (the self-test
 # feeds it captured listings). The first entry is the main worktree. Entries inside
-# <parent directory of main>/Kaiju Incremental-wt/ and inside the desktop app's session folder
+# <parent directory of main>/Kaiju-Incremental-wt/ and inside the desktop app's session folder
 # <main>/.claude/worktrees/ are both counted. Any other linked worktree is listed as a
 # warning but not counted. A prunable entry is a stale registration rather than a live
 # worktree: it is not counted either, and is reported with its fix.
@@ -18,7 +18,7 @@
 # Usage: bash tools/lint/worktrees.sh
 
 MAX_WORKTREES=4 # guardrail C1: at most four live worktrees, both places together
-WT_DIR_NAME="Kaiju Incremental-wt"
+WT_DIR_NAME="Kaiju-Incremental-wt"
 SESSION_DIR_NAME=".claude/worktrees"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

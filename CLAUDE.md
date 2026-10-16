@@ -44,7 +44,7 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
 - One Godot process per agent; isolate every run (`tools/run_tests.sh` does; a direct run sets
   `APPDATA=<your scratch dir>`). Never kill Godot by image name; kill by the PID you recorded.
 - GPU jobs (renders, generation, local models) one at a time; the art role owns them.
-- Worktrees: `git worktree add -b claude/<topic> ../Kaiju Incremental-wt/<topic> origin/main`. Remove
+- Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`. Remove
   the worktree when the PR merges. More than four live worktrees is a violation.
 - Only the merge role edits `docs/STATUS.md` and `docs/DECISIONS.md`, in a docs-only board PR
   after each merge; every other PR states its board and log changes in its body.
