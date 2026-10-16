@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-033 · Director · Kaiju growth stages picked
+Why: stage board docs/captures/2026-10-16-stages/stages_board.png. Reptile adolescent = B (Tripo
+f9cf6ba7, slimmer version of the adult); mantis baby 06ed8a12, adolescent 0161ad14, adult 9668b815
+("yes, use them"). Changes: reptilian_adolescent re-rigged at 130 voxels; mantis rigs wait on the
+hexapod skeleton (kaiju-motion).
+
 ## 2026-10-16 · D-032 · Director · Looks first, performance tuning later
 Why: "lets worry later about frame rate/performance issues. focus on getting the best looking game
 we can and then we can tune it". Changes: perf budgets no longer block visual work; benches are still
