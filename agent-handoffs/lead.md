@@ -31,6 +31,7 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 6. Review city-layout captures before the director sees them (art-qa-critic).
 7. 4K TV: check UI text size at TV distance; HDR output; perf at 4K (~9 ms GPU before).
    Director confirmed the TV is on the 4070 SUPER.
+9. Building fidelity (D-028) sent to city-layout: RES 8-12, recessed facades, LOD; review its side-by-side.
 8. Cars (CityDecor.car, police cruisers) are far chunkier than the buildings: detail pass or
    Tripo vehicles later (noted in the street-life review).
 

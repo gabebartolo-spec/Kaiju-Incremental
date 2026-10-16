@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
+Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
+fidelity". Kaiju are ~16 voxels per floor-unit, buildings 4. Changes: city-layout raises building
+RES (8-12) with recessed, framed facades and rooftop clutter, distance LOD if perf needs it.
+
 ## 2026-10-16 · D-027 · Director · The game targets a 4K 120 Hz TV
 Why: "i want the game to display on a 4k tv" (Beyond TV, 3840x2160, 120 Hz VRR, HDR, 400 nits).
 Changes: starts fullscreen, stretch aspect "expand", adaptive vsync (VRR); UI stays a 1920x1080
