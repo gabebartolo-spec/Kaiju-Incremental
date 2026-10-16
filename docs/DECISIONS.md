@@ -4,8 +4,45 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
+Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
+hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
+in a per-species branch (data/upgrades.json), ultimate at the branch end.
+
+## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
+Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
+over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".
+Changes: the radial rig takes its tentacle count from the mesh; baby/adolescent keep the many-limb plan.
+Also: a jaw bone for the reptile ("him opening his maw is a key part of his design").
+
+## 2026-10-16 · D-035 · Director · Three species, three ways to play (docs/SPECIES.md)
+Why: the director's species brief: reptilian = strongest (tail shears buildings, unstoppable momentum,
+ultimate atomic beam); insectoid = fastest (scuttle, jump/hover, climbs towers, ultimate egg brood that
+devours civilians and fights the military); cephalopod = most cunning (360 hydra limbs, grab and throw
+tanks and helicopters, push/pull/climb/squeeze, ultimate corrosive ink). Changes: SPECIES.md is the spec;
+build after locomotion (PR #10) lands; three open questions listed there.
+
+## 2026-10-16 · D-034 · Director · Kaiju get real Tripo-textured skins; reptile = dark olive crocodile
+Why: "i hope this isnt our final textured look"; "should be greener, less grey"; picked C (dark olive
+middle ground) over B (bright green) on docs/captures/2026-10-16-stages/reptile_skin_options.png.
+Also: "spend as many tripo credits as u want". Changes: rig_voxel.py samples the base-colour texture
+when present; every stage of every species gets a matching texture pass (same prompt per species).
+
+## 2026-10-16 · D-033 · Director · Kaiju growth stages picked
+Why: stage board docs/captures/2026-10-16-stages/stages_board.png. Reptile adolescent = B (Tripo
+f9cf6ba7, slimmer version of the adult); mantis baby 06ed8a12, adolescent 0161ad14, adult 9668b815
+("yes, use them"). Changes: reptilian_adolescent re-rigged at 130 voxels; mantis rigs wait on the
+hexapod skeleton (kaiju-motion).
+
+## 2026-10-16 · D-032 · Director · Looks first, performance tuning later
+Why: "lets worry later about frame rate/performance issues. focus on getting the best looking game
+we can and then we can tune it". Changes: perf budgets no longer block visual work; benches are still
+recorded in PRs (so tuning has a baseline) but a slower frame is not a reason to cut detail. A perf
+pass comes after the look is locked.
+
 ## 2026-10-16 · D-031 · Director · Kaiju move like killing machines, each species its own way
-Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness;
+Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness (posture a
+medium between Godzilla and T-rex, ~20-30° lean: "my t-rex comparison was mostly the gracefulness");
 insectoid = disturbing skitter, twitches, exoskeletal motion; cephalopod = slides, pushes, pulls,
 grabs building edges with tentacles, never tip-toes. Changes: helper kaiju-motion rebuilds rig
 locomotion (foot IK, weight shift, tail counterbalance, hexapod and radial rigs).

@@ -10,6 +10,7 @@ const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
 const PAINT := 0.02
 const WATER_Y := -0.8
 const FAR := 1400.0
+const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
 const MID_BLOCK := 18.0  # an avenue this long between crossings gets a mid-block crossing
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
 
@@ -38,6 +39,8 @@ func _ready() -> void:
 		var rect: Rect2 = block["rect"]
 		if rect.position.y < coast:
 			continue
+		if str(block["use"]) == "outer" and minf(rect.size.x, rect.size.y) < MIN_BUILDABLE:
+			continue  # a sliver too thin to build on stays road, not a pale strip
 		# The block's pavement reaches out over its sidewalks (and meets across an alley).
 		var walk := rect.grow(Num.f(cfg["sidewalk"]))
 		match str(block["use"]):
