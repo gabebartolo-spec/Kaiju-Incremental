@@ -29,7 +29,7 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 5. 4K TV text size check (perf deferred, D-032).
 
 ## Helpers
-- kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: reptile round 1 REJECTED (fix
+- kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: round 2 = FIX (posture, no skate, head, mass PASS; jaw open, tail lag, hold beat, game-camera read, baby stumble, pale legs, true side cam to fix). Round 1 was REJECTED (fix
   list sent: posture lean 20-30 deg, tail sweep, head stable/mouth closed, weight, arms, blends, baby
   clumsier, game-camera readability, washed-out legs, stuttering capture). Round 2 clips exist
   (rex2_*); run a FRESH motion-critic when it reports. Adds KaijuModel.foot_planted(side,strength,at).
