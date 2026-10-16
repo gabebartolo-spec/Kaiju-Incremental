@@ -3,5 +3,7 @@
 # up (game-architecture §6). A suite with no line here fails until one is added.
 smoke 13
 sim 39
+powers 24
+tentacles 17
 city 5
-flow 22
+flow 26

@@ -50,6 +50,8 @@ var gait: KaijuGait
 var chains: Array[SpringChain] = []
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
 var bone_close: Dictionary = {}
+## Bones that rest in a sculpted snarl (rig.json "snarl"): their mouth shows true colours.
+var bone_snarl: Dictionary = {}
 ## name -> the MultiMeshInstance3D drawing that bone's own voxels (its skin).
 var skins: Dictionary = {}
 var _bones: Dictionary = {}  # name -> Node3D
@@ -119,6 +121,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_head[bone_name] = head
 		_parent[bone_name] = parent_name
 		bone_close[bone_name] = Num.f(d.get("close", 0.0))
+		bone_snarl[bone_name] = d.get("snarl", false) == true
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]

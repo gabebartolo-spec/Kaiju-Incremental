@@ -10,3 +10,11 @@ static func make(stream: String, index: int = 0) -> RandomNumberGenerator:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("%d:%s:%d" % [MASTER_SEED, stream, index])
 	return rng
+
+
+## A second stream drawn from an existing one's seed, so adding a consumer (a new power)
+## never shifts what the first stream produces.
+static func derive(rng: RandomNumberGenerator, salt: int) -> RandomNumberGenerator:
+	var out := RandomNumberGenerator.new()
+	out.seed = hash("%d:%d" % [rng.seed, salt])
+	return out
