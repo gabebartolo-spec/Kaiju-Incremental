@@ -12,6 +12,8 @@ const VOXEL := DESIGN_UNIT / RES
 const MODEL_HEIGHT := 10.0
 ## Render layer bit lit by the kaiju-only rim light (layer 1 stays on for the world lights).
 const RIM_LAYER := 2
+## The kaiju's voxels sit on their own layer instead of the city's, so ground decals skip them.
+const BODY_LAYER := 4
 const IVORY := Color("e8e0c8")
 const PUPIL := Color("15130f")
 
@@ -108,7 +110,7 @@ func roar() -> void:
 
 
 func _lit(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:
-	mmi.layers = 1 | RIM_LAYER
+	mmi.layers = BODY_LAYER | RIM_LAYER
 	return mmi
 
 

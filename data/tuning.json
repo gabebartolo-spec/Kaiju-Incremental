@@ -74,6 +74,22 @@
 		"fall_gravity": 30.0,
 		"topple_bonus": 1.5
 	},
+	"fx": {
+		"power_max": 2.5,
+		"crack_stomp_power": 1.8,
+		"beam_seconds": 0.9,
+		"orbit_degrees": 25.0,
+		"orbit_rise": 3.0,
+		"orbit_in_seconds": 0.3,
+		"orbit_out_seconds": 0.5,
+		"scorch_seconds": 5.0,
+		"crater_seconds": 6.0,
+		"crack_seconds": 2.5,
+		"sweep_seconds": 0.5,
+		"leap_trail_seconds": 0.4,
+		"regen_tint": "8cffb0",
+		"deflect_tint": "cfe6ff"
+	},
 	"street": {
 		"person_voxel": 0.065,
 		"civilians_per_lot": 3,
