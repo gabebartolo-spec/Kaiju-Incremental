@@ -3,8 +3,9 @@
     blender -b --python assets/source/vehicles/build_tank.py -- <out.blend> <out.glb>
     (or exec() it inside a live Blender through the MCP)
 
-Blender axes: Z up, the tank faces +Y (glTF export turns that into -Z forward, the game's
-facing). Ground is z = 0. Real-world metres, Abrams/Leopard-like: 9.8 m long with the gun,
+Blender axes: Z up, ground z = 0. Parts are laid out facing +Y, then the Hull root is turned
+180 degrees so the finished tank faces -Y: the glTF front (+Z) and what tools/blender/voxelize.py
+expects (Blender -Y becomes the game's -Z forward). Real-world metres, Abrams/Leopard-like: 9.8 m long with the gun,
 3.7 m wide over the skirts, 2.4 m to the commander's cupola.
 
 Objects (each its own mesh, parented so the turret can turn and the gun can elevate):
@@ -321,6 +322,7 @@ def build():
     box(bm, (mount.x + 0.07, mount.y - 0.2, mount.z + 0.1), (mount.x + 0.2, mount.y + 0.05,
         mount.z + 0.22), mi("tan_dark"), off=mount)                                    # ammo can
     new_obj("CommanderMG", bm, all_mats, parent=turret, origin=mount - ring)
+    hull.rotation_euler = (0.0, 0.0, math.pi)  # face -Y (glTF front, voxelize convention)
     return hull
 
 
