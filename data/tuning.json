@@ -28,6 +28,8 @@
 		"threat_per_chunk": 0.0005
 	},
 	"city": {
+		"district": "",
+		"district_margin": 3.0,
 		"grid": 11,
 		"spacing": 9.0,
 		"empty_chance": 0.15,

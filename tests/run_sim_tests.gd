@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 const SaveScript := preload("res://autoload/save_system.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
+const DISTRICT := "melbourne_cbd"
 
 
 func suite_name() -> String:
@@ -17,6 +18,7 @@ func run_checks() -> void:
 	_check_data()
 	_check_tree()
 	_check_city()
+	_check_district()
 	_check_structure()
 	_check_topple_crush()
 	_check_toughness()
@@ -34,7 +36,7 @@ func _tree(levels: Dictionary = {}) -> UpgradeTree:
 
 
 func _layout() -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	return CitySource.buildings(Seeds.make("city", 0), Content.section("city"))
 
 
 func _sim(species_id: String, levels: Dictionary, run_index: int = 0) -> RampageSim:
@@ -140,6 +142,96 @@ func _check_city() -> void:
 		tiers.has(1) and tiers.has(2) and tiers.has(3),
 		"the city has towers of at least three tiers: %s" % [tiers.keys()]
 	)
+
+
+## The real district (D-029): the baked Melbourne CBD loads the same every time, every building
+## has chunks, nothing overlaps, the streets are a valid graph and a rampage on it replays.
+func _check_district() -> void:
+	var cfg: Dictionary = _district_tuning()["city"]
+	check(CityDistrict.exists(DISTRICT), "the baked district %s ships in data/cities" % DISTRICT)
+	var a := CitySource.buildings(Seeds.make("city", 0), cfg)
+	var b := CitySource.buildings(Seeds.make("city", 7), cfg)
+	check(
+		a.size() > 500 and a == b,
+		"the district is the same %d buildings whatever the seed" % a.size()
+	)
+	var play := CitySource.play(cfg)
+	var cells := {}
+	var problems: Array[String] = []
+	for entry: Dictionary in a:
+		var w := Num.i(entry["w"])
+		var d := Num.i(entry["d"])
+		var x0 := roundi(Num.f(entry["x"]) - w * 0.5)
+		var z0 := roundi(Num.f(entry["z"]) - d * 0.5)
+		if w < 1 or d < 1 or Num.i(entry["h"]) < 1:
+			problems.append("empty box %s" % entry)
+		if not play.has_point(Vector2(Num.f(entry["x"]), Num.f(entry["z"]))):
+			problems.append("outside play %s" % entry)
+		for x: int in range(x0, x0 + w):
+			for z: int in range(z0, z0 + d):
+				if cells.has(Vector2i(x, z)):
+					problems.append("overlap at %s" % Vector2i(x, z))
+				cells[Vector2i(x, z)] = true
+	check(
+		problems.is_empty(),
+		"every district building is a box inside the play rect, none overlapping: %s"
+		% [problems.slice(0, 5)]
+	)
+	var plan := CityDistrict.plan(DISTRICT)
+	var nodes: Array[Vector2] = plan["nodes"]
+	var bad := 0
+	var kinds := {}
+	for street: Dictionary in plan["streets"]:
+		kinds[str(street["kind"])] = true
+		if Num.i(street["from"]) >= nodes.size() or Num.i(street["to"]) >= nodes.size():
+			bad += 1
+	check(
+		nodes.size() > 500 and bad == 0 and kinds.has("avenue") and kinds.has("alley"),
+		"the district's streets are a valid graph of avenues, streets and lanes (%d bad)" % bad
+	)
+	var water := 0
+	for area: Dictionary in plan["areas"]:
+		if str(area["use"]) == "water":
+			water += 1
+	check(water >= 1, "the district has the Yarra as water along its edge")
+	var sim := _district_sim(0)
+	var empty := 0
+	for building: RampageSim.Building in sim.buildings:
+		if building.frame.alive_count != building.w * building.d * building.height:
+			empty += 1
+	check(
+		empty == 0 and sim.chunks_total > 10000,
+		"every district building starts whole (%d chunks, %d short)" % [sim.chunks_total, empty]
+	)
+	check(
+		sim.arena.has_point(sim.kaiju_pos) and sim.kaiju_pos == CitySource.start(cfg),
+		"the kaiju arrives at the district's start, inside the arena: %s" % sim.kaiju_pos
+	)
+	var first := _autoplay(_district_sim(1))
+	var second := _autoplay(_district_sim(1))
+	check(
+		first == second and Num.i(first["rubble"]) > 10,
+		"a rampage through the district replays identically and earns rubble: %s" % [first]
+	)
+
+
+func _district_tuning() -> Dictionary:
+	var tuning := Content.tuning().duplicate(true)
+	var city: Dictionary = tuning["city"]
+	city["district"] = DISTRICT
+	return tuning
+
+
+func _district_sim(run_index: int) -> RampageSim:
+	var tuning := _district_tuning()
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), Content.species_def("reptilian"), _tree()
+	)
+	var city: Dictionary = tuning["city"]
+	var layout := CitySource.buildings(Seeds.make("city", 0), city)
+	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run_index))
+	sim.ability_type = "ring"
+	return sim
 
 
 func _check_structure() -> void:

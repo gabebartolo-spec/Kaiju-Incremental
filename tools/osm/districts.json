@@ -1,0 +1,16 @@
+{
+	"_note": "One entry per district (cities ship as patches, D-029). bbox: south, west, north, east (degrees); everything inside is baked. The playable rect runs between the centre lines of play_streets plus play_margin_m, and play_south_m past the south street (to the middle of the river). start is where the kaiju arrives. Map data (c) OpenStreetMap contributors, ODbL 1.0.",
+	"melbourne_cbd": {
+		"name": "Melbourne CBD",
+		"bbox": [-37.8235, 144.9480, -37.8060, 144.9760],
+		"origin": [-37.8143, 144.9632],
+		"metres_per_unit": 10.0,
+		"sidewalk_units": 0.5,
+		"play_streets": {"west": "Spencer Street", "east": "Spring Street", "north": "La Trobe Street", "south": "Flinders Street"},
+		"play_margin_m": 30.0,
+		"play_south_m": 200.0,
+		"start": [-37.8203, 144.9668],
+		"centre_for_heights": [-37.8150, 144.9640],
+		"centre_reach_m": 900.0
+	}
+}

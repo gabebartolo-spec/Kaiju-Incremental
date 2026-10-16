@@ -15,3 +15,6 @@ override.cfg
 
 # Director reference footage (large; stays local)
 *.mp4
+
+# OSM raw downloads (tools/osm/fetch_osm.py); the baked district is data/cities/
+tools/osm/cache/

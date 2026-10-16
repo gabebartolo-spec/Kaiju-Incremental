@@ -65,6 +65,9 @@ var tanks_destroyed := 0
 var ability_ready_in := 0.0
 var over := false
 var end_reason := ""
+## The ground the kaiju may walk: the playable city plus a margin. arena_half is its biggest
+## half-extent (views that frame the whole arena use it).
+var arena: Rect2
 var arena_half: float
 var next_fall_id := 0
 var collapse: Collapse
@@ -103,9 +106,12 @@ func _init(
 		b.frame = Structure.new(b.w, b.d, b.height, Num.f(city["chunk_hp"]) * b.tier)
 		buildings.append(b)
 		chunks_total += b.w * b.d * b.height
-	var city_half := CityGen.half_extent(city)
-	arena_half = city_half + Num.f(city["spacing"]) * 2.0
-	kaiju_pos = Vector2(0.0, city_half + Num.f(city["spacing"]))
+	arena = CitySource.play(city).grow(CitySource.margin(city))
+	arena_half = maxf(
+		maxf(absf(arena.position.x), absf(arena.end.x)),
+		maxf(absf(arena.position.y), absf(arena.end.y))
+	)
+	kaiju_pos = CitySource.start(city)
 	collapse = Collapse.new(self)
 
 
@@ -190,7 +196,7 @@ func _end(reason: String) -> void:
 
 
 func _clamp_to_arena(pos: Vector2) -> Vector2:
-	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
+	return pos.clamp(arena.position, arena.end)
 
 
 func _stomp() -> void:
@@ -355,7 +361,10 @@ func _spawn_tank() -> void:
 	tank.id = _next_tank_id
 	_next_tank_id += 1
 	var angle := _rng.randf() * TAU
-	tank.pos = _clamp_to_arena(Vector2(cos(angle), sin(angle)) * arena_half * 1.2)
+	var reach := arena.size * 0.6
+	tank.pos = _clamp_to_arena(
+		arena.get_center() + Vector2(cos(angle) * reach.x, sin(angle) * reach.y) * 1.2
+	)
 	tank.hp = Num.f(army["tank_hp"]) * (1.0 + Num.f(army["threat_per_chunk"]) * chunks_destroyed)
 	tank.cooldown = Num.f(army["fire_interval"])
 	tanks.append(tank)
