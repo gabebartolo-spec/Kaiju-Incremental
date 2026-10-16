@@ -24,16 +24,18 @@ const SURGE_OMEGA := 5.0
 const PLANT_EASE := 0.07
 const PELVIS_OMEGA := 9.0
 const PELVIS_ZETA := 0.7
-## Weight shift over the stance leg: sideways (hip heights), roll and hip yaw (rad).
-const SWAY := 0.12
+## Weight shift over the stance leg: sideways (hip heights), roll and hip yaw (rad). Small: the
+## weight reads from the pelvis drop and roll, not a side slide (director: "shoulder wiggle").
+const SWAY := 0.03
 const ROLL := 0.13
-const HIP_YAW := 0.16
+const HIP_YAW := 0.06
 ## A stretched planted foot: the pelvis sinks at most this much (hip heights), easing back up.
 const MAX_SINK := 0.18
 const SINK_RECOVER := 1.5
-## The chest counters the hips' yaw and takes out their roll, so the shoulders ride level
-## (director: the weight shows in the hips, not the shoulders); slow breathing (Hz, rad).
-const CHEST_COUNTER := 0.5
+## The chest takes out the hips' yaw, roll and side sway at the first spine bone, so the
+## shoulders stay locked to the line of travel (the weight shows in the hips, not the
+## shoulders); slow breathing (Hz, rad).
+const CHEST_COUNTER := 1.0
 const SHOULDER_LEVEL := 1.0
 const BREATH_HZ := 0.22
 const BREATH := 0.022
@@ -116,22 +118,36 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 	pelvis_speed = _pelvis.y
 	var euler := Vector3(-_lean.x, _yaw.x, _roll.x)
 	var offset := Vector3(_sway.x, _pelvis.x, _surge.x)
-	g.rig.pose("spine0", euler, offset)
 	# Keep every planted foot in reach: sink the pelvis (at once) rather than let a foot slide,
 	# and ease back up (never pop) once it is no longer needed.
+	g.rig.pose("spine0", euler, offset)
 	var need := 0.0
 	for leg: BipedGait.Leg in legs:
 		if leg.planted:
 			need = maxf(need, reach_drop(leg, root) / g.s)
 	need = minf(need, MAX_SINK * h)
 	_sink = maxf(need, move_toward(_sink, need, dt * SINK_RECOVER * h))
-	if _sink > 0.0:
-		g.rig.pose("spine0", euler, offset - Vector3(0, _sink, 0))
+	offset.y -= _sink
+	g.rig.pose("spine0", euler, offset)
+	_lock_chest(euler, offset)
+
+
+## The chest sits where a pelvis with only its lean, drop and surge would carry it: the hips'
+## yaw, roll and side sway are taken out exactly at the first spine bone (CHEST_COUNTER 1 = all),
+## so the shoulders stay locked to the line of travel. Slow breathing on top.
+func _lock_chest(euler: Vector3, offset: Vector3) -> void:
+	var rig := g.rig
+	var r0 := rig.rest_of("spine0")
+	var r1 := rig.rest_of("spine1")
+	var hips := Transform3D(r0.basis * Basis.from_euler(euler), r0.origin + offset)
+	var keep := Vector3(euler.x, euler.y * (1.0 - CHEST_COUNTER), euler.z * (1.0 - SHOULDER_LEVEL))
+	var calm_offset := Vector3(offset.x * (1.0 - CHEST_COUNTER), offset.y, offset.z)
+	var calm := Transform3D(r0.basis * Basis.from_euler(keep), r0.origin + calm_offset)
+	var local := hips.affine_inverse() * calm * r1
 	var breath := sin(g.time * TAU * BREATH_HZ) * BREATH
-	var counter := -CHEST_COUNTER * _yaw.x
-	var level := -SHOULDER_LEVEL * _roll.x
-	g.rig.pose("spine1", Vector3(breath + 0.03 * _lean.x, counter, level * 0.65))
-	g.rig.pose("spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, counter, level * 0.35))
+	var b := r1.basis.inverse() * local.basis * Basis.from_euler(Vector3(breath, 0, 0))
+	rig.pose_basis("spine1", b, local.origin - r1.origin)
+	rig.pose("spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, 0, 0))
 
 
 ## A young body trips now and then while walking: the pelvis dips and lurches to one side, the
