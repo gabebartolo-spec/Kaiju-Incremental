@@ -100,6 +100,16 @@ func _run() -> void:
 			roared = true
 			kaiju.roar()
 		kaiju.animate(dt, move.length())
+		# Stills only draw near a wanted frame (software rendering on CI is slow); the walk runs.
+		var near := _find or _frames.any(func(f: int) -> bool: return f >= frame and f - frame <= 2)
+		RenderingServer.viewport_set_update_mode(
+			root.get_viewport_rid(),
+			(
+				RenderingServer.VIEWPORT_UPDATE_ALWAYS
+				if near
+				else RenderingServer.VIEWPORT_UPDATE_DISABLED
+			)
+		)
 		var right := kaiju.global_basis.x.normalized()
 		cam.position = at + right * DISTANCE * body_scale + Vector3(0, 4.0 * body_scale, 0)
 		cam.look_at(at + Vector3(0, 3.6 * body_scale, 0))
