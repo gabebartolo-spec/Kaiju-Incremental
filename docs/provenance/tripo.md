@@ -30,3 +30,5 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | reptilian adolescent texture | olive crocodile prompt (D-034) on f9cf6ba7 | Texture | f9cf6ba7 (texture) | 30 | yes | RIGGED (130 vox) |
 | 2026-10-16 | cephalopod adult | ff432a4f set: ff432a4f / 8bf2f668 / f303b247 / 666430b3 | inspected | 8bf2f668-965b-47b0-b663-fe76a22104d9 (octo_2) | (100, above) | yes | director PICK C: 10+ barnacled tentacles (hydra); A f303b247 clawed, B ff432a4f smooth; 666430b3 not exported |
 | 2026-10-16 | cephalopod baby | text prompt (soft oversized mantle, huge slit eyes, a dozen stubby uneven tentacles, budding barnacles) | Smart Mesh P2.0 x4 | (see Studio, 23:20) | 100 | yes | generating |
+| 2026-10-16 | cephalopod baby | 23:19 set: 6176590f / b2edc684 / ede8c6a2 / f1eb550f | picked | 6176590f-5ece-4108-b0a5-d6d42a91bfd4 (5,524 faces) | (100, above) | yes | director: "i love him" (big round eyes, short curled tentacles) |
+| 2026-10-16 | insectoid adult texture | dark chitin, rust underside, acid-green eyes on 9668b815 | Texture | 9668b815 (texture) | 30 | yes | generating |
