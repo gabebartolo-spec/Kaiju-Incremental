@@ -6,12 +6,12 @@ extends Node3D
 
 const PROP_VOXEL := 0.25
 const CAR_COLORS: Array[Color] = [
-	Color("b8b8b4"),
-	Color("2e3a48"),
-	Color("7a1f1f"),
-	Color("d8d4c8"),
-	Color("3d4a3a"),
-	Color("a08850")
+	Color("6b6e70"),
+	Color("2a3138"),
+	Color("5a2a26"),
+	Color("8a8a84"),
+	Color("3a4236"),
+	Color("6a5e48")
 ]
 
 var sim: RampageSim
@@ -38,8 +38,8 @@ func _ready() -> void:
 	var palette := {
 		"glass": Color("2b3640"),
 		"wheel": Color("1a1a1a"),
-		"ivory": Color("e8e0c8"),
-		"tail": Color("a02020"),
+		"ivory": Color("b8b2a0"),
+		"tail": Color("6a1a1a"),
 		"bark": Color("5a4030"),
 		"leaf": Color("55703f"),
 		"leaf_dark": Color("3f5832"),

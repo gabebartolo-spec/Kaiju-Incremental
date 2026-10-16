@@ -64,14 +64,19 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 	cam.current = true
 	await _frames(SETTLE)
 	var nearest := _nearest(sim, 4)
-	for n: int in nearest.size():  # two buildings smashed flat, two undermined and toppling
+	for n: int in nearest.size():  # two flattened, two with holes bitten into the near wall
 		var index := nearest[n]
 		var b := sim.buildings[index]
 		var cells: Array[Vector3i] = []
-		for y: int in b.height if n < 2 else 1:
-			for x: int in b.w if n < 2 else maxi(1, b.w - 1):
-				for z: int in b.d:
-					cells.append(Vector3i(x, y, z))
+		if n < 2:
+			for y: int in b.height:
+				for x: int in b.w:
+					for z: int in b.d:
+						cells.append(Vector3i(x, y, z))
+		else:
+			for y: int in range(1, mini(b.height - 1, 6)):
+				for x: int in range(maxi(0, (b.w >> 1) - 1), mini(b.w, (b.w >> 1) + 2)):
+					cells.append(Vector3i(x, y, b.d - 1))
 		sim.damage_chunks(index, cells, 9999.0)
 	_route(sim, city, at)
 	for t: int in 2:  # tanks closing in, one firing

@@ -51,7 +51,7 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 func _add_rim_light() -> void:
 	var rim := DirectionalLight3D.new()
 	rim.light_color = Color("9fc4ff")
-	rim.light_energy = 1.6
+	rim.light_energy = 2.4
 	rim.light_cull_mask = RIM_LAYER
 	rim.rotation_degrees = Vector3(-35, 160, 0)
 	add_child(rim)

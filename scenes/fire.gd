@@ -5,6 +5,7 @@ extends Node3D
 ## Presentation only.
 
 const SMOKE_SHADER := preload("res://scenes/smoke.gdshader")
+const EMBER_SHADER := preload("res://scenes/ember.gdshader")
 const FLAME_COLORS: Array[Color] = [
 	Color("fff1a0"), Color("ffb040"), Color("e85a1c"), Color("5a2a18")
 ]
@@ -18,10 +19,10 @@ var _seed: float
 
 func _init(size: float, seed_value: float) -> void:
 	_seed = seed_value
-	_base_energy = 2.0 + size
+	_base_energy = 3.5 + size * 1.5
 	_light = OmniLight3D.new()
 	_light.light_color = Color("ff9a4a")
-	_light.omni_range = 4.0 + size * 2.0
+	_light.omni_range = 6.0 + size * 3.0
 	_light.light_energy = _base_energy
 	_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 	add_child(_light)
@@ -40,38 +41,40 @@ func _flames(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.6, 12.0, Vector3(0, 2.5, 0), Vector2(0.8, 2.0))
 	_scale(mat, Vector2(0.6, 1.4), Vector2(1.0, 0.1))
 	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array([0.0, 0.3, 0.65, 1.0]))
-	return _system(mat, _cube(0.25, true), roundi(40 * maxf(1.0, size)), 0.9)
+	return _system(mat, _cube(0.3, true), roundi(90 * maxf(1.0, size)), 1.1)
 
 
 func _embers(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.8, 35.0, WIND * 0.6 + Vector3(0, 1.2, 0), Vector2(1.5, 4.0))
 	_scale(mat, Vector2(0.4, 1.0), Vector2(1.0, 0.3))
 	_ramp(mat, PackedColorArray([Color("ffe9a0"), Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
-	return _system(mat, _cube(0.08, true), roundi(20 * maxf(1.0, size)), 2.8)
+	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size)), 3.2)
 
 
+## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
 func _smoke(size: float) -> GPUParticles3D:
-	var mat := _base(size * 0.7, 18.0, WIND + Vector3(0, 0.5, 0), Vector2(1.2, 2.2))
-	_scale(mat, Vector2(1.6, 3.2), Vector2(0.5, 2.2))
+	var mat := _base(size * 0.5, 8.0, WIND * 0.6 + Vector3(0, 1.4, 0), Vector2(1.8, 3.0))
+	_scale(mat, Vector2(1.8, 3.4), Vector2(0.6, 2.6))
 	_ramp(
 		mat,
 		PackedColorArray(
 			[
-				Color(0.12, 0.11, 0.11, 0.0),
-				Color(0.16, 0.15, 0.15, 0.85),
-				Color(0.32, 0.32, 0.34, 0.0)
+				Color(0.05, 0.05, 0.05, 0.0),
+				Color(0.07, 0.07, 0.075, 0.97),
+				Color(0.13, 0.13, 0.14, 0.8),
+				Color(0.22, 0.23, 0.25, 0.0),
 			]
 		),
-		PackedFloat32Array([0.0, 0.12, 1.0])
+		PackedFloat32Array([0.0, 0.08, 0.6, 1.0])
 	)
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE * (1.4 + size * 0.5)
 	var draw := ShaderMaterial.new()
 	draw.shader = SMOKE_SHADER
 	quad.material = draw
-	var p := _system(mat, quad, roundi(26 * maxf(1.0, size)), 7.0)
+	var p := _system(mat, quad, roundi(60 * maxf(1.0, size)), 9.0)
 	p.position.y = 0.8
-	p.visibility_aabb = AABB(Vector3(-20, -2, -20), Vector3(40, 40, 40))
+	p.visibility_aabb = AABB(Vector3(-20, -2, -20), Vector3(40, 50, 40))
 	return p
 
 
@@ -124,9 +127,12 @@ func _system(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float)
 func _cube(size: float, glowing: bool) -> BoxMesh:
 	var cube := BoxMesh.new()
 	cube.size = Vector3.ONE * size
+	if glowing:
+		var hot := ShaderMaterial.new()
+		hot.shader = EMBER_SHADER
+		cube.material = hot
+		return cube
 	var draw := StandardMaterial3D.new()
 	draw.vertex_color_use_as_albedo = true
-	if glowing:
-		draw.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	cube.material = draw
 	return cube

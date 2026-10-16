@@ -16,7 +16,7 @@ var _views: Array[BuildingView] = []
 var _falling: Dictionary = {}
 var _decor: CityDecor
 var _fires: Array[Fire] = []
-var _debris: Array[RigidBody3D] = []
+var _debris: DebrisField
 
 var _with_decor := true
 
@@ -37,6 +37,8 @@ func _ready() -> void:
 		_views.append(view)
 	fx = Fx.new()
 	add_child(fx)
+	_debris = DebrisField.new(_rng, MAX_DEBRIS)
+	add_child(_debris)
 	_prewarm_fire()
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
@@ -51,9 +53,6 @@ func crush(at: Vector3, radius: float) -> void:
 
 func _process(delta: float) -> void:
 	_animate_falls(delta)
-	while _debris.size() > MAX_DEBRIS:
-		var old: RigidBody3D = _debris.pop_front()
-		old.queue_free()
 
 
 func _build_environment() -> void:
@@ -164,6 +163,8 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	for c: Vector3i in cells:
 		mid += b.chunk_world(c)
 	fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
+	if _rng.randf() < 0.18:  # broken floors sometimes catch fire
+		fire(mid / maxi(1, cells.size()), 0.35)
 	_ruin_if_gone(index)
 
 
@@ -250,44 +251,12 @@ func _ruin_if_gone(index: int) -> void:
 	var b := sim.buildings[index]
 	if b.frame.alive_count == 0 and not _views[index].has_meta("ruined"):
 		_views[index].set_meta("ruined", true)
-		fire(Vector3(b.x, 0.4, b.z), clampf(b.w * b.d / 9.0, 0.6, 2.5))
-		slab(Vector3(b.w, 0.5, b.d), Vector3(b.x, 0.25, b.z), _base_color(b).darkened(0.35))
+		fire(Vector3(b.x, 0.6, b.z), clampf(b.w * b.d / 9.0, 0.6, 2.5))
+		add_child(Ruin.build(_views[index].voxels, _rng))
 
 
 func debris(pos: Vector3, color: Color, away: Vector3) -> void:
-	var body := RigidBody3D.new()
-	var shape := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3.ONE * BuildingVoxels.VOXEL
-	shape.shape = box_shape
-	body.add_child(shape)
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * BuildingVoxels.VOXEL * 0.95
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(color, 1.0).lightened(Look.value("debris_lift"))
-	mesh.material = mat
-	mi.mesh = mesh
-	body.add_child(mi)
-	body.position = pos
-	add_child(body)
-	var spread := Vector3(
-		_rng.randf_range(-1, 1), _rng.randf_range(0.5, 1.5), _rng.randf_range(-1, 1)
-	)
-	body.apply_central_impulse((away * 4.0 + spread * 4.0) * body.mass)
-	body.angular_velocity = Vector3(
-		_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6)
-	)
-	_debris.append(body)
-	var tween := body.create_tween()
-	tween.tween_interval(2.5)
-	tween.tween_property(body, "scale", Vector3.ONE * 0.01, 0.6)
-	tween.tween_callback(func() -> void: _forget_debris(body))
-
-
-func _forget_debris(body: RigidBody3D) -> void:
-	_debris.erase(body)
-	body.queue_free()
+	_debris.spawn(pos, color, away)
 
 
 ## A fire that keeps burning (ruins, wrecks); the oldest goes out past the cap.
