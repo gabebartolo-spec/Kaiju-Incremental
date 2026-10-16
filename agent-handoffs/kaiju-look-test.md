@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 02:45
-## State: running a check (12 CI capture runs for the PR evidence; full test suite)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 03:50
+## State: running a check (PR #15 open, Auto-fix on; 12 CI capture runs for its evidence)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -12,9 +12,10 @@ local_9fac90d2-fae7-4940-b4ac-144a87f28e6e. The look test (rounds 1-2) is done: 
 claude/kaiju-look-test-a763a6 (0d00544), notes in side-session-notes/<lead>/kaiju-look-test/.
 
 ## Branch and commit
-claude/kaiju-voxel-skin (pushed), cut from origin/claude/kaiju-motion-species (PR #11, stacked on
-#10) + origin/claude/look-options merged in. Head 877ed7e. No PR yet. This worktree is
-.claude/worktrees/kaiju-look-test-a763a6 (switched branch).
+claude/kaiju-voxel-skin, PR #15 into claude/look-options (open, Auto-fix on). Synced with #11's
+latest (kaiju-motion-species, which holds #10) and look-options (#10 merged there as aaa60f7):
+merge #11 first, then look-options, or #10's squash conflicts. Head 4efc470. All 9 skins rebaked
+after the sync (bone counts changed). This worktree is .claude/worktrees/kaiju-look-test-a763a6.
 
 ## What exists
 - tools/kaiju_skin/bake_all.sh (GODOT=... bash ...): dump_rest.gd (Godot headless: every rig's rest
@@ -27,7 +28,8 @@ claude/kaiju-voxel-skin (pushed), cut from origin/claude/kaiju-motion-species (P
   mantle). Rig voxel MMIs -> layers 0 (gait toggles still run). Mouth inside/seam from the jaw pose.
 - scenes/voxel_skin.gdshader (rigid cubes: blended centre, main bone's turn, gap_fill grow),
   scenes/voxel_skin_fill.gdshader (linear skin, derivative normals).
-- KaijuModel: static show_rigid_voxels ("--kaiju-rigid" user arg) = A; else VoxelSkin.load_for + sync.
+- KaijuModel: 4 lines (VoxelSkin.attach / sync_if). Debug flag VoxelSkin.show_rigid_voxels
+  ("--kaiju-rigid" user arg) = A. kaiju_model.gd sits at the 400-line gdlint cap.
 - tests/run_smoke_tests.gd: +_check_skins_fresh, +_check_voxel_skin (default skin for all three,
   no rig voxels drawn, finite pose, mouth shows on held jaw, flag = no skin). Floor smoke 13 -> 19.
   The stale check was shown failing (appended a byte to insectoid_baby.rig.json).
@@ -36,19 +38,19 @@ claude/kaiju-voxel-skin (pushed), cut from origin/claude/kaiju-motion-species (P
   .gitattributes: *.kvox, *.vskin binary.
 
 ## Evidence so far
-- smoke 19/19 locally; gdlint/gdformat clean on changed files.
-- Local side stills (before the director's fullscreen game blocked windowed Godot): reptile arms
-  bent and lowered, no shoulder sheet; mantis fine; octopus mantle blotches are in the .kvox (same in
-  A's old clip).
-- Most-bent joints: reptile leg_r1@572 leg_r0@574 (+jaw@677); mantis arm_r1@216 head0@730
-  arm_r2@632; octopus tentacle5_0@418 tentacle8_5@658 tentacle5_4@701.
+- Local, head 63b2234: smoke 19, sim 39, powers 24, tentacles 17, city 5, flow 26 all pass.
+  Stale-skin check shown failing first. gdlint/gdformat clean repo-wide.
+- Joints (capture_skin --find, new rigs): reptile leg_r1@572 leg_r0@574 jaw@676; mantis arm_r1@131
+  arm_r2@403 leg_r1@726; octopus tentacle6_2@635 tentacle1_0@656 tentacle11_5@869.
+- Earlier (old head) CI stills: mantis A sheds floating shards at arm_r2, C stays whole.
 
 ## Running jobs
-CI capture runs (scratch ci_runs.txt): reptilian rigid clip 38923658204 / stills 38923677785, skin
-clip 38923695073 / stills 38923713484; insectoid rigid 38923732976 / 38923752364, skin 38923771628 /
-38923789957; cephalopod rigid 38923807867 / 38923825633, skin 38923842735 / 38923860421.
-Download: gh run download <id> -D <dir>. Then compose before|after per species + crops, open PR.
-override.cfg is in the worktree root (untracked): delete before ending.
+CI captures on 63b2234 (ids in scratch ci_runs2.txt): reptilian rigid clip 38934348115 / stills
+38934357962, skin 38934366730 / 38934377957; insectoid rigid 38934388712 / 38934398600, skin
+38934408909 / 38934418490; cephalopod rigid 38934427444 / 38934435081, skin 38934447283 /
+38934457743. Rigid clips are slowest (~1 h, lavapipe). Then: gh run download each into
+scratch dl/<sp>/<v>_<clip|stills>/, run scratch py/compose_pr.py, post clips/crops on PR #15
+(upload to the notes folder + a PR comment), fill the Evidence section, send the lead.
 
 ## Open decisions / touch points
 Messages sent to kaiju-motion and species-motion (02:00): no edits to their files; they or I rerun
@@ -58,5 +60,6 @@ replies yet.
 ## Rules learnt the hard way
 - Never wrap windowed Godot in a script: the focus guard must see the command. Use CI captures.
 - gh workflow run prints the run URL; a "newest run after" poll can pick another session's dispatch.
+- A fresh worktree has LFS fonts as pointers: flow then floods font errors and times out. git lfs pull.
 - APPDATA override for Godot hides Python user site-packages (PIL): set per command.
 - Godot front faces are clockwise; Tripo textures are packed JPEGs; Blender heat weights fail on Tripo.
