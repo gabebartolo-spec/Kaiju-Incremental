@@ -32,10 +32,14 @@ green). The board has NOT passed my QA yet; the PR stays on HOLD with the lead.
 Merged look-options (8cf4a16: no project-wide fullscreen; D-030 SFX decided). Recapture
 powers4 (scratchpad) passed for leap and breath impact, but showed: body overlay far too strong
 (kaiju turned solid pink/mint), lash streaks too faint, and the breath voxels washed out to peach.
-powers6 (new city): breath beam + scorch, cracks, lash, leap pass. Regen lit whole bone parts (MODEL_MATRIX skips multimesh instance transforms) -> rim.gdshader now takes world y per fragment. Capture powers7 running (bcsxhn54h).
-1. Once the GPU is free (watcher biuo13l46; other agents' Godot PIDs 21188/320188): run
-   scratchpad dbg_breath.gd (kaiju at (4.5,30) facing +X) to confirm which way the scorch wedge
-   points, then capture_powers.gd -> powers5, board.py (scratchpad) -> check with 2x crops.
+powers6/7 (new city): breath beam + scorch, cracks, lash, leap pass. Fixed since: regen rings use
+per-fragment world y (multimesh), additive shaders fog_disabled (fog drew pale quads round flares
+and the beam impact), bigger deflect flash (29cc36c). I/J in gameplay shots sit in fire smoke, so
+H/I/J on the board come from scratchpad dbg_cues.gd (clear street, same camera).
+Capture powers8 + cue shots running (buaor8773); then board.py -> QA -> docs/captures -> push.
+Findings for the lead's learnings (not mine to record): Godot additive unshaded quads need
+fog_disabled; MODEL_MATRIX in a MultiMesh shader excludes the instance transform.
+1. Wedge orientation verified (dbg_breath.gd). Review the powers8 board with 2x crops.
 2. Copy the board into docs/captures/2026-10-16-powers/, convert the clip to mp4, push, and
    message the lead.
 3. Then the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0; synthesize hums, beams,
