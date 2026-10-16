@@ -13,7 +13,7 @@ const TWITCH_PARTS := 3
 ## At rest, a big move (a whole scythe raised, a jerk-turn of the body, a head snap) comes this
 ## often (s), so the body never stands dead still for long; how far a scythe rises (rad) and the
 ## body jerk-turns (rad).
-const BIG_EVERY := Vector2(0.25, 0.55)
+const BIG_EVERY := Vector2(0.18, 0.4)
 const RAISE := 0.55
 const JERK_TURN := 0.35
 ## At rest a leg taps (lifts and replants a little shifted) this often (s), on its own timer.
