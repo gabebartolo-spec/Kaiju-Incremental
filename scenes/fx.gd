@@ -9,6 +9,7 @@ const SMOKE := preload("res://scenes/smoke.gdshader")
 
 var _dust_mat: ParticleProcessMaterial
 var _dust_mesh: Mesh
+var _puff_mesh: Mesh
 var _spark_mat: ParticleProcessMaterial
 var _spark_mesh: BoxMesh
 var _breath_mesh: BoxMesh
@@ -28,6 +29,7 @@ func _ready() -> void:
 		}
 	)
 	_dust_mesh = _puff(2.2)
+	_puff_mesh = _puff(0.5)
 	_spark_mat = _particle_mat(
 		{
 			"spread": 60.0,
@@ -59,6 +61,16 @@ func dust(at: Vector3, size: float) -> void:
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
+
+
+## A small puff of dust: a person crushed underfoot.
+func puff(at: Vector3) -> void:
+	var p := _burst(_dust_mat, _puff_mesh, 6, 1.2)
+	p.position = at
+	var mat: ParticleProcessMaterial = p.process_material
+	mat.emission_box_extents = Vector3(0.2, 0.1, 0.2)
+	mat.initial_velocity_min = 0.4
+	mat.initial_velocity_max = 1.0
 
 
 ## Dust along a line: where a toppled tower hits the street.

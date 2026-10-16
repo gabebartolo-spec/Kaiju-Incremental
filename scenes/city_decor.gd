@@ -102,7 +102,7 @@ func _streets() -> void:
 				var at := Vector3(t, 0, s + lane) if along_x else Vector3(s + lane, 0, t)
 				var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
 				if absf(fposmod(t + _spacing * 0.5 + _half, _spacing) - _spacing * 0.5) > 2.2:
-					_props.add(at, func(v: VoxelBuilder) -> void: _car(v, color, along_x))
+					_props.add(at, func(v: VoxelBuilder) -> void: car(v, color, along_x))
 				t += _rng.randf_range(3.0, 7.0)
 		for j: int in _grid + 1:  # a streetlight at one corner of every crossing
 			var base := Vector3(s + 1.9, 0, _street(j) + 1.9)
@@ -116,7 +116,8 @@ func _streets() -> void:
 			_lamps.append(lamp)
 
 
-func _car(v: VoxelBuilder, color: String, along_x: bool) -> void:
+## A car (about 1.5 long at PROP_VOXEL), nose to -Z (to -X when along_x). Traffic reuses it.
+static func car(v: VoxelBuilder, color: String, along_x: bool) -> void:
 	var local := VoxelBuilder.new()
 	local.box(Vector3i(-1, 0, -3), Vector3i(1, 1, 2), color)
 	local.box(Vector3i(-1, 2, -1), Vector3i(1, 2, 1), "glass")
