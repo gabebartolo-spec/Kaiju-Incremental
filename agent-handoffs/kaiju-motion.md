@@ -1,55 +1,54 @@
-# Kaiju-motion handoff, 2026-10-16 22:15
-## State: running a check (species PR suites); reptile PR #10 green, awaiting lead review
+# Kaiju-motion handoff, 2026-10-16 23:05
+## State: running a check (species suites + city captures); reptile round 2 awaiting lead critic
 
 ## Task
-D-031: rebuild kaiju locomotion per species (reptile = JP T-rex, insectoid = skittering mantis,
-cephalopod = sliding/gripping octopus). Presentation only; the gait reads the node's motion.
-Brief from the lead (local_9fac90d2-...); evidence goes to the lead for a motion-critic review.
+D-031: rebuild kaiju locomotion per species. Reptile = Godzilla-to-T-rex lean (20-30 deg from
+vertical, director correction) with T-rex grace; insectoid = skittering mantis; cephalopod =
+sliding/gripping octopus. Presentation only. Evidence -> lead -> motion critic -> director.
+D-032: looks first; rig cost no longer a limit but recorded in PRs.
 
 ## Branch and commit
-- claude/kaiju-motion -> PR #10 into claude/look-options (reptile + gait system), CI 8/8 green.
-- claude/kaiju-motion-species (local, on top of #10): hexapod + radial gaits, mantis rig, octopus
-  stand-in, rig_voxel.py hexapod/radial skeletons, rampage grip hook. PR into look-options
-  after #10 merges (or stacked on #10's branch).
+- claude/kaiju-motion -> PR #10 into claude/look-options. Round 2 at 0bd36d1 (+ d948f25,
+  an `-s ours` merge of the pre-rebase head: force-push is denied here, never retry it).
+- claude/kaiju-motion-species (local, on top of #10): hexapod + radial gaits, mantis rigs
+  baby/adolescent/adult (assets/kaiju/insectoid_*), octopus stand-in, rig_voxel.py
+  hexapod/radial skeletons, rampage grip hook, foot_planted emits, smoke 13. Not pushed yet.
 
 ## Unfinished changes
-- species branch: commit after suites pass; add insect/octopus drift checks to smoke; PR.
-- Insectoid baby/adolescent use the adult rig until the lead's nymph sculpt exists
-  (rig it: blender -b --python tools/blender/rig_voxel.py -- <glb> assets/kaiju/insectoid_baby insectoid 110).
-- Octopus sculpt: when it exists, rig with species "cephalopod" (radial skeleton) and drop
-  CephalopodStandIn from KaijuModel.
+- Species branch: commit (assets + gaits + smoke), push as claude/kaiju-motion-species, PR into
+  look-options after #10 (body drafted in scratchpad pr_species.md; update ids/clip names).
+- Send lead: city_*.mp4 (real rampage among buildings) + bug/octo clips for the critic.
+- Octopus sculpt (lead generating ff432a4f): rig with species "cephalopod" (radial skeleton),
+  then drop CephalopodStandIn in KaijuModel.
 
 ## Evidence so far
-- tools/capture/capture_motion.gd: scripted walk/curve/sharp turn/stand+stomps/roar/reversal;
-  prints foot drift + rig ms. Reptile adult/baby drift 0.0000, insect 0.0000, octopus tips n/a.
-- Rig cost 0.06-0.30 ms avg per frame (budget 0.5).
-- Clips (60 fps mp4) in side-session-notes/local_9fac90d2.../kaiju-motion/.
-- Smoke check "the reptilian's planted feet hold" (seen failing with reach-stepping disabled).
+- tools/capture/capture_motion.gd (--cam=game|side|fixed): slide 0.0 cm for reptile adult/baby,
+  insect baby/adolescent/adult; rig 0.08-0.3 ms avg.
+- Reptile torso 24 deg standing / 27 walking from vertical; tail -3 deg (measured in engine).
+- Clips: side-session-notes/local_9fac90d2.../kaiju-motion/ (round 1) and /round2/.
+- Mantis bone-ownership plots: scratchpad rig/bones_all.png.
 
 ## Attempts (fix-loop record)
-- Foot slide 6-8 units on reversals -> out-of-reach feet step/hop, pelvis sink capped (was
-  accumulating every frame), stance excursion capped by speed -> 0.
-- Leg gaps on bent voxel limbs -> RigJoints overlap bands; less crouch/tilt.
-- Upright Godzilla posture -> lean 0.3-0.48 rad, tail lowered and straightened.
-- Insect front legs landing past reach -> home pulled in 15%, landing clamped to 90% reach.
-- Octopus arms coiled under the body -> per-chain contraction (min 0.7), all arms aim forward.
+- Foot slide on reversals -> step/hop rules + eased pelvis sink -> 0.
+- Z-fight stripes on legs -> joint overlap voxels moved to an inset filler layer.
+- Tail "banana": lift sign was inverted (negative raised it); now soft chain + delayed sweep.
+- Mantis: knees/hips by arc fraction; limb roots penalised; antennae as islands handled;
+  head-zone override so the head turns as one piece.
 
 ## Open decisions
-- Licensing register has no row for any Tripo kaiju sculpt (reptiles already in assets/, mantis
-  added on the species branch). Lead to record/clear; I marked nothing CLEARED.
-- Roar wind-up (0.3 s head back) starts at the ability event; breath VFX could start after it.
+- Licensing register has no rows for Tripo kaiju sculpts (lead to record; nothing marked by me).
+- Roar wind-up starts at the ability event (breath VFX starts during it).
 
 ## Running jobs
-- Local suites on the species branch (background); no override.cfg left after captures (delete
-  override.cfg in this worktree when done).
+- Background: species suites (/tmp/kgtests3.log), city captures (scratchpad clips/city_*.avi).
+- Delete override.cfg in this worktree when captures finish.
 
 ## Findings for the lead
-- capture_motion's printed foot drift caught every slide bug before any clip was watched
-  (evidence: drift 8.05 -> 0.0000 across 4 fixes, PR #10).
-- Measure the persistent-state mutation trap: modifying a spring's state inside a clamp made the
-  pelvis sink every frame (hip 5.1 -> 1.7); clamps belong in the pose, not the state.
+- capture_motion's printed foot drift caught every slide bug before any clip was watched.
+- Clamps belong in the pose, not in spring state (pelvis sank every frame, hip 5.1 -> 1.7).
+- Measure posture in engine (pelvis->neck angle) before arguing about it from stills.
 
 ## Rules learnt the hard way (under 10 lines)
-- Never edit .gd files while a local suite runs: it compiles scripts lazily and fails spuriously.
-- New class_name files need a headless --import before a --script run sees them.
-- gdlint caps files at 400 lines; split helpers (BipedHead, BipedSwing, RigJoints).
+- Never edit .gd while a local suite or capture runs; switch branches -> --import first.
+- gdlint: 400 lines/file, <=4 args/function, signals before consts.
+- Kill only Godot PIDs you started (check CreationDate/CommandLine).

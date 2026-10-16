@@ -236,6 +236,12 @@ def hexapod_skeleton(v, tris, lo, hi):
     waist[0] = 0.0
     # Head: the top of the midline below the antennae; neck where it narrows below it.
     upper_core = v[(np.abs(v[:, 0]) < W * 0.12) & (v[:, 2] > z(0.6))]
+    # The head's top is the highest slab of the midline with real bulk (antennae are thin).
+    bins = np.arange(z(0.6), hi[2] + H * 0.02, H * 0.02)
+    counts, _ = np.histogram(upper_core[:, 2], bins)
+    solid = np.where(counts >= counts.max() * 0.15)[0]
+    top_z = bins[solid[-1] + 1] if len(solid) else hi[2]
+    upper_core = upper_core[upper_core[:, 2] <= top_z]
     head_top = upper_core[np.argmax(upper_core[:, 2])] if len(upper_core) else hi
     head_pts = upper_core[upper_core[:, 2] > head_top[2] - H * 0.1]
     head_c = head_pts.mean(0)
@@ -244,6 +250,7 @@ def hexapod_skeleton(v, tris, lo, hi):
     for p in (head_c, neck):
         p[0] = 0.0
     mid = (waist + neck) / 2
+    HEAD_ZONE.update({"neck_z": neck[2], "centre": head_c, "radius": H * 0.14})
     chain("thorax", [waist, mid, neck], None)
     bones.append({"name": "head0", "parent": "thorax1", "head": neck, "tail": mouth, "physics": False})
     # Abdomen: the furthest midline point behind and below the waist.
@@ -269,11 +276,18 @@ def hexapod_skeleton(v, tris, lo, hi):
         if len(top) == 0:
             continue
         a_tip = top[np.argmax(v[top, 2])]
-        path = path_to_core(v, prev, a_tip)
-        near = np.where(np.linalg.norm(path - head_c, axis=1) < H * 0.06)[0]
-        base_i = int(near[0]) if len(near) else len(path) // 2
-        ant = path[: base_i + 1]
-        chain(f"antenna_{side}", [at_arc(ant, f) for f in (1.0, 0.66, 0.33, 0.0)], "head0", physics=True)
+        if np.isfinite(dist[a_tip]):
+            path = path_to_core(v, prev, a_tip)
+            near = np.where(np.linalg.norm(path - head_c, axis=1) < H * 0.06)[0]
+            base_i = int(near[0]) if len(near) else len(path) // 2
+            ant = path[: base_i + 1]
+            joints = [at_arc(ant, f) for f in (1.0, 0.66, 0.33, 0.0)]
+        else:
+            # A separate mesh island: from its point nearest the head straight out to its tip.
+            island = np.where(~np.isfinite(dist) & (np.sign(v[:, 0]) == sx))[0]
+            base = v[island[np.argmin(np.linalg.norm(v[island] - head_c, axis=1))]]
+            joints = [base + (v[a_tip] - base) * f for f in (0.0, 0.33, 0.66, 1.0)]
+        chain(f"antenna_{side}", joints, "head0", physics=True)
     for b in bones:
         b["head"], b["tail"] = b["head"].tolist(), b["tail"].tolist()
     return bones
@@ -314,8 +328,12 @@ def radial_skeleton(v, tris, lo, hi, arms=8, segments=6):
     return bones
 
 
+# Where the hexapod's head is (set by hexapod_skeleton): voxels above the neck near the head's
+# centre belong to the head whatever bone is nearest, so the head turns as one piece.
+HEAD_ZONE = {}
+
 # Hexapod limb roots sit against the body; their distance is stretched so body voxels stay on the body.
-ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4}
+ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0}
 
 
 def nearest_bone(points, bones, side_of, penalty=None):
@@ -386,6 +404,12 @@ def main():
     centres_bl = (keys + 0.5) / scale + origin  # back to Blender space for bone tests
     side = lambda name: 1 if "_l" in name else (-1 if "_r" in name else 0)
     owner = nearest_bone(centres_bl, bones, side, ROOT_PENALTY if body_plan == "hexapod" else None)
+    if HEAD_ZONE:
+        names = [b["name"] for b in bones]
+        in_head = (centres_bl[:, 2] > HEAD_ZONE["neck_z"]) & (
+            np.linalg.norm(centres_bl - HEAD_ZONE["centre"], axis=1) < HEAD_ZONE["radius"])
+        keep = np.array([names[o].startswith("arm") for o in owner])
+        owner[in_head & ~keep] = names.index("head0")
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
     gk[:, 0] -= 1  # keep integer cells after the x flip

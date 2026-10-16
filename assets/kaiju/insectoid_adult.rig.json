@@ -1,0 +1,456 @@
+{
+ "height": 160,
+ "type": "hexapod",
+ "bones": [
+  {
+   "name": "thorax0",
+   "parent": null,
+   "head": [
+    -0.0,
+    49.58,
+    9.34
+   ],
+   "tail": [
+    -0.0,
+    91.57,
+    -13.7
+   ],
+   "physics": false
+  },
+  {
+   "name": "thorax1",
+   "parent": "thorax0",
+   "head": [
+    -0.0,
+    91.57,
+    -13.7
+   ],
+   "tail": [
+    -0.0,
+    133.55,
+    -36.75
+   ],
+   "physics": false
+  },
+  {
+   "name": "head0",
+   "parent": "thorax1",
+   "head": [
+    -0.0,
+    133.55,
+    -36.75
+   ],
+   "tail": [
+    16.04,
+    155.66,
+    -48.74
+   ],
+   "physics": false
+  },
+  {
+   "name": "abdomen0",
+   "parent": "thorax0",
+   "head": [
+    -0.0,
+    49.58,
+    9.34
+   ],
+   "tail": [
+    2.98,
+    37.66,
+    33.73
+   ],
+   "physics": false
+  },
+  {
+   "name": "abdomen1",
+   "parent": "abdomen0",
+   "head": [
+    2.98,
+    37.66,
+    33.73
+   ],
+   "tail": [
+    5.95,
+    25.75,
+    58.13
+   ],
+   "physics": false
+  },
+  {
+   "name": "abdomen2",
+   "parent": "abdomen1",
+   "head": [
+    5.95,
+    25.75,
+    58.13
+   ],
+   "tail": [
+    8.51,
+    15.53,
+    79.03
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l0",
+   "parent": "thorax0",
+   "head": [
+    -14.56,
+    52.82,
+    -20.47
+   ],
+   "tail": [
+    -25.13,
+    40.86,
+    -40.35
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l1",
+   "parent": "leg_l0",
+   "head": [
+    -25.13,
+    40.86,
+    -40.35
+   ],
+   "tail": [
+    -38.64,
+    4.97,
+    -64.66
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l2",
+   "parent": "leg_l1",
+   "head": [
+    -38.64,
+    4.97,
+    -64.66
+   ],
+   "tail": [
+    -39.89,
+    1.24,
+    -78.26
+   ],
+   "physics": false
+  },
+  {
+   "name": "hind_l0",
+   "parent": "thorax0",
+   "head": [
+    -18.06,
+    46.22,
+    34.37
+   ],
+   "tail": [
+    -44.31,
+    43.26,
+    43.54
+   ],
+   "physics": false
+  },
+  {
+   "name": "hind_l1",
+   "parent": "hind_l0",
+   "head": [
+    -44.31,
+    43.26,
+    43.54
+   ],
+   "tail": [
+    -62.18,
+    7.61,
+    54.64
+   ],
+   "physics": false
+  },
+  {
+   "name": "hind_l2",
+   "parent": "hind_l1",
+   "head": [
+    -62.18,
+    7.61,
+    54.64
+   ],
+   "tail": [
+    -72.35,
+    3.34,
+    44.55
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r0",
+   "parent": "thorax0",
+   "head": [
+    15.73,
+    51.89,
+    -9.83
+   ],
+   "tail": [
+    30.25,
+    42.1,
+    -36.78
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r1",
+   "parent": "leg_r0",
+   "head": [
+    30.25,
+    42.1,
+    -36.78
+   ],
+   "tail": [
+    43.23,
+    6.14,
+    -61.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r2",
+   "parent": "leg_r1",
+   "head": [
+    43.23,
+    6.14,
+    -61.32
+   ],
+   "tail": [
+    51.07,
+    0.47,
+    -72.28
+   ],
+   "physics": false
+  },
+  {
+   "name": "hind_r0",
+   "parent": "thorax0",
+   "head": [
+    19.69,
+    47.38,
+    33.28
+   ],
+   "tail": [
+    45.71,
+    46.06,
+    42.22
+   ],
+   "physics": false
+  },
+  {
+   "name": "hind_r1",
+   "parent": "hind_r0",
+   "head": [
+    45.71,
+    46.06,
+    42.22
+   ],
+   "tail": [
+    65.98,
+    8.0,
+    52.86
+   ],
+   "physics": false
+  },
+  {
+   "name": "hind_r2",
+   "parent": "hind_r1",
+   "head": [
+    65.98,
+    8.0,
+    52.86
+   ],
+   "tail": [
+    76.39,
+    3.57,
+    42.99
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l0",
+   "parent": "thorax1",
+   "head": [
+    -10.91,
+    100.12,
+    -7.26
+   ],
+   "tail": [
+    -58.84,
+    117.68,
+    -37.79
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l1",
+   "parent": "arm_l0",
+   "head": [
+    -58.84,
+    117.68,
+    -37.79
+   ],
+   "tail": [
+    -72.2,
+    110.92,
+    -47.81
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l2",
+   "parent": "arm_l1",
+   "head": [
+    -72.2,
+    110.92,
+    -47.81
+   ],
+   "tail": [
+    -72.74,
+    95.62,
+    -54.02
+   ],
+   "physics": false
+  },
+  {
+   "name": "antenna_l0",
+   "parent": "head0",
+   "head": [
+    -8.19,
+    145.41,
+    -42.53
+   ],
+   "tail": [
+    -14.33,
+    151.78,
+    -45.71
+   ],
+   "physics": true
+  },
+  {
+   "name": "antenna_l1",
+   "parent": "antenna_l0",
+   "head": [
+    -14.33,
+    151.78,
+    -45.71
+   ],
+   "tail": [
+    -21.94,
+    155.89,
+    -49.91
+   ],
+   "physics": true
+  },
+  {
+   "name": "antenna_l2",
+   "parent": "antenna_l1",
+   "head": [
+    -21.94,
+    155.89,
+    -49.91
+   ],
+   "tail": [
+    -28.78,
+    157.91,
+    -56.43
+   ],
+   "physics": true
+  },
+  {
+   "name": "arm_r0",
+   "parent": "thorax1",
+   "head": [
+    11.15,
+    100.51,
+    -12.62
+   ],
+   "tail": [
+    56.59,
+    116.59,
+    -47.5
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r1",
+   "parent": "arm_r0",
+   "head": [
+    56.59,
+    116.59,
+    -47.5
+   ],
+   "tail": [
+    68.63,
+    111.46,
+    -57.13
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r2",
+   "parent": "arm_r1",
+   "head": [
+    68.63,
+    111.46,
+    -57.13
+   ],
+   "tail": [
+    72.2,
+    95.77,
+    -60.86
+   ],
+   "physics": false
+  },
+  {
+   "name": "antenna_r0",
+   "parent": "head0",
+   "head": [
+    8.12,
+    149.91,
+    -44.39
+   ],
+   "tail": [
+    12.78,
+    154.03,
+    -46.95
+   ],
+   "physics": true
+  },
+  {
+   "name": "antenna_r1",
+   "parent": "antenna_r0",
+   "head": [
+    12.78,
+    154.03,
+    -46.95
+   ],
+   "tail": [
+    18.37,
+    157.21,
+    -50.53
+   ],
+   "physics": true
+  },
+  {
+   "name": "antenna_r2",
+   "parent": "antenna_r1",
+   "head": [
+    18.37,
+    157.21,
+    -50.53
+   ],
+   "tail": [
+    25.28,
+    159.0,
+    -56.35
+   ],
+   "physics": true
+  }
+ ]
+}

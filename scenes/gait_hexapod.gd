@@ -38,6 +38,8 @@ const PULSE := 0.05
 const ROCK_HZ := 1.3
 const ROCK := 0.05
 const REACH_STEP := 0.96
+## An insect's footfall is light (KaijuRig.foot_planted strength at a standstill; doubles at speed).
+const STEP_WEIGHT := 0.18
 ## Feet stand this share of the way out from the hips (the sculpt's legs are nearly straight)
 ## and land within this share of the leg's reach.
 const HOME_IN := 0.85
@@ -59,6 +61,7 @@ class Leg:
 	var last_cycle := -1
 	var side := 1.0
 	var plant_at := Vector3.ZERO
+	var id := ""  ## footfall id: "fl", "fr", "bl", "br"
 
 
 var legs: Array[Leg] = []
@@ -92,6 +95,7 @@ func _init(p_rig: KaijuRig) -> void:
 			leg.names.append("%s%d" % [prefix, i])
 		leg.offset = PAIR[prefix]
 		leg.side = -1.0 if prefix.ends_with("_l") else 1.0
+		leg.id = ("f" if prefix.begins_with("leg") else "b") + ("l" if leg.side < 0.0 else "r")
 		leg.l1 = rig.dir_of(leg.names[0]).length()
 		leg.l2 = rig.dir_of(leg.names[1]).length()
 		leg.tarsus = rig.dir_of(leg.names[2])
@@ -210,6 +214,11 @@ func _step(dt: float, root: Transform3D, standing: bool) -> void:
 			leg.planted = true
 			leg.foot = land
 			leg.plant_at = land
+			var stage := clampf(sqrt(s / 1.3), 0.4, 1.0)
+			var weight := (
+				STEP_WEIGHT + STEP_WEIGHT * clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
+			)
+			rig.foot_planted.emit(leg.id, weight * stage, land)
 
 
 ## Pulls a landing spot in so the leg can still reach it from the hip.
@@ -270,7 +279,7 @@ func _solve(root: Transform3D) -> void:
 		var ankle := _ankle(leg, root)
 		# An insect's knee rides high and out: the leg arches over the foot.
 		var pole := up + right * leg.side * 0.6
-		var knee := KaijuRig.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
+		var knee := KaijuGait.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
 		rig.aim(leg.names[0], hip, knee)
 		rig.aim(leg.names[1], knee, ankle)
 		rig.aim(leg.names[2], ankle, leg.foot)

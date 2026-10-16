@@ -94,13 +94,18 @@ func _check_main_scene() -> void:
 	await process_frame
 
 
-## The reptilian walks, curves, reverses hard and stands stomping the way the rampage drives it
+## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it
 ## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
 func _check_planted_feet() -> void:
-	var def: Dictionary = Content.species_def("reptilian")
+	for species: String in ["reptilian", "insectoid"]:
+		await _check_feet_of(species)
+
+
+func _check_feet_of(species_id: String) -> void:
+	var def: Dictionary = Content.species_def(species_id)
 	var stats: Dictionary = def["stats"]
 	var colors: Dictionary = def["colors"]
-	var kaiju := KaijuModel.new("reptilian", colors, "adult")
+	var kaiju := KaijuModel.new(species_id, colors, "adult")
 	kaiju.scale = Vector3.ONE * 1.3
 	root.add_child(kaiju)
 	var dt := 1.0 / 60.0

@@ -106,3 +106,15 @@ static func spring3(
 	var a := (target - value) * omega * omega - vel * (2.0 * zeta * omega)
 	var v := vel + a * dt
 	return PackedVector3Array([value + v * dt, v])
+
+
+## Two-bone IK: where the middle joint goes so bones a (length l1) and b (l2) reach from root to
+## end, bending towards pole. An end out of reach leaves the chain straight towards it.
+static func solve_knee(root: Vector3, end: Vector3, l1: float, l2: float, pole: Vector3) -> Vector3:
+	var d := end - root
+	var dist := clampf(d.length(), absf(l1 - l2) + 0.0001, l1 + l2 - 0.0001)
+	var dir := d.normalized() if d.length() > 0.0001 else Vector3.DOWN
+	var cos_a := clampf((l1 * l1 + dist * dist - l2 * l2) / (2.0 * l1 * dist), -1.0, 1.0)
+	var p := pole - dir * pole.dot(dir)
+	p = p.normalized() if p.length() > 0.0001 else dir.cross(Vector3.RIGHT).normalized()
+	return root + dir * (cos_a * l1) + p * (sqrt(maxf(0.0, 1.0 - cos_a * cos_a)) * l1)

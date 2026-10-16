@@ -23,6 +23,8 @@ const RELEASE_STRETCH := 0.98
 ## A gripping arm shortens to keep this much slack (share of its length), down to CONTRACT_MIN.
 const GRIP_SLACK := 0.95
 const CONTRACT_MIN := 0.7
+## A tentacle slapping down to grip (KaijuRig.foot_planted strength for an adult).
+const GRIP_WEIGHT := 0.45
 ## Grip on buildings: search radius (arm lengths).
 const GRIP_RADIUS := 1.1
 ## Mantle: stretch toward the grip, squash, drag tilt, breathing.
@@ -123,6 +125,8 @@ func update(delta: float) -> void:
 				arm.gripping = true
 				arm.grip = arm.to
 				_pull_v += 1.2  # a slap: the body lurches toward the new grip
+				var stage := clampf(sqrt(s / 1.3), 0.4, 1.0)
+				rig.foot_planted.emit("t%d" % arms.find(arm), GRIP_WEIGHT * stage, arm.grip)
 		var want := 1.0
 		if arm.gripping:
 			arm.chain.pins = {arm.chain.names.size(): arm.grip}
