@@ -1,73 +1,65 @@
 class_name HexapodGait
 extends KaijuGait
-## The insectoid's walk (a mantis: four walking legs, two raptorial arms): it skitters. Legs
-## step in diagonal pairs with fast, snapping swings; it moves in bursts with micro-pauses where
-## the body freezes and the sim's motion is caught up in a dash; joints snap from pose to pose
-## like a machine: the head jerks between targets and cocks sideways, antennae and arms twitch,
-## the abdomen pulses. A stomp is a quick strike of the arms.
+## The insectoid's walk (a mantis: four walking legs, two raptorial arms): it never walks, it
+## skitters. Moving, it alternates hard holds (body, legs, head and scythes dead still while the
+## sim moves on) with darts that snap the body to where the sim is, the legs scrambling in
+## diagonal pairs under it. Holds and darts are irregular. A turn is led by the legs: they
+## step round to the new heading first and the body swings after them, in about 0.3 s. The
+## upper body (HexapodUpper) snaps between held poses and twitches at rest.
 
 const LEGS: Array[String] = ["leg_l", "leg_r", "hind_l", "hind_r"]
 ## Diagonal pairs step together: front-left with hind-right, then front-right with hind-left.
-const PAIR := {"leg_l": 0.0, "hind_r": 0.0, "leg_r": 0.5, "hind_l": 0.5}
-## Stride: duration bounds (s at scale 1), swing share, step length (hip heights) and lift.
-const CYCLE_MIN := 0.22
-const CYCLE_MAX := 0.5
-const SWING := 0.45
-const STEP := 0.7
-const LIFT := 0.4
+const PAIR := {"leg_l": 0, "hind_r": 0, "leg_r": 1, "hind_l": 1}
+## Holds (s): usually short, sometimes long; a dart catches up at this many times the sim's
+## speed and lasts at least DART_MIN (s). The body may fall this far behind (hip heights).
+const HOLD := Vector2(0.15, 0.3)
+const LONG_HOLD := Vector2(0.3, 0.5)
+const LONG_HOLD_CHANCE := 0.3
+const DART_RATE := 2.4
+const DART_MIN := 0.06
+const MAX_LAG := 2.2
+## A hold needs the body facing within this of the sim's heading (rad); a dart's body waits this
+## long (s) for its legs to lead.
+const FACING := 0.1
+const LEG_LEAD := 0.05
+## More than this off heading (rad), the body waits for a leg to be in the air before it swings.
+const BIG_TURN := 0.06
+## How fast the body swings round after its legs (rad/s at scale 1).
+const TURN_RATE := 9.5
 const STAND_SPEED := 0.1
-const SETTLE_DISTANCE := 0.14
-## Skitter: seconds moving, seconds frozen, catch-up rate (1/s), the most it may fall behind
-## (hip heights), and how much quicker its steps are in a burst.
-const BURST := Vector2(0.2, 0.5)
-const FREEZE := Vector2(0.1, 0.4)
-const CATCH_UP := 14.0
-const MAX_LAG := 1.0
-const BURST_CADENCE := 0.65
-## Head: seconds between snaps, snap spring, how far it turns, pitches and cocks sideways.
-const HEAD_HOLD := Vector2(0.15, 0.7)
-const HEAD_OMEGA := 34.0
-const HEAD_YAW := 0.7
-const HEAD_PITCH := 0.25
-const HEAD_COCK := 0.45
-const HEAD_TREMBLE := 0.04
-## Twitches: seconds between them; arm strike reach (rad) and how many stomps between strikes.
-const TWITCH_EVERY := Vector2(0.12, 0.5)
-const STRIKE := 0.9
-const STRIKE_EVERY := 3
-## Body: abdomen pulse (Hz, rad), stalking rock (Hz, hip heights), reach margin.
-const PULSE_HZ := 2.2
-const PULSE := 0.05
-const ROCK_HZ := 1.3
-const ROCK := 0.02
-const REACH_STEP := 0.96
-## Perched: how low the body crouches (hip heights), how far it pitches forward (rad), how far
-## the scythes rise (share of a strike).
-const PERCH_CROUCH := 0.25
-const PERCH_PITCH := 0.25
-const PERCH_ARMS := 0.35
-## Scythes: held raised and folded against the chest (femur forward-up, tibia folded back down
-## along it, claw tucked); a strike throws them out; twitches jolt them (rad).
-const FOLD_FEMUR := Vector3(0.15, 0.6, 0.7)  ## out, up, forward
-const FOLD_TIBIA := Vector3(0.1, -0.75, -0.55)
-const FOLD_CLAW := Vector3(0.0, -0.6, 0.6)
-const STRIKE_FEMUR := Vector3(0.1, 0.25, 1.0)
-const STRIKE_TIBIA := Vector3(0.0, -0.2, 1.0)
-const TWITCH_JOLT := 0.5
+## A pair steps when its feet are this far (hip heights) from where they belong; swing times
+## (s at scale 1) in a dart and settling; lift (hip heights); stretch that forces a step.
+const STEP_AT := 0.2
+const SETTLE_AT := 0.1
+const SWING_DART := 0.075
+const SWING_SETTLE := 0.11
+const LIFT := 0.5
+const REACH_STEP := 0.97
+## A leg tap at rest: swing (s) and how far it shifts (hip heights).
+const TAP_SWING := 0.09
+const TAP_SHIFT := 0.12
 ## A planted leg's knee flicks out and back (snap rate 1/s, how far in hip-widths).
 const KNEE_SNAP := 9.0
 const KNEE_FLICK := 1.6
 ## An insect's footfall is light (KaijuRig.foot_planted strength at a standstill; doubles at speed).
 const STEP_WEIGHT := 0.18
-## Feet stand this share of the way out from the hips (the sculpt's legs are nearly straight)
-## and land within this share of the leg's reach.
+## Feet stand this share of the way out from the hips and land within this share of reach.
 const HOME_IN := 0.85
 const LAND_REACH := 0.9
+## Body: abdomen pulse at rest (Hz, rad); a dart pitches the body down by this (rad).
+const PULSE_HZ := 2.2
+const PULSE := 0.05
+const DART_PITCH := 0.12
+## Perched: crouch (hip heights), forward pitch (rad).
+const PERCH_CROUCH := 0.25
+const PERCH_PITCH := 0.25
+## How many stomps between scythe strikes.
+const STRIKE_EVERY := 3
 
 
 class Leg:
 	var names: Array[String] = []
-	var offset := 0.0
+	var pair := 0
 	var home := Vector3.ZERO
 	var l1 := 0.0
 	var l2 := 0.0
@@ -75,9 +67,9 @@ class Leg:
 	var foot := Vector3.ZERO
 	var planted := true
 	var from := Vector3.ZERO
+	var shift := Vector3.ZERO  ## a tap's landing offset (world)
 	var t := 0.0
-	var swing_time := 0.15
-	var last_cycle := -1
+	var swing_time := 0.1
 	var side := 1.0
 	var plant_at := Vector3.ZERO
 	var id := ""  ## footfall id: "fl", "fr", "bl", "br"
@@ -87,28 +79,22 @@ class Leg:
 var legs: Array[Leg] = []
 ## Perched on a roof (KaijuModel.climbing): a low, wide, coiled stance, scythes half raised.
 var climbing := false
-var _phase := 0.0
-var _cycle := 0.4
-var _frozen := false
-var _state_left := 0.3
+## True while the body is in a hard hold (for captures and tests).
+var holding := false
+var upper: HexapodUpper
+var _hold_left := 0.0
+var _dart_time := 0.0
+var _held_yaw := 0.0
+var _anchor := Vector3.ZERO
 var _lag := Vector3.ZERO  # world offset the body is held back by
-var _head := Vector3.ZERO  # yaw, pitch, roll offsets now
-var _head_v := Vector3.ZERO
-var _head_target := Vector3.ZERO
-var _head_hold := 0.5
-var _twitch_in := 0.8
-var _arm_twitch := {"arm_l": 0.0, "arm_r": 0.0}
-var _strike := 0.0
-var _stomps := 0
-var _rear := 0.0
 var _jolt := 0.0
-var _ready := false
+var _stomps := 0
 var _perch := 0.0
+var _ready := false
 
 
 func _init(p_rig: KaijuRig) -> void:
 	super(p_rig)
-	turn_max = 5.0
 	var hips := 0.0
 	for prefix: String in LEGS:
 		if not rig.has_bone(prefix + "2"):
@@ -116,7 +102,7 @@ func _init(p_rig: KaijuRig) -> void:
 		var leg := Leg.new()
 		for i: int in 3:
 			leg.names.append("%s%d" % [prefix, i])
-		leg.offset = PAIR[prefix]
+		leg.pair = PAIR[prefix]
 		leg.side = -1.0 if prefix.ends_with("_l") else 1.0
 		leg.id = ("f" if prefix.begins_with("leg") else "b") + ("l" if leg.side < 0.0 else "r")
 		leg.l1 = rig.dir_of(leg.names[0]).length()
@@ -130,26 +116,28 @@ func _init(p_rig: KaijuRig) -> void:
 		legs.append(leg)
 	hip_height = hips / maxf(1.0, legs.size())
 	for chain: KaijuRig.SpringChain in rig.chains:
-		chain.stiffness = 40.0  # stiff, springy feelers
+		chain.stiffness = 60.0  # stiff, springy feelers
 		chain.gravity_scale = 0.3
+	upper = HexapodUpper.new(self)
 
 
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
 	var hip_w := hip_height * s
-	_skitter(dt, hip_w)
+	var moving := speed > STAND_SPEED * hip_w
+	_skitter(dt, hip_w, moving)
+	if holding:
+		# A hard hold: the body keeps its place and heading; nothing moves at all.
+		rig.rotation.y = wrapf(_held_yaw - model_yaw, -PI, PI)
+		body_yaw = _held_yaw
+		return
 	var root := rig.global_transform
-	var standing := speed < STAND_SPEED * hip_w or _frozen
-	if not standing:
-		var k := sqrt(s)
-		_cycle = clampf(2.0 * STEP * hip_w / maxf(speed, 0.001), CYCLE_MIN * k, CYCLE_MAX * k)
-		_cycle *= BURST_CADENCE  # it only steps in bursts: quick ones
-	_step(dt, root, standing)
+	_step(dt, root, moving)
 	_pose_body(dt)
 	_solve(root, dt)
-	_pose_head(dt)
-	_twitch(dt)
+	upper.perch = _perch
+	upper.update(dt, 0.0 if moving or _lag.length() > 0.05 * hip_w else 1.0)
 	rig.simulate_chains(delta)
 	for leg: Leg in legs:
 		if leg.planted:
@@ -163,87 +151,115 @@ func stomp() -> void:
 	_stomps += 1
 	_jolt = 1.0
 	if _stomps % STRIKE_EVERY == 0:
-		_strike = 1.0
+		upper.strike()
 
 
 func roar() -> void:
-	_rear = 1.0
-	_strike = 1.0
+	upper.roar()
 
 
-## Bursts and freezes: frozen, the body holds its place in the world while the sim moves on;
-## then it dashes to catch up.
-func _skitter(dt: float, hip_w: float) -> void:
-	_state_left -= dt
-	if _state_left <= 0.0:
-		_frozen = not _frozen and speed > STAND_SPEED * hip_w
-		var span := FREEZE if _frozen else BURST
-		_state_left = rng.randf_range(span.x, span.y)
-	if _frozen:
-		_lag += velocity * dt
-	else:
-		_lag = _lag.lerp(Vector3.ZERO, minf(1.0, dt * CATCH_UP))
-	_lag = _lag.limit_length(MAX_LAG * hip_w)
+## Holds and darts. Holding, the body stays put in the world (and keeps its heading) while the
+## sim moves on; darting, it snaps to catch up, then holds again. A hold starts only with every
+## foot down and the body facing the sim's heading, and ends early if the body falls too far
+## behind. A dart that has to turn waits LEG_LEAD for the legs to start round first.
+func _skitter(dt: float, hip_w: float, moving: bool) -> void:
 	var frame := rig.get_parent_node_3d().global_transform
+	if holding:
+		_lag = frame.origin - _anchor
+		_lag.y = 0.0
+		_hold_left -= dt
+		if _hold_left <= 0.0 or _lag.length() > MAX_LAG * hip_w or not moving:
+			holding = false
+			_dart_time = 0.0
+	else:
+		_dart_time += dt
+		var rate := DART_RATE * maxf(speed, STAND_SPEED * hip_w * 4.0)
+		_lag = _lag.move_toward(Vector3.ZERO, rate * dt)
+		var facing := absf(wrapf(model_yaw - body_yaw, -PI, PI)) < FACING
+		var down := true
+		for leg: Leg in legs:
+			down = down and leg.planted
+		if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
+			holding = true
+			_held_yaw = body_yaw
+			_anchor = frame.origin - _lag  # where the body is drawn now, not the sim
+			var span := LONG_HOLD if rng.randf() < LONG_HOLD_CHANCE else HOLD
+			_hold_left = rng.randf_range(span.x, span.y)
 	rig.position = frame.basis.inverse() * -_lag
+	if not holding:
+		# The legs move first; then the body swings round after them at a constant, snappy rate.
+		var airborne := false
+		for leg: Leg in legs:
+			airborne = airborne or not leg.planted
+		var big := absf(wrapf(model_yaw - _held_yaw, -PI, PI)) > BIG_TURN
+		if _dart_time >= LEG_LEAD and (airborne or not big):
+			_held_yaw = rotate_toward(_held_yaw, model_yaw, TURN_RATE / sqrt(maxf(s, 0.01)) * dt)
+		body_yaw = _held_yaw
+		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 
 
-func _step(dt: float, root: Transform3D, standing: bool) -> void:
+## Feet in diagonal pairs: a pair steps when it is out of place (it lands where the body is
+## heading, on the sim's heading, so the legs lead a turn); a tap at rest moves one leg.
+func _step(dt: float, root: Transform3D, moving: bool) -> void:
 	var ground := root.origin.y
+	var frame := rig.get_parent_node_3d().global_transform
 	if not _ready:
 		_ready = true
 		for leg: Leg in legs:
 			leg.foot = root * leg.home
 			leg.plant_at = leg.foot
-	var swinging := false
+	var hip_w := hip_height * s
+	var darting := _lag.length() > 0.05 * hip_w
+	var swing := (SWING_DART if darting else SWING_SETTLE) * sqrt(s)
+	# Where each foot belongs: under the body where it will be (the sim's place and heading).
+	var lead := velocity * swing
+	var swinging := PackedByteArray([0, 0])
+	var worst := PackedFloat32Array([0.0, 0.0])
 	for leg: Leg in legs:
-		swinging = swinging or not leg.planted
-	if not standing:
-		_phase += dt / _cycle
-		for leg: Leg in legs:
-			var p := _phase - leg.offset
-			var c := floori(p)
-			if leg.planted and p - c < SWING and c != leg.last_cycle:
-				leg.last_cycle = c
-				_lift(leg, _cycle * SWING)
-	elif not swinging:
-		var worst: Leg = null
-		var worst_d := SETTLE_DISTANCE * hip_height * s
-		for leg: Leg in legs:
-			var d := Vector2(leg.foot.x - (root * leg.home).x, leg.foot.z - (root * leg.home).z)
-			if d.length() > worst_d:
-				worst_d = d.length()
-				worst = leg
-		if worst != null:
+		if not leg.planted:
+			swinging[leg.pair] = 1
+		var want := frame * leg.home + lead
+		var off := Vector2(leg.foot.x - want.x, leg.foot.z - want.z).length()
+		worst[leg.pair] = maxf(worst[leg.pair], off)
+	var limit := (STEP_AT if moving or darting else SETTLE_AT) * hip_w
+	if swinging[0] == 0 and swinging[1] == 0:
+		var pick := 0 if worst[0] >= worst[1] else 1
+		if worst[pick] > limit:
 			for leg: Leg in legs:
-				if PAIR[leg.names[0].trim_suffix("0")] == worst.offset:
-					_lift(leg, 0.12 * sqrt(s))
+				if leg.pair == pick:
+					_lift(leg, swing, Vector3.ZERO)
+		elif upper.tap_leg >= 0 and upper.tap_leg < legs.size():
+			var tap := legs[upper.tap_leg]
+			var shift := Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1))
+			_lift(tap, TAP_SWING * sqrt(s), shift.normalized() * TAP_SHIFT * hip_w)
+	upper.tap_leg = -1
 	for leg: Leg in legs:
 		if leg.planted and _stretch(leg, root) > REACH_STEP:
-			_lift(leg, 0.1 * sqrt(s))
+			_lift(leg, swing, Vector3.ZERO)
 		if leg.planted:
 			leg.foot.y = ground
 			continue
 		leg.t = minf(1.0, leg.t + dt / leg.swing_time)
-		var land := root * leg.home
-		if not standing:
-			land += velocity * ((1.0 - leg.t) * leg.swing_time + _cycle * (1.0 - SWING) * 0.5)
+		var land := frame * leg.home + lead + leg.shift
 		land.y = ground
 		land = _within_reach(leg, land, root)
 		# Snap: most of the travel happens at once, then it settles (a fast ease-out).
-		var e := 1.0 - pow(1.0 - leg.t, 4.0)
+		var e := 1.0 - pow(1.0 - leg.t, 3.0)
 		leg.foot = leg.from.lerp(land, e)
-		leg.foot.y = ground + sin(PI * minf(1.0, leg.t * 1.3)) * LIFT * hip_height * s
+		var lift := LIFT * (1.0 if leg.shift == Vector3.ZERO else 0.6)
+		leg.foot.y = ground + sin(PI * minf(1.0, leg.t * 1.2)) * lift * hip_w
 		if leg.t >= 1.0:
-			leg.planted = true
-			leg.foot = land
-			leg.plant_at = land
-			leg.snap = 1.0
-			var stage := clampf(sqrt(s / 1.3), 0.4, 1.0)
-			var weight := (
-				STEP_WEIGHT + STEP_WEIGHT * clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
-			)
-			rig.foot_planted.emit(leg.id, weight * stage, land)
+			_plant(leg, land)
+
+
+func _plant(leg: Leg, land: Vector3) -> void:
+	leg.planted = true
+	leg.foot = land
+	leg.plant_at = land
+	leg.snap = 1.0
+	var stage := clampf(sqrt(s / 1.3), 0.4, 1.0)
+	var weight := STEP_WEIGHT + STEP_WEIGHT * clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
+	rig.foot_planted.emit(leg.id, weight * stage, land)
 
 
 ## Pulls a landing spot in so the leg can still reach it from the hip.
@@ -260,11 +276,12 @@ func _within_reach(leg: Leg, land: Vector3, root: Transform3D) -> Vector3:
 	return land + Vector3(fixed.x, 0.0, fixed.y)
 
 
-func _lift(leg: Leg, seconds: float) -> void:
+func _lift(leg: Leg, seconds: float, shift: Vector3) -> void:
 	leg.planted = false
 	leg.from = leg.foot
+	leg.shift = shift
 	leg.t = 0.0
-	leg.swing_time = maxf(0.06, seconds)
+	leg.swing_time = maxf(0.05, seconds)
 
 
 func _stretch(leg: Leg, root: Transform3D) -> float:
@@ -278,23 +295,21 @@ func _ankle(leg: Leg, root: Transform3D) -> Vector3:
 
 func _pose_body(dt: float) -> void:
 	_jolt = maxf(0.0, _jolt - dt * 8.0)
-	_rear = maxf(0.0, _rear - dt * 1.2)
-	var rock := sin(time * TAU * ROCK_HZ) * ROCK * hip_height
-	if not _frozen:
-		rock *= 0.3
-	# The rock is stepped, not smooth: a few twitchy positions a second.
-	rock = snappedf(rock, ROCK * hip_height * 0.35)
-	var rear := sin(PI * minf(1.0, _rear * 1.5)) * 0.5
 	_perch = lerpf(_perch, 1.0 if climbing else 0.0, minf(1.0, dt * 6.0))
-	var drop := -_jolt * 0.06 * hip_height - PERCH_CROUCH * hip_height * _perch
-	rig.pose("thorax0", Vector3(rear * 0.6 - PERCH_PITCH * _perch, 0, 0), Vector3(rock, drop, 0))
-	rig.pose("thorax1", Vector3(rear * 0.4 - 0.05 * _jolt, 0, 0))
-	var pulse := sin(time * TAU * PULSE_HZ)
+	var hip_w := hip_height
+	var dart := clampf(_lag.length() / maxf(0.001, 0.3 * hip_w * s), 0.0, 1.0)
+	var jerk := upper.body_jerk
+	var rear := upper.rear * HexapodUpper.REAR
+	var drop := -_jolt * 0.06 * hip_w - PERCH_CROUCH * hip_w * _perch
+	var pitch := rear - PERCH_PITCH * _perch - DART_PITCH * dart + jerk.y
+	rig.pose("thorax0", Vector3(pitch, jerk.x, jerk.z), Vector3(0, drop, 0))
+	rig.pose("thorax1", Vector3(rear * 0.6 - 0.05 * _jolt, 0, 0))
+	var pulse := sin(time * TAU * PULSE_HZ) * PULSE
 	for i: int in 3:
-		rig.pose("abdomen%d" % i, Vector3(pulse * PULSE * (i + 1) * 0.5 - rear * 0.2, 0, 0))
-	if rig.has_bone("abdomen1"):
-		var swell := 1.0 + maxf(0.0, pulse) * 0.04
-		rig.bone("abdomen1").scale = Vector3(swell, swell, 1.0)
+		var curl := (
+			pulse * (i + 1) * 0.5 - rear * 0.3 + upper.abdomen_jerk * (0.6 if i == 0 else 0.3)
+		)
+		rig.pose("abdomen%d" % i, Vector3(curl, 0, 0))
 
 
 func _solve(root: Transform3D, dt: float) -> void:
@@ -312,68 +327,3 @@ func _solve(root: Transform3D, dt: float) -> void:
 		rig.aim(leg.names[0], hip, knee)
 		rig.aim(leg.names[1], knee, ankle)
 		rig.aim(leg.names[2], ankle, leg.foot)
-
-
-func _pose_head(dt: float) -> void:
-	if not rig.has_bone("head0"):
-		return
-	_head_hold -= dt
-	if _head_hold <= 0.0:
-		_head_hold = rng.randf_range(HEAD_HOLD.x, HEAD_HOLD.y)
-		var lead := clampf(yaw_rate * 0.25, -0.5, 0.5)
-		_head_target = Vector3(
-			rng.randf_range(-HEAD_YAW, HEAD_YAW) * (0.4 if speed > 0.5 else 1.0) + lead,
-			rng.randf_range(-HEAD_PITCH, HEAD_PITCH * 0.5),
-			rng.randf_range(-HEAD_COCK, HEAD_COCK) if rng.randf() < 0.4 else 0.0
-		)
-	var target := _head_target + Vector3(0, -0.4 * _strike, 0)
-	# A constant fine tremble under the snaps: it is never quite still.
-	target += Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), 0) * HEAD_TREMBLE
-	var a := (target - _head) * HEAD_OMEGA * HEAD_OMEGA - _head_v * (2.0 * 0.9 * HEAD_OMEGA)
-	_head_v += a * dt
-	_head += _head_v * dt
-	var world := Basis(Vector3.UP, model_yaw + _head.x)
-	world = world * Basis(Vector3.RIGHT, _head.y) * Basis(Vector3.BACK, _head.z)
-	rig.set_world_basis("head0", world)
-
-
-## Arms twitch and strike; antennae flick.
-func _twitch(dt: float) -> void:
-	_twitch_in -= dt
-	if _twitch_in <= 0.0:
-		_twitch_in = rng.randf_range(TWITCH_EVERY.x, TWITCH_EVERY.y)
-		var arm := "arm_l" if rng.randf() < 0.5 else "arm_r"
-		_arm_twitch[arm] = rng.randf_range(0.4, 1.0) * TWITCH_JOLT
-		for chain: KaijuRig.SpringChain in rig.chains:
-			if rng.randf() < 0.6:
-				var kick := Vector3(rng.randf_range(-1, 1), rng.randf_range(-0.5, 1), 0) * 14.0 * s
-				chain.kick(rig.global_transform.basis * kick / s, 1.0 / 60.0)
-	_strike = maxf(0.0, _strike - dt * 3.2)
-	# A strike shoots out fast and folds back slower.
-	var lash := sin(PI * pow(1.0 - _strike, 0.5)) if _strike > 0.0 else 0.0
-	for arm: String in ["arm_l", "arm_r"]:
-		var tw: float = _arm_twitch[arm]
-		_arm_twitch[arm] = maxf(0.0, tw - dt * 2.5)
-		_pose_arm(arm, maxf(lash, PERCH_ARMS * _perch), snappedf(tw, 0.08))
-
-
-## One scythe by aiming its three bones: folded against the chest at rest, thrown out on a strike
-## (lash 0..1), jolted by a twitch.
-func _pose_arm(arm: String, lash: float, jolt: float) -> void:
-	if not rig.has_bone(arm + "2"):
-		return
-	var b := rig.global_transform.basis.orthonormalized()
-	var side := -1.0 if arm.ends_with("_l") else 1.0
-	var out := b.x * side
-	var up := b.y
-	var fwd := -b.z
-	var dir := func(v: Vector3) -> Vector3: return (out * v.x + up * v.y + fwd * v.z).normalized()
-	var femur: Vector3 = dir.call(FOLD_FEMUR.lerp(STRIKE_FEMUR, lash) + Vector3(0, jolt, 0))
-	var tibia: Vector3 = dir.call(FOLD_TIBIA.lerp(STRIKE_TIBIA, lash) + Vector3(0, 0, jolt))
-	var claw: Vector3 = dir.call(FOLD_CLAW.lerp(STRIKE_TIBIA, lash))
-	var shoulder := rig.bone(arm + "0").global_position
-	var elbow := shoulder + femur * rig.dir_of(arm + "0").length() * s
-	var wrist := elbow + tibia * rig.dir_of(arm + "1").length() * s
-	rig.aim(arm + "0", shoulder, elbow)
-	rig.aim(arm + "1", elbow, wrist)
-	rig.aim(arm + "2", wrist, wrist + claw * rig.dir_of(arm + "2").length() * s)

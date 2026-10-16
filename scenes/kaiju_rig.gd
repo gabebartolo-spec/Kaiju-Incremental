@@ -50,6 +50,8 @@ var gait: KaijuGait
 var chains: Array[SpringChain] = []
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
 var bone_close: Dictionary = {}
+## Bones that rest in a sculpted snarl (rig.json "snarl"): their mouth shows true colours.
+var bone_snarl: Dictionary = {}
 ## name -> the MultiMeshInstance3D drawing that bone's own voxels (its skin).
 var skins: Dictionary = {}
 var _bones: Dictionary = {}  # name -> Node3D
@@ -119,6 +121,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_head[bone_name] = head
 		_parent[bone_name] = parent_name
 		bone_close[bone_name] = Num.f(d.get("close", 0.0))
+		bone_snarl[bone_name] = d.get("snarl", false) == true
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]
@@ -155,18 +158,21 @@ func attach_voxels(
 	return mmi
 
 
-## Models arrive in a T-pose; a kaiju carries its arms lowered and reaching forward.
+## Models arrive in a T-pose; a kaiju carries its arms lowered and reaching forward. A biped's
+## rest pose is its standing arm pose (BipedSwing: hanging, elbow bent, hands at the belly), so a
+## skin bound to the rest pose matches what is shown and the gait only adds small swings to it.
 func _relax_arms() -> void:
-	for side: String in ["l", "r"]:
+	var bases := BipedSwing.rest_arm_bases(self) if body_plan == "biped" else {}
+	for side: String in ["l", "r"] if bases.is_empty() else []:
 		var root := "arm_%s0" % side
-		if not _bones.has(root):
-			continue
-		var outward: float = signf(dir_of(root).x)
-		var lower := Basis(Vector3.BACK, -outward * 0.95)
-		var reach := Basis(Vector3.UP, outward * 0.35)
-		var rest: Transform3D = _rest[root]
-		_rest[root] = Transform3D(reach * lower * rest.basis, rest.origin)
-		bone(root).transform = rest_of(root)
+		if _bones.has(root):
+			var outward: float = signf(dir_of(root).x)
+			var lower := Basis(Vector3.BACK, -outward * 0.95)
+			bases[root] = Basis(Vector3.UP, outward * 0.35) * lower * rest_of(root).basis
+	for n: String in bases:
+		var b: Basis = bases[n]
+		_rest[n] = Transform3D(b, rest_of(n).origin)
+		bone(n).transform = rest_of(n)
 
 
 func _collect_chains(defs: Array) -> void:

@@ -1,63 +1,63 @@
-# Kaiju-motion handoff, 2026-10-17 03:30
-## State: awaiting lead (round 6b on PR #10 bb0be53, merged into #11 f58645b; evidence kaiju-motion/round6b/)
+# Kaiju-motion handoff, 2026-10-17 08:00 (final)
+## State: available (reptile done and merged; only duty left: keep PR #11 in sync and CI green)
 
 ## Task
-D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
-grace; insectoid = skittering, disturbing mantis; cephalopod = sliding/gripping octopus/hydra
-(D-036). Presentation only. Evidence -> lead -> motion critic -> director. D-032: cost recorded,
-not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-powers session.
+D-031: species-true kaiju locomotion. This role is REPTILE only (lead split, 2026-10-17).
+species-motion (local_87c25bd4) owns the mantis and octopus: hexapod/radial gaits, their assets
+and their parts of rig_voxel.py. Presentation only; the sim decides nothing from any of this.
 
 ## Branch and commit
-- claude/kaiju-motion -> PR #10 (reptile). Round 5 at 5e3427f: mouth inside split (dark seam shut,
-  pink open), even cadence (adult 0.45 s +-2-6%, baby 0.32 s), no double plants, still roar,
-  footfall ring + camera dip, front34/rear evidence cams, per-frame feet CSV.
-  Force-push is denied: merge, never rebase a pushed branch.
-- claude/kaiju-motion-species -> PR #11 (base claude/kaiju-motion; retarget to look-options once
-  #10 merges). Mantis adult textured (86ac43d, UV-seam weld), cephalopod rigs rebuilt
-  (9c0094d: voxels only on their own tentacle, true counts 13/8/13), hooks incl. climbing(on).
-  Lead asked: NO more octopus motion clips until it OKs species3/octo_bone_sheet.png.
+- claude/kaiju-motion -> PR #10 (reptile): MERGED into claude/look-options (squash aaa60f7).
+  The branch can be deleted by the lead. Force-push is denied: merge, never rebase.
+- claude/kaiju-motion-species -> PR #11, base claude/look-options. Holds #10 plus the species
+  work; fast-forwarded to claude/species-motion 3e41996 (mantis/octopus round 3) on 2026-10-17.
+  Lint, smoke 13, sim 39, powers 24, tentacles 17, city 5 green locally; slide 0.0 cm x3.
+- Keeping #11 in sync: merge origin/claude/look-options in. After a squash-merge of a PR this
+  branch already holds, conflicts resolve to ours (verify look-options == that branch first).
+  species-motion merges into claude/species-motion; fast-forward #11 to it when it asks.
 
 ## Unfinished changes
-- none uncommitted. Round 6b answers the lead's round-5 REJECT (arms aimed in chest space,
-  plates/inboard shoulder on spine, no chest band on arm roots, decisive stop, roar waits for
-  feet, baby dip floor). Open: baby roar still has a plant at 10.017 (in-flight stomp; roar
-  starts on that frame); baby trip makes reverse cadence +21%; no automated sealed-chest check.
-- CI flow fix: ability_fx looks up body parts per toggle (freed after a growth stage).
-- capture_motion --tint colours each bone (arm0 red, arm1 yellow, hand magenta) for rig QA.
-- Mantis all three stages textured (D-038) at 862d318.
-- Queue: hydra bone fixes (every long tentacle chained, majority smoothing, orphans to nearest
-  bone, pale mantle patch; resend bone sheet), then species round 2 QA (mantis freezes/darts,
-  idle twitch, roar flare, leg-led 0.3 s turn; octopus surges, adolescent pull, baby 2-3 arms).
-- Adult hydra: two raised arches have no chain (ride the mantle); max_arms 16 is the cap.
-- D-035 locomotion anticipation (insect jump/climb, octopus squeeze through gaps) not started.
+- none uncommitted.
 
-## Evidence so far
-- capture_motion.gd: --cam=game|side|fixed, event labels, --trace CSV (+ _plants.csv).
-- Slide 0.0 cm everywhere; reptile plants every ~0.44 s +-5%, speed dip at plants.
-- Clips: side-session-notes/local_9fac90d2.../kaiju-motion/{round2,round3,round4,species1,species2}/.
+## What the reptile ended with (all merged in #10)
+- Shoulders locked to the line of travel: spine1 = exact inverse of the pelvis yaw/roll/sway
+  (keeps lean, drop, surge); SWAY 0.03, HIP_YAW 0.06. capture_motion prints SHOULDERS
+  drift/tilt/yaw (adult 0.00% drift; a constant -3.95 deg yaw is the sculpt's asymmetry).
+- Arms: posed, never simulated. Hang, ~60 deg elbow, hands resting in front of the belly
+  (director's pick). Also the KaijuRig rest pose for bipeds (BipedSwing.rest_arm_bases), so the
+  D-041 skin binds to it. Stride swing +-0.14 rad, turn brace <= 0.2 rad, raised only to roar.
+- Jaw baked into the voxels at rest (rig_voxel.close_jaw): baby/adolescent shut (hairline,
+  no throat gap); adult a tight snarl in true colours (director's pick B; rig arg 0.35,
+  rig.json "snarl": true). Director REJECTED skin-coloured mouth insides.
+- rig_voxel: reclaim_plates (shoulder plates and inboard shoulder on the spine), no chest
+  joint band on arm roots, clean_blemishes (the adult's chest "nips": 4 voxels).
+- Gait: decisive stop (a step in flight never slows), roar waits for a swinging foot,
+  stomp steps replace settle steps, baby camera-dip floor.
+- Rig commands (copy each GLB to its own scratch folder first; blender -b only):
+  blender -b --python tools/blender/rig_voxel.py -- <rep_<stage>_tex_olive.glb copy>
+    assets/kaiju/reptilian_<stage> reptilian <100|130|160> [0.35 for the adult]
+  GLBs: ~/Downloads/kaiju_tripo/rep_{baby,adol,adult}_tex_olive.glb.
 
 ## Attempts (fix-loop record)
-- Reversal foot slide -> step/hop rules + eased sink -> 0. Z-fight stripes -> inset filler.
-- Uneven steps after the hold: stride outran reach + pelvis resonance -> stance 0.48 hip,
-  landing clamp anticipates hold, rescue steps counted as slot steps, stiffer pelvis.
-- Jaw: red mouth-interior voxels give the cut and the close angle (cap 0.7 rad).
-- Radial: tips by furthest-surface claiming; baby head fixed by mantle-centre, thin-tip and
-  on-bone rules.
+- Posing arm bones by rotating about their own x rolled them (claws floated): aim joints instead.
+- Floating shoulder shards: per-bone --tint capture found the joint band of chest on the arm.
+- A jaw turned shut every frame opened a throat gap the inset filler showed as a lattice: bake it.
+- Adult jaw fully shut sank into the skull (dark wedge): director chose a resting snarl.
 
 ## Open decisions
-- none (licensing rows added by lead, 7cae54e).
+- none.
 
 ## Running jobs
 - none. Remove override.cfg after any capture.
 
-## Findings for the lead
-- Plot pelvis height + forward speed per frame (--trace) to prove rhythm; it exposed uneven steps.
-- Log plant/lift events with reasons: two "rescue" rules were silently driving the gait.
-- Bone-ownership plots (front/side, coloured per bone) catch rig faults before any capture.
+## Findings for the lead (not yet in any learnings log)
+- capture_motion --tint (each bone a flat colour) found rig faults frame steps could not.
+- Exporting APPDATA for Godot hides Python's user site-packages (cv2): unset it for Python.
+- Merging a base with a duplicate of your work (squash): diff base vs your old branch first.
 
 ## Rules learnt the hard way (under 10 lines)
-- Windowed Godot steals focus from the director's fullscreen games: focus-guard blocks it then.
-  Work headless, retry captures minutes apart, batch all clips into one short windowed run.
+- Windowed Godot steals focus from the director's fullscreen games; focus-guard blocks it.
+  Use headless runs and CI captures (tools/capture/ci_capture.sh --movie ...).
 - Never edit .gd while a local suite/capture runs; after switching branches run --import.
-- gdlint: 400 lines/file, <=4 args, 20 public methods, signals first, public vars before private.
-- Kill only Godot PIDs you started (check CreationDate/CommandLine).
+- gdlint: 400 lines/file, <=4 args, 20 public methods; check after every merge (caps break).
+- Kill only Godot PIDs you started.

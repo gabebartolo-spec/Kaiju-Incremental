@@ -122,6 +122,16 @@ func foot_drift() -> float:
 	return _rig.gait.max_drift if _rig != null else 0.0
 
 
+## Where the body is drawn now (world): its root bone, which can lag or lead the node (an insect's
+## hold and dart, an octopus's drag and surge). Cameras follow this, not the node, so a hold is
+## still on screen and a dart bursts. The node's position for unrigged bodies.
+func focus() -> Vector3:
+	if _rig == null:
+		return global_position
+	var p := _rig.bone(_rig.bone_names()[0]).global_position
+	return Vector3(p.x, global_position.y, p.z)
+
+
 ## Hip height in world units (0 for unrigged bodies).
 func hip_height() -> float:
 	return _rig.gait.hip_height * _rig.gait.s if _rig != null else 0.0

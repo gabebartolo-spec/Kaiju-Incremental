@@ -9,6 +9,8 @@ extends SceneTree
 ## holds still beside the first straight walk (for judging foot slide by eye). Footfalls kick
 ## dust and nudge the camera as in the rampage; the scripted events are labelled on screen.
 ## --trace=<file.csv>: t, pelvis height and forward speed per frame (the rhythm plot).
+## --pose-trace=<file.csv>: per frame the scripted event, the body's world x/z and heading, a
+## hard hold (insectoid), and how far all the bones moved that frame (stillness and twitches).
 ## Headless (no movie) just prints the measurements. Slide is
 ## also given in cm, taking a world unit as one storey (3.5 m).
 
@@ -16,6 +18,8 @@ const FPS := 60.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const CM_PER_UNIT := 350.0
+## The side clip's kaiju turns side-on to the camera when it stops (s), so the roar is in profile.
+const SIDE_PIVOT := 9.2
 
 ## Every footfall: time, which foot, where (world), strength (written next to the trace).
 var plants := PackedStringArray()
@@ -24,7 +28,10 @@ var _stage := "adult"
 var _cam := "game"
 var _seconds := 15.0
 var _trace := ""
+var _pose_trace := ""
+var _poser := PoseTrace.new()
 var _dip := 0.0
+var _focus := Vector3.ZERO
 var _line: Line2D
 var _guide: Line2D
 var _label: Label
@@ -47,6 +54,8 @@ func _initialize() -> void:
 			_stage = arg.substr(8)
 		elif arg.begins_with("--cam="):
 			_cam = arg.substr(6)
+		elif arg.begins_with("--pose-trace="):
+			_pose_trace = arg.substr(13)
 		elif arg.begins_with("--trace="):
 			_trace = arg.substr(8)
 		elif arg.begins_with("--seconds="):
@@ -123,6 +132,7 @@ func _run() -> void:
 	)
 	var rows := PackedStringArray(["t,pelvis_y,forward_speed"])
 	var feet := PackedStringArray(["t,foot,planted,x,z"])
+	var poses := PackedStringArray(["t,event,x,z,yaw,holding,bone_motion,model_yaw"])
 	plants.append("t,foot,x,y,z,strength,camera_dip_units,camera_dip_px_at_1080p")
 	var last_pelvis := Vector3.ZERO
 	var cam := Camera3D.new()
@@ -145,6 +155,8 @@ func _run() -> void:
 		if move.length() > 0.05:
 			pos += move.limit_length(1.0) * speed * dt
 			facing = move.normalized()
+		elif _cam == "side" and t >= SIDE_PIVOT:
+			facing = Vector2(0, -1)  # standing, it turns side-on to the camera for the roar
 		at = at.lerp(Vector3(pos.x, 0, pos.y), minf(1.0, dt * 12.0))
 		kaiju.position = at
 		kaiju.rotation.y = lerp_angle(
@@ -164,10 +176,19 @@ func _run() -> void:
 		total_usec += spent
 		_label.text = _event_at(t)
 		_dip = move_toward(_dip, 0.0, dt * Rampage.DIP_RECOVER * _dip + dt * 0.05)
-		_place(cam, at, Vector3(facing.x, 0, facing.y), body_scale)
+		# Cameras follow the body as drawn (KaijuModel.focus), eased as in the rampage.
+		_focus = _focus.lerp(kaiju.focus(), minf(1.0, dt * Rampage.FOCUS_FOLLOW))
+		_place(
+			cam,
+			_focus if _cam in ["game", "side"] else at,
+			Vector3(facing.x, 0, facing.y),
+			body_scale
+		)
 		if _cam == "game":
 			cam.position.y -= _dip * (0.75 + 0.4 * body_scale)
 		_trace_feet(kaiju, t, feet)
+		if _pose_trace != "":
+			poses.append(_poser.row(kaiju, t, _event_at(t)))
 		if _cam == "rear":
 			_level_line(kaiju, cam)
 			_plumb_line(kaiju, cam)
@@ -190,6 +211,10 @@ func _run() -> void:
 		f = FileAccess.open(_trace.get_basename() + "_feet.csv", FileAccess.WRITE)
 		f.store_string(String.chr(10).join(feet))
 		f.close()
+	if _pose_trace != "":
+		var pf := FileAccess.open(_pose_trace, FileAccess.WRITE)
+		pf.store_string(String.chr(10).join(poses))
+		pf.close()
 	if _sh_hi > _sh_lo:
 		var p2p := _sh_hi - _sh_lo
 		var line := "SHOULDERS %s %s straight walk 2.0-4.5 s: lateral drift %.3f (%.2f%% of height %.2f)"
@@ -225,6 +250,10 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 8.5, 0)) * body_scale
 		cam.look_at(at + Vector3(0, 7.5, 0) * body_scale)
 		return
+	if _cam == "front34w":  # the same angle, wider and lower: the whole body, arms included
+		cam.position = at + (fwd * 19.0 + right * 12.0 + Vector3(0, 6.0, 0)) * body_scale
+		cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)
+		return
 	if _cam == "rear":  # straight behind at shoulder height: the shoulder line against level
 		cam.position = at + (-fwd * 17.0 + Vector3(0, 7.0, 0)) * body_scale
 		cam.look_at(at + Vector3(0, 6.5, 0) * body_scale)
@@ -238,9 +267,12 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 		cam.position = at + CAMERA_OFFSET * zoom
 		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
 		return
-	var wide := 1.4 if _species == "cephalopod" else 1.0  # a wide body needs a wider shot
-	cam.position = at + Vector3(16.0 * wide, 4.0 * wide, 0) * body_scale
-	cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
+	if _species == "cephalopod":  # a wide body needs a wider shot
+		cam.position = at + Vector3(16.0 * 1.4, 4.0 * 1.4, 0) * body_scale
+		cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
+		return
+	cam.position = at + Vector3(22.0, 5.0, 0) * body_scale  # side: the whole body in frame
+	cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)
 
 
 ## What the script is doing at time t, shown on the clip.

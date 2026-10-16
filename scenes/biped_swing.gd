@@ -25,12 +25,13 @@ const WHIP := 0.22
 ## Arms (posed, never simulated: director, "limp scarves", "outstretched like a zombie"), as the
 ## Jurassic Park tyrannosaur and Godzilla 2014 carry theirs. Each bone is aimed along a direction
 ## in the body's heading frame (x outward, y up, -z forward), so it bends at the joint and never
-## rolls: the upper arm hangs down and a little forward, the elbow is bent about 85 degrees so
-## the forearm angles forward and up towards the chest, the hand curls loosely in. A roar lifts
+## rolls: the upper arm hangs down and a little forward, the elbow is bent about 60 degrees so
+## the forearm reaches forward with the hands resting in front of the belly, below the chest
+## (director: a relaxed tyrannosaur hang), the hand drooping loosely. A roar lifts
 ## and spreads them into a claw; nothing else raises them.
 const ARM_UPPER := Vector3(0.15, -0.92, -0.35)
-const ARM_FORE := Vector3(-0.3, 0.25, -0.92)
-const ARM_HAND := Vector3(-0.25, -0.35, -0.9)
+const ARM_FORE := Vector3(-0.25, -0.2, -0.95)
+const ARM_HAND := Vector3(-0.2, -0.55, -0.8)
 const ARM_UPPER_ROAR := Vector3(0.45, -0.4, -0.8)
 const ARM_FORE_ROAR := Vector3(0.2, 0.55, -0.8)
 ## A small counter-swing with the stride (rad of forward/back swing at the hips' full yaw), and a
@@ -100,6 +101,28 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 			lift += TAIL_FLICK * hip_drop * k
 			tail.drive[i] = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, lift)
 	_pose_arms(roar_open, hip_yaw, dt)
+
+
+## The standing arm pose as the rig's rest pose: bone name -> rest basis that turns arm_<side>0/1/2
+## (in rig space, which at rest is the heading frame) to point along ARM_UPPER/FORE/HAND. Bends at
+## the joints, no roll.
+static func rest_arm_bases(rig: KaijuRig) -> Dictionary:
+	var out: Dictionary = {}
+	var dirs: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
+	for side: String in ["l", "r"]:
+		if not rig.has_bone("arm_%s0" % side):
+			continue
+		var outward := signf(rig.dir_of("arm_%s0" % side).x)
+		var above := Basis.IDENTITY  # the parent's rest orientation (the spine has none)
+		for i: int in dirs.size():
+			var n := "arm_%s%d" % [side, i]
+			if not rig.has_bone(n):
+				break
+			var want := (dirs[i] * Vector3(outward, 1, 1)).normalized()
+			var world := Basis(Quaternion(rig.dir_of(n).normalized(), want))
+			out[n] = above.inverse() * world
+			above = world
+	return out
 
 
 func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
