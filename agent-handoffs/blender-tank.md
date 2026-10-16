@@ -26,7 +26,7 @@ claude/blender-tank-eed18f (worktree .claude/worktrees/blender-tank-eed18f), pus
 ## Gotchas
 - Blender MCP runs in SAFE MODE: no exec/open; bpy.ops.wm.open_mainfile works. Paste code inline or use `blender -b`.
 - glTF-imported roots use quaternion rotation: set rotation_mode = "XYZ" before touching rotation_euler.
-- A Blender window (PID 461804) with the MCP server was already running before this session; left open.
+- Blender (PID 461804, MCP host) closed at the end by PID, per the lead brief; quit_blender is blocked by safe mode.
 
 ## Open decisions (lead/director)
 1. Scale: true scale (h7, 0.8 u tall) or the current 2x presentation (h14)?
