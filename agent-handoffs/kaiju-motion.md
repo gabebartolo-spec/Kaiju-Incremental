@@ -37,6 +37,9 @@ and their parts of rig_voxel.py. Presentation only; the sim decides nothing from
   blender -b --python tools/blender/rig_voxel.py -- <rep_<stage>_tex_olive.glb copy>
     assets/kaiju/reptilian_<stage> reptilian <100|130|160> [0.35 for the adult]
   GLBs: ~/Downloads/kaiju_tripo/rep_{baby,adol,adult}_tex_olive.glb.
+- D-041 skins (kaiju-look-test, PR #15) bind to the .kvox, .rig.json and rest pose. After any reptile
+  re-rig or rest-pose code change, run GODOT=<godot> bash tools/kaiju_skin/bake_all.sh (about a minute)
+  or ping kaiju-look-test. Its smoke test catches .kvox/.rig.json drift, not rest-pose code.
 
 ## Attempts (fix-loop record)
 - Posing arm bones by rotating about their own x rolled them (claws floated): aim joints instead.
