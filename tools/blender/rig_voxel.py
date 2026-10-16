@@ -330,7 +330,9 @@ def radial_skeleton(v, tris, lo, hi, segments=6, max_arms=16):
     It stops when the furthest unclaimed point is short of a tentacle's reach."""
     H = hi[2] - lo[2]
     W = max(hi[0] - lo[0], hi[1] - lo[1])
-    centre = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2])
+    # The body's centre is under its mantle/head (the upper body), not the bounding box's centre.
+    top = v[v[:, 2] > lo[2] + H * 0.55]
+    centre = top[:, :2].mean(0) if len(top) else np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2])
     core = np.where(np.linalg.norm(v[:, :2] - centre, axis=1) < W * 0.06)[0]
     dist, prev = geodesic(v, tris, core)
     reach = np.where(np.isfinite(dist), dist, -1.0)
@@ -339,7 +341,20 @@ def radial_skeleton(v, tris, lo, hi, segments=6, max_arms=16):
     crown = np.array([centre[0], centre[1], hi[2]])
     bones = [{"name": "mantle0", "parent": None, "head": base, "tail": crown, "physics": False}]
     free = reach.copy()
-    longest = reach.max()
+    # A tip is out past the mantle (a big round head has far-away points of its own).
+    flat = np.linalg.norm(v[:, :2] - centre, axis=1)
+    upper = flat[v[:, 2] > lo[2] + H * 0.55]
+    # The mantle dominates the upper body (raised tentacles are a minority): its median radius.
+    mantle_r = np.median(upper) * 1.4 if len(upper) else W * 0.1
+    free[flat < mantle_r * 1.05] = -1.0
+    # A tip is thin: little surface around it (a head's shell is broad).
+    cell = (v / (W * 0.04)).astype(int)
+    _, inverse, counts = np.unique(cell, axis=0, return_inverse=True, return_counts=True)
+    crowd = counts[inverse.ravel()]
+    free[crowd > np.percentile(crowd, 60)] = -1.0
+    MANTLE_ZONE.update({"centre": centre, "radius": mantle_r, "above": lo[2] + H * 0.3,
+                        "thick": W * 0.05})
+    longest = free.max()
     radius = W * 0.05
     for i in range(max_arms):
         tip = int(np.argmax(free))
@@ -425,6 +440,9 @@ def split_jaw(points, owner, bones, cell, rgb):
 # Where the hexapod's head is (set by hexapod_skeleton): voxels above the neck near the head's
 # centre belong to the head whatever bone is nearest, so the head turns as one piece.
 HEAD_ZONE = {}
+# Where a radial body's mantle is (set by radial_skeleton): voxels above tentacle height within
+# its radius stay on the mantle, so a big head never flaps about on a tentacle.
+MANTLE_ZONE = {}
 
 # Limb roots sit against the body; their distance is stretched so body voxels stay on the body.
 ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0, "tentacle": 2.0}
@@ -515,6 +533,15 @@ def main():
             np.linalg.norm(centres_bl - HEAD_ZONE["centre"], axis=1) < HEAD_ZONE["radius"])
         keep = np.array([names[o].startswith("arm") for o in owner])
         owner[in_head & ~keep] = names.index("head0")
+    if MANTLE_ZONE:
+        # Above tentacle height, a voxel is the mantle's unless it sits on its tentacle's bone.
+        heads = np.array([b["head"] for b in bones])[owner]
+        tails = np.array([b["tail"] for b in bones])[owner]
+        ab = tails - heads
+        t = np.clip(np.sum((centres_bl - heads) * ab, axis=1) / np.maximum(1e-9, np.sum(ab * ab, axis=1)), 0, 1)
+        off_bone = np.linalg.norm(centres_bl - (heads + t[:, None] * ab), axis=1) > MANTLE_ZONE["thick"]
+        near = np.linalg.norm(centres_bl[:, :2] - MANTLE_ZONE["centre"], axis=1) < MANTLE_ZONE["radius"] * 1.5
+        owner[(centres_bl[:, 2] > MANTLE_ZONE["above"]) & off_bone & near] = 0
     if body_plan == "biped":
         rgb = np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
         owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
