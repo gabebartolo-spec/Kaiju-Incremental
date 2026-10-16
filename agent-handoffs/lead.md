@@ -41,14 +41,14 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 - WorkerThreadPool tasks: wait in _exit_tree. Frame gaps, not TIME_PROCESS. nvidia-smi before
   windowed runs. Capture override.cfg must be deleted afterwards.
 
-10. Real-city (D-029) TABLED by the director until the core game is proven; helper pausing on a WIP branch with handoff agent-handoffs/real-city.md.
+10. Real-city (D-029) TABLED: paused clean on claude/real-city-92596b (95d7ffb), no PR, handoff agent-handoffs/real-city.md on that branch.
 
 11. PR #6 (ability VFX) sent back with a FIX list: breath camera orbit + beam reaching target, lash fan replaced by an arc, boosted subtle cues, HUD 998 timer bug. SFX (D-030): free libs + synthesis, follow-up PR.
 12. Fullscreen start moved to exported builds only (8cf4a16); focus-guard blocks fullscreen projects.
 
 13. Locomotion (D-031): helper kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): reptile first, then hexapod mantis rig, radial cephalopod rig; motion-critic review before the director.
 
-14. PR #7 city layout round 2 MERGED (quiet streets, full blocks, quay/bay/skyline north, fog edges). FIX carried into D-028: east filler too gridlike.
+14. PR #7 merged at round 1 (74d9a28) by mistake: CI finished before round 2 (a56acf8) was pushed. Round 2 (quiet zebras, filled blocks, fog edges) ships in the D-028 PR with the east-filler fixes. Lesson: check the PR head SHA matches the reviewed board before merging.
 
 15. PR #6 ability VFX MERGED (round 2 passed). Follow-ups for the SFX PR: ready flash tints the whole body red (make it a rim/eye glow), breath hidden behind the body for ~0.25 s when facing away.
 
