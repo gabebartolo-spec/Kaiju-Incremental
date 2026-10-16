@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-031 · Director · Kaiju move like killing machines, each species its own way
+Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness;
+insectoid = disturbing skitter, twitches, exoskeletal motion; cephalopod = slides, pushes, pulls,
+grabs building edges with tentacles, never tip-toes. Changes: helper kaiju-motion rebuilds rig
+locomotion (foot IK, weight shift, tail counterbalance, hexapod and radial rigs).
+
 ## 2026-10-16 · D-030 · Director · SFX: free libraries, synthesized in-house where that sounds better
 Why: "download the free stuff, synthesize in-house when we can get better results". Changes: Sonniss
 GDC bundles, Kenney (CC0) and Freesound CC0 only; each source CLEARED in the licence register first;
@@ -15,6 +21,8 @@ Why: "could we have real cities with real layouts... imagine how fun it would be
 city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
 (ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
 area. No player-imported cities, ever: new cities ship as patches (director, 2026-10-16).
+TABLED (director, 2026-10-16): "focus on proofing the game before we expand to that feature";
+the helper pauses at a clean point on its WIP branch.
 
 ## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
 Why: "our kaiju models look so good that they make the buildings look shitty, can we up their

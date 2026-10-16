@@ -5,7 +5,9 @@ extends RefCounted
 ## archetypes give the facades their read: office (ribbon windows, spandrel bands, AC units),
 ## brick residential (punched windows, balconies, water tank), glass tower (curtain wall,
 ## antenna with beacon), stone classic (deep-set windows with sills, cornices, stepped roof).
-## Hollow shell plus a floor slab per floor, so a broken building shows its floors.
+## Hollow shell plus a floor slab per floor, so a broken building shows its floors. A side that
+## shares a party wall with a neighbour is blank brick or concrete, as in a real terrace; some
+## shops hang a vertical neon sign off a street face (Tokyo).
 
 const RES := 4
 const VOXEL := 1.0 / RES
@@ -14,6 +16,10 @@ const BRICK := 1
 const GLASS := 2
 const STONE := 3
 const AWNINGS: Array[Color] = [Color("7d4636"), Color("3f5a4a"), Color("6a5a3a"), Color("4a4f66")]
+const NEON: Array[Color] = [Color("ff4f8b"), Color("4fd8ff"), Color("ffb347"), Color("8dff6a")]
+const SIGN_CHANCE := 0.3
+## Sides, as the outward step in cells: -x, +x, -z, +z.
+const SIDES: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
 
 var vox := VoxelBuilder.new()
 var palette: Dictionary = {}
@@ -22,10 +28,13 @@ var _w: int
 var _d: int
 var _h: int
 var _lit_chance: float
+var _party: Array[Vector2i] = []
 
 
-func _init(p_building: RampageSim.Building, base: Color) -> void:
+## party: the sides (from SIDES) that touch a neighbouring building.
+func _init(p_building: RampageSim.Building, base: Color, party: Array[Vector2i] = []) -> void:
 	b = p_building
+	_party = party
 	_w = b.w * RES
 	_d = b.d * RES
 	_h = b.height * RES
@@ -34,6 +43,7 @@ func _init(p_building: RampageSim.Building, base: Color) -> void:
 	_shell()
 	_slabs()
 	_roof()
+	_sign()
 
 
 func archetype() -> int:
@@ -78,7 +88,12 @@ func _make_palette(base: Color) -> void:
 		"vent": Color("3a3c3e"),
 		"tank": Color("6a5040"),
 		"beacon": Color(1.0, 0.25, 0.2, 0.0),
+		"sign_frame": Color("1c1e22"),
 	}
+	for i: int in NEON.size():
+		var neon := NEON[i]
+		neon.a = 0.0
+		palette["neon%d" % i] = neon
 
 
 func _roll(cell: Vector3i, mod: int) -> int:
@@ -140,7 +155,10 @@ func _shell() -> void:
 				if not edge_x and not edge_z:
 					continue
 				var p := x if edge_z else z
-				vox.put(Vector3i(x, y, z), _facade(Vector3i(x, y, z), p, edge_x and edge_z))
+				var key := _facade(Vector3i(x, y, z), p, edge_x and edge_z)
+				if _is_party(x, z) and not (edge_x and edge_z):
+					key = "wall"  # a party wall: no windows, no shopfront
+				vox.put(Vector3i(x, y, z), key)
 	_outside_details()
 
 
@@ -154,6 +172,8 @@ func _outside_details() -> void:
 				if out_x == out_z:  # skip the inside and the outer corners
 					continue
 				var p := x if out_z else z
+				if _is_party(x, z):
+					continue
 				var inner := Vector3i(clampi(x, 0, _w - 1), y, clampi(z, 0, _d - 1))
 				var key := _proud(y, p, vox.key_at(inner))
 				if key != "":
@@ -225,3 +245,49 @@ func _roof() -> void:
 				for x: int in range(1 + step * 2, _w - 1 - step * 2):
 					for z: int in range(1 + step * 2, _d - 1 - step * 2):
 						vox.put(Vector3i(x, top + step, z), "trim")
+
+
+## Whether cell column (x, z) lies on (or just outside) a side shared with a neighbour.
+func _is_party(x: int, z: int) -> bool:
+	for side: Vector2i in _party:
+		if (
+			(side.x < 0 and x <= 0)
+			or (side.x > 0 and x >= _w - 1)
+			or (side.y < 0 and z <= 0)
+			or (side.y > 0 and z >= _d - 1)
+		):
+			return true
+	return false
+
+
+## A vertical neon sign hung off a street face near a corner: a dark frame with glowing
+## bands, two cells wide, from above the awning up to five floors.
+func _sign() -> void:
+	if b.height < 3 or archetype() == GLASS or _roll(Vector3i(7, 7, 7), 1000) >= SIGN_CHANCE * 1000:
+		return
+	var open: Array[Vector2i] = []
+	for side: Vector2i in SIDES:
+		if not _party.has(side):
+			open.append(side)
+	if open.is_empty():
+		return
+	var side := open[_roll(Vector3i(3, 1, 4), open.size())]
+	var top := mini(_h - 3, RES * 5)
+	var colour := _roll(Vector3i(5, 9, 2), NEON.size())
+	# Along the face, two cells in from a corner; out from the wall, two cells deep.
+	var along := 2 if _roll(Vector3i(1, 2, 3), 2) == 0 else (_w if side.y != 0 else _d) - 4
+	for y: int in range(RES + 1, top):
+		for a: int in 2:
+			for out: int in range(1, 3):
+				var cell := Vector3i.ZERO
+				if side.x != 0:
+					cell = Vector3i(-out if side.x < 0 else _w - 1 + out, y, along + a)
+				else:
+					cell = Vector3i(along + a, y, -out if side.y < 0 else _d - 1 + out)
+				var band := floori(y / 3.0) % 3
+				var key := (
+					"sign_frame"
+					if y == RES + 1 or y == top - 1 or band == 2
+					else ("neon%d" % ((colour + band) % NEON.size()))
+				)
+				vox.put(cell, key)

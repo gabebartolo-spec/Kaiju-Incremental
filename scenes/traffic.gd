@@ -1,12 +1,13 @@
 class_name Traffic
 extends Node3D
-## Moving cars on the street grid. Streets are one-way (the parked rows leave one lane down the
-## middle), alternating direction street by street; cars turn at crossings, queue behind the
-## car ahead, and when the kaiju comes near they brake, back away and flee. Police cruisers
-## drive in and park across a street for a blockade. Crushed cars flatten like parked ones.
-## Presentation only.
+## Moving cars on the street plan (CityGen.map). Side streets are one-way (the parked rows
+## leave one lane down the middle), alternating direction street by street; avenues and the
+## diagonal carry a lane each way. Cars turn at crossings, queue behind the car ahead, and when
+## the kaiju comes near they brake, back away and flee (the wrong way down a one-way street if
+## they must). Police cruisers drive in and park across a street for a blockade. Crushed cars
+## flatten like parked ones. Presentation only.
 
-const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const TWO_WAY_LANE := 1.0  # avenues: each lane's middle this far from the centre line
 const ACCEL := 6.0
 const BRAKE := 12.0
 const BACK_SPEED := 0.6  # backing away, as a share of flee speed
@@ -21,8 +22,11 @@ const LIGHT_GLOW := 2.5  # police light bars
 class Car:
 	extends RefCounted
 	var pos := Vector2.ZERO
-	var dir := Vector2i(0, -1)
-	var node := Vector2i.ZERO  # the crossing it is driving to
+	var line := Vector2.ZERO  # its point on the street's centre line (pos is off it by lane)
+	var dir := Vector2(0, -1)
+	var node := 0  # the crossing it is driving to
+	var from := 0  # the crossing it came from
+	var lane := 0.0  # sideways from the centre line, to the right of dir
 	var speed := 0.0
 	var fleeing := false
 	var braking := false
@@ -45,9 +49,13 @@ var cars: Array[Car] = []
 var fled := 0
 var _cfg: Dictionary
 var _rng: RandomNumberGenerator
-var _grid: int
 var _half: float
-var _spacing: float
+var _nodes: Array[Vector2] = []
+## Per crossing: the lanes out of it, {"to": node, "lane": offset}, and the crossings every
+## street it touches leads to (a fleeing car may drive any of them).
+var _lanes: Array[Array] = []
+var _links: Array[Array] = []
+var _ends: Array[Vector2i] = []  # every lane as (from, to), for spawning
 var _meshes: Array[ArrayMesh] = []
 var _police_meshes: Array[ArrayMesh] = []
 var _clock := 0.0
@@ -58,9 +66,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	_rng = rng
 	_cfg = Content.section("street")
-	_grid = Num.i(sim.city["grid"])
-	_spacing = Num.f(sim.city["spacing"])
 	_half = CityGen.half_extent(sim.city)
+	_build_lanes(CityGen.map(sim.city))
 
 
 func _ready() -> void:
@@ -113,49 +120,102 @@ func _bake(v: VoxelBuilder, palette: Dictionary) -> ArrayMesh:
 	return v.bake(palette, voxel, Vector3(0, 0, voxel * 0.5), LIGHT_GLOW)
 
 
-## Street centre line k = 0..grid (the same lines CityDecor marks).
-func street(k: int) -> float:
-	return -_half + (k - 0.5) * _spacing
+## The drivable network inside the playable city: alleys carry no cars.
+func _build_lanes(plan: Dictionary) -> void:
+	_nodes = plan["nodes"]
+	for n: int in _nodes.size():
+		_lanes.append([])
+		_links.append([])
+	var xs: Array[float] = plan["xs"]
+	var zs: Array[float] = plan["zs"]
+	for street: Dictionary in plan["streets"]:
+		var kind := str(street["kind"])
+		var a := Num.i(street["from"])
+		var b := Num.i(street["to"])
+		if kind == CityGen.ALLEY or not (_inside(_nodes[a]) and _inside(_nodes[b])):
+			continue
+		_links[a].append(b)
+		_links[b].append(a)
+		if kind != CityGen.STREET:
+			_add_lane(a, b, TWO_WAY_LANE)
+			_add_lane(b, a, TWO_WAY_LANE)
+			continue
+		# One-way, alternating with the street's index along its axis.
+		var d := _nodes[b] - _nodes[a]
+		var vertical := absf(d.y) > absf(d.x)
+		var index := xs.find(_nodes[a].x) if vertical else zs.find(_nodes[a].y)
+		var forward := (d.y if vertical else d.x) > 0.0
+		if (posmod(index, 2) == 0) == forward:
+			_add_lane(a, b, 0.0)
+		else:
+			_add_lane(b, a, 0.0)
 
 
-func crossing(n: Vector2i) -> Vector2:
-	return Vector2(street(n.x), street(n.y))
+func _add_lane(a: int, b: int, lane: float) -> void:
+	_lanes[a].append({"to": b, "lane": lane})
+	_ends.append(Vector2i(a, b))
 
 
-## One-way rule: a street's direction alternates with its index.
-func _oneway(k: int) -> int:
-	return 1 if k % 2 == 0 else -1
+func _inside(p: Vector2) -> bool:
+	return maxf(absf(p.x), absf(p.y)) <= _half + 0.5
 
 
-func _in_grid(n: Vector2i) -> bool:
-	return n.x >= 0 and n.y >= 0 and n.x <= _grid and n.y <= _grid
+func crossing(n: int) -> Vector2:
+	return _nodes[n]
 
 
-func _legal(at: Vector2i, d: Vector2i) -> bool:
-	if not _in_grid(at + d):
-		return false
-	return d.x == _oneway(at.y) if d.x != 0 else d.y == _oneway(at.x)
+## Crossings inside the city that cars can reach (the police pick blockade spots from these).
+func crossings() -> Array[int]:
+	var out: Array[int] = []
+	for n: int in _nodes.size():
+		if not _links[n].is_empty():
+			out.append(n)
+	return out
+
+
+## Unit directions of the streets leaving crossing n.
+func street_dirs(n: int) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for other: int in _links[n]:
+		out.append((_nodes[other] - _nodes[n]).normalized())
+	return out
 
 
 func _spawn_random() -> void:
-	var from := Vector2i(_rng.randi_range(0, _grid), _rng.randi_range(0, _grid))
-	var options: Array[Vector2i] = []
-	for d: Vector2i in DIRS:
-		if _legal(from, d):
-			options.append(d)
-	if options.is_empty():
+	if _ends.is_empty():
 		return
-	var d := options[_rng.randi_range(0, options.size() - 1)]
-	var pos := crossing(from) + Vector2(d) * _rng.randf_range(1.0, _spacing - 1.0)
+	var end := _ends[_rng.randi_range(0, _ends.size() - 1)]
+	var length := _nodes[end.x].distance_to(_nodes[end.y])
+	if length < 3.0:
+		return
+	var probe := Car.new()
+	_enter(probe, end.x, end.y)
+	probe.line = _nodes[end.x] + probe.dir * _rng.randf_range(1.0, length - 1.0)
+	probe.pos = probe.line + _right(probe) * probe.lane
 	for other: Car in cars:
-		if other.pos.distance_to(pos) < Num.f(_cfg["car_gap"]) + 0.5:
+		if other.pos.distance_to(probe.pos) < Num.f(_cfg["car_gap"]) + 0.5:
 			return
 	var car := _make(_meshes[_rng.randi_range(0, _meshes.size() - 1)], false)
-	car.pos = pos
-	car.dir = d
-	car.node = from + d
+	_enter(car, end.x, end.y)
+	car.line = probe.line
+	car.pos = probe.pos
 	car.speed = Num.f(_cfg["drive_speed"])
 	_place(car, 1.0)
+
+
+## Puts a car on the lane from crossing a to crossing b.
+func _enter(car: Car, a: int, b: int) -> void:
+	car.from = a
+	car.node = b
+	car.dir = (_nodes[b] - _nodes[a]).normalized()
+	car.lane = 0.0
+	for lane: Dictionary in _lanes[a]:
+		if Num.i(lane["to"]) == b:
+			car.lane = Num.f(lane["lane"])
+
+
+func _right(car: Car) -> Vector2:
+	return Vector2(-car.dir.y, car.dir.x)
 
 
 func _make(mesh: ArrayMesh, police: bool) -> Car:
@@ -230,7 +290,7 @@ func _arrive(car: Car, delta: float) -> void:
 
 func _drive(car: Car, delta: float, kaiju: Vector2) -> void:
 	var d := car.pos.distance_to(kaiju)
-	var dir := Vector2(car.dir)
+	var dir := car.dir
 	if not car.fleeing and d < Num.f(_cfg["panic_radius"]):
 		car.fleeing = true
 		fled += 1
@@ -242,8 +302,9 @@ func _drive(car: Car, delta: float, kaiju: Vector2) -> void:
 		target *= BACK_SPEED
 	if car.braking:
 		car.speed = move_toward(car.speed, 0.0, BRAKE * delta)
-		var room := maxf(0.0, (crossing(car.node) - car.pos).dot(dir))
-		car.pos += dir * minf(car.speed * delta, room)
+		var room := maxf(0.0, (_nodes[car.node] - car.line).dot(dir))
+		car.line += dir * minf(car.speed * delta, room)
+		car.pos = car.line + _right(car) * car.lane
 		if car.speed <= 0.0:
 			car.braking = false
 			_turn_back(car, true)
@@ -258,26 +319,31 @@ func _drive(car: Car, delta: float, kaiju: Vector2) -> void:
 	var rate := ACCEL if target > car.speed else BRAKE
 	car.speed = move_toward(car.speed, target, rate * delta)
 	var step := car.speed * delta
-	var rest := (crossing(car.node) - car.pos).dot(dir)
+	var rest := (_nodes[car.node] - car.line).dot(dir)
 	if step < rest:
-		car.pos += dir * step
+		car.line += dir * step
+		car.pos = car.line + _right(car) * car.lane
 		return
-	car.pos = crossing(car.node)
+	car.line = _nodes[car.node]
 	car.backing = false
-	car.dir = _next_dir(car, kaiju)
-	car.node += car.dir
+	_enter(car, car.node, _next_node(car, kaiju))
+	car.pos = car.line + _right(car) * car.lane
 
 
 ## Reverses along the street: backing up (still facing the kaiju) or a full U-turn.
 func _turn_back(car: Car, backing: bool) -> void:
-	car.node -= car.dir
+	var was := car.node
+	car.node = car.from
+	car.from = was
 	car.dir = -car.dir
+	if backing:
+		car.lane = -car.lane  # the same spot on the road, now reversing
 	car.backing = backing
 	car.blocked = 0.0
 
 
 func _blocked(car: Car) -> bool:
-	var dir := Vector2(car.dir)
+	var dir := car.dir
 	var gap := Num.f(_cfg["car_gap"])
 	for other: Car in cars:
 		if other == car:
@@ -289,27 +355,31 @@ func _blocked(car: Car) -> bool:
 	return false
 
 
-func _next_dir(car: Car, kaiju: Vector2) -> Vector2i:
+## The crossing to drive to next from car.node: a legal lane at random, or, fleeing, any
+## street that leads furthest from the kaiju.
+func _next_node(car: Car, kaiju: Vector2) -> int:
 	var at := car.node
-	var options: Array[Vector2i] = []
-	for d: Vector2i in DIRS:
-		if d == -car.dir:
-			continue
-		if _legal(at, d) or (car.fleeing and _in_grid(at + d)):
-			options.append(d)
+	var options: Array[int] = []
+	for lane: Dictionary in _lanes[at]:
+		if Num.i(lane["to"]) != car.from:
+			options.append(Num.i(lane["to"]))
+	if car.fleeing:
+		for other: int in _links[at]:
+			if other != car.from and not options.has(other):
+				options.append(other)
 	if options.is_empty():
-		return -car.dir if _in_grid(at - car.dir) else car.dir
+		return car.from
 	if not car.fleeing:
 		return options[_rng.randi_range(0, options.size() - 1)]
 	var best := options[0]
-	for d: Vector2i in options:
-		if crossing(at + d).distance_to(kaiju) > crossing(at + best).distance_to(kaiju):
-			best = d
+	for n: int in options:
+		if _nodes[n].distance_to(kaiju) > _nodes[best].distance_to(kaiju):
+			best = n
 	return best
 
 
 func _place(car: Car, delta: float) -> void:
-	var facing := Vector2(-car.dir) if car.backing else Vector2(car.dir)
+	var facing := -car.dir if car.backing else car.dir
 	if car.arrive_t >= 0.0 or car.parked:
 		var drive := car.arrive_to - car.arrive_from
 		facing = car.arrive_facing if car.arrive_t > 0.6 or car.parked else drive

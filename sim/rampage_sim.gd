@@ -104,8 +104,8 @@ func _init(
 		buildings.append(b)
 		chunks_total += b.w * b.d * b.height
 	var city_half := CityGen.half_extent(city)
-	arena_half = city_half + Num.f(city["spacing"]) * 2.0
-	kaiju_pos = Vector2(0.0, city_half + Num.f(city["spacing"]))
+	arena_half = city_half + Num.f(city["arena_margin"])
+	kaiju_pos = Vector2(0.0, city_half)  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 
 

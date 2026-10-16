@@ -1,6 +1,6 @@
 class_name StreetLife
 extends Node3D
-## People in the streets. Civilians walk the pavement round every lot and cross at the
+## People in the streets. Civilians walk the pavement round every block and cross at the
 ## corners; when the kaiju comes near they turn and run from it, arms up. Police set up
 ## blockades on a street ahead of it: cruisers park across the road, lights flashing, and
 ## officers fire their pistols in vain until it is almost on them, then scatter. Stomps,
@@ -8,8 +8,8 @@ extends Node3D
 ## Presentation only: the sim and the economy never know any of them exist.
 
 const CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
-const PAVEMENT := 0.35  # pavement line, out from a building's wall
-const PARK_EDGE := 2.95  # pavement line round a park lot, from its middle
+const PAVEMENT := 0.45  # pavement line, out from the block's edge (its buildings' walls)
+const CROSSWALK := 9.5  # longest crossing to the corner of the block across the street
 const SIDE_STEP := 0.2  # people keep a little to one side of the line
 const PACE_SPREAD := 0.2  # walkers differ in pace, so a crowd strings out instead of merging
 const WALK_HZ := 3.0
@@ -72,10 +72,11 @@ func _ready() -> void:
 	traffic = Traffic.new(sim, Seeds.make("traffic", 0))
 	add_child(traffic)
 	_build_pavements()
+	# A few people per building, spread over the blocks.
 	var per_lot := Num.i(_cfg["civilians_per_lot"])
-	for lot: int in _nodes.size() >> 2:
-		for n: int in per_lot:
-			_spawn_civilian(lot)
+	var blocks := _nodes.size() >> 2
+	for n: int in per_lot * sim.buildings.size():
+		_spawn_civilian(n % maxi(1, blocks))
 	var capacity := people.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
 	for outfit: int in VoxelPerson.OUTFITS.size():
@@ -94,39 +95,39 @@ func _ready() -> void:
 	add_child(police)
 
 
-## Pavement corners round every lot (4 per lot), linked round the lot and across the streets.
+## Pavement corners round every block of the playable city (4 per block), linked round the
+## block and across the streets to the nearest corner of the block opposite.
 func _build_pavements() -> void:
-	var grid := Num.i(sim.city["grid"])
-	var spacing := Num.f(sim.city["spacing"])
 	var half := CityGen.half_extent(sim.city)
-	var lots := {}
-	for b: RampageSim.Building in sim.buildings:
-		lots[Vector2i(roundi((b.x + half) / spacing), roundi((b.z + half) / spacing))] = b
-	for gx: int in grid:
-		for gz: int in grid:
-			var centre := Vector2(-half + gx * spacing, -half + gz * spacing)
-			var size := Vector2(PARK_EDGE, PARK_EDGE)
-			var key := Vector2i(gx, gz)
-			if lots.has(key):
-				var b: RampageSim.Building = lots[key]
-				centre = Vector2(b.x, b.z)
-				size = Vector2(b.w * 0.5 + PAVEMENT, b.d * 0.5 + PAVEMENT)
-			for c: Vector2 in CORNERS:
-				_nodes.append(centre + c * size)
-				_links.append([])
-	for gx: int in grid:
-		for gz: int in grid:
-			var lot := gx * grid + gz
-			for c: int in 4:
-				_link(lot * 4 + c, lot * 4 + (c + 1) % 4)
-			if gx + 1 < grid:  # across the street to the lot on +x
-				var east := (gx + 1) * grid + gz
-				_link(lot * 4 + 1, east * 4 + 0)
-				_link(lot * 4 + 2, east * 4 + 3)
-			if gz + 1 < grid:  # across the street to the lot on +z
-				var south := gx * grid + gz + 1
-				_link(lot * 4 + 3, south * 4 + 0)
-				_link(lot * 4 + 2, south * 4 + 1)
+	for block: Dictionary in CityGen.map(sim.city)["blocks"]:
+		var rect: Rect2 = block["rect"]
+		if str(block["use"]) == "outer" or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
+			continue
+		var ring := rect.grow(PAVEMENT)
+		var size := ring.size * 0.5
+		for c: Vector2 in CORNERS:
+			_nodes.append(ring.get_center() + c * size)
+			_links.append([])
+	var blocks := _nodes.size() >> 2
+	for block: int in blocks:
+		for c: int in 4:
+			_link(block * 4 + c, block * 4 + (c + 1) % 4)
+	# Crossings: a corner links to the nearest corner of another block straight across a street.
+	for a: int in _nodes.size():
+		for axis: int in 2:
+			var best := -1
+			for b: int in _nodes.size():
+				if a >> 2 == b >> 2:
+					continue
+				var d := _nodes[b] - _nodes[a]
+				var along := absf(d.x) if axis == 0 else absf(d.y)
+				var off := absf(d.y) if axis == 0 else absf(d.x)
+				if off > 1.0 or along > CROSSWALK:
+					continue
+				if best < 0 or along < _nodes[best].distance_to(_nodes[a]):
+					best = b
+			if best >= 0 and not _links[a].has(best):
+				_link(a, best)
 
 
 func _link(a: int, b: int) -> void:

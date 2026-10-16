@@ -138,38 +138,40 @@ func update(delta: float, kaiju: Vector2) -> void:
 
 ## Picks a crossing ahead of the kaiju and sends two cruisers to block the street there.
 func _start_blockade(kaiju: Vector2) -> void:
-	var grid := Num.i(sim.city["grid"])
+	var traffic := _street.traffic
 	var want := Num.f(_cfg["blockade_distance"])
-	var best := Vector2(INF, INF)
+	var best := -1
 	var best_score := INF
-	for i: int in grid + 1:
-		for j: int in grid + 1:
-			var at := _street.traffic.crossing(Vector2i(i, j))
-			var d := at - kaiju
-			var dist := d.length()
-			if dist < SPOT_MIN or dist > SPOT_MAX:
-				continue
-			var facing := d.normalized().dot(sim.facing)
-			if facing < AHEAD:
-				continue
-			var taken := false
-			for other: Blockade in _blockades:
-				taken = taken or other.at.distance_to(at) < 1.0
-			var score := absf(dist - want) - facing * 4.0
-			if not taken and score < best_score:
-				best_score = score
-				best = at
-	if best.x == INF:
+	for n: int in traffic.crossings():
+		var at := traffic.crossing(n)
+		var d := at - kaiju
+		var dist := d.length()
+		if dist < SPOT_MIN or dist > SPOT_MAX:
+			continue
+		var facing := d.normalized().dot(sim.facing)
+		if facing < AHEAD:
+			continue
+		var taken := false
+		for other: Blockade in _blockades:
+			taken = taken or other.at.distance_to(at) < 1.0
+		var score := absf(dist - want) - facing * 4.0
+		if not taken and score < best_score:
+			best_score = score
+			best = n
+	if best < 0:
 		return
 	var b := Blockade.new()
-	b.at = best
-	var v := kaiju - best
-	b.toward = Vector2(signf(v.x), 0) if absf(v.x) >= absf(v.y) else Vector2(0, signf(v.y))
+	b.at = traffic.crossing(best)
+	# Block the street that leads from the crossing most nearly toward the kaiju.
+	var v := (kaiju - b.at).normalized()
+	for d: Vector2 in traffic.street_dirs(best):
+		if b.toward == Vector2.ZERO or d.dot(v) > b.toward.dot(v):
+			b.toward = d
 	b.across = Vector2(-b.toward.y, b.toward.x)
-	var line := best + b.toward * BARRIER
+	var line := b.at + b.toward * BARRIER
 	for s: float in [-1.0, 1.0]:  # nose to nose across the road
 		var slot := line + b.across * s * 0.85
-		var from := best - b.toward * 9.0 + b.across * s * 0.4
+		var from := b.at - b.toward * 9.0 + b.across * s * 0.4
 		var angle := _rng.randf_range(-0.2, 0.2)
 		_street.traffic.add_police(from, slot, (-b.across * s).rotated(angle))
 	b.light = OmniLight3D.new()
