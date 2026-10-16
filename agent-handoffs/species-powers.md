@@ -29,7 +29,7 @@ self-test). gdlint/gdformat clean. Clips + stills + contact sheets in the notes 
 species-powers/ (reptilian/insectoid/cephalopod _branch.mp4).
 
 ## Open decisions
-1. Pacing: the scripted player finishes the tree in 0.9 h, because the fixed city is 100%
+1. Pacing: lead said keep shared costs; branches paced vs the curve (table in PR body; 0.6-0.9 h total).
    flattened by run 11. I recommended "city grows per evolution" as a separate task and left the
    shared costs alone. Question sent to the lead; no answer yet.
 2. Ultimate on a second button (E), hold-to-glide: flagged for the director in the PR.

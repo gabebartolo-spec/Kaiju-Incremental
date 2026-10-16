@@ -2,8 +2,8 @@ extends SceneTree
 ## Pacing estimate for the upgrade tree (target 3-5 hours, zero AFK, D-035): a scripted player
 ## plays seeded rampages (walk to the nearest building, signature and ultimate when ready,
 ## glide half the time) and between runs buys the cheapest affordable upgrade until none is
-## left. Prints, per species, the play time at which each evolution and the ultimate land and
-## when the tree is complete. Play time = rampage seconds + TREE_SECONDS per visit.
+## left. Prints, per species, the play time at which each evolution and each branch node
+## lands and when the tree is complete. Play time = rampage seconds + TREE_SECONDS per visit.
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400] [--verbose]
 
 const DT := 1.0 / 15.0
@@ -33,10 +33,6 @@ func _pace(species_id: String) -> void:
 	var species := Content.species_def(species_id)
 	var tree := UpgradeTree.new(Content.upgrades(), {}, species_id)
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
-	var ultimate := ""
-	for id: String in tree.order:
-		if str(tree.defs[id]["name"]).begins_with("ULTIMATE"):
-			ultimate = id
 	var rubble := 0
 	var clock := 0.0
 	var marks: Array[String] = []
@@ -78,7 +74,9 @@ func _pace(species_id: String) -> void:
 			if pick == "":
 				break
 			rubble -= tree.buy(pick, rubble)
-			if pick in MILESTONES or (pick == ultimate and tree.level(pick) == 1):
+			var def: Dictionary = tree.defs[pick]
+			var branch := str(def.get("species", "")) != ""
+			if pick in MILESTONES or (branch and tree.level(pick) == 1):
 				marks.append(
 					(
 						"%s at %.2f h (run %d, %.0f%% city)"

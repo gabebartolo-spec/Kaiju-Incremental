@@ -5,7 +5,7 @@ extends Node3D
 ## events and state; decides nothing. Part of Rampage.
 ##
 ## Rig hooks (agreed with kaiju-motion, called only when the model has them):
-## tail_sweep(side), grab(limb, at), throw(toward), jaw_open(open).
+## tail_sweep(side), grab(limb, at), throw(toward), jaw_open(open), climbing(on).
 
 const INK := Color("7dff3a")
 const EGG := Color("e8dcb8")
@@ -24,6 +24,7 @@ var _helis: Dictionary = {}
 var _young: Dictionary = {}
 var _beam: MeshInstance3D
 var _dust_t := 0.0
+var _climbing := false
 var _glow_mats: Dictionary = {}
 
 
@@ -260,6 +261,10 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 		_beam.scale = Vector3(1.4 * bs, 1.4 * bs, mouth.distance_to(end))
 		_beam.look_at_from_position((mouth + end) * 0.5, end, Vector3.UP)
 		_city.fx.sparks(end)
+	var climbing := sim.stand_y > 0.5
+	if climbing != _climbing:
+		_climbing = climbing
+		_hook("climbing", [climbing])
 	_dust_t -= delta
 	if sim.stat("momentum") > 0.0 and sim.powers.momentum > 0.5 and _dust_t <= 0.0:
 		_dust_t = 0.15
