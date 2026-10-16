@@ -1,17 +1,19 @@
 class_name CityView
 extends Node3D
-## The voxel city and its effects: sky and light, ground, one MultiMesh per building (cells
-## bottom-up, so losing layers is a smaller visible_instance_count), tumbling debris, rings,
-## flames and floating text. Draws only; RampageSim decides what breaks.
+## The voxel city and its effects: sky and light, ground, buildings (BuildingView: voxels by
+## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
+## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
 
 const MAX_DEBRIS := 320
-const DEBRIS_PER_LAYER := 9
+const DEBRIS_PER_CHUNK := 3
+const DEBRIS_PER_LANDING := 70
 const MAX_FIRES := 30
 
 var sim: RampageSim
+var fx: Fx
 var _rng: RandomNumberGenerator
-var _building_mms: Array[MultiMeshInstance3D] = []
-var _building_voxels: Array[BuildingVoxels] = []
+var _views: Array[BuildingView] = []
+var _falling: Dictionary = {}
 var _decor: CityDecor
 var _fires: Array[Fire] = []
 var _debris: Array[RigidBody3D] = []
@@ -30,7 +32,12 @@ func _ready() -> void:
 	_build_environment()
 	_build_ground()
 	for b: RampageSim.Building in sim.buildings:
-		_build_building(b)
+		var view := BuildingView.new(b, _base_color(b))
+		add_child(view)
+		_views.append(view)
+	fx = Fx.new()
+	add_child(fx)
+	_prewarm_fire()
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
 		add_child(_decor)
@@ -42,8 +49,9 @@ func crush(at: Vector3, radius: float) -> void:
 		_decor.crush(at, radius)
 
 
-func _process(_delta: float) -> void:
-	if _debris.size() > MAX_DEBRIS:
+func _process(delta: float) -> void:
+	_animate_falls(delta)
+	while _debris.size() > MAX_DEBRIS:
 		var old: RigidBody3D = _debris.pop_front()
 		old.queue_free()
 
@@ -123,41 +131,122 @@ func slab(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 	return mi
 
 
-func _build_building(b: RampageSim.Building) -> void:
-	var voxels := BuildingVoxels.new(b, _base_color(b))
-	voxels.vox.salt = b.style
-	var glow := Look.value("window_glow")
-	var mmi := voxels.vox.build(voxels.palette, BuildingVoxels.VOXEL, glow, voxels.origin())
-	add_child(mmi)
-	_building_mms.append(mmi)
-	_building_voxels.append(voxels)
-
-
 func _base_color(b: RampageSim.Building) -> Color:
 	var styles := Look.styles()
 	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
-## A building lost `count` layers: hide them, throw voxels away from the kaiju, leave a
-## rubble slab when nothing stands.
-func layers_destroyed(index: int, count: int, kaiju_at: Vector3) -> void:
+## The first fire compiles its particle shaders; do it now, out of sight, not mid-rampage.
+func _prewarm_fire() -> void:
+	var f := Fire.new(0.5, 0.0)
+	f.position = Vector3(0, -60, 0)
+	add_child(f)
+	get_tree().create_timer(1.0).timeout.connect(f.queue_free)
+
+
+## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
+func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
+	var view := _views[index]
+	var parts := view.hide_chunks(cells)
 	var b := sim.buildings[index]
-	var voxels := _building_voxels[index]
-	_building_mms[index].multimesh.visible_instance_count = voxels.visible_for(b.layers)
-	var away := (Vector3(b.x, 0, b.z) - kaiju_at).normalized()
-	var res := BuildingVoxels.RES
-	for layer: int in range(b.layers, b.layers + count):
-		for _n: int in DEBRIS_PER_LAYER:
-			var cell := Vector3i(
-				_rng.randi_range(0, b.w * res - 1),
-				layer * res + _rng.randi_range(0, res - 1),
-				_rng.randi_range(0, b.d * res - 1)
+	var centre := Vector3(b.x, 0, b.z)
+	var away := (centre - Vector3(kaiju_at.x, 0, kaiju_at.z)).normalized()
+	var budget := mini(parts.size(), cells.size() * DEBRIS_PER_CHUNK)
+	for n: int in budget:
+		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
+		var pos: Vector3 = part["pos"]
+		var color: Color = part["color"]
+		debris(pos, color, away)
+	var mid := Vector3.ZERO
+	for c: Vector3i in cells:
+		mid += b.chunk_world(c)
+	fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
+	_ruin_if_gone(index)
+
+
+## A section starts to fall: lift its voxels into a piece that topples or drops.
+func fall_start(event: Dictionary) -> void:
+	var index := Num.i(event["building"])
+	var cells: Array[Vector3i] = event["cells"]
+	var pivot: Vector3 = event["pivot"]
+	var piece := _views[index].lift_piece(cells, pivot)
+	add_child(piece)
+	_falling[Num.i(event["id"])] = {
+		"node": piece,
+		"kind": str(event["kind"]),
+		"dir": event["dir"],
+		"drop": Num.f(event["drop"]),
+		"duration": maxf(0.05, Num.f(event["duration"])),
+		"t": 0.0,
+	}
+	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
+	_ruin_if_gone(index)
+
+
+## Gravity drives it: the angle (topple) or the drop grows with the square of time.
+func _animate_falls(delta: float) -> void:
+	for id: int in _falling:
+		var f: Dictionary = _falling[id]
+		var node: Node3D = f["node"]
+		f["t"] = Num.f(f["t"]) + delta
+		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
+		if str(f["kind"]) == "topple":
+			var dir: Vector2 = f["dir"]
+			var axis := Vector3(dir.y, 0, -dir.x).normalized()
+			node.basis = Basis(axis, PI * 0.5 * k * k)
+		else:
+			node.position.y = (
+				node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
 			)
-			var key := voxels.vox.key_at(cell)
-			var color: Color = voxels.palette.get(key if key != "" else "wall", Color.GRAY)
-			var pos := voxels.origin() + Vector3(cell) * BuildingVoxels.VOXEL
-			debris(pos + Vector3(0, BuildingVoxels.VOXEL * 0.5, 0), color, away)
-	if b.layers == 0:
+			f["dropped"] = Num.f(f["drop"]) * k * k
+
+
+## A section hit the ground (or what was below it): it bursts into debris and dust.
+func fall_land(event: Dictionary) -> void:
+	var id := Num.i(event["id"])
+	if not _falling.has(id):
+		return
+	var f: Dictionary = _falling[id]
+	_falling.erase(id)
+	var node: Node3D = f["node"]
+	var parts: Array = node.get_meta("parts", [])
+	var landed: Array[Vector3] = []
+	for n: int in mini(parts.size(), DEBRIS_PER_LANDING):
+		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
+		var pos: Vector3 = part["pos"]
+		var pivot: Vector3 = node.get_meta("pivot")
+		var at := node.global_transform * (pos - pivot)
+		landed.append(at)
+		var color: Color = part["color"]
+		debris(at, color, Vector3.UP)
+	node.queue_free()
+	if str(event["kind"]) == "topple":
+		var from: Vector2 = event["from"]
+		var to: Vector2 = event["to"]
+		var width := Num.f(event["width"])
+		var a := Vector3(from.x, 0, from.y)
+		var b := Vector3(to.x, 0, to.y)
+		fx.dust_line(a, b, width)
+		_rubble_strip(a, b, width)
+		var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
+		for i: int in steps + 1:
+			crush(a.lerp(b, float(i) / steps), width * 0.6)
+	elif not landed.is_empty():
+		fx.dust(landed[0], 1.5)
+
+
+## A long low mound where a tower came down across the street.
+func _rubble_strip(a: Vector3, b: Vector3, width: float) -> void:
+	var mound := slab(
+		Vector3(width, 0.6, a.distance_to(b)), (a + b) * 0.5 + Vector3(0, 0.3, 0), Look.color("lot")
+	)
+	mound.look_at(b + Vector3(0, 0.3, 0), Vector3.UP)
+
+
+func _ruin_if_gone(index: int) -> void:
+	var b := sim.buildings[index]
+	if b.frame.alive_count == 0 and not _views[index].has_meta("ruined"):
+		_views[index].set_meta("ruined", true)
 		fire(Vector3(b.x, 0.4, b.z), clampf(b.w * b.d / 9.0, 0.6, 2.5))
 		slab(Vector3(b.w, 0.5, b.d), Vector3(b.x, 0.25, b.z), _base_color(b).darkened(0.35))
 

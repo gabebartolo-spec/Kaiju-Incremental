@@ -1,7 +1,7 @@
 class_name CityGen
 extends RefCounted
 ## Seeded city layout: a grid of lots, towers taller toward downtown. Each building is a stack
-## of voxel layers; its tier (from height) decides which kaiju size can topple it.
+## of floors; its tier (from height) decides how tough its structure is.
 
 
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:

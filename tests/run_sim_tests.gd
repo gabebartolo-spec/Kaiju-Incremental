@@ -17,7 +17,9 @@ func run_checks() -> void:
 	_check_data()
 	_check_tree()
 	_check_city()
-	_check_tier_gate()
+	_check_structure()
+	_check_topple_crush()
+	_check_toughness()
 	_check_determinism()
 	_check_upgrade_effects()
 	_check_species_differ()
@@ -44,21 +46,16 @@ func _sim(species_id: String, levels: Dictionary, run_index: int = 0) -> Rampage
 	return sim
 
 
-## Scripted player: walk to the nearest building it can topple, use the signature when ready.
+## Scripted player: walk to the nearest standing building, use the signature when ready.
 func _autoplay(sim: RampageSim) -> Dictionary:
 	var steps := 0
+	var target := Vector2(INF, INF)
 	while not sim.over and steps < MAX_STEPS:
-		var best := Vector2.ZERO
-		var best_d := INF
-		for b: RampageSim.Building in sim.buildings:
-			if b.layers > 0 and b.tier <= sim.size_tier():
-				var d := sim.kaiju_pos.distance_to(Vector2(b.x, b.z))
-				if d < best_d:
-					best_d = d
-					best = Vector2(b.x, b.z)
+		if steps % 15 == 0:
+			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
-		if best_d < INF and best_d > sim.stomp_radius() * 0.6:
-			move = (best - sim.kaiju_pos).normalized()
+		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+			move = (target - sim.kaiju_pos).normalized()
 		sim.step(DT, move, sim.ability_ready_in <= 0.0)
 		steps += 1
 	return sim.result()
@@ -145,30 +142,85 @@ func _check_city() -> void:
 	)
 
 
-func _check_tier_gate() -> void:
+func _check_structure() -> void:
+	# A floor knocked out from under a block: everything above drops.
+	var block := Structure.new(3, 3, 6, 10.0)
+	for x: int in 3:
+		for z: int in 3:
+			block.remove(Vector3i(x, 2, z))
+	var parts := block.settle()
+	var dropped: Array = parts[0]["cells"] if parts.size() == 1 else []
+	check(
+		parts.size() == 1 and str(parts[0]["kind"]) == "drop" and dropped.size() == 27,
+		"with a floor gone, the 27 chunks above it drop: %s" % [parts.size()]
+	)
+	# A tower whose base is eaten away on one side tips over toward the missing side.
+	var tower := Structure.new(3, 3, 12, 10.0)
+	for x: int in 2:
+		for z: int in 3:
+			tower.remove(Vector3i(x, 0, z))
+	var tipping := tower.settle()
+	var topples := tipping.size() == 1 and str(tipping[0]["kind"]) == "topple"
+	var dir: Vector2i = tipping[0]["dir"] if topples else Vector2i.ZERO
+	check(
+		topples and dir == Vector2i(-1, 0), "an undermined tower topples toward the gap: %s" % [dir]
+	)
+	# A tower with a sound base stands.
+	var sound := Structure.new(3, 3, 12, 10.0)
+	sound.remove(Vector3i(0, 0, 0))
+	check(sound.settle().is_empty(), "a tower missing one corner chunk still stands")
+
+
+## A toppled tower lands across the street and smashes the building it falls on.
+func _check_topple_crush() -> void:
+	var layout: Array[Dictionary] = [
+		{"x": 0.0, "z": 0.0, "w": 3, "d": 3, "h": 14, "tier": 1, "style": 0},
+		{"x": -6.0, "z": 0.0, "w": 3, "d": 3, "h": 4, "tier": 1, "style": 1},
+	]
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), Content.species_def("reptilian"), _tree()
+	)
+	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	var base: Array[Vector3i] = []
+	for x: int in 2:
+		for z: int in 3:
+			base.append(Vector3i(x, 0, z))
+	var before := sim.buildings[1].frame.alive_count
+	sim.damage_chunks(0, base, 999.0)
+	check(
+		sim.falls.size() == 1 and sim.falls[0].kind == "topple",
+		"breaking the base sets the tower toppling"
+	)
+	var rubble_before := sim.rubble
+	var landed := false
+	for i: int in 30 * 5:
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "fall_land":
+				landed = true
+		if landed:
+			break
+	check(landed, "the toppling tower lands within five seconds")
+	check(sim.buildings[1].frame.alive_count < before, "the tower smashes the building it falls on")
+	check(sim.rubble > rubble_before, "a toppled tower pays rubble when it lands")
+
+
+## A tower above the kaiju's size is tougher; the same blow breaks a low building's floor.
+func _check_toughness() -> void:
 	var small := _sim("reptilian", {})
-	var grown := _sim("reptilian", {"claws": 1, "hide": 1, "rage": 1, "evolve1": 1})
 	var low := -1
 	var tall := -1
 	for i: int in small.buildings.size():
 		if small.buildings[i].tier == 1 and low < 0:
 			low = i
-		if small.buildings[i].tier == 2 and tall < 0:
+		if small.buildings[i].tier == 3 and tall < 0:
 			tall = i
-	var low_hit := small.buildings[low].layer_hp * 2.0
+	var hit := Num.f(Content.section("city")["chunk_hp"]) * 1.1
+	var low_cell: Array[Vector3i] = [Vector3i(0, 0, 0)]
+	check(small.damage_chunks(low, low_cell, hit) == 1, "a blow breaks a low building's chunk")
+	var tall_cell: Array[Vector3i] = [Vector3i(0, 0, 0)]
 	check(
-		small.damage_building(low, low_hit) == 2,
-		"a small kaiju topples two layers of a low building with two layers' damage"
-	)
-	var tall_hit := small.buildings[tall].layer_hp * 3.0
-	var small_lost := small.damage_building(tall, tall_hit)
-	var grown_lost := grown.damage_building(tall, tall_hit)
-	check(
-		small_lost == 0 and grown_lost == 3,
-		(
-			"a mid-rise shrugs off a small kaiju (%d layers) but falls to an evolved one (%d layers)"
-			% [small_lost, grown_lost]
-		)
+		small.damage_chunks(tall, tall_cell, hit) == 0,
+		"the same blow does not break a tower's chunk"
 	)
 
 
@@ -190,10 +242,10 @@ func _check_upgrade_effects() -> void:
 	var base := _autoplay(_sim("reptilian", {}))
 	var claws := _autoplay(_sim("reptilian", {"claws": 5}))
 	check(
-		Num.i(claws["rubble"]) > Num.i(base["rubble"]) * 1.3,
+		Num.f(claws["destruction"]) > Num.f(base["destruction"]) * 1.15,
 		(
-			"five levels of claws earn clearly more rubble (%d vs %d)"
-			% [Num.i(claws["rubble"]), Num.i(base["rubble"])]
+			"five levels of claws break clearly more of the city (%.3f vs %.3f)"
+			% [Num.f(claws["destruction"]), Num.f(base["destruction"])]
 		)
 	)
 	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1, "rage": 5}))
@@ -208,10 +260,10 @@ func _check_upgrade_effects() -> void:
 	var evolved := _autoplay(_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}))
 	var unevolved := _autoplay(_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3}))
 	check(
-		Num.i(evolved["rubble"]) > Num.i(unevolved["rubble"]),
+		Num.f(evolved["destruction"]) > Num.f(unevolved["destruction"]),
 		(
-			"evolving earns more rubble (%d vs %d)"
-			% [Num.i(evolved["rubble"]), Num.i(unevolved["rubble"])]
+			"evolving destroys more (%.3f vs %.3f)"
+			% [Num.f(evolved["destruction"]), Num.f(unevolved["destruction"])]
 		)
 	)
 

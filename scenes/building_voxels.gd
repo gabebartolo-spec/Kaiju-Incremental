@@ -45,13 +45,6 @@ func origin() -> Vector3:
 	return Vector3(b.x - b.w * 0.5 + VOXEL * 0.5, 0.0, b.z - b.d * 0.5 + VOXEL * 0.5)
 
 
-## Instances to draw while `layers` sim layers stand (roof gear goes with the top floor).
-func visible_for(layers: int) -> int:
-	if layers >= b.height:
-		return vox.sorted_y.size()
-	return vox.count_below(layers * RES)
-
-
 ## World positions of lit windows (for real lights) on the building's lower floors.
 func lit_windows() -> Array[Vector3]:
 	var out: Array[Vector3] = []

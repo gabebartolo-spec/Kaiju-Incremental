@@ -14,6 +14,8 @@ var cells: Dictionary = {}
 var salt := 0
 ## Each built instance's cell y, ascending (filled by build()).
 var sorted_y: PackedInt32Array = PackedInt32Array()
+## The cell behind each built instance, in instance order (filled by build()).
+var built_cells: Array[Vector3i] = []
 
 
 func put(cell: Vector3i, key: String) -> void:
@@ -115,6 +117,7 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 	shown.sort_custom(func(a: Vector3i, b: Vector3i) -> bool: return a.y < b.y)
 	sorted_y = PackedInt32Array()
 	sorted_y.resize(shown.size())
+	built_cells = shown
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true

@@ -1,17 +1,51 @@
 {
 	"kaiju": {
-		"hp": 100, "speed": 5.0, "stomp_damage": 10, "stomp_radius": 2.5, "stomp_interval": 0.7,
-		"size": 1, "armor": 0, "regen": 0, "rubble_mult": 1.0, "run_seconds": 40,
-		"ability_damage": 30, "ability_cooldown": 7.0, "ability_range": 9.0
+		"hp": 100,
+		"speed": 5.0,
+		"stomp_damage": 10,
+		"stomp_radius": 2.5,
+		"stomp_interval": 0.7,
+		"size": 1,
+		"armor": 0,
+		"regen": 0,
+		"rubble_mult": 1.0,
+		"run_seconds": 40,
+		"ability_damage": 30,
+		"ability_cooldown": 7.0,
+		"ability_range": 9.0
 	},
 	"army": {
-		"start_interval": 5.0, "min_interval": 1.0, "escalation_per_layer": 0.04,
-		"tank_hp": 25, "threat_per_layer": 0.01, "tank_damage": 4, "min_damage": 1,
-		"fire_interval": 2.2, "range": 11.0, "speed": 2.5, "tank_rubble": 2
+		"start_interval": 5.0,
+		"min_interval": 1.0,
+		"tank_hp": 25,
+		"tank_damage": 4,
+		"min_damage": 1,
+		"fire_interval": 2.2,
+		"range": 11.0,
+		"speed": 2.5,
+		"tank_rubble": 2,
+		"escalation_per_chunk": 0.002,
+		"threat_per_chunk": 0.0005
 	},
 	"city": {
-		"grid": 11, "spacing": 9.0, "empty_chance": 0.15, "min_height": 3, "max_height": 26,
-		"max_footprint": 5, "tier_height": 7, "layer_hp": 6.0, "under_tier_mult": 0.08,
-		"size_scale_per_tier": 0.8, "young_scale": 0.5, "growth_per_level": 0.02, "leap_distance": 8.0, "cone_half_angle_deg": 30.0
+		"grid": 11,
+		"spacing": 9.0,
+		"empty_chance": 0.15,
+		"min_height": 3,
+		"max_height": 26,
+		"max_footprint": 5,
+		"tier_height": 7,
+		"size_scale_per_tier": 0.8,
+		"young_scale": 0.5,
+		"growth_per_level": 0.02,
+		"leap_distance": 8.0,
+		"cone_half_angle_deg": 30.0,
+		"chunk_hp": 7.0,
+		"tough_mult": 0.35,
+		"chunk_rubble": 0.05,
+		"kaiju_height": 10.0,
+		"impact_damage": 60.0,
+		"fall_gravity": 30.0,
+		"topple_bonus": 1.5
 	}
 }

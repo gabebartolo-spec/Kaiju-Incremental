@@ -23,6 +23,7 @@ var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
 var _too_tall_cooldown := 0.0
 var _autoplay := false
+var _autoplay_target := Vector2(INF, INF)
 
 
 ## stats: final run stats; layout: CityGen output; run_index seeds the army.
@@ -90,18 +91,24 @@ func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
 			_kaiju.stomp()
-			_city.ring(_kaiju_at, Num.f(event["radius"]), Color(1, 0.85, 0.6, 0.7), 0.35)
+			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
 			_ability_fx(event)
-		"layers_destroyed":
-			_on_layers_destroyed(Num.i(event["building"]), Num.i(event["count"]))
-		"too_tall":
+		"chunks_broken":
+			var cells: Array[Vector3i] = event["cells"]
+			_on_chunks_broken(Num.i(event["building"]), cells)
+		"fall_start":
+			_city.fall_start(event)
+		"fall_land":
+			_city.fall_land(event)
+			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
+		"tough":
 			if _too_tall_cooldown <= 0.0:
 				_too_tall_cooldown = 2.5
 				var b := sim.buildings[Num.i(event["building"])]
-				_city.float_text("TOO TALL - EVOLVE", Vector3(b.x, 4.0, b.z), UiKit.WARN)
+				_city.float_text("TOO STRONG - UNDERMINE IT", Vector3(b.x, 4.0, b.z), UiKit.WARN)
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":
@@ -115,12 +122,13 @@ func _on_event(event: Dictionary) -> void:
 			get_node("/root/EventBus").emit_signal("run_ended", sim.result())
 
 
-func _on_layers_destroyed(index: int, count: int) -> void:
-	_city.layers_destroyed(index, count, _kaiju_at)
+func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
+	_city.chunks_broken(index, cells, _kaiju_at)
 	var b := sim.buildings[index]
-	var gained := count * b.tier * (b.w * b.d) / 9.0 * sim.stat("rubble_mult")
+	var gained := cells.size() * b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult")
 	if gained >= 1.0:
-		_city.float_text("+%d" % Num.i(gained), Vector3(b.x, b.layers + 2.0, b.z), UiKit.WARN)
+		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
+		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
 
 
 func _ability_fx(event: Dictionary) -> void:
@@ -202,6 +210,7 @@ func _tank_fired(id: int) -> void:
 	_city.flash(node.position + Vector3(0, 1.0, 0), Color("ffc070"), 4.0, 0.12)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
+	tween.tween_callback(func() -> void: _city.fx.sparks(target))
 	tween.tween_callback(shell.queue_free)
 	_shake = maxf(_shake, 0.08)
 
@@ -230,15 +239,11 @@ func _place_camera(delta: float) -> void:
 
 
 func _autoplay_move() -> Vector2:
-	var best := Vector2.ZERO
-	var best_d := INF
-	for b: RampageSim.Building in sim.buildings:
-		if b.layers <= 0 or b.tier > sim.size_tier():
-			continue
-		var d := sim.kaiju_pos.distance_to(Vector2(b.x, b.z))
-		if d < best_d:
-			best_d = d
-			best = Vector2(b.x, b.z)
-	if best_d == INF or best_d < sim.stomp_radius() * 0.6:
+	if Engine.get_physics_frames() % 15 == 0 or _autoplay_target.x == INF:
+		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
+	if (
+		_autoplay_target.x == INF
+		or sim.kaiju_pos.distance_to(_autoplay_target) < sim.stomp_radius() * 0.5
+	):
 		return Vector2.ZERO
-	return (best - sim.kaiju_pos).normalized()
+	return (_autoplay_target - sim.kaiju_pos).normalized()

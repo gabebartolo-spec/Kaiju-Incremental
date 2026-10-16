@@ -63,12 +63,16 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 	cam.current = true
 	await _frames(SETTLE)
 	var nearest := _nearest(sim, 4)
-	for n: int in nearest.size():  # two ruins burning, two buildings half down
+	for n: int in nearest.size():  # two buildings smashed flat, two undermined and toppling
 		var index := nearest[n]
-		var hits := 999.0 if n < 2 else 6.0
-		var lost := sim.damage_building(index, sim.buildings[index].layer_hp * hits)
-		if lost > 0:
-			city.layers_destroyed(index, lost, at)
+		var b := sim.buildings[index]
+		var cells: Array[Vector3i] = []
+		for y: int in b.height if n < 2 else 1:
+			for x: int in b.w if n < 2 else maxi(1, b.w - 1):
+				for z: int in b.d:
+					cells.append(Vector3i(x, y, z))
+		sim.damage_chunks(index, cells, 9999.0)
+	_route(sim, city, at)
 	for t: int in 2:  # tanks closing in, one firing
 		var tank := TankModel.new()
 		tank.position = at + Vector3(-7.0 + t * 12.0, 0, 9.0 - t * 3.0)
@@ -78,12 +82,7 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 	city.ring(at, sim.stomp_radius(), Color(1, 0.85, 0.6, 0.7), 0.35)
 	await _frames(DEBRIS_FRAMES)
 	_shot("%s_city" % id)
-	await _frames(90)
-	var instances := 0
-	for node: Node in stage.find_children("*", "MultiMeshInstance3D", true, false):
-		var mmi: MultiMeshInstance3D = node
-		instances += mmi.multimesh.instance_count
-	print("fps ", id, " ", Engine.get_frames_per_second(), " voxels ", instances)
+	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
 	stage.queue_free()
 	await process_frame
 
@@ -110,17 +109,28 @@ func _lineup_shot(id: String) -> void:
 	cam.current = true
 	await _frames(SETTLE)
 	_shot("%s_lineup" % id)
-	await _frames(90)
-	print("fps lineup ", Engine.get_frames_per_second())
+	print("perf lineup ", await _measure())
 	stage.queue_free()
 	await process_frame
+
+
+## Sends the sim's pending events to the city view (what Rampage does each frame).
+func _route(sim: RampageSim, city: CityView, at: Vector3) -> void:
+	for event: Dictionary in sim.step(0.0, Vector2.ZERO, false):
+		match str(event["type"]):
+			"chunks_broken":
+				var cells: Array[Vector3i] = event["cells"]
+				city.chunks_broken(Num.i(event["building"]), cells, at)
+			"fall_start":
+				city.fall_start(event)
+			"fall_land":
+				city.fall_land(event)
 
 
 func _nearest(sim: RampageSim, count: int) -> Array[int]:
 	var order: Array[int] = []
 	for i: int in sim.buildings.size():
-		if sim.buildings[i].tier <= sim.size_tier():
-			order.append(i)
+		order.append(i)
 	order.sort_custom(
 		func(a: int, b: int) -> bool:
 			var pa := Vector2(sim.buildings[a].x, sim.buildings[a].z)
@@ -128,6 +138,32 @@ func _nearest(sim: RampageSim, count: int) -> Array[int]:
 			return pa.distance_to(sim.kaiju_pos) < pb.distance_to(sim.kaiju_pos)
 	)
 	return order.slice(0, count)
+
+
+## Average GPU and CPU frame time (ms) over 60 frames, from the engine's own timers, plus the
+## triangles drawn: independent of window focus or vsync.
+func _measure() -> String:
+	var vp := root.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	await _frames(20)
+	var gpu := 0.0
+	var cpu := 0.0
+	for _i: int in 60:
+		await process_frame
+		gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
+		cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
+	var tris := RenderingServer.get_rendering_info(
+		RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME
+	)
+	return "gpu %.1fms cpu %.1fms tris %dk" % [gpu / 60.0, cpu / 60.0, tris / 1000]
+
+
+func _count_voxels(stage: Node) -> int:
+	var instances := 0
+	for node: Node in stage.find_children("*", "MultiMeshInstance3D", true, false):
+		var mmi: MultiMeshInstance3D = node
+		instances += mmi.multimesh.instance_count
+	return instances
 
 
 func _frames(n: int) -> void:

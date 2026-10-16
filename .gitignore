@@ -12,3 +12,6 @@ review/
 .claude/worktrees/
 .claude/settings.local.json
 override.cfg
+
+# Director reference footage (large; stays local)
+*.mp4

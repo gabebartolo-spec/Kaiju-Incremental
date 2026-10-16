@@ -76,8 +76,8 @@ func _check_rampage() -> void:
 		frames += 1
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
 	check(
-		rampage.sim.layers_destroyed > 0,
-		"the autoplayed kaiju destroys buildings (%d layers)" % rampage.sim.layers_destroyed
+		rampage.sim.chunks_destroyed > 0,
+		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
 	)
 	await process_frame
 	var go: Button = null
