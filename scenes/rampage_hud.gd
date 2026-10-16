@@ -19,6 +19,7 @@ var _time: Label
 var _rubble: Label
 var _destruction: ProgressBar
 var _ability: Label
+var _ultimate: Label
 var _results_shown := false
 
 
@@ -68,6 +69,9 @@ func _ready() -> void:
 	_ability = UiKit.label("", UiKit.SIZE_HEAD)
 	_ability.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ability)
+	_ultimate = UiKit.label("", UiKit.SIZE_BODY)
+	_ultimate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bottom.add_child(_ultimate)
 	var hint := UiKit.label("Move: WASD / left stick", UiKit.SIZE_SMALL, UiKit.MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(hint)
@@ -97,6 +101,13 @@ func refresh() -> void:
 	else:
 		_ability.text = "%s  %.1fs" % [ability_name, sim.ability_ready_in]
 		_ability.add_theme_color_override("font_color", UiKit.MUTED)
+	_ultimate.visible = sim.powers.has_ultimate()
+	if sim.ultimate_ready_in <= 0.0:
+		_ultimate.text = "ULTIMATE  READY  [E / Y]"
+		_ultimate.add_theme_color_override("font_color", UiKit.ACCENT)
+	else:
+		_ultimate.text = "ULTIMATE  %.0fs" % sim.ultimate_ready_in
+		_ultimate.add_theme_color_override("font_color", UiKit.MUTED)
 
 
 func show_results() -> void:
@@ -122,6 +133,7 @@ func show_results() -> void:
 		"Rubble earned:  %d" % Num.i(result["rubble"]),
 		"City destroyed:  %d%%" % Num.i(Num.f(result["destruction"]) * 100.0),
 		"Tanks crushed:  %d" % Num.i(result["tanks"]),
+		"Helicopters downed:  %d" % Num.i(result["helis"]),
 	]
 	var title := UiKit.label(headline, UiKit.SIZE_HEAD, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
