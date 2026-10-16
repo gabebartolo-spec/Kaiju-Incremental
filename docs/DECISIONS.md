@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-17 · D-042 · Director · Military vehicles at 2x real size, desert tan; modelled in Blender
+Why: tank board docs/captures/2026-10-17-vehicles/tank_board.png (modelled through the Blender MCP);
+picked 2x (readable from the game camera beside a growing kaiju) and desert tan (olive goes near-black
+in blue-hour light). Changes: TankModel uses the voxelized Blender tank; helicopters follow the same way.
+
 ## 2026-10-17 · D-041 · Director · Kaiju render as voxel cubes on a smooth skin (look test C)
 Why: "its looking very rough so far, would this work better if our kaiju werent voxel?"; side-by-side
 docs/captures/2026-10-17-look-test/look_test_abc.mp4 (A per-bone voxels / B smooth skinned / C voxel cubes
