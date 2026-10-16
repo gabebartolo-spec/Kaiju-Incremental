@@ -56,11 +56,15 @@ merged origin/claude/look-options 55ce218 (capture.yml live). Pushed.
   now spans all districts); same rules, flag in PR.
 
 ## Running jobs
-CI capture dispatch (ci_capture.sh capture_growth.gd, all 4 stages) -> $TEMP/cg_stills.
-Pacing run "c" (factors 2.9 4 11.4 11.4 15 15 15) -> scratchpad pace_c.txt. CI stills run 38923419011 uses the OLD sizes: recapture after costs/sizes settle. Godot:
-console exe on Desktop, APPDATA=$TEMP/cg_appdata, headless only (director gaming).
+Pacing "d" (factors 2.9 4 8.5 9 15 15 15) -> scratchpad pace_d.txt. CI stills run
+38923419011 (OLD sizes 42/66/105/166): recapture after final sizes are committed.
 
 ## Findings for the lead
+- Pacing c (factors 2.9 4 11.4 11.4 15 15 15): reptile 4.07 h, insect 1.97 h, ceph 2.93 h
+  (median OK); Behemoth stage flat for reptile (50 runs, 4.0->4.5k) -> d shortens it.
+- Ablation (tools/ablate_scratch.gd, uncommitted scratch; Colossus kit in Colossus city):
+  insect 96% -> 60% without Leap Slam (climb/glide ~0 for the bot); reptile 43% (tail ~2 pts);
+  ceph 63% (limbs within noise). Lead asked for a concrete +-20% balance proposal in the PR.
 - Destroyed area per run scales with the kaiju's crater (body scale x9 young->Apex), so the
   city's area must grow ~x2.5-3 per evolution or runs end "city_fallen" and rubble goes flat.
 
