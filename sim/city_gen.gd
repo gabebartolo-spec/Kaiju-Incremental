@@ -2,11 +2,9 @@ class_name CityGen
 extends RefCounted
 ## Seeded city layout, in two steps.
 ##
-## The city grows with each evolution (D-039): cfg.districts lists the half-extents of the
-## nested districts (young, Behemoth, Colossus, Apex Titan) and cfg.half the one in play. The
-## street plan always runs out to the largest district, so the plan, its blocks and the lots
-## in them are the same at every stage: an evolution only turns more of the city playable,
-## and the districts still to come stand past the edge as the city you will grow into.
+## The city grows with each evolution (D-039): cfg.districts = nested district half-extents,
+## cfg.half = the one in play. The plan always spans every district, so an evolution only turns
+## more of the same city playable; the districts still to come stand past the edge.
 ##
 ## map(cfg): the street plan, fixed by the city config alone (its own map_seed), so presentation
 ## (streets, traffic, the outskirts) can rebuild it without the run's seed. Streets run at
@@ -46,8 +44,7 @@ static func districts(cfg: Dictionary) -> Array[float]:
 	return out
 
 
-## Which district a rect lies in (0 = the innermost), by its furthest edge from the centre;
-## past the last ring: districts().size().
+## The district a rect lies in by its furthest edge (0 innermost; past the last: size()).
 static func district_of(rect: Rect2, cfg: Dictionary) -> int:
 	var edge := maxf(
 		maxf(absf(rect.position.x), absf(rect.end.x)), maxf(absf(rect.position.y), absf(rect.end.y))
@@ -198,7 +195,6 @@ static func _ring(
 		_add_line(lines, to * side)
 
 
-## Adds a line past either end of a sorted list.
 static func _add_line(lines: Array[float], v: float) -> void:
 	if v > lines[lines.size() - 1]:
 		lines.append(v)

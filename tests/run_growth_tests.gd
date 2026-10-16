@@ -65,7 +65,10 @@ func _check_stages_grow() -> void:
 			chunks += Num.i(e["w"]) * Num.i(e["d"]) * Num.i(e["h"])
 			tallest = maxi(tallest, Num.i(e["h"]))
 		var now := {
-			"half": Num.f(cfg["half"]), "buildings": layout.size(), "chunks": chunks, "tallest": tallest
+			"half": Num.f(cfg["half"]),
+			"buildings": layout.size(),
+			"chunks": chunks,
+			"tallest": tallest
 		}
 		for key: String in now:
 			grows = grows and Num.f(now[key]) > Num.f(last[key])
@@ -82,10 +85,7 @@ func _check_districts_kept() -> void:
 	var young_plan := CityGen.map(young)
 	var apex_plan := CityGen.map(apex)
 	var same: bool = young_plan["xs"] == apex_plan["xs"] and young_plan["zs"] == apex_plan["zs"]
-	check(
-		same,
-		"the street plan is the same at every stage"
-	)
+	check(same, "the street plan is the same at every stage")
 	var footprints := {}
 	for e: Dictionary in _layout(4):
 		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
@@ -108,10 +108,14 @@ func _check_edges() -> void:
 		if -Num.f(cfg["coast_z"]) - half < 60.0:
 			bad.append("%d: bay only %.0f past the edge" % [tier, -Num.f(cfg["coast_z"]) - half])
 		if Num.f(cfg["outer_half"]) < half + 100.0:
-			bad.append("%d: outskirts end %.0f past the edge" % [tier, Num.f(cfg["outer_half"]) - half])
+			bad.append(
+				"%d: outskirts end %.0f past the edge" % [tier, Num.f(cfg["outer_half"]) - half]
+			)
 		var layout := _layout(tier)
 		var stats := UpgradeTree.run_stats(
-			Content.section("kaiju"), Content.species_def("reptilian"), UpgradeTree.new(Content.upgrades())
+			Content.section("kaiju"),
+			Content.species_def("reptilian"),
+			UpgradeTree.new(Content.upgrades())
 		)
 		var spawn := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0)).kaiju_pos
 		for e: Dictionary in layout:
@@ -123,7 +127,10 @@ func _check_edges() -> void:
 		var built := 0
 		for block: Dictionary in plan["blocks"]:
 			var rect: Rect2 = block["rect"]
-			var inside := maxf(maxf(absf(rect.position.x), absf(rect.end.x)), maxf(absf(rect.position.y), absf(rect.end.y)))
+			var inside := maxf(
+				maxf(absf(rect.position.x), absf(rect.end.x)),
+				maxf(absf(rect.position.y), absf(rect.end.y))
+			)
 			if str(block["use"]) == "built" and inside >= half:
 				bad.append("%d: a built block past the ring" % tier)
 			built += 1 if str(block["use"]) == "built" else 0
@@ -162,12 +169,17 @@ func _check_growth_matters() -> void:
 	var on := _play(_tuning(3), _layout(3), COLOSSUS)
 	check(
 		Num.i(on["chunks"]) > Num.i(off["chunks"]) * 4,
-		"growth on: the Colossus's city is far bigger (%d vs %d chunks)" % [on["chunks"], off["chunks"]]
+		(
+			"growth on: the Colossus's city is far bigger (%d vs %d chunks)"
+			% [on["chunks"], off["chunks"]]
+		)
 	)
 	check(
 		str(off["reason"]) == "city_fallen" and str(on["reason"]) == "time",
-		"growth off the Colossus flattens the city; on, it rampages to the clock (%s vs %s)"
-		% [off["reason"], on["reason"]]
+		(
+			"growth off the Colossus flattens the city; on, it rampages to the clock (%s vs %s)"
+			% [off["reason"], on["reason"]]
+		)
 	)
 	check(
 		Num.i(on["rubble"]) > Num.i(off["rubble"]) and Num.f(on["destruction"]) < 1.0,
@@ -226,7 +238,10 @@ func _check_cost_curve() -> void:
 				young_total += Num.i(c)
 	check(
 		e1 > young_total / 10,
-		"the first evolution is a real goal, not a first-run buy (%d vs young nodes %d)" % [e1, young_total]
+		(
+			"the first evolution is a real goal, not a first-run buy (%d vs young nodes %d)"
+			% [e1, young_total]
+		)
 	)
 	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
 		var total := 0
@@ -270,7 +285,10 @@ func _check_early_hook() -> void:
 			earned += Num.i(sim.result()["rubble"])
 		check(
 			earned >= first,
-			"%s: two young rampages (%d rubble) buy the first power (%d)" % [species_id, earned, first]
+			(
+				"%s: two young rampages (%d rubble) buy the first power (%d)"
+				% [species_id, earned, first]
+			)
 		)
 
 

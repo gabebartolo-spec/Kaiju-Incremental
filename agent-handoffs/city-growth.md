@@ -1,5 +1,5 @@
-# City-growth handoff, 2026-10-17 03:35
-## State: running a check (CI stills x4 + final pacing; then open the PR)
+# City-growth handoff, 2026-10-17 04:10
+## State: awaiting lead (PR #16 open; CI blocked by Actions billing)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -9,7 +9,8 @@ stage, insectoid balance note (lead asked: which nodes drive it, a +-20% proposa
 handoff, then tell the lead (local_9fac90d2-fae7-4940-b4ac-144a87f28e6e).
 
 ## Branch and commit
-claude/city-growth-e79d28, merged origin/claude/look-options 6535330, pushed. No PR yet.
+claude/city-growth-e79d28, merged origin/claude/look-options 6535330, pushed. PR #16 into
+claude/look-options (bound, Auto-fix on).
 
 ## What is built
 - sim/city_gen.gd: cfg.districts [42,70,125,210]; the plan always spans every district (ring
@@ -32,10 +33,12 @@ claude/city-growth-e79d28, merged origin/claude/look-options 6535330, pushed. No
   harness self-test: all green.
 
 ## Unfinished changes
-data/upgrades.json UNCOMMITTED = pacing "e" trial (d x1.15 after young: 2.9 4.6 9.8 10.4 17.3
-17.3 17.3); keep if the median species lands ~3 h (d gave reptile 3.51, ceph 2.55, insect 1.71,
-scratchpad pace_final_d.txt; --flat reptile: 374 flat runs, tree unfinished after 400). Next: PR body from scratchpad pace_final.txt (+ city_stats, --flat run) and
-the stills (gh run download the 4 runs); balance note; bind PR; message the lead.
+None. Costs = pacing "e" (median ceph 2.94 h, reptile 3.94 h, insect 1.93 h). gdlint/gdformat
+clean locally (pip gdtoolkit 4). Stills for stages 1-2 committed in
+docs/captures/2026-10-17-city-growth/.
+- Pending: stages 3-4 stills (`tools/capture/ci_capture.sh capture_growth.gd -- --stage=3
+  --quick`, then 4) and CI checks: GitHub Actions refuses to start jobs ("recent account
+  payments have failed or your spending limit needs to be increased"). Director's to fix.
 
 ## Evidence so far
 - Pacing d (before the lots fix): reptile 3.77 h, insect 1.78 h, ceph 2.70 h; first power
@@ -52,10 +55,7 @@ the stills (gh run download the 4 runs); balance note; bind PR; message the lead
 - Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-Pacing e -> scratchpad pace_e.txt. Stage 1 stills downloaded to $TEMP/cg_stills_new/s1 (9 min run;
-empty south strip = pre-existing young layout, z 35-42 row too shallow).
-CI capture runs 38932348925 / 360987 / 371956 / 383703 (stages 1-4). Local pacing ->
-scratchpad pace_final.txt (Godot console exe, APPDATA=$TEMP/cg_appdata).
+None.
 
 ## Findings for the lead
 - A seeded generator that draws a number only on some branches shifts every later draw when a

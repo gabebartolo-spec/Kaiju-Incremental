@@ -93,7 +93,15 @@ func _stage(tier: int) -> void:
 	print(
 		(
 			"stage %d half %.0f: %d buildings, %d chunks, built in %d ms, body %.2f, aerial %s"
-			% [tier, half, sim.buildings.size(), sim.chunks_total, built, sim.body_scale(), await _measure()]
+			% [
+				tier,
+				half,
+				sim.buildings.size(),
+				sim.chunks_total,
+				built,
+				sim.body_scale(),
+				await _measure()
+			]
 		)
 	)
 	var scale := sim.body_scale()
