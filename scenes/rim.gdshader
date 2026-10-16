@@ -15,7 +15,7 @@ void vertex() {
 }
 
 void fragment() {
-	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 2.0);
+	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 3.0);
 	float bands = mix(1.0, 0.35 + 0.65 * pow(0.5 + 0.5 * sin(world_y * 1.6 - TIME * 5.0), 3.0), shimmer);
-	ALBEDO = tint.rgb * strength * (0.2 + 1.6 * rim) * bands;
+	ALBEDO = tint.rgb * strength * (0.04 + 1.2 * rim) * bands;
 }

@@ -73,11 +73,11 @@ func _process(delta: float) -> void:
 	_ready_glow = maxf(0.0, _ready_glow - delta * 1.8)
 	var strength := 0.0
 	if _ready_glow > 0.05:
-		strength = _ready_glow * 2.2
+		strength = _ready_glow * 1.4
 		_overlay.set_shader_parameter("tint", _tint)
 		_overlay.set_shader_parameter("shimmer", 0.0)
 	elif _healing:
-		strength = 0.9
+		strength = 0.55
 		_overlay.set_shader_parameter("tint", Color(str(_tune["regen_tint"])))
 		_overlay.set_shader_parameter("shimmer", 1.0)
 	_overlay.set_shader_parameter("strength", strength)

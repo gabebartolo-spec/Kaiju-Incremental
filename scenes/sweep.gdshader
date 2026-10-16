@@ -14,9 +14,9 @@ float streak(float r, float a, float radius, float lag) {
 	if (behind < 0.0 || behind > 0.45) {
 		return 0.0;
 	}
-	float width = 0.02 + behind * 0.06;
+	float width = 0.045 + behind * 0.08;
 	float band = exp(-pow((r - radius) / width, 2.0));
-	return band * (exp(-behind * 9.0) * 0.8 + exp(-behind * 90.0) * 1.5);
+	return band * (exp(-behind * 6.0) + exp(-behind * 60.0) * 2.0);
 }
 
 void fragment() {

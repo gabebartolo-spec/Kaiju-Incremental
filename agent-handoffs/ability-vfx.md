@@ -1,4 +1,4 @@
-# Ability VFX handoff, 2026-10-16 21:00
+# Ability VFX handoff, 2026-10-16 21:00 (rev 21:05)
 ## State: working (waiting for the GPU to recapture; lead review FIX items implemented)
 
 ## Task
@@ -10,7 +10,7 @@ boost the deflect/regen/ready/cracks cues, no placeholder HUD timer. Then a new 
 
 ## Branch and commit
 claude/ability-vfx (worktree affectionate-goldstine-64c8fb), PR #6 into claude/look-options.
-Pushed: 2e762fa. Local, NOT pushed: c5aa7e0 (review fixes) + this handoff.
+Local commits not pushed yet (review fixes + merge + tuning); push after the board passes QA.
 
 ## Done in c5aa7e0
 - Breath: camera orbit 25 deg + rise (tuning fx.orbit_*); beam stops at the first standing
@@ -25,22 +25,25 @@ Pushed: 2e762fa. Local, NOT pushed: c5aa7e0 (review fixes) + this handoff.
 - The capture uses Rampage.autoplay_signature instead of the 999 s cooldown hack. The "998 s"
   timer the lead saw came from the capture script, not the game.
 - Particle recipes split out to scenes/fx_particles.gd (keeps ability_fx.gd under 400 lines).
-- flow 22, smoke 11, sim 39 green locally.
+- flow 22, smoke 11, sim 39 gree## Next
+Merged look-options (8cf4a16: no project-wide fullscreen; D-030 SFX decided). Recapture
+powers4 (scratchpad) passed for leap and breath impact, but showed: body overlay far too strong
+(kaiju turned solid pink/mint), lash streaks too faint, and the breath voxels washed out to peach.
+Tuned in the latest commit (rim strength/power, streak width, heat 2.0 + ramp 0.15).
+1. Once the GPU is free (watcher biuo13l46; other agents' Godot PIDs 21188/320188): run
+   scratchpad dbg_breath.gd (kaiju at (4.5,30) facing +X) to confirm which way the scorch wedge
+   points, then capture_powers.gd -> powers5, board.py (scratchpad) -> check with 2x crops.
+2. Copy the board into docs/captures/2026-10-16-powers/, convert the clip to mp4, push, and
+   message the lead.
+3. Then the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0; synthesize hums, beams,
+   pings, sizzles, regen in-house; register + provenance before assets/).
 
-## Next
-1. When the GPU is free (another agent's Godot PID 161680 had it at 99%), write override.cfg
-   WITH window/size/mode=0 (the project starts fullscreen, which re-centred the window on the
-   director's screen last time), run capture_powers.gd, delete override.cfg.
-2. Check every still with 2x crops: is the wedge's orientation right (texture top = local -Z,
-   not yet verified)? Is the beam visible after the orbit? Are the decals on rubble?
-3. Rebuild the board (python script in the earlier turn: crop centre 50%, labels A-J) into
-   docs/captures/2026-10-16-powers/, convert the clip to mp4 (imageio-ffmpeg), push, and message
-   the lead with paths.
+ith paths.
 
 ## Attempts (beam visibility)
 Edge glow (failed), x-ray through walls (covered the kaiju, reverted), flat glow floor plus a
 white-hot jet ramp; now the camera orbit (lead-approved) plus a beam that ends on its target.
 
 ## Running jobs
-Background GPU-wait watcher b81jjvvb4; a wakeup at 21:14 as a fallback. No Godot of mine running.
+GPU-wait watcher biuo13l46; a wakeup at 21:14 as a fallback. No Godot of mine running.
 No override.cfg left.
