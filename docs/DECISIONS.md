@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-032 · Director · Looks first, performance tuning later
+Why: "lets worry later about frame rate/performance issues. focus on getting the best looking game
+we can and then we can tune it". Changes: perf budgets no longer block visual work; benches are still
+recorded in PRs (so tuning has a baseline) but a slower frame is not a reason to cut detail. A perf
+pass comes after the look is locked.
+
 ## 2026-10-16 · D-031 · Director · Kaiju move like killing machines, each species its own way
 Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness;
 insectoid = disturbing skitter, twitches, exoskeletal motion; cephalopod = slides, pushes, pulls,

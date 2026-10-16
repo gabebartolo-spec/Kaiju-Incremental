@@ -52,7 +52,7 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 
 15. PR #6 ability VFX MERGED (round 2 passed). Follow-ups for the SFX PR: ready flash tints the whole body red (make it a rim/eye glow), breath hidden behind the body for ~0.25 s when facing away.
 
-16. PR #9 MERGED (b9c4d5d, at the reviewed head): RES 8 buildings, round-2 streets/edges, varied east outskirts. 4K GPU ~14 ms (over 120 Hz budget; under 60): perf pass needed before TV play.
+16. PR #9 MERGED (b9c4d5d, at the reviewed head): RES 8 buildings, round-2 streets/edges, varied east outskirts. 4K GPU ~14 ms; perf tuning deferred (D-032, looks first).
 17. VFX/SFX PAUSED by the director until locomotion is done. PR #8 on hold. Resume tasks: low-end stomps ("cellophane"), sync to KaijuRig.foot_planted.
 
 ## Running jobs
