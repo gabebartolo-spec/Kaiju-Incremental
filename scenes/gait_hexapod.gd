@@ -25,7 +25,7 @@ const LEG_LEAD := 0.05
 ## More than this off heading (rad), the body waits for a leg to be in the air before it swings.
 const BIG_TURN := 0.06
 ## How fast the body swings round after its legs (rad/s at scale 1).
-const TURN_RATE := 8.0
+const TURN_RATE := 9.5
 const STAND_SPEED := 0.1
 ## A pair steps when its feet are this far (hip heights) from where they belong; swing times
 ## (s at scale 1) in a dart and settling; lift (hip heights); stretch that forces a step.

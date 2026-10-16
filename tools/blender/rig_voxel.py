@@ -646,6 +646,39 @@ def radial_owners(keys, points, bones):
     return owner
 
 
+MANDIBLE_REACH = 0.3
+
+
+def split_mandibles(keys, points, owner, bones):
+    """Cuts the mantis's mouthparts off the head into two bones, mandible_l and mandible_r: the
+    head voxels within MANDIBLE_REACH of the head's length from the mouth, split left and right,
+    each hinged at its upper end. Returns the new owners (bones gains the mandibles)."""
+    names = [b["name"] for b in bones]
+    if "head0" not in names:
+        return owner
+    hi = names.index("head0")
+    neck, mouth = np.array(bones[hi]["head"]), np.array(bones[hi]["tail"])
+    reach = np.linalg.norm(mouth - neck) * MANDIBLE_REACH
+    out = owner.copy()
+    for side, sx in (("l", 1), ("r", -1)):
+        part = np.where((owner == hi) & (np.linalg.norm(points - mouth, axis=1) < reach)
+                        & (np.sign(points[:, 0] - mouth[0]) == sx))[0]
+        if len(part) < 8:
+            continue
+        # Only its largest joined piece moves (a stray bit would float off the face).
+        nb = neighbour_table(keys[part])
+        comp = pieces(np.zeros(len(part), int), nb)
+        part = part[comp == np.bincount(comp).argmax()]
+        pts = points[part]
+        tip = pts[np.argmin(np.linalg.norm(pts - mouth, axis=1))]
+        hinge = pts[np.argmax(pts[:, 2])]  # its upper end, where it joins the face
+        bones.append({"name": f"mandible_{side}", "parent": "head0", "head": hinge, "tail": tip,
+                      "physics": False})
+        out[part] = len(bones) - 1
+        print(f"mandible_{side}: {len(part)} voxels")
+    return out
+
+
 def whole_limbs(keys, points, owner, bones):
     """A piece of a limb cut off from the rest of that limb floats when it moves: it joins the
     limb (or body) it touches most, onto the nearest of that limb's bones."""
@@ -904,6 +937,7 @@ def main():
     if body_plan != "radial":
         owner = adopt_orphans(keys, owner)
         if body_plan == "hexapod":
+            owner = split_mandibles(keys, centres_bl, owner, bones)
             owner = whole_limbs(keys, centres_bl, owner, bones)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))

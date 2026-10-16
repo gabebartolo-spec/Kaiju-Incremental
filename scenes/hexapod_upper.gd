@@ -230,5 +230,6 @@ func _pose_arm(arm: String, lash: float, flex: float, display: float) -> void:
 func _pose_mandibles(spread: float) -> void:
 	for m: String in ["mandible_l", "mandible_r"]:
 		if _rig.has_bone(m):
-			var side := -1.0 if m.ends_with("_l") else 1.0
-			_rig.pose(m, Vector3(spread * 0.3, spread * side, 0))
+			# Bones rest unrotated in the head's frame; _l sits on the -x side, so +yaw is outward.
+			var out := 1.0 if m.ends_with("_l") else -1.0
+			_rig.pose(m, Vector3(spread * 0.3, spread * out, 0))
