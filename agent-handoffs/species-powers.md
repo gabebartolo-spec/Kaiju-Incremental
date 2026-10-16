@@ -31,7 +31,7 @@ species-powers/ (reptilian/insectoid/cephalopod _branch.mp4).
 ## Open decisions
 1. Pacing: lead said keep the shared costs; branches are paced against the curve (table in the PR
    body; the whole tree takes 0.6-0.9 h because the city is flattened by run 11). City growth per
-   evolution is the director's call; the lead is asking.
+   evolution decided (D-039); --grow=3 projection in the PR body seeds the cost re-tune follow-up.
 2. Ultimate on a second button (E), hold-to-glide: flagged for the director in the PR.
 3. Rig hooks tail_sweep / grab / throw / jaw_open: AGREED by
    kaiju-motion (23:57). It is adding them on its PR #11 and will ping when they're pushed;
