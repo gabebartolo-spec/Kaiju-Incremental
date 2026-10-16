@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 23:05
-## State: working (next: cephalopod variants octo_3/octo_4 export + six-view; kaiju-motion on reptile round 3)
+# Lead handoff, 2026-10-16 23:52
+## State: working (mantis nymph 06ed8a12 + adolescent 0161ad14 textures v2 generating; review before export)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
@@ -21,10 +21,10 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 ## Next (mine)
 1. DONE: all three reptile stages rigged from olive textures (docs/captures/2026-10-16-stages/reptile_stages_ingame.png).
 
-2. Cephalopod adult: 4 variants ff432a4f / 8bf2f668 / f303b247 / 666430b3; octo_1, octo_2 downloaded to
+2. Cephalopod stages ALL PICKED: baby 6176590f (octo_baby.glb), adolescent a328effe (octo_adolescent.glb), adult 8bf2f668 (octo_2.glb); sent to kaiju-motion. Next: one skin prompt for all three (check each result!).
    ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
    logic), then a skin. Radial rig comes from kaiju-motion.
-3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
+3. Mantis skins: adult approved (D-038, mantis_adult_tex.glb, sent to kaiju-motion); nymph + adolescent v1 REJECTED (off-colour), v2 generating. Export only after a visual check.
 4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
 5. 4K TV text size check (perf deferred, D-032).
 6. Species gameplay (D-035, docs/SPECIES.md): build after PR #10; 3 open questions for the director there.
@@ -47,6 +47,8 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
   (focus-guard hook checks first); delete after. Never set fullscreen in project.godot.
 - After a merge that adds classes, run `godot --headless --import` once or scripts fail to parse.
 - Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
+
+7. Helpers started 23:20: species-powers (local_136df838-e381-4671-b237-5402935f837b, per-species upgrade branches + helicopters), ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d, xvfb capture workflow). Cephalopod baby generating; adolescent next.
 
 ## Running jobs
 None in Tripo. Sessions above. No override.cfg left.
