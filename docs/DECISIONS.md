@@ -17,6 +17,11 @@ for the insectoid and cephalopod.
 Why: "we should probably have 3 models per kaiju though". The first reptile sculpt: "he looks
 wonderful" (adult). Stages map to the evolutions: baby (start), adolescent (EVOLVE 1), adult (EVOLVE 2+).
 
+## 2026-10-16 · D-020 · Director · Tripo sculpts for military vehicles and landmarks (~350 credits)
+Why: "do military vehicles and landmarks". Tank, attack helicopter, fighter jet, APC; stadium, radio
+mast, bridge. Vehicles voxelized as rigid models (rotors/turrets split); landmarks voxelized and cut
+into structural chunks so they still collapse.
+
 ## 2026-10-16 · D-019 · Director · Civilians and moving traffic in the streets ("we also need civilians in the streets", "cars, etc")
 
 ## 2026-10-16 · D-018 · Director · Smoke dialled back ~15% for visibility (opacity and particle count)

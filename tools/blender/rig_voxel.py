@@ -131,8 +131,12 @@ def biped_skeleton(v, lo, hi):
     head = trace(v, 2, z(0.8), hi[2], 2, lambda p: np.abs(p[:, 0]) < W * 0.12)
     head[-1] = v[(v[:, 2] > z(0.85))][np.argmin(v[(v[:, 2] > z(0.85))][:, 1])]  # snout tip
     chain("head", head, "spine2")
+    # Arm height: where the upper body is widest (T-pose or arms raised alike).
+    fracs = np.linspace(0.5, 0.95, 19)
+    widths = [np.ptp(v[np.abs(v[:, 2] - z(f)) < H * 0.03][:, 0]) if np.any(np.abs(v[:, 2] - z(f)) < H * 0.03) else 0 for f in fracs]
+    arm_f = float(fracs[int(np.argmax(widths))])
     for side, sx in (("l", 1), ("r", -1)):
-        arm = lambda p, sx=sx: (p[:, 0] * sx > W * 0.12) & (np.abs(p[:, 2] - z(0.72)) < H * 0.12)
+        arm = lambda p, sx=sx: (p[:, 0] * sx > W * 0.12) & (np.abs(p[:, 2] - z(arm_f)) < H * 0.15)
         tip = hi[0] if sx > 0 else lo[0]
         joints = trace(v, 0, sx * W * 0.12, tip * 0.97, 3, arm)
         chain(f"arm_{side}", joints, "spine2", physics=False)
