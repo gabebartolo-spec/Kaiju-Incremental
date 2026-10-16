@@ -36,7 +36,7 @@ func _run() -> void:
 	# A played save one evolution away, with a best to beat.
 	var save := SaveFile.new_save(_species)
 	save["runs"] = 3
-	save["rubble"] = 320
+	save["rubble"] = UpgradeTree.new(Content.upgrades(), {}, _species).cost("evolve1") + 20
 	save["levels"] = {"claws": 2, "hide": 1, "rage": 1}
 	save["best"] = {"rubble": 60.0, "destruction": 0.05, "toppled": 1.0, "tanks": 1.0}
 	SaveFile.save_game(save)

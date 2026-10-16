@@ -6,6 +6,9 @@ extends RefCounted
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
+## Rubble left after buying the first evolution (costs come from data, so city-growth's
+## re-tuning cannot break these checks).
+const LEFT_OVER := 100
 
 var t: SceneTree
 var check: Callable
@@ -159,12 +162,12 @@ func _check_results_compare() -> void:
 	await _frames(1)
 
 
-## A save with Endless Rage owned and 400 rubble: Continue goes to the tree; clicking the
+## A save with Endless Rage owned and the first evolution's price plus 100 rubble: Continue goes to the tree; clicking the
 ## first evolution buys it and plays the reveal (baby to adolescent, a bigger body, the tower
 ## it now topples); Enter skips it without buying again. Quit, relaunch, Continue: same tree.
 func _check_evolution_and_continue() -> void:
 	var save := SaveFile.new_save("insectoid")
-	save["rubble"] = 400
+	save["rubble"] = _evolve_cost() + LEFT_OVER
 	save["runs"] = 2
 	save["levels"] = {"claws": 1, "hide": 1, "rage": 1}
 	SaveFile.save_game(save)
@@ -204,7 +207,7 @@ func _check_evolution_and_continue() -> void:
 	await _frames(2)
 	var reveal := GuiInput.find_script(tree, EvolutionReveal) as EvolutionReveal
 	check.call(
-		reveal != null and tree.tree.level("evolve1") == 1 and tree.rubble == 100,
+		reveal != null and tree.tree.level("evolve1") == 1 and tree.rubble == LEFT_OVER,
 		"clicking the evolution buys it (rubble %d) and plays the reveal" % tree.rubble
 	)
 	if reveal != null:
@@ -235,7 +238,7 @@ func _check_evolution_and_continue() -> void:
 	check.call(
 		(
 			reloaded != null
-			and reloaded.rubble == 100
+			and reloaded.rubble == LEFT_OVER
 			and reloaded.tree.level("evolve1") == 1
 			and reloaded.tree.level("rage") == 1
 		),
@@ -318,3 +321,7 @@ func _check_migration() -> void:
 		Num.i(loaded.get("version", 0)) == 2 and Num.i(loaded["levels"]["claws"]) == 2,
 		"a v1 save file on disk loads as v2"
 	)
+
+
+func _evolve_cost() -> int:
+	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")

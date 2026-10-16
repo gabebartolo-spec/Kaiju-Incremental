@@ -46,7 +46,10 @@ on top; not pushed yet, no PR.
 None for the director yet. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Coordination
-Messaged city-growth (local_abf1bce5) which files I touch; no reply yet.
+city-growth (local_abf1bce5) replied: it edits main.gd _start_rampage (CityGrowth.layout) and
+rampage.gd setup() (CityGrowth.tuning_for), raises upgrade costs 2-8x. No overlap with my
+edits; my tests/capture read evolve1's cost from data. If tier_height becomes per-stage, the
+reveal's tower should read CityGrowth.tuning_for(...)["city"].
 
 ## Running jobs
 Local flow suite run (background), logs in %TEMP%/gf_logs.
