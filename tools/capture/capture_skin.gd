@@ -123,6 +123,9 @@ func _run() -> void:
 		for bone_name: String in ranked.slice(0, 3):
 			var best: Array = worst[bone_name]
 			picks.append("%s@%d" % [bone_name, best[1]])
+		if worst.has("jaw") and not picks.has("jaw@%d" % worst["jaw"][1]):
+			var jaw: Array = worst["jaw"]
+			picks.append("jaw@%d" % jaw[1])  # the roar, always worth a look
 		print("JOINTS ", " ".join(picks))
 	else:
 		var f := FileAccess.open(_stills.path_join(variant + ".json"), FileAccess.WRITE)
