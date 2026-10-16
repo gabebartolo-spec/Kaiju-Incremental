@@ -42,7 +42,10 @@ func lay(count: int) -> void:
 		y.id = _next_id
 		_next_id += 1
 		var spread := Num.f(cfg["egg_spread"]) * sim.body_scale()
-		y.pos = sim.kaiju_pos + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.5, 1.0) * spread
+		y.pos = (
+			sim.kaiju_pos
+			+ Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.5, 1.0) * spread
+		)
 		y.hp = Num.f(cfg["brood_hp"])
 		y.life = Num.f(cfg["brood_life"])
 		y.hatch = Num.f(cfg["hatch_seconds"])

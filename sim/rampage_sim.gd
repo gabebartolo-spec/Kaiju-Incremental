@@ -49,6 +49,10 @@ class Tank:
 	var coat_dps := 0.0
 
 
+## step() button flags.
+const HELD := 1
+const ULTIMATE := 2
+
 var stats: Dictionary
 var army: Dictionary
 var city: Dictionary
@@ -71,6 +75,8 @@ var end_reason := ""
 var arena_half: float
 var next_fall_id := 0
 var collapse: Collapse
+## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
+var army_units: Army
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
@@ -91,9 +97,7 @@ var events: Array[Dictionary]:
 	get:
 		return _events
 var _rng: RandomNumberGenerator
-var _spawn_timer: float
 var _stomp_timer := 0.0
-var _next_tank_id := 0
 var _events: Array[Dictionary] = []
 
 
@@ -109,7 +113,6 @@ func _init(
 	hp = stat("hp")
 	max_hp = hp
 	time_left = stat("run_seconds")
-	_spawn_timer = Num.f(army["start_interval"])
 	for entry: Dictionary in layout:
 		var b := Building.new()
 		b.x = Num.f(entry["x"])
@@ -126,17 +129,11 @@ func _init(
 	arena_half = city_half + Num.f(city["arena_margin"])
 	kaiju_pos = Vector2(0.0, city_half)  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
-	powers = SpeciesPowers.new(self, _derived(rng, 0x5EED))
+	army_units = Army.new(self, rng)
+	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
-	air = AirWing.new(self, air_cfg, _derived(rng, 0xA1))
-	brood = Brood.new(self, _derived(rng, 0xB0))
-
-
-## A second seeded stream from the army's, so powers never shift when tanks spawn.
-static func _derived(rng: RandomNumberGenerator, salt: int) -> RandomNumberGenerator:
-	var out := RandomNumberGenerator.new()
-	out.seed = hash("%d:%d" % [rng.seed, salt])
-	return out
+	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 
 
 func stat(stat_name: String) -> float:
@@ -187,15 +184,12 @@ func result() -> Dictionary:
 	}
 
 
-## Advances the rampage by dt with the player's move vector, the signature button (pressed
-## this step / held down) and the ultimate button. Returns the events of this step.
-func step(
-	dt: float,
-	move: Vector2,
-	signature_pressed: bool,
-	signature_held: bool = false,
-	ultimate_pressed: bool = false
-) -> Array[Dictionary]:
+## Advances the rampage by dt with the player's move vector, the signature button pressed
+## this step, and the other buttons as flags (HELD: signature held down, ULTIMATE: pressed).
+## Returns the events of this step for presentation.
+func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
+	var signature_held := buttons & HELD != 0
+	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
 	if over:
 		return _events
@@ -206,7 +200,7 @@ func step(
 	if moving:
 		var dir := move.limit_length(1.0)
 		var speed := stat("speed") * powers.speed_mult()
-		kaiju_pos = _clamp_to_arena(kaiju_pos + dir * speed * dt)
+		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
 		facing = powers.turn_toward(facing, dir.normalized(), dt)
 	powers.after_move(dt, old_facing, moving)
 	_stomp_timer -= dt
@@ -225,7 +219,7 @@ func step(
 	powers.step(dt, signature_held)
 	brood.step(dt)
 	collapse.step(dt)
-	_step_army(dt)
+	army_units.step(dt)
 	air.step(dt)
 	if chunks_destroyed >= chunks_total:
 		_end("city_fallen")
@@ -243,7 +237,7 @@ func _end(reason: String) -> void:
 	_events.append({"type": "run_over", "reason": reason})
 
 
-func _clamp_to_arena(pos: Vector2) -> Vector2:
+func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
 
 
@@ -251,8 +245,8 @@ func _stomp() -> void:
 	var radius := stomp_radius()
 	var centre := kaiju_pos
 	_events.append({"type": "stomp", "radius": radius, "lift": stand_y})
-	_hit_area(
-		func(p: Vector2, r: float) -> float: return _falloff(p.distance_to(centre) - r, radius),
+	hit_area(
+		func(p: Vector2, r: float) -> float: return falloff(p.distance_to(centre) - r, radius),
 		stat("stomp_damage") * powers.hit_mult(),
 		maxi(0, floori(stand_y) - Num.i(powers_cfg["climb_dig"])),
 		ceili(reach_top())
@@ -261,7 +255,7 @@ func _stomp() -> void:
 
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a
 ## wider crater, because more of the fading edge still beats what a chunk can take.
-func _falloff(distance: float, radius: float) -> float:
+static func falloff(distance: float, radius: float) -> float:
 	if distance <= radius:
 		return 1.0
 	return clampf(1.0 - (distance - radius) / radius, 0.0, 1.0)
@@ -277,7 +271,7 @@ func _signature() -> void:
 			var dir := facing
 			_events.append({"type": "ability", "kind": "cone", "reach": reach})
 			hit_air = true  # fire reaches up to the helicopters
-			_hit_area(
+			hit_area(
 				func(p: Vector2, r: float) -> float:
 					var to := p - origin
 					if to.length() > reach + r:
@@ -288,23 +282,22 @@ func _signature() -> void:
 			hit_air = false
 		"leap":
 			var from := kaiju_pos
-			kaiju_pos = _clamp_to_arena(
+			kaiju_pos = clamp_to_arena(
 				kaiju_pos + facing * Num.f(city["leap_distance"]) * body_scale()
 			)
 			var land := kaiju_pos
 			_events.append({"type": "ability", "kind": "leap", "reach": reach, "from": from})
-			_hit_area(
-				func(p: Vector2, r: float) -> float:
-					return _falloff(p.distance_to(land) - r, reach),
+			hit_area(
+				func(p: Vector2, r: float) -> float: return falloff(p.distance_to(land) - r, reach),
 				damage
 			)
 			powers.leap_landed()
 		_:
 			var centre := kaiju_pos
 			_events.append({"type": "ability", "kind": "ring", "reach": reach})
-			_hit_area(
+			hit_area(
 				func(p: Vector2, r: float) -> float:
-					return _falloff(p.distance_to(centre) - r, reach),
+					return falloff(p.distance_to(centre) - r, reach),
 				damage
 			)
 
@@ -313,10 +306,6 @@ func _signature() -> void:
 ## every tank, and every helicopter it can reach, by damage x force(position, own radius),
 ## force 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
-	_hit_area(force, damage, y_lo, y_hi)
-
-
-func _hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
 	var top := ceili(reach_height()) if y_hi < 0 else y_hi
 	for i: int in buildings.size():
 		var b := buildings[i]
@@ -404,63 +393,5 @@ func pay(b: Building, chunks: int, bonus: float) -> void:
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * bonus * stat("rubble_mult")
 
 
-func _step_army(dt: float) -> void:
-	_spawn_timer -= dt
-	if _spawn_timer <= 0.0:
-		_spawn_tank()
-		_spawn_timer = maxf(
-			Num.f(army["min_interval"]),
-			Num.f(army["start_interval"]) - Num.f(army["escalation_per_chunk"]) * chunks_destroyed
-		)
-	var reach := Num.f(army["range"]) + stomp_radius()
-	var coated := false
-	for tank: Tank in tanks:
-		if tank.coat_t > 0.0:
-			tank.coat_t -= dt
-			tank.hp -= tank.coat_dps * dt
-			coated = true
-		var to := kaiju_pos - tank.pos
-		var dist := to.length()
-		if dist > reach:
-			tank.pos += to / dist * Num.f(army["speed"]) * dt
-		tank.cooldown -= dt
-		if tank.cooldown > 0.0:
-			continue
-		# A young of the brood nearer than the kaiju draws the fire instead.
-		var young := brood.nearest_young(tank.pos, minf(dist, reach + 1.0))
-		if young != null:
-			tank.cooldown = Num.f(army["fire_interval"])
-			young.hp -= Num.f(army["tank_damage"]) * 2.0
-			_events.append({"type": "tank_fired", "tank": tank.id, "at": young.pos})
-		elif dist <= reach + 1.0:
-			tank.cooldown = Num.f(army["fire_interval"])
-			hp -= maxf(Num.f(army["min_damage"]), Num.f(army["tank_damage"]) - stat("armor"))
-			_events.append({"type": "tank_fired", "tank": tank.id})
-	if coated:
-		clear_dead_tanks()
-
-
-func _spawn_tank() -> void:
-	var tank := Tank.new()
-	tank.id = _next_tank_id
-	_next_tank_id += 1
-	var angle := _rng.randf() * TAU
-	tank.pos = _clamp_to_arena(Vector2(cos(angle), sin(angle)) * arena_half * 1.2)
-	tank.hp = Num.f(army["tank_hp"]) * (1.0 + Num.f(army["threat_per_chunk"]) * chunks_destroyed)
-	tank.cooldown = Num.f(army["fire_interval"])
-	tanks.append(tank)
-	_events.append({"type": "tank_spawned", "tank": tank.id})
-
-
 func clear_dead_tanks() -> void:
-	var alive: Array[Tank] = []
-	for tank: Tank in tanks:
-		if tank.hp > 0.0:
-			alive.append(tank)
-		else:
-			tanks_destroyed += 1
-			rubble += Num.f(army["tank_rubble"]) * stat("rubble_mult")
-			_events.append(
-				{"type": "tank_destroyed", "tank": tank.id, "x": tank.pos.x, "z": tank.pos.y}
-			)
-	tanks = alive
+	army_units.clear_dead()

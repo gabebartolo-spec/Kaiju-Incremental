@@ -5,19 +5,9 @@ extends RefCounted
 ## RampageSim; split out to keep files small. Pure and seeded.
 ##   Reptilian: tail sweep on a hard turn, momentum on a straight line, Atomic Beam.
 ##   Insectoid: glide after a leap while the button is held, climbing (Brood is in Brood).
-##   Cephalopod: hydra limbs, grab and throw, squeezing through gaps, Corrosive Ink.
+##   Cephalopod: squeezing through gaps, Corrosive Ink (limbs, grab and throw: Tentacles).
 ## Shared: buildings block the body (slow it) unless a power says otherwise, and coatings
 ## (beam fire, ink) that eat chunks and units over time.
-
-
-## Something a tentacle grabbed, in flight to where the kaiju faced.
-class Thrown:
-	var kind: String
-	var from: Vector2
-	var to: Vector2
-	var t := 0.0
-	var duration: float
-
 
 var sim: RampageSim
 var cfg: Dictionary
@@ -25,10 +15,10 @@ var cfg: Dictionary
 var momentum := 0.0
 var beam_left := 0.0
 var glide_left := 0.0
-var thrown: Array[Thrown] = []
 ## Coated chunks, key building * 2^20 + chunk index: {"b", "c", "t", "dps", "kind"}.
 var coats: Dictionary = {}
-var limb_strikes := 0
+## The cephalopod's limbs: hydra strikes, grab and throw (Tentacles).
+var tentacles: Tentacles
 var tail_sweeps := 0
 ## Chunks broken by tail sweeps themselves (not what falls after).
 var tail_cut := 0
@@ -36,15 +26,14 @@ var _rng: RandomNumberGenerator
 var _turn := 0.0
 var _tail_cd := 0.0
 var _ram_cd := 0.0
-var _grab_cd := 0.0
 var _glide_armed := false
-var _limb_cd: Array[float] = []
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = sim.powers_cfg
 	_rng = rng
+	tentacles = Tentacles.new(sim, rng)
 
 
 func _bs() -> float:
@@ -102,7 +91,9 @@ func turn_toward(from: Vector2, to: Vector2, dt: float) -> Vector2:
 func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 	var turn := absf(old_facing.angle_to(sim.facing)) if moving else 0.0
 	if moving:
-		momentum += dt / Num.f(cfg["momentum_build_seconds"]) - turn * Num.f(cfg["momentum_turn_bleed"])
+		momentum += (
+			dt / Num.f(cfg["momentum_build_seconds"]) - turn * Num.f(cfg["momentum_turn_bleed"])
+		)
 	else:
 		momentum -= dt * Num.f(cfg["momentum_idle_decay"])
 	momentum = clampf(momentum, 0.0, 1.0)
@@ -179,7 +170,8 @@ func _climb(dt: float) -> void:
 	var centre := sim.kaiju_pos
 	var y := floori(sim.stand_y) - 1
 	sim.hit_area(
-		func(p: Vector2, r: float) -> float: return 1.0 if p.distance_to(centre) <= 1.0 + r else 0.0,
+		func(p: Vector2, r: float) -> float:
+			return 1.0 if p.distance_to(centre) <= 1.0 + r else 0.0,
 		Num.f(cfg["climb_load"]) * sim.stat("climb") * dt,
 		y,
 		y + 1
@@ -221,9 +213,7 @@ func ultimate() -> void:
 func step(dt: float, held: bool) -> void:
 	_glide(dt, held)
 	_beam(dt)
-	_limbs(dt)
-	_grab(dt)
-	_thrown(dt)
+	tentacles.step(dt)
 	_coats(dt)
 
 
@@ -245,7 +235,8 @@ func _glide(dt: float, held: bool) -> void:
 	var reach := sim.ability_reach()
 	sim.events.append({"type": "glide_land", "reach": reach})
 	sim.hit_area(
-		func(p: Vector2, r: float) -> float: return sim._falloff(p.distance_to(land) - r, reach),
+		func(p: Vector2, r: float) -> float:
+			return RampageSim.falloff(p.distance_to(land) - r, reach),
 		sim.stat("ability_damage") * Num.f(cfg["glide_land_mult"])
 	)
 
@@ -284,148 +275,14 @@ func _ink() -> void:
 	sim.hit_coat = {"kind": "ink", "dps": dps, "seconds": cfg["ink_seconds"]}
 	sim.hit_air = true
 	sim.hit_area(
-		func(p: Vector2, r: float) -> float: return sim._falloff(p.distance_to(centre) - r, reach),
+		func(p: Vector2, r: float) -> float:
+			return RampageSim.falloff(p.distance_to(centre) - r, reach),
 		dps * Num.f(cfg["ink_splash"]),
 		0,
 		ceili(sim.reach_top() * 1.5)
 	)
 	sim.hit_coat = {}
 	sim.hit_air = false
-
-
-## Each freed tentacle strikes on its own timer at a target it picks: a nearby tank or
-## helicopter if there is one, else a seeded spot all around the body.
-func _limbs(dt: float) -> void:
-	var count := Num.i(sim.stat("limbs"))
-	var interval := Num.f(cfg["limb_interval"])
-	while _limb_cd.size() < count:
-		_limb_cd.append(interval * (1.0 + float(_limb_cd.size()) / maxf(1.0, count)))
-	var reach := Num.f(cfg["limb_reach"]) * _bs()
-	for i: int in count:
-		_limb_cd[i] -= dt
-		if _limb_cd[i] > 0.0:
-			continue
-		_limb_cd[i] += interval
-		var targets := _units_within(reach)
-		if targets.is_empty():
-			targets = _chunks_within(reach)
-		if not targets.is_empty():
-			_strike(i, targets[_rng.randi_range(0, targets.size() - 1)])
-
-
-func _strike(limb: int, at: Vector2) -> void:
-	limb_strikes += 1
-	var radius := Num.f(cfg["limb_radius"]) * _bs()
-	sim.events.append({"type": "limb", "limb": limb, "at": at})
-	sim.hit_air = true
-	sim.hit_area(
-		func(p: Vector2, r: float) -> float: return sim._falloff(p.distance_to(at) - r, radius),
-		sim.stat("stomp_damage") * Num.f(cfg["limb_mult"])
-	)
-	sim.hit_air = false
-
-
-## For every building in reach, its standing chunk nearest the kaiju (one target each).
-func _chunks_within(reach: float) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	var from := sim.kaiju_pos
-	var top := ceili(sim.reach_top())
-	for b: RampageSim.Building in sim.buildings:
-		if b.frame.alive_count == 0:
-			continue
-		if Vector2(b.x, b.z).distance_to(from) - Vector2(b.w, b.d).length() * 0.5 > reach:
-			continue
-		var best := Vector2(INF, INF)
-		var best_d := reach
-		for y: int in mini(top, b.height):
-			for x: int in b.w:
-				for z: int in b.d:
-					if b.frame.alive(Vector3i(x, y, z)):
-						var p := b.chunk_world(Vector3i(x, y, z))
-						var d := Vector2(p.x, p.z).distance_to(from)
-						if d <= best_d:
-							best_d = d
-							best = Vector2(p.x, p.z)
-		if best.x < INF:
-			out.append(best)
-	return out
-
-
-func _units_within(reach: float) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	for tank: RampageSim.Tank in sim.tanks:
-		if tank.pos.distance_to(sim.kaiju_pos) <= reach:
-			out.append(tank.pos)
-	for heli: AirWing.Heli in sim.air.helis:
-		if heli.pos.distance_to(sim.kaiju_pos) <= reach:
-			out.append(heli.pos)
-	return out
-
-
-## A tentacle seizes the nearest tank or helicopter and hurls it where the kaiju faces; with
-## none in reach for a while it settles for a car off the street.
-func _grab(dt: float) -> void:
-	_grab_cd -= dt
-	if sim.stat("throw_damage") <= 0.0 or _grab_cd > 0.0:
-		return
-	var reach := Num.f(cfg["grab_reach"]) * _bs()
-	if _units_within(reach).is_empty() and _grab_cd > -Num.f(cfg["car_wait"]):
-		return
-	_grab_cd = Num.f(cfg["grab_cooldown"])
-	var kind := "car"
-	var from := sim.kaiju_pos
-	var best := reach
-	var best_tank: RampageSim.Tank = null
-	var best_heli: AirWing.Heli = null
-	for tank: RampageSim.Tank in sim.tanks:
-		var d := tank.pos.distance_to(sim.kaiju_pos)
-		if d <= best:
-			best = d
-			best_tank = tank
-	for heli: AirWing.Heli in sim.air.helis:
-		var d := heli.pos.distance_to(sim.kaiju_pos)
-		if d <= best:
-			best = d
-			best_heli = heli
-			best_tank = null
-	if best_heli != null:
-		kind = "heli"
-		from = best_heli.pos
-		best_heli.hp = 0.0
-		sim.air.clear_dead()
-	elif best_tank != null:
-		kind = "tank"
-		from = best_tank.pos
-		best_tank.hp = 0.0
-		sim.clear_dead_tanks()
-	var throw := Thrown.new()
-	throw.kind = kind
-	throw.from = from
-	throw.to = sim._clamp_to_arena(
-		sim.kaiju_pos + sim.facing * Num.f(cfg["throw_range"]) * _bs()
-	)
-	throw.duration = Num.f(cfg["throw_seconds"])
-	thrown.append(throw)
-	sim.events.append({"type": "grab", "kind": kind, "from": from, "to": throw.to})
-
-
-func _thrown(dt: float) -> void:
-	var landed: Array[Thrown] = []
-	for throw: Thrown in thrown:
-		throw.t += dt
-		if throw.t >= throw.duration:
-			landed.append(throw)
-	for throw: Thrown in landed:
-		thrown.erase(throw)
-		var blast: Dictionary = cfg["throw_blast"]
-		var mults: Dictionary = cfg["throw_mult"]
-		var radius := Num.f(blast[throw.kind]) * _bs()
-		var at := throw.to
-		sim.events.append({"type": "throw_land", "kind": throw.kind, "at": at, "radius": radius})
-		sim.hit_area(
-			func(p: Vector2, r: float) -> float: return sim._falloff(p.distance_to(at) - r, radius),
-			sim.stat("throw_damage") * Num.f(mults[throw.kind])
-		)
 
 
 ## --- Coatings: beam fire and ink eat what they cover -----------------------------------

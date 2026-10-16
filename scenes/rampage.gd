@@ -8,6 +8,8 @@ signal finished(result: Dictionary)
 
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
+## How high a gliding insectoid hovers (per body scale).
+const GLIDE_LIFT := 3.0
 
 var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
@@ -18,6 +20,7 @@ var ability_fx: AbilityFx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
 var _city: CityView
+var _powers: PowersView
 var _was_ready := true
 var _leap_reach := 0.0
 var _leap_power := 1.0
@@ -63,6 +66,8 @@ func _ready() -> void:
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	ability_fx.attach_body(_kaiju)
+	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
+	add_child(_powers)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
@@ -82,11 +87,16 @@ func _physics_process(delta: float) -> void:
 		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var signature := Input.is_action_just_pressed("signature")
+	var held := Input.is_action_pressed("signature")
+	var ultimate := Input.is_action_just_pressed("ultimate")
 	if _autoplay:
 		move = _autoplay_move()
 		signature = autoplay_signature and sim.ability_ready_in <= 0.0
+		held = autoplay_signature and Engine.get_physics_frames() % 90 < 50
+		ultimate = autoplay_signature
 	var t0 := Time.get_ticks_usec()
-	var events := sim.step(delta, move, signature)
+	var buttons := (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
+	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
@@ -95,6 +105,7 @@ func _physics_process(delta: float) -> void:
 	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
 	_update_kaiju(delta, move.length())
 	_update_powers()
+	_powers.update(delta, _kaiju_at)
 	_update_tanks()
 	_hud.refresh()
 
@@ -141,7 +152,8 @@ func _on_event(event: Dictionary) -> void:
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":
-			_tank_fired(Num.i(event["tank"]))
+			var at: Vector2 = event.get("at", sim.kaiju_pos)
+			_tank_fired(Num.i(event["tank"]), _to_world(at))
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
@@ -149,6 +161,8 @@ func _on_event(event: Dictionary) -> void:
 			_hud.refresh()
 			_hud.show_results()
 			get_node("/root/EventBus").emit_signal("run_ended", sim.result())
+		_:
+			_powers.on_event(event, _kaiju_at)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
@@ -198,6 +212,7 @@ func _ability_fx(event: Dictionary) -> void:
 
 func _update_kaiju(delta: float, moving: float) -> void:
 	var target := _to_world(sim.kaiju_pos)
+	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
 	if _leap_time > 0.0:
 		_leap_time += delta
 		var t := clampf(_leap_time / 0.4, 0.0, 1.0)
@@ -258,11 +273,13 @@ func _update_tanks() -> void:
 			node.rotation.y = atan2(-to.x, -to.y)
 
 
-func _tank_fired(id: int) -> void:
+func _tank_fired(id: int, at: Vector3) -> void:
 	if not _tank_nodes.has(id):
 		return
 	var node: Node3D = _tank_nodes[id]
-	var target := _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
+	var target := at + Vector3(0, 1.0, 0)
+	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
+		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
 	var shell := _part(Vector3.ONE * 0.35, node.position + Vector3(0, 0.9, 0), UiKit.WARN)
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
