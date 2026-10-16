@@ -47,5 +47,17 @@
 		"impact_damage": 60.0,
 		"fall_gravity": 30.0,
 		"topple_bonus": 1.5
+	},
+	"fx": {
+		"power_max": 2.5,
+		"crack_stomp_power": 1.8,
+		"beam_seconds": 0.65,
+		"scorch_seconds": 5.0,
+		"crater_seconds": 6.0,
+		"crack_seconds": 2.5,
+		"sweep_seconds": 0.5,
+		"leap_trail_seconds": 0.4,
+		"regen_tint": "8cffb0",
+		"deflect_tint": "cfe6ff"
 	}
 }

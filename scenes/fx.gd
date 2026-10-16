@@ -45,6 +45,7 @@ func _ready() -> void:
 	_breath_mesh.size = Vector3.ONE * 0.25
 	var hot := ShaderMaterial.new()
 	hot.shader = preload("res://scenes/ember.gdshader")
+	hot.set_shader_parameter("heat", 3.0)  # white-hot enough for the bloom to catch
 	_breath_mesh.material = hot
 	# Prewarm: one of each, out of sight, so the first real one does not stall a frame.
 	dust(Vector3(0, -50, 0), 0.5)
@@ -83,7 +84,12 @@ func breath(from: Vector3, span: Vector3, color: Color) -> void:
 	mat.initial_velocity_max = span.length() / 0.3
 	mat.scale_min = 1.5
 	mat.scale_max = 4.0
-	mat.color = color
+	var ramp := Gradient.new()  # white-hot at the mouth, the species colour as it cools
+	ramp.colors = PackedColorArray([Color(1.0, 0.95, 0.75), color, color.darkened(0.5)])
+	ramp.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	mat.color_ramp = ramp_tex
 	var p := GPUParticles3D.new()
 	p.process_material = mat
 	p.draw_pass_1 = _breath_mesh
@@ -98,13 +104,15 @@ func breath(from: Vector3, span: Vector3, color: Color) -> void:
 	get_tree().create_timer(0.8).timeout.connect(p.queue_free)
 
 
-## A ring that runs out across the ground from a stomp.
-func shockwave(at: Vector3, radius: float) -> void:
+## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own.
+func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0)) -> void:
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * radius * 2.4
 	var mat := ShaderMaterial.new()
 	mat.shader = SHOCKWAVE
+	if tint.a > 0.0:
+		mat.set_shader_parameter("tint", tint)
 	plane.material = mat
 	quad.mesh = plane
 	quad.position = at + Vector3(0, 0.15, 0)

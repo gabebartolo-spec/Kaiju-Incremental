@@ -13,7 +13,12 @@ var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
 var cost_usec: Dictionary = {}
 var species: Dictionary
+## The look of the signature attack and the upgrades (read by the flow suite).
+var ability_fx: AbilityFx
 var _city: CityView
+var _was_ready := true
+var _leap_reach := 0.0
+var _leap_power := 1.0
 var _hud: RampageHud
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
@@ -48,6 +53,8 @@ func _ready() -> void:
 	_city = CityView.new(sim, _fx_rng)
 	add_child(_city)
 	var colors: Dictionary = species["colors"]
+	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale())
+	add_child(ability_fx)
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	_kaiju_at = _to_world(sim.kaiju_pos)
@@ -81,6 +88,7 @@ func _physics_process(delta: float) -> void:
 		_note_cost(str(event["type"]), t1)
 	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
 	_update_kaiju(delta, move.length())
+	_update_powers()
 	_update_tanks()
 	_hud.refresh()
 
@@ -105,6 +113,7 @@ func _on_event(event: Dictionary) -> void:
 		"stomp":
 			_kaiju.stomp()
 			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
+			ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), _power("stomp_damage"))
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
@@ -145,28 +154,39 @@ func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
 		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
 
 
+## How far an upgraded stat is above the species' own value (1 = not upgraded).
+func _power(stat_name: String) -> float:
+	var base: Dictionary = species["stats"]
+	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
+
+
 func _ability_fx(event: Dictionary) -> void:
 	var reach := Num.f(event["reach"])
+	var strength := _power("ability_damage")
 	_shake = maxf(_shake, 0.45)
 	var colors: Dictionary = species["colors"]
 	var eye := Color(str(colors["eye"]))
 	_city.crush(_to_world(sim.kaiju_pos), reach * (0.5 if str(event["kind"]) == "cone" else 1.0))
 	match str(event["kind"]):
 		"cone":
-			var mouth := _kaiju_at + Vector3(0, 6.0 * sim.body_scale(), 0)
-			_city.fx.breath(
-				mouth, _to_world(sim.facing) * reach + Vector3(0, -mouth.y + 0.5, 0), eye
+			var facing := _to_world(sim.facing)
+			var mouth := (
+				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
 			)
-			var mid := _kaiju_at + _to_world(sim.facing) * reach * 0.5 + Vector3(0, 2, 0)
-			_city.flash(mid, eye, 8.0, 0.6)
+			var span := facing * reach + Vector3(0, -mouth.y + 0.5, 0)
+			_city.fx.breath(mouth, span, eye)
+			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
+			ability_fx.breath(mouth, span, half_angle, strength)
 		"leap":
 			var from: Vector2 = event["from"]
 			_leap_from = _to_world(from)
 			_leap_time = 0.0001
-			_city.ring(_to_world(sim.kaiju_pos), reach, eye, 0.5)
+			_leap_reach = reach
+			_leap_power = strength
+			ability_fx.leap_takeoff(_leap_from)
 		_:
+			ability_fx.lash(_kaiju_at, reach, strength)
 			_city.ring(_kaiju_at, reach, eye, 0.5)
-			_city.ring(_kaiju_at, reach * 0.6, eye.lightened(0.3), 0.35)
 
 
 func _update_kaiju(delta: float, moving: float) -> void:
@@ -175,15 +195,28 @@ func _update_kaiju(delta: float, moving: float) -> void:
 		_leap_time += delta
 		var t := clampf(_leap_time / 0.4, 0.0, 1.0)
 		_kaiju_at = _leap_from.lerp(target, t) + Vector3(0, sin(t * PI) * 6.0, 0)
+		ability_fx.leap_trail(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), t < 1.0)
 		if t >= 1.0:
 			_leap_time = 0.0
 			_kaiju_at = target
+			ability_fx.leap_land(target, _leap_reach, _leap_power)
+			_shake = maxf(_shake, 0.5)
 	else:
 		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
 	var heading := atan2(-sim.facing.x, -sim.facing.y)
 	_kaiju.rotation.y = lerp_angle(_kaiju.rotation.y, heading, minf(1.0, delta * 10.0))
 	_kaiju.animate(delta, moving)
+
+
+## Signature Recharge's ready pulse and Regeneration's motes.
+func _update_powers() -> void:
+	var charged := sim.ability_ready_in <= 0.0
+	if charged and not _was_ready:
+		ability_fx.ready_pulse(_kaiju_at)
+	_was_ready = charged
+	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
+	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
 
 
 func _spawn_tank_node(id: int) -> void:
@@ -229,7 +262,11 @@ func _tank_fired(id: int) -> void:
 	_city.flash(node.position + Vector3(0, 1.0, 0), Color("ffc070"), 4.0, 0.12)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
-	tween.tween_callback(func() -> void: _city.fx.sparks(target))
+	if sim.stat("armor") > 0.0:
+		var away := (node.position - target).normalized() + Vector3.UP * 0.5
+		tween.tween_callback(func() -> void: ability_fx.deflect(target, away))
+	else:
+		tween.tween_callback(func() -> void: _city.fx.sparks(target))
 	tween.tween_callback(shell.queue_free)
 	_shake = maxf(_shake, 0.08)
 
