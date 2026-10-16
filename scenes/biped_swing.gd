@@ -37,9 +37,9 @@ var rig: KaijuRig
 var hip_drop := 0.0
 var youth := 0.0
 var _straight: Array[float] = []
-var _sweep: Array[float] = []
+var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
 var _whip := 0.0  # 1 -> 0 over a tail whip
-var _whip_side := 1.0  # the hips' yaw as it travels down the tail, one per bone
+var _whip_side := 1.0
 
 
 func _init(p_rig: KaijuRig) -> void:
