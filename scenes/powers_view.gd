@@ -5,7 +5,7 @@ extends Node3D
 ## events and state; decides nothing. Part of Rampage.
 ##
 ## Rig hooks (agreed with kaiju-motion, called only when the model has them):
-## tail_sweep(side), grab(limb, at), throw(toward), jaw_open(open), climbing(on).
+## tail_sweep(side), grab(limb, at), throw(toward), limb_tip(limb), jaw_open(open), climbing(on).
 
 const INK := Color("7dff3a")
 const EGG := Color("e8dcb8")
@@ -13,6 +13,10 @@ const YOUNG := Color("3a2a22")
 const CAR := Color("8a3b2e")
 const TRACER := Color("ffd27a")
 const COATS_SHOWN := 4
+## Shares of a throw's flight: the tentacle reaching (the rig's 0.3 s reach in 0.7 s), then
+## lifting the object on its tip; the rest is the throw.
+const REACH_SHARE := 0.43
+const LIFT_SHARE := 0.22
 
 var sim: RampageSim
 ## Every power event this view has drawn, by type (read by the flow suite).
@@ -174,7 +178,6 @@ func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:
 	var from := _w(event["from"], 1.0)
 	var to := _w(event["to"], 0.5)
 	_hook("grab", [0, from])
-	_hook("throw", [to])
 	var node: Node3D
 	match kind:
 		"tank":
@@ -184,15 +187,34 @@ func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:
 		_:
 			node = _box(Vector3(1.0, 0.7, 2.0), CAR, false)
 	add_child(node)
-	var hold := kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
 	node.position = from
+	# The sim's flight (throw_seconds) runs from the grab to the landing. The tentacle reaches
+	# (REACH_SHARE), lifts the object on its tip (LIFT_SHARE), then throws it to land on time.
 	var seconds := Num.f(sim.powers_cfg["throw_seconds"])
+	var hold := kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
 	var tween := node.create_tween()
-	tween.tween_property(node, "position", hold, seconds * 0.3)
-	tween.tween_property(node, "position", to, seconds * 0.7)
-	tween.parallel().tween_property(node, "rotation", Vector3(TAU, 0, PI), seconds * 0.7)
+	tween.tween_interval(seconds * REACH_SHARE)
+	tween.tween_method(
+		func(t: float) -> void: node.position = from.lerp(_tip(hold), t),
+		0.0,
+		1.0,
+		seconds * LIFT_SHARE
+	)
+	tween.tween_callback(func() -> void: _hook("throw", [to]))
+	var flight := seconds * (1.0 - REACH_SHARE - LIFT_SHARE)
+	tween.tween_property(node, "position", to, flight)
+	tween.parallel().tween_property(node, "rotation", Vector3(TAU, 0, PI), flight)
 	tween.tween_callback(node.queue_free)
-	_streak(kaiju_at + Vector3(0, 1.5, 0), from, _tint, 0.3)
+	if not _kaiju.has_method("limb_tip"):
+		_streak(kaiju_at + Vector3(0, 1.5, 0), from, _tint, 0.3)
+
+
+## Where the holding tentacle's tip is (the rig's limb_tip), or `fallback` without that rig.
+func _tip(fallback: Vector3) -> Vector3:
+	if _kaiju.has_method("limb_tip"):
+		var tip: Vector3 = _kaiju.call("limb_tip", 0)
+		return tip
+	return fallback
 
 
 func _heli_fired(id: int, kaiju_at: Vector3) -> void:

@@ -35,7 +35,7 @@ species-powers/ (reptilian/insectoid/cephalopod _branch.mp4).
 2. Ultimate on a second button (E), hold-to-glide: flagged for the director in the PR.
 3. Rig hooks tail_sweep / grab / throw / jaw_open: AGREED by
    kaiju-motion (23:57). It is adding them on its PR #11 and will ping when they're pushed;
-   PowersView calls them through has_method. climbing(on) asked for 00:00; no reply yet.
+   Pushed on #11 (338b880) + limb_tip(limb); grab rides limb_tip then throws. climbing(on) pending.
 
 ## Running jobs
 None. No override.cfg left.
