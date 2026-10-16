@@ -515,6 +515,41 @@ def nearest_bone(points, bones, side_of, penalty=None):
     return best
 
 
+PLATE_MARGIN = 1.5
+
+
+def reclaim_plates(points, owner, bones):
+    """Shoulder plates and dorsal spikes sit beside the upper arm but belong to the torso: an
+    upper-arm voxel farther from its bone than the forearm is thick (times PLATE_MARGIN) goes to
+    the nearest spine or head bone, so the plates ride the chest instead of swinging with the arm."""
+    names = [b["name"] for b in bones]
+    seg = lambda i, p: _seg_dist(p, bones[i])
+    body = [i for i, n in enumerate(names) if n.startswith(("spine", "head"))]
+    out = owner.copy()
+    moved = 0
+    for side in ("l", "r"):
+        if f"arm_{side}0" not in names or f"arm_{side}1" not in names:
+            continue
+        upper, fore = names.index(f"arm_{side}0"), names.index(f"arm_{side}1")
+        radius = np.median(seg(fore, points[owner == fore])) * PLATE_MARGIN
+        idx = np.where(owner == upper)[0]
+        far = idx[seg(upper, points[idx]) > radius]
+        if len(far) == 0:
+            continue
+        dists = np.stack([seg(i, points[far]) for i in body])
+        out[far] = np.array(body)[np.argmin(dists, axis=0)]
+        moved += len(far)
+    print(f"plates reclaimed: {moved}")
+    return out
+
+
+def _seg_dist(points, b):
+    a, c = np.array(b["head"]), np.array(b["tail"])
+    ab = c - a
+    t = np.clip(((points - a) @ ab) / max(1e-9, ab @ ab), 0, 1)
+    return np.linalg.norm(points - (a + t[:, None] * ab), axis=1)
+
+
 # --- voxelize -------------------------------------------------------------------------------------
 
 def surface_voxels(v, tris, col, scale, origin, texture=None):
@@ -594,6 +629,7 @@ def main():
         off_bone = np.linalg.norm(centres_bl - (heads + t[:, None] * ab), axis=1) > thick
         owner[off_bone] = 0
     if body_plan == "biped":
+        owner = reclaim_plates(centres_bl, owner, bones)
         rgb = np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
         owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
     owner = adopt_orphans(keys, owner)
