@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-17 00:15
-## State: running a check (code review of PR #12 species-powers); helpers working on PR #10/#11, CI captures
+# Lead handoff, 2026-10-17 00:22
+## State: working (mantis adolescent skin v3 generating on 0161ad14; helpers fixing PRs #10 #11 #12)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art/motion QA of every helper,
@@ -16,7 +16,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 ## Models (all source GLBs in ~/Downloads/kaiju_tripo/; copy to scratch before Blender)
 - Reptile: all 3 stages rigged from olive textures (rep_*_tex_olive.glb) and in look-options; kaiju-motion
   re-rigs them with a jaw bone on PR #10.
-- Mantis: adult skin approved (mantis_adult_tex.glb, D-038). Nymph 06ed8a12 + adolescent 0161ad14 skins
+- Mantis: adult skin approved (mantis_adult_tex.glb, D-038); nymph skin v2 PASSED (mantis_baby_tex.glb, sent). Adolescent 0161ad14 v2 REJECTED (orange limbs), v3 generating. Old note: nymph + adolescent skins
   v1 rejected (blue / orange belly); v2 (strict "every part dark" prompt) generated, NOT YET CHECKED: open
   /workspace/texture/<id>, look, export only if dark chitin + red eyes, then send to kaiju-motion.
 - Cephalopod: baby 6176590f (octo_baby.glb, director "i love him"), adolescent a328effe (octo_adolescent.glb),
@@ -36,7 +36,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - city-layout done; real-city TABLED (D-029, branch claude/real-city-92596b).
 
 ## Next (mine)
-1. Check mantis nymph/adolescent skins v2; export; send.
+1. Check mantis adolescent skin v3 (0161ad14); export only if uniformly dark; send to kaiju-motion.
 2. Cephalopod skins (3 stages).
 3. Follow-up task after #12: city growth per evolution (D-039) + cost re-tune (~5x from Colossus, pacing.gd).
 4. Helicopter + military Tripo models (D-020/D-037); landmarks.
