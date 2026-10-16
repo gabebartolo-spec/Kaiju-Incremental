@@ -1,61 +1,44 @@
-# Lead handoff, 2026-10-16 17:36
-## State: awaiting director: destruction board + clip shown; critic loop stopped at round 12 (taste oscillation)
+# Lead handoff, 2026-10-16 20:00
+## State: working (kaiju stages via Tripo); helper city-layout running; street-life helper running
 
 ## Task
-Art direction + destruction overhaul. Director decisions today (docs/DECISIONS.md D-008..D-013):
-look C (concrete) far more detailed; real light sources; young kaiju outscaled by the city, grows
-(D-009); terrifying monsters, not toys; buildings are real structures that topple like Jenga;
-shaders and particles; kaiju models from Tripo, voxelized in Blender (D-012, spend approved
-"a few hundred credits per species"; ask past 500/session).
-Reference: WATCH THIS.mp4 (repo root, untracked; CityV voxel city destruction) + CG Cookie
-detailed-voxel trailer (youtube iPENkVBlPgI). Frames: scratchpad w_city/, w_city2/.
+Kaiju sculpts (3 species x baby/adolescent/adult, rigged voxels) + art direction. Director today:
+D-022 insectoid = mantis (2 scythe arms + 4 legs), D-023 credits: quality over cost (log every
+task), D-024 real city/edges (helper), D-025 smoke must not obscure the camera, D-026 ability
+VFX/SFX later, D-027 4K 120 Hz TV target.
 
 ## Branch and commit
-claude/look-options -> PR #3 (HOLD: director has not seen the detailed look yet). Pushed to head.
+claude/look-options -> PR #3 (HOLD until the director has seen the work). Helpers PR into it:
+street-life (civilians/traffic), city-layout (layout + edges, worktree branch city-layout).
 
-## What exists now
-- sim/structure.gd (chunks, support, drop/topple), sim/collapse.gd (falls, landing, strip crush),
-  RampageSim blows spread outward (_falloff) so power = bigger crater; nearest_standing() for AI.
-- scenes: BuildingView (voxels per chunk, chip() ragged holes), CityView, DebrisField (Jolt rigid
-  debris), Ruin (rubble heap + wall stubs), Fire (flames/embers ember.gdshader, smoke.gdshader
-  columns), Fx (dust puffs, sparks, shockwave.gdshader), CityDecor/PropField (cars, trees, lamps
-  with OmniLights; crushable), TankModel, KaijuModel (code-built RES 5 placeholders; loads
-  assets/kaiju/<species>.kvox when present), Kvox loader, VoxelBuilder (DIRECT colours).
-- tools/blender/voxelize.py (GLB -> .kvox, textured, proven on a test mesh); tools/capture/
-  capture_looks.gd (perf via engine timers) and bench_rampage.gd.
-- Economy retuned: ~80 rubble first rampage (chunk_rubble 0.05).
+## Done this turn
+- smoke.gdshader camera rule: clear inside 8 units of camera, full from 22; 55% kept over screen
+  centre. Capture: scratchpad smoke_after/ (kaiju visible through fires). Tests green.
+- project.godot: fullscreen at start, stretch aspect expand, adaptive vsync (VRR TV).
+- Tripo downloads staged in ~/Downloads/kaiju_tripo/: mantis_a (adult PICK, 9668b815),
+  mantis_b (rejected, armless), mantis_c_lowpoly (adolescent candidate), adol_a (reptile adol v2).
+  Six-view sheets in scratchpad six/<name>_sheet.png.
 
-## Unfinished
-1. Tripo reptilian generated (task 484078ce..., 30 cr, Private). Inspection + download need the
-   director: Chrome window too small for the viewer and downloads need his OK. Then texture (if
-   untextured), rig/animate, voxelize, six-view QA, then insectoid + cephalopod.
-2. Critic rounds 1-8 fixed (round 8: dusty rubble palette, dim fire light, soft smoke); rounds 1-7 fixed (ruins, plumes, ember-cluster fire, grade, stepped bites, rubble piles
-   where towers land, hitches, exit crash); round 9 fixed (pale concrete heaps, corner stumps); round 10 fixed (grey rubble, floors kept when chipping); round 11 fixed (solid heaps, tall stumps, wall panels); round 12 found one real fix (fire light reach); loop stopped there. Note: rounds 8/9 oscillated (too bright, then too dark) - stop at a middle the reference shows. Board ready:
-   docs/captures/2026-10-16-destruction/board.png (A young, B evolved).
-   Then show the director: city captures + docs/captures/2026-10-16-destruction/rampage_clip.mp4
-   (local only, *.mp4 is gitignored).
-3. Lineup kaiju still code-built placeholders (toy-like) until the sculpts land.
-
-## Evidence so far
-Tests: smoke 11, sim 39, flow 9 + self-test green; lint clean. GPU ~4.5 ms 1080p, ~9 ms 4K
-(4070 SUPER, engine timers). Offscreen-window FPS is throttled: never trust it.
-
-## Perf (engine timers, 4070 SUPER)
-1080p GPU ~5 ms; real frame gaps worst 20.8 ms, 0/3994 over 33 ms (bench_rampage.gd prints a
-per-event worst-cost table). Debris spawns from a queue (30/frame); ruins build on WorkerThreadPool.
+## Next
+1. Insectoid: generate the baby (mantis nymph: big head, stubby body, small scythes) and maybe a
+   proper-density adolescent from the mantis_c shape; Smart Mesh P2.0, Private each time.
+2. rig_voxel.py: add a hexapod skeleton (thorax/abdomen, 2 raptorial arms, 4 legs, antennae
+   physics chains); KaijuRig walk needs 4-leg gait (tripod alternation).
+3. Reptile adolescent v2: download b/c/d (export with the DEFAULT name; typing a new file name
+   makes the export silently fail; rename locally), pick, rig at 130 voxels.
+4. Board for the director: baby / adolescent / adult per species, labelled.
+5. Cephalopod: all 3 stages + radial tentacle rig.
+6. Review city-layout captures before the director sees them (art-qa-critic).
+7. 4K TV: check UI text size at TV distance; HDR output; perf at 4K (~9 ms GPU before).
+   The TV is listed on "AMD Radeon Graphics" (the iGPU output): ask the director to plug it
+   into the 4070 SUPER if the game runs on the iGPU.
 
 ## Rules learnt the hard way
-- WorkerThreadPool tasks: wait in _exit_tree or the game crashes at exit.
-- Performance.TIME_PROCESS updates ~1/s: measure hitches as wall-clock frame gaps.
-- Check nvidia-smi for a game before windowed runs (director plays LoL).
-- sim.step() clears events: route sim.events right after direct damage calls (capture tool).
-- Godot scaled RigidBody is unsupported: tween the mesh child, not the body.
-- gdformat rewraps code: re-read before scripted string edits.
-- Capture override.cfg must be deleted afterwards.
-
-## Attempts
-- Fire: cream "lampshade" = fire light washing out its smoke base + AgX desaturating bright orange;
-  fixed by starting smoke above flames, ember heat 1.4, small flame cubes.
+- Tripo export: leave the default file name; typing one kills the download silently.
+- Tripo thumbnails can fail to switch the selection: confirm the URL/face count changes first.
+- WorkerThreadPool tasks: wait in _exit_tree. Frame gaps, not TIME_PROCESS. nvidia-smi before
+  windowed runs. Capture override.cfg must be deleted afterwards.
 
 ## Running jobs
-None. CI on PR #3: the one red run (977a34e) was the exit crash, fixed since; later runs green. override.cfg present for captures: delete when done.
+Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), street-life
+(local_a48b34e9-0fa8-49e0-905e-66d3861e031a). No override.cfg left behind.

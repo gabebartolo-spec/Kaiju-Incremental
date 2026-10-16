@@ -13,3 +13,9 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | reptilian adolescent (v1) | dd1fb56e variant 512c7cad | rejected | 512c7cad-6cba-4efa-a8fa-48bf0194d468 | - | yes | director: too similar to the baby |
 | 2026-10-16 | reptilian adolescent (v2) | text prompt (lanky growth spurt, half-grown plates; Lion King cub/teen/adult ref) | Smart Mesh P2.0 x4 | 70f4408b-7d7b-4824-a8d1-b420ce3ff0ea | 100 | yes | generating |
 | 2026-10-16 | insectoid adult | text prompt | Smart Mesh P2.0 x4 | 843f55af-af03-4224-8d77-8539b3efaafe | 100 | yes | generating |
+| 2026-10-16 | reptilian adolescent (v2) | 70f4408b variant adol_a | inspecting | 70f4408b-7d7b-4824-a8d1-b420ce3ff0ea | - | yes | six-view clean (2 arms, 2 legs, tail) but humanoid torso; b/c/d not yet downloaded |
+| 2026-10-16 | insectoid adult | 843f55af | rejected | 843f55af-af03-4224-8d77-8539b3efaafe | - | yes | no arms (director: "a bit armless") |
+| 2026-10-16 | insectoid adult (mantis) | text prompt (upright mantis, 2 scythe arms, 4 legs) | Smart Mesh P2.0 x4 | c7cdcd1e-9f53-46aa-827a-f67dbdf832da | 100 | yes | done |
+| 2026-10-16 | insectoid adult | mantis variant 9668b815 (20,085 faces) | picked | 9668b815-c82b-441e-96d8-a941d77ac59a | - | yes | PASS six-view: 2 scythe arms, 4 legs, antennae, spiked; director: "keep pursuing the mantis look" |
+| 2026-10-16 | insectoid | mantis variant 8ec4566c (19,677 faces) | rejected | 8ec4566c-5010-49f6-b577-74c7fbfaaf0e | - | yes | lost the raptorial arms (ant-like) |
+| 2026-10-16 | insectoid adolescent? | mantis low-poly variant (5,535 faces) | candidate | c7cdcd1e (variant) | - | yes | lanky classic mantis, 2 arms 4 legs: adolescent candidate |
