@@ -1,5 +1,5 @@
-# Game-flow handoff, 2026-10-17 04:10
-## State: running a check (flow suite, headless, local)
+# Game-flow handoff, 2026-10-17 04:15
+## State: blocked (GitHub Actions refuses jobs: billing / spending limit)
 
 ## Task
 Make the loop around the rampage feel finished (brief from session local_9fac90d2):
@@ -60,6 +60,12 @@ to fill). Auto-fix is on.
   capture.yml landed have blank headings until this reaches look-options/main.
 - Autoload names (SaveSystem, Settings) don't resolve in class_name scripts compiled under
   `--script` test runs -> moved logic to static classes SaveFile/PlayerSettings.
+
+## Blocker
+Since ~2026-10-16 17:07Z every Actions job (tests, lint, capture; also blender-tank) fails in
+3 s with "The job was not started because recent account payments have failed or your spending
+limit needs to be increased". Director's billing decision; told the lead. Nothing to fix in code.
+When Actions works: re-dispatch both captures (commands under Unfinished), re-run PR #14 checks.
 
 ## Open decisions
 None for the director yet. Civilians count comes from the view (StreetLife.killed), not the sim.
