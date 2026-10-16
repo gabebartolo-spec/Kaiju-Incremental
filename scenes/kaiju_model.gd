@@ -137,6 +137,12 @@ func jaw_open(open: bool) -> void:
 		(_rig.gait as BipedGait).head.held_open = open
 
 
+## Perched on a roof: a low, coiled climbing stance (or back to the ground) - the insectoid.
+func climbing(on: bool) -> void:
+	if _rig != null and _rig.gait is HexapodGait:
+		(_rig.gait as HexapodGait).climbing = on
+
+
 ## A tentacle reaches to `at` and holds on (limb_hint < 0: the nearest) - the cephalopod.
 func grab(limb_hint: int, at: Vector3) -> void:
 	if _rig != null and _rig.gait is RadialGait:

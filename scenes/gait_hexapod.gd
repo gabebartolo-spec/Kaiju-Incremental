@@ -41,6 +41,11 @@ const PULSE := 0.05
 const ROCK_HZ := 1.3
 const ROCK := 0.02
 const REACH_STEP := 0.96
+## Perched: how low the body crouches (hip heights), how far it pitches forward (rad), how far
+## the scythes rise (share of a strike).
+const PERCH_CROUCH := 0.25
+const PERCH_PITCH := 0.25
+const PERCH_ARMS := 0.35
 ## Scythes: held raised and folded against the chest (femur forward-up, tibia folded back down
 ## along it, claw tucked); a strike throws them out; twitches jolt them (rad).
 const FOLD_FEMUR := Vector3(0.15, 0.6, 0.7)  ## out, up, forward
@@ -80,6 +85,8 @@ class Leg:
 
 
 var legs: Array[Leg] = []
+## Perched on a roof (KaijuModel.climbing): a low, wide, coiled stance, scythes half raised.
+var climbing := false
 var _phase := 0.0
 var _cycle := 0.4
 var _frozen := false
@@ -96,6 +103,7 @@ var _stomps := 0
 var _rear := 0.0
 var _jolt := 0.0
 var _ready := false
+var _perch := 0.0
 
 
 func _init(p_rig: KaijuRig) -> void:
@@ -277,8 +285,9 @@ func _pose_body(dt: float) -> void:
 	# The rock is stepped, not smooth: a few twitchy positions a second.
 	rock = snappedf(rock, ROCK * hip_height * 0.35)
 	var rear := sin(PI * minf(1.0, _rear * 1.5)) * 0.5
-	var drop := -_jolt * 0.06 * hip_height
-	rig.pose("thorax0", Vector3(rear * 0.6, 0, 0), Vector3(rock, drop, 0))
+	_perch = lerpf(_perch, 1.0 if climbing else 0.0, minf(1.0, dt * 6.0))
+	var drop := -_jolt * 0.06 * hip_height - PERCH_CROUCH * hip_height * _perch
+	rig.pose("thorax0", Vector3(rear * 0.6 - PERCH_PITCH * _perch, 0, 0), Vector3(rock, drop, 0))
 	rig.pose("thorax1", Vector3(rear * 0.4 - 0.05 * _jolt, 0, 0))
 	var pulse := sin(time * TAU * PULSE_HZ)
 	for i: int in 3:
@@ -345,7 +354,7 @@ func _twitch(dt: float) -> void:
 	for arm: String in ["arm_l", "arm_r"]:
 		var tw: float = _arm_twitch[arm]
 		_arm_twitch[arm] = maxf(0.0, tw - dt * 2.5)
-		_pose_arm(arm, lash, snappedf(tw, 0.08))
+		_pose_arm(arm, maxf(lash, PERCH_ARMS * _perch), snappedf(tw, 0.08))
 
 
 ## One scythe by aiming its three bones: folded against the chest at rest, thrown out on a strike
