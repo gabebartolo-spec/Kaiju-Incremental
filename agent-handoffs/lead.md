@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 03:40
+# Lead handoff, 2026-10-17 04:20
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -64,6 +64,13 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d): capture.yml works on CI (lavapipe); PR soon.
 - ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED until locomotion lands; PR #8 on hold.
 - city-layout done; real-city TABLED (D-029, branch claude/real-city-92596b).
+
+## 04:20 status
+- Mantis r3c: hold/dart contrast 1.4x->4.6x (fixed); rest twitches too small -> r3d (0a36ec4): scythe raise ~30deg, body jerk-turn ~20deg, head snap every 0.25-0.55 s. CI renders running; then FRESH motion-critic on r3d side+game + both octopus clips; then merge #11 at reviewed SHA.
+- PR #15 (look test, head 3a96ed9): CI shard pending; clips + joint crops not yet posted. Review them, then merge.
+- PR #14 (game-flow, draft): watcher b3ro328hh waiting on runs 38923674895/38923781359.
+- city-growth: pacing round e + stills running; data/upgrades.json uncommitted trial.
+- blender-tank / blender-reptile: running (share one Blender MCP).
 
 ## Next (mine)
 1. DONE: all 3 mantis skins exported (mantis_{baby,adolescent,adult}_tex.glb) and sent.
