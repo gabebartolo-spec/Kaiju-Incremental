@@ -4,9 +4,12 @@ extends RefCounted
 ## instances that can be crushed (flattened) when the kaiju stomps on it. Presentation only:
 ## the sim never knows props exist.
 
+const BUCKET := 8.0  # props are filed by ground cell of this size, so a crush looks nearby only
+
 var vox := VoxelBuilder.new()
 var voxel: float
 var _groups: Array[Dictionary] = []
+var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
 var _mmi: MultiMeshInstance3D
 
 
@@ -25,6 +28,11 @@ func add(at: Vector3, shape: Callable) -> void:
 	for cell: Vector3i in local.cells:
 		vox.put(cell + offset, local.key_at(cell))
 	_groups.append({"at": at, "cells": vox.cells.size() - before, "offset": offset, "local": local})
+	var key := Vector2i(floori(at.x / BUCKET), floori(at.z / BUCKET))
+	if not _buckets.has(key):
+		_buckets[key] = []
+	var bucket: Array = _buckets[key]
+	bucket.append(_groups.size() - 1)
 
 
 ## glow: strength for palette colours with alpha 0 (lamps).
@@ -55,16 +63,25 @@ func crush(at: Vector3, radius: float) -> void:
 	if _mmi == null:
 		return
 	var mm := _mmi.multimesh
-	for group: Dictionary in _groups:
-		if group.get("crushed", false):
-			continue
-		var base: Vector3 = group["at"]
-		if Vector2(base.x - at.x, base.z - at.z).length() > radius:
-			continue
-		group["crushed"] = true
-		var ids: PackedInt32Array = group["ids"]
-		for i: int in ids:
-			var t := mm.get_instance_transform(i)
-			t.origin.y = t.origin.y * 0.2 + voxel * 0.1
-			t.basis = Basis.from_scale(Vector3(1.15, 0.25, 1.15))
-			mm.set_instance_transform(i, t)
+	var lo := Vector2i(floori((at.x - radius) / BUCKET), floori((at.z - radius) / BUCKET))
+	var hi := Vector2i(floori((at.x + radius) / BUCKET), floori((at.z + radius) / BUCKET))
+	for bx: int in range(lo.x, hi.x + 1):
+		for bz: int in range(lo.y, hi.y + 1):
+			var bucket: Array = _buckets.get(Vector2i(bx, bz), [])
+			for index: int in bucket:
+				_crush_group(mm, _groups[index], at, radius)
+
+
+func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3, radius: float) -> void:
+	if group.get("crushed", false):
+		return
+	var base: Vector3 = group["at"]
+	if Vector2(base.x - at.x, base.z - at.z).length() > radius:
+		return
+	group["crushed"] = true
+	var ids: PackedInt32Array = group["ids"]
+	for i: int in ids:
+		var t := mm.get_instance_transform(i)
+		t.origin.y = t.origin.y * 0.2 + voxel * 0.1
+		t.basis = Basis.from_scale(Vector3(1.15, 0.25, 1.15))
+		mm.set_instance_transform(i, t)
