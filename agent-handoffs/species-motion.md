@@ -1,5 +1,5 @@
 # Species-motion handoff, 2026-10-17 02:40
-## State: awaiting lead (mantis_r3b + octo_r3b baby clip sent); paused at usage limit
+## State: running a check (CI renders of mantis r3c + octopus adult side)
 
 ## Task
 Mantis (insectoid) and octopus (cephalopod) locomotion, taken over from kaiju-motion (it keeps
@@ -40,6 +40,11 @@ side-session-notes/local_9fac90d2.../species-motion/: octo_bone_sheet_r3.png (+ 
 mantis_bone_sheet_r3.png, mantis_r3a/ (first mantis clips, older twitch amplitudes, numbers.txt).
 
 ## Running jobs
+- r3c CI runs 38932071938 (mantis game), 38932082863 (mantis side), 38932093965 (octopus
+  adult side), each with --pose-trace=user://pose.csv (out/userdata/...). Measure with
+  tools/capture/screen_motion.py <clip.mp4> <pose.csv>; compare to r3b (holds 0.0073 vs darts 0.0104,
+  rest dead-still 1.03 s). Lead r3b verdict: FIX (holds invisible on screen, game cam slide,
+  twitches unreadable at 80x150, side orbit, roar dead end); r3c (1d7d436) addresses all five.
 - Mantis clips sent (notes species-motion/mantis_r3b/); octopus baby sent (octo_r3b/).
   Octopus adult side run 38923742801 finished but is NOT downloaded (network timeout), dispatched with
   --ref claude/species-motion. A background watcher downloads each to scratchpad/ci/<run id>.
