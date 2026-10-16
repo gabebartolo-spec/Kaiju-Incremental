@@ -1,57 +1,56 @@
-# Lead handoff, 2026-10-17 00:05
-## State: working (mantis nymph 06ed8a12 + adolescent 0161ad14 textures v2 generating; review before export)
+# Lead handoff, 2026-10-17 00:15
+## State: running a check (code review of PR #12 species-powers); helpers working on PR #10/#11, CI captures
 
 ## Task
-Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
-director decisions. Today's decisions: D-022..D-034 in docs/DECISIONS.md. Key ones now:
-D-031 locomotion (reptile = Godzilla/T-rex medium lean, T-rex *grace*), D-032 looks first / perf
-later, D-033 stages picked, D-034 Tripo skins (reptile = dark olive crocodile), credits unlimited.
+Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art/motion QA of every helper,
+director decisions. Decisions D-022..D-040 in docs/DECISIONS.md. Live ones: D-031 locomotion (reptile =
+Godzilla/T-rex medium lean, T-rex *grace*), D-032 looks first / perf later, D-034 Tripo skins, D-035/D-037
+species kits as upgrade-tree nodes (docs/SPECIES.md), D-039 city grows per evolution, D-040 ultimates on
+their own button (E / pad Y). Credits unlimited (director); log every task in docs/provenance/tripo.md.
 
 ## Branch and commit
-claude/look-options (PR #3 to main on HOLD until the director has seen the work).
-Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 buildings, edges).
+claude/look-options (PR #3 to main on HOLD until the director has seen the work). Merged in today: #5 street
+life, #6 ability VFX, #7/#9 city (RES 8 buildings, edges). Open into it: #8 SFX (paused), #10 reptile
+locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 
-## Done this stretch
-- Reptile adolescent B (Tripo f9cf6ba7) rigged at 130 vox; adult re-rigged at 160 from the olive
-  texture (rig_voxel.py now samples the base-colour texture when the GLB has one).
-- Mantis stages approved: baby 06ed8a12, adolescent 0161ad14, adult 9668b815 -> kaiju-motion rigs
-  them with its hexapod skeleton (it has already produced insectoid_adult, uncommitted on its branch).
-- Boards: docs/captures/2026-10-16-stages/ (stages_board, reptile_skin_options, reptile_olive_ingame).
-
-## Next (mine)
-1. DONE: all three reptile stages rigged from olive textures (docs/captures/2026-10-16-stages/reptile_stages_ingame.png).
-
-2. Cephalopod stages ALL PICKED: baby 6176590f (octo_baby.glb), adolescent a328effe (octo_adolescent.glb), adult 8bf2f668 (octo_2.glb); sent to kaiju-motion. Next: one skin prompt for all three (check each result!).
-   ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
-   logic), then a skin. Radial rig comes from kaiju-motion.
-3. Mantis skins: adult approved (D-038, mantis_adult_tex.glb, sent to kaiju-motion); nymph + adolescent v1 REJECTED (off-colour), v2 generating. Export only after a visual check.
-4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
-5. 4K TV text size check (perf deferred, D-032).
-6. Species gameplay (D-035, docs/SPECIES.md): build after PR #10; 3 open questions for the director there.
+## Models (all source GLBs in ~/Downloads/kaiju_tripo/; copy to scratch before Blender)
+- Reptile: all 3 stages rigged from olive textures (rep_*_tex_olive.glb) and in look-options; kaiju-motion
+  re-rigs them with a jaw bone on PR #10.
+- Mantis: adult skin approved (mantis_adult_tex.glb, D-038). Nymph 06ed8a12 + adolescent 0161ad14 skins
+  v1 rejected (blue / orange belly); v2 (strict "every part dark" prompt) generated, NOT YET CHECKED: open
+  /workspace/texture/<id>, look, export only if dark chitin + red eyes, then send to kaiju-motion.
+- Cephalopod: baby 6176590f (octo_baby.glb, director "i love him"), adolescent a328effe (octo_adolescent.glb),
+  adult 8bf2f668 (octo_2.glb, 10+ tentacles). Untextured: next, one skin prompt for all three, check each.
 
 ## Helpers
-- kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: round 2 = FIX (posture, no skate, head, mass PASS; jaw open, tail lag, hold beat, game-camera read, baby stumble, pale legs, true side cam to fix). Round 1 was REJECTED (fix
-  list sent: posture lean 20-30 deg, tail sweep, head stable/mouth closed, weight, arms, blends, baby
-  clumsier, game-camera readability, washed-out legs, stuttering capture). Round 2 clips exist
-  (rex2_*); run a FRESH motion-critic when it reports. Adds KaijuModel.foot_planted(side,strength,at).
-- ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED by the director until locomotion
-  lands. PR #8 SFX on hold (stomps reworked low-end, not yet synced to foot_planted).
-- city-layout: done; RES 12 / facade proposal in its handoff (branch claude/city-layout-56adda).
-- real-city: TABLED (D-029), WIP on claude/real-city-92596b.
+- kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
+  shows when closed + orphan voxels; double plants; roar marching; baby holes/scurry; per-frame slide trace;
+  rear shoulder proof). PR #11: hydra rig BROKEN (mantle voxels on tentacle chains -> floating balloons,
+  director "bizarre"); asked for a static bone-colour sheet before more clips. Mantis gait = FIX (frozen idle,
+  rigid scythes, smooth not skittering, pole legs, colour pop on turns). Run a FRESH motion-critic per round.
+- species-powers (local_136df838-e381-4671-b237-5402935f837b): PR #12 open, CI pending; a code reviewer is
+  doing the sim review (diff + checkout staged in scratchpad pr12/). Captures in side-session-notes
+  species-powers/. Then merge (match head SHA) after #10/#11 or rebase as needed.
+- ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d): capture.yml works on CI (lavapipe); PR soon.
+- ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED until locomotion lands; PR #8 on hold.
+- city-layout done; real-city TABLED (D-029, branch claude/real-city-92596b).
+
+## Next (mine)
+1. Check mantis nymph/adolescent skins v2; export; send.
+2. Cephalopod skins (3 stages).
+3. Follow-up task after #12: city growth per evolution (D-039) + cost re-tune (~5x from Colossus, pacing.gd).
+4. Helicopter + military Tripo models (D-020/D-037); landmarks.
+5. 4K TV text size check (perf deferred, D-032).
 
 ## Rules learnt the hard way
-- Tripo: export with the default name; use `find` refs (coordinates shift with the page height);
-  a new browser tab may show Tripo logged out: use the original tab; check Remove Lighting per page.
-- Merge only the SHA you reviewed (`--match-head-commit`).
-- Windowed Godot: write override.cfg (mode=0, no_focus, -20000) in a SEPARATE command before the run
-  (focus-guard hook checks first); delete after. Never set fullscreen in project.godot.
-- After a merge that adds classes, run `godot --headless --import` once or scripts fail to parse.
-- Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
-
-7. Helpers started 23:20: species-powers (local_136df838-e381-4671-b237-5402935f837b, per-species upgrade branches + helicopters), ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d, xvfb capture workflow). Cephalopod baby generating; adolescent next.
-
-15. City growth per evolution (D-039): needs its own task after species-powers lands (sim + city_gen + costs re-tune).
-16. Reptile locomotion round 4: FIX (jaw interior shows when closed, orphan voxels, cadence double-plants, roar marching, baby holes/scurry). Round 5 next.
+- Tripo: default export name; `find` refs, never pixel coords across loads; stay in the signed-in tab;
+  check Remove Lighting per page; texture prompts drift per model: inspect every result.
+- Merge only the reviewed SHA (`--match-head-commit`).
+- Windowed Godot: separate command writes override.cfg (mode=0, no_focus, -20000) first; focus-guard also
+  blocks while a fullscreen app is in front; prefer CI captures. Never set fullscreen in project.godot.
+- `rm` with variables: use "${VAR:?}". After merges that add classes, run `godot --headless --import`.
+- Subagents without a shell can't read private PRs: stage the diff/checkout for them.
 
 ## Running jobs
-None in Tripo. Sessions above. No override.cfg left.
+None in Tripo (mantis v2 textures finished, unchecked). Sessions above. Scratch worktree pr12/tree (detached,
+remove with `git worktree remove` after the review). No override.cfg left.
