@@ -71,7 +71,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 			var part: VoxelBuilder = per_bone[i]
 			part.salt = 7
 			var mmi := part.build({}, voxel, glow, -head)
-			mmi.layers = 1 | KaijuModel.RIM_LAYER
+			mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 			node.add_child(mmi)
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
 	_relax_arms()
