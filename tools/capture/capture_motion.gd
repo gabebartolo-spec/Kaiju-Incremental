@@ -17,6 +17,8 @@ const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const CM_PER_UNIT := 350.0
 
+## Every footfall: time, which foot, where (world), strength (written next to the trace).
+var plants := PackedStringArray()
 var _species := "reptilian"
 var _stage := "adult"
 var _cam := "game"
@@ -25,8 +27,6 @@ var _trace := ""
 var _shake := 0.0
 var _label: Label
 var _time := 0.0
-## Every footfall: time, which foot, where (world), strength (written next to the trace).
-var plants := PackedStringArray()
 
 
 func _initialize() -> void:
