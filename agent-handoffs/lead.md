@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-16 21:45
+# Lead handoff, 2026-10-16 22:00
 ## State: working; helpers city-layout, real-city-cbd, ability-vfx (PR #6 FIX list) running
 
 ## Task
@@ -54,6 +54,8 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 
 16. PR #9 MERGED (b9c4d5d, at the reviewed head): RES 8 buildings, round-2 streets/edges, varied east outskirts. 4K GPU ~14 ms; perf tuning deferred (D-032, looks first).
 17. VFX/SFX PAUSED by the director until locomotion is done. PR #8 on hold. Resume tasks: low-end stomps ("cellophane"), sync to KaijuRig.foot_planted.
+
+18. Stage board for the director: docs/captures/2026-10-16-stages/stages_board.png (reptile adol A=cedf6851, B=f9cf6ba7; mantis baby 06ed8a12, adol 0161ad14, adult 9668b815). GLBs in ~/Downloads/kaiju_tripo. After the director picks: rig_voxel at 100/130/160 (mantis needs the hexapod rig from kaiju-motion).
 
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
