@@ -24,7 +24,7 @@ func _ready() -> void:
 			"smin": 1.0,
 			"smax": 2.6,
 			"grow": true,
-			"colors": [Color(0.22, 0.24, 0.26, 0.55), Color(0.2, 0.22, 0.24, 0.0)],
+			"colors": [Color(0.22, 0.24, 0.26, 0.47), Color(0.2, 0.22, 0.24, 0.0)],
 		}
 	)
 	_dust_mesh = _puff(2.2)
