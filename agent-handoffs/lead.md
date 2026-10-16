@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 17:33
-## State: running a check (director AFK, "no questions"): critic gate round 8 on the city look
+# Lead handoff, 2026-10-16 17:36
+## State: running a check (director AFK, "no questions"): critic gate round 9 on the city look
 
 ## Task
 Art direction + destruction overhaul. Director decisions today (docs/DECISIONS.md D-008..D-013):
@@ -29,8 +29,8 @@ claude/look-options -> PR #3 (HOLD: director has not seen the detailed look yet)
 1. Tripo reptilian generated (task 484078ce..., 30 cr, Private). Inspection + download need the
    director: Chrome window too small for the viewer and downloads need his OK. Then texture (if
    untextured), rig/animate, voxelize, six-view QA, then insectoid + cephalopod.
-2. Critic rounds 1-7 fixed (ruins, plumes, ember-cluster fire, grade, stepped bites, rubble piles
-   where towers land, hitches, exit crash); round 8 gate pending. Board ready:
+2. Critic rounds 1-8 fixed (round 8: dusty rubble palette, dim fire light, soft smoke); rounds 1-7 fixed (ruins, plumes, ember-cluster fire, grade, stepped bites, rubble piles
+   where towers land, hitches, exit crash); round 9 gate pending. Board ready:
    docs/captures/2026-10-16-destruction/board.png (A young, B evolved).
    Then show the director: city captures + docs/captures/2026-10-16-destruction/rampage_clip.mp4
    (local only, *.mp4 is gitignored).
@@ -58,4 +58,4 @@ per-event worst-cost table). Debris spawns from a queue (30/frame); ruins build 
   fixed by starting smoke above flames, ember heat 1.4, small flame cubes.
 
 ## Running jobs
-Critic gate round 8 (background agent). override.cfg present for captures: delete when done.
+Critic gate round 9 (background agent). CI on PR #3: the one red run (977a34e) was the exit crash, fixed since; later runs green. override.cfg present for captures: delete when done.
