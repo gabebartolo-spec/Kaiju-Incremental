@@ -1,5 +1,5 @@
 # Species-motion handoff, 2026-10-17 02:40
-## State: awaiting lead (mantis r3c game clip sent); side + octopus adult CI still rendering
+## State: running a check (r3d mantis CI renders; then fresh critic gets r3d side + game + both octopus)
 
 ## Task
 Mantis (insectoid) and octopus (cephalopod) locomotion, taken over from kaiju-motion (it keeps
@@ -41,6 +41,9 @@ side-session-notes/local_9fac90d2.../species-motion/: octo_bone_sheet_r3.png (+ 
 mantis_bone_sheet_r3.png, mantis_r3a/ (first mantis clips, older twitch amplitudes, numbers.txt).
 
 ## Running jobs
+- r3d (0a36ec4: big rest moves) CI runs 38935787382 (game), 38935798177 (side). Target from lead:
+  no dead-still run at rest > ~0.6 s by mean energy (screen_motion.py). Octopus adult side r3c run
+  38932093965 also pending; octopus baby clip already in notes octo_r3b/.
 - r3c game measured: holds median 0.0023 (r3b 0.0073), darts 0.0107; rest twitches still small by
   mean energy (2.0 s dead-still run) - expect FIX on finding 3; next: fewer, larger moves.
 - kaiju-look-test: after any .kvox/.rig.json change run GODOT=<godot> bash tools/kaiju_skin/bake_all.sh
