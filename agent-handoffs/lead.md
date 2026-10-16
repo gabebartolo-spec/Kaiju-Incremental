@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 00:30
+# Lead handoff, 2026-10-17 00:45
 ## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
 
 ## Task
@@ -27,10 +27,10 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
   shows when closed + orphan voxels; double plants; roar marching; baby holes/scurry; per-frame slide trace;
   rear shoulder proof). PR #11: hydra rig BROKEN (mantle voxels on tentacle chains -> floating balloons,
   director "bizarre"); asked for a static bone-colour sheet before more clips. Mantis gait = FIX (frozen idle,
-  rigid scythes, smooth not skittering, pole legs, colour pop on turns). Run a FRESH motion-critic per round.
-- species-powers (local_136df838-e381-4671-b237-5402935f837b): PR #12 sim review = FIX (size-scaled building slow, heli respawn farm, magic numbers, flaky autoplay, lost heli event); was
-  doing the sim review (diff + checkout staged in scratchpad pr12/). Captures in side-session-notes
-  species-powers/. Then merge (match head SHA) after #10/#11 or rebase as needed.
+  rigid scythes, smooth not skittering, pole legs, colour pop on turns). Species round 2: mantis REJECT (still idle, no freeze bursts), octopus FIX (floaters, no surge), baby octo REJECT at game cam. Run a FRESH motion-critic per round.
+- species-powers (local_136df838-e381-4671-b237-5402935f837b): PR #12 MERGED (858c2dc) after fixes (unscaled block radius, heli clock, tuning numbers, step counter). Next: D-039 city growth + cost re-tune task.
+
+
 - ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d): capture.yml works on CI (lavapipe); PR soon.
 - ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED until locomotion lands; PR #8 on hold.
 - city-layout done; real-city TABLED (D-029, branch claude/real-city-92596b).
