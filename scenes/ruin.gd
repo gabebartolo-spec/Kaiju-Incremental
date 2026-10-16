@@ -63,7 +63,7 @@ static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 	var palette := {}
 	for key: String in voxels.palette:
 		var c: Color = voxels.palette[key]
-		palette[key] = Color(c.lerp(Color("9a9c9a"), 0.55), 1.0)
+		palette[key] = Color(c.lerp(Color("8e908e"), 0.8), 1.0)
 		palette["stub_" + key] = c
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
 	palette["char"] = Color("2a2624")

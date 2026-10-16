@@ -73,6 +73,9 @@ func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictiona
 					var list: PackedInt32Array = _by_chunk[n]
 					for i: int in list:
 						var cell := voxels.vox.built_cells[i]
+						var key := voxels.vox.key_at(cell)
+						if key == "slab" or key == "roof":
+							continue  # floors stay: a bite shows dark floors, not the street
 						var far := maxi(
 							maxi(
 								maxi(lo.x - cell.x, cell.x - hi.x),
