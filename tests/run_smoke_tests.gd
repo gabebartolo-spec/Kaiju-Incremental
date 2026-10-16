@@ -29,6 +29,8 @@ func run_checks() -> void:
 	_check_scripts_compile()
 	await _check_main_scene()
 	await _check_planted_feet()
+	_check_skins_fresh()
+	await _check_voxel_skin()
 
 
 func _check_settings() -> void:
@@ -92,6 +94,79 @@ func _check_main_scene() -> void:
 	check(scene.is_inside_tree(), "%s stays up for %d frames" % [path, FRAMES_UP])
 	scene.queue_free()
 	await process_frame
+
+
+## D-041: every rigged kaiju has a voxel skin baked from its current .kvox and .rig.json.
+func _check_skins_fresh() -> void:
+	var stale: Array[String] = []
+	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+		for stage: String in ["baby", "adolescent", "adult"]:
+			var base := "res://assets/kaiju/%s_%s" % [species, stage]
+			if not FileAccess.file_exists(base + ".rig.json"):
+				continue
+			if VoxelSkin.baked_stamp(base) != VoxelSkin.source_stamp(base):
+				stale.append(base.get_file())
+	check(
+		stale.is_empty(),
+		(
+			"every kaiju's voxel skin matches its rig (stale: %s; run tools/kaiju_skin/bake_all.sh)"
+			% [stale]
+		)
+	)
+
+
+## D-041: kaiju draw as voxel cubes on a smooth skin by default; the rig's own voxels draw nothing;
+## the skin follows the pose (finite matrices) and shows the mouth's inside when the jaw drops; the
+## debug flag brings back the rigid voxels.
+func _check_voxel_skin() -> void:
+	var skinned: Array[String] = []
+	var leaks: Array[String] = []
+	var broken: Array[String] = []
+	var mouth := false
+	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+		var def: Dictionary = Content.species_def(species)
+		var colors: Dictionary = def["colors"]
+		var kaiju := KaijuModel.new(species, colors, "adult")
+		root.add_child(kaiju)
+		if species == "reptilian":
+			kaiju.jaw_open(true)
+		for frame: int in 40:
+			kaiju.position.z -= 0.05
+			kaiju.animate(1.0 / 60.0, 1.0)
+		var skins := kaiju.find_children("VoxelSkin", "VoxelSkin", true, false)
+		if not skins.is_empty():
+			var skin: VoxelSkin = skins[0]
+			skinned.append(species)
+			for node: Node in kaiju.find_children("*", "MultiMeshInstance3D", true, false):
+				if not skin.is_ancestor_of(node) and (node as MultiMeshInstance3D).layers != 0:
+					leaks.append("%s/%s" % [species, node.get_parent().name])
+			for m: Projection in skin.pose:
+				if not (
+					m.x.is_finite() and m.y.is_finite() and m.z.is_finite() and m.w.is_finite()
+				):
+					broken.append(species)
+					break
+			if species == "reptilian":
+				mouth = skin.mouth_open
+		kaiju.queue_free()
+		await process_frame
+	check(
+		skinned.size() == 3, "all three adults draw as a voxel skin by default (got %s)" % [skinned]
+	)
+	check(leaks.is_empty(), "no rig voxels draw under a voxel skin (drawing: %s)" % [leaks])
+	check(
+		broken.is_empty(),
+		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
+	)
+	check(mouth, "the reptile's held-open jaw shows the mouth's inside on the skin")
+	KaijuModel.show_rigid_voxels = true
+	var rex: Dictionary = Content.species_def("reptilian")
+	var rex_colors: Dictionary = rex["colors"]
+	var rigid := KaijuModel.new("reptilian", rex_colors, "adult")
+	var none := rigid.find_children("VoxelSkin", "VoxelSkin", true, false).is_empty()
+	check(none, "the debug flag draws the rigid voxels instead (no skin)")
+	rigid.free()
+	KaijuModel.show_rigid_voxels = false
 
 
 ## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it

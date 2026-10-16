@@ -20,6 +20,9 @@ const BODY_LAYER := 4
 const IVORY := Color("e8e0c8")
 const PUPIL := Color("15130f")
 
+## Debug (D-041): rigid voxels per bone instead of a VoxelSkin. "--kaiju-rigid" after "--".
+static var show_rigid_voxels := "--kaiju-rigid" in OS.get_cmdline_user_args()
+
 var species_id: String
 var _colors: Dictionary = {}
 var _vox := VoxelBuilder.new()
@@ -27,6 +30,7 @@ var _vox := VoxelBuilder.new()
 var _poses: Array[MultiMeshInstance3D] = []
 var _body: Node3D
 var _rig: KaijuRig
+var _skin: VoxelSkin
 var _walk_phase := 0.0
 var _squash := 0.0
 
@@ -47,6 +51,10 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		var base := "res://assets/kaiju/%s_%s" % [species_id, stages[i]]
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
+			if not show_rigid_voxels:
+				_skin = VoxelSkin.load_for(_rig, base)
+				if _skin != null:
+					_rig.add_child(_skin)
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
@@ -97,6 +105,8 @@ func animate(delta: float, moving: float) -> void:
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _rig != null:
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
+		if _skin != null:
+			_skin.sync()
 		return
 	_body.position.y = absf(sin(_walk_phase)) * 0.25 * moving
 	_body.rotation.z = sin(_walk_phase) * 0.06 * moving
