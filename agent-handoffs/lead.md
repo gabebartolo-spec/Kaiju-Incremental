@@ -1,13 +1,14 @@
 # Lead handoff, 2026-10-16
 ## State: awaiting director
-Asked: playtest the greybox first, or start the voxel art direction.
+Asked: which look (A Toy Diorama / B Monster Movie Night / C Concrete Realism). PR #3 is HELD on it;
+on the answer set data/looks.json "default", log the decision, merge.
 
 ## Task
 Kickoff of Kaiju Incremental: decisions D-002..D-007 (active not idle, short rampages, move + auto
 attacks, Godot PC + web, voxels, 3 species incl. Cephalopod), scaffold, greybox slice, CI green.
 
 ## Branch and commit
-main @ 30c0001 (scaffold + slice + PR #1 CI fixes). Protected: test, doc-caps, gitleaks required.
+claude/look-options -> PR #3 (looks, rounder kaiju, camera pulled back). main @ 532fb0c (scaffold + slice + PR #1 CI fixes). Protected: test, doc-caps, gitleaks required.
 This file rides on claude/lead-handoff.
 
 ## Unfinished changes
@@ -25,6 +26,10 @@ Captures: docs/captures/2026-10-16-greybox/ (greybox, not a look proposal).
 ## Open decisions (director)
 - Next assignment (playtest notes vs art direction). Cities count / endgame. Customisation beyond species.
 - Repo visibility never answered: private by default (D-002a).
+
+## Look work notes
+- Capture: tools/capture/capture_looks.gd + scratchpad board.py (PIL); board in docs/captures/2026-10-16-looks/.
+- Three fresh realism-critic rounds; remaining open taste point: octopus vs squid read (director's call).
 
 ## Running jobs
 None.
