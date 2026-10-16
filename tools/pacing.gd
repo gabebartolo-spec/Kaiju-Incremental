@@ -5,6 +5,7 @@ extends SceneTree
 ## left. Prints, per species, the play time at which each evolution and each branch node
 ## lands and when the tree is complete. Play time = rampage seconds + TREE_SECONDS per visit.
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400] [--verbose]
+##     [--grow=N]  (D-039 projection: city area x N per evolution)
 
 const DT := 1.0 / 15.0
 const TREE_SECONDS := 20.0
@@ -13,12 +14,17 @@ const MILESTONES: Array[String] = ["evolve1", "evolve2", "evolve3"]
 var _runs := 400
 var _only := ""
 var _verbose := false
+## Projection for D-039: the city's area x _grow per evolution (1 = today's fixed city).
+var _grow := 1.0
+var _cities: Dictionary = {}
 
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--runs="):
 			_runs = arg.substr(7).to_int()
+		if arg.begins_with("--grow="):
+			_grow = arg.substr(7).to_float()
 		if arg == "--verbose":
 			_verbose = true
 		if arg.begins_with("--species="):
@@ -32,14 +38,16 @@ func _initialize() -> void:
 func _pace(species_id: String) -> void:
 	var species := Content.species_def(species_id)
 	var tree := UpgradeTree.new(Content.upgrades(), {}, species_id)
-	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var rubble := 0
 	var clock := 0.0
 	var marks: Array[String] = []
 	var run := 0
 	while run < _runs and tree.levels_owned() < tree.levels_total():
 		var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-		var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", run))
+		var city: Array = _city(Num.i(stats["size"]))
+		var tuning: Dictionary = city[0]
+		var layout: Array[Dictionary] = city[1]
+		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run))
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
 		var target := Vector2(INF, INF)
@@ -92,6 +100,16 @@ func _pace(species_id: String) -> void:
 			% [tree.levels_owned(), tree.levels_total(), run, clock / 3600.0]
 		)
 	)
+
+
+## [tuning, layout] for a size tier: the city's half-extent grows by sqrt(_grow) per tier.
+func _city(tier: int) -> Array:
+	if not _cities.has(tier):
+		var tuning: Dictionary = Content.tuning().duplicate(true)
+		var cfg: Dictionary = tuning["city"]
+		cfg["half"] = roundi(Num.f(cfg["half"]) * pow(sqrt(_grow), tier - 1))
+		_cities[tier] = [tuning, CityGen.generate(Seeds.make("city", 0), cfg)]
+	return _cities[tier]
 
 
 func _cheapest(tree: UpgradeTree, rubble: int) -> String:
