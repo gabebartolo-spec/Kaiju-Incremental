@@ -8,14 +8,9 @@ name: capture
 # run log and out/RENDERER.txt say which one rendered. Expect it to be slow (software), and
 # expect looks that differ from the local GPU render: see tools/capture/README.md.
 #
-# GitHub only lets you dispatch a workflow that exists on the default branch, so until this
-# file is on main it cannot be dispatched. Until then (and as a smoke test whenever this file
-# changes) a push to a claude/** branch that edits this file runs both example captures
-# (the rig clip, and capture_looks.gd --street: the full looks set is hours on a software GPU).
+# GitHub only dispatches workflows that exist on the default branch, so this file lives on
+# main; the capture scripts themselves come from the dispatched --ref branch.
 on:
-  push:
-    branches: ["claude/**"]
-    paths: [".github/workflows/capture.yml"]
   workflow_dispatch:
     inputs:
       script:
