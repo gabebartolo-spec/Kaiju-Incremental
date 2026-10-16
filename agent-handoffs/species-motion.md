@@ -1,5 +1,5 @@
 # Species-motion handoff, 2026-10-17 02:40
-## State: running a check (CI captures of round 3b; then send clips to the lead)
+## State: awaiting lead on mantis_r3b clips; octopus CI clips (2 runs) still rendering
 
 ## Task
 Mantis (insectoid) and octopus (cephalopod) locomotion, taken over from kaiju-motion (it keeps
@@ -8,7 +8,7 @@ Director: the insect must "disturb and disgust" (skitter, twitch, exoskeletal); 
 slide, push and pull, grab edges, never tip-toe; never wind-up-toy.
 
 ## Branch and commit
-- claude/species-motion at 5cfdd4d (pushed). Cut from PR #11's head; since merged with PR #11's
+- claude/species-motion at 5d8c161 (pushed; merged PR #11 at 99a9385, now based on look-options). Cut from PR #11's head; since merged with PR #11's
   head (0490f07, includes KaijuGrip and close_jaw) and claude/look-options (capture.yml that can be
   dispatched). Merge, never rebase.
 - No PR of its own yet. Plan: a PR into claude/kaiju-motion-species once the lead OKs the clips.
@@ -40,8 +40,8 @@ side-session-notes/local_9fac90d2.../species-motion/: octo_bone_sheet_r3.png (+ 
 mantis_bone_sheet_r3.png, mantis_r3a/ (first mantis clips, older twitch amplitudes, numbers.txt).
 
 ## Running jobs
-- CI capture runs 38923718118 (mantis adult side), 38923730820 (mantis adult game),
-  38923742801 (octopus adult side), 38923755282 (octopus baby game), dispatched with
+- Mantis CI clips done and sent (notes species-motion/mantis_r3b/). Octopus runs
+  38923742801 (adult side), 38923755282 (baby game) still rendering, dispatched with
   --ref claude/species-motion. A background watcher downloads each to scratchpad/ci/<run id>.
   If the session is gone: gh run download <id>.
 
