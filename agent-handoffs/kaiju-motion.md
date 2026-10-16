@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 00:00
-## State: awaiting lead (reptile round 3 critic, species PR #11 critic)
+# Kaiju-motion handoff, 2026-10-17 00:40
+## State: awaiting lead (reptile round 4 critic on PR #10; hydra + species critic on PR #11)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg from vertical,
@@ -8,7 +8,8 @@ Presentation only. Evidence -> lead -> motion critic -> director. D-032: rig cos
 a limit.
 
 ## Branch and commit
-- claude/kaiju-motion -> PR #10 (reptile), round 3 at 331a556 (look-options merged, olive skin).
+- claude/kaiju-motion -> PR #10 (reptile), round 4 at ed5e96d: jaw bone (rig_voxel split_jaw,
+  "close" angle), level shoulders (0.9 deg max), eased plants + 5% jitter, trip, dust/nudge.
   Force-push is denied here: merge, never rebase a pushed branch.
 - claude/kaiju-motion-species -> PR #11, stacked on #10 (base claude/kaiju-motion). Retarget to
   claude/look-options once #10 merges. Mantis baby/adolescent/adult rigs, hexapod + radial gaits,
@@ -16,8 +17,11 @@ a limit.
 
 ## Unfinished changes
 - none uncommitted. Next: act on the lead's round-3 / species critic verdicts.
-- Octopus sculpt (lead generating ff432a4f): rig with species "cephalopod" (radial skeleton),
-  drop CephalopodStandIn from KaijuModel.
+- Hydra adult rigged (octo_2, 16 tentacles found, b0a34cc). Open: a stray voxel fragment near
+  the head and a pale patch at the mantle front in hydra_game.mp4; baby/adolescent hydra GLBs to
+  come from the lead (rig at 100/130 with species "cephalopod").
+- D-035 (docs/SPECIES.md): locomotion should anticipate reptile tail-sweep/momentum, insect
+  jump/hover/climb, octopus grab-and-throw and squeezing through gaps. Not started.
 - Mantis GLBs are untextured (palette colours); textured exports would let rig_voxel sample skins.
 
 ## Evidence so far
