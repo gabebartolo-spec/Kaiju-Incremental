@@ -60,8 +60,9 @@ static func map(cfg: Dictionary) -> Dictionary:
 	# The outskirts draw from their own stream, so tuning them never reshuffles the city.
 	var far := RandomNumberGenerator.new()
 	far.seed = Num.i(cfg["map_seed"]) + 1
-	_extend(far, xs, outer, Num.i(long[0]), Num.i(long[1]) + 4)
-	_extend(far, zs, outer, Num.i(short[0]), Num.i(short[1]) + 4)
+	# ...and their blocks vary far more than the city's, so the outskirts are no even grid.
+	_extend(far, xs, outer, Num.i(long[0]) - 6, Num.i(long[1]) + 14)
+	_extend(far, zs, outer, Num.i(short[0]) - 2, Num.i(short[1]) + 12)
 	var avenues_x := _avenues(rng, xs, half, cfg)
 	var avenues_z := _avenues(rng, zs, half, cfg)
 	# Which grid edges are alleys: x-line i between zs[j] and zs[j+1] is ax[Vector2i(i, j)].
