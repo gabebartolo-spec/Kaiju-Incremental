@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 02:45
+# Lead handoff, 2026-10-17 03:40
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -43,6 +43,14 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - Held notes SENT (02:30): reptile baby chest hole + jaw seam + round6 reverse proof -> kaiju-motion (then merge #10); helpers told to merge look-options for capture.yml and dispatch on their OWN branch.
 
 - Balance finding (city-growth): insectoid clears ~2x faster than the other species in grown cities (Climber/glide); costs paced on median; species-balance follow-up to raise with the director after its PR (target +-20% tree time)
+
+- PR #10 reptile locomotion MERGED (aaa60f7): planted feet, locked shoulders, arms at belly, sealed baby chin, snarl rest mouth "B" (director, via kaiju-motion), chest blemish clean-up in rig_voxel.
+- Blender MCP installed (user scope, telemetry off, safe mode); agents may open Blender UI; director says pause -> touch ~/.claude/focus-pause (blocks it again).
+
+- 03:12 usage-limit reset: resumed species-motion (mantis r3b FIX: camera freeze on holds, darts vs scroll, 10deg twitch amplitude, fixed side cam, roar end; octo adult clip re-download), city-growth (tests, stills, open PR), blender-tank (MCP renders, board), kaiju-motion (keep #11 in sync, hand to species-motion).
+- PR #14 game-flow (draft, flow 66 checks): awaiting its CI screenshots (runs 38923674895, 38923781359, watcher b3ro328hh), then review + mark ready + merge.
+
+- Blender tank (blender-tank, local_5c21d3fa-ab76-4f0b-98ae-360caff8c60d): board PASS; D-042 2x size + desert tan; wiring into TankModel + capture + PR; then a helicopter.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
