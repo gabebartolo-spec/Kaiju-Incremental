@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-16 23:52
+# Lead handoff, 2026-10-17 00:05
 ## State: working (mantis nymph 06ed8a12 + adolescent 0161ad14 textures v2 generating; review before export)
 
 ## Task
@@ -49,6 +49,9 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 - Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
 
 7. Helpers started 23:20: species-powers (local_136df838-e381-4671-b237-5402935f837b, per-species upgrade branches + helicopters), ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d, xvfb capture workflow). Cephalopod baby generating; adolescent next.
+
+15. City growth per evolution (D-039): needs its own task after species-powers lands (sim + city_gen + costs re-tune).
+16. Reptile locomotion round 4: FIX (jaw interior shows when closed, orphan voxels, cadence double-plants, roar marching, baby holes/scurry). Round 5 next.
 
 ## Running jobs
 None in Tripo. Sessions above. No override.cfg left.

@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-039 · Director · The city grows with each evolution
+Why: species-powers' pacing sim (tools/pacing.gd) clears the tree in 0.9 h because the one city is
+flattened by run 11; the director picked "bigger city each stage" over a new city per stage or raised
+costs. Changes: each evolution unlocks more districts, taller towers, harder defences; costs re-tuned
+after that (a follow-up task); species-powers paces only its branches against the current curve.
+
 ## 2026-10-16 · D-038 · Director · Mantis skin = dark chitin, red eyes, rusty scythe tips; octopus baby 6176590f
 Why: approved docs/captures/2026-10-16-stages/mantis_skin_v2.png ("Yes, use it"); the cephalopod baby
 "i love him" (Tripo 6176590f, big round eyes). Changes: same mantis prompt on all three insect stages.
