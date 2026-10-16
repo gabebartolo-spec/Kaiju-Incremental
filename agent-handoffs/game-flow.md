@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 02:55
+# Game-flow handoff, 2026-10-17 03:00
 ## State: running a check (flow suite, headless, local)
 
 ## Task
@@ -12,7 +12,8 @@ lead reviews first. No windowed Godot (director is gaming): headless tests, CI c
 
 ## Branch and commit
 claude/game-flow-edfba4, pushed at 904a312 (origin/claude/look-options 55ce218 merged in for
-the working capture.yml). No PR yet.
+the working capture.yml). Draft PR #14 into claude/look-options (body draft in the PR; CAPTURE_LINKS placeholder
+to fill). Auto-fix is on.
 
 ## What is built (all code written, first full test run pending)
 - sim: `Collapse.toppled`, `Collapse.biggest_fall`; `RampageSim.end(reason)` is public (pause
@@ -45,7 +46,8 @@ the working capture.yml). No PR yet.
 - Rerun with real fonts: flow 66 checks, 0 failures, 51 s (was a 900 s timeout). Floor 26 -> 66
   in tests/expected_checks.txt.
 - Full run 1: smoke/sim red: tests/run_sim_tests.gd preloaded save_system.gd for migrate();
-  now preloads save_file.gd. Full run 2 pending.
+  now preloads save_file.gd. Full run 2: ALL GREEN (smoke 11, sim 39, powers 24, tentacles
+  17, city 5, flow 66, self-test).
 
 ## Findings for the lead (worker -> lead; lead decides what is recorded)
 - Proven 2026-10-17: a worktree without `git lfs pull` has 129-byte LFS pointers for fonts and
@@ -65,6 +67,9 @@ edits; my tests/capture read evolve1's cost from data. If tier_height becomes pe
 reveal's tower should read CityGrowth.tuning_for(...)["city"].
 
 ## Running jobs
+- CI capture runs 38923674895 (shots) and 38923781359 (clip); results download to
+  %TEMP%/gf_cap/shots and %TEMP%/gf_cap/clip. Then: 2x crop QA, put shots in
+  docs/captures/2026-10-17-game-flow/, fill the PR Evidence, mark ready, report to the lead.
 - Local full run (all suites + self-test), logs in %TEMP%/gf_all.
 - CI capture dispatches: shots -> %TEMP%/gf_cap/shots, clip (--movie --clip) -> %TEMP%/gf_cap/clip.
 - Follow-up after city-growth merges: reveal reads CityGrowth.tuning_for(tuning, size)["city"]
