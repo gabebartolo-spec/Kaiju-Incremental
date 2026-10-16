@@ -29,3 +29,16 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | reptilian baby texture | olive crocodile prompt (D-034) on 5a84ed39 | Texture | 5a84ed39 (texture) | 30 | yes | RIGGED (100 vox) |
 | 2026-10-16 | reptilian adolescent texture | olive crocodile prompt (D-034) on f9cf6ba7 | Texture | f9cf6ba7 (texture) | 30 | yes | RIGGED (130 vox) |
 | 2026-10-16 | cephalopod adult | ff432a4f set: ff432a4f / 8bf2f668 / f303b247 / 666430b3 | inspected | 8bf2f668-965b-47b0-b663-fe76a22104d9 (octo_2) | (100, above) | yes | director PICK C: 10+ barnacled tentacles (hydra); A f303b247 clawed, B ff432a4f smooth; 666430b3 not exported |
+| 2026-10-16 | cephalopod baby | text prompt (soft oversized mantle, huge slit eyes, a dozen stubby uneven tentacles, budding barnacles) | Smart Mesh P2.0 x4 | (see Studio, 23:20) | 100 | yes | generating |
+| 2026-10-16 | cephalopod baby | 23:19 set: 6176590f / b2edc684 / ede8c6a2 / f1eb550f | picked | 6176590f-5ece-4108-b0a5-d6d42a91bfd4 (5,524 faces) | (100, above) | yes | director: "i love him" (big round eyes, short curled tentacles) |
+| 2026-10-16 | insectoid adult texture | dark chitin, rust underside, acid-green eyes on 9668b815 | Texture | 9668b815 (texture) | 30 | yes | REJECT (lead): came out uniform copper-orange |
+| 2026-10-16 | cephalopod adolescent | text prompt (leaner angular mantle, brow ridges, 10 lanky whip tentacles, first barnacles) | Smart Mesh P2.0 x4 | 724612fd-2df8-4ca9-9f62-3b16044d3a1b | 100 | yes | generating |
+| 2026-10-16 | insectoid adult texture v2 | near-black chitin, rust seams only, "no orange body" | Texture | 9668b815 (texture) | 30 | yes | director PICK (dark chitin, red eyes) |
+| 2026-10-16 | insectoid baby texture | mantis skin prompt (nymph) on 06ed8a12 | Texture | 06ed8a12 (texture) | 30 | yes | REJECT (lead): blue body, orange eyes |
+| 2026-10-16 | insectoid adolescent texture | mantis skin prompt on 0161ad14 | Texture | 0161ad14 (texture) | 30 | yes | REJECT (lead): orange belly, grey head |
+| 2026-10-16 | insectoid baby texture v2 | strict "every part dark, no blue/orange" prompt | Texture | 06ed8a12 (texture) | 30 | yes | PASS (lead): dark chitin, red-rim eyes; mantis_baby_tex.glb |
+| 2026-10-16 | insectoid adolescent texture v2 | strict "every part dark, no orange belly" prompt | Texture | 0161ad14 (texture) | 30 | yes | REJECT (lead): bright orange limbs |
+| 2026-10-16 | cephalopod adolescent | 724612fd set | picked | a328effe-5a6b-4f6f-a3e4-53f00d8e2f9f (28k faces, low sprawl) | (100, above) | yes | director PICK B (octo_adolescent.glb) |
+| 2026-10-17 | insectoid adolescent texture v3 | "legs, arms ... ALL the same dark brown-black" prompt | Texture | 0161ad14 (texture) | 30 | yes | PASS (lead): uniform red-brown chitin; mantis_adolescent_tex.glb |
+| 2026-10-17 | cephalopod adult texture | deep-sea octopus: bruised purple-maroon, barnacles, pale pink-grey suckers, amber eyes on 8bf2f668 | Texture | 8bf2f668 (texture) | 30 | yes | generating |
+| 2026-10-17 | reptilian adult auto-rig | Tripo Auto Rig (Humanoid, Mixamo preset) on 01e78e11 | Rig | 01e78e11 (rig) | 20 | yes | for look test B (rep_adult_rigged.glb) |

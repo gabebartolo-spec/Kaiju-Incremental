@@ -43,8 +43,9 @@ the sky hurls it into a building".
 - **Ultimate (fully evolved): Corrosive Ink.** Sprays ink that coats buildings and attackers in glowing
   gunk; coated chunks dissolve over a few seconds and coated units die (sim: a damage-over-time decal).
 
-## Open questions (director's call when building starts)
-1. Insectoid hover: held button, or automatic after a jump?
-2. Is each ultimate the evolved form of today's signature (cone -> beam, leap -> brood, lash -> ink), or a
-   second button on top of it?
-3. Do military helicopters and jets exist before the octopus can pluck them (D-020 vehicles via Tripo)?
+## Answers (director, 2026-10-16)
+1. Insectoid hover: tap = leap, HOLD the jump button mid-air = a short steerable glide.
+2. Ultimates and every power above are **nodes in the upgrade tree**: "you forgetting this is an
+   incremental, not a kaiju simulator". Each species' tree unlocks its kit step by step (tail sweep,
+   momentum, climbing, brood, grab-and-throw...), with the ultimate at the end of its branch.
+3. Helicopters come first (D-020 Tripo vehicles); the octopus plucks them, others swat or burn them.
