@@ -23,7 +23,7 @@ States: working · running a check · awaiting director · blocked · available.
 2. Lead: `project.godot` with the autoload list and typing warnings as errors; the smoke suite
    green; the harness self-test green.
 3. Lead: the deliberately broken PRs (lowered floor, unregistered suite, untyped script, planted
-   `Kaiju Incremental_TEST_SECRET_` key); each must go red. Record the result in `docs/audits/`.
+   `KAIJU_TEST_SECRET_` key); each must go red. Record the result in `docs/audits/`.
 4. Lead: the document pack from the playbook kickoff checklist (vision, engine, machine, team,
    guardrails, style bibles, pipeline, roadmap, repo, licence register, open questions).
 

@@ -8,7 +8,7 @@ name: build
 # project.godot, export_presets.cfg or this file is proven by the push to main that
 # merges it, or by running the workflow by hand on the branch. The exported game runs
 # headless for 120 frames and must load the main scene from project.godot without
-# logging an error; the .exe is then uploaded as the "Kaiju Incremental-windows" artefact. Sprite
+# logging an error; the .exe is then uploaded as the "KaijuIncremental-windows" artefact. Sprite
 # sheets under assets/sprites are plain git (.gitattributes), so no LFS is needed here; a
 # phase that ships LFS assets (audio, fonts, models) turns on `lfs: true` at checkout
 # (and caches the objects; LFS bandwidth is metered).
@@ -73,16 +73,16 @@ jobs:
           timeout 600 "$godot" --headless --path . --editor --import > import.log 2>&1 || { cat import.log; exit 1; }
           if grep -qE "SCRIPT ERROR|Parse Error|Compile Error" import.log; then cat import.log; exit 1; fi
           mkdir -p out/windows
-          timeout 600 "$godot" --headless --path . --export-release "Windows Desktop" out/windows/Kaiju Incremental.exe > export.log 2>&1 \
+          timeout 600 "$godot" --headless --path . --export-release "Windows Desktop" out/windows/KaijuIncremental.exe > export.log 2>&1 \
             || { cat export.log; exit 1; }
           cat export.log
-          test -f out/windows/Kaiju Incremental.exe || { echo "::error::the export produced no out/windows/Kaiju Incremental.exe"; exit 1; }
+          test -f out/windows/KaijuIncremental.exe || { echo "::error::the export produced no out/windows/KaijuIncremental.exe"; exit 1; }
 
       - name: Launch the build headless; it must reach the main scene
         run: |
           main=$(tr -d '\r' < project.godot | sed -n 's/^run\/main_scene="\(.*\)"$/\1/p')
           code=0
-          timeout 300 out/windows/Kaiju Incremental.exe --headless --verbose --quit-after 120 > launch.log 2>&1 || code=$?
+          timeout 300 out/windows/KaijuIncremental.exe --headless --verbose --quit-after 120 > launch.log 2>&1 || code=$?
           if [ "$code" != 0 ]; then
             cat launch.log; echo "::error::the exported build exited with $code"; exit 1
           fi
@@ -97,8 +97,8 @@ jobs:
       - name: Upload the build
         uses: actions/upload-artifact@v4
         with:
-          name: Kaiju Incremental-windows
-          path: out/windows/Kaiju Incremental.exe
+          name: KaijuIncremental-windows
+          path: out/windows/KaijuIncremental.exe
           retention-days: 30
 
       - name: Upload the logs
