@@ -10,7 +10,8 @@ name: capture
 #
 # GitHub only lets you dispatch a workflow that exists on the default branch, so until this
 # file is on main it cannot be dispatched. Until then (and as a smoke test whenever this file
-# changes) a push to a claude/** branch that edits this file runs both example captures.
+# changes) a push to a claude/** branch that edits this file runs both example captures
+# (the rig clip, and capture_looks.gd --street: the full looks set is hours on a software GPU).
 on:
   push:
     branches: ["claude/**"]
@@ -54,11 +55,11 @@ env:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(github.event_name == 'push' && '[{"script":"capture_rig.gd","args":"--species=reptilian --stage=adult","movie":true},{"script":"capture_looks.gd","args":"","movie":false}]' || '[{}]') }}
+        include: ${{ fromJSON(github.event_name == 'push' && '[{"script":"capture_rig.gd","args":"--species=reptilian --stage=adult","movie":true},{"script":"capture_looks.gd","args":"--street","movie":false}]' || '[{}]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -148,6 +149,7 @@ jobs:
           # Scripts that default to user:// (capture_looks.gd without --out) land here.
           if [ -d "$HOME/.local/share/godot/app_userdata" ]; then
             mkdir -p out/userdata && cp -r "$HOME/.local/share/godot/app_userdata/." out/userdata/
+            rm -rf out/userdata/*/shader_cache
           fi
           ls -laR out | head -80
 
