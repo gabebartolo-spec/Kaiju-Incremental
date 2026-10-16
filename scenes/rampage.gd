@@ -204,7 +204,10 @@ func _part(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 
 
 func _update_tanks() -> void:
+	var flatten := Engine.get_physics_frames() % 10 == 0  # tanks roll over cars and lamps
 	for tank: RampageSim.Tank in sim.tanks:
+		if flatten:
+			_city.crush(_to_world(tank.pos), 1.4)
 		if not _tank_nodes.has(tank.id):
 			continue
 		var node: Node3D = _tank_nodes[tank.id]

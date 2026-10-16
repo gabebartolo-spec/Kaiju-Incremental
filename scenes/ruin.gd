@@ -27,15 +27,15 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 			var fall := 1.0 - sqrt(cx * cx + cz * cz) / wobble
 			if fall <= 0.0:
 				continue
-			var h := roundi(peak * pow(fall, 0.8) + rng.randf_range(-1.5, 1.5))
-			var near_core := Vector2(x, z).distance_to(hot) < RES * 1.2
+			var h := maxi(1, roundi(peak * pow(fall, 0.8) + rng.randf_range(-1.5, 1.5)))
+			var near_core := Vector2(x, z).distance_to(hot) < RES * 0.8
 			for y: int in maxi(0, h):
 				# Rubble comes down in chunks: one key per 2-4 cell block, not per voxel.
 				var block := Vector3i(floori(x / 3.0), floori(y / 2.0), floori(z / 3.0))
 				var key := keys[absi(hash(block + Vector3i(b.style, 0, 0))) % keys.size()]
 				if y == h - 1 and near_core and rng.randf() < 0.55:
 					key = "ember"  # one concentrated bed of glowing coals
-				elif y == h - 1 and absi(hash(block)) % 5 == 0:
+				elif y >= h - 1 and absi(hash(block)) % 3 == 0:
 					key = "char"  # scorched patches
 				vox.put(Vector3i(x, y, z), key)
 	for side: int in 2:  # ragged wall stubs on two faces

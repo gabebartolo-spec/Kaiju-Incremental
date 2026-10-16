@@ -85,6 +85,7 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 		var tank := TankModel.new()
 		tank.position = at + Vector3(-7.0 + t * 12.0, 0, 9.0 - t * 3.0)
 		stage.add_child(tank)
+		city.crush(tank.position, 1.6)
 		tank.look_at_from_position(tank.position, at, Vector3.UP, true)
 	city.flash(at + Vector3(-7.0, 1.0, 9.0), Color("ffc070"), 4.0, 0.4)
 	for _f: int in FALL_FRAMES:  # let the undermined towers topple and land

@@ -80,7 +80,7 @@ func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictiona
 							),
 							maxi(lo.z - cell.z, cell.z - hi.z)
 						)
-						var chance := 0.55 if far <= 1 else (0.2 if far == 2 else 0.0)
+						var chance := 0.4 if far <= 1 else (0.08 if far == 2 else 0.0)
 						if rng.randf() < chance:
 							var t := _mm.get_instance_transform(i)
 							if t.basis != HIDDEN:

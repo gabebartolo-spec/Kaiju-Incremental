@@ -19,7 +19,7 @@ var _seed: float
 
 func _init(size: float, seed_value: float) -> void:
 	_seed = seed_value
-	_base_energy = 7.0 + size * 3.0
+	_base_energy = 4.0 + size * 2.0
 	_light = OmniLight3D.new()
 	_light.light_color = Color("ff9a4a")
 	_light.omni_range = 9.0 + size * 4.0
@@ -39,9 +39,9 @@ func _process(delta: float) -> void:
 
 func _flames(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.6, 12.0, Vector3(0, 2.5, 0), Vector2(0.8, 2.0))
-	_scale(mat, Vector2(1.0, 2.2), Vector2(1.0, 0.1))
+	_scale(mat, Vector2(0.5, 1.2), Vector2(1.0, 0.1))
 	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array([0.0, 0.3, 0.65, 1.0]))
-	return _system(mat, _cube(0.3, true), roundi(90 * maxf(1.0, size)), 1.1)
+	return _system(mat, _cube(0.18, true), roundi(130 * maxf(1.0, size)), 1.0)
 
 
 func _embers(size: float) -> GPUParticles3D:
@@ -73,7 +73,7 @@ func _smoke(size: float) -> GPUParticles3D:
 	draw.shader = SMOKE_SHADER
 	quad.material = draw
 	var p := _system(mat, quad, roundi(110 * maxf(1.0, size)), 10.0)
-	p.position.y = 0.8
+	p.position.y = 1.8  # smoke starts above the flames, so their light does not wash it out
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20), Vector3(40, 50, 40))
 	return p
 
