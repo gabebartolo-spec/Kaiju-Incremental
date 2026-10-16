@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-029 · Director · Real city districts from OpenStreetMap, starting with Melbourne CBD
+Why: "could we have real cities with real layouts... imagine how fun it would be to destroy your own
+city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
+(ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
+area. Player-picked cities need runtime download and a server: later, PC only, if ever.
+
 ## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
 Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
 fidelity". Kaiju are ~16 voxels per floor-unit, buildings 4. Changes: city-layout raises building
