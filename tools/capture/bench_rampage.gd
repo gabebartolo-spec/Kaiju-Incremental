@@ -63,6 +63,7 @@ func _run() -> void:
 		gap_max = maxf(gap_max, gap)
 		if gap > 33.4:
 			slow += 1
+			print("slow frame: %.1fms at %.1fs" % [gap, (Time.get_ticks_msec() - start) / 1000.0])
 	print("frame gaps: worst %.1fms, %d of %d frames over 33 ms" % [gap_max, slow, frames])
 	print(
 		(
@@ -87,4 +88,19 @@ func _run() -> void:
 			func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(rampage.cost_usec[k]) / 1000.0]
 		)
 	)
+	for node: Node in rampage.get_children():
+		if node is CityView:
+			var city: CityView = node
+			var street := city.street
+			print(
+				(
+					"street life: %d people, %d cars, avg %.2fms worst %.2fms per frame"
+					% [
+						street.people.size(),
+						street.traffic.cars.size(),
+						street.total_usec / 1000.0 / maxi(1, street.frames),
+						street.worst_usec / 1000.0
+					]
+				)
+			)
 	quit()

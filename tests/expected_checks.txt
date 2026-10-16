@@ -3,4 +3,4 @@
 # up (game-architecture §6). A suite with no line here fails until one is added.
 smoke 11
 sim 39
-flow 17
+flow 22

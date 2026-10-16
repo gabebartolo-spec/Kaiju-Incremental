@@ -2,10 +2,11 @@ extends SceneTree
 ## Captures every look in data/looks.json on one fixed stage for the art-direction review:
 ## a mid-rampage city shot (the evolved reptilian, three buildings breaking, debris in the air)
 ## and a line-up of the three species. Needs a window (no --headless) and the untracked
-## no-focus override.cfg.
+## no-focus override.cfg. --street: only the default look's young shot plus street close-ups
+## (civilians walking, civilians fleeing, a police blockade) for the anatomy check.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
-##     --script tools/capture/capture_looks.gd -- --out=<dir>
+##     --script tools/capture/capture_looks.gd -- --out=<dir> [--street]
 
 const SETTLE := 12
 const DEBRIS_FRAMES := 9
@@ -13,20 +14,30 @@ const FALL_FRAMES := 240
 const STAGE_AT := Vector2(13.5, 31.5)
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const LINEUP_SPACING := 13.0
+const STREET_FRAMES := 3000  # most frames to wait for a police blockade to open fire
+const CLOSE := Vector3(1.6, 1.3, 1.6)  # close-up camera offset from its subject
 
 var _out := "user://looks"
+var _street := false
 
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
+		elif arg == "--street":
+			_street = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	if _street:
+		await _city_shot(str(Content.look()["id"]) + "_young", {})
+		await _street_shots()
+		quit()
+		return
 	for look: Dictionary in Content.looks():
 		Content.set_look(str(look["id"]))
 		await _city_shot(str(look["id"]) + "_young", {})
@@ -105,6 +116,78 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 			lifted += 1
 	print("debris above 2u: ", floating, " pieces still lifted: ", lifted)
 	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
+	stage.queue_free()
+	await process_frame
+
+
+## Close-ups of street life: a calm walker, a fleeing civilian and a police blockade.
+func _street_shots() -> void:
+	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	var species := Content.species_def("reptilian")
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
+	)
+	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	sim.kaiju_pos = STAGE_AT
+	var stage := Node3D.new()
+	var city := CityView.new(sim, Seeds.make("fx", 0))
+	stage.add_child(city)
+	var colors: Dictionary = species["colors"]
+	var kaiju := KaijuModel.new("reptilian", colors)
+	kaiju.position = Vector3(STAGE_AT.x, 0, STAGE_AT.y)
+	kaiju.scale = Vector3.ONE * sim.body_scale()
+	stage.add_child(kaiju)
+	var cam := Camera3D.new()
+	cam.fov = 40.0
+	stage.add_child(cam)
+	root.add_child(stage)
+	cam.current = true
+	var street := city.street
+	var waited := 0
+	while street.police.shots < 4 and waited < STREET_FRAMES:  # officers at posts, firing
+		await process_frame
+		waited += 1
+	var calm := Vector2(INF, INF)
+	var fleeing := Vector2(INF, INF)
+	for p: StreetLife.Person in street.people:
+		if p.cop:
+			continue
+		if p.fleeing and fleeing.x == INF:
+			fleeing = p.pos
+		elif not p.fleeing and calm.x == INF and p.pos.distance_to(sim.kaiju_pos) > 40.0:
+			calm = p.pos
+	var cruisers := Vector2.ZERO
+	var count := 0
+	for car: Traffic.Car in street.traffic.cars:
+		if car.police and not car.crushed:
+			cruisers += car.pos
+			count += 1
+	var subjects := {"street_walkers": calm, "street_fleeing": fleeing}
+	if count > 0:
+		subjects["street_blockade"] = cruisers / count
+	for shot_name: String in subjects:
+		var at: Vector2 = subjects[shot_name]
+		if at.x == INF:
+			print("no subject for ", shot_name)
+			continue
+		var target := Vector3(at.x, 0.35, at.y)
+		var offset := CLOSE * (2.2 if shot_name == "street_blockade" else 1.0)
+		cam.position = target + offset
+		cam.look_at(target)
+		await _frames(3)
+		_shot(shot_name)
+	print(
+		(
+			"street: civilians %d cars %d fled %d blockades %d shots %d"
+			% [
+				street.civilians(),
+				street.traffic.cars.size(),
+				street.fled,
+				street.police.blockades_made,
+				street.police.shots
+			]
+		)
+	)
 	stage.queue_free()
 	await process_frame
 

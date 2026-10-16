@@ -19,3 +19,4 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | insectoid adult | mantis variant 9668b815 (20,085 faces) | picked | 9668b815-c82b-441e-96d8-a941d77ac59a | - | yes | PASS six-view: 2 scythe arms, 4 legs, antennae, spiked; director: "keep pursuing the mantis look" |
 | 2026-10-16 | insectoid | mantis variant 8ec4566c (19,677 faces) | rejected | 8ec4566c-5010-49f6-b577-74c7fbfaaf0e | - | yes | lost the raptorial arms (ant-like) |
 | 2026-10-16 | insectoid adolescent? | mantis low-poly variant (5,535 faces) | candidate | c7cdcd1e (variant) | - | yes | lanky classic mantis, 2 arms 4 legs: adolescent candidate |
+| 2026-10-16 | insectoid baby (mantis nymph) | text prompt (oversized head, stubby thorax, small scythes, 4 short legs) | Smart Mesh P2.0 x4 | b1ddb234-c406-4428-8f4b-4c4eb36d5ff5 | 100 | yes | generating |

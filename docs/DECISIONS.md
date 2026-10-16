@@ -4,11 +4,22 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-029 · Director · Real city districts from OpenStreetMap, starting with Melbourne CBD
+Why: "could we have real cities with real layouts... imagine how fun it would be to destroy your own
+city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
+(ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
+area. No player-imported cities, ever: new cities ship as patches (director, 2026-10-16).
+
+## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
+Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
+fidelity". Kaiju are ~16 voxels per floor-unit, buildings 4. Changes: city-layout raises building
+RES (8-12) with recessed, framed facades and rooftop clutter, distance LOD if perf needs it.
+
 ## 2026-10-16 · D-027 · Director · The game targets a 4K 120 Hz TV
 Why: "i want the game to display on a 4k tv" (Beyond TV, 3840x2160, 120 Hz VRR, HDR, 400 nits).
 Changes: starts fullscreen, stretch aspect "expand", adaptive vsync (VRR); UI stays a 1920x1080
-canvas scaled 2x. Still open: TV-distance text sizes, HDR output, and the TV sits on the AMD
-iGPU output while the 4070 SUPER does the rendering work (see the lead handoff).
+canvas scaled 2x. The TV is plugged into the 4070 SUPER (director, 2026-10-16). Still open:
+TV-distance text sizes, HDR output, perf at native 4K.
 
 ## 2026-10-16 · D-026 · Director · Ability powers get proper VFX and SFX (later milestone)
 Why: "we will eventually need some nice vfx and sfx for our powers/abilities that we will unlock".
