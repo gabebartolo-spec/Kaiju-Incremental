@@ -1,5 +1,5 @@
 # Species-motion handoff, 2026-10-17 02:40
-## State: running a check (r3d mantis CI renders; then fresh critic gets r3d side + game + both octopus)
+## State: blocked (GitHub Actions billing: jobs not starting); r3d partial packet sent to lead
 
 ## Task
 Mantis (insectoid) and octopus (cephalopod) locomotion, taken over from kaiju-motion (it keeps
@@ -41,6 +41,11 @@ side-session-notes/local_9fac90d2.../species-motion/: octo_bone_sheet_r3.png (+ 
 mantis_bone_sheet_r3.png, mantis_r3a/ (first mantis clips, older twitch amplitudes, numbers.txt).
 
 ## Running jobs
+- NONE. Actions refuses jobs ("recent account payments have failed or spending limit", run
+  38940864369). Director's spend call via the lead. Do not dispatch captures until it's fixed.
+- 00284f3 (big rest moves every 0.18-0.4 s) is pushed but NOT rendered; r3d game at 0a36ec4 had a
+  0.83 s dead-still run (target ~0.6). Octopus adult side clip never rendered (runs stall >1 h in
+  software Forward+; try --renderer=gl_compatibility).
 - r3d (0a36ec4: big rest moves) CI runs 38935787382 (game), 38935798177 (side). Target from lead:
   no dead-still run at rest > ~0.6 s by mean energy (screen_motion.py). Octopus adult side r3c run
   38932093965 also pending; octopus baby clip already in notes octo_r3b/.
