@@ -41,7 +41,7 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 - WorkerThreadPool tasks: wait in _exit_tree. Frame gaps, not TIME_PROCESS. nvidia-smi before
   windowed runs. Capture override.cfg must be deleted afterwards.
 
-10. Real-city (D-029): helper real-city (local_be78aea9-8152-4f28-8fbd-ce03988707a2) bakes Melbourne CBD from OSM; told to rebase on look-options and coordinate a CityData interface with city-layout.
+10. Real-city (D-029, CBD only, cities ship as patches, no player imports): helper session failed to start (C: had 3.5 GB free, worktree needs 5.4 GB). Retry from that session once space is freed.
 
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36, told to sync onto ca2c65c),
