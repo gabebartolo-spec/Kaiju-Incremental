@@ -220,7 +220,7 @@ func _check_cost_curve() -> void:
 				for c: Variant in def["cost"]:
 					total += Num.i(c)
 		check(
-			total >= 1500000 and total <= 4000000,
+			total >= 1500000 and total <= 3000000,
 			"the %s tree costs %d rubble in all (the 3-5 h band)" % [species_id, total]
 		)
 

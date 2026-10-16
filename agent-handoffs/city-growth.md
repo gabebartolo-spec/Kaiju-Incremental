@@ -1,5 +1,5 @@
-# City-growth handoff, 2026-10-17 03:00
-## State: running a check (cost-tuning pacing run in background)
+# City-growth handoff, 2026-10-17 03:15
+## State: blocked (usage limit) - costs + sizes committed; tests/stills/PR not done
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -30,6 +30,13 @@ merged origin/claude/look-options 55ce218 (capture.yml live). Pushed.
   NOT RUN YET. Cost band check (1.5M-4M total) is a placeholder: set from final costs.
 
 ## Unfinished changes
+- FINAL costs = pacing d (factors 2.9 4 8.5 9 15 15 15), committed. Totals ~2.04M each species.
+  Scripted tree: reptile 3.77 h, insect 1.78 h, ceph 2.70 h; first power after run 2 (all).
+  Tables: scratchpad pace_d.txt (copy into PR body).
+- NEXT: run tools/run_tests.sh (growth suite never run; fix failures), recapture stills
+  (ci_capture.sh capture_growth.gd), open PR into claude/look-options with tables, stills,
+  insect balance note (Leap Slam drives 96%->60%; propose leap damage/reach -35%, reptile cone
+  +25% to reach +-20%), perf numbers (Apex 355k chunks), tier-1 city re-rolled note.
 - data/upgrades.json is being rewritten by the scratch tuner (uncommitted, in flux):
   scratchpad scale_costs.py <orig> <out> f1 fe1 f2 fe2 f3 fe3 f4 (stage multipliers; first
   levels of young nodes kept), pace_all.sh <tag> factors. Original copy: scratchpad
