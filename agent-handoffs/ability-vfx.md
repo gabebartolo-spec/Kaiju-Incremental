@@ -25,7 +25,9 @@ Local commits not pushed yet (review fixes + merge + tuning); push after the boa
 - The capture uses Rampage.autoplay_signature instead of the 999 s cooldown hack. The "998 s"
   timer the lead saw came from the capture script, not the game.
 - Particle recipes split out to scenes/fx_particles.gd (keeps ability_fx.gd under 400 lines).
-- flow 22, smoke 11, sim 39 gree## Next
+- flow 22, smoke 11, sim 39 green locally.
+
+## Next
 Merged look-options (8cf4a16: no project-wide fullscreen; D-030 SFX decided). Recapture
 powers4 (scratchpad) passed for leap and breath impact, but showed: body overlay far too strong
 (kaiju turned solid pink/mint), lash streaks too faint, and the breath voxels washed out to peach.
@@ -37,8 +39,6 @@ Tuned in the latest commit (rim strength/power, streak width, heat 2.0 + ramp 0.
    message the lead.
 3. Then the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0; synthesize hums, beams,
    pings, sizzles, regen in-house; register + provenance before assets/).
-
-ith paths.
 
 ## Attempts (beam visibility)
 Edge glow (failed), x-ray through walls (covered the kaiju, reverted), flat glow floor plus a
