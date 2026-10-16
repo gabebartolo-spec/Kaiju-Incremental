@@ -36,6 +36,7 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | insectoid adult texture v2 | near-black chitin, rust seams only, "no orange body" | Texture | 9668b815 (texture) | 30 | yes | director PICK (dark chitin, red eyes) |
 | 2026-10-16 | insectoid baby texture | mantis skin prompt (nymph) on 06ed8a12 | Texture | 06ed8a12 (texture) | 30 | yes | REJECT (lead): blue body, orange eyes |
 | 2026-10-16 | insectoid adolescent texture | mantis skin prompt on 0161ad14 | Texture | 0161ad14 (texture) | 30 | yes | REJECT (lead): orange belly, grey head |
-| 2026-10-16 | insectoid baby texture v2 | strict "every part dark, no blue/orange" prompt | Texture | 06ed8a12 (texture) | 30 | yes | generating |
-| 2026-10-16 | insectoid adolescent texture v2 | strict "every part dark, no orange belly" prompt | Texture | 0161ad14 (texture) | 30 | yes | generating |
+| 2026-10-16 | insectoid baby texture v2 | strict "every part dark, no blue/orange" prompt | Texture | 06ed8a12 (texture) | 30 | yes | PASS (lead): dark chitin, red-rim eyes; mantis_baby_tex.glb |
+| 2026-10-16 | insectoid adolescent texture v2 | strict "every part dark, no orange belly" prompt | Texture | 0161ad14 (texture) | 30 | yes | REJECT (lead): bright orange limbs |
 | 2026-10-16 | cephalopod adolescent | 724612fd set | picked | a328effe-5a6b-4f6f-a3e4-53f00d8e2f9f (28k faces, low sprawl) | (100, above) | yes | director PICK B (octo_adolescent.glb) |
+| 2026-10-17 | insectoid adolescent texture v3 | "legs, arms ... ALL the same dark brown-black" prompt | Texture | 0161ad14 (texture) | 30 | yes | generating |
