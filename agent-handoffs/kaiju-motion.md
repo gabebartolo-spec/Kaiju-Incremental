@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 04:30
-## State: awaiting lead (reptile only now: shoulder lock 2ba26d1 + bent arms d88c121 on #10; #11 at 57eedbd)
+# Kaiju-motion handoff, 2026-10-17 05:10
+## State: awaiting lead (shoulder lock + bent arms PASSED; lower hands 49a23c9 on #10, #11 at 3349914)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -28,7 +28,10 @@ not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-po
 - Shoulder lock: spine1 = exact inverse of the pelvis yaw/roll/sway (keeps lean/drop/surge);
   SWAY 0.03, HIP_YAW 0.06. capture_motion prints SHOULDERS drift/tilt/yaw + rear plumb line.
   Adult yaw reads a constant -3.95 deg: sculpt asymmetry (swing 0.02).
-- Arms: aimed in the heading frame: hang, ~85 deg elbow, hands curled at chest; stride swing.
+- Arms: aimed in the heading frame: hang, ~60 deg elbow, hands resting in front of the belly
+  (director's pick, lead-approved). Final pose sent to kaiju-look-test (D-041 bake). Open offer:
+  make it the KaijuRig rest pose (_relax_arms) if look-test says "go".
+- capture_motion: --cam=front34w (whole body), side camera pulled back (cephalopod keeps its own).
   Short loops: one clip per fix to the lead (notes kaiju-motion/round6c_*, round6d_*).
 - CI flow fix: ability_fx looks up body parts per toggle (freed after a growth stage).
 - capture_motion --tint colours each bone (arm0 red, arm1 yellow, hand magenta) for rig QA.
