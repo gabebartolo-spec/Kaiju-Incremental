@@ -10,7 +10,8 @@ boost the deflect/regen/ready/cracks cues, no placeholder HUD timer. Then a new 
 
 ## Branch and commit
 claude/ability-vfx (worktree affectionate-goldstine-64c8fb), PR #6 into claude/look-options.
-Local commits not pushed yet (review fixes + merge + tuning); push after the board passes QA.
+Pushed through 1635ab2 (merged look-options with #7 real city; floors city 5, flow 22; all 4 suites
+green). The board has NOT passed my QA yet; the PR stays on HOLD with the lead.
 
 ## Done in c5aa7e0
 - Breath: camera orbit 25 deg + rise (tuning fx.orbit_*); beam stops at the first standing
