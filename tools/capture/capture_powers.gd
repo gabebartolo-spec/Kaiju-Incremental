@@ -55,30 +55,30 @@ func _species_shots(species_id: String) -> void:
 		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
 	)
 	rampage.set_autoplay(true)
+	rampage.autoplay_signature = false
 	root.add_child(rampage)
-	rampage.sim.ability_ready_in = 999.0
 	await _frames(SETTLE)
-	rampage.sim.ability_ready_in = 0.0
+	rampage.autoplay_signature = true
+	await physics_frame
+	await physics_frame
+	rampage.autoplay_signature = false
 	var waited := 0
 	for at: int in AFTER:
 		await _frames(at - waited)
 		waited = at
 		_shot("%s_signature_%02d" % [species_id, at])
-	rampage.sim.ability_ready_in = 999.0
 	if species_id == "reptilian":
 		await _upgrade_shots(rampage)
 	rampage.queue_free()
 	await _frames(2)
 
 
-## Stills two frames after each upgrade effect first plays.
+## Stills a few frames after each upgrade effect first plays; the signature is left to recharge
+## on its own (the HUD counts down for real), so the ready pulse comes when it is ready.
 func _upgrade_shots(rampage: Rampage) -> void:
-	rampage.sim.ability_ready_in = 3.0
 	var seen: Array[String] = []
 	for _i: int in UPGRADES_FRAMES:
 		await physics_frame
-		if rampage.sim.ability_ready_in <= 0.0:
-			rampage.sim.ability_ready_in = 999.0
 		for k: String in ["cracks", "ready", "deflect", "regen"]:
 			if not seen.has(k) and rampage.ability_fx.played.has(k):
 				seen.append(k)

@@ -15,6 +15,8 @@ var cost_usec: Dictionary = {}
 var species: Dictionary
 ## The look of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
+## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
+var autoplay_signature := true
 var _city: CityView
 var _was_ready := true
 var _leap_reach := 0.0
@@ -30,6 +32,9 @@ var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
 var _too_tall_cooldown := 0.0
 var _autoplay := false
+## Seconds since the breath camera move began; negative when the camera is at rest.
+var _orbit_t := -1.0
+var _orbit_side := 1.0
 var _autoplay_target := Vector2(INF, INF)
 
 
@@ -57,6 +62,7 @@ func _ready() -> void:
 	add_child(ability_fx)
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
+	ability_fx.attach_body(_kaiju)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
@@ -78,7 +84,7 @@ func _physics_process(delta: float) -> void:
 	var signature := Input.is_action_just_pressed("signature")
 	if _autoplay:
 		move = _autoplay_move()
-		signature = sim.ability_ready_in <= 0.0
+		signature = autoplay_signature and sim.ability_ready_in <= 0.0
 	var t0 := Time.get_ticks_usec()
 	var events := sim.step(delta, move, signature)
 	_note_cost("sim.step", t0)
@@ -177,6 +183,8 @@ func _ability_fx(event: Dictionary) -> void:
 			_city.fx.breath(mouth, span, eye)
 			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 			ability_fx.breath(mouth, span, half_angle, strength)
+			_orbit_t = 0.0
+			_orbit_side = 1.0 if sim.facing.x >= 0.0 else -1.0
 		"leap":
 			var from: Vector2 = event["from"]
 			_leap_from = _to_world(from)
@@ -186,7 +194,6 @@ func _ability_fx(event: Dictionary) -> void:
 			ability_fx.leap_takeoff(_leap_from)
 		_:
 			ability_fx.lash(_kaiju_at, reach, strength)
-			_city.ring(_kaiju_at, reach, eye, 0.5)
 
 
 func _update_kaiju(delta: float, moving: float) -> void:
@@ -288,10 +295,29 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 
 func _place_camera(delta: float) -> void:
 	var zoom := 0.75 + 0.4 * sim.body_scale()
-	var target := _kaiju_at + CAMERA_OFFSET * zoom
+	var target := _kaiju_at + _breath_orbit(delta) * zoom
 	_camera.position = _camera.position.lerp(target, minf(1.0, delta * 5.0))
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(_kaiju_at + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
+
+
+## The camera offset, swung to the side and lifted while Atomic Breath fires so the beam crosses
+## the screen instead of running straight away from the camera; the kaiju stays framed.
+func _breath_orbit(delta: float) -> Vector3:
+	if _orbit_t < 0.0:
+		return CAMERA_OFFSET
+	_orbit_t += delta
+	var fx: Dictionary = Content.section("fx")
+	var ease_in := Num.f(fx["orbit_in_seconds"])
+	var hold := ease_in + Num.f(fx["beam_seconds"])
+	var ease_out := Num.f(fx["orbit_out_seconds"])
+	var w := smoothstep(0.0, ease_in, _orbit_t)
+	if _orbit_t > hold:
+		w = 1.0 - smoothstep(hold, hold + ease_out, _orbit_t)
+	if _orbit_t > hold + ease_out:
+		_orbit_t = -1.0
+	var turn := deg_to_rad(Num.f(fx["orbit_degrees"])) * w * _orbit_side
+	return CAMERA_OFFSET.rotated(Vector3.UP, turn) + Vector3(0, Num.f(fx["orbit_rise"]) * w, 0)
 
 
 func _autoplay_move() -> Vector2:

@@ -1,23 +1,25 @@
 class_name AbilityFx
 extends Node3D
 ## The look of every unlockable power, presentation only (D-026). Each signature attack has its
-## own shape: Atomic Breath a plasma beam that scorches a wedge into the street, Leap Slam a
-## trail through the air and a glowing crater, Tentacle Lash an arc whipping round the kaiju.
-## Upgrades show too: Signature Power brightens the attack, heavy stomps crack the street,
-## Signature Recharge pulses when the attack is ready, Regeneration sheds green motes, Armoured
-## Scales throw shells off in a cold glint. Nothing here hides the kaiju (D-025): no smoke above
-## knee height, glow is additive and narrow, dust uses the camera-safe smoke shader.
+## own shape: Atomic Breath a plasma beam that runs out to what it hits, flares there and
+## scorches the street, Leap Slam a trail through the air and a glowing crater, Tentacle Lash
+## two streaks whipping round with the tentacle tips, spray, debris and gouges. Upgrades show
+## too: Signature Power brightens the attack, heavy stomps crack the street molten, Signature
+## Recharge pulses at the feet and lights the body, Regeneration shimmers green over the hide,
+## Armoured Scales throw shells off in a spark burst and a metallic flash. Nothing here hides the
+## kaiju (D-025): glows are additive and thin, marks are decals that skip the kaiju's layer.
 
 const BEAM := preload("res://scenes/beam.gdshader")
-const SCORCH := preload("res://scenes/scorch.gdshader")
 const SWEEP := preload("res://scenes/sweep.gdshader")
-const EMBER := preload("res://scenes/ember.gdshader")
+const RIM := preload("res://scenes/rim.gdshader")
+const FLARE := preload("res://scenes/flare.gdshader")
 const STREET := Color("3a3d40")
+const INK := Color("2a1620")
 const MOLTEN := Color("ff7a2a")
+const WATER := Color(0.85, 0.95, 1.0)
 
 ## Every effect played, in order ("breath", "leap", "lash", "cracks", "ready", "deflect",
-## "regen");
-## read by the flow suite to prove each power leaves its own mark.
+## "regen"); read by the flow suite to prove each power leaves its own mark.
 var played: Array[String] = []
 var _city: CityView
 var _tint: Color
@@ -26,6 +28,11 @@ var _tune: Dictionary
 var _trail: GPUParticles3D
 var _regen: GPUParticles3D
 var _glint_mesh: BoxMesh
+var _overlay: ShaderMaterial
+var _body_parts: Array[GeometryInstance3D] = []
+var _overlay_on := false
+var _ready_glow := 0.0
+var _healing := false
 
 
 ## tint: the species' eye colour; body_scale: the kaiju's size this run.
@@ -37,10 +44,14 @@ func _init(city: CityView, tint: Color, body_scale: float) -> void:
 
 
 func _ready() -> void:
-	_glint_mesh = _glow_cube(0.14)
-	_trail = _emitter(_trail_mat(), _glow_cube(0.3), 70, Num.f(_tune["leap_trail_seconds"]))
-	_regen = _emitter(_regen_mat(), _glow_cube(0.12), 26, 1.5)
-	# Prewarm every shader out of sight so the first real use does not stall a frame.
+	_glint_mesh = FxParticles.glow_cube(0.22)
+	var trail_life := Num.f(_tune["leap_trail_seconds"])
+	_trail = _emitter(FxParticles.trail(_tint, _scale), FxParticles.glow_cube(0.3), 70, trail_life)
+	var green := Color(str(_tune["regen_tint"]))
+	_regen = _emitter(FxParticles.motes(green, _scale), FxParticles.glow_cube(0.14), 40, 1.5)
+	_overlay = ShaderMaterial.new()
+	_overlay.shader = RIM
+	# Prewarm every shader and decal texture out of sight so first use does not stall a frame.
 	var away := Vector3(0, -50, 0)
 	breath(away, Vector3.FORWARD * 4.0, 0.5, 1.0)
 	leap_land(away, 2.0, 1.0)
@@ -48,7 +59,33 @@ func _ready() -> void:
 	stomp_cracks(away, 2.0, 3.0)
 	ready_pulse(away)
 	deflect(away, Vector3.UP)
+	_ready_glow = 0.0
 	played.clear()
+
+
+## The kaiju whose voxels take the body glows (ready flash, regeneration shimmer).
+func attach_body(body: Node3D) -> void:
+	for node: Node in body.find_children("*", "GeometryInstance3D", true, false):
+		_body_parts.append(node as GeometryInstance3D)
+
+
+func _process(delta: float) -> void:
+	_ready_glow = maxf(0.0, _ready_glow - delta * 1.8)
+	var strength := 0.0
+	if _ready_glow > 0.05:
+		strength = _ready_glow * 2.2
+		_overlay.set_shader_parameter("tint", _tint)
+		_overlay.set_shader_parameter("shimmer", 0.0)
+	elif _healing:
+		strength = 0.9
+		_overlay.set_shader_parameter("tint", Color(str(_tune["regen_tint"])))
+		_overlay.set_shader_parameter("shimmer", 1.0)
+	_overlay.set_shader_parameter("strength", strength)
+	var want := strength > 0.0
+	if want != _overlay_on:
+		_overlay_on = want
+		for part: GeometryInstance3D in _body_parts:
+			part.material_overlay = _overlay if want else null
 
 
 ## How far an upgraded stat is above the species' own value, as 1..power_max.
@@ -57,17 +94,19 @@ func power(value: float, base: float) -> float:
 
 
 ## Atomic Breath: a white-hot beam from the mouth along `span` (mouth to the street at full
-## reach), a light racing down it, and a scorched wedge on the street that glows, then cools.
+## reach) that stops on the first standing wall it meets, a flare and a light on what it hits,
+## and a scorched wedge across the street, rubble and ruins.
 func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -> void:
 	played.append("breath")
 	var seconds := Num.f(_tune["beam_seconds"])
-	var length := span.length()
 	var reach := Vector2(span.x, span.z).length()
-	var dir := span / maxf(length, 0.001)
+	var hit := mouth + span * _first_hit(mouth, span)
+	var dir := (hit - mouth).normalized()
+	var length := mouth.distance_to(hit)
 	var cyl := CylinderMesh.new()
 	cyl.height = length
 	cyl.bottom_radius = 0.35 * _scale
-	cyl.top_radius = reach * tan(half_angle) * 0.4
+	cyl.top_radius = maxf(0.6, length * tan(half_angle) * 0.3)
 	cyl.radial_segments = 24
 	cyl.rings = 1
 	cyl.cap_top = false
@@ -81,19 +120,24 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	beam.position = mouth + dir * length * 0.5
 	add_child(beam)
 	_drive(mat, "progress", seconds, beam)
-	var light := _light(mouth, _tint.lightened(0.3), 6.0 * strength)
-	var tween := light.create_tween()
-	tween.tween_property(light, "position", mouth + span, seconds * 0.4)
-	tween.tween_property(light, "light_energy", 0.0, seconds * 0.6)
-	tween.tween_callback(light.queue_free)
+	# The struck face: a flare, hot sparks and a light just in front of it that lights the wall.
+	_flare(hit - dir * 0.6, 3.5 * _scale * strength, _tint.lightened(0.4), seconds)
+	var burst := FxParticles.sparks(_tint)
+	burst.direction = -dir + Vector3.UP * 0.4
+	_burst(burst, roundi(50 * strength), 0.7).position = hit - dir * 0.4
+	_city.flash(hit - dir * 1.5, _tint.lightened(0.3), 10.0 * strength, seconds * 1.4)
+	var look := {
+		"size": reach * 2.0,
+		"seconds": Num.f(_tune["scorch_seconds"]),
+		"half_angle": half_angle,
+		"energy": 3.0 + strength,
+		"tint": _tint,
+	}
 	var feet := Vector3(mouth.x, mouth.y + span.y - 0.5, mouth.z)
-	var flat := Vector3(dir.x, 0.0, dir.z)
-	var mark := _mark(feet, reach * 2.0, 1, Num.f(_tune["scorch_seconds"]))
+	var scorch := FxDecals.spawn(self, feet, FxDecals.Shape.WEDGE, look)
+	var flat := Vector3(span.x, 0.0, span.z)
 	if flat.length() > 0.01:
-		mark.basis = Basis.looking_at(flat.normalized(), Vector3.UP)
-	var scorch: ShaderMaterial = (mark.mesh as PlaneMesh).material
-	scorch.set_shader_parameter("half_angle", half_angle)
-	scorch.set_shader_parameter("glow", 2.0 + strength)
+		scorch.basis = Basis.looking_at(flat.normalized(), Vector3.UP)
 
 
 ## Leap Slam lift-off: a kick of dust and a small ring where the kaiju left the ground.
@@ -112,10 +156,14 @@ func leap_trail(at: Vector3, on: bool) -> void:
 ## thrown outward and a low ring of dust.
 func leap_land(at: Vector3, reach: float, strength: float) -> void:
 	played.append("leap")
-	var crater := _mark(at, reach * 2.2, 0, Num.f(_tune["crater_seconds"]))
-	var mat: ShaderMaterial = (crater.mesh as PlaneMesh).material
-	mat.set_shader_parameter("crack_count", 11.0)
-	mat.set_shader_parameter("glow", 3.0 + 2.0 * strength)
+	var look := {
+		"size": reach * 2.2,
+		"seconds": Num.f(_tune["crater_seconds"]),
+		"cracks": 11,
+		"energy": 3.0 + 2.0 * strength,
+		"tint": _tint,
+	}
+	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
 	_city.fx.shockwave(at, reach * 1.3, _tint)
 	_city.fx.shockwave(at, reach * 0.8)
 	for n: int in 12:
@@ -127,98 +175,114 @@ func leap_land(at: Vector3, reach: float, strength: float) -> void:
 	_city.flash(at + Vector3(0, 1.5, 0), _tint, 7.0 * strength, 0.5)
 
 
-## Tentacle Lash: one bright arc whipping round the kaiju at shin height, and spray flung off
-## its edge.
+## Tentacle Lash: two streaks whipping round with the tentacle tips at shin height, ink and
+## water flung off them, street chunks kicked along the arc as it passes, gouges left behind.
 func lash(centre: Vector3, reach: float, strength: float) -> void:
 	played.append("lash")
+	var seconds := Num.f(_tune["sweep_seconds"])
+	var tips := reach * 0.55
 	var plane := PlaneMesh.new()
-	plane.size = Vector2.ONE * reach * 2.0
+	plane.size = Vector2.ONE * tips / 0.8 * 2.0
 	var mat := _shader(SWEEP, strength)
 	plane.material = mat
 	var sweep := MeshInstance3D.new()
 	sweep.mesh = plane
 	sweep.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	sweep.position = Vector3(centre.x, 0.7 * _scale, centre.z)
+	sweep.position = centre + Vector3(0, 0.7 * _scale, 0)
 	add_child(sweep)
-	_drive(mat, "progress", Num.f(_tune["sweep_seconds"]), sweep)
-	var spray := _burst(_spray_mat(reach), _glint_mesh, roundi(60 * strength), 0.9)
-	spray.position = Vector3(centre.x, 0.8 * _scale, centre.z)
+	_drive(mat, "progress", seconds, sweep)
+	for color: Color in [INK, WATER]:
+		var drops := _burst(FxParticles.spray(tips, color), roundi(45 * strength), 1.0)
+		drops.position = centre + Vector3(0, 0.8 * _scale, 0)
+	for n: int in 10:
+		var phi := TAU * (n + 0.5) / 10.0 - PI
+		var at := centre + Vector3(cos(phi) * tips, 0.4, sin(phi) * tips)
+		var kick := Vector3(-sin(phi), 0.9, cos(phi))
+		var timer := get_tree().create_timer(seconds * 0.9 * (n + 0.5) / 10.0)
+		timer.timeout.connect(func() -> void: _city.debris(at, STREET, kick))
+	var look := {"size": tips * 2.5, "seconds": 4.0, "energy": 0.0, "soot": 0.9}
+	FxDecals.spawn(self, centre, FxDecals.Shape.SCRAPE, look)
 	_city.flash(centre + Vector3(0, 2.0, 0), _tint, 5.0 * strength, 0.45)
 
 
-## Heavy stomps crack the street; past the threshold the cracks glow molten.
+## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp.
 func stomp_cracks(at: Vector3, radius: float, strength: float) -> void:
 	var from := Num.f(_tune["crack_stomp_power"])
 	if strength < from:
 		return
 	played.append("cracks")
-	var mark := _mark(at, radius * 2.0, 0, Num.f(_tune["crack_seconds"]))
-	var mat: ShaderMaterial = (mark.mesh as PlaneMesh).material
-	mat.set_shader_parameter("char_strength", 0.35)
-	mat.set_shader_parameter("crack_count", 7.0)
-	mat.set_shader_parameter("tint", MOLTEN)
-	mat.set_shader_parameter("glow", 4.0 * (strength - from))
+	var look := {
+		"size": radius * 2.2,
+		"seconds": Num.f(_tune["crack_seconds"]),
+		"cracks": 7,
+		"energy": 2.5 + 3.0 * (strength - from),
+		"tint": MOLTEN,
+		"soot": 0.5,
+	}
+	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
 
 
-## Signature ready again: a halo rises from the feet to the shoulders.
+## Signature ready again: one ring runs out from the feet and the body flashes its colour.
 func ready_pulse(at: Vector3) -> void:
 	played.append("ready")
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.92
-	torus.outer_radius = 1.0
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.albedo_color = Color(_tint, 0.9)
-	torus.material = mat
-	var halo := MeshInstance3D.new()
-	halo.mesh = torus
-	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	halo.position = at + Vector3(0, 0.3, 0)
-	halo.scale = Vector3(2.4, 0.4, 2.4) * _scale
-	add_child(halo)
-	var tween := halo.create_tween().set_parallel(true)
-	tween.tween_property(halo, "position:y", at.y + 5.0 * _scale, 0.6)
-	tween.tween_property(halo, "scale", Vector3(1.4, 0.4, 1.4) * _scale, 0.6)
-	tween.tween_property(mat, "albedo_color:a", 0.0, 0.6)
-	tween.chain().tween_callback(halo.queue_free)
+	_city.fx.shockwave(at, 4.0 * _scale, _tint)
+	_ready_glow = 1.0
 
 
-## Regeneration: green motes drift off the body while it heals.
+## Regeneration: a green shimmer runs up the hide and motes drift off it while it heals.
 func regen(body_centre: Vector3, healing: bool) -> void:
 	_regen.position = body_centre
 	if healing and not _regen.emitting:
 		played.append("regen")
 	_regen.emitting = healing
+	_healing = healing
 
 
-## Armoured Scales: a shell glances off, sparks thrown back the way it came in a cold glint.
+## Armoured Scales: a shell glances off in a burst of sparks thrown back the way it came and a
+## short metallic flash on the hide.
 func deflect(at: Vector3, away: Vector3) -> void:
 	played.append("deflect")
-	var mat := _spark_mat(Color(str(_tune["deflect_tint"])))
-	mat.direction = away.normalized()
-	var sparks := _burst(mat, _glint_mesh, 22, 0.5)
-	sparks.position = at
-	_city.flash(at, Color(str(_tune["deflect_tint"])), 3.0, 0.15)
+	var cold := Color(str(_tune["deflect_tint"]))
+	var burst := FxParticles.sparks(cold)
+	burst.direction = away.normalized()
+	_burst(burst, 40, 0.5).position = at
+	_flare(at, 2.2 * _scale, cold, 0.18)
+	_city.flash(at, cold, 6.0, 0.15)
 
 
-## A mark on the street (scorch.gdshader) that cools and fades over `seconds`.
-func _mark(at: Vector3, size: float, shape: int, seconds: float) -> MeshInstance3D:
-	var plane := PlaneMesh.new()
-	plane.size = Vector2.ONE * size
+## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).
+func _first_hit(from: Vector3, span: Vector3) -> float:
+	var steps := maxi(4, ceili(span.length() / 0.5))
+	for i: int in range(1, steps + 1):
+		var t := float(i) / steps
+		var p := from + span * t
+		for b: RampageSim.Building in _city.sim.buildings:
+			var lx := p.x - (b.x - b.w * 0.5)
+			var lz := p.z - (b.z - b.d * 0.5)
+			if lx < 0.0 or lz < 0.0 or lx >= b.w or lz >= b.d:
+				continue
+			if b.frame.top_below(floori(lx), floori(lz), b.height) + 1 > p.y:
+				return t
+	return 1.0
+
+
+func _flare(at: Vector3, size: float, tint: Color, seconds: float) -> void:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * size
 	var mat := ShaderMaterial.new()
-	mat.shader = SCORCH
-	mat.set_shader_parameter("shape", shape)
-	mat.set_shader_parameter("tint", _tint)
-	plane.material = mat
-	var mi := MeshInstance3D.new()
-	mi.mesh = plane
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.position = Vector3(at.x, at.y + 0.07, at.z)
-	add_child(mi)
-	_drive(mat, "age", seconds, mi)
-	return mi
+	mat.shader = FLARE
+	mat.set_shader_parameter("tint", tint)
+	quad.material = mat
+	var flare := MeshInstance3D.new()
+	flare.mesh = quad
+	flare.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	flare.position = at
+	add_child(flare)
+	var tween := flare.create_tween()
+	tween.tween_method(
+		func(v: float) -> void: mat.set_shader_parameter("fade", 1.0 - v), 0.0, 1.0, seconds
+	)
+	tween.tween_callback(flare.queue_free)
 
 
 func _shader(shader: Shader, strength: float) -> ShaderMaterial:
@@ -229,23 +293,13 @@ func _shader(shader: Shader, strength: float) -> ShaderMaterial:
 	return mat
 
 
-## Runs a shader parameter 0..1 over `seconds`, then frees `owner`.
+## Runs a shader parameter 0..1 over `seconds`, then frees `owner_node`.
 func _drive(mat: ShaderMaterial, param: String, seconds: float, owner_node: Node) -> void:
 	var tween := owner_node.create_tween()
 	tween.tween_method(
 		func(v: float) -> void: mat.set_shader_parameter(param, v), 0.0, 1.0, seconds
 	)
 	tween.tween_callback(owner_node.queue_free)
-
-
-func _light(at: Vector3, color: Color, energy: float) -> OmniLight3D:
-	var light := OmniLight3D.new()
-	light.light_color = color
-	light.light_energy = energy
-	light.omni_range = 4.0 + energy
-	light.position = at
-	add_child(light)
-	return light
 
 
 func _basis_along(dir: Vector3) -> Basis:
@@ -270,99 +324,11 @@ func _emitter(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float
 	return p
 
 
-func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
-	var p := _emitter(mat, mesh, amount, life)
+## A one-shot burst of glowing voxels.
+func _burst(mat: ParticleProcessMaterial, amount: int, life: float) -> GPUParticles3D:
+	var p := _emitter(mat, _glint_mesh, amount, life)
 	p.one_shot = true
 	p.explosiveness = 0.85
 	p.emitting = true
 	get_tree().create_timer(life + 0.2).timeout.connect(p.queue_free)
 	return p
-
-
-func _trail_mat() -> ParticleProcessMaterial:
-	var mat := _base_mat(_tint.lightened(0.2), _tint.darkened(0.4))
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	mat.emission_sphere_radius = 1.2 * _scale
-	mat.spread = 180.0
-	mat.initial_velocity_min = 0.2
-	mat.initial_velocity_max = 1.0
-	mat.gravity = Vector3(0, -1.0, 0)
-	_shrink(mat, 1.2 * _scale)
-	return mat
-
-
-func _regen_mat() -> ParticleProcessMaterial:
-	var tint := Color(str(_tune["regen_tint"]))
-	var mat := _base_mat(tint, Color(tint, 0.0))
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(1.0, 2.0, 1.0) * _scale
-	mat.direction = Vector3.UP
-	mat.spread = 15.0
-	mat.initial_velocity_min = 0.6
-	mat.initial_velocity_max = 1.4
-	mat.gravity = Vector3(0, 0.8, 0)
-	_shrink(mat, 1.0 + 0.3 * _scale)
-	return mat
-
-
-func _spray_mat(reach: float) -> ParticleProcessMaterial:
-	var mat := _base_mat(_tint.lightened(0.5), _tint)
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
-	mat.emission_ring_axis = Vector3.UP
-	mat.emission_ring_radius = reach * 0.8
-	mat.emission_ring_inner_radius = reach * 0.6
-	mat.emission_ring_height = 0.2
-	mat.direction = Vector3.UP
-	mat.spread = 35.0
-	mat.radial_velocity_min = 3.0
-	mat.radial_velocity_max = 7.0
-	mat.initial_velocity_min = 3.0
-	mat.initial_velocity_max = 7.0
-	mat.gravity = Vector3(0, -16, 0)
-	_shrink(mat, 1.0)
-	return mat
-
-
-func _spark_mat(tint: Color) -> ParticleProcessMaterial:
-	var mat := _base_mat(Color.WHITE, tint)
-	mat.spread = 50.0
-	mat.initial_velocity_min = 6.0
-	mat.initial_velocity_max = 11.0
-	mat.gravity = Vector3(0, -18, 0)
-	_shrink(mat, 1.0)
-	return mat
-
-
-func _base_mat(start: Color, end: Color) -> ParticleProcessMaterial:
-	var mat := ParticleProcessMaterial.new()
-	mat.damping_min = 0.5
-	mat.damping_max = 1.5
-	mat.angular_velocity_min = -180.0
-	mat.angular_velocity_max = 180.0
-	var ramp := Gradient.new()
-	ramp.colors = PackedColorArray([start, end])
-	var ramp_tex := GradientTexture1D.new()
-	ramp_tex.gradient = ramp
-	mat.color_ramp = ramp_tex
-	return mat
-
-
-## Particles start at `size` and shrink to nothing over their life.
-func _shrink(mat: ParticleProcessMaterial, size: float) -> void:
-	mat.scale_min = size * 0.6
-	mat.scale_max = size
-	var curve := Curve.new()
-	curve.add_point(Vector2(0, 1.0))
-	curve.add_point(Vector2(1, 0.0))
-	var curve_tex := CurveTexture.new()
-	curve_tex.curve = curve
-	mat.scale_curve = curve_tex
-
-
-func _glow_cube(size: float) -> BoxMesh:
-	var cube := BoxMesh.new()
-	cube.size = Vector3.ONE * size
-	var mat := ShaderMaterial.new()
-	mat.shader = EMBER
-	cube.material = mat
-	return cube
