@@ -48,7 +48,7 @@ def load(path):
         v = np.array([x.co for x in mesh.vertices])
         v = (np.c_[v, np.ones(len(v))] @ mw.T)[:, :3]
         n = np.array([x.normal for x in mesh.vertices]) @ mw[:3, :3].T
-        base = sum(len(x) for x in verts_all)
+        base = sum(len(a) for a, _ in verts_all)  # vertices so far (several meshes: body + jaw)
         verts_all.append((v, n))
         uv_layer = mesh.uv_layers.active.data if mesh.uv_layers.active else None
         for t in mesh.loop_triangles:
