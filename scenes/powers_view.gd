@@ -140,7 +140,6 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"heli_spawned":
 			var heli := HelicopterModel.new()
 			add_child(heli)
-			heli.scale = Vector3.ONE * maxf(1.0, bs)
 			_helis[Num.i(event["heli"])] = heli
 		"heli_fired":
 			_heli_fired(Num.i(event["heli"]), kaiju_at)
@@ -220,10 +219,11 @@ func _tip(fallback: Vector3) -> Vector3:
 func _heli_fired(id: int, kaiju_at: Vector3) -> void:
 	if not _helis.has(id):
 		return
-	var heli: Node3D = _helis[id]
+	var heli: HelicopterModel = _helis[id]
 	var target := kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0)
-	_streak(heli.position, target, TRACER, 0.12)
-	_city.flash(heli.position, TRACER, 3.0, 0.1)
+	var muzzle := heli.fire()
+	_streak(muzzle, target, TRACER, 0.12)
+	_city.flash(muzzle, TRACER, 3.0, 0.1)
 	_city.fx.sparks(target)
 
 
@@ -235,9 +235,7 @@ func _heli_down(id: int, at: Vector2) -> void:
 	var ground := _w(at)
 	for n: int in 6:
 		_city.debris(
-			ground + Vector3(0, sim.air.altitude() * 0.5, 0),
-			HelicopterModel.PALETTE["body"],
-			Vector3.UP
+			ground + Vector3(0, sim.air.altitude() * 0.5, 0), HelicopterModel.TAN, Vector3.UP
 		)
 	_city.flash(ground + Vector3(0, 2.0, 0), Color("ff8a3a"), 8.0, 0.5)
 	_city.fire(ground, 0.6)
@@ -249,12 +247,13 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 	var bs := sim.body_scale()
 	for heli: AirWing.Heli in sim.air.helis:
 		if _helis.has(heli.id):
-			var node: Node3D = _helis[heli.id]
+			var node: HelicopterModel = _helis[heli.id]
 			var at := _w(heli.pos, sim.air.altitude())
 			var to := at - node.position
 			node.position = at
 			if to.length() > 0.001:
 				node.rotation.y = atan2(-to.x, -to.z)
+			node.aim(kaiju_at + Vector3(0, 3.0 * bs, 0))
 	var seen := {}
 	for y: Brood.Young in sim.brood.young:
 		seen[y.id] = true

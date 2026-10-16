@@ -212,6 +212,9 @@
 		"gun_elevation": 0.35,
 		"recoil": 0.3,
 		"recoil_seconds": 0.45,
-		"hull_turn": 3.0
+		"hull_turn": 3.0,
+		"heli_height": 2.75,
+		"main_rotor_spin": 28.0,
+		"tail_rotor_spin": 45.0
 	}
 }

@@ -30,6 +30,7 @@ func run_checks() -> void:
 	await _check_main_scene()
 	await _check_planted_feet()
 	_check_tank()
+	_check_heli()
 
 
 func _check_settings() -> void:
@@ -174,3 +175,35 @@ func _check_tank() -> void:
 		"the shot leaves the muzzle (%s) and the gun kicks back" % muzzle
 	)
 	tank.free()
+
+
+## The Blender helicopter (D-042) loads as body, main rotor, tail rotor and chin gun; both rotors
+## spin about their own hubs, and the gun swings onto a target below and ahead with the muzzle
+## at the nose.
+func _check_heli() -> void:
+	var heli := HelicopterModel.new()
+	root.add_child(heli)
+	var main: Node3D = heli._main_rotor
+	var tail: Node3D = heli._tail_rotor
+	var hub := main.position
+	heli._process(0.1)
+	check(
+		heli.get_child_count() == 4 and main.rotation.y > 0.5 and tail.rotation.x > 0.5,
+		(
+			"the rotors spin about their hubs (main %.2f, tail %.2f rad)"
+			% [main.rotation.y, tail.rotation.x]
+		)
+	)
+	var target := Vector3(3.0, -6.0, -12.0)
+	heli.aim(target)
+	var muzzle := heli.fire()
+	var aim := -heli._gun.global_basis.z
+	check(
+		(
+			aim.angle_to(target - heli._gun.global_position) < 0.02
+			and muzzle.z < -2.0
+			and main.position == hub
+		),
+		"the chin gun aims at a target below and ahead; muzzle at %s" % muzzle
+	)
+	heli.free()
