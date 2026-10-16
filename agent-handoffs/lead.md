@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 02:05
+# Lead handoff, 2026-10-17 02:35
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -30,13 +30,17 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 
 ## Speed-up (director "can you work faster", 01:26)
 - Split: kaiju-motion = reptile only; species-motion (local_87c25bd4-a526-4731-b18e-7c728966a2df) = mantis + octopus (from PR #11). Short loops; lead checks clips quickly, full critic only before the director.
-- Reptile shoulders FIXED (0% drift, shown to director); arms PASS QA, director wants hands lower near the belly (elbow ~55-65 deg), in progress.
+- Reptile shoulders FIXED; arms lowered to the belly (49a23c9, stills docs/captures/2026-10-17-motion/reptile_arms_low.png); FINAL critic on PR #10 running, then merge #10 (match head SHA) and #11 after species-motion.
 - D-041: director picked look test C (voxel cubes on skinned lattice); kaiju-look-test productionises it (all 9 kaiju, shoulder bake, bone array, PR).
 - Director: reptile arms "outstretched like a zombie": bent elbows, hands near chest (sent to kaiju-motion).
 
 ## Gameplay helpers started 02:00
 - city-growth (local_abf1bce5-336a-4fc8-942a-ff8f84538b7a): D-039 city grows per evolution + 3-5 h economy re-tune.
 - game-flow (local_9e7bf3f2-b85d-489b-987f-b9e45b8bfb55): run summary, evolution reveal, tree polish, menus/pause/settings (4K UI scale), save/continue.
+
+## CI captures live (02:20)
+- PR #13 merged to main (capture.yml dispatch-only + tools/capture/ci_capture.sh); workflow also on look-options (dispatch reads the file from the ref; branches cut before 02:20 need it merged in). Helpers already dispatching.
+- Held notes SENT (02:30): reptile baby chest hole + jaw seam + round6 reverse proof -> kaiju-motion (then merge #10); helpers told to merge look-options for capture.yml and dispatch on their OWN branch.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
