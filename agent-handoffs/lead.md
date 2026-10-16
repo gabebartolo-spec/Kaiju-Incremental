@@ -27,6 +27,7 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
 4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
 5. 4K TV text size check (perf deferred, D-032).
+6. Species gameplay (D-035, docs/SPECIES.md): build after PR #10; 3 open questions for the director there.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: round 2 = FIX (posture, no skate, head, mass PASS; jaw open, tail lag, hold beat, game-camera read, baby stumble, pale legs, true side cam to fix). Round 1 was REJECTED (fix
