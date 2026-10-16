@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 07:10
-## State: awaiting lead (#10 ready to merge at 734257e; baby CI clip sent; adult CI run 38925016471 still rendering)
+# Kaiju-motion handoff, 2026-10-17 07:30
+## State: available (#10 MERGED as aaa60f7 into look-options; #11 retargeted + synced 99a9385)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -8,12 +8,12 @@ grace; insectoid = skittering, disturbing mantis; cephalopod = sliding/gripping 
 not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-powers session.
 
 ## Branch and commit
-- claude/kaiju-motion -> PR #10 (reptile). Round 5 at 5e3427f: mouth inside split (dark seam shut,
+- claude/kaiju-motion -> PR #10 (reptile): MERGED (squash aaa60f7). Branch can be deleted by the lead. Round 5 at 5e3427f: mouth inside split (dark seam shut,
   pink open), even cadence (adult 0.45 s +-2-6%, baby 0.32 s), no double plants, still roar,
   footfall ring + camera dip, front34/rear evidence cams, per-frame feet CSV.
   Force-push is denied: merge, never rebase a pushed branch.
-- claude/kaiju-motion-species -> PR #11 (base claude/kaiju-motion; retarget to look-options once
-  #10 merges). Mantis adult textured (86ac43d, UV-seam weld), cephalopod rigs rebuilt
+- claude/kaiju-motion-species -> PR #11, base claude/look-options (synced 99a9385; the squash
+  conflicts resolved to ours since #11 already held all of #10). Mantis adult textured (86ac43d, UV-seam weld), cephalopod rigs rebuilt
   (9c0094d: voxels only on their own tentacle, true counts 13/8/13), hooks incl. climbing(on).
   Lead asked: NO more octopus motion clips until it OKs species3/octo_bone_sheet.png.
 
