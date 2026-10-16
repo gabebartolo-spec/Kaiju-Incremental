@@ -159,14 +159,14 @@ func _check_voxel_skin() -> void:
 		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
 	)
 	check(mouth, "the reptile's held-open jaw shows the mouth's inside on the skin")
-	KaijuModel.show_rigid_voxels = true
+	VoxelSkin.show_rigid_voxels = true
 	var rex: Dictionary = Content.species_def("reptilian")
 	var rex_colors: Dictionary = rex["colors"]
 	var rigid := KaijuModel.new("reptilian", rex_colors, "adult")
 	var none := rigid.find_children("VoxelSkin", "VoxelSkin", true, false).is_empty()
 	check(none, "the debug flag draws the rigid voxels instead (no skin)")
 	rigid.free()
-	KaijuModel.show_rigid_voxels = false
+	VoxelSkin.show_rigid_voxels = false
 
 
 ## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it

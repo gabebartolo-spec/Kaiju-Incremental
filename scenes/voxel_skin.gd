@@ -15,6 +15,9 @@ const VERSION := 2
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
 const BOUNDS := AABB(Vector3(-12, -4, -12), Vector3(24, 24, 24))
 
+## Debug: draw rigged kaiju the old way, rigid voxels per bone (pass "--kaiju-rigid" after "--").
+static var show_rigid_voxels := "--kaiju-rigid" in OS.get_cmdline_user_args()
+
 ## The bone matrices sent to the shaders last frame, and whether the mouth's inside showed.
 var pose: Array[Projection] = []
 var mouth_open := false
@@ -24,6 +27,23 @@ var _binds: Array[Transform3D] = []
 var _cubes: ShaderMaterial
 var _fill: ShaderMaterial
 var _hid_rig_voxels := 0
+
+
+## Puts the skin on a rig built from <base> (KaijuModel does this); null when show_rigid_voxels is
+## set or no skin was baked, and the rig then draws its own voxels.
+static func attach(rig: KaijuRig, base: String) -> VoxelSkin:
+	if show_rigid_voxels:
+		return null
+	var skin := load_for(rig, base)
+	if skin != null:
+		rig.add_child(skin)
+	return skin
+
+
+## Calls sync() on a skin that may be null (a kaiju without one).
+static func sync_if(skin: VoxelSkin) -> void:
+	if skin != null:
+		skin.sync()
 
 
 ## The skin for a rig built from <base>, or null when no .vskin was baked for it (the rig then

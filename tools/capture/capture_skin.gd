@@ -71,7 +71,7 @@ func _run() -> void:
 	stage.add_child(cam)
 	root.add_child(stage)
 	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
-	var variant := "rigid" if KaijuModel.show_rigid_voxels else "skin"
+	var variant := "rigid" if VoxelSkin.show_rigid_voxels else "skin"
 	var worst := {}  # bone -> [bend, frame]
 	var shots: Array[Dictionary] = []
 	var pos := Vector2.ZERO
