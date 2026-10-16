@@ -235,7 +235,7 @@ func fall_land(event: Dictionary) -> void:
 		var a := Vector3(from.x, 0, from.y)
 		var b := Vector3(to.x, 0, to.y)
 		fx.dust_line(a, b, width)
-		_rubble_strip(a, b, width)
+		_rubble_strip(Num.i(event["building"]), a, b, width)
 		var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
 		for i: int in steps + 1:
 			crush(a.lerp(b, float(i) / steps), width * 0.6)
@@ -243,12 +243,9 @@ func fall_land(event: Dictionary) -> void:
 		fx.dust(landed[0], 1.5)
 
 
-## A long low mound where a tower came down across the street.
-func _rubble_strip(a: Vector3, b: Vector3, width: float) -> void:
-	var mound := slab(
-		Vector3(width, 0.6, a.distance_to(b)), (a + b) * 0.5 + Vector3(0, 0.3, 0), Look.color("lot")
-	)
-	mound.look_at(b + Vector3(0, 0.3, 0), Vector3.UP)
+## A rubble pile where a tower came down across the street.
+func _rubble_strip(building: int, a: Vector3, b: Vector3, width: float) -> void:
+	add_child(Ruin.strip(_views[building].voxels, a, b, width))
 
 
 ## Builds the ruin on a worker thread (it is thousands of voxels) and adds it when ready.

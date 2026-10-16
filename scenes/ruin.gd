@@ -63,3 +63,33 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
 	palette["char"] = Color("201c1a")
 	return vox.build(palette, BuildingVoxels.VOXEL, 2.0, voxels.origin())
+
+
+## The pile a toppled tower leaves along the street: chunky voxels in its own colours, a floor or
+## two high along the middle of the strip, thinning at the edges.
+static func strip(
+	voxels: BuildingVoxels, from: Vector3, to: Vector3, width: float
+) -> MultiMeshInstance3D:
+	var vox := VoxelBuilder.new()
+	var keys: Array[String] = ["wall", "wall", "wall", "pillar", "trim", "slab", "window", "char"]
+	var along := to - from
+	var length := along.length()
+	var dir := along / maxf(0.001, length)
+	var side := Vector3(-dir.z, 0, dir.x)
+	var cells := roundi(length * RES)
+	var half := roundi(width * 0.5 * RES) + 1
+	for t: int in cells:
+		for s: int in range(-half, half + 1):
+			var across := absf(float(s)) / half
+			var h := roundi(
+				RES * 1.6 * (1.0 - across * across) + float(absi(hash(Vector2i(t, s))) % 3)
+			)
+			var p := from + dir * (t / float(RES)) + side * (s / float(RES))
+			var base := Vector3i((p / BuildingVoxels.VOXEL).round())
+			for y: int in maxi(1, h):
+				var block := Vector3i(floori(t / 3.0), floori(y / 2.0), floori(s / 3.0))
+				vox.put(base + Vector3i(0, y, 0), keys[absi(hash(block)) % keys.size()])
+	var palette := voxels.palette.duplicate()
+	palette["char"] = Color("201c1a")
+	vox.salt = 57
+	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)

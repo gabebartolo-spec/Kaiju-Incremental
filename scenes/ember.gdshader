@@ -2,7 +2,7 @@ shader_type spatial;
 render_mode unshaded;
 // Glowing flame / ember voxel: the particle colour, pushed above white so the bloom catches it.
 
-uniform float heat = 2.4;
+uniform float heat = 1.4;
 
 void fragment() {
 	ALBEDO = COLOR.rgb * heat;
