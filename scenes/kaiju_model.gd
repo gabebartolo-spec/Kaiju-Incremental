@@ -18,6 +18,8 @@ const PUPIL := Color("15130f")
 var species_id: String
 var _colors: Dictionary = {}
 var _vox := VoxelBuilder.new()
+## Walk-cycle flipbook poses of a voxelized model (empty for code-built bodies).
+var _poses: Array[MultiMeshInstance3D] = []
 var _body: Node3D
 var _walk_phase := 0.0
 var _squash := 0.0
@@ -32,9 +34,14 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 	_vox.salt = 7
 	# A voxelized sculpt (tools/blender/voxelize.py, D-012) replaces the code-built body.
 	_add_rim_light()
-	var height := Kvox.load_into("res://assets/kaiju/%s.kvox" % species_id, _vox)
-	if height > 0:
-		_body.add_child(_lit(_vox.build({}, MODEL_HEIGHT / height, _glow(), Vector3.ZERO)))
+	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
+	if model.height > 0:
+		for pose: VoxelBuilder in model.frames:
+			pose.salt = 7
+			var mmi := _lit(pose.build({}, MODEL_HEIGHT / model.height, _glow(), Vector3.ZERO))
+			mmi.visible = _poses.is_empty()
+			_body.add_child(mmi)
+			_poses.append(mmi)
 		return
 	match species_id:
 		"insectoid":
@@ -65,6 +72,10 @@ func animate(delta: float, moving: float) -> void:
 	_body.position.y = bob
 	_body.rotation.z = sin(_walk_phase) * 0.06 * moving
 	_body.scale = Vector3(1.0 + _squash * 0.12, 1.0 - _squash * 0.15, 1.0 + _squash * 0.12)
+	if _poses.size() > 1:
+		var shown := posmod(floori(_walk_phase / PI * _poses.size() * 0.5), _poses.size())
+		for i: int in _poses.size():
+			_poses[i].visible = i == shown
 
 
 func stomp() -> void:

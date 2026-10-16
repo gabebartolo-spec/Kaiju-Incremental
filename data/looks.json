@@ -6,14 +6,14 @@
 			"label": "C",
 			"name": "Concrete Realism (blue hour)",
 			"sky_top": "2a4458",
-			"sky_horizon": "7a96a2",
+			"sky_horizon": "5f8590",
 			"ambient": 1.15,
 			"sun_color": "cfe0ea",
 			"sun_energy": 0.7,
 			"sun_pitch": -38,
-			"fog_color": "5f7d8a",
-			"fog_density": 0.0045,
-			"saturation": 0.85,
+			"fog_color": "4d7380",
+			"fog_density": 0.008,
+			"saturation": 0.9,
 			"contrast": 1.12,
 			"glow": 0.7,
 			"voxel_inset": 0.99,
@@ -36,7 +36,7 @@
 			"asphalt": "4b5459",
 			"lot": "8a8f92",
 			"lamp_energy": 2.6,
-			"ambient_color": "6a8e9e"
+			"ambient_color": "5d8a98"
 		}
 	]
 }

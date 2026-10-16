@@ -23,7 +23,7 @@ func _ready() -> void:
 			"smin": 1.0,
 			"smax": 2.6,
 			"grow": true,
-			"colors": [Color(0.62, 0.58, 0.52, 0.75), Color(0.5, 0.48, 0.45, 0.0)],
+			"colors": [Color(0.36, 0.37, 0.38, 0.8), Color(0.3, 0.31, 0.32, 0.0)],
 		}
 	)
 	_dust_mesh = _puff(1.4)
@@ -48,7 +48,7 @@ func _ready() -> void:
 
 ## A billowing dust cloud; size ~ the width of what came down.
 func dust(at: Vector3, size: float) -> void:
-	var p := _burst(_dust_mat, _dust_mesh, roundi(24 * clampf(size, 0.5, 4.0)), 2.6)
+	var p := _burst(_dust_mat, _dust_mesh, roundi(12 * clampf(size, 0.5, 4.0)), 2.6)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)

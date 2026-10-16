@@ -74,9 +74,10 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 					for z: int in b.d:
 						cells.append(Vector3i(x, y, z))
 		else:
-			for y: int in range(1, mini(b.height - 1, 6)):
-				for x: int in range(maxi(0, (b.w >> 1) - 1), mini(b.w, (b.w >> 1) + 2)):
-					cells.append(Vector3i(x, y, b.d - 1))
+			for y: int in range(maxi(1, b.height - 4), b.height):
+				for x: int in range(0, maxi(1, b.w - 1)):
+					for z: int in range(b.d - 2, b.d):
+						cells.append(Vector3i(x, y, z))
 		sim.damage_chunks(index, cells, 9999.0)
 	_route(sim, city, at)
 	for t: int in 2:  # tanks closing in, one firing

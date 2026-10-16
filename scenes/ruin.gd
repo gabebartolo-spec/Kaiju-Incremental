@@ -13,7 +13,7 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 	var d := b.d * RES
 	var vox := VoxelBuilder.new()
 	var keys: Array[String] = ["wall", "wall", "wall", "slab", "slab", "trim", "window", "pillar"]
-	var peak := 2.0 + b.tier * 1.5
+	var peak := RES * (1.4 + b.tier * 0.8)
 	for x: int in range(-3, w + 3):
 		for z: int in range(-3, d + 3):
 			var cx := (x - w * 0.5) / (w * 0.5 + 3.0)
@@ -21,7 +21,10 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 			var fall := 1.0 - sqrt(cx * cx + cz * cz)
 			var h := roundi(peak * fall + rng.randf_range(-1.5, 1.5))
 			for y: int in maxi(0, h):
-				vox.put(Vector3i(x, y, z), keys[rng.randi_range(0, keys.size() - 1)])
+				var key := keys[rng.randi_range(0, keys.size() - 1)]
+				if y == h - 1 and rng.randf() < 0.12:
+					key = "ember"  # glowing coals on the surface of the heap
+				vox.put(Vector3i(x, y, z), key)
 	for side: int in 2:  # ragged wall stubs on two faces
 		var along_x := rng.randf() < 0.5
 		var fixed := 0 if side == 0 else (d - 1 if along_x else w - 1)
@@ -35,5 +38,6 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 				var key := "window" if y % RES in [1, 2] and p % 3 != 0 else "wall"
 				vox.put(cell, key)
 	vox.salt = b.style + 91
-	var glow := Look.value("window_glow")
-	return vox.build(voxels.palette, BuildingVoxels.VOXEL, glow, voxels.origin())
+	var palette := voxels.palette.duplicate()
+	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
+	return vox.build(palette, BuildingVoxels.VOXEL, 2.0, voxels.origin())

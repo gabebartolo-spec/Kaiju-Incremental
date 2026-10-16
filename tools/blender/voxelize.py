@@ -1,11 +1,16 @@
 """Voxelizes a textured model (GLB/FBX/OBJ) into the game's .kvox format: the surface shell of
 the model on a regular grid, each voxel coloured from the model's base-colour texture.
 
-    blender -b --python tools/blender/voxelize.py -- <in.glb> <out.kvox> <height_in_voxels>
+    blender -b --python tools/blender/voxelize.py -- <in.glb> <out.kvox> <height_in_voxels> [frames]
 
-.kvox (little-endian): b"KVOX", uint32 version (1), uint32 count, uint16 height, then per voxel
-int16 x, int16 y, int16 z, uint8 r, uint8 g, uint8 b, uint8 flags (0). y is up, the model faces
--Z, feet rest on y = 0, x and z are centred. Pure Blender + numpy, no add-ons.
+With `frames` > 1 the model's first animation (e.g. a rigged walk cycle) is sampled at that many
+evenly spaced frames and each pose is voxelized: a flipbook the game steps through while walking.
+The scale and centre come from the first frame, so the body does not swim between frames.
+
+.kvox (little-endian): b"KVOX", uint32 version (2), uint32 frame count, uint16 height, then per
+frame: uint32 count and per voxel int16 x, int16 y, int16 z, uint8 r, uint8 g, uint8 b,
+uint8 flags (0). y is up, the model faces -Z, feet rest on y = 0, x and z are centred.
+Pure Blender + numpy, no add-ons.
 """
 import struct
 import sys
@@ -80,20 +85,13 @@ def image_array(img, cache):
     return cache[img.name]
 
 
-def main():
-    args = sys.argv[sys.argv.index("--") + 1:]
-    src, dst, height = args[0], args[1], int(args[2])
-    objects = load(src)
-    tris = triangles(objects)
-    allp = np.concatenate([t[0] for t in tris])
-    lo, hi = allp.min(axis=0), allp.max(axis=0)
-    # Blender is Z-up; the game is Y-up. Scale so the model is `height` voxels tall.
-    scale = (height - 1) / max(1e-6, hi[2] - lo[2])
-    centre = (lo + hi) / 2.0
+def voxelize(tris, frame_fit):
+    """Cells {(x, y, z): [r, g, b, n]} for the triangles, using a fixed (scale, centre, floor)."""
+    scale, centre, floor = frame_fit
     cells = {}
     cache = {}
     for p, uv, mat in tris:
-        q = (p - np.array([centre[0], centre[1], lo[2]])) * scale
+        q = (p - np.array([centre[0], centre[1], floor])) * scale
         edge = max(np.linalg.norm(q[1] - q[0]), np.linalg.norm(q[2] - q[1]), np.linalg.norm(q[0] - q[2]))
         n = max(2, int(edge * 2.0) + 1)
         a, b = np.meshgrid(np.linspace(0, 1, n), np.linspace(0, 1, n))
@@ -124,13 +122,48 @@ def main():
                 acc[1] += col[1]
                 acc[2] += col[2]
                 acc[3] += 1
+    return cells
+
+
+def frame_range():
+    """(start, end) of the first action in the scene, or None."""
+    for obj in bpy.context.scene.objects:
+        ad = obj.animation_data
+        if ad is not None and ad.action is not None:
+            start, end = ad.action.frame_range
+            return int(start), int(end)
+    return None
+
+
+def main():
+    args = sys.argv[sys.argv.index("--") + 1:]
+    src, dst, height = args[0], args[1], int(args[2])
+    frames = int(args[3]) if len(args) > 3 else 1
+    objects = load(src)
+    span = frame_range()
+    if frames > 1 and span is None:
+        print("no animation found; writing one frame")
+        frames = 1
+    poses = []
+    fit = None
+    for i in range(frames):
+        if frames > 1:
+            bpy.context.scene.frame_set(int(span[0] + (span[1] - span[0]) * i / frames))
+        tris = triangles(objects)
+        if fit is None:
+            allp = np.concatenate([t[0] for t in tris])
+            lo, hi = allp.min(axis=0), allp.max(axis=0)
+            fit = ((height - 1) / max(1e-6, hi[2] - lo[2]), (lo + hi) / 2.0, lo[2])
+        poses.append(voxelize(tris, fit))
     with open(dst, "wb") as f:
         f.write(b"KVOX")
-        f.write(struct.pack("<IIH", 1, len(cells), height))
-        for (x, y, z), (r, g, b, n) in cells.items():
-            rgb = [int(max(0, min(255, round((v / n) ** (1 / 2.2) * 255)))) for v in (r, g, b)]
-            f.write(struct.pack("<hhhBBBB", x, y, z, rgb[0], rgb[1], rgb[2], 0))
-    print(f"voxelized {src}: {len(cells)} voxels, {height} tall -> {dst}")
+        f.write(struct.pack("<IIH", 2, len(poses), height))
+        for cells in poses:
+            f.write(struct.pack("<I", len(cells)))
+            for (x, y, z), (r, g, b, n) in cells.items():
+                rgb = [int(max(0, min(255, round((v / n) ** (1 / 2.2) * 255)))) for v in (r, g, b)]
+                f.write(struct.pack("<hhhBBBB", x, y, z, rgb[0], rgb[1], rgb[2], 0))
+    print(f"voxelized {src}: {len(poses)} frame(s), {sum(len(c) for c in poses)} voxels, {height} tall -> {dst}")
 
 
 main()

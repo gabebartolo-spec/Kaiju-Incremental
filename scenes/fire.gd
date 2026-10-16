@@ -9,7 +9,7 @@ const EMBER_SHADER := preload("res://scenes/ember.gdshader")
 const FLAME_COLORS: Array[Color] = [
 	Color("fff1a0"), Color("ffb040"), Color("e85a1c"), Color("5a2a18")
 ]
-const WIND := Vector3(0.9, 0.0, 0.4)
+const WIND := Vector3(2.2, 0.0, 0.9)
 
 var _light: OmniLight3D
 var _base_energy: float
@@ -53,8 +53,8 @@ func _embers(size: float) -> GPUParticles3D:
 
 ## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
 func _smoke(size: float) -> GPUParticles3D:
-	var mat := _base(size * 0.5, 8.0, WIND * 0.6 + Vector3(0, 1.4, 0), Vector2(1.8, 3.0))
-	_scale(mat, Vector2(1.8, 3.4), Vector2(0.6, 2.6))
+	var mat := _base(size * 0.5, 6.0, WIND * 0.8 + Vector3(0, 2.2, 0), Vector2(2.5, 4.0))
+	_scale(mat, Vector2(1.6, 3.0), Vector2(0.7, 3.4))
 	_ramp(
 		mat,
 		PackedColorArray(
@@ -72,7 +72,7 @@ func _smoke(size: float) -> GPUParticles3D:
 	var draw := ShaderMaterial.new()
 	draw.shader = SMOKE_SHADER
 	quad.material = draw
-	var p := _system(mat, quad, roundi(60 * maxf(1.0, size)), 9.0)
+	var p := _system(mat, quad, roundi(110 * maxf(1.0, size)), 10.0)
 	p.position.y = 0.8
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20), Vector3(40, 50, 40))
 	return p

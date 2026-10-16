@@ -27,7 +27,7 @@ func _process(_delta: float) -> void:
 func spawn(pos: Vector3, color: Color, away: Vector3) -> void:
 	var size := BuildingVoxels.VOXEL * (_rng.randf_range(0.35, 0.8) if _rng.randf() < 0.8 else 1.0)
 	var body := RigidBody3D.new()
-	body.gravity_scale = 1.6
+	body.gravity_scale = 2.2
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
 	box_shape.size = Vector3.ONE * size
