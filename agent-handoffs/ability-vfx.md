@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-16 21:35
-## State: awaiting lead (PR #8 open; stomps reworked after the director's "cellophane" note; stomp clip sent)
+## State: paused by the director ("pause vfx until the locomotion is done"); PR #8 on HOLD, do not merge
 
 ## Task
 D-026 + D-030. PR #6 (ability VFX) PASSED round 2 and is merged into claude/look-options.
@@ -30,16 +30,29 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - VFX: ready_pulse(feet, head) = shockwave + eye flare; rim.gdshader is regen-only now;
   breath muzzle flare.
 
-## Next
-- PR #8 open (claude/ability-sfx into claude/look-options), do NOT merge: the director has heard
-  only the stomps so far ("crinkly like they're walking on cellophane").
-- Stomps reworked: 3 tiers by stomp power (tuning sfx.stomp_tiers [1.4, 1.8]): sub thump
-  68->40/63->37/58->34 Hz + impactSoft_heavy low-passed at 2.5 kHz + 150 Hz knock + rumble tail;
-  debris settle quiet and late on tiers 2-3; high-passed at 28 Hz. stomp_crack is gone.
-  Measured: >99.9% of the energy below 500 Hz, >2 kHz down 43-60 dB, 15-38% in 80-250 Hz (TV
-  speakers). Clip: scratchpad/stomps/stomps.mp4 (tools/capture/capture_stomps.gd).
-- build_sfx.py reseeds per sound; decoded audio is identical across rebuilds (the ogg bytes
-  differ only by the stream serial). The other sounds are new noise draws of the same design.
+## First task when this resumes (after kaiju-motion lands)
+1. Stomps must sound low and weighty (director: "crinkly like they're walking on cellophane").
+   Rework done in a4df2b5 (3 low-end tiers, >99.9% energy < 500 Hz), but the director has not
+   heard it yet. Clip: scratchpad/stomps/stomps.mp4 (tools/capture/capture_stomps.gd).
+2. Stomps must land on the feet (director: "the stomping noises also sound divorced from the
+   actual footfalls of the kaiju"). Lead's plan: footstep sound + small dust + light shake on
+   the rig's foot-plant moment; the sim stomp (damage + shockwave) keeps its own timing, and its
+   heavy sound becomes the NEXT footfall's sound made bigger (no separate thud).
+   - Proposed to kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), no reply yet:
+     KaijuRig `signal foot_planted(side: String, strength: float)` (+ position: a 3rd arg or
+     foot_position(side)), re-emitted by KaijuModel; Rampage connects in one place.
+   - Current rig (before the IK walk): KaijuRig.animate drives leg_l0/leg_r0 by sin(_phase)
+     (sign +/- per side); leg_*1 lifts by max(0, -cos * sign), so a foot plants where its lift
+     returns to 0 (cos(_phase) crosses 0 per side, i.e. _phase = PI/2 + k*PI alternating
+     sides). Non-rig kaiju: KaijuModel._walk_phase, a step at each |sin| minimum.
+   - Sfx: footstep = a light stomp variant, quiet; heavy = tier sound (sfx.stomp_tiers) on
+     the first plant after a sim stomp event; fallback: if no plant within ~0.4 s (standing
+     still), play it at the sim stomp.
+   - Proof: a clip where every audible thump lines up with a foot landing (frame-step it).
+3. Then the director listens to the rest of PR #8 (breath, leap, lash, ready, deflect, regen).
+
+## Notes
+- build_sfx.py reseeds per sound; decoded audio is identical across rebuilds.
 - Not done: creature roars (Sonniss); Freesound needs a login.
 
 ## Running jobs
