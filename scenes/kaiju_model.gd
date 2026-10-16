@@ -50,6 +50,10 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
+	if species_id == "cephalopod":  # no sculpt yet: a code-built octopus on the radial rig
+		_rig = CephalopodStandIn.build(colors, MODEL_HEIGHT, _glow())
+		_body.add_child(_rig)
+		return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
 	if model.height > 0:
 		for pose: VoxelBuilder in model.frames:
@@ -111,6 +115,13 @@ func foot_drift() -> float:
 ## Hip height in world units (0 for unrigged bodies).
 func hip_height() -> float:
 	return _rig.gait.hip_height * _rig.gait.s if _rig != null else 0.0
+
+
+## Lets a tentacled body grip buildings: finder(point: Vector3, radius: float) -> Vector3 gives the
+## nearest building corner or edge (Vector3.INF if none).
+func set_grip_finder(finder: Callable) -> void:
+	if _rig != null and _rig.gait is RadialGait:
+		(_rig.gait as RadialGait).grip_finder = finder
 
 
 func stomp() -> void:

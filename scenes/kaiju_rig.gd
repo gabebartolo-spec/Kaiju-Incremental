@@ -33,6 +33,10 @@ class SpringChain:
 	var prev := PackedVector3Array()
 	## When set, the joint at that index is pinned to this world point (a tentacle tip gripping).
 	var pins: Dictionary = {}
+	## Joints never sink below this world height (a tentacle lying on the street).
+	var ground := -INF
+	## Whole-chain contraction (1 = rest length): a gripping tentacle shortens as it hauls.
+	var contract := 1.0
 
 	## Throws every joint (more towards the tip): a stomp whips the tail.
 	func kick(velocity: Vector3, dt: float) -> void:
@@ -125,6 +129,10 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 	_relax_arms()
 	_collect_chains(defs)
 	match body_plan:
+		"hexapod":
+			gait = HexapodGait.new(self)
+		"radial":
+			gait = RadialGait.new(self)
 		_:
 			gait = BipedGait.new(self)
 
@@ -345,11 +353,22 @@ func simulate_chains(delta: float) -> void:
 			var vel := (p - prev[i]) * DAMPING
 			prev[i] = p
 			pos[i] = p + vel + ((target[i] - p) * k + g) * dt * dt
+		for i: int in range(1, pos.size()):
+			pos[i].y = maxf(pos[i].y, chain.ground)
+		var pinned := -1
+		for i: int in chain.pins:
+			pinned = maxi(pinned, i)
 		for _pass: int in CONSTRAINT_PASSES:
+			if pinned > 0:
+				# Reach for the pin from the tip back (FABRIK), then hang from the root again.
+				var pin: Vector3 = chain.pins[pinned]
+				pos[pinned] = pin
+				for i: int in range(pinned - 1, 0, -1):
+					var back := (target[i + 1] - target[i]).length()
+					var e := pos[i] - pos[i + 1]
+					if e.length() > 0.0001:
+						pos[i] = pos[i + 1] + e.normalized() * back
 			for i: int in range(1, pos.size()):
-				if chain.pins.has(i):
-					var pin: Vector3 = chain.pins[i]
-					pos[i] = pin
 				var length := (target[i] - target[i - 1]).length()
 				var d := pos[i] - pos[i - 1]
 				if d.length() > 0.0001:
@@ -358,6 +377,8 @@ func simulate_chains(delta: float) -> void:
 		chain.prev = prev
 		for i: int in chain.names.size():
 			aim(chain.names[i], pos[i], pos[i + 1])
+		if chain.contract != 1.0:
+			bone(chain.names[0]).scale = Vector3.ONE * chain.contract
 
 
 ## World positions of a chain's joints if every bone of it sat at its driven rest pose.
@@ -365,7 +386,11 @@ func _rest_points(chain: SpringChain) -> PackedVector3Array:
 	var names := chain.names
 	var parent := bone(names[0]).get_parent() as Node3D
 	var first := rest_of(names[0])
-	var xform := parent.global_transform * Transform3D(first.basis * chain.drive[0], first.origin)
+	var shrink := Vector3.ONE * chain.contract
+	var xform := (
+		parent.global_transform
+		* Transform3D((first.basis * chain.drive[0]).scaled(shrink), first.origin)
+	)
 	var points := PackedVector3Array([xform.origin])
 	for i: int in names.size():
 		points.append(xform * dir_of(names[i]))

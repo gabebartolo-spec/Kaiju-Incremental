@@ -5,7 +5,9 @@ tracing the body's own limbs, voxelizes the surface and tags every voxel with it
     blender -b --python tools/blender/rig_voxel.py -- <in.glb> <out_basename> <species> <height_vox>
 
 Writes <out>.kvox (version 2, one pose; each voxel's flags byte is its bone index) and <out>.rig.json
-(bones: name, parent, head, tail in voxel units with y up and -Z forward, plus "physics" chains).
+(type "biped", "hexapod" or "radial"; bones: name, parent, head, tail in voxel units with y up and -Z forward,
+plus "physics" chains). The insectoid gets the hexapod skeleton (D-022 mantis), the cephalopod a
+radial one (mantle + 8 tentacle chains), the reptilian a biped.
 Colours come from data/species.json. Pure Blender + numpy.
 """
 import json
@@ -150,7 +152,173 @@ def biped_skeleton(v, lo, hi):
     return bones
 
 
-def nearest_bone(points, bones, side_of):
+def geodesic(v, tris, sources):
+    """Distance over the surface from the nearest source vertex, and each vertex's predecessor."""
+    import heapq
+    adj = [[] for _ in range(len(v))]
+    for a, b, c in tris:
+        for p, q in ((a, b), (b, c), (c, a)):
+            d = float(np.linalg.norm(v[p] - v[q]))
+            adj[p].append((q, d))
+            adj[q].append((p, d))
+    dist = np.full(len(v), np.inf)
+    prev = np.full(len(v), -1)
+    heap = []
+    for s in sources:
+        dist[s] = 0.0
+        heap.append((0.0, int(s)))
+    heapq.heapify(heap)
+    while heap:
+        d, x = heapq.heappop(heap)
+        if d > dist[x]:
+            continue
+        for y, w in adj[x]:
+            if d + w < dist[y]:
+                dist[y] = d + w
+                prev[y] = x
+                heapq.heappush(heap, (d + w, y))
+    return dist, prev
+
+
+def path_to_core(v, prev, tip):
+    """Vertex positions from a limb tip back along the surface to the body's midline."""
+    out = [tip]
+    while prev[out[-1]] >= 0:
+        out.append(prev[out[-1]])
+    return v[out]
+
+
+def at_arc(path, frac):
+    """Point a fraction of the way along a polyline (by length)."""
+    seg = np.linalg.norm(np.diff(path, axis=0), axis=1)
+    acc = np.r_[0, np.cumsum(seg)]
+    target = acc[-1] * frac
+    i = min(int(np.searchsorted(acc, target)), len(path) - 1)
+    return path[i]
+
+
+def hexapod_skeleton(v, tris, lo, hi):
+    """Bones for a mantis-like insect: thorax and head on the midline, an abdomen, two raptorial
+    arms, four walking legs and two antennae (physics). Limbs are found by walking over the
+    surface from each tip (foot, claw, antenna tip) back to the body's midline."""
+    H = hi[2] - lo[2]
+    W = hi[0] - lo[0]
+    z = lambda f: lo[2] + f * H
+    core = np.where(np.abs(v[:, 0]) < W * 0.03)[0]
+    dist, prev = geodesic(v, tris, core)
+    reach = np.where(np.isfinite(dist), dist, -1)
+    bones = []
+
+    def chain(name, joints, parent, physics=False):
+        prev_name = parent
+        for i in range(len(joints) - 1):
+            bname = f"{name}{i}"
+            bones.append({"name": bname, "parent": prev_name, "head": np.array(joints[i]),
+                          "tail": np.array(joints[i + 1]), "physics": physics})
+            prev_name = bname
+        return prev_name
+
+    # Feet: the four lowest clusters away from the midline, one per quadrant.
+    feet = {}
+    low = np.where((v[:, 2] < z(0.05)) & (np.abs(v[:, 0]) > W * 0.12))[0]
+    for side, sx in (("l", 1), ("r", -1)):
+        for end, sy in (("leg", -1), ("hind", 1)):  # -Y is forward
+            mask = low[(np.sign(v[low, 0]) == sx) & (np.sign(v[low, 1] - np.median(v[low, 1])) == sy)]
+            if len(mask) == 0:
+                raise SystemExit(f"no foot found for {end}_{side}")
+            feet[(end, side)] = mask[np.argmax(reach[mask])]
+    hips = {}
+    for key, tip in feet.items():
+        path = path_to_core(v, prev, tip)
+        hips[key] = at_arc(path, 0.8)
+        feet[key] = (path[0], at_arc(path, 0.12), at_arc(path, 0.5))
+    waist = np.mean([h for h in hips.values()], axis=0)
+    waist[0] = 0.0
+    # Head: the top of the midline below the antennae; neck where it narrows below it.
+    upper_core = v[(np.abs(v[:, 0]) < W * 0.12) & (v[:, 2] > z(0.6))]
+    head_top = upper_core[np.argmax(upper_core[:, 2])] if len(upper_core) else hi
+    head_pts = upper_core[upper_core[:, 2] > head_top[2] - H * 0.1]
+    head_c = head_pts.mean(0)
+    mouth = head_pts[np.argmin(head_pts[:, 1])]
+    neck = upper_core[np.abs(upper_core[:, 2] - (head_top[2] - H * 0.14)) < H * 0.02].mean(0)
+    for p in (head_c, neck):
+        p[0] = 0.0
+    mid = (waist + neck) / 2
+    chain("thorax", [waist, mid, neck], None)
+    bones.append({"name": "head0", "parent": "thorax1", "head": neck, "tail": mouth, "physics": False})
+    # Abdomen: the furthest midline point behind and below the waist.
+    back = np.where((np.abs(v[:, 0]) < W * 0.1) & (v[:, 2] < waist[2]) & (v[:, 1] > waist[1]))[0]
+    tip = v[back[np.argmax(np.linalg.norm(v[back] - waist, axis=1))]] if len(back) else waist + [0, H * 0.3, -H * 0.2]
+    abdomen = [waist + (tip - waist) * f for f in (0.0, 0.35, 0.7, 1.0)]
+    chain("abdomen", abdomen, "thorax0")
+    for (end, side), (foot, ankle, knee) in feet.items():
+        chain(f"{end}_{side}", [hips[(end, side)], knee, ankle, foot], "thorax0")
+    for side, sx in (("l", 1), ("r", -1)):
+        # Raptorial arm: the furthest surface point on this side of the upper body (the claw tip).
+        cand = np.where((np.sign(v[:, 0]) == sx) & (v[:, 2] > z(0.35)) & (v[:, 2] < head_c[2])
+                        & (np.abs(v[:, 0]) > W * 0.1))[0]
+        claw = cand[np.argmax(reach[cand])]
+        path = path_to_core(v, prev, claw)
+        k = np.argmax(path[: int(len(path) * 0.8), 2])
+        elbow = path[k]
+        shoulder = at_arc(path, 0.88)
+        wrist = at_arc(path[:k + 1], 0.45)
+        chain(f"arm_{side}", [shoulder, elbow, wrist, path[0]], "thorax1")
+        # Antenna: the highest point on this side above the head.
+        top = np.where((np.sign(v[:, 0]) == sx) & (v[:, 2] > head_top[2] - H * 0.05))[0]
+        if len(top) == 0:
+            continue
+        a_tip = top[np.argmax(v[top, 2])]
+        path = path_to_core(v, prev, a_tip)
+        near = np.where(np.linalg.norm(path - head_c, axis=1) < H * 0.06)[0]
+        base_i = int(near[0]) if len(near) else len(path) // 2
+        ant = path[: base_i + 1]
+        chain(f"antenna_{side}", [at_arc(ant, f) for f in (1.0, 0.66, 0.33, 0.0)], "head0", physics=True)
+    for b in bones:
+        b["head"], b["tail"] = b["head"].tolist(), b["tail"].tolist()
+    return bones
+
+
+def radial_skeleton(v, tris, lo, hi, arms=8, segments=6):
+    """Bones for an octopus-like body: a mantle on the midline and `arms` tentacles, each a
+    physics chain from the body out to its tip. Tips are the furthest low points in each of
+    `arms` sectors around the body; each tentacle follows the surface back to the midline."""
+    H = hi[2] - lo[2]
+    W = max(hi[0] - lo[0], hi[1] - lo[1])
+    centre = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2])
+    core = np.where(np.linalg.norm(v[:, :2] - centre, axis=1) < W * 0.06)[0]
+    dist, prev = geodesic(v, tris, core)
+    reach = np.where(np.isfinite(dist), dist, -1)
+    body = v[core]
+    base = np.array([centre[0], centre[1], body[:, 2].min() + H * 0.05])
+    crown = np.array([centre[0], centre[1], hi[2]])
+    bones = [{"name": "mantle0", "parent": None, "head": base, "tail": crown, "physics": False}]
+    angle = np.arctan2(v[:, 1] - centre[1], v[:, 0] - centre[0])
+    low = v[:, 2] < lo[2] + H * 0.3
+    for i in range(arms):
+        a0 = -np.pi + i * 2 * np.pi / arms
+        sector = np.where(low & (angle >= a0) & (angle < a0 + 2 * np.pi / arms))[0]
+        if len(sector) == 0:
+            continue
+        tip = sector[np.argmax(reach[sector])]
+        path = path_to_core(v, prev, tip)
+        joints = [at_arc(path, f) for f in np.linspace(0.92, 0.0, segments + 1)]
+        parent = "mantle0"
+        for j in range(segments):
+            name = f"tentacle{i}_{j}"
+            bones.append({"name": name, "parent": parent, "head": joints[j], "tail": joints[j + 1],
+                          "physics": True})
+            parent = name
+    for b in bones:
+        b["head"], b["tail"] = np.asarray(b["head"]).tolist(), np.asarray(b["tail"]).tolist()
+    return bones
+
+
+# Hexapod limb roots sit against the body; their distance is stretched so body voxels stay on the body.
+ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4}
+
+
+def nearest_bone(points, bones, side_of, penalty=None):
     """Index of the bone whose segment is nearest each point (limbs stay on their own side)."""
     best = np.full(len(points), -1)
     best_d = np.full(len(points), np.inf)
@@ -159,6 +327,9 @@ def nearest_bone(points, bones, side_of):
         ab = c - a
         t = np.clip(((points - a) @ ab) / max(1e-9, ab @ ab), 0, 1)
         d = np.linalg.norm(points - (a + t[:, None] * ab), axis=1)
+        kind = b["name"].split("_")[0]
+        if penalty and b["name"].endswith("0") and kind in penalty:
+            d = d * penalty[kind]  # a limb root must not take body voxels
         s = side_of(b["name"])
         if s != 0:
             d = np.where(np.sign(points[:, 0]) == s, d, d + 1e3)
@@ -201,14 +372,20 @@ def main():
     lo, hi = v.min(0), v.max(0)
     H = hi[2] - lo[2]
     col = vertex_colours(v, n, tris, colors, H)
-    bones = biped_skeleton(v, lo, hi)
+    body_plan = {"insectoid": "hexapod", "cephalopod": "radial"}.get(species, "biped")
+    if body_plan == "hexapod":
+        bones = hexapod_skeleton(v, tris, lo, hi)
+    elif body_plan == "radial":
+        bones = radial_skeleton(v, tris, lo, hi)
+    else:
+        bones = biped_skeleton(v, lo, hi)
     scale = (height - 1) / H
     origin = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
     cells = surface_voxels(v, tris, col, scale, origin)
     keys = np.array(list(cells.keys()))
     centres_bl = (keys + 0.5) / scale + origin  # back to Blender space for bone tests
     side = lambda name: 1 if "_l" in name else (-1 if "_r" in name else 0)
-    owner = nearest_bone(centres_bl, bones, side)
+    owner = nearest_bone(centres_bl, bones, side, ROOT_PENALTY if body_plan == "hexapod" else None)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
     gk[:, 0] -= 1  # keep integer cells after the x flip
@@ -220,7 +397,7 @@ def main():
             # Species colours are already display (sRGB) values: no gamma here.
             rgb = [int(max(0, min(255, round(x / cnt * 255)))) for x in (r, gr, b)]
             f.write(struct.pack("<hhhBBBB", g[0], g[1], g[2], *rgb, int(bone)))
-    rig = {"height": height, "bones": []}
+    rig = {"height": height, "type": body_plan, "bones": []}
     for b in bones:
         head = to_game(((np.array(b["head"]) - origin) * scale)[None])[0]
         tail = to_game(((np.array(b["tail"]) - origin) * scale)[None])[0]
