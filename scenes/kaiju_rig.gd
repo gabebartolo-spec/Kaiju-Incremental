@@ -15,13 +15,12 @@ signal foot_planted(side: String, strength: float, at: Vector3)
 const STIFFNESS := 9.0
 const DAMPING := 0.9
 const GRAVITY := Vector3(0, -6.0, 0)
-const LIMB_STIFFNESS := 26.0
 const CONSTRAINT_PASSES := 3
 ## Joint filler cubes are this much smaller, so they stay inside the skin until a bend opens it.
 const JOINT_INSET := 0.82
 
 
-## A run of physics bones (tail, antenna, arm, tentacle) simulated as Verlet points.
+## A run of physics bones (tail, antenna, tentacle) simulated as Verlet points.
 class SpringChain:
 	var names: Array[String] = []
 	var stiffness := STIFFNESS
@@ -173,12 +172,7 @@ func _collect_chains(defs: Array) -> void:
 		var parent := str(d["parent"]) if d["parent"] != null else ""
 		var is_physics: bool = d["physics"]
 		var starts_chain := is_physics and not _is_physics(defs, parent)
-		var is_arm := (
-			body_plan == "biped"
-			and bone_name.begins_with("arm_")
-			and not parent.begins_with("arm_")
-		)
-		if starts_chain or is_arm:
+		if starts_chain:
 			var chain := SpringChain.new()
 			chain.names.append(bone_name)
 			var walk := bone_name
@@ -188,7 +182,6 @@ func _collect_chains(defs: Array) -> void:
 					break
 				walk = str(children[0])
 				chain.names.append(walk)
-			chain.stiffness = LIMB_STIFFNESS if is_arm else STIFFNESS
 			for _n: String in chain.names:
 				chain.drive.append(Basis.IDENTITY)
 			chains.append(chain)
