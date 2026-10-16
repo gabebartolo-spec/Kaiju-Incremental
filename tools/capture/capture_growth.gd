@@ -7,7 +7,9 @@ extends SceneTree
 ## capture_growth.gd), never windowed on the director's PC.
 ##
 ##   godot --path . --resolution 1280x720 --windowed \
-##     --script tools/capture/capture_growth.gd -- --out=<dir> [--stage=N]
+##     --script tools/capture/capture_growth.gd -- --out=<dir> [--stage=N] [--quick]
+## --quick: a few settle frames and no frame timings (a software-rendered CI frame of the
+## Colossus city takes tens of seconds, and its timings mean nothing anyway).
 
 const SETTLE := 12
 const SPECIES := "reptilian"
@@ -32,6 +34,8 @@ const LEVELS: Array[Dictionary] = [
 
 var _out := "user://growth"
 var _only := 0
+var _settle := SETTLE
+var _timed := true
 
 
 func _initialize() -> void:
@@ -40,6 +44,9 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg.begins_with("--stage="):
 			_only = arg.substr(8).to_int()
+		elif arg == "--quick":
+			_settle = 3
+			_timed = false
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -80,7 +87,7 @@ func _stage(tier: int) -> void:
 	cam.position = Vector3(half * 0.15, half * 1.05, half * 1.75)
 	cam.look_at(Vector3(0, 0, -half * 0.15))
 	cam.current = true
-	await _frames(SETTLE)
+	await _frames(_settle)
 	var id := "growth_%d" % tier
 	_shot(id + "_aerial")
 	print(
@@ -92,7 +99,7 @@ func _stage(tier: int) -> void:
 	var scale := sim.body_scale()
 	cam.position = at + Vector3(-9.0, 9.0, 16.0) * (0.75 + 0.6 * scale)
 	cam.look_at(at + Vector3(0, 3.0 * scale, -8.0 * scale))
-	await _frames(SETTLE)
+	await _frames(_settle)
 	_shot(id + "_kaiju")
 	print("stage %d kaiju view %s" % [tier, await _measure()])
 	stage.queue_free()
@@ -101,6 +108,8 @@ func _stage(tier: int) -> void:
 
 ## Average GPU and CPU frame time (ms) over 30 frames, from the engine's own timers.
 func _measure() -> String:
+	if not _timed:
+		return "(not timed)"
 	var vp := root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	await _frames(10)
