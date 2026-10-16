@@ -51,6 +51,8 @@ a limit.
 - Log plant/lift events with reasons: two "rescue" rules were silently driving the gait.
 
 ## Rules learnt the hard way (under 10 lines)
+- Windowed Godot steals focus from the director's fullscreen games: focus-guard blocks it then.
+  Work headless, retry captures minutes apart, batch all clips into one short windowed run.
 - Never edit .gd while a local suite/capture runs; after switching branches run --import.
 - gdlint: 400 lines/file, <=4 args, signals before consts, public vars before private.
 - Kill only Godot PIDs you started (check CreationDate/CommandLine).
