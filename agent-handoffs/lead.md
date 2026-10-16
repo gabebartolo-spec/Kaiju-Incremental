@@ -1,67 +1,51 @@
-# Lead handoff, 2026-10-16 22:50
-## State: working; kaiju-motion running; city, vfx/sfx, real-city paused or done
+# Lead handoff, 2026-10-16 22:55
+## State: working (reptile baby + adolescent skins generating in Tripo; kaiju-motion on reptile round 2)
 
 ## Task
-Kaiju sculpts (3 species x baby/adolescent/adult, rigged voxels) + art direction. Director today:
-D-022 insectoid = mantis (2 scythe arms + 4 legs), D-023 credits: quality over cost (log every
-task), D-024 real city/edges (helper), D-025 smoke must not obscure the camera, D-026 ability
-VFX/SFX later, D-027 4K 120 Hz TV target.
+Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
+director decisions. Today's decisions: D-022..D-034 in docs/DECISIONS.md. Key ones now:
+D-031 locomotion (reptile = Godzilla/T-rex medium lean, T-rex *grace*), D-032 looks first / perf
+later, D-033 stages picked, D-034 Tripo skins (reptile = dark olive crocodile), credits unlimited.
 
 ## Branch and commit
-claude/look-options -> PR #3 (HOLD until the director has seen the work). Helpers PR into it:
-street-life (civilians/traffic), city-layout (layout + edges, worktree branch city-layout).
+claude/look-options (PR #3 to main on HOLD until the director has seen the work).
+Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 buildings, edges).
 
-## Done this turn
-- smoke.gdshader camera rule: clear inside 8 units of camera, full from 22; 55% kept over screen
-  centre. Capture: scratchpad smoke_after/ (kaiju visible through fires). Tests green.
-- project.godot: fullscreen at start, stretch aspect expand, adaptive vsync (VRR TV).
-- Tripo downloads staged in ~/Downloads/kaiju_tripo/: mantis_a (adult PICK, 9668b815),
-  mantis_b (rejected, armless), mantis_c_lowpoly (adolescent candidate), adol_a (reptile adol v2).
-  Six-view sheets in scratchpad six/<name>_sheet.png.
+## Done this stretch
+- Reptile adolescent B (Tripo f9cf6ba7) rigged at 130 vox; adult re-rigged at 160 from the olive
+  texture (rig_voxel.py now samples the base-colour texture when the GLB has one).
+- Mantis stages approved: baby 06ed8a12, adolescent 0161ad14, adult 9668b815 -> kaiju-motion rigs
+  them with its hexapod skeleton (it has already produced insectoid_adult, uncommitted on its branch).
+- Boards: docs/captures/2026-10-16-stages/ (stages_board, reptile_skin_options, reptile_olive_ingame).
 
-## Next
-1. Insectoid baby generating: Tripo b1ddb234 (mantis nymph, 4 variants, Private). Export each
-   (default name), six-view, pick. Maybe a proper-density adolescent from the mantis_c shape.
-2. rig_voxel.py: add a hexapod skeleton (thorax/abdomen, 2 raptorial arms, 4 legs, antennae
-   physics chains); KaijuRig walk needs 4-leg gait (tripod alternation).
-3. Reptile adolescent v2: download b/c/d (export with the DEFAULT name; typing a new file name
-   makes the export silently fail; rename locally), pick, rig at 130 voxels.
-4. Board for the director: baby / adolescent / adult per species, labelled.
-5. Cephalopod: all 3 stages + radial tentacle rig.
-6. Review city-layout captures before the director sees them (art-qa-critic).
-7. 4K TV: check UI text size at TV distance; HDR output; perf at 4K (~9 ms GPU before).
-   Director confirmed the TV is on the 4070 SUPER.
-9. Building fidelity (D-028) sent to city-layout: RES 8-12, recessed facades, LOD; review its side-by-side.
-8. Cars (CityDecor.car, police cruisers) are far chunkier than the buildings: detail pass or
-   Tripo vehicles later (noted in the street-life review).
+## Next (mine)
+1. When textures finish: export (default name, via find refs), rig baby at 100 and adolescent at 130
+   from the textured GLBs (copy into scratch first), in-game check with capture_rig.gd, commit.
+2. Cephalopod adult: 4 variants ff432a4f / 8bf2f668 / f303b247 / 666430b3; octo_1, octo_2 downloaded to
+   ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
+   logic), then a skin. Radial rig comes from kaiju-motion.
+3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
+4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
+5. 4K TV text size check (perf deferred, D-032).
+
+## Helpers
+- kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: reptile round 1 REJECTED (fix
+  list sent: posture lean 20-30 deg, tail sweep, head stable/mouth closed, weight, arms, blends, baby
+  clumsier, game-camera readability, washed-out legs, stuttering capture). Round 2 clips exist
+  (rex2_*); run a FRESH motion-critic when it reports. Adds KaijuModel.foot_planted(side,strength,at).
+- ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED by the director until locomotion
+  lands. PR #8 SFX on hold (stomps reworked low-end, not yet synced to foot_planted).
+- city-layout: done; RES 12 / facade proposal in its handoff (branch claude/city-layout-56adda).
+- real-city: TABLED (D-029), WIP on claude/real-city-92596b.
 
 ## Rules learnt the hard way
-- Tripo export: leave the default file name; typing one kills the download silently.
-- Tripo thumbnails can fail to switch the selection: confirm the URL/face count changes first.
-- WorkerThreadPool tasks: wait in _exit_tree. Frame gaps, not TIME_PROCESS. nvidia-smi before
-  windowed runs. Capture override.cfg must be deleted afterwards.
-
-10. Real-city (D-029) TABLED: paused clean on claude/real-city-92596b (95d7ffb), no PR, handoff agent-handoffs/real-city.md on that branch.
-
-11. PR #6 (ability VFX) sent back with a FIX list: breath camera orbit + beam reaching target, lash fan replaced by an arc, boosted subtle cues, HUD 998 timer bug. SFX (D-030): free libs + synthesis, follow-up PR.
-12. Fullscreen start moved to exported builds only (8cf4a16); focus-guard blocks fullscreen projects.
-
-13. Locomotion (D-031): helper kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): reptile first, then hexapod mantis rig, radial cephalopod rig; motion-critic review before the director.
-
-14. PR #7 merged at round 1 (74d9a28) by mistake: CI finished before round 2 (a56acf8) was pushed. Round 2 (quiet zebras, filled blocks, fog edges) ships in the D-028 PR with the east-filler fixes. Lesson: check the PR head SHA matches the reviewed board before merging.
-
-15. PR #6 ability VFX MERGED (round 2 passed). Follow-ups for the SFX PR: ready flash tints the whole body red (make it a rim/eye glow), breath hidden behind the body for ~0.25 s when facing away.
-
-16. PR #9 MERGED (b9c4d5d, at the reviewed head): RES 8 buildings, round-2 streets/edges, varied east outskirts. 4K GPU ~14 ms; perf tuning deferred (D-032, looks first).
-17. VFX/SFX PAUSED by the director until locomotion is done. PR #8 on hold. Resume tasks: low-end stomps ("cellophane"), sync to KaijuRig.foot_planted.
-
-18. Stages picked (D-033): reptile adolescent B f9cf6ba7 RIGGED (130 vox, 26 bones, walk/roar checked in-game); mantis 06ed8a12/0161ad14/9668b815 handed to kaiju-motion for the hexapod rig. Next for me: cephalopod 3 stages (Tripo), then military vehicles/landmarks (D-020).
-
-19. Reptile locomotion QA round 1: REJECT (motion-critic + lead), fix list sent; posture = medium Godzilla/T-rex lean (director). Insect/octo clips pending review.
-
-20. Skins (D-034): reptile adult olive texture RIGGED from texture colours (57k voxels); in-game it reads dark green + ivory spikes. Next: same prompt on baby (5a84ed39) + adolescent (f9cf6ba7), then mantis + cephalopod skins.
+- Tripo: export with the default name; use `find` refs (coordinates shift with the page height);
+  a new browser tab may show Tripo logged out: use the original tab; check Remove Lighting per page.
+- Merge only the SHA you reviewed (`--match-head-commit`).
+- Windowed Godot: write override.cfg (mode=0, no_focus, -20000) in a SEPARATE command before the run
+  (focus-guard hook checks first); delete after. Never set fullscreen in project.godot.
+- After a merge that adds classes, run `godot --headless --import` once or scripts fail to parse.
+- Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
 
 ## Running jobs
-Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
-ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106). street-life PR #5 MERGED (ca2c65c),
-flow floor 22. Tripo ff432a4f (cephalopod adult, 4 variants) generating. No override.cfg left behind.
+Tripo textures: 5a84ed39 (baby), f9cf6ba7 (adolescent). Sessions above. No override.cfg left.
