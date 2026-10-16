@@ -28,7 +28,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
   rear shoulder proof). PR #11: hydra rig BROKEN (mantle voxels on tentacle chains -> floating balloons,
   director "bizarre"); asked for a static bone-colour sheet before more clips. Mantis gait = FIX (frozen idle,
   rigid scythes, smooth not skittering, pole legs, colour pop on turns). Run a FRESH motion-critic per round.
-- species-powers (local_136df838-e381-4671-b237-5402935f837b): PR #12 open, CI pending; a code reviewer is
+- species-powers (local_136df838-e381-4671-b237-5402935f837b): PR #12 sim review = FIX (size-scaled building slow, heli respawn farm, magic numbers, flaky autoplay, lost heli event); was
   doing the sim review (diff + checkout staged in scratchpad pr12/). Captures in side-session-notes
   species-powers/. Then merge (match head SHA) after #10/#11 or rebase as needed.
 - ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d): capture.yml works on CI (lavapipe); PR soon.
@@ -53,4 +53,4 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 
 ## Running jobs
 None in Tripo (mantis v2 textures finished, unchecked). Sessions above. Scratch worktree pr12/tree (detached,
-remove with `git worktree remove` after the review). No override.cfg left.
+removed). No override.cfg left.
