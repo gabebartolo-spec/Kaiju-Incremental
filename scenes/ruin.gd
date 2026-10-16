@@ -13,12 +13,12 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 	var d := b.d * RES
 	var vox := VoxelBuilder.new()
 	var keys: Array[String] = ["wall", "wall", "wall", "slab", "slab", "trim", "window", "pillar"]
-	var peak := RES * (1.4 + b.tier * 0.8)
+	var peak := RES * (2.4 + b.tier * 0.9)
 	for x: int in range(-3, w + 3):
 		for z: int in range(-3, d + 3):
 			var cx := (x - w * 0.5) / (w * 0.5 + 3.0)
 			var cz := (z - d * 0.5) / (d * 0.5 + 3.0)
-			var fall := 1.0 - sqrt(cx * cx + cz * cz)
+			var fall := pow(maxf(0.0, 1.0 - sqrt(cx * cx + cz * cz)), 0.7)
 			var h := roundi(peak * fall + rng.randf_range(-1.5, 1.5))
 			for y: int in maxi(0, h):
 				var key := keys[rng.randi_range(0, keys.size() - 1)]
@@ -37,6 +37,14 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 				var cell := Vector3i(p, y, fixed) if along_x else Vector3i(fixed, y, p)
 				var key := "window" if y % RES in [1, 2] and p % 3 != 0 else "wall"
 				vox.put(cell, key)
+	for slab_n: int in 3:  # broken floor slabs leaning against the heap
+		var sx := rng.randi_range(0, w - 1)
+		var sz := rng.randi_range(0, d - 1)
+		var tilt := rng.randf_range(0.4, 0.9)
+		for t: int in RES * 3:
+			for side: int in RES:
+				var cell := Vector3i(sx + t, roundi(t * tilt) + 1, sz + side)
+				vox.put(cell, "slab")
 	vox.salt = b.style + 91
 	var palette := voxels.palette.duplicate()
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)

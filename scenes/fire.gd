@@ -39,7 +39,7 @@ func _process(delta: float) -> void:
 
 func _flames(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.6, 12.0, Vector3(0, 2.5, 0), Vector2(0.8, 2.0))
-	_scale(mat, Vector2(0.6, 1.4), Vector2(1.0, 0.1))
+	_scale(mat, Vector2(1.0, 2.2), Vector2(1.0, 0.1))
 	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array([0.0, 0.3, 0.65, 1.0]))
 	return _system(mat, _cube(0.3, true), roundi(90 * maxf(1.0, size)), 1.1)
 

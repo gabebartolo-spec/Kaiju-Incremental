@@ -92,6 +92,16 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 	city.ring(at, sim.stomp_radius(), Color(1, 0.85, 0.6, 0.7), 0.35)
 	await _frames(DEBRIS_FRAMES)
 	_shot("%s_city" % id)
+	var floating := 0
+	var lifted := 0
+	for node: Node in stage.find_children("*", "RigidBody3D", true, false):
+		var body: RigidBody3D = node
+		if body.global_position.y > 2.0:
+			floating += 1
+	for node: Node in city.get_children():
+		if node.has_meta("parts"):
+			lifted += 1
+	print("debris above 2u: ", floating, " pieces still lifted: ", lifted)
 	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
 	stage.queue_free()
 	await process_frame

@@ -162,7 +162,8 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	var mid := Vector3.ZERO
 	for c: Vector3i in cells:
 		mid += b.chunk_world(c)
-	fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
+	if cells.size() >= 4:  # only a real collapse throws up a dust cloud
+		fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
 	if _rng.randf() < 0.18:  # broken floors sometimes catch fire
 		fire(mid / maxi(1, cells.size()), 0.35)
 	_ruin_if_gone(index)
@@ -251,7 +252,10 @@ func _ruin_if_gone(index: int) -> void:
 	var b := sim.buildings[index]
 	if b.frame.alive_count == 0 and not _views[index].has_meta("ruined"):
 		_views[index].set_meta("ruined", true)
-		fire(Vector3(b.x, 0.6, b.z), clampf(b.w * b.d / 9.0, 0.6, 2.5))
+		var size := clampf(b.w * b.d / 9.0, 0.6, 2.5)
+		var heap_top := 0.6 + 0.9 * b.tier  # flames sit on top of the rubble heap
+		fire(Vector3(b.x, heap_top, b.z), size)
+		fire(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
 		add_child(Ruin.build(_views[index].voxels, _rng))
 
 
