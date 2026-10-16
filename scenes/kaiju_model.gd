@@ -88,11 +88,10 @@ func animate(delta: float, moving: float) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _rig != null:
-		_rig.animate(delta, moving)
-		_body.position.y = absf(sin(_walk_phase)) * 0.12 * moving
-	else:
-		_body.position.y = absf(sin(_walk_phase)) * 0.25 * moving
-		_body.rotation.z = sin(_walk_phase) * 0.06 * moving
+		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
+		return
+	_body.position.y = absf(sin(_walk_phase)) * 0.25 * moving
+	_body.rotation.z = sin(_walk_phase) * 0.06 * moving
 	_body.scale = Vector3(1.0 + _squash * 0.12, 1.0 - _squash * 0.15, 1.0 + _squash * 0.12)
 	if _poses.size() > 1:
 		var shown := posmod(floori(_walk_phase / PI * _poses.size() * 0.5), _poses.size())
@@ -100,8 +99,21 @@ func animate(delta: float, moving: float) -> void:
 			_poses[i].visible = i == shown
 
 
+## Worst drift of a planted foot so far (world units; 0 unrigged), for captures and tests.
+func foot_drift() -> float:
+	return _rig.gait.max_drift if _rig != null else 0.0
+
+
+## Hip height in world units (0 for unrigged bodies).
+func hip_height() -> float:
+	return _rig.gait.hip_height * _rig.gait.s if _rig != null else 0.0
+
+
 func stomp() -> void:
-	_squash = 0.4 if _rig != null else 1.0
+	if _rig != null:
+		_rig.stomp()
+	else:
+		_squash = 1.0
 
 
 func roar() -> void:
