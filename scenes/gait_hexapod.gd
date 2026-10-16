@@ -12,8 +12,8 @@ const LEGS: Array[String] = ["leg_l", "leg_r", "hind_l", "hind_r"]
 const PAIR := {"leg_l": 0, "hind_r": 0, "leg_r": 1, "hind_l": 1}
 ## Holds (s): usually short, sometimes long; a dart catches up at this many times the sim's
 ## speed and lasts at least DART_MIN (s). The body may fall this far behind (hip heights).
-const HOLD := Vector2(0.1, 0.3)
-const LONG_HOLD := Vector2(0.3, 0.45)
+const HOLD := Vector2(0.15, 0.3)
+const LONG_HOLD := Vector2(0.3, 0.5)
 const LONG_HOLD_CHANCE := 0.3
 const DART_RATE := 2.4
 const DART_MIN := 0.06
@@ -182,7 +182,7 @@ func _skitter(dt: float, hip_w: float, moving: bool) -> void:
 		if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
 			holding = true
 			_held_yaw = body_yaw
-			_anchor = frame.origin
+			_anchor = frame.origin - _lag  # where the body is drawn now, not the sim
 			var span := LONG_HOLD if rng.randf() < LONG_HOLD_CHANCE else HOLD
 			_hold_left = rng.randf_range(span.x, span.y)
 	rig.position = frame.basis.inverse() * -_lag

@@ -10,6 +10,8 @@ extends RefCounted
 ## Twitches: seconds between them, and how many parts twitch at once (at most).
 const TWITCH_EVERY := Vector2(0.12, 0.5)
 const TWITCH_PARTS := 3
+## At rest a leg taps (lifts and replants a little shifted) this often (s), on its own timer.
+const TAP_EVERY := Vector2(0.2, 0.6)
 ## The values that snap and hold.
 const SNAPS: Array[String] = [
 	"head_yaw",
@@ -48,7 +50,9 @@ const FLARE_FEMUR := Vector3(0.9, 0.9, 0.3)
 const FLARE_TIBIA := Vector3(1.0, 0.6, 0.15)
 const FLARE_CLAW := Vector3(0.5, -0.9, 0.2)
 ## A claw flex opens the tibia off the femur by up to this (share of the way to a strike).
-const FLEX := 0.9
+const FLEX := 1.0
+## ... and swings the femur out sideways by this (body-frame units, about 25 degrees at full).
+const FLEX_OUT := 0.5
 ## Mandibles: how far they spread (rad) in a chatter and in the roar.
 const CHATTER := 0.5
 const MANDIBLE_FLARE := 0.7
@@ -77,6 +81,7 @@ var _vel := PackedFloat32Array()
 var _target := PackedFloat32Array()
 var _hold := PackedFloat32Array()
 var _twitch_in := 0.3
+var _tap_in := 0.4
 var _head_hold := 0.3
 var _head_target := Vector3.ZERO
 var _strike := 0.0
@@ -108,6 +113,11 @@ func update(dt: float, calm: float) -> void:
 		_twitch_in = rng.randf_range(TWITCH_EVERY.x, TWITCH_EVERY.y)
 		for _i: int in rng.randi_range(1, TWITCH_PARTS):
 			_twitch(rng.randi() % 6, calm)
+	_tap_in -= dt
+	if _tap_in <= 0.0:
+		_tap_in = rng.randf_range(TAP_EVERY.x, TAP_EVERY.y)
+		if calm > 0.5:
+			tap_leg = rng.randi() % 4
 	_head_hold -= dt
 	if _head_hold <= 0.0:
 		_head_hold = rng.randf_range(HEAD_HOLD.x, HEAD_HOLD.y)
@@ -121,7 +131,15 @@ func update(dt: float, calm: float) -> void:
 	for i: int in SNAPS.size():
 		_step_snap(i, dt)
 	_strike = maxf(0.0, _strike - dt * STRIKE_DECAY)
+	var was_roaring := _roar > 0.0
 	_roar = maxf(0.0, _roar - dt / ROAR_SECONDS)
+	if was_roaring and _roar == 0.0:
+		# The display ends in a spasm, never a dead hold: both scythes, the head and a leg.
+		_snap_to("flex_l", FLEX)
+		_snap_to("flex_r", FLEX * 0.7)
+		_snap_to("jerk_roll", BODY_JERK.z * (1.0 if rng.randf() < 0.5 else -1.0))
+		_head_hold = 0.0
+		tap_leg = rng.randi() % 4
 	# The display: up fast, held, dropped at the end.
 	var display := clampf(minf(_roar * 6.0, (1.0 - _roar) * 12.0), 0.0, 1.0) if _roar > 0.0 else 0.0
 	rear = display
@@ -211,6 +229,7 @@ func _pose_arm(arm: String, lash: float, flex: float, display: float) -> void:
 	var fwd := -b.z
 	var dir := func(v: Vector3) -> Vector3: return (out * v.x + up * v.y + fwd * v.z).normalized()
 	var femur_v := FOLD_FEMUR.lerp(STRIKE_FEMUR, maxf(lash, flex * 0.5)).lerp(FLARE_FEMUR, display)
+	femur_v += Vector3(FLEX_OUT, 0, 0) * flex  # a twitch swings the scythe out: visible from above
 	var tibia_v := FOLD_TIBIA.lerp(STRIKE_TIBIA, maxf(lash, flex)).lerp(FLARE_TIBIA, display)
 	var claw_v := FOLD_CLAW.lerp(STRIKE_TIBIA, lash).lerp(FLARE_CLAW, display)
 	var s := _gait.s

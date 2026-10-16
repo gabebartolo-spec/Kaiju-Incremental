@@ -18,6 +18,8 @@ const FPS := 60.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const CM_PER_UNIT := 350.0
+## The side clip's kaiju turns side-on to the camera when it stops (s), so the roar is in profile.
+const SIDE_PIVOT := 9.2
 
 ## Every footfall: time, which foot, where (world), strength (written next to the trace).
 var plants := PackedStringArray()
@@ -29,6 +31,7 @@ var _trace := ""
 var _pose_trace := ""
 var _poser := PoseTrace.new()
 var _dip := 0.0
+var _focus := Vector3.ZERO
 var _line: Line2D
 var _guide: Line2D
 var _label: Label
@@ -152,6 +155,8 @@ func _run() -> void:
 		if move.length() > 0.05:
 			pos += move.limit_length(1.0) * speed * dt
 			facing = move.normalized()
+		elif _cam == "side" and t >= SIDE_PIVOT:
+			facing = Vector2(0, -1)  # standing, it turns side-on to the camera for the roar
 		at = at.lerp(Vector3(pos.x, 0, pos.y), minf(1.0, dt * 12.0))
 		kaiju.position = at
 		kaiju.rotation.y = lerp_angle(
@@ -171,7 +176,14 @@ func _run() -> void:
 		total_usec += spent
 		_label.text = _event_at(t)
 		_dip = move_toward(_dip, 0.0, dt * Rampage.DIP_RECOVER * _dip + dt * 0.05)
-		_place(cam, at, Vector3(facing.x, 0, facing.y), body_scale)
+		# Cameras follow the body as drawn (KaijuModel.focus), eased as in the rampage.
+		_focus = _focus.lerp(kaiju.focus(), minf(1.0, dt * Rampage.FOCUS_FOLLOW))
+		_place(
+			cam,
+			_focus if _cam in ["game", "side"] else at,
+			Vector3(facing.x, 0, facing.y),
+			body_scale
+		)
 		if _cam == "game":
 			cam.position.y -= _dip * (0.75 + 0.4 * body_scale)
 		_trace_feet(kaiju, t, feet)
