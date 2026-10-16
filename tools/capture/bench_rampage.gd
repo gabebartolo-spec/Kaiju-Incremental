@@ -41,6 +41,9 @@ func _run() -> void:
 	var gpu_max := 0.0
 	var cpu_max := 0.0
 	var logic_max := 0.0
+	var slow := 0
+	var gap_max := 0.0
+	var last := Time.get_ticks_usec()
 	var start := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - start < _seconds * 1000.0 and not rampage.sim.over:
 		await process_frame
@@ -54,6 +57,13 @@ func _run() -> void:
 			+ Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)
 		)
 		logic_max = maxf(logic_max, logic * 1000.0)
+		var now := Time.get_ticks_usec()
+		var gap := (now - last) / 1000.0
+		last = now
+		gap_max = maxf(gap_max, gap)
+		if gap > 33.4:
+			slow += 1
+	print("frame gaps: worst %.1fms, %d of %d frames over 33 ms" % [gap_max, slow, frames])
 	print(
 		(
 			(
@@ -69,6 +79,12 @@ func _run() -> void:
 				logic_max,
 				rampage.sim.chunks_destroyed
 			]
+		)
+	)
+	print(
+		"worst costs (ms): ",
+		rampage.cost_usec.keys().map(
+			func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(rampage.cost_usec[k]) / 1000.0]
 		)
 	)
 	quit()

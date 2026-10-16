@@ -14,16 +14,27 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 	var vox := VoxelBuilder.new()
 	var keys: Array[String] = ["wall", "wall", "wall", "slab", "slab", "trim", "window", "pillar"]
 	var peak := RES * (2.4 + b.tier * 0.9)
-	for x: int in range(-3, w + 3):
-		for z: int in range(-3, d + 3):
-			var cx := (x - w * 0.5) / (w * 0.5 + 3.0)
-			var cz := (z - d * 0.5) / (d * 0.5 + 3.0)
-			var fall := pow(maxf(0.0, 1.0 - sqrt(cx * cx + cz * cz)), 0.7)
-			var h := roundi(peak * fall + rng.randf_range(-1.5, 1.5))
+	var spill := RES + 2
+	var hot := Vector2(w * rng.randf_range(0.35, 0.65), d * rng.randf_range(0.35, 0.65))
+	for x: int in range(-spill, w + spill):
+		for z: int in range(-spill, d + spill):
+			var cx := (x - w * 0.5) / (w * 0.5 + spill)
+			var cz := (z - d * 0.5) / (d * 0.5 + spill)
+			# A lumpy outline: the radius wobbles with direction, so the heap is no rectangle.
+			var wobble := (
+				0.75 + 0.25 * sin(atan2(cz, cx) * 3.0 + b.x) + rng.randf_range(-0.12, 0.12)
+			)
+			var fall := 1.0 - sqrt(cx * cx + cz * cz) / wobble
+			if fall <= 0.0:
+				continue
+			var h := roundi(peak * pow(fall, 0.8) + rng.randf_range(-1.5, 1.5))
+			var near_core := Vector2(x, z).distance_to(hot) < RES * 1.2
 			for y: int in maxi(0, h):
 				var key := keys[rng.randi_range(0, keys.size() - 1)]
-				if y == h - 1 and rng.randf() < 0.12:
-					key = "ember"  # glowing coals on the surface of the heap
+				if y == h - 1 and near_core and rng.randf() < 0.55:
+					key = "ember"  # one concentrated bed of glowing coals
+				elif y >= h - 2 and rng.randf() < 0.45:
+					key = "char"  # scorched surface
 				vox.put(Vector3i(x, y, z), key)
 	for side: int in 2:  # ragged wall stubs on two faces
 		var along_x := rng.randf() < 0.5
@@ -48,4 +59,5 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 	vox.salt = b.style + 91
 	var palette := voxels.palette.duplicate()
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
+	palette["char"] = Color("201c1a")
 	return vox.build(palette, BuildingVoxels.VOXEL, 2.0, voxels.origin())

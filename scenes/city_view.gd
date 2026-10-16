@@ -14,6 +14,8 @@ var fx: Fx
 var _rng: RandomNumberGenerator
 var _views: Array[BuildingView] = []
 var _falling: Dictionary = {}
+var _flame_mesh: BoxMesh
+var _flame_color := Color.BLACK
 var _decor: CityDecor
 var _fires: Array[Fire] = []
 var _debris: DebrisField
@@ -248,6 +250,17 @@ func _rubble_strip(a: Vector3, b: Vector3, width: float) -> void:
 	mound.look_at(b + Vector3(0, 0.3, 0), Vector3.UP)
 
 
+## Builds the ruin on a worker thread (it is thousands of voxels) and adds it when ready.
+func _add_ruin(index: int) -> void:
+	var voxels := _views[index].voxels
+	var rng := Seeds.make("ruin", index)
+	WorkerThreadPool.add_task(
+		func() -> void:
+			var mmi := Ruin.build(voxels, rng)
+			add_child.call_deferred(mmi)
+	)
+
+
 func _ruin_if_gone(index: int) -> void:
 	var b := sim.buildings[index]
 	if b.frame.alive_count == 0 and not _views[index].has_meta("ruined"):
@@ -256,7 +269,7 @@ func _ruin_if_gone(index: int) -> void:
 		var heap_top := 0.6 + 0.9 * b.tier  # flames sit on top of the rubble heap
 		fire(Vector3(b.x, heap_top, b.z), size)
 		fire(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
-		add_child(Ruin.build(_views[index].voxels, _rng))
+		_add_ruin(index)
 
 
 func debris(pos: Vector3, color: Color, away: Vector3) -> void:
@@ -296,11 +309,13 @@ func flame_cone(from: Vector3, ground_at: Vector3, span: Vector3, color: Color) 
 
 
 func _flame_voxel(from: Vector3, to: Vector3, color: Color) -> void:
+	if _flame_mesh == null or _flame_mesh.material != null and _flame_color != color:
+		_flame_color = color
+		_flame_mesh = BoxMesh.new()
+		_flame_mesh.material = glow(color, 3.0)
 	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * _rng.randf_range(0.5, 1.1)
-	mesh.material = glow(color, 3.0)
-	mi.mesh = mesh
+	mi.mesh = _flame_mesh
+	mi.scale = Vector3.ONE * _rng.randf_range(0.5, 1.1)
 	mi.position = from
 	add_child(mi)
 	var tween := mi.create_tween()

@@ -4,7 +4,10 @@ extends Node3D
 ## small, in the building's own colours; they fall heavily, settle on the street, then crumble.
 ## Meshes and materials are shared by size and colour. Oldest pieces go first past the cap.
 
+const SPAWN_PER_FRAME := 30
+
 var _rng: RandomNumberGenerator
+var _queue: Array[Array] = []
 var _cap: int
 var _bodies: Array[RigidBody3D] = []
 var _meshes: Dictionary = {}
@@ -17,6 +20,14 @@ func _init(rng: RandomNumberGenerator, cap: int) -> void:
 
 
 func _process(_delta: float) -> void:
+	for _n: int in mini(SPAWN_PER_FRAME, _queue.size()):
+		var item: Array = _queue.pop_front()
+		var pos: Vector3 = item[0]
+		var color: Color = item[1]
+		var away: Vector3 = item[2]
+		_spawn_now(pos, color, away)
+	if _queue.size() > _cap:
+		_queue = _queue.slice(_queue.size() - _cap)
 	while _bodies.size() > _cap:
 		var old: RigidBody3D = _bodies.pop_front()
 		old.queue_free()
@@ -24,7 +35,13 @@ func _process(_delta: float) -> void:
 
 ## A real physics fragment: mostly small, in the building's own colours, thrown out and
 ## falling heavily to settle on the street, then crumbling away.
+## Queues a fragment; at most SPAWN_PER_FRAME are created each frame so a big collapse never
+## stalls a frame.
 func spawn(pos: Vector3, color: Color, away: Vector3) -> void:
+	_queue.append([pos, color, away])
+
+
+func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 	var size := BuildingVoxels.VOXEL * (_rng.randf_range(0.35, 0.8) if _rng.randf() < 0.8 else 1.0)
 	var body := RigidBody3D.new()
 	body.gravity_scale = 2.2

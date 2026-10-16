@@ -10,6 +10,8 @@ const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
 
 var sim: RampageSim
+## Worst cost per sim step / event kind, in microseconds (benchmarking).
+var cost_usec: Dictionary = {}
 var species: Dictionary
 var _city: CityView
 var _hud: RampageHud
@@ -70,8 +72,13 @@ func _physics_process(delta: float) -> void:
 	if _autoplay:
 		move = _autoplay_move()
 		signature = sim.ability_ready_in <= 0.0
-	for event: Dictionary in sim.step(delta, move, signature):
+	var t0 := Time.get_ticks_usec()
+	var events := sim.step(delta, move, signature)
+	_note_cost("sim.step", t0)
+	for event: Dictionary in events:
+		var t1 := Time.get_ticks_usec()
 		_on_event(event)
+		_note_cost(str(event["type"]), t1)
 	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
 	_update_kaiju(delta, move.length())
 	_update_tanks()
@@ -81,6 +88,12 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	_place_camera(delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
+
+
+## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
+func _note_cost(what: String, since: int) -> void:
+	var spent := Time.get_ticks_usec() - since
+	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
 
 
 func _to_world(p: Vector2) -> Vector3:
@@ -140,7 +153,9 @@ func _ability_fx(event: Dictionary) -> void:
 	match str(event["kind"]):
 		"cone":
 			var mouth := _kaiju_at + Vector3(0, 6.0 * sim.body_scale(), 0)
-			_city.flame_cone(mouth, _kaiju_at, _to_world(sim.facing) * reach, eye)
+			_city.fx.breath(
+				mouth, _to_world(sim.facing) * reach + Vector3(0, -mouth.y + 0.5, 0), eye
+			)
 			var mid := _kaiju_at + _to_world(sim.facing) * reach * 0.5 + Vector3(0, 2, 0)
 			_city.flash(mid, eye, 8.0, 0.6)
 		"leap":

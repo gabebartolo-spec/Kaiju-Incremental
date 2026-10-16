@@ -72,7 +72,7 @@ func _make_palette(base: Color) -> void:
 		"shop": Color("1e2429"),
 		"shop_lit": shop_lit,
 		"awning": AWNINGS[posmod(roundi(b.x + b.z * 3.0), AWNINGS.size())],
-		"slab": Color("55585a"),
+		"slab": Color("2b2d30"),
 		"roof": Look.color("roof"),
 		"gear": Color("a9aaa4"),
 		"vent": Color("3a3c3e"),
