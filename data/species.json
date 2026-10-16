@@ -14,7 +14,7 @@
 			"ability": {"type": "leap", "name": "Leap Slam", "hint": "Jumps forward and crushes where it lands."},
 			"stats": {"hp": 80, "speed": 7.0, "stomp_damage": 6, "stomp_radius": 2.2, "stomp_interval": 0.45,
 				"ability_damage": 22, "ability_cooldown": 4.5, "ability_range": 4.0},
-			"colors": {"body": "5b3f8c", "belly": "2fb8a6", "accent": "2a1d45", "eye": "c6ff3a"}
+			"colors": {"body": "7a5cc8", "belly": "2fb8a6", "accent": "3e2f78", "eye": "ffe14d"}
 		},
 		{
 			"id": "cephalopod", "name": "Cephalopod",

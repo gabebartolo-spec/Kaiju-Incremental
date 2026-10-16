@@ -7,11 +7,6 @@ extends Node3D
 const VOXEL := 1.0
 const MAX_DEBRIS := 220
 const DEBRIS_PER_LAYER := 5
-const STYLE_COLORS: Array[Color] = [
-	Color("8d9298"), Color("b59a78"), Color("5f8f95"), Color("4b5260")
-]
-const WINDOW_DARK := Color("27384a")
-const WINDOW_LIT := Color("ffd27a")
 
 var sim: RampageSim
 var _rng: RandomNumberGenerator
@@ -26,13 +21,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
-	_cube_mesh = BoxMesh.new()
-	_cube_mesh.size = Vector3.ONE * VOXEL * 0.94
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.roughness = 0.9
-	_cube_mesh.material = mat
+	_cube_mesh = Look.voxel_mesh(VOXEL, Look.value("window_glow"))
 	_build_environment()
 	_build_ground()
 	for b: RampageSim.Building in sim.buildings:
@@ -49,29 +38,35 @@ func _build_environment() -> void:
 	var env := Environment.new()
 	var sky := Sky.new()
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("6f9fd8")
-	sky_mat.sky_horizon_color = Color("e0c9a6")
-	sky_mat.ground_horizon_color = Color("e0c9a6")
+	sky_mat.sky_top_color = Look.color("sky_top")
+	sky_mat.sky_horizon_color = Look.color("sky_horizon")
+	sky_mat.ground_horizon_color = Look.color("sky_horizon")
+	sky_mat.ground_bottom_color = Look.color("sky_top")
 	sky.sky_material = sky_mat
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.7
+	if Content.look().has("ambient_color"):
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		env.ambient_light_color = Look.color("ambient_color")
+	env.ambient_light_energy = Look.value("ambient")
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.ssao_enabled = true
-	env.fog_enabled = true
-	env.fog_light_color = Color("e0c9a6")
-	env.fog_density = 0.0012
+	env.fog_enabled = Look.value("fog_density") > 0.0
+	env.fog_light_color = Look.color("fog_color")
+	env.fog_density = Look.value("fog_density")
+	env.glow_enabled = Look.value("glow") > 0.0
+	env.glow_intensity = Look.value("glow")
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.25
-	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = Look.value("saturation")
+	env.adjustment_contrast = Look.value("contrast")
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-55, -35, 0)
-	sun.light_energy = 1.25
-	sun.light_color = Color("fff1dc")
+	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
+	sun.light_energy = Look.value("sun_energy")
+	sun.light_color = Look.color("sun_color")
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 140.0
 	add_child(sun)
@@ -87,11 +82,11 @@ func _build_ground() -> void:
 	shape.position.y = -0.5
 	ground.add_child(shape)
 	add_child(ground)
-	slab(Vector3(size, 0.2, size), Vector3(0, -0.1, 0), Color("5d7a45"))  # outskirts
+	slab(Vector3(size, 0.2, size), Vector3(0, -0.1, 0), Look.color("outskirts"))
 	var city := (sim.arena_half - Num.f(sim.city["spacing"])) * 2.0
-	slab(Vector3(city, 0.2, city), Vector3(0, -0.05, 0), Color("3a3f45"))  # asphalt
+	slab(Vector3(city, 0.2, city), Vector3(0, -0.05, 0), Look.color("asphalt"))
 	for b: RampageSim.Building in sim.buildings:
-		slab(Vector3(b.w + 1.2, 0.2, b.d + 1.2), Vector3(b.x, 0.0, b.z), Color("8a8f94"))
+		slab(Vector3(b.w + 1.2, 0.2, b.d + 1.2), Vector3(b.x, 0.0, b.z), Look.color("lot"))
 
 
 func slab(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
@@ -129,7 +124,8 @@ func _build_building(b: RampageSim.Building) -> void:
 
 
 func _base_color(b: RampageSim.Building) -> Color:
-	return STYLE_COLORS[b.style % STYLE_COLORS.size()]
+	var styles := Look.styles()
+	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
 ## cell: (x across, layer, z across).
@@ -140,15 +136,21 @@ func _cell_pos(b: RampageSim.Building, cell: Vector3i) -> Vector3:
 	)
 
 
+## Alpha 0 marks a lit window, which glows when the look says so.
 func _cell_color(b: RampageSim.Building, cell: Vector3i) -> Color:
-	var base := _base_color(b)
 	if cell.y == b.height - 1:
-		return base.darkened(0.25)
+		return Look.jitter(Look.color("roof"), cell, b.style)
 	var outer := cell.x == 0 or cell.z == 0 or cell.x == b.w - 1 or cell.z == b.d - 1
 	if outer and cell.y % 2 == 1:
-		var lit := (cell.x * 7 + cell.z * 13 + cell.y * 5 + b.style) % 6 == 0
-		return WINDOW_LIT if lit else WINDOW_DARK
-	return base * (1.0 - 0.04 * ((cell.x + cell.z + cell.y) % 3))
+		var roll := float(
+			absi(hash(Vector4i(cell.x, cell.y, cell.z, roundi(b.x * 7.0 + b.z)))) % 1000
+		)
+		if roll / 1000.0 < Look.value("window_lit"):
+			var lit := Look.color("window_lit_color")
+			lit.a = 0.0
+			return lit
+		return Look.jitter(Look.color("window"), cell, b.style)
+	return Look.jitter(_base_color(b), cell, b.style)
 
 
 ## A building lost `count` layers: hide them, throw voxels away from the kaiju, leave a
@@ -176,7 +178,7 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3.ONE * 0.8
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
+	mat.albedo_color = Color(color, 1.0).lightened(Look.value("debris_lift"))
 	mesh.material = mat
 	mi.mesh = mesh
 	body.add_child(mi)

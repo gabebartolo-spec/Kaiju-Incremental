@@ -23,6 +23,7 @@ func run_checks() -> void:
 	_check_species_differ()
 	_check_army()
 	_check_save_migrate()
+	_check_looks()
 
 
 func _tree(levels: Dictionary = {}) -> UpgradeTree:
@@ -255,3 +256,45 @@ func _check_save_migrate() -> void:
 		"a version 1 save loads"
 	)
 	check(SaveScript.migrate({"version": 99}).is_empty(), "a save from a newer version is refused")
+
+
+## Every look (data/looks.json) carries every key presentation reads, and the default exists.
+func _check_looks() -> void:
+	var keys: Array[String] = [
+		"label",
+		"name",
+		"sky_top",
+		"sky_horizon",
+		"ambient",
+		"sun_color",
+		"sun_energy",
+		"sun_pitch",
+		"fog_color",
+		"fog_density",
+		"saturation",
+		"contrast",
+		"glow",
+		"voxel_inset",
+		"color_noise",
+		"window_lit",
+		"window_glow",
+		"accent_glow",
+		"kaiju_lift",
+		"styles",
+		"roof",
+		"window",
+		"window_lit_color",
+		"outskirts",
+		"asphalt",
+		"lot",
+	]
+	var missing: Array[String] = []
+	for look: Dictionary in Content.looks():
+		for key: String in keys:
+			if not look.has(key):
+				missing.append("%s.%s" % [look["id"], key])
+	check(
+		Content.looks().size() == 3 and missing.is_empty(), "three complete looks: %s" % [missing]
+	)
+	var default_id := str(Content.load_json("res://data/looks.json")["default"])
+	check(str(Content.look()["id"]) == default_id, "the default look %s is the one in use" % default_id)

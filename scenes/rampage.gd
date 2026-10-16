@@ -6,7 +6,7 @@ extends Node3D
 
 signal finished(result: Dictionary)
 
-const CAMERA_OFFSET := Vector3(0, 21, 11)
+const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
 
 var sim: RampageSim
@@ -222,7 +222,7 @@ func _place_camera(delta: float) -> void:
 	var target := _kaiju_at + CAMERA_OFFSET * zoom
 	_camera.position = _camera.position.lerp(target, minf(1.0, delta * 5.0))
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
-	_camera.look_at(_kaiju_at + Vector3(0, 2.0 * sim.body_scale(), 0) + jitter)
+	_camera.look_at(_kaiju_at + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
 
 
 func _autoplay_move() -> Vector2:
