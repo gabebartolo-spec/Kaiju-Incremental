@@ -15,7 +15,7 @@
 			"fog_density": 0.012,
 			"saturation": 0.9,
 			"contrast": 1.12,
-			"glow": 1.0,
+			"glow": 0.8,
 			"voxel_inset": 0.99,
 			"color_noise": 0.08,
 			"window_lit": 0.28,

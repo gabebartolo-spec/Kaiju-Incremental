@@ -7,7 +7,7 @@ extends Node3D
 const SMOKE_SHADER := preload("res://scenes/smoke.gdshader")
 const EMBER_SHADER := preload("res://scenes/ember.gdshader")
 const FLAME_COLORS: Array[Color] = [
-	Color("fff1a0"), Color("ffb040"), Color("e85a1c"), Color("5a2a18")
+	Color("ffc850"), Color("ff8a20"), Color("d8430e"), Color("3a1a10")
 ]
 const WIND := Vector3(2.2, 0.0, 0.9)
 

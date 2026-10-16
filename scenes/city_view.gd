@@ -14,6 +14,7 @@ var fx: Fx
 var _rng: RandomNumberGenerator
 var _views: Array[BuildingView] = []
 var _falling: Dictionary = {}
+var _ruin_tasks: Array[int] = []
 var _flame_mesh: BoxMesh
 var _flame_color := Color.BLACK
 var _decor: CityDecor
@@ -82,7 +83,7 @@ func _build_environment() -> void:
 	env.fog_density = Look.value("fog_density")
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
-	env.glow_hdr_threshold = 0.85
+	env.glow_hdr_threshold = 1.1
 	# Light bounces: lamps, fires and the sun colour the streets and walls around them
 	# (screen-space; full SDFGI cost about a tenth of the frame for little gain here).
 	env.ssil_enabled = true
@@ -254,11 +255,26 @@ func _rubble_strip(a: Vector3, b: Vector3, width: float) -> void:
 func _add_ruin(index: int) -> void:
 	var voxels := _views[index].voxels
 	var rng := Seeds.make("ruin", index)
-	WorkerThreadPool.add_task(
+	var task := WorkerThreadPool.add_task(
 		func() -> void:
 			var mmi := Ruin.build(voxels, rng)
-			add_child.call_deferred(mmi)
+			_attach_ruin.call_deferred(mmi)
 	)
+	_ruin_tasks.append(task)
+
+
+func _attach_ruin(mmi: MultiMeshInstance3D) -> void:
+	if is_inside_tree():
+		add_child(mmi)
+	else:
+		mmi.free()
+
+
+## Never leave the scene while a ruin is still being built on another thread.
+func _exit_tree() -> void:
+	for task: int in _ruin_tasks:
+		WorkerThreadPool.wait_for_task_completion(task)
+	_ruin_tasks.clear()
 
 
 func _ruin_if_gone(index: int) -> void:
@@ -266,7 +282,7 @@ func _ruin_if_gone(index: int) -> void:
 	if b.frame.alive_count == 0 and not _views[index].has_meta("ruined"):
 		_views[index].set_meta("ruined", true)
 		var size := clampf(b.w * b.d / 9.0, 0.6, 2.5)
-		var heap_top := 0.6 + 0.9 * b.tier  # flames sit on top of the rubble heap
+		var heap_top := 2.4 + 0.9 * b.tier  # flames sit on top of the rubble heap
 		fire(Vector3(b.x, heap_top, b.z), size)
 		fire(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
 		_add_ruin(index)

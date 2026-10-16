@@ -12,7 +12,7 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 	var w := b.w * RES
 	var d := b.d * RES
 	var vox := VoxelBuilder.new()
-	var keys: Array[String] = ["wall", "wall", "wall", "slab", "slab", "trim", "window", "pillar"]
+	var keys: Array[String] = ["wall", "wall", "wall", "wall", "pillar", "trim", "slab", "window"]
 	var peak := RES * (2.4 + b.tier * 0.9)
 	var spill := RES + 2
 	var hot := Vector2(w * rng.randf_range(0.35, 0.65), d * rng.randf_range(0.35, 0.65))
@@ -30,11 +30,13 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 			var h := roundi(peak * pow(fall, 0.8) + rng.randf_range(-1.5, 1.5))
 			var near_core := Vector2(x, z).distance_to(hot) < RES * 1.2
 			for y: int in maxi(0, h):
-				var key := keys[rng.randi_range(0, keys.size() - 1)]
+				# Rubble comes down in chunks: one key per 2-4 cell block, not per voxel.
+				var block := Vector3i(floori(x / 3.0), floori(y / 2.0), floori(z / 3.0))
+				var key := keys[absi(hash(block + Vector3i(b.style, 0, 0))) % keys.size()]
 				if y == h - 1 and near_core and rng.randf() < 0.55:
 					key = "ember"  # one concentrated bed of glowing coals
-				elif y >= h - 2 and rng.randf() < 0.45:
-					key = "char"  # scorched surface
+				elif y == h - 1 and absi(hash(block)) % 5 == 0:
+					key = "char"  # scorched patches
 				vox.put(Vector3i(x, y, z), key)
 	for side: int in 2:  # ragged wall stubs on two faces
 		var along_x := rng.randf() < 0.5
