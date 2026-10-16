@@ -164,7 +164,8 @@ func _check_results_compare() -> void:
 
 ## A save with Endless Rage owned and the first evolution's price plus LEFT_OVER rubble:
 ## Continue goes to the tree; clicking the first evolution buys it and plays the reveal (baby
-## to adolescent, a bigger body, the tower it now topples); Enter skips it without buying again. Quit, relaunch, Continue: same tree.
+## to adolescent, a bigger body, the tower it now topples); Enter skips it
+## without buying again. Quit, relaunch, Continue: same tree.
 func _check_evolution_and_continue() -> void:
 	var save := SaveFile.new_save("insectoid")
 	save["rubble"] = _evolve_cost() + LEFT_OVER
