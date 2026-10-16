@@ -175,8 +175,10 @@ func _mantle_follows(kaiju: KaijuModel, skin: VoxelSkin) -> bool:
 	if not is_instance_valid(held):
 		return false
 	var mantle: Node3D = held
+	mantle.scale = Vector3.ONE * 1.2  # a roar puff
+	skin.sync()
 	var m := skin.pose[rig.bone_names().find("mantle0")]
-	return absf(Vector3(m.x.x, m.x.y, m.x.z).length() - mantle.scale.x) < 0.001
+	return absf(Vector3(m.x.x, m.x.y, m.x.z).length() - 1.2) < 0.001
 
 
 ## The mouth's inside shows on the skin as BipedHead shows it: hidden while a closed jaw rests,
