@@ -1,48 +1,43 @@
-# Lead handoff, 2026-10-16
-## State: awaiting director
-Asked: which look (A Toy Diorama / B Monster Movie Night / C Concrete Realism). PR #3 is HELD on it;
-on the answer set data/looks.json "default", log the decision, merge.
+# Lead handoff, 2026-10-16 16:40
+## State: blocked (GPU): director is gaming; captures and FPS tuning wait for a free GPU
+Then: capture, fresh critic, reach 60 fps, show the director the detailed look.
 
 ## Task
-Kickoff of Kaiju Incremental: decisions D-002..D-007 (active not idle, short rampages, move + auto
-attacks, Godot PC + web, voxels, 3 species incl. Cephalopod), scaffold, greybox slice, CI green.
+Art direction. Director picked look C (Concrete Realism) and asked for far more voxels (D-008), real
+light sources (D-010), and a young kaiju outscaled by the city that grows as you play (D-009).
 
 ## Branch and commit
-claude/look-options -> PR #3 (looks, rounder kaiju, camera pulled back). main @ 532fb0c (scaffold + slice + PR #1 CI fixes). Protected: test, doc-caps, gitleaks required.
-This file rides on claude/lead-handoff.
+claude/look-options -> PR #3 (HOLD until the director sees the detailed look). Latest 82534b4.
 
 ## Unfinished changes
-None in code. Phase 0 item 3 open: deliberately broken PRs (lowered floor, unregistered suite,
-untyped script, KAIJU_TEST_SECRET_ + 16 chars), each red then closed; results to docs/audits/.
+None uncommitted. Built and test-green, NOT yet seen by a critic or the director:
+- scenes/voxel_builder.gd (shared voxel shapes + bottom-up MultiMesh), building_voxels.gd (RES 4,
+  archetypes, sills/balconies/awnings, roof gear), city_decor.gd + prop_field.gd (lane markings,
+  cars, trees, streetlights with real OmniLights; props flatten under stomps), tank_model.gd,
+  fire.gd (burning ruins/wrecks with flickering lights), kaiju_model.gd (RES 5, teeth, claws, scales,
+  plates, compound eyes, suckers). Evening light, SSAO + SSIL, glow. SDFGI and volumetric fog off.
 
 ## Evidence so far
-Local: smoke 11, sim 28, flow 9 + harness self-test green; gdlint/gdformat clean. PR #1: 8/8 green.
-Captures: docs/captures/2026-10-16-greybox/ (greybox, not a look proposal).
+Headless: smoke 11, sim 32 (growth fixture added), flow 9, harness self-test green; lint clean.
+Captures det2 (taken while the GPU was busy): looks right, evening city with lit windows.
+FPS 36-49 at 1080p with 313k voxels, measured while League of Legends used the GPU: not trustworthy.
 
 ## Attempts (fix-loop record)
-- First main CI red: tools/*.sh lacked exec bit (exit 126), no export preset, spaced name in paths;
-  then gitleaks 403 (needs pull-requests: read). All fixed in PR #1.
+- FPS: toggled SDFGI / volumetric fog / SSIL / SSAO / lamps / shadow splits: all within noise
+  because of the game. Re-measure with a free GPU before optimising. Candidate cuts: floor slabs
+  (hidden until broken), shadow casting on far buildings, 2 shadow splits.
 
 ## Open decisions (director)
-- Next assignment (playtest notes vs art direction). Cities count / endgame. Customisation beyond species.
-- Repo visibility never answered: private by default (D-002a).
-
-## Look work notes
-- Capture: tools/capture/capture_looks.gd + scratchpad board.py (PIL); board in docs/captures/2026-10-16-looks/.
-- Three fresh realism-critic rounds; remaining open taste point: octopus vs squid read (director's call).
+- Time of day: evening chosen by the lead so lights read; director may move it.
+- Life-stage models (hatchling to adult) beyond scaling: follow-up.
 
 ## Running jobs
 None.
 
 ## Findings for the lead
-- project-kickoff template bugs (spaced name, exec bit, export preset, gitleaks perms): fixed in the
-  templates, logged in project-kickoff learnings.
-- Tests via `--script` compile before autoloads exist: logged in game-architecture learnings.
+- Check nvidia-smi for a game before windowed runs (memory-shared/shared-machine-rules.md).
 
 ## Rules learnt the hard way
-- Code reachable from tests must not name autoloads; use Content/Seeds statics, EventBus via get_node.
-- int()/float() on a Variant fails strict typing: use Num.i / Num.f.
-- MultiMesh vertex colours need vertex_color_is_srgb = true.
-- docs/.gdignore keeps captures out of the Godot import.
-- Capture override.cfg (no_focus, off-screen) must be deleted after, or F5 opens off-screen.
-- gdlint/gdformat live in C:\Users\DANTE\AppData\Roaming\Python\Python314\Scripts.
+- Test runners compile before autoloads exist: sim/scenes use Content/Seeds statics.
+- int()/float() on a Variant fails strict typing: Num.i / Num.f.
+- Buried-voxel culling or gaps show inner cells as a smear. Delete override.cfg after captures.
