@@ -1,79 +1,64 @@
-# City-growth handoff, 2026-10-17 03:15
-## State: blocked (usage limit) - costs + sizes committed; tests/stills/PR not done
+# City-growth handoff, 2026-10-17 03:35
+## State: running a check (CI stills x4 + final pacing; then open the PR)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
-player ~3 h), first species power by run 3, no flat grind. Done = PR into claude/look-options,
-CI green, pacing tables per species/stage in the PR body, CI stills per stage, this handoff,
-results to the lead (local_9fac90d2-fae7-4940-b4ac-144a87f28e6e).
+player ~3 h on the median species), first species power by run 3, no flat grind. Done = PR into
+claude/look-options, CI green, pacing tables per species/stage in the PR body, CI stills per
+stage, insectoid balance note (lead asked: which nodes drive it, a +-20% proposal), this
+handoff, then tell the lead (local_9fac90d2-fae7-4940-b4ac-144a87f28e6e).
 
 ## Branch and commit
-claude/city-growth-e79d28 (worktree .claude/worktrees/city-growth-e79d28), fast-forwarded to
-merged origin/claude/look-options 55ce218 (capture.yml live). Pushed.
+claude/city-growth-e79d28, merged origin/claude/look-options 6535330, pushed. No PR yet.
 
-## What is built (WIP commit)
-- sim/city_gen.gd: cfg.districts [42,66,105,166] = nested districts; the plan always spans all
-  of them (ring avenue per district, grow lines from map_seed+2), cfg.half = playable one.
-  Blocks carry "district"; generate() fills innermost district first (lots keep their place
-  across stages); one park per district.
-- sim/city_lots.gd: district_lot_grow [0,1,2,3] = bigger lots in later districts.
-- sim/city_growth.gd: CityGrowth.tuning_for(tuning, tier) deep copy + growth.stages overrides;
-  layout(tuning, tier, rng); stage_count.
-- data/tuning.json: districts, lot grow, 9 cores, army.spawn_radius 50, growth.stages (city
-  half/coast_z/max_height/tower_chance; army and air per stage; stage 1 air.max 0).
-- sim/army.gd: tanks spawn spawn_radius round the kaiju.
-- scenes/main.gd + rampage.gd use the stage tuning/layout (game-flow told by message).
-- tools/pacing.gd: uses stages, per-stage table, --flat. tools/capture/city_stats.gd per stage.
-- tools/capture/capture_growth.gd (aerial + kaiju still per stage, perf print).
-- Temp capture workflow removed; stills via tools/capture/ci_capture.sh capture_growth.gd.
-- tests/run_growth_tests.gd (floor 23), registered in run_tests.sh, ci_shards, expected_checks.
-  NOT RUN YET. Cost band check (1.5M-4M total) is a placeholder: set from final costs.
+## What is built
+- sim/city_gen.gd: cfg.districts [42,70,125,210]; the plan always spans every district (ring
+  avenue each), cfg.half = the playable one; blocks carry "district"; generate() fills
+  innermost first; one park per district.
+- sim/city_lots.gd: district_lot_grow [0,1,2,3]; tower and pencil heights always drawn (a
+  stage's tower_chance/max_height no longer shifts later lots: the growth test caught it).
+- sim/city_growth.gd: CityGrowth.tuning_for / layout / stage_count.
+- data/tuning.json: districts, lot grow, 15 cores, outer_half 360, army.spawn_radius 60,
+  growth.stages (half, coast_z, max_height 26/32/40/48, tower_chance; army + air per stage;
+  stage 1 no helicopters, 2/4/6 after).
+- sim/army.gd: tanks from the edge in a small city, round the kaiju once the edge is > 60 away.
+- data/upgrades.json: costs = pacing "d" factors (young x2.9 except first levels, evolve1
+  x4 = 1200, Behemoth x8.5, evolve2 22000, Colossus x15, evolve3 300000, ultimates x15).
+- scenes/main.gd + rampage.gd run on the stage tuning/layout (game-flow knows; PR #14).
+- tools/pacing.gd per-stage tables, --flat; city_stats.gd per stage; capture_growth.gd.
+- tests/run_growth_tests.gd (23 checks, floor 23). Fixed old fixtures: sim "longer rampage"
+  now hide 5 (both runs reach the clock); flow heli check gives the run the base air wing.
+- Local full run: smoke 12, sim 39, powers 24, tentacles 17, city 5, growth 23, flow 26,
+  harness self-test: all green.
 
 ## Unfinished changes
-- FINAL costs = pacing d (factors 2.9 4 8.5 9 15 15 15), committed. Totals ~2.04M each species.
-  Scripted tree: reptile 3.77 h, insect 1.78 h, ceph 2.70 h; first power after run 2 (all).
-  Tables: scratchpad pace_d.txt (copy into PR body).
-- NEXT: run tools/run_tests.sh (growth suite never run; fix failures), recapture stills
-  (ci_capture.sh capture_growth.gd), open PR into claude/look-options with tables, stills,
-  insect balance note (Leap Slam drives 96%->60%; propose leap damage/reach -35%, reptile cone
-  +25% to reach +-20%), perf numbers (Apex 355k chunks), tier-1 city re-rolled note.
-- data/upgrades.json is being rewritten by the scratch tuner (uncommitted, in flux):
-  scratchpad scale_costs.py <orig> <out> f1 fe1 f2 fe2 f3 fe3 f4 (stage multipliers; first
-  levels of young nodes kept), pace_all.sh <tag> factors. Original copy: scratchpad
-  upgrades_orig.json (= git HEAD version).
-- Next: iterate factors to ~3 h scripted, commit costs; run tools/run_tests.sh (all suites);
-  PR with tables + stills.
+None uncommitted. Next: PR body from scratchpad pace_final.txt (+ city_stats, --flat run) and
+the stills (gh run download the 4 runs); balance note; bind PR; message the lead.
 
 ## Evidence so far
-- Pacing a (costs x2.2/2.5/6/6/8/8/8, districts 42/66/105/166): reptile 2.39 h, insect 1.19 h,
-  ceph 1.82 h; insect flattens Colossus+Apex cities every run (flat grind).
-- Pacing b (districts 42/70/125/210, +6 Apex-ring cores, outer_half 360; same costs): reptile
-  2.29 h (Colossus 43->85%, Apex 13/14 defeated), insect 1.17 h (Colossus/Apex 100% every run),
-  ceph 1.68 h. Insect = species-balance issue, flagged to lead (not fixable by city size).
-- city_stats now: buildings 140/313/925/2428, chunks 11.9k/25k/103k/355k (perf risk at Apex).
-- Uncommitted tuning.json: districts 42/70/125/210, new cores, outer_half 360, Apex army
-  tank_damage 11 / heli damage 7. Scratch results: pace_a.txt, pace_b.txt.
+- Pacing d (before the lots fix): reptile 3.77 h, insect 1.78 h, ceph 2.70 h; first power
+  after run 2 for all. Final numbers re-run in pace_final.txt (layouts changed slightly).
+- Ablation (Colossus kit, Colossus city): insect 96% -> 60% without Leap Slam; climb/glide ~0
+  for the scripted player; reptile 43%; ceph 63%.
+- city_stats (before the lots fix): chunks 11.9k / 25k / 103k / 355k (perf risk at Apex).
 
 ## Attempts
-- heredoc python through Bash failed once on quotes: write scripts to scratchpad with Write.
-- `git show origin/x:path` in Git Bash needs MSYS_NO_PATHCONV=1.
+- Districts x2 area: cities flattened every run -> x3 area per stage.
+- Old single CI stills run (all stages in one job) ran >1 h and was cancelled: one run per stage.
 
 ## Open decisions
-- None for the director yet. Tier-1 city changed slightly (alleys/lots re-rolled because the plan
-  now spans all districts); same rules, flag in PR.
+- Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-Pacing "d" (factors 2.9 4 8.5 9 15 15 15) -> scratchpad pace_d.txt. CI stills run
-38923419011 (OLD sizes 42/66/105/166): recapture after final sizes are committed.
+CI capture runs 38932348925 / 360987 / 371956 / 383703 (stages 1-4). Local pacing ->
+scratchpad pace_final.txt (Godot console exe, APPDATA=$TEMP/cg_appdata).
 
 ## Findings for the lead
-- Pacing c (factors 2.9 4 11.4 11.4 15 15 15): reptile 4.07 h, insect 1.97 h, ceph 2.93 h
-  (median OK); Behemoth stage flat for reptile (50 runs, 4.0->4.5k) -> d shortens it.
-- Ablation (tools/ablate_scratch.gd, uncommitted scratch; Colossus kit in Colossus city):
-  insect 96% -> 60% without Leap Slam (climb/glide ~0 for the bot); reptile 43% (tail ~2 pts);
-  ceph 63% (limbs within noise). Lead asked for a concrete +-20% balance proposal in the PR.
-- Destroyed area per run scales with the kaiju's crater (body scale x9 young->Apex), so the
-  city's area must grow ~x2.5-3 per evolution or runs end "city_fallen" and rubble goes flat.
+- A seeded generator that draws a number only on some branches shifts every later draw when a
+  tuning changes the branch; draw unconditionally (growth test "lots kept" caught it, fixed).
+- Destroyed area per run scales with the kaiju's crater, so city area must grow ~x3 per
+  evolution or runs end city_fallen and rubble per run goes flat.
 
 ## Rules learnt the hard way
 - One Godot at a time while the director games; headless + --audio-driver Dummy.
+- `git show origin/x:path` in Git Bash needs MSYS_NO_PATHCONV=1.
