@@ -225,6 +225,10 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 8.5, 0)) * body_scale
 		cam.look_at(at + Vector3(0, 7.5, 0) * body_scale)
 		return
+	if _cam == "front34w":  # the same angle, wider and lower: the whole body, arms included
+		cam.position = at + (fwd * 19.0 + right * 12.0 + Vector3(0, 6.0, 0)) * body_scale
+		cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)
+		return
 	if _cam == "rear":  # straight behind at shoulder height: the shoulder line against level
 		cam.position = at + (-fwd * 17.0 + Vector3(0, 7.0, 0)) * body_scale
 		cam.look_at(at + Vector3(0, 6.5, 0) * body_scale)
@@ -238,9 +242,12 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 		cam.position = at + CAMERA_OFFSET * zoom
 		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
 		return
-	var wide := 1.4 if _species == "cephalopod" else 1.0  # a wide body needs a wider shot
-	cam.position = at + Vector3(16.0 * wide, 4.0 * wide, 0) * body_scale
-	cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
+	if _species == "cephalopod":  # a wide body needs a wider shot
+		cam.position = at + Vector3(16.0 * 1.4, 4.0 * 1.4, 0) * body_scale
+		cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
+		return
+	cam.position = at + Vector3(22.0, 5.0, 0) * body_scale  # side: the whole body in frame
+	cam.look_at(at + Vector3(0, 4.8, 0) * body_scale)
 
 
 ## What the script is doing at time t, shown on the clip.
