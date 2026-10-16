@@ -8,8 +8,9 @@ const BAND := 0.35
 const WIDTH := 1.0
 
 
-## Adds the overlap bands to every bone's voxels (before they are built into meshes).
-static func overlap(rig: KaijuRig) -> void:
+## The overlap band each bone carries: bone name -> VoxelBuilder of its neighbours' cells (only
+## cells the bone does not own). Built as a separate, inset layer so it never z-fights the skin.
+static func overlap(rig: KaijuRig) -> Dictionary:
 	var extra: Dictionary = {}  # bone -> Dictionary cell -> Color
 	for child: String in rig.bone_names():
 		var parent := rig.parent_of(child)
@@ -30,13 +31,18 @@ static func overlap(rig: KaijuRig) -> void:
 		}
 		_take(theirs, joint, -1.0, _bucket(extra, child))
 		_take(mine, joint, 1.0, _bucket(extra, parent))
+	var out: Dictionary = {}
 	for bone_name: String in extra:
 		var part := rig.voxels_of(bone_name)
+		var band := VoxelBuilder.new()
 		var cells: Dictionary = extra[bone_name]
 		for cell: Vector3i in cells:
 			if not part.cells.has(cell):
 				var color: Color = cells[cell]
-				part.put_color(cell, color)
+				band.put_color(cell, color)
+		if band.cells.size() > 0:
+			out[bone_name] = band
+	return out
 
 
 static func _bucket(extra: Dictionary, bone_name: String) -> Dictionary:

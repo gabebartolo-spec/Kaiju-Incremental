@@ -6,9 +6,10 @@ extends Node3D
 ## Tails, antennae and tentacles ("physics" bones) are spring chains the gait can steer.
 ## Presentation only: the gait follows the node's motion and never moves the kaiju. Faces -Z.
 
-## A foot (or a tentacle) came down: where, and how hard (0..1, 1 = a stomp). For footfall
-## sounds and dust; presentation only.
-signal foot_planted(at: Vector3, weight: float)
+## A foot (or a tentacle's grip) came down, on the frame it touches: which ("left"/"right",
+## "fl"/"fr"/"bl"/"br", "t0".."t7"), how hard (0..1: walk speed x life stage, 1 = an adult's
+## stomp) and where (world). For footfall sounds, dust and camera shake; presentation only.
+signal foot_planted(side: String, strength: float, at: Vector3)
 
 ## Chain feel: pull back to the target pose, motion kept per step, gravity.
 const STIFFNESS := 9.0
@@ -16,6 +17,8 @@ const DAMPING := 0.9
 const GRAVITY := Vector3(0, -6.0, 0)
 const LIMB_STIFFNESS := 26.0
 const CONSTRAINT_PASSES := 3
+## Joint filler cubes are this much smaller, so they stay inside the skin until a bend opens it.
+const JOINT_INSET := 0.82
 
 
 ## A run of physics bones (tail, antenna, arm, tentacle) simulated as Verlet points.
@@ -111,10 +114,13 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
 			_voxels[bone_name] = per_bone[i]
-	RigJoints.overlap(self)
+	var bands := RigJoints.overlap(self)
 	for bone_name: String in _voxels:
 		var part: VoxelBuilder = _voxels[bone_name]
 		attach_voxels(bone_name, part)
+	for bone_name: String in bands:
+		var band: VoxelBuilder = bands[bone_name]
+		attach_voxels(bone_name, band, null, JOINT_INSET)
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
 	_relax_arms()
 	_collect_chains(defs)
@@ -124,8 +130,11 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 
 
 ## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.
-func attach_voxels(bone_name: String, part: VoxelBuilder, under: Node3D = null) -> Node3D:
+func attach_voxels(
+	bone_name: String, part: VoxelBuilder, under: Node3D = null, inset: float = 1.0
+) -> Node3D:
 	part.salt = 7
+	part.inset = inset
 	var head: Vector3 = _head[bone_name]
 	var mmi := part.build({}, _voxel, _glow, -head)
 	mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER

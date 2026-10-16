@@ -5,6 +5,9 @@ extends Node3D
 ## suckers, compound eyes) has room. About 10 units tall at body scale 1. Animation is
 ## presentation only: bob while walking, squash on stomp.
 
+## Re-emits KaijuRig.foot_planted (see there) so the scene connects in one place.
+signal foot_planted(side: String, strength: float, at: Vector3)
+
 const RES := 5
 const DESIGN_UNIT := 0.6
 const VOXEL := DESIGN_UNIT / RES
@@ -45,6 +48,7 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
 			_body.add_child(_rig)
+			_rig.foot_planted.connect(foot_planted.emit)
 			return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
 	if model.height > 0:

@@ -5,11 +5,14 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_motion.gd -- --species=reptilian --stage=adult --cam=game
-## --cam=side follows close from the side. Headless (no movie) just prints the measurements.
+## --cam=side follows close from the side; --cam=fixed holds still beside the first straight walk
+## (for judging foot slide by eye). Headless (no movie) just prints the measurements. Slide is
+## also given in cm, taking a world unit as one storey (3.5 m).
 
 const FPS := 60.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
+const CM_PER_UNIT := 350.0
 
 var _species := "reptilian"
 var _stage := "adult"
@@ -105,11 +108,12 @@ func _run() -> void:
 	var hip := kaiju.hip_height()
 	print(
 		(
-			"MOTION %s %s: foot drift max %.4f (%.2f%% of hip %.2f); rig %.3f ms avg, %.3f worst"
+			"MOTION %s %s: foot drift max %.4f (%.1f cm, %.2f%% of hip %.2f); rig %.3f ms avg, %.3f worst"
 			% [
 				_species,
 				_stage,
 				drift,
+				drift * CM_PER_UNIT,
 				100.0 * drift / maxf(0.0001, hip),
 				hip,
 				total_usec / 1000.0 / maxi(1, frames),
@@ -121,6 +125,10 @@ func _run() -> void:
 
 
 func _place(cam: Camera3D, at: Vector3, facing: Vector2, body_scale: float) -> void:
+	if _cam == "fixed":
+		cam.position = Vector3(maxf(22.0 * body_scale, 20.0), 4.0 * body_scale, -9.0)
+		cam.look_at(Vector3(0, 3.5 * body_scale, -9.0))
+		return
 	if _cam == "game":
 		var zoom := 0.75 + 0.4 * body_scale
 		cam.position = at + CAMERA_OFFSET * zoom

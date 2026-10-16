@@ -1,10 +1,9 @@
 class_name BipedGait
 extends KaijuGait
-## The reptilian's walk: a heavy, graceful predator (the Jurassic Park tyrannosaur).
-## Feet plant and stay planted (two-bone IK to the knee, the metatarsus rolling over the toes),
-## stride and cadence follow the real speed, the pelvis drops into each footfall and rolls over
-## the stance leg, the body leans into the walk with the tail swinging against the hips, and the
-## head stays level, scans, and leads every turn with a little overshoot.
+## The reptilian's walk: halfway between Godzilla and the Jurassic Park tyrannosaur, with the
+## tyrannosaur's grace (D-031). Feet plant and stay planted (two-bone IK to the knee, the
+## metatarsus rolling over the toes); stride and cadence follow the real speed. BipedBody carries
+## the weight, BipedHead the head, BipedSwing the tail and arms. A young body steps quicker.
 
 ## Swing share of a stride walking (both feet are down twice per stride) and at a run.
 const SWING_WALK := 0.4
@@ -29,29 +28,18 @@ const LIFT_FAST := 0.18
 const LIFT_STOMP := 0.3
 ## Feet track narrower than the hips (a predator walks almost on a line).
 const TRACK_NARROWING := 0.82
-## Crouch: the pelvis sits this much lower (hip heights) standing and walking, so the knees bend.
-const CROUCH_STAND := 0.03
-const CROUCH_WALK := 0.05
 ## A planted foot stretched past this share of its reach steps; past the second it hops.
 const REACH_STEP := 0.97
 const REACH_HOP := 1.02
 ## At most this much (hip heights) the pelvis sinks to keep a stretched foot planted.
 const MAX_REACH_DROP := 0.18
-## Pelvis: footfall jolt (hip heights/s), spring, sway over the stance leg, roll, yaw, lean.
-const FOOTFALL_JOLT := 0.55
-const STOMP_JOLT := 1.1
-const PELVIS_OMEGA := 10.0
-const PELVIS_ZETA := 0.42
-const SWAY := 0.075
-const ROLL := 0.07
-const HIP_YAW := 0.1
-const LEAN_STAND := 0.3
-const LEAN_WALK := 0.48
-const LEAN_ACCEL := 0.02
-## Chest counters the hips so the shoulders ride steady; slow breathing.
-const CHEST_COUNTER := 0.5
-const BREATH_HZ := 0.22
-const BREATH := 0.022
+## Body scale of an adult and a baby: in between, the walk is that much younger.
+const ADULT_SCALE := 1.3
+const BABY_SCALE := 0.5
+## A baby steps this much quicker than its size alone would make it.
+const YOUTH_CADENCE := 0.3
+## Footfall ids for KaijuRig.foot_planted, and a stage's share of a full adult step.
+const SIDES := {-1.0: "left", 1.0: "right"}
 
 
 class Leg:
@@ -81,15 +69,13 @@ class Leg:
 var legs: Array[Leg] = []
 var head: BipedHead
 var swing: BipedSwing
+var body: BipedBody
+## 0 for an adult .. 1 for a baby: how young the walk is.
+var youth := 0.0
 var _phase := 0.0
 var _cycle := 1.0
 var _swing := SWING_WALK
-var _pelvis_y := 0.0
-var _pelvis_vy := 0.0
-var _sway := Vector2.ZERO  # value, velocity
-var _roll := Vector2.ZERO
-var _yaw := Vector2.ZERO
-var _lean := Vector2.ZERO
+var _heavy_next := false
 var _stomp_times: Array[float] = []
 var _stomp_leg := 0
 var _stomp_planned := -1.0
@@ -120,26 +106,28 @@ func _init(p_rig: KaijuRig) -> void:
 	hip_height = hips / maxf(1.0, legs.size())
 	head = BipedHead.new(self)
 	swing = BipedSwing.new(rig)
+	body = BipedBody.new(self)
 
 
 func update(delta: float) -> void:
 	track(delta)
+	youth = clampf((ADULT_SCALE - s) / (ADULT_SCALE - BABY_SCALE), 0.0, 1.0)
 	var dt := minf(delta, 1.0 / 20.0)
 	var root := rig.global_transform
 	var hip_w := hip_height * s
 	var standing := speed < STAND_SPEED * hip_w
 	var step_len := hip_w * clampf(STEP_MIN + STEP_PER_SPEED * speed / hip_w, STEP_MIN, STEP_MAX)
 	if not standing:
-		var k := sqrt(s)
+		var k := sqrt(s) * (1.0 - YOUTH_CADENCE * youth)
 		_swing = lerpf(SWING_WALK, SWING_RUN, clampf(speed / (2.0 * hip_w), 0.0, 1.0))
 		var cycle := 2.0 * step_len / maxf(speed, 0.001)
 		cycle = minf(cycle, STANCE_REACH * hip_w / (maxf(speed, 0.001) * (1.0 - _swing)))
 		_cycle = clampf(cycle, CYCLE_MIN * k, CYCLE_MAX * k)
 	_step_feet(dt, root, standing)
-	_pose_body(dt, root)
+	body.update(dt, root, head.roar_lean())
 	_solve_legs(root)
 	head.update(dt, standing)
-	swing.update(time, _yaw.x, head.roar_open())
+	swing.update(time, body.hip_yaw, head.roar_open(), dt)
 	rig.simulate_chains(delta)
 	_measure_slide()
 
@@ -148,10 +136,13 @@ func stomp() -> void:
 	_stomp_times.append(time)
 	if _stomp_times.size() > 3:
 		_stomp_times.pop_front()
+	var stomping := false
 	for leg: Leg in legs:
 		if leg.stomping and not leg.planted:
 			leg.t = 1.0
-	_pelvis_vy -= STOMP_JOLT * hip_height
+			stomping = true
+	if not stomping:
+		_heavy_next = true  # walking: the next footfall is the stomp
 	head.dip()
 	var tail := rig.chain_named("tail0")
 	if tail != null:
@@ -212,8 +203,7 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 			var cycle := floori(p)
 			var local := p - cycle
 			if leg.planted and local < _swing and cycle != leg.last_cycle:
-				var speed_k := clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
-				_lift_foot(leg, _cycle * _swing, lerpf(LIFT_SLOW, LIFT_FAST, speed_k))
+				_lift_foot(leg, _cycle * _swing, lerpf(LIFT_SLOW, LIFT_FAST, speed_k()))
 				leg.walking = true
 				leg.last_cycle = cycle
 				leg.t = local / _swing
@@ -273,12 +263,13 @@ func _plant(leg: Leg, standing: bool) -> void:
 	leg.planted = true
 	leg.plant_at = leg.foot
 	leg.drift = 0.0
-	var speed_k := clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
-	var jolt := FOOTFALL_JOLT * (0.35 + 0.65 * speed_k) * hip_height
-	if leg.stomping:
-		jolt = STOMP_JOLT * hip_height
-	_pelvis_vy -= jolt
-	rig.foot_planted.emit(leg.foot, jolt / (STOMP_JOLT * hip_height))
+	var weight := 0.35 + 0.45 * speed_k()
+	if leg.stomping or _heavy_next:
+		weight = 1.0
+		_heavy_next = false
+	body.plant(weight)
+	var stage := clampf(sqrt(s / ADULT_SCALE), 0.4, 1.0)
+	rig.foot_planted.emit(str(SIDES[leg.side]), weight * stage, leg.foot)
 	leg.stomping = false
 	if standing:
 		_settle_cool = 0.12
@@ -307,53 +298,19 @@ func _plan_stomp() -> void:
 	leg.stomping = true
 
 
-# --- body ----------------------------------------------------------------------------------------
+## 0..1: how fast it is going, in strides (2 hip heights a second = 1).
+func speed_k() -> float:
+	return clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
 
 
-func _pose_body(dt: float, root: Transform3D) -> void:
-	var speed_k := clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
-	var w_l := 1.0 if legs[0].planted else 0.0
-	var w_r := 1.0 if legs[1].planted else 0.0
-	var fwd := -root.basis.z.normalized()
-	var mid := (legs[0].foot + legs[1].foot) * 0.5
-	var ahead := (legs[0].foot - mid).dot(fwd) - (legs[1].foot - mid).dot(fwd)
-	_sway = spring(_sway.x, _sway.y, SWAY * hip_height * (w_r - w_l), 6.0, 0.8, dt)
-	_roll = spring(_roll.x, _roll.y, -ROLL * (w_r - w_l), 6.0, 0.7, dt)
-	var yaw_target := -HIP_YAW * clampf(ahead / (hip_height * s), -1.0, 1.0)
-	_yaw = spring(_yaw.x, _yaw.y, yaw_target, 8.0, 0.8, dt)
-	var forward_accel := accel.dot(fwd) / maxf(0.001, s)
-	var lean_target := lerpf(LEAN_STAND, LEAN_WALK, speed_k)
-	lean_target += clampf(forward_accel * LEAN_ACCEL, -0.08, 0.1)
-	lean_target += head.roar_lean()
-	_lean = spring(_lean.x, _lean.y, lean_target, 5.0, 0.9, dt)
-	var crouch := lerpf(CROUCH_STAND, CROUCH_WALK, speed_k) * hip_height
-	var p := spring(_pelvis_y, _pelvis_vy, -crouch, PELVIS_OMEGA, PELVIS_ZETA, dt)
-	_pelvis_y = p.x
-	_pelvis_vy = p.y
-	var breath := sin(time * TAU * BREATH_HZ) * BREATH
-	var euler := Vector3(-_lean.x, _yaw.x, _roll.x)
-	rig.pose("spine0", euler, Vector3(_sway.x, _pelvis_y, 0))
-	# Keep every planted foot in reach: drop the pelvis rather than let a foot slide.
-	var drop := 0.0
-	for leg: Leg in legs:
-		if not leg.planted:
-			continue
-		var hip := rig.bone(leg.names[0]).global_position
-		var ankle := _ankle(leg, root)
-		var reach := (leg.l1 + leg.l2) * s * 0.995
-		var d := hip - ankle
-		var up := Vector3.UP
-		var du := d.dot(up)
-		var disc := du * du - d.length_squared() + reach * reach
-		if d.length() > reach:
-			drop = maxf(drop, du - sqrt(maxf(0.0, disc)))
-	if drop > 0.0:
-		var sink := minf(drop / s, MAX_REACH_DROP * hip_height)
-		rig.pose("spine0", euler, Vector3(_sway.x, _pelvis_y - sink, 0))
-	rig.pose("spine1", Vector3(breath + 0.03 * _lean.x, -CHEST_COUNTER * _yaw.x, -0.4 * _roll.x))
-	rig.pose(
-		"spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, -CHEST_COUNTER * _yaw.x, -0.3 * _roll.x)
-	)
+## How far (world units) the pelvis must sink for a planted foot's ankle to be in reach.
+func reach_drop(leg: Leg, root: Transform3D) -> float:
+	var d := rig.bone(leg.names[0]).global_position - _ankle(leg, root)
+	var reach := (leg.l1 + leg.l2) * s * 0.995
+	if d.length() <= reach:
+		return 0.0
+	var du := d.y
+	return du - sqrt(maxf(0.0, du * du - d.length_squared() + reach * reach))
 
 
 # --- legs ----------------------------------------------------------------------------------------
