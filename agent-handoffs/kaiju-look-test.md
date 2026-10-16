@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 03:58
-## State: running a check (PR #15 open, Auto-fix on; 12 CI capture runs for its evidence)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 05:50
+## State: blocked (octopus captures: GitHub Actions billing block; windowed Godot blocked while the director games)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -45,11 +45,15 @@ after the sync (bone counts changed). This worktree is .claude/worktrees/kaiju-l
 - Earlier (old head) CI stills: mantis A sheds floating shards at arm_r2, C stays whole.
 
 ## Running jobs
-CI captures on 6dfa6b3 (scratch ci_runs3.txt): reptilian rigid clip 38935288977 / stills 38935298372,
-skin 38935307047 / 38935316239; insectoid rigid 38935325310 / 38935334815, skin 38935344392 /
-38935354141; cephalopod rigid 38935364941 / 38935373784, skin 38935382240 / 38935391440. Earlier
-sets (ci_runs.txt, ci_runs2.txt) are stale (old rigs) and cancelled. Next: download into scratch
-dl/<sp>/<v>_<clip|stills>/, run scratch py/compose_pr.py, post on PR #15, fill Evidence, tell lead.
+None. Evidence done for reptile + mantis (CI on 6dfa6b3, runs in scratch ci_runs3.txt), composed
+into side-session-notes/<lead>/kaiju-voxel-skin/ (before_after mp4s, *_joints.png) and written into
+PR #15's body. Octopus: CI 6dfa6b3 runs timed out (50 min, 150k voxels on lavapipe); the lighter
+rerun (--seconds=6 clips, capture_skin draws only near targets, 1d? see ci_runs4.txt) was refused:
+"recent account payments have failed or your spending limit needs to be increased" (all Actions).
+Lead told (05:45). Next: octopus capture locally when the focus guard allows (windowed
+capture_motion.gd --species=cephalopod --cam=game [--kaiju-rigid] --seconds=6, and capture_skin.gd
+--species=cephalopod --frames=635,656,869 [--kaiju-rigid] --stills=<dir>), compose with scratch
+py/compose_pr.py <dl> <out> <ffmpeg> cephalopod, add to PR #15, tell the lead.
 
 ## Open decisions / touch points
 Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
@@ -60,6 +64,7 @@ species-motion: mantle scale reads rig.skins["mantle0"] (smoke-proven); their ri
 ## Rules learnt the hard way
 - Never wrap windowed Godot in a script: the focus guard must see the command. Use CI captures.
 - gh workflow run prints the run URL; a "newest run after" poll can pick another session's dispatch.
+- A scratch file named inspect.py shadows Python's stdlib for scripts in that folder.
 - A fresh worktree has LFS fonts as pointers: flow then floods font errors and times out. git lfs pull.
 - APPDATA override for Godot hides Python user site-packages (PIL): set per command.
 - Godot front faces are clockwise; Tripo textures are packed JPEGs; Blender heat weights fail on Tripo.
