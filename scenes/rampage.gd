@@ -6,6 +6,9 @@ extends Node3D
 
 signal finished(result: Dictionary)
 
+## Footfall dust size (per body scale) and camera nudge (at full strength).
+const FOOTFALL_DUST := 0.35
+const FOOTFALL_SHAKE := 0.06
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
 
@@ -66,6 +69,7 @@ func _ready() -> void:
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
+	_kaiju.foot_planted.connect(_on_footfall)
 	_camera = Camera3D.new()
 	_camera.fov = 55.0
 	add_child(_camera)
@@ -224,6 +228,13 @@ func _update_powers() -> void:
 	_was_ready = charged
 	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
 	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
+
+
+## Every footfall kicks a little dust and nudges the camera (a minimal version until the
+## ability-sfx pass drives footstep sound, dust and shake from the same signal).
+func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
+	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * sim.body_scale() * (0.5 + strength))
+	_shake = maxf(_shake, FOOTFALL_SHAKE * strength)
 
 
 func _spawn_tank_node(id: int) -> void:
