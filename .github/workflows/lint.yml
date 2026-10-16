@@ -91,6 +91,10 @@ jobs:
   # (the fake-secret pattern the gate plants, and a generic sk- key rule).
   gitleaks:
     runs-on: ubuntu-latest
+    # gitleaks-action lists the PR's commits through the API; contents: read alone is a 403.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
