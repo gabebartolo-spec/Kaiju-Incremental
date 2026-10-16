@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-17 · D-040 · Director · Ultimates get their own button
+Why: picked "own button" over replacing the signature. Changes: E / pad Y, long cooldown (18 s);
+the signature stays (the insect keeps Leap Slam for hold-to-glide). As built in PR #12.
+
 ## 2026-10-16 · D-039 · Director · The city grows with each evolution
 Why: species-powers' pacing sim (tools/pacing.gd) clears the tree in 0.9 h because the one city is
 flattened by run 11; the director picked "bigger city each stage" over a new city per stage or raised
