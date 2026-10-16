@@ -471,96 +471,6 @@
    "name": "tentacle5_0",
    "parent": "mantle0",
    "head": [
-    -2.24,
-    2.78,
-    5.46
-   ],
-   "tail": [
-    9.7,
-    2.84,
-    2.94
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle5_1",
-   "parent": "tentacle5_0",
-   "head": [
-    9.7,
-    2.84,
-    2.94
-   ],
-   "tail": [
-    19.87,
-    2.27,
-    -4.39
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle5_2",
-   "parent": "tentacle5_1",
-   "head": [
-    19.87,
-    2.27,
-    -4.39
-   ],
-   "tail": [
-    24.36,
-    5.12,
-    -11.15
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle5_3",
-   "parent": "tentacle5_2",
-   "head": [
-    24.36,
-    5.12,
-    -11.15
-   ],
-   "tail": [
-    32.95,
-    8.09,
-    -15.76
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle5_4",
-   "parent": "tentacle5_3",
-   "head": [
-    32.95,
-    8.09,
-    -15.76
-   ],
-   "tail": [
-    44.07,
-    9.48,
-    -24.73
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle5_5",
-   "parent": "tentacle5_4",
-   "head": [
-    44.07,
-    9.48,
-    -24.73
-   ],
-   "tail": [
-    50.95,
-    8.34,
-    -32.0
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle6_0",
-   "parent": "mantle0",
-   "head": [
     -1.42,
     5.37,
     14.37
@@ -573,8 +483,8 @@
    "physics": true
   },
   {
-   "name": "tentacle6_1",
-   "parent": "tentacle6_0",
+   "name": "tentacle5_1",
+   "parent": "tentacle5_0",
    "head": [
     10.65,
     4.61,
@@ -588,8 +498,8 @@
    "physics": true
   },
   {
-   "name": "tentacle6_2",
-   "parent": "tentacle6_1",
+   "name": "tentacle5_2",
+   "parent": "tentacle5_1",
    "head": [
     22.59,
     6.0,
@@ -603,8 +513,8 @@
    "physics": true
   },
   {
-   "name": "tentacle6_3",
-   "parent": "tentacle6_2",
+   "name": "tentacle5_3",
+   "parent": "tentacle5_2",
    "head": [
     29.47,
     6.25,
@@ -618,8 +528,8 @@
    "physics": true
   },
   {
-   "name": "tentacle6_4",
-   "parent": "tentacle6_3",
+   "name": "tentacle5_4",
+   "parent": "tentacle5_3",
    "head": [
     37.05,
     2.53,
@@ -633,8 +543,8 @@
    "physics": true
   },
   {
-   "name": "tentacle6_5",
-   "parent": "tentacle6_4",
+   "name": "tentacle5_5",
+   "parent": "tentacle5_4",
    "head": [
     47.54,
     8.66,
@@ -648,367 +558,7 @@
    "physics": true
   },
   {
-   "name": "tentacle7_0",
-   "parent": "mantle0",
-   "head": [
-    -5.02,
-    32.35,
-    18.86
-   ],
-   "tail": [
-    0.73,
-    32.79,
-    22.46
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle7_1",
-   "parent": "tentacle7_0",
-   "head": [
-    0.73,
-    32.79,
-    22.46
-   ],
-   "tail": [
-    7.99,
-    33.04,
-    26.44
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle7_2",
-   "parent": "tentacle7_1",
-   "head": [
-    7.99,
-    33.04,
-    26.44
-   ],
-   "tail": [
-    24.73,
-    37.09,
-    27.01
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle7_3",
-   "parent": "tentacle7_2",
-   "head": [
-    24.73,
-    37.09,
-    27.01
-   ],
-   "tail": [
-    27.13,
-    40.31,
-    32.0
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle7_4",
-   "parent": "tentacle7_3",
-   "head": [
-    27.13,
-    40.31,
-    32.0
-   ],
-   "tail": [
-    30.8,
-    49.97,
-    41.86
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle7_5",
-   "parent": "tentacle7_4",
-   "head": [
-    30.8,
-    49.97,
-    41.86
-   ],
-   "tail": [
-    29.28,
-    63.43,
-    48.93
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle8_0",
-   "parent": "mantle0",
-   "head": [
-    -2.24,
-    2.78,
-    5.46
-   ],
-   "tail": [
-    4.07,
-    4.74,
-    -5.4
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle8_1",
-   "parent": "tentacle8_0",
-   "head": [
-    4.07,
-    4.74,
-    -5.4
-   ],
-   "tail": [
-    11.47,
-    2.53,
-    -7.04
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle8_2",
-   "parent": "tentacle8_1",
-   "head": [
-    11.47,
-    2.53,
-    -7.04
-   ],
-   "tail": [
-    20.19,
-    6.51,
-    -15.64
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle8_3",
-   "parent": "tentacle8_2",
-   "head": [
-    20.19,
-    6.51,
-    -15.64
-   ],
-   "tail": [
-    26.31,
-    7.2,
-    -23.72
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle8_4",
-   "parent": "tentacle8_3",
-   "head": [
-    26.31,
-    7.2,
-    -23.72
-   ],
-   "tail": [
-    33.71,
-    6.89,
-    -29.91
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle8_5",
-   "parent": "tentacle8_4",
-   "head": [
-    33.71,
-    6.89,
-    -29.91
-   ],
-   "tail": [
-    43.12,
-    12.83,
-    -32.95
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle9_0",
-   "parent": "mantle0",
-   "head": [
-    -2.24,
-    2.78,
-    5.46
-   ],
-   "tail": [
-    9.7,
-    2.84,
-    2.94
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle9_1",
-   "parent": "tentacle9_0",
-   "head": [
-    9.7,
-    2.84,
-    2.94
-   ],
-   "tail": [
-    21.07,
-    2.53,
-    -0.54
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle9_2",
-   "parent": "tentacle9_1",
-   "head": [
-    21.07,
-    2.53,
-    -0.54
-   ],
-   "tail": [
-    28.21,
-    5.05,
-    -2.75
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle9_3",
-   "parent": "tentacle9_2",
-   "head": [
-    28.21,
-    5.05,
-    -2.75
-   ],
-   "tail": [
-    34.78,
-    8.72,
-    -9.26
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle9_4",
-   "parent": "tentacle9_3",
-   "head": [
-    34.78,
-    8.72,
-    -9.26
-   ],
-   "tail": [
-    47.16,
-    9.35,
-    -13.11
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle9_5",
-   "parent": "tentacle9_4",
-   "head": [
-    47.16,
-    9.35,
-    -13.11
-   ],
-   "tail": [
-    55.12,
-    17.94,
-    -11.09
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle10_0",
-   "parent": "mantle0",
-   "head": [
-    -6.22,
-    2.4,
-    6.16
-   ],
-   "tail": [
-    -3.89,
-    8.15,
-    -7.23
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle10_1",
-   "parent": "tentacle10_0",
-   "head": [
-    -3.89,
-    8.15,
-    -7.23
-   ],
-   "tail": [
-    -1.8,
-    17.12,
-    -10.84
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle10_2",
-   "parent": "tentacle10_1",
-   "head": [
-    -1.8,
-    17.12,
-    -10.84
-   ],
-   "tail": [
-    -2.62,
-    13.46,
-    -19.24
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle10_3",
-   "parent": "tentacle10_2",
-   "head": [
-    -2.62,
-    13.46,
-    -19.24
-   ],
-   "tail": [
-    -4.52,
-    9.6,
-    -29.28
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle10_4",
-   "parent": "tentacle10_3",
-   "head": [
-    -4.52,
-    9.6,
-    -29.28
-   ],
-   "tail": [
-    -3.82,
-    7.83,
-    -39.2
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle10_5",
-   "parent": "tentacle10_4",
-   "head": [
-    -3.82,
-    7.83,
-    -39.2
-   ],
-   "tail": [
-    -0.6,
-    7.52,
-    -51.46
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle11_0",
+   "name": "tentacle6_0",
    "parent": "mantle0",
    "head": [
     -10.9,
@@ -1023,8 +573,8 @@
    "physics": true
   },
   {
-   "name": "tentacle11_1",
-   "parent": "tentacle11_0",
+   "name": "tentacle6_1",
+   "parent": "tentacle6_0",
    "head": [
     -11.59,
     6.38,
@@ -1038,8 +588,8 @@
    "physics": true
   },
   {
-   "name": "tentacle11_2",
-   "parent": "tentacle11_1",
+   "name": "tentacle6_2",
+   "parent": "tentacle6_1",
    "head": [
     -13.05,
     12.7,
@@ -1053,8 +603,8 @@
    "physics": true
   },
   {
-   "name": "tentacle11_3",
-   "parent": "tentacle11_2",
+   "name": "tentacle6_3",
+   "parent": "tentacle6_2",
    "head": [
     -20.56,
     11.12,
@@ -1068,8 +618,8 @@
    "physics": true
   },
   {
-   "name": "tentacle11_4",
-   "parent": "tentacle11_3",
+   "name": "tentacle6_4",
+   "parent": "tentacle6_3",
    "head": [
     -27.83,
     9.79,
@@ -1083,8 +633,8 @@
    "physics": true
   },
   {
-   "name": "tentacle11_5",
-   "parent": "tentacle11_4",
+   "name": "tentacle6_5",
+   "parent": "tentacle6_4",
    "head": [
     -32.13,
     6.51,
@@ -1098,277 +648,7 @@
    "physics": true
   },
   {
-   "name": "tentacle12_0",
-   "parent": "mantle0",
-   "head": [
-    -5.02,
-    32.35,
-    18.86
-   ],
-   "tail": [
-    0.73,
-    32.79,
-    22.46
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle12_1",
-   "parent": "tentacle12_0",
-   "head": [
-    0.73,
-    32.79,
-    22.46
-   ],
-   "tail": [
-    7.99,
-    33.04,
-    26.44
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle12_2",
-   "parent": "tentacle12_1",
-   "head": [
-    7.99,
-    33.04,
-    26.44
-   ],
-   "tail": [
-    15.19,
-    34.05,
-    24.86
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle12_3",
-   "parent": "tentacle12_2",
-   "head": [
-    15.19,
-    34.05,
-    24.86
-   ],
-   "tail": [
-    24.73,
-    37.09,
-    27.01
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle12_4",
-   "parent": "tentacle12_3",
-   "head": [
-    24.73,
-    37.09,
-    27.01
-   ],
-   "tail": [
-    34.59,
-    48.9,
-    30.55
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle12_5",
-   "parent": "tentacle12_4",
-   "head": [
-    34.59,
-    48.9,
-    30.55
-   ],
-   "tail": [
-    35.6,
-    60.78,
-    37.88
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle13_0",
-   "parent": "mantle0",
-   "head": [
-    -5.02,
-    32.35,
-    18.86
-   ],
-   "tail": [
-    0.73,
-    32.79,
-    22.46
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle13_1",
-   "parent": "tentacle13_0",
-   "head": [
-    0.73,
-    32.79,
-    22.46
-   ],
-   "tail": [
-    7.99,
-    33.04,
-    26.44
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle13_2",
-   "parent": "tentacle13_1",
-   "head": [
-    7.99,
-    33.04,
-    26.44
-   ],
-   "tail": [
-    17.22,
-    34.87,
-    30.17
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle13_3",
-   "parent": "tentacle13_2",
-   "head": [
-    17.22,
-    34.87,
-    30.17
-   ],
-   "tail": [
-    21.2,
-    40.18,
-    42.61
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle13_4",
-   "parent": "tentacle13_3",
-   "head": [
-    21.2,
-    40.18,
-    42.61
-   ],
-   "tail": [
-    22.33,
-    45.87,
-    48.55
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle13_5",
-   "parent": "tentacle13_4",
-   "head": [
-    22.33,
-    45.87,
-    48.55
-   ],
-   "tail": [
-    21.32,
-    60.34,
-    55.31
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle14_0",
-   "parent": "mantle0",
-   "head": [
-    -6.92,
-    2.72,
-    1.23
-   ],
-   "tail": [
-    -7.68,
-    7.01,
-    -6.85
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle14_1",
-   "parent": "tentacle14_0",
-   "head": [
-    -7.68,
-    7.01,
-    -6.85
-   ],
-   "tail": [
-    -10.52,
-    12.07,
-    -13.11
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle14_2",
-   "parent": "tentacle14_1",
-   "head": [
-    -10.52,
-    12.07,
-    -13.11
-   ],
-   "tail": [
-    -13.11,
-    7.08,
-    -20.69
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle14_3",
-   "parent": "tentacle14_2",
-   "head": [
-    -13.11,
-    7.08,
-    -20.69
-   ],
-   "tail": [
-    -20.63,
-    4.61,
-    -30.86
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle14_4",
-   "parent": "tentacle14_3",
-   "head": [
-    -20.63,
-    4.61,
-    -30.86
-   ],
-   "tail": [
-    -26.25,
-    4.3,
-    -37.62
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle14_5",
-   "parent": "tentacle14_4",
-   "head": [
-    -26.25,
-    4.3,
-    -37.62
-   ],
-   "tail": [
-    -24.8,
-    3.29,
-    -40.34
-   ],
-   "physics": true
-  },
-  {
-   "name": "tentacle15_0",
+   "name": "tentacle7_0",
    "parent": "mantle0",
    "head": [
     -18.8,
@@ -1383,8 +663,8 @@
    "physics": true
   },
   {
-   "name": "tentacle15_1",
-   "parent": "tentacle15_0",
+   "name": "tentacle7_1",
+   "parent": "tentacle7_0",
    "head": [
     -20.44,
     20.98,
@@ -1398,8 +678,8 @@
    "physics": true
   },
   {
-   "name": "tentacle15_2",
-   "parent": "tentacle15_1",
+   "name": "tentacle7_2",
+   "parent": "tentacle7_1",
    "head": [
     -26.31,
     12.57,
@@ -1413,8 +693,8 @@
    "physics": true
   },
   {
-   "name": "tentacle15_3",
-   "parent": "tentacle15_2",
+   "name": "tentacle7_3",
+   "parent": "tentacle7_2",
    "head": [
     -33.96,
     9.48,
@@ -1428,8 +708,8 @@
    "physics": true
   },
   {
-   "name": "tentacle15_4",
-   "parent": "tentacle15_3",
+   "name": "tentacle7_4",
+   "parent": "tentacle7_3",
    "head": [
     -44.45,
     10.05,
@@ -1443,8 +723,8 @@
    "physics": true
   },
   {
-   "name": "tentacle15_5",
-   "parent": "tentacle15_4",
+   "name": "tentacle7_5",
+   "parent": "tentacle7_4",
    "head": [
     -56.07,
     5.94,
@@ -1454,6 +734,456 @@
     -63.15,
     2.21,
     -10.96
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle8_0",
+   "parent": "mantle0",
+   "head": [
+    -10.52,
+    32.35,
+    17.97
+   ],
+   "tail": [
+    0.73,
+    32.79,
+    22.46
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle8_1",
+   "parent": "tentacle8_0",
+   "head": [
+    0.73,
+    32.79,
+    22.46
+   ],
+   "tail": [
+    7.99,
+    33.04,
+    26.44
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle8_2",
+   "parent": "tentacle8_1",
+   "head": [
+    7.99,
+    33.04,
+    26.44
+   ],
+   "tail": [
+    15.19,
+    34.05,
+    24.86
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle8_3",
+   "parent": "tentacle8_2",
+   "head": [
+    15.19,
+    34.05,
+    24.86
+   ],
+   "tail": [
+    27.13,
+    40.31,
+    32.0
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle8_4",
+   "parent": "tentacle8_3",
+   "head": [
+    27.13,
+    40.31,
+    32.0
+   ],
+   "tail": [
+    29.6,
+    44.16,
+    37.18
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle8_5",
+   "parent": "tentacle8_4",
+   "head": [
+    29.6,
+    44.16,
+    37.18
+   ],
+   "tail": [
+    30.67,
+    56.42,
+    45.84
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle9_0",
+   "parent": "mantle0",
+   "head": [
+    -10.52,
+    32.35,
+    17.97
+   ],
+   "tail": [
+    0.92,
+    32.03,
+    19.24
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle9_1",
+   "parent": "tentacle9_0",
+   "head": [
+    0.92,
+    32.03,
+    19.24
+   ],
+   "tail": [
+    12.41,
+    31.72,
+    17.22
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle9_2",
+   "parent": "tentacle9_1",
+   "head": [
+    12.41,
+    31.72,
+    17.22
+   ],
+   "tail": [
+    21.95,
+    34.94,
+    15.45
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle9_3",
+   "parent": "tentacle9_2",
+   "head": [
+    21.95,
+    34.94,
+    15.45
+   ],
+   "tail": [
+    23.03,
+    37.34,
+    9.07
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle9_4",
+   "parent": "tentacle9_3",
+   "head": [
+    23.03,
+    37.34,
+    9.07
+   ],
+   "tail": [
+    25.75,
+    48.9,
+    5.53
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle9_5",
+   "parent": "tentacle9_4",
+   "head": [
+    25.75,
+    48.9,
+    5.53
+   ],
+   "tail": [
+    25.43,
+    55.72,
+    -0.41
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle10_0",
+   "parent": "mantle0",
+   "head": [
+    -14.63,
+    11.69,
+    16.96
+   ],
+   "tail": [
+    -23.85,
+    16.81,
+    22.9
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle10_1",
+   "parent": "tentacle10_0",
+   "head": [
+    -23.85,
+    16.81,
+    22.9
+   ],
+   "tail": [
+    -32.69,
+    16.3,
+    22.78
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle10_2",
+   "parent": "tentacle10_1",
+   "head": [
+    -32.69,
+    16.3,
+    22.78
+   ],
+   "tail": [
+    -41.6,
+    18.13,
+    24.67
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle10_3",
+   "parent": "tentacle10_2",
+   "head": [
+    -41.6,
+    18.13,
+    24.67
+   ],
+   "tail": [
+    -47.92,
+    26.28,
+    22.33
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle10_4",
+   "parent": "tentacle10_3",
+   "head": [
+    -47.92,
+    26.28,
+    22.33
+   ],
+   "tail": [
+    -52.47,
+    31.4,
+    16.77
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle10_5",
+   "parent": "tentacle10_4",
+   "head": [
+    -52.47,
+    31.4,
+    16.77
+   ],
+   "tail": [
+    -59.29,
+    35.25,
+    15.51
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle11_0",
+   "parent": "mantle0",
+   "head": [
+    -11.85,
+    33.99,
+    20.63
+   ],
+   "tail": [
+    -6.85,
+    33.11,
+    26.44
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle11_1",
+   "parent": "tentacle11_0",
+   "head": [
+    -6.85,
+    33.11,
+    26.44
+   ],
+   "tail": [
+    -7.99,
+    33.36,
+    32.0
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle11_2",
+   "parent": "tentacle11_1",
+   "head": [
+    -7.99,
+    33.36,
+    32.0
+   ],
+   "tail": [
+    -9.26,
+    34.56,
+    38.57
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle11_3",
+   "parent": "tentacle11_2",
+   "head": [
+    -9.26,
+    34.56,
+    38.57
+   ],
+   "tail": [
+    -10.27,
+    37.84,
+    45.58
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle11_4",
+   "parent": "tentacle11_3",
+   "head": [
+    -10.27,
+    37.84,
+    45.58
+   ],
+   "tail": [
+    -10.84,
+    43.53,
+    51.9
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle11_5",
+   "parent": "tentacle11_4",
+   "head": [
+    -10.84,
+    43.53,
+    51.9
+   ],
+   "tail": [
+    -10.14,
+    58.63,
+    58.28
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle12_0",
+   "parent": "mantle0",
+   "head": [
+    -10.14,
+    12.57,
+    19.17
+   ],
+   "tail": [
+    -11.15,
+    15.92,
+    27.96
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle12_1",
+   "parent": "tentacle12_0",
+   "head": [
+    -11.15,
+    15.92,
+    27.96
+   ],
+   "tail": [
+    -13.24,
+    12.76,
+    34.46
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle12_2",
+   "parent": "tentacle12_1",
+   "head": [
+    -13.24,
+    12.76,
+    34.46
+   ],
+   "tail": [
+    -15.13,
+    12.7,
+    40.09
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle12_3",
+   "parent": "tentacle12_2",
+   "head": [
+    -15.13,
+    12.7,
+    40.09
+   ],
+   "tail": [
+    -18.35,
+    12.51,
+    44.45
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle12_4",
+   "parent": "tentacle12_3",
+   "head": [
+    -18.35,
+    12.51,
+    44.45
+   ],
+   "tail": [
+    -16.77,
+    7.39,
+    50.13
+   ],
+   "physics": true
+  },
+  {
+   "name": "tentacle12_5",
+   "parent": "tentacle12_4",
+   "head": [
+    -16.77,
+    7.39,
+    50.13
+   ],
+   "tail": [
+    -14.31,
+    2.53,
+    52.72
    ],
    "physics": true
   }
