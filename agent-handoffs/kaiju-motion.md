@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 05:40
-## State: awaiting lead (#10 ready for final critic pass; rest arm pose 5c6e703; #11 at 457915e)
+# Kaiju-motion handoff, 2026-10-17 07:30
+## State: available (#10 MERGED as aaa60f7 into look-options; #11 retargeted + synced 99a9385)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -8,12 +8,12 @@ grace; insectoid = skittering, disturbing mantis; cephalopod = sliding/gripping 
 not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-powers session.
 
 ## Branch and commit
-- claude/kaiju-motion -> PR #10 (reptile). Round 5 at 5e3427f: mouth inside split (dark seam shut,
+- claude/kaiju-motion -> PR #10 (reptile): MERGED (squash aaa60f7). Branch can be deleted by the lead. Round 5 at 5e3427f: mouth inside split (dark seam shut,
   pink open), even cadence (adult 0.45 s +-2-6%, baby 0.32 s), no double plants, still roar,
   footfall ring + camera dip, front34/rear evidence cams, per-frame feet CSV.
   Force-push is denied: merge, never rebase a pushed branch.
-- claude/kaiju-motion-species -> PR #11 (base claude/kaiju-motion; retarget to look-options once
-  #10 merges). Mantis adult textured (86ac43d, UV-seam weld), cephalopod rigs rebuilt
+- claude/kaiju-motion-species -> PR #11, base claude/look-options (synced 99a9385; the squash
+  conflicts resolved to ours since #11 already held all of #10). Mantis adult textured (86ac43d, UV-seam weld), cephalopod rigs rebuilt
   (9c0094d: voxels only on their own tentacle, true counts 13/8/13), hooks incl. climbing(on).
   Lead asked: NO more octopus motion clips until it OKs species3/octo_bone_sheet.png.
 
@@ -34,6 +34,15 @@ not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-po
   told to rebake. Director gaming: headless + CI captures only (focus-guard).
 - capture_motion: --cam=front34w (whole body), side camera pulled back (cephalopod keeps its own).
   Short loops: one clip per fix to the lead (notes kaiju-motion/round6c_*, round6d_*).
+- Final reptile critic (lead): adult PASS. Baby fixes done: jaw baked shut at rest
+  (rig_voxel.close_jaw; no throat gap, hairline mouth). Director picked adult mouth "B": a
+  tight snarl, true colours (rig arg jaw_shut 0.35 -> rig.json "snarl": true -> BipedHead skips
+  the dark seam). Director REJECTED skin-coloured mouth insides. Rig commands:
+  blender -b --python tools/blender/rig_voxel.py -- <rep_<stage>_tex_olive.glb copy>     assets/kaiju/reptilian_<stage> reptilian <100|130|160> [0.35 adult only]
+- #10 has look-options merged (45b2be6) for capture.yml. Baby CI clip (run 38925005160) sent:
+  notes kaiju-motion/round6f_baby_ci/. Torso blemish pass (rig_voxel.clean_blemishes, the
+  adult "nips": 4 voxels) at 734257e. kaiju-look-test told to rebake.
+- #11: grip finder moved to scenes/kaiju_grip.gd (rampage.gd line cap); told species-motion.
 - CI flow fix: ability_fx looks up body parts per toggle (freed after a growth stage).
 - capture_motion --tint colours each bone (arm0 red, arm1 yellow, hand magenta) for rig QA.
 - Mantis all three stages textured (D-038) at 862d318.
