@@ -179,7 +179,7 @@ def biped_skeleton(v, lo, hi):
     return bones
 
 
-JAW_CLOSE_MAX = 0.7
+JAW_CLOSE_MAX = 1.0
 
 
 def split_jaw(points, owner, bones, cell, rgb):
@@ -234,6 +234,22 @@ def split_jaw(points, owner, bones, cell, rgb):
     out = owner.copy()
     out[idx[jaw]] = len(bones) - 1
     print(f"jaw: {jaw.sum()} voxels, mouth gap closes by {np.degrees(close):.1f} deg")
+    return out
+
+
+def adopt_orphans(keys, owner):
+    """A voxel with no neighbour on its own bone would float free when that bone moves: it joins
+    the bone most of its neighbours are on."""
+    index = {tuple(k): i for i, k in enumerate(keys)}
+    out = owner.copy()
+    steps = [(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1) if dx or dy or dz]
+    moved = 0
+    for i, k in enumerate(keys):
+        around = [owner[j] for j in (index.get((k[0] + a, k[1] + b, k[2] + c)) for a, b, c in steps) if j is not None]
+        if around and owner[i] not in around:
+            out[i] = max(set(around), key=around.count)
+            moved += 1
+    print(f"orphans adopted: {moved}")
     return out
 
 
@@ -309,6 +325,7 @@ def main():
     owner = nearest_bone(centres_bl, bones, side)
     rgb = np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
     owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
+    owner = adopt_orphans(keys, owner)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
     gk[:, 0] -= 1  # keep integer cells after the x flip

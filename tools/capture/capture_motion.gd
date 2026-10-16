@@ -24,7 +24,9 @@ var _stage := "adult"
 var _cam := "game"
 var _seconds := 15.0
 var _trace := ""
-var _shake := 0.0
+var _dip := 0.0
+var _line: Line2D
+var _guide: Line2D
 var _label: Label
 var _time := 0.0
 
@@ -72,6 +74,14 @@ func _run() -> void:
 	_label.position = Vector2(24, 18)
 	_label.add_theme_font_size_override("font_size", 28)
 	ui.add_child(_label)
+	_guide = Line2D.new()
+	_guide.default_color = Color(1, 1, 1, 0.8)
+	_guide.width = 2.0
+	_line = Line2D.new()
+	_line.default_color = Color(1, 0.2, 0.2)
+	_line.width = 3.0
+	ui.add_child(_guide)
+	ui.add_child(_line)
 	stage.add_child(ui)
 	var def: Dictionary = Content.species_def(_species)
 	var stats: Dictionary = def["stats"]
@@ -82,14 +92,20 @@ func _run() -> void:
 	var body_scale: float = SCALES.get(_stage, 1.0)
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
+	# Footfalls as in the rampage (Rampage._on_footfall): dust, a pale ring, a camera dip.
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
-			plants.append("%.3f,%s,%.3f,%.3f,%.3f,%.2f" % [_time, side, at.x, at.y, at.z, strength])
-			city.fx.dust(at + Vector3(0, 0.2, 0), 1.1 * body_scale * (0.5 + strength))
-			_shake = maxf(_shake, 0.14 * strength)
+			var size := body_scale * (0.2 + strength)
+			city.fx.dust(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
+			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT)
+			var dip := Rampage.FOOTFALL_DIP * body_scale * strength
+			_dip = maxf(_dip, dip)
+			var row := [_time, side, at.x, at.y, at.z, strength, dip, _dip_px(dip, body_scale)]
+			plants.append("%.3f,%s,%.3f,%.3f,%.3f,%.2f,%.3f,%.1f" % row)
 	)
 	var rows := PackedStringArray(["t,pelvis_y,forward_speed"])
-	plants.append("t,foot,x,y,z,strength")
+	var feet := PackedStringArray(["t,foot,planted,x,z"])
+	plants.append("t,foot,x,y,z,strength,camera_dip_units,camera_dip_px_at_1080p")
 	var last_pelvis := Vector3.ZERO
 	var cam := Camera3D.new()
 	cam.fov = 55.0 if _cam == "game" else 40.0
@@ -129,10 +145,13 @@ func _run() -> void:
 		worst_usec = maxi(worst_usec, spent)
 		total_usec += spent
 		_label.text = _event_at(t)
-		_shake = maxf(0.0, _shake - dt * 3.0)
-		_place(cam, at, body_scale)
-		var jitter := Vector3(sin(t * 91.0), cos(t * 77.0), 0) * _shake * 0.6
-		cam.position += cam.global_transform.basis * jitter
+		_dip = move_toward(_dip, 0.0, dt * Rampage.DIP_RECOVER * _dip + dt * 0.05)
+		_place(cam, at, Vector3(facing.x, 0, facing.y), body_scale)
+		if _cam == "game":
+			cam.position.y -= _dip * (0.75 + 0.4 * body_scale)
+		_trace_feet(kaiju, t, feet)
+		if _cam == "rear":
+			_level_line(kaiju, cam)
 		var pelvis := _pelvis_of(kaiju)
 		if frames > 0:
 			var fwd := Vector3(facing.x, 0, facing.y)
@@ -146,6 +165,9 @@ func _run() -> void:
 		f.close()
 		f = FileAccess.open(_trace.get_basename() + "_plants.csv", FileAccess.WRITE)
 		f.store_string(String.chr(10).join(plants))
+		f.close()
+		f = FileAccess.open(_trace.get_basename() + "_feet.csv", FileAccess.WRITE)
+		f.store_string(String.chr(10).join(feet))
 		f.close()
 	var drift := kaiju.foot_drift()
 	var hip := kaiju.hip_height()
@@ -167,7 +189,16 @@ func _run() -> void:
 	quit()
 
 
-func _place(cam: Camera3D, at: Vector3, body_scale: float) -> void:
+func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void:
+	var right := fwd.cross(Vector3.UP).normalized()
+	if _cam == "front34":  # ahead and to one side, at head height: the roar's hinge and gape
+		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 8.5, 0)) * body_scale
+		cam.look_at(at + Vector3(0, 7.5, 0) * body_scale)
+		return
+	if _cam == "rear":  # straight behind at shoulder height: the shoulder line against level
+		cam.position = at + (-fwd * 17.0 + Vector3(0, 7.0, 0)) * body_scale
+		cam.look_at(at + Vector3(0, 6.5, 0) * body_scale)
+		return
 	if _cam == "fixed":
 		cam.position = Vector3(34.0, 3.0 * body_scale + 3.0, -9.0)
 		cam.look_at(Vector3(0, 2.5 * body_scale, -9.0))
@@ -205,3 +236,38 @@ func _pelvis_of(kaiju: KaijuModel) -> Vector3:
 	for node: Node in kaiju.find_children("spine0", "Node3D", true, false):
 		return (node as Node3D).global_position
 	return kaiju.global_position
+
+
+## Every foot's world position and whether it is planted, each frame (the slide trace).
+func _trace_feet(kaiju: KaijuModel, t: float, into: PackedStringArray) -> void:
+	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		if rig.gait is BipedGait:
+			for leg: BipedGait.Leg in (rig.gait as BipedGait).legs:
+				var p := rig.tail_world(leg.names[2])
+				into.append("%.4f,%s,%d,%.4f,%.4f" % [t, leg.names[0], int(leg.planted), p.x, p.z])
+
+
+## The shoulder line (red, through the two arm roots) over a level guide (white), with its tilt.
+func _level_line(kaiju: KaijuModel, cam: Camera3D) -> void:
+	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		if not rig.has_bone("arm_l0") or not rig.has_bone("arm_r0"):
+			return
+		var a := rig.bone("arm_l0").global_position
+		var b := rig.bone("arm_r0").global_position
+		var sa := cam.unproject_position(a)
+		var sb := cam.unproject_position(b)
+		_line.points = PackedVector2Array([sa, sb])
+		var mid := (sa + sb) * 0.5
+		var half := absf(sb.x - sa.x) * 0.75
+		_guide.points = PackedVector2Array([mid - Vector2(half, 0), mid + Vector2(half, 0)])
+		var tilt := rad_to_deg(atan2(b.y - a.y, Vector2(b.x - a.x, b.z - a.z).length()))
+		_label.text += "   shoulder tilt %.1f deg" % tilt
+
+
+## How many pixels a camera dip moves the picture at 1080p for the gameplay camera.
+func _dip_px(dip: float, body_scale: float) -> float:
+	var zoom := 0.75 + 0.4 * body_scale
+	var dist := CAMERA_OFFSET.length() * zoom
+	return dip * zoom / (2.0 * dist * tan(deg_to_rad(55.0) * 0.5)) * 1080.0
