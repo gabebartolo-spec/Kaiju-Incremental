@@ -11,6 +11,10 @@ func _ready() -> void:
 	_axis_action("move_down", [KEY_S, KEY_DOWN], JOY_AXIS_LEFT_Y, 1.0)
 	_button_action("signature", [KEY_SPACE], JOY_BUTTON_A)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
+	# The shipped game starts fullscreen (D-027). Editor-binary runs (agent captures) stay windowed:
+	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
+	if OS.has_feature("template"):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
 func _unhandled_input(event: InputEvent) -> void:
