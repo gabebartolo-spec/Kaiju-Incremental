@@ -21,6 +21,8 @@ Why: "could we have real cities with real layouts... imagine how fun it would be
 city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
 (ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
 area. No player-imported cities, ever: new cities ship as patches (director, 2026-10-16).
+TABLED (director, 2026-10-16): "focus on proofing the game before we expand to that feature";
+the helper pauses at a clean point on its WIP branch.
 
 ## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
 Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
