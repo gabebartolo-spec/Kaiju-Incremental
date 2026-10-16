@@ -32,3 +32,4 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | cephalopod baby | text prompt (soft oversized mantle, huge slit eyes, a dozen stubby uneven tentacles, budding barnacles) | Smart Mesh P2.0 x4 | (see Studio, 23:20) | 100 | yes | generating |
 | 2026-10-16 | cephalopod baby | 23:19 set: 6176590f / b2edc684 / ede8c6a2 / f1eb550f | picked | 6176590f-5ece-4108-b0a5-d6d42a91bfd4 (5,524 faces) | (100, above) | yes | director: "i love him" (big round eyes, short curled tentacles) |
 | 2026-10-16 | insectoid adult texture | dark chitin, rust underside, acid-green eyes on 9668b815 | Texture | 9668b815 (texture) | 30 | yes | generating |
+| 2026-10-16 | cephalopod adolescent | text prompt (leaner angular mantle, brow ridges, 10 lanky whip tentacles, first barnacles) | Smart Mesh P2.0 x4 | 724612fd-2df8-4ca9-9f62-3b16044d3a1b | 100 | yes | generating |

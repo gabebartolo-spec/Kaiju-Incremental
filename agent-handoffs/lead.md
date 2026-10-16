@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 23:25
-## State: working (next: cephalopod variants octo_3/octo_4 export + six-view; kaiju-motion on reptile round 3)
+# Lead handoff, 2026-10-16 23:32
+## State: working (cephalopod adolescent 724612fd + mantis adult texture generating; helpers: kaiju-motion, species-powers, ci-captures)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
@@ -21,7 +21,7 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 ## Next (mine)
 1. DONE: all three reptile stages rigged from olive textures (docs/captures/2026-10-16-stages/reptile_stages_ingame.png).
 
-2. Cephalopod adult: 4 variants ff432a4f / 8bf2f668 / f303b247 / 666430b3; octo_1, octo_2 downloaded to
+2. Cephalopod: adult = 8bf2f668 (octo_2.glb, D-036), baby = 6176590f (octo_baby.glb, director "i love him"), adolescent generating (724612fd). Then a skin for all three.
    ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
    logic), then a skin. Radial rig comes from kaiju-motion.
 3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
