@@ -1,5 +1,5 @@
 # Species-motion handoff, 2026-10-17 02:40
-## State: running a check (CI renders of mantis r3c + octopus adult side)
+## State: awaiting lead (mantis r3c game clip sent); side + octopus adult CI still rendering
 
 ## Task
 Mantis (insectoid) and octopus (cephalopod) locomotion, taken over from kaiju-motion (it keeps
@@ -8,7 +8,8 @@ Director: the insect must "disturb and disgust" (skitter, twitch, exoskeletal); 
 slide, push and pull, grab edges, never tip-toe; never wind-up-toy.
 
 ## Branch and commit
-- claude/species-motion at 5d8c161 (pushed; merged PR #11 at 99a9385, now based on look-options). Cut from PR #11's head; since merged with PR #11's
+- claude/species-motion = PR #11 head (claude/kaiju-motion-species) since 849cb96: push both.
+  Was 5d8c161 (pushed; merged PR #11 at 99a9385, now based on look-options). Cut from PR #11's head; since merged with PR #11's
   head (0490f07, includes KaijuGrip and close_jaw) and claude/look-options (capture.yml that can be
   dispatched). Merge, never rebase.
 - No PR of its own yet. Plan: a PR into claude/kaiju-motion-species once the lead OKs the clips.
@@ -40,6 +41,10 @@ side-session-notes/local_9fac90d2.../species-motion/: octo_bone_sheet_r3.png (+ 
 mantis_bone_sheet_r3.png, mantis_r3a/ (first mantis clips, older twitch amplitudes, numbers.txt).
 
 ## Running jobs
+- r3c game measured: holds median 0.0023 (r3b 0.0073), darts 0.0107; rest twitches still small by
+  mean energy (2.0 s dead-still run) - expect FIX on finding 3; next: fewer, larger moves.
+- kaiju-look-test: after any .kvox/.rig.json change run GODOT=<godot> bash tools/kaiju_skin/bake_all.sh
+  and commit the .vskin files (smoke fails on a stale skin) once PR #15 lands.
 - r3c CI runs 38932071938 (mantis game), 38932082863 (mantis side), 38932093965 (octopus
   adult side), each with --pose-trace=user://pose.csv (out/userdata/...). Measure with
   tools/capture/screen_motion.py <clip.mp4> <pose.csv>; compare to r3b (holds 0.0073 vs darts 0.0104,
