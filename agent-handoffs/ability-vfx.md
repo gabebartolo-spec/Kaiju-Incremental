@@ -1,5 +1,5 @@
 # Ability VFX handoff, 2026-10-16 21:00 (rev 21:05)
-## State: working (waiting for the GPU to recapture; lead review FIX items implemented)
+## State: awaiting lead (FIX list done; new board + clip sent)
 
 ## Task
 D-026: a distinct VFX for every unlockable power, plus the SFX sourcing proposal. The lead is
@@ -29,26 +29,20 @@ green). The board has NOT passed my QA yet; the PR stays on HOLD with the lead.
 - flow 22, smoke 11, sim 39 green locally.
 
 ## Next
-Merged look-options (8cf4a16: no project-wide fullscreen; D-030 SFX decided). Recapture
-powers4 (scratchpad) passed for leap and breath impact, but showed: body overlay far too strong
-(kaiju turned solid pink/mint), lash streaks too faint, and the breath voxels washed out to peach.
-powers6/7 (new city): breath beam + scorch, cracks, lash, leap pass. Fixed since: regen rings use
-per-fragment world y (multimesh), additive shaders fog_disabled (fog drew pale quads round flares
-and the beam impact), bigger deflect flash (29cc36c). I/J in gameplay shots sit in fire smoke, so
-H/I/J on the board come from scratchpad dbg_cues.gd (clear street, same camera).
-Capture powers8 + cue shots running (buaor8773); then board.py -> QA -> docs/captures -> push.
-Findings for the lead's learnings (not mine to record): Godot additive unshaded quads need
-fog_disabled; MODEL_MATRIX in a MultiMesh shader excludes the instance transform.
-1. Wedge orientation verified (dbg_breath.gd). Review the powers8 board with 2x crops.
-2. Copy the board into docs/captures/2026-10-16-powers/, convert the clip to mp4, push, and
-   message the lead.
-3. Then the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0; synthesize hums, beams,
-   pings, sizzles, regen in-house; register + provenance before assets/).
+- FIX list done and pushed. Board (A-J, gameplay camera): docs/captures/2026-10-16-powers/
+  powers_board.png; H/I/J from tools/capture/capture_cues.gd (clear street). Clip (powers8):
+  scratchpad .../powers8/powers.mp4.
+- Known: the breath at 0.25 s is still mostly behind the body when the kaiju faces away (the
+  orbit is 25 deg as approved); the ready flash tints the body red for about 0.5 s.
+- Findings for the lead's learnings (not mine to record): additive unshaded quads need
+  fog_disabled; MODEL_MATRIX in a MultiMesh shader excludes the instance transform.
+- After the lead passes this: the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0;
+  synthesize hums, beams, pings, sizzles, regen in-house; register + provenance first).
 
 ## Attempts (beam visibility)
 Edge glow (failed), x-ray through walls (covered the kaiju, reverted), flat glow floor plus a
 white-hot jet ramp; now the camera orbit (lead-approved) plus a beam that ends on its target.
 
 ## Running jobs
-GPU-wait watcher biuo13l46; a wakeup at 21:14 as a fallback. No Godot of mine running.
+None. No Godot of mine running.
 No override.cfg left.
