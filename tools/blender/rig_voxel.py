@@ -6,7 +6,8 @@ tracing the body's own limbs, voxelizes the surface and tags every voxel with it
 
 Writes <out>.kvox (version 2, one pose; each voxel's flags byte is its bone index) and <out>.rig.json
 (bones: name, parent, head, tail in voxel units with y up and -Z forward, plus "physics" chains).
-Colours come from data/species.json. Pure Blender + numpy.
+Colours come from the model's base-colour texture when it has one (a Tripo textured export),
+else from data/species.json. Pure Blender + numpy.
 """
 import json
 import struct
@@ -21,10 +22,23 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # --- load and normalise ---------------------------------------------------------------------------
 
+def base_image(mat):
+    """The image feeding the material's Base Color, or None (Tripo textured exports have one)."""
+    if mat is None or not mat.use_nodes:
+        return None
+    for node in mat.node_tree.nodes:
+        if node.type == "BSDF_PRINCIPLED":
+            link = node.inputs["Base Color"].links
+            if link and link[0].from_node.type == "TEX_IMAGE":
+                return link[0].from_node.image
+    return None
+
+
 def load(path):
+    """Vertices, normals, triangles, and per-triangle UVs plus texture (None when untextured)."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=path)
-    tris, verts_all = [], []
+    tris, verts_all, tri_uvs, tri_img, images = [], [], [], [], {}
     deps = bpy.context.evaluated_depsgraph_get()
     for obj in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
         ev = obj.evaluated_get(deps)
@@ -36,13 +50,28 @@ def load(path):
         n = np.array([x.normal for x in mesh.vertices]) @ mw[:3, :3].T
         base = sum(len(x) for x in verts_all)
         verts_all.append((v, n))
+        uv_layer = mesh.uv_layers.active.data if mesh.uv_layers.active else None
         for t in mesh.loop_triangles:
             tris.append([base + i for i in t.vertices])
+            mat = obj.material_slots[t.material_index].material if obj.material_slots else None
+            img = base_image(mat)
+            if img is not None and img.size[0] > 0 and uv_layer is not None:
+                if img.name not in images:
+                    w, h = img.size
+                    # Raw pixels of an 8-bit texture are display (sRGB) values: what .kvox stores.
+                    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, img.channels)
+                    images[img.name] = px[:, :, :3]
+                tri_img.append(img.name)
+                tri_uvs.append([uv_layer[i].uv[:] for i in t.loops])
+            else:
+                tri_img.append(None)
+                tri_uvs.append([(0, 0)] * 3)
         ev.to_mesh_clear()
     v = np.concatenate([a for a, _ in verts_all])
     n = np.concatenate([b for _, b in verts_all])
     n /= np.maximum(1e-9, np.linalg.norm(n, axis=1, keepdims=True))
-    return v, n, np.array(tris)
+    texture = (np.array(tri_uvs), tri_img, images) if images else None
+    return v, n, np.array(tris), texture
 
 
 def to_game(p):
@@ -169,9 +198,11 @@ def nearest_bone(points, bones, side_of):
 
 # --- voxelize -------------------------------------------------------------------------------------
 
-def surface_voxels(v, tris, col, scale, origin):
+def surface_voxels(v, tris, col, scale, origin, texture=None):
+    """Voxel cells sampled over every triangle; colours from the texture when there is one,
+    else interpolated from the vertex colours."""
     cells = {}
-    for a, b, c in tris:
+    for t, (a, b, c) in enumerate(tris):
         q = (v[[a, b, c]] - origin) * scale
         edge = max(np.linalg.norm(q[1] - q[0]), np.linalg.norm(q[2] - q[1]), np.linalg.norm(q[0] - q[2]))
         n = max(2, int(edge * 2) + 1)
@@ -181,7 +212,15 @@ def surface_voxels(v, tris, col, scale, origin):
         u, w = u[k], w[k]
         bary = np.c_[1 - u - w, u, w]
         pts = bary @ q
-        cs = bary @ col[[a, b, c]]
+        if texture is not None and texture[1][t] is not None:
+            px = texture[2][texture[1][t]]
+            ph, pw = px.shape[:2]
+            uvs = bary @ texture[0][t]
+            ix = np.clip((uvs[:, 0] % 1.0) * (pw - 1), 0, pw - 1).astype(int)
+            iy = np.clip((uvs[:, 1] % 1.0) * (ph - 1), 0, ph - 1).astype(int)
+            cs = px[iy, ix]
+        else:
+            cs = bary @ col[[a, b, c]]
         for key, cc in zip(map(tuple, np.floor(pts).astype(int)), cs):
             acc = cells.get(key)
             if acc is None:
@@ -197,14 +236,15 @@ def main():
     defs = json.loads((ROOT / "data/species.json").read_text(encoding="utf-8"))["species"]
     hexes = next(d for d in defs if d["id"] == species)["colors"]
     colors = {k: [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)] for k, h in hexes.items()}
-    v, n, tris = load(src)
+    v, n, tris, texture = load(src)
     lo, hi = v.min(0), v.max(0)
     H = hi[2] - lo[2]
     col = vertex_colours(v, n, tris, colors, H)
     bones = biped_skeleton(v, lo, hi)
     scale = (height - 1) / H
     origin = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
-    cells = surface_voxels(v, tris, col, scale, origin)
+    cells = surface_voxels(v, tris, col, scale, origin, texture)
+    print("colours from", "texture" if texture is not None else "species palette")
     keys = np.array(list(cells.keys()))
     centres_bl = (keys + 0.5) / scale + origin  # back to Blender space for bone tests
     side = lambda name: 1 if "_l" in name else (-1 if "_r" in name else 0)
