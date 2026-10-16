@@ -7,12 +7,15 @@ extends RefCounted
 ## Tail: lift per bone (positive lowers), sideways curl straightened (0..1), stiffness and
 ## gravity share (soft: it lags and droops between steps), the sweep against the hips (per bone,
 ## times the hip yaw), how fast that sweep travels down the tail (1/s), idle sway.
-const TAIL_LIFT := -0.04
+const TAIL_LIFT := -0.08
+## A young tail is carried higher, clear of the legs; the tail flicks against the pelvis drop.
+const TAIL_YOUTH_LIFT := -0.04
+const TAIL_FLICK := 0.05
 const TAIL_STRAIGHTEN := 0.75
 const TAIL_STIFFNESS := 7.0
 const TAIL_GRAVITY := 0.8
-const TAIL_SWEEP := 0.45
-const TAIL_DELAY := 7.0
+const TAIL_SWEEP := 0.9
+const TAIL_DELAY := 4.0
 const TAIL_SWAY := 0.03
 ## Arms: tucked against the chest (down-curl, inward turn, elbow bend), extra curl at a roar,
 ## a little swing against the hips; soft chains so they jiggle with each step.
@@ -24,6 +27,9 @@ const ARM_SWING := 0.5
 const ARM_STIFFNESS := 14.0
 
 var rig: KaijuRig
+## The pelvis's drop speed (hip heights/s) and how young the body is (0..1), set each frame.
+var hip_drop := 0.0
+var youth := 0.0
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
 
@@ -61,7 +67,8 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 			var k := float(i + 1) / n
 			var sway := sin(time * 0.9 - i * 0.45) * TAIL_SWAY
 			var yaw := -TAIL_SWEEP * _sweep[i] + sway + _straight[i]
-			var lift := TAIL_LIFT * (1.0 - k * 0.5)
+			var lift := (TAIL_LIFT + TAIL_YOUTH_LIFT * youth) * (1.0 - k * 0.5)
+			lift += TAIL_FLICK * hip_drop * k
 			tail.drive[i] = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, lift)
 	for side: String in ["l", "r"]:
 		var chain := rig.chain_named("arm_%s0" % side)

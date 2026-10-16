@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-034 · Director · Kaiju get real Tripo-textured skins; reptile = dark olive crocodile
+Why: "i hope this isnt our final textured look"; "should be greener, less grey"; picked C (dark olive
+middle ground) over B (bright green) on docs/captures/2026-10-16-stages/reptile_skin_options.png.
+Also: "spend as many tripo credits as u want". Changes: rig_voxel.py samples the base-colour texture
+when present; every stage of every species gets a matching texture pass (same prompt per species).
+
 ## 2026-10-16 · D-033 · Director · Kaiju growth stages picked
 Why: stage board docs/captures/2026-10-16-stages/stages_board.png. Reptile adolescent = B (Tripo
 f9cf6ba7, slimmer version of the adult); mantis baby 06ed8a12, adolescent 0161ad14, adult 9668b815

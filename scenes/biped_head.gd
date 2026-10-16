@@ -84,7 +84,7 @@ func update(dt: float, standing: bool) -> void:
 		off = wrapf(_head_yaw - g.body_yaw, -PI, PI)
 	# Tells: a snort (head flick) and a jaw click now and then.
 	_tell_in -= dt
-	if _tell_in <= 0.0:
+	if _tell_in <= 0.0 and standing:  # a snort or jaw click only while it stands
 		_tell_in = g.rng.randf_range(TELL_EVERY.x, TELL_EVERY.y)
 		_tell = 1.0
 		_head_pitch.y += 1.6

@@ -9,7 +9,7 @@ extends KaijuGait
 const SWING_WALK := 0.4
 const SWING_RUN := 0.5
 ## How far a foot may travel under the body while planted (hip heights), so it stays in reach.
-const STANCE_REACH := 1.15
+const STANCE_REACH := 0.55
 ## Step length in hip heights: at a standstill, how much it grows with speed, and its cap.
 const STEP_MIN := 0.45
 const STEP_PER_SPEED := 0.3
@@ -29,8 +29,12 @@ const LIFT_STOMP := 0.3
 ## Feet track narrower than the hips (a predator walks almost on a line).
 const TRACK_NARROWING := 0.82
 ## A planted foot stretched past this share of its reach steps; past the second it hops.
-const REACH_STEP := 0.97
+const REACH_STEP := 0.99
 const REACH_HOP := 1.02
+## A foot lands within this share of the leg's reach, and stays down at least this share of a
+## stride before a stretch can lift it again (unless it is past REACH_HOP).
+const LAND_REACH := 0.9
+const MIN_STANCE := 0.3
 ## At most this much (hip heights) the pelvis sinks to keep a stretched foot planted.
 const MAX_REACH_DROP := 0.18
 ## Body scale of an adult and a baby: in between, the walk is that much younger.
@@ -61,6 +65,7 @@ class Leg:
 	var last_cycle := -1
 	var tilt := 0.0
 	var walking := false  ## this swing is a walk step (its pace follows the stride)
+	var down_for := 0.0  ## seconds since it planted
 	## Foot-slide meter: where the foot was planted, worst drift during this stance (world units).
 	var plant_at := Vector3.ZERO
 	var drift := 0.0
@@ -127,6 +132,8 @@ func update(delta: float) -> void:
 	body.update(dt, root, head.roar_lean())
 	_solve_legs(root)
 	head.update(dt, standing)
+	swing.hip_drop = body.pelvis_speed / maxf(0.001, hip_height)
+	swing.youth = youth
 	swing.update(time, body.hip_yaw, head.roar_open(), dt)
 	rig.simulate_chains(delta)
 	_measure_slide()
@@ -185,7 +192,10 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 	# A hard reversal can leave it no time: then it hops (both feet briefly off the ground).
 	var hurry := 1.0
 	for leg: Leg in legs:
-		if leg.planted and _stretch(leg, root) > REACH_STEP:
+		if leg.planted:
+			leg.down_for += dt
+		var settled := leg.down_for > MIN_STANCE * _cycle
+		if leg.planted and _stretch(leg, root) > (REACH_STEP if settled else REACH_HOP):
 			var other_air := 0.0
 			for o: Leg in legs:
 				if o != leg and not o.planted:
@@ -194,6 +204,7 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 				var quick := 0.6 if other_air > 0.0 else 1.0
 				_lift_foot(leg, minf(_cycle * _swing, SETTLE_SECONDS * sqrt(s)) * quick, LIFT_SLOW)
 				leg.walking = not standing
+				leg.last_cycle = roundi(_phase - leg.offset)  # this counts as its next stride slot
 			else:
 				hurry = 2.5
 	# Walking: each leg swings once per stride, in its slot.
@@ -232,6 +243,7 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 		if not standing:
 			land += velocity * (remaining + stance_time * 0.5)
 		land.y = ground
+		land = _within_reach(leg, land, root)
 		var e := leg.t * leg.t * (3.0 - 2.0 * leg.t)
 		if leg.stomping:
 			e = leg.t * leg.t  # hangs, then drives down
@@ -241,6 +253,22 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 		if leg.t >= 1.0:
 			leg.foot = land
 			_plant(leg, standing)
+
+
+## Pulls a landing spot in so the leg reaches it comfortably from the hip, even while the body
+## hangs back on the next plant.
+func _within_reach(leg: Leg, land: Vector3, root: Transform3D) -> Vector3:
+	var fwd := -root.basis.z.normalized()
+	var hip := rig.bone(leg.names[0]).global_position - fwd * body.hold_back()
+	var ankle := land + (_ankle(leg, root) - leg.foot)
+	var reach := (leg.l1 + leg.l2) * s * LAND_REACH
+	var dy := minf(hip.y - ankle.y, reach * 0.85)  # a high pelvis sinks to the foot
+	var flat := Vector2(ankle.x - hip.x, ankle.z - hip.z)
+	var most := sqrt(maxf(0.0, reach * reach - dy * dy))
+	if flat.length() <= most:
+		return land
+	var fixed := flat.normalized() * most - flat
+	return land + Vector3(fixed.x, 0.0, fixed.y)
 
 
 ## How far a planted foot's ankle is from its hip, as a share of the leg's reach.
@@ -261,6 +289,7 @@ func _lift_foot(leg: Leg, seconds: float, lift: float) -> void:
 
 func _plant(leg: Leg, standing: bool) -> void:
 	leg.planted = true
+	leg.down_for = 0.0
 	leg.plant_at = leg.foot
 	leg.drift = 0.0
 	var weight := 0.35 + 0.45 * speed_k()

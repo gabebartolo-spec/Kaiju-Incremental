@@ -12,13 +12,16 @@ const LEAN_WALK := 0.24
 const LEAN_ACCEL := 0.02
 ## Crouch: the pelvis sits this much lower (hip heights) standing and walking, so the knees bend.
 const CROUCH_STAND := 0.03
-const CROUCH_WALK := 0.05
+const CROUCH_WALK := 0.09
 ## Footfall: drop (hip heights/s) and the hold-back surge; pelvis spring (heavy, slow to rise).
-const FOOTFALL_JOLT := 0.9
-const STOMP_JOLT := 1.4
-const SURGE_JOLT := 0.5
-const PELVIS_OMEGA := 7.0
-const PELVIS_ZETA := 0.38
+const FOOTFALL_JOLT := 1.7
+const STOMP_JOLT := 2.3
+## On each plant the body hangs back against its own travel (share of the speed): a visible
+## pause, then a surge as the spring brings it back up to the sim's position.
+const SURGE_HOLD := 0.95
+const SURGE_OMEGA := 5.0
+const PELVIS_OMEGA := 9.0
+const PELVIS_ZETA := 0.7
 ## Weight shift over the stance leg: sideways (hip heights), roll and hip yaw (rad).
 const SWAY := 0.12
 const ROLL := 0.13
@@ -26,19 +29,23 @@ const HIP_YAW := 0.16
 ## A stretched planted foot: the pelvis sinks at most this much (hip heights), easing back up.
 const MAX_SINK := 0.18
 const SINK_RECOVER := 1.5
-## Chest counters the hips so the shoulders ride steady; slow breathing (Hz, rad).
+## The chest counters the hips' yaw, and rolls with them (so the shoulders read from above);
+## slow breathing (Hz, rad).
 const CHEST_COUNTER := 0.5
+const SHOULDER_ROLL := 0.45
 const BREATH_HZ := 0.22
 const BREATH := 0.022
 ## Youth: extra bounce and sway, and an overbalance every few seconds (s) of this size (rad).
 const YOUTH_BOUNCE := 0.6
 const YOUTH_SWAY := 0.8
-const STUMBLE_EVERY := Vector2(1.6, 3.5)
+const STUMBLE_EVERY := Vector2(3.0, 6.0)
 const STUMBLE := 0.22
 
 var g: BipedGait
 ## Hip yaw this frame (rad): the tail and arms swing against it.
 var hip_yaw := 0.0
+## Pelvis drop speed this frame (rig units/s): the tail flicks against it.
+var pelvis_speed := 0.0
 var _pelvis := Vector2.ZERO  # height offset, velocity
 var _surge := Vector2.ZERO  # how far the body hangs back, velocity
 var _sway := Vector2.ZERO
@@ -46,18 +53,23 @@ var _roll := Vector2.ZERO
 var _yaw := Vector2.ZERO
 var _lean := Vector2.ZERO
 var _sink := 0.0
-var _stumble_in := 2.0
+var _stumble_in := 3.0
 
 
 func _init(gait: BipedGait) -> void:
 	g = gait
 
 
+## How far (world units) the body hangs back at the deepest of a plant's hold.
+func hold_back() -> float:
+	return SURGE_HOLD * g.speed / SURGE_OMEGA * 0.5
+
+
 ## A foot came down (weight 0..1, 1 = a stomp): the body drops and hangs back for a beat.
 func plant(weight: float) -> void:
 	var jolt := lerpf(FOOTFALL_JOLT, STOMP_JOLT, weight) * (1.0 + YOUTH_BOUNCE * g.youth)
 	_pelvis.y -= jolt * g.hip_height
-	_surge.y += SURGE_JOLT * g.hip_height * (0.4 + 0.6 * g.speed_k())
+	_surge.y += SURGE_HOLD * g.speed / maxf(0.001, g.s)
 
 
 func update(dt: float, root: Transform3D, roar_lean: float) -> void:
@@ -82,7 +94,8 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 	_lean = KaijuGait.spring(_lean.x, _lean.y, lean_target, 4.0, 0.9, dt)
 	var crouch := lerpf(CROUCH_STAND, CROUCH_WALK, speed_k) * h
 	_pelvis = KaijuGait.spring(_pelvis.x, _pelvis.y, -crouch, PELVIS_OMEGA, PELVIS_ZETA, dt)
-	_surge = KaijuGait.spring(_surge.x, _surge.y, 0.0, 6.0, 0.8, dt)
+	_surge = KaijuGait.spring(_surge.x, _surge.y, 0.0, SURGE_OMEGA, 0.75, dt)
+	pelvis_speed = _pelvis.y
 	var euler := Vector3(-_lean.x, _yaw.x, _roll.x)
 	var offset := Vector3(_sway.x, _pelvis.x, _surge.x)
 	g.rig.pose("spine0", euler, offset)
@@ -98,19 +111,20 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 		g.rig.pose("spine0", euler, offset - Vector3(0, _sink, 0))
 	var breath := sin(g.time * TAU * BREATH_HZ) * BREATH
 	var counter := -CHEST_COUNTER * _yaw.x
-	g.rig.pose("spine1", Vector3(breath + 0.03 * _lean.x, counter, -0.4 * _roll.x))
-	g.rig.pose("spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, counter, -0.3 * _roll.x))
+	var shoulders := SHOULDER_ROLL * _roll.x
+	g.rig.pose("spine1", Vector3(breath + 0.03 * _lean.x, counter, shoulders))
+	g.rig.pose("spine2", Vector3(breath * 0.6 + 0.03 * _lean.x, counter, shoulders * 0.6))
 
 
 ## A young body overbalances now and then while walking: a lurch to one side it catches.
 func _stumble(dt: float, speed_k: float) -> void:
-	if g.youth <= 0.0 or speed_k < 0.1:
-		return
+	if g.youth <= 0.0 or speed_k < 0.1 or absf(g.yaw_rate) > 0.4:
+		return  # only on a straight walk, so it reads as one clear stumble
 	_stumble_in -= dt
 	if _stumble_in > 0.0:
 		return
 	_stumble_in = g.rng.randf_range(STUMBLE_EVERY.x, STUMBLE_EVERY.y)
 	var side := 1.0 if g.rng.randf() < 0.5 else -1.0
-	_roll.y += side * STUMBLE * g.youth * 12.0
-	_sway.y += side * STUMBLE * g.youth * g.hip_height * 6.0
-	_pelvis.y -= 0.4 * g.youth * g.hip_height
+	_roll.y += side * STUMBLE * g.youth * 6.0
+	_sway.y += side * STUMBLE * g.youth * g.hip_height * 4.0
+	_pelvis.y -= 0.2 * g.youth * g.hip_height
