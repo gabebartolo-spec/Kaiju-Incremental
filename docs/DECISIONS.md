@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-013 · Director · Terrifying monsters, not toys; buildings are real structures
+Why: "the kaiju currently look like childrens toys, they should look like terrifying monsters";
+"towers falling like jenga ... they should be actual structures"; "need shaders and particle effects".
+Reference footage: WATCH THIS.mp4 (CityV voxel destruction) and the CG Cookie detailed-voxel trailer.
+Changes: Structure (chunks, support, drops, toppling), dust/shockwave/sparks, kaiju rebuilt from models.
+
+## 2026-10-16 · D-012 · Director · Kaiju models come from Tripo, voxelized in Blender
+Why: realistic anatomy and skin texture in dense voxels (the raptor in the reference trailer).
+Spend: approved at "roughly a few hundred credits per species with retries"; the lead asks before
+going past 500 credits in one session. Every model passes a six-view inspection before use; every
+task id, credit cost and verdict goes in docs/provenance/tripo.md.
+
 ## 2026-10-16 · D-010 · Director · Real light sources; no sterile lighting
 Why: "lighting is very sterile too, should be real light sources in the game". Changes: evening sun
 with long shadows, streetlamps that light the street, lit windows, burning ruins and wrecks, muzzle

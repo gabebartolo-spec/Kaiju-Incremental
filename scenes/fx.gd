@@ -5,9 +5,10 @@ extends Node3D
 ## at start (prewarm) so its shaders compile before play instead of freezing the first time.
 
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
+const SMOKE := preload("res://scenes/smoke.gdshader")
 
 var _dust_mat: ParticleProcessMaterial
-var _dust_mesh: BoxMesh
+var _dust_mesh: Mesh
 var _spark_mat: ParticleProcessMaterial
 var _spark_mesh: BoxMesh
 
@@ -25,7 +26,7 @@ func _ready() -> void:
 			"colors": [Color(0.62, 0.58, 0.52, 0.75), Color(0.5, 0.48, 0.45, 0.0)],
 		}
 	)
-	_dust_mesh = _cube(0.6, false)
+	_dust_mesh = _puff(1.4)
 	_spark_mat = _particle_mat(
 		{
 			"spread": 60.0,
@@ -126,6 +127,16 @@ func _particle_mat(o: Dictionary) -> ParticleProcessMaterial:
 	ramp_tex.gradient = ramp
 	mat.color_ramp = ramp_tex
 	return mat
+
+
+## A soft camera-facing puff (the smoke shader), for dust clouds.
+func _puff(size: float) -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * size
+	var mat := ShaderMaterial.new()
+	mat.shader = SMOKE
+	quad.material = mat
+	return quad
 
 
 func _cube(size: float, bright: bool) -> BoxMesh:

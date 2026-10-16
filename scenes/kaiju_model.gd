@@ -8,6 +8,10 @@ extends Node3D
 const RES := 5
 const DESIGN_UNIT := 0.6
 const VOXEL := DESIGN_UNIT / RES
+## Height in world units of a voxelized model at body scale 1.
+const MODEL_HEIGHT := 10.0
+## Render layer bit lit by the kaiju-only rim light (layer 1 stays on for the world lights).
+const RIM_LAYER := 2
 const IVORY := Color("e8e0c8")
 const PUPIL := Color("15130f")
 
@@ -25,6 +29,13 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 		_colors[key] = Color(str(colors[key]))
 	_body = Node3D.new()
 	add_child(_body)
+	_vox.salt = 7
+	# A voxelized sculpt (tools/blender/voxelize.py, D-012) replaces the code-built body.
+	_add_rim_light()
+	var height := Kvox.load_into("res://assets/kaiju/%s.kvox" % species_id, _vox)
+	if height > 0:
+		_body.add_child(_lit(_vox.build({}, MODEL_HEIGHT / height, _glow(), Vector3.ZERO)))
+		return
 	match species_id:
 		"insectoid":
 			_insectoid()
@@ -32,8 +43,18 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 			_cephalopod()
 		_:
 			_reptilian()
-	_vox.salt = 7
-	_body.add_child(_vox.build(_palette(), VOXEL, _glow(), Vector3.ZERO))
+	_body.add_child(_lit(_vox.build(_palette(), VOXEL, _glow(), Vector3.ZERO)))
+
+
+## A cool rim light from behind and above that only lights the kaiju (render layer 2), so a dark
+## hide still shows its shape against a dark city.
+func _add_rim_light() -> void:
+	var rim := DirectionalLight3D.new()
+	rim.light_color = Color("9fc4ff")
+	rim.light_energy = 1.6
+	rim.light_cull_mask = RIM_LAYER
+	rim.rotation_degrees = Vector3(-35, 160, 0)
+	add_child(rim)
 
 
 ## moving: 0..1 how hard the kaiju is walking this frame.
@@ -48,6 +69,11 @@ func animate(delta: float, moving: float) -> void:
 
 func stomp() -> void:
 	_squash = 1.0
+
+
+func _lit(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:
+	mmi.layers = 1 | RIM_LAYER
+	return mmi
 
 
 func _glow() -> float:

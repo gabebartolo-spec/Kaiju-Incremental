@@ -4,9 +4,9 @@ extends Node3D
 ## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
 ## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
 
-const MAX_DEBRIS := 320
-const DEBRIS_PER_CHUNK := 3
-const DEBRIS_PER_LANDING := 70
+const MAX_DEBRIS := 600
+const DEBRIS_PER_CHUNK := 8
+const DEBRIS_PER_LANDING := 160
 const MAX_FIRES := 30
 
 var sim: RampageSim
@@ -74,6 +74,8 @@ func _build_environment() -> void:
 	env.ambient_light_energy = Look.value("ambient")
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.ssao_enabled = true
+	env.ssao_intensity = 2.5
+	env.ssao_radius = 1.5
 	env.fog_enabled = Look.value("fog_density") > 0.0
 	env.fog_light_color = Look.color("fog_color")
 	env.fog_density = Look.value("fog_density")
@@ -148,6 +150,7 @@ func _prewarm_fire() -> void:
 func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
 	var view := _views[index]
 	var parts := view.hide_chunks(cells)
+	parts.append_array(view.chip(cells, _rng))
 	var b := sim.buildings[index]
 	var centre := Vector3(b.x, 0, b.z)
 	var away := (centre - Vector3(kaiju_at.x, 0, kaiju_at.z)).normalized()
@@ -255,12 +258,12 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 	var body := RigidBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3.ONE * 0.5
+	box_shape.size = Vector3.ONE * BuildingVoxels.VOXEL
 	shape.shape = box_shape
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * 0.5
+	mesh.size = Vector3.ONE * BuildingVoxels.VOXEL * 0.95
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(color, 1.0).lightened(Look.value("debris_lift"))
 	mesh.material = mat

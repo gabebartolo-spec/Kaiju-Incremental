@@ -9,6 +9,7 @@ extends SceneTree
 
 const SETTLE := 12
 const DEBRIS_FRAMES := 9
+const FALL_FRAMES := 240
 const STAGE_AT := Vector2(13.5, 31.5)
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const LINEUP_SPACING := 13.0
@@ -79,6 +80,9 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 		stage.add_child(tank)
 		tank.look_at_from_position(tank.position, at, Vector3.UP, true)
 	city.flash(at + Vector3(-7.0, 1.0, 9.0), Color("ffc070"), 4.0, 0.4)
+	for _f: int in FALL_FRAMES:  # let the undermined towers topple and land
+		_send(sim.step(1.0 / 60.0, Vector2.ZERO, false), city, at)
+		await process_frame
 	city.ring(at, sim.stomp_radius(), Color(1, 0.85, 0.6, 0.7), 0.35)
 	await _frames(DEBRIS_FRAMES)
 	_shot("%s_city" % id)
@@ -116,7 +120,11 @@ func _lineup_shot(id: String) -> void:
 
 ## Sends the sim's pending events to the city view (what Rampage does each frame).
 func _route(sim: RampageSim, city: CityView, at: Vector3) -> void:
-	for event: Dictionary in sim.step(0.0, Vector2.ZERO, false):
+	_send(sim.events.duplicate(), city, at)
+
+
+func _send(events: Array[Dictionary], city: CityView, at: Vector3) -> void:
+	for event: Dictionary in events:
 		match str(event["type"]):
 			"chunks_broken":
 				var cells: Array[Vector3i] = event["cells"]

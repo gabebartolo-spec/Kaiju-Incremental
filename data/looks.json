@@ -4,22 +4,22 @@
 		{
 			"id": "concrete",
 			"label": "C",
-			"name": "Concrete Realism (evening)",
-			"sky_top": "2e4466",
-			"sky_horizon": "e6a26e",
-			"ambient": 0.38,
-			"sun_color": "ffb27a",
-			"sun_energy": 1.15,
-			"sun_pitch": -14,
-			"fog_color": "8f98a8",
-			"fog_density": 0.002,
-			"saturation": 0.95,
-			"contrast": 1.12,
-			"glow": 0.6,
+			"name": "Concrete Realism (blue hour)",
+			"sky_top": "1c2f48",
+			"sky_horizon": "b88468",
+			"ambient": 0.9,
+			"sun_color": "ffb48a",
+			"sun_energy": 0.75,
+			"sun_pitch": -12,
+			"fog_color": "6a8090",
+			"fog_density": 0.004,
+			"saturation": 0.9,
+			"contrast": 1.15,
+			"glow": 0.7,
 			"voxel_inset": 0.99,
 			"color_noise": 0.08,
-			"window_lit": 0.22,
-			"window_glow": 1.0,
+			"window_lit": 0.28,
+			"window_glow": 1.3,
 			"accent_glow": 0.0,
 			"kaiju_lift": 0.0,
 			"styles": [
@@ -35,7 +35,8 @@
 			"outskirts": "5d6b4a",
 			"asphalt": "3e4044",
 			"lot": "8c8a84",
-			"lamp_energy": 2.2
+			"lamp_energy": 2.6,
+			"ambient_color": "4d6a80"
 		}
 	]
 }

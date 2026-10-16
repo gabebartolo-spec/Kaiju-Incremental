@@ -5,11 +5,14 @@ extends RefCounted
 ## Buried cells (all six neighbours filled) are skipped: they can never be seen and would
 ## show through the gaps between voxels.
 
+const DIRECT := "#"
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
 ]
 
 var cells: Dictionary = {}
+## Per-cell colours for cells keyed DIRECT (models voxelized from a texture).
+var colors: Dictionary = {}
 ## Seeds the per-cell colour jitter so neighbouring models do not repeat.
 var salt := 0
 ## Each built instance's cell y, ascending (filled by build()).
@@ -20,6 +23,11 @@ var built_cells: Array[Vector3i] = []
 
 func put(cell: Vector3i, key: String) -> void:
 	cells[cell] = key
+
+
+func put_color(cell: Vector3i, color: Color) -> void:
+	cells[cell] = DIRECT
+	colors[cell] = color
 
 
 func has(cell: Vector3i) -> bool:
@@ -127,7 +135,8 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 	for i: int in shown.size():
 		var cell := shown[i]
 		sorted_y[i] = cell.y
-		var base: Color = palette.get(str(cells[cell]), Color.MAGENTA)
+		var key: String = cells[cell]
+		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
 		mm.set_instance_transform(i, Transform3D(Basis(), origin + Vector3(cell) * voxel + lift))
 		mm.set_instance_color(i, Look.jitter(base, cell, salt))
 	var mmi := MultiMeshInstance3D.new()
