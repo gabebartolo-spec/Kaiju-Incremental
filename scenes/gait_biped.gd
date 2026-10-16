@@ -278,6 +278,7 @@ func _plant(leg: Leg, standing: bool) -> void:
 	if leg.stomping:
 		jolt = STOMP_JOLT * hip_height
 	_pelvis_vy -= jolt
+	rig.foot_planted.emit(leg.foot, jolt / (STOMP_JOLT * hip_height))
 	leg.stomping = false
 	if standing:
 		_settle_cool = 0.12

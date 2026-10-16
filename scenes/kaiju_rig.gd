@@ -6,6 +6,10 @@ extends Node3D
 ## Tails, antennae and tentacles ("physics" bones) are spring chains the gait can steer.
 ## Presentation only: the gait follows the node's motion and never moves the kaiju. Faces -Z.
 
+## A foot (or a tentacle) came down: where, and how hard (0..1, 1 = a stomp). For footfall
+## sounds and dust; presentation only.
+signal foot_planted(at: Vector3, weight: float)
+
 ## Chain feel: pull back to the target pose, motion kept per step, gravity.
 const STIFFNESS := 9.0
 const DAMPING := 0.9
