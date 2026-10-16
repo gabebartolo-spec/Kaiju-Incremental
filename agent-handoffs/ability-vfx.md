@@ -1,48 +1,43 @@
-# Ability VFX handoff, 2026-10-16 21:00 (rev 21:05)
-## State: awaiting lead (FIX list done; new board + clip sent)
+# Ability VFX/SFX handoff, 2026-10-16 21:35
+## State: working (SFX PR built and committed; waiting for the GPU to capture the clip with audio)
 
 ## Task
-D-026: a distinct VFX for every unlockable power, plus the SFX sourcing proposal. The lead is
-asking the director about SFX. Lead review of PR #6 was FIX: breath (camera orbit approved, beam
-reaches its target, visible scorch), lash (no filled fan; tip streaks, spray, debris, scrapes),
-boost the deflect/regen/ready/cracks cues, no placeholder HUD timer. Then a new board
-(same labels A-J) and a clip at the gameplay camera.
+D-026 + D-030. PR #6 (ability VFX) PASSED round 2 and is merged into claude/look-options.
+Now: the SFX follow-up PR, including two VFX fixes from the lead's round-2 notes:
+(1) the ready flash read as damage -> an eye flare + foot ring; (2) the breath is hidden behind
+the body for about 0.25 s -> a muzzle flash at the jaw on frame 1.
+D-030 (director): download the free stuff (Sonniss GDC, Kenney CC0, Freesound CC0 only),
+synthesize in-house when that sounds better; register + per-file provenance; raw downloads
+outside the repo.
 
 ## Branch and commit
-claude/ability-vfx (worktree affectionate-goldstine-64c8fb), PR #6 into claude/look-options.
-Pushed through 1635ab2 (merged look-options with #7 real city; floors city 5, flow 22; all 4 suites
-green). The board has NOT passed my QA yet; the PR stays on HOLD with the lead.
+claude/ability-sfx (worktree affectionate-goldstine-64c8fb, from origin/claude/look-options
+ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 
-## Done in c5aa7e0
-- Breath: camera orbit 25 deg + rise (tuning fx.orbit_*); beam stops at the first standing
-  chunk (AbilityFx._first_hit); flare (flare.gdshader), sparks, light on the struck face.
-- Marks are Decals (scenes/fx_decals.gd; textures drawn once from FastNoiseLite): scorch wedge,
-  crater, molten cracks, lash gouges. The kaiju's voxels moved to KaijuModel.BODY_LAYER (4) so
-  decals (cull_mask 1) skip it. scorch.gdshader removed.
-- Lash: sweep.gdshader is now two thin tip streaks; ink + water spray (FxParticles.spray with
-  orbit velocity); debris kicked along the arc on timers; scrape decal. city.ring removed.
-- Cues: deflect = 40 sparks + flare; regen = rim.gdshader green shimmer overlay on the body
-  (AbilityFx.attach_body) + motes; ready = shockwave ring + body flash; cracks = wide molten.
-- The capture uses Rampage.autoplay_signature instead of the 999 s cooldown hack. The "998 s"
-  timer the lead saw came from the capture script, not the game.
-- Particle recipes split out to scenes/fx_particles.gd (keeps ability_fx.gd under 400 lines).
-- flow 22, smoke 11, sim 39 green locally.
+## Done (3d7f5a2)
+- tools/sfx/build_sfx.py: builds assets/sfx/*.ogg (11 files, about 180 KB) from Kenney Impact +
+  Sci-fi packs (raw in C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl, outside the repo) plus
+  numpy synthesis. Seeded. Run: python tools/sfx/build_sfx.py --kenney <that dir>.
+- Sounds: stomp_0..2, stomp_crack, breath, leap_whoosh, leap_land, lash, ready, deflect,
+  regen_loop. Peaks -0.7 to -6 dB, no clipping (volumedetect). Not listened to by a human yet.
+- scenes/sfx.gd (Sfx): pooled AudioStreamPlayers, pitch jitter from Seeds "sfx", volumes in
+  tuning.json "sfx". Rampage calls it next to every AbilityFx call; Rampage.sfx is public.
+- docs/LICENSING_REGISTER.md rows (Kenney CC0, our mixes, build tool); docs/provenance/sfx.md
+  lists every layer per file.
+- tests.yml: each Godot job runs `git lfs pull --include="assets/sfx/*"` (audio is LFS).
+- Flow: +4 checks (each signature sounds; the upgraded kaiju has the crack/ready/deflect/regen
+  sounds); floor flow 22 -> 26. smoke 11, sim 39, city 5, flow 26 green locally.
+- VFX: ready_pulse(feet, head) = shockwave + eye flare; rim.gdshader is regen-only now;
+  breath muzzle flare.
 
 ## Next
-- FIX list done and pushed. Board (A-J, gameplay camera): docs/captures/2026-10-16-powers/
-  powers_board.png; H/I/J from tools/capture/capture_cues.gd (clear street). Clip (powers8):
-  scratchpad .../powers8/powers.mp4.
-- Known: the breath at 0.25 s is still mostly behind the body when the kaiju faces away (the
-  orbit is 25 deg as approved); the ready flash tints the body red for about 0.5 s.
-- Findings for the lead's learnings (not mine to record): additive unshaded quads need
-  fog_disabled; MODEL_MATRIX in a MultiMesh shader excludes the instance transform.
-- After the lead passes this: the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0;
-  synthesize hums, beams, pings, sizzles, regen in-house; register + provenance first).
-
-## Attempts (beam visibility)
-Edge glow (failed), x-ray through walls (covered the kaiju, reverted), flat glow floor plus a
-white-hot jet ramp; now the camera orbit (lead-approved) plus a beam that ends on its target.
+1. Capture (background bcbmfsgnl, output scratchpad/sfx1): check ready (cue_ready) and the
+   breath muzzle flash; convert powers.avi to mp4 WITH audio (aac) and a waveform image.
+2. Merge origin/claude/look-options (49072a7), push, open the PR into claude/look-options
+   (kaiju-pr template), message the lead with the clip; ask the lead to listen (I cannot hear).
+3. Not done: Sonniss and Freesound were not needed yet (Freesound needs an account login, which
+   I cannot create). Creature roars are the likely next need (Sonniss creature sounds).
 
 ## Running jobs
-None. No Godot of mine running.
-No override.cfg left.
+bcbmfsgnl: waits for the GPU, then runs capture_powers.gd + capture_cues.gd with override.cfg
+(it deletes override.cfg itself).
