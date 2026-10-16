@@ -1,11 +1,13 @@
-# City handoff, 2026-10-16 21:05
-## State: awaiting lead (PR #7 open into claude/look-options, CI running, Auto-fix on; boards await lead review)
+# City handoff, 2026-10-16 21:50
+## State: working (D-028 building fidelity: benches running; round 2 layout sent to lead)
 
 ## Task
 Director 2026-10-16: "our city exists in a void ... far too gridlike, it must look like an
 actual city not a grid of isolated buildings"; then "use tokyo and new york as inspiration".
-Scope: city layout (sim) + city edges/background + evidence. Not in scope: D-028 building
-fidelity (RES 8-12) and D-029 real OSM districts (another helper) - see Open decisions.
+Scope: city layout (sim) + city edges/background + evidence; round 2 (director: too many
+zebras, too much asphalt, edges must make sense); D-028 building fidelity (lead brief 20:58:
+RES 8-12, recessed facades, LOD if needed, side-by-side with the reptile adult; lead reviews).
+D-029 real OSM districts is real-city-cbd's (agreed: same CityGen.map() shape + optional mask).
 
 ## Branch and commit
 claude/city-layout-56adda (worktree .claude/worktrees/city-layout-56adda), merged with
@@ -47,9 +49,23 @@ folder city-captures/.
 - Flow suite took 535 s in a fresh worktree: LFS fonts were pointers (FreeType error spam
   per frame). `git lfs pull` then reimport: 14 s.
 
+## D-028 in progress (uncommitted until benches are in)
+- BuildingVoxels RES 8, re-authored: recessed windows (one cell back), proud sills, lintels,
+  keystones, pilasters, cornices, string courses, balconies with railings, shopfront sign band
+  and awning, stair huts, AC units with ducts, vent stacks, water tank, mast rings, 4-wide neon.
+- BuildingMesher bakes each building to one face-culled ArrayMesh (hollow counts as solid) plus
+  a hidden slab mesh; UV2 = (chunk index, clump hash). building_baked.gdshader collapses dead
+  chunks via a per-building R8 `alive` texture; bitten = share of 2x2x2 clumps hidden; back
+  faces draw dark (seen through holes). BuildingView keeps the old API (hide_chunks, chip,
+  lift_piece = same meshes + piece texture). Views build on WorkerThreadPool (2.35 s, 16 thr).
+- Party walls blank only up to the neighbour's height (party_walls returns side -> floors).
+- City shell 2.3M tris at RES 8 (RES 4 instanced was ~5.6M). Capture GPU 4.8-5.0 ms (others
+  running). Ruin rows rescaled for RES 8.
+- Next: bench 1080p + 4K vs round 2 (temp worktree $scratch/r4 at a56acf8), side-by-side board
+  (round-2 RES 4 vs RES 8, reptile adult in frame, 2x crops), commit, push, send to lead.
+  RES 12 only if perf allows.
+
 ## Open decisions
-- D-028 (building RES 8-12) is assigned to "city-layout" in the lead handoff but no brief
-  reached this session; start only on the lead's word.
 - D-029 real OSM districts: if a baked district returns the same CityGen.map() shape,
   ground, traffic, people and police run on it unchanged.
 
