@@ -7,8 +7,8 @@ changes. Only the merge role edits this file, from the "Board and log" section o
 ## 2026-10-16 · D-027 · Director · The game targets a 4K 120 Hz TV
 Why: "i want the game to display on a 4k tv" (Beyond TV, 3840x2160, 120 Hz VRR, HDR, 400 nits).
 Changes: starts fullscreen, stretch aspect "expand", adaptive vsync (VRR); UI stays a 1920x1080
-canvas scaled 2x. Still open: TV-distance text sizes, HDR output, and the TV sits on the AMD
-iGPU output while the 4070 SUPER does the rendering work (see the lead handoff).
+canvas scaled 2x. The TV is plugged into the 4070 SUPER (director, 2026-10-16). Still open:
+TV-distance text sizes, HDR output, perf at native 4K.
 
 ## 2026-10-16 · D-026 · Director · Ability powers get proper VFX and SFX (later milestone)
 Why: "we will eventually need some nice vfx and sfx for our powers/abilities that we will unlock".
