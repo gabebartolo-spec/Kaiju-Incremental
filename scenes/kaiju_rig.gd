@@ -3,7 +3,8 @@ extends Node3D
 ## A rigged voxel kaiju (tools/blender/rig_voxel.py): one node per bone, each carrying its
 ## own voxels, so the body bends where the real one would. A procedural walk drives the
 ## legs, arms, spine and head; tails, antennae and tentacles ("physics" bones) are spring
-## chains: they lag behind the body, swing with every step and settle under gravity. Presentation only. Faces -Z.
+## chains: they lag behind the body, swing with every step and settle under gravity.
+## Presentation only. Faces -Z.
 
 ## Chain feel: how hard a joint is pulled back to its rest pose, how much motion it keeps, gravity.
 const STIFFNESS := 9.0
