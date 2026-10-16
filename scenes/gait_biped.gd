@@ -40,9 +40,10 @@ const LAND_REACH := 0.9
 const MIN_STANCE := 0.3
 ## Two footfalls never land closer together than this (s).
 const PLANT_GAP := 0.2
+const STOMP_LIVE := 3.0  # stomps this recent (s): the sim is stomping on a beat
 ## A trip's catch step (s at scale 1); stride-to-stride timing jitter (share of a stride).
 const CATCH_SECONDS := 0.22
-const STRIDE_JITTER := 0.05
+const STRIDE_JITTER := 0.03
 ## At most this much (hip heights) the pelvis sinks to keep a stretched foot planted.
 const MAX_REACH_DROP := 0.18
 ## Body scale of an adult and a baby: in between, the walk is that much younger.
@@ -92,6 +93,7 @@ var _stomp_times: Array[float] = []
 var _stomp_leg := 0
 var _stomp_planned := -1.0
 var _settle_cool := 0.0
+var _roar_waiting := false
 var _was_standing := true
 
 
@@ -165,8 +167,9 @@ func stomp() -> void:
 		tail.kick(Vector3(0, 9.0, 0) * s, 1.0 / 60.0)
 
 
+## A roar waits for a swinging foot to land, so the feet are planted and still all through it.
 func roar() -> void:
-	head.roar()
+	_roar_waiting = true
 
 
 # --- feet ----------------------------------------------------------------------------------------
@@ -230,10 +233,15 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 				leg.t = local / _swing
 	else:
 		_settle_cool -= dt
-		var roaring := head.roar_open() > 0.0 or head.roar_lean() != 0.0
+		if _roar_waiting and not swinging:
+			_roar_waiting = false
+			head.roar()
+		var roaring := _roar_waiting or head.roar_open() > 0.0 or head.roar_lean() != 0.0
+		# While the sim stomps on a beat, its stomp steps square the feet up: no extra settle step.
+		var stomps_live := _stomp_times.size() > 1 and time - _stomp_times[-1] < STOMP_LIVE
 		if not roaring:  # roaring, the feet stay planted and still
 			_plan_stomp()
-		if not swinging and _settle_cool <= 0.0 and not roaring:
+		if not swinging and _settle_cool <= 0.0 and not roaring and not stomps_live:
 			var worst: Leg = null
 			var worst_d := SETTLE_DISTANCE * hip_height * s
 			for leg: Leg in legs:
@@ -247,8 +255,8 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 		if leg.planted:
 			leg.foot.y = ground
 			continue
-		if leg.walking:
-			leg.swing_time = _cycle * _swing
+		if leg.walking:  # a step in flight may quicken, never slow (stopping stays decisive)
+			leg.swing_time = minf(leg.swing_time, _cycle * _swing)
 		leg.t += dt * hurry / leg.swing_time
 		var remaining := maxf(0.0, 1.0 - leg.t) * leg.swing_time
 		var land := root * leg.home
@@ -336,6 +344,9 @@ func _plan_stomp() -> void:
 			return
 	_stomp_planned = next
 	_stomp_leg = 1 - _stomp_leg
+	var stray := _stray(legs[0]) - _stray(legs[1])  # the stray foot stomps home
+	if absf(stray) > SETTLE_DISTANCE * hip_height * s:
+		_stomp_leg = 0 if stray > 0.0 else 1
 	var leg := legs[_stomp_leg]
 	_lift_foot(leg, next - time, LIFT_STOMP)
 	leg.stomping = true
@@ -384,5 +395,5 @@ func _measure_slide() -> void:
 		max_drift = maxf(max_drift, leg.drift)
 
 
-static func _flat(v: Vector3) -> Vector3:
-	return Vector3(v.x, 0.0, v.z)
+func _stray(leg: Leg) -> float:
+	return _flat(leg.foot - rig.global_transform * leg.home).length()

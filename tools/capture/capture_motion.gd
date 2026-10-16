@@ -29,6 +29,7 @@ var _line: Line2D
 var _guide: Line2D
 var _label: Label
 var _time := 0.0
+var _tint := false
 
 
 func _initialize() -> void:
@@ -43,6 +44,8 @@ func _initialize() -> void:
 			_trace = arg.substr(8)
 		elif arg.begins_with("--seconds="):
 			_seconds = float(arg.substr(10))
+		elif arg == "--tint":
+			_tint = true
 	_run.call_deferred()
 
 
@@ -92,13 +95,17 @@ func _run() -> void:
 	var body_scale: float = SCALES.get(_stage, 1.0)
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
+	if _tint:
+		_tint_bones.call_deferred(kaiju)
 	# Footfalls as in the rampage (Rampage._on_footfall): dust, a pale ring, a camera dip.
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
 			var size := body_scale * (0.2 + strength)
 			city.fx.dust(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
 			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT)
-			var dip := Rampage.FOOTFALL_DIP * body_scale * strength
+			var dip := (
+				Rampage.FOOTFALL_DIP * maxf(Rampage.FOOTFALL_DIP_FLOOR, body_scale) * strength
+			)
 			_dip = maxf(_dip, dip)
 			var row := [_time, side, at.x, at.y, at.z, strength, dip, _dip_px(dip, body_scale)]
 			plants.append("%.3f,%s,%.3f,%.3f,%.3f,%.2f,%.3f,%.1f" % row)
@@ -271,3 +278,26 @@ func _dip_px(dip: float, body_scale: float) -> float:
 	var zoom := 0.75 + 0.4 * body_scale
 	var dist := CAMERA_OFFSET.length() * zoom
 	return dip * zoom / (2.0 * dist * tan(deg_to_rad(55.0) * 0.5)) * 1080.0
+
+
+## --tint: each bone's voxels in one flat colour (arm roots red, forearms yellow, hands magenta,
+## head cyan, chest white), to see which bone carries a stray piece in motion.
+func _tint_bones(kaiju: KaijuModel) -> void:
+	var hues := {
+		"arm_l0": Color.RED,
+		"arm_r0": Color.RED,
+		"arm_l1": Color.YELLOW,
+		"arm_r1": Color.YELLOW,
+		"arm_l2": Color.MAGENTA,
+		"arm_r2": Color.MAGENTA,
+		"head0": Color.CYAN,
+		"spine2": Color.WHITE
+	}
+	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		for b: String in rig.bone_names():
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = hues.get(b, Color(0.25, 0.4, 0.25))
+			for m: Node in rig.bone(b).get_children():
+				if m is GeometryInstance3D:
+					(m as GeometryInstance3D).material_override = mat

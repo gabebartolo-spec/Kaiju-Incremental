@@ -106,3 +106,8 @@ static func spring3(
 	var a := (target - value) * omega * omega - vel * (2.0 * zeta * omega)
 	var v := vel + a * dt
 	return PackedVector3Array([value + v * dt, v])
+
+
+## A vector flattened onto the ground plane.
+static func _flat(v: Vector3) -> Vector3:
+	return Vector3(v.x, 0.0, v.z)

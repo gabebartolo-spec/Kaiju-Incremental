@@ -19,20 +19,23 @@ const TAIL_DELAY := 4.0
 const TAIL_SWAY := 0.03
 ## At most this much bend per tail bone (rad), so the voxel segments never part.
 const TAIL_BEND_MAX := 0.12
-## Arms (posed, never simulated: director, "limp scarves"): tucked against the chest (down-curl,
-## inward turn), forearms raised (elbow bend), extra curl at a roar, a small swing against the
-## hips, pulled in tighter by a turn (per rad/s of yaw rate, at most ARM_BRACE_MAX); the swing and
-## brace follow through a stiff spring (rad/s, damping) that lags at most a few degrees.
-const ARM_TUCK := 0.75
-const ARM_IN := 0.5
-const ARM_ELBOW := 1.1
-const ARM_WRIST := 0.25
-const ARM_ROAR := 0.4
+## Arms (posed, never simulated: director, "limp scarves"). Each bone is aimed along a direction
+## in the chest's space (x outward, y up, -z forward), so it bends at the joint and never rolls:
+## upper arm down and forward off the shoulder, forearm raised forward, hand level. A roar lifts
+## and spreads them into a claw. A small swing against the hips (times the hip yaw) and a brace
+## in on a turn (per rad/s of yaw rate, at most ARM_BRACE_MAX) follow a stiff spring (rad/s,
+## damping), so the lag is a few degrees and the arms never fling past the body line.
+const ARM_UPPER := Vector3(0.4, -0.75, -0.55)
+const ARM_FORE := Vector3(-0.1, 0.3, -0.95)
+const ARM_HAND := Vector3(0.0, -0.2, -0.98)
+const ARM_UPPER_ROAR := Vector3(0.65, -0.25, -0.7)
+const ARM_FORE_ROAR := Vector3(0.25, 0.6, -0.75)
 const ARM_SWING := 0.5
 const ARM_BRACE := 0.25
 const ARM_BRACE_MAX := 0.2
 const ARM_OMEGA := 18.0
 const ARM_ZETA := 0.9
+## A young body's arms stay nearer their sculpted pose (tucking them bares unmodelled chest).
 const ARM_YOUTH_EASE := 0.75
 
 var rig: KaijuRig
@@ -87,15 +90,32 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 	var brace := minf(ARM_BRACE_MAX, absf(yaw_rate) * ARM_BRACE)
 	_arm_swing = KaijuGait.spring(_arm_swing.x, _arm_swing.y, hip_yaw, ARM_OMEGA, ARM_ZETA, dt)
 	_arm_brace = KaijuGait.spring(_arm_brace.x, _arm_brace.y, brace, ARM_OMEGA, ARM_ZETA, dt)
-	# A young body's arms stay nearer their sculpted pose (tucking them bares unmodelled chest).
-	var tuck := 1.0 - ARM_YOUTH_EASE * youth
+	if not rig.has_bone("spine2"):
+		return
+	var chest := rig.bone("spine2").global_transform.basis.orthonormalized()
+	var swing := Basis(Vector3.UP, -_arm_swing.x * ARM_SWING)
+	var roar := clampf(roar_open, 0.0, 1.0)
+	var ease := ARM_YOUTH_EASE * youth
 	for side: String in ["l", "r"]:
-		var root := "arm_%s0" % side
-		if not rig.has_bone(root):
+		var names: Array[String] = []
+		for i: int in 3:
+			if rig.has_bone("arm_%s%d" % [side, i]):
+				names.append("arm_%s%d" % [side, i])
+		if names.is_empty():
 			continue
-		var sgn := -1.0 if side == "l" else 1.0
-		var curl := -ARM_TUCK * tuck - ARM_ROAR * maxf(0.0, roar_open) - _arm_brace.x
-		var turn_in := sgn * (ARM_IN * tuck + _arm_brace.x) - sgn * _arm_swing.x * ARM_SWING
-		rig.pose_basis(root, Basis(Vector3.UP, turn_in) * Basis(Vector3.RIGHT, curl))
-		rig.pose("arm_%s1" % side, Vector3(-ARM_ELBOW, 0, 0))
-		rig.pose("arm_%s2" % side, Vector3(-ARM_WRIST, 0, 0))
+		var shoulder := rig.bone(names[0]).global_position
+		var out := signf((chest.inverse() * (rig.tail_world(names[0]) - shoulder)).x)
+		var dirs: Array[Vector3] = [
+			ARM_UPPER.lerp(ARM_UPPER_ROAR, roar) - Vector3(_arm_brace.x, 0, 0),
+			ARM_FORE.lerp(ARM_FORE_ROAR, roar),
+			ARM_HAND,
+		]
+		var rest := Basis.IDENTITY
+		for i: int in names.size():
+			var n := names[i]
+			var from := rig.bone(n).global_position
+			var length := (rig.tail_world(n) - from).length()
+			rest = rest * rig.rest_of(n).basis
+			var d := dirs[i] * Vector3(out, 1, 1)
+			d = d.normalized().lerp((rest * rig.dir_of(n)).normalized(), ease)
+			rig.aim(n, from, from + chest * (swing * d).normalized() * length)

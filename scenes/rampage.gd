@@ -12,6 +12,8 @@ const FOOTFALL_DUST := 1.1
 const FOOTFALL_RING := 1.4
 const FOOTFALL_TINT := Color(0.86, 0.83, 0.76, 0.7)
 const FOOTFALL_DIP := 0.35
+## The dip scales with body size, but never below this: a baby still shakes the street.
+const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
@@ -241,7 +243,9 @@ func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
 	var size := sim.body_scale() * (0.2 + strength)
 	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT)
-	_step_dip = maxf(_step_dip, FOOTFALL_DIP * sim.body_scale() * strength)
+	_step_dip = maxf(
+		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
+	)
 
 
 func _spawn_tank_node(id: int) -> void:
