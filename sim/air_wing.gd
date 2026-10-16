@@ -46,10 +46,13 @@ func cap() -> int:
 
 
 func step(dt: float) -> void:
-	_spawn_timer -= dt
-	if _spawn_timer <= 0.0 and helis.size() < cap():
-		_spawn_timer = Num.f(cfg["interval"])
-		spawn()
+	# The call-in clock only runs while the sky is short of helicopters: a kill is replaced
+	# after `interval`, never on the next step.
+	if helis.size() < cap():
+		_spawn_timer -= dt
+		if _spawn_timer <= 0.0:
+			_spawn_timer = Num.f(cfg["interval"])
+			spawn()
 	var coated := false
 	for heli: Heli in helis:
 		heli.angle += Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius) * dt
@@ -75,10 +78,12 @@ func spawn() -> Heli:
 	heli.id = _next_id
 	_next_id += 1
 	heli.angle = _rng.randf() * TAU
-	heli.radius = Num.f(cfg["orbit_radius"]) * _rng.randf_range(0.8, 1.2) * sim.body_scale()
+	var jitter := Num.f(cfg["orbit_jitter"])
+	var circle := Num.f(cfg["orbit_radius"]) * _rng.randf_range(1.0 - jitter, 1.0 + jitter)
+	heli.radius = circle * sim.body_scale()
 	heli.pos = orbit_pos(heli)
 	heli.hp = Num.f(cfg["hp"])
-	heli.cooldown = Num.f(cfg["fire_interval"]) * 1.5
+	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
 	helis.append(heli)
 	sim.events.append({"type": "heli_spawned", "heli": heli.id})
 	return heli
@@ -97,7 +102,7 @@ func hit(force: Callable, damage: float, reaches_air: bool) -> void:
 	if not reaches_air or helis.is_empty():
 		return
 	for heli: Heli in helis:
-		var k: float = force.call(heli.pos, 0.8)
+		var k: float = force.call(heli.pos, Num.f(cfg["heli_radius"]))
 		heli.hp -= damage * k
 		if k > 0.0 and not sim.hit_coat.is_empty():
 			heli.coat_t = Num.f(sim.hit_coat["seconds"])

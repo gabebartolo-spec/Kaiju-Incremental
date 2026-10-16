@@ -20,6 +20,9 @@ func run_checks() -> void:
 	_check_glide()
 	_check_climb()
 	_check_brood()
+	_check_streets()
+	_check_base_unchanged()
+	_check_levels()
 
 
 func _check_branches() -> void:
@@ -270,3 +273,95 @@ func _check_brood() -> void:
 			if str(event["type"]) == "tank_fired" and event.has("at"):
 				shot_young = true
 	check(shot_young, "a tank near the young fires on them instead of the kaiju")
+
+
+## The building slow does not grow with the kaiju (lead review): a grown kaiju with no branch
+## node strides down a 4-wide street lined with blocks at full speed, past every block.
+func _check_streets() -> void:
+	var street: Array[Dictionary] = []
+	for n: int in 6:
+		for side: float in [-3.5, 3.5]:
+			street.append(_b(side, 34.0 - n * 8.0, Vector3i(3, 6, 4), 3))
+	var grown := {"claws": 5, "hide": 5, "rage": 1, "evolve1": 1, "evolve2": 1}
+	var slow: Array[String] = []
+	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+		for levels: Dictionary in [{}, grown]:
+			var sim := _sim(species_id, levels, street, Vector2(0, 40))
+			_run(sim, 2.0, NORTH)
+			var free := sim.stat("speed") * 2.0
+			if 40.0 - sim.kaiju_pos.y < free * 0.95:
+				slow.append(
+					(
+						"%s tier %d: %.1f of %.1f"
+						% [species_id, sim.size_tier(), 40.0 - sim.kaiju_pos.y, free]
+					)
+				)
+	check(slow.is_empty(), "young and grown kaiju walk a city street at full speed: %s" % [slow])
+	# The street runs z 37 .. -9 (inside the arena's +-44.5); the kaiju starts at z 40.
+	var far := _sim("reptilian", grown, street, Vector2(0, 40))
+	_run(far, 11.0, NORTH)
+	check(
+		far.kaiju_pos.y < -10.0,
+		(
+			"a tier-3 kaiju with no branch passes all six blocks in 11 s (at z %.0f, past -10)"
+			% far.kaiju_pos.y
+		)
+	)
+
+
+## A kaiju with no branch node bought plays exactly as before the branches existed: no tail,
+## no ram, no climb, no glide, no limbs or throws, no ultimate.
+func _check_base_unchanged() -> void:
+	var stray: Array[String] = []
+	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+		var ring: Array[Dictionary] = [_b(5, 0, Vector3i(3, 3, 8)), _b(-5, 0, Vector3i(3, 3, 8))]
+		var sim := _sim(species_id, {}, ring, Vector2(0, 3))
+		var seen := {}
+		for i: int in 30 * 8:
+			var move := Vector2.from_angle(i * 0.11)
+			var flags := RampageSim.HELD | (RampageSim.ULTIMATE if i % 60 == 0 else 0)
+			for event: Dictionary in sim.step(DT, move, i % 45 == 0, flags):
+				seen[str(event["type"])] = true
+			if sim.stand_y != 0.0 or sim.powers.hit_mult() != 1.0:
+				stray.append("%s lift/mult" % species_id)
+				break
+		for kind: String in [
+			"tail_sweep", "glide_start", "beam_start", "eggs_laid", "limb", "grab", "ink", "coated"
+		]:
+			if seen.has(kind):
+				stray.append("%s %s" % [species_id, kind])
+		if sim.powers.has_ultimate():
+			stray.append("%s ultimate" % species_id)
+	check(
+		stray.is_empty(), "a kaiju with no branch node uses none of the branch powers: %s" % [stray]
+	)
+
+
+## More levels of a node do more: a deeper tail cut, a faster scuttle, a longer glide.
+func _check_levels() -> void:
+	var cut: Array[int] = []
+	for level: int in [1, 4]:
+		var sim := _sim(
+			"reptilian", {"r_tail": level}, [_b(0, 0, Vector3i(3, 3, 8), 2)], Vector2(2.2, 1.5)
+		)
+		_run(sim, 0.4, NORTH)
+		_run(sim, 1.0, EAST)
+		cut.append(sim.powers.tail_cut)
+	var run: Array[float] = []
+	for level: int in [1, 4]:
+		var sim := _sim("insectoid", {"i_scuttle": level}, [], Vector2(0, 20))
+		_run(sim, 2.0, NORTH)
+		run.append(20.0 - sim.kaiju_pos.y)
+	var glide: Array[float] = []
+	for level: int in [1, 3]:
+		var sim := _sim("insectoid", {"i_glide": level}, [], Vector2(0, 30))
+		sim.facing = NORTH
+		_run(sim, 4.0, NORTH, PRESS | HOLD)
+		glide.append(30.0 - sim.kaiju_pos.y)
+	check(
+		cut[1] > cut[0] and run[1] > run[0] * 1.2 and glide[1] > glide[0] + 3.0,
+		(
+			"higher levels do more: tail cut %d > %d, scuttle %.1f > %.1f, glide %.1f > %.1f"
+			% [cut[1], cut[0], run[1], run[0], glide[1], glide[0]]
+		)
+	)

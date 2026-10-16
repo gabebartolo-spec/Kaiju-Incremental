@@ -44,7 +44,7 @@ func step(dt: float) -> void:
 		var young := sim.brood.nearest_young(tank.pos, minf(dist, reach + 1.0))
 		if young != null:
 			tank.cooldown = Num.f(cfg["fire_interval"])
-			young.hp -= Num.f(cfg["tank_damage"]) * 2.0
+			young.hp -= Num.f(cfg["tank_damage"]) * Num.f(cfg["young_damage_mult"])
 			sim.events.append({"type": "tank_fired", "tank": tank.id, "at": young.pos})
 		elif dist <= reach + 1.0:
 			tank.cooldown = Num.f(cfg["fire_interval"])

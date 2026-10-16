@@ -15,6 +15,7 @@ func run_checks() -> void:
 	_check_grab()
 	_check_ink()
 	_check_helicopters()
+	_check_caps()
 	_check_replay()
 
 
@@ -188,3 +189,67 @@ func _check_replay() -> void:
 			runs.append(sim.result())
 		same = same and runs[0] == runs[1]
 	check(same, "every species' full branch replays identically from the same seed")
+
+
+## Caps (lead review): a downed helicopter is replaced only after the call-in interval, never on
+## the next step; never more helicopters than the max; never more young than brood_max; and a
+## second Brood level lays twice the eggs.
+func _check_caps() -> void:
+	var air: Dictionary = Content.section("air")
+	var sim := _sim("reptilian", {}, [], Vector2(0, 0))
+	sim.chunks_total = 1000000  # a big-city stand-in, so the run cannot end as "fallen"
+	sim.chunks_destroyed = Num.i(air["after_chunks"])
+	var first := _run(sim, 0.2, Vector2.ZERO)
+	var called := first.has("heli_spawned") and sim.air.helis.size() == 1
+	_run(sim, Num.f(air["interval"]) * 1.5, Vector2.ZERO)  # a long spell at the cap first
+	called = called and sim.air.helis.size() == 1
+	sim.air.helis[0].hp = 0.0 if called else 1.0
+	sim.air.clear_dead()
+	var soon := _run(sim, Num.f(air["interval"]) * 0.9, Vector2.ZERO)
+	var later := _run(sim, Num.f(air["interval"]) * 0.2, Vector2.ZERO)
+	check(
+		called and not soon.has("heli_spawned") and later.has("heli_spawned"),
+		(
+			"a downed helicopter is replaced only after the %.0f s call-in interval"
+			% Num.f(air["interval"])
+		)
+	)
+	var swarm := _sim("reptilian", {"hide": 5, "titan_hide": 5}, [], Vector2(0, 0))
+	swarm.chunks_total = 1000000
+	swarm.chunks_destroyed = 99999
+	var most := 0
+	for i: int in 30 * 60:
+		swarm.step(DT, Vector2.ZERO, false)
+		most = maxi(most, swarm.air.helis.size())
+	check(
+		most == Num.i(air["max"]),
+		"the sky never holds more than %d helicopters (most %d)" % [Num.i(air["max"]), most]
+	)
+	var one := _sim("insectoid", {"i_brood": 1}, [], Vector2(0, 0))
+	var two := _sim("insectoid", {"i_brood": 2}, [], Vector2(0, 0))
+	one.brood.lay(Num.i(one.stat("brood_count")))
+	two.brood.lay(Num.i(two.stat("brood_count")))
+	var full := _sim("insectoid", {"i_brood": 3}, [], Vector2(0, 0))
+	var empty_event := false
+	for n: int in 6:
+		full.brood.lay(Num.i(full.stat("brood_count")))
+	var cap := Num.i(Content.section("powers")["brood_max"])
+	full.brood.lay(3)
+	for event: Dictionary in full.events:
+		var at: Array = event.get("at", [1])
+		if str(event["type"]) == "eggs_laid" and at.is_empty():
+			empty_event = true
+	check(
+		one.brood.young.size() == 3 and two.brood.young.size() == 6,
+		(
+			"each Brood level lays three more eggs (%d, %d)"
+			% [one.brood.young.size(), two.brood.young.size()]
+		)
+	)
+	check(
+		full.brood.young.size() == cap and not empty_event,
+		(
+			"the brood never passes %d young, and a full brood lays nothing (%d)"
+			% [cap, full.brood.young.size()]
+		)
+	)

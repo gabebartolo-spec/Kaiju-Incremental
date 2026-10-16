@@ -197,7 +197,8 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
 	await physics_frame
-	rampage.sim.air.spawn()
+	# Call the helicopters in the way a rampage does (through step), so the view sees heli_spawned.
+	rampage.sim.chunks_destroyed = Num.i(Content.section("air")["after_chunks"])
 	var view: PowersView = rampage.find_children("*", "PowersView", true, false)[0]
 	var frames := 0
 	while frames < POWER_FRAMES and not rampage.sim.over:

@@ -9,6 +9,9 @@ extends RefCounted
 ## Shared: buildings block the body (slow it) unless a power says otherwise, and coatings
 ## (beam fire, ink) that eat chunks and units over time.
 
+## A chunk is one sim unit across: its centre is this far from its faces.
+const CHUNK_HALF := 0.5
+
 var sim: RampageSim
 var cfg: Dictionary
 ## 0..1: how much straight-line speed the reptilian has built.
@@ -47,14 +50,13 @@ func _bs() -> float:
 ## over them, glides above them, squeezes between them or has the momentum to ram on.
 func speed_mult() -> float:
 	if beam_left > 0.0:
-		return 0.3
+		return Num.f(cfg["beam_move_mult"])
 	if sim.airborne:
 		return Num.f(cfg["glide_speed_mult"])
 	var mult := 1.0 + momentum * Num.f(cfg["momentum_speed"]) if sim.stat("momentum") > 0.0 else 1.0
 	if sim.stat("climb") > 0.0:
 		return mult
-	var radius := Num.f(cfg["body_radius"]) * _bs() * (1.0 - clampf(sim.stat("squeeze"), 0.0, 0.9))
-	if blocked(sim.kaiju_pos, radius):
+	if blocked(sim.kaiju_pos, block_radius()):
 		var slow := Num.f(cfg["block_slow"])
 		if sim.stat("momentum") > 0.0:
 			slow = lerpf(slow, 1.0, momentum)
@@ -62,7 +64,17 @@ func speed_mult() -> float:
 	return mult
 
 
-## Any standing street-level chunk within radius of pos.
+## The body's footprint for being held up by buildings. It does not grow with the kaiju, and
+## it stays narrower than a street (block_street_margin inside half its width): a grown kaiju
+## strides down any street and only the walls it walks into hold it back. It is wider than
+## an alley, so alleys hold it, unless Squeeze shrinks it.
+func block_radius() -> float:
+	var street := Num.f(sim.city["street_width"]) * 0.5 - Num.f(cfg["block_street_margin"])
+	var squeeze := 1.0 - clampf(sim.stat("squeeze"), 0.0, Num.f(cfg["squeeze_max"]))
+	return minf(Num.f(cfg["block_radius"]), street) * squeeze
+
+
+## Any standing street-level chunk whose square the circle (pos, radius) overlaps.
 func blocked(pos: Vector2, radius: float) -> bool:
 	for b: RampageSim.Building in sim.buildings:
 		if b.frame.alive_count == 0:
@@ -74,7 +86,11 @@ func blocked(pos: Vector2, radius: float) -> bool:
 				var c := Vector3i(x, 0, z)
 				if b.frame.alive(c):
 					var p := b.chunk_world(c)
-					if Vector2(p.x, p.z).distance_to(pos) <= radius + 0.5:
+					var gap := Vector2(
+						maxf(absf(p.x - pos.x) - CHUNK_HALF, 0.0),
+						maxf(absf(p.z - pos.y) - CHUNK_HALF, 0.0)
+					)
+					if gap.length() < radius:
 						return true
 	return false
 
@@ -120,7 +136,9 @@ func _tail_sweep(side: float) -> void:
 	var centre := sim.kaiju_pos
 	var ahead := sim.facing
 	var lo := Num.i(cfg["tail_floor_lo"])
-	var floors := ceili((Num.f(cfg["tail_floors"]) + sim.stat("tail_floors")) * _bs() * 2.0)
+	var per_scale := Num.f(cfg["tail_floors_per_scale"])
+	var floors := ceili((Num.f(cfg["tail_floors"]) + sim.stat("tail_floors")) * _bs() * per_scale)
+	var arc := Num.f(cfg["tail_arc_dot"])
 	sim.events.append({"type": "tail_sweep", "side": side, "reach": reach})
 	var before := sim.chunks_destroyed
 	sim.hit_area(
@@ -128,7 +146,7 @@ func _tail_sweep(side: float) -> void:
 			var to := p - centre
 			if to.length() > reach + r:
 				return 0.0
-			return 1.0 if to.length() <= r or ahead.dot(to.normalized()) <= 0.35 else 0.0,
+			return 1.0 if to.length() <= r or ahead.dot(to.normalized()) <= arc else 0.0,
 		sim.stat("tail_damage"),
 		lo,
 		lo + floors
@@ -144,12 +162,12 @@ func _ram(dt: float) -> void:
 	_ram_cd = Num.f(cfg["ram_interval"])
 	var centre := sim.kaiju_pos
 	var ahead := sim.facing
-	var radius := Num.f(cfg["body_radius"]) * _bs() + 1.0
+	var radius := Num.f(cfg["body_radius"]) * _bs() + Num.f(cfg["ram_reach_extra"])
 	var front := func(p: Vector2, r: float) -> float:
 		var to := p - centre
 		return 1.0 if to.length() <= radius + r and to.dot(ahead) >= -r else 0.0
 	for tank: RampageSim.Tank in sim.tanks:
-		if front.call(tank.pos, 0.6) > 0.0:
+		if front.call(tank.pos, RampageSim.TANK_RADIUS) > 0.0:
 			tank.pos += ahead * Num.f(cfg["knockback"]) * momentum
 	sim.hit_area(front, sim.stat("stomp_damage") * sim.stat("momentum") * momentum)
 
@@ -168,10 +186,11 @@ func _climb(dt: float) -> void:
 	if sim.stand_y < 1.0:
 		return
 	var centre := sim.kaiju_pos
+	var load_radius := Num.f(cfg["climb_load_radius"])
 	var y := floori(sim.stand_y) - 1
 	sim.hit_area(
 		func(p: Vector2, r: float) -> float:
-			return 1.0 if p.distance_to(centre) <= 1.0 + r else 0.0,
+			return 1.0 if p.distance_to(centre) <= load_radius + r else 0.0,
 		Num.f(cfg["climb_load"]) * sim.stat("climb") * dt,
 		y,
 		y + 1
@@ -259,7 +278,7 @@ func _beam(dt: float) -> void:
 			return 1.0 if t >= -r and t <= length + r and side <= half + r else 0.0,
 		sim.stat("beam_dps") * dt,
 		0,
-		ceili(sim.reach_top() * 1.5)
+		ceili(sim.reach_top() * Num.f(cfg["coat_reach_mult"]))
 	)
 	sim.hit_coat = {}
 	sim.hit_air = false
@@ -279,7 +298,7 @@ func _ink() -> void:
 			return RampageSim.falloff(p.distance_to(centre) - r, reach),
 		dps * Num.f(cfg["ink_splash"]),
 		0,
-		ceili(sim.reach_top() * 1.5)
+		ceili(sim.reach_top() * Num.f(cfg["coat_reach_mult"]))
 	)
 	sim.hit_coat = {}
 	sim.hit_air = false

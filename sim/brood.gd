@@ -36,6 +36,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 ## Lays up to `count` eggs (never more than the cap alive at once).
 func lay(count: int) -> void:
 	var room := mini(count, Num.i(cfg["brood_max"]) - young.size())
+	if room <= 0:
+		return
 	var at: Array[Vector2] = []
 	for n: int in room:
 		var y := Young.new()
@@ -44,12 +46,16 @@ func lay(count: int) -> void:
 		var spread := Num.f(cfg["egg_spread"]) * sim.body_scale()
 		y.pos = (
 			sim.kaiju_pos
-			+ Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(0.5, 1.0) * spread
+			+ (
+				Vector2.from_angle(_rng.randf() * TAU)
+				* _rng.randf_range(Num.f(cfg["egg_spread_min"]), 1.0)
+				* spread
+			)
 		)
 		y.hp = Num.f(cfg["brood_hp"])
 		y.life = Num.f(cfg["brood_life"])
 		y.hatch = Num.f(cfg["hatch_seconds"])
-		y.retarget = _rng.randf() * 0.5
+		y.retarget = _rng.randf() * Num.f(cfg["brood_retarget"])
 		young.append(y)
 		at.append(y.pos)
 	sim.events.append({"type": "eggs_laid", "at": at})
@@ -79,16 +85,16 @@ func step(dt: float) -> void:
 func _hunt(y: Young, dt: float) -> void:
 	y.retarget -= dt
 	if y.retarget <= 0.0:
-		y.retarget = 0.5
+		y.retarget = Num.f(cfg["brood_retarget"])
 		y.target = _pick_target(y.pos)
 	if y.target.x == INF:
 		return
 	var radius := Num.f(cfg["brood_bite_radius"])
 	var to := y.target - y.pos
-	if to.length() > radius * 0.8:
+	if to.length() > radius * Num.f(cfg["brood_close_in"]):
 		y.pos += to.limit_length(Num.f(cfg["brood_speed"]) * dt)
 	y.bite_cd -= dt
-	if y.bite_cd > 0.0 or to.length() > radius * 1.5:
+	if y.bite_cd > 0.0 or to.length() > radius * Num.f(cfg["brood_bite_reach"]):
 		return
 	y.bite_cd = Num.f(cfg["brood_bite_interval"])
 	bites += 1

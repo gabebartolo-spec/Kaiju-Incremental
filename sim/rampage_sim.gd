@@ -52,6 +52,8 @@ class Tank:
 ## step() button flags.
 const HELD := 1
 const ULTIMATE := 2
+## A tank's footprint radius for area hits.
+const TANK_RADIUS := 0.6
 
 var stats: Dictionary
 var army: Dictionary
@@ -328,7 +330,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			powers.coat(i, cells)
 		_apply(i, cells, amounts)
 	for tank: Tank in tanks:
-		var k: float = force.call(tank.pos, 0.6)
+		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k
 		if k > 0.0 and not hit_coat.is_empty():
 			tank.coat_t = Num.f(hit_coat["seconds"])

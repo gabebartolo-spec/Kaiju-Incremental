@@ -10,6 +10,9 @@ const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
+## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
+const AUTOPLAY_GLIDE_CYCLE := 90
+const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
@@ -41,6 +44,9 @@ var _autoplay := false
 var _orbit_t := -1.0
 var _orbit_side := 1.0
 var _autoplay_target := Vector2(INF, INF)
+## Physics steps this rampage has run: autoplay paces itself on this, never the engine clock,
+## so a run plays the same whatever ran before it.
+var _steps := 0
 
 
 ## stats: final run stats; layout: CityGen output; run_index seeds the army.
@@ -100,8 +106,9 @@ func _physics_process(delta: float) -> void:
 	elif _autoplay:
 		move = _autoplay_move()
 		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and Engine.get_physics_frames() % 90 < 50
+		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
 		ultimate = autoplay_signature
+	_steps += 1
 	var t0 := Time.get_ticks_usec()
 	var buttons := (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
@@ -268,7 +275,7 @@ func _part(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 
 
 func _update_tanks() -> void:
-	var flatten := Engine.get_physics_frames() % 10 == 0  # tanks roll over cars and lamps
+	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
 	for tank: RampageSim.Tank in sim.tanks:
 		if flatten:
 			_city.crush(_to_world(tank.pos), 1.4)
@@ -346,7 +353,7 @@ func _breath_orbit(delta: float) -> Vector3:
 
 
 func _autoplay_move() -> Vector2:
-	if Engine.get_physics_frames() % 15 == 0 or _autoplay_target.x == INF:
+	if _steps % 15 == 0 or _autoplay_target.x == INF:
 		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
 	if (
 		_autoplay_target.x == INF
