@@ -285,6 +285,35 @@ def close_jaw(keys, values, owner, bones, scale, origin, shut=1.0):
     return np.array(new_keys), new_values, np.array(new_owner)
 
 
+BLEMISH_WARM = 8 / 255  # how much warmer than green and blue (0..1) reads as a blemish
+BLEMISH_REACH = 2  # cells
+
+
+def clean_blemishes(keys, values, owner, bones):
+    """Texture blemishes on the torso (warm pink spots that read as nipples on the adult):
+    a voxel on a spine bone whose colour is warm against the body (red above green and blue by
+    BLEMISH_WARM) takes the median colour of its non-warm neighbours within BLEMISH_REACH cells.
+    Mouth, eyes and every other bone are left alone."""
+    names = [b["name"] for b in bones]
+    torso = {i for i, n in enumerate(names) if n.startswith("spine")}
+    rgb = np.array([[r / c, g / c, b / c] for r, g, b, c in values])
+    warm = (rgb[:, 0] > rgb[:, 1] + BLEMISH_WARM) & (rgb[:, 0] > rgb[:, 2] + BLEMISH_WARM)
+    index = {tuple(k): i for i, k in enumerate(keys)}
+    span = range(-BLEMISH_REACH, BLEMISH_REACH + 1)
+    fixed = 0
+    out = list(values)
+    for i in np.where(warm & np.isin(owner, list(torso)))[0]:
+        k = keys[i]
+        near = [index.get((k[0] + a, k[1] + b, k[2] + c)) for a in span for b in span for c in span]
+        calm = [j for j in near if j is not None and not warm[j]]
+        if calm:
+            m = np.median(rgb[calm], axis=0)
+            out[i] = [m[0], m[1], m[2], 1]
+            fixed += 1
+    print(f"torso blemishes cleaned: {fixed}")
+    return out
+
+
 def adopt_orphans(keys, owner):
     """A voxel with no neighbour on its own bone would float free when that bone moves: it joins
     the bone most of its neighbours are on."""
@@ -423,6 +452,7 @@ def main():
     values = list(cells.values())
     keys, values, owner = close_jaw(keys, values, owner, bones, scale, origin, jaw_shut)
     owner = adopt_orphans(keys, owner)
+    values = clean_blemishes(keys, values, owner, bones)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
     gk[:, 0] -= 1  # keep integer cells after the x flip
