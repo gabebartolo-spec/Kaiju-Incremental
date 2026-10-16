@@ -8,14 +8,10 @@ uniform vec4 tint : source_color = vec4(0.55, 1.0, 0.7, 1.0);
 uniform float strength = 0.0;
 uniform float shimmer = 0.0;
 
-varying float world_y;
-
-void vertex() {
-	world_y = (MODEL_MATRIX * vec4(VERTEX, 1.0)).y;
-}
-
 void fragment() {
 	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 3.0);
+	// World height per fragment: MODEL_MATRIX skips each voxel's own multimesh transform.
+	float world_y = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).y;
 	float ring = pow(0.5 + 0.5 * sin(world_y * 1.4 - TIME * 4.0), 12.0);
 	float flash = 0.04 + 1.2 * rim;
 	ALBEDO = tint.rgb * strength * mix(flash, ring * 2.5, shimmer);
