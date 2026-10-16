@@ -15,6 +15,8 @@ var cost_usec: Dictionary = {}
 var species: Dictionary
 ## The look of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
+## Their sounds (read by the flow suite).
+var sfx: Sfx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
 var _city: CityView
@@ -47,6 +49,7 @@ func setup(
 	sim = RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	_fx_rng = Seeds.make("fx", run_index)
+	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
 
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
@@ -60,6 +63,7 @@ func _ready() -> void:
 	var colors: Dictionary = species["colors"]
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale())
 	add_child(ability_fx)
+	add_child(sfx)
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	ability_fx.attach_body(_kaiju)
@@ -119,7 +123,8 @@ func _on_event(event: Dictionary) -> void:
 		"stomp":
 			_kaiju.stomp()
 			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
-			ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), _power("stomp_damage"))
+			var radius := Num.f(event["radius"])
+			sfx.stomp(ability_fx.stomp_cracks(_kaiju_at, radius, _power("stomp_damage")))
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
@@ -183,6 +188,7 @@ func _ability_fx(event: Dictionary) -> void:
 			_city.fx.breath(mouth, span, eye)
 			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 			ability_fx.breath(mouth, span, half_angle, strength)
+			sfx.play("breath")
 			_orbit_t = 0.0
 			_orbit_side = 1.0 if sim.facing.x >= 0.0 else -1.0
 		"leap":
@@ -192,8 +198,10 @@ func _ability_fx(event: Dictionary) -> void:
 			_leap_reach = reach
 			_leap_power = strength
 			ability_fx.leap_takeoff(_leap_from)
+			sfx.play("leap_whoosh")
 		_:
 			ability_fx.lash(_kaiju_at, reach, strength)
+			sfx.play("lash")
 
 
 func _update_kaiju(delta: float, moving: float) -> void:
@@ -207,6 +215,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 			_leap_time = 0.0
 			_kaiju_at = target
 			ability_fx.leap_land(target, _leap_reach, _leap_power)
+			sfx.play("leap_land")
 			_shake = maxf(_shake, 0.5)
 	else:
 		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
@@ -220,10 +229,13 @@ func _update_kaiju(delta: float, moving: float) -> void:
 func _update_powers() -> void:
 	var charged := sim.ability_ready_in <= 0.0
 	if charged and not _was_ready:
-		ability_fx.ready_pulse(_kaiju_at)
+		var head := _kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale()
+		ability_fx.ready_pulse(_kaiju_at, head + _to_world(sim.facing) * sim.body_scale())
+		sfx.play("ready")
 	_was_ready = charged
 	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
 	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
+	sfx.regen(healing)
 
 
 func _spawn_tank_node(id: int) -> void:
@@ -272,6 +284,7 @@ func _tank_fired(id: int) -> void:
 	if sim.stat("armor") > 0.0:
 		var away := (node.position - target).normalized() + Vector3.UP * 0.5
 		tween.tween_callback(func() -> void: ability_fx.deflect(target, away))
+		tween.tween_callback(func() -> void: sfx.play("deflect"))
 	else:
 		tween.tween_callback(func() -> void: _city.fx.sparks(target))
 	tween.tween_callback(shell.queue_free)

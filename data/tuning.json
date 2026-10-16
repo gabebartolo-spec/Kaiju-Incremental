@@ -74,6 +74,20 @@
 		"fall_gravity": 30.0,
 		"topple_bonus": 1.5
 	},
+	"sfx": {
+		"pitch_jitter": 0.06,
+		"volume_db": {
+			"stomp": -9.0,
+			"stomp_crack": -8.0,
+			"breath": -2.0,
+			"leap_whoosh": -6.0,
+			"leap_land": -2.0,
+			"lash": -3.0,
+			"ready": -8.0,
+			"deflect": -10.0,
+			"regen_loop": -14.0
+		}
+	},
 	"fx": {
 		"power_max": 2.5,
 		"crack_stomp_power": 1.8,

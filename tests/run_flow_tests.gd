@@ -5,6 +5,7 @@ extends "res://tests/lib/runner.gd"
 
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
+const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
 const UPGRADED := {
 	"claws": 3,
@@ -153,12 +154,20 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
+	var sound: String = SIGNATURE_SOUND[kind]
+	var heard := rampage.sfx.played
+	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
 	else:
 		for k: String in ["cracks", "ready", "deflect", "regen"]:
 			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
+		var cues: Array[String] = ["stomp_crack", "ready", "deflect", "regen_loop"]
+		check(
+			cues.all(func(c: String) -> bool: return heard.has(c)),
+			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]
+		)
 	rampage.queue_free()
 	await process_frame
 
