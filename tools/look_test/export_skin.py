@@ -46,17 +46,21 @@ def read_kvox(path):
 
 
 LATTICE_PASSES = 12  # voxel-lattice smoothing of A's one-bone-per-voxel split (joint blend width)
+FILL_INSET = 0.25  # voxels: the filler lattice sits this far inside the rigid cubes
 COLOR_NOISE = 0.08  # data/looks.json color_noise: the per-cell brightness jitter A draws with
 DIRS = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)]
 
 
-def write_kmesh(path, pos, nrm, uv, rgba, bones, weights, tris):
+def write_kmesh(path, pos, nrm, uv, rgba, bones, weights, tris, centres=None):
+    """centres given: magic "KMS2", each vertex also carries f32 centre[3] (its cube's rest centre)."""
     with open(path, "wb") as f:
-        f.write(b"KMSH")
+        f.write(b"KMSH" if centres is None else b"KMS2")
         f.write(struct.pack("<II", len(pos), len(tris)))
         for i in range(len(pos)):
             f.write(struct.pack("<3f3f2f4B", *pos[i], *nrm[i], *uv[i], *rgba[i]))
             f.write(struct.pack("<4B4f", *[int(b) for b in bones[i]], *weights[i]))
+            if centres is not None:
+                f.write(struct.pack("<3f", *centres[i]))
         f.write(np.asarray(tris, dtype="<u4").tobytes())
 
 
@@ -141,16 +145,71 @@ def voxel_surface(cells, rgb, owner, w, related, nbr, nb, out):
         cw[n] = cache[ck]
     bones, weights = top4(cw)
     write_kmesh(out / "voxel.kmesh", pos, nrm, uv, rgba, bones, weights, tris)
+    # Filler under the rigid cubes: the same watertight lattice, every face a quarter voxel in.
+    inset = [p - n * FILL_INSET for p, n in zip(pos, nrm)]
+    write_kmesh(out / "voxel_fill.kmesh", inset, nrm, uv, rgba, bones, weights, tris)
+    # Round 2: rigid cubes. Every vertex of a cube carries the cube's own weights and centre; the
+    # shader (voxel_rigid.gdshader) moves the centre smoothly and turns the cube without shear.
+    cell_bones, cell_weights = top4(w)
+    cell_of = np.array(cell_of)
+    centres = ci[cell_of] + np.array([0.0, 0.5, 0.0])
+    write_kmesh(out / "voxel_rigid.kmesh", pos, nrm, uv, rgba, cell_bones[cell_of], cell_weights[cell_of],
+                tris, centres)
     print(f"voxel surface: {len(pos)} verts, {len(tris)} tris, {len(corner_cells)} lattice corners")
+
+
+# Tripo auto-rig (a Mixamo humanoid) -> KaijuRig bones. Left/Right are Blender +x/-x, which are
+# our "_l"/"_r". Hands and fingers fold into the last arm bone, feet and toes into the last leg
+# bone. It has no tail and no jaw: those vertices keep the lattice weights (see tripo_weights).
+TRIPO_MAP = {"Hips": "spine0", "Spine": "spine0", "Spine1": "spine1", "Spine2": "spine2",
+             "Neck": "head0", "Head": "head1", "HeadTop_End": "head1"}
+for _side, _ours in (("Left", "l"), ("Right", "r")):
+    TRIPO_MAP.update({f"{_side}UpLeg": f"leg_{_ours}0", f"{_side}Leg": f"leg_{_ours}1",
+                      f"{_side}Foot": f"leg_{_ours}2", f"{_side}ToeBase": f"leg_{_ours}2",
+                      f"{_side}Toe_End": f"leg_{_ours}2", f"{_side}Shoulder": "spine2",
+                      f"{_side}Arm": f"arm_{_ours}0", f"{_side}ForeArm": f"arm_{_ours}1",
+                      f"{_side}Hand": f"arm_{_ours}2"})
+
+
+def tripo_weights(path, names):
+    """Per-vertex weights of a Tripo auto-rigged GLB mapped onto our bones, with the vertices in
+    world space (normalise them like the textured mesh). Unmapped groups are reported."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=path)
+    obj = max((o for o in bpy.context.scene.objects if o.type == "MESH"), key=lambda o: len(o.data.vertices))
+    mw = np.array(obj.matrix_world)
+    v = np.array([x.co for x in obj.data.vertices])
+    v = (np.c_[v, np.ones(len(v))] @ mw.T)[:, :3]
+    col = {}
+    unmapped = set()
+    for vg in obj.vertex_groups:
+        base = vg.name.split(":")[-1]
+        key = base[:base.index("Hand") + 4] if base.startswith(("LeftHand", "RightHand")) else base
+        if key not in TRIPO_MAP:
+            unmapped.add(vg.name)
+            continue
+        col[vg.index] = names.index(TRIPO_MAP[key])
+    w = np.zeros((len(v), len(names)))
+    for x in obj.data.vertices:
+        for ge in x.groups:
+            if ge.group in col:
+                w[x.index, col[ge.group]] += ge.weight
+    print(f"tripo rig: {len(obj.vertex_groups)} groups, unmapped {sorted(unmapped)}; "
+          f"{(w.sum(1) <= 0).sum()} vertices unweighted")
+    return v, w
 
 
 def main():
     args = sys.argv[sys.argv.index("--") + 1:]
     src, rig_base, out = args[0], args[1], Path(args[2])
+    tripo = next((a.split("=", 1)[1] for a in args if a.startswith("--tripo_rig=")), None)
     out.mkdir(parents=True, exist_ok=True)
     rig = json.loads(Path(rig_base + ".rig.json").read_text(encoding="utf-8"))
     height, cells, owner, rgb = read_kvox(rig_base + ".kvox")
     bones = rig["bones"]
+    names = [b["name"] for b in bones]
+    if tripo:
+        tv, tw_rig = tripo_weights(tripo, names)
     print(f"kvox {len(cells)} voxels, {len(bones)} bones, height {height}")
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -190,6 +249,28 @@ def main():
                 w[i] += cell_w[idx] * np.exp(-(dist / GATHER_RADIUS) ** 2)
         if w[i].sum() <= 0:
             w[i] = cell_w[near_i]
+    if tripo:
+        # Tripo's weights everywhere its rig has the bones; the tail and jaw (no Tripo bones) keep
+        # the lattice weights, blended in by how much of each vertex the lattice gives them.
+        tlo, thi = tv.min(0), tv.max(0)
+        tg = to_game((tv - np.array([(tlo[0] + thi[0]) / 2, (tlo[1] + thi[1]) / 2, tlo[2]]))
+                     * ((height - 1) / (thi[2] - tlo[2]))) - np.array([0.5, 0.0, 0.5])
+        ttree = KDTree(len(tg))
+        for i, c in enumerate(tg):
+            ttree.insert(c, i)
+        ttree.balance()
+        own = np.array([n.startswith("tail") or n == "jaw" for n in names])
+        w /= np.maximum(1e-9, w.sum(1, keepdims=True))
+        far = 0.0
+        for i, p in enumerate(g):
+            _co, k, d = ttree.find(p)
+            far = max(far, d)
+            f = w[i, own].sum()
+            t = tw_rig[k].copy()
+            t[own] = 0.0
+            t = t / t.sum() if t.sum() > 0 else w[i]
+            w[i] = w[i] * f + t * (1.0 - f)
+        print(f"tripo mesh matched to the textured mesh within {far:.2f} voxels")
     top = np.argsort(-w, axis=1)[:, :4]
     tw = np.take_along_axis(w, top, 1)
     tw /= np.maximum(1e-9, tw.sum(1, keepdims=True))
@@ -212,7 +293,7 @@ def main():
     nrm = [gn[vi] for vi, _u, _v in verts]
     uvs = [(u, vv) for _vi, u, vv in verts]
     white = [(255, 255, 255, 255)] * len(verts)
-    write_kmesh(out / "skin.kmesh", pos, nrm, uvs, white, top[[vi for vi, _u, _v in verts]],
+    write_kmesh(out / ("skin_tripo.kmesh" if tripo else "skin.kmesh"), pos, nrm, uvs, white, top[[vi for vi, _u, _v in verts]],
                 tw[[vi for vi, _u, _v in verts]], tris)
     # Albedo texture, as is (sRGB): the packed file's own bytes, so always skin_albedo.jpg.
     mat = obj.material_slots[0].material

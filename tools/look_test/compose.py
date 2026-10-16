@@ -1,10 +1,11 @@
 """Look test (throwaway): lays the six look_test.gd runs side by side, and cuts the joint crops.
 
-    python tools/look_test/compose.py <clips_dir> <stills_dir> <out_dir> <ffmpeg>
+    python tools/look_test/compose.py <clips_dir> <stills_dir> <out_dir> <ffmpeg> <knee> <hip> <jaw>
 
 clip: A | B | C, each the middle 960 px of its 1920x1080 run (the cameras follow the kaiju),
 gameplay camera first, then the side camera -> <out>/look_test_abc.mp4 (2880x1080, 60 fps).
-crops: the side still where the near (right) knee is most bent, hip and knee for each panel,
+crops: the profile stills at the most-bent knee and hip and the widest roar (frame numbers from
+look_test.gd's FIND line), for each panel,
 cropped 300 px square and enlarged 2x (nearest, so voxels stay sharp) -> <out>/joints_hip.png,
 <out>/joints_knee.png.
 """
@@ -53,22 +54,30 @@ def bend(rec):
     return math.acos(max(-1.0, min(1.0, cos)))
 
 
-best = min(range(len(data["A"])), key=lambda i: bend(data["A"][i]))
-print("joint crops at frame", data["A"][best]["frame"])
-font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 34)
-titles = {"A": "A  current voxels", "B": "B  smooth skin", "C": "C  voxel lattice skin"}
-for joint, bone in (("hip", "leg_r0"), ("knee", "leg_r1")):
+# Most-bent frames from look_test.gd's FIND line (same in every run): knee, hip, jaw.
+frames = {"knee": int(sys.argv[5]), "hip": int(sys.argv[6]), "jaw": int(sys.argv[7])}
+
+
+def rec_at(v, frame):
+    return next(r for r in data[v] if r["frame"] == frame)
+
+
+font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 28)
+small = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", 22)
+titles = {"A": "A current", "B": "B smooth, Tripo rig", "C": "C rigid voxels"}
+for joint, bone in (("hip", "leg_r0"), ("knee", "leg_r1"), ("jaw", "jaw")):
     tiles = []
     for v in "ABC":
-        rec = data[v][best]
+        rec = rec_at(v, frames[joint])
         img = Image.open(rec["png"]).convert("RGB")
         x, y = pt(rec[bone])
         box = (int(x - 150), int(y - 150), int(x + 150), int(y + 150))
         tiles.append(img.crop(box).resize((600, 600), Image.NEAREST))
-    sheet = Image.new("RGB", (600 * 3 + 8, 660), "black")
+    sheet = Image.new("RGB", (600 * 3 + 8, 664), "black")
     draw = ImageDraw.Draw(sheet)
     for i, (v, tile) in enumerate(zip("ABC", tiles)):
         sheet.paste(tile, (i * 604, 60))
-        draw.text((i * 604 + 12, 12), f"{titles[v]}: {joint} (2x)", fill="white", font=font)
+        draw.text((i * 604 + 12, 12), f"{titles[v]}: {joint}", fill="white", font=font)
+    draw.text((8, 628), f"2x crops, frame {frames[joint]}", fill="white", font=small)
     sheet.save(out / f"joints_{joint}.png")
 print("wrote", out)
