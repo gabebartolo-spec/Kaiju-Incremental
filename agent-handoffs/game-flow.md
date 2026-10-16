@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 03:00
+# Game-flow handoff, 2026-10-17 04:10
 ## State: running a check (flow suite, headless, local)
 
 ## Task
@@ -54,6 +54,10 @@ to fill). Auto-fix is on.
   .glb; every UiKit label logs a FreeType error with a backtrace (22k errors, 8 MB log) and the
   flow suite timed out at 900 s. After `git lfs install --local && git lfs pull`: 51 s, 18 errors.
   Candidate for kaiju-godot-tests learnings ("pull LFS in every new worktree before a run").
+- Same on CI: capture.yml checked out without LFS, so every Kaiju Claw heading/button rendered
+  BLANK (run 38923674895, 01_title.png) and the render hit the 50 min limit after 5 shots.
+  Fixed on this branch (`lfs: true`, 3 font files ~26 KB). Every agent's CI captures since
+  capture.yml landed have blank headings until this reaches look-options/main.
 - Autoload names (SaveSystem, Settings) don't resolve in class_name scripts compiled under
   `--script` test runs -> moved logic to static classes SaveFile/PlayerSettings.
 
@@ -67,7 +71,7 @@ edits; my tests/capture read evolve1's cost from data. If tier_height becomes pe
 reveal's tower should read CityGrowth.tuning_for(...)["city"].
 
 ## Running jobs
-- CI capture runs 38923674895 (shots) and 38923781359 (clip); results download to
+- CI capture re-dispatched after the LFS fix (shots + clip); results download to
   %TEMP%/gf_cap/shots and %TEMP%/gf_cap/clip. Then: 2x crop QA, put shots in
   docs/captures/2026-10-17-game-flow/, fill the PR Evidence, mark ready, report to the lead.
 - Local full run (all suites + self-test), logs in %TEMP%/gf_all.
