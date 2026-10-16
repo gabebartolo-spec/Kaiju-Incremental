@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 22:55
-## State: working (reptile baby + adolescent skins generating in Tripo; kaiju-motion on reptile round 2)
+# Lead handoff, 2026-10-16 23:05
+## State: working (next: cephalopod variants octo_3/octo_4 export + six-view; kaiju-motion on reptile round 3)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
@@ -19,14 +19,15 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 - Boards: docs/captures/2026-10-16-stages/ (stages_board, reptile_skin_options, reptile_olive_ingame).
 
 ## Next (mine)
-1. When textures finish: export (default name, via find refs), rig baby at 100 and adolescent at 130
-   from the textured GLBs (copy into scratch first), in-game check with capture_rig.gd, commit.
+1. DONE: all three reptile stages rigged from olive textures (docs/captures/2026-10-16-stages/reptile_stages_ingame.png).
+
 2. Cephalopod adult: 4 variants ff432a4f / 8bf2f668 / f303b247 / 666430b3; octo_1, octo_2 downloaded to
    ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
    logic), then a skin. Radial rig comes from kaiju-motion.
 3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
 4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
 5. 4K TV text size check (perf deferred, D-032).
+6. Species gameplay (D-035, docs/SPECIES.md): build after PR #10; 3 open questions for the director there.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: round 2 = FIX (posture, no skate, head, mass PASS; jaw open, tail lag, hold beat, game-camera read, baby stumble, pale legs, true side cam to fix). Round 1 was REJECTED (fix
@@ -48,4 +49,4 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 - Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
 
 ## Running jobs
-Tripo textures: 5a84ed39 (baby), f9cf6ba7 (adolescent). Sessions above. No override.cfg left.
+None in Tripo. Sessions above. No override.cfg left.

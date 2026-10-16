@@ -22,7 +22,7 @@ const ROAR_BACK := 0.32
 const ROAR_LUNGE := 0.14
 const ROAR_HOLD := 0.9
 const ROAR_RECOVER := 0.45
-const JAW_OPEN := 0.55
+const JAW_OPEN := 1.0
 ## Idle tells: a snort or jaw click every few seconds.
 const TELL_EVERY := Vector2(5.0, 10.0)
 
@@ -38,15 +38,12 @@ var _scan := Vector2.ZERO  # yaw, pitch
 var _tell_in := 4.0
 var _tell := 0.0
 var _roar_t := -1.0
-var _jaw: Node3D
 var _jaw_open := 0.0
-var _mouth: Node3D
 
 
 func _init(gait: BipedGait) -> void:
 	g = gait
 	_tell_in = g.rng.randf_range(TELL_EVERY.x, TELL_EVERY.y)
-	_split_jaw()
 
 
 func roar() -> void:
@@ -183,64 +180,10 @@ static func _ease_out(t: float) -> float:
 # --- jaw -----------------------------------------------------------------------------------------
 
 
-## The sculpt's skull is one bone; cut the lower jaw off it (the voxels below the mouth line, from
-## the jaw hinge forward) and hang it on its own pivot so it can open.
-func _split_jaw() -> void:
-	var cells := g.rig.voxels_of("head1")
-	if cells == null:
-		return
-	var v := g.rig.voxel_size()
-	var head := g.rig.head_of("head1")
-	var tip := head + g.rig.dir_of("head1")
-	var length := (tip - head).length()
-	# Mouth line: from the hinge (a third of the way along the skull) to just under the snout tip.
-	var hinge := head.lerp(tip, 0.3) + Vector3(0, -0.06, 0) * length
-	var snout := tip + Vector3(0, -0.18, 0) * length
-	var axis := (snout - hinge).normalized()
-	var below := Vector3.UP - axis * axis.y
-	below = below.normalized()
-	var upper := VoxelBuilder.new()
-	var lower := VoxelBuilder.new()
-	for cell: Vector3i in cells.cells:
-		var p := (Vector3(cell) + Vector3(0.5, 0.5, 0.5)) * v
-		var rel := p - hinge
-		var color: Color = cells.colors[cell]
-		if rel.dot(axis) > 0.0 and rel.dot(below) < 0.0:
-			lower.put_color(cell, color)
-		else:
-			upper.put_color(cell, color)
-	if lower.cells.size() < 20:
-		return
-	var skull := g.rig.bone("head1")
-	for child: Node in skull.get_children():
-		if child is MultiMeshInstance3D:
-			skull.remove_child(child)
-			child.queue_free()
-	g.rig.attach_voxels("head1", upper)
-	_jaw = Node3D.new()
-	_jaw.name = "jaw"
-	_jaw.position = hinge - head
-	skull.add_child(_jaw)
-	var holder := Node3D.new()
-	holder.position = -(hinge - head)
-	_jaw.add_child(holder)
-	g.rig.attach_voxels("head1", lower, holder)
-	# A dark mouth inside: fill the cut so an open jaw shows a throat, not a hollow shell.
-	var mouth := VoxelBuilder.new()
-	var dark := Color("2a0d0b")
-	for cell: Vector3i in lower.cells:
-		var above := cell + Vector3i(0, 1, 0)
-		if not lower.cells.has(above) and upper.cells.has(above) == false:
-			mouth.put_color(above, dark)
-	if mouth.cells.size() > 0:
-		_mouth = g.rig.attach_voxels("head1", mouth, holder)
-
-
 func _pose_jaw(dt: float) -> void:
-	if _jaw == null:
+	if not g.rig.has_bone("jaw"):
 		return
 	var target := JAW_OPEN * roar_open() + 0.07 * _tell
 	_jaw_open = lerpf(_jaw_open, target, minf(1.0, dt * 18.0))
-	_jaw.rotation = Vector3(-_jaw_open, 0, 0)
-	if _mouth != null:
-		_mouth.visible = _jaw_open > 0.03  # the throat shows only when the jaw is open
+	# Shut at rest (the sculpt's snarl closed by the rig's "close" angle), dropped open to roar.
+	g.rig.pose("jaw", Vector3(Num.f(g.rig.bone_close.get("jaw", 0.0)) - _jaw_open, 0, 0))

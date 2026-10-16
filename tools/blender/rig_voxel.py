@@ -365,6 +365,64 @@ HEAD_ZONE = {}
 ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0}
 
 
+JAW_CLOSE_MAX = 0.7
+
+
+def split_jaw(points, owner, bones, cell, rgb):
+    """Cuts the lower jaw off the skull (a biped's head1) into its own bone, "jaw", hinged at the
+    back of the mouth. An open sculpted mouth shows its red interior: the mouth line runs through
+    the middle of it, and "close" is how far the jaw must turn up (radians, about its hinge) to
+    shut it. A closed mouth (no interior) is cut at the emptiest band across the front of the
+    skull. Returns the new owners (bones gains the jaw), or the old ones if no mouth is found."""
+    names = [b["name"] for b in bones]
+    if "head1" not in names:
+        return owner
+    hi = names.index("head1")
+    h, t = np.array(bones[hi]["head"]), np.array(bones[hi]["tail"])
+    L = np.linalg.norm(t - h)
+    a = (t - h) / L
+    up = np.array([0.0, 0.0, 1.0]) - a * a[2]
+    up /= np.linalg.norm(up)
+    idx = np.where(owner == hi)[0]
+    rel = points[idx] - h
+    s_along, u = rel @ a / L, rel @ up
+    front = s_along > 0.45
+    if front.sum() < 50:
+        return owner
+    c = rgb[idx]
+    inside = front & (c[:, 0] > c[:, 1] * 1.35) & (c[:, 0] > c[:, 2] * 1.35)
+    hinge_s = 0.3
+    if inside.sum() >= 12:
+        lo_u, hi_u = np.percentile(u[inside], [10, 90])
+        cut = (lo_u + hi_u) / 2
+        hinge_s = max(0.15, float(np.percentile(s_along[inside], 5)) - 0.05)
+    else:
+        bins = np.arange(u[front].min(), u[front].max() + cell, cell)
+        counts, _ = np.histogram(u[front], bins)
+        counts = np.convolve(counts, np.ones(3) / 3, mode="same")
+        lo_i, hi_i = int(len(counts) * 0.2), int(len(counts) * 0.75)
+        if hi_i <= lo_i:
+            return owner
+        k = lo_i + int(np.argmin(counts[lo_i:hi_i]))
+        cut = (bins[k] + bins[k + 1]) / 2
+        lo_u = hi_u = cut
+    jaw = (s_along > hinge_s) & (u < cut)
+    if jaw.sum() < 30:
+        return owner
+    tip_s = s_along[jaw].max()
+    reach = max(cell, (tip_s - hinge_s) * L)
+    # Tongue and throat sit inside the gap too: at most JAW_CLOSE_MAX shuts the snarl.
+    close = min(JAW_CLOSE_MAX, float(np.arctan2(max(0.0, hi_u - lo_u), reach)))
+    hinge = h + a * hinge_s * L + up * cut
+    jaw_tip = points[idx[jaw]][np.argmax(s_along[jaw])]
+    bones.append({"name": "jaw", "parent": "head1", "head": hinge, "tail": jaw_tip, "physics": False,
+                  "close": round(close, 3)})
+    out = owner.copy()
+    out[idx[jaw]] = len(bones) - 1
+    print(f"jaw: {jaw.sum()} voxels, mouth gap closes by {np.degrees(close):.1f} deg")
+    return out
+
+
 def nearest_bone(points, bones, side_of, penalty=None):
     """Index of the bone whose segment is nearest each point (limbs stay on their own side)."""
     best = np.full(len(points), -1)
@@ -450,6 +508,9 @@ def main():
             np.linalg.norm(centres_bl - HEAD_ZONE["centre"], axis=1) < HEAD_ZONE["radius"])
         keep = np.array([names[o].startswith("arm") for o in owner])
         owner[in_head & ~keep] = names.index("head0")
+    if body_plan == "biped":
+        rgb = np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
+        owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
     gk[:, 0] -= 1  # keep integer cells after the x flip
@@ -465,8 +526,11 @@ def main():
     for b in bones:
         head = to_game(((np.array(b["head"]) - origin) * scale)[None])[0]
         tail = to_game(((np.array(b["tail"]) - origin) * scale)[None])[0]
-        rig["bones"].append({"name": b["name"], "parent": b["parent"], "head": head.round(2).tolist(),
-                             "tail": tail.round(2).tolist(), "physics": b["physics"]})
+        entry = {"name": b["name"], "parent": b["parent"], "head": head.round(2).tolist(),
+                 "tail": tail.round(2).tolist(), "physics": b["physics"]}
+        if "close" in b:
+            entry["close"] = b["close"]
+        rig["bones"].append(entry)
     out.with_suffix(".rig.json").write_text(json.dumps(rig, indent=1), encoding="utf-8")
     counts = np.bincount(owner, minlength=len(bones))
     print(f"rigged {src}: {len(cells)} voxels, {len(bones)} bones; voxels per bone min {counts.min()}")

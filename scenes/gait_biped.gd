@@ -9,7 +9,7 @@ extends KaijuGait
 const SWING_WALK := 0.4
 const SWING_RUN := 0.5
 ## How far a foot may travel under the body while planted (hip heights), so it stays in reach.
-const STANCE_REACH := 0.55
+const STANCE_REACH := 0.48
 ## Step length in hip heights: at a standstill, how much it grows with speed, and its cap.
 const STEP_MIN := 0.45
 const STEP_PER_SPEED := 0.3
@@ -35,6 +35,9 @@ const REACH_HOP := 1.02
 ## stride before a stretch can lift it again (unless it is past REACH_HOP).
 const LAND_REACH := 0.9
 const MIN_STANCE := 0.3
+## A trip's catch step (s at scale 1); stride-to-stride timing jitter (share of a stride).
+const CATCH_SECONDS := 0.22
+const STRIDE_JITTER := 0.05
 ## At most this much (hip heights) the pelvis sinks to keep a stretched foot planted.
 const MAX_REACH_DROP := 0.18
 ## Body scale of an adult and a baby: in between, the walk is that much younger.
@@ -81,6 +84,7 @@ var _phase := 0.0
 var _cycle := 1.0
 var _swing := SWING_WALK
 var _heavy_next := false
+var _jitter := 1.0
 var _stomp_times: Array[float] = []
 var _stomp_leg := 0
 var _stomp_planned := -1.0
@@ -127,7 +131,7 @@ func update(delta: float) -> void:
 		_swing = lerpf(SWING_WALK, SWING_RUN, clampf(speed / (2.0 * hip_w), 0.0, 1.0))
 		var cycle := 2.0 * step_len / maxf(speed, 0.001)
 		cycle = minf(cycle, STANCE_REACH * hip_w / (maxf(speed, 0.001) * (1.0 - _swing)))
-		_cycle = clampf(cycle, CYCLE_MIN * k, CYCLE_MAX * k)
+		_cycle = clampf(cycle, CYCLE_MIN * k, CYCLE_MAX * k) * _jitter
 	_step_feet(dt, root, standing)
 	body.update(dt, root, head.roar_lean())
 	_solve_legs(root)
@@ -201,7 +205,9 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 				if o != leg and not o.planted:
 					other_air = maxf(other_air, 1.0 - o.t)
 			if other_air == 0.0 or other_air < 0.55 or _stretch(leg, root) > REACH_HOP:
-				var quick := 0.6 if other_air > 0.0 else 1.0
+				var local := fposmod(_phase - leg.offset, 1.0)
+				# A rescue close to its own stride slot is just an early step, not a hurried one.
+				var quick := 0.6 if other_air > 0.0 and local < 0.75 else 1.0
 				_lift_foot(leg, minf(_cycle * _swing, SETTLE_SECONDS * sqrt(s)) * quick, LIFT_SLOW)
 				leg.walking = not standing
 				leg.last_cycle = roundi(_phase - leg.offset)  # this counts as its next stride slot
@@ -215,6 +221,7 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 			var local := p - cycle
 			if leg.planted and local < _swing and cycle != leg.last_cycle:
 				_lift_foot(leg, _cycle * _swing, lerpf(LIFT_SLOW, LIFT_FAST, speed_k()))
+				_jitter = 1.0 + rng.randf_range(-STRIDE_JITTER, STRIDE_JITTER)
 				leg.walking = true
 				leg.last_cycle = cycle
 				leg.t = local / _swing
@@ -325,6 +332,14 @@ func _plan_stomp() -> void:
 	var leg := legs[_stomp_leg]
 	_lift_foot(leg, next - time, LIFT_STOMP)
 	leg.stomping = true
+
+
+## A trip's catch: the foot on that side (-1 left, +1 right) swings out fast to catch the body.
+func catch_step(side: float) -> void:
+	for leg: Leg in legs:
+		if leg.side == side and leg.planted:
+			_lift_foot(leg, CATCH_SECONDS * sqrt(s), LIFT_SLOW)
+			leg.last_cycle = roundi(_phase - leg.offset)
 
 
 ## 0..1: how fast it is going, in strides (2 hip heights a second = 1).
