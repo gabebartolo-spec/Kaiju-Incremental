@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 02:25
+# Lead handoff, 2026-10-17 02:35
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -40,7 +40,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 
 ## CI captures live (02:20)
 - PR #13 merged to main (capture.yml dispatch-only + tools/capture/ci_capture.sh); workflow also on look-options (dispatch reads the file from the ref; branches cut before 02:20 need it merged in). Helpers already dispatching.
-- Messaging to helpers PAUSED by the app (10+ msgs since the director last typed) until the director types again. Pending to send: reptile final critic = FIX (baby chest hole under chin, baby jaw seam open while walking; adult PASS) -> kaiju-motion; mantis r3a ack -> species-motion; ci-captures ack.
+- Held notes SENT (02:30): reptile baby chest hole + jaw seam + round6 reverse proof -> kaiju-motion (then merge #10); helpers told to merge look-options for capture.yml and dispatch on their OWN branch.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
