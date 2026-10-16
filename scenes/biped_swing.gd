@@ -88,6 +88,28 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 	_pose_arms(roar_open, hip_yaw, dt)
 
 
+## The standing arm pose as the rig's rest pose: bone name -> rest basis that turns arm_<side>0/1/2
+## (in rig space, which at rest is the heading frame) to point along ARM_UPPER/FORE/HAND. Bends at
+## the joints, no roll.
+static func rest_arm_bases(rig: KaijuRig) -> Dictionary:
+	var out: Dictionary = {}
+	var dirs: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
+	for side: String in ["l", "r"]:
+		if not rig.has_bone("arm_%s0" % side):
+			continue
+		var outward := signf(rig.dir_of("arm_%s0" % side).x)
+		var above := Basis.IDENTITY  # the parent's rest orientation (the spine has none)
+		for i: int in dirs.size():
+			var n := "arm_%s%d" % [side, i]
+			if not rig.has_bone(n):
+				break
+			var want := (dirs[i] * Vector3(outward, 1, 1)).normalized()
+			var world := Basis(Quaternion(rig.dir_of(n).normalized(), want))
+			out[n] = above.inverse() * world
+			above = world
+	return out
+
+
 func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 	var brace := minf(ARM_BRACE_MAX, absf(yaw_rate) * ARM_BRACE)
 	var stride := clampf(hip_yaw / BipedBody.HIP_YAW, -1.0, 1.0) * ARM_STRIDE

@@ -148,8 +148,17 @@ func attach_voxels(
 	return mmi
 
 
-## Models arrive in a T-pose; a kaiju carries its arms lowered and reaching forward.
+## Models arrive in a T-pose; a kaiju carries its arms lowered and reaching forward. A biped's
+## rest pose is its standing arm pose (BipedSwing: hanging, elbow bent, hands at the belly), so a
+## skin bound to the rest pose matches what is shown and the gait only adds small swings to it.
 func _relax_arms() -> void:
+	if body_plan == "biped":
+		var bases := BipedSwing.rest_arm_bases(self)
+		for n: String in bases:
+			var b: Basis = bases[n]
+			_rest[n] = Transform3D(b, rest_of(n).origin)
+			bone(n).transform = rest_of(n)
+		return
 	for side: String in ["l", "r"]:
 		var root := "arm_%s0" % side
 		if not _bones.has(root):
