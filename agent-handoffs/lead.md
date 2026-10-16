@@ -46,6 +46,8 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 11. PR #6 (ability VFX) sent back with a FIX list: breath camera orbit + beam reaching target, lash fan replaced by an arc, boosted subtle cues, HUD 998 timer bug. SFX (D-030): free libs + synthesis, follow-up PR.
 12. Fullscreen start moved to exported builds only (8cf4a16); focus-guard blocks fullscreen projects.
 
+13. Locomotion (D-031): helper kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): reptile first, then hexapod mantis rig, radial cephalopod rig; motion-critic review before the director.
+
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
 ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106). street-life PR #5 MERGED (ca2c65c),
