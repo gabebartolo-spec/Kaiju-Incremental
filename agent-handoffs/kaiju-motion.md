@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 06:40
-## State: running a check (CI renders of baby + adult front34w, runs 38925005160 / 38925016471)
+# Kaiju-motion handoff, 2026-10-17 07:10
+## State: awaiting lead (#10 ready to merge at 734257e; baby CI clip sent; adult CI run 38925016471 still rendering)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -39,8 +39,9 @@ not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-po
   tight snarl, true colours (rig arg jaw_shut 0.35 -> rig.json "snarl": true -> BipedHead skips
   the dark seam). Director REJECTED skin-coloured mouth insides. Rig commands:
   blender -b --python tools/blender/rig_voxel.py -- <rep_<stage>_tex_olive.glb copy>     assets/kaiju/reptilian_<stage> reptilian <100|130|160> [0.35 adult only]
-- #10 has look-options merged (45b2be6) for capture.yml. Next: send the CI baby clip (incl.
-  REVERSE at 12+ s) to the lead; lead then merges #10.
+- #10 has look-options merged (45b2be6) for capture.yml. Baby CI clip (run 38925005160) sent:
+  notes kaiju-motion/round6f_baby_ci/. Torso blemish pass (rig_voxel.clean_blemishes, the
+  adult "nips": 4 voxels) at 734257e. kaiju-look-test told to rebake.
 - #11: grip finder moved to scenes/kaiju_grip.gd (rampage.gd line cap); told species-motion.
 - CI flow fix: ability_fx looks up body parts per toggle (freed after a growth stage).
 - capture_motion --tint colours each bone (arm0 red, arm1 yellow, hand magenta) for rig QA.
