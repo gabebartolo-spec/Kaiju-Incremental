@@ -30,6 +30,8 @@ func _initialize() -> void:
 			_find = true
 		elif arg.begins_with("--stills="):
 			_stills = arg.substr(9)
+		elif arg.begins_with("--out=") and _stills == "":  # CI captures (capture.yml) pass --out
+			_stills = arg.substr(6)
 		elif arg.begins_with("--frames="):
 			for part: String in arg.substr(9).split(","):
 				_frames.append(int(part))
