@@ -17,6 +17,10 @@ for the insectoid and cephalopod.
 Why: "we should probably have 3 models per kaiju though". The first reptile sculpt: "he looks
 wonderful" (adult). Stages map to the evolutions: baby (start), adolescent (EVOLVE 1), adult (EVOLVE 2+).
 
+## 2026-10-16 · D-021 · Director · Game font: "Kaiju Claw" (direction B) for headings and big buttons
+Why: picked from the A/B/C font board (docs/captures/2026-10-16-font/font_board.png) in the font
+session. Ours (built with fontTools); body text below 36 px keeps the default font. PR #4.
+
 ## 2026-10-16 · D-020 · Director · Tripo sculpts for military vehicles and landmarks (~350 credits)
 Why: "do military vehicles and landmarks". Tank, attack helicopter, fighter jet, APC; stadium, radio
 mast, bridge. Vehicles voxelized as rigid models (rotors/turrets split); landmarks voxelized and cut
