@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 02:10
+# Lead handoff, 2026-10-17 02:25
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -37,6 +37,10 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 ## Gameplay helpers started 02:00
 - city-growth (local_abf1bce5-336a-4fc8-942a-ff8f84538b7a): D-039 city grows per evolution + 3-5 h economy re-tune.
 - game-flow (local_9e7bf3f2-b85d-489b-987f-b9e45b8bfb55): run summary, evolution reveal, tree polish, menus/pause/settings (4K UI scale), save/continue.
+
+## CI captures live (02:20)
+- PR #13 merged to main (capture.yml dispatch-only + tools/capture/ci_capture.sh); workflow also on look-options (dispatch reads the file from the ref; branches cut before 02:20 need it merged in). Helpers already dispatching.
+- Messaging to helpers PAUSED by the app (10+ msgs since the director last typed) until the director types again. Pending to send: reptile final critic = FIX (baby chest hole under chin, baby jaw seam open while walking; adult PASS) -> kaiju-motion; mantis r3a ack -> species-motion; ci-captures ack.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
