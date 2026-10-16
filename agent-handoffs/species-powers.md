@@ -33,7 +33,9 @@ species-powers/ (reptilian/insectoid/cephalopod _branch.mp4).
    flattened by run 11. I recommended "city grows per evolution" as a separate task and left the
    shared costs alone. Question sent to the lead; no answer yet.
 2. Ultimate on a second button (E), hold-to-glide: flagged for the director in the PR.
-3. Rig hooks tail_sweep/grab/throw/jaw_open proposed to kaiju-motion (local_fd14d508...); no reply yet.
+3. Rig hooks tail_sweep(side) / grab(limb, at) / throw(toward) / jaw_open(open): AGREED by
+   kaiju-motion (23:57). It is adding them on its PR #11 and will ping when they're pushed;
+   PowersView already calls them through has_method, so nothing changes here.
 
 ## Running jobs
 None. No override.cfg left.
