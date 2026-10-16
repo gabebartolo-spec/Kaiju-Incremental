@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-038 · Director · Mantis skin = dark chitin, red eyes, rusty scythe tips; octopus baby 6176590f
+Why: approved docs/captures/2026-10-16-stages/mantis_skin_v2.png ("Yes, use it"); the cephalopod baby
+"i love him" (Tripo 6176590f, big round eyes). Changes: same mantis prompt on all three insect stages.
+
 ## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
 Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
 hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
