@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 00:55
-## State: awaiting lead (reptile round 5 on PR #10; hydra static bone sheet + species on PR #11)
+# Kaiju-motion handoff, 2026-10-17 02:10
+## State: awaiting lead (reptile round 6 on PR #10, 1f8ff0e; next: hydra bone fixes, species round 2 QA)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -18,8 +18,12 @@ not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-po
   Lead asked: NO more octopus motion clips until it OKs species3/octo_bone_sheet.png.
 
 ## Unfinished changes
-- none uncommitted. Next: lead verdicts on PR #10 round 4 and PR #11 round 2.
-- Mantis textured GLBs coming from the lead -> re-rig at 100/130/160 (species insectoid).
+- none uncommitted. Round 6 (posed arms, plates on spine via rig_voxel.reclaim_plates) at
+  1f8ff0e, merged into species 74474ff; evidence in notes kaiju-motion/round6/.
+- Mantis all three stages textured (D-038) at 862d318.
+- Queue: hydra bone fixes (every long tentacle chained, majority smoothing, orphans to nearest
+  bone, pale mantle patch; resend bone sheet), then species round 2 QA (mantis freezes/darts,
+  idle twitch, roar flare, leg-led 0.3 s turn; octopus surges, adolescent pull, baby 2-3 arms).
 - Adult hydra: two raised arches have no chain (ride the mantle); max_arms 16 is the cap.
 - D-035 locomotion anticipation (insect jump/climb, octopus squeeze through gaps) not started.
 
