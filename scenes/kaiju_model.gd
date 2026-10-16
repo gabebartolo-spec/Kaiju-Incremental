@@ -21,11 +21,13 @@ var _vox := VoxelBuilder.new()
 ## Walk-cycle flipbook poses of a voxelized model (empty for code-built bodies).
 var _poses: Array[MultiMeshInstance3D] = []
 var _body: Node3D
+var _rig: KaijuRig
 var _walk_phase := 0.0
 var _squash := 0.0
 
 
-func _init(p_species_id: String, colors: Dictionary) -> void:
+## stage: "baby", "adolescent" or "adult" (D-014); a missing stage falls back to the next one up.
+func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") -> void:
 	species_id = p_species_id
 	for key: String in colors:
 		_colors[key] = Color(str(colors[key]))
@@ -34,6 +36,14 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 	_vox.salt = 7
 	# A voxelized sculpt (tools/blender/voxelize.py, D-012) replaces the code-built body.
 	_add_rim_light()
+	# A rigged sculpt (tools/blender/rig_voxel.py, D-015) with walk and physics comes first.
+	var stages: Array[String] = ["baby", "adolescent", "adult"]
+	for i: int in range(stages.find(stage), stages.size()):
+		var base := "res://assets/kaiju/%s_%s" % [species_id, stages[i]]
+		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
+		if _rig != null:
+			_body.add_child(_rig)
+			return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
 	if model.height > 0:
 		for pose: VoxelBuilder in model.frames:
@@ -53,6 +63,13 @@ func _init(p_species_id: String, colors: Dictionary) -> void:
 	_body.add_child(_lit(_vox.build(_palette(), VOXEL, _glow(), Vector3.ZERO)))
 
 
+## The life stage that matches an evolution tier (D-014): baby, then adolescent, then adult.
+static func stage_for(size_tier: int) -> String:
+	if size_tier <= 1:
+		return "baby"
+	return "adolescent" if size_tier == 2 else "adult"
+
+
 ## A cool rim light from behind and above that only lights the kaiju (render layer 2), so a dark
 ## hide still shows its shape against a dark city.
 func _add_rim_light() -> void:
@@ -68,9 +85,12 @@ func _add_rim_light() -> void:
 func animate(delta: float, moving: float) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)
 	_squash = maxf(0.0, _squash - delta * 5.0)
-	var bob := absf(sin(_walk_phase)) * 0.25 * moving
-	_body.position.y = bob
-	_body.rotation.z = sin(_walk_phase) * 0.06 * moving
+	if _rig != null:
+		_rig.animate(delta, moving)
+		_body.position.y = absf(sin(_walk_phase)) * 0.12 * moving
+	else:
+		_body.position.y = absf(sin(_walk_phase)) * 0.25 * moving
+		_body.rotation.z = sin(_walk_phase) * 0.06 * moving
 	_body.scale = Vector3(1.0 + _squash * 0.12, 1.0 - _squash * 0.15, 1.0 + _squash * 0.12)
 	if _poses.size() > 1:
 		var shown := posmod(floori(_walk_phase / PI * _poses.size() * 0.5), _poses.size())
@@ -79,7 +99,12 @@ func animate(delta: float, moving: float) -> void:
 
 
 func stomp() -> void:
-	_squash = 1.0
+	_squash = 0.4 if _rig != null else 1.0
+
+
+func roar() -> void:
+	if _rig != null:
+		_rig.roar()
 
 
 func _lit(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:

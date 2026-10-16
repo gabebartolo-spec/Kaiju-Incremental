@@ -48,7 +48,7 @@ func _ready() -> void:
 	_city = CityView.new(sim, _fx_rng)
 	add_child(_city)
 	var colors: Dictionary = species["colors"]
-	_kaiju = KaijuModel.new(str(species["id"]), colors)
+	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
@@ -108,6 +108,7 @@ func _on_event(event: Dictionary) -> void:
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
+			_kaiju.roar()
 			_ability_fx(event)
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]

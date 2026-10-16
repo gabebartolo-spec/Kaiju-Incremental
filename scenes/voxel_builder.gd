@@ -13,6 +13,10 @@ const NEIGHBOURS: Array[Vector3i] = [
 var cells: Dictionary = {}
 ## Per-cell colours for cells keyed DIRECT (models voxelized from a texture).
 var colors: Dictionary = {}
+## Per-cell flags from a .kvox (e.g. the bone a voxel belongs to).
+var flags: Dictionary = {}
+## Model height in cells when loaded from a .kvox (0 otherwise).
+var height_hint := 0
 ## Seeds the per-cell colour jitter so neighbouring models do not repeat.
 var salt := 0
 ## Each built instance's cell y, ascending (filled by build()).

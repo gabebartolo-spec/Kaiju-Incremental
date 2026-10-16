@@ -26,13 +26,16 @@ static func read(path: String) -> Kvox:
 	for i: int in count:
 		var voxels := first if version == 1 else f.get_32()
 		var vox := VoxelBuilder.new()
+		vox.height_hint = out.height
 		for _v: int in voxels:
 			var cell := Vector3i(
 				_signed16(f.get_16()), _signed16(f.get_16()), _signed16(f.get_16())
 			)
 			var color := Color8(f.get_8(), f.get_8(), f.get_8())
-			f.get_8()  # flags
+			var flag := f.get_8()
 			vox.put_color(cell, color)
+			if flag != 0:
+				vox.flags[cell] = flag
 		out.frames.append(vox)
 	return out
 
