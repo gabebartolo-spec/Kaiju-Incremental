@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 17:20
-## State: working (director AFK, "no questions"); critic round 2 on the city look running
+# Lead handoff, 2026-10-16 17:30
+## State: working (director AFK, "no questions"); critic gate round 6 on the city look running
 
 ## Task
 Art direction + destruction overhaul. Director decisions today (docs/DECISIONS.md D-008..D-013):
@@ -11,7 +11,7 @@ Reference: WATCH THIS.mp4 (repo root, untracked; CityV voxel city destruction) +
 detailed-voxel trailer (youtube iPENkVBlPgI). Frames: scratchpad w_city/, w_city2/.
 
 ## Branch and commit
-claude/look-options -> PR #3 (HOLD: director has not seen the detailed look yet). Head 9bd44d5.
+claude/look-options -> PR #3 (HOLD: director has not seen the detailed look yet). Pushed to head.
 
 ## What exists now
 - sim/structure.gd (chunks, support, drop/topple), sim/collapse.gd (falls, landing, strip crush),
@@ -29,14 +29,22 @@ claude/look-options -> PR #3 (HOLD: director has not seen the detailed look yet)
 1. Tripo reptilian generated (task 484078ce..., 30 cr, Private). Inspection + download need the
    director: Chrome window too small for the viewer and downloads need his OK. Then texture (if
    untextured), rig/animate, voxelize, six-view QA, then insectoid + cephalopod.
-2. Critic round 2 verdict -> fix -> re-capture -> show director board (city + lineup).
+2. Critic rounds 1-5 fixed (ruins, plumes, fire, grade, bites, hitches); round 6 gate pending.
+   Then show the director: city captures + docs/captures/2026-10-16-destruction/rampage_clip.mp4
+   (local only, *.mp4 is gitignored).
 3. Lineup kaiju still code-built placeholders (toy-like) until the sculpts land.
 
 ## Evidence so far
 Tests: smoke 11, sim 39, flow 9 + self-test green; lint clean. GPU ~4.5 ms 1080p, ~9 ms 4K
 (4070 SUPER, engine timers). Offscreen-window FPS is throttled: never trust it.
 
+## Perf (engine timers, 4070 SUPER)
+1080p GPU ~5 ms; real frame gaps worst 20.8 ms, 0/3994 over 33 ms (bench_rampage.gd prints a
+per-event worst-cost table). Debris spawns from a queue (30/frame); ruins build on WorkerThreadPool.
+
 ## Rules learnt the hard way
+- WorkerThreadPool tasks: wait in _exit_tree or the game crashes at exit.
+- Performance.TIME_PROCESS updates ~1/s: measure hitches as wall-clock frame gaps.
 - Check nvidia-smi for a game before windowed runs (director plays LoL).
 - sim.step() clears events: route sim.events right after direct damage calls (capture tool).
 - Godot scaled RigidBody is unsupported: tween the mesh child, not the body.
