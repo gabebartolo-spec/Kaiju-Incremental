@@ -49,9 +49,10 @@ var height_units: float
 var body_plan := "biped"
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
-## name -> how far that bone turns about its x axis to close (rig.json "close": the jaw of a
-## sculpt with an open snarl).
+## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
 var bone_close: Dictionary = {}
+## name -> the MultiMeshInstance3D drawing that bone's own voxels (its skin).
+var skins: Dictionary = {}
 var _bones: Dictionary = {}  # name -> Node3D
 var _rest: Dictionary = {}  # name -> Transform3D (local rest)
 var _dir: Dictionary = {}  # name -> rest head->tail vector, in the bone's own space
@@ -125,7 +126,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 	var bands := RigJoints.overlap(self)
 	for bone_name: String in _voxels:
 		var part: VoxelBuilder = _voxels[bone_name]
-		attach_voxels(bone_name, part)
+		skins[bone_name] = attach_voxels(bone_name, part)
 	for bone_name: String in bands:
 		var band: VoxelBuilder = bands[bone_name]
 		attach_voxels(bone_name, band, null, JOINT_INSET)

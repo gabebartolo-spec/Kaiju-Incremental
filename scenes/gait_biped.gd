@@ -8,6 +8,9 @@ extends KaijuGait
 ## Swing share of a stride walking (both feet are down twice per stride) and at a run.
 const SWING_WALK := 0.4
 const SWING_RUN := 0.5
+## A young body runs with a flight phase (fewer, longer strides); a stomp beat adds this weight.
+const SWING_YOUNG := 0.7
+const HEAVY_STEP := 0.2
 ## How far a foot may travel under the body while planted (hip heights), so it stays in reach.
 const STANCE_REACH := 0.48
 ## Step length in hip heights: at a standstill, how much it grows with speed, and its cap.
@@ -35,6 +38,8 @@ const REACH_HOP := 1.02
 ## stride before a stretch can lift it again (unless it is past REACH_HOP).
 const LAND_REACH := 0.9
 const MIN_STANCE := 0.3
+## Two footfalls never land closer together than this (s).
+const PLANT_GAP := 0.2
 ## A trip's catch step (s at scale 1); stride-to-stride timing jitter (share of a stride).
 const CATCH_SECONDS := 0.22
 const STRIDE_JITTER := 0.05
@@ -43,8 +48,6 @@ const MAX_REACH_DROP := 0.18
 ## Body scale of an adult and a baby: in between, the walk is that much younger.
 const ADULT_SCALE := 1.3
 const BABY_SCALE := 0.5
-## A baby steps this much quicker than its size alone would make it.
-const YOUTH_CADENCE := 0.3
 ## Footfall ids for KaijuRig.foot_planted, and a stage's share of a full adult step.
 const SIDES := {-1.0: "left", 1.0: "right"}
 
@@ -127,8 +130,9 @@ func update(delta: float) -> void:
 	var standing := speed < STAND_SPEED * hip_w
 	var step_len := hip_w * clampf(STEP_MIN + STEP_PER_SPEED * speed / hip_w, STEP_MIN, STEP_MAX)
 	if not standing:
-		var k := sqrt(s) * (1.0 - YOUTH_CADENCE * youth)
+		var k := sqrt(s)
 		_swing = lerpf(SWING_WALK, SWING_RUN, clampf(speed / (2.0 * hip_w), 0.0, 1.0))
+		_swing = lerpf(_swing, SWING_YOUNG, youth)
 		var cycle := 2.0 * step_len / maxf(speed, 0.001)
 		cycle = minf(cycle, STANCE_REACH * hip_w / (maxf(speed, 0.001) * (1.0 - _swing)))
 		_cycle = clampf(cycle, CYCLE_MIN * k, CYCLE_MAX * k) * _jitter
@@ -193,23 +197,21 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 	var stance_time := _cycle * (1.0 - _swing)
 	# A planted foot left out of reach (a sudden turn or burst) steps now rather than slide;
 	# if the other foot is still in the air, that one hurries down first.
-	# A hard reversal can leave it no time: then it hops (both feet briefly off the ground).
 	var hurry := 1.0
 	for leg: Leg in legs:
 		if leg.planted:
 			leg.down_for += dt
 		var settled := leg.down_for > MIN_STANCE * _cycle
 		if leg.planted and _stretch(leg, root) > (REACH_STEP if settled else REACH_HOP):
-			var other_air := 0.0
+			var other_left := 0.0  # seconds until the other foot lands, if it is in the air
 			for o: Leg in legs:
 				if o != leg and not o.planted:
-					other_air = maxf(other_air, 1.0 - o.t)
-			if other_air == 0.0 or other_air < 0.55 or _stretch(leg, root) > REACH_HOP:
-				var local := fposmod(_phase - leg.offset, 1.0)
-				# A rescue close to its own stride slot is just an early step, not a hurried one.
-				var quick := 0.6 if other_air > 0.0 and local < 0.75 else 1.0
-				_lift_foot(leg, minf(_cycle * _swing, SETTLE_SECONDS * sqrt(s)) * quick, LIFT_SLOW)
-				leg.walking = not standing
+					other_left = maxf(other_left, (1.0 - o.t) * o.swing_time)
+			if other_left == 0.0 or _stretch(leg, root) > REACH_HOP:
+				# A hard turn may need both feet up: then it lands well after the other (no pop).
+				var swing := minf(_cycle * _swing, SETTLE_SECONDS * sqrt(s))
+				_lift_foot(leg, maxf(swing, other_left + PLANT_GAP), LIFT_SLOW)
+				leg.walking = false
 				leg.last_cycle = roundi(_phase - leg.offset)  # this counts as its next stride slot
 			else:
 				hurry = 2.5
@@ -227,8 +229,10 @@ func _step_feet(dt: float, root: Transform3D, standing: bool) -> void:
 				leg.t = local / _swing
 	else:
 		_settle_cool -= dt
-		_plan_stomp()
-		if not swinging and _settle_cool <= 0.0:
+		var roaring := head.roar_open() > 0.0 or head.roar_lean() != 0.0
+		if not roaring:  # roaring, the feet stay planted and still
+			_plan_stomp()
+		if not swinging and _settle_cool <= 0.0 and not roaring:
 			var worst: Leg = null
 			var worst_d := SETTLE_DISTANCE * hip_height * s
 			for leg: Leg in legs:
@@ -300,9 +304,11 @@ func _plant(leg: Leg, standing: bool) -> void:
 	leg.plant_at = leg.foot
 	leg.drift = 0.0
 	var weight := 0.35 + 0.45 * speed_k()
-	if leg.stomping or _heavy_next:
+	if leg.stomping:
 		weight = 1.0
-		_heavy_next = false
+	elif _heavy_next:  # walking, the stomp beat makes this step a little heavier, not a slam
+		weight = minf(1.0, weight + HEAVY_STEP)
+	_heavy_next = false
 	body.plant(weight)
 	var stage := clampf(sqrt(s / ADULT_SCALE), 0.4, 1.0)
 	rig.foot_planted.emit(str(SIDES[leg.side]), weight * stage, leg.foot)
@@ -334,27 +340,9 @@ func _plan_stomp() -> void:
 	leg.stomping = true
 
 
-## A trip's catch: the foot on that side (-1 left, +1 right) swings out fast to catch the body.
-func catch_step(side: float) -> void:
-	for leg: Leg in legs:
-		if leg.side == side and leg.planted:
-			_lift_foot(leg, CATCH_SECONDS * sqrt(s), LIFT_SLOW)
-			leg.last_cycle = roundi(_phase - leg.offset)
-
-
 ## 0..1: how fast it is going, in strides (2 hip heights a second = 1).
 func speed_k() -> float:
 	return clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
-
-
-## How far (world units) the pelvis must sink for a planted foot's ankle to be in reach.
-func reach_drop(leg: Leg, root: Transform3D) -> float:
-	var d := rig.bone(leg.names[0]).global_position - _ankle(leg, root)
-	var reach := (leg.l1 + leg.l2) * s * 0.995
-	if d.length() <= reach:
-		return 0.0
-	var du := d.y
-	return du - sqrt(maxf(0.0, du * du - d.length_squared() + reach * reach))
 
 
 # --- legs ----------------------------------------------------------------------------------------

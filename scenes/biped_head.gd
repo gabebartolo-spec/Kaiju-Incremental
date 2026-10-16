@@ -23,6 +23,11 @@ const ROAR_LUNGE := 0.14
 const ROAR_HOLD := 0.9
 const ROAR_RECOVER := 0.45
 const JAW_OPEN := 1.0
+## Mouth inside: how red a cell must be (red over green and blue), how dark it reads shut, and
+## how far open (rad) the jaw must be to show the pink.
+const MOUTH_RED := 1.35
+const SEAM_DARK := 0.22
+const MOUTH_SHOWS := 0.12
 ## Idle tells: a snort or jaw click every few seconds.
 const TELL_EVERY := Vector2(5.0, 10.0)
 
@@ -41,11 +46,15 @@ var _tell_in := 4.0
 var _tell := 0.0
 var _roar_t := -1.0
 var _jaw_open := 0.0
+var _mouth_open: Array[Node3D] = []  # the mouth's pink inside, shown once the jaw drops
+var _mouth_shut: Array[Node3D] = []  # the same cells as a dark lip seam, shown while shut
 
 
 func _init(gait: BipedGait) -> void:
 	g = gait
 	_tell_in = g.rng.randf_range(TELL_EVERY.x, TELL_EVERY.y)
+	for bone_name: String in ["head1", "jaw"]:
+		_split_mouth(bone_name)
 
 
 func roar() -> void:
@@ -189,3 +198,33 @@ func _pose_jaw(dt: float) -> void:
 	_jaw_open = lerpf(_jaw_open, target, minf(1.0, dt * 18.0))
 	# Shut at rest (the sculpt's snarl closed by the rig's "close" angle), dropped open to roar.
 	g.rig.pose("jaw", Vector3(Num.f(g.rig.bone_close.get("jaw", 0.0)) - _jaw_open, 0, 0))
+	var showing := _jaw_open > MOUTH_SHOWS
+	for node: Node3D in _mouth_open:
+		node.visible = showing
+	for node: Node3D in _mouth_shut:
+		node.visible = not showing
+
+
+## The sculpt's open snarl leaves its pink inside on the skull and jaw. Shut, those cells read as a
+## dark lip seam; the pink shows only when the jaw drops (a roar, the beam).
+func _split_mouth(bone_name: String) -> void:
+	var cells := g.rig.voxels_of(bone_name)
+	var skin: Node3D = g.rig.skins.get(bone_name, null)
+	if cells == null or skin == null:
+		return
+	var rest := VoxelBuilder.new()
+	var inside := VoxelBuilder.new()
+	var seam := VoxelBuilder.new()
+	for cell: Vector3i in cells.cells:
+		var c: Color = cells.colors[cell]
+		if c.r > c.g * MOUTH_RED and c.r > c.b * MOUTH_RED:
+			inside.put_color(cell, c)
+			seam.put_color(cell, Color(c.r * SEAM_DARK, c.g * SEAM_DARK, c.b * SEAM_DARK))
+		else:
+			rest.put_color(cell, c)
+	if inside.cells.is_empty():
+		return
+	skin.queue_free()
+	g.rig.attach_voxels(bone_name, rest)
+	_mouth_open.append(g.rig.attach_voxels(bone_name, inside))
+	_mouth_shut.append(g.rig.attach_voxels(bone_name, seam))

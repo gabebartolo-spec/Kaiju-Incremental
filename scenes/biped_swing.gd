@@ -30,6 +30,7 @@ const ARM_ELBOW := 0.9
 const ARM_ROAR := 0.4
 const ARM_SWING := 0.5
 const ARM_STIFFNESS := 14.0
+const ARM_YOUTH_EASE := 0.75
 
 var rig: KaijuRig
 ## The pelvis's drop speed (hip heights/s) and how young the body is (0..1), set each frame.
@@ -93,8 +94,10 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 		if chain == null:
 			continue
 		var sgn := -1.0 if side == "l" else 1.0
-		var curl := Basis(Vector3.RIGHT, -ARM_TUCK - ARM_ROAR * maxf(0.0, roar_open))
-		var tuck_in := Basis(Vector3.UP, sgn * ARM_IN - sgn * hip_yaw * ARM_SWING)
+		# A young body's arms stay nearer their sculpted pose (tucking them bares unmodelled chest).
+		var tuck := 1.0 - ARM_YOUTH_EASE * youth
+		var curl := Basis(Vector3.RIGHT, -ARM_TUCK * tuck - ARM_ROAR * maxf(0.0, roar_open))
+		var tuck_in := Basis(Vector3.UP, sgn * ARM_IN * tuck - sgn * hip_yaw * ARM_SWING)
 		chain.drive[0] = tuck_in * curl
 		if chain.drive.size() > 1:
 			chain.drive[1] = Basis(Vector3.RIGHT, -ARM_ELBOW)

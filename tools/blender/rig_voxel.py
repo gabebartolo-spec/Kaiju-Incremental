@@ -410,7 +410,7 @@ def radial_skeleton(v, tris, lo, hi, segments=6, max_arms=16):
     return bones
 
 
-JAW_CLOSE_MAX = 0.7
+JAW_CLOSE_MAX = 1.0
 
 
 def split_jaw(points, owner, bones, cell, rgb):
@@ -593,10 +593,10 @@ def main():
         thick = MANTLE_ZONE["width"] * (TENTACLE_THICK[0] + (TENTACLE_THICK[1] - TENTACLE_THICK[0]) * frac)
         off_bone = np.linalg.norm(centres_bl - (heads + t[:, None] * ab), axis=1) > thick
         owner[off_bone] = 0
-    owner = adopt_orphans(keys, owner)
     if body_plan == "biped":
         rgb = np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
         owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
+    owner = adopt_orphans(keys, owner)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
     gk[:, 0] -= 1  # keep integer cells after the x flip

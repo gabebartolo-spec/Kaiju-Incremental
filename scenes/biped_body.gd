@@ -44,6 +44,9 @@ const STUMBLE_EVERY := Vector2(3.0, 6.0)
 const STUMBLE := 0.22
 ## A trip: how deep the pelvis dips (hip heights) and over how long (s).
 const TRIP_DIP := 0.35
+## A trip pitches the body forward (rad/s kick); a young body's bounce varies step to step.
+const TRIP_PITCH := 3.5
+const YOUTH_BOB_VARY := 0.3
 const TRIP_EASE := 0.15
 
 var g: BipedGait
@@ -76,6 +79,7 @@ func hold_back() -> float:
 ## A foot came down (weight 0..1, 1 = a stomp): the body drops and hangs back for a beat.
 func plant(weight: float) -> void:
 	var jolt := lerpf(FOOTFALL_JOLT, STOMP_JOLT, weight) * (1.0 + YOUTH_BOUNCE * g.youth)
+	jolt *= 1.0 + g.youth * g.rng.randf_range(-YOUTH_BOB_VARY, YOUTH_BOB_VARY)  # no two alike
 	_ease_left = PLANT_EASE
 	_drop_rate = jolt * g.hip_height / PLANT_EASE
 	_hold_rate = SURGE_HOLD * g.speed / maxf(0.001, g.s) / PLANT_EASE
@@ -118,7 +122,7 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 	var need := 0.0
 	for leg: BipedGait.Leg in legs:
 		if leg.planted:
-			need = maxf(need, g.reach_drop(leg, root) / g.s)
+			need = maxf(need, reach_drop(leg, root) / g.s)
 	need = minf(need, MAX_SINK * h)
 	_sink = maxf(need, move_toward(_sink, need, dt * SINK_RECOVER * h))
 	if _sink > 0.0:
@@ -133,7 +137,7 @@ func update(dt: float, root: Transform3D, roar_lean: float) -> void:
 ## A young body trips now and then while walking: the pelvis dips and lurches to one side, the
 ## body stalls, and the foot on that side swings out quickly to catch it; then it walks on.
 func _stumble(dt: float, speed_k: float) -> void:
-	if g.youth <= 0.0 or speed_k < 0.1 or absf(g.yaw_rate) > 0.4:
+	if g.youth < 0.1 or speed_k < 0.1 or absf(g.yaw_rate) > 0.4:
 		return  # only on a straight walk, so it reads as one clear stumble
 	_stumble_in -= dt
 	if _stumble_in > 0.0:
@@ -144,5 +148,27 @@ func _stumble(dt: float, speed_k: float) -> void:
 	_drop_rate = TRIP_DIP * g.youth * g.hip_height / TRIP_EASE
 	_hold_rate = g.speed / maxf(0.001, g.s) / TRIP_EASE
 	_roll.y -= side * STUMBLE * g.youth * 8.0
+	_lean.y += TRIP_PITCH * g.youth  # it pitches forward over the caught foot
 	_sway.y += side * STUMBLE * g.youth * g.hip_height * 5.0
-	g.catch_step(side)
+	catch_step(side)
+
+
+## A trip's catch: the foot on that side (-1 left, +1 right) swings out fast to catch the body.
+func catch_step(side: float) -> void:
+	for leg: BipedGait.Leg in g.legs:
+		if not leg.planted:
+			return  # mid-stride: no room for a catch without two feet landing together
+	for leg: BipedGait.Leg in g.legs:
+		if leg.side == side and leg.planted:
+			g._lift_foot(leg, BipedGait.CATCH_SECONDS * sqrt(g.s), BipedGait.LIFT_SLOW)
+			leg.last_cycle = roundi(g._phase - leg.offset)
+
+
+## How far (world units) the pelvis must sink for a planted foot's ankle to be in reach.
+func reach_drop(leg: BipedGait.Leg, root: Transform3D) -> float:
+	var d := g.rig.bone(leg.names[0]).global_position - g._ankle(leg, root)
+	var reach := (leg.l1 + leg.l2) * g.s * 0.995
+	if d.length() <= reach:
+		return 0.0
+	var du := d.y
+	return du - sqrt(maxf(0.0, du * du - d.length_squared() + reach * reach))
