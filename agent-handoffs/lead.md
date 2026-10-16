@@ -60,4 +60,4 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
 ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106). street-life PR #5 MERGED (ca2c65c),
-flow floor 14. Tripo b1ddb234 generating. No override.cfg left behind.
+flow floor 22. Tripo ff432a4f (cephalopod adult, 4 variants) generating. No override.cfg left behind.
