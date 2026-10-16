@@ -46,7 +46,7 @@ func _ready() -> void:
 	_debris = DebrisField.new(_rng, MAX_DEBRIS)
 	add_child(_debris)
 	_prewarm_fire()
-	if _with_decor:
+	if _with_decor and not CitySource.is_real(sim.city):
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
 		add_child(_decor)
 		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0))
@@ -112,6 +112,11 @@ func _build_environment() -> void:
 
 
 func _build_ground() -> void:
+	if CitySource.is_real(sim.city):  # a real district brings its own streets and skyline
+		var district := CitySource.district(sim.city)
+		add_child(DistrictGround.new(CityDistrict.plan(district)))
+		add_child(DistrictGround.skyline(CityDistrict.outer_buildings(district, sim.city)))
+		return
 	var size := sim.arena_half * 2.0 + 60.0
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()

@@ -57,6 +57,22 @@ static func set_look(id: String) -> void:
 	_look_id = id
 
 
+## Plays a real district (data/cities/<id>.json) instead of the generic city; "" for generic.
+## The city config's "district" is what CitySource reads.
+static func set_district(id: String) -> void:
+	_load()
+	var city: Dictionary = _tuning["city"]
+	city["district"] = id
+
+
+## The --district=<id> user argument, if any (main, bench and capture tools pass it on).
+static func district_arg() -> String:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--district="):
+			return arg.substr(11)
+	return ""
+
+
 static func load_json(path: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:

@@ -4,7 +4,7 @@ extends SceneTree
 ## from the engine's own timers (window focus and vsync do not matter). Needs a window.
 ##
 ##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/bench_rampage.gd \
-##     -- --species=reptilian --seconds=30
+##     -- --species=reptilian --seconds=30 [--district=melbourne_cbd]
 
 var _species := "reptilian"
 var _seconds := 30.0
@@ -21,6 +21,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
+	Content.set_district(Content.district_arg())
 	var species := Content.species_def(_species)
 	var levels := {"claws": 4, "hide": 3, "rage": 3, "quake": 2, "evolve1": 1, "sig_power": 2}
 	var stats := UpgradeTree.run_stats(
@@ -28,7 +29,7 @@ func _run() -> void:
 	)
 	var rampage := Rampage.new()
 	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 2
+		species, stats, CitySource.buildings(Seeds.make("city", 0), Content.section("city")), 2
 	)
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
@@ -92,6 +93,8 @@ func _run() -> void:
 		if node is CityView:
 			var city: CityView = node
 			var street := city.street
+			if street == null:
+				continue
 			print(
 				(
 					"street life: %d people, %d cars, avg %.2fms worst %.2fms per frame"

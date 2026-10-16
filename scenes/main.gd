@@ -11,6 +11,8 @@ var _tree: UpgradeTree
 
 
 func _ready() -> void:
+	if Content.district_arg() != "":
+		Content.set_district(Content.district_arg())
 	_save = SaveSystem.load_game()
 	_show_title()
 
@@ -94,7 +96,7 @@ func _base_stats() -> Dictionary:
 
 func _start_rampage() -> void:
 	var city: Dictionary = GameData.section("city")
-	var layout := CityGen.generate(Rng.make(CITY_STREAM, 0), city)
+	var layout := CitySource.buildings(Rng.make(CITY_STREAM, 0), city)
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var rampage := Rampage.new()
 	rampage.setup(_species(), stats, layout, Num.i(_save.get("runs", 0)))
