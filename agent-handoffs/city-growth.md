@@ -37,12 +37,15 @@ merged origin/claude/look-options 55ce218 (capture.yml live). Pushed.
 - Next: iterate factors to ~3 h scripted, commit costs; run tools/run_tests.sh (all suites);
   PR with tables + stills.
 
-## Evidence so far (pacing, reptilian, ORIGINAL costs)
-- Districts x2 area (58/78/104): Behemoth/Colossus cities flattened in one run (city_fallen) -> too small.
-- 42/66/105/166 + lot grow: runs end on time; young 7->80%, Behemoth 67->95%, Colossus 59->99%,
-  Apex 72-79%; rubble/run young 0.1-1.3k, Beh 3.3-5.6k, Col 13-22k, Apex 30-34k; tree 0.52 h.
-- city_stats: stage 1..4 buildings 147/367/776/1577, chunks 9.5k/28k/89k/178k (perf risk at Apex,
-  D-032 says looks first; record capture timings in PR).
+## Evidence so far
+- Pacing a (costs x2.2/2.5/6/6/8/8/8, districts 42/66/105/166): reptile 2.39 h, insect 1.19 h,
+  ceph 1.82 h; insect flattens Colossus+Apex cities every run (flat grind).
+- Pacing b (districts 42/70/125/210, +6 Apex-ring cores, outer_half 360; same costs): reptile
+  2.29 h (Colossus 43->85%, Apex 13/14 defeated), insect 1.17 h (Colossus/Apex 100% every run),
+  ceph 1.68 h. Insect = species-balance issue, flagged to lead (not fixable by city size).
+- city_stats now: buildings 140/313/925/2428, chunks 11.9k/25k/103k/355k (perf risk at Apex).
+- Uncommitted tuning.json: districts 42/70/125/210, new cores, outer_half 360, Apex army
+  tank_damage 11 / heli damage 7. Scratch results: pace_a.txt, pace_b.txt.
 
 ## Attempts
 - heredoc python through Bash failed once on quotes: write scripts to scratchpad with Write.
@@ -54,7 +57,7 @@ merged origin/claude/look-options 55ce218 (capture.yml live). Pushed.
 
 ## Running jobs
 CI capture dispatch (ci_capture.sh capture_growth.gd, all 4 stages) -> $TEMP/cg_stills.
-Background pacing run "a" (factors 2.2 2.5 6 6 8 8 8), output scratchpad pace_a.txt. Godot:
+Pacing run "c" (factors 2.9 4 11.4 11.4 15 15 15) -> scratchpad pace_c.txt. CI stills run 38923419011 uses the OLD sizes: recapture after costs/sizes settle. Godot:
 console exe on Desktop, APPDATA=$TEMP/cg_appdata, headless only (director gaming).
 
 ## Findings for the lead
