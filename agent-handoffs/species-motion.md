@@ -15,8 +15,12 @@ push and pull, grab edges, never tip-toe; never wind-up-toy.
   capture_motion --pose-trace, tools/capture/motion_report.py
 - 324d14a octopus gait (3 front arms take turns, drag/surge body, breathing, roar puff/ripple)
 - 7b7759b mantis mandible bones (rig) + flare; turn rate 9.5
+- 05c904f merged PR #11 head a6c1f0b (pose-trace moved to tools/capture/pose_trace.gd for the
+  400-line cap); all suites pass locally. Lead PASSED octo_bone_sheet_r3.
+- kaiju-motion agreed the split. kaiju-look-test (D-041 voxel skin) reads my rigs: rerun its
+  tools/kaiju_skin/bake_all.sh after any rig change; it needs the _mantle scale mirrored.
 
-## File split (agreed by message to kaiju-motion; no reply yet)
+## File split (agreed with kaiju-motion)
 Mine: scenes/gait_hexapod.gd, hexapod_upper.gd, gait_radial.gd, cephalopod_stand_in.gd,
 assets/kaiju/insectoid_*, cephalopod_*, radial/hexapod parts of tools/blender/rig_voxel.py.
 Theirs: biped files, kaiju_rig.gd / kaiju_gait.gd / kaiju_model.gd core. Shared: capture_motion.gd.
