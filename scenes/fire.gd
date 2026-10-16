@@ -22,7 +22,7 @@ func _init(size: float, seed_value: float) -> void:
 	_base_energy = 2.5 + size * 1.2
 	_light = OmniLight3D.new()
 	_light.light_color = Color("ff9a4a")
-	_light.omni_range = 9.0 + size * 4.0
+	_light.omni_range = 4.0 + size * 2.0
 	_light.light_energy = _base_energy
 	_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 	add_child(_light)

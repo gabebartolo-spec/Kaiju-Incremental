@@ -45,7 +45,7 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 				var edge := x == 0 or z == 0 or x == w - 1 or z == d - 1 or x == cx0 or z == cz0
 				if not edge:
 					continue
-				var top := roundi(peak) + RES * floors - rng.randi_range(0, RES)  # above the pile
+				var top := roundi(peak) + RES * floors - rng.randi_range(0, RES * 2)  # jagged, above the pile
 				for y: int in maxi(RES, top):
 					var key := (
 						"stub_window" if y % RES in [1, 2] and (x + z) % 3 != 0 else "stub_wall"
