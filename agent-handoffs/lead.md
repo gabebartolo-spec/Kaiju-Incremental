@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 00:45
+# Lead handoff, 2026-10-17 00:50
 ## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
 
 ## Task
@@ -21,6 +21,11 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
   /workspace/texture/<id>, look, export only if dark chitin + red eyes, then send to kaiju-motion.
 - Cephalopod: baby 6176590f (octo_baby.glb, director "i love him"), adolescent a328effe (octo_adolescent.glb),
   adult 8bf2f668 (octo_2.glb, 10+ tentacles). Untextured: next, one skin prompt for all three, check each.
+
+## Director motion notes 00:44-00:46 (sent to kaiju-motion for round 5)
+- Arms flail like "limp scarves" on sharp turns: arms become posed muscle, not spring chains.
+- Shoulder plates swing left/right, "like hes dance walking": plates on arm bones + torso yaw; upper body one stable mass.
+- Look test (kaiju-look-test, local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc): voxel vs smooth skinned vs voxel-snap shader; director picks from a clip.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
