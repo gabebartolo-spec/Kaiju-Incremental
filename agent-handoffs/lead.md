@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 01:30
+# Lead handoff, 2026-10-17 01:55
 ## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
 
 ## Task
@@ -30,7 +30,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 
 ## Speed-up (director "can you work faster", 01:26)
 - Split: kaiju-motion = reptile only; species-motion (local_87c25bd4-a526-4731-b18e-7c728966a2df) = mantis + octopus (from PR #11). Short loops; lead checks clips quickly, full critic only before the director.
-- Look test round 2: C knee shear fix, B on Tripo auto-rig (rep_adult_rigged.glb, Mixamo, no tail bones).
+- D-041: director picked look test C (voxel cubes on skinned lattice); kaiju-look-test productionises it (all 9 kaiju, shoulder bake, bone array, PR).
 - Director: reptile arms "outstretched like a zombie": bent elbows, hands near chest (sent to kaiju-motion).
 
 ## Helpers
