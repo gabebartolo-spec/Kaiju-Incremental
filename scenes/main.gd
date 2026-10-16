@@ -93,9 +93,9 @@ func _base_stats() -> Dictionary:
 
 
 func _start_rampage() -> void:
-	var city: Dictionary = GameData.section("city")
-	var layout := CityGen.generate(Rng.make(CITY_STREAM, 0), city)
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
+	var tier := Num.i(stats["size"])
+	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))
 	var rampage := Rampage.new()
 	rampage.setup(_species(), stats, layout, Num.i(_save.get("runs", 0)))
 	rampage.finished.connect(_on_rampage_finished)

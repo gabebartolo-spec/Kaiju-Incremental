@@ -1,0 +1,124 @@
+name: capture-growth
+
+# TEMPORARY (city-growth, D-039): renders tools/capture/capture_growth.gd, one job per growth
+# stage, on push to this branch, because capture.yml (ci-captures) cannot be dispatched until it
+# is on main. Removed again before the PR merges; the run link and stills are in the PR body.
+on:
+  push:
+    branches: ["claude/city-growth-e79d28"]
+    paths: [".github/workflows/capture_growth.yml", "tools/capture/capture_growth.gd"]
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          name="Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          curl -fsSL --retry 3 -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${name}.zip" \
+          || curl -fsSL --retry 3 -o godot.zip \
+            "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=linux.x86_64.zip&platform=linux.64"
+          unzip -q godot.zip && rm godot.zip
+          mv "${name}" godot && chmod +x godot
+
+      - name: Install xvfb, Mesa software drivers (llvmpipe, lavapipe) and ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb mesa-vulkan-drivers libvulkan1 libgl1-mesa-dri libglx-mesa0 \
+            libxcursor1 libxinerama1 libxrandr2 libxi6 libasound2t64 ffmpeg vulkan-tools
+
+      - name: Import the project
+        run: |
+          timeout 900 "$HOME/godot/godot" --headless --path . --import > import.log 2>&1 || { cat import.log; exit 1; }
+          if grep -qE "SCRIPT ERROR|Parse Error|Compile Error" import.log; then cat import.log; exit 1; fi
+
+      - name: Capture
+        env:
+          SCRIPT: capture_growth.gd
+          ARGS: --stage=${{ matrix.stage }}
+          RENDERER: auto
+          MOVIE: false
+          FPS: "30"
+          RES: 1280x720
+        run: |
+          case "$SCRIPT" in *[!A-Za-z0-9_.]*|"") echo "::error::bad script name"; exit 1;; esac
+          test -f "tools/capture/$SCRIPT" || { echo "::error::tools/capture/$SCRIPT does not exist"; exit 1; }
+          out="$PWD/out"; mkdir -p "$out"
+          user_args="$ARGS"
+          case "$user_args" in *--out=*) ;; *) user_args="$user_args --out=$out";; esac
+          export LIBGL_ALWAYS_SOFTWARE=1
+          vulkaninfo --summary 2>&1 | grep -E "deviceName|driverName" | head -3 || true
+
+          run_one() { # $1 = rendering method, $2 = rendering driver
+            local movie_args=()
+            if [ "$MOVIE" = true ]; then movie_args=(--write-movie "$out/clip.avi" --fixed-fps "$FPS"); fi
+            echo "=== $1 on $2 ===" | tee -a "$out/RENDERER.txt"
+            # $user_args is split on purpose: it is a list of --flag=value words.
+            # shellcheck disable=SC2086
+            timeout 3000 xvfb-run -a -s "-screen 0 ${RES}x24" \
+              "$HOME/godot/godot" --path . --rendering-method "$1" --rendering-driver "$2" \
+              --resolution "$RES" --windowed "${movie_args[@]}" \
+              --script "tools/capture/$SCRIPT" -- $user_args > "$out/godot-$1.log" 2>&1
+          }
+
+          code=0
+          case "$RENDERER" in
+            auto)
+              run_one forward_plus vulkan || code=$?
+              if [ "$code" != 0 ]; then
+                echo "::warning::forward_plus on lavapipe failed (exit $code); falling back to gl_compatibility"
+                tail -n 30 "$out/godot-forward_plus.log"
+                code=0; run_one gl_compatibility opengl3 || code=$?
+              fi;;
+            forward_plus|mobile) run_one "$RENDERER" vulkan || code=$?;;
+            gl_compatibility) run_one gl_compatibility opengl3 || code=$?;;
+          esac
+          tail -n 60 "$out"/godot-*.log
+          exit "$code"
+
+      - name: Convert the clip to MP4 and collect user:// output
+        if: always()
+        run: |
+          mkdir -p out
+          if [ -f out/clip.avi ]; then
+            ffmpeg -y -loglevel error -i out/clip.avi -c:v libx264 -pix_fmt yuv420p -crf 18 out/clip.mp4 && rm out/clip.avi
+          fi
+          # Scripts that default to user:// (capture_looks.gd without --out) land here.
+          if [ -d "$HOME/.local/share/godot/app_userdata" ]; then
+            mkdir -p out/userdata && cp -r "$HOME/.local/share/godot/app_userdata/." out/userdata/
+            rm -rf out/userdata/*/shader_cache
+          fi
+          ls -laR out | head -80
+
+      - name: Upload the captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: growth-stage-${{ matrix.stage }}
+          path: out
+          retention-days: 14
+          if-no-files-found: warn

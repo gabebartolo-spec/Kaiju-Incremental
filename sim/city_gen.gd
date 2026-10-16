@@ -2,6 +2,12 @@ class_name CityGen
 extends RefCounted
 ## Seeded city layout, in two steps.
 ##
+## The city grows with each evolution (D-039): cfg.districts lists the half-extents of the
+## nested districts (young, Behemoth, Colossus, Apex Titan) and cfg.half the one in play. The
+## street plan always runs out to the largest district, so the plan, its blocks and the lots
+## in them are the same at every stage: an evolution only turns more of the city playable,
+## and the districts still to come stand past the edge as the city you will grow into.
+##
 ## map(cfg): the street plan, fixed by the city config alone (its own map_seed), so presentation
 ## (streets, traffic, the outskirts) can rebuild it without the run's seed. Streets run at
 ## irregular spacing with a ring avenue on the playable edge, a couple of avenues, alleys that
@@ -19,13 +25,38 @@ const DIAGONAL := "diagonal"
 
 
 ## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style.
+## Blocks fill district by district, innermost first, so a district's lots draw the same
+## numbers whichever stage is in play (only the stage's height caps change them).
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
-	for block: Dictionary in plan["blocks"]:
-		if str(block["use"]) == "built":
-			out.append_array(CityLots.fill_block(rng, plan, block, cfg, 1.0))
+	for ring: int in districts(cfg).size():
+		for block: Dictionary in plan["blocks"]:
+			if str(block["use"]) == "built" and Num.i(block["district"]) == ring:
+				out.append_array(CityLots.fill_block(rng, plan, block, cfg, 1.0))
 	return out
+
+
+## Half-extents of the nested districts, smallest first (just [half] for a one-district city).
+static func districts(cfg: Dictionary) -> Array[float]:
+	var out: Array[float] = []
+	var raw: Array = cfg.get("districts", [cfg["half"]])
+	for h: Variant in raw:
+		out.append(Num.f(h))
+	return out
+
+
+## Which district a rect lies in (0 = the innermost), by its furthest edge from the centre;
+## past the last ring: districts().size().
+static func district_of(rect: Rect2, cfg: Dictionary) -> int:
+	var edge := maxf(
+		maxf(absf(rect.position.x), absf(rect.end.x)), maxf(absf(rect.position.y), absf(rect.end.y))
+	)
+	var rings := districts(cfg)
+	for k: int in rings.size():
+		if edge < rings[k]:
+			return k
+	return rings.size()
 
 
 static func tier_for_height(height: int, cfg: Dictionary) -> int:
@@ -50,31 +81,38 @@ static func cores(cfg: Dictionary) -> Array[Vector3]:
 static func map(cfg: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = Num.i(cfg["map_seed"])
-	var half := half_extent(cfg)
+	var rings := districts(cfg)
+	var full := rings[rings.size() - 1]
 	var outer := Num.f(cfg["outer_half"])
 	# Long blocks one way, short the other (Manhattan): x-lines far apart, z-lines close.
 	var long: Array = cfg["block_long"]
 	var short: Array = cfg["block_short"]
-	var xs := _lines(rng, half, Num.i(long[0]), Num.i(long[1]))
-	var zs := _lines(rng, half, Num.i(short[0]), Num.i(short[1]))
+	var xs := _lines(rng, rings[0], Num.i(long[0]), Num.i(long[1]))
+	var zs := _lines(rng, rings[0], Num.i(short[0]), Num.i(short[1]))
+	# Each later district's streets, out to its own ring avenue, draw from their own stream.
+	var grow := RandomNumberGenerator.new()
+	grow.seed = Num.i(cfg["map_seed"]) + 2
+	for k: int in range(1, rings.size()):
+		_ring(grow, xs, rings[k - 1], rings[k], Num.i(long[0]), Num.i(long[1]))
+		_ring(grow, zs, rings[k - 1], rings[k], Num.i(short[0]), Num.i(short[1]))
 	# The outskirts draw from their own stream, so tuning them never reshuffles the city.
 	var far := RandomNumberGenerator.new()
 	far.seed = Num.i(cfg["map_seed"]) + 1
 	# ...and their blocks vary far more than the city's, so the outskirts are no even grid.
 	_extend(far, xs, outer, Num.i(long[0]) - 6, Num.i(long[1]) + 14)
 	_extend(far, zs, outer, Num.i(short[0]) - 2, Num.i(short[1]) + 12)
-	var avenues_x := _avenues(rng, xs, half, cfg)
-	var avenues_z := _avenues(rng, zs, half, cfg)
+	var avenues_x := _avenues(rng, xs, rings, cfg)
+	var avenues_z := _avenues(rng, zs, rings, cfg)
 	# Which grid edges are alleys: x-line i between zs[j] and zs[j+1] is ax[Vector2i(i, j)].
 	var alley_x := {}
 	var alley_z := {}
 	for i: int in xs.size():
 		for j: int in zs.size() - 1:
-			if _alley_ok(xs[i], zs[j], zs[j + 1], half, avenues_x.has(i), rng, cfg):
+			if _alley_ok(xs[i], zs[j], zs[j + 1], full, avenues_x.has(i), rng, cfg):
 				alley_x[Vector2i(i, j)] = true
 	for j: int in zs.size():
 		for i: int in xs.size() - 1:
-			if _alley_ok(zs[j], xs[i], xs[i + 1], half, avenues_z.has(j), rng, cfg):
+			if _alley_ok(zs[j], xs[i], xs[i + 1], full, avenues_z.has(j), rng, cfg):
 				alley_z[Vector2i(j, i)] = true
 	var diag := _diagonal(cfg)
 	var plan := {
@@ -145,6 +183,29 @@ static func _lines(rng: RandomNumberGenerator, half: float, lo: int, hi: int) ->
 	return out
 
 
+## A district's street lines between the ring at +-from and its own ring at +-to, both ways,
+## with the same block sizes as the city inside.
+static func _ring(
+	rng: RandomNumberGenerator, lines: Array[float], from: float, to: float, lo: int, hi: int
+) -> void:
+	for side: float in [1.0, -1.0]:
+		var p := from
+		while to - p > hi + lo:
+			p += rng.randi_range(lo, hi)
+			_add_line(lines, p * side)
+		if to - p > hi:  # split a long last gap in two
+			_add_line(lines, (p + roundi((to - p) * 0.5)) * side)
+		_add_line(lines, to * side)
+
+
+## Adds a line past either end of a sorted list.
+static func _add_line(lines: Array[float], v: float) -> void:
+	if v > lines[lines.size() - 1]:
+		lines.append(v)
+	else:
+		lines.push_front(v)
+
+
 ## Carries the lines on out to +-outer, both ways.
 static func _extend(
 	rng: RandomNumberGenerator, lines: Array[float], outer: float, lo: int, hi: int
@@ -159,16 +220,19 @@ static func _extend(
 		lines.push_front(p)
 
 
-## The ring lines and one or two lines through the playable city are avenues.
+## Every district's ring lines and one or two lines through the first district are avenues.
 static func _avenues(
-	rng: RandomNumberGenerator, lines: Array[float], half: float, cfg: Dictionary
+	rng: RandomNumberGenerator, lines: Array[float], rings: Array[float], cfg: Dictionary
 ) -> Dictionary:
 	var out := {}
 	var inner: Array[int] = []
 	for i: int in lines.size():
-		if is_equal_approx(absf(lines[i]), half):
+		var ring := false
+		for h: float in rings:
+			ring = ring or is_equal_approx(absf(lines[i]), h)
+		if ring:
 			out[i] = true
-		elif absf(lines[i]) < half:
+		elif absf(lines[i]) < rings[0]:
 			inner.append(i)
 	for n: int in mini(Num.i(cfg["avenues"]), inner.size()):
 		var pick := inner[rng.randi_range(0, inner.size() - 1)]
@@ -305,28 +369,35 @@ static func _blocks(
 			if playable and CityLots.town_share(rect.get_center(), cfg) < 0.2:
 				if roll < Num.f(cfg["parking_chance"]):
 					use = "parking"
-			blocks.append({"rect": rect, "use": use})
+			blocks.append({"rect": rect, "use": use, "district": district_of(rect, cfg)})
 			if playable:
 				inner.append(blocks.size() - 1)
-	# One park: the biggest block between the towers and the edge. One plaza: the block at the
-	# heart of the first tower district.
+	# One park per district: its biggest block between the towers and its ring. One plaza: the
+	# block at the heart of the first tower district.
+	var rings := districts(cfg)
 	var heart := cores(cfg)[0]
-	var best_park := -1
-	var park_area := 0.0
+	var parks: Array[int] = []
+	var park_area: Array[float] = []
+	for k: int in rings.size():
+		parks.append(-1)
+		park_area.append(0.0)
 	var best_plaza := -1
 	var plaza_away := INF
 	for n: int in inner:
 		var rect: Rect2 = blocks[n]["rect"]
+		var ring := Num.i(blocks[n]["district"])
 		var town := CityLots.town_share(rect.get_center(), cfg)
-		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / half
-		if town < 0.1 and edge < 0.75 and rect.get_area() > park_area:
-			best_park = n
-			park_area = rect.get_area()
+		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]
+		var inside := edge < 0.75 or ring > 0  # a later district is one ring of blocks deep
+		if town < 0.1 and inside and rect.get_area() > park_area[ring]:
+			parks[ring] = n
+			park_area[ring] = rect.get_area()
 		var away := rect.get_center().distance_to(Vector2(heart.x, heart.y))
 		if away < plaza_away:
 			best_plaza = n
 			plaza_away = away
-	if best_park >= 0:
-		blocks[best_park]["use"] = "park"
-	if best_plaza >= 0 and best_plaza != best_park and Num.f(cfg["plaza_blocks"]) > 0.0:
+	for n: int in parks:
+		if n >= 0:
+			blocks[n]["use"] = "park"
+	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
 		blocks[best_plaza]["use"] = "plaza"

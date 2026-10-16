@@ -59,8 +59,10 @@ func _spawn() -> void:
 	var tank := RampageSim.Tank.new()
 	tank.id = _next_id
 	_next_id += 1
+	# Tanks roll in from round the kaiju, not from the far edge of a grown city (D-039).
 	var angle := _rng.randf() * TAU
-	tank.pos = sim.clamp_to_arena(Vector2(cos(angle), sin(angle)) * sim.arena_half * 1.2)
+	var at := sim.kaiju_pos + Vector2(cos(angle), sin(angle)) * Num.f(cfg["spawn_radius"])
+	tank.pos = sim.clamp_to_arena(at)
 	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
 	tank.hp = Num.f(cfg["tank_hp"]) * threat
 	tank.cooldown = Num.f(cfg["fire_interval"])
