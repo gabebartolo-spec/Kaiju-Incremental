@@ -237,17 +237,19 @@ def split_jaw(points, owner, bones, cell, rgb):
     return out
 
 
-def close_jaw(keys, values, owner, bones, scale, origin):
+def close_jaw(keys, values, owner, bones, scale, origin, shut=1.0):
     """Bakes the shut jaw into the voxels: the jaw's cells turn up about its hinge by its "close"
     angle and land in new cells, and "close" becomes 0. At rest the mouth is then shut (its red
     inside folds away, a hairline at the lips) and nothing turns while it walks: a jaw turned
-    shut every frame opened a see-through gap under the chin. Only a roar opens it."""
+    shut every frame opened a see-through gap under the chin. Only a roar opens it. shut < 1 bakes
+    the jaw only that share of the way (a resting snarl, teeth and pink showing: the director's
+    pick for the adult) and marks it "snarl", so the game shows its true colours at rest."""
     names = [b["name"] for b in bones]
     if "jaw" not in names:
         return keys, values, owner
     ji = names.index("jaw")
     jaw = bones[ji]
-    angle = float(jaw.get("close", 0.0))
+    angle = float(jaw.get("close", 0.0)) * shut
     if angle <= 0.0:
         return keys, values, owner
     hinge, tip = np.array(jaw["head"]), np.array(jaw["tail"])
@@ -277,6 +279,8 @@ def close_jaw(keys, values, owner, bones, scale, origin):
             landed += 1
     jaw["tail"] = turn(tip[None, :], angle)[0]
     jaw["close"] = 0.0
+    if shut < 1.0:
+        jaw["snarl"] = True
     print(f"jaw baked shut: turned {np.degrees(angle):.1f} deg, {landed} cells")
     return np.array(new_keys), new_values, np.array(new_owner)
 
@@ -396,6 +400,7 @@ def surface_voxels(v, tris, col, scale, origin, texture=None):
 def main():
     args = sys.argv[sys.argv.index("--") + 1:]
     src, out, species, height = args[0], Path(args[1]), args[2], int(args[3])
+    jaw_shut = float(args[4]) if len(args) > 4 else 1.0  # share of the snarl baked shut
     defs = json.loads((ROOT / "data/species.json").read_text(encoding="utf-8"))["species"]
     hexes = next(d for d in defs if d["id"] == species)["colors"]
     colors = {k: [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)] for k, h in hexes.items()}
@@ -416,7 +421,7 @@ def main():
     rgb =np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
     owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
     values = list(cells.values())
-    keys, values, owner = close_jaw(keys, values, owner, bones, scale, origin)
+    keys, values, owner = close_jaw(keys, values, owner, bones, scale, origin, jaw_shut)
     owner = adopt_orphans(keys, owner)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
@@ -437,6 +442,8 @@ def main():
                  "tail": tail.round(2).tolist(), "physics": b["physics"]}
         if "close" in b:
             entry["close"] = b["close"]
+        if b.get("snarl"):
+            entry["snarl"] = True
         rig["bones"].append(entry)
     out.with_suffix(".rig.json").write_text(json.dumps(rig, indent=1), encoding="utf-8")
     counts = np.bincount(owner, minlength=len(bones))
