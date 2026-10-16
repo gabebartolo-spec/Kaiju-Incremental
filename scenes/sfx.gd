@@ -25,9 +25,7 @@ func _init(rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
-	var names: Array[String] = [
-		"stomp_crack", "breath", "leap_whoosh", "leap_land", "lash", "ready", "deflect"
-	]
+	var names: Array[String] = ["breath", "leap_whoosh", "leap_land", "lash", "ready", "deflect"]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
 	for sound: String in names:
@@ -44,11 +42,14 @@ func _ready() -> void:
 	add_child(_regen)
 
 
-## A stomp; heavy ones (the street cracks) add a crack-and-rumble layer.
-func stomp(cracks: bool) -> void:
-	play("stomp_%d" % _rng.randi_range(0, STOMPS - 1))
-	if cracks:
-		play("stomp_crack")
+## A stomp, heavier and lower the stronger the stomp (power: stomp damage over the species'
+## own, as AbilityFx.power gives it).
+func stomp(power: float) -> void:
+	var tier := 0
+	for edge: Variant in _tune["stomp_tiers"]:
+		if power >= Num.f(edge):
+			tier += 1
+	play("stomp_%d" % mini(tier, STOMPS - 1))
 
 
 ## Regeneration's bubbling, on while the kaiju heals.
@@ -77,5 +78,5 @@ func play(sound: String) -> void:
 
 func _volume(sound: String) -> float:
 	var levels: Dictionary = _tune["volume_db"]
-	var key := "stomp" if sound.begins_with("stomp_") and sound != "stomp_crack" else sound
+	var key := "stomp" if sound.begins_with("stomp_") else sound
 	return Num.f(levels.get(key, 0.0))

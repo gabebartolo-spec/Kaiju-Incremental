@@ -63,6 +63,11 @@ def hump(n: int, peak: float) -> np.ndarray:
     return np.where(t < peak, np.sin(t / peak * np.pi / 2), np.cos((t - peak) / (1 - peak) * np.pi / 2)) ** 2
 
 
+def highpass(x: np.ndarray, cutoff: float) -> np.ndarray:
+    """Removes DC and rumble below `cutoff` (wasted headroom no speaker plays)."""
+    return x - lowpass(x, cutoff)
+
+
 def lowpass(x: np.ndarray, cutoff: float) -> np.ndarray:
     a = np.exp(-2 * np.pi * cutoff / RATE)
     y = np.empty_like(x)
@@ -123,6 +128,12 @@ def thump(length: float, top: float, bottom: float) -> np.ndarray:
     return body + click * 0.6
 
 
+def reseed(name: str) -> None:
+    """Each sound draws its own random stream, so changing one never changes the others."""
+    global rng
+    rng = np.random.default_rng(sum(ord(c) * (i + 1) for i, c in enumerate(name)))
+
+
 def save(name: str, x: np.ndarray, peak_db: float = -1.0, loop: bool = False) -> None:
     x = x.copy()
     if not loop:  # a loop must not fade, or it clicks where it wraps
@@ -146,20 +157,48 @@ def save(name: str, x: np.ndarray, peak_db: float = -1.0, loop: bool = False) ->
     print(f"{name}.ogg  {len(x) / RATE:.2f} s")
 
 
+def low_share(x: np.ndarray, below: float = 500.0) -> float:
+    """Fraction of the energy below `below` Hz."""
+    spectrum = np.abs(np.fft.rfft(x)) ** 2
+    freqs = np.fft.rfftfreq(len(x), 1 / RATE)
+    return float(spectrum[freqs < below].sum() / max(spectrum.sum(), 1e-12))
+
+
 def build_stomps() -> None:
+    """Three tiers, felt more than heard (director: the first ones crinkled like cellophane).
+    Each is a sub thump with a fast pitch drop, a concrete thud low-passed hard, a rumble tail
+    and, only on the heavier tiers, a quiet late settle of debris. A heavier tier is lower and
+    longer, never brighter."""
+    reseed("build_stomps")
     for k in range(3):
-        x = np.zeros(seconds(0.9))
-        place(x, thump(0.8, 95 - k * 8, 30 + k * 3), 0.0)
-        place(x, pitch(kenney(f"impactPunch_heavy_00{k}"), 0.6), 0.0, 0.5)
-        place(x, lowpass(noise(seconds(0.6)), 300) * env(seconds(0.6), 0.01, 0.2), 0.0, 0.5)
-        save(f"stomp_{k}", x, -3.0)
-    x = np.zeros(seconds(1.2))
-    place(x, pitch(kenney("explosionCrunch_001"), 0.7), 0.0, 0.8)
-    place(x, crackle(seconds(1.1), 900, 0.3), 0.02, 0.5)
-    save("stomp_crack", x, -4.0)
+        length = 1.0 + 0.4 * k
+        x = np.zeros(seconds(length))
+        n = seconds(length)
+        top, bottom = 68 - 5 * k, 40 - 3 * k  # nothing under ~35 Hz: most speakers drop it
+        freq = bottom + (top - bottom) * np.exp(-np.arange(n) / RATE / 0.06)
+        sub = np.sin(2 * np.pi * np.cumsum(freq) / RATE) * env(n, 0.002, 0.22 + 0.12 * k)
+        place(x, sub, 0.0, 1.0)
+        # The thud carries the 80-400 Hz body a TV speaker can actually play.
+        thud = pitch(kenney(f"impactSoft_heavy_00{k}"), 0.55 - 0.07 * k)
+        thud = lowpass(lowpass(thud, 2500), 2500)
+        place(x, thud / max(1e-9, np.max(np.abs(thud))), 0.0, 1.0)
+        knock_n = seconds(0.18)
+        knock_f = (150 - 20 * k) * np.exp(-np.arange(knock_n) / RATE / 0.05) + 70 - 10 * k
+        knock = np.sin(2 * np.pi * np.cumsum(knock_f) / RATE) * env(knock_n, 0.001, 0.05)
+        place(x, knock, 0.0, 1.1)
+        rumble_n = seconds(0.6 + 0.3 * k)
+        rumble = lowpass(lowpass(np.cumsum(noise(rumble_n)) * 0.02, 140), 140)
+        rumble *= env(rumble_n, 0.03, 0.3 + 0.2 * k)
+        place(x, rumble / max(1e-9, np.max(np.abs(rumble))), 0.0, 0.5 + 0.1 * k)
+        if k > 0:
+            settle = lowpass(lowpass(crackle(seconds(0.6), 120, 0.25), 2500), 2500)
+            place(x, settle / max(1e-9, np.max(np.abs(settle))), 0.3, 0.05 * k)
+        save(f"stomp_{k}", highpass(highpass(x, 28.0), 28.0), -2.0)
+        print(f"  stomp_{k}: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
 
 
 def build_breath() -> None:
+    reseed("build_breath")
     n = seconds(2.3)
     x = np.zeros(n)
     hum_n = seconds(0.45)
@@ -179,6 +218,7 @@ def build_breath() -> None:
 
 
 def build_leap() -> None:
+    reseed("build_leap")
     n = seconds(0.6)
     x = np.zeros(n)
     sweep = np.linspace(250, 1600, n)
@@ -194,6 +234,7 @@ def build_leap() -> None:
 
 
 def build_lash() -> None:
+    reseed("build_lash")
     x = np.zeros(seconds(1.3))
     swoosh_n = seconds(0.28)
     place(x, bandpass(noise(swoosh_n), np.linspace(400, 2500, swoosh_n), 2.0) * hump(swoosh_n, 0.8) * 3.0, 0.0)
@@ -206,6 +247,7 @@ def build_lash() -> None:
 
 
 def build_ready() -> None:
+    reseed("build_ready")
     n = seconds(0.7)
     freq = np.linspace(65, 105, n) + 4 * np.sin(np.linspace(0, 45, n))
     growl = tone(freq, 12, 0.8)
@@ -222,6 +264,7 @@ def build_ready() -> None:
 
 
 def build_deflect() -> None:
+    reseed("build_deflect")
     x = np.zeros(seconds(0.9))
     place(x, kenney("impactMetal_heavy_001"), 0.0, 1.0)
     place(x, pitch(kenney("impactBell_heavy_002"), 1.2), 0.0, 0.35)
@@ -230,6 +273,7 @@ def build_deflect() -> None:
 
 def build_regen() -> None:
     """Two seconds of soft bubbling that loops without a seam (bubbles wrap round the end)."""
+    reseed("build_regen")
     n = seconds(2.0)
     x = np.zeros(n)
     for _ in range(26):

@@ -163,7 +163,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	else:
 		for k: String in ["cracks", "ready", "deflect", "regen"]:
 			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
-		var cues: Array[String] = ["stomp_crack", "ready", "deflect", "regen_loop"]
+		var cues: Array[String] = ["stomp_2", "ready", "deflect", "regen_loop"]
 		check(
 			cues.all(func(c: String) -> bool: return heard.has(c)),
 			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]

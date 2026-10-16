@@ -123,8 +123,9 @@ func _on_event(event: Dictionary) -> void:
 		"stomp":
 			_kaiju.stomp()
 			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
-			var radius := Num.f(event["radius"])
-			sfx.stomp(ability_fx.stomp_cracks(_kaiju_at, radius, _power("stomp_damage")))
+			var heavy := _power("stomp_damage")
+			ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), heavy)
+			sfx.stomp(heavy)
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
