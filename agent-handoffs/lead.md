@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 02:35
+# Lead handoff, 2026-10-17 02:45
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -41,6 +41,8 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 ## CI captures live (02:20)
 - PR #13 merged to main (capture.yml dispatch-only + tools/capture/ci_capture.sh); workflow also on look-options (dispatch reads the file from the ref; branches cut before 02:20 need it merged in). Helpers already dispatching.
 - Held notes SENT (02:30): reptile baby chest hole + jaw seam + round6 reverse proof -> kaiju-motion (then merge #10); helpers told to merge look-options for capture.yml and dispatch on their OWN branch.
+
+- Balance finding (city-growth): insectoid clears ~2x faster than the other species in grown cities (Climber/glide); costs paced on median; species-balance follow-up to raise with the director after its PR (target +-20% tree time)
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
