@@ -7,7 +7,14 @@ name: capture
 # Vulkan). `auto` tries Forward+ on lavapipe first and falls back to gl_compatibility; the
 # run log and out/RENDERER.txt say which one rendered. Expect it to be slow (software), and
 # expect looks that differ from the local GPU render: see tools/capture/README.md.
+#
+# GitHub only lets you dispatch a workflow that exists on the default branch, so until this
+# file is on main it cannot be dispatched. Until then (and as a smoke test whenever this file
+# changes) a push to a claude/** branch that edits this file runs both example captures.
 on:
+  push:
+    branches: ["claude/**"]
+    paths: [".github/workflows/capture.yml"]
   workflow_dispatch:
     inputs:
       script:
@@ -48,6 +55,10 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'push' && '[{"script":"capture_rig.gd","args":"--species=reptilian --stage=adult","movie":true},{"script":"capture_looks.gd","args":"","movie":false}]' || '[{}]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -85,12 +96,12 @@ jobs:
 
       - name: Capture
         env:
-          SCRIPT: ${{ inputs.script }}
-          ARGS: ${{ inputs.args }}
-          RENDERER: ${{ inputs.renderer }}
-          MOVIE: ${{ inputs.movie }}
-          FPS: ${{ inputs.fps }}
-          RES: ${{ inputs.resolution }}
+          SCRIPT: ${{ matrix.script || inputs.script }}
+          ARGS: ${{ matrix.args || inputs.args }}
+          RENDERER: ${{ inputs.renderer || 'auto' }}
+          MOVIE: ${{ matrix.movie || inputs.movie }}
+          FPS: ${{ inputs.fps || '30' }}
+          RES: ${{ inputs.resolution || '1280x720' }}
         run: |
           case "$SCRIPT" in *[!A-Za-z0-9_.]*|"") echo "::error::bad script name"; exit 1;; esac
           test -f "tools/capture/$SCRIPT" || { echo "::error::tools/capture/$SCRIPT does not exist"; exit 1; }
@@ -144,7 +155,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: capture-${{ github.run_id }}
+          name: capture-${{ github.run_id }}-${{ strategy.job-index }}
           path: out
           retention-days: 14
           if-no-files-found: warn
