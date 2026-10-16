@@ -265,7 +265,7 @@ func _grip_point(at: Vector3, radius: float) -> Vector3:
 ## Every footfall kicks a little dust and nudges the camera (a minimal version until the
 ## ability-sfx pass drives footstep sound, dust and shake from the same signal).
 func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
-	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * sim.body_scale() * (0.5 + strength))
+	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * sim.body_scale() * (0.2 + strength))
 	_shake = maxf(_shake, FOOTFALL_SHAKE * strength)
 
 

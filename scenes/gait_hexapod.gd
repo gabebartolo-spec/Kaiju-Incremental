@@ -14,30 +14,44 @@ const CYCLE_MIN := 0.22
 const CYCLE_MAX := 0.5
 const SWING := 0.45
 const STEP := 0.7
-const LIFT := 0.28
+const LIFT := 0.4
 const STAND_SPEED := 0.1
 const SETTLE_DISTANCE := 0.14
-## Skitter: seconds moving, seconds frozen, catch-up rate (1/s), and the most it may fall behind.
-const BURST := Vector2(0.25, 0.7)
-const FREEZE := Vector2(0.06, 0.2)
-const CATCH_UP := 9.0
-const MAX_LAG := 0.6
+## Skitter: seconds moving, seconds frozen, catch-up rate (1/s), the most it may fall behind
+## (hip heights), and how much quicker its steps are in a burst.
+const BURST := Vector2(0.2, 0.5)
+const FREEZE := Vector2(0.1, 0.4)
+const CATCH_UP := 14.0
+const MAX_LAG := 1.0
+const BURST_CADENCE := 0.65
 ## Head: seconds between snaps, snap spring, how far it turns, pitches and cocks sideways.
-const HEAD_HOLD := Vector2(0.25, 1.3)
+const HEAD_HOLD := Vector2(0.15, 0.7)
 const HEAD_OMEGA := 34.0
 const HEAD_YAW := 0.7
 const HEAD_PITCH := 0.25
 const HEAD_COCK := 0.45
+const HEAD_TREMBLE := 0.04
 ## Twitches: seconds between them; arm strike reach (rad) and how many stomps between strikes.
-const TWITCH_EVERY := Vector2(0.4, 1.6)
+const TWITCH_EVERY := Vector2(0.12, 0.5)
 const STRIKE := 0.9
 const STRIKE_EVERY := 3
 ## Body: abdomen pulse (Hz, rad), stalking rock (Hz, hip heights), reach margin.
 const PULSE_HZ := 2.2
 const PULSE := 0.05
 const ROCK_HZ := 1.3
-const ROCK := 0.05
+const ROCK := 0.02
 const REACH_STEP := 0.96
+## Scythes: held raised and folded against the chest (femur forward-up, tibia folded back down
+## along it, claw tucked); a strike throws them out; twitches jolt them (rad).
+const FOLD_FEMUR := Vector3(0.15, 0.6, 0.7)  ## out, up, forward
+const FOLD_TIBIA := Vector3(0.1, -0.75, -0.55)
+const FOLD_CLAW := Vector3(0.0, -0.6, 0.6)
+const STRIKE_FEMUR := Vector3(0.1, 0.25, 1.0)
+const STRIKE_TIBIA := Vector3(0.0, -0.2, 1.0)
+const TWITCH_JOLT := 0.5
+## A planted leg's knee flicks out and back (snap rate 1/s, how far in hip-widths).
+const KNEE_SNAP := 9.0
+const KNEE_FLICK := 1.6
 ## An insect's footfall is light (KaijuRig.foot_planted strength at a standstill; doubles at speed).
 const STEP_WEIGHT := 0.18
 ## Feet stand this share of the way out from the hips (the sculpt's legs are nearly straight)
@@ -62,6 +76,7 @@ class Leg:
 	var side := 1.0
 	var plant_at := Vector3.ZERO
 	var id := ""  ## footfall id: "fl", "fr", "bl", "br"
+	var snap := 0.0  ## knee flick after a plant, 1 -> 0
 
 
 var legs: Array[Leg] = []
@@ -85,7 +100,7 @@ var _ready := false
 
 func _init(p_rig: KaijuRig) -> void:
 	super(p_rig)
-	turn_max = 9.0
+	turn_max = 5.0
 	var hips := 0.0
 	for prefix: String in LEGS:
 		if not rig.has_bone(prefix + "2"):
@@ -121,9 +136,10 @@ func update(delta: float) -> void:
 	if not standing:
 		var k := sqrt(s)
 		_cycle = clampf(2.0 * STEP * hip_w / maxf(speed, 0.001), CYCLE_MIN * k, CYCLE_MAX * k)
+		_cycle *= BURST_CADENCE  # it only steps in bursts: quick ones
 	_step(dt, root, standing)
 	_pose_body(dt)
-	_solve(root)
+	_solve(root, dt)
 	_pose_head(dt)
 	_twitch(dt)
 	rig.simulate_chains(delta)
@@ -214,6 +230,7 @@ func _step(dt: float, root: Transform3D, standing: bool) -> void:
 			leg.planted = true
 			leg.foot = land
 			leg.plant_at = land
+			leg.snap = 1.0
 			var stage := clampf(sqrt(s / 1.3), 0.4, 1.0)
 			var weight := (
 				STEP_WEIGHT + STEP_WEIGHT * clampf(speed / (2.0 * hip_height * s), 0.0, 1.0)
@@ -271,14 +288,17 @@ func _pose_body(dt: float) -> void:
 		rig.bone("abdomen1").scale = Vector3(swell, swell, 1.0)
 
 
-func _solve(root: Transform3D) -> void:
+func _solve(root: Transform3D, dt: float) -> void:
 	var up := root.basis.y.normalized()
 	var right := root.basis.x.normalized()
 	for leg: Leg in legs:
 		var hip := rig.bone(leg.names[0]).global_position
 		var ankle := _ankle(leg, root)
-		# An insect's knee rides high and out: the leg arches over the foot.
-		var pole := up + right * leg.side * 0.6
+		# An insect's knee rides high and out: the leg arches over the foot, rising further in a
+		# swing and flicking out on the plant.
+		leg.snap = maxf(0.0, leg.snap - KNEE_SNAP * dt)
+		var swing_up := sin(PI * leg.t) if not leg.planted else 0.0
+		var pole := up * (1.0 + swing_up) + right * leg.side * (0.6 + KNEE_FLICK * leg.snap)
 		var knee := KaijuGait.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
 		rig.aim(leg.names[0], hip, knee)
 		rig.aim(leg.names[1], knee, ankle)
@@ -298,6 +318,8 @@ func _pose_head(dt: float) -> void:
 			rng.randf_range(-HEAD_COCK, HEAD_COCK) if rng.randf() < 0.4 else 0.0
 		)
 	var target := _head_target + Vector3(0, -0.4 * _strike, 0)
+	# A constant fine tremble under the snaps: it is never quite still.
+	target += Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), 0) * HEAD_TREMBLE
 	var a := (target - _head) * HEAD_OMEGA * HEAD_OMEGA - _head_v * (2.0 * 0.9 * HEAD_OMEGA)
 	_head_v += a * dt
 	_head += _head_v * dt
@@ -312,7 +334,7 @@ func _twitch(dt: float) -> void:
 	if _twitch_in <= 0.0:
 		_twitch_in = rng.randf_range(TWITCH_EVERY.x, TWITCH_EVERY.y)
 		var arm := "arm_l" if rng.randf() < 0.5 else "arm_r"
-		_arm_twitch[arm] = rng.randf_range(0.15, 0.35)
+		_arm_twitch[arm] = rng.randf_range(0.4, 1.0) * TWITCH_JOLT
 		for chain: KaijuRig.SpringChain in rig.chains:
 			if rng.randf() < 0.6:
 				var kick := Vector3(rng.randf_range(-1, 1), rng.randf_range(-0.5, 1), 0) * 14.0 * s
@@ -323,7 +345,26 @@ func _twitch(dt: float) -> void:
 	for arm: String in ["arm_l", "arm_r"]:
 		var tw: float = _arm_twitch[arm]
 		_arm_twitch[arm] = maxf(0.0, tw - dt * 2.5)
-		var snap := snappedf(tw, 0.08)
-		rig.pose(arm + "0", Vector3(-STRIKE * 0.6 * lash - snap, 0, 0))
-		rig.pose(arm + "1", Vector3(STRIKE * lash + snap * 1.5, 0, 0))
-		rig.pose(arm + "2", Vector3(-0.6 * lash, 0, 0))
+		_pose_arm(arm, lash, snappedf(tw, 0.08))
+
+
+## One scythe by aiming its three bones: folded against the chest at rest, thrown out on a strike
+## (lash 0..1), jolted by a twitch.
+func _pose_arm(arm: String, lash: float, jolt: float) -> void:
+	if not rig.has_bone(arm + "2"):
+		return
+	var b := rig.global_transform.basis.orthonormalized()
+	var side := -1.0 if arm.ends_with("_l") else 1.0
+	var out := b.x * side
+	var up := b.y
+	var fwd := -b.z
+	var dir := func(v: Vector3) -> Vector3: return (out * v.x + up * v.y + fwd * v.z).normalized()
+	var femur: Vector3 = dir.call(FOLD_FEMUR.lerp(STRIKE_FEMUR, lash) + Vector3(0, jolt, 0))
+	var tibia: Vector3 = dir.call(FOLD_TIBIA.lerp(STRIKE_TIBIA, lash) + Vector3(0, 0, jolt))
+	var claw: Vector3 = dir.call(FOLD_CLAW.lerp(STRIKE_TIBIA, lash))
+	var shoulder := rig.bone(arm + "0").global_position
+	var elbow := shoulder + femur * rig.dir_of(arm + "0").length() * s
+	var wrist := elbow + tibia * rig.dir_of(arm + "1").length() * s
+	rig.aim(arm + "0", shoulder, elbow)
+	rig.aim(arm + "1", elbow, wrist)
+	rig.aim(arm + "2", wrist, wrist + claw * rig.dir_of(arm + "2").length() * s)

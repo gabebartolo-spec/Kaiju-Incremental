@@ -85,7 +85,7 @@ func _run() -> void:
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
 			plants.append("%.3f,%s,%.3f,%.3f,%.3f,%.2f" % [_time, side, at.x, at.y, at.z, strength])
-			city.fx.dust(at + Vector3(0, 0.2, 0), 1.1 * body_scale * (0.5 + strength))
+			city.fx.dust(at + Vector3(0, 0.2, 0), 1.1 * body_scale * (0.2 + strength))
 			_shake = maxf(_shake, 0.14 * strength)
 	)
 	var rows := PackedStringArray(["t,pelvis_y,forward_speed"])
@@ -177,7 +177,8 @@ func _place(cam: Camera3D, at: Vector3, body_scale: float) -> void:
 		cam.position = at + CAMERA_OFFSET * zoom
 		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
 		return
-	cam.position = at + Vector3(16.0, 4.0, 0) * body_scale
+	var wide := 1.4 if _species == "cephalopod" else 1.0  # a wide body needs a wider shot
+	cam.position = at + Vector3(16.0 * wide, 4.0 * wide, 0) * body_scale
 	cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
 
 

@@ -11,7 +11,7 @@ const ARM_STIFFNESS := 5.0
 const ARM_GRAVITY := 1.6
 ## Reaching: seconds per reach (scale 1), arc height (body heights), most arms reaching at once.
 const REACH_SECONDS := 0.42
-const REACH_ARC := 0.25
+const REACH_ARC := 0.4
 const MAX_REACHING := 3
 ## Where a reaching arm aims: share of its length, how far ahead of the travel direction.
 const AIM_REACH := 0.9
@@ -22,13 +22,20 @@ const PUSH_UNTIL := 0.35
 const RELEASE_STRETCH := 0.98
 ## A gripping arm shortens to keep this much slack (share of its length), down to CONTRACT_MIN.
 const GRIP_SLACK := 0.95
-const CONTRACT_MIN := 0.7
+const CONTRACT_MIN := 0.5
+## Turning faster than this (rad/s) frees the arms behind the new heading; a grip's lurch.
+const TURN_RELEASE := 0.8
+const SLAP := 2.0
+## Grab and throw (species powers): reach time, hold height (body heights), throw speed.
+const GRAB_SECONDS := 0.3
+const HOLD_HEIGHT := 1.6
+const THROW_SPEED := 45.0
 ## A tentacle slapping down to grip (KaijuRig.foot_planted strength for an adult).
 const GRIP_WEIGHT := 0.45
 ## Grip on buildings: search radius (arm lengths).
 const GRIP_RADIUS := 1.1
 ## Mantle: stretch toward the grip, squash, drag tilt, breathing.
-const STRETCH := 0.18
+const STRETCH := 0.35
 const DRAG_TILT := 0.18
 const BREATH_HZ := 0.35
 const BREATH := 0.04
@@ -49,6 +56,7 @@ class Arm:
 	var grip := Vector3.ZERO
 	var on_building := false
 	var phase := 0.0
+	var holding := false  ## grabbed something for a throw (KaijuModel.grab)
 
 
 var arms: Array[Arm] = []
@@ -92,12 +100,18 @@ func update(delta: float) -> void:
 	var root := rig.global_transform
 	var ground := root.origin.y
 	var moving := speed > 0.15 * s
+	# Turning, the arms on the new side let go and reach round first: it turns arm over arm.
+	var turning := absf(yaw_rate) > TURN_RELEASE
+	var max_reaching := MAX_REACHING + (2 if turning else 0)
 	var reaching := 0
 	for arm: Arm in arms:
 		reaching += 1 if arm.reaching else 0
 	for arm: Arm in arms:
 		arm.chain.ground = ground + 0.1 * s
 		var base := arm.chain.pos[0] if arm.chain.pos.size() > 0 else root.origin
+		if arm.holding:
+			_hold(arm, root, dt)
+			continue
 		if arm.gripping:
 			var stretch := (arm.grip - base).length() / (arm.length * s)
 			var heading := velocity.normalized() if speed > 0.05 else Vector3.ZERO
@@ -106,11 +120,11 @@ func update(delta: float) -> void:
 				_release(arm)
 			elif (
 				moving
-				and (behind < -PUSH_UNTIL or stretch < CONTRACT_MIN)
-				and reaching < MAX_REACHING
+				and (behind < -PUSH_UNTIL or stretch < CONTRACT_MIN or (turning and behind < 0.0))
+				and reaching < max_reaching
 			):
 				_release(arm)  # it has pushed the body past: peel off and reach again
-		if not arm.gripping and not arm.reaching and reaching < MAX_REACHING:
+		if not arm.gripping and not arm.reaching and reaching < max_reaching:
 			if moving or _wants_grip(arm, root):
 				_reach(arm, root, base)
 				reaching += 1
@@ -124,7 +138,7 @@ func update(delta: float) -> void:
 				arm.reaching = false
 				arm.gripping = true
 				arm.grip = arm.to
-				_pull_v += 1.2  # a slap: the body lurches toward the new grip
+				_pull_v += SLAP  # a slap: the body lurches toward the new grip
 				var stage := clampf(sqrt(s / 1.3), 0.4, 1.0)
 				rig.foot_planted.emit("t%d" % arms.find(arm), GRIP_WEIGHT * stage, arm.grip)
 		var want := 1.0
@@ -155,7 +169,57 @@ func roar() -> void:
 		arm.chain.kick(rig.global_transform.basis * (side * 30.0 + Vector3(0, 8, 0)), 1.0 / 60.0)
 
 
+## Reach a tentacle (limb_hint picks one; below 0, the one nearest `at`) to `at` and hold on.
+func grab(limb_hint: int, at: Vector3) -> void:
+	if arms.is_empty():
+		return
+	var arm := arms[posmod(limb_hint, arms.size())]
+	if limb_hint < 0:
+		for a: Arm in arms:
+			if a.chain.pos.size() > 0 and arm.chain.pos.size() > 0:
+				var d := (a.chain.pos[-1] - at).length()
+				if d < (arm.chain.pos[-1] - at).length():
+					arm = a
+	_release(arm)
+	arm.from = arm.chain.pos[-1] if arm.chain.pos.size() > 0 else at
+	arm.to = at
+	arm.t = 0.0
+	arm.holding = true
+
+
+## Hurl whatever the holding tentacle has, toward a point.
+func throw(toward: Vector3) -> void:
+	for arm: Arm in arms:
+		if arm.holding:
+			_release(arm)
+			var tip := arm.chain.pos[-1] if arm.chain.pos.size() > 0 else toward
+			arm.chain.kick((toward - tip).normalized() * THROW_SPEED * s, 1.0 / 60.0)
+			_pull_v -= SLAP
+
+
+## World position of a tentacle's tip (to carry a grabbed thing), or the body if there is none.
+func limb_tip(limb_hint: int) -> Vector3:
+	for arm: Arm in arms:
+		if arm.holding:
+			return arm.chain.pos[-1]
+	if arms.is_empty() or arms[0].chain.pos.is_empty():
+		return rig.global_position
+	return arms[posmod(limb_hint, arms.size())].chain.pos[-1]
+
+
+## A holding tentacle: reach to the thing, then lift it high over the body, coiled round it.
+func _hold(arm: Arm, root: Transform3D, dt: float) -> void:
+	arm.t = minf(2.0, arm.t + dt / (GRAB_SECONDS * sqrt(s)))
+	var high := root.origin + Vector3.UP * HOLD_HEIGHT * hip_height * s
+	var p := arm.from.lerp(arm.to, minf(1.0, arm.t))
+	if arm.t > 1.0:
+		p = arm.to.lerp(high, arm.t - 1.0)
+	arm.chain.pins = {arm.chain.names.size(): p}
+	arm.chain.contract = lerpf(arm.chain.contract, 0.8, minf(1.0, dt * 6.0))
+
+
 func _release(arm: Arm) -> void:
+	arm.holding = false
 	arm.gripping = false
 	arm.reaching = false
 	arm.on_building = false

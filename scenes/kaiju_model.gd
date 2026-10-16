@@ -124,6 +124,38 @@ func set_grip_finder(finder: Callable) -> void:
 		(_rig.gait as RadialGait).grip_finder = finder
 
 
+## Species-power hooks (no-ops on a body without the limb):
+## a fast tail whip to one side (-1 left, +1 right) - the reptilian.
+func tail_sweep(side: float) -> void:
+	if _rig != null and _rig.gait is BipedGait:
+		(_rig.gait as BipedGait).swing.whip(side)
+
+
+## The maw held open (the beam) or shut again - the reptilian.
+func jaw_open(open: bool) -> void:
+	if _rig != null and _rig.gait is BipedGait:
+		(_rig.gait as BipedGait).head.held_open = open
+
+
+## A tentacle reaches to `at` and holds on (limb_hint < 0: the nearest) - the cephalopod.
+func grab(limb_hint: int, at: Vector3) -> void:
+	if _rig != null and _rig.gait is RadialGait:
+		(_rig.gait as RadialGait).grab(limb_hint, at)
+
+
+## The holding tentacle hurls toward a point.
+func throw(toward: Vector3) -> void:
+	if _rig != null and _rig.gait is RadialGait:
+		(_rig.gait as RadialGait).throw(toward)
+
+
+## Where a tentacle's tip is (to carry a grabbed thing); the model's origin for other bodies.
+func limb_tip(limb_hint: int) -> Vector3:
+	if _rig != null and _rig.gait is RadialGait:
+		return (_rig.gait as RadialGait).limb_tip(limb_hint)
+	return global_position
+
+
 func stomp() -> void:
 	if _rig != null:
 		_rig.stomp()
