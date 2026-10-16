@@ -159,23 +159,17 @@ func attach_voxels(
 ## rest pose is its standing arm pose (BipedSwing: hanging, elbow bent, hands at the belly), so a
 ## skin bound to the rest pose matches what is shown and the gait only adds small swings to it.
 func _relax_arms() -> void:
-	if body_plan == "biped":
-		var bases := BipedSwing.rest_arm_bases(self)
-		for n: String in bases:
-			var b: Basis = bases[n]
-			_rest[n] = Transform3D(b, rest_of(n).origin)
-			bone(n).transform = rest_of(n)
-		return
-	for side: String in ["l", "r"]:
+	var bases := BipedSwing.rest_arm_bases(self) if body_plan == "biped" else {}
+	for side: String in ["l", "r"] if bases.is_empty() else []:
 		var root := "arm_%s0" % side
-		if not _bones.has(root):
-			continue
-		var outward: float = signf(dir_of(root).x)
-		var lower := Basis(Vector3.BACK, -outward * 0.95)
-		var reach := Basis(Vector3.UP, outward * 0.35)
-		var rest: Transform3D = _rest[root]
-		_rest[root] = Transform3D(reach * lower * rest.basis, rest.origin)
-		bone(root).transform = rest_of(root)
+		if _bones.has(root):
+			var outward: float = signf(dir_of(root).x)
+			var lower := Basis(Vector3.BACK, -outward * 0.95)
+			bases[root] = Basis(Vector3.UP, outward * 0.35) * lower * rest_of(root).basis
+	for n: String in bases:
+		var b: Basis = bases[n]
+		_rest[n] = Transform3D(b, rest_of(n).origin)
+		bone(n).transform = rest_of(n)
 
 
 func _collect_chains(defs: Array) -> void:
