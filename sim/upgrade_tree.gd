@@ -1,15 +1,22 @@
 class_name UpgradeTree
 extends RefCounted
 ## The upgrade tree: definitions (data/upgrades.json), the levels bought, and the stats they
-## produce on top of a species. Pure: no nodes, no files.
+## produce on top of a species. Pure: no nodes, no files. A definition with a "species" key
+## belongs to that species' own branch and is left out of every other species' tree.
 
 var defs: Dictionary = {}
 var order: Array[String] = []
 var levels: Dictionary = {}
 
 
-func _init(definitions: Array[Dictionary], saved_levels: Dictionary = {}) -> void:
+## species_id "" keeps every branch (data checks); a game passes its kaiju's species.
+func _init(
+	definitions: Array[Dictionary], saved_levels: Dictionary = {}, species_id: String = ""
+) -> void:
 	for def: Dictionary in definitions:
+		var owner := str(def.get("species", ""))
+		if species_id != "" and owner != "" and owner != species_id:
+			continue
 		var id: String = def["id"]
 		defs[id] = def
 		order.append(id)

@@ -10,6 +10,7 @@ func _ready() -> void:
 	_axis_action("move_up", [KEY_W, KEY_UP], JOY_AXIS_LEFT_Y, -1.0)
 	_axis_action("move_down", [KEY_S, KEY_DOWN], JOY_AXIS_LEFT_Y, 1.0)
 	_button_action("signature", [KEY_SPACE], JOY_BUTTON_A)
+	_button_action("ultimate", [KEY_E], JOY_BUTTON_Y)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
 	# The shipped game starts fullscreen (D-027). Editor-binary runs (agent captures) stay windowed:
 	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
