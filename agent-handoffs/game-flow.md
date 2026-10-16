@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 02:20
+# Game-flow handoff, 2026-10-17 02:40
 ## State: running a check (flow suite, headless, local)
 
 ## Task
@@ -11,8 +11,8 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director is gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4 (fast-forwarded to origin/claude/look-options b97af62). WIP commit
-on top; not pushed yet, no PR.
+claude/game-flow-edfba4, pushed at 904a312 (origin/claude/look-options 55ce218 merged in for
+the working capture.yml). No PR yet.
 
 ## What is built (all code written, first full test run pending)
 - sim: `Collapse.toppled`, `Collapse.biggest_fall`; `RampageSim.end(reason)` is public (pause
@@ -39,6 +39,9 @@ on top; not pushed yet, no PR.
 - PR body (Evidence, Not exercised, Board and log), art-qa/screen-critic check of shots.
 
 ## Attempts
+- This worktree had Git LFS pointers instead of fonts/models (font errors flooded the log);
+  `git lfs install --local && git lfs pull` fixed it. Do this in every new worktree.
+- First flow run: one real failure (UI scale float compare) -> is_equal_approx; rerun pending.
 - Autoload names (SaveSystem, Settings) don't resolve in class_name scripts compiled under
   `--script` test runs -> moved logic to static classes SaveFile/PlayerSettings.
 
@@ -52,4 +55,7 @@ edits; my tests/capture read evolve1's cost from data. If tier_height becomes pe
 reveal's tower should read CityGrowth.tuning_for(...)["city"].
 
 ## Running jobs
-Local flow suite run (background), logs in %TEMP%/gf_logs.
+- Local flow suite (stale: started before LFS pull), logs in %TEMP%/gf_logs. Rerun after.
+- CI capture dispatches: shots -> %TEMP%/gf_cap/shots, clip (--movie --clip) -> %TEMP%/gf_cap/clip.
+- Follow-up after city-growth merges: reveal reads CityGrowth.tuning_for(tuning, size)["city"]
+  for max_height and adds "a city of half x half" (42/66/105/166).
