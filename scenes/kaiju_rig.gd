@@ -1,25 +1,64 @@
 class_name KaijuRig
 extends Node3D
 ## A rigged voxel kaiju (tools/blender/rig_voxel.py): one node per bone, each carrying its
-## own voxels, so the body bends where the real one would. A procedural walk drives the
-## legs, arms, spine and head; tails, antennae and tentacles ("physics" bones) are spring
-## chains: they lag behind the body, swing with every step and settle under gravity.
-## Presentation only. Faces -Z.
+## own voxels, so the body bends where the real one would. A gait per body plan (KaijuGait)
+## moves it: planted feet solved by IK, a body that carries its weight, a head that hunts.
+## Tails, antennae and tentacles ("physics" bones) are spring chains the gait can steer.
+## Presentation only: the gait follows the node's motion and never moves the kaiju. Faces -Z.
 
-## Chain feel: how hard a joint is pulled back to its rest pose, how much motion it keeps, gravity.
+## A foot (or a tentacle's grip) came down, on the frame it touches: which ("left"/"right",
+## "fl"/"fr"/"bl"/"br", "t0".."t7"), how hard (0..1: walk speed x life stage, 1 = an adult's
+## stomp) and where (world). For footfall sounds, dust and camera shake; presentation only.
+signal foot_planted(side: String, strength: float, at: Vector3)
+
+## Chain feel: pull back to the target pose, motion kept per step, gravity.
 const STIFFNESS := 9.0
 const DAMPING := 0.9
 const GRAVITY := Vector3(0, -6.0, 0)
-const LIMB_STIFFNESS := 26.0
 const CONSTRAINT_PASSES := 3
+## Joint filler cubes are this much smaller, so they stay inside the skin until a bend opens it.
+const JOINT_INSET := 0.82
+
+
+## A run of physics bones (tail, antenna, tentacle) simulated as Verlet points.
+class SpringChain:
+	var names: Array[String] = []
+	var stiffness := STIFFNESS
+	var gravity_scale := 1.0
+	## Extra rotation per bone on top of its rest pose: how the gait steers the chain.
+	var drive: Array[Basis] = []
+	## Joint world positions this frame and last frame (index 0 is the root).
+	var pos := PackedVector3Array()
+	var prev := PackedVector3Array()
+	## When set, the joint at that index is pinned to this world point (a tentacle tip gripping).
+	var pins: Dictionary = {}
+
+	## Throws every joint (more towards the tip): a stomp whips the tail.
+	func kick(velocity: Vector3, dt: float) -> void:
+		for i: int in range(1, pos.size()):
+			prev[i] -= velocity * dt * float(i) / (pos.size() - 1)
+
 
 var height_units: float
+## "biped", "hexapod" or "radial" (rig.json "type"); picks the gait.
+var body_plan := "biped"
+var gait: KaijuGait
+var chains: Array[SpringChain] = []
+## name -> how far that bone turns about its x axis to close (rig.json "close": the jaw of a
+## sculpt with an open snarl).
+var bone_close: Dictionary = {}
+## Bones that rest in a sculpted snarl (rig.json "snarl"): their mouth shows true colours.
+var bone_snarl: Dictionary = {}
+## name -> the MultiMeshInstance3D drawing that bone's own voxels (its skin).
+var skins: Dictionary = {}
 var _bones: Dictionary = {}  # name -> Node3D
 var _rest: Dictionary = {}  # name -> Transform3D (local rest)
 var _dir: Dictionary = {}  # name -> rest head->tail vector, in the bone's own space
-var _chains: Array[Dictionary] = []
-var _phase := 0.0
-var _roar := 0.0
+var _head: Dictionary = {}  # name -> rest head, rig space
+var _parent: Dictionary = {}  # name -> parent bone name ("" for the root)
+var _voxels: Dictionary = {}  # name -> VoxelBuilder of that bone's cells (rig space, voxel units)
+var _voxel := 1.0
+var _glow := 1.5
 
 
 ## Builds the rig from <base>.rig.json and <base>.kvox; returns null if either is missing.
@@ -39,12 +78,22 @@ static func load_from(base: String, model_height: float, glow: float) -> KaijuRi
 	return rig
 
 
+## A rig built in code (no files): spec as in rig.json, voxels tagged with bone index + 1.
+static func from_spec(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> KaijuRig:
+	var rig := KaijuRig.new()
+	rig._build(spec, vox, voxel, glow)
+	return rig
+
+
 func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> void:
+	_voxel = voxel
+	_glow = glow
+	body_plan = str(spec.get("type", "biped"))
 	var defs: Array = spec["bones"]
 	var heads: Dictionary = {}
 	for d: Dictionary in defs:
 		heads[str(d["name"])] = _vec(d["head"]) * voxel
-	# Split the voxels by bone (the flags byte), each relative to its bone's head.
+	# Split the voxels by bone (the flags byte).
 	var per_bone: Dictionary = {}
 	for cell: Vector3i in vox.cells:
 		var index: int = vox.flags.get(cell, 0)
@@ -66,30 +115,57 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		parent.add_child(node)
 		_bones[bone_name] = node
 		_rest[bone_name] = node.transform
+		_head[bone_name] = head
+		_parent[bone_name] = parent_name
+		bone_close[bone_name] = Num.f(d.get("close", 0.0))
+		bone_snarl[bone_name] = d.get("snarl", false) == true
 		_dir[bone_name] = _vec(d["tail"]) * voxel - head
 		if per_bone.has(i):
-			var part: VoxelBuilder = per_bone[i]
-			part.salt = 7
-			var mmi := part.build({}, voxel, glow, -head)
-			mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
-			node.add_child(mmi)
+			_voxels[bone_name] = per_bone[i]
+	var bands := RigJoints.overlap(self)
+	for bone_name: String in _voxels:
+		var part: VoxelBuilder = _voxels[bone_name]
+		skins[bone_name] = attach_voxels(bone_name, part)
+	for bone_name: String in bands:
+		var band: VoxelBuilder = bands[bone_name]
+		attach_voxels(bone_name, band, null, JOINT_INSET)
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
 	_relax_arms()
 	_collect_chains(defs)
+	match body_plan:
+		_:
+			gait = BipedGait.new(self)
 
 
-## Models arrive in a T-pose; a kaiju carries its arms lowered and reaching forward.
+## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.
+func attach_voxels(
+	bone_name: String, part: VoxelBuilder, under: Node3D = null, inset: float = 1.0
+) -> Node3D:
+	part.salt = 7
+	part.inset = inset
+	var head: Vector3 = _head[bone_name]
+	var mmi := part.build({}, _voxel, _glow, -head)
+	mmi.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
+	var holder: Node3D = under if under != null else bone(bone_name)
+	holder.add_child(mmi)
+	return mmi
+
+
+## Models arrive in a T-pose; a kaiju carries its arms lowered and reaching forward. A biped's
+## rest pose is its standing arm pose (BipedSwing: hanging, elbow bent, hands at the belly), so a
+## skin bound to the rest pose matches what is shown and the gait only adds small swings to it.
 func _relax_arms() -> void:
-	for side: String in ["l", "r"]:
+	var bases := BipedSwing.rest_arm_bases(self) if body_plan == "biped" else {}
+	for side: String in ["l", "r"] if bases.is_empty() else []:
 		var root := "arm_%s0" % side
-		if not _bones.has(root):
-			continue
-		var outward: float = signf(_dir_of(root).x)
-		var lower := Basis(Vector3.BACK, -outward * 0.95)
-		var reach := Basis(Vector3.UP, outward * 0.35)
-		var rest: Transform3D = _rest[root]
-		_rest[root] = Transform3D(reach * lower * rest.basis, rest.origin)
-		_bone(root).transform = _rest_of(root)
+		if _bones.has(root):
+			var outward: float = signf(dir_of(root).x)
+			var lower := Basis(Vector3.BACK, -outward * 0.95)
+			bases[root] = Basis(Vector3.UP, outward * 0.35) * lower * rest_of(root).basis
+	for n: String in bases:
+		var b: Basis = bases[n]
+		_rest[n] = Transform3D(b, rest_of(n).origin)
+		bone(n).transform = rest_of(n)
 
 
 func _collect_chains(defs: Array) -> void:
@@ -102,17 +178,19 @@ func _collect_chains(defs: Array) -> void:
 		var parent := str(d["parent"]) if d["parent"] != null else ""
 		var is_physics: bool = d["physics"]
 		var starts_chain := is_physics and not _is_physics(defs, parent)
-		var is_arm := bone_name.begins_with("arm_") and not parent.begins_with("arm_")
-		if starts_chain or is_arm:
-			var names: Array[String] = [bone_name]
+		if starts_chain:
+			var chain := SpringChain.new()
+			chain.names.append(bone_name)
 			var walk := bone_name
 			while by_parent.has(walk):
 				var children: Array = by_parent[walk]
 				if children.size() != 1:
 					break
 				walk = str(children[0])
-				names.append(walk)
-			_chains.append({"names": names, "stiffness": LIMB_STIFFNESS if is_arm else STIFFNESS})
+				chain.names.append(walk)
+			for _n: String in chain.names:
+				chain.drive.append(Basis.IDENTITY)
+			chains.append(chain)
 
 
 func _is_physics(defs: Array, bone_name: String) -> bool:
@@ -129,103 +207,181 @@ static func _vec(v: Variant) -> Vector3:
 
 
 func roar() -> void:
-	_roar = 1.0
+	gait.roar()
 
 
-## moving 0..1. Call every frame.
-func animate(delta: float, moving: float) -> void:
-	_phase += delta * (1.5 + 5.5 * moving)
-	_roar = maxf(0.0, _roar - delta * 1.5)
-	var s := sin(_phase)
-	var c := cos(_phase)
-	for side: String in ["l", "r"]:
-		var sign := 1.0 if side == "l" else -1.0
-		_pose("leg_%s0" % side, Vector3(s * sign * 0.45 * moving, 0, 0))
-		_pose("leg_%s1" % side, Vector3(maxf(0.0, -c * sign) * 0.6 * moving, 0, 0))
-		_pose("leg_%s2" % side, Vector3(-s * sign * 0.25 * moving, 0, 0))
-	_pose("spine0", Vector3(0.05 * moving, 0, sin(_phase * 2.0) * 0.04 * moving))
-	_pose("spine1", Vector3(sin(_phase * 0.5) * 0.02, 0, 0))
-	_pose("spine2", Vector3(0, s * 0.08 * moving, 0))
-	_pose("head0", Vector3(-0.35 * _roar + sin(_phase * 2.0) * 0.03, 0, 0))
-	_pose("head1", Vector3(-0.25 * _roar, 0, 0))
-	_simulate(delta)
+func stomp() -> void:
+	gait.stomp()
 
 
-func _pose(bone_name: String, euler: Vector3) -> void:
-	if not _bones.has(bone_name):
+## Call every frame. moving (0..1) is kept for callers; the gait reads the real motion itself.
+func animate(delta: float, _moving: float) -> void:
+	if not is_inside_tree():
 		return
-	var node: Node3D = _bones[bone_name]
-	var rest: Transform3D = _rest[bone_name]
-	node.transform = Transform3D(rest.basis * Basis.from_euler(euler), rest.origin)
+	gait.update(delta)
 
 
-## Spring chains: joints follow where the rest pose would put them, but with inertia and gravity,
-## then each bone is turned to point at the simulated position of the next joint.
-func _simulate(delta: float) -> void:
-	var dt := minf(delta, 1.0 / 30.0)
-	for chain: Dictionary in _chains:
-		var names: Array[String] = chain["names"]
-		var k: float = chain["stiffness"]
-		var target := _rest_points(names)
-		if not chain.has("pos"):
-			chain["pos"] = target.duplicate()
-			chain["prev"] = target.duplicate()
-		var pos: PackedVector3Array = chain["pos"]
-		var prev: PackedVector3Array = chain["prev"]
-		pos[0] = target[0]
-		for i: int in range(1, pos.size()):
-			var p := pos[i]
-			var vel := (p - prev[i]) * DAMPING
-			prev[i] = p
-			pos[i] = p + vel + ((target[i] - p) * k + GRAVITY) * dt * dt
-		for _pass: int in CONSTRAINT_PASSES:
-			for i: int in range(1, pos.size()):
-				var length := (target[i] - target[i - 1]).length()
-				var d := pos[i] - pos[i - 1]
-				if d.length() > 0.0001:
-					pos[i] = pos[i - 1] + d.normalized() * length
-		chain["pos"] = pos
-		chain["prev"] = prev
-		for i: int in names.size():
-			_aim(names[i], pos[i], pos[i + 1])
+# --- bone access for gaits -----------------------------------------------------------------------
 
 
-## World positions of a chain's joints if every bone of it sat at rest under its moving parent.
-func _rest_points(names: Array[String]) -> PackedVector3Array:
-	var parent := _bone(names[0]).get_parent() as Node3D
-	var xform := parent.global_transform * _rest_of(names[0])
-	var points := PackedVector3Array([xform.origin])
-	for i: int in names.size():
-		points.append(xform * _dir_of(names[i]))
-		if i + 1 < names.size():
-			xform = xform * _rest_of(names[i + 1])
-	return points
+func has_bone(bone_name: String) -> bool:
+	return _bones.has(bone_name)
 
 
-func _bone(bone_name: String) -> Node3D:
+func bone(bone_name: String) -> Node3D:
 	var node: Node3D = _bones[bone_name]
 	return node
 
 
-func _rest_of(bone_name: String) -> Transform3D:
+func rest_of(bone_name: String) -> Transform3D:
 	var t: Transform3D = _rest[bone_name]
 	return t
 
 
-func _dir_of(bone_name: String) -> Vector3:
+func dir_of(bone_name: String) -> Vector3:
 	var d: Vector3 = _dir[bone_name]
 	return d
 
 
-func _aim(bone_name: String, from: Vector3, to: Vector3) -> void:
+## Rest head of a bone in rig space (the rig's own units: model height ~10).
+func head_of(bone_name: String) -> Vector3:
+	var h: Vector3 = _head[bone_name]
+	return h
+
+
+func parent_of(bone_name: String) -> String:
+	return str(_parent[bone_name])
+
+
+func voxels_of(bone_name: String) -> VoxelBuilder:
+	if not _voxels.has(bone_name):
+		return null
+	var part: VoxelBuilder = _voxels[bone_name]
+	return part
+
+
+## Voxel size in rig units.
+func voxel_size() -> float:
+	return _voxel
+
+
+func bone_names() -> Array[String]:
+	var out: Array[String] = []
+	for n: String in _bones:
+		out.append(n)
+	return out
+
+
+## Poses a bone by a rotation on top of its rest pose, and an offset in its parent's space.
+func pose(bone_name: String, euler: Vector3, offset: Vector3 = Vector3.ZERO) -> void:
+	if not _bones.has(bone_name):
+		return
+	var node: Node3D = _bones[bone_name]
+	var rest: Transform3D = _rest[bone_name]
+	node.transform = Transform3D(rest.basis * Basis.from_euler(euler), rest.origin + offset)
+
+
+func pose_basis(bone_name: String, b: Basis, offset: Vector3 = Vector3.ZERO) -> void:
+	var node: Node3D = _bones[bone_name]
+	var rest: Transform3D = _rest[bone_name]
+	node.transform = Transform3D(rest.basis * b, rest.origin + offset)
+
+
+## Turns a bone (from its rest pose under its current parent) so its head->tail points from -> to.
+func aim(bone_name: String, from: Vector3, to: Vector3) -> void:
 	var node: Node3D = _bones[bone_name]
 	var parent := node.get_parent() as Node3D
 	var rest: Transform3D = _rest[bone_name]
 	var rest_world := parent.global_transform * rest
 	var want := to - from
-	var have := rest_world.basis * _dir_of(bone_name)
+	var have := rest_world.basis * dir_of(bone_name)
 	if want.length() < 0.0001 or have.length() < 0.0001:
 		return
 	var turn := Quaternion(have.normalized(), want.normalized())
 	var world_basis := Basis(turn) * rest_world.basis
 	node.transform = Transform3D(parent.global_transform.basis.inverse() * world_basis, rest.origin)
+
+
+## Sets a bone's world orientation (an orthonormal basis; the rig's scale is kept).
+func set_world_basis(bone_name: String, world_basis: Basis) -> void:
+	var node: Node3D = _bones[bone_name]
+	var parent := node.get_parent() as Node3D
+	var pb := parent.global_transform.basis
+	var scaled := world_basis.scaled(pb.get_scale())
+	node.transform = Transform3D(pb.inverse() * scaled, node.transform.origin)
+
+
+## World position of a bone's tail as posed now.
+func tail_world(bone_name: String) -> Vector3:
+	return bone(bone_name).global_transform * dir_of(bone_name)
+
+
+## Two-bone IK: where the middle joint goes so bones a (length l1) and b (l2) reach from root to
+## end, bending towards pole. An end out of reach leaves the chain straight towards it.
+static func solve_knee(root: Vector3, end: Vector3, l1: float, l2: float, pole: Vector3) -> Vector3:
+	var d := end - root
+	var dist := clampf(d.length(), absf(l1 - l2) + 0.0001, l1 + l2 - 0.0001)
+	var dir := d.normalized() if d.length() > 0.0001 else Vector3.DOWN
+	var cos_a := clampf((l1 * l1 + dist * dist - l2 * l2) / (2.0 * l1 * dist), -1.0, 1.0)
+	var p := pole - dir * pole.dot(dir)
+	p = p.normalized() if p.length() > 0.0001 else dir.cross(Vector3.RIGHT).normalized()
+	return root + dir * (cos_a * l1) + p * (sqrt(maxf(0.0, 1.0 - cos_a * cos_a)) * l1)
+
+
+# --- spring chains -------------------------------------------------------------------------------
+
+
+## Spring chains: joints follow where the (driven) rest pose would put them, with inertia and
+## gravity, then each bone is turned to point at the simulated position of the next joint.
+func simulate_chains(delta: float) -> void:
+	var dt := minf(delta, 1.0 / 30.0)
+	for chain: SpringChain in chains:
+		var target := _rest_points(chain)
+		if chain.pos.is_empty():
+			chain.pos = target.duplicate()
+			chain.prev = target.duplicate()
+		var pos := chain.pos
+		var prev := chain.prev
+		pos[0] = target[0]
+		var k := chain.stiffness
+		var g := GRAVITY * chain.gravity_scale
+		for i: int in range(1, pos.size()):
+			var p := pos[i]
+			var vel := (p - prev[i]) * DAMPING
+			prev[i] = p
+			pos[i] = p + vel + ((target[i] - p) * k + g) * dt * dt
+		for _pass: int in CONSTRAINT_PASSES:
+			for i: int in range(1, pos.size()):
+				if chain.pins.has(i):
+					var pin: Vector3 = chain.pins[i]
+					pos[i] = pin
+				var length := (target[i] - target[i - 1]).length()
+				var d := pos[i] - pos[i - 1]
+				if d.length() > 0.0001:
+					pos[i] = pos[i - 1] + d.normalized() * length
+		chain.pos = pos
+		chain.prev = prev
+		for i: int in chain.names.size():
+			aim(chain.names[i], pos[i], pos[i + 1])
+
+
+## World positions of a chain's joints if every bone of it sat at its driven rest pose.
+func _rest_points(chain: SpringChain) -> PackedVector3Array:
+	var names := chain.names
+	var parent := bone(names[0]).get_parent() as Node3D
+	var first := rest_of(names[0])
+	var xform := parent.global_transform * Transform3D(first.basis * chain.drive[0], first.origin)
+	var points := PackedVector3Array([xform.origin])
+	for i: int in names.size():
+		points.append(xform * dir_of(names[i]))
+		if i + 1 < names.size():
+			var r := rest_of(names[i + 1])
+			xform = xform * Transform3D(r.basis * chain.drive[i + 1], r.origin)
+	return points
+
+
+func chain_named(first_bone: String) -> SpringChain:
+	for chain: SpringChain in chains:
+		if chain.names[0] == first_bone:
+			return chain
+	return null
