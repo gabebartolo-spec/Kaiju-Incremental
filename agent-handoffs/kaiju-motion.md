@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 02:10
-## State: awaiting lead (reptile round 6 on PR #10, 1f8ff0e; next: hydra bone fixes, species round 2 QA)
+# Kaiju-motion handoff, 2026-10-17 05:40
+## State: awaiting lead (#10 ready for final critic pass; rest arm pose 5c6e703; #11 at 457915e)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -18,8 +18,24 @@ not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-po
   Lead asked: NO more octopus motion clips until it OKs species3/octo_bone_sheet.png.
 
 ## Unfinished changes
-- none uncommitted. Round 6 (posed arms, plates on spine via rig_voxel.reclaim_plates) at
-  1f8ff0e, merged into species 74474ff; evidence in notes kaiju-motion/round6/.
+- none uncommitted. Round 6b answers the lead's round-5 REJECT (arms aimed in chest space,
+  plates/inboard shoulder on spine, no chest band on arm roots, decisive stop, roar waits for
+  feet, baby dip floor). Open: baby roar still has a plant at 10.017 (in-flight stomp; roar
+  starts on that frame); baby trip makes reverse cadence +21%; no automated sealed-chest check.
+- Split (lead, 2026-10-17): this session = REPTILE only (gait_biped, biped_*, kaiju_rig/gait/model
+  core). species-motion (local_87c25bd4) owns hexapod/radial gaits, mantis/octopus assets and
+  their rig_voxel parts, on its own PR into claude/kaiju-motion-species. Shared files: small edits.
+- Shoulder lock: spine1 = exact inverse of the pelvis yaw/roll/sway (keeps lean/drop/surge);
+  SWAY 0.03, HIP_YAW 0.06. capture_motion prints SHOULDERS drift/tilt/yaw + rear plumb line.
+  Adult yaw reads a constant -3.95 deg: sculpt asymmetry (swing 0.02).
+- Arms: aimed in the heading frame: hang, ~60 deg elbow, hands resting in front of the belly
+  (director's pick, lead-approved). It is also the KaijuRig rest pose for bipeds
+  (_relax_arms <- BipedSwing.rest_arm_bases), so the D-041 skin binds to it; kaiju-look-test
+  told to rebake. Director gaming: headless + CI captures only (focus-guard).
+- capture_motion: --cam=front34w (whole body), side camera pulled back (cephalopod keeps its own).
+  Short loops: one clip per fix to the lead (notes kaiju-motion/round6c_*, round6d_*).
+- CI flow fix: ability_fx looks up body parts per toggle (freed after a growth stage).
+- capture_motion --tint colours each bone (arm0 red, arm1 yellow, hand magenta) for rig QA.
 - Mantis all three stages textured (D-038) at 862d318.
 - Queue: hydra bone fixes (every long tentacle chained, majority smoothing, orphans to nearest
   bone, pale mantle patch; resend bone sheet), then species round 2 QA (mantis freezes/darts,

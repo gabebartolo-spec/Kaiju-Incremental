@@ -829,15 +829,18 @@ def nearest_bone(points, bones, side_of, penalty=None):
 
 
 PLATE_MARGIN = 1.5
+PLATE_ROOT = 0.35
 
 
 def reclaim_plates(points, owner, bones):
     """Shoulder plates and dorsal spikes sit beside the upper arm but belong to the torso: an
-    upper-arm voxel farther from its bone than the forearm is thick (times PLATE_MARGIN) goes to
-    the nearest spine or head bone, so the plates ride the chest instead of swinging with the arm."""
+    upper-arm voxel near the shoulder (the inner PLATE_ROOT of the bone) and farther from it than
+    the forearm is thick (times PLATE_MARGIN), or above it by that thickness, goes to the nearest spine bone, so the plates ride
+    the chest instead of swinging with the arm. Bumps out along the arm stay on it: left on the
+    chest they would float where the sculpted arm was."""
     names = [b["name"] for b in bones]
     seg = lambda i, p: _seg_dist(p, bones[i])
-    body = [i for i, n in enumerate(names) if n.startswith(("spine", "head"))]
+    body = [i for i, n in enumerate(names) if n.startswith("spine")]  # never the head: it turns
     out = owner.copy()
     moved = 0
     for side in ("l", "r"):
@@ -846,7 +849,14 @@ def reclaim_plates(points, owner, bones):
         upper, fore = names.index(f"arm_{side}0"), names.index(f"arm_{side}1")
         radius = np.median(seg(fore, points[owner == fore])) * PLATE_MARGIN
         idx = np.where(owner == upper)[0]
-        far = idx[seg(upper, points[idx]) > radius]
+        a, c = np.array(bones[upper]["head"]), np.array(bones[upper]["tail"])
+        along = ((points[idx] - a) @ (c - a)) / max(1e-9, (c - a) @ (c - a))
+        # Above the shoulder counts too: the arm lowers, and its top would rise off the body.
+        axis_z = a[2] + np.clip(along, 0, 1) * (c[2] - a[2])
+        above = points[idx][:, 2] - axis_z > radius / PLATE_MARGIN
+        # Inboard of the shoulder joint is chest: lowering the arm would swing it up and away.
+        inboard = along < 0.0
+        far = idx[(((seg(upper, points[idx]) > radius) | above) & (along < PLATE_ROOT)) | inboard]
         if len(far) == 0:
             continue
         dists = np.stack([seg(i, points[far]) for i in body])

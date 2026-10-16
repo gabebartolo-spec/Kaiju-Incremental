@@ -22,21 +22,26 @@ const TAIL_BEND_MAX := 0.12
 ## Tail whip (species power): length (s) and bend per bone at its height (rad).
 const WHIP_SECONDS := 0.35
 const WHIP := 0.22
-## Arms (posed, never simulated: director, "limp scarves"): tucked against the chest (down-curl,
-## inward turn), forearms raised (elbow bend), extra curl at a roar, a small swing against the
-## hips, pulled in tighter by a turn (per rad/s of yaw rate, at most ARM_BRACE_MAX); the swing and
-## brace follow through a stiff spring (rad/s, damping) that lags at most a few degrees.
-const ARM_TUCK := 0.75
-const ARM_IN := 0.5
-const ARM_ELBOW := 1.1
-const ARM_WRIST := 0.25
-const ARM_ROAR := 0.4
-const ARM_SWING := 0.5
+## Arms (posed, never simulated: director, "limp scarves", "outstretched like a zombie"), as the
+## Jurassic Park tyrannosaur and Godzilla 2014 carry theirs. Each bone is aimed along a direction
+## in the body's heading frame (x outward, y up, -z forward), so it bends at the joint and never
+## rolls: the upper arm hangs down and a little forward, the elbow is bent about 60 degrees so
+## the forearm reaches forward with the hands resting in front of the belly, below the chest
+## (director: a relaxed tyrannosaur hang), the hand drooping loosely. A roar lifts
+## and spreads them into a claw; nothing else raises them.
+const ARM_UPPER := Vector3(0.15, -0.92, -0.35)
+const ARM_FORE := Vector3(-0.25, -0.2, -0.95)
+const ARM_HAND := Vector3(-0.2, -0.55, -0.8)
+const ARM_UPPER_ROAR := Vector3(0.45, -0.4, -0.8)
+const ARM_FORE_ROAR := Vector3(0.2, 0.55, -0.8)
+## A small counter-swing with the stride (rad of forward/back swing at the hips' full yaw), and a
+## brace in on a turn (per rad/s of yaw rate, at most ARM_BRACE_MAX); both follow a stiff spring
+## (rad/s, damping), so the lag is a few degrees and the arms never fling past the body line.
+const ARM_STRIDE := 0.14
 const ARM_BRACE := 0.25
 const ARM_BRACE_MAX := 0.2
 const ARM_OMEGA := 18.0
 const ARM_ZETA := 0.9
-const ARM_YOUTH_EASE := 0.75
 
 var rig: KaijuRig
 ## The pelvis's drop speed (hip heights/s) and how young the body is (0..1), set each frame.
@@ -98,19 +103,54 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 	_pose_arms(roar_open, hip_yaw, dt)
 
 
+## The standing arm pose as the rig's rest pose: bone name -> rest basis that turns arm_<side>0/1/2
+## (in rig space, which at rest is the heading frame) to point along ARM_UPPER/FORE/HAND. Bends at
+## the joints, no roll.
+static func rest_arm_bases(rig: KaijuRig) -> Dictionary:
+	var out: Dictionary = {}
+	var dirs: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
+	for side: String in ["l", "r"]:
+		if not rig.has_bone("arm_%s0" % side):
+			continue
+		var outward := signf(rig.dir_of("arm_%s0" % side).x)
+		var above := Basis.IDENTITY  # the parent's rest orientation (the spine has none)
+		for i: int in dirs.size():
+			var n := "arm_%s%d" % [side, i]
+			if not rig.has_bone(n):
+				break
+			var want := (dirs[i] * Vector3(outward, 1, 1)).normalized()
+			var world := Basis(Quaternion(rig.dir_of(n).normalized(), want))
+			out[n] = above.inverse() * world
+			above = world
+	return out
+
+
 func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 	var brace := minf(ARM_BRACE_MAX, absf(yaw_rate) * ARM_BRACE)
-	_arm_swing = KaijuGait.spring(_arm_swing.x, _arm_swing.y, hip_yaw, ARM_OMEGA, ARM_ZETA, dt)
+	var stride := clampf(hip_yaw / BipedBody.HIP_YAW, -1.0, 1.0) * ARM_STRIDE
+	_arm_swing = KaijuGait.spring(_arm_swing.x, _arm_swing.y, stride, ARM_OMEGA, ARM_ZETA, dt)
 	_arm_brace = KaijuGait.spring(_arm_brace.x, _arm_brace.y, brace, ARM_OMEGA, ARM_ZETA, dt)
-	# A young body's arms stay nearer their sculpted pose (tucking them bares unmodelled chest).
-	var tuck := 1.0 - ARM_YOUTH_EASE * youth
+	var body := rig.global_transform.basis.orthonormalized()
+	var roar := clampf(roar_open, 0.0, 1.0)
 	for side: String in ["l", "r"]:
-		var root := "arm_%s0" % side
-		if not rig.has_bone(root):
+		var names: Array[String] = []
+		for i: int in 3:
+			if rig.has_bone("arm_%s%d" % [side, i]):
+				names.append("arm_%s%d" % [side, i])
+		if names.is_empty():
 			continue
-		var sgn := -1.0 if side == "l" else 1.0
-		var curl := -ARM_TUCK * tuck - ARM_ROAR * maxf(0.0, roar_open) - _arm_brace.x
-		var turn_in := sgn * (ARM_IN * tuck + _arm_brace.x) - sgn * _arm_swing.x * ARM_SWING
-		rig.pose_basis(root, Basis(Vector3.UP, turn_in) * Basis(Vector3.RIGHT, curl))
-		rig.pose("arm_%s1" % side, Vector3(-ARM_ELBOW, 0, 0))
-		rig.pose("arm_%s2" % side, Vector3(-ARM_WRIST, 0, 0))
+		var shoulder := rig.bone(names[0]).global_position
+		var out := signf((body.inverse() * (rig.tail_world(names[0]) - shoulder)).x)
+		# The arm on the side of the trailing leg swings forward (left arm with the right leg).
+		var swing := Basis(Vector3.RIGHT, -out * _arm_swing.x * (1.0 - roar))
+		var dirs: Array[Vector3] = [
+			swing * ARM_UPPER.lerp(ARM_UPPER_ROAR, roar) - Vector3(_arm_brace.x, 0, 0),
+			swing * ARM_FORE.lerp(ARM_FORE_ROAR, roar),
+			swing * ARM_HAND,
+		]
+		for i: int in names.size():
+			var n := names[i]
+			var from := rig.bone(n).global_position
+			var length := (rig.tail_world(n) - from).length()
+			var d := (dirs[i] * Vector3(out, 1, 1)).normalized()
+			rig.aim(n, from, from + body * d * length)
