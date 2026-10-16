@@ -1,11 +1,11 @@
-# blender-reptile handoff, 2026-10-17 04:05
+# blender-reptile handoff, 2026-10-17 04:10
 ## State: awaiting lead (board sent; A vs B is the lead's/director's call)
 ## Task
 Director 2026-10-17: "try making the reptilian kaiju in blender". Brief from the lead: model the adult
 reptile by hand in Blender via the MCP, rig-friendly; .blend + GLB under assets/source/kaiju; rig_voxel
 at 160 into a separate test asset; labelled board (4 views vs Tripo adult + both voxelized) to the lead.
 ## Branch and commit
-claude/blender-reptile-f5388e (worktree .claude/worktrees/blender-reptile-f5388e), pushed; no PR yet.
+claude/blender-reptile-f5388e (worktree .claude/worktrees/blender-reptile-f5388e), pushed at 4a1b1f8; no PR yet (lead decides).
 ## Done
 - `assets/source/kaiju/build_reptile.py` builds it headless in ~10 s:
   `blender -b --factory-startup --python assets/source/kaiju/build_reptile.py -- <out.blend> <out.glb>`.
