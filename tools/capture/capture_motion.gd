@@ -9,6 +9,8 @@ extends SceneTree
 ## holds still beside the first straight walk (for judging foot slide by eye). Footfalls kick
 ## dust and nudge the camera as in the rampage; the scripted events are labelled on screen.
 ## --trace=<file.csv>: t, pelvis height and forward speed per frame (the rhythm plot).
+## --pose-trace=<file.csv>: per frame the scripted event, the body's world x/z and heading, a
+## hard hold (insectoid), and how far all the bones moved that frame (stillness and twitches).
 ## Headless (no movie) just prints the measurements. Slide is
 ## also given in cm, taking a world unit as one storey (3.5 m).
 
@@ -24,6 +26,8 @@ var _stage := "adult"
 var _cam := "game"
 var _seconds := 15.0
 var _trace := ""
+var _pose_trace := ""
+var _last_bones := PackedVector3Array()
 var _dip := 0.0
 var _line: Line2D
 var _guide: Line2D
@@ -39,6 +43,8 @@ func _initialize() -> void:
 			_stage = arg.substr(8)
 		elif arg.begins_with("--cam="):
 			_cam = arg.substr(6)
+		elif arg.begins_with("--pose-trace="):
+			_pose_trace = arg.substr(13)
 		elif arg.begins_with("--trace="):
 			_trace = arg.substr(8)
 		elif arg.begins_with("--seconds="):
@@ -105,6 +111,7 @@ func _run() -> void:
 	)
 	var rows := PackedStringArray(["t,pelvis_y,forward_speed"])
 	var feet := PackedStringArray(["t,foot,planted,x,z"])
+	var poses := PackedStringArray(["t,event,x,z,yaw,holding,bone_motion,model_yaw"])
 	plants.append("t,foot,x,y,z,strength,camera_dip_units,camera_dip_px_at_1080p")
 	var last_pelvis := Vector3.ZERO
 	var cam := Camera3D.new()
@@ -150,6 +157,8 @@ func _run() -> void:
 		if _cam == "game":
 			cam.position.y -= _dip * (0.75 + 0.4 * body_scale)
 		_trace_feet(kaiju, t, feet)
+		if _pose_trace != "":
+			poses.append(_pose_row(kaiju, t))
 		if _cam == "rear":
 			_level_line(kaiju, cam)
 		var pelvis := _pelvis_of(kaiju)
@@ -169,6 +178,10 @@ func _run() -> void:
 		f = FileAccess.open(_trace.get_basename() + "_feet.csv", FileAccess.WRITE)
 		f.store_string(String.chr(10).join(feet))
 		f.close()
+	if _pose_trace != "":
+		var pf := FileAccess.open(_pose_trace, FileAccess.WRITE)
+		pf.store_string(String.chr(10).join(poses))
+		pf.close()
 	var drift := kaiju.foot_drift()
 	var hip := kaiju.hip_height()
 	print(
@@ -208,9 +221,11 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 		cam.position = at + CAMERA_OFFSET * zoom
 		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
 		return
-	var wide := 1.4 if _species == "cephalopod" else 1.0  # a wide body needs a wider shot
+	# A wide body needs a wider shot: the mantis's raised scythes, feelers and long abdomen too.
+	var wide: float = {"cephalopod": 1.4, "insectoid": 1.45}.get(_species, 1.0)
+	var aim: float = {"insectoid": 4.8}.get(_species, 3.6)
 	cam.position = at + Vector3(16.0 * wide, 4.0 * wide, 0) * body_scale
-	cam.look_at(at + Vector3(0, 3.6, 0) * body_scale)
+	cam.look_at(at + Vector3(0, aim, 0) * body_scale)
 
 
 ## What the script is doing at time t, shown on the clip.
@@ -237,6 +252,33 @@ func _pelvis_of(kaiju: KaijuModel) -> Vector3:
 	for node: Node in kaiju.find_children("spine0", "Node3D", true, false):
 		return (node as Node3D).global_position
 	return kaiju.global_position
+
+
+## One pose-trace row: the body root bone's world place and heading, and the summed movement of
+## every bone since the last frame (0 means dead still).
+func _pose_row(kaiju: KaijuModel, t: float) -> String:
+	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		var names := rig.bone_names()
+		var body := rig.bone(names[0])
+		var fwd := -body.global_transform.basis.z
+		var moved := 0.0
+		var now := PackedVector3Array()
+		for n: String in names:
+			now.append(rig.tail_world(n))
+		if _last_bones.size() == now.size():
+			for i: int in now.size():
+				moved += (now[i] - _last_bones[i]).length()
+		_last_bones = now
+		var holding := 0
+		if rig.gait is HexapodGait:
+			holding = int((rig.gait as HexapodGait).holding)
+		var p := body.global_position
+		return (
+			"%.4f,%s,%.4f,%.4f,%.4f,%d,%.5f,%.4f"
+			% [t, _event_at(t), p.x, p.z, atan2(-fwd.x, -fwd.z), holding, moved, kaiju.rotation.y]
+		)
+	return "%.4f" % t
 
 
 ## Every foot's world position and whether it is planted, each frame (the slide trace).
