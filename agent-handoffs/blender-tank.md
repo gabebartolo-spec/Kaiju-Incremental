@@ -1,37 +1,45 @@
-# blender-tank handoff (2026-10-17 03:40)
-State: awaiting lead (board sent; scale and palette are the lead's/director's call)
+# blender-tank handoff (2026-10-17 04:20)
+State: awaiting lead (tank PR #17 and heli PR open; GitHub Actions blocked by billing)
 
 ## Task
-Director 2026-10-17: "ok can you make stuff in blender now? try to make a tank". Lead brief: model an MBT
-in Blender via the MCP, GLB + .blend under assets/source/vehicles, voxelize at game scale, comparison board to the lead.
+Director 2026-10-17 "make a tank in blender"; D-042 picked 2x real size, desert tan. Lead brief: wire the
+tank into the game (turret aims, gun recoils, crush/grab intact), CI capture, PR; then a helicopter
+the same way (spinning main + tail rotor nodes) as a second PR.
 
-## Branch and commit
-claude/blender-tank-eed18f (worktree .claude/worktrees/blender-tank-eed18f), pushed; no PR yet.
+## Branches and PRs
+- claude/blender-tank-eed18f -> PR #17 into claude/look-options (tank). Worktree .claude/worktrees/blender-tank-eed18f.
+- claude/blender-heli (same worktree, stacked on the tank branch) -> heli PR into claude/look-options;
+  it carries #17's commits until #17 merges. Switch with `git switch <branch>` (both clean when committed).
 
 ## Done
-- `assets/source/vehicles/build_tank.py` builds the tank (headless `blender -b --python ... -- out.blend out.glb`).
-  Hull > Tracks, Turret (pivot on ring) > Barrel (pivot on trunnion), CommanderMG. Faces -Y (glTF front, voxelize
-  convention; Hull root turned 180 deg). 9.82 x 3.71 m, 2.4 m at cupola. Desert tan (#b89c6a), dark tracks.
-- tank_mbt.blend / .glb; tank_mbt_h7.kvox (true scale, ~city RES 8 grain), tank_mbt_h14.kvox (for a 2x tank).
-- Checked through the live Blender MCP `look`: 4 views clean, wheels on the belt, pivots turn/elevate.
-- Board: side-session notes folder `blender-tank/tank_board.png` (+ compare_render.py that made the line-up).
-- LICENSING_REGISTER row added (ours, CLEARED).
+- Pipeline: assets/source/vehicles/build_tank.py, build_heli.py (bpy, headless) -> .blend/.glb (LFS) ->
+  tools/blender/voxelize_parts.py (one grid, per-part kvox + <base>.parts.json hinges) -> assets/vehicles/.
+- scenes/vehicle_parts.gd (VehicleParts loader), TankModel (hull/turret/barrel, aim, fire recoil),
+  HelicopterModel (body, main rotor Y spin, tail rotor X spin, chin gun aim, fire muzzle).
+- rampage.gd: hull heads where it drives, turret aims at the kaiju, shells from the muzzle.
+  powers_view.gd: heli gun aims, bursts from the muzzle; heli no longer scaled by body_scale (D-042 fixes 2x).
+- tuning.json "vehicles": tank_height 1.61, heli_height 2.75, turn/recoil/spin rates.
+- Smoke checks: _check_tank (3), _check_heli (2); floor smoke 12 -> 17. All six suites green locally.
+- Boards (notes folder): blender-tank/tank_board.png (lead PASS), tanks_reptilian_*.png (CI still);
+  blender-heli/heli_board.png. Licensing rows for both models.
 
-## Findings
-- Game scale: 1 unit = 1 floor (~3.3 m); city voxel 1/8 u. Real tank = 0.8 u tall, 3 u long. The current
-  code tank (scenes/tank_model.gd) is 1.6 u tall, 3.6 u long: ~2x real height and stubby.
-- Olive goes near-black under blue-hour light; tan reads clearly.
-- Voxelizing loses the wheels (skirts hide them, shell only) and thickens the barrel to one voxel.
+## Blocked / not exercised
+- GitHub Actions refuses every job ("recent account payments have failed or your spending limit...").
+  CI tests + captures cannot run; billing is the director's. Only one CI capture got through (run 38935554448).
+- No capture of a tank firing, a grab/throw of the new tank, or the heli in game.
+- Track scroll skipped: flat dark tracks under the skirts would not show it.
 
 ## Gotchas
-- Blender MCP runs in SAFE MODE: no exec/open; bpy.ops.wm.open_mainfile works. Paste code inline or use `blender -b`.
-- glTF-imported roots use quaternion rotation: set rotation_mode = "XYZ" before touching rotation_euler.
-- Blender (PID 461804, MCP host) closed at the end by PID, per the lead brief; quit_blender is blocked by safe mode.
+- Blender MCP: safe mode (no exec/open/quit); open_mainfile works. Start a window with
+  --python-expr registering a timer that calls bpy.ops.blendermcp.start_server(). Close by PID.
+- glTF-imported roots use quaternion rotation: set rotation_mode "XYZ" before rotation_euler.
+- Fonts are LFS: a fresh worktree needs `git lfs pull --include "assets/fonts/*"` or the flow suite
+  floods font errors and times out.
+- GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
 
-## Open decisions (lead/director)
-1. Scale: true scale (h7, 0.8 u tall) or the current 2x presentation (h14)?
-2. Palette: tan (recommended) or olive.
-3. Then: wire the kvox into TankModel (Kvox.read) and take an in-game CI capture. Not started.
+## Open decisions (lead)
+1. Heli no longer grows with the kaiju (was max(1, body_scale)): keep fixed 2x per D-042?
+2. Billing for Actions (director).
 
 ## Running jobs
-None.
+None. Blender closed.
