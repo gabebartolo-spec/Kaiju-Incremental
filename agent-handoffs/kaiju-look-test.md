@@ -1,4 +1,4 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 03:50
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 03:58
 ## State: running a check (PR #15 open, Auto-fix on; 12 CI capture runs for its evidence)
 
 ## Task
@@ -14,7 +14,7 @@ claude/kaiju-look-test-a763a6 (0d00544), notes in side-session-notes/<lead>/kaij
 ## Branch and commit
 claude/kaiju-voxel-skin, PR #15 into claude/look-options (open, Auto-fix on). Synced with #11's
 latest (kaiju-motion-species, which holds #10) and look-options (#10 merged there as aaa60f7):
-merge #11 first, then look-options, or #10's squash conflicts. Head 4efc470. All 9 skins rebaked
+merge #11 first, then look-options, or #10's squash conflicts. Head 6dfa6b3 (snarl mouth, mantle + mouth smoke checks; smoke floor 20). All 9 skins rebaked
 after the sync (bone counts changed). This worktree is .claude/worktrees/kaiju-look-test-a763a6.
 
 ## What exists
@@ -45,17 +45,17 @@ after the sync (bone counts changed). This worktree is .claude/worktrees/kaiju-l
 - Earlier (old head) CI stills: mantis A sheds floating shards at arm_r2, C stays whole.
 
 ## Running jobs
-CI captures on 63b2234 (ids in scratch ci_runs2.txt): reptilian rigid clip 38934348115 / stills
-38934357962, skin 38934366730 / 38934377957; insectoid rigid 38934388712 / 38934398600, skin
-38934408909 / 38934418490; cephalopod rigid 38934427444 / 38934435081, skin 38934447283 /
-38934457743. Rigid clips are slowest (~1 h, lavapipe). Then: gh run download each into
-scratch dl/<sp>/<v>_<clip|stills>/, run scratch py/compose_pr.py, post clips/crops on PR #15
-(upload to the notes folder + a PR comment), fill the Evidence section, send the lead.
+CI captures on 6dfa6b3 (scratch ci_runs3.txt): reptilian rigid clip 38935288977 / stills 38935298372,
+skin 38935307047 / 38935316239; insectoid rigid 38935325310 / 38935334815, skin 38935344392 /
+38935354141; cephalopod rigid 38935364941 / 38935373784, skin 38935382240 / 38935391440. Earlier
+sets (ci_runs.txt, ci_runs2.txt) are stale (old rigs) and cancelled. Next: download into scratch
+dl/<sp>/<v>_<clip|stills>/, run scratch py/compose_pr.py, post on PR #15, fill Evidence, tell lead.
 
 ## Open decisions / touch points
-Messages sent to kaiju-motion and species-motion (02:00): no edits to their files; they or I rerun
-bake_all.sh after rig changes; asked kaiju-motion whether the bent arms are rest or gait pose. No
-replies yet.
+Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
+adult rests in a snarl (bone_snarl.jaw: mouth shows true colours at rest). Agreed with
+species-motion: mantle scale reads rig.skins["mantle0"] (smoke-proven); their rigs regrown
+(octopus 61/43/79 bones, mantis 32). Both rerun bake_all.sh after rig changes, or ping.
 
 ## Rules learnt the hard way
 - Never wrap windowed Godot in a script: the focus guard must see the command. Use CI captures.
