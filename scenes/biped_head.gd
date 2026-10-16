@@ -53,8 +53,9 @@ var _mouth_shut: Array[Node3D] = []  # the same cells as a dark lip seam, shown 
 func _init(gait: BipedGait) -> void:
 	g = gait
 	_tell_in = g.rng.randf_range(TELL_EVERY.x, TELL_EVERY.y)
-	for bone_name: String in ["head1", "jaw"]:
-		_split_mouth(bone_name)
+	if not g.rig.bone_snarl.get("jaw", false):  # a resting snarl keeps its true colours
+		for bone_name: String in ["head1", "jaw"]:
+			_split_mouth(bone_name)
 
 
 func roar() -> void:
