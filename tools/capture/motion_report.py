@@ -108,6 +108,47 @@ def main():
             lead = air_at_start or (first is not None and body_start is not None and first <= body_start)
             print(f"  a foot in the air when the body starts turning: {air_at_start}; first fresh lift {first}; "
                   f"legs lead: {lead}")
+    if len(sys.argv) > 2:
+        grips(rows, Path(sys.argv[2]), dt)
+
+
+def grips(rows, base, dt):
+    """A tentacled body: its grips (which arms, how often, how many at once) and how the body's
+    speed surges after a grip and drags before the next (speed ratio and the lag of the peak)."""
+    plants = base.with_name(base.stem + "_plants.csv")
+    if not plants.exists():
+        return
+    g = [(float(r["t"]), r["foot"]) for r in csv.DictReader(open(plants, encoding="utf-8"))
+         if r["foot"].startswith("t")]
+    if not g:
+        return
+    walk = [r for r in rows if r["event"] in WALKING]
+    tw = [r["t"] for r in walk]
+    gw = [x for x in g if tw and tw[0] <= x[0] <= tw[-1]]
+    gaps = [b[0] - a[0] for a, b in zip(gw, gw[1:])]
+    print(f"grips while moving: {len(gw)} by {len(set(a for _, a in gw))} arms; gaps {stats(gaps)}")
+    first = [r["t"] for r in rows if r["event"] == "WALK"]
+    straight = [a for t, a in g if first and first[0] <= t <= 4.5]
+    print(f"  first straight walk: {len(straight)} grips by {len(set(straight))} arms: {' '.join(straight)}")
+    sp = {}
+    for p, q in zip(walk, walk[1:]):
+        if abs(q["t"] - p["t"] - dt) < 1e-4:
+            sp[round(q["t"], 4)] = math.hypot(q["x"] - p["x"], q["z"] - p["z"]) / dt
+    v = sorted(sp.values())
+    if v:
+        lo, hi = v[len(v) // 10], v[len(v) * 9 // 10]
+        print(f"body speed while moving: p10 {lo:.2f} p90 {hi:.2f} units/s (surge/drag ratio {hi / max(lo, 1e-6):.2f})")
+    # Mean speed by time since the last grip: a surge shows as a peak soon after.
+    bins = {}
+    times = [x[0] for x in gw]
+    for t, s in sp.items():
+        before = [x for x in times if x <= t]
+        if before:
+            k = int((t - before[-1]) / 0.05)
+            bins.setdefault(k, []).append(s)
+    prof = " ".join(f"{k * 0.05:.2f}:{sum(b) / len(b):.1f}" for k, b in sorted(bins.items())[:10])
+    print(f"  mean speed by time since the last grip (s:units/s): {prof}")
+
 
 if __name__ == "__main__":
     main()
