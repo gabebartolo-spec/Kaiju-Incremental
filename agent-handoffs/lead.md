@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-17 02:00
-## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
+# Lead handoff, 2026-10-17 02:05
+## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art/motion QA of every helper,
@@ -33,6 +33,10 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - Reptile shoulders FIXED (0% drift, shown to director); arms PASS QA, director wants hands lower near the belly (elbow ~55-65 deg), in progress.
 - D-041: director picked look test C (voxel cubes on skinned lattice); kaiju-look-test productionises it (all 9 kaiju, shoulder bake, bone array, PR).
 - Director: reptile arms "outstretched like a zombie": bent elbows, hands near chest (sent to kaiju-motion).
+
+## Gameplay helpers started 02:00
+- city-growth (local_abf1bce5-336a-4fc8-942a-ff8f84538b7a): D-039 city grows per evolution + 3-5 h economy re-tune.
+- game-flow (local_9e7bf3f2-b85d-489b-987f-b9e45b8bfb55): run summary, evolution reveal, tree polish, menus/pause/settings (4K UI scale), save/continue.
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
