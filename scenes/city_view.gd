@@ -8,9 +8,12 @@ const MAX_DEBRIS := 600
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
 const MAX_FIRES := 30
+const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 var sim: RampageSim
 var fx: Fx
+## Civilians, police and moving traffic (null on an empty stage).
+var street: StreetLife
 var _rng: RandomNumberGenerator
 var _views: Array[BuildingView] = []
 var _falling: Dictionary = {}
@@ -50,12 +53,16 @@ func _ready() -> void:
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
 		add_child(_decor)
+		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0))
+		add_child(street)
 
 
-## Cars, trees and lights under a stomp go flat.
+## Cars, trees and lights under a stomp go flat; people there are crushed.
 func crush(at: Vector3, radius: float) -> void:
 	if _decor != null:
 		_decor.crush(at, radius)
+	if street != null:
+		street.crush(at, radius)
 
 
 func _process(delta: float) -> void:
@@ -122,20 +129,6 @@ func _build_ground() -> void:
 	add_child(streets)
 	if _with_decor:
 		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
-
-
-func slab(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 1.0
-	mesh.material = mat
-	mi.mesh = mesh
-	mi.position = pos
-	add_child(mi)
-	return mi
 
 
 func _base_color(b: RampageSim.Building) -> Color:
@@ -244,6 +237,9 @@ func fall_land(event: Dictionary) -> void:
 			crush(a.lerp(b, float(i) / steps), width * 0.6)
 	elif not landed.is_empty():
 		fx.dust(landed[0], 1.5)
+		if street != null:  # the section came down round its own building
+			var b := sim.buildings[Num.i(event["building"])]
+			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH)
 
 
 ## A rubble pile where a tower came down across the street, built on a worker thread (a tall

@@ -36,18 +36,20 @@ func _ready() -> void:
 		var rect: Rect2 = block["rect"]
 		if rect.position.y < coast:
 			continue
+		# The block's pavement reaches out over its sidewalks (and meets across an alley).
+		var walk := rect.grow(Num.f(cfg["sidewalk"]))
 		match str(block["use"]):
 			"park":
-				_slab(rect, Vector2(PAVE_TOP, 0.3), pavement)
-				_slab(rect.grow(-1.0), Vector2(PAVE_TOP + 0.02, 0.3), Look.color("outskirts"))
+				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
+				_slab(rect.grow(-0.5), Vector2(PAVE_TOP + 0.02, 0.3), Look.color("outskirts"))
 			"plaza":
-				_slab(rect, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
+				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
 			"parking":
-				_slab(rect, Vector2(PAVE_TOP, 0.3), pavement)
+				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
 				_parking_bays(rect.grow(-0.6))
 			_:
-				_slab(rect, Vector2(PAVE_TOP, 0.3), pavement)
+				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)

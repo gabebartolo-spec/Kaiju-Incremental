@@ -2,8 +2,16 @@ shader_type spatial;
 render_mode blend_mix, depth_draw_never, cull_disabled, shadows_disabled;
 // Soft billboard smoke puff: a round, noisy, dark mass that is lit dimly by the scene and
 // thins out at its edges. Colour and alpha come from the particle (COLOR).
+// Camera rule (director, 2026-10-16): a little smog in view is immersive, a wall of it ruins the
+// view. Smoke thins as it nears the camera and over the screen centre, where the kaiju stands.
 
 uniform float softness = 0.2;
+// Fully clear this close to the camera, full strength from near_full on (world units).
+uniform float near_clear = 8.0;
+uniform float near_full = 22.0;
+// Opacity kept over the screen centre, and the screen radius that clearing reaches.
+uniform float centre_keep = 0.55;
+uniform float centre_radius = 0.28;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -32,5 +40,8 @@ void fragment() {
 	float round_mask = 1.0 - smoothstep(softness, 1.0, length(p) + (n - 0.5) * 0.5);
 	ALBEDO = COLOR.rgb * (0.75 + 0.35 * n);
 	ROUGHNESS = 1.0;
-	ALPHA = COLOR.a * round_mask;
+	float near = smoothstep(near_clear, near_full, -VERTEX.z);
+	vec2 off = (SCREEN_UV - 0.5) * vec2(VIEWPORT_SIZE.x / VIEWPORT_SIZE.y, 1.0);
+	float centre = mix(centre_keep, 1.0, smoothstep(centre_radius * 0.4, centre_radius, length(off)));
+	ALPHA = COLOR.a * round_mask * near * centre;
 }

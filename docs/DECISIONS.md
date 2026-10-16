@@ -4,6 +4,46 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-029 · Director · Real city districts from OpenStreetMap, starting with Melbourne CBD
+Why: "could we have real cities with real layouts... imagine how fun it would be to destroy your own
+city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
+(ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
+area. No player-imported cities, ever: new cities ship as patches (director, 2026-10-16).
+
+## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
+Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
+fidelity". Kaiju are ~16 voxels per floor-unit, buildings 4. Changes: city-layout raises building
+RES (8-12) with recessed, framed facades and rooftop clutter, distance LOD if perf needs it.
+
+## 2026-10-16 · D-027 · Director · The game targets a 4K 120 Hz TV
+Why: "i want the game to display on a 4k tv" (Beyond TV, 3840x2160, 120 Hz VRR, HDR, 400 nits).
+Changes: starts fullscreen, stretch aspect "expand", adaptive vsync (VRR); UI stays a 1920x1080
+canvas scaled 2x. The TV is plugged into the 4070 SUPER (director, 2026-10-16). Still open:
+TV-distance text sizes, HDR output, perf at native 4K.
+
+## 2026-10-16 · D-026 · Director · Ability powers get proper VFX and SFX (later milestone)
+Why: "we will eventually need some nice vfx and sfx for our powers/abilities that we will unlock".
+Changes: none yet. Any SFX source must clear the licence register first.
+
+## 2026-10-16 · D-025 · Director · Smoke must not obscure the camera view
+Why: "a little smog in the camera is good and immersive, too much and it just ruins the view".
+Changes: smoke.gdshader fades smoke near the camera (clear inside 8 units, full from 22) and keeps
+55% of it over the screen centre where the kaiju stands. This is the rule for every future smoke,
+dust or fog effect.
+
+## 2026-10-16 · D-024 · Director · The city must read as a real city with believable edges
+Why: "it seems like our city exists in a void... far too gridlike"; "not saying our map has to be
+infinite, but it has to make sense visually". Changes: helper session city-layout (branch city-layout).
+
+## 2026-10-16 · D-023 · Director · Tripo credits: quality over cost
+Why: "dont worry about credit cost, just get good results, the credits ar there to be spent".
+Changes: no per-session cap for kaiju/vehicle/landmark generation; every task is still logged in
+docs/provenance/tripo.md.
+
+## 2026-10-16 · D-022 · Director · The insectoid is a mantis: two raptorial arms plus four legs
+Why: "the insectoids are looking a bit armless, they should have legs and arms"; "keep pursuing
+the mantis look". Changes: adult = mantis_a (Tripo 9668b815); the rig needs a hexapod skeleton.
+
 ## 2026-10-16 · D-016 · Director · ~1,000 Tripo credits approved for 9 rig-ready kaiju this session
 Why: "Yes, ~1,000 credits". Smart Mesh P2.0 (100 each, 4 variants per run) + auto-rig (~20 each).
 
