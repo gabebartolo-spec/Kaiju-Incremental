@@ -322,29 +322,35 @@ def hexapod_skeleton(v, tris, lo, hi):
     return bones
 
 
-def radial_skeleton(v, tris, lo, hi, arms=8, segments=6):
-    """Bones for an octopus-like body: a mantle on the midline and `arms` tentacles, each a
-    physics chain from the body out to its tip. Tips are the furthest low points in each of
-    `arms` sectors around the body; each tentacle follows the surface back to the midline."""
+def radial_skeleton(v, tris, lo, hi, segments=6, max_arms=16):
+    """Bones for an octopus- or hydra-like body: a mantle on the midline and one physics chain per
+    tentacle, however many the sculpt has. Tentacles are found one at a time: the surface point
+    furthest (over the surface) from the body is a tip; its path back to the body is that
+    tentacle, and everything near the path is claimed so the next tip is a different tentacle.
+    It stops when the furthest unclaimed point is short of a tentacle's reach."""
     H = hi[2] - lo[2]
     W = max(hi[0] - lo[0], hi[1] - lo[1])
     centre = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2])
     core = np.where(np.linalg.norm(v[:, :2] - centre, axis=1) < W * 0.06)[0]
     dist, prev = geodesic(v, tris, core)
-    reach = np.where(np.isfinite(dist), dist, -1)
+    reach = np.where(np.isfinite(dist), dist, -1.0)
     body = v[core]
     base = np.array([centre[0], centre[1], body[:, 2].min() + H * 0.05])
     crown = np.array([centre[0], centre[1], hi[2]])
     bones = [{"name": "mantle0", "parent": None, "head": base, "tail": crown, "physics": False}]
-    angle = np.arctan2(v[:, 1] - centre[1], v[:, 0] - centre[0])
-    low = v[:, 2] < lo[2] + H * 0.3
-    for i in range(arms):
-        a0 = -np.pi + i * 2 * np.pi / arms
-        sector = np.where(low & (angle >= a0) & (angle < a0 + 2 * np.pi / arms))[0]
-        if len(sector) == 0:
-            continue
-        tip = sector[np.argmax(reach[sector])]
+    free = reach.copy()
+    longest = reach.max()
+    radius = W * 0.05
+    for i in range(max_arms):
+        tip = int(np.argmax(free))
+        if free[tip] < longest * 0.45:
+            break
         path = path_to_core(v, prev, tip)
+        # Claim this tentacle: every vertex near its outer path, so the next tip is another one.
+        outer = path[: max(2, int(len(path) * 0.8))]
+        for chunk in np.array_split(outer, max(1, len(outer) // 50)):
+            near = np.min(np.linalg.norm(v[:, None, :] - chunk[None, :, :], axis=2), axis=1) < radius
+            free[near] = -1.0
         joints = [at_arc(path, f) for f in np.linspace(0.92, 0.0, segments + 1)]
         parent = "mantle0"
         for j in range(segments):
@@ -352,17 +358,10 @@ def radial_skeleton(v, tris, lo, hi, arms=8, segments=6):
             bones.append({"name": name, "parent": parent, "head": joints[j], "tail": joints[j + 1],
                           "physics": True})
             parent = name
+    print(f"radial: {(len(bones) - 1) // segments} tentacles")
     for b in bones:
         b["head"], b["tail"] = np.asarray(b["head"]).tolist(), np.asarray(b["tail"]).tolist()
     return bones
-
-
-# Where the hexapod's head is (set by hexapod_skeleton): voxels above the neck near the head's
-# centre belong to the head whatever bone is nearest, so the head turns as one piece.
-HEAD_ZONE = {}
-
-# Hexapod limb roots sit against the body; their distance is stretched so body voxels stay on the body.
-ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0}
 
 
 JAW_CLOSE_MAX = 0.7
@@ -423,6 +422,14 @@ def split_jaw(points, owner, bones, cell, rgb):
     return out
 
 
+# Where the hexapod's head is (set by hexapod_skeleton): voxels above the neck near the head's
+# centre belong to the head whatever bone is nearest, so the head turns as one piece.
+HEAD_ZONE = {}
+
+# Limb roots sit against the body; their distance is stretched so body voxels stay on the body.
+ROOT_PENALTY = {"leg": 2.0, "hind": 2.0, "arm": 1.4, "antenna": 4.0, "tentacle": 2.0}
+
+
 def nearest_bone(points, bones, side_of, penalty=None):
     """Index of the bone whose segment is nearest each point (limbs stay on their own side)."""
     best = np.full(len(points), -1)
@@ -432,7 +439,7 @@ def nearest_bone(points, bones, side_of, penalty=None):
         ab = c - a
         t = np.clip(((points - a) @ ab) / max(1e-9, ab @ ab), 0, 1)
         d = np.linalg.norm(points - (a + t[:, None] * ab), axis=1)
-        kind = b["name"].split("_")[0]
+        kind = b["name"].split("_")[0].rstrip("0123456789")
         if penalty and b["name"].endswith("0") and kind in penalty:
             d = d * penalty[kind]  # a limb root must not take body voxels
         s = side_of(b["name"])
@@ -501,7 +508,7 @@ def main():
     keys = np.array(list(cells.keys()))
     centres_bl = (keys + 0.5) / scale + origin  # back to Blender space for bone tests
     side = lambda name: 1 if "_l" in name else (-1 if "_r" in name else 0)
-    owner = nearest_bone(centres_bl, bones, side, ROOT_PENALTY if body_plan == "hexapod" else None)
+    owner = nearest_bone(centres_bl, bones, side, ROOT_PENALTY if body_plan != "biped" else None)
     if HEAD_ZONE:
         names = [b["name"] for b in bones]
         in_head = (centres_bl[:, 2] > HEAD_ZONE["neck_z"]) & (
