@@ -8,7 +8,21 @@ extends "res://tests/lib/runner.gd"
 const DT := 1.0 / 15.0
 ## Upgrades owned at the start of each stage (enough body to be that stage's kaiju).
 const COLOSSUS := {
-	"claws": 5, "hide": 5, "rage": 5, "evolve1": 1, "tail": 3, "sig_power": 3, "evolve2": 1
+	"claws": 5,
+	"hide": 5,
+	"stride": 4,
+	"quake": 4,
+	"rage": 5,
+	"scales": 4,
+	"greed": 5,
+	"frenzy": 4,
+	"evolve1": 1,
+	"sig_power": 5,
+	"regen": 4,
+	"tail": 5,
+	"titan_hide": 5,
+	"sig_recharge": 4,
+	"evolve2": 1
 }
 
 
@@ -67,8 +81,9 @@ func _check_districts_kept() -> void:
 	var apex: Dictionary = _tuning(4)["city"]
 	var young_plan := CityGen.map(young)
 	var apex_plan := CityGen.map(apex)
+	var same: bool = young_plan["xs"] == apex_plan["xs"] and young_plan["zs"] == apex_plan["zs"]
 	check(
-		young_plan["xs"] == apex_plan["xs"] and young_plan["zs"] == apex_plan["zs"],
+		same,
 		"the street plan is the same at every stage"
 	)
 	var footprints := {}
@@ -205,7 +220,8 @@ func _check_cost_curve() -> void:
 	check(e1 < e2 and e2 < e3, "each evolution costs more (%d, %d, %d)" % [e1, e2, e3])
 	var young_total := 0
 	for def: Dictionary in Content.upgrades():
-		if (def["requires"] as Array).is_empty() or str(def["id"]) in ["stride", "quake", "rage"]:
+		var requires: Array = def["requires"]
+		if requires.is_empty() or str(def["id"]) in ["stride", "quake", "rage"]:
 			for c: Variant in def["cost"]:
 				young_total += Num.i(c)
 	check(
@@ -265,7 +281,8 @@ func _check_determinism() -> void:
 	var b := _layout(3)
 	check(a == b, "the same stage builds the same city every time")
 	var twice := _tuning(4)
-	(twice["city"] as Dictionary)["half"] = -1
+	var grown_city: Dictionary = twice["city"]
+	grown_city["half"] = -1
 	check(
 		JSON.stringify(Content.tuning()) == before,
 		"stage tunings are copies: the base tuning is never changed"

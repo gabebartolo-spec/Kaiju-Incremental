@@ -248,8 +248,9 @@ func _check_upgrade_effects() -> void:
 			% [Num.f(claws["destruction"]), Num.f(base["destruction"])]
 		)
 	)
-	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1, "rage": 5}))
-	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1}))
+	# Thick hide so both runs last to the clock: a defeat would end them at the same moment.
+	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5, "rage": 5}))
+	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5}))
 	check(
 		Num.f(rage["destruction"]) > Num.f(few["destruction"]),
 		(

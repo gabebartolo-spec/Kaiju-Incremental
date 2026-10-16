@@ -126,14 +126,17 @@ static func _fill_row(
 		var cap := row_cap if back else _height_cap(town, cfg)
 		var h := mini(terrace_h + rng.randi_range(-1, 1), cap)
 		var roll := rng.randf()
+		# Both heights are always drawn, so a stage's tower chance or height cap (D-039) never
+		# shifts the numbers the lots after this one draw.
+		var tower_h := rng.randi_range(maxi(min_h, roundi(cap * 0.6)), maxi(min_h, cap))
+		var pencil: Array = cfg["pencil_height"]
+		var pencil_h := rng.randi_range(Num.i(pencil[0]), Num.i(pencil[1]))
 		if back:
 			pass
 		elif roll < sqrt(town) * Num.f(cfg["tower_chance"]):
-			h = rng.randi_range(maxi(min_h, roundi(cap * 0.6)), cap)
+			h = tower_h
 		elif span <= 3 and roll > 1.0 - Num.f(cfg["pencil_chance"]):
-			# A Tokyo pencil building: one narrow lot shoots up among the low-rise.
-			var pencil: Array = cfg["pencil_height"]
-			h = rng.randi_range(Num.i(pencil[0]), Num.i(pencil[1]))
+			h = pencil_h  # a Tokyo pencil building shoots up among the low-rise
 		h = maxi(2, roundi(h * height_scale))
 		var style := terrace_style if rng.randf() < 0.6 else rng.randi_range(0, 3)
 		var lot_deep := deep

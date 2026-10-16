@@ -120,7 +120,7 @@
 		"range": 11.0,
 		"speed": 2.5,
 		"tank_rubble": 2,
-		"spawn_radius": 50.0,
+		"spawn_radius": 60.0,
 		"escalation_per_chunk": 0.002,
 		"threat_per_chunk": 0.0005,
 		"young_damage_mult": 2.0
