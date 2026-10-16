@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-16 23:32
-## State: working (cephalopod adolescent 724612fd + mantis adult texture generating; helpers: kaiju-motion, species-powers, ci-captures)
+# Lead handoff, 2026-10-16 23:52
+## State: working (mantis nymph 06ed8a12 + adolescent 0161ad14 textures v2 generating; review before export)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
@@ -21,10 +21,10 @@ Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 building
 ## Next (mine)
 1. DONE: all three reptile stages rigged from olive textures (docs/captures/2026-10-16-stages/reptile_stages_ingame.png).
 
-2. Cephalopod: adult = 8bf2f668 (octo_2.glb, D-036), baby = 6176590f (octo_baby.glb, director "i love him"), adolescent generating (724612fd). Then a skin for all three.
+2. Cephalopod stages ALL PICKED: baby 6176590f (octo_baby.glb), adolescent a328effe (octo_adolescent.glb), adult 8bf2f668 (octo_2.glb); sent to kaiju-motion. Next: one skin prompt for all three (check each result!).
    ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
    logic), then a skin. Radial rig comes from kaiju-motion.
-3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
+3. Mantis skins: adult approved (D-038, mantis_adult_tex.glb, sent to kaiju-motion); nymph + adolescent v1 REJECTED (off-colour), v2 generating. Export only after a visual check.
 4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
 5. 4K TV text size check (perf deferred, D-032).
 6. Species gameplay (D-035, docs/SPECIES.md): build after PR #10; 3 open questions for the director there.
