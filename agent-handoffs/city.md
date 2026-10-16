@@ -1,5 +1,5 @@
 # City handoff, 2026-10-16 21:05
-## State: awaiting lead (captures sent for review; PR open into claude/look-options)
+## State: awaiting lead (PR #7 open into claude/look-options, CI running, Auto-fix on; boards await lead review)
 
 ## Task
 Director 2026-10-16: "our city exists in a void ... far too gridlike, it must look like an
@@ -9,7 +9,7 @@ fidelity (RES 8-12) and D-029 real OSM districts (another helper) - see Open dec
 
 ## Branch and commit
 claude/city-layout-56adda (worktree .claude/worktrees/city-layout-56adda), merged with
-origin/claude/look-options at 829bc53 (street life #5 included). PR into claude/look-options.
+origin/claude/look-options at 829bc53 (street life #5 included). PR #7 into claude/look-options.
 
 ## What exists now
 - sim/city_gen.gd: CityGen.map(cfg) street plan from the config alone (map_seed): long
