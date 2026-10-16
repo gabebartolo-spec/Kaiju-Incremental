@@ -30,6 +30,13 @@ var _guide: Line2D
 var _label: Label
 var _time := 0.0
 var _tint := false
+var _plumb: Line2D
+## Straight walk (2.0-4.5 s): shoulder-centre lateral offset, tilt and yaw (deg), each min/max.
+var _sh_lo := INF
+var _sh_hi := -INF
+var _sh_tilt := Vector2(INF, -INF)  # min, max (deg)
+var _sh_yaw := Vector2(INF, -INF)
+var _height := 0.0
 
 
 func _initialize() -> void:
@@ -84,6 +91,10 @@ func _run() -> void:
 	_line.default_color = Color(1, 0.2, 0.2)
 	_line.width = 3.0
 	ui.add_child(_guide)
+	_plumb = Line2D.new()
+	_plumb.default_color = Color(1, 1, 1, 0.8)
+	_plumb.width = 2.0
+	ui.add_child(_plumb)
 	ui.add_child(_line)
 	stage.add_child(ui)
 	var def: Dictionary = Content.species_def(_species)
@@ -159,6 +170,9 @@ func _run() -> void:
 		_trace_feet(kaiju, t, feet)
 		if _cam == "rear":
 			_level_line(kaiju, cam)
+			_plumb_line(kaiju, cam)
+		if t >= 2.0 and t < 4.5:
+			_measure_shoulders(kaiju, Vector3(facing.x, 0, facing.y))
 		var pelvis := _pelvis_of(kaiju)
 		if frames > 0:
 			var fwd := Vector3(facing.x, 0, facing.y)
@@ -176,6 +190,15 @@ func _run() -> void:
 		f = FileAccess.open(_trace.get_basename() + "_feet.csv", FileAccess.WRITE)
 		f.store_string(String.chr(10).join(feet))
 		f.close()
+	if _sh_hi > _sh_lo:
+		var p2p := _sh_hi - _sh_lo
+		var line := "SHOULDERS %s %s straight walk 2.0-4.5 s: lateral drift %.3f (%.2f%% of height %.2f)"
+		line += "; tilt %.2f..%.2f deg (swing %.2f); yaw %.2f..%.2f deg (swing %.2f)"
+		var tilt := _sh_tilt
+		var yaw := _sh_yaw
+		var vals := [_species, _stage, p2p, 100.0 * p2p / maxf(0.001, _height), _height]
+		vals += [tilt.x, tilt.y, tilt.y - tilt.x, yaw.x, yaw.y, yaw.y - yaw.x]
+		print(line % vals)
 	var drift := kaiju.foot_drift()
 	var hip := kaiju.hip_height()
 	print(
@@ -306,3 +329,31 @@ func _tint_bones(kaiju: KaijuModel) -> void:
 			for m: Node in rig.bone(b).get_children():
 				if m is GeometryInstance3D:
 					(m as GeometryInstance3D).material_override = mat
+
+
+## The shoulder centre against the line of travel: lateral offset (world units), tilt and yaw.
+func _measure_shoulders(kaiju: KaijuModel, fwd: Vector3) -> void:
+	for node: Node in kaiju.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		if not rig.has_bone("arm_l0") or not rig.has_bone("arm_r0"):
+			return
+		var a := rig.bone("arm_l0").global_position
+		var b := rig.bone("arm_r0").global_position
+		var right := fwd.cross(Vector3.UP).normalized()
+		var side := ((a + b) * 0.5 - kaiju.global_position).dot(right)
+		_sh_lo = minf(_sh_lo, side)
+		_sh_hi = maxf(_sh_hi, side)
+		var flat := Vector3(b.x - a.x, 0, b.z - a.z)
+		var tilt := rad_to_deg(atan2(b.y - a.y, flat.length()))
+		_sh_tilt = Vector2(minf(_sh_tilt.x, tilt), maxf(_sh_tilt.y, tilt))
+		var yaw := rad_to_deg(asin(clampf(flat.normalized().dot(fwd), -1.0, 1.0)))
+		_sh_yaw = Vector2(minf(_sh_yaw.x, yaw), maxf(_sh_yaw.y, yaw))
+		if rig.has_bone("head1"):
+			_height = maxf(_height, rig.bone("head1").global_position.y - kaiju.global_position.y)
+
+
+## A fixed plumb line straight up from the line of travel (where the spine should stay).
+func _plumb_line(kaiju: KaijuModel, cam: Camera3D) -> void:
+	var foot := kaiju.global_position
+	var top := foot + Vector3.UP * maxf(1.0, _height * 1.1)
+	_plumb.points = PackedVector2Array([cam.unproject_position(foot), cam.unproject_position(top)])
