@@ -122,14 +122,12 @@ func _check_voxel_skin() -> void:
 	var skinned: Array[String] = []
 	var leaks: Array[String] = []
 	var broken: Array[String] = []
-	var mouth := false
+	var mantle_ok := false
 	for species: String in ["reptilian", "insectoid", "cephalopod"]:
 		var def: Dictionary = Content.species_def(species)
 		var colors: Dictionary = def["colors"]
 		var kaiju := KaijuModel.new(species, colors, "adult")
 		root.add_child(kaiju)
-		if species == "reptilian":
-			kaiju.jaw_open(true)
 		for frame: int in 40:
 			kaiju.position.z -= 0.05
 			kaiju.animate(1.0 / 60.0, 1.0)
@@ -146,8 +144,8 @@ func _check_voxel_skin() -> void:
 				):
 					broken.append(species)
 					break
-			if species == "reptilian":
-				mouth = skin.mouth_open
+			if species == "cephalopod":
+				mantle_ok = _mantle_follows(kaiju, skin)
 		kaiju.queue_free()
 		await process_frame
 	check(
@@ -158,7 +156,8 @@ func _check_voxel_skin() -> void:
 		broken.is_empty(),
 		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
 	)
-	check(mouth, "the reptile's held-open jaw shows the mouth's inside on the skin")
+	check(mantle_ok, "the octopus mantle's breathing scale reaches its skin")
+	await _check_skin_mouth()
 	VoxelSkin.show_rigid_voxels = true
 	var rex: Dictionary = Content.species_def("reptilian")
 	var rex_colors: Dictionary = rex["colors"]
@@ -167,6 +166,39 @@ func _check_voxel_skin() -> void:
 	check(none, "the debug flag draws the rigid voxels instead (no skin)")
 	rigid.free()
 	VoxelSkin.show_rigid_voxels = false
+
+
+## The mantle voxels' node (which gait_radial scales to breathe) sizes the skin's mantle0 bone.
+func _mantle_follows(kaiju: KaijuModel, skin: VoxelSkin) -> bool:
+	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
+	var held: Variant = rig.skins.get("mantle0", null)
+	if not is_instance_valid(held):
+		return false
+	var mantle: Node3D = held
+	var m := skin.pose[rig.bone_names().find("mantle0")]
+	return absf(Vector3(m.x.x, m.x.y, m.x.z).length() - mantle.scale.x) < 0.001
+
+
+## The mouth's inside shows on the skin as BipedHead shows it: hidden while a closed jaw rests,
+## shown once the jaw is held open (the adolescent has no resting snarl).
+func _check_skin_mouth() -> void:
+	var rex: Dictionary = Content.species_def("reptilian")
+	var rex_colors: Dictionary = rex["colors"]
+	var kaiju := KaijuModel.new("reptilian", rex_colors, "adolescent")
+	root.add_child(kaiju)
+	var skin: VoxelSkin = kaiju.find_children("VoxelSkin", "VoxelSkin", true, false)[0]
+	for frame: int in 20:
+		kaiju.animate(1.0 / 60.0, 0.0)
+	var shut := not skin.mouth_open
+	kaiju.jaw_open(true)
+	for frame: int in 30:
+		kaiju.animate(1.0 / 60.0, 0.0)
+	check(
+		shut and skin.mouth_open,
+		"the skin hides the mouth's inside at a shut rest and shows it with the jaw held open"
+	)
+	kaiju.queue_free()
+	await process_frame
 
 
 ## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it

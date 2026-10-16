@@ -219,10 +219,12 @@ func _skin_global(i: int) -> Transform3D:
 	return _nodes[i].global_transform
 
 
-## True once the jaw has dropped far enough that BipedHead would show the mouth's pink inside.
+## True when BipedHead would show the mouth's pink inside: a snarling rest, or a dropped jaw.
 func _mouth_showing() -> bool:
 	if not _rig.has_bone("jaw"):
 		return false
+	if _rig.bone_snarl.get("jaw", false):  # a resting snarl keeps its true colours (BipedHead)
+		return true
 	var turn := (_rig.rest_of("jaw").basis.inverse() * _rig.bone("jaw").transform.basis).get_euler()
 	return Num.f(_rig.bone_close.get("jaw", 0.0)) - turn.x > BipedHead.MOUTH_SHOWS
 
