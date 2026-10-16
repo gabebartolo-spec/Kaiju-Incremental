@@ -41,3 +41,4 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | cephalopod adolescent | 724612fd set | picked | a328effe-5a6b-4f6f-a3e4-53f00d8e2f9f (28k faces, low sprawl) | (100, above) | yes | director PICK B (octo_adolescent.glb) |
 | 2026-10-17 | insectoid adolescent texture v3 | "legs, arms ... ALL the same dark brown-black" prompt | Texture | 0161ad14 (texture) | 30 | yes | PASS (lead): uniform red-brown chitin; mantis_adolescent_tex.glb |
 | 2026-10-17 | cephalopod adult texture | deep-sea octopus: bruised purple-maroon, barnacles, pale pink-grey suckers, amber eyes on 8bf2f668 | Texture | 8bf2f668 (texture) | 30 | yes | generating |
+| 2026-10-17 | reptilian adult auto-rig | Tripo Auto Rig (Humanoid, Mixamo preset) on 01e78e11 | Rig | 01e78e11 (rig) | 20 | yes | for look test B (rep_adult_rigged.glb) |
