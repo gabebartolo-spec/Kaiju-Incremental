@@ -51,10 +51,6 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(github.event_name == 'push' && '[{"script":"capture_rig.gd","args":"--species=reptilian --stage=adult","movie":true},{"script":"capture_looks.gd","args":"--street","movie":false}]' || '[{}]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,10 +88,10 @@ jobs:
 
       - name: Capture
         env:
-          SCRIPT: ${{ matrix.script || inputs.script }}
-          ARGS: ${{ matrix.args || inputs.args }}
+          SCRIPT: ${{ inputs.script }}
+          ARGS: ${{ inputs.args }}
           RENDERER: ${{ inputs.renderer || 'auto' }}
-          MOVIE: ${{ matrix.movie || inputs.movie }}
+          MOVIE: ${{ inputs.movie }}
           FPS: ${{ inputs.fps || '30' }}
           RES: ${{ inputs.resolution || '1280x720' }}
         run: |
