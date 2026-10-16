@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-16 20:25
+# Lead handoff, 2026-10-16 20:45
 ## State: working (kaiju stages via Tripo); helper city-layout running; street-life helper running
 
 ## Task
@@ -42,6 +42,9 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
   windowed runs. Capture override.cfg must be deleted afterwards.
 
 10. Real-city (D-029, CBD only, cities ship as patches, no player imports): helper session failed to start (C: had 3.5 GB free, worktree needs 5.4 GB). Retry from that session once space is freed.
+
+11. PR #6 (ability VFX) sent back with a FIX list: breath camera orbit + beam reaching target, lash fan replaced by an arc, boosted subtle cues, HUD 998 timer bug. SFX (D-030): free libs + synthesis, follow-up PR.
+12. Fullscreen start moved to exported builds only (8cf4a16); focus-guard blocks fullscreen projects.
 
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36, told to sync onto ca2c65c),

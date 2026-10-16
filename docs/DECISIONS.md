@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-030 · Director · SFX: free libraries, synthesized in-house where that sounds better
+Why: "download the free stuff, synthesize in-house when we can get better results". Changes: Sonniss
+GDC bundles, Kenney (CC0) and Freesound CC0 only; each source CLEARED in the licence register first;
+no paid packs. Also: fullscreen now starts only in exported builds (a project-wide fullscreen start put
+agent capture windows on the director's screen).
+
 ## 2026-10-16 · D-029 · Director · Real city districts from OpenStreetMap, starting with Melbourne CBD
 Why: "could we have real cities with real layouts... imagine how fun it would be to destroy your own
 city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
