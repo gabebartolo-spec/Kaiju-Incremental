@@ -29,7 +29,10 @@ static func overlap(rig: KaijuRig) -> Dictionary:
 			"width": length * WIDTH,
 			"voxel": rig.voxel_size(),
 		}
-		_take(theirs, joint, -1.0, _bucket(extra, child))
+		# An arm turns far from its sculpted pose at the shoulder: a band of chest on it would swing
+		# out as loose shards. The chest carries the arm's band instead.
+		if not (child.begins_with("arm_") and not parent.begins_with("arm_")):
+			_take(theirs, joint, -1.0, _bucket(extra, child))
 		_take(mine, joint, 1.0, _bucket(extra, parent))
 	var out: Dictionary = {}
 	for bone_name: String in extra:

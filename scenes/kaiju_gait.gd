@@ -118,3 +118,8 @@ static func solve_knee(root: Vector3, end: Vector3, l1: float, l2: float, pole: 
 	var p := pole - dir * pole.dot(dir)
 	p = p.normalized() if p.length() > 0.0001 else dir.cross(Vector3.RIGHT).normalized()
 	return root + dir * (cos_a * l1) + p * (sqrt(maxf(0.0, 1.0 - cos_a * cos_a)) * l1)
+
+
+## A vector flattened onto the ground plane.
+static func _flat(v: Vector3) -> Vector3:
+	return Vector3(v.x, 0.0, v.z)
