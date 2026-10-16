@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-16 20:48
+# Lead handoff, 2026-10-16 21:15
 ## State: working; helpers city-layout, real-city-cbd, ability-vfx (PR #6 FIX list) running
 
 ## Task
@@ -47,6 +47,8 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 12. Fullscreen start moved to exported builds only (8cf4a16); focus-guard blocks fullscreen projects.
 
 13. Locomotion (D-031): helper kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): reptile first, then hexapod mantis rig, radial cephalopod rig; motion-critic review before the director.
+
+14. PR #7 city layout round 2 MERGED (quiet streets, full blocks, quay/bay/skyline north, fog edges). FIX carried into D-028: east filler too gridlike.
 
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
