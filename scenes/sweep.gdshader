@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
 // Tentacle Lash: two smeared streaks whipping once round the kaiju where its tentacle tips run
 // (a flat PlaneMesh at shin height). `progress` 0..1 drives the heads through a full turn; each
 // streak is a thin hot lip with a short smear behind it. No filled area: nothing reads as a

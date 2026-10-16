@@ -245,8 +245,8 @@ func deflect(at: Vector3, away: Vector3) -> void:
 	var cold := Color(str(_tune["deflect_tint"]))
 	var burst := FxParticles.sparks(cold)
 	burst.direction = away.normalized()
-	_burst(burst, 40, 0.5).position = at
-	_flare(at, 2.2 * _scale, cold, 0.18)
+	_burst(burst, 70, 0.6).position = at
+	_flare(at, 4.5 * _scale, cold, 0.22)
 	_city.flash(at, cold, 6.0, 0.15)
 
 

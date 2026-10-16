@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, shadows_disabled, fog_disabled;
 // A glow laid over the kaiju's own voxels (material_overlay): brightest at the silhouette, so
 // the body stays readable under it. shimmer 1 runs thin rings up the body (Regeneration) and
 // lights nothing between them; 0 is a rim flash (signature ready). Additive and thin, so it never hides the kaiju (D-025).

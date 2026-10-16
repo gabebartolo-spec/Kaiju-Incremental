@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, cull_disabled, depth_draw_never;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled;
 // A ground shockwave: a bright ring that runs outward and fades, with a ragged edge.
 // `progress` 0..1 is driven from script; the quad is scaled to the full radius.
 

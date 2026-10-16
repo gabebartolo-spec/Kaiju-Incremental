@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 // A camera-facing flash of light (beam impact, a shell glancing off the hide): a hot core and
 // four short rays. `fade` 1..0 from script.
 

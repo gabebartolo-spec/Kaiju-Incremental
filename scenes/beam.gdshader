@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
 // Atomic Breath core: a tapered cylinder (CylinderMesh, mouth at the bottom) of hot plasma.
 // A white-hot spine fades to the species colour at the edges; turbulence streams away from
 // the mouth. `progress` 0..1 from script: a hard flare, a short hold, then the beam thins out.
