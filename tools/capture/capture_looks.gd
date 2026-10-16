@@ -1,8 +1,9 @@
 extends SceneTree
 ## Captures every look in data/looks.json on one fixed stage for the art-direction review:
-## a mid-rampage city shot (the evolved reptilian, three buildings breaking, debris in the air)
-## and a line-up of the three species. Needs a window (no --headless) and the untracked
-## no-focus override.cfg.
+## a mid-rampage city shot (the evolved reptilian, three buildings breaking, debris in the
+## air), the same at the city's north edge (what lies past the playable area), a wide view
+## over the bay to the far skyline, and a line-up of the three species. Needs a window
+## (no --headless) and the untracked no-focus override.cfg.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_looks.gd -- --out=<dir>
@@ -10,9 +11,13 @@ extends SceneTree
 const SETTLE := 12
 const DEBRIS_FRAMES := 9
 const FALL_FRAMES := 240
-const STAGE_AT := Vector2(13.5, 31.5)
+const STAGE_AT := Vector2(5.0, -8.0)  # a crossing at the edge of the midtown towers
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const LINEUP_SPACING := 13.0
+const EDGE_AT := Vector2(5.0, -40.0)  # on the north ring avenue, looking out over the edge
+const SKYLINE_CAMERA := Vector3(-30, 34, 30)
+const SKYLINE_LOOK := Vector3(10, 12, -140)
+const EVOLVED := {"claws": 3, "hide": 3, "rage": 3, "stride": 2, "quake": 2, "evolve1": 1}
 
 var _out := "user://looks"
 
@@ -30,27 +35,26 @@ func _run() -> void:
 	for look: Dictionary in Content.looks():
 		Content.set_look(str(look["id"]))
 		await _city_shot(str(look["id"]) + "_young", {})
-		await _city_shot(
-			str(look["id"]) + "_evolved",
-			{"claws": 3, "hide": 3, "rage": 3, "stride": 2, "quake": 2, "evolve1": 1}
-		)
+		await _city_shot(str(look["id"]) + "_evolved", EVOLVED)
+		await _city_shot(str(look["id"]) + "_edge", EVOLVED, EDGE_AT)
+		await _skyline_shot(str(look["id"]))
 		await _lineup_shot(str(look["id"]))
 	quit()
 
 
-func _city_shot(id: String, levels: Dictionary) -> void:
+func _city_shot(id: String, levels: Dictionary, stage_at: Vector2 = STAGE_AT) -> void:
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
-	sim.kaiju_pos = STAGE_AT
+	sim.kaiju_pos = stage_at
 	var stage := Node3D.new()
 	var city := CityView.new(sim, Seeds.make("fx", 0))
 	stage.add_child(city)
 	var colors: Dictionary = species["colors"]
 	var kaiju := KaijuModel.new("reptilian", colors)
-	var at := Vector3(STAGE_AT.x, 0, STAGE_AT.y)
+	var at := Vector3(stage_at.x, 0, stage_at.y)
 	kaiju.position = at
 	kaiju.scale = Vector3.ONE * sim.body_scale()
 	kaiju.rotation.y = 0.5
@@ -105,6 +109,27 @@ func _city_shot(id: String, levels: Dictionary) -> void:
 			lifted += 1
 	print("debris above 2u: ", floating, " pieces still lifted: ", lifted)
 	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
+	stage.queue_free()
+	await process_frame
+
+
+## A wide establishing view from above the city's south side over the towers, the bay and the
+## skyline beyond: what the playable edge opens onto.
+func _skyline_shot(id: String) -> void:
+	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	var sim := RampageSim.new({}, Content.tuning(), layout, Seeds.make("army", 0))
+	var stage := Node3D.new()
+	stage.add_child(CityView.new(sim, Seeds.make("fx", 0)))
+	var cam := Camera3D.new()
+	cam.fov = 55.0
+	stage.add_child(cam)
+	cam.position = SKYLINE_CAMERA
+	root.add_child(stage)
+	cam.look_at(SKYLINE_LOOK)
+	cam.current = true
+	await _frames(SETTLE)
+	_shot("%s_skyline" % id)
+	print("perf skyline ", await _measure(), " voxels ", _count_voxels(stage))
 	stage.queue_free()
 	await process_frame
 

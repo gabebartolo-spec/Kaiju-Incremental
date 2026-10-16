@@ -5,48 +5,73 @@ extends Node3D
 ## topples over its edge (accelerating like a real fall) or drops straight down.
 
 const HIDDEN := Basis(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO)
+const SHELL := 0
+const INSIDE := 1  # the floor slabs: hidden behind the walls until something breaks
 
 var b: RampageSim.Building
 var voxels: BuildingVoxels
-var _mm: MultiMesh
-var _by_chunk: Dictionary = {}
+## Per part (SHELL, INSIDE): its MultiMesh, the cell behind each instance, and chunk -> ids.
+var _mms: Array[MultiMesh] = []
+var _cells: Array = []
+var _by_chunk: Array[Dictionary] = []
+var _inside: MultiMeshInstance3D
 
 
-func _init(p_building: RampageSim.Building, base: Color) -> void:
+## party: the sides shared with a neighbour (BuildingVoxels.SIDES).
+func _init(p_building: RampageSim.Building, base: Color, party: Array[Vector2i] = []) -> void:
 	b = p_building
-	voxels = BuildingVoxels.new(b, base)
-	voxels.vox.salt = b.style
-	var mmi := voxels.vox.build(
-		voxels.palette, BuildingVoxels.VOXEL, Look.value("window_glow"), voxels.origin()
-	)
-	_mm = mmi.multimesh
-	add_child(mmi)
+	voxels = BuildingVoxels.new(b, base, party)
+	# The floor slabs cannot be seen while the walls stand; they are drawn only once the
+	# building is first broken open, which keeps a whole city's floors off the GPU.
+	var shell := VoxelBuilder.new()
+	var inside := VoxelBuilder.new()
+	for cell: Vector3i in voxels.vox.cells:
+		var key := voxels.vox.key_at(cell)
+		if key == "slab":
+			inside.put(cell, key)
+		else:
+			shell.put(cell, key)
 	var res := BuildingVoxels.RES
-	for i: int in voxels.vox.built_cells.size():
-		var cell := voxels.vox.built_cells[i]
-		var chunk := Vector3i(
-			clampi(floori(float(cell.x) / res), 0, b.w - 1),
-			clampi(floori(float(cell.y) / res), 0, b.height - 1),
-			clampi(floori(float(cell.z) / res), 0, b.d - 1)
+	for part: VoxelBuilder in [shell, inside]:
+		part.salt = b.style
+		var mmi := part.build(
+			voxels.palette, BuildingVoxels.VOXEL, Look.value("window_glow"), voxels.origin()
 		)
-		if not _by_chunk.has(chunk):
-			_by_chunk[chunk] = PackedInt32Array()
-		var list: PackedInt32Array = _by_chunk[chunk]
-		list.append(i)
-		_by_chunk[chunk] = list
+		add_child(mmi)
+		_mms.append(mmi.multimesh)
+		_cells.append(part.built_cells)
+		var by_chunk := {}
+		for i: int in part.built_cells.size():
+			var cell := part.built_cells[i]
+			var chunk := Vector3i(
+				clampi(floori(float(cell.x) / res), 0, b.w - 1),
+				clampi(floori(float(cell.y) / res), 0, b.height - 1),
+				clampi(floori(float(cell.z) / res), 0, b.d - 1)
+			)
+			if not by_chunk.has(chunk):
+				by_chunk[chunk] = PackedInt32Array()
+			var list: PackedInt32Array = by_chunk[chunk]
+			list.append(i)
+			by_chunk[chunk] = list
+		_by_chunk.append(by_chunk)
+		_inside = mmi
+	_inside.visible = false
 
 
 ## Hides the voxels of these chunks; returns their world positions and colours (for debris).
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
+	_inside.visible = true
 	var out: Array[Dictionary] = []
-	for chunk: Vector3i in cells:
-		var list: PackedInt32Array = _by_chunk.get(chunk, PackedInt32Array())
-		for i: int in list:
-			var t := _mm.get_instance_transform(i)
-			if t.basis == HIDDEN:
-				continue
-			out.append({"pos": t.origin, "color": _mm.get_instance_color(i)})
-			_mm.set_instance_transform(i, Transform3D(HIDDEN, t.origin))
+	for part: int in _mms.size():
+		var mm := _mms[part]
+		for chunk: Vector3i in cells:
+			var list: PackedInt32Array = _by_chunk[part].get(chunk, PackedInt32Array())
+			for i: int in list:
+				var t := mm.get_instance_transform(i)
+				if t.basis == HIDDEN:
+					continue
+				out.append({"pos": t.origin, "color": mm.get_instance_color(i)})
+				mm.set_instance_transform(i, Transform3D(HIDDEN, t.origin))
 	return out
 
 
@@ -54,7 +79,11 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 ## along the chunk grid: voxels of standing neighbours within a voxel or two of the broken
 ## chunks vanish at random. Cosmetic only; the sim's chunks are unchanged.
 func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictionary]:
+	_inside.visible = true
 	var res := BuildingVoxels.RES
+	var mm := _mms[SHELL]
+	var shell: Dictionary = _by_chunk[SHELL]
+	var built: Array[Vector3i] = _cells[SHELL]
 	var gone := {}
 	for c: Vector3i in broken:
 		gone[c] = true
@@ -67,12 +96,12 @@ func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictiona
 			for dy: int in range(-1, 2):
 				for dz: int in range(-1, 2):
 					var n := c + Vector3i(dx, dy, dz)
-					if gone.has(n) or seen.has(n) or not _by_chunk.has(n):
+					if gone.has(n) or seen.has(n) or not shell.has(n):
 						continue
 					seen[n] = true
-					var list: PackedInt32Array = _by_chunk[n]
+					var list: PackedInt32Array = shell[n]
 					for i: int in list:
-						var cell := voxels.vox.built_cells[i]
+						var cell := built[i]
 						var key := voxels.vox.key_at(cell)
 						if key == "slab" or key == "roof":
 							continue  # floors stay: a bite shows dark floors, not the street
@@ -85,10 +114,10 @@ func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictiona
 						)
 						var chance := 0.4 if far <= 1 else (0.08 if far == 2 else 0.0)
 						if rng.randf() < chance:
-							var t := _mm.get_instance_transform(i)
+							var t := mm.get_instance_transform(i)
 							if t.basis != HIDDEN:
-								out.append({"pos": t.origin, "color": _mm.get_instance_color(i)})
-								_mm.set_instance_transform(i, Transform3D(HIDDEN, t.origin))
+								out.append({"pos": t.origin, "color": mm.get_instance_color(i)})
+								mm.set_instance_transform(i, Transform3D(HIDDEN, t.origin))
 	return out
 
 
@@ -100,7 +129,7 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	mm.mesh = _mm.mesh
+	mm.mesh = _mms[SHELL].mesh
 	mm.instance_count = parts.size()
 	for i: int in parts.size():
 		var at: Vector3 = parts[i]["pos"]
@@ -113,3 +142,21 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 	piece.set_meta("parts", parts)
 	piece.set_meta("pivot", pivot)
 	return piece
+
+
+## For each building, the sides (BuildingVoxels.SIDES) where it touches a neighbour.
+static func party_walls(buildings: Array[RampageSim.Building]) -> Array[Array]:
+	var out: Array[Array] = []
+	for a: RampageSim.Building in buildings:
+		var sides: Array[Vector2i] = []
+		for other: RampageSim.Building in buildings:
+			if other == a:
+				continue
+			var gap_x := absf(a.x - other.x) - (a.w + other.w) * 0.5
+			var gap_z := absf(a.z - other.z) - (a.d + other.d) * 0.5
+			if absf(gap_x) < 0.01 and gap_z < -0.01:
+				sides.append(Vector2i(1 if other.x > a.x else -1, 0))
+			elif absf(gap_z) < 0.01 and gap_x < -0.01:
+				sides.append(Vector2i(0, 1 if other.z > a.z else -1))
+		out.append(sides)
+	return out

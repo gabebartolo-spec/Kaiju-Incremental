@@ -34,8 +34,12 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = tru
 func _ready() -> void:
 	_build_environment()
 	_build_ground()
-	for b: RampageSim.Building in sim.buildings:
-		var view := BuildingView.new(b, _base_color(b))
+	var party := BuildingView.party_walls(sim.buildings)
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		var sides: Array[Vector2i] = []
+		sides.assign(party[i])
+		var view := BuildingView.new(b, _base_color(b), sides)
 		add_child(view)
 		_views.append(view)
 	fx = Fx.new()
@@ -65,7 +69,7 @@ func _build_environment() -> void:
 	sky_mat.sky_top_color = Look.color("sky_top")
 	sky_mat.sky_horizon_color = Look.color("sky_horizon")
 	sky_mat.ground_horizon_color = Look.color("sky_horizon")
-	sky_mat.ground_bottom_color = Look.color("sky_top")
+	sky_mat.ground_bottom_color = Look.color("sky_horizon")
 	sky.sky_material = sky_mat
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
@@ -104,21 +108,20 @@ func _build_environment() -> void:
 	add_child(sun)
 
 
+## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
 func _build_ground() -> void:
-	var size := sim.arena_half * 2.0 + 60.0
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3(size, 1.0, size)
+	box_shape.size = Vector3(800.0, 1.0, 800.0)
 	shape.shape = box_shape
 	shape.position.y = -0.5
 	ground.add_child(shape)
 	add_child(ground)
-	slab(Vector3(size, 0.2, size), Vector3(0, -0.1, 0), Look.color("outskirts"))
-	var city := (sim.arena_half - Num.f(sim.city["spacing"])) * 2.0
-	slab(Vector3(city, 0.2, city), Vector3(0, -0.05, 0), Look.color("asphalt"))
-	for b: RampageSim.Building in sim.buildings:
-		slab(Vector3(b.w + 1.2, 0.2, b.d + 1.2), Vector3(b.x, 0.0, b.z), Look.color("lot"))
+	var streets := CityGround.new(sim.city)
+	add_child(streets)
+	if _with_decor:
+		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 
 
 func slab(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
@@ -243,9 +246,16 @@ func fall_land(event: Dictionary) -> void:
 		fx.dust(landed[0], 1.5)
 
 
-## A rubble pile where a tower came down across the street.
+## A rubble pile where a tower came down across the street, built on a worker thread (a tall
+## tower's strip is thousands of voxels) and added when ready.
 func _rubble_strip(building: int, a: Vector3, b: Vector3, width: float) -> void:
-	add_child(Ruin.strip(_views[building].voxels, a, b, width))
+	var voxels := _views[building].voxels
+	var task := WorkerThreadPool.add_task(
+		func() -> void:
+			var mmi := Ruin.strip(voxels, a, b, width)
+			_attach_ruin.call_deferred(mmi)
+	)
+	_ruin_tasks.append(task)
 
 
 ## Builds the ruin on a worker thread (it is thousands of voxels) and adds it when ready.
