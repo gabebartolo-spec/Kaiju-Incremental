@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 03:30
-## State: awaiting lead (round 6b on PR #10 bb0be53, merged into #11 f58645b; evidence kaiju-motion/round6b/)
+# Kaiju-motion handoff, 2026-10-17 04:30
+## State: awaiting lead (reptile only now: shoulder lock 2ba26d1 + bent arms d88c121 on #10; #11 at 57eedbd)
 
 ## Task
 D-031: species-true kaiju locomotion. Reptile = Godzilla-to-T-rex lean (20-30 deg) with T-rex
@@ -22,6 +22,14 @@ not a limit. D-035 (docs/SPECIES.md): powers; hooks on KaijuModel for species-po
   plates/inboard shoulder on spine, no chest band on arm roots, decisive stop, roar waits for
   feet, baby dip floor). Open: baby roar still has a plant at 10.017 (in-flight stomp; roar
   starts on that frame); baby trip makes reverse cadence +21%; no automated sealed-chest check.
+- Split (lead, 2026-10-17): this session = REPTILE only (gait_biped, biped_*, kaiju_rig/gait/model
+  core). species-motion (local_87c25bd4) owns hexapod/radial gaits, mantis/octopus assets and
+  their rig_voxel parts, on its own PR into claude/kaiju-motion-species. Shared files: small edits.
+- Shoulder lock: spine1 = exact inverse of the pelvis yaw/roll/sway (keeps lean/drop/surge);
+  SWAY 0.03, HIP_YAW 0.06. capture_motion prints SHOULDERS drift/tilt/yaw + rear plumb line.
+  Adult yaw reads a constant -3.95 deg: sculpt asymmetry (swing 0.02).
+- Arms: aimed in the heading frame: hang, ~85 deg elbow, hands curled at chest; stride swing.
+  Short loops: one clip per fix to the lead (notes kaiju-motion/round6c_*, round6d_*).
 - CI flow fix: ability_fx looks up body parts per toggle (freed after a growth stage).
 - capture_motion --tint colours each bone (arm0 red, arm1 yellow, hand magenta) for rig QA.
 - Mantis all three stages textured (D-038) at 862d318.
