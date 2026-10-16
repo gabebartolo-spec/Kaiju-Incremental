@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 00:22
-## State: working (mantis adolescent skin v3 generating on 0161ad14; helpers fixing PRs #10 #11 #12)
+## State: working (next: cephalopod skins x3; awaiting critic on species round 2, hydra bone fix, PR #12 fixes)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art/motion QA of every helper,
@@ -36,7 +36,7 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - city-layout done; real-city TABLED (D-029, branch claude/real-city-92596b).
 
 ## Next (mine)
-1. Check mantis adolescent skin v3 (0161ad14); export only if uniformly dark; send to kaiju-motion.
+1. DONE: all 3 mantis skins exported (mantis_{baby,adolescent,adult}_tex.glb) and sent.
 2. Cephalopod skins (3 stages).
 3. Follow-up task after #12: city growth per evolution (D-039) + cost re-tune (~5x from Colossus, pacing.gd).
 4. Helicopter + military Tripo models (D-020/D-037); landmarks.
