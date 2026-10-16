@@ -4,7 +4,7 @@ extends "res://tests/lib/runner.gd"
 ## rampage achieves.
 ##   godot --headless --path . --script tests/run_sim_tests.gd
 
-const SaveScript := preload("res://autoload/save_system.gd")
+const SaveScript := preload("res://autoload/save_file.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 

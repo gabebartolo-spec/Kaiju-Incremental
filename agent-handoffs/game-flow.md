@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 02:50
+# Game-flow handoff, 2026-10-17 02:55
 ## State: running a check (flow suite, headless, local)
 
 ## Task
@@ -43,7 +43,9 @@ the working capture.yml). No PR yet.
   `git lfs install --local && git lfs pull` fixed it. Do this in every new worktree.
 - First flow run: one real failure (UI scale float compare) -> is_equal_approx.
 - Rerun with real fonts: flow 66 checks, 0 failures, 51 s (was a 900 s timeout). Floor 26 -> 66
-  in tests/expected_checks.txt (uncommitted until the full run passes).
+  in tests/expected_checks.txt.
+- Full run 1: smoke/sim red: tests/run_sim_tests.gd preloaded save_system.gd for migrate();
+  now preloads save_file.gd. Full run 2 pending.
 
 ## Findings for the lead (worker -> lead; lead decides what is recorded)
 - Proven 2026-10-17: a worktree without `git lfs pull` has 129-byte LFS pointers for fonts and
