@@ -3,7 +3,7 @@ render_mode blend_mix, depth_draw_never, cull_disabled, shadows_disabled;
 // Soft billboard smoke puff: a round, noisy, dark mass that is lit dimly by the scene and
 // thins out at its edges. Colour and alpha come from the particle (COLOR).
 
-uniform float softness = 0.55;
+uniform float softness = 0.2;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);

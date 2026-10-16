@@ -19,7 +19,7 @@ var _seed: float
 
 func _init(size: float, seed_value: float) -> void:
 	_seed = seed_value
-	_base_energy = 4.0 + size * 2.0
+	_base_energy = 2.5 + size * 1.2
 	_light = OmniLight3D.new()
 	_light.light_color = Color("ff9a4a")
 	_light.omni_range = 9.0 + size * 4.0
@@ -60,15 +60,15 @@ func _smoke(size: float) -> GPUParticles3D:
 		PackedColorArray(
 			[
 				Color(0.05, 0.05, 0.05, 0.0),
-				Color(0.07, 0.07, 0.075, 0.97),
-				Color(0.13, 0.13, 0.14, 0.8),
+				Color(0.1, 0.1, 0.11, 0.72),
+				Color(0.2, 0.2, 0.22, 0.5),
 				Color(0.22, 0.23, 0.25, 0.0),
 			]
 		),
 		PackedFloat32Array([0.0, 0.08, 0.6, 1.0])
 	)
 	var quad := QuadMesh.new()
-	quad.size = Vector2.ONE * (1.4 + size * 0.5)
+	quad.size = Vector2(1.0, 1.7) * (1.4 + size * 0.5)  # taller than wide: a rising column
 	var draw := ShaderMaterial.new()
 	draw.shader = SMOKE_SHADER
 	quad.material = draw

@@ -59,10 +59,18 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 				var cell := Vector3i(sx + t, roundi(t * tilt) + 1, sz + side)
 				vox.put(cell, "slab")
 	vox.salt = b.style + 91
-	var palette := voxels.palette.duplicate()
+	return vox.build(rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin())
+
+
+## The building's colours dulled to dusty, broken rubble, plus coals and scorch.
+static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
+	var palette := {}
+	for key: String in voxels.palette:
+		var c: Color = voxels.palette[key]
+		palette[key] = Color(c.darkened(0.35).lerp(Color("4a4a48"), 0.35), 1.0)
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
 	palette["char"] = Color("201c1a")
-	return vox.build(palette, BuildingVoxels.VOXEL, 2.0, voxels.origin())
+	return palette
 
 
 ## The pile a toppled tower leaves along the street: chunky voxels in its own colours, a floor or
@@ -89,7 +97,5 @@ static func strip(
 			for y: int in maxi(1, h):
 				var block := Vector3i(floori(t / 3.0), floori(y / 2.0), floori(s / 3.0))
 				vox.put(base + Vector3i(0, y, 0), keys[absi(hash(block)) % keys.size()])
-	var palette := voxels.palette.duplicate()
-	palette["char"] = Color("201c1a")
 	vox.salt = 57
-	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
+	return vox.build(rubble_palette(voxels), BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
