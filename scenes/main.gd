@@ -1,5 +1,6 @@
 extends Node
-## Game flow: title -> species select (new game) -> rampage -> evolution tree -> rampage ...
+## Game flow: title -> species select (new game) -> rampage -> end beat -> results ->
+## evolution tree (evolution reveal on an evolution) -> rampage ...
 ## Owns the save state; screens get what they need through setup() and report back by signal.
 ## Progress comes only from playing: nothing accrues while the game is closed.
 
@@ -15,6 +16,11 @@ func _ready() -> void:
 	_show_title()
 
 
+## The screen on show (the flow suite and captures read it).
+func screen() -> Node:
+	return _screen
+
+
 func _swap(next: Node) -> void:
 	if _screen != null:
 		_screen.queue_free()
@@ -23,44 +29,27 @@ func _swap(next: Node) -> void:
 
 
 func _show_title() -> void:
-	var screen := Control.new()
-	UiKit.full_rect(screen)
-	screen.add_child(UiKit.backdrop())
-	var col := VBoxContainer.new()
-	UiKit.full_rect(col)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 24)
-	screen.add_child(col)
-	var title := UiKit.label("KAIJU INCREMENTAL", 104, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(title)
-	var sub := UiKit.label("Grow. Evolve. Flatten the city.", UiKit.SIZE_HEAD, UiKit.MUTED)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(sub)
-	var buttons := VBoxContainer.new()
-	buttons.custom_minimum_size = Vector2(520, 0)
-	buttons.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	buttons.add_theme_constant_override("separation", 16)
-	col.add_child(buttons)
-	var focus: Button
-	if not _save.is_empty():
-		var species := GameData.species_def(str(_save.get("species", "")))
-		var cont := UiKit.button("CONTINUE  (%s)" % str(species["name"]), UiKit.SIZE_HEAD)
-		cont.pressed.connect(_continue)
-		buttons.add_child(cont)
-		focus = cont
-	var fresh := UiKit.button(
-		"NEW KAIJU", UiKit.SIZE_HEAD, UiKit.PANEL_EDGE if focus else UiKit.ACCENT
+	var title := TitleScreen.new()
+	title.setup(_summary())
+	title.continue_pressed.connect(_continue)
+	title.new_game_pressed.connect(_new_game)
+	_swap(title)
+
+
+## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 rubble"; "" with no save.
+func _summary() -> String:
+	if _save.is_empty():
+		return ""
+	var runs := Num.i(_save.get("runs", 0))
+	return (
+		"%s, %d rampage%s, %d rubble"
+		% [
+			str(_species()["name"]),
+			runs,
+			"" if runs == 1 else "s",
+			Num.i(_save.get("rubble", 0)),
+		]
 	)
-	fresh.pressed.connect(_new_game)
-	buttons.add_child(fresh)
-	if focus == null:
-		focus = fresh
-	var hint := UiKit.label("F11 fullscreen", UiKit.SIZE_SMALL, UiKit.MUTED)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(hint)
-	_swap(screen)
-	focus.grab_focus.call_deferred()
 
 
 func _new_game() -> void:
@@ -70,7 +59,7 @@ func _new_game() -> void:
 
 
 func _on_species_chosen(species_id: String) -> void:
-	_save = {"species": species_id, "rubble": 0, "levels": {}, "runs": 0, "best_destruction": 0.0}
+	_save = SaveFile.new_save(species_id)
 	SaveSystem.save_game(_save)
 	_continue()
 
@@ -102,25 +91,51 @@ func _start_rampage() -> void:
 	_swap(rampage)
 
 
+## Banks the rampage, then shows the results over the wrecked city, against the best before it.
 func _on_rampage_finished(result: Dictionary) -> void:
+	var previous: Dictionary = _save.get("best", {})
+	if Num.i(_save.get("runs", 0)) == 0:
+		previous = {}
 	_save["rubble"] = Num.i(_save.get("rubble", 0)) + Num.i(result["rubble"])
 	_save["runs"] = Num.i(_save.get("runs", 0)) + 1
-	_save["best_destruction"] = maxf(
-		Num.f(_save.get("best_destruction", 0.0)), Num.f(result["destruction"])
-	)
+	_save["best"] = SaveFile.merge_best(previous, result)
 	SaveSystem.save_game(_save)
-	_show_tree()
+	var results := ResultsScreen.new(result, previous)
+	results.continued.connect(_show_tree)
+	_screen.add_child(results)
 
 
 func _show_tree() -> void:
 	var screen := UpgradeScreen.new()
 	screen.setup(_tree, Num.i(_save.get("rubble", 0)), _species(), _base_stats())
-	screen.bought.connect(func(_id: String) -> void: _on_bought(screen))
+	screen.bought.connect(func(id: String) -> void: _on_bought(screen, id))
 	screen.start_pressed.connect(_start_rampage)
+	screen.menu_pressed.connect(_show_title)
 	_swap(screen)
 
 
-func _on_bought(screen: UpgradeScreen) -> void:
+func _on_bought(screen: UpgradeScreen, id: String) -> void:
 	_save["rubble"] = screen.rubble
 	_save["levels"] = _tree.levels.duplicate()
 	SaveSystem.save_game(_save)
+	var def: Dictionary = _tree.defs[id]
+	var effects: Dictionary = def.get("effects", {})
+	if effects.has("size"):
+		_reveal(screen, id)
+
+
+## The evolution reveal over the tree: the body before this purchase against the body after.
+func _reveal(screen: UpgradeScreen, id: String) -> void:
+	var before_levels := _tree.levels.duplicate()
+	before_levels[id] = _tree.level(id) - 1
+	var before_tree := UpgradeTree.new(GameData.upgrades, before_levels, str(_save["species"]))
+	var reveal := EvolutionReveal.new()
+	reveal.setup(
+		_species(),
+		UpgradeTree.run_stats(_base_stats(), _species(), before_tree),
+		UpgradeTree.run_stats(_base_stats(), _species(), _tree),
+		GameData.section("city")
+	)
+	var node := screen.node_button(id)
+	reveal.done.connect(func() -> void: node.grab_focus.call_deferred())
+	screen.add_child(reveal)

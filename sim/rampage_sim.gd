@@ -146,12 +146,9 @@ func size_tier() -> int:
 	return Num.i(stat("size"))
 
 
-## How big the kaiju is drawn and how far its attacks reach. It starts young, dwarfed by the
-## city; every upgrade level grows it a little ("growth" = levels owned), every evolution a lot.
+## How big the kaiju is drawn and how far its attacks reach (Growth.body_scale).
 func body_scale() -> float:
-	var tier := 1.0 + Num.f(city["size_scale_per_tier"]) * (stat("size") - 1.0)
-	var growth := 1.0 + Num.f(city["growth_per_level"]) * stat("growth")
-	return Num.f(city["young_scale"]) * tier * growth
+	return Growth.body_scale(stats, city)
 
 
 func stomp_radius() -> float:
@@ -182,6 +179,8 @@ func result() -> Dictionary:
 		"destruction": destruction(),
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
+		"toppled": collapse.toppled,
+		"biggest_fall": collapse.biggest_fall,
 		"reason": end_reason,
 	}
 
@@ -224,15 +223,16 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	army_units.step(dt)
 	air.step(dt)
 	if chunks_destroyed >= chunks_total:
-		_end("city_fallen")
+		end("city_fallen")
 	elif hp <= 0.0:
-		_end("defeated")
+		end("defeated")
 	elif time_left <= 0.0:
-		_end("time")
+		end("time")
 	return _events
 
 
-func _end(reason: String) -> void:
+## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.
+func end(reason: String) -> void:
 	over = true
 	end_reason = reason
 	hp = maxf(0.0, hp)

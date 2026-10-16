@@ -1,8 +1,11 @@
 extends "res://tests/lib/runner.gd"
-## Flow suite: every screen builds headless and the rampage presentation survives a played
-## rampage to its results panel without a script error.
+## Flow suite: every screen builds headless and is driven by real input (tests/lib/
+## flow_screens.gd), and the rampage presentation survives a played rampage through its end
+## beat without a script error.
 ##   godot --headless --path . --script tests/run_flow_tests.gd
 
+const FlowScreens := preload("res://tests/lib/flow_screens.gd")
+const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
@@ -23,6 +26,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await FlowScreens.new(self, check).run()
 	await _check_species_select()
 	await _check_upgrade_screen()
 	await _check_rampage()
@@ -53,7 +57,7 @@ func _check_species_select() -> void:
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))
 	var second: Button = buttons[1]
-	second.pressed.emit()
+	await GuiInput.click(self, second)
 	check(picked == ["insectoid"], "choosing the second card picks the insectoid: %s" % [picked])
 	select.queue_free()
 	await process_frame
@@ -67,7 +71,8 @@ func _check_upgrade_screen() -> void:
 	await process_frame
 	var buttons := screen.find_children("*", "Button", true, false)
 	check(
-		buttons.size() == tree.order.size() + 1, "the tree shows a button per upgrade plus Rampage"
+		buttons.size() == tree.order.size() + 2,
+		"the tree shows a button per upgrade plus Rampage and Menu"
 	)
 	var claws: Button = null
 	for node: Node in buttons:
@@ -84,7 +89,7 @@ func _check_upgrade_screen() -> void:
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
-		claws.pressed.emit()
+		await GuiInput.click(self, claws)
 		check(
 			tree.level("claws") == 1 and screen.rubble == 18,
 			"pressing Sharpened Claws buys it for 12 (rubble %d)" % screen.rubble
@@ -133,17 +138,22 @@ func _check_rampage() -> void:
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
 	)
 	await process_frame
-	var go: Button = null
-	for node: Node in rampage.find_children("*", "Button", true, false):
-		var b: Button = node
-		if b.text.begins_with("EVOLVE"):
-			go = b
-	check(go != null, "the results panel offers EVOLVE")
-	if go != null:
-		go.pressed.emit()
+	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	var reason := rampage.sim.end_reason
+	var want: Array = RampageHud.HEADLINES.get(reason, [""])
 	check(
-		results.size() == 1 and Num.i(results[0]["rubble"]) >= 0,
-		"EVOLVE reports the rampage result"
+		hud.beat_running() and hud.headline.text == str(want[0]),
+		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
+	)
+	for _i: int in RampageHud.BEAT_FRAMES + 2:
+		await process_frame
+	check(
+		results.size() == 1 and Num.i(results[0]["rubble"]) >= 0 and results[0].has("civilians"),
+		"after the end beat the rampage reports its result, civilians counted"
+	)
+	check(
+		results.size() == 1 and Num.i(results[0]["toppled"]) > 0,
+		"an autoplayed rampage topples buildings: %s" % [results]
 	)
 	rampage.queue_free()
 	await process_frame

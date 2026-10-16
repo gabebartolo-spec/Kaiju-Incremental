@@ -1,27 +1,49 @@
 class_name UpgradeScreen
 extends Control
-## The evolution tree between rampages. Spend rubble on nodes, see what each changes, then
-## start the next rampage. Nodes are laid out by their data `pos`; lines join prerequisites.
+## The evolution tree between rampages. Spend rubble on nodes, see what each changes in play
+## (the stat now -> after the next level), then start the next rampage. Nodes are laid out by
+## their data `pos`; lines join prerequisites. The species' own branch sits on a band of its
+## own, ending in its ultimate (D-040) as the capstone. Reads the tree; buying goes through it.
 
 signal start_pressed
 signal bought(id: String)
+signal menu_pressed
 
 const CELL := Vector2(172, 128)
-const NODE_SIZE := Vector2(160, 108)
 ## The species' own branch (docs/SPECIES.md) sits on this row, on a band of its own.
 const BRANCH_ROW := 5
-const BRANCH_TINT := Color(0.85, 0.35, 0.15, 0.16)
+const COLUMNS := 8
+const BRANCH_TINT_ALPHA := 0.18
+## Stat, how it reads in play, format ("inv" shows 1/value per second).
 const STAT_LINES: Array[Array] = [
-	["Health", "hp", "%d"],
-	["Stomp power", "stomp_damage", "%.0f"],
-	["Stomp reach", "stomp_radius", "%.1f"],
-	["Stomps / sec", "stomp_interval", "inv"],
-	["Speed", "speed", "%.1f"],
-	["Armour", "armor", "%.1f"],
-	["Rampage time", "run_seconds", "%ds"],
-	["Signature power", "ability_damage", "%.0f"],
-	["Signature recharge", "ability_cooldown", "%.1fs"],
-	["Size", "size", "%d"]
+	["hp", "Health", "%d"],
+	["stomp_damage", "Stomp power", "%.0f"],
+	["stomp_radius", "Stomp reach", "%.1f"],
+	["stomp_interval", "Stomps / sec", "inv"],
+	["speed", "Speed", "%.1f"],
+	["armor", "Armour", "%.1f"],
+	["run_seconds", "Rampage time", "%ds"],
+	["ability_damage", "Signature power", "%.0f"],
+	["ability_cooldown", "Signature recharge", "%.1fs"],
+	["size", "Size", "%d"],
+]
+## Stats only some nodes change: shown in a node's details, not the summary.
+const EXTRA_STATS: Array[Array] = [
+	["regen", "Healing / sec", "%.1f"],
+	["rubble_mult", "Rubble earned", "x%.2f"],
+	["ability_range", "Signature reach", "%.1f"],
+	["tail_damage", "Tail sweep power", "%.0f"],
+	["tail_reach", "Tail reach", "%.1f"],
+	["tail_floors", "Floors the tail cuts", "%d"],
+	["momentum", "Momentum", "%.1f"],
+	["beam_dps", "Atomic Beam damage / sec", "%.0f"],
+	["glide_seconds", "Glide time", "%.1fs"],
+	["climb", "Climbing", "%d"],
+	["brood_count", "Young per clutch", "%d"],
+	["limbs", "Free tentacles", "%d"],
+	["squeeze", "Squeeze", "%.1f"],
+	["throw_damage", "Throw damage", "%.0f"],
+	["ink_dps", "Ink damage / sec", "%.0f"],
 ]
 
 var tree: UpgradeTree
@@ -31,9 +53,12 @@ var base_stats: Dictionary
 var _buttons: Dictionary = {}
 var _rubble_label: Label
 var _info_title: Label
+var _info_role: Label
 var _info_body: Label
+var _info_status: Label
 var _stats_label: Label
 var _selected := ""
+var _ultimate_cooldown := 0.0
 
 
 func setup(p_tree: UpgradeTree, p_rubble: int, p_species: Dictionary, p_base: Dictionary) -> void:
@@ -44,6 +69,7 @@ func setup(p_tree: UpgradeTree, p_rubble: int, p_species: Dictionary, p_base: Di
 
 
 func _ready() -> void:
+	_ultimate_cooldown = Num.f(Content.section("powers").get("ultimate_cooldown", 0.0))
 	UiKit.full_rect(self)
 	add_child(UiKit.backdrop())
 	var root := MarginContainer.new()
@@ -56,62 +82,86 @@ func _ready() -> void:
 	root.add_child(col)
 
 	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 24)
 	col.add_child(header)
 	var title := UiKit.label("EVOLUTION TREE", 48, UiKit.ACCENT)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	_rubble_label = UiKit.label("", UiKit.SIZE_HEAD, UiKit.WARN)
 	header.add_child(_rubble_label)
+	var menu := UiKit.button("MENU", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	menu.pressed.connect(func() -> void: menu_pressed.emit())
+	header.add_child(menu)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 24)
 	col.add_child(body)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.follow_focus = true
+	body.add_child(scroll)
+	scroll.add_child(_build_tree_area())
+	body.add_child(_build_side())
+	_selected = tree.order[0]
+	_refresh()
 
+
+func _build_tree_area() -> Control:
 	var area := _TreeLines.new()
 	area.screen = self
-	area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	area.custom_minimum_size = Vector2(CELL.x * 8, CELL.y * (BRANCH_ROW + 1))
-	body.add_child(area)
+	area.custom_minimum_size = Vector2(CELL.x * COLUMNS + 48, CELL.y * (BRANCH_ROW + 1) + 72)
 	var band := ColorRect.new()
-	band.color = BRANCH_TINT
-	band.position = Vector2(-8, BRANCH_ROW * CELL.y - 10)
-	band.size = Vector2(CELL.x * 8, NODE_SIZE.y + 20)
+	var colors: Dictionary = species["colors"]
+	band.color = Color(Color(str(colors["eye"])), BRANCH_TINT_ALPHA)
+	band.position = Vector2(-8, BRANCH_ROW * CELL.y - 14)
+	band.size = Vector2(CELL.x * COLUMNS + 48, UpgradeNode.CAPSTONE_SIZE.y + 28)
 	area.add_child(band)
 	var branch := UiKit.label(
-		"%s\nBRANCH" % str(species["name"]).to_upper(), UiKit.SIZE_SMALL, UiKit.ACCENT
+		(
+			"%s BRANCH  -  only the %s can grow these"
+			% [str(species["name"]).to_upper(), str(species["name"]).to_lower()]
+		),
+		UiKit.SIZE_SMALL,
+		Color(str(colors["eye"])).lightened(0.3)
 	)
-	branch.position = Vector2(0, BRANCH_ROW * CELL.y + 18)
+	branch.position = Vector2(0, BRANCH_ROW * CELL.y + UpgradeNode.CAPSTONE_SIZE.y + 18)
 	area.add_child(branch)
 	for id: String in tree.order:
 		var def: Dictionary = tree.defs[id]
 		var pos: Array = def["pos"]
-		var b := Button.new()
+		var b := UpgradeNode.new(id, role_of(id))
 		b.position = Vector2(Num.f(pos[0]) * CELL.x, Num.f(pos[1]) * CELL.y)
-		b.size = NODE_SIZE
-		b.add_theme_font_size_override("font_size", UiKit.SIZE_SMALL)
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if b.role == "ultimate":
+			b.position -= (UpgradeNode.CAPSTONE_SIZE - UpgradeNode.SIZE) * 0.5
 		b.pressed.connect(_on_node_pressed.bind(id))
 		b.focus_entered.connect(_select.bind(id))
 		b.mouse_entered.connect(_select.bind(id))
 		area.add_child(b)
 		_buttons[id] = b
+	return area
 
+
+func _build_side() -> Control:
 	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(380, 0)
+	side.custom_minimum_size = Vector2(420, 0)
 	side.add_theme_constant_override("separation", 14)
-	body.add_child(side)
 	var info := UiKit.panel()
-	info.custom_minimum_size = Vector2(0, 230)
+	info.custom_minimum_size = Vector2(0, 330)
 	side.add_child(info)
 	var info_col := VBoxContainer.new()
 	info.add_child(info_col)
 	_info_title = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
 	_info_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_title)
+	_info_role = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
+	info_col.add_child(_info_role)
 	_info_body = UiKit.label("", UiKit.SIZE_BODY, UiKit.MUTED)
 	_info_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_body)
+	_info_status = UiKit.label("", UiKit.SIZE_BODY, UiKit.TEXT)
+	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_col.add_child(_info_status)
 	var stats_panel := UiKit.panel()
 	stats_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side.add_child(stats_panel)
@@ -122,8 +172,24 @@ func _ready() -> void:
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
 	go.grab_focus.call_deferred()
-	_selected = tree.order[0]
-	_refresh()
+	return side
+
+
+## "ultimate": a species node nothing else needs (its branch's capstone); "evolve": grows the
+## kaiju a size; "branch": the rest of the species branch; "plain": the shared tree.
+func role_of(id: String) -> String:
+	var def: Dictionary = tree.defs[id]
+	var effects: Dictionary = def.get("effects", {})
+	if effects.has("size"):
+		return "evolve"
+	if str(def.get("species", "")) == "":
+		return "plain"
+	for other: String in tree.order:
+		var other_def: Dictionary = tree.defs[other]
+		var requires: Array = other_def.get("requires", [])
+		if requires.has(id):
+			return "branch"
+	return "ultimate"
 
 
 func _on_node_pressed(id: String) -> void:
@@ -140,68 +206,85 @@ func _select(id: String) -> void:
 	_selected = id
 	var def: Dictionary = tree.defs[id]
 	_info_title.text = str(def["name"])
+	var role := role_of(id)
+	_info_role.text = {
+		"plain": "",
+		"branch": "%s BRANCH" % str(species["name"]).to_upper(),
+		"evolve": "EVOLUTION",
+		"ultimate": "ULTIMATE  -  %s BRANCH CAPSTONE" % str(species["name"]).to_upper(),
+	}[role]
 	var lines: Array[String] = [str(def["desc"])]
+	var stats := UpgradeTree.run_stats(base_stats, species, tree)
 	var effects: Dictionary = def.get("effects", {})
+	var steps := 0 if tree.is_maxed(id) else 1
 	for stat: String in effects:
-		var per := Num.f(effects[stat])
+		var now := Num.f(stats.get(stat, 0.0))
+		var after := now + Num.f(effects[stat]) * steps
 		lines.append(
 			(
-				"%s%s %s per level"
-				% ["+" if per >= 0.0 else "", str(snappedf(per, 0.01)), _stat_name(stat)]
+				"%s  %s"
+				% [
+					_stat_name(stat),
+					_fmt(stat, now) + ("  ->  " + _fmt(stat, after) if steps else "")
+				]
 			)
 		)
-	lines.append("Level %d / %d" % [tree.level(id), tree.max_level(id)])
+	if role == "evolve" and steps > 0:
+		var stage := KaijuModel.stage_for(Num.i(stats.get("size", 1)) + 1)
+		lines.append("Grows into the %s: towers one tier taller now fall to you" % stage)
+	if role == "ultimate":
+		lines.append("Press E / pad Y in a rampage; recharges in %ds" % roundi(_ultimate_cooldown))
+	_info_body.text = "\n".join(lines)
+	_info_status.text = _status_line(id)
+	var b: UpgradeNode = _buttons[id]
+	var tint: Color = {"buy": UiKit.GOOD, "poor": UiKit.BAD, "maxed": UiKit.WARN}.get(
+		b.state, UiKit.MUTED
+	)
+	_info_status.add_theme_color_override("font_color", tint)
+
+
+func _status_line(id: String) -> String:
+	var head := "Level %d / %d   " % [tree.level(id), tree.max_level(id)]
 	if tree.is_maxed(id):
-		lines.append("MAXED")
-	elif not tree.is_unlocked(id):
+		return head + "MAXED"
+	if not tree.is_unlocked(id):
+		var def: Dictionary = tree.defs[id]
 		var names: Array[String] = []
 		var requires: Array = def.get("requires", [])
 		for req: String in requires:
-			var req_def: Dictionary = tree.defs[req]
-			names.append(str(req_def["name"]))
-		lines.append("Needs: " + ", ".join(names))
-	else:
-		lines.append("Cost: %d rubble" % tree.cost(id))
-	_info_body.text = "\n".join(lines)
+			if tree.level(req) < 1:
+				var req_def: Dictionary = tree.defs[req]
+				names.append(str(req_def["name"]))
+		return head + "Needs: " + ", ".join(names)
+	if tree.can_buy(id, rubble):
+		return head + "Cost %d rubble  -  press to buy" % tree.cost(id)
+	return head + "Cost %d rubble  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
 
 
 func _stat_name(stat: String) -> String:
-	for entry: Array in STAT_LINES:
-		if entry[1] == stat:
-			return str(entry[0]).to_lower()
-	return stat.replace("_", " ")
+	for entry: Array in STAT_LINES + EXTRA_STATS:
+		if entry[0] == stat:
+			return str(entry[1])
+	return stat.replace("_", " ").capitalize()
+
+
+func _fmt(stat: String, value: float) -> String:
+	var fmt := "%.1f"
+	for entry: Array in STAT_LINES + EXTRA_STATS:
+		if entry[0] == stat:
+			fmt = str(entry[2])
+	if fmt == "inv":
+		return "%.1f" % (1.0 / maxf(0.1, value))
+	if fmt.contains("%d"):
+		return fmt % roundi(value)
+	return fmt % value
 
 
 func _refresh() -> void:
 	_rubble_label.text = "RUBBLE  %d" % rubble
 	for id: String in tree.order:
-		var b: Button = _buttons[id]
-		var def: Dictionary = tree.defs[id]
-		var state := _state(id)
-		var cost_text := (
-			"MAX"
-			if tree.is_maxed(id)
-			else ("%d" % tree.cost(id) if tree.is_unlocked(id) else "locked")
-		)
-		b.text = (
-			"%s\n%d/%d   %s" % [str(def["name"]), tree.level(id), tree.max_level(id), cost_text]
-		)
-		var fill: Color = {
-			"maxed": Color("8a6d1f"),
-			"buy": Color("2f6b2a"),
-			"poor": UiKit.PANEL,
-			"locked": Color("15191e")
-		}[state]
-		var edge: Color = {
-			"maxed": UiKit.WARN, "buy": UiKit.GOOD, "poor": UiKit.PANEL_EDGE, "locked": UiKit.LOCKED
-		}[state]
-		b.add_theme_stylebox_override("normal", UiKit.box(fill, edge, 3, 8))
-		b.add_theme_stylebox_override("hover", UiKit.box(fill.lightened(0.15), Color.WHITE, 3, 8))
-		b.add_theme_stylebox_override("focus", UiKit.box(fill.lightened(0.15), Color.WHITE, 5, 8))
-		b.add_theme_stylebox_override("pressed", UiKit.box(fill.darkened(0.2), Color.WHITE, 3, 8))
-		b.add_theme_color_override(
-			"font_color", UiKit.LOCKED.lightened(0.3) if state == "locked" else UiKit.TEXT
-		)
+		var b: UpgradeNode = _buttons[id]
+		b.show_state(tree, rubble)
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
 	var lines: Array[String] = [
 		(
@@ -213,30 +296,21 @@ func _refresh() -> void:
 		)
 	]
 	for entry: Array in STAT_LINES:
-		var value := Num.f(stats.get(str(entry[1]), 0.0))
-		var fmt := str(entry[2])
-		var shown := (
-			"%.1f" % (1.0 / maxf(0.1, value))
-			if fmt == "inv"
-			else fmt % (Num.i(value) if fmt.contains("%d") else value)
+		lines.append(
+			"%s:  %s" % [str(entry[1]), _fmt(str(entry[0]), Num.f(stats.get(str(entry[0]), 0.0)))]
 		)
-		lines.append("%s:  %s" % [str(entry[0]), shown])
 	_stats_label.text = "\n".join(lines)
 	if _selected != "":
 		_select(_selected)
 
 
-func _state(id: String) -> String:
-	if tree.is_maxed(id):
-		return "maxed"
-	if not tree.is_unlocked(id):
-		return "locked"
-	return "buy" if tree.can_buy(id, rubble) else "poor"
+func node_button(id: String) -> UpgradeNode:
+	return _buttons[id]
 
 
 func node_centre(id: String) -> Vector2:
 	var b: Button = _buttons[id]
-	return b.position + NODE_SIZE * 0.5
+	return b.position + b.size * 0.5
 
 
 ## Draws the prerequisite lines under the node buttons.
