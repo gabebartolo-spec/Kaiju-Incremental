@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
+Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
+over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".
+Changes: the radial rig takes its tentacle count from the mesh; baby/adolescent keep the many-limb plan.
+Also: a jaw bone for the reptile ("him opening his maw is a key part of his design").
+
 ## 2026-10-16 · D-035 · Director · Three species, three ways to play (docs/SPECIES.md)
 Why: the director's species brief: reptilian = strongest (tail shears buildings, unstoppable momentum,
 ultimate atomic beam); insectoid = fastest (scuttle, jump/hover, climbs towers, ultimate egg brood that
