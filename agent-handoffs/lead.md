@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 00:55
+# Lead handoff, 2026-10-17 01:30
 ## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
 
 ## Task
@@ -27,6 +27,11 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - Shoulder plates swing left/right, "like hes dance walking": plates on arm bones + torso yaw; upper body one stable mass.
 - Reptile round 5 = REJECT (arm fling on turn 6.9-7.5 s; baby chest holes, roar plant, cadence; summary over-claimed). Round 6 = arms + plates first. Mantis textured bone sheet PASS.
 - Look test (kaiju-look-test, local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc): voxel vs smooth skinned vs voxel-snap shader; director picks from a clip.
+
+## Speed-up (director "can you work faster", 01:26)
+- Split: kaiju-motion = reptile only; species-motion (local_87c25bd4-a526-4731-b18e-7c728966a2df) = mantis + octopus (from PR #11). Short loops; lead checks clips quickly, full critic only before the director.
+- Look test round 2: C knee shear fix, B on Tripo auto-rig (rep_adult_rigged.glb, Mixamo, no tail bones).
+- Director: reptile arms "outstretched like a zombie": bent elbows, hands near chest (sent to kaiju-motion).
 
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
