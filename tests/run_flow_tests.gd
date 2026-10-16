@@ -70,10 +70,27 @@ func _check_rampage() -> void:
 	var results: Array[Dictionary] = []
 	rampage.finished.connect(func(r: Dictionary) -> void: results.append(r))
 	root.add_child(rampage)
+	await process_frame
+	var street := _street_life(rampage)
+	check(
+		street != null and street.civilians() > 100 and street.traffic.cars.size() > 20,
+		"the city fills with civilians and moving cars",
+	)
 	var frames := 0
 	while not rampage.sim.over and frames < RAMPAGE_FRAMES:
 		await physics_frame
 		frames += 1
+	if street != null:
+		check(street.fled > 0, "civilians run from the kaiju (%d fled)" % street.fled)
+		check(street.traffic.fled > 0, "cars flee the kaiju (%d)" % street.traffic.fled)
+		check(
+			street.police.blockades_made > 0 and street.police.shots > 0,
+			(
+				"police blockade a street and open fire (%d, %d shots)"
+				% [street.police.blockades_made, street.police.shots]
+			),
+		)
+		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
 	check(
 		rampage.sim.chunks_destroyed > 0,
@@ -94,3 +111,14 @@ func _check_rampage() -> void:
 	)
 	rampage.queue_free()
 	await process_frame
+
+
+func _street_life(node: Node) -> StreetLife:
+	if node is StreetLife:
+		var found: StreetLife = node
+		return found
+	for child: Node in node.get_children():
+		var hit := _street_life(child)
+		if hit != null:
+			return hit
+	return null

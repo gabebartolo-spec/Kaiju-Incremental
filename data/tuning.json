@@ -47,5 +47,24 @@
 		"impact_damage": 60.0,
 		"fall_gravity": 30.0,
 		"topple_bonus": 1.5
+	},
+	"street": {
+		"person_voxel": 0.065,
+		"civilians_per_lot": 3,
+		"walk_speed": 0.8,
+		"run_speed": 2.4,
+		"panic_radius": 25.0,
+		"calm_radius": 32.0,
+		"cars": 36,
+		"drive_speed": 3.5,
+		"flee_speed": 7.0,
+		"car_gap": 1.9,
+		"blockade_interval": 9.0,
+		"blockade_distance": 20.0,
+		"max_blockades": 2,
+		"cops_per_blockade": 4,
+		"cop_hold_radius": 7.0,
+		"cop_fire_interval": 0.7,
+		"max_police_cars": 8
 	}
 }

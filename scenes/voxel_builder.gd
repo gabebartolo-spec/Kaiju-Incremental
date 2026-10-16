@@ -142,3 +142,34 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	return mmi
+
+
+## One merged mesh (vertex colours, hidden faces culled) for a small model that moves as a
+## whole: people and moving cars. palette as build(); `origin` offsets every cell.
+func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var lift := Vector3(0, voxel * 0.5, 0)
+	for cell: Vector3i in cells:
+		var key: String = cells[cell]
+		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
+		st.set_color(Look.jitter(base, cell, salt))
+		var centre := origin + Vector3(cell) * voxel + lift
+		for d: Vector3i in NEIGHBOURS:
+			if not cells.has(cell + d):
+				_face(st, centre, Vector3(d), voxel * 0.5)
+	var mesh := st.commit()
+	mesh.surface_set_material(0, Look.voxel_material(glow))
+	return mesh
+
+
+## One cube face, wound clockwise as seen from outside (Godot's front face).
+static func _face(st: SurfaceTool, centre: Vector3, n: Vector3, half: float) -> void:
+	var a := Vector3.UP if absf(n.y) < 0.5 else Vector3.RIGHT
+	var u := a.cross(n) * half
+	var v := n.cross(u.normalized()) * half
+	var c := centre + n * half
+	var quad: Array[Vector3] = [c - u - v, c + u - v, c + u + v, c - u + v]
+	st.set_normal(n)
+	for i: int in [0, 2, 1, 0, 3, 2]:
+		st.add_vertex(quad[i])
