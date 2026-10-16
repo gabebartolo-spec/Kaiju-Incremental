@@ -38,9 +38,12 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
    actual footfalls of the kaiju"). Lead's plan: footstep sound + small dust + light shake on
    the rig's foot-plant moment; the sim stomp (damage + shockwave) keeps its own timing, and its
    heavy sound becomes the NEXT footfall's sound made bigger (no separate thud).
-   - Proposed to kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), no reply yet:
-     KaijuRig `signal foot_planted(side: String, strength: float)` (+ position: a 3rd arg or
-     foot_position(side)), re-emitted by KaijuModel; Rampage connects in one place.
+   - AGREED with kaiju-motion (local_fd14d508...): `KaijuModel.foot_planted(side: String,
+     strength: float, at: Vector3)`, emitted once on the IK touch-down frame; `at` = world
+     contact point. Ids: biped "left"/"right"; mantis "fl"/"fr"/"bl"/"br"; tentacles "t0".."t7".
+     strength 0..1 = walk speed x stage (adult ~0.6-0.8, baby ~0.3; 1 = stomp slam). kaiju-motion
+     adds the signal to kaiju_rig.gd + kaiju_model.gd in PR #10; DO NOT edit those two files.
+     I only connect to it in Rampage (and Sfx/AbilityFx for the dust).
    - Current rig (before the IK walk): KaijuRig.animate drives leg_l0/leg_r0 by sin(_phase)
      (sign +/- per side); leg_*1 lifts by max(0, -cos * sign), so a foot plants where its lift
      returns to 0 (cos(_phase) crosses 0 per side, i.e. _phase = PI/2 + k*PI alternating
