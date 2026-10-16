@@ -26,3 +26,5 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-16 | reptilian adult texture | texture prompt (dark charcoal/slate-green scutes, ivory spines, Remove Lighting on) on 01e78e11 | Texture | 01e78e11 (texture) | 30 | yes | done; director: "should be greener, less grey" |
 | 2026-10-16 | reptilian adult texture v2 | greener prompt (director: "should be greener, less grey") | Texture | 01e78e11 (texture) | 30 | yes | done: bright green; director "i liked the green" |
 | 2026-10-16 | reptilian adult texture v3 | dark olive crocodile prompt (middle ground) | Texture | 01e78e11 (texture) | 30 | yes | director PICK (C) |
+| 2026-10-16 | reptilian baby texture | olive crocodile prompt (D-034) on 5a84ed39 | Texture | 5a84ed39 (texture) | 30 | yes | generating |
+| 2026-10-16 | reptilian adolescent texture | olive crocodile prompt (D-034) on f9cf6ba7 | Texture | f9cf6ba7 (texture) | 30 | yes | generating |
