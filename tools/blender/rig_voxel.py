@@ -237,6 +237,50 @@ def split_jaw(points, owner, bones, cell, rgb):
     return out
 
 
+def close_jaw(keys, values, owner, bones, scale, origin):
+    """Bakes the shut jaw into the voxels: the jaw's cells turn up about its hinge by its "close"
+    angle and land in new cells, and "close" becomes 0. At rest the mouth is then shut (its red
+    inside folds away, a hairline at the lips) and nothing turns while it walks: a jaw turned
+    shut every frame opened a see-through gap under the chin. Only a roar opens it."""
+    names = [b["name"] for b in bones]
+    if "jaw" not in names:
+        return keys, values, owner
+    ji = names.index("jaw")
+    jaw = bones[ji]
+    angle = float(jaw.get("close", 0.0))
+    if angle <= 0.0:
+        return keys, values, owner
+    hinge, tip = np.array(jaw["head"]), np.array(jaw["tail"])
+    fwd = (tip - hinge) / np.linalg.norm(tip - hinge)
+    up = np.array([0.0, 0.0, 1.0]) - fwd * fwd[2]
+    up /= np.linalg.norm(up)
+    def turn(p, by):
+        rel = p - hinge
+        s, v = rel @ fwd, rel @ up
+        rest = rel - np.outer(s, fwd) - np.outer(v, up)
+        c, sn = np.cos(by), np.sin(by)
+        return hinge + rest + np.outer(s * c - v * sn, fwd) + np.outer(s * sn + v * c, up)
+    # Inverse mapping (no holes): every cell around the turned jaw looks back at where it came from.
+    on_jaw = owner == ji
+    src = {tuple(k): i for i, k in zip(np.where(on_jaw)[0], keys[on_jaw])}
+    taken = {tuple(k) for k in keys[~on_jaw]}
+    ends = np.floor((turn((keys[on_jaw] + 0.5) / scale + origin, angle) - origin) * scale)
+    lo, hi = ends.min(0).astype(int) - 2, ends.max(0).astype(int) + 3
+    grid = np.stack(np.meshgrid(*[np.arange(l, h) for l, h in zip(lo, hi)], indexing="ij"), -1).reshape(-1, 3)
+    back = np.floor((turn((grid + 0.5) / scale + origin, -angle) - origin) * scale).astype(int)
+    keep = np.where(~on_jaw)[0]
+    new_keys, new_values, new_owner = list(keys[keep]), [values[i] for i in keep], list(owner[keep])
+    landed = 0
+    for k, b in zip(map(tuple, grid), map(tuple, back)):
+        if b in src and k not in taken:  # the skull keeps its own cells
+            new_keys.append(np.array(k)); new_values.append(values[src[b]]); new_owner.append(ji)
+            landed += 1
+    jaw["tail"] = turn(tip[None, :], angle)[0]
+    jaw["close"] = 0.0
+    print(f"jaw baked shut: turned {np.degrees(angle):.1f} deg, {landed} cells")
+    return np.array(new_keys), new_values, np.array(new_owner)
+
+
 def adopt_orphans(keys, owner):
     """A voxel with no neighbour on its own bone would float free when that bone moves: it joins
     the bone most of its neighbours are on."""
@@ -371,6 +415,8 @@ def main():
     owner = reclaim_plates(centres_bl, owner, bones)
     rgb =np.array([[r / cnt, gr / cnt, b / cnt] for r, gr, b, cnt in cells.values()])
     owner = split_jaw(centres_bl, owner, bones, 1.0 / scale, rgb)
+    values = list(cells.values())
+    keys, values, owner = close_jaw(keys, values, owner, bones, scale, origin)
     owner = adopt_orphans(keys, owner)
     # Write voxels (game axes) with their bone index in the flags byte.
     gk = to_game(keys.astype(float))
@@ -378,8 +424,8 @@ def main():
     with open(out.with_suffix(".kvox"), "wb") as f:
         f.write(b"KVOX")
         f.write(struct.pack("<IIH", 2, 1, height))
-        f.write(struct.pack("<I", len(cells)))
-        for g, (r, gr, b, cnt), bone in zip(gk.astype(int), cells.values(), owner):
+        f.write(struct.pack("<I", len(values)))
+        for g, (r, gr, b, cnt), bone in zip(gk.astype(int), values, owner):
             # Species colours are already display (sRGB) values: no gamma here.
             rgb = [int(max(0, min(255, round(x / cnt * 255)))) for x in (r, gr, b)]
             f.write(struct.pack("<hhhBBBB", g[0], g[1], g[2], *rgb, int(bone)))
@@ -394,7 +440,7 @@ def main():
         rig["bones"].append(entry)
     out.with_suffix(".rig.json").write_text(json.dumps(rig, indent=1), encoding="utf-8")
     counts = np.bincount(owner, minlength=len(bones))
-    print(f"rigged {src}: {len(cells)} voxels, {len(bones)} bones; voxels per bone min {counts.min()}")
+    print(f"rigged {src}: {len(values)} voxels, {len(bones)} bones; voxels per bone min {counts.min()}")
 
 
 main()
