@@ -53,7 +53,7 @@ street-life (civilians/traffic), city-layout (layout + edges, worktree branch ci
 15. PR #6 ability VFX MERGED (round 2 passed). Follow-ups for the SFX PR: ready flash tints the whole body red (make it a rim/eye glow), breath hidden behind the body for ~0.25 s when facing away.
 
 16. PR #9 MERGED (b9c4d5d, at the reviewed head): RES 8 buildings, round-2 streets/edges, varied east outskirts. 4K GPU ~14 ms (over 120 Hz budget; under 60): perf pass needed before TV play.
-17. PR #8 SFX on HOLD: director says stomps sound like cellophane and out of sync with feet; ability-vfx reworking low-end stomps, synced to KaijuRig.foot_planted from kaiju-motion.
+17. VFX/SFX PAUSED by the director until locomotion is done. PR #8 on hold. Resume tasks: low-end stomps ("cellophane"), sync to KaijuRig.foot_planted.
 
 ## Running jobs
 Sessions: city-layout (local_134db419-684a-4484-bc85-0333f568ac36), real-city-cbd (local_64cc120d-5664-4914-b3e7-aad7d1a039a6),
