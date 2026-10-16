@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-17 00:22
-## State: working (next: cephalopod skins x3; awaiting critic on species round 2, hydra bone fix, PR #12 fixes)
+# Lead handoff, 2026-10-17 00:30
+## State: working (cephalopod adult texture generating on 8bf2f668: check, show director, then baby + adolescent; critic on species round 2 running)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art/motion QA of every helper,
@@ -52,5 +52,5 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - Subagents without a shell can't read private PRs: stage the diff/checkout for them.
 
 ## Running jobs
-None in Tripo (mantis v2 textures finished, unchecked). Sessions above. Scratch worktree pr12/tree (detached,
+Tripo: cephalopod adult texture (8bf2f668) generating. Sessions above. Scratch worktree pr12/tree (detached,
 removed). No override.cfg left.
