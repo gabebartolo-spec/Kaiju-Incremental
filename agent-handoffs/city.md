@@ -1,5 +1,5 @@
-# City handoff, 2026-10-16 21:50
-## State: working (D-028 building fidelity: benches running; round 2 layout sent to lead)
+# City handoff, 2026-10-16 21:40
+## State: awaiting lead (PR #9: D-028 + round 2 + east fix; clean bench pair queued)
 
 ## Task
 Director 2026-10-16: "our city exists in a void ... far too gridlike, it must look like an
@@ -49,21 +49,20 @@ folder city-captures/.
 - Flow suite took 535 s in a fresh worktree: LFS fonts were pointers (FreeType error spam
   per frame). `git lfs pull` then reimport: 14 s.
 
-## D-028 in progress (uncommitted until benches are in)
-- BuildingVoxels RES 8, re-authored: recessed windows (one cell back), proud sills, lintels,
-  keystones, pilasters, cornices, string courses, balconies with railings, shopfront sign band
-  and awning, stair huts, AC units with ducts, vent stacks, water tank, mast rings, 4-wide neon.
-- BuildingMesher bakes each building to one face-culled ArrayMesh (hollow counts as solid) plus
-  a hidden slab mesh; UV2 = (chunk index, clump hash). building_baked.gdshader collapses dead
-  chunks via a per-building R8 `alive` texture; bitten = share of 2x2x2 clumps hidden; back
-  faces draw dark (seen through holes). BuildingView keeps the old API (hide_chunks, chip,
-  lift_piece = same meshes + piece texture). Views build on WorkerThreadPool (2.35 s, 16 thr).
-- Party walls blank only up to the neighbour's height (party_walls returns side -> floors).
-- City shell 2.3M tris at RES 8 (RES 4 instanced was ~5.6M). Capture GPU 4.8-5.0 ms (others
-  running). Ruin rows rescaled for RES 8.
-- Next: bench 1080p + 4K vs round 2 (temp worktree $scratch/r4 at a56acf8), side-by-side board
-  (round-2 RES 4 vs RES 8, reptile adult in frame, 2x crops), commit, push, send to lead.
-  RES 12 only if perf allows.
+## D-028 (PR #9, pushed 5004a70)
+- BuildingVoxels RES 8 re-authored (recesses, sills, lintels, keystones, pilasters, cornices,
+  balconies with rails, shop sign band + awning, stair huts, AC + ducts, vents, tank, mast).
+- BuildingMesher: one face-culled ArrayMesh per building (hollow = solid) + hidden slab mesh;
+  UV2 = (chunk, 2x2x2 clump hash). building_baked.gdshader: per-building R8 `alive` texture
+  (0 gone, 1 standing, between = bitten); back faces dark. BuildingView API unchanged.
+  build_all() on WorkerThreadPool: 2.35 s, 16 threads. party_walls -> side: floors covered.
+- Outskirts (lead review of east view): outer gaps from own seed with wide ranges, per-block
+  height scale, 9 outer cores, two winding inland freeways (CitySkyline._inland_x), slivers
+  stay road; Aircraft split into scenes/aircraft.gd.
+- Bench (contended, interleaved): 1080p 6.5 vs 6.6 ms; 4K 14.2 vs 14.2 ms (4K over budget
+  before this PR). Clean pair: background job waits for zero Godot processes, then runs
+  $scratch/r4 (a56acf8, RES 4) vs this worktree at 1080p and 4K; post it as a PR comment.
+- RES 12 / LOD: recommended not needed; lead to decide.
 
 ## Open decisions
 - D-029 real OSM districts: if a baked district returns the same CityGen.map() shape,
