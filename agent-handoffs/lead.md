@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 05:48
+# Lead handoff, 2026-10-18 05:53
 ## State: working (lead since 03:56); #31 board MERGED (3df0f6b); Perf merges #32 itself at 212b8ac then stops (director
 ## "finish up" 05:3x); queue #22 r2 -> #33 sfx-bus -> #27 UI -> city fill (D-062)
 
@@ -59,6 +59,12 @@ adolescent models first; SFX in; adult never played. Decisions D-050..D-061 are 
   crops + Perf bench. Worktree ../Kaiju-Incremental-wt/no-empty-space (its old worktree vanished 05:14; a stray
   `git switch` ran in the main checkout for a minute, restored clean; verified 05:46).
 - blender-reptile (local_bce75838-34da-4991-a74e-b37ed5781547): #22 evidence, then P3 rig.
+- Old lead session NOW: ROOFTOP DEFENDERS (D-063, director 05:50 "put soldiers/gun bearing citizens defending their
+  homes on rooftops shooting at the kaiju"; answer: chip damage, no new escalation curve). Army unit type "rooftop"
+  in sim/army.gd, numbers in tuning army.rooftop, pays biomass (rooftop_rubble), figures + rifle + muzzle flash +
+  tracer, Sfx cue "rifle" (ability-vfx later); sim-review packet (I review), player-effect fixture, 3 s clip.
+  Branch claude/rooftop-defenders, worktree -wt/rooftops. ability-vfx: #33 (menu clip + demo_end roar call being
+  added) then #34 army sounds (stacked; needs a tank-fire clip) then (d) heli gun/crash.
 - Tripo session: octopus adult (8bf2f668) six-view FIX (10-11 arms, two eye pairs, no siphon); sheets in its notes
   docs/captures/2026-10-18-species/. Parked with the species plan (D-060); director call only if it resumes.
 - Species plan (local_424edb4c...): plan only (D-060); -wt/species-a holds uncommitted edits; leave.
