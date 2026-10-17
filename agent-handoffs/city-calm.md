@@ -1,44 +1,49 @@
-# City-calm handoff, 2026-10-18 05:05
-## State: running a check (build.yml dispatch dry run on CI, run 39056399854)
+# City-calm handoff, 2026-10-18 05:08
+## State: running a check (build.yml dispatch on look-options, run 39056638725); smoke waits for GPU go ~05:40
 
 ## Task
 Role city-calm (helper). Lead: "Game demo planning" (local_106fc100).
 - DONE: #26 calm streets (merged 55231be, D-054).
-- DONE: #28 export-windows (head 5cb8ad9, lead PASS, lead merges on green).
-- NOW: ci-export (demo P6). build.yml workflow_dispatch for any ref (input `ref`) runs
-  tools/export_windows.sh + pack check on CI, uploads KaijuIncremental-<sha> (7 days); keep
-  the main push trigger. Proof: one dispatch on look-options, artifact downloaded and
-  smoke-launched locally (GPU slot: ask the lead; lighting until 05:20, voxel-edges 05:40).
+- DONE: #28 export-windows (merged 5cb8ad9): tools/export_windows.sh, tools/pck_check.py,
+  exclude_filter "tests/*, tools/*".
+- NOW: ci-export (demo P6, D-050). build.yml workflow_dispatch input `ref`; export via
+  tools/export_windows.sh + pack check on CI; dispatched run uploads KaijuIncremental-<sha>
+  (7 days); main push trigger unchanged. Proof: one dispatch on look-options, artifact
+  downloaded and smoke-launched locally. PR into look-options.
 
 ## Branch and commit
-claude/ci-export stacked on 5cb8ad9 (#28), in worktree .claude/worktrees/city-calm-streets-722ec5.
-8793b28 = build.yml change (pushed). After #28 merges: merge origin/claude/look-options in
-(no rebase/force-push), then open the PR into look-options.
+claude/ci-export, worktree .claude/worktrees/city-calm-streets-722ec5.
+8793b28 = build.yml change; b75a6ac = merge of look-options 87fba2d (pushed).
 
 ## Unfinished changes
-none uncommitted.
+none uncommitted (this handoff aside).
 
 ## Evidence so far
-notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\export-windows
-- Dry-run dispatch on claude/ci-export: run 39056399854 (pending).
+notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\ci-export
+- Dry run on claude/ci-export: run 39056399854 green; artifact KaijuIncremental-8793b28;
+  exe 126,591,656 B, 229 files, no tools/, headless launch loaded main.tscn.
+- look-options run 39056638725: background job downloads to notes/ci-export/artifact and
+  saves run_39056638725.log.
+- PR body draft: scratchpad pr_ci_export.md (LOOK_RUN / SMOKE placeholders).
 
 ## Next
-1. Dry run green -> wait for #28 merge -> `gh workflow run build.yml --ref claude/ci-export
-   -f ref=claude/look-options` (workflow file from this branch, code from look-options).
-2. gh run download -> notes/ci-export/; smoke-launch it with scratchpad smoke_exe.sh (point EXE
-   at the download) after the lead's GPU go.
-3. PR into look-options, report to the lead with the head SHA.
+1. When the run is done: check it is green and HEAD = look-options 87fba2d in the log; open the
+   PR into look-options with the body (fill LOOK_RUN).
+2. At the lead's GPU go (~05:40): bash scratchpad/smoke_exe.sh <notes>/ci-export/smoke
+   <path to downloaded exe>; check a title frame and godot.log; fill SMOKE; gh pr edit; report.
 
 ## Attempts (fix-loop record)
-none yet
+none
 
 ## Open decisions
 none
 
 ## Running jobs
-gh run watch 39056399854 (background).
+bc0zh3fcr: gh run watch 39056638725 + download (background).
 
 ## Findings for the lead
+- pck_check's tools/ assertion caught 40 dev-tool files in the demo pack before the filter
+  change (#28): reading the real pack beats trusting the preset.
 - ci_capture.sh picks the newest workflow_dispatch run without filtering by branch; verify the
   run's headBranch.
 
