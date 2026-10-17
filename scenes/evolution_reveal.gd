@@ -12,7 +12,9 @@ const SWAP_FRAME := 54
 const GROW_FRAMES := 24
 const END_FRAME := 230
 const SKIP_AFTER := 8
-const VIEW_SIZE := Vector2i(1200, 760)
+## The 3D view fills what the text leaves, at most this big (so the lines below it stay on
+## screen at every UI scale).
+const VIEW_MAX := Vector2(1200, 760)
 ## The comparison tower's footprint (chunks); it is built by the city's own BuildingView.
 const TOWER_SIDE := 6
 
@@ -23,13 +25,14 @@ var scale_before: float
 var scale_after: float
 ## The tallest tower (floors) the new body brings down without undermining it.
 var tower_floors: int
+## The size lines under the headline (read by the flow suite's on-screen check).
+var lines: Label
 var _species: Dictionary
 var _viewport: SubViewport
 var _kaiju: KaijuModel
 var _camera: Camera3D
 var _flash: ColorRect
 var _headline: Label
-var _lines: Label
 var _finished := false
 
 
@@ -63,20 +66,20 @@ func _ready() -> void:
 	add_child(col)
 	var view := SubViewportContainer.new()
 	view.stretch = true
-	view.custom_minimum_size = Vector2(VIEW_SIZE)
+	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	view.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	view.resized.connect(func() -> void: _fit_view(view))
 	col.add_child(view)
 	_viewport = SubViewport.new()
-	_viewport.size = VIEW_SIZE
 	_viewport.own_world_3d = true
 	view.add_child(_viewport)
 	_build_stage()
 	_headline = UiKit.label("EVOLVING...", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	_headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_headline)
-	_lines = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
-	_lines.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(_lines)
+	lines = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
+	lines.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(lines)
 	var hint := UiKit.label("Enter / A to skip", UiKit.SIZE_SMALL, UiKit.MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(hint)
@@ -87,6 +90,12 @@ func _ready() -> void:
 	add_child(_flash)
 	_place_kaiju(stage_before, scale_before)
 	grab_focus.call_deferred()
+
+
+## Keeps the view at the screen's spare height (capped at VIEW_MAX), wide in the same ratio.
+func _fit_view(view: SubViewportContainer) -> void:
+	var h := minf(VIEW_MAX.y, view.size.y)
+	view.custom_minimum_size.x = h * VIEW_MAX.x / VIEW_MAX.y
 
 
 func _process(delta: float) -> void:
@@ -141,7 +150,7 @@ func _swap() -> void:
 	_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
 	var floors_before := roundi(KaijuModel.MODEL_HEIGHT * scale_before)
 	var floors_after := roundi(KaijuModel.MODEL_HEIGHT * scale_after)
-	_lines.text = (
+	lines.text = (
 		"Stands %d floors tall (was %d)\nTowers up to %d floors now fall to you"
 		% [floors_after, floors_before, tower_floors]
 	)
