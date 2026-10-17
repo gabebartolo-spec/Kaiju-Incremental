@@ -63,7 +63,9 @@ KNOWN = {
     "C": dict(
         spine=[V((0, 92, 52)), V((0, 80, 60)), V((0, 68, 67)), V((0, 60, 73))],
         neck=[V((0, 60, 73)), V((0, 51, 80)), V((0, 42, 86))],
-        snout=V((0, 0.5, 82.5)), jaw=(V((0, 33, 82)), V((0, 3, 80.5))),
+        snout=V((0, 0.5, 82.5)), jaw=(V((0, 35, 84)), V((0, 3, 80.5))),
+        # The closed mouth's tooth line, tip to gape corner (read off a side render of the head).
+        mouth=(V((0, 1.5, 82.5)), V((0, 34, 87))),
         arm=[V((5, 66, 72)), V((16, 66, 72)), V((41, 71, 72)), V((54, 71, 72)), V((66, 70, 71))],
         leg=[V((17, 90, 46)), V((21, 82, 28)), V((23.5, 92, 16)), V((28, 76, 2.5)), V((28, 67, 1))],
         tail=[V((0, 100, 47)), V((0, 114, 42)), V((0, 126, 39)), V((0, 138, 37)), V((0, 150, 37)),
@@ -322,6 +324,12 @@ def jaw_mask(obj, v):
     if MODEL == "A":
         return np.full(len(v), obj.name.startswith("Jaw"))
     hinge, tip = L["jaw"]
+    if "mouth" in L:  # a measured tooth line: everything under it, above the throat, is jaw
+        m0, m1 = L["mouth"]
+        k_ = np.clip((v[:, 1] - hinge.y) / (tip.y - hinge.y), 0, 1)
+        floor = (hinge.z - 7.0) + ((tip.z - 4.0) - (hinge.z - 7.0)) * k_
+        line = m0.z + (m1.z - m0.z) * (v[:, 1] - m0.y) / (m1.y - m0.y)
+        return (v[:, 1] > tip.y - 4) & (v[:, 1] < m1.y + 0.5) & (v[:, 2] < line) & (v[:, 2] > floor)             & (np.abs(v[:, 0]) < 9)
     mask = np.zeros(len(v), bool)
     for y0 in np.arange(tip.y - 3, hinge.y - 1, 1.0):
         sl = (np.abs(v[:, 1] - y0) < 0.5) & (np.abs(v[:, 0]) < 9) & (v[:, 2] > 76) & (v[:, 2] < 97)
@@ -340,6 +348,71 @@ def jaw_mask(obj, v):
         floor = (hinge.z - 7.0) + ((tip.z - 4.0) - (hinge.z - 7.0)) * min(1.0, max(0.0, k_))
         mask |= (np.abs(v[:, 1] - y0) < 0.5) & (v[:, 2] < cut) & (v[:, 2] > floor) & (np.abs(v[:, 0]) < 9)
     return mask
+
+
+def mouth_z(y):
+    """Height of the closed mouth's tooth line at y (models with a measured "mouth")."""
+    m0, m1 = L["mouth"]
+    return m0.z + (m1.z - m0.z) * (y - m0.y) / (m1.y - m0.y)
+
+
+RIPS = {}  # per object: (head-side vertex ids, jaw-side copies) along the ripped tooth line
+
+
+def rip_mouth(obj):
+    """A sealed Tripo mouth: the lips are one skin, so an opening jaw would stretch a curtain of faces
+    across the gap. Tear the skin along the tooth line (render mesh only): faces whose centre is under
+    the line in the mouth zone keep copies of the shared vertices; backfaces shade dark so the gap
+    reads as a mouth interior. The game export keeps the welded (untorn) positions."""
+    me = obj.data
+    co = np.array([v.co for v in me.vertices])
+    hinge, tip = L["jaw"]
+    m1 = L["mouth"][1]
+    def in_jaw(c):
+        return abs(c[0]) < 9 and tip.y - 4 < c[1] < m1.y and c[2] < mouth_z(c[1])             and c[2] > (hinge.z - 7.0) + ((tip.z - 4.0) - (hinge.z - 7.0)) * min(1, max(0, (c[1] - hinge.y) / (tip.y - hinge.y)))
+    jaw_face = [in_jaw(co[list(f.vertices)].mean(0)) for f in me.polygons]
+    used = {}
+    for f, jf in zip(me.polygons, jaw_face):
+        for vi in f.vertices:
+            used.setdefault(vi, set()).add(jf)
+    tear = [vi for vi, k in used.items() if len(k) == 2 and co[vi, 1] < m1.y - 1]
+    base = len(me.vertices)
+    me.vertices.add(len(tear))
+    new_of = {vi: base + k for k, vi in enumerate(tear)}
+    for vi, ni in new_of.items():
+        me.vertices[ni].co = me.vertices[vi].co
+    for f, jf in zip(me.polygons, jaw_face):
+        if jf:
+            for li in f.loop_indices:
+                vi = me.loops[li].vertex_index
+                if vi in new_of:
+                    me.loops[li].vertex_index = new_of[vi]
+    me.update(calc_edges=True)
+    me.validate()
+    # Hard sides in front of the gape (the hinge keeps its blend): every vertex of a jaw face rides
+    # the jaw, every other vertex in the mouth zone rides the skull.
+    jaw_v, head_v = set(), set()
+    for f, jf in zip(me.polygons, jaw_face):
+        (jaw_v if jf else head_v).update(f.vertices)
+    co = np.array([v.co for v in me.vertices])
+    front = lambda vi: co[vi, 1] < m1.y - 4 and abs(co[vi, 0]) < 9
+    RIPS[obj.name] = (np.array(sorted(v for v in head_v - jaw_v if front(v) and co[v, 2] > mouth_z(co[v, 1]) - 1),
+                               dtype=np.int64),
+                      np.array(sorted(v for v in jaw_v if front(v)), dtype=np.int64))
+    for slot in obj.material_slots:
+        nt = slot.material.node_tree
+        bsdf = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None)
+        if bsdf is None or not bsdf.inputs["Base Color"].is_linked:
+            continue
+        src = bsdf.inputs["Base Color"].links[0].from_socket
+        geo = nt.nodes.new("ShaderNodeNewGeometry")
+        mix = nt.nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        mix.inputs["B"].default_value = (0.035, 0.008, 0.006, 1.0)
+        nt.links.new(geo.outputs["Backfacing"], mix.inputs[0])
+        nt.links.new(src, mix.inputs["A"])
+        nt.links.new(mix.outputs["Result"], bsdf.inputs["Base Color"])
+    print(f"mouth {obj.name}: tooth line torn at {len(tear)} vertices")
 
 
 def seg(points, h, t):
@@ -436,7 +509,10 @@ def weights_for(obj):
             near_i = mi[np.argmin(np.linalg.norm(v[mi] - cen, axis=1))]
             hinge, tip = L["jaw"]
             k_ = min(1.0, max(0.0, (cen[1] - hinge.y) / (tip.y - hinge.y)))
-            if jaw[members].all() and len(members) > 100 and cen[2] > hinge.z + (tip.z - hinge.z) * k_ + 0.5:
+            if "mouth" in L and abs(cen[0]) < 9 and tip.y - 4 < cen[1] < L["mouth"][1].y                     and abs(cen[2] - mouth_z(cen[1])) < 4:
+                W[members] = 0.0  # a tooth: rigid with the jaw its centre sits on
+                W[members, idx["jaw" if cen[2] < mouth_z(cen[1]) else "head"]] = 1.0
+            elif jaw[members].all() and len(members) > 100 and cen[2] > hinge.z + (tip.z - hinge.z) * k_ + 0.5:
                 W[members] = 0.0  # the palate: a slab above the mouth line rides the skull
                 W[members, idx["head"]] = 1.0
             elif not jaw[members].any() or jaw[near_i]:
@@ -449,6 +525,12 @@ def weights_for(obj):
     print(f"welded {obj.name}: {len(v_all)} -> {len(v)} positions")
     WELDED[obj.name] = (v.copy(), W.copy())
     W, v, jaw = W[weld], v_all, jaw[weld]
+    if obj.name in RIPS:  # the torn lips: each side rides its own jaw, nothing spans the gap
+        head_side, jaw_side = RIPS[obj.name]
+        W[head_side] = 0.0
+        W[head_side, NAMES.index("head")] = 1.0
+        W[jaw_side] = 0.0
+        W[jaw_side, NAMES.index("jaw")] = 1.0
     groups = {n: obj.vertex_groups.new(name=n) for n in NAMES}
     for j, n in enumerate(NAMES):
         nz = np.nonzero(W[:, j] > 0.002)[0]
@@ -466,6 +548,8 @@ REST_V = {}
 WEIGHTS = {}
 WELDED = {}  # per object: unique positions and their weights (what the game samples)
 for o in meshes:
+    if "mouth" in L:
+        rip_mouth(o)
     REST_V[o.name], WEIGHTS[o.name] = weights_for(o)
 
 

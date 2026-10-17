@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 16:05
-## State: running a check (croc titan re-run after jaw-mask fix, bash b4af9gm2a)
+# blender-reptile handoff, 2026-10-17 16:30
+## State: running a check (croc titan re-run with the mouth rip, bash b8b1tmt06)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -17,17 +17,18 @@ checked. Welded 13,097 -> 5,507 positions. Critic fixes in pose_frame: roar wind
 tail down and out, claws to the chest with bent elbows; walk weight shift 4.5% hip height, chest drift
 + counter-turn, tail counter-sway in step with the shift; jaw shut at rest. Crops at roar f52.
 Lead wants: renders side + 3q, foot slide, girth, 2x crops -> lead runs a fresh critic.
-## Round 4 progress (16:05)
-- First chain done: foot slide walk 4.1 / turn 12.3 / roar 2.3 cm; girth >=90% except elbow 84.5% at roar.
-- DEFECT found in jaw crop f52: B-tuned jaw mask split C's lower jaw (smear). Fix: KNOWN["C"] gets
-  mouth=(tip (1.5,82.5) -> gape (34,87)) read off an ortho head render; jaw_mask uses it when present;
-  hinge moved to (35,84). Plot confirms a clean split. Re-running export + clips + crops.
+## Round 4 progress (16:30)
+- First chain: foot slide walk 4.1 / turn 12.3 / roar 2.3 cm; girth >=90% except elbow 84.5% (roar).
+- DEFECT (jaw crop f52): the Tripo mouth is SEALED (lips one skin), so opening the jaw stretched a
+  curtain across the gape. Fixes in motion_test.py (KNOWN["C"] only, via a "mouth" landmark):
+  mouth line tip (1.5,82.5) -> gape (34,87) read off an ortho head render; jaw_mask uses it; hinge
+  (35,84); tooth islands rigid with the jaw their centre sits on; rip_mouth() tears the render mesh
+  along the line (faces by centroid, boundary verts duplicated in front of the gape), hard head/jaw
+  weights in the mouth zone, backfaces dark. Export keeps welded untorn positions. Head check
+  (scratch ct/jc/pair.png): rest clean, f52 jaws part with their own teeth.
 - Export verified (verify_skin vs scratch ct/vox/croctitan.kvox): sums 1, 5,507 pos, median 1.07 m.
-- 44 loose islands (teeth/eyes?): check teeth in the new jaw crop before sending.
 - Next: board (scratch ct/board.py) -> docs/captures/2026-10-17-croctitan/, skin -> assets/kaiju/test/
   croctitan.*, clips -> notes blender-reptile/croctitan/, send lead.
-## Unfinished changes
-tools/blender/motion_test.py: mouth-line jaw mask (uncommitted until the re-run checks out).
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -68,10 +69,13 @@ patches read as black squares.
 - Auto spine: centroids sat on the belly (dense folds), then a back cut-off removed the rump surface:
   2/98 pct of the full slice, cut only far tail (foot_y + 40).
 - Fit report compared frames wrongly: KNOWN was mutated in place by the re-origin; copy it.
+- C jaw: B's gap-search mask split the jaw; mouth line fixed the mask but a sealed mouth still made a
+  curtain. Deleting spanning faces showed holes (open shell); tinting them caught cheek faces. Rip +
+  hard weights worked.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-bash b4af9gm2a: headless Blender chain (scratch ct/). No MCP Blender open.
+bash b8b1tmt06: headless Blender chain (scratch ct/). No MCP Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
