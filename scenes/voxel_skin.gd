@@ -108,7 +108,12 @@ static func skin_files(base: String) -> Array[String]:
 		return out
 	var skin: Dictionary = info
 	out.append(meta)
-	out.append(meta.get_base_dir().path_join(str(skin.get("weights_file", ""))))
+	var weights := meta.get_base_dir().path_join(str(skin.get("weights_file", "")))
+	out.append(weights)
+	# Its welded triangles, when exported (tools/kaiju_skin/skin_faces.py).
+	var faces := weights.get_basename() + ".skinf"
+	if FileAccess.file_exists(faces):
+		out.append(faces)
 	return out
 
 

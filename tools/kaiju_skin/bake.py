@@ -55,15 +55,12 @@ def read_kvox(path):
 
 
 def skin_files(kdir, name):
-    """The Blender skin listed for this kaiju in skin_weights.json ([json, weights] paths), or []."""
+    """The Blender skin listed for this kaiju in skin_weights.json (skin_paths()), or []."""
     listing = kdir / "skin_weights.json"
     if not listing.exists():
         return []
     rel = json.loads(listing.read_text(encoding="utf-8")).get(name)
-    if rel is None:
-        return []
-    meta = kdir / rel
-    return [meta, meta.parent / json.loads(meta.read_text(encoding="utf-8"))["weights_file"]]
+    return [] if rel is None else skin_paths(kdir / rel)
 
 
 def source_stamp(kdir, name):
@@ -75,37 +72,108 @@ def source_stamp(kdir, name):
     return hashlib.sha256(data).digest()[:8]
 
 
-def blender_weights(kdir, name, cells, owner, names):
-    """Per-voxel weights (cells x bones) from a Blender skin export, or None if none is listed.
-    Each .kvox cell maps into the skin's space (kvox_cell_to_skin) and blends the weights of its
-    SKIN_NEAREST nearest welded positions by inverse distance; each Blender bone counts for its
-    "game" bone. Hinges stay rigid: a voxel the .kvox gives to the jaw is all jaw, and no other
-    voxel takes any jaw weight (rig_voxel bakes the jaw part-shut, off the skin's rest)."""
-    files = skin_files(kdir, name)
-    if not files:
-        return None
-    meta = json.loads(files[0].read_text(encoding="utf-8"))
+def skin_paths(meta_path):
+    """A Blender skin export's files: the .skin.json, its .skinw and, when present, its .skinf
+    (the welded triangles, tools/kaiju_skin/skin_faces.py)."""
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    weights = meta_path.parent / meta["weights_file"]
+    faces = weights.with_suffix(".skinf")
+    return [meta_path, weights] + ([faces] if faces.exists() else [])
+
+
+def closest_on_triangles(p, a, b, c):
+    """Barycentric weights (n x 3) of the closest point to each p on its triangle a b c, and the
+    squared distance (Ericson, Real-Time Collision Detection 5.1.5, vectorised)."""
+    dot = lambda x, y: (x * y).sum(-1)
+    ab, ac, ap, bp, cp = b - a, c - a, p - a, p - b, p - c
+    d1, d2, d3, d4, d5, d6 = dot(ab, ap), dot(ac, ap), dot(ab, bp), dot(ac, bp), dot(ab, cp), dot(ac, cp)
+    va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+    safe = lambda x: np.where(np.abs(x) > 1e-12, x, 1e-12)
+    den = safe(va + vb + vc)
+    v, w = vb / den, vc / den
+    bary = np.stack([1 - v - w, v, w], -1)
+    # The edges and corners, later regions first so the earlier tests win (Ericson's order).
+    t = (d4 - d3) / safe((d4 - d3) + (d5 - d6))
+    bary = np.where(((va <= 0) & (d4 - d3 >= 0) & (d5 - d6 >= 0))[..., None], np.stack([0 * t, 1 - t, t], -1), bary)
+    t = d2 / safe(d2 - d6)
+    bary = np.where(((vb <= 0) & (d2 >= 0) & (d6 <= 0))[..., None], np.stack([1 - t, 0 * t, t], -1), bary)
+    corner = lambda i: np.eye(3)[i] * np.ones_like(d1)[..., None]
+    bary = np.where(((d6 >= 0) & (d5 <= d6))[..., None], corner(2), bary)
+    t = d1 / safe(d1 - d3)
+    bary = np.where(((vc <= 0) & (d1 >= 0) & (d3 <= 0))[..., None], np.stack([1 - t, t, 0 * t], -1), bary)
+    bary = np.where(((d3 >= 0) & (d4 <= d3))[..., None], corner(1), bary)
+    bary = np.where(((d1 <= 0) & (d2 <= 0))[..., None], corner(0), bary)
+    q = bary[..., 0:1] * a + bary[..., 1:2] * b + bary[..., 2:3] * c
+    return bary, ((p - q) ** 2).sum(-1)
+
+
+def sample_skin(meta_path, cells, names):
+    """Per-voxel weights (cells x names, unnormalised) from a Blender skin export, each Blender bone
+    counting for its "game" bone, and each cell's distance to the skin (metres). Each .kvox cell
+    maps into the skin's space (kvox_cell_to_skin). With the export's triangles (.skinf) a cell takes
+    the weights at the closest point on the skin (barycentric; the triangles tried are those around
+    its SKIN_NEAREST * 2 nearest positions); without, it blends its SKIN_NEAREST nearest welded
+    positions by inverse distance, which on a sparse mesh pulls weight across a crease."""
+    files = skin_paths(meta_path)
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
     raw = files[1].read_bytes()
     assert raw[:4] == b"KSKW", files[1]
     count = struct.unpack_from("<I", raw, 8)[0]
     rec = np.frombuffer(raw, dtype=[("p", "<f4", 3), ("b", "u1", 4), ("w", "<f4", 4)], count=count, offset=14)
     to_game = np.array([names.index(b["game"]) for b in meta["bones"]])
+    per_pos = np.zeros((count, len(names)))
+    for slot in range(4):
+        real = rec["b"][:, slot] != 255
+        np.add.at(per_pos, (np.nonzero(real)[0], to_game[rec["b"][real, slot]]), rec["w"][real, slot])
     m = np.array(meta["kvox_cell_to_skin"], dtype=float)
-    pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3].astype(np.float32)
-    skin_p = rec["p"].astype(np.float32)
+    pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3]
+    skin_p = rec["p"].astype(float)
+    tris = None
+    if len(files) > 2:
+        fraw = files[2].read_bytes()
+        assert fraw[:4] == b"KSKF", files[2]
+        tris = np.frombuffer(fraw, dtype="<u4", count=struct.unpack_from("<I", fraw, 8)[0] * 3,
+                             offset=12).reshape(-1, 3).astype(np.int64)
+        around = [[] for _ in range(count)]  # each position's triangles
+        for t, tri in enumerate(tris):
+            for i in tri:
+                around[i].append(t)
+        width = max(len(x) for x in around)
+        around = np.array([x + [-1] * (width - len(x)) for x in around])
     w = np.zeros((len(cells), len(names)))
-    for lo in range(0, len(cells), 2048):
-        chunk = pts[lo:lo + 2048]
+    gap = np.zeros(len(cells))
+    k_near = SKIN_NEAREST * 2 if tris is not None else SKIN_NEAREST
+    for lo in range(0, len(cells), 1024):
+        chunk = pts[lo:lo + 1024]
         d2 = ((chunk[:, None, :] - skin_p[None, :, :]) ** 2).sum(-1)
-        near = np.argpartition(d2, SKIN_NEAREST, axis=1)[:, :SKIN_NEAREST]
-        inv = 1.0 / (np.sqrt(np.take_along_axis(d2, near, 1)) + 1e-3) ** 2
-        for k in range(SKIN_NEAREST):
-            for slot in range(4):
-                bone = rec["b"][near[:, k], slot]
-                share = rec["w"][near[:, k], slot] * inv[:, k]
-                real = bone != 255
-                rows = np.arange(lo, lo + len(chunk))[real]
-                np.add.at(w, (rows, to_game[bone[real]]), share[real])
+        near = np.argpartition(d2, k_near, axis=1)[:, :k_near]
+        if tris is None:
+            dist = np.sqrt(np.take_along_axis(d2, near, 1))
+            gap[lo:lo + len(chunk)] = dist.min(1)
+            inv = 1.0 / (dist + 1e-3) ** 2
+            w[lo:lo + len(chunk)] = (per_pos[near] * inv[..., None]).sum(1)
+            continue
+        cand = around[near].reshape(len(chunk), -1)
+        ok = cand >= 0
+        tri = tris[np.where(ok, cand, 0)]
+        bary, dd = closest_on_triangles(chunk[:, None, :], skin_p[tri[..., 0]], skin_p[tri[..., 1]],
+                                        skin_p[tri[..., 2]])
+        best = np.argmin(np.where(ok, dd, np.inf), axis=1)
+        row = np.arange(len(chunk))
+        bt, bb = tri[row, best], bary[row, best]
+        gap[lo:lo + len(chunk)] = np.sqrt(dd[row, best])
+        w[lo:lo + len(chunk)] = (per_pos[bt] * bb[..., None]).sum(1)
+    return np.maximum(w, 0.0), gap
+
+
+def blender_weights(kdir, name, cells, owner, names):
+    """Per-voxel weights (cells x bones) from the Blender skin listed for this kaiju, or None.
+    Hinges stay rigid: a voxel the .kvox gives to the jaw is all jaw, and no other voxel takes any
+    jaw weight (the .kvox draws the mouth line: tools/kaiju_skin/rig_from_skin.py)."""
+    files = skin_files(kdir, name)
+    if not files:
+        return None
+    w, _ = sample_skin(files[0], cells, names)
     for hinge in (h for h in HINGES if h in names):
         j = names.index(hinge)
         mine = owner == j
@@ -249,4 +317,5 @@ def main():
         bake(name, entry, kdir, rig)
 
 
-main()
+if __name__ == "__main__":
+    main()
