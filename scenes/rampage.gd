@@ -36,6 +36,7 @@ var autoplay_signature := true
 var scripted: Callable
 var _city: CityView
 var _powers: PowersView
+var _fade: VehicleFade
 var _was_ready := true
 var _leap_reach := 0.0
 var _leap_power := 1.0
@@ -62,13 +63,13 @@ var _autoplay_target := Vector2(INF, INF)
 var _steps := 0
 
 
-## stats: final run stats; layout: CityGen output; run_index seeds the army.
+## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army.
 func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", run_index))
+	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	_fx_rng = Seeds.make("fx", run_index)
 
@@ -89,6 +90,7 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
+	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_focus = _kaiju_at
@@ -145,6 +147,7 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_place_camera(delta)
+	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
 
 

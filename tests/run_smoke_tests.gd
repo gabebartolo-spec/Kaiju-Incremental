@@ -32,6 +32,8 @@ func run_checks() -> void:
 	_check_skins_fresh()
 	await _check_voxel_skin()
 	_check_tank()
+	_check_heli()
+	_check_vehicle_fade()
 
 
 func _check_settings() -> void:
@@ -288,3 +290,69 @@ func _check_tank() -> void:
 		"the shot leaves the muzzle (%s) and the gun kicks back" % muzzle
 	)
 	tank.free()
+
+
+## The Blender helicopter (D-042) loads as body, main rotor, tail rotor and chin gun; both rotors
+## spin about their own hubs, and the gun swings onto a target below and ahead with the muzzle
+## at the nose.
+func _check_heli() -> void:
+	var heli := HelicopterModel.new()
+	root.add_child(heli)
+	var main: Node3D = heli._main_rotor
+	var tail: Node3D = heli._tail_rotor
+	var hub := main.position
+	heli._process(0.1)
+	check(
+		heli.get_child_count() == 4 and main.rotation.y > 0.5 and tail.rotation.x > 0.5,
+		(
+			"the rotors spin about their hubs (main %.2f, tail %.2f rad)"
+			% [main.rotation.y, tail.rotation.x]
+		)
+	)
+	var target := Vector3(3.0, -6.0, -12.0)
+	heli.aim(target)
+	var muzzle := heli.fire()
+	var aim := -heli._gun.global_basis.z
+	check(
+		(
+			aim.angle_to(target - heli._gun.global_position) < 0.02
+			and muzzle.z < -2.0
+			and main.position == hub
+		),
+		"the chin gun aims at a target below and ahead; muzzle at %s" % muzzle
+	)
+	heli.free()
+
+
+## A helicopter between the camera and the kaiju fades to the screen door and one off to the side
+## stays solid; the sim keeps helicopters off the side the game camera actually views from.
+func _check_vehicle_fade() -> void:
+	var front := HelicopterModel.new()
+	var side := HelicopterModel.new()
+	root.add_child(front)
+	root.add_child(side)
+	var eye := Rampage.CAMERA_OFFSET
+	front.position = eye * 0.5
+	side.position = Vector3(20, 9, 0)
+	var nodes: Array[Node3D] = [front, side]
+	var fade := VehicleFade.new(func() -> Array: return [], func() -> Array: return nodes)
+	for _i: int in 30:
+		fade.update(eye, Vector3.ZERO, 1.0, 1.0 / 30.0)
+	var low := Num.f(Content.section("vehicles")["fade_opacity"])
+	var a: float = front.get_meta("opacity", 1.0)
+	var b: float = side.get_meta("opacity", 1.0)
+	check(
+		is_equal_approx(a, low) and b == 1.0,
+		"a helicopter in front of the kaiju fades to %.2f, one at the side stays %.2f" % [a, b]
+	)
+	var bearing := rad_to_deg(atan2(Rampage.CAMERA_OFFSET.z, Rampage.CAMERA_OFFSET.x))
+	var air := Num.f(Content.section("air")["camera_bearing"])
+	check(
+		is_equal_approx(bearing, air),
+		(
+			"the helicopters' clear side (%.0f deg) is where the camera looks from (%.0f)"
+			% [air, bearing]
+		)
+	)
+	front.free()
+	side.free()
