@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (PR #40 sim review + art QA; local GPU clip done, evidence in lead notes rooftops/gpu/)
+## State: awaiting lead (look FIX pushed 55c68e0; GPU slot asked for the re-clip; sim review PASSED)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -34,8 +34,14 @@ Shots hurt: chip damage, no new escalation curve.
 ## Decisions taken (flagged to LEAD)
 - Armour does not reduce rifle chip. Brood young don't draw rifle fire. Figures vanish when the fall starts.
 
+## Review (lead, 2026-10-18)
+- Sim review PASS at fa3ef77. Look FIX (squads and flashes invisible at the game camera) answered in
+  55c68e0: flashes 0.45 u additive/unshaded/fog-free 0.08 s, tracers 0.09 u + 0.08 s hold, spark on
+  the hide, figures 1.5x spaced 0.55. Flow floor 115 (look-options 113 + 2).
+
 ## Next
-1. LEAD's sim review and art QA -> fixes (Auto-fix is on for #40).
+1. Lead's GPU go -> local re-clip (override.cfg first, delete after; wait on your own PID) -> 3 s clip, a
+   mid-volley still (the capture now waits 4 frames after a volley) and a 2x crop -> lead -> lead merges #40.
 2. On a look FIX: re-run `tools/capture/ci_capture.sh --movie --fps=60 --resolution=1920x1080
    capture_rooftops.gd -- --out=<dir>`, trim with ffmpeg (-ss 0.75 -t 3), crop from rooftops.json spots.
 3. When look-options moves: sync (floors resolve to the real counts).
