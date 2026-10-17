@@ -1,73 +1,67 @@
-# City-growth handoff, 2026-10-17 12:45
-## State: awaiting lead (PR #16 fog fix pushed, head 427ae30 after gdlint fix; director questions tabled)
+# City-growth handoff, 2026-10-17 17:30
+## State: awaiting lead (Apex playability PR open; do not merge; head SHA sent to the lead)
 
 ## Task
-D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
-player ~3 h on the median species), first species power by run 3, no flat grind. Done = PR into
-claude/look-options, CI green, pacing tables per species/stage in the PR body, CI stills per
-stage, insectoid balance note (lead asked: which nodes drive it, a +-20% proposal), this
-handoff, then tell the lead (local_9fac90d2-fae7-4940-b4ac-144a87f28e6e).
+Lead 16:45, after #16 (D-039 city growth) merged at 13870b3: APEX PLAYABILITY, one PR into
+claude/look-options. (1) Profile the Apex city build, fix the top cost, Apex rampage load under
+15 s on the local GPU, no stage slower, a test that party-wall pairs grow ~linearly. (2) The
+kaiju hidden behind towers at the game camera: screen-door buildings between the camera and the
+kaiju (D-025 rule, the vehicles' 35% look from #18); never move the camera. Evidence: load
+times before/after per stage, game-camera stills stages 3-4 before/after, a ~20 s clip. Keep
+balance proposal D and the Apex height question out (tabled for the director).
 
 ## Branch and commit
-claude/city-growth-e79d28, merged origin/claude/look-options 6535330, pushed. PR #16 into
-claude/look-options (bound, Auto-fix on).
+claude/apex-playability (cut from origin/claude/look-options 13870b3), checked out in the
+worktree folder .claude/worktrees/city-growth-e79d28 (the app's EnterWorktree isolation blocked
+Godot runs and cross-worktree writes, so the fresh worktree was removed and the branch moved
+here). Old branch claude/city-growth-e79d28 is merged (#16). Pushed; PR open.
 
 ## What is built
-- sim/city_gen.gd: cfg.districts [42,70,125,210]; the plan always spans every district (ring
-  avenue each), cfg.half = the playable one; blocks carry "district"; generate() fills
-  innermost first; one park per district.
-- sim/city_lots.gd: district_lot_grow [0,1,2,3]; tower and pencil heights always drawn (a
-  stage's tower_chance/max_height no longer shifts later lots: the growth test caught it).
-- sim/city_growth.gd: CityGrowth.tuning_for / layout / stage_count.
-- data/tuning.json: districts, lot grow, 15 cores, outer_half 360, army.spawn_radius 60,
-  growth.stages (half, coast_z, max_height 26/32/40/48, tower_chance; army + air per stage;
-  stage 1 no helicopters, 2/4/6 after).
-- sim/army.gd: tanks from the edge in a small city, round the kaiju once the edge is > 60 away.
-- data/upgrades.json: costs = pacing "d" factors (young x2.9 except first levels, evolve1
-  x4 = 1200, Behemoth x8.5, evolve2 22000, Colossus x15, evolve3 300000, ultimates x15).
-- scenes/main.gd + rampage.gd run on the stage tuning/layout (game-flow knows; PR #14).
-- tools/pacing.gd per-stage tables, --flat; city_stats.gd per stage; capture_growth.gd.
-- tests/run_growth_tests.gd (23 checks, floor 23). Fixed old fixtures: sim "longer rampage"
-  now hide 5 (both runs reach the clock); flow heli check gives the run the base air wing.
-- Local full run: smoke 12, sim 39, powers 24, tentacles 17, city 5, growth 23, flow 26,
-  harness self-test: all green.
+- tools/capture/profile_city.gd: per-phase load profile (headless), --full = old load.
+- BuildingView.party_walls: spatial grid (PARTY_CELL 8), pair_checks counter. 5.9M -> 11k
+  pairs at Apex, 1733 -> 17 ms. The suspect was NOT the top cost.
+- Top cost was meshing (BuildingVoxels + BuildingMesher, ~0.37 ms per chunk on threads, 129 s
+  headless at Apex). Fix: scenes/building_stream.gd (BuildingStream) meshes the nearest
+  buildings up to city.load_chunks (20000, data) before the rampage, draws the rest as facade
+  stand-ins (CitySkyline.facade_material), streams them in on worker threads nearest first;
+  view(n) builds on demand so a hit never lands on a stand-in. CityView uses _stream.view(i).
+- scenes/building_fade.gd (BuildingFade) + building_baked.gdshader opacity/Bayer screen door +
+  BuildingView.set_opacity: towers cutting sight lines from the camera to 9 points over the
+  kaiju (3 heights x 0/1/2 body radii along its facing) ease to vehicles.fade_opacity.
+  Run from CityView._process (rampage.gd untouched: it sits at the 400-line cap).
+- tests/run_load_tests.gd (new suite "load", floor 6; ALL_SUITES + shard 1): grid == all pairs,
+  pairs ~linear, sight test, stream budget / on-demand / completes.
+- tools/capture/capture_occlusion.gd: Apex walk-up-the-street clip from the game camera.
 
-## Unfinished changes
-None. Costs = pacing "e" (median ceph 2.94 h, reptile 3.94 h, insect 1.93 h). gdlint/gdformat
-clean locally (pip gdtoolkit 4). Stills for stages 1-2 committed in
-docs/captures/2026-10-17-city-growth/.
-- Pending: stages 3-4 stills (`tools/capture/ci_capture.sh capture_growth.gd -- --stage=3
-  --quick`, then 4) and CI checks: GitHub Actions refuses to start jobs ("recent account
-  payments have failed or your spending limit needs to be increased"). Director's to fix.
-
-## Evidence so far
-- Pacing d (before the lots fix): reptile 3.77 h, insect 1.78 h, ceph 2.70 h; first power
-  after run 2 for all. Final numbers re-run in pace_final.txt (layouts changed slightly).
-- Ablation (Colossus kit, Colossus city): insect 96% -> 60% without Leap Slam; climb/glide ~0
-  for the scripted player; reptile 43%; ceph 63%.
-- city_stats (before the lots fix): chunks 11.9k / 25k / 103k / 355k (perf risk at Apex).
+## Evidence
+- GPU (RTX 4070 SUPER) city view build: young 5.9 -> 5.1 s; Behemoth 9.9 -> 8.0 s (before =
+  load_chunks unlimited); Colossus 40-42 -> 8.9-9.2 s; Apex 167-184 -> 12.8-13.4 s.
+- Headless rest-streamed-in times: Behemoth 0.9 s, Colossus 24 s, Apex 107 s.
+- Stills: docs/captures/2026-10-17-apex-playability/ (board_game_camera_before_after.png,
+  growth_4_game_crop2x.png, growth_N_game.png, apex_walk_frames.png). Clip: shared notes
+  folder apex-playability/apex_occlusion.mp4 (20 s, 720p, GPU, not in the repo).
+- Full local run green: smoke 27, sim 39, powers 24, tentacles 18, city 5, growth 24, load 6,
+  flow 26, harness self-test; gdlint/gdformat clean (100 files).
 
 ## Attempts
-- Districts x2 area: cities flattened every run -> x3 area per stage.
-- Old single CI stills run (all stages in one job) ran >1 h and was cancelled: one run per stage.
+- First sight test aimed straight above the feet: missed the torso (the model's body runs
+  forward along its facing); aiming 0/1/2 body radii ahead fixed it (crop proves it).
+- EnterWorktree isolation refused Godot runs (paths containing "GitHub" read as git); exited.
 
 ## Open decisions
-- Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
+- Balance proposal D and the Apex height question: director (via the lead), not in this PR.
+- The worktree folder name no longer matches its branch; the lead may want it re-homed later.
 
 ## Running jobs
-None. Lead review fix done: stage-scaled fog (growth.stages city.fog_scale 1/0.6/0.34/0.2 and
-far_haze; CityView fog_density x fog_scale; growth check -> floor 24). All 12 stills (aerial,
-kaiju, game camera) + board_fog_before_after.png committed; stages 1-2 CI (39006401376,
-39006406352), 3-4 GPU (override.cfg deleted, no Godot left). Load note for the lead's
-follow-up: views already threaded; prime suspect BuildingView.party_walls O(n^2) on the main
-thread (5.9M pairs at Apex). Balance D and the Apex height wait for the director.
+None. override.cfg deleted after every GPU run; no Godot left running.
 
 ## Findings for the lead
-- A seeded generator that draws a number only on some branches shifts every later draw when a
-  tuning changes the branch; draw unconditionally (growth test "lots kept" caught it, fixed).
-- Destroyed area per run scales with the kaiju's crater, so city area must grow ~x3 per
-  evolution or runs end city_fallen and rubble per run goes flat.
+- Profile before fixing: the obvious O(n^2) suspect cost 1.7 s; meshing cost 129 s. A per-phase
+  profiler (tools/capture/profile_city.gd) settled it in one headless run.
+- A screen-door sight test must aim at the model's real mass (torso/head ahead of the feet),
+  not its origin; check with a 2x crop.
 
 ## Rules learnt the hard way
-- One Godot at a time while the director games; headless + --audio-driver Dummy.
-- `git show origin/x:path` in Git Bash needs MSYS_NO_PATHCONV=1.
+- One Godot at a time while the director games; GPU windowed runs only off-screen with
+  override.cfg written by the file tool first (the focus guard checks before the command runs).
+- Godot movie AVI -> mp4 here: pip imageio-ffmpeg's bundled ffmpeg (no system ffmpeg).
