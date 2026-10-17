@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 12:55
-## State: running a check (re-capture of the 2-min mix with the new levels, bash baod56xwp)
+# Ability VFX/SFX handoff, 2026-10-18 13:20
+## State: available (done for the night per the lead; everything open is tabled for the director's listen)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -15,7 +15,7 @@
 ## Open PRs (each → claude/look-options; all tabled for the director's listen, none merge tonight)
 - **#39** claude/heli-sfx, head 2ecdbe0, flow 113: heli gun and crash. Clip army-sfx/heli_gun_crash.mp4.
 - **#42** claude/footstep-variants, head aadc2f6, flow 114: footstep_1..3 round-robin. Clips in footsteps/.
-- **#43** claude/crowd-sfx, head 272a285, flow 114: crowd_panic loop.
+- **#43** claude/crowd-sfx, head 8d37511, flow 114: crowd_panic loop.
   - Driven by StreetLife.panicking() and the destruction rate; ducks 9 dB under breath; high-passed at 300 Hz.
   - Sfx.watch(camera, helis, street). Clips in crowd/.
 - The PRs collide on flow floors and on the sfx.watch line (#39 vs #43). Resync to the real counts as each lands.
@@ -36,16 +36,12 @@
   - tank_fire high-passed at 120 Hz.
 - Tools: claude/mix-report (pushed, no PR) has tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py.
 
-## Job (o2): proposed levels as a branch (lead said yes; tabled for the director's listen)
-- claude/mix-levels (off claude/mix-report, which is off #43's branch), commit 3cc93c5, local, not pushed yet.
-  - crowd_panic -14 → -6, crowd quiet_db -30 → -24, regen_loop -14 → -20.
-  - Regen bubbles play only for the first regen_seconds 2.5 of each heal, then fade 40 dB/s.
-  - tank_fire is high-passed at 120 Hz (rebuilt ogg). Flow 115 (+ the regen-fade check). All suites green.
-- Left to do:
-  - Run mix_report.py on scratchpad/mix2 against the targets (crowd gap -15..-20 dB, regen on < 15%,
-    stomps masked by army 0, master -23..-18 LUFS, TP ≤ -1).
-  - A/B 20 s clip of the same window from scratchpad/mix/mix.avi (before) and mix2/mix.avi (after).
-  - Push, open a PR stacked on #43, tell the lead. Then go available for the night.
+## Job (o2) DONE: PR #45 claude/mix-levels → base claude/crowd-sfx (stacked on #43), flow 115
+- crowd -6 dB (quiet -24), regen -20 dB as a 2.5 s cue per heal, tank_fire high-passed at 120 Hz.
+- Re-measured: crowd gap -18.9 dB, regen on 6%, master -20.5 LUFS / -3.9 dBTP all met.
+  Stomps masked by army 15 → 8, not 0: it's shell_hit's thud; a 120 Hz high-pass on it is the next step if wanted.
+- A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
+- When #43 merges, retarget #45 to look-options.
 
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
@@ -66,4 +62,4 @@
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-CI on #39, #42 and #43. Godot capture (mix2) running; override.cfg is deleted when it ends.
+CI on #39, #42 and #43. No Godot, no override.cfg.
