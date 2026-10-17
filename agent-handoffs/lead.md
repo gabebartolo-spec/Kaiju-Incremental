@@ -12,8 +12,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 ## TABLED FOR THE DIRECTOR (ask in this order when he is back; images/clips first)
 1. #35 crease shader: A off vs B 0.3 (C 0.6 "too strong"). Board docs/captures/2026-10-18-crease/crease_board_ABC.jpg on
    claude/voxel-edge-shading; my QA PASS; fresh motion-critic on crease_B_pan.mp4 (verdict pending: agent "critic").
-2. #22 croc titan clips: A/B game-cam clip (before procedural / after Blender clips, round 2 fixes). Merge happens on a
-   fresh-critic PASS overnight (D-047 already decided); this is his look, after the fact, reversible.
+2. #22 croc titan clips MERGED 09:3x (AFTER reads heavier on the roar, even elsewhere; no regression). Show him the
+   A/B ...blender-reptile\d047ound3\croctitan_before_after_game.mp4; slam/turn polish follow-up queued after P3.
 3. PR #36 (claude/army-scales, from the AFL "Kaiju tree research" session, says "director-assigned finding 1"): army
    and air scale inside each stage (growth.per_level), Regeneration behind evolve2, Scales last young node, Titan
    Hide first after evolve1. Pacing: reptilian evolve1 0.62 h (was 0.59); Behemoth 38 time / 5 defeated / 2 city
@@ -39,18 +39,26 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    (notes mix-report/report.md): master -21.4 LUFS; crowd inaudible, regen loop masks army, tank thump masks
    stomps. Proposal = PR #45 (stacked on #43): A/B mix-report/ab_before_after_20s.mp4 (one listen); crowd audible,
    regen loop 86% -> 6%, master -20.5 LUFS. #46 rifle volley (rifle/rifle_volleys_in_game.mp4). Sound session idle;
-   approved sound PRs merge one at a time in his order (each resyncs the flow floor).
+   approved sound PRs merge one at a time in his order (each resyncs the flow floor). Heads 09:2x: #39 bac13d7,
+   #42 dc8fd13, #43 c216ac0, #45 4ec9618 (on #43), #46 61ecda9; checks moved to own tests/lib files, any order.
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
    1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
    copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
 10a. Rooftops (#40, critic PASS after 6 rounds, merging at 0fdf935): white tracers read as "something is shooting";
    shooters/flashes barely visible and ~1 s gaps feel sparse. Ask: more squads/denser fire, or bigger shooters?
    Clip: ...side-session-notes\local_106fc100...\rooftops\fix6\rooftops_behemoth_3s_1080p_fix6.mp4.
+10b. Military AI (D-066): total damage per run held within ±5% of today's, but the mix shifts: helicopters 3.8 ->
+   13.6 at Behemoth (fly real attack runs now), tanks slightly less. Note for him after merge.
+10c. P3 croc stages (claude/croctitan-p3): stage board ...blender-reptile\p3\stage_board.png (baby/adolescent/adult).
+   Gameplay Q: the baby walks at the species speed 5.5 u/s (3.4 hip-heights/s, adult 0.85): slow stage 1 so it reads
+   as a toddler, or keep? (balance).
 10. Tree stats panel shows 12 raw numbers (STOMPS/S, RECHARGE 7.05...): trim to ~4 player words? (screen-critic).
 11. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
-- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill, #44 worktree cap, #40 rooftops. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
+- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill, #44 worktree cap, #40 rooftops,
+  #38 breath reads from behind (flame curtain), #47 scorch glow fade-in, #48 shader uid, #22 croc titan clips (D-047;
+  critic r3: walk PASS, roar/turn polish in a follow-up PR after P3; clip tabled for his look). Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
   #29 playtest sheet, #28 #30 export + CI artifact, #8 SFX, #32 perf hitches, #33 SFX bus + slider + menu sounds +
   end-card roar sound. Decisions D-050..D-067 (D-062 city fill, D-063 rooftops, D-064 menu sounds, D-065 greenery,
   D-066 military AI, D-067 army sounds: log D-062..D-067 in the next board PR).

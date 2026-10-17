@@ -294,6 +294,7 @@
 		"orbit_out_seconds": 0.5,
 		"scorch_seconds": 5.0,
 		"scorch_soot_in": 0.4,
+		"scorch_glow_in": 0.12,
 		"crater_seconds": 6.0,
 		"crack_seconds": 2.5,
 		"sweep_seconds": 0.5,
