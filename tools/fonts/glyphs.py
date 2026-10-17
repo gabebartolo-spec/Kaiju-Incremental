@@ -320,14 +320,15 @@ GLYPHS: dict[str, list[str]] = {
         "########",
         "########",
     ],
-    "0": [
+    "0": [  # no slash (read as a glitch on the TV); a 4-cell counter so it never reads as a bar;
+        # square inside where O is rounded
         ".######.",
         "########",
         "##....##",
-        "##...###",
-        "##..####",
-        "####..##",
-        "###...##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
         "##....##",
         "########",
         ".######.",

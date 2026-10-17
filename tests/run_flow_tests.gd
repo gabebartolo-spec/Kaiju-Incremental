@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
+const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
@@ -74,7 +75,9 @@ func _check_species_select() -> void:
 	var select := SpeciesSelect.new()
 	root.add_child(select)
 	await process_frame
-	var buttons := select.find_children("*", "Button", true, false)
+	var buttons := select.find_children("*", "Button", true, false).filter(
+		func(b: Node) -> bool: return (b as Button).text == "CHOOSE"
+	)
 	check(buttons.size() == 3, "the species screen offers three choices, found %d" % buttons.size())
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))
@@ -190,6 +193,8 @@ func _check_rampage() -> void:
 		hud.beat_running() and hud.headline.text == str(want[0]),
 		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
 	)
+	var hints := await FlowLayout.late_hints(self, rampage)
+	check(hints == 0, "no world hint shows behind the end beat: %d" % hints)
 	for _i: int in RampageHud.BEAT_FRAMES + 2:
 		await process_frame
 	check(
