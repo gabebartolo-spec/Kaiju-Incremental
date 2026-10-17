@@ -56,6 +56,17 @@ Local windowed capture (off-screen override.cfg; focus guard allows only when th
 ONE GPU job at a time: species-motion octopus first, then kaiju-look-test octopus. Everyone merges look-options
 for the LFS fix before capturing.
 
+## D-045 (director 14:22): reptile = NEW original Tripo design, rigged in Blender (hand rig, welded weights)
+- Blender test critic: deformation + feet PASS both; animation FIX (no roar wind-up, frozen hold, tail not
+  counterbalancing, arms out at peak, static walk upper body, B mouth open at rest). blender-reptile on HOLD.
+- NEXT (me): Tripo Studio /workspace/generate-image -> 3-4 reference images, show the director labelled, then
+  image-to-3D (Smart Mesh P2.0), Private, Remove Lighting. Brief: original reptile kaiju, NOT Godzilla: long
+  crocodile snout, MOUTH CLOSED, pale bony back plates/osteoderm ridge (not maple-leaf fins), long low tail,
+  digitigrade legs, forearms with clawed hands, dark olive hide; full body A-pose, limbs clear of torso, front
+  three-quarter orthographic, neutral grey bg, soft even light, no props. Then baby/adolescent once adult picked.
+- BLOCKED 14:25: Chrome window minimized (Tripo viewport 0x0, screenshots time out). Retry when restored.
+- #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
+
 ## FOCUS (director 13:06): "how using blender might improve motion"
 - Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
   A 8/11/1 cm, B 5.5/19/4 cm (walk/turn/roar, of 100 m); girth A shoulder 96%, B 91%. B right foot 69 cm off
