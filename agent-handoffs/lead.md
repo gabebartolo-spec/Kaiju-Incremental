@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-17 22:55
-## State: working (blender-reptile re-fitting the hand rig to croc titan v2, then opens the D-047 PR)
+# Lead handoff, 2026-10-18 00:40
+## State: working (blender-reptile adding tail mobility to the v2 clips inside the D-047 PR)
 
 ## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
 - Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
@@ -8,6 +8,10 @@
   balance 19415. Boards: docs/captures/2026-10-17-reptile-design/croctitan_{arms,spine_colour}_board.png.
 - DONE: downloaded ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb, six-view PASS (croctitan_v2_six_view.png),
   D-048 logged. blender-reptile briefed 22:50: re-fit, skin, .kclip, kvox, D-047 PR -> lead QA + fresh critic.
+- 00:36 director: v2 model "incredible, whatever we are doing now is working"; ONE note: tail reads rigid, wants a
+  powerful skyscraper-crushing tail. Briefed blender-reptile: root-to-tip travelling wave (tip 3-4x root), turn
+  whip+overshoot settle 0.3-0.5 s, roar lift+slam, <=25 deg/joint; evidence top-down tip traces + diff plot + root 2x.
+  Tail-swipe attack = suggestion only (director's gameplay call).
 - Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
 
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
