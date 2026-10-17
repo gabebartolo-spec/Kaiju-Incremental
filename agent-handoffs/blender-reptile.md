@@ -1,4 +1,4 @@
-# blender-reptile handoff, 2026-10-18 01:00
+# blender-reptile handoff, 2026-10-18 01:10
 ## State: running a check (AFTER CI captures bh15qd2l1 at cb1726e; Blender board renders b6yosgxdc)
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
 Open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera, per-frame PNG
@@ -7,7 +7,8 @@ a Blender walk/turn/roar render of v2, and (tail note) top-down walk tip-path re
 2x crops of the tail root in the turn. One self-check, list nits, no loops. Auto-fix off. Don't
 merge. Tail attack (swipe flattening towers): suggestion only, a director gameplay call.
 ## Branch and commit
-claude/croctitan-clips (this worktree). Head cb1726e pushed (tail). e560001 v2 re-fit + data.
+claude/croctitan-clips (this worktree). Pushed cb1726e (tail; captures run on it). Local, unpushed:
+5400a96 tests: clips own the tail (clips 13) + this handoff. Push with the evidence commit.
 ## Tail (cb1726e)
 - motion_test.py: TAIL_WALK (4.0, 1.5) deg/joint wave, TAIL_LAG 0.5 rad/joint; TAIL_IDLE (1.2, 0.6)
   72-frame sway (0.6 in roar); turn whip tail_whip(): spring TAIL_SPRING (12 rad/s, 0.35) driven by
@@ -20,7 +21,11 @@ claude/croctitan-clips (this worktree). Head cb1726e pushed (tail). e560001 v2 r
   the stop, overshoot 6 deg, settled to 10% in 0.46 s; roar skin 26.6 m lift -> 0.5 m slam.
 - gait_clip.gd: TURN_SETTLE 12 frames (turn clip plays its tail settle); tail lag spring for
   walking curves (drive = body yaw accel in walk/idle), soft limit TAIL_MAX 0.008 (tanh).
-- clips suite 12 (new: walking curve swings the tail, settles; shown failing with drive off).
+- clips suite 13: walking curve swings the tail and settles (shown failing with drive off); the
+  clips own the tail (lead part 2): ClipGait.update never calls BipedSwing.update (0.12 rad clamp)
+  or simulate_chains; straight walk matches clip within 0.01 rad; standing turn bends 0.189 rad.
+- Lead part 2 still owed: in-game 2x crop of tail root at the turn extreme (voxel parting) from
+  ci3/after_game; in-game BEFORE/AFTER must show the tail; state the tail owner in the PR body.
   All suites green locally.
 ## Evidence pipeline (scratch)
 tail/ (old/new JSON, tailtop_old_vs_new.png, crops_row.png, r/ renders), ci2/ (before_* valid:
