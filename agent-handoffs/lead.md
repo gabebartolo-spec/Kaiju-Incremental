@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 04:30
+# Lead handoff, 2026-10-18 04:38
 ## State: working (lead since 03:56); waiting on helpers: #22 r2, #23 jaw+title fix, #8 roar wiring, city-calm PR, Tripo board r2
 
 ## Who
@@ -24,7 +24,7 @@ adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never
   croctitan_stage_refs_board.png (realism-critic FIX: B2 arms clear; A2 blunt head, low nub spines, neutral
   stance); round 2 generated 03:49. Next: board r2 to the director (through me), Smart Mesh, texture, six-view,
   GLBs to blender-reptile. Also asked it to download the octopus adult texture 8bf2f668 for the species session.
-- P4 SFX: ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106), PR #8 head 32ecfa1 (dials crack_min_interval
+- P4 SFX: ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106), PR #8 head 2a2edb5 (roar on the reveal + Sfx entry, army: tank_fire, shell_hit, heli_rotor loop with distance fade; flow floor 76->87). Roar APPROVED D-055. Merge order: #26 first (city floor 5->6), then #8 syncs look-options, I merge on green. Next job given: (e) mixer bus + SFX volume slider in settings (new PR), then (f) UI sounds. Earlier head 32ecfa1 (dials crack_min_interval
   2.5 s + footstep_min_interval 0.25 s, roar.ogg draft + provenance). Director 04:30 listened to r2 clips
   (...ability-sfx-d050/r2/): SHIP AS IS = D-052 (in #25's Board and log; helper logs it in #8 too). Now (b): roar in
   the evolution reveal + a Sfx entry for the end card (option 1: not under Atomic Breath, no new power); then I merge
@@ -42,7 +42,7 @@ adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never
 ## Other live sessions
 - city-calm (local_9af27a16-0360-4923-b623-6a14a763ce49): director 03:53 "remove the level crossing hellscape".
   Fix 54e9f16 on claude/city-calm-streets (zebras at 1 central junction, key city.zebra_junctions, city floor 5->6);
-  CI BEFORE/AFTER 1080p stage 1 + Behemoth + 2x crops; PR next; reports to me. Then the export proof.
+  PR #26 (55231be): my defect check PASS, director 04:35 ship AFTER (D-054); merge-on-green watcher armed. Export proof next; smoke launch held until the GPU slot frees (~04:45).
 - Performance (local_02d8efe2-2071-46af-b4f0-813e88c01810, handoff agent-handoffs/performance.md, director-approved):
   demo baseline bench tools/capture/bench_rampage.gd, reptilian at Behemoth, 1080p x3 + 4K x3; has the local GPU
   slot 04:25-04:45; results in its own handoff only.
@@ -54,7 +54,7 @@ adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never
 - Unsloth loaded-model fix APPLIED 04:22 (director OK; memory-shared/local-models-companion.md; MCP reconnect needed).
 
 ## Director decisions today (log in board PRs): D-050 demo (#21), D-051 reveal title (#23), D-052 SFX ship (#25),
-D-053 worktrees one per live session (#25), D-TBD-species-models 04:27 (species session's first PR): keep all six
+D-053 worktrees one per live session (#25 MERGED 444ed01), D-054 streets: zebras only at the central junction (#26, director 04:35), D-055 croc roar on reveal + end card, not under breath (#8, 04:35), D-TBD-species-models 04:27 (species session's first PR): keep all six
 mantis/octopus meshes, croc hand rig + welded weights, octopus first; octopus texture 8bf2f668 now critical path. Stale branches kaiju-skin-weights{,-before} deleted 04:21.
 Open for the director: Q3 Apex height (not needed for the demo; park).
 
@@ -85,7 +85,7 @@ ci-captures-worktree-backup/; its CLAUDE.md note is in #25). Lint: `bash tools/l
   director's listen is the gate, the lead checks timing and density only.
 
 ## Running jobs
-Mine: merge-on-green watcher on #25. No override.cfg, no windowed Godot. Performance session holds the GPU slot.
+Mine: merge-on-green watcher on #26 (then arm one for #8 after its sync). No override.cfg, no windowed Godot. Performance session holds the GPU slot.
 Helpers: blender-reptile r2 batch (CI captures), kaiju-motion jaw+title fix, ability-vfx roar wiring, city-calm
 captures + export build, Tripo session board r2 + octopus texture.
 
