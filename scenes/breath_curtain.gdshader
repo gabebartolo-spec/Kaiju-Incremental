@@ -28,7 +28,7 @@ void fragment() {
 	// Flames licking upward: noise streams up and breaks the top edge into tongues.
 	float lick = noise(vec2(UV.x * 9.0, up * 3.0 - TIME * 6.0)) * 0.6
 		+ noise(vec2(UV.x * 21.0, up * 7.0 - TIME * 11.0)) * 0.4;
-	float tongue = 1.0 - smoothstep(0.35 + 0.5 * lick, 0.75 + 0.5 * lick, up);
+	float tongue = (1.0 - smoothstep(0.35 + 0.5 * lick, 0.75 + 0.5 * lick, up)) * smoothstep(0.0, 0.12, up);
 	float centre = pow(1.0 - side, 1.2);
 	// It stands up as the beam's front reaches the arc (a tenth of the life), then thins out.
 	float arrive = smoothstep(0.04, 0.14, progress);

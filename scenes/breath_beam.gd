@@ -21,8 +21,8 @@ const FAN_LIFT := 0.3
 ## reach, kept short and soft so it warms the struck street without a hard-rimmed pool.
 const MUZZLE_SIZE := 4.5
 const STRIKE_SIZE := 3.5
-const LIGHT_ENERGY := 6.0
-const LIGHT_RANGE := 7.0
+const LIGHT_ENERGY := 4.0
+const LIGHT_RANGE := 3.5
 const LIGHT_FALLOFF := 2.0
 
 ## Signature Power's brightness for the next fire (1..fx.power_max).

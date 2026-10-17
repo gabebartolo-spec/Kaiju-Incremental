@@ -45,7 +45,7 @@ void fragment() {
 	float front = 1.0 - smoothstep(progress * 10.0 - 0.15, progress * 10.0, out_);
 	// Quiet under the kaiju's feet and at the far edge, strongest in between.
 	float reach = smoothstep(0.15, 0.45, out_) * (1.0 - smoothstep(0.55, 1.0, out_));
-	vec3 hot = mix(tint.rgb, vec3(1.0, 0.85, 0.6), centre * centre * 0.6);
+	vec3 hot = mix(tint.rgb, vec3(1.0, 0.6, 0.3), centre * centre * 0.5);
 	ALBEDO = hot * (1.6 + 0.9 * power) * (0.6 + 0.4 * stream);
 	ALPHA = clamp(strength * centre * (0.5 + 0.5 * stream) * grow * thin * front * reach, 0.0, 1.0);
 }
