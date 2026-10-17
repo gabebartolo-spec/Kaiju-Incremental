@@ -50,7 +50,9 @@ Director: "tank and heli models look great".
   crocodile snout, MOUTH CLOSED, pale bony back plates/osteoderm ridge (not maple-leaf fins), long low tail,
   digitigrade legs, forearms with clawed hands, dark olive hide; full body A-pose, limbs clear of torso, front
   three-quarter orthographic, neutral grey bg, soft even light, no props. Then baby/adolescent once adult picked.
-- BLOCKED 14:25: Chrome window minimized (Tripo viewport 0x0, screenshots time out). Retry when restored.
+- BLOCKED 14:40: Chrome restored but hidden behind the League of Legends client: the page doesn't paint, typing
+  doesn't register (form_input works), Generate clicks do nothing, screenshots time out. Prompt text is ready in
+  the box (830 chars, 4:3, 4 images, free quota 32/1000). Needs Chrome visible (other screen) or after gaming.
 - #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
 
 ## FOCUS (director 13:06): "how using blender might improve motion"
