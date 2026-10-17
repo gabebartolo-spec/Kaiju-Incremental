@@ -23,8 +23,7 @@
   too (mantis head cut in both, octopus touches top). CI capture runs 39042109877/...141622 = failure: helper checks.
 - D-049 (a86b290): director applied balance D 03:00. NOT implemented yet (data edits from PR #16 body table D;
   verify with tools/pacing.gd). Demo gaps given 03:04: D-047 PR, balance D, croc baby/adolescent (old models),
-  #8 SFX on hold, Windows build from look-options. Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
-
+  #8 SFX on hold, Windows build from look-options. Q3 Apex height still open.
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
 
 ## Task
