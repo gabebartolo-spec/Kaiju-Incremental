@@ -218,8 +218,6 @@ func _ability_fx(event: Dictionary) -> void:
 	var reach := Num.f(event["reach"])
 	var strength := _power("ability_damage")
 	_shake = maxf(_shake, 0.45)
-	var colors: Dictionary = species["colors"]
-	var eye := Color(str(colors["eye"]))
 	_city.crush(_to_world(sim.kaiju_pos), reach * (0.5 if str(event["kind"]) == "cone" else 1.0))
 	match str(event["kind"]):
 		"cone":
@@ -228,7 +226,6 @@ func _ability_fx(event: Dictionary) -> void:
 				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
 			)
 			var span := facing * reach + Vector3(0, -mouth.y + 0.5, 0)
-			_city.fx.breath(mouth, span, eye)
 			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 			ability_fx.breath(mouth, span, half_angle, strength)
 			_orbit_t = 0.0

@@ -12,7 +12,6 @@ var _dust_mesh: Mesh
 var _puff_mesh: Mesh
 var _spark_mat: ParticleProcessMaterial
 var _spark_mesh: BoxMesh
-var _breath_mesh: BoxMesh
 
 
 func _ready() -> void:
@@ -43,17 +42,10 @@ func _ready() -> void:
 		}
 	)
 	_spark_mesh = _cube(0.12, true)
-	_breath_mesh = BoxMesh.new()
-	_breath_mesh.size = Vector3.ONE * 0.25
-	var hot := ShaderMaterial.new()
-	hot.shader = preload("res://scenes/ember.gdshader")
-	hot.set_shader_parameter("heat", 2.0)  # white-hot enough for the bloom to catch
-	_breath_mesh.material = hot
 	# Prewarm: one of each, out of sight, so the first real one does not stall a frame.
 	dust(Vector3(0, -50, 0), 0.5)
 	sparks(Vector3(0, -50, 0))
 	shockwave(Vector3(0, -50, 0), 1.0)
-	breath(Vector3(0, -50, 0), Vector3(1, 0, 0), Color.ORANGE)
 
 
 ## A billowing dust cloud; size ~ the width of what came down.
@@ -84,36 +76,6 @@ func dust_line(from: Vector3, to: Vector3, width: float) -> void:
 func sparks(at: Vector3) -> void:
 	var p := _burst(_spark_mat, _spark_mesh, 18, 0.5)
 	p.position = at
-
-
-## A cone of glowing voxels blasting along `span` (direction times reach) from `from`.
-func breath(from: Vector3, span: Vector3, color: Color) -> void:
-	var mat := ParticleProcessMaterial.new()
-	mat.direction = span.normalized()
-	mat.spread = 22.0
-	mat.gravity = Vector3(0, -2.0, 0)
-	mat.initial_velocity_min = span.length() / 0.45
-	mat.initial_velocity_max = span.length() / 0.3
-	mat.scale_min = 1.5
-	mat.scale_max = 4.0
-	var ramp := Gradient.new()  # white-hot at the mouth, the species colour as it cools
-	ramp.colors = PackedColorArray([Color(1.0, 0.95, 0.75), color, color.darkened(0.5)])
-	ramp.offsets = PackedFloat32Array([0.0, 0.15, 1.0])
-	var ramp_tex := GradientTexture1D.new()
-	ramp_tex.gradient = ramp
-	mat.color_ramp = ramp_tex
-	var p := GPUParticles3D.new()
-	p.process_material = mat
-	p.draw_pass_1 = _breath_mesh
-	p.amount = 160
-	p.lifetime = 0.45
-	p.one_shot = true
-	p.explosiveness = 0.6
-	p.emitting = true
-	p.position = from
-	p.visibility_aabb = AABB(Vector3(-30, -10, -30), Vector3(60, 30, 60))
-	add_child(p)
-	get_tree().create_timer(0.8).timeout.connect(p.queue_free)
 
 
 ## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own.

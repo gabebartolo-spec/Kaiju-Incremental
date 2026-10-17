@@ -196,12 +196,16 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
 		want.append_array(["cracks", "ready", "deflect", "regen"])
+	var jets := 0
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		jets = maxi(jets, _breath_jets(rampage))
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
+	if kind == "breath":
+		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
@@ -210,6 +214,17 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
 	rampage.queue_free()
 	await process_frame
+
+
+## Live voxel-cube jets (glowing 0.25 u cubes) in the city's effects, above the prewarm spot.
+func _breath_jets(rampage: Rampage) -> int:
+	var count := 0
+	for node: Node in rampage.find_children("*", "GPUParticles3D", true, false):
+		var p: GPUParticles3D = node
+		var cube := p.draw_pass_1 as BoxMesh
+		if cube != null and is_equal_approx(cube.size.x, 0.25) and p.global_position.y > -10.0:
+			count += 1
+	return count
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every
