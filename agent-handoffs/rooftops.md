@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (PR #40 open, synced with look-options 004c8a0, all suites green; sim review + look QA)
+## State: awaiting lead (PR #40 sim review + art QA; local GPU clip done, evidence in lead notes rooftops/gpu/)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -13,7 +13,7 @@ Shots hurt: chip damage, no new escalation curve.
 ## Done (local, all suites green)
 - sim/army.gd: Army.Squad. Placed at city start from Seeds.derive(army rng, 0x2007): buildings >=
   min_height, seeded Fisher-Yates, chance each, cap max_by_tier, top-layer cell, off the stair-hut corner.
-  Fire every fire_interval in range (ground plane); volley = damage_by_tier x threat() (the tank
+  Fire every fire_interval in range (ground plane); volley = damage_by_tier x threat_scale() (the tank
   armour curve). Die when the roof chunk is not alive, or via splash() from hit_area when the attack
   reaches the roof floor. Paid via clear_dead with rooftop_rubble[tier] x rubble_mult.
 - sim/rampage_sim.gd: hit_area -> army_units.splash (also clears dead tanks); result()["rooftops"].
@@ -39,6 +39,12 @@ Shots hurt: chip damage, no new escalation curve.
 2. On a look FIX: re-run `tools/capture/ci_capture.sh --movie --fps=60 --resolution=1920x1080
    capture_rooftops.gd -- --out=<dir>`, trim with ffmpeg (-ss 0.75 -t 3), crop from rooftops.json spots.
 3. When look-options moves: sync (floors resolve to the real counts).
+
+## Lead rules (2026-10-18)
+- Rooftops land BEFORE Military AI (local_5325ef73), which syncs after. In sim/army.gd keep hunks to the
+  squad code, threat_scale() and the clear_dead tail; _spawn() is left as it was (Military AI edits it).
+- rampage.gd is at its 400-line cap: no lines from this PR. Floors resolve to the real counts (flow 114).
+- Armour does not reduce chip (lead accepted; tabled for the director as a balance note).
 
 ## Don't touch
 scenes/biped_swing.gd, scenes/gait_clip.gd, scenes/city_ground.gd, scenes/ui_kit.gd.

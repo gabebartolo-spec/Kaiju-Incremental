@@ -107,7 +107,8 @@ func _spawn() -> void:
 	if edge > Num.f(cfg["spawn_radius"]):
 		at = sim.kaiju_pos + dir * Num.f(cfg["spawn_radius"])
 	tank.pos = sim.clamp_to_arena(at)
-	tank.hp = Num.f(cfg["tank_hp"]) * threat()
+	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
+	tank.hp = Num.f(cfg["tank_hp"]) * threat
 	tank.cooldown = Num.f(cfg["fire_interval"])
 	sim.tanks.append(tank)
 	sim.events.append({"type": "tank_spawned", "tank": tank.id})
@@ -147,13 +148,13 @@ func clear_dead() -> void:
 
 
 ## How hard the army fights back: more the more of the city has fallen.
-func threat() -> float:
+func threat_scale() -> float:
 	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
 
 
 ## One squad's volley at the kaiju: the size tier's sting, grown by the threat.
 func volley() -> float:
-	return _by_tier("damage_by_tier") * threat()
+	return _by_tier("damage_by_tier") * threat_scale()
 
 
 ## A rooftop entry for the kaiju's size tier (tiers past the list use its last entry).
