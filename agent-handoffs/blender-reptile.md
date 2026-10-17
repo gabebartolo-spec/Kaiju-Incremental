@@ -1,8 +1,8 @@
-# blender-reptile handoff, 2026-10-18 05:45
+# blender-reptile handoff, 2026-10-18 06:15
 ## State: running a check. LEAD round 2 FIX (04:11, judged at the GAME camera) done in code, local
 ## 16260e9 (= 3aa63a6 tail round 2 + merge look-options 81afe80; 7d3f761 cards option A), all 9 suites
-## green. Auto-fix base conflicts forced pushes: #22 = b434102 (merged look-options 522fd72;
-## floors city 6, flow 102, clips 14; all suites green; lead.md 109 lines so doc-caps clears).
+## green. Auto-fix base conflicts forced pushes: #22 = 20dc41b (merged look-options b25bb4f;
+## floors flow 109, clips 14 - clips line moved above smoke to stop flow-bump conflicts).
 ## Card stills committed. Remaining evidence (3 s clips, 2x slam/turn crops, body) in one push.
 ## Round 2: walk TAIL_WALK (2,5) over TAIL_WALK_PERIOD 72 = 1.5 cycles (tip 45.3 m = 0.72x), walk
 ## clip baked as 3 cycles (header "cycles", KaijuClips.cycles_of); roar TAIL_LIFT (6,-9): tip above
@@ -17,8 +17,11 @@
 ## Owed for round 2: 3 s game-cam clips walk/turn/roar (roar clip 13.3-18.3: crouch, rear, slam,
 ## recovery), before/after aligned by time (same schedule, seed), 2x crops slam contact + turn
 ## settle, species_cards_before_after (fill per species), PR body; push; delete tmp; SHA to LEAD.
-## P3 GLBs arrived (05:22): scratch p3/baby.glb, p3/adol.glb (adolescent needs 90 deg turn). P3 proposed
-## as its own session (card task_312ec4fa, full brief) - this session finishes P2 only.
+## P3 (lead OK'd: in THIS session after #22; card withdrawn). Scratch p3/: baby.glb, adol_rot.glb
+## (adolescent turned +90 deg Z by p3/rot.py: now faces -Y), g_*_side/top/front.png (grid.py),
+## slice.py -> v_*.npy. Auto fit: rough on baby (tail on top, pelvis off), fails on adolescent ->
+## hand-measure. Baby: T-pose arms straight out x +-67 at z 56-60; huge head (snout y0 z~83).
+## Adolescent: hips z~48-52 at y~70; tail level at z 63-66 to y 208 (needs strong tail carry down).
 ## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
 ## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
