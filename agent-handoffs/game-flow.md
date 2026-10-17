@@ -1,5 +1,5 @@
-# Game-flow handoff, 2026-10-17 15:05
-## State: running a check (3 CI captures; PR #14 CI re-running)
+# Game-flow handoff, 2026-10-17 16:45
+## State: running a check (round-4 CI captures for lead review 2)
 
 ## Task
 Make the loop around the rampage feel finished (brief from lead session local_9fac90d2):
@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at 1ad3dc7 (look-options e5e564b merged) (origin/claude/look-options merged in; rampage.gd
+claude/game-flow-edfba4, pushed at 2ebdfce (look-options e5e564b merged) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built
@@ -50,6 +50,15 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
   its tree hid RAMPAGE at 125% -> stats scroll; species select CHOOSE off screen at 115/125%
   -> shorter preview. Both shown failing in the new check first. 4K now uses --ui-only.
 
+## Lead review 2 (FIX) -> done in 2ebdfce
+1. Tree at 125%: shrinks to fit (Control + scale, never scrolls); check covers every node,
+   shown failing first ("ULTIMATE: Brood at 125%").
+2/3. Pause and report over the tree were my old --ui-only staging; the game only pauses in a
+   rampage. --ui-only now runs a 45-frame live rampage, so both are shot over the city.
+4. Reveal tower = BuildingView (city voxels/windows/shader), feet on the same ground line.
+5. Cancelled 38999978259; clip now about 20 s at 1280x720.
+Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
+
 ## Findings for the lead (lead decides what gets recorded)
 - Pull LFS in every new worktree before a test run (proven: 900 s timeout -> 51 s).
 - Every CI capture before capture.yml's `lfs: true` has blank Kaiju Claw text.
@@ -58,5 +67,5 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- CI captures round 3 on c1ca495: shots 38999978259, 4K --ui-only 39000008904, clip
-  39000034737 -> %TEMP%/gf_cap/{shots,4k,clip} (watcher waits for all three logs).
+- CI captures round 4 on 2ebdfce: 1080p 39006384659, 4K insectoid --ui-only 39006409260,
+  clip 720p 39006434429 -> %TEMP%/gf_cap/{shots,4k,clip}.
