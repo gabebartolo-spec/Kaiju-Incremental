@@ -85,7 +85,8 @@ func _ready() -> void:
 	_city = CityView.new(sim, _fx_rng)
 	add_child(_city)
 	var colors: Dictionary = species["colors"]
-	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale())
+	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
+	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
 	add_child(ability_fx)
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
@@ -94,6 +95,9 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
+	# Build one tank and one helicopter now, so the army's first spawn reuses their voxels.
+	TankModel.new().free()
+	HelicopterModel.new().free()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
@@ -237,8 +241,7 @@ func _ability_fx(event: Dictionary) -> void:
 			)
 			var span := facing * reach + Vector3(0, -mouth.y + 0.5, 0)
 			_city.fx.breath(mouth, span, eye)
-			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
-			ability_fx.breath(mouth, span, half_angle, strength)
+			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
