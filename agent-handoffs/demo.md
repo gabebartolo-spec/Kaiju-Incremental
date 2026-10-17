@@ -1,5 +1,5 @@
-# Demo handoff, 2026-10-18 03:42
-## State: running a check (suites + pacing for balance D on claude/balance-d)
+# Demo handoff, 2026-10-18 03:48
+## State: running a check (pacing x3 species; suites green; PR not yet opened)
 
 ## Task
 Minimal playable demo. Plan approved by the director 03:35:
@@ -16,15 +16,18 @@ end node evolve1; species_select filter; main.gd -> new scenes/demo_end.gd) · P
 from look-options · P7 director playtest.
 
 ## Branch and commit
-claude/balance-d from claude/look-options ed1d2d9 (local; origin/look-options is at dbff208, 7 handoff
-commits behind local: the lead session owns that push). Not pushed, no PR yet.
+claude/balance-d from look-options ed1d2d9, pushed at c782362 (7b07459 data + handoff, c782362 test fixes +
+D-050 in docs/DECISIONS.md). No PR yet. The main checkout is ON this branch; the lead session commits handoffs in
+the same checkout: tell the lead before switching back to look-options.
 
-## Unfinished changes (committed with this handoff)
+## Changes (all committed)
 - data/upgrades.json: all 31 cost arrays x1.27, r_beam x0.6 (0.762 total), i_brood x1.8 (2.286 total),
   rounded to int.
 - data/species.json: reptilian speed 5.5, ability_damage 36, ability_range 11; insectoid ability_damage 18,
   ability_cooldown 6.5.
 - data/tuning.json: cone_half_angle_deg 36.
+- tests: claws 12 -> 15 (sim, flow); growth tree-total band upper 3.0M -> 4.5M (insectoid 4.12M, Brood x1.8
+  stacks on x1.27). All 8 suites green at floors locally (tests2.log).
 Expected pacing (PR #16 table D): ceph 3.70 h / rep 4.43 h / insect 3.26 h.
 
 ## Running jobs
@@ -35,13 +38,12 @@ a71b8659-f570-46fa-a36b-eb259807c651/scratchpad/{tests,pacing_*}.log). First att
 PATH; rerun with the full path. No override.cfg, no windowed Godot.
 
 ## Next
-1. Read logs: all 8 suites at floors (smoke 27, sim 39, powers 24, tentacles 18, city 5, growth 24, load 6,
-   flow 76); pacing hours-to-evolve1 for reptilian (demo target 20-30 min) and totals vs table D.
-2. Push, open PR into claude/look-options with the template: evidence = suite counts + pacing table;
+1. Read pacing logs: reptilian hours-to-evolve1 (demo target 20-30 min) and totals vs table D.
+2. Open PR into claude/look-options with the template: evidence = suite counts + pacing table;
    Board and log = D-050 in full; [MERGE NOTE] floors unchanged, director gate approved (D-049/D-050).
-3. Lead session "Kaiju Incremental game" was told the plan and asked to brief P2-P4 helpers (message
-   e159e529, 03:40); confirm it did before briefing anyone yourself.
-4. Worktrees: 7 live (cap 4); city-growth, game-flow, kaiju-look-test are clean/detached/merged -> remove.
+3. Briefed 03:40 (director: "get the other chats working"): ability-vfx -> P4; blender-reptile -> P2 then P3 rig;
+   kaiju-motion -> P5 demo slice in a new worktree after removing the 3 stale ones; lead -> P3 Tripo meshes + QA
+   gates. P6 Windows export is mine after P5. Lead reviews the P1 PR.
 
 ## Open decisions
 None for the director right now. If reptilian evolve1 lands outside 20-30 min, propose one lever (evolve1
