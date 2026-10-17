@@ -6,6 +6,14 @@ extends Control
 signal continue_pressed
 signal new_game_pressed
 
+## The crawl along the bottom of the menu.
+const NEWS: Array[String] = [
+	"MONSTER SIGHTED OFFSHORE",
+	"RESIDENTS URGED TO STAY INDOORS",
+	"ARMY PLACED ON HIGH ALERT",
+	"EXPERTS: 'IT IS STILL GROWING'",
+]
+
 ## summary: "" for no save, else what Continue resumes (e.g. "Reptilian, 3 rampages").
 var summary := ""
 var _col: VBoxContainer
@@ -20,15 +28,19 @@ func setup(p_summary: String) -> void:
 func _ready() -> void:
 	UiKit.full_rect(self)
 	add_child(UiKit.backdrop())
+	_add_broadcast_frame()
 	_col = VBoxContainer.new()
 	UiKit.full_rect(_col)
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	_col.add_theme_constant_override("separation", 24)
 	add_child(_col)
+	var kicker := UiKit.label("CIVIL DEFENCE ALERT", UiKit.SIZE_BODY, UiKit.ALERT)
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_col.add_child(kicker)
 	var title := UiKit.label("KAIJU INCREMENTAL", 104, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(title)
-	var sub := UiKit.label("Grow. Evolve. Flatten the city.", UiKit.SIZE_HEAD, UiKit.MUTED)
+	var sub := UiKit.label("Grow. Evolve. Flatten the city.", UiKit.SIZE_HEAD, UiKit.TEXT)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(sub)
 	_buttons = VBoxContainer.new()
@@ -37,6 +49,21 @@ func _ready() -> void:
 	_buttons.add_theme_constant_override("separation", 16)
 	_col.add_child(_buttons)
 	_show_main()
+
+
+## Hazard tape along the top edge and the news crawl along the bottom: the city has seen you.
+func _add_broadcast_frame() -> void:
+	var top := UiKit.tape(18.0)
+	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top.offset_bottom = 18.0
+	add_child(top)
+	var lines := PackedStringArray(NEWS)
+	if summary != "":
+		lines.insert(0, "%s STILL AT LARGE" % summary.get_slice(",", 0).to_upper())
+	var crawl := NewsTicker.new(lines)
+	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	crawl.offset_top = -NewsTicker.HEIGHT
+	add_child(crawl)
 
 
 func _show_main() -> void:

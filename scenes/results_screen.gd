@@ -84,6 +84,22 @@ func _ready() -> void:
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
 	_go.grab_focus.call_deferred()
+	var crawl := NewsTicker.new(news(result))
+	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	crawl.offset_top = -NewsTicker.HEIGHT
+	add_child(crawl)
+
+
+## The evening news about this rampage, for the crawl under the report.
+static func news(r: Dictionary) -> PackedStringArray:
+	var lines := PackedStringArray()
+	lines.append("%d%% OF THE CITY DESTROYED" % floori(Num.f(r.get("destruction", 0)) * 100.0))
+	if Num.i(r.get("toppled", 0)) > 0:
+		lines.append("%d BUILDINGS DOWN" % Num.i(r.get("toppled", 0)))
+	if Num.i(r.get("tanks", 0)) + Num.i(r.get("helis", 0)) > 0:
+		lines.append("ARMY LOSSES MOUNT")
+	lines.append("THE CREATURE HAS RETREATED - FOR NOW")
+	return lines
 
 
 func _process(_delta: float) -> void:
