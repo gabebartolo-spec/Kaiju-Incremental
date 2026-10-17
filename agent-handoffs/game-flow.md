@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at 2ebdfce (look-options e5e564b merged) (origin/claude/look-options merged in; rampage.gd
+claude/game-flow-edfba4, pushed at HEAD (look-options 51229c0 merged; rampage.gd 398/400 after the heli merge: run-over UI lives in RampageHud.run_over) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built

@@ -106,7 +106,6 @@ func _ready() -> void:
 	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
-	_hud.end_requested.connect(func() -> void: _on_event(sim.end("ended")))
 	add_child(_hud)
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
@@ -195,9 +194,7 @@ func _on_event(event: Dictionary) -> void:
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
 		"run_over":
-			_hud.refresh()
-			_hud.show_end_beat(str(event["reason"]))
-			get_node("/root/EventBus").emit_signal("run_ended", _hud.result())
+			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
 

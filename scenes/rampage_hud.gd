@@ -4,8 +4,6 @@ extends CanvasLayer
 ## beat (why it ended, big). Reads the sim; reports the beat's end through `beat_done`.
 
 signal beat_done(result: Dictionary)
-## The pause menu's End Rampage was chosen.
-signal end_requested
 
 ## Reason: headline, line under it.
 const HEADLINES := {
@@ -133,6 +131,19 @@ func refresh() -> void:
 		_ultimate.add_theme_color_override("font_color", UiKit.MUTED)
 
 
+## The rampage is over (the sim said so): show why, and tell the rest of the game.
+func run_over(reason: String) -> void:
+	refresh()
+	show_end_beat(reason)
+	get_node("/root/EventBus").emit_signal("run_ended", result())
+
+
+## The pause menu's End Rampage: the sim ends the run now (earnings kept), then the end beat.
+func _end_now() -> void:
+	sim.end("ended")
+	run_over("ended")
+
+
 ## The end beat: the reason the rampage ended slams onto the screen while the city keeps
 ## falling in slow motion. After BEAT_FRAMES (or a confirm once BEAT_MIN_FRAMES have shown, so
 ## a held attack button cannot skip it by accident) it reports `beat_done`.
@@ -184,7 +195,7 @@ func pause() -> void:
 	if sim.over or get_tree().paused:
 		return
 	var menu := PauseMenu.new()
-	menu.end_pressed.connect(func() -> void: end_requested.emit())
+	menu.end_pressed.connect(_end_now)
 	add_child(menu)
 	get_tree().paused = true
 
