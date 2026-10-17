@@ -1,41 +1,43 @@
-# Voxel-edges handoff, 2026-10-18 05:45
-## State: awaiting lead (method change proposed; the effect is invisible at the game camera)
+# Voxel-edges (crease shader) handoff, 2026-10-18 05:50
+## State: awaiting lead (A/B/C board + PR #35 sent for lead QA; director gate after)
 ## Task
-Director, 2026-10-18 (in session): "Prototype voxel edge shading first and bring me a labelled
-before/after capture through the lead." The lead (LEAD session) gates every look; the board goes to the
-director only through the lead.
+Director, 2026-10-18: first "prototype voxel edge shading", then (via the lead, after it proved
+invisible at the game camera) "(a) crease pass prototype": screen-space, depth + normal breaks darkened,
+strengths in looks.json, off-switch in data, per-voxel bevel dropped. Bars from the lead: visible at
+the game camera (mean diff + 2x crops), no shimmer in a 3 s 1080p pan, 4K GPU cost from the perf
+lines, labelled A/B/C board at 1080p + 4K, art-qa-critic pass, then to the lead.
 ## Branch and commit
-claude/voxel-edge-shading (worktree ../Kaiju-Incremental-wt/voxel-edges), base claude/look-options
-db2e73b, head = "art: voxel edges compile". Pushed, no PR. A stray local branch claude/voxel-edges
-(no commits, never pushed) can be deleted.
+claude/voxel-edge-shading (worktree ../Kaiju-Incremental-wt/voxel-edges), base claude/look-options.
+PR gabebartolo-spec/Kaiju-Incremental#35 into claude/look-options, Auto-fix on. Do not merge (director
+gate). A stray local branch claude/voxel-edges (no commits) can be deleted.
 ## What changed
-- scenes/voxel_edge.gdshaderinc: face coordinate -1..1, bevel normal tilt at the rim, thin seam, fade-out
-  where the rim band is under ~1 px. The varyings are written in each shader's vertex() (Godot rejects
-  varying writes in helper functions).
-- voxel.gdshader (box_mesh uniform), building_baked.gdshader, voxel_skin.gdshader include it;
-  building_mesher.gd + voxel_builder.gd write face UVs (BuildingMesher.FACE_UV); Look.edge_params.
-- data/looks.json edge_width 0.2 / edge_bevel 0.7 / edge_dark 0.3; run_sim_tests _check_looks keys.
-## Evidence so far
-- Suites local: sim 39, smoke 27, city 5 pass (before the compile fix; it touches shaders only).
-- Local GPU A/B (lead's slot), capture_looks.gd, 4K + 1080p, edge_width 0 = before. Scratchpad:
-  local4k/, local1080/, crop_evolved.png (crops.py; needs plain `python`, PIL is in user site).
-- Mean abs diff before→after: evolved 1.09/255, young 0.86, lineup 0.00. At the game camera a voxel is
-  about 5-10 px at 4K, so the rim band is under a pixel and fades out. Buildings show no change.
-- GPU cost within noise (4K, RTX 4070 S): young 11.9→11.6 ms, evolved 12.7→12.2, lineup 10.7→10.0.
-- CI capture runs 39052984488/39053097548 were cancelled (on the broken-compile commit).
+- scenes/crease.gdshader + scenes/crease_pass.gd (CreasePass.make(), null when strength 0); city_view.gd
+  adds it. looks.json crease_strength/radius/depth_step/normal_step/fade_near/fade_far; _check_looks keys.
+- tools/capture/capture_looks.gd --pan (3 s camera slide after the evolved city shot).
+- The per-voxel bevel was reverted (commit "art: drop per-voxel edge bevel").
+## Evidence
+- Suites local: sim 39, smoke 27, city 5 pass.
+- Local GPU renders (scratchpad/crease/{A,B,C}_{4k,1080}, B_pan): 0 SHADER ERROR. Mean diff vs A:
+  evolved B 5.68 / C 11.92, young 4.58 / 9.68, lineup 2.12 / 5.12. 4K GPU evolved 12.1/12.3/12.1 ms.
+- Pan B: residual mean 3.5/255, max 6 except the teardown frames; 2x strip shows no popping.
+- Board and crops in docs/captures/2026-10-18-crease/; scripts in scratchpad (crease_ab.sh, board.py,
+  pan.py, qa.py; use plain `python`, PIL and cv2 are in the user site).
 ## Attempts (fix-loop record)
-1. Shader compile failure (varyings in a helper): fixed, confirmed by a clean 4K log.
-2. Per-voxel bevel: works but is invisible at game scale. Method change proposed, not a retune.
+1. Per-voxel bevel: compile fix (varyings only in vertex()), then invisible at game scale. Method changed.
+2. Crease at 0.6: too strong (ink look, kaiju speckle). The board is re-scoped to A 0 / B 0.3 / C 0.6.
 ## Open decisions
-Lead (then the director): (a) screen-space crease pass (darken depth/normal breaks in pixels),
-(b) keep edges for close-ups only, (c) shelve.
+Director (through the lead): A vs B (C shown as too strong). After the pick: set crease_strength in
+looks.json, update the PR body's Board and log, push.
 ## Running jobs
 none
 ## Findings for the lead
-- Headless suites never compile spatial shaders: run one rendered capture and grep for SHADER ERROR
-  before any CI capture. That would have saved two 70-min CI runs.
-- Measure on-screen voxel size before choosing a per-voxel effect; under ~8 px a rim effect cannot show.
+- Headless suites never compile spatial shaders: one rendered run plus a grep for SHADER ERROR before
+  any CI capture would have saved two 70-min CI runs.
+- Measure on-screen voxel size before choosing a per-voxel effect: under ~8 px a rim effect can't show;
+  a screen-space pass works at any zoom.
+- A mean-abs-diff number against the off state makes "is it visible" objective (0.00 vs 5.7).
 ## Rules learnt the hard way (under 10 lines)
 - PRs here target claude/look-options, not main.
 - Godot shaders: only vertex()/fragment() may write varyings; helpers take them as parameters.
 - The focus guard scans Bash command text: write Godot launch scripts with the Write tool.
+- Typed GDScript: Dictionary values are Variant; wrap them in str() before a String parameter.
