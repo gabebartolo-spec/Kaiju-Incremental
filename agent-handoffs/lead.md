@@ -31,6 +31,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    needs A + D), (2) A -> C -> E -> F, (3) all six. Landmark sites (merged-block plazas) start after D-062 merges.
 8. #39 heli gun burst + crash (stacked on #34): listen to ...side-session-notes\local_9fac90d2...\army-sfx\
    heli_gun_crash.mp4 (busy picture, listen only); merge after his yes. Croc roar layers from Sonniss GDC: ask.
+   Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
+   ambience (branches, coming). #41 limiter MERGED (objective: no clipping).
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
    1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; my FIX: #2 read as a real A-10, made original; fresh
    critic next. Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
