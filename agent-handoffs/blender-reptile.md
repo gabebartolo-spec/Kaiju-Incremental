@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 16:50
-## State: running a check (croc titan r5 timing fixes: render chain bash bjckbbp07 -> scratch r5/)
+# blender-reptile handoff, 2026-10-17 16:42
+## State: awaiting lead (croc titan r5 sent)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -39,7 +39,9 @@ drift 56-118 overlapping recovery 104-140, head/tail "look" sweep, breathe x3 at
 x1.5 (bob + pelvis pitch). 5 tail base lifts in the roar: tip min z 8.8 -> 20.2 m. 6 roar seam 0.22 ->
 0.08. 7 turn: tail wave damped 65% over f110-140. New task `diff` (per-frame mean vertex move in rig
 space + seam + tail tip z); plot script scratch r5/plot.py (r4 vs r5, r4 diffs from mt_r4.py patched).
-Pending: chain renders, check export byte-identical, board, commit evidence, clips -> notes croctitan_r5/.
+DELIVERED 16:42: export byte-identical to 3ea955d (cmp). Foot slide walk 3.4 / turn 11.4 / roar 3.4 cm;
+girth unchanged. docs/captures/2026-10-17-croctitan-r5/ (crops, measurements, per_frame_diff.png +
+diff/*.json); clips + sheets in notes blender-reptile/croctitan_r5/.
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -86,7 +88,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-bash bjckbbp07: headless Blender r5 chain (scratch r5/). No MCP Blender open.
+None. No Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
