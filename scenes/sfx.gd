@@ -16,10 +16,13 @@ static var _ui_player: AudioStreamPlayer
 
 ## Every sound played, in order; read by the flow suite.
 var played: Array[String] = []
+## The camera: army sounds fade with their distance from it (Rampage sets it).
+var listener: Node3D
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _regen: AudioStreamPlayer
+var _rotor: AudioStreamPlayer
 var _rng: RandomNumberGenerator
 var _tune: Dictionary
 ## Size-tier pitch (baby high, Behemoth low), from set_size_tier.
@@ -51,6 +54,9 @@ func _ready() -> void:
 		"footstep",
 		"stomp_crack",
 		"collapse",
+		"roar",
+		"tank_fire",
+		"shell_hit",
 	]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
@@ -61,13 +67,8 @@ func _ready() -> void:
 		player.bus = "SFX"
 		add_child(player)
 		_pool.append(player)
-	_regen = AudioStreamPlayer.new()
-	_regen.bus = "SFX"
-	var loop: AudioStreamOggVorbis = load("res://assets/sfx/regen_loop.ogg")
-	loop.loop = true
-	_regen.stream = loop
-	_regen.volume_db = _volume("regen_loop")
-	add_child(_regen)
+	_regen = _looping("regen_loop")
+	_rotor = _looping("heli_rotor")
 
 
 func _process(delta: float) -> void:
@@ -158,6 +159,45 @@ func _release_stomp() -> void:
 		_since_crack = 0.0
 		play("stomp_crack")
 	_pending = ""
+
+
+## The army's sounds where they happen (tank_fire, shell_hit): quieter the further they are
+## from the camera, down to a floor so a far tank is still heard.
+func play_at(sound: String, at: Vector3) -> void:
+	play(sound, _distance_db(at))
+
+
+## The helicopters' rotor loop: on while any is flying, as loud as the nearest one.
+func rotors(helis: Array[Node3D]) -> void:
+	if helis.is_empty():
+		if _rotor.playing:
+			_rotor.stop()
+		return
+	var near := INF
+	for heli: Node3D in helis:
+		near = minf(near, _distance_db(heli.global_position) * -1.0)
+	_rotor.volume_db = _volume("heli_rotor") - near
+	if not _rotor.playing:
+		played.append("heli_rotor")
+		_rotor.play()
+
+
+func _distance_db(at: Vector3) -> float:
+	if listener == null or not listener.is_inside_tree():
+		return 0.0
+	var ratio := listener.global_position.distance_to(at) / Num.f(_tune["near_distance"])
+	return maxf(Num.f(_tune["far_floor_db"]), -20.0 * log(maxf(1.0, ratio)) / log(10.0))
+
+
+func _looping(sound: String) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	player.bus = "SFX"
+	var loop: AudioStreamOggVorbis = load("res://assets/sfx/%s.ogg" % sound)
+	loop.loop = true
+	player.stream = loop
+	player.volume_db = _volume(sound)
+	add_child(player)
+	return player
 
 
 ## Regeneration's bubbling, on while the kaiju heals.
