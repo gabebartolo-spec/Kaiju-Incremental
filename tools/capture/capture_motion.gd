@@ -27,6 +27,7 @@ var _species := "reptilian"
 var _stage := "adult"
 var _cam := "game"
 var _seconds := 15.0
+var _roar_at := 10.0  # s; capture_clips.gd moves it
 var _trace := ""
 var _pose_trace := ""
 var _poser := PoseTrace.new()
@@ -157,6 +158,8 @@ func _run() -> void:
 			facing = move.normalized()
 		elif _cam == "side" and t >= SIDE_PIVOT:
 			facing = Vector2(0, -1)  # standing, it turns side-on to the camera for the roar
+		else:
+			facing = _standing_facing(t, facing)
 		at = at.lerp(Vector3(pos.x, 0, pos.y), minf(1.0, dt * 12.0))
 		kaiju.position = at
 		kaiju.rotation.y = lerp_angle(
@@ -166,7 +169,7 @@ func _run() -> void:
 		if stomp_in <= 0.0:
 			stomp_in += interval
 			kaiju.stomp()
-		if t >= 10.0 and not roared:
+		if t >= _roar_at and not roared:
 			roared = true
 			kaiju.roar()
 		var t0 := Time.get_ticks_usec()
@@ -276,6 +279,11 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 
 
 ## What the script is doing at time t, shown on the clip.
+## Where a standing kaiju faces at time t (capture_clips.gd turns it on the spot).
+func _standing_facing(_t: float, facing: Vector2) -> Vector2:
+	return facing
+
+
 func _event_at(t: float) -> String:
 	if t < 1.0:
 		return "STAND (stomps)"
