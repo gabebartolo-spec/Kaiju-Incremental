@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 06:15
-## State: working on (e) SFX bus + slider on branch claude/sfx-bus (stacked on #8 111b696). The PR opens after #8 merges, then (f) UI clicks, (d) heli gun/crash, and the army PR
+# Ability VFX/SFX handoff, 2026-10-18 07:00
+## State: running a check (CI on PR #33 sfx-bus and PR #34 army, both auto-fix ON). Next: (d) heli gun burst + heli crash
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -50,36 +50,19 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - The director's listen is the gate.
 - Flow floor is 83.
 
-## Lead's orders (2026-10-18)
-- D-052 (r2 shipped) and D-055 (roar on reveal + end card) are in #8's Board and log.
-- (b) The roar plays via Sfx.roar(parent), a static entry that returns the player:
-  - the EvolutionReveal calls it in _swap;
-  - kaiju-motion's demo end card (PR #23, scenes/demo_end.gd) calls the same entry.
-- Clip: ability-sfx-d050/roar/roar_reveal.mp4, plus roar_spec.png.
-- Flow floor is 84.
-- (c) Army sounds were REVERTED from #8 (lead: new PR off look-options after #8 merges). The work is saved
-  on local branch claude/army-sfx-wip (b1f9e18): tank_fire, shell_hit, heli_rotor, Sfx.play_at/rotors,
-  near_distance/far_floor_db, 3 heli flow checks.
-  - Next: once #8 merges, branch off look-options and cherry-pick b1f9e18.
-  - The "roar" volume key already exists, so drop that hunk.
-  - Floor: base + 3.
-
-## (e) SFX bus + volume slider (claude/sfx-bus, local)
-- PlayerSettings: BUSES ["SFX", "Music"] are created under Master by bus(); sfx_volume is saved as audio/sfx_volume.
-  The default is tuning "sfx" default_volume 0.9.
-- The settings menu has a "Sound effects" slider (SettingsMenu.effects). All Sfx players, including the roar, use bus "SFX".
-- Flow +3 checks, floor 87:
-  - a real mouse drag to 70% sets the bus;
-  - the value survives load_saved;
-  - every power sound plays on SFX.
-  With the slider unwired, 2 of them failed, so the checks are proven.
-- Captures at 1080p and 4K/125% are in shared notes sfx-bus/.
-- After #8 merges: rebase onto look-options, push, open the PR into claude/look-options.
-
-## (f) UI sounds (claude/sfx-bus, local, on top of (e))
-- ui_click (every UiKit.button press), ui_confirm / ui_deny (upgrade tree buy succeeds or fails).
-- Sfx.ui(sound) is static, with one player under the root on bus SFX; Sfx.ui_played is read by the tests.
-- Flow +3, floor 90 on this branch. When rebasing onto look-options after #8: base flow 100 + 6 = 106.
+## Status (2026-10-18)
+- PR #8 is MERGED (47e1b30). D-052 (r2 shipped) and D-055 (roar on the reveal and end card) are logged.
+  kaiju-motion has been told to call Sfx.roar(self) in demo_end.gd.
+- PR #33 (claude/sfx-bus → look-options):
+  - (e) SFX and Music buses; "Sound effects" slider (PlayerSettings.sfx_volume, default from tuning sfx default_volume).
+  - (f) Menu sounds: Sfx.ui -> ui_click (UiKit.button), ui_confirm / ui_deny (upgrade buy).
+  - Flow 106.
+- PR #34 (claude/army-sfx, base claude/sfx-bus, stacked):
+  - tank_fire, shell_hit, heli_rotor; Sfx.play_at / rotors / listener.
+  - Flow 109. When #33 merges, retarget it to look-options.
+- Evidence is in shared notes sfx-bus/ and army-sfx/.
+- Next job (d): heli gun burst (PowersView._heli_fired) and heli crash (_heli_down), on top of #34.
+- Worktree branches: claude/sfx-bus, claude/army-sfx. The old ability-sfx branch is merged and can be deleted.
 
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).
