@@ -41,8 +41,6 @@ func _run() -> void:
 				"stage %d map_seed %d: %d cells, %d empty (arena %d, band %d)"
 				% [tier, map_seed, got["cells"], empty.size(), got["arena_empty"], got["band_empty"]]
 			)
-			if map_seed == 7301:
-				print(got["map"])
-				print("empty at ", empty)
+			print("empty at ", empty)
 			holder.free()
 	quit()

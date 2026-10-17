@@ -270,6 +270,7 @@
 		"calm_radius": 32.0,
 		"cars": 36,
 		"parked_chance": 0.7,
+		"parked_chance_beyond": 0.9,
 		"parked_gap": [1.9, 3.2],
 		"lane_stop_chance": 0.12,
 		"drive_speed": 3.5,

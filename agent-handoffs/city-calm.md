@@ -1,56 +1,64 @@
-# City-calm handoff, 2026-10-18 05:10
-## State: awaiting lead (PR #30 open; local smoke of the CI artifact waits for the GPU go ~05:40)
+# City-calm handoff, 2026-10-18 05:58
+## State: running a check (D-062 BEFORE/AFTER captures on CI); D-065 greenery queued next
 
 ## Task
-Role city-calm (helper). Lead: "Game demo planning" (local_106fc100).
-- DONE: #26 calm streets (merged 55231be, D-054).
-- DONE: #28 export-windows (merged 5cb8ad9): tools/export_windows.sh, tools/pck_check.py,
-  exclude_filter "tests/*, tools/*".
-- NOW: ci-export (demo P6, D-050). build.yml workflow_dispatch input `ref`; export via
-  tools/export_windows.sh + pack check on CI; dispatched run uploads KaijuIncremental-<sha>
-  (7 days); main push trigger unchanged. Proof: one dispatch on look-options, artifact
-  downloaded and smoke-launched locally. PR into look-options.
+Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep from 06:4x:
+no questions to him; sim changes (destructible props) go to the lead.
+- DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export (artifact smoke PASS).
+- NOW: D-062, director 05:27 "there should never be vast empty spaces with nothing to smash or
+  kill". Arena cells need smashables, band cells (past the edge, as far as the camera sees)
+  need dressing; both floors 0; 3 map_seed cities; stills, crops, frame cost; PR to the lead.
+- NEXT: D-065 (director 06:2x): believable trees, bushes, floral areas, parks, gardens,
+  playgrounds; targets in tuning; everything crushable; separate PR. Brief in the lead's
+  message: street trees every 8-15 m on avenues/main streets, 8-15% green lots, none more than
+  ~2 blocks from one, yards where lots have yard_chance; parks count as filled cells.
 
 ## Branch and commit
-claude/ci-export, worktree .claude/worktrees/city-calm-streets-722ec5.
-8793b28 = build.yml change; b75a6ac = merge of look-options 87fba2d (pushed).
+claude/no-empty-space off origin/claude/look-options 3df0f6b, worktree
+C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/no-empty-space.
 
-## Unfinished changes
-none uncommitted (this handoff aside).
+## What changed (D-062)
+- tests/lib/city_coverage.gd: 10 m cells over arena + city.view_beyond (30).
+- tests/run_city_tests.gd _check_no_empty_ground: stage 1 + 2 x map_seed 7301/1234/98765,
+  floor city 6 -> 12.
+- scenes/city_decor.gd: parked cars run past the edge to arena + view_beyond (no lamps there);
+  short blocks past the edge get a mid-kerb car; cars may stand where a street runs into the
+  diagonal past the edge; the diagonal's kerb trees run on past the edge.
+- data/tuning.json: city.coverage_cell 10, city.view_beyond 30; street.parked_chance 0.7,
+  parked_chance_beyond 0.9, parked_gap [1.9, 3.2], lane_stop_chance 0.12.
+- tools/coverage_probe.gd prints the maps.
 
 ## Evidence so far
-notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\ci-export
-- Dry run on claude/ci-export: run 39056399854 green; artifact KaijuIncremental-8793b28;
-  exe 126,591,656 B, 229 files, no tools/, headless launch loaded main.tscn.
-- look-options run 39056638725 green at 87fba2d: 235 files, pack check ok, main.tscn reached;
-  artifact KaijuIncremental-87fba2d downloaded to notes/ci-export/artifact/ (126,598,360 B).
-- PR #30 open (head 01d6e1e), body says the smoke is pending.
-- PR body draft: scratchpad pr_ci_export.md (LOOK_RUN / SMOKE placeholders).
+notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\no-empty-space
+- Red on the original decor (city_red_original_decor.log): empty past the edge, stage 1
+  17/17/12, Behemoth 19/13/12; arena 0 everywhere. Green: all 0 (city_green.log).
+- All suites green (run_tests_all.log): smoke 27, sim 39, powers 24, tentacles 18, city 12,
+  growth 24, load 6, flow 100, self-test ok.
+- Camera past the arena edge: stage 1 south 14, sides 22-50, north 37 m; Behemoth 16.5,
+  27-67, 51 m. The kaiju is clamped to half + 2.5.
 
 ## Next
-1. DONE: run checked, PR #30 opened, lead told.
-2. At the lead's GPU go (~05:40): bash scratchpad/smoke_exe.sh <notes>/ci-export/smoke
-   <path to downloaded exe>; check a title frame and godot.log; fill SMOKE; gh pr edit; report.
+1. CI captures (capture_growth --stage=1/2 --quick, 1920x1080): BEFORE on look-options,
+   AFTER on this branch; labelled stills; 2x crops of the ring and the south band.
+2. Frame cost: local timed capture_growth run after the lead's GPU go (~06:35).
+3. PR with D-062 in Board and log; report to Kaiju: Lead (<=8 lines). Then D-065.
 
 ## Attempts (fix-loop record)
-none
+- Coverage measure: 30 m cells found nothing; 10 m used. Rect sampling first skipped far edges
+  (inflated empties to 26); fixed by sampling edges too.
 
 ## Open decisions
-none
+none (the lead decided: dress the band).
 
 ## Running jobs
-none.
+CI capture runs (see notes).
 
 ## Findings for the lead
-- pck_check's tools/ assertion caught 40 dev-tool files in the demo pack before the filter
-  change (#28): reading the real pack beats trusting the preset.
-- ci_capture.sh picks the newest workflow_dispatch run without filtering by branch; verify the
-  run's headBranch.
+- A worktree removed under a live session sends its next git command into the main checkout
+  (05:28, restored at once). Check `git rev-parse --show-toplevel` first.
+- Seeds.make("city", n) does not change the street plan; city.map_seed does.
 
 ## Rules learnt the hard way (under 10 lines)
-- Branch off origin/claude/look-options, not the worktree's starting commit.
-- `git lfs pull` before any suite or export in a fresh worktree; pulling mid-run makes the
-  re-import segfault (exit 139). With LFS pointers, flow times out at 900 s.
-- Template builds start fullscreen (settings.gd): seed user settings.cfg fullscreen=false
-  before any windowed exe run.
-- The exported pack stores resources RSCC/zstd-compressed: Python 3.14 compression.zstd.
+- Before any git command in a worktree, confirm it still exists (show-toplevel).
+- `git lfs pull` before suites/exports in a fresh worktree; never mid-run.
+- Template builds start fullscreen: seed settings.cfg fullscreen=false for smoke runs.

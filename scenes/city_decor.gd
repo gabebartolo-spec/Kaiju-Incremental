@@ -87,6 +87,7 @@ func _streets() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var lit_nodes := {}
 	var chance := Num.f(_street["parked_chance"])
+	var chance_beyond := Num.f(_street["parked_chance_beyond"])
 	var lane_stop := Num.f(_street["lane_stop_chance"])
 	var gap: Array = _street["parked_gap"]
 	for street: Dictionary in plan["streets"]:
@@ -102,20 +103,26 @@ func _streets() -> void:
 		var length := a.distance_to(b)
 		if kind != CityGen.DIAGONAL:
 			var along_x := absf(dir.x) > 0.5
+			# Past the edge, where nothing drives, cars may stand where a street runs into the
+			# diagonal, and a short block still gets one mid-kerb (D-062: no bare asphalt).
 			for kerb: float in [-1.0, 1.0]:
 				var t := CROSSING_CLEAR + _rng.randf_range(0.0, 2.0)
-				while t < length - CROSSING_CLEAR:
+				if not playable and t >= length - CROSSING_CLEAR:
+					t = length * 0.5
+				while t < length - CROSSING_CLEAR or is_equal_approx(t, length * 0.5):
 					var lane := width * 0.5 - 0.6
 					if _rng.randf() < lane_stop:
 						lane = width * 0.25  # stopped in the traffic lane
 					var p := a + dir * t + side * kerb * lane
 					var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
 					var on_diagonal := (
-						CityGen.diagonal_distance(plan, p)
+						playable
+						and CityGen.diagonal_distance(plan, p)
 						< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
 					)
 					var seen := _inside(p, _view - _half)
-					if _rng.randf() < chance and not on_diagonal and seen:
+					var roll := _rng.randf()
+					if roll < (chance if playable else chance_beyond) and not on_diagonal and seen:
 						_props.add(
 							Vector3(p.x, 0, p.y),
 							func(v: VoxelBuilder) -> void: car(v, color, along_x)
@@ -201,23 +208,43 @@ func _on_edge(r: Rect2, edge: int, t: float) -> Vector2:
 
 
 ## Street trees down both sides of the diagonal, and in the leftover corners it cuts out of
-## the blocks (little plazas, the way Broadway leaves them).
+## the blocks (little plazas, the way Broadway leaves them). Past the playable edge the kerb row
+## runs on as far as the camera sees (D-062), clear of the skyline's stand-ins.
 func _diagonal_trees() -> void:
 	var diag: Dictionary = plan["diagonal"]
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	var side := Vector2(-dir.y, dir.x)
 	var kerb := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 0.6
-	var t := -_half * 1.6
-	while t < _half * 1.6:
+	var reach := maxf(_half * 1.6, _view / absf(dir.x))
+	var t := -reach
+	while t < reach:
 		for s: float in [-1.0, 1.0]:
 			for off: float in [kerb, kerb + 2.5, kerb + 5.0]:
 				var p := at + dir * t + side * s * off
-				if not _inside(p, -1.0) or _on_building(p) or _near_street(p):
+				var city := _inside(p, -1.0)
+				if not city and (off != kerb or not _inside(p, _view - _half)):
+					continue
+				if _on_building(p) or (_near_street(p) if city else _on_road(p)):
 					continue
 				if off == kerb or _rng.randf() < 0.45:
 					_props.add(Vector3(p.x, 0, p.y), _tree)
 		t += 4.0
+
+
+## Whether p lies on a grid street's carriageway (past the edge, where stand-ins fill the blocks
+## and a tree may stand on the pavement).
+func _on_road(p: Vector2) -> bool:
+	var nodes: Array[Vector2] = plan["nodes"]
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) == CityGen.DIAGONAL:
+			continue
+		var a := nodes[Num.i(street["from"])]
+		var b := nodes[Num.i(street["to"])]
+		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
+		if q.distance_to(p) < Num.f(street["width"]) * 0.5 + 0.3:
+			return true
+	return false
 
 
 ## Whether p lies on a grid street (not on a block).

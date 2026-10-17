@@ -32,15 +32,15 @@ static func measure(
 		var steps := maxi(1, ceili(a.distance_to(b) / (size * 0.25)))
 		for i: int in steps + 1:
 			mark.call(a.lerp(b, float(i) / steps), road)
+	# A footprint marks every cell it reaches: sampled a quarter cell apart, edges included.
+	var cover := func(r: Rect2, into: Dictionary) -> void:
+		var nx := maxi(1, ceili(r.size.x / (size * 0.25)))
+		var nz := maxi(1, ceili(r.size.y / (size * 0.25)))
+		for i: int in nx + 1:
+			for j: int in nz + 1:
+				mark.call(r.position + r.size * Vector2(float(i) / nx, float(j) / nz), into)
 	for bld: RampageSim.Building in sim.buildings:
-		var r := Rect2(bld.x - bld.w * 0.5, bld.z - bld.d * 0.5, bld.w, bld.d)
-		var x := r.position.x
-		while x <= r.end.x:
-			var z := r.position.y
-			while z <= r.end.y:
-				mark.call(Vector2(x, z), full)
-				z += minf(r.size.y, size * 0.25)
-			x += minf(r.size.x, size * 0.25)
+		cover.call(Rect2(bld.x - bld.w * 0.5, bld.z - bld.d * 0.5, bld.w, bld.d), full)
 	for g: Dictionary in decor._props._groups:
 		var at: Vector3 = g["at"]
 		mark.call(Vector2(at.x, at.z), full)
@@ -49,14 +49,10 @@ static func measure(
 	for p: StreetLife.Person in street.people:
 		mark.call(p.pos, full)
 	var dressed := {}  # the band only: stand-ins count there, never inside the arena
-	var corners: Array[Vector2] = [
-		Vector2(-0.5, -0.5), Vector2(0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5), Vector2.ZERO
-	]
 	for box: Dictionary in skyline._near:
 		var at: Vector3 = box["at"]
 		var sz: Vector3 = box["size"]
-		for k: Vector2 in corners:
-			mark.call(Vector2(at.x + k.x * sz.x, at.z + k.y * sz.z), dressed)
+		cover.call(Rect2(at.x - sz.x * 0.5, at.z - sz.z * 0.5, sz.x, sz.z), dressed)
 	var coast := Num.f(cfg["coast_z"])
 	var empty: Array[Vector2] = []
 	var lines: PackedStringArray = []
