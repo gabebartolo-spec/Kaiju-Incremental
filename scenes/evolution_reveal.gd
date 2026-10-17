@@ -29,6 +29,8 @@ var scale_after: float
 var tower_floors: int
 ## The size lines under the headline (read by the flow suite's on-screen check).
 var lines: Label
+## The new stage's roar (Sfx.roar), started with the swap.
+var roar: AudioStreamPlayer
 var _species: Dictionary
 var _viewport: SubViewport
 var _kaiju: KaijuModel
@@ -155,6 +157,7 @@ func _try_skip() -> void:
 func _swap() -> void:
 	_place_kaiju(stage_after, scale_before)
 	_kaiju.roar()
+	roar = Sfx.roar(self)
 	_flash.color.a = 0.9
 	_headline.text = title.to_upper()
 	if title.is_empty():

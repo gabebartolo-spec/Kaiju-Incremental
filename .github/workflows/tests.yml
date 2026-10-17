@@ -101,6 +101,11 @@ jobs:
           # and button draws nothing and the flow suite's font check fails.
           lfs: true
 
+      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio,
+      # not pointer files. Fonts and models stay as pointers (nothing in the suites needs them).
+      - name: Fetch the sound files
+        run: git lfs pull --include="assets/sfx/*"
+
       - name: Cache Godot
         id: godot-cache
         uses: actions/cache@v4
@@ -146,6 +151,11 @@ jobs:
           # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
           # and button draws nothing and the flow suite's font check fails.
           lfs: true
+
+      # Sounds are LFS objects; fetch only them (about 200 KB) so the game loads real audio,
+      # not pointer files. Fonts and models stay as pointers (nothing in the suites needs them).
+      - name: Fetch the sound files
+        run: git lfs pull --include="assets/sfx/*"
 
       - name: Cache Godot
         id: godot-cache
