@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-17 12:50
-## State: working (croc titan rig + motion with blender-reptile; reviews of #14/#15/#18 pending)
+# Lead handoff, 2026-10-17 16:00
+## State: working (croc titan rig + motion with blender-reptile; #14/#16 reviews pending)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -8,7 +8,7 @@ director decisions (D-022..D-042 in docs/DECISIONS.md), helper coordination. Cre
 
 ## Branch and commit
 claude/look-options (integration; PR #3 to main on HOLD until the director signs off). Latest: 30682ae
-(LFS checkout in capture/tests/build, from game-flow 7777974/35be8e9), then this handoff.
+#18 heli MERGED ee18f50 (16:00, head 3a4e83c, 8/8 green); blender-tank told to remove worktree.
 
 ## D-044 LOCOMOTION PAUSED (director 12:46) until models are decided
 species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-test skips octopus captures.
@@ -27,7 +27,7 @@ Director: "tank and heli models look great".
 ## Open PRs into look-options
 - 15:52 director: pause agents working on models we won't use (usage). #15 MERGED (7ff1f03). #19 (Blender
   weights reader, proven on OLD reptile) parked until croc titan export; voxel-skin paused. kaiju-motion told to
-  turn off #11 auto-fix. #18 heli PASS, conflicting after #15 -> blender-tank syncing, merge head when green.
+  turn off #11 auto-fix. #18 MERGED. Auto-fix OFF: #11, #19 (confirmed); #8 asked again 16:00 (it synced a conflict at 68342d5).
   #16 city: all stills in; Apex 3-min load (follow-up); director Qs pending: balance D, Apex height.
 - #15 voxel skin ACCEPTED r3 (4be3650; scythe clean, thigh seam at full flex accepted until Blender weights):
   CONFLICTING after #17, helper syncing, merge new head when green. Next: Blender-weights input PR (voxel-skin)
