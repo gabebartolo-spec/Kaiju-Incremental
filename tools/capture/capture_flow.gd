@@ -15,7 +15,11 @@ const MAIN_SCENE := "res://scenes/main.tscn"
 const SETTLE := 12
 ## Autoplayed frames before the pause shot (shorter for the clip).
 const RAMPAGE_FRAMES := 420
-const CLIP_RAMPAGE_FRAMES := 150
+const CLIP_RAMPAGE_FRAMES := 120
+## The clip cuts the end beat here (it runs RampageHud.BEAT_FRAMES in play).
+const CLIP_BEAT_FRAMES := 90
+## With --write-movie the project's 1920x1080 wins over --resolution; the clip sets the window.
+const CLIP_SIZE := Vector2i(1280, 720)
 const UI_ONLY_RAMPAGE_FRAMES := 45
 ## Clip: how long the report counts, then how long it holds, before EVOLVE.
 const CLIP_COUNT_FRAMES := 45
@@ -51,6 +55,8 @@ func _run() -> void:
 	# One sim step per rendered frame: a slow software render must not fast-forward the fight
 	# (8 steps a frame killed the kaiju before the pause shot in run 38992440820).
 	Engine.max_physics_steps_per_frame = 1
+	if _clip:
+		root.size = CLIP_SIZE
 	if _ui_scale != 1.0:
 		for _i: int in PlayerSettings.UI_SCALES.size():
 			if not is_equal_approx(PlayerSettings.ui_scale, _ui_scale):
@@ -109,7 +115,9 @@ func _run() -> void:
 	rampage.sim.time_left = 0.05  # capture only: run the clock out now
 	await _frames(18)
 	_shot("06_end_beat")
-	if _ui_only:
+	if _clip:
+		await _frames(CLIP_BEAT_FRAMES)
+	if _ui_only or _clip:
 		hud.finish_beat()
 	while hud.beat_running():
 		await process_frame
