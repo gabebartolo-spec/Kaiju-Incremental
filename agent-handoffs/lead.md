@@ -25,6 +25,10 @@ Director: "tank and heli models look great".
   Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
 
 ## Open PRs into look-options
+- 15:52 director: pause agents working on models we won't use (usage). #15 MERGED (7ff1f03). #19 (Blender
+  weights reader, proven on OLD reptile) parked until croc titan export; voxel-skin paused. kaiju-motion told to
+  turn off #11 auto-fix. #18 heli PASS, conflicting after #15 -> blender-tank syncing, merge head when green.
+  #16 city: all stills in; Apex 3-min load (follow-up); director Qs pending: balance D, Apex height.
 - #15 voxel skin ACCEPTED r3 (4be3650; scythe clean, thigh seam at full flex accepted until Blender weights):
   CONFLICTING after #17, helper syncing, merge new head when green. Next: Blender-weights input PR (voxel-skin)
   + rig/weights export from motion_test.py (blender-reptile), tested on Tripo B until the D-045 mesh exists.
