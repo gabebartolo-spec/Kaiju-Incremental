@@ -18,7 +18,9 @@
   procedural motion reads as a 5 m lizard, roar jaw drops ~vertical -> director Q: bring Blender clips in game.
 - #14 game flow MERGED de727f3 (r4 passed lead; r3 screen-critic items fixed; 5 nits accepted). Board updated 81230a3.
   Director queue: side-session-notes/<lead>/lead/director_queue.md (Q1 ANSWERED 21:11 = D-047 yes, b7091c8; blender-reptile briefed: export clips + clip player,
-  walk phase by distance over procedural planting; Q2 balance D,
+  walk phase by distance over procedural planting.
+  21:15 director: arms look odd/too long (measured: arm ~55-60% of height > leg). Arm board A 100/B 70/C 50% asked
+  (notes blender-reptile/arms/); clip export + skin re-export held until the pick; Q2 balance D,
   Q3 Apex height, branch deletes). Open PRs left: #11, #8 (paused), #3 (to main, hold). Former r3 note: (tree text 24 px < 28, need-N overlap, side panel scroll, copy,
   locked contrast, "blocks", HUD behind dialogs, reveal floor count/skip hint).
 - TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
