@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 17:00
-## State: running a check (CI captures of the croc titan, before vs after; then report to the lead)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 17:20
+## State: running a check (CI clips of the croc titan; stills done, then report to the lead)
 
 ## Task
 D-041 voxel skin is merged (#15, squash 7ff1f03). PR #19 (claude/kaiju-skin-weights -> claude/look-
@@ -12,7 +12,7 @@ Auto-fix OFF. Baby/adolescent unchanged. Lead = local_9fac90d2-fae7-4940-b4ac-14
 
 ## Branch and commits
 claude/kaiju-skin-weights: 8d6f8e7 = BEFORE (croc titan on rig_voxel's auto rig, lattice weights,
-plus the new tools); 5182944 = AFTER (head). Local suites green on both (smoke 23 on before; all six
+plus the new tools); 5182944 = AFTER; 73d84a1 = shoulder-hole fix (head). Local suites green on both (smoke 23 on before; all six
 on after: smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 26). gdlint/gdformat clean.
 
 ## How the croc titan is built (one-off asset steps, scratch GLB copy)
@@ -36,17 +36,25 @@ weights, not the sampler. IDW vs barycentric: argmax differs on 2.4%, weight mov
 Ownership sheets: scratch ct/after_owners.png, after_mouth.png (straight split; nearest-position
 split near the line combed the lips, dropped).
 
-## CI captures (dispatched 16:55, Forward+, same seed)
-before stills 39007989740, before clip 39007991777, after stills 39007993559, after clip 39007995329
-(dispatch with --ref claude/kaiju-skin-weights: main's capture.yml is older and fails at once).
-Stills frames 180 (walk), 360 (knee), 417 (hip), 574 (ankle/turn), 665 (jaw, roar), 700; clip game
-camera 0-20 s 720p. Compose: scratchpad py/compose_ct.py <dl> <out> <ffmpeg> (ffmpeg via
-imageio_ffmpeg). Output to notes folder kaiju-voxel-skin/croctitan/.
+## Done since (17:20)
+- First after stills showed a see-through hole on top of the shoulder: bake posed voxels into the
+  lowered-arm rest by their main bone only. Fix 73d84a1: Blender-weighted voxels pose by their blend
+  (supersampled where a turned bone has weight); side-projection holes 140 -> 2; lattice kaiju
+  byte-identical. Recaptured: hole gone.
+- PR #19 body/title rewritten for the croc titan (evidence, Not exercised, merge note).
+- Evidence in notes kaiju-voxel-skin/croctitan/ (joints_2x.png, full_<f>.png, owner sheets).
+
+## CI captures (Forward+, same seed)
+before stills 39007989740, after stills 39008519628 (head 73d84a1); clips 0-20 s game camera 720p:
+before 39007991777, after 39008521585. Dispatch with --ref claude/kaiju-skin-weights (main's
+capture.yml is older and fails at once). Compose: scratchpad py/compose_ct.py <dl> <out> <ffmpeg>
+(dl/{before,after}_{stills,clip}; ffmpeg via imageio_ffmpeg).
 
 ## Next
-Download, LOOK at every frame, compose, update PR #19 body (title + croc titan evidence), send lead
-stills + clip + head SHA. Note for lead: croc titan is 204 m long vs the old upright reptile; rest
-pose arms are T-pose in the skeleton (BipedSwing lowers them at load); jaw "close" 0, no snarl.
+Clips done -> compose croctitan_game_before_after.mp4 into the notes folder, LOOK at it, send the
+lead stills + clip + head SHA. Findings for the lead: roar pose (game biped head/jaw motion swings
+the croc's head and jaw down; kaiju-motion's code), 204 m long body, filler 143k vertices, hip
+leg/tail mixing is in the authored weights.
 
 ## Rules learnt the hard way
 - Python write_text on Windows writes CRLF; git checks out LF, so a stamped file (rig.json) must be
@@ -61,4 +69,4 @@ pose arms are T-pose in the skeleton (BipedSwing lowers them at load); jaw "clos
 - Fresh worktrees have LFS fonts as pointers: git lfs pull, or flow times out.
 
 ## Running jobs
-The four CI capture runs above.
+The two clip runs above (39007991777, 39008521585).
