@@ -3,16 +3,16 @@ shader_type spatial;
 // instance per voxel; its transform is the voxel's rest centre, INSTANCE_CUSTOM its bones as small
 // whole numbers (half precision safe: the compatibility renderer stores per-instance data that
 // way), COLOR.rgb its sRGB colour and COLOR.a its second bone's weight. Each cube's centre follows
-// its blended bones (smooth), it turns with its main bone (cubes of one bone stay on one tidy
-// grid), and grows a little, never more than max_grow, where its bones disagree.
+// its blended bones (smooth); it turns with its main bone's rotation (cubes of one bone stay on
+// one tidy grid) and keeps its size.
 
 uniform mat4 bones[128];
 // The cubes' own node back to skin (rig) space, so the shader can read each instance's centre.
 uniform mat4 to_skin;
 // Where a cube's bones disagree the blended basis shrinks: grow the cube by that much times this.
 uniform float gap_fill = 1.0;
-// Cubes stay near one size: the growth is capped here (lead review: no oversized, sheared cubes).
-uniform float max_grow = 0.15;
+// Cubes keep one size: growth is off by default (lead review round 2); the filler covers gaps.
+uniform float max_grow = 0.0;
 // 0 = jaw shut (mouth inside drawn as a dark lip seam), 1 = open or a snarl (its pink shows).
 uniform float mouth_open = 0.0;
 uniform float seam_dark = 0.22;
@@ -39,7 +39,12 @@ void vertex() {
 	vec3 moved = (blend * vec4(centre, 1.0)).xyz;
 	float shrink = 1.0 - min(length(blend[0].xyz), min(length(blend[1].xyz), length(blend[2].xyz)));
 	float grow = 1.0 + min(max_grow, gap_fill * max(0.0, shrink));
-	mat3 turn = mat3(bones[b0]);
+	// The main bone's turn only: its scale (a gait's swell or stretch) never reaches a cube, so
+	// every cube keeps one size and square axes (lead review round 2: no slats).
+	mat3 m = mat3(bones[b0]);
+	vec3 ax = normalize(m[0]);
+	vec3 ay = normalize(m[1] - ax * dot(ax, m[1]));
+	mat3 turn = mat3(ax, ay, cross(ax, ay));
 	// The engine adds the instance's centre back after this.
 	VERTEX = (moved - centre) + turn * (VERTEX * grow);
 	NORMAL = normalize(turn * NORMAL);
