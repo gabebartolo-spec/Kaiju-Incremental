@@ -1,4 +1,4 @@
-# blender-reptile handoff, 2026-10-17 15:35
+# blender-reptile handoff, 2026-10-17 15:05
 ## State: awaiting lead (rig export delivered, verified, format agreed with voxel-skin)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
@@ -9,7 +9,7 @@ Round 3 (lead 14:54): add an export of the rig + welded weights to motion_test.p
 kaiju-voxel-skin (local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc), test on B, commit; a new mesh must fit in
 ONE command. NOT in scope: animation polish (critic notes below), A's design.
 ## Branch and commit
-claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96.
+claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c.
 ## Delivered (round 3)
 - motion_test.py fit modes: A | B (hand pivots) | auto (sliced from the mesh) | landmarks.json.
   auto vs hand on B: every pivot within 1-4 m (hand tip 5.3, belly 5.8) on a 100 m body; on A the low
