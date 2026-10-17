@@ -43,6 +43,12 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	add_child(_slabs)
 
 
+## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
+func set_opacity(value: float) -> void:
+	_shell_mat.set_shader_parameter("opacity", value)
+	_slab_mat.set_shader_parameter("opacity", value)
+
+
 func _material(tex: Texture2D) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = SHADER
