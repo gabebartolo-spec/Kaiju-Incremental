@@ -1,5 +1,5 @@
-# City-growth handoff, 2026-10-17 04:10
-## State: awaiting lead (PR #16 open; CI blocked by Actions billing)
+# City-growth handoff, 2026-10-17 12:45
+## State: running a check (balance proposal experiments; PR #16 awaiting CI/billing)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -55,7 +55,12 @@ docs/captures/2026-10-17-city-growth/.
 - Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-None.
+Balance experiments (lead 12:40: aim all species ~3.5-4 h within +-20%, insect stays fastest per
+run, via costs or Leap Slam numbers; PROPOSAL ONLY, director decides). scratchpad balance.sh ->
+balance_1.txt: A costs x1.27, B A+insect leap cd 6.5/dmg 18, C A+reptile breath 11/36/36deg.
+It TEMPORARILY edits data/upgrades.json, species.json, tuning.json and restores them with git
+checkout at the end: if you find them modified and no Godot running, `git checkout data/`.
+After CI works: dispatch stage 3-4 stills (ci_capture.sh capture_growth.gd -- --stage=N --quick).
 
 ## Findings for the lead
 - A seeded generator that draws a number only on some branches shifts every later draw when a
