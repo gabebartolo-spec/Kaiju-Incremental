@@ -61,6 +61,11 @@ for the LFS fix before capturing.
 - Two routes explained to the director: (1) Blender skeleton+weights replace rig_voxel's guessed bone
   ownership (fixes detached parts, stiff limbs; D-041 skin takes weights); (2) authored clips (roar, tail
   swipe, beam) layered over procedural foot planting.
+- 13:19 MOTION TEST DONE (blender-reptile 4ab6781; clips in notes blender-reptile/motion-test/): B (Tripo) moves
+  cleanly on the hand rig -> bad in-game motion = OUR auto rig/weights, not the Tripo mesh. Final slide A 8/10.9/1.1,
+  B 6.1/22/4.8 cm. Lead QA: turn + roar deform cleanly on both, jaw opens well; FIX for A: roar-peak arms reach
+  forward (zombie), dark square blotches on thigh. Fresh motion-critic running (background). Seam-weld finding
+  (glTF splits verts at UV seams) sent to kaiju-look-test as a suspect for the shattered mantis.
 - ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
 
 ## Blender direction (director 12:39)
