@@ -1,9 +1,9 @@
 # Checks each suite must run (tools/run_tests.sh). A suite reporting fewer fails the
 # run: checks went missing. Raise a floor in the PR that adds checks; floors only go
 # up (game-architecture §6). A suite with no line here fails until one is added.
-smoke 23
+smoke 27
 sim 39
 powers 24
-tentacles 17
+tentacles 18
 city 5
 flow 26
