@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 
 VERSION = 2
-LATTICE_PASSES = 4  # joint blend width in lattice passes: narrow, so mixed cubes stay a thin seam (review r2)
+LATTICE_PASSES = 12  # joint blend width, in voxel-lattice smoothing passes (look test round 2)
 MIXED = 0.98  # a voxel whose main bone has less than this share is in a joint: it gets filler
 FILL_INSET = 0.3  # voxels: the filler sits this far inside the cubes
 MOUTH_RED = 1.35  # BipedHead.MOUTH_RED: the sculpt's pink mouth inside
