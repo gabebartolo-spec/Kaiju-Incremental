@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 13:10
-## State: running a check (CI probe: mantis C stills on forward_plus + gl_compatibility)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 13:35
+## State: awaiting lead (review-fix evidence sent for PR #15)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -57,10 +57,11 @@ never blend with the parent. 5: capture_skin.gd --clip=game|close --from --to (d
 frame; dispatch with -f renderer=forward_plus so CI never silently falls back).
 
 ## Running jobs
-CI probe (scratch ci_probe.txt): insectoid skin stills 131,403 on forward_plus 38993171860 and
-gl_compatibility 38993177975. If both show an intact mantis: dispatch reptile + mantis A/C x
-game (--from=0 --to=13) and close (--from=4 --to=12.5) clips, renderer=forward_plus, plus stills;
-compose; send the lead.
+None. Review-fix evidence (CI Forward+ on 5f807cb, ids in scratch ci_runs5.txt): composed with
+scratch py/compose_r2.py into side-session-notes/<lead>/kaiju-voxel-skin/review-fix/
+(kaiju_skin_before_after_r2.mp4, per-species game/close mp4, *_joints.png, thigh_cmp.png,
+mantis_C_forwardplus_vs_glcompat.png). PR #15 body updated; lead messaged 13:35.
+Remaining honest defects: a cube-orientation seam where thigh meets shin; game cam A ~= C.
 
 ## Open decisions / touch points
 Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
@@ -71,6 +72,8 @@ species-motion: mantle scale reads rig.skins["mantle0"] (smoke-proven); their ri
 ## Rules learnt the hard way
 - Never wrap windowed Godot in a script: the focus guard must see the command. Use CI captures.
 - gh workflow run prints the run URL; a "newest run after" poll can pick another session's dispatch.
+- CI capture.yml falls back to gl_compatibility after a Forward+ timeout: always dispatch with
+  -f renderer=forward_plus. Compatibility keeps MultiMesh custom/colour at half precision.
 - A scratch file named inspect.py shadows Python's stdlib for scripts in that folder.
 - A fresh worktree has LFS fonts as pointers: flow then floods font errors and times out. git lfs pull.
 - APPDATA override for Godot hides Python user site-packages (PIL): set per command.
