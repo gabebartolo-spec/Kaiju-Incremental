@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 20:05
+# Game-flow handoff, 2026-10-17 20:40
 ## State: running a check (round-3 FIX: final 4K stills + clip on CI)
 
 ## Task
@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at e5c13c7 (look-options 414a290 merged: #16 city growth and
+claude/game-flow-edfba4, pushed at f030607 (look-options 414a290 merged: #16 city growth and
 #20 Apex streaming; rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
@@ -76,6 +76,8 @@ row shows its best; HUD hides behind pause/report; reveal hint bigger, off the e
 -> 0149cdc: break-a-word check (failed first), real text width, "12k" prices, side 330 wide,
 row "Tallest tower toppled (floors)". 4K 39015479637 QA: evolve node text touched its focus
 border, side copy orphans -> e5c13c7 (margin = pad + the node's thickest border; NBSP).
+4K 39016554227 QA: selected evolve node's price wrapped ("0/1 BUY / 1400") -> f030607
+(status line wrap check failed first; one space; evolve/ultimate focus keeps border width).
 Then: QA new captures, add to docs/captures, send lead.
 
 ## Findings for the lead (lead decides what gets recorded)
@@ -86,4 +88,4 @@ Then: QA new captures, add to docs/captures, send lead.
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- CI on e5c13c7: 4K 39016554227 -> %TEMP%/gf_cap8/4k; clip 39016580665 -> %TEMP%/gf_cap8/clip.
+- CI on f030607: 4K 39018505981 -> %TEMP%/gf_cap9/4k; clip 39018533460 -> %TEMP%/gf_cap9/clip.
