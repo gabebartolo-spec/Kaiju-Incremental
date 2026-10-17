@@ -1,10 +1,15 @@
 # Species-motion handoff, 2026-10-17 12:55
-## State: paused (director: pause locomotion until the models are decided)
+## State: paused (D-044: locomotion paused until the models are decided; no Godot runs)
 
 Director, via the lead: "theyre doing work they might have to replace if we change our models".
 Do not start new locomotion work until the lead lifts the pause.
 
 ## Open items (first = most important)
+0. WHEN LOCOMOTION RESUMES, start here: the r3e packet (code at 8f650f4 on claude/species-motion) is
+   in side-session-notes/local_9fac90d2.../species-motion/r3e/ (mantis game+side, octopus adult
+   game+side, baby r3b, pose.csv per clip, screen_numbers.txt). It crossed the pause, so no critic
+   round has run on it. Caveats: the mantis meter box catches only the torso (item 2); the
+   director's octopus note (item 1).
 1. OCTOPUS (director watched r3e cephalopod_adult_*.mp4): "head detached, limbs a static, awkward
    mesh". So the mantle floats free of the tentacle base, and the limbs read as a rigid static mesh.
    Likely causes to check first:
@@ -16,8 +21,8 @@ Do not start new locomotion work until the lead lifts the pause.
 2. Mantis r3e: the lead's fresh critic verdict is still pending (packet in notes species-motion/r3e/).
    At the game camera, screen_motion.py's centre box (280x540) is narrower than the adult mantis,
    so the meter under-reads the limbs; widen the box per stage before using it as a gate.
-3. PR #11 (claude/kaiju-motion-species) is the head for this work, but pushing to it was refused by
-   the permission classifier on 2026-10-17. The lead or kaiju-motion must fast-forward it to
+3. PR #11 (claude/kaiju-motion-species) stays as-is under the pause (lead, 2026-10-17); my push to
+   it was refused by the permission classifier. When resuming, ask the lead to fast-forward it to
    claude/species-motion.
 
 ## Task (when resumed)
