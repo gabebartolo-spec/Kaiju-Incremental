@@ -14,6 +14,10 @@
 - Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
   ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
   voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
+- #19 MERGED 4f5afb5 (croc titan adult in game on Blender weights; foot ok, jaw shut cleaner). Critic: SHARED
+  procedural motion reads as a 5 m lizard, roar jaw drops ~vertical -> director Q: bring Blender clips in game.
+- #14 r4 code 50a93f4, CI stills running (39013828752/39013803405); r3 screen-critic FIX x8 (tree text 24 px < 28, need-N overlap, side panel scroll, copy,
+  locked contrast, "blocks", HUD behind dialogs, reveal floor count/skip hint).
 - TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
 
 ## Task
@@ -80,15 +84,7 @@ D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the 
   (glTF splits verts at UV seams) sent to kaiju-look-test as a suspect for the shattered mantis.
 - ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
 
-## Blender direction (director 12:39)
-- Board: Tripo adult looks better; Blender adult "promising", "more original, less a blatant Godzilla copy"
-  (memory: original-not-godzilla). Blender wins only if it ANIMATES better than Tripo.
-- blender-reptile (local_bce75838-34da-4991-a74e-b37ed5781547) briefed: one hand-weighted armature (deform vs
-  control bones, spline-IK tail, 3-5 loops per joint) fitted to BOTH meshes (A Blender, B Tripo olive copy in
-  scratch, never committed), walk + 90 deg turn + roar, headless Blender renders side by side, foot slide cm,
-  2x joint crops, volume loss per joint. Answers: mesh or rig at fault. Clips come to me first.
-- Research on animatable Blender models given to the director and to blender-reptile (sources: Blender wiki,
-  Blender Studio, Rigify docs, MCP reviews: MCP is good for ~80% of a rig, weak on weights, timing, sculpt).
+## Blender direction: see D-045/D-046 and memory original-not-godzilla (judge by motion, not stills).
 
 ## Helpers (ids)
 - species-motion local_87c25bd4-a526-4731-b18e-7c728966a2df (mantis/octopus, PR #11)
