@@ -1,63 +1,64 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 16:10
-## State: paused (lead: no more work on the old reptile; resume when the lead sends the croc titan swap)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 17:00
+## State: running a check (CI captures of the croc titan, before vs after; then report to the lead)
 
 ## Task
-D-041: every kaiju draws as voxel cubes on a smooth skin (VoxelSkin). PR #15 is MERGED into
-claude/look-options (squash 7ff1f03 of 2290d50). Follow-up PR #19 (claude/kaiju-skin-weights, base
-claude/look-options): the bake can take a hand-made Blender rig's weights. Lead (15:50): retarget
-#19, let its CI run, then STOP. The director: don't spend usage on models we won't use. The current
-Tripo reptile adult is replaced by the D-046 croc titan; no captures, tuning or tests on the old
-reptile; don't touch the mantis or octopus skins. Lead = local_9fac90d2-fae7-4940-b4ac-144a87f28e6e.
+D-041 voxel skin is merged (#15, squash 7ff1f03). PR #19 (claude/kaiju-skin-weights -> claude/look-
+options): the bake takes a hand-made Blender rig's weights. Lead 16:30: swap in the D-046 croc titan
+as the reptilian adult (Tripo 351ad916, GLB ~/Downloads/kaiju_tripo/rep_croctitan_adult.glb, never
+commit it) with blender-reptile's skin export (3ea955d); jaw a rigid hinge, clean mouth split;
+evidence = game camera clip + 2x crops (hips, knees, shoulders, jaw, tail; walk + roar), before (old
+auto rig) vs after (Blender weights), same seed. Send stills, clip, head SHA to the lead. Don't merge.
+Auto-fix OFF. Baby/adolescent unchanged. Lead = local_9fac90d2-fae7-4940-b4ac-144a87f28e6e.
 
-## Branch and commit
-claude/kaiju-skin-weights, PR #19 into claude/look-options, merge 9f952ea. look-options merged in
-after #15's squash: conflicts in voxel_skin.gd, bake.py, reptilian_adult.vskin and this file
-resolved to this branch's versions (look-options held exactly 2290d50's, so the branch is #15 + the
-weights change). Local suites green (smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 26),
-gdlint clean. Worktree: .claude/worktrees/kaiju-look-test-a763a6. The session's PR monitor is bound
-to #15.
+## Branch and commits
+claude/kaiju-skin-weights: 8d6f8e7 = BEFORE (croc titan on rig_voxel's auto rig, lattice weights,
+plus the new tools); 5182944 = AFTER (head). Local suites green on both (smoke 23 on before; all six
+on after: smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 26). gdlint/gdformat clean.
 
-## What exists (merged in #15)
-- tools/kaiju_skin/bake_all.sh (GODOT=<godot> bash ...): dump_rest.gd (each rig's rest pose as the
-  game builds it) -> bake.py -> assets/kaiju/<name>.vskin (gzip). Stamp = sha256 of .kvox + .rig.json
-  (+ Blender skin files in #19); smoke fails a stale skin.
-- scenes/voxel_skin.gd (VoxelSkin): MultiMesh cubes (centre in the instance transform,
-  INSTANCE_CUSTOM small ints: compatibility renderer keeps it at half precision) + filler mesh.
-  Debug flag VoxelSkin.show_rigid_voxels ("--kaiju-rigid") = the old rigid voxels.
-- voxel_skin.gdshader: cube centre from the blended bones, rotation = main bone's (scale stripped),
-  one size. voxel_skin_fill.gdshader: linear skin, faceted normals.
-- Bake rules: lattice-smoothed .kvox split (12 passes, joint-related bones only); HINGES (jaw,
-  mandible_l/r) never blend; arms baked into the rig's lowered rest pose.
-- tools/capture/capture_skin.gd: --find (most-bent joints), stills (--frames), clips
-  (--clip=game|close --from --to, draws every 2nd frame for CI).
+## How the croc titan is built (one-off asset steps, scratch GLB copy)
+1. blender -b --python tools/blender/rig_voxel.py -- <glb> <out>/reptilian_adult reptilian 160 0
+   (jaw arg 0: the croc's mouth is shut; rig_voxel's upright-biped skeleton is wrong for this body,
+   so only its voxels and colours are kept)
+2. blender -b --python tools/kaiju_skin/skin_faces.py -- <glb> assets/kaiju/test/croctitan.skin.json
+   -> croctitan.skinf (10,721 welded triangles; every GLB point lands on a welded position, 0.0000 m)
+3. python tools/kaiju_skin/rig_from_skin.py assets/kaiju/reptilian_adult.kvox
+   assets/kaiju/test/croctitan.skin.json -90.5,82.5,-58,87
+   (rig.json from the Blender skeleton; voxel owners = Blender weights' argmax; mouth line = motion_test
+   KNOWN["C"] mouth (y 1.5->34 behind the snout, z 82.5->87) re-origined on the pelvis (y 92): skin
+   z = y - 92. Straight cut: head1/jaw voxels in front of the gape and under the line are jaw.)
+4. GODOT=<godot> bash tools/kaiju_skin/bake_all.sh (only reptilian_adult.vskin changes)
 
-## PR #19 (Blender weights)
-assets/kaiju/skin_weights.json {kaiju: path to .skin.json}. bake.py blender_weights(): 4 nearest
-welded positions (inverse distance) via kvox_cell_to_skin, bones summed per "game" name, jaw voxels
-all jaw. Tested on blender-reptile's test rig (2aa4b6c) for reptilian_adult: knee seam gone,
-forearm pinholes mostly gone (evidence: side-session-notes/<lead>/kaiju-voxel-skin/blender-weights/).
-Reptile filler 50k -> 111k vertices. Export format (blender-reptile): KSKW, u32 version, u32 N,
-u16 bones, 32-byte records from byte 14 {f32 xyz, u8 bone[4], f32 weight[4]}; producer:
-blender -b --python tools/blender/motion_test.py -- auto <new.glb> <out_dir> export 160.
+## Sampling finding (lead asked)
+4-nearest IDW on this sparse mesh (gap median 1.07 m): >20% unrelated-bone weight on 4.5% of voxels
+(old reptile 0.9%). Barycentric on the triangles (bake.sample_skin, used when a .skinf exists): gap
+0.20 m, the SAME 4.6%: the leg/tail and leg/spine1 mixing at the hip is in blender-reptile's authored
+weights, not the sampler. IDW vs barycentric: argmax differs on 2.4%, weight moved >25% on 1.0%.
+Ownership sheets: scratch ct/after_owners.png, after_mouth.png (straight split; nearest-position
+split near the line combed the lips, dropped).
 
-## Next (when the lead messages the croc titan swap)
-Point skin_weights.json at the croc titan's export (and its new .kvox/.rig.json), rerun
-bake_all.sh, smoke, CI captures with -f renderer=forward_plus, report. Nothing else until then.
+## CI captures (dispatched 16:55, Forward+, same seed)
+before stills 39007989740, before clip 39007991777, after stills 39007993559, after clip 39007995329
+(dispatch with --ref claude/kaiju-skin-weights: main's capture.yml is older and fails at once).
+Stills frames 180 (walk), 360 (knee), 417 (hip), 574 (ankle/turn), 665 (jaw, roar), 700; clip game
+camera 0-20 s 720p. Compose: scratchpad py/compose_ct.py <dl> <out> <ffmpeg> (ffmpeg via
+imageio_ffmpeg). Output to notes folder kaiju-voxel-skin/croctitan/.
 
-## Accepted limits (in #15's Not exercised)
-Lattice weights: a ribbed seam at a full knee bend and hairline pinholes on short limbs; narrowing
-the blend (gap + streaks) and shadowless filler (no change) were tried and reverted.
+## Next
+Download, LOOK at every frame, compose, update PR #19 body (title + croc titan evidence), send lead
+stills + clip + head SHA. Note for lead: croc titan is 204 m long vs the old upright reptile; rest
+pose arms are T-pose in the skeleton (BipedSwing lowers them at load); jaw "close" 0, no snarl.
 
 ## Rules learnt the hard way
+- Python write_text on Windows writes CRLF; git checks out LF, so a stamped file (rig.json) must be
+  written with newline="\n" or CI's smoke sees a stale skin.
 - capture.yml falls back to gl_compatibility after a Forward+ timeout: dispatch with
   -f renderer=forward_plus. Compatibility keeps MultiMesh custom/colour data at half precision.
 - Never report on a frame you have not looked at: a black or failed grab is not "no defect".
 - Never wrap windowed Godot in a script: the focus guard must see the command.
-- gh workflow run prints the run URL; a "newest run after" poll can pick another session's run.
-- A squash-merged base makes the stacked branch conflict on the same files: compare blobs to the
-  merged SHA, then take the branch's side.
-- APPDATA override hides Python user site-packages (PIL); a scratch inspect.py shadows stdlib.
+- gh workflow run prints the run URL; use it (other sessions dispatch too).
+- A squash-merged base makes the stacked branch conflict: compare blobs to the merged SHA.
+- python -I hides user site-packages (numpy, PIL); a scratch inspect.py shadows stdlib.
 - Fresh worktrees have LFS fonts as pointers: git lfs pull, or flow times out.
 
 ## Running jobs
-CI on PR #19 (the lead asked to let it run). Nothing else.
+The four CI capture runs above.
