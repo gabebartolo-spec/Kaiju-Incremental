@@ -24,6 +24,10 @@ var _size_pitch := 1.0
 var _pending := ""
 var _pending_crack := false
 var _pending_age := 0.0
+## Seconds since the last footstep and the last ground crack (the director's dials:
+## footstep_min_interval, crack_min_interval).
+var _since_step := INF
+var _since_crack := INF
 
 
 ## rng: the presentation's own seeded stream (pitch variation only).
@@ -61,6 +65,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_since_step += delta
+	_since_crack += delta
 	if _pending == "":
 		return
 	_pending_age += delta
@@ -94,6 +100,9 @@ func footstep(strength: float) -> void:
 	if _pending != "":
 		_release_stomp()
 		return
+	if _since_step < Num.f(_tune["footstep_min_interval"]):
+		return
+	_since_step = 0.0
 	var quiet := Num.f(_tune["footstep_quiet_db"]) * (1.0 - clampf(strength, 0.0, 1.0))
 	play("footstep", quiet)
 
@@ -105,7 +114,8 @@ func collapse(topple: bool) -> void:
 
 func _release_stomp() -> void:
 	play(_pending)
-	if _pending_crack:
+	if _pending_crack and _since_crack >= Num.f(_tune["crack_min_interval"]):
+		_since_crack = 0.0
 		play("stomp_crack")
 	_pending = ""
 

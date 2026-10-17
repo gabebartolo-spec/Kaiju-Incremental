@@ -237,6 +237,7 @@ func _check_stomp_timing() -> void:
 	var pitches: Array[float] = []
 	for tier: int in [1, 4]:
 		sfx.set_size_tier(tier)
+		sfx._process(1.0)  # past footstep_min_interval
 		sfx.footstep(1.0)
 		pitches.append(sfx.last_pitch())
 	check(
