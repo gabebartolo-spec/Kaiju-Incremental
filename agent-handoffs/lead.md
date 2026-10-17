@@ -32,7 +32,9 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 8. #39 heli gun burst + crash (stacked on #34): listen to ...side-session-notes\local_9fac90d2...\army-sfx\
    heli_gun_crash.mp4 (busy picture, listen only); merge after his yes. Croc roar layers from Sonniss GDC: ask.
    Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
-   ambience (branches, coming). #41 limiter MERGED (objective: no clipping).
+   ambience (#43; synth voices risky, CC0 crowd fallback = his licence call). #41 limiter MERGED. Mix report
+   (notes mix-report/report.md): master -21.4 LUFS; crowd inaudible, regen loop masks army, tank thump masks
+   stomps; proposal branch + A/B clip coming, apply only after his listen.
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
    1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
    copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
