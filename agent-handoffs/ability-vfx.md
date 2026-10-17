@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 13:20
-## State: available (done for the night per the lead; everything open is tabled for the director's listen)
+# Ability VFX/SFX handoff, 2026-10-18 14:40
+## State: available (all 5 tabled PRs synced to look-options f71c527 = #38 + #40; idle until the lead pings)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -42,6 +42,20 @@
   Stomps masked by army 15 → 8, not 0: it's shell_hit's thud; a 120 Hz high-pass on it is the next step if wanted.
 - A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
 - When #43 merges, retarget #45 to look-options.
+
+## Sync status, 2026-10-18 14:40 (look-options f71c527)
+| PR | Head | Flow |
+|---|---|---|
+| #39 heli | bac13d7 | 116 |
+| #42 footsteps | dc8fd13 | 117 |
+| #43 crowd | c216ac0 | 117 |
+| #45 mix (on #43) | 9acb9e2 | 118 |
+| #46 rifle | 61ecda9 | 117 |
+
+- run_flow_tests.gd is at 393 lines on look-options. Each PR keeps its added checks in its own tests/lib file:
+  flow_heli_sounds, flow_step_sounds, flow_sounds (crowd + regen), flow_rifle_sounds.
+  So the PRs merge in any order with only a floor resync.
+- The lead merges them one at a time in the director's order and pings me. Resync each to the real count.
 
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
