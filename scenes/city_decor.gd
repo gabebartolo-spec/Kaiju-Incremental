@@ -24,7 +24,6 @@ var _props := PropField.new(PROP_VOXEL)
 var _half: float
 var _view: float  # parked cars reach this far from the centre: the arena and what the camera
 # shows past its edge (city.view_beyond)
-var _street: Dictionary
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
 
@@ -35,7 +34,6 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	plan = CityGen.map(sim.city)
 	_half = CityGen.half_extent(sim.city)
 	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
-	_street = Content.section("street")
 	for b: RampageSim.Building in sim.buildings:
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
 
@@ -86,10 +84,10 @@ func _on_building(p: Vector2) -> bool:
 func _streets() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var lit_nodes := {}
-	var chance := Num.f(_street["parked_chance"])
-	var chance_beyond := Num.f(_street["parked_chance_beyond"])
-	var lane_stop := Num.f(_street["lane_stop_chance"])
-	var gap: Array = _street["parked_gap"]
+	var chance := Num.f(sim.city["parked_chance"])
+	var chance_beyond := Num.f(sim.city["parked_chance_beyond"])
+	var lane_stop := Num.f(sim.city["lane_stop_chance"])
+	var gap: Array = sim.city["parked_gap"]
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
 		var a := nodes[Num.i(street["from"])]
