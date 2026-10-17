@@ -224,6 +224,7 @@ func _arc_wall(half_angle: float) -> ArrayMesh:
 		_wall_vertex(st, p0, t0, 0.0)
 		_wall_vertex(st, p1, t1, 1.0)
 		_wall_vertex(st, p0, t0, 1.0)
+	st.generate_normals()  # the curtain thins where it is seen edge-on
 	return st.commit()
 
 

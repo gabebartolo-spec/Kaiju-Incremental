@@ -33,8 +33,11 @@ void fragment() {
 	// No base line: the flames fade in from the street.
 	float base = smoothstep(0.0, 0.45, up);
 	float churn = 0.55 + 0.45 * noise(vec2(UV.x * 8.0, up * 4.0 - TIME * 7.0));
-	// Soft at both ends of the arc.
-	float centre = 1.0 - smoothstep(0.55, 1.0, side);
+	// Soft at both ends of the arc, and thin where the wall is seen edge-on (the side view), so
+	// it never collapses into a flat panel with a straight edge.
+	float centre = 1.0 - smoothstep(0.35, 1.0, side);
+	float facing = abs(dot(normalize(NORMAL), normalize(VIEW)));
+	centre *= smoothstep(0.08, 0.45, facing);
 	// It stands up as the beam's front reaches the arc (a tenth of the life), then thins out.
 	float arrive = smoothstep(0.04, 0.14, progress);
 	float thin = 1.0 - smoothstep(0.5, 1.0, progress);
