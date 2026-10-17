@@ -32,6 +32,8 @@ const MOUTH_SHOWS := 0.12
 const TELL_EVERY := Vector2(5.0, 10.0)
 
 var g: BipedGait
+## The maw held open (KaijuModel.jaw_open: the beam).
+var held_open := false
 var _head_yaw := 0.0
 var _head_yaw_v := 0.0
 var _head_pitch := Vector2.ZERO
@@ -193,7 +195,7 @@ static func _ease_out(t: float) -> float:
 func _pose_jaw(dt: float) -> void:
 	if not g.rig.has_bone("jaw"):
 		return
-	var target := JAW_OPEN * roar_open() + 0.07 * _tell
+	var target := maxf(JAW_OPEN * roar_open(), JAW_OPEN if held_open else 0.0) + 0.07 * _tell
 	_jaw_open = lerpf(_jaw_open, target, minf(1.0, dt * 18.0))
 	# Shut at rest (the sculpt's snarl closed by the rig's "close" angle), dropped open to roar.
 	g.rig.pose("jaw", Vector3(Num.f(g.rig.bone_close.get("jaw", 0.0)) - _jaw_open, 0, 0))

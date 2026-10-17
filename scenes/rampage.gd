@@ -16,7 +16,8 @@ const FOOTFALL_DIP := 0.35
 const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)
-const TANK_GREEN := Color("55613a")
+## How fast the camera's aim catches up with the kaiju's drawn body (1/s).
+const FOCUS_FOLLOW := 12.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
@@ -35,12 +36,15 @@ var autoplay_signature := true
 var scripted: Callable
 var _city: CityView
 var _powers: PowersView
+var _fade: VehicleFade
 var _was_ready := true
 var _leap_reach := 0.0
 var _leap_power := 1.0
 var _hud: RampageHud
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
+var _focus := Vector3.ZERO
+var _cam_offset := CAMERA_OFFSET
 var _leap_time := 0.0
 var _leap_from := Vector3.ZERO
 var _camera: Camera3D
@@ -87,9 +91,14 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
+	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
+	_focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
+	_kaiju.set_grip_finder(
+		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
+	)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_camera = Camera3D.new()
 	_camera.fov = 55.0
@@ -133,12 +142,13 @@ func _physics_process(delta: float) -> void:
 	_update_kaiju(delta, move.length())
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
-	_update_tanks()
+	_update_tanks(delta)
 	_hud.refresh()
 
 
 func _process(delta: float) -> void:
 	_place_camera(delta)
+	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
 
 
@@ -285,43 +295,43 @@ func _spawn_tank_node(id: int) -> void:
 	_tank_nodes[id] = tank
 
 
-func _part(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material = mat
-	mi.mesh = mesh
-	mi.position = pos
-	return mi
-
-
-func _update_tanks() -> void:
+## Each tank's hull turns to the way it drives (to the kaiju when it stands) and its turret keeps
+## the gun on the kaiju.
+func _update_tanks(delta: float) -> void:
 	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
+	var turn := Num.f(Content.section("vehicles")["hull_turn"]) * delta
 	for tank: RampageSim.Tank in sim.tanks:
 		if flatten:
 			_city.crush(_to_world(tank.pos), 1.4)
 		if not _tank_nodes.has(tank.id):
 			continue
-		var node: Node3D = _tank_nodes[tank.id]
-		node.position = _to_world(tank.pos)
-		var to := sim.kaiju_pos - tank.pos
-		if to.length() > 0.01:
-			node.rotation.y = atan2(-to.x, -to.y)
+		var node: TankModel = _tank_nodes[tank.id]
+		var at := _to_world(tank.pos)
+		var drive := at - node.position
+		node.position = at
+		var heading := Vector2(drive.x, drive.z)
+		if heading.length() < 0.001:
+			var to := sim.kaiju_pos - tank.pos
+			heading = Vector2(to.x, to.y)
+		if heading.length() > 0.001:
+			var want := atan2(-heading.x, -heading.y)
+			var diff := wrapf(want - node.rotation.y, -PI, PI)
+			node.rotation.y += clampf(diff, -turn, turn)
+		node.aim(_kaiju_at + Vector3(0, 2.0 * sim.body_scale(), 0), delta)
 
 
 func _tank_fired(id: int, at: Vector3) -> void:
 	if not _tank_nodes.has(id):
 		return
-	var node: Node3D = _tank_nodes[id]
+	var node: TankModel = _tank_nodes[id]
 	var target := at + Vector3(0, 1.0, 0)
 	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
 		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	var shell := _part(Vector3.ONE * 0.35, node.position + Vector3(0, 0.9, 0), UiKit.WARN)
+	var muzzle := node.fire()
+	var shell := TankModel.box(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
-	_city.flash(node.position + Vector3(0, 1.0, 0), Color("ffc070"), 4.0, 0.12)
+	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
 	if sim.stat("armor") > 0.0:
@@ -340,7 +350,7 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 		_tank_nodes.erase(id)
 	for n: int in 8:
 		_city.debris(
-			pos + Vector3(0, 0.5, 0), TANK_GREEN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
+			pos + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
 		)
 	_city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
 	_city.fire(pos, 0.6)
@@ -351,10 +361,14 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 func _place_camera(delta: float) -> void:
 	var zoom := 0.75 + 0.4 * sim.body_scale()
 	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
-	var target := _kaiju_at + _breath_orbit(delta) * zoom - Vector3(0, _step_dip * zoom, 0)
-	_camera.position = _camera.position.lerp(target, minf(1.0, delta * 5.0))
+	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
+	# and its dart bursts ahead of the camera.
+	_focus = _focus.lerp(_kaiju.focus(), minf(1.0, delta * FOCUS_FOLLOW))
+	var offset := _breath_orbit(delta) * zoom - Vector3(0, _step_dip * zoom, 0)
+	_cam_offset = _cam_offset.lerp(offset, minf(1.0, delta * 5.0))
+	_camera.position = _focus + _cam_offset
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
-	_camera.look_at(_kaiju_at + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
+	_camera.look_at(_focus + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
 
 
 ## The camera offset, swung to the side and lifted while Atomic Breath fires so the beam crosses

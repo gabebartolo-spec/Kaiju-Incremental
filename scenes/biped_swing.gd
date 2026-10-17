@@ -19,6 +19,9 @@ const TAIL_DELAY := 4.0
 const TAIL_SWAY := 0.03
 ## At most this much bend per tail bone (rad), so the voxel segments never part.
 const TAIL_BEND_MAX := 0.12
+## Tail whip (species power): length (s) and bend per bone at its height (rad).
+const WHIP_SECONDS := 0.35
+const WHIP := 0.22
 ## Arms (posed, never simulated: director, "limp scarves", "outstretched like a zombie"), as the
 ## Jurassic Park tyrannosaur and Godzilla 2014 carry theirs. Each bone is aimed along a direction
 ## in the body's heading frame (x outward, y up, -z forward), so it bends at the joint and never
@@ -48,6 +51,8 @@ var youth := 0.0
 var yaw_rate := 0.0
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
+var _whip := 0.0  # 1 -> 0 over a tail whip
+var _whip_side := 1.0
 var _arm_swing := Vector2.ZERO
 var _arm_brace := Vector2.ZERO
 
@@ -69,7 +74,14 @@ func _init(p_rig: KaijuRig) -> void:
 
 
 ## hip_yaw: the pelvis's swing this frame; roar_open 0..1.
+## A fast tail whip to one side (-1 left, +1 right): the species power's tail sweep.
+func whip(side: float) -> void:
+	_whip = 1.0
+	_whip_side = side
+
+
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
+	_whip = maxf(0.0, _whip - dt / WHIP_SECONDS)
 	var tail := rig.chain_named("tail0")
 	if tail != null:
 		var n := tail.drive.size()
@@ -81,6 +93,9 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 			var k := float(i + 1) / n
 			var sway := sin(time * 0.9 - i * 0.45) * TAIL_SWAY
 			var bend := clampf(-TAIL_SWEEP * _sweep[i] + sway, -TAIL_BEND_MAX, TAIL_BEND_MAX)
+			if _whip > 0.0:  # a whip wave running down the tail, base first
+				var wave := clampf((1.0 - _whip) * PI * 1.6 - i * 0.22, 0.0, PI)
+				bend += _whip_side * WHIP * sin(wave)
 			var yaw := bend + _straight[i]
 			var lift := (TAIL_LIFT + TAIL_YOUTH_LIFT * youth) * (1.0 - k * 0.5)
 			lift += TAIL_FLICK * hip_drop * k
