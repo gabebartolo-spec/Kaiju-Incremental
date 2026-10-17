@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const FlowSounds := preload("res://tests/lib/flow_sounds.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
@@ -162,6 +163,21 @@ func _check_rampage() -> void:
 		)
 		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
+	# Rooftop defenders (D-063): figures stand on the squads' roofs, at most max_drawn of them,
+	# and their volleys draw flashes and tracers and call the rifle cue.
+	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
+	var cap := Num.i(rampage.sim.army["rooftop"]["max_drawn"])
+	check(
+		roofs != null and roofs.most_drawn > 0 and roofs.most_drawn <= cap,
+		(
+			"armed citizens stand on the roofs, at most %d drawn (%d)"
+			% [cap, roofs.most_drawn if roofs else -1]
+		)
+	)
+	check(
+		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
+		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
+	)
 	check(
 		rampage.sim.chunks_destroyed > 0,
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
@@ -219,15 +235,19 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
 		want.append_array(["cracks", "ready", "deflect", "regen"])
+	var jets := 0
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		jets = maxi(jets, _breath_jets(rampage))
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
 	var sound: String = SIGNATURE_SOUND[kind]
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
+	if kind == "breath":
+		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
@@ -240,6 +260,17 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		)
 	rampage.queue_free()
 	await process_frame
+
+
+## Live voxel-cube jets (glowing 0.25 u cubes) in the city's effects, above the prewarm spot.
+func _breath_jets(rampage: Rampage) -> int:
+	var count := 0
+	for node: Node in rampage.find_children("*", "GPUParticles3D", true, false):
+		var p: GPUParticles3D = node
+		var cube := p.draw_pass_1 as BoxMesh
+		if cube != null and is_equal_approx(cube.size.x, 0.25) and p.global_position.y > -10.0:
+			count += 1
+	return count
 
 
 ## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
@@ -258,15 +289,7 @@ func _check_stomp_timing() -> void:
 		is_equal_approx(ceiling, Num.f(dynamics["ceiling_db"])),
 		"a hard limiter holds Master under %s dBFS (found %s)" % [dynamics["ceiling_db"], ceiling]
 	)
-	var calm := sfx.crowd_target(0.0, false)
-	var panic := sfx.crowd_target(0.8, false)
-	check(
-		calm < -50.0 and panic > calm + 20.0 and sfx.crowd_target(0.8, true) < panic - 6.0,
-		(
-			"the crowd is silent when calm, loud in a panic, and ducks under the breath (%.0f, %.0f, %.0f)"
-			% [calm, panic, sfx.crowd_target(0.8, true)]
-		)
-	)
+	FlowSounds.crowd(check, sfx)
 	var early := sfx.played.duplicate()
 	var buses: Array[String] = []
 	for player: Node in sfx.get_children():
@@ -290,19 +313,7 @@ func _check_stomp_timing() -> void:
 		pitches[0] > pitches[1] * 1.2,
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
-	sfx.regen(true)
-	var bubbling := sfx._regen.playing
-	for _i: int in 4:
-		sfx._process(1.0)
-		sfx.regen(true)  # still healing
-	var faded := not sfx._regen.playing
-	sfx.regen(false)
-	sfx.regen(true)
-	check(
-		bubbling and faded and sfx._regen.playing,
-		"regen bubbles start each heal and fade within seconds (%s, %s)" % [bubbling, faded]
-	)
-	sfx.regen(false)
+	FlowSounds.regen(check, sfx)
 	sfx.free()
 
 
