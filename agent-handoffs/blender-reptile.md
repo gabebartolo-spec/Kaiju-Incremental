@@ -1,18 +1,20 @@
-# blender-reptile handoff, 2026-10-18 05:05
+# blender-reptile handoff, 2026-10-18 05:25
 ## State: running a check. LEAD round 2 FIX (04:11, judged at the GAME camera) done in code, local
 ## 16260e9 (= 3aa63a6 tail round 2 + merge look-options 81afe80; 7d3f761 cards option A), all 9 suites
-## green. Auto-fix conflict (base #23 demo slice) forced a push: #22 = fd80192 (merge 94ebcd8,
-## floors city 6, flow 92, clips 14; all suites green). Evidence follows in one push.
+## green. Auto-fix base conflicts forced pushes: #22 = bc788c9 (merged look-options 47e1b30;
+## floors city 6, flow 100, clips 14; all suites green). Evidence follows in one push.
 ## Round 2: walk TAIL_WALK (2,5) over TAIL_WALK_PERIOD 72 = 1.5 cycles (tip 45.3 m = 0.72x), walk
 ## clip baked as 3 cycles (header "cycles", KaijuClips.cycles_of); roar TAIL_LIFT (6,-9): tip above
 ## hip f19-40 (0.92 s), crashes 96 -> 3 m f38-46, lands f47 = head peak; slam emits
 ## rig.foot_planted("tail", 1.6, tip) (dust, ring, camera dip; check shown failing first); turn spring
 ## (14, 0.25), TAIL_WHIP (6.5, 8.3), TURN_SETTLE 24 (offline: overshoot ~8 deg, settle ~0.4 s).
-## CI (all from temp branch claude/croctitan-cards-tmp = fd80192, delete after): chain b2vwtf0yr ->
+## CI (all from temp branch claude/croctitan-cards-tmp = bc788c9, delete after): chain b2vwtf0yr ->
 ## BEFORE game 39054681594 -> bmgmirzlv 4K cards (ci6) -> byhacv7qr AFTER game + side (ci7).
 ## Owed for round 2: 3 s game-cam clips walk/turn/roar (roar clip 13.3-18.3: crouch, rear, slam,
 ## recovery), before/after aligned by time (same schedule, seed), 2x crops slam contact + turn
 ## settle, species_cards_before_after (fill per species), PR body; push; delete tmp; SHA to LEAD.
+## P3 GLBs arrived (05:22): scratch p3/baby.glb, p3/adol.glb (adolescent needs 90 deg turn). P3 proposed
+## as its own session (card task_312ec4fa, full brief) - this session finishes P2 only.
 ## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
 ## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
