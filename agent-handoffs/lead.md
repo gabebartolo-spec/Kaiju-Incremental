@@ -17,8 +17,9 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 3. PR #36 (claude/army-scales, from the AFL "Kaiju tree research" session, says "director-assigned finding 1"): army
    and air scale inside each stage (growth.per_level), Regeneration behind evolve2, Scales last young node, Titan
    Hide first after evolve1. Pacing: reptilian evolve1 0.62 h (was 0.59); Behemoth 38 time / 5 defeated / 2 city
-   (was 48/1/1). Balance = his call (D-049): ask "apply #36?" with that table; not merged tonight. Syncs after
-   Military AI / Rooftops (same files).
+   (was 48/1/1). 06:5x the AFL session RELAYED a director approval ("the lead reviews and merges"). A relayed approval
+   is not his word to me: NOT merged. Ask him directly in the morning ("merge #36?") with the pacing table; review the
+   diff meanwhile. Syncs after Military AI / Rooftops (same files).
 4. Street-life civilian cap (~600 per city) after Perf's no-feel pass: perf numbers in agent-handoffs/performance.md.
 5. Octopus adult mesh FIX (10-11 arms, two eye pairs): only if the species plan (D-060) resumes.
 6. D-065 (b): 8-15% green lots means fewer buildings/chunks = slower demo (touches D-049). City session prepares a
