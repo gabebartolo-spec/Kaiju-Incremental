@@ -1,5 +1,5 @@
 # City-growth handoff, 2026-10-17 12:45
-## State: awaiting lead (PR #16 fog fix pushed; director questions tabled)
+## State: awaiting lead (PR #16 fog fix pushed, head 427ae30 after gdlint fix; director questions tabled)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
