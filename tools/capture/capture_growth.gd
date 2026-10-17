@@ -2,9 +2,9 @@ extends SceneTree
 ## Stills of the city at each growth stage (D-039): for every size tier, the stage's city with
 ## its kaiju (young, Behemoth, Colossus, Apex Titan) seen from high over the south edge (the
 ## whole playable city, its ring avenue and the districts still to come past it), and a closer
-## view of the kaiju among the buildings it is the size of. Prints build time, building
-## counts and frame timings per stage. Needs a window: run it on CI (tools/capture/ci_capture.sh
-## capture_growth.gd), never windowed on the director's PC.
+## view of the kaiju among the buildings it is the size of, and the in-game camera's view.
+## Prints build time, building counts and frame timings per stage. Needs a window: run it on CI
+## (tools/capture/ci_capture.sh capture_growth.gd), or off-screen with the no_focus override.
 ##
 ##   godot --path . --resolution 1280x720 --windowed \
 ##     --script tools/capture/capture_growth.gd -- --out=<dir> [--stage=N] [--quick]
@@ -13,6 +13,8 @@ extends SceneTree
 
 const SETTLE := 12
 const SPECIES := "reptilian"
+## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
+const GAME_CAMERA := Vector3(0, 27, 19)
 ## Upgrades owned at each stage, so the kaiju has the body (size and growth) of that stage.
 const LEVELS: Array[Dictionary] = [
 	{"claws": 2, "hide": 2},
@@ -111,6 +113,11 @@ func _stage(tier: int) -> void:
 	await _frames(_settle)
 	_shot(id + "_kaiju")
 	print("stage %d kaiju view %s" % [tier, await _measure()])
+	# The rampage's own camera (Rampage._place_camera at rest): what the player sees.
+	cam.position = at + GAME_CAMERA * (0.75 + 0.4 * scale)
+	cam.look_at(at + Vector3(0, 3.5 * scale, 0))
+	await _frames(_settle)
+	_shot(id + "_game")
 	stage.queue_free()
 	await process_frame
 

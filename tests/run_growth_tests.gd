@@ -137,6 +137,13 @@ func _check_edges() -> void:
 		if built == 0:
 			bad.append("%d: no built blocks" % tier)
 	check(bad.is_empty(), "every stage's city has believable edges: %s" % [bad])
+	var fog_ok := true
+	for tier: int in range(2, 5):
+		var now: Dictionary = _tuning(tier)["city"]
+		var before: Dictionary = _tuning(tier - 1)["city"]
+		var thinner := Num.f(now["fog_scale"]) < Num.f(before["fog_scale"])
+		fog_ok = fog_ok and thinner and Num.f(now["far_haze"]) < Num.f(before["far_haze"])
+	check(fog_ok, "the fog thins as the city grows, so its far edge still reads as skyline")
 
 
 ## Defences harden with each stage: no helicopters for the young kaiju, helicopters from the
