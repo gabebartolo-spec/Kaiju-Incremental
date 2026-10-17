@@ -8,7 +8,7 @@ signal continued
 
 ## Stat key, label, how the value is shown ("int" or "pct").
 const ROWS: Array[Array] = [
-	["rubble", "Rubble earned", "int"],
+	["rubble", "Biomass devoured", "int"],
 	["destruction", "City destroyed", "pct"],
 	["toppled", "Buildings toppled", "int"],
 	["tallest_topple", "Tallest tower toppled (floors)", "int"],
@@ -21,6 +21,8 @@ const ROWS: Array[Array] = [
 const COUNT_FRAMES := 36
 const ROW_GAP_FRAMES := 12
 const LAYER := 20
+## The stat the headline under the title compares with the best (its row shows no best badge).
+const VERDICT_STAT := "rubble"
 
 var result: Dictionary
 var previous_best: Dictionary
@@ -84,6 +86,29 @@ func _ready() -> void:
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
 	_go.grab_focus.call_deferred()
+	var crawl := NewsTicker.new(news(result))
+	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	crawl.offset_top = -NewsTicker.HEIGHT
+	add_child(crawl)
+
+
+## The evening news about this rampage, for the crawl under the report: the city's reaction,
+## not the table again (data/tuning.json "news.report": per stat, the first line whose "min"
+## the rampage reached; "{n}" is the stat's value).
+static func news(r: Dictionary) -> PackedStringArray:
+	var cfg := Content.section("news")
+	var lines := PackedStringArray()
+	var done: Dictionary = {}
+	var report: Array = cfg.get("report", [])
+	for entry: Dictionary in report:
+		var stat := str(entry["stat"])
+		var value := Num.f(r.get(stat, 0))
+		if done.has(stat) or value < Num.f(entry["min"]):
+			continue
+		done[stat] = true
+		lines.append(str(entry["line"]).replace("{n}", str(floori(value))))
+	lines.append(str(cfg.get("close", "")))
+	return lines
 
 
 func _process(_delta: float) -> void:
@@ -112,8 +137,8 @@ func verdict() -> String:
 	if rubble > best:
 		if best <= 0.0:
 			return "BIGGER THAN EVER"
-		return "BIGGER THAN LAST TIME  +%d%% RUBBLE" % roundi(100.0 * (rubble - best) / best)
-	return "%d RUBBLE SHORT OF YOUR BEST" % ceili(best - rubble)
+		return "BIGGER THAN LAST TIME  +%d%% BIOMASS" % roundi(100.0 * (rubble - best) / best)
+	return "%d BIOMASS SHORT OF YOUR BEST" % ceili(best - rubble)
 
 
 ## True when this rampage beat the best before it on `key` (never on a first rampage).
@@ -144,7 +169,7 @@ func _show_frame() -> void:
 		var record := landed and is_new_best(str(row[0]))
 		_values[n].add_theme_color_override("font_color", UiKit.GOOD if record else UiKit.TEXT)
 		_badges[n].modulate.a = 1.0 if landed else 0.0
-		if record:
+		if record and str(row[0]) != VERDICT_STAT:
 			_badges[n].text = "NEW BEST"
 			_badges[n].add_theme_color_override("font_color", UiKit.GOOD)
 	_verdict.modulate.a = 0.0 if counting() else 1.0
@@ -159,6 +184,7 @@ func _shown(row: Array, value: float) -> String:
 
 ## Every row shows the best before this rampage (none at all on a first rampage).
 func _best_text(row: Array) -> String:
-	if previous_best.is_empty():
+	# The headline under the title already compares this row with the best: say it once.
+	if previous_best.is_empty() or str(row[0]) == VERDICT_STAT:
 		return ""
 	return "best " + _shown(row, Num.f(previous_best.get(str(row[0]), 0.0)))

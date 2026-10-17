@@ -5,14 +5,12 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_motion.gd -- --species=reptilian --stage=adult --cam=game
-## --cam=side tracks the kaiju from one fixed side (the world +x side, no orbit); --cam=fixed
-## holds still beside the first straight walk (for judging foot slide by eye). Footfalls kick
-## dust and nudge the camera as in the rampage; the scripted events are labelled on screen.
+## --cam=side: one fixed side (world +x, no orbit); --cam=fixed holds still by the first walk (slide
+## by eye). Footfalls kick dust and dip the camera (eased) as in the rampage; events are labelled.
 ## --trace=<file.csv>: t, pelvis height and forward speed per frame (the rhythm plot).
 ## --pose-trace=<file.csv>: per frame the scripted event, the body's world x/z and heading, a
 ## hard hold (insectoid), and how far all the bones moved that frame (stillness and twitches).
-## Headless (no movie) just prints the measurements. Slide is
-## also given in cm, taking a world unit as one storey (3.5 m).
+## Headless (no movie) prints the measurements; slide also in cm (a world unit = a 3.5 m storey).
 
 const FPS := 60.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
@@ -27,10 +25,12 @@ var _species := "reptilian"
 var _stage := "adult"
 var _cam := "game"
 var _seconds := 15.0
+var _roar_at := 10.0  # s; capture_clips.gd moves it
 var _trace := ""
 var _pose_trace := ""
 var _poser := PoseTrace.new()
 var _dip := 0.0
+var _dip_shown := 0.0  # eased toward _dip, as Rampage eases its camera offset
 var _focus := Vector3.ZERO
 var _line: Line2D
 var _guide: Line2D
@@ -157,6 +157,8 @@ func _run() -> void:
 			facing = move.normalized()
 		elif _cam == "side" and t >= SIDE_PIVOT:
 			facing = Vector2(0, -1)  # standing, it turns side-on to the camera for the roar
+		else:
+			facing = _standing_facing(t, facing)
 		at = at.lerp(Vector3(pos.x, 0, pos.y), minf(1.0, dt * 12.0))
 		kaiju.position = at
 		kaiju.rotation.y = lerp_angle(
@@ -166,7 +168,7 @@ func _run() -> void:
 		if stomp_in <= 0.0:
 			stomp_in += interval
 			kaiju.stomp()
-		if t >= 10.0 and not roared:
+		if t >= _roar_at and not roared:
 			roared = true
 			kaiju.roar()
 		var t0 := Time.get_ticks_usec()
@@ -185,7 +187,8 @@ func _run() -> void:
 			body_scale
 		)
 		if _cam == "game":
-			cam.position.y -= _dip * (0.75 + 0.4 * body_scale)
+			_dip_shown = lerpf(_dip_shown, _dip, minf(1.0, dt * 5.0))
+			cam.position.y -= _dip_shown * (0.75 + 0.4 * body_scale)
 		_trace_feet(kaiju, t, feet)
 		if _pose_trace != "":
 			poses.append(_poser.row(kaiju, t, _event_at(t)))
@@ -276,6 +279,11 @@ func _place(cam: Camera3D, at: Vector3, fwd: Vector3, body_scale: float) -> void
 
 
 ## What the script is doing at time t, shown on the clip.
+## Where a standing kaiju faces at time t (capture_clips.gd turns it on the spot).
+func _standing_facing(_t: float, facing: Vector2) -> Vector2:
+	return facing
+
+
 func _event_at(t: float) -> String:
 	if t < 1.0:
 		return "STAND (stomps)"

@@ -6,6 +6,7 @@ extends RefCounted
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+const FlowSave := preload("res://tests/lib/flow_save.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -30,7 +31,9 @@ func run() -> void:
 	layout.reveal_stage_city()
 	await layout.reveal_fits()
 	await _check_settings()
-	_check_migration()
+	layout.currency_named()
+	layout.fonts_ours()
+	FlowSave.migration(check)
 	SaveFile.delete_save()
 
 
@@ -65,6 +68,12 @@ func _check_new_game() -> void:
 	var select := _screen(main)
 	check.call(select is SpeciesSelect, "clicking NEW KAIJU opens species select")
 	await layout.fits_at_scales(select as Control, "species select")
+	await GuiInput.key(t, KEY_ESCAPE)
+	await _frames(2)
+	check.call(_screen(main) is TitleScreen, "Esc on species select goes back to the title")
+	await GuiInput.click(t, GuiInput.button(_screen(main), "NEW KAIJU"))
+	await _frames(2)
+	select = _screen(main)
 	await GuiInput.click(t, GuiInput.button(select, "CHOOSE"))
 	await _frames(3)
 	var rampage := _screen(main) as Rampage
@@ -75,8 +84,10 @@ func _check_new_game() -> void:
 	if rampage == null:
 		main.queue_free()
 		return
+	layout.listen(rampage, "HUD")
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(rampage, PauseMenu)
+	layout.listen(rampage, "pause")
 	check.call(t.paused and menu != null, "Esc pauses the rampage and opens the pause menu")
 	check.call(_hint_hidden(rampage), "the HUD's hints hide behind the pause menu (lead review 3)")
 	var clock := rampage.sim.time_left
@@ -145,8 +156,10 @@ func _check_results_compare() -> void:
 	var results := ResultsScreen.new(result, best)
 	t.root.add_child(results)
 	await _frames(3)
+	layout.listen(results, "results")
+	await layout.crawl_reads(results, "results")
 	check.call(
-		results.verdict() == "BIGGER THAN LAST TIME  +50% RUBBLE",
+		results.verdict() == "BIGGER THAN LAST TIME  +50% BIOMASS",
 		"beating the best by half says +50%%: %s" % results.verdict()
 	)
 	await GuiInput.key(t, KEY_ENTER)
@@ -162,17 +175,17 @@ func _check_results_compare() -> void:
 			results.is_new_best("rubble")
 			and results.is_new_best("toppled")
 			and not results.is_new_best("tanks")
-			and labels.count("NEW BEST") == 4
+			and labels.count("NEW BEST") == 3
 		),
 		"new bests are marked, misses are not (%d marked)" % labels.count("NEW BEST")
 	)
 	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
 	check.call(
-		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size(),
-		"every row shows its best or NEW BEST: %s" % [bests]
+		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size() - 1,
+		"every row but the headline's shows its best or NEW BEST once: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
-	check.call(short.verdict() == "50 RUBBLE SHORT OF YOUR BEST", "a miss says how far short")
+	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")
 	short.free()
 	results.queue_free()
 	await _frames(1)
@@ -192,6 +205,8 @@ func _check_evolution_and_continue() -> void:
 	var title := _screen(main)
 	var cont := GuiInput.button(title, "CONTINUE")
 	check.call(cont != null, "with a save the title offers Continue")
+	await layout.fits_at_scales(title as Control, "title screen")
+	layout.listen(title, "title")
 	await GuiInput.click(t, cont)
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
@@ -224,6 +239,7 @@ func _check_evolution_and_continue() -> void:
 		"the insectoid's Brood is its branch's capstone, bigger, with its button"
 	)
 	await layout.fits_at_scales(tree, "evolution tree")
+	layout.listen(tree, "tree")
 	check.call(
 		(
 			tree.node_button("i_glide").role == "branch"
@@ -349,40 +365,6 @@ func _check_settings() -> void:
 	check.call(PlayerSettings.ui_scale == 1.0, "UI scale wraps back to 100%")
 	main.queue_free()
 	await _frames(2)
-
-
-## A version 1 save comes up as version 2 with its best destruction kept; newer is refused.
-func _check_migration() -> void:
-	var v1 := {
-		"version": 1,
-		"species": "cephalopod",
-		"rubble": 42,
-		"levels": {"claws": 2},
-		"runs": 3,
-		"best_destruction": 0.4
-	}
-	var up := SaveFile.migrate(v1)
-	check.call(
-		(
-			Num.i(up["version"]) == SaveFile.VERSION
-			and Num.f(up["best"]["destruction"]) == 0.4
-			and not up.has("best_destruction")
-			and Num.i(up["rubble"]) == 42
-		),
-		"a v1 save migrates to v%d keeping its best and its bank: %s" % [SaveFile.VERSION, up]
-	)
-	check.call(
-		SaveFile.migrate({"version": SaveFile.VERSION + 1}).is_empty(),
-		"a save from a newer version is refused"
-	)
-	var file := FileAccess.open(SaveFile.PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(v1))
-	file.close()
-	var loaded := SaveFile.load_game()
-	check.call(
-		Num.i(loaded.get("version", 0)) == 2 and Num.i(loaded["levels"]["claws"]) == 2,
-		"a v1 save file on disk loads as v2"
-	)
 
 
 func _evolve_cost() -> int:
