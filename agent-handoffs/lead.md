@@ -18,7 +18,10 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    defeat stays possible after Behemoth"): unknown owner, no PR, not pushed? Ask whose; leave it alone until then.
 4. Street-life civilian cap (~600 per city) after Perf's no-feel pass: perf numbers in agent-handoffs/performance.md.
 5. Octopus adult mesh FIX (10-11 arms, two eye pairs): only if the species plan (D-060) resumes.
-6. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
+6. D-065 (b): 8-15% green lots means fewer buildings/chunks = slower demo (touches D-049). City session prepares a
+   table (0/8/12/15%: chunks per stage, pacing hours to evolve1 and tree end); ask him with it. (a) street trees,
+   park/yard bushes, flower beds, playground props (presentation, crushable) proceeds tonight.
+7. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
 - Merged on look-options 2026-10-18: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
