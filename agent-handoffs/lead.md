@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 12:50
-## State: awaiting director (make repo public: GitHub Actions blocked by billing)
+## State: working (CI restored 12:47: repo PUBLIC; reviewing #15 next)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -15,7 +15,10 @@ species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-te
 Director saw octopus local capture: "head detached, limbs a static, awkward mesh" (I had not caught it).
 D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the model pipeline first.
 
-## BLOCKER: CI billing (12:35)
+## CI billing RESOLVED 12:47: director made the repo public; main protection confirmed (test, doc-caps,
+gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to dispatch captures.
+Director: "tank and heli models look great".
+## (history) CI billing (12:35)
 - Every Actions job refuses: "recent account payments have failed or your spending limit needs to be increased".
 - Director chose "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by
   the auto-mode classifier, so the director flips it himself (Settings > General > Danger Zone, or the command).
