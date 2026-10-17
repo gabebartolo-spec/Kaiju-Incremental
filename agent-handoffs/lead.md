@@ -47,6 +47,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 10a. Rooftops (#40, critic PASS after 6 rounds, merging at 0fdf935): white tracers read as "something is shooting";
    shooters/flashes barely visible and ~1 s gaps feel sparse. Ask: more squads/denser fire, or bigger shooters?
    Clip: ...side-session-notes\local_106fc100...\rooftops\fix6\rooftops_behemoth_3s_1080p_fix6.mp4.
+10b. Military AI (D-066): total damage per run held within ±5% of today's, but the mix shifts: helicopters 3.8 ->
+   13.6 at Behemoth (fly real attack runs now), tanks slightly less. Note for him after merge.
 10. Tree stats panel shows 12 raw numbers (STOMPS/S, RECHARGE 7.05...): trim to ~4 player words? (screen-critic).
 11. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
