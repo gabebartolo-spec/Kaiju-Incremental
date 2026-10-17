@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 10:40
-## State: running a check (CI on #39, #41, #42; auto-fix ON for all). Asked the lead for the next job
+# Ability VFX/SFX handoff, 2026-10-18 16:30
+## State: awaiting lead (merge #49 first, then resync the 5 tabled sound PRs)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -10,24 +10,64 @@
 - #8: power SFX, footsteps and stomps on plants, crack, collapse, roar on the reveal. D-052, D-055.
 - #33: SFX/Music buses, Sound effects slider, menu sounds, end-card Sfx.roar. D-064.
 - #34: tank fire, shell hit, heli rotor. D-067.
+- #41: Master limiter + SFX compressor.
 
-## Open PRs (each → claude/look-options)
-- **#39** claude/heli-sfx, head 1c66048, flow 112.
-  - Heli gun and crash via PowersView.sfx; Sfx.watch(camera, powers).
-  - Clip: army-sfx/heli_gun_crash.mp4. Waiting for the director's listen.
-- **#41** claude/sfx-limiter, head 89cef13, flow 113.
-  - Compressor on SFX and a HardLimiter (-1 dB) on Master, via PlayerSettings._dynamics(); tuning sfx.dynamics.
-  - Stacked worst case: peak before 0.0 dBFS with 409 clipped samples; after -2.9 dBFS, 0 clipped.
-    Normal play is -0.5 dB.
-  - Clips: sfx-limiter/.
-- **#42** claude/footstep-variants, head 9e47407, flow 113.
-  - footstep_1..3 plus Sfx.STEPS round-robin.
-  - Clips: footsteps/walk_in_game.mp4 and footstep_round_robin.wav.
-- #39, #41 and #42 each add to flow on a 112 base. Whichever merges later needs a floor resync to the real count.
+## Open PRs (each → claude/look-options; all tabled for the director's listen, none merge tonight)
+- **#39** claude/heli-sfx, head 2ecdbe0, flow 113: heli gun and crash. Clip army-sfx/heli_gun_crash.mp4.
+- **#42** claude/footstep-variants, head aadc2f6, flow 114: footstep_1..3 round-robin. Clips in footsteps/.
+- **#43** claude/crowd-sfx, head 8d37511, flow 114: crowd_panic loop.
+  - Driven by StreetLife.panicking() and the destruction rate; ducks 9 dB under breath; high-passed at 300 Hz.
+  - Sfx.watch(camera, helis, street). Clips in crowd/.
+- The PRs collide on flow floors and on the sfx.watch line (#39 vs #43). Resync to the real counts as each lands.
+
+## Branch waiting
+- claude/rifle-sfx (b1a43d2, pushed, no PR): rifle.ogg plus the Sfx "rifle" stream, for #40 (rooftop defenders),
+  which calls Sfx.play("rifle").
+  - After #40 merges: merge look-options in, change rooftop_view's call to play_at("rifle", <squad pos>)
+    for the distance fade, add a flow check, record a clip, then open the PR.
+  - A/B listen: rifle/rifle_vs_tank.wav.
+
+## Job (o): mix report DONE (shared notes mix-report/report.md, run clip, log, raw tables)
+- Master -21.4 LUFS, -3.9 dBTP. Loudness order is right.
+- Problems: crowd inaudible (-44 LUFS, 26 dB under); regen loop on 86% of the run; tank_fire's thump masks stomps.
+- Proposal (not applied, waits for the director's listen):
+  - crowd -14 → -6 dB, quiet_db -30 → -24;
+  - regen -20 dB, first 2.5 s per heal only;
+  - tank_fire high-passed at 120 Hz.
+- Tools: claude/mix-report (pushed, no PR) has tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py.
+
+## Job (o2) DONE: PR #45 claude/mix-levels → base claude/crowd-sfx (stacked on #43), flow 115
+- crowd -6 dB (quiet -24), regen -20 dB as a 2.5 s cue per heal, tank_fire high-passed at 120 Hz.
+- Re-measured: crowd gap -18.9 dB, regen on 6%, master -20.5 LUFS / -3.9 dBTP all met.
+  Stomps masked by army 15 → 8, not 0: it's shell_hit's thud; a 120 Hz high-pass on it is the next step if wanted.
+- A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
+- When #43 merges, retarget #45 to look-options.
+
+## Sync status (#39/#42/#43/#45 on look-options f71c527; #46 on 39acc0a; base flow is now 117)
+| PR | Head | Flow |
+|---|---|---|
+| #39 heli | bac13d7 | 116 |
+| #42 footsteps | dc8fd13 | 117 |
+| #43 crowd | c216ac0 | 117 |
+| #45 mix (on #43) | 9acb9e2 | 118 |
+| #46 rifle | c871803 (on 39acc0a) | 118 |
+
+- run_flow_tests.gd is at 393 lines on look-options. Each PR keeps its added checks in its own tests/lib file:
+  flow_heli_sounds, flow_step_sounds, flow_sounds (crowd + regen), flow_rifle_sounds.
+  So the PRs merge in any order with only a floor resync.
+- The lead merges them one at a time in the director's order and pings me. Resync each to the real count.
+
+## Blocker and fix (2026-10-18 16:30)
+- After #27, run_flow_tests.gd on look-options is 399/400 lines. Every tabled PR would break the gdlint cap.
+- **PR #49** claude/flow-sfx-split moves _check_stomp_timing into tests/lib/flow_sfx.gd (static run(root, check));
+  the flow file goes to 358 lines with the same 129 checks.
+- After #49 merges, resync #39, #42, #43, #45 and #46. Each one's edits to the old _check_stomp_timing block
+  now belong in tests/lib/flow_sfx.gd: #42 walk, #43 crowd, #45 regen (as calls to their own lib files),
+  and #46 rifle in _check_rampage. Floors = 129 + each PR's own checks.
+- #39 is at 1fc14bd, synced to the pre-#27 base.
 
 ## Next
-- The lead's queue is done except (h), Sonniss roars, which waits for the director (taste + licence).
-  Ask the lead for more.
+- Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
 - Every sync: check `git log origin/claude/look-options -1` first.
   - Squash merges: keep look-options' version of the merged PR's lines, then add only mine.
   - Floors are the real counts the suite prints.
@@ -45,4 +85,4 @@
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-CI on #39, #41 and #42. No Godot, no override.cfg.
+CI on #39, #42 and #43. No Godot, no override.cfg.
