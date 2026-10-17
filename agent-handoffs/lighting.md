@@ -1,5 +1,5 @@
-# Lighting handoff, 2026-10-18
-## State: running a check (CI capture of 4 looks; director decision next)
+# Lighting handoff, 2026-10-18 05:10
+## State: awaiting lead (A/B boards sent; lead puts ONE decision to the director)
 
 ## Who
 Role: lighting (director 2026-10-18: "beautiful realistic lighting and ways to add atmosphere";
@@ -34,7 +34,18 @@ drama + threat direction); tank headlights/beacons; species accent glow pulsing;
 lights the city (fires accumulate = escalation); lightning flashes; a luminance floor check on
 captures (playfield p50 luminance >= a threshold) as the readability guard.
 
-## Next
+## Round 2 (c200af1)
+Director: night "looks terrible, so white". Cause: vol fog far too dense at the game camera plus
+white window glow. Now vol_fog 0.0015-0.003, night windows amber d9963f, glow 1.2, lit 0.3.
+capture_screens.gd --looks=a,b = same seeded rampage start+mid per look at the game camera.
+Boards: docs/captures/2026-10-18-lighting/board_1080.png, board_4k.png, crop_windows_4k.png,
+crop_fire_4k.png. Centre luminance p10/p50 (mid): A 61/71 B 67/79 C 39/53 D 17/27.
+QA: C, D pass; B brown and flat (needs a pass if chosen). Pre-existing peach cube cluster by the
+kaiju in start frames (shows in A too, timing varies by run): not lighting, flagged to the lead.
+Lead rules: look changes reach the director only via the lead, A/B at the game camera 1080p+4K,
+CI one run at a time or the lead's local GPU slot; PR into claude/look-options; reports <=8 lines.
+
+## Next (old list)
 1. CI run output -> scratchpad/looks1 (log looks1.log). Build a labelled board
    (concrete/golden/dusk/night, city + skyline shots), 2x crops, art-qa-critic self-check.
 2. Measure playfield luminance per look for the night readability claim.
