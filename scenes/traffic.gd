@@ -72,7 +72,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 
 func _ready() -> void:
 	var palette := _car_palette()
-	for i: int in CityDecor.CAR_COLORS.size():
+	for i: int in CityDecor.car_colors().size():
 		var v := VoxelBuilder.new()
 		v.salt = 40 + i
 		CityDecor.car(v, "car%d" % i, false)
@@ -109,8 +109,9 @@ func _car_palette() -> Dictionary:
 		"red_lit": Color(1.0, 0.12, 0.08, 0.0),
 		"blue_lit": Color(0.15, 0.3, 1.0, 0.0),
 	}
-	for i: int in CityDecor.CAR_COLORS.size():
-		palette["car%d" % i] = CityDecor.CAR_COLORS[i]
+	var paints := CityDecor.car_colors()
+	for i: int in paints.size():
+		palette["car%d" % i] = paints[i]
 	return palette
 
 

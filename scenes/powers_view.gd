@@ -21,6 +21,8 @@ const LIFT_SHARE := 0.22
 var sim: RampageSim
 ## The rampage's sounds (Rampage sets it): the helicopters' gun and crash.
 var sfx: Sfx
+## The rooftop defenders (D-063), drawn beside the helicopters; their events come through here.
+var rooftops: RooftopView
 ## Every power event this view has drawn, by type (read by the flow suite).
 var played: Array[String] = []
 var _city: CityView
@@ -39,6 +41,13 @@ func _init(p_sim: RampageSim, city: CityView, kaiju: Node3D, tint: Color) -> voi
 	_city = city
 	_kaiju = kaiju
 	_tint = tint
+
+
+func _ready() -> void:
+	var rampage := get_parent() as Rampage
+	rooftops = RooftopView.new(sim, _city, rampage.sfx, Seeds.make("rooftop_fx"))
+	rooftops.body = _kaiju
+	add_child(rooftops)
 
 
 func _hook(method: String, args: Array) -> void:
@@ -148,7 +157,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"heli_destroyed":
 			_heli_down(Num.i(event["heli"]), Vector2(Num.f(event["x"]), Num.f(event["z"])))
 		_:
-			return false
+			return rooftops.on_event(event, kaiju_at)
 	if not played.has(str(event["type"])):
 		played.append(str(event["type"]))
 	return true
