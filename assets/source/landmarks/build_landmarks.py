@@ -303,7 +303,7 @@ def megatower():
     box((0, -8.05, 1.5), (10, 0.2, 2.2), "f2d38a")                 # lit lobby
     z, size = 3.0, 11.0
     steps = 14
-    for k in range(steps):                                         # twisted glass floors (3 floors each)
+    for k in range(steps):                                         # stepped glass floors (3 floors a step)
         rz = 0.0
         s = size - k * 0.32
         box((0, 0, z + 1.5), (s - 0.3, s - 0.3, 3.0), "1f3348", rz=rz)  # dark core: floor lines
