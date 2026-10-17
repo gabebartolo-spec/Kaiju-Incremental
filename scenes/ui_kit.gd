@@ -42,6 +42,7 @@ const DISPLAY_MIN_SIZE := SIZE_HEAD
 
 static var _display_font: Font
 static var _arrow: ImageTexture
+static var _grabbers: Dictionary = {}
 
 
 ## The display font for headings at or above DISPLAY_MIN_SIZE, else null (Kaiju Block, the
@@ -163,6 +164,36 @@ static func bar(fill: Color, height: int = 26, taped: bool = false) -> ProgressB
 	inner.set_content_margin_all(0)
 	p.add_theme_stylebox_override("fill", inner)
 	return p
+
+
+## A slider in the broadcast look: a white-edged black track filled hazard yellow, and a square
+## yellow grabber that turns white-ringed when the slider has focus.
+static func slider_look(s: HSlider) -> void:
+	var track := box(Color(0, 0, 0, 0.75), TEXT, 2)
+	track.content_margin_top = 6
+	track.content_margin_bottom = 6
+	s.add_theme_stylebox_override("slider", track)
+	var fill := box(ACCENT, ACCENT, 0)
+	fill.content_margin_top = 6
+	fill.content_margin_bottom = 6
+	s.add_theme_stylebox_override("grabber_area", fill)
+	s.add_theme_stylebox_override("grabber_area_highlight", fill)
+	s.add_theme_icon_override("grabber", _grabber(BG))
+	s.add_theme_icon_override("grabber_highlight", _grabber(Color.WHITE))
+
+
+## A square grabber: hazard yellow with an `ring` coloured edge (cached per colour).
+static func _grabber(ring: Color) -> Texture2D:
+	var key := ring.to_html()
+	if not _grabbers.has(key):
+		var side := 28
+		var edge := 4
+		var img := Image.create(side, side, false, Image.FORMAT_RGBA8)
+		img.fill(ring)
+		img.fill_rect(Rect2i(edge, edge, side - 2 * edge, side - 2 * edge), ACCENT)
+		_grabbers[key] = ImageTexture.create_from_image(img)
+	var tex: Texture2D = _grabbers[key]
+	return tex
 
 
 ## A full-width strip of hazard tape, `height` tall (screen edges, dividers).

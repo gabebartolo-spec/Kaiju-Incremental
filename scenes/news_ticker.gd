@@ -8,6 +8,9 @@ const HEIGHT := 56.0
 const SPEED := 120.0
 const TAG_WIDTH := 210.0
 const SEPARATOR := "   ///   "
+## The headlines repeat this many times in the strip, so a short list still fills a wide screen
+## and the loop never shows an empty stretch.
+const REPEAT := 4
 
 var _crawl: Label
 var _tag: Label
@@ -22,7 +25,8 @@ func _init(lines: PackedStringArray) -> void:
 	strip.color = UiKit.ALERT
 	UiKit.full_rect(strip)
 	add_child(strip)
-	_crawl = UiKit.label(SEPARATOR.join(lines) + SEPARATOR, UiKit.SIZE_BODY, Color.WHITE)
+	var unit := SEPARATOR.join(lines) + SEPARATOR
+	_crawl = UiKit.label(unit.repeat(REPEAT), UiKit.SIZE_BODY, Color.WHITE)
 	# The strip's full height with the text centred in it (the font is only known in the tree).
 	_crawl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_crawl.position = Vector2(TAG_WIDTH, 0.0)
@@ -40,7 +44,7 @@ func _init(lines: PackedStringArray) -> void:
 
 
 func _process(delta: float) -> void:
-	var loop := _crawl.get_minimum_size().x
+	var loop := _crawl.get_minimum_size().x / REPEAT
 	_crawl.position.x -= SPEED * delta
 	if _crawl.position.x < TAG_WIDTH - loop:
 		_crawl.position.x += loop

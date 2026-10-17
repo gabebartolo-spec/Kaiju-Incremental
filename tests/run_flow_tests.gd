@@ -174,6 +174,16 @@ func _check_rampage() -> void:
 		hud.beat_running() and hud.headline.text == str(want[0]),
 		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
 	)
+	# A world hint that pops during the end beat must not show behind the headline.
+	var city: CityView = GuiInput.find_script(rampage, CityView)
+	var at := rampage.sim.kaiju_pos
+	city.float_text("LATE HINT", Vector3(at.x, 4.0, at.y), Color.WHITE)
+	await process_frame
+	await process_frame
+	var hints := city.find_children("*", "Label3D", true, false).filter(
+		func(n: Node) -> bool: return (n as Label3D).visible and (n as Label3D).text != ""
+	)
+	check(hints.is_empty(), "no world hint shows behind the end beat: %d" % hints.size())
 	for _i: int in RampageHud.BEAT_FRAMES + 2:
 		await process_frame
 	check(

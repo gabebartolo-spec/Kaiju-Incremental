@@ -236,8 +236,10 @@ func _status_line(id: String) -> String:
 				names.append(str(req_def["name"]))
 		return head + "Needs: " + ", ".join(names)
 	if tree.can_buy(id, rubble):
-		return head + "Cost %d biomass  -  press%sto%sbuy" % [tree.cost(id), NBSP, NBSP]
-	return head + "Cost %d biomass  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
+		return head + "Cost %d biomass%s-  press%sto%sbuy" % [tree.cost(id), NBSP, NBSP, NBSP]
+	return (
+		head + "Cost %d biomass%s-  %d more needed" % [tree.cost(id), NBSP, tree.cost(id) - rubble]
+	)
 
 
 func _stat_name(stat: String) -> String:

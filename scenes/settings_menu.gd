@@ -118,6 +118,7 @@ func _slider(parent: Control, text: String, value: float) -> HSlider:
 	slider.custom_minimum_size = Vector2(420, 40)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.value = round(value * 100.0)
+	UiKit.slider_look(slider)
 	row.add_child(slider)
 	var label := UiKit.label("", UiKit.SIZE_BODY)
 	label.custom_minimum_size = Vector2(90, 0)

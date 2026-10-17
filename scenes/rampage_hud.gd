@@ -217,6 +217,8 @@ func _process(_delta: float) -> void:
 	if not beat_running():
 		return
 	_beat_frame += 1
+	# World hints ("TOO STRONG ...") never show behind the headline, even one that pops late.
+	get_tree().call_group(CityView.FLOAT_TEXT, "queue_free")
 	if _beat_frame >= BEAT_FRAMES:
 		finish_beat()
 
