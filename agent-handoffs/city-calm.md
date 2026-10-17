@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 07:55
-## State: running a check (D-065(a) CI stills + trample clip); awaiting the lead's GPU slot for frame cost
+# City-calm handoff, 2026-10-18 09:35
+## State: running a check (gated CI: close-ups s1/s2 + 1080p trample clip, after UI #27 4K run)
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep: no questions
@@ -53,8 +53,17 @@ notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-..
 ## Open decisions
 D-065(b) green lots: director's morning call (lead holds the table).
 
+## Since 07:55
+- Frame cost done (GPU within noise, CPU +0.1-0.3 ms, tris +0.2-0.7%; notes greenery/timed/).
+- Self-QA art pass 4471398: bushes bigger, blooms scattered (city.flower_bloom), swing chains,
+  trample walks through the trees (OFF_PATH 0.25). Lead: contact trample -> 618d3ab
+  CityDecor._process flattens props within city.trample_body x body_scale (body only: rampage.gd
+  and city_view.gd are at the 400-line cap). Avenue close-up on a row of street trees c30a92d.
+- CI captures: one at a time overall; wait for UI #27's 4K run (lead 09:21).
+- after2_s1 (4471398) and close2_s1 (4471398) downloaded; after2_s2 downloading.
+
 ## Running jobs
-bcp0ggx9j: CI capture chain.
+bkwthdxxy: gated CI chain -> notes greenery/close3_s1, close3_s2, trample2.
 
 ## Findings for the lead
 - Never use `git --work-tree=X checkout <ref> -- .` to export a tree: it rewrites the current
@@ -67,3 +76,4 @@ bcp0ggx9j: CI capture chain.
 - `git lfs pull` before suites/exports in a fresh worktree; never mid-run.
 - Template builds start fullscreen: seed settings.cfg fullscreen=false for smoke runs.
 - gdlint: 400-line file cap, <=4 function args, public vars before private.
+- Never chain commit/push after a Godot --check-only through grep: test its output first.
