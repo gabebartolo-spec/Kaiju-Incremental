@@ -10,6 +10,21 @@ signal back_pressed
 
 ## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
 const PREVIEW_SIZE := Vector2i(440, 270)
+## The preview camera looks down this way (the old fixed camera's view) through a fairly long lens
+## (deg; a near limb swinging toward a wide lens would push the kaiju small); the turning kaiju
+## fills at most this much of the card's width and keeps this margin (of the height) top and bottom.
+const PREVIEW_VIEW := Vector3(0, -2.9, -12.5)
+const PREVIEW_FOV := 30.0
+const PREVIEW_FILL := 0.92
+const PREVIEW_MARGIN := 0.06
+## The kaiju sways this far (rad) either side of a three-quarter side view (yaw, rad) at this rate
+## (rad/s), so its length reads; the fit samples the sway at this many angles and every this-many-th
+## skin corner.
+const PREVIEW_YAW := PI * 0.62
+const PREVIEW_SWAY := 0.7
+const PREVIEW_SWAY_RATE := 0.5
+const PREVIEW_SAMPLES := 7
+const PREVIEW_STRIDE := 13
 const BACK_WIDTH := 360
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
@@ -19,6 +34,7 @@ const COMPARE: Array[Array] = [
 ]
 
 var _models: Array[KaijuModel] = []
+var _time := 0.0
 
 
 func _ready() -> void:
@@ -57,9 +73,55 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	_time += delta
 	for model: KaijuModel in _models:
-		model.rotation.y += delta * 0.35
+		model.rotation.y = PREVIEW_YAW + PREVIEW_SWAY * sin(_time * PREVIEW_SWAY_RATE)
 		model.animate(delta, 0.3)
+
+
+## Frames the preview on the kaiju's skin at every angle of its sway: aimed at the middle of all of
+## it and stood back along the old camera's view until it fits the card's width and, with a margin
+## top and bottom, its height (a long tail, a tall head never leave the card).
+func _frame(cam: Camera3D, model: KaijuModel) -> void:
+	var points := _skin_points(model)
+	var turns: Array[Basis] = []
+	var box := AABB(points[0], Vector3.ZERO)
+	for k: int in PREVIEW_SAMPLES:
+		var yaw := PREVIEW_YAW + PREVIEW_SWAY * lerpf(-1.0, 1.0, float(k) / (PREVIEW_SAMPLES - 1))
+		turns.append(Basis(Vector3.UP, yaw))
+		for p: Vector3 in points:
+			box = box.expand(turns[k] * p)
+	var aim := box.get_center()
+	var look := PREVIEW_VIEW.normalized()
+	var up := look.cross(Vector3.UP).cross(look).normalized()
+	var right := look.cross(up)
+	var tan_v := tan(deg_to_rad(cam.fov) * 0.5) * (1.0 - 2.0 * PREVIEW_MARGIN)
+	var tan_h := tan(deg_to_rad(cam.fov) * 0.5) * PREVIEW_FILL * PREVIEW_SIZE.x / PREVIEW_SIZE.y
+	var back := 0.0
+	for turn: Basis in turns:
+		for p: Vector3 in points:
+			var r := turn * p - aim
+			var fit := maxf(absf(r.dot(up)) / tan_v, absf(r.dot(right)) / tan_h)
+			back = maxf(back, fit - r.dot(look))
+	cam.position = model.position + aim - look * back
+	cam.look_at(model.position + aim)
+
+
+## A sample of the skin's points (every PREVIEW_STRIDE-th corner) in the model's own space.
+func _skin_points(model: KaijuModel) -> PackedVector3Array:
+	var points: PackedVector3Array = []
+	var from_model := model.global_transform.affine_inverse()
+	for geo: Node in model.find_children("*", "MeshInstance3D", true, false):
+		var g: MeshInstance3D = geo
+		if g.mesh != null:
+			var to_model := from_model * g.global_transform
+			for surface: int in g.mesh.get_surface_count():
+				var corners: PackedVector3Array = g.mesh.surface_get_arrays(surface)[
+					Mesh.ARRAY_VERTEX
+				]
+				for i: int in range(0, corners.size(), PREVIEW_STRIDE):
+					points.append(to_model * corners[i])
+	return points
 
 
 func _card(row: HBoxContainer, def: Dictionary) -> Button:
@@ -82,13 +144,12 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	var colors: Dictionary = def["colors"]
 	var model := KaijuModel.new(str(def["id"]), colors)
 	viewport.add_child(model)
-	model.rotation.y = PI * 0.75
+	model.rotation.y = PREVIEW_YAW
 	_models.append(model)
 	var cam := Camera3D.new()
-	cam.position = Vector3(0, 6.5, 12.5)
-	cam.fov = 45.0
+	cam.fov = PREVIEW_FOV
 	viewport.add_child(cam)
-	cam.look_at(Vector3(0, 3.6, 0))
+	_frame(cam, model)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-40, -30, 0)
 	viewport.add_child(sun)

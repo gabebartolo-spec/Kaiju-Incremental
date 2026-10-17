@@ -5,11 +5,13 @@ extends SceneTree
 ##
 ##   APPDATA=<scratch> godot --path . --resolution 3840x2160 --windowed \
 ##     --script tools/capture/capture_screens.gd -- --out=<dir> --species=reptilian
+## --only=select stops after the species select (a 4K still on CI finishes in time).
 
 const SETTLE := 20
 
 var _out := "user://screens"
 var _species := "reptilian"
+var _only := ""
 
 
 func _initialize() -> void:
@@ -18,6 +20,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg.begins_with("--species="):
 			_species = arg.substr(10)
+		elif arg.begins_with("--only="):
+			_only = arg.substr(7)
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -29,6 +33,9 @@ func _run() -> void:
 	await _frames(SETTLE)
 	_shot("1_species_select")
 	select.queue_free()
+	if _only == "select":
+		quit()
+		return
 
 	var species := Content.species_def(_species)
 	var levels := {"claws": 2, "hide": 2}
