@@ -1,48 +1,72 @@
-# Ability VFX handoff, 2026-10-16 21:00 (rev 21:05)
-## State: awaiting lead (FIX list done; new board + clip sent)
+# Ability VFX/SFX handoff, 2026-10-18 05:50
+## State: running a check (#8 synced with look-options 6ae41fa; the lead merges at this SHA on green). Next: (e) SFX bus + volume slider on branch claude/sfx-bus, then (f) UI clicks, then (d) heli gun/crash, plus the army PR
 
 ## Task
-D-026: a distinct VFX for every unlockable power, plus the SFX sourcing proposal. The lead is
-asking the director about SFX. Lead review of PR #6 was FIX: breath (camera orbit approved, beam
-reaches its target, visible scorch), lash (no filled fan; tip streaks, spray, debris, scrapes),
-boost the deflect/regen/ready/cracks cues, no placeholder HUD timer. Then a new board
-(same labels A-J) and a clip at the gameplay camera.
+From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
+revive PR #8 (claude/ability-sfx) as demo phase P4. Croc titan (reptilian) only, baby -> Behemoth.
+Priority: stomps, stomp_crack, building collapse/debris, Atomic Breath, ready, deflect, regen.
+Leap and lash stay, but they are not reviewed. Stomps are pitched by size tier, not by model.
+Steps:
+1. Sync onto origin/claude/look-options.
+2. Licence rows CLEARED and provenance complete.
+3. LFS pull in tests.yml.
+4. Suites green; flow base 76, raised for my checks.
+5. Three 3 s clips with audio (stomp, building fall, breath) at the game camera, 1080p, plus my listening note.
+6. PR body: Board and log "D-050 demo: SFX unpaused". Auto-fix on.
+When CI is green, report the head SHA to the lead (local_9fac90d2...) and to Game demo planning.
 
 ## Branch and commit
-claude/ability-vfx (worktree affectionate-goldstine-64c8fb), PR #6 into claude/look-options.
-Pushed through 1635ab2 (merged look-options with #7 real city; floors city 5, flow 22; all 4 suites
-green). The board has NOT passed my QA yet; the PR stays on HOLD with the lead.
+claude/ability-sfx, worktree affectionate-goldstine-64c8fb. Synced to look-options dbff208, pushed;
+PR #8 body updated, Auto-fix ON. Do not merge.
 
-## Done in c5aa7e0
-- Breath: camera orbit 25 deg + rise (tuning fx.orbit_*); beam stops at the first standing
-  chunk (AbilityFx._first_hit); flare (flare.gdshader), sparks, light on the struck face.
-- Marks are Decals (scenes/fx_decals.gd; textures drawn once from FastNoiseLite): scorch wedge,
-  crater, molten cracks, lash gouges. The kaiju's voxels moved to KaijuModel.BODY_LAYER (4) so
-  decals (cull_mask 1) skip it. scorch.gdshader removed.
-- Lash: sweep.gdshader is now two thin tip streaks; ink + water spray (FxParticles.spray with
-  orbit velocity); debris kicked along the arc on timers; scrape decal. city.ring removed.
-- Cues: deflect = 40 sparks + flare; regen = rim.gdshader green shimmer overlay on the body
-  (AbilityFx.attach_body) + motes; ready = shockwave ring + body flash; cracks = wide molten.
-- The capture uses Rampage.autoplay_signature instead of the 999 s cooldown hack. The "998 s"
-  timer the lead saw came from the capture script, not the game.
-- Particle recipes split out to scenes/fx_particles.gd (keeps ability_fx.gd under 400 lines).
-- flow 22, smoke 11, sim 39 green locally.
+## Done this pass
+- Merge conflicts resolved, keeping both sides: tuning.json (sfx + growth), register (heli + audio rows), floors (base).
+- New sounds in build_sfx.py: footstep, stomp_crack, collapse (Kenney impactMining/impactGlass,
+  explosionCrunch, lowFrequency_explosion + synthesis). Raw packs are re-extracted in
+  C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl (outside the repo).
+- Sfx:
+  - footstep(strength)
+  - stomp(power, crack): waits for the next foot plant; plays alone after stomp_wait 0.4 s
+  - collapse(topple)
+  - set_size_tier (size_pitch [1.3, 1.12, 1.0, 0.88])
+  - last_pitch()
+- Rampage wiring:
+  - foot_planted -> sfx.footstep
+  - stomp -> sfx.stomp(power, ability_fx.stomp_cracks(...)), which now returns bool
+  - fall_land -> sfx.collapse
+- Flow checks (+3):
+  - _check_stomp_timing: the stomp is deferred to the next plant; baby pitch is higher than Behemoth
+  - the rampage hears footstep + collapse
+  - stomp_crack added to the upgraded cues
+- Provenance rows for the 3 new files; register date note.
+- tools/capture/capture_sfx_clips.gd: 20 s autoplayed croc run that prints "SOUND <frame> <name>".
+- PR body draft: scratchpad/pr8_body.md (placeholders EVIDENCE/FLOORS/SYNC).
 
 ## Next
-- FIX list done and pushed. Board (A-J, gameplay camera): docs/captures/2026-10-16-powers/
-  powers_board.png; H/I/J from tools/capture/capture_cues.gd (clear street). Clip (powers8):
-  scratchpad .../powers8/powers.mp4.
-- Known: the breath at 0.25 s is still mostly behind the body when the kaiju faces away (the
-  orbit is 25 deg as approved); the ready flash tints the body red for about 0.5 s.
-- Findings for the lead's learnings (not mine to record): additive unshaded quads need
-  fog_disabled; MODEL_MATRIX in a MultiMesh shader excludes the instance transform.
-- After the lead passes this: the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0;
-  synthesize hums, beams, pings, sizzles, regen in-house; register + provenance first).
+- When CI is green, send the head SHA to the lead (local_9fac90d2...) and Game demo planning
+  (local_106fc100...).
+- Clips (stomp, building_fall, breath .mp4) + run.log are in the shared notes folder
+  side-session-notes/local_9fac90d2.../ability-sfx-d050/.
+- The director's listen is the gate.
+- Flow floor is 83.
 
-## Attempts (beam visibility)
-Edge glow (failed), x-ray through walls (covered the kaiju, reverted), flat glow floor plus a
-white-hot jet ramp; now the camera orbit (lead-approved) plus a beam that ends on its target.
+## Lead's orders (2026-10-18)
+- D-052 (r2 shipped) and D-055 (roar on reveal + end card) are in #8's Board and log.
+- (b) The roar plays via Sfx.roar(parent), a static entry that returns the player:
+  - the EvolutionReveal calls it in _swap;
+  - kaiju-motion's demo end card (PR #23, scenes/demo_end.gd) calls the same entry.
+- Clip: ability-sfx-d050/roar/roar_reveal.mp4, plus roar_spec.png.
+- Flow floor is 84.
+- (c) Army sounds were REVERTED from #8 (lead: new PR off look-options after #8 merges). The work is saved
+  on local branch claude/army-sfx-wip (b1f9e18): tank_fire, shell_hit, heli_rotor, Sfx.play_at/rotors,
+  near_distance/far_floor_db, 3 heli flow checks.
+  - Next: once #8 merges, branch off look-options and cherry-pick b1f9e18.
+  - The "roar" volume key already exists, so drop that hunk.
+  - Floor: base + 3.
+
+## Notes
+- Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).
+- build_sfx.py reseeds per sound; rebuilt unchanged oggs differ only by stream serial, so revert them.
 
 ## Running jobs
-None. No Godot of mine running.
-No override.cfg left.
+CI on PR #8 (Auto-fix watches it). No Godot, no override.cfg.
