@@ -38,9 +38,9 @@ class Heli:
 
 var sim: RampageSim
 var cfg: Dictionary
-var _form: Dictionary  # air.formation: pairs, runs and break-offs (D-066)
 var helis: Array[Heli] = []
 var destroyed := 0
+var _form: Dictionary  # air.formation: pairs, runs and break-offs (D-066)
 var _rng: RandomNumberGenerator
 var _spawn_timer := 0.0
 var _next_id := 0

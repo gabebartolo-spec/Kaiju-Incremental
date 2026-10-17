@@ -309,11 +309,11 @@ func _spawn_tank_node(id: int) -> void:
 	_tank_nodes[id] = tank
 
 
-## Each tank's hull turns to the way it drives (to the kaiju when it stands; backing off, it keeps
-## its front to the kaiju) and its turret keeps the gun on the kaiju.
+## Hull to the way it drives (front to the kaiju when it stands or backs off), turret on the kaiju.
 func _update_tanks(delta: float) -> void:
 	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
 	var turn := Num.f(Content.section("vehicles")["hull_turn"]) * delta
+	var convoy := sim.army_units.convoy
 	for tank: RampageSim.Tank in sim.tanks:
 		if flatten:
 			_city.crush(_to_world(tank.pos), 1.4)
@@ -323,7 +323,7 @@ func _update_tanks(delta: float) -> void:
 		var at := _to_world(tank.pos)
 		var drive := at - node.position
 		node.position = at
-		var heading := Vector2(drive.x, drive.z) * (-1.0 if tank.reversing else 1.0)
+		var heading := Vector2(drive.x, drive.z) * (-1.0 if convoy.reversing(tank.id) else 1.0)
 		if heading.length() < 0.001:
 			var to := sim.kaiju_pos - tank.pos
 			heading = Vector2(to.x, to.y)

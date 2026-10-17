@@ -47,9 +47,6 @@ class Tank:
 	## Burning or ink-coated: damage per second until coat_t runs out.
 	var coat_t := 0.0
 	var coat_dps := 0.0
-	## The way it last drove (Convoy), and whether it is backing off with its hull to the kaiju.
-	var heading := Vector2.ZERO
-	var reversing := false
 
 
 ## step() button flags.

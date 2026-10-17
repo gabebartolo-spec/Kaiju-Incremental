@@ -10,11 +10,17 @@ extends SceneTree
 
 const DT := 1.0 / 15.0
 const PX := 6.0  # pixels per metre
-const LEVELS := {1: {}, 2: {"evolve1": 1}, 3: {"evolve1": 1, "evolve2": 1}, 4: {"evolve1": 1, "evolve2": 1, "evolve3": 1}}
+const LEVELS := {
+	1: {},
+	2: {"evolve1": 1},
+	3: {"evolve1": 1, "evolve2": 1},
+	4: {"evolve1": 1, "evolve2": 1, "evolve3": 1}
+}
 
 
 ## Army.step, timed (microseconds per call kept in `costs`).
-class TimedArmy extends Army:
+class TimedArmy:
+	extends Army
 	var costs: Array[int] = []
 
 	func step(dt: float) -> void:
@@ -74,7 +80,9 @@ func _run() -> void:
 		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
 			move = (target - sim.kaiju_pos).normalized()
 		var held := RampageSim.HELD if steps % 30 < 15 else 0
-		for event: Dictionary in sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE):
+		for event: Dictionary in sim.step(
+			DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE
+		):
 			if str(event["type"]) == "tank_fired":
 				shots += 1
 		kaiju.append(sim.kaiju_pos)
@@ -96,7 +104,7 @@ func _run() -> void:
 			list.append(heli.pos)
 			helis[heli.id] = list
 	_report(army.costs, tracks.size(), shots)
-	_draw(sim, tracks, parked, helis, kaiju)
+	_draw(sim, {"tanks": tracks, "parked": parked, "helis": helis}, kaiju)
 	quit()
 
 
@@ -110,12 +118,24 @@ func _report(costs: Array[int], tanks: int, shots: int) -> void:
 	print(
 		(
 			"army step tier %d seed %d: %d steps, mean %.0f us, p95 %d us, max %d us; %d tanks, %d shots"
-			% [_tier, _seed, sorted.size(), float(total) / n, sorted[mini(n - 1, n * 95 / 100)], sorted[n - 1], tanks, shots]
+			% [
+				_tier,
+				_seed,
+				sorted.size(),
+				float(total) / n,
+				sorted[mini(n - 1, n * 95 / 100)],
+				sorted[n - 1],
+				tanks,
+				shots
+			]
 		)
 	)
 
 
-func _draw(sim: RampageSim, tracks: Dictionary, parked: Dictionary, helis: Dictionary, kaiju: Array[Vector2]) -> void:
+func _draw(sim: RampageSim, trace: Dictionary, kaiju: Array[Vector2]) -> void:
+	var tracks: Dictionary = trace["tanks"]
+	var parked: Dictionary = trace["parked"]
+	var helis: Dictionary = trace["helis"]
 	var half := sim.arena_half + 22.0
 	var size := ceili(half * 2.0 * PX)
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)

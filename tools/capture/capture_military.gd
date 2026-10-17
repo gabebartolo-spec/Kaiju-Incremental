@@ -39,7 +39,9 @@ func _run() -> void:
 	stats["hp"] = 100000.0  # the clip watches the army: the kaiju must not fall mid-take
 	var tier := Num.i(stats["size"])
 	var rampage := Rampage.new()
-	rampage.setup(species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), 1)
+	rampage.setup(
+		species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), 1
+	)
 	rampage.scripted = _input
 	root.add_child(rampage)
 	await physics_frame

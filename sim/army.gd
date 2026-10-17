@@ -25,11 +25,11 @@ var cfg: Dictionary
 var rooftop: Dictionary
 var squads: Array[Squad] = []
 var rooftops_destroyed := 0
+## Road movement and firing positions (D-066).
+var convoy: Convoy
 var _rng: RandomNumberGenerator
 var _spawn_timer: float
 var _next_id := 0
-## Road movement and firing positions (D-066).
-var convoy: Convoy
 var _column := -1
 var _column_left := 0
 var _column_entry := -1
