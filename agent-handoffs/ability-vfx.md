@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 04:40
-## State: available (asked the lead "LEAD"/Game demo planning, local_106fc100..., for a job; doing prep meanwhile)
+# Ability VFX/SFX handoff, 2026-10-18 05:05
+## State: running a check (PR #8 CI after (a)(b)(c) push; lead = "LEAD", local_106fc100...)
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -50,17 +50,18 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - The director's listen is the gate.
 - Flow floor is 83.
 
-## Unpushed (lead said no pushes yet; branch is ahead of 2195d54)
-- 2dc3297: the director's dials in tuning "sfx":
-  - footstep_min_interval 0.25
-  - crack_min_interval 2.5
-  Flow is green at 83.
-- v2 clips with the dials are in shared notes ability-sfx-d050/v2-dials/. Cracks dropped from 29 to 7 in 20 s.
-- roar.ogg (croc titan end-card roar, synth only, 2.2 s, timed to the biped head's roar):
-  - in build_sfx.py build_roar, with a provenance row;
-  - NOT wired in, because the end card is demo P5's;
-  - the ogg and its spectrogram are in shared notes ability-sfx-d050/roar/.
-Push only when the lead says.
+## Lead's orders (2026-10-18), all pushed to #8
+(a) Dials + r2 clips: done. Clips in ability-sfx-d050/r2/.
+(b) Croc roar:
+- roar.ogg is 4.2 s: 38-52 Hz bellow plus an echo tail.
+- It plays in the EvolutionReveal (_swap). Flow check: "the evolved kaiju roars".
+- Clip: ability-sfx-d050/roar/roar_reveal.mp4.
+- I asked the lead whether the signature should roar too (it would clash with breath); no answer yet.
+(c) Army sounds:
+- tank_fire (Sfx.play_at, distance falloff from the camera, near_distance/far_floor_db)
+- shell_hit (unarmoured hits)
+- heli_rotor loop (Sfx.rotors(_powers.helis()))
+Flow floor is 87. Stomp rate left alone (sim rule D-004).
 
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).

@@ -28,6 +28,8 @@ var scale_after: float
 var tower_floors: int
 ## The size lines under the headline (read by the flow suite's on-screen check).
 var lines: Label
+## The new stage's roar (assets/sfx/roar.ogg), started with the swap.
+var roar: AudioStreamPlayer
 var _species: Dictionary
 var _viewport: SubViewport
 var _kaiju: KaijuModel
@@ -92,6 +94,11 @@ func _ready() -> void:
 	UiKit.full_rect(_flash)
 	add_child(_flash)
 	_place_kaiju(stage_before, scale_before)
+	roar = AudioStreamPlayer.new()
+	roar.stream = load("res://assets/sfx/roar.ogg")
+	var levels: Dictionary = Content.section("sfx")["volume_db"]
+	roar.volume_db = Num.f(levels["roar"])
+	add_child(roar)
 	grab_focus.call_deferred()
 
 
@@ -149,6 +156,7 @@ func _try_skip() -> void:
 func _swap() -> void:
 	_place_kaiju(stage_after, scale_before)
 	_kaiju.roar()
+	roar.play()
 	_flash.color.a = 0.9
 	_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
 	var floors_before := roundi(KaijuModel.MODEL_HEIGHT * scale_before)
