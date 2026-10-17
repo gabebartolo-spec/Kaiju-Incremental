@@ -235,17 +235,21 @@ func _street_tree(v: VoxelBuilder) -> void:
 
 ## A low round bush.
 func _bush(v: VoxelBuilder) -> void:
-	var r := _rng.randf_range(1.3, 1.9)
+	var r := _rng.randf_range(1.9, 2.5)
 	v.blob(Vector3(0.0, r * 0.6, 0.0), Vector3(r, r * 0.7, r), "bush")
 	v.blob(Vector3(r * 0.3, r * 0.4, r * 0.2), Vector3(r * 0.6, r * 0.5, r * 0.6), "bush_dark")
 
 
-## A flower bed: a soil border with blooms of one colour on top, leaves between.
+## A flower bed: a soil border, a bed of leaves, and blooms of one colour scattered over it at
+## two heights (city.flower_bloom share of the bed).
 func _flower_bed(v: VoxelBuilder, bloom: String) -> void:
+	var share := Num.f(_sim.city["flower_bloom"])
 	v.box(Vector3i(-2, 0, -1), Vector3i(2, 0, 1), "soil")
 	for x: int in range(-2, 3):
 		for z: int in range(-1, 2):
-			v.put(Vector3i(x, 1, z), bloom if posmod(x + z, 2) == 0 else "bush")
+			v.put(Vector3i(x, 1, z), "bush")
+			if _rng.randf() < share:
+				v.put(Vector3i(x, 1 + _rng.randi_range(1, 2), z), bloom)
 
 
 ## A playground on a soft pad (city.playground_size): a slide, a swing frame, a climbing frame.
@@ -262,6 +266,7 @@ func _playground(v: VoxelBuilder) -> void:
 		v.box(Vector3i(x, 1, half - 2), Vector3i(x, 8, half - 2), "play_metal")
 	v.box(Vector3i(1, 8, half - 2), Vector3i(half - 1, 8, half - 2), "play_metal")
 	for x: int in [3, half - 3]:
+		v.box(Vector3i(x, 4, half - 2), Vector3i(x, 7, half - 2), "play_metal")  # the chain
 		v.put(Vector3i(x, 3, half - 2), "play_blue")
 	# The climbing frame: four posts and a top rail.
 	var c0 := Vector3i(-half + 1, 1, 1)

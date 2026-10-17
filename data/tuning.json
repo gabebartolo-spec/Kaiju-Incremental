@@ -162,6 +162,7 @@
 		"street_tree_clear": 3,
 		"garden_bush_gap": 1.4,
 		"park_flower_beds": 2,
+		"flower_bloom": 0.55,
 		"playground_size": 4,
 		"yard_depth": [0.6, 1.6],
 		"block_long": [18, 26],

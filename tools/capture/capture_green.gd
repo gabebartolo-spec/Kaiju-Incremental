@@ -14,8 +14,9 @@ const SPECIES := "reptilian"
 const GAME_CAMERA := Vector3(0, 27, 19)
 const PARK_ZOOM := 0.6
 const PLAYGROUND_ZOOM := 0.25
-const AVENUE_ZOOM := 0.3
+const AVENUE_ZOOM := 0.45
 const START_OUTSIDE := 3.0  # the clip starts this far south of the park
+const OFF_PATH := 0.25  # ...and this share of its width east of the middle path, in the trees
 const AVENUE_MIN := 18.0  # the avenue close-up looks down the first block at least this long
 
 var _out := "user://green"
@@ -58,7 +59,8 @@ func _park(cfg: Dictionary) -> Rect2:
 	return Rect2()
 
 
-## The middle of the first long avenue block in the playable city, on its pavement.
+## The middle of the first long avenue block in the playable city that runs north-south, so
+## the camera (from the south, like the game's) looks down it rather than over a roof.
 func _avenue_spot(cfg: Dictionary) -> Vector2:
 	var plan := CityGen.map(cfg)
 	var nodes: Array[Vector2] = plan["nodes"]
@@ -67,9 +69,10 @@ func _avenue_spot(cfg: Dictionary) -> Vector2:
 		var a := nodes[Num.i(street["from"])]
 		var b := nodes[Num.i(street["to"])]
 		var inside := maxf(maxf(absf(a.x), absf(a.y)), maxf(absf(b.x), absf(b.y))) <= half
-		if str(street["kind"]) == CityGen.AVENUE and inside and a.distance_to(b) >= AVENUE_MIN:
-			var dir := (b - a).normalized()
-			return (a + b) * 0.5 + Vector2(-dir.y, dir.x) * Num.f(street["width"]) * 0.5
+		var north_south := absf(a.x - b.x) < 0.01
+		if str(street["kind"]) == CityGen.AVENUE and inside and north_south:
+			if a.distance_to(b) >= AVENUE_MIN:
+				return (a + b) * 0.5
 	return Vector2.ZERO
 
 
@@ -126,7 +129,8 @@ func _trample_clip() -> void:
 		0
 	)
 	var park := _park(rampage.sim.city)
-	rampage.sim.kaiju_pos = Vector2(park.get_center().x, park.end.y + START_OUTSIDE)
+	var x := park.get_center().x + park.size.x * OFF_PATH
+	rampage.sim.kaiju_pos = Vector2(x, park.end.y + START_OUTSIDE)
 	root.add_child(rampage)
 	Input.action_press("move_up")
 	var frames := 0
