@@ -2,7 +2,7 @@ class_name Rampage
 extends Node3D
 ## Presents one rampage. Reads input, steps RampageSim, and turns its events into the city
 ## view, the kaiju, the tanks, the camera and the HUD. It never decides an outcome; when the
-## sim ends, the HUD shows the result and Continue emits finished.
+## sim ends, the HUD plays the end beat, then `finished` reports the result. Esc pauses.
 
 signal finished(result: Dictionary)
 
@@ -38,6 +38,7 @@ var autoplay_signature := true
 var scripted: Callable
 var _city: CityView
 var _powers: PowersView
+var _fade: VehicleFade
 var _was_ready := true
 var _leap_reach := 0.0
 var _leap_power := 1.0
@@ -63,13 +64,13 @@ var _autoplay_target := Vector2(INF, INF)
 var _steps := 0
 
 
-## stats: final run stats; layout: CityGen output; run_index seeds the army.
+## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army.
 func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", run_index))
+	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
@@ -87,11 +88,13 @@ func _ready() -> void:
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale())
 	add_child(ability_fx)
 	add_child(sfx)
+	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
+	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_focus = _kaiju_at
@@ -105,8 +108,8 @@ func _ready() -> void:
 	add_child(_camera)
 	_camera.current = true
 	_place_camera(1.0)
-	_hud = RampageHud.new(sim, species)
-	_hud.continued.connect(func() -> void: finished.emit(sim.result()))
+	_hud = RampageHud.new(sim, species, _city.street)
+	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
@@ -148,6 +151,7 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_place_camera(delta)
+	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
 
 
@@ -167,8 +171,7 @@ func _on_event(event: Dictionary) -> void:
 			_kaiju.stomp()
 			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
 			var heavy := _power("stomp_damage")
-			ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), heavy)
-			sfx.stomp(heavy)
+			sfx.stomp(heavy, ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), heavy))
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
@@ -181,6 +184,7 @@ func _on_event(event: Dictionary) -> void:
 			_city.fall_start(event)
 		"fall_land":
 			_city.fall_land(event)
+			sfx.collapse(str(event["kind"]) == "topple")
 			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
 		"tough":
 			if _too_tall_cooldown <= 0.0:
@@ -196,9 +200,7 @@ func _on_event(event: Dictionary) -> void:
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
 		"run_over":
-			_hud.refresh()
-			_hud.show_results()
-			get_node("/root/EventBus").emit_signal("run_ended", sim.result())
+			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
 
@@ -285,9 +287,10 @@ func _update_powers() -> void:
 	sfx.regen(healing)
 
 
-## Every footfall kicks a little dust and nudges the camera (a minimal version until the
-## ability-sfx pass drives footstep sound, dust and shake from the same signal).
+## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
+## was waiting for this foot), so what you hear lands with what you see.
 func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
+	sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
 	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT)

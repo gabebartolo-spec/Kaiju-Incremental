@@ -1,5 +1,16 @@
-# Lead handoff, 2026-10-17 12:50
-## State: working (croc titan rig + motion with blender-reptile; reviews of #14/#15/#18 pending)
+# Lead handoff, 2026-10-17 22:55
+## State: working (blender-reptile re-fitting the hand rig to croc titan v2, then opens the D-047 PR)
+
+## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
+- Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
+  picked B; GPT redraw for arms-clear + long tail -> variant 3 -> Smart Mesh c8185166 (100) v1 6623 quads ->
+  texture (30). Spines: 3 free colour edits, director picked B charcoal -> re-texture from charcoal ref (30),
+  balance 19415. Boards: docs/captures/2026-10-17-reptile-design/croctitan_{arms,spine_colour}_board.png.
+- DONE: downloaded ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb, six-view PASS (croctitan_v2_six_view.png),
+  D-048 logged. blender-reptile briefed 22:50: re-fit, skin, .kclip, kvox, D-047 PR -> lead QA + fresh critic.
+- Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
+
+## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -8,26 +19,17 @@ director decisions (D-022..D-042 in docs/DECISIONS.md), helper coordination. Cre
 
 ## Branch and commit
 claude/look-options (integration; PR #3 to main on HOLD until the director signs off). Latest: 30682ae
-(LFS checkout in capture/tests/build, from game-flow 7777974/35be8e9), then this handoff.
+#18 heli MERGED ee18f50 (16:00, head 3a4e83c, 8/8 green); blender-tank told to remove worktree.
 
 ## D-044 LOCOMOTION PAUSED (director 12:46) until models are decided
 species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-test skips octopus captures.
 Director saw octopus local capture: "head detached, limbs a static, awkward mesh" (I had not caught it).
 D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the model pipeline first.
 
-## CI billing RESOLVED 12:47: director made the repo public; main protection confirmed (test, doc-caps,
-gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to dispatch captures.
-Director: "tank and heli models look great".
-- QA 12:55: heli board PASS (Apache-like, tandem cockpit, stub wings, chin gun, rotors as parts; 2x real);
-  tank in-game crop reads well. Merge #17 then #18 once their in-game captures + CI are green.
-- #15 round 2 (5f807cb): cause = GL Compatibility fallback scrambled packed instance data (web renderer too!),
-  fixed + captures forced Forward+; mantis intact, thigh cubes square; lead look PASS; fresh re-critic running.
-  Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
-
 ## Open PRs into look-options
 - 15:52 director: pause agents working on models we won't use (usage). #15 MERGED (7ff1f03). #19 (Blender
   weights reader, proven on OLD reptile) parked until croc titan export; voxel-skin paused. kaiju-motion told to
-  turn off #11 auto-fix. #18 heli PASS, conflicting after #15 -> blender-tank syncing, merge head when green.
+  turn off #11 auto-fix. #18 MERGED. Auto-fix OFF: #11, #19 (confirmed); #8 asked again 16:00 (it synced a conflict at 68342d5).
   #16 city: all stills in; Apex 3-min load (follow-up); director Qs pending: balance D, Apex height.
 - #15 voxel skin ACCEPTED r3 (4be3650; scythe clean, thigh seam at full flex accepted until Blender weights):
   CONFLICTING after #17, helper syncing, merge new head when green. Next: Blender-weights input PR (voxel-skin)
@@ -58,7 +60,6 @@ Director: "tank and heli models look great".
   19575. ~/Downloads/kaiju_tripo/rep_croctitan_adult.glb; six-view PASS (croctitan_six_view.png). Sent to
   blender-reptile: weld, hand rig, weights export, walk/turn/roar with critic fixes -> fresh critic -> director.
   Next Tripo: baby + adolescent from the same design.
-- #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
 
 ## FOCUS (director 13:06): "how using blender might improve motion"
 - Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
@@ -75,15 +76,7 @@ Director: "tank and heli models look great".
   (glTF splits verts at UV seams) sent to kaiju-look-test as a suspect for the shattered mantis.
 - ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
 
-## Blender direction (director 12:39)
-- Board: Tripo adult looks better; Blender adult "promising", "more original, less a blatant Godzilla copy"
-  (memory: original-not-godzilla). Blender wins only if it ANIMATES better than Tripo.
-- blender-reptile (local_bce75838-34da-4991-a74e-b37ed5781547) briefed: one hand-weighted armature (deform vs
-  control bones, spline-IK tail, 3-5 loops per joint) fitted to BOTH meshes (A Blender, B Tripo olive copy in
-  scratch, never committed), walk + 90 deg turn + roar, headless Blender renders side by side, foot slide cm,
-  2x joint crops, volume loss per joint. Answers: mesh or rig at fault. Clips come to me first.
-- Research on animatable Blender models given to the director and to blender-reptile (sources: Blender wiki,
-  Blender Studio, Rigify docs, MCP reviews: MCP is good for ~80% of a rig, weak on weights, timing, sculpt).
+## Blender direction: see D-045/D-046 and memory original-not-godzilla (judge by motion, not stills).
 
 ## Helpers (ids)
 - species-motion local_87c25bd4-a526-4731-b18e-7c728966a2df (mantis/octopus, PR #11)
@@ -96,11 +89,9 @@ Director: "tank and heli models look great".
 - ability-vfx paused (PR #8); real-city tabled (D-029).
 
 ## Next (mine)
-1. Review #15 reptile/mantis clips + joint crops (art-qa-critic; fresh motion-critic before the director).
-2. QA heli board and #17/#18.
-3. After the flip: protect main, D-043, rerun CI.
-4. Fresh motion-critic on mantis r3d + octopus when clips land; merge #11.
-5. Cephalopod skins (3 stages); 4K TV UI check.
+1. Croc titan clips: lead QA (2x crops) -> fresh motion-critic -> table for the director.
+2. Then voxel-skin: swap #19 to croc titan export; replace old reptile adult in game.
+3. #14/#16 re-reviews when helpers report; merge at reviewed SHA (after fresh critics).
 
 ## Rules learnt the hard way
 - Tripo: default export name; `find` refs; stay in the signed-in tab; Remove Lighting per page; inspect every texture.

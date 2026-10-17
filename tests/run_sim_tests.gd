@@ -4,7 +4,7 @@ extends "res://tests/lib/runner.gd"
 ## rampage achieves.
 ##   godot --headless --path . --script tests/run_sim_tests.gd
 
-const SaveScript := preload("res://autoload/save_system.gd")
+const SaveScript := preload("res://autoload/save_file.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -248,8 +248,9 @@ func _check_upgrade_effects() -> void:
 			% [Num.f(claws["destruction"]), Num.f(base["destruction"])]
 		)
 	)
-	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1, "rage": 5}))
-	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1}))
+	# Thick hide so both runs last to the clock: a defeat would end them at the same moment.
+	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5, "rage": 5}))
+	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5}))
 	check(
 		Num.f(rage["destruction"]) > Num.f(few["destruction"]),
 		(

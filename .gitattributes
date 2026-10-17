@@ -20,3 +20,5 @@
 # Baked voxel data the game reads with FileAccess: binary, never text-normalised.
 *.kvox binary
 *.vskin binary
+*.skinw binary
+*.skinf binary

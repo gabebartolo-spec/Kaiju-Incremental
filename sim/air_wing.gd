@@ -3,13 +3,18 @@ extends RefCounted
 ## Military helicopters (D-037): once the kaiju has done enough damage they arrive, circle it
 ## and strafe it. A kaiju reaches them only when it stands tall enough (a grown body or a
 ## climbed roof) or with an attack that reaches the air (fire, ink, tentacles); a cephalopod
-## can pluck one out of the sky. Part of RampageSim. Pure and seeded.
+## can pluck one out of the sky. They keep to the far side of the kaiju from the game camera
+## (`camera_bearing`, clear of `clear_arc` either side of it) and cruise `clear_margin` beyond
+## its body, so a helicopter never hangs between the player and the kaiju. Part of RampageSim.
+## Pure and seeded.
 
 
 class Heli:
 	var id: int
 	var angle: float
-	var radius: float
+	var turn := 1.0  # which way it sweeps along its arc
+	var radius: float  # its circle: sets its speed and how deep it dives
+	var cruise: float  # how far out it flies between dives (clear of the kaiju's body)
 	var pos: Vector2
 	var hp: float
 	var cooldown: float
@@ -55,7 +60,8 @@ func step(dt: float) -> void:
 			spawn()
 	var coated := false
 	for heli: Heli in helis:
-		heli.angle += Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius) * dt
+		heli.angle += heli.turn * Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius) * dt
+		_keep_clear(heli)
 		heli.pos = orbit_pos(heli)
 		if heli.coat_t > 0.0:
 			heli.coat_t -= dt
@@ -77,10 +83,13 @@ func spawn() -> Heli:
 	var heli := Heli.new()
 	heli.id = _next_id
 	_next_id += 1
-	heli.angle = _rng.randf() * TAU
+	var arc := deg_to_rad(Num.f(cfg["clear_arc"]))
+	heli.angle = _bearing() + arc + _rng.randf() * (TAU - 2.0 * arc)
 	var jitter := Num.f(cfg["orbit_jitter"])
 	var circle := Num.f(cfg["orbit_radius"]) * _rng.randf_range(1.0 - jitter, 1.0 + jitter)
+	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
 	heli.radius = circle * sim.body_scale()
+	heli.cruise = maxf(heli.radius, body + Num.f(cfg["clear_margin"]))
 	heli.pos = orbit_pos(heli)
 	heli.hp = Num.f(cfg["hp"])
 	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
@@ -89,12 +98,31 @@ func spawn() -> Heli:
 	return heli
 
 
-## Circling, it dives in twice a lap on a strafing run (down to dive x its circle) and
-## swings back out: the moment a tall enough kaiju can swat it.
+## Sweeping its arc, it dives in on a strafing run at each side of the kaiju (down to dive x
+## its circle) and swings back out behind it: the moment a tall enough kaiju can swat it.
 func orbit_pos(heli: Heli) -> Vector2:
 	var dive := Num.f(cfg["dive"])
-	var r := heli.radius * (dive + (1.0 - dive) * (0.5 + 0.5 * cos(2.0 * heli.angle)))
+	var side := heli.angle - _bearing()
+	var low := heli.radius * dive
+	var r := low + (heli.cruise - low) * (0.5 + 0.5 * cos(2.0 * side))
 	return sim.kaiju_pos + Vector2.from_angle(heli.angle) * r
+
+
+## The direction from the kaiju toward the game camera, on the ground plane.
+func _bearing() -> float:
+	return deg_to_rad(Num.f(cfg["camera_bearing"]))
+
+
+## Turns a helicopter back at either end of its arc, so it never crosses the camera's side.
+func _keep_clear(heli: Heli) -> void:
+	var arc := deg_to_rad(Num.f(cfg["clear_arc"]))
+	var side := wrapf(heli.angle - _bearing(), 0.0, TAU)
+	if side < arc:
+		heli.angle = _bearing() + arc
+		heli.turn = 1.0
+	elif side > TAU - arc:
+		heli.angle = _bearing() + TAU - arc
+		heli.turn = -1.0
 
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high).

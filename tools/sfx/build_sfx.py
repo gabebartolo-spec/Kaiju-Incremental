@@ -197,6 +197,59 @@ def build_stomps() -> None:
         print(f"  stomp_{k}: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
 
 
+def build_footstep() -> None:
+    """The plain walking step on every foot plant: a short low thud, quieter and drier than a
+    stomp. The game re-pitches it per size tier (baby higher, Behemoth lower)."""
+    reseed("build_footstep")
+    x = np.zeros(seconds(0.7))
+    place(x, thump(0.6, 62, 38), 0.0, 1.0)
+    thud = lowpass(lowpass(pitch(kenney("impactSoft_heavy_003"), 0.6), 1800), 1800)
+    place(x, thud / max(1e-9, np.max(np.abs(thud))), 0.0, 0.7)
+    grit = lowpass(crackle(seconds(0.25), 90, 0.08), 2200)
+    place(x, grit / max(1e-9, np.max(np.abs(grit))), 0.02, 0.06)
+    save("footstep", highpass(highpass(x, 28.0), 28.0), -3.0)
+    print(f"  footstep: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
+
+
+def build_stomp_crack() -> None:
+    """The ground splitting under a heavy stomp, on top of the stomp thump: rock grinding
+    open, then grit trickling into the cracks. Low-passed so it rumbles rather than ticks."""
+    reseed("build_stomp_crack")
+    x = np.zeros(seconds(1.6))
+    for i, at in enumerate([0.0, 0.07, 0.16]):
+        rock = lowpass(pitch(kenney(f"impactMining_00{i}"), 0.5 - 0.05 * i), 3500)
+        place(x, rock / max(1e-9, np.max(np.abs(rock))), at, 0.8 - 0.15 * i)
+    grind_n = seconds(0.9)
+    grind = bandpass(noise(grind_n), np.linspace(420, 160, grind_n), 1.2) * env(grind_n, 0.02, 0.3)
+    place(x, grind / max(1e-9, np.max(np.abs(grind))), 0.03, 0.6)
+    trickle = lowpass(crackle(seconds(1.2), 160, 0.45), 3000)
+    place(x, trickle / max(1e-9, np.max(np.abs(trickle))), 0.25, 0.15)
+    save("stomp_crack", highpass(x, 40.0), -4.0)
+
+
+def build_collapse() -> None:
+    """A building coming down (sim fall_land): a crunch of concrete, a deep impact, glass
+    bursting, then a long rumble with debris raining for a couple of seconds."""
+    reseed("build_collapse")
+    x = np.zeros(seconds(3.2))
+    place(x, pitch(kenney("explosionCrunch_000"), 0.6), 0.0, 0.9)
+    place(x, kenney("lowFrequency_explosion_001"), 0.0, 0.9)
+    place(x, thump(1.4, 70, 30), 0.0, 1.0)
+    for i, at in enumerate([0.05, 0.18, 0.4]):
+        glass = lowpass(pitch(kenney(f"impactGlass_heavy_00{i}"), 0.85), 6000)
+        place(x, glass, at, 0.18 - 0.04 * i)
+    rumble_n = seconds(2.8)
+    rumble = lowpass(lowpass(np.cumsum(noise(rumble_n)) * 0.02, 180), 180)
+    rumble *= hump(rumble_n, 0.12) * np.exp(-np.arange(rumble_n) / RATE / 1.2)
+    place(x, rumble / max(1e-9, np.max(np.abs(rumble))), 0.05, 0.7)
+    rain = lowpass(crackle(seconds(2.4), 220, 0.9), 3500)
+    place(x, rain / max(1e-9, np.max(np.abs(rain))), 0.2, 0.3)
+    for i, at in enumerate([0.5, 0.9, 1.4]):
+        chunk = lowpass(pitch(kenney(f"impactMining_00{i + 1}"), 0.45), 2500)
+        place(x, chunk / max(1e-9, np.max(np.abs(chunk))), at, 0.35 - 0.08 * i)
+    save("collapse", highpass(highpass(x, 30.0), 30.0), -1.5)
+
+
 def build_breath() -> None:
     reseed("build_breath")
     n = seconds(2.3)
@@ -294,6 +347,9 @@ def main() -> None:
     parser.add_argument("--kenney", required=True, help="folder holding the unzipped Kenney packs")
     kenney_root = pathlib.Path(parser.parse_args().kenney)
     build_stomps()
+    build_footstep()
+    build_stomp_crack()
+    build_collapse()
     build_breath()
     build_leap()
     build_lash()

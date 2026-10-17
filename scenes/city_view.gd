@@ -15,7 +15,8 @@ var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
 var _rng: RandomNumberGenerator
-var _views: Array[BuildingView] = []
+var _stream: BuildingStream
+var _fade: BuildingFade
 var _falling: Dictionary = {}
 var _ruin_tasks: Array[int] = []
 var _flame_mesh: BoxMesh
@@ -40,9 +41,9 @@ func _ready() -> void:
 	var colors: Array[Color] = []
 	for b: RampageSim.Building in sim.buildings:
 		colors.append(_base_color(b))
-	for view: BuildingView in BuildingView.build_all(sim.buildings, colors):
-		add_child(view)
-		_views.append(view)
+	_stream = BuildingStream.new(sim, colors)
+	add_child(_stream)
+	_fade = BuildingFade.new(sim.buildings, _stream.built)
 	fx = Fx.new()
 	add_child(fx)
 	_debris = DebrisField.new(_rng, MAX_DEBRIS)
@@ -65,6 +66,13 @@ func crush(at: Vector3, radius: float) -> void:
 
 func _process(delta: float) -> void:
 	_animate_falls(delta)
+	var camera := get_viewport().get_camera_3d()
+	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
+		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+		var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
+		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
+		_fade.update(camera.global_position, sight, delta)
 
 
 func _build_environment() -> void:
@@ -89,7 +97,8 @@ func _build_environment() -> void:
 	env.ssao_radius = 1.5
 	env.fog_enabled = Look.value("fog_density") > 0.0
 	env.fog_light_color = Look.color("fog_color")
-	env.fog_density = Look.value("fog_density")
+	# A grown city (D-039) thins the fog with its size, so its far edge still reads as skyline.
+	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = 1.1
@@ -144,7 +153,7 @@ func _prewarm_fire() -> void:
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
 func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
-	var view := _views[index]
+	var view := _stream.view(index)
 	var parts := view.hide_chunks(cells)
 	parts.append_array(view.chip(cells, _rng))
 	var b := sim.buildings[index]
@@ -171,7 +180,7 @@ func fall_start(event: Dictionary) -> void:
 	var index := Num.i(event["building"])
 	var cells: Array[Vector3i] = event["cells"]
 	var pivot: Vector3 = event["pivot"]
-	var piece := _views[index].lift_piece(cells, pivot)
+	var piece := _stream.view(index).lift_piece(cells, pivot)
 	add_child(piece)
 	_falling[Num.i(event["id"])] = {
 		"node": piece,
@@ -243,7 +252,7 @@ func fall_land(event: Dictionary) -> void:
 ## A rubble pile where a tower came down across the street, built on a worker thread (a tall
 ## tower's strip is thousands of voxels) and added when ready.
 func _rubble_strip(building: int, a: Vector3, b: Vector3, width: float) -> void:
-	var voxels := _views[building].voxels
+	var voxels := _stream.view(building).voxels
 	var task := WorkerThreadPool.add_task(
 		func() -> void:
 			var mmi := Ruin.strip(voxels, a, b, width)
@@ -254,7 +263,7 @@ func _rubble_strip(building: int, a: Vector3, b: Vector3, width: float) -> void:
 
 ## Builds the ruin on a worker thread (it is thousands of voxels) and adds it when ready.
 func _add_ruin(index: int) -> void:
-	var voxels := _views[index].voxels
+	var voxels := _stream.view(index).voxels
 	var rng := Seeds.make("ruin", index)
 	var task := WorkerThreadPool.add_task(
 		func() -> void:
@@ -280,8 +289,8 @@ func _exit_tree() -> void:
 
 func _ruin_if_gone(index: int) -> void:
 	var b := sim.buildings[index]
-	if b.frame.alive_count == 0 and not _views[index].has_meta("ruined"):
-		_views[index].set_meta("ruined", true)
+	if b.frame.alive_count == 0 and not _stream.view(index).has_meta("ruined"):
+		_stream.view(index).set_meta("ruined", true)
 		var size := clampf(b.w * b.d / 9.0, 0.6, 2.5)
 		var heap_top := 2.4 + 0.9 * b.tier  # flames sit on top of the rubble heap
 		fire(Vector3(b.x, heap_top, b.z), size)

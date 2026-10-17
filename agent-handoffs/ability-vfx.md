@@ -1,62 +1,57 @@
-# Ability VFX/SFX handoff, 2026-10-17 15:55
-## State: paused by the director ("pause vfx until the locomotion is done"); PR #8 on HOLD, do not merge
+# Ability VFX/SFX handoff, 2026-10-18 03:50
+## State: working (D-050 demo P4: SFX unpaused; PR #8 revive, do not merge)
 
 ## Task
-D-026 + D-030. PR #6 (ability VFX) PASSED round 2 and is merged into claude/look-options.
-Now: the SFX follow-up PR, including two VFX fixes from the lead's round-2 notes:
-(1) the ready flash read as damage -> an eye flare + foot ring; (2) the breath is hidden behind
-the body for about 0.25 s -> a muzzle flash at the jaw on frame 1.
-D-030 (director): download the free stuff (Sonniss GDC, Kenney CC0, Freesound CC0 only),
-synthesize in-house when that sounds better; register + per-file provenance; raw downloads
-outside the repo.
+From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
+revive PR #8 (claude/ability-sfx) as demo phase P4. Croc titan (reptilian) only, baby -> Behemoth.
+Priority: stomps, stomp_crack, building collapse/debris, Atomic Breath, ready, deflect, regen.
+Leap and lash stay, but they are not reviewed. Stomps are pitched by size tier, not by model.
+Steps:
+1. Sync onto origin/claude/look-options.
+2. Licence rows CLEARED and provenance complete.
+3. LFS pull in tests.yml.
+4. Suites green; flow base 76, raised for my checks.
+5. Three 3 s clips with audio (stomp, building fall, breath) at the game camera, 1080p, plus my listening note.
+6. PR body: Board and log "D-050 demo: SFX unpaused". Auto-fix on.
+When CI is green, report the head SHA to the lead (local_9fac90d2...) and to Game demo planning.
 
 ## Branch and commit
-claude/ability-sfx (worktree affectionate-goldstine-64c8fb, from origin/claude/look-options
-ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
+claude/ability-sfx, worktree affectionate-goldstine-64c8fb. Merge of look-options dbff208, committed
+locally with this handoff; NOT pushed yet.
 
-## Done (3d7f5a2)
-- tools/sfx/build_sfx.py: builds assets/sfx/*.ogg (11 files, about 180 KB) from Kenney Impact +
-  Sci-fi packs (raw in C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl, outside the repo) plus
-  numpy synthesis. Seeded. Run: python tools/sfx/build_sfx.py --kenney <that dir>.
-- Sounds: stomp_0..2, stomp_crack, breath, leap_whoosh, leap_land, lash, ready, deflect,
-  regen_loop. Peaks -0.7 to -6 dB, no clipping (volumedetect). Not listened to by a human yet.
-- scenes/sfx.gd (Sfx): pooled AudioStreamPlayers, pitch jitter from Seeds "sfx", volumes in
-  tuning.json "sfx". Rampage calls it next to every AbilityFx call; Rampage.sfx is public.
-- docs/LICENSING_REGISTER.md rows (Kenney CC0, our mixes, build tool); docs/provenance/sfx.md
-  lists every layer per file.
-- tests.yml: each Godot job runs `git lfs pull --include="assets/sfx/*"` (audio is LFS).
-- Flow: +4 sound checks on top of the base (flow floor 30 after the 2026-10-17 merge).
-- VFX: ready_pulse(feet, head) = shockwave + eye flare; rim.gdshader is regen-only now;
-  breath muzzle flare.
+## Done this pass
+- Merge conflicts resolved, keeping both sides: tuning.json (sfx + growth), register (heli + audio rows), floors (base).
+- New sounds in build_sfx.py: footstep, stomp_crack, collapse (Kenney impactMining/impactGlass,
+  explosionCrunch, lowFrequency_explosion + synthesis). Raw packs are re-extracted in
+  C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl (outside the repo).
+- Sfx:
+  - footstep(strength)
+  - stomp(power, crack): waits for the next foot plant; plays alone after stomp_wait 0.4 s
+  - collapse(topple)
+  - set_size_tier (size_pitch [1.3, 1.12, 1.0, 0.88])
+  - last_pitch()
+- Rampage wiring:
+  - foot_planted -> sfx.footstep
+  - stomp -> sfx.stomp(power, ability_fx.stomp_cracks(...)), which now returns bool
+  - fall_land -> sfx.collapse
+- Flow checks (+3):
+  - _check_stomp_timing: the stomp is deferred to the next plant; baby pitch is higher than Behemoth
+  - the rampage hears footstep + collapse
+  - stomp_crack added to the upgraded cues
+- Provenance rows for the 3 new files; register date note.
+- tools/capture/capture_sfx_clips.gd: 20 s autoplayed croc run that prints "SOUND <frame> <name>".
+- PR body draft: scratchpad/pr8_body.md (placeholders EVIDENCE/FLOORS/SYNC).
 
-## First task when this resumes (after kaiju-motion lands)
-1. Stomps must sound low and weighty (director: "crinkly like they're walking on cellophane").
-   Rework done in a4df2b5 (3 low-end tiers, >99.9% energy < 500 Hz), but the director has not
-   heard it yet. Clip: scratchpad/stomps/stomps.mp4 (tools/capture/capture_stomps.gd).
-2. Stomps must land on the feet (director: "the stomping noises also sound divorced from the
-   actual footfalls of the kaiju"). Lead's plan: footstep sound + small dust + light shake on
-   the rig's foot-plant moment; the sim stomp (damage + shockwave) keeps its own timing, and its
-   heavy sound becomes the NEXT footfall's sound made bigger (no separate thud).
-   - AGREED with kaiju-motion (local_fd14d508...): `KaijuModel.foot_planted(side: String,
-     strength: float, at: Vector3)`, emitted once on the IK touch-down frame; `at` = world
-     contact point. Ids: biped "left"/"right"; mantis "fl"/"fr"/"bl"/"br"; tentacles "t0".."t7".
-     strength 0..1 = walk speed x stage (adult ~0.6-0.8, baby ~0.3; 1 = stomp slam). kaiju-motion
-     adds the signal to kaiju_rig.gd + kaiju_model.gd in PR #10; DO NOT edit those two files.
-     I only connect to it in Rampage (and Sfx/AbilityFx for the dust).
-   - Current rig (before the IK walk): KaijuRig.animate drives leg_l0/leg_r0 by sin(_phase)
-     (sign +/- per side); leg_*1 lifts by max(0, -cos * sign), so a foot plants where its lift
-     returns to 0 (cos(_phase) crosses 0 per side, i.e. _phase = PI/2 + k*PI alternating
-     sides). Non-rig kaiju: KaijuModel._walk_phase, a step at each |sin| minimum.
-   - Sfx: footstep = a light stomp variant, quiet; heavy = tier sound (sfx.stomp_tiers) on
-     the first plant after a sim stomp event; fallback: if no plant within ~0.4 s (standing
-     still), play it at the sim stomp.
-   - Proof: a clip where every audible thump lines up with a foot landing (frame-step it).
-3. Then the director listens to the rest of PR #8 (breath, leap, lash, ready, deflect, regen).
+## Next
+1. Read the flow result (log: $TMP/../claude_sfx_tests.log). Set the flow floor to the reported count (76 + 3 if green).
+2. Capture: write the no-focus override.cfg, run one Godot, then cut 3 x 3 s mp4 around the first stomp_*, collapse and breath; delete override.cfg.
+   - Command: printf '[display]\nwindow/size/mode=0\nwindow/size/no_focus=true\nwindow/size/initial_position_type=0\nwindow/size/initial_position=Vector2i(-20000,-20000)\n' > override.cfg
+   - GODOT is /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
+3. Push, update the PR body, turn auto-fix on, report the SHA when CI is green.
 
 ## Notes
-- build_sfx.py reseeds per sound; decoded audio is identical across rebuilds.
-- Not done: creature roars (Sonniss); Freesound needs a login.
+- Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).
+- build_sfx.py reseeds per sound; rebuilt unchanged oggs differ only by stream serial, so revert them.
 
 ## Running jobs
-None. No override.cfg left. Auto-fix on PR #8 turned OFF (lead, 2026-10-17 15:57): do not
-resolve conflicts while on hold; #8 may sit conflicted; sync once on restart. Last action (2026-10-17 15:55): merged look-options again; the camera conflict resolved as the base's focus-follow camera + my BreathCamera offset. Floors smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 30; all green.
+Flow suite (tools/run_tests.sh, background task beukis11h). No override.cfg present.

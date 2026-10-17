@@ -12,6 +12,9 @@ Sources:
 | File | Layers (source file, treatment) |
 |---|---|
 | stomp_0/1/2.ogg (light, heavy, titan) | synth sub thump (sine, fast pitch drop to 40/37/34 Hz) + Kenney `impactSoft_heavy_000/001/002` pitched down and low-passed at 2.5 kHz + synth 150 Hz knock + synth rumble tail (low-passed brown noise); tiers 1-2 add a quiet late debris settle (low-passed at 2.5 kHz). High-passed at 28 Hz. Reworked 2026-10-16 after the director: "crinkly like they're walking on cellophane". |
+| footstep.ogg (every foot plant; pitched by size tier in game) | synth sub thump (62 to 38 Hz) + Kenney `impactSoft_heavy_003` pitched 0.6, low-passed at 1.8 kHz + a quiet synth grit crackle (low-passed at 2.2 kHz). High-passed at 28 Hz. Added 2026-10-18 (D-050). |
+| stomp_crack.ogg (heavy stomps that crack the street) | Kenney `impactMining_000/001/002` pitched 0.5/0.45/0.4, low-passed at 3.5 kHz, staggered + synth rock grind (band-passed noise sweeping 420 to 160 Hz) + synth grit trickle (low-passed crackle). High-passed at 40 Hz. Added 2026-10-18 (D-050). |
+| collapse.ogg (a building part lands) | Kenney `explosionCrunch_000` pitched 0.6 + `lowFrequency_explosion_001` + synth sub thump + Kenney `impactGlass_heavy_000/001/002` pitched 0.85, low-passed at 6 kHz (windows) + synth rumble (low-passed brown noise) + synth debris rain (low-passed crackle) + Kenney `impactMining_001/002/003` pitched 0.45, low-passed at 2.5 kHz (falling chunks). High-passed at 30 Hz. Added 2026-10-18 (D-050). |
 | breath.ogg | synth rising hum (0-0.45 s) + synth roar (swept band-passed noise + 55 Hz buzz) + Kenney `thrusterFire_000` pitched 0.7 + synth sizzle (hiss + crackle) |
 | leap_whoosh.ogg | synth swept whoosh + Kenney `impactPlate_light_001` pitched 1.3 (chitin clack) |
 | leap_land.ogg | Kenney `lowFrequency_explosion_000` + `explosionCrunch_002` pitched 0.8 + synth sub thump + synth crackle |

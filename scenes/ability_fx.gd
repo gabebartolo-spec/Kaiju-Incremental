@@ -200,10 +200,10 @@ func lash(centre: Vector3, reach: float, strength: float) -> void:
 
 
 ## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp.
-func stomp_cracks(at: Vector3, radius: float, strength: float) -> void:
+func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
 	var from := Num.f(_tune["crack_stomp_power"])
 	if strength < from:
-		return
+		return false
 	played.append("cracks")
 	var look := {
 		"size": radius * 2.2,
@@ -214,6 +214,7 @@ func stomp_cracks(at: Vector3, radius: float, strength: float) -> void:
 		"soot": 0.5,
 	}
 	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
+	return true
 
 
 ## Signature ready again: one ring runs out from the feet and the eyes flare in the species

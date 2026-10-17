@@ -35,7 +35,7 @@ EXPECTED_CHECKS="${EXPECTED_CHECKS:-tests/expected_checks.txt}"
 # EXTRAS_ONLY=1 runs only the self-test, no suites.
 # CI splits the work this way: shards run SUITES_ONLY, one job runs EXTRAS_ONLY.
 SUITES_ONLY="${SUITES_ONLY:-0}"
-ALL_SUITES=(smoke sim powers tentacles city flow)
+ALL_SUITES=(smoke sim powers tentacles city growth load flow)
 [ "$#" -gt 0 ] && SUITES=("$@") || SUITES=("${ALL_SUITES[@]}")
 # Read once and clear it: the harness self-test runs this script again, and a child
 # that inherited EXTRAS_ONLY would run no suites and pass a short one.

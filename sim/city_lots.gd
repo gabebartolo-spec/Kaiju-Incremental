@@ -23,7 +23,8 @@ static func fill_block(
 	if w < 2 or d < 2:
 		return []
 	var downtown := town_share(rect.get_center(), cfg)
-	var depth := rng.randi_range(Num.i(cfg["depth_min"]), Num.i(cfg["depth_max"]))
+	var grow := lot_grow(block, cfg)
+	var depth := rng.randi_range(Num.i(cfg["depth_min"]), Num.i(cfg["depth_max"])) + grow
 	if downtown > 0.6:
 		depth += 1
 	var rows: Array[Dictionary] = []  # each: rect (Rect2i), along_x, street side (-1/+1)
@@ -53,8 +54,18 @@ static func fill_block(
 		rows.append({"r": yard, "along_x": yard.size.x >= yard.size.y, "front": 0, "back": true})
 	var out: Array[Dictionary] = []
 	for row: Dictionary in rows:
+		row["grow"] = grow
 		out.append_array(_fill_row(rng, row, downtown, height_scale, plan, cfg))
 	return out
+
+
+## How much bigger than the first district's the lots of a block's district are (D-039: the
+## districts a grown kaiju opens are blocks of bigger, denser buildings). Past the last
+## district (the outskirts): 0.
+static func lot_grow(block: Dictionary, cfg: Dictionary) -> int:
+	var grows: Array = cfg.get("district_lot_grow", [])
+	var k := Num.i(block.get("district", 0))
+	return Num.i(grows[k]) if k < grows.size() else 0
 
 
 ## Tallest a building may be at this much downtown.
@@ -86,8 +97,9 @@ static func _fill_row(
 	var deep := r.size.y if along_x else r.size.x
 	if length < 2 or deep < 2:
 		return []
-	var fmin := Num.i(cfg["frontage_min"])
-	var fmax := Num.i(cfg["frontage_max"]) + (2 if downtown > 0.5 else 0)
+	var grow := Num.i(row.get("grow", 0))
+	var fmin := Num.i(cfg["frontage_min"]) + grow
+	var fmax := Num.i(cfg["frontage_max"]) + (2 if downtown > 0.5 else 0) + grow * 2
 	var min_h := Num.i(cfg["min_height"])
 	var back: bool = row.get("back", false)
 	var row_cap := _height_cap(downtown, cfg)
@@ -114,14 +126,17 @@ static func _fill_row(
 		var cap := row_cap if back else _height_cap(town, cfg)
 		var h := mini(terrace_h + rng.randi_range(-1, 1), cap)
 		var roll := rng.randf()
+		# Both heights are always drawn, so a stage's tower chance or height cap (D-039) never
+		# shifts the numbers the lots after this one draw.
+		var tower_h := rng.randi_range(maxi(min_h, roundi(cap * 0.6)), maxi(min_h, cap))
+		var pencil: Array = cfg["pencil_height"]
+		var pencil_h := rng.randi_range(Num.i(pencil[0]), Num.i(pencil[1]))
 		if back:
 			pass
 		elif roll < sqrt(town) * Num.f(cfg["tower_chance"]):
-			h = rng.randi_range(maxi(min_h, roundi(cap * 0.6)), cap)
+			h = tower_h
 		elif span <= 3 and roll > 1.0 - Num.f(cfg["pencil_chance"]):
-			# A Tokyo pencil building: one narrow lot shoots up among the low-rise.
-			var pencil: Array = cfg["pencil_height"]
-			h = rng.randi_range(Num.i(pencil[0]), Num.i(pencil[1]))
+			h = pencil_h  # a Tokyo pencil building shoots up among the low-rise
 		h = maxi(2, roundi(h * height_scale))
 		var style := terrace_style if rng.randf() < 0.6 else rng.randi_range(0, 3)
 		var lot_deep := deep

@@ -26,6 +26,7 @@ const DISPLAY_FONT_PATH := "res://assets/fonts/kaiju_claw.ttf"
 const DISPLAY_MIN_SIZE := SIZE_HEAD
 
 static var _display_font: Font
+static var _arrow: ImageTexture
 
 
 ## The display font for headings at or above DISPLAY_MIN_SIZE, else null (theme default).
@@ -106,3 +107,32 @@ static func backdrop() -> ColorRect:
 	r.color = BG
 	full_rect(r)
 	return r
+
+
+## Body text that can carry inline images (UiKit.arrow()): wraps, grows to fit, never scrolls.
+static func rich(size: int = SIZE_BODY, color: Color = TEXT) -> RichTextLabel:
+	var r := RichTextLabel.new()
+	r.fit_content = true
+	r.scroll_active = false
+	r.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	r.add_theme_font_size_override("normal_font_size", size)
+	r.add_theme_color_override("default_color", color)
+	return r
+
+
+## A right arrow, drawn here because neither the body font nor Kaiju Claw has U+2192 and the
+## web build has no system font to fall back on. White; tint it with add_image's color.
+static func arrow() -> Texture2D:
+	if _arrow == null:
+		var w := 30
+		var half := 10  # half the height; the head is a right triangle this deep
+		var img := Image.create(w, half * 2, false, Image.FORMAT_RGBA8)
+		for y: int in half * 2:
+			var off := absi(y - half)
+			for x: int in w:
+				var shaft := x < w - half and off <= 2
+				var head := x >= w - half - 2 and x - (w - half - 2) <= half - off
+				if shaft or head:
+					img.set_pixel(x, y, Color.WHITE)
+		_arrow = ImageTexture.create_from_image(img)
+	return _arrow

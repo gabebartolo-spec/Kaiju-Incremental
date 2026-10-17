@@ -1,8 +1,11 @@
 extends "res://tests/lib/runner.gd"
-## Flow suite: every screen builds headless and the rampage presentation survives a played
-## rampage to its results panel without a script error.
+## Flow suite: every screen builds headless and is driven by real input (tests/lib/
+## flow_screens.gd), and the rampage presentation survives a played rampage through its end
+## beat without a script error.
 ##   godot --headless --path . --script tests/run_flow_tests.gd
 
+const FlowScreens := preload("res://tests/lib/flow_screens.gd")
+const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
@@ -24,9 +27,12 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	await FlowScreens.new(self, check).run()
+	_check_display_font()
 	await _check_species_select()
 	await _check_upgrade_screen()
 	await _check_rampage()
+	_check_stomp_timing()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})
 	await _check_powers("cephalopod", "lash", {})
@@ -45,6 +51,17 @@ func run_checks() -> void:
 	)
 
 
+## The display font is a real font, not a Git LFS pointer: without the LFS checkout every
+## Kaiju Claw heading, button and results value draws nothing (PR #14's first CI captures).
+func _check_display_font() -> void:
+	var font := UiKit.font_for(UiKit.SIZE_HEAD) as FontFile
+	var bytes := FileAccess.get_file_as_bytes(UiKit.DISPLAY_FONT_PATH).size()
+	check(
+		font != null and bytes > 1024 and font.has_char("A".unicode_at(0)),
+		"the Kaiju Claw display font loads with glyphs (%d bytes on disk)" % bytes
+	)
+
+
 func _check_species_select() -> void:
 	var select := SpeciesSelect.new()
 	root.add_child(select)
@@ -54,7 +71,7 @@ func _check_species_select() -> void:
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))
 	var second: Button = buttons[1]
-	second.pressed.emit()
+	await GuiInput.click(self, second)
 	check(picked == ["insectoid"], "choosing the second card picks the insectoid: %s" % [picked])
 	select.queue_free()
 	await process_frame
@@ -68,7 +85,8 @@ func _check_upgrade_screen() -> void:
 	await process_frame
 	var buttons := screen.find_children("*", "Button", true, false)
 	check(
-		buttons.size() == tree.order.size() + 1, "the tree shows a button per upgrade plus Rampage"
+		buttons.size() == tree.order.size() + 2,
+		"the tree shows a button per upgrade plus Rampage and Menu"
 	)
 	var claws: Button = null
 	for node: Node in buttons:
@@ -85,7 +103,7 @@ func _check_upgrade_screen() -> void:
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
-		claws.pressed.emit()
+		await GuiInput.click(self, claws)
 		check(
 			tree.level("claws") == 1 and screen.rubble == 18,
 			"pressing Sharpened Claws buys it for 12 (rubble %d)" % screen.rubble
@@ -134,17 +152,27 @@ func _check_rampage() -> void:
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
 	)
 	await process_frame
-	var go: Button = null
-	for node: Node in rampage.find_children("*", "Button", true, false):
-		var b: Button = node
-		if b.text.begins_with("EVOLVE"):
-			go = b
-	check(go != null, "the results panel offers EVOLVE")
-	if go != null:
-		go.pressed.emit()
+	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	var reason := rampage.sim.end_reason
+	var want: Array = RampageHud.HEADLINES.get(reason, [""])
 	check(
-		results.size() == 1 and Num.i(results[0]["rubble"]) >= 0,
-		"EVOLVE reports the rampage result"
+		hud.beat_running() and hud.headline.text == str(want[0]),
+		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
+	)
+	for _i: int in RampageHud.BEAT_FRAMES + 2:
+		await process_frame
+	check(
+		results.size() == 1 and Num.i(results[0]["rubble"]) >= 0 and results[0].has("civilians"),
+		"after the end beat the rampage reports its result, civilians counted"
+	)
+	check(
+		results.size() == 1 and Num.i(results[0]["toppled"]) > 0,
+		"an autoplayed rampage topples buildings: %s" % [results]
+	)
+	var heard := rampage.sfx.played
+	check(
+		heard.has("footstep") and heard.has("collapse"),
+		"the kaiju's feet and falling buildings make sounds: %s" % [heard.slice(0, 12)]
 	)
 	rampage.queue_free()
 	await process_frame
@@ -165,6 +193,8 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
 	var played := rampage.ability_fx.played
+	var heard := rampage.sfx.played
+	var cues: Array[String] = ["stomp_2", "stomp_crack", "ready", "deflect", "regen_loop"]
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
@@ -173,10 +203,10 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		await physics_frame
 		frames += 1
 		if want.all(func(k: String) -> bool: return played.has(k)):
-			break
+			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
+				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
 	var sound: String = SIGNATURE_SOUND[kind]
-	var heard := rampage.sfx.played
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
 	if levels.is_empty():
 		if species_id == "cephalopod":
@@ -184,13 +214,36 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	else:
 		for k: String in ["cracks", "ready", "deflect", "regen"]:
 			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
-		var cues: Array[String] = ["stomp_2", "ready", "deflect", "regen_loop"]
 		check(
 			cues.all(func(c: String) -> bool: return heard.has(c)),
 			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]
 		)
 	rampage.queue_free()
 	await process_frame
+
+
+## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
+## plays its tier and the ground crack instead of a footstep; steps pitch by size tier.
+func _check_stomp_timing() -> void:
+	var sfx := Sfx.new(Seeds.make("sfx", 0))
+	root.add_child(sfx)
+	sfx.stomp(2.0, true)
+	var early := sfx.played.duplicate()
+	sfx.footstep(0.7)
+	check(
+		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
+		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
+	)
+	var pitches: Array[float] = []
+	for tier: int in [1, 4]:
+		sfx.set_size_tier(tier)
+		sfx.footstep(1.0)
+		pitches.append(sfx.last_pitch())
+	check(
+		pitches[0] > pitches[1] * 1.2,
+		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
+	)
+	sfx.free()
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every
@@ -207,6 +260,9 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 	root.add_child(rampage)
 	await physics_frame
 	# Call the helicopters in the way a rampage does (through step), so the view sees heli_spawned.
+	# The young city has no helicopters (D-039 stage 1); this check is about the view, so
+	# give this run the base air wing.
+	rampage.sim.air.cfg["max"] = Num.i(Content.section("air")["max"])
 	rampage.sim.chunks_destroyed = Num.i(Content.section("air")["after_chunks"])
 	var view: PowersView = rampage.find_children("*", "PowersView", true, false)[0]
 	var frames := 0
