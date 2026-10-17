@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-18 · D-049 · Director · City-growth balance: apply proposal D
+Why: with one cost curve the runs were cephalopod 2.94 h, reptilian 3.94 h, insectoid 1.93 h (insectoid well under the
+3-5 h target, driven by the Leap Slam). Changes (measured in #16's tools/pacing.gd): all costs x1.27; Leap Slam cooldown
+4.5 -> 6.5 s, damage 22 -> 18; reptilian breath range 9 -> 11, damage 30 -> 36, cone 30 -> 36 deg, speed 5 -> 5.5; Atomic
+Beam cost x0.6, Brood cost x1.8. Expected runs 3.70 / 4.43 / 3.26 h; the insectoid stays the fastest clearer.
+
 ## 2026-10-17 · D-048 · Director · Croc titan v2: short reptilian arms (B) and charcoal spines (B)
 Why: director: the arms are "always doing something odd... maybe his arms are just too long" and "too human looking
 in the musculature" (measured 51% of height, 76% of the leg); "i dont like how light the colour of his spines are".
