@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 16:45
+# Game-flow handoff, 2026-10-17 17:00
 ## State: running a check (round-4 CI captures for lead review 2)
 
 ## Task
@@ -11,7 +11,8 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at HEAD (look-options 51229c0 merged; rampage.gd 398/400 after the heli merge: run-over UI lives in RampageHud.run_over) (origin/claude/look-options merged in; rampage.gd
+claude/game-flow-edfba4, pushed at e14a826 (look-options 13870b3 merged: city growth #16;
+rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built
@@ -33,8 +34,7 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
    city 5, flow 67, self-test); pushed.
 2. Captures: download, 2x-crop QA every shot (buttons/values readable, 1080p + 4K), copy to
    docs/captures/2026-10-17-game-flow/, fill PR #14 Evidence (CAPTURE_LINKS), send to lead.
-3. Mark PR ready after lead's OK. Follow-up when city-growth #16 merges: reveal reads
-   CityGrowth.tuning_for(tuning, size)["city"] (max_height 26/32/40/48; half 42/66/105/166).
+3. Mark PR ready only on the lead's OK.
 
 ## Attempts / history
 - Worktree had LFS pointer fonts -> flow suite timed out (900 s); `git lfs pull` -> 51 s.
@@ -57,6 +57,8 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
    rampage. --ui-only now runs a 45-frame live rampage, so both are shot over the city.
 4. Reveal tower = BuildingView (city voxels/windows/shader), feet on the same ground line.
 5. Cancelled 38999978259; clip now about 20 s at 1280x720.
+6. (lead 16:45) #16 merged in; reveal tower cap from CityGrowth.for_stats(after)["city"];
+   flow check: Apex Titan tower 28 floors (first city caps 26). Floors growth 24, flow 71.
 Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
 
 ## Findings for the lead (lead decides what gets recorded)
