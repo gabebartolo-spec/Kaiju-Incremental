@@ -25,6 +25,9 @@ const RESTEP_REACH := 0.98
 const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
 
+## Debug: true records the procedural gait instead (before/after captures, tools/capture).
+static var off := false
+
 var clips: KaijuClips
 ## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
 var state := "idle"
@@ -47,7 +50,7 @@ var _jaw_peak := Quaternion.IDENTITY
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
 static func or_biped(p_rig: KaijuRig, p_clips: Variant) -> KaijuGait:
-	if p_clips is KaijuClips:
+	if p_clips is KaijuClips and not off:
 		var baked: KaijuClips = p_clips
 		var why := baked.fit(p_rig)
 		if why.is_empty():

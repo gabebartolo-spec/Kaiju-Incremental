@@ -7,6 +7,10 @@ extends "res://tools/capture/capture_motion.gd"
 ## Same options as capture_motion.gd (--cam, --pose-trace, --trace, ...); 20 s by default.
 ## Prints "CLIPSTATE t <from> -> <to>" at each cross-fade start and "CLIPSEAM t <clip>" each time a
 ## looping clip wraps (for the per-frame difference plot); nothing on a kaiju without clips.
+## --procedural: the same moves on the procedural gait (ClipGait.off), the "before".
+## --frames=N saves every Nth frame as PNG to <out>/frames (--out=<dir>, default user://clips),
+## optionally only from --from=<s> to --to=<s>: lossless frames for the difference plot and clips
+## (each is the frame drawn before that step, one frame behind the label).
 
 const TURN_AT := 8.5
 const ROAR_AT := 13.0
@@ -14,9 +18,27 @@ const ROAR_AT := 13.0
 var _gait: ClipGait
 var _state := ""
 var _lap := 0
+var _out := "user://clips"
+var _every := 0
+var _from := 0.0
+var _to := INF
+var _frame := 0
 
 
 func _initialize() -> void:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg == "--procedural":
+			ClipGait.off = true
+		elif arg.begins_with("--out="):
+			_out = arg.substr(6)
+		elif arg.begins_with("--frames="):
+			_every = int(arg.substr(9))
+		elif arg.begins_with("--from="):
+			_from = float(arg.substr(7))
+		elif arg.begins_with("--to="):
+			_to = float(arg.substr(5))
+	if _every > 0:
+		DirAccess.make_dir_recursive_absolute(_out.path_join("frames"))
 	super()
 	_roar_at = ROAR_AT
 	if not "--seconds=" in " ".join(OS.get_cmdline_user_args()):
@@ -35,6 +57,10 @@ func _standing_facing(t: float, facing: Vector2) -> Vector2:
 
 func _event_at(t: float) -> String:
 	_log_clip(t)
+	if _every > 0 and _frame % _every == 0 and t >= _from and t <= _to:
+		var shot := root.get_viewport().get_texture().get_image()
+		shot.save_png(_out.path_join("frames/f%05d.png" % _frame))
+	_frame += 1
 	if t < 1.0:
 		return "STAND"
 	if t < 7.0:
