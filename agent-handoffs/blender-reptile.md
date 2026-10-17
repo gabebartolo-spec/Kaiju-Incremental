@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 15:52
-## State: running a check (croc titan D-046: export + walk/turn/roar render chain, bash b2ygxxxce)
+# blender-reptile handoff, 2026-10-17 16:05
+## State: running a check (croc titan re-run after jaw-mask fix, bash b4af9gm2a)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -17,6 +17,17 @@ checked. Welded 13,097 -> 5,507 positions. Critic fixes in pose_frame: roar wind
 tail down and out, claws to the chest with bent elbows; walk weight shift 4.5% hip height, chest drift
 + counter-turn, tail counter-sway in step with the shift; jaw shut at rest. Crops at roar f52.
 Lead wants: renders side + 3q, foot slide, girth, 2x crops -> lead runs a fresh critic.
+## Round 4 progress (16:05)
+- First chain done: foot slide walk 4.1 / turn 12.3 / roar 2.3 cm; girth >=90% except elbow 84.5% at roar.
+- DEFECT found in jaw crop f52: B-tuned jaw mask split C's lower jaw (smear). Fix: KNOWN["C"] gets
+  mouth=(tip (1.5,82.5) -> gape (34,87)) read off an ortho head render; jaw_mask uses it when present;
+  hinge moved to (35,84). Plot confirms a clean split. Re-running export + clips + crops.
+- Export verified (verify_skin vs scratch ct/vox/croctitan.kvox): sums 1, 5,507 pos, median 1.07 m.
+- 44 loose islands (teeth/eyes?): check teeth in the new jaw crop before sending.
+- Next: board (scratch ct/board.py) -> docs/captures/2026-10-17-croctitan/, skin -> assets/kaiju/test/
+  croctitan.*, clips -> notes blender-reptile/croctitan/, send lead.
+## Unfinished changes
+tools/blender/motion_test.py: mouth-line jaw mask (uncommitted until the re-run checks out).
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -60,7 +71,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-None. No Blender open.
+bash b4af9gm2a: headless Blender chain (scratch ct/). No MCP Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
