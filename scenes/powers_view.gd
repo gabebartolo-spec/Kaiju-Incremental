@@ -241,18 +241,28 @@ func _heli_down(id: int, at: Vector2) -> void:
 	_city.fire(ground, 0.6)
 
 
+## The helicopter nodes now in the air.
+func helis() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	for node: Node3D in _helis.values():
+		out.append(node)
+	return out
+
+
 ## Per frame: helicopters on their circles, the young on their hunt, the beam along the
 ## kaiju's facing, and momentum's dust trail.
 func update(delta: float, kaiju_at: Vector3) -> void:
 	var bs := sim.body_scale()
+	var turn := minf(1.0, delta * Num.f(Content.section("vehicles")["heli_turn"]))
 	for heli: AirWing.Heli in sim.air.helis:
 		if _helis.has(heli.id):
 			var node: HelicopterModel = _helis[heli.id]
 			var at := _w(heli.pos, sim.air.altitude())
 			var to := at - node.position
 			node.position = at
-			if to.length() > 0.001:
-				node.rotation.y = atan2(-to.x, -to.z)
+			if to.length() > 0.001:  # eased, so a turn at the end of its arc is a bank, not a snap
+				var heading := atan2(-to.x, -to.z)
+				node.rotation.y = lerp_angle(node.rotation.y, heading, turn)
 			node.aim(kaiju_at + Vector3(0, 3.0 * bs, 0))
 	var seen := {}
 	for y: Brood.Young in sim.brood.young:

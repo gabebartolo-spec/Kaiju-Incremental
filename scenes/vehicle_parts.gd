@@ -49,6 +49,15 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	return node
 
 
+## Fades every voxel part under `root` (1 = solid, lower drops a share of its pixels).
+static func set_opacity(root: Node, opacity: float) -> void:
+	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
+		var mmi := node as MultiMeshInstance3D
+		var mat := (mmi.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("opacity", opacity)
+
+
 func _read(part: String) -> Kvox:
 	var entry: Dictionary = _parts[part]
 	return Kvox.read(_dir.path_join(str(entry["kvox"])))
