@@ -89,7 +89,8 @@ func _build_environment() -> void:
 	env.ssao_radius = 1.5
 	env.fog_enabled = Look.value("fog_density") > 0.0
 	env.fog_light_color = Look.color("fog_color")
-	env.fog_density = Look.value("fog_density")
+	# A grown city (D-039) thins the fog with its size, so its far edge still reads as skyline.
+	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = 1.1

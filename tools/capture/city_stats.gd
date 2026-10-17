@@ -1,11 +1,18 @@
 extends SceneTree
 ## Prints the seeded city's numbers (buildings, chunks, rough voxel count, tiers, street plan),
 ## to compare layouts without rendering:
-##   godot --headless --path . --script tools/capture/city_stats.gd
+## one line per growth stage (D-039):
+##   godot --headless --path . --script tools/capture/city_stats.gd [-- --plan]
 
 
 func _initialize() -> void:
-	var cfg := Content.section("city")
+	for tier: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
+		_stats(tier)
+	quit()
+
+
+func _stats(stage: int) -> void:
+	var cfg: Dictionary = CityGrowth.tuning_for(Content.tuning(), stage)["city"]
 	var layout := CityGen.generate(Seeds.make("city", 0), cfg)
 	var chunks := 0
 	var voxels := 0
@@ -22,8 +29,8 @@ func _initialize() -> void:
 		tiers[tier] = Num.i(tiers.get(tier, 0)) + 1
 	print(
 		(
-			"buildings %d chunks %d voxels ~%dk tallest %d tiers %s"
-			% [layout.size(), chunks, voxels / 1000, tallest, tiers]
+			"stage %d half %d: buildings %d chunks %d voxels ~%dk tallest %d tiers %s"
+			% [stage, Num.i(cfg["half"]), layout.size(), chunks, voxels / 1000, tallest, tiers]
 		)
 	)
 	var plan := CityGen.map(cfg)
@@ -37,6 +44,6 @@ func _initialize() -> void:
 		kinds[str(st["kind"])] = Num.i(kinds.get(str(st["kind"]), 0)) + 1
 	var nodes: Array[Vector2] = plan["nodes"]
 	print("nodes %d streets %s blocks %s" % [nodes.size(), kinds, uses])
-	print("street lines x %s" % [plan["xs"]])
-	print("street lines z %s" % [plan["zs"]])
-	quit()
+	if "--plan" in OS.get_cmdline_user_args():
+		print("street lines x %s" % [plan["xs"]])
+		print("street lines z %s" % [plan["zs"]])

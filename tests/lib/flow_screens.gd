@@ -228,6 +228,7 @@ func _check_evolution_and_continue() -> void:
 				% reveal.tower_floors
 			)
 		)
+		_check_reveal_stage_city()
 		await _frames(EvolutionReveal.SWAP_FRAME + 2)
 		check.call(reveal.revealed(), "the new stage is on screen after the swap")
 		await GuiInput.key(t, KEY_ENTER)
@@ -367,3 +368,22 @@ func _check_fits_at_scales(screen: Control, what: String) -> void:
 ## Fully inside the visible screen (tree nodes included: the tree shrinks to fit, never scrolls).
 func _on_screen(b: Button, view: Rect2) -> bool:
 	return view.encloses(b.get_global_rect())
+
+
+## The reveal measures against the new stage's city (D-039): the Apex Titan topples size x tier
+## height floors, more than the first city's tallest tower allows.
+func _check_reveal_stage_city() -> void:
+	var tuning := Content.tuning()
+	var stage4: Dictionary = CityGrowth.tuning_for(tuning, 4)["city"]
+	var first: Dictionary = tuning["city"]
+	var reveal := EvolutionReveal.new()
+	reveal.setup(Content.species_def("reptilian"), {"size": 3}, {"size": 4}, stage4)
+	var want := mini(4 * Num.i(stage4["tier_height"]), Num.i(stage4["max_height"]))
+	check.call(
+		reveal.tower_floors == want and want > Num.i(first["max_height"]),
+		(
+			"the Apex Titan's reveal tower is %d floors from its stage's city (first city caps %d)"
+			% [reveal.tower_floors, Num.i(first["max_height"])]
+		)
+	)
+	reveal.free()

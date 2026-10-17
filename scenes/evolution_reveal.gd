@@ -33,7 +33,8 @@ var _lines: Label
 var _finished := false
 
 
-## before / after: run stats either side of the purchase; city: tuning "city".
+## before / after: run stats either side of the purchase; city: the new stage's tuning "city"
+## (CityGrowth.for_stats(after)["city"]): its height cap is the tallest tower there is.
 func setup(species: Dictionary, before: Dictionary, after: Dictionary, city: Dictionary) -> void:
 	_species = species
 	stage_before = KaijuModel.stage_for(Num.i(before.get("size", 1)))

@@ -220,6 +220,9 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 	root.add_child(rampage)
 	await physics_frame
 	# Call the helicopters in the way a rampage does (through step), so the view sees heli_spawned.
+	# The young city has no helicopters (D-039 stage 1); this check is about the view, so
+	# give this run the base air wing.
+	rampage.sim.air.cfg["max"] = Num.i(Content.section("air")["max"])
 	rampage.sim.chunks_destroyed = Num.i(Content.section("air")["after_chunks"])
 	var view: PowersView = rampage.find_children("*", "PowersView", true, false)[0]
 	var frames := 0

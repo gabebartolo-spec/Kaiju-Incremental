@@ -82,9 +82,9 @@ func _base_stats() -> Dictionary:
 
 
 func _start_rampage() -> void:
-	var city: Dictionary = GameData.section("city")
-	var layout := CityGen.generate(Rng.make(CITY_STREAM, 0), city)
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
+	var tier := Num.i(stats["size"])
+	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))
 	var rampage := Rampage.new()
 	rampage.setup(_species(), stats, layout, Num.i(_save.get("runs", 0)))
 	rampage.finished.connect(_on_rampage_finished)
@@ -129,12 +129,12 @@ func _reveal(screen: UpgradeScreen, id: String) -> void:
 	var before_levels := _tree.levels.duplicate()
 	before_levels[id] = _tree.level(id) - 1
 	var before_tree := UpgradeTree.new(GameData.upgrades, before_levels, str(_save["species"]))
+	var after := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
+	var stage_city: Dictionary = CityGrowth.for_stats(after)["city"]
 	var reveal := EvolutionReveal.new()
+	# The new stage's city (D-039), so "towers up to N floors" matches the city it will face.
 	reveal.setup(
-		_species(),
-		UpgradeTree.run_stats(_base_stats(), _species(), before_tree),
-		UpgradeTree.run_stats(_base_stats(), _species(), _tree),
-		GameData.section("city")
+		_species(), UpgradeTree.run_stats(_base_stats(), _species(), before_tree), after, stage_city
 	)
 	var node := screen.node_button(id)
 	reveal.done.connect(func() -> void: node.grab_focus.call_deferred())

@@ -63,13 +63,13 @@ var _autoplay_target := Vector2(INF, INF)
 var _steps := 0
 
 
-## stats: final run stats; layout: CityGen output; run_index seeds the army.
+## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army.
 func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", run_index))
+	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	_fx_rng = Seeds.make("fx", run_index)
 
