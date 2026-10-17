@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 21:55
-## State: running a check (7 CI captures for the D-047 evidence; PR not yet opened)
+# blender-reptile handoff, 2026-10-17 22:08
+## State: awaiting lead (the new Smart Mesh GLB path; D-047 PR held for it)
 ## Task (lead 21:14, D-047 "play your croc titan clips in the game")
 One PR into claude/look-options from claude/croctitan-clips: 1 bake the r7 clips (idle, walk 48-frame
 cycle, turn left/right, roar) to compact data in game axes; 2 a clip player for the croc titan (walk
@@ -14,6 +14,11 @@ claude/croctitan-clips (this worktree, switched from claude/blender-reptile-f538
 kept). Base db8962f (look-options moved to 1bcced1 since: docs only, arm-length board).
 Commits: 7dca14d (player, data, tests, tools), 3706b4e (capture frames + --procedural), 22a620a
 (skin.json LF). 3706b4e pushed; 22a620a local until the captures finish.
+## Lead 22:06: HOLD the PR for the new mesh (director picked short arms, variant B; Tripo Smart
+Mesh c8185166, GLB path to come). Then in one pass: re-fit per notes blender-reptile/refit.md,
+re-export the skin, re-bake the .kclip, swap the adult kvox/skin in game, open the D-047 PR with the
+new-mesh evidence (same list). The 7 CI captures of the current mesh finish but are NOT packaged.
+Current arm 50.6 m = 51% of height, 76% of leg; shoulders 32 m; hand 29% of head (sent to lead).
 ## What is built
 - tools/blender/motion_test.py task `clips` -> <stem>.kclip (KCLP v1: JSON header with the 27 game bones
   in rig.json order + the skin bones each gathers + rest heads + stride + clip table; 242 B/frame int16).
@@ -32,8 +37,8 @@ Commits: 7dca14d (player, data, tests, tools), 3706b4e (capture frames + --proce
 - tools/capture/capture_clips.gd (extends capture_motion: walk, stop, standing 90 left turn, roar;
   logs CLIPSTATE/CLIPSEAM; --frames=N --from --to save PNGs; --procedural).
 ## Running jobs
-bash ban015cq4: 7 ci_capture.sh runs -> scratch ci/{after,before}_{game,jaw,feet}, ci/select4k.
-Then: scratch ev/compose_ba.py (side by side), ev/pngdiff_game.py (plot), Blender encode_intra (r6/).
+bash ban015cq4: 7 ci_capture.sh runs (current mesh; not to be packaged). Evidence tools for the new mesh:
+scratch ev/compose_ba.py (side by side), ev/pngdiff_game.py (plot), ev/encode_intra30.py.
 ## Attempts (fix-loop record)
 - First drift (0.425 vs 0.229): idle feet locked, walk started at f0 -> overreach. Walk entry frame
   matched to the planted feet + re-step guard -> 0.0.
