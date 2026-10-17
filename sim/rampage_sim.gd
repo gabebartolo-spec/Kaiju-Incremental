@@ -232,11 +232,12 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 
 
 ## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.
-func end(reason: String) -> void:
+func end(reason: String) -> Dictionary:
 	over = true
 	end_reason = reason
 	hp = maxf(0.0, hp)
 	_events.append({"type": "run_over", "reason": reason})
+	return _events[-1]
 
 
 func clamp_to_arena(pos: Vector2) -> Vector2:

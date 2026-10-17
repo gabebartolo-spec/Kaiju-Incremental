@@ -2,8 +2,7 @@ class_name Rampage
 extends Node3D
 ## Presents one rampage. Reads input, steps RampageSim, and turns its events into the city
 ## view, the kaiju, the tanks, the camera and the HUD. It never decides an outcome; when the
-## sim ends, the HUD plays the end beat (in slow motion) and then `finished` reports the
-## result. Pause (Esc / Start) opens the pause menu.
+## sim ends, the HUD plays the end beat, then `finished` reports the result. Esc pauses.
 
 signal finished(result: Dictionary)
 
@@ -95,22 +94,11 @@ func _ready() -> void:
 	add_child(_camera)
 	_camera.current = true
 	_place_camera(1.0)
-	_hud = RampageHud.new(sim, species)
-	_hud.beat_done.connect(func() -> void: finished.emit(result()))
-	_hud.end_requested.connect(_end_now)
+	_hud = RampageHud.new(sim, species, _city.street)
+	_hud.beat_done.connect(finished.emit)
+	_hud.end_requested.connect(func() -> void: _on_event(sim.end("ended")))
 	add_child(_hud)
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
-
-
-## The sim's result plus what only the view counts: the civilians it crushed.
-func result() -> Dictionary:
-	return sim.result().merged({"civilians": _city.street.killed if _city.street else 0})
-
-
-## Pause menu's End Rampage: the sim ends now, keeping what was earned.
-func _end_now() -> void:
-	sim.end("ended")
-	_on_event({"type": "run_over", "reason": "ended"})
 
 
 func _physics_process(delta: float) -> void:
@@ -197,9 +185,8 @@ func _on_event(event: Dictionary) -> void:
 			_tank_destroyed(Num.i(event["tank"]), at)
 		"run_over":
 			_hud.refresh()
-			_shake = maxf(_shake, 0.5)
 			_hud.show_end_beat(str(event["reason"]))
-			get_node("/root/EventBus").emit_signal("run_ended", result())
+			get_node("/root/EventBus").emit_signal("run_ended", _hud.result())
 		_:
 			_powers.on_event(event, _kaiju_at)
 

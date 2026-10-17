@@ -3,7 +3,7 @@ extends CanvasLayer
 ## The rampage HUD: health, clock, rubble, city destroyed, signature readiness; then the end
 ## beat (why it ended, big). Reads the sim; reports the beat's end through `beat_done`.
 
-signal beat_done
+signal beat_done(result: Dictionary)
 ## The pause menu's End Rampage was chosen.
 signal end_requested
 
@@ -23,6 +23,8 @@ const END_SLOWMO := 0.3
 
 var sim: RampageSim
 var species: Dictionary
+## The crowd (null with no streets): only the view counts the civilians it crushed.
+var street: StreetLife
 ## The end beat's headline (read by the flow suite and the captures).
 var headline: Label
 var _hp: ProgressBar
@@ -36,9 +38,15 @@ var _beat_frame := -1
 var _beat_done := false
 
 
-func _init(p_sim: RampageSim, p_species: Dictionary) -> void:
+func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> void:
 	sim = p_sim
 	species = p_species
+	street = p_street
+
+
+## The sim's result plus what only the view counts: the civilians it crushed.
+func result() -> Dictionary:
+	return sim.result().merged({"civilians": street.killed if street != null else 0})
 
 
 func _ready() -> void:
@@ -199,4 +207,4 @@ func _exit_tree() -> void:
 func _finish_beat() -> void:
 	Engine.time_scale = 1.0
 	_beat_done = true
-	beat_done.emit()
+	beat_done.emit(result())
