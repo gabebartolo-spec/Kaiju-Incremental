@@ -11,6 +11,7 @@ var summary := ""
 var _col: VBoxContainer
 var _buttons: VBoxContainer
 var _first: Button
+var _crawl: NewsTicker
 
 
 func setup(p_summary: String) -> void:
@@ -20,15 +21,19 @@ func setup(p_summary: String) -> void:
 func _ready() -> void:
 	UiKit.full_rect(self)
 	add_child(UiKit.backdrop())
+	_add_broadcast_frame()
 	_col = VBoxContainer.new()
 	UiKit.full_rect(_col)
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	_col.add_theme_constant_override("separation", 24)
 	add_child(_col)
+	var kicker := UiKit.label("CIVIL DEFENCE ALERT", UiKit.SIZE_BODY, UiKit.ALERT)
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_col.add_child(kicker)
 	var title := UiKit.label("KAIJU INCREMENTAL", 104, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(title)
-	var sub := UiKit.label("Grow. Evolve. Flatten the city.", UiKit.SIZE_HEAD, UiKit.MUTED)
+	var sub := UiKit.label("Grow. Evolve. Flatten the city.", UiKit.SIZE_HEAD, UiKit.TEXT)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(sub)
 	_buttons = VBoxContainer.new()
@@ -37,6 +42,24 @@ func _ready() -> void:
 	_buttons.add_theme_constant_override("separation", 16)
 	_col.add_child(_buttons)
 	_show_main()
+
+
+## Hazard tape along the top edge and the news crawl along the bottom: the city has seen you.
+func _add_broadcast_frame() -> void:
+	var top := UiKit.tape(18.0)
+	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top.offset_bottom = 18.0
+	add_child(top)
+	var news := Content.section("news")
+	var title_lines: Array = news.get("title", [])
+	var lines := PackedStringArray(title_lines)
+	if summary != "":
+		var who := summary.get_slice(",", 0).to_upper()
+		lines.insert(0, str(news.get("at_large", "")).replace("{species}", who))
+	_crawl = NewsTicker.new(lines)
+	_crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_crawl.offset_top = -NewsTicker.HEIGHT
+	add_child(_crawl)
 
 
 func _show_main() -> void:
@@ -64,9 +87,11 @@ func _on_new() -> void:
 func _open_settings() -> void:
 	var settings := SettingsMenu.new()
 	_col.visible = false  # nothing behind the settings can take focus
+	_crawl.visible = false  # nor show dimmed under its panel
 	settings.closed.connect(
 		func() -> void:
 			_col.visible = true
+			_crawl.visible = true
 			_show_main()
 	)
 	add_child(settings)

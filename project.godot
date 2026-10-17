@@ -34,6 +34,8 @@ window/vsync/vsync_mode=2
 
 [gui]
 
+theme/custom_font="res://assets/fonts/kaiju_block.ttf"
+
 theme/default_font_size=24
 
 [rendering]

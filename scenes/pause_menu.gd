@@ -35,7 +35,7 @@ func _ready() -> void:
 	_col.add_child(title)
 	_resume = _add("RESUME", UiKit.ACCENT, resume)
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
-	_add("END RAMPAGE  (keep rubble)", UiKit.PANEL_EDGE, _end)
+	_add("END RAMPAGE  (keep biomass)", UiKit.PANEL_EDGE, _end)
 	_resume.grab_focus.call_deferred()
 
 
