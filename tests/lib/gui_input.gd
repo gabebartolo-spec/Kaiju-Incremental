@@ -16,6 +16,34 @@ static func click(tree: SceneTree, control: Control) -> void:
 		await tree.process_frame
 
 
+## Drags the mouse across `control` from one fraction of its width to another, along its
+## middle: press, move in steps, release (a slider's grabber follows like a player's drag).
+static func drag(tree: SceneTree, control: Control, from: float, to: float) -> void:
+	var rect := control.get_global_rect()
+	var at := func(f: float) -> Vector2:
+		return Vector2(rect.position.x + rect.size.x * f, rect.get_center().y)
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = at.call(from)
+	press.global_position = press.position
+	tree.root.push_input(press, true)
+	await tree.process_frame
+	for k: int in range(1, 6):
+		var move := InputEventMouseMotion.new()
+		move.button_mask = MOUSE_BUTTON_MASK_LEFT
+		move.position = at.call(lerpf(from, to, k / 5.0))
+		move.global_position = move.position
+		tree.root.push_input(move, true)
+		await tree.process_frame
+	var release := press.duplicate() as InputEventMouseButton
+	release.pressed = false
+	release.position = at.call(to)
+	release.global_position = release.position
+	tree.root.push_input(release, true)
+	await tree.process_frame
+
+
 ## Presses and releases a key (both its keycode and physical keycode, so UI actions and the
 ## game's physical-key actions both see it).
 static func key(tree: SceneTree, keycode: Key) -> void:

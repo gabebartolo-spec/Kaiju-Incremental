@@ -86,6 +86,7 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	b.add_theme_stylebox_override("focus", box(fill.darkened(0.05), Color.WHITE, 4))
 	b.add_theme_stylebox_override("pressed", box(fill.darkened(0.4), Color.WHITE))
 	b.add_theme_stylebox_override("disabled", box(LOCKED.darkened(0.3), LOCKED))
+	b.pressed.connect(func() -> void: Sfx.ui("ui_click"))
 	return b
 
 

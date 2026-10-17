@@ -191,6 +191,7 @@
 	"sfx": {
 		"pitch_jitter": 0.06,
 		"stomp_tiers": [1.4, 1.8],
+		"default_volume": 0.9,
 		"stomp_wait": 0.4,
 		"footstep_min_interval": 0.25,
 		"crack_min_interval": 2.5,
@@ -199,6 +200,9 @@
 		"drop_quiet_db": -5.0,
 		"volume_db": {
 			"roar": -1.0,
+			"ui_click": -12.0,
+			"ui_confirm": -6.0,
+			"ui_deny": -10.0,
 			"footstep": -9.0,
 			"stomp_crack": -5.0,
 			"collapse": -3.0,

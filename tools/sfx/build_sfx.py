@@ -293,6 +293,28 @@ def build_roar() -> None:
     print(f"  roar: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
 
 
+def build_ui() -> None:
+    """Menu sounds: a dry click on every button, a two-note confirm (with a soft low thump, the
+    kaiju's weight) when an upgrade is bought, and a low buzz when it can't be."""
+    reseed("build_ui")
+    n = seconds(0.07)
+    tick = bandpass(noise(n), np.full(n, 2200.0), 1.5) * env(n, 0.0005, 0.008)
+    body = np.sin(2 * np.pi * 420 * np.arange(n) / RATE) * env(n, 0.001, 0.02)
+    save("ui_click", tick * 2.0 + body * 0.5, -6.0)
+    x = np.zeros(seconds(0.45))
+    for at, f in [(0.0, 523.0), (0.08, 784.0)]:
+        m = seconds(0.3)
+        t = np.arange(m) / RATE
+        note = (np.sin(2 * np.pi * f * t) + 0.3 * np.sin(2 * np.pi * 2 * f * t)) * env(m, 0.004, 0.09)
+        place(x, note, at, 0.6)
+    place(x, thump(0.3, 90, 50), 0.0, 0.5)
+    save("ui_confirm", x, -5.0)
+    n = seconds(0.18)
+    t = np.arange(n) / RATE
+    buzz = tone(np.full(n, 110.0), 10, 0.7) * hump(n, 0.2)
+    save("ui_deny", lowpass(buzz, 1500), -8.0)
+
+
 def build_breath() -> None:
     reseed("build_breath")
     n = seconds(2.3)
@@ -394,6 +416,7 @@ def main() -> None:
     build_stomp_crack()
     build_collapse()
     build_roar()
+    build_ui()
     build_breath()
     build_leap()
     build_lash()

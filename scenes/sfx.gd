@@ -10,6 +10,10 @@ extends Node
 const POOL := 8
 const STOMPS := 3
 
+## Menu sounds played (Sfx.ui), in order; read by the flow suite.
+static var ui_played: Array[String] = []
+static var _ui_player: AudioStreamPlayer
+
 ## Every sound played, in order; read by the flow suite.
 var played: Array[String] = []
 var _streams: Dictionary = {}
@@ -54,9 +58,11 @@ func _ready() -> void:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
 	for _i: int in POOL:
 		var player := AudioStreamPlayer.new()
+		player.bus = "SFX"
 		add_child(player)
 		_pool.append(player)
 	_regen = AudioStreamPlayer.new()
+	_regen.bus = "SFX"
 	var loop: AudioStreamOggVorbis = load("res://assets/sfx/regen_loop.ogg")
 	loop.loop = true
 	_regen.stream = loop
@@ -81,10 +87,32 @@ func set_size_tier(tier: int) -> void:
 	_size_pitch = Num.f(pitches[clampi(tier - 1, 0, pitches.size() - 1)])
 
 
+## A menu sound (ui_click, ui_confirm, ui_deny) on one shared player under the tree's root,
+## so a sound outlives the screen that made it.
+static func ui(sound: String) -> void:
+	ui_played.append(sound)
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	if not is_instance_valid(_ui_player):
+		_ui_player = AudioStreamPlayer.new()
+		_ui_player.bus = "SFX"
+		_ui_player.max_polyphony = 4
+		tree.root.add_child.call_deferred(_ui_player)
+	var levels: Dictionary = Content.section("sfx")["volume_db"]
+	_ui_player.stream = load("res://assets/sfx/%s.ogg" % sound)
+	_ui_player.volume_db = Num.f(levels[sound])
+	if _ui_player.is_inside_tree():
+		_ui_player.play()
+	else:
+		_ui_player.ready.connect(_ui_player.play, CONNECT_ONE_SHOT)
+
+
 ## The croc titan's roar, played at once from its own player under `parent` (screens with no
 ## rampage, such as the evolution reveal and the demo end card, call this). Returns the player.
 static func roar(parent: Node) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
+	player.bus = "SFX"
 	player.stream = load("res://assets/sfx/roar.ogg")
 	var levels: Dictionary = Content.section("sfx")["volume_db"]
 	player.volume_db = Num.f(levels["roar"])

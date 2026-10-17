@@ -154,6 +154,13 @@ func _check_end_card() -> void:
 		"the end card roars only from a clip (clip roar %s, roars %d)" % [clip, roars]
 	)
 	check.call(
+		Num.i(card.get("roar_sounds")) == roars,
+		(
+			"every end-card roar is heard (%d sounds, %d roars)"
+			% [Num.i(card.get("roar_sounds")), roars]
+		)
+	)
+	check.call(
 		GuiInput.button(card, "TITLE") != null and GuiInput.button(card, "QUIT") != null,
 		"the end card offers Title and Quit"
 	)
