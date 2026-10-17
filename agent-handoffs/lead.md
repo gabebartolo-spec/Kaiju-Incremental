@@ -20,7 +20,10 @@ gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to 
 Director: "tank and heli models look great".
 - QA 12:55: heli board PASS (Apache-like, tandem cockpit, stub wings, chin gun, rotors as parts; 2x real);
   tank in-game crop reads well. Merge #17 then #18 once their in-game captures + CI are green.
-- #15 FIX (fresh critic, verified): C mantis SHATTERED in game clip (crops fine: clip vs stills disagree);
+- #15 round 2 (5f807cb): cause = GL Compatibility fallback scrambled packed instance data (web renderer too!),
+  fixed + captures forced Forward+; mantis intact, thigh cubes square; lead look PASS; fresh re-critic running.
+  Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
+- (round 1) #15 FIX (fresh critic, verified): C mantis SHATTERED in game clip (crops fine: clip vs stills disagree);
   reptile thigh shear f572, jaw scatter f676; A/C fog differs; add close cam. Sent to kaiju-look-test.
 ## (history) CI billing (12:35)
 - Every Actions job refuses: "recent account payments have failed or your spending limit needs to be increased".
