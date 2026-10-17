@@ -18,8 +18,8 @@ static var _ui_player: AudioStreamPlayer
 var played: Array[String] = []
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
-## Returns the helicopters in the air (Array[Node3D]); the rotor loop follows them.
-var _helis: Callable
+## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
+var _powers: PowersView
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
@@ -75,16 +75,16 @@ func _ready() -> void:
 	_rotor = _looping("heli_rotor")
 
 
-## Rampage hands over its camera and its helicopters (PowersView.helis) once, at start.
-func watch(camera: Node3D, helis: Callable) -> void:
+## Rampage hands over its camera and its powers' view (helicopters) once, at start.
+func watch(camera: Node3D, powers: PowersView) -> void:
 	listener = camera
-	_helis = helis
+	_powers = powers
+	powers.sfx = self
 
 
 func _process(delta: float) -> void:
-	if _helis.is_valid():
-		var helis: Array[Node3D] = _helis.call()
-		rotors(helis)
+	if is_instance_valid(_powers):
+		rotors(_powers.helis())
 	_since_step += delta
 	_since_crack += delta
 	if _pending == "":

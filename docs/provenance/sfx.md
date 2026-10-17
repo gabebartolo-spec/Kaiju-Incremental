@@ -20,6 +20,8 @@ Sources:
 | tank_fire.ogg (a tank's cannon) | synth muzzle crack (band-passed noise) + Kenney `explosionCrunch_001` pitched 0.75 + `lowFrequency_explosion_001` + synth thump + synth echo tail. Added 2026-10-18 (D-050). |
 | shell_hit.ogg (a shell hits the unarmoured kaiju) | Kenney `impactPunch_heavy_001` pitched 0.7 + `impactMetal_light_002` pitched 0.8 + synth thump + synth grit crackle. Added 2026-10-18 (D-050). |
 | heli_rotor.ogg (seamless 2 s loop) | synth only: 19 Hz main-blade slap (pulsed low-passed noise), 76 Hz tail-rotor buzz (band-passed noise), turbine whine (2.4/3.6 kHz sines), 57 Hz hum; the 0.5 s overrun is crossfaded into the start. Added 2026-10-18 (D-050). |
+| heli_gun.ogg (a helicopter's chin-gun burst) | synth only: five rounds at 11 a second, each a band-passed noise crack over a low-passed thud, plus a synth echo tail. Added 2026-10-18 (D-050). |
+| heli_crash.ogg (a helicopter shot down) | synth falling turbine whine + Kenney `lowFrequency_explosion_000` + `explosionCrunch_003` pitched 0.85 + synth thump + Kenney `impactMetal_heavy_000..003` pitched 0.75-0.9 (metal raining down). Added 2026-10-18 (D-050). |
 | breath.ogg | synth rising hum (0-0.45 s) + synth roar (swept band-passed noise + 55 Hz buzz) + Kenney `thrusterFire_000` pitched 0.7 + synth sizzle (hiss + crackle) |
 | leap_whoosh.ogg | synth swept whoosh + Kenney `impactPlate_light_001` pitched 1.3 (chitin clack) |
 | leap_land.ogg | Kenney `lowFrequency_explosion_000` + `explosionCrunch_002` pitched 0.8 + synth sub thump + synth crackle |

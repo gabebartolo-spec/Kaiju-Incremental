@@ -334,12 +334,18 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
+	# One more helicopter arrives, fires and is shot down (its events, as the sim sends them).
+	var heard := rampage.sfx.played
+	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
+	for event: Dictionary in [
+		{"type": "heli_spawned", "heli": 999},
+		{"type": "heli_fired", "heli": 999},
+		{"type": "heli_destroyed", "heli": 999, "x": at.x + 10.0, "z": at.z},
+	]:
+		view.on_event(event, at)
 	check(
-		rampage.sfx.played.has("heli_rotor") and rampage.sfx.played.has("heli_gun"),
-		(
-			"the %s's helicopters are heard flying and firing: %s"
-			% [species_id, rampage.sfx.played.slice(-8)]
-		)
+		["heli_rotor", "heli_gun", "heli_crash"].all(func(k: String) -> bool: return heard.has(k)),
+		"the %s's helicopters are heard flying, firing, falling: %s" % [species_id, heard.slice(-8)]
 	)
 	rampage.queue_free()
 	await process_frame
