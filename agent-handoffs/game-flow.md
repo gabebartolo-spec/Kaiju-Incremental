@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 17:00
+# Game-flow handoff, 2026-10-17 17:50
 ## State: running a check (round-4 CI captures for lead review 2)
 
 ## Task
@@ -11,8 +11,8 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at e14a826 (look-options 13870b3 merged: city growth #16;
-rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
+claude/game-flow-edfba4, pushed at ad2191b (look-options 414a290 merged: #16 city growth and
+#20 Apex streaming; rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built
@@ -59,6 +59,10 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
 5. Cancelled 38999978259; clip now about 20 s at 1280x720.
 6. (lead 16:45) #16 merged in; reveal tower cap from CityGrowth.for_stats(after)["city"];
    flow check: Apex Titan tower 28 floors (first city caps 26). Floors growth 24, flow 71.
+7. #20 merged in (floor load 6). Round-4 4K stills: tree/band/capstone fit, pause over the city,
+   real building in the reveal; BUT reveal size lines fell off screen at 125% -> 3D view now
+   takes the spare height; check shown failing first; flow 72. Layout checks moved to
+   tests/lib/flow_layout.gd (400-line cap). Clip was 25 s at 1080p -> 1280x720 window + cuts.
 Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
 
 ## Findings for the lead (lead decides what gets recorded)
@@ -69,5 +73,5 @@ Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- CI captures round 4 on 2ebdfce: 1080p 39006384659, 4K insectoid --ui-only 39006409260,
-  clip 720p 39006434429 -> %TEMP%/gf_cap/{shots,4k,clip}.
+- CI: 1080p stills 39006384659 (on 2ebdfce) -> %TEMP%/gf_cap/shots; 4K 39010927207 (d67112d)
+  -> %TEMP%/gf_cap5/4k; clip 39011009292 (ad2191b) -> %TEMP%/gf_cap5/clip. Then QA + send lead.
