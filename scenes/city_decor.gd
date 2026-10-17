@@ -2,8 +2,10 @@ class_name CityDecor
 extends Node3D
 ## Street life on the street plan (CityGen.map): cars parked along the kerbs, streetlights at
 ## the crossings and down the long blocks, trees in the park, round the plaza and along the
-## diagonal avenue, and parking lots full of cars. All seeded, all voxels; cars, trees and
-## lights flatten under the kaiju's feet. Presentation only.
+## diagonal avenue, and parking lots full of cars; street trees down the avenues, gardens and
+## a playground in every park, hedges and flowers in the front yards (D-065). All seeded, all
+## voxels; cars, trees, bushes, flowers, swings and lights flatten under the kaiju's feet.
+## Presentation only.
 
 const PROP_VOXEL := 0.25
 const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
@@ -11,6 +13,8 @@ const LAMP_EVERY := 13.0
 
 var sim: RampageSim
 var plan: Dictionary
+## D-065 greenery counts (CityGreenery.green), for the city suite and the report.
+var green: Dictionary = {}
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
 var _half: float
@@ -19,6 +23,8 @@ var _view: float  # parked cars reach this far from the centre: the arena and wh
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
 var _paints := 0  # how many car paints
+var _lamp_spots: Array[Vector2] = []
+var _park_trees: Array[Vector2] = []
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -46,6 +52,10 @@ func _ready() -> void:
 	_streets()
 	_blocks()
 	_diagonal_trees()
+	# D-065 greenery last, so the cars and trees before it keep their places.
+	var greenery := CityGreenery.new(self, _rng)
+	greenery.plant()
+	green = greenery.green
 	var palette := {
 		"glass": Color("2b3640"),
 		"wheel": Color("1a1a1a"),
@@ -60,6 +70,7 @@ func _ready() -> void:
 	var paints := car_colors()
 	for i: int in paints.size():
 		palette["car%d" % i] = paints[i]
+	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
 
 
@@ -154,6 +165,7 @@ func _lamp(p: Vector2, toward: Vector2) -> void:
 	if _on_building(p):
 		return
 	var arm := Vector2i(roundi(signf(toward.x)), roundi(signf(toward.y)))
+	_lamp_spots.append(p)
 	_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _streetlight(v, arm))
 	var light := OmniLight3D.new()
 	light.light_color = Color("ffd59a")
@@ -171,13 +183,16 @@ func _blocks() -> void:
 		match str(block["use"]):
 			"park":
 				var inner := rect.grow(-1.6)
+				var play := CityGreenery.playground_pad(rect, sim.city).grow(0.5)
 				for n: int in roundi(rect.get_area() / 9.0):
 					var p := Vector2(
 						_rng.randf_range(inner.position.x, inner.end.x),
 						_rng.randf_range(inner.position.y, inner.end.y)
 					)
-					if absf(p.x - rect.get_center().x) > 1.2:  # a path down the middle
+					var on_path := absf(p.x - rect.get_center().x) <= 1.2  # a path down the middle
+					if not on_path and not play.has_point(p):
 						_props.add(Vector3(p.x, 0, p.y), _tree)
+						_park_trees.append(p)
 			"plaza":
 				var ring := rect.grow(-1.2)
 				var t := 0.0

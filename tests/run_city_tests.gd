@@ -5,6 +5,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_city_tests.gd
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
+const Green := preload("res://tests/lib/city_green.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -161,4 +162,48 @@ func _check_no_empty_ground() -> void:
 					]
 				)
 			)
+			_check_greenery(tier, map_seed, sim, decor)
 			holder.free()
+
+
+## A believable amount of green (D-065, director 2026-10-18: "make sure there are a believable
+## amount of trees, bushes, floral areas, parks, gardens, playgrounds throughout the city"):
+## street trees down the avenues at a real downtown spacing (both pavements, one every
+## city.street_tree_gap metres, fewer at crossings and lamps), a garden and a playground in
+## every park, and a hedge in the front yards. Everything is a crushable decor prop.
+func _check_greenery(tier: int, map_seed: int, sim: RampageSim, decor: CityDecor) -> void:
+	var got: Dictionary = Green.measure(sim, decor)
+	var gap: Array = sim.city["street_tree_gap"]
+	var per_km := Num.f(got["trees_per_km"])
+	var low := 1000.0 / Num.f(gap[1])  # one pavement's worth at the widest spacing
+	var high := 2000.0 / Num.f(gap[0])  # both pavements at the closest
+	var parks := Num.i(got["parks"])
+	check(
+		(
+			per_km >= low
+			and per_km <= high
+			and Num.i(got["playgrounds"]) == parks
+			and Num.i(got["bushes"]) > 0
+			and Num.i(got["flower_beds"]) > 0
+			and (Num.i(got["yards"]) == 0 or Num.i(got["hedges"]) > 0)
+		),
+		(
+			(
+				"stage %d, map_seed %d: green city (%.0f street trees/km of avenue, want %.0f-%.0f;"
+				+ " %d parks, %d playgrounds, %d bushes, %d flower beds, %d yards, %d hedges)"
+			)
+			% [
+				tier,
+				map_seed,
+				per_km,
+				low,
+				high,
+				parks,
+				Num.i(got["playgrounds"]),
+				Num.i(got["bushes"]),
+				Num.i(got["flower_beds"]),
+				Num.i(got["yards"]),
+				Num.i(got["hedges"])
+			]
+		)
+	)
