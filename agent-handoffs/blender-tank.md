@@ -1,4 +1,4 @@
-# blender-tank handoff (2026-10-17 15:35)
+# blender-tank handoff (2026-10-17 15:55)
 State: awaiting lead (PR #18 round 1 proof sent: blender-heli/round1/)
 
 ## Task
@@ -42,7 +42,8 @@ fix commit c2f124c, pushed. PR #18 body updated with round 1. The tank branch is
 ## Next
 1. Proof sent 15:35 (CI run 39000551493): kaiju visible in all 41 half-second tiles; close passes are
    faded dives beyond the kaiju. Notes folder blender-heli/round1/.
-2. Wait for the lead's re-review of #18 (Auto-fix on; base merged at 3e5a4f4).
+2. Wait for the lead's re-review of #18 (Auto-fix on; look-options 7ff1f03 merged at 5ae3b88: kept
+   TankModel.box() from #15, smoke floor 23+4 = 27; all suites green).
 
 ## Running jobs
 None. Blender closed.
