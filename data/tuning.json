@@ -191,6 +191,7 @@
 	"sfx": {
 		"pitch_jitter": 0.06,
 		"stomp_tiers": [1.4, 1.8],
+		"default_volume": 0.9,
 		"stomp_wait": 0.4,
 		"footstep_min_interval": 0.25,
 		"crack_min_interval": 2.5,

@@ -54,9 +54,11 @@ func _ready() -> void:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
 	for _i: int in POOL:
 		var player := AudioStreamPlayer.new()
+		player.bus = "SFX"
 		add_child(player)
 		_pool.append(player)
 	_regen = AudioStreamPlayer.new()
+	_regen.bus = "SFX"
 	var loop: AudioStreamOggVorbis = load("res://assets/sfx/regen_loop.ogg")
 	loop.loop = true
 	_regen.stream = loop
@@ -85,6 +87,7 @@ func set_size_tier(tier: int) -> void:
 ## rampage, such as the evolution reveal and the demo end card, call this). Returns the player.
 static func roar(parent: Node) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
+	player.bus = "SFX"
 	player.stream = load("res://assets/sfx/roar.ogg")
 	var levels: Dictionary = Content.section("sfx")["volume_db"]
 	player.volume_db = Num.f(levels["roar"])

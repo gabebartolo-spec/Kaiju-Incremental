@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 05:50
-## State: running a check (#8 synced with look-options 6ae41fa; the lead merges at this SHA on green). Next: (e) SFX bus + volume slider on branch claude/sfx-bus, then (f) UI clicks, then (d) heli gun/crash, plus the army PR
+# Ability VFX/SFX handoff, 2026-10-18 06:15
+## State: working on (e) SFX bus + slider on branch claude/sfx-bus (stacked on #8 111b696). The PR opens after #8 merges, then (f) UI clicks, (d) heli gun/crash, and the army PR
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -63,6 +63,18 @@ PR #8 body updated, Auto-fix ON. Do not merge.
   - Next: once #8 merges, branch off look-options and cherry-pick b1f9e18.
   - The "roar" volume key already exists, so drop that hunk.
   - Floor: base + 3.
+
+## (e) SFX bus + volume slider (claude/sfx-bus, local)
+- PlayerSettings: BUSES ["SFX", "Music"] are created under Master by bus(); sfx_volume is saved as audio/sfx_volume.
+  The default is tuning "sfx" default_volume 0.9.
+- The settings menu has a "Sound effects" slider (SettingsMenu.effects). All Sfx players, including the roar, use bus "SFX".
+- Flow +3 checks, floor 87:
+  - a real mouse drag to 70% sets the bus;
+  - the value survives load_saved;
+  - every power sound plays on SFX.
+  With the slider unwired, 2 of them failed, so the checks are proven.
+- Captures at 1080p and 4K/125% are in shared notes sfx-bus/.
+- After #8 merges: rebase onto look-options, push, open the PR into claude/look-options.
 
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).

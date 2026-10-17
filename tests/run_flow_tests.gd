@@ -235,6 +235,13 @@ func _check_stomp_timing() -> void:
 	root.add_child(sfx)
 	sfx.stomp(2.0, true)
 	var early := sfx.played.duplicate()
+	var buses: Array[String] = []
+	for player: Node in sfx.get_children():
+		buses.append((player as AudioStreamPlayer).bus)
+	check(
+		buses.all(func(b: String) -> bool: return b == "SFX"),
+		"every power sound plays on the SFX bus: %s" % [buses]
+	)
 	sfx.footstep(0.7)
 	check(
 		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
