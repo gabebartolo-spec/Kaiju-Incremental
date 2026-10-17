@@ -28,7 +28,10 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 7. Landmarks (session "Kaiju: Landmark models", local_87d706ce...): board ...side-session-notes\local_9fac90d2...\
    landmarks\board1\landmark_board.png, six originals A stadium / B gate / C clock hall / D sky wheel / E spire /
    F megatower; my QA PASS, fresh critic pending. Ask "which landmarks per city": (1, rec) A -> D -> E -> F (demo
-   needs A + D), (2) A -> C -> E -> F, (3) all six. Landmark sites (merged-block plazas) start after D-062 merges.
+   needs A + D), (2) A -> C -> E -> F, (3) all six. Board r5 (all panels critic PASS): ...\landmarks\board5\
+   landmark_board_r5.png. Sites built on claude/landmarks (A + D placeholders, data-driven); landmark chunk bonus
+   held to ±5% pacing. Critic side-note: in its renders the small croc's tail hangs like a third leg and the upright
+   adult with back plates may read as Godzilla: show him if relevant.
 8. #39 heli gun burst + crash (stacked on #34): listen to ...side-session-notes\local_9fac90d2...\army-sfx\
    heli_gun_crash.mp4 (busy picture, listen only); merge after his yes. Croc roar layers from Sonniss GDC: ask.
    Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
