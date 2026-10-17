@@ -2,8 +2,8 @@ class_name UpgradeNode
 extends Button
 ## One node of the evolution tree. Its look says at a glance what it is and whether you can
 ## have it: green and "BUY n" when affordable, the price dimmed when not (the side panel says how
-## much is missing), a dimmed box when locked, gold when maxed; evolutions edged gold, the
-## species' ultimate edged magenta and taller as its branch's capstone, with its button.
+## much is missing), a dashed outline when locked, hazard yellow when maxed; evolutions in alert
+## red, the species' ultimate under a band of hazard tape and taller as its branch's capstone.
 
 ## Text size range: the largest that fits the node's width, never below FONT_MIN (at 4K and the
 ## largest UI scale FONT_MIN still clears the TV's 28 px cap-height bar).
@@ -11,14 +11,16 @@ const FONT_MAX := 22
 const FONT_MIN := 18
 const PAD := 2
 ## The thickest border each kind of node draws (focused): its text keeps clear of it.
-const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 5, "ultimate": 6}
+const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 5, "ultimate": 8}
 const FILL := {
-	"maxed": Color("8a6d1f"), "buy": Color("2f6b2a"), "poor": UiKit.PANEL, "locked": Color("15191e")
+	"maxed": Color("3a3010"), "buy": Color("1e3a1b"), "poor": UiKit.PANEL, "locked": Color("111114")
 }
 const EDGE := {
-	"maxed": UiKit.WARN, "buy": UiKit.GOOD, "poor": UiKit.PANEL_EDGE, "locked": UiKit.LOCKED
+	"maxed": UiKit.ACCENT, "buy": UiKit.GOOD, "poor": UiKit.PANEL_EDGE, "locked": UiKit.LOCKED
 }
-const ULTIMATE_EDGE := Color("ff3df0")
+const EVOLVE_FILL := Color("3a0d0b")
+## The ultimate's band of hazard tape across its top (px, inside its thickest border).
+const ULTIMATE_BAND := 8.0
 ## The widest level-and-price line a node shows (prices from 10 000 up read "12k").
 const WIDEST_STATUS := "0/5 BUY 8888"
 
@@ -91,10 +93,11 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 	var edge: Color = EDGE[state]
 	var width := 3
 	if role == "evolve" and state != "maxed":
-		edge = UiKit.WARN if state != "locked" else edge
+		edge = UiKit.ALERT if state != "locked" else UiKit.ALERT.darkened(0.45)
+		fill = EVOLVE_FILL if state != "locked" else fill
 		width = 5
 	elif role == "ultimate":
-		edge = ULTIMATE_EDGE if state != "locked" else ULTIMATE_EDGE.darkened(0.5)
+		edge = UiKit.ACCENT if state != "locked" else UiKit.ACCENT.darkened(0.55)
 		width = 6
 	for look: String in ["normal", "hover", "focus", "pressed"]:
 		var box_fill := fill
@@ -106,7 +109,13 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 			# Plain nodes thicken when focused; evolutions and the ultimate are thick already.
 			if look == "focus" and width < 5:
 				box_width = width + 2
-		var style := UiKit.box(box_fill, box_edge, box_width, 8)
+		var style := UiKit.hazard(box_fill, box_edge, box_width)
+		style.dashed = state == "locked" and look == "normal"
+		if role == "ultimate":
+			style.band = HazardBox.Band.TOP
+			style.band_size = ULTIMATE_BAND
+			if state == "locked":
+				style.tape_on = UiKit.LOCKED
 		# The border is drawn inside the box: keep the text clear of the thickest one.
 		style.set_content_margin_all(PAD + Num.f(MAX_BORDER[role]))
 		add_theme_stylebox_override(look, style)

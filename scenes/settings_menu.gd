@@ -64,6 +64,9 @@ func _ready() -> void:
 		grid.add_child(UiKit.label(heading, UiKit.SIZE_SMALL, UiKit.MUTED))
 	var controls: Array[Array] = PlayerSettings.CONTROLS
 	for entry: Array in controls:
+		# A row tied to a species (its 4th entry) shows only when that species is playable.
+		if entry.size() > 3 and not Demo.allows(str(entry[3])):
+			continue
 		grid.add_child(UiKit.label(str(entry[0]), UiKit.SIZE_SMALL, UiKit.TEXT))
 		grid.add_child(UiKit.label(str(entry[1]), UiKit.SIZE_SMALL, UiKit.TEXT))
 		grid.add_child(UiKit.label(str(entry[2]), UiKit.SIZE_SMALL, UiKit.TEXT))
@@ -115,6 +118,7 @@ func _slider(parent: Control, text: String, value: float) -> HSlider:
 	slider.custom_minimum_size = Vector2(420, 40)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.value = round(value * 100.0)
+	UiKit.slider_look(slider)
 	row.add_child(slider)
 	var label := UiKit.label("", UiKit.SIZE_BODY)
 	label.custom_minimum_size = Vector2(90, 0)
