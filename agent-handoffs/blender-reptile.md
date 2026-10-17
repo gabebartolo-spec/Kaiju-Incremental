@@ -1,53 +1,42 @@
-# blender-reptile handoff, 2026-10-17 22:08
-## State: awaiting lead (the new Smart Mesh GLB path; D-047 PR held for it)
-## Task (lead 21:14, D-047 "play your croc titan clips in the game")
-One PR into claude/look-options from claude/croctitan-clips: 1 bake the r7 clips (idle, walk 48-frame
-cycle, turn left/right, roar) to compact data in game axes; 2 a clip player for the croc titan (walk
-phase driven by distance, IK planting on top, 0.2-0.3 s blends, sim stays the authority; other species
-keep procedural); 3 tests (load + validate, phase vs distance, no NaN, others procedural; floors rise).
-Evidence: in-game BEFORE vs AFTER at the game camera (~20 s 720p, same seed), 2x crops of feet at
-contact and jaw at roar peak, a 4K species-select still, per-frame difference plot from PNG frames with
-seams and blends marked. One round of self-checking, then report; list nits, no re-render loops.
-Auto-fix off. Don't merge. Skin export must stay byte-identical (voxel-skin builds on it).
+# blender-reptile handoff, 2026-10-17 23:15
+## State: running a check (v2 evidence: 7 CI captures bxk6uh1b8 + Blender board render bx23u6epq)
+## Task (lead 22:47): D-047 on the croc titan v2 (D-048), one pass, then open the PR
+Re-fit the hand rig to Tripo c8185166 (GLB ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb ->
+scratch v2/croctitan.glb, never commit); re-export the skin; re-bake the .kclip; swap the adult
+kvox/skin in game; open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera,
+per-frame PNG diff (seams, blends), 2x crops of feet at contact and jaw at roar peak, a 4K species-select
+still, plus a Blender walk/turn/roar render of v2 for the board. One self-check, list nits, no loops.
+Auto-fix off. Don't merge. Send the lead the head SHA.
 ## Branch and commit
-claude/croctitan-clips (this worktree, switched from claude/blender-reptile-f5388e, which is pushed and
-kept). Base db8962f (look-options moved to 1bcced1 since: docs only, arm-length board).
-Commits: 7dca14d (player, data, tests, tools), 3706b4e (capture frames + --procedural), 22a620a
-(skin.json LF). 3706b4e pushed; 22a620a local until the captures finish.
-## Lead 22:06: HOLD the PR for the new mesh (director picked short arms, variant B; Tripo Smart
-Mesh c8185166, GLB path to come). Then in one pass: re-fit per notes blender-reptile/refit.md,
-re-export the skin, re-bake the .kclip, swap the adult kvox/skin in game, open the D-047 PR with the
-new-mesh evidence (same list). The 7 CI captures of the current mesh finish but are NOT packaged.
-Current arm 50.6 m = 51% of height, 76% of leg; shoulders 32 m; hand 29% of head (sent to lead).
-## What is built
-- tools/blender/motion_test.py task `clips` -> <stem>.kclip (KCLP v1: JSON header with the 27 game bones
-  in rig.json order + the skin bones each gathers + rest heads + stride + clip table; 242 B/frame int16).
-  New `idle` clip (breathing only). FK self-check: worst joint error 1.72 m = the collapsed meta+toe tip
-  (game leg_x2 is one straight bone); the file carries the true toe targets for the IK layer.
-- assets/kaiju/reptilian_adult.kclip (135,545 B, 552 frames). Re-export reproduces it byte for byte.
-- scenes/kaiju_clips.gd (KaijuClips: read, fit to rig = bone order + least-squares rest-head fit,
-  pose_at with slerp, mix). scenes/gait_clip.gd (ClipGait extends BipedGait: states idle/walk/turn_*/
-  roar, 0.25 s blends, walk phase = distance/stride, walk entry frame matched to the feet, planted feet
-  locked + 2-bone IK, re-step when overreached, turn on the spot when standing and heading error > 0.6
-  rad, jaw held for the beam, tail whip via BipedSwing.tick_whip/whip_yaw). ClipGait.or_biped picks it
-  in KaijuRig._build when <base>.kclip fits; ClipGait.off = procedural (captures' --procedural).
-- tests/run_clips_tests.gd (11 checks; registered in run_tests.sh, ci_shards, floors, README).
-  All suites green locally: smoke 27, sim 39, powers 24, tentacles 18, city 5, growth 24, load 6,
-  flow 76, clips 11.
-- tools/capture/capture_clips.gd (extends capture_motion: walk, stop, standing 90 left turn, roar;
-  logs CLIPSTATE/CLIPSEAM; --frames=N --from --to save PNGs; --procedural).
-## Running jobs
-bash ban015cq4: 7 ci_capture.sh runs (current mesh; not to be packaged). Evidence tools for the new mesh:
-scratch ev/compose_ba.py (side by side), ev/pngdiff_game.py (plot), ev/encode_intra30.py.
+claude/croctitan-clips (this worktree; claude/blender-reptile-f5388e is pushed and kept).
+Merged look-options dbff208 (D-048 docs). Head e560001 pushed: v2 re-fit + data.
+Earlier: 7dca14d player/data/tests, 3706b4e capture frames + --procedural, 22a620a skin.json LF.
+## v2 re-fit (done, e560001)
+- KNOWN["C"] replaced (v1 in history): measured on 1 m grid renders (scratch v2/grid.py, legshot.py,
+  head_grid). Hip (14,72,50), short arm shoulder (16,44,71) -> claws (28,33,55), mouth (1,84)->(27.5,
+  87.3), hinge (30,85.5), 10 tail bones over 185 m to (271,3), belly 31.
+- New landmark keys: hands (hand targets as offsets from the rest wrist: low (1,-1,1), high (3,2,7));
+  tail_lift 3, tail_roar_lift 5, tail_breathe 0.15 (the long tail went below the street: tip min z
+  -4.7 idle / -2.9 walk / -13.9 roar -> 9.4 / 6.7 / 10.1 m). Other models keep their defaults.
+- Data rebuilt (#19 recipe): export 160 (5,362 positions), rig_voxel 160 jaw 0 (90,709 voxels),
+  skin_faces (10,559 tris), rig_from_skin mouth -79,84,-52.5,87.3 (gap median 0.20 m), bake_all
+  (only reptilian_adult.vskin changes), clips (135,552 B; FK worst 2.84 m = collapsed foot tip).
+- All suites green on v2: smoke 27, sim 39, powers 24, tentacles 18, city 5, growth 24, load 6,
+  flow 76, clips 11; harness self-test passes.
+## Player (unchanged since 3706b4e): scenes/kaiju_clips.gd, scenes/gait_clip.gd (see PR body)
+## Evidence pipeline (scratch)
+ci2/{after,before}_{game,jaw,feet}/frames + logs, ci2/select4k; v2b/ (Blender board: r/, comp/,
+clips/, meas/, crops/). ev/compose_ba.py, ev/pngdiff_game.py, ev/encode_intra30.py, r6/encode_intra.py.
+BEFORE = same branch with --procedural (ClipGait.off): the v2 mesh on the procedural gait, same seed.
+## Nits found in self-check (list in the PR, don't loop)
+- Blender render only: at the roar peak, low-poly inner lip faces of the upper jaw show as shards.
+- Turn clips play only for a standing turn (heading error > 0.6 rad); curves use walk + IK planting.
 ## Attempts (fix-loop record)
-- First drift (0.425 vs 0.229): idle feet locked, walk started at f0 -> overreach. Walk entry frame
-  matched to the planted feet + re-step guard -> 0.0.
-- Debug script "hang" = compile error (CATCH_SECONDS clashed with BipedGait's): renamed RESTEP_*.
-- Smoke "stale skin": my working copy of croctitan.skin.json had CRLF (copied from Blender output);
-  restored from the index; exporter now writes LF.
-- Local GPU captures blocked by the focus guard (director in League of Legends): CI instead.
-## Open decisions
-None for the director. Interpretation to state in the PR: turn clips play only for a standing turn
-(heading error > 0.6 rad); walking curves use the walk clip + IK planting.
+- First drift 0.425 (idle-locked feet, walk from f0): walk entry matched to feet + re-step guard.
+- Debug "hang" = compile error (CATCH_SECONDS clash) -> RESTEP_*.
+- Stale skin from CRLF working copies (Blender/Windows writes): exporter writes LF; check eol.
+- Local GPU blocked by the focus guard (League of Legends) -> CI captures with PNG frames.
+- Focus guard: write override.cfg in a separate command; `set -e` in a command reads as -e (editor).
 ## Findings for the lead (theirs to record)
-- Blender's Path.write_text on Windows writes CRLF; the skin stamp hashes bytes -> false "stale".
+- Windows CRLF writes break byte-hashed stamps (skin.json, rig.json): write LF explicitly.
+- The focus guard flags `set -e` as Godot's editor flag.
