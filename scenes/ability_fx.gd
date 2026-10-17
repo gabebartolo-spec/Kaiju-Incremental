@@ -114,6 +114,7 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	var look := {
 		"size": flat.length() * 2.0,
 		"seconds": Num.f(_tune["scorch_seconds"]),
+		"soot_in": Num.f(_tune["scorch_soot_in"]),
 		"half_angle": half_angle,
 		"energy": 3.0 + strength,
 		"tint": _tint,
