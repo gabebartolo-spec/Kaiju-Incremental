@@ -80,6 +80,17 @@ func fits_at_scales(screen: Control, what: String) -> void:
 				)
 				if px < TV_CAP_PX:
 					misses.append("%s%s cap %.0f px" % [name, at, px])
+		for node: Node in screen.find_children("*", "Label", true, false):
+			var l: Label = node
+			for n: UpgradeNode in nodes:
+				if (
+					l.is_visible_in_tree()
+					and l.text != ""
+					and l.get_global_rect().intersects(n.get_global_rect().grow(-1.0))
+				):
+					misses.append(
+						"label '%s' under %s at %d%%" % [l.text, n.id, roundi(scale * 100.0)]
+					)
 		for i: int in nodes.size():
 			for j: int in range(i + 1, nodes.size()):
 				if nodes[i].get_global_rect().grow(-1.0).intersects(nodes[j].get_global_rect()):
