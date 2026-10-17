@@ -24,6 +24,11 @@ static func tuning_for(tuning: Dictionary, tier: int) -> Dictionary:
 	return out
 
 
+## The game's tuning for a rampage with these run stats (their size tier picks the stage).
+static func for_stats(stats: Dictionary) -> Dictionary:
+	return tuning_for(Content.tuning(), Num.i(stats.get("size", 1)))
+
+
 ## The playable city of a size tier, seeded from `rng` (CityGen.generate on the stage's city).
 static func layout(tuning: Dictionary, tier: int, rng: RandomNumberGenerator) -> Array[Dictionary]:
 	var cfg: Dictionary = tuning_for(tuning, tier)["city"]
