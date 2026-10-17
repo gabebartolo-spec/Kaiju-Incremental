@@ -72,6 +72,12 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - city-growth: pacing round e + stills running; data/upgrades.json uncommitted trial.
 - blender-tank / blender-reptile: running (share one Blender MCP).
 
+## 12:40 CI BLOCKED (billing) - director chose: make repo public
+- Actions jobs refused: spending limit. Director picked "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by the auto-mode classifier: the director flips it (Settings > General > Danger Zone) or runs the command. Pre-flight clean (no secrets, no Tripo GLBs; commit email gabebartolo@gmail.com visible). After the flip: protect main (github-hygiene), log D-043, rerun failed jobs (#11: gh run rerun 38935875288 --failed; #15; capture runs).
+- PR #14 screenshots FIX sent: buttons and report values blank (title, report, tree button).
+- Blender reptile board seen by director: Tripo looks better, but Blender is "more original, less a blatant Godzilla copy"; Blender wins only if it animates better. blender-reptile briefed: one hand-weighted armature on BOTH meshes, walk/turn/roar, rendered side by side in headless Blender, measuring foot slide. Answers whether the poor motion comes from the mesh or our auto rig.
+- New PRs: #16 city-growth, #17 blender-tank (unreviewed; CI blocked).
+
 ## Next (mine)
 1. DONE: all 3 mantis skins exported (mantis_{baby,adolescent,adult}_tex.glb) and sent.
 2. Cephalopod skins (3 stages).
