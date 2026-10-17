@@ -5,6 +5,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_sim_tests.gd
 
 const SaveScript := preload("res://autoload/save_file.gd")
+const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -24,6 +25,7 @@ func run_checks() -> void:
 	_check_upgrade_effects()
 	_check_species_differ()
 	_check_army()
+	SimRooftops.new(check, _sim, _autoplay).run()
 	_check_save_migrate()
 	_check_looks()
 	_check_growth()
@@ -33,24 +35,28 @@ func _tree(levels: Dictionary = {}) -> UpgradeTree:
 	return UpgradeTree.new(Content.upgrades(), levels)
 
 
-func _layout() -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+func _layout(city: Dictionary = Content.section("city")) -> Array[Dictionary]:
+	return CityGen.generate(Seeds.make("city", 0), city)
 
 
-func _sim(species_id: String, levels: Dictionary, run_index: int = 0) -> RampageSim:
+func _sim(
+	species_id: String, levels: Dictionary, run_index: int = 0, tuning: Dictionary = {}
+) -> RampageSim:
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, _tree(levels))
 	var ability: Dictionary = species["ability"]
-	var sim := RampageSim.new(stats, Content.tuning(), _layout(), Seeds.make("army", run_index))
+	var tune := Content.tuning() if tuning.is_empty() else tuning
+	var city: Dictionary = tune["city"]
+	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	return sim
 
 
 ## Scripted player: walk to the nearest standing building, use the signature when ready.
-func _autoplay(sim: RampageSim) -> Dictionary:
+func _autoplay(sim: RampageSim, max_steps: int = MAX_STEPS) -> Dictionary:
 	var steps := 0
 	var target := Vector2(INF, INF)
-	while not sim.over and steps < MAX_STEPS:
+	while not sim.over and steps < max_steps:
 		if steps % 15 == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
