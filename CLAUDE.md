@@ -45,12 +45,16 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
   `APPDATA=<your scratch dir>`). Never kill Godot by image name; kill by the PID you recorded.
 - GPU jobs (renders, generation, local models) one at a time; the art role owns them.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`. Remove
-  the worktree when the PR merges. More than four live worktrees is a violation.
+  the worktree when the PR merges. One live worktree per live session (D-053); the lead prunes dead
+  ones, and `tools/lint/worktrees.sh` caps the total.
 - Only the merge role edits `docs/STATUS.md` and `docs/DECISIONS.md`, in a docs-only board PR
   after each merge; every other PR states its board and log changes in its body.
 - Stage files by name, never `git add -A`; never `git stash`; revert `.import` churn.
 - Windowed Godot or Blender runs never steal the director's focus (no_focus override.cfg,
   `blender -b`, captures on CI).
+- Captures and clips render on CI by default: `tools/capture/ci_capture.sh <script.gd> -- <args>
+  --out=<dir>` (workflow `capture.yml`, xvfb + software rendering). Local windowed runs only when
+  the director is away; the focus-guard hook blocks them while a fullscreen app is in front.
 
 ## Sessions and context
 
