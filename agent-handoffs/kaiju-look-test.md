@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 13:35
-## State: awaiting lead (review-fix evidence sent for PR #15)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 14:55
+## State: running a check (review r2 fixes: 4 C captures on CI)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -56,12 +56,19 @@ filler shaded with normals snapped to its main bone's axes. 4: bake HINGES (jaw,
 never blend with the parent. 5: capture_skin.gd --clip=game|close --from --to (draws every 2nd
 frame; dispatch with -f renderer=forward_plus so CI never silently falls back).
 
+## Review round 2 (lead 14:22, FIX): sheared cubes
+Mantis scythe slats (close f335, joints f403), reptile thigh ribbed ramp (f572/574), reptile
+forearm speckle (close f220). Fixes: 8f5a798 cube turn = main bone's rotation only (scale stripped),
+growth off (max_grow 0): changed ~0.05% of pixels, so scale was not the cause; f790f6a narrower
+joint blend (LATTICE_PASSES 12 -> 4), all rebaked. New head f790f6a: the scythe at f335 already
+read as a clean cube grid on 8f5a798 (A sheds shards there).
+
 ## Running jobs
-None. Review-fix evidence (CI Forward+ on 5f807cb, ids in scratch ci_runs5.txt): composed with
-scratch py/compose_r2.py into side-session-notes/<lead>/kaiju-voxel-skin/review-fix/
-(kaiju_skin_before_after_r2.mp4, per-species game/close mp4, *_joints.png, thigh_cmp.png,
-mantis_C_forwardplus_vs_glcompat.png). PR #15 body updated; lead messaged 13:35.
-Remaining honest defects: a cube-orientation seam where thigh meets shin; game cam A ~= C.
+CI (scratch ci_runs7.txt, forward_plus, f790f6a): C only, reptile + mantis close clip + stills.
+A from round 1 (scratch dl5 rigid_*) is reused. Compose with scratch py/compose_r3.py
+<dl> <out> <ffmpeg> reptilian,insectoid after copying dl8 skin_* + dl5 rigid_* + picks.json
+into one dl dir. Then send the lead. Lower priority now: the director picked a new Tripo reptile
+rigged in Blender; next is Blender weights into bake.py (one function swap, see message 13:25).
 
 ## Open decisions / touch points
 Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
