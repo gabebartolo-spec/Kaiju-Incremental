@@ -17,6 +17,10 @@ const FAN_LIFT := 0.3
 var power := 1.0
 ## Where the sim's hit cone starts (the kaiju's feet) for the next fire.
 var cone_origin := Vector3.ZERO
+## The body breathing: while the beam is lit its core stays on the jaw as the head moves.
+var follow: Node3D
+var _jaw: Node3D
+var _hit := Vector3.ZERO
 var _scale: float
 var _seconds: float
 var _core: MeshInstance3D
@@ -48,13 +52,11 @@ func _init(tint: Color, body_scale: float, tune: Dictionary) -> void:
 ## Lights the breath from `mouth`: the core to `hit`, the fan along `span` (mouth to the street
 ## at full reach) over `half_angle` either side, for fx.beam_seconds.
 func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> void:
-	var dir := (hit - mouth).normalized()
-	var length := mouth.distance_to(hit)
-	_core_mesh.height = length
+	_hit = hit
+	_jaw = _jaw_of(follow)
 	_core_mesh.bottom_radius = 0.3 * _scale
 	_core_mesh.top_radius = 0.45 * _scale
-	_core.basis = along(dir)
-	_core.position = mouth + dir * length * 0.5
+	_place_core(mouth)
 	if not is_equal_approx(half_angle, _fan_half):
 		_fan_half = half_angle
 		_fan.mesh = _sector(half_angle)
@@ -81,12 +83,25 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 ## Where the breath leaves `model`: most of the way along its jaw bone, between the jaws, so the
 ## beam starts at the snout rather than inside the body. `fallback` for bodies with no jaw.
 static func mouth_of(model: Node3D, fallback: Vector3) -> Vector3:
+	var jaw := _jaw_of(model)
+	return _along_jaw(jaw) if jaw != null else fallback
+
+
+## The model's "jaw" bone, when it hangs under a KaijuRig.
+static func _jaw_of(model: Node3D) -> Node3D:
+	if model == null:
+		return null
 	var jaw := model.find_child("jaw", true, false) as Node3D
 	var rig := jaw.get_parent() if jaw != null else null
 	while rig != null and not rig is KaijuRig:
 		rig = rig.get_parent()
-	if rig == null:
-		return fallback
+	return jaw if rig != null else null
+
+
+static func _along_jaw(jaw: Node3D) -> Vector3:
+	var rig := jaw.get_parent()
+	while not rig is KaijuRig:
+		rig = rig.get_parent()
 	return jaw.global_transform * ((rig as KaijuRig).dir_of("jaw") * MOUTH_ALONG_JAW)
 
 
@@ -99,6 +114,19 @@ static func along(dir: Vector3) -> Basis:
 		x = Vector3.RIGHT
 	x = x.normalized()
 	return Basis(x, y, x.cross(y))
+
+
+func _process(_delta: float) -> void:
+	if _core.visible and is_instance_valid(_jaw):
+		_place_core(_along_jaw(_jaw))
+
+
+func _place_core(mouth: Vector3) -> void:
+	var dir := (_hit - mouth).normalized()
+	var length := mouth.distance_to(_hit)
+	_core_mesh.height = length
+	_core.basis = along(dir)
+	_core.position = mouth + dir * length * 0.5
 
 
 func _set_progress(v: float) -> void:

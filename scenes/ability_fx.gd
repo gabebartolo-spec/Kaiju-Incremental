@@ -107,6 +107,7 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	_flare(mouth, 4.5 * _scale * strength, HOT, 0.3)
 	_beam.power = strength
 	_beam.cone_origin = cone_origin
+	_beam.follow = _body
 	_beam.fire(mouth, hit, span, half_angle)
 	# The struck face: a flare, hot sparks and a light just in front of it that lights the wall.
 	_flare(hit - dir * 0.6, 3.5 * _scale * strength, _tint.lightened(0.4), seconds)
