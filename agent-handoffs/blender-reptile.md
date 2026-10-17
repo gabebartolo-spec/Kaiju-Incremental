@@ -1,5 +1,6 @@
-# blender-reptile handoff, 2026-10-18 02:50
-## State: running a check (AFTER game capture at 2dbc983: bvsmduu3l -> ci4/after_game)
+# blender-reptile handoff, 2026-10-18 03:10
+## State: running a check (AFTER game 39046293165 -> ci4/after_game at 2dbc983; 4K select
+## 39047808973 -> ci4/select4k at 5bd22c4). Lead passed the roar tail; cards were the last FIX.
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
 Open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera, per-frame PNG
 diff (seams, blends), 2x crops of feet at contact and jaw at roar peak, a 4K species-select still,
@@ -39,7 +40,13 @@ species card fix a168942 (lead 01:38: fix it in this PR).
 - Next: when ci4 lands: in-game 2x root crop at turn + mid-tail at slam, compose BEFORE/AFTER
   (ev/compose_ba.py ci3/before_game vs ci4/after_game) + PNG diff, commit evidence, open PR,
   send lead head SHA. Nits: f51 bounce only +2.7 m (barely reads); mantis card head cut (old).
-## Species card (a168942)
+## Species card height fit (5bd22c4, lead 03:00)
+_frame aims at the kaiju's middle, fits width (0.92) and height (6% margin) of the swept profile,
+PREVIEW_FOV 30 (fill: croc 0.42, mantis 0.62, octopus 0.48 of card height; mantis was 0.93 and cut).
+Red capture runs: Capture step exit 124 = the workflow's hard 3000 s Godot timeout on lavapipe
+(capture.yml line 115); PNGs written before the kill; BEFORE game has 595/600 frames. Say so in PR;
+follow-up: make the timeout a dispatch input.
+## Species card (a168942, superseded by 5bd22c4)
 species_select._frame: old fixed camera, backed off along the same view only when the turning kaiju
 (skin reach per height band, every angle) is wider than the card. Distances: croc 12.8 -> 23.7,
 octopus -> 16.1 (its tentacles clipped before), mantis unchanged. +0.4 s card build. Lead wanted a
