@@ -1,8 +1,8 @@
 extends SceneTree
 ## Stills of every landmark in the Behemoth's city (city.landmarks), from the rampage's own
-## camera with the kaiju beside it: standing, then after the kaiju has knocked out the floors on
-## its side (the sim breaks the chunks and settles what falls; the city view draws it as in a
-## rampage). Needs a window: run it on CI (tools/capture/ci_capture.sh --resolution=1920x1080
+## camera's angle with the kaiju beside it: standing, then after a short rampage into it (the
+## sim breaks the chunks and settles what falls; the city view draws it as in a rampage). Needs
+## a window: run it on CI (tools/capture/ci_capture.sh --resolution=1920x1080
 ## capture_landmarks.gd -- --out=<dir>), or off-screen with the no_focus override.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
@@ -13,12 +13,10 @@ const SPECIES := "reptilian"
 ## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
 const GAME_CAMERA := Vector3(0, 27, 19)
 const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}
-## Sim time stepped after the break, so every falling part has landed.
-const FALL_SECONDS := 4.0
+## Sim time of the rampage into each landmark, and sim steps per drawn frame.
+const RAMPAGE_SECONDS := 9.0
+const STEPS_PER_FRAME := 3
 const DT := 1.0 / 30.0
-## Floors knocked out on the kaiju's side, and how deep into the footprint.
-const BREAK_FLOORS := 2
-const BREAK_DEPTH := 0.5
 ## Camera distance per unit of the landmark's largest size.
 const FRAME := 1.7
 
@@ -77,7 +75,7 @@ func _run() -> void:
 		cam.look_at(centre)
 		await _frames(SETTLE)
 		_shot("%s_standing" % b.landmark)
-		_break(n)
+		await _break(n, kaiju)
 		await _frames(SETTLE * 3)
 		_shot("%s_broken" % b.landmark)
 		print(
@@ -89,22 +87,22 @@ func _run() -> void:
 	quit()
 
 
-## Knocks out the bottom floors of the half of the footprint facing the kaiju, then steps the sim
-## until what lost its support has fallen, drawing every event as a rampage does.
-func _break(n: int) -> void:
+## A short rampage into it: the kaiju walks from the kerb toward the landmark's middle, stomping
+## as it goes and using its signature whenever it is ready, the sim deciding what breaks and falls
+## and the city view drawing every event as in a rampage. Several sim steps per drawn frame keep
+## the software-rendered CI run short.
+func _break(n: int, kaiju: Node3D) -> void:
 	var b := _sim.buildings[n]
-	var cells: Array[Vector3i] = []
-	for y: int in BREAK_FLOORS:
-		for z: int in range(floori(b.d * (1.0 - BREAK_DEPTH)), b.d):
-			for x: int in b.w:
-				if b.frame.alive(Vector3i(x, y, z)):
-					cells.append(Vector3i(x, y, z))
-	_sim.damage_chunks(n, cells, 1.0e9)
-	_apply(_sim.events)
+	var goal := Vector2(b.x, b.z)
 	var t := 0.0
-	while t < FALL_SECONDS:
-		_apply(_sim.step(DT, Vector2.ZERO, false))
-		t += DT
+	while t < RAMPAGE_SECONDS:
+		for _k: int in STEPS_PER_FRAME:
+			var to := goal - _sim.kaiju_pos
+			var move := to.normalized() if to.length() > 1.0 else Vector2.ZERO
+			_apply(_sim.step(DT, move, _sim.ability_ready_in <= 0.0))
+			t += DT
+		_kaiju_at = Vector3(_sim.kaiju_pos.x, 0, _sim.kaiju_pos.y)
+		kaiju.position = _kaiju_at
 		await process_frame
 
 
