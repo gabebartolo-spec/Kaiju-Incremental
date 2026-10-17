@@ -8,8 +8,8 @@
 - #16 MERGED 13870b3 (16:44, head 60e637d green). city-growth next: Apex load (<15 s; party_walls grid) +
   building fade between camera and kaiju (D-025 rule); new branch/worktree. game-flow told to sync #16.
 - Croc titan r6 (cd70417) PASSED fresh motion-critic #3 (r4/r5 FIX: loop seams, 7 Hz shake layer, coil, rear;
-  18-frame spikes were codec GOP). Last polish (roar peak pulse, deeper head dip) + DIRECTOR BOARD (hand rig vs
-  old auto rig, notes blender-reptile/director/) in progress. Table it for the director.
+  18-frame spikes were codec GOP). r7 (d924b29) polish ACCEPTED. Board notes blender-reptile/director/
+  (render vs old in-game: not fair alone) -> pair with #19 in-game before/after, then table. blender-reptile idle.
 - Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
   ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
   voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
