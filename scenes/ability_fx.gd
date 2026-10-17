@@ -30,7 +30,7 @@ var _trail: GPUParticles3D
 var _regen: GPUParticles3D
 var _glint_mesh: BoxMesh
 var _overlay: ShaderMaterial
-var _body_parts: Array[GeometryInstance3D] = []
+var _body: Node3D
 var _overlay_on := false
 var _healing := false
 
@@ -66,16 +66,18 @@ func _ready() -> void:
 
 ## The kaiju whose voxels take the body glows (ready flash, regeneration shimmer).
 func attach_body(body: Node3D) -> void:
-	for node: Node in body.find_children("*", "GeometryInstance3D", true, false):
-		_body_parts.append(node as GeometryInstance3D)
+	_body = body
 
 
 func _process(_delta: float) -> void:
 	var want := _healing
 	if want != _overlay_on:
 		_overlay_on = want
-		for part: GeometryInstance3D in _body_parts:
-			part.material_overlay = _overlay if want else null
+		if not is_instance_valid(_body):
+			return
+		# Looked up each time: a growth stage rebuilds the body and frees its old parts.
+		for node: Node in _body.find_children("*", "GeometryInstance3D", true, false):
+			(node as GeometryInstance3D).material_overlay = _overlay if want else null
 
 
 ## How far an upgraded stat is above the species' own value, as 1..power_max.

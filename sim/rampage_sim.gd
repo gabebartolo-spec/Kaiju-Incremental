@@ -44,7 +44,16 @@ class Tank:
 	var pos: Vector2
 	var hp: float
 	var cooldown: float
+	## Burning or ink-coated: damage per second until coat_t runs out.
+	var coat_t := 0.0
+	var coat_dps := 0.0
 
+
+## step() button flags.
+const HELD := 1
+const ULTIMATE := 2
+## A tank's footprint radius for area hits.
+const TANK_RADIUS := 0.6
 
 var stats: Dictionary
 var army: Dictionary
@@ -68,14 +77,29 @@ var end_reason := ""
 var arena_half: float
 var next_fall_id := 0
 var collapse: Collapse
+## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
+var army_units: Army
+## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
+var powers: SpeciesPowers
+var air: AirWing
+var brood: Brood
+var powers_cfg: Dictionary
+## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
+var stand_y := 0.0
+## In the air (gliding): no stomps, no blocking.
+var airborne := false
+var ultimate_ready_in := 0.0
+## While set, every chunk and unit _hit_area damages is also coated with it:
+## {"kind": "burn"|"ink", "dps": float, "seconds": float}.
+var hit_coat: Dictionary = {}
+## While true, _hit_area also reaches helicopters whatever the kaiju's height.
+var hit_air := false
 ## Events of the current step (Collapse appends here too).
 var events: Array[Dictionary]:
 	get:
 		return _events
 var _rng: RandomNumberGenerator
-var _spawn_timer: float
 var _stomp_timer := 0.0
-var _next_tank_id := 0
 var _events: Array[Dictionary] = []
 
 
@@ -86,11 +110,11 @@ func _init(
 	stats = p_stats
 	army = tuning["army"]
 	city = tuning["city"]
+	powers_cfg = tuning["powers"]
 	_rng = rng
 	hp = stat("hp")
 	max_hp = hp
 	time_left = stat("run_seconds")
-	_spawn_timer = Num.f(army["start_interval"])
 	for entry: Dictionary in layout:
 		var b := Building.new()
 		b.x = Num.f(entry["x"])
@@ -107,6 +131,11 @@ func _init(
 	arena_half = city_half + Num.f(city["arena_margin"])
 	kaiju_pos = Vector2(0.0, city_half)  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
+	army_units = Army.new(self, rng)
+	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
+	var air_cfg: Dictionary = tuning["air"]
+	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 
 
 func stat(stat_name: String) -> float:
@@ -138,6 +167,11 @@ func reach_height() -> float:
 	return Num.f(city["kaiju_height"]) * body_scale()
 
 
+## The highest point it can strike from where it stands (a climbed roof adds its height).
+func reach_top() -> float:
+	return stand_y + reach_height()
+
+
 func destruction() -> float:
 	return Num.f(chunks_destroyed) / maxf(1.0, Num.f(chunks_total))
 
@@ -147,32 +181,48 @@ func result() -> Dictionary:
 		"rubble": Num.i(floor(rubble)),
 		"destruction": destruction(),
 		"tanks": tanks_destroyed,
+		"helis": air.destroyed,
 		"reason": end_reason,
 	}
 
 
-## Advances the rampage by dt with the player's move vector and signature button.
+## Advances the rampage by dt with the player's move vector, the signature button pressed
+## this step, and the other buttons as flags (HELD: signature held down, ULTIMATE: pressed).
 ## Returns the events of this step for presentation.
-func step(dt: float, move: Vector2, signature_pressed: bool) -> Array[Dictionary]:
+func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
+	var signature_held := buttons & HELD != 0
+	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
 	if over:
 		return _events
 	time_left -= dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
-	if move.length() > 0.05:
+	var old_facing := facing
+	var moving := move.length() > 0.05
+	if moving:
 		var dir := move.limit_length(1.0)
-		kaiju_pos = _clamp_to_arena(kaiju_pos + dir * stat("speed") * dt)
-		facing = dir.normalized()
+		var speed := stat("speed") * powers.speed_mult()
+		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
+		facing = powers.turn_toward(facing, dir.normalized(), dt)
+	powers.after_move(dt, old_facing, moving)
 	_stomp_timer -= dt
 	if _stomp_timer <= 0.0:
 		_stomp_timer += maxf(0.1, stat("stomp_interval"))
-		_stomp()
+		if not airborne:
+			_stomp()
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
 		_signature()
+	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
+	if ultimate_pressed and ultimate_ready_in <= 0.0 and powers.has_ultimate():
+		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
+		powers.ultimate()
+	powers.step(dt, signature_held)
+	brood.step(dt)
 	collapse.step(dt)
-	_step_army(dt)
+	army_units.step(dt)
+	air.step(dt)
 	if chunks_destroyed >= chunks_total:
 		_end("city_fallen")
 	elif hp <= 0.0:
@@ -189,23 +239,25 @@ func _end(reason: String) -> void:
 	_events.append({"type": "run_over", "reason": reason})
 
 
-func _clamp_to_arena(pos: Vector2) -> Vector2:
+func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
 
 
 func _stomp() -> void:
 	var radius := stomp_radius()
 	var centre := kaiju_pos
-	_events.append({"type": "stomp", "radius": radius})
-	_hit_area(
-		func(p: Vector2, r: float) -> float: return _falloff(p.distance_to(centre) - r, radius),
-		stat("stomp_damage")
+	_events.append({"type": "stomp", "radius": radius, "lift": stand_y})
+	hit_area(
+		func(p: Vector2, r: float) -> float: return falloff(p.distance_to(centre) - r, radius),
+		stat("stomp_damage") * powers.hit_mult(),
+		maxi(0, floori(stand_y) - Num.i(powers_cfg["climb_dig"])),
+		ceili(reach_top())
 	)
 
 
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a
 ## wider crater, because more of the fading edge still beats what a chunk can take.
-func _falloff(distance: float, radius: float) -> float:
+static func falloff(distance: float, radius: float) -> float:
 	if distance <= radius:
 		return 1.0
 	return clampf(1.0 - (distance - radius) / radius, 0.0, 1.0)
@@ -220,7 +272,8 @@ func _signature() -> void:
 			var origin := kaiju_pos
 			var dir := facing
 			_events.append({"type": "ability", "kind": "cone", "reach": reach})
-			_hit_area(
+			hit_air = true  # fire reaches up to the helicopters
+			hit_area(
 				func(p: Vector2, r: float) -> float:
 					var to := p - origin
 					if to.length() > reach + r:
@@ -228,32 +281,34 @@ func _signature() -> void:
 					return 1.0 if to.length() <= r or absf(dir.angle_to(to)) <= half_angle else 0.0,
 				damage
 			)
+			hit_air = false
 		"leap":
 			var from := kaiju_pos
-			kaiju_pos = _clamp_to_arena(
+			kaiju_pos = clamp_to_arena(
 				kaiju_pos + facing * Num.f(city["leap_distance"]) * body_scale()
 			)
 			var land := kaiju_pos
 			_events.append({"type": "ability", "kind": "leap", "reach": reach, "from": from})
-			_hit_area(
-				func(p: Vector2, r: float) -> float:
-					return _falloff(p.distance_to(land) - r, reach),
+			hit_area(
+				func(p: Vector2, r: float) -> float: return falloff(p.distance_to(land) - r, reach),
 				damage
 			)
+			powers.leap_landed()
 		_:
 			var centre := kaiju_pos
 			_events.append({"type": "ability", "kind": "ring", "reach": reach})
-			_hit_area(
+			hit_area(
 				func(p: Vector2, r: float) -> float:
-					return _falloff(p.distance_to(centre) - r, reach),
+					return falloff(p.distance_to(centre) - r, reach),
 				damage
 			)
 
 
-## Damages every standing chunk (up to the kaiju's reach) and tank by damage x force(position,
-## own radius), force 0..1; then lets the hit buildings settle.
-func _hit_area(force: Callable, damage: float) -> void:
-	var top := ceili(reach_height())
+## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach),
+## every tank, and every helicopter it can reach, by damage x force(position, own radius),
+## force 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
+func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
+	var top := ceili(reach_height()) if y_hi < 0 else y_hi
 	for i: int in buildings.size():
 		var b := buildings[i]
 		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
@@ -261,7 +316,7 @@ func _hit_area(force: Callable, damage: float) -> void:
 			continue
 		var cells: Array[Vector3i] = []
 		var amounts := PackedFloat32Array()
-		for y: int in mini(top, b.height):
+		for y: int in range(maxi(0, y_lo), mini(top, b.height)):
 			for x: int in b.w:
 				for z: int in b.d:
 					var c := Vector3i(x, y, z)
@@ -271,10 +326,16 @@ func _hit_area(force: Callable, damage: float) -> void:
 						if k > 0.0:
 							cells.append(c)
 							amounts.append(damage * k)
+		if not hit_coat.is_empty():
+			powers.coat(i, cells)
 		_apply(i, cells, amounts)
 	for tank: Tank in tanks:
-		var k: float = force.call(tank.pos, 0.6)
+		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k
+		if k > 0.0 and not hit_coat.is_empty():
+			tank.coat_t = Num.f(hit_coat["seconds"])
+			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
+	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
 	clear_dead_tanks()
 
 
@@ -304,6 +365,11 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 	return _apply(index, cells, amounts)
 
 
+## Damages chunks of one building, each by its own amount.
+func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
+	return _apply(index, cells, amounts)
+
+
 ## A building above the kaiju's size tier is tougher. Broken chunks pay rubble; then whatever
 ## lost support starts to fall. Returns chunks broken.
 func _apply(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
@@ -329,48 +395,5 @@ func pay(b: Building, chunks: int, bonus: float) -> void:
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * bonus * stat("rubble_mult")
 
 
-func _step_army(dt: float) -> void:
-	_spawn_timer -= dt
-	if _spawn_timer <= 0.0:
-		_spawn_tank()
-		_spawn_timer = maxf(
-			Num.f(army["min_interval"]),
-			Num.f(army["start_interval"]) - Num.f(army["escalation_per_chunk"]) * chunks_destroyed
-		)
-	var reach := Num.f(army["range"]) + stomp_radius()
-	for tank: Tank in tanks:
-		var to := kaiju_pos - tank.pos
-		var dist := to.length()
-		if dist > reach:
-			tank.pos += to / dist * Num.f(army["speed"]) * dt
-		tank.cooldown -= dt
-		if dist <= reach + 1.0 and tank.cooldown <= 0.0:
-			tank.cooldown = Num.f(army["fire_interval"])
-			hp -= maxf(Num.f(army["min_damage"]), Num.f(army["tank_damage"]) - stat("armor"))
-			_events.append({"type": "tank_fired", "tank": tank.id})
-
-
-func _spawn_tank() -> void:
-	var tank := Tank.new()
-	tank.id = _next_tank_id
-	_next_tank_id += 1
-	var angle := _rng.randf() * TAU
-	tank.pos = _clamp_to_arena(Vector2(cos(angle), sin(angle)) * arena_half * 1.2)
-	tank.hp = Num.f(army["tank_hp"]) * (1.0 + Num.f(army["threat_per_chunk"]) * chunks_destroyed)
-	tank.cooldown = Num.f(army["fire_interval"])
-	tanks.append(tank)
-	_events.append({"type": "tank_spawned", "tank": tank.id})
-
-
 func clear_dead_tanks() -> void:
-	var alive: Array[Tank] = []
-	for tank: Tank in tanks:
-		if tank.hp > 0.0:
-			alive.append(tank)
-		else:
-			tanks_destroyed += 1
-			rubble += Num.f(army["tank_rubble"]) * stat("rubble_mult")
-			_events.append(
-				{"type": "tank_destroyed", "tank": tank.id, "x": tank.pos.x, "z": tank.pos.y}
-			)
-	tanks = alive
+	army_units.clear_dead()

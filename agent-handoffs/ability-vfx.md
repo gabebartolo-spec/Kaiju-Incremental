@@ -25,7 +25,7 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - docs/LICENSING_REGISTER.md rows (Kenney CC0, our mixes, build tool); docs/provenance/sfx.md
   lists every layer per file.
 - tests.yml: each Godot job runs `git lfs pull --include="assets/sfx/*"` (audio is LFS).
-- Flow: +4 checks (each signature sounds; the upgraded kaiju has the crack/ready/deflect/regen
+- Flow: +4 sound checks on top of the base (flow floor 30 after the 2026-10-17 merge).
   sounds); floor flow 22 -> 26. smoke 11, sim 39, city 5, flow 26 green locally.
 - VFX: ready_pulse(feet, head) = shockwave + eye flare; rim.gdshader is regen-only now;
   breath muzzle flare.
@@ -59,4 +59,4 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - Not done: creature roars (Sonniss); Freesound needs a login.
 
 ## Running jobs
-None. No override.cfg left. Last action: merged look-options into claude/ability-sfx (da0d7bb; register conflict kept both sides; 4 suites green), pushed.
+None. No override.cfg left. Last action (2026-10-17): merged look-options again (register conflict kept both sides; floors now flow 30 = base 26 + my 4; smoke 15, sim 39, powers 24, tentacles 17, city 5, flow 30 green), pushed.

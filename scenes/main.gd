@@ -77,7 +77,7 @@ func _on_species_chosen(species_id: String) -> void:
 
 func _continue() -> void:
 	var levels: Dictionary = _save.get("levels", {})
-	_tree = UpgradeTree.new(GameData.upgrades, levels)
+	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")))
 	if Num.i(_save.get("runs", 0)) == 0:
 		_start_rampage()
 	else:

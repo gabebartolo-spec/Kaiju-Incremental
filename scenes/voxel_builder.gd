@@ -23,6 +23,8 @@ var salt := 0
 var sorted_y: PackedInt32Array = PackedInt32Array()
 ## The cell behind each built instance, in instance order (filled by build()).
 var built_cells: Array[Vector3i] = []
+## Drawn size of each cube as a share of a cell (build()).
+var inset := 1.0
 
 
 func put(cell: Vector3i, key: String) -> void:
@@ -121,6 +123,7 @@ func count_below(y: int) -> int:
 
 ## One MultiMesh for every visible cell. palette: key -> Color (alpha 0 = glows at `glow`).
 ## A cell's centre sits at origin + cell * voxel, lifted half a voxel so y = 0 rests on the ground.
+## Cubes are drawn at `inset` of their size (below 1: a filler layer that hides inside a skin).
 func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> MultiMeshInstance3D:
 	var shown: Array[Vector3i] = []
 	for cell: Vector3i in cells:
@@ -141,7 +144,8 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 		sorted_y[i] = cell.y
 		var key: String = cells[cell]
 		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
-		mm.set_instance_transform(i, Transform3D(Basis(), origin + Vector3(cell) * voxel + lift))
+		var cube := Basis().scaled(Vector3.ONE * inset)
+		mm.set_instance_transform(i, Transform3D(cube, origin + Vector3(cell) * voxel + lift))
 		mm.set_instance_color(i, Look.jitter(base, cell, salt))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm

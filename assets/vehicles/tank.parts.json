@@ -1,0 +1,29 @@
+{
+ "height": 14,
+ "parts": {
+  "hull": {
+   "kvox": "tank_hull.kvox",
+   "pivot": [
+    -0.5,
+    0.0,
+    4.094
+   ]
+  },
+  "turret": {
+   "kvox": "tank_turret.kvox",
+   "pivot": [
+    -0.5,
+    6.598,
+    4.583
+   ]
+  },
+  "barrel": {
+   "kvox": "tank_barrel.kvox",
+   "pivot": [
+    -0.5,
+    8.797,
+    -5.436
+   ]
+  }
+ }
+}

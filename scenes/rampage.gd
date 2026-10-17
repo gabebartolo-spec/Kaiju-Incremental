@@ -6,8 +6,21 @@ extends Node3D
 
 signal finished(result: Dictionary)
 
+## Footfall: dust size and a pale ground ring (per body scale), and how far the camera dips
+## (world units at full strength) and how fast it comes back (1/s).
+const FOOTFALL_DUST := 1.1
+const FOOTFALL_RING := 1.4
+const FOOTFALL_TINT := Color(0.86, 0.83, 0.76, 0.7)
+const FOOTFALL_DIP := 0.35
+## The dip scales with body size, but never below this: a baby still shakes the street.
+const FOOTFALL_DIP_FLOOR := 1.0
+const DIP_RECOVER := 4.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)
-const TANK_GREEN := Color("55613a")
+## How high a gliding insectoid hovers (per body scale).
+const GLIDE_LIFT := 3.0
+## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
+const AUTOPLAY_GLIDE_CYCLE := 90
+const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
@@ -19,7 +32,10 @@ var ability_fx: AbilityFx
 var sfx: Sfx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
+## Capture hook: when set, called with the sim each physics frame for the player's input.
+var scripted: Callable
 var _city: CityView
+var _powers: PowersView
 var _was_ready := true
 var _leap_reach := 0.0
 var _leap_power := 1.0
@@ -30,6 +46,7 @@ var _leap_time := 0.0
 var _leap_from := Vector3.ZERO
 var _camera: Camera3D
 var _shake := 0.0
+var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
 var _too_tall_cooldown := 0.0
@@ -38,6 +55,9 @@ var _autoplay := false
 var _orbit_t := -1.0
 var _orbit_side := 1.0
 var _autoplay_target := Vector2(INF, INF)
+## Physics steps this rampage has run: autoplay paces itself on this, never the engine clock,
+## so a run plays the same whatever ran before it.
+var _steps := 0
 
 
 ## stats: final run stats; layout: CityGen output; run_index seeds the army.
@@ -67,9 +87,12 @@ func _ready() -> void:
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	ability_fx.attach_body(_kaiju)
+	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
+	add_child(_powers)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
+	_kaiju.foot_planted.connect(_on_footfall)
 	_camera = Camera3D.new()
 	_camera.fov = 55.0
 	add_child(_camera)
@@ -86,11 +109,23 @@ func _physics_process(delta: float) -> void:
 		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var signature := Input.is_action_just_pressed("signature")
-	if _autoplay:
+	var held := Input.is_action_pressed("signature")
+	var ultimate := Input.is_action_just_pressed("ultimate")
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate"} per frame
+		var input: Dictionary = scripted.call(sim)
+		move = input.get("move", Vector2.ZERO)
+		signature = input.get("signature", false)
+		held = input.get("held", false)
+		ultimate = input.get("ultimate", false)
+	elif _autoplay:
 		move = _autoplay_move()
 		signature = autoplay_signature and sim.ability_ready_in <= 0.0
+		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
+		ultimate = autoplay_signature
+	_steps += 1
 	var t0 := Time.get_ticks_usec()
-	var events := sim.step(delta, move, signature)
+	var buttons := (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
+	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
@@ -99,7 +134,8 @@ func _physics_process(delta: float) -> void:
 	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
 	_update_kaiju(delta, move.length())
 	_update_powers()
-	_update_tanks()
+	_powers.update(delta, _kaiju_at)
+	_update_tanks(delta)
 	_hud.refresh()
 
 
@@ -147,7 +183,8 @@ func _on_event(event: Dictionary) -> void:
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":
-			_tank_fired(Num.i(event["tank"]))
+			var at: Vector2 = event.get("at", sim.kaiju_pos)
+			_tank_fired(Num.i(event["tank"]), _to_world(at))
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
@@ -155,6 +192,8 @@ func _on_event(event: Dictionary) -> void:
 			_hud.refresh()
 			_hud.show_results()
 			get_node("/root/EventBus").emit_signal("run_ended", sim.result())
+		_:
+			_powers.on_event(event, _kaiju_at)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
@@ -207,6 +246,7 @@ func _ability_fx(event: Dictionary) -> void:
 
 func _update_kaiju(delta: float, moving: float) -> void:
 	var target := _to_world(sim.kaiju_pos)
+	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
 	if _leap_time > 0.0:
 		_leap_time += delta
 		var t := clampf(_leap_time / 0.4, 0.0, 1.0)
@@ -239,6 +279,17 @@ func _update_powers() -> void:
 	sfx.regen(healing)
 
 
+## Every footfall kicks a little dust and nudges the camera (a minimal version until the
+## ability-sfx pass drives footstep sound, dust and shake from the same signal).
+func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
+	var size := sim.body_scale() * (0.2 + strength)
+	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
+	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT)
+	_step_dip = maxf(
+		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
+	)
+
+
 func _spawn_tank_node(id: int) -> void:
 	var tank := TankModel.new()
 	add_child(tank)
@@ -257,29 +308,43 @@ func _part(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 	return mi
 
 
-func _update_tanks() -> void:
-	var flatten := Engine.get_physics_frames() % 10 == 0  # tanks roll over cars and lamps
+## Each tank's hull turns to the way it drives (to the kaiju when it stands) and its turret keeps
+## the gun on the kaiju.
+func _update_tanks(delta: float) -> void:
+	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
+	var turn := Num.f(Content.section("vehicles")["hull_turn"]) * delta
 	for tank: RampageSim.Tank in sim.tanks:
 		if flatten:
 			_city.crush(_to_world(tank.pos), 1.4)
 		if not _tank_nodes.has(tank.id):
 			continue
-		var node: Node3D = _tank_nodes[tank.id]
-		node.position = _to_world(tank.pos)
-		var to := sim.kaiju_pos - tank.pos
-		if to.length() > 0.01:
-			node.rotation.y = atan2(-to.x, -to.y)
+		var node: TankModel = _tank_nodes[tank.id]
+		var at := _to_world(tank.pos)
+		var drive := at - node.position
+		node.position = at
+		var heading := Vector2(drive.x, drive.z)
+		if heading.length() < 0.001:
+			var to := sim.kaiju_pos - tank.pos
+			heading = Vector2(to.x, to.y)
+		if heading.length() > 0.001:
+			var want := atan2(-heading.x, -heading.y)
+			var diff := wrapf(want - node.rotation.y, -PI, PI)
+			node.rotation.y += clampf(diff, -turn, turn)
+		node.aim(_kaiju_at + Vector3(0, 2.0 * sim.body_scale(), 0), delta)
 
 
-func _tank_fired(id: int) -> void:
+func _tank_fired(id: int, at: Vector3) -> void:
 	if not _tank_nodes.has(id):
 		return
-	var node: Node3D = _tank_nodes[id]
-	var target := _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	var shell := _part(Vector3.ONE * 0.35, node.position + Vector3(0, 0.9, 0), UiKit.WARN)
+	var node: TankModel = _tank_nodes[id]
+	var target := at + Vector3(0, 1.0, 0)
+	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
+		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
+	var muzzle := node.fire()
+	var shell := _part(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
-	_city.flash(node.position + Vector3(0, 1.0, 0), Color("ffc070"), 4.0, 0.12)
+	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
 	if sim.stat("armor") > 0.0:
@@ -299,7 +364,7 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 		_tank_nodes.erase(id)
 	for n: int in 8:
 		_city.debris(
-			pos + Vector3(0, 0.5, 0), TANK_GREEN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
+			pos + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
 		)
 	_city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
 	_city.fire(pos, 0.6)
@@ -309,7 +374,8 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 
 func _place_camera(delta: float) -> void:
 	var zoom := 0.75 + 0.4 * sim.body_scale()
-	var target := _kaiju_at + _breath_orbit(delta) * zoom
+	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
+	var target := _kaiju_at + _breath_orbit(delta) * zoom - Vector3(0, _step_dip * zoom, 0)
 	_camera.position = _camera.position.lerp(target, minf(1.0, delta * 5.0))
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(_kaiju_at + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
@@ -335,7 +401,7 @@ func _breath_orbit(delta: float) -> Vector3:
 
 
 func _autoplay_move() -> Vector2:
-	if Engine.get_physics_frames() % 15 == 0 or _autoplay_target.x == INF:
+	if _steps % 15 == 0 or _autoplay_target.x == INF:
 		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
 	if (
 		_autoplay_target.x == INF

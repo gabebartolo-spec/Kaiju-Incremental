@@ -166,4 +166,5 @@ def main():
     print(f"voxelized {src}: {len(poses)} frame(s), {sum(len(c) for c in poses)} voxels, {height} tall -> {dst}")
 
 
-main()
+if __name__ == "__main__":
+    main()

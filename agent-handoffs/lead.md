@@ -1,54 +1,112 @@
-# Lead handoff, 2026-10-16 23:25
-## State: working (next: cephalopod variants octo_3/octo_4 export + six-view; kaiju-motion on reptile round 3)
+# Lead handoff, 2026-10-17 12:50
+## State: blocked (Chrome minimized: Tripo reference images for D-045 wait; director in fullscreen game)
 
 ## Task
-Lead for Kaiju Incremental: kaiju sculpts and skins (Tripo -> rig_voxel), art QA of every helper,
-director decisions. Today's decisions: D-022..D-034 in docs/DECISIONS.md. Key ones now:
-D-031 locomotion (reptile = Godzilla/T-rex medium lean, T-rex *grace*), D-032 looks first / perf
-later, D-033 stages picked, D-034 Tripo skins (reptile = dark olive crocodile), credits unlimited.
+Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
+director decisions (D-022..D-042 in docs/DECISIONS.md), helper coordination. Credits unlimited for Tripo
+(D-023); log every task in docs/provenance/tripo.md.
 
 ## Branch and commit
-claude/look-options (PR #3 to main on HOLD until the director has seen the work).
-Merged into it today: #5 street life, #6 ability VFX, #7/#9 city (RES 8 buildings, edges).
+claude/look-options (integration; PR #3 to main on HOLD until the director signs off). Latest: 30682ae
+(LFS checkout in capture/tests/build, from game-flow 7777974/35be8e9), then this handoff.
 
-## Done this stretch
-- Reptile adolescent B (Tripo f9cf6ba7) rigged at 130 vox; adult re-rigged at 160 from the olive
-  texture (rig_voxel.py now samples the base-colour texture when the GLB has one).
-- Mantis stages approved: baby 06ed8a12, adolescent 0161ad14, adult 9668b815 -> kaiju-motion rigs
-  them with its hexapod skeleton (it has already produced insectoid_adult, uncommitted on its branch).
-- Boards: docs/captures/2026-10-16-stages/ (stages_board, reptile_skin_options, reptile_olive_ingame).
+## D-044 LOCOMOTION PAUSED (director 12:46) until models are decided
+species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-test skips octopus captures.
+Director saw octopus local capture: "head detached, limbs a static, awkward mesh" (I had not caught it).
+D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the model pipeline first.
+
+## CI billing RESOLVED 12:47: director made the repo public; main protection confirmed (test, doc-caps,
+gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to dispatch captures.
+Director: "tank and heli models look great".
+- QA 12:55: heli board PASS (Apache-like, tandem cockpit, stub wings, chin gun, rotors as parts; 2x real);
+  tank in-game crop reads well. Merge #17 then #18 once their in-game captures + CI are green.
+- #15 round 2 (5f807cb): cause = GL Compatibility fallback scrambled packed instance data (web renderer too!),
+  fixed + captures forced Forward+; mantis intact, thigh cubes square; lead look PASS; fresh re-critic running.
+  Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
+
+## Open PRs into look-options
+- #17 tank MERGED 14:45 (9cbe34b). #18 heli FIX: heli hides the baby kaiju at game cam (21 s) -> orbit beside,
+  not over, the camera-kaiju line + fade vehicles between camera and kaiju (D-025 rule). Size stays 2x.
+- #16 city-growth: stage 3 stills in; stage 4 (350k chunks) kills CI runners -> local GPU render approved,
+  waiting for the director's game to close (perf red flag). Balance proposal D (3.3-4.4 h, +-17%) to put to director.
+- #11 species locomotion (mantis + octopus). species-motion r3d: holds fixed (contrast 4.6x), big rest moves
+  00284f3 not yet rendered. Needs: game + side mantis clips, octopus adult side, then FRESH motion-critic, then
+  merge at reviewed SHA.
+- #14 game-flow: screenshots FAILED review (blank buttons/values) -> cause LFS pointer font, fixed 7777974, flow
+  67. Needs new stills (1080p + 4K at 125%) + clip, then review, mark ready, merge.
+- #15 voxel skin (D-041): reptile + mantis before/after clips and 2x joint crops ready in
+  side-session-notes/<lead>/kaiju-voxel-skin/ -> REVIEW THEM NEXT. Octopus captures local, after species-motion.
+- #16 city-growth (D-039): 4 nested cities, pacing ceph 2.94 h / rep 3.94 h / insect 1.93 h. Stage 3-4 stills
+  pending CI. Told it: target all species 3.5-4 h within +-20%, keep insectoid fastest in-run; prepare a
+  proposal only. Balance is a director question after #16 review.
+- #17 Blender tank (D-042, 2x, desert tan) in game; #18 helicopter (stacked on #17). Board
+  blender-heli/heli_board.png to QA. Decided: helis fixed 2x scale, no growth multiplier.
+- #8 SFX paused; #3 to main on hold.
+
+
+## D-045 (director 14:22): reptile = NEW original Tripo design, rigged in Blender (hand rig, welded weights)
+- Blender test critic: deformation + feet PASS both; animation FIX (no roar wind-up, frozen hold, tail not
+  counterbalancing, arms out at peak, static walk upper body, B mouth open at rest). blender-reptile on HOLD.
+- NEXT (me): Tripo Studio /workspace/generate-image -> 3-4 reference images, show the director labelled, then
+  image-to-3D (Smart Mesh P2.0), Private, Remove Lighting. Brief: original reptile kaiju, NOT Godzilla: long
+  crocodile snout, MOUTH CLOSED, pale bony back plates/osteoderm ridge (not maple-leaf fins), long low tail,
+  digitigrade legs, forearms with clawed hands, dark olive hide; full body A-pose, limbs clear of torso, front
+  three-quarter orthographic, neutral grey bg, soft even light, no props. Then baby/adolescent once adult picked.
+- BLOCKED 14:40: Chrome restored but hidden behind the League of Legends client: the page doesn't paint, typing
+  doesn't register (form_input works), Generate clicks do nothing, screenshots time out. Prompt text is ready in
+  the box (830 chars, 4:3, 4 images, free quota 32/1000). Needs Chrome visible (other screen) or after gaming.
+- #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
+
+## FOCUS (director 13:06): "how using blender might improve motion"
+- Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
+  A 8/11/1 cm, B 5.5/19/4 cm (walk/turn/roar, of 100 m); girth A shoulder 96%, B 91%. B right foot 69 cm off
+  ground in the Tripo sculpt (mesh fault). So the RIG matters more than the mesh. Weak: A arms barely move;
+  walk in place. Turn/roar renders + crops still running; then my QA + fresh motion-critic.
+- Two routes explained to the director: (1) Blender skeleton+weights replace rig_voxel's guessed bone
+  ownership (fixes detached parts, stiff limbs; D-041 skin takes weights); (2) authored clips (roar, tail
+  swipe, beam) layered over procedural foot planting.
+- 13:19 MOTION TEST DONE (blender-reptile 4ab6781; clips in notes blender-reptile/motion-test/): B (Tripo) moves
+  cleanly on the hand rig -> bad in-game motion = OUR auto rig/weights, not the Tripo mesh. Final slide A 8/10.9/1.1,
+  B 6.1/22/4.8 cm. Lead QA: turn + roar deform cleanly on both, jaw opens well; FIX for A: roar-peak arms reach
+  forward (zombie), dark square blotches on thigh. Fresh motion-critic running (background). Seam-weld finding
+  (glTF splits verts at UV seams) sent to kaiju-look-test as a suspect for the shattered mantis.
+- ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
+
+## Blender direction (director 12:39)
+- Board: Tripo adult looks better; Blender adult "promising", "more original, less a blatant Godzilla copy"
+  (memory: original-not-godzilla). Blender wins only if it ANIMATES better than Tripo.
+- blender-reptile (local_bce75838-34da-4991-a74e-b37ed5781547) briefed: one hand-weighted armature (deform vs
+  control bones, spline-IK tail, 3-5 loops per joint) fitted to BOTH meshes (A Blender, B Tripo olive copy in
+  scratch, never committed), walk + 90 deg turn + roar, headless Blender renders side by side, foot slide cm,
+  2x joint crops, volume loss per joint. Answers: mesh or rig at fault. Clips come to me first.
+- Research on animatable Blender models given to the director and to blender-reptile (sources: Blender wiki,
+  Blender Studio, Rigify docs, MCP reviews: MCP is good for ~80% of a rig, weak on weights, timing, sculpt).
+
+## Helpers (ids)
+- species-motion local_87c25bd4-a526-4731-b18e-7c728966a2df (mantis/octopus, PR #11)
+- kaiju-look-test local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc (PR #15)
+- game-flow local_9e7bf3f2-b85d-489b-987f-b9e45b8bfb55 (PR #14)
+- city-growth local_abf1bce5-336a-4fc8-942a-ff8f84538b7a (PR #16)
+- blender-tank local_5c21d3fa-ab76-4f0b-98ae-360caff8c60d (PR #17/#18, available)
+- blender-reptile local_bce75838-34da-4991-a74e-b37ed5781547 (motion test)
+- kaiju-motion local_fd14d508-6453-459d-b05c-fb22af37d14f (keeps #11 in sync)
+- ability-vfx paused (PR #8); real-city tabled (D-029).
 
 ## Next (mine)
-1. DONE: all three reptile stages rigged from olive textures (docs/captures/2026-10-16-stages/reptile_stages_ingame.png).
-
-2. Cephalopod adult: 4 variants ff432a4f / 8bf2f668 / f303b247 / 666430b3; octo_1, octo_2 downloaded to
-   ~/Downloads/kaiju_tripo; export the other two, six-view, pick, then baby + adolescent (Lion King
-   logic), then a skin. Radial rig comes from kaiju-motion.
-3. Mantis skins (3 stages, one prompt), after the director sees the rigs.
-4. Military vehicles + landmarks via Tripo (D-020); cars are chunkier than RES 8 buildings.
-5. 4K TV text size check (perf deferred, D-032).
-6. Species gameplay (D-035, docs/SPECIES.md): build after PR #10; 3 open questions for the director there.
-
-## Helpers
-- kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f), PR #10: round 2 = FIX (posture, no skate, head, mass PASS; jaw open, tail lag, hold beat, game-camera read, baby stumble, pale legs, true side cam to fix). Round 1 was REJECTED (fix
-  list sent: posture lean 20-30 deg, tail sweep, head stable/mouth closed, weight, arms, blends, baby
-  clumsier, game-camera readability, washed-out legs, stuttering capture). Round 2 clips exist
-  (rex2_*); run a FRESH motion-critic when it reports. Adds KaijuModel.foot_planted(side,strength,at).
-- ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED by the director until locomotion
-  lands. PR #8 SFX on hold (stomps reworked low-end, not yet synced to foot_planted).
-- city-layout: done; RES 12 / facade proposal in its handoff (branch claude/city-layout-56adda).
-- real-city: TABLED (D-029), WIP on claude/real-city-92596b.
+1. Review #15 reptile/mantis clips + joint crops (art-qa-critic; fresh motion-critic before the director).
+2. QA heli board and #17/#18.
+3. After the flip: protect main, D-043, rerun CI.
+4. Fresh motion-critic on mantis r3d + octopus when clips land; merge #11.
+5. Cephalopod skins (3 stages); 4K TV UI check.
 
 ## Rules learnt the hard way
-- Tripo: export with the default name; use `find` refs (coordinates shift with the page height);
-  a new browser tab may show Tripo logged out: use the original tab; check Remove Lighting per page.
-- Merge only the SHA you reviewed (`--match-head-commit`).
-- Windowed Godot: write override.cfg (mode=0, no_focus, -20000) in a SEPARATE command before the run
-  (focus-guard hook checks first); delete after. Never set fullscreen in project.godot.
-- After a merge that adds classes, run `godot --headless --import` once or scripts fail to parse.
-- Running Python with APPDATA overridden loses user site-packages: set APPDATA only on the Godot call.
-
-7. Helpers started 23:20: species-powers (local_136df838-e381-4671-b237-5402935f837b, per-species upgrade branches + helicopters), ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d, xvfb capture workflow). Cephalopod baby generating; adolescent next.
+- Tripo: default export name; `find` refs; stay in the signed-in tab; Remove Lighting per page; inspect every texture.
+- Merge only the reviewed SHA (`--match-head-commit`).
+- Windowed Godot: separate command writes override.cfg (mode=0, no_focus, -20000) first; guard blocks while a
+  fullscreen app is in front. Never set fullscreen in project.godot.
+- CI checkout needs `lfs: true` (fonts are LFS). Heavy software-rendered captures burn minutes: render locally.
+- `rm` with variables: "${VAR:?}". After merges that add classes: `godot --headless --import`.
+- Subagents without a shell can't read private PRs: stage the diff for them.
 
 ## Running jobs
-None in Tripo. Sessions above. No override.cfg left.
+None of mine. No override.cfg left. Helpers: blender-reptile working; others blocked on CI.

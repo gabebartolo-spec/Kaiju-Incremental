@@ -7,6 +7,8 @@ extends "res://tests/lib/runner.gd"
 
 const AUTOLOADS: Array[String] = ["Debug", "EventBus", "GameData", "Rng", "SaveSystem", "Settings"]
 const FRAMES_UP := 3
+## Planted feet may drift at most this share of the hip height over a walk with hard turns.
+const MAX_FOOT_DRIFT := 0.02
 const WARNING_AS_ERROR := 2
 const STRICT_WARNINGS: Array[String] = [
 	"debug/gdscript/warnings/untyped_declaration",
@@ -26,6 +28,8 @@ func run_checks() -> void:
 	_check_autoloads()
 	_check_scripts_compile()
 	await _check_main_scene()
+	await _check_planted_feet()
+	_check_tank()
 
 
 func _check_settings() -> void:
@@ -89,3 +93,84 @@ func _check_main_scene() -> void:
 	check(scene.is_inside_tree(), "%s stays up for %d frames" % [path, FRAMES_UP])
 	scene.queue_free()
 	await process_frame
+
+
+## The reptilian walks, curves, reverses hard and stands stomping the way the rampage drives it
+## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
+func _check_planted_feet() -> void:
+	var def: Dictionary = Content.species_def("reptilian")
+	var stats: Dictionary = def["stats"]
+	var colors: Dictionary = def["colors"]
+	var kaiju := KaijuModel.new("reptilian", colors, "adult")
+	kaiju.scale = Vector3.ONE * 1.3
+	root.add_child(kaiju)
+	var dt := 1.0 / 60.0
+	var pos := Vector2.ZERO
+	var facing := Vector2(0, -1)
+	var stomp_in := 0.0
+	for frame: int in 600:
+		var t := frame * dt
+		var move := Vector2.ZERO
+		if t > 0.5 and t < 3.0:
+			move = Vector2(0, -1)
+		elif t >= 3.0 and t < 5.0:
+			move = Vector2(0.4, 1).normalized()  # a hard reversal
+		elif t >= 5.0 and t < 7.0:
+			move = Vector2(-1, 0)
+		if move != Vector2.ZERO:
+			pos += move * Num.f(stats["speed"]) * dt
+			facing = move
+		kaiju.position = kaiju.position.lerp(Vector3(pos.x, 0, pos.y), minf(1.0, dt * 12.0))
+		var heading := atan2(-facing.x, -facing.y)
+		kaiju.rotation.y = lerp_angle(kaiju.rotation.y, heading, minf(1.0, dt * 10.0))
+		stomp_in -= dt
+		if stomp_in <= 0.0:
+			stomp_in += Num.f(stats["stomp_interval"])
+			kaiju.stomp()
+		kaiju.animate(dt, move.length())
+	var drift := kaiju.foot_drift()
+	var hip := kaiju.hip_height()
+	check(
+		hip > 0.0 and drift <= MAX_FOOT_DRIFT * hip,
+		(
+			"the reptilian's planted feet hold (drift %.3f <= %.3f units)"
+			% [drift, MAX_FOOT_DRIFT * hip]
+		)
+	)
+	kaiju.queue_free()
+	await process_frame
+
+
+## The Blender tank (D-042) loads as hull, turret and gun; the turret swings onto a target at
+## the side while the hull stays put, and a shot leaves the muzzle ahead of the hull and kicks the
+## gun back.
+func _check_tank() -> void:
+	var tank := TankModel.new()
+	root.add_child(tank)
+	var cfg := Content.section("vehicles")
+	var counts: Array[int] = []
+	for part: Node3D in [tank, tank._turret, tank._barrel]:
+		for child: Node in part.get_children():
+			if child is MultiMeshInstance3D:
+				counts.append((child as MultiMeshInstance3D).multimesh.instance_count)
+	check(
+		counts.size() == 3 and not counts.has(0) and tank._barrel.get_parent() == tank._turret,
+		"the tank is hull > turret > gun, each with voxels: %s" % [counts]
+	)
+	var target := Vector3(10.0, 1.0, 0.0)  # off the right side
+	for _i: int in 120:
+		tank.aim(target, 1.0 / 60.0)
+	var facing := -tank._turret.global_basis.z
+	var want := (target - tank._turret.global_position) * Vector3(1, 0, 1)
+	check(
+		facing.angle_to(want.normalized()) < 0.05 and tank.rotation.y == 0.0,
+		"the turret turns onto a target at the side (off by %.3f rad)" % facing.angle_to(want)
+	)
+	var rest := tank._barrel.position
+	var muzzle := tank.fire()
+	tank._process(Num.f(cfg["recoil_seconds"]) * 0.25)
+	check(
+		muzzle.x > 2.0 and tank._barrel.position.distance_to(rest) > 0.05,
+		"the shot leaves the muzzle (%s) and the gun kicks back" % muzzle
+	)
+	tank.free()
