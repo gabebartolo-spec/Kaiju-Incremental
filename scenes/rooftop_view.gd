@@ -2,18 +2,25 @@ class_name RooftopView
 extends Node3D
 ## Rooftop defenders (D-063), presentation only: the sim's rooftop squads drawn as armed citizens
 ## and soldiers standing on their roofs, turned to the kaiju, rifles up. Each sim volley flashes
-## at every muzzle of the squad and sends a thin tracer at the kaiju's hide; flashes, tracers and
-## figures are MultiMesh pools, so a volley creates no nodes. At most army.rooftop.max_drawn
-## figures are drawn (street life already costs milliseconds a frame).
+## at every muzzle of the squad, sends a bright tracer at the kaiju's hide and sparks where it
+## strikes. Flashes, tracers and sparks are unshaded and additive and ignore the fog, so a volley
+## reads at the game camera from across the city. Everything is a MultiMesh pool, so a volley
+## creates no nodes. At most army.rooftop.max_drawn figures are drawn (street life already costs
+## milliseconds a frame); they stand FIGURE_SCALE times a street person, to read as a group.
 
-const MAX_FLASHES := 48
+const MAX_FLASHES := 96
 const MAX_TRACERS := 48
-const FLASH_SECONDS := 0.07
-const FLASH_COLOR := Color(1.0, 0.85, 0.5, 0.0)
-const TRACER_SECONDS := 0.16
-const TRACER_SHARE := 0.3  # a tracer is this share of its flight long
-const TRACER_WIDTH := 0.05
-const SPACING := 0.4  # figures of a squad stand this far apart across their line of fire
+const FLASH_SECONDS := 0.08
+const FLASH_SIZE := 0.45  # world units: about 3.5x a street officer's pistol flash
+const SPARK_SIZE := 0.6
+const SPARK_SECONDS := 0.1
+const GLOW := Color(1.0, 0.82, 0.45)
+const TRACER_SECONDS := 0.2  # muzzle to hide...
+const TRACER_HOLD := 0.08  # ...then the full streak lingers this long
+const TRACER_SHARE := 0.55  # a flying tracer is this share of its flight long
+const TRACER_WIDTH := 0.09
+const FIGURE_SCALE := 1.5
+const SPACING := 0.55  # figures of a squad stand this far apart across their line of fire
 const AIM_HEIGHT := 3.5  # tracers end this high on the kaiju (per body scale)...
 const AIM_SPREAD := 1.2  # ...scattered this far either way
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
@@ -51,8 +58,21 @@ func _ready() -> void:
 		var mm := _pool(VoxelPerson.rifleman(outfit, _voxel), Num.i(_cfg["max_drawn"]))
 		_figures.append(mm)
 	_counts.resize(_figures.size())
-	_flash_mm = _pool(Look.voxel_mesh(_voxel * 2.0, 6.0), MAX_FLASHES, true)
-	_tracer_mm = _pool(Look.voxel_mesh(1.0, 5.0), MAX_TRACERS, true)
+	_flash_mm = _pool(_glow_box(), MAX_FLASHES, true)
+	_tracer_mm = _pool(_glow_box(), MAX_TRACERS, true)
+
+
+## A unit cube that glows whatever the light and fog: unshaded, additive, tinted per instance.
+func _glow_box() -> BoxMesh:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.disable_fog = true
+	mat.vertex_color_use_as_albedo = true
+	mat.albedo_color = GLOW
+	var box := BoxMesh.new()
+	box.material = mat
+	return box
 
 
 func _pool(mesh: Mesh, count: int, colored := false) -> MultiMesh:
@@ -82,7 +102,8 @@ func stance(squad: Army.Squad, k: int) -> Transform3D:
 	var feet := squad.cell.y + 1.0
 	if b.style % 4 == BuildingVoxels.STONE:
 		feet += STONE_STEP * BuildingVoxels.VOXEL
-	return Transform3D(Basis(Vector3.UP, atan2(-to.x, -to.y)), Vector3(at.x, feet, at.y))
+	var basis := Basis(Vector3.UP, atan2(-to.x, -to.y)).scaled(Vector3.ONE * FIGURE_SCALE)
+	return Transform3D(basis, Vector3(at.x, feet, at.y))
 
 
 ## Runs after Rampage stepped the sim this frame (a descendant processes after it).
@@ -135,7 +156,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, 8.5, -7.5) * _voxel)
 			if _flashes.size() < MAX_FLASHES:
-				_flashes.append({"at": muzzle, "t": FLASH_SECONDS})
+				_flashes.append({"at": muzzle, "t": FLASH_SECONDS, "size": FLASH_SIZE})
 			var spot := Vector3(
 				_rng.randf_range(-AIM_SPREAD, AIM_SPREAD),
 				AIM_HEIGHT + _rng.randf_range(-AIM_SPREAD, AIM_SPREAD),
@@ -155,26 +176,32 @@ func _draw_flashes(delta: float) -> void:
 			_flashes.erase(f)
 			continue
 		var at: Vector3 = f["at"]
-		_flash_mm.set_instance_transform(shown, Transform3D(Basis(), at))
-		_flash_mm.set_instance_color(shown, FLASH_COLOR)
+		var size := Num.f(f["size"])
+		_flash_mm.set_instance_transform(shown, Transform3D(Basis().scaled(Vector3.ONE * size), at))
+		_flash_mm.set_instance_color(shown, Color.WHITE)
 		shown += 1
 	_flash_mm.visible_instance_count = shown
 
 
-## Each tracer is a thin glowing bar a share of its flight long, running muzzle to hide.
+## Each tracer is a glowing bar a share of its flight long, running muzzle to hide; when its head
+## strikes, the hide sparks and the streak lingers TRACER_HOLD seconds before it goes.
 func _draw_tracers(delta: float) -> void:
 	var shown := 0
+	var hold := TRACER_HOLD / TRACER_SECONDS
 	for tr: Dictionary in _tracers.duplicate():
-		tr["t"] = Num.f(tr["t"]) + delta / TRACER_SECONDS
+		var was := Num.f(tr["t"])
+		tr["t"] = was + delta / TRACER_SECONDS
 		var t := Num.f(tr["t"])
-		if t >= 1.0:
+		var to: Vector3 = tr["to"]
+		if was + TRACER_SHARE < 1.0 and t + TRACER_SHARE >= 1.0 and _flashes.size() < MAX_FLASHES:
+			_flashes.append({"at": to, "t": SPARK_SECONDS, "size": SPARK_SIZE})
+		if t >= 1.0 - TRACER_SHARE + hold:
 			_tracers.erase(tr)
 			continue
 		var from: Vector3 = tr["from"]
-		var to: Vector3 = tr["to"]
 		var span := to - from
 		var head := from + span * minf(1.0, t + TRACER_SHARE)
-		var tail := from + span * t
+		var tail := from + span * minf(t, 1.0 - TRACER_SHARE)
 		var z := (head - tail).normalized()
 		var x := z.cross(Vector3.UP)
 		if x.length() < 0.01:
@@ -182,6 +209,6 @@ func _draw_tracers(delta: float) -> void:
 		x = x.normalized()
 		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * head.distance_to(tail))
 		_tracer_mm.set_instance_transform(shown, Transform3D(basis, (head + tail) * 0.5))
-		_tracer_mm.set_instance_color(shown, FLASH_COLOR)
+		_tracer_mm.set_instance_color(shown, Color.WHITE)
 		shown += 1
 	_tracer_mm.visible_instance_count = shown
