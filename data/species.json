@@ -11,13 +11,13 @@
 			},
 			"stats": {
 				"hp": 120,
-				"speed": 5.0,
+				"speed": 5.5,
 				"stomp_damage": 10,
 				"stomp_radius": 2.5,
 				"stomp_interval": 0.7,
-				"ability_damage": 30,
+				"ability_damage": 36,
 				"ability_cooldown": 7.0,
-				"ability_range": 9.0
+				"ability_range": 11.0
 			},
 			"colors": {
 				"body": "2c3127",
@@ -41,8 +41,8 @@
 				"stomp_damage": 6,
 				"stomp_radius": 2.2,
 				"stomp_interval": 0.45,
-				"ability_damage": 22,
-				"ability_cooldown": 4.5,
+				"ability_damage": 18,
+				"ability_cooldown": 6.5,
 				"ability_range": 4.0
 			},
 			"colors": {
