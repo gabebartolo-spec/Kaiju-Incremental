@@ -11,8 +11,11 @@ extends Node3D
 const MAX_FLASHES := 96
 const MAX_TRACERS := 48
 const FLASH_SECONDS := 0.08
-const FLASH_SIZE := 0.45  # world units: about 3.5x a street officer's pistol flash
-const SPARK_SIZE := 0.6
+const FLASH_SIZE := 0.35  # world units, a soft star facing the camera
+const FLASH_AHEAD := 0.2  # the star burns this far out along the aim, clear of the shooter
+const FLASH_STAGGER := 1.0 / 60.0  # each rifle of a squad fires this much after the one before
+const SPARK_SIZE := 0.5
+const STAR_PIXELS := 32
 const SPARK_SECONDS := 0.1
 const GLOW := Color(1.0, 0.82, 0.45)
 ## Over-range brightness per instance, past the city's glow threshold (1.1, AgX tonemap), so
@@ -65,8 +68,36 @@ func _ready() -> void:
 		var mm := _pool(VoxelPerson.rifleman(outfit, _voxel), Num.i(_cfg["max_drawn"]))
 		_figures.append(mm)
 	_counts.resize(_figures.size())
-	_flash_mm = _pool(_glow_box(), MAX_FLASHES, true)
+	_flash_mm = _pool(_star(), MAX_FLASHES, true)
 	_tracer_mm = _pool(_glow_box(), MAX_TRACERS, true)
+
+
+## A unit quad that always faces the camera, painted with a soft four-point star: additive,
+## unshaded, fog-free, tinted per instance (muzzle flashes and the sparks on the hide).
+func _star() -> QuadMesh:
+	var img := Image.create(STAR_PIXELS, STAR_PIXELS, false, Image.FORMAT_RGBA8)
+	var half := (STAR_PIXELS - 1) * 0.5
+	for y: int in STAR_PIXELS:
+		for x: int in STAR_PIXELS:
+			var u := absf(x - half) / half
+			var v := absf(y - half) / half
+			var core := exp(-(u * u + v * v) * 3.5)
+			var arms := exp(-u * 1.6) * exp(-v * 12.0) + exp(-v * 1.6) * exp(-u * 12.0)
+			var a := clampf(core + arms, 0.0, 1.0) * clampf((1.0 - maxf(u, v)) * 3.0, 0.0, 1.0)
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.disable_fog = true
+	mat.vertex_color_use_as_albedo = true
+	mat.albedo_color = GLOW
+	mat.albedo_texture = ImageTexture.create_from_image(img)
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.billboard_keep_scale = true
+	var quad := QuadMesh.new()
+	quad.material = mat
+	return quad
 
 
 ## A unit cube that glows whatever the light and fog: unshaded, additive, tinted per instance.
@@ -165,7 +196,11 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, 8.5, -7.5) * _voxel)
 			if _flashes.size() < MAX_FLASHES:
-				_flashes.append({"at": muzzle, "t": FLASH_SECONDS, "size": FLASH_SIZE})
+				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
+				var lag := k * FLASH_STAGGER
+				_flashes.append(
+					{"at": muzzle + ahead, "t": FLASH_SECONDS + lag, "size": FLASH_SIZE, "lag": lag}
+				)
 			var spot := Vector3(
 				_rng.randf_range(-AIM_SPREAD, AIM_SPREAD),
 				AIM_HEIGHT + _rng.randf_range(-AIM_SPREAD, AIM_SPREAD),
@@ -189,8 +224,11 @@ func _draw_flashes(delta: float) -> void:
 	var shown := 0
 	for f: Dictionary in _flashes.duplicate():
 		f["t"] = Num.f(f["t"]) - delta
+		f["lag"] = Num.f(f["lag"]) - delta
 		if Num.f(f["t"]) <= 0.0:
 			_flashes.erase(f)
+			continue
+		if Num.f(f["lag"]) > 0.0:  # this rifle has not fired yet
 			continue
 		var at: Vector3 = f["at"]
 		var size := Num.f(f["size"])
@@ -211,7 +249,7 @@ func _draw_tracers(delta: float) -> void:
 		var t := Num.f(tr["t"])
 		var to: Vector3 = tr["to"]
 		if was + TRACER_SHARE < 1.0 and t + TRACER_SHARE >= 1.0 and _flashes.size() < MAX_FLASHES:
-			_flashes.append({"at": to, "t": SPARK_SECONDS, "size": SPARK_SIZE})
+			_flashes.append({"at": to, "t": SPARK_SECONDS, "size": SPARK_SIZE, "lag": 0.0})
 		if t >= 1.0 - TRACER_SHARE + hold:
 			_tracers.erase(tr)
 			continue
