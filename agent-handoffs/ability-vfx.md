@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 05:05
-## State: running a check (PR #8 CI after (a)(b)(c) push; lead = "LEAD", local_106fc100...)
+# Ability VFX/SFX handoff, 2026-10-18 05:10
+## State: running a check (PR #8 CI at 2a2edb5); asked the lead for the next job: (d) heli gun/crash, (e) SFX bus + volume slider, (f) UI clicks
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
