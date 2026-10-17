@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-18 00:40
-## State: working (blender-reptile adding tail mobility to the v2 clips inside the D-047 PR)
+# Lead handoff, 2026-10-18 01:40
+## State: working (blender-reptile: D-047 PR with v2 tail + species-card framing; AFTER captures on CI)
 
 ## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
 - Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
@@ -11,7 +11,10 @@
 - 00:36 director: v2 model "incredible, whatever we are doing now is working"; ONE note: tail reads rigid, wants a
   powerful skyscraper-crushing tail. Briefed blender-reptile: root-to-tip travelling wave (tip 3-4x root), turn
   whip+overshoot settle 0.3-0.5 s, roar lift+slam, <=25 deg/joint; evidence top-down tip traces + diff plot + root 2x.
-  Tail-swipe attack = suggestion only (director's gameplay call).
+  Tail-swipe attack = suggestion only (director's gameplay call). In-game tail owner = scenes/biped_swing.gd
+  (TAIL_BEND_MAX 0.12 rad clamp, ~7 deg); told helper to hand tail to .kclip or raise clamp (not waking kaiju-motion).
+  Species-select card broken by the 185 m tail: lead OK'd frame-by-bounds + 3/4 side-on in the same PR.
+- Unsloth helper (local-models MCP, gemma-4-12b) tested OK 01:36; holds ~10.7 GB VRAM (GPU renders compete).
 - Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
 
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
