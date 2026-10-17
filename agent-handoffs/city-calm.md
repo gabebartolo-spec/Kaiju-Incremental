@@ -1,78 +1,69 @@
-# City-calm handoff, 2026-10-18 07:05
-## State: awaiting lead (#37 complete: frame cost + look-options sync pushed; lead merges on green)
+# City-calm handoff, 2026-10-18 07:55
+## State: running a check (D-065(a) CI stills + trample clip); awaiting the lead's GPU slot for frame cost
 
 ## Task
-Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep from 06:4x:
-no questions to him; sim changes (destructible props) go to the lead.
-- DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export (artifact smoke PASS).
-- NOW: D-062, director 05:27 "there should never be vast empty spaces with nothing to smash or
-  kill". Arena cells need smashables, band cells (past the edge, as far as the camera sees)
-  need dressing; both floors 0; 3 map_seed cities; stills, crops, frame cost; PR to the lead.
-- NEXT: D-065 (director 06:2x): believable trees, bushes, floral areas, parks, gardens,
-  playgrounds; targets in tuning; everything crushable; separate PR. Brief in the lead's
-  message: street trees every 8-15 m on avenues/main streets, 8-15% green lots, none more than
-  ~2 blocks from one, yards where lots have yard_chance; parks count as filled cells.
+Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep: no questions
+to him; anything sim (destructible props, green lots) goes to the lead.
+- DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export, #37 no empty ground
+  (D-062, squash 2b241df).
+- DONE: D-065(b) green-lot table sent to the lead (notes no-empty-space/D-065b_green_lot_table.md):
+  0/8/12/15% green lots: tree end 4.46/4.88/5.08/5.18 h, evolve1 0.59/0.64/0.67/0.64 h.
+- NOW: D-065(a), director 06:2x "make sure there are a believable amount of trees, bushes,
+  floral areas, parks, gardens, playgrounds throughout the city". Presentation only, all
+  crushable; separate PR off look-options; evidence = BEFORE/AFTER game-cam stills s1 + s2,
+  2x crops of a park, an avenue of trees, a playground, a 3 s trample clip, frame cost.
 
 ## Branch and commit
-claude/no-empty-space off origin/claude/look-options 3df0f6b, worktree
-C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/no-empty-space.
+claude/greenery off look-options b8fb42f; worktree
+C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/greenery. Head c07b4f0 (pushed).
+(A stray local branch claude/greenery-before exists; harmless, delete when allowed.)
 
-## What changed (D-062)
-- tests/lib/city_coverage.gd: 10 m cells over arena + city.view_beyond (30).
-- tests/run_city_tests.gd _check_no_empty_ground: stage 1 + 2 x map_seed 7301/1234/98765,
-  floor city 6 -> 12.
-- scenes/city_decor.gd: parked cars run past the edge to arena + view_beyond (no lamps there);
-  short blocks past the edge get a mid-kerb car; cars may stand where a street runs into the
-  diagonal past the edge; the diagonal's kerb trees run on past the edge.
-- data/tuning.json: city.coverage_cell 10, city.view_beyond 30; street.parked_chance 0.7,
-  parked_chance_beyond 0.9, parked_gap [1.9, 3.2], lane_stop_chance 0.12.
-- tools/coverage_probe.gd prints the maps.
+## What changed
+- scenes/city_greenery.gd (new, CityGreenery): plant() runs last in CityDecor._ready (decor
+  RNG drawn after everything else): avenue street trees (city.street_tree_gap [8, 15],
+  street_tree_clear 3, clear of lamps/diagonal/buildings); park garden (border hedge, path
+  hedges, flower beds city.park_flower_beds per 100 m2, playground on
+  playground_pad = south-west corner, city.playground_size 4); front-yard hedges
+  (city.yard_depth [0.6, 1.6]); PALETTE merged into the decor palette.
+- scenes/city_decor.gd: green counts, lamp spots, park trees kept off the playground pad.
+- tests/lib/city_green.gd + run_city_tests.gd _check_greenery (inside the D-062 loop);
+  floor city 12 -> 18. tools/coverage_probe.gd prints the green numbers.
+- tools/capture/capture_green.gd: close-ups (park, playground, avenue) + --trample clip.
 
 ## Evidence so far
-notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\no-empty-space
-- Red on the original decor (city_red_original_decor.log): empty past the edge, stage 1
-  17/17/12, Behemoth 19/13/12; arena 0 everywhere. Green: all 0 (city_green.log).
-- All suites green (run_tests_all.log): smoke 27, sim 39, powers 24, tentacles 18, city 12,
-  growth 24, load 6, flow 100, self-test ok.
-- Camera past the arena edge: stage 1 south 14, sides 22-50, north 37 m; Behemoth 16.5,
-  27-67, 51 m. The kaiju is clamped to half + 2.5.
-
-## PR #37 (D-062), head 90738cf
-- Lead stage 1 check PASS; nit fixed: car paints now city.car_colors (tuning), 2a3138/3a4236
-  lifted to 5b6b7a/6b7a52; gdlint fix (literal newline) + gdformat.
-- BEFORE runs 39060231519 (s1), before_s2 run in notes; AFTER re-captures -> notes after2_s1/2.
-- Local suites not re-run after 90738cf (pacing holds my Godot slot); CI tests on the PR.
-
-## D-065(b) table for the lead (green-lot share, data unchanged; local hack in
-sim/city_lots.gd via KAIJU_GREEN_SHARE env, NEVER commit; tools/_chunks_probe.gd untracked)
-- chunks stage1/2/3/4: 0%: 12286/25811/107259/350448; 8%: 10556/23323/98594/322765;
-  12%: 10310/22241/95995/307730; 15%: 10214/21695/91092/297409.
-- pacing.gd reptilian: shares 0/0.08/0.12 done (notes pacing_green_<share>.log); 0.15 was stopped
-  for the GPU slot and must be re-run. Then revert the hack and send the lead the table.
-- #37 frame cost: about +0.2-0.3 ms GPU, +3-5% triangles (notes timed/).
+notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\greenery
+- city_red_before.log: 6 FAILs on the old decor; city_after.log green; run_tests_all.log all
+  green (smoke 27, sim 39, powers 24, tentacles 18, city 18, growth 24, load 6, flow 113).
+- green_numbers_after.txt (stage 1 / Behemoth, 3 map_seeds): trees 123-139 / 131-137 per km
+  of avenue; parks 1 / 2, all with playgrounds; park bushes 21-28 / 44-52; green blocks
+  4-8% / 4-6% and furthest building 55-71 / 83-105 m from a park (both need D-065(b)).
+- CI chain running (captures.log): before_s1/2, after_s1/2, close_s1/2, trample (720p, 5 s).
 
 ## Next
-1. CI captures (capture_growth --stage=1/2 --quick, 1920x1080): BEFORE on look-options,
-   AFTER on this branch; labelled stills; 2x crops of the ring and the south band.
-2. Frame cost: local timed capture_growth run after the lead's GPU go (~06:35).
-3. PR with D-062 in Board and log; report to Kaiju: Lead (<=8 lines). Then D-065.
+1. Labelled BEFORE/AFTER side-by-sides; 2x crops of park, playground, avenue (AFTER;
+   BEFORE close-ups not possible: a temp branch push was declined); check the trample clip.
+2. Frame cost on the lead's GPU slot (timed capture_growth, as for #37).
+3. PR into look-options with D-065 (Board and log), report to the lead.
 
 ## Attempts (fix-loop record)
-- Coverage measure: 30 m cells found nothing; 10 m used. Rect sampling first skipped far edges
-  (inflated empties to 26); fixed by sampling edges too.
+- Playground first went in the corner with fewest trees, but those trees were already planted
+  (they would poke through): fixed by a fixed pad the park's trees skip.
+- `git --work-tree=<tmp> checkout <branch> -- .` rewrote my index (not files): reset -q fixed.
 
 ## Open decisions
-none (the lead decided: dress the band).
+D-065(b) green lots: director's morning call (lead holds the table).
 
 ## Running jobs
-CI capture runs (see notes).
+bcp0ggx9j: CI capture chain.
 
 ## Findings for the lead
-- A worktree removed under a live session sends its next git command into the main checkout
-  (05:28, restored at once). Check `git rev-parse --show-toplevel` first.
-- Seeds.make("city", n) does not change the street plan; city.map_seed does.
+- Never use `git --work-tree=X checkout <ref> -- .` to export a tree: it rewrites the current
+  index. Use `git archive <ref> | tar -x -C X`.
+- A worktree removed under a live session sends its next git command into the main checkout;
+  check `git rev-parse --show-toplevel` first.
 
 ## Rules learnt the hard way (under 10 lines)
-- Before any git command in a worktree, confirm it still exists (show-toplevel).
+- Branch off origin/claude/look-options; confirm the worktree exists before git commands.
 - `git lfs pull` before suites/exports in a fresh worktree; never mid-run.
 - Template builds start fullscreen: seed settings.cfg fullscreen=false for smoke runs.
+- gdlint: 400-line file cap, <=4 function args, public vars before private.
