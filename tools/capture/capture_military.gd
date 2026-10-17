@@ -1,23 +1,24 @@
 extends SceneTree
 ## The army at work (D-066) at the game camera: a Behemoth croc stands in the city while tank
 ## columns drive in by road and deploy to firing posts round it, and a helicopter pair makes an
-## attack run; at 6 s the kaiju turns to face the pair and they break off. For the clip, columns
-## call in from spawn_radius CLIP_SPAWN (so they arrive inside the frame) and the pair is up from
-## the start; everything else is the game's own data and code. Stills along the way; pair with
-## --write-movie (ci_capture.sh --movie) for the clip. Needs a window and the no-focus
-## override.cfg (or CI: tools/capture/ci_capture.sh).
+## attack run; at TURN_AT the kaiju turns to face the pair and they break off. Clip-only
+## overrides, so it all happens inside 18 s (trimmed to a 10 s clip) and inside the frame: columns call in from CLIP_SPAWN
+## (not army.spawn_radius) every 1.6 s, the pair is up from the start (after_chunks 0, call-in
+## 0.8 s) and runs every 2.5 s; the kaiju cannot fall. Everything else is the game's own data and
+## code. Stills along the way; pair with --write-movie (ci_capture.sh --movie) for the clip.
+## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_military.gd -- --out=<dir> [--seconds=10]
+##     --script tools/capture/capture_military.gd -- --out=<dir> [--seconds=18]
 
-const SHOTS: Array[int] = [120, 240, 330, 420, 510, 590]
+const SHOTS: Array[int] = [300, 480, 600, 720, 840, 960, 1060]
 ## Where columns call in from, metres from the kaiju (the game's is army.spawn_radius).
-const CLIP_SPAWN := 34.0
+const CLIP_SPAWN := 44.0
 ## When the kaiju turns to face the helicopters.
-const TURN_AT := 6.0
+const TURN_AT := 13.0
 
 var _out := "user://military"
-var _seconds := 10.0
+var _seconds := 18.0
 var _frame := 0
 
 
