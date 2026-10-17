@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
+const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
@@ -162,6 +163,21 @@ func _check_rampage() -> void:
 		)
 		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
+	# Rooftop defenders (D-063): figures stand on the squads' roofs, at most max_drawn of them,
+	# and their volleys draw flashes and tracers and call the rifle cue.
+	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
+	var cap := Num.i(rampage.sim.army["rooftop"]["max_drawn"])
+	check(
+		roofs != null and roofs.most_drawn > 0 and roofs.most_drawn <= cap,
+		(
+			"armed citizens stand on the roofs, at most %d drawn (%d)"
+			% [cap, roofs.most_drawn if roofs else -1]
+		)
+	)
+	check(
+		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
+		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
+	)
 	check(
 		rampage.sim.chunks_destroyed > 0,
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
@@ -216,15 +232,30 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
 		want.append_array(["cracks", "ready", "deflect", "regen"])
+	var jets := 0
+	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		jets = maxi(jets, FlowBreath.jets(rampage))
+		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
 	var sound: String = SIGNATURE_SOUND[kind]
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
+	if kind == "breath":
+		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
+		var first := Num.f(scorch_glow.get("first", -1.0))
+		var peak := Num.f(scorch_glow.get("peak", 0.0))
+		check(
+			first >= 0.0 and first < peak * 0.5,
+			(
+				"the breath scorch's molten cracks glow in, not at full on frame one (%.2f of %.2f)"
+				% [first, peak]
+			)
+		)
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
