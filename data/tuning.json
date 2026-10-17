@@ -102,6 +102,15 @@
 		"ink_unit_mult": 3.0
 	},
 	"air": {
+		"formation": {
+			"run_every": 5.0,
+			"run_speed": 6.0,
+			"break_speed": 9.0,
+			"attack_clear": 5.5,
+			"face_deg": 40.0,
+			"wing_gap": 10.0,
+			"wing_out": 7.0
+		},
 		"after_chunks": 120,
 		"interval": 12.0,
 		"max": 3,
@@ -122,13 +131,36 @@
 		"clear_margin": 16.0
 	},
 	"army": {
+		"convoy": {
+			"column": 2,
+			"hull": [5.0, 2.5],
+			"clear": 0.4,
+			"two_lanes": 6.0,
+			"follow": 8.0,
+			"entry_depth": 10.0,
+			"band": [0.6, 0.95],
+			"standoff": 0.8,
+			"post_gap": 6.0,
+			"reserve": 1.5,
+			"danger": 0.55,
+			"danger_cost": 200.0,
+			"held_cost": 40.0,
+			"oncoming_cost": 80.0,
+			"spread_deg": 30.0,
+			"cover": 0.6,
+			"street_cost": 1.4,
+			"replan": 1.5,
+			"stuck": 2.0,
+			"reverse": 0.6,
+			"grid": 8.0
+		},
 		"start_interval": 5.0,
 		"min_interval": 1.0,
 		"tank_hp": 25,
 		"tank_damage": 4,
 		"min_damage": 1,
 		"fire_interval": 2.2,
-		"range": 11.0,
+		"range": 24.0,
 		"speed": 2.5,
 		"tank_rubble": 2,
 		"spawn_radius": 60.0,
