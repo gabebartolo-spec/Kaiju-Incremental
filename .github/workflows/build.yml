@@ -8,7 +8,9 @@ name: build
 # project.godot, export_presets.cfg or this file is proven by the push to main that
 # merges it, or by running the workflow by hand on the branch. The exported game runs
 # headless for 120 frames and must load the main scene from project.godot without
-# logging an error; the .exe is then uploaded as the "KaijuIncremental-windows" artefact. Sprite
+# logging an error. The export itself is tools/export_windows.sh (with its pack check), the
+# same script agents run locally. On main the .exe is uploaded as "KaijuIncremental-windows"
+# (30 days); a dispatched run uploads "KaijuIncremental-<sha>" (7 days), the demo build. Sprite
 # sheets under assets/sprites are plain git (.gitattributes). The display fonts are LFS
 # (assets/fonts, ~26 KB), so the checkout pulls LFS; LFS bandwidth is metered, so keep big
 # binaries out of it or cache them.
@@ -18,10 +20,18 @@ on:
     paths-ignore:
       - "docs/**"
       - "**/*.md"
+  # By hand, for any branch (the demo build comes from here): exports `ref` (default: the
+  # branch the run is dispatched on) and uploads KaijuIncremental-<sha> for 7 days.
+  #   gh workflow run build.yml --ref claude/look-options [-f ref=<branch or sha>]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or commit to export (default: the dispatched branch)"
+        required: false
+        default: ""
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-${{ inputs.ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -40,7 +50,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref || github.ref }}
           lfs: true
+
+      # tools/pck_check.py reads the zstd-compressed resources with compression.zstd (3.14+).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
 
       - name: Cache Godot and its Windows export templates
         id: godot-cache
@@ -69,16 +85,14 @@ jobs:
           dest="$(cygpath -u "$APPDATA")/Godot/export_templates/${GODOT_VERSION}.stable"
           mkdir -p "$dest" && cp ~/godot/templates/* "$dest/"
 
-      - name: Import and export
+      # tools/export_windows.sh: import (script errors fail it), export the "Windows Desktop"
+      # preset, then tools/pck_check.py proves the pack holds the real fonts (not LFS pointers)
+      # and every kaiju model, and ships no tools/ scripts.
+      - name: Import, export and check the pack
         run: |
-          godot="$HOME/godot/Godot_v${GODOT_VERSION}-stable_win64_console.exe"
-          timeout 600 "$godot" --headless --path . --editor --import > import.log 2>&1 || { cat import.log; exit 1; }
-          if grep -qE "SCRIPT ERROR|Parse Error|Compile Error" import.log; then cat import.log; exit 1; fi
-          mkdir -p out/windows
-          timeout 600 "$godot" --headless --path . --export-release "Windows Desktop" out/windows/KaijuIncremental.exe > export.log 2>&1 \
-            || { cat export.log; exit 1; }
-          cat export.log
-          test -f out/windows/KaijuIncremental.exe || { echo "::error::the export produced no out/windows/KaijuIncremental.exe"; exit 1; }
+          GODOT="$HOME/godot/Godot_v${GODOT_VERSION}-stable_win64_console.exe"             timeout 1200 tools/export_windows.sh 2>&1 | tee export.log
+          test "${PIPESTATUS[0]}" = 0 || { echo "::error::export or pack check failed"; exit 1; }
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Launch the build headless; it must reach the main scene
         run: |
@@ -97,11 +111,20 @@ jobs:
           echo "The exported build launched headless and loaded $main."
 
       - name: Upload the build
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: KaijuIncremental-windows
           path: out/windows/KaijuIncremental.exe
           retention-days: 30
+
+      - name: Upload the build for the dispatched ref
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: KaijuIncremental-${{ env.sha }}
+          path: out/windows/KaijuIncremental.exe
+          retention-days: 7
 
       - name: Upload the logs
         if: failure()
@@ -109,6 +132,5 @@ jobs:
         with:
           name: build-logs
           path: |
-            import.log
             export.log
             launch.log
