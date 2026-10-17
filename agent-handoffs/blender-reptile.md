@@ -1,4 +1,4 @@
-# blender-reptile handoff, 2026-10-17 13:15
+# blender-reptile handoff, 2026-10-17 13:08
 ## State: running a check (full A|B renders of walk, turn, roar; then compose, encode, crops)
 ## Task
 Round 1 (done, D-pending): hand-modelled reptile adult A vs Tripo adult B; board sent; director:
@@ -20,10 +20,16 @@ claude/blender-reptile-f5388e; round 1 at 4a1b1f8/edf5b60; round 2 rig script at
   Keys are baked per frame: root path (walk straight / smooth 90 deg turn), pelvis bob/sway/yaw,
   spine/neck counter, tail wave, feet world-planted through stance, roar crouch-rear-hold-recover.
 - Scratch (not committed): scratchpad/mt/{r,meas,crops,compose.py,encode.py}; B.glb copy.
+- motion_test.py `volume` task: girth kept per joint at its worst frame (shell of vertices round the
+  joint, mean distance to the posed joint centre vs rest).
+- Walk clips encoded (scratch mt/clips/walk_{side,threeq}_AB.mp4, 1284x480, Blender's ffmpeg).
 ## Evidence so far
 - Foot slide on deformed toe pads, max per clip: A walk 8.0 / turn 10.8 / roar 1.1 cm;
   B walk 5.5 / turn 19.1 / roar 4.3 cm (100 m kaiju). B's right foot rests 69 cm off the ground in
   the Tripo sculpt itself (left at 0) - mesh, not rig.
+- Girth kept (worst frame): A shoulder 95.6, elbow 94.8, neck (roar) 95.8, rest >= 97%;
+  B shoulder 91.4, elbow 96.3, rest >= 98%. Weak spot on both: shoulder/elbow (arms swing ~70 deg
+  down from the A-pose to the belly). Walk cycle reviewed on a contact sheet: reads cleanly on both.
 ## Attempts (fix-loop record)
 - Rig origin at the snout put planted feet 60 m ahead: re-origin on the pelvis.
 - Foot targets used rig.matrix_world (last frame): one-frame (84 cm) offset; build the matrix per frame.
@@ -31,6 +37,11 @@ claude/blender-reptile-f5388e; round 1 at 4a1b1f8/edf5b60; round 2 rig script at
 - FK arm angles gave different hands on A and B (different rest forearms): IK hand targets instead.
 - Roar tail pitch sign pushed B's tail into the ground (looked detached): + pitch lifts a tail bone.
 - B jaw mask reached the throat: floor line under the mouth, only in front of the hinge.
+## Direction (lead, 13:01)
+Director prefers A's look ("more original, less a blatant Godzilla copy"): A is the design direction,
+B is only the motion-test control. Any refinement keeps A's croc snout, pale dorsal plates, long low
+tail; never drift it toward Godzilla. Lead research notes (13:01): joint edge loops, deform/control
+bone split, per-joint volume numbers (done), QuadriFlow for B if ever needed.
 ## Open decisions
 Lead/director read of the clips: does B move well on the hand rig?
 ## Running jobs

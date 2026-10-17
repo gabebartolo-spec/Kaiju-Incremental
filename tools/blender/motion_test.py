@@ -647,7 +647,65 @@ def crops():
         bpy.ops.render.render(write_still=True)
 
 
-if TASK == "render":
+JOINTS = {"shoulder_L": "upperarm_L", "elbow_L": "forearm_L", "wrist_L": "hand_L", "hip_L": "thigh_L",
+          "knee_L": "shin_L", "ankle_L": "meta_L", "neck": "neck1", "skull": "head", "jaw_hinge": "jaw",
+          "tail_base": "tail1", "tail_mid": "tail5"}
+
+
+def volume(clip):
+    """Girth kept at each joint: vertices within reach of the joint at rest, their mean distance
+    to the posed joint centre each frame against rest. A collapsing (pinching) joint drops below
+    100%; the worst frame is reported. A candy-wrapper twist shows up the same way."""
+    P = key_clip(clip)
+    sets = {}
+    for j, bone in JOINTS.items():
+        b = arm_data.bones[bone]
+        c = np.array(b.head_local)
+        near = min(np.linalg.norm(REST_V[o.name] - c, axis=1).min() for o in meshes)
+        r = near + 0.5 * min(b.length, b.parent.length if b.parent else b.length)  # a shell round the joint
+        for o in meshes:
+            sel = np.nonzero(np.linalg.norm(REST_V[o.name] - c, axis=1) < r)[0]
+            if len(sel):
+                sets.setdefault(j, []).append((o, sel))
+    rest = {}
+    worst = {j: (9.9, -1) for j in sets}
+    for f in [-1] + list(range(FRAMES)):
+        if f < 0:
+            for pb in rig.pose.bones:  # rest pose
+                pb.matrix_basis = Matrix.Identity(4)
+            for con in [c for pb in rig.pose.bones for c in pb.constraints]:
+                con.mute = True
+            bpy.context.view_layer.update()
+        else:
+            if f == 0:
+                for con in [c for pb in rig.pose.bones for c in pb.constraints]:
+                    con.mute = False
+            settle(f)
+        deps = bpy.context.evaluated_depsgraph_get()
+        cos = {}
+        for o in meshes:
+            me = o.evaluated_get(deps).to_mesh()
+            co = np.empty(len(me.vertices) * 3)
+            me.vertices.foreach_get("co", co)
+            o.evaluated_get(deps).to_mesh_clear()
+            cos[o.name] = co.reshape(-1, 3)  # objects sit at identity under the rig's space
+        for j, parts in sets.items():
+            centre = np.array(rig.pose.bones[JOINTS[j]].head)
+            pts = np.concatenate([cos[o.name][sel] for o, sel in parts])
+            g = np.linalg.norm(pts - centre, axis=1).mean()
+            if f < 0:
+                rest[j] = g
+            elif g / rest[j] < worst[j][0]:
+                worst[j] = (g / rest[j], f)
+    res = {j: {"girth_kept_pct": round(100 * w, 1), "frame": fr} for j, (w, fr) in worst.items()}
+    (OUT / f"{MODEL}_{clip}_volume.json").write_text(json.dumps(res, indent=1))
+    print("volume", MODEL, clip, {j: float(v["girth_kept_pct"]) for j, v in res.items()})
+
+
+if TASK == "volume":
+    for c in CLIPS:
+        volume(c)
+elif TASK == "render":
     for c in CLIPS:
         render(c)
 elif TASK == "measure":
