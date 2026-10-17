@@ -1,5 +1,5 @@
 # Kaiju voxel skin (was: look test) handoff, 2026-10-17 17:20
-## State: running a check (CI clips of the croc titan; stills done, then report to the lead)
+## State: awaiting lead (croc titan #19 evidence sent; don't merge; auto-fix off)
 
 ## Task
 D-041 voxel skin is merged (#15, squash 7ff1f03). PR #19 (claude/kaiju-skin-weights -> claude/look-
@@ -51,10 +51,10 @@ capture.yml is older and fails at once). Compose: scratchpad py/compose_ct.py <d
 (dl/{before,after}_{stills,clip}; ffmpeg via imageio_ffmpeg).
 
 ## Next
-Clips done -> compose croctitan_game_before_after.mp4 into the notes folder, LOOK at it, send the
-lead stills + clip + head SHA. Findings for the lead: roar pose (game biped head/jaw motion swings
-the croc's head and jaw down; kaiju-motion's code), 204 m long body, filler 143k vertices, hip
-leg/tail mixing is in the authored weights.
+Sent to lead 17:35: stills, clip (notes kaiju-voxel-skin/croctitan/croctitan_game_before_after.mp4,
+clip_sheet.png), head SHA. Wait for review. Open findings for others: roar pose (kaiju-motion's
+biped head/jaw motion swings the croc's head and jaw down), 204 m body (camera/reach unchecked),
+filler 143k vertices, hip leg/tail mixing is in blender-reptile's authored weights.
 
 ## Rules learnt the hard way
 - Python write_text on Windows writes CRLF; git checks out LF, so a stamped file (rig.json) must be
@@ -69,4 +69,4 @@ leg/tail mixing is in the authored weights.
 - Fresh worktrees have LFS fonts as pointers: git lfs pull, or flow times out.
 
 ## Running jobs
-The two clip runs above (39007991777, 39008521585).
+None (PR #19 CI on push only).
