@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 05:50
-## State: blocked (octopus captures: GitHub Actions billing block; windowed Godot blocked while the director games)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 12:45
+## State: awaiting species-motion (its local octopus run first, then my octopus capture)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -50,7 +50,9 @@ into side-session-notes/<lead>/kaiju-voxel-skin/ (before_after mp4s, *_joints.pn
 PR #15's body. Octopus: CI 6dfa6b3 runs timed out (50 min, 150k voxels on lavapipe); the lighter
 rerun (--seconds=6 clips, capture_skin draws only near targets, 1d? see ci_runs4.txt) was refused:
 "recent account payments have failed or your spending limit needs to be increased" (all Actions).
-Lead told (05:45). Next: octopus capture locally when the focus guard allows (windowed
+Lead (12:42): capture the octopus locally, windowed + off-screen override.cfg, only when the focus
+guard allows AND after species-motion messages that its local octopus run is done (one GPU job at a
+time). look-options merged in (55ae39d, LFS checkout fix). Then: octopus capture locally (windowed
 capture_motion.gd --species=cephalopod --cam=game [--kaiju-rigid] --seconds=6, and capture_skin.gd
 --species=cephalopod --frames=635,656,869 [--kaiju-rigid] --stills=<dir>), compose with scratch
 py/compose_pr.py <dl> <out> <ffmpeg> cephalopod, add to PR #15, tell the lead.
