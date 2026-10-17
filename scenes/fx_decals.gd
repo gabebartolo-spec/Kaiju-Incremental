@@ -47,7 +47,9 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 static func is_drawn(shape: Shape, look: Dictionary) -> bool:
 	var cracks := Num.i(look.get("cracks", 9))
 	var half := Num.f(look.get("half_angle", 0.5))
-	return _cache.has(_key(shape, cracks, half, false)) and _cache.has(_key(shape, cracks, half, true))
+	return (
+		_cache.has(_key(shape, cracks, half, false)) and _cache.has(_key(shape, cracks, half, true))
+	)
 
 
 static func _key(shape: Shape, cracks: int, half: float, glow: bool) -> String:
