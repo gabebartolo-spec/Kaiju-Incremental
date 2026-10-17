@@ -25,6 +25,9 @@ Director: "tank and heli models look great".
   Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
 
 ## Open PRs into look-options
+- #15 voxel skin ACCEPTED r3 (4be3650; scythe clean, thigh seam at full flex accepted until Blender weights):
+  CONFLICTING after #17, helper syncing, merge new head when green. Next: Blender-weights input PR (voxel-skin)
+  + rig/weights export from motion_test.py (blender-reptile), tested on Tripo B until the D-045 mesh exists.
 - #17 tank MERGED 14:45 (9cbe34b). #18 heli FIX: heli hides the baby kaiju at game cam (21 s) -> orbit beside,
   not over, the camera-kaiju line + fade vehicles between camera and kaiju (D-025 rule). Size stays 2x.
 - #16 city-growth: stage 3 stills in; stage 4 (350k chunks) kills CI runners -> local GPU render approved,
