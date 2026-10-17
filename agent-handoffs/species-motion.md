@@ -1,5 +1,5 @@
 # Species-motion handoff, 2026-10-17 02:40
-## State: blocked (GitHub Actions billing: jobs not starting); r3d partial packet sent to lead
+## State: awaiting lead (full r3e packet sent for a fresh critic)
 
 ## Task
 Mantis (insectoid) and octopus (cephalopod) locomotion, taken over from kaiju-motion (it keeps
@@ -41,27 +41,15 @@ side-session-notes/local_9fac90d2.../species-motion/: octo_bone_sheet_r3.png (+ 
 mantis_bone_sheet_r3.png, mantis_r3a/ (first mantis clips, older twitch amplitudes, numbers.txt).
 
 ## Running jobs
-- NONE. Actions refuses jobs ("recent account payments have failed or spending limit", run
-  38940864369). Director's spend call via the lead. Do not dispatch captures until it's fixed.
-- 00284f3 (big rest moves every 0.18-0.4 s) is pushed but NOT rendered; r3d game at 0a36ec4 had a
-  0.83 s dead-still run (target ~0.6). Octopus adult side clip never rendered (runs stall >1 h in
-  software Forward+; try --renderer=gl_compatibility).
-- r3d (0a36ec4: big rest moves) CI runs 38935787382 (game), 38935798177 (side). Target from lead:
-  no dead-still run at rest > ~0.6 s by mean energy (screen_motion.py). Octopus adult side r3c run
-  38932093965 also pending; octopus baby clip already in notes octo_r3b/.
-- r3c game measured: holds median 0.0023 (r3b 0.0073), darts 0.0107; rest twitches still small by
-  mean energy (2.0 s dead-still run) - expect FIX on finding 3; next: fewer, larger moves.
-- kaiju-look-test: after any .kvox/.rig.json change run GODOT=<godot> bash tools/kaiju_skin/bake_all.sh
-  and commit the .vskin files (smoke fails on a stale skin) once PR #15 lands.
-- r3c CI runs 38932071938 (mantis game), 38932082863 (mantis side), 38932093965 (octopus
-  adult side), each with --pose-trace=user://pose.csv (out/userdata/...). Measure with
-  tools/capture/screen_motion.py <clip.mp4> <pose.csv>; compare to r3b (holds 0.0073 vs darts 0.0104,
-  rest dead-still 1.03 s). Lead r3b verdict: FIX (holds invisible on screen, game cam slide,
-  twitches unreadable at 80x150, side orbit, roar dead end); r3c (1d7d436) addresses all five.
-- Mantis clips sent (notes species-motion/mantis_r3b/); octopus baby sent (octo_r3b/).
-  Octopus adult side run 38923742801 finished but is NOT downloaded (network timeout), dispatched with
-  --ref claude/species-motion. A background watcher downloads each to scratchpad/ci/<run id>.
-  If the session is gone: gh run download <id>.
+- None. Actions blocked on billing (director to make repo public). Captures now run LOCALLY:
+  write override.cfg (off-screen, no_focus) in its own step, run windowed capture_motion at
+  --fixed-fps 60, delete override.cfg, convert AVI with cv2+imageio. Focus-guard allows it only when
+  the director is not in a fullscreen app. Share the GPU with kaiju-look-test: message before/after.
+- r3e packet: notes species-motion/r3e/ (mantis game+side, octopus adult game+side, baby r3b).
+  Mantis game rest dead-still 0.88 s on screen_motion.py, but its box is narrower than the adult
+  mantis at game cam (torso only): the meter under-reads limbs. Octopus adult measured OK.
+- Pushing to claude/kaiju-motion-species was refused by the permission classifier: ask the lead or
+  kaiju-motion to fast-forward #11 to claude/species-motion.
 
 ## Attempts (fix-loop record)
 - Octopus ownership: thickness test from the chain -> slate mid-tentacle. Region grow from seeds
