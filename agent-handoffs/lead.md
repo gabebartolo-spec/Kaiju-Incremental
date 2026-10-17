@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 12:50
-## State: working (CI restored 12:47: repo PUBLIC; reviewing #15 next)
+## State: awaiting director (start Blender-to-game helper now, or after turn/roar clips pass?)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -52,6 +52,16 @@ Director: "tank and heli models look great".
 Local windowed capture (off-screen override.cfg; focus guard allows only when the director isn't fullscreen),
 ONE GPU job at a time: species-motion octopus first, then kaiju-look-test octopus. Everyone merges look-options
 for the LFS fix before capturing.
+
+## FOCUS (director 13:06): "how using blender might improve motion"
+- Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
+  A 8/11/1 cm, B 5.5/19/4 cm (walk/turn/roar, of 100 m); girth A shoulder 96%, B 91%. B right foot 69 cm off
+  ground in the Tripo sculpt (mesh fault). So the RIG matters more than the mesh. Weak: A arms barely move;
+  walk in place. Turn/roar renders + crops still running; then my QA + fresh motion-critic.
+- Two routes explained to the director: (1) Blender skeleton+weights replace rig_voxel's guessed bone
+  ownership (fixes detached parts, stiff limbs; D-041 skin takes weights); (2) authored clips (roar, tail
+  swipe, beam) layered over procedural foot planting.
+- ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
 
 ## Blender direction (director 12:39)
 - Board: Tripo adult looks better; Blender adult "promising", "more original, less a blatant Godzilla copy"
