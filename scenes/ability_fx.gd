@@ -14,6 +14,8 @@ const RIM := preload("res://scenes/rim.gdshader")
 const FLARE := preload("res://scenes/flare.gdshader")
 const STREET := Color("3a3d40")
 const INK := Color("2a1620")
+## How much the breath's strike sparks' lifetimes vary (0 = all die together).
+const SPARK_LIFE_SPREAD := 0.6
 const MOLTEN := Color("ff7a2a")
 const WATER := Color(0.85, 0.95, 1.0)
 
@@ -107,6 +109,7 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	# The struck face: hot sparks (BreathBeam carries the flashes and the light).
 	var burst := FxParticles.sparks(_tint)
 	burst.direction = -dir + Vector3.UP * 0.4
+	burst.lifetime_randomness = SPARK_LIFE_SPREAD  # die out over time, not all on one frame
 	_burst(burst, roundi(50 * strength), 0.7).position = hit - dir * 0.4
 	# The scorch covers the sim's hit cone: from the feet (cone_origin) out to full reach.
 	var target := mouth + span
