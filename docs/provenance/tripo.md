@@ -42,3 +42,7 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-17 | insectoid adolescent texture v3 | "legs, arms ... ALL the same dark brown-black" prompt | Texture | 0161ad14 (texture) | 30 | yes | PASS (lead): uniform red-brown chitin; mantis_adolescent_tex.glb |
 | 2026-10-17 | cephalopod adult texture | deep-sea octopus: bruised purple-maroon, barnacles, pale pink-grey suckers, amber eyes on 8bf2f668 | Texture | 8bf2f668 (texture) | 30 | yes | generating |
 | 2026-10-17 | reptilian adult auto-rig | Tripo Auto Rig (Humanoid, Mixamo preset) on 01e78e11 | Rig | 01e78e11 (rig) | 20 | yes | for look test B (rep_adult_rigged.glb) |
+| 2026-10-17 | reptilian (D-045/046) refs | 3 text prompts x4 (croc titan / monitor titan / lean predator) | GPT Image 2.5 | image history 14:57-14:59 | 0 (free quota) | n/a | board reptile_directions.png; director PICK A croc titan |
+| 2026-10-17 | reptilian adult new | 2 Nano Banana edits of A (upright, then arms clear = A-pose) | Image edit | image history 15:30-15:31 | 0 (free) | n/a | A-pose ref PASS (lead); multi-view 15:33 REJECTED (left view missing arm, right arm raised wrong) |
+| 2026-10-17 | reptilian adult new | A-pose croc titan single image | Smart Mesh P2.0 x4 | 351ad916-623a-4b93-b919-cbb4ab52fd61 | 100 | yes | variant 1 PICKED (quad 6758 faces, clean joint loops) |
+| 2026-10-17 | reptilian adult new | texture from A-pose ref | Texture | 351ad916 (texture) | 30 | yes | six-view PASS (lead): rep_croctitan_adult.glb, croctitan_six_view.png |

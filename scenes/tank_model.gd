@@ -56,3 +56,16 @@ func fire() -> Vector3:
 ## Where the muzzle is now (world space).
 func muzzle() -> Vector3:
 	return _barrel.to_global(_muzzle)
+
+
+## A plain coloured box at pos (a fired shell, say).
+static func box(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mesh.material = mat
+	mi.mesh = mesh
+	mi.position = pos
+	return mi
