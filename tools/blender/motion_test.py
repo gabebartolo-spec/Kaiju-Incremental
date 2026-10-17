@@ -645,12 +645,15 @@ def foot_world(clip, side, f, P):
 
 
 # Tail motion (degrees per joint, base -> tip: base + extra * k, k = 0 at the root, 1 at the tip).
-TAIL_WALK = (4.0, 1.5)  # the walk's side-to-side wave
+TAIL_WALK = (4.0, 10.0)  # the walk's side-to-side S-wave
 TAIL_IDLE = (1.2, 0.6)  # the standing sway (72-frame period; at 0.6 in the roar)
-TAIL_LAG = 0.5  # phase (rad) each joint trails the one before
+TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
 TAIL_WHIP = (5.0, 6.4)  # turn whip per unit of tail_whip()
 TAIL_WHIP_DELAY = 0.5  # frames the whip takes per joint
-TAIL_SLAM = (1.0, 0.85)  # roar: lift per joint through the coil, slam per joint at the peak
+TAIL_LIFT = (5.0, -18.0)  # roar: the lift's arc per joint (root rises, mid curves up, tip trails)
+TAIL_SLAM = (1.15, 0.85)  # roar: the slam per joint as it lands, then where it rests, x (0.2 + 1.6 k)
+TAIL_TRAIL = 12.0  # roar: how far the outer tail curls up as the slam starts (per joint, x k)
+TAIL_SLAM_DELAY = 0.8  # frames the lift and the slam take per joint (the tip lands after the mid-tail)
 TAIL_SPRING = (12.0, 0.35)  # the tail's natural frequency (rad/s) and damping ratio
 _WHIP = {}
 
@@ -773,10 +776,18 @@ def pose_frame(clip, f, P):
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
         turn_yaw = (TAIL_WHIP[0] + TAIL_WHIP[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
         roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3) - 1.2 * look * (i >= 3)
-        lift = ramp(10, 26, f) * (1 - ramp(33, 40, f)) * roar
-        slam = ramp(33 + 0.6 * i, 40 + 0.6 * i, f) * (1 - ramp(104, 140, f)) * roar
-        b = f - 40 - 0.6 * i
-        rebound = math.exp(-b / 6) * math.sin(math.pi * b / 8) * roar if b > 0 else 0.0
+        # Lift: an arc, root first, the tip trailing; slam: a wave down the tail that speeds up into
+        # the street (no ease at the bottom: it lands hard), a short bounce, then it rests low.
+        lag = TAIL_SLAM_DELAY * i
+        hit = 37 + lag
+        fall = 5.0 - 3.0 * k  # the outer tail whips down fastest
+        down = min(1.0, max(0.0, (f - hit + fall) / fall)) ** 2
+        lift = ramp(10 + 1.5 * lag, 24 + 1.5 * lag, f) * (1 - down) * roar
+        slam = down * (TAIL_SLAM[0] + (TAIL_SLAM[1] - TAIL_SLAM[0]) * ramp(hit + 2, hit + 10, f))
+        slam *= (1 - ramp(104, 140, f)) * roar
+        trail = ramp(31, 36, f) * (1 - down) * roar  # the outer tail trails up as the root drives down
+        b = f - hit
+        rebound = math.exp(-b / 3) * math.sin(math.pi * b / 4) * roar if b > 0 else 0.0
         # In the roar the base lifts against the pelvis tipping back, so the slam lands the tip just
         # above the street rather than through it.
         set_rot(f"tail{i}", world_q(yaw=walk_yaw + idle_yaw + turn_yaw + roar_yaw,
@@ -784,7 +795,7 @@ def pose_frame(clip, f, P):
                                     + L.get("tail_roar_lift", 2.5) * rear * (i < 2) - 0.3 * rear * (i >= 2)
                                     + 2.0 * windup * (i < 4) + L.get("tail_breathe", 0.4) * breathe
                                     + L.get("tail_lift", 0.0) * (i == 0)
-                                    + TAIL_SLAM[0] * lift - TAIL_SLAM[1] * (0.5 + k) * (slam - 0.5 * rebound)))
+                                    + (TAIL_LIFT[0] + TAIL_LIFT[1] * k) * lift + TAIL_TRAIL * k * trail - (0.2 + 1.6 * k) * (slam - 4.0 * TAIL_SLAM[1] * rebound)))
     # Feet: world-fixed while planted (converted into the moving rig's space).
     # The rig's matrix for this frame (rig.matrix_world still holds the last evaluated frame).
     inv = (Matrix.Translation(root) @ Matrix.Rotation(math.radians(yaw), 4, "Z")).inverted()
@@ -957,7 +968,9 @@ def crops():
              # overshoot (from above and behind, where a pinch, a fin or a shear would show).
              ("turn", 39, "tail_root_drag", "tail1", V((-0.35, 0.6, 0.8)), 40),
              ("turn", 108, "tail_root_whip", "tail1", V((-0.35, 0.6, 0.8)), 40),
-             ("turn", 117, "tail_root_over", "tail1", V((-0.35, 0.6, 0.8)), 40)]
+             ("turn", 117, "tail_root_over", "tail1", V((-0.35, 0.6, 0.8)), 40),
+             # The roar's slam: the mid-tail as the tip lands (side on, where a kink would show).
+             ("roar", 47, "tail_mid_slam", "tail5", V((-1, 0.1, 0.15)), 55)]
     cam.data.lens = 50
     for clip, f, label, bone, d, dist in [x for x in shots if x[0] in CLIPS]:
         key_clip(clip)
@@ -1054,20 +1067,21 @@ def diff(clip):
 def tail_stats(clip):
     """The tail through a clip, in the rig's own space (root travel and yaw removed): each joint's
     side-to-side sweep (half the range of x), the tip's path, each joint's bend from rest (deg, the
-    worst frame), the lowest joint and lowest tail skin (world z, m), and the tip's angle off the
+    worst frame), each joint's height and the lowest tail skin (world z, m), and the tip's angle off the
     body's long axis per frame (the turn's whip and settle)."""
     key_clip(clip)
     names = [f"tail{i}" for i in range(TAIL_BONES)]
     behind = L["tail"][0].y + 5.0  # tail skin: rest vertices behind the tail's first metres
     tail_v = {o.name: np.nonzero(REST_V[o.name][:, 1] > behind)[0] for o in meshes}
-    xs, path_xy, bends, low_joint, low_skin, tip_angle = [], [], [], [], [], []
+    xs, path_xy, bends, low_joint, low_skin, tip_angle, joint_z = [], [], [], [], [], [], []
     for f in range(FRAMES):
         settle(f)
         pts = [rig.pose.bones[n].head.copy() for n in names] + [rig.pose.bones[names[-1]].tail.copy()]
         xs.append([p.x for p in pts])
         path_xy.append([[p.x, p.y] for p in pts])
         bends.append([math.degrees(rig.pose.bones[n].rotation_quaternion.angle) for n in names])
-        low_joint.append(min((rig.matrix_world @ p).z for p in pts))
+        joint_z.append([(rig.matrix_world @ p).z for p in pts])
+        low_joint.append(min(joint_z[-1]))
         deps = bpy.context.evaluated_depsgraph_get()
         low = 1e9
         for o in meshes:
@@ -1085,7 +1099,7 @@ def tail_stats(clip):
     sweep = ((xs.max(0) - xs.min(0)) / 2).tolist()
     out = dict(clip=clip, sweep_m=sweep, tip_over_root=sweep[-1] / max(sweep[1], 1e-6),
                max_bend_deg=np.array(bends).max(0).tolist(), low_joint_z=low_joint, low_skin_z=low_skin,
-               tip_angle_deg=tip_angle, path_xy=path_xy)
+               tip_angle_deg=tip_angle, path_xy=path_xy, joint_z=joint_z)
     (OUT / f"{MODEL}_{clip}_tail.json").write_text(json.dumps(out), encoding="utf-8")
     print(f"tail {MODEL} {clip}: sweep root {sweep[1]:.2f} m tip {sweep[-1]:.2f} m "
           f"(x{out['tip_over_root']:.1f}); worst bend {max(out['max_bend_deg']):.1f} deg; "
