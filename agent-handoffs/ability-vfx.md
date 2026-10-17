@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 04:15
-## State: awaiting lead ("Game demo planning" is now the lead, local_106fc100...; #8 QA; D-050 demo P4: SFX unpaused; PR #8 revive, do not merge)
+# Ability VFX/SFX handoff, 2026-10-18 04:25
+## State: available (asked the lead "Game demo planning", local_106fc100..., for a job: push dials + re-cut clips / croc roar / army sounds)
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -51,7 +51,7 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - Flow floor is 83.
 
 ## Unpushed (lead said no pushes yet)
-Local commit after 2195d54 adds the director's dials in tuning "sfx":
+Local commits after 2195d54 (2dc3297 + a capture .uid) add the director's dials in tuning "sfx":
 - footstep_min_interval 0.25
 - crack_min_interval 2.5 (the crack is now the exception, not every stomp)
 Flow is green at 83. Push only when the lead says.
