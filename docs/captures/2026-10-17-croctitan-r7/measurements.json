@@ -1,0 +1,305 @@
+{
+ "roar_footslide": {
+  "model": "C",
+  "clip": "roar",
+  "plants": [
+   {
+    "foot": "L",
+    "frames": [
+     0,
+     143
+    ],
+    "slide_cm": 4.0,
+    "sole_min_z_cm": 46.6
+   },
+   {
+    "foot": "R",
+    "frames": [
+     0,
+     143
+    ],
+    "slide_cm": 3.4,
+    "sole_min_z_cm": 48.4
+   }
+  ],
+  "max_slide_cm": 4.0
+ },
+ "roar_volume": {
+  "shoulder_L": {
+   "girth_kept_pct": 90.1,
+   "frame": 140
+  },
+  "elbow_L": {
+   "girth_kept_pct": 84.5,
+   "frame": 47
+  },
+  "wrist_L": {
+   "girth_kept_pct": 101.3,
+   "frame": 24
+  },
+  "hip_L": {
+   "girth_kept_pct": 99.9,
+   "frame": 34
+  },
+  "knee_L": {
+   "girth_kept_pct": 100.0,
+   "frame": 28
+  },
+  "ankle_L": {
+   "girth_kept_pct": 98.8,
+   "frame": 37
+  },
+  "neck": {
+   "girth_kept_pct": 99.5,
+   "frame": 64
+  },
+  "skull": {
+   "girth_kept_pct": 99.3,
+   "frame": 63
+  },
+  "jaw_hinge": {
+   "girth_kept_pct": 99.3,
+   "frame": 63
+  },
+  "tail_base": {
+   "girth_kept_pct": 99.8,
+   "frame": 26
+  },
+  "tail_mid": {
+   "girth_kept_pct": 100.0,
+   "frame": 20
+  }
+ },
+ "turn_footslide": {
+  "model": "C",
+  "clip": "turn",
+  "plants": [
+   {
+    "foot": "L",
+    "frames": [
+     0,
+     29
+    ],
+    "slide_cm": 3.6,
+    "sole_min_z_cm": 31.5
+   },
+   {
+    "foot": "L",
+    "frames": [
+     48,
+     77
+    ],
+    "slide_cm": 11.4,
+    "sole_min_z_cm": 23.1
+   },
+   {
+    "foot": "L",
+    "frames": [
+     96,
+     125
+    ],
+    "slide_cm": 4.2,
+    "sole_min_z_cm": 31.5
+   },
+   {
+    "foot": "R",
+    "frames": [
+     0,
+     5
+    ],
+    "slide_cm": 2.0,
+    "sole_min_z_cm": 47.6
+   },
+   {
+    "foot": "R",
+    "frames": [
+     24,
+     53
+    ],
+    "slide_cm": 5.3,
+    "sole_min_z_cm": 46.3
+   },
+   {
+    "foot": "R",
+    "frames": [
+     72,
+     101
+    ],
+    "slide_cm": 7.6,
+    "sole_min_z_cm": 37.6
+   },
+   {
+    "foot": "R",
+    "frames": [
+     120,
+     143
+    ],
+    "slide_cm": 0.9,
+    "sole_min_z_cm": 49.3
+   }
+  ],
+  "max_slide_cm": 11.4
+ },
+ "turn_volume": {
+  "shoulder_L": {
+   "girth_kept_pct": 89.9,
+   "frame": 13
+  },
+  "elbow_L": {
+   "girth_kept_pct": 87.7,
+   "frame": 108
+  },
+  "wrist_L": {
+   "girth_kept_pct": 101.2,
+   "frame": 132
+  },
+  "hip_L": {
+   "girth_kept_pct": 99.2,
+   "frame": 33
+  },
+  "knee_L": {
+   "girth_kept_pct": 99.8,
+   "frame": 143
+  },
+  "ankle_L": {
+   "girth_kept_pct": 98.2,
+   "frame": 143
+  },
+  "neck": {
+   "girth_kept_pct": 100.0,
+   "frame": 47
+  },
+  "skull": {
+   "girth_kept_pct": 100.0,
+   "frame": 35
+  },
+  "jaw_hinge": {
+   "girth_kept_pct": 99.9,
+   "frame": 35
+  },
+  "tail_base": {
+   "girth_kept_pct": 99.8,
+   "frame": 57
+  },
+  "tail_mid": {
+   "girth_kept_pct": 100.0,
+   "frame": 13
+  }
+ },
+ "walk_footslide": {
+  "model": "C",
+  "clip": "walk",
+  "plants": [
+   {
+    "foot": "L",
+    "frames": [
+     0,
+     29
+    ],
+    "slide_cm": 3.6,
+    "sole_min_z_cm": 31.5
+   },
+   {
+    "foot": "L",
+    "frames": [
+     48,
+     77
+    ],
+    "slide_cm": 3.6,
+    "sole_min_z_cm": 31.5
+   },
+   {
+    "foot": "L",
+    "frames": [
+     96,
+     125
+    ],
+    "slide_cm": 3.6,
+    "sole_min_z_cm": 31.5
+   },
+   {
+    "foot": "R",
+    "frames": [
+     0,
+     5
+    ],
+    "slide_cm": 2.0,
+    "sole_min_z_cm": 47.6
+   },
+   {
+    "foot": "R",
+    "frames": [
+     24,
+     53
+    ],
+    "slide_cm": 3.0,
+    "sole_min_z_cm": 47.6
+   },
+   {
+    "foot": "R",
+    "frames": [
+     72,
+     101
+    ],
+    "slide_cm": 3.0,
+    "sole_min_z_cm": 47.6
+   },
+   {
+    "foot": "R",
+    "frames": [
+     120,
+     143
+    ],
+    "slide_cm": 0.9,
+    "sole_min_z_cm": 49.3
+   }
+  ],
+  "max_slide_cm": 3.6
+ },
+ "walk_volume": {
+  "shoulder_L": {
+   "girth_kept_pct": 89.9,
+   "frame": 13
+  },
+  "elbow_L": {
+   "girth_kept_pct": 87.7,
+   "frame": 12
+  },
+  "wrist_L": {
+   "girth_kept_pct": 101.2,
+   "frame": 84
+  },
+  "hip_L": {
+   "girth_kept_pct": 99.3,
+   "frame": 31
+  },
+  "knee_L": {
+   "girth_kept_pct": 99.8,
+   "frame": 143
+  },
+  "ankle_L": {
+   "girth_kept_pct": 98.2,
+   "frame": 143
+  },
+  "neck": {
+   "girth_kept_pct": 100.0,
+   "frame": 47
+  },
+  "skull": {
+   "girth_kept_pct": 100.0,
+   "frame": 35
+  },
+  "jaw_hinge": {
+   "girth_kept_pct": 99.9,
+   "frame": 35
+  },
+  "tail_base": {
+   "girth_kept_pct": 99.9,
+   "frame": 104
+  },
+  "tail_mid": {
+   "girth_kept_pct": 100.0,
+   "frame": 13
+  }
+ }
+}

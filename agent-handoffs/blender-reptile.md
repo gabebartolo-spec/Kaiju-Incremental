@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 17:25
-## State: running a check (r7 polish + director board: chain bash ba72i5m06)
+# blender-reptile handoff, 2026-10-17 17:22
+## State: awaiting lead (r7 polish + director board delivered)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -63,7 +63,8 @@ diff/*.json); clips + sheets in notes blender-reptile/croctitan_r5/.
   scratch dir/oldB (60 fps; segments walk 92-275/437-605/736-900, turn 280-435, roar 612-732),
   resampled x2.5, looped. Composer scratch dir/board.py (also writes the still sheet). Captions only
   state what the look-test NOTE documents (no jaw/tail bones -> lattice weights; thigh fold; knee crease).
-  Pending: chain -> compose -> encode_intra -> check -> commit evidence -> tell lead.
+  DONE 17:22: board 25.5 s (54 MB) + still + README in notes director/; r7 evidence
+  docs/captures/2026-10-17-croctitan-r7/; clips notes croctitan_r7/. Export byte-identical (cmp).
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -110,7 +111,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-bash ba72i5m06: headless r7 chain + high-view renders (scratch r7/, dir/hi). No MCP Blender.
+None. No Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
