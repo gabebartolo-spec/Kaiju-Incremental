@@ -574,7 +574,7 @@ def set_loc(name, delta):
 
 
 hip_h = L["leg"][0].z
-D = 0.95 * 46.0  # stride per cycle, the same for both meshes so the paths match
+D = 130.0 / 3  # stride per cycle (~0.95 x 46 m): a clip's 3 cycles travel exactly 13 ground squares, so it loops
 T = 48.0  # frames per cycle: three cycles in the 144-frame clip, so the walk loops seamlessly
 DUTY = 0.62
 V_WALK = D / T
@@ -642,15 +642,15 @@ def pose_frame(clip, f, P):
         return t * t * (3 - 2 * t)
     roar = 0.0 if walking else 1.0
     gait = 1.0 - roar
-    # Roar beats (24 fps): settle 0-16; wind-up 16-34 (head drops, weight sinks; the last 8 frames,
-    # 26-34, a sharp weight drop); rear 34-48 (fast); peak 48-58 (10 frames, a tremor); slow drift
-    # 58-112 (sags to 60% while the jaw stays wide); recover 112-140.
-    windup = (ramp(16, 34, f) * (1 - ramp(34, 42, f))) * roar
-    drop = (ramp(26, 34, f) * (1 - ramp(34, 40, f))) * roar
+    # Roar beats (24 fps): settle 0-14; coil 14-38 (the head dips first and is already lifting while
+    # the pelvis still sinks, so the motion never stalls); rear 31-47 (one ease in and out, fastest
+    # about f39); peak 47-56; slow linear drift 56-118 overlapping the recovery 104-140. Nothing in
+    # the roar moves faster than the breathing and the look: no tremor layer (a 7 Hz shake buzzed).
+    windup = ramp(12, 28, f) * (1 - ramp(27, 40, f)) * roar   # head and neck coil (bottoms first)
+    drop = ramp(22, 38, f) * (1 - ramp(37, 45, f)) * roar     # pelvis and knees load, fastest as the head turns
     # The drift is linear (never a hold) and overlaps the recovery, so nothing stops between them.
     drift = min(1.0, max(0.0, (f - 56) / 62.0))
-    rear = ramp(34, 48, f) * (1 - 0.45 * drift) * (1 - ramp(104, 140, f)) * roar
-    shake = math.sin(f * 2 * math.pi * 7 / FPS) * ramp(46, 50, f) * (1 - ramp(58, 80, f)) * roar
+    rear = ramp(31, 47, f) * (1 - 0.45 * drift) * (1 - ramp(104, 140, f)) * roar
     # Breathing at a period that divides the clip (72 frames), so the roar loops without a pop.
     breathe = math.sin(f * 2 * math.pi / 72) * roar
     # A slow look across the street through the drift (head and tail), gone by the recovery.
@@ -664,12 +664,12 @@ def pose_frame(clip, f, P):
         d = ((f / T - phs) % 1.0) * T  # frames since this foot's contact
         land += math.sin(math.pi * d / 10.0) ** 2 if d < 10.0 else 0.0  # sin^2: no velocity step
     bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
-           - 0.045 * hip_h * windup - 0.075 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe)
+           - 0.18 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe)
     sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
     p_yaw = 4.0 * math.sin(ph) * gait
     p_roll = 3.0 * math.cos(w) * gait
-    set_rot("pelvis", world_q(pitch=-7 * rear + 6 * windup + 4.5 * drop, yaw=p_yaw, roll=p_roll))
+    set_rot("pelvis", world_q(pitch=-7 * rear + 9 * drop, yaw=p_yaw, roll=p_roll))
     set_rot("spine", world_q(pitch=1.2 * math.sin(2 * ph - 0.5) * gait - 10 * rear + 4 * windup,
                              yaw=-0.6 * p_yaw, roll=-0.6 * p_roll))
     set_rot("chest", world_q(pitch=-0.8 * math.sin(2 * ph - 1.0) * gait - 9 * rear + 3 * windup + 1.5 * breathe,
@@ -677,13 +677,13 @@ def pose_frame(clip, f, P):
                              roll=-0.8 * p_roll + 1.5 * math.cos(w - 0.8) * gait))
     # Neck and head keep the hunting gaze steady (counter the body), a little low when walking;
     # in the roar the head dips through the wind-up, then throws back.
-    set_rot("neck0", world_q(pitch=4 * gait + 1.2 * math.sin(2 * ph - 1.4) * gait - 15 * rear + 9 * windup
-                             + 0.8 * shake, yaw=-0.25 * p_yaw - 1.0 * math.sin(ph - 1.2) * gait))
-    set_rot("neck1", world_q(pitch=2 * gait - 11 * rear + 7 * windup, yaw=-0.25 * p_yaw))
-    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 6 * windup + 1.2 * shake
+    set_rot("neck0", world_q(pitch=4 * gait + 1.2 * math.sin(2 * ph - 1.4) * gait - 15 * rear + 16 * windup,
+                             yaw=-0.25 * p_yaw - 1.0 * math.sin(ph - 1.2) * gait))
+    set_rot("neck1", world_q(pitch=2 * gait - 11 * rear + 10 * windup, yaw=-0.25 * p_yaw))
+    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 10 * windup
                             + 2.0 * breathe, yaw=7.0 * look))
     # Mouth shut at rest and walking; it parts in the wind-up and gapes at the peak.
-    set_rot("jaw", world_q(pitch=L.get("jaw_rest", 0.0) + 5 * windup + 36.0 * rear * (1 + 0.04 * shake)))
+    set_rot("jaw", world_q(pitch=L.get("jaw_rest", 0.0) + 5 * windup + 36.0 * rear))
     # Arms: elbows bent, hands low in front of the belly; at the peak the claws come up to the chest,
     # elbows still bent (never out forward); no shoulder roll.
     sp1 = L["spine"][1]
@@ -897,7 +897,7 @@ def diff(clip):
     key_clip(clip)
     deps = None
     prev = first = None
-    steps, tip_z = [], []
+    steps, tip_z, head_tip = [], [], []
     tip = rig.pose.bones[f"tail{TAIL_BONES - 1}"]
     for f in range(FRAMES):
         settle(f)
@@ -916,8 +916,12 @@ def diff(clip):
             first = cur
         prev = cur
         tip_z.append(float((rig.matrix_world @ tip.tail).z))
+        head_tip.append(list(rig.matrix_world @ rig.pose.bones["head"].tail))
     seam = float(np.linalg.norm(first - prev, axis=1).mean())
-    out = dict(clip=clip, steps=steps, seam=seam, median=float(np.median(steps)), tail_tip_z=tip_z)
+    # Buzz check: sign flips of the snout tip's acceleration (a tremor flips every frame or two).
+    acc = np.diff(np.array(head_tip), n=2, axis=0)
+    out = dict(clip=clip, steps=steps, seam=seam, median=float(np.median(steps)), tail_tip_z=tip_z,
+               head_tip=head_tip, head_accel=np.linalg.norm(acc, axis=1).tolist())
     (OUT / f"{MODEL}_{clip}_diff.json").write_text(json.dumps(out), encoding="utf-8")
     print(f"diff {MODEL} {clip}: median {out['median']:.3f} m/frame, max {max(steps):.3f} "
           f"(f{int(np.argmax(steps)) + 1}), seam {seam:.3f}; tail tip min z {min(tip_z):.1f} m")

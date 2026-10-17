@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 16:42
-## State: awaiting lead (croc titan r5 sent)
+# blender-reptile handoff, 2026-10-17 17:00
+## State: running a check (croc titan r6 roar fixes: chain bash bhcyjh836 -> scratch r6/)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -42,6 +42,14 @@ space + seam + tail tip z); plot script scratch r5/plot.py (r4 vs r5, r4 diffs f
 DELIVERED 16:42: export byte-identical to 3ea955d (cmp). Foot slide walk 3.4 / turn 11.4 / roar 3.4 cm;
 girth unchanged. docs/captures/2026-10-17-croctitan-r5/ (crops, measurements, per_frame_diff.png +
 diff/*.json); clips + sheets in notes blender-reptile/croctitan_r5/.
+## Round 6 (lead 16:46: roar only; walk/turn pass pending a clean re-encode; skin byte-identical)
+1 buzz = the 7 Hz `shake` term on neck0/head/jaw (3.4-frame beat): removed. Snout-tip z acceleration
+  has 0 sign flips f48-74. 2 coil: head coil ramp(12,28)/(27,40), pelvis load ramp(22,38)/(37,45),
+  drop 0.18 hip_h (8.3 m), pelvis pitch 9, neck0 16 / neck1 10 / head 10 deg. Pose change f28-31 dips
+  to 0.80 vs 1.17 (the head's turnaround), then builds smoothly. 3 rear ramp(31,47), fastest f39-41.
+  Walk stride D = 130/3 so 3 cycles = 13 ground squares (PNG seam was a ground jump otherwise).
+  Encoder: scratch r6/encode_intra.py (gopsize 1, no B-frames, PERC_LOSSLESS; Blender has no -g CLI).
+  PNG pixel diff per view: scratch r6/pngdiff.py. diff JSON now carries head_tip + head_accel.
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -88,7 +96,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-None. No Blender open.
+bash bhcyjh836: headless r6 chain (scratch r6/). No MCP Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
