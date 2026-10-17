@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 04:25
-## State: available (asked the lead "Game demo planning", local_106fc100..., for a job: push dials + re-cut clips / croc roar / army sounds)
+# Ability VFX/SFX handoff, 2026-10-18 04:40
+## State: available (asked the lead "LEAD"/Game demo planning, local_106fc100..., for a job; doing prep meanwhile)
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -50,11 +50,17 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - The director's listen is the gate.
 - Flow floor is 83.
 
-## Unpushed (lead said no pushes yet)
-Local commits after 2195d54 (2dc3297 + a capture .uid) add the director's dials in tuning "sfx":
-- footstep_min_interval 0.25
-- crack_min_interval 2.5 (the crack is now the exception, not every stomp)
-Flow is green at 83. Push only when the lead says.
+## Unpushed (lead said no pushes yet; branch is ahead of 2195d54)
+- 2dc3297: the director's dials in tuning "sfx":
+  - footstep_min_interval 0.25
+  - crack_min_interval 2.5
+  Flow is green at 83.
+- v2 clips with the dials are in shared notes ability-sfx-d050/v2-dials/. Cracks dropped from 29 to 7 in 20 s.
+- roar.ogg (croc titan end-card roar, synth only, 2.2 s, timed to the biped head's roar):
+  - in build_sfx.py build_roar, with a provenance row;
+  - NOT wired in, because the end card is demo P5's;
+  - the ogg and its spectrogram are in shared notes ability-sfx-d050/roar/.
+Push only when the lead says.
 
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).

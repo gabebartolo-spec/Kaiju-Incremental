@@ -250,6 +250,35 @@ def build_collapse() -> None:
     save("collapse", highpass(highpass(x, 30.0), 30.0), -1.5)
 
 
+def build_roar() -> None:
+    """The croc titan's roar (demo end card, D-050), timed to the biped head's roar: a
+    breath in while the head goes back (0.32 s), then a 1.2 s bellow from the lunge. A
+    crocodile bellow is a low, rough rumble rather than a lion's tone: a 48-62 Hz buzz with
+    many harmonics through three throat formants, a fast rasp, and a hiss of breath."""
+    reseed("build_roar")
+    x = np.zeros(seconds(2.2))
+    inhale_n = seconds(0.34)
+    inhale = bandpass(noise(inhale_n), np.linspace(500, 1400, inhale_n), 1.0)
+    place(x, inhale * hump(inhale_n, 0.85) * 0.5, 0.0)
+    n = seconds(1.6)
+    t = np.arange(n) / RATE
+    shape = hump(n, 0.12) * np.exp(-np.maximum(t - 0.9, 0.0) / 0.25)
+    freq = 48 + 14 * np.sin(np.pi * np.clip(t / 1.2, 0, 1)) + 2.5 * np.sin(2 * np.pi * 5.5 * t)
+    buzz = tone(freq, 24, 0.85)
+    rasp = 0.6 + 0.4 * np.sign(np.sin(2 * np.pi * np.cumsum(freq * 0.5) / RATE))
+    buzz *= rasp
+    throat = (bandpass(buzz, np.full(n, 320.0), 2.5) * 1.6
+              + bandpass(buzz, np.full(n, 760.0), 3.0) * 1.0
+              + bandpass(buzz, np.linspace(1500, 1100, n), 3.5) * 0.5
+              + lowpass(buzz, 200) * 1.2)
+    breath = bandpass(noise(n), np.full(n, 1800.0), 0.8) * 0.35
+    body = (throat + breath) * shape
+    place(x, body / max(1e-9, np.max(np.abs(body))), 0.32, 1.0)
+    sub = thump(1.2, 60, 34)
+    place(x, sub, 0.32, 0.5)
+    save("roar", highpass(highpass(x, 30.0), 30.0), -1.5)
+
+
 def build_breath() -> None:
     reseed("build_breath")
     n = seconds(2.3)
@@ -350,6 +379,7 @@ def main() -> None:
     build_footstep()
     build_stomp_crack()
     build_collapse()
+    build_roar()
     build_breath()
     build_leap()
     build_lash()
