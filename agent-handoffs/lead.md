@@ -1,5 +1,6 @@
-# Lead handoff, 2026-10-18 05:40
-## State: working (lead since 03:56); merge queue #31 board (doc-caps fix) -> #32 perf -> #22 r2 -> #33 sfx-bus -> #27 UI
+# Lead handoff, 2026-10-18 05:48
+## State: working (lead since 03:56); #31 board MERGED (3df0f6b); Perf merges #32 itself at 212b8ac then stops (director
+## "finish up" 05:3x); queue #22 r2 -> #33 sfx-bus -> #27 UI -> city fill (D-062)
 
 ## Who
 Lead = session "LEAD" (local_106fc100...). The old lead session ("Kaiju Incremental game", local_9fac90d2-fae7-
@@ -51,7 +52,12 @@ adolescent models first; SFX in; adult never played. Decisions D-050..D-061 are 
   breath), --fixed-fps 60 on still captures, before/after CI movie + fresh motion-critic, PR to me (lead call).
 - Voxel edges (local_944d7cf5-7e53-439c-9fda-16f5a95b46e4, claude/voxel-edge-shading cc4e166): CI before/after done;
   GPU slot 05:22-05:40 for the 4K A/B; then 2x rim crops, critic, Performance bench, PR + D-TBD -> director A/B.
-- city-calm (local_9af27a16-0360-4923-b623-6a14a763ce49): #26 D-054, #28, #30 merged; artifact smoke at 05:40.
+- city-calm (local_9af27a16-0360-4923-b623-6a14a763ce49): #26 D-054, #28, #30 merged; artifact smoke at 05:42; then
+  D-062 (director 05:27 "there should never be vast empty spaces with nothing to smash or kill"): coverage check
+  (~30 m cells on/beside roads, stage 1 + Behemoth, seeds 0-2, floor 0 empty cells, failing first), fill with parked
+  cars, props, people via tuning knobs; presentation + data only (destructible = sim: stop and ask); stills + 2x
+  crops + Perf bench. Worktree ../Kaiju-Incremental-wt/no-empty-space (its old worktree vanished 05:14; a stray
+  `git switch` ran in the main checkout for a minute, restored clean; verified 05:46).
 - blender-reptile (local_bce75838-34da-4991-a74e-b37ed5781547): #22 evidence, then P3 rig.
 - Tripo session: octopus adult (8bf2f668) six-view FIX (10-11 arms, two eye pairs, no siphon); sheets in its notes
   docs/captures/2026-10-18-species/. Parked with the species plan (D-060); director call only if it resumes.
@@ -90,7 +96,7 @@ Mine: none. GPU slot: voxel-edges to 05:40, then city-calm smoke. Helpers: blend
 Perf #32 CI, ability-vfx army PR + menu clip, lighting jet removal, voxel-edges A/B.
 
 ## Next (lead)
-1. Fix #31 (merge look-options with this file into claude/board-2) -> merge. 2. #32 watcher -> merge.
+1. #31 done. 2. #32: Perf merges it (not me); confirm, then remove the perf-hitches worktree if left.
 3. #22 evidence -> 2x check -> FRESH motion-critic -> A/B clip to the director -> merge; assign the ClipGait end-card
 roar + old-save handling to a free helper (city-calm after its smoke). 4. #33: menu clip -> director listen ->
 merge. 5. Voxel-edges board -> director. 6. #27 captures -> screen-critic -> merge. 7. Demo artifact build via
