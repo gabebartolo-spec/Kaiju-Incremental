@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 04:18
+# Lead handoff, 2026-10-18 04:24
 ## State: working (lead since 03:56); waiting on helpers: #22 r2, #23 jaw fix, #8 r2 clips, city-calm PR, Tripo board r2
 
 ## Who
@@ -46,11 +46,11 @@ adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never
   claude/city-calm-streets (zebras at 1 central junction, key city.zebra_junctions, city floor 5->6); CI
   BEFORE/AFTER 1080p stage 1 + Behemoth + 2x crops; PR next. Auto-fix off, no merge; reports to me.
 - #11 locomotion (mantis/octopus) PAUSED (D-044), not in the demo. #3 look-options -> main on HOLD.
-- Unsloth script bug fix awaits director OK (memory-shared/local-models-companion.md).
 
 ## Director queue (old file: C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2.../lead/
-director_queue.md). Open: Q3 Apex height (not needed for the demo; park); reveal wording (stage name vs Behemoth);
-housekeeping OK: delete remote branches claude/kaiju-skin-weights-before and claude/kaiju-skin-weights (#19 merged).
+director_queue.md). Open: Q3 Apex height (not needed for the demo; park). Answered 04:20: reveal title = node name BEHEMOTH (D-051,
+kaiju-motion adds it to #23 and logs it there); stale weights branches DELETED on origin; Unsloth loaded-model fix
+APPLIED (memory-shared/local-models-companion.md updated; needs an MCP reconnect to take effect).
 
 ## Branch and checkout
 Main checkout is on claude/look-options (80ff088+). Only the lead commits here (handoff, docs). Worktrees: 7
@@ -85,5 +85,4 @@ city-calm captures + export branch, ability-vfx r2 clips, Tripo session refs boa
 3. #23 after the jaw fix + clip -> merge; then its ClipGait roar follow-up after #22.
 4. city-calm PR -> defect check on BEFORE/AFTER crops -> one labelled picture to the director -> merge.
 5. Tripo board r2 -> my defect check (realism-critic) -> director (labelled A/B).
-6. Director Qs to batch when he is back: reveal wording; stale remote branches delete OK; Unsloth fix OK.
 Director comments live in DECISIONS.md (D-050); this project keeps no roadmap comment chapters. playbook: nothing new.
