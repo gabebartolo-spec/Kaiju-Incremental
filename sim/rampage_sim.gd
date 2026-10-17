@@ -182,6 +182,7 @@ func result() -> Dictionary:
 		"destruction": destruction(),
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
+		"rooftops": army_units.rooftops_destroyed,
 		"toppled": collapse.toppled,
 		"tallest_topple": collapse.tallest_topple,
 		"reason": end_reason,
@@ -307,9 +308,9 @@ func _signature() -> void:
 			)
 
 
-## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach),
-## every tank, and every helicopter it can reach, by damage x force(position, own radius),
-## force 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
+## Damages every standing chunk on floors y_lo..y_hi-1 (y_hi < 0: up to the kaiju's reach), every
+## tank, roof squad and helicopter it can reach, by damage x force(position, own radius), force
+## 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
 	var top := ceili(reach_height()) if y_hi < 0 else y_hi
 	for i: int in buildings.size():
@@ -338,8 +339,8 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 		if k > 0.0 and not hit_coat.is_empty():
 			tank.coat_t = Num.f(hit_coat["seconds"])
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
+	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
-	clear_dead_tanks()
 
 
 ## Nearest standing ground-floor chunk to `from` (what an attacker walks to), or INF if none.

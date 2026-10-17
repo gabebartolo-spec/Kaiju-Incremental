@@ -17,7 +17,7 @@
 #
 # Usage: bash tools/lint/worktrees.sh
 
-MAX_WORKTREES=8 # guardrail C1 (D-053, 2026-10-18): one per live session, both places together; the lead prunes dead ones
+MAX_WORKTREES=12 # guardrail C1 (D-053, 2026-10-18): one per live session, both places together; the lead prunes dead ones
 WT_DIR_NAME="Kaiju-Incremental-wt"
 SESSION_DIR_NAME=".claude/worktrees"
 

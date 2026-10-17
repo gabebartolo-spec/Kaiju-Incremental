@@ -162,6 +162,21 @@ func _check_rampage() -> void:
 		)
 		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
+	# Rooftop defenders (D-063): figures stand on the squads' roofs, at most max_drawn of them,
+	# and their volleys draw flashes and tracers and call the rifle cue.
+	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
+	var cap := Num.i(rampage.sim.army["rooftop"]["max_drawn"])
+	check(
+		roofs != null and roofs.most_drawn > 0 and roofs.most_drawn <= cap,
+		(
+			"armed citizens stand on the roofs, at most %d drawn (%d)"
+			% [cap, roofs.most_drawn if roofs else -1]
+		)
+	)
+	check(
+		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
+		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
+	)
 	check(
 		rampage.sim.chunks_destroyed > 0,
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
@@ -209,7 +224,9 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	root.add_child(rampage)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = ["stomp_2", "stomp_crack", "ready", "deflect", "regen_loop"]
+	var cues: Array[String] = [
+		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
+	]
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
@@ -243,6 +260,16 @@ func _check_stomp_timing() -> void:
 	var sfx := Sfx.new(Seeds.make("sfx", 0))
 	root.add_child(sfx)
 	sfx.stomp(2.0, true)
+	var dynamics: Dictionary = Content.section("sfx")["dynamics"]
+	var ceiling := INF
+	for i: int in AudioServer.get_bus_effect_count(0):
+		var effect := AudioServer.get_bus_effect(0, i)
+		if effect is AudioEffectHardLimiter:
+			ceiling = (effect as AudioEffectHardLimiter).ceiling_db
+	check(
+		is_equal_approx(ceiling, Num.f(dynamics["ceiling_db"])),
+		"a hard limiter holds Master under %s dBFS (found %s)" % [dynamics["ceiling_db"], ceiling]
+	)
 	var early := sfx.played.duplicate()
 	var buses: Array[String] = []
 	for player: Node in sfx.get_children():
@@ -332,6 +359,10 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
+	check(
+		rampage.sfx.played.has("heli_rotor"),
+		"the %s's helicopters are heard: %s" % [species_id, rampage.sfx.played.slice(-8)]
+	)
 	rampage.queue_free()
 	await process_frame
 
