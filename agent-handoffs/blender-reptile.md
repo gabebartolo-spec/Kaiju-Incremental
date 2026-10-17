@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 13:24
-## State: awaiting lead (motion test clips + crops + numbers sent; verdict is the lead's/director's)
+# blender-reptile handoff, 2026-10-17 13:27
+## State: awaiting lead (HOLD: director picks the mesh and whether to port the rig; start nothing until the lead messages)
 ## Task
 Round 1 (done): hand-modelled reptile adult A vs Tripo adult B (board in docs/captures/2026-10-17-
 blender-reptile). Round 2 (lead 12:39): MOTION TEST - one hand-built armature fitted to both meshes,
@@ -39,6 +39,12 @@ claude/blender-reptile-f5388e (pushed). Round 1 4a1b1f8; round 2 script c283dd3;
 - Crack slivers on both at the roar peak: glTF splits UV seams (B 28,691 verts = 11,246 positions);
   weld by position before weighting fixed it. Same fix found A's 540 loose spines/scutes.
 - Volume shell radius: base on the nearest surface distance (deep pivots found no vertices).
+## Motion-critic (lead 13:26): deformation + feet PASS on both; animation FIX, NOT yet to be fixed
+- Roar: no visible crouch/wind-up (f0-43 reads static; my crouch keys 18-40 are too small), 2 s
+  frozen hold (f60-108), arms go OUT at the peak (should stay tucked or claw forward).
+- Tail does not counterbalance (walk and roar); walk upper body static.
+- B mouth open at rest (sculpt). A: black square patches on thigh/back = the dark armour-scute
+  patches (plate_patch in build_reptile.py) read as texture defects; rethink if A goes forward.
 ## Open decisions (lead/director)
 1. Port the hand rig + welded falloff weights into the game pipeline (D-041 skinned lattice) for A?
 2. Next A refinement round (keep its identity) or straight to in-game motion?
