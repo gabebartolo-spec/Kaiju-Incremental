@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:10
-## State: awaiting lead (review r2 reported; decision on the hairline seams: accept / overscale / blended turn)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:20
+## State: running a check (PR #15 CI on the merged head; then send the lead the SHA to merge)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -73,7 +73,17 @@ read as a clean cube grid on 8f5a798 (A sheds shards there).
   (c) blended turn (brings shear back).
 
 ## Running jobs
-None. Evidence in side-session-notes/<lead>/kaiju-voxel-skin/review-r2/.
+PR #15 CI on the head after this commit. Lead accepted round 3 (thigh seam accepted, in Not
+exercised). Merged look-options (tank #17): conflicts in run_smoke_tests (kept both: skin + tank
+checks), rampage.gd (kept FOCUS_FOLLOW, dropped unused TANK_GREEN), floors (smoke 23). rampage.gd
+hit 409 lines: TankModel.box now holds the shell box helper. Lead merges exactly the SHA I send.
+
+## Next (lead, 14:55)
+Separate small PR: Blender-weights input for the bake. Optional per-kaiju weights file (per
+voxel, sampled from the source mesh's vertex weights), part of the stale stamp, hinge rule kept.
+Build and test against blender-reptile's current test rig (branch claude/blender-reptile-f5388e,
+tools/blender/motion_test.py) exported as a weights file; the real source will be the hand rig on
+the D-045 Tripo reptile.
 
 ## Open decisions / touch points
 Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
