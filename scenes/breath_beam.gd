@@ -52,8 +52,12 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	if not is_equal_approx(half_angle, _fan_half):
 		_fan_half = half_angle
 		_fan.mesh = _sector(half_angle)
-	var reach := span.length()
-	_fan.basis = along(span.normalized()).scaled(Vector3.ONE * reach)
+	# The fan lies in the breath's sloped plane; narrowing it by the slope keeps its footprint on
+	# the street exactly the sim's hit cone (half_angle, out to full reach), never wider.
+	var span_length := span.length()
+	var slope := Vector2(span.x, span.z).length() / maxf(span_length, 0.001)
+	var b := along(span.normalized())
+	_fan.basis = Basis(b.x * span_length * slope, b.y * span_length, b.z * span_length)
 	_fan.position = mouth
 	for mat: ShaderMaterial in [_core_mat, _fan_mat]:
 		mat.set_shader_parameter("power", power)
