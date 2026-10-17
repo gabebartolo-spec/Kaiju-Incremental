@@ -1,105 +1,45 @@
-# blender-reptile handoff, 2026-10-18 06:15
-## State: running a check. LEAD round 2 FIX (04:11, judged at the GAME camera) done in code, local
-## 16260e9 (= 3aa63a6 tail round 2 + merge look-options 81afe80; 7d3f761 cards option A), all 9 suites
-## green. Auto-fix base conflicts forced pushes: #22 = 20dc41b (merged look-options b25bb4f;
-## floors flow 109, clips 14 - clips line moved above smoke to stop flow-bump conflicts).
-## Card stills committed. Remaining evidence (3 s clips, 2x slam/turn crops, body) in one push.
-## Round 2: walk TAIL_WALK (2,5) over TAIL_WALK_PERIOD 72 = 1.5 cycles (tip 45.3 m = 0.72x), walk
-## clip baked as 3 cycles (header "cycles", KaijuClips.cycles_of); roar TAIL_LIFT (6,-9): tip above
-## hip f19-40 (0.92 s), crashes 96 -> 3 m f38-46, lands f47 = head peak; slam emits
-## rig.foot_planted("tail", 1.6, tip) (dust, ring, camera dip; check shown failing first); turn spring
-## (14, 0.25), TAIL_WHIP (6.5, 8.3), TURN_SETTLE 24 (offline: overshoot ~8 deg, settle ~0.4 s).
-## CI (temp branch claude/croctitan-cards-tmp = bc788c9, delete after): BEFORE reruns red on the
-## 3000 s timeout under congestion (ci3 595/600 frames used; ci5 593/600). 4K cards DONE green
-## 39058482321 -> species_cards_before_after.png + species_select_4k.png (committed; demo shows
-## the croc card only). byhacv7qr: AFTER game + side -> ci7 (running).
-## doc-caps red was base lead.md: fixed by the 522fd72 merge.
-## Owed for round 2: 3 s game-cam clips walk/turn/roar (roar clip 13.3-18.3: crouch, rear, slam,
-## recovery), before/after aligned by time (same schedule, seed), 2x crops slam contact + turn
-## settle, species_cards_before_after (fill per species), PR body; push; delete tmp; SHA to LEAD.
-## P3 (lead OK'd: in THIS session after #22; card withdrawn). Scratch p3/: baby.glb, adol_rot.glb
-## (adolescent turned +90 deg Z by p3/rot.py: now faces -Y), g_*_side/top/front.png (grid.py),
-## slice.py -> v_*.npy. Auto fit: rough on baby (tail on top, pelvis off), fails on adolescent ->
-## hand-measure. Baby: T-pose arms straight out x +-67 at z 56-60; huge head (snout y0 z~83).
-## Adolescent: hips z~48-52 at y~70; tail level at z 63-66 to y 208 (needs strong tail carry down).
-## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
-## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
-## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
-Open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera, per-frame PNG
-diff (seams, blends), 2x crops of feet at contact and jaw at roar peak, a 4K species-select still,
-a Blender walk/turn/roar render of v2, and (tail note) top-down walk tip-path render old vs new,
-2x crops of the tail root in the turn. One self-check, list nits, no loops. Auto-fix off. Don't
-merge. Tail attack (swipe flattening towers): suggestion only, a director gameplay call.
-## Branch and commit
-claude/croctitan-clips (this worktree). Pushed a168942: tail cb1726e, clips-own-tail test 5400a96,
-species card fix a168942 (lead 01:38: fix it in this PR).
-## Tail (cb1726e)
-- motion_test.py: TAIL_WALK (4.0, 1.5) deg/joint wave, TAIL_LAG 0.5 rad/joint; TAIL_IDLE (1.2, 0.6)
-  72-frame sway (0.6 in roar); turn whip tail_whip(): spring TAIL_SPRING (12 rad/s, 0.35) driven by
-  body yaw accel, TAIL_WHIP (5.0, 6.4), 0.5 frame delay per joint; roar lift (1.0/joint, f10-33),
-  slam TAIL_SLAM 0.85 x (0.5+k) wave f33-46, rebound, rests low until recovery.
-- New tasks: `tail` (sweep/bends/clearance JSON), `tailtop` (top-down still with tip paths),
-  crops adds tail_root_drag/whip/over (turn f39/f108/f117).
-- Measured (old -> new): walk tip sweep 15.5 -> 33.8 m, root third 4.8 -> 9.4 m (x3.6); idle
-  0 -> 10.4 m; worst bend 7.9 deg/joint (limit 25); turn tip: drag 32 deg, through 26 deg at
-  the stop, overshoot 6 deg, settled to 10% in 0.46 s; roar skin 26.6 m lift -> 0.5 m slam.
-- gait_clip.gd: TURN_SETTLE 12 frames (turn clip plays its tail settle); tail lag spring for
-  walking curves (drive = body yaw accel in walk/idle), soft limit TAIL_MAX 0.008 (tanh).
-- clips suite 13: walking curve swings the tail and settles (shown failing with drive off); the
-  clips own the tail (lead part 2): ClipGait.update never calls BipedSwing.update (0.12 rad clamp)
-  or simulate_chains; straight walk matches clip within 0.01 rad; standing turn bends 0.189 rad.
-- Lead part 2 still owed: in-game 2x crop of tail root at the turn extreme (voxel parting) from
-  ci3/after_game; in-game BEFORE/AFTER must show the tail; state the tail owner in the PR body.
-  All suites green locally.
-## Lead QA round (02:31, one pass): bolder tail - committed and pushed 2dbc983 (suites all green)
-- Walk: TAIL_WALK (4, 10), TAIL_LAG 0.42 (0.6 wave; a full wave cancels the tip to 23-28 m at 18
-  deg, so say so): tip 62.9 m, worst 14.0 deg. Idle tip 13.7 m. Turn kept (worst 15.8 deg).
-- Roar: TAIL_LIFT (5, -18) arc (mid 50 m, tip trails 36 m at f27); TAIL_TRAIL 12 tip curls up to
-  79 m at f35 as root drives down; slam TAIL_SLAM (1.15 land, 0.85 rest) x (0.2 + 1.6k), fall
-  5 - 3k frames; mid bottoms f44-45, tip lands f47 at 2.6 m/frame (skin 0.4 m), bounces +2.7 m.
-- tail task records joint_z; crops adds roar f47 tail_mid_slam.
-- Done: tail/tailtop_old_vs_new.png, roar_sheet.png, crops2/ (clean), board mp4s re-encoded,
-  ci3/before_game forward_plus (run 39042141622, 595 frames).
-- Next: when ci4 lands: in-game 2x root crop at turn + mid-tail at slam, compose BEFORE/AFTER
-  (ev/compose_ba.py ci3/before_game vs ci4/after_game) + PNG diff, commit evidence, open PR,
-  send lead head SHA. Nits: f51 bounce only +2.7 m (barely reads); mantis card head cut (old).
-## P2 asks (Game demo planning): green capture runs; in-game 3 s clips walk/turn/roar at game cam
-## (DONE, notes d047/ingame_game_cam_*.mp4) + side (from ci5/after_side); report SHA to lead AND
-## "Game demo planning" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac). 39047808973 cancelled.
-## Evidence done (docs/captures/2026-10-18-croctitan-clips, uncommitted until the cards land)
-before_after_game_sheet, png_diff_game, feet_contact_2x, jaw_roar_peak_2x, tail_in_game_2x,
-tail_walk_topdown_old_vs_new, tail_roar_side_sheet, tail_blender_crops. MP4s in notes/blender-reptile/
-d047/. PR body: scratch ev/pr_body.md (only CARDS_PLACEHOLDER left). AFTER run 39046293165 green.
-Last steps: cards_before_after (ci2 vs ci4 select4k crop box 440,470,3400,1070) + species_select_4k
-.png into the folder, fill CARDS_PLACEHOLDER, commit, push, gh pr create --base claude/look-options
---title "art: ...", ccd_pr bind, auto-fix OFF, send lead the head SHA.
-## Species card height fit (5bd22c4, lead 03:00)
-_frame aims at the kaiju's middle, fits width (0.92) and height (6% margin) of the swept profile,
-PREVIEW_FOV 30 (fill: croc 0.42, mantis 0.62, octopus 0.48 of card height; mantis was 0.93 and cut).
-Red capture runs: Capture step exit 124 = the workflow's hard 3000 s Godot timeout on lavapipe
-(capture.yml line 115); PNGs written before the kill; BEFORE game has 595/600 frames. Say so in PR;
-follow-up: make the timeout a dispatch input.
-## Species card (a168942, superseded by 5bd22c4)
-species_select._frame: old fixed camera, backed off along the same view only when the turning kaiju
-(skin reach per height band, every angle) is wider than the card. Distances: croc 12.8 -> 23.7,
-octopus -> 16.1 (its tentacles clipped before), mantis unchanged. +0.4 s card build. Lead wanted a
-fixed 3/4 yaw, but the card spins (0.35 rad/s), so I fit the swept volume; say so in the PR. Owed:
-before/after card stills: DONE tail/cards_before_after.png (ci3/select4k run 39042109877);
-mantis head cut at top in both (pre-existing nit).
-## Done evidence
-ci3/after_game (forward_plus, cb1726e; turn ends 12.25 s, drift 0.0 cm); tail/game_tailroot_2x.png
-(no parting at 10.2 s drag / 11.0 s swing-through); tail/ Blender board mp4s (croctitan_v2_tail_*).
-ci2/before_game was gl_compatibility (fallback): not comparable, rerun on forward_plus.
-## Evidence pipeline (scratch)
-tail/ (old/new JSON, tailtop_old_vs_new.png, crops_row.png, r/ renders), ci2/ (before_* valid:
-procedural path unchanged; after_* stale pre-tail), ci3/ (new after_game, after_jaw_side).
-select4k 39031717171 and before_game 39031609516 still running on CI (pre-tail head; species
-select still shows the idle tail - note it). ev/compose_ba.py, ev/pngdiff_game.py,
-ev/encode_intra30.py, r6/encode_intra.py, v2b/compose_v2.py. PR body draft ev/pr_body.md.
-## Nits (list in PR)
-- Blender render: inner lip shards at roar peak; foot slide walk 12 cm, turn 87 cm (sole sinks).
-- In-game side capture: head leaves frame top at roar peak.
-- Turn clips only for standing turns; walking curves use walk + IK + tail lag spring.
+# blender-reptile handoff, 2026-10-18 07:35
+## State: working (P3 starting). P2 (D-047, PR #22) handed to the lead "Kaiju: Lead" =
+## local_106fc100-d2a4-4091-bc9a-4bda31df13ac at head 439d8d3 (round-2 evidence pushed; lead runs
+## its 2x check + a fresh motion-critic, then merges). Director asleep: no questions to him.
+## Rules: report to the lead only; art never to the director. Auto-fix is ON for #22 (the app set it):
+## base conflicts arrive as ci-monitor-events -> fetch origin/claude/look-options, merge, real floors.
+
+## P2 (#22, claude/croctitan-clips, this worktree) - done unless the lead sends FIX
+- v2 croc titan (Tripo c8185166) on the hand rig, skin, kvox, .kclip; ClipGait plays the clips.
+- Tail: walk S-wave over 1.5 walk cycles (TAIL_WALK (2,5), TAIL_LAG 0.42, TAIL_WALK_PERIOD 72; walk
+  clip baked as 3 cycles, header "cycles", KaijuClips.cycles_of); roar arc lift TAIL_LIFT (6,-9),
+  TAIL_TRAIL 12, slam TAIL_SLAM (1.15, 0.85), lands f47 = head peak; ClipGait emits
+  rig.foot_planted("tail", 1.6, tip) at ROAR_SLAM_FRAME (dust, ring, camera dip); turn spring
+  TAIL_SPRING (14, 0.25), TAIL_WHIP (6.5, 8.3), TURN_SETTLE 24; game lag spring for walking curves
+  (soft limit TAIL_MAX 0.008). The clips own tail0..8 (BipedSwing clamp never runs for the adult).
+- Species cards (scenes/species_select.gd): sway +-40 deg around PI*0.62, camera fits the skin over
+  the sway (width 0.92, height with 6% margin, 30 deg lens).
+- Tests: clips suite 14. Floors line `clips 14` sits above `smoke` (avoids flow-bump conflicts).
+- Evidence: docs/captures/2026-10-18-croctitan-clips/*; MP4s in the lead notes folder
+  C:/Users/DANTE/.claude-desktop-work/side-session-notes/local_9fac90d2-fae7-4940-b4ac-144a87f28e6e/
+  blender-reptile/d047/ (round2/ is current).
+- Nits listed in the PR: turn settle ~0.6 s; slam dust small at the game cam; side cam crops the tip.
+- CI captures: one at a time (concurrent runs hit capture.yml's 3000 s timeout); capture_screens
+  --only=select for a 4K still.
+
+## P3 (lead OK'd in this session): croc titan baby (stage_for tier 1) + adolescent (tier 2)
+- GLBs (never commit): ~/Downloads/kaiju_tripo/rep_croctitan_{baby,adolescent}.glb; scratch copies
+  p3/baby.glb, p3/adol_rot.glb (adolescent turned +90 deg Z by p3/rot.py so it faces -Y).
+- Sheets: docs/captures/2026-10-17-reptile-design/croctitan_{baby,adolescent}_six_view.png; approved
+  line croctitan_stage_line.png. Cadence: baby quick and bouncy; adolescent gangly, long stride.
+- Done: grid renders p3/g_*_{side,front,top}.png; slices p3/slice.py -> v_*.npy. Auto fit rough on
+  baby (tail on top, pelvis off), fails on adolescent -> hand-measure KNOWN entries.
+- Baby: T-pose arms straight out x +-67 at z 56-60; huge head (snout y0 z~83); tail to y 211.
+- Adolescent: hips z~48-52 at y~70; tail level at z 63-66 to y 208 (strong carry-down needed).
+- Plan: new branch claude/croctitan-stages from claude/croctitan-clips (stacked on #22 until it
+  merges); KNOWN["CB"], KNOWN["CA"] in motion_test.py; #19 recipe per stage (export 160, rig_voxel,
+  skin_faces, rig_from_skin mouth line, bake_all, clips) -> assets/kaiju/reptilian_{baby,adolescent}.*;
+  clips suite: each stage ClipGait + fit; stage board (baby/adolescent/adult, same camera and height
+  scale, labels top-left) + in-game clips per stage -> PR into claude/look-options -> lead.
+- Recipe: notes folder blender-reptile/refit.md.
+
 ## Findings for the lead (theirs to record)
-- Windows CRLF writes break byte-hashed stamps: write LF explicitly.
+- Concurrent lavapipe captures double each run (25 -> 50 min) and trip the 3000 s timeout.
+- Windows CRLF writes (and gdformat) break byte-hashed stamps: write LF explicitly.
 - The focus guard flags `set -e` as Godot's editor flag.
