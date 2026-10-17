@@ -7,16 +7,20 @@ PR's "Board and log" section. History rolls to `docs/archive/status_<month>.md`.
 Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor, a missing suite,
 an untyped declaration and a planted secret). Gate signer: the lead.
 
-## Agents (2026-10-18 04:10)
+## Agents (2026-10-18 05:30)
 
 | Agent | State | Item | Branch / PR | Since |
 |-------|-------|------|-------------|-------|
-| Lead (demo session) | working | demo D-050: QA gates, merges, board | claude/look-options (#3 to main on hold) | 2026-10-18 |
-| Tripo (old lead session) | working | P3 croc baby + adolescent meshes (refs board r2) | none; sends provenance rows | 2026-10-18 |
-| blender-reptile | awaiting lead | P2 D-047 croc titan clips in game; then P3 rig/export | #22 | 2026-10-18 |
-| ability-vfx | working | P4 SFX unpaused; dials, roar, army sounds | #8 | 2026-10-18 |
-| kaiju-motion | awaiting lead | P5 demo slice (allow-list, end card) | #23 | 2026-10-18 |
-| city-calm | working | zebra "hellscape" fix; then P6 local Windows export proof | claude/city-calm-streets, claude/export-windows | 2026-10-18 |
+| LEAD | working | demo D-050: QA gates, merges, board, GPU slot | claude/look-options (#3 to main on hold) | 2026-10-18 |
+| Tripo (old lead session) | available | P3 meshes delivered (D-059); octopus six-view check | none; provenance rows via the lead | 2026-10-18 |
+| blender-reptile | working | #22 round 2 evidence; then P3 baby/adolescent rig + export | #22 | 2026-10-18 |
+| ability-vfx | working | SFX bus + volume slider PR; UI sounds; army sounds PR | claude/sfx-bus | 2026-10-18 |
+| city-calm | awaiting lead | #30 artifact smoke; then available | claude/ci-export | 2026-10-18 |
+| UI | working | #27 look A (D-061), biomass (D-056), body font (D-058) | #27 | 2026-10-18 |
+| Performance | working | hitch fixes PR (prewarm angle, VehicleParts cache) | claude/perf-hitches | 2026-10-18 |
+| lighting | working | legacy breath voxel jet removal; fixed-fps still captures | new branch | 2026-10-18 |
+| voxel-edges | running a check | edge-shading A/B board for the director | claude/voxel-edge-shading | 2026-10-18 |
+| species-plan | available | plan only (D-060); worktree species-a parked | none | 2026-10-18 |
 
 States: working · running a check · awaiting director · blocked · available.
 
@@ -38,12 +42,12 @@ States: working · running a check · awaiting director · blocked · available.
    guardrails, style bibles, pipeline, roadmap, repo, licence register, open questions).
 
 ### Demo (D-050, 2026-10-18; the director's playtest is the Phase 2 gate)
-1. P1 balance D (D-049): MERGED #21 (81afe80).
+1. P1 balance D (D-049): MERGED #21 (81afe80). Board #24, worktree cap #25, streets #26.
 2. P2 D-047 croc titan clips in game: #22 (blender-reptile).
 3. P3 croc baby + adolescent models: Tripo session -> blender-reptile.
-4. P4 SFX: #8 (ability-vfx).
-5. P5 demo slice: #23 (kaiju-motion).
-6. P6 Windows export from look-options: city-calm (local proof), lead (the build the director plays).
+4. P4 SFX: MERGED #8 (47e1b30; D-052, D-055).
+5. P5 demo slice: MERGED #23 (94ebcd8; D-051). Playtest sheet MERGED #29.
+6. P6 Windows export: MERGED #28 (local proof) and #30 (CI workflow_dispatch artifact); the director's build after #22.
 7. P7 director playtest.
 
 ### Done ahead of the gate (director asked to "build" the game, 2026-10-16)
