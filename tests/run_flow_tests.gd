@@ -290,6 +290,19 @@ func _check_stomp_timing() -> void:
 		pitches[0] > pitches[1] * 1.2,
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
+	sfx.regen(true)
+	var bubbling := sfx._regen.playing
+	for _i: int in 4:
+		sfx._process(1.0)
+		sfx.regen(true)  # still healing
+	var faded := not sfx._regen.playing
+	sfx.regen(false)
+	sfx.regen(true)
+	check(
+		bubbling and faded and sfx._regen.playing,
+		"regen bubbles start each heal and fade within seconds (%s, %s)" % [bubbling, faded]
+	)
+	sfx.regen(false)
 	sfx.free()
 
 
