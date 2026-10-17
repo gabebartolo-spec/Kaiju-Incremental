@@ -28,12 +28,15 @@ void fragment() {
 	// Flames licking upward: noise streams up and breaks the top edge into tongues.
 	float lick = noise(vec2(UV.x * 9.0, up * 3.0 - TIME * 6.0)) * 0.6
 		+ noise(vec2(UV.x * 21.0, up * 7.0 - TIME * 11.0)) * 0.4;
-	float tongue = (1.0 - smoothstep(0.35 + 0.5 * lick, 0.75 + 0.5 * lick, up)) * smoothstep(0.0, 0.12, up);
+	// Flame tongues all the way up, and no base line: the lower half fades in from the street, so
+	// seen from behind the curtain never reads as a sheet with an edge.
+	float tongue = (1.0 - smoothstep(0.35 + 0.5 * lick, 0.75 + 0.5 * lick, up))
+		* smoothstep(0.0, 0.5, up) * smoothstep(0.25, 0.65, lick + 0.2 * up);
 	float centre = pow(1.0 - side, 1.2);
 	// It stands up as the beam's front reaches the arc (a tenth of the life), then thins out.
 	float arrive = smoothstep(0.04, 0.14, progress);
 	float thin = 1.0 - smoothstep(0.5, 1.0, progress);
-	vec3 hot = mix(tint.rgb, vec3(1.0, 0.85, 0.55), pow(1.0 - up, 2.0) * centre);
+	vec3 hot = mix(tint.rgb, vec3(1.0, 0.7, 0.4), lick * centre);
 	ALBEDO = hot * (1.6 + 0.9 * power);
 	ALPHA = clamp(strength * centre * tongue * (0.45 + 0.55 * lick) * arrive * thin, 0.0, 1.0);
 }
