@@ -65,8 +65,7 @@ func setup(
 ) -> void:
 	species = p_species
 	var ability: Dictionary = species["ability"]
-	# The city and its defences grow with each evolution (D-039).
-	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(stats["size"]))
+	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(stats["size"]))  # D-039
 	sim = RampageSim.new(stats, tuning, layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	_fx_rng = Seeds.make("fx", run_index)
