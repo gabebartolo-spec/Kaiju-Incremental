@@ -350,6 +350,42 @@ def build_army() -> None:
     save("heli_rotor", loop, -4.0, loop=True)
 
 
+def build_crowd() -> None:
+    """The city panicking (D-050), as a 6 s loop the game fades with how many people flee and how
+    fast the city falls: a far-off murmur of many voices, shouts, and screams that rise and
+    break, with a hint of running feet. High-passed at 300 Hz and kept mid-heavy, so it sits above
+    the stomps (almost all below 500 Hz) instead of on them."""
+    reseed("build_crowd")
+    n = seconds(6.0)
+    m = seconds(1.0)
+    total = n + m
+    t = np.arange(total) / RATE
+    x = np.zeros(total)
+    for _ in range(14):  # murmur: voices as formant-filtered noise with a syllable rhythm
+        rate = rng.uniform(3.0, 6.0)
+        syl = np.clip(np.sin(2 * np.pi * rate * t + rng.uniform(0, 6.28)), 0, 1) ** 2
+        voice = bandpass(noise(total), np.full(total, rng.uniform(450, 900)), 2.0) * 0.6
+        voice += bandpass(noise(total), np.full(total, rng.uniform(1300, 2200)), 3.0) * 0.4
+        x += voice * syl * rng.uniform(0.3, 0.7)
+    for _ in range(9):  # screams and shouts: a rising, wavering tone through a mouth formant
+        length = seconds(rng.uniform(0.5, 1.1))
+        f0 = rng.uniform(500, 850)
+        glide = f0 * (1 + 0.5 * hump(length, 0.3)) + 25 * np.sin(np.linspace(0, 40, length))
+        scream = bandpass(tone(glide, 8, 0.6), np.full(length, rng.uniform(1100, 1700)), 2.0)
+        scream *= hump(length, 0.25)
+        place(x, scream * rng.uniform(0.25, 0.55), rng.uniform(0.0, 6.0 - 1.1))
+    feet = bandpass(crackle(total, 18, 0.03), np.full(total, 1500.0), 1.0)
+    x += feet * 0.15
+    x = lowpass(x, 3500)
+    x = x + tail(x.copy(), 1.2, 0.5, 2000) * 0.4  # off the buildings: far away, not in your ear
+    x = highpass(highpass(x, 300.0), 300.0)
+    loop = x[:n].copy()
+    fade = np.linspace(0.0, 1.0, m)
+    loop[:m] = x[:m] * fade + x[n:] * (1.0 - fade)
+    save("crowd_panic", loop, -6.0, loop=True)
+    print(f"  crowd_panic: {low_share(loop) * 100:.0f}% of the energy below 500 Hz")
+
+
 def build_breath() -> None:
     reseed("build_breath")
     n = seconds(2.3)
@@ -452,6 +488,7 @@ def main() -> None:
     build_collapse()
     build_roar()
     build_ui()
+    build_crowd()
     build_army()
     build_breath()
     build_leap()

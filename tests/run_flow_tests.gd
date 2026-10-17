@@ -186,8 +186,11 @@ func _check_rampage() -> void:
 	)
 	var heard := rampage.sfx.played
 	check(
-		heard.has("footstep") and heard.has("collapse"),
-		"the kaiju's feet and falling buildings make sounds: %s" % [heard.slice(0, 12)]
+		heard.has("footstep") and heard.has("collapse") and heard.has("crowd_panic"),
+		(
+			"the kaiju's feet, falling buildings and the fleeing crowd are heard: %s"
+			% [heard.slice(0, 12)]
+		)
 	)
 	rampage.queue_free()
 	await process_frame
@@ -254,6 +257,15 @@ func _check_stomp_timing() -> void:
 	check(
 		is_equal_approx(ceiling, Num.f(dynamics["ceiling_db"])),
 		"a hard limiter holds Master under %s dBFS (found %s)" % [dynamics["ceiling_db"], ceiling]
+	)
+	var calm := sfx.crowd_target(0.0, false)
+	var panic := sfx.crowd_target(0.8, false)
+	check(
+		calm < -50.0 and panic > calm + 20.0 and sfx.crowd_target(0.8, true) < panic - 6.0,
+		(
+			"the crowd is silent when calm, loud in a panic, and ducks under the breath (%.0f, %.0f, %.0f)"
+			% [calm, panic, sfx.crowd_target(0.8, true)]
+		)
 	)
 	var early := sfx.played.duplicate()
 	var buses: Array[String] = []
