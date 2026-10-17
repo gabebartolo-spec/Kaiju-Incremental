@@ -111,9 +111,7 @@ func _build_environment() -> void:
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
-	var crease := CreasePass.make()  # creases darkened in screen space; off when the look says 0
-	if crease != null:
-		add_child(crease)
+	CreasePass.attach(self)  # creases darkened in screen space; off when the look says 0
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
 	sun.light_energy = Look.value("sun_energy")

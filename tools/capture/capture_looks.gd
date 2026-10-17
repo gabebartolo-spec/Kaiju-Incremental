@@ -6,7 +6,10 @@ extends SceneTree
 ## (no --headless) and the untracked no-focus override.cfg. --street: only the default look's
 ## young shot plus street close-ups (civilians walking, civilians fleeing, a police blockade)
 ## for the anatomy check. --pan: only the evolved city shot, then the camera slides sideways for
-## PAN_FRAMES (a shimmer check for screen-space passes; record with --write-movie --fixed-fps 60).
+## PAN_FRAMES; --pan=N slides N times as fast (a shimmer check for screen-space passes; record
+## with --write-movie --fixed-fps 60).
+## --resize: the evolved city shot, then the same view after a window resize, at 150% UI scale,
+## and under the evolution reveal (screen-space passes must not stretch or go stale).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_looks.gd -- --out=<dir> [--street]
@@ -27,10 +30,14 @@ const STREET_FRAMES := 3000  # most frames to wait for a police blockade to open
 const CLOSE := Vector3(1.6, 1.3, 1.6)  # close-up camera offset from its subject
 const PAN_FRAMES := 180  # 3 s at 60 fps
 const PAN_STEP := Vector3(0.04, 0, 0)  # camera slide per frame (world units)
+const RESIZED := Vector2i(1280, 720)
+const UI_SCALE := 1.5
 
 var _out := "user://looks"
 var _street := false
 var _pan := false
+var _pan_speed := 1.0
+var _resize := false
 
 
 func _initialize() -> void:
@@ -39,15 +46,18 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--street":
 			_street = true
-		elif arg == "--pan":
+		elif arg.begins_with("--pan"):  # --pan or --pan=<speed multiplier>
 			_pan = true
+			_pan_speed = float(arg.substr(6)) if arg.begins_with("--pan=") else 1.0
+		elif arg == "--resize":
+			_resize = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	if _pan:
+	if _pan or _resize:
 		await _city_shot(str(Content.look()["id"]) + "_evolved", EVOLVED)
 		quit()
 		return
@@ -136,8 +146,10 @@ func _city_shot(id: String, levels: Dictionary, stage_at: Vector2 = STAGE_AT) ->
 	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
 	if _pan:
 		for _f: int in PAN_FRAMES:
-			cam.position += PAN_STEP
+			cam.position += PAN_STEP * _pan_speed
 			await process_frame
+	if _resize:
+		await _resize_shots(id)
 	stage.queue_free()
 	await process_frame
 
@@ -321,6 +333,30 @@ func _count_voxels(stage: Node) -> int:
 func _frames(n: int) -> void:
 	for _i: int in n:
 		await process_frame
+
+
+## The same view after a window resize, at a larger UI scale, and under the evolution reveal.
+func _resize_shots(id: String) -> void:
+	var full := root.size
+	root.size = RESIZED
+	await _frames(SETTLE)
+	_shot("%s_resized" % id)
+	root.size = full
+	root.content_scale_factor = UI_SCALE
+	await _frames(SETTLE)
+	_shot("%s_uiscale" % id)
+	root.content_scale_factor = 1.0
+	var species := Content.species_def("reptilian")
+	var kaiju := Content.section("kaiju")
+	var before := UpgradeTree.run_stats(kaiju, species, UpgradeTree.new(Content.upgrades(), {}))
+	var after := UpgradeTree.run_stats(kaiju, species, UpgradeTree.new(Content.upgrades(), EVOLVED))
+	var reveal := EvolutionReveal.new()
+	var city: Dictionary = CityGrowth.for_stats(after)["city"]
+	reveal.setup(species, before, after, city)
+	root.add_child(reveal)
+	await _frames(EvolutionReveal.SWAP_FRAME + SETTLE)
+	_shot("%s_reveal" % id)
+	reveal.queue_free()
 
 
 func _shot(shot_name: String) -> void:

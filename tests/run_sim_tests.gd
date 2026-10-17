@@ -340,6 +340,7 @@ func _check_looks() -> void:
 		"crease_normal_step",
 		"crease_fade_near",
 		"crease_fade_far",
+		"kaiju_roughness",
 		"window_lit",
 		"window_glow",
 		"accent_glow",

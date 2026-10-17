@@ -19,6 +19,11 @@ uniform float normal_step = 0.25;
 // Creases fade out between these distances (world units), so the far city does not turn to grit.
 uniform float fade_near = 60.0;
 uniform float fade_far = 180.0;
+// The kaiju's roughness (looks.json kaiju_roughness) tags its pixels in the normal buffer: inside
+// its own voxel relief the creases would boil as it moves, so it keeps only the shadow its
+// silhouette casts onto what lies behind it. Negative = skip nothing.
+uniform float skip_roughness = -1.0;
+const float SKIP_BAND = 0.02;
 
 const float REFERENCE_LINES = 1080.0;
 const vec2 OFFSETS[4] = vec2[](vec2(1.0, 0.0), vec2(-1.0, 0.0), vec2(0.0, 1.0), vec2(0.0, -1.0));
@@ -33,12 +38,24 @@ float view_depth(vec2 uv, mat4 inv_projection) {
 	return -view.z / view.w;
 }
 
+// The buffer packs roughness with a sign flag above 0.5 (Godot's normal_roughness layout).
+float buffer_roughness(vec2 uv) {
+	float r = texture(normal_tex, uv).w;
+	if (r > 0.5) {
+		r = 1.0 - r;
+	}
+	return r / (127.0 / 255.0);
+}
+
 vec3 view_normal(vec2 uv) {
 	return normalize(texture(normal_tex, uv).xyz * 2.0 - 1.0);
 }
 
 void fragment() {
 	vec2 uv = SCREEN_UV;
+	if (abs(buffer_roughness(uv) - skip_roughness) < SKIP_BAND) {
+		discard;
+	}
 	vec2 texel = radius * (VIEWPORT_SIZE.y / REFERENCE_LINES) / VIEWPORT_SIZE;
 	float d = view_depth(uv, INV_PROJECTION_MATRIX);
 	vec3 n = view_normal(uv);
