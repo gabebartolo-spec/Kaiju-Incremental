@@ -25,6 +25,8 @@ Director: "tank and heli models look great".
   Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
 
 ## Open PRs into look-options
+- #17 tank MERGED 14:45 (9cbe34b). #18 heli FIX: heli hides the baby kaiju at game cam (21 s) -> orbit beside,
+  not over, the camera-kaiju line + fade vehicles between camera and kaiju (D-025 rule). Size stays 2x.
 - #16 city-growth: stage 3 stills in; stage 4 (350k chunks) kills CI runners -> local GPU render approved,
   waiting for the director's game to close (perf red flag). Balance proposal D (3.3-4.4 h, +-17%) to put to director.
 - #11 species locomotion (mantis + octopus). species-motion r3d: holds fixed (contrast 4.6x), big rest moves
