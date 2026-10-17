@@ -76,6 +76,11 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - Captures at 1080p and 4K/125% are in shared notes sfx-bus/.
 - After #8 merges: rebase onto look-options, push, open the PR into claude/look-options.
 
+## (f) UI sounds (claude/sfx-bus, local, on top of (e))
+- ui_click (every UiKit.button press), ui_confirm / ui_deny (upgrade tree buy succeeds or fails).
+- Sfx.ui(sound) is static, with one player under the root on bus SFX; Sfx.ui_played is read by the tests.
+- Flow +3, floor 90 on this branch. When rebasing onto look-options after #8: base flow 100 + 6 = 106.
+
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).
 - build_sfx.py reseeds per sound; rebuilt unchanged oggs differ only by stream serial, so revert them.

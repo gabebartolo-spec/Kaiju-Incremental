@@ -287,9 +287,11 @@ func _check_evolution_and_continue() -> void:
 func _check_settings() -> void:
 	var main := await _main()
 	var title := _screen(main)
+	Sfx.ui_played.clear()
 	await GuiInput.click(t, GuiInput.button(title, "SETTINGS"))
 	var menu := GuiInput.find_script(title, SettingsMenu) as SettingsMenu
 	check.call(menu != null, "clicking SETTINGS opens the settings")
+	check.call(Sfx.ui_played == ["ui_click"], "a menu button clicks: %s" % [Sfx.ui_played])
 	if menu == null:
 		main.queue_free()
 		return

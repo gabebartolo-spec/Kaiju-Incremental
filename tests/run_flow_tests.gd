@@ -109,10 +109,18 @@ func _check_upgrade_screen() -> void:
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
+		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
+		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
 		check(
 			tree.level("claws") == 1 and screen.rubble == 15,
 			"pressing Sharpened Claws buys it for 15 (rubble %d)" % screen.rubble
+		)
+		Sfx.ui_played.clear()
+		await GuiInput.click(self, claws)  # level 2 costs more than the 15 left
+		check(
+			tree.level("claws") == 1 and Sfx.ui_played == ["ui_deny"],
+			"a purchase it can't afford buzzes: %s" % [Sfx.ui_played]
 		)
 	screen.queue_free()
 	await process_frame
