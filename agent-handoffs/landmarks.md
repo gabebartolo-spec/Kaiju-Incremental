@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 09:10
-## State: running a check (pacing with/without landmarks; then CI stills, then PR to LEAD)
+# Landmarks handoff, 2026-10-18 09:55
+## State: running a check (CI capture of the landmarks, queued behind two other sessions' captures)
 
 ## Task
 Original city landmarks, modelled in Blender and voxel-baked so they break chunk by chunk like any
@@ -30,16 +30,16 @@ tools/capture/capture_landmarks.gd, this file.
 - Shapes reach CityGen via cfg: Content merges data/landmarks.json into city.landmark_shapes (LEAD
   ruling on city-fill's layering nit; done in Content so every cfg path has them, not only tuning_for).
 - City-fill reviewed the city_gen diff: no blockers.
-- Tests at dc4f0bb: smoke 27, sim 39, powers 24, tentacles 18, city 19, growth 24, load 9, flow 113.
+- Tests at 1bf1a1c (full suite + harness self-test green): smoke 27, sim 39, powers 24, tentacles 18, city 19, growth 24, load 9, flow 113.
 
 ## Next
-1. Pacing (LEAD ruling a): tools/pacing.gd --species=reptilian with landmarks off vs on; keep
-   evolve1 within +-5% of 0.59 h and the tree within +-5% of 4.46 h; lower the bonus if 2.0 breaks
-   it; both tables in the PR; the number is a director balance note. Logs: scratchpad pace_*.log.
-   pace.sh edits data/tuning.json during the baseline run and restores it: never commit mid-run.
-2. Full suite, commit, push; ci_capture.sh --resolution=1920x1080 capture_landmarks.gd (stage 2:
-   stadium + wheel standing/broken), one CI capture at a time; 2x crop of the break.
-3. PR (<= 8 lines) with the sim packet (notes landmarks/sim_packet.md); LEAD runs the critic.
+1. CI stills (capture_landmarks.gd, 1920x1080, stage 2): run 1 (39071828104) framed from behind the
+   kaiju, so towers south of the plaza hid the stadium (no BuildingFade in the script). Fixed: the
+   game camera's angle centred on each landmark. Run 2 is queued until no other capture runs (one
+   at a time). Then a 2x crop of the break and my own check.
+2. PR into claude/look-options (<= 8 lines): stills + crop, pacing table (none 0.59/4.46 h; bonus
+   2.0 0.61/4.90; 4.0 0.59/4.61), suites, sim packet link (notes landmarks/sim_packet.md: put it under
+   Evidence). Auto-fix off; LEAD reviews + runs the fresh critic on the break.
 Follow-ups (not this PR): the wheel drawn past the edge at stage 1 as a "reach this" lure; bake
 E/F once picked (megatower ~816k raw voxels: Perf).
 
