@@ -158,6 +158,8 @@ func _check_end_card() -> void:
 		"the end card offers Title and Quit"
 	)
 	await layout.fits_at_scales(card as Control, "demo end card")
+	layout.listen(card, "demo end card")
+	layout.fonts_ours()
 	var saved := SaveFile.load_game()
 	var levels: Dictionary = saved.get("levels", {})
 	check.call(

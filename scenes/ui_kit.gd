@@ -32,17 +32,20 @@ const SIZE_SMALL := 20
 const SIZE_HEAD := 36
 const SIZE_TITLE := 72
 
-## The game's own display face (tools/fonts/build_fonts.py) for headings, titles and big buttons.
+## Our own faces (tools/fonts/build_fonts.py), capitals only (D-058). Body text is Kaiju Block,
+## the project's default font (project.godot gui/theme/custom_font), so every label, button and
+## tree node uses it with no override. Headings, titles and big buttons use the display face:
 ## The director's pick is this one line: kaiju_claw (B), kaiju_rubble (A) or kaiju_fault (C).
 const DISPLAY_FONT_PATH := "res://assets/fonts/kaiju_claw.ttf"
-## Below this size text keeps the engine's clean default font: the claw gashes turn to noise.
+## Below this size text stays in Kaiju Block: the claw gashes turn to noise.
 const DISPLAY_MIN_SIZE := SIZE_HEAD
 
 static var _display_font: Font
 static var _arrow: ImageTexture
 
 
-## The display font for headings at or above DISPLAY_MIN_SIZE, else null (theme default).
+## The display font for headings at or above DISPLAY_MIN_SIZE, else null (Kaiju Block, the
+## project's default font).
 static func font_for(size: int) -> Font:
 	if size < DISPLAY_MIN_SIZE:
 		return null

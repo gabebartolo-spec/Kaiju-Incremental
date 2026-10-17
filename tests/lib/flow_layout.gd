@@ -10,14 +10,19 @@ const TV_SIZE := Vector2i(3840, 2160)
 const TV_CAP_PX := 28.0
 ## Cap height of the UI fonts as a share of their size (Open Sans / Kaiju Claw, about 0.71).
 const CAP_SHARE := 0.71
+## Every face the game draws text in is one of ours (D-058): Kaiju Block, headings Kaiju Claw.
+const OUR_FONTS := "res://assets/fonts/kaiju_"
 
 ## The currency's old name (D-056: the kaiju earns BIOMASS); no visible text may say it.
 const OLD_CURRENCY := "rubble"
 
 var t: SceneTree
 var check: Callable
+
 ## Visible texts that still say OLD_CURRENCY, "<where>: <text>" (listen() fills it).
 var said: Array[String] = []
+## Visible texts drawn in a face that is not ours (the engine default), "<where>: <text>".
+var foreign: Array[String] = []
 
 
 func _init(runner: SceneTree, p_check: Callable) -> void:
@@ -157,7 +162,8 @@ func _breaks_a_word(b: Button) -> bool:
 	return false
 
 
-## Notes every visible label, button and rich text under `root` that says OLD_CURRENCY.
+## Notes every visible label, button and rich text under `root` that says OLD_CURRENCY or is
+## drawn in a face that is not ours.
 func listen(root: Node, where: String) -> void:
 	for node: Node in root.find_children("*", "Control", true, false):
 		var text := ""
@@ -167,8 +173,15 @@ func listen(root: Node, where: String) -> void:
 			text = (node as Button).text
 		elif node is RichTextLabel:
 			text = (node as RichTextLabel).get_parsed_text()
-		if (node as Control).is_visible_in_tree() and text.containsn(OLD_CURRENCY):
-			said.append("%s: %s" % [where, text.get_slice(String.chr(10), 0)])
+		if text == "" or not (node as Control).is_visible_in_tree():
+			continue
+		var line := "%s: %s" % [where, text.get_slice(String.chr(10), 0)]
+		if text.containsn(OLD_CURRENCY):
+			said.append(line)
+		var slot := "normal_font" if node is RichTextLabel else "font"
+		var face := (node as Control).get_theme_font(slot)
+		if face == null or not face.resource_path.begins_with(OUR_FONTS):
+			foreign.append(line)
 
 
 ## D-056: the screens listen() heard, and every node's description, call the currency biomass.
@@ -179,3 +192,15 @@ func currency_named() -> void:
 	check.call(
 		said.is_empty(), "no screen or node says %s (D-056 biomass): %s" % [OLD_CURRENCY, said]
 	)
+
+
+## D-058: every text listen() heard is drawn in one of our faces, never the engine default.
+func fonts_ours() -> void:
+	check.call(
+		foreign.is_empty(),
+		(
+			"every screen's text is in our own fonts (D-058): %d not: %s"
+			% [foreign.size(), foreign.slice(0, 6)]
+		)
+	)
+	foreign.clear()

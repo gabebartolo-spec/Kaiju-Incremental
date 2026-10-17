@@ -31,6 +31,7 @@ func run() -> void:
 	await layout.reveal_fits()
 	await _check_settings()
 	layout.currency_named()
+	layout.fonts_ours()
 	_check_migration()
 	SaveFile.delete_save()
 
