@@ -10,6 +10,11 @@ director decisions (D-022..D-042 in docs/DECISIONS.md), helper coordination. Cre
 claude/look-options (integration; PR #3 to main on HOLD until the director signs off). Latest: 30682ae
 (LFS checkout in capture/tests/build, from game-flow 7777974/35be8e9), then this handoff.
 
+## D-044 LOCOMOTION PAUSED (director 12:46) until models are decided
+species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-test skips octopus captures.
+Director saw octopus local capture: "head detached, limbs a static, awkward mesh" (I had not caught it).
+D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the model pipeline first.
+
 ## BLOCKER: CI billing (12:35)
 - Every Actions job refuses: "recent account payments have failed or your spending limit needs to be increased".
 - Director chose "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by
