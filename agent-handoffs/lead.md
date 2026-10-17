@@ -7,8 +7,9 @@
   placeholder tower in reveal; stuck capture runs. Then fresh screen-critic, then the director.
 - #16 MERGED 13870b3 (16:44, head 60e637d green). city-growth next: Apex load (<15 s; party_walls grid) +
   building fade between camera and kaiju (D-025 rule); new branch/worktree. game-flow told to sync #16.
-- Croc titan r5 (c4b1b0f/b29109f): seams fixed (walk 4.31->0.45 m). Fresh critic r5 RUNNING; lead suspects
-  roar f48-72 alternate-frame zigzag (jitter?) and f34 stall.
+- Croc titan r6 (cd70417) PASSED fresh motion-critic #3 (r4/r5 FIX: loop seams, 7 Hz shake layer, coil, rear;
+  18-frame spikes were codec GOP). Last polish (roar peak pulse, deeper head dip) + DIRECTOR BOARD (hand rig vs
+  old auto rig, notes blender-reptile/director/) in progress. Table it for the director.
 - Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
   ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
   voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
