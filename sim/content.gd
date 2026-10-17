@@ -83,6 +83,9 @@ static func _load() -> void:
 	_looks = _list("res://data/looks.json", "looks")
 	_look_id = str(load_json("res://data/looks.json").get("default", ""))
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
+	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
+	var city: Dictionary = _tuning.get("city", {})
+	city["landmark_shapes"] = _landmarks
 
 
 static func _list(path: String, key: String) -> Array[Dictionary]:

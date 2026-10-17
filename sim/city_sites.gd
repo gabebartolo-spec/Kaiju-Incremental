@@ -2,9 +2,10 @@ class_name CitySites
 extends RefCounted
 ## Landmark sites (part of CityGen.map, split out to keep files small). Each landmark in
 ## city.landmarks takes the street-grid cells round its anchor, as many as its baked footprint
-## (data/landmarks.json) plus a margin needs, as one plaza: the streets inside it are never laid,
-## so traffic and the ground go round it. A site stays inside one district (it never swallows a
-## ring avenue) and clear of the diagonal avenue; a landmark that cannot get one is left out.
+## (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a margin needs, as one
+## plaza: the streets inside it are never laid, so traffic and the ground go round it. A site
+## stays inside one district (it never swallows a ring avenue) and clear of the diagonal avenue;
+## a landmark that cannot get one is left out.
 ## Pure: the same city config always gives the same sites.
 
 
@@ -20,8 +21,9 @@ static func find(
 	var av_z: Dictionary = avenues[1]
 	var out: Array[Dictionary] = []
 	var raw: Array = cfg.get("landmarks", [])
+	var shapes: Dictionary = cfg.get("landmark_shapes", {})
 	for spec: Dictionary in raw:
-		var shape: Dictionary = Content.landmarks().get(str(spec["id"]), {})
+		var shape: Dictionary = shapes.get(str(spec["id"]), {})
 		if shape.is_empty():
 			continue
 		var pad := 2.0 * Num.f(spec["margin"])

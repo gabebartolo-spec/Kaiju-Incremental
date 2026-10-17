@@ -1,80 +1,56 @@
-# Landmarks handoff, 2026-10-18 07:50
-## State: running a check (fresh critic on board round 4)
+# Landmarks handoff, 2026-10-18 09:10
+## State: running a check (pacing with/without landmarks; then CI stills, then PR to LEAD)
 
 ## Task
 Original city landmarks, modelled in Blender and voxel-baked so they break chunk by chunk like any
-building, wired in through data, PR into claude/look-options to LEAD ("Kaiju: Lead",
-local_106fc100...): 8-line body, Auto-fix off, never merge. Director prompt: "dont forget we can create
-our own models in blender, but maybe you should work on some landmarks". Director (via the old lead):
-"use tripo if results in blender are poor". Blender results are not poor, so Tripo was not used.
+building, placed through data, PR into claude/look-options to LEAD ("Kaiju: Lead", local_106fc100...):
+8-line body, Auto-fix off, never merge. Director: "dont forget we can create our own models in
+blender, but maybe you should work on some landmarks"; "use tripo if results in blender are poor"
+(not needed: Blender passed five critic rounds).
 
 ## Branch and commit
-Worktree ../Kaiju-Incremental-wt/landmarks on claude/landmarks (from origin/claude/look-options 7911400).
-No PR yet.
+Worktree ../Kaiju-Incremental-wt/landmarks, branch claude/landmarks, synced with look-options 2b241df
+(merge 863d22a). Commits: db908ac path + sim, ca0cecf/1861996/f1078ae model rounds, dc4f0bb sites.
+Not pushed yet (push before ci_capture.sh). Uncommitted: content.gd/city_sites.gd shapes-via-cfg,
+tools/capture/capture_landmarks.gd, this file.
 
 ## Done
-- Board r1 (notes landmarks/board1): six concepts. LEAD's 2x check passed; the fresh critic said FIX on
-  every panel (board1/critic.md). Round 2 fixed it all: stadium piers and ribs, gate rebuilt (tall
-  pillars, passage, steps, free-standing lanterns), clock-hall gable + hipped roof + 4 faces with
-  hands, wheel polygon rim + drum hub + outside capsules, spire ring-stepped shaft + flat roof,
-  megatower open crown. Plus a side-view scale strip and "units" in the captions.
-  Board r2 (board2/): critic r2 passed B and E and asked for fixes on A, C, D and F. The round-3 fixes
-  are done: stadium piers flush (and the caption now says bowl 7 floors), every clock reads 3:00 with
-  dark belfry openings, wheel hub raised over a lower hall, megatower axis-aligned (rotated floors
-  aliased) with a crown of tapering points, croc staged clear of bases. Critic r3: A, B, E PASS;
-  C, D, F FIX -> r4: portico gable roof, dial rings + 10:10 hands, side windows; wheel rim complete
-  (brace removed) with the hall centred under it; megatower a glass row per floor + straight stepped
-  crown points, caption "45 floors + crown"; small red lanterns in the gate passage. Board r4
-  (board4/) is with a fresh critic (board4/critic.md). Megatower is now ~706k raw voxels (Perf note).
-- For LEAD, outside my scope (critics r2/r3): the City 1-2 croc (adolescent scaled down) has its tail
-  hanging straight down so it reads as a third leg; the City 3-4 croc's pale back plates on an upright
-  body may read as a Godzilla silhouette. Those belong to the croc model's owner.
-- Full suite green on db908ac (smoke 27, sim 39, powers 24, tentacles 18, city 11, growth 24, load 9,
-  flow 109, harness self-test). City + load re-run green after the r3 stadium rebake.
-- The director question is tabled for his morning by LEAD: "which landmarks per city"; I recommend
-  A stadium -> D wheel -> E spire -> F megatower (the demo needs only A + D).
-- Code (stadium as the test model; city 1 gets one under every option):
-  - assets/source/landmarks/build_landmarks.py (all six, Blender from code) + stadium.glb;
-  - tools/landmarks/bake.py: raw voxelize.py shell -> assets/landmarks/<id>.kvox (building-local
-    cells, flags = 6-bit mask of faces open to outside air) + data/landmarks.json (w, d, h, kvox,
-    chunk mask = chunks holding a voxel or sealed air);
-  - scenes/landmark_voxels.gd (extends BuildingVoxels, facade off, cached kvox); BuildingMesher
-    uses DIRECT colours and the face mask (mask -1 = old path); BuildingView picks LandmarkVoxels when
-    b.landmark != "";
-  - sim: sim/landmarks.gd builds every Building from its entry (moved out of RampageSim: 400-line
-    cap); Structure.keep(layers); Building.landmark / rubble_bonus; chunks_total += alive_count;
-    pay() x rubble_bonus. Content.landmarks().
-  - tests: city +5 (mask rows, keeps exactly its chunks, stands as built, destruction counts real
-    chunks, player-effect 3x pay), load +3 (no stray voxels, open faces only, debris samples).
-    Floors: city 6 -> 11, load 6 -> 9.
-- Licence rows added (landmark models, bake tool).
-- Sim-review packet draft: notes landmarks/sim_packet.md.
-
-## Recipe
-blender -b --factory-startup --python assets/source/landmarks/build_landmarks.py -- <dir> stadium
-blender -b --factory-startup --python tools/blender/voxelize.py -- <dir>/stadium.glb raw.kvox <round(h*8)+1>
-python tools/landmarks/bake.py raw.kvox stadium
-Board renders: notes landmarks/src (board_render.py, lineup.py, compose.py), Cycles on the CPU.
+- Concept board: 6 originals (A stadium, B gate, C clock hall, D wheel, E spire, F megatower).
+  Critic rounds r1-r5 (notes landmarks/board1..board5); r5: all six PASS. LEAD tabled the director
+  question for the morning: which landmarks per city (rec A -> D -> E -> F; the demo needs A + D).
+- Path: assets/source/landmarks/build_landmarks.py (Blender, all six) -> tools/blender/voxelize.py
+  (height round(h*8)+1) -> tools/landmarks/bake.py -> assets/landmarks/<id>.kvox (flags = faces open
+  to outside air) + data/landmarks.json (w, d, h, chunk mask). LandmarkVoxels + BuildingMesher mask;
+  sim: Landmarks.building(), Structure.keep(), rubble_bonus, chunks_total = alive chunks.
+- Sites: CitySites (sim) grows grid cells round a data anchor until the footprint fits, never
+  across a ring avenue or the diagonal; CityGen skips streets inside and emits the entry;
+  CityLines = moved street-line helpers (city_gen was at the 400-line cap). Ground/decor: one
+  "plaza", "landmark" line each. Data: city.landmarks stadium (22,-24) margin 0 tier 1, wheel (10,56)
+  margin 2 tier 2, both rubble_bonus 4.0 (pacing: evolve1 0.59 h = base, tree 4.61 h vs 4.46 h; 2.0 gave 4.90 h).
+- Shapes reach CityGen via cfg: Content merges data/landmarks.json into city.landmark_shapes (LEAD
+  ruling on city-fill's layering nit; done in Content so every cfg path has them, not only tuning_for).
+- City-fill reviewed the city_gen diff: no blockers.
+- Tests at dc4f0bb: smoke 27, sim 39, powers 24, tentacles 18, city 19, growth 24, load 9, flow 113.
 
 ## Next
-1. Critic r2 verdict -> fix -> LEAD QA -> director pick (LEAD asks).
-2. After city-calm's D-062 merges (LEAD pings): the landmark site in CityGen.map() (merge the blocks
-   under a data anchor into a plaza, drop the inner streets), tuning city.landmarks [{id, district,
-   anchor, tier, rubble_bonus}], city_ground/decor draw the site; city-calm reviews the city_gen diff.
-3. Bake the picked ones; CI 1080p stills standing/destroyed + 2x crop of the break (capture.yml, one
-   at a time); Perf bench (megatower is ~500k raw voxels).
-4. PR to LEAD with the sim packet; kaiju-sim-review by LEAD.
-
-## Open decisions
-- Director: which landmarks per city (tabled by LEAD for the morning).
+1. Pacing (LEAD ruling a): tools/pacing.gd --species=reptilian with landmarks off vs on; keep
+   evolve1 within +-5% of 0.59 h and the tree within +-5% of 4.46 h; lower the bonus if 2.0 breaks
+   it; both tables in the PR; the number is a director balance note. Logs: scratchpad pace_*.log.
+   pace.sh edits data/tuning.json during the baseline run and restores it: never commit mid-run.
+2. Full suite, commit, push; ci_capture.sh --resolution=1920x1080 capture_landmarks.gd (stage 2:
+   stadium + wheel standing/broken), one CI capture at a time; 2x crop of the break.
+3. PR (<= 8 lines) with the sim packet (notes landmarks/sim_packet.md); LEAD runs the critic.
+Follow-ups (not this PR): the wheel drawn past the edge at stage 1 as a "reach this" lure; bake
+E/F once picked (megatower ~816k raw voxels: Perf).
 
 ## Findings for the lead
-- voxelize.py shells surfaces only: a solid disc bakes as a cap. Build open parts as real rings
-  (a boolean annulus). The stadium bowl was a white lid until that fix.
-- Slow tapers (cones) and thin tori bake into stair-step streaks and lumps at 8 voxels per floor.
-  Constant-radius stacked rings and straight-segment polygons bake clean (critic r1 -> r2).
-- Blender renders on CPU Cycles need no GPU slot (15-30 s a panel).
+- voxelize.py shells surfaces only: a solid disc bakes as a cap; build open parts as rings.
+- Rotated geometry and slow tapers alias into ragged edges at 8 voxels per floor; axis-aligned
+  boxes and constant rings bake clean (critic rounds r1-r4).
+- A critic that reads a stale copy of the source reports fixed defects: point it at the current file.
+- Godot --script on a worktree with new class_names needs --import first, and a runtime script
+  error makes a headless --script hang (debugger): always wrap probes in `timeout`.
 
 ## Rules learnt the hard way
-- gdlint caps files at 400 lines: rampage_sim.gd was at 399; move code out rather than squeeze it.
+- gdlint caps files at 400 lines and functions at 4 arguments.
 - gdformat on Windows writes CRLF; convert back to LF before committing.
