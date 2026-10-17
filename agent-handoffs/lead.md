@@ -14,10 +14,9 @@
 - Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
   ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
   voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
-- #19 in-game (147f1c8): Blender weights fix hip shear + tail-root fin at game scale (turn 7.5-12 s), 2x hip/
-  tail/shoulder better. FIX: AFTER foot blob f417, grey cloud f574, framed jaw crop. Critic: the SHARED procedural
-  motion reads as a 5 m lizard (rear-up, no settle) -> director Q: bring Blender-authored clips into the game.
-- #14 r3 (fc2ddba): screen-critic FIX x8 sent (tree text 24 px < 28, need-N overlap, side panel scroll, copy,
+- #19 MERGED 4f5afb5 (croc titan adult in game on Blender weights; foot ok, jaw shut cleaner). Critic: SHARED
+  procedural motion reads as a 5 m lizard, roar jaw drops ~vertical -> director Q: bring Blender clips in game.
+- #14 r4 code 50a93f4, CI stills running (39013828752/39013803405); r3 screen-critic FIX x8 (tree text 24 px < 28, need-N overlap, side panel scroll, copy,
   locked contrast, "blocks", HUD behind dialogs, reveal floor count/skip hint).
 - TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
 
