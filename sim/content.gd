@@ -8,6 +8,7 @@ static var _upgrades: Array[Dictionary] = []
 static var _species: Array[Dictionary] = []
 static var _looks: Array[Dictionary] = []
 static var _look_id := ""
+static var _landmarks: Dictionary = {}
 
 
 static func tuning() -> Dictionary:
@@ -36,6 +37,13 @@ static func species_def(id: String) -> Dictionary:
 		if def["id"] == id:
 			return def
 	return species()[0]
+
+
+## Each landmark's baked shape (data/landmarks.json, written by tools/landmarks/bake.py): id ->
+## {w, d, h, kvox, chunks (one string per floor, "1" per structural chunk, x fastest)}.
+static func landmarks() -> Dictionary:
+	_load()
+	return _landmarks
 
 
 static func looks() -> Array[Dictionary]:
@@ -74,6 +82,7 @@ static func _load() -> void:
 	_species = _list("res://data/species.json", "species")
 	_looks = _list("res://data/looks.json", "looks")
 	_look_id = str(load_json("res://data/looks.json").get("default", ""))
+	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
 
 
 static func _list(path: String, key: String) -> Array[Dictionary]:

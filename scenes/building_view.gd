@@ -30,7 +30,10 @@ var _slab_mat: ShaderMaterial
 ## built here, so a whole city can be built across worker threads before entering the tree.
 func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
 	b = p_building
-	voxels = BuildingVoxels.new(b, base, party)
+	if b.landmark == "":
+		voxels = BuildingVoxels.new(b, base, party)
+	else:
+		voxels = LandmarkVoxels.new(b, base)
 	mesher = BuildingMesher.new(voxels)
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))

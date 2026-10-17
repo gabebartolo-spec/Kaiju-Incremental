@@ -27,6 +27,18 @@ func _init(p_w: int, p_d: int, p_h: int, chunk_hp: float) -> void:
 	alive_count = w * d * h
 
 
+## Keeps only the chunks a shape marks: one string per floor, a "1" per chunk that exists,
+## x fastest then z (a landmark's baked chunks). Every other chunk is gone from the start.
+func keep(layers: Array) -> void:
+	for y: int in h:
+		var row := str(layers[y]) if y < layers.size() else ""
+		for z: int in d:
+			for x: int in w:
+				var k := x + z * w
+				if k >= row.length() or row[k] != "1":
+					remove(Vector3i(x, y, z))
+
+
 func index(c: Vector3i) -> int:
 	return c.x + c.z * w + c.y * w * d
 

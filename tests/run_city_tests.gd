@@ -1,6 +1,7 @@
 extends "res://tests/lib/runner.gd"
 ## City suite: the seeded layout reads as a real city, not a grid of isolated towers
-## (director, 2026-10-16), and the street plan presentation builds on is fixed by the config.
+## (director, 2026-10-16), the street plan presentation builds on is fixed by the config, and a
+## landmark stands and pays in its own shape.
 ## Headless and seeded.
 ##   godot --headless --path . --script tests/run_city_tests.gd
 
@@ -12,6 +13,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
 	_check_calm_streets()
+	_check_landmark()
 
 
 ## The city reads as a real city, not a grid of isolated towers (director, 2026-10-16): lots
@@ -101,3 +103,60 @@ func _check_calm_streets() -> void:
 		)
 	)
 	ground.free()
+
+
+## A landmark is a Structure with only its model's chunks: it stands as built, and (player-effect
+## fixture) its chunks pay rubble_bonus times what the same chunks of an ordinary building pay.
+func _check_landmark() -> void:
+	var shape: Dictionary = Content.landmarks().get("stadium", {})
+	var layers: Array = shape.get("chunks", [])
+	var w := Num.i(shape.get("w", 0))
+	var d := Num.i(shape.get("d", 0))
+	var h := Num.i(shape.get("h", 0))
+	var marked := 0
+	var rows_ok := layers.size() == h and h > 0
+	for row: Variant in layers:
+		rows_ok = rows_ok and str(row).length() == w * d
+		marked += str(row).count("1")
+	check(rows_ok, "the stadium's chunk mask has one %d-long row per floor (%d)" % [w * d, h])
+	var frame := Structure.new(w, d, h, 10.0)
+	frame.keep(layers)
+	check(
+		frame.alive_count == marked and marked > 0 and marked < w * d * h,
+		"a landmark keeps exactly its model's chunks: %d of %d" % [frame.alive_count, w * d * h]
+	)
+	check(frame.settle().is_empty(), "a landmark stands as built: nothing loose at the start")
+	var plain := {"x": -40.0, "z": 0.0, "w": w, "d": d, "h": h, "tier": 2, "style": 0}
+	var mark := plain.duplicate()
+	mark["x"] = 40.0
+	mark["landmark"] = "stadium"
+	mark["rubble_bonus"] = 3.0
+	mark["chunks"] = layers
+	var layout: Array[Dictionary] = [plain, mark]
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades())
+	)
+	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	check(
+		sim.chunks_total == w * d * h + marked,
+		"destruction counts only a landmark's real chunks: %d" % sim.chunks_total
+	)
+	# The same top chunks of each: a chunk with nothing above it, so nothing falls.
+	var tops: Array[Vector3i] = []
+	for z: int in d:
+		for x: int in w:
+			var y := sim.buildings[1].frame.top_below(x, z, h)
+			if y >= 0 and tops.size() < 6:
+				tops.append(Vector3i(x, y, z))
+	var before := sim.rubble
+	var plain_broken := sim.damage_chunks(0, tops, 1.0e6)
+	var plain_pay := sim.rubble - before
+	before = sim.rubble
+	var mark_broken := sim.damage_chunks(1, tops, 1.0e6)
+	var mark_pay := sim.rubble - before
+	check(
+		plain_broken == 6 and mark_broken == 6 and is_equal_approx(mark_pay, plain_pay * 3.0),
+		"a landmark's chunks pay 3x an ordinary building's: %.2f vs %.2f" % [mark_pay, plain_pay]
+	)
