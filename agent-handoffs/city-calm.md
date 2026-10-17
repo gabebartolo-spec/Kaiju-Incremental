@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 04:40
-## State: working (export-windows: export + pack check done; smoke launch held until 04:45 GPU slot)
+# City-calm handoff, 2026-10-18 04:48
+## State: awaiting lead (export-windows PR open into look-options; smoke launch passed)
 
 ## Task
 Role city-calm (helper). Lead: "Game demo planning" (local_106fc100).
@@ -25,7 +25,7 @@ notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-..
 - PR body draft: scratchpad pr_export.md (SMOKE_RESULT / EXPORT_RESULT placeholders).
 
 ## Next
-1. 04:45 (or the lead's go): smoke launch with scratchpad smoke_exe.sh <notes>/smoke. It does
+1. DONE 04:41: smoke launch with scratchpad smoke_exe.sh <notes>/smoke. It does
    override.cfg beside the exe (mode=0, no_focus, -20000), seeded settings.cfg
    fullscreen=false, own APPDATA, --audio-driver Dummy, --write-movie PNG 1080p,
    --quit-after 450, and kills its own PID at 120 s. Pick a title frame and the log head.
@@ -38,7 +38,7 @@ pck parser: 1st misread the header (pos 28, should be 32) -> fixed; RSCC compres
 none
 
 ## Running jobs
-a wait-until-04:45 timer only.
+none.
 
 ## Findings for the lead
 - The exported pack ships tools/capture/*.gdc and tools/pacing.gdc (exclude_filter is only
