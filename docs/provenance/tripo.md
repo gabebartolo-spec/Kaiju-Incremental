@@ -53,3 +53,4 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-17 | reptilian adult v2 | croc titan short arms, variant 3 | Smart Mesh P2.0 x4 | c8185166-665e-4573-90f1-a2e647b8f2c0 | 100 | yes | variant 1 PICKED (quad 6623 faces; arms clear, long tail) |
 | 2026-10-17 | reptilian adult v2 | texture | Texture | c8185166 (texture) | 30 | yes | textured, balance 19445; six-view after download |
 | 2026-10-17 | reptilian adult v2 colour | 3 Nano Banana colour edits of the variant 3 ref: dark olive / charcoal / bronze-brown spines | Image edit | image history 22:1x | 0 (free) | n/a | board croctitan_spine_colour_board.png -> director (director disliked the pale spines) |
+| 2026-10-17 | reptilian adult v2 colour | director picked B charcoal; re-texture of c8185166 from the charcoal ref, Remove Lighting on | Texture | c8185166 (texture 2) | 30 | yes | charcoal spines PASS (lead, Tripo viewer); balance 19415; six-view after download |
