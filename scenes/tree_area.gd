@@ -76,8 +76,26 @@ func _layout() -> void:
 			b.place(at, box)
 	_band.position = Vector2(0, BRANCH_ROW * cell.y - CAPSTONE_EXTRA)
 	_band.size = Vector2(size.x, cell.y + CAPSTONE_EXTRA)
-	_caption.position = Vector2(0, (BRANCH_ROW + 1) * cell.y + 4)
+	_caption.position = _caption_spot(cell)
 	queue_redraw()
+
+
+## Where the branch caption goes: the first place along the band's top strip that no node
+## covers (screen critic: not at the screen's bottom edge), else just under the band.
+func _caption_spot(cell: Vector2) -> Vector2:
+	var text := _caption.get_combined_minimum_size()
+	var x := GAP.x
+	while x + text.x <= size.x:
+		var spot := Rect2(_band.position + Vector2(x, 0), text)
+		var free := true
+		for b: Button in buttons.values():
+			if b.get_rect().intersects(spot):
+				free = false
+				break
+		if free:
+			return spot.position
+		x += cell.x * 0.5
+	return Vector2(0, (BRANCH_ROW + 1) * cell.y + 4)
 
 
 func _draw() -> void:

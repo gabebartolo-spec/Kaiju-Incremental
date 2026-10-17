@@ -8,14 +8,15 @@ const PATH := "user://settings.cfg"
 ## UI scale steps on top of the 1080p canvas (D-027: already 2x on a 4K TV). Every screen fits
 ## at the largest step; the evolution tree scrolls when it has to.
 const UI_SCALES: Array[float] = [1.0, 1.15, 1.25]
-## The controls list the settings screen shows: action, keyboard, pad.
+## The controls list the settings screen shows: action, keyboard, pad, and for a species-only
+## row that species's id (hidden while Demo.allows() says it is not playable).
 const CONTROLS: Array[Array] = [
 	["Move", "WASD / arrows", "Left stick"],
 	["Signature attack", "Space", "A"],
-	["Glide (insectoid, hold)", "Hold Space", "Hold A"],
+	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
-	["Fullscreen", "F11", "-"],
+	["Fullscreen", "F11", "Keyboard only"],
 	["Confirm", "Enter / Space", "A"],
 	["Back", "Esc", "B"],
 ]
