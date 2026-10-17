@@ -7,4 +7,5 @@ powers 24
 tentacles 18
 city 5
 growth 24
+load 6
 flow 26
