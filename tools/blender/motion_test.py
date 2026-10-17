@@ -1082,7 +1082,8 @@ def export(height_vox):
            "kvox_note": "p_skin = M @ (gx, gy, gz, 1): centre of a rig_voxel cell of the SAME glb at "
                         "kvox_height. rig_voxel bakes the jaw shut by a few degrees: jaw cells sit "
                         "turned from rest; sample them against jaw-weighted positions."}
-    (OUT / f"{stem}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8")
+    # LF on every OS: the game's skin stamp hashes these bytes (a CRLF copy read as stale).
+    (OUT / f"{stem}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
     print(f"exported {stem}: {len(names)} bones, {len(g)} welded positions -> {OUT}")
 
 
