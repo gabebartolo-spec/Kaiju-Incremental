@@ -64,5 +64,21 @@ own: D-032 (looks first, tuning later) still holds; a slow frame is a finding, n
 2. Same bench on each demo PR before merge (A/B vs look-options), recorded here.
 3. Verify the bench builds the grown city; if not, add a `--stage=` arg (small PR).
 
+## Task
+Keep the ledger above current: every merged or open PR gets a cost line (measured or "not benched").
+
+## Branch and commit
+Main checkout, claude/look-options (lead's checkout; this file is the only thing committed here).
+No worktree of my own (worktree count is already over the cap of 4).
+
+## Unfinished changes
+None.
+
+## Attempts
+None yet (survey only: code reading plus PR bodies #5 #9 #15 #16 #20 #22).
+
+## Open decisions
+Director: run the demo baseline bench now, or wait until #22/#8/#23 merge (asked 04:55).
+
 ## Running jobs
 None. No Godot started, no override.cfg written.
