@@ -58,7 +58,7 @@ func _run() -> void:
 	await _frames(ROAR_SHOT_FRAME)
 	_shot("04_demo_end")
 	await _frames(HOLD_FRAMES - ROAR_SHOT_FRAME)
-	await _click(_button(_screen(), "TITLE"))
+	await _click(_button(_screen(), "MAIN MENU"))
 	await _frames(SETTLE)
 	_shot("05_title_after")
 	await _click(_button(_screen(), "CONTINUE"))

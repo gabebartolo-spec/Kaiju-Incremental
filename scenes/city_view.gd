@@ -8,6 +8,7 @@ const MAX_DEBRIS := 600
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
 const MAX_FIRES := 30
+const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 var sim: RampageSim
@@ -389,6 +390,7 @@ func float_text(text: String, pos: Vector3, color: Color) -> void:
 	l.outline_size = 24
 	l.modulate = color
 	l.no_depth_test = true
+	l.add_to_group(FLOAT_TEXT)
 	l.position = pos
 	add_child(l)
 	var tween := l.create_tween()
