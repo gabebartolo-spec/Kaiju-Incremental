@@ -1,7 +1,4 @@
 shader_type spatial;
-// Lit like the outer skin, never in the cubes' shadow: a hairline gap between cubes reads as skin
-// of the local colour, not a dark hole (lead review round 3).
-render_mode shadows_disabled;
 // D-041: the filler under a kaiju's cubes (scenes/voxel_skin.gd): the joints' voxel faces as one
 // watertight, linearly skinned surface a little inside the cubes, so where a bending joint pulls
 // cubes apart the gap shows skin, never sky. CUSTOM0 = bones 0-2 and weight 0, CUSTOM1.xy =

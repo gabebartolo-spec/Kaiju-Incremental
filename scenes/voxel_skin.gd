@@ -179,7 +179,6 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		fill.mesh = mesh
 		fill.material_override = _fill
 		fill.custom_aabb = BOUNDS
-		fill.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		fill.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 		add_child(fill)
 	_hide_rig_voxels()
