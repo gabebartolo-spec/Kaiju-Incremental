@@ -1,58 +1,55 @@
-# blender-reptile handoff, 2026-10-17 13:27
-## State: awaiting lead (HOLD: director picks the mesh and whether to port the rig; start nothing until the lead messages)
+# blender-reptile handoff, 2026-10-17 15:25
+## State: awaiting lead (rig export delivered and verified; voxel-skin told the format)
 ## Task
-Round 1 (done): hand-modelled reptile adult A vs Tripo adult B (board in docs/captures/2026-10-17-
-blender-reptile). Round 2 (lead 12:39): MOTION TEST - one hand-built armature fitted to both meshes,
-hand-set weights, walk (D-031) + 90 deg turn + roar with jaw; A|B side and three-quarter; foot slide per
-plant; 2x crops of shoulder/hip/jaw at most-bent frames. Question: bad in-game motion = Tripo mesh or
-our auto rig/weights? CI billing-blocked: local blender -b renders, commit, no CI.
-## Direction (lead 13:01)
-Director prefers A's look ("more original, less a blatant Godzilla copy"): A is the design direction,
-B only the motion-test control. Keep A's croc snout, pale dorsal plates, long low tail; never drift
-toward Godzilla.
+History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
+round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
+folder, crops + numbers in docs/captures/2026-10-17-motion-test). Director D-045: a NEW original Tripo
+reptile (not A, not B) rigged with this hand rig; its Tripo design waits on the director's Chrome.
+Round 3 (lead 14:54): add an export of the rig + welded weights to motion_test.py, agree the format with
+kaiju-voxel-skin (local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc), test on B, commit; a new mesh must fit in
+ONE command. NOT in scope: animation polish (critic notes below), A's design.
 ## Branch and commit
-claude/blender-reptile-f5388e (pushed). Round 1 4a1b1f8; round 2 script c283dd3; evidence 4ab6781.
-## Delivered (round 2)
-- tools/blender/motion_test.py: `blender -b --python tools/blender/motion_test.py -- <A|B> <glb> <out>
-  <render|measure|volume|crops|blend|still> [clip]`, ONE clip per process. Normalises to 100 m,
-  re-origins on the pelvis, rig from per-mesh LANDMARKS (measured pivots), IK legs (thigh-shin-meta to
-  a ball ctrl + knee pole, toe copies ctrl), IK arms (hand target low at the belly, elbow pole), weights
-  = nearest bone in region + 50/50 linear falloff over 40% of the shorter bone + 6 smoothing passes,
-  computed on POSITION-WELDED vertices, loose islands rigid to the hide, palate rides the skull.
-- Committed: docs/captures/2026-10-17-motion-test/joint_crops.png + measurements.json.
-- Clips (mp4 is gitignored repo-wide, so NOT committed): notes folder
-  blender-reptile/motion-test/{walk,turn,roar}_{side,threeq}_AB.mp4 (1284x480, 6 s, 24 fps) with
-  compose.py/encode.py; frames re-render from motion_test.py in ~10 min (render task, per clip).
-- Numbers (100 m kaiju): foot slide max per plant A walk 8.0 / turn 10.9 / roar 1.1 cm;
-  B 6.1 / 22.0 / 4.8 cm. Girth kept at worst frame: A shoulder 95.7, elbow 94.8, neck 95.9, skull 96.3,
-  rest >= 99%; B shoulder 91.0, elbow 96.0, rest >= 98%. No tearing/candy-wrap in the crops.
-- Verdict offered: B moves cleanly on a hand rig, so the in-game problem is our auto rig/weights
-  (rig_voxel: nearest-bone ownership, no joint blend), not the Tripo mesh. B's sculpt has its right
-  foot 69 cm off the ground at rest. Shoulders are the weakest joint on both (arms drop ~70 deg).
+claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96.
+## Delivered (round 3)
+- motion_test.py fit modes: A | B (hand pivots) | auto (sliced from the mesh) | landmarks.json.
+  auto vs hand on B: every pivot within 1-4 m (hand tip 5.3, belly 5.8) on a 100 m body; on A the low
+  neck is 7-10 m off (fine for Tripo-like meshes). Rules: torso mid = halfway between 2nd/98th pct of
+  a core slice (vertex density is uneven), knee = most forward leg slice, ankle = most backward below
+  it, skull base 76% from snout to neck base, arms traced outward, tail bands behind the hips.
+- task fit: auto vs hand table + <stem>_fit_side/_front.png (bones over see-through mesh). Look first.
+- task export [height_vox]: <stem>.skin.json (33 deform bones, parents first; head/tail/basis rows
+  x,y,z + roll_blender in GAME axes: -x, z, y; metres; origin ground under pelvis; 100 m tall;
+  physics/jaw flags; kvox_cell_to_skin 4x4 for rig_voxel cells of the SAME glb) + <stem>.skinw
+  ("KSKW", u32 ver 1, u32 N, u16 bones, N x 32-byte {f32 xyz, u8 bone[4], f32 w[4]}, welded, sorted,
+  sum 1, unused 255/0).
+- tools/blender/verify_skin.py <skin.json> <kvox>: sums, parents, size, kvox cells -> skin distance.
+- Test export: assets/kaiju/test/reptilian_adult.skin.json/.skinw (B, hand fit; 11,246 positions).
+  Verified: sums 1.0, kvox cells of assets/kaiju/reptilian_adult.kvox land median 0.69 m / max 2.4 m
+  from the skin (voxel 0.629 m). auto export gives the same counts and distances.
+- One command for the new mesh (copy the GLB to scratch, never commit Tripo sources):
+  blender -b --python tools/blender/motion_test.py -- auto <new.glb> <out> fit      (check the sheet)
+  blender -b --python tools/blender/motion_test.py -- auto <new.glb> <out> export 160
+  (then rig_voxel.py on the same GLB at 160 for the kvox). Override bad pivots with a landmarks.json.
+## Format agreement
+Proposal sent 14:56, correction (32-byte records) + ready note sent 15:20; no reply from voxel-skin yet.
+## Motion-critic notes (lead 13:26; NOT to fix until asked)
+Roar: no visible crouch/wind-up, 2 s frozen hold (f60-108), arms go out at the peak. Tail does not
+counterbalance (walk, roar); walk upper body static. B mouth open at rest. A: dark armour-scute
+patches read as black squares.
 ## Attempts (fix-loop record)
 - Rig origin at the snout put planted feet 60 m ahead: re-origin on the pelvis.
-- Foot targets used rig.matrix_world (last frame): one-frame (84 cm) offset; build the matrix per frame.
-- Keying a 2nd clip in one process left frame 0 posed from the old one: one clip per process + settle().
-- FK arm angles gave different hands on A and B: IK hand targets.
-- Roar tail pitch sign pushed B's tail into the ground: + pitch lifts a tail bone.
-- B jaw mask reached the throat: floor line under the mouth, only in front of the hinge.
-- Crack slivers on both at the roar peak: glTF splits UV seams (B 28,691 verts = 11,246 positions);
-  weld by position before weighting fixed it. Same fix found A's 540 loose spines/scutes.
-- Volume shell radius: base on the nearest surface distance (deep pivots found no vertices).
-## Motion-critic (lead 13:26): deformation + feet PASS on both; animation FIX, NOT yet to be fixed
-- Roar: no visible crouch/wind-up (f0-43 reads static; my crouch keys 18-40 are too small), 2 s
-  frozen hold (f60-108), arms go OUT at the peak (should stay tucked or claw forward).
-- Tail does not counterbalance (walk and roar); walk upper body static.
-- B mouth open at rest (sculpt). A: black square patches on thigh/back = the dark armour-scute
-  patches (plate_patch in build_reptile.py) read as texture defects; rethink if A goes forward.
+- Foot targets from a stale rig.matrix_world: one-frame (84 cm) offset; build the matrix per frame.
+- 2nd clip in one process kept frame 0 of the old one: one clip per process + settle() twice.
+- UV-seam splits cracked joints: weld by position before weighting (B 28,691 verts = 11,246 positions).
+- Auto spine: centroids sat on the belly (dense folds), then a back cut-off removed the rump surface:
+  2/98 pct of the full slice, cut only far tail (foot_y + 40).
+- Fit report compared frames wrongly: KNOWN was mutated in place by the re-origin; copy it.
 ## Open decisions (lead/director)
-1. Port the hand rig + welded falloff weights into the game pipeline (D-041 skinned lattice) for A?
-2. Next A refinement round (keep its identity) or straight to in-game motion?
+None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
 None. No Blender open.
 ## Findings for the lead
-- UV-seam vertex splits crack any per-vertex weighting unless welded first: check the game's skin
-  path (D-041) for the same.
+- glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
 ## Rules learnt the hard way
-- Measure on deformed mesh vertices (toe pads, joint shells), not bones: bones hid the seam cracks.
+- Measure on deformed mesh vertices, not bones. Check a skeleton fit on an overlay sheet before use.
