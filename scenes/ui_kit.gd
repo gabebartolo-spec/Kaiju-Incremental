@@ -14,6 +14,9 @@ const MUTED := Color("b9b4a6")
 const ACCENT := Color("ffcc00")
 ## Alert red: evolutions, the clock running out, the news crawl.
 const ALERT := Color("ff3b30")
+## The news crawl's strip: alert red dark enough that white body text reads at 5:1 (ALERT gives
+## 3.6:1, fine for the big clock digits, not for 24 px text).
+const CRAWL_RED := Color("d42a1f")
 const GOOD := Color("7dff6a")
 const WARN := Color("ffd84a")
 const BAD := Color("ff3b30")
@@ -100,6 +103,18 @@ static func hazard(
 	elif band == HazardBox.Band.TOP:
 		s.content_margin_top = PANEL_BAND + 14.0
 	return s
+
+
+## WCAG contrast ratio of two colours (1..21); body text wants 4.5 or more.
+static func contrast(a: Color, b: Color) -> float:
+	var la := _relative_luminance(a)
+	var lb := _relative_luminance(b)
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
+
+
+static func _relative_luminance(c: Color) -> float:
+	var l := c.srgb_to_linear()
+	return 0.2126 * l.r + 0.7152 * l.g + 0.0722 * l.b
 
 
 ## Dark text on bright fills, light text on dark ones.

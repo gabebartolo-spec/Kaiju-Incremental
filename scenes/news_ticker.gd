@@ -8,11 +8,15 @@ const HEIGHT := 56.0
 const SPEED := 120.0
 const TAG_WIDTH := 210.0
 const SEPARATOR := "   ///   "
-## The headlines repeat this many times in the strip, so a short list still fills a wide screen
-## and the loop never shows an empty stretch.
-const REPEAT := 4
+## The strip shows two cycles of headlines; each cycle is padded to at least the strip's width,
+## so a short list never shows a headline twice at once and the loop has no empty stretch.
+const REPEAT := 2
 
+## The strip behind the text (read by the flow suite's contrast check).
+var strip: ColorRect
 var _crawl: Label
+var _unit := ""
+var _headlines := ""
 var _tag: Label
 
 
@@ -21,12 +25,14 @@ func _init(lines: PackedStringArray) -> void:
 	custom_minimum_size = Vector2(0, HEIGHT)
 	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var strip := ColorRect.new()
-	strip.color = UiKit.ALERT
+	strip = ColorRect.new()
+	strip.color = UiKit.CRAWL_RED
 	UiKit.full_rect(strip)
 	add_child(strip)
-	var unit := SEPARATOR.join(lines) + SEPARATOR
-	_crawl = UiKit.label(unit.repeat(REPEAT), UiKit.SIZE_BODY, Color.WHITE)
+	_headlines = SEPARATOR.join(lines) + SEPARATOR
+	_unit = _headlines
+	_crawl = UiKit.label(_unit.repeat(REPEAT), UiKit.SIZE_BODY, Color.WHITE)
+	resized.connect(_fit_cycle)
 	# The strip's full height with the text centred in it (the font is only known in the tree).
 	_crawl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_crawl.position = Vector2(TAG_WIDTH, 0.0)
@@ -48,3 +54,32 @@ func _process(delta: float) -> void:
 	_crawl.position.x -= SPEED * delta
 	if _crawl.position.x < TAG_WIDTH - loop:
 		_crawl.position.x += loop
+
+
+## Pads one cycle with spaces until it spans the strip, then shows REPEAT cycles.
+func _fit_cycle() -> void:
+	if not is_inside_tree():
+		return
+	_unit = _headlines
+	var space := (
+		_crawl
+		. get_theme_font("font")
+		. get_string_size(" ", HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY)
+		. x
+	)
+	var short := visible_width() - unit_width()
+	if short > 0.0 and space > 0.0:
+		_unit += " ".repeat(ceili(short / space))
+	_crawl.text = _unit.repeat(REPEAT)
+
+
+## The width of one cycle of headlines (px): at least the visible strip, so no headline shows
+## twice on screen at once.
+func unit_width() -> float:
+	var font := _crawl.get_theme_font("font")
+	return font.get_string_size(_unit, HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY).x
+
+
+## The width of strip the text crawls across (px).
+func visible_width() -> float:
+	return size.x - TAG_WIDTH

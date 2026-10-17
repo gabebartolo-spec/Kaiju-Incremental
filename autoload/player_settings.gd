@@ -16,7 +16,7 @@ const CONTROLS: Array[Array] = [
 	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
-	["Fullscreen", "F11", "-"],
+	["Fullscreen", "F11", "Keyboard only"],
 	["Confirm", "Enter / Space", "A"],
 	["Back", "Esc", "B"],
 ]

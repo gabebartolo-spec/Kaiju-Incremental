@@ -209,6 +209,8 @@ def style_claw(sk: Skeleton) -> pathops.Path:
     top = ROWS * CELL * B_SY
     if sk.w < 4 or sk.ch in "-_=#*":  # gashes turn these small symbols to mush
         return shape
+    if sk.ch.isdigit():  # numerals stay solid: a gash through a 0 read as a bar on the TV
+        return shape
     slant = 0.42  # x travel per unit of y: a raking swipe, not a vertical cut
     length = top * (0.55 + 0.12 * rnd("clen", sk.ch))
     y_top = top * (0.98 - 0.1 * rnd("ctop", sk.ch))

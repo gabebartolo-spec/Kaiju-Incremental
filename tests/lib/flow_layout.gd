@@ -145,7 +145,13 @@ func reveal_fits() -> void:
 	t.root.add_child(reveal)
 	await _frames(3)
 	var frame_before := reveal.view.size
+	var hint_before := reveal.skip_hint.get_global_rect().position
 	await _frames(EvolutionReveal.SWAP_FRAME + 1)
+	var hint_after := reveal.skip_hint.get_global_rect().position
+	check.call(
+		hint_after == hint_before,
+		"the reveal's skip prompt stays put through the swap: %s, %s" % [hint_before, hint_after]
+	)
 	check.call(
 		reveal.view.size == frame_before and frame_before.y > 0.0,
 		(
@@ -245,3 +251,32 @@ static func late_hints(runner: SceneTree, rampage: Rampage) -> int:
 		func(n: Node) -> bool: return (n as Label3D).visible and (n as Label3D).text != ""
 	)
 	return hints.size()
+
+
+## The news crawl reads: white on its strip at body-text contrast, and one cycle of headlines is
+## at least as wide as the strip even with a single short headline, so no headline shows twice
+## at once (screen critic round 2).
+func crawl_reads(screen: Node, what: String) -> void:
+	var crawl: NewsTicker = null
+	for node: Node in screen.find_children("*", "Control", true, false):
+		if node is NewsTicker:
+			crawl = node
+	var ratio := UiKit.contrast(Color.WHITE, crawl.strip.color)
+	check.call(
+		ratio >= 4.5, "the %s crawl's text is %.2f:1 on its strip (4.5 wanted)" % [what, ratio]
+	)
+	var window := t.root.size
+	t.root.size = TV_SIZE
+	var short := NewsTicker.new(PackedStringArray(["ONE HEADLINE"]))
+	short.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	t.root.add_child(short)
+	await _frames(3)
+	var cycle := short.unit_width()
+	var span := short.visible_width()
+	short.queue_free()
+	t.root.size = window
+	await _frames(2)
+	check.call(
+		cycle >= span,
+		"a one-headline crawl never shows it twice: cycle %.0f px, strip %.0f px" % [cycle, span]
+	)

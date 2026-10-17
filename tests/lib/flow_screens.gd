@@ -157,6 +157,7 @@ func _check_results_compare() -> void:
 	t.root.add_child(results)
 	await _frames(3)
 	layout.listen(results, "results")
+	await layout.crawl_reads(results, "results")
 	check.call(
 		results.verdict() == "BIGGER THAN LAST TIME  +50% BIOMASS",
 		"beating the best by half says +50%%: %s" % results.verdict()
@@ -174,14 +175,14 @@ func _check_results_compare() -> void:
 			results.is_new_best("rubble")
 			and results.is_new_best("toppled")
 			and not results.is_new_best("tanks")
-			and labels.count("NEW BEST") == 4
+			and labels.count("NEW BEST") == 3
 		),
 		"new bests are marked, misses are not (%d marked)" % labels.count("NEW BEST")
 	)
 	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
 	check.call(
-		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size(),
-		"every row shows its best or NEW BEST: %s" % [bests]
+		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size() - 1,
+		"every row but the headline's shows its best or NEW BEST once: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
 	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")

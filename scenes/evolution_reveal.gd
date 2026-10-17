@@ -34,6 +34,8 @@ var tower_floors: int
 var lines: Label
 ## The new stage's roar (Sfx.roar), started with the swap.
 var roar: AudioStreamPlayer
+## The skip prompt (read by the flow suite: it stays in one place for the whole reveal).
+var skip_hint: Label
 ## The 3D frame (read by the flow suite: one size before and after the swap, and on the demo card).
 var view: SubViewportContainer
 var _species: Dictionary
@@ -83,10 +85,14 @@ func _ready() -> void:
 	col.add_child(_headline)
 	lines = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
 	lines.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Two lines tall from the start (empty before the swap), so the skip prompt never moves.
 	col.add_child(lines)
-	var hint := UiKit.label("Enter / A to skip", UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.45))
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(hint)
+	lines.text = "X" + String.chr(10) + "X"
+	lines.custom_minimum_size.y = lines.get_combined_minimum_size().y
+	lines.text = ""
+	skip_hint = UiKit.label("Enter / A to skip", UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.45))
+	skip_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(skip_hint)
 	_flash = ColorRect.new()
 	_flash.color = Color(1, 1, 1, 0)
 	_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -21,6 +21,8 @@ const ROWS: Array[Array] = [
 const COUNT_FRAMES := 36
 const ROW_GAP_FRAMES := 12
 const LAYER := 20
+## The stat the headline under the title compares with the best (its row shows no best badge).
+const VERDICT_STAT := "rubble"
 
 var result: Dictionary
 var previous_best: Dictionary
@@ -167,7 +169,7 @@ func _show_frame() -> void:
 		var record := landed and is_new_best(str(row[0]))
 		_values[n].add_theme_color_override("font_color", UiKit.GOOD if record else UiKit.TEXT)
 		_badges[n].modulate.a = 1.0 if landed else 0.0
-		if record:
+		if record and str(row[0]) != VERDICT_STAT:
 			_badges[n].text = "NEW BEST"
 			_badges[n].add_theme_color_override("font_color", UiKit.GOOD)
 	_verdict.modulate.a = 0.0 if counting() else 1.0
@@ -182,6 +184,7 @@ func _shown(row: Array, value: float) -> String:
 
 ## Every row shows the best before this rampage (none at all on a first rampage).
 func _best_text(row: Array) -> String:
-	if previous_best.is_empty():
+	# The headline under the title already compares this row with the best: say it once.
+	if previous_best.is_empty() or str(row[0]) == VERDICT_STAT:
 		return ""
 	return "best " + _shown(row, Num.f(previous_best.get(str(row[0]), 0.0)))
