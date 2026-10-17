@@ -19,6 +19,7 @@ func run_checks() -> void:
 	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
 	_check_calm_streets()
 	_check_landmark()
+	_check_landmark_sites()
 	_check_no_empty_ground()
 
 
@@ -221,3 +222,54 @@ func _check_landmark() -> void:
 		plain_broken == 6 and mark_broken == 6 and is_equal_approx(mark_pay, plain_pay * 3.0),
 		"a landmark's chunks pay 3x an ordinary building's: %.2f vs %.2f" % [mark_pay, plain_pay]
 	)
+
+
+## Landmark sites (city.landmarks): on the shipping map the stadium stands in the first city and
+## the wheel joins it at the Behemoth, each centred on its own plaza of merged blocks: no street
+## runs through a site, the landmark fits inside its kerbs, and no other building touches it.
+func _check_landmark_sites() -> void:
+	for tier: int in [1, 2]:
+		var base := Content.tuning()
+		var cfg: Dictionary = CityGrowth.tuning_for(base, tier)["city"]
+		var plan := CityGen.map(cfg)
+		var nodes: Array[Vector2] = plan["nodes"]
+		var through := 0
+		for site: Dictionary in plan["sites"]:
+			var outer: Rect2 = site["outer"]
+			for st: Dictionary in plan["streets"]:
+				var mid := (nodes[Num.i(st["from"])] + nodes[Num.i(st["to"])]) * 0.5
+				through += 1 if outer.grow(-0.01).has_point(mid) else 0
+		var layout := CityGrowth.layout(base, tier, Seeds.make("city", 0))
+		var ids: Array[String] = []
+		var misfit := 0
+		var touching := 0
+		for e: Dictionary in layout:
+			if not e.has("landmark"):
+				continue
+			ids.append(str(e["landmark"]))
+			var foot := _footprint(e)
+			var inside := false
+			for site: Dictionary in plan["sites"]:
+				var rect: Rect2 = site["rect"]
+				inside = inside or rect.grow(0.01).encloses(foot)
+			misfit += 0 if inside else 1
+			for other: Dictionary in layout:
+				if other != e and _footprint(other).intersects(foot):
+					touching += 1
+		ids.sort()
+		var want: Array[String] = ["stadium"]
+		if tier == 2:
+			want.append("wheel")
+		check(
+			ids == want and through == 0 and misfit == 0 and touching == 0,
+			(
+				"stage %d: landmarks %s on their own plazas (%d streets through, %d misfit, %d touching)"
+				% [tier, ids, through, misfit, touching]
+			)
+		)
+
+
+func _footprint(e: Dictionary) -> Rect2:
+	var w := Num.f(e["w"])
+	var d := Num.f(e["d"])
+	return Rect2(Num.f(e["x"]) - w * 0.5, Num.f(e["z"]) - d * 0.5, w, d)

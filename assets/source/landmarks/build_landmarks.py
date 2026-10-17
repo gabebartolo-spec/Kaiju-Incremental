@@ -160,10 +160,11 @@ def gate():
     box((0, -2.85, 8.1), (14.6, 0.2, 0.5), GOLD)                   # gold band
     box((0, -3.0, 7.0), (3.2, 0.3, 1.5), "141414")                 # name board over the passage
     box((0, -3.15, 7.0), (2.6, 0.1, 1.0), GOLD)
-    for sx in (-1, 1):                                             # paired red lanterns in the passage
-        box((sx * 2.0, -2.6, 7.6), (0.15, 0.15, 0.5), "3a332c")
-        box((sx * 2.0, -2.6, 6.9), (0.8, 0.8, 0.9), "d8362a")
-        box((sx * 2.0, -2.6, 7.4), (0.6, 0.6, 0.15), GOLD)
+    for sx in (-1, 1):                                             # red lanterns hung at the lintel's front
+        box((sx * 2.05, -3.1, 7.55), (0.15, 0.15, 0.4), "3a332c")
+        box((sx * 2.05, -3.1, 6.6), (0.8, 0.9, 1.4), "d8362a")
+        box((sx * 2.05, -3.1, 7.35), (0.6, 0.7, 0.15), GOLD)
+        box((sx * 2.05, -3.1, 5.85), (0.6, 0.7, 0.15), GOLD)
     # three roofs, each a flared hip with gold-tipped upturned corners, a red storey between
     roofs = [(8.5, 8.6, 1.5), (10.9, 6.4, 1.3), (13.0, 4.3, 1.4)]
     for k, (z, half, hgt) in enumerate(roofs):
@@ -186,7 +187,8 @@ def gate():
         x, y = sx * 5.0, -6.6
         box((x, y, 0.3), (1.4, 1.4, 0.6), "6f6a60")
         box((x, y, 1.6), (0.6, 0.6, 2.0), "6f6a60")
-        box((x, y, 3.2), (1.3, 1.3, 1.2), "ff7a2a")
+        box((x, y, 3.2), (1.3, 1.3, 1.2), "d8362a")                # red lantern body
+        box((x, y, 3.2), (1.4, 1.4, 0.2), GOLD)                    # gold band
         box((x, y, 4.0), (1.8, 1.8, 0.4), "3a332c")
         box((x, y, 4.4), (0.8, 0.8, 0.4), "3a332c")
 
@@ -305,8 +307,8 @@ def megatower():
         rz = 0.0
         s = size - k * 0.32
         box((0, 0, z + 1.5), (s - 0.3, s - 0.3, 3.0), "1f3348", rz=rz)  # dark core: floor lines
-        for f in range(3):                                         # one glass row per floor
-            box((0, 0, z + f * 0.9 + 0.45), (s, s, 0.7), "3e7fb0", rz=rz)
+        for f in range(3):                                         # one glass row per floor, dark seam 3 voxels
+            box((0, 0, z + f * 0.9 + 0.42), (s, s, 0.55), "4a8cc0", rz=rz)
         box((0, 0, z + 2.8), (s, s, 0.4), "cfd7df", rz=rz)        # setback band every 3 floors
         z += 3.0
     rz = 0.0

@@ -151,6 +151,10 @@
 		"load_chunks": 20000,
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
+		"landmarks": [
+			{"id": "stadium", "anchor": [22, -24], "margin": 0, "tier": 1, "rubble_bonus": 2.0},
+			{"id": "wheel", "anchor": [10, 56], "margin": 2, "tier": 2, "rubble_bonus": 2.0}
+		],
 		"coverage_cell": 10,
 		"view_beyond": 30,
 		"parked_chance": 0.7,

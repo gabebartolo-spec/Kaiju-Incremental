@@ -178,7 +178,7 @@ func _blocks() -> void:
 					)
 					if absf(p.x - rect.get_center().x) > 1.2:  # a path down the middle
 						_props.add(Vector3(p.x, 0, p.y), _tree)
-			"plaza":
+			"plaza", "landmark":  # trees round the plaza (round a landmark too)
 				var ring := rect.grow(-1.2)
 				var t := 0.0
 				while t < 1.0:
