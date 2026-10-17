@@ -17,8 +17,8 @@ const EDGE := {
 	"maxed": UiKit.WARN, "buy": UiKit.GOOD, "poor": UiKit.PANEL_EDGE, "locked": UiKit.LOCKED
 }
 const ULTIMATE_EDGE := Color("ff3df0")
-## The widest level-and-price line a node shows (five-digit late-game prices).
-const WIDEST_STATUS := "0/5  BUY 88888"
+## The widest level-and-price line a node shows (prices from 10 000 up read "12k").
+const WIDEST_STATUS := "0/5  BUY 8888"
 
 var id: String
 ## "plain", "branch" (species branch), "evolve" (grows the kaiju) or "ultimate" (capstone).
@@ -38,7 +38,7 @@ func _init(p_id: String, p_role: String, p_name: String) -> void:
 ## and all its lines (name, level and price, the ultimate's button) fit the height.
 func place(at: Vector2, box: Vector2) -> void:
 	var font := get_theme_font("font")
-	var room := box.x - 2.0 * PAD - 4.0
+	var room := text_width(box.x)
 	var pick := FONT_MIN
 	for px: int in range(FONT_MAX, FONT_MIN - 1, -1):
 		var name_lines := 1
@@ -62,6 +62,17 @@ func place(at: Vector2, box: Vector2) -> void:
 	size = box
 
 
+## The width the button lays its text out in, for a node `width` wide (its box margins and a
+## little slack for the text server's rounding).
+func text_width(width: float) -> float:
+	return width - 2.0 * PAD - 4.0
+
+
+## A price as a node shows it: in full below 10 000, else in thousands ("32k").
+static func short_price(price: int) -> String:
+	return str(price) if price < 10000 else "%dk" % floori(price / 1000.0)
+
+
 ## Redraws the node from the tree and the rubble in hand.
 func show_state(tree: UpgradeTree, rubble: int) -> void:
 	if tree.is_maxed(id):
@@ -70,10 +81,8 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 		state = "locked"
 	else:
 		state = "buy" if tree.can_buy(id, rubble) else "poor"
-	var price := tree.cost(id)
-	var status: String = {
-		"maxed": "MAXED", "locked": "", "buy": "BUY %d" % price, "poor": "%d" % price
-	}[state]
+	var price := short_price(tree.cost(id))
+	var status: String = {"maxed": "MAXED", "locked": "", "buy": "BUY " + price, "poor": price}[state]
 	var tag := "\n[E / Y]" if role == "ultimate" else ""
 	text = "%s\n%d/%d  %s%s" % [_name, tree.level(id), tree.max_level(id), status, tag]
 	var fill: Color = FILL[state]

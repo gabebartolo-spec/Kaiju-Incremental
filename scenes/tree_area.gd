@@ -11,7 +11,7 @@ signal node_selected(id: String)
 const COLUMNS := 8
 ## The species' own branch (docs/SPECIES.md) is the bottom row.
 const BRANCH_ROW := 5
-const GAP := Vector2(12, 16)
+const GAP := Vector2(8, 16)
 ## Room under the band for its caption.
 const CAPTION_HEIGHT := 34.0
 ## The capstone is this much taller than a node (its extra "[E / Y]" line).

@@ -11,7 +11,7 @@ signal bought(id: String)
 signal menu_pressed
 
 ## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
-const SIDE_WIDTH := 360
+const SIDE_WIDTH := 330
 ## Stat, how it reads in play, format ("inv" shows 1/value per second), short name for the
 ## two-column summary.
 const STAT_LINES: Array[Array] = [

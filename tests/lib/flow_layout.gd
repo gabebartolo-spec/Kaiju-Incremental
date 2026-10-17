@@ -50,6 +50,8 @@ func fits_at_scales(screen: Control, what: String) -> void:
 					or b.get_global_transform().get_scale().x != 1.0
 				):
 					misses.append(name + at + " text does not fit")
+				if _breaks_a_word(b):
+					misses.append(name + at + " breaks a word")
 				var px := (
 					b.get_theme_font_size("font_size") * (TV_SIZE.y / 1080.0) * scale * CAP_SHARE
 				)
@@ -113,3 +115,18 @@ func reveal_fits() -> void:
 	t.root.size = window
 	await _frames(2)
 	check.call(on, "the reveal's size lines stay on screen at 125%% on the TV: %s" % [rect])
+
+
+## True when the node's name wraps inside a word ("Regeneratio / n", lead review 3).
+func _breaks_a_word(b: Button) -> bool:
+	var name := b.text.get_slice(String.chr(10), 0)
+	var line := TextParagraph.new()
+	line.add_string(name, b.get_theme_font("font"), b.get_theme_font_size("font_size"))
+	line.width = b.size.x - b.get_theme_stylebox("normal").get_minimum_size().x
+	line.break_flags = TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND
+	line.break_flags |= TextServer.BREAK_ADAPTIVE
+	for i: int in range(1, line.get_line_count()):
+		var start := line.get_line_range(i).x
+		if start > 0 and name[start - 1] != " ":
+			return true
+	return false

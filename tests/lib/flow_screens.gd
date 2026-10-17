@@ -154,7 +154,7 @@ func _check_results_compare() -> void:
 	for node: Node in results.find_children("*", "Label", true, false):
 		labels.append((node as Label).text)
 	check.call(
-		labels.has("300") and labels.has("25%") and labels.has("12 floors"),
+		labels.has("300") and labels.has("25%") and labels.has("12"),
 		"Enter lands the counts on the result: %s" % [labels]
 	)
 	check.call(

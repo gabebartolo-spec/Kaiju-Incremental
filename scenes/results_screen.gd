@@ -6,12 +6,12 @@ extends CanvasLayer
 
 signal continued
 
-## Stat key, label, how the value is shown ("int", "pct" or "floors").
+## Stat key, label, how the value is shown ("int" or "pct").
 const ROWS: Array[Array] = [
 	["rubble", "Rubble earned", "int"],
 	["destruction", "City destroyed", "pct"],
 	["toppled", "Buildings toppled", "int"],
-	["tallest_topple", "Tallest tower toppled", "floors"],
+	["tallest_topple", "Tallest tower toppled (floors)", "int"],
 	["civilians", "Civilians crushed", "int"],
 	["tanks", "Tanks crushed", "int"],
 	["helis", "Helicopters downed", "int"],
@@ -154,8 +154,6 @@ func _show_frame() -> void:
 func _shown(row: Array, value: float) -> String:
 	if str(row[2]) == "pct":
 		return "%d%%" % floori(value * 100.0)
-	if str(row[2]) == "floors":
-		return "%d floors" % floori(value)
 	return "%d" % floori(value)
 
 
