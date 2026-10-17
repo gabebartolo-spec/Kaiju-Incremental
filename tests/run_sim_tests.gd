@@ -316,6 +316,13 @@ func _check_save_migrate() -> void:
 	check(SaveScript.migrate({"version": 99}).is_empty(), "a save from a newer version is refused")
 
 
+func _look_by_id(id: String) -> Dictionary:
+	for def: Dictionary in Content.looks():
+		if def["id"] == id:
+			return def
+	return {}
+
+
 ## Every look (data/looks.json) carries every key presentation reads, and the default exists.
 func _check_looks() -> void:
 	var keys: Array[String] = [
@@ -354,6 +361,16 @@ func _check_looks() -> void:
 	check(
 		Content.looks().size() >= 1 and missing.is_empty(), "every look is complete: %s" % [missing]
 	)
+	var raw: Array = Content.load_json("res://data/looks.json")["looks"]
+	var inherited := true
+	for entry: Dictionary in raw:
+		if entry.has("base"):
+			var own := _look_by_id(str(entry["id"]))
+			var base := _look_by_id(str(entry["base"]))
+			for key: String in base:
+				if not entry.has(key) and own[key] != base[key]:
+					inherited = false
+	check(inherited, "a lighting variant takes every key it does not set from its base look")
 	var default_id := str(Content.load_json("res://data/looks.json")["default"])
 	check(
 		str(Content.look()["id"]) == default_id,

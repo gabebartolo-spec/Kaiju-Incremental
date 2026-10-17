@@ -5,7 +5,7 @@ extends SceneTree
 ## over the bay to the far skyline, and a line-up of the three species. Needs a window
 ## (no --headless) and the untracked no-focus override.cfg. --street: only the default look's
 ## young shot plus street close-ups (civilians walking, civilians fleeing, a police blockade)
-## for the anatomy check.
+## for the anatomy check. --looks=golden,night: only those looks.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_looks.gd -- --out=<dir> [--street]
@@ -27,12 +27,15 @@ const CLOSE := Vector3(1.6, 1.3, 1.6)  # close-up camera offset from its subject
 
 var _out := "user://looks"
 var _street := false
+var _only: PackedStringArray = []  # --looks=a,b: capture only these looks (all by default)
 
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
+		elif arg.begins_with("--looks="):
+			_only = arg.substr(8).split(",")
 		elif arg == "--street":
 			_street = true
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -47,6 +50,8 @@ func _run() -> void:
 		quit()
 		return
 	for look: Dictionary in Content.looks():
+		if not _only.is_empty() and not _only.has(str(look["id"])):
+			continue
 		Content.set_look(str(look["id"]))
 		await _city_shot(str(look["id"]) + "_young", {})
 		await _city_shot(str(look["id"]) + "_evolved", EVOLVED)

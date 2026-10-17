@@ -10,8 +10,17 @@ static func value(key: String) -> float:
 	return Num.f(Content.look().get(key, 0.0))
 
 
+## A value an older look may not set; `fallback` keeps that look exactly as it was.
+static func value_or(key: String, fallback: float) -> float:
+	return Num.f(Content.look().get(key, fallback))
+
+
 static func color(key: String) -> Color:
 	return Color(str(Content.look().get(key, "ff00ff")))
+
+
+static func color_or(key: String, fallback: Color) -> Color:
+	return Color(str(Content.look()[key])) if Content.look().has(key) else fallback
 
 
 static func styles() -> Array[Color]:

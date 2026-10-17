@@ -19,7 +19,7 @@ var _seed: float
 
 func _init(size: float, seed_value: float) -> void:
 	_seed = seed_value
-	_base_energy = 2.5 + size * 1.2
+	_base_energy = (2.5 + size * 1.2) * Look.value_or("fire_light", 1.0)
 	_light = OmniLight3D.new()
 	_light.light_color = Color("ff9a4a")
 	_light.omni_range = 4.0 + size * 2.0

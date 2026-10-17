@@ -72,7 +72,7 @@ static func _load() -> void:
 	_tuning = load_json("res://data/tuning.json")
 	_upgrades = _list("res://data/upgrades.json", "upgrades")
 	_species = _list("res://data/species.json", "species")
-	_looks = _list("res://data/looks.json", "looks")
+	_looks = _inherit(_list("res://data/looks.json", "looks"))
 	_look_id = str(load_json("res://data/looks.json").get("default", ""))
 
 
@@ -82,3 +82,17 @@ static func _list(path: String, key: String) -> Array[Dictionary]:
 	for entry: Dictionary in raw:
 		out.append(entry)
 	return out
+
+
+## A look with "base" takes every key it does not set from that look, so a lighting variant
+## lists only what it changes.
+static func _inherit(defs: Array[Dictionary]) -> Array[Dictionary]:
+	var by_id := {}
+	for def: Dictionary in defs:
+		by_id[def["id"]] = def
+	for def: Dictionary in defs:
+		var base: Dictionary = by_id.get(def.get("base", ""), {})
+		for key: String in base:
+			if not def.has(key):
+				def[key] = base[key]
+	return defs

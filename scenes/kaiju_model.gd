@@ -86,8 +86,8 @@ static func stage_for(size_tier: int) -> String:
 ## hide still shows its shape against a dark city.
 func _add_rim_light() -> void:
 	var rim := DirectionalLight3D.new()
-	rim.light_color = Color("9fc4ff")
-	rim.light_energy = 2.4
+	rim.light_color = Look.color_or("rim_color", Color("9fc4ff"))
+	rim.light_energy = Look.value_or("rim_energy", 2.4)
 	rim.light_cull_mask = RIM_LAYER
 	rim.rotation_degrees = Vector3(-35, 160, 0)
 	add_child(rim)
