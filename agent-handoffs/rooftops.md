@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (look FIX pushed 55c68e0; GPU slot asked for the re-clip; sim review PASSED)
+## State: awaiting lead (look FIX re-clipped on the GPU, head e57636e; lead checks, runs a critic, merges #40)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -35,16 +35,21 @@ Shots hurt: chip damage, no new escalation curve.
 - Armour does not reduce rifle chip. Brood young don't draw rifle fire. Figures vanish when the fall starts.
 
 ## Review (lead, 2026-10-18)
-- Sim review PASS at fa3ef77. Look FIX (squads and flashes invisible at the game camera) answered in
-  55c68e0: flashes 0.45 u additive/unshaded/fog-free 0.08 s, tracers 0.09 u + 0.08 s hold, spark on
-  the hide, figures 1.5x spaced 0.55. Flow floor 115 (look-options 113 + 2).
+- Sim review PASS at fa3ef77. Look FIX: squads and flashes were invisible at the game camera.
+- Fixes: flashes 0.45 u, additive, unshaded, fog-free, 0.08 s; tracers 0.09 u with a 0.08 s hold;
+  a spark on the hide; figures 1.5x, spaced 0.55. Flashes, tracers and sparks are drawn at HOT 4.0,
+  over the glow threshold of 1.1.
+- Root cause of the invisible tracers: they were aimed at the kaiju's axis and buried in its body.
+  They now end on the near hide (_hide). The capture stands the kaiju 13 u off and takes stills
+  2 frames after a volley.
+- GPU re-clip evidence is in the lead notes rooftops/fix/ (clip, mid-volley still, 2x crop).
+- Open: the 3 flashes merge into a block that hides the figures for 0.08 s. Offered ~0.3 u offset
+  forward; the lead decides.
 
 ## Next
-1. Lead's GPU go -> local re-clip (override.cfg first, delete after; wait on your own PID) -> 3 s clip, a
-   mid-volley still (the capture now waits 4 frames after a volley) and a 2x crop -> lead -> lead merges #40.
-2. On a look FIX: re-run `tools/capture/ci_capture.sh --movie --fps=60 --resolution=1920x1080
-   capture_rooftops.gd -- --out=<dir>`, trim with ffmpeg (-ss 0.75 -t 3), crop from rooftops.json spots.
-3. When look-options moves: sync (floors resolve to the real counts).
+1. Lead's look verdict: if it asks for smaller flashes, change FLASH_SIZE and the muzzle offset, then
+   re-clip (ask for the GPU slot; override.cfg first, delete after).
+2. After #40 merges, Military AI syncs onto it; this worktree can be removed by the lead.
 
 ## Lead rules (2026-10-18)
 - Rooftops land BEFORE Military AI (local_5325ef73), which syncs after. In sim/army.gd keep hunks to the
