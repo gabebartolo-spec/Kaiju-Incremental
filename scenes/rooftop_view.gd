@@ -13,14 +13,15 @@ const MAX_FLASHES := 48
 const MAX_SPARKS := 48
 const MAX_TRACERS := 48
 ## Flashes and sparks are counted in physics frames (60 a second), so the stagger is exact.
-const FLASH_FRAMES := 4
+const FLASH_FRAMES := 3
 const FLASH_SIZE := 0.35  # world units, a soft star facing the camera
 const FLASH_AHEAD := 0.45  # the star burns this far out along the aim, clear of the shooter
 const STAGGER_FRAMES := 1  # each rifle of a squad fires this many frames after the one before
 ## A spark on the hide is drawn over everything (the body would hide it) for this long.
-const SPARK_FRAMES := 7
+const SPARK_FRAMES := 4
 const SPARK_SIZE := 0.6
-const POINT_BLANK_FRAMES := 3  # a round arriving sooner than this draws no tracer
+const POINT_BLANK_FRAMES := 3  # a round arriving sooner than this draws no tracer...
+const SHORT_PIXELS := 60.0  # ...nor does one whose path on screen is shorter than this
 const STAR_PIXELS := 32
 const GLOW := Color(1.0, 0.82, 0.45)
 ## Over-range brightness per instance, past the city's glow threshold (1.1, AgX tonemap), so
@@ -36,7 +37,6 @@ const SPACING := 0.55  # figures of a squad stand this far apart across their li
 const AIM_SPREAD := 0.25  # rounds scatter this far round the body point they aim at (per scale)
 const BODY_MIDDLE := 3.0  # an unrigged body is struck this high (per body scale)...
 const ABOVE_HIPS := 1.15  # ...a rigged one at a bone this many hip heights up (no legs or tail)
-const HIDE_DEPTH := 0.35  # they strike this share of the body radius out from a bone
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
 
 ## Running totals and the figures drawn this frame (tests and the capture tool read them).
@@ -46,6 +46,8 @@ var most_drawn := 0
 ## The latest volley's squad and the flashes and tracers lit now (the capture tool reads them).
 var last_squad := -1
 var lit := Vector2i.ZERO
+## The worst time one volley's hit search took, in microseconds (the gate tool reads it).
+var worst_aim_usec := 0
 ## Every spark drawn: {"at": world point, "frame": physics frame} (the capture tool measures them).
 var spark_log: Array[Dictionary] = []
 var sim: RampageSim
@@ -96,9 +98,9 @@ func _star(on_top: bool) -> QuadMesh:
 		for x: int in STAR_PIXELS:
 			var u := absf(x - half) / half
 			var v := absf(y - half) / half
-			var core := exp(-(u * u + v * v) * 3.5)
-			var arms := exp(-u * 1.6) * exp(-v * 12.0) + exp(-v * 1.6) * exp(-u * 12.0)
-			var a := clampf(core + arms, 0.0, 1.0) * clampf((1.0 - maxf(u, v)) * 3.0, 0.0, 1.0)
+			var core := exp(-(u * u + v * v) * 40.0)
+			var arms := exp(-u * 3.0) * exp(-v * 45.0) + exp(-v * 3.0) * exp(-u * 45.0)
+			var a := clampf(core + arms, 0.0, 1.0) * clampf((1.0 - maxf(u, v)) * 4.0, 0.0, 1.0)
 			img.set_pixel(x, y, Color(1, 1, 1, a))
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -210,31 +212,36 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			continue
 		shots += 1
 		last_squad = squad_id
+		var t0 := Time.get_ticks_usec()
 		for k: int in Num.i(_cfg["squad_size"]):
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, 8.5, -7.5) * _voxel)
 			var wait := k * STAGGER_FRAMES
 			if _flashes.size() < MAX_FLASHES:
 				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
-				_flashes.append({"at": muzzle + ahead, "wait": wait, "left": FLASH_FRAMES})
+				_flashes.append({"hit": {"at": muzzle + ahead}, "wait": wait, "left": FLASH_FRAMES})
 			var spot := Vector3(
 				_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1)
 			)
-			var to := _hide(kaiju_at, muzzle, spot)
+			var hit := _hide(kaiju_at, muzzle, spot)
+			var to := _at(hit)
 			var flight := muzzle.distance_to(to) / TRACER_SPEED
-			if flight * Engine.physics_ticks_per_second < POINT_BLANK_FRAMES:
-				_spark(to, wait)  # point-blank: the flash and the spark, no tracer
+			var frames := roundi(flight * Engine.physics_ticks_per_second)
+			if frames < POINT_BLANK_FRAMES or _on_screen(muzzle, to) < SHORT_PIXELS:
+				_spark(hit, wait + frames)  # flash and spark only: a stub of a tracer reads as noise
 			elif _tracers.size() < MAX_TRACERS:
 				_tracers.append(
-					{"from": muzzle, "to": to, "t": 0.0, "flight": flight, "wait": wait}
+					{"from": muzzle, "hit": hit, "t": 0.0, "flight": flight, "wait": wait}
 				)
+		worst_aim_usec = maxi(worst_aim_usec, Time.get_ticks_usec() - t0)
 		return
 
 
-## Where a round from `muzzle` strikes: the bone of the drawn body nearest the shooter (above
-## the feet), pushed out toward the shooter onto the hide, `spot` scattering it. A body without a
-## rig is struck at its middle.
-func _hide(kaiju_at: Vector3, muzzle: Vector3, spot: Vector3) -> Vector3:
+## Where a round from `muzzle` strikes: it is aimed at the bone of the drawn body nearest the
+## shooter (above the hips), `spot` scattering the aim, and hits the first voxel of the body on
+## that line (KaijuHit), so its tracer ends and its spark burns on the visible hide, following the
+## body as it moves. A body without a rig is struck at its middle. Returns a strike for _at().
+func _hide(kaiju_at: Vector3, muzzle: Vector3, spot: Vector3) -> Dictionary:
 	var bs := sim.body_scale()
 	var aim := kaiju_at + Vector3.UP * bs * BODY_MIDDLE
 	var rig: KaijuRig = null
@@ -244,16 +251,34 @@ func _hide(kaiju_at: Vector3, muzzle: Vector3, spot: Vector3) -> Vector3:
 	if body != null:
 		for node: Node in body.find_children("*", "KaijuRig", true, false):
 			rig = node as KaijuRig
-	if rig != null:
-		var best := INF
-		for bone_name: String in rig.bone_names():
-			var p := rig.bone(bone_name).global_position
-			var d := p.distance_squared_to(muzzle)
-			if p.y > kaiju_at.y + hips * ABOVE_HIPS and d < best:
-				best = d
-				aim = p
-	var out := (muzzle - aim).normalized() * Num.f(sim.powers_cfg["body_radius"]) * bs * HIDE_DEPTH
-	return aim + out + spot * bs * AIM_SPREAD
+	if rig == null:
+		return {"at": aim + spot * bs * AIM_SPREAD}
+	var best := INF
+	for bone_name: String in rig.bone_names():
+		var p := rig.bone(bone_name).global_position
+		var d := p.distance_squared_to(muzzle)
+		if p.y > kaiju_at.y + hips * ABOVE_HIPS and d < best:
+			best = d
+			aim = p
+	aim += spot * bs * AIM_SPREAD
+	var hit := KaijuHit.strike(rig, muzzle, aim)
+	return hit if not hit.is_empty() else {"at": aim}
+
+
+## Where a strike is now: on the moving body, or the fixed point it was given.
+func _at(hit: Dictionary) -> Vector3:
+	if hit.has("at"):
+		var fixed: Vector3 = hit["at"]
+		return fixed
+	return KaijuHit.where(hit)
+
+
+## How long the line from `a` to `b` is on screen, in pixels (INF without a camera).
+func _on_screen(a: Vector3, b: Vector3) -> float:
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	if camera == null or camera.is_position_behind(a) or camera.is_position_behind(b):
+		return INF
+	return camera.unproject_position(a).distance_to(camera.unproject_position(b))
 
 
 func _draw_flashes() -> void:
@@ -264,10 +289,10 @@ func _draw_sparks() -> void:
 	_spark_mm.visible_instance_count = _draw_stars(_sparks, _spark_mm, SPARK_SIZE)
 
 
-## A spark at `at` on the hide, after `wait` frames.
-func _spark(at: Vector3, wait: int) -> void:
+## A spark at strike `hit` on the hide, after `wait` frames; it rides the body while it burns.
+func _spark(hit: Dictionary, wait: int) -> void:
 	if _sparks.size() < MAX_SPARKS:
-		_sparks.append({"at": at, "wait": wait, "left": SPARK_FRAMES})
+		_sparks.append({"hit": hit, "wait": wait, "left": SPARK_FRAMES})
 
 
 ## Draws each star whose wait is over, for its frames left; returns how many it drew.
@@ -280,12 +305,18 @@ func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
 		if Num.i(f["left"]) <= 0:
 			stars.erase(f)
 			continue
+		var struck: Dictionary = f["hit"]
+		var at := _at(struck)
+		if at == Vector3.INF:  # the bone it struck is gone (a stage change)
+			stars.erase(f)
+			continue
 		if mm == _spark_mm and Num.i(f["left"]) == SPARK_FRAMES:
-			spark_log.append({"at": f["at"], "frame": _frame})
+			spark_log.append({"at": at, "frame": _frame})
+		var total := float(SPARK_FRAMES if mm == _spark_mm else FLASH_FRAMES)
+		var fade := Num.f(f["left"]) / total  # full on the first frame, fading out
 		f["left"] = Num.i(f["left"]) - 1
-		var at: Vector3 = f["at"]
 		mm.set_instance_transform(shown, Transform3D(Basis().scaled(Vector3.ONE * size), at))
-		mm.set_instance_color(shown, HOT)
+		mm.set_instance_color(shown, HOT * fade)
 		shown += 1
 	return shown
 
@@ -301,9 +332,11 @@ func _draw_tracers(delta: float) -> void:
 		var flight := maxf(Num.f(tr["flight"]), 0.001)
 		tr["t"] = Num.f(tr["t"]) + delta / flight
 		var t := Num.f(tr["t"])
-		var to: Vector3 = tr["to"]
-		if t >= 1.0:
-			_spark(to, 0)
+		var hit: Dictionary = tr["hit"]
+		var to := _at(hit)
+		if t >= 1.0 or to == Vector3.INF:
+			if to != Vector3.INF:
+				_spark(hit, 0)
 			_tracers.erase(tr)
 			continue
 		var from: Vector3 = tr["from"]
