@@ -1,14 +1,18 @@
-"""Motion test: one hand-built armature, fitted to a kaiju mesh at its real pivots, scripted weights
-with clean joint falloff, and three keyed clips (walk, 90 degree turn, roar). Answers "is bad motion
-the mesh or the rig?" by running the same rig and keys on two meshes (A: our Blender reptile,
-B: the Tripo adult).
+"""Motion test and rig export: one hand-built armature, fitted to a kaiju mesh at its real pivots,
+scripted weights with clean joint falloff, three keyed clips (walk, 90 degree turn, roar), and an
+export of the rig and welded weights for the game's voxel skin.
 
-    blender -b --python tools/blender/motion_test.py -- <A|B> <in.glb> <out_dir> <task> [clips]
+    blender -b --python tools/blender/motion_test.py -- <A|B|auto|landmarks.json> <in.glb> <out_dir> <task> [clips]
 
-task: render (PNG frames per clip and view), measure (foot slide JSON), crops (joint close-ups),
-blend (save the rigged, keyed .blend). clips: comma list of walk,turn,roar (default all). Run one clip per Blender process: re-keying a
+Fit: A and B use pivots measured by hand on those meshes; auto finds them by slicing the mesh (a
+biped kaiju facing -Y: legs, tail, arms out); a .json gives them explicitly (same keys as LANDMARKS,
+metres in the normalised frame). task: render (PNG frames per clip and view), measure (foot slide
+JSON), volume (girth kept per joint), crops (joint close-ups), blend (save the rigged, keyed .blend),
+export (<out>/<stem>.skin.json + .skinw for the game, see export()), fit (landmark report).
+clips: comma list of walk,turn,roar (default all). Run one clip per Blender process: re-keying a
 second clip in the same process left the first frame posed from the old action.
-Units: metres, every model normalised to 100 m tall, snout at y = 0, facing -Y, feet on z = 0.
+Units: metres, every model normalised to 100 m tall, facing -Y, feet on z = 0, origin on the ground
+under the pelvis.
 """
 import json
 import math
@@ -35,7 +39,7 @@ def a_pt(x, y, z):
     return V((x * k, (y + 51.517) * k, z * k))
 
 
-LANDMARKS = {
+KNOWN = {
     "A": dict(
         spine=[a_pt(0, 12, 45), a_pt(0, 4, 56), a_pt(0, -3, 66), a_pt(0, -7, 74)],
         neck=[a_pt(0, -7, 74), a_pt(0, -12, 83), a_pt(0, -18, 89)],
@@ -54,15 +58,8 @@ LANDMARKS = {
         tail=[V((0, 40, 38)), V((2.6, 48, 27)), V((1.8, 59, 24)), V((3, 68, 19.5)), V((6.5, 77, 15)),
               V((11, 85, 12.3)), V((17, 93, 11.7)), V((22, 101, 11)), V((29, 108, 16)), V((38, 117, 19))],
         belly=13.0),
-}[MODEL]
+}
 TAIL_BONES = 10
-# Re-origin on the pelvis' ground point: the rig turns about the hips, not the snout.
-ROOT_Y = LANDMARKS["spine"][0].y
-for key, val in LANDMARKS.items():
-    if isinstance(val, V):
-        LANDMARKS[key] = val - V((0, ROOT_Y, 0))
-    elif isinstance(val, (list, tuple)):
-        LANDMARKS[key] = type(val)(p - V((0, ROOT_Y, 0)) for p in val)
 
 
 def resample(points, n):
@@ -89,15 +86,110 @@ bpy.ops.import_scene.gltf(filepath=SRC)
 meshes = [o for o in scene.objects if o.type == "MESH"]
 world = {o.name: o.matrix_world.copy() for o in meshes}
 pts = np.concatenate([np.array([world[o.name] @ v.co for v in o.data.vertices]) for o in meshes])
-lo, hi = pts.min(0), pts.max(0)
+SRC_LO, SRC_HI = pts.min(0), pts.max(0)
+lo, hi = SRC_LO, SRC_HI
 s = 100.0 / (hi[2] - lo[2])
-norm = Matrix.Translation((0, -ROOT_Y, 0)) @ Matrix.Scale(s, 4) @ Matrix.Translation((-(lo[0] + hi[0]) / 2, -lo[1], -lo[2]))
+norm0 = Matrix.Scale(s, 4) @ Matrix.Translation((-(lo[0] + hi[0]) / 2, -lo[1], -lo[2]))
 for o in meshes:
     o.parent = None
-    o.data.transform(norm @ world[o.name])
+    o.data.transform(norm0 @ world[o.name])
     o.matrix_world = Matrix.Identity(4)
 for o in [o for o in scene.objects if o.type != "MESH"]:
     bpy.data.objects.remove(o)
+
+
+def all_vertices():
+    return np.concatenate([np.array([v.co for v in o.data.vertices]) for o in meshes])
+
+
+def auto_landmarks(v):
+    """Pivots of a biped kaiju found by slicing the normalised mesh (100 m tall, facing -Y). Joint
+    rules: hip at 46% height, knee = the most forward leg slice, ankle = the most backward one below
+    it, ball = the front half of the foot; spine and neck from the core (|x| < 6 m); arms traced
+    outward; tail from bands behind the hips. Checked against the hand-measured A and B (task fit)."""
+    def cen(m, n=8):
+        return V(v[m].mean(0)) if m.sum() >= n else None
+    core = np.abs(v[:, 0]) < 6
+    feet = (v[:, 2] < 2.5) & (np.abs(v[:, 0]) > 5)
+    foot_y = float(np.median(v[feet, 1]))
+    up = (v[:, 2] > 80) & (np.abs(v[:, 0]) < 8)
+    tip = v[up][np.argmin(v[up][:, 1])]
+    snout = V((0, tip[1], tip[2]))
+    head_len = None
+
+    def mid(zz, ymax):
+        """Middle of the torso at height zz: halfway between its front and back (2nd/98th pct: vertex
+        density is uneven, belly folds are dense, so a centroid or median sits too far forward)."""
+        ys = v[core & (np.abs(v[:, 2] - zz) < 1.5) & (v[:, 1] < ymax) & (v[:, 1] > snout.y + 8), 1]
+        return float(np.percentile(ys, 2) + np.percentile(ys, 98)) / 2
+
+    pel = V((0, mid(46, foot_y + 40), 46))  # the slice's back is the rump; beyond it, only tail
+    spine = [pel] + [V((0, mid(zz, pel.y + 14), zz)) for zz in (58, 69, 78)]
+    neck0 = spine[-1]
+    # Skull base: ~76% of the way from the snout back to the neck base (A 0.74, B 0.78 by hand).
+    head0 = V((0, snout.y + 0.76 * (neck0.y - snout.y), max(snout.z + 1.0, neck0.z + 8.0)))
+    neck = [neck0, (neck0 + head0) / 2, head0]
+    hinge = V((0, head0.y - 0.1 * (head0.y - snout.y), head0.z - 4))
+    jaw = (hinge, snout + V((0, 3, -7)))
+    left = v[:, 0] > 0
+    leg_zone = lambda zz: left & (v[:, 0] > 4) & (np.abs(v[:, 2] - zz) < 1.2) &         (v[:, 1] < pel.y + (12 if zz > 20 else 18)) & (v[:, 1] > foot_y - 30)
+    hip = cen(leg_zone(45))
+    hip = V((hip.x * 0.85, hip.y, 45))
+    slices = [(zz, cen(leg_zone(zz))) for zz in np.arange(14, 41, 1.0)]
+    slices = [(zz, c) for zz, c in slices if c is not None]
+    kz, knee = min(slices, key=lambda t: t[1].y)
+    low = [(zz, cen(leg_zone(zz))) for zz in np.arange(5, kz - 3, 1.0)]
+    low = [(zz, c) for zz, c in low if c is not None]
+    az, ankle = max(low, key=lambda t: t[1].y)
+    foot = v[left & feet]
+    front = foot[foot[:, 1] < np.median(foot[:, 1])]
+    ball = V((front[:, 0].mean(), front[:, 1].mean(), 2.5))
+    toe_p = foot[np.argmin(foot[:, 1])]
+    toe = V((toe_p[0], toe_p[1], 1.0))
+    arms = v[left & (v[:, 2] > 55) & (v[:, 1] < pel.y + 10)]
+    mx = arms[:, 0].max()
+    def arm_at(f):
+        b_ = arms[np.abs(arms[:, 0] - f * mx) < 1.5]
+        return V((f * mx, b_[:, 1].mean(), b_[:, 2].mean()))
+    sh = arm_at(0.32)
+    arm = [V((0.08 * mx, sh.y, sh.z)), sh, arm_at(0.6), arm_at(0.8), arm_at(0.97)]
+    tail = [V((0, pel.y + 6, pel.z - 6))]
+    yt = v[:, 1].max()
+    for yy in np.arange(pel.y + 12, yt - 2, 7.0):
+        c = cen((np.abs(v[:, 1] - yy) < 2) & (v[:, 2] < pel.z), 5)
+        if c is not None:
+            tail.append(V((c.x, yy, c.z)))
+    end = v[v[:, 1] > yt - 2].mean(0)
+    tail.append(V((end[0], yt, end[2])))
+    s1 = spine[1]
+    front_y = v[core & (np.abs(v[:, 2] - s1.z) < 2), 1].min()
+    return dict(spine=spine, neck=neck, snout=snout, jaw=jaw, arm=arm,
+                leg=[hip, knee, ankle, ball, toe], tail=tail, belly=float(s1.y - front_y + 3.0))
+
+
+def load_landmarks(path):
+    d = json.loads(Path(path).read_text(encoding="utf-8"))
+    conv = lambda x: V(x) if isinstance(x[0], (int, float)) else [V(p) for p in x]
+    return {k: (conv(val) if isinstance(val, list) else val) for k, val in d.items()}
+
+
+if MODEL in KNOWN:
+    LANDMARKS = {k: (V(x) if isinstance(x, V) else type(x)(V(p) for p in x) if isinstance(x, (list, tuple)) else x)
+                 for k, x in KNOWN[MODEL].items()}
+elif MODEL == "auto":
+    LANDMARKS = auto_landmarks(all_vertices())
+else:
+    LANDMARKS = load_landmarks(MODEL)
+# Re-origin on the pelvis' ground point: the rig turns about the hips, not the snout.
+ROOT_Y = LANDMARKS["spine"][0].y
+for key, val in list(LANDMARKS.items()):
+    if isinstance(val, V):
+        LANDMARKS[key] = val - V((0, ROOT_Y, 0))
+    elif isinstance(val, (list, tuple)):
+        LANDMARKS[key] = type(val)(p - V((0, ROOT_Y, 0)) for p in val)
+norm = Matrix.Translation((0, -ROOT_Y, 0)) @ norm0
+for o in meshes:
+    o.data.transform(Matrix.Translation((0, -ROOT_Y, 0)))
 
 
 # --- armature ---------------------------------------------------------------------------------------
@@ -141,6 +233,7 @@ tail = resample(L["tail"], TAIL_BONES)
 for i in range(TAIL_BONES):
     add(f"tail{i}", tail[i], tail[i + 1], "pelvis" if i == 0 else f"tail{i - 1}", UP)
 
+ROLLS = {}
 arm_data = bpy.data.armatures.new("KaijuRig")
 rig = bpy.data.objects.new("KaijuRig", arm_data)
 scene.collection.objects.link(rig)
@@ -150,6 +243,7 @@ for name, h, t, parent, up, deform in BONES:
     eb = arm_data.edit_bones.new(name)
     eb.head, eb.tail = h, t
     eb.align_roll(up)
+    ROLLS[name] = eb.roll
     eb.use_deform = deform
     if parent:
         eb.parent = arm_data.edit_bones[parent]
@@ -342,6 +436,7 @@ def weights_for(obj):
     np.put_along_axis(W, top, 0, axis=1)
     W /= np.maximum(1e-9, W.sum(1, keepdims=True))
     print(f"welded {obj.name}: {len(v_all)} -> {len(v)} positions")
+    WELDED[obj.name] = (v.copy(), W.copy())
     W, v, jaw = W[weld], v_all, jaw[weld]
     groups = {n: obj.vertex_groups.new(name=n) for n in NAMES}
     for j, n in enumerate(NAMES):
@@ -358,6 +453,7 @@ def weights_for(obj):
 
 REST_V = {}
 WEIGHTS = {}
+WELDED = {}  # per object: unique positions and their weights (what the game samples)
 for o in meshes:
     REST_V[o.name], WEIGHTS[o.name] = weights_for(o)
 
@@ -715,7 +811,152 @@ def volume(clip):
     print("volume", MODEL, clip, {j: float(v["girth_kept_pct"]) for j, v in res.items()})
 
 
-if TASK == "volume":
+GAME = np.array([[-1.0, 0, 0], [0, 0, 1.0], [0, 1.0, 0]])  # blender (x, y, z) -> game (-x, z, y), det +1
+
+
+def to_game3(p):
+    return (GAME @ np.asarray(p, float).T).T
+
+
+def export(height_vox):
+    """The rig and welded weights for the game's voxel skin (format agreed with kaiju-voxel-skin).
+    <stem>.skin.json: bones (deform only, parents first) with rest head/tail and basis in game axes
+    (metres, Y up, -Z forward, origin on the ground under the pelvis), plus the matrix that takes a
+    rig_voxel .kvox cell (gx, gy, gz) of the same GLB at height_vox to its centre in this space.
+    <stem>.skinw: "KSKW", u32 version 1, u32 N, u16 bone count, then N x {f32 xyz, u8 bone[4],
+    f32 weight[4]} (32 bytes), welded positions, weights sorted, summing to 1, unused = 255 / 0."""
+    stem = Path(SRC).stem
+    bones = []
+    for b in arm_data.bones:
+        if not b.use_deform:
+            continue
+        basis = np.array(b.matrix_local.to_3x3())  # columns: the bone's x, y (along), z axes
+        bones.append({"name": b.name, "parent": b.parent.name if b.parent else None,
+                      "head": to_game3(b.head_local).round(4).tolist(),
+                      "tail": to_game3(b.tail_local).round(4).tolist(),
+                      "basis": (GAME @ basis).T.round(5).tolist(),  # rows: x, y, z axes
+                      "roll_blender": round(float(ROLLS[b.name]), 5),
+                      "physics": b.name.startswith("tail"), "jaw": b.name == "jaw"})
+    names = [b["name"] for b in bones]
+    pos, wts = [], []
+    for o in meshes:
+        v, W = WELDED[o.name]
+        pos.append(v)
+        wts.append(W)
+    pos, W = np.concatenate(pos), np.concatenate(wts)
+    order = np.argsort(-W, axis=1)[:, :4]
+    top = np.take_along_axis(W, order, axis=1)
+    top /= np.maximum(1e-9, top.sum(1, keepdims=True))
+    idx = np.array([names.index(n) for n in NAMES])[order].astype(np.uint8)
+    idx[top <= 0] = 255
+    top[top <= 0] = 0
+    g = to_game3(pos).astype(np.float32)
+    rec = np.zeros(len(g), dtype=[("p", "<f4", 3), ("b", "u1", 4), ("w", "<f4", 4)])
+    rec["p"], rec["b"], rec["w"] = g, idx, top.astype(np.float32)
+    with open(OUT / f"{stem}.skinw", "wb") as f:
+        f.write(b"KSKW" + np.array([1, len(g)], "<u4").tobytes() + np.array([len(names)], "<u2").tobytes())
+        f.write(rec.tobytes())
+    # rig_voxel's cell -> source point: k = (-(gx + 1), gz, gy); src = (k + 0.5) / sc + origin,
+    # origin = (bbox centre x, bbox centre y, min z), sc = (height_vox - 1) / source height.
+    sc = (height_vox - 1) / (SRC_HI[2] - SRC_LO[2])
+    origin = np.array([(SRC_LO[0] + SRC_HI[0]) / 2, (SRC_LO[1] + SRC_HI[1]) / 2, SRC_LO[2]])
+    def cell_to_skin(gc):
+        k = np.array([-(gc[0] + 1), gc[2], gc[1]], float)
+        src = (k + 0.5) / sc + origin
+        bl = np.array(norm @ V(src))
+        return to_game3(bl)
+    o0 = cell_to_skin((0, 0, 0))
+    M = np.eye(4)
+    for i in range(3):
+        e = [0, 0, 0]
+        e[i] = 1
+        M[:3, i] = cell_to_skin(e) - o0
+    M[:3, 3] = o0
+    gmin, gmax = to_game3(np.concatenate([REST_V[o.name] for o in meshes])).min(0),         to_game3(np.concatenate([REST_V[o.name] for o in meshes])).max(0)
+    doc = {"version": 1, "units": "m", "axes": "game: Y up, -Z forward, x = -blender x; origin on the "
+           "ground under the pelvis; model normalised to 100 m tall", "height_m": 100.0,
+           "source": stem, "bones": bones, "vertex_count": int(len(g)),
+           "weights_file": f"{stem}.skinw", "bbox_game": [gmin.round(3).tolist(), gmax.round(3).tolist()],
+           "kvox_height": height_vox,
+           "kvox_cell_to_skin": M.round(6).tolist(),
+           "kvox_note": "p_skin = M @ (gx, gy, gz, 1): centre of a rig_voxel cell of the SAME glb at "
+                        "kvox_height. rig_voxel bakes the jaw shut by a few degrees: jaw cells sit "
+                        "turned from rest; sample them against jaw-weighted positions."}
+    (OUT / f"{stem}.skin.json").write_text(json.dumps(doc, indent=1), encoding="utf-8")
+    print(f"exported {stem}: {len(names)} bones, {len(g)} welded positions -> {OUT}")
+
+
+def fit_sheet():
+    """Bones drawn over the mesh (see-through), side and front, orthographic, 10 m checker ground:
+    <out>/<stem>_fit_side.png, _fit_front.png. Look at these before trusting an auto fit."""
+    stem = Path(SRC).stem
+    red = bpy.data.materials.new("bone")
+    red.use_nodes = True
+    em = red.node_tree.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (1, 0.1, 0.05, 1)
+    em.inputs["Strength"].default_value = 3
+    out_n = next(n for n in red.node_tree.nodes if n.type == "OUTPUT_MATERIAL")
+    red.node_tree.links.new(em.outputs[0], out_n.inputs["Surface"])
+    for b in arm_data.bones:
+        if not b.use_deform:
+            continue
+        h, t = b.head_local, b.tail_local
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.7, depth=(t - h).length, location=(h + t) / 2)
+        c = bpy.context.active_object
+        c.rotation_mode = "QUATERNION"
+        c.rotation_quaternion = (t - h).to_track_quat("Z", "Y")
+        c.data.materials.append(red)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=1.4, location=h)
+        bpy.context.active_object.data.materials.append(red)
+    for o in meshes:
+        o.modifiers.clear()
+        for slot in o.material_slots:
+            m = slot.material
+            if m is None:
+                continue
+            m.surface_render_method = "BLENDED"
+            bsdf = next((n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+            if bsdf:
+                bsdf.inputs["Alpha"].default_value = 0.3
+    ground.hide_render = True
+    cam.data.type = "ORTHO"
+    cam.data.ortho_scale = 190
+    scene.render.resolution_x = scene.render.resolution_y = 900
+    for name, d in (("side", V((-1, 0, 0))), ("front", V((0, -1, 0)))):
+        cam.location = V((0, 10, 50)) + d * 400
+        cam.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+        scene.render.filepath = str(OUT / f"{stem}_fit_{name}.png")
+        bpy.ops.render.render(write_still=True)
+    print("fit sheet", OUT / f"{stem}_fit_side.png")
+
+
+def fit_report():
+    """Auto landmarks against the hand-measured ones (only for A and B), then the fit sheet."""
+    if MODEL not in KNOWN:
+        print("fit: no hand landmarks to compare for", MODEL)
+        fit_sheet()
+        return
+    auto = auto_landmarks(all_vertices() + np.array([0, ROOT_Y, 0]))  # same frame as KNOWN
+    hand = KNOWN[MODEL]
+    rows = []
+    for k in ("spine", "neck", "arm", "leg", "jaw"):
+        for i, (a_, h_) in enumerate(zip(auto[k], hand[k])):
+            rows.append((f"{k}[{i}]", round((V(a_) - V(h_)).length, 1)))
+    rows.append(("snout", round((auto["snout"] - hand["snout"]).length, 1)))
+    rows.append(("belly", round(auto["belly"] - hand["belly"], 1)))
+    print("fit", MODEL, "auto vs hand (m):", rows)
+    for k in ("spine", "neck", "leg"):
+        print(" ", k, "auto", [tuple(round(c, 1) for c in p) for p in auto[k]])
+        print(" ", k, "hand", [tuple(round(c, 1) for c in p) for p in hand[k]])
+    (OUT / f"{MODEL}_fit.json").write_text(json.dumps({"auto_minus_hand_m": rows}, indent=1))
+    fit_sheet()
+
+
+if TASK == "export":
+    export(int(CLIPS[0]) if CLIPS[0].isdigit() else 160)
+elif TASK == "fit":
+    fit_report()
+elif TASK == "volume":
     for c in CLIPS:
         volume(c)
 elif TASK == "render":
