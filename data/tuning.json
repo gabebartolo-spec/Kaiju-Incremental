@@ -3,6 +3,7 @@
 		"enabled": true,
 		"species": ["reptilian"],
 		"end_node": "evolve1",
+		"tease_size": 3,
 		"end_title": "DEMO COMPLETE",
 		"end_line": "You become the Croc Titan"
 	},
