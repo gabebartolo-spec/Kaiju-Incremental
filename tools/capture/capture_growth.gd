@@ -105,8 +105,9 @@ func _stage(tier: int) -> void:
 		)
 	)
 	var scale := sim.body_scale()
-	cam.position = at + Vector3(-9.0, 9.0, 16.0) * (0.75 + 0.6 * scale)
-	cam.look_at(at + Vector3(0, 3.0 * scale, -8.0 * scale))
+	# From over the edge behind it, high enough that no tower stands between camera and kaiju.
+	cam.position = at + Vector3(10.0, 13.0, 15.0) * (0.75 + 0.6 * scale)
+	cam.look_at(at + Vector3(0, 4.0 * scale, -6.0 * scale))
 	await _frames(_settle)
 	_shot(id + "_kaiju")
 	print("stage %d kaiju view %s" % [tier, await _measure()])
