@@ -260,6 +260,16 @@ func _check_stomp_timing() -> void:
 	var sfx := Sfx.new(Seeds.make("sfx", 0))
 	root.add_child(sfx)
 	sfx.stomp(2.0, true)
+	var dynamics: Dictionary = Content.section("sfx")["dynamics"]
+	var ceiling := INF
+	for i: int in AudioServer.get_bus_effect_count(0):
+		var effect := AudioServer.get_bus_effect(0, i)
+		if effect is AudioEffectHardLimiter:
+			ceiling = (effect as AudioEffectHardLimiter).ceiling_db
+	check(
+		is_equal_approx(ceiling, Num.f(dynamics["ceiling_db"])),
+		"a hard limiter holds Master under %s dBFS (found %s)" % [dynamics["ceiling_db"], ceiling]
+	)
 	var early := sfx.played.duplicate()
 	var buses: Array[String] = []
 	for player: Node in sfx.get_children():
