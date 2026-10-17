@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 07:45
-## State: running a check (CI on PR #33 bd97471 and PR #34 9f12f62, auto-fix ON for both). Next: (d) heli gun + crash
+# Ability VFX/SFX handoff, 2026-10-18 08:20
+## State: running a check (CI on #33 aa453bc, #34 09749f2; auto-fix ON). Next: (d) heli gun + crash
 
 ## Who
 Lead is "Game demo planning" / "LEAD", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -12,7 +12,7 @@ Say "awaiting lead" only after asking for the next job with options (memory-shar
   Logged as D-052 (r2 shipped as heard) and D-055 (roar on the reveal and end card).
 
 ## Open PRs
-- **#33** claude/sfx-bus → claude/look-options, head = this merge, flow 109.
+- **#33** claude/sfx-bus → claude/look-options, head aa453bc, flow 109 (the lead merges it via a watcher; push only to fix conflicts or CI).
   - (e) SFX and Music buses: PlayerSettings.BUSES/bus().
   - "Sound effects" slider (SettingsMenu.effects), sfx_volume saved in settings.cfg, default from tuning sfx
     default_volume 0.9.
@@ -22,10 +22,10 @@ Say "awaiting lead" only after asking for the next job with options (memory-shar
   - Evidence (shared notes side-session-notes/local_9fac90d2.../sfx-bus/):
     - settings_1080.png, settings_4k_ui125.png
     - ui_sounds.mp4 (real input: 3 clicks, confirm, deny)
-- **#34** claude/army-sfx → base claude/sfx-bus (stacked), head 9f12f62, flow 110.
+- **#34** claude/army-sfx → base claude/sfx-bus (stacked), head 09749f2, flow 112, D-064 (menu sounds + slider shipped) in its Board and log.
   - tank_fire, shell_hit (unarmoured hits), heli_rotor loop.
   - Sfx.listener / play_at / rotors; tuning near_distance 80, far_floor_db -18.
-  - Clip: army-sfx/heli_rotor.mp4. There is no tank-fire clip: no tank fired in the 20 s seed.
+  - Clips: army-sfx/tank_fire_shell_hit.mp4 (capture_sfx_clips.gd -- --army) and heli_rotor.mp4.
   - When #33 merges, retarget #34 to claude/look-options (`gh pr edit 34 --base claude/look-options`) and
     merge look-options in.
 

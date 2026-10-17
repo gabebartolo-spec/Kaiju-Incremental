@@ -209,7 +209,9 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	root.add_child(rampage)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = ["stomp_2", "stomp_crack", "ready", "deflect", "regen_loop"]
+	var cues: Array[String] = [
+		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
+	]
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
@@ -332,6 +334,10 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
+	check(
+		rampage.sfx.played.has("heli_rotor"),
+		"the %s's helicopters are heard: %s" % [species_id, rampage.sfx.played.slice(-8)]
+	)
 	rampage.queue_free()
 	await process_frame
 
