@@ -32,6 +32,8 @@ var species: Dictionary
 var ability_fx: AbilityFx
 ## Their sounds (read by the flow suite).
 var sfx: Sfx
+## The rooftop defenders (D-063; read by the flow suite).
+var rooftops: RooftopView
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
 ## Capture hook: when set, called with the sim each physics frame for the player's input.
@@ -94,6 +96,8 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
+	rooftops = RooftopView.new(sim, _city, sfx, Seeds.derive(_fx_rng, 0x2007))
+	add_child(rooftops)
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
@@ -199,6 +203,8 @@ func _on_event(event: Dictionary) -> void:
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
+		"rooftop_fired", "rooftop_destroyed":
+			rooftops.on_event(event, _kaiju_at)
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:

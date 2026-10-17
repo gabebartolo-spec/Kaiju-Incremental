@@ -3,9 +3,27 @@ extends RefCounted
 ## The tanks: they arrive faster the more the city falls, roll in to range and shell the kaiju
 ## (or the nearest young of a brood, if one is closer). Coated tanks burn. Part of RampageSim;
 ## the tanks themselves live in sim.tanks. Draws from the army's own seeded stream.
+## Rooftop defenders (D-063): armed citizens hold some of the taller roofs from the start and
+## fire rifles at the kaiju in range, a sting far below a tank shell, scaled by its size tier and
+## by the same threat the tanks' armour grows with. A squad dies when the roof chunk under it
+## goes (broken, dropped or toppled) or under any attack whose splash reaches its roof floor.
+
+
+## Armed citizens holding a roof: they stand on chunk `cell` of building `building`.
+class Squad:
+	var id: int
+	var building: int
+	var cell: Vector3i
+	var pos: Vector2
+	var cooldown: float
+	var dead := false
+
 
 var sim: RampageSim
 var cfg: Dictionary
+var rooftop: Dictionary
+var squads: Array[Squad] = []
+var rooftops_destroyed := 0
 var _rng: RandomNumberGenerator
 var _spawn_timer: float
 var _next_id := 0
@@ -14,8 +32,10 @@ var _next_id := 0
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = sim.army
+	rooftop = cfg["rooftop"]
 	_rng = rng
 	_spawn_timer = Num.f(cfg["start_interval"])
+	_place_squads(Seeds.derive(rng, 0x2007))
 
 
 func step(dt: float) -> void:
@@ -51,8 +71,27 @@ func step(dt: float) -> void:
 			var hurt := Num.f(cfg["tank_damage"]) - sim.stat("armor")
 			sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt)
 			sim.events.append({"type": "tank_fired", "tank": tank.id})
-	if coated:
+	if _step_squads(dt) or coated:
 		clear_dead()
+
+
+## Each squad whose roof still stands fires a volley every fire_interval while the kaiju is in
+## range. True when a squad lost its roof (clear_dead removes it and pays its biomass).
+func _step_squads(dt: float) -> bool:
+	var lost := false
+	var reach := Num.f(rooftop["range"])
+	for squad: Squad in squads:
+		if not sim.buildings[squad.building].frame.alive(squad.cell):
+			squad.dead = true
+			lost = true
+			continue
+		squad.cooldown -= dt
+		if squad.cooldown > 0.0 or squad.pos.distance_to(sim.kaiju_pos) > reach:
+			continue
+		squad.cooldown = Num.f(rooftop["fire_interval"])
+		sim.hp -= volley()
+		sim.events.append({"type": "rooftop_fired", "squad": squad.id})
+	return lost
 
 
 func _spawn() -> void:
@@ -68,8 +107,7 @@ func _spawn() -> void:
 	if edge > Num.f(cfg["spawn_radius"]):
 		at = sim.kaiju_pos + dir * Num.f(cfg["spawn_radius"])
 	tank.pos = sim.clamp_to_arena(at)
-	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
-	tank.hp = Num.f(cfg["tank_hp"]) * threat
+	tank.hp = Num.f(cfg["tank_hp"]) * threat()
 	tank.cooldown = Num.f(cfg["fire_interval"])
 	sim.tanks.append(tank)
 	sim.events.append({"type": "tank_spawned", "tank": tank.id})
@@ -87,3 +125,81 @@ func clear_dead() -> void:
 				{"type": "tank_destroyed", "tank": tank.id, "x": tank.pos.x, "z": tank.pos.y}
 			)
 	sim.tanks = alive
+	if squads.any(func(squad: Squad) -> bool: return squad.dead):
+		var holding: Array[Squad] = []
+		for squad: Squad in squads:
+			if not squad.dead:
+				holding.append(squad)
+				continue
+			rooftops_destroyed += 1
+			sim.rubble += _by_tier("rooftop_rubble") * sim.stat("rubble_mult")
+			var at := sim.buildings[squad.building].chunk_world(squad.cell)
+			sim.events.append(
+				{
+					"type": "rooftop_destroyed",
+					"squad": squad.id,
+					"x": at.x,
+					"y": at.y + 0.5,
+					"z": at.z
+				}
+			)
+		squads = holding
+
+
+## How hard the army fights back: more the more of the city has fallen.
+func threat() -> float:
+	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
+
+
+## One squad's volley at the kaiju: the size tier's sting, grown by the threat.
+func volley() -> float:
+	return _by_tier("damage_by_tier") * threat()
+
+
+## A rooftop entry for the kaiju's size tier (tiers past the list use its last entry).
+func _by_tier(key: String) -> float:
+	var list: Array = rooftop[key]
+	return Num.f(list[clampi(sim.size_tier() - 1, 0, list.size() - 1)])
+
+
+## Squads take some of the roofs min_height floors and up, each with `chance`, visited in a
+## seeded order so they spread over the whole city, up to the size tier's cap. A squad keeps
+## off the corner where a roof's stair hut stands.
+func _place_squads(rng: RandomNumberGenerator) -> void:
+	var cap := roundi(_by_tier("max_by_tier"))
+	var tall: Array[int] = []
+	for i: int in sim.buildings.size():
+		if sim.buildings[i].height >= Num.i(rooftop["min_height"]):
+			tall.append(i)
+	for n: int in range(tall.size() - 1, 0, -1):  # Fisher-Yates on the army's own stream
+		var k := rng.randi_range(0, n)
+		var swap := tall[n]
+		tall[n] = tall[k]
+		tall[k] = swap
+	for i: int in tall:
+		if squads.size() >= cap:
+			break
+		if rng.randf() >= Num.f(rooftop["chance"]):
+			continue
+		var b := sim.buildings[i]
+		var cell := Vector3i(rng.randi_range(0, b.w - 1), b.height - 1, rng.randi_range(0, b.d - 1))
+		if b.w >= 3 and b.d >= 3 and cell.x < 2 and cell.z < 2:
+			cell = Vector3i(b.w - 1, cell.y, b.d - 1)
+		var squad := Squad.new()
+		squad.id = squads.size()
+		squad.building = i
+		squad.cell = cell
+		var at := b.chunk_world(cell)
+		squad.pos = Vector2(at.x, at.z)
+		squad.cooldown = rng.randf() * Num.f(rooftop["fire_interval"])
+		squads.append(squad)
+
+
+## An attack on floors y_lo..y_hi-1 kills every squad whose roof floor it reaches and whose
+## spot its force touches; then the dead tanks and squads are cleared and paid for.
+func splash(force: Callable, y_lo: int, y_hi: int) -> void:
+	for squad: Squad in squads:
+		if squad.cell.y >= y_lo and squad.cell.y < y_hi:
+			var k: float = force.call(squad.pos, Num.f(rooftop["radius"]))
+			squad.dead = squad.dead or k > 0.0
+	clear_dead()
