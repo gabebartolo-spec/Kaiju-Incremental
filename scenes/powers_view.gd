@@ -44,6 +44,7 @@ func _init(p_sim: RampageSim, city: CityView, kaiju: Node3D, tint: Color) -> voi
 func _ready() -> void:
 	var rampage := get_parent() as Rampage
 	rooftops = RooftopView.new(sim, _city, rampage.sfx, Seeds.make("rooftop_fx"))
+	rooftops.body = _kaiju
 	add_child(rooftops)
 
 

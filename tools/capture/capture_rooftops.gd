@@ -9,10 +9,10 @@ extends SceneTree
 ##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0]
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
-const FRAMES := 60 * 4
+const FRAMES := 60 * 6
 const SETTLE := 45  # frames for the camera to settle before stills count
 const MAX_STILLS := 4
-const MID_FLIGHT := 2  # frames after a volley a still is taken
+const MID_FLIGHT := 5  # frames after a volley a still is taken: tracers in flight
 const LEVELS := {"claws": 3, "hide": 5, "rage": 3, "evolve1": 1}
 ## Where the kaiju stands from the chosen squad (south-east, so the squad is up-left of it on
 ## screen and not behind its body), as a share of the rifle range.
@@ -21,6 +21,7 @@ const STAND := Vector2(0.65, 0.5)
 var _out := "user://rooftops"
 var _seed := 0
 var _stills: Array[Dictionary] = []
+var _volleys: Array[int] = []
 
 
 func _initialize() -> void:
@@ -53,17 +54,21 @@ func _run() -> void:
 	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
 	var camera := root.get_viewport().get_camera_3d()
 	var shots := 0
+	var due := -1
 	for i: int in FRAMES:
 		await physics_frame
-		if i < SETTLE or _stills.size() >= MAX_STILLS:
-			continue
 		if roofs.shots > shots:
 			shots = roofs.shots
-			for _f: int in MID_FLIGHT:  # muzzle flashes still lit, tracers on their way
-				await physics_frame
+			_volleys.append(i)
+			if i >= SETTLE and due < 0 and _stills.size() < MAX_STILLS:
+				due = i + MID_FLIGHT
+		if i == due:
+			due = -1
 			_still(rampage, roofs, camera, i)
 	var file := FileAccess.open(_out.path_join("rooftops.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"stills": _stills, "squad": squad.id}, "  "))
+	file.store_string(
+		JSON.stringify({"stills": _stills, "squad": squad.id, "volley_frames": _volleys}, "  ")
+	)
 	file.close()
 	print(
 		(

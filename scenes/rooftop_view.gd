@@ -21,15 +21,17 @@ const GLOW := Color(1.0, 0.82, 0.45)
 ## Over-range brightness per instance, past the city's glow threshold (1.1, AgX tonemap), so
 ## flashes, tracers and sparks bloom instead of reading as tan sticks.
 const HOT := Color(4.0, 4.0, 4.0)
-const TRACER_SECONDS := 0.2  # muzzle to hide...
-const TRACER_HOLD := 0.08  # ...then the full streak lingers this long
-const TRACER_SHARE := 0.55  # a flying tracer is this share of its flight long
-const TRACER_WIDTH := 0.09
+const TRACER_SPEED := 60.0  # world units a second, muzzle to hide
+const TRACER_LENGTH := 1.75  # a tracer is a short streak this long, flying the whole way
+const TRACER_WIDTH := 0.05
+## A tracer burns less over-range than a flash: a thin core with a soft glow, not a white rod.
+const TRACER_HOT := Color(2.0, 2.0, 2.0)
 const FIGURE_SCALE := 1.5
 const SPACING := 0.55  # figures of a squad stand this far apart across their line of fire
-const AIM_HEIGHT := 3.5  # tracers end this high on the kaiju (per body scale)...
-const AIM_SPREAD := 0.8  # ...scattered this far either way...
-const HIDE_DEPTH := 0.8  # ...on the near side, this share of the body radius out from its axis
+const AIM_SPREAD := 0.25  # rounds scatter this far round the body point they aim at (per scale)
+const BODY_MIDDLE := 3.0  # an unrigged body is struck this high (per body scale)...
+const FEET_CLEAR := 1.0  # ...and a rigged one at a bone at least this high (never the feet)
+const HIDE_DEPTH := 0.35  # they strike this share of the body radius out from a bone
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
 
 ## Running totals and the figures drawn this frame (tests and the capture tool read them).
@@ -40,6 +42,8 @@ var most_drawn := 0
 var last_squad := -1
 var lit := Vector2i.ZERO
 var sim: RampageSim
+## The drawn kaiju: rounds strike the part of its rigged body nearest each shooter.
+var body: Node3D
 var _city: CityView
 var _sfx: Sfx
 var _cfg: Dictionary
@@ -202,22 +206,35 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 					{"at": muzzle + ahead, "t": FLASH_SECONDS + lag, "size": FLASH_SIZE, "lag": lag}
 				)
 			var spot := Vector3(
-				_rng.randf_range(-AIM_SPREAD, AIM_SPREAD),
-				AIM_HEIGHT + _rng.randf_range(-AIM_SPREAD, AIM_SPREAD),
-				_rng.randf_range(-AIM_SPREAD, AIM_SPREAD)
+				_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1)
 			)
 			if _tracers.size() < MAX_TRACERS:
-				_tracers.append({"from": muzzle, "to": _hide(kaiju_at, muzzle, spot), "t": 0.0})
+				var to := _hide(kaiju_at, muzzle, spot)
+				var flight := muzzle.distance_to(to) / TRACER_SPEED
+				_tracers.append({"from": muzzle, "to": to, "t": 0.0, "flight": flight})
 		return
 
 
-## Where a round from `muzzle` strikes: on the side of the body facing the shooter (not its
-## middle, where the body would hide the tracer), `spot` scattering it.
+## Where a round from `muzzle` strikes: the bone of the drawn body nearest the shooter (above
+## the feet), pushed out toward the shooter onto the hide, `spot` scattering it. A body without a
+## rig is struck at its middle.
 func _hide(kaiju_at: Vector3, muzzle: Vector3, spot: Vector3) -> Vector3:
 	var bs := sim.body_scale()
-	var toward := Vector3(muzzle.x - kaiju_at.x, 0.0, muzzle.z - kaiju_at.z).normalized()
-	var skin := toward * Num.f(sim.powers_cfg["body_radius"]) * bs * HIDE_DEPTH
-	return kaiju_at + skin + spot * bs
+	var aim := kaiju_at + Vector3.UP * bs * BODY_MIDDLE
+	var rig: KaijuRig = null
+	if body != null:
+		for node: Node in body.find_children("*", "KaijuRig", true, false):
+			rig = node as KaijuRig
+	if rig != null:
+		var best := INF
+		for bone_name: String in rig.bone_names():
+			var p := rig.bone(bone_name).global_position
+			var d := p.distance_squared_to(muzzle)
+			if p.y > kaiju_at.y + bs * FEET_CLEAR and d < best:
+				best = d
+				aim = p
+	var out := (muzzle - aim).normalized() * Num.f(sim.powers_cfg["body_radius"]) * bs * HIDE_DEPTH
+	return aim + out + spot * bs * AIM_SPREAD
 
 
 func _draw_flashes(delta: float) -> void:
@@ -238,32 +255,31 @@ func _draw_flashes(delta: float) -> void:
 	_flash_mm.visible_instance_count = shown
 
 
-## Each tracer is a glowing bar a share of its flight long, running muzzle to hide; when its head
-## strikes, the hide sparks and the streak lingers TRACER_HOLD seconds before it goes.
+## Each tracer is a short glowing streak flying muzzle to hide; on arrival it is gone and the
+## hide sparks exactly at its tip.
 func _draw_tracers(delta: float) -> void:
 	var shown := 0
-	var hold := TRACER_HOLD / TRACER_SECONDS
 	for tr: Dictionary in _tracers.duplicate():
-		var was := Num.f(tr["t"])
-		tr["t"] = was + delta / TRACER_SECONDS
+		var flight := maxf(Num.f(tr["flight"]), 0.001)
+		tr["t"] = Num.f(tr["t"]) + delta / flight
 		var t := Num.f(tr["t"])
 		var to: Vector3 = tr["to"]
-		if was + TRACER_SHARE < 1.0 and t + TRACER_SHARE >= 1.0 and _flashes.size() < MAX_FLASHES:
-			_flashes.append({"at": to, "t": SPARK_SECONDS, "size": SPARK_SIZE, "lag": 0.0})
-		if t >= 1.0 - TRACER_SHARE + hold:
+		if t >= 1.0:
+			if _flashes.size() < MAX_FLASHES:
+				_flashes.append({"at": to, "t": SPARK_SECONDS, "size": SPARK_SIZE, "lag": 0.0})
 			_tracers.erase(tr)
 			continue
 		var from: Vector3 = tr["from"]
-		var span := to - from
-		var head := from + span * minf(1.0, t + TRACER_SHARE)
-		var tail := from + span * minf(t, 1.0 - TRACER_SHARE)
-		var z := (head - tail).normalized()
+		var head := from.lerp(to, t)
+		var z := (to - from).normalized()
+		var tail := head - z * minf(TRACER_LENGTH, head.distance_to(from))
 		var x := z.cross(Vector3.UP)
 		if x.length() < 0.01:
 			x = Vector3.RIGHT
 		x = x.normalized()
-		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * head.distance_to(tail))
+		var length := maxf(0.01, head.distance_to(tail))
+		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * length)
 		_tracer_mm.set_instance_transform(shown, Transform3D(basis, (head + tail) * 0.5))
-		_tracer_mm.set_instance_color(shown, HOT)
+		_tracer_mm.set_instance_color(shown, TRACER_HOT)
 		shown += 1
 	_tracer_mm.visible_instance_count = shown
