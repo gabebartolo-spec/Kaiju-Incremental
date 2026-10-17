@@ -1,4 +1,4 @@
-# Ability VFX/SFX handoff, 2026-10-17 15:05
+# Ability VFX/SFX handoff, 2026-10-17 15:55
 ## State: paused by the director ("pause vfx until the locomotion is done"); PR #8 on HOLD, do not merge
 
 ## Task
@@ -26,7 +26,6 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
   lists every layer per file.
 - tests.yml: each Godot job runs `git lfs pull --include="assets/sfx/*"` (audio is LFS).
 - Flow: +4 sound checks on top of the base (flow floor 30 after the 2026-10-17 merge).
-  sounds); floor flow 22 -> 26. smoke 11, sim 39, city 5, flow 26 green locally.
 - VFX: ready_pulse(feet, head) = shockwave + eye flare; rim.gdshader is regen-only now;
   breath muzzle flare.
 
@@ -59,4 +58,4 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - Not done: creature roars (Sonniss); Freesound needs a login.
 
 ## Running jobs
-None. No override.cfg left. Last action (2026-10-17): fixed gdlint on PR #8 (rampage.gd over 400 lines after the base merge): breath camera orbit moved to scenes/breath_camera.gd (BreathCamera). All 6 suites green.
+None. No override.cfg left. Last action (2026-10-17 15:55): merged look-options again; the camera conflict resolved as the base's focus-follow camera + my BreathCamera offset. Floors smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 30; all green.
