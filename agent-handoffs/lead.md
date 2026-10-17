@@ -34,12 +34,12 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
    ambience (branches, coming). #41 limiter MERGED (objective: no clipping).
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
-   1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; my FIX: #2 read as a real A-10, made original; fresh
-   critic next. Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
+   1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
+   copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
 10. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
-- Merged on look-options 2026-10-18: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
+- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
   #29 playtest sheet, #28 #30 export + CI artifact, #8 SFX, #32 perf hitches, #33 SFX bus + slider + menu sounds +
   end-card roar sound. Decisions D-050..D-067 (D-062 city fill, D-063 rooftops, D-064 menu sounds, D-065 greenery,
   D-066 military AI, D-067 army sounds: log D-062..D-067 in the next board PR).
