@@ -63,19 +63,27 @@ KNOWN = {
         tail=[V((0, 40, 38)), V((2.6, 48, 27)), V((1.8, 59, 24)), V((3, 68, 19.5)), V((6.5, 77, 15)),
               V((11, 85, 12.3)), V((17, 93, 11.7)), V((22, 101, 11)), V((29, 108, 16)), V((38, 117, 19))],
         belly=13.0),
-    # C: the D-046 "Croc titan" (Tripo 351ad916 v1): a near-horizontal croc-theropod, measured by
-    # vertex slices (head level at ~83 m, plates on top, sprawling digitigrade legs, level tail).
+    # C: the D-046 "Croc titan", v2 (Tripo Smart Mesh c8185166, lead 22:47): an upright croc-theropod
+    # with short T-rex arms and a 185 m tail that tapers to the ground, measured on 1 m grid side and
+    # front renders and vertex slices (v1, task 351ad916, is in this file's history).
     "C": dict(
-        spine=[V((0, 92, 52)), V((0, 80, 60)), V((0, 68, 67)), V((0, 60, 73))],
-        neck=[V((0, 60, 73)), V((0, 51, 80)), V((0, 42, 86))],
-        snout=V((0, 0.5, 82.5)), jaw=(V((0, 35, 84)), V((0, 3, 80.5))),
+        spine=[V((0, 80, 55)), V((0, 68, 61)), V((0, 56, 67)), V((0, 47, 73))],
+        neck=[V((0, 47, 73)), V((0, 40, 80)), V((0, 33, 86))],
+        snout=V((0, 0.5, 84)), jaw=(V((0, 30, 85.5)), V((0, 2, 82))),
         # The closed mouth's tooth line, tip to gape corner (read off a side render of the head).
-        mouth=(V((0, 1.5, 82.5)), V((0, 34, 87))),
-        arm=[V((5, 66, 72)), V((16, 66, 72)), V((41, 71, 72)), V((54, 71, 72)), V((66, 70, 71))],
-        leg=[V((17, 90, 46)), V((21, 82, 28)), V((23.5, 92, 16)), V((28, 76, 2.5)), V((28, 67, 1))],
-        tail=[V((0, 100, 47)), V((0, 114, 42)), V((0, 126, 39)), V((0, 138, 37)), V((0, 150, 37)),
-              V((0, 162, 35.5)), V((0, 174, 34.5)), V((0, 186, 33)), V((0, 198, 30.5)), V((0, 204, 30))],
-        belly=35.0),
+        mouth=(V((0, 1, 84)), V((0, 27.5, 87.3))),
+        arm=[V((5, 46, 73)), V((16, 44, 71)), V((24, 38, 66)), V((27, 35, 62)), V((28, 33, 55))],
+        leg=[V((14, 72, 50)), V((22, 62, 35)), V((26, 72, 17)), V((29, 62, 3)), V((30, 50, 1))],
+        tail=[V((0, 86, 52)), V((0, 104.5, 47)), V((0, 123, 38)), V((0, 141.5, 30)), V((0, 160, 26)),
+              V((0, 178.5, 22)), V((0, 197, 19)), V((0, 215.5, 16)), V((0, 234, 12)), V((0, 252.5, 8.5)),
+              V((0, 271, 3))],
+        # Short arms: the hand targets are offsets from each rest wrist (in, back, up; metres):
+        # tucked low on the walk, claws up to the chest at the roar.
+        hands={"low": (1.0, -1.0, 1.0), "high": (3.0, 2.0, 7.0)},
+        # The 185 m tail rests on its tip: carry it a little off the street, lift it harder against
+        # the roar's pelvis tip, breathe it less (degrees).
+        tail_lift=3.0, tail_roar_lift=5.0, tail_breathe=0.15,
+        belly=31.0),
 }
 TAIL_BONES = 10
 
@@ -701,9 +709,14 @@ def pose_frame(clip, f, P):
     for side, sg in (("L", 1), ("R", -1)):
         swing = 2.5 * math.sin(ph + (0 if side == "L" else math.pi)) * gait
         set_rot(f"clav_{side}", world_q())
-        low = V((sg * 9.0, sp1.y - L["belly"] + 0.5 * swing, sp1.z + 2.0))
-        high = V((sg * 13.0, sp1.y - L["belly"] + 2.0, sp1.z + 12.0))
         rest_wrist = REST[f"hand_tgt_{side}"].translation
+        if "hands" in L:  # offsets from the rest wrist (short arms reach these)
+            lo, hi = L["hands"]["low"], L["hands"]["high"]
+            low = rest_wrist + V((-sg * lo[0], lo[1] + 0.5 * swing, lo[2]))
+            high = rest_wrist + V((-sg * hi[0], hi[1], hi[2]))
+        else:
+            low = V((sg * 9.0, sp1.y - L["belly"] + 0.5 * swing, sp1.z + 2.0))
+            high = V((sg * 13.0, sp1.y - L["belly"] + 2.0, sp1.z + 12.0))
         set_loc(f"hand_tgt_{side}", low.lerp(high, rear) - rest_wrist)
         set_rot(f"hand_{side}", world_q(pitch=25 - 10 * rear))
     # Tail: counter-sways the hips on the walk (a wave to the tip, in step with the weight shift);
@@ -717,8 +730,9 @@ def pose_frame(clip, f, P):
         # In the roar the base lifts against the pelvis tipping back, so the tip stays clear of the street.
         set_rot(f"tail{i}", world_q(yaw=walk_yaw + roar_yaw,
                                     pitch=0.6 * math.sin(2 * ph - 0.45 * i) * gait * settle_t
-                                    + 2.5 * rear * (i < 2) - 0.3 * rear * (i >= 2)
-                                    + 2.0 * windup * (i < 4) + 0.4 * breathe))
+                                    + L.get("tail_roar_lift", 2.5) * rear * (i < 2) - 0.3 * rear * (i >= 2)
+                                    + 2.0 * windup * (i < 4) + L.get("tail_breathe", 0.4) * breathe
+                                    + L.get("tail_lift", 0.0) * (i == 0)))
     # Feet: world-fixed while planted (converted into the moving rig's space).
     # The rig's matrix for this frame (rig.matrix_world still holds the last evaluated frame).
     inv = (Matrix.Translation(root) @ Matrix.Rotation(math.radians(yaw), 4, "Z")).inverted()
