@@ -1,11 +1,17 @@
-# blender-reptile handoff, 2026-10-18 04:15
-## State: running a check. PR #22 (lead QA round 1 stills PASS; motion-critic running at the lead).
-## Local unpushed: 7d3f761 cards option A (sway +-40 deg around PI*0.62, tight skin fit; fill croc
-## 0.56, mantis 0.63, octopus 0.55) + handoffs. Temp branch claude/croctitan-cards-tmp (= 7d3f761)
-## for the card 4K: bmgmirzlv waits for chain b2vwtf0yr (ci5/after_side 39050777699, ci5/before_game)
-## then dispatches -> ci6/select4k. ONE batched push to #22: merge origin/claude/look-options (81afe80,
-## #21) + cards + side 3 s clips + new species_cards_before_after.png + PR body (fills per species).
-## Then delete the tmp branch, send head SHA to LEAD local_106fc100-d2a4-4091-bc9a-4bda31df13ac.
+# blender-reptile handoff, 2026-10-18 04:45
+## State: running a check. LEAD round 2 FIX (04:11, judged at the GAME camera) done in code, local
+## 16260e9 (= 3aa63a6 tail round 2 + merge look-options 81afe80; 7d3f761 cards option A), all 9 suites
+## green, clips 14. #22 is still at a88a4d4: ONE batched push when evidence is ready.
+## Round 2: walk TAIL_WALK (2,5) over TAIL_WALK_PERIOD 72 = 1.5 cycles (tip 45.3 m = 0.72x), walk
+## clip baked as 3 cycles (header "cycles", KaijuClips.cycles_of); roar TAIL_LIFT (6,-9): tip above
+## hip f19-40 (0.92 s), crashes 96 -> 3 m f38-46, lands f47 = head peak; slam emits
+## rig.foot_planted("tail", 1.6, tip) (dust, ring, camera dip; check shown failing first); turn spring
+## (14, 0.25), TAIL_WHIP (6.5, 8.3), TURN_SETTLE 24 (offline: overshoot ~8 deg, settle ~0.4 s).
+## CI (all from temp branch claude/croctitan-cards-tmp = 16260e9, delete after): chain b2vwtf0yr ->
+## BEFORE game 39054681594 -> bmgmirzlv 4K cards (ci6) -> byhacv7qr AFTER game + side (ci7).
+## Owed for round 2: 3 s game-cam clips walk/turn/roar (roar clip 13.3-18.3: crouch, rear, slam,
+## recovery), before/after aligned by time (same schedule, seed), 2x crops slam contact + turn
+## settle, species_cards_before_after (fill per species), PR body; push; delete tmp; SHA to LEAD.
 ## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
 ## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
