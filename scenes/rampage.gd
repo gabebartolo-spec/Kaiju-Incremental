@@ -32,8 +32,6 @@ var species: Dictionary
 var ability_fx: AbilityFx
 ## Their sounds (read by the flow suite).
 var sfx: Sfx
-## The rooftop defenders (D-063; read by the flow suite).
-var rooftops: RooftopView
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
 ## Capture hook: when set, called with the sim each physics frame for the player's input.
@@ -87,7 +85,8 @@ func _ready() -> void:
 	_city = CityView.new(sim, _fx_rng)
 	add_child(_city)
 	var colors: Dictionary = species["colors"]
-	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale())
+	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
+	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
 	add_child(ability_fx)
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
@@ -96,8 +95,9 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	rooftops = RooftopView.new(sim, _city, sfx, Seeds.derive(_fx_rng, 0x2007))
-	add_child(rooftops)
+	# Build one tank and one helicopter now, so the army's first spawn reuses their voxels.
+	TankModel.new().free()
+	HelicopterModel.new().free()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
@@ -111,6 +111,7 @@ func _ready() -> void:
 	_camera.fov = 55.0
 	add_child(_camera)
 	_camera.current = true
+	sfx.watch(_camera, _powers.helis)
 	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
@@ -203,8 +204,6 @@ func _on_event(event: Dictionary) -> void:
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
-		"rooftop_fired", "rooftop_destroyed":
-			rooftops.on_event(event, _kaiju_at)
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
@@ -241,8 +240,7 @@ func _ability_fx(event: Dictionary) -> void:
 			)
 			var span := facing * reach + Vector3(0, -mouth.y + 0.5, 0)
 			_city.fx.breath(mouth, span, eye)
-			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
-			ability_fx.breath(mouth, span, half_angle, strength)
+			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
@@ -348,6 +346,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
 	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
+	sfx.play_at("tank_fire", muzzle)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
 	if sim.stat("armor") > 0.0:
@@ -356,6 +355,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 		tween.tween_callback(func() -> void: sfx.play("deflect"))
 	else:
 		tween.tween_callback(func() -> void: _city.fx.sparks(target))
+		tween.tween_callback(func() -> void: sfx.play_at("shell_hit", target))
 	tween.tween_callback(shell.queue_free)
 	_shake = maxf(_shake, 0.08)
 

@@ -8,6 +8,7 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0]
 
+const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FRAMES := 60 * 4
 const SETTLE := 45  # frames for the camera to settle before stills count
 const MAX_STILLS := 4
@@ -48,23 +49,24 @@ func _run() -> void:
 	sim.facing = (squad.pos - sim.kaiju_pos).normalized()
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	root.add_child(rampage)
+	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
 	var camera := root.get_viewport().get_camera_3d()
 	var shots := 0
 	for i: int in FRAMES:
 		await physics_frame
 		if i < SETTLE or _stills.size() >= MAX_STILLS:
 			continue
-		if rampage.rooftops.shots > shots:
-			shots = rampage.rooftops.shots
+		if roofs.shots > shots:
+			shots = roofs.shots
 			await process_frame  # the flash and tracer drawn
-			_still(rampage, camera, i)
+			_still(rampage, roofs, camera, i)
 	var file := FileAccess.open(_out.path_join("rooftops.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"stills": _stills, "squad": squad.id}, "  "))
 	file.close()
 	print(
 		(
 			"rooftops: %d squads, %d volleys drawn, %d stills"
-			% [sim.army_units.squads.size(), rampage.rooftops.shots, _stills.size()]
+			% [sim.army_units.squads.size(), roofs.shots, _stills.size()]
 		)
 	)
 	quit()
@@ -85,12 +87,12 @@ func _busiest(sim: RampageSim) -> Army.Squad:
 	return best
 
 
-func _still(rampage: Rampage, camera: Camera3D, frame: int) -> void:
+func _still(rampage: Rampage, roofs: RooftopView, camera: Camera3D, frame: int) -> void:
 	var name := "rooftops_%04d.png" % frame
 	root.get_viewport().get_texture().get_image().save_png(_out.path_join(name))
 	var spots: Array[Dictionary] = []
 	for squad: Army.Squad in rampage.sim.army_units.squads:
-		var feet := rampage.rooftops.stance(squad, 1).origin
+		var feet := roofs.stance(squad, 1).origin
 		if camera.is_position_behind(feet):
 			continue
 		var at := camera.unproject_position(feet + Vector3(0, 0.4, 0))

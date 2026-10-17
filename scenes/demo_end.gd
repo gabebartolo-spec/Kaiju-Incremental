@@ -17,9 +17,11 @@ const BUTTON_WIDTH := 320
 ## What the card stages (read by the flow suite).
 var species_id: String
 var stage: String
-## True when the kaiju roars from a baked clip; roars counts the roars asked for.
+## True when the kaiju roars from a baked clip; roars counts the roars asked for, and
+## roar_sounds the croc roars heard with them (Sfx.roar, D-055).
 var clip_roar := false
 var roars := 0
+var roar_sounds := 0
 var _colors: Dictionary
 var _scale: float
 var _floors: int
@@ -86,6 +88,8 @@ func _process(delta: float) -> void:
 	if clip_roar and _frame % ROAR_EVERY == 0:
 		_kaiju.roar()
 		roars += 1
+		Sfx.roar(self)
+		roar_sounds += 1
 	_frame += 1
 	_kaiju.animate(delta, 0.0)
 

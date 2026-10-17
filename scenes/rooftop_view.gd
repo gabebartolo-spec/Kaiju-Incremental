@@ -13,7 +13,7 @@ const FLASH_COLOR := Color(1.0, 0.85, 0.5, 0.0)
 const TRACER_SECONDS := 0.16
 const TRACER_SHARE := 0.3  # a tracer is this share of its flight long
 const TRACER_WIDTH := 0.05
-const SPACING := 0.3  # figures of a squad stand this far apart across their line of fire
+const SPACING := 0.4  # figures of a squad stand this far apart across their line of fire
 const AIM_HEIGHT := 3.5  # tracers end this high on the kaiju (per body scale)...
 const AIM_SPREAD := 1.2  # ...scattered this far either way
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
@@ -85,7 +85,7 @@ func stance(squad: Army.Squad, k: int) -> Transform3D:
 	return Transform3D(Basis(Vector3.UP, atan2(-to.x, -to.y)), Vector3(at.x, feet, at.y))
 
 
-## Runs after Rampage stepped the sim this frame (a child processes after its parent).
+## Runs after Rampage stepped the sim this frame (a descendant processes after it).
 func _physics_process(delta: float) -> void:
 	_counts.fill(0)
 	drawn = 0
@@ -105,12 +105,15 @@ func _physics_process(delta: float) -> void:
 	_draw_tracers(delta)
 
 
-## The sim's rooftop events; the kaiju's drawn body stands with its feet at `kaiju_at`.
-func on_event(event: Dictionary, kaiju_at: Vector3) -> void:
+## The sim's rooftop events (true when it was one); the kaiju's drawn body stands with its feet
+## at `kaiju_at`.
+func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	if str(event["type"]) == "rooftop_fired":
 		fired(Num.i(event["squad"]), kaiju_at)
 		_sfx.play("rifle")
-		return
+		return true
+	if str(event["type"]) != "rooftop_destroyed":
+		return false
 	# Gone with its roof or under a blow: a puff of dust there and its biomass.
 	var at := Vector3(Num.f(event["x"]), Num.f(event["y"]), Num.f(event["z"]))
 	_city.fx.dust(at, 0.5)
@@ -118,6 +121,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> void:
 	var paid := Num.f(list[clampi(sim.size_tier() - 1, 0, list.size() - 1)])
 	var gained := paid * sim.stat("rubble_mult")
 	_city.float_text("+%d" % Num.i(gained), at + Vector3(0, 2, 0), UiKit.WARN)
+	return true
 
 
 ## A squad's volley (sim rooftop_fired): a flash at each muzzle and a tracer from each at the
