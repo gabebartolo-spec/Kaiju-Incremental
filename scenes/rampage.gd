@@ -111,6 +111,7 @@ func _ready() -> void:
 	_camera.fov = 55.0
 	add_child(_camera)
 	_camera.current = true
+	sfx.watch(_camera, _powers.helis)
 	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
@@ -342,6 +343,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
 	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
+	sfx.play_at("tank_fire", muzzle)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
 	if sim.stat("armor") > 0.0:
@@ -350,6 +352,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 		tween.tween_callback(func() -> void: sfx.play("deflect"))
 	else:
 		tween.tween_callback(func() -> void: _city.fx.sparks(target))
+		tween.tween_callback(func() -> void: sfx.play_at("shell_hit", target))
 	tween.tween_callback(shell.queue_free)
 	_shake = maxf(_shake, 0.08)
 
