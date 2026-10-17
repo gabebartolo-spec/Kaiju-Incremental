@@ -165,6 +165,7 @@
 		"flower_bloom": 0.55,
 		"playground_size": 4,
 		"yard_depth": [0.6, 1.6],
+		"trample_body": 1.5,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
 		"avenues": 1,

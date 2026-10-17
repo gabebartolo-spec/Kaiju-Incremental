@@ -23,6 +23,7 @@ var _view: float  # parked cars reach this far from the centre: the arena and wh
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
 var _paints := 0  # how many car paints
+var _walked := Vector2(INF, INF)  # where the kaiju stood last frame (trample)
 var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
 
@@ -72,6 +73,16 @@ func _ready() -> void:
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
+
+
+## Whatever the kaiju's body walks through goes flat at once, not only what a stomp hits, so a
+## walk leaves a continuous trampled path (D-065): a city.trample_body radius at its body scale,
+## on the ground only. Presentation only: the sim never knows.
+func _process(_delta: float) -> void:
+	var at := sim.kaiju_pos
+	if at != _walked and _walked.x != INF and not sim.airborne:
+		crush(Vector3(at.x, 0, at.y), Num.f(sim.city["trample_body"]) * sim.body_scale())
+	_walked = at
 
 
 ## Flattens props under a stomp.
