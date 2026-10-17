@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:30
-## State: running a check (PR #15 CI on the final head; then send the lead the SHA)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:45
+## State: running a check (Blender-weights PR: CI captures of the reptile)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -12,10 +12,20 @@ local_9fac90d2-fae7-4940-b4ac-144a87f28e6e. The look test (rounds 1-2) is done: 
 claude/kaiju-look-test-a763a6 (0d00544), notes in side-session-notes/<lead>/kaiju-look-test/.
 
 ## Branch and commit
-claude/kaiju-voxel-skin, PR #15 into claude/look-options (open, Auto-fix on). Synced with #11's
-latest (kaiju-motion-species, which holds #10) and look-options (#10 merged there as aaa60f7):
-merge #11 first, then look-options, or #10's squash conflicts. Head 6dfa6b3 (snarl mouth, mantle + mouth smoke checks; smoke floor 20). All 9 skins rebaked
-after the sync (bone counts changed). This worktree is .claude/worktrees/kaiju-look-test-a763a6.
+PR #15 (claude/kaiju-voxel-skin) green at 2290d50; the lead merges exactly that SHA. Now on
+claude/kaiju-skin-weights (pushed, stacked on #15's head, no PR yet), head de7f1de: Blender-weights
+input. Retarget onto look-options once #15 merges. Worktree: .claude/worktrees/kaiju-look-test-a763a6.
+
+## Blender-weights PR (lead 14:55)
+assets/kaiju/skin_weights.json lists {kaiju: path to a .skin.json} (reptilian_adult ->
+test/reptilian_adult.skin.json, blender-reptile 2aa4b6c: 33 bones, per-bone "game" map, 11,246
+welded positions, kvox_cell_to_skin). bake.py blender_weights(): k=4 nearest by inverse distance
+(chunked numpy, no scipy), bones summed per "game" bone, jaw-owned voxels all jaw and no jaw
+elsewhere, no lattice smoothing, filler pairs voxels by their main bone. Stamp (bake.py and
+VoxelSkin.source_stamp) covers both skin files: proven failing on an edited skin.json. Reptile
+adult filler grew 50k -> 111k verts (broad Blender falloff marks more voxels as joints).
+CI runs (scratch ci_w1.txt): reptile close 39002565491, stills 572,574,676 39002569524. Compare
+vs lattice C (scratch dl7 skin_*) and A (dl5 rigid_*), then open the PR into look-options.
 
 ## What exists
 - tools/kaiju_skin/bake_all.sh (GODOT=... bash ...): dump_rest.gd (Godot headless: every rig's rest
