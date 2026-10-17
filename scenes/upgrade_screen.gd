@@ -173,6 +173,7 @@ func role_of(id: String) -> String:
 
 func _on_node_pressed(id: String) -> void:
 	var price := tree.buy(id, rubble)
+	Sfx.ui("ui_confirm" if price > 0 else "ui_deny")
 	if price > 0:
 		rubble -= price
 		bought.emit(id)

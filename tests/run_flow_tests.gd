@@ -38,6 +38,7 @@ func run_checks() -> void:
 	await _check_upgrade_screen()
 	await _check_rampage()
 	_check_stomp_timing()
+	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})
 	await _check_powers("cephalopod", "lash", {})
@@ -109,10 +110,18 @@ func _check_upgrade_screen() -> void:
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
+		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
+		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
 		check(
 			tree.level("claws") == 1 and screen.rubble == 15,
 			"pressing Sharpened Claws buys it for 15 (rubble %d)" % screen.rubble
+		)
+		Sfx.ui_played.clear()
+		await GuiInput.click(self, claws)  # level 2 costs more than the 15 left
+		check(
+			tree.level("claws") == 1 and Sfx.ui_played == ["ui_deny"],
+			"a purchase it can't afford buzzes: %s" % [Sfx.ui_played]
 		)
 	screen.queue_free()
 	await process_frame
@@ -200,7 +209,9 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	root.add_child(rampage)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = ["stomp_2", "stomp_crack", "ready", "deflect", "regen_loop"]
+	var cues: Array[String] = [
+		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
+	]
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
@@ -235,6 +246,13 @@ func _check_stomp_timing() -> void:
 	root.add_child(sfx)
 	sfx.stomp(2.0, true)
 	var early := sfx.played.duplicate()
+	var buses: Array[String] = []
+	for player: Node in sfx.get_children():
+		buses.append((player as AudioStreamPlayer).bus)
+	check(
+		buses.all(func(b: String) -> bool: return b == "SFX"),
+		"every power sound plays on the SFX bus: %s" % [buses]
+	)
 	sfx.footstep(0.7)
 	check(
 		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
@@ -251,6 +269,42 @@ func _check_stomp_timing() -> void:
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
 	sfx.free()
+
+
+## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Atomic Breath
+## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
+func _check_warm_start() -> void:
+	var species := Content.species_def("reptilian")
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
+	)
+	var rampage := Rampage.new()
+	rampage.setup(
+		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
+	)
+	root.add_child(rampage)
+	var half := deg_to_rad(Num.f(rampage.sim.city["cone_half_angle_deg"]))
+	check(
+		FxDecals.is_drawn(FxDecals.Shape.WEDGE, {"half_angle": half}),
+		"the breath's scorch for this run's %.2f rad cone is drawn before the first breath" % half
+	)
+	rampage.queue_free()
+	await process_frame
+	var a := TankModel.new()
+	var b := TankModel.new()
+	var hull_a: MultiMeshInstance3D = a.get_child(0)
+	var hull_b: MultiMeshInstance3D = b.get_child(0)
+	VehicleParts.set_opacity(a, 0.3)
+	var mat_b := hull_b.material_override as ShaderMaterial
+	if mat_b == null:
+		mat_b = (hull_b.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
+	var faded_b: Variant = mat_b.get_shader_parameter("opacity")
+	check(
+		hull_a.multimesh == hull_b.multimesh and (faded_b == null or Num.f(faded_b) >= 1.0),
+		"a second tank reuses the first one's voxels, and fading one leaves the other solid"
+	)
+	a.free()
+	b.free()
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every
@@ -280,6 +334,10 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
+	check(
+		rampage.sfx.played.has("heli_rotor"),
+		"the %s's helicopters are heard: %s" % [species_id, rampage.sfx.played.slice(-8)]
+	)
 	rampage.queue_free()
 	await process_frame
 
