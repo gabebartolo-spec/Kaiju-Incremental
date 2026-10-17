@@ -1,5 +1,5 @@
 # City-growth handoff, 2026-10-17 12:45
-## State: running a check (balance experiment D; stage 3-4 stills on CI)
+## State: running a check (stage 4 stills retry; balance proposal sent)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -55,16 +55,12 @@ docs/captures/2026-10-17-city-growth/.
 - Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-- CI stills stage 3/4: runs 38992452507 / 38992457904 (after look-options merge 8aa0bac).
-  When done: gh run download, check (art-qa), add to docs/captures/2026-10-17-city-growth/,
-  update PR #16 stills table, send to lead.
-- Balance proposal (lead 12:40: all species ~3.5-4 h within +-20%, insect stays fastest per run;
-  PROPOSAL ONLY). Results (scratchpad balance_1.txt): A costs x1.27 -> ceph 3.70, reptile 4.98,
-  insect 2.42 h; B A+insect leap cd 6.5/dmg 18 -> insect 2.94 h (still caps Apex city);
-  C A+reptile breath range 11/dmg 36/cone 36 -> reptile 4.86 h. Running D (balance_d.sh ->
-  balance_d.txt): B + i_brood x1.8, C + r_beam x0.6 + reptile speed 5.5. These scripts
-  TEMPORARILY edit data/*.json and git-checkout them at the end; if found modified with no
-  Godot running: `git checkout data/`.
+- Stage 4 stills retry on gl_compatibility: CI run 38996038405. Forward+ run 38992457904 died
+  after 53 min ("runner lost communication": the Apex city starves a software-render runner).
+  If it succeeds: download, check, commit to docs/captures/2026-10-17-city-growth/, update the
+  PR #16 stills table, send to lead. If it fails: report it to the lead as a perf finding.
+- Balance proposal D is done, sent to the lead and in the PR body (not applied): ceph 3.70,
+  reptile 4.43, insect 3.26 h. Scripts: scratchpad balance.sh, balance_d.sh, variant_d.py.
 
 ## Findings for the lead
 - A seeded generator that draws a number only on some branches shifts every later draw when a
