@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-17 02:45
+# Lead handoff, 2026-10-17 04:20
 ## State: working (director gaming 02:00: "take a break from art and build some of game"; no windowed Godot)
 
 ## Task
@@ -44,6 +44,14 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 
 - Balance finding (city-growth): insectoid clears ~2x faster than the other species in grown cities (Climber/glide); costs paced on median; species-balance follow-up to raise with the director after its PR (target +-20% tree time)
 
+- PR #10 reptile locomotion MERGED (aaa60f7): planted feet, locked shoulders, arms at belly, sealed baby chin, snarl rest mouth "B" (director, via kaiju-motion), chest blemish clean-up in rig_voxel.
+- Blender MCP installed (user scope, telemetry off, safe mode); agents may open Blender UI; director says pause -> touch ~/.claude/focus-pause (blocks it again).
+
+- 03:12 usage-limit reset: resumed species-motion (mantis r3b FIX: camera freeze on holds, darts vs scroll, 10deg twitch amplitude, fixed side cam, roar end; octo adult clip re-download), city-growth (tests, stills, open PR), blender-tank (MCP renders, board), kaiju-motion (keep #11 in sync, hand to species-motion).
+- PR #14 game-flow (draft, flow 66 checks): awaiting its CI screenshots (runs 38923674895, 38923781359, watcher b3ro328hh), then review + mark ready + merge.
+
+- Blender tank (blender-tank, local_5c21d3fa-ab76-4f0b-98ae-360caff8c60d): board PASS; D-042 2x size + desert tan; wiring into TankModel + capture + PR; then a helicopter.
+
 ## Helpers
 - kaiju-motion (local_fd14d508-6453-459d-b05c-fb22af37d14f): PR #10 reptile round 4 = FIX (jaw interior
   shows when closed + orphan voxels; double plants; roar marching; baby holes/scurry; per-frame slide trace;
@@ -56,6 +64,19 @@ locomotion, #11 species locomotion (stacked on #10), #12 species powers.
 - ci-captures (local_1171d586-b2d9-464b-8a9e-e55028717b5d): capture.yml works on CI (lavapipe); PR soon.
 - ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106): PAUSED until locomotion lands; PR #8 on hold.
 - city-layout done; real-city TABLED (D-029, branch claude/real-city-92596b).
+
+## 04:20 status
+- Mantis r3c: hold/dart contrast 1.4x->4.6x (fixed); rest twitches too small -> r3d (0a36ec4): scythe raise ~30deg, body jerk-turn ~20deg, head snap every 0.25-0.55 s. CI renders running; then FRESH motion-critic on r3d side+game + both octopus clips; then merge #11 at reviewed SHA.
+- PR #15 (look test, head 3a96ed9): CI shard pending; clips + joint crops not yet posted. Review them, then merge.
+- PR #14 (game-flow, draft): watcher b3ro328hh waiting on runs 38923674895/38923781359.
+- city-growth: pacing round e + stills running; data/upgrades.json uncommitted trial.
+- blender-tank / blender-reptile: running (share one Blender MCP).
+
+## 12:40 CI BLOCKED (billing) - director chose: make repo public
+- Actions jobs refused: spending limit. Director picked "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by the auto-mode classifier: the director flips it (Settings > General > Danger Zone) or runs the command. Pre-flight clean (no secrets, no Tripo GLBs; commit email gabebartolo@gmail.com visible). After the flip: protect main (github-hygiene), log D-043, rerun failed jobs (#11: gh run rerun 38935875288 --failed; #15; capture runs).
+- PR #14 screenshots FIX sent: buttons and report values blank (title, report, tree button).
+- Blender reptile board seen by director: Tripo looks better, but Blender is "more original, less a blatant Godzilla copy"; Blender wins only if it animates better. blender-reptile briefed: one hand-weighted armature on BOTH meshes, walk/turn/roar, rendered side by side in headless Blender, measuring foot slide. Answers whether the poor motion comes from the mesh or our auto rig.
+- New PRs: #16 city-growth, #17 blender-tank (unreviewed; CI blocked).
 
 ## Next (mine)
 1. DONE: all 3 mantis skins exported (mantis_{baby,adolescent,adult}_tex.glb) and sent.
