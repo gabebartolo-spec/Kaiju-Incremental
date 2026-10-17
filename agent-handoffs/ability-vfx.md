@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 03:50
-## State: working (D-050 demo P4: SFX unpaused; PR #8 revive, do not merge)
+# Ability VFX/SFX handoff, 2026-10-18 03:55
+## State: running a check (CI on PR #8; D-050 demo P4: SFX unpaused; PR #8 revive, do not merge)
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -16,8 +16,8 @@ Steps:
 When CI is green, report the head SHA to the lead (local_9fac90d2...) and to Game demo planning.
 
 ## Branch and commit
-claude/ability-sfx, worktree affectionate-goldstine-64c8fb. Merge of look-options dbff208, committed
-locally with this handoff; NOT pushed yet.
+claude/ability-sfx, worktree affectionate-goldstine-64c8fb. Synced to look-options dbff208, pushed;
+PR #8 body updated, Auto-fix ON. Do not merge.
 
 ## Done this pass
 - Merge conflicts resolved, keeping both sides: tuning.json (sfx + growth), register (heli + audio rows), floors (base).
@@ -43,15 +43,16 @@ locally with this handoff; NOT pushed yet.
 - PR body draft: scratchpad/pr8_body.md (placeholders EVIDENCE/FLOORS/SYNC).
 
 ## Next
-1. Read the flow result (log: $TMP/../claude_sfx_tests.log). Set the flow floor to the reported count (76 + 3 if green).
-2. Capture: write the no-focus override.cfg, run one Godot, then cut 3 x 3 s mp4 around the first stomp_*, collapse and breath; delete override.cfg.
-   - Command: printf '[display]\nwindow/size/mode=0\nwindow/size/no_focus=true\nwindow/size/initial_position_type=0\nwindow/size/initial_position=Vector2i(-20000,-20000)\n' > override.cfg
-   - GODOT is /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
-3. Push, update the PR body, turn auto-fix on, report the SHA when CI is green.
+- When CI is green, send the head SHA to the lead (local_9fac90d2...) and Game demo planning
+  (local_106fc100...).
+- Clips (stomp, building_fall, breath .mp4) + run.log are in the shared notes folder
+  side-session-notes/local_9fac90d2.../ability-sfx-d050/.
+- The director's listen is the gate.
+- Flow floor is 83.
 
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).
 - build_sfx.py reseeds per sound; rebuilt unchanged oggs differ only by stream serial, so revert them.
 
 ## Running jobs
-Flow suite (tools/run_tests.sh, background task beukis11h). No override.cfg present.
+CI on PR #8 (Auto-fix watches it). No Godot, no override.cfg.
