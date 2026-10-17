@@ -1,46 +1,53 @@
-# UI handoff, 2026-10-18 05:10
-## State: running a check (smoke + flow suites local; CI captures next)
+# UI handoff, 2026-10-18 05:35
+## State: running a check (full local suites after syncing look-options with #8)
 
 ## Task
-Director (2026-10-18, in chat): "you are User Interface, buttons, menus; make the game UI
-thematically rich, beautiful and intuitive; full licence to create our own assets".
-Director picked look A "Emergency Broadcast" from three mockups (A broadcast / B concrete /
-C monster hide), AskUserQuestion answer 2026-10-18. Needs a D-id from the merge role.
+Director (2026-10-18, chat): "you are User Interface, buttons, menus; make the game UI thematically
+rich, beautiful and intuitive; full licence to create our own assets". Lead = session "LEAD"
+(local_106fc100); it holds QA gates and merges, relays director decisions. Report <=8 lines.
 
-## Look A in one line
-The city's civil-defence alarm is screaming about you: hazard yellow (ffcc00) on near-black
-(0b0b0d), alert red (ff3b30), square edges, hazard tape, faint scanlines, a red news crawl.
+## Decisions in this PR (#27, for the merge role, all in the PR body's Board and log)
+- D-TBD-ui-look-broadcast: look A "Emergency Broadcast" (director picked from mockups A/B/C).
+- D-056 (director 05:08): currency reads BIOMASS on screen; keys/save unchanged.
+- D-058 (director 05:13): body text Kaiju Block (our plain face); headings Kaiju Claw; capitals only.
 
 ## Branch
-claude/ui-broadcast in ../Kaiju-Incremental-wt/ui-broadcast, from origin/claude/look-options
-444ed01. PR goes into claude/look-options. Not pushed yet at time of writing.
+claude/ui-broadcast in ../Kaiju-Incremental-wt/ui-broadcast; PR #27 (draft) into
+claude/look-options, Auto-fix on. Merged look-options at 9b52e83 (#23 demo) and again after #8
+(47e1b30); flow floor resolved to 104 (100 base + my 4) pending the full run's real count.
+#22 lands before #27: sync again after it.
 
 ## What is built
-- scenes/hazard_box.gd: StyleBox subclass (fill, edge solid/dashed, tape band left/top,
-  focus ring); static tape() and frame() draw helpers. fill setter emits changed.
-- scenes/news_ticker.gd: red crawl, black BREAKING tag, frame-delta scroll (presentation).
-- scenes/ui_kit.gd: new palette (+ALERT), box radius 0, hazard(), ink() (dark text on bright
-  fills), panel() = yellow edge + top tape, button() = left tape, focus lights dark buttons
-  yellow with a ring, bar(taped), tape(), backdrop() with Scanlines; inner classes Tape,
-  Scanlines.
-- upgrade_node.gd: maxed yellow, buy green, locked dashed, evolve alert red, ultimate under
-  a tape band (MAX_BORDER ultimate 6 -> 8 to keep text clear of the band).
-- title_screen.gd: CIVIL DEFENCE ALERT kicker, tape on top edge, news crawl (NEWS + "<SPECIES>
-  STILL AT LARGE" when a save exists).
-- rampage_hud.gd: dark plates behind the corner groups, clock in a red block (yellow under
-  10 s), destruction bar taped.
-- results_screen.gd: crawl with this rampage's news (ResultsScreen.news(result)).
-- Mockups: scratchpad only (dir_A/B/C.png); copy A into docs/captures with the PR.
+- scenes/hazard_box.gd: StyleBox (fill setter emits changed, solid/dashed edge, tape band, focus
+  ring drawn INSIDE the edge: an outside ring covered the Reach bar on species select).
+- scenes/news_ticker.gd: BREAKING crawl, label full strip height, text centred.
+- ui_kit.gd: palette A (+ALERT), hazard(), ink(), panel/button/bar/tape/backdrop+Scanlines.
+- upgrade_node.gd, title_screen.gd (kicker, tape, crawl), rampage_hud.gd (plates, clock block),
+  results_screen.gd (crawl from ResultsScreen.news()).
+- Biomass strings: main.gd, pause_menu, rampage_hud, upgrade_screen (counter, costs, stat row),
+  results_screen (row, verdict), data/upgrades.json Hoarder desc, docs/VISION.md.
+- Fonts: build_fonts.py STAMP pins head timestamps (A-C byte-identical, cmp), style D Block ->
+  assets/fonts/kaiju_block.ttf; project.godot gui/theme/custom_font = kaiju_block; licence row.
+- Tests (flow): crawl overlap in fits_at_scales + title fit; FlowLayout.listen() over HUD, pause,
+  results, title, tree, demo end card -> currency_named() and fonts_ours(). All shown failing
+  first (crawl 12 misses with a planted 700 px crawl; currency 7 hits; fonts 70 texts).
+- Captures: docs/captures/2026-10-18-ui-broadcast/ mockup_{A,B,C}.png, body_font_{1080_2x,4k125}.png.
 
 ## Next
-1. Suites green (smoke, flow; layout checks cover button fit at every UI scale).
-2. Push, open PR into claude/look-options, CI capture_flow at 1080p and 4K125 -> 
-   docs/captures/2026-10-18-ui-broadcast/; art-qa / screen-critic pass by the lead first.
-3. Follow-ups worth proposing: HUD crawl reacting to rampage events; species select cards
-   as "threat dossiers"; reveal screen "THREAT LEVEL RAISED".
+1. Full suites green -> set flow floor to the real count -> push.
+2. CI: ci_capture.sh --resolution=1920x1080 capture_flow.gd -- --species=reptilian
+   --out=docs/captures/2026-10-18-ui-broadcast/1080; capture_demo.gd (1080);
+   --resolution=3840x2160 capture_flow.gd -- --ui-scale=1.25 --ui-only (4k125). One at a time.
+3. Own 2x pass (art-qa-critic), then send the lead the paths; lead runs the screen-critic.
+4. Watch: Kaiju Block caps are wider than the old body font; tree nodes and the side panel may
+   pick smaller sizes; the layout checks will catch overflow.
 
-## Open decisions
-None pending; look A chosen.
+## Follow-ups worth proposing
+HUD crawl reacting to rampage events; species cards as threat dossiers; reveal "THREAT LEVEL RAISED".
+
+## Findings for the lead
+- A capture cancelled mid-run still downloads its finished shots (4 of 11): usable for early QA.
+- fontTools stamps head.created/modified with "now": pin them or font rebuilds never match.
 
 ## Running jobs
-Local suites smoke + flow (background shell in this session).
+Full local suite run (background shell in this session).

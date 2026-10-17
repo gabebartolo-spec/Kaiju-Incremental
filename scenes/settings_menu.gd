@@ -66,6 +66,9 @@ func _ready() -> void:
 		grid.add_child(UiKit.label(heading, UiKit.SIZE_SMALL, UiKit.MUTED))
 	var controls: Array[Array] = PlayerSettings.CONTROLS
 	for entry: Array in controls:
+		# A row tied to a species (its 4th entry) shows only when that species is playable.
+		if entry.size() > 3 and not Demo.allows(str(entry[3])):
+			continue
 		grid.add_child(UiKit.label(str(entry[0]), UiKit.SIZE_SMALL, UiKit.TEXT))
 		grid.add_child(UiKit.label(str(entry[1]), UiKit.SIZE_SMALL, UiKit.TEXT))
 		grid.add_child(UiKit.label(str(entry[2]), UiKit.SIZE_SMALL, UiKit.TEXT))

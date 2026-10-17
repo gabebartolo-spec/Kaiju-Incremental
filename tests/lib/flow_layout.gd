@@ -68,7 +68,11 @@ func fits_at_scales(screen: Control, what: String) -> void:
 				):
 					misses.append(name + at + " text does not fit")
 				if _breaks_a_word(b):
-					misses.append(name + at + " breaks a word")
+					var room := b.size.x - b.get_theme_stylebox("normal").get_minimum_size().x
+					var px_size := b.get_theme_font_size("font_size")
+					misses.append(
+						"%s%s breaks a word (%.0f px room, %d px text)" % [name, at, room, px_size]
+					)
 				var px := (
 					b.get_theme_font_size("font_size") * (TV_SIZE.y / 1080.0) * scale * CAP_SHARE
 				)

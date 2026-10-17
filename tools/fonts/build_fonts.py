@@ -263,16 +263,19 @@ def style_fault(sk: Skeleton) -> pathops.Path:
     return union([lower, upper])
 
 
+D_SX = 0.85  # a little condensed: the tree's longest node names fit at the TV's 125% UI scale
+
+
 def style_block(sk: Skeleton) -> pathops.Path:
     """D: the skeleton's cells, solid, nothing knocked off: reads at body-text sizes."""
-    return solid(sk)
+    return solid(sk, D_SX)
 
 
 STYLES = {
     "A": ("Kaiju Rubble", "kaiju_rubble", style_rubble, 1.0, HEAVY),
     "B": ("Kaiju Claw", "kaiju_claw", style_claw, B_SX, 0),
     "C": ("Kaiju Fault", "kaiju_fault", style_fault, 1.0, HEAVY),
-    "D": ("Kaiju Block", "kaiju_block", style_block, 1.0, 0),
+    "D": ("Kaiju Block", "kaiju_block", style_block, D_SX, 0),
 }
 
 

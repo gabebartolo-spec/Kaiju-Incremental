@@ -46,6 +46,7 @@ func run() -> void:
 	await _check_species_filter()
 	await _check_end_card()
 	await _check_other_species_save()
+	await _check_controls_rows()
 	SaveFile.delete_save()
 
 
@@ -197,3 +198,31 @@ func _check_other_species_save() -> void:
 	)
 	main.queue_free()
 	await _frames(2)
+
+
+## Settings' controls list only what the playable species can do: the croc-only demo shows no
+## insectoid Glide row; the full game does (lead, 2026-10-18).
+func _check_controls_rows() -> void:
+	var with_demo := await _control_names()
+	var demo := Content.section("demo")
+	demo["enabled"] = false
+	var full_game := await _control_names()
+	demo["enabled"] = true
+	var glide := func(names: Array[String]) -> bool:
+		return names.any(func(n: String) -> bool: return n.containsn("glide"))
+	check.call(
+		not glide.call(with_demo) and glide.call(full_game),
+		"the demo's controls list has no insectoid Glide; the full game's has: %s" % [with_demo]
+	)
+
+
+func _control_names() -> Array[String]:
+	var menu := SettingsMenu.new()
+	t.root.add_child(menu)
+	await _frames(2)
+	var names: Array[String] = []
+	for node: Node in menu.find_children("*", "Label", true, false):
+		names.append((node as Label).text)
+	menu.queue_free()
+	await _frames(1)
+	return names
