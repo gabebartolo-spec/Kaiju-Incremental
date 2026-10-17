@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-17 · D-047 · Director · Play the Blender-made croc titan clips in the game
+Why: in game, the Blender weights (#19) fixed the hip shear and tail-root seams, but the game's procedural walk and
+roar still read as a 5 m lizard (fresh critic: rear-up, no settle, the jaw drops vertical). The Blender clips
+(blender-reptile r7, d924b29) passed three fresh motion critics: crouch, throw, a slow drift at the peak, tail
+counterbalance. Options: play the Blender clips (picked), or keep procedural and tune by hand. Changes: the croc
+titan's roar, turn and idle play from exported Blender clips; the walk is the Blender cycle layered over the
+procedural foot planting (root motion and terrain stay procedural). Other species follow once their models are decided.
+
 ## 2026-10-17 · D-046 · Director · New reptile look: A "Croc titan"
 Why: board docs/captures/2026-10-17-reptile-design/reptile_directions.png (Tripo GPT Image 2.5, free quota):
 A croc titan, B armoured monitor titan, C lean apex predator. Picked A: croc snout and pale flat bone scutes
