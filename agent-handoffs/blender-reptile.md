@@ -1,6 +1,9 @@
-# blender-reptile handoff, 2026-10-18 10:45
-## State: running a check (P3 in-game captures b6vursfjd: baby then adolescent, one at a time
-## behind other agents' runs -> scratch ci9/{baby,adolescent}). Lead = "Kaiju: Lead"
+# blender-reptile handoff, 2026-10-18 11:00
+## State: running a check (P3 CI: b6vursfjd game-cam baby then adolescent -> ci9/{baby,adolescent};
+## then b61u7un3x side-cam roar 14.5-15.6 s -> ci9/jaw_{baby,adolescent}). Lead FIX (10:29): baby
+## open mouth shards - the Blender render shows the Tripo tear; the game draws voxels (baby 163,
+## adolescent 0 mouth-inside voxels). Judge on in-game 2x jaw crops; if bad: dark mouth fill in the
+## bake, else a smaller jaw angle. Baby speed tabled for the director (keep 5.5 u/s). Lead = "Kaiju: Lead"
 ## local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Director asleep: never ask him; art to the lead only.
 
 ## Done
@@ -12,7 +15,8 @@
   ~0.15 s; turn settle on screen <= 0.5 s; trim the roar's dead 1.1 s; before/after aligned, no black
   first frame, a street with buildings.
 
-## P3: croc titan baby (tier 1) + adolescent (tier 2) - branch claude/croctitan-p3 (this worktree), pushed 39b7b0e
+## P3: croc titan baby (tier 1) + adolescent (tier 2) - branch claude/croctitan-p3 (this worktree), pushed b7cc9dd
+## (synced look-options 434bb49: flow 130; my flow check lives in tests/lib/flow_demo.gd)
 - GLBs (never commit): ~/Downloads/kaiju_tripo/rep_croctitan_{baby,adolescent}.glb; scratch p3/
   croctitan_baby.glb, croctitan_adolescent.glb (adolescent turned +90 deg Z by p3/rot.py).
 - motion_test.py: KNOWN["CB"], ["CA"] (hand-measured on p3/grid_*.png, headgrid_*.png); per-model
@@ -23,7 +27,7 @@
   baby -87,81,-52,86.5; adolescent -79,86.8,-61,89.6. Voxel heights 100 / 130 (adult 160).
 - Recipe per stage: motion_test export <vox>; rig_voxel.py <glb> assets/kaiju/<name> reptilian <vox>;
   skin_faces.py; rig_from_skin.py <kvox> <skin.json> <mouth>; motion_test clips; bake_all.sh.
-- Tests: clips 14 (every stage on ClipGait); flow 118 (end card's adult ClipGait + roars). New
+- Tests: clips 14 (every stage on ClipGait); flow 130 (incl. end card's adult ClipGait + roars). New
   checks shown failing without the kclips. All suites green.
 - Probe (capture_clips --probe --stage=X): baby stride cycle 0.40 s (was 0.28: stride 44 m, the
   max its legs reach), tail 1.40 s, settle 0.40 s; adolescent stride 0.91 s, tail 1.60 s.
