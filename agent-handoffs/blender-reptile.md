@@ -1,5 +1,6 @@
-# blender-reptile handoff, 2026-10-18 01:10
-## State: running a check (AFTER CI captures bh15qd2l1 at cb1726e; Blender board renders b6yosgxdc)
+# blender-reptile handoff, 2026-10-18 02:05
+## State: running a check (CI: 4K select at a168942 bg29eq2jb -> ci3/select4k; BEFORE game forward_plus
+## bufrn4gg1 -> ci3/before_game. Both dispatchers can race for run ids: verify with gh run list.)
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
 Open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera, per-frame PNG
 diff (seams, blends), 2x crops of feet at contact and jaw at roar peak, a 4K species-select still,
@@ -7,8 +8,8 @@ a Blender walk/turn/roar render of v2, and (tail note) top-down walk tip-path re
 2x crops of the tail root in the turn. One self-check, list nits, no loops. Auto-fix off. Don't
 merge. Tail attack (swipe flattening towers): suggestion only, a director gameplay call.
 ## Branch and commit
-claude/croctitan-clips (this worktree). Pushed cb1726e (tail; captures run on it). Local, unpushed:
-5400a96 tests: clips own the tail (clips 13) + this handoff. Push with the evidence commit.
+claude/croctitan-clips (this worktree). Pushed a168942: tail cb1726e, clips-own-tail test 5400a96,
+species card fix a168942 (lead 01:38: fix it in this PR).
 ## Tail (cb1726e)
 - motion_test.py: TAIL_WALK (4.0, 1.5) deg/joint wave, TAIL_LAG 0.5 rad/joint; TAIL_IDLE (1.2, 0.6)
   72-frame sway (0.6 in roar); turn whip tail_whip(): spring TAIL_SPRING (12 rad/s, 0.35) driven by
@@ -27,6 +28,16 @@ claude/croctitan-clips (this worktree). Pushed cb1726e (tail; captures run on it
 - Lead part 2 still owed: in-game 2x crop of tail root at the turn extreme (voxel parting) from
   ci3/after_game; in-game BEFORE/AFTER must show the tail; state the tail owner in the PR body.
   All suites green locally.
+## Species card (a168942)
+species_select._frame: old fixed camera, backed off along the same view only when the turning kaiju
+(skin reach per height band, every angle) is wider than the card. Distances: croc 12.8 -> 23.7,
+octopus -> 16.1 (its tentacles clipped before), mantis unchanged. +0.4 s card build. Lead wanted a
+fixed 3/4 yaw, but the card spins (0.35 rad/s), so I fit the swept volume; say so in the PR. Owed:
+before/after card stills side by side (ci2/select4k vs ci3/select4k).
+## Done evidence
+ci3/after_game (forward_plus, cb1726e; turn ends 12.25 s, drift 0.0 cm); tail/game_tailroot_2x.png
+(no parting at 10.2 s drag / 11.0 s swing-through); tail/ Blender board mp4s (croctitan_v2_tail_*).
+ci2/before_game was gl_compatibility (fallback): not comparable, rerun on forward_plus.
 ## Evidence pipeline (scratch)
 tail/ (old/new JSON, tailtop_old_vs_new.png, crops_row.png, r/ renders), ci2/ (before_* valid:
 procedural path unchanged; after_* stale pre-tail), ci3/ (new after_game, after_jaw_side).
