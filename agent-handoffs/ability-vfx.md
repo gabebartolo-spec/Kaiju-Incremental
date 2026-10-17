@@ -1,50 +1,48 @@
-# Ability VFX/SFX handoff, 2026-10-18 08:20
-## State: running a check (CI on #33 aa453bc, #34 09749f2; auto-fix ON). Next: (d) heli gun + crash
+# Ability VFX/SFX handoff, 2026-10-18 10:40
+## State: running a check (CI on #39, #41, #42; auto-fix ON for all). Asked the lead for the next job
 
 ## Who
-Lead is "Game demo planning" / "LEAD", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
-The old lead (local_9fac90d2) is on P3 Tripo only. Report and ask for jobs at local_106fc100.
-Say "awaiting lead" only after asking for the next job with options (memory-shared work-while-waiting).
+- Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
+- The director is asleep, so anything for his ear is tabled with the lead.
+- Report to the lead and ask for jobs, always naming 2-3 options. Never just "await".
 
-## Done
-- PR #8 is MERGED (47e1b30): power SFX, footsteps and stomps on foot plants, crack (capped 2.5 s), collapse,
-  breath, ready, deflect, regen, croc roar on the evolution reveal (Sfx.roar).
-  Logged as D-052 (r2 shipped as heard) and D-055 (roar on the reveal and end card).
+## Merged
+- #8: power SFX, footsteps and stomps on plants, crack, collapse, roar on the reveal. D-052, D-055.
+- #33: SFX/Music buses, Sound effects slider, menu sounds, end-card Sfx.roar. D-064.
+- #34: tank fire, shell hit, heli rotor. D-067.
 
-## Open PRs
-- **#33** claude/sfx-bus → claude/look-options, head aa453bc, flow 109 (the lead merges it via a watcher; push only to fix conflicts or CI).
-  - (e) SFX and Music buses: PlayerSettings.BUSES/bus().
-  - "Sound effects" slider (SettingsMenu.effects), sfx_volume saved in settings.cfg, default from tuning sfx
-    default_volume 0.9.
-  - (f) Menu sounds: Sfx.ui(sound) is static with one shared player. ui_click plays on every UiKit.button,
-    ui_confirm / ui_deny on an upgrade buy.
-  - demo_end.gd calls Sfx.roar(self) with each clip roar (roar_sounds); this only fires once ClipGait (#22) lands.
-  - Evidence (shared notes side-session-notes/local_9fac90d2.../sfx-bus/):
-    - settings_1080.png, settings_4k_ui125.png
-    - ui_sounds.mp4 (real input: 3 clicks, confirm, deny)
-- **#34** claude/army-sfx → base claude/sfx-bus (stacked), head 09749f2, flow 112, D-064 (menu sounds + slider shipped) in its Board and log.
-  - tank_fire, shell_hit (unarmoured hits), heli_rotor loop.
-  - Sfx.listener / play_at / rotors; tuning near_distance 80, far_floor_db -18.
-  - Clips: army-sfx/tank_fire_shell_hit.mp4 (capture_sfx_clips.gd -- --army) and heli_rotor.mp4.
-  - When #33 merges, retarget #34 to claude/look-options (`gh pr edit 34 --base claude/look-options`) and
-    merge look-options in.
+## Open PRs (each → claude/look-options)
+- **#39** claude/heli-sfx, head 1c66048, flow 112.
+  - Heli gun and crash via PowersView.sfx; Sfx.watch(camera, powers).
+  - Clip: army-sfx/heli_gun_crash.mp4. Waiting for the director's listen.
+- **#41** claude/sfx-limiter, head 89cef13, flow 113.
+  - Compressor on SFX and a HardLimiter (-1 dB) on Master, via PlayerSettings._dynamics(); tuning sfx.dynamics.
+  - Stacked worst case: peak before 0.0 dBFS with 409 clipped samples; after -2.9 dBFS, 0 clipped.
+    Normal play is -0.5 dB.
+  - Clips: sfx-limiter/.
+- **#42** claude/footstep-variants, head 9e47407, flow 113.
+  - footstep_1..3 plus Sfx.STEPS round-robin.
+  - Clips: footsteps/walk_in_game.mp4 and footstep_round_robin.wav.
+- #39, #41 and #42 each add to flow on a 112 base. Whichever merges later needs a floor resync to the real count.
 
 ## Next
-- (d) Heli gun burst (PowersView._heli_fired) and heli crash (_heli_down), on top of claude/army-sfx.
-  Use Sfx.play_at, add the build_sfx.py sounds plus provenance rows, add flow checks, and record a clip.
-- Every sync: check `git log origin/claude/look-options -1` first. Floors are the real counts the suite prints.
+- The lead's queue is done except (h), Sonniss roars, which waits for the director (taste + licence).
+  Ask the lead for more.
+- Every sync: check `git log origin/claude/look-options -1` first.
+  - Squash merges: keep look-options' version of the merged PR's lines, then add only mine.
+  - Floors are the real counts the suite prints.
+  - Run gdlint over the whole tree before a push. rampage.gd is at the 400-line cap.
 
 ## How-to
 - Godot: /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
   - Tests: GODOT=<that> SUITES_ONLY=1 tools/run_tests.sh [suite...]
-  - Windowed captures need the no-focus override.cfg written first in its own command (a hook checks), and
-    deleted afterwards.
+  - Windowed captures need override.cfg written in its own command first (a hook checks), and deleted after.
 - Sounds: python tools/sfx/build_sfx.py --kenney C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl.
-  The Kenney CC0 packs are unzipped there, outside the repo. Rebuilt unchanged oggs differ only by stream
-  serial, so `git checkout` them.
-- Clips: tools/capture/capture_sfx_clips.gd (logs "SOUND <frame> <name>"), capture_roar.gd, capture_ui_sounds.gd.
-  Run them with --write-movie, then cut with imageio_ffmpeg's ffmpeg.
+  The Kenney CC0 packs are unzipped there, outside the repo. Revert unchanged rebuilt oggs (only the serial differs).
+- Clips: tools/capture/capture_sfx_clips.gd ("-- --army" for tanks and helis), capture_roar.gd,
+  capture_ui_sounds.gd, capture_loud.gd. Use --write-movie, then imageio_ffmpeg's ffmpeg.
+  Shared notes live at side-session-notes/local_9fac90d2.../.
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-CI on #33 and #34. No Godot, no override.cfg.
+CI on #39, #41 and #42. No Godot, no override.cfg.
