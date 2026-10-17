@@ -58,6 +58,7 @@ func _summary() -> String:
 func _new_game() -> void:
 	var select := SpeciesSelect.new()
 	select.chosen.connect(_on_species_chosen)
+	select.back_pressed.connect(_show_title)
 	_swap(select)
 
 

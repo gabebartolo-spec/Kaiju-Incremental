@@ -17,6 +17,9 @@ const SKIP_AFTER := 8
 ## screen at every UI scale).
 const VIEW_MAX := Vector2(1200, 760)
 const EDGE_MARGIN := 48.0
+## Height kept under the 3D frame for the headline, two size lines and the hint (or the demo
+## card's buttons), so the frame is one fixed size on every screen that shows it.
+const TEXT_RESERVE := 330.0
 
 var frame := 0
 ## The evolution's display name (headline after the swap); "" falls back to species and stage.
@@ -31,6 +34,8 @@ var tower_floors: int
 var lines: Label
 ## The new stage's roar (Sfx.roar), started with the swap.
 var roar: AudioStreamPlayer
+## The 3D frame (read by the flow suite: one size before and after the swap, and on the demo card).
+var view: SubViewportContainer
 var _species: Dictionary
 var _viewport: SubViewport
 var _kaiju: KaijuModel
@@ -65,14 +70,9 @@ func _ready() -> void:
 	UiKit.full_rect(col)
 	col.offset_top = EDGE_MARGIN
 	col.offset_bottom = -EDGE_MARGIN  # keeps the skip hint off the bottom edge
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
-	var view := SubViewportContainer.new()
-	view.stretch = true
-	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	view.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	view.resized.connect(func() -> void: _fit_view(view))
+	view = frame_view(self)
 	col.add_child(view)
 	_viewport = SubViewport.new()
 	_viewport.own_world_3d = true
@@ -96,10 +96,19 @@ func _ready() -> void:
 	grab_focus.call_deferred()
 
 
-## Keeps the view at the screen's spare height (capped at VIEW_MAX), wide in the same ratio.
-func _fit_view(view: SubViewportContainer) -> void:
-	var h := minf(VIEW_MAX.y, view.size.y)
-	view.custom_minimum_size.x = h * VIEW_MAX.x / VIEW_MAX.y
+## The 3D frame for a screen `owner`: one fixed size from the screen's height (capped at
+## VIEW_MAX, TEXT_RESERVE kept for the text under it), top-aligned, so it never changes size
+## or moves while the text under it changes (screen critic, 2026-10-18).
+static func frame_view(owner: Control) -> SubViewportContainer:
+	var v := SubViewportContainer.new()
+	v.stretch = true
+	v.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var fit := func() -> void:
+		var h := minf(VIEW_MAX.y, owner.size.y - 2.0 * EDGE_MARGIN - TEXT_RESERVE)
+		v.custom_minimum_size = Vector2(h * VIEW_MAX.x / VIEW_MAX.y, h)
+	owner.resized.connect(fit)
+	fit.call()
+	return v
 
 
 func _process(delta: float) -> void:

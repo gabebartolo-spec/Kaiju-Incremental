@@ -100,8 +100,10 @@ func _ready() -> void:
 	right.add_child(_destruction)
 
 	var bottom := VBoxContainer.new()
-	bottom.size_flags_vertical = Control.SIZE_SHRINK_END
-	root.add_child(bottom)
+	var bottom_plate := _plate(bottom)
+	bottom_plate.size_flags_vertical = Control.SIZE_SHRINK_END
+	bottom_plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	root.add_child(bottom_plate)
 	_ability = UiKit.label("", UiKit.SIZE_HEAD)
 	_ability.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ability)
@@ -109,7 +111,7 @@ func _ready() -> void:
 	_ultimate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ultimate)
 	var hint := UiKit.label(
-		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_SMALL, UiKit.MUTED
+		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_BODY, UiKit.MUTED
 	)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(hint)

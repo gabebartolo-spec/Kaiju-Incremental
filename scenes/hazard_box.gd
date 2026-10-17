@@ -44,6 +44,11 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 	frame(to_canvas_item, rect, edge, border, dashed)
 	if ring:
 		var inner := rect.grow(-(border + RING_GAP))
+		# Clear of the tape too: a ring crossing the stripe reads as a glitch (screen critic).
+		if band == Band.LEFT:
+			inner = inner.grow_side(SIDE_LEFT, -band_size)
+		elif band == Band.TOP:
+			inner = inner.grow_side(SIDE_TOP, -band_size)
 		frame(to_canvas_item, inner, ring_color, RING_WIDTH, false)
 
 

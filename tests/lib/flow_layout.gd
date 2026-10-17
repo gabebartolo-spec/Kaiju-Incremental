@@ -130,7 +130,16 @@ func reveal_fits() -> void:
 		Content.species_def("reptilian"), {"size": 1}, {"size": 2}, Content.section("city")
 	)
 	t.root.add_child(reveal)
-	await _frames(EvolutionReveal.SWAP_FRAME + 4)
+	await _frames(3)
+	var frame_before := reveal.view.size
+	await _frames(EvolutionReveal.SWAP_FRAME + 1)
+	check.call(
+		reveal.view.size == frame_before and frame_before.y > 0.0,
+		(
+			"the reveal's frame keeps one size through the swap: %s, %s"
+			% [frame_before, reveal.view.size]
+		)
+	)
 	var rect := reveal.lines.get_global_rect()
 	var on := t.root.get_visible_rect().encloses(rect) and reveal.lines.text != ""
 	check.call(reveal.roar.playing, "the evolved kaiju roars as it is revealed")

@@ -6,19 +6,12 @@ extends Control
 signal continue_pressed
 signal new_game_pressed
 
-## The crawl along the bottom of the menu.
-const NEWS: Array[String] = [
-	"MONSTER SIGHTED OFFSHORE",
-	"RESIDENTS URGED TO STAY INDOORS",
-	"ARMY PLACED ON HIGH ALERT",
-	"EXPERTS: 'IT IS STILL GROWING'",
-]
-
 ## summary: "" for no save, else what Continue resumes (e.g. "Reptilian, 3 rampages").
 var summary := ""
 var _col: VBoxContainer
 var _buttons: VBoxContainer
 var _first: Button
+var _crawl: NewsTicker
 
 
 func setup(p_summary: String) -> void:
@@ -57,13 +50,16 @@ func _add_broadcast_frame() -> void:
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top.offset_bottom = 18.0
 	add_child(top)
-	var lines := PackedStringArray(NEWS)
+	var news := Content.section("news")
+	var title_lines: Array = news.get("title", [])
+	var lines := PackedStringArray(title_lines)
 	if summary != "":
-		lines.insert(0, "%s STILL AT LARGE" % summary.get_slice(",", 0).to_upper())
-	var crawl := NewsTicker.new(lines)
-	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	crawl.offset_top = -NewsTicker.HEIGHT
-	add_child(crawl)
+		var who := summary.get_slice(",", 0).to_upper()
+		lines.insert(0, str(news.get("at_large", "")).replace("{species}", who))
+	_crawl = NewsTicker.new(lines)
+	_crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_crawl.offset_top = -NewsTicker.HEIGHT
+	add_child(_crawl)
 
 
 func _show_main() -> void:
@@ -91,9 +87,11 @@ func _on_new() -> void:
 func _open_settings() -> void:
 	var settings := SettingsMenu.new()
 	_col.visible = false  # nothing behind the settings can take focus
+	_crawl.visible = false  # nor show dimmed under its panel
 	settings.closed.connect(
 		func() -> void:
 			_col.visible = true
+			_crawl.visible = true
 			_show_main()
 	)
 	add_child(settings)

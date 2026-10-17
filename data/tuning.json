@@ -1,4 +1,20 @@
 {
+	"news": {
+		"title": ["MONSTER SIGHTED OFFSHORE", "RESIDENTS URGED TO STAY INDOORS", "ARMY PLACED ON HIGH ALERT", "EXPERTS: 'IT IS STILL GROWING'"],
+		"at_large": "{species} STILL AT LARGE",
+		"report": [
+			{"stat": "destruction", "min": 0.5, "line": "CITY DECLARED A DISASTER ZONE"},
+			{"stat": "destruction", "min": 0.2, "line": "DOWNTOWN LIES IN RUINS"},
+			{"stat": "destruction", "min": 0.05, "line": "WHOLE BLOCKS FLATTENED OVERNIGHT"},
+			{"stat": "destruction", "min": 0.0, "line": "OFFICIALS CALL THE DAMAGE 'MINOR'"},
+			{"stat": "tallest_topple", "min": 10, "line": "{n}-FLOOR TOWER COMES DOWN - SKYLINE CHANGED FOREVER"},
+			{"stat": "toppled", "min": 1, "line": "INSURERS REFUSE CLAIMS: 'ACT OF MONSTER'"},
+			{"stat": "civilians", "min": 1, "line": "MASS EVACUATION ORDERED"},
+			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
+			{"stat": "helis", "min": 1, "line": "AIR FORCE GROUNDS ALL HELICOPTERS"}
+		],
+		"close": "THE CREATURE HAS RETREATED - FOR NOW"
+	},
 	"demo": {
 		"enabled": true,
 		"species": ["reptilian"],

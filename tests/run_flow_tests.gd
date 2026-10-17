@@ -73,7 +73,9 @@ func _check_species_select() -> void:
 	var select := SpeciesSelect.new()
 	root.add_child(select)
 	await process_frame
-	var buttons := select.find_children("*", "Button", true, false)
+	var buttons := select.find_children("*", "Button", true, false).filter(
+		func(b: Node) -> bool: return (b as Button).text == "CHOOSE"
+	)
 	check(buttons.size() == 3, "the species screen offers three choices, found %d" % buttons.size())
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))

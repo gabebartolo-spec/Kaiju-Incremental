@@ -68,6 +68,12 @@ func _check_new_game() -> void:
 	var select := _screen(main)
 	check.call(select is SpeciesSelect, "clicking NEW KAIJU opens species select")
 	await layout.fits_at_scales(select as Control, "species select")
+	await GuiInput.key(t, KEY_ESCAPE)
+	await _frames(2)
+	check.call(_screen(main) is TitleScreen, "Esc on species select goes back to the title")
+	await GuiInput.click(t, GuiInput.button(_screen(main), "NEW KAIJU"))
+	await _frames(2)
+	select = _screen(main)
 	await GuiInput.click(t, GuiInput.button(select, "CHOOSE"))
 	await _frames(3)
 	var rampage := _screen(main) as Rampage

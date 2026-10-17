@@ -76,7 +76,8 @@ func _layout() -> void:
 			b.place(at, box)
 	_band.position = Vector2(0, BRANCH_ROW * cell.y - CAPSTONE_EXTRA)
 	_band.size = Vector2(size.x, cell.y + CAPSTONE_EXTRA)
-	_caption.position = Vector2(0, (BRANCH_ROW + 1) * cell.y + 4)
+	# Inside the band's top strip (above the branch row), not at the screen's bottom edge.
+	_caption.position = _band.position + Vector2(GAP.x, 0)
 	queue_redraw()
 
 

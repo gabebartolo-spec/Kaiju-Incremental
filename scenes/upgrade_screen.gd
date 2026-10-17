@@ -235,11 +235,10 @@ func _status_line(id: String) -> String:
 				var req_def: Dictionary = tree.defs[req]
 				names.append(str(req_def["name"]))
 		return head + "Needs: " + ", ".join(names)
+	var have := ("Cost %d" + String.chr(10) + "You have %d biomass  -  ") % [tree.cost(id), rubble]
 	if tree.can_buy(id, rubble):
-		return head + "Cost %d biomass%s-  press%sto%sbuy" % [tree.cost(id), NBSP, NBSP, NBSP]
-	return (
-		head + "Cost %d biomass%s-  %d more needed" % [tree.cost(id), NBSP, tree.cost(id) - rubble]
-	)
+		return head + have + "press%sto%sbuy" % [NBSP, NBSP]
+	return head + have + "%d%smore needed" % [tree.cost(id) - rubble, NBSP]
 
 
 func _stat_name(stat: String) -> String:

@@ -90,15 +90,22 @@ func _ready() -> void:
 	add_child(crawl)
 
 
-## The evening news about this rampage, for the crawl under the report.
+## The evening news about this rampage, for the crawl under the report: the city's reaction,
+## not the table again (data/tuning.json "news.report": per stat, the first line whose "min"
+## the rampage reached; "{n}" is the stat's value).
 static func news(r: Dictionary) -> PackedStringArray:
+	var cfg := Content.section("news")
 	var lines := PackedStringArray()
-	lines.append("%d%% OF THE CITY DESTROYED" % floori(Num.f(r.get("destruction", 0)) * 100.0))
-	if Num.i(r.get("toppled", 0)) > 0:
-		lines.append("%d BUILDINGS DOWN" % Num.i(r.get("toppled", 0)))
-	if Num.i(r.get("tanks", 0)) + Num.i(r.get("helis", 0)) > 0:
-		lines.append("ARMY LOSSES MOUNT")
-	lines.append("THE CREATURE HAS RETREATED - FOR NOW")
+	var done: Dictionary = {}
+	var report: Array = cfg.get("report", [])
+	for entry: Dictionary in report:
+		var stat := str(entry["stat"])
+		var value := Num.f(r.get(stat, 0))
+		if done.has(stat) or value < Num.f(entry["min"]):
+			continue
+		done[stat] = true
+		lines.append(str(entry["line"]).replace("{n}", str(floori(value))))
+	lines.append(str(cfg.get("close", "")))
 	return lines
 
 

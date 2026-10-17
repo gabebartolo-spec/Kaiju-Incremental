@@ -5,9 +5,12 @@ extends Control
 ## compares, so the choice is about how it plays.
 
 signal chosen(species_id: String)
+## Back to the title (Esc / B, or the BACK button); nothing has changed yet.
+signal back_pressed
 
 ## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
 const PREVIEW_SIZE := Vector2i(440, 270)
+const BACK_WIDTH := 360
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
 	["Speed", "speed", 8.0],
@@ -38,8 +41,19 @@ func _ready() -> void:
 		var pick := _card(row, def)
 		if first == null:
 			first = pick
+	var back := UiKit.button("BACK  (ESC / B)", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	back.custom_minimum_size = Vector2(BACK_WIDTH, 0)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	back.pressed.connect(func() -> void: back_pressed.emit())
+	col.add_child(back)
 	if first != null:
 		first.grab_focus.call_deferred()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		back_pressed.emit()
 
 
 func _process(delta: float) -> void:

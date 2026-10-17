@@ -83,7 +83,9 @@ func _check_species_filter() -> void:
 	var picks: Array[Node] = []
 	var names: Array[String] = []
 	if select != null:
-		picks = select.find_children("*", "Button", true, false)
+		picks = select.find_children("*", "Button", true, false).filter(
+			func(b: Node) -> bool: return (b as Button).text == "CHOOSE"
+		)
 		for node: Node in select.find_children("*", "Label", true, false):
 			names.append((node as Label).text)
 	check.call(
@@ -162,9 +164,20 @@ func _check_end_card() -> void:
 		)
 	)
 	check.call(
-		GuiInput.button(card, "TITLE") != null and GuiInput.button(card, "QUIT") != null,
-		"the end card offers Title and Quit"
+		GuiInput.button(card, "MAIN MENU") != null and GuiInput.button(card, "QUIT") != null,
+		"the end card offers Main Menu and Quit"
 	)
+	var reveal_frame := EvolutionReveal.new()
+	reveal_frame.setup(
+		Content.species_def("reptilian"), {"size": 1}, {"size": 2}, Content.section("city")
+	)
+	t.root.add_child(reveal_frame)
+	await _frames(2)
+	check.call(
+		(card as DemoEnd).view.size == reveal_frame.view.size,
+		"the demo card's frame is the reveal's: %s" % [(card as DemoEnd).view.size]
+	)
+	reveal_frame.queue_free()
 	await layout.fits_at_scales(card as Control, "demo end card")
 	layout.listen(card, "demo end card")
 	layout.fonts_ours()
@@ -174,7 +187,7 @@ func _check_end_card() -> void:
 		Num.i(levels.get("evolve1", 0)) == 1 and saved["species"] == "reptilian",
 		"the save holds Behemoth: %s" % [levels]
 	)
-	await GuiInput.click(t, GuiInput.button(card, "TITLE"))
+	await GuiInput.click(t, GuiInput.button(card, "MAIN MENU"))
 	await _frames(2)
 	var title := _screen(main)
 	check.call(title is TitleScreen, "Title on the end card goes to the title screen")
