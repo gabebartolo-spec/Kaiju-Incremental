@@ -1,5 +1,5 @@
 # City-growth handoff, 2026-10-17 12:45
-## State: running a check (stage 4 stills retry; balance proposal sent)
+## State: awaiting lead (PR #16 review; stage 4 still blocked by Apex render cost)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -55,12 +55,10 @@ docs/captures/2026-10-17-city-growth/.
 - Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-- Stage 4 stills retry on gl_compatibility: CI run 38996038405. Forward+ run 38992457904 died
-  after 53 min ("runner lost communication": the Apex city starves a software-render runner).
-  If it succeeds: download, check, commit to docs/captures/2026-10-17-city-growth/, update the
-  PR #16 stills table, send to lead. If it fails: report it to the lead as a perf finding.
-- Balance proposal D is done, sent to the lead and in the PR body (not applied): ceph 3.70,
-  reptile 4.43, insect 3.26 h. Scripts: scratchpad balance.sh, balance_d.sh, variant_d.py.
+None. Stage 4 (Apex) stills failed twice on CI (Forward+ 38992457904 runner lost after 53 min;
+gl_compatibility 38996038405 SIGTERM 6.5 min): stopped retrying (two-failure rule). Reported
+as a perf finding: needs a GPU render on the director's PC (not while gaming) or facade
+stand-ins for unbroken far blocks. Balance proposal D is in PR #16 and with the lead.
 
 ## Findings for the lead
 - A seeded generator that draws a number only on some branches shifts every later draw when a
