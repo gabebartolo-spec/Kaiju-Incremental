@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead GPU go (critic FIX coded, head b358186; re-clip, then fresh critic, then merge)
+## State: awaiting lead (critic FIX 3 re-clipped in rooftops/fix4/, sparks measured in the movie; fresh critic, then merge)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -50,10 +50,15 @@ Shots hurt: chip damage, no new escalation curve.
   rig bone nearest the shooter (above FEET_CLEAR), pushed out 0.35 body-radius; the star spark lands
   at the tip on arrival; TRACER_HOT 2 and 0.05 wide. The capture runs 6 s, logs volley_frames and
   takes stills 5 frames after a volley. Squad 6's "ledge" was checked in the sim: an intact top layer.
+- Critic FIX 3 (deda6cc + capture): sparks are stars with no depth test for 7 frames; flashes counted
+  in frames (4, one-frame stagger, 0.45 u ahead); point-blank (<3 frames) means no tracer; rounds aim at
+  bones above 1.15x the hip height. The capture picks the stand spot with the most squads firing on
+  screen (seed 0: 3 firing, 5 on screen; no seed 0-11 gives 4 firing). Movie-measured sparks: min
+  gain +0.42, median +0.62 luminance.
 
 ## Next
-1. GPU go -> re-clip; trim the clip to cover 3 whole volleys using volley_frames (the movie frame is
-   about the physics frame); still = a stills entry with tracers_lit > 0 -> lead -> fresh critic.
+1. Lead's fresh critic on fix4 -> any fix -> GPU go -> re-clip -> `python tools/capture/spark_gain.py
+   <dir> <ffmpeg>` (each spark's brightness gain in the movie; the in-engine image lags, so not that).
 2. After #40 merges, Military AI syncs onto it; this worktree can be removed by the lead.
 
 ## Lead rules (2026-10-18)

@@ -2,8 +2,9 @@ extends SceneTree
 ## Captures the rooftop defenders (D-063) at the game camera: a Behemoth croc stands in the
 ## Behemoth city where the most squads have it in rifle range, and they fire on it. Stills mid-
 ## volley, plus rooftops.json: each still's squad screen spots (for the 2x crop), every volley's
-## frame, and every hit spark's screen spot with the brightness it added there (proof each spark
-## shows: the frame with it against the frame before).
+## frame and every hit spark's frame and screen spot. tools/capture/spark_gain.py then measures in
+## the recorded movie how much each spark brightens its spot (the viewport image read here lags
+## the sim by a frame or two, so the movie is the proof).
 ## Pair with --write-movie (ci_capture.sh --movie) for the clip. Needs a window and the
 ## no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
@@ -18,7 +19,9 @@ const MID_FLIGHT := 5  # frames after a volley a still is taken: tracers in flig
 const LEVELS := {"claws": 3, "hide": 5, "rage": 3, "evolve1": 1}
 const GRID := 2.0  # the stand search tries every this many units over the arena
 const NEAR := 5.0  # a squad nearer than this to the stand spot does not count (point-blank)
-const WINDOW := 3  # a spark's brightness is the brightest pixel within this many of its spot
+## The ground the game camera shows round the kaiju (x either way, z ahead / behind it): squads
+## outside it would fire from off screen or from under the HUD.
+const VIEW := Rect2(-24.0, -30.0, 48.0, 36.0)
 
 var _out := "user://rooftops"
 var _seed := 0
@@ -57,26 +60,17 @@ func _run() -> void:
 	var shots := 0
 	var due := -1
 	var logged := 0
-	var pending: Array[Dictionary] = []
-	var before: Image = null
 	var size := Vector2(root.get_viewport().get_visible_rect().size)
 	for i: int in FRAMES:
 		await physics_frame
-		# This frame's image shows the last frame drawn: the sparks logged then, against before.
-		var now := root.get_viewport().get_texture().get_image()
-		for spark: Dictionary in pending:
-			spark["added"] = _peak(now, spark) - _peak(before, spark)
-			_sparks.append(spark)
-		pending = []
 		while logged < roofs.spark_log.size():
 			var at: Vector3 = roofs.spark_log[logged]["at"]
 			var px := camera.unproject_position(at)
 			var seen := (
 				not camera.is_position_behind(at) and Rect2(Vector2.ZERO, size).has_point(px)
 			)
-			pending.append({"frame": i, "x": roundi(px.x), "y": roundi(px.y), "on_screen": seen})
+			_sparks.append({"frame": i, "x": roundi(px.x), "y": roundi(px.y), "on_screen": seen})
 			logged += 1
-		before = now
 		if roofs.shots > shots:
 			shots = roofs.shots
 			_volleys.append(i)
@@ -92,21 +86,20 @@ func _run() -> void:
 	file.close()
 	print(
 		(
-			"rooftops: %d squads, %d volleys drawn, %d stills, %d sparks, dimmest spark +%.2f"
+			"rooftops: %d squads, %d volleys drawn, %d stills, %d sparks"
 			% [
 				sim.army_units.squads.size(),
 				roofs.shots,
 				_stills.size(),
 				_sparks.size(),
-				_dimmest()
 			]
 		)
 	)
 	quit()
 
 
-## The spot (on a GRID over the arena) where the most squads have the kaiju in rifle range,
-## none of them point-blank.
+## The spot (on a GRID over the arena) where the most squads in the camera's VIEW have the kaiju
+## in rifle range (none point-blank), then where the most squads are in VIEW.
 func _stand(sim: RampageSim) -> Vector2:
 	var reach := Num.f(sim.army["rooftop"]["range"]) * 0.95
 	var best := sim.kaiju_pos
@@ -115,37 +108,24 @@ func _stand(sim: RampageSim) -> Vector2:
 	for gx: int in steps:
 		for gz: int in steps:
 			var at := Vector2(-sim.arena_half + gx * GRID, -sim.arena_half + gz * GRID)
-			var n := 0
+			var firing := 0
+			var seen := 0
 			for squad: Army.Squad in sim.army_units.squads:
 				var d := squad.pos.distance_to(at)
-				n += 1 if d > NEAR and d < reach else 0
+				var shown := VIEW.has_point(squad.pos - at)
+				seen += 1 if shown else 0
+				firing += 1 if d > NEAR and d < reach and shown else 0
+			var n := firing * 100 + seen  # most firing on screen, then most on screen
 			if n > best_n:
 				best_n = n
 				best = at
-	print("rooftops: standing at %s, %d squads in range" % [best, best_n])
+	print(
+		(
+			"rooftops: standing at %s, %d squads firing on screen, %d on screen"
+			% [best, floori(best_n / 100.0), best_n % 100]
+		)
+	)
 	return best
-
-
-## The brightest luminance within WINDOW pixels of a spark's spot (0 without an image).
-func _peak(img: Image, spark: Dictionary) -> float:
-	if img == null:
-		return 0.0
-	var top := 0.0
-	for dy: int in range(-WINDOW, WINDOW + 1):
-		for dx: int in range(-WINDOW, WINDOW + 1):
-			var x := Num.i(spark["x"]) + dx
-			var y := Num.i(spark["y"]) + dy
-			if x >= 0 and y >= 0 and x < img.get_width() and y < img.get_height():
-				top = maxf(top, img.get_pixel(x, y).get_luminance())
-	return top
-
-
-func _dimmest() -> float:
-	var low := INF
-	for spark: Dictionary in _sparks:
-		if spark["on_screen"]:
-			low = minf(low, Num.f(spark["added"]))
-	return low
 
 
 func _still(rampage: Rampage, roofs: RooftopView, camera: Camera3D, frame: int) -> void:
