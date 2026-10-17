@@ -9,9 +9,9 @@ name: build
 # merges it, or by running the workflow by hand on the branch. The exported game runs
 # headless for 120 frames and must load the main scene from project.godot without
 # logging an error; the .exe is then uploaded as the "KaijuIncremental-windows" artefact. Sprite
-# sheets under assets/sprites are plain git (.gitattributes), so no LFS is needed here; a
-# phase that ships LFS assets (audio, fonts, models) turns on `lfs: true` at checkout
-# (and caches the objects; LFS bandwidth is metered).
+# sheets under assets/sprites are plain git (.gitattributes). The display fonts are LFS
+# (assets/fonts, ~26 KB), so the checkout pulls LFS; LFS bandwidth is metered, so keep big
+# binaries out of it or cache them.
 on:
   push:
     branches: [main]
@@ -39,6 +39,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Cache Godot and its Windows export templates
         id: godot-cache
