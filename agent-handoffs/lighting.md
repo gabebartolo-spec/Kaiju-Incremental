@@ -1,51 +1,25 @@
-# Lighting handoff, 2026-10-18 08:55
-## State: awaiting lead (PR #38 ready; lead merges on green; head = this commit)
+# Lighting handoff, 2026-10-18 09:25
+## State: available (#38 and #47 merged; no open work)
 
 ## Who
 Role: lighting, reporting to the lead ("Kaiju: Lead" in ListAgents; message it by name). Rules:
 look changes reach the director only via the lead; CI captures one run at a time or the lead's GPU
 slot; PRs into claude/look-options; reports <=8 lines. Director asleep since 06:4x: no questions.
 
-## Closed: lighting looks (D-057)
-Director picked A, keep concrete. claude/lighting (d2f63dc) stays pushed, not merged.
+## Closed
+- Lighting looks (D-057): director kept concrete; claude/lighting (d2f63dc) pushed, not merged.
+- PR #38 MERGED (907adfb -> f71c527): breath voxel jet removed; breath reads from the game camera
+  (jaw core, flame curtain on the hit cone's far arc, eased flashes). Taste notes for the director
+  are in the PR body. The lead added the layer-isolation method to the art-qa-critic learnings.
 
-## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), synced ccc6d89 (after #40)
-Lead's calls: remove the legacy voxel jet (defect) AND make the breath read from the game camera.
-DONE: critic 6 all PASS/taste except the edge-on panel, fixed (ae04d98) and confirmed on GPU; the
-lead waived critic 7. PR body updated (taste notes for the director). Flow floor 116, sim 50. rampage.gd 399/400 lines: don't add lines there.
-Built:
-- fx.gd jet removed; flow check "no pale voxel-cube jet" (failed first).
-- scenes/breath_beam.gd (pooled): core from the JAW (mouth_of, 0.7 along "jaw"; tracks the jaw
-  while lit); flame curtain (breath_curtain.gdshader) on the far arc of the sim's hit cone (from
-  ability_fx.cone_origin = the feet, full reach, 36 deg), height fx.breath_curtain_height 7;
-  muzzle flash (3.5 u, warm), strike flare, strike light (4 energy, 3.5 u), all driven by one
-  progress value, easing in over fx.breath_fade_in 0.12.
-- Scorch from the cone origin; soot fades in (FxDecals optional soot_in; fx.scorch_soot_in 0.4).
-- capture.yml --fixed-fps for stills; capture_powers --species --signature-only --side;
-  tools/capture/probe_breath.gd (headless geometry probe).
-- Removed again: the street glow (breath_fan.gdshader); the curtain carries the behind read.
-Key measurement: from the game camera the mouth-to-street beam lies inside the body's screen
-outline (head top ~42 deg below the horizon, beam 44-51 deg), so the core never shows from behind.
-Say so in the PR (the lead asked for that honest note).
+## Now: nothing open
+- PR #47 MERGED (a4b3ef2): breath scorch cracks glow in (fx.scorch_glow_in 0.12); found with
+  tools/capture/probe_decals.gd + a scorch-off render; fresh critic PASS.
+- Worktree ../Kaiju-Incremental-wt/lighting removed; remote claude/breath-before deleted.
+- Next session: ask the lead for a job (lighting/FX). Start a fresh worktree per task.
 
-## Critic log (scratchpad crit*/; renders scratchpad gpu_*, iso_*)
-1 FIX beam inside the back -> jaw anchor. 2 FIX fan invisible behind + frame-1 pop -> curtain +
-eased flashes. 3 FIX pale hard-rimmed pool (strike light range) -> small light. 4 5/6, sharp dark
-edge: I guessed soot, then the fan, both wrong; layer isolation (all / curtain off / scorch off)
-proved it was the curtain's smooth lower sheet -> lower half fades in. 5: 4/6, blocky curtain +
-white muzzle flash -> separate tongues, warm smaller flash (17ecd14, not rendered yet).
-Known, out of scope: red jagged ground decal pops at the breath (pre-existing; lead logged it as
-my follow-up after #38: find the fx_decals crack/scorch spawning at full opacity, 0.1 s fade-in).
-White drop at f121 behind: probably the #6 spark burst dying together.
-
-## Next (after the merge)
-0. Remove this worktree once #38 merges (git worktree remove), delete claude/breath-before.
-   Then the red jagged ground decal pop (lead's follow-up): find which fx_decals mark spawns at
-   full opacity at the breath (frame ~91), add a ~0.1 s fade-in, prove with a clip.
-Done steps, kept for reference:
-1. On the slot: write the off-screen override.cfg into the worktree; scratchpad/render_breath.sh
-   gpu_behind14 ; render_breath.sh gpu_side14 --side ; delete override.cfg. Isolate layers via
-   scratchpad/isolate.sh pattern if anything new appears (prove, don't guess).
-2. Fresh motion-critic (same bars), then gh pr edit 38 --body-file scratchpad/pr_body.md (fill
-   FINAL_PATHS / FINAL_VERDICT; drop the street-glow lines), sync look-options, push, report.
-3. Then the red decal follow-up.
+## Tools left for later sessions
+- scratchpad scripts are session-local; the repo keeps tools/capture/probe_breath.gd,
+  probe_decals.gd and capture_powers.gd --species --signature-only --side.
+- Local GPU render: off-screen no_focus override.cfg in the worktree, one Godot, delete after;
+  the focus guard blocks command text naming Godot plus a windowed flag without it.

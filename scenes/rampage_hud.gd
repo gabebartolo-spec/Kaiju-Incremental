@@ -18,6 +18,8 @@ const BEAT_MIN_FRAMES := 40
 const BEAT_SIZE := 128
 ## The world runs at this speed during the end beat.
 const END_SLOWMO := 0.3
+## How opaque the plates behind the HUD's corner groups are.
+const PLATE_ALPHA := 0.62
 
 var sim: RampageSim
 var species: Dictionary
@@ -34,6 +36,7 @@ var _ability: Label
 var _ultimate: Label
 ## The HUD's bars and hints: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
+var _clock_box: HazardBox
 var _beat_frame := -1
 var _beat_done := false
 
@@ -65,29 +68,42 @@ func _ready() -> void:
 
 	var left := VBoxContainer.new()
 	left.custom_minimum_size = Vector2(420, 0)
-	top.add_child(left)
+	top.add_child(_plate(left))
 	left.add_child(UiKit.label(str(species["name"]).to_upper(), UiKit.SIZE_BODY, UiKit.MUTED))
-	_hp = UiKit.bar(UiKit.BAD, 30)
+	_hp = UiKit.bar(UiKit.ALERT, 30)
 	left.add_child(_hp)
 	_hp_text = UiKit.label("", UiKit.SIZE_SMALL)
 	left.add_child(_hp_text)
 
+	var clock_slot := CenterContainer.new()
+	clock_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	clock_slot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	top.add_child(clock_slot)
+	_clock_box = UiKit.hazard(UiKit.ALERT, UiKit.ALERT, 0.0)
+	_clock_box.set_content_margin_all(6)
+	_clock_box.content_margin_left = 18
+	_clock_box.content_margin_right = 18
+	var clock := PanelContainer.new()
+	clock.add_theme_stylebox_override("panel", _clock_box)
+	clock_slot.add_child(clock)
 	_time = UiKit.label("", 64)
 	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_time.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(_time)
+	_time.custom_minimum_size = Vector2(96, 0)
+	clock.add_child(_time)
 
 	var right := VBoxContainer.new()
 	right.custom_minimum_size = Vector2(420, 0)
-	top.add_child(right)
+	top.add_child(_plate(right))
 	_rubble = _right_label(right, "", UiKit.SIZE_HEAD, UiKit.WARN)
 	_right_label(right, "CITY DESTROYED", UiKit.SIZE_SMALL, UiKit.MUTED)
-	_destruction = UiKit.bar(UiKit.ACCENT, 22)
+	_destruction = UiKit.bar(UiKit.ACCENT, 22, true)
 	right.add_child(_destruction)
 
 	var bottom := VBoxContainer.new()
-	bottom.size_flags_vertical = Control.SIZE_SHRINK_END
-	root.add_child(bottom)
+	var bottom_plate := _plate(bottom)
+	bottom_plate.size_flags_vertical = Control.SIZE_SHRINK_END
+	bottom_plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	root.add_child(bottom_plate)
 	_ability = UiKit.label("", UiKit.SIZE_HEAD)
 	_ability.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ability)
@@ -95,11 +111,22 @@ func _ready() -> void:
 	_ultimate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ultimate)
 	var hint := UiKit.label(
-		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_SMALL, UiKit.MUTED
+		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_BODY, UiKit.MUTED
 	)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(hint)
 	refresh()
+
+
+## A dark broadcast plate behind a HUD group, so it reads over a bright street or a fire.
+func _plate(content: Control) -> PanelContainer:
+	var plate := PanelContainer.new()
+	var box := UiKit.box(Color(UiKit.BG, PLATE_ALPHA), UiKit.BG, 0)
+	box.set_content_margin_all(12)
+	plate.add_theme_stylebox_override("panel", box)
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.add_child(content)
+	return plate
 
 
 func _right_label(parent: Control, text: String, size: int, color: Color) -> Label:
@@ -114,8 +141,11 @@ func refresh() -> void:
 	_hp.value = sim.hp
 	_hp_text.text = "%d / %d" % [ceili(sim.hp), ceili(sim.max_hp)]
 	_time.text = "%d" % ceili(maxf(0.0, sim.time_left))
-	_time.add_theme_color_override("font_color", UiKit.BAD if sim.time_left < 10.0 else UiKit.TEXT)
-	_rubble.text = "RUBBLE  %d" % Num.i(floor(sim.rubble))
+	# The last ten seconds: the clock turns from alert red to hazard yellow.
+	var hurry := sim.time_left < 10.0
+	_clock_box.fill = UiKit.ACCENT if hurry else UiKit.ALERT
+	_time.add_theme_color_override("font_color", UiKit.BG if hurry else Color.WHITE)
+	_rubble.text = "BIOMASS  %d" % Num.i(floor(sim.rubble))
 	_destruction.value = sim.destruction() * 100.0
 	var ability: Dictionary = species["ability"]
 	var ability_name := str(ability["name"]).to_upper()
@@ -189,6 +219,8 @@ func _process(_delta: float) -> void:
 	if not beat_running():
 		return
 	_beat_frame += 1
+	# World hints ("TOO STRONG ...") never show behind the headline, even one that pops late.
+	get_tree().call_group(CityView.FLOAT_TEXT, "queue_free")
 	if _beat_frame >= BEAT_FRAMES:
 		finish_beat()
 

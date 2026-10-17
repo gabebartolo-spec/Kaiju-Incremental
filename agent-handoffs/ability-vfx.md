@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 14:40
-## State: available (all 5 tabled PRs synced to look-options f71c527 = #38 + #40; idle until the lead pings)
+# Ability VFX/SFX handoff, 2026-10-18 16:30
+## State: awaiting lead (merge #49 first, then resync the 5 tabled sound PRs)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -43,19 +43,28 @@
 - A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
 - When #43 merges, retarget #45 to look-options.
 
-## Sync status, 2026-10-18 14:40 (look-options f71c527)
+## Sync status (#39/#42/#43/#45 on look-options f71c527; #46 on 39acc0a; base flow is now 117)
 | PR | Head | Flow |
 |---|---|---|
 | #39 heli | bac13d7 | 116 |
 | #42 footsteps | dc8fd13 | 117 |
 | #43 crowd | c216ac0 | 117 |
 | #45 mix (on #43) | 9acb9e2 | 118 |
-| #46 rifle | 61ecda9 | 117 |
+| #46 rifle | c871803 (on 39acc0a) | 118 |
 
 - run_flow_tests.gd is at 393 lines on look-options. Each PR keeps its added checks in its own tests/lib file:
   flow_heli_sounds, flow_step_sounds, flow_sounds (crowd + regen), flow_rifle_sounds.
   So the PRs merge in any order with only a floor resync.
 - The lead merges them one at a time in the director's order and pings me. Resync each to the real count.
+
+## Blocker and fix (2026-10-18 16:30)
+- After #27, run_flow_tests.gd on look-options is 399/400 lines. Every tabled PR would break the gdlint cap.
+- **PR #49** claude/flow-sfx-split moves _check_stomp_timing into tests/lib/flow_sfx.gd (static run(root, check));
+  the flow file goes to 358 lines with the same 129 checks.
+- After #49 merges, resync #39, #42, #43, #45 and #46. Each one's edits to the old _check_stomp_timing block
+  now belong in tests/lib/flow_sfx.gd: #42 walk, #43 crowd, #45 regen (as calls to their own lib files),
+  and #46 rifle in _check_rampage. Floors = 129 + each PR's own checks.
+- #39 is at 1fc14bd, synced to the pre-#27 base.
 
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
