@@ -1,18 +1,30 @@
 class_name RampageHud
 extends CanvasLayer
-## The rampage HUD: health, clock, rubble, city destroyed, signature readiness; then the
-## results panel. Reads the sim; the Continue button reports back through `continued`.
+## The rampage HUD: health, clock, rubble, city destroyed, signature readiness; then the end
+## beat (why it ended, big). Reads the sim; reports the beat's end through `beat_done`.
 
-signal continued
+signal beat_done(result: Dictionary)
 
+## Reason: headline, line under it.
 const HEADLINES := {
-	"defeated": "THE ARMY BROUGHT YOU DOWN",
-	"time": "YOUR RAGE IS SPENT",
-	"city_fallen": "THE CITY HAS FALLEN",
+	"defeated": ["BROUGHT DOWN", "The army got you this time"],
+	"time": ["TIME UP", "Your rage is spent"],
+	"city_fallen": ["THE CITY HAS FALLEN", "Nothing left standing"],
+	"ended": ["RAMPAGE ENDED", "You called it off"],
 }
+## The end beat runs this many frames, and can be skipped after the first BEAT_MIN_FRAMES.
+const BEAT_FRAMES := 150
+const BEAT_MIN_FRAMES := 40
+const BEAT_SIZE := 128
+## The world runs at this speed during the end beat.
+const END_SLOWMO := 0.3
 
 var sim: RampageSim
 var species: Dictionary
+## The crowd (null with no streets): only the view counts the civilians it crushed.
+var street: StreetLife
+## The end beat's headline (read by the flow suite and the captures).
+var headline: Label
 var _hp: ProgressBar
 var _hp_text: Label
 var _time: Label
@@ -20,16 +32,26 @@ var _rubble: Label
 var _destruction: ProgressBar
 var _ability: Label
 var _ultimate: Label
-var _results_shown := false
+## The HUD's bars and hints: hidden while a dialog (pause, the report) is up.
+var _widgets: Control
+var _beat_frame := -1
+var _beat_done := false
 
 
-func _init(p_sim: RampageSim, p_species: Dictionary) -> void:
+func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> void:
 	sim = p_sim
 	species = p_species
+	street = p_street
+
+
+## The sim's result plus what only the view counts: the civilians it crushed.
+func result() -> Dictionary:
+	return sim.result().merged({"civilians": street.killed if street != null else 0})
 
 
 func _ready() -> void:
 	var root := MarginContainer.new()
+	_widgets = root
 	UiKit.full_rect(root)
 	for side: String in ["left", "right", "top", "bottom"]:
 		root.add_theme_constant_override("margin_" + side, 28)
@@ -72,7 +94,9 @@ func _ready() -> void:
 	_ultimate = UiKit.label("", UiKit.SIZE_BODY)
 	_ultimate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ultimate)
-	var hint := UiKit.label("Move: WASD / left stick", UiKit.SIZE_SMALL, UiKit.MUTED)
+	var hint := UiKit.label(
+		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_SMALL, UiKit.MUTED
+	)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(hint)
 	refresh()
@@ -110,39 +134,97 @@ func refresh() -> void:
 		_ultimate.add_theme_color_override("font_color", UiKit.MUTED)
 
 
-func show_results() -> void:
-	if _results_shown:
+## The rampage is over (the sim said so): show why, and tell the rest of the game.
+func run_over(reason: String) -> void:
+	refresh()
+	show_end_beat(reason)
+	get_node("/root/EventBus").emit_signal("run_ended", result())
+
+
+## The pause menu's End Rampage: the sim ends the run now (earnings kept), then the end beat.
+func _end_now() -> void:
+	sim.end("ended")
+	run_over("ended")
+
+
+## The end beat: the reason the rampage ended slams onto the screen while the city keeps
+## falling in slow motion. After BEAT_FRAMES (or a confirm once BEAT_MIN_FRAMES have shown, so
+## a held attack button cannot skip it by accident) it reports `beat_done`.
+func show_end_beat(reason: String) -> void:
+	if _beat_frame >= 0:
 		return
-	_results_shown = true
-	var result := sim.result()
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.55)
-	UiKit.full_rect(dim)
-	add_child(dim)
+	_beat_frame = 0
+	Engine.time_scale = END_SLOWMO
+	var flash := ColorRect.new()
+	flash.color = Color(1.0, 0.55, 0.25, 0.45)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UiKit.full_rect(flash)
+	add_child(flash)
 	var centre := CenterContainer.new()
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiKit.full_rect(centre)
 	add_child(centre)
-	var panel := UiKit.panel()
-	panel.custom_minimum_size = Vector2(720, 0)
-	centre.add_child(panel)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 14)
-	panel.add_child(col)
-	var headline := str(HEADLINES.get(result["reason"], "RAMPAGE OVER"))
-	var lines: Array[String] = [
-		"Rubble earned:  %d" % Num.i(result["rubble"]),
-		"City destroyed:  %d%%" % Num.i(Num.f(result["destruction"]) * 100.0),
-		"Tanks crushed:  %d" % Num.i(result["tanks"]),
-		"Helicopters downed:  %d" % Num.i(result["helis"]),
-	]
-	var title := UiKit.label(headline, UiKit.SIZE_HEAD, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(title)
-	for line: String in lines:
-		var l := UiKit.label(line, UiKit.SIZE_BODY)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(l)
-	var go := UiKit.button("EVOLVE  >", UiKit.SIZE_HEAD)
-	go.pressed.connect(func() -> void: continued.emit())
-	col.add_child(go)
-	go.grab_focus.call_deferred()
+	centre.add_child(col)
+	var lines: Array = HEADLINES.get(reason, ["RAMPAGE OVER", ""])
+	headline = UiKit.label(str(lines[0]), BEAT_SIZE, UiKit.ACCENT)
+	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(headline)
+	var sub := UiKit.label(str(lines[1]), UiKit.SIZE_HEAD, UiKit.TEXT)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(sub)
+	headline.pivot_offset = headline.get_combined_minimum_size() * 0.5
+	var tween := create_tween().set_ignore_time_scale(true)
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	headline.scale = Vector2.ONE * 2.4
+	tween.tween_property(headline, "scale", Vector2.ONE, 0.35)
+	tween.parallel().tween_property(flash, "color:a", 0.0, 0.6)
+
+
+func beat_running() -> bool:
+	return _beat_frame >= 0 and not _beat_done
+
+
+func _process(_delta: float) -> void:
+	if not beat_running():
+		return
+	_beat_frame += 1
+	if _beat_frame >= BEAT_FRAMES:
+		finish_beat()
+
+
+## Opens the pause menu and stops the world (the menu runs while paused).
+func pause() -> void:
+	if sim.over or get_tree().paused:
+		return
+	var menu := PauseMenu.new()
+	menu.end_pressed.connect(_end_now)
+	_widgets.visible = false
+	menu.tree_exited.connect(func() -> void: _widgets.visible = not _beat_done)
+	add_child(menu)
+	get_tree().paused = true
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause") and _beat_frame < 0:
+		get_viewport().set_input_as_handled()
+		pause()
+	elif beat_running() and _beat_frame >= BEAT_MIN_FRAMES and event.is_action_pressed("ui_accept"):
+		get_viewport().set_input_as_handled()
+		finish_beat()
+
+
+## Leaving mid-beat or mid-pause (quit to title) must not leave the world slowed or paused.
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+
+
+## Ends the end beat now (also the capture tool's skip); only while it is running.
+func finish_beat() -> void:
+	if not beat_running():
+		return
+	Engine.time_scale = 1.0
+	_beat_done = true
+	visible = false  # the report takes over the screen; the city stays behind it
+	beat_done.emit(result())

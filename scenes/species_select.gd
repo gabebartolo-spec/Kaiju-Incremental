@@ -5,7 +5,8 @@ extends Control
 
 signal chosen(species_id: String)
 
-const PREVIEW_SIZE := Vector2i(460, 380)
+## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
+const PREVIEW_SIZE := Vector2i(440, 270)
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
 	["Speed", "speed", 8.0],
@@ -22,7 +23,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 28)
+	col.add_theme_constant_override("separation", 16)
 	add_child(col)
 	var title := UiKit.label("CHOOSE YOUR KAIJU", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -51,7 +52,7 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	panel.custom_minimum_size = Vector2(PREVIEW_SIZE.x + 28, 0)
 	row.add_child(panel)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 10)
+	col.add_theme_constant_override("separation", 6)
 	panel.add_child(col)
 
 	var view := SubViewportContainer.new()

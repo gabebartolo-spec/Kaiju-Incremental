@@ -2,7 +2,7 @@ class_name Rampage
 extends Node3D
 ## Presents one rampage. Reads input, steps RampageSim, and turns its events into the city
 ## view, the kaiju, the tanks, the camera and the HUD. It never decides an outcome; when the
-## sim ends, the HUD shows the result and Continue emits finished.
+## sim ends, the HUD plays the end beat, then `finished` reports the result. Esc pauses.
 
 signal finished(result: Dictionary)
 
@@ -104,8 +104,8 @@ func _ready() -> void:
 	add_child(_camera)
 	_camera.current = true
 	_place_camera(1.0)
-	_hud = RampageHud.new(sim, species)
-	_hud.continued.connect(func() -> void: finished.emit(sim.result()))
+	_hud = RampageHud.new(sim, species, _city.street)
+	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
@@ -194,9 +194,7 @@ func _on_event(event: Dictionary) -> void:
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tank_destroyed(Num.i(event["tank"]), at)
 		"run_over":
-			_hud.refresh()
-			_hud.show_results()
-			get_node("/root/EventBus").emit_signal("run_ended", sim.result())
+			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
 
