@@ -58,6 +58,17 @@ KNOWN = {
         tail=[V((0, 40, 38)), V((2.6, 48, 27)), V((1.8, 59, 24)), V((3, 68, 19.5)), V((6.5, 77, 15)),
               V((11, 85, 12.3)), V((17, 93, 11.7)), V((22, 101, 11)), V((29, 108, 16)), V((38, 117, 19))],
         belly=13.0),
+    # C: the D-046 "Croc titan" (Tripo 351ad916 v1): a near-horizontal croc-theropod, measured by
+    # vertex slices (head level at ~83 m, plates on top, sprawling digitigrade legs, level tail).
+    "C": dict(
+        spine=[V((0, 92, 52)), V((0, 80, 60)), V((0, 68, 67)), V((0, 60, 73))],
+        neck=[V((0, 60, 73)), V((0, 51, 80)), V((0, 42, 86))],
+        snout=V((0, 0.5, 82.5)), jaw=(V((0, 33, 82)), V((0, 3, 80.5))),
+        arm=[V((5, 66, 72)), V((16, 66, 72)), V((41, 71, 72)), V((54, 71, 72)), V((66, 70, 71))],
+        leg=[V((17, 90, 46)), V((21, 82, 28)), V((23.5, 92, 16)), V((28, 76, 2.5)), V((28, 67, 1))],
+        tail=[V((0, 100, 47)), V((0, 114, 42)), V((0, 126, 39)), V((0, 138, 37)), V((0, 150, 37)),
+              V((0, 162, 35.5)), V((0, 174, 34.5)), V((0, 186, 33)), V((0, 198, 30.5)), V((0, 204, 30))],
+        belly=35.0),
 }
 TAIL_BONES = 10
 
@@ -540,44 +551,62 @@ def pose_frame(clip, f, P):
     rig.rotation_euler = (0, 0, math.radians(yaw))
     ph = 2 * math.pi * f / T
     walking = clip != "roar"
-    # Roar envelope: crouch (20-40), rear and open (40-60), hold (60-108), recover (108-140).
     def ramp(a, b, x):
         t = min(1.0, max(0.0, (x - a) / (b - a)))
         return t * t * (3 - 2 * t)
-    crouch = ramp(18, 38, f) * (1 - ramp(40, 56, f)) if not walking else 0.0
-    rear = ramp(40, 58, f) * (1 - ramp(106, 136, f)) if not walking else 0.0
-    shake = math.sin(f * 2 * math.pi * 7 / FPS) * (ramp(58, 64, f) * (1 - ramp(100, 108, f))) if not walking else 0.0
-    gait = 1.0 if walking else 0.0
-    # Pelvis: bob twice a cycle, sway over the stance foot, slight yaw and roll.
-    bob = -0.016 * hip_h * math.cos(2 * ph) * gait - 0.05 * hip_h * crouch + 0.03 * hip_h * rear
-    sway = 0.025 * hip_h * math.cos(ph - math.pi * DUTY) * gait
+    roar = 0.0 if walking else 1.0
+    gait = 1.0 - roar
+    # Roar beats (24 fps): settle 0-16; wind-up 16-34 (head drops, weight sinks; the last 8 frames,
+    # 26-34, a sharp weight drop); rear 34-48 (fast); peak 48-58 (10 frames, a tremor); slow drift
+    # 58-112 (sags to 60% while the jaw stays wide); recover 112-140.
+    windup = (ramp(16, 34, f) * (1 - ramp(34, 42, f))) * roar
+    drop = (ramp(26, 34, f) * (1 - ramp(34, 40, f))) * roar
+    rear = ramp(34, 48, f) * (1 - 0.4 * ramp(58, 112, f)) * (1 - ramp(112, 140, f)) * roar
+    shake = math.sin(f * 2 * math.pi * 7 / FPS) * ramp(46, 50, f) * (1 - ramp(58, 80, f)) * roar
+    breathe = math.sin(f * 2 * math.pi / 60) * roar
+    # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
+    # after it and counter-turns; the tail sways against the hips.
+    w = ph - math.pi * DUTY  # 0 = left foot mid-stance
+    bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.03 * hip_h * windup - 0.05 * hip_h * drop
+           + 0.035 * hip_h * rear + 0.004 * hip_h * breathe)
+    sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
-    p_yaw = 3.0 * math.sin(ph) * gait
-    set_rot("pelvis", world_q(pitch=-6 * rear + 4 * crouch, yaw=p_yaw, roll=2.0 * math.cos(ph - math.pi * DUTY) * gait))
-    set_rot("spine", world_q(pitch=1.0 * math.sin(2 * ph) * gait - 9 * rear + 5 * crouch, yaw=-0.5 * p_yaw))
-    set_rot("chest", world_q(pitch=-0.6 * math.sin(2 * ph) * gait - 7 * rear + 3 * crouch, yaw=-0.4 * p_yaw))
-    # Neck and head steady the gaze (the hunting head): counter the body, a little low when walking.
-    set_rot("neck0", world_q(pitch=4 * gait - 14 * rear + 8 * crouch + 0.8 * shake, yaw=-0.3 * p_yaw))
-    set_rot("neck1", world_q(pitch=2 * gait - 10 * rear + 6 * crouch, yaw=-0.3 * p_yaw))
-    set_rot("head", world_q(pitch=-0.5 * math.sin(2 * ph) * gait - 18 * rear + 6 * crouch + 1.2 * shake))
-    set_rot("jaw", world_q(pitch=4.0 * gait + 34.0 * rear * (1 + 0.04 * shake) - 3 * crouch))
-    # Arms hang with bent elbows, hands low near the belly; no shoulder roll; a small swing.
+    p_yaw = 4.0 * math.sin(ph) * gait
+    p_roll = 3.0 * math.cos(w) * gait
+    set_rot("pelvis", world_q(pitch=-7 * rear + 4 * windup + 3 * drop, yaw=p_yaw, roll=p_roll))
+    set_rot("spine", world_q(pitch=1.2 * math.sin(2 * ph - 0.5) * gait - 10 * rear + 4 * windup,
+                             yaw=-0.6 * p_yaw, roll=-0.6 * p_roll))
+    set_rot("chest", world_q(pitch=-0.8 * math.sin(2 * ph - 1.0) * gait - 9 * rear + 3 * windup,
+                             yaw=-0.7 * p_yaw + 2.0 * math.sin(ph - 0.8) * gait,
+                             roll=-0.8 * p_roll + 1.5 * math.cos(w - 0.8) * gait))
+    # Neck and head keep the hunting gaze steady (counter the body), a little low when walking;
+    # in the roar the head dips through the wind-up, then throws back.
+    set_rot("neck0", world_q(pitch=4 * gait + 1.2 * math.sin(2 * ph - 1.4) * gait - 15 * rear + 9 * windup
+                             + 0.8 * shake, yaw=-0.25 * p_yaw - 1.0 * math.sin(ph - 1.2) * gait))
+    set_rot("neck1", world_q(pitch=2 * gait - 11 * rear + 7 * windup, yaw=-0.25 * p_yaw))
+    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 6 * windup + 1.2 * shake))
+    # Mouth shut at rest and walking; it parts in the wind-up and gapes at the peak.
+    set_rot("jaw", world_q(pitch=L.get("jaw_rest", 0.0) + 5 * windup + 36.0 * rear * (1 + 0.04 * shake)))
+    # Arms: elbows bent, hands low in front of the belly; at the peak the claws come up to the chest,
+    # elbows still bent (never out forward); no shoulder roll.
+    sp1 = L["spine"][1]
     for side, sg in (("L", 1), ("R", -1)):
-        swing = 3.0 * math.sin(ph + (0 if side == "L" else math.pi)) * gait
+        swing = 2.5 * math.sin(ph + (0 if side == "L" else math.pi)) * gait
         set_rot(f"clav_{side}", world_q())
-        # IK hand target: low in front of the belly (riding the chest); spread and raised to roar.
-        sp1 = L["spine"][1]
         low = V((sg * 9.0, sp1.y - L["belly"] + 0.5 * swing, sp1.z + 2.0))
-        high = V((sg * 24.0, sp1.y - L["belly"] - 4.0, sp1.z + 14.0))
+        high = V((sg * 13.0, sp1.y - L["belly"] + 2.0, sp1.z + 12.0))
         rest_wrist = REST[f"hand_tgt_{side}"].translation
         set_loc(f"hand_tgt_{side}", low.lerp(high, rear) - rest_wrist)
-        set_rot(f"hand_{side}", world_q(pitch=25 - 30 * rear))
-    # Tail: a wave that runs to the tip against the hips, lifted when he rears.
+        set_rot(f"hand_{side}", world_q(pitch=25 - 10 * rear))
+    # Tail: counter-sways the hips on the walk (a wave to the tip, in step with the weight shift);
+    # in the roar it swings down and out as the head rears, then settles.
     for i in range(TAIL_BONES):
-        amp = (1.2 + 0.45 * i) * gait
-        set_rot(f"tail{i}", world_q(yaw=-amp * math.sin(ph - 0.5 * i),
-                                    pitch=0.6 * math.sin(2 * ph - 0.45 * i) * gait + 3.0 * rear * (i < 4) + 1.0 * rear * (i >= 4)
-                                    + 2.0 * crouch))
+        k = i / (TAIL_BONES - 1)
+        walk_yaw = (1.0 + 0.35 * i) * math.cos(w - 0.45 * i) * gait
+        roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3)
+        set_rot(f"tail{i}", world_q(yaw=walk_yaw + roar_yaw,
+                                    pitch=0.6 * math.sin(2 * ph - 0.45 * i) * gait - 0.9 * rear * (i >= 2)
+                                    + 2.0 * windup * (i < 4) + 0.4 * breathe))
     # Feet: world-fixed while planted (converted into the moving rig's space).
     # The rig's matrix for this frame (rig.matrix_world still holds the last evaluated frame).
     inv = (Matrix.Translation(root) @ Matrix.Rotation(math.radians(yaw), 4, "Z")).inverted()
@@ -640,12 +669,13 @@ cam.data.lens = 35
 cam.data.clip_end = 5000
 scene.collection.objects.link(cam)
 scene.camera = cam
+CAM_DIST = max(235.0, 1.25 * float(np.ptp(np.concatenate([REST_V[o.name][:, 1] for o in meshes]))))
 VIEWS = {"side": V((-1, 0, 0.12)), "threeq": V((-0.75, -0.65, 0.32))}
 
 
 def place_camera(view, focus):
     d = VIEWS[view].normalized()
-    cam.location = focus + d * 235
+    cam.location = focus + d * CAM_DIST
     cam.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
 
 
@@ -737,8 +767,8 @@ def crops():
     scene.render.resolution_x = scene.render.resolution_y = 700
     shots = [("walk", 39, "shoulder_L", "upperarm_L", V((-0.6, -0.8, 0.25)), 34),
              ("walk", 39, "hip_L", "thigh_L", V((-1, -0.25, 0.1)), 40),
-             ("roar", 80, "jaw", "jaw", V((-0.85, -0.5, 0.2)), 36),
-             ("roar", 80, "shoulder_L_roar", "upperarm_L", V((-0.5, -0.85, 0.2)), 34)]
+             ("roar", 52, "jaw", "jaw", V((-0.85, -0.5, 0.2)), 36),
+             ("roar", 52, "shoulder_L_roar", "upperarm_L", V((-0.5, -0.85, 0.2)), 34)]
     cam.data.lens = 50
     for clip, f, label, bone, d, dist in [x for x in shots if x[0] in CLIPS]:
         key_clip(clip)
@@ -952,7 +982,12 @@ def fit_report():
         print("fit: no hand landmarks to compare for", MODEL)
         fit_sheet()
         return
-    auto = auto_landmarks(all_vertices() + np.array([0, ROOT_Y, 0]))  # same frame as KNOWN
+    try:
+        auto = auto_landmarks(all_vertices() + np.array([0, ROOT_Y, 0]))  # same frame as KNOWN
+    except (AttributeError, ValueError, IndexError) as e:
+        print(f"fit {MODEL}: auto landmarks failed on this body plan ({e}); hand pivots used")
+        fit_sheet()
+        return
     hand = KNOWN[MODEL]
     rows = []
     for k in ("spine", "neck", "arm", "leg", "jaw"):
@@ -989,7 +1024,7 @@ elif TASK == "blend":
 elif TASK == "still":
     for c in CLIPS:
         P = key_clip(c)
-        for f in (0, 13, 26, 39, 60, 80):
+        for f in ((0, 13, 26, 39, 60, 80) if c != "roar" else (10, 32, 40, 52, 85, 125)):
             scene.frame_set(f)
             for view in VIEWS:
                 place_camera(view, focus_of(P, f) if c != "roar" else V((0, 15, 48)))

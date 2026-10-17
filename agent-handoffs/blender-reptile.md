@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 15:05
-## State: awaiting lead (rig export delivered, verified, format agreed with voxel-skin)
+# blender-reptile handoff, 2026-10-17 16:05
+## State: running a check (croc titan D-046: export + walk/turn/roar render chain, bash b2ygxxxce)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -8,6 +8,15 @@ reptile (not A, not B) rigged with this hand rig; its Tripo design waits on the 
 Round 3 (lead 14:54): add an export of the rig + welded weights to motion_test.py, agree the format with
 kaiju-voxel-skin (local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc), test on B, commit; a new mesh must fit in
 ONE command. NOT in scope: animation polish (critic notes below), A's design.
+## Round 4 (lead 15:47, D-046): the "Croc titan" (Tripo 351ad916 v1, ~/Downloads/kaiju_tripo/
+rep_croctitan_adult.glb -> scratch ct/croctitan.glb, never commit). Fit C (KNOWN["C"], measured by
+vertex slices: horizontal croc-theropod, pelvis 92 m behind the snout, 42 m skull, feet at +-28 m,
+level 112 m tail); auto fit FAILS on this body plan (upright-biped rules) -> hand pivots; fit sheet
+checked. Welded 13,097 -> 5,507 positions. Critic fixes in pose_frame: roar wind-up 16-34 with an
+8-frame weight drop 26-34, fast rear 34-48, 10-frame peak, slow drift to 60% 58-112, recover 112-140,
+tail down and out, claws to the chest with bent elbows; walk weight shift 4.5% hip height, chest drift
++ counter-turn, tail counter-sway in step with the shift; jaw shut at rest. Crops at roar f52.
+Lead wants: renders side + 3q, foot slide, girth, 2x crops -> lead runs a fresh critic.
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c.
 ## Delivered (round 3)
