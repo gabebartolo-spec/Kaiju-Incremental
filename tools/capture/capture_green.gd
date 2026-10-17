@@ -124,8 +124,11 @@ func _stills() -> void:
 	var kerb := _avenue_spot(sim.city)
 	var decor: CityDecor = city._decor
 	var planted: Variant = decor.get("green")
-	if planted is Dictionary and not (planted["street_trees"] as Array).is_empty():
-		kerb = _tree_row(planted["street_trees"])
+	if planted is Dictionary:
+		var green: Dictionary = planted
+		var trees: Array = green.get("street_trees", [])
+		if not trees.is_empty():
+			kerb = _tree_row(trees)
 	await _shot(cam, Vector3(kerb.x, 0, kerb.y), AVENUE_ZOOM, "green_avenue_s%d" % _stage)
 	stage.queue_free()
 	await process_frame
