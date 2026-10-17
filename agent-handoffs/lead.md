@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-18 03:00
-## State: working (blender-reptile: species-card height fit, then opens D-047 PR at 2dbc983+)
+# Lead handoff, 2026-10-18 03:05
+## State: awaiting director (demo: make croc baby+adolescent first?); blender-reptile on card height fit
 
 ## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
 - Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
@@ -21,7 +21,9 @@
   Species card a168942: fits swept volume (card spins), octopus 12.5->16.1, mantis same; check octopus stills.
 - 02:58 pre-PR QA of 2dbc983: walk 62.9 m tip, 14 deg/joint OK; roar lift arc + slam PASS. Cards FIX: fit height
   too (mantis head cut in both, octopus touches top). CI capture runs 39042109877/...141622 = failure: helper checks.
-- Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
+- D-049 (a86b290): director applied balance D 03:00. NOT implemented yet (data edits from PR #16 body table D;
+  verify with tools/pacing.gd). Demo gaps given 03:04: D-047 PR, balance D, croc baby/adolescent (old models),
+  #8 SFX on hold, Windows build from look-options. Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
 
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
 
