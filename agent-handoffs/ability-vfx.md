@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 12:00
-## State: running a check (2-min mix capture, bash blpfr5jk5) for job (o): the mix measurement report
+# Ability VFX/SFX handoff, 2026-10-18 12:30
+## State: available (mix report delivered; asked the lead whether to prepare the proposed levels as a branch)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -27,14 +27,14 @@
     for the distance fade, add a flow check, record a clip, then open the PR.
   - A/B listen: rifle/rifle_vs_tank.wav.
 
-## Job (o): mix measurement report (lead: report + proposal only, no level changes before the director listens)
-- Branch claude/mix-report (off claude/crowd-sfx, local, not pushed):
-  - tools/capture/capture_mix_log.gd logs every sound (frame, name, volume dB, pitch) and the loop volumes;
-    2 min of croc Behemoth autoplay with helicopters.
-  - tools/sfx/mix_report.py rebuilds per-category stems and measures LUFS and true peak (ffmpeg ebur128),
-    share of energy, and masking (SMR < 3 dB in the category's band), alongside the real master mix.
-- Output goes to scratchpad/mix/, then the report and proposed level table go to shared notes mix-report/,
-  then tell the lead.
+## Job (o): mix report DONE (shared notes mix-report/report.md, run clip, log, raw tables)
+- Master -21.4 LUFS, -3.9 dBTP. Loudness order is right.
+- Problems: crowd inaudible (-44 LUFS, 26 dB under); regen loop on 86% of the run; tank_fire's thump masks stomps.
+- Proposal (not applied, waits for the director's listen):
+  - crowd -14 → -6 dB, quiet_db -30 → -24;
+  - regen -20 dB, first 2.5 s per heal only;
+  - tank_fire high-passed at 120 Hz.
+- Tools: claude/mix-report (pushed, no PR) has tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py.
 
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
@@ -55,4 +55,4 @@
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-CI on #39, #42 and #43. Godot capture running (mix); override.cfg is present until it ends; delete it after.
+CI on #39, #42 and #43. No Godot, no override.cfg.
