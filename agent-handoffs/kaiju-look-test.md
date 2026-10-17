@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 12:50
-## State: awaiting lead (PR #15 review on the reptile + mantis evidence; octopus captures skipped)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 13:10
+## State: running a check (CI probe: mantis C stills on forward_plus + gl_compatibility)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -44,19 +44,23 @@ after the sync (bone counts changed). This worktree is .claude/worktrees/kaiju-l
   arm_r2@403 leg_r1@726; octopus tentacle6_2@635 tentacle1_0@656 tentacle11_5@869.
 - Earlier (old head) CI stills: mantis A sheds floating shards at arm_r2, C stays whole.
 
+## Lead review of #15 (12:55): FIX
+1 mantis C clip shattered; 2 its fog differs; 3 reptile thigh smeared at f572; 4 reptile jaw a loose
+scatter at f676; 5 add a close 3/4 camera (2x game zoom) on the sharp turn + roar. Octopus skipped,
+no gait edits (D-044 locomotion paused), capture on CI (repo public, CI back).
+Cause of 1+2: CI's forward_plus run hit the 50-min timeout and capture.yml fell back to
+gl_compatibility, which keeps MultiMesh custom data at half precision: my packed floats (to ~2M)
+scrambled bones/cells. Fixed in 5f807cb: centre in the instance transform, INSTANCE_CUSTOM =
+small ints (b0+128*mouth, b1, b2, w0), w1 in colour alpha, uniform to_skin. 3: max_grow 0.15 +
+filler shaded with normals snapped to its main bone's axes. 4: bake HINGES (jaw, mandible_l/r)
+never blend with the parent. 5: capture_skin.gd --clip=game|close --from --to (draws every 2nd
+frame; dispatch with -f renderer=forward_plus so CI never silently falls back).
+
 ## Running jobs
-None. Evidence done for reptile + mantis (CI on 6dfa6b3, runs in scratch ci_runs3.txt), composed
-into side-session-notes/<lead>/kaiju-voxel-skin/ (before_after mp4s, *_joints.png) and written into
-PR #15's body. Octopus: CI 6dfa6b3 runs timed out (50 min, 150k voxels on lavapipe); the lighter
-rerun (--seconds=6 clips, capture_skin draws only near targets, 1d? see ci_runs4.txt) was refused:
-"recent account payments have failed or your spending limit needs to be increased" (all Actions).
-Lead (12:46): SKIP the octopus captures and run no Godot: the director paused locomotion until the
-models are decided, and the octopus motion is broken (mantle floats). Superseded plan: capture the octopus locally, windowed + off-screen override.cfg, only when the focus
-guard allows AND after species-motion messages that its local octopus run is done (one GPU job at a
-time). look-options merged in (55ae39d, LFS checkout fix). Then: octopus capture locally (windowed
-capture_motion.gd --species=cephalopod --cam=game [--kaiju-rigid] --seconds=6, and capture_skin.gd
---species=cephalopod --frames=635,656,869 [--kaiju-rigid] --stills=<dir>), compose with scratch
-py/compose_pr.py <dl> <out> <ffmpeg> cephalopod, add to PR #15, tell the lead.
+CI probe (scratch ci_probe.txt): insectoid skin stills 131,403 on forward_plus 38993171860 and
+gl_compatibility 38993177975. If both show an intact mantis: dispatch reptile + mantis A/C x
+game (--from=0 --to=13) and close (--from=4 --to=12.5) clips, renderer=forward_plus, plus stills;
+compose; send the lead.
 
 ## Open decisions / touch points
 Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
