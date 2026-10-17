@@ -4,15 +4,13 @@ extends RefCounted
 ## The building's hollow inside counts as solid while it stands, so the inner faces of its
 ## walls are never drawn; the floor slabs bake into a second mesh that is shown only once the
 ## building is broken open. Every vertex carries its structural chunk and a per-voxel hash
-## (UV2) for building_baked.gdshader, its place on its voxel face (UV, for the edge shading), and a few voxels per chunk are kept as samples for the
+## (UV2) for building_baked.gdshader, and a few voxels per chunk are kept as samples for the
 ## debris a broken chunk throws. Pure data: safe to run on a worker thread.
 
 const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
 ]
 const SAMPLES_PER_CHUNK := 12
-## A face's corners on the face (c - u - v, c + u - v, c + u + v, c - u + v): voxel_edge.gdshaderinc.
-const FACE_UV: Array[Vector2] = [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
 
 ## The shell (walls, windows, roof, gear) and the hidden floor slabs.
 var shell: ArrayMesh
@@ -62,7 +60,6 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
-	var uv := PackedVector2Array()
 	var uv2 := PackedVector2Array()
 	var index := PackedInt32Array()
 	var all: Dictionary = _v.vox.cells
@@ -92,7 +89,6 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 			var v := nf.cross(u.normalized()) * half
 			var c := centre + nf * half
 			verts.append_array([c - u - v, c + u - v, c + u + v, c - u + v])
-			uv.append_array(FACE_UV)
 			for i: int in 4:
 				normals.append(nf)
 				colors.append(color)
@@ -108,7 +104,6 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_TEX_UV] = uv
 	arrays[Mesh.ARRAY_TEX_UV2] = uv2
 	arrays[Mesh.ARRAY_INDEX] = index
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)

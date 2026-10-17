@@ -159,7 +159,6 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_cubes.shader = CUBE_SHADER
 	_cubes.set_shader_parameter("voxel", voxel)
 	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
-	Look.edge_params(_cubes)
 	var cubes := MultiMeshInstance3D.new()
 	_cube_node = cubes
 	cubes.multimesh = mm

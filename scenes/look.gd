@@ -22,28 +22,19 @@ static func styles() -> Array[Color]:
 	return out
 
 
-## The voxel material: colour is sRGB, alpha 0 marks a glowing cell. `box_mesh` for a BoxMesh
-## per cell (MultiMesh); otherwise a baked mesh of faces that carries its face UVs.
-static func voxel_material(glow: float, box_mesh := false) -> ShaderMaterial:
+## The MultiMesh material: instance colour is sRGB, alpha 0 marks a glowing cell.
+static func voxel_material(glow: float) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = VOXEL_SHADER
 	mat.set_shader_parameter("glow", glow)
-	mat.set_shader_parameter("box_mesh", box_mesh)
-	edge_params(mat)
 	return mat
-
-
-## The look's voxel edge shading (voxel_edge.gdshaderinc) on a voxel material.
-static func edge_params(mat: ShaderMaterial) -> void:
-	for key: String in ["edge_width", "edge_bevel", "edge_dark"]:
-		mat.set_shader_parameter(key, value(key))
 
 
 ## A cube mesh for one voxel of `size`, inset by the look so the grid shows (or not).
 static func voxel_mesh(size: float, glow: float) -> BoxMesh:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3.ONE * size * value("voxel_inset")
-	mesh.material = voxel_material(glow, true)
+	mesh.material = voxel_material(glow)
 	return mesh
 
 
