@@ -10,7 +10,8 @@ extends RefCounted
 ## Like a real gunship section (D-066): a second helicopter flies as the first one's wingman,
 ## trailing it wing_gap back and wing_out wider. Between runs they orbit at cruise distance; every
 ## run_every seconds the lead turns in on an attack run down to attack_clear beyond the kaiju's
-## body (never over or inside it), firing only on the run, and breaks back out. If the kaiju turns to face either of the
+## body (never over or inside it), holds a strafing pass along its arc for run_hold seconds,
+## firing only on the run, and breaks back out. If the kaiju turns to face either of the
 ## pair, they break off at once and reverse their sweep.
 
 const ORBIT := 0
@@ -163,12 +164,15 @@ func _lead(heli: Heli, dt: float) -> void:
 			heli.run_t -= dt
 			if heli.run_t <= 0.0 and not faced:
 				heli.state = RUN
+				heli.run_t = 0.0
 		RUN:
 			heli.r = move_toward(heli.r, low, Num.f(_form["run_speed"]) * dt)
+			if heli.r <= low + 0.01:
+				heli.run_t -= dt  # the strafing pass along the arc, run_hold long
 			if faced:
 				heli.turn = -heli.turn
 				heli.state = BREAK
-			elif heli.r <= low + 0.01:
+			elif heli.r <= low + 0.01 and heli.run_t <= -Num.f(_form["run_hold"]):
 				heli.state = BREAK
 		BREAK:
 			heli.r = move_toward(heli.r, out, Num.f(_form["break_speed"]) * dt)

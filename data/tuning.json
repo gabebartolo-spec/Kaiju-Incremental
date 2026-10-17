@@ -106,7 +106,8 @@
 			"run_every": 5.0,
 			"run_speed": 6.0,
 			"break_speed": 9.0,
-			"attack_clear": 5.5,
+			"attack_clear": 1.8,
+			"run_hold": 1.0,
 			"face_deg": 40.0,
 			"wing_gap": 10.0,
 			"wing_out": 7.0
@@ -144,7 +145,7 @@
 			"reserve": 1.5,
 			"danger": 0.55,
 			"danger_cost": 200.0,
-			"held_cost": 40.0,
+			"held_cost": 300.0,
 			"oncoming_cost": 80.0,
 			"spread_deg": 30.0,
 			"cover": 0.6,
@@ -160,7 +161,7 @@
 		"tank_damage": 4,
 		"min_damage": 1,
 		"fire_interval": 2.2,
-		"range": 36.0,
+		"range": 11.0,
 		"speed": 2.5,
 		"tank_rubble": 2,
 		"spawn_radius": 60.0,
@@ -284,7 +285,8 @@
 		"stages": [
 			{
 				"city": {"half": 42, "coast_z": -112, "max_height": 26},
-				"air": {"max": 0}
+				"air": {"max": 0},
+				"army": {"range": 36.0}
 			},
 			{
 				"city": {"half": 70, "coast_z": -140, "max_height": 32, "tower_chance": 0.6,

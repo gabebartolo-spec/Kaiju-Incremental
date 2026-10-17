@@ -27,6 +27,7 @@ var _tier := 1
 var _seed := 0
 var _seconds := 60.0
 var _out := "user://army_trace.png"
+var _half := 0.0
 
 
 func _initialize() -> void:
@@ -80,7 +81,8 @@ func _run() -> void:
 		for tank: RampageSim.Tank in sim.tanks:
 			var list: Array = tracks.get(tank.id, [])
 			var s := 0.0
-			if not list.is_empty() and (list[list.size() - 1] as Vector2).distance_to(tank.pos) < 0.001:
+			var prev: Vector2 = list[list.size() - 1] if not list.is_empty() else Vector2(INF, INF)
+			if prev.distance_to(tank.pos) < 0.001:
 				s = Num.f(still.get(tank.id, 0.0)) + DT
 			still[tank.id] = s
 			if absf(s - 3.0) < DT * 0.5:
@@ -118,40 +120,50 @@ func _draw(sim: RampageSim, tracks: Dictionary, parked: Dictionary, helis: Dicti
 	var size := ceili(half * 2.0 * PX)
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
 	img.fill(Color("1b1f24"))
-	var to_px := func(p: Vector2) -> Vector2i: return Vector2i(roundi((p.x + half) * PX), roundi((p.y + half) * PX))
+	_half = half
 	var plan := CityGen.map(sim.city)
 	var nodes: Array = plan["nodes"]
 	for street: Dictionary in plan["streets"]:
 		var a: Vector2 = nodes[Num.i(street["from"])]
 		var b: Vector2 = nodes[Num.i(street["to"])]
 		var shade := Color("5a6470") if str(street["kind"]) != CityGen.ALLEY else Color("33393f")
-		_line(img, to_px.call(a), to_px.call(b), shade, maxi(1, roundi(Num.f(street["width"]) * PX * 0.5)))
+		_line(img, _px(a), _px(b), shade, maxi(1, roundi(Num.f(street["width"]) * PX * 0.5)))
 	for b: RampageSim.Building in sim.buildings:
-		var lo: Vector2i = to_px.call(Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5))
-		var hi: Vector2i = to_px.call(Vector2(b.x + b.w * 0.5, b.z + b.d * 0.5))
+		var lo := _px(Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5))
+		var hi := _px(Vector2(b.x + b.w * 0.5, b.z + b.d * 0.5))
 		img.fill_rect(Rect2i(lo, hi - lo), Color("2c3138"))
-	var edge: Vector2i = to_px.call(Vector2(-sim.arena_half, -sim.arena_half))
+	var edge := _px(Vector2(-sim.arena_half, -sim.arena_half))
 	var span := roundi(sim.arena_half * 2.0 * PX)
 	_rect(img, Rect2i(edge, Vector2i(span, span)), Color("445"))
 	for k: int in range(1, kaiju.size()):
-		_line(img, to_px.call(kaiju[k - 1]), to_px.call(kaiju[k]), Color("ff4a3a"), 2)
+		_line(img, _px(kaiju[k - 1]), _px(kaiju[k]), Color("ff4a3a"), 2)
 	var hue := 0.0
 	for id: int in tracks:
 		var list: Array = tracks[id]
 		var c := Color.from_hsv(fmod(hue, 1.0), 0.75, 1.0)
 		hue += 0.137
 		for k: int in range(1, list.size()):
-			_line(img, to_px.call(list[k - 1]), to_px.call(list[k]), c, 1)
-		_dot(img, to_px.call(list[0]), c, 4)
-		for at: Vector2 in parked.get(id, []):
-			_ring(img, to_px.call(at), c, 7)
+			var a: Vector2 = list[k - 1]
+			var b: Vector2 = list[k]
+			_line(img, _px(a), _px(b), c, 1)
+		var first: Vector2 = list[0]
+		_dot(img, _px(first), c, 4)
+		var stops: Array = parked.get(id, [])
+		for at: Vector2 in stops:
+			_ring(img, _px(at), c, 7)
 	for id: int in helis:
 		var list: Array = helis[id]
 		for k: int in range(1, list.size()):
-			_line(img, to_px.call(list[k - 1]), to_px.call(list[k]), Color("6ec8ff"), 1)
+			var a: Vector2 = list[k - 1]
+			var b: Vector2 = list[k]
+			_line(img, _px(a), _px(b), Color("6ec8ff"), 1)
 	DirAccess.make_dir_recursive_absolute(_out.get_base_dir())
 	img.save_png(_out)
 	print("trace: ", ProjectSettings.globalize_path(_out))
+
+
+func _px(p: Vector2) -> Vector2i:
+	return Vector2i(roundi((p.x + _half) * PX), roundi((p.y + _half) * PX))
 
 
 static func _line(img: Image, a: Vector2i, b: Vector2i, c: Color, w: int) -> void:

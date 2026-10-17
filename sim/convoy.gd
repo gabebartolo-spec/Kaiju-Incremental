@@ -20,6 +20,7 @@ class Route:
 	var replan_t := 0.0
 	var stuck_t := 0.0
 	var avoid := -1  # a road it was stuck on: left out of its next plan
+	var around: Dictionary = {}  # with the roads by the tank that held it up
 	var retreating := false
 	var give_to := -1  # an older tank it is backing up for
 	var yield_t := 0.0
@@ -35,6 +36,8 @@ var edge_b := PackedInt32Array()
 var edge_len := PackedFloat32Array()
 var edge_cost := PackedFloat32Array()
 var edge_lane := PackedFloat32Array()  # how far right of the centre line tanks drive
+var edge_half := PackedFloat32Array()  # half the road's width
+var _road_grid: Dictionary = {}  # Vector2i cell -> PackedInt32Array of roads through it
 var blocked := PackedByteArray()
 var links: Array[PackedInt32Array] = []
 ## Nodes on the edge of the plan (where a road leaves the box): where columns enter.
@@ -51,6 +54,7 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
 	_box = sim.arena_half + Num.f(cfg["entry_depth"])
 	_build_graph(CityGen.map(sim.city))
 	_index_buildings()
+	_index_roads()
 
 
 ## The roads tanks may use, clipped to the box round the playable city plus the entry depth.
@@ -78,6 +82,7 @@ func _build_graph(plan: Dictionary) -> void:
 		edge_cost.append(length * cost)
 		var width := Num.f(street["width"])
 		edge_lane.append(width * 0.25 if width >= Num.f(cfg["two_lanes"]) else 0.0)
+		edge_half.append(width * 0.5)
 		blocked.append(0)
 		links[na].append(edge_a.size() - 1)
 		links[nb].append(edge_a.size() - 1)
@@ -119,6 +124,64 @@ func _clip(a: Vector2, b: Vector2) -> Array[Vector2]:
 	if t0 >= t1:
 		return []
 	return [a + d * t0, a + d * t1]
+
+
+## Roads by grid cell, for on_road.
+func _index_roads() -> void:
+	var cell := Num.f(cfg["grid"])
+	for e: int in edge_a.size():
+		var a := nodes[edge_a[e]]
+		var b := nodes[edge_b[e]]
+		var lo := Vector2i(floori(minf(a.x, b.x) / cell) - 1, floori(minf(a.y, b.y) / cell) - 1)
+		var hi := Vector2i(floori(maxf(a.x, b.x) / cell) + 1, floori(maxf(a.y, b.y) / cell) + 1)
+		for cx: int in range(lo.x, hi.x + 1):
+			for cz: int in range(lo.y, hi.y + 1):
+				var key := Vector2i(cx, cz)
+				var list: PackedInt32Array = _road_grid.get(key, PackedInt32Array())
+				list.append(e)
+				_road_grid[key] = list
+
+
+## Is p on the carriageway of a road tanks use?
+func on_road(p: Vector2) -> bool:
+	var cell := Num.f(cfg["grid"])
+	for e: int in _road_grid.get(Vector2i(floori(p.x / cell), floori(p.y / cell)), PackedInt32Array()):
+		var q := Geometry2D.get_closest_point_to_segment(p, nodes[edge_a[e]], nodes[edge_b[e]])
+		if q.distance_to(p) <= edge_half[e]:
+			return true
+	return false
+
+
+## Room for a whole hull at p: its centre no further off a road's centre line than the road's
+## half width plus the sidewalk, less half the hull and a hand's breadth, and clear of every
+## building lot (where a street runs out into an alley between buildings).
+func drivable(p: Vector2) -> bool:
+	var hull: Array = cfg["hull"]
+	var spare := Num.f(sim.city["sidewalk"]) - Num.f(hull[1]) * 0.5 - 0.1
+	var cell := Num.f(cfg["grid"])
+	var on := false
+	for e: int in _road_grid.get(Vector2i(floori(p.x / cell), floori(p.y / cell)), PackedInt32Array()):
+		var q := Geometry2D.get_closest_point_to_segment(p, nodes[edge_a[e]], nodes[edge_b[e]])
+		if q.distance_to(p) <= edge_half[e] + spare:
+			on = true
+			break
+	if not on:
+		return false
+	var clear := Num.f(hull[1]) * 0.5 + 0.05  # and clear of every lot, standing or fallen
+	var key := _cell_of(p)
+	for dx: int in [-1, 0, 1]:
+		for dz: int in [-1, 0, 1]:
+			for i: int in _grid.get(key + Vector2i(dx, dz), PackedInt32Array()):
+				var b := sim.buildings[i]
+				var lo := Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5)
+				if p.clamp(lo, lo + Vector2(b.w, b.d)).distance_to(p) < clear:
+					return false
+	return true
+
+
+func on_edge(p: Vector2, e: int) -> bool:
+	var q := Geometry2D.get_closest_point_to_segment(p, nodes[edge_a[e]], nodes[edge_b[e]])
+	return q.distance_to(p) <= edge_half[e]
 
 
 ## Buildings by grid cell, for line-of-fire tests.
@@ -255,9 +318,12 @@ func _plan(tank: RampageSim.Tank, r: Route, urgent: bool) -> void:
 	r.replan_t = Num.f(cfg["replan"])
 	if start.is_empty():
 		r.avoid = -1
+		r.around = {}
 		return
 	var from: Dictionary = start["from"]
-	var dist := _dijkstra(from, r.avoid)
+	if on_edge(tank.pos, Num.i(start["edge"])):
+		r.edge = Num.i(start["edge"])
+	var dist := _dijkstra(from, r.avoid, r.around)
 	var goal := _choose(tank, r, dist, urgent)
 	if goal.is_empty() and urgent:  # every post taken, and the kaiju on top of it: back off anyway
 		var away := _ring_posts(tank, r, dist, [reach() * Num.f(cfg["reserve"])] as Array[float])
@@ -265,6 +331,7 @@ func _plan(tank: RampageSim.Tank, r: Route, urgent: bool) -> void:
 		if not goal.is_empty():
 			goal["reserve"] = true
 	r.avoid = -1
+	r.around = {}
 	if goal.is_empty():
 		r.retreating = urgent  # nowhere to go: try again at the next re-plan, not every step
 		return
@@ -282,7 +349,8 @@ func _plan(tank: RampageSim.Tank, r: Route, urgent: bool) -> void:
 			n = edge_a[e] if edge_b[e] == n else edge_b[e]
 		# n is a start node: onto the plan first if off it, then along the road it is on.
 		var via: Vector2 = start["via"]
-		if via.distance_to(tank.pos) > 0.05:
+		var on := Num.i(start["edge"])
+		if via.distance_to(tank.pos) > edge_lane[on] + 0.25:  # onto the road's line first
 			path.append(via)
 			legs.append(-1)
 		path.append(nodes[n])
@@ -323,6 +391,8 @@ func _keep_right(tank: RampageSim.Tank, path: Array[Vector2], legs: Array[int]) 
 func _start(tank: RampageSim.Tank, r: Route) -> Dictionary:
 	var e := r.edge
 	var p := tank.pos
+	if e >= 0 and not on_edge(p, e):  # it has turned off that road (or not yet onto it)
+		e = -1
 	if e < 0:
 		var best := INF
 		for k: int in edge_a.size():
@@ -349,7 +419,7 @@ func _start(tank: RampageSim.Tank, r: Route) -> Dictionary:
 ## Cheapest road cost from the start nodes to every node: a road passing inside the danger
 ## radius costs heavily (tanks drive round the kaiju, not past its feet); blocked roads and the
 ## one it was stuck on are out.
-func _dijkstra(start: Dictionary, avoid: int) -> Dictionary:
+func _dijkstra(start: Dictionary, avoid: int, around: Dictionary) -> Dictionary:
 	var count := nodes.size()
 	var cost := PackedFloat32Array()
 	cost.resize(count)
@@ -371,7 +441,7 @@ func _dijkstra(start: Dictionary, avoid: int) -> Dictionary:
 		if top.x > cost[n]:
 			continue
 		for e: int in links[n]:
-			if blocked[e] != 0 or e == avoid:
+			if blocked[e] != 0 or e == avoid or around.has(e):
 				continue
 			var to := edge_b[e] if edge_a[e] == n else edge_a[e]
 			var c := top.x + edge_cost[e]
@@ -497,7 +567,7 @@ func _band_posts(tank: RampageSim.Tank, r: Route, dist: Dictionary) -> Array[Dic
 	var step := Num.f(cfg["post_gap"])
 	var cands: Array[Dictionary] = []
 	for e: int in edge_a.size():
-		if blocked[e] != 0 or e == r.avoid:
+		if blocked[e] != 0 or e == r.avoid or r.around.has(e):
 			continue
 		var a := nodes[edge_a[e]]
 		var b := nodes[edge_b[e]]
@@ -514,7 +584,7 @@ func _band_posts(tank: RampageSim.Tank, r: Route, dist: Dictionary) -> Array[Dic
 			var via_a := cost[edge_a[e]] + a.distance_to(at)
 			var via_b := cost[edge_b[e]] + b.distance_to(at)
 			var off := absf(d - mid) * 2.0
-			if r.edge == e:  # on the same road: drive straight along it
+			if r.edge == e and on_edge(tank.pos, e):  # on the same road: drive straight along it
 				cands.append({"at": at, "node": -1, "edge": e, "cost": tank.pos.distance_to(at) + off})
 			elif minf(via_a, via_b) < INF:
 				var node := edge_a[e] if via_a <= via_b else edge_b[e]
@@ -531,7 +601,7 @@ func _ring_posts(tank: RampageSim.Tank, r: Route, dist: Dictionary, rings: Array
 	var k := sim.kaiju_pos
 	var cands: Array[Dictionary] = []
 	for e: int in edge_a.size():
-		if blocked[e] != 0 or e == r.avoid:
+		if blocked[e] != 0 or e == r.avoid or r.around.has(e):
 			continue
 		var a := nodes[edge_a[e]]
 		var b := nodes[edge_b[e]]
@@ -540,7 +610,7 @@ func _ring_posts(tank: RampageSim.Tank, r: Route, dist: Dictionary, rings: Array
 				var at := a.lerp(b, t)
 				var via_a := cost[edge_a[e]] + a.distance_to(at)
 				var via_b := cost[edge_b[e]] + b.distance_to(at)
-				if r.edge == e:  # on the same road: drive straight along it
+				if r.edge == e and on_edge(tank.pos, e):  # on the same road: drive straight along it
 					cands.append({"at": at, "node": -1, "edge": e, "cost": tank.pos.distance_to(at)})
 				elif minf(via_a, via_b) < INF:
 					var node := edge_a[e] if via_a <= via_b else edge_b[e]
@@ -666,11 +736,17 @@ func _drive(tank: RampageSim.Tank, r: Route, dt: float) -> void:
 	var move := minf(dist, speed * dt)
 	var next := tank.pos + dir * move
 	var blocker := _blocker(tank, next, dir)
+	if blocker == null and not drivable(next) and drivable(tank.pos):
+		blocker = tank  # the move would put its hull off the road: treat it as blocked
 	if blocker != null:
 		r.stuck_t += dt
 		_give_way(tank, blocker, speed * Num.f(cfg["reverse"]) * dt)
 		if r.stuck_t >= Num.f(cfg["stuck"]):
 			r.avoid = r.edges[0] if not r.edges.is_empty() else -1
+			if blocker != tank:  # round the tank in its way, not just off this road
+				for e: int in _road_grid.get(_cell_of(blocker.pos), PackedInt32Array()):
+					if e != r.edge and on_edge(blocker.pos, e):
+						r.around[e] = true
 			_plan(tank, r, r.retreating)
 		return
 	r.stuck_t = 0.0
@@ -689,6 +765,8 @@ func _drive(tank: RampageSim.Tank, r: Route, dt: float) -> void:
 ## one gives way for `stuck` seconds, backing up (hull still facing its way) while it is in the
 ## older one's road.
 func _give_way(tank: RampageSim.Tank, blocker: RampageSim.Tank, step: float) -> void:
+	if blocker == tank:
+		return
 	var o: Route = routes.get(blocker.id)
 	if blocker.id > tank.id or o == null or o.path.is_empty() or o.stuck_t <= 0.0:
 		return
@@ -702,10 +780,11 @@ func _back_off(tank: RampageSim.Tank, older: RampageSim.Tank, step: float) -> vo
 	var o: Route = routes.get(older.id)
 	if o == null or o.stuck_t <= 0.0:
 		return
+	# Straight back along its hull, away from the older tank, and only while it stays on the road.
 	var own := tank.heading if tank.heading != Vector2.ZERO else (tank.pos - older.pos).normalized()
-	var back := -own if own.dot(tank.pos - older.pos) < 0.0 else own
+	var back := own if own.dot(tank.pos - older.pos) > 0.0 else -own
 	var to := tank.pos + back * step
-	if _blocker(tank, to, own) == null:
+	if drivable(to) and _blocker(tank, to, own) == null:
 		tank.pos = to
 		tank.reversing = back.dot(own) < 0.0
 

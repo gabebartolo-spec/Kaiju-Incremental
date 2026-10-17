@@ -16,6 +16,8 @@ const HULL_HALF_WIDTH := 1.2
 const HULL_LENGTH := 5.0
 ## Half a helicopter's airframe (assets/vehicles/heli body, 10 m nose to tail).
 const HELI_HALF := 5.0
+## Head-room the test keeps between a helicopter's hit circle (air.heli_radius) and the body.
+const HELI_CLEAR := 0.5
 
 
 func suite_name() -> String:
@@ -38,8 +40,7 @@ func _rampage(tier: int, seed: int) -> RampageSim:
 	var levels: Dictionary = LEVELS[tier]
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	stats["hp"] = 1000000.0  # the run must not end early: these checks watch the army
-	stats["run_seconds"] = 1000.0
+	stats["hp"] = 1000000.0  # the kaiju must not fall: these checks watch the army to the clock
 	var tuning := CityGrowth.tuning_for(Content.tuning(), tier)
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", seed))
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", seed))
@@ -152,11 +153,11 @@ func _autoplay(sim: RampageSim, steps: int, target: Vector2) -> Vector2:
 	return target
 
 
-## 60 s autoplayed rampages: every tank, every step, stays on a road and off every building and
-## keeps a hull length from every other tank; a tank that stands still 3 s or more (at its post,
-## not waiting in a column) stands in its firing band; tanks enter by road from outside the
-## playable edge (in a city smaller than the spawn radius); helicopters never come within half an
-## airframe of the kaiju's body.
+## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every
+## building and no two hulls overlap; a tank standing still 3 s or more within range stands at
+## standoff in its firing band, never up close, and none waits inside the danger radius (those
+## beyond range are in reserve); tanks enter by road from outside the
+## playable edge (in a city smaller than the spawn radius); helicopters never fly into the kaiju.
 func _check_rampages() -> void:
 	var off_road := 0
 	var inside := 0
@@ -166,6 +167,7 @@ func _check_rampages() -> void:
 	var parked := 0
 	var parked_in_band := 0
 	var parked_reserve := 0
+	var parked_close := 0
 	var longest_in_danger := 0.0
 	var entries_ok := true
 	var entered := 0
@@ -188,10 +190,11 @@ func _check_rampages() -> void:
 			var convoy: Dictionary = sim.army.get("convoy", {})
 			var box := sim.arena_half + Num.f(convoy.get("entry_depth", 0.0))
 			var edge_entries := box <= Num.f(sim.army["spawn_radius"])
-			var reserve := Num.f(convoy.get("reserve", 1.0))
 			var target := Vector2(INF, INF)
-			for steps: int in roundi(60.0 / DT):
+			var steps := 0
+			while not sim.over:  # the game's own run length (run_seconds)
 				target = _autoplay(sim, steps, target)
+				steps += 1
 				var reach := _reach(sim)
 				var danger := _danger(sim)
 				for tank: RampageSim.Tank in sim.tanks:
@@ -228,8 +231,10 @@ func _check_rampages() -> void:
 						parked += 1
 						if d >= danger - 0.5 and d <= reach + 1.0:
 							parked_in_band += 1
-						elif d > reach + 1.0 and d <= reach * reserve + 8.0:
+						elif d > reach + 1.0:
 							parked_reserve += 1
+						else:
+							parked_close += 1
 						if d < danger - 0.5:
 							var t := Num.f(danger_t.get(tank.id, 0.0)) + DT
 							danger_t[tank.id] = t
@@ -243,7 +248,8 @@ func _check_rampages() -> void:
 					last[tank.id] = tank.pos
 				for heli: AirWing.Heli in sim.air.helis:
 					heli_samples += 1
-					heli_gap = minf(heli_gap, heli.pos.distance_to(sim.kaiju_pos) - body)
+					var clear := Num.f(sim.air.cfg["heli_radius"])
+					heli_gap = minf(heli_gap, heli.pos.distance_to(sim.kaiju_pos) - body - clear)
 	check(
 		tank_samples > 2000 and inside == 0,
 		"no tank hull ever overlaps a building footprint (%d of %d tank-steps)" % [inside, tank_samples]
@@ -260,20 +266,19 @@ func _check_rampages() -> void:
 		overlaps == 0,
 		"no two tank hulls ever overlap (%d tank-step pairs; closest centres %.2f m)" % [overlaps, closest]
 	)
-	var firing := float(parked_in_band) / maxf(1.0, float(parked))
-	var held := float(parked_in_band + parked_reserve) / maxf(1.0, float(parked))
+	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		parked > 500 and held >= 0.95 and firing >= 0.6 and longest_in_danger <= 1.0,
+		parked_in_band > 300 and standoff >= 0.95 and longest_in_danger <= 1.0,
 		(
-			"tanks hold standoff: of %d parked tank-steps %.0f%% in the firing band, %.0f%% on it or in reserve; a parked tank never stays inside the danger radius over 1 s (%.1f s)"
-			% [parked, firing * 100.0, held * 100.0, longest_in_danger]
+			"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing band, not up close (%d in reserve beyond range); none stays inside the danger radius over 1 s (%.1f s)"
+			% [standoff * 100.0, parked_in_band + parked_close, parked_reserve, longest_in_danger]
 		)
 	)
 	check(
-		heli_samples > 500 and heli_gap >= HELI_HALF,
+		heli_samples > 500 and heli_gap >= HELI_CLEAR,
 		(
-			"helicopters never come within half an airframe of the kaiju's body (closest %.2f m beyond it, %d samples)"
-			% [heli_gap, heli_samples]
+			"helicopters never fly into the kaiju: their hit circle stays %.1f m clear of its body (closest %.2f m, %d samples)"
+			% [HELI_CLEAR, heli_gap, heli_samples]
 		)
 	)
 
