@@ -1,5 +1,5 @@
-# Game-flow handoff, 2026-10-17 17:50
-## State: running a check (round-4 CI captures for lead review 2)
+# Game-flow handoff, 2026-10-17 18:20
+## State: awaiting lead (round-2 FIX sent with stills, clip, head fc2ddba)
 
 ## Task
 Make the loop around the rampage feel finished (brief from lead session local_9fac90d2):
@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at ad2191b (look-options 414a290 merged: #16 city growth and
+claude/game-flow-edfba4, pushed at fc2ddba (look-options 414a290 merged: #16 city growth and
 #20 Apex streaming; rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
@@ -32,8 +32,8 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
 ## Unfinished (in order)
 1. Done: full local run green after the merge (smoke 12, sim 39, powers 24, tentacles 17,
    city 5, flow 67, self-test); pushed.
-2. Captures: download, 2x-crop QA every shot (buttons/values readable, 1080p + 4K), copy to
-   docs/captures/2026-10-17-game-flow/, fill PR #14 Evidence (CAPTURE_LINKS), send to lead.
+2. Done: stills + clip in docs/captures/2026-10-17-game-flow/, PR body Evidence filled,
+   sent to lead 18:20. Next: lead's verdict / screen-critic round.
 3. Mark PR ready only on the lead's OK.
 
 ## Attempts / history
@@ -73,5 +73,4 @@ Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- CI: 1080p stills 39006384659 (on 2ebdfce) -> %TEMP%/gf_cap/shots; 4K 39010927207 (d67112d)
-  -> %TEMP%/gf_cap5/4k; clip 39011009292 (ad2191b) -> %TEMP%/gf_cap5/clip. Then QA + send lead.
+None.
