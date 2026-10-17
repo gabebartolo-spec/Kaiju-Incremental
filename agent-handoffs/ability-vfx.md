@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 12:30
-## State: available (mix report delivered; asked the lead whether to prepare the proposed levels as a branch)
+# Ability VFX/SFX handoff, 2026-10-18 12:55
+## State: running a check (re-capture of the 2-min mix with the new levels, bash baod56xwp)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -36,6 +36,17 @@
   - tank_fire high-passed at 120 Hz.
 - Tools: claude/mix-report (pushed, no PR) has tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py.
 
+## Job (o2): proposed levels as a branch (lead said yes; tabled for the director's listen)
+- claude/mix-levels (off claude/mix-report, which is off #43's branch), commit 3cc93c5, local, not pushed yet.
+  - crowd_panic -14 → -6, crowd quiet_db -30 → -24, regen_loop -14 → -20.
+  - Regen bubbles play only for the first regen_seconds 2.5 of each heal, then fade 40 dB/s.
+  - tank_fire is high-passed at 120 Hz (rebuilt ogg). Flow 115 (+ the regen-fade check). All suites green.
+- Left to do:
+  - Run mix_report.py on scratchpad/mix2 against the targets (crowd gap -15..-20 dB, regen on < 15%,
+    stomps masked by army 0, master -23..-18 LUFS, TP ≤ -1).
+  - A/B 20 s clip of the same window from scratchpad/mix/mix.avi (before) and mix2/mix.avi (after).
+  - Push, open a PR stacked on #43, tell the lead. Then go available for the night.
+
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
 - Every sync: check `git log origin/claude/look-options -1` first.
@@ -55,4 +66,4 @@
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-CI on #39, #42 and #43. No Godot, no override.cfg.
+CI on #39, #42 and #43. Godot capture (mix2) running; override.cfg is deleted when it ends.
