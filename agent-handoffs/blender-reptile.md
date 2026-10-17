@@ -51,6 +51,7 @@ diff/*.json); clips + sheets in notes blender-reptile/croctitan_r5/.
   squares but a 20 m period; 130 m flipped the colours at the seam). Drift eased in from f47 (6-frame
   ease then linear, no cap). DELIVERED: PNG pixel seams walk side 0.92 / 3q 1.35 (medians 1.21 / 1.49),
   roar 0.16 / 0.13; export byte-identical (cmp); docs/captures/2026-10-17-croctitan-r6/; notes croctitan_r6/.
+  Commits 3110988 (script), 2214a87 (evidence), cd70417 (plot label). Sent to lead 17:05.
   Encoder: scratch r6/encode_intra.py (gopsize 1, no B-frames, PERC_LOSSLESS; Blender has no -g CLI).
   PNG pixel diff per view: scratch r6/pngdiff.py. diff JSON now carries head_tip + head_accel.
 ## Branch and commit
