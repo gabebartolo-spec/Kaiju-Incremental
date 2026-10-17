@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 11:40
-## State: running a check (CI on #39, #42, #43); rifle branch waits for #40. Asked the lead for the next job
+# Ability VFX/SFX handoff, 2026-10-18 12:00
+## State: running a check (2-min mix capture, bash blpfr5jk5) for job (o): the mix measurement report
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -27,6 +27,15 @@
     for the distance fade, add a flow check, record a clip, then open the PR.
   - A/B listen: rifle/rifle_vs_tank.wav.
 
+## Job (o): mix measurement report (lead: report + proposal only, no level changes before the director listens)
+- Branch claude/mix-report (off claude/crowd-sfx, local, not pushed):
+  - tools/capture/capture_mix_log.gd logs every sound (frame, name, volume dB, pitch) and the loop volumes;
+    2 min of croc Behemoth autoplay with helicopters.
+  - tools/sfx/mix_report.py rebuilds per-category stems and measures LUFS and true peak (ffmpeg ebur128),
+    share of energy, and masking (SMR < 3 dB in the category's band), alongside the real master mix.
+- Output goes to scratchpad/mix/, then the report and proposed level table go to shared notes mix-report/,
+  then tell the lead.
+
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
 - Every sync: check `git log origin/claude/look-options -1` first.
@@ -46,4 +55,4 @@
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-CI on #39, #42 and #43. No Godot, no override.cfg.
+CI on #39, #42 and #43. Godot capture running (mix); override.cfg is present until it ends; delete it after.
