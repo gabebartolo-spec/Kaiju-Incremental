@@ -60,6 +60,7 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	if not is_equal_approx(half_angle, _fan_half):
 		_fan_half = half_angle
 		_fan.mesh = _sector(half_angle)
+		_fan_mat.set_shader_parameter("half_angle", half_angle)
 	# The fan lies flat on the street over exactly the sim's hit cone: from the kaiju's feet
 	# (`cone_origin`) out to where the breath strikes at full reach, half_angle either side.
 	# Face-up to the game camera, it spills past both sides of the body that hides the core.
