@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 06:15
-## State: running a check (PR #37: AFTER re-captures on CI at 90738cf; frame cost waits for the GPU go)
+# City-calm handoff, 2026-10-18 07:05
+## State: awaiting lead (#37 complete: frame cost + look-options sync pushed; lead merges on green)
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep from 06:4x:
@@ -47,7 +47,9 @@ notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-..
 sim/city_lots.gd via KAIJU_GREEN_SHARE env, NEVER commit; tools/_chunks_probe.gd untracked)
 - chunks stage1/2/3/4: 0%: 12286/25811/107259/350448; 8%: 10556/23323/98594/322765;
   12%: 10310/22241/95995/307730; 15%: 10214/21695/91092/297409.
-- pacing.gd reptilian hours: running (notes pacing_green_<share>.log).
+- pacing.gd reptilian: shares 0/0.08/0.12 done (notes pacing_green_<share>.log); 0.15 was stopped
+  for the GPU slot and must be re-run. Then revert the hack and send the lead the table.
+- #37 frame cost: about +0.2-0.3 ms GPU, +3-5% triangles (notes timed/).
 
 ## Next
 1. CI captures (capture_growth --stage=1/2 --quick, 1920x1080): BEFORE on look-options,
