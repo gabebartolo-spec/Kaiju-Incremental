@@ -10,7 +10,7 @@ extends RefCounted
 ## Like a real gunship section (D-066): a second helicopter flies as the first one's wingman,
 ## trailing it wing_gap back and wing_out wider. Between runs they orbit at cruise distance; every
 ## run_every seconds the lead turns in on an attack run down to attack_clear beyond the kaiju's
-## body (never over or inside it) and breaks back out. If the kaiju turns to face either of the
+## body (never over or inside it), firing only on the run, and breaks back out. If the kaiju turns to face either of the
 ## pair, they break off at once and reverse their sweep.
 
 const ORBIT := 0
@@ -88,7 +88,7 @@ func step(dt: float) -> void:
 			heli.hp -= heli.coat_dps * dt
 			coated = true
 		heli.cooldown -= dt
-		if heli.cooldown <= 0.0:
+		if heli.cooldown <= 0.0 and heli.state == RUN:  # guns only on an attack run
 			heli.cooldown = Num.f(cfg["fire_interval"])
 			var army := sim.army
 			var hurt := Num.f(cfg["damage"]) - sim.stat("armor")
