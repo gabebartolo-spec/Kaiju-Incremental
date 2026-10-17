@@ -265,7 +265,6 @@
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"breath_fade_in": 0.12,
-		"breath_fan_alpha": 0.35,
 		"breath_curtain_alpha": 0.7,
 		"breath_curtain_height": 7.0,
 		"orbit_degrees": 25.0,

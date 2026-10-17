@@ -94,8 +94,8 @@ func power(value: float, base: float) -> float:
 
 
 ## Atomic Breath: a white-hot core (BreathBeam) from the mouth along `span` (mouth to the
-## street at full reach) that stops on the first standing wall it meets, a soft fan across the
-## cone, a flare and a light on what it hits, and a scorched wedge across the street.
+## street at full reach) that stops on the first standing wall it meets, a flame curtain on
+## the cone's far arc, a flare and a light on what it hits, and a scorched wedge on the street.
 func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -> void:
 	played.append("breath")
 	var hit := mouth + span * _first_hit(mouth, span)

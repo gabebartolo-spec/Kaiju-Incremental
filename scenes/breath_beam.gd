@@ -1,22 +1,21 @@
 class_name BreathBeam
 extends Node3D
 ## Atomic Breath's light, built once and reused (pooled): a slim white-hot core from the jaw to
-## what it strikes, a soft glow on the street over the breath's hit cone, a curtain of flame
-## standing up along the cone's far arc, a muzzle flash, a flare and a light at the struck point.
+## what it strikes, a curtain of flame standing up along the far arc of the breath's hit cone,
+## a muzzle flash, a flare and a light at the struck point (the scorch marks the cone itself).
 ## From the game camera behind the kaiju the body hides the core; the curtain rises above the
 ## head, so the breath still reads. Everything eases in together over fx.breath_fade_in.
 ## Presentation only; all additive, so nothing hides the kaiju (D-025).
 
 const BEAM := preload("res://scenes/beam.gdshader")
-const FAN := preload("res://scenes/breath_fan.gdshader")
 const CURTAIN := preload("res://scenes/breath_curtain.gdshader")
 const FLARE := preload("res://scenes/flare.gdshader")
 const HOT := Color(1.0, 0.92, 0.7)
-const FAN_SEGMENTS := 24
+const ARC_SEGMENTS := 24
 ## How far along the jaw bone (hinge 0, chin 1) the breath leaves the mouth.
 const MOUTH_ALONG_JAW := 0.7
-## How far under the struck street point the fan lies (the target sits 0.5 above the street).
-const FAN_LIFT := 0.3
+## How far under the struck street point the curtain stands (the target sits 0.5 above it).
+const STREET_DROP := 0.3
 ## Flash sizes (world units at body scale 1), as #6 had them; the strike light's peak energy and
 ## reach, kept short and soft so it warms the struck street without a hard-rimmed pool.
 const MUZZLE_SIZE := 4.5
@@ -38,9 +37,7 @@ var _seconds: float
 var _core: MeshInstance3D
 var _core_mesh: CylinderMesh
 var _core_mat: ShaderMaterial
-var _fan: MeshInstance3D
-var _fan_mat: ShaderMaterial
-var _fan_half := -1.0
+var _arc_half := -1.0
 var _curtain: MeshInstance3D
 var _curtain_mat: ShaderMaterial
 var _curtain_height: float
@@ -62,10 +59,6 @@ func _init(tint: Color, body_scale: float, tune: Dictionary) -> void:
 	_core_mat = _material(BEAM, tint, tune)
 	_core_mesh.material = _core_mat
 	_core = _instance(_core_mesh)
-	_fan_mat = _material(FAN, tint, tune)
-	_fan_mat.set_shader_parameter("strength", Num.f(tune["breath_fan_alpha"]))
-	_fan = _instance(null)
-	_fan.material_override = _fan_mat
 	_curtain_mat = _material(CURTAIN, tint, tune)
 	_curtain_mat.set_shader_parameter("strength", Num.f(tune["breath_curtain_alpha"]))
 	_curtain = _instance(null)
@@ -81,30 +74,25 @@ func _init(tint: Color, body_scale: float, tune: Dictionary) -> void:
 	add_child(_light)
 
 
-## Lights the breath from `mouth`: the core to `hit`, the fan along `span` (mouth to the street
-## at full reach) over `half_angle` either side, for fx.beam_seconds.
+## Lights the breath from `mouth`: the core to `hit`, the curtain on the arc at the end of
+## `span` (mouth to the street at full reach), half_angle either side, for fx.beam_seconds.
 func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> void:
 	_hit = hit
 	_jaw = _jaw_of(follow)
 	_core_mesh.bottom_radius = 0.3 * _scale
 	_core_mesh.top_radius = 0.45 * _scale
 	_place_core(mouth)
-	if not is_equal_approx(half_angle, _fan_half):
-		_fan_half = half_angle
-		_fan.mesh = _sector(half_angle)
-		_fan_mat.set_shader_parameter("half_angle", half_angle)
+	if not is_equal_approx(half_angle, _arc_half):
+		_arc_half = half_angle
 		_curtain.mesh = _arc_wall(half_angle)
-	# The fan lies flat on the street over exactly the sim's hit cone: from the kaiju's feet
-	# (`cone_origin`) out to where the breath strikes at full reach, half_angle either side.
-	# Face-up to the game camera, it spills past both sides of the body that hides the core.
+	# The curtain stands on the far arc of exactly the sim's hit cone: centred on the kaiju's
+	# feet (`cone_origin`), at full reach, half_angle either side; it never promises more reach.
 	var target := mouth + span
 	var flat := Vector3(target.x - cone_origin.x, 0.0, target.z - cone_origin.z)
 	var b := along(flat.normalized())
-	_fan.basis = b.scaled(Vector3.ONE * flat.length())
-	_fan.position = Vector3(cone_origin.x, target.y - FAN_LIFT, cone_origin.z)
 	var reach := flat.length()
 	_curtain.basis = Basis(b.x * reach, b.y * reach, Vector3.UP * _curtain_height)
-	_curtain.position = _fan.position
+	_curtain.position = Vector3(cone_origin.x, target.y - STREET_DROP, cone_origin.z)
 	var dir := (hit - mouth).normalized()
 	_muzzle.position = mouth
 	(_muzzle.mesh as QuadMesh).size = Vector2.ONE * MUZZLE_SIZE * _scale * power
@@ -112,10 +100,10 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	(_strike.mesh as QuadMesh).size = Vector2.ONE * STRIKE_SIZE * _scale * power
 	_light.position = hit - dir * 1.5
 	_light.omni_range = LIGHT_RANGE * _scale
-	for mat: ShaderMaterial in [_core_mat, _fan_mat, _curtain_mat]:
+	for mat: ShaderMaterial in [_core_mat, _curtain_mat]:
 		mat.set_shader_parameter("power", power)
 	_set_progress(0.0)
-	for node: Node3D in [_core, _fan, _curtain, _muzzle, _strike, _light]:
+	for node: Node3D in [_core, _curtain, _muzzle, _strike, _light]:
 		node.visible = true
 	if _tween != null:
 		_tween.kill()
@@ -174,7 +162,7 @@ func _place_core(mouth: Vector3) -> void:
 
 
 func _set_progress(v: float) -> void:
-	for mat: ShaderMaterial in [_core_mat, _fan_mat, _curtain_mat]:
+	for mat: ShaderMaterial in [_core_mat, _curtain_mat]:
 		mat.set_shader_parameter("progress", v)
 	var grow := clampf(v / _fade_in, 0.0, 1.0)  # linear: an even ramp over the fade-in
 	var struck := clampf((v - 0.04) / _fade_in, 0.0, 1.0)  # as the front reaches what it hits
@@ -184,7 +172,7 @@ func _set_progress(v: float) -> void:
 
 
 func _hide() -> void:
-	for node: Node3D in [_core, _fan, _curtain, _muzzle, _strike, _light]:
+	for node: Node3D in [_core, _curtain, _muzzle, _strike, _light]:
 		node.visible = false
 
 
@@ -218,14 +206,14 @@ func _instance(mesh: Mesh) -> MeshInstance3D:
 	return node
 
 
-## A unit wall standing on the fan's arc: x/y on the unit circle over `half_angle` either side
+## A unit wall standing on an arc: x/y on the unit circle over `half_angle` either side
 ## of +y, z from 0 (street) to 1 (top). UV.x runs -1..1 along the arc, UV.y up the wall.
 func _arc_wall(half_angle: float) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i: int in FAN_SEGMENTS:
-		var t0 := float(i) / FAN_SEGMENTS
-		var t1 := float(i + 1) / FAN_SEGMENTS
+	for i: int in ARC_SEGMENTS:
+		var t0 := float(i) / ARC_SEGMENTS
+		var t1 := float(i + 1) / ARC_SEGMENTS
 		var a0 := lerpf(-half_angle, half_angle, t0)
 		var a1 := lerpf(-half_angle, half_angle, t1)
 		var p0 := Vector3(sin(a0), cos(a0), 0.0)
@@ -242,20 +230,3 @@ func _arc_wall(half_angle: float) -> ArrayMesh:
 static func _wall_vertex(st: SurfaceTool, at: Vector3, along_arc: float, up: float) -> void:
 	st.set_uv(Vector2(along_arc * 2.0 - 1.0, up))
 	st.add_vertex(at + Vector3(0.0, 0.0, up))
-
-
-## A flat unit fan in the local xy plane: apex at the origin, opening along +y over
-## `half_angle` either side. UV.x runs -1..1 across it, UV.y 0..1 outward.
-func _sector(half_angle: float) -> ArrayMesh:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i: int in FAN_SEGMENTS:
-		var a0 := lerpf(-half_angle, half_angle, float(i) / FAN_SEGMENTS)
-		var a1 := lerpf(-half_angle, half_angle, float(i + 1) / FAN_SEGMENTS)
-		st.set_uv(Vector2(0.0, 0.0))
-		st.add_vertex(Vector3.ZERO)
-		st.set_uv(Vector2(a0 / half_angle, 1.0))
-		st.add_vertex(Vector3(sin(a0), cos(a0), 0.0))
-		st.set_uv(Vector2(a1 / half_angle, 1.0))
-		st.add_vertex(Vector3(sin(a1), cos(a1), 0.0))
-	return st.commit()
