@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 04:28
+# Lead handoff, 2026-10-18 04:30
 ## State: working (lead since 03:56); waiting on helpers: #22 r2, #23 jaw+title fix, #8 roar wiring, city-calm PR, Tripo board r2
 
 ## Who
@@ -54,7 +54,8 @@ adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never
 - Unsloth loaded-model fix APPLIED 04:22 (director OK; memory-shared/local-models-companion.md; MCP reconnect needed).
 
 ## Director decisions today (log in board PRs): D-050 demo (#21), D-051 reveal title (#23), D-052 SFX ship (#25),
-D-053 worktrees one per live session (#25). Stale branches kaiju-skin-weights{,-before} deleted 04:21.
+D-053 worktrees one per live session (#25), D-TBD-species-models 04:27 (species session's first PR): keep all six
+mantis/octopus meshes, croc hand rig + welded weights, octopus first; octopus texture 8bf2f668 now critical path. Stale branches kaiju-skin-weights{,-before} deleted 04:21.
 Open for the director: Q3 Apex height (not needed for the demo; park).
 
 ## Branch and checkout
