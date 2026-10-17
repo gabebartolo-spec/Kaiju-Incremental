@@ -2,10 +2,10 @@
 # run: checks went missing. Raise a floor in the PR that adds checks; floors only go
 # up (game-architecture §6). A suite with no line here fails until one is added.
 smoke 27
-sim 39
+sim 50
 powers 24
 tentacles 18
 city 12
 growth 24
 load 6
-flow 113
+flow 115

@@ -162,6 +162,21 @@ func _check_rampage() -> void:
 		)
 		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
+	# Rooftop defenders (D-063): figures stand on the squads' roofs, at most max_drawn of them,
+	# and their volleys draw flashes and tracers and call the rifle cue.
+	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
+	var cap := Num.i(rampage.sim.army["rooftop"]["max_drawn"])
+	check(
+		roofs != null and roofs.most_drawn > 0 and roofs.most_drawn <= cap,
+		(
+			"armed citizens stand on the roofs, at most %d drawn (%d)"
+			% [cap, roofs.most_drawn if roofs else -1]
+		)
+	)
+	check(
+		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
+		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
+	)
 	check(
 		rampage.sim.chunks_destroyed > 0,
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
