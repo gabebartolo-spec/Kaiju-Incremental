@@ -1,8 +1,9 @@
-# blender-reptile handoff, 2026-10-18 05:40
+# blender-reptile handoff, 2026-10-18 05:45
 ## State: running a check. LEAD round 2 FIX (04:11, judged at the GAME camera) done in code, local
 ## 16260e9 (= 3aa63a6 tail round 2 + merge look-options 81afe80; 7d3f761 cards option A), all 9 suites
-## green. Auto-fix base conflicts forced pushes: #22 = bc788c9 (merged look-options 47e1b30;
-## floors city 6, flow 100, clips 14; all suites green). Evidence follows in one push.
+## green. Auto-fix base conflicts forced pushes: #22 = b434102 (merged look-options 522fd72;
+## floors city 6, flow 102, clips 14; all suites green; lead.md 109 lines so doc-caps clears).
+## Card stills committed. Remaining evidence (3 s clips, 2x slam/turn crops, body) in one push.
 ## Round 2: walk TAIL_WALK (2,5) over TAIL_WALK_PERIOD 72 = 1.5 cycles (tip 45.3 m = 0.72x), walk
 ## clip baked as 3 cycles (header "cycles", KaijuClips.cycles_of); roar TAIL_LIFT (6,-9): tip above
 ## hip f19-40 (0.92 s), crashes 96 -> 3 m f38-46, lands f47 = head peak; slam emits
@@ -10,9 +11,9 @@
 ## (14, 0.25), TAIL_WHIP (6.5, 8.3), TURN_SETTLE 24 (offline: overshoot ~8 deg, settle ~0.4 s).
 ## CI (temp branch claude/croctitan-cards-tmp = bc788c9, delete after): BEFORE reruns red on the
 ## 3000 s timeout under congestion (ci3 595/600 frames used; ci5 593/600). 4K cards DONE green
-## 39058482321 -> species_cards_before_after.png + species_select_4k.png (in evidence folder,
-## uncommitted; demo shows the croc card only). byhacv7qr: AFTER game + side -> ci7 (running).
-## doc-caps red was base lead.md (fixed on look-options 2019f23): merge it with the evidence push.
+## 39058482321 -> species_cards_before_after.png + species_select_4k.png (committed; demo shows
+## the croc card only). byhacv7qr: AFTER game + side -> ci7 (running).
+## doc-caps red was base lead.md: fixed by the 522fd72 merge.
 ## Owed for round 2: 3 s game-cam clips walk/turn/roar (roar clip 13.3-18.3: crouch, rear, slam,
 ## recovery), before/after aligned by time (same schedule, seed), 2x crops slam contact + turn
 ## settle, species_cards_before_after (fill per species), PR body; push; delete tmp; SHA to LEAD.
