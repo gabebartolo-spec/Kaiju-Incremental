@@ -6,8 +6,12 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --write-movie <dir>/powers.avi --script tools/capture/capture_powers.gd -- --out=<dir>
+## --species=reptilian: only that species; --signature-only: skip the upgrade effects after it.
+## --side: watch from the kaiju's right side, level with its chest, instead of the game camera.
 
 const SETTLE := 90
+const SIDE_DISTANCE := 26.0
+const SIDE_HEIGHT := 9.0
 const AFTER: Array[int] = [6, 14, 26, 40, 90]
 const UPGRADES_FRAMES := 60 * 30
 const SHOWN := {
@@ -28,18 +32,28 @@ const SHOWN := {
 
 var _out := "user://powers"
 
+var _species: Array[String] = ["reptilian", "insectoid", "cephalopod"]
+var _signature_only := false
+var _side := false
+
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
+		elif arg.begins_with("--species="):
+			_species = [arg.substr(10)]
+		elif arg == "--signature-only":
+			_signature_only = true
+		elif arg == "--side":
+			_side = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
+	for species_id: String in _species:
 		await _species_shots(species_id)
 	quit()
 
@@ -58,6 +72,16 @@ func _species_shots(species_id: String) -> void:
 	rampage.autoplay_signature = false
 	root.add_child(rampage)
 	await _frames(SETTLE)
+	if _side:  # side-on: the breath runs across the frame instead of away from the camera
+		var cam := Camera3D.new()
+		rampage.add_child(cam)
+		var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
+		var right := Vector3(-rampage.sim.facing.y, 0.0, rampage.sim.facing.x)
+		cam.position = at + right * SIDE_DISTANCE + Vector3(0, SIDE_HEIGHT, 0)
+		cam.look_at(
+			at + Vector3(rampage.sim.facing.x, 0.0, rampage.sim.facing.y) * 5.0 + Vector3.UP * 3.0
+		)
+		cam.current = true
 	rampage.autoplay_signature = true
 	await physics_frame
 	await physics_frame
@@ -67,8 +91,10 @@ func _species_shots(species_id: String) -> void:
 		await _frames(at - waited)
 		waited = at
 		_shot("%s_signature_%02d" % [species_id, at])
-	if species_id == "reptilian":
+	if species_id == "reptilian" and not _signature_only:
 		await _upgrade_shots(rampage)
+	elif _signature_only:
+		await _frames(SETTLE)  # a beat after, so the clip shows what the power leaves behind
 	rampage.queue_free()
 	await _frames(2)
 
