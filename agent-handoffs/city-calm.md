@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 05:58
-## State: running a check (D-062 BEFORE/AFTER captures on CI); D-065 greenery queued next
+# City-calm handoff, 2026-10-18 06:15
+## State: running a check (PR #37: AFTER re-captures on CI at 90738cf; frame cost waits for the GPU go)
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep from 06:4x:
@@ -36,6 +36,18 @@ notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-..
   growth 24, load 6, flow 100, self-test ok.
 - Camera past the arena edge: stage 1 south 14, sides 22-50, north 37 m; Behemoth 16.5,
   27-67, 51 m. The kaiju is clamped to half + 2.5.
+
+## PR #37 (D-062), head 90738cf
+- Lead stage 1 check PASS; nit fixed: car paints now city.car_colors (tuning), 2a3138/3a4236
+  lifted to 5b6b7a/6b7a52; gdlint fix (literal newline) + gdformat.
+- BEFORE runs 39060231519 (s1), before_s2 run in notes; AFTER re-captures -> notes after2_s1/2.
+- Local suites not re-run after 90738cf (pacing holds my Godot slot); CI tests on the PR.
+
+## D-065(b) table for the lead (green-lot share, data unchanged; local hack in
+sim/city_lots.gd via KAIJU_GREEN_SHARE env, NEVER commit; tools/_chunks_probe.gd untracked)
+- chunks stage1/2/3/4: 0%: 12286/25811/107259/350448; 8%: 10556/23323/98594/322765;
+  12%: 10310/22241/95995/307730; 15%: 10214/21695/91092/297409.
+- pacing.gd reptilian hours: running (notes pacing_green_<share>.log).
 
 ## Next
 1. CI captures (capture_growth --stage=1/2 --quick, 1920x1080): BEFORE on look-options,
