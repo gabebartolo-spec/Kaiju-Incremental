@@ -4,6 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-17 · D-048 · Director · Croc titan v2: short reptilian arms (B) and charcoal spines (B)
+Why: director: the arms are "always doing something odd... maybe his arms are just too long" and "too human looking
+in the musculature" (measured 51% of height, 76% of the leg); "i dont like how light the colour of his spines are".
+Boards: croctitan_arms_board.png (NOW / A / B / C, picked B) and croctitan_spine_colour_board.png (olive / charcoal /
+bronze, picked charcoal). Changes: new Tripo Smart Mesh c8185166 (6623 quads, arms clear, long low tail), charcoal
+re-texture, six-view PASS (croctitan_v2_six_view.png); the Blender hand rig is re-fitted to it before D-047 ships.
+
 ## 2026-10-17 · D-047 · Director · Play the Blender-made croc titan clips in the game
 Why: in game, the Blender weights (#19) fixed the hip shear and tail-root seams, but the game's procedural walk and
 roar still read as a 5 m lizard (fresh critic: rear-up, no settle, the jaw drops vertical). The Blender clips

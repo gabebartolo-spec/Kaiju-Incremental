@@ -1,14 +1,14 @@
-# Lead handoff, 2026-10-17 22:35
-## State: awaiting director (download OK for croc titan v2 GLB)
+# Lead handoff, 2026-10-17 22:55
+## State: working (blender-reptile re-fitting the hand rig to croc titan v2, then opens the D-047 PR)
 
 ## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
 - Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
   picked B; GPT redraw for arms-clear + long tail -> variant 3 -> Smart Mesh c8185166 (100) v1 6623 quads ->
   texture (30). Spines: 3 free colour edits, director picked B charcoal -> re-texture from charcoal ref (30),
   balance 19415. Boards: docs/captures/2026-10-17-reptile-design/croctitan_{arms,spine_colour}_board.png.
-- NEXT: download (ask), six-view, save ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb, send path to
-  blender-reptile: re-fit (refit.md), skin re-export, .kclip re-bake, swap kvox, open D-047 PR (held for it).
-- D-048 to log: short arms B + charcoal spines (director). Q2 balance D, Q3 Apex height still open.
+- DONE: downloaded ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb, six-view PASS (croctitan_v2_six_view.png),
+  D-048 logged. blender-reptile briefed 22:50: re-fit, skin, .kclip, kvox, D-047 PR -> lead QA + fresh critic.
+- Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
 
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
 
