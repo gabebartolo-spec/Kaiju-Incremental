@@ -1,34 +1,30 @@
 class_name UpgradeScreen
 extends Control
 ## The evolution tree between rampages. Spend rubble on nodes, see what each changes in play
-## (the stat now -> after the next level), then start the next rampage. Nodes are laid out by
-## their data `pos`; lines join prerequisites. The species' own branch sits on a band of its
-## own, ending in its ultimate (D-040) as the capstone. Reads the tree; buying goes through it.
+## (each stat now, an arrow, after the next level), then start the next rampage. TreeArea lays
+## the nodes out by their data `pos` to fill the screen; the species' own branch sits on a band
+## of its own, ending in its ultimate (D-040) as the capstone. Reads the tree; buying goes
+## through it.
 
 signal start_pressed
 signal bought(id: String)
 signal menu_pressed
 
-const CELL := Vector2(172, 128)
-## The species' own branch (docs/SPECIES.md) sits on this row, on a band of its own.
-const BRANCH_ROW := 5
-const COLUMNS := 8
-const BRANCH_TINT_ALPHA := 0.18
-## The tree's width: the last column's capstone and a small edge. At 1080p (100%) it fits
-## beside the side panel at full size; at larger UI scales it shrinks to fit (never scrolls).
-const AREA_WIDTH := CELL.x * (COLUMNS - 1) + UpgradeNode.CAPSTONE_SIZE.x + 4
-## Stat, how it reads in play, format ("inv" shows 1/value per second).
+## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
+const SIDE_WIDTH := 360
+## Stat, how it reads in play, format ("inv" shows 1/value per second), short name for the
+## two-column summary.
 const STAT_LINES: Array[Array] = [
-	["hp", "Health", "%d"],
-	["stomp_damage", "Stomp power", "%.0f"],
-	["stomp_radius", "Stomp reach", "%.1f"],
-	["stomp_interval", "Stomps / sec", "inv"],
-	["speed", "Speed", "%.1f"],
-	["armor", "Armour", "%.1f"],
-	["run_seconds", "Rampage time", "%ds"],
-	["ability_damage", "Signature power", "%.0f"],
-	["ability_cooldown", "Signature recharge", "%.1fs"],
-	["size", "Size", "%d"],
+	["hp", "Health", "%d", "Health"],
+	["stomp_damage", "Stomp power", "%.0f", "Stomp"],
+	["stomp_radius", "Stomp reach", "%.1f", "Reach"],
+	["stomp_interval", "Stomps / sec", "inv", "Stomps/s"],
+	["speed", "Speed", "%.1f", "Speed"],
+	["armor", "Armour", "%.1f", "Armour"],
+	["run_seconds", "Rampage time", "%ds", "Time"],
+	["ability_damage", "Signature power", "%.0f", "Signature"],
+	["ability_cooldown", "Signature recharge", "%.1fs", "Recharge"],
+	["size", "Size", "%d", "Size"],
 ]
 ## Stats only some nodes change: shown in a node's details, not the summary.
 const EXTRA_STATS: Array[Array] = [
@@ -53,13 +49,14 @@ var tree: UpgradeTree
 var rubble: int
 var species: Dictionary
 var base_stats: Dictionary
-var _buttons: Dictionary = {}
+var _area: TreeArea
 var _rubble_label: Label
 var _info_title: Label
 var _info_role: Label
-var _info_body: Label
+var _info_body: RichTextLabel
 var _info_status: Label
-var _stats_label: Label
+var _stats_title: Label
+var _stats_grid: GridContainer
 var _selected := ""
 var _ultimate_cooldown := 0.0
 
@@ -100,66 +97,26 @@ func _ready() -> void:
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 24)
 	col.add_child(body)
-	var fit := Control.new()
-	fit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fit.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_child(fit)
-	var area := _build_tree_area()
-	fit.add_child(area)
-	fit.resized.connect(func() -> void: _fit_tree(fit, area))
+	_area = TreeArea.new()
+	var roles: Dictionary = {}
+	for id: String in tree.order:
+		roles[id] = role_of(id)
+	_area.setup(tree, species, roles)
+	_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_area.node_pressed.connect(_on_node_pressed)
+	_area.node_selected.connect(_select)
+	body.add_child(_area)
 	body.add_child(_build_side())
 	_selected = tree.order[0]
 	_refresh()
 
 
-## Shrinks the whole tree (never grows it) so every node, the branch band and its capstone
-## stay on screen at every UI scale (D-027: the 4K TV at 125%).
-func _fit_tree(fit: Control, area: Control) -> void:
-	var need := area.custom_minimum_size
-	var k := minf(1.0, minf(fit.size.x / need.x, fit.size.y / need.y))
-	area.scale = Vector2(k, k)
-
-
-func _build_tree_area() -> Control:
-	var area := _TreeLines.new()
-	area.screen = self
-	area.custom_minimum_size = Vector2(AREA_WIDTH, CELL.y * (BRANCH_ROW + 1) + 72)
-	var band := ColorRect.new()
-	var colors: Dictionary = species["colors"]
-	band.color = Color(Color(str(colors["eye"])), BRANCH_TINT_ALPHA)
-	band.position = Vector2(-8, BRANCH_ROW * CELL.y - 14)
-	band.size = Vector2(AREA_WIDTH + 8, UpgradeNode.CAPSTONE_SIZE.y + 28)
-	area.add_child(band)
-	var branch := UiKit.label(
-		(
-			"%s BRANCH  -  only the %s can grow these"
-			% [str(species["name"]).to_upper(), str(species["name"]).to_lower()]
-		),
-		UiKit.SIZE_SMALL,
-		Color(str(colors["eye"])).lightened(0.3)
-	)
-	branch.position = Vector2(0, BRANCH_ROW * CELL.y + UpgradeNode.CAPSTONE_SIZE.y + 18)
-	area.add_child(branch)
-	for id: String in tree.order:
-		var def: Dictionary = tree.defs[id]
-		var pos: Array = def["pos"]
-		var b := UpgradeNode.new(id, role_of(id))
-		b.position = Vector2(Num.f(pos[0]) * CELL.x, Num.f(pos[1]) * CELL.y)
-		if b.role == "ultimate":
-			b.position -= (UpgradeNode.CAPSTONE_SIZE - UpgradeNode.SIZE) * 0.5
-		b.pressed.connect(_on_node_pressed.bind(id))
-		b.focus_entered.connect(_select.bind(id))
-		b.mouse_entered.connect(_select.bind(id))
-		area.add_child(b)
-		_buttons[id] = b
-	return area
-
-
 func _build_side() -> Control:
 	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(420, 0)
-	side.add_theme_constant_override("separation", 14)
+	side.custom_minimum_size = Vector2(SIDE_WIDTH, 0)
+	side.add_theme_constant_override("separation", 12)
 	var info := UiKit.panel()
+	info.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side.add_child(info)
 	var info_col := VBoxContainer.new()
 	info.add_child(info_col)
@@ -168,25 +125,28 @@ func _build_side() -> Control:
 	info_col.add_child(_info_title)
 	_info_role = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
 	info_col.add_child(_info_role)
-	_info_body = UiKit.label("", UiKit.SIZE_BODY, UiKit.MUTED)
-	_info_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_info_body = UiKit.rich(UiKit.SIZE_SMALL, UiKit.MUTED.lightened(0.2))
 	info_col.add_child(_info_body)
-	_info_status = UiKit.label("", UiKit.SIZE_BODY, UiKit.TEXT)
+	_info_status = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
-	# The stats scroll when the screen is short (UI scale 125% on a TV), so RAMPAGE stays on screen.
-	var stats_scroll := ScrollContainer.new()
-	stats_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stats_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	side.add_child(stats_scroll)
 	var stats_panel := UiKit.panel()
-	stats_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stats_scroll.add_child(stats_panel)
-	_stats_label = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
-	stats_panel.add_child(_stats_label)
+	side.add_child(stats_panel)
+	var stats_col := VBoxContainer.new()
+	stats_panel.add_child(stats_col)
+	_stats_title = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
+	stats_col.add_child(_stats_title)
+	_stats_grid = GridContainer.new()
+	_stats_grid.columns = 4
+	_stats_grid.add_theme_constant_override("h_separation", 12)
+	stats_col.add_child(_stats_grid)
+	for entry: Array in STAT_LINES:
+		_stats_grid.add_child(UiKit.label(str(entry[3]), UiKit.SIZE_SMALL, UiKit.MUTED))
+		var value := UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
+		value.name = str(entry[0])
+		_stats_grid.add_child(value)
 	var go := UiKit.button("RAMPAGE  >", UiKit.SIZE_HEAD)
-	go.custom_minimum_size = Vector2(0, 84)
+	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
 	go.grab_focus.call_deferred()
@@ -231,30 +191,28 @@ func _select(id: String) -> void:
 		"evolve": "EVOLUTION",
 		"ultimate": "ULTIMATE  -  %s BRANCH CAPSTONE" % str(species["name"]).to_upper(),
 	}[role]
-	var lines: Array[String] = [str(def["desc"])]
+	_info_body.clear()
+	_info_body.append_text(str(def["desc"]))
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
 	var effects: Dictionary = def.get("effects", {})
 	var steps := 0 if tree.is_maxed(id) else 1
 	for stat: String in effects:
 		var now := Num.f(stats.get(stat, 0.0))
-		var after := now + Num.f(effects[stat]) * steps
-		lines.append(
-			(
-				"%s  %s"
-				% [
-					_stat_name(stat),
-					_fmt(stat, now) + ("  ->  " + _fmt(stat, after) if steps else "")
-				]
-			)
-		)
+		_info_body.append_text("\n%s  %s" % [_stat_name(stat), _fmt(stat, now)])
+		if steps > 0:
+			_info_body.append_text("  ")
+			_info_body.add_image(UiKit.arrow(), UiKit.SIZE_SMALL, 0, UiKit.GOOD)
+			_info_body.append_text("  " + _fmt(stat, now + Num.f(effects[stat])))
 	if role == "evolve" and steps > 0:
 		var stage := KaijuModel.stage_for(Num.i(stats.get("size", 1)) + 1)
-		lines.append("Grows into the %s: towers one tier taller now fall to you" % stage)
+		_info_body.append_text("\nGrows into the %s." % stage)
+		_info_body.append_text("\nTowers one tier taller now fall to you.")
 	if role == "ultimate":
-		lines.append("Press E / pad Y in a rampage; recharges in %ds" % roundi(_ultimate_cooldown))
-	_info_body.text = "\n".join(lines)
+		_info_body.append_text(
+			"\nPress E / pad Y in a rampage; recharges in %ds." % roundi(_ultimate_cooldown)
+		)
 	_info_status.text = _status_line(id)
-	var b: UpgradeNode = _buttons[id]
+	var b := node_button(id)
 	var tint: Color = {"buy": UiKit.GOOD, "poor": UiKit.BAD, "maxed": UiKit.WARN}.get(
 		b.state, UiKit.MUTED
 	)
@@ -275,8 +233,8 @@ func _status_line(id: String) -> String:
 				names.append(str(req_def["name"]))
 		return head + "Needs: " + ", ".join(names)
 	if tree.can_buy(id, rubble):
-		return head + "Cost %d rubble  -  press to buy" % tree.cost(id)
-	return head + "Cost %d rubble  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
+		return head + "Cost %d  -  press to buy" % tree.cost(id)
+	return head + "Cost %d  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
 
 
 func _stat_name(stat: String) -> String:
@@ -301,54 +259,22 @@ func _fmt(stat: String, value: float) -> String:
 func _refresh() -> void:
 	_rubble_label.text = "RUBBLE  %d" % rubble
 	for id: String in tree.order:
-		var b: UpgradeNode = _buttons[id]
-		b.show_state(tree, rubble)
+		node_button(id).show_state(tree, rubble)
+	_area.queue_redraw()
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
-	var lines: Array[String] = [
-		(
-			"%s  -  evolution %d%%"
-			% [
-				str(species["name"]).to_upper(),
-				roundi(100.0 * tree.levels_owned() / maxf(1.0, tree.levels_total()))
-			]
-		)
-	]
+	_stats_title.text = (
+		"%s  -  evolution %d%%"
+		% [
+			str(species["name"]).to_upper(),
+			roundi(100.0 * tree.levels_owned() / maxf(1.0, tree.levels_total()))
+		]
+	)
 	for entry: Array in STAT_LINES:
-		lines.append(
-			"%s:  %s" % [str(entry[1]), _fmt(str(entry[0]), Num.f(stats.get(str(entry[0]), 0.0)))]
-		)
-	_stats_label.text = "\n".join(lines)
+		var value: Label = _stats_grid.get_node(str(entry[0]))
+		value.text = _fmt(str(entry[0]), Num.f(stats.get(str(entry[0]), 0.0)))
 	if _selected != "":
 		_select(_selected)
 
 
 func node_button(id: String) -> UpgradeNode:
-	return _buttons[id]
-
-
-func node_centre(id: String) -> Vector2:
-	var b: Button = _buttons[id]
-	return b.position + b.size * 0.5
-
-
-## Draws the prerequisite lines under the node buttons.
-class _TreeLines:
-	extends Control
-	var screen: UpgradeScreen
-
-	func _process(_delta: float) -> void:
-		queue_redraw()
-
-	func _draw() -> void:
-		for id: String in screen.tree.order:
-			var def: Dictionary = screen.tree.defs[id]
-			var requires: Array = def.get("requires", [])
-			for req: String in requires:
-				var owned := screen.tree.level(req) > 0
-				draw_line(
-					screen.node_centre(req),
-					screen.node_centre(id),
-					UiKit.GOOD if owned else UiKit.LOCKED,
-					4.0,
-					true
-				)
+	return _area.buttons[id]

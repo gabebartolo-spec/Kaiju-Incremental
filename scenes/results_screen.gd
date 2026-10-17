@@ -6,12 +6,12 @@ extends CanvasLayer
 
 signal continued
 
-## Stat key, label, how the value is shown ("int" or "pct").
+## Stat key, label, how the value is shown ("int", "pct" or "floors").
 const ROWS: Array[Array] = [
 	["rubble", "Rubble earned", "int"],
 	["destruction", "City destroyed", "pct"],
 	["toppled", "Buildings toppled", "int"],
-	["biggest_fall", "Biggest collapse (blocks)", "int"],
+	["tallest_topple", "Tallest tower toppled", "floors"],
 	["civilians", "Civilians crushed", "int"],
 	["tanks", "Tanks crushed", "int"],
 	["helis", "Helicopters downed", "int"],
@@ -154,10 +154,13 @@ func _show_frame() -> void:
 func _shown(row: Array, value: float) -> String:
 	if str(row[2]) == "pct":
 		return "%d%%" % floori(value * 100.0)
+	if str(row[2]) == "floors":
+		return "%d floors" % floori(value)
 	return "%d" % floori(value)
 
 
+## Every row shows the best before this rampage (none at all on a first rampage).
 func _best_text(row: Array) -> String:
-	if previous_best.is_empty() or not previous_best.has(str(row[0])):
+	if previous_best.is_empty():
 		return ""
-	return "best " + _shown(row, Num.f(previous_best[str(row[0])]))
+	return "best " + _shown(row, Num.f(previous_best.get(str(row[0]), 0.0)))

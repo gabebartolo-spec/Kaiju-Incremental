@@ -180,7 +180,7 @@ func result() -> Dictionary:
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
 		"toppled": collapse.toppled,
-		"biggest_fall": collapse.biggest_fall,
+		"tallest_topple": collapse.tallest_topple,
 		"reason": end_reason,
 	}
 

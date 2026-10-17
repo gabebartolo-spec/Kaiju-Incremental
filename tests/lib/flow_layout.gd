@@ -6,6 +6,10 @@ extends RefCounted
 ## The director's TV (D-027). Headless windows are 64x64 (a tall square canvas), so each check
 ## sizes the window to this first.
 const TV_SIZE := Vector2i(3840, 2160)
+## The TV bar for text: cap height in real pixels on the TV (lead review 3).
+const TV_CAP_PX := 28.0
+## Cap height of the UI fonts as a share of their size (Open Sans / Kaiju Claw, about 0.71).
+const CAP_SHARE := 0.71
 
 var t: SceneTree
 var check: Callable
@@ -32,23 +36,42 @@ func fits_at_scales(screen: Control, what: String) -> void:
 		PlayerSettings.apply()
 		await _frames(3)
 		var view := t.root.get_visible_rect()
+		var nodes: Array[UpgradeNode] = []
 		for node: Node in screen.find_children("*", "Button", true, false):
 			var b: Button = node
-			if b.is_visible_in_tree() and not _on_screen(b, view):
-				var name := b.text.get_slice(String.chr(10), 0)
-				misses.append("%s at %d%%" % [name, roundi(scale * 100.0)])
+			var name := b.text.get_slice(String.chr(10), 0)
+			var at := " at %d%%" % roundi(scale * 100.0)
+			if b.is_visible_in_tree() and not view.encloses(b.get_global_rect()):
+				misses.append(name + at + " off screen")
+			if b is UpgradeNode:
+				nodes.append(b)
+				if (
+					b.get_minimum_size().y > b.size.y + 0.5
+					or b.get_global_transform().get_scale().x != 1.0
+				):
+					misses.append(name + at + " text does not fit")
+				var px := (
+					b.get_theme_font_size("font_size") * (TV_SIZE.y / 1080.0) * scale * CAP_SHARE
+				)
+				if px < TV_CAP_PX:
+					misses.append("%s%s cap %.0f px" % [name, at, px])
+		for i: int in nodes.size():
+			for j: int in range(i + 1, nodes.size()):
+				if nodes[i].get_global_rect().grow(-1.0).intersects(nodes[j].get_global_rect()):
+					misses.append(
+						"%s touches %s at %d%%" % [nodes[i].id, nodes[j].id, roundi(scale * 100.0)]
+					)
 	PlayerSettings.ui_scale = PlayerSettings.UI_SCALES[0]
 	PlayerSettings.apply()
 	t.root.size = window
 	await _frames(2)
 	check.call(
-		misses.is_empty(), "the %s's buttons stay on screen at every UI scale: %s" % [what, misses]
+		misses.is_empty(),
+		(
+			"the %s fits the TV at every UI scale (on screen, 28 px text, no overlaps): %s"
+			% [what, misses]
+		)
 	)
-
-
-## Fully inside the visible screen (tree nodes included: the tree shrinks to fit, never scrolls).
-func _on_screen(b: Button, view: Rect2) -> bool:
-	return view.encloses(b.get_global_rect())
 
 
 ## The reveal measures against the new stage's city (D-039): the Apex Titan topples size x tier

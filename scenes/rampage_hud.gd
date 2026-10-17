@@ -32,6 +32,8 @@ var _rubble: Label
 var _destruction: ProgressBar
 var _ability: Label
 var _ultimate: Label
+## The HUD's bars and hints: hidden while a dialog (pause, the report) is up.
+var _widgets: Control
 var _beat_frame := -1
 var _beat_done := false
 
@@ -49,6 +51,7 @@ func result() -> Dictionary:
 
 func _ready() -> void:
 	var root := MarginContainer.new()
+	_widgets = root
 	UiKit.full_rect(root)
 	for side: String in ["left", "right", "top", "bottom"]:
 		root.add_theme_constant_override("margin_" + side, 28)
@@ -196,6 +199,8 @@ func pause() -> void:
 		return
 	var menu := PauseMenu.new()
 	menu.end_pressed.connect(_end_now)
+	_widgets.visible = false
+	menu.tree_exited.connect(func() -> void: _widgets.visible = not _beat_done)
 	add_child(menu)
 	get_tree().paused = true
 
@@ -221,4 +226,5 @@ func finish_beat() -> void:
 		return
 	Engine.time_scale = 1.0
 	_beat_done = true
+	visible = false  # the report takes over the screen; the city stays behind it
 	beat_done.emit(result())

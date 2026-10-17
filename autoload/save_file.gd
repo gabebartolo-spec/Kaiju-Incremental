@@ -9,7 +9,7 @@ const PATH := "user://save.json"
 const VERSION := 2
 ## The results screen's records: each is the best single rampage, per stat.
 const BEST_KEYS: Array[String] = [
-	"rubble", "destruction", "toppled", "biggest_fall", "civilians", "tanks", "helis"
+	"rubble", "destruction", "toppled", "tallest_topple", "civilians", "tanks", "helis"
 ]
 
 

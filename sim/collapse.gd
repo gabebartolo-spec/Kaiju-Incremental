@@ -5,10 +5,10 @@ extends RefCounted
 ## street, buildings and tanks). Part of RampageSim; split out to keep files small.
 
 var sim: RampageSim
-## Buildings that toppled over sideways (each counted once) and the most chunks that came down
-## in one fall: the results screen's biggest topple.
+## Buildings that toppled over sideways (each counted once) and the tallest of them, in floors:
+## the results screen's biggest collapse.
 var toppled := 0
-var biggest_fall := 0
+var tallest_topple := 0
 var _toppled_ids: Dictionary = {}
 
 
@@ -92,7 +92,8 @@ func _land(f: RampageSim.Fall) -> void:
 	var b := sim.buildings[f.building]
 	var bonus := Num.f(sim.city["topple_bonus"]) if f.kind == "topple" else 1.0
 	sim.pay(b, f.cells.size(), bonus)
-	biggest_fall = maxi(biggest_fall, f.cells.size())
+	if f.kind == "topple":
+		tallest_topple = maxi(tallest_topple, f.height)
 	var impact := Num.f(sim.city["impact_damage"])
 	var event := {"type": "fall_land", "id": f.id, "kind": f.kind, "building": f.building}
 	if f.kind == "topple":

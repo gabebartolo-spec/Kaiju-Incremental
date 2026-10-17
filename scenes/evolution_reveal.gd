@@ -15,6 +15,7 @@ const SKIP_AFTER := 8
 ## The 3D view fills what the text leaves, at most this big (so the lines below it stay on
 ## screen at every UI scale).
 const VIEW_MAX := Vector2(1200, 760)
+const EDGE_MARGIN := 48.0
 ## The comparison tower's footprint (chunks); it is built by the city's own BuildingView.
 const TOWER_SIDE := 6
 
@@ -61,6 +62,8 @@ func _ready() -> void:
 	add_child(UiKit.backdrop())
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
+	col.offset_top = EDGE_MARGIN
+	col.offset_bottom = -EDGE_MARGIN  # keeps the skip hint off the bottom edge
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
@@ -80,7 +83,7 @@ func _ready() -> void:
 	lines = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
 	lines.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(lines)
-	var hint := UiKit.label("Enter / A to skip", UiKit.SIZE_SMALL, UiKit.MUTED)
+	var hint := UiKit.label("Enter / A to skip", UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.45))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(hint)
 	_flash = ColorRect.new()

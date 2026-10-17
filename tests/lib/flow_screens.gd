@@ -78,6 +78,7 @@ func _check_new_game() -> void:
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(rampage, PauseMenu)
 	check.call(t.paused and menu != null, "Esc pauses the rampage and opens the pause menu")
+	check.call(_hint_hidden(rampage), "the HUD's hints hide behind the pause menu (lead review 3)")
 	var clock := rampage.sim.time_left
 	await _frames(10)
 	check.call(rampage.sim.time_left == clock, "the rampage clock stands still while paused")
@@ -105,6 +106,10 @@ func _check_new_game() -> void:
 		results != null and Engine.time_scale == 1.0,
 		"after the beat the results show over the city at normal speed"
 	)
+	check.call(
+		not (GuiInput.find_script(rampage, RampageHud) as RampageHud).visible,
+		"the HUD hides behind the report"
+	)
 	if results != null:
 		check.call(
 			results.verdict() == "YOUR FIRST RAMPAGE" and results.counting(),
@@ -130,7 +135,7 @@ func _check_results_compare() -> void:
 		"rubble": 300,
 		"destruction": 0.25,
 		"toppled": 4,
-		"biggest_fall": 90,
+		"tallest_topple": 12,
 		"civilians": 12,
 		"tanks": 2,
 		"helis": 0,
@@ -149,7 +154,7 @@ func _check_results_compare() -> void:
 	for node: Node in results.find_children("*", "Label", true, false):
 		labels.append((node as Label).text)
 	check.call(
-		labels.has("300") and labels.has("25%") and labels.has("90"),
+		labels.has("300") and labels.has("25%") and labels.has("12 floors"),
 		"Enter lands the counts on the result: %s" % [labels]
 	)
 	check.call(
@@ -160,6 +165,11 @@ func _check_results_compare() -> void:
 			and labels.count("NEW BEST") == 4
 		),
 		"new bests are marked, misses are not (%d marked)" % labels.count("NEW BEST")
+	)
+	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
+	check.call(
+		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size(),
+		"every row shows its best or NEW BEST: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
 	check.call(short.verdict() == "50 RUBBLE SHORT OF YOUR BEST", "a miss says how far short")
@@ -194,11 +204,21 @@ func _check_evolution_and_continue() -> void:
 		stride.text.contains("BUY %d" % tree.tree.cost("stride")) and stride.state == "buy",
 		"an affordable node says BUY and its price: %s" % stride.text
 	)
+	var copy: Array[String] = []
+	for node: Node in tree.find_children("*", "", true, false):
+		if node is Button or node is Label:
+			copy.append(str(node.get("text")))
+		elif node is RichTextLabel:
+			copy.append((node as RichTextLabel).get_parsed_text())
+	var bad := copy.filter(func(c: String) -> bool: return c.contains("->") or c.contains("need"))
+	check.call(
+		bad.is_empty(), "the tree uses drawn arrows and keeps 'need' in the side panel: %s" % [bad]
+	)
 	var ultimate := tree.node_button("i_brood")
 	check.call(
 		(
 			ultimate.role == "ultimate"
-			and ultimate.size == UpgradeNode.CAPSTONE_SIZE
+			and ultimate.size.y > stride.size.y
 			and ultimate.text.contains("[E / Y]")
 		),
 		"the insectoid's Brood is its branch's capstone, bigger, with its button"
@@ -340,3 +360,12 @@ func _check_migration() -> void:
 
 func _evolve_cost() -> int:
 	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")
+
+
+## True when the HUD's control hints ("Move: WASD ...") are not showing.
+func _hint_hidden(rampage: Rampage) -> bool:
+	for node: Node in rampage.find_children("*", "Label", true, false):
+		var l: Label = node
+		if l.text.begins_with("Move:"):
+			return not l.is_visible_in_tree()
+	return false
