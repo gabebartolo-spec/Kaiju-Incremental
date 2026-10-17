@@ -1,5 +1,8 @@
-# blender-reptile handoff, 2026-10-18 03:25
-## State: running a check (4K select 39047808973 at 5bd22c4 -> ci4/select4k; bq3xxpgcp)
+# blender-reptile handoff, 2026-10-18 03:45
+## State: running a check (b2vwtf0yr: sequential CI at 4a35fed -> ci5/select4k (--only=select),
+## ci5/after_side, ci5/before_game; one at a time - concurrent runs hit the 3000 s timeout)
+## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
+## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
 Open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera, per-frame PNG
 diff (seams, blends), 2x crops of feet at contact and jaw at roar peak, a 4K species-select still,
@@ -39,6 +42,9 @@ species card fix a168942 (lead 01:38: fix it in this PR).
 - Next: when ci4 lands: in-game 2x root crop at turn + mid-tail at slam, compose BEFORE/AFTER
   (ev/compose_ba.py ci3/before_game vs ci4/after_game) + PNG diff, commit evidence, open PR,
   send lead head SHA. Nits: f51 bounce only +2.7 m (barely reads); mantis card head cut (old).
+## P2 asks (Game demo planning): green capture runs; in-game 3 s clips walk/turn/roar at game cam
+## (DONE, notes d047/ingame_game_cam_*.mp4) + side (from ci5/after_side); report SHA to lead AND
+## "Game demo planning" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac). 39047808973 cancelled.
 ## Evidence done (docs/captures/2026-10-18-croctitan-clips, uncommitted until the cards land)
 before_after_game_sheet, png_diff_game, feet_contact_2x, jaw_roar_peak_2x, tail_in_game_2x,
 tail_walk_topdown_old_vs_new, tail_roar_side_sheet, tail_blender_crops. MP4s in notes/blender-reptile/
