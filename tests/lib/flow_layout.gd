@@ -117,8 +117,18 @@ func reveal_fits() -> void:
 	check.call(on, "the reveal's size lines stay on screen at 125%% on the TV: %s" % [rect])
 
 
-## True when the node's name wraps inside a word ("Regeneratio / n", lead review 3).
+## True when the node's name wraps inside a word ("Regeneratio / n", lead review 3) or its
+## level-and-price line wraps at all ("0/1 BUY / 1400").
 func _breaks_a_word(b: Button) -> bool:
+	var status := TextParagraph.new()
+	status.add_string(
+		b.text.get_slice(String.chr(10), 1),
+		b.get_theme_font("font"),
+		b.get_theme_font_size("font_size")
+	)
+	status.width = b.size.x - b.get_theme_stylebox("normal").get_minimum_size().x
+	if status.get_line_count() > 1:
+		return true
 	var name := b.text.get_slice(String.chr(10), 0)
 	var line := TextParagraph.new()
 	line.add_string(name, b.get_theme_font("font"), b.get_theme_font_size("font_size"))

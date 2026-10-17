@@ -11,7 +11,7 @@ const FONT_MAX := 22
 const FONT_MIN := 18
 const PAD := 2
 ## The thickest border each kind of node draws (focused): its text keeps clear of it.
-const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 7, "ultimate": 8}
+const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 5, "ultimate": 6}
 const FILL := {
 	"maxed": Color("8a6d1f"), "buy": Color("2f6b2a"), "poor": UiKit.PANEL, "locked": Color("15191e")
 }
@@ -20,7 +20,7 @@ const EDGE := {
 }
 const ULTIMATE_EDGE := Color("ff3df0")
 ## The widest level-and-price line a node shows (prices from 10 000 up read "12k").
-const WIDEST_STATUS := "0/5  BUY 8888"
+const WIDEST_STATUS := "0/5 BUY 8888"
 
 var id: String
 ## "plain", "branch" (species branch), "evolve" (grows the kaiju) or "ultimate" (capstone).
@@ -86,7 +86,7 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 	var price := short_price(tree.cost(id))
 	var status: String = {"maxed": "MAXED", "locked": "", "buy": "BUY " + price, "poor": price}[state]
 	var tag := "\n[E / Y]" if role == "ultimate" else ""
-	text = "%s\n%d/%d  %s%s" % [_name, tree.level(id), tree.max_level(id), status, tag]
+	text = "%s\n%d/%d %s%s" % [_name, tree.level(id), tree.max_level(id), status, tag]
 	var fill: Color = FILL[state]
 	var edge: Color = EDGE[state]
 	var width := 3
@@ -103,7 +103,9 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 		if look != "normal":
 			box_edge = Color.WHITE
 			box_fill = fill.darkened(0.2) if look == "pressed" else fill.lightened(0.15)
-			box_width = width + (2 if look == "focus" else 0)
+			# Plain nodes thicken when focused; evolutions and the ultimate are thick already.
+			if look == "focus" and width < 5:
+				box_width = width + 2
 		var style := UiKit.box(box_fill, box_edge, box_width, 8)
 		# The border is drawn inside the box: keep the text clear of the thickest one.
 		style.set_content_margin_all(PAD + Num.f(MAX_BORDER[role]))
