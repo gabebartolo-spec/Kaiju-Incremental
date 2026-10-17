@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 12:50
-## State: working (CI restored 12:47: repo PUBLIC; reviewing #15 next)
+## State: blocked (Chrome minimized: Tripo reference images for D-045 wait; director in fullscreen game)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -18,18 +18,17 @@ D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the 
 ## CI billing RESOLVED 12:47: director made the repo public; main protection confirmed (test, doc-caps,
 gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to dispatch captures.
 Director: "tank and heli models look great".
-## (history) CI billing (12:35)
-- Every Actions job refuses: "recent account payments have failed or your spending limit needs to be increased".
-- Director chose "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by
-  the auto-mode classifier, so the director flips it himself (Settings > General > Danger Zone, or the command).
-- Pre-flight clean: no secrets, no Tripo GLBs in any ref (only our Blender .blend/.glb); commit email
-  gabebartolo@gmail.com becomes visible.
-- AFTER the flip: protect main (github-hygiene: test, doc-caps, gitleaks required; squash only; no force push),
-  log D-043 (repo public, director 12:35), rerun failed jobs (#11 `gh run rerun 38935875288 --failed`, #14,
-  #15, #16, #17, #18), tell helpers to dispatch their captures.
-- If he raises the limit instead: log that as D-043 and rerun.
+- QA 12:55: heli board PASS (Apache-like, tandem cockpit, stub wings, chin gun, rotors as parts; 2x real);
+  tank in-game crop reads well. Merge #17 then #18 once their in-game captures + CI are green.
+- #15 round 2 (5f807cb): cause = GL Compatibility fallback scrambled packed instance data (web renderer too!),
+  fixed + captures forced Forward+; mantis intact, thigh cubes square; lead look PASS; fresh re-critic running.
+  Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
 
-## Open PRs into look-options (all green locally; CI red = billing only)
+## Open PRs into look-options
+- #17 tank MERGED 14:45 (9cbe34b). #18 heli FIX: heli hides the baby kaiju at game cam (21 s) -> orbit beside,
+  not over, the camera-kaiju line + fade vehicles between camera and kaiju (D-025 rule). Size stays 2x.
+- #16 city-growth: stage 3 stills in; stage 4 (350k chunks) kills CI runners -> local GPU render approved,
+  waiting for the director's game to close (perf red flag). Balance proposal D (3.3-4.4 h, +-17%) to put to director.
 - #11 species locomotion (mantis + octopus). species-motion r3d: holds fixed (contrast 4.6x), big rest moves
   00284f3 not yet rendered. Needs: game + side mantis clips, octopus adult side, then FRESH motion-critic, then
   merge at reviewed SHA.
@@ -44,10 +43,34 @@ Director: "tank and heli models look great".
   blender-heli/heli_board.png to QA. Decided: helis fixed 2x scale, no growth multiplier.
 - #8 SFX paused; #3 to main on hold.
 
-## Captures plan while CI is out
-Local windowed capture (off-screen override.cfg; focus guard allows only when the director isn't fullscreen),
-ONE GPU job at a time: species-motion octopus first, then kaiju-look-test octopus. Everyone merges look-options
-for the LFS fix before capturing.
+
+## D-045 (director 14:22): reptile = NEW original Tripo design, rigged in Blender (hand rig, welded weights)
+- Blender test critic: deformation + feet PASS both; animation FIX (no roar wind-up, frozen hold, tail not
+  counterbalancing, arms out at peak, static walk upper body, B mouth open at rest). blender-reptile on HOLD.
+- NEXT (me): Tripo Studio /workspace/generate-image -> 3-4 reference images, show the director labelled, then
+  image-to-3D (Smart Mesh P2.0), Private, Remove Lighting. Brief: original reptile kaiju, NOT Godzilla: long
+  crocodile snout, MOUTH CLOSED, pale bony back plates/osteoderm ridge (not maple-leaf fins), long low tail,
+  digitigrade legs, forearms with clawed hands, dark olive hide; full body A-pose, limbs clear of torso, front
+  three-quarter orthographic, neutral grey bg, soft even light, no props. Then baby/adolescent once adult picked.
+- BLOCKED 14:40: Chrome restored but hidden behind the League of Legends client: the page doesn't paint, typing
+  doesn't register (form_input works), Generate clicks do nothing, screenshots time out. Prompt text is ready in
+  the box (830 chars, 4:3, 4 images, free quota 32/1000). Needs Chrome visible (other screen) or after gaming.
+- #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
+
+## FOCUS (director 13:06): "how using blender might improve motion"
+- Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
+  A 8/11/1 cm, B 5.5/19/4 cm (walk/turn/roar, of 100 m); girth A shoulder 96%, B 91%. B right foot 69 cm off
+  ground in the Tripo sculpt (mesh fault). So the RIG matters more than the mesh. Weak: A arms barely move;
+  walk in place. Turn/roar renders + crops still running; then my QA + fresh motion-critic.
+- Two routes explained to the director: (1) Blender skeleton+weights replace rig_voxel's guessed bone
+  ownership (fixes detached parts, stiff limbs; D-041 skin takes weights); (2) authored clips (roar, tail
+  swipe, beam) layered over procedural foot planting.
+- 13:19 MOTION TEST DONE (blender-reptile 4ab6781; clips in notes blender-reptile/motion-test/): B (Tripo) moves
+  cleanly on the hand rig -> bad in-game motion = OUR auto rig/weights, not the Tripo mesh. Final slide A 8/10.9/1.1,
+  B 6.1/22/4.8 cm. Lead QA: turn + roar deform cleanly on both, jaw opens well; FIX for A: roar-peak arms reach
+  forward (zombie), dark square blotches on thigh. Fresh motion-critic running (background). Seam-weld finding
+  (glTF splits verts at UV seams) sent to kaiju-look-test as a suspect for the shattered mantis.
+- ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
 
 ## Blender direction (director 12:39)
 - Board: Tripo adult looks better; Blender adult "promising", "more original, less a blatant Godzilla copy"
