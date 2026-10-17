@@ -16,6 +16,8 @@ uniform float roughness_value = 0.9;
 uniform float opacity = 1.0;
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
+#include "res://scenes/voxel_edge.gdshaderinc"
+
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
 }
@@ -25,6 +27,7 @@ void vertex() {
 	if (state < 0.02 || UV2.y < 1.0 - state) {
 		VERTEX = vec3(0.0);
 	}
+	edge_vertex(NORMAL, UV * 2.0 - 1.0, mat3(MODELVIEW_MATRIX));
 }
 
 void fragment() {
@@ -37,7 +40,11 @@ void fragment() {
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	ROUGHNESS = roughness_value;
 	if (FRONT_FACING) {
-		ALBEDO = albedo;
+		vec3 shaded = albedo;
+		vec3 normal = NORMAL;
+		edge_fragment(shaded, normal);
+		ALBEDO = shaded;
+		NORMAL = normal;
 		EMISSION = albedo * glow * (1.0 - COLOR.a);
 	} else {
 		ALBEDO = albedo * 0.12;

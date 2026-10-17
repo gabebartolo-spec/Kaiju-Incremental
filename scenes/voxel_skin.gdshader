@@ -20,6 +20,8 @@ uniform float roughness_value = 0.9;
 
 varying vec3 tint;
 
+#include "res://scenes/voxel_edge.gdshaderinc"
+
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
 }
@@ -45,6 +47,7 @@ void vertex() {
 	vec3 ax = normalize(m[0]);
 	vec3 ay = normalize(m[1] - ax * dot(ax, m[1]));
 	mat3 turn = mat3(ax, ay, cross(ax, ay));
+	edge_vertex(NORMAL, edge_box_face(VERTEX, NORMAL), mat3(MODELVIEW_MATRIX) * turn);
 	// The engine adds the instance's centre back after this.
 	VERTEX = (moved - centre) + turn * (VERTEX * grow);
 	NORMAL = normalize(turn * NORMAL);
@@ -55,6 +58,10 @@ void vertex() {
 }
 
 void fragment() {
-	ALBEDO = srgb_to_linear(tint);
+	vec3 shaded = srgb_to_linear(tint);
+	vec3 normal = NORMAL;
+	edge_fragment(shaded, normal);
+	ALBEDO = shaded;
+	NORMAL = normal;
 	ROUGHNESS = roughness_value;
 }

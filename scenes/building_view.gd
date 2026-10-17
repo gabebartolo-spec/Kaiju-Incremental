@@ -54,6 +54,7 @@ func _material(tex: Texture2D) -> ShaderMaterial:
 	mat.shader = SHADER
 	mat.set_shader_parameter("alive", tex)
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
+	Look.edge_params(mat)
 	return mat
 
 

@@ -180,4 +180,5 @@ static func _face(st: SurfaceTool, centre: Vector3, n: Vector3, half: float) -> 
 	var quad: Array[Vector3] = [c - u - v, c + u - v, c + u + v, c - u + v]
 	st.set_normal(n)
 	for i: int in [0, 2, 1, 0, 3, 2]:
+		st.set_uv(BuildingMesher.FACE_UV[i])
 		st.add_vertex(quad[i])
