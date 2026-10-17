@@ -192,6 +192,14 @@
 		"pitch_jitter": 0.06,
 		"stomp_tiers": [1.4, 1.8],
 		"default_volume": 0.9,
+		"dynamics": {
+			"threshold_db": -6.0,
+			"ratio": 2.0,
+			"attack_us": 5000.0,
+			"release_ms": 250.0,
+			"ceiling_db": -1.0,
+			"limiter_release": 0.1
+		},
 		"stomp_wait": 0.4,
 		"footstep_min_interval": 0.25,
 		"crack_min_interval": 2.5,
