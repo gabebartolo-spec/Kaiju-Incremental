@@ -85,6 +85,38 @@ KNOWN = {
         # the roar's pelvis tip, breathe it less (degrees).
         tail_lift=3.0, tail_roar_lift=5.0, tail_breathe=0.15,
         belly=31.0),
+    # The croc titan baby (stage 1, Tripo edf7bb50): a cub's big head and squat legs, arms in a T-pose
+    # (straight out at shoulder height), a long tail lying on the street. Measured on 1 m grid side,
+    # front and head renders. Quick and bouncy: a shorter stride in a 36-frame cycle (four per clip).
+    "CB": dict(
+        spine=[V((0, 88, 38)), V((0, 76, 48)), V((0, 64, 58)), V((0, 54, 66))],
+        neck=[V((0, 54, 66)), V((0, 47, 74)), V((0, 42, 80))],
+        snout=V((0, 0.5, 82.5)), jaw=(V((0, 39, 85)), V((0, 2, 79.5))),
+        mouth=(V((0, 1, 81)), V((0, 36, 86.5))),
+        arm=[V((6, 56, 64)), V((17, 56, 62)), V((38, 56, 61)), V((56, 56, 60)), V((67, 56, 59))],
+        leg=[V((18, 80, 33)), V((24, 68, 20)), V((28, 82, 7)), V((30, 68, 2)), V((30, 58, 1))],
+        tail=[V((0, 96, 36)), V((0, 104, 30)), V((0, 112, 25)), V((0, 120, 19)), V((0, 132, 14)),
+              V((0, 144, 11)), V((0, 156, 9.5)), V((0, 168, 8.5)), V((0, 180, 8)), V((0, 192, 6.5)),
+              V((0, 211, 3.5))],
+        # T-pose arms: the hands come down in front of the belly (in, back, up from the rest wrist).
+        hands={"low": (42.0, -8.0, -12.0), "high": (44.0, -6.0, 2.0)},
+        tail_lift=4.0, tail_roar_lift=5.0, tail_breathe=0.2,
+        belly=12.0, stride=31.0, cycle=36.0, bounce=1.8),
+    # The adolescent (stage 2, Tripo 109910f0, imported turned 90 deg to face -Y): lanky, long legs,
+    # arms hanging forward, the tail held level at hip height. A long, gangly stride.
+    "CA": dict(
+        spine=[V((0, 80, 60)), V((0, 66, 64)), V((0, 52, 70)), V((0, 42, 76))],
+        neck=[V((0, 42, 76)), V((0, 35, 82)), V((0, 28, 87))],
+        snout=V((0, 0.3, 88)), jaw=(V((0, 21, 88)), V((0, 2, 85.5))),
+        mouth=(V((0, 1, 86.8)), V((0, 19, 89.6))),
+        arm=[V((6, 44, 74)), V((17, 40, 72)), V((20, 32, 63)), V((22, 24, 56)), V((22, 20, 50))],
+        leg=[V((12, 72, 55)), V((13, 78, 24)), V((14, 73, 8)), V((16, 62, 2)), V((18, 52, 0.5))],
+        tail=[V((0, 86, 59)), V((0, 98, 58)), V((0, 110, 57.5)), V((0, 122, 58)), V((0, 134, 58.5)),
+              V((0, 146, 60)), V((0, 158, 61.5)), V((0, 170, 63)), V((0, 182, 64)), V((0, 195, 64.8)),
+              V((0, 208, 64.8))],
+        hands={"low": (1.0, -1.0, 1.0), "high": (3.0, 3.0, 8.0)},
+        tail_lift=0.0, tail_roar_lift=2.5, tail_breathe=0.3,
+        belly=15.0, stride=56.0, cycle=48.0, bounce=1.2),
 }
 TAIL_BONES = 10
 
@@ -588,8 +620,11 @@ def set_loc(name, delta):
 
 
 hip_h = L["leg"][0].z
-D = 140.0 / 3  # stride per cycle (~46.7 m): 3 cycles travel 140 m = 7 checker periods (20 m), so the clip loops
-T = 48.0  # frames per cycle: three cycles in the 144-frame clip, so the walk loops seamlessly
+# Stride per cycle (adult ~46.7 m: 3 cycles travel 140 m = 7 checker periods, so the render loops) and
+# frames per cycle (a whole number of cycles in the 144-frame clip, so the walk loops seamlessly);
+# a model's landmarks may set its own (a cub's quick short steps, an adolescent's long ones).
+D = L.get("stride", 140.0 / 3)
+T = L.get("cycle", 48.0)
 DUTY = 0.62
 V_WALK = D / T
 BALL = {s: (L["leg"][3] if s == "L" else mir(L["leg"][3])) for s in ("L", "R")}
@@ -729,7 +764,8 @@ def pose_frame(clip, f, P):
     for phs in PHASE.values():
         d = ((f / T - phs) % 1.0) * T  # frames since this foot's contact
         land += math.sin(math.pi * d / 10.0) ** 2 if d < 10.0 else 0.0  # sin^2: no velocity step
-    bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
+    bounce = L.get("bounce", 1.0)  # how high the body bobs on each step (a cub bounces)
+    bob = (-0.016 * bounce * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
            - 0.18 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe + 0.015 * hip_h * pulse)
     sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
