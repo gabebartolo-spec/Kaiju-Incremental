@@ -13,10 +13,8 @@ const GROW_FRAMES := 24
 const END_FRAME := 230
 const SKIP_AFTER := 8
 const VIEW_SIZE := Vector2i(1200, 760)
-const FLOOR_GAP := 0.12
-const TOWER_SIDE := 6.0
-const CONCRETE := Color("8b8d8f")
-const WINDOW_LIT := Color("ffcf7a")
+## The comparison tower's footprint (chunks); it is built by the city's own BuildingView.
+const TOWER_SIDE := 6
 
 var frame := 0
 var stage_before: String
@@ -178,8 +176,7 @@ func _build_stage() -> void:
 	_viewport.add_child(ground)
 	var tallest := maxf(KaijuModel.MODEL_HEIGHT * scale_after, float(tower_floors))
 	var tower_x := KaijuModel.MODEL_HEIGHT * scale_after * 0.5 + TOWER_SIDE
-	for n: int in tower_floors:
-		_floor(Vector3(tower_x, n + 0.5, 0.0))
+	_viewport.add_child(_tower(tower_x))
 	_camera = Camera3D.new()
 	_camera.fov = 40.0
 	var aim := Vector3(tower_x * 0.5, tallest * 0.5, 0.0)
@@ -188,22 +185,19 @@ func _build_stage() -> void:
 	_camera.look_at(aim)
 
 
-## One floor of the reference tower: a concrete slab with a band of lit windows.
-func _floor(at: Vector3) -> void:
-	var slab := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(TOWER_SIDE, 1.0 - FLOOR_GAP, TOWER_SIDE)
-	slab.mesh = box
-	slab.material_override = _material(CONCRETE, 0.0)
-	slab.position = at
-	_viewport.add_child(slab)
-	var band := MeshInstance3D.new()
-	var glass := BoxMesh.new()
-	glass.size = Vector3(TOWER_SIDE + 0.08, 0.4, TOWER_SIDE + 0.08)
-	band.mesh = glass
-	band.material_override = _material(WINDOW_LIT, 1.4)
-	band.position = at
-	_viewport.add_child(band)
+## A real city building of tower_floors floors (same voxels, windows and shader as the city),
+## standing on the ground line beside the kaiju.
+func _tower(x: float) -> BuildingView:
+	var b := RampageSim.Building.new()
+	b.x = x
+	b.z = 0.0
+	b.w = TOWER_SIDE
+	b.d = TOWER_SIDE
+	b.height = tower_floors
+	b.tier = CityGen.tier_for_height(tower_floors, Content.section("city"))
+	b.style = 0
+	b.frame = Structure.new(b.w, b.d, b.height, 1.0)
+	return BuildingView.new(b, Look.styles()[0])
 
 
 func _material(color: Color, glow: float) -> StandardMaterial3D:

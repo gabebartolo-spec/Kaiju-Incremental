@@ -364,8 +364,6 @@ func _check_fits_at_scales(screen: Control, what: String) -> void:
 	)
 
 
-## A tree node may sit in its scroll area (reachable by scrolling); anything else must be on screen.
+## Fully inside the visible screen (tree nodes included: the tree shrinks to fit, never scrolls).
 func _on_screen(b: Button, view: Rect2) -> bool:
-	if b is UpgradeNode:
-		return true
 	return view.encloses(b.get_global_rect())

@@ -6,15 +6,20 @@ extends SceneTree
 ##
 ##   tools/capture/ci_capture.sh --resolution=1920x1080 capture_flow.gd -- --species=reptilian
 ##   tools/capture/ci_capture.sh --resolution=3840x2160 capture_flow.gd -- --ui-scale=1.25 --ui-only
-## --ui-only skips the rampage (the city at 4K on a software GPU outlasts CI's time limit) and
-## shows the results and pause screens over a plain backdrop instead.
-##   tools/capture/ci_capture.sh --movie --resolution=1920x1080 capture_flow.gd -- --clip
+## --ui-only keeps the rampage short (a few seconds) and skips the waits: the city at 4K on a
+## software GPU outlasts CI's time limit. Pause and the report are still over the live city.
+##   tools/capture/ci_capture.sh --movie --resolution=1280x720 capture_flow.gd -- --clip
+## The clip is about 20 s (CI's step limit, tools/capture/README.md).
 
 const MAIN_SCENE := "res://scenes/main.tscn"
 const SETTLE := 12
 ## Autoplayed frames before the pause shot (shorter for the clip).
 const RAMPAGE_FRAMES := 420
 const CLIP_RAMPAGE_FRAMES := 150
+const UI_ONLY_RAMPAGE_FRAMES := 45
+## Clip: how long the report counts, then how long it holds, before EVOLVE.
+const CLIP_COUNT_FRAMES := 45
+const CLIP_HOLD_FRAMES := 45
 
 var _out := "user://flow"
 var _species := "reptilian"
@@ -81,14 +86,16 @@ func _run() -> void:
 	tree.node_button("evolve1").grab_focus()
 	await _frames(SETTLE)
 	_shot("03_evolution_tree")
-	if _ui_only:
-		await _ui_screens(tree)
-		return
 	tree.start_pressed.emit()
 	await _frames(2)
 	var rampage := _screen() as Rampage
 	rampage.set_autoplay(true)
-	await _frames(CLIP_RAMPAGE_FRAMES if _clip else RAMPAGE_FRAMES)
+	var fight := RAMPAGE_FRAMES
+	if _clip:
+		fight = CLIP_RAMPAGE_FRAMES
+	elif _ui_only:
+		fight = UI_ONLY_RAMPAGE_FRAMES
+	await _frames(fight)
 	_shot("04_rampage")
 	var hud: RampageHud = rampage.find_children("*", "RampageHud", true, false)[0]
 	if not _clip:
@@ -102,14 +109,23 @@ func _run() -> void:
 	rampage.sim.time_left = 0.05  # capture only: run the clock out now
 	await _frames(18)
 	_shot("06_end_beat")
+	if _ui_only:
+		hud.finish_beat()
 	while hud.beat_running():
 		await process_frame
 	await _frames(3)
 	var results: ResultsScreen = rampage.find_children("*", "ResultsScreen", true, false)[0]
-	await _frames(ResultsScreen.COUNT_FRAMES * 2)
-	_shot("07_results_counting")
-	while results.counting():
-		await process_frame
+	if _clip:
+		await _frames(CLIP_COUNT_FRAMES)
+		results.skip()
+		await _frames(CLIP_HOLD_FRAMES)
+	elif _ui_only:
+		results.skip()
+	else:
+		await _frames(ResultsScreen.COUNT_FRAMES * 2)
+		_shot("07_results_counting")
+		while results.counting():
+			await process_frame
 	await _frames(SETTLE)
 	_shot("08_results")
 	results.continued.emit()
@@ -123,36 +139,6 @@ func _run() -> void:
 	await _frames(EvolutionReveal.END_FRAME - EvolutionReveal.SWAP_FRAME)
 	await _frames(SETTLE)
 	_shot("11_tree_after")
-	SaveFile.delete_save()
-	quit()
-
-
-## The rampage's overlays without the city (for --ui-only), then the reveal from the tree.
-func _ui_screens(tree: UpgradeScreen) -> void:
-	var pause := PauseMenu.new()
-	root.add_child(pause)
-	await _frames(SETTLE)
-	_shot("05_pause")
-	pause.queue_free()
-	var result := {
-		"rubble": 92,
-		"destruction": 0.06,
-		"toppled": 2,
-		"biggest_fall": 72,
-		"civilians": 17,
-		"tanks": 1,
-		"helis": 0,
-		"reason": "time"
-	}
-	var results := ResultsScreen.new(result, {"rubble": 60.0, "tanks": 1.0})
-	root.add_child(results)
-	results.skip()
-	await _frames(SETTLE)
-	_shot("08_results")
-	results.queue_free()
-	tree.node_button("evolve1").pressed.emit()
-	await _frames(EvolutionReveal.SWAP_FRAME + EvolutionReveal.GROW_FRAMES + 30)
-	_shot("10_reveal_after")
 	SaveFile.delete_save()
 	quit()
 

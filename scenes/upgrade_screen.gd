@@ -14,8 +14,8 @@ const CELL := Vector2(172, 128)
 const BRANCH_ROW := 5
 const COLUMNS := 8
 const BRANCH_TINT_ALPHA := 0.18
-## The tree's width: the last column's capstone and a small edge, so at 1080p (100%) it fits
-## beside the side panel without a scrollbar; larger UI scales scroll.
+## The tree's width: the last column's capstone and a small edge. At 1080p (100%) it fits
+## beside the side panel at full size; at larger UI scales it shrinks to fit (never scrolls).
 const AREA_WIDTH := CELL.x * (COLUMNS - 1) + UpgradeNode.CAPSTONE_SIZE.x + 4
 ## Stat, how it reads in play, format ("inv" shows 1/value per second).
 const STAT_LINES: Array[Array] = [
@@ -100,14 +100,24 @@ func _ready() -> void:
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 24)
 	col.add_child(body)
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.follow_focus = true
-	body.add_child(scroll)
-	scroll.add_child(_build_tree_area())
+	var fit := Control.new()
+	fit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_child(fit)
+	var area := _build_tree_area()
+	fit.add_child(area)
+	fit.resized.connect(func() -> void: _fit_tree(fit, area))
 	body.add_child(_build_side())
 	_selected = tree.order[0]
 	_refresh()
+
+
+## Shrinks the whole tree (never grows it) so every node, the branch band and its capstone
+## stay on screen at every UI scale (D-027: the 4K TV at 125%).
+func _fit_tree(fit: Control, area: Control) -> void:
+	var need := area.custom_minimum_size
+	var k := minf(1.0, minf(fit.size.x / need.x, fit.size.y / need.y))
+	area.scale = Vector2(k, k)
 
 
 func _build_tree_area() -> Control:

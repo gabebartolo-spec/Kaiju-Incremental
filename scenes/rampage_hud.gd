@@ -176,7 +176,7 @@ func _process(_delta: float) -> void:
 		return
 	_beat_frame += 1
 	if _beat_frame >= BEAT_FRAMES:
-		_finish_beat()
+		finish_beat()
 
 
 ## Opens the pause menu and stops the world (the menu runs while paused).
@@ -195,7 +195,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		pause()
 	elif beat_running() and _beat_frame >= BEAT_MIN_FRAMES and event.is_action_pressed("ui_accept"):
 		get_viewport().set_input_as_handled()
-		_finish_beat()
+		finish_beat()
 
 
 ## Leaving mid-beat or mid-pause (quit to title) must not leave the world slowed or paused.
@@ -204,7 +204,10 @@ func _exit_tree() -> void:
 	get_tree().paused = false
 
 
-func _finish_beat() -> void:
+## Ends the end beat now (also the capture tool's skip); only while it is running.
+func finish_beat() -> void:
+	if not beat_running():
+		return
 	Engine.time_scale = 1.0
 	_beat_done = true
 	beat_done.emit(result())
