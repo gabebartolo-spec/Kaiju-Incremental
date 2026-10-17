@@ -123,9 +123,11 @@ def stadium():
     for ro, ri, top, col in tiers:                                 # terraces rise outward
         annulus(0.0, top, ro, ri, col)
     annulus(0.0, 5.4, (13.2, 10.2), (12.4, 9.4), CONCRETE)         # outer wall
-    for i in range(36):                                            # wall piers, one cap height
+    for i in range(36):                                            # wall piers, flush with the wall top
         a = i / 36 * math.tau
-        box((13.25 * math.cos(a), 10.25 * math.sin(a), 2.45), (0.6, 0.6, 4.9), "efeae0", rz=a)
+        if abs(math.sin(a) + 1.0) < 0.06:
+            continue                                               # none behind the banner
+        box((13.25 * math.cos(a), 10.25 * math.sin(a), 2.7), (0.6, 0.6, 5.4), "efeae0", rz=a)
     annulus(6.2, 6.7, (13.6, 10.6), (11.4, 8.4), WHITE)            # cantilever roof ring
     for i in range(28):                                            # ribs, tucked under the ring
         a = i / 28 * math.tau
@@ -212,13 +214,17 @@ def clock_hall():
     box((0, 1.0, 14.2), (4.8, 4.8, 0.5), "b7aa90")
     faces = [((0, -1.15), (math.pi / 2, 0, 0), (0, -1)), ((0, 3.15), (math.pi / 2, 0, 0), (0, 1)),
              ((-2.15, 1.0), (0, math.pi / 2, 0), (-1, 0)), ((2.15, 1.0), (0, math.pi / 2, 0), (1, 0))]
-    for (dx, dy), rot, (nx, ny) in faces:                          # four faces, each with hands
+    for (dx, dy), rot, (nx, ny) in faces:                          # four faces, all showing 3:00
         cyl((dx, dy, 12.0), 1.3, 0.25, "f4efe0", 32, rot=rot)
         hx, hy = dx + nx * 0.18, dy + ny * 0.18
+        rx, ry = -ny, nx                                           # the viewer's right on this face
         box((hx, hy, 12.4), (0.2 if ny else 0.1, 0.1 if ny else 0.2, 0.9), "1a1a1a")
-        box((hx + (0.3 if ny else 0), hy + (0 if ny else 0.3), 12.0),
-            (0.7 if ny else 0.1, 0.1 if ny else 0.7, 0.18), "1a1a1a")
+        box((hx + rx * 0.3, hy + ry * 0.3, 12.0), (0.7 if ny else 0.1, 0.1 if ny else 0.7, 0.18), "1a1a1a")
     box((0, 1.0, 15.2), (3.6, 3.6, 1.6), "efe7d4")                 # belfry
+    for nx, ny in ((0, -1), (0, 1), (-1, 0), (1, 0)):              # dark louvred openings
+        for k in (-0.75, 0.75):
+            ox, oy = (k, 1.0 + ny * 1.85) if ny else (nx * 1.85, 1.0 + k)
+            box((ox, oy, 15.1), (0.8 if ny else 0.25, 0.25 if ny else 0.8, 1.1), "2a2826")
     cyl((0, 1.0, 17.5), 2.6, 3.0, "4f8f7c", 4, rot=(0, 0, math.pi / 4), r2=0.2)  # spire
     cyl((0, 1.0, 19.3), 0.12, 0.8, "e3b23c", 8)
 
@@ -227,9 +233,9 @@ def wheel():
     """D: Sky Wheel - an observation wheel: a polygon rim of straight segments on two A-frames,
     a drum hub, level capsules mounted outside the rim."""
     R, N = 10.0, 32
-    hz = R + 3.4
+    hz = R + 4.6
     box((0, 0, 0.4), (14, 8, 0.8), "8a8478")                       # base
-    box((0, -3.0, 1.6), (6, 2, 1.6), "f2c230")                     # boarding house
+    box((0, -3.4, 1.4), (6, 1.6, 1.2), "f2c230")                   # boarding house, in front
     for sy in (-1, 1):                                             # two A-frames
         for sx in (-1, 1):
             beam((sx * 5.5, sy * 3.0, 0.8), (0, sy * 1.0, hz), 0.9, "e8e6e0")
@@ -279,26 +285,29 @@ def spire():
 
 
 def megatower():
-    """F: Crown Megatower - stepped, twisting glass tower with an open gold crown of points."""
+    """F: Crown Megatower - glass tower stepping in every 3 floors, an open gold crown of points.
+    Axis-aligned on purpose: rotated floors alias into ragged edges at 8 voxels per floor."""
     box((0, 0, 1.5), (16, 16, 3.0), "6c7480")                     # podium
     box((0, -8.05, 1.5), (10, 0.2, 2.2), "f2d38a")                 # lit lobby
     z, size = 3.0, 11.0
     steps = 14
     for k in range(steps):                                         # twisted glass floors (3 floors each)
-        rz = k * math.radians(4.0)
+        rz = 0.0
         s = size - k * 0.32
         box((0, 0, z + 1.5), (s, s, 2.6), "3e7fb0", rz=rz)
-        box((0, 0, z + 2.8), (s + 0.3, s + 0.3, 0.4), "cfd7df", rz=rz)  # floor band, 3 voxels
+        box((0, 0, z + 2.8), (s, s, 0.4), "cfd7df", rz=rz)        # floor band, flush with the glass
         z += 3.0
-    rz = steps * math.radians(4.0)
+    rz = 0.0
     s = size - steps * 0.32
-    for i in range(12):                                            # open crown: vertical gold points
+    box((0, 0, z + 0.2), (s - 0.6, s - 0.6, 0.4), "2a2f3a", rz=rz)  # dark open top
+    for i in range(12):                                            # crown: tapering gold points
         a = i / 12 * math.tau + rz
         x, y = 0.45 * s * math.cos(a), 0.45 * s * math.sin(a)
         tall = 5.0 if i % 2 == 0 else 3.4
-        box((x, y, z + tall / 2), (0.7, 0.7, tall), "e3b23c")
-    cyl((0, 0, z + 0.2), 0.45 * s + 0.4, 0.4, "e3b23c", 48)         # crown band
-    cyl((0, 0, z + 4.0), 0.3, 8.0, "e3b23c", 8)                    # central spire
+        cyl((x, y, z + tall / 2), 0.6, tall, "e3b23c", 4, r2=0.08)
+    ro, ri = 0.45 * s + 0.5, 0.45 * s - 0.5
+    annulus(z, z + 0.6, (ro, ro), (ri, ri), "e3b23c")              # crown band, open centre
+    cyl((0, 0, z + 4.5), 0.7, 9.0, "e3b23c", 6, r2=0.08)           # taller central spire
 
 
 ALL = {"stadium": stadium, "gate": gate, "clock_hall": clock_hall, "wheel": wheel,
