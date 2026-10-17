@@ -8,6 +8,8 @@ render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabl
 
 uniform float progress = 0.0;
 uniform float power = 1.0;
+// Progress the beam takes to fade in (set from fx.breath_fade_in): no first-frame pop.
+uniform float fade_in = 0.11;
 uniform vec4 tint : source_color = vec4(1.0, 0.3, 0.08, 1.0);
 
 float hash(vec2 p) {
@@ -29,7 +31,7 @@ void fragment() {
 	float core = pow(facing, 2.5);
 	float stream = noise(vec2(UV.x * 10.0, along * 7.0 - TIME * 18.0)) * 0.65
 		+ noise(vec2(UV.x * 23.0, along * 15.0 - TIME * 31.0)) * 0.35;
-	float flare = smoothstep(0.0, 0.08, progress);
+	float flare = smoothstep(0.0, fade_in, progress);
 	float thin = 1.0 - smoothstep(0.45, 1.0, progress);
 	// The front races out over the first fifth of the life, then the whole beam holds.
 	float front = 1.0 - smoothstep(progress * 5.0 - 0.15, progress * 5.0, along);

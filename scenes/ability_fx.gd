@@ -9,7 +9,6 @@ extends Node3D
 ## Armoured Scales throw shells off in a spark burst and a metallic flash. Nothing here hides the
 ## kaiju (D-025): glows are additive and thin, marks are decals that skip the kaiju's layer.
 
-const BEAM := preload("res://scenes/beam.gdshader")
 const SWEEP := preload("res://scenes/sweep.gdshader")
 const RIM := preload("res://scenes/rim.gdshader")
 const FLARE := preload("res://scenes/flare.gdshader")
@@ -35,6 +34,7 @@ var _overlay: ShaderMaterial
 var _body: Node3D
 var _overlay_on := false
 var _healing := false
+var _beam: BreathBeam
 
 
 ## tint: the species' eye colour; body_scale: the kaiju's size this run; cone: Atomic
@@ -45,6 +45,8 @@ func _init(city: CityView, tint: Color, body_scale: float, cone: float) -> void:
 	_scale = body_scale
 	cone_half_angle = cone
 	_tune = Content.section("fx")
+	_beam = BreathBeam.new(tint, body_scale, _tune)
+	add_child(_beam)
 
 
 func _ready() -> void:
@@ -89,35 +91,19 @@ func power(value: float, base: float) -> float:
 	return clampf(value / maxf(base, 0.001), 1.0, Num.f(_tune["power_max"]))
 
 
-## Atomic Breath: a white-hot beam from the mouth along `span` (mouth to the street at full
-## reach) that stops on the first standing wall it meets, a flare and a light on what it hits,
-## and a scorched wedge across the street, rubble and ruins.
+## Atomic Breath: a white-hot core (BreathBeam) from the mouth along `span` (mouth to the
+## street at full reach) that stops on the first standing wall it meets, a soft fan across the
+## cone, a flare and a light on what it hits, and a scorched wedge across the street.
 func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -> void:
 	played.append("breath")
 	var seconds := Num.f(_tune["beam_seconds"])
 	var reach := Vector2(span.x, span.z).length()
 	var hit := mouth + span * _first_hit(mouth, span)
 	var dir := (hit - mouth).normalized()
-	var length := mouth.distance_to(hit)
 	# Muzzle flash on the first frame: the jaw lights up even while the body hides the beam.
 	_flare(mouth, 4.5 * _scale * strength, HOT, 0.3)
-	var cyl := CylinderMesh.new()
-	cyl.height = length
-	cyl.bottom_radius = 0.35 * _scale
-	cyl.top_radius = maxf(0.6, length * tan(half_angle) * 0.3)
-	cyl.radial_segments = 24
-	cyl.rings = 1
-	cyl.cap_top = false
-	cyl.cap_bottom = false
-	var mat := _shader(BEAM, strength)
-	cyl.material = mat
-	var beam := MeshInstance3D.new()
-	beam.mesh = cyl
-	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	beam.basis = _basis_along(dir)
-	beam.position = mouth + dir * length * 0.5
-	add_child(beam)
-	_drive(mat, "progress", seconds, beam)
+	_beam.power = strength
+	_beam.fire(mouth, hit, span, half_angle)
 	# The struck face: a flare, hot sparks and a light just in front of it that lights the wall.
 	_flare(hit - dir * 0.6, 3.5 * _scale * strength, _tint.lightened(0.4), seconds)
 	var burst := FxParticles.sparks(_tint)
@@ -300,15 +286,6 @@ func _drive(mat: ShaderMaterial, param: String, seconds: float, owner_node: Node
 		func(v: float) -> void: mat.set_shader_parameter(param, v), 0.0, 1.0, seconds
 	)
 	tween.tween_callback(owner_node.queue_free)
-
-
-func _basis_along(dir: Vector3) -> Basis:
-	var y := dir.normalized()
-	var x := y.cross(Vector3.UP)
-	if x.length() < 0.01:
-		x = Vector3.RIGHT
-	x = x.normalized()
-	return Basis(x, y, x.cross(y))
 
 
 func _emitter(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
