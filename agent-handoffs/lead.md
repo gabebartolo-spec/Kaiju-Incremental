@@ -12,8 +12,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 ## TABLED FOR THE DIRECTOR (ask in this order when he is back; images/clips first)
 1. #35 crease shader: A off vs B 0.3 (C 0.6 "too strong"). Board docs/captures/2026-10-18-crease/crease_board_ABC.jpg on
    claude/voxel-edge-shading; my QA PASS; fresh motion-critic on crease_B_pan.mp4 (verdict pending: agent "critic").
-2. #22 croc titan clips: A/B game-cam clip (before procedural / after Blender clips, round 2 fixes). Merge happens on a
-   fresh-critic PASS overnight (D-047 already decided); this is his look, after the fact, reversible.
+2. #22 croc titan clips MERGED 09:3x (AFTER reads heavier on the roar, even elsewhere; no regression). Show him the
+   A/B ...blender-reptile\d047ound3\croctitan_before_after_game.mp4; slam/turn polish follow-up queued after P3.
 3. PR #36 (claude/army-scales, from the AFL "Kaiju tree research" session, says "director-assigned finding 1"): army
    and air scale inside each stage (growth.per_level), Regeneration behind evolve2, Scales last young node, Titan
    Hide first after evolve1. Pacing: reptilian evolve1 0.62 h (was 0.59); Behemoth 38 time / 5 defeated / 2 city
@@ -54,7 +54,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 
 ## DEMO (D-050) state
 - Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill, #44 worktree cap, #40 rooftops,
-  #38 breath reads from behind (flame curtain), #47 scorch glow fade-in. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
+  #38 breath reads from behind (flame curtain), #47 scorch glow fade-in, #48 shader uid, #22 croc titan clips (D-047;
+  critic r3: walk PASS, roar/turn polish in a follow-up PR after P3; clip tabled for his look). Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
   #29 playtest sheet, #28 #30 export + CI artifact, #8 SFX, #32 perf hitches, #33 SFX bus + slider + menu sounds +
   end-card roar sound. Decisions D-050..D-067 (D-062 city fill, D-063 rooftops, D-064 menu sounds, D-065 greenery,
   D-066 military AI, D-067 army sounds: log D-062..D-067 in the next board PR).
