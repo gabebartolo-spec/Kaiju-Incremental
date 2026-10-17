@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 12:50
-## State: awaiting director (start Blender-to-game helper now, or after turn/roar clips pass?)
+## State: blocked (Chrome minimized: Tripo reference images for D-045 wait; director in fullscreen game)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -23,20 +23,10 @@ Director: "tank and heli models look great".
 - #15 round 2 (5f807cb): cause = GL Compatibility fallback scrambled packed instance data (web renderer too!),
   fixed + captures forced Forward+; mantis intact, thigh cubes square; lead look PASS; fresh re-critic running.
   Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
-- (round 1) #15 FIX (fresh critic, verified): C mantis SHATTERED in game clip (crops fine: clip vs stills disagree);
-  reptile thigh shear f572, jaw scatter f676; A/C fog differs; add close cam. Sent to kaiju-look-test.
-## (history) CI billing (12:35)
-- Every Actions job refuses: "recent account payments have failed or your spending limit needs to be increased".
-- Director chose "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by
-  the auto-mode classifier, so the director flips it himself (Settings > General > Danger Zone, or the command).
-- Pre-flight clean: no secrets, no Tripo GLBs in any ref (only our Blender .blend/.glb); commit email
-  gabebartolo@gmail.com becomes visible.
-- AFTER the flip: protect main (github-hygiene: test, doc-caps, gitleaks required; squash only; no force push),
-  log D-043 (repo public, director 12:35), rerun failed jobs (#11 `gh run rerun 38935875288 --failed`, #14,
-  #15, #16, #17, #18), tell helpers to dispatch their captures.
-- If he raises the limit instead: log that as D-043 and rerun.
 
-## Open PRs into look-options (all green locally; CI red = billing only)
+## Open PRs into look-options
+- #16 city-growth: stage 3 stills in; stage 4 (350k chunks) kills CI runners -> local GPU render approved,
+  waiting for the director's game to close (perf red flag). Balance proposal D (3.3-4.4 h, +-17%) to put to director.
 - #11 species locomotion (mantis + octopus). species-motion r3d: holds fixed (contrast 4.6x), big rest moves
   00284f3 not yet rendered. Needs: game + side mantis clips, octopus adult side, then FRESH motion-critic, then
   merge at reviewed SHA.
@@ -51,10 +41,6 @@ Director: "tank and heli models look great".
   blender-heli/heli_board.png to QA. Decided: helis fixed 2x scale, no growth multiplier.
 - #8 SFX paused; #3 to main on hold.
 
-## Captures plan while CI is out
-Local windowed capture (off-screen override.cfg; focus guard allows only when the director isn't fullscreen),
-ONE GPU job at a time: species-motion octopus first, then kaiju-look-test octopus. Everyone merges look-options
-for the LFS fix before capturing.
 
 ## D-045 (director 14:22): reptile = NEW original Tripo design, rigged in Blender (hand rig, welded weights)
 - Blender test critic: deformation + feet PASS both; animation FIX (no roar wind-up, frozen hold, tail not
