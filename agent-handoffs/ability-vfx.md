@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 07:00
-## State: running a check (CI on PR #33 sfx-bus and PR #34 army, both auto-fix ON). Next: (d) heli gun burst + heli crash
+# Ability VFX/SFX handoff, 2026-10-18 07:40
+## State: running a check (CI on #33 bd97471 and #34). Next: (d) heli gun + crash
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -61,6 +61,9 @@ PR #8 body updated, Auto-fix ON. Do not merge.
   - tank_fire, shell_hit, heli_rotor; Sfx.play_at / rotors / listener.
   - Flow 109. When #33 merges, retarget it to look-options.
 - Evidence is in shared notes sfx-bus/ and army-sfx/.
+- #33 also has demo_end.gd Sfx.roar(self) with each clip roar (roar_sounds plus a flow check), flow 107,
+  and the UI clip sfx-bus/ui_sounds.mp4 (tools/capture/capture_ui_sounds.gd).
+- #34 has claude/sfx-bus merged in, flow 110.
 - Next job (d): heli gun burst (PowersView._heli_fired) and heli crash (_heli_down), on top of #34.
 - Worktree branches: claude/sfx-bus, claude/army-sfx. The old ability-sfx branch is merged and can be deleted.
 
