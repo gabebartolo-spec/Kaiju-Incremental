@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 04:48
-## State: awaiting lead (export-windows PR open into look-options; smoke launch passed)
+# City-calm handoff, 2026-10-18 05:00
+## State: awaiting lead (#28 review fix pushed: tools/* excluded, re-export + smoke clean)
 
 ## Task
 Role city-calm (helper). Lead: "Game demo planning" (local_106fc100).
@@ -25,6 +25,9 @@ notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-..
 - PR body draft: scratchpad pr_export.md (SMOKE_RESULT / EXPORT_RESULT placeholders).
 
 ## Next
+0. NEXT TASK (lead 04:50): build.yml workflow_dispatch (input ref) running export_windows.sh +
+   pck_check on CI, upload KaijuIncremental-<sha>.zip (7-day retention), keep main push trigger;
+   proof = one dispatch on look-options, artifact downloaded + smoke-launched locally; PR.
 1. DONE 04:41: smoke launch with scratchpad smoke_exe.sh <notes>/smoke. It does
    override.cfg beside the exe (mode=0, no_focus, -20000), seeded settings.cfg
    fullscreen=false, own APPDATA, --audio-driver Dummy, --write-movie PNG 1080p,
@@ -41,8 +44,8 @@ none
 none.
 
 ## Findings for the lead
-- The exported pack ships tools/capture/*.gdc and tools/pacing.gdc (exclude_filter is only
-  tests/*). Harmless; trim with exclude_filter "tests/*, tools/*" if wanted.
+- (done in #28) exclude_filter now "tests/*, tools/*"; pack 269 -> 229 files; pck_check fails
+  on any tools/ file in the pack.
 - ci_capture.sh picks the newest workflow_dispatch run without filtering by branch; verify the
   run's headBranch.
 

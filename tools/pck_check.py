@@ -6,7 +6,8 @@ The pack is the one embedded at the end of the exe (export_presets.cfg embed_pck
 .pck file. Checks, failing loudly with exit 1:
   - every assets/fonts/*.ttf in the checkout is a real font (not a Git LFS pointer) and its
     imported FontFile in the pack carries the font's own bytes;
-  - every assets/kaiju/*.kvox in the checkout is in the pack, byte for byte.
+  - every assets/kaiju/*.kvox in the checkout is in the pack, byte for byte;
+  - no dev tools ship: nothing under tools/ (export_presets.cfg exclude_filter).
 --list prints every path in the pack with its size.
 """
 
@@ -121,6 +122,11 @@ def main():
             bad.append(f"{name}: differs from the checkout")
         else:
             print(f"ok  {name} ({len(files[name])} B)")
+    shipped_tools = sorted(n for n in files if n.startswith("tools/"))
+    if shipped_tools:
+        bad.append(f"{len(shipped_tools)} dev tool files in the pack, e.g. {shipped_tools[0]}")
+    else:
+        print("ok  no tools/ files in the pack")
     for line in bad:
         print("FAIL:", line)
     if bad:
