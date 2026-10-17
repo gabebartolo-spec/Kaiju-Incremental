@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: running a check (pacing on/off; then PR into claude/look-options; clip waits on the GPU slot)
+## State: awaiting lead (PR #40 open, synced with look-options 004c8a0, all suites green; sim review + look QA)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -21,21 +21,24 @@ Shots hurt: chip damage, no new escalation curve.
   fire_interval 2, range 16, damage_by_tier 0.3/0.5/0.8/1.2, rooftop_rubble 1/3/8/18, radius 0.5,
   max_drawn 36.
 - scenes/rooftop_view.gd: VoxelPerson.rifleman figures (5 outfits), MultiMesh flash and tracer pools,
-  dust + "+N" on death, Sfx "rifle" (no stream yet). Wired in scenes/rampage.gd (now 400/400 lines).
+  dust + "+N" on death, Sfx "rifle" (no stream yet). Built and fed by scenes/powers_view.gd
+  (rampage.gd is at its 400-line cap on look-options; it is untouched).
 - tests/lib/sim_rooftops.gd (11 sim checks incl. the effect fixture), 2 flow checks; floors sim 50, flow 102.
 - tools/capture/capture_rooftops.gd: Behemoth clip + stills + rooftops.json (squad screen spots for the crop).
 - Evidence logs (failing first, passes, bench): %TEMP%/rooftops_ev/. Bench script: scratchpad rooftop_bench.gd.
-- PR body draft: scratchpad pr_body.md (PACING_LINE / CLIP_LINE placeholders).
+- Pacing on vs off: 0.58/4.45 h vs 0.59/4.46 h (no change). CI clip run 39061920261 (at ef33e9c):
+  3 s 1080p clip, stills, 2x/4x crops, logs in the lead notes folder rooftops/.
+- Look note: figures are about 10 px tall at the Behemoth camera; tracers read, flashes are faint. Scaling up
+  is LEAD's / the director's call.
 
 ## Decisions taken (flagged to LEAD)
 - Armour does not reduce rifle chip. Brood young don't draw rifle fire. Figures vanish when the fall starts.
 
 ## Next
-1. Pacing on vs off -> PR body. Commit, push, open the PR, bind it, report to LEAD.
-2. Clip: local GPU slot (asked LEAD) or CI `tools/capture/ci_capture.sh --movie --resolution=1920x1080
-   --fps=60 capture_rooftops.gd -- --out=<dir>`; trim to 3 s with ffmpeg; 2x crop of one squad from a
-   still using rooftops.json spots. Clips go to LEAD (art QA), never straight to the director.
-3. LEAD's sim review -> fixes.
+1. LEAD's sim review and art QA -> fixes (Auto-fix is on for #40).
+2. On a look FIX: re-run `tools/capture/ci_capture.sh --movie --fps=60 --resolution=1920x1080
+   capture_rooftops.gd -- --out=<dir>`, trim with ffmpeg (-ss 0.75 -t 3), crop from rooftops.json spots.
+3. When look-options moves: sync (floors resolve to the real counts).
 
 ## Don't touch
 scenes/biped_swing.gd, scenes/gait_clip.gd, scenes/city_ground.gd, scenes/ui_kit.gd.
