@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 15:25
-## State: awaiting lead (rig export delivered and verified; voxel-skin told the format)
+# blender-reptile handoff, 2026-10-17 15:35
+## State: awaiting lead (rig export delivered, verified, format agreed with voxel-skin)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -31,7 +31,11 @@ claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96.
   blender -b --python tools/blender/motion_test.py -- auto <new.glb> <out> export 160
   (then rig_voxel.py on the same GLB at 160 for the kvox). Override bad pivots with a landmarks.json.
 ## Format agreement
-Proposal sent 14:56, correction (32-byte records) + ready note sent 15:20; no reply from voxel-skin yet.
+AGREED with kaiju-voxel-skin (15:04): space, welding, .skinw layout OK; added per-bone "game" (today's
+KaijuRig name: pelvis->spine0, spine->spine1, chest/clav->spine2, neck0/1->head0, head->head1, jaw,
+upperarm/forearm/hand->arm_x0/1/2, thigh/shin->leg_x0/1, meta/toe->leg_x2, tail9 folds into tail8;
+_L = blender +x = rig_voxel _l, checked). Their sampler: k-nearest welded positions, IDW, sums per game
+bone; jaw never blends with the skull; both files feed their .vskin stale stamp (re-export = rebake).
 ## Motion-critic notes (lead 13:26; NOT to fix until asked)
 Roar: no visible crouch/wind-up, 2 s frozen hold (f60-108), arms go out at the peak. Tail does not
 counterbalance (walk, roar); walk upper body static. B mouth open at rest. A: dark armour-scute

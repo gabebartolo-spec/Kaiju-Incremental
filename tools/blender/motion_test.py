@@ -818,6 +818,22 @@ def to_game3(p):
     return (GAME @ np.asarray(p, float).T).T
 
 
+def game_bone(name):
+    """Today's KaijuRig bone (rig_voxel names) that drives this bone, agreed with kaiju-voxel-skin:
+    no counterpart -> the nearest ancestor's game bone; the 10-bone tail folds its last two into
+    tail8. Sides: our _L is blender +x, rig_voxel's _l (game -x)."""
+    sd = {"_L": "l", "_R": "r"}.get(name[-2:], "")
+    fixed = {"pelvis": "spine0", "spine": "spine1", "chest": "spine2", "neck0": "head0", "neck1": "head0",
+             "head": "head1", "jaw": "jaw"}
+    if name in fixed:
+        return fixed[name]
+    if name.startswith("tail"):
+        return f"tail{min(int(name[4:]), 8)}"
+    base = name[:-2]
+    return {"clav": "spine2", "upperarm": f"arm_{sd}0", "forearm": f"arm_{sd}1", "hand": f"arm_{sd}2",
+            "thigh": f"leg_{sd}0", "shin": f"leg_{sd}1", "meta": f"leg_{sd}2", "toe": f"leg_{sd}2"}[base]
+
+
 def export(height_vox):
     """The rig and welded weights for the game's voxel skin (format agreed with kaiju-voxel-skin).
     <stem>.skin.json: bones (deform only, parents first) with rest head/tail and basis in game axes
@@ -831,7 +847,7 @@ def export(height_vox):
         if not b.use_deform:
             continue
         basis = np.array(b.matrix_local.to_3x3())  # columns: the bone's x, y (along), z axes
-        bones.append({"name": b.name, "parent": b.parent.name if b.parent else None,
+        bones.append({"name": b.name, "game": game_bone(b.name), "parent": b.parent.name if b.parent else None,
                       "head": to_game3(b.head_local).round(4).tolist(),
                       "tail": to_game3(b.tail_local).round(4).tolist(),
                       "basis": (GAME @ basis).T.round(5).tolist(),  # rows: x, y, z axes
