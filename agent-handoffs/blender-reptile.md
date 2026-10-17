@@ -1,8 +1,10 @@
-# blender-reptile handoff, 2026-10-18 08:30
+# blender-reptile handoff, 2026-10-18 09:35
 ## State: running a check. #22 ROUND 3 (lead 07:50 FIX; P3 PAUSED until #22 lands). Code committed
 ## locally ce44bb3 on claude/croctitan-clips (#22 remote still 439d8d3). Probe-gated numbers sent.
-## Captures br14pqabg from temp branch claude/croctitan-cards-tmp (= ce44bb3): ci8/after_game then
-## ci8/before_game (--procedural, same commit). Then: 3 s game-cam clips walk/turn/roar, before/after
+## Lead accepted the probe numbers (settle beats overshoot). AFTER green 39069948211 (ci8/after_game);
+## BEFORE 39073530817 running (ci8/before_game). Done: notes d047/round3/ingame_game_cam_*.mp4,
+## slam_turn_2x.png (uncommitted). Capture queue rule: one run at a time overall; check
+## `gh run list --workflow capture.yml --status in_progress` before any dispatch (lead 09:21). Then: 3 s game-cam clips walk/turn/roar, before/after
 ## (aligned), 2x slam + turn crops, PR body, merge look-options, ONE push, delete tmp, SHA to lead.
 ## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Auto-fix ON for #22.
 
