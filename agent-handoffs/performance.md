@@ -1,80 +1,71 @@
-# Performance handoff, 2026-10-18 04:40
-## State: available (demo baseline bench done and reported; GPU slot released to the lead)
+# Performance handoff, 2026-10-18 05:45
+## State: available (PR #32 merged cfb063f; director said "finish up"; next items queued below)
 
 ## Who
 Performance role (director, 2026-10-18): keeps track of every addition to the game and judges its
-frame-rate cost. Reads; measures; reports to the director and the lead (LEAD session, "Game demo
-planning", local_106fc100...). Does not cut detail on its own: D-032 (looks first, tuning later)
-still holds; a slow frame is a finding, not a veto.
+frame-rate cost. Reports to the LEAD session ("Game demo planning", local_106fc100...) and the
+director. D-032 (looks first) holds: a slow frame is a finding, not a veto; no feel change without
+the director.
 
-## Task
-Keep the ledger below current: every merged or open PR gets a cost line (measured or "not benched").
-GPU benches only with the lead's slot; one Godot, off-screen override.cfg (write it with the Write
-tool in its own step: the focus-guard hook blocks any Bash command containing a windowed flag until
-the file exists), isolated APPDATA, PID kill only, delete override.cfg after.
-
-## Demo baseline bench, 2026-10-18 04:28-04:37 (4070 SUPER, game code = 553fdeb = be78c82)
-Seed city 0, reptilian, autoplay 30 s, 3 runs (Behemoth) / 2 runs (pre-evolve). Contended CPU: helper
-headless tests + Blender -b ran meanwhile, so frame gaps and logic max are pessimistic; GPU timers hold.
-| Scene | Res | GPU avg | GPU max | Frames >33 ms | Worst gap | Street life avg |
-|---|---|---|---|---|---|---|
-| Pre-evolve, tier 1 baby (the demo's real worst play) | 1080p | 6.0-6.1 ms | 12 ms | 14-16 of ~2360 (0.6%) | 53-201 ms | 2.3 ms (385 people) |
-| Pre-evolve | "4K" * | 13.3-13.4 | 32 | 30-34 of ~2000 (1.6%) | 66-73 | 2.3 |
-| Behemoth, tier 2 adolescent, grown city | 1080p | 9.6-9.7 | 15 | 31-52 of ~1520 (2-3.4%) | 71-345 | 4.5-4.7 (956 people) |
-| Behemoth | "4K" * | 20.0-20.2 | 40-43 | 103-115 of ~1290 (8-9%) | 72-78 | 4.5 |
-\* Requested 3840x2160 windowed; the viewport reported 1977x1080 (window clamped to the screen), yet
-GPU doubled, so the render size is unclear. True 4K NOT verified: next time render via a fixed-size
-SubViewport or check the swapchain size.
-Repeatable hitches (every run): signature ability first use 126-170 ms; tank spawn 35-45 ms; heli
-spawn 30-42 ms. The demo never plays a Behemoth rampage (it ends on the card after evolve1).
-
-## Ledger: earlier numbers (4070 SUPER unless said)
-| When | Change | Number | Source |
-|---|---|---|---|
-| 10-16 | City RES 4 vs 8 (#9) | 1080p GPU 6.5 vs 6.6 ms; 4K 14.2 vs 14.2 | #9 body (contended) |
-| 10-16 | Floor slabs lazily shown (#9) | GPU 7.3 -> 5.6 ms | city handoff |
-| 10-16 | Street life, 363 people (#5) | ~1.0 ms avg, worst 5-9 ms | #5 body |
-| 10-16 | Fx.sparks per call (#5) | 2-7 ms hitch (new GPUParticles node + material) | street-life handoff |
-| 10-17 | Voxel skin (#15) | +0.43-0.46 ms GPU over an empty city | #15 body |
-| 10-17 | City growth (#16), 720p | young 3.0 / Colossus 11-12 / Apex 25-27 ms GPU | #16 body |
-| 10-17 | Apex streaming (#20) | load young 5.1 s, Behemoth 8.0, Colossus 9, Apex 13 | #20 body |
-| 10-18 | Croc clips (#22, open) | rig 0.375 ms avg CPU; no in-game GPU run | #22 body |
-| 10-18 | Baseline above | includes tanks/heli, voxel skin, croc adult rig, game flow | this file |
-Still to land and NOT in the baseline: #22 clips, #8 SFX, #23 demo slice, city-calm zebras (D-054).
-
-## Causes traced in code
-1. Tank/heli spawn 30-45 ms: `TankModel._init` / `HelicopterModel._init` -> `VehicleParts` re-reads
-   `.parts.json` + `.kvox` and builds each MultiMesh per spawn, no cache. Fix shape: static cache of
-   the built meshes per part (no look change).
-2. Ability 126-170 ms: roar + `_ability_fx` builds new GPUParticles3D + ParticleProcessMaterial
-   (`fx.gd _burst/breath`, `ability_fx.gd _burst/_emitter`); likely first-use shader/pipeline
-   compile. To verify: is it first use only? Fix shape: warm the emitters at load, pool them.
-3. Street life scales with the city: 2.3 ms (385 people) -> 4.6 ms (956) CPU per frame at Behemoth.
-4. Uncapped `CityView.flash` OmniLights (9 call sites); fires cap 30 with a light each; 600
-   RigidBody debris; one OmniLight per street lamp.
-5. Post stack (SSAO + SSIL + glow + fog + sun shadows 160 m + MSAA 2x): the big lever at high res, a
-   look call (D-032), not mine.
-
-## Bench recipe (scratch script is session-local; re-create it)
-Copy `tools/capture/bench_rampage.gd`, then: add `--preset=` (pre = claws 4 hide 3 rage 3 quake 2;
-behemoth = that + evolve1 1 + sig_power 2); build the city with
-`CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))` (the repo script
-uses the base city for every tier); print viewport size and stage. Worth a small PR (proposed).
+## Task (next, assigned by the lead 05:3x; none started)
+One PR each, same before/after bench discipline:
+(a) Breath particle pooling: each later breath costs ~13 ms (fx.gd breath + ability_fx _burst build a
+    new GPUParticles3D + ParticleProcessMaterial per call). Pool and restart() the emitters.
+(b) Street life, no feel change: cache the four tuning floats (`Num.f(_cfg[...])` per person per
+    frame) and update people beyond ~40 m of the camera every 3rd frame with 3x delta. Proof = 1080p
+    game-camera still before/after with a diff of ~0. Cost now 2.3 ms (385 people) -> 4.6 ms (956).
+    The 600-civilian cap is the director's call; the lead asks him once (b) lands.
+(c) sim.step profile at Behemoth (which steps cost what) written here. No sim change without a
+    kaiju-sim-review packet. Worst sim.step: 5-10 ms windowed, 33-64 ms headless.
+Then re-bench after #22 lands (#8, #23 and #26 are merged).
 
 ## Branch and commit
-Main checkout, claude/look-options (lead's checkout; only this file committed here). No worktree.
+#32 merged into claude/look-options as cfb063f (squash of head 6525a75). Worktree removed.
+Branch claude/perf-hitches may still exist locally/on origin (my `git branch -D` was refused by
+permissions): the lead can prune it.
+
+## What #32 did
+- First Atomic Breath 101-159 -> 19-24 ms: the prewarm drew the scorch decal at 0.5 rad, the breath
+  uses cone_half_angle_deg 36 = 0.63 rad, and FxDecals caches by angle. Now
+  `AbilityFx.new(..., cone)` prewarms at the run's angle (`AbilityFx.cone_half_angle`).
+- Tank/heli spawn 34-58 -> 1.5 ms: VehicleParts static caches (kvox per path, MultiMesh per part) plus a
+  per-vehicle material_override, so fades stay per vehicle; one of each built at rampage load.
+- Flow floor 100 -> 102 (2 checks, shown failing on the old code). GPU unchanged.
+- CI lessons: gdlint max-file-lines 400 (rampage.gd sits at 397); gdformat --check runs in gdlint
+  (local: ~/AppData/Roaming/Python/Python314/Scripts/gdformat.exe and gdlint.exe).
+
+## Ledger (4070 SUPER)
+| When | Scene / change | Number |
+|---|---|---|
+| 10-16 | City 1080p / 4K (#9) | GPU 6.5 / 14.2 ms |
+| 10-16 | Street life 363 people (#5) | ~1.0 ms avg |
+| 10-17 | Voxel skin (#15) | +0.45 ms GPU |
+| 10-17 | City growth 720p (#16) | young 3.0 / Colossus 11-12 / Apex 25-27 ms GPU |
+| 10-17 | Apex streaming (#20) | load Behemoth 8.0 s, Apex 13 s |
+| 10-18 04:30 | Demo baseline 1080p (be78c82) | pre-evolve GPU 6.0 ms, Behemoth 9.6 ms; "4K" 13.3 / 20.1 ms (window clamped to 1977x1080: true 4K unverified) |
+| 10-18 05:15 | #32 hitches (before 40a2ec2 / after 7f63d01) | ability 101-159 -> 19-24 ms, tank 34-41 -> 1.5, heli 56-58 -> 1.4 |
+Not yet benched: #8 SFX, #22 clips (rig 0.375 ms CPU per its body), #23 slice, #26 zebras.
+Also open: the post stack (SSAO+SSIL+glow+fog+shadows+MSAA) is the 4K lever, and a look call.
+
+## Bench recipe (scratch scripts are session-local)
+`tools/capture/bench_rampage.gd` plus: `--preset=` (pre = claws 4 hide 3 rage 3 quake 2; behemoth = +
+evolve1 1, sig_power 2); city from `CityGrowth.layout(Content.tuning(), Num.i(stats["size"]),
+Seeds.make("city", 0))`; print the viewport and stage. Before = main checkout, after = worktree,
+interleaved. override.cfg goes in EACH project dir, written with the Write tool first (the focus-guard
+hook blocks any Bash command containing the windowed flag until it exists). Ask the lead for the GPU
+slot; delete override.cfg after; kill by PID only. Headless runs give CPU handler costs (cost_usec)
+without the GPU slot.
 
 ## Unfinished changes
-None. override.cfg deleted; all 11 Godot PIDs (1088517-1091817) exited on their own.
+None. No override.cfg, no Godot of mine running.
 
 ## Attempts
-1st bench Bash call blocked by the focus guard (heredoc text contained the windowed flag) -> fixed by
-writing override.cfg and run.sh with the Write tool.
+- The focus guard blocked a heredoc containing the windowed flag -> use the Write tool.
+- `tasklist` hung for 120 s -> use PowerShell Get-Process / Get-CimInstance.
+- CI failed twice on lint (file length, gdformat) -> run gdlint + gdformat --check locally before pushing.
 
 ## Open decisions
-- Director/lead: fix the spawn and ability hitches now (cache + warm-up, no look change), or after
-  the look is locked (D-032)?
-- Lead: bench PR (preset + grown city + true 4K) yes/no.
+- Director (via the lead): civilian cap at big cities (feel change), after (b).
 
 ## Running jobs
 None.
