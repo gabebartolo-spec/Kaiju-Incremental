@@ -17,6 +17,7 @@ const STREET := Color("3a3d40")
 const INK := Color("2a1620")
 const MOLTEN := Color("ff7a2a")
 const WATER := Color(0.85, 0.95, 1.0)
+const HOT := Color(1.0, 0.92, 0.7)
 
 ## Every effect played, in order ("breath", "leap", "lash", "cracks", "ready", "deflect",
 ## "regen"); read by the flow suite to prove each power leaves its own mark.
@@ -31,7 +32,6 @@ var _glint_mesh: BoxMesh
 var _overlay: ShaderMaterial
 var _body: Node3D
 var _overlay_on := false
-var _ready_glow := 0.0
 var _healing := false
 
 
@@ -51,15 +51,16 @@ func _ready() -> void:
 	_regen = _emitter(FxParticles.motes(green, _scale), FxParticles.glow_cube(0.14), 40, 1.5)
 	_overlay = ShaderMaterial.new()
 	_overlay.shader = RIM
+	_overlay.set_shader_parameter("tint", Color(str(_tune["regen_tint"])))
+	_overlay.set_shader_parameter("strength", 0.55)
 	# Prewarm every shader and decal texture out of sight so first use does not stall a frame.
 	var away := Vector3(0, -50, 0)
 	breath(away, Vector3.FORWARD * 4.0, 0.5, 1.0)
 	leap_land(away, 2.0, 1.0)
 	lash(away, 2.0, 1.0)
 	stomp_cracks(away, 2.0, 3.0)
-	ready_pulse(away)
+	ready_pulse(away, away)
 	deflect(away, Vector3.UP)
-	_ready_glow = 0.0
 	played.clear()
 
 
@@ -68,19 +69,8 @@ func attach_body(body: Node3D) -> void:
 	_body = body
 
 
-func _process(delta: float) -> void:
-	_ready_glow = maxf(0.0, _ready_glow - delta * 1.8)
-	var strength := 0.0
-	if _ready_glow > 0.05:
-		strength = _ready_glow * 1.4
-		_overlay.set_shader_parameter("tint", _tint)
-		_overlay.set_shader_parameter("shimmer", 0.0)
-	elif _healing:
-		strength = 0.55
-		_overlay.set_shader_parameter("tint", Color(str(_tune["regen_tint"])))
-		_overlay.set_shader_parameter("shimmer", 1.0)
-	_overlay.set_shader_parameter("strength", strength)
-	var want := strength > 0.0
+func _process(_delta: float) -> void:
+	var want := _healing
 	if want != _overlay_on:
 		_overlay_on = want
 		if not is_instance_valid(_body):
@@ -105,6 +95,8 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	var hit := mouth + span * _first_hit(mouth, span)
 	var dir := (hit - mouth).normalized()
 	var length := mouth.distance_to(hit)
+	# Muzzle flash on the first frame: the jaw lights up even while the body hides the beam.
+	_flare(mouth, 4.5 * _scale * strength, HOT, 0.3)
 	var cyl := CylinderMesh.new()
 	cyl.height = length
 	cyl.bottom_radius = 0.35 * _scale
@@ -208,10 +200,10 @@ func lash(centre: Vector3, reach: float, strength: float) -> void:
 
 
 ## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp.
-func stomp_cracks(at: Vector3, radius: float, strength: float) -> void:
+func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
 	var from := Num.f(_tune["crack_stomp_power"])
 	if strength < from:
-		return
+		return false
 	played.append("cracks")
 	var look := {
 		"size": radius * 2.2,
@@ -222,13 +214,15 @@ func stomp_cracks(at: Vector3, radius: float, strength: float) -> void:
 		"soot": 0.5,
 	}
 	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
+	return true
 
 
-## Signature ready again: one ring runs out from the feet and the body flashes its colour.
-func ready_pulse(at: Vector3) -> void:
+## Signature ready again: one ring runs out from the feet and the eyes flare in the species
+## colour (not the whole body, which read as taking damage).
+func ready_pulse(feet: Vector3, head: Vector3) -> void:
 	played.append("ready")
-	_city.fx.shockwave(at, 4.0 * _scale, _tint)
-	_ready_glow = 1.0
+	_city.fx.shockwave(feet, 4.0 * _scale, _tint)
+	_flare(head, 3.0 * _scale, _tint, 0.5)
 
 
 ## Regeneration: a green shimmer runs up the hide and motes drift off it while it heals.

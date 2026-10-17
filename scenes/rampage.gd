@@ -30,6 +30,8 @@ var cost_usec: Dictionary = {}
 var species: Dictionary
 ## The look of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
+## Their sounds (read by the flow suite).
+var sfx: Sfx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
 ## Capture hook: when set, called with the sim each physics frame for the player's input.
@@ -55,8 +57,7 @@ var _fx_rng: RandomNumberGenerator
 var _too_tall_cooldown := 0.0
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
-var _orbit_t := -1.0
-var _orbit_side := 1.0
+var _breath_camera := BreathCamera.new()
 var _autoplay_target := Vector2(INF, INF)
 ## Physics steps this rampage has run: autoplay paces itself on this, never the engine clock,
 ## so a run plays the same whatever ran before it.
@@ -72,6 +73,7 @@ func setup(
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
 	_fx_rng = Seeds.make("fx", run_index)
+	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
 
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
@@ -85,6 +87,8 @@ func _ready() -> void:
 	var colors: Dictionary = species["colors"]
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale())
 	add_child(ability_fx)
+	add_child(sfx)
+	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
 	ability_fx.attach_body(_kaiju)
@@ -166,7 +170,8 @@ func _on_event(event: Dictionary) -> void:
 		"stomp":
 			_kaiju.stomp()
 			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
-			ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), _power("stomp_damage"))
+			var heavy := _power("stomp_damage")
+			sfx.stomp(heavy, ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), heavy))
 			_city.crush(_kaiju_at, Num.f(event["radius"]))
 			_shake = maxf(_shake, 0.15)
 		"ability":
@@ -179,6 +184,7 @@ func _on_event(event: Dictionary) -> void:
 			_city.fall_start(event)
 		"fall_land":
 			_city.fall_land(event)
+			sfx.collapse(str(event["kind"]) == "topple")
 			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
 		"tough":
 			if _too_tall_cooldown <= 0.0:
@@ -231,8 +237,8 @@ func _ability_fx(event: Dictionary) -> void:
 			_city.fx.breath(mouth, span, eye)
 			var half_angle := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 			ability_fx.breath(mouth, span, half_angle, strength)
-			_orbit_t = 0.0
-			_orbit_side = 1.0 if sim.facing.x >= 0.0 else -1.0
+			sfx.play("breath")
+			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
 			var from: Vector2 = event["from"]
 			_leap_from = _to_world(from)
@@ -240,8 +246,10 @@ func _ability_fx(event: Dictionary) -> void:
 			_leap_reach = reach
 			_leap_power = strength
 			ability_fx.leap_takeoff(_leap_from)
+			sfx.play("leap_whoosh")
 		_:
 			ability_fx.lash(_kaiju_at, reach, strength)
+			sfx.play("lash")
 
 
 func _update_kaiju(delta: float, moving: float) -> void:
@@ -256,6 +264,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 			_leap_time = 0.0
 			_kaiju_at = target
 			ability_fx.leap_land(target, _leap_reach, _leap_power)
+			sfx.play("leap_land")
 			_shake = maxf(_shake, 0.5)
 	else:
 		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
@@ -269,15 +278,19 @@ func _update_kaiju(delta: float, moving: float) -> void:
 func _update_powers() -> void:
 	var charged := sim.ability_ready_in <= 0.0
 	if charged and not _was_ready:
-		ability_fx.ready_pulse(_kaiju_at)
+		var head := _kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale()
+		ability_fx.ready_pulse(_kaiju_at, head + _to_world(sim.facing) * sim.body_scale())
+		sfx.play("ready")
 	_was_ready = charged
 	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
 	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
+	sfx.regen(healing)
 
 
-## Every footfall kicks a little dust and nudges the camera (a minimal version until the
-## ability-sfx pass drives footstep sound, dust and shake from the same signal).
+## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
+## was waiting for this foot), so what you hear lands with what you see.
 func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
+	sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
 	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT)
@@ -334,6 +347,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 	if sim.stat("armor") > 0.0:
 		var away := (node.position - target).normalized() + Vector3.UP * 0.5
 		tween.tween_callback(func() -> void: ability_fx.deflect(target, away))
+		tween.tween_callback(func() -> void: sfx.play("deflect"))
 	else:
 		tween.tween_callback(func() -> void: _city.fx.sparks(target))
 	tween.tween_callback(shell.queue_free)
@@ -361,30 +375,12 @@ func _place_camera(delta: float) -> void:
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
 	_focus = _focus.lerp(_kaiju.focus(), minf(1.0, delta * FOCUS_FOLLOW))
-	var offset := _breath_orbit(delta) * zoom - Vector3(0, _step_dip * zoom, 0)
+	var rest := _breath_camera.offset(CAMERA_OFFSET, delta)
+	var offset := rest * zoom - Vector3(0, _step_dip * zoom, 0)
 	_cam_offset = _cam_offset.lerp(offset, minf(1.0, delta * 5.0))
 	_camera.position = _focus + _cam_offset
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(_focus + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
-
-
-## The camera offset, swung to the side and lifted while Atomic Breath fires so the beam crosses
-## the screen instead of running straight away from the camera; the kaiju stays framed.
-func _breath_orbit(delta: float) -> Vector3:
-	if _orbit_t < 0.0:
-		return CAMERA_OFFSET
-	_orbit_t += delta
-	var fx: Dictionary = Content.section("fx")
-	var ease_in := Num.f(fx["orbit_in_seconds"])
-	var hold := ease_in + Num.f(fx["beam_seconds"])
-	var ease_out := Num.f(fx["orbit_out_seconds"])
-	var w := smoothstep(0.0, ease_in, _orbit_t)
-	if _orbit_t > hold:
-		w = 1.0 - smoothstep(hold, hold + ease_out, _orbit_t)
-	if _orbit_t > hold + ease_out:
-		_orbit_t = -1.0
-	var turn := deg_to_rad(Num.f(fx["orbit_degrees"])) * w * _orbit_side
-	return CAMERA_OFFSET.rotated(Vector3.UP, turn) + Vector3(0, Num.f(fx["orbit_rise"]) * w, 0)
 
 
 func _autoplay_move() -> Vector2:

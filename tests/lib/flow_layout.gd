@@ -129,6 +129,7 @@ func reveal_fits() -> void:
 	await _frames(EvolutionReveal.SWAP_FRAME + 4)
 	var rect := reveal.lines.get_global_rect()
 	var on := t.root.get_visible_rect().encloses(rect) and reveal.lines.text != ""
+	check.call(reveal.roar.playing, "the evolved kaiju roars as it is revealed")
 	reveal.finish()
 	PlayerSettings.ui_scale = PlayerSettings.UI_SCALES[0]
 	PlayerSettings.apply()
