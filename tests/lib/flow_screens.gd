@@ -6,6 +6,7 @@ extends RefCounted
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+const FlowSave := preload("res://tests/lib/flow_save.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -32,7 +33,7 @@ func run() -> void:
 	await _check_settings()
 	layout.currency_named()
 	layout.fonts_ours()
-	_check_migration()
+	FlowSave.migration(check)
 	SaveFile.delete_save()
 
 
@@ -357,40 +358,6 @@ func _check_settings() -> void:
 	check.call(PlayerSettings.ui_scale == 1.0, "UI scale wraps back to 100%")
 	main.queue_free()
 	await _frames(2)
-
-
-## A version 1 save comes up as version 2 with its best destruction kept; newer is refused.
-func _check_migration() -> void:
-	var v1 := {
-		"version": 1,
-		"species": "cephalopod",
-		"rubble": 42,
-		"levels": {"claws": 2},
-		"runs": 3,
-		"best_destruction": 0.4
-	}
-	var up := SaveFile.migrate(v1)
-	check.call(
-		(
-			Num.i(up["version"]) == SaveFile.VERSION
-			and Num.f(up["best"]["destruction"]) == 0.4
-			and not up.has("best_destruction")
-			and Num.i(up["rubble"]) == 42
-		),
-		"a v1 save migrates to v%d keeping its best and its bank: %s" % [SaveFile.VERSION, up]
-	)
-	check.call(
-		SaveFile.migrate({"version": SaveFile.VERSION + 1}).is_empty(),
-		"a save from a newer version is refused"
-	)
-	var file := FileAccess.open(SaveFile.PATH, FileAccess.WRITE)
-	file.store_string(JSON.stringify(v1))
-	file.close()
-	var loaded := SaveFile.load_game()
-	check.call(
-		Num.i(loaded.get("version", 0)) == 2 and Num.i(loaded["levels"]["claws"]) == 2,
-		"a v1 save file on disk loads as v2"
-	)
 
 
 func _evolve_cost() -> int:
