@@ -1,4 +1,4 @@
-# Ability VFX/SFX handoff, 2026-10-17 14:50
+# Ability VFX/SFX handoff, 2026-10-17 15:00
 ## State: paused by the director ("pause vfx until the locomotion is done"); PR #8 on HOLD, do not merge
 
 ## Task
@@ -59,4 +59,4 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - Not done: creature roars (Sonniss); Freesound needs a login.
 
 ## Running jobs
-None. No override.cfg left. Last action (2026-10-17): merged look-options again (register conflict kept both sides; floors now flow 30 = base 26 + my 4; smoke 15, sim 39, powers 24, tentacles 17, city 5, flow 30 green), pushed.
+None. No override.cfg left. Last action (2026-10-17): fixed gdlint on PR #8 (rampage.gd over 400 lines after the base merge): breath camera orbit moved to scenes/breath_camera.gd (BreathCamera). All 6 suites green.
