@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 13:50
-## State: available (rifle PR #46 open; everything open is tabled for the director's listen)
+# Ability VFX/SFX handoff, 2026-10-18 15:20
+## State: available (#46 resynced to look-options 39acc0a = #38 + #47; others resync as they come up)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -20,10 +20,12 @@
   - Sfx.watch(camera, helis, street). Clips in crowd/.
 - The PRs collide on flow floors and on the sfx.watch line (#39 vs #43). Resync to the real counts as each lands.
 
-- **#46** claude/rifle-sfx, head ad1f436, flow 116 (look-options has #40).
-  - rifle.ogg; rooftop_view plays it with play_at at the squad (_squad_at).
-  - Clip: rifle/rifle_volleys_in_game.mp4.
-- #45 (mix levels) is stacked on #43.
+## Branch waiting
+- claude/rifle-sfx (b1a43d2, pushed, no PR): rifle.ogg plus the Sfx "rifle" stream, for #40 (rooftop defenders),
+  which calls Sfx.play("rifle").
+  - After #40 merges: merge look-options in, change rooftop_view's call to play_at("rifle", <squad pos>)
+    for the distance fade, add a flow check, record a clip, then open the PR.
+  - A/B listen: rifle/rifle_vs_tank.wav.
 
 ## Job (o): mix report DONE (shared notes mix-report/report.md, run clip, log, raw tables)
 - Master -21.4 LUFS, -3.9 dBTP. Loudness order is right.
@@ -40,6 +42,20 @@
   Stomps masked by army 15 → 8, not 0: it's shell_hit's thud; a 120 Hz high-pass on it is the next step if wanted.
 - A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
 - When #43 merges, retarget #45 to look-options.
+
+## Sync status (#39/#42/#43/#45 on look-options f71c527; #46 on 39acc0a; base flow is now 117)
+| PR | Head | Flow |
+|---|---|---|
+| #39 heli | bac13d7 | 116 |
+| #42 footsteps | dc8fd13 | 117 |
+| #43 crowd | c216ac0 | 117 |
+| #45 mix (on #43) | 9acb9e2 | 118 |
+| #46 rifle | c871803 (on 39acc0a) | 118 |
+
+- run_flow_tests.gd is at 393 lines on look-options. Each PR keeps its added checks in its own tests/lib file:
+  flow_heli_sounds, flow_step_sounds, flow_sounds (crowd + regen), flow_rifle_sounds.
+  So the PRs merge in any order with only a floor resync.
+- The lead merges them one at a time in the director's order and pings me. Resync each to the real count.
 
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
