@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 14:55
-## State: running a check (review r2 fixes: 4 C captures on CI)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:10
+## State: awaiting lead (review r2 reported; decision on the hairline seams: accept / overscale / blended turn)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -63,12 +63,17 @@ growth off (max_grow 0): changed ~0.05% of pixels, so scale was not the cause; f
 joint blend (LATTICE_PASSES 12 -> 4), all rebaked. New head f790f6a: the scythe at f335 already
 read as a clean cube grid on 8f5a798 (A sheds shards there).
 
+## Review r2 outcome (head 4be3650 = 8f5a798 behaviour)
+- Scythe slats: fixed (main-bone rotation only, no growth). Evidence review-r2/scythe_zoom.png.
+- Thigh band at full knee flex: remains (mild ribbing). The clamp (LATTICE_PASSES 4, f790f6a) opened
+  a gap with streaked filler: worse, reverted (4be3650). Two failed attempts: stop (rule 8).
+- Forearm speckle at close f220: REAL (hairline gaps between cubes turned by different bones). I
+  first told the lead "no speckle" without looking (black frame grab): corrected 15:10.
+- Options sent: (a) accept until Blender weights [recommended], (b) 5-8% uniform overscale,
+  (c) blended turn (brings shear back).
+
 ## Running jobs
-CI (scratch ci_runs7.txt, forward_plus, f790f6a): C only, reptile + mantis close clip + stills.
-A from round 1 (scratch dl5 rigid_*) is reused. Compose with scratch py/compose_r3.py
-<dl> <out> <ffmpeg> reptilian,insectoid after copying dl8 skin_* + dl5 rigid_* + picks.json
-into one dl dir. Then send the lead. Lower priority now: the director picked a new Tripo reptile
-rigged in Blender; next is Blender weights into bake.py (one function swap, see message 13:25).
+None. Evidence in side-session-notes/<lead>/kaiju-voxel-skin/review-r2/.
 
 ## Open decisions / touch points
 Agreed with kaiju-motion: rest pose = standing arms (5c6e703, director's lower T-rex hang); reptile
@@ -81,6 +86,7 @@ species-motion: mantle scale reads rig.skins["mantle0"] (smoke-proven); their ri
 - gh workflow run prints the run URL; a "newest run after" poll can pick another session's dispatch.
 - CI capture.yml falls back to gl_compatibility after a Forward+ timeout: always dispatch with
   -f renderer=forward_plus. Compatibility keeps MultiMesh custom/colour at half precision.
+- Never report on a frame you have not looked at: a black or failed grab is not "no defect".
 - A scratch file named inspect.py shadows Python's stdlib for scripts in that folder.
 - A fresh worktree has LFS fonts as pointers: flow then floods font errors and times out. git lfs pull.
 - APPDATA override for Godot hides Python user site-packages (PIL): set per command.
