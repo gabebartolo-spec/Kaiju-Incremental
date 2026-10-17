@@ -78,19 +78,19 @@ func _check_party_walls() -> void:
 ## does not.
 func _check_building_fade() -> void:
 	var eye := Vector3(0, 30, 40)
-	var feet := Vector3(0, 0, 0)
+	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3(0, 0, -3))
 	var tower := RampageSim.Building.new()
 	tower.w = 6
 	tower.d = 6
 	tower.height = 30
 	tower.x = 0.0
 	tower.z = 15.0
-	var front := BuildingFade.blocks(eye, feet, 20.0, tower)
+	var front := BuildingFade.blocks(eye, sight, tower)
 	tower.z = -15.0
-	var behind := BuildingFade.blocks(eye, feet, 20.0, tower)
+	var behind := BuildingFade.blocks(eye, sight, tower)
 	tower.z = 15.0
 	tower.x = 30.0
-	var beside := BuildingFade.blocks(eye, feet, 20.0, tower)
+	var beside := BuildingFade.blocks(eye, sight, tower)
 	check(
 		front and not behind and not beside,
 		"a tower fades only when it stands between camera and kaiju"

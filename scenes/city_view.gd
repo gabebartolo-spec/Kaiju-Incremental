@@ -69,8 +69,10 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var eye := camera.global_position
-		_fade.update(eye, feet, sim.reach_height(), delta)
+		var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
+		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
+		_fade.update(camera.global_position, sight, delta)
 
 
 func _build_environment() -> void:
