@@ -4,6 +4,11 @@ extends "res://tests/lib/runner.gd"
 ## Headless and seeded.
 ##   godot --headless --path . --script tests/run_city_tests.gd
 
+const Coverage := preload("res://tests/lib/city_coverage.gd")
+## Three different street plans (city.map_seed), so the coverage rule holds for cities other
+## than the one we ship today.
+const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
+
 
 func suite_name() -> String:
 	return "City"
@@ -11,6 +16,8 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
+	_check_calm_streets()
+	_check_no_empty_ground()
 
 
 ## The city reads as a real city, not a grid of isolated towers (director, 2026-10-16): lots
@@ -80,3 +87,78 @@ func _check_city_layout(layout: Array[Dictionary]) -> void:
 	for r: Rect2 in rects:
 		on_lot = on_lot or r.has_point(spawn)
 	check(not on_lot, "the kaiju starts in the street, not inside a building: %s" % spawn)
+
+
+## Calm streets (director, 2026-10-18: "remove the level crossing hellscape"): zebra crossings
+## only at the city.zebra_junctions junctions where two avenues cross, nearest the centre.
+func _check_calm_streets() -> void:
+	var cfg := Content.section("city")
+	var ground := CityGround.new(cfg)
+	var zebras := ground.zebra_junctions()
+	var nodes: Array[Vector2] = ground.plan["nodes"]
+	var far := 0.0
+	for n: int in zebras:
+		far = maxf(far, nodes[n].length())
+	check(
+		zebras.size() == Num.i(cfg["zebra_junctions"]) and far <= Num.f(cfg["half"]),
+		(
+			"zebras at %d junctions (tuning %d), furthest %.0f from the centre"
+			% [zebras.size(), Num.i(cfg["zebra_junctions"]), far]
+		)
+	)
+	ground.free()
+
+
+## No empty ground (D-062, director 2026-10-18: "there should never be vast empty spaces with
+## nothing to smash or kill"): at stage 1 and the Behemoth, in three cities, every
+## city.coverage_cell cell on or beside a street holds something to smash inside the arena,
+## and past its edge, as far as the game camera shows (city.view_beyond), a stand-in building,
+## a parked car or a street tree: never bare asphalt.
+func _check_no_empty_ground() -> void:
+	for tier: int in [1, 2]:
+		for map_seed: int in COVERAGE_SEEDS:
+			var base: Dictionary = Content.tuning().duplicate(true)
+			var city_cfg: Dictionary = base["city"]
+			city_cfg["map_seed"] = map_seed
+			var stats := UpgradeTree.run_stats(
+				Content.section("kaiju"),
+				Content.species_def("reptilian"),
+				UpgradeTree.new(Content.upgrades())
+			)
+			var sim := RampageSim.new(
+				stats,
+				CityGrowth.tuning_for(base, tier),
+				CityGrowth.layout(base, tier, Seeds.make("city", 0)),
+				Seeds.make("army", 0)
+			)
+			var holder := Node3D.new()
+			root.add_child(holder)
+			var decor := CityDecor.new(sim, Seeds.make("decor", 0))
+			holder.add_child(decor)
+			var fx := Fx.new()
+			holder.add_child(fx)
+			var street := StreetLife.new(sim, fx, Seeds.make("civilians", 0))
+			holder.add_child(street)
+			var ground := CityGround.new(sim.city)
+			holder.add_child(ground)
+			var skyline := CitySkyline.new(ground, Seeds.make("skyline", 0))
+			holder.add_child(skyline)
+			var got: Dictionary = Coverage.measure(sim, decor, street, skyline)
+			check(
+				Num.i(got["arena_empty"]) == 0 and Num.i(got["band_empty"]) == 0,
+				(
+					(
+						"stage %d, map_seed %d: no empty ground (%d cells: %d empty in the arena,"
+						+ " %d past the edge, at %s)"
+					)
+					% [
+						tier,
+						map_seed,
+						Num.i(got["cells"]),
+						Num.i(got["arena_empty"]),
+						Num.i(got["band_empty"]),
+						got["empty"]
+					]
+				)
+			)
+			holder.free()

@@ -1,48 +1,47 @@
-# Ability VFX handoff, 2026-10-16 21:00 (rev 21:05)
-## State: awaiting lead (FIX list done; new board + clip sent)
+# Ability VFX/SFX handoff, 2026-10-18 10:10
+## State: running a check (CI on #39 1c66048 and the limiter PR). Next: (g) footstep variants with round-robin
 
-## Task
-D-026: a distinct VFX for every unlockable power, plus the SFX sourcing proposal. The lead is
-asking the director about SFX. Lead review of PR #6 was FIX: breath (camera orbit approved, beam
-reaches its target, visible scorch), lash (no filled fan; tip streaks, spray, debris, scrapes),
-boost the deflect/regen/ready/cracks cues, no placeholder HUD timer. Then a new board
-(same labels A-J) and a clip at the gameplay camera.
+## Who
+Lead is "Game demo planning" / "LEAD", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
+The old lead (local_9fac90d2) is on P3 Tripo only. Report and ask for jobs at local_106fc100.
+Say "awaiting lead" only after asking for the next job with options (memory-shared work-while-waiting).
 
-## Branch and commit
-claude/ability-vfx (worktree affectionate-goldstine-64c8fb), PR #6 into claude/look-options.
-Pushed through 1635ab2 (merged look-options with #7 real city; floors city 5, flow 22; all 4 suites
-green). The board has NOT passed my QA yet; the PR stays on HOLD with the lead.
+## Done
+- PR #8 is MERGED (47e1b30): power SFX, footsteps and stomps on foot plants, crack (capped 2.5 s), collapse,
+  breath, ready, deflect, regen, croc roar on the evolution reveal (Sfx.roar).
+  Logged as D-052 (r2 shipped as heard) and D-055 (roar on the reveal and end card).
 
-## Done in c5aa7e0
-- Breath: camera orbit 25 deg + rise (tuning fx.orbit_*); beam stops at the first standing
-  chunk (AbilityFx._first_hit); flare (flare.gdshader), sparks, light on the struck face.
-- Marks are Decals (scenes/fx_decals.gd; textures drawn once from FastNoiseLite): scorch wedge,
-  crater, molten cracks, lash gouges. The kaiju's voxels moved to KaijuModel.BODY_LAYER (4) so
-  decals (cull_mask 1) skip it. scorch.gdshader removed.
-- Lash: sweep.gdshader is now two thin tip streaks; ink + water spray (FxParticles.spray with
-  orbit velocity); debris kicked along the arc on timers; scrape decal. city.ring removed.
-- Cues: deflect = 40 sparks + flare; regen = rim.gdshader green shimmer overlay on the body
-  (AbilityFx.attach_body) + motes; ready = shockwave ring + body flash; cracks = wide molten.
-- The capture uses Rampage.autoplay_signature instead of the 999 s cooldown hack. The "998 s"
-  timer the lead saw came from the capture script, not the game.
-- Particle recipes split out to scenes/fx_particles.gd (keeps ability_fx.gd under 400 lines).
-- flow 22, smoke 11, sim 39 green locally.
+## Merged
+- #33 (bus, slider, menu sounds; D-064) and #34 (army sounds; D-067). Their branches are gone.
+
+## Open PRs
+- **#39** claude/heli-sfx → look-options, head 1c66048, flow 112. Heli gun and crash; waits for the director's listen.
+- **Limiter PR** claude/sfx-limiter → look-options, flow 113.
+  - PlayerSettings._dynamics(): AudioEffectCompressor on SFX (-6 dB, 2:1, 5 ms, 250 ms) and
+    AudioEffectHardLimiter on Master (ceiling -1 dB, release 0.1). Values in tuning sfx.dynamics.
+  - Proof: tools/capture/capture_loud.gd stacks breath, 2 collapses, 3 tanks, stomp_2, crack and roar three times.
+    - Before: peak 0.0 dBFS, 409 clipped samples.
+    - After: peak -2.9 dBFS, 0 clipped.
+    - Tail (normal play) RMS is only 0.5 dB lower, so no pumping.
+  - Clips are in shared notes sfx-limiter/.
 
 ## Next
-- FIX list done and pushed. Board (A-J, gameplay camera): docs/captures/2026-10-16-powers/
-  powers_board.png; H/I/J from tools/capture/capture_cues.gd (clear street). Clip (powers8):
-  scratchpad .../powers8/powers.mp4.
-- Known: the breath at 0.25 s is still mostly behind the body when the kaiju faces away (the
-  orbit is 25 deg as approved); the ready flash tints the body red for about 0.5 s.
-- Findings for the lead's learnings (not mine to record): additive unshaded quads need
-  fog_disabled; MODEL_MATRIX in a MultiMesh shader excludes the instance transform.
-- After the lead passes this: the SFX follow-up PR per D-030 (Sonniss/Kenney/Freesound CC0;
-  synthesize hums, beams, pings, sizzles, regen in-house; register + provenance first).
+- (g) 3-4 footstep variants with round-robin. (h) Sonniss roars waits for the director.
+- Every sync: check `git log origin/claude/look-options -1` first. Squash merges mean "keep look-options'
+  version of the merged PR's lines; add only mine". Floors are real counts. Run gdlint over the whole tree
+  before a push. rampage.gd is at 400 lines.
 
-## Attempts (beam visibility)
-Edge glow (failed), x-ray through walls (covered the kaiju, reverted), flat glow floor plus a
-white-hot jet ramp; now the camera orbit (lead-approved) plus a beam that ends on its target.
+## How-to
+- Godot: /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
+  - Tests: GODOT=<that> SUITES_ONLY=1 tools/run_tests.sh [suite...]
+  - Windowed captures need the no-focus override.cfg written first in its own command (a hook checks), and
+    deleted afterwards.
+- Sounds: python tools/sfx/build_sfx.py --kenney C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl.
+  The Kenney CC0 packs are unzipped there, outside the repo. Rebuilt unchanged oggs differ only by stream
+  serial, so `git checkout` them.
+- Clips: tools/capture/capture_sfx_clips.gd (logs "SOUND <frame> <name>"), capture_roar.gd, capture_ui_sounds.gd.
+  Run them with --write-movie, then cut with imageio_ffmpeg's ffmpeg.
+- Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## Running jobs
-None. No Godot of mine running.
-No override.cfg left.
+CI on #33 and #34. No Godot, no override.cfg.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# worktrees.sh: guardrail C1, at most four live worktrees.
+# worktrees.sh: guardrail C1, one live worktree per live session (D-053), at most MAX_WORKTREES.
 #
 # Reads `git worktree list --porcelain`, or the file named by $WORKTREE_LIST (the self-test
 # feeds it captured listings). The first entry is the main worktree. Entries inside
@@ -17,7 +17,7 @@
 #
 # Usage: bash tools/lint/worktrees.sh
 
-MAX_WORKTREES=4 # guardrail C1: at most four live worktrees, both places together
+MAX_WORKTREES=12 # guardrail C1 (D-053, 2026-10-18): one per live session, both places together; the lead prunes dead ones
 WT_DIR_NAME="Kaiju-Incremental-wt"
 SESSION_DIR_NAME=".claude/worktrees"
 

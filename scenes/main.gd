@@ -1,6 +1,8 @@
 extends Node
 ## Game flow: title -> species select (new game) -> rampage -> end beat -> results ->
 ## evolution tree (evolution reveal on an evolution) -> rampage ...
+## The demo (D-050, data/tuning.json "demo") offers its species only and, after its end
+## evolution's reveal, shows the demo end card; Continue on that save lands there again.
 ## Owns the save state; screens get what they need through setup() and report back by signal.
 ## Progress comes only from playing: nothing accrues while the game is closed.
 
@@ -36,9 +38,10 @@ func _show_title() -> void:
 	_swap(title)
 
 
-## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 rubble"; "" with no save.
+## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 rubble"; "" with no save (or a
+## save of a species the demo leaves out).
 func _summary() -> String:
-	if _save.is_empty():
+	if _save.is_empty() or not Demo.allows(str(_save.get("species", ""))):
 		return ""
 	var runs := Num.i(_save.get("runs", 0))
 	return (
@@ -67,7 +70,9 @@ func _on_species_chosen(species_id: String) -> void:
 func _continue() -> void:
 	var levels: Dictionary = _save.get("levels", {})
 	_tree = UpgradeTree.new(GameData.upgrades, levels, str(_save.get("species", "")))
-	if Num.i(_save.get("runs", 0)) == 0:
+	if Demo.complete(levels):
+		_show_demo_end()
+	elif Num.i(_save.get("runs", 0)) == 0:
 		_start_rampage()
 	else:
 		_show_tree()
@@ -132,10 +137,23 @@ func _reveal(screen: UpgradeScreen, id: String) -> void:
 	var after := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var stage_city: Dictionary = CityGrowth.for_stats(after)["city"]
 	var reveal := EvolutionReveal.new()
+	var def: Dictionary = _tree.defs[id]
+	reveal.title = EvolutionReveal.title_of(def)
 	# The new stage's city (D-039), so "towers up to N floors" matches the city it will face.
 	reveal.setup(
 		_species(), UpgradeTree.run_stats(_base_stats(), _species(), before_tree), after, stage_city
 	)
-	var node := screen.node_button(id)
-	reveal.done.connect(func() -> void: node.grab_focus.call_deferred())
+	if Demo.is_end(id):
+		reveal.done.connect(_show_demo_end, CONNECT_DEFERRED)
+	else:
+		var node := screen.node_button(id)
+		reveal.done.connect(func() -> void: node.grab_focus.call_deferred())
 	screen.add_child(reveal)
+
+
+## The demo's last screen: the next stage roaring, Title or Quit (D-050).
+func _show_demo_end() -> void:
+	var card := DemoEnd.new()
+	card.setup(_species(), _base_stats())
+	card.title_pressed.connect(_show_title)
+	_swap(card)

@@ -20,10 +20,38 @@ const OUTFITS: Array[Dictionary] = [
 ]
 const COP := 6
 
+## Rooftop defenders (D-063): armed citizens in their street clothes, and soldiers in drab with
+## a helmet (the "hair" cell row).
+const ROOFTOP_OUTFITS: Array[Dictionary] = [
+	{"shirt": "8a3a32", "pants": "2f3440", "hair": "2a1f18", "skin": "e0b48e"},
+	{"shirt": "c9c2b0", "pants": "3b3a36", "hair": "1a1714", "skin": "8d5a3b"},
+	{"shirt": "4a5233", "pants": "3d4230", "hair": "39402a", "skin": "c58c5f"},
+	{"shirt": "3f5f7a", "pants": "57503f", "hair": "6a4a2a", "skin": "f0caa8"},
+	{"shirt": "4a5233", "pants": "3d4230", "hair": "39402a", "skin": "e0b48e"},
+]
+
 
 static func mesh(outfit: int, pose: int, voxel: float) -> ArrayMesh:
 	var o: Dictionary = OUTFITS[outfit]
+	var v := VoxelBuilder.new()
+	v.salt = outfit * POSES + pose
 	var cop: bool = o.get("cop", false)
+	_body(v, pose, cop)
+	return _bake(v, o, voxel)
+
+
+## A rooftop defender (D-063): the aiming pose with a rifle in place of the pistol, its barrel
+## two cells wide and running three cells past the hands.
+static func rifleman(outfit: int, voxel: float) -> ArrayMesh:
+	var v := VoxelBuilder.new()
+	v.salt = 97 + outfit
+	_body(v, Pose.AIM, false)
+	v.box(Vector3i(-1, 8, -7), Vector3i(0, 8, -4), "gun")
+	v.box(Vector3i(-1, 9, -4), Vector3i(0, 9, -3), "gun")  # receiver against the hands
+	return _bake(v, ROOFTOP_OUTFITS[outfit], voxel)
+
+
+static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float) -> ArrayMesh:
 	var palette := {
 		"shirt": Color(str(o["shirt"])),
 		"pants": Color(str(o["pants"])),
@@ -33,9 +61,6 @@ static func mesh(outfit: int, pose: int, voxel: float) -> ArrayMesh:
 		"gun": Color("161616"),
 		"belt": Color("0e0e0e"),
 	}
-	var v := VoxelBuilder.new()
-	v.salt = outfit * POSES + pose
-	_body(v, pose, cop)
 	# The body is symmetric about cell x = -0.5 and z = -0.5: centre it on the origin.
 	return v.bake(palette, voxel, Vector3(voxel * 0.5, 0, voxel * 0.5), 0.0)
 

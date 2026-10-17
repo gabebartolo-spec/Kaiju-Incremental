@@ -11,7 +11,7 @@ Kaiju Incremental adds.
 ## Before you start
 
 Work only on what `docs/STATUS.md` "Assigned items" lists. Branch from current main in your own
-worktree; more than four live is a violation (`bash tools/lint/worktrees.sh`):
+worktree; one live worktree per live session, the lead prunes dead ones (D-053; `bash tools/lint/worktrees.sh`):
 
 ```bash
 git fetch -q origin

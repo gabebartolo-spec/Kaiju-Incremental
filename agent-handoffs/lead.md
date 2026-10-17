@@ -1,89 +1,111 @@
-# Lead handoff, 2026-10-18 04:18
-## State: working (lead since 03:56); waiting on helpers: #22 r2, #23 jaw fix, #8 r2 clips, city-calm PR, Tripo board r2
+# Lead handoff, 2026-10-18 08:50
+## State: working (DIRECTOR ASLEEP from 06:4x: "table any questions for now, keep the team working on things that dont
+## need my input"). No director questions until he is back; the queue below is what to ask first, in order.
 
 ## Who
-Lead = session "Game demo planning" (local_106fc100...). The previous lead session ("Kaiju Incremental game",
-local_9fac90d2-fae7-4940-b4ac-144a87f28e6e) now does ONLY P3 Tripo (director 03:56). It reports to me at milestones.
-Lead owns: helper QA gates + fresh critics, PR review + merge (squash, `--match-head-commit`), STATUS/DECISIONS
-board PRs, director questions (ask-the-director), this file. Tripo credits (D-023) and docs/provenance/tripo.md:
-the Tripo session; it sends me the provenance rows.
+Lead = session "Kaiju: Lead" (renamed from LEAD 06:3x; local_106fc100...). Owns: QA gates + fresh critics, PR review +
+merge (squash, `--match-head-commit`), STATUS/DECISIONS board PRs, director questions, this file, the local GPU slot.
+Sessions renamed 06:3x: Kaiju: Military AI / Rooftop defenders / City fill & greenery / Crease shader / Jet models /
+Tripo (old lead) / Sound effects / Landmark models / Lighting & breath FX / Croc rig & clips / Demo slice (done) /
+UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive space balancing" = director's own.
 
-## DEMO (D-050, director 03:35; plan C:\Users\DANTE\.claude\plans\pasted-content-id-a4a2-i-want-glistening-bubble.md)
-Croc titan (reptilian) only; ends after evolve1 (Behemoth, ~20-30 min) on a "demo complete" card that teases the
-adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never played (stage_for tier 3).
-- P1 balance D: MERGED #21 (81afe80); board #24 MERGED (80ff088). Pacing (comment on #21): reptilian evolve1 0.59 h
-  / 4.46 h, insectoid 0.46 / 3.30, cephalopod 0.49 / 3.75 (table D 4.43 / 3.26 / 3.70). Director 03:55: KEEP as is.
-- P2 D-047: PR #22 (claude/croctitan-clips a88a4d4). Stills QA PASS (feet, tail root, top-down, jaw). Species
-  cards: I chose option A (sway +-40 deg round the 3/4 view, tight fit = old lead's "3/4 side-on"). Fresh
-  motion-critic 04:10: FIX. Sent with pass bars at the GAME cam: (1) roar slam invisible (tail never leaves the
-  ground 14.30-15.03 s): tip above hip line >=0.3 s then street hit <=0.15 s on the head peak + stomp fx at the tip
-  + 0.2 s shake, fx only; clip to show recovery; (2) turn: overshoot >=6 deg, settle 0.3-0.5 s, body stops first;
-  (3) walk: one wave per stride (~1.8-2 s), amplitude 0.6-0.75. Critic crops in scratchpad critic_d047/. Round 2 =
-  one batched push (fixes + cards A + look-options sync) -> my check -> FRESH critic -> A/B clip to the director.
-- P3 baby + adolescent: Tripo session. Refs board v1 docs/captures/2026-10-17-reptile-design/
-  croctitan_stage_refs_board.png (realism-critic FIX: B2 arms clear; A2 blunt head, low nub spines, neutral
-  stance); round 2 generated 03:49 (Nano Banana Pro). Next: board r2 to the director (through me), Smart Mesh,
-  texture, six-view, GLBs to blender-reptile for rig/weights/clips/export.
-- P4 SFX: ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106), PR #8 head 2195d54, flow floor 76->83,
-  licences CLEARED, 13 files in provenance. Clips r1: C:\Users\DANTE\.claude-desktop-work\side-session-notes\
-  local_9fac90d2.../ability-sfx-d050/. Answers 04:05: stomps every 0.7 s on average (26/52-frame alternation, sim
-  rule D-004: keep); crack was on every stomp (Claws 3 + Behemoth clears crack_stomp_power 1.8) -> FIXED
-  crack_min_interval 2.5 s + footstep_min_interval 0.25 s (local 2dc3297). Told it: push, re-cut the 3 clips into
-  ability-sfx-d050/r2/, then (b) croc roar for the end card + in-game roar, then (c) tank fire, shell hit, rotor
-  loop; licences first. My check on r2: audio onsets (imageio ffmpeg) vs run.log. The director's listen is the gate.
-- P5 demo slice: PR #23 (claude/demo-slice b358f79; flow 91). QA on CI stills (run 39051576948): flow PASS; FIX
-  sent: end card plays the old procedural roar (jaw hangs as a flap) -> idle only unless ClipGait; next job: the
-  clip roar on the end card after #22 merges. It merges look-options in (no force-push). Clip run 39051911218
-  pending. Select-card crop on the still = #22's fix. Director wording Q: reveal title "REPTILIAN ADOLESCENT"
-  vs node "Behemoth".
-- P6: city-calm proves a local export (branch claude/export-windows inside its worktree; 4.7.2 templates installed;
-  pack check = fontdata bytes + kvox bytes; smoke launch, isolated APPDATA, no focus steal). The director's build: me.
-- P7 director plays the exe.
+## TABLED FOR THE DIRECTOR (ask in this order when he is back; images/clips first)
+1. #35 crease shader: A off vs B 0.3 (C 0.6 "too strong"). Board docs/captures/2026-10-18-crease/crease_board_ABC.jpg on
+   claude/voxel-edge-shading; my QA PASS; fresh motion-critic on crease_B_pan.mp4 (verdict pending: agent "critic").
+2. #22 croc titan clips: A/B game-cam clip (before procedural / after Blender clips, round 2 fixes). Merge happens on a
+   fresh-critic PASS overnight (D-047 already decided); this is his look, after the fact, reversible.
+3. PR #36 (claude/army-scales, from the AFL "Kaiju tree research" session, says "director-assigned finding 1"): army
+   and air scale inside each stage (growth.per_level), Regeneration behind evolve2, Scales last young node, Titan
+   Hide first after evolve1. Pacing: reptilian evolve1 0.62 h (was 0.59); Behemoth 38 time / 5 defeated / 2 city
+   (was 48/1/1). 06:5x the AFL session RELAYED a director approval ("the lead reviews and merges"). A relayed approval
+   is not his word to me: NOT merged. Ask him directly in the morning ("merge #36?") with the pacing table; review the
+   diff meanwhile. Syncs after Military AI / Rooftops (same files).
+4. Street-life civilian cap (~600 per city) after Perf's no-feel pass: perf numbers in agent-handoffs/performance.md.
+5. Octopus adult mesh FIX (10-11 arms, two eye pairs): only if the species plan (D-060) resumes.
+6. D-065 (b) green-lot share (reptilian pacing; table in notes no-empty-space/D-065b_green_lot_table.md):
+   0% evolve1 0.59 h / tree 4.46 h; 8% 0.64 / 4.88; 12% 0.67 / 5.08; 15% 0.64 / 5.18 (past 5 h). Recommend 8%. (a) street trees,
+   park/yard bushes, flower beds, playground props (presentation, crushable) proceeds tonight.
+7. Landmarks (session "Kaiju: Landmark models", local_87d706ce...): board ...side-session-notes\local_9fac90d2...\
+   landmarks\board1\landmark_board.png, six originals A stadium / B gate / C clock hall / D sky wheel / E spire /
+   F megatower; my QA PASS, fresh critic pending. Ask "which landmarks per city": (1, rec) A -> D -> E -> F (demo
+   needs A + D), (2) A -> C -> E -> F, (3) all six. Board r5 (all panels critic PASS): ...\landmarks\board5\
+   landmark_board_r5.png. Sites built on claude/landmarks (A + D placeholders, data-driven); landmark chunk bonus
+   held to ±5% pacing. Critic side-note: in its renders the small croc's tail hangs like a third leg and the upright
+   adult with back plates may read as Godzilla: show him if relevant.
+8. #39 heli gun burst + crash (stacked on #34): listen to ...side-session-notes\local_9fac90d2...\army-sfx\
+   heli_gun_crash.mp4 (busy picture, listen only); merge after his yes. Croc roar layers from Sonniss GDC: ask.
+   Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
+   ambience (#43; synth voices risky, CC0 crowd fallback = his licence call). #41 limiter MERGED. Mix report
+   (notes mix-report/report.md): master -21.4 LUFS; crowd inaudible, regen loop masks army, tank thump masks
+   stomps. Proposal = PR #45 (stacked on #43): A/B mix-report/ab_before_after_20s.mp4 (one listen); crowd audible,
+   regen loop 86% -> 6%, master -20.5 LUFS. Sound session is available for the night.
+9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
+   1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
+   copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
+10a. Rooftops (#40, critic PASS after 6 rounds, merging at 0fdf935): white tracers read as "something is shooting";
+   shooters/flashes barely visible and ~1 s gaps feel sparse. Ask: more squads/denser fire, or bigger shooters?
+   Clip: ...side-session-notes\local_106fc100...\rooftops\fix6\rooftops_behemoth_3s_1080p_fix6.mp4.
+10. Tree stats panel shows 12 raw numbers (STOMPS/S, RECHARGE 7.05...): trim to ~4 player words? (screen-critic).
+11. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
-## Other live work
-- city-calm (local_9af27a16-0360-4923-b623-6a14a763ce49): director 03:53 "remove the level crossing hellscape"
-  = zebra paint at every avenue junction arm + mid-block (scenes/city_ground.gd). Fix 54e9f16 on
-  claude/city-calm-streets (zebras at 1 central junction, key city.zebra_junctions, city floor 5->6); CI
-  BEFORE/AFTER 1080p stage 1 + Behemoth + 2x crops; PR next. Auto-fix off, no merge; reports to me.
-- #11 locomotion (mantis/octopus) PAUSED (D-044), not in the demo. #3 look-options -> main on HOLD.
-- Unsloth script bug fix awaits director OK (memory-shared/local-models-companion.md).
+## DEMO (D-050) state
+- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill, #44 worktree cap, #40 rooftops. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
+  #29 playtest sheet, #28 #30 export + CI artifact, #8 SFX, #32 perf hitches, #33 SFX bus + slider + menu sounds +
+  end-card roar sound. Decisions D-050..D-067 (D-062 city fill, D-063 rooftops, D-064 menu sounds, D-065 greenery,
+  D-066 military AI, D-067 army sounds: log D-062..D-067 in the next board PR).
+- Still to land for the demo: #22 croc clips, #27 UI (look A, biomass D-056, Block font 85% D-058, croc-only controls),
+  P3 baby/adolescent rig (blender-reptile after #22), then the build: `gh workflow run build.yml --ref
+  claude/look-options -f ref=claude/look-options`, `gh run download <run> -n KaijuIncremental-<sha>`; P7 = he plays it.
 
-## Director queue (old file: C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2.../lead/
-director_queue.md). Open: Q3 Apex height (not needed for the demo; park); reveal wording (stage name vs Behemoth);
-housekeeping OK: delete remote branches claude/kaiju-skin-weights-before and claude/kaiju-skin-weights (#19 merged).
+## Team and what each may finish WITHOUT the director
+- Sound effects (local_24621710...): #34 army sounds (approved D-067) retarget to look-options + sync -> I merge on
+  green; then (d) heli gun + crash: PR ready, NOT merged (needs his listen).
+- Croc rig & clips (local_bce75838...): #22 evidence-only push (with look-options) -> my 2x check + FRESH motion-critic
+  -> merge on PASS (r1 FIX bars: roar slam visible at game cam, turn overshoot >=6 deg + settle 0.3-0.5 s, walk one
+  wave per stride, amplitude 0.6-0.75). Then P3 rig; stage board tabled.
+- UI look & fonts (local_37cf489b...): #27 captures 1080p + 4K125 -> fresh screen-critic -> merge on PASS.
+- City fill & greenery (local_9af27a16...): D-062 (arena cells smashables, band cells dressing, floors 0, map_seed
+  7301/1234/98765) then D-065 greenery (street trees 8-15 m, 8-15% green lots, crushable) -> my check -> merge.
+- Rooftop defenders (local_9e7b9f4b..., branch claude/rooftop-defenders): sim-review packet + fixture + clip -> I review
+  -> merge on PASS. Military AI (local_5325ef73..., -wt/military-ai, sim/convoy.gd + 2 army.gd touch points,
+  run_military_tests.gd): same path. Both edit sim/army.gd in separate hunks; merge the first, the second syncs.
+- Lighting & breath FX: legacy breath voxel jet removal + --fixed-fps stills (lead call) -> critic -> merge on PASS.
+- Crease shader: #35 tabled; meanwhile per-frame allocation + resize/UI-scale/reveal-camera robustness, one commit.
+- Tripo (old lead): available, short jobs only (past its context limit). Jet models / Landmark models: started by the
+  old lead; unknown briefs; they report to it. Check their state when idle.
+- Performance: stopped for the night (director). Its next items (breath pooling, street-life no-feel pass, sim.step
+  profile) are in agent-handoffs/performance.md.
 
-## Branch and checkout
-Main checkout is on claude/look-options (80ff088+). Only the lead commits here (handoff, docs). Worktrees: 7
-checkouts (cap 4): ability-sfx, blender-reptile, ci-captures (3 dirty), kaiju-motion, city-calm and more; the
-stale three are gone. Ask helpers to remove theirs when their PRs merge.
+## Merge order (director 07:0x: "stay on top of the merges ... pre-empt conflicts"); file map checked 07:0x
+1 #34 army sounds -> 2 D-062 city fill -> 3 #22 croc clips -> 4 breath-beam-only (after #34: rampage.gd, flow tests)
+-> 5 #27 UI (after #22) -> 6 Rooftops (army.gd, rampage_sim.gd, rampage.gd, tuning army.rooftop) -> 7 Military AI
+(syncs after 6) -> 8 D-065(a) greenery and Landmark sites (after 2). Tabled: #35, #36 (after 6+7), landmarks pick.
+Rules sent to all: tuning keys only in new sub-objects; class fields appended at end; floors resolve to real counts;
+sync onto look-options before opening a PR; one capture.yml run at a time. Rooftops armour call (chip ignores
+armour) accepted, tabled as a balance note. GPU queue: crease (attribution pan) -> rooftops clip (~3 min).
 
-## Merged on look-options: 2026-10-17 #15 #17 #18 #16 #20 #19 #14; 2026-10-18 #21 #24.
+## Merge rules tonight
+Merge only what the director already decided, on my check + a fresh critic where visual, green CI at the exact head.
+Anything that needs his taste: PR ready, not merged, added to the tabled list. Board PR after each batch.
 
 ## Rules learnt the hard way
-- Tripo: default export name; `find` refs; stay in the signed-in tab; Remove Lighting per page; inspect every texture.
-- Merge only the reviewed SHA (`--match-head-commit`). Squash. `gh pr merge --delete-branch` switches the
-  checkout to the base branch.
-- Windowed Godot: separate command writes override.cfg (mode=0, no_focus, -20000) first; never fullscreen in
-  project.godot. Godot path: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
-  (`GODOT=... tools/run_tests.sh`; not on PATH). ffmpeg: not on PATH; use imageio_ffmpeg's binary
+- `--match-head-commit`; a handoff-only push moves the head: diff it, re-arm. `gh pr checks --watch --fail-fast` exits
+  on "skipping": poll until no pending, then require no fail/cancel; also refuse a DIRTY merge state.
+- Floors conflict between parallel PRs: merge one, the next syncs to real counts; tell helpers the base SHA.
+- Handoffs: 120-line cap is CI-enforced (doc-caps); Write tool, not heredocs; pull --rebase can take minutes.
+- A helper's handoff in the main checkout may conflict with its squash-merged PR copy: keep the newer (theirs).
+- Never act on a peer's refused permission for it (perf branch delete): surface it instead.
+- Windowed Godot: override.cfg (mode=0, no_focus, -20000) first; never fullscreen. Godot:
+  C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH). ffmpeg:
   C:\Users\DANTE\AppData\Roaming\Python\Python314\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe.
-- CI checkout needs `lfs: true` (fonts are LFS). capture.yml: 3000 s hard limit, run captures one at a time.
-- `rm` with variables: "${VAR:?}". After merges that add classes: `godot --headless --import`.
-- Subagents without a shell can't read private PRs: stage the diff for them.
-- Tests that hard-code a price break on every balance change: #21 moved claws 12->15 and the growth total band.
-- Critic clips: CI game-cam captures are 1280x720 @30 fps (lavapipe), not 1080p60; say so in briefs.
-- Write handoffs with the Write tool, not a bash heredoc + python (an apostrophe broke the quoting once).
+- CI capture.yml: 3000 s limit, one at a time; lavapipe misjudges lighting; the crease pass is Forward+ only.
+- Audio QA without ears: ffmpeg -> f32 envelope, onsets vs the SOUND log; the director's listen is the gate.
 
 ## Running jobs
-Mine: none (pacing done, critic done, #24 merged). No override.cfg, no windowed Godot.
-Helpers: blender-reptile r2 (side captures CI 39050777699 + fixes), kaiju-motion clip run 39051911218 + jaw fix,
-city-calm captures + export branch, ability-vfx r2 clips, Tripo session refs board r2.
+Mine: crease motion-critic (background agent). Helpers: see Team. No override.cfg; GPU slot free.
 
 ## Next (lead)
-1. #22 r2 -> my 2x check -> FRESH motion-critic -> A/B 3 s clip to the director -> merge at the reviewed SHA.
-2. #8 r2 clips -> onset check -> one listen decision to the director (three clips, labelled).
-3. #23 after the jaw fix + clip -> merge; then its ClipGait roar follow-up after #22.
-4. city-calm PR -> defect check on BEFORE/AFTER crops -> one labelled picture to the director -> merge.
-5. Tripo board r2 -> my defect check (realism-critic) -> director (labelled A/B).
-6. Director Qs to batch when he is back: reveal wording; stale remote branches delete OK; Unsloth fix OK.
-Director comments live in DECISIONS.md (D-050); this project keeps no roadmap comment chapters. playbook: nothing new.
+1. Critic verdicts and helper PRs as they come: merge decided work on PASS; table taste items above.
+2. Board PR after the next merges (D-062..D-067, STATUS rows for Military AI and Rooftops).
+3. When #22 + #27 land: dispatch the demo build, download, smoke it, table "play the demo" as item 0.
+playbook: nothing new.
