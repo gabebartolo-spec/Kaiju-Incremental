@@ -15,6 +15,9 @@ const FLASH_SIZE := 0.45  # world units: about 3.5x a street officer's pistol fl
 const SPARK_SIZE := 0.6
 const SPARK_SECONDS := 0.1
 const GLOW := Color(1.0, 0.82, 0.45)
+## Over-range brightness per instance, past the city's glow threshold (1.1, AgX tonemap), so
+## flashes, tracers and sparks bloom instead of reading as tan sticks.
+const HOT := Color(4.0, 4.0, 4.0)
 const TRACER_SECONDS := 0.2  # muzzle to hide...
 const TRACER_HOLD := 0.08  # ...then the full streak lingers this long
 const TRACER_SHARE := 0.55  # a flying tracer is this share of its flight long
@@ -22,13 +25,17 @@ const TRACER_WIDTH := 0.09
 const FIGURE_SCALE := 1.5
 const SPACING := 0.55  # figures of a squad stand this far apart across their line of fire
 const AIM_HEIGHT := 3.5  # tracers end this high on the kaiju (per body scale)...
-const AIM_SPREAD := 1.2  # ...scattered this far either way
+const AIM_SPREAD := 0.8  # ...scattered this far either way...
+const HIDE_DEPTH := 0.8  # ...on the near side, this share of the body radius out from its axis
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
 
 ## Running totals and the figures drawn this frame (tests and the capture tool read them).
 var shots := 0
 var drawn := 0
 var most_drawn := 0
+## The latest volley's squad and the flashes and tracers lit now (the capture tool reads them).
+var last_squad := -1
+var lit := Vector2i.ZERO
 var sim: RampageSim
 var _city: CityView
 var _sfx: Sfx
@@ -124,6 +131,7 @@ func _physics_process(delta: float) -> void:
 	most_drawn = maxi(most_drawn, drawn)
 	_draw_flashes(delta)
 	_draw_tracers(delta)
+	lit = Vector2i(_flash_mm.visible_instance_count, _tracer_mm.visible_instance_count)
 
 
 ## The sim's rooftop events (true when it was one); the kaiju's drawn body stands with its feet
@@ -152,6 +160,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 		if squad.id != squad_id:
 			continue
 		shots += 1
+		last_squad = squad_id
 		for k: int in Num.i(_cfg["squad_size"]):
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, 8.5, -7.5) * _voxel)
@@ -163,9 +172,17 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 				_rng.randf_range(-AIM_SPREAD, AIM_SPREAD)
 			)
 			if _tracers.size() < MAX_TRACERS:
-				var hit := kaiju_at + spot * sim.body_scale()
-				_tracers.append({"from": muzzle, "to": hit, "t": 0.0})
+				_tracers.append({"from": muzzle, "to": _hide(kaiju_at, muzzle, spot), "t": 0.0})
 		return
+
+
+## Where a round from `muzzle` strikes: on the side of the body facing the shooter (not its
+## middle, where the body would hide the tracer), `spot` scattering it.
+func _hide(kaiju_at: Vector3, muzzle: Vector3, spot: Vector3) -> Vector3:
+	var bs := sim.body_scale()
+	var toward := Vector3(muzzle.x - kaiju_at.x, 0.0, muzzle.z - kaiju_at.z).normalized()
+	var skin := toward * Num.f(sim.powers_cfg["body_radius"]) * bs * HIDE_DEPTH
+	return kaiju_at + skin + spot * bs
 
 
 func _draw_flashes(delta: float) -> void:
@@ -178,7 +195,7 @@ func _draw_flashes(delta: float) -> void:
 		var at: Vector3 = f["at"]
 		var size := Num.f(f["size"])
 		_flash_mm.set_instance_transform(shown, Transform3D(Basis().scaled(Vector3.ONE * size), at))
-		_flash_mm.set_instance_color(shown, Color.WHITE)
+		_flash_mm.set_instance_color(shown, HOT)
 		shown += 1
 	_flash_mm.visible_instance_count = shown
 
@@ -209,6 +226,6 @@ func _draw_tracers(delta: float) -> void:
 		x = x.normalized()
 		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * head.distance_to(tail))
 		_tracer_mm.set_instance_transform(shown, Transform3D(basis, (head + tail) * 0.5))
-		_tracer_mm.set_instance_color(shown, Color.WHITE)
+		_tracer_mm.set_instance_color(shown, HOT)
 		shown += 1
 	_tracer_mm.visible_instance_count = shown

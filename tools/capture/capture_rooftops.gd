@@ -12,11 +12,11 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FRAMES := 60 * 4
 const SETTLE := 45  # frames for the camera to settle before stills count
 const MAX_STILLS := 4
-const MID_FLIGHT := 4  # frames after a volley a still is taken
+const MID_FLIGHT := 2  # frames after a volley a still is taken
 const LEVELS := {"claws": 3, "hide": 5, "rage": 3, "evolve1": 1}
 ## Where the kaiju stands from the chosen squad (south-east, so the squad is up-left of it on
 ## screen and not behind its body), as a share of the rifle range.
-const STAND := Vector2(0.45, 0.4)
+const STAND := Vector2(0.65, 0.5)
 
 var _out := "user://rooftops"
 var _seed := 0
@@ -99,4 +99,16 @@ func _still(rampage: Rampage, roofs: RooftopView, camera: Camera3D, frame: int) 
 			continue
 		var at := camera.unproject_position(feet + Vector3(0, 0.4, 0))
 		spots.append({"squad": squad.id, "x": roundi(at.x), "y": roundi(at.y)})
-	_stills.append({"file": name, "frame": frame, "spots": spots})
+	(
+		_stills
+		. append(
+			{
+				"file": name,
+				"frame": frame,
+				"spots": spots,
+				"volley_squad": roofs.last_squad,
+				"flashes_lit": roofs.lit.x,
+				"tracers_lit": roofs.lit.y,
+			}
+		)
+	)
