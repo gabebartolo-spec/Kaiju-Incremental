@@ -5,6 +5,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_flow_tests.gd
 
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
+const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
@@ -26,6 +27,10 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
+	var demo := FlowDemo.new(self, check)
+	await demo.run()
+	# The full game (every species, every evolution) with the demo switched off.
+	demo.demo_off()
 	await FlowScreens.new(self, check).run()
 	_check_display_font()
 	await _check_species_select()
@@ -47,6 +52,7 @@ func run_checks() -> void:
 	await _check_branch_view(
 		"cephalopod", {"c_hydra": 2, "c_grab": 1, "c_ink": 1}, ["limb", "grab", "throw_land", "ink"]
 	)
+	demo.demo_restore()
 
 
 ## The display font is a real font, not a Git LFS pointer: without the LFS checkout every

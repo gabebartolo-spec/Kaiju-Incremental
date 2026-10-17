@@ -1,4 +1,11 @@
 {
+	"demo": {
+		"enabled": true,
+		"species": ["reptilian"],
+		"end_node": "evolve1",
+		"end_title": "DEMO COMPLETE",
+		"end_line": "You become the Croc Titan"
+	},
 	"kaiju": {
 		"hp": 100,
 		"speed": 5.0,
