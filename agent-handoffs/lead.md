@@ -25,7 +25,11 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 6. D-065 (b): 8-15% green lots means fewer buildings/chunks = slower demo (touches D-049). City session prepares a
    table (0/8/12/15%: chunks per stage, pacing hours to evolve1 and tree end); ask him with it. (a) street trees,
    park/yard bushes, flower beds, playground props (presentation, crushable) proceeds tonight.
-7. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
+7. Landmarks (session "Kaiju: Landmark models", local_87d706ce...): board ...side-session-notes\local_9fac90d2...\
+   landmarks\board1\landmark_board.png, six originals A stadium / B gate / C clock hall / D sky wheel / E spire /
+   F megatower; my QA PASS, fresh critic pending. Ask "which landmarks per city": (1, rec) A -> D -> E -> F (demo
+   needs A + D), (2) A -> C -> E -> F, (3) all six. Landmark sites (merged-block plazas) start after D-062 merges.
+8. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
 - Merged on look-options 2026-10-18: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
