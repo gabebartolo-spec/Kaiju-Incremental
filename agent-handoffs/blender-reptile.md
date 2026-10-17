@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 17:05
-## State: awaiting lead (croc titan r6 sent)
+# blender-reptile handoff, 2026-10-17 17:25
+## State: running a check (r7 polish + director board: chain bash ba72i5m06)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -54,6 +54,16 @@ diff/*.json); clips + sheets in notes blender-reptile/croctitan_r5/.
   Commits 3110988 (script), 2214a87 (evidence), cd70417 (plot label). Sent to lead 17:05.
   Encoder: scratch r6/encode_intra.py (gopsize 1, no B-frames, PERC_LOSSLESS; Blender has no -g CLI).
   PNG pixel diff per view: scratch r6/pngdiff.py. diff JSON now carries head_tip + head_accel.
+## Round 7 (lead 17:06: r6 PASSED; polish + director board, one pass; skin byte-identical)
+1 roar peak pulse f55-73 (sin^2, ~0.7 Hz): jaw +9, chest -4, neck0/head -2, pelvis +1.5% hip_h.
+2 head dip x1.5 (neck0 24 / neck1 15 / head 15 x windup). Pose diff: one smooth out-and-back hump.
+3 DIRECTOR BOARD -> notes blender-reptile/director/: 1920x1080 all-intra, 1.5 s card + walk x2 + turn
+  + roar (25.5 s). Left: croc titan, new view "high" (MT_VIEWS=high MT_RES=960x920, scratch dir/hi).
+  Right: OLD = look_test_abc.mp4 panel B (Tripo auto-rig weights, in-game), extracted 0-15 s to
+  scratch dir/oldB (60 fps; segments walk 92-275/437-605/736-900, turn 280-435, roar 612-732),
+  resampled x2.5, looped. Composer scratch dir/board.py (also writes the still sheet). Captions only
+  state what the look-test NOTE documents (no jaw/tail bones -> lattice weights; thigh fold; knee crease).
+  Pending: chain -> compose -> encode_intra -> check -> commit evidence -> tell lead.
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -100,7 +110,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-None. No Blender open.
+bash ba72i5m06: headless r7 chain + high-view renders (scratch r7/, dir/hi). No MCP Blender.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.

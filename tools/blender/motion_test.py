@@ -29,6 +29,10 @@ CLIPS = ARGS[4].split(",") if len(ARGS) > 4 else ["walk", "turn", "roar"]
 OUT.mkdir(parents=True, exist_ok=True)
 FPS, FRAMES = 24, 144
 RES = (640, 480)
+# Optional overrides for board renders: MT_VIEWS=high MT_RES=960x920 (default: side + three-quarter, 640x480).
+import os
+if os.environ.get("MT_RES"):
+    RES = tuple(int(x) for x in os.environ["MT_RES"].split("x"))
 
 
 # --- landmarks (the real pivots, measured on each mesh; left side, right is mirrored) -------------
@@ -655,6 +659,9 @@ def pose_frame(clip, f, P):
     rear = ramp(31, 47, f) * (1 - 0.45 * drift) * (1 - ramp(104, 140, f)) * roar
     # Breathing at a period that divides the clip (72 frames), so the roar loops without a pop.
     breathe = math.sin(f * 2 * math.pi / 72) * roar
+    # One slow pulse at the peak (f55-73, about 0.7 Hz): the jaw snaps wider and the chest pushes, then
+    # settles, so the peak is a second bellow rather than a statue.
+    pulse = (math.sin(math.pi * (f - 55) / 18.0) ** 2 if 55 <= f <= 73 else 0.0) * roar
     # A slow look across the street through the drift (head and tail), gone by the recovery.
     look = math.sin(math.pi * min(1.0, max(0.0, (f - 46) / 90.0))) * math.sin(2 * math.pi * (f - 46) / 90.0) * roar
     # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
@@ -666,7 +673,7 @@ def pose_frame(clip, f, P):
         d = ((f / T - phs) % 1.0) * T  # frames since this foot's contact
         land += math.sin(math.pi * d / 10.0) ** 2 if d < 10.0 else 0.0  # sin^2: no velocity step
     bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
-           - 0.18 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe)
+           - 0.18 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe + 0.015 * hip_h * pulse)
     sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
     p_yaw = 4.0 * math.sin(ph) * gait
@@ -674,18 +681,18 @@ def pose_frame(clip, f, P):
     set_rot("pelvis", world_q(pitch=-7 * rear + 9 * drop, yaw=p_yaw, roll=p_roll))
     set_rot("spine", world_q(pitch=1.2 * math.sin(2 * ph - 0.5) * gait - 10 * rear + 4 * windup,
                              yaw=-0.6 * p_yaw, roll=-0.6 * p_roll))
-    set_rot("chest", world_q(pitch=-0.8 * math.sin(2 * ph - 1.0) * gait - 9 * rear + 3 * windup + 1.5 * breathe,
+    set_rot("chest", world_q(pitch=-0.8 * math.sin(2 * ph - 1.0) * gait - 9 * rear + 3 * windup + 1.5 * breathe - 4.0 * pulse,
                              yaw=-0.7 * p_yaw + 2.0 * math.sin(ph - 0.8) * gait,
                              roll=-0.8 * p_roll + 1.5 * math.cos(w - 0.8) * gait))
     # Neck and head keep the hunting gaze steady (counter the body), a little low when walking;
     # in the roar the head dips through the wind-up, then throws back.
-    set_rot("neck0", world_q(pitch=4 * gait + 1.2 * math.sin(2 * ph - 1.4) * gait - 15 * rear + 16 * windup,
+    set_rot("neck0", world_q(pitch=4 * gait + 1.2 * math.sin(2 * ph - 1.4) * gait - 15 * rear + 24 * windup - 2.0 * pulse,
                              yaw=-0.25 * p_yaw - 1.0 * math.sin(ph - 1.2) * gait))
-    set_rot("neck1", world_q(pitch=2 * gait - 11 * rear + 10 * windup, yaw=-0.25 * p_yaw))
-    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 10 * windup
-                            + 2.0 * breathe, yaw=7.0 * look))
+    set_rot("neck1", world_q(pitch=2 * gait - 11 * rear + 15 * windup, yaw=-0.25 * p_yaw))
+    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 15 * windup
+                            + 2.0 * breathe - 2.0 * pulse, yaw=7.0 * look))
     # Mouth shut at rest and walking; it parts in the wind-up and gapes at the peak.
-    set_rot("jaw", world_q(pitch=L.get("jaw_rest", 0.0) + 5 * windup + 36.0 * rear))
+    set_rot("jaw", world_q(pitch=L.get("jaw_rest", 0.0) + 5 * windup + 36.0 * rear + 9.0 * pulse))
     # Arms: elbows bent, hands low in front of the belly; at the peak the claws come up to the chest,
     # elbows still bent (never out forward); no shoulder roll.
     sp1 = L["spine"][1]
@@ -773,7 +780,9 @@ cam.data.clip_end = 5000
 scene.collection.objects.link(cam)
 scene.camera = cam
 CAM_DIST = max(235.0, 1.25 * float(np.ptp(np.concatenate([REST_V[o.name][:, 1] for o in meshes]))))
-VIEWS = {"side": V((-1, 0, 0.12)), "threeq": V((-0.75, -0.65, 0.32))}
+VIEWS = {"side": V((-1, 0, 0.12)), "threeq": V((-0.75, -0.65, 0.32)),
+         "high": V((-0.62, -0.55, 0.75))}  # high: front three-quarter about 45 deg down, like the game camera
+RENDER_VIEWS = os.environ.get("MT_VIEWS", "side,threeq").split(",")
 
 
 def place_camera(view, focus, far=1.0):
@@ -802,7 +811,7 @@ def settle(f):
 
 def render(clip):
     P = key_clip(clip)
-    for view in VIEWS:
+    for view in RENDER_VIEWS:
         d = OUT / f"{MODEL}_{clip}_{view}"
         d.mkdir(parents=True, exist_ok=True)
         for f in range(FRAMES):
@@ -1172,7 +1181,7 @@ elif TASK == "still":
         P = key_clip(c)
         for f in ((0, 13, 26, 39, 60, 80) if c != "roar" else (10, 32, 40, 52, 85, 125)):
             scene.frame_set(f)
-            for view in VIEWS:
+            for view in RENDER_VIEWS:
                 place_camera(view, *((focus_of(P, f),) if c != "roar" else (ROAR_FOCUS, ROAR_FAR)))
                 scene.render.filepath = str(OUT / f"{MODEL}_{c}_{view}_f{f:03d}.png")
                 bpy.ops.render.render(write_still=True)
