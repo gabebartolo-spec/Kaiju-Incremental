@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-18 01:40
-## State: working (blender-reptile: D-047 PR with v2 tail + species-card framing; AFTER captures on CI)
+# Lead handoff, 2026-10-18 02:35
+## State: working (blender-reptile: tail FIX pass (walk S-wave ~60 m tip, roar arc+slam), then opens D-047 PR)
 
 ## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
 - Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
@@ -14,7 +14,11 @@
   Tail-swipe attack = suggestion only (director's gameplay call). In-game tail owner = scenes/biped_swing.gd
   (TAIL_BEND_MAX 0.12 rad clamp, ~7 deg); told helper to hand tail to .kclip or raise clamp (not waking kaiju-motion).
   Species-select card broken by the 185 m tail: lead OK'd frame-by-bounds + 3/4 side-on in the same PR.
-- Unsloth helper (local-models MCP, gemma-4-12b) tested OK 01:36; holds ~10.7 GB VRAM (GPU renders compete).
+- Unsloth: director paused testing 02:25. Script bug (picks /v1/models[0], not the loaded model): fix blocked by
+  permission, awaiting director (memory-shared/local-models-companion.md). Gemma 4 12B best so far.
+- Lead early QA 02:30 on cb1726e tail: turn good; walk tip 33.8 m (7.9 deg/joint) + roar straight rod = too timid.
+  FIX sent: walk ~60 m S-wave 14-18 deg/joint, roar lift arc + slam with tip impact; rerun AFTER game only.
+  Species card a168942: fits swept volume (card spins), octopus 12.5->16.1, mantis same; check octopus stills.
 - Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
 
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
