@@ -1,5 +1,5 @@
 # City-growth handoff, 2026-10-17 12:45
-## State: blocked (stage 4 GPU render waits for the director's fullscreen game to close)
+## State: awaiting lead (PR #16 review; stills complete; balance + Apex height for the director)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -55,15 +55,12 @@ docs/captures/2026-10-17-city-growth/.
 - Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-- Lead approved (14:28) a LOCAL GPU render of stage 4 (Apex) as the bench: windowed with the
-  untracked no_focus override.cfg (in this worktree now, ignored via info/exclude), only when
-  the focus guard allows. Blocked while the director plays League; a background watcher
-  polls every 3 min for the League client to close. Then run, record PID:
-  console exe --path . --audio-driver Dummy --resolution 1280x720 --windowed --script
-  tools/capture/capture_growth.gd -- --stage=4 --out=$TEMP/cg_gpu   (APPDATA=$TEMP/cg_appdata)
-  Record the gpu/cpu ms + build time from the log (the bench), kill only that PID, DELETE
-  override.cfg after, commit the stills, update the PR #16 table, send to lead.
-- Balance proposal D: with the lead, not applied. Stage-scaled fog: follow-up, not in #16.
+None. Stages 3-4 rendered on the GPU 14:56-15:07 (lead-approved, League closed; override.cfg
+deleted, no Godot left). Stills committed; PR #16 body has the stills, the bench (Apex view
+build 167-184 s = load red flag; GPU 25-27 ms) and a director taste question (Apex Titan ~28
+floors among 43-48 floor towers at entry). Balance proposal D with the lead, not applied.
+Follow-ups for the lead (not in #16): incremental/threaded city build + far-block stand-ins;
+stage-scaled fog.
 
 ## Findings for the lead
 - A seeded generator that draws a number only on some branches shifts every later draw when a
