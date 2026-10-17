@@ -76,13 +76,45 @@ static func load_for(rig: KaijuRig, base: String) -> VoxelSkin:
 	return skin
 
 
-## The first 8 bytes of SHA-256 over <base>.kvox then <base>.rig.json: what a fresh .vskin carries.
+## The first 8 bytes of SHA-256 over <base>.kvox, <base>.rig.json and, when skin_weights.json lists
+## one for this kaiju, its Blender skin (.skin.json, then its weights file): what a fresh .vskin
+## carries (tools/kaiju_skin/bake.py source_stamp()).
 static func source_stamp(base: String) -> PackedByteArray:
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_SHA256)
 	ctx.update(FileAccess.get_file_as_bytes(base + ".kvox"))
 	ctx.update(FileAccess.get_file_as_bytes(base + ".rig.json"))
+	for path: String in skin_files(base):
+		ctx.update(FileAccess.get_file_as_bytes(path))
 	return ctx.finish().slice(0, 8)
+
+
+## The Blender skin files listed for <base> in its folder's skin_weights.json, or none.
+static func skin_files(base: String) -> Array[String]:
+	var out: Array[String] = []
+	var listing := base.get_base_dir().path_join("skin_weights.json")
+	if not FileAccess.file_exists(listing):
+		return out
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(listing))
+	if not parsed is Dictionary:
+		return out
+	var table: Dictionary = parsed
+	var rel: Variant = table.get(base.get_file(), null)
+	if not rel is String:
+		return out
+	var meta := base.get_base_dir().path_join(str(rel))
+	var info: Variant = JSON.parse_string(FileAccess.get_file_as_string(meta))
+	if not info is Dictionary:
+		return out
+	var skin: Dictionary = info
+	out.append(meta)
+	var weights := meta.get_base_dir().path_join(str(skin.get("weights_file", "")))
+	out.append(weights)
+	# Its welded triangles, when exported (tools/kaiju_skin/skin_faces.py).
+	var faces := weights.get_basename() + ".skinf"
+	if FileAccess.file_exists(faces):
+		out.append(faces)
+	return out
 
 
 ## The stamp a baked <base>.vskin was made from (empty if there is none).

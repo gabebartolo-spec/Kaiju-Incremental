@@ -32,12 +32,15 @@ var _clip := ""
 var _from := 0.0
 var _to := 15.0
 var _view_dir := Vector3.ZERO
+var _part := ""  # --skin-part=cubes|filler draws only that part of the skin (defect hunts)
 
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--species="):
 			_species = arg.substr(10)
+		elif arg.begins_with("--skin-part="):
+			_part = arg.substr(12)
 		elif arg.begins_with("--stage="):
 			_stage = arg.substr(8)
 		elif arg == "--find":
@@ -92,6 +95,14 @@ func _run() -> void:
 	root.add_child(stage)
 	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
 	var variant := "rigid" if VoxelSkin.show_rigid_voxels else "skin"
+	if _part != "":
+		variant += "_" + _part
+		for skin: Node in rig.get_children():
+			if not skin is VoxelSkin:
+				continue
+			for part: Node in skin.get_children():
+				var cubes := part is MultiMeshInstance3D
+				(part as Node3D).visible = cubes == (_part == "cubes")
 	var worst := {}  # bone -> [bend, frame]
 	var shots: Array[Dictionary] = []
 	var pos := Vector2.ZERO
