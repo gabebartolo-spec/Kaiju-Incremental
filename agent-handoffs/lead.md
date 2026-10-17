@@ -59,6 +59,14 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 - Performance: stopped for the night (director). Its next items (breath pooling, street-life no-feel pass, sim.step
   profile) are in agent-handoffs/performance.md.
 
+## Merge order (director 07:0x: "stay on top of the merges ... pre-empt conflicts"); file map checked 07:0x
+1 #34 army sounds -> 2 D-062 city fill -> 3 #22 croc clips -> 4 breath-beam-only (after #34: rampage.gd, flow tests)
+-> 5 #27 UI (after #22) -> 6 Rooftops (army.gd, rampage_sim.gd, rampage.gd, tuning army.rooftop) -> 7 Military AI
+(syncs after 6) -> 8 D-065(a) greenery and Landmark sites (after 2). Tabled: #35, #36 (after 6+7), landmarks pick.
+Rules sent to all: tuning keys only in new sub-objects; class fields appended at end; floors resolve to real counts;
+sync onto look-options before opening a PR; one capture.yml run at a time. Rooftops armour call (chip ignores
+armour) accepted, tabled as a balance note. GPU queue: crease (attribution pan) -> rooftops clip (~3 min).
+
 ## Merge rules tonight
 Merge only what the director already decided, on my check + a fresh critic where visual, green CI at the exact head.
 Anything that needs his taste: PR ready, not merged, added to the tabled list. Board PR after each batch.
