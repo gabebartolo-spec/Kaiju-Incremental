@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 14:55
+# Game-flow handoff, 2026-10-17 15:05
 ## State: running a check (3 CI captures; PR #14 CI re-running)
 
 ## Task
@@ -11,12 +11,13 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at c1ca495 (origin/claude/look-options merged in; rampage.gd
+claude/game-flow-edfba4, pushed at 1ad3dc7 (look-options e5e564b merged) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built
 - sim: Collapse.toppled / biggest_fall; RampageSim.end(reason) public ("ended" = pause menu);
-  Growth.body_scale (sim/growth.gd). rampage_sim.gd 399/400 and rampage.gd 400/400 lines.
+  Growth.body_scale (sim/growth.gd). rampage_sim.gd 400/400, rampage.gd 398/400: the HUD builds
+  result() (sim + civilians) and emits beat_done(result); sim.end() returns its event.
 - rampage_hud.gd: end beat (headline punch, slow-mo 0.3, 150 frames, skip after 40), pause.
 - results_screen.gd, evolution_reveal.gd, upgrade_node.gd + upgrade_screen.gd, title_screen.gd,
   pause_menu.gd, settings_menu.gd. autoload/save_file.gd (save v2 + v1 migration) and
@@ -41,7 +42,8 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
 - Lead review round 1 (FIX): blank title/buttons/values in CI stills = LFS pointer font on CI
   (not colour/tween). Fixed + font check (FAIL on 129-byte pointer, PASS on 8944-byte font).
 - GitHub Actions was blocked by billing 17:07Z-12:45; repo now public, Actions runs.
-- PR lint red after base moved: rampage.gd 415 lines -> trimmed to 400.
+- PR lint red twice after the base moved (rampage.gd 415, then 411 with the tank merge) ->
+  398. Any further base growth in rampage.gd/rampage_sim.gd needs the same trim.
 - CI stills round 2 (run 38992440820, 1080p): title/tree/results/reveal read well; pause and
   end-beat shots showed the results because the kaiju had died (8 physics steps per slow
   frame) -> capture pins max_physics_steps_per_frame = 1. 4K run timed out after 3 shots and
