@@ -85,9 +85,8 @@ func _ready() -> void:
 	_city = CityView.new(sim, _fx_rng)
 	add_child(_city)
 	var colors: Dictionary = species["colors"]
-	ability_fx = AbilityFx.new(
-		_city, Color(str(colors["eye"])), sim.body_scale(), _cone_half_angle()
-	)
+	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
+	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
 	add_child(ability_fx)
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
@@ -166,10 +165,6 @@ func _note_cost(what: String, since: int) -> void:
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
 
 
-func _cone_half_angle() -> float:
-	return deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
-
-
 func _to_world(p: Vector2) -> Vector3:
 	return Vector3(p.x, 0.0, p.y)
 
@@ -244,7 +239,7 @@ func _ability_fx(event: Dictionary) -> void:
 			)
 			var span := facing * reach + Vector3(0, -mouth.y + 0.5, 0)
 			_city.fx.breath(mouth, span, eye)
-			ability_fx.breath(mouth, span, _cone_half_angle(), strength)
+			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
