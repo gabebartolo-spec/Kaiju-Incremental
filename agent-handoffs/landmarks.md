@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 07:25
-## State: running a check (fresh critic on board round 3; full suite GREEN at db908ac)
+# Landmarks handoff, 2026-10-18 07:50
+## State: running a check (fresh critic on board round 4)
 
 ## Task
 Original city landmarks, modelled in Blender and voxel-baked so they break chunk by chunk like any
@@ -21,8 +21,14 @@ No PR yet.
   Board r2 (board2/): critic r2 passed B and E and asked for fixes on A, C, D and F. The round-3 fixes
   are done: stadium piers flush (and the caption now says bowl 7 floors), every clock reads 3:00 with
   dark belfry openings, wheel hub raised over a lower hall, megatower axis-aligned (rotated floors
-  aliased) with a crown of tapering points, croc staged clear of bases. Board r3 (board3/) is with a
-  fresh critic (board3/critic.md).
+  aliased) with a crown of tapering points, croc staged clear of bases. Critic r3: A, B, E PASS;
+  C, D, F FIX -> r4: portico gable roof, dial rings + 10:10 hands, side windows; wheel rim complete
+  (brace removed) with the hall centred under it; megatower a glass row per floor + straight stepped
+  crown points, caption "45 floors + crown"; small red lanterns in the gate passage. Board r4
+  (board4/) is with a fresh critic (board4/critic.md). Megatower is now ~706k raw voxels (Perf note).
+- For LEAD, outside my scope (critics r2/r3): the City 1-2 croc (adolescent scaled down) has its tail
+  hanging straight down so it reads as a third leg; the City 3-4 croc's pale back plates on an upright
+  body may read as a Godzilla silhouette. Those belong to the croc model's owner.
 - Full suite green on db908ac (smoke 27, sim 39, powers 24, tentacles 18, city 11, growth 24, load 9,
   flow 109, harness self-test). City + load re-run green after the r3 stadium rebake.
 - The director question is tabled for his morning by LEAD: "which landmarks per city"; I recommend

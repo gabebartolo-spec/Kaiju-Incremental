@@ -160,6 +160,10 @@ def gate():
     box((0, -2.85, 8.1), (14.6, 0.2, 0.5), GOLD)                   # gold band
     box((0, -3.0, 7.0), (3.2, 0.3, 1.5), "141414")                 # name board over the passage
     box((0, -3.15, 7.0), (2.6, 0.1, 1.0), GOLD)
+    for sx in (-1, 1):                                             # paired red lanterns in the passage
+        box((sx * 2.0, -2.6, 7.6), (0.15, 0.15, 0.5), "3a332c")
+        box((sx * 2.0, -2.6, 6.9), (0.8, 0.8, 0.9), "d8362a")
+        box((sx * 2.0, -2.6, 7.4), (0.6, 0.6, 0.15), GOLD)
     # three roofs, each a flared hip with gold-tipped upturned corners, a red storey between
     roofs = [(8.5, 8.6, 1.5), (10.9, 6.4, 1.3), (13.0, 4.3, 1.4)]
     for k, (z, half, hgt) in enumerate(roofs):
@@ -198,9 +202,14 @@ def clock_hall():
     for x in [-7 + i * 1.75 for i in range(9)]:                    # colonnade
         cyl((x, -5.0, 3.2), 0.38, 4.4, "efe7d4", 16)
     box((0, -4.9, 5.7), (16.2, 1.6, 0.6), "efe7d4")                # entablature (top at 6.0)
-    prism(-6.0, 6.0, -5.4, -4.7, 5.95, 7.9, "b9a684")              # pediment: thin upright gable
+    prism(-6.4, 6.4, -5.6, -2.0, 5.95, 8.1, "4f8f7c")              # portico roof, gable to the front
+    prism(-5.8, 5.8, -5.75, -5.55, 6.15, 7.8, "b9a684")            # shaded tympanum on the gable end
     for sx in (-1, 1):                                             # raking cornice along both slopes
-        beam((sx * 6.4, -5.55, 5.95), (0, -5.55, 8.15), 0.35, "efe7d4")
+        beam((sx * 6.5, -5.8, 5.95), (0, -5.8, 8.2), 0.3, "efe7d4")
+    for sx in (-1, 1):                                             # side-wall windows
+        for y in (-2.5, -0.5, 1.5, 3.5):
+            for z in (2.3, 4.3):
+                box((sx * 8.0, y, z), (0.1, 0.7, 1.1), "3a3f4a")
     for x in [-6 + i * 1.5 for i in range(9)]:                    # windows
         for z in (2.3, 4.3):
             box((x, -4.45, z), (0.7, 0.1, 1.1), "3a3f4a")
@@ -215,11 +224,13 @@ def clock_hall():
     faces = [((0, -1.15), (math.pi / 2, 0, 0), (0, -1)), ((0, 3.15), (math.pi / 2, 0, 0), (0, 1)),
              ((-2.15, 1.0), (0, math.pi / 2, 0), (-1, 0)), ((2.15, 1.0), (0, math.pi / 2, 0), (1, 0))]
     for (dx, dy), rot, (nx, ny) in faces:                          # four faces, all showing 3:00
-        cyl((dx, dy, 12.0), 1.3, 0.25, "f4efe0", 32, rot=rot)
-        hx, hy = dx + nx * 0.18, dy + ny * 0.18
+        cyl((dx, dy, 12.0), 1.45, 0.2, "2b2a28", 32, rot=rot)          # dark dial ring
+        cyl((dx + nx * 0.05, dy + ny * 0.05, 12.0), 1.25, 0.25, "f4efe0", 32, rot=rot)
+        hx, hy = dx + nx * 0.2, dy + ny * 0.2
         rx, ry = -ny, nx                                           # the viewer's right on this face
-        box((hx, hy, 12.4), (0.2 if ny else 0.1, 0.1 if ny else 0.2, 0.9), "1a1a1a")
-        box((hx + rx * 0.3, hy + ry * 0.3, 12.0), (0.7 if ny else 0.1, 0.1 if ny else 0.7, 0.18), "1a1a1a")
+        for side, length in ((1, 1.0), (-1, 0.7)):                 # 10:10, pivot at the centre
+            beam((hx, hy, 12.0), (hx + rx * side * 0.87 * length, hy + ry * side * 0.87 * length,
+                                   12.0 + 0.5 * length), 0.2, "1a1a1a")
     box((0, 1.0, 15.2), (3.6, 3.6, 1.6), "efe7d4")                 # belfry
     for nx, ny in ((0, -1), (0, 1), (-1, 0), (1, 0)):              # dark louvred openings
         for k in (-0.75, 0.75):
@@ -235,11 +246,10 @@ def wheel():
     R, N = 10.0, 32
     hz = R + 4.6
     box((0, 0, 0.4), (14, 8, 0.8), "8a8478")                       # base
-    box((0, -3.4, 1.4), (6, 1.6, 1.2), "f2c230")                   # boarding house, in front
+    box((0, 0, 1.4), (5.0, 2.4, 1.2), "f2c230")                    # boarding hall under the rim
     for sy in (-1, 1):                                             # two A-frames
         for sx in (-1, 1):
             beam((sx * 5.5, sy * 3.0, 0.8), (0, sy * 1.0, hz), 0.9, "e8e6e0")
-        beam((-3.6, sy * 2.4, 5.2), (3.6, sy * 2.4, 5.2), 0.5, "e8e6e0")  # cross brace
     cyl((0, 0, hz), 1.0, 2.0, STEEL, 24, rot=(math.pi / 2, 0, 0))  # hub drum
     cyl((0, 0, hz), 0.35, 2.8, "5a5f66", 12, rot=(math.pi / 2, 0, 0))  # axle
     pts = [(R * math.cos(i / N * math.tau), hz + R * math.sin(i / N * math.tau)) for i in range(N)]
@@ -294,20 +304,25 @@ def megatower():
     for k in range(steps):                                         # twisted glass floors (3 floors each)
         rz = 0.0
         s = size - k * 0.32
-        box((0, 0, z + 1.5), (s, s, 2.6), "3e7fb0", rz=rz)
-        box((0, 0, z + 2.8), (s, s, 0.4), "cfd7df", rz=rz)        # floor band, flush with the glass
+        box((0, 0, z + 1.5), (s - 0.3, s - 0.3, 3.0), "1f3348", rz=rz)  # dark core: floor lines
+        for f in range(3):                                         # one glass row per floor
+            box((0, 0, z + f * 0.9 + 0.45), (s, s, 0.7), "3e7fb0", rz=rz)
+        box((0, 0, z + 2.8), (s, s, 0.4), "cfd7df", rz=rz)        # setback band every 3 floors
         z += 3.0
     rz = 0.0
     s = size - steps * 0.32
-    box((0, 0, z + 0.2), (s - 0.6, s - 0.6, 0.4), "2a2f3a", rz=rz)  # dark open top
-    for i in range(12):                                            # crown: tapering gold points
-        a = i / 12 * math.tau + rz
-        x, y = 0.45 * s * math.cos(a), 0.45 * s * math.sin(a)
-        tall = 5.0 if i % 2 == 0 else 3.4
-        cyl((x, y, z + tall / 2), 0.6, tall, "e3b23c", 4, r2=0.08)
+    box((0, 0, z + 0.2), (s - 0.6, s - 0.6, 0.4), "2a2f3a")          # dark open top
+    for i in range(8):                                             # crown: 8 straight stepped points
+        a = i / 8 * math.tau + math.pi / 8
+        x, y = round(0.42 * s * math.cos(a) * 4) / 4, round(0.42 * s * math.sin(a) * 4) / 4
+        box((x, y, z + 1.5), (0.75, 0.75, 3.0), "e3b23c")
+        box((x, y, z + 3.6), (0.5, 0.5, 1.2), "e3b23c")
+        box((x, y, z + 4.6), (0.25, 0.25, 0.8), "f2d38a")
     ro, ri = 0.45 * s + 0.5, 0.45 * s - 0.5
     annulus(z, z + 0.6, (ro, ro), (ri, ri), "e3b23c")              # crown band, open centre
-    cyl((0, 0, z + 4.5), 0.7, 9.0, "e3b23c", 6, r2=0.08)           # taller central spire
+    box((0, 0, z + 2.5), (1.0, 1.0, 5.0), "e3b23c")                # central spire, stepped
+    box((0, 0, z + 6.0), (0.6, 0.6, 2.0), "e3b23c")
+    box((0, 0, z + 7.75), (0.25, 0.25, 1.5), "f2d38a")
 
 
 ALL = {"stadium": stadium, "gate": gate, "clock_hall": clock_hall, "wheel": wheel,
