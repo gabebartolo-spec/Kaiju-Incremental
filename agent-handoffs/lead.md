@@ -1,5 +1,13 @@
-# Lead handoff, 2026-10-17 16:00
-## State: working (croc titan rig + motion with blender-reptile; #14/#16 reviews pending)
+# Lead handoff, 2026-10-17 16:25
+## State: working (director AFK 16:14: "run an efficient shift, archive defunct sessions, table questions, work until usage runs out")
+
+## AFK shift (16:14)
+- Archived: blender-tank, species-powers, ci-captures (README saved 3a354a1), real-city, species-motion.
+- #14 r2 (run 39000008904) FIX sent: tree species band clipped, pause over tree, report over tree, striped
+  placeholder tower in reveal; stuck capture runs. Then fresh screen-critic, then the director.
+- #16 FIX sent: stage-scaled fog (stage 2-4 aerials are a fog wall). After merge: Apex 3-min load task.
+- Croc titan: blender-reptile fixed jaw smear (mouth line, hinge), re-rendering (b4af9gm2a).
+- TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -14,15 +22,6 @@ claude/look-options (integration; PR #3 to main on HOLD until the director signs
 species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-test skips octopus captures.
 Director saw octopus local capture: "head detached, limbs a static, awkward mesh" (I had not caught it).
 D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the model pipeline first.
-
-## CI billing RESOLVED 12:47: director made the repo public; main protection confirmed (test, doc-caps,
-gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to dispatch captures.
-Director: "tank and heli models look great".
-- QA 12:55: heli board PASS (Apache-like, tandem cockpit, stub wings, chin gun, rotors as parts; 2x real);
-  tank in-game crop reads well. Merge #17 then #18 once their in-game captures + CI are green.
-- #15 round 2 (5f807cb): cause = GL Compatibility fallback scrambled packed instance data (web renderer too!),
-  fixed + captures forced Forward+; mantis intact, thigh cubes square; lead look PASS; fresh re-critic running.
-  Then merge at reviewed SHA. Told it: keep bake.py weight input swappable for Blender weights.
 
 ## Open PRs into look-options
 - 15:52 director: pause agents working on models we won't use (usage). #15 MERGED (7ff1f03). #19 (Blender
@@ -58,7 +57,6 @@ Director: "tank and heli models look great".
   19575. ~/Downloads/kaiju_tripo/rep_croctitan_adult.glb; six-view PASS (croctitan_six_view.png). Sent to
   blender-reptile: weld, hand rig, weights export, walk/turn/roar with critic fixes -> fresh critic -> director.
   Next Tripo: baby + adolescent from the same design.
-- #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
 
 ## FOCUS (director 13:06): "how using blender might improve motion"
 - Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
@@ -96,11 +94,9 @@ Director: "tank and heli models look great".
 - ability-vfx paused (PR #8); real-city tabled (D-029).
 
 ## Next (mine)
-1. Review #15 reptile/mantis clips + joint crops (art-qa-critic; fresh motion-critic before the director).
-2. QA heli board and #17/#18.
-3. After the flip: protect main, D-043, rerun CI.
-4. Fresh motion-critic on mantis r3d + octopus when clips land; merge #11.
-5. Cephalopod skins (3 stages); 4K TV UI check.
+1. Croc titan clips: lead QA (2x crops) -> fresh motion-critic -> table for the director.
+2. Then voxel-skin: swap #19 to croc titan export; replace old reptile adult in game.
+3. #14/#16 re-reviews when helpers report; merge at reviewed SHA (after fresh critics).
 
 ## Rules learnt the hard way
 - Tripo: default export name; `find` refs; stay in the signed-in tab; Remove Lighting per page; inspect every texture.
