@@ -14,8 +14,14 @@ const PREVIEW_VIEW := Vector3(0, -2.9, -12.5)
 const PREVIEW_FOV := 30.0
 const PREVIEW_FILL := 0.92
 const PREVIEW_MARGIN := 0.06
-## Height bands the skin's reach is measured in (the fit's resolution).
-const PROFILE_BANDS := 8
+## The kaiju sways this far (rad) either side of a three-quarter side view (yaw, rad) at this rate
+## (rad/s), so its length reads; the fit samples the sway at this many angles and every this-many-th
+## skin corner.
+const PREVIEW_YAW := PI * 0.62
+const PREVIEW_SWAY := 0.7
+const PREVIEW_SWAY_RATE := 0.5
+const PREVIEW_SAMPLES := 7
+const PREVIEW_STRIDE := 13
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
 	["Speed", "speed", 8.0],
@@ -24,6 +30,7 @@ const COMPARE: Array[Array] = [
 ]
 
 var _models: Array[KaijuModel] = []
+var _time := 0.0
 
 
 func _ready() -> void:
@@ -51,61 +58,55 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_time += delta
 	for model: KaijuModel in _models:
-		model.rotation.y += delta * 0.35
+		model.rotation.y = PREVIEW_YAW + PREVIEW_SWAY * sin(_time * PREVIEW_SWAY_RATE)
 		model.animate(delta, 0.3)
 
 
-## Frames the preview on everything the turning kaiju sweeps through (its skin's farthest reach
-## from the spin axis in each height band, turned through every angle): aimed at its middle and
-## stood back along the old camera's view until it fits the card's width and, with a margin top
-## and bottom, its height, so no species leaves its card as it turns (a long tail, a tall head).
+## Frames the preview on the kaiju's skin at every angle of its sway: aimed at the middle of all of
+## it and stood back along the old camera's view until it fits the card's width and, with a margin
+## top and bottom, its height (a long tail, a tall head never leave the card).
 func _frame(cam: Camera3D, model: KaijuModel) -> void:
-	var profile := _profile(model)
+	var points := _skin_points(model)
+	var turns: Array[Basis] = []
+	var box := AABB(points[0], Vector3.ZERO)
+	for k: int in PREVIEW_SAMPLES:
+		var yaw := PREVIEW_YAW + PREVIEW_SWAY * lerpf(-1.0, 1.0, float(k) / (PREVIEW_SAMPLES - 1))
+		turns.append(Basis(Vector3.UP, yaw))
+		for p: Vector3 in points:
+			box = box.expand(turns[k] * p)
+	var aim := box.get_center()
 	var look := PREVIEW_VIEW.normalized()
 	var up := look.cross(Vector3.UP).cross(look).normalized()
 	var right := look.cross(up)
 	var tan_v := tan(deg_to_rad(cam.fov) * 0.5) * (1.0 - 2.0 * PREVIEW_MARGIN)
 	var tan_h := tan(deg_to_rad(cam.fov) * 0.5) * PREVIEW_FILL * PREVIEW_SIZE.x / PREVIEW_SIZE.y
-	var aim := Vector3(0, (profile[0].y + profile[profile.size() - 1].y) * 0.5, 0)
 	var back := 0.0
-	for ring: Vector2 in profile:
-		for k: int in 16:
-			var a := TAU * k / 16.0
-			var r := Vector3(cos(a) * ring.x, ring.y, sin(a) * ring.x) - aim
+	for turn: Basis in turns:
+		for p: Vector3 in points:
+			var r := turn * p - aim
 			var fit := maxf(absf(r.dot(up)) / tan_v, absf(r.dot(right)) / tan_h)
 			back = maxf(back, fit - r.dot(look))
 	cam.position = model.position + aim - look * back
 	cam.look_at(model.position + aim)
 
 
-## The skin's reach from the spin axis (x) at the bottom and top of PROFILE_BANDS height bands (y),
-## bottom first, in the model's own space.
-func _profile(model: KaijuModel) -> Array[Vector2]:
+## A sample of the skin's points (every PREVIEW_STRIDE-th corner) in the model's own space.
+func _skin_points(model: KaijuModel) -> PackedVector3Array:
 	var points: PackedVector3Array = []
+	var from_model := model.global_transform.affine_inverse()
 	for geo: Node in model.find_children("*", "MeshInstance3D", true, false):
 		var g: MeshInstance3D = geo
 		if g.mesh != null:
-			var to_model := model.global_transform.affine_inverse() * g.global_transform
-			for v: Vector3 in g.mesh.get_faces():
-				points.append(to_model * v)
-	var low := INF
-	var high := -INF
-	for p: Vector3 in points:
-		low = minf(low, p.y)
-		high = maxf(high, p.y)
-	var reach: Array[float] = []
-	reach.resize(PROFILE_BANDS)
-	reach.fill(0.0)
-	var band := maxf(high - low, 0.001) / PROFILE_BANDS
-	for p: Vector3 in points:
-		var i := mini(int((p.y - low) / band), PROFILE_BANDS - 1)
-		reach[i] = maxf(reach[i], Vector2(p.x, p.z).length())
-	var out: Array[Vector2] = []
-	for i: int in PROFILE_BANDS:
-		out.append(Vector2(reach[i], low + band * i))
-		out.append(Vector2(reach[i], low + band * (i + 1)))
-	return out
+			var to_model := from_model * g.global_transform
+			for surface: int in g.mesh.get_surface_count():
+				var corners: PackedVector3Array = g.mesh.surface_get_arrays(surface)[
+					Mesh.ARRAY_VERTEX
+				]
+				for i: int in range(0, corners.size(), PREVIEW_STRIDE):
+					points.append(to_model * corners[i])
+	return points
 
 
 func _card(row: HBoxContainer, def: Dictionary) -> Button:
@@ -128,7 +129,7 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	var colors: Dictionary = def["colors"]
 	var model := KaijuModel.new(str(def["id"]), colors)
 	viewport.add_child(model)
-	model.rotation.y = PI * 0.75
+	model.rotation.y = PREVIEW_YAW
 	_models.append(model)
 	var cam := Camera3D.new()
 	cam.fov = PREVIEW_FOV
