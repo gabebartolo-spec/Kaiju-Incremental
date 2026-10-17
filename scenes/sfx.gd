@@ -57,6 +57,8 @@ func _ready() -> void:
 		"roar",
 		"tank_fire",
 		"shell_hit",
+		"heli_gun",
+		"heli_crash",
 	]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)

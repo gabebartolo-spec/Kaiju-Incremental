@@ -335,8 +335,11 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
 	check(
-		rampage.sfx.played.has("heli_rotor"),
-		"the %s's helicopters are heard: %s" % [species_id, rampage.sfx.played.slice(-8)]
+		rampage.sfx.played.has("heli_rotor") and rampage.sfx.played.has("heli_gun"),
+		(
+			"the %s's helicopters are heard flying and firing: %s"
+			% [species_id, rampage.sfx.played.slice(-8)]
+		)
 	)
 	rampage.queue_free()
 	await process_frame

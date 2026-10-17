@@ -348,6 +348,29 @@ def build_army() -> None:
     fade = np.linspace(0.0, 1.0, m)
     loop[:m] = full[:m] * fade + full[n:] * (1.0 - fade)
     save("heli_rotor", loop, -4.0, loop=True)
+    # Chin gun: a five-round burst at 11 rounds a second, each a sharp crack over a short thud.
+    reseed("build_heli_gun")
+    x = np.zeros(seconds(0.75))
+    for k in range(5):
+        shot_n = seconds(0.09)
+        crack = bandpass(noise(shot_n), np.full(shot_n, 2600.0), 0.8) * env(shot_n, 0.0005, 0.012)
+        body = lowpass(noise(shot_n), 600) * env(shot_n, 0.001, 0.03)
+        place(x, crack * 2.5 + body * 2.0, k / 11.0, 1.0 - 0.06 * k)
+    place(x, tail(x.copy(), 0.6, 0.18, 1500), 0.0, 0.2)
+    save("heli_gun", x, -3.0)
+    # Helicopter down: the turbine whine falling away, a blast, and metal raining on the street.
+    reseed("build_heli_crash")
+    x = np.zeros(seconds(2.6))
+    whine_n = seconds(0.6)
+    whine = np.sin(2 * np.pi * np.cumsum(np.linspace(2400, 700, whine_n)) / RATE) * np.linspace(0.3, 0.0, whine_n)
+    place(x, whine, 0.0, 0.5)
+    place(x, kenney("lowFrequency_explosion_000"), 0.15, 0.9)
+    place(x, pitch(kenney("explosionCrunch_003"), 0.85), 0.15, 0.8)
+    place(x, thump(0.9, 85, 40), 0.15, 0.6)
+    for i, at in enumerate([0.45, 0.7, 1.0, 1.35]):
+        clang = pitch(kenney(f"impactMetal_heavy_00{i}"), 0.75 + 0.05 * i)
+        place(x, clang, at, 0.4 - 0.07 * i)
+    save("heli_crash", x, -1.5)
 
 
 def build_breath() -> None:
