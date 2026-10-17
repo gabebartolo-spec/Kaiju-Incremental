@@ -5,8 +5,9 @@
 - Archived: blender-tank, species-powers, ci-captures (README saved 3a354a1), real-city, species-motion.
 - #14 r2 (run 39000008904) FIX sent: tree species band clipped, pause over tree, report over tree, striped
   placeholder tower in reveal; stuck capture runs. Then fresh screen-critic, then the director.
-- #16 MERGED 13870b3 (16:44, head 60e637d green). city-growth next: Apex load (<15 s; party_walls grid) +
-  building fade between camera and kaiju (D-025 rule); new branch/worktree. game-flow told to sync #16.
+- #16 MERGED 13870b3; #20 Apex playability MERGED 414a290 (load 167->13 s via streamed meshing; towers
+  screen-door in front of kaiju). city-growth auto-archived on merge (unarchive for balance D / Apex height).
+  game-flow and voxel-skin told to sync #16/#20.
 - Croc titan r6 (cd70417) PASSED fresh motion-critic #3 (r4/r5 FIX: loop seams, 7 Hz shake layer, coil, rear;
   18-frame spikes were codec GOP). r7 (d924b29) polish ACCEPTED. Board notes blender-reptile/director/
   (render vs old in-game: not fair alone) -> pair with #19 in-game before/after, then table. blender-reptile idle.
