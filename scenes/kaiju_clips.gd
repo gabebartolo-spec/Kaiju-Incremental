@@ -6,7 +6,8 @@ extends RefCounted
 ## Layout: "KCLP", u32 version, u32 header length, the header (JSON: bones in rig.json order, the
 ## skin bones each gathers, rest heads in metres, fps, stride per walk cycle, the clip table), then
 ## FRAME_BYTES per frame: int16[4] quaternion per bone, int16[3] pelvis offset, int16[6] left and
-## right toe tips, int16 root yaw (centidegrees), int16[2] root travel, u8 planted bits, u8 pad.
+## right toe tips, int16 root yaw (centidegrees), int16[2] root travel (dm; unused), u8 planted
+## bits, u8 pad.
 
 const MAGIC := "KCLP"
 const VERSION := 1

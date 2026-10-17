@@ -681,7 +681,8 @@ def foot_world(clip, side, f, P):
 
 # Tail motion (degrees per joint, base -> tip: base + extra * k, k = 0 at the root, 1 at the tip).
 TAIL_WALK = (1.0, 2.5)  # the walk's side-to-side S-wave
-TAIL_WALK_PERIOD = 84  # frames per tail wave: seven strides carry four waves (a heavy tail, not an eel)
+TAIL_WALK_PERIOD = 1.75 * T  # frames per tail wave: seven strides carry four (a heavy tail, not an eel)
+WALK_CYCLES = 7  # the baked walk: whole strides and whole tail waves, so it loops
 TAIL_IDLE = (0.4, 0.2)  # the standing sway (72-frame period; at 0.6 in the roar)
 TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
 TAIL_WHIP = (7.8, 10.0)  # turn whip per unit of tail_whip()
@@ -1303,7 +1304,7 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
               f"tail{i}" for i in range(9)] + ["jaw"]
 # Clips the game plays: name -> (motion_test clip, frames kept, loops). The walk keeps one 48-frame
 # cycle and the idle one 72-frame breath (both loop seamlessly); turn_right is turn_left mirrored.
-GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", FRAMES, True), ("turn_left", "turn", 144, False),
+GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", int(WALK_CYCLES * T), True), ("turn_left", "turn", 144, False),
               ("turn_right", "turn", 144, False), ("roar", "roar", 108, False)]
 Q16 = 32767.0  # int16 scale of a quaternion component (positions are stored in cm)
 
@@ -1385,7 +1386,7 @@ def clips_export():
     header length, the header (JSON: game bones in rig.json order and the skin bones each gathers,
     their rest heads, fps, the walk's stride per cycle, the clip table), then every clip's frames:
     27 x int16[4] local quaternion (x y z w, /32767), int16[3] pelvis offset, int16[6] left then
-    right toe tip (rig space, cm), int16 root yaw (centidegrees), int16[2] root travel (x z, cm),
+    right toe tip (rig space, cm), int16 root yaw (centidegrees), int16[2] root travel (x z, dm; unused by the game),
     u8 contacts (bit 0 left, 1 right), u8 pad: 242 bytes a frame. Game axes, metres x 100."""
     import struct
     first, last = game_chains()
@@ -1418,7 +1419,7 @@ def clips_export():
             body += struct.pack("<3h", *cm(off))
             body += struct.pack("<6h", *(cm(feet[0]) + cm(feet[1])))
             body += struct.pack("<h", int(round(yaw * 100)))
-            body += struct.pack("<2h", *cm((travel.x, travel.z)))
+            body += struct.pack("<2h", *(int(round(c * 10.0)) for c in (travel.x, travel.z)))  # dm
             body += struct.pack("<BB", (1 if contact[0] else 0) | (2 if contact[1] else 0), 0)
         table.append({"name": name, "first": start, "frames": n, "loop": loop,
                       "cycles": round(n / T) if clip == "walk" else 1})
