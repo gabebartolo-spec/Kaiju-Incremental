@@ -145,7 +145,14 @@ func _check_end_card() -> void:
 		str(card.get("stage")) == "adult" and str(card.get("species_id")) == "reptilian",
 		"the end card stages the reptilian adult (%s)" % card.get("stage")
 	)
-	check.call(Num.i(card.get("roars")) >= 1, "the adult roars on the end card")
+	# Only a baked clip roar (ClipGait, D-047) plays: the procedural roar drops the jaw straight
+	# down (lead QA on #23), so without clips the adult stands idle.
+	var clip: Variant = card.get("clip_roar")
+	var roars := Num.i(card.get("roars"))
+	check.call(
+		clip is bool and (roars >= 1 if clip else roars == 0),
+		"the end card roars only from a clip (clip roar %s, roars %d)" % [clip, roars]
+	)
 	check.call(
 		GuiInput.button(card, "TITLE") != null and GuiInput.button(card, "QUIT") != null,
 		"the end card offers Title and Quit"

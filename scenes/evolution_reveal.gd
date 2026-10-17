@@ -3,7 +3,8 @@ extends Control
 ## Plays when an evolution is bought: the kaiju as it was stands beside a tower, shakes, a flash,
 ## and it is the next stage (baby -> adolescent -> adult, KaijuModel.stage_for) at its new size,
 ## roaring. The tower is the tallest the new body topples without undermining it (its size tier
-## x the city's tier height), so the comparison is a play fact. Skippable; reports `done`.
+## x the city's tier height), so the comparison is a play fact. It is titled by the evolution
+## bought (D-051: "BEHEMOTH", from its data name), not the life stage. Skippable; reports `done`.
 
 signal done
 
@@ -18,6 +19,8 @@ const VIEW_MAX := Vector2(1200, 760)
 const EDGE_MARGIN := 48.0
 
 var frame := 0
+## The evolution's display name (headline after the swap); "" falls back to species and stage.
+var title := ""
 var stage_before: String
 var stage_after: String
 var scale_before: float
@@ -125,6 +128,13 @@ func _gui_input(event: InputEvent) -> void:
 
 
 ## True once the new stage is on screen.
+## An evolution node's display name: its data name after the "EVOLVE: "-style label, e.g.
+## "EVOLVE: Behemoth" -> "Behemoth" (D-051).
+static func title_of(def: Dictionary) -> String:
+	var full := str(def.get("name", ""))
+	return full.get_slice(":", full.get_slice_count(":") - 1).strip_edges()
+
+
 func revealed() -> bool:
 	return frame >= SWAP_FRAME
 
@@ -146,7 +156,9 @@ func _swap() -> void:
 	_place_kaiju(stage_after, scale_before)
 	_kaiju.roar()
 	_flash.color.a = 0.9
-	_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
+	_headline.text = title.to_upper()
+	if title.is_empty():
+		_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
 	var floors_before := roundi(KaijuModel.MODEL_HEIGHT * scale_before)
 	var floors_after := roundi(KaijuModel.MODEL_HEIGHT * scale_after)
 	lines.text = (

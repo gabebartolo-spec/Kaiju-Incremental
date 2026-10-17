@@ -2,18 +2,23 @@ class_name DemoEnd
 extends Control
 ## The demo's last screen (D-050). After the demo's end evolution and its reveal (and on every
 ## Continue after it), the stage the full game holds next (data "demo.tease_size": the adult)
-## roars beside the tower it would topple, on the reveal's own set and camera (RevealStage),
-## under the demo lines from data/tuning.json "demo". Title or Quit; the save is untouched.
+## stands beside the tower it would topple, on the reveal's own set and camera (RevealStage),
+## under the demo lines from data/tuning.json "demo". It roars only from a baked clip (ClipGait,
+## D-047): the procedural roar drops the jaw straight down, so a rig without clips stands idle.
+## Title or Quit; the save is untouched.
 
 signal title_pressed
 
-## Frame-paced like the reveal: the kaiju roars on arrival, then again every ROAR_EVERY frames.
-const ROAR_EVERY := 240
+## Frame-paced like the reveal: a clip roar on arrival, then again every ROAR_EVERY frames (the
+## clip gait idles in between).
+const ROAR_EVERY := 360
 const BUTTON_WIDTH := 320
 
 ## What the card stages (read by the flow suite).
 var species_id: String
 var stage: String
+## True when the kaiju roars from a baked clip; roars counts the roars asked for.
+var clip_roar := false
 var roars := 0
 var _colors: Dictionary
 var _scale: float
@@ -58,6 +63,7 @@ func _ready() -> void:
 	_kaiju.scale = Vector3.ONE * _scale
 	_kaiju.rotation.y = PI * 0.8
 	viewport.add_child(_kaiju)
+	clip_roar = has_clip_roar(_kaiju)
 	var demo := Content.section("demo")
 	var headline := UiKit.label(str(demo["end_title"]), UiKit.SIZE_TITLE, UiKit.ACCENT)
 	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -77,11 +83,22 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if _frame % ROAR_EVERY == 0:
+	if clip_roar and _frame % ROAR_EVERY == 0:
 		_kaiju.roar()
 		roars += 1
 	_frame += 1
 	_kaiju.animate(delta, 0.0)
+
+
+## True when `model` roars from a baked clip (its rig's gait is ClipGait, D-047). Named, not typed:
+## ClipGait lands in its own PR, and until then no rig has one.
+static func has_clip_roar(model: KaijuModel) -> bool:
+	for node: Node in model.find_children("*", "", true, false):
+		if node is KaijuRig:
+			var gait: KaijuGait = (node as KaijuRig).gait
+			var script: Script = gait.get_script() if gait != null else null
+			return script != null and script.get_global_name() == "ClipGait"
+	return false
 
 
 func _button(row: HBoxContainer, text: String, fill: Color) -> Button:

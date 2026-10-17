@@ -137,6 +137,8 @@ func _reveal(screen: UpgradeScreen, id: String) -> void:
 	var after := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var stage_city: Dictionary = CityGrowth.for_stats(after)["city"]
 	var reveal := EvolutionReveal.new()
+	var def: Dictionary = _tree.defs[id]
+	reveal.title = EvolutionReveal.title_of(def)
 	# The new stage's city (D-039), so "towers up to N floors" matches the city it will face.
 	reveal.setup(
 		_species(), UpgradeTree.run_stats(_base_stats(), _species(), before_tree), after, stage_city
