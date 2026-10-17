@@ -27,6 +27,8 @@ const BIG_TURN := 0.06
 ## How fast the body swings round after its legs (rad/s at scale 1).
 const TURN_RATE := 9.5
 const STAND_SPEED := 0.1
+## Below this speed (hip heights/s) it is settling to a stop: no holds, rest twitches instead.
+const CALM_SPEED := 0.6
 ## A pair steps when its feet are this far (hip heights) from where they belong; swing times
 ## (s at scale 1) in a dart and settling; lift (hip heights); stretch that forces a step.
 const STEP_AT := 0.2
@@ -137,7 +139,9 @@ func update(delta: float) -> void:
 	_pose_body(dt)
 	_solve(root, dt)
 	upper.perch = _perch
-	upper.update(dt, 0.0 if moving or _lag.length() > 0.05 * hip_w else 1.0)
+	# Slowing to a stop counts as standing: it twitches, it does not hold.
+	var calm := speed < CALM_SPEED * hip_w and _lag.length() < 0.05 * hip_w
+	upper.update(dt, 1.0 if calm else 0.0)
 	rig.simulate_chains(delta)
 	for leg: Leg in legs:
 		if leg.planted:
@@ -179,7 +183,8 @@ func _skitter(dt: float, hip_w: float, moving: bool) -> void:
 		var down := true
 		for leg: Leg in legs:
 			down = down and leg.planted
-		if moving and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
+		var striding := speed >= CALM_SPEED * hip_w
+		if striding and down and facing and _lag.length() < 0.01 * hip_w and _dart_time >= DART_MIN:
 			holding = true
 			_held_yaw = body_yaw
 			_anchor = frame.origin - _lag  # where the body is drawn now, not the sim

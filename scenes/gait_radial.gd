@@ -50,13 +50,13 @@ const GRIP_RADIUS := 1.1
 ## Mantle: stretch toward the grip, squash, drag tilt, breathing.
 const STRETCH := 0.35
 const DRAG_TILT := 0.18
-const BREATH_HZ := 0.45
+const BREATH_HZ := 0.6
 const BREATH := 0.07
 ## The roar: the mantle puffs up by this share, the arms ripple this many times faster.
 const ROAR_PUFF := 0.2
 const ROAR_RIPPLE := 3.0
 ## Groping while standing: curl wave speed (Hz) and strength (rad per bone).
-const GROPE_HZ := 0.45
+const GROPE_HZ := 0.7
 const GROPE := 0.32
 
 
