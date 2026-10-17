@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 06:45
+# Lead handoff, 2026-10-18 08:50
 ## State: working (DIRECTOR ASLEEP from 06:4x: "table any questions for now, keep the team working on things that dont
 ## need my input"). No director questions until he is back; the queue below is what to ask first, in order.
 
@@ -49,7 +49,7 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 11. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
-- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
+- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill, #44 worktree cap, #40 rooftops. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
   #29 playtest sheet, #28 #30 export + CI artifact, #8 SFX, #32 perf hitches, #33 SFX bus + slider + menu sounds +
   end-card roar sound. Decisions D-050..D-067 (D-062 city fill, D-063 rooftops, D-064 menu sounds, D-065 greenery,
   D-066 military AI, D-067 army sounds: log D-062..D-067 in the next board PR).
