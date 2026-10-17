@@ -262,7 +262,12 @@ def weights_for(obj):
     me = obj.data
     v = np.empty(len(me.vertices) * 3)
     me.vertices.foreach_get("co", v)
-    v = v.reshape(-1, 3)
+    v_all = v.reshape(-1, 3)
+    # Weld by position: glTF splits vertices along UV seams; weighted apart, a seam opens a crack.
+    _, first, weld = np.unique(np.round(v_all / 0.001).astype(np.int64), axis=0, return_index=True,
+                               return_inverse=True)
+    weld = weld.ravel()
+    v = v_all[first]
     heads = {n: np.array(h) for n, h, *_ in DEFORM}
     tails = {n: np.array(t) for n, h, t, *_ in DEFORM}
     lens = {n: np.linalg.norm(tails[n] - heads[n]) for n in NAMES}
@@ -304,7 +309,8 @@ def weights_for(obj):
     # Smooth over the surface: seams between chains (arm/chest, thigh/belly) get a soft edge.
     e = np.empty(len(me.edges) * 2, dtype=np.int64)
     me.edges.foreach_get("vertices", e)
-    e = e.reshape(-1, 2)
+    e = weld[e.reshape(-1, 2)]
+    e = e[e[:, 0] != e[:, 1]]
     deg = np.bincount(e.ravel(), minlength=len(v)).astype(float)[:, None]
     for _ in range(6):
         acc = np.zeros_like(W)
@@ -323,13 +329,20 @@ def weights_for(obj):
             cen = v[members].mean(0)
             # The anchor: the main-body vertex nearest the island (its base on the hide).
             near_i = mi[np.argmin(np.linalg.norm(v[mi] - cen, axis=1))]
-            if not jaw[members].any() or jaw[near_i]:
+            hinge, tip = L["jaw"]
+            k_ = min(1.0, max(0.0, (cen[1] - hinge.y) / (tip.y - hinge.y)))
+            if jaw[members].all() and len(members) > 100 and cen[2] > hinge.z + (tip.z - hinge.z) * k_ + 0.5:
+                W[members] = 0.0  # the palate: a slab above the mouth line rides the skull
+                W[members, idx["head"]] = 1.0
+            elif not jaw[members].any() or jaw[near_i]:
                 W[members] = W[near_i]
         print(f"islands {obj.name}: {len(np.unique(comp[~main]))} loose parts rigged to the hide")
     # Four influences at most, normalised.
     top = np.argsort(-W, axis=1)[:, 4:]
     np.put_along_axis(W, top, 0, axis=1)
     W /= np.maximum(1e-9, W.sum(1, keepdims=True))
+    print(f"welded {obj.name}: {len(v_all)} -> {len(v)} positions")
+    W, v, jaw = W[weld], v_all, jaw[weld]
     groups = {n: obj.vertex_groups.new(name=n) for n in NAMES}
     for j, n in enumerate(NAMES):
         nz = np.nonzero(W[:, j] > 0.002)[0]

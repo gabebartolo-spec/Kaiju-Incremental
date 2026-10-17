@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 13:08
-## State: running a check (full A|B renders of walk, turn, roar; then compose, encode, crops)
+# blender-reptile handoff, 2026-10-17 13:15
+## State: running a check (round-2 re-render after the seam-weld fix; bash task b23gsacfa)
 ## Task
 Round 1 (done, D-pending): hand-modelled reptile adult A vs Tripo adult B; board sent; director:
 Tripo looks better, Blender "promising". Round 2 (lead, 2026-10-17 12:39): MOTION TEST, not sculpting.
@@ -31,6 +31,11 @@ claude/blender-reptile-f5388e; round 1 at 4a1b1f8/edf5b60; round 2 rig script at
   B shoulder 91.4, elbow 96.3, rest >= 98%. Weak spot on both: shoulder/elbow (arms swing ~70 deg
   down from the A-pose to the belly). Walk cycle reviewed on a contact sheet: reads cleanly on both.
 ## Attempts (fix-loop record)
+- 2x crops showed crack slivers at the roar peak on BOTH meshes (heavy on B): glTF splits vertices
+  on UV seams (B 28,691 verts = 11,246 positions), so smoothing never crossed seams and the two
+  sides got different weights. Weld by position before weighting: cracks gone on both.
+- A's palate (separate slab in the Jaw object) dropped with the jaw: big jaw-object islands above
+  the hinge-tip line ride the head.
 - Rig origin at the snout put planted feet 60 m ahead: re-origin on the pelvis.
 - Foot targets used rig.matrix_world (last frame): one-frame (84 cm) offset; build the matrix per frame.
 - Keying a 2nd clip in one process left frame 0 posed from the old one: one clip per process + settle().
