@@ -1,5 +1,5 @@
-# Demo-slice handoff, 2026-10-18 04:05
-## State: running a check (CI captures of the demo: 1080p stills + 3 s clip)
+# Demo-slice handoff, 2026-10-18 04:10
+## State: available (PR #23 open, Auto-fix on; asked the lead local_106fc100 for the next job)
 
 ## Task
 Demo phase P5 "demo slice" (brief from "Game demo planning", local_106fc100, 03:35; plan
@@ -12,7 +12,7 @@ claude/demo-slice from origin/claude/look-options dbff208; worktree
 C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/demo-slice. Pushed.
 - 63c5df5 failing-first flow checks + tuning "demo" section (red: 3 failures, 82 checks).
 - 954e3b0 implementation; all 8 suites green locally (flow 91, floor raised 76 -> 91).
-PR into claude/look-options: not opened yet (after captures). Balance D (claude/balance-d) and
+PR #23 into claude/look-options (opened 04:05). Lead is now "Game demo planning" (local_106fc100). Balance D (claude/balance-d) and
 D-047 may land first: merge look-options in when they do (never rebase/force-push).
 
 ## What it does
@@ -30,14 +30,13 @@ D-047 may land first: merge look-options in when they do (never rebase/force-pus
   -> reveal -> end card -> Title -> Continue (end card again).
 
 ## Running jobs
-CI captures (background in this session): ci_capture.sh capture_demo.gd at 1920x1080 (stills) then
---movie --fps=30 -- --clip. Output and logs: side-session-notes/local_9fac90d2.../demo-slice/.
+none. Evidence: CI runs 39051576948 (stills) and 39051911218 (clip.mp4) in
+side-session-notes/local_9fac90d2.../demo-slice/{stills,clip}.
 
 ## Next
-1. Check the stills and clip (2x crops: end card text, adult on screen, buttons), then open the PR
-   (template; Board and log "D-050 demo decisions"; floors flow 76 -> 91).
-2. Report head SHA to the lead "Kaiju Incremental game" (local_9fac90d2) and "Game demo planning"
-   (local_106fc100).
+1. When #21 (balance D) merges: merge origin/claude/look-options in (claws costs 15 in the flow
+   buy check), rerun the suites, push.
+2. Await the lead's next job (offered: P6 Windows export, select-card croc framing).
 
 ## Open points for the lead
 - A dev save of insectoid/cephalopod is hidden in demo mode (no Continue; New Kaiju then overwrites
