@@ -1,5 +1,5 @@
-# Demo-slice handoff, 2026-10-18 04:10
-## State: available (PR #23 open, Auto-fix on; asked the lead local_106fc100 for the next job)
+# Demo-slice handoff, 2026-10-18 04:45
+## State: awaiting lead (#23 head 25f518a: jaw fix + D-051 pushed; clip roar waits on #22)
 
 ## Task
 Demo phase P5 "demo slice" (brief from "Game demo planning", local_106fc100, 03:35; plan
@@ -30,13 +30,22 @@ D-047 may land first: merge look-options in when they do (never rebase/force-pus
   -> reveal -> end card -> Title -> Continue (end card again).
 
 ## Running jobs
-none. Evidence: CI runs 39051576948 (stills) and 39051911218 (clip.mp4) in
-side-session-notes/local_9fac90d2.../demo-slice/{stills,clip}.
+none. Evidence: CI 39051576948 (stills), 39051911218 (clip), 39054107256 (recut after lead QA)
+in side-session-notes/local_9fac90d2.../demo-slice/{stills,clip,stills2}.
 
-## Next
-1. When #21 (balance D) merges: merge origin/claude/look-options in (claws costs 15 in the flow
-   buy check), rerun the suites, push.
-2. Await the lead's next job (offered: P6 Windows export, select-card croc framing).
+## Lead QA round (done, 25f518a)
+- End card roars only via ClipGait (DemoEnd.has_clip_roar, by class name: ClipGait is in #22),
+  every 360 frames; else idle (the procedural roar dropped the jaw straight down).
+- D-051: reveal headline = node data name after the colon (EvolutionReveal.title_of; main sets
+  reveal.title). Flow 92. #21 merged in (377f87c).
+
+## Next (lead's job: real clip roar on the end card)
+1. When #22 (claude/croctitan-clips) merges: merge origin/claude/look-options in (floors conflict:
+   keep flow 92 and add clips 13), switch has_clip_roar to `gait is ClipGait`, suites, push.
+2. CI clip: ci_capture.sh --movie --fps=30 --resolution=1920x1080 capture_demo.gd -- --clip; check
+   the clip roar on the end card; report to the lead (local_106fc100) in <=8 lines.
+Local throwaway branch tmp/clip-roar-check (#22 merged in, not pushed) showed clip_roar=true,
+flow 92 + clips 13 green; delete it when done (git branch -D tmp/clip-roar-check).
 
 ## Open points for the lead
 - A dev save of insectoid/cephalopod is hidden in demo mode (no Continue; New Kaiju then overwrites
