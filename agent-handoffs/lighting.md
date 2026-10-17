@@ -1,4 +1,4 @@
-# Lighting handoff, 2026-10-18 07:20
+# Lighting handoff, 2026-10-18 07:50
 ## State: awaiting slot (lead's local GPU slot for the breath behind + side clip)
 
 ## Who
@@ -10,7 +10,7 @@ claude/look-options; reports <=8 lines. The director is asleep (06:4x): no quest
 ## Closed: lighting looks (D-057)
 Director picked A, keep concrete. claude/lighting (d2f63dc) stays pushed, not merged.
 
-## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), head f253b6f
+## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), head e673ed4
 Lead's call: the legacy voxel jet goes AND the breath must read from behind at the game camera.
 Done:
 - fx.gd breath() jet removed; flow check "no pale voxel-cube jet" (failed first); floor 114.
@@ -28,8 +28,17 @@ the body's screen silhouette (head top ~42 deg, beam 44-51 deg). That is why the
 GPU renders so far (scratchpad gpu_side2/gpu_side4): side view good, snout to street. The behind
 view showed the fan too small BEFORE the move to the street; not yet rendered since.
 
+## Round log (GPU renders in scratchpad gpu_*; critic sheets scratchpad/crit/)
+- gpu_*6 + fresh critic: FIX. Side PASS; behind FAIL (only dim cone edges past the body); pop
+  FAIL (muzzle flare + street flash full on frame 1). The side clip's frame-90 jump is the
+  --side camera switching on, not a dropped frame.
+- e673ed4 (method change): flame curtain (breath_curtain.gdshader, fx.breath_curtain_height 7,
+  breath_curtain_alpha 0.7) on the cone's far arc, rising above the head from the game camera;
+  muzzle flash, strike flare and strike light moved into BreathBeam, driven by progress (ease in);
+  scorch from the cone origin. Not rendered yet.
+
 ## Next
-1. On the slot: scratchpad/render_breath.sh gpu_behind5 ; render_breath.sh gpu_side5 --side
+1. On the slot: scratchpad/render_breath.sh gpu_behind7 ; render_breath.sh gpu_side7 --side
    (write the off-screen override.cfg into the worktree first; delete it after; the focus
    guard blocks any command text that names Godot plus a windowed flag without it).
 2. Check 2x crops: the fan visible from behind on every breath frame, nothing opaque over the body,
