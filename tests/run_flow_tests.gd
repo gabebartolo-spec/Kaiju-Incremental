@@ -258,6 +258,25 @@ func _check_stomp_timing() -> void:
 		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
 		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
 	)
+	var walk: Array[String] = []
+	for _i: int in 8:
+		sfx._process(1.0)  # past footstep_min_interval
+		sfx.footstep(0.7)
+		walk.append(sfx.played[-1])
+	var unique := {}
+	for step: String in walk:
+		unique[step] = true
+	check(
+		(
+			unique.size() == Sfx.STEPS.size()
+			and walk.slice(0, 4) == walk.slice(4, 8)
+			and range(1, walk.size()).all(func(i: int) -> bool: return walk[i] != walk[i - 1])
+		),
+		(
+			"a walk takes turns with %d step sounds, never one twice in a row: %s"
+			% [Sfx.STEPS.size(), walk]
+		)
+	)
 	var pitches: Array[float] = []
 	for tier: int in [1, 4]:
 		sfx.set_size_tier(tier)
