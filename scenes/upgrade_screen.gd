@@ -12,6 +12,7 @@ signal menu_pressed
 
 ## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
 const SIDE_WIDTH := 330
+const NBSP := " "
 ## Stat, how it reads in play, format ("inv" shows 1/value per second), short name for the
 ## two-column summary.
 const STAT_LINES: Array[Array] = [
@@ -206,7 +207,8 @@ func _select(id: String) -> void:
 	if role == "evolve" and steps > 0:
 		var stage := KaijuModel.stage_for(Num.i(stats.get("size", 1)) + 1)
 		_info_body.append_text("\nGrows into the %s." % stage)
-		_info_body.append_text("\nTowers one tier taller now fall to you.")
+		# No-break spaces keep "fall to you." together when the line wraps (no orphan "you").
+		_info_body.append_text("\nTowers one tier taller now fall%sto%syou." % [NBSP, NBSP])
 	if role == "ultimate":
 		_info_body.append_text(
 			"\nPress E / pad Y in a rampage; recharges in %ds." % roundi(_ultimate_cooldown)
@@ -233,7 +235,7 @@ func _status_line(id: String) -> String:
 				names.append(str(req_def["name"]))
 		return head + "Needs: " + ", ".join(names)
 	if tree.can_buy(id, rubble):
-		return head + "Cost %d  -  press to buy" % tree.cost(id)
+		return head + "Cost %d  -  press%sto%sbuy" % [tree.cost(id), NBSP, NBSP]
 	return head + "Cost %d  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
 
 

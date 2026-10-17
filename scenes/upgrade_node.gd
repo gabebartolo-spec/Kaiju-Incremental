@@ -9,7 +9,9 @@ extends Button
 ## largest UI scale FONT_MIN still clears the TV's 28 px cap-height bar).
 const FONT_MAX := 22
 const FONT_MIN := 18
-const PAD := 6
+const PAD := 2
+## The thickest border each kind of node draws (focused): its text keeps clear of it.
+const MAX_BORDER := {"plain": 5, "branch": 5, "evolve": 7, "ultimate": 8}
 const FILL := {
 	"maxed": Color("8a6d1f"), "buy": Color("2f6b2a"), "poor": UiKit.PANEL, "locked": Color("15191e")
 }
@@ -65,7 +67,7 @@ func place(at: Vector2, box: Vector2) -> void:
 ## The width the button lays its text out in, for a node `width` wide (its box margins and a
 ## little slack for the text server's rounding).
 func text_width(width: float) -> float:
-	return width - 2.0 * PAD - 4.0
+	return width - 2.0 * (PAD + Num.f(MAX_BORDER[role])) - 2.0
 
 
 ## A price as a node shows it: in full below 10 000, else in thousands ("32k").
@@ -103,7 +105,8 @@ func show_state(tree: UpgradeTree, rubble: int) -> void:
 			box_fill = fill.darkened(0.2) if look == "pressed" else fill.lightened(0.15)
 			box_width = width + (2 if look == "focus" else 0)
 		var style := UiKit.box(box_fill, box_edge, box_width, 8)
-		style.set_content_margin_all(PAD)
+		# The border is drawn inside the box: keep the text clear of the thickest one.
+		style.set_content_margin_all(PAD + Num.f(MAX_BORDER[role]))
 		add_theme_stylebox_override(look, style)
 	# Locked and unaffordable read as dimmed, but stay well above 4.5:1 on their fills.
 	var font := UiKit.TEXT if state in ["buy", "maxed"] else UiKit.MUTED.lightened(0.25)
