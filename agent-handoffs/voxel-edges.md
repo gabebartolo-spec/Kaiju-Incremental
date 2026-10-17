@@ -1,5 +1,5 @@
-# Voxel-edges (crease shader) handoff, 2026-10-18 05:50
-## State: awaiting lead (A/B/C board + PR #35 sent for lead QA; director gate after)
+# Voxel-edges (crease shader) handoff, 2026-10-18 06:35
+## State: available (#35 tabled for the director's morning: A vs B; lead QA PASS + motion FIX done)
 ## Task
 Director, 2026-10-18: first "prototype voxel edge shading", then (via the lead, after it proved
 invisible at the game camera) "(a) crease pass prototype": screen-space, depth + normal breaks darkened,
@@ -28,6 +28,11 @@ gate). A stray local branch claude/voxel-edges (no commits) can be deleted.
 ## Open decisions
 Director (through the lead): A vs B (C shown as too strong). After the pick: set crease_strength in
 looks.json, update the PR body's Board and log, push.
+## Round 2 (eacddc1)
+- Kaiju mask: kaiju roughness 0.85 tags it in the normal buffer; crease discards it (silhouette shadow
+  only). Static kaiju flicker A 2.48 / B 2.65; walk residual 3.68 / 4.45; 4K GPU 12.0 / 12.7 ms.
+- CreasePass.attach (lint: city_view.gd 399 lines); smoke +3 checks (floor 30); capture_looks --pan=N,
+  --resize (1280x720, UI 150%, reveal: all clean). Scripts: scratchpad flicker.py, still_flicker.py, walk.py.
 ## Running jobs
 none
 ## Findings for the lead
