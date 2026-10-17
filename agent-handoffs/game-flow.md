@@ -1,5 +1,5 @@
-# Game-flow handoff, 2026-10-17 20:40
-## State: running a check (round-3 FIX: final 4K stills + clip on CI)
+# Game-flow handoff, 2026-10-17 21:00
+## State: awaiting lead (final capture sent; lead + screen critic review next, one batch)
 
 ## Task
 Make the loop around the rampage feel finished (brief from lead session local_9fac90d2):
@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at f030607 (look-options 414a290 merged: #16 city growth and
+claude/game-flow-edfba4, pushed at 9decc68 (code f030607) (look-options 414a290 merged: #16 city growth and
 #20 Apex streaming; rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
@@ -78,7 +78,9 @@ row "Tallest tower toppled (floors)". 4K 39015479637 QA: evolve node text touche
 border, side copy orphans -> e5c13c7 (margin = pad + the node's thickest border; NBSP).
 4K 39016554227 QA: selected evolve node's price wrapped ("0/1 BUY / 1400") -> f030607
 (status line wrap check failed first; one space; evolve/ultimate focus keeps border width).
-Then: QA new captures, add to docs/captures, send lead.
+Final capture committed (9decc68) and sent 21:00 with nits (side "Cost - press to buy" two
+lines; Behemoth status tight; clip report "short of your best"; clip 720p by downscale).
+Lead: no more self-iteration; next fixes come as one batch.
 
 ## Findings for the lead (lead decides what gets recorded)
 - Pull LFS in every new worktree before a test run (proven: 900 s timeout -> 51 s).
@@ -88,4 +90,4 @@ Then: QA new captures, add to docs/captures, send lead.
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- CI on f030607: 4K 39018505981 -> %TEMP%/gf_cap9/4k; clip 39018533460 -> %TEMP%/gf_cap9/clip.
+None.
