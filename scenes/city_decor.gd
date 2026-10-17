@@ -6,14 +6,6 @@ extends Node3D
 ## lights flatten under the kaiju's feet. Presentation only.
 
 const PROP_VOXEL := 0.25
-const CAR_COLORS: Array[Color] = [
-	Color("6b6e70"),
-	Color("2a3138"),
-	Color("5a2a26"),
-	Color("8a8a84"),
-	Color("3a4236"),
-	Color("6a5e48")
-]
 const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
 
@@ -26,6 +18,17 @@ var _view: float  # parked cars reach this far from the centre: the arena and wh
 # shows past its edge (city.view_beyond)
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
+var _paints := 0  # how many car paints
+
+
+## Parked and moving car paints (city.car_colors), each light enough to read against the
+## asphalt under fog (D-062).
+static func car_colors() -> Array[Color]:
+	var out: Array[Color] = []
+	var raw: Array = Content.section("city")["car_colors"]
+	for hex: String in raw:
+		out.append(Color(hex))
+	return out
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
@@ -33,6 +36,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	plan = CityGen.map(sim.city)
 	_half = CityGen.half_extent(sim.city)
+	_paints = car_colors().size()
 	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
 	for b: RampageSim.Building in sim.buildings:
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
@@ -53,8 +57,9 @@ func _ready() -> void:
 		"pole": Color("4a4c4e"),
 		"lamp": Color(1.0, 0.86, 0.6, 0.0),
 	}
-	for i: int in CAR_COLORS.size():
-		palette["car%d" % i] = CAR_COLORS[i]
+	var paints := car_colors()
+	for i: int in paints.size():
+		palette["car%d" % i] = paints[i]
 	add_child(_props.build(palette, 31, 3.0))
 
 
@@ -112,11 +117,13 @@ func _streets() -> void:
 					if _rng.randf() < lane_stop:
 						lane = width * 0.25  # stopped in the traffic lane
 					var p := a + dir * t + side * kerb * lane
-					var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
+					var color := "car%d" % _rng.randi_range(0, _paints - 1)
 					var on_diagonal := (
 						playable
-						and CityGen.diagonal_distance(plan, p)
-						< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
+						and (
+							CityGen.diagonal_distance(plan, p)
+							< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
+						)
 					)
 					var seen := _inside(p, _view - _half)
 					var roll := _rng.randf()
@@ -186,7 +193,7 @@ func _blocks() -> void:
 				while x < bays.end.x - 0.6:
 					for z: float in [bays.position.y + 1.2, bays.end.y - 1.2]:
 						if _rng.randf() < 0.7:
-							var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
+							var color := "car%d" % _rng.randi_range(0, _paints - 1)
 							_props.add(
 								Vector3(x, 0, z),
 								func(v: VoxelBuilder) -> void: car(v, color, false)

@@ -81,6 +81,5 @@ static func measure(
 		"empty": empty,
 		"arena_empty": arena_empty,
 		"band_empty": empty.size() - arena_empty,
-		"map": "
-".join(lines),
+		"map": "\n".join(lines),
 	}

@@ -4,7 +4,6 @@ extends "res://tests/lib/runner.gd"
 ## Headless and seeded.
 ##   godot --headless --path . --script tests/run_city_tests.gd
 
-
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
@@ -148,16 +147,18 @@ func _check_no_empty_ground() -> void:
 			check(
 				Num.i(got["arena_empty"]) == 0 and Num.i(got["band_empty"]) == 0,
 				(
-					"stage %d, map_seed %d: no empty ground (%d cells: %d empty in the arena,"
-					+ " %d past the edge, at %s)"
+					(
+						"stage %d, map_seed %d: no empty ground (%d cells: %d empty in the arena,"
+						+ " %d past the edge, at %s)"
+					)
+					% [
+						tier,
+						map_seed,
+						Num.i(got["cells"]),
+						Num.i(got["arena_empty"]),
+						Num.i(got["band_empty"]),
+						got["empty"]
+					]
 				)
-				% [
-					tier,
-					map_seed,
-					Num.i(got["cells"]),
-					Num.i(got["arena_empty"]),
-					Num.i(got["band_empty"]),
-					got["empty"]
-				]
 			)
 			holder.free()

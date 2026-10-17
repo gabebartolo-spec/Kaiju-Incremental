@@ -38,8 +38,17 @@ func _run() -> void:
 			var got: Dictionary = Coverage.measure(sim, decor, street, skyline)
 			var empty: Array = got["empty"]
 			print(
-				"stage %d map_seed %d: %d cells, %d empty (arena %d, band %d)"
-				% [tier, map_seed, got["cells"], empty.size(), got["arena_empty"], got["band_empty"]]
+				(
+					"stage %d map_seed %d: %d cells, %d empty (arena %d, band %d)"
+					% [
+						tier,
+						map_seed,
+						got["cells"],
+						empty.size(),
+						got["arena_empty"],
+						got["band_empty"]
+					]
+				)
 			)
 			print("empty at ", empty)
 			holder.free()
