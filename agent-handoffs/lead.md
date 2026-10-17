@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 05:14
+# Lead handoff, 2026-10-18 05:16
 ## State: working (lead since 03:56); merge queue #8 (re-sync) -> #30 -> #22 r2 -> perf-hitches -> #27; GPU: Perf 05:10-05:22, voxel-edges 05:22-05:42, city-calm 05:42
 
 ## Who
@@ -21,8 +21,12 @@ adolescent get NEW models first; SFX unpaused; adult never played (stage_for tie
   to the director -> merge at the reviewed SHA. Then kaiju-motion: `is ClipGait` + end-card clip-roar clip.
 - P3 baby + adolescent: Tripo session. Director 04:4x approved the refs (docs/captures/2026-10-17-reptile-design/
   croctitan_stage_line.png, critic PASS) and the Smart Mesh spend (~260 credits); submitting now; also downloads
-  the octopus adult texture 8bf2f668 (director yes). A stray Chrome "My Assets" tab froze its Tripo tab; no Kaiju
-  session drives Chrome (species session confirmed). Next: meshes -> six-view -> GLBs to blender-reptile.
+  the octopus adult texture: DONE 05:12, C:\Users\DANTE\Downloads\kaiju_tripo\octo_adult_tex.glb (29,569 quads, 2k
+  textures, not six-view checked; the species session has ended, relay the path when it returns). Smart Mesh
+  submitted 05:12 in the built-in browser (Chrome extension unreachable): baby edf7bb50-3810-4206-a0e1-2b037c840637,
+  adolescent 109910f0-5125-464b-afde-37c72193ef81, x4 variants, 100 credits each, balance 19415 -> 19215. Next: pick
+  variants, texture (2 x 30), export, six-view, hand to blender-reptile; provenance rows come to me to commit.
+  Built-in-browser learning: Tripo Export never reaches disk; hook anchor clicks for the signed CDN link + curl.
 - P4 SFX: ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106), PR #8 head ed0d8ea (dials, roar.ogg + Sfx.roar on
   the reveal, flow 84; army sounds moved to local branch claude/army-sfx-wip b1f9e18 for a new PR). D-052 ship SFX
   r2 (04:30), D-055 roar on reveal + end card (04:35). Told 04:52: #23 merged, sync look-options (flow floor 92 +
@@ -57,7 +61,9 @@ HELD by their permission mode: tell the director)
 - Lighting (local_b98f22d9-dd85-46ab-ba01-4a6fa997f8f6, claude/lighting c200af1, -wt/lighting): board A-D at the
   game cam (docs/captures/2026-10-18-lighting/, luminance p50 72/78/52/27) -> director 05:12: A KEEP CURRENT (D-057,
   lighting parked, no PR; branch stays pushed). Next task given: the pale peach cube cluster beside the kaiju in the
-  start frame (pre-existing, some runs): seeded repro, fix, check failing first, before/after crop, PR.
+  start frame: CAUSE = the legacy Atomic Breath voxel jet (scenes/fx.gd breath(), rampage.gd:231), flat unshaded
+  cubes beside the #6 beam; "some runs" = still captures lack --fixed-fps. Lead call 05:14: drop the jet, keep the
+  beam; --fixed-fps 60 on still captures; before/after CI movie + fresh motion-critic; PR to me.
 - Voxel edges ("Game shader selection", local_944d7cf5-7e53-439c-9fda-16f5a95b46e4, claude/voxel-edge-shading
   cc4e166, -wt/voxel-edges): director: prototype voxel edge shading, labelled before/after through the lead.
   voxel_edge.gdshaderinc, strengths in looks.json. CI before/after 1080p runs 39052984488 / 39053097548 finishing;
@@ -83,7 +89,7 @@ HELD by their permission mode: tell the director)
 D-052 SFX ship + D-053 worktrees one per live session (#25 MERGED 444ed01), D-054 streets (#26), D-055 roar (#8),
 D-TBD-species-models 04:27 (keep all six mantis/octopus meshes, croc hand rig, octopus first; execution paused
 04:50), D-TBD-ui-look-broadcast (#27), D-056 BIOMASS currency 05:08 (#27), D-057 lighting stays current 05:12,
-D-TBD-body-font (board pending, #27), P3 refs + ~260 Tripo credits approved. Open: Q3 Apex height (park).
+D-058 body font = Kaiju Block 05:13 (#27), P3 refs + ~260 Tripo credits approved. Open: Q3 Apex height (park).
 
 ## Branch and checkout
 Main checkout on claude/look-options (94ebcd8+). Only the lead commits here (handoffs, docs); Performance and the
@@ -91,7 +97,7 @@ species session also wrote handoffs/plans here. Worktrees 7-8 (cap 8, D-053): ab
 city-calm, kaiju-motion-cacfd1 (kaiju-motion's cwd; delete when that session ends), -wt/demo-slice (delete after
 #23: told), lighting, voxel-edges, species-a. ci-captures removed (backup: old lead notes ci-captures-worktree-backup/).
 
-## Merged on look-options: 2026-10-17 #15 #17 #18 #16 #20 #19 #14; 2026-10-18 #21 #24 #25 #26 #23 #29 #28.
+## Merged on look-options: 2026-10-17 #15 #17 #18 #16 #20 #19 #14; 2026-10-18 #21 #24 #25 #26 #23 #29 #28 #30.
 
 ## Rules learnt the hard way
 - Tripo: default export name; `find` refs; stay in the signed-in tab; Remove Lighting per page; inspect every texture.
@@ -112,7 +118,7 @@ city-calm, kaiju-motion-cacfd1 (kaiju-motion's cwd; delete when that session end
 - Audio QA without ears: ffmpeg -> f32 envelope, onsets vs the helper's SOUND log; the director's listen is the gate.
 
 ## Running jobs
-Mine: merge-on-green watcher on #30. GPU slot: Performance to 05:22, voxel-edges to 05:42, city-calm smoke 05:42.
+Mine: none (all watchers done). GPU slot: Performance to 05:22, voxel-edges to 05:42, city-calm smoke 05:42.
 Helpers: blender-reptile r2 batch; ability-vfx #8 sync; city-calm #28 addition; kaiju-motion playtest sheet;
 lighting A/B; voxel-edges CI runs; Performance hitch fixes; Tripo session Smart Mesh submissions.
 
