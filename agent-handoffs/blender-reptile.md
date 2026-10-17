@@ -1,9 +1,17 @@
-# blender-reptile handoff, 2026-10-18 07:35
-## State: working (P3 starting). P2 (D-047, PR #22) handed to the lead "Kaiju: Lead" =
-## local_106fc100-d2a4-4091-bc9a-4bda31df13ac at head 439d8d3 (round-2 evidence pushed; lead runs
-## its 2x check + a fresh motion-critic, then merges). Director asleep: no questions to him.
-## Rules: report to the lead only; art never to the director. Auto-fix is ON for #22 (the app set it):
-## base conflicts arrive as ci-monitor-events -> fetch origin/claude/look-options, merge, real floors.
+# blender-reptile handoff, 2026-10-18 08:30
+## State: running a check. #22 ROUND 3 (lead 07:50 FIX; P3 PAUSED until #22 lands). Code committed
+## locally ce44bb3 on claude/croctitan-clips (#22 remote still 439d8d3). Probe-gated numbers sent.
+## Captures br14pqabg from temp branch claude/croctitan-cards-tmp (= ce44bb3): ci8/after_game then
+## ci8/before_game (--procedural, same commit). Then: 3 s game-cam clips walk/turn/roar, before/after
+## (aligned), 2x slam + turn crops, PR body, merge look-options, ONE push, delete tmp, SHA to lead.
+## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Auto-fix ON for #22.
+
+## Round 3 (probe: godot --headless --path . --script tools/capture/capture_clips.gd -- --probe)
+- Walk: TAIL_WALK (1.0, 2.5), TAIL_WALK_PERIOD 84 (4 waves / 7 strides), FRAMES 336 (walk 7 cycles):
+  period 1.84 s, sweep 21.6 m. Turn: TAIL_SPRING (14, 0.36), TAIL_WHIP (7.8, 10.0), turn clip tail has
+  no walk sway and its body gait fades f100-116; game lag spring only in walk: settle 0.42 s,
+  overshoot 4.3. Roar: ROAR_REST (71, 99), exported 108 frames: ends 17.47 s. Slam TAIL_SLAM_STRENGTH
+  5: dust 7.4, ring 9.5, dip 71.5 px. TAIL_IDLE (0.4, 0.2). Capture dip eased (_dip_shown).
 
 ## P2 (#22, claude/croctitan-clips, this worktree) - done unless the lead sends FIX
 - v2 croc titan (Tripo c8185166) on the hand rig, skin, kvox, .kclip; ClipGait plays the clips.
