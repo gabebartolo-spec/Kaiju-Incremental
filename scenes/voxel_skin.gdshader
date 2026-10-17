@@ -1,16 +1,19 @@
 shader_type spatial;
 // D-041: a kaiju's voxels as rigid cubes on a smooth skin (scenes/voxel_skin.gd). One MultiMesh
-// instance per voxel, its transform left at identity; INSTANCE_CUSTOM carries the voxel (packed as
-// exact floats, see VoxelSkin.pack()). Each cube's centre follows its blended bones (smooth), it
-// turns with its main bone (cubes of one bone stay on one tidy grid), and grows a little where its
-// bones disagree so a bending joint stays closed. INSTANCE COLOR is sRGB (as voxel.gdshader).
+// instance per voxel; its transform is the voxel's rest centre, INSTANCE_CUSTOM its bones as small
+// whole numbers (half precision safe: the compatibility renderer stores per-instance data that
+// way), COLOR.rgb its sRGB colour and COLOR.a its second bone's weight. Each cube's centre follows
+// its blended bones (smooth), it turns with its main bone (cubes of one bone stay on one tidy
+// grid), and grows a little, never more than max_grow, where its bones disagree.
 
 uniform mat4 bones[128];
-uniform float voxel = 0.0625;
-uniform float inset = 0.99;
+// The cubes' own node back to skin (rig) space, so the shader can read each instance's centre.
+uniform mat4 to_skin;
 // Where a cube's bones disagree the blended basis shrinks: grow the cube by that much times this.
 uniform float gap_fill = 1.0;
-// 0 = jaw shut (mouth inside drawn as a dark lip seam), 1 = open (its pink shows).
+// Cubes stay near one size: the growth is capped here (lead review: no oversized, sheared cubes).
+uniform float max_grow = 0.15;
+// 0 = jaw shut (mouth inside drawn as a dark lip seam), 1 = open or a snarl (its pink shows).
 uniform float mouth_open = 0.0;
 uniform float seam_dark = 0.22;
 uniform float roughness_value = 0.9;
@@ -23,20 +26,22 @@ vec3 srgb_to_linear(vec3 c) {
 
 void vertex() {
 	vec4 c = INSTANCE_CUSTOM;
-	vec3 cell = vec3(mod(c.x, 1024.0), floor(c.x / 1024.0), mod(c.y, 1024.0)) - 512.0;
-	float mouth = floor(c.y / 1024.0);
-	int b0 = int(mod(c.z, 128.0));
-	int b1 = int(mod(floor(c.z / 128.0), 128.0));
-	int b2 = int(floor(c.z / 16384.0));
-	float w0 = mod(c.w, 256.0) / 255.0;
-	float w1 = floor(c.w / 256.0) / 255.0;
+	float first = floor(c.x + 0.5);
+	int b0 = int(mod(first, 128.0));
+	float mouth = floor(first / 128.0);
+	int b1 = int(c.y + 0.5);
+	int b2 = int(c.z + 0.5);
+	float w0 = floor(c.w + 0.5) / 255.0;
+	float w1 = COLOR.a;
 	float w2 = max(0.0, 1.0 - w0 - w1);
-	vec3 centre = (cell + vec3(0.0, 0.5, 0.0)) * voxel;
+	vec3 centre = (to_skin * MODEL_MATRIX)[3].xyz;
 	mat4 blend = bones[b0] * w0 + bones[b1] * w1 + bones[b2] * w2;
 	vec3 moved = (blend * vec4(centre, 1.0)).xyz;
 	float shrink = 1.0 - min(length(blend[0].xyz), min(length(blend[1].xyz), length(blend[2].xyz)));
+	float grow = 1.0 + min(max_grow, gap_fill * max(0.0, shrink));
 	mat3 turn = mat3(bones[b0]);
-	VERTEX = moved + turn * (VERTEX * (1.0 + gap_fill * max(0.0, shrink)));
+	// The engine adds the instance's centre back after this.
+	VERTEX = (moved - centre) + turn * (VERTEX * grow);
 	NORMAL = normalize(turn * NORMAL);
 	tint = COLOR.rgb;
 	if (mouth > 0.5) {

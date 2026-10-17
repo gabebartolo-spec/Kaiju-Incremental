@@ -13,6 +13,8 @@ const MAX_BONES := 128
 ## Gzip'd .vskin layout version this reader understands (tools/kaiju_skin/bake.py).
 const VERSION := 2
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
+## A cell's centre sits half a voxel up from its corner (VoxelBuilder's lift).
+const HALF_UP := Vector3(0, 0.5, 0)
 const BOUNDS := AABB(Vector3(-12, -4, -12), Vector3(24, 24, 24))
 
 ## Debug: draw rigged kaiju the old way, rigid voxels per bone (pass "--kaiju-rigid" after "--").
@@ -25,6 +27,7 @@ var _rig: KaijuRig
 var _nodes: Array[Node3D] = []
 var _binds: Array[Transform3D] = []
 var _cubes: ShaderMaterial
+var _cube_node: MultiMeshInstance3D
 var _fill: ShaderMaterial
 var _hid_rig_voxels := 0
 
@@ -114,17 +117,18 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	for i: int in cells:
 		var cell := Vector3i(raw.decode_s16(at), raw.decode_s16(at + 2), raw.decode_s16(at + 4))
 		var base := Color8(raw[at + 6], raw[at + 7], raw[at + 8])
-		mm.set_instance_transform(i, Transform3D())
-		mm.set_instance_color(i, Look.jitter(base, cell, 7))
-		mm.set_instance_custom_data(
-			i, pack(cell, raw[at + 9], raw.slice(at + 10, at + 13), raw.slice(at + 13, at + 15))
-		)
+		var tint := Look.jitter(base, cell, 7)
+		tint.a = raw[at + 14] / 255.0  # the second bone's weight rides in the colour's alpha
+		mm.set_instance_transform(i, Transform3D(Basis(), (Vector3(cell) + HALF_UP) * voxel))
+		mm.set_instance_color(i, tint)
+		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
 		at += 15
 	_cubes = ShaderMaterial.new()
 	_cubes.shader = CUBE_SHADER
 	_cubes.set_shader_parameter("voxel", voxel)
 	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
 	var cubes := MultiMeshInstance3D.new()
+	_cube_node = cubes
 	cubes.multimesh = mm
 	cubes.material_override = _cubes
 	cubes.custom_aabb = BOUNDS
@@ -180,16 +184,16 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_hide_rig_voxels()
 
 
-## One voxel as exact floats for INSTANCE_CUSTOM (each field well inside a float's 24 bits):
-## x | y, z | mouth flag, bones 0-2 (7 bits each), weights 0-1 (8 bits each; the third is the rest).
-static func pack(
-	cell: Vector3i, flags: int, bones: PackedByteArray, weights: PackedByteArray
-) -> Color:
+## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps
+## per-instance data at half precision (exact only up to 2048), where bigger packed numbers broke
+## the mantis (PR #15 review). Bone 0 (+128 for a mouth-inside voxel), bone 1, bone 2, weight 0
+## (0..255). The voxel's centre is its instance transform; weight 1 is the colour's alpha.
+static func pack(flags: int, bones_weight: PackedByteArray) -> Color:
 	return Color(
-		float(cell.x + 512 + 1024 * (cell.y + 512)),
-		float(cell.z + 512 + 1024 * flags),
-		float(bones[0] + 128 * bones[1] + 16384 * bones[2]),
-		float(weights[0] + 256 * weights[1]),
+		float(bones_weight[0] + 128 * flags),
+		float(bones_weight[1]),
+		float(bones_weight[2]),
+		float(bones_weight[3]),
 	)
 
 
@@ -202,6 +206,7 @@ func sync() -> void:
 	for i: int in _nodes.size():
 		pose[i] = Projection(to_rig * _skin_global(i) * _binds[i])
 	_cubes.set_shader_parameter("bones", pose)
+	_cubes.set_shader_parameter("to_skin", Projection(_cube_node.global_transform.affine_inverse()))
 	if _fill != null:
 		_fill.set_shader_parameter("bones", pose)
 	mouth_open = _mouth_showing()

@@ -32,6 +32,9 @@ MIXED = 0.98  # a voxel whose main bone has less than this share is in a joint: 
 FILL_INSET = 0.3  # voxels: the filler sits this far inside the cubes
 MOUTH_RED = 1.35  # BipedHead.MOUTH_RED: the sculpt's pink mouth inside
 MOUTH_BONES = ("head1", "jaw")
+# Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible): they
+# never blend with it, so an open mouth keeps its mass and its teeth (lead review, PR #15).
+HINGES = ("jaw", "mandible_l", "mandible_r")
 DIRS = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)])
 
 
@@ -73,7 +76,7 @@ def bake(name, rest, kdir, rig):
     for i, n in enumerate(names):
         if parents.get(n) is not None:
             j = names.index(parents[n])
-            related[i, j] = related[j, i] = True
+            related[i, j] = related[j, i] = n not in HINGES
     # Into the rest pose the game builds (rig units), and back onto the grid.
     xf = np.array([b["xform"] for b in bones])
     basis = xf[:, :9].reshape(-1, 3, 3).transpose(0, 2, 1)  # columns x, y, z

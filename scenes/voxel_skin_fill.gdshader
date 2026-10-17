@@ -2,25 +2,44 @@ shader_type spatial;
 // D-041: the filler under a kaiju's cubes (scenes/voxel_skin.gd): the joints' voxel faces as one
 // watertight, linearly skinned surface a little inside the cubes, so where a bending joint pulls
 // cubes apart the gap shows skin, never sky. CUSTOM0 = bones 0-2 and weight 0, CUSTOM1.xy =
-// weights 1-2. Flat-shaded from screen derivatives (the bake stores no normals).
+// weights 1-2. Shaded like voxel faces: its normal snaps to the nearest axis of its main bone, so
+// a stretched patch reads as cube faces instead of a streaked sheet (lead review, PR #15).
 
 uniform mat4 bones[128];
 uniform float roughness_value = 0.9;
+
+varying flat vec3 axis_x;
+varying flat vec3 axis_y;
+varying flat vec3 axis_z;
 
 vec3 srgb_to_linear(vec3 c) {
 	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
 }
 
 void vertex() {
-	mat4 blend = bones[int(CUSTOM0.x + 0.5)] * CUSTOM0.w
+	mat4 main_bone = bones[int(CUSTOM0.x + 0.5)];
+	mat4 blend = main_bone * CUSTOM0.w
 		+ bones[int(CUSTOM0.y + 0.5)] * CUSTOM1.x
 		+ bones[int(CUSTOM0.z + 0.5)] * CUSTOM1.y;
 	VERTEX = (blend * vec4(VERTEX, 1.0)).xyz;
+	mat3 to_view = mat3(MODELVIEW_MATRIX) * mat3(main_bone);
+	axis_x = normalize(to_view[0]);
+	axis_y = normalize(to_view[1]);
+	axis_z = normalize(to_view[2]);
 }
 
 void fragment() {
 	vec3 n = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
-	NORMAL = dot(n, VERTEX) > 0.0 ? -n : n;
+	n = dot(n, VERTEX) > 0.0 ? -n : n;
+	vec3 d = vec3(dot(n, axis_x), dot(n, axis_y), dot(n, axis_z));
+	vec3 a = abs(d);
+	if (a.x >= a.y && a.x >= a.z) {
+		NORMAL = axis_x * sign(d.x);
+	} else if (a.y >= a.z) {
+		NORMAL = axis_y * sign(d.y);
+	} else {
+		NORMAL = axis_z * sign(d.z);
+	}
 	ALBEDO = srgb_to_linear(COLOR.rgb);
 	ROUGHNESS = roughness_value;
 }

@@ -8,16 +8,30 @@ extends SceneTree
 ##     --stills=<dir> --frames=<f1,f2,f3> [--kaiju-rigid]
 ## saves <dir>/<variant>_<frame>.png and <variant>.json (each bone's pixel position per frame).
 ## Variant is "rigid" with --kaiju-rigid, else "skin".
+## Clips (A and C under identical conditions, for CI's software renderer):
+##   godot --path . --windowed --write-movie <out.avi> --fixed-fps 60 --script
+##     tools/capture/capture_skin.gd -- --species=reptilian --clip=close --from=4 --to=12.5
+## --clip=game (the rampage camera) or close (3/4 front, about 2x the game zoom). The walk runs
+## every frame; only every second frame from --from on is drawn (the movie repeats the last one),
+## which halves CI time; trim the clip to --from afterwards.
 
 const FPS := 60.0
 const SCALES := {"baby": 0.5, "adolescent": 0.9, "adult": 1.3}
 const DISTANCE := 17.0
+const CAMERA_OFFSET := Vector3(0, 27, 19)  # scenes/rampage.gd
+## The close camera: this share of the game camera's distance, from 3/4 front, a little above.
+const CLOSE_SHARE := 0.5
+const CLOSE_PITCH := 0.45
 
 var _species := "reptilian"
 var _stage := "adult"
 var _find := false
 var _stills := ""
 var _frames: Array[int] = []
+var _clip := ""
+var _from := 0.0
+var _to := 15.0
+var _view_dir := Vector3.ZERO
 
 
 func _initialize() -> void:
@@ -32,6 +46,12 @@ func _initialize() -> void:
 			_stills = arg.substr(9)
 		elif arg.begins_with("--out=") and _stills == "":  # CI captures (capture.yml) pass --out
 			_stills = arg.substr(6)
+		elif arg.begins_with("--clip="):
+			_clip = arg.substr(7)
+		elif arg.begins_with("--from="):
+			_from = float(arg.substr(7))
+		elif arg.begins_with("--to="):
+			_to = float(arg.substr(5))
 		elif arg.begins_with("--frames="):
 			for part: String in arg.substr(9).split(","):
 				_frames.append(int(part))
@@ -67,7 +87,7 @@ func _run() -> void:
 	kaiju.scale = Vector3.ONE * body_scale
 	stage.add_child(kaiju)
 	var cam := Camera3D.new()
-	cam.fov = 40.0
+	cam.fov = 55.0 if _clip != "" else 40.0
 	stage.add_child(cam)
 	root.add_child(stage)
 	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
@@ -80,7 +100,7 @@ func _run() -> void:
 	var stomp_in := Num.f(stats["stomp_interval"])
 	var roared := false
 	var dt := 1.0 / FPS
-	var last: int = _frames.max() if not _frames.is_empty() else int(15.0 * FPS)
+	var last: int = _frames.max() if not _frames.is_empty() else int(_to * FPS)
 	for frame: int in last + 1:
 		var t := frame / FPS
 		var move := _input_at(t)
@@ -102,6 +122,8 @@ func _run() -> void:
 		kaiju.animate(dt, move.length())
 		# Stills only draw near a wanted frame (software rendering on CI is slow); the walk runs.
 		var near := _find or _frames.any(func(f: int) -> bool: return f >= frame and f - frame <= 2)
+		if _clip != "":
+			near = t >= _from - 0.1 and frame % 2 == 0
 		RenderingServer.viewport_set_update_mode(
 			root.get_viewport_rid(),
 			(
@@ -110,9 +132,7 @@ func _run() -> void:
 				else RenderingServer.VIEWPORT_UPDATE_DISABLED
 			)
 		)
-		var right := kaiju.global_basis.x.normalized()
-		cam.position = at + right * DISTANCE * body_scale + Vector3(0, 4.0 * body_scale, 0)
-		cam.look_at(at + Vector3(0, 3.6 * body_scale, 0))
+		_place(cam, kaiju, body_scale, dt)
 		await process_frame
 		if _find:
 			_measure(rig, frame, worst)
@@ -137,11 +157,34 @@ func _run() -> void:
 			var jaw: Array = worst["jaw"]
 			picks.append("jaw@%d" % jaw[1])  # the roar, always worth a look
 		print("JOINTS ", " ".join(picks))
-	else:
+	elif _clip == "":
 		var f := FileAccess.open(_stills.path_join(variant + ".json"), FileAccess.WRITE)
 		f.store_string(JSON.stringify(shots))
 		f.close()
 	quit()
+
+
+func _place(cam: Camera3D, kaiju: KaijuModel, body_scale: float, dt: float) -> void:
+	var at := kaiju.position
+	if _clip == "game":
+		var zoom := 0.75 + 0.4 * body_scale
+		cam.position = at + CAMERA_OFFSET * zoom
+		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
+		return
+	if _clip == "close":
+		# 3/4 from the front-right, easing round as the kaiju turns so a sharp turn stays readable.
+		var want := (kaiju.global_basis.x - kaiju.global_basis.z).normalized()
+		_view_dir = (
+			want if _view_dir == Vector3.ZERO else _view_dir.slerp(want, minf(1.0, dt * 2.0))
+		)
+		var reach := CAMERA_OFFSET.length() * (0.75 + 0.4 * body_scale) * CLOSE_SHARE
+		var flat := Vector3(_view_dir.x, 0, _view_dir.z).normalized()
+		cam.position = at + (flat * cos(CLOSE_PITCH) + Vector3.UP * sin(CLOSE_PITCH)) * reach
+		cam.look_at(at + Vector3(0, 3.5 * body_scale, 0))
+		return
+	var right := kaiju.global_basis.x.normalized()
+	cam.position = at + right * DISTANCE * body_scale + Vector3(0, 4.0 * body_scale, 0)
+	cam.look_at(at + Vector3(0, 3.6 * body_scale, 0))
 
 
 ## Each joint's bend this frame (the turn between a bone and its parent beyond their rest
