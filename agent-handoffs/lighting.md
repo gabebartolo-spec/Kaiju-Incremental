@@ -1,49 +1,47 @@
-# Lighting handoff, 2026-10-18 07:50
-## State: awaiting slot (lead's local GPU slot for the breath behind + side clip)
+# Lighting handoff, 2026-10-18 08:40
+## State: awaiting slot (lead's GPU slot for the final breath render, then fresh critic 6)
 
 ## Who
-Role: lighting, reporting to the lead ("Kaiju: Lead" in ListAgents; its pipe address changes on
-restart, so message it by name). Rules: look changes reach the director only via the lead (A/B at
-the game camera); CI captures one run at a time or the lead's GPU slot; PRs into
-claude/look-options; reports <=8 lines. The director is asleep (06:4x): no questions to him.
+Role: lighting, reporting to the lead ("Kaiju: Lead" in ListAgents; message it by name). Rules:
+look changes reach the director only via the lead; CI captures one run at a time or the lead's GPU
+slot; PRs into claude/look-options; reports <=8 lines. Director asleep since 06:4x: no questions.
 
 ## Closed: lighting looks (D-057)
 Director picked A, keep concrete. claude/lighting (d2f63dc) stays pushed, not merged.
 
-## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), head e673ed4
-Lead's call: the legacy voxel jet goes AND the breath must read from behind at the game camera.
-Done:
-- fx.gd breath() jet removed; flow check "no pale voxel-cube jet" (failed first); floor 114.
-- capture.yml: --fixed-fps for stills (fixed-fps flag only, per the lead).
-- scenes/breath_beam.gd (pooled): slim core from the JAW (BreathBeam.mouth_of: 0.7 along the
-  "jaw" bone; the old hard-coded mouth was inside the back) to the struck point; a flat
-  additive fan (breath_fan.gdshader) on the street over exactly the sim's hit cone: from the feet
-  (ability_fx.cone_origin, set by rampage), out to full reach, 36 deg either side (±6.5 u).
-  Fade-in fx.breath_fade_in 0.1 s; fx.breath_fan_alpha 1.0; fan albedo 2.6+1.4*power.
-- capture_powers.gd --species --signature-only --side; tools/capture/probe_breath.gd (headless:
-  prints facing, mouth, beam, fan apex/tip/edges, camera).
-- rampage.gd 399 lines (cap 400): don't add lines there.
-Measured: from the game camera (kaiju z=70, cam z=89 y=31) the mouth-to-street beam lies inside
-the body's screen silhouette (head top ~42 deg, beam 44-51 deg). That is why the fan carries it.
-GPU renders so far (scratchpad gpu_side2/gpu_side4): side view good, snout to street. The behind
-view showed the fan too small BEFORE the move to the street; not yet rendered since.
+## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), head 17ecd14
+Lead's calls: remove the legacy voxel jet (defect) AND make the breath read from the game camera.
+The lead merges on a fresh motion-critic PASS. Synced with look-options at a3ee004 (sync again
+before the final push). Flow floor 114. rampage.gd 399/400 lines: don't add lines there.
+Built:
+- fx.gd jet removed; flow check "no pale voxel-cube jet" (failed first).
+- scenes/breath_beam.gd (pooled): core from the JAW (mouth_of, 0.7 along "jaw"; tracks the jaw
+  while lit); flame curtain (breath_curtain.gdshader) on the far arc of the sim's hit cone (from
+  ability_fx.cone_origin = the feet, full reach, 36 deg), height fx.breath_curtain_height 7;
+  muzzle flash (3.5 u, warm), strike flare, strike light (4 energy, 3.5 u), all driven by one
+  progress value, easing in over fx.breath_fade_in 0.12.
+- Scorch from the cone origin; soot fades in (FxDecals optional soot_in; fx.scorch_soot_in 0.4).
+- capture.yml --fixed-fps for stills; capture_powers --species --signature-only --side;
+  tools/capture/probe_breath.gd (headless geometry probe).
+- Removed again: the street glow (breath_fan.gdshader); the curtain carries the behind read.
+Key measurement: from the game camera the mouth-to-street beam lies inside the body's screen
+outline (head top ~42 deg below the horizon, beam 44-51 deg), so the core never shows from behind.
+Say so in the PR (the lead asked for that honest note).
 
-## Round log (GPU renders in scratchpad gpu_*; critic sheets scratchpad/crit/)
-- gpu_*6 + fresh critic: FIX. Side PASS; behind FAIL (only dim cone edges past the body); pop
-  FAIL (muzzle flare + street flash full on frame 1). The side clip's frame-90 jump is the
-  --side camera switching on, not a dropped frame.
-- e673ed4 (method change): flame curtain (breath_curtain.gdshader, fx.breath_curtain_height 7,
-  breath_curtain_alpha 0.7) on the cone's far arc, rising above the head from the game camera;
-  muzzle flash, strike flare and strike light moved into BreathBeam, driven by progress (ease in);
-  scorch from the cone origin. Not rendered yet.
+## Critic log (scratchpad crit*/; renders scratchpad gpu_*, iso_*)
+1 FIX beam inside the back -> jaw anchor. 2 FIX fan invisible behind + frame-1 pop -> curtain +
+eased flashes. 3 FIX pale hard-rimmed pool (strike light range) -> small light. 4 5/6, sharp dark
+edge: I guessed soot, then the fan, both wrong; layer isolation (all / curtain off / scorch off)
+proved it was the curtain's smooth lower sheet -> lower half fades in. 5: 4/6, blocky curtain +
+white muzzle flash -> separate tongues, warm smaller flash (17ecd14, not rendered yet).
+Known, out of scope: red jagged ground decal pops at the breath (pre-existing; lead logged it as
+my follow-up after #38: find the fx_decals crack/scorch spawning at full opacity, 0.1 s fade-in).
+White drop at f121 behind: probably the #6 spark burst dying together.
 
 ## Next
-1. On the slot: scratchpad/render_breath.sh gpu_behind7 ; render_breath.sh gpu_side7 --side
-   (write the off-screen override.cfg into the worktree first; delete it after; the focus
-   guard blocks any command text that names Godot plus a windowed flag without it).
-2. Check 2x crops: the fan visible from behind on every breath frame, nothing opaque over the body,
-   no pop; peach/white pixel count near the flare level. Tune fan alpha/albedo in data if needed.
-3. Fresh motion-critic on the behind + side clips (bars above), then update the PR #38 body
-   (scratchpad/pr_body.md is stale: rewrite Evidence and Not exercised) and report to the lead.
-Known: the beam stays fixed in the world for 0.9 s while the head moves (side frame 40); a critic
-may flag it; a fix would be to re-aim the core at mouth_of each frame.
+1. On the slot: write the off-screen override.cfg into the worktree; scratchpad/render_breath.sh
+   gpu_behind14 ; render_breath.sh gpu_side14 --side ; delete override.cfg. Isolate layers via
+   scratchpad/isolate.sh pattern if anything new appears (prove, don't guess).
+2. Fresh motion-critic (same bars), then gh pr edit 38 --body-file scratchpad/pr_body.md (fill
+   FINAL_PATHS / FINAL_VERDICT; drop the street-glow lines), sync look-options, push, report.
+3. Then the red decal follow-up.
