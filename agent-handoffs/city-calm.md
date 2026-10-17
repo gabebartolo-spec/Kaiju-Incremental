@@ -1,48 +1,57 @@
-# City-calm handoff, 2026-10-18 04:27
-## State: awaiting lead (PR open into claude/look-options; lead QA + fresh critic next)
+# City-calm handoff, 2026-10-18 05:00
+## State: awaiting lead (#28 review fix pushed: tools/* excluded, re-export + smoke clean)
 
 ## Task
-Director 2026-10-18 03:53: "remove the level crossing hellscape, i get that tokyo is a
-reference but this is too much". Make the streets calm and readable from the game camera.
-Lead: "Game demo planning" (local_106fc100, 03:56 on), not local_56c0390b.
-
-## What the director saw
-Zebra crossings on every arm of every junction along every avenue (rings +-42/+-70 and the
-inner avenue), plus a mid-block zebra on every avenue segment longer than 18. No railway
-code exists. Labelled 2x crop: notes/city-calm/before_s1_labelled_2x.png.
+Role city-calm (helper). Lead: "Game demo planning" (local_106fc100).
+1. DONE: calm streets, PR #26 (claude/city-calm-streets, head 55231be). Lead PASS; director
+   04:35 "ship AFTER" = D-054; lead merges on green and logs D-054 in the board PR.
+2. NOW: export-windows (demo P6 prep, D-050). Prove a local Windows export of
+   claude/look-options: tools/export_windows.sh + tools/pck_check.py, smoke-launch the exe,
+   PR into look-options, report to the lead with the head SHA.
 
 ## Branch and commit
-claude/city-calm-streets off claude/look-options (ed1d2d9). 54e9f16 is the fix:
-scenes/city_ground.gd zebra_junctions() (MID_BLOCK gone), data/tuning.json
-city.zebra_junctions = 1, tests/run_city_tests.gd _check_calm_streets, floor city 5 -> 6.
+claude/export-windows off origin/claude/look-options (444ed01), in the city-calm worktree
+(.claude/worktrees/city-calm-streets-722ec5). ce97435 = the two tools (pushed).
 
-## Callers
-The "crossings" in traffic/police/street_life/city_decor are road-graph nodes, not paint.
-Unchanged.
+## Unfinished changes
+none uncommitted. out/windows/KaijuIncremental.exe (git-ignored) is built from ce97435.
 
-## Evidence
-notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\city-calm
-- CI runs: before s1 39051748926, before s2 39051918842 (look-options ed1d2d9); after s1
-  39052207839, after s2 39052370448 (54e9f16). 1080p game camera, seed city 0.
-- side_by_side_s{1,2}.png, junction_2x_before_after_s{1,2}.png, {before,after}_s{1,2}_game.png
-- Suites: smoke 27, sim 39, powers 24, tentacles 18, city 6, growth 24, load 6, flow 76,
-  self-test ok (logs run_tests_*.log in notes). The new check was red at key 99.
+## Evidence so far
+notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\export-windows
+- export_run_ce97435.log: exit 0, exe 126,668,576 B, pack 269 files; pack check passed
+  (3 fonts carry their TTF bytes after RSCC/zstd decompress; 9 kvox byte for byte).
+- Shown failing first: LFS pointer ttf + wrong kvox -> two FAIL lines, exit 1.
+- pck_list.txt, export_run1_parser_bug.log (first parser misread the format-4 header).
+- PR body draft: scratchpad pr_export.md (SMOKE_RESULT / EXPORT_RESULT placeholders).
+
+## Next
+0. NEXT TASK (lead 04:50): build.yml workflow_dispatch (input ref) running export_windows.sh +
+   pck_check on CI, upload KaijuIncremental-<sha>.zip (7-day retention), keep main push trigger;
+   proof = one dispatch on look-options, artifact downloaded + smoke-launched locally; PR.
+1. DONE 04:41: smoke launch with scratchpad smoke_exe.sh <notes>/smoke. It does
+   override.cfg beside the exe (mode=0, no_focus, -20000), seeded settings.cfg
+   fullscreen=false, own APPDATA, --audio-driver Dummy, --write-movie PNG 1080p,
+   --quit-after 450, and kills its own PID at 120 s. Pick a title frame and the log head.
+2. Fill the PR body, open the PR into look-options, report to the lead (<=8 lines, head SHA).
 
 ## Attempts (fix-loop record)
-none on the feature. The first flow run timed out because of LFS font pointers (see rules).
+pck parser: 1st misread the header (pos 28, should be 32) -> fixed; RSCC compression handled.
 
 ## Open decisions
-1 zebra junction vs 0: taste call for the lead's critic and the director.
+none
 
 ## Running jobs
-none for city-calm. Next in queue: export-windows (lead task, same worktree, new branch).
+none.
 
 ## Findings for the lead
-- ci_capture.sh picks the newest workflow_dispatch run without filtering by branch, so with
-  agents dispatching seconds apart it can download another agent's run. Verify with
-  `gh run view <id> --json headBranch,headSha` (this time all four were mine).
+- (done in #28) exclude_filter now "tests/*, tools/*"; pack 269 -> 229 files; pck_check fails
+  on any tools/ file in the pack.
+- ci_capture.sh picks the newest workflow_dispatch run without filtering by branch; verify the
+  run's headBranch.
 
 ## Rules learnt the hard way (under 10 lines)
-- The app's worktree was cut from local main (lead commits); branch off origin/claude/look-options.
-- `git lfs pull` BEFORE any suite run in a fresh worktree; pulling during a run makes the
-  re-import segfault (exit 139).
+- Branch off origin/claude/look-options, not the worktree's starting commit.
+- `git lfs pull` before any suite or export in a fresh worktree; pulling mid-run makes the
+  re-import segfault (exit 139). With LFS pointers, flow times out at 900 s.
+- Template builds start fullscreen (settings.gd): seed user settings.cfg fullscreen=false
+  before any windowed exe run.
