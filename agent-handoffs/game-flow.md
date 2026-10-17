@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 13:05
+# Game-flow handoff, 2026-10-17 14:55
 ## State: running a check (3 CI captures; PR #14 CI re-running)
 
 ## Task
@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at 0396604 (origin/claude/look-options merged in; rampage.gd
+claude/game-flow-edfba4, pushed at c1ca495 (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built
@@ -22,7 +22,8 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
   pause_menu.gd, settings_menu.gd. autoload/save_file.gd (save v2 + v1 migration) and
   autoload/player_settings.gd (settings.cfg) are static; SaveSystem/Settings forward.
 - Tests: tests/lib/gui_input.gd (real clicks/keys), tests/lib/flow_screens.gd; display-font
-  check in run_flow_tests.gd. Flow floor 67.
+  check in run_flow_tests.gd; "buttons stay on screen at every UI scale" for tree, settings,
+  species select (window set to 3840x2160: headless windows are 64x64). Flow floor 70.
 - tools/capture/capture_flow.gd: 11 shots; --clip; --ui-scale=1.25.
 - LFS checkout in capture.yml, tests.yml (shards + self-test), build.yml.
 
@@ -41,6 +42,11 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
   (not colour/tween). Fixed + font check (FAIL on 129-byte pointer, PASS on 8944-byte font).
 - GitHub Actions was blocked by billing 17:07Z-12:45; repo now public, Actions runs.
 - PR lint red after base moved: rampage.gd 415 lines -> trimmed to 400.
+- CI stills round 2 (run 38992440820, 1080p): title/tree/results/reveal read well; pause and
+  end-beat shots showed the results because the kaiju had died (8 physics steps per slow
+  frame) -> capture pins max_physics_steps_per_frame = 1. 4K run timed out after 3 shots and
+  its tree hid RAMPAGE at 125% -> stats scroll; species select CHOOSE off screen at 115/125%
+  -> shorter preview. Both shown failing in the new check first. 4K now uses --ui-only.
 
 ## Findings for the lead (lead decides what gets recorded)
 - Pull LFS in every new worktree before a test run (proven: 900 s timeout -> 51 s).
@@ -50,5 +56,5 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- CI captures: shots 38992440820 -> %TEMP%/gf_cap/shots, 4K 38992469000 -> %TEMP%/gf_cap/4k,
-  clip 38992495568 -> %TEMP%/gf_cap/clip (watcher waits for all three logs).
+- CI captures round 3 on c1ca495: shots 38999978259, 4K --ui-only 39000008904, clip
+  39000034737 -> %TEMP%/gf_cap/{shots,4k,clip} (watcher waits for all three logs).
