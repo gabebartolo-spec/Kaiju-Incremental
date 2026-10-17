@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 05:10
-## State: running a check (PR #8 CI at 2a2edb5); asked the lead for the next job: (d) heli gun/crash, (e) SFX bus + volume slider, (f) UI clicks
+# Ability VFX/SFX handoff, 2026-10-18 05:30
+## State: running a check (PR #8 final push; the lead merges at the SHA when green)
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -50,18 +50,19 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - The director's listen is the gate.
 - Flow floor is 83.
 
-## Lead's orders (2026-10-18), all pushed to #8
-(a) Dials + r2 clips: done. Clips in ability-sfx-d050/r2/.
-(b) Croc roar:
-- roar.ogg is 4.2 s: 38-52 Hz bellow plus an echo tail.
-- It plays in the EvolutionReveal (_swap). Flow check: "the evolved kaiju roars".
-- Clip: ability-sfx-d050/roar/roar_reveal.mp4.
-- I asked the lead whether the signature should roar too (it would clash with breath); no answer yet.
-(c) Army sounds:
-- tank_fire (Sfx.play_at, distance falloff from the camera, near_distance/far_floor_db)
-- shell_hit (unarmoured hits)
-- heli_rotor loop (Sfx.rotors(_powers.helis()))
-Flow floor is 87. Stomp rate left alone (sim rule D-004).
+## Lead's orders (2026-10-18)
+- Director 04:30 heard r2 and said SHIP AS IS. Logged as D-052 in #8's Board and log.
+- (b) The roar plays via Sfx.roar(parent), a static entry that returns the player:
+  - the EvolutionReveal calls it in _swap;
+  - kaiju-motion's demo end card (PR #23, scenes/demo_end.gd) calls the same entry.
+- Clip: ability-sfx-d050/roar/roar_reveal.mp4, plus roar_spec.png.
+- Flow floor is 84.
+- (c) Army sounds were REVERTED from #8 (lead: new PR off look-options after #8 merges). The work is saved
+  on local branch claude/army-sfx-wip (b1f9e18): tank_fire, shell_hit, heli_rotor, Sfx.play_at/rotors,
+  near_distance/far_floor_db, 3 heli flow checks.
+  - Next: once #8 merges, branch off look-options and cherry-pick b1f9e18.
+  - The "roar" volume key already exists, so drop that hunk.
+  - Floor: base + 3.
 
 ## Notes
 - Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd (kaiju-motion's files).

@@ -293,43 +293,6 @@ def build_roar() -> None:
     print(f"  roar: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
 
 
-def build_army() -> None:
-    """The army (D-050): a tank's cannon, a shell slamming into the kaiju's hide, and the
-    attack helicopter's rotor as a seamless loop the game fades in and out."""
-    reseed("build_army")
-    x = np.zeros(seconds(1.6))
-    crack_n = seconds(0.08)
-    crack = bandpass(noise(crack_n), np.full(crack_n, 1800.0), 0.6) * env(crack_n, 0.0005, 0.02)
-    place(x, crack * 3.0, 0.0)
-    place(x, pitch(kenney("explosionCrunch_001"), 0.75), 0.0, 0.8)
-    place(x, kenney("lowFrequency_explosion_001"), 0.0, 0.7)
-    place(x, thump(0.7, 90, 45), 0.0, 0.6)
-    echo = tail(x.copy(), 1.2, 0.35, 1200)
-    save("tank_fire", x + echo * 0.25, -2.0)
-    x = np.zeros(seconds(0.9))
-    place(x, pitch(kenney("impactPunch_heavy_001"), 0.7), 0.0, 1.0)
-    place(x, pitch(kenney("impactMetal_light_002"), 0.8), 0.0, 0.35)
-    place(x, thump(0.5, 110, 55), 0.0, 0.6)
-    place(x, lowpass(crackle(seconds(0.5), 300, 0.15), 3000), 0.02, 0.3)
-    save("shell_hit", x, -3.0)
-    # Rotor: main-blade slaps at 19 Hz and a tail-rotor buzz at 4x (whole cycles in 2 s), over
-    # a turbine whine. Built 0.5 s long and the overrun crossfaded into the start: no seam.
-    n = seconds(2.0)
-    m = seconds(0.5)
-    t = np.arange(n + m) / RATE
-    slap_phase = (t * 19.0) % 1.0
-    slap = np.exp(-slap_phase / 0.035) * (1 - np.exp(-slap_phase / 0.002))
-    chop = lowpass(noise(n + m), 700) * slap * 4.0 + lowpass(slap, 300) * 2.0
-    tail_rotor = bandpass(noise(n + m), np.full(n + m, 1100.0), 2.0) * (0.5 + 0.5 * np.sin(2 * np.pi * 76 * t))
-    whine = (np.sin(2 * np.pi * 2400 * t) * 0.05 + np.sin(2 * np.pi * 3600 * t) * 0.02)
-    hum = np.sin(2 * np.pi * 57 * t) * 0.3
-    full = chop + tail_rotor * 0.6 + whine + hum
-    loop = full[:n].copy()
-    fade = np.linspace(0.0, 1.0, m)
-    loop[:m] = full[:m] * fade + full[n:] * (1.0 - fade)
-    save("heli_rotor", loop, -4.0, loop=True)
-
-
 def build_breath() -> None:
     reseed("build_breath")
     n = seconds(2.3)
@@ -431,7 +394,6 @@ def main() -> None:
     build_stomp_crack()
     build_collapse()
     build_roar()
-    build_army()
     build_breath()
     build_leap()
     build_lash()
