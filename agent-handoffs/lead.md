@@ -38,7 +38,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    ambience (#43; synth voices risky, CC0 crowd fallback = his licence call). #41 limiter MERGED. Mix report
    (notes mix-report/report.md): master -21.4 LUFS; crowd inaudible, regen loop masks army, tank thump masks
    stomps. Proposal = PR #45 (stacked on #43): A/B mix-report/ab_before_after_20s.mp4 (one listen); crowd audible,
-   regen loop 86% -> 6%, master -20.5 LUFS. Sound session is available for the night.
+   regen loop 86% -> 6%, master -20.5 LUFS. #46 rifle volley (rifle/rifle_volleys_in_game.mp4). Sound session idle;
+   approved sound PRs merge one at a time in his order (each resyncs the flow floor).
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
    1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
    copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
