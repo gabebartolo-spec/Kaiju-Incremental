@@ -1,5 +1,5 @@
 # Kaiju voxel skin (was: look test) handoff, 2026-10-17 17:20
-## State: awaiting lead (croc titan #19 final captures on the current city sent; don't merge)
+## State: awaiting lead (#19 review 1 answered: feet are not a regression, jaw crops sent)
 
 ## Task
 D-041 voxel skin is merged (#15, squash 7ff1f03). PR #19 (claude/kaiju-skin-weights -> claude/look-
@@ -51,12 +51,15 @@ capture.yml is older and fails at once). Compose: scratchpad py/compose_ct.py <d
 (dl/{before,after}_{stills,clip}; ffmpeg via imageio_ffmpeg).
 
 ## Next
-18:10: merged look-options (#16 city growth, #20 Apex streaming) into #19 (head a4b9216, suites
-green, rebake unchanged). Final captures on it: before = throwaway branch claude/kaiju-skin-weights-
-before (5f55e9f; delete once the lead is done with it), stills 39010692988/39010696693, clips
-39010694877/39010698384; notes kaiju-voxel-skin/croctitan/current-city/. Sent to lead; awaiting review.
-Open findings: roar pose (kaiju-motion's biped head/jaw motion), 204 m body, filler 143k vertices,
-hip leg/tail mixing in blender-reptile's weights, capture_skin's stage has no towers (empty sim).
+Lead review 1 (18:17) answered 18:45, notes kaiju-voxel-skin/croctitan/review-1/:
+- f417 soft raised foot / f574 grey cloud: NOT VFX (capture_skin has no fx), NOT filler (cubes-only
+  frame == full skin; capture_skin --skin-part=cubes|filler, commit 0651f48), NOT cube loss (foot
+  cells 3672/3661 before == after, same colours; rigid voxels with Blender owners look the same).
+  It is the same cubes at the hand rig's foot angle (broad sole plane toward camera, far side, fog).
+  Runs: cubes 39013222127, filler 39013224567, rigid 39013226414.
+- jaw_2x.png: shut f180 / open f665, before vs after (after shut clean; open = rigid slab; the
+  open angle/head pitch is the roar motion, kaiju-motion's).
+Awaiting lead. Throwaway branch claude/kaiju-skin-weights-before still up (delete when lead is done).
 
 ## Rules learnt the hard way
 - Python write_text on Windows writes CRLF; git checks out LF, so a stamped file (rig.json) must be
