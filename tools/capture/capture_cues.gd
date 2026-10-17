@@ -47,7 +47,8 @@ func _run() -> void:
 	_shot("deflect")
 	for _i: int in 30:
 		await process_frame
-	r.ability_fx.ready_pulse(Vector3(r.sim.kaiju_pos.x, 0, r.sim.kaiju_pos.y))
+	var feet := Vector3(r.sim.kaiju_pos.x, 0, r.sim.kaiju_pos.y)
+	r.ability_fx.ready_pulse(feet, feet + Vector3(0, 6.0 * r.sim.body_scale(), 0))
 	for _i: int in 6:
 		await process_frame
 	_shot("ready")

@@ -4,6 +4,12 @@ extends RefCounted
 ## part's .kvox and its hinge, all on one grid, so a turret or a rotor turns about its real
 ## hinge. Presentation only.
 
+## Parsed .kvox per path and built voxels per part, shared by every vehicle of a type, so a tank
+## or helicopter spawning mid-rampage reuses them instead of re-reading and re-filling (35-45 ms a
+## spawn before). Each vehicle still gets its own material, so one fades without the others.
+static var _kvox_cache: Dictionary = {}
+static var _mesh_cache: Dictionary = {}
+
 ## World size of one voxel.
 var voxel := 0.0
 var _dir := ""
@@ -35,9 +41,16 @@ func front(part: String) -> float:
 
 ## A part's voxels with every cell offset by `origin` (minus the hinge puts the hinge at 0).
 func build(part: String, origin: Vector3, salt: int) -> MultiMeshInstance3D:
-	var vox: VoxelBuilder = _read(part).frames[0]
-	vox.salt = salt
-	return vox.build({}, voxel, 0.0, origin)
+	var key := "%s|%s|%f|%d|%v" % [_dir, part, voxel, salt, origin]
+	if not _mesh_cache.has(key):
+		var vox: VoxelBuilder = _read(part).frames[0]
+		vox.salt = salt
+		_mesh_cache[key] = vox.build({}, voxel, 0.0, origin).multimesh
+	var mm: MultiMesh = _mesh_cache[key]
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.material_override = (mm.mesh as PrimitiveMesh).material.duplicate()
+	return mmi
 
 
 ## A node on `parent` at the part's hinge (less `centre`), holding the part's voxels.
@@ -53,11 +66,16 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 static func set_opacity(root: Node, opacity: float) -> void:
 	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
 		var mmi := node as MultiMeshInstance3D
-		var mat := (mmi.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
+		var mat := mmi.material_override as ShaderMaterial
+		if mat == null:
+			mat = (mmi.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
 		if mat != null:
 			mat.set_shader_parameter("opacity", opacity)
 
 
 func _read(part: String) -> Kvox:
 	var entry: Dictionary = _parts[part]
-	return Kvox.read(_dir.path_join(str(entry["kvox"])))
+	var path := _dir.path_join(str(entry["kvox"]))
+	if not _kvox_cache.has(path):
+		_kvox_cache[path] = Kvox.read(path)
+	return _kvox_cache[path]
