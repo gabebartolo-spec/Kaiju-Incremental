@@ -23,6 +23,8 @@ const HOT := Color(1.0, 0.92, 0.7)
 var played: Array[String] = []
 ## Atomic Breath's half angle this run (radians).
 var cone_half_angle := 0.0
+## Where the next breath's hit cone starts (the kaiju's feet); set before breath().
+var cone_origin := Vector3.ZERO
 var _city: CityView
 var _tint: Color
 var _scale: float
@@ -61,6 +63,7 @@ func _ready() -> void:
 	_overlay.set_shader_parameter("strength", 0.55)
 	# Prewarm every shader and decal texture out of sight so first use does not stall a frame.
 	var away := Vector3(0, -50, 0)
+	cone_origin = away
 	breath(away, Vector3.FORWARD * 4.0, cone_half_angle, 1.0)
 	leap_land(away, 2.0, 1.0)
 	lash(away, 2.0, 1.0)
@@ -103,6 +106,7 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 	# Muzzle flash on the first frame: the jaw lights up even while the body hides the beam.
 	_flare(mouth, 4.5 * _scale * strength, HOT, 0.3)
 	_beam.power = strength
+	_beam.cone_origin = cone_origin
 	_beam.fire(mouth, hit, span, half_angle)
 	# The struck face: a flare, hot sparks and a light just in front of it that lights the wall.
 	_flare(hit - dir * 0.6, 3.5 * _scale * strength, _tint.lightened(0.4), seconds)

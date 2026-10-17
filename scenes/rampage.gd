@@ -233,10 +233,12 @@ func _ability_fx(event: Dictionary) -> void:
 	match str(event["kind"]):
 		"cone":
 			var facing := _to_world(sim.facing)
-			var mouth := (
+			var chest := (
 				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
 			)
-			var span := facing * reach + Vector3(0, -mouth.y + 0.5, 0)
+			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
+			var span := _kaiju_at + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
+			ability_fx.cone_origin = _kaiju_at
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)

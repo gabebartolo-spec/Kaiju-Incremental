@@ -28,7 +28,7 @@ float noise(vec2 p) {
 void fragment() {
 	float side = abs(UV.x);
 	float out_ = UV.y;
-	float centre = pow(1.0 - side, 2.0);
+	float centre = pow(1.0 - side, 1.3);
 	float stream = noise(vec2(UV.x * 6.0, out_ * 5.0 - TIME * 14.0)) * 0.6
 		+ noise(vec2(UV.x * 15.0, out_ * 11.0 - TIME * 23.0)) * 0.4;
 	float grow = smoothstep(0.0, fade_in, progress);
@@ -36,8 +36,8 @@ void fragment() {
 	// The front races out with the core, then the whole fan holds and thins.
 	float front = 1.0 - smoothstep(progress * 5.0 - 0.15, progress * 5.0, out_);
 	// Quiet near the mouth (over the head) and at the far edge, strongest in between.
-	float reach = smoothstep(0.08, 0.3, out_) * (1.0 - smoothstep(0.8, 1.0, out_));
+	float reach = smoothstep(0.04, 0.2, out_) * (1.0 - smoothstep(0.8, 1.0, out_));
 	vec3 hot = mix(tint.rgb, vec3(1.0, 0.95, 0.8), centre * centre);
-	ALBEDO = hot * (1.2 + 0.8 * power) * (0.6 + 0.4 * stream);
+	ALBEDO = hot * (2.6 + 1.4 * power) * (0.6 + 0.4 * stream);
 	ALPHA = clamp(strength * centre * (0.5 + 0.5 * stream) * grow * thin * front * reach, 0.0, 1.0);
 }

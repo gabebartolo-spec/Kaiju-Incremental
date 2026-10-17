@@ -8,9 +8,15 @@ extends Node3D
 const BEAM := preload("res://scenes/beam.gdshader")
 const FAN := preload("res://scenes/breath_fan.gdshader")
 const FAN_SEGMENTS := 24
+## How far along the jaw bone (hinge 0, chin 1) the breath leaves the mouth.
+const MOUTH_ALONG_JAW := 0.7
+## How far under the struck street point the fan lies (the target sits 0.5 above the street).
+const FAN_LIFT := 0.3
 
 ## Signature Power's brightness for the next fire (1..fx.power_max).
 var power := 1.0
+## Where the sim's hit cone starts (the kaiju's feet) for the next fire.
+var cone_origin := Vector3.ZERO
 var _scale: float
 var _seconds: float
 var _core: MeshInstance3D
@@ -52,13 +58,14 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	if not is_equal_approx(half_angle, _fan_half):
 		_fan_half = half_angle
 		_fan.mesh = _sector(half_angle)
-	# The fan lies in the breath's sloped plane; narrowing it by the slope keeps its footprint on
-	# the street exactly the sim's hit cone (half_angle, out to full reach), never wider.
-	var span_length := span.length()
-	var slope := Vector2(span.x, span.z).length() / maxf(span_length, 0.001)
-	var b := along(span.normalized())
-	_fan.basis = Basis(b.x * span_length * slope, b.y * span_length, b.z * span_length)
-	_fan.position = mouth
+	# The fan lies flat on the street over exactly the sim's hit cone: from the kaiju's feet
+	# (`cone_origin`) out to where the breath strikes at full reach, half_angle either side.
+	# Face-up to the game camera, it spills past both sides of the body that hides the core.
+	var target := mouth + span
+	var flat := Vector3(target.x - cone_origin.x, 0.0, target.z - cone_origin.z)
+	var b := along(flat.normalized())
+	_fan.basis = b.scaled(Vector3.ONE * flat.length())
+	_fan.position = Vector3(cone_origin.x, target.y - FAN_LIFT, cone_origin.z)
 	for mat: ShaderMaterial in [_core_mat, _fan_mat]:
 		mat.set_shader_parameter("power", power)
 		mat.set_shader_parameter("progress", 0.0)
@@ -71,7 +78,20 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	_tween.tween_callback(_hide)
 
 
-## A basis whose y runs along `dir` and whose x lies flat (across the breath).
+## Where the breath leaves `model`: most of the way along its jaw bone, between the jaws, so the
+## beam starts at the snout rather than inside the body. `fallback` for bodies with no jaw.
+static func mouth_of(model: Node3D, fallback: Vector3) -> Vector3:
+	var jaw := model.find_child("jaw", true, false) as Node3D
+	var rig := jaw.get_parent() if jaw != null else null
+	while rig != null and not rig is KaijuRig:
+		rig = rig.get_parent()
+	if rig == null:
+		return fallback
+	return jaw.global_transform * ((rig as KaijuRig).dir_of("jaw") * MOUTH_ALONG_JAW)
+
+
+## A basis whose y runs along `dir` and whose x lies flat (across the breath); for a flat `dir`
+## the xy plane is the street.
 static func along(dir: Vector3) -> Basis:
 	var y := dir.normalized()
 	var x := y.cross(Vector3.UP)

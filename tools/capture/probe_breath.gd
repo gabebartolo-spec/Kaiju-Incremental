@@ -43,6 +43,15 @@ func _run() -> void:
 			print(
 				"beam centre ", m.global_position, " axis ", m.global_basis.y, " len ", cyl.height
 			)
+	for node: Node in rampage.ability_fx.find_children("*", "MeshInstance3D", true, false):
+		var m: MeshInstance3D = node
+		if m.mesh is ArrayMesh and m.visible:
+			print("fan apex ", m.global_position, " tip ", m.global_transform * Vector3(0, 1, 0))
+			print(
+				"fan edges ",
+				m.global_transform * Vector3(-0.59, 0.81, 0),
+				m.global_transform * Vector3(0.59, 0.81, 0)
+			)
 	var cam := rampage.get_viewport().get_camera_3d()
 	if cam != null:
 		print("camera ", cam.global_position, " looks ", -cam.global_basis.z)
