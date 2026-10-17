@@ -80,8 +80,21 @@ func whip(side: float) -> void:
 	_whip_side = side
 
 
-func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
+## Runs the whip down by dt (a gait that poses the tail itself calls this, then whip_yaw()).
+func tick_whip(dt: float) -> void:
 	_whip = maxf(0.0, _whip - dt / WHIP_SECONDS)
+
+
+## The whip wave's yaw on tail bone i now (radians; 0 when no whip is running), base first.
+func whip_yaw(i: int) -> float:
+	if _whip <= 0.0:
+		return 0.0
+	var wave := clampf((1.0 - _whip) * PI * 1.6 - i * 0.22, 0.0, PI)
+	return _whip_side * WHIP * sin(wave)
+
+
+func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
+	tick_whip(dt)
 	var tail := rig.chain_named("tail0")
 	if tail != null:
 		var n := tail.drive.size()
@@ -93,9 +106,7 @@ func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 			var k := float(i + 1) / n
 			var sway := sin(time * 0.9 - i * 0.45) * TAIL_SWAY
 			var bend := clampf(-TAIL_SWEEP * _sweep[i] + sway, -TAIL_BEND_MAX, TAIL_BEND_MAX)
-			if _whip > 0.0:  # a whip wave running down the tail, base first
-				var wave := clampf((1.0 - _whip) * PI * 1.6 - i * 0.22, 0.0, PI)
-				bend += _whip_side * WHIP * sin(wave)
+			bend += whip_yaw(i)  # a whip wave running down the tail, base first
 			var yaw := bend + _straight[i]
 			var lift := (TAIL_LIFT + TAIL_YOUTH_LIFT * youth) * (1.0 - k * 0.5)
 			lift += TAIL_FLICK * hip_drop * k

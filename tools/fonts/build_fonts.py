@@ -7,6 +7,8 @@ Three styles share one skeleton so the director compares a finish, not three alp
   A  Rubble: solid voxel blocks with chipped corners and the odd crack, like broken concrete.
   B  Claw:   tall condensed blocks raked by three tapering claw gashes, a monster-poster title.
   C  Fault:  each letter snapped along a jagged crack, the top half lifted off its base.
+  D  Block:  the bare skeleton, solid and undamaged: the body-text face for small sizes, where
+             chips, gashes and cracks turn to noise.
 
 Deterministic: every chip, gash and crack comes from a hash of the glyph and cell, never a
 clock or global RNG, so a rebuild gives the same bytes. Needs fontTools (MIT) and
@@ -34,6 +36,9 @@ SPACE = 260
 ROWS = 10
 HEAVY = round(CELL * 0.28)  # A and C: every cell grows this much each way (heavier strokes)
 BOLD = 0  # set per style by build()
+# head.created / head.modified, pinned so a rebuild gives the same bytes (fontTools stamps "now"
+# by default); the value the first fonts were built with (2026-10-16).
+STAMP = 3874984571
 
 
 def rnd(*key: object) -> float:
@@ -204,6 +209,8 @@ def style_claw(sk: Skeleton) -> pathops.Path:
     top = ROWS * CELL * B_SY
     if sk.w < 4 or sk.ch in "-_=#*":  # gashes turn these small symbols to mush
         return shape
+    if sk.ch.isdigit():  # numerals stay solid: a gash through a 0 read as a bar on the TV
+        return shape
     slant = 0.42  # x travel per unit of y: a raking swipe, not a vertical cut
     length = top * (0.55 + 0.12 * rnd("clen", sk.ch))
     y_top = top * (0.98 - 0.1 * rnd("ctop", sk.ch))
@@ -258,10 +265,19 @@ def style_fault(sk: Skeleton) -> pathops.Path:
     return union([lower, upper])
 
 
+D_SX = 0.85  # a little condensed: the tree's longest node names fit at the TV's 125% UI scale
+
+
+def style_block(sk: Skeleton) -> pathops.Path:
+    """D: the skeleton's cells, solid, nothing knocked off: reads at body-text sizes."""
+    return solid(sk, D_SX)
+
+
 STYLES = {
     "A": ("Kaiju Rubble", "kaiju_rubble", style_rubble, 1.0, HEAVY),
     "B": ("Kaiju Claw", "kaiju_claw", style_claw, B_SX, 0),
     "C": ("Kaiju Fault", "kaiju_fault", style_fault, 1.0, HEAVY),
+    "D": ("Kaiju Block", "kaiju_block", style_block, D_SX, 0),
 }
 
 
@@ -397,6 +413,8 @@ def build(key: str, out_dir: str) -> str:
             "\n".join(lines) + "\n} kern;\n"
         addOpenTypeFeaturesFromString(fb.font, fea)
     path = os.path.join(out_dir, stem + ".ttf")
+    fb.font["head"].created = fb.font["head"].modified = STAMP
+    fb.font.recalcTimestamp = False
     fb.save(path)
     print(f"{key} {family}: {len(skels)} glyphs, {len(pairs)} kern pairs -> {path}")
     return path

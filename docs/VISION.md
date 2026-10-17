@@ -3,7 +3,7 @@
 Cap: 120 lines. Changed only by a director decision (`docs/DECISIONS.md`).
 
 **One sentence.** You are a kaiju: tear through a voxel city in short, frantic rampages, spend
-the rubble on a deep evolution tree, and come back bigger until no tower can stand before you.
+the biomass you devour on a deep evolution tree, and come back bigger until no tower can stand before you.
 
 **Pillar.** You are the disaster: every rampage must feel bigger than the last.
 
@@ -21,7 +21,8 @@ the rubble on a deep evolution tree, and come back bigger until no tower can sta
   lose layers and spill blocks as you smash them.
 
 ## The core loop
-Rampage -> earn rubble from every layer and tank -> buy evolution nodes -> rampage again,
+Rampage -> devour biomass from every layer and tank (D-056: "it devours what it flattens;
+evolving is growing") -> buy evolution nodes -> rampage again,
 reaching further. **Size tiers** gate the city: a building taller than your tier barely feels
 your blows ("TOO TALL - EVOLVE"), so each EVOLVE node opens a new skyline.
 
