@@ -1,49 +1,49 @@
-# blender-tank handoff (2026-10-17 14:40)
-State: awaiting lead (in-game captures sent; PRs #17/#18 review)
+# blender-tank handoff (2026-10-17 15:20)
+State: running a check (CI --air capture of helicopters around a baby kaiju, for PR #18 round 1)
 
 ## Task
-Director 2026-10-17 "make a tank in blender"; D-042 picked 2x real size, desert tan. Lead brief: wire the
-tank into the game (turret aims, gun recoils, crush/grab intact), CI capture, PR; then a helicopter
-the same way (spinning main + tail rotor nodes) as a second PR.
+D-042 vehicles from Blender at 2x real, desert tan. Tank: PR #17 MERGED (ee43f3c into look-options).
+Helicopter: PR #18 (claude/blender-heli) got a FIX from the lead: a heli hid the baby kaiju at the game
+camera. The size stays 2x; fix the view: (1) helis orbit to the side, never in the camera-to-kaiju line,
+cruise at least about 1.5x the heli length beyond the silhouette; (2) backstop: fade any vehicle that
+passes between the camera and the kaiju to about 35%. Prove it with a ~20 s game-cam clip of helis
+circling a baby kaiju (kaiju visible every frame) and a frame grid.
 
-## Branches and PRs
-- claude/blender-tank-eed18f -> PR #17 into claude/look-options (tank). Worktree .claude/worktrees/blender-tank-eed18f.
-- claude/blender-heli (same worktree, stacked on the tank branch) -> heli PR into claude/look-options;
-  it carries #17's commits until #17 merges. Switch with `git switch <branch>` (both clean when committed).
+## Branch and commit
+Worktree .claude/worktrees/blender-tank-eed18f, on claude/blender-heli. look-options merged in (54cee60);
+fix commit c2f124c, pushed. PR #18 body updated with round 1. The tank branch is done (merged).
 
-## Done
-- Pipeline: assets/source/vehicles/build_tank.py, build_heli.py (bpy, headless) -> .blend/.glb (LFS) ->
-  tools/blender/voxelize_parts.py (one grid, per-part kvox + <base>.parts.json hinges) -> assets/vehicles/.
-- scenes/vehicle_parts.gd (VehicleParts loader), TankModel (hull/turret/barrel, aim, fire recoil),
-  HelicopterModel (body, main rotor Y spin, tail rotor X spin, chin gun aim, fire muzzle).
-- rampage.gd: hull heads where it drives, turret aims at the kaiju, shells from the muzzle.
-  powers_view.gd: heli gun aims, bursts from the muzzle; heli no longer scaled by body_scale (D-042 fixes 2x).
-- tuning.json "vehicles": tank_height 1.61, heli_height 2.75, turn/recoil/spin rates.
-- Smoke checks: _check_tank (3), _check_heli (2); floor smoke 12 -> 17. All six suites green locally.
-- Boards (notes folder): blender-tank/tank_board.png (lead PASS), tanks_reptilian_*.png (CI still);
-  blender-heli/heli_board.png. Licensing rows for both models.
+## Round 1 changes (c2f124c)
+- sim/air_wing.gd: Heli.turn, Heli.cruise; spawn inside the allowed arc; `_keep_clear` turns a heli back
+  at the arc ends; orbit_pos dives at the sides (relative to the camera bearing) to the old depth
+  (radius x dive) and cruises at `cruise` = max(circle, body + clear_margin).
+  tuning air: camera_bearing 90, clear_arc 60, clear_margin 16.
+- scenes/vehicle_fade.gd (VehicleFade), voxel.gdshader `opacity` (4x4 Bayer screen door),
+  VehicleParts.set_opacity, PowersView.helis(), eased heli heading (vehicles.heli_turn).
+  rampage.gd is at the 400-line lint cap: add nothing there.
+- Checks: tentacles _check_heli_keeps_clear (floor 18); smoke _check_vehicle_fade (floor 19).
+- capture_tanks.gd --air: helis called in at once (chunks_destroyed), the kaiju stands 20 s, a still every 2 s.
 
-## Blocked / not exercised
-- GitHub Actions refuses every job ("recent account payments have failed or your spending limit...").
-  CI tests + captures cannot run; billing is the director's. Only one CI capture got through (run 38935554448).
-- No capture of a tank firing, a grab/throw of the new tank, or the heli in game.
-- Track scroll skipped: flat dark tracks under the skirts would not show it.
+## Attempts
+- First sim version dived to 20% of the new, wider cruise: claws-5 reptiles stopped swatting helis and
+  the sim check "five levels of claws break clearly more" failed (0.102 vs 0.090). Fixed by keeping the
+  dive depth of the old circle. Lesson: the orbit radius is gameplay (swat window), not only a view.
 
 ## Gotchas
-- Blender MCP: safe mode (no exec/open/quit); open_mainfile works. Start a window with
-  --python-expr registering a timer that calls bpy.ops.blendermcp.start_server(). Close by PID.
-- glTF-imported roots use quaternion rotation: set rotation_mode "XYZ" before rotation_euler.
-- Fonts are LFS: a fresh worktree needs `git lfs pull --include "assets/fonts/*"` or the flow suite
-  floods font errors and times out.
+- The focus-guard hook blocks any Bash command whose text mentions godot + script/write-movie
+  (even inside a heredoc). Write such edits with the Write tool, not python heredocs.
+- Fonts are LFS: a fresh worktree needs `git lfs pull --include "assets/fonts/*"`.
 - GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
+- CI capture: a 40 s 1080p clip times out (3000 s step); use --resolution=1280x720 and about 20 s.
+- Blender MCP: safe mode (no exec/open/quit); open_mainfile works; start the server with a
+  --python-expr timer calling bpy.ops.blendermcp.start_server(); close by PID. Coordinate with
+  blender-reptile before opening Blender (one MCP instance at a time).
 
-## Captures (sent 14:38)
-- CI run 38992549862 (capture_tanks.gd, reptilian, --movie, heli branch): tank arrives 24 s, turret
-  swings on, fires at 26.2 s; tan heli circling and firing at 20-25 s. Notes folder
-  blender-vehicles-ingame/ (clips, zooms, stills). Run timed out at 29 s of 40 (1080p llvmpipe,
-  3000 s step limit): for longer runs pass --resolution=1280x720 or trim FRAMES.
-- Flagged to lead: the fixed-2x heli dwarfs the baby kaiju at the game camera (D-042 as decided).
-- No octopus-grab capture (D-044 locomotion pause). Worktree on claude/blender-heli.
+## Next
+1. When the --air capture lands (scratchpad ci3/, log $TMP/ci3.log): check every frame that the kaiju
+   is visible (frame grid at 2x), then send the clip + grid to the lead (notes folder blender-heli/).
+2. Wait for the lead's re-review of #18.
 
 ## Running jobs
-None. Blender closed.
+CI capture: ci_capture.sh --movie --resolution=1280x720 --ref=claude/blender-heli capture_tanks.gd
+-- --species=reptilian --air. Blender closed.
