@@ -1,5 +1,5 @@
-# blender-tank handoff (2026-10-17 12:55)
-State: running a check (CI capture of tanks firing + helis, heli branch)
+# blender-tank handoff (2026-10-17 14:40)
+State: awaiting lead (in-game captures sent; PRs #17/#18 review)
 
 ## Task
 Director 2026-10-17 "make a tank in blender"; D-042 picked 2x real size, desert tan. Lead brief: wire the
@@ -37,12 +37,13 @@ the same way (spinning main + tail rotor nodes) as a second PR.
   floods font errors and times out.
 - GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
 
-## Next (lead, 12:49)
-- Director: "tank and heli models look great". Repo public, Actions back; lead reran #17/#18 checks.
-- look-options merged into both branches; capture_tanks.gd now wades into buildings for 40 s.
-- Capture dispatched on claude/blender-heli with --movie (reptilian). Send stills + clip to the lead.
-- No octopus-grab capture: locomotion paused (D-044).
-- Worktree is checked out on claude/blender-heli.
+## Captures (sent 14:38)
+- CI run 38992549862 (capture_tanks.gd, reptilian, --movie, heli branch): tank arrives 24 s, turret
+  swings on, fires at 26.2 s; tan heli circling and firing at 20-25 s. Notes folder
+  blender-vehicles-ingame/ (clips, zooms, stills). Run timed out at 29 s of 40 (1080p llvmpipe,
+  3000 s step limit): for longer runs pass --resolution=1280x720 or trim FRAMES.
+- Flagged to lead: the fixed-2x heli dwarfs the baby kaiju at the game camera (D-042 as decided).
+- No octopus-grab capture (D-044 locomotion pause). Worktree on claude/blender-heli.
 
 ## Running jobs
-CI capture (capture.yml, ci_capture.sh --movie --ref=claude/blender-heli) -> scratchpad ci2/. Blender closed.
+None. Blender closed.
