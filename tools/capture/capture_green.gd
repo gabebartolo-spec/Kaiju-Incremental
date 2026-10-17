@@ -16,6 +16,7 @@ const PARK_ZOOM := 0.6
 const PLAYGROUND_ZOOM := 0.25
 const AVENUE_ZOOM := 0.3
 const START_OUTSIDE := 3.0  # the clip starts this far south of the park
+const AVENUE_MIN := 18.0  # the avenue close-up looks down the first block at least this long
 
 var _out := "user://green"
 var _stage := 1
@@ -57,6 +58,21 @@ func _park(cfg: Dictionary) -> Rect2:
 	return Rect2()
 
 
+## The middle of the first long avenue block in the playable city, on its pavement.
+func _avenue_spot(cfg: Dictionary) -> Vector2:
+	var plan := CityGen.map(cfg)
+	var nodes: Array[Vector2] = plan["nodes"]
+	var half := CityGen.half_extent(cfg)
+	for street: Dictionary in plan["streets"]:
+		var a := nodes[Num.i(street["from"])]
+		var b := nodes[Num.i(street["to"])]
+		var inside := maxf(maxf(absf(a.x), absf(a.y)), maxf(absf(b.x), absf(b.y))) <= half
+		if str(street["kind"]) == CityGen.AVENUE and inside and a.distance_to(b) >= AVENUE_MIN:
+			var dir := (b - a).normalized()
+			return (a + b) * 0.5 + Vector2(-dir.y, dir.x) * Num.f(street["width"]) * 0.5
+	return Vector2.ZERO
+
+
 func _stats() -> Dictionary:
 	return UpgradeTree.run_stats(
 		Content.section("kaiju"), Content.species_def(SPECIES), UpgradeTree.new(Content.upgrades())
@@ -84,10 +100,8 @@ func _stills() -> void:
 	await _shot(cam, at, PARK_ZOOM, "green_park_s%d" % _stage)
 	var pad := CityGreenery.playground_pad(park, sim.city).get_center()
 	await _shot(cam, Vector3(pad.x, 0, pad.y), PLAYGROUND_ZOOM, "green_playground_s%d" % _stage)
-	var decor: CityDecor = city._decor
-	var trees: Array = decor.green["street_trees"]
-	var tree: Vector2 = trees[trees.size() >> 1]
-	await _shot(cam, Vector3(tree.x, 0, tree.y), AVENUE_ZOOM, "green_avenue_s%d" % _stage)
+	var kerb := _avenue_spot(sim.city)
+	await _shot(cam, Vector3(kerb.x, 0, kerb.y), AVENUE_ZOOM, "green_avenue_s%d" % _stage)
 	stage.queue_free()
 	await process_frame
 
