@@ -5,11 +5,13 @@ extends SceneTree
 ##
 ##   APPDATA=<scratch> godot --path . --resolution 3840x2160 --windowed \
 ##     --script tools/capture/capture_screens.gd -- --out=<dir> --species=reptilian
+## --looks=concrete,night: only the rampage start and mid shots, once per look (lighting A/B).
 
 const SETTLE := 20
 
 var _out := "user://screens"
 var _species := "reptilian"
+var _looks: PackedStringArray = []
 
 
 func _initialize() -> void:
@@ -18,12 +20,20 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg.begins_with("--species="):
 			_species = arg.substr(10)
+		elif arg.begins_with("--looks="):
+			_looks = arg.substr(8).split(",")
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	if not _looks.is_empty():
+		for look: String in _looks:
+			Content.set_look(look)
+			await _look_rampage(look)
+		quit()
+		return
 	var select := SpeciesSelect.new()
 	root.add_child(select)
 	await _frames(SETTLE)
@@ -54,6 +64,25 @@ func _run() -> void:
 	await _frames(SETTLE)
 	_shot("5_evolution_tree")
 	quit()
+
+
+## The same seeded rampage under one look, at the game camera: start and mid-fight.
+func _look_rampage(look: String) -> void:
+	var species := Content.species_def(_species)
+	var tree := UpgradeTree.new(Content.upgrades(), {"claws": 2, "hide": 2})
+	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
+	var rampage := Rampage.new()
+	rampage.setup(
+		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
+	)
+	rampage.set_autoplay(true)
+	root.add_child(rampage)
+	await _frames(SETTLE)
+	_shot("%s_start" % look)
+	await _frames(60 * 9)
+	_shot("%s_mid" % look)
+	rampage.queue_free()
+	await _frames(2)
 
 
 func _frames(n: int) -> void:
