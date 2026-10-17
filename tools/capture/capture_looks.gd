@@ -5,7 +5,8 @@ extends SceneTree
 ## over the bay to the far skyline, and a line-up of the three species. Needs a window
 ## (no --headless) and the untracked no-focus override.cfg. --street: only the default look's
 ## young shot plus street close-ups (civilians walking, civilians fleeing, a police blockade)
-## for the anatomy check.
+## for the anatomy check. --pan: only the evolved city shot, then the camera slides sideways for
+## PAN_FRAMES (a shimmer check for screen-space passes; record with --write-movie --fixed-fps 60).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_looks.gd -- --out=<dir> [--street]
@@ -24,9 +25,12 @@ const EAST_LOOK := Vector3(180, 0, 40)
 const EVOLVED := {"claws": 3, "hide": 3, "rage": 3, "stride": 2, "quake": 2, "evolve1": 1}
 const STREET_FRAMES := 3000  # most frames to wait for a police blockade to open fire
 const CLOSE := Vector3(1.6, 1.3, 1.6)  # close-up camera offset from its subject
+const PAN_FRAMES := 180  # 3 s at 60 fps
+const PAN_STEP := Vector3(0.04, 0, 0)  # camera slide per frame (world units)
 
 var _out := "user://looks"
 var _street := false
+var _pan := false
 
 
 func _initialize() -> void:
@@ -35,12 +39,18 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--street":
 			_street = true
+		elif arg == "--pan":
+			_pan = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	if _pan:
+		await _city_shot(str(Content.look()["id"]) + "_evolved", EVOLVED)
+		quit()
+		return
 	if _street:
 		await _city_shot(str(Content.look()["id"]) + "_young", {})
 		await _street_shots()
@@ -124,6 +134,10 @@ func _city_shot(id: String, levels: Dictionary, stage_at: Vector2 = STAGE_AT) ->
 			lifted += 1
 	print("debris above 2u: ", floating, " pieces still lifted: ", lifted)
 	print("perf ", id, " ", await _measure(), " voxels ", _count_voxels(stage))
+	if _pan:
+		for _f: int in PAN_FRAMES:
+			cam.position += PAN_STEP
+			await process_frame
 	stage.queue_free()
 	await process_frame
 
