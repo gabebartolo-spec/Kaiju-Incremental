@@ -22,8 +22,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    diff meanwhile. Syncs after Military AI / Rooftops (same files).
 4. Street-life civilian cap (~600 per city) after Perf's no-feel pass: perf numbers in agent-handoffs/performance.md.
 5. Octopus adult mesh FIX (10-11 arms, two eye pairs): only if the species plan (D-060) resumes.
-6. D-065 (b): 8-15% green lots means fewer buildings/chunks = slower demo (touches D-049). City session prepares a
-   table (0/8/12/15%: chunks per stage, pacing hours to evolve1 and tree end); ask him with it. (a) street trees,
+6. D-065 (b) green-lot share (reptilian pacing; table in notes no-empty-space/D-065b_green_lot_table.md):
+   0% evolve1 0.59 h / tree 4.46 h; 8% 0.64 / 4.88; 12% 0.67 / 5.08; 15% 0.64 / 5.18 (past 5 h). Recommend 8%. (a) street trees,
    park/yard bushes, flower beds, playground props (presentation, crushable) proceeds tonight.
 7. Landmarks (session "Kaiju: Landmark models", local_87d706ce...): board ...side-session-notes\local_9fac90d2...\
    landmarks\board1\landmark_board.png, six originals A stadium / B gate / C clock hall / D sky wheel / E spire /
