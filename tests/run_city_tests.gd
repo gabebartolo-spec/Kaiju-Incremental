@@ -11,6 +11,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
+	_check_calm_streets()
 
 
 ## The city reads as a real city, not a grid of isolated towers (director, 2026-10-16): lots
@@ -80,3 +81,23 @@ func _check_city_layout(layout: Array[Dictionary]) -> void:
 	for r: Rect2 in rects:
 		on_lot = on_lot or r.has_point(spawn)
 	check(not on_lot, "the kaiju starts in the street, not inside a building: %s" % spawn)
+
+
+## Calm streets (director, 2026-10-18: "remove the level crossing hellscape"): zebra crossings
+## only at the city.zebra_junctions junctions where two avenues cross, nearest the centre.
+func _check_calm_streets() -> void:
+	var cfg := Content.section("city")
+	var ground := CityGround.new(cfg)
+	var zebras := ground.zebra_junctions()
+	var nodes: Array[Vector2] = ground.plan["nodes"]
+	var far := 0.0
+	for n: int in zebras:
+		far = maxf(far, nodes[n].length())
+	check(
+		zebras.size() == Num.i(cfg["zebra_junctions"]) and far <= Num.f(cfg["half"]),
+		(
+			"zebras at %d junctions (tuning %d), furthest %.0f from the centre"
+			% [zebras.size(), Num.i(cfg["zebra_junctions"]), far]
+		)
+	)
+	ground.free()
