@@ -48,3 +48,7 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-17 | reptilian adult new | texture from A-pose ref | Texture | 351ad916 (texture) | 30 | yes | six-view PASS (lead): rep_croctitan_adult.glb, croctitan_six_view.png |
 | 2026-10-17 | reptilian adult arms | 2 Nano Banana edits: shorter, scaly arms | Image edit | image history 21:2x | 0 (free) | n/a | REJECTED (lead): length barely changed; edit 1 added spiked bracers |
 | 2026-10-17 | reptilian adult arms | GPT Image 2.5 redraw from the A-pose ref (screen capture), short T-rex arms x4 | Image gen | image history 21:31 | 0 (free) | n/a | short scaly arms PASS (lead); arms near the chest, tail shorter; board croctitan_arms_board.png -> director |
+| 2026-10-17 | reptilian adult arms | director picked B; 2 Nano Banana pose edits (arms clear, long tail) | Image edit | image history 21:3x | 0 (free) | n/a | REJECTED: tail curled forward / no change |
+| 2026-10-17 | reptilian adult arms | GPT Image 2.5 redraw of B: arms clear, long low tail x4 | Image gen | image history 21:50 | 0 (free) | n/a | variant 3 PASS (lead): long low tail, far arm clear, near arm close but separate |
+| 2026-10-17 | reptilian adult v2 | croc titan short arms, variant 3 | Smart Mesh P2.0 x4 | c8185166-665e-4573-90f1-a2e647b8f2c0 | 100 | yes | variant 1 PICKED (quad 6623 faces; arms clear, long tail) |
+| 2026-10-17 | reptilian adult v2 | texture | Texture | c8185166 (texture) | 30 | yes | textured, balance 19445; six-view after download |
