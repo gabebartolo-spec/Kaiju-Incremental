@@ -17,10 +17,13 @@ const FAN_SEGMENTS := 24
 const MOUTH_ALONG_JAW := 0.7
 ## How far under the struck street point the fan lies (the target sits 0.5 above the street).
 const FAN_LIFT := 0.3
-## Flash sizes (world units at body scale 1) and the strike light's peak energy, as #6 had them.
+## Flash sizes (world units at body scale 1), as #6 had them; the strike light's peak energy and
+## reach, kept short and soft so it warms the struck street without a hard-rimmed pool.
 const MUZZLE_SIZE := 4.5
 const STRIKE_SIZE := 3.5
-const LIGHT_ENERGY := 10.0
+const LIGHT_ENERGY := 6.0
+const LIGHT_RANGE := 7.0
+const LIGHT_FALLOFF := 2.0
 
 ## Signature Power's brightness for the next fire (1..fx.power_max).
 var power := 1.0
@@ -73,6 +76,7 @@ func _init(tint: Color, body_scale: float, tune: Dictionary) -> void:
 	_strike = _instance(_flare_quad(tint.lightened(0.4)))
 	_light = OmniLight3D.new()
 	_light.light_color = tint.lightened(0.3)
+	_light.omni_attenuation = LIGHT_FALLOFF
 	_light.visible = false
 	add_child(_light)
 
@@ -107,7 +111,7 @@ func fire(mouth: Vector3, hit: Vector3, span: Vector3, half_angle: float) -> voi
 	_strike.position = hit - dir * 0.6
 	(_strike.mesh as QuadMesh).size = Vector2.ONE * STRIKE_SIZE * _scale * power
 	_light.position = hit - dir * 1.5
-	_light.omni_range = 3.0 + LIGHT_ENERGY * power
+	_light.omni_range = LIGHT_RANGE * _scale
 	for mat: ShaderMaterial in [_core_mat, _fan_mat, _curtain_mat]:
 		mat.set_shader_parameter("power", power)
 	_set_progress(0.0)
@@ -172,8 +176,8 @@ func _place_core(mouth: Vector3) -> void:
 func _set_progress(v: float) -> void:
 	for mat: ShaderMaterial in [_core_mat, _fan_mat, _curtain_mat]:
 		mat.set_shader_parameter("progress", v)
-	var grow := smoothstep(0.0, _fade_in, v)
-	var struck := smoothstep(0.1, 0.25, v)  # the front reaches what it hits
+	var grow := clampf(v / _fade_in, 0.0, 1.0)  # linear: an even ramp over the fade-in
+	var struck := clampf((v - 0.04) / _fade_in, 0.0, 1.0)  # as the front reaches what it hits
 	_flare_fade(_muzzle, grow * (1.0 - smoothstep(0.1, 0.35, v)))
 	_flare_fade(_strike, struck * (1.0 - v))
 	_light.light_energy = LIGHT_ENERGY * power * struck * (1.0 - v)

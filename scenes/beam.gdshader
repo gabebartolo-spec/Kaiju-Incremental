@@ -33,8 +33,8 @@ void fragment() {
 		+ noise(vec2(UV.x * 23.0, along * 15.0 - TIME * 31.0)) * 0.35;
 	float flare = smoothstep(0.0, fade_in, progress);
 	float thin = 1.0 - smoothstep(0.45, 1.0, progress);
-	// The front races out over the first fifth of the life, then the whole beam holds.
-	float front = 1.0 - smoothstep(progress * 5.0 - 0.15, progress * 5.0, along);
+	// The front races out over the first tenth of the life, then the whole beam holds.
+	float front = 1.0 - smoothstep(progress * 10.0 - 0.15, progress * 10.0, along);
 	float tip = 1.0 - smoothstep(0.75, 1.0, along);
 	vec3 hot = mix(tint.rgb, vec3(1.0, 0.97, 0.85), core * core);
 	ALBEDO = hot * (1.6 + 1.4 * power) * (0.55 + 0.45 * stream);
