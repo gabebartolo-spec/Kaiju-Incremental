@@ -1,4 +1,4 @@
-# Game-flow handoff, 2026-10-17 04:15
+# Game-flow handoff, 2026-10-17 12:45
 ## State: blocked (GitHub Actions refuses jobs: billing / spending limit)
 
 ## Task
@@ -61,10 +61,20 @@ to fill). Auto-fix is on.
 - Autoload names (SaveSystem, Settings) don't resolve in class_name scripts compiled under
   `--script` test runs -> moved logic to static classes SaveFile/PlayerSettings.
 
+## Lead review round 1 (FIX): blank buttons/title/results values in CI shots
+Cause: display font was an LFS pointer on CI (not colour, not tween timing). Fixed: lfs: true in
+capture.yml, tests.yml (shards + self-test) and build.yml (the exported game shipped without
+it too). New flow check "the Kaiju Claw display font loads with glyphs": FAIL on the 129-byte
+pointer, PASS on the real 8944-byte font (probe run, 2026-10-17). Flow 67/67, floor 66 -> 67.
+capture_flow.gd takes --ui-scale=1.25 for the 4K still. Still owed: new 1080p + 4K stills.
+
 ## Blocker
 Since ~2026-10-16 17:07Z every Actions job (tests, lint, capture; also blender-tank) fails in
 3 s with "The job was not started because recent account payments have failed or your spending
-limit needs to be increased". Director's billing decision; told the lead. Nothing to fix in code.
+limit needs to be increased". Director is making the repo public to fix it (lead, 12:38); then dispatch:
+  ci_capture.sh --resolution=1920x1080 capture_flow.gd -- --species=reptilian
+  ci_capture.sh --resolution=3840x2160 capture_flow.gd -- --species=reptilian --ui-scale=1.25
+  ci_capture.sh --movie --fps=30 --resolution=1920x1080 capture_flow.gd -- --clip Nothing to fix in code.
 When Actions works: re-dispatch both captures (commands under Unfinished), re-run PR #14 checks.
 
 ## Open decisions

@@ -5,6 +5,7 @@ extends SceneTree
 ## on CI (tools/capture/ci_capture.sh), never windowed on the director's PC.
 ##
 ##   tools/capture/ci_capture.sh --resolution=1920x1080 capture_flow.gd -- --species=reptilian
+##   tools/capture/ci_capture.sh --resolution=3840x2160 capture_flow.gd -- --ui-scale=1.25
 ##   tools/capture/ci_capture.sh --movie --resolution=1920x1080 capture_flow.gd -- --clip
 
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -16,6 +17,8 @@ const CLIP_RAMPAGE_FRAMES := 150
 var _out := "user://flow"
 var _species := "reptilian"
 var _clip := false
+## Settings UI scale for the run (PlayerSettings.UI_SCALES), e.g. 1.25 at 3840x2160 for the TV.
+var _ui_scale := 1.0
 var _main: Node
 
 
@@ -27,12 +30,18 @@ func _initialize() -> void:
 			_species = arg.substr(10)
 		elif arg == "--clip":
 			_clip = true
+		elif arg.begins_with("--ui-scale="):
+			_ui_scale = float(arg.substr(11))
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	if _ui_scale != 1.0:
+		for _i: int in PlayerSettings.UI_SCALES.size():
+			if not is_equal_approx(PlayerSettings.ui_scale, _ui_scale):
+				PlayerSettings.next_ui_scale()
 	# A played save one evolution away, with a best to beat.
 	var save := SaveFile.new_save(_species)
 	save["runs"] = 3

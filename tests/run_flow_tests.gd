@@ -27,6 +27,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await FlowScreens.new(self, check).run()
+	_check_display_font()
 	await _check_species_select()
 	await _check_upgrade_screen()
 	await _check_rampage()
@@ -45,6 +46,17 @@ func run_checks() -> void:
 	)
 	await _check_branch_view(
 		"cephalopod", {"c_hydra": 2, "c_grab": 1, "c_ink": 1}, ["limb", "grab", "throw_land", "ink"]
+	)
+
+
+## The display font is a real font, not a Git LFS pointer: without the LFS checkout every
+## Kaiju Claw heading, button and results value draws nothing (PR #14's first CI captures).
+func _check_display_font() -> void:
+	var font := UiKit.font_for(UiKit.SIZE_HEAD) as FontFile
+	var bytes := FileAccess.get_file_as_bytes(UiKit.DISPLAY_FONT_PATH).size()
+	check(
+		font != null and bytes > 1024 and font.has_char("A".unicode_at(0)),
+		"the Kaiju Claw display font loads with glyphs (%d bytes on disk)" % bytes
 	)
 
 

@@ -96,6 +96,10 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
+          # and button draws nothing and the flow suite's font check fails.
+          lfs: true
 
       - name: Cache Godot
         id: godot-cache
@@ -138,6 +142,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The Kaiju Claw display fonts are LFS (3 files, ~26 KB): without them every heading
+          # and button draws nothing and the flow suite's font check fails.
+          lfs: true
 
       - name: Cache Godot
         id: godot-cache
