@@ -1,29 +1,16 @@
-# Lead handoff, 2026-10-17 20:20
-## State: working (D-047 Blender clips in game: blender-reptile building PR; Q2-Q4 still for the director)
+# Lead handoff, 2026-10-17 22:35
+## State: awaiting director (download OK for croc titan v2 GLB)
 
-## AFK shift (16:14)
-- Archived: blender-tank, species-powers, ci-captures (README saved 3a354a1), real-city, species-motion.
-- #14 r2 (run 39000008904) FIX sent: tree species band clipped, pause over tree, report over tree, striped
-  placeholder tower in reveal; stuck capture runs. Then fresh screen-critic, then the director.
-- #16 MERGED 13870b3; #20 Apex playability MERGED 414a290 (load 167->13 s via streamed meshing; towers
-  screen-door in front of kaiju). city-growth auto-archived on merge (unarchive for balance D / Apex height).
-  game-flow and voxel-skin told to sync #16/#20.
-- Croc titan r6 (cd70417) PASSED fresh motion-critic #3 (r4/r5 FIX: loop seams, 7 Hz shake layer, coil, rear;
-  18-frame spikes were codec GOP). r7 (d924b29) polish ACCEPTED. Board notes blender-reptile/director/
-  (render vs old in-game: not fair alone) -> pair with #19 in-game before/after, then table. blender-reptile idle.
-- Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
-  ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
-  voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
-- #19 MERGED 4f5afb5 (croc titan adult in game on Blender weights; foot ok, jaw shut cleaner). Critic: SHARED
-  procedural motion reads as a 5 m lizard, roar jaw drops ~vertical -> director Q: bring Blender clips in game.
-- #14 game flow MERGED de727f3 (r4 passed lead; r3 screen-critic items fixed; 5 nits accepted). Board updated 81230a3.
-  Director queue: side-session-notes/<lead>/lead/director_queue.md (Q1 ANSWERED 21:11 = D-047 yes, b7091c8; blender-reptile briefed: export clips + clip player,
-  walk phase by distance over procedural planting.
-  21:15 director: arms look odd/too long (measured: arm ~55-60% of height > leg). Arm board A 100/B 70/C 50% asked
-  (notes blender-reptile/arms/); clip export + skin re-export held until the pick; Q2 balance D,
-  Q3 Apex height, branch deletes). Open PRs left: #11, #8 (paused), #3 (to main, hold). Former r3 note: (tree text 24 px < 28, need-N overlap, side panel scroll, copy,
-  locked contrast, "blocks", HUD behind dialogs, reveal floor count/skip hint).
-- TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
+## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
+- Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
+  picked B; GPT redraw for arms-clear + long tail -> variant 3 -> Smart Mesh c8185166 (100) v1 6623 quads ->
+  texture (30). Spines: 3 free colour edits, director picked B charcoal -> re-texture from charcoal ref (30),
+  balance 19415. Boards: docs/captures/2026-10-17-reptile-design/croctitan_{arms,spine_colour}_board.png.
+- NEXT: download (ask), six-view, save ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb, send path to
+  blender-reptile: re-fit (refit.md), skin re-export, .kclip re-bake, swap kvox, open D-047 PR (held for it).
+- D-048 to log: short arms B + charcoal spines (director). Q2 balance D, Q3 Apex height still open.
+
+## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
