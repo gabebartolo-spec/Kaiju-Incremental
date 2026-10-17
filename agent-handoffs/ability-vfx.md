@@ -1,4 +1,4 @@
-# Ability VFX/SFX handoff, 2026-10-16 23:30
+# Ability VFX/SFX handoff, 2026-10-17 14:50
 ## State: paused by the director ("pause vfx until the locomotion is done"); PR #8 on HOLD, do not merge
 
 ## Task
