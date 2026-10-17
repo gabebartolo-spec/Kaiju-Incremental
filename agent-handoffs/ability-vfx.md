@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 08:20
-## State: running a check (CI on #33 aa453bc, #34 09749f2; auto-fix ON). Next: (d) heli gun + crash
+# Ability VFX/SFX handoff, 2026-10-18 09:10
+## State: running a check (CI on #33 aa453bc, #34 31093be, #39 c9edc86; auto-fix ON). Asked the lead for the next job
 
 ## Who
 Lead is "Game demo planning" / "LEAD", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -22,17 +22,22 @@ Say "awaiting lead" only after asking for the next job with options (memory-shar
   - Evidence (shared notes side-session-notes/local_9fac90d2.../sfx-bus/):
     - settings_1080.png, settings_4k_ui125.png
     - ui_sounds.mp4 (real input: 3 clicks, confirm, deny)
-- **#34** claude/army-sfx → base claude/sfx-bus (stacked), head 09749f2, flow 112, D-064 (menu sounds + slider shipped) in its Board and log.
+- **#34** claude/army-sfx → base claude/sfx-bus (stacked), head 31093be (Sfx.watch keeps rampage.gd at 400 lines), flow 112, D-064 (menu sounds + slider shipped) in its Board and log.
   - tank_fire, shell_hit (unarmoured hits), heli_rotor loop.
   - Sfx.listener / play_at / rotors; tuning near_distance 80, far_floor_db -18.
   - Clips: army-sfx/tank_fire_shell_hit.mp4 (capture_sfx_clips.gd -- --army) and heli_rotor.mp4.
   - When #33 merges, retarget #34 to claude/look-options (`gh pr edit 34 --base claude/look-options`) and
     merge look-options in.
 
+- **#39** claude/heli-sfx → base claude/army-sfx (stacked), head c9edc86, flow 112.
+  - heli_gun and heli_crash via PowersView.sfx; Sfx.watch(camera, powers).
+  - Clip: army-sfx/heli_gun_crash.mp4.
+  - Retarget it as #33 and #34 land.
+
 ## Next
-- (d) Heli gun burst (PowersView._heli_fired) and heli crash (_heli_down), on top of claude/army-sfx.
-  Use Sfx.play_at, add the build_sfx.py sounds plus provenance rows, add flow checks, and record a clip.
+- Ask the lead for the next job (offered: footstep variety per surface, a Music bus track, Sonniss roars).
 - Every sync: check `git log origin/claude/look-options -1` first. Floors are the real counts the suite prints.
+- Run gdlint across the whole tree before a push. rampage.gd is at the 400-line cap; a merge can push it over.
 
 ## How-to
 - Godot: /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
