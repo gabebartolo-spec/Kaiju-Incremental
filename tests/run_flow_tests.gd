@@ -9,6 +9,7 @@ const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
+const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
 const UPGRADED := {
 	"claws": 3,
@@ -36,6 +37,7 @@ func run_checks() -> void:
 	await _check_species_select()
 	await _check_upgrade_screen()
 	await _check_rampage()
+	_check_stomp_timing()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})
 	await _check_powers("cephalopod", "lash", {})
@@ -173,6 +175,11 @@ func _check_rampage() -> void:
 		results.size() == 1 and Num.i(results[0]["toppled"]) > 0,
 		"an autoplayed rampage topples buildings: %s" % [results]
 	)
+	var heard := rampage.sfx.played
+	check(
+		heard.has("footstep") and heard.has("collapse"),
+		"the kaiju's feet and falling buildings make sounds: %s" % [heard.slice(0, 12)]
+	)
 	rampage.queue_free()
 	await process_frame
 
@@ -192,6 +199,8 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
 	var played := rampage.ability_fx.played
+	var heard := rampage.sfx.played
+	var cues: Array[String] = ["stomp_2", "stomp_crack", "ready", "deflect", "regen_loop"]
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
@@ -200,16 +209,48 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		await physics_frame
 		frames += 1
 		if want.all(func(k: String) -> bool: return played.has(k)):
-			break
+			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
+				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
+	var sound: String = SIGNATURE_SOUND[kind]
+	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
 	else:
 		for k: String in ["cracks", "ready", "deflect", "regen"]:
 			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
+		check(
+			cues.all(func(c: String) -> bool: return heard.has(c)),
+			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]
+		)
 	rampage.queue_free()
 	await process_frame
+
+
+## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
+## plays its tier and the ground crack instead of a footstep; steps pitch by size tier.
+func _check_stomp_timing() -> void:
+	var sfx := Sfx.new(Seeds.make("sfx", 0))
+	root.add_child(sfx)
+	sfx.stomp(2.0, true)
+	var early := sfx.played.duplicate()
+	sfx.footstep(0.7)
+	check(
+		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
+		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
+	)
+	var pitches: Array[float] = []
+	for tier: int in [1, 4]:
+		sfx.set_size_tier(tier)
+		sfx._process(1.0)  # past footstep_min_interval
+		sfx.footstep(1.0)
+		pitches.append(sfx.last_pitch())
+	check(
+		pitches[0] > pitches[1] * 1.2,
+		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
+	)
+	sfx.free()
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every
