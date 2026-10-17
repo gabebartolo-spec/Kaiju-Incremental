@@ -1,5 +1,5 @@
 # City-growth handoff, 2026-10-17 12:45
-## State: awaiting lead (PR #16 review; stills complete; balance + Apex height for the director)
+## State: awaiting lead (PR #16 fog fix pushed; director questions tabled)
 
 ## Task
 D-039: the city grows with each evolution + economy re-tuned for 3-5 h active play (scripted
@@ -55,12 +55,12 @@ docs/captures/2026-10-17-city-growth/.
 - Species balance (insect ~2x) is for the lead/director after this PR; not fixed here.
 
 ## Running jobs
-None. Stages 3-4 rendered on the GPU 14:56-15:07 (lead-approved, League closed; override.cfg
-deleted, no Godot left). Stills committed; PR #16 body has the stills, the bench (Apex view
-build 167-184 s = load red flag; GPU 25-27 ms) and a director taste question (Apex Titan ~28
-floors among 43-48 floor towers at entry). Balance proposal D with the lead, not applied.
-Follow-ups for the lead (not in #16): incremental/threaded city build + far-block stand-ins;
-stage-scaled fog.
+None. Lead review fix done: stage-scaled fog (growth.stages city.fog_scale 1/0.6/0.34/0.2 and
+far_haze; CityView fog_density x fog_scale; growth check -> floor 24). All 12 stills (aerial,
+kaiju, game camera) + board_fog_before_after.png committed; stages 1-2 CI (39006401376,
+39006406352), 3-4 GPU (override.cfg deleted, no Godot left). Load note for the lead's
+follow-up: views already threaded; prime suspect BuildingView.party_walls O(n^2) on the main
+thread (5.9M pairs at Apex). Balance D and the Apex height wait for the director.
 
 ## Findings for the lead
 - A seeded generator that draws a number only on some branches shifts every later draw when a
