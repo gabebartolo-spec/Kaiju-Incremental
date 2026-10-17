@@ -4,7 +4,8 @@ extends "res://tests/lib/runner.gd"
 ## file for another skeleton is refused, the walk's phase follows the distance travelled, a
 ## standing heading change turns on the spot, the roar opens the jaw and ends, no bone goes NaN,
 ## a curve while walking swings the tail out and it settles, the clips (not the procedural tail)
-## own the tail bones, and every other kaiju keeps its procedural gait. Fixed 60 Hz steps, no
+## own the tail bones, the roar's tail slam lands as one footfall, and every other kaiju keeps its
+## procedural gait. Fixed 60 Hz steps, no
 ## clock, no randomness.
 ##   godot --headless --path . --script tests/run_clips_tests.gd
 ## Seeded by design: nothing here draws random numbers (the gaits seed their own twitches).
@@ -24,6 +25,7 @@ func run_checks() -> void:
 	await _check_turn_and_roar()
 	await _check_tail_lag()
 	await _check_tail_owner()
+	await _check_tail_slam()
 
 
 func _model(species: String, stage: String) -> KaijuModel:
@@ -226,6 +228,30 @@ func _check_tail_owner() -> void:
 			% [worst, most, BipedSwing.TAIL_BEND_MAX]
 		)
 	)
+	kaiju.queue_free()
+	await process_frame
+
+
+## The roar's tail slam lands once, as a heavy footfall at the tail tip on the street (the scene's
+## dust, ring and camera dip), not as damage.
+func _check_tail_slam() -> void:
+	var kaiju := _model("reptilian", "adult")
+	var rig := _rig_of(kaiju)
+	var slams: Array[Vector3] = []
+	rig.foot_planted.connect(
+		func(side: String, _strength: float, at: Vector3) -> void:
+			if side == "tail":
+				slams.append(at)
+	)
+	for frame: int in 30:
+		kaiju.animate(DT, 0.0)
+	kaiju.roar()
+	for frame: int in 420:
+		kaiju.animate(DT, 0.0)
+	var behind := (
+		slams.size() == 1 and (slams[0] - rig.global_position).length() > kaiju.hip_height()
+	)
+	check(behind, "the roar's tail slam lands once, behind the kaiju (%d slams)" % slams.size())
 	kaiju.queue_free()
 	await process_frame
 

@@ -14,12 +14,16 @@ const TURN_TRIGGER := 0.6
 ## Frames of lead-in kept before the part of a turn clip that carries its yaw, and of settle
 ## after it (the tail's whip settles about half a second after the body stops).
 const TURN_PAD := 6
-const TURN_SETTLE := 12
+const TURN_SETTLE := 24
 ## How fast a lifted foot's lag behind its clip path dies out (1/s): gone before it lands.
 const LAG_DECAY := 10.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
+## The roar clip's frame where the tail tip hits the street (motion_test TAIL_SLAM), and how hard
+## the hit lands as a footfall (dust, ring, camera dip; presentation only, no damage).
+const ROAR_SLAM_FRAME := 47.0
+const TAIL_SLAM_STRENGTH := 1.6
 ## A planted foot that ends this far from its clip spot (strides), or on a straight leg (fraction
 ## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip.
 const RESTEP_GAP := 0.3
@@ -31,8 +35,8 @@ const RESTEP_LIFT := 0.06
 ## ratio as the turn clips' whip (motion_test TAIL_SPRING); per-bone gain base -> tip (TAIL_WHIP),
 ## how long the swing takes to reach each next bone (s), and the swing it eases towards and never
 ## passes (rad; the sim turns faster than the clips, so a sharp turn would curl the tail too far).
-const TAIL_SPRING := Vector2(12.0, 0.35)
-const TAIL_GAIN := Vector2(5.0, 6.4)
+const TAIL_SPRING := Vector2(14.0, 0.25)
+const TAIL_GAIN := Vector2(6.5, 8.3)
 const TAIL_DELAY := 0.021
 const TAIL_MAX := 0.008
 
@@ -67,6 +71,7 @@ var _tail_at: Array[float] = []
 var _last_body_yaw := 0.0
 var _last_yaw_rate := 0.0
 var _tail_primed := false
+var _tail_tip := ""  # the last tail bone (its tail is the tip)
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -89,17 +94,20 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
 			_tail_at.append(0.0)
+			_tail_tip = bone_name
 
 
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
+	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
 	_apply(pose, dt)
+	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
 	_measure_slide()
 
@@ -143,7 +151,7 @@ func _choose(dt: float) -> void:
 	if state == "walk":
 		var cycles := speed * dt / maxf(stride(), 0.0001)
 		walk_cycles += cycles
-		clip_time += cycles * clips.frames_of("walk")
+		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
 	else:
 		clip_time += dt * clips.fps
 	_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
@@ -215,6 +223,14 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 			q = Quaternion(Vector3.UP, bend) * q
 		var offset := pose.offset * clips.rig_scale if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
+
+
+## The roar's tail slam lands as a heavy footfall where the tip meets the street.
+func _slam_tail(roar_was: float) -> void:
+	if state == "roar" and roar_was < ROAR_SLAM_FRAME and clip_time >= ROAR_SLAM_FRAME:
+		var tip := rig.tail_world(_tail_tip)
+		tip.y = rig.global_position.y
+		rig.foot_planted.emit("tail", TAIL_SLAM_STRENGTH, tip)
 
 
 ## The tail lags the body's turns: the spring is pushed by the body's turning acceleration (not

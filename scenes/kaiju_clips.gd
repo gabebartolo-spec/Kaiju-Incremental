@@ -33,6 +33,7 @@ var body_height_m := 100.0
 var rig_scale := 1.0
 var rig_origin := Vector3.ZERO
 var _clips: Dictionary = {}  # name -> Vector3i(first frame, frames, loops 0/1)
+var _cycles: Dictionary = {}  # name -> walk cycles the clip holds (1 unless the file says)
 var _rest_heads: Array[Vector3] = []
 var _raw := PackedByteArray()
 var _data_at := 0
@@ -79,6 +80,8 @@ func _load(header: Dictionary, raw: PackedByteArray, data_at: int) -> bool:
 		var first := Num.i(c["first"])
 		var frames := Num.i(c["frames"])
 		_clips[str(c["name"])] = Vector3i(first, frames, 1 if c.get("loop", false) else 0)
+		var cycles: float = c.get("cycles", 1.0)
+		_cycles[str(c["name"])] = maxi(1, roundi(cycles))
 		total = maxi(total, first + frames)
 	_raw = raw
 	_data_at = data_at
@@ -97,6 +100,11 @@ func has_clip(clip: String) -> bool:
 func frames_of(clip: String) -> int:
 	var c: Vector3i = _clips[clip]
 	return c.y
+
+
+## Walk cycles (strides) the clip holds: its frames per stride is frames_of / cycles_of.
+func cycles_of(clip: String) -> int:
+	return _cycles.get(clip, 1)
 
 
 func loops(clip: String) -> bool:

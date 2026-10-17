@@ -645,16 +645,17 @@ def foot_world(clip, side, f, P):
 
 
 # Tail motion (degrees per joint, base -> tip: base + extra * k, k = 0 at the root, 1 at the tip).
-TAIL_WALK = (4.0, 10.0)  # the walk's side-to-side S-wave
+TAIL_WALK = (2.0, 5.0)  # the walk's side-to-side S-wave
+TAIL_WALK_PERIOD = 72  # frames per tail wave: one and a half walk cycles (a heavy tail, not an eel)
 TAIL_IDLE = (1.2, 0.6)  # the standing sway (72-frame period; at 0.6 in the roar)
 TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
-TAIL_WHIP = (5.0, 6.4)  # turn whip per unit of tail_whip()
+TAIL_WHIP = (6.5, 8.3)  # turn whip per unit of tail_whip()
 TAIL_WHIP_DELAY = 0.5  # frames the whip takes per joint
-TAIL_LIFT = (5.0, -18.0)  # roar: the lift's arc per joint (root rises, mid curves up, tip trails)
+TAIL_LIFT = (6.0, -9.0)  # roar: the lift's arc per joint (root rises, mid curves up, tip trails)
 TAIL_SLAM = (1.15, 0.85)  # roar: the slam per joint as it lands, then where it rests, x (0.2 + 1.6 k)
 TAIL_TRAIL = 12.0  # roar: how far the outer tail curls up as the slam starts (per joint, x k)
 TAIL_SLAM_DELAY = 0.8  # frames the lift and the slam take per joint (the tip lands after the mid-tail)
-TAIL_SPRING = (12.0, 0.35)  # the tail's natural frequency (rad/s) and damping ratio
+TAIL_SPRING = (14.0, 0.25)  # the tail's natural frequency (rad/s) and damping ratio
 _WHIP = {}
 
 
@@ -772,7 +773,7 @@ def pose_frame(clip, f, P):
         k = i / (TAIL_BONES - 1)
         settle_t = 1 - 0.65 * ramp(110, 140, f) if clip == "turn" else 1.0
         walk_yaw = TAIL_WALK[0] + TAIL_WALK[1] * k
-        walk_yaw *= math.cos(w - TAIL_LAG * i) * gait * settle_t
+        walk_yaw *= math.cos(2 * math.pi * f / TAIL_WALK_PERIOD - math.pi * DUTY - TAIL_LAG * i) * gait * settle_t
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
         turn_yaw = (TAIL_WHIP[0] + TAIL_WHIP[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
         roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3) - 1.2 * look * (i >= 3)
@@ -1259,7 +1260,7 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
               f"tail{i}" for i in range(9)] + ["jaw"]
 # Clips the game plays: name -> (motion_test clip, frames kept, loops). The walk keeps one 48-frame
 # cycle and the idle one 72-frame breath (both loop seamlessly); turn_right is turn_left mirrored.
-GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", int(T), True), ("turn_left", "turn", FRAMES, False),
+GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", FRAMES, True), ("turn_left", "turn", FRAMES, False),
               ("turn_right", "turn", FRAMES, False), ("roar", "roar", FRAMES, False)]
 Q16 = 32767.0  # int16 scale of a quaternion component (positions are stored in cm)
 
@@ -1376,7 +1377,8 @@ def clips_export():
             body += struct.pack("<h", int(round(yaw * 100)))
             body += struct.pack("<2h", *cm((travel.x, travel.z)))
             body += struct.pack("<BB", (1 if contact[0] else 0) | (2 if contact[1] else 0), 0)
-        table.append({"name": name, "first": start, "frames": n, "loop": loop})
+        table.append({"name": name, "first": start, "frames": n, "loop": loop,
+                      "cycles": round(n / T) if clip == "walk" else 1})
         start += n
     header = json.dumps({"version": 1, "fps": FPS, "frame_bytes": 242, "bones": GAME_BONES,
                          "gathers": gathers, "rest_heads_m": heads, "stride_m": round(D, 4),
