@@ -1,5 +1,5 @@
-# blender-tank handoff (2026-10-17 12:45)
-State: available (lead QA of #17/#18 pending; captures wait for CI to return)
+# blender-tank handoff (2026-10-17 12:55)
+State: running a check (CI capture of tanks firing + helis, heli branch)
 
 ## Task
 Director 2026-10-17 "make a tank in blender"; D-042 picked 2x real size, desert tan. Lead brief: wire the
@@ -37,11 +37,12 @@ the same way (spinning main + tail rotor nodes) as a second PR.
   floods font errors and times out.
 - GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
 
-## Next (lead, 12:42)
-- Heli stays fixed 2x, no growth multiplier: settled (as in #18).
-- When CI returns (repo going public): merge origin/claude/look-options (LFS fix 30682ae) into both
-  branches, then dispatch capture_tanks.gd (reptilian: shot; cephalopod + c_grab: grab/throw) and a
-  heli capture; send stills to the lead.
+## Next (lead, 12:49)
+- Director: "tank and heli models look great". Repo public, Actions back; lead reran #17/#18 checks.
+- look-options merged into both branches; capture_tanks.gd now wades into buildings for 40 s.
+- Capture dispatched on claude/blender-heli with --movie (reptilian). Send stills + clip to the lead.
+- No octopus-grab capture: locomotion paused (D-044).
+- Worktree is checked out on claude/blender-heli.
 
 ## Running jobs
-None. Blender closed.
+CI capture (capture.yml, ci_capture.sh --movie --ref=claude/blender-heli) -> scratchpad ci2/. Blender closed.
