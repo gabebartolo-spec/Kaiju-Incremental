@@ -1,5 +1,5 @@
-# Game-flow handoff, 2026-10-17 18:20
-## State: awaiting lead (round-2 FIX sent with stills, clip, head fc2ddba)
+# Game-flow handoff, 2026-10-17 19:10
+## State: running a check (round-3 FIX captures on CI)
 
 ## Task
 Make the loop around the rampage feel finished (brief from lead session local_9fac90d2):
@@ -11,7 +11,7 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4, pushed at fc2ddba (look-options 414a290 merged: #16 city growth and
+claude/game-flow-edfba4, pushed at 50a93f4 (look-options 414a290 merged: #16 city growth and
 #20 Apex streaming; rampage.gd 398/400, rampage_sim.gd 399/400) (origin/claude/look-options merged in; rampage.gd
 trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
@@ -65,6 +65,15 @@ trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Dra
    tests/lib/flow_layout.gd (400-line cap). Clip was 25 s at 1080p -> 1280x720 window + cuts.
 Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
 
+## Lead review 3 (FIX, 18:17) -> done in 50a93f4
+Tree = scenes/tree_area.gd (fills the space, never scaled; UpgradeNode.place picks 22..18 px
+so words and lines fit); "need N" in side panel; side panel two-column stats, no scroll;
+arrows drawn (UiKit.arrow, fonts lack U+2192); copy fixed; locked text lighter, no LOCKED;
+report "Tallest tower toppled" in floors (Collapse.tallest_topple; save key renamed), every
+row shows its best; HUD hides behind pause/report; reveal hint bigger, off the edge. Tower is
+14 floors as stated (13 window rows + ground shopfront; crop in the reply). Flow 76.
+Then: QA captures, add to docs/captures/2026-10-17-game-flow/, send lead head SHA.
+
 ## Findings for the lead (lead decides what gets recorded)
 - Pull LFS in every new worktree before a test run (proven: 900 s timeout -> 51 s).
 - Every CI capture before capture.yml's `lfs: true` has blank Kaiju Claw text.
@@ -73,4 +82,4 @@ Then: send the lead stills + clip + head SHA. Do not merge; Auto-fix off (lead).
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-None.
+- CI 4K insectoid --ui-only 39013803405 -> %TEMP%/gf_cap6/4k; clip 39013828752 -> %TEMP%/gf_cap6/clip.
