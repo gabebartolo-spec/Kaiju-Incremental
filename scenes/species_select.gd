@@ -7,11 +7,13 @@ signal chosen(species_id: String)
 
 ## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
 const PREVIEW_SIZE := Vector2i(440, 270)
-## The preview camera's place and aim for a compact kaiju, and how much of the card's width a wide
-## one (a long tail) may fill at its widest as it turns.
-const PREVIEW_FROM := Vector3(0, 6.5, 12.5)
-const PREVIEW_AT := Vector3(0, 3.6, 0)
+## The preview camera looks down this way (the old fixed camera's view) through a fairly long lens
+## (deg; a near limb swinging toward a wide lens would push the kaiju small); the turning kaiju
+## fills at most this much of the card's width and keeps this margin (of the height) top and bottom.
+const PREVIEW_VIEW := Vector3(0, -2.9, -12.5)
+const PREVIEW_FOV := 30.0
 const PREVIEW_FILL := 0.92
+const PREVIEW_MARGIN := 0.06
 ## Height bands the skin's reach is measured in (the fit's resolution).
 const PROFILE_BANDS := 8
 const COMPARE: Array[Array] = [
@@ -54,22 +56,27 @@ func _process(delta: float) -> void:
 		model.animate(delta, 0.3)
 
 
-## Frames the preview: the old fixed camera (it suits a compact kaiju), standing back along the
-## same view only when the turning kaiju is wider than the card: its skin's farthest reach from the
-## spin axis in each height band (the tail tip of a long tail) turned through every angle.
+## Frames the preview on everything the turning kaiju sweeps through (its skin's farthest reach
+## from the spin axis in each height band, turned through every angle): aimed at its middle and
+## stood back along the old camera's view until it fits the card's width and, with a margin top
+## and bottom, its height, so no species leaves its card as it turns (a long tail, a tall head).
 func _frame(cam: Camera3D, model: KaijuModel) -> void:
-	var look := (PREVIEW_AT - PREVIEW_FROM).normalized()
+	var profile := _profile(model)
+	var look := PREVIEW_VIEW.normalized()
 	var up := look.cross(Vector3.UP).cross(look).normalized()
 	var right := look.cross(up)
+	var tan_v := tan(deg_to_rad(cam.fov) * 0.5) * (1.0 - 2.0 * PREVIEW_MARGIN)
 	var tan_h := tan(deg_to_rad(cam.fov) * 0.5) * PREVIEW_FILL * PREVIEW_SIZE.x / PREVIEW_SIZE.y
-	var back := (PREVIEW_AT - PREVIEW_FROM).length()
-	for ring: Vector2 in _profile(model):
+	var aim := Vector3(0, (profile[0].y + profile[profile.size() - 1].y) * 0.5, 0)
+	var back := 0.0
+	for ring: Vector2 in profile:
 		for k: int in 16:
 			var a := TAU * k / 16.0
-			var r := Vector3(cos(a) * ring.x, ring.y, sin(a) * ring.x) - PREVIEW_AT
-			back = maxf(back, absf(r.dot(right)) / tan_h - r.dot(look))
-	cam.position = model.position + PREVIEW_AT - look * back
-	cam.look_at(model.position + PREVIEW_AT)
+			var r := Vector3(cos(a) * ring.x, ring.y, sin(a) * ring.x) - aim
+			var fit := maxf(absf(r.dot(up)) / tan_v, absf(r.dot(right)) / tan_h)
+			back = maxf(back, fit - r.dot(look))
+	cam.position = model.position + aim - look * back
+	cam.look_at(model.position + aim)
 
 
 ## The skin's reach from the spin axis (x) at the bottom and top of PROFILE_BANDS height bands (y),
@@ -124,7 +131,7 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	model.rotation.y = PI * 0.75
 	_models.append(model)
 	var cam := Camera3D.new()
-	cam.fov = 45.0
+	cam.fov = PREVIEW_FOV
 	viewport.add_child(cam)
 	_frame(cam, model)
 	var sun := DirectionalLight3D.new()
