@@ -1,6 +1,10 @@
-# blender-reptile handoff, 2026-10-18 03:45
-## State: running a check (b2vwtf0yr: sequential CI at 4a35fed -> ci5/select4k (--only=select),
-## ci5/after_side, ci5/before_game; one at a time - concurrent runs hit the 3000 s timeout)
+# blender-reptile handoff, 2026-10-18 04:00
+## State: awaiting lead (PR #22 open, head a88a4d4, sent to the new lead "Game demo planning"
+## local_106fc100-d2a4-4091-bc9a-4bda31df13ac, which owns QA since 03:56; old lead = Tripo only).
+## Running: b2vwtf0yr chain -> ci5/after_side (39050777699), then ci5/before_game. When they land:
+## cut 3 s side clips walk/turn/roar to notes d047/, update PR #22 body (gh pr edit 22 --body-file
+## scratch ev/pr_body.md; replace 'pending'/'running' lines). Auto-fix shows ON (set in the app).
+## Open lead decision: cards full spin (as pushed, small) vs sway +-40 deg (recommended).
 ## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
 ## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
