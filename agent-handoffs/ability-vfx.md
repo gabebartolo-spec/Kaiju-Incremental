@@ -58,4 +58,5 @@ ea8eae8). Local commit 3d7f5a2 + this handoff, NOT pushed yet. No PR yet.
 - Not done: creature roars (Sonniss); Freesound needs a login.
 
 ## Running jobs
-None. No override.cfg left. Last action (2026-10-17 15:55): merged look-options again; the camera conflict resolved as the base's focus-follow camera + my BreathCamera offset. Floors smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 30; all green.
+None. No override.cfg left. Auto-fix on PR #8 turned OFF (lead, 2026-10-17 15:57): do not
+resolve conflicts while on hold; #8 may sit conflicted; sync once on restart. Last action (2026-10-17 15:55): merged look-options again; the camera conflict resolved as the base's focus-follow camera + my BreathCamera offset. Floors smoke 23, sim 39, powers 24, tentacles 17, city 5, flow 30; all green.
