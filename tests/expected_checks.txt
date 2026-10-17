@@ -6,4 +6,4 @@ sim 39
 powers 24
 tentacles 17
 city 5
-flow 67
+flow 70

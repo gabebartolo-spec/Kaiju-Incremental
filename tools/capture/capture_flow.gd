@@ -5,7 +5,9 @@ extends SceneTree
 ## on CI (tools/capture/ci_capture.sh), never windowed on the director's PC.
 ##
 ##   tools/capture/ci_capture.sh --resolution=1920x1080 capture_flow.gd -- --species=reptilian
-##   tools/capture/ci_capture.sh --resolution=3840x2160 capture_flow.gd -- --ui-scale=1.25
+##   tools/capture/ci_capture.sh --resolution=3840x2160 capture_flow.gd -- --ui-scale=1.25 --ui-only
+## --ui-only skips the rampage (the city at 4K on a software GPU outlasts CI's time limit) and
+## shows the results and pause screens over a plain backdrop instead.
 ##   tools/capture/ci_capture.sh --movie --resolution=1920x1080 capture_flow.gd -- --clip
 
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -19,6 +21,7 @@ var _species := "reptilian"
 var _clip := false
 ## Settings UI scale for the run (PlayerSettings.UI_SCALES), e.g. 1.25 at 3840x2160 for the TV.
 var _ui_scale := 1.0
+var _ui_only := false
 var _main: Node
 
 
@@ -30,6 +33,8 @@ func _initialize() -> void:
 			_species = arg.substr(10)
 		elif arg == "--clip":
 			_clip = true
+		elif arg == "--ui-only":
+			_ui_only = true
 		elif arg.begins_with("--ui-scale="):
 			_ui_scale = float(arg.substr(11))
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -38,6 +43,9 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
+	# One sim step per rendered frame: a slow software render must not fast-forward the fight
+	# (8 steps a frame killed the kaiju before the pause shot in run 38992440820).
+	Engine.max_physics_steps_per_frame = 1
 	if _ui_scale != 1.0:
 		for _i: int in PlayerSettings.UI_SCALES.size():
 			if not is_equal_approx(PlayerSettings.ui_scale, _ui_scale):
@@ -61,12 +69,21 @@ func _run() -> void:
 		var settings: SettingsMenu = title.find_children("*", "SettingsMenu", true, false)[0]
 		settings.close()
 		await _frames(SETTLE)
+		var select := SpeciesSelect.new()
+		root.add_child(select)
+		await _frames(SETTLE)
+		_shot("02b_species_select")
+		select.queue_free()
+		await _frames(2)
 	_press(_screen(), "CONTINUE")
 	await _frames(SETTLE)
 	var tree := _screen() as UpgradeScreen
 	tree.node_button("evolve1").grab_focus()
 	await _frames(SETTLE)
 	_shot("03_evolution_tree")
+	if _ui_only:
+		await _ui_screens(tree)
+		return
 	tree.start_pressed.emit()
 	await _frames(2)
 	var rampage := _screen() as Rampage
@@ -106,6 +123,36 @@ func _run() -> void:
 	await _frames(EvolutionReveal.END_FRAME - EvolutionReveal.SWAP_FRAME)
 	await _frames(SETTLE)
 	_shot("11_tree_after")
+	SaveFile.delete_save()
+	quit()
+
+
+## The rampage's overlays without the city (for --ui-only), then the reveal from the tree.
+func _ui_screens(tree: UpgradeScreen) -> void:
+	var pause := PauseMenu.new()
+	root.add_child(pause)
+	await _frames(SETTLE)
+	_shot("05_pause")
+	pause.queue_free()
+	var result := {
+		"rubble": 92,
+		"destruction": 0.06,
+		"toppled": 2,
+		"biggest_fall": 72,
+		"civilians": 17,
+		"tanks": 1,
+		"helis": 0,
+		"reason": "time"
+	}
+	var results := ResultsScreen.new(result, {"rubble": 60.0, "tanks": 1.0})
+	root.add_child(results)
+	results.skip()
+	await _frames(SETTLE)
+	_shot("08_results")
+	results.queue_free()
+	tree.node_button("evolve1").pressed.emit()
+	await _frames(EvolutionReveal.SWAP_FRAME + EvolutionReveal.GROW_FRAMES + 30)
+	_shot("10_reveal_after")
 	SaveFile.delete_save()
 	quit()
 

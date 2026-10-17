@@ -14,6 +14,9 @@ const CELL := Vector2(172, 128)
 const BRANCH_ROW := 5
 const COLUMNS := 8
 const BRANCH_TINT_ALPHA := 0.18
+## The tree's width: the last column's capstone and a small edge, so at 1080p (100%) it fits
+## beside the side panel without a scrollbar; larger UI scales scroll.
+const AREA_WIDTH := CELL.x * (COLUMNS - 1) + UpgradeNode.CAPSTONE_SIZE.x + 4
 ## Stat, how it reads in play, format ("inv" shows 1/value per second).
 const STAT_LINES: Array[Array] = [
 	["hp", "Health", "%d"],
@@ -110,12 +113,12 @@ func _ready() -> void:
 func _build_tree_area() -> Control:
 	var area := _TreeLines.new()
 	area.screen = self
-	area.custom_minimum_size = Vector2(CELL.x * COLUMNS + 48, CELL.y * (BRANCH_ROW + 1) + 72)
+	area.custom_minimum_size = Vector2(AREA_WIDTH, CELL.y * (BRANCH_ROW + 1) + 72)
 	var band := ColorRect.new()
 	var colors: Dictionary = species["colors"]
 	band.color = Color(Color(str(colors["eye"])), BRANCH_TINT_ALPHA)
 	band.position = Vector2(-8, BRANCH_ROW * CELL.y - 14)
-	band.size = Vector2(CELL.x * COLUMNS + 48, UpgradeNode.CAPSTONE_SIZE.y + 28)
+	band.size = Vector2(AREA_WIDTH + 8, UpgradeNode.CAPSTONE_SIZE.y + 28)
 	area.add_child(band)
 	var branch := UiKit.label(
 		(
@@ -147,7 +150,6 @@ func _build_side() -> Control:
 	side.custom_minimum_size = Vector2(420, 0)
 	side.add_theme_constant_override("separation", 14)
 	var info := UiKit.panel()
-	info.custom_minimum_size = Vector2(0, 330)
 	side.add_child(info)
 	var info_col := VBoxContainer.new()
 	info.add_child(info_col)
@@ -162,9 +164,15 @@ func _build_side() -> Control:
 	_info_status = UiKit.label("", UiKit.SIZE_BODY, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
+	# The stats scroll when the screen is short (UI scale 125% on a TV), so RAMPAGE stays on screen.
+	var stats_scroll := ScrollContainer.new()
+	stats_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stats_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side.add_child(stats_scroll)
 	var stats_panel := UiKit.panel()
+	stats_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stats_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	side.add_child(stats_panel)
+	stats_scroll.add_child(stats_panel)
 	_stats_label = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
 	stats_panel.add_child(_stats_label)
 	var go := UiKit.button("RAMPAGE  >", UiKit.SIZE_HEAD)

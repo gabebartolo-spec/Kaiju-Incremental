@@ -9,6 +9,8 @@ const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
 const LEFT_OVER := 100
+## The director's TV (D-027).
+const TV_SIZE := Vector2i(3840, 2160)
 
 var t: SceneTree
 var check: Callable
@@ -59,6 +61,7 @@ func _check_new_game() -> void:
 	await _frames(2)
 	var select := _screen(main)
 	check.call(select is SpeciesSelect, "clicking NEW KAIJU opens species select")
+	await _check_fits_at_scales(select as Control, "species select")
 	await GuiInput.click(t, GuiInput.button(select, "CHOOSE"))
 	await _frames(3)
 	var rampage := _screen(main) as Rampage
@@ -197,6 +200,7 @@ func _check_evolution_and_continue() -> void:
 		),
 		"the insectoid's Brood is its branch's capstone, bigger, with its button"
 	)
+	await _check_fits_at_scales(tree, "evolution tree")
 	check.call(
 		(
 			tree.node_button("i_glide").role == "branch"
@@ -260,6 +264,7 @@ func _check_settings() -> void:
 	if menu == null:
 		main.queue_free()
 		return
+	await _check_fits_at_scales(menu, "settings")
 	var was_full: bool = PlayerSettings.fullscreen
 	await GuiInput.click(t, GuiInput.button(menu, "ON" if was_full else "OFF"))
 	check.call(PlayerSettings.fullscreen != was_full, "clicking the fullscreen switch flips it")
@@ -332,3 +337,35 @@ func _check_migration() -> void:
 
 func _evolve_cost() -> int:
 	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")
+
+
+## Every UI scale keeps a screen's buttons fully on screen (the 4K TV at 125%, lead review 1).
+func _check_fits_at_scales(screen: Control, what: String) -> void:
+	var misses: Array[String] = []
+	# Headless windows are 64x64 (a tall square canvas); measure on the director's 4K TV.
+	var window := t.root.size
+	t.root.size = TV_SIZE
+	for scale: float in PlayerSettings.UI_SCALES:
+		PlayerSettings.ui_scale = scale
+		PlayerSettings.apply()
+		await _frames(3)
+		var view := t.root.get_visible_rect()
+		for node: Node in screen.find_children("*", "Button", true, false):
+			var b: Button = node
+			if b.is_visible_in_tree() and not _on_screen(b, view):
+				var name := b.text.get_slice(String.chr(10), 0)
+				misses.append("%s at %d%%" % [name, roundi(scale * 100.0)])
+	PlayerSettings.ui_scale = PlayerSettings.UI_SCALES[0]
+	PlayerSettings.apply()
+	t.root.size = window
+	await _frames(2)
+	check.call(
+		misses.is_empty(), "the %s's buttons stay on screen at every UI scale: %s" % [what, misses]
+	)
+
+
+## A tree node may sit in its scroll area (reachable by scrolling); anything else must be on screen.
+func _on_screen(b: Button, view: Rect2) -> bool:
+	if b is UpgradeNode:
+		return true
+	return view.encloses(b.get_global_rect())
