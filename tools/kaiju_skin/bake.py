@@ -8,7 +8,9 @@ rig_voxel.py) and writes <name>.vskin:
 - the voxels moved into the rig's real rest pose (the arms the game lowers at load are lowered here,
   so the skin is never stretched from a T-pose), snapped back onto the grid;
 - per voxel, up to 3 bones and weights: the bone split smoothed over the voxel lattice, blending only
-  bones that form a joint (a thigh lying against the tail stays its own part);
+  bones that form a joint (a thigh lying against the tail stays its own part); or, for a kaiju listed
+  in assets/kaiju/skin_weights.json, a hand-made Blender skin (tools/blender/motion_test.py export:
+  <x>.skin.json + <x>.skinw), sampled onto each voxel from the nearest weighted positions;
 - a filler: the exposed faces of the voxels near joints as one watertight surface, set a little
   inside the cubes, so a bending joint shows skin where cubes part, never sky.
 
@@ -35,6 +37,7 @@ MOUTH_BONES = ("head1", "jaw")
 # Hinged parts that move as one rigid piece against their parent (a jaw, a mantis mandible): they
 # never blend with it, so an open mouth keeps its mass and its teeth (lead review, PR #15).
 HINGES = ("jaw", "mandible_l", "mandible_r")
+SKIN_NEAREST = 4  # a voxel blends the weights of this many nearest Blender skin positions
 DIRS = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)])
 
 
@@ -51,9 +54,67 @@ def read_kvox(path):
     return np.c_[rec["x"], rec["y"], rec["z"]].astype(int), np.c_[rec["r"], rec["g"], rec["b"]], rec["f"].astype(int)
 
 
+def skin_files(kdir, name):
+    """The Blender skin listed for this kaiju in skin_weights.json ([json, weights] paths), or []."""
+    listing = kdir / "skin_weights.json"
+    if not listing.exists():
+        return []
+    rel = json.loads(listing.read_text(encoding="utf-8")).get(name)
+    if rel is None:
+        return []
+    meta = kdir / rel
+    return [meta, meta.parent / json.loads(meta.read_text(encoding="utf-8"))["weights_file"]]
+
+
 def source_stamp(kdir, name):
+    """First 8 bytes of SHA-256 over the .kvox, the .rig.json and any Blender skin files (in that
+    order; VoxelSkin.source_stamp() hashes the same bytes)."""
     data = (kdir / f"{name}.kvox").read_bytes() + (kdir / f"{name}.rig.json").read_bytes()
+    for f in skin_files(kdir, name):
+        data += f.read_bytes()
     return hashlib.sha256(data).digest()[:8]
+
+
+def blender_weights(kdir, name, cells, owner, names):
+    """Per-voxel weights (cells x bones) from a Blender skin export, or None if none is listed.
+    Each .kvox cell maps into the skin's space (kvox_cell_to_skin) and blends the weights of its
+    SKIN_NEAREST nearest welded positions by inverse distance; each Blender bone counts for its
+    "game" bone. Hinges stay rigid: a voxel the .kvox gives to the jaw is all jaw, and no other
+    voxel takes any jaw weight (rig_voxel bakes the jaw part-shut, off the skin's rest)."""
+    files = skin_files(kdir, name)
+    if not files:
+        return None
+    meta = json.loads(files[0].read_text(encoding="utf-8"))
+    raw = files[1].read_bytes()
+    assert raw[:4] == b"KSKW", files[1]
+    count = struct.unpack_from("<I", raw, 8)[0]
+    rec = np.frombuffer(raw, dtype=[("p", "<f4", 3), ("b", "u1", 4), ("w", "<f4", 4)], count=count, offset=14)
+    to_game = np.array([names.index(b["game"]) for b in meta["bones"]])
+    m = np.array(meta["kvox_cell_to_skin"], dtype=float)
+    pts = (np.c_[cells, np.ones(len(cells))] @ m.T)[:, :3].astype(np.float32)
+    skin_p = rec["p"].astype(np.float32)
+    w = np.zeros((len(cells), len(names)))
+    for lo in range(0, len(cells), 2048):
+        chunk = pts[lo:lo + 2048]
+        d2 = ((chunk[:, None, :] - skin_p[None, :, :]) ** 2).sum(-1)
+        near = np.argpartition(d2, SKIN_NEAREST, axis=1)[:, :SKIN_NEAREST]
+        inv = 1.0 / (np.sqrt(np.take_along_axis(d2, near, 1)) + 1e-3) ** 2
+        for k in range(SKIN_NEAREST):
+            for slot in range(4):
+                bone = rec["b"][near[:, k], slot]
+                share = rec["w"][near[:, k], slot] * inv[:, k]
+                real = bone != 255
+                rows = np.arange(lo, lo + len(chunk))[real]
+                np.add.at(w, (rows, to_game[bone[real]]), share[real])
+    for hinge in (h for h in HINGES if h in names):
+        j = names.index(hinge)
+        mine = owner == j
+        w[:, j] = 0.0
+        w[mine] = 0.0
+        w[mine, j] = 1.0
+    empty = w.sum(1) <= 0  # only jaw-weighted positions nearby: keep the .kvox bone
+    w[empty, owner[empty]] = 1.0
+    return w / w.sum(1, keepdims=True)
 
 
 def top3(w):
@@ -70,6 +131,7 @@ def bake(name, rest, kdir, rig):
     bones = rest["bones"]
     names = [b["name"] for b in bones]
     nb = len(names)
+    from_blender = blender_weights(kdir, name, cells, owner, names)
     v = rest["voxel"]
     parents = {b["name"]: b["parent"] for b in rig["bones"]}
     related = np.eye(nb, dtype=bool)
@@ -95,13 +157,18 @@ def bake(name, rest, kdir, rig):
     _, first = np.unique(baked, axis=0, return_index=True)
     keep = np.sort(first)
     cells, rgb, owner = baked[keep], rgb[src[keep]], owner[src[keep]]
+    kvox_owner = owner  # the mouth test reads the .kvox split, whatever the weights
     count = len(cells)
     index = {tuple(c): i for i, c in enumerate(cells)}
     nbr = np.array([[index.get((c[0] + d[0], c[1] + d[1], c[2] + d[2]), -1) for d in DIRS] for c in cells])
-    # Lattice-smoothed weights, joint-related bones only.
+    # Lattice-smoothed weights, joint-related bones only; or the Blender skin's, as they are (the
+    # filler then pairs voxels by their main bone).
     w = np.zeros((count, nb))
     w[np.arange(count), owner] = 1.0
-    for _ in range(LATTICE_PASSES):
+    if from_blender is not None:
+        w = from_blender[src[keep]]
+        owner = np.argmax(w, axis=1)
+    for _ in range(LATTICE_PASSES if from_blender is None else 0):
         acc = w.copy()
         cnt = np.ones((count, 1))
         for k in range(6):
@@ -113,7 +180,7 @@ def bake(name, rest, kdir, rig):
     cb, cq = top3(w)
     mouth_bones = [names.index(m) for m in MOUTH_BONES if m in names]
     r, g, b = rgb[:, 0].astype(float), rgb[:, 1].astype(float), rgb[:, 2].astype(float)
-    mouth = np.isin(owner, mouth_bones) & (r > g * MOUTH_RED) & (r > b * MOUTH_RED)
+    mouth = np.isin(kvox_owner, mouth_bones) & (r > g * MOUTH_RED) & (r > b * MOUTH_RED)
     # Filler: exposed faces of joint voxels (and their neighbours), corners shared between voxels
     # whose bones form a joint, so it stays watertight as the joint bends.
     zone = w.max(1) < MIXED
@@ -169,7 +236,7 @@ def bake(name, rest, kdir, rig):
     blob += struct.pack("<I", len(fpos)) + vert_rec.tobytes()
     blob += struct.pack("<I", len(tris) * 3) + np.array(tris, dtype="<u4").tobytes()
     (kdir / f"{name}.vskin").write_bytes(gzip.compress(blob, 9))
-    print(f"{name}: {count} voxels, {nb} bones, "
+    print(f"{name}: {count} voxels, {nb} bones, weights {'Blender skin' if from_blender is not None else 'lattice'}, "
           f"filler {len(fpos)} vertices {len(tris)} triangles, {mouth.sum()} mouth voxels")
 
 
