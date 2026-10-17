@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:45
-## State: running a check (Blender-weights PR: CI captures of the reptile)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 16:00
+## State: awaiting lead (merge #15 at 2290d50; review PR #19 Blender weights)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -24,8 +24,9 @@ welded positions, kvox_cell_to_skin). bake.py blender_weights(): k=4 nearest by 
 elsewhere, no lattice smoothing, filler pairs voxels by their main bone. Stamp (bake.py and
 VoxelSkin.source_stamp) covers both skin files: proven failing on an edited skin.json. Reptile
 adult filler grew 50k -> 111k verts (broad Blender falloff marks more voxels as joints).
-CI runs (scratch ci_w1.txt): reptile close 39002565491, stills 572,574,676 39002569524. Compare
-vs lattice C (scratch dl7 skin_*) and A (dl5 rigid_*), then open the PR into look-options.
+PR #19 open (base claude/kaiju-voxel-skin; retarget to look-options after #15 merges). Evidence
+(CI 39002565491/39002569524) in side-session-notes/<lead>/kaiju-voxel-skin/blender-weights/: knee
+seam gone, forearm pinholes mostly gone, jaw/hip hold. Lead messaged 16:00.
 
 ## What exists
 - tools/kaiju_skin/bake_all.sh (GODOT=... bash ...): dump_rest.gd (Godot headless: every rig's rest
