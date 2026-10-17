@@ -42,8 +42,20 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 	return decal
 
 
+## Whether the textures spawn() needs for `shape` and `look` are already drawn (first use of an
+## undrawn mark costs ~0.1-0.2 s of per-pixel drawing; AbilityFx prewarms the ones a run uses).
+static func is_drawn(shape: Shape, look: Dictionary) -> bool:
+	var cracks := Num.i(look.get("cracks", 9))
+	var half := Num.f(look.get("half_angle", 0.5))
+	return _cache.has(_key(shape, cracks, half, false)) and _cache.has(_key(shape, cracks, half, true))
+
+
+static func _key(shape: Shape, cracks: int, half: float, glow: bool) -> String:
+	return "%d/%d/%.2f/%s" % [shape, cracks, half, glow]
+
+
 static func _texture(shape: Shape, cracks: int, half: float, glow: bool) -> ImageTexture:
-	var key := "%d/%d/%.2f/%s" % [shape, cracks, half, glow]
+	var key := _key(shape, cracks, half, glow)
 	if _cache.has(key):
 		return _cache[key]
 	var noise := FastNoiseLite.new()

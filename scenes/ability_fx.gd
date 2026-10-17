@@ -32,14 +32,17 @@ var _glint_mesh: BoxMesh
 var _overlay: ShaderMaterial
 var _body: Node3D
 var _overlay_on := false
+var _cone_half_angle := 0.0
 var _healing := false
 
 
-## tint: the species' eye colour; body_scale: the kaiju's size this run.
-func _init(city: CityView, tint: Color, body_scale: float) -> void:
+## tint: the species' eye colour; body_scale: the kaiju's size this run; cone_half_angle: Atomic
+## Breath's half angle this run (radians), so the prewarm draws the scorch texture it will use.
+func _init(city: CityView, tint: Color, body_scale: float, cone_half_angle: float) -> void:
 	_city = city
 	_tint = tint
 	_scale = body_scale
+	_cone_half_angle = cone_half_angle
 	_tune = Content.section("fx")
 
 
@@ -55,7 +58,7 @@ func _ready() -> void:
 	_overlay.set_shader_parameter("strength", 0.55)
 	# Prewarm every shader and decal texture out of sight so first use does not stall a frame.
 	var away := Vector3(0, -50, 0)
-	breath(away, Vector3.FORWARD * 4.0, 0.5, 1.0)
+	breath(away, Vector3.FORWARD * 4.0, _cone_half_angle, 1.0)
 	leap_land(away, 2.0, 1.0)
 	lash(away, 2.0, 1.0)
 	stomp_cracks(away, 2.0, 3.0)
