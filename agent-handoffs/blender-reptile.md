@@ -1,44 +1,41 @@
-# blender-reptile handoff, 2026-10-17 04:10
-## State: awaiting lead (board sent; A vs B is the lead's/director's call)
+# blender-reptile handoff, 2026-10-17 13:10
+## State: running a check (full A|B renders of walk, turn, roar; then compose, encode, crops)
 ## Task
-Director 2026-10-17: "try making the reptilian kaiju in blender". Brief from the lead: model the adult
-reptile by hand in Blender via the MCP, rig-friendly; .blend + GLB under assets/source/kaiju; rig_voxel
-at 160 into a separate test asset; labelled board (4 views vs Tripo adult + both voxelized) to the lead.
+Round 1 (done, D-pending): hand-modelled reptile adult A vs Tripo adult B; board sent; director:
+Tripo looks better, Blender "promising". Round 2 (lead, 2026-10-17 12:39): MOTION TEST, not sculpting.
+One hand-built armature fitted to BOTH meshes, hand-set weights with clean falloff; key a walk (D-031),
+a 90 deg turn and a roar with the jaw; render A|B side and three-quarter ~6 s, foot slide in cm per
+plant, 2x crops of shoulders/hips/jaw at their most bent frames. Question: bad motion = Tripo mesh or
+our auto rig/weights? CI is billing-blocked: render locally (blender -b), commit, no CI dispatch.
 ## Branch and commit
-claude/blender-reptile-f5388e (worktree .claude/worktrees/blender-reptile-f5388e), pushed at 4a1b1f8; no PR yet (lead decides).
-## Done
-- `assets/source/kaiju/build_reptile.py` builds it headless in ~10 s:
-  `blender -b --factory-startup --python assets/source/kaiju/build_reptile.py -- <out.blend> <out.glb>`.
-  Metaball sculpt (tube() of overlapping ellipsoids, negative balls for eye sockets) -> voxel remesh
-  0.38 m + smooth + cloud bumps; separate Jaw (+ lower teeth, tongue/palate in dark red); details by
-  convex hulls placed by ray casts onto the hide: 3 rows of jagged 3-prong ivory spines (spaced by
-  surface arc length), keeled scute rows, armour patches (shoulder, thigh, neck, tail flank), claws,
-  teeth, small amber eyes under heavy brows. Colours per vertex -> smart UV (both objects packed
-  together) -> Cycles EMIT bake 2048 -> Principled + texture; vertex colours removed before export.
-- 100.6 m tall, 172 m long, faces -Y, Z up, feet on z=0 (both feet ~930 verts within 1 m), arms
-  out ~10 deg below horizontal; hide watertight (0 non-manifold); 176k + 16k faces; GLB 14 MB (LFS).
-- Test asset: assets/kaiju/test/reptilian_adult_blender.{kvox,rig.json} (height 160, snarl 0.35 like
-  the adult): 78,692 voxels (Tripo adult 57,286), 27 bones, jaw 1013 voxels / 16 deg gap, colours
-  from texture, 0 torso blemishes. Inert: the game loads kaiju by exact name only.
-- Board: docs/captures/2026-10-17-blender-reptile/reptile_blender_board.png (+ notes folder copy
-  blender-reptile/ with views.py, voxview.py, board.py that made it).
-- Live Blender MCP: opened the .blend (PID 53284), get_scene_info + look x2 + vertex checks; closed by PID.
-- LICENSING_REGISTER row (ours, CLEARED). assets/source/.gdignore (same empty file as the tank branch).
-## Findings for the lead
-- BUG FIXED in tools/blender/rig_voxel.py load(): `base` summed len((v, n)) = 2 per mesh, so any GLB
-  with more than one mesh indexed mesh 2's triangles into mesh 1's vertices (jaw ended up as red
-  voxels on the right arm). Tripo exports are single-mesh, so no current asset changes.
-- rig_voxel clean_blemishes repaints "warm" torso voxels (r > g,b by 8/255): a warm ivory turned
-  3,055 torso spine voxels olive. Ivory must be neutral (0.80, 0.79, 0.67).
-- glTF export with a colour attribute left on makes the importer mix it over the texture, and
-  rig_voxel then falls back to the species palette: remove colour attributes after baking.
-- rig_voxel arm trace uses the widest band +-0.15H: drooping arms pull the root toward the thighs;
-  arms must stay near horizontal (shoulder root still traces ~10 voxels low; motion code lowers arms).
-## Open decisions (lead/director)
-1. A (hand-modelled) or B (Tripo) for the adult? A: correct 25-30 deg lean, croc head, long
-   counterweight tail, true digitigrade legs, editable script. B: richer muscle/plate surface detail.
-2. If A: wire it in (rename to reptilian_adult.*), motion check in game; baby/adolescent same way?
+claude/blender-reptile-f5388e; round 1 at 4a1b1f8/edf5b60 (pushed). Round 2 uncommitted yet.
+## Unfinished changes
+- tools/blender/motion_test.py (new): `blender -b --python tools/blender/motion_test.py -- <A|B> <glb>
+  <out> <render|measure|crops|blend|still> [clip]` - ONE clip per process (see Attempts).
+  Normalises to 100 m, re-origins on the pelvis ground point, builds the rig from LANDMARKS (pivots
+  measured on each mesh: gridded ortho renders + vertex slices), IK legs (thigh-shin-meta to a foot
+  ctrl at the ball, knee pole, toe copies ctrl) and IK arms (hand target on the chest low in front of
+  the belly, elbow pole), weights = nearest bone in region (side, jaw mask) + linear 50/50 falloff over
+  40% of the shorter bone at each joint + 6 surface smoothing passes + loose islands rigid to the hide.
+  Keys are baked per frame: root path (walk straight / smooth 90 deg turn), pelvis bob/sway/yaw,
+  spine/neck counter, tail wave, feet world-planted through stance, roar crouch-rear-hold-recover.
+- Scratch (not committed): scratchpad/mt/{r,meas,crops,compose.py,encode.py}; B.glb copy.
+## Evidence so far
+- Foot slide on deformed toe pads, max per clip: A walk 8.0 / turn 10.8 / roar 1.1 cm;
+  B walk 5.5 / turn 19.1 / roar 4.3 cm (100 m kaiju). B's right foot rests 69 cm off the ground in
+  the Tripo sculpt itself (left at 0) - mesh, not rig.
+## Attempts (fix-loop record)
+- Rig origin at the snout put planted feet 60 m ahead: re-origin on the pelvis.
+- Foot targets used rig.matrix_world (last frame): one-frame (84 cm) offset; build the matrix per frame.
+- Keying a 2nd clip in one process left frame 0 posed from the old one: one clip per process + settle().
+- FK arm angles gave different hands on A and B (different rest forearms): IK hand targets instead.
+- Roar tail pitch sign pushed B's tail into the ground (looked detached): + pitch lifts a tail bone.
+- B jaw mask reached the throat: floor line under the mouth, only in front of the hinge.
+## Open decisions
+Lead/director read of the clips: does B move well on the hand rig?
 ## Running jobs
-None. Blender closed.
+Background render chain (bash task b1y3qhaxe): render walk/turn/roar x A/B, then crops walk/roar.
+## Findings for the lead
+- Same rig and keys on both meshes: plants hold to <20 cm on both, so foot sliding is not a mesh issue.
 ## Rules learnt the hard way
-- Blender MCP safe mode: no numpy in execute_blender_code; open the .blend by launching Blender with it.
+- Blender IK is history-dependent: evaluate a frame twice after any jump.
