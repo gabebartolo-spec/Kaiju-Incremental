@@ -1,5 +1,5 @@
-# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:20
-## State: running a check (PR #15 CI on the merged head; then send the lead the SHA to merge)
+# Kaiju voxel skin (was: look test) handoff, 2026-10-17 15:30
+## State: running a check (PR #15 CI on the final head; then send the lead the SHA)
 
 ## Task
 D-041 (director picked C): every kaiju draws as voxel cubes on a smooth skin. Lead's brief (01:50):
@@ -69,11 +69,11 @@ read as a clean cube grid on 8f5a798 (A sheds shards there).
   a gap with streaked filler: worse, reverted (4be3650). Two failed attempts: stop (rule 8).
 - Forearm speckle at close f220: REAL (hairline gaps between cubes turned by different bones). I
   first told the lead "no speckle" without looking (black frame grab): corrected 15:10.
-- Options sent: (a) accept until Blender weights [recommended], (b) 5-8% uniform overscale,
-  (c) blended turn (brings shear back).
+- Lead took (a): accept until Blender weights.
 
 ## Running jobs
-PR #15 CI on the head after this commit. Lead accepted round 3 (thigh seam accepted, in Not
+PR #15 CI on the head after this commit. Lead's one-shot idea (filler without shadows, 25abd00)
+did not change the f220 forearm speckle: reverted; (a) taken and noted in Not exercised. Lead accepted round 3 (thigh seam accepted, in Not
 exercised). Merged look-options (tank #17): conflicts in run_smoke_tests (kept both: skin + tank
 checks), rampage.gd (kept FOCUS_FOLLOW, dropped unused TANK_GREEN), floors (smoke 23). rampage.gd
 hit 409 lines: TankModel.box now holds the shell box helper. Lead merges exactly the SHA I send.
@@ -81,7 +81,10 @@ hit 409 lines: TankModel.box now holds the shell box helper. Lead merges exactly
 ## Next (lead, 14:55)
 Separate small PR: Blender-weights input for the bake. Optional per-kaiju weights file (per
 voxel, sampled from the source mesh's vertex weights), part of the stale stamp, hinge rule kept.
-Build and test against blender-reptile's current test rig (branch claude/blender-reptile-f5388e,
+blender-reptile's export is ready (86adf96): assets/kaiju/test/reptilian_adult.skin.json + .skinw
+(KSKW, u32 version, u32 N, u16 bones, 32-byte records from byte 14; kvox_cell_to_skin 4x4; jaw
+cells -> jaw bone); asked whether skin.json carries a per-bone "game" KaijuRig name map. Build and
+test against blender-reptile's current test rig (branch claude/blender-reptile-f5388e,
 tools/blender/motion_test.py) exported as a weights file; the real source will be the hand rig on
 the D-045 Tripo reptile.
 
