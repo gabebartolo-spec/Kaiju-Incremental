@@ -22,6 +22,9 @@ var plan: Dictionary
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
 var _half: float
+var _view: float  # parked cars reach this far from the centre: the arena and what the camera
+# shows past its edge (city.view_beyond)
+var _street: Dictionary
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
 
@@ -31,6 +34,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	plan = CityGen.map(sim.city)
 	_half = CityGen.half_extent(sim.city)
+	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
+	_street = Content.section("street")
 	for b: RampageSim.Building in sim.buildings:
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
 
@@ -75,17 +80,22 @@ func _on_building(p: Vector2) -> bool:
 	return false
 
 
-## Parked cars along both kerbs, now and then one stopped in the lane; a streetlight at a
-## corner of every crossing and down the long blocks.
+## Parked cars along both kerbs, now and then one stopped in the lane, out past the playable
+## edge as far as the camera sees (D-062: no empty ground); a streetlight at a corner of every
+## crossing and down the long blocks of the playable city.
 func _streets() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var lit_nodes := {}
+	var chance := Num.f(_street["parked_chance"])
+	var lane_stop := Num.f(_street["lane_stop_chance"])
+	var gap: Array = _street["parked_gap"]
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
 		var a := nodes[Num.i(street["from"])]
 		var b := nodes[Num.i(street["to"])]
-		if not (_inside(a, 0.5) and _inside(b, 0.5)) or kind == CityGen.ALLEY:
+		if not (_inside(a, _view - _half) or _inside(b, _view - _half)) or kind == CityGen.ALLEY:
 			continue
+		var playable := _inside(a, 0.5) and _inside(b, 0.5)
 		var width := Num.f(street["width"])
 		var dir := (b - a).normalized()
 		var side := Vector2(-dir.y, dir.x)
@@ -96,7 +106,7 @@ func _streets() -> void:
 				var t := CROSSING_CLEAR + _rng.randf_range(0.0, 2.0)
 				while t < length - CROSSING_CLEAR:
 					var lane := width * 0.5 - 0.6
-					if _rng.randf() < 0.12:
+					if _rng.randf() < lane_stop:
 						lane = width * 0.25  # stopped in the traffic lane
 					var p := a + dir * t + side * kerb * lane
 					var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
@@ -104,12 +114,15 @@ func _streets() -> void:
 						CityGen.diagonal_distance(plan, p)
 						< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
 					)
-					if _rng.randf() < 0.7 and not on_diagonal:
+					var seen := _inside(p, _view - _half)
+					if _rng.randf() < chance and not on_diagonal and seen:
 						_props.add(
 							Vector3(p.x, 0, p.y),
 							func(v: VoxelBuilder) -> void: car(v, color, along_x)
 						)
-					t += _rng.randf_range(1.9, 3.2)
+					t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
+		if not playable:
+			continue  # past the edge: cars only (each lamp is a real light)
 		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
 			if not lit_nodes.has(end) and kind != CityGen.DIAGONAL:
 				lit_nodes[end] = true
