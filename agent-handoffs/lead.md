@@ -20,8 +20,8 @@ gitleaks; squash only). Reran failed checks on #14 #16 #17 #18; helpers told to 
 Director: "tank and heli models look great".
 - QA 12:55: heli board PASS (Apache-like, tandem cockpit, stub wings, chin gun, rotors as parts; 2x real);
   tank in-game crop reads well. Merge #17 then #18 once their in-game captures + CI are green.
-- #15 joint crops PASS (hip sky-gaps and seams closed in C; jaw intact). Fresh motion-critic running on the
-  three before/after clips (background agent); merge #15 on PASS at the reviewed SHA.
+- #15 FIX (fresh critic, verified): C mantis SHATTERED in game clip (crops fine: clip vs stills disagree);
+  reptile thigh shear f572, jaw scatter f676; A/C fog differs; add close cam. Sent to kaiju-look-test.
 ## (history) CI billing (12:35)
 - Every Actions job refuses: "recent account payments have failed or your spending limit needs to be increased".
 - Director chose "make the repo public" (free minutes). My `gh repo edit --visibility public` was DENIED by
