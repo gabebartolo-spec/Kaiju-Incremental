@@ -1,7 +1,8 @@
 class_name SpeciesSelect
 extends Control
-## New game: pick one of the species. Each card shows the kaiju turning in a live 3D preview,
-## its signature attack and how its body compares, so the choice is about how it plays.
+## New game: pick one of the species (in the demo, D-050, its species only; the rest are absent).
+## Each card shows the kaiju turning in a live 3D preview, its signature attack and how its body
+## compares, so the choice is about how it plays.
 
 signal chosen(species_id: String)
 
@@ -49,7 +50,7 @@ func _ready() -> void:
 	row.add_theme_constant_override("separation", 32)
 	col.add_child(row)
 	var first: Button = null
-	for def: Dictionary in Content.species():
+	for def: Dictionary in Demo.species():
 		var pick := _card(row, def)
 		if first == null:
 			first = pick
