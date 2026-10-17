@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (flash tweak re-clipped, head 93dccb9; lead runs a fresh motion-critic, then merges #40)
+## State: awaiting lead GPU go (critic FIX coded, head b358186; re-clip, then fresh critic, then merge)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -45,10 +45,15 @@ Shots hurt: chip damage, no new escalation curve.
 - GPU re-clip evidence is in the lead notes rooftops/fix/ (clip, mid-volley still, 2x crop).
 - Flash tweak (lead): flashes are now 0.35 u soft star billboards (procedural 32 px texture,
   additive, fog-free), FLASH_AHEAD 0.2 u out along the aim, the rifles 1 frame apart; sparks use the
-  same star. Re-clip is in rooftops/fix2/.
+  same star. Re-clip is in rooftops/fix2/: the flashes PASSED a fresh motion-critic.
+- Critic FIX 2 (coded in b358186): tracers are 1.75 u streaks flying at 60 u/s; the round strikes the
+  rig bone nearest the shooter (above FEET_CLEAR), pushed out 0.35 body-radius; the star spark lands
+  at the tip on arrival; TRACER_HOT 2 and 0.05 wide. The capture runs 6 s, logs volley_frames and
+  takes stills 5 frames after a volley. Squad 6's "ledge" was checked in the sim: an intact top layer.
 
 ## Next
-1. Lead's critic verdict -> any fix -> re-clip (ask for the GPU slot; override.cfg first, delete after).
+1. GPU go -> re-clip; trim the clip to cover 3 whole volleys using volley_frames (the movie frame is
+   about the physics frame); still = a stills entry with tracers_lit > 0 -> lead -> fresh critic.
 2. After #40 merges, Military AI syncs onto it; this worktree can be removed by the lead.
 
 ## Lead rules (2026-10-18)
