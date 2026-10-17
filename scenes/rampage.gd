@@ -111,7 +111,7 @@ func _ready() -> void:
 	_camera.fov = 55.0
 	add_child(_camera)
 	_camera.current = true
-	sfx.listener = _camera
+	sfx.watch(_camera, _powers.helis)
 	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
@@ -158,7 +158,6 @@ func _process(delta: float) -> void:
 	_place_camera(delta)
 	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
-	sfx.rotors(_powers.helis())
 
 
 ## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
