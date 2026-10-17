@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-18 02:35
-## State: working (blender-reptile: tail FIX pass (walk S-wave ~60 m tip, roar arc+slam), then opens D-047 PR)
+# Lead handoff, 2026-10-18 03:00
+## State: working (blender-reptile: species-card height fit, then opens D-047 PR at 2dbc983+)
 
 ## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
 - Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
@@ -19,6 +19,8 @@
 - Lead early QA 02:30 on cb1726e tail: turn good; walk tip 33.8 m (7.9 deg/joint) + roar straight rod = too timid.
   FIX sent: walk ~60 m S-wave 14-18 deg/joint, roar lift arc + slam with tip impact; rerun AFTER game only.
   Species card a168942: fits swept volume (card spins), octopus 12.5->16.1, mantis same; check octopus stills.
+- 02:58 pre-PR QA of 2dbc983: walk 62.9 m tip, 14 deg/joint OK; roar lift arc + slam PASS. Cards FIX: fit height
+  too (mantis head cut in both, octopus touches top). CI capture runs 39042109877/...141622 = failure: helper checks.
 - Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
 
 ## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
