@@ -38,6 +38,7 @@ func run_checks() -> void:
 	await _check_upgrade_screen()
 	await _check_rampage()
 	_check_stomp_timing()
+	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})
 	await _check_powers("cephalopod", "lash", {})
@@ -251,6 +252,42 @@ func _check_stomp_timing() -> void:
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
 	sfx.free()
+
+
+## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Atomic Breath
+## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
+func _check_warm_start() -> void:
+	var species := Content.species_def("reptilian")
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
+	)
+	var rampage := Rampage.new()
+	rampage.setup(
+		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
+	)
+	root.add_child(rampage)
+	var half := deg_to_rad(Num.f(rampage.sim.city["cone_half_angle_deg"]))
+	check(
+		FxDecals.is_drawn(FxDecals.Shape.WEDGE, {"half_angle": half}),
+		"the breath's scorch for this run's %.2f rad cone is drawn before the first breath" % half
+	)
+	rampage.queue_free()
+	await process_frame
+	var a := TankModel.new()
+	var b := TankModel.new()
+	var hull_a: MultiMeshInstance3D = a.get_child(0)
+	var hull_b: MultiMeshInstance3D = b.get_child(0)
+	VehicleParts.set_opacity(a, 0.3)
+	var mat_b := hull_b.material_override as ShaderMaterial
+	if mat_b == null:
+		mat_b = (hull_b.multimesh.mesh as PrimitiveMesh).material as ShaderMaterial
+	var faded_b: Variant = mat_b.get_shader_parameter("opacity")
+	check(
+		hull_a.multimesh == hull_b.multimesh and (faded_b == null or Num.f(faded_b) >= 1.0),
+		"a second tank reuses the first one's voxels, and fading one leaves the other solid"
+	)
+	a.free()
+	b.free()
 
 
 ## An autoplayed rampage with a species branch bought (and a helicopter called in) draws every
