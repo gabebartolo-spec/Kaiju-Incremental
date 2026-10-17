@@ -1,4 +1,4 @@
-# blender-reptile handoff, 2026-10-17 13:15
+# blender-reptile handoff, 2026-10-17 13:09
 ## State: running a check (round-2 re-render after the seam-weld fix; bash task b23gsacfa)
 ## Task
 Round 1 (done, D-pending): hand-modelled reptile adult A vs Tripo adult B; board sent; director:
@@ -8,7 +8,7 @@ a 90 deg turn and a roar with the jaw; render A|B side and three-quarter ~6 s, f
 plant, 2x crops of shoulders/hips/jaw at their most bent frames. Question: bad motion = Tripo mesh or
 our auto rig/weights? CI is billing-blocked: render locally (blender -b), commit, no CI dispatch.
 ## Branch and commit
-claude/blender-reptile-f5388e; round 1 at 4a1b1f8/edf5b60; round 2 rig script at cb56749 (pushed). Clips not committed yet.
+claude/blender-reptile-f5388e; round 1 at 4a1b1f8/edf5b60; round 2 script at c283dd3 (pushed). Clips not committed yet.
 ## Unfinished changes
 - tools/blender/motion_test.py (new): `blender -b --python tools/blender/motion_test.py -- <A|B> <glb>
   <out> <render|measure|crops|blend|still> [clip]` - ONE clip per process (see Attempts).
