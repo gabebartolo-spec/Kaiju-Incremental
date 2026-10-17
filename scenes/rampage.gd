@@ -7,6 +7,15 @@ extends Node3D
 
 signal finished(result: Dictionary)
 
+## Footfall: dust size and a pale ground ring (per body scale), and how far the camera dips
+## (world units at full strength) and how fast it comes back (1/s).
+const FOOTFALL_DUST := 1.1
+const FOOTFALL_RING := 1.4
+const FOOTFALL_TINT := Color(0.86, 0.83, 0.76, 0.7)
+const FOOTFALL_DIP := 0.35
+## The dip scales with body size, but never below this: a baby still shakes the street.
+const FOOTFALL_DIP_FLOOR := 1.0
+const DIP_RECOVER := 4.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
 ## The world runs at this speed during the end beat.
@@ -39,6 +48,7 @@ var _leap_time := 0.0
 var _leap_from := Vector3.ZERO
 var _camera: Camera3D
 var _shake := 0.0
+var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
 var _too_tall_cooldown := 0.0
@@ -82,6 +92,7 @@ func _ready() -> void:
 	_kaiju_at = _to_world(sim.kaiju_pos)
 	_kaiju.position = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
+	_kaiju.foot_planted.connect(_on_footfall)
 	_camera = Camera3D.new()
 	_camera.fov = 55.0
 	add_child(_camera)
@@ -285,6 +296,17 @@ func _update_powers() -> void:
 	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
 
 
+## Every footfall kicks a little dust and nudges the camera (a minimal version until the
+## ability-sfx pass drives footstep sound, dust and shake from the same signal).
+func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
+	var size := sim.body_scale() * (0.2 + strength)
+	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
+	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT)
+	_step_dip = maxf(
+		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
+	)
+
+
 func _spawn_tank_node(id: int) -> void:
 	var tank := TankModel.new()
 	add_child(tank)
@@ -356,7 +378,8 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 
 func _place_camera(delta: float) -> void:
 	var zoom := 0.75 + 0.4 * sim.body_scale()
-	var target := _kaiju_at + _breath_orbit(delta) * zoom
+	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
+	var target := _kaiju_at + _breath_orbit(delta) * zoom - Vector3(0, _step_dip * zoom, 0)
 	_camera.position = _camera.position.lerp(target, minf(1.0, delta * 5.0))
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(_kaiju_at + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
