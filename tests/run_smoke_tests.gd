@@ -29,6 +29,7 @@ func run_checks() -> void:
 	_check_scripts_compile()
 	await _check_main_scene()
 	await _check_planted_feet()
+	_check_tank()
 
 
 func _check_settings() -> void:
@@ -138,3 +139,38 @@ func _check_planted_feet() -> void:
 	)
 	kaiju.queue_free()
 	await process_frame
+
+
+## The Blender tank (D-042) loads as hull, turret and gun; the turret swings onto a target at
+## the side while the hull stays put, and a shot leaves the muzzle ahead of the hull and kicks the
+## gun back.
+func _check_tank() -> void:
+	var tank := TankModel.new()
+	root.add_child(tank)
+	var cfg := Content.section("vehicles")
+	var counts: Array[int] = []
+	for part: Node3D in [tank, tank._turret, tank._barrel]:
+		for child: Node in part.get_children():
+			if child is MultiMeshInstance3D:
+				counts.append((child as MultiMeshInstance3D).multimesh.instance_count)
+	check(
+		counts.size() == 3 and not counts.has(0) and tank._barrel.get_parent() == tank._turret,
+		"the tank is hull > turret > gun, each with voxels: %s" % [counts]
+	)
+	var target := Vector3(10.0, 1.0, 0.0)  # off the right side
+	for _i: int in 120:
+		tank.aim(target, 1.0 / 60.0)
+	var facing := -tank._turret.global_basis.z
+	var want := (target - tank._turret.global_position) * Vector3(1, 0, 1)
+	check(
+		facing.angle_to(want.normalized()) < 0.05 and tank.rotation.y == 0.0,
+		"the turret turns onto a target at the side (off by %.3f rad)" % facing.angle_to(want)
+	)
+	var rest := tank._barrel.position
+	var muzzle := tank.fire()
+	tank._process(Num.f(cfg["recoil_seconds"]) * 0.25)
+	check(
+		muzzle.x > 2.0 and tank._barrel.position.distance_to(rest) > 0.05,
+		"the shot leaves the muzzle (%s) and the gun kicks back" % muzzle
+	)
+	tank.free()
