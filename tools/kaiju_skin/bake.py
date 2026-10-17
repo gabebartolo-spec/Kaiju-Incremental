@@ -213,14 +213,21 @@ def bake(name, rest, kdir, rig):
     origin, head = xf[:, 9:], np.array([b["head"] for b in bones])
     # A turned bone (the lowered arms) is sampled 8 times per voxel so the turned shell has no
     # pinholes once it is snapped back onto the grid; an unturned one moves whole cells.
+    # With Blender weights a voxel moves by its blend of bones (a soft shoulder: moved by its main
+    # bone alone, the top of the shoulder swung down with the arm and left a hole, croc titan).
     turned = np.abs(basis - np.eye(3)).max(axis=(1, 2)) > 1e-4
     src = np.arange(len(cells))
-    many = np.where(turned[owner])[0]
+    many = np.where(turned[owner] if from_blender is None else (from_blender[:, turned] > 0).any(1))[0]
     subs = [np.array(o) * 0.5 - 0.25 for o in np.ndindex(2, 2, 2)]
     src = np.concatenate([src] + [many] * len(subs))
     off = np.concatenate([np.zeros((len(cells), 3))] + [np.tile(o, (len(many), 1)) for o in subs])
-    p = (cells[src] + off + np.array([0.0, 0.5, 0.0])) * v - head[owner[src]]
-    moved = np.einsum("nij,nj->ni", basis[owner[src]], p) + origin[owner[src]]
+    at = (cells[src] + off + np.array([0.0, 0.5, 0.0])) * v
+    if from_blender is None:
+        moved = np.einsum("nij,nj->ni", basis[owner[src]], at - head[owner[src]]) + origin[owner[src]]
+    else:
+        moved = np.zeros_like(at)
+        for b in np.where(from_blender.any(0))[0]:
+            moved += from_blender[src, b:b + 1] * ((at - head[b]) @ basis[b].T + origin[b])
     baked = np.round(moved / v - np.array([0.0, 0.5, 0.0])).astype(int)
     _, first = np.unique(baked, axis=0, return_index=True)
     keep = np.sort(first)
