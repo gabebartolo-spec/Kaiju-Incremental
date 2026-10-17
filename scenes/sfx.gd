@@ -83,6 +83,18 @@ func set_size_tier(tier: int) -> void:
 	_size_pitch = Num.f(pitches[clampi(tier - 1, 0, pitches.size() - 1)])
 
 
+## The croc titan's roar, played at once from its own player under `parent` (screens with no
+## rampage, such as the evolution reveal and the demo end card, call this). Returns the player.
+static func roar(parent: Node) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	player.stream = load("res://assets/sfx/roar.ogg")
+	var levels: Dictionary = Content.section("sfx")["volume_db"]
+	player.volume_db = Num.f(levels["roar"])
+	parent.add_child(player)
+	player.play()
+	return player
+
+
 ## A sim stomp, heavier and lower the stronger it is (power: stomp damage over the species'
 ## own, as AbilityFx.power gives it). It sounds on the next foot plant; crack adds the ground
 ## splitting (the same threshold that draws the molten cracks).
