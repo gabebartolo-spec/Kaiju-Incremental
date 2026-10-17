@@ -19,6 +19,8 @@ const DT := 1.0 / 30.0
 ## Floors knocked out on the kaiju's side, and how deep into the footprint.
 const BREAK_FLOORS := 2
 const BREAK_DEPTH := 0.5
+## Camera distance per unit of the landmark's largest size.
+const FRAME := 1.7
 
 var _out := "user://landmarks"
 var _tier := 2
@@ -67,9 +69,12 @@ func _run() -> void:
 		_kaiju_at = Vector3(b.x, 0, b.z + b.d * 0.5 + 2.0)
 		_sim.kaiju_pos = Vector2(_kaiju_at.x, _kaiju_at.z)
 		kaiju.position = _kaiju_at
-		var scale := _sim.body_scale()
-		cam.position = _kaiju_at + GAME_CAMERA * (0.75 + 0.4 * scale)
-		cam.look_at(_kaiju_at + Vector3(0, 3.5 * scale, -b.d * 0.35))
+		# The game camera's angle, centred on the landmark and backed off to frame all of it, so
+		# the towers south of the plaza (faded in a rampage) do not hide it.
+		var centre := Vector3(b.x, b.height * 0.3, b.z)
+		var reach := maxf(maxf(b.w, b.d), b.height) * FRAME
+		cam.position = centre + GAME_CAMERA.normalized() * reach
+		cam.look_at(centre)
 		await _frames(SETTLE)
 		_shot("%s_standing" % b.landmark)
 		_break(n)
