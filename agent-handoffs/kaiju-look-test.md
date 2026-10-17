@@ -1,5 +1,5 @@
 # Kaiju voxel skin (was: look test) handoff, 2026-10-17 17:20
-## State: awaiting lead (croc titan #19 evidence sent; don't merge; auto-fix off)
+## State: awaiting lead (croc titan #19 final captures on the current city sent; don't merge)
 
 ## Task
 D-041 voxel skin is merged (#15, squash 7ff1f03). PR #19 (claude/kaiju-skin-weights -> claude/look-
@@ -51,10 +51,12 @@ capture.yml is older and fails at once). Compose: scratchpad py/compose_ct.py <d
 (dl/{before,after}_{stills,clip}; ffmpeg via imageio_ffmpeg).
 
 ## Next
-Sent to lead 17:35: stills, clip (notes kaiju-voxel-skin/croctitan/croctitan_game_before_after.mp4,
-clip_sheet.png), head SHA. Wait for review. Open findings for others: roar pose (kaiju-motion's
-biped head/jaw motion swings the croc's head and jaw down), 204 m body (camera/reach unchecked),
-filler 143k vertices, hip leg/tail mixing is in blender-reptile's authored weights.
+18:10: merged look-options (#16 city growth, #20 Apex streaming) into #19 (head a4b9216, suites
+green, rebake unchanged). Final captures on it: before = throwaway branch claude/kaiju-skin-weights-
+before (5f55e9f; delete once the lead is done with it), stills 39010692988/39010696693, clips
+39010694877/39010698384; notes kaiju-voxel-skin/croctitan/current-city/. Sent to lead; awaiting review.
+Open findings: roar pose (kaiju-motion's biped head/jaw motion), 204 m body, filler 143k vertices,
+hip leg/tail mixing in blender-reptile's weights, capture_skin's stage has no towers (empty sim).
 
 ## Rules learnt the hard way
 - Python write_text on Windows writes CRLF; git checks out LF, so a stamped file (rig.json) must be
