@@ -205,5 +205,13 @@
 		"cop_hold_radius": 7.0,
 		"cop_fire_interval": 0.7,
 		"max_police_cars": 8
+	},
+	"vehicles": {
+		"tank_height": 1.61,
+		"turret_turn": 2.5,
+		"gun_elevation": 0.35,
+		"recoil": 0.3,
+		"recoil_seconds": 0.45,
+		"hull_turn": 3.0
 	}
 }

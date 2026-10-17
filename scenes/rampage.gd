@@ -18,7 +18,6 @@ const DIP_RECOVER := 4.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 ## How fast the camera's aim catches up with the kaiju's drawn body (1/s).
 const FOCUS_FOLLOW := 12.0
-const TANK_GREEN := Color("55613a")
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
@@ -140,7 +139,7 @@ func _physics_process(delta: float) -> void:
 	_update_kaiju(delta, move.length())
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
-	_update_tanks()
+	_update_tanks(delta)
 	_hud.refresh()
 
 
@@ -304,31 +303,43 @@ func _part(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 	return mi
 
 
-func _update_tanks() -> void:
+## Each tank's hull turns to the way it drives (to the kaiju when it stands) and its turret keeps
+## the gun on the kaiju.
+func _update_tanks(delta: float) -> void:
 	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
+	var turn := Num.f(Content.section("vehicles")["hull_turn"]) * delta
 	for tank: RampageSim.Tank in sim.tanks:
 		if flatten:
 			_city.crush(_to_world(tank.pos), 1.4)
 		if not _tank_nodes.has(tank.id):
 			continue
-		var node: Node3D = _tank_nodes[tank.id]
-		node.position = _to_world(tank.pos)
-		var to := sim.kaiju_pos - tank.pos
-		if to.length() > 0.01:
-			node.rotation.y = atan2(-to.x, -to.y)
+		var node: TankModel = _tank_nodes[tank.id]
+		var at := _to_world(tank.pos)
+		var drive := at - node.position
+		node.position = at
+		var heading := Vector2(drive.x, drive.z)
+		if heading.length() < 0.001:
+			var to := sim.kaiju_pos - tank.pos
+			heading = Vector2(to.x, to.y)
+		if heading.length() > 0.001:
+			var want := atan2(-heading.x, -heading.y)
+			var diff := wrapf(want - node.rotation.y, -PI, PI)
+			node.rotation.y += clampf(diff, -turn, turn)
+		node.aim(_kaiju_at + Vector3(0, 2.0 * sim.body_scale(), 0), delta)
 
 
 func _tank_fired(id: int, at: Vector3) -> void:
 	if not _tank_nodes.has(id):
 		return
-	var node: Node3D = _tank_nodes[id]
+	var node: TankModel = _tank_nodes[id]
 	var target := at + Vector3(0, 1.0, 0)
 	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
 		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	var shell := _part(Vector3.ONE * 0.35, node.position + Vector3(0, 0.9, 0), UiKit.WARN)
+	var muzzle := node.fire()
+	var shell := _part(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
-	_city.flash(node.position + Vector3(0, 1.0, 0), Color("ffc070"), 4.0, 0.12)
+	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
 	var tween := shell.create_tween()
 	tween.tween_property(shell, "position", target, 0.22)
 	if sim.stat("armor") > 0.0:
@@ -347,7 +358,7 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 		_tank_nodes.erase(id)
 	for n: int in 8:
 		_city.debris(
-			pos + Vector3(0, 0.5, 0), TANK_GREEN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
+			pos + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
 		)
 	_city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
 	_city.fire(pos, 0.6)
