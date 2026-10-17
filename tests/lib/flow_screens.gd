@@ -30,6 +30,7 @@ func run() -> void:
 	layout.reveal_stage_city()
 	await layout.reveal_fits()
 	await _check_settings()
+	layout.currency_named()
 	_check_migration()
 	SaveFile.delete_save()
 
@@ -75,8 +76,10 @@ func _check_new_game() -> void:
 	if rampage == null:
 		main.queue_free()
 		return
+	layout.listen(rampage, "HUD")
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(rampage, PauseMenu)
+	layout.listen(rampage, "pause")
 	check.call(t.paused and menu != null, "Esc pauses the rampage and opens the pause menu")
 	check.call(_hint_hidden(rampage), "the HUD's hints hide behind the pause menu (lead review 3)")
 	var clock := rampage.sim.time_left
@@ -145,8 +148,9 @@ func _check_results_compare() -> void:
 	var results := ResultsScreen.new(result, best)
 	t.root.add_child(results)
 	await _frames(3)
+	layout.listen(results, "results")
 	check.call(
-		results.verdict() == "BIGGER THAN LAST TIME  +50% RUBBLE",
+		results.verdict() == "BIGGER THAN LAST TIME  +50% BIOMASS",
 		"beating the best by half says +50%%: %s" % results.verdict()
 	)
 	await GuiInput.key(t, KEY_ENTER)
@@ -172,7 +176,7 @@ func _check_results_compare() -> void:
 		"every row shows its best or NEW BEST: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
-	check.call(short.verdict() == "50 RUBBLE SHORT OF YOUR BEST", "a miss says how far short")
+	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")
 	short.free()
 	results.queue_free()
 	await _frames(1)
@@ -192,6 +196,8 @@ func _check_evolution_and_continue() -> void:
 	var title := _screen(main)
 	var cont := GuiInput.button(title, "CONTINUE")
 	check.call(cont != null, "with a save the title offers Continue")
+	await layout.fits_at_scales(title as Control, "title screen")
+	layout.listen(title, "title")
 	await GuiInput.click(t, cont)
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
@@ -224,6 +230,7 @@ func _check_evolution_and_continue() -> void:
 		"the insectoid's Brood is its branch's capstone, bigger, with its button"
 	)
 	await layout.fits_at_scales(tree, "evolution tree")
+	layout.listen(tree, "tree")
 	check.call(
 		(
 			tree.node_button("i_glide").role == "branch"

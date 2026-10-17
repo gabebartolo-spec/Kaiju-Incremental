@@ -11,8 +11,13 @@ const TV_CAP_PX := 28.0
 ## Cap height of the UI fonts as a share of their size (Open Sans / Kaiju Claw, about 0.71).
 const CAP_SHARE := 0.71
 
+## The currency's old name (D-056: the kaiju earns BIOMASS); no visible text may say it.
+const OLD_CURRENCY := "rubble"
+
 var t: SceneTree
 var check: Callable
+## Visible texts that still say OLD_CURRENCY, "<where>: <text>" (listen() fills it).
+var said: Array[String] = []
 
 
 func _init(runner: SceneTree, p_check: Callable) -> void:
@@ -37,12 +42,19 @@ func fits_at_scales(screen: Control, what: String) -> void:
 		await _frames(3)
 		var view := t.root.get_visible_rect()
 		var nodes: Array[UpgradeNode] = []
+		var crawls: Array[Rect2] = []
+		for node: Node in screen.find_children("*", "Control", true, false):
+			if node is NewsTicker:
+				crawls.append((node as Control).get_global_rect())
 		for node: Node in screen.find_children("*", "Button", true, false):
 			var b: Button = node
 			var name := b.text.get_slice(String.chr(10), 0)
 			var at := " at %d%%" % roundi(scale * 100.0)
 			if b.is_visible_in_tree() and not view.encloses(b.get_global_rect()):
 				misses.append(name + at + " off screen")
+			for crawl: Rect2 in crawls:
+				if b.is_visible_in_tree() and crawl.intersects(b.get_global_rect()):
+					misses.append(name + at + " under the news crawl")
 			if b is UpgradeNode:
 				nodes.append(b)
 				if (
@@ -67,11 +79,14 @@ func fits_at_scales(screen: Control, what: String) -> void:
 	PlayerSettings.apply()
 	t.root.size = window
 	await _frames(2)
-	check.call(
-		misses.is_empty(),
-		(
-			"the %s fits the TV at every UI scale (on screen, 28 px text, no overlaps): %s"
-			% [what, misses]
+	(
+		check
+		. call(
+			misses.is_empty(),
+			(
+				"the %s fits the TV at every UI scale (on screen, 28 px, no overlaps, clear of crawl): %s"
+				% [what, misses]
+			)
 		)
 	)
 
@@ -140,3 +155,27 @@ func _breaks_a_word(b: Button) -> bool:
 		if start > 0 and name[start - 1] != " ":
 			return true
 	return false
+
+
+## Notes every visible label, button and rich text under `root` that says OLD_CURRENCY.
+func listen(root: Node, where: String) -> void:
+	for node: Node in root.find_children("*", "Control", true, false):
+		var text := ""
+		if node is Label:
+			text = (node as Label).text
+		elif node is Button:
+			text = (node as Button).text
+		elif node is RichTextLabel:
+			text = (node as RichTextLabel).get_parsed_text()
+		if (node as Control).is_visible_in_tree() and text.containsn(OLD_CURRENCY):
+			said.append("%s: %s" % [where, text.get_slice(String.chr(10), 0)])
+
+
+## D-056: the screens listen() heard, and every node's description, call the currency biomass.
+func currency_named() -> void:
+	for up: Dictionary in Content.upgrades():
+		if str(up.get("desc", "")).containsn(OLD_CURRENCY):
+			said.append("node %s: %s" % [up["id"], up["desc"]])
+	check.call(
+		said.is_empty(), "no screen or node says %s (D-056 biomass): %s" % [OLD_CURRENCY, said]
+	)

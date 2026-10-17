@@ -2,7 +2,8 @@ class_name HazardBox
 extends StyleBox
 ## The emergency-broadcast box (the director's UI look A): a flat fill with square corners, an
 ## edge (solid or dashed), an optional band of hazard tape on the left or top, and an optional
-## outer ring for focus, the city's alarm system pointing at you. UiKit builds every one.
+## focus ring drawn just inside the edge (never outside: a ring outside the box covered the
+## controls next to it). The city's alarm system pointing at you. UiKit builds every one.
 
 enum Band { NONE, LEFT, TOP }
 
@@ -10,9 +11,9 @@ enum Band { NONE, LEFT, TOP }
 const STRIPE := 10.0
 ## A dash and its gap on a dashed edge (px).
 const DASH := 12.0
-## The focus ring sits this far outside the box and is this thick.
+## The focus ring sits this far inside the box's edge and is this thick.
 const RING_GAP := 4.0
-const RING_WIDTH := 4.0
+const RING_WIDTH := 3.0
 
 var fill := Color.BLACK:
 	set(value):
@@ -42,8 +43,8 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 		)
 	frame(to_canvas_item, rect, edge, border, dashed)
 	if ring:
-		var outer := rect.grow(RING_GAP + RING_WIDTH)
-		frame(to_canvas_item, outer, ring_color, RING_WIDTH, false)
+		var inner := rect.grow(-(border + RING_GAP))
+		frame(to_canvas_item, inner, ring_color, RING_WIDTH, false)
 
 
 ## Diagonal hazard tape filling `rect`: stripes of `on` over `off`, leaning like road tape.

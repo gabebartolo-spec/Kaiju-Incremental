@@ -23,7 +23,10 @@ func _init(lines: PackedStringArray) -> void:
 	UiKit.full_rect(strip)
 	add_child(strip)
 	_crawl = UiKit.label(SEPARATOR.join(lines) + SEPARATOR, UiKit.SIZE_BODY, Color.WHITE)
-	_crawl.position = Vector2(TAG_WIDTH, (HEIGHT - _crawl.get_minimum_size().y) / 2.0)
+	# The strip's full height with the text centred in it (the font is only known in the tree).
+	_crawl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_crawl.position = Vector2(TAG_WIDTH, 0.0)
+	_crawl.size.y = HEIGHT
 	add_child(_crawl)
 	var tag_box := ColorRect.new()
 	tag_box.color = UiKit.BG

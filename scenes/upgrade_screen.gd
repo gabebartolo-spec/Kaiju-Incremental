@@ -30,7 +30,7 @@ const STAT_LINES: Array[Array] = [
 ## Stats only some nodes change: shown in a node's details, not the summary.
 const EXTRA_STATS: Array[Array] = [
 	["regen", "Healing / sec", "%.1f"],
-	["rubble_mult", "Rubble earned", "x%.2f"],
+	["rubble_mult", "Biomass earned", "x%.2f"],
 	["ability_range", "Signature reach", "%.1f"],
 	["tail_damage", "Tail sweep power", "%.0f"],
 	["tail_reach", "Tail reach", "%.1f"],
@@ -235,8 +235,8 @@ func _status_line(id: String) -> String:
 				names.append(str(req_def["name"]))
 		return head + "Needs: " + ", ".join(names)
 	if tree.can_buy(id, rubble):
-		return head + "Cost %d  -  press%sto%sbuy" % [tree.cost(id), NBSP, NBSP]
-	return head + "Cost %d  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
+		return head + "Cost %d biomass  -  press%sto%sbuy" % [tree.cost(id), NBSP, NBSP]
+	return head + "Cost %d biomass  -  %d more needed" % [tree.cost(id), tree.cost(id) - rubble]
 
 
 func _stat_name(stat: String) -> String:
@@ -259,7 +259,7 @@ func _fmt(stat: String, value: float) -> String:
 
 
 func _refresh() -> void:
-	_rubble_label.text = "RUBBLE  %d" % rubble
+	_rubble_label.text = "BIOMASS  %d" % rubble
 	for id: String in tree.order:
 		node_button(id).show_state(tree, rubble)
 	_area.queue_redraw()

@@ -8,7 +8,7 @@ signal continued
 
 ## Stat key, label, how the value is shown ("int" or "pct").
 const ROWS: Array[Array] = [
-	["rubble", "Rubble earned", "int"],
+	["rubble", "Biomass devoured", "int"],
 	["destruction", "City destroyed", "pct"],
 	["toppled", "Buildings toppled", "int"],
 	["tallest_topple", "Tallest tower toppled (floors)", "int"],
@@ -128,8 +128,8 @@ func verdict() -> String:
 	if rubble > best:
 		if best <= 0.0:
 			return "BIGGER THAN EVER"
-		return "BIGGER THAN LAST TIME  +%d%% RUBBLE" % roundi(100.0 * (rubble - best) / best)
-	return "%d RUBBLE SHORT OF YOUR BEST" % ceili(best - rubble)
+		return "BIGGER THAN LAST TIME  +%d%% BIOMASS" % roundi(100.0 * (rubble - best) / best)
+	return "%d BIOMASS SHORT OF YOUR BEST" % ceili(best - rubble)
 
 
 ## True when this rampage beat the best before it on `key` (never on a first rampage).

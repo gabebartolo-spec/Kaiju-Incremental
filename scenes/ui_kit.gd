@@ -111,7 +111,7 @@ static func panel(color: Color = PANEL) -> PanelContainer:
 
 
 ## A button with hazard tape down its left edge. Focus (and hover) lights a dark button up in
-## hazard yellow with a ring around it, so the pad and mouse always show where you are.
+## hazard yellow; focus adds a dark ring inside its edge, so the pad always shows where you are.
 static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) -> Button:
 	var b := Button.new()
 	b.text = text
@@ -123,10 +123,10 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	var hover := hazard(lit, lit, 2.0, left)
 	var focus := hazard(lit, lit, 2.0, left)
 	focus.ring = true
-	focus.ring_color = lit
+	focus.ring_color = ink(lit)
 	var pressed := hazard(lit.darkened(0.25), lit, 2.0, left)
 	pressed.ring = true
-	pressed.ring_color = lit
+	pressed.ring_color = ink(lit.darkened(0.25))
 	var off := hazard(PANEL, LOCKED, 2.0, left)
 	off.dashed = true
 	off.tape_on = LOCKED

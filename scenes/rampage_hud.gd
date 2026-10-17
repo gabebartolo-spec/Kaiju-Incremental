@@ -143,7 +143,7 @@ func refresh() -> void:
 	var hurry := sim.time_left < 10.0
 	_clock_box.fill = UiKit.ACCENT if hurry else UiKit.ALERT
 	_time.add_theme_color_override("font_color", UiKit.BG if hurry else Color.WHITE)
-	_rubble.text = "RUBBLE  %d" % Num.i(floor(sim.rubble))
+	_rubble.text = "BIOMASS  %d" % Num.i(floor(sim.rubble))
 	_destruction.value = sim.destruction() * 100.0
 	var ability: Dictionary = species["ability"]
 	var ability_name := str(ability["name"]).to_upper()

@@ -38,14 +38,14 @@ func _show_title() -> void:
 	_swap(title)
 
 
-## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 rubble"; "" with no save (or a
+## What Continue resumes, e.g. "Reptilian, 3 rampages, 120 biomass"; "" with no save (or a
 ## save of a species the demo leaves out).
 func _summary() -> String:
 	if _save.is_empty() or not Demo.allows(str(_save.get("species", ""))):
 		return ""
 	var runs := Num.i(_save.get("runs", 0))
 	return (
-		"%s, %d rampage%s, %d rubble"
+		"%s, %d rampage%s, %d biomass"
 		% [
 			str(_species()["name"]),
 			runs,
