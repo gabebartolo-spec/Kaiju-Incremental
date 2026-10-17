@@ -239,6 +239,11 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	player.play()
 
 
+## The volume (dB) of the latest play, its distance fade included (read by the flow suite).
+func last_volume() -> float:
+	return _pool[(_next + POOL - 1) % POOL].volume_db
+
+
 ## The pitch of the latest play (the flow suite checks the size-tier pitch with it).
 func last_pitch() -> float:
 	return _pool[(_next + POOL - 1) % POOL].pitch_scale

@@ -22,21 +22,31 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
    diff meanwhile. Syncs after Military AI / Rooftops (same files).
 4. Street-life civilian cap (~600 per city) after Perf's no-feel pass: perf numbers in agent-handoffs/performance.md.
 5. Octopus adult mesh FIX (10-11 arms, two eye pairs): only if the species plan (D-060) resumes.
-6. D-065 (b): 8-15% green lots means fewer buildings/chunks = slower demo (touches D-049). City session prepares a
-   table (0/8/12/15%: chunks per stage, pacing hours to evolve1 and tree end); ask him with it. (a) street trees,
+6. D-065 (b) green-lot share (reptilian pacing; table in notes no-empty-space/D-065b_green_lot_table.md):
+   0% evolve1 0.59 h / tree 4.46 h; 8% 0.64 / 4.88; 12% 0.67 / 5.08; 15% 0.64 / 5.18 (past 5 h). Recommend 8%. (a) street trees,
    park/yard bushes, flower beds, playground props (presentation, crushable) proceeds tonight.
 7. Landmarks (session "Kaiju: Landmark models", local_87d706ce...): board ...side-session-notes\local_9fac90d2...\
    landmarks\board1\landmark_board.png, six originals A stadium / B gate / C clock hall / D sky wheel / E spire /
    F megatower; my QA PASS, fresh critic pending. Ask "which landmarks per city": (1, rec) A -> D -> E -> F (demo
-   needs A + D), (2) A -> C -> E -> F, (3) all six. Landmark sites (merged-block plazas) start after D-062 merges.
+   needs A + D), (2) A -> C -> E -> F, (3) all six. Board r5 (all panels critic PASS): ...\landmarks\board5\
+   landmark_board_r5.png. Sites built on claude/landmarks (A + D placeholders, data-driven); landmark chunk bonus
+   held to ±5% pacing. Critic side-note: in its renders the small croc's tail hangs like a third leg and the upright
+   adult with back plates may read as Godzilla: show him if relevant.
 8. #39 heli gun burst + crash (stacked on #34): listen to ...side-session-notes\local_9fac90d2...\army-sfx\
    heli_gun_crash.mp4 (busy picture, listen only); merge after his yes. Croc roar layers from Sonniss GDC: ask.
    Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
-   ambience (branches, coming). #41 limiter MERGED (objective: no clipping).
+   ambience (#43; synth voices risky, CC0 crowd fallback = his licence call). #41 limiter MERGED. Mix report
+   (notes mix-report/report.md): master -21.4 LUFS; crowd inaudible, regen loop masks army, tank thump masks
+   stomps. Proposal = PR #45 (stacked on #43): A/B mix-report/ab_before_after_20s.mp4 (one listen); crowd audible,
+   regen loop 86% -> 6%, master -20.5 LUFS. Sound session is available for the night.
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
    1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
    copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
-10. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
+10a. Rooftops (#40, critic PASS after 6 rounds, merging at 0fdf935): white tracers read as "something is shooting";
+   shooters/flashes barely visible and ~1 s gaps feel sparse. Ask: more squads/denser fire, or bigger shooters?
+   Clip: ...side-session-notes\local_106fc100...\rooftops\fix6\rooftops_behemoth_3s_1080p_fix6.mp4.
+10. Tree stats panel shows 12 raw numbers (STOMPS/S, RECHARGE 7.05...): trim to ~4 player words? (screen-critic).
+11. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
 - Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill. Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
