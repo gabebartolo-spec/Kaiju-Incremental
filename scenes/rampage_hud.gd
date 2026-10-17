@@ -18,6 +18,8 @@ const HEADLINES := {
 const BEAT_FRAMES := 150
 const BEAT_MIN_FRAMES := 40
 const BEAT_SIZE := 128
+## The world runs at this speed during the end beat.
+const END_SLOWMO := 0.3
 
 var sim: RampageSim
 var species: Dictionary
@@ -130,6 +132,7 @@ func show_end_beat(reason: String) -> void:
 	if _beat_frame >= 0:
 		return
 	_beat_frame = 0
+	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.55, 0.25, 0.45)
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -187,6 +190,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_finish_beat()
 
 
+## Leaving mid-beat or mid-pause (quit to title) must not leave the world slowed or paused.
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+
+
 func _finish_beat() -> void:
+	Engine.time_scale = 1.0
 	_beat_done = true
 	beat_done.emit()

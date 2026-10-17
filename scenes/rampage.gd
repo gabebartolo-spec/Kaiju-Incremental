@@ -18,8 +18,6 @@ const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 const CAMERA_OFFSET := Vector3(0, 27, 19)
 const TANK_GREEN := Color("55613a")
-## The world runs at this speed during the end beat.
-const END_SLOWMO := 0.3
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
@@ -99,7 +97,7 @@ func _ready() -> void:
 	_camera.current = true
 	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species)
-	_hud.beat_done.connect(_on_beat_done)
+	_hud.beat_done.connect(func() -> void: finished.emit(result()))
 	_hud.end_requested.connect(_end_now)
 	add_child(_hud)
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
@@ -107,25 +105,13 @@ func _ready() -> void:
 
 ## The sim's result plus what only the view counts: the civilians it crushed.
 func result() -> Dictionary:
-	var out := sim.result()
-	out["civilians"] = _city.street.killed if _city.street != null else 0
-	return out
+	return sim.result().merged({"civilians": _city.street.killed if _city.street else 0})
 
 
 ## Pause menu's End Rampage: the sim ends now, keeping what was earned.
 func _end_now() -> void:
 	sim.end("ended")
 	_on_event({"type": "run_over", "reason": "ended"})
-
-
-func _on_beat_done() -> void:
-	Engine.time_scale = 1.0
-	finished.emit(result())
-
-
-func _exit_tree() -> void:
-	Engine.time_scale = 1.0
-	get_tree().paused = false
 
 
 func _physics_process(delta: float) -> void:
@@ -212,7 +198,6 @@ func _on_event(event: Dictionary) -> void:
 			_tank_destroyed(Num.i(event["tank"]), at)
 		"run_over":
 			_hud.refresh()
-			Engine.time_scale = END_SLOWMO
 			_shake = maxf(_shake, 0.5)
 			_hud.show_end_beat(str(event["reason"]))
 			get_node("/root/EventBus").emit_signal("run_ended", result())
