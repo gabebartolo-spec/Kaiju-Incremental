@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 05:08
-## State: running a check (build.yml dispatch on look-options, run 39056638725); smoke waits for GPU go ~05:40
+# City-calm handoff, 2026-10-18 05:10
+## State: awaiting lead (PR #30 open; local smoke of the CI artifact waits for the GPU go ~05:40)
 
 ## Task
 Role city-calm (helper). Lead: "Game demo planning" (local_106fc100).
@@ -22,13 +22,13 @@ none uncommitted (this handoff aside).
 notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\ci-export
 - Dry run on claude/ci-export: run 39056399854 green; artifact KaijuIncremental-8793b28;
   exe 126,591,656 B, 229 files, no tools/, headless launch loaded main.tscn.
-- look-options run 39056638725: background job downloads to notes/ci-export/artifact and
-  saves run_39056638725.log.
+- look-options run 39056638725 green at 87fba2d: 235 files, pack check ok, main.tscn reached;
+  artifact KaijuIncremental-87fba2d downloaded to notes/ci-export/artifact/ (126,598,360 B).
+- PR #30 open (head 01d6e1e), body says the smoke is pending.
 - PR body draft: scratchpad pr_ci_export.md (LOOK_RUN / SMOKE placeholders).
 
 ## Next
-1. When the run is done: check it is green and HEAD = look-options 87fba2d in the log; open the
-   PR into look-options with the body (fill LOOK_RUN).
+1. DONE: run checked, PR #30 opened, lead told.
 2. At the lead's GPU go (~05:40): bash scratchpad/smoke_exe.sh <notes>/ci-export/smoke
    <path to downloaded exe>; check a title frame and godot.log; fill SMOKE; gh pr edit; report.
 
@@ -39,7 +39,7 @@ none
 none
 
 ## Running jobs
-bc0zh3fcr: gh run watch 39056638725 + download (background).
+none.
 
 ## Findings for the lead
 - pck_check's tools/ assertion caught 40 dev-tool files in the demo pack before the filter
