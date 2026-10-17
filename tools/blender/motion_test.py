@@ -575,7 +575,7 @@ def set_loc(name, delta):
 
 hip_h = L["leg"][0].z
 D = 0.95 * 46.0  # stride per cycle, the same for both meshes so the paths match
-T = 52.0  # frames per cycle
+T = 48.0  # frames per cycle: three cycles in the 144-frame clip, so the walk loops seamlessly
 DUTY = 0.62
 V_WALK = D / T
 BALL = {s: (L["leg"][3] if s == "L" else mir(L["leg"][3])) for s in ("L", "R")}
@@ -624,8 +624,10 @@ def foot_world(clip, side, f, P):
     p0, y0 = plant(k)
     p1, y1 = plant(k + 1)
     e = s_ * s_ * (3 - 2 * s_)
-    p = p0.lerp(p1, e) + V((0, 0, 0.075 * hip_h * math.sin(math.pi * s_)))
-    return p, y0 + (y1 - y0) * e, 16.0 * math.sin(math.pi * s_), False
+    # Lift and toe pitch go as sin^2: the foot arrives with no downward speed (no snap at contact).
+    lift = math.sin(math.pi * s_) ** 2
+    p = p0.lerp(p1, e) + V((0, 0, 0.085 * hip_h * lift))
+    return p, y0 + (y1 - y0) * e, 16.0 * lift, False
 
 
 def pose_frame(clip, f, P):
@@ -645,22 +647,32 @@ def pose_frame(clip, f, P):
     # 58-112 (sags to 60% while the jaw stays wide); recover 112-140.
     windup = (ramp(16, 34, f) * (1 - ramp(34, 42, f))) * roar
     drop = (ramp(26, 34, f) * (1 - ramp(34, 40, f))) * roar
-    rear = ramp(34, 48, f) * (1 - 0.4 * ramp(58, 112, f)) * (1 - ramp(112, 140, f)) * roar
+    # The drift is linear (never a hold) and overlaps the recovery, so nothing stops between them.
+    drift = min(1.0, max(0.0, (f - 56) / 62.0))
+    rear = ramp(34, 48, f) * (1 - 0.45 * drift) * (1 - ramp(104, 140, f)) * roar
     shake = math.sin(f * 2 * math.pi * 7 / FPS) * ramp(46, 50, f) * (1 - ramp(58, 80, f)) * roar
-    breathe = math.sin(f * 2 * math.pi / 60) * roar
+    # Breathing at a period that divides the clip (72 frames), so the roar loops without a pop.
+    breathe = math.sin(f * 2 * math.pi / 72) * roar
+    # A slow look across the street through the drift (head and tail), gone by the recovery.
+    look = math.sin(math.pi * min(1.0, max(0.0, (f - 50) / 86.0))) * math.sin(2 * math.pi * (f - 50) / 86.0) * roar
     # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
     # after it and counter-turns; the tail sways against the hips.
     w = ph - math.pi * DUTY  # 0 = left foot mid-stance
-    bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.03 * hip_h * windup - 0.05 * hip_h * drop
-           + 0.035 * hip_h * rear + 0.004 * hip_h * breathe)
+    # Weight lands on each contact: a short dip in the frames after a foot plants.
+    land = 0.0
+    for phs in PHASE.values():
+        d = ((f / T - phs) % 1.0) * T  # frames since this foot's contact
+        land += math.sin(math.pi * d / 10.0) ** 2 if d < 10.0 else 0.0  # sin^2: no velocity step
+    bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
+           - 0.045 * hip_h * windup - 0.075 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe)
     sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
     p_yaw = 4.0 * math.sin(ph) * gait
     p_roll = 3.0 * math.cos(w) * gait
-    set_rot("pelvis", world_q(pitch=-7 * rear + 4 * windup + 3 * drop, yaw=p_yaw, roll=p_roll))
+    set_rot("pelvis", world_q(pitch=-7 * rear + 6 * windup + 4.5 * drop, yaw=p_yaw, roll=p_roll))
     set_rot("spine", world_q(pitch=1.2 * math.sin(2 * ph - 0.5) * gait - 10 * rear + 4 * windup,
                              yaw=-0.6 * p_yaw, roll=-0.6 * p_roll))
-    set_rot("chest", world_q(pitch=-0.8 * math.sin(2 * ph - 1.0) * gait - 9 * rear + 3 * windup,
+    set_rot("chest", world_q(pitch=-0.8 * math.sin(2 * ph - 1.0) * gait - 9 * rear + 3 * windup + 1.5 * breathe,
                              yaw=-0.7 * p_yaw + 2.0 * math.sin(ph - 0.8) * gait,
                              roll=-0.8 * p_roll + 1.5 * math.cos(w - 0.8) * gait))
     # Neck and head keep the hunting gaze steady (counter the body), a little low when walking;
@@ -668,7 +680,8 @@ def pose_frame(clip, f, P):
     set_rot("neck0", world_q(pitch=4 * gait + 1.2 * math.sin(2 * ph - 1.4) * gait - 15 * rear + 9 * windup
                              + 0.8 * shake, yaw=-0.25 * p_yaw - 1.0 * math.sin(ph - 1.2) * gait))
     set_rot("neck1", world_q(pitch=2 * gait - 11 * rear + 7 * windup, yaw=-0.25 * p_yaw))
-    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 6 * windup + 1.2 * shake))
+    set_rot("head", world_q(pitch=-1.4 * math.sin(2 * ph - 1.4) * gait - 16 * rear + 6 * windup + 1.2 * shake
+                            + 2.0 * breathe, yaw=7.0 * look))
     # Mouth shut at rest and walking; it parts in the wind-up and gapes at the peak.
     set_rot("jaw", world_q(pitch=L.get("jaw_rest", 0.0) + 5 * windup + 36.0 * rear * (1 + 0.04 * shake)))
     # Arms: elbows bent, hands low in front of the belly; at the peak the claws come up to the chest,
@@ -686,10 +699,14 @@ def pose_frame(clip, f, P):
     # in the roar it swings down and out as the head rears, then settles.
     for i in range(TAIL_BONES):
         k = i / (TAIL_BONES - 1)
-        walk_yaw = (1.0 + 0.35 * i) * math.cos(w - 0.45 * i) * gait
-        roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3)
+        # The turn ends with the tail settling (wave damped over the last 30 frames).
+        settle_t = 1 - 0.65 * ramp(110, 140, f) if clip == "turn" else 1.0
+        walk_yaw = (1.0 + 0.35 * i) * math.cos(w - 0.45 * i) * gait * settle_t
+        roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3) - 1.2 * look * (i >= 3)
+        # In the roar the base lifts against the pelvis tipping back, so the tip stays clear of the street.
         set_rot(f"tail{i}", world_q(yaw=walk_yaw + roar_yaw,
-                                    pitch=0.6 * math.sin(2 * ph - 0.45 * i) * gait - 0.9 * rear * (i >= 2)
+                                    pitch=0.6 * math.sin(2 * ph - 0.45 * i) * gait * settle_t
+                                    + 2.5 * rear * (i < 2) - 0.3 * rear * (i >= 2)
                                     + 2.0 * windup * (i < 4) + 0.4 * breathe))
     # Feet: world-fixed while planted (converted into the moving rig's space).
     # The rig's matrix for this frame (rig.matrix_world still holds the last evaluated frame).
@@ -872,6 +889,38 @@ def crops():
         cam.rotation_euler = (-dd).to_track_quat("-Z", "Y").to_euler()
         scene.render.filepath = str(OUT / f"{MODEL}_crop_{label}_f{f}.png")
         bpy.ops.render.render(write_still=True)
+
+
+def diff(clip):
+    """Per-frame change of the pose: mean distance every vertex moves between frames, in the rig's
+    own space (root travel removed), including the loop seam f(N-1) -> f0; and the tail tip's height."""
+    key_clip(clip)
+    deps = None
+    prev = first = None
+    steps, tip_z = [], []
+    tip = rig.pose.bones[f"tail{TAIL_BONES - 1}"]
+    for f in range(FRAMES):
+        settle(f)
+        deps = bpy.context.evaluated_depsgraph_get()
+        cos = []
+        for o in meshes:
+            me = o.evaluated_get(deps).to_mesh()
+            co = np.empty(len(me.vertices) * 3)
+            me.vertices.foreach_get("co", co)
+            o.evaluated_get(deps).to_mesh_clear()
+            cos.append(co.reshape(-1, 3))
+        cur = np.concatenate(cos)
+        if prev is not None:
+            steps.append(float(np.linalg.norm(cur - prev, axis=1).mean()))
+        else:
+            first = cur
+        prev = cur
+        tip_z.append(float((rig.matrix_world @ tip.tail).z))
+    seam = float(np.linalg.norm(first - prev, axis=1).mean())
+    out = dict(clip=clip, steps=steps, seam=seam, median=float(np.median(steps)), tail_tip_z=tip_z)
+    (OUT / f"{MODEL}_{clip}_diff.json").write_text(json.dumps(out), encoding="utf-8")
+    print(f"diff {MODEL} {clip}: median {out['median']:.3f} m/frame, max {max(steps):.3f} "
+          f"(f{int(np.argmax(steps)) + 1}), seam {seam:.3f}; tail tip min z {min(tip_z):.1f} m")
 
 
 JOINTS = {"shoulder_L": "upperarm_L", "elbow_L": "forearm_L", "wrist_L": "hand_L", "hip_L": "thigh_L",
@@ -1106,6 +1155,9 @@ elif TASK == "measure":
         measure(c)
 elif TASK == "crops":
     crops()
+elif TASK == "diff":
+    for c in CLIPS:
+        diff(c)
 elif TASK == "blend":
     key_clip(CLIPS[0])
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT / f"{MODEL}_motion_test.blend"))
