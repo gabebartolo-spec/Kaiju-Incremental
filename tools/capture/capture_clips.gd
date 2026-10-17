@@ -8,6 +8,7 @@ extends "res://tools/capture/capture_motion.gd"
 ## Prints "CLIPSTATE t <from> -> <to>" at each cross-fade start and "CLIPSEAM t <clip>" each time a
 ## looping clip wraps (for the per-frame difference plot); nothing on a kaiju without clips.
 ## --procedural: the same moves on the procedural gait (ClipGait.off), the "before".
+## --probe: no pictures needed (run it --headless); prints the ClipProbe numbers at the end.
 ## --frames=N saves every Nth frame as PNG to <out>/frames (--out=<dir>, default user://clips),
 ## optionally only from --from=<s> to --to=<s>: lossless frames for the difference plot and clips
 ## (each is the frame drawn before that step, one frame behind the label).
@@ -23,12 +24,16 @@ var _every := 0
 var _from := 0.0
 var _to := INF
 var _frame := 0
+var _probe: ClipProbe
+var _tip := ""
 
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg == "--procedural":
 			ClipGait.off = true
+		elif arg == "--probe":
+			_probe = ClipProbe.new()
 		elif arg.begins_with("--out="):
 			_out = arg.substr(6)
 		elif arg.begins_with("--frames="):
@@ -57,6 +62,7 @@ func _standing_facing(t: float, facing: Vector2) -> Vector2:
 
 func _event_at(t: float) -> String:
 	_log_clip(t)
+	_feed_probe(t)
 	if _every > 0 and _frame % _every == 0 and t >= _from and t <= _to:
 		var shot := root.get_viewport().get_texture().get_image()
 		shot.save_png(_out.path_join("frames/f%05d.png" % _frame))
@@ -72,6 +78,32 @@ func _event_at(t: float) -> String:
 	if t < ROAR_AT + 6.0:
 		return "ROAR"
 	return "STAND"
+
+
+func _feed_probe(t: float) -> void:
+	if _probe == null or _gait == null:
+		return
+	var rig := _gait.rig
+	if _tip.is_empty():
+		for n: String in _gait.clips.bones:
+			if n.begins_with("tail"):
+				_tip = n
+		rig.foot_planted.connect(
+			func(side: String, strength: float, _at: Vector3) -> void:
+				if side == "tail":
+					var scale: float = SCALES.get(_stage, 1.0)
+					var size := scale * (0.2 + strength)
+					var dip := (
+						Rampage.FOOTFALL_DIP * maxf(Rampage.FOOTFALL_DIP_FLOOR, scale) * strength
+					)
+					var fx := Vector3(Rampage.FOOTFALL_DUST * size, Rampage.FOOTFALL_RING * size, 0)
+					fx.z = _dip_px(dip, scale)
+					_probe.slam(_time, strength, fx)
+		)
+	var kaiju: KaijuModel = root.find_children("*", "KaijuModel", true, false)[0]
+	_probe.sample(t, kaiju, _gait, _tip)
+	if t >= _seconds - 1.5 / FPS:
+		_probe.report(TURN_AT, ROAR_AT)
 
 
 func _log_clip(t: float) -> void:

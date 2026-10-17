@@ -29,7 +29,7 @@ ARGS = sys.argv[sys.argv.index("--") + 1:]
 MODEL, SRC, OUT, TASK = ARGS[0], ARGS[1], Path(ARGS[2]), ARGS[3]
 CLIPS = ARGS[4].split(",") if len(ARGS) > 4 else ["walk", "turn", "roar"]
 OUT.mkdir(parents=True, exist_ok=True)
-FPS, FRAMES = 24, 144
+FPS, FRAMES = 24, 336  # 336 frames: seven walk cycles with four whole tail waves; other clips use fewer
 RES = (640, 480)
 # Optional overrides for board renders: MT_VIEWS=high MT_RES=960x920 (default: side + three-quarter, 640x480).
 import os
@@ -645,18 +645,20 @@ def foot_world(clip, side, f, P):
 
 
 # Tail motion (degrees per joint, base -> tip: base + extra * k, k = 0 at the root, 1 at the tip).
-TAIL_WALK = (2.0, 5.0)  # the walk's side-to-side S-wave
-TAIL_WALK_PERIOD = 72  # frames per tail wave: one and a half walk cycles (a heavy tail, not an eel)
-TAIL_IDLE = (1.2, 0.6)  # the standing sway (72-frame period; at 0.6 in the roar)
+TAIL_WALK = (1.0, 2.5)  # the walk's side-to-side S-wave
+TAIL_WALK_PERIOD = 84  # frames per tail wave: seven strides carry four waves (a heavy tail, not an eel)
+TAIL_IDLE = (0.4, 0.2)  # the standing sway (72-frame period; at 0.6 in the roar)
 TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
-TAIL_WHIP = (6.5, 8.3)  # turn whip per unit of tail_whip()
+TAIL_WHIP = (7.8, 10.0)  # turn whip per unit of tail_whip()
 TAIL_WHIP_DELAY = 0.5  # frames the whip takes per joint
 TAIL_LIFT = (6.0, -9.0)  # roar: the lift's arc per joint (root rises, mid curves up, tip trails)
 TAIL_SLAM = (1.15, 0.85)  # roar: the slam per joint as it lands, then where it rests, x (0.2 + 1.6 k)
 TAIL_TRAIL = 12.0  # roar: how far the outer tail curls up as the slam starts (per joint, x k)
 TAIL_SLAM_DELAY = 0.8  # frames the lift and the slam take per joint (the tip lands after the mid-tail)
-TAIL_SPRING = (14.0, 0.25)  # the tail's natural frequency (rad/s) and damping ratio
+TAIL_SPRING = (14.0, 0.36)  # the tail's natural frequency (rad/s) and damping ratio
 _WHIP = {}
+# The roar's recovery (frames): about a second after the slam it returns to standing.
+ROAR_REST = (71, 99)
 
 
 def tail_whip(clip, P):
@@ -697,10 +699,13 @@ def pose_frame(clip, f, P):
         return t * t * (3 - 2 * t)
     roar = 1.0 if clip == "roar" else 0.0
     gait = 1.0 if walking else 0.0
+    if clip == "turn":  # the game turns standing: the body's walking sway dies once the turn is done
+        gait *= 1 - ramp(100, 116, f)
     idle = 1.0 if clip == "idle" else 0.0  # the game's standing loop: breathing only
     # Roar beats (24 fps): settle 0-14; coil 14-38 (the head dips first and is already lifting while
     # the pelvis still sinks, so the motion never stalls); rear 31-47 (one ease in and out, fastest
-    # about f39); then a slow drift 47-118 (eased in) overlapping the recovery 104-140. Nothing in
+    # about f39); then a slow drift (eased in) through a one-second hold after the slam, and the
+    # recovery ROAR_REST (back to standing, so the game's roar ends soon after the slam). Nothing in
     # the roar moves faster than the breathing and the look: no tremor layer (a 7 Hz shake buzzed).
     windup = ramp(12, 28, f) * (1 - ramp(27, 40, f)) * roar   # head and neck coil (bottoms first)
     drop = ramp(22, 38, f) * (1 - ramp(37, 45, f)) * roar     # pelvis and knees load, fastest as the head turns
@@ -708,14 +713,14 @@ def pose_frame(clip, f, P):
     # overlaps the recovery, so nothing stops between them.
     d_ = max(0.0, f - 47.0)
     drift = (d_ * d_ / 12.0 if d_ < 6 else d_ - 3.0) / 68.0  # 6-frame ease, then steady (no cap: no kink)
-    rear = ramp(31, 47, f) * (1 - 0.45 * drift) * (1 - ramp(104, 140, f)) * roar
+    rear = ramp(31, 47, f) * (1 - 0.45 * drift) * (1 - ramp(*ROAR_REST, f)) * roar
     # Breathing at a period that divides the clip (72 frames), so the roar loops without a pop.
     breathe = math.sin(f * 2 * math.pi / 72) * (roar + idle)
     # One slow pulse at the peak (f55-73, about 0.7 Hz): the jaw snaps wider and the chest pushes, then
     # settles, so the peak is a second bellow rather than a statue.
     pulse = (math.sin(math.pi * (f - 55) / 18.0) ** 2 if 55 <= f <= 73 else 0.0) * roar
     # A slow look across the street through the drift (head and tail), gone by the recovery.
-    look = math.sin(math.pi * min(1.0, max(0.0, (f - 46) / 90.0))) * math.sin(2 * math.pi * (f - 46) / 90.0) * roar
+    look = math.sin(math.pi * min(1.0, max(0.0, (f - 46) / 50.0))) * math.sin(2 * math.pi * (f - 46) / 50.0) * roar
     # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
     # after it and counter-turns; the tail sways against the hips.
     w = ph - math.pi * DUTY  # 0 = left foot mid-stance
@@ -771,7 +776,9 @@ def pose_frame(clip, f, P):
     whip = tail_whip(clip, P) if clip == "turn" else None
     for i in range(TAIL_BONES):
         k = i / (TAIL_BONES - 1)
-        settle_t = 1 - 0.65 * ramp(110, 140, f) if clip == "turn" else 1.0
+        # The game turns standing: the turn clip's tail carries only the whip (no walk sway), so it
+        # settles to the idle pose when the body stops.
+        settle_t = 0.0 if clip == "turn" else 1.0
         walk_yaw = TAIL_WALK[0] + TAIL_WALK[1] * k
         walk_yaw *= math.cos(2 * math.pi * f / TAIL_WALK_PERIOD - math.pi * DUTY - TAIL_LAG * i) * gait * settle_t
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
@@ -785,7 +792,7 @@ def pose_frame(clip, f, P):
         down = min(1.0, max(0.0, (f - hit + fall) / fall)) ** 2
         lift = ramp(10 + 1.5 * lag, 24 + 1.5 * lag, f) * (1 - down) * roar
         slam = down * (TAIL_SLAM[0] + (TAIL_SLAM[1] - TAIL_SLAM[0]) * ramp(hit + 2, hit + 10, f))
-        slam *= (1 - ramp(104, 140, f)) * roar
+        slam *= (1 - ramp(*ROAR_REST, f)) * roar
         trail = ramp(31, 36, f) * (1 - down) * roar  # the outer tail trails up as the root drives down
         b = f - hit
         rebound = math.exp(-b / 3) * math.sin(math.pi * b / 4) * roar if b > 0 else 0.0
@@ -1260,8 +1267,8 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
               f"tail{i}" for i in range(9)] + ["jaw"]
 # Clips the game plays: name -> (motion_test clip, frames kept, loops). The walk keeps one 48-frame
 # cycle and the idle one 72-frame breath (both loop seamlessly); turn_right is turn_left mirrored.
-GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", FRAMES, True), ("turn_left", "turn", FRAMES, False),
-              ("turn_right", "turn", FRAMES, False), ("roar", "roar", FRAMES, False)]
+GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", FRAMES, True), ("turn_left", "turn", 144, False),
+              ("turn_right", "turn", 144, False), ("roar", "roar", 108, False)]
 Q16 = 32767.0  # int16 scale of a quaternion component (positions are stored in cm)
 
 

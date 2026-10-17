@@ -21,9 +21,10 @@ const LAG_DECAY := 10.0
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
 ## The roar clip's frame where the tail tip hits the street (motion_test TAIL_SLAM), and how hard
-## the hit lands as a footfall (dust, ring, camera dip; presentation only, no damage).
+## the hit lands as a footfall: about four steps' dust and ring and a camera dip of a few percent
+## of the frame (the scene's footfall path; presentation only, no damage).
 const ROAR_SLAM_FRAME := 47.0
-const TAIL_SLAM_STRENGTH := 1.6
+const TAIL_SLAM_STRENGTH := 5.0
 ## A planted foot that ends this far from its clip spot (strides), or on a straight leg (fraction
 ## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip.
 const RESTEP_GAP := 0.3
@@ -35,8 +36,8 @@ const RESTEP_LIFT := 0.06
 ## ratio as the turn clips' whip (motion_test TAIL_SPRING); per-bone gain base -> tip (TAIL_WHIP),
 ## how long the swing takes to reach each next bone (s), and the swing it eases towards and never
 ## passes (rad; the sim turns faster than the clips, so a sharp turn would curl the tail too far).
-const TAIL_SPRING := Vector2(14.0, 0.25)
-const TAIL_GAIN := Vector2(6.5, 8.3)
+const TAIL_SPRING := Vector2(14.0, 0.36)
+const TAIL_GAIN := Vector2(7.8, 10.0)
 const TAIL_DELAY := 0.021
 const TAIL_MAX := 0.008
 
@@ -233,15 +234,15 @@ func _slam_tail(roar_was: float) -> void:
 		rig.foot_planted.emit("tail", TAIL_SLAM_STRENGTH, tip)
 
 
-## The tail lags the body's turns: the spring is pushed by the body's turning acceleration (not
-## during a turn clip or the roar, which carry their own tail), and its swing reaches each bone
-## a moment after the one before, so a curve drags the tail wide and it whips back and settles.
+## The tail lags the body's turns: the spring is pushed by the body's turning acceleration while
+## walking (a standing turn plays a turn clip, which carries its own whip), and its swing reaches
+## each bone a moment after the one before: a curve drags the tail wide, it whips back and settles.
 func _swing_tail(dt: float) -> void:
 	if not _tail_primed:  # the first frame: no turning yet
 		_tail_primed = true
 		_last_body_yaw = body_yaw
 	var rate := wrapf(body_yaw - _last_body_yaw, -PI, PI) / dt
-	var accel := (rate - _last_yaw_rate) / dt if state == "walk" or state == "idle" else 0.0
+	var accel := (rate - _last_yaw_rate) / dt if state == "walk" else 0.0
 	_last_body_yaw = body_yaw
 	_last_yaw_rate = rate
 	var wn := TAIL_SPRING.x
