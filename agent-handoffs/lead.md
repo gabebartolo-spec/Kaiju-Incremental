@@ -6,7 +6,9 @@
 - #14 r2 (run 39000008904) FIX sent: tree species band clipped, pause over tree, report over tree, striped
   placeholder tower in reveal; stuck capture runs. Then fresh screen-critic, then the director.
 - #16 FIX sent: stage-scaled fog (stage 2-4 aerials are a fog wall). After merge: Apex 3-min load task.
-- Croc titan: blender-reptile fixed jaw smear (mouth line, hinge), re-rendering (b4af9gm2a).
+- Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
+  ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
+  voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
 - TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
 
 ## Task
