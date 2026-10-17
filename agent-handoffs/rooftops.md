@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (look FIX re-clipped on the GPU, head e57636e; lead checks, runs a critic, merges #40)
+## State: awaiting lead (flash tweak re-clipped, head 93dccb9; lead runs a fresh motion-critic, then merges #40)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -43,12 +43,12 @@ Shots hurt: chip damage, no new escalation curve.
   They now end on the near hide (_hide). The capture stands the kaiju 13 u off and takes stills
   2 frames after a volley.
 - GPU re-clip evidence is in the lead notes rooftops/fix/ (clip, mid-volley still, 2x crop).
-- Open: the 3 flashes merge into a block that hides the figures for 0.08 s. Offered ~0.3 u offset
-  forward; the lead decides.
+- Flash tweak (lead): flashes are now 0.35 u soft star billboards (procedural 32 px texture,
+  additive, fog-free), FLASH_AHEAD 0.2 u out along the aim, the rifles 1 frame apart; sparks use the
+  same star. Re-clip is in rooftops/fix2/.
 
 ## Next
-1. Lead's look verdict: if it asks for smaller flashes, change FLASH_SIZE and the muzzle offset, then
-   re-clip (ask for the GPU slot; override.cfg first, delete after).
+1. Lead's critic verdict -> any fix -> re-clip (ask for the GPU slot; override.cfg first, delete after).
 2. After #40 merges, Military AI syncs onto it; this worktree can be removed by the lead.
 
 ## Lead rules (2026-10-18)
