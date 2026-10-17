@@ -25,18 +25,20 @@ float noise(vec2 p) {
 void fragment() {
 	float side = abs(UV.x);
 	float up = UV.y;
-	// Flames licking upward: noise streams up and breaks the top edge into tongues.
-	float lick = noise(vec2(UV.x * 9.0, up * 3.0 - TIME * 6.0)) * 0.6
-		+ noise(vec2(UV.x * 21.0, up * 7.0 - TIME * 11.0)) * 0.4;
-	// Flame tongues all the way up, and no base line: the lower half fades in from the street, so
-	// seen from behind the curtain never reads as a sheet with an edge.
-	float tongue = (1.0 - smoothstep(0.35 + 0.5 * lick, 0.75 + 0.5 * lick, up))
-		* smoothstep(0.0, 0.5, up) * smoothstep(0.25, 0.65, lick + 0.2 * up);
-	float centre = pow(1.0 - side, 1.2);
+	// Each tongue has its own height, a slow two-octave wave along the arc, so the top breaks
+	// into separate licks that rise and fall; inside, the flame churns upward.
+	float height = 0.45 + 0.35 * noise(vec2(UV.x * 5.0, TIME * 1.5))
+		+ 0.2 * noise(vec2(UV.x * 13.0, TIME * 2.7 + 3.0));
+	float body = 1.0 - smoothstep(height - 0.3, height, up);
+	// No base line: the flames fade in from the street.
+	float base = smoothstep(0.0, 0.45, up);
+	float churn = 0.55 + 0.45 * noise(vec2(UV.x * 8.0, up * 4.0 - TIME * 7.0));
+	// Soft at both ends of the arc.
+	float centre = 1.0 - smoothstep(0.55, 1.0, side);
 	// It stands up as the beam's front reaches the arc (a tenth of the life), then thins out.
 	float arrive = smoothstep(0.04, 0.14, progress);
 	float thin = 1.0 - smoothstep(0.5, 1.0, progress);
-	vec3 hot = mix(tint.rgb, vec3(1.0, 0.7, 0.4), lick * centre);
+	vec3 hot = mix(tint.rgb, vec3(1.0, 0.7, 0.4), (1.0 - up) * 0.6 * churn);
 	ALBEDO = hot * (1.6 + 0.9 * power);
-	ALPHA = clamp(strength * centre * tongue * (0.45 + 0.55 * lick) * arrive * thin, 0.0, 1.0);
+	ALPHA = clamp(strength * centre * body * base * churn * arrive * thin, 0.0, 1.0);
 }

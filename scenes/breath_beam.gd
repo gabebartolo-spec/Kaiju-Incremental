@@ -10,15 +10,15 @@ extends Node3D
 const BEAM := preload("res://scenes/beam.gdshader")
 const CURTAIN := preload("res://scenes/breath_curtain.gdshader")
 const FLARE := preload("res://scenes/flare.gdshader")
-const HOT := Color(1.0, 0.92, 0.7)
+const HOT := Color(1.0, 0.8, 0.55)  # warm, so the flash is not the whitest thing on screen
 const ARC_SEGMENTS := 24
 ## How far along the jaw bone (hinge 0, chin 1) the breath leaves the mouth.
 const MOUTH_ALONG_JAW := 0.7
 ## How far under the struck street point the curtain stands (the target sits 0.5 above it).
 const STREET_DROP := 0.3
-## Flash sizes (world units at body scale 1), as #6 had them; the strike light's peak energy and
-## reach, kept short and soft so it warms the struck street without a hard-rimmed pool.
-const MUZZLE_SIZE := 4.5
+## Flash sizes (world units at body scale 1; the muzzle a little under #6's 4.5), and the strike
+## light's peak energy and reach, short and soft so it warms the struck street without a hard rim.
+const MUZZLE_SIZE := 3.5
 const STRIKE_SIZE := 3.5
 const LIGHT_ENERGY := 4.0
 const LIGHT_RANGE := 3.5
