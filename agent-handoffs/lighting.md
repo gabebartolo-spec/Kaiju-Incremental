@@ -1,5 +1,5 @@
-# Lighting handoff, 2026-10-18 09:15
-## State: awaiting lead (PR claude/decal-fade-in open; lead merges on green; then available)
+# Lighting handoff, 2026-10-18 09:25
+## State: available (#38 and #47 merged; no open work)
 
 ## Who
 Role: lighting, reporting to the lead ("Kaiju: Lead" in ListAgents; message it by name). Rules:
@@ -12,22 +12,11 @@ slot; PRs into claude/look-options; reports <=8 lines. Director asleep since 06:
   (jaw core, flame curtain on the hit cone's far arc, eased flashes). Taste notes for the director
   are in the PR body. The lead added the layer-isolation method to the art-qa-critic learnings.
 
-## Now: claude/decal-fade-in (worktree ../Kaiju-Incremental-wt/lighting), off look-options f71c527
-The red jagged mark that popped beside the kaiju on the breath's first frame = the breath scorch
-decal's emission (molten crack lines) at full energy 4.8 on frame one (pre-existing since #6).
-Proof: tools/capture/probe_decals.gd (headless) lists the only nodes new on that frame (spark
-burst + scorch decal); scorch-off render removes it (docs/captures/2026-10-18-breath/
-scorch_glow_isolation.png). Fix: optional "glow_in" on FxDecals.spawn; fx.scorch_glow_in 0.12.
-Flow check (tests/lib/flow_breath.gd track_scorch_glow) failed first (4.81 of 4.81), floor 117.
-Fresh critic PASS: chevron pixels 0, 28, 148, 241, 309, 363, 387 over f91-97 (was 0 -> 383 in one
-frame); cools as before; no regression (whole-frame diff 0.09-0.22). Board:
-docs/captures/2026-10-18-breath/scorch_glow_before_after.png. #46 also raises flow from 116:
-whichever merges second resyncs.
-
-## Next
-1. After the merge: remove this worktree (git worktree remove ../Kaiju-Incremental-wt/lighting),
-   delete remote claude/breath-before (mine, from #38's BEFORE clip).
-2. Available: ask the lead for the next job.
+## Now: nothing open
+- PR #47 MERGED (a4b3ef2): breath scorch cracks glow in (fx.scorch_glow_in 0.12); found with
+  tools/capture/probe_decals.gd + a scorch-off render; fresh critic PASS.
+- Worktree ../Kaiju-Incremental-wt/lighting removed; remote claude/breath-before deleted.
+- Next session: ask the lead for a job (lighting/FX). Start a fresh worktree per task.
 
 ## Tools left for later sessions
 - scratchpad scripts are session-local; the repo keeps tools/capture/probe_breath.gd,
