@@ -6,14 +6,6 @@ extends Node3D
 ## lights flatten under the kaiju's feet. Presentation only.
 
 const PROP_VOXEL := 0.25
-const CAR_COLORS: Array[Color] = [
-	Color("6b6e70"),
-	Color("2a3138"),
-	Color("5a2a26"),
-	Color("8a8a84"),
-	Color("3a4236"),
-	Color("6a5e48")
-]
 const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
 
@@ -22,8 +14,21 @@ var plan: Dictionary
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
 var _half: float
+var _view: float  # parked cars reach this far from the centre: the arena and what the camera
+# shows past its edge (city.view_beyond)
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
+var _paints := 0  # how many car paints
+
+
+## Parked and moving car paints (city.car_colors), each light enough to read against the
+## asphalt under fog (D-062).
+static func car_colors() -> Array[Color]:
+	var out: Array[Color] = []
+	var raw: Array = Content.section("city")["car_colors"]
+	for hex: String in raw:
+		out.append(Color(hex))
+	return out
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
@@ -31,6 +36,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	plan = CityGen.map(sim.city)
 	_half = CityGen.half_extent(sim.city)
+	_paints = car_colors().size()
+	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
 	for b: RampageSim.Building in sim.buildings:
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
 
@@ -50,8 +57,9 @@ func _ready() -> void:
 		"pole": Color("4a4c4e"),
 		"lamp": Color(1.0, 0.86, 0.6, 0.0),
 	}
-	for i: int in CAR_COLORS.size():
-		palette["car%d" % i] = CAR_COLORS[i]
+	var paints := car_colors()
+	for i: int in paints.size():
+		palette["car%d" % i] = paints[i]
 	add_child(_props.build(palette, 31, 3.0))
 
 
@@ -75,41 +83,58 @@ func _on_building(p: Vector2) -> bool:
 	return false
 
 
-## Parked cars along both kerbs, now and then one stopped in the lane; a streetlight at a
-## corner of every crossing and down the long blocks.
+## Parked cars along both kerbs, now and then one stopped in the lane, out past the playable
+## edge as far as the camera sees (D-062: no empty ground); a streetlight at a corner of every
+## crossing and down the long blocks of the playable city.
 func _streets() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var lit_nodes := {}
+	var chance := Num.f(sim.city["parked_chance"])
+	var chance_beyond := Num.f(sim.city["parked_chance_beyond"])
+	var lane_stop := Num.f(sim.city["lane_stop_chance"])
+	var gap: Array = sim.city["parked_gap"]
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
 		var a := nodes[Num.i(street["from"])]
 		var b := nodes[Num.i(street["to"])]
-		if not (_inside(a, 0.5) and _inside(b, 0.5)) or kind == CityGen.ALLEY:
+		if not (_inside(a, _view - _half) or _inside(b, _view - _half)) or kind == CityGen.ALLEY:
 			continue
+		var playable := _inside(a, 0.5) and _inside(b, 0.5)
 		var width := Num.f(street["width"])
 		var dir := (b - a).normalized()
 		var side := Vector2(-dir.y, dir.x)
 		var length := a.distance_to(b)
 		if kind != CityGen.DIAGONAL:
 			var along_x := absf(dir.x) > 0.5
+			# Past the edge, where nothing drives, cars may stand where a street runs into the
+			# diagonal, and a short block still gets one mid-kerb (D-062: no bare asphalt).
 			for kerb: float in [-1.0, 1.0]:
 				var t := CROSSING_CLEAR + _rng.randf_range(0.0, 2.0)
-				while t < length - CROSSING_CLEAR:
+				if not playable and t >= length - CROSSING_CLEAR:
+					t = length * 0.5
+				while t < length - CROSSING_CLEAR or is_equal_approx(t, length * 0.5):
 					var lane := width * 0.5 - 0.6
-					if _rng.randf() < 0.12:
+					if _rng.randf() < lane_stop:
 						lane = width * 0.25  # stopped in the traffic lane
 					var p := a + dir * t + side * kerb * lane
-					var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
+					var color := "car%d" % _rng.randi_range(0, _paints - 1)
 					var on_diagonal := (
-						CityGen.diagonal_distance(plan, p)
-						< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
+						playable
+						and (
+							CityGen.diagonal_distance(plan, p)
+							< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
+						)
 					)
-					if _rng.randf() < 0.7 and not on_diagonal:
+					var seen := _inside(p, _view - _half)
+					var roll := _rng.randf()
+					if roll < (chance if playable else chance_beyond) and not on_diagonal and seen:
 						_props.add(
 							Vector3(p.x, 0, p.y),
 							func(v: VoxelBuilder) -> void: car(v, color, along_x)
 						)
-					t += _rng.randf_range(1.9, 3.2)
+					t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
+		if not playable:
+			continue  # past the edge: cars only (each lamp is a real light)
 		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
 			if not lit_nodes.has(end) and kind != CityGen.DIAGONAL:
 				lit_nodes[end] = true
@@ -168,7 +193,7 @@ func _blocks() -> void:
 				while x < bays.end.x - 0.6:
 					for z: float in [bays.position.y + 1.2, bays.end.y - 1.2]:
 						if _rng.randf() < 0.7:
-							var color := "car%d" % _rng.randi_range(0, CAR_COLORS.size() - 1)
+							var color := "car%d" % _rng.randi_range(0, _paints - 1)
 							_props.add(
 								Vector3(x, 0, z),
 								func(v: VoxelBuilder) -> void: car(v, color, false)
@@ -188,23 +213,43 @@ func _on_edge(r: Rect2, edge: int, t: float) -> Vector2:
 
 
 ## Street trees down both sides of the diagonal, and in the leftover corners it cuts out of
-## the blocks (little plazas, the way Broadway leaves them).
+## the blocks (little plazas, the way Broadway leaves them). Past the playable edge the kerb row
+## runs on as far as the camera sees (D-062), clear of the skyline's stand-ins.
 func _diagonal_trees() -> void:
 	var diag: Dictionary = plan["diagonal"]
 	var at: Vector2 = diag["at"]
 	var dir: Vector2 = diag["dir"]
 	var side := Vector2(-dir.y, dir.x)
 	var kerb := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 0.6
-	var t := -_half * 1.6
-	while t < _half * 1.6:
+	var reach := maxf(_half * 1.6, _view / absf(dir.x))
+	var t := -reach
+	while t < reach:
 		for s: float in [-1.0, 1.0]:
 			for off: float in [kerb, kerb + 2.5, kerb + 5.0]:
 				var p := at + dir * t + side * s * off
-				if not _inside(p, -1.0) or _on_building(p) or _near_street(p):
+				var city := _inside(p, -1.0)
+				if not city and (off != kerb or not _inside(p, _view - _half)):
+					continue
+				if _on_building(p) or (_near_street(p) if city else _on_road(p)):
 					continue
 				if off == kerb or _rng.randf() < 0.45:
 					_props.add(Vector3(p.x, 0, p.y), _tree)
 		t += 4.0
+
+
+## Whether p lies on a grid street's carriageway (past the edge, where stand-ins fill the blocks
+## and a tree may stand on the pavement).
+func _on_road(p: Vector2) -> bool:
+	var nodes: Array[Vector2] = plan["nodes"]
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) == CityGen.DIAGONAL:
+			continue
+		var a := nodes[Num.i(street["from"])]
+		var b := nodes[Num.i(street["to"])]
+		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
+		if q.distance_to(p) < Num.f(street["width"]) * 0.5 + 0.3:
+			return true
+	return false
 
 
 ## Whether p lies on a grid street (not on a block).
