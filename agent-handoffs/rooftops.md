@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (critic FIX 4 re-clipped in rooftops/fix5/, hit gate 27/27; fresh critic, then merge)
+## State: awaiting lead (critic FIX 5 re-clipped in rooftops/fix6/, valid gate 27/27; fresh critic, then merge)
 
 ## Who
 Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
@@ -55,15 +55,15 @@ Shots hurt: chip damage, no new escalation curve.
   bones above 1.15x the hip height. The capture picks the stand spot with the most squads firing on
   screen (seed 0: 3 firing, 5 on screen; no seed 0-11 gives 4 firing). Movie-measured sparks: min
   gain +0.42, median +0.62 luminance.
-- Critic FIX 4 (79e2c27), method change: scenes/kaiju_hit.gd hits the first rig voxel (KaijuHit.parts:
-  every MultiMesh under the rig except VoxelSkin's) on the line from the muzzle to the nearest bone
-  above the hips, held in bone space so the tracer end and the spark ride the body. The fallback is the
-  nearest voxel. Stars are a sharp 4-point sprite, flash 3 / spark 4 frames with a fade; screen paths
-  under 60 px get no tracer. The gate tools/capture/rooftop_hit_gate.gd (headless, projected-voxel
-  silhouette) gives 27/27 inside; worst search 1.7 ms per volley. Movie sparks: min +0.49, median +0.65.
+- Critic FIX 4/5: surface voxel hits (KaijuHit) still landed beside the skinned body, so it was removed.
+  The lead's method (4cbdbbb): the hit is the centre of the nearest upper-body bone (TARGETS: spine0-2,
+  head0-1, arm_l0/r0), held to the bone; the spark has no depth test, the tracer is depth-tested.
+  Sparks 0.9 u for 4 frames, flashes 0.5 u for 3. LESSON: the headless renderer keeps no MultiMesh
+  instance data, so rooftop_hit_gate.gd builds the silhouette from KaijuRig.voxels_of cells. Valid gate:
+  27/27; a known-bad 2.5 u offset gives 9/27 and exit 1. Movie sparks: min +0.53 luminance.
 
 ## Next
-1. Lead's fresh critic on fix5 -> any fix -> rerun the gate first -> GPU go -> re-clip -> `python tools/capture/spark_gain.py
+1. Lead's fresh critic on fix6 -> any fix -> rerun the gate first -> GPU go -> re-clip -> `python tools/capture/spark_gain.py
    <dir> <ffmpeg>` (each spark's brightness gain in the movie; the in-engine image lags, so not that).
 2. After #40 merges, Military AI syncs onto it; this worktree can be removed by the lead.
 
