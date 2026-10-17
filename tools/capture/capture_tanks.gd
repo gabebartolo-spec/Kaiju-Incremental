@@ -1,14 +1,17 @@
 extends SceneTree
-## Captures the Blender tank (D-042) in a real rampage at the game camera: the kaiju stands while
-## tanks roll in, turn their turrets onto it and fire. With --species=cephalopod and Grab and
-## Throw, a limb seizes tanks and hurls them. Stills along the way; pair with --write-movie for
-## the clip. Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
+## Captures the Blender vehicles (D-042) in a real rampage at the game camera: the kaiju wades
+## into the nearest buildings, tanks roll in, turn their turrets onto it and fire, and once
+## enough of the city is down the helicopters arrive. Stills along the way; pair with
+## --write-movie (ci_capture.sh --movie) for the clip. Needs a window and the no-focus
+## override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_tanks.gd -- --species=<id> --out=<dir>
 
-const FRAMES := 60 * 16
-const SHOTS: Array[int] = [420, 540, 660, 780, 900]
+const FRAMES := 60 * 40
+const SHOTS: Array[int] = [600, 900, 1200, 1500, 1800, 2100, 2340]
+## Frames between picking the next building to walk into.
+const RETARGET := 20
 const LEVELS := {
 	"reptilian": {"claws": 1},
 	"cephalopod": {"claws": 1, "c_grab": 3},
@@ -16,6 +19,8 @@ const LEVELS := {
 
 var _out := "user://tanks"
 var _species := "reptilian"
+var _frame := 0
+var _target := Vector2(INF, INF)
 
 
 func _initialize() -> void:
@@ -38,11 +43,21 @@ func _run() -> void:
 	rampage.setup(
 		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
 	)
-	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
+	rampage.scripted = _input
 	root.add_child(rampage)
 	for i: int in FRAMES:
 		await physics_frame
+		_frame = i
 		if SHOTS.has(i):
-			var path := _out.path_join("tanks_%s_%03d.png" % [_species, i])
+			var path := _out.path_join("tanks_%s_%04d.png" % [_species, i])
 			root.get_viewport().get_texture().get_image().save_png(path)
 	quit()
+
+
+## Walk into the nearest standing building and keep wrecking.
+func _input(sim: RampageSim) -> Dictionary:
+	if _frame % RETARGET == 0:
+		_target = sim.nearest_standing(sim.kaiju_pos)
+	if _target.x == INF or sim.kaiju_pos.distance_to(_target) < 1.0:
+		return {"move": Vector2.ZERO}
+	return {"move": (_target - sim.kaiju_pos).normalized()}

@@ -1,5 +1,5 @@
-# blender-tank handoff (2026-10-17 04:20)
-State: awaiting lead (tank PR #17 and heli PR open; GitHub Actions blocked by billing)
+# blender-tank handoff (2026-10-17 12:45)
+State: available (lead QA of #17/#18 pending; captures wait for CI to return)
 
 ## Task
 Director 2026-10-17 "make a tank in blender"; D-042 picked 2x real size, desert tan. Lead brief: wire the
@@ -37,9 +37,11 @@ the same way (spinning main + tail rotor nodes) as a second PR.
   floods font errors and times out.
 - GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
 
-## Open decisions (lead)
-1. Heli no longer grows with the kaiju (was max(1, body_scale)): keep fixed 2x per D-042?
-2. Billing for Actions (director).
+## Next (lead, 12:42)
+- Heli stays fixed 2x, no growth multiplier: settled (as in #18).
+- When CI returns (repo going public): merge origin/claude/look-options (LFS fix 30682ae) into both
+  branches, then dispatch capture_tanks.gd (reptilian: shot; cephalopod + c_grab: grab/throw) and a
+  heli capture; send stills to the lead.
 
 ## Running jobs
 None. Blender closed.
