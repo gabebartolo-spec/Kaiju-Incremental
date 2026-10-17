@@ -1,5 +1,5 @@
-# Lighting handoff, 2026-10-18 08:40
-## State: awaiting slot (lead's GPU slot for the final breath render, then fresh critic 6)
+# Lighting handoff, 2026-10-18 08:55
+## State: awaiting lead (PR #38 ready; lead merges on green; head = this commit)
 
 ## Who
 Role: lighting, reporting to the lead ("Kaiju: Lead" in ListAgents; message it by name). Rules:
@@ -9,10 +9,10 @@ slot; PRs into claude/look-options; reports <=8 lines. Director asleep since 06:
 ## Closed: lighting looks (D-057)
 Director picked A, keep concrete. claude/lighting (d2f63dc) stays pushed, not merged.
 
-## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), head 17ecd14
+## Now: PR #38 claude/breath-beam-only (worktree ../Kaiju-Incremental-wt/lighting), synced ccc6d89 (after #40)
 Lead's calls: remove the legacy voxel jet (defect) AND make the breath read from the game camera.
-The lead merges on a fresh motion-critic PASS. Synced with look-options at a3ee004 (sync again
-before the final push). Flow floor 114. rampage.gd 399/400 lines: don't add lines there.
+DONE: critic 6 all PASS/taste except the edge-on panel, fixed (ae04d98) and confirmed on GPU; the
+lead waived critic 7. PR body updated (taste notes for the director). Flow floor 116, sim 50. rampage.gd 399/400 lines: don't add lines there.
 Built:
 - fx.gd jet removed; flow check "no pale voxel-cube jet" (failed first).
 - scenes/breath_beam.gd (pooled): core from the JAW (mouth_of, 0.7 along "jaw"; tracks the jaw
@@ -38,7 +38,11 @@ Known, out of scope: red jagged ground decal pops at the breath (pre-existing; l
 my follow-up after #38: find the fx_decals crack/scorch spawning at full opacity, 0.1 s fade-in).
 White drop at f121 behind: probably the #6 spark burst dying together.
 
-## Next
+## Next (after the merge)
+0. Remove this worktree once #38 merges (git worktree remove), delete claude/breath-before.
+   Then the red jagged ground decal pop (lead's follow-up): find which fx_decals mark spawns at
+   full opacity at the breath (frame ~91), add a ~0.1 s fade-in, prove with a clip.
+Done steps, kept for reference:
 1. On the slot: write the off-screen override.cfg into the worktree; scratchpad/render_breath.sh
    gpu_behind14 ; render_breath.sh gpu_side14 --side ; delete override.cfg. Isolate layers via
    scratchpad/isolate.sh pattern if anything new appears (prove, don't guess).
