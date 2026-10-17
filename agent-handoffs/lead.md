@@ -1,106 +1,97 @@
-# Lead handoff, 2026-10-17 22:55
-## State: working (blender-reptile re-fitting the hand rig to croc titan v2, then opens the D-047 PR)
+# Lead handoff, 2026-10-18 04:38
+## State: working (lead since 03:56); waiting on helpers: #22 r2, #23 jaw+title fix, #8 roar wiring, city-calm PR, Tripo board r2
 
-## Croc titan v2 (director 21:15-22:30): arms too long + human muscles; spines too pale
-- Short reptilian arms: Nano Banana edits FAILED x2 -> GPT Image 2.5 redraw from ref (free) -> board, director
-  picked B; GPT redraw for arms-clear + long tail -> variant 3 -> Smart Mesh c8185166 (100) v1 6623 quads ->
-  texture (30). Spines: 3 free colour edits, director picked B charcoal -> re-texture from charcoal ref (30),
-  balance 19415. Boards: docs/captures/2026-10-17-reptile-design/croctitan_{arms,spine_colour}_board.png.
-- DONE: downloaded ~/Downloads/kaiju_tripo/rep_croctitan_adult_v2.glb, six-view PASS (croctitan_v2_six_view.png),
-  D-048 logged. blender-reptile briefed 22:50: re-fit, skin, .kclip, kvox, D-047 PR -> lead QA + fresh critic.
-- Q2 balance D, Q3 Apex height still open. llama-server/Qwen (director's Unsloth app) is not ours; RAM 98%.
+## Who
+Lead = session "Game demo planning" (local_106fc100...). The previous lead session ("Kaiju Incremental game",
+local_9fac90d2-fae7-4940-b4ac-144a87f28e6e) now does ONLY P3 Tripo (director 03:56). It reports to me at milestones.
+Lead owns: helper QA gates + fresh critics, PR review + merge (squash, `--match-head-commit`), STATUS/DECISIONS
+board PRs, director questions (ask-the-director), this file, the local GPU slot. Tripo credits (D-023) and
+docs/provenance/tripo.md: the Tripo session; it sends me the provenance rows.
 
-## Merged today (look-options): #15 #17 #18 #16 #20 #19 #14. Director queue: notes lead/director_queue.md.
+## DEMO (D-050, director 03:35; plan C:\Users\DANTE\.claude\plans\pasted-content-id-a4a2-i-want-glistening-bubble.md)
+Croc titan (reptilian) only; ends after evolve1 (Behemoth, ~20-30 min) on a "demo complete" card that teases the
+adult roaring; baby + adolescent get NEW models first; SFX unpaused; adult never played (stage_for tier 3).
+- P1 balance D: MERGED #21 (81afe80); board #24 MERGED (80ff088). Pacing (comment on #21): reptilian evolve1 0.59 h
+  / 4.46 h, insectoid 0.46 / 3.30, cephalopod 0.49 / 3.75 (table D 4.43 / 3.26 / 3.70). Director 03:55: KEEP as is.
+- P2 D-047: PR #22 (claude/croctitan-clips a88a4d4 + local 7d3f761 cards A). Stills QA PASS. Fresh motion-critic
+  04:10: FIX, sent with pass bars at the GAME cam: (1) roar slam invisible (tail never leaves the ground 14.30-15.03 s):
+  tip above hip line >=0.3 s then street hit <=0.15 s on the head peak + stomp fx at the tip + 0.2 s shake, fx only;
+  clip shows recovery; (2) turn: overshoot >=6 deg, settle 0.3-0.5 s, body stops first; (3) walk: one wave per
+  stride (~1.8-2 s), amplitude 0.6-0.75. Critic crops: scratchpad critic_d047/. Cards A done locally (croc fill 0.42
+  -> 0.56). Round 2 = ONE batched push (fixes + cards + side clips + look-options sync) -> my check -> FRESH critic
+  -> A/B clip to the director -> merge at the reviewed SHA.
+- P3 baby + adolescent: Tripo session. Refs board v1 docs/captures/2026-10-17-reptile-design/
+  croctitan_stage_refs_board.png (realism-critic FIX: B2 arms clear; A2 blunt head, low nub spines, neutral
+  stance); round 2 generated 03:49. Next: board r2 to the director (through me), Smart Mesh, texture, six-view,
+  GLBs to blender-reptile. Also asked it to download the octopus adult texture 8bf2f668 for the species session.
+- P4 SFX: ability-vfx (local_24621710-3f9c-4f67-ae39-8fa4b6192106), PR #8 head 2a2edb5 (roar on the reveal + Sfx entry, army: tank_fire, shell_hit, heli_rotor loop with distance fade; flow floor 76->87). Roar APPROVED D-055. Merge order: #26 first (city floor 5->6), then #8 syncs look-options, I merge on green. Next job given: (e) mixer bus + SFX volume slider in settings (new PR), then (f) UI sounds. Earlier head 32ecfa1 (dials crack_min_interval
+  2.5 s + footstep_min_interval 0.25 s, roar.ogg draft + provenance). Director 04:30 listened to r2 clips
+  (...ability-sfx-d050/r2/): SHIP AS IS = D-052 (in #25's Board and log; helper logs it in #8 too). Now (b): roar in
+  the evolution reveal + a Sfx entry for the end card (option 1: not under Atomic Breath, no new power); then I merge
+  #8 at that SHA when green. (c) army sounds (tank fire, shell hit, rotor) = a NEW PR after #8.
+- P5 demo slice: PR #23 (claude/demo-slice b358f79 + #21 merged in; flow 91). QA on CI stills: flow PASS; FIX
+  sent: end card idle only unless ClipGait (old procedural roar hangs the jaw); D-051 (director 04:20): reveal
+  title = node name BEHEMOTH, not "REPTILIAN ADOLESCENT" (same push, flow check failing first). Clip in:
+  ...side-session-notes\local_9fac90d2...\demo-slice\clip\capture-39051911218-0\clip.mp4 (re-check after the fix).
+  Next job after: clip roar on the end card via ClipGait once #22 merges; the end card also calls the roar Sfx.
+- P6: city-calm proves a local export (branch claude/export-windows in its worktree; templates installed; pack check
+  = fontdata bytes + kvox bytes). Its exe smoke launch is HELD until the Performance bench ends (~04:45). The
+  director's build: me.
+- P7 director plays the exe.
 
-## Task
-Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
-director decisions (D-022..D-042 in docs/DECISIONS.md), helper coordination. Credits unlimited for Tripo
-(D-023); log every task in docs/provenance/tripo.md.
+## Other live sessions
+- city-calm (local_9af27a16-0360-4923-b623-6a14a763ce49): director 03:53 "remove the level crossing hellscape".
+  Fix 54e9f16 on claude/city-calm-streets (zebras at 1 central junction, key city.zebra_junctions, city floor 5->6);
+  PR #26 (55231be): my defect check PASS, director 04:35 ship AFTER (D-054); merge-on-green watcher armed. Export proof next; smoke launch held until the GPU slot frees (~04:45).
+- Performance (local_02d8efe2-2071-46af-b4f0-813e88c01810, handoff agent-handoffs/performance.md, director-approved):
+  demo baseline bench tools/capture/bench_rampage.gd, reptilian at Behemoth, 1080p x3 + 4K x3; has the local GPU
+  slot 04:25-04:45; results in its own handoff only.
+- Species plan (local_424edb4c-bc64-4094-8463-da44fe4cf0e4, "Character animation implementation plan"): director-
+  approved docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md (mantis + octopus game-ready, stacks on
+  #22). OUTSIDE the demo (D-050/D-044); told: no demo files, one GPU job at a time, PRs to me. Worktree
+  ../Kaiju-Incremental-wt/species-a.
+- #11 locomotion PAUSED (D-044); the species plan folds its findings in and closes #11 unmerged. #3 -> main on HOLD.
+- Unsloth loaded-model fix APPLIED 04:22 (director OK; memory-shared/local-models-companion.md; MCP reconnect needed).
 
-## Branch and commit
-claude/look-options (integration; PR #3 to main on HOLD until the director signs off). Latest: 30682ae
-#18 heli MERGED ee18f50 (16:00, head 3a4e83c, 8/8 green); blender-tank told to remove worktree.
+## Director decisions today (log in board PRs): D-050 demo (#21), D-051 reveal title (#23), D-052 SFX ship (#25),
+D-053 worktrees one per live session (#25 MERGED 444ed01), D-054 streets: zebras only at the central junction (#26, director 04:35), D-055 croc roar on reveal + end card, not under breath (#8, 04:35), D-TBD-species-models 04:27 (species session's first PR): keep all six
+mantis/octopus meshes, croc hand rig + welded weights, octopus first; octopus texture 8bf2f668 now critical path. Stale branches kaiju-skin-weights{,-before} deleted 04:21.
+Open for the director: Q3 Apex height (not needed for the demo; park).
 
-## D-044 LOCOMOTION PAUSED (director 12:46) until models are decided
-species-motion, kaiju-motion told to stop (PR #11 open, unmerged); kaiju-look-test skips octopus captures.
-Director saw octopus local capture: "head detached, limbs a static, awkward mesh" (I had not caught it).
-D-043/D-044 logged (efa6756). Blender motion test (blender-reptile) decides the model pipeline first.
+## Branch and checkout
+Main checkout on claude/look-options (6185a0a+). Only the lead commits here (handoff, docs). PR #25
+claude/worktree-cap (cap 8 + CI-capture rule in CLAUDE.md) merging on green via my watcher. Worktrees: 7 live
+(ability-sfx, croctitan-clips, city-calm, kaiju-motion-cacfd1 = kaiju-motion's cwd, delete when that session ends;
+-wt/demo-slice, lighting, voxel-edges); ci-captures removed (files backed up in the old lead's notes folder
+ci-captures-worktree-backup/; its CLAUDE.md note is in #25). Lint: `bash tools/lint/worktrees.sh`.
 
-## Open PRs into look-options
-- 15:52 director: pause agents working on models we won't use (usage). #15 MERGED (7ff1f03). #19 (Blender
-  weights reader, proven on OLD reptile) parked until croc titan export; voxel-skin paused. kaiju-motion told to
-  turn off #11 auto-fix. #18 MERGED. Auto-fix OFF: #11, #19 (confirmed); #8 asked again 16:00 (it synced a conflict at 68342d5).
-  #16 city: all stills in; Apex 3-min load (follow-up); director Qs pending: balance D, Apex height.
-- #15 voxel skin ACCEPTED r3 (4be3650; scythe clean, thigh seam at full flex accepted until Blender weights):
-  CONFLICTING after #17, helper syncing, merge new head when green. Next: Blender-weights input PR (voxel-skin)
-  + rig/weights export from motion_test.py (blender-reptile), tested on Tripo B until the D-045 mesh exists.
-- #17 tank MERGED 14:45 (9cbe34b). #18 heli FIX: heli hides the baby kaiju at game cam (21 s) -> orbit beside,
-  not over, the camera-kaiju line + fade vehicles between camera and kaiju (D-025 rule). Size stays 2x.
-- #16 city-growth: stage 3 stills in; stage 4 (350k chunks) kills CI runners -> local GPU render approved,
-  waiting for the director's game to close (perf red flag). Balance proposal D (3.3-4.4 h, +-17%) to put to director.
-- #11 species locomotion (mantis + octopus). species-motion r3d: holds fixed (contrast 4.6x), big rest moves
-  00284f3 not yet rendered. Needs: game + side mantis clips, octopus adult side, then FRESH motion-critic, then
-  merge at reviewed SHA.
-- #14 game-flow: screenshots FAILED review (blank buttons/values) -> cause LFS pointer font, fixed 7777974, flow
-  67. Needs new stills (1080p + 4K at 125%) + clip, then review, mark ready, merge.
-- #15 voxel skin (D-041): reptile + mantis before/after clips and 2x joint crops ready in
-  side-session-notes/<lead>/kaiju-voxel-skin/ -> REVIEW THEM NEXT. Octopus captures local, after species-motion.
-- #16 city-growth (D-039): 4 nested cities, pacing ceph 2.94 h / rep 3.94 h / insect 1.93 h. Stage 3-4 stills
-  pending CI. Told it: target all species 3.5-4 h within +-20%, keep insectoid fastest in-run; prepare a
-  proposal only. Balance is a director question after #16 review.
-- #17 Blender tank (D-042, 2x, desert tan) in game; #18 helicopter (stacked on #17). Board
-  blender-heli/heli_board.png to QA. Decided: helis fixed 2x scale, no growth multiplier.
-- #8 SFX paused; #3 to main on hold.
-
-
-## D-045 (director 14:22): reptile = NEW original Tripo design, rigged in Blender (hand rig, welded weights)
-- Blender test critic: deformation + feet PASS both; animation FIX (no roar wind-up, frozen hold, tail not
-  counterbalancing, arms out at peak, static walk upper body, B mouth open at rest). blender-reptile on HOLD.
-- 15:45 D-046 croc titan built: refs (free) -> A-pose edit -> Smart Mesh 351ad916 v1 (100) -> texture (30), balance
-  19575. ~/Downloads/kaiju_tripo/rep_croctitan_adult.glb; six-view PASS (croctitan_six_view.png). Sent to
-  blender-reptile: weld, hand rig, weights export, walk/turn/roar with critic fixes -> fresh critic -> director.
-  Next Tripo: baby + adolescent from the same design.
-
-## FOCUS (director 13:06): "how using blender might improve motion"
-- Early test read (blender-reptile walk clips): same hand rig on A and B walks cleanly on both; foot slide
-  A 8/11/1 cm, B 5.5/19/4 cm (walk/turn/roar, of 100 m); girth A shoulder 96%, B 91%. B right foot 69 cm off
-  ground in the Tripo sculpt (mesh fault). So the RIG matters more than the mesh. Weak: A arms barely move;
-  walk in place. Turn/roar renders + crops still running; then my QA + fresh motion-critic.
-- Two routes explained to the director: (1) Blender skeleton+weights replace rig_voxel's guessed bone
-  ownership (fixes detached parts, stiff limbs; D-041 skin takes weights); (2) authored clips (roar, tail
-  swipe, beam) layered over procedural foot planting.
-- 13:19 MOTION TEST DONE (blender-reptile 4ab6781; clips in notes blender-reptile/motion-test/): B (Tripo) moves
-  cleanly on the hand rig -> bad in-game motion = OUR auto rig/weights, not the Tripo mesh. Final slide A 8/10.9/1.1,
-  B 6.1/22/4.8 cm. Lead QA: turn + roar deform cleanly on both, jaw opens well; FIX for A: roar-peak arms reach
-  forward (zombie), dark square blotches on thigh. Fresh motion-critic running (background). Seam-weld finding
-  (glTF splits verts at UV seams) sent to kaiju-look-test as a suspect for the shattered mantis.
-- ASKED director: start a helper now on getting the Blender skeleton into the game, or wait for clips.
-
-## Blender direction: see D-045/D-046 and memory original-not-godzilla (judge by motion, not stills).
-
-## Helpers (ids)
-- species-motion local_87c25bd4-a526-4731-b18e-7c728966a2df (mantis/octopus, PR #11)
-- kaiju-look-test local_c9f2ad5f-c2d8-444e-be1e-bc4d838f23cc (PR #15)
-- game-flow local_9e7bf3f2-b85d-489b-987f-b9e45b8bfb55 (PR #14)
-- city-growth local_abf1bce5-336a-4fc8-942a-ff8f84538b7a (PR #16)
-- blender-tank local_5c21d3fa-ab76-4f0b-98ae-360caff8c60d (PR #17/#18, available)
-- blender-reptile local_bce75838-34da-4991-a74e-b37ed5781547 (motion test)
-- kaiju-motion local_fd14d508-6453-459d-b05c-fb22af37d14f (keeps #11 in sync)
-- ability-vfx paused (PR #8); real-city tabled (D-029).
-
-## Next (mine)
-1. Croc titan clips: lead QA (2x crops) -> fresh motion-critic -> table for the director.
-2. Then voxel-skin: swap #19 to croc titan export; replace old reptile adult in game.
-3. #14/#16 re-reviews when helpers report; merge at reviewed SHA (after fresh critics).
+## Merged on look-options: 2026-10-17 #15 #17 #18 #16 #20 #19 #14; 2026-10-18 #21 #24.
 
 ## Rules learnt the hard way
 - Tripo: default export name; `find` refs; stay in the signed-in tab; Remove Lighting per page; inspect every texture.
-- Merge only the reviewed SHA (`--match-head-commit`).
-- Windowed Godot: separate command writes override.cfg (mode=0, no_focus, -20000) first; guard blocks while a
-  fullscreen app is in front. Never set fullscreen in project.godot.
-- CI checkout needs `lfs: true` (fonts are LFS). Heavy software-rendered captures burn minutes: render locally.
+- Merge only the reviewed SHA (`--match-head-commit`). Squash. `gh pr merge --delete-branch` switches the checkout.
+- Windowed Godot: separate command writes override.cfg (mode=0, no_focus, -20000) first; never fullscreen in
+  project.godot. Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
+  (`GODOT=... tools/run_tests.sh`; not on PATH). ffmpeg: imageio_ffmpeg's binary at
+  C:\Users\DANTE\AppData\Roaming\Python\Python314\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe.
+- CI checkout needs `lfs: true`. capture.yml: 3000 s hard limit, run captures one at a time. CI game-cam clips are
+  1280x720 @30 fps (lavapipe): say so in critic briefs.
 - `rm` with variables: "${VAR:?}". After merges that add classes: `godot --headless --import`.
 - Subagents without a shell can't read private PRs: stage the diff for them.
+- Tests that hard-code a price break on every balance change (#21: claws 12->15, growth total band).
+- `git worktree remove --force` is refused by auto mode: back the files up and ask the director, then retry once.
+- Write handoffs with the Write tool, not a bash heredoc + python (quoting broke once).
+- Audio QA without ears: decode with ffmpeg to f32, per-frame envelope, onsets vs the helper's SOUND log; the
+  director's listen is the gate, the lead checks timing and density only.
 
 ## Running jobs
-None of mine. No override.cfg left. Helpers: blender-reptile working; others blocked on CI.
+Mine: merge-on-green watcher on #26 (then arm one for #8 after its sync). No override.cfg, no windowed Godot. Performance session holds the GPU slot.
+Helpers: blender-reptile r2 batch (CI captures), kaiju-motion jaw+title fix, ability-vfx roar wiring, city-calm
+captures + export build, Tripo session board r2 + octopus texture.
+
+## Next (lead)
+1. #22 r2 -> my 2x check -> FRESH motion-critic -> A/B 3 s clip to the director -> merge at the reviewed SHA.
+2. #8 roar SHA -> merge on green; tell kaiju-motion the Sfx call. 3. #23 fix push -> stills + clip check -> merge.
+4. city-calm PR -> crops check -> one labelled picture to the director -> merge. 5. Tripo board r2 -> realism-critic
+-> director. 6. 04:45: release the GPU slot to city-calm's smoke launch. 7. Board PR after each merge batch.
+Director comments live in DECISIONS.md; this project keeps no roadmap comment chapters. playbook: nothing new.

@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 05:30
-## State: running a check (PR #8 final push; the lead merges at the SHA when green)
+# Ability VFX/SFX handoff, 2026-10-18 05:50
+## State: running a check (#8 synced with look-options 6ae41fa; the lead merges at this SHA on green). Next: (e) SFX bus + volume slider on branch claude/sfx-bus, then (f) UI clicks, then (d) heli gun/crash, plus the army PR
 
 ## Task
 From the demo-planning session (local_106fc100..., "Game demo planning"), director 2026-10-18 03:35:
@@ -51,7 +51,7 @@ PR #8 body updated, Auto-fix ON. Do not merge.
 - Flow floor is 83.
 
 ## Lead's orders (2026-10-18)
-- Director 04:30 heard r2 and said SHIP AS IS. Logged as D-052 in #8's Board and log.
+- D-052 (r2 shipped) and D-055 (roar on reveal + end card) are in #8's Board and log.
 - (b) The roar plays via Sfx.roar(parent), a static entry that returns the player:
   - the EvolutionReveal calls it in _swap;
   - kaiju-motion's demo end card (PR #23, scenes/demo_end.gd) calls the same entry.

@@ -105,8 +105,8 @@ func _check_upgrade_screen() -> void:
 	if claws != null:
 		await GuiInput.click(self, claws)
 		check(
-			tree.level("claws") == 1 and screen.rubble == 18,
-			"pressing Sharpened Claws buys it for 12 (rubble %d)" % screen.rubble
+			tree.level("claws") == 1 and screen.rubble == 15,
+			"pressing Sharpened Claws buys it for 15 (rubble %d)" % screen.rubble
 		)
 	screen.queue_free()
 	await process_frame

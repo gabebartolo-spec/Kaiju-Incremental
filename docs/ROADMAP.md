@@ -18,3 +18,4 @@ Gate: director look approval recorded in `docs/DECISIONS.md`.
 Deliverables: the core loop playable end to end with placeholder content; player-effect fixtures
 for every system; save, reload, continue.
 Gate: a director playtest; the slice success test the vision names.
+Demo (D-050): the croc line only, hatchling to Behemoth, a Windows exe; the director's playtest of it is this gate.
