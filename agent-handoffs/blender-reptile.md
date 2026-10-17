@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 16:30
-## State: running a check (croc titan re-run with the mouth rip, bash b8b1tmt06)
+# blender-reptile handoff, 2026-10-17 16:25
+## State: awaiting lead (croc titan round 4 sent; lead runs a fresh critic)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -26,9 +26,12 @@ Lead wants: renders side + 3q, foot slide, girth, 2x crops -> lead runs a fresh 
   along the line (faces by centroid, boundary verts duplicated in front of the gape), hard head/jaw
   weights in the mouth zone, backfaces dark. Export keeps welded untorn positions. Head check
   (scratch ct/jc/pair.png): rest clean, f52 jaws part with their own teeth.
-- Export verified (verify_skin vs scratch ct/vox/croctitan.kvox): sums 1, 5,507 pos, median 1.07 m.
-- Next: board (scratch ct/board.py) -> docs/captures/2026-10-17-croctitan/, skin -> assets/kaiju/test/
-  croctitan.*, clips -> notes blender-reptile/croctitan/, send lead.
+- DELIVERED 16:25: clips (walk/turn/roar, side + 3q) + sheets + jaw rest-vs-f52 in notes
+  blender-reptile/croctitan/; board + measurements docs/captures/2026-10-17-croctitan/; skin export
+  assets/kaiju/test/croctitan.skin.json/.skinw (verify_skin: sums 1, kvox median 1.07 m, p95 2.28).
+  Final: foot slide walk 4.1 / turn 12.3 / roar 2.3 cm; girth >=90% except elbow 84.5% (roar peak,
+  claws to chest). Roar framing raised (ROAR_FOCUS z60, x1.15) so the reared snout stays in frame.
+- Known weak spot: walk shoulder crop on this horizontal body is mostly neck skin.
 ## Branch and commit
 claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
@@ -75,7 +78,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-bash b8b1tmt06: headless Blender chain (scratch ct/). No MCP Blender open.
+None. No Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.

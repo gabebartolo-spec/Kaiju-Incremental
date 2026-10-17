@@ -757,10 +757,14 @@ CAM_DIST = max(235.0, 1.25 * float(np.ptp(np.concatenate([REST_V[o.name][:, 1] f
 VIEWS = {"side": V((-1, 0, 0.12)), "threeq": V((-0.75, -0.65, 0.32))}
 
 
-def place_camera(view, focus):
+def place_camera(view, focus, far=1.0):
     d = VIEWS[view].normalized()
-    cam.location = focus + d * CAM_DIST
+    cam.location = focus + d * CAM_DIST * far
     cam.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+
+
+# The roar rears the head well above standing height: frame higher and wider so the snout stays in.
+ROAR_FOCUS, ROAR_FAR = V((0, 15, 60)), 1.15
 
 
 def focus_of(P, f):
@@ -784,7 +788,7 @@ def render(clip):
         d.mkdir(parents=True, exist_ok=True)
         for f in range(FRAMES):
             settle(f)
-            place_camera(view, focus_of(P, f) if clip != "roar" else V((0, 15, 48)))
+            place_camera(view, *((focus_of(P, f),) if clip != "roar" else (ROAR_FOCUS, ROAR_FAR)))
             scene.render.filepath = str(d / f"{f:04d}.png")
             bpy.ops.render.render(write_still=True)
         print("rendered", d)
@@ -1111,6 +1115,6 @@ elif TASK == "still":
         for f in ((0, 13, 26, 39, 60, 80) if c != "roar" else (10, 32, 40, 52, 85, 125)):
             scene.frame_set(f)
             for view in VIEWS:
-                place_camera(view, focus_of(P, f) if c != "roar" else V((0, 15, 48)))
+                place_camera(view, *((focus_of(P, f),) if c != "roar" else (ROAR_FOCUS, ROAR_FAR)))
                 scene.render.filepath = str(OUT / f"{MODEL}_{c}_{view}_f{f:03d}.png")
                 bpy.ops.render.render(write_still=True)
