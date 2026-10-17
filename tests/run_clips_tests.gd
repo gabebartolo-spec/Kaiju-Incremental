@@ -3,7 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## The clip file loads and fits the rig it was baked for (same bones and order as the skin), a
 ## file for another skeleton is refused, the walk's phase follows the distance travelled, a
 ## standing heading change turns on the spot, the roar opens the jaw and ends, no bone goes NaN,
-## and every other kaiju keeps its procedural gait. Fixed 60 Hz steps, no clock, no randomness.
+## a curve while walking swings the tail out and it settles, and every other kaiju keeps its
+## procedural gait. Fixed 60 Hz steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_clips_tests.gd
 ## Seeded by design: nothing here draws random numbers (the gaits seed their own twitches).
 
@@ -20,6 +21,7 @@ func run_checks() -> void:
 	await _check_who_uses_clips()
 	await _check_walk_phase()
 	await _check_turn_and_roar()
+	await _check_tail_lag()
 
 
 func _model(species: String, stage: String) -> KaijuModel:
@@ -161,6 +163,30 @@ func _check_turn_and_roar() -> void:
 		"the roar drops the jaw (mouth shows) and settles back to idle"
 	)
 	check(finite, "no bone turns NaN or infinite through idle, turn and roar")
+	kaiju.queue_free()
+	await process_frame
+
+
+## Curving while walking (no turn clip plays) swings the tail out against the turn, and once the
+## walk straightens the swing dies away within a second.
+func _check_tail_lag() -> void:
+	var kaiju := _model("reptilian", "adult")
+	var gait: ClipGait = _rig_of(kaiju).gait
+	var biggest := 0.0
+	for frame: int in 180:
+		if frame >= 30 and frame < 120:
+			kaiju.rotation.y += 0.8 * DT  # the sim steers left
+		kaiju.position += kaiju.basis * Vector3(0, 0, -4.0 * DT)
+		kaiju.animate(DT, 1.0)
+		biggest = maxf(biggest, absf(gait.tail_shown))
+	var left := absf(gait.tail_shown)
+	check(
+		gait.state == "walk" and biggest > 0.002 and left < 0.1 * biggest,
+		(
+			"a curve while walking swings the tail out and it settles (peak %.4f, left %.4f)"
+			% [biggest, left]
+		)
+	)
 	kaiju.queue_free()
 	await process_frame
 

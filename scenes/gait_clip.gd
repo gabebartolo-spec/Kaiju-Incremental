@@ -11,8 +11,10 @@ extends BipedGait
 const BLEND_SECONDS := 0.25
 ## Heading error (rad) that makes a standing kaiju turn on the spot with a turn clip.
 const TURN_TRIGGER := 0.6
-## Frames of lead-in and settle kept around the part of a turn clip that carries its yaw.
+## Frames of lead-in kept before the part of a turn clip that carries its yaw, and of settle
+## after it (the tail's whip settles about half a second after the body stops).
 const TURN_PAD := 6
+const TURN_SETTLE := 12
 ## How fast a lifted foot's lag behind its clip path dies out (1/s): gone before it lands.
 const LAG_DECAY := 10.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
@@ -24,6 +26,15 @@ const RESTEP_GAP := 0.3
 const RESTEP_REACH := 0.98
 const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
+## The tail's mass on turns the clips don't carry (curves while walking, idle heading drift): a
+## damped spring driven by the body's turning acceleration, natural frequency (rad/s) and damping
+## ratio as the turn clips' whip (motion_test TAIL_SPRING); per-bone gain base -> tip (TAIL_WHIP),
+## how long the swing takes to reach each next bone (s), and the swing it eases towards and never
+## passes (rad; the sim turns faster than the clips, so a sharp turn would curl the tail too far).
+const TAIL_SPRING := Vector2(12.0, 0.35)
+const TAIL_GAIN := Vector2(5.0, 6.4)
+const TAIL_DELAY := 0.021
+const TAIL_MAX := 0.008
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -34,6 +45,10 @@ var state := "idle"
 var clip_time := 0.0
 ## Walk cycles travelled so far (distance / stride), for tests and captures.
 var walk_cycles := 0.0
+## The tail spring's swing from the body's turning (rad; not counting the clips' own tail motion).
+var tail_swing := 0.0
+## The spring's swing, eased to TAIL_MAX: what the tail shows.
+var tail_shown := 0.0
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -46,6 +61,12 @@ var _was_planted: Array[bool] = [false, false]
 var _catch: Array[float] = [0.0, 0.0]  # seconds left of a catch step
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
+## The tail spring's speed (rad/s), its swing as it reaches each bone, the body's last yaw rate.
+var _tail_v := 0.0
+var _tail_at: Array[float] = []
+var _last_body_yaw := 0.0
+var _last_yaw_rate := 0.0
+var _tail_primed := false
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -65,12 +86,16 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	for turn: String in ["turn_left", "turn_right"]:
 		_turn_span[turn] = _yaw_span(turn)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
+	for bone_name: String in clips.bones:
+		if bone_name.begins_with("tail"):
+			_tail_at.append(0.0)
 
 
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
 	_choose(dt)
+	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
@@ -101,7 +126,7 @@ func _choose(dt: float) -> void:
 			_go(settle, _walk_entry() if moving else 0.0)
 	elif state.begins_with("turn"):
 		var span: Vector2 = _turn_span[state]
-		if moving or clip_time >= span.y + TURN_PAD:
+		if moving or clip_time >= span.y + TURN_SETTLE:
 			_go(settle, _walk_entry() if moving else 0.0)
 	elif moving:
 		if state != "walk":
@@ -185,9 +210,38 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		if bone_name == "jaw" and _jaw_hold > 0.0:
 			q = q.slerp(_jaw_peak, smoothstep(0.0, 1.0, _jaw_hold))  # the maw held open (the beam)
 		elif bone_name.begins_with("tail"):
-			q = Quaternion(Vector3.UP, swing.whip_yaw(bone_name.to_int())) * q
+			var i_tail := bone_name.to_int()
+			var bend := swing.whip_yaw(i_tail) + _tail_at[i_tail] * _tail_gain(i_tail)
+			q = Quaternion(Vector3.UP, bend) * q
 		var offset := pose.offset * clips.rig_scale if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
+
+
+## The tail lags the body's turns: the spring is pushed by the body's turning acceleration (not
+## during a turn clip or the roar, which carry their own tail), and its swing reaches each bone
+## a moment after the one before, so a curve drags the tail wide and it whips back and settles.
+func _swing_tail(dt: float) -> void:
+	if not _tail_primed:  # the first frame: no turning yet
+		_tail_primed = true
+		_last_body_yaw = body_yaw
+	var rate := wrapf(body_yaw - _last_body_yaw, -PI, PI) / dt
+	var accel := (rate - _last_yaw_rate) / dt if state == "walk" or state == "idle" else 0.0
+	_last_body_yaw = body_yaw
+	_last_yaw_rate = rate
+	var wn := TAIL_SPRING.x
+	_tail_v += (-wn * wn * tail_swing - 2.0 * TAIL_SPRING.y * wn * _tail_v - accel) * dt
+	tail_swing += _tail_v * dt
+	tail_shown = TAIL_MAX * tanh(tail_swing / TAIL_MAX)
+	var reach := 1.0 - exp(-dt / TAIL_DELAY)
+	var ahead := tail_shown
+	for i: int in _tail_at.size():
+		_tail_at[i] += (ahead - _tail_at[i]) * reach
+		ahead = _tail_at[i]
+
+
+func _tail_gain(i: int) -> float:
+	var k := float(i) / maxf(1.0, _tail_at.size() - 1.0)
+	return TAIL_GAIN.x + TAIL_GAIN.y * k
 
 
 ## Planted feet hold their spot in the world; a lifted foot follows its clip path, starting from
