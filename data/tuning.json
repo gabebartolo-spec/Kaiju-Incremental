@@ -291,14 +291,14 @@
 			{
 				"city": {"half": 70, "coast_z": -140, "max_height": 32, "tower_chance": 0.6,
 					"fog_scale": 0.6, "far_haze": 0.0024},
-				"army": {"range": 15.0, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6, "tank_rubble": 6,
+				"army": {"range": 14.0, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6, "tank_rubble": 6,
 					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
 				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12}
 			},
 			{
 				"city": {"half": 125, "coast_z": -195, "max_height": 40, "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
-				"army": {"range": 16.0, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10,
+				"army": {"range": 15.5, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10,
 					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.0004, "threat_per_chunk": 0.00008},
 				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 6,
 					"rubble": 30}
@@ -306,7 +306,7 @@
 			{
 				"city": {"half": 210, "coast_z": -280, "max_height": 48, "tower_chance": 0.7,
 					"fog_scale": 0.2, "far_haze": 0.0008},
-				"army": {"range": 18.0, "start_interval": 2.5, "min_interval": 0.6, "tank_hp": 160, "tank_damage": 11,
+				"army": {"range": 17.0, "start_interval": 2.5, "min_interval": 0.6, "tank_hp": 160, "tank_damage": 11,
 					"tank_rubble": 35, "speed": 3.5, "escalation_per_chunk": 0.0002, "threat_per_chunk": 0.00003},
 				"air": {"max": 6, "interval": 9.0, "after_chunks": 800, "max_per_chunks": 2500, "hp": 80,
 					"damage": 7, "rubble": 60}
