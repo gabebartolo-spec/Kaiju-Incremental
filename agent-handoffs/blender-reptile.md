@@ -1,4 +1,4 @@
-# blender-reptile handoff, 2026-10-17 16:05
+# blender-reptile handoff, 2026-10-17 15:52
 ## State: running a check (croc titan D-046: export + walk/turn/roar render chain, bash b2ygxxxce)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
@@ -18,7 +18,7 @@ tail down and out, claws to the chest with bent elbows; walk weight shift 4.5% h
 + counter-turn, tail counter-sway in step with the shift; jaw shut at rest. Crops at roar f52.
 Lead wants: renders side + 3q, foot slide, girth, 2x crops -> lead runs a fresh critic.
 ## Branch and commit
-claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c.
+claude/blender-reptile-f5388e (pushed). Round 3 at 86adf96; game-name map 2aa4b6c; round 4 script fdcea1a.
 ## Delivered (round 3)
 - motion_test.py fit modes: A | B (hand pivots) | auto (sliced from the mesh) | landmarks.json.
   auto vs hand on B: every pivot within 1-4 m (hand tip 5.3, belly 5.8) on a 100 m body; on A the low
