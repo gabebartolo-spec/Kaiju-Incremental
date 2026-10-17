@@ -1,5 +1,5 @@
-# Game-flow handoff, 2026-10-17 13:00
-## State: running a check (full local suite + 3 CI captures)
+# Game-flow handoff, 2026-10-17 13:05
+## State: running a check (3 CI captures; PR #14 CI re-running)
 
 ## Task
 Make the loop around the rampage feel finished (brief from lead session local_9fac90d2):
@@ -11,9 +11,8 @@ Done = PR into claude/look-options, CI green, CI-rendered screenshot per screen 
 lead reviews first. No windowed Godot (director gaming): headless tests, CI captures only.
 
 ## Branch and commit
-claude/game-flow-edfba4. Pushed: 7777974. Local, not yet pushed: merge of origin/claude/
-look-options + rampage.gd trim (415 -> 400 lines: slow-mo and time/pause reset moved into
-rampage_hud.gd, result() uses merged()). Draft PR #14 into claude/look-options, Auto-fix on.
+claude/game-flow-edfba4, pushed at 0396604 (origin/claude/look-options merged in; rampage.gd
+trimmed 415 -> 400: slow-mo and time/pause reset moved into rampage_hud.gd). Draft PR #14 into claude/look-options, Auto-fix on.
 
 ## What is built
 - sim: Collapse.toppled / biggest_fall; RampageSim.end(reason) public ("ended" = pause menu);
@@ -28,7 +27,8 @@ rampage_hud.gd, result() uses merged()). Draft PR #14 into claude/look-options, 
 - LFS checkout in capture.yml, tests.yml (shards + self-test), build.yml.
 
 ## Unfinished (in order)
-1. Full local run green after the merge -> push.
+1. Done: full local run green after the merge (smoke 12, sim 39, powers 24, tentacles 17,
+   city 5, flow 67, self-test); pushed.
 2. Captures: download, 2x-crop QA every shot (buttons/values readable, 1080p + 4K), copy to
    docs/captures/2026-10-17-game-flow/, fill PR #14 Evidence (CAPTURE_LINKS), send to lead.
 3. Mark PR ready after lead's OK. Follow-up when city-growth #16 merges: reveal reads
@@ -50,6 +50,5 @@ rampage_hud.gd, result() uses merged()). Draft PR #14 into claude/look-options, 
 None for the director. Civilians count comes from the view (StreetLife.killed), not the sim.
 
 ## Running jobs
-- Local full run: %TEMP%/gf_all.
 - CI captures: shots 38992440820 -> %TEMP%/gf_cap/shots, 4K 38992469000 -> %TEMP%/gf_cap/4k,
   clip 38992495568 -> %TEMP%/gf_cap/clip (watcher waits for all three logs).
