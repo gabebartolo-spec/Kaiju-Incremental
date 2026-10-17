@@ -107,8 +107,10 @@ jobs:
           vulkaninfo --summary 2>&1 | grep -E "deviceName|driverName" | head -3 || true
 
           run_one() { # $1 = rendering method, $2 = rendering driver
-            local movie_args=()
-            if [ "$MOVIE" = true ]; then movie_args=(--write-movie "$out/clip.avi" --fixed-fps "$FPS"); fi
+            # Stills too run on a fixed frame clock, so a shot lands on the same frame every run
+            # (a 0.45 s effect was in some runs' stills and not others).
+            local movie_args=(--fixed-fps "$FPS")
+            if [ "$MOVIE" = true ]; then movie_args+=(--write-movie "$out/clip.avi"); fi
             echo "=== $1 on $2 ===" | tee -a "$out/RENDERER.txt"
             # $user_args is split on purpose: it is a list of --flag=value words.
             # shellcheck disable=SC2086

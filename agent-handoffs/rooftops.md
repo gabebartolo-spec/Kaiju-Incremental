@@ -1,77 +1,59 @@
 # Rooftops handoff, 2026-10-18
-## State: awaiting lead (critic FIX 5 re-clipped in rooftops/fix6/, valid gate 27/27; fresh critic, then merge)
+## State: available (PR #40 MERGED into claude/look-options at ea6de01; worktree already removed)
+
+This is the final agent-handoffs/rooftops.md. The worktree was removed before it could be committed,
+so the lead lands this file in its next handoff/board commit (the copy on look-options is the
+pre-merge one, which says "awaiting lead").
 
 ## Who
-Session "Kaiju: Rooftop defenders" (started by LEAD = "Kaiju: Lead"). Reports to LEAD, at most 8
-lines, with the PR number and head SHA. Worktree .claude/worktrees/elastic-snyder-033782, branch
-claude/rooftop-defenders off origin/claude/look-options (67986f1). PR into claude/look-options, never merge.
+Session "Kaiju: Rooftop defenders" (started by "Kaiju: Lead"). Branch claude/rooftop-defenders is
+merged; delete it with the lead's usual cleanup (local and origin both still exist).
 
-## Task (D-063, director 05:50)
-"put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju".
-Shots hurt: chip damage, no new escalation curve.
+## Task (D-063, director 2026-10-18 05:50)
+"put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Shots
+hurt: chip damage, no new escalation curve. The lead accepted that armour doesn't reduce the chip and
+tabled it for the director as a balance note.
 
-## Done (local, all suites green)
-- sim/army.gd: Army.Squad. Placed at city start from Seeds.derive(army rng, 0x2007): buildings >=
-  min_height, seeded Fisher-Yates, chance each, cap max_by_tier, top-layer cell, off the stair-hut corner.
-  Fire every fire_interval in range (ground plane); volley = damage_by_tier x threat_scale() (the tank
-  armour curve). Die when the roof chunk is not alive, or via splash() from hit_area when the attack
-  reaches the roof floor. Paid via clear_dead with rooftop_rubble[tier] x rubble_mult.
-- sim/rampage_sim.gd: hit_area -> army_units.splash (also clears dead tanks); result()["rooftops"].
-- data/tuning.json army.rooftop: min_height 4, chance 0.3, max_by_tier 6/10/14/18, squad_size 3,
-  fire_interval 2, range 16, damage_by_tier 0.3/0.5/0.8/1.2, rooftop_rubble 1/3/8/18, radius 0.5,
-  max_drawn 36.
-- scenes/rooftop_view.gd: VoxelPerson.rifleman figures (5 outfits), MultiMesh flash and tracer pools,
-  dust + "+N" on death, Sfx "rifle" (no stream yet). Built and fed by scenes/powers_view.gd
-  (rampage.gd is at its 400-line cap on look-options; it is untouched).
-- tests/lib/sim_rooftops.gd (11 sim checks incl. the effect fixture), 2 flow checks; floors sim 50, flow 102.
-- tools/capture/capture_rooftops.gd: Behemoth clip + stills + rooftops.json (squad screen spots for the crop).
-- Evidence logs (failing first, passes, bench): %TEMP%/rooftops_ev/. Bench script: scratchpad rooftop_bench.gd.
-- Pacing on vs off: 0.58/4.45 h vs 0.59/4.46 h (no change). CI clip run 39061920261 (at ef33e9c):
-  3 s 1080p clip, stills, 2x/4x crops, logs in the lead notes folder rooftops/.
-- Look note: figures are about 10 px tall at the Behemoth camera; tracers read, flashes are faint. Scaling up
-  is LEAD's / the director's call.
+## What shipped (#40)
+- sim/army.gd Army.Squad: placed at city start from Seeds.derive(army rng, 0x2007). Candidates are
+  buildings >= min_height, in a seeded Fisher-Yates order, each kept with chance, capped by
+  max_by_tier; the squad stands on a top-layer cell. It fires every fire_interval in range;
+  volley = damage_by_tier x threat_scale(). It dies when its roof chunk dies or a hit_area splash
+  reaches its floor (splash() also clears dead tanks), and pays rooftop_rubble[tier]. result()["rooftops"].
+- data/tuning.json army.rooftop (all the numbers, incl. max_drawn 36). Pacing: no change (0.58/4.45 h
+  vs 0.59/4.46 h).
+- scenes/rooftop_view.gd, built and fed by scenes/powers_view.gd (rampage.gd sits at its 400-line cap):
+  - VoxelPerson.rifleman figures at 1.5x.
+  - Flashes and sparks are 4-point star billboards counted in frames: flash 0.5 u for 3 frames, rifles
+    1 frame apart; spark 0.9 u for 4 frames, no depth test.
+  - Tracers are 1.75 u streaks at 60 u/s, depth-tested. None when the shot is point-blank (<3 frames)
+    or its screen path is under 60 px.
+  - Rounds strike the centre of the nearest upper-body bone (TARGETS), held to the bone.
+- Tests: tests/lib/sim_rooftops.gd (11 sim checks incl. the player-effect fixture "army.rooftop") and
+  2 flow checks; floors sim 50, flow 115.
+- Tools: tools/capture/capture_rooftops.gd picks the stand spot with the most squads firing on screen
+  and logs volleys and sparks. tools/capture/rooftop_hit_gate.gd (headless silhouette gate) and
+  tools/capture/spark_gain.py (spark brightness measured from the movie).
 
-## Decisions taken (flagged to LEAD)
-- Armour does not reduce rifle chip. Brood young don't draw rifle fire. Figures vanish when the fall starts.
+## Lessons (for the lead to judge for the playbook / skills)
+- The headless (dummy) renderer keeps no MultiMesh instance data: get_instance_transform returns
+  nothing useful. A gate built on it passed 27/27 while the footage missed. Build masks from source
+  data (KaijuRig.voxels_of cells) and prove the gate on a known-bad control: hits shifted 2.5 u gave
+  9/27 and exit 1.
+- get_viewport().get_texture().get_image() inside a capture lags the sim by a frame or two; measure
+  effects from the recorded movie instead (spark_gain.py found the offset itself).
+- Rig voxels (KaijuRig.skins) don't match the drawn VoxelSkin closely enough to hit "the surface";
+  aiming at bone centres the body surrounds is robust.
 
-## Review (lead, 2026-10-18)
-- Sim review PASS at fa3ef77. Look FIX: squads and flashes were invisible at the game camera.
-- Fixes: flashes 0.45 u, additive, unshaded, fog-free, 0.08 s; tracers 0.09 u with a 0.08 s hold;
-  a spark on the hide; figures 1.5x, spaced 0.55. Flashes, tracers and sparks are drawn at HOT 4.0,
-  over the glow threshold of 1.1.
-- Root cause of the invisible tracers: they were aimed at the kaiju's axis and buried in its body.
-  They now end on the near hide (_hide). The capture stands the kaiju 13 u off and takes stills
-  2 frames after a volley.
-- GPU re-clip evidence is in the lead notes rooftops/fix/ (clip, mid-volley still, 2x crop).
-- Flash tweak (lead): flashes are now 0.35 u soft star billboards (procedural 32 px texture,
-  additive, fog-free), FLASH_AHEAD 0.2 u out along the aim, the rifles 1 frame apart; sparks use the
-  same star. Re-clip is in rooftops/fix2/: the flashes PASSED a fresh motion-critic.
-- Critic FIX 2 (coded in b358186): tracers are 1.75 u streaks flying at 60 u/s; the round strikes the
-  rig bone nearest the shooter (above FEET_CLEAR), pushed out 0.35 body-radius; the star spark lands
-  at the tip on arrival; TRACER_HOT 2 and 0.05 wide. The capture runs 6 s, logs volley_frames and
-  takes stills 5 frames after a volley. Squad 6's "ledge" was checked in the sim: an intact top layer.
-- Critic FIX 3 (deda6cc + capture): sparks are stars with no depth test for 7 frames; flashes counted
-  in frames (4, one-frame stagger, 0.45 u ahead); point-blank (<3 frames) means no tracer; rounds aim at
-  bones above 1.15x the hip height. The capture picks the stand spot with the most squads firing on
-  screen (seed 0: 3 firing, 5 on screen; no seed 0-11 gives 4 firing). Movie-measured sparks: min
-  gain +0.42, median +0.62 luminance.
-- Critic FIX 4/5: surface voxel hits (KaijuHit) still landed beside the skinned body, so it was removed.
-  The lead's method (4cbdbbb): the hit is the centre of the nearest upper-body bone (TARGETS: spine0-2,
-  head0-1, arm_l0/r0), held to the bone; the spark has no depth test, the tracer is depth-tested.
-  Sparks 0.9 u for 4 frames, flashes 0.5 u for 3. LESSON: the headless renderer keeps no MultiMesh
-  instance data, so rooftop_hit_gate.gd builds the silhouette from KaijuRig.voxels_of cells. Valid gate:
-  27/27; a known-bad 2.5 u offset gives 9/27 and exit 1. Movie sparks: min +0.53 luminance.
+## Open (lead's post-merge notes; a follow-up card was proposed to the user)
+- Some sparks sit on the shoulder edge: move the targets 8-10 px inward onto the spine/arm mass.
+- Flashes come out about 8 px at the game camera and are still easy to miss.
+- About 1 s dead gaps make the fire feel sparse; the lead puts the density/visibility question to the
+  director first.
 
-## Next
-1. Lead's fresh critic on fix6 -> any fix -> rerun the gate first -> GPU go -> re-clip -> `python tools/capture/spark_gain.py
-   <dir> <ffmpeg>` (each spark's brightness gain in the movie; the in-engine image lags, so not that).
-2. After #40 merges, Military AI syncs onto it; this worktree can be removed by the lead.
+## Evidence
+Lead notes folder rooftops/ (fix through fix6): clips, crops, gate logs, spark_gain.json, bench and
+pacing logs.
 
-## Lead rules (2026-10-18)
-- Rooftops land BEFORE Military AI (local_5325ef73), which syncs after. In sim/army.gd keep hunks to the
-  squad code, threat_scale() and the clear_dead tail; _spawn() is left as it was (Military AI edits it).
-- rampage.gd is at its 400-line cap: no lines from this PR. Floors resolve to the real counts (flow 114).
-- Armour does not reduce chip (lead accepted; tabled for the director as a balance note).
-
-## Don't touch
+## Don't touch (when this was assigned)
 scenes/biped_swing.gd, scenes/gait_clip.gd, scenes/city_ground.gd, scenes/ui_kit.gd.
