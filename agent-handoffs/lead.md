@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 12:50
-## State: blocked (Chrome minimized: Tripo reference images for D-045 wait; director in fullscreen game)
+## State: working (croc titan rig + motion with blender-reptile; reviews of #14/#15/#18 pending)
 
 ## Task
 Lead for Kaiju Incremental: kaiju sculpts/skins, art and motion QA of every helper before the director,
@@ -50,14 +50,10 @@ Director: "tank and heli models look great".
 ## D-045 (director 14:22): reptile = NEW original Tripo design, rigged in Blender (hand rig, welded weights)
 - Blender test critic: deformation + feet PASS both; animation FIX (no roar wind-up, frozen hold, tail not
   counterbalancing, arms out at peak, static walk upper body, B mouth open at rest). blender-reptile on HOLD.
-- NEXT (me): Tripo Studio /workspace/generate-image -> 3-4 reference images, show the director labelled, then
-  image-to-3D (Smart Mesh P2.0), Private, Remove Lighting. Brief: original reptile kaiju, NOT Godzilla: long
-  crocodile snout, MOUTH CLOSED, pale bony back plates/osteoderm ridge (not maple-leaf fins), long low tail,
-  digitigrade legs, forearms with clawed hands, dark olive hide; full body A-pose, limbs clear of torso, front
-  three-quarter orthographic, neutral grey bg, soft even light, no props. Then baby/adolescent once adult picked.
-- BLOCKED 14:40: Chrome restored but hidden behind the League of Legends client: the page doesn't paint, typing
-  doesn't register (form_input works), Generate clicks do nothing, screenshots time out. Prompt text is ready in
-  the box (830 chars, 4:3, 4 images, free quota 32/1000). Needs Chrome visible (other screen) or after gaming.
+- 15:45 D-046 croc titan built: refs (free) -> A-pose edit -> Smart Mesh 351ad916 v1 (100) -> texture (30), balance
+  19575. ~/Downloads/kaiju_tripo/rep_croctitan_adult.glb; six-view PASS (croctitan_six_view.png). Sent to
+  blender-reptile: weld, hand rig, weights export, walk/turn/roar with critic fixes -> fresh critic -> director.
+  Next Tripo: baby + adolescent from the same design.
 - #15 round 3 FIX sent (sheared slat cubes at scythe/thigh, forearm speckle); keep it small (Blender weights next).
 
 ## FOCUS (director 13:06): "how using blender might improve motion"
