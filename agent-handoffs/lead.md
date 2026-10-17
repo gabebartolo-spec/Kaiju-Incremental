@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-17 20:20
-## State: awaiting director (AFK shift done: all reviewable work merged; questions in director_queue.md)
+## State: working (D-047 Blender clips in game: blender-reptile building PR; Q2-Q4 still for the director)
 
 ## AFK shift (16:14)
 - Archived: blender-tank, species-powers, ci-captures (README saved 3a354a1), real-city, species-motion.
@@ -17,7 +17,8 @@
 - #19 MERGED 4f5afb5 (croc titan adult in game on Blender weights; foot ok, jaw shut cleaner). Critic: SHARED
   procedural motion reads as a 5 m lizard, roar jaw drops ~vertical -> director Q: bring Blender clips in game.
 - #14 game flow MERGED de727f3 (r4 passed lead; r3 screen-critic items fixed; 5 nits accepted). Board updated 81230a3.
-  Director queue: side-session-notes/<lead>/lead/director_queue.md (Q1 Blender clips in game, Q2 balance D,
+  Director queue: side-session-notes/<lead>/lead/director_queue.md (Q1 ANSWERED 21:11 = D-047 yes, b7091c8; blender-reptile briefed: export clips + clip player,
+  walk phase by distance over procedural planting; Q2 balance D,
   Q3 Apex height, branch deletes). Open PRs left: #11, #8 (paused), #3 (to main, hold). Former r3 note: (tree text 24 px < 28, need-N overlap, side panel scroll, copy,
   locked contrast, "blocks", HUD behind dialogs, reveal floor count/skip hint).
 - TABLED for the director: (1) balance D for #16; (2) Apex height; (3) croc titan motion clips once QA passes.
