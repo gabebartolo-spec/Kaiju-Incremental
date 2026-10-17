@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
@@ -237,10 +238,12 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	if not levels.is_empty():
 		want.append_array(["cracks", "ready", "deflect", "regen"])
 	var jets := 0
+	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
-		jets = maxi(jets, _breath_jets(rampage))
+		jets = maxi(jets, FlowBreath.jets(rampage))
+		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
@@ -249,6 +252,15 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
 	if kind == "breath":
 		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
+		var first := Num.f(scorch_glow.get("first", -1.0))
+		var peak := Num.f(scorch_glow.get("peak", 0.0))
+		check(
+			first >= 0.0 and first < peak * 0.5,
+			(
+				"the breath scorch's molten cracks glow in, not at full on frame one (%.2f of %.2f)"
+				% [first, peak]
+			)
+		)
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
@@ -261,17 +273,6 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		)
 	rampage.queue_free()
 	await process_frame
-
-
-## Live voxel-cube jets (glowing 0.25 u cubes) in the city's effects, above the prewarm spot.
-func _breath_jets(rampage: Rampage) -> int:
-	var count := 0
-	for node: Node in rampage.find_children("*", "GPUParticles3D", true, false):
-		var p: GPUParticles3D = node
-		var cube := p.draw_pass_1 as BoxMesh
-		if cube != null and is_equal_approx(cube.size.x, 0.25) and p.global_position.y > -10.0:
-			count += 1
-	return count
 
 
 ## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
