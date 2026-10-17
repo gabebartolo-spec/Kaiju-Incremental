@@ -1,6 +1,6 @@
-# blender-reptile handoff, 2026-10-18 02:05
-## State: running a check (CI: 4K select at a168942 bg29eq2jb -> ci3/select4k; BEFORE game forward_plus
-## bufrn4gg1 -> ci3/before_game. Both dispatchers can race for run ids: verify with gh run list.)
+# blender-reptile handoff, 2026-10-18 02:45
+## State: running a check (Blender chain boepgn93e: kclip -> tail/kc2, tailtop -> tail/top_new2,
+## crops -> tail/crops2, renders -> tail/r2; BEFORE game forward_plus rerun bufrn4gg1 -> ci3/before_game)
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
 Open the D-047 PR into claude/look-options with: BEFORE/AFTER at the game camera, per-frame PNG
 diff (seams, blends), 2x crops of feet at contact and jaw at roar peak, a 4K species-select still,
@@ -28,12 +28,23 @@ species card fix a168942 (lead 01:38: fix it in this PR).
 - Lead part 2 still owed: in-game 2x crop of tail root at the turn extreme (voxel parting) from
   ci3/after_game; in-game BEFORE/AFTER must show the tail; state the tail owner in the PR body.
   All suites green locally.
+## Lead QA round (02:31, one pass): bolder tail - UNCOMMITTED in tools/blender/motion_test.py
+- Walk: TAIL_WALK (4, 10), TAIL_LAG 0.42 (0.6 wave; a full wave cancels the tip to 23-28 m at 18
+  deg, so say so): tip 62.9 m, worst 14.0 deg. Idle tip 13.7 m. Turn kept (worst 15.8 deg).
+- Roar: TAIL_LIFT (5, -18) arc (mid 50 m, tip trails 36 m at f27); TAIL_TRAIL 12 tip curls up to
+  79 m at f35 as root drives down; slam TAIL_SLAM (1.15 land, 0.85 rest) x (0.2 + 1.6k), fall
+  5 - 3k frames; mid bottoms f44-45, tip lands f47 at 2.6 m/frame (skin 0.4 m), bounces +2.7 m.
+- tail task records joint_z; crops adds roar f47 tail_mid_slam.
+- Next: copy tail/kc2/croctitan.kclip -> assets/kaiju/reptilian_adult.kclip, suites, commit,
+  push, re-run ONLY after_game capture (ci4), in-game 2x root crop at turn + mid-tail at slam,
+  tailtop + roar sheet, compose BEFORE/AFTER + PNG diff, open PR, send lead head SHA.
 ## Species card (a168942)
 species_select._frame: old fixed camera, backed off along the same view only when the turning kaiju
 (skin reach per height band, every angle) is wider than the card. Distances: croc 12.8 -> 23.7,
 octopus -> 16.1 (its tentacles clipped before), mantis unchanged. +0.4 s card build. Lead wanted a
 fixed 3/4 yaw, but the card spins (0.35 rad/s), so I fit the swept volume; say so in the PR. Owed:
-before/after card stills side by side (ci2/select4k vs ci3/select4k).
+before/after card stills: DONE tail/cards_before_after.png (ci3/select4k run 39042109877);
+mantis head cut at top in both (pre-existing nit).
 ## Done evidence
 ci3/after_game (forward_plus, cb1726e; turn ends 12.25 s, drift 0.0 cm); tail/game_tailroot_2x.png
 (no parting at 10.2 s drag / 11.0 s swing-through); tail/ Blender board mp4s (croctitan_v2_tail_*).
