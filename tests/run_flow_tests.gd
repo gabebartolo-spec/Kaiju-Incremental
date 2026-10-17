@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
@@ -231,15 +232,19 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
 		want.append_array(["cracks", "ready", "deflect", "regen"])
+	var jets := 0
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		jets = maxi(jets, _breath_jets(rampage))
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
 	var sound: String = SIGNATURE_SOUND[kind]
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
+	if kind == "breath":
+		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
@@ -252,6 +257,17 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		)
 	rampage.queue_free()
 	await process_frame
+
+
+## Live voxel-cube jets (glowing 0.25 u cubes) in the city's effects, above the prewarm spot.
+func _breath_jets(rampage: Rampage) -> int:
+	var count := 0
+	for node: Node in rampage.find_children("*", "GPUParticles3D", true, false):
+		var p: GPUParticles3D = node
+		var cube := p.draw_pass_1 as BoxMesh
+		if cube != null and is_equal_approx(cube.size.x, 0.25) and p.global_position.y > -10.0:
+			count += 1
+	return count
 
 
 ## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
@@ -359,19 +375,7 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
-	# One more helicopter arrives, fires and is shot down (its events, as the sim sends them).
-	var heard := rampage.sfx.played
-	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
-	for event: Dictionary in [
-		{"type": "heli_spawned", "heli": 999},
-		{"type": "heli_fired", "heli": 999},
-		{"type": "heli_destroyed", "heli": 999, "x": at.x + 10.0, "z": at.z},
-	]:
-		view.on_event(event, at)
-	check(
-		["heli_rotor", "heli_gun", "heli_crash"].all(func(k: String) -> bool: return heard.has(k)),
-		"the %s's helicopters are heard flying, firing, falling: %s" % [species_id, heard.slice(-8)]
-	)
+	FlowHeliSounds.check_heard(check, rampage, view, species_id)
 	rampage.queue_free()
 	await process_frame
 
