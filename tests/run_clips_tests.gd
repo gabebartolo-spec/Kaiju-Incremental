@@ -3,8 +3,9 @@ extends "res://tests/lib/runner.gd"
 ## The clip file loads and fits the rig it was baked for (same bones and order as the skin), a
 ## file for another skeleton is refused, the walk's phase follows the distance travelled, a
 ## standing heading change turns on the spot, the roar opens the jaw and ends, no bone goes NaN,
-## a curve while walking swings the tail out and it settles, and every other kaiju keeps its
-## procedural gait. Fixed 60 Hz steps, no clock, no randomness.
+## a curve while walking swings the tail out and it settles, the clips (not the procedural tail)
+## own the tail bones, and every other kaiju keeps its procedural gait. Fixed 60 Hz steps, no
+## clock, no randomness.
 ##   godot --headless --path . --script tests/run_clips_tests.gd
 ## Seeded by design: nothing here draws random numbers (the gaits seed their own twitches).
 
@@ -22,6 +23,7 @@ func run_checks() -> void:
 	await _check_walk_phase()
 	await _check_turn_and_roar()
 	await _check_tail_lag()
+	await _check_tail_owner()
 
 
 func _model(species: String, stage: String) -> KaijuModel:
@@ -185,6 +187,43 @@ func _check_tail_lag() -> void:
 		(
 			"a curve while walking swings the tail out and it settles (peak %.4f, left %.4f)"
 			% [biggest, left]
+		)
+	)
+	kaiju.queue_free()
+	await process_frame
+
+
+## The clips own the tail: walking straight, every tail bone shows the clip's turn (within 0.01
+## rad, the turn-lag spring settling from the first frames; BipedSwing's sway alone is 0.03: the
+## procedural tail and the spring chains don't run), and a standing turn's whip
+## bends a tail joint past the procedural tail's clamp (BipedSwing.TAIL_BEND_MAX).
+func _check_tail_owner() -> void:
+	var kaiju := _model("reptilian", "adult")
+	var rig := _rig_of(kaiju)
+	var gait: ClipGait = rig.gait
+	for frame: int in 120:
+		kaiju.position += Vector3(0, 0, -4.0 * DT)
+		kaiju.animate(DT, 1.0)
+	var pose := gait.clips.pose_at("walk", gait.clip_time)
+	var worst := 0.0
+	for i: int in gait.clips.bones.size():
+		if gait.clips.bones[i].begins_with("tail"):
+			var shown := rig.bone(gait.clips.bones[i]).transform.basis.get_rotation_quaternion()
+			worst = maxf(worst, shown.angle_to(pose.turns[i]))
+	var most := 0.0
+	for frame: int in 30:
+		kaiju.animate(DT, 0.0)  # stand
+	kaiju.rotation.y += PI * 0.5
+	for frame: int in 300:
+		kaiju.animate(DT, 0.0)
+		for n: String in gait.clips.bones:
+			if n.begins_with("tail"):
+				most = maxf(most, rig.bone(n).transform.basis.get_rotation_quaternion().get_angle())
+	check(
+		worst < 0.01 and most > BipedSwing.TAIL_BEND_MAX,
+		(
+			"the clips own the tail (off the clip %.4f rad; turn bends %.3f > clamp %.2f)"
+			% [worst, most, BipedSwing.TAIL_BEND_MAX]
 		)
 	)
 	kaiju.queue_free()

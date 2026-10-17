@@ -9,4 +9,4 @@ city 5
 growth 24
 load 6
 flow 76
-clips 12
+clips 13
