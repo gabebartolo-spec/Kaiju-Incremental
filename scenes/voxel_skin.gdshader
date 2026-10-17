@@ -47,7 +47,9 @@ void vertex() {
 	vec3 ax = normalize(m[0]);
 	vec3 ay = normalize(m[1] - ax * dot(ax, m[1]));
 	mat3 turn = mat3(ax, ay, cross(ax, ay));
-	edge_vertex(NORMAL, edge_box_face(VERTEX, NORMAL), mat3(MODELVIEW_MATRIX) * turn);
+	edge_face = edge_box_face(VERTEX, NORMAL);
+	edge_u = normalize(mat3(MODELVIEW_MATRIX) * turn * edge_u_axis(NORMAL));
+	edge_v = normalize(mat3(MODELVIEW_MATRIX) * turn * edge_v_axis(NORMAL));
 	// The engine adds the instance's centre back after this.
 	VERTEX = (moved - centre) + turn * (VERTEX * grow);
 	NORMAL = normalize(turn * NORMAL);
@@ -60,7 +62,7 @@ void vertex() {
 void fragment() {
 	vec3 shaded = srgb_to_linear(tint);
 	vec3 normal = NORMAL;
-	edge_fragment(shaded, normal);
+	edge_fragment(edge_face, edge_u, edge_v, shaded, normal);
 	ALBEDO = shaded;
 	NORMAL = normal;
 	ROUGHNESS = roughness_value;

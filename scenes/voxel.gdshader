@@ -19,8 +19,9 @@ vec3 srgb_to_linear(vec3 c) {
 }
 
 void vertex() {
-	vec2 face = box_mesh ? edge_box_face(VERTEX, NORMAL) : UV * 2.0 - 1.0;
-	edge_vertex(NORMAL, face, mat3(MODELVIEW_MATRIX));
+	edge_face = box_mesh ? edge_box_face(VERTEX, NORMAL) : UV * 2.0 - 1.0;
+	edge_u = normalize(mat3(MODELVIEW_MATRIX) * edge_u_axis(NORMAL));
+	edge_v = normalize(mat3(MODELVIEW_MATRIX) * edge_v_axis(NORMAL));
 }
 
 void fragment() {
@@ -33,7 +34,7 @@ void fragment() {
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	vec3 shaded = albedo;
 	vec3 normal = NORMAL;
-	edge_fragment(shaded, normal);
+	edge_fragment(edge_face, edge_u, edge_v, shaded, normal);
 	ALBEDO = shaded;
 	NORMAL = normal;
 	ROUGHNESS = roughness_value;

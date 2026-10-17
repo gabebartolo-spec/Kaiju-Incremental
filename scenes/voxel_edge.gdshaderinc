@@ -26,26 +26,28 @@ vec2 edge_box_face(vec3 vertex, vec3 n) {
 	return vec2(dot(s, u), dot(s, v));
 }
 
-// n: the face normal in model space; face: its -1..1 coordinate; to_view: model to view rotation.
-void edge_vertex(vec3 n, vec2 face, mat3 to_view) {
-	vec3 u = normalize(cross(edge_axis_a(n), n));
-	edge_face = face;
-	edge_u = normalize(to_view * u);
-	edge_v = normalize(to_view * cross(n, u));
+// The face's own axes for a model-space normal n. Godot only lets vertex() itself write the
+// varyings, so each shader sets edge_face, edge_u and edge_v there (view-space axes).
+vec3 edge_u_axis(vec3 n) {
+	return normalize(cross(edge_axis_a(n), n));
+}
+
+vec3 edge_v_axis(vec3 n) {
+	return cross(n, edge_u_axis(n));
 }
 
 // Bends the view-space normal and darkens the albedo near the rim. Where the rim band would be
 // thinner than about a pixel (a far or small voxel) it fades out instead of shimmering.
-void edge_fragment(inout vec3 albedo, inout vec3 normal) {
+void edge_fragment(vec2 face, vec3 u, vec3 v, inout vec3 albedo, inout vec3 normal) {
 	if (edge_width <= 0.0) {
 		return;
 	}
-	vec2 f = abs(edge_face);
-	float px = max(max(fwidth(edge_face.x), fwidth(edge_face.y)), 1e-5);
+	vec2 f = abs(face);
+	float px = max(max(fwidth(face.x), fwidth(face.y)), 1e-5);
 	float fade = smoothstep(0.75, 1.5, edge_width / px);
 	vec2 rim = smoothstep(vec2(1.0 - edge_width), vec2(1.0), f);
-	vec2 tilt = sign(edge_face) * rim * edge_bevel * fade;
-	normal = normalize(normal + edge_u * tilt.x + edge_v * tilt.y);
+	vec2 tilt = sign(face) * rim * edge_bevel * fade;
+	normal = normalize(normal + u * tilt.x + v * tilt.y);
 	float seam = smoothstep(1.0 - edge_width * 0.3, 1.0, max(f.x, f.y));
 	albedo *= 1.0 - edge_dark * seam * fade;
 }

@@ -27,7 +27,9 @@ void vertex() {
 	if (state < 0.02 || UV2.y < 1.0 - state) {
 		VERTEX = vec3(0.0);
 	}
-	edge_vertex(NORMAL, UV * 2.0 - 1.0, mat3(MODELVIEW_MATRIX));
+	edge_face = UV * 2.0 - 1.0;
+	edge_u = normalize(mat3(MODELVIEW_MATRIX) * edge_u_axis(NORMAL));
+	edge_v = normalize(mat3(MODELVIEW_MATRIX) * edge_v_axis(NORMAL));
 }
 
 void fragment() {
@@ -42,7 +44,7 @@ void fragment() {
 	if (FRONT_FACING) {
 		vec3 shaded = albedo;
 		vec3 normal = NORMAL;
-		edge_fragment(shaded, normal);
+		edge_fragment(edge_face, edge_u, edge_v, shaded, normal);
 		ALBEDO = shaded;
 		NORMAL = normal;
 		EMISSION = albedo * glow * (1.0 - COLOR.a);
