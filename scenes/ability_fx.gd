@@ -16,7 +16,6 @@ const STREET := Color("3a3d40")
 const INK := Color("2a1620")
 const MOLTEN := Color("ff7a2a")
 const WATER := Color(0.85, 0.95, 1.0)
-const HOT := Color(1.0, 0.92, 0.7)
 
 ## Every effect played, in order ("breath", "leap", "lash", "cracks", "ready", "deflect",
 ## "regen"); read by the flow suite to prove each power leaves its own mark.
@@ -99,32 +98,28 @@ func power(value: float, base: float) -> float:
 ## cone, a flare and a light on what it hits, and a scorched wedge across the street.
 func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -> void:
 	played.append("breath")
-	var seconds := Num.f(_tune["beam_seconds"])
-	var reach := Vector2(span.x, span.z).length()
 	var hit := mouth + span * _first_hit(mouth, span)
 	var dir := (hit - mouth).normalized()
-	# Muzzle flash on the first frame: the jaw lights up even while the body hides the beam.
-	_flare(mouth, 4.5 * _scale * strength, HOT, 0.3)
 	_beam.power = strength
 	_beam.cone_origin = cone_origin
 	_beam.follow = _body
 	_beam.fire(mouth, hit, span, half_angle)
-	# The struck face: a flare, hot sparks and a light just in front of it that lights the wall.
-	_flare(hit - dir * 0.6, 3.5 * _scale * strength, _tint.lightened(0.4), seconds)
+	# The struck face: hot sparks (BreathBeam carries the flashes and the light).
 	var burst := FxParticles.sparks(_tint)
 	burst.direction = -dir + Vector3.UP * 0.4
 	_burst(burst, roundi(50 * strength), 0.7).position = hit - dir * 0.4
-	_city.flash(hit - dir * 1.5, _tint.lightened(0.3), 10.0 * strength, seconds * 1.4)
+	# The scorch covers the sim's hit cone: from the feet (cone_origin) out to full reach.
+	var target := mouth + span
+	var flat := Vector3(target.x - cone_origin.x, 0.0, target.z - cone_origin.z)
 	var look := {
-		"size": reach * 2.0,
+		"size": flat.length() * 2.0,
 		"seconds": Num.f(_tune["scorch_seconds"]),
 		"half_angle": half_angle,
 		"energy": 3.0 + strength,
 		"tint": _tint,
 	}
-	var feet := Vector3(mouth.x, mouth.y + span.y - 0.5, mouth.z)
+	var feet := Vector3(cone_origin.x, target.y - 0.5, cone_origin.z)
 	var scorch := FxDecals.spawn(self, feet, FxDecals.Shape.WEDGE, look)
-	var flat := Vector3(span.x, 0.0, span.z)
 	if flat.length() > 0.01:
 		scorch.basis = Basis.looking_at(flat.normalized(), Vector3.UP)
 

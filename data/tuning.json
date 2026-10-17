@@ -266,6 +266,8 @@
 		"beam_seconds": 0.9,
 		"breath_fade_in": 0.1,
 		"breath_fan_alpha": 0.8,
+		"breath_curtain_alpha": 0.7,
+		"breath_curtain_height": 7.0,
 		"orbit_degrees": 25.0,
 		"orbit_rise": 3.0,
 		"orbit_in_seconds": 0.3,
