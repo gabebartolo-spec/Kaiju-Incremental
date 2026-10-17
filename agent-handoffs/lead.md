@@ -5,10 +5,10 @@
 - Archived: blender-tank, species-powers, ci-captures (README saved 3a354a1), real-city, species-motion.
 - #14 r2 (run 39000008904) FIX sent: tree species band clipped, pause over tree, report over tree, striped
   placeholder tower in reveal; stuck capture runs. Then fresh screen-critic, then the director.
-- #16 fog fix PASS (cea4996, board_fog_before_after.png); gdlint red: rampage.gd 402/400 -> city-growth trimming;
-  merge at its green SHA. Then city-growth's next task: Apex load (party_walls all-pairs 5.9M -> spatial grid)
-  + Apex game cam hides the kaiju behind towers (growth_4_game.png: only the tail shows) -> see-through/fade.
-- Croc titan r5 (c4b1b0f): seams fixed per diff plot (walk 4.31->0.45 m), renders running; QA then critic.
+- #16 MERGED 13870b3 (16:44, head 60e637d green). city-growth next: Apex load (<15 s; party_walls grid) +
+  building fade between camera and kaiju (D-025 rule); new branch/worktree. game-flow told to sync #16.
+- Croc titan r5 (c4b1b0f/b29109f): seams fixed (walk 4.31->0.45 m). Fresh critic r5 RUNNING; lead suspects
+  roar f48-72 alternate-frame zigzag (jitter?) and f34 stall.
 - Croc titan r4 (3ea955d, notes blender-reptile/croctitan/): lead QA ok (walk/roar poses read; open mouth
   ragged/see-through at 2x, game voxel mouth fills it). Fresh motion-critic RUNNING (background).
   voxel-skin resumed: bake croc titan kvox, swap #19 to croctitan.skin export, in-game before/after.
