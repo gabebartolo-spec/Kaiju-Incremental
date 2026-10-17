@@ -3,7 +3,8 @@ extends RefCounted
 ## floral areas, parks, gardens, playgrounds throughout the city"): measures a city's
 ## greenery the way a real downtown is judged. Street trees per km of avenue, the parks and
 ## what is in them, front yards and their hedges, the share of the playable city's blocks
-## that are green, and the furthest any building stands from a park.
+## that are green, and the furthest any building stands from a park. The city suite's green
+## check lives here too (check_city), so run_city_tests.gd keeps room under its line cap.
 
 
 ## decor is a CityDecor that has run _ready; before D-065 it has no "green" counts, and every
@@ -50,3 +51,48 @@ static func measure(sim: RampageSim, decor: CityDecor) -> Dictionary:
 		"green_pct": 100.0 * green_area / maxf(1.0, city_area),
 		"furthest_from_park_m": furthest,
 	}
+
+
+## A believable amount of green (D-065, director 2026-10-18: "make sure there are a believable
+## amount of trees, bushes, floral areas, parks, gardens, playgrounds throughout the city"):
+## street trees down the avenues at a real downtown spacing (both pavements, one every
+## city.street_tree_gap metres, fewer at crossings and lamps), a garden and a playground in
+## every park, and a hedge in the front yards. Everything is a crushable decor prop.
+static func check_city(
+	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check: Callable
+) -> void:
+	var got: Dictionary = measure(sim, decor)
+	var gap: Array = sim.city["street_tree_gap"]
+	var per_km := Num.f(got["trees_per_km"])
+	var low := 1000.0 / Num.f(gap[1])  # one pavement's worth at the widest spacing
+	var high := 2000.0 / Num.f(gap[0])  # both pavements at the closest
+	var parks := Num.i(got["parks"])
+	check.call(
+		(
+			per_km >= low
+			and per_km <= high
+			and Num.i(got["playgrounds"]) == parks
+			and Num.i(got["bushes"]) > 0
+			and Num.i(got["flower_beds"]) > 0
+			and (Num.i(got["yards"]) == 0 or Num.i(got["hedges"]) > 0)
+		),
+		(
+			(
+				"stage %d, map_seed %d: green city (%.0f street trees/km of avenue, want %.0f-%.0f;"
+				+ " %d parks, %d playgrounds, %d bushes, %d flower beds, %d yards, %d hedges)"
+			)
+			% [
+				tier,
+				map_seed,
+				per_km,
+				low,
+				high,
+				parks,
+				Num.i(got["playgrounds"]),
+				Num.i(got["bushes"]),
+				Num.i(got["flower_beds"]),
+				Num.i(got["yards"]),
+				Num.i(got["hedges"])
+			]
+		)
+	)
