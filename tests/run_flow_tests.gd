@@ -9,6 +9,7 @@ const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
@@ -39,7 +40,7 @@ func run_checks() -> void:
 	await _check_species_select()
 	await _check_upgrade_screen()
 	await _check_rampage()
-	_check_stomp_timing()
+	FlowSfx.run(root, check)
 	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})
@@ -273,48 +274,6 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		)
 	rampage.queue_free()
 	await process_frame
-
-
-## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
-## plays its tier and the ground crack instead of a footstep; steps pitch by size tier.
-func _check_stomp_timing() -> void:
-	var sfx := Sfx.new(Seeds.make("sfx", 0))
-	root.add_child(sfx)
-	sfx.stomp(2.0, true)
-	var dynamics: Dictionary = Content.section("sfx")["dynamics"]
-	var ceiling := INF
-	for i: int in AudioServer.get_bus_effect_count(0):
-		var effect := AudioServer.get_bus_effect(0, i)
-		if effect is AudioEffectHardLimiter:
-			ceiling = (effect as AudioEffectHardLimiter).ceiling_db
-	check(
-		is_equal_approx(ceiling, Num.f(dynamics["ceiling_db"])),
-		"a hard limiter holds Master under %s dBFS (found %s)" % [dynamics["ceiling_db"], ceiling]
-	)
-	var early := sfx.played.duplicate()
-	var buses: Array[String] = []
-	for player: Node in sfx.get_children():
-		buses.append((player as AudioStreamPlayer).bus)
-	check(
-		buses.all(func(b: String) -> bool: return b == "SFX"),
-		"every power sound plays on the SFX bus: %s" % [buses]
-	)
-	sfx.footstep(0.7)
-	check(
-		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
-		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
-	)
-	var pitches: Array[float] = []
-	for tier: int in [1, 4]:
-		sfx.set_size_tier(tier)
-		sfx._process(1.0)  # past footstep_min_interval
-		sfx.footstep(1.0)
-		pitches.append(sfx.last_pitch())
-	check(
-		pitches[0] > pitches[1] * 1.2,
-		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
-	)
-	sfx.free()
 
 
 ## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Atomic Breath
