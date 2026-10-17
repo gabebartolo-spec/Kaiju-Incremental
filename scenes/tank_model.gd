@@ -90,3 +90,16 @@ func _build(model: Kvox, origin: Vector3) -> MultiMeshInstance3D:
 	var vox: VoxelBuilder = model.frames[0]
 	vox.salt = 3
 	return vox.build({}, _voxel, 0.0, origin)
+
+
+## A plain coloured box at pos (a fired shell, say).
+static func box(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mesh.material = mat
+	mi.mesh = mesh
+	mi.position = pos
+	return mi

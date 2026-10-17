@@ -291,18 +291,6 @@ func _spawn_tank_node(id: int) -> void:
 	_tank_nodes[id] = tank
 
 
-func _part(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material = mat
-	mi.mesh = mesh
-	mi.position = pos
-	return mi
-
-
 ## Each tank's hull turns to the way it drives (to the kaiju when it stands) and its turret keeps
 ## the gun on the kaiju.
 func _update_tanks(delta: float) -> void:
@@ -336,7 +324,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
 		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
 	var muzzle := node.fire()
-	var shell := _part(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
+	var shell := TankModel.box(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
 	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
 	add_child(shell)
 	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
