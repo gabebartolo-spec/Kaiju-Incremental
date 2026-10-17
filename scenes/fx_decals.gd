@@ -17,7 +17,8 @@ static var _cache: Dictionary = {}
 
 
 ## A mark of `shape` (wedge points along local -Z), `size` across, centred on `at`. Its cracks
-## glow `tint` at `energy`, cool over the first 60% of `seconds`, then the soot fades.
+## glow `tint` at `energy`, cool over the first 60% of `seconds`, then the soot fades. With
+## "soot_in" (seconds) the soot darkens in over that time instead of landing at once.
 static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -> Decal:
 	var size := Num.f(look["size"])
 	var seconds := Num.f(look["seconds"])
@@ -31,7 +32,9 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 	decal.emission_energy = Num.f(look.get("energy", 2.0))
 	var tint: Color = look.get("tint", Color.WHITE)
 	decal.modulate = tint
-	decal.albedo_mix = Num.f(look.get("soot", 1.0))
+	var soot := Num.f(look.get("soot", 1.0))
+	var soot_in := Num.f(look.get("soot_in", 0.0))
+	decal.albedo_mix = 0.0 if soot_in > 0.0 else soot
 	decal.normal_fade = 0.35
 	decal.cull_mask = CITY_LAYER
 	parent.add_child(decal)
@@ -39,6 +42,8 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 	tween.tween_property(decal, "emission_energy", 0.0, seconds * 0.6)
 	tween.tween_property(decal, "albedo_mix", 0.0, seconds * 0.4)
 	tween.tween_callback(decal.queue_free)
+	if soot_in > 0.0:
+		decal.create_tween().tween_property(decal, "albedo_mix", soot, soot_in)
 	return decal
 
 
