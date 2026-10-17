@@ -2,8 +2,9 @@ extends SceneTree
 ## Headless gate for the rooftop rifles (D-063) before any capture: plays the capture's scene
 ## (capture_rooftops.gd: the Behemoth where the most squads fire on screen) and, on the frame each
 ## hit spark lights, builds the kaiju's silhouette from the game camera (every voxel of its rig
-## projected to the screen) and checks the spark (where its tracer ended) falls inside it, dilated
-## DILATE px. Prints the counts and the worst cost of a volley's hit search; exits 1 on any miss.
+## projected to the screen, as its rig poses them) and checks the spark
+## (an upper-body bone's centre, where its tracer ended) falls inside it, dilated DILATE px.
+## Prints the counts and the worst cost of a volley's hit search; exits 1 on any miss.
 ##
 ##   godot --headless --path . --script tools/capture/rooftop_hit_gate.gd -- [--seed=0]
 
@@ -78,16 +79,24 @@ func _run() -> void:
 	quit(0 if misses.is_empty() and on_screen > 0 else 1)
 
 
-## Every voxel of the rig projected to the screen as a square its own size: the silhouette.
+## Every voxel of the rig projected to the screen as a square its own size: the silhouette. Voxel
+## centres come from the rig's cells (KaijuRig.voxels_of), placed the way KaijuRig.attach_voxels
+## and VoxelBuilder.build place them under each bone; the MultiMesh instance data is empty here
+## (the headless renderer keeps none).
 func _silhouette(rig: KaijuRig, camera: Camera3D) -> PackedByteArray:
 	var mask := PackedByteArray()
 	mask.resize(SIZE.x * SIZE.y)
-	for mmi: MultiMeshInstance3D in KaijuHit.parts(rig):
-		var xf := mmi.global_transform
-		var half := rig.voxel_size() * xf.basis.get_scale().x * 0.5
-		var mm := mmi.multimesh
-		for n: int in mm.instance_count:
-			var c := xf * mm.get_instance_transform(n).origin
+	var voxel := rig.voxel_size()
+	var lift := Vector3(0, voxel * 0.5, 0)
+	for bone_name: String in rig.bone_names():
+		var part := rig.voxels_of(bone_name)
+		if part == null:
+			continue
+		var xf := rig.bone(bone_name).global_transform
+		var origin := -rig.head_of(bone_name)
+		var half := voxel * xf.basis.get_scale().x * 0.5
+		for cell: Vector3i in part.cells:
+			var c := xf * (origin + Vector3(cell) * voxel + lift)
 			if camera.is_position_behind(c):
 				continue
 			var p := camera.unproject_position(c)

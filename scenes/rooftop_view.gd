@@ -14,12 +14,12 @@ const MAX_SPARKS := 48
 const MAX_TRACERS := 48
 ## Flashes and sparks are counted in physics frames (60 a second), so the stagger is exact.
 const FLASH_FRAMES := 3
-const FLASH_SIZE := 0.35  # world units, a soft star facing the camera
+const FLASH_SIZE := 0.5  # world units (about 15 px at the Behemoth's game camera), a star
 const FLASH_AHEAD := 0.45  # the star burns this far out along the aim, clear of the shooter
 const STAGGER_FRAMES := 1  # each rifle of a squad fires this many frames after the one before
 ## A spark on the hide is drawn over everything (the body would hide it) for this long.
 const SPARK_FRAMES := 4
-const SPARK_SIZE := 0.6
+const SPARK_SIZE := 0.9  # about 25 px at the Behemoth's game camera
 const POINT_BLANK_FRAMES := 3  # a round arriving sooner than this draws no tracer...
 const SHORT_PIXELS := 60.0  # ...nor does one whose path on screen is shorter than this
 const STAR_PIXELS := 32
@@ -34,9 +34,10 @@ const TRACER_WIDTH := 0.05
 const TRACER_HOT := Color(2.0, 2.0, 2.0)
 const FIGURE_SCALE := 1.5
 const SPACING := 0.55  # figures of a squad stand this far apart across their line of fire
-const AIM_SPREAD := 0.25  # rounds scatter this far round the body point they aim at (per scale)
-const BODY_MIDDLE := 3.0  # an unrigged body is struck this high (per body scale)...
-const ABOVE_HIPS := 1.15  # ...a rigged one at a bone this many hip heights up (no legs or tail)
+const BODY_MIDDLE := 3.0  # an unrigged body is struck this high (per body scale)
+## The bones a round may strike: the upper body only (trunk, neck, head, upper arms), never a leg
+## or the tail.
+const TARGETS: Array[String] = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_r0"]
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
 
 ## Running totals and the figures drawn this frame (tests and the capture tool read them).
@@ -98,8 +99,8 @@ func _star(on_top: bool) -> QuadMesh:
 		for x: int in STAR_PIXELS:
 			var u := absf(x - half) / half
 			var v := absf(y - half) / half
-			var core := exp(-(u * u + v * v) * 40.0)
-			var arms := exp(-u * 3.0) * exp(-v * 45.0) + exp(-v * 3.0) * exp(-u * 45.0)
+			var core := exp(-(u * u + v * v) * 14.0)
+			var arms := exp(-u * 2.5) * exp(-v * 30.0) + exp(-v * 2.5) * exp(-u * 30.0)
 			var a := clampf(core + arms, 0.0, 1.0) * clampf((1.0 - maxf(u, v)) * 4.0, 0.0, 1.0)
 			img.set_pixel(x, y, Color(1, 1, 1, a))
 	var mat := StandardMaterial3D.new()
@@ -220,10 +221,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			if _flashes.size() < MAX_FLASHES:
 				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
 				_flashes.append({"hit": {"at": muzzle + ahead}, "wait": wait, "left": FLASH_FRAMES})
-			var spot := Vector3(
-				_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1)
-			)
-			var hit := _hide(kaiju_at, muzzle, spot)
+			var hit := _hide(kaiju_at, muzzle)
 			var to := _at(hit)
 			var flight := muzzle.distance_to(to) / TRACER_SPEED
 			var frames := roundi(flight * Engine.physics_ticks_per_second)
@@ -237,40 +235,46 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 		return
 
 
-## Where a round from `muzzle` strikes: it is aimed at the bone of the drawn body nearest the
-## shooter (above the hips), `spot` scattering the aim, and hits the first voxel of the body on
-## that line (KaijuHit), so its tracer ends and its spark burns on the visible hide, following the
-## body as it moves. A body without a rig is struck at its middle. Returns a strike for _at().
-func _hide(kaiju_at: Vector3, muzzle: Vector3, spot: Vector3) -> Dictionary:
-	var bs := sim.body_scale()
-	var aim := kaiju_at + Vector3.UP * bs * BODY_MIDDLE
+## Where a round from `muzzle` strikes: the centre of the upper-body bone (TARGETS) nearest the
+## shooter, held to the bone so it moves with the drawn skin. The body always surrounds a bone's
+## centre, so the spark there (drawn over everything) never sits on the street, and the tracer
+## (depth-tested) vanishes into the hide where it meets it. A body without a rig is struck at its
+## middle. Returns a strike for _at().
+func _hide(kaiju_at: Vector3, muzzle: Vector3) -> Dictionary:
 	var rig: KaijuRig = null
-	var hips := 0.0
-	if body is KaijuModel:
-		hips = (body as KaijuModel).hip_height()
 	if body != null:
 		for node: Node in body.find_children("*", "KaijuRig", true, false):
 			rig = node as KaijuRig
 	if rig == null:
-		return {"at": aim + spot * bs * AIM_SPREAD}
+		return {"at": kaiju_at + Vector3.UP * sim.body_scale() * BODY_MIDDLE}
 	var best := INF
-	for bone_name: String in rig.bone_names():
-		var p := rig.bone(bone_name).global_position
-		var d := p.distance_squared_to(muzzle)
-		if p.y > kaiju_at.y + hips * ABOVE_HIPS and d < best:
+	var hit := {}
+	for bone_name: String in TARGETS:
+		if not rig.has_bone(bone_name):
+			continue
+		var bone := rig.bone(bone_name)
+		var centre := rig.dir_of(bone_name) * 0.5
+		var d := (bone.global_transform * centre).distance_squared_to(muzzle)
+		if d < best:
 			best = d
-			aim = p
-	aim += spot * bs * AIM_SPREAD
-	var hit := KaijuHit.strike(rig, muzzle, aim)
-	return hit if not hit.is_empty() else {"at": aim}
+			hit = {"bone": bone, "local": centre}
+	if hit.is_empty():
+		return {"at": kaiju_at + Vector3.UP * sim.body_scale() * BODY_MIDDLE}
+	return hit
 
 
-## Where a strike is now: on the moving body, or the fixed point it was given.
+## Where a strike is now: on its bone as the body moves, or the fixed point it was given
+## (Vector3.INF once the bone is gone).
 func _at(hit: Dictionary) -> Vector3:
 	if hit.has("at"):
 		var fixed: Vector3 = hit["at"]
 		return fixed
-	return KaijuHit.where(hit)
+	var node: Variant = hit["bone"]
+	if not is_instance_valid(node):
+		return Vector3.INF
+	var bone: Node3D = node
+	var local: Vector3 = hit["local"]
+	return bone.global_transform * local
 
 
 ## How long the line from `a` to `b` is on screen, in pixels (INF without a camera).
