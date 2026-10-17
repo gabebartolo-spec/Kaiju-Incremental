@@ -1,5 +1,5 @@
-# blender-tank handoff (2026-10-17 15:20)
-State: running a check (CI --air capture of helicopters around a baby kaiju, for PR #18 round 1)
+# blender-tank handoff (2026-10-17 15:35)
+State: awaiting lead (PR #18 round 1 proof sent: blender-heli/round1/)
 
 ## Task
 D-042 vehicles from Blender at 2x real, desert tan. Tank: PR #17 MERGED (ee43f3c into look-options).
@@ -40,10 +40,9 @@ fix commit c2f124c, pushed. PR #18 body updated with round 1. The tank branch is
   blender-reptile before opening Blender (one MCP instance at a time).
 
 ## Next
-1. When the --air capture lands (scratchpad ci3/, log $TMP/ci3.log): check every frame that the kaiju
-   is visible (frame grid at 2x), then send the clip + grid to the lead (notes folder blender-heli/).
-2. Wait for the lead's re-review of #18.
+1. Proof sent 15:35 (CI run 39000551493): kaiju visible in all 41 half-second tiles; close passes are
+   faded dives beyond the kaiju. Notes folder blender-heli/round1/.
+2. Wait for the lead's re-review of #18 (Auto-fix on; base merged at 3e5a4f4).
 
 ## Running jobs
-CI capture: ci_capture.sh --movie --resolution=1280x720 --ref=claude/blender-heli capture_tanks.gd
--- --species=reptilian --air. Blender closed.
+None. Blender closed.
