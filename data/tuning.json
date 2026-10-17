@@ -142,6 +142,7 @@
 		"fog_scale": 1.0,
 		"load_chunks": 20000,
 		"markings_beyond": 30,
+		"zebra_junctions": 1,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
 		"avenues": 1,

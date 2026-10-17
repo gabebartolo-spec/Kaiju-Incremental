@@ -11,7 +11,6 @@ const PAINT := 0.02
 const WATER_Y := -0.8
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
-const MID_BLOCK := 18.0  # an avenue this long between crossings gets a mid-block crossing
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
 
 var plan: Dictionary
@@ -99,21 +98,13 @@ func _diagonal(asphalt: Color) -> void:
 		_slab(Rect2(mid - span * 0.5, span), Vector2(DIAG_TOP, 0.3), asphalt, angle)
 
 
-## Quiet road paint, as a real city has it: a dashed centre line on the avenues and the
-## diagonal only, and zebra crossings only at the signalled junctions where an avenue meets a
-## street (one per arm), plus one mid-block on a long avenue. Side streets and alleys get none.
+## Quiet road paint, readable from the kaiju's height: a dashed centre line on the avenues and
+## the diagonal, and zebra crossings (one per arm) only at the few junctions where two avenues
+## cross nearest the city centre (city.zebra_junctions). Nothing else gets crossings.
 func _markings() -> void:
 	var nodes: Array[Vector2] = plan["nodes"]
 	var reach := Num.f(cfg["half"]) + Num.f(cfg["markings_beyond"])
-	var signalled := {}  # crossings of two grid lines where an avenue runs through
-	var xs: Array[float] = plan["xs"]
-	var zs: Array[float] = plan["zs"]
-	for street: Dictionary in plan["streets"]:
-		if str(street["kind"]) != CityGen.AVENUE:
-			continue
-		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
-			if xs.has(nodes[end].x) and zs.has(nodes[end].y):
-				signalled[end] = true
+	var zebras := zebra_junctions()
 	for street: Dictionary in plan["streets"]:
 		var kind := str(street["kind"])
 		if kind == CityGen.ALLEY:
@@ -134,11 +125,43 @@ func _markings() -> void:
 		if kind == CityGen.DIAGONAL:
 			continue
 		for i: int in 2:
-			if signalled.has(ends[i]):
+			if zebras.has(ends[i]):
 				var toward := dir if i == 0 else -dir
 				_zebra(nodes[ends[i]] + toward * (width * 0.5 + 0.9), toward, width)
-		if kind == CityGen.AVENUE and length > MID_BLOCK:
-			_zebra(a + dir * length * 0.5, dir, width)
+
+
+## The junctions that get zebra crossings: where an avenue along x meets one along z, nearest
+## the centre first, at most city.zebra_junctions of them.
+func zebra_junctions() -> Dictionary:
+	var nodes: Array[Vector2] = plan["nodes"]
+	var along_x := {}
+	var along_z := {}
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) != CityGen.AVENUE:
+			continue
+		var ends: Array[int] = [Num.i(street["from"]), Num.i(street["to"])]
+		var flat := is_equal_approx(nodes[ends[0]].y, nodes[ends[1]].y)
+		for end: int in ends:
+			if flat:
+				along_x[end] = true
+			else:
+				along_z[end] = true
+	var both: Array[int] = []
+	for n: int in along_x:
+		if along_z.has(n) and nodes[n].y >= coast:
+			both.append(n)
+	both.sort_custom(
+		func(p: int, q: int) -> bool:
+			var dp := nodes[p].length()
+			var dq := nodes[q].length()
+			if not is_equal_approx(dp, dq):
+				return dp < dq
+			return nodes[p] < nodes[q]
+	)
+	var out := {}
+	for k: int in mini(Num.i(cfg["zebra_junctions"]), both.size()):
+		out[both[k]] = true
+	return out
 
 
 ## Dashes down the centre line from a along `span` (direction times length), at height y.
