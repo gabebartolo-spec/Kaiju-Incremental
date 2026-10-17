@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 07:45
-## State: running a check (CI on PR #33 bd97471 and PR #34 9f12f62, auto-fix ON for both). Next: (d) heli gun + crash
+# Ability VFX/SFX handoff, 2026-10-18 10:10
+## State: running a check (CI on #39 1c66048 and the limiter PR). Next: (g) footstep variants with round-robin
 
 ## Who
 Lead is "Game demo planning" / "LEAD", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -11,28 +11,25 @@ Say "awaiting lead" only after asking for the next job with options (memory-shar
   breath, ready, deflect, regen, croc roar on the evolution reveal (Sfx.roar).
   Logged as D-052 (r2 shipped as heard) and D-055 (roar on the reveal and end card).
 
+## Merged
+- #33 (bus, slider, menu sounds; D-064) and #34 (army sounds; D-067). Their branches are gone.
+
 ## Open PRs
-- **#33** claude/sfx-bus → claude/look-options, head = this merge, flow 109.
-  - (e) SFX and Music buses: PlayerSettings.BUSES/bus().
-  - "Sound effects" slider (SettingsMenu.effects), sfx_volume saved in settings.cfg, default from tuning sfx
-    default_volume 0.9.
-  - (f) Menu sounds: Sfx.ui(sound) is static with one shared player. ui_click plays on every UiKit.button,
-    ui_confirm / ui_deny on an upgrade buy.
-  - demo_end.gd calls Sfx.roar(self) with each clip roar (roar_sounds); this only fires once ClipGait (#22) lands.
-  - Evidence (shared notes side-session-notes/local_9fac90d2.../sfx-bus/):
-    - settings_1080.png, settings_4k_ui125.png
-    - ui_sounds.mp4 (real input: 3 clicks, confirm, deny)
-- **#34** claude/army-sfx → base claude/sfx-bus (stacked), head 9f12f62, flow 110.
-  - tank_fire, shell_hit (unarmoured hits), heli_rotor loop.
-  - Sfx.listener / play_at / rotors; tuning near_distance 80, far_floor_db -18.
-  - Clip: army-sfx/heli_rotor.mp4. There is no tank-fire clip: no tank fired in the 20 s seed.
-  - When #33 merges, retarget #34 to claude/look-options (`gh pr edit 34 --base claude/look-options`) and
-    merge look-options in.
+- **#39** claude/heli-sfx → look-options, head 1c66048, flow 112. Heli gun and crash; waits for the director's listen.
+- **Limiter PR** claude/sfx-limiter → look-options, flow 113.
+  - PlayerSettings._dynamics(): AudioEffectCompressor on SFX (-6 dB, 2:1, 5 ms, 250 ms) and
+    AudioEffectHardLimiter on Master (ceiling -1 dB, release 0.1). Values in tuning sfx.dynamics.
+  - Proof: tools/capture/capture_loud.gd stacks breath, 2 collapses, 3 tanks, stomp_2, crack and roar three times.
+    - Before: peak 0.0 dBFS, 409 clipped samples.
+    - After: peak -2.9 dBFS, 0 clipped.
+    - Tail (normal play) RMS is only 0.5 dB lower, so no pumping.
+  - Clips are in shared notes sfx-limiter/.
 
 ## Next
-- (d) Heli gun burst (PowersView._heli_fired) and heli crash (_heli_down), on top of claude/army-sfx.
-  Use Sfx.play_at, add the build_sfx.py sounds plus provenance rows, add flow checks, and record a clip.
-- Every sync: check `git log origin/claude/look-options -1` first. Floors are the real counts the suite prints.
+- (g) 3-4 footstep variants with round-robin. (h) Sonniss roars waits for the director.
+- Every sync: check `git log origin/claude/look-options -1` first. Squash merges mean "keep look-options'
+  version of the merged PR's lines; add only mine". Floors are real counts. Run gdlint over the whole tree
+  before a push. rampage.gd is at 400 lines.
 
 ## How-to
 - Godot: /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe

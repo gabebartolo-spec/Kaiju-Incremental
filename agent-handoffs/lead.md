@@ -25,7 +25,18 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 6. D-065 (b): 8-15% green lots means fewer buildings/chunks = slower demo (touches D-049). City session prepares a
    table (0/8/12/15%: chunks per stage, pacing hours to evolve1 and tree end); ask him with it. (a) street trees,
    park/yard bushes, flower beds, playground props (presentation, crushable) proceeds tonight.
-7. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
+7. Landmarks (session "Kaiju: Landmark models", local_87d706ce...): board ...side-session-notes\local_9fac90d2...\
+   landmarks\board1\landmark_board.png, six originals A stadium / B gate / C clock hall / D sky wheel / E spire /
+   F megatower; my QA PASS, fresh critic pending. Ask "which landmarks per city": (1, rec) A -> D -> E -> F (demo
+   needs A + D), (2) A -> C -> E -> F, (3) all six. Landmark sites (merged-block plazas) start after D-062 merges.
+8. #39 heli gun burst + crash (stacked on #34): listen to ...side-session-notes\local_9fac90d2...\army-sfx\
+   heli_gun_crash.mp4 (busy picture, listen only); merge after his yes. Croc roar layers from Sonniss GDC: ask.
+   Also for his listen: #42 footstep variants (footsteps/walk_in_game.mp4), rooftop "rifle" sound and crowd panic
+   ambience (branches, coming). #41 limiter MERGED (objective: no clipping).
+9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
+   1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; my FIX: #2 read as a real A-10, made original; fresh
+   critic next. Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
+10. Q3 Apex height (park). 7. Rooftops / Military AI / greenery / city fill clips: show after merge, for taste only.
 
 ## DEMO (D-050) state
 - Merged on look-options 2026-10-18: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
@@ -54,6 +65,14 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   old lead; unknown briefs; they report to it. Check their state when idle.
 - Performance: stopped for the night (director). Its next items (breath pooling, street-life no-feel pass, sim.step
   profile) are in agent-handoffs/performance.md.
+
+## Merge order (director 07:0x: "stay on top of the merges ... pre-empt conflicts"); file map checked 07:0x
+1 #34 army sounds -> 2 D-062 city fill -> 3 #22 croc clips -> 4 breath-beam-only (after #34: rampage.gd, flow tests)
+-> 5 #27 UI (after #22) -> 6 Rooftops (army.gd, rampage_sim.gd, rampage.gd, tuning army.rooftop) -> 7 Military AI
+(syncs after 6) -> 8 D-065(a) greenery and Landmark sites (after 2). Tabled: #35, #36 (after 6+7), landmarks pick.
+Rules sent to all: tuning keys only in new sub-objects; class fields appended at end; floors resolve to real counts;
+sync onto look-options before opening a PR; one capture.yml run at a time. Rooftops armour call (chip ignores
+armour) accepted, tabled as a balance note. GPU queue: crease (attribution pan) -> rooftops clip (~3 min).
 
 ## Merge rules tonight
 Merge only what the director already decided, on my check + a fresh critic where visual, green CI at the exact head.
