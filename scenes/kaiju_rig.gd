@@ -76,6 +76,7 @@ static func load_from(base: String, model_height: float, glow: float) -> KaijuRi
 	if not parsed is Dictionary:
 		return null
 	var spec: Dictionary = parsed
+	spec["clips"] = KaijuClips.read(base + ".kclip")  # D-047: null for a kaiju without clips
 	var rig := KaijuRig.new()
 	rig._build(spec, model.frames[0], model_height / model.height, glow)
 	return rig
@@ -141,7 +142,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		"radial":
 			gait = RadialGait.new(self)
 		_:
-			gait = BipedGait.new(self)
+			gait = ClipGait.or_biped(self, spec.get("clips"))
 
 
 ## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.

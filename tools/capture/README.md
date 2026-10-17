@@ -28,6 +28,13 @@ CI: software rendering says nothing about frame rate.
 `workflow_dispatch` only works for workflows that exist on the default branch, so
 `ci_capture.sh` works once `capture.yml` is on `main`. Until then a push to a `claude/**`
 branch that edits `capture.yml` runs the two example captures.
+## Stills run on a fixed frame clock
+
+capture.yml passes a fixed fps to every run, stills included; give a local still capture the
+same flag (`--fixed-fps 60`). Without it the frames between a script's awaits and the physics
+steps drift with machine load, so the same seeded shot catches a short effect in one run and
+misses it in the next.
+
 ## Heavy scenes go to the local GPU
 
 Software rendering is slow: a 40 s 1080p clip hit the 3000 s step limit (PR #18), and the
