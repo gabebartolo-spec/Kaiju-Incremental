@@ -253,6 +253,12 @@ func _check_evolution_and_continue() -> void:
 		)
 		await _frames(EvolutionReveal.SWAP_FRAME + 2)
 		check.call(reveal.revealed(), "the new stage is on screen after the swap")
+		var shown: Array[String] = []
+		for node: Node in reveal.find_children("*", "Label", true, false):
+			shown.append((node as Label).text)
+		check.call(
+			shown.has("BEHEMOTH"), "the reveal is titled by the node bought (D-051): %s" % [shown]
+		)
 		await GuiInput.key(t, KEY_ENTER)
 		await _frames(2)
 		check.call(not is_instance_valid(reveal), "Enter skips the reveal")

@@ -3,7 +3,8 @@ extends Control
 ## Plays when an evolution is bought: the kaiju as it was stands beside a tower, shakes, a flash,
 ## and it is the next stage (baby -> adolescent -> adult, KaijuModel.stage_for) at its new size,
 ## roaring. The tower is the tallest the new body topples without undermining it (its size tier
-## x the city's tier height), so the comparison is a play fact. Skippable; reports `done`.
+## x the city's tier height), so the comparison is a play fact. It is titled by the evolution
+## bought (D-051: "BEHEMOTH", from its data name), not the life stage. Skippable; reports `done`.
 
 signal done
 
@@ -16,10 +17,10 @@ const SKIP_AFTER := 8
 ## screen at every UI scale).
 const VIEW_MAX := Vector2(1200, 760)
 const EDGE_MARGIN := 48.0
-## The comparison tower's footprint (chunks); it is built by the city's own BuildingView.
-const TOWER_SIDE := 6
 
 var frame := 0
+## The evolution's display name (headline after the swap); "" falls back to species and stage.
+var title := ""
 var stage_before: String
 var stage_after: String
 var scale_before: float
@@ -45,9 +46,7 @@ func setup(species: Dictionary, before: Dictionary, after: Dictionary, city: Dic
 	stage_after = KaijuModel.stage_for(Num.i(after.get("size", 1)))
 	scale_before = Growth.body_scale(before, city)
 	scale_after = Growth.body_scale(after, city)
-	tower_floors = mini(
-		Num.i(after.get("size", 1)) * Num.i(city["tier_height"]), Num.i(city["max_height"])
-	)
+	tower_floors = RevealStage.tower_floors(Num.i(after.get("size", 1)), city)
 
 
 func _ready() -> void:
@@ -76,7 +75,7 @@ func _ready() -> void:
 	_viewport = SubViewport.new()
 	_viewport.own_world_3d = true
 	view.add_child(_viewport)
-	_build_stage()
+	_camera = RevealStage.build(_viewport, scale_after, tower_floors)
 	_headline = UiKit.label("EVOLVING...", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	_headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(_headline)
@@ -129,6 +128,13 @@ func _gui_input(event: InputEvent) -> void:
 
 
 ## True once the new stage is on screen.
+## An evolution node's display name: its data name after the "EVOLVE: "-style label, e.g.
+## "EVOLVE: Behemoth" -> "Behemoth" (D-051).
+static func title_of(def: Dictionary) -> String:
+	var full := str(def.get("name", ""))
+	return full.get_slice(":", full.get_slice_count(":") - 1).strip_edges()
+
+
 func revealed() -> bool:
 	return frame >= SWAP_FRAME
 
@@ -150,7 +156,9 @@ func _swap() -> void:
 	_place_kaiju(stage_after, scale_before)
 	_kaiju.roar()
 	_flash.color.a = 0.9
-	_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
+	_headline.text = title.to_upper()
+	if title.is_empty():
+		_headline.text = "%s  %s" % [str(_species["name"]).to_upper(), stage_after.to_upper()]
 	var floors_before := roundi(KaijuModel.MODEL_HEIGHT * scale_before)
 	var floors_after := roundi(KaijuModel.MODEL_HEIGHT * scale_after)
 	lines.text = (
@@ -167,57 +175,3 @@ func _place_kaiju(stage: String, body_scale: float) -> void:
 	_kaiju.scale = Vector3.ONE * body_scale
 	_kaiju.rotation.y = PI * 0.8
 	_viewport.add_child(_kaiju)
-
-
-func _build_stage() -> void:
-	var env := WorldEnvironment.new()
-	env.environment = Environment.new()
-	env.environment.background_mode = Environment.BG_COLOR
-	env.environment.background_color = Color("1b2433")
-	env.environment.ambient_light_color = Color("6f86a8")
-	env.environment.ambient_light_energy = 0.6
-	_viewport.add_child(env)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-35, -40, 0)
-	sun.light_energy = 1.2
-	_viewport.add_child(sun)
-	var ground := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(200, 200)
-	ground.mesh = plane
-	ground.material_override = _material(Color("2c3036"), 0.0)
-	_viewport.add_child(ground)
-	var tallest := maxf(KaijuModel.MODEL_HEIGHT * scale_after, float(tower_floors))
-	var tower_x := KaijuModel.MODEL_HEIGHT * scale_after * 0.5 + TOWER_SIDE
-	_viewport.add_child(_tower(tower_x))
-	_camera = Camera3D.new()
-	_camera.fov = 40.0
-	var aim := Vector3(tower_x * 0.5, tallest * 0.5, 0.0)
-	_camera.position = aim + Vector3(0.0, tallest * 0.15, tallest * 1.55 + 8.0)
-	_viewport.add_child(_camera)
-	_camera.look_at(aim)
-
-
-## A real city building of tower_floors floors (same voxels, windows and shader as the city),
-## standing on the ground line beside the kaiju.
-func _tower(x: float) -> BuildingView:
-	var b := RampageSim.Building.new()
-	b.x = x
-	b.z = 0.0
-	b.w = TOWER_SIDE
-	b.d = TOWER_SIDE
-	b.height = tower_floors
-	b.tier = CityGen.tier_for_height(tower_floors, Content.section("city"))
-	b.style = 0
-	b.frame = Structure.new(b.w, b.d, b.height, 1.0)
-	return BuildingView.new(b, Look.styles()[0])
-
-
-func _material(color: Color, glow: float) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	if glow > 0.0:
-		mat.emission_enabled = true
-		mat.emission = color
-		mat.emission_energy_multiplier = glow
-	return mat
