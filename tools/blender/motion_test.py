@@ -574,7 +574,7 @@ def set_loc(name, delta):
 
 
 hip_h = L["leg"][0].z
-D = 130.0 / 3  # stride per cycle (~0.95 x 46 m): a clip's 3 cycles travel exactly 13 ground squares, so it loops
+D = 140.0 / 3  # stride per cycle (~46.7 m): 3 cycles travel 140 m = 7 checker periods (20 m), so the clip loops
 T = 48.0  # frames per cycle: three cycles in the 144-frame clip, so the walk loops seamlessly
 DUTY = 0.62
 V_WALK = D / T
@@ -644,17 +644,19 @@ def pose_frame(clip, f, P):
     gait = 1.0 - roar
     # Roar beats (24 fps): settle 0-14; coil 14-38 (the head dips first and is already lifting while
     # the pelvis still sinks, so the motion never stalls); rear 31-47 (one ease in and out, fastest
-    # about f39); peak 47-56; slow linear drift 56-118 overlapping the recovery 104-140. Nothing in
+    # about f39); then a slow drift 47-118 (eased in) overlapping the recovery 104-140. Nothing in
     # the roar moves faster than the breathing and the look: no tremor layer (a 7 Hz shake buzzed).
     windup = ramp(12, 28, f) * (1 - ramp(27, 40, f)) * roar   # head and neck coil (bottoms first)
     drop = ramp(22, 38, f) * (1 - ramp(37, 45, f)) * roar     # pelvis and knees load, fastest as the head turns
-    # The drift is linear (never a hold) and overlaps the recovery, so nothing stops between them.
-    drift = min(1.0, max(0.0, (f - 56) / 62.0))
+    # The drift starts as the rear ends (eased in: no frozen peak, no speed step), builds steadily and
+    # overlaps the recovery, so nothing stops between them.
+    d_ = max(0.0, f - 47.0)
+    drift = (d_ * d_ / 12.0 if d_ < 6 else d_ - 3.0) / 68.0  # 6-frame ease, then steady (no cap: no kink)
     rear = ramp(31, 47, f) * (1 - 0.45 * drift) * (1 - ramp(104, 140, f)) * roar
     # Breathing at a period that divides the clip (72 frames), so the roar loops without a pop.
     breathe = math.sin(f * 2 * math.pi / 72) * roar
     # A slow look across the street through the drift (head and tail), gone by the recovery.
-    look = math.sin(math.pi * min(1.0, max(0.0, (f - 50) / 86.0))) * math.sin(2 * math.pi * (f - 50) / 86.0) * roar
+    look = math.sin(math.pi * min(1.0, max(0.0, (f - 46) / 90.0))) * math.sin(2 * math.pi * (f - 46) / 90.0) * roar
     # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
     # after it and counter-turns; the tail sways against the hips.
     w = ph - math.pi * DUTY  # 0 = left foot mid-stance

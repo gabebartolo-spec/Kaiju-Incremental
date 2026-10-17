@@ -1,5 +1,5 @@
-# blender-reptile handoff, 2026-10-17 17:00
-## State: running a check (croc titan r6 roar fixes: chain bash bhcyjh836 -> scratch r6/)
+# blender-reptile handoff, 2026-10-17 17:05
+## State: awaiting lead (croc titan r6 sent)
 ## Task
 History: round 1 hand-modelled reptile A vs Tripo B (board docs/captures/2026-10-17-blender-reptile);
 round 2 motion test (one hand rig on both; deformation + feet PASSED by motion-critic; clips in the notes
@@ -47,7 +47,10 @@ diff/*.json); clips + sheets in notes blender-reptile/croctitan_r5/.
   has 0 sign flips f48-74. 2 coil: head coil ramp(12,28)/(27,40), pelvis load ramp(22,38)/(37,45),
   drop 0.18 hip_h (8.3 m), pelvis pitch 9, neck0 16 / neck1 10 / head 10 deg. Pose change f28-31 dips
   to 0.80 vs 1.17 (the head's turnaround), then builds smoothly. 3 rear ramp(31,47), fastest f39-41.
-  Walk stride D = 130/3 so 3 cycles = 13 ground squares (PNG seam was a ground jump otherwise).
+  Walk stride D = 140/3: 3 cycles = 140 m = 7 checker PERIODS (Blender checker Scale 600 on 6 km = 10 m
+  squares but a 20 m period; 130 m flipped the colours at the seam). Drift eased in from f47 (6-frame
+  ease then linear, no cap). DELIVERED: PNG pixel seams walk side 0.92 / 3q 1.35 (medians 1.21 / 1.49),
+  roar 0.16 / 0.13; export byte-identical (cmp); docs/captures/2026-10-17-croctitan-r6/; notes croctitan_r6/.
   Encoder: scratch r6/encode_intra.py (gopsize 1, no B-frames, PERC_LOSSLESS; Blender has no -g CLI).
   PNG pixel diff per view: scratch r6/pngdiff.py. diff JSON now carries head_tip + head_accel.
 ## Branch and commit
@@ -96,7 +99,7 @@ patches read as black squares.
 ## Open decisions (lead/director)
 None for me; the new Tripo mesh (D-045) is the next input.
 ## Running jobs
-bash bhcyjh836: headless r6 chain (scratch r6/). No MCP Blender open.
+None. No Blender open.
 ## Findings for the lead
 - glTF UV-seam splits crack per-vertex weights unless welded (applies to the game skin path too).
 - Blender IK is history-dependent: evaluate a frame twice after any jump.
