@@ -1,13 +1,14 @@
-# blender-reptile handoff, 2026-10-18 04:45
+# blender-reptile handoff, 2026-10-18 05:05
 ## State: running a check. LEAD round 2 FIX (04:11, judged at the GAME camera) done in code, local
 ## 16260e9 (= 3aa63a6 tail round 2 + merge look-options 81afe80; 7d3f761 cards option A), all 9 suites
-## green, clips 14. #22 is still at a88a4d4: ONE batched push when evidence is ready.
+## green. Auto-fix conflict (base #23 demo slice) forced a push: #22 = fd80192 (merge 94ebcd8,
+## floors city 6, flow 92, clips 14; all suites green). Evidence follows in one push.
 ## Round 2: walk TAIL_WALK (2,5) over TAIL_WALK_PERIOD 72 = 1.5 cycles (tip 45.3 m = 0.72x), walk
 ## clip baked as 3 cycles (header "cycles", KaijuClips.cycles_of); roar TAIL_LIFT (6,-9): tip above
 ## hip f19-40 (0.92 s), crashes 96 -> 3 m f38-46, lands f47 = head peak; slam emits
 ## rig.foot_planted("tail", 1.6, tip) (dust, ring, camera dip; check shown failing first); turn spring
 ## (14, 0.25), TAIL_WHIP (6.5, 8.3), TURN_SETTLE 24 (offline: overshoot ~8 deg, settle ~0.4 s).
-## CI (all from temp branch claude/croctitan-cards-tmp = 16260e9, delete after): chain b2vwtf0yr ->
+## CI (all from temp branch claude/croctitan-cards-tmp = fd80192, delete after): chain b2vwtf0yr ->
 ## BEFORE game 39054681594 -> bmgmirzlv 4K cards (ci6) -> byhacv7qr AFTER game + side (ci7).
 ## Owed for round 2: 3 s game-cam clips walk/turn/roar (roar clip 13.3-18.3: crouch, rear, slam,
 ## recovery), before/after aligned by time (same schedule, seed), 2x crops slam contact + turn
