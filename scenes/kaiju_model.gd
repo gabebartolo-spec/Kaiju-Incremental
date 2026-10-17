@@ -27,6 +27,7 @@ var _vox := VoxelBuilder.new()
 var _poses: Array[MultiMeshInstance3D] = []
 var _body: Node3D
 var _rig: KaijuRig
+var _skin: VoxelSkin
 var _walk_phase := 0.0
 var _squash := 0.0
 
@@ -47,9 +48,14 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		var base := "res://assets/kaiju/%s_%s" % [species_id, stages[i]]
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
+			_skin = VoxelSkin.attach(_rig, base)  # D-041; null when debugging rigid voxels
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
+	if species_id == "cephalopod":  # no sculpt yet: a code-built octopus on the radial rig
+		_rig = CephalopodStandIn.build(colors, MODEL_HEIGHT, _glow())
+		_body.add_child(_rig)
+		return
 	var model := Kvox.read("res://assets/kaiju/%s.kvox" % species_id)
 	if model.height > 0:
 		for pose: VoxelBuilder in model.frames:
@@ -93,6 +99,7 @@ func animate(delta: float, moving: float) -> void:
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _rig != null:
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
+		VoxelSkin.sync_if(_skin)
 		return
 	_body.position.y = absf(sin(_walk_phase)) * 0.25 * moving
 	_body.rotation.z = sin(_walk_phase) * 0.06 * moving
@@ -108,9 +115,64 @@ func foot_drift() -> float:
 	return _rig.gait.max_drift if _rig != null else 0.0
 
 
+## Where the body is drawn now (world): its root bone, which can lag or lead the node (an insect's
+## hold and dart, an octopus's drag and surge). Cameras follow this, not the node, so a hold is
+## still on screen and a dart bursts. The node's position for unrigged bodies.
+func focus() -> Vector3:
+	if _rig == null:
+		return global_position
+	var p := _rig.bone(_rig.bone_names()[0]).global_position
+	return Vector3(p.x, global_position.y, p.z)
+
+
 ## Hip height in world units (0 for unrigged bodies).
 func hip_height() -> float:
 	return _rig.gait.hip_height * _rig.gait.s if _rig != null else 0.0
+
+
+## Lets a tentacled body grip buildings: finder(point: Vector3, radius: float) -> Vector3 gives the
+## nearest building corner or edge (Vector3.INF if none).
+func set_grip_finder(finder: Callable) -> void:
+	if _rig != null and _rig.gait is RadialGait:
+		(_rig.gait as RadialGait).grip_finder = finder
+
+
+## Species-power hooks (no-ops on a body without the limb):
+## a fast tail whip to one side (-1 left, +1 right) - the reptilian.
+func tail_sweep(side: float) -> void:
+	if _rig != null and _rig.gait is BipedGait:
+		(_rig.gait as BipedGait).swing.whip(side)
+
+
+## The maw held open (the beam) or shut again - the reptilian.
+func jaw_open(open: bool) -> void:
+	if _rig != null and _rig.gait is BipedGait:
+		(_rig.gait as BipedGait).head.held_open = open
+
+
+## Perched on a roof: a low, coiled climbing stance (or back to the ground) - the insectoid.
+func climbing(on: bool) -> void:
+	if _rig != null and _rig.gait is HexapodGait:
+		(_rig.gait as HexapodGait).climbing = on
+
+
+## A tentacle reaches to `at` and holds on (limb_hint < 0: the nearest) - the cephalopod.
+func grab(limb_hint: int, at: Vector3) -> void:
+	if _rig != null and _rig.gait is RadialGait:
+		(_rig.gait as RadialGait).grab(limb_hint, at)
+
+
+## The holding tentacle hurls toward a point.
+func throw(toward: Vector3) -> void:
+	if _rig != null and _rig.gait is RadialGait:
+		(_rig.gait as RadialGait).throw(toward)
+
+
+## Where a tentacle's tip is (to carry a grabbed thing); the model's origin for other bodies.
+func limb_tip(limb_hint: int) -> Vector3:
+	if _rig != null and _rig.gait is RadialGait:
+		return (_rig.gait as RadialGait).limb_tip(limb_hint)
+	return global_position
 
 
 func stomp() -> void:

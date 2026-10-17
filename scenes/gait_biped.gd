@@ -380,7 +380,7 @@ func _solve_legs(root: Transform3D) -> void:
 			leg.tilt = lerpf(leg.tilt, -0.3 * fold + 0.06 * leg.t, 0.5)
 		var ankle := _ankle(leg, root)
 		var pole := fwd + right * leg.side * 0.2
-		var knee := KaijuRig.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
+		var knee := KaijuGait.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
 		rig.aim(leg.names[0], hip, knee)
 		rig.aim(leg.names[1], knee, ankle)
 		rig.aim(leg.names[2], ankle, leg.foot)

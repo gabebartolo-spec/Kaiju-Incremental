@@ -29,7 +29,11 @@ func run_checks() -> void:
 	_check_scripts_compile()
 	await _check_main_scene()
 	await _check_planted_feet()
+	_check_skins_fresh()
+	await _check_voxel_skin()
 	_check_tank()
+	_check_heli()
+	_check_vehicle_fade()
 
 
 func _check_settings() -> void:
@@ -95,13 +99,125 @@ func _check_main_scene() -> void:
 	await process_frame
 
 
-## The reptilian walks, curves, reverses hard and stands stomping the way the rampage drives it
+## D-041: every rigged kaiju has a voxel skin baked from its current .kvox and .rig.json.
+func _check_skins_fresh() -> void:
+	var stale: Array[String] = []
+	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+		for stage: String in ["baby", "adolescent", "adult"]:
+			var base := "res://assets/kaiju/%s_%s" % [species, stage]
+			if not FileAccess.file_exists(base + ".rig.json"):
+				continue
+			if VoxelSkin.baked_stamp(base) != VoxelSkin.source_stamp(base):
+				stale.append(base.get_file())
+	check(
+		stale.is_empty(),
+		(
+			"every kaiju's voxel skin matches its rig (stale: %s; run tools/kaiju_skin/bake_all.sh)"
+			% [stale]
+		)
+	)
+
+
+## D-041: kaiju draw as voxel cubes on a smooth skin by default; the rig's own voxels draw nothing;
+## the skin follows the pose (finite matrices) and shows the mouth's inside when the jaw drops; the
+## debug flag brings back the rigid voxels.
+func _check_voxel_skin() -> void:
+	var skinned: Array[String] = []
+	var leaks: Array[String] = []
+	var broken: Array[String] = []
+	var mantle_ok := false
+	for species: String in ["reptilian", "insectoid", "cephalopod"]:
+		var def: Dictionary = Content.species_def(species)
+		var colors: Dictionary = def["colors"]
+		var kaiju := KaijuModel.new(species, colors, "adult")
+		root.add_child(kaiju)
+		for frame: int in 40:
+			kaiju.position.z -= 0.05
+			kaiju.animate(1.0 / 60.0, 1.0)
+		var skins := kaiju.find_children("VoxelSkin", "VoxelSkin", true, false)
+		if not skins.is_empty():
+			var skin: VoxelSkin = skins[0]
+			skinned.append(species)
+			for node: Node in kaiju.find_children("*", "MultiMeshInstance3D", true, false):
+				if not skin.is_ancestor_of(node) and (node as MultiMeshInstance3D).layers != 0:
+					leaks.append("%s/%s" % [species, node.get_parent().name])
+			for m: Projection in skin.pose:
+				if not (
+					m.x.is_finite() and m.y.is_finite() and m.z.is_finite() and m.w.is_finite()
+				):
+					broken.append(species)
+					break
+			if species == "cephalopod":
+				mantle_ok = _mantle_follows(kaiju, skin)
+		kaiju.queue_free()
+		await process_frame
+	check(
+		skinned.size() == 3, "all three adults draw as a voxel skin by default (got %s)" % [skinned]
+	)
+	check(leaks.is_empty(), "no rig voxels draw under a voxel skin (drawing: %s)" % [leaks])
+	check(
+		broken.is_empty(),
+		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
+	)
+	check(mantle_ok, "the octopus mantle's breathing scale reaches its skin")
+	await _check_skin_mouth()
+	VoxelSkin.show_rigid_voxels = true
+	var rex: Dictionary = Content.species_def("reptilian")
+	var rex_colors: Dictionary = rex["colors"]
+	var rigid := KaijuModel.new("reptilian", rex_colors, "adult")
+	var none := rigid.find_children("VoxelSkin", "VoxelSkin", true, false).is_empty()
+	check(none, "the debug flag draws the rigid voxels instead (no skin)")
+	rigid.free()
+	VoxelSkin.show_rigid_voxels = false
+
+
+## The mantle voxels' node (which gait_radial scales to breathe) sizes the skin's mantle0 bone.
+func _mantle_follows(kaiju: KaijuModel, skin: VoxelSkin) -> bool:
+	var rig: KaijuRig = kaiju.find_children("*", "KaijuRig", true, false)[0]
+	var held: Variant = rig.skins.get("mantle0", null)
+	if not is_instance_valid(held):
+		return false
+	var mantle: Node3D = held
+	mantle.scale = Vector3.ONE * 1.2  # a roar puff
+	skin.sync()
+	var m := skin.pose[rig.bone_names().find("mantle0")]
+	return absf(Vector3(m.x.x, m.x.y, m.x.z).length() - 1.2) < 0.001
+
+
+## The mouth's inside shows on the skin as BipedHead shows it: hidden while a closed jaw rests,
+## shown once the jaw is held open (the adolescent has no resting snarl).
+func _check_skin_mouth() -> void:
+	var rex: Dictionary = Content.species_def("reptilian")
+	var rex_colors: Dictionary = rex["colors"]
+	var kaiju := KaijuModel.new("reptilian", rex_colors, "adolescent")
+	root.add_child(kaiju)
+	var skin: VoxelSkin = kaiju.find_children("VoxelSkin", "VoxelSkin", true, false)[0]
+	for frame: int in 20:
+		kaiju.animate(1.0 / 60.0, 0.0)
+	var shut := not skin.mouth_open
+	kaiju.jaw_open(true)
+	for frame: int in 30:
+		kaiju.animate(1.0 / 60.0, 0.0)
+	check(
+		shut and skin.mouth_open,
+		"the skin hides the mouth's inside at a shut rest and shows it with the jaw held open"
+	)
+	kaiju.queue_free()
+	await process_frame
+
+
+## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it
 ## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
 func _check_planted_feet() -> void:
-	var def: Dictionary = Content.species_def("reptilian")
+	for species: String in ["reptilian", "insectoid"]:
+		await _check_feet_of(species)
+
+
+func _check_feet_of(species_id: String) -> void:
+	var def: Dictionary = Content.species_def(species_id)
 	var stats: Dictionary = def["stats"]
 	var colors: Dictionary = def["colors"]
-	var kaiju := KaijuModel.new("reptilian", colors, "adult")
+	var kaiju := KaijuModel.new(species_id, colors, "adult")
 	kaiju.scale = Vector3.ONE * 1.3
 	root.add_child(kaiju)
 	var dt := 1.0 / 60.0
@@ -174,3 +290,69 @@ func _check_tank() -> void:
 		"the shot leaves the muzzle (%s) and the gun kicks back" % muzzle
 	)
 	tank.free()
+
+
+## The Blender helicopter (D-042) loads as body, main rotor, tail rotor and chin gun; both rotors
+## spin about their own hubs, and the gun swings onto a target below and ahead with the muzzle
+## at the nose.
+func _check_heli() -> void:
+	var heli := HelicopterModel.new()
+	root.add_child(heli)
+	var main: Node3D = heli._main_rotor
+	var tail: Node3D = heli._tail_rotor
+	var hub := main.position
+	heli._process(0.1)
+	check(
+		heli.get_child_count() == 4 and main.rotation.y > 0.5 and tail.rotation.x > 0.5,
+		(
+			"the rotors spin about their hubs (main %.2f, tail %.2f rad)"
+			% [main.rotation.y, tail.rotation.x]
+		)
+	)
+	var target := Vector3(3.0, -6.0, -12.0)
+	heli.aim(target)
+	var muzzle := heli.fire()
+	var aim := -heli._gun.global_basis.z
+	check(
+		(
+			aim.angle_to(target - heli._gun.global_position) < 0.02
+			and muzzle.z < -2.0
+			and main.position == hub
+		),
+		"the chin gun aims at a target below and ahead; muzzle at %s" % muzzle
+	)
+	heli.free()
+
+
+## A helicopter between the camera and the kaiju fades to the screen door and one off to the side
+## stays solid; the sim keeps helicopters off the side the game camera actually views from.
+func _check_vehicle_fade() -> void:
+	var front := HelicopterModel.new()
+	var side := HelicopterModel.new()
+	root.add_child(front)
+	root.add_child(side)
+	var eye := Rampage.CAMERA_OFFSET
+	front.position = eye * 0.5
+	side.position = Vector3(20, 9, 0)
+	var nodes: Array[Node3D] = [front, side]
+	var fade := VehicleFade.new(func() -> Array: return [], func() -> Array: return nodes)
+	for _i: int in 30:
+		fade.update(eye, Vector3.ZERO, 1.0, 1.0 / 30.0)
+	var low := Num.f(Content.section("vehicles")["fade_opacity"])
+	var a: float = front.get_meta("opacity", 1.0)
+	var b: float = side.get_meta("opacity", 1.0)
+	check(
+		is_equal_approx(a, low) and b == 1.0,
+		"a helicopter in front of the kaiju fades to %.2f, one at the side stays %.2f" % [a, b]
+	)
+	var bearing := rad_to_deg(atan2(Rampage.CAMERA_OFFSET.z, Rampage.CAMERA_OFFSET.x))
+	var air := Num.f(Content.section("air")["camera_bearing"])
+	check(
+		is_equal_approx(bearing, air),
+		(
+			"the helicopters' clear side (%.0f deg) is where the camera looks from (%.0f)"
+			% [air, bearing]
+		)
+	)
+	front.free()
+	side.free()

@@ -1,43 +1,49 @@
 class_name HelicopterModel
 extends Node3D
-## A placeholder voxel attack helicopter, about 3 units long, facing -Z: cabin, tail boom,
-## skids and a spinning main rotor. The real Tripo model replaces it later (D-037).
+## The attack helicopter (D-042): modelled in Blender (assets/source/vehicles/build_heli.py) and
+## voxelized per part (tools/blender/voxelize_parts.py) at 2x real size, desert tan, facing -Z,
+## the node's origin under the mast, level with the wheels. The main and tail rotors spin about
+## their real hubs; the chin gun aims at aim()'s target and fire() returns its muzzle.
 ## Presentation only.
 
-const VOXEL := 0.2
-const PALETTE := {
-	"body": Color("4f5a3a"),
-	"dark": Color("343b27"),
-	"glass": Color("9fc4d0"),
-	"skid": Color("26261f"),
-	"rotor": Color("1e1e1a"),
-}
+const BASE := "res://assets/vehicles/heli"
+## Body tan, for wreck debris.
+const TAN := Color("b89c6a")
+## Below this sine of the angle to straight down, look_at() has no stable up: keep the last aim.
+const MIN_TILT := 0.05
 
-var _rotor: Node3D
+var _main_rotor: Node3D
+var _tail_rotor: Node3D
+var _gun: Node3D
+var _cfg: Dictionary
+var _muzzle := Vector3.ZERO  # in the gun's space
 
 
 func _init() -> void:
-	var v := VoxelBuilder.new()
-	v.box(Vector3i(-2, 0, -5), Vector3i(2, 3, 2), "body")  # cabin
-	v.box(Vector3i(-1, 2, -7), Vector3i(1, 3, -6), "glass")  # canopy
-	v.box(Vector3i(-1, 1, -6), Vector3i(1, 1, -6), "dark")  # chin gun
-	v.box(Vector3i(0, 2, 3), Vector3i(0, 3, 12), "dark")  # tail boom
-	v.box(Vector3i(0, 3, 11), Vector3i(0, 6, 12), "body")  # fin
-	for side: int in [-1, 1]:  # skids
-		v.box(Vector3i(side * 3, -2, -4), Vector3i(side * 3, -2, 2), "skid")
-		v.put(Vector3i(side * 2, -1, -2), "skid")
-		v.put(Vector3i(side * 2, -1, 1), "skid")
-	v.box(Vector3i(0, 4, -1), Vector3i(0, 4, 0), "dark")  # mast
-	v.salt = 5
-	add_child(v.build(PALETTE, VOXEL, 0.0, Vector3.ZERO))
-	_rotor = Node3D.new()
-	_rotor.position = Vector3(0, 1.05, -0.1)
-	add_child(_rotor)
-	var blades := VoxelBuilder.new()
-	blades.box(Vector3i(-12, 0, 0), Vector3i(12, 0, 0), "rotor")
-	blades.box(Vector3i(0, 0, -12), Vector3i(0, 0, 12), "rotor")
-	_rotor.add_child(blades.build(PALETTE, VOXEL, 0.0, Vector3.ZERO))
+	_cfg = Content.section("vehicles")
+	var parts := VehicleParts.new(BASE, Num.f(_cfg["heli_height"]))
+	var centre := parts.pivot("body") * Vector3(1, 0, 1)
+	add_child(parts.build("body", -centre, 5))
+	_main_rotor = parts.hinge("main_rotor", self, centre, 5)
+	_tail_rotor = parts.hinge("tail_rotor", self, centre, 5)
+	_gun = parts.hinge("gun", self, centre, 5)
+	_muzzle = Vector3(0, 0, parts.front("gun") - parts.pivot("gun").z)
 
 
 func _process(delta: float) -> void:
-	_rotor.rotation.y += delta * 28.0
+	_main_rotor.rotation.y += delta * Num.f(_cfg["main_rotor_spin"])
+	_tail_rotor.rotation.x += delta * Num.f(_cfg["tail_rotor_spin"])
+
+
+## Points the chin gun at `target` (world space).
+func aim(target: Vector3) -> void:
+	if not _gun.is_inside_tree():
+		return
+	var to := target - _gun.global_position
+	if to.length() > 0.01 and Vector2(to.x, to.z).length() > to.length() * MIN_TILT:
+		_gun.look_at(target)
+
+
+## Where the chin gun's muzzle is now (world space): where a burst leaves.
+func fire() -> Vector3:
+	return _gun.to_global(_muzzle)

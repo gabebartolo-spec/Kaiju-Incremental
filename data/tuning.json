@@ -108,7 +108,10 @@
 		"orbit_speed": 9.0,
 		"fire_interval": 1.6,
 		"damage": 3,
-		"rubble": 4
+		"rubble": 4,
+		"camera_bearing": 90.0,
+		"clear_arc": 60.0,
+		"clear_margin": 16.0
 	},
 	"army": {
 		"start_interval": 5.0,
@@ -212,6 +215,14 @@
 		"gun_elevation": 0.35,
 		"recoil": 0.3,
 		"recoil_seconds": 0.45,
-		"hull_turn": 3.0
+		"hull_turn": 3.0,
+		"heli_height": 2.75,
+		"main_rotor_spin": 28.0,
+		"tail_rotor_spin": 45.0,
+		"heli_turn": 3.0,
+		"fade_opacity": 0.35,
+		"fade_seconds": 0.25,
+		"tank_clear": 2.0,
+		"heli_clear": 5.0
 	}
 }

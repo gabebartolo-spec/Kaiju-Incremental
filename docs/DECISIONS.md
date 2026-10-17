@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-17 · D-046 · Director · New reptile look: A "Croc titan"
+Why: board docs/captures/2026-10-17-reptile-design/reptile_directions.png (Tripo GPT Image 2.5, free quota):
+A croc titan, B armoured monitor titan, C lean apex predator. Picked A: croc snout and pale flat bone scutes
+carried over from the Blender model, bulk with grace. Changes: A goes to T-pose and multi-view references, then
+Tripo Smart Mesh, texture and the Blender hand rig (D-045); the baby and adolescent follow from it.
+
 ## 2026-10-17 · D-045 · Director · Reptile body: a NEW original Tripo design, rigged in Blender
 Why: Blender motion test (blender-reptile 4ab6781, clips in notes blender-reptile/motion-test/): one hand-made
 skeleton with welded falloff weights moved BOTH the Blender model and the Tripo model cleanly (critic: deformation

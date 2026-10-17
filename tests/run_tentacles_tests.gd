@@ -141,6 +141,7 @@ func _check_helicopters() -> void:
 		"a helicopter circles and strafes the kaiju (%d bursts)" % Num.i(seen.get("heli_fired", 0))
 	)
 	check(heli.hp > 0.0, "a young kaiju's stomps cannot reach a helicopter")
+	_check_heli_keeps_clear()
 	var grown := _sim("reptilian", {"evolve1": 1, "claws": 5, "hide": 5}, [], Vector2(0, 0))
 	grown.air.spawn()
 	var swatted := _run(grown, 12.0, Vector2.ZERO)
@@ -156,6 +157,35 @@ func _check_helicopters() -> void:
 			if str(event["type"]) == "grab" and str(event["kind"]) == "heli":
 				grabbed = true
 	check(grabbed, "a cephalopod plucks a helicopter out of the sky")
+
+
+## Helicopters keep off the camera's side of the kaiju (never between the player and it) and
+## cruise a helicopter-and-a-half beyond its body, for 20 s of sweeping and diving.
+func _check_heli_keeps_clear() -> void:
+	var sim := _sim("reptilian", {}, [], Vector2(0, 0))
+	var air: Dictionary = Content.section("air")
+	var bearing := deg_to_rad(Num.f(air["camera_bearing"]))
+	var body := Num.f(Content.section("powers")["body_radius"]) * sim.body_scale()
+	for _n: int in 3:
+		sim.air.spawn()
+	var closest := PI
+	var cruise := INF
+	for i: int in roundi(20.0 / DT):
+		sim.step(DT, Vector2.ZERO, false)
+		for heli: AirWing.Heli in sim.air.helis:
+			var side := absf(wrapf((heli.pos - sim.kaiju_pos).angle() - bearing, -PI, PI))
+			closest = minf(closest, side)
+			cruise = minf(cruise, heli.cruise - body)
+	check(
+		(
+			closest >= deg_to_rad(Num.f(air["clear_arc"])) - 0.01
+			and cruise >= Num.f(air["clear_margin"])
+		),
+		(
+			"helicopters stay %.0f deg off the camera side and cruise %.1f beyond the body"
+			% [rad_to_deg(closest), cruise]
+		)
+	)
 
 
 ## A full autoplayed rampage with every branch bought replays identically for each species.
