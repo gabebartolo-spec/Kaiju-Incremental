@@ -250,33 +250,47 @@ def build_collapse() -> None:
     save("collapse", highpass(highpass(x, 30.0), 30.0), -1.5)
 
 
+def tail(x: np.ndarray, length: float, decay: float, cutoff: float) -> np.ndarray:
+    """A city-sized echo: x convolved with dark, decaying noise (a cheap reverb)."""
+    n = seconds(length)
+    ir = lowpass(noise(n), cutoff) * np.exp(-np.arange(n) / RATE / decay)
+    size = len(x) + n
+    wet = np.fft.irfft(np.fft.rfft(x, size) * np.fft.rfft(ir, size), size)[: len(x)]
+    return wet / max(1e-9, np.max(np.abs(wet)))
+
+
 def build_roar() -> None:
-    """The croc titan's roar (demo end card, D-050), timed to the biped head's roar: a
-    breath in while the head goes back (0.32 s), then a 1.2 s bellow from the lunge. A
-    crocodile bellow is a low, rough rumble rather than a lion's tone: a 48-62 Hz buzz with
-    many harmonics through three throat formants, a fast rasp, and a hiss of breath."""
+    """The croc titan's roar (demo end card and evolution reveal, D-050), timed to the biped
+    head's roar: a breath in while the head goes back (0.32 s), then a 1.7 s bellow from the
+    lunge and a long echo off the city. A crocodile bellow is a low, rough rumble rather than a
+    lion's tone: a 38-52 Hz buzz with many harmonics through three throat formants, a half-rate
+    rasp, a hiss of breath, and a sub-bass push under the lunge."""
     reseed("build_roar")
-    x = np.zeros(seconds(2.2))
+    x = np.zeros(seconds(4.2))
     inhale_n = seconds(0.34)
-    inhale = bandpass(noise(inhale_n), np.linspace(500, 1400, inhale_n), 1.0)
-    place(x, inhale * hump(inhale_n, 0.85) * 0.5, 0.0)
-    n = seconds(1.6)
+    inhale = bandpass(noise(inhale_n), np.linspace(400, 1100, inhale_n), 1.0)
+    place(x, inhale * hump(inhale_n, 0.85) * 0.4, 0.0)
+    n = seconds(2.1)
     t = np.arange(n) / RATE
-    shape = hump(n, 0.12) * np.exp(-np.maximum(t - 0.9, 0.0) / 0.25)
-    freq = 48 + 14 * np.sin(np.pi * np.clip(t / 1.2, 0, 1)) + 2.5 * np.sin(2 * np.pi * 5.5 * t)
-    buzz = tone(freq, 24, 0.85)
-    rasp = 0.6 + 0.4 * np.sign(np.sin(2 * np.pi * np.cumsum(freq * 0.5) / RATE))
-    buzz *= rasp
-    throat = (bandpass(buzz, np.full(n, 320.0), 2.5) * 1.6
-              + bandpass(buzz, np.full(n, 760.0), 3.0) * 1.0
-              + bandpass(buzz, np.linspace(1500, 1100, n), 3.5) * 0.5
-              + lowpass(buzz, 200) * 1.2)
-    breath = bandpass(noise(n), np.full(n, 1800.0), 0.8) * 0.35
+    shape = hump(n, 0.1) * np.exp(-np.maximum(t - 1.3, 0.0) / 0.35)
+    freq = 38 + 14 * np.sin(np.pi * np.clip(t / 1.7, 0, 1)) + 2.0 * np.sin(2 * np.pi * 5.0 * t)
+    buzz = tone(freq, 28, 0.85)
+    buzz *= 0.6 + 0.4 * np.sign(np.sin(2 * np.pi * np.cumsum(freq * 0.5) / RATE))
+    throat = (bandpass(buzz, np.full(n, 280.0), 2.5) * 1.6
+              + bandpass(buzz, np.full(n, 650.0), 3.0) * 0.9
+              + bandpass(buzz, np.linspace(1300, 950, n), 3.5) * 0.4
+              + lowpass(buzz, 180) * 1.6)
+    breath = bandpass(noise(n), np.full(n, 1500.0), 0.8) * 0.3
     body = (throat + breath) * shape
-    place(x, body / max(1e-9, np.max(np.abs(body))), 0.32, 1.0)
-    sub = thump(1.2, 60, 34)
-    place(x, sub, 0.32, 0.5)
-    save("roar", highpass(highpass(x, 30.0), 30.0), -1.5)
+    body /= max(1e-9, np.max(np.abs(body)))
+    place(x, body, 0.32, 1.0)
+    push = lowpass(pitch(kenney("lowFrequency_explosion_000"), 0.5), 400)
+    place(x, push / max(1e-9, np.max(np.abs(push))), 0.32, 0.45)
+    place(x, thump(1.6, 55, 30), 0.32, 0.6)
+    dry = x.copy()
+    x = dry + lowpass(tail(dry, 2.5, 0.7, 900), 900) * 0.35
+    save("roar", highpass(highpass(x, 28.0), 28.0), -1.0)
+    print(f"  roar: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
 
 
 def build_breath() -> None:
