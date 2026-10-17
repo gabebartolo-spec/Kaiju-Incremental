@@ -1,10 +1,11 @@
-# blender-reptile handoff, 2026-10-18 04:00
-## State: awaiting lead (PR #22 open, head a88a4d4, sent to the new lead "Game demo planning"
-## local_106fc100-d2a4-4091-bc9a-4bda31df13ac, which owns QA since 03:56; old lead = Tripo only).
-## Running: b2vwtf0yr chain -> ci5/after_side (39050777699), then ci5/before_game. When they land:
-## cut 3 s side clips walk/turn/roar to notes d047/, update PR #22 body (gh pr edit 22 --body-file
-## scratch ev/pr_body.md; replace 'pending'/'running' lines). Auto-fix shows ON (set in the app).
-## Open lead decision: cards full spin (as pushed, small) vs sway +-40 deg (recommended).
+# blender-reptile handoff, 2026-10-18 04:15
+## State: running a check. PR #22 (lead QA round 1 stills PASS; motion-critic running at the lead).
+## Local unpushed: 7d3f761 cards option A (sway +-40 deg around PI*0.62, tight skin fit; fill croc
+## 0.56, mantis 0.63, octopus 0.55) + handoffs. Temp branch claude/croctitan-cards-tmp (= 7d3f761)
+## for the card 4K: bmgmirzlv waits for chain b2vwtf0yr (ci5/after_side 39050777699, ci5/before_game)
+## then dispatches -> ci6/select4k. ONE batched push to #22: merge origin/claude/look-options (81afe80,
+## #21) + cards + side 3 s clips + new species_cards_before_after.png + PR body (fills per species).
+## Then delete the tmp branch, send head SHA to LEAD local_106fc100-d2a4-4091-bc9a-4bda31df13ac.
 ## Next phase P3 (Game demo planning 03:41): croc baby + adolescent from lead's Tripo meshes;
 ## plan C:/Users/DANTE/.claude/plans/pasted-content-id-a4a2-i-want-glistening-bubble.md
 ## Task (lead 22:47 + director tail note 00:36): D-047 on croc titan v2, one PR, then send head SHA
