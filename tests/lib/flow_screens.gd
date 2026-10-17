@@ -295,9 +295,11 @@ func _check_evolution_and_continue() -> void:
 func _check_settings() -> void:
 	var main := await _main()
 	var title := _screen(main)
+	Sfx.ui_played.clear()
 	await GuiInput.click(t, GuiInput.button(title, "SETTINGS"))
 	var menu := GuiInput.find_script(title, SettingsMenu) as SettingsMenu
 	check.call(menu != null, "clicking SETTINGS opens the settings")
+	check.call(Sfx.ui_played == ["ui_click"], "a menu button clicks: %s" % [Sfx.ui_played])
 	if menu == null:
 		main.queue_free()
 		return
@@ -313,6 +315,18 @@ func _check_settings() -> void:
 			and is_equal_approx(t.root.content_scale_factor, 1.15)
 		),
 		"clicking UI scale steps it to 115%% and scales the UI (%s)" % t.root.content_scale_factor
+	)
+	await GuiInput.drag(t, menu.effects, 0.1, 0.7)
+	var sfx_db := AudioServer.get_bus_volume_db(PlayerSettings.bus("SFX"))
+	check.call(
+		(
+			is_equal_approx(PlayerSettings.sfx_volume, 0.7)
+			and is_equal_approx(sfx_db, linear_to_db(0.7))
+		),
+		(
+			"dragging Sound effects to 70%% sets the SFX bus (%s, %.1f dB)"
+			% [PlayerSettings.sfx_volume, sfx_db]
+		)
 	)
 	var texts: Array[String] = []
 	for node: Node in menu.find_children("*", "Label", true, false):
@@ -331,6 +345,13 @@ func _check_settings() -> void:
 		),
 		"the UI scale is saved to settings.cfg"
 	)
+	PlayerSettings.sfx_volume = -1.0
+	PlayerSettings.load_saved(false)
+	check.call(
+		is_equal_approx(PlayerSettings.sfx_volume, 0.7),
+		"the sound-effects volume comes back after a reload (%s)" % PlayerSettings.sfx_volume
+	)
+	PlayerSettings.set_sfx_volume(Num.f(Content.section("sfx")["default_volume"]))
 	PlayerSettings.next_ui_scale()
 	PlayerSettings.next_ui_scale()
 	check.call(PlayerSettings.ui_scale == 1.0, "UI scale wraps back to 100%")

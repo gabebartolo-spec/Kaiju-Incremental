@@ -1,8 +1,8 @@
 class_name PlayerSettings
 extends RefCounted
-## The player's settings: volume, fullscreen and UI scale, kept in their own file apart from
-## the save. Static so the settings screen and tests reach them without the Settings autoload
-## (which loads them at start and owns the input actions and F11).
+## The player's settings: volume (overall and sound effects), fullscreen and UI scale, kept in
+## their own file apart from the save. Static so the settings screen and tests reach them
+## without the Settings autoload (which loads them at start and owns the input actions and F11).
 
 const PATH := "user://settings.cfg"
 ## UI scale steps on top of the 1080p canvas (D-027: already 2x on a 4K TV). Every screen fits
@@ -21,13 +21,24 @@ const CONTROLS: Array[Array] = [
 	["Back", "Esc", "B"],
 ]
 
+## Mixer buses under Master: every game sound plays on SFX; Music waits for the music.
+const BUSES: Array[String] = ["SFX", "Music"]
+
 static var volume := 0.8
+## The SFX bus volume (0..1); the default is tuning "sfx" default_volume.
+static var sfx_volume := -1.0
 static var fullscreen := false
 static var ui_scale := 1.0
 
 
 static func set_volume(value: float) -> void:
 	volume = clampf(value, 0.0, 1.0)
+	apply()
+	save()
+
+
+static func set_sfx_volume(value: float) -> void:
+	sfx_volume = clampf(value, 0.0, 1.0)
 	apply()
 	save()
 
@@ -47,8 +58,10 @@ static func next_ui_scale() -> void:
 
 
 static func apply() -> void:
-	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(volume, 0.0001)))
-	AudioServer.set_bus_mute(0, volume <= 0.0)
+	for bus_name: String in BUSES:
+		bus(bus_name)
+	_set_bus(0, volume)
+	_set_bus(bus("SFX"), sfx())
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree != null:
 		tree.root.content_scale_factor = ui_scale
@@ -66,9 +79,34 @@ static func apply() -> void:
 		)
 
 
+## The index of a bus in BUSES, made (sending to Master) the first time it is asked for.
+static func bus(bus_name: String) -> int:
+	var at := AudioServer.get_bus_index(bus_name)
+	if at >= 0:
+		return at
+	AudioServer.add_bus()
+	at = AudioServer.bus_count - 1
+	AudioServer.set_bus_name(at, bus_name)
+	AudioServer.set_bus_send(at, "Master")
+	return at
+
+
+## The sound-effects volume, its tuning default until the player sets one.
+static func sfx() -> float:
+	if sfx_volume < 0.0:
+		return Num.f(Content.section("sfx")["default_volume"])
+	return sfx_volume
+
+
+static func _set_bus(at: int, value: float) -> void:
+	AudioServer.set_bus_volume_db(at, linear_to_db(maxf(value, 0.0001)))
+	AudioServer.set_bus_mute(at, value <= 0.0)
+
+
 static func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "volume", volume)
+	cfg.set_value("audio", "sfx_volume", sfx())
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
 	cfg.save(PATH)
@@ -81,6 +119,7 @@ static func load_saved(start_full: bool) -> void:
 	if cfg.load(PATH) != OK:
 		return
 	volume = clampf(Num.f(cfg.get_value("audio", "volume", volume)), 0.0, 1.0)
+	sfx_volume = clampf(Num.f(cfg.get_value("audio", "sfx_volume", sfx())), 0.0, 1.0)
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]

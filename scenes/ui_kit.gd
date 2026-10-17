@@ -144,6 +144,7 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	b.add_theme_color_override("font_hover_pressed_color", ink(lit))
 	b.add_theme_color_override("font_pressed_color", ink(lit.darkened(0.25)))
 	b.add_theme_color_override("font_disabled_color", LOCKED.lightened(0.3))
+	b.pressed.connect(func() -> void: Sfx.ui("ui_click"))
 	return b
 
 
