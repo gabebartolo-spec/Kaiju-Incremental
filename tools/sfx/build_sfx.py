@@ -350,6 +350,22 @@ def build_army() -> None:
     save("heli_rotor", loop, -4.0, loop=True)
 
 
+def build_rifle() -> None:
+    """A rooftop squad's volley (D-063): four or five rifles cracking within a quarter second,
+    each a sharp high crack with a small body, then a short slap off the buildings. Lighter,
+    higher and shorter than a tank's cannon, so the two never blur."""
+    reseed("build_rifle")
+    x = np.zeros(seconds(0.9))
+    for k in range(5):
+        shot_n = seconds(0.07)
+        crack = bandpass(noise(shot_n), np.full(shot_n, rng.uniform(2800, 3800)), 0.9)
+        crack *= env(shot_n, 0.0003, 0.008)
+        body = bandpass(noise(shot_n), np.full(shot_n, 380.0), 1.2) * env(shot_n, 0.001, 0.02)
+        place(x, crack * 3.0 + body * 1.5, rng.uniform(0.0, 0.22), rng.uniform(0.6, 1.0))
+    slap = tail(x.copy(), 0.6, 0.15, 2500)
+    save("rifle", x + slap * 0.25, -4.0)
+
+
 def build_breath() -> None:
     reseed("build_breath")
     n = seconds(2.3)
@@ -452,6 +468,7 @@ def main() -> None:
     build_collapse()
     build_roar()
     build_ui()
+    build_rifle()
     build_army()
     build_breath()
     build_leap()

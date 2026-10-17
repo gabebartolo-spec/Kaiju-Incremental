@@ -222,6 +222,7 @@
 			"ui_deny": -10.0,
 			"tank_fire": -8.0,
 			"shell_hit": -6.0,
+			"rifle": -12.0,
 			"heli_rotor": -12.0,
 			"footstep": -9.0,
 			"stomp_crack": -5.0,
