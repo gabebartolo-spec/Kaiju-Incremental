@@ -101,7 +101,9 @@ KNOWN = {
         # T-pose arms: the hands come down in front of the belly (in, back, up from the rest wrist).
         hands={"low": (42.0, -8.0, -12.0), "high": (44.0, -6.0, 2.0)},
         tail_lift=4.0, tail_roar_lift=5.0, tail_breathe=0.2,
-        belly=12.0, stride=31.0, cycle=36.0, bounce=1.8),
+        # The game moves the cub as fast as the adult on legs a third the size: the longest stride its
+        # legs reach (44 m) and a slow tail (a wave every 3.5 strides) keep it quick, not frantic.
+        belly=12.0, stride=44.0, cycle=36.0, bounce=1.8, tail_strides=3.5, tail_sway=0.4),
     # The adolescent (stage 2, Tripo 109910f0, imported turned 90 deg to face -Y): lanky, long legs,
     # arms hanging forward, the tail held level at hip height. A long, gangly stride.
     "CA": dict(
@@ -681,8 +683,8 @@ def foot_world(clip, side, f, P):
 
 # Tail motion (degrees per joint, base -> tip: base + extra * k, k = 0 at the root, 1 at the tip).
 TAIL_WALK = (1.0, 2.5)  # the walk's side-to-side S-wave
-TAIL_WALK_PERIOD = 1.75 * T  # frames per tail wave: seven strides carry four (a heavy tail, not an eel)
-WALK_CYCLES = 7  # the baked walk: whole strides and whole tail waves, so it loops
+TAIL_WALK_PERIOD = L.get("tail_strides", 1.75) * T  # frames per tail wave: seven strides carry four
+WALK_CYCLES = 7  # the baked walk: whole strides and whole tail waves (tail_strides divides 7), so it loops
 TAIL_IDLE = (0.4, 0.2)  # the standing sway (72-frame period; at 0.6 in the roar)
 TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
 TAIL_WHIP = (7.8, 10.0)  # turn whip per unit of tail_whip()
@@ -816,7 +818,7 @@ def pose_frame(clip, f, P):
         # The game turns standing: the turn clip's tail carries only the whip (no walk sway), so it
         # settles to the idle pose when the body stops.
         settle_t = 0.0 if clip == "turn" else 1.0
-        walk_yaw = TAIL_WALK[0] + TAIL_WALK[1] * k
+        walk_yaw = (TAIL_WALK[0] + TAIL_WALK[1] * k) * L.get("tail_sway", 1.0)
         walk_yaw *= math.cos(2 * math.pi * f / TAIL_WALK_PERIOD - math.pi * DUTY - TAIL_LAG * i) * gait * settle_t
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
         turn_yaw = (TAIL_WHIP[0] + TAIL_WHIP[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
