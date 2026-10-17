@@ -1,5 +1,5 @@
-# Kaiju-motion handoff, 2026-10-17 08:00 (final)
-## State: available (reptile done and merged; only duty left: keep PR #11 in sync and CI green)
+# Kaiju-motion handoff, 2026-10-17 12:50 (final)
+## State: paused (director paused all locomotion until the kaiju models are decided, Blender vs Tripo; PR #11 left open as-is, no syncing or CI re-runs)
 
 ## Task
 D-031: species-true kaiju locomotion. This role is REPTILE only (lead split, 2026-10-17).
@@ -12,7 +12,9 @@ and their parts of rig_voxel.py. Presentation only; the sim decides nothing from
 - claude/kaiju-motion-species -> PR #11, base claude/look-options. Holds #10 plus the species
   work; fast-forwarded to claude/species-motion 3e41996 (mantis/octopus round 3) on 2026-10-17.
   Lint, smoke 13, sim 39, powers 24, tentacles 17, city 5 green locally; slide 0.0 cm x3.
-- Keeping #11 in sync: merge origin/claude/look-options in. After a squash-merge of a PR this
+- PAUSED 2026-10-17 (lead): do not sync or re-run #11 until the director resumes locomotion.
+  GitHub Actions is also blocked by billing (jobs not started).
+- Keeping #11 in sync (when resumed): merge origin/claude/look-options in. After a squash-merge of a PR this
   branch already holds, conflicts resolve to ours (verify look-options == that branch first).
   species-motion merges into claude/species-motion; fast-forward #11 to it when it asks.
 
