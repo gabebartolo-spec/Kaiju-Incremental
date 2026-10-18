@@ -19,6 +19,7 @@ Messaging: budget one message per worker with everything; hand-offs go peer to p
 10 GPU fan very loud, fps fine: vsync_mode=2 (adaptive) uncapped above refresh? -> max_fps cap / setting.
 11 military + rooftops too strong from the start: ramp up (city caught unaware); reptilian emerges from a RIVER
   at the start of each run -> army ramp (ability-vfx) + river spawn (greenery/city gen).
+12 still too much smoke on camera (D-018, D-025): cut smoke opacity/count near the camera, fade by camera distance.
 Plan: stadium 5+9; rooftops 1+3; army 8+11a; greenery 11b river; croc 2+4 dash; dry-run 6+7+10. CI-only till he ends.
 CI: #76 probe-only PR (stall gone on CI: worst sim.step 6.9 ms) -> merge on green.
 ## DIRECTOR PLAYTESTING NOW (~09:xx): ALL local Godot paused; CI only. AFL lead (local_8cceb00a) capped to 1 headless:
