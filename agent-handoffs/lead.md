@@ -31,6 +31,8 @@ a failed first send in a parallel batch cancels the rest.
   together with:
 11 "military response too high from the word go ... emerge from a river" -> greenery: the river + emergence, event
   "kaiju_emerged"; jets session: the army alert ramps over ~20-40 s from that event.
+MERGED: #79 D-090 stadium + wheel 1.5x (2nd Behemoth run 2.5x spike -> full-game retune, past the demo); #78 crowd
+killable + gradual flee (f0634ee).
 MERGED: #77 frame cap (ce6648c; 60/120 default/unlimited, menus <= 60) -> exe-2 smoke must capture the Settings screen.
 #50 split: tanks-only PR + helis to claude/heli-flight with a D (street canyons) vs B (camera pull-back) note -> director.
 Then: lead checks every PR at 2x (+ a fresh critic for visuals), merges, builds demo exe 2 (build.yml), the dry-run
