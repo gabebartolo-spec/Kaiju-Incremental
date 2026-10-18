@@ -9,7 +9,9 @@ extends SceneTree
 ## no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0]
+##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0] [--typical]
+## --typical stands where a middling number of squads fire (the median of the spots where any
+## do), not the most: what a rampage usually looks like (D-076).
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FRAMES := 60 * 6
@@ -25,6 +27,7 @@ const VIEW := Rect2(-24.0, -30.0, 48.0, 36.0)
 
 var _out := "user://rooftops"
 var _seed := 0
+var _typical := false
 var _stills: Array[Dictionary] = []
 var _volleys: Array[int] = []
 var _sparks: Array[Dictionary] = []
@@ -36,6 +39,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		if arg.begins_with("--seed="):
 			_seed = arg.substr(7).to_int()
+		if arg == "--typical":
+			_typical = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -51,7 +56,7 @@ func _run() -> void:
 	var rampage := Rampage.new()
 	rampage.setup(species, stats, layout, _seed)
 	var sim := rampage.sim
-	sim.kaiju_pos = _stand(sim)
+	sim.kaiju_pos = _stand(sim, _typical)
 	sim.facing = Vector2(0, -1)
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	root.add_child(rampage)
@@ -99,11 +104,13 @@ func _run() -> void:
 
 
 ## The spot (on a GRID over the arena) where the most squads in the camera's VIEW have the kaiju
-## in rifle range (none point-blank), then where the most squads are in VIEW.
-func _stand(sim: RampageSim) -> Vector2:
-	var reach := Num.f(sim.army["rooftop"]["range"]) * 0.95
+## in rifle range (none point-blank; range from its stomp edge, as the sim's), then where the most
+## squads are in VIEW. typical: the median of the spots where any fire, instead of the most.
+func _stand(sim: RampageSim, typical := false) -> Vector2:
+	var reach := (Num.f(sim.army["rooftop"]["range"]) + sim.stomp_radius()) * 0.95
 	var best := sim.kaiju_pos
 	var best_n := -1
+	var spots: Array[Vector3] = []  # x, z, score of every spot where any squad fires
 	var steps := int(sim.arena_half * 2.0 / GRID)
 	for gx: int in steps:
 		for gz: int in steps:
@@ -116,9 +123,16 @@ func _stand(sim: RampageSim) -> Vector2:
 				seen += 1 if shown else 0
 				firing += 1 if d > NEAR and d < reach and shown else 0
 			var n := firing * 100 + seen  # most firing on screen, then most on screen
+			if firing > 0:
+				spots.append(Vector3(at.x, at.y, n))
 			if n > best_n:
 				best_n = n
 				best = at
+	if typical and not spots.is_empty():
+		spots.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.z < b.z)
+		var mid := spots[floori(spots.size() * 0.5)]
+		best = Vector2(mid.x, mid.y)
+		best_n = roundi(mid.z)
 	print(
 		(
 			"rooftops: standing at %s, %d squads firing on screen, %d on screen"
