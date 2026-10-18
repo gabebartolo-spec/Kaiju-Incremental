@@ -4,9 +4,10 @@ extends SceneTree
 ## attack run; at TURN_AT the kaiju turns to face the pair and they break off. Clip-only
 ## overrides, so it all happens inside 18 s (trimmed to a 10 s clip) and inside the frame:
 ## columns call in from CLIP_SPAWN (not army.spawn_radius) every 1.6 s, the pair is up from
-## the start (after_chunks 0, call-in
-## 0.8 s) and runs every 2.5 s; the kaiju cannot fall. Everything else is the game's own data and
-## code. Stills along the way; pair with --write-movie (ci_capture.sh --movie) for the clip.
+## the start (after_chunks 0, call-in 0.8 s) and runs every 2.5 s; the kaiju cannot fall.
+## Everything else is the game's own data and code. Stills along the way; pair with
+## --write-movie (ci_capture.sh --movie) for the clip. The log names each time a lead turns
+## back (faced: breaking off; else: at the camera's arc) and the pair's closest spacing.
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
@@ -56,12 +57,25 @@ func _run() -> void:
 	sim.air.cfg["interval"] = 0.8
 	sim.air._form["run_every"] = 2.5
 	sim.chunks_destroyed = 2  # two helicopters may be up (AirWing.cap)
+	var turns := {}  # lead id -> its turn last frame
+	var closest := INF
 	for i: int in roundi(_seconds * 60.0):
 		await physics_frame
 		_frame = i
+		for heli: AirWing.Heli in sim.air.helis:
+			if heli.wing_of >= 0:
+				for lead: AirWing.Heli in sim.air.helis:
+					if lead.id == heli.wing_of:
+						closest = minf(closest, heli.pos.distance_to(lead.pos))
+				continue
+			if turns.has(heli.id) and Num.f(turns[heli.id]) != heli.turn:
+				var why := "faced, breaking off" if heli.state == AirWing.BREAK else "camera arc"
+				print("%.2f s: lead %d turns back (%s)" % [i / 60.0, heli.id, why])
+			turns[heli.id] = heli.turn
 		if SHOTS.has(i):
 			var path := _out.path_join("military_%04d.png" % i)
 			root.get_viewport().get_texture().get_image().save_png(path)
+	print("pair closest spacing %.2f m" % closest)
 	quit()
 
 
