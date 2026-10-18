@@ -1,8 +1,9 @@
 # Lead handoff, 2026-10-18 18:00
-## State: blocked on messaging cap (10 sends; resumes at the director's next message)
-QUEUED (send first on resume): rooftops (local_1ac658ed) "GO: GPU slot yours; 4% height cull approved, keep the hide
-spark on culled squads' volleys; render, remove override.cfg, report slot free + clip, 0096 2x crop, spark stats".
-#59 AFL clip (no crowd) -> motion critic running; landmarks has the crowd brief (D-078a). #36 resynced 08291ea, pre-sweep running.
+## State: running a check (demo chain; messaging budget: batch, peer-to-peer GPU queue, never ask director to unblock)
+GPU queue (peer to peer, set 18:3x): rooftops #63 re-render -> landmarks #59 (crowd + AFL r2) -> greenery #55 r10 -> croc #54.
+#59 AFL r1 FAIL (fresh critic, lead-verified g030/g104): grid-row team photo, no ball, inward rim slide, dark slabs
+f94-114 + one-frame pop, flee clump, kaiju hidden. One fix round + crowd sent; fail again -> burst-in-place only.
+#36 resynced 08291ea, pre-sweep (+#54 +#63) running. #50 DIRTY (needs resync; last round).
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
