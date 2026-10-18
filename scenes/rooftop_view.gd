@@ -159,13 +159,32 @@ func stance(squad: Army.Squad, k: int) -> Transform3D:
 	var across := Vector2(-to.y, to.x)
 	var n := Num.i(_cfg["squad_size"])
 	var at := squad.pos + across * (k - (n - 1) * 0.5) * SPACING + to * 0.1 * (k % 2)
-	var inset := Vector2(b.w, b.d) * 0.5 - Vector2.ONE * PARAPET_IN * BuildingVoxels.VOXEL
-	at = at.clamp(Vector2(b.x, b.z) - inset, Vector2(b.x, b.z) + inset)  # in from the parapet
+	var roof := _roof(squad).grow(-PARAPET_IN * BuildingVoxels.VOXEL)
+	at = at.clamp(roof.position, roof.end)  # in from the parapet, on the squad's own roof level
 	var feet := squad.cell.y + 1.0
 	if b.style % 4 == BuildingVoxels.STONE:
 		feet += STONE_STEP * BuildingVoxels.VOXEL
 	var basis := Basis(Vector3.UP, atan2(-to.x, -to.y)).scaled(Vector3.ONE * FIGURE_SCALE)
 	return Transform3D(basis, Vector3(at.x, feet, at.y))
+
+
+## The squad's roof (world x, z): the columns round its chunk whose roof is as high as its own, so
+## no figure stands out over a lower step or past a corner.
+func _roof(squad: Army.Squad) -> Rect2:
+	var b := sim.buildings[squad.building]
+	var c := squad.cell
+	var lo := Vector2i(c.x, c.z)
+	var hi := lo
+	while lo.x > 0 and b.frame.top_below(lo.x - 1, c.z, b.height) == c.y:
+		lo.x -= 1
+	while hi.x < b.w - 1 and b.frame.top_below(hi.x + 1, c.z, b.height) == c.y:
+		hi.x += 1
+	while lo.y > 0 and b.frame.top_below(c.x, lo.y - 1, b.height) == c.y:
+		lo.y -= 1
+	while hi.y < b.d - 1 and b.frame.top_below(c.x, hi.y + 1, b.height) == c.y:
+		hi.y += 1
+	var corner := b.local_to_world(Vector3(lo.x, 0, lo.y))
+	return Rect2(corner.x, corner.z, hi.x - lo.x + 1, hi.y - lo.y + 1)
 
 
 ## Runs after Rampage stepped the sim this frame (a descendant processes after it).

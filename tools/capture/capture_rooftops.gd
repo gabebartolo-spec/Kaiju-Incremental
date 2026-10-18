@@ -10,8 +10,9 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0] [--typical]
-## --typical stands where a middling number of squads fire (the median of the spots where any
-## do), not the most: what a rampage usually looks like (D-076).
+## --typical stands where a middling number of squads fire (the median of the open spots where
+## any do and MIN_SEEN are on screen), not the most: what a rampage usually looks like (D-076).
+## Every stand spot is open: no building within CLEAR of the kaiju, none between it and the camera.
 ## --rifle-ab=A,B plays 6 s with the rifle cue at A dB, then 6 s more at B dB (the mix A/B).
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
@@ -25,6 +26,10 @@ const NEAR := 5.0  # a squad nearer than this to the stand spot does not count (
 ## The ground the game camera shows round the kaiju (x either way, z ahead / behind it): squads
 ## outside it would fire from off screen or from under the HUD.
 const VIEW := Rect2(-24.0, -30.0, 48.0, 36.0)
+const CLEAR := 5.0  # an open spot has no building footprint this close to the kaiju
+const MIN_SEEN := 5  # a --typical spot shows at least this many squads
+const CAMERA := Vector3(0, 27, 19)  # Rampage.CAMERA_OFFSET (before its size zoom)
+const SIGHT_STEPS := 24  # points tested along the camera's line of sight to the body
 
 var _out := "user://rooftops"
 var _seed := 0
@@ -147,8 +152,10 @@ func _stand(sim: RampageSim, typical := false) -> Vector2:
 				var shown := VIEW.has_point(squad.pos - at)
 				seen += 1 if shown else 0
 				firing += 1 if d > NEAR and d < reach and shown else 0
+			if firing == 0 or not _open(sim, at):
+				continue
 			var n := firing * 100 + seen  # most firing on screen, then most on screen
-			if firing > 0:
+			if firing > 0 and seen >= MIN_SEEN:
 				spots.append(Vector3(at.x, at.y, n))
 			if n > best_n:
 				best_n = n
@@ -165,6 +172,25 @@ func _stand(sim: RampageSim, typical := false) -> Vector2:
 		)
 	)
 	return best
+
+
+## No building footprint within CLEAR of `at`, and none standing in the game camera's line of
+## sight from behind and above to the kaiju's middle there: the whole body shows, not a strip.
+func _open(sim: RampageSim, at: Vector2) -> bool:
+	var scale := sim.body_scale()
+	var eye := Vector3(at.x, 0, at.y) + CAMERA * (0.75 + 0.4 * scale)  # Rampage._place_camera
+	var middle := Vector3(at.x, 3.0 * scale, at.y)
+	for b: RampageSim.Building in sim.buildings:
+		var rect := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
+		if rect.grow(CLEAR).has_point(at):
+			return false
+		if not rect.grow(eye.distance_to(middle)).has_point(at):
+			continue
+		for k: int in range(1, SIGHT_STEPS):
+			var p := middle.lerp(eye, k / float(SIGHT_STEPS))
+			if p.y < b.height and rect.has_point(Vector2(p.x, p.z)):
+				return false
+	return true
 
 
 func _still(rampage: Rampage, roofs: RooftopView, camera: Camera3D, frame: int) -> void:
