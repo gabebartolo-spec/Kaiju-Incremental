@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 21:30
-## State: awaiting lead (#55 r13 sent; #55 merges after the demo build per D-084)
+# City-calm handoff, 2026-10-18 22:30
+## State: awaiting lead (#55 r14 sent; #55 merges after the demo build per D-084)
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
@@ -26,20 +26,22 @@ delete when allowed.
 - scenes/prop_field.gd: a tree is crushed in place (lead, rule 8 after ten topple rounds): a
   pale stump (city.stump_color) stays, the cells above are hidden, 1 in 4 leaf cells and every
   bark cell go to PropField's leaf_field / bark_field (DebrisField, size_scale/lift knobs; the
-  decor adds them), bark flung toward the camera; drained before they process (contact frame).
-  Fx.tree_puff: two footfall puffs (#62 look) at the stump; the custom earth puff is deleted.
+  decor adds them), bark dark brown, scattered at spawn, flung toward the camera; drained before
+  they process (contact frame). Stump: bark sides, warm cut top. Fx.tree_puff: soft unlit radial
+  sprite, 30% peak in 2 frames, gone <1 s (footfall puffs vanish in the smoke centre clearing).
   group["origins"]/["keys"] are kept because headless MultiMeshes keep no transforms.
 - tests/lib/city_trample.gd: tail tree goes down; crushed tree leaves stump + debris same frame.
   city floor 53.
 
 ## Evidence (notes side-session-notes/local_9fac90d2-.../greenery/)
-- r13/: trample/clip_720p.mp4 (from f0), fall_strip.png, contact_seq_2x.png, pair_r13_2x.png,
-  samples.txt, proplog. r12/stump_accounting_2x.png (tree 643's stump behind a standing crown).
-- city_red_r11_crush.log (6 FAILs, debris off); run_tests_r15.log (full suite, r13 code).
-- Older rounds: r9/, r10/ (topple), r11b/, r12/ (puff failed). PR body: scratchpad pr_green.md.
+- r14/: trample/clip_720p.mp4 + lossless clip.avi (from f0), fall_strip.png, contact_seq_2x.png,
+  stump_puff_bark_3x.png, pair_r14_2x.png, samples.txt (from the avi), proplog.
+  r12/stump_accounting_2x.png (tree 643's stump behind a standing crown).
+- city_red_r11_crush.log (6 FAILs, debris off); run_tests_r16.log (full suite, r14 code).
+- Older rounds r9-r13 failed. Sample the lossless avi: mp4v bleeds colour on small pieces.
 
 ## Next
-1. The lead critics r13 after the demo build ships; fix findings, re-render locally (no GPU
+1. The lead critics r14 after the demo build ships; fix findings, re-render locally (no GPU
    baton while the director is away: own override.cfg, removed after). Then merge, D-075.
 2. Stomp shockwave tan crescents (rampage.gd:177) are not #55's; the lead excluded them.
 
