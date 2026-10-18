@@ -346,7 +346,9 @@ def build_army() -> None:
     place(x, pitch(kenney("impactMetal_light_002"), 0.8), 0.0, 0.35)
     place(x, thump(0.5, 110, 55), 0.0, 0.6)
     place(x, lowpass(crackle(seconds(0.5), 300, 0.15), 3000), 0.02, 0.3)
-    save("shell_hit", x, -3.0)
+    # High-passed at 120 Hz like the cannon, so a hit landing on a stomp leaves the stomp its
+    # low end (mix report: the last 8 masked stomps were this thud).
+    save("shell_hit", highpass(highpass(x, 120.0), 120.0), -3.0)
     # Rotor: main-blade slaps at 19 Hz and a tail-rotor buzz at 4x (whole cycles in 2 s), over
     # a turbine whine. Built 0.5 s long and the overrun crossfaded into the start: no seam.
     n = seconds(2.0)
