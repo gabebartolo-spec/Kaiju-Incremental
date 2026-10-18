@@ -117,6 +117,7 @@ func _check_bomb_collateral() -> void:
 	var rubble: Array[float] = []
 	for pass_on: bool in [false, true]:
 		var sim := _delta_sim([_b(4.8, 0, Vector3i(3, 3, 4))])
+		sim.army_units.squads.clear()  # the roof's riflemen would pay for their own deaths
 		if pass_on:
 			sim.strike.spawn()
 		else:

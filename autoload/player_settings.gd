@@ -1,6 +1,7 @@
 class_name PlayerSettings
 extends RefCounted
-## The player's settings: volume (overall and sound effects), fullscreen and UI scale, kept in
+## The player's settings: volume (overall and sound effects), fullscreen, UI scale and the frame
+## cap, kept in
 ## their own file apart from the save. Static so the settings screen and tests reach them
 ## without the Settings autoload (which loads them at start and owns the input actions and F11).
 
@@ -29,6 +30,10 @@ static var volume := 0.8
 static var sfx_volume := -1.0
 static var fullscreen := false
 static var ui_scale := 1.0
+## Frames a second at most in play (0 = unlimited); -1 = tuning "display" fps_default.
+static var fps_cap := -1
+## True while a rampage is on screen (main.gd); menus and pause run at tuning menu_fps at most.
+static var in_play := false
 
 
 static func set_volume(value: float) -> void:
@@ -55,6 +60,35 @@ static func next_ui_scale() -> void:
 	ui_scale = UI_SCALES[(at + 1) % UI_SCALES.size()]
 	apply()
 	save()
+
+
+## Steps the frame cap to the next of tuning "display" fps_caps (wrapping round).
+static func next_fps_cap() -> void:
+	var caps := _caps()
+	fps_cap = caps[(caps.find(cap()) + 1) % caps.size()]
+	save()
+
+
+## tuning "display" fps_caps as ints (JSON numbers load as floats, and 120.0 is not found as 120).
+static func _caps() -> Array[int]:
+	var out: Array[int] = []
+	for value: Variant in Content.section("display")["fps_caps"]:
+		out.append(Num.i(value))
+	return out
+
+
+## The player's frame cap in play (0 = unlimited).
+static func cap() -> int:
+	return fps_cap if fps_cap >= 0 else Num.i(Content.section("display")["fps_default"])
+
+
+## The frame cap right now: the player's in an unpaused rampage, never above tuning menu_fps in
+## menus or pause, so an idle screen does not spin the graphics card (director's playtest).
+static func frame_cap(paused: bool) -> int:
+	var menu := Num.i(Content.section("display")["menu_fps"])
+	if in_play and not paused:
+		return cap()
+	return menu if cap() == 0 else mini(cap(), menu)
 
 
 static func apply() -> void:
@@ -137,6 +171,7 @@ static func save() -> void:
 	cfg.set_value("audio", "sfx_volume", sfx())
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
+	cfg.set_value("display", "fps_cap", cap())
 	cfg.save(PATH)
 
 
@@ -151,3 +186,5 @@ static func load_saved(start_full: bool) -> void:
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]
+	var saved_cap := Num.i(cfg.get_value("display", "fps_cap", cap()))
+	fps_cap = saved_cap if _caps().has(saved_cap) else -1
