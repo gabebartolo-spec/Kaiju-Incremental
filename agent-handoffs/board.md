@@ -1,7 +1,7 @@
 # Handoff: board (this session: "Kaiju: Load, smoke FX, builds")
 
-Updated: 2026-10-19 03:00
-State: awaiting lead (playtest fix PRs open; 4K GPU proposal sent)
+Updated: 2026-10-19 02:45
+State: working (#92 open; 4K still pair waits on the focus guard)
 
 ## Open PRs (each green locally on all suites after syncing look-options)
 - Fix 3 frame cap: #77 MERGED.
@@ -19,11 +19,11 @@ State: awaiting lead (playtest fix PRs open; 4K GPU proposal sent)
 - Load timing method: export with `--export-release "Windows Desktop"`, then
   `godot_console --headless --main-pack K.exe --script <probe.gd> -- --tier=N` (scratch APPDATA).
 
-## GPU at 4K (lead request, 2026-10-19)
-Measured at 4K off-screen (worktree gpu4k, detached look-options 54e407f; probe + split.py in the scratchpad).
-High, uncapped: 80 fps at stage 1, 200 W, fan 50%. Behemoth: 52 fps, GPU-bound.
-Balanced (0.75 FSR1, MSAA off), cap 60: 110 W at stage 1, and Behemoth holds 60.
-Proposal sent to the lead: a Graphics High/Balanced setting, with 60 as the 4K default. Waiting for go; not built.
+## GPU at 4K -> PR #92 (claude/graphics-setting, worktree graphics, head 4e68ff7)
+Graphics High / Balanced (0.75 FSR1, MSAA off) + 4K default Balanced/60 in display.graphics_default.
+Suites green (flow 154). PENDING: the High vs Balanced 4K still pair (stills.gd + 2x crops of the croc and a
+building edge). The focus guard blocks it while the director is in League; retry, then commit it to
+docs/captures and update the PR body. Note: the project MSAA is 4x, not 2x.
 
 ## Next
 Lead review at 2x; follow-up for the first young load if the lead wants it.
