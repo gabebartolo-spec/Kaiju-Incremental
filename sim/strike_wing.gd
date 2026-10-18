@@ -4,11 +4,13 @@ extends RefCounted
 ## across the arena, strafing a line through where the kaiju stood when it was called in, then
 ## flies on and out; another follows after `interval`. Passes run across the game camera's view
 ## (at right angles to `camera_bearing`, give or take `yaw_jitter`), so a pass is seen edge to
-## edge and never flies at the lens; it flies `clearance` over the kaiju's head. `warn_seconds`
-## before the first round lands the sim says so (jet_inbound): a kaiju that steps off the line
-## takes nothing. Rounds also chew the roofs they land on: collateral that falls like any other
-## but pays the player no biomass (director, D-072). Only an attack that reaches the air (or a
-## cephalopod's grab) downs a jet. Unlike the helicopters (AirWing) a jet never circles.
+## edge and never flies at the lens; it flies `clearance` over the kaiju's head. Before the first
+## round lands the sim says where (jet_inbound), as long before as the kaiju needs to walk clear
+## of the line at its size and speed plus `react_seconds` (D-080), entering further out when it
+## needs to: a kaiju that steps off the line takes nothing. Rounds also chew the roofs they land
+## on: collateral that falls like any other but pays the player no biomass (director, D-072).
+## Only an attack that reaches the air (or a cephalopod's grab) downs a jet. Unlike the
+## helicopters (AirWing) a jet never circles.
 ## Part of RampageSim. Pure and seeded.
 
 
@@ -16,6 +18,8 @@ class Jet:
 	var id: int
 	var kind: String
 	var start: Vector2  # where it enters, `approach` short of the line's centre
+	var approach: float  # how far short: `approach`, or further when the warning needs it
+	var lead: float  # seconds of warning before its first round lands
 	var dir: Vector2  # its heading on the ground plane
 	var s := 0.0  # distance flown from start
 	var pos: Vector2
@@ -67,15 +71,15 @@ func step(dt: float) -> void:
 		jet.s += Num.f(cfg["speed"]) * dt
 		jet.pos = jet.start + jet.dir * jet.s
 		_strafe(jet)
-		if jet.s >= 2.0 * Num.f(cfg["approach"]):
+		if jet.s >= 2.0 * jet.approach:
 			gone.append(jet)
 	for jet: Jet in gone:
 		jets.erase(jet)
 		sim.events.append({"type": "jet_left", "jet": jet.id})
 
 
-## A new jet lines up on the kaiju: it enters `approach` short of the kaiju's spot (off screen)
-## from alternate sides, heading across the camera's view.
+## A new jet lines up on the kaiju: it enters `approach` short of the kaiju's spot (off screen;
+## further if its warning needs the room) from alternate sides, heading across the camera's view.
 func spawn() -> Jet:
 	var jet := Jet.new()
 	jet.id = _next_id
@@ -86,7 +90,12 @@ func spawn() -> Jet:
 	jet.dir = (across * _side).rotated(_rng.randf_range(-jitter, jitter))
 	_side = -_side
 	var centre := sim.kaiju_pos - _toward_camera() * Num.f(cfg["lane_behind"])
-	jet.start = centre - jet.dir * Num.f(cfg["approach"])
+	jet.lead = warn_lead(0.0)
+	var speed := Num.f(cfg["speed"])
+	var half_line := Num.f(cfg["strafe_step"]) * (Num.i(cfg["rounds"]) - 1) * 0.5
+	var room := speed * (jet.lead + Num.f(cfg["react_seconds"])) + half_line
+	jet.approach = maxf(Num.f(cfg["approach"]), room + Num.f(cfg["strafe_lead"]))
+	jet.start = centre - jet.dir * jet.approach
 	jet.pos = jet.start
 	jet.hp = Num.f(cfg["hp"])
 	jets.append(jet)
@@ -101,22 +110,32 @@ func spawn() -> Jet:
 func line(jet: Jet) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	var step := Num.f(cfg["strafe_step"])
-	var first := Num.f(cfg["approach"]) - step * (Num.i(cfg["rounds"]) - 1) * 0.5
+	var first := jet.approach - step * (Num.i(cfg["rounds"]) - 1) * 0.5
 	for k: int in Num.i(cfg["rounds"]):
 		out.append(jet.start + jet.dir * (first + step * k))
 	return out
 
 
 ## Its guns hit `strafe_lead` ahead of it: each line point lands as that spot reaches it, and
-## the warning goes out `warn_seconds` before the first.
+## the warning goes out `lead` seconds before the first.
 func _strafe(jet: Jet) -> void:
 	var points := line(jet)
 	var gun := jet.s + Num.f(cfg["strafe_lead"])
 	var first := jet.start.distance_to(points[0])
-	if not jet.warned and gun >= first - Num.f(cfg["speed"]) * Num.f(cfg["warn_seconds"]):
+	if not jet.warned and gun >= first - Num.f(cfg["speed"]) * jet.lead:
 		jet.warned = true
-		sim.events.append(
-			{"type": "jet_inbound", "jet": jet.id, "from": points[0], "to": points[-1]}
+		(
+			sim
+			. events
+			. append(
+				{
+					"type": "jet_inbound",
+					"jet": jet.id,
+					"from": points[0],
+					"to": points[-1],
+					"lead": jet.lead,
+				}
+			)
 		)
 	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
 	while jet.next_round < points.size():
@@ -154,6 +173,13 @@ func _wreck(at: Vector2) -> void:
 			var kept := sim.rubble
 			sim.damage_chunks(i, cells, Num.f(cfg["round_damage"]))
 			sim.rubble = kept
+
+
+## D-080: seconds of warning the kaiju needs to walk clear of a hit `blast` wide (its body
+## radius plus the blast, at its speed) plus `react_seconds` to see it.
+func warn_lead(blast: float) -> float:
+	var clear := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale() + blast
+	return clear / maxf(0.1, sim.stat("speed")) + Num.f(cfg["react_seconds"])
 
 
 ## The direction from the kaiju toward the game camera, on the ground plane.

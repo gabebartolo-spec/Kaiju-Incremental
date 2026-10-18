@@ -46,7 +46,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"jet_inbound":
 			var from: Vector2 = event["from"]
 			var to: Vector2 = event["to"]
-			_warn_line(from, to)
+			_warn_line(from, to, Num.f(event["lead"]))
 			_sfx.play("jet_flyby")
 		"jet_strafe":
 			_strafe(event, kaiju_at)
@@ -70,10 +70,10 @@ func _place(node: Node3D, at: Vector2, dir: Vector2) -> void:
 
 
 ## The rounds' line on the ground: hot marks that blink until the pass has gone through.
-func _warn_line(from: Vector2, to: Vector2) -> void:
+func _warn_line(from: Vector2, to: Vector2, lead: float) -> void:
 	var cfg := sim.strike.cfg
 	var marks := Num.i(cfg["rounds"])
-	var lasts := Num.f(cfg["warn_seconds"]) + from.distance_to(to) / Num.f(cfg["speed"])
+	var lasts := lead + from.distance_to(to) / Num.f(cfg["speed"])
 	var blink := lasts / (2.0 * MARK_BLINKS)
 	for k: int in marks:
 		var p := from.lerp(to, k / maxf(1.0, marks - 1.0))

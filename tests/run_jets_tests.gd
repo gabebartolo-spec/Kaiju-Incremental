@@ -24,6 +24,7 @@ func run_checks() -> void:
 	_check_collateral()
 	_check_grab()
 	_check_height()
+	_check_lead_scales()
 
 
 ## A sim whose jets are on (`max`), its city hurt enough to call them in (the call-in mark
@@ -74,7 +75,7 @@ func _check_pass_shape() -> void:
 	var off_square := absf(jet.dir.dot(toward))
 	var start_far := jet.start.distance_to(AT) >= Num.f(cfg["approach"]) - 0.01
 	var left := _until(sim, "jet_left", 10.0)
-	var flown := 2.0 * Num.f(cfg["approach"]) / Num.f(cfg["speed"])
+	var flown := 2.0 * jet.approach / Num.f(cfg["speed"])
 	check(
 		off_square <= sin(deg_to_rad(Num.f(cfg["yaw_jitter"]))) + 0.001 and start_far,
 		"a jet enters off screen and flies across the camera's view (%.2f off square)" % off_square
@@ -85,10 +86,11 @@ func _check_pass_shape() -> void:
 	)
 
 
-## The warning comes warn_seconds before the first round lands, and a standing kaiju is hit.
+## The warning comes the jet's lead (D-080) before the first round lands, and a standing kaiju
+## is hit.
 func _check_warning() -> void:
 	var sim := _jet_sim()
-	sim.strike.spawn()
+	var jet := sim.strike.spawn()
 	var warned := INF
 	var first := INF
 	var hits := 0
@@ -103,8 +105,8 @@ func _check_warning() -> void:
 					hits += 1 if event["hit"] else 0
 	var lead := first - warned
 	check(
-		lead >= Num.f(sim.strike.cfg["warn_seconds"]) - DT,
-		"the warning comes %.2f s before the first round lands" % lead
+		lead >= jet.lead - DT,
+		"the warning comes %.2f s (lead %.2f) before the first round lands" % [lead, jet.lead]
 	)
 	check(hits > 0, "a kaiju standing on the line is strafed (%d rounds hit)" % hits)
 
@@ -194,7 +196,7 @@ func _check_collateral() -> void:
 func _check_grab() -> void:
 	var sim := _jet_sim(1, [], "cephalopod", {"c_grab": 1})
 	var jet := sim.strike.spawn()
-	jet.s = Num.f(sim.strike.cfg["approach"]) - 1.0  # overhead now, before any car is taken
+	jet.s = jet.approach - 1.0  # overhead now, before any car is taken
 	var grabbed := false
 	for i: int in roundi(2.0 / DT):  # before the next jet is called in
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
@@ -239,3 +241,39 @@ func _check_jet() -> void:
 		"the interceptor draws its Blender voxels (%d of %d), nose forward" % [cubes, cells]
 	)
 	jet.free()
+
+
+## D-080: the warning is as long as the kaiju needs to walk clear (body radius at its speed) plus
+## the reaction time, so it grows with the body; a jet enters further out to give it room, and
+## a grown kaiju can still dodge.
+func _check_lead_scales() -> void:
+	var young := _jet_sim()
+	var apex := _jet_sim(1, [], "reptilian", {"evolve1": 1, "evolve2": 1, "evolve3": 1})
+	var leads: Array[float] = []
+	var jets: Array[StrikeWing.Jet] = []
+	for sim: RampageSim in [young, apex]:
+		var jet := sim.strike.spawn()
+		jets.append(jet)
+		var clear := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale() / sim.stat("speed")
+		leads.append(clear + Num.f(sim.strike.cfg["react_seconds"]))
+	var hits := 0
+	var move := Vector2.ZERO
+	for i: int in roundi(8.0 / DT):
+		for event: Dictionary in apex.step(DT, move, false):
+			if str(event["type"]) == "jet_inbound":
+				move = Vector2(0, 1)
+			if str(event["type"]) == "jet_strafe" and event["hit"]:
+				hits += 1
+	check(
+		(
+			is_equal_approx(jets[0].lead, leads[0])
+			and is_equal_approx(jets[1].lead, leads[1])
+			and jets[1].lead > jets[0].lead
+			and jets[1].approach >= jets[0].approach
+			and hits == 0
+		),
+		(
+			"the warning grows with the body (young %.2f s, Apex %.2f s); an Apex dodges (%d hits)"
+			% [jets[0].lead, jets[1].lead, hits]
+		)
+	)
