@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: running a check (bh8rshsag re-measure on 51a2d5d; awaiting LEAD's GPU slot for the re-render)
+## State: running a check (bh8rshsag re-measure on 51a2d5d; clip2 sent to LEAD for the critic)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -55,7 +55,12 @@ If #50 lands first: re-sync floors once.
   Seeds.derive(rng, 0x2008), mean unchanged); view: rifles 2..14 frames ragged. Sim check (floor 53)
   failed first with jitter 0. Fixed #53's flow_rifle_sounds check (gap left open by live volleys +
   counted all sounds). Sound session gone; LEAD told.
-- First local clip (pre-fix): clip/ (15 volleys, 42/42 sparks, gain med 0.79). Needs re-render.
+- First local clip (pre-fix): clip/. Re-render clip2/ at fa3ba10 code: 14 volleys, ragged gaps
+  3..63 frames, 41 sparks all peak >= 0.89 (gain med 0.76), crops 0096 before/after + 3 sparks.
+  Sent to LEAD. GPU slot passed to greenery with LEAD's queue (stadium, croc #54, #50).
+- fa3ba10: hidden (looming / past max_drawn) squads still spark on the hide (LEAD); sim 53, flow 138.
+- After re-measure: replace the PR's balance section (base pacing_lo.txt vs pacing_lo_c.txt,
+  replay_lo_base/cand.txt), mention interval_jitter, the looming rule and the flow_rifle_sounds fix.
 - Base pacing on af7eb05: 0.59 h / 4.56 h; totals 183.3/200.7/475.0/690.2 (pacing_lo.txt).
 
 ## Older plan (superseded where it conflicts)
