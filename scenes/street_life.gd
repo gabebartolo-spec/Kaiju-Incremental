@@ -169,12 +169,26 @@ func civilians() -> int:
 	return n
 
 
+## Civilians crushed so far: on the streets, on the pitch and in the stands (fans crushed or
+## gone with their stand: director playtest, 2026-10-19).
+func civilians_killed() -> int:
+	var n := killed
+	for game: StadiumMatch in matches:
+		n += game.killed
+		if game.crowd != null:
+			n += game.crowd.killed + game.crowd.fallen
+	return n
+
+
 ## How many civilians are running from the kaiju now (the crowd-panic sound follows it).
 func panicking() -> int:
 	var n := 0
 	for p: Person in people:
 		if p.fleeing and not p.cop:
 			n += 1
+	for game: StadiumMatch in matches:  # a stadium crowd on the run screams with them
+		if game.crowd != null:
+			n += game.crowd.running()
 	return n
 
 

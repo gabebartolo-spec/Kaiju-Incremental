@@ -131,6 +131,7 @@ func _ready() -> void:
 	add_child(_ball_node)
 	if StadiumCrowd.enabled:
 		crowd = StadiumCrowd.new(sim, _index, kits, _rng)
+		crowd.fx = _fx
 		add_child(crowd)
 
 
@@ -180,8 +181,10 @@ func on_pitch() -> int:
 	return players.size()
 
 
-## Everyone within `radius` of `at` is crushed (one dust puff).
-func crush(at: Vector3, radius: float) -> void:
+## Everyone within `radius` of `at` is crushed (one dust puff), players and fans where they are
+## now. Returns how many.
+func crush(at: Vector3, radius: float) -> int:
+	var dead := killed
 	var c := Vector2(at.x, at.z)
 	var puffed := false
 	for i: int in range(players.size() - 1, -1, -1):
@@ -192,8 +195,10 @@ func crush(at: Vector3, radius: float) -> void:
 			_fx.puff(Vector3(players[i].pos.x, _top + 0.15, players[i].pos.y))
 		players.remove_at(i)
 		killed += 1
+	dead = killed - dead
 	if crowd != null:
-		crowd.crush(at, radius)
+		dead += crowd.crush(at, radius)
+	return dead
 
 
 func _process(delta: float) -> void:
