@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: awaiting lead (playtest fixes pushed: rifle-fire a45f989, breath-aim 43652fa; no PRs yet)
+## State: awaiting lead (PRs #80 rifles a06b6d9, #83 breath snout 70e3de9 open; Auto-fix on)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -11,12 +11,16 @@ unison ... improvised, unrehearsed resistance". LEAD D-076a: tanks unchanged; ri
 tier so each stage's damage per run holds within ±5%; reptilian pacing within ±5%. No HUD change
 (D-061): hit read = flash + tracer + hide spark. PR #63 into claude/look-options; LEAD merges.
 
-## Playtest fixes (D-083, director playtest, LEAD 2026-10-18); proof notes PLAYTEST_FIXES.md
-- claude/rifle-fire a45f989: rifle "type writer" -> near squads (12 u) crack, the rest rifle_far
-  pops (-14 dB, pitch 0.7); gaps 0.25 s +60% / 0.5 s +80%; pitch ±10%. 6.5 -> 1.2 cracks/s.
-- claude/breath-aim 43652fa: BreathAim wedge (scenes/breath_aim.gd) = RampageSim.cone() while
-  the breath is ready; flow check + known-bad; floor flow 149.
-- Both off look-options, all 9 suites pass. Awaiting LEAD: open PRs? merge?
+## Playtest fixes (D-083, director playtest, LEAD); proof notes PLAYTEST_FIXES.md, breath-snout/
+- #80 claude/rifle-fire a06b6d9: near squads (12 u) crack, the rest rifle_far pops (-14 dB,
+  pitch 0.7); gaps 0.25 s +60% / 0.5 s +80%; pitch ±10%. LEAD PASS on numbers.
+- #83 claude/breath-aim 70e3de9: sim/breath_cone.gd (BreathCone.of) = the cone from the SNOUT
+  (city.breath_snout_ahead [10.4,10.4,10.3,13.5] x body_scale ahead of kaiju_pos, the tail root);
+  sim burns it, beam/scorch aim from event "from", BreathAim (scenes/breath_aim.gd) draws it while
+  ready. Flow check (mismatch 0; known-bad tail-root 12.24 u fails). Floor flow 153.
+  Pacing 130 runs: evolve1 0.26 -> 0.27 h; defeats up (Beh 6 -> 17, Col 31 -> 39): LEAD's call.
+- If croc-contact-dash (local_1feb30ca) moves kaiju_pos to the body centre: re-measure the snout
+  offsets (probe: KaijuModel per stage, KaijuRig.tail_world("head1"), forward is -Z).
 - #63 MERGED. Legs/tail hit WIP stays local on claude/rooftop-density (ea54ca5), post-demo.
 
 ## Branch and commit
