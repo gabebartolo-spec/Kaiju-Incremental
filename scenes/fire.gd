@@ -144,3 +144,8 @@ func _cube(size: float, glowing: bool) -> BoxMesh:
 	draw.vertex_color_use_as_albedo = true
 	cube.material = draw
 	return cube
+
+
+func audit_untyped() -> int:
+	var x = 1
+	return x
