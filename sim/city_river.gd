@@ -54,3 +54,103 @@ static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 		plan["river"] = band
 		plan["river_spawn"] = spawn
 		plan["river_bank"] = Vector2(spawn.x, band.x - SPAWN_INSET)
+
+
+## The river's open water (x, z), west to east: each run of river blocks with their sidewalks,
+## joined across the streets between them (CityRiver.bridges carries those over it). A gap
+## wider than any street is a landmark's site: the water stops there. Empty without a river.
+static func channels(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var spans := _spans(plan, cfg)
+	for n: int in spans.size():
+		if n > 0 and _crossing(spans[n - 1], spans[n], cfg):
+			out[-1] = out[-1].merge(spans[n])
+		else:
+			out.append(spans[n])
+	return out
+
+
+## The streets across the river (x, z): one deck over the water in each gap between
+## neighbouring river blocks of a channel.
+static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var spans := _spans(plan, cfg)
+	for n: int in range(1, spans.size()):
+		if _crossing(spans[n - 1], spans[n], cfg):
+			var from := spans[n - 1].end.x
+			out.append(
+				Rect2(from, spans[n].position.y, spans[n].position.x - from, spans[n].size.y)
+			)
+	return out
+
+
+## Quay sheds (lead check 2026-10-19: the young city's first steps out of the water must hit
+## something): small buildings lining the pavement of each bare built block of the first
+## district (one whose lots came out empty, a sliver between close street lines) within
+## city "quay" "reach" of the bank point. They draw their own numbers, so no other lot moves,
+## and stand the same at every stage.
+static func sheds(plan: Dictionary, bare: Array[Dictionary], cfg: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if not plan.has("river_bank"):
+		return out
+	var quay: Dictionary = cfg["quay"]
+	var bank: Vector2 = plan["river_bank"]
+	var widths: Array = quay["width"]
+	var heights: Array = quay["height"]
+	var gap := Num.i(quay["gap"])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = Num.i(cfg["map_seed"]) + 3
+	var clear := CityGen.width_of(CityGen.DIAGONAL, cfg) * 0.5 + 1.0
+	for block: Dictionary in bare:
+		var rect: Rect2 = block["rect"]
+		var strip := rect.grow(Num.f(cfg["sidewalk"]))
+		var along_x := strip.size.x >= strip.size.y
+		var length := roundi(maxf(strip.size.x, strip.size.y))
+		var deep := floori(minf(strip.size.x, strip.size.y))
+		var t := gap
+		while deep >= 2:
+			var w := rng.randi_range(Num.i(widths[0]), Num.i(widths[1]))
+			var h := rng.randi_range(Num.i(heights[0]), Num.i(heights[1]))
+			var style := rng.randi_range(0, 3)
+			if t + w > length - gap:
+				break
+			var mid := t + w * 0.5
+			var c := (
+				strip.position + (Vector2(mid, deep * 0.5) if along_x else Vector2(deep * 0.5, mid))
+			)
+			t += w + gap
+			if c.distance_to(bank) > Num.f(quay["reach"]):
+				continue
+			if CityGen.diagonal_distance(plan, c) < clear + w:
+				continue
+			(
+				out
+				. append(
+					{
+						"x": c.x,
+						"z": c.y,
+						"w": w if along_x else deep,
+						"d": deep if along_x else w,
+						"h": h,
+						"tier": CityGen.tier_for_height(h, cfg),
+						"style": style,
+					}
+				)
+			)
+	return out
+
+
+## The river blocks with their sidewalks, west to east.
+static func _spans(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for block: Dictionary in plan["blocks"]:
+		if str(block["use"]) == "river":
+			var rect: Rect2 = block["rect"]
+			out.append(rect.grow(Num.f(cfg["sidewalk"])))
+	out.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.x < b.position.x)
+	return out
+
+
+## Whether the gap between two neighbouring river spans is a street (a bridge), not a site.
+static func _crossing(west: Rect2, east: Rect2, cfg: Dictionary) -> bool:
+	return east.position.x - west.end.x <= Num.f(cfg["avenue_width"]) + 0.01

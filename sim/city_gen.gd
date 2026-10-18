@@ -25,17 +25,22 @@ const DIAGONAL := "diagonal"
 ## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style.
 ## Blocks fill district by district, innermost first, so a district's lots draw the same
 ## numbers whichever stage is in play (only the stage's height caps change them). The river's
-## blocks (CityRiver) still draw their lots and drop them, so every other building stays put.
+## blocks (CityRiver) still draw their lots and drop them, so every other building stays put;
+## its quay sheds come last, from their own numbers.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
+	var bare: Array[Dictionary] = []  # the first district's built blocks too thin for a lot
 	for ring: int in districts(cfg).size():
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
 				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
 				if str(block["use"]) == "built":
 					out.append_array(lots)
+					if lots.is_empty() and ring == 0:
+						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
+	out.append_array(CityRiver.sheds(plan, bare, cfg))
 	return out
 
 

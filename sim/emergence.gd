@@ -13,8 +13,10 @@ var _t := 0.0
 var _rise: float
 var _depth: float
 var _wade: float
+var _bed: float  # how far the river's water lies below the street (city "river_depth")
 var _spawn: Vector2
 var _bank: Vector2
+var _water: Array[Rect2]  # the river's channels (CityRiver.channels)
 
 
 func _init(city: Dictionary, tuning: Dictionary) -> void:
@@ -22,7 +24,9 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_rise = Num.f(cfg["rise_seconds"])
 	_depth = Num.f(cfg["depth"])
 	_wade = Num.f(cfg["wade_speed"])
+	_bed = Num.f(city.get("river_depth", 0.0))
 	var plan := CityGen.map(city)
+	_water = CityRiver.channels(plan, city)
 	_spawn = plan.get("river_spawn", Vector2(INF, INF))
 	_bank = plan.get("river_bank", _spawn)
 
@@ -38,7 +42,7 @@ func start(sim: RampageSim) -> void:
 	sim.stand_y = -_depth * sim.body_scale()
 
 
-## How far out of the water the kaiju is, 0 (under) to 1 (standing on the river bed).
+## How far through its rise the kaiju is, 0 (under) to 1 (wading in the river).
 func risen() -> float:
 	return clampf(_t / _rise, 0.0, 1.0) if active else 1.0
 
@@ -49,13 +53,18 @@ func step(sim: RampageSim, dt: float) -> bool:
 		return false
 	_t += dt
 	if _t < _rise:
-		sim.stand_y = -_depth * sim.body_scale() * (1.0 - smoothstep(0.0, 1.0, _t / _rise))
+		var up := smoothstep(0.0, 1.0, _t / _rise)
+		sim.stand_y = lerpf(-_depth * sim.body_scale(), -_bed, up)  # up to wading depth
 		return true
-	sim.stand_y = 0.0
 	var bank := sim.clamp_to_arena(_bank)
 	var stride := sim.stat("speed") * _wade * dt
-	if sim.kaiju_pos.distance_to(bank) > stride:
-		sim.facing = sim.kaiju_pos.direction_to(bank)
+	var floor_y := 0.0
+	for water: Rect2 in _water:
+		if water.has_point(sim.kaiju_pos):
+			floor_y = -_bed
+	sim.stand_y = move_toward(sim.stand_y, floor_y, stride)  # climbs out over the quay
+	if sim.kaiju_pos.distance_to(bank) > stride or sim.stand_y < 0.0:
+		sim.facing = sim.kaiju_pos.direction_to(bank) if sim.kaiju_pos != bank else sim.facing
 		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)
 		return true
 	sim.kaiju_pos = bank

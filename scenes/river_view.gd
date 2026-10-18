@@ -1,7 +1,7 @@
 class_name RiverView
 extends Node
 ## The splash of the kaiju's rise from the river at the start of a run (D-083; the sim's
-## Emergence holds the rise and the kaiju's height): a ring on the water as the run opens, a
+## Emergence holds the rise and the kaiju's height): a ring on the sunk water as the run opens, a
 ## big one as the body breaks the surface, and a last one as it steps out. Rings from the
 ## existing Fx, tinted like spray; presentation only.
 
@@ -31,5 +31,6 @@ func _process(_delta: float) -> void:
 
 func _splash(size: float, tail: bool) -> void:
 	_beat += 1
-	var at := Vector3(_sim.kaiju_pos.x, CityGround.RIVER_Y, _sim.kaiju_pos.y)
+	var water := -Num.f(_sim.city.get("river_depth", 0.0))
+	var at := Vector3(_sim.kaiju_pos.x, maxf(_sim.stand_y, water) + 0.02, _sim.kaiju_pos.y)
 	_fx.shockwave(at, RING * _sim.body_scale() * size, SPRAY, tail)

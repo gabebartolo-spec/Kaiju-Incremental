@@ -10,8 +10,8 @@ const PAVE_TOP := 0.1  # blocks stand a kerb above the street
 const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
 const PAINT := 0.02
 const WATER_Y := -0.8
-const RIVER_Y := PAVE_TOP + 0.01  # the river's surface, inside its quays
-const RIVER_QUAY := 0.6  # the stone edge left showing along each bank
+const RIVER_QUAY := 0.6  # the stone quay wall along each bank, its top a narrow walk
+const PARAPET := Vector2(0.9, 0.3)  # a bridge parapet's height over the deck, and its width
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
@@ -34,9 +34,13 @@ func _ready() -> void:
 	var asphalt := Look.color("asphalt")
 	var pavement := Look.color("lot")
 	var outer := Num.f(cfg["outer_half"])
-	# Land: asphalt under everything south of the quay, darker beyond the drawn streets.
-	_slab(Rect2(-FAR, coast, FAR * 2.0, FAR), Vector2(-0.01, 0.4), asphalt.darkened(0.25))
-	_slab(Rect2(-outer, coast, outer * 2.0, outer - coast), Vector2(0.001, 0.4), asphalt)
+	# Land: asphalt under everything south of the quay, darker beyond the drawn streets, open
+	# where the river runs.
+	var channels := CityRiver.channels(plan, cfg)
+	for land: Rect2 in _cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
+		_slab(land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
+	for land: Rect2 in _cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
+		_slab(land, Vector2(0.001, 0.4), asphalt)
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		if rect.position.y < coast:
@@ -55,11 +59,11 @@ func _ready() -> void:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
 				_parking_bays(rect.grow(-0.6))
-			"river":  # a stone quay; the water runs over it (_river)
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
+			"river":
+				pass  # its water and quays: _river
 			_:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
-	_river(asphalt)
+	_river(channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
@@ -271,28 +275,48 @@ func _water() -> MeshInstance3D:
 	)
 
 
-## The river (CityRiver): glossy water, bluer and lighter than the bay's so it reads beside the
-## asphalt, running the length of its row inside the quays, with the cross streets carried over
-## it as bridges. A gap wider than any street is a landmark's site: the water stops at it.
-func _river(asphalt: Color) -> void:
-	var spans: Array[Rect2] = []
-	for block: Dictionary in plan["blocks"]:
-		if str(block["use"]) == "river":
-			var rect: Rect2 = block["rect"]
-			spans.append(rect)
-	spans.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.x < b.position.x)
-	var widest := Num.f(cfg["avenue_width"])
-	var run := Rect2()
-	for n: int in spans.size():
-		run = spans[n] if n == 0 else run.merge(spans[n])
-		var gap := INF if n == spans.size() - 1 else spans[n + 1].position.x - spans[n].end.x
-		if gap > widest:
-			var water := run.grow_individual(0, -RIVER_QUAY, 0, -RIVER_QUAY)
-			add_child(_sheet(water, RIVER_Y, Look.color("river")))
-			run = spans[n + 1] if n + 1 < spans.size() else run
-		else:
-			var bridge := Rect2(spans[n].end.x, run.position.y, gap, run.size.y)
-			_slab(bridge, Vector2(RIVER_Y + 0.02, 0.1), asphalt)
+## The river (CityRiver): a channel sunk city "river_depth" below the street, glossy water
+## bluer and lighter than the bay's between stone quay walls, running on under its bridges:
+## a deck at street level with a parapet along each side for every street that crosses it.
+func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
+	var depth := Num.f(cfg.get("river_depth", 0.0))
+	var bridges := CityRiver.bridges(plan, cfg)
+	var wall := Vector2(PAVE_TOP, depth + 0.5)
+	for channel: Rect2 in channels:
+		add_child(_sheet(channel, -depth, Look.color("river")))
+		var x0 := channel.position.x
+		var z0 := channel.position.y
+		var banks: Array[Rect2] = [
+			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
+			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
+		]
+		for side: Rect2 in _cut(banks, bridges):
+			_slab(side, wall, stone)
+		_slab(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone)
+		_slab(Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone)
+	for deck: Rect2 in bridges:
+		_slab(deck, Vector2(0.001, 0.5), asphalt)
+		for x: float in [deck.position.x, deck.end.x - PARAPET.y]:
+			_slab(Rect2(x, deck.position.y, PARAPET.y, deck.size.y), Vector2(PARAPET.x, 1.0), stone)
+
+
+## rects with every hole cut out of them, as the rects left over.
+static func _cut(rects: Array[Rect2], holes: Array[Rect2]) -> Array[Rect2]:
+	var out: Array[Rect2] = rects.duplicate()
+	for hole: Rect2 in holes:
+		var left: Array[Rect2] = []
+		for r: Rect2 in out:
+			var common := r.intersection(hole)
+			if not r.intersects(hole) or common.get_area() <= 0.0:
+				left.append(r)
+				continue
+			left.append(Rect2(r.position, Vector2(r.size.x, common.position.y - r.position.y)))
+			left.append(Rect2(r.position.x, common.end.y, r.size.x, r.end.y - common.end.y))
+			var mid := Rect2(r.position.x, common.position.y, 0.0, common.size.y)
+			left.append(Rect2(mid.position, Vector2(common.position.x - r.position.x, mid.size.y)))
+			left.append(Rect2(common.end.x, mid.position.y, r.end.x - common.end.x, mid.size.y))
+		out.assign(left.filter(func(q: Rect2) -> bool: return q.size.x > 0.0 and q.size.y > 0.0))
+	return out
 
 
 ## Glossy water of `color` over rect (x, z) at height y.

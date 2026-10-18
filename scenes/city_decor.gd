@@ -18,6 +18,7 @@ var _view: float  # parked cars reach this far from the centre: the arena and wh
 # shows past its edge (city.view_beyond)
 var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
+var _water: Array[Rect2] = []  # the river and its bridges (CityRiver): no car parks, no lamp
 var _paints := 0  # how many car paints
 
 
@@ -38,6 +39,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_half = CityGen.half_extent(sim.city)
 	_paints = car_colors().size()
 	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
+	for channel: Rect2 in CityRiver.channels(plan, sim.city):
+		_water.append(channel.grow(0.5))
 	for b: RampageSim.Building in sim.buildings:
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
 
@@ -77,7 +80,7 @@ func _inside(p: Vector2, margin: float = 0.0) -> bool:
 
 
 func _on_building(p: Vector2) -> bool:
-	for r: Rect2 in _footprints:
+	for r: Rect2 in _footprints + _water:
 		if r.has_point(p):
 			return true
 	return false
@@ -127,7 +130,8 @@ func _streets() -> void:
 					)
 					var seen := _inside(p, _view - _half)
 					var roll := _rng.randf()
-					if roll < (chance if playable else chance_beyond) and not on_diagonal and seen:
+					var parked := roll < (chance if playable else chance_beyond)
+					if parked and not on_diagonal and seen and not _on_building(p):
 						_props.add(
 							Vector3(p.x, 0, p.y),
 							func(v: VoxelBuilder) -> void: car(v, color, along_x)
