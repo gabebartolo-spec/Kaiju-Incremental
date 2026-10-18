@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-19 01:30
-## State: available (#52 closed per D-079; capture_mix_log --out tiny PR open; #56 waits for #50; #36 last)
+# Ability VFX/SFX handoff, 2026-10-19 02:00
+## State: available (#56 resynced onto look-options e3b0c5a with #60; it merges after #50; #36 last)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -18,7 +18,7 @@
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
 - **#52 CLOSED unmerged:** the director kept A, the full boom (D-079). shell_hit stays as it is.
-  - capture_mix_log --out moved to a tiny PR (branch claude/mixlog-out), so CI captures can write the log.
+  - capture_mix_log --out landed as #60.
   - Clip and notes stay in shared notes shellhit-ab/.
 - **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
   - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
