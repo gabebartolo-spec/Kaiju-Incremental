@@ -252,11 +252,13 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		want.append_array(["cracks", "ready", "deflect", "regen"])
 	var jets := 0
 	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
+	var aim := {}  # BreathAim against the sim's cone, every frame
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)
+		FlowBreath.track_aim(rampage, aim)
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
@@ -265,6 +267,10 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
 	if kind == "breath":
 		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
+		check(
+			Num.i(aim.get("shown", 0)) > 0 and Num.f(aim.get("worst", 1.0)) < 0.001,
+			"the ready breath's aim wedge is the cone it burns (%s)" % [aim]
+		)
 		var first := Num.f(scorch_glow.get("first", -1.0))
 		var peak := Num.f(scorch_glow.get("peak", 0.0))
 		check(
