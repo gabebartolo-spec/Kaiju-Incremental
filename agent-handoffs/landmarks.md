@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-19 03:10
-## State: awaiting lead (#59 burst fix sent for LEAD's own check and merge; head 0c01c61)
+# Landmarks handoff, 2026-10-19 04:40
+## State: awaiting lead (#59 r5 tweaks + resync pushed, head 4229d5f; LEAD checks the strip at 2x and merges on green)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -8,7 +8,7 @@ merge; LEAD does QA, critics, merges and the director.
   claude/look-options. Branch claude/landmarks stays on origin (never --delete-branch over a live
   worktree; LEAD prunes).
 - #59 stadium matches (D-078): branch claude/stadium-matches, base claude/look-options, ready
-  for review, head 0379e4a. Full suite + harness green there (flow 141 = 138 + 3).
+  for review, head 4229d5f. Full suite green there (flow 146 = 139 + 7).
 One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
 
 ## #57 as merged
@@ -44,6 +44,11 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   shadow). Suite green there (flow 145). Frame time crowd off/on (1080p, before no-shadow):
   frame 12.8 -> 15.6 ms, GPU 10.5 -> 13.3 ms; re-time when the director is not fullscreen.
   Slot passed to croc #54 (then #50). Re-render on CI (director in a fullscreen game).
+- Round 5b (LEAD's 2x check: core PASS): merged look-options with #54 (ad0a773; floors city 23,
+  growth 26, flow 146); 4229d5f: chunks in the wall's albedo x0.65, 30% at x0.45, unshaded
+  (tuning chunk_shade / chunk_dark / chunk_dark_share); dust = 7 soft smoke.gdshader billboards
+  (Fx's step puff, MultiMesh, centre_keep 1) instead of spheres. Strip re-rendered
+  (scratchpad local_strip.sh). Proof LEAD asked: strip only + suite. Chunks read warm beige.
 - Round 5 (2821786, captures 0c01c61): r4 passed bar one blocker (burst read as a vanish).
   LandmarkBurst now: 7 opaque dust balls on the break frame + ~360 lit 2-3 voxel chunks flung
   outward for 0.3 s + 40 physics fragments (tuning.json "landmark_burst"). Strip
@@ -65,18 +70,6 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   Crowd CPU: calm 0.015 ms, flee 6.2 -> 1.5 ms (cached cfg, no trig, STRIDE 3). GPU 1080p
   off/on: frame 5.85/5.82, GPU 3.97/4.19 ms. Ball still small at game cam (offer 3x).
   No GPU baton now (LEAD: up to 3 windowed at once while the director is away).
-- DONE: CI round 2 captures committed 1299868; clip notes landmarks/afl_crowd_r2_720p.mp4;
-  paths sent to LEAD. Open: re-time crowd with no shadows on the local GPU when allowed.
-- (was) On CI landing: copy stills to docs/captures/2026-10-18-matches/, crops (afl/nfl/soccer/
-  cricket _2x, crowd_stand_2x, afl_after_2x), mp4 to notes landmarks/, PR body, paths to LEAD.
-- After the slot: pass it on as LEAD/greenery say. If round 2 fails, LEAD changes method
-  (demo with sections bursting in place only).
-- NEXT on the GPU slot: scratchpad local_crowd.sh (stills, --frametime off/on, clip; mp4 to
-  720p). Then: 2x crop of a stand, commit stills, clip to notes landmarks/, paths + frame times
-  to LEAD, PR body update.
-- Earlier (pre-crowd): ready for review, base claude/look-options. Suite green at 3bc9f2e.
-- AFL clip rendered on the local GPU (scratchpad local_clip.sh): notes landmarks/afl_cave_in_720p.mp4
-  (mp4 is gitignored; Movie Maker wrote 1080p, scaled to 720p). Pair in docs/captures/2026-10-18-matches/.
 - Own check: ~3.4-4.0 s the stands sections toppling inward show their dark hollow undersides
   over the pitch, then burst. Proposed fix if the critic fails it: landmark sections drop in place
   instead of rotating over.
