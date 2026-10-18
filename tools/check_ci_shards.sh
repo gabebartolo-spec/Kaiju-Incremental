@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Checks that tools/ci_shards.txt runs every suite in tools/run_tests.sh exactly
-# once, and no suite that does not exist. CI runs it first (the "plan" job).
+# once, and no suite that does not exist; and that every tests/run_<suite>_tests.gd is
+# in ALL_SUITES (a runner missing there never runs and has no floor: Phase 0 audit,
+# docs/audits/2026-10-19-phase0-broken-prs.md). CI runs it first (the "plan" job).
 #
 #   tools/check_ci_shards.sh            # check, print what is wrong, exit 1 if so
 #   tools/check_ci_shards.sh --matrix   # check, then print the GitHub matrix as JSON
@@ -55,6 +57,16 @@ done < "$SHARDS"
 for s in $all; do
 	if [ -z "${seen[$s]:-}" ]; then
 		echo "ERROR: suite '$s' is in ALL_SUITES but in no CI shard: add it to $SHARDS" >&2
+		bad=1
+	fi
+done
+TESTS_DIR="${TESTS_DIR:-tests}"
+for f in "$TESTS_DIR"/run_*_tests.gd; do
+	[ -e "$f" ] || continue
+	s="${f##*/run_}"
+	s="${s%_tests.gd}"
+	if ! [[ " $all " == *" $s "* ]]; then
+		echo "ERROR: $f is not in ALL_SUITES of $RUNNER: it would never run and has no floor" >&2
 		bad=1
 	fi
 done

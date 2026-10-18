@@ -19,3 +19,6 @@ Deliverables: the core loop playable end to end with placeholder content; player
 for every system; save, reload, continue.
 Gate: a director playtest; the slice success test the vision names.
 Demo (D-050): the croc line only, hatchling to Behemoth, a Windows exe; the director's playtest of it is this gate.
+After the demo (D-083 order: playtest fixes first): better sound effects (ElevenLabs) and music (Suno), director
+2026-10-19. Both are paid for commercial use: the director's written spend yes in `docs/DECISIONS.md` and a CLEARED
+line in `docs/LICENSING_REGISTER.md` come before any generated audio enters `assets/`.
