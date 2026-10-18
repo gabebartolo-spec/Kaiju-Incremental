@@ -8,7 +8,8 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
 Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
 
-## DIRECTOR PLAYTESTING NOW (~09:xx): ALL local Godot paused (Kaiju sessions + AFL heads-up); CI only. Wait for his notes.
+## DIRECTOR PLAYTESTING NOW (~09:xx): ALL local Godot paused; CI only. AFL lead (local_8cceb00a) capped to 1 headless:
+## MESSAGE IT when the playtest ends (else it lifts at 23:30). Then lift the Kaiju pause too. Wait for his notes.
 ## EXE HANDED TO THE DIRECTOR (P7): C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe
 ## (run 39123363720; smoke 10/10, pack PASS). Next = his playtest notes (D-083: fixes first), then #55 merge, #50.
 ## Probe at 44f56fd (noisy box): settle 5.4 ms fixed; sim.step worst 43.9 ms, rooftop_fired 62 ms + 205 Nil errors
