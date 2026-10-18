@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-19 00:45
-## State: running a check (#52 CI capture run 39089682447); voice-pool PR #56 open; #52 resynced onto b810d1a
+# Ability VFX/SFX handoff, 2026-10-19 01:15
+## State: available (#52 A/B sent to the lead for its check; #56 merges after #50; #36 last in the demo chain)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -17,16 +17,12 @@
 - #46 rifle volleys (look-options e14854c). All five tabled sound PRs are in. The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **Gap job (a): branch claude/shell-hit-hp = DRAFT PR #52 (head 424c2f1, on look-options e14854c; Auto-fix on). The director listens before merge..**
-  - build_sfx.py: shell_hit high-passed at 120 Hz (energy below 120 Hz 82% -> 33%; below 300 Hz 97% -> 84%).
-  - The provenance row is updated. capture_mix_log.gd now takes --out=<dir>.
-  - Old file for the A/B: scratchpad/shellhp/shell_hit_before.ogg.
-  - CI capture (60 fps, 2 min) downloads to scratchpad/shellhp/ci.
-  - Next: run mix_report.py on that log twice (swap the old ogg into assets/sfx for "before", then restore).
-    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), fill #52's
-    Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
-  - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
-
+- **#52 shell_hit high-pass: DRAFT, head fa5dd3e, numbers and A/B in the body. Awaiting the lead's check, then the director's listen.**
+  - The CI capture was cancelled by the lead (renderer auto fell back after a 3000 s timeout). Next time pass --renderer=gl_compatibility and keep it short.
+  - Current-tree headless log: scratchpad/shellhp/head/mix_log.txt.
+    - Stomps masked by army 14 -> 4; by shell_hit 9 -> 0.
+    - The 4 left are heli_crash, an intended big moment; a high-pass on it is the option if the director wants.
+  - Clip: shared notes shellhit-ab/ab_shell_hit_20s.mp4 (audio-only cards, A then B, 31-51 s). Tool: scratchpad/ab_shell.py (movie "-" = audio only).
 - **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
   - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
     - rifle sounds 187 vs 60 (4.8/s vs 1.5/s while firing);
@@ -89,5 +85,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- bue4oa2qy: CI capture for #52.
+- None.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
