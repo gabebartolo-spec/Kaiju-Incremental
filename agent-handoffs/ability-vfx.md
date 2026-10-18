@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 04:10
-## State: working (#36 resynced onto look-options ca1f76d, floors city 23 growth 29 load 13 flow 138; pre-sweep of young stage on #36+#54+#63 in a scratch copy)
+## State: running a check (#36 pushed 08291ea; D-069a pick young army tank_damage 3.5, 130-run confirm running on scratch #36+#54+#63)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -96,5 +96,7 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- Young-stage pre-sweep runs in a scratch copy (git archive of #36+#54+#63), never in this worktree.
+- Scratch copy scratchpad/sweep36 (#36+#54+#63, floors sim 52 growth 31 flow 139); script scratchpad/young_sweep36.sh '<json>'... (N=runs). Deterministic.
+- 45-run results, young ended time/defeated/city: {} 8/26/0 of 34; td3 23/9/0; td3+si6 29/3/0; td3.5 14/18/0 (PICK); si6 18/14/0; td3.5+si5.5 20/12/0. evolve1 0.68-0.70 h for all. young_damage_mult is NOT a lever (damage to the kaiju's young).
+- When #54 + #63 land: resync #36, add "army": {"tank_damage": 3.5} to stages[0], 130-run pacing, before/after table in #36's body, Board/log line D-069a.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
