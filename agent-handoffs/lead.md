@@ -8,7 +8,13 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
 Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
 
-## PLAYTEST NOTES (director, 2026-10-19, exe 44f56fd; D-083 fixes first -> demo exe 2). Briefs HELD at his stop.
+## PLAYTEST PAUSED by the director: 'not shippable as is ... a very good start, well done'. Briefs SENT 10:xx:
+## stadium 5+9; rooftops 1+3; dry-run 6+7+10+12; greenery 11b river ('kaiju_emerged' event); JETS session (jets parked)
+## 8+11a; NEW session 'croc-contact-dash' (local_1feb30ca; told to reset from main onto look-options) 2+4.
+## Army (local_24621710) + croc (local_bce75838) sessions were auto-ARCHIVED on PR merge. Local Godot back on; AFL flag lifted.
+## Jets #58 critic: FIX (wings read forward-swept -> mirror; 'miss' does 30 dmg; tracer = laser -> 6-10 streaks/s;
+## gun audio 0.3 s late) -> send to jets after its playtest fixes.
+## PLAYTEST NOTES (director, 2026-10-19, exe 44f56fd; D-083 fixes first -> demo exe 2).
 1 rooftop gun chatter = typewriter, annoying -> rooftops: cap cracks/s, gap 0.25 s+, falloff, pitch var.
 2 kaiju phasing through buildings: KEEP the baby breaking in + hollowing out ("feels really cool") but smoother:
   the body breaks every voxel it overlaps as it moves, never clips through solid walls -> croc/Structure owner.
@@ -20,10 +26,7 @@ Messaging: budget one message per worker with everything; hand-offs go peer to p
 11 military + rooftops too strong from the start: ramp up (city caught unaware); reptilian emerges from a RIVER
   at the start of each run -> army ramp (ability-vfx) + river spawn (greenery/city gen).
 12 still too much smoke on camera (D-018, D-025): cut smoke opacity/count near the camera, fade by camera distance.
-Plan: stadium 5+9; rooftops 1+3; army 8+11a; greenery 11b river; croc 2+4 dash; dry-run 6+7+10. CI-only till he ends.
 CI: #76 probe-only PR (stall gone on CI: worst sim.step 6.9 ms) -> merge on green.
-## DIRECTOR PLAYTESTING NOW (~09:xx): ALL local Godot paused; CI only. AFL lead (local_8cceb00a) capped to 1 headless:
-## MESSAGE IT when the playtest ends (else it lifts at 23:30). Then lift the Kaiju pause too. Wait for his notes.
 ## EXE HANDED TO THE DIRECTOR (P7): C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe
 ## (run 39123363720; smoke 10/10, pack PASS). Next = his playtest notes (D-083: fixes first), then #55 merge, #50.
 ## Probe at 44f56fd (noisy box): settle 5.4 ms fixed; sim.step worst 43.9 ms, rooftop_fired 62 ms + 205 Nil errors
