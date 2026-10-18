@@ -295,7 +295,8 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	if sound.begins_with("footstep") or sound.begins_with("stomp"):
 		pitch *= _size_pitch
 	player.pitch_scale = pitch * (1.0 + _rng.randf_range(-jitter, jitter))
-	player.play()
+	var starts: Dictionary = _tune.get("start_s", {})  # skips a sample's silent lead-in
+	player.play(Num.f(starts.get(sound, 0.0)))
 
 
 ## The crowd's level in dB for a panic `intensity` (0..1), pulled down while Atomic Breath
