@@ -268,10 +268,11 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			var half_angle := deg_to_rad(Num.f(city["cone_half_angle_deg"]))
-			var origin := kaiju_pos
+			var aim := BreathCone.of(self)  # what BreathAim shows
+			var half_angle := Num.f(aim["half_angle"])
+			var origin: Vector2 = aim["origin"]
 			var dir := facing
-			_events.append({"type": "ability", "kind": "cone", "reach": reach})
+			_events.append({"type": "ability", "kind": "cone", "reach": reach, "from": origin})
 			hit_air = true  # fire reaches up to the helicopters
 			hit_area(
 				func(p: Vector2, r: float) -> float:
