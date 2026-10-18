@@ -6,7 +6,8 @@ extends SceneTree
 ## at once and the kaiju stands for 20 s: helicopters circling a baby kaiju that must stay in
 ## view. With --jets (D-072) a Colossus stands in its own city (jets come from the Colossus on)
 ## while a jet makes its strafing pass through it: the warning line, the rounds chewing roofs,
-## the jet flying on out; a still every half second.
+## the jet flying on out; a still every half second. --jet=<kind> sends only that kind (the
+## bomber over an Apex, the stage whose set-piece it is).
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
@@ -28,6 +29,9 @@ const LEVELS := {
 	"cephalopod": {"claws": 1, "c_grab": 3},
 }
 const COLOSSUS := {"claws": 1, "evolve1": 1, "evolve2": 1}
+const APEX := {"claws": 1, "evolve1": 1, "evolve2": 1, "evolve3": 1}
+## Seconds of rampage per kind (a slow bomber's pass is long).
+const JETS_SECONDS := {"bomber": 12}
 
 var _out := "user://tanks"
 var _species := "reptilian"
@@ -35,6 +39,7 @@ var _frame := 0
 var _target := Vector2(INF, INF)
 var _air := false
 var _jets := false
+var _kind := ""
 
 
 func _initialize() -> void:
@@ -47,6 +52,9 @@ func _initialize() -> void:
 			_air = true
 		if arg == "--jets":
 			_jets = true
+		if arg.begins_with("--jet="):
+			_jets = true
+			_kind = arg.substr(6)
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -54,7 +62,9 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var species := Content.species_def(_species)
-	var levels: Dictionary = COLOSSUS if _jets else LEVELS[_species]
+	var levels: Dictionary = LEVELS[_species]
+	if _jets:
+		levels = APEX if _kind == "bomber" else COLOSSUS
 	var tree := UpgradeTree.new(Content.upgrades(), levels, _species)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var rampage := Rampage.new()
@@ -74,8 +84,12 @@ func _run() -> void:
 		var jets := rampage.sim.strike.cfg.duplicate()
 		jets["after_chunks"] = 0
 		jets["first_delay"] = JETS_FIRST
+		if _kind != "":
+			jets["order"] = [_kind]
 		rampage.sim.strike = StrikeWing.new(rampage.sim, {"jets": jets}, Seeds.make("jets_capture"))
 	var frames := JETS_FRAMES if _jets else (AIR_FRAMES if _air else FRAMES)
+	if JETS_SECONDS.has(_kind):
+		frames = 60 * Num.i(JETS_SECONDS[_kind])
 	var every := JETS_EVERY if _jets else AIR_EVERY
 	for i: int in frames:
 		await physics_frame
