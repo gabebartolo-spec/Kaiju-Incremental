@@ -320,10 +320,15 @@
 	},
 	"body": {"speed_mult": 1.0, "hp_mult": 1.0},
 	"growth": {
+		"per_level": {
+			"army": {"tank_hp": 0.03, "tank_damage": 0.03, "start_interval": -0.01},
+			"air": {"hp": 0.03, "damage": 0.03}
+		},
 		"stages": [
 			{
 				"city": {"half": 42, "coast_z": -112, "max_height": 26},
 				"air": {"max": 0},
+				"per_level": {},
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
@@ -331,7 +336,11 @@
 					"fog_scale": 0.6, "far_haze": 0.0024},
 				"army": {"start_interval": 4.0, "tank_hp": 45, "tank_damage": 6, "tank_rubble": 6,
 					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
-				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12}
+				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12},
+				"per_level": {
+					"army": {"tank_hp": 0.02, "tank_damage": 0.02, "start_interval": -0.01},
+					"air": {"hp": 0.02, "damage": 0.02}
+				}
 			},
 			{
 				"city": {"half": 125, "coast_z": -195, "max_height": 40, "tower_chance": 0.65,
@@ -372,6 +381,39 @@
 		"leap_trail_seconds": 0.4,
 		"regen_tint": "8cffb0",
 		"deflect_tint": "cfe6ff"
+	},
+	"landmark_burst": {
+		"chunks": 360,
+		"chunk_voxels": [2.0, 3.0],
+		"chunk_speed": [3.0, 7.0],
+		"chunk_life": 0.3,
+		"chunk_shade": 0.65,
+		"chunk_dark": 0.45,
+		"chunk_dark_share": 0.3,
+		"fragments": 40,
+		"clouds": 7,
+		"cloud_alpha": 0.9,
+		"cloud_life": 0.45,
+		"cloud_max": 2.5
+	},
+	"crowd": {
+		"max": 4000,
+		"spacing": 2,
+		"seats": ["b23d32", "8e3029"],
+		"seat_match": 24,
+		"team_share": 0.6,
+		"neutral": [
+			{"shirt": "3f5f7a", "pants": "2f3440", "hair": "2a1f18"},
+			{"shirt": "c08a2e", "pants": "3b3a36", "hair": "1a1714"},
+			{"shirt": "4f6a46", "pants": "57503f", "hair": "6a4a2a"},
+			{"shirt": "6a4a6e", "pants": "2a2a2e", "hair": "3a2a20"}
+		],
+		"bob": 0.05,
+		"bob_hz": [1.2, 2.4],
+		"flee_speed": 3.0,
+		"flee_delay": 0.5,
+		"flee_slope": 0.8,
+		"exit_r": 0.86
 	},
 	"street": {
 		"person_voxel": 0.065,

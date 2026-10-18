@@ -1,0 +1,77 @@
+{
+	"pitch": {
+		"landmark": "stadium",
+		"half": [7.6, 4.6],
+		"top": 1.25,
+		"gate": [0.0, -10.5],
+		"voxel": 0.125,
+		"player_speed": 1.4,
+		"flee_speed": 2.6,
+		"kick_every": [0.4, 1.0],
+		"kick_speed": 7.0,
+		"ball_scale": 3.0,
+		"ball_glow": 0.8,
+		"sprint": 1.6,
+		"chasers": 3,
+		"drift": 0.8,
+		"drift_hz": 0.25,
+		"react": [0.1, 0.4],
+		"mouths": 12,
+		"mouth": [0.9, 0.55, 0.6]
+	},
+	"sports": [
+		{
+			"id": "afl",
+			"shape": "oval",
+			"posts": "afl",
+			"line": "f2f2ee",
+			"post_color": "f2f2ee",
+			"ball": "f2d23a",
+			"per_side": 11,
+			"kits": [
+				{"shirt": "1d3b8f", "pants": "f2f2ee", "hair": "2a1f18"},
+				{"shirt": "b52a2a", "pants": "161616", "hair": "1a1714"}
+			]
+		},
+		{
+			"id": "nfl",
+			"shape": "rect",
+			"posts": "uprights",
+			"line": "f2f2ee",
+			"post_color": "f2d03a",
+			"ball": "fff0c0",
+			"per_side": 11,
+			"kits": [
+				{"shirt": "1f5a3a", "pants": "e8e2cc", "hair": "1f5a3a"},
+				{"shirt": "e8e8e8", "pants": "1f2a5a", "hair": "1f2a5a"}
+			]
+		},
+		{
+			"id": "soccer",
+			"shape": "rect",
+			"posts": "goals",
+			"line": "f2f2ee",
+			"post_color": "f4f4f4",
+			"ball": "f4f4f4",
+			"per_side": 11,
+			"kits": [
+				{"shirt": "e0c02a", "pants": "1a1a1a", "hair": "2a1f18"},
+				{"shirt": "6a2a7a", "pants": "f2f2ee", "hair": "1a1714"}
+			]
+		},
+		{
+			"id": "cricket",
+			"shape": "oval",
+			"posts": "stumps",
+			"line": "f2f2ee",
+			"post_color": "e8dcb8",
+			"ball": "f4f4f4",
+			"strip": "b8996a",
+			"per_side": 11,
+			"kits": [
+				{"shirt": "f2f0e8", "pants": "f2f0e8", "hair": "1f2a5a"},
+				{"shirt": "f2f0e8", "pants": "f2f0e8", "hair": "6a1f2a"}
+			]
+		}
+	]
+}
