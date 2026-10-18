@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: running a check (PR #63 open; re-measure on look-options bvrm2j6wy; clip dispatch armed bibqqy81q)
+## State: running a check (bh8rshsag re-measure on 51a2d5d; awaiting LEAD's GPU slot for the re-render)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -47,6 +47,16 @@ hide spark. PR into claude/look-options after #50 merges, synced; do not merge.
 - bibqqy81q: waits for capture.yml empty, then dispatches the clip on claude/rooftop-density.
 - Then: hit gate + known-bad on the synced branch; spark_gain.py + three 2x crops; PR update.
 If #50 lands first: re-sync floors once.
+## Since PR open (head 51a2d5d)
+- f731cbe: rooftop_view hides squads whose figure would stand > 4% of screen (near-camera giants
+  found in my local clip, zoom_near_tower_0096.png). File at its 400-line cap.
+- 51a2d5d: DIRECTOR (in this session): "make sure that shooters arent firing in unison, should give
+  the impression of an improvised, unrehearsed resistance". Sim: interval_jitter 0.5 (own stream
+  Seeds.derive(rng, 0x2008), mean unchanged); view: rifles 2..14 frames ragged. Sim check (floor 53)
+  failed first with jitter 0. Fixed #53's flow_rifle_sounds check (gap left open by live volleys +
+  counted all sounds). Sound session gone; LEAD told.
+- First local clip (pre-fix): clip/ (15 volleys, 42/42 sparks, gain med 0.79). Needs re-render.
+- Base pacing on af7eb05: 0.59 h / 4.56 h; totals 183.3/200.7/475.0/690.2 (pacing_lo.txt).
 
 ## Older plan (superseded where it conflicts)
 1. When LEAD says #50 merged: merge origin/claude/look-options into claude/rooftop-density
