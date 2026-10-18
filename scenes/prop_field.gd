@@ -17,7 +17,8 @@ var stump_color := Color(0.85, 0.77, 0.6)  # every crushed tree's stump: fresh-c
 var leaf_color := Color(0.42, 0.82, 0.24)  # a crushed tree's leaf debris (saturated: dusk light)
 var bark_color := Color(0.55, 0.35, 0.17)  # and its bark debris
 var throw_speed := 1.5  # how hard debris leaves a crushed tree, out and up
-var puff_size := 1.0  # the footfall puffs at a crushed tree's stump
+var puff_size := 1.0  # the dust puffs over a crushed tree's stump (m)
+var puff_alpha := 0.3  # and how opaque each is at its peak
 ## Where crushed trees' debris flies, leaf and bark apart (bark bigger, to read); the owner adds
 ## both to the scene before it processes.
 var leaf_field := DebrisField.new(Seeds.make("tree_leaf"), 160)
@@ -139,6 +140,7 @@ func configure(city: Dictionary) -> void:
 	bark_color = Color(str(city["tree_debris_bark"]))
 	throw_speed = Num.f(city["tree_debris_speed"])
 	puff_size = Num.f(city["tree_puff_size"])
+	puff_alpha = Num.f(city["tree_puff_alpha"])
 	leaf_field.size_scale = Num.f(city["tree_debris_size"])
 	bark_field.size_scale = Num.f(city["tree_bark_size"])
 	leaf_field.lift = 0.0
@@ -146,7 +148,7 @@ func configure(city: Dictionary) -> void:
 
 
 ## Throws what crushed trees left since the last call (before the fields process this frame,
-## so the burst shows on the frame the tree goes), with two footfall puffs at each stump.
+## so the burst shows on the frame the tree goes), with two soft dust puffs over each stump.
 func throw(fx: Fx) -> void:
 	for piece: Array in debris:
 		var from: Vector3 = piece[0]
@@ -156,7 +158,7 @@ func throw(fx: Fx) -> void:
 	debris.clear()
 	for stump: Vector3 in stumps:
 		for side: float in [-1.0, 1.0]:
-			fx.tree_puff(stump + Vector3(side * puff_size * 0.4, 0.2, 0), puff_size)
+			fx.tree_puff(stump + Vector3(side * puff_size * 0.25, 0, 0), puff_size, puff_alpha)
 	stumps.clear()
 
 
@@ -192,13 +194,18 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var thrown := 0
 	var gone := Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	for k: int in ids.size():
-		if heights[k] < STUMP:
-			mm.set_instance_color(ids[k], stump_color)
+		if heights[k] < STUMP:  # the cut top shows fresh wood; the stump's sides keep their bark
+			if heights[k] == STUMP - 1:
+				mm.set_instance_color(ids[k], stump_color)
 			continue
 		mm.set_instance_transform(ids[k], gone)
 		var bark := keys[k] == "bark"
 		if k % (BARK_EVERY if bark else LEAF_EVERY) == 0:
-			debris.append([origins[k], bark_color if bark else leaf_color, flung if bark else away])
+			var from := origins[k]
+			if bark:  # scattered round the trunk, so the bark bursts instead of rising as a stack
+				var turn := float(k) * 2.39996  # golden angle: evenly spread, the same every run
+				from += Vector3(cos(turn), 0, sin(turn)) * voxel * 3.0
+			debris.append([from, bark_color if bark else leaf_color, flung if bark else away])
 			thrown += 1
 	group["stump_color"] = stump_color
 	group["debris"] = thrown
