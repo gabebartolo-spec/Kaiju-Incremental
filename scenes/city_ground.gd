@@ -10,7 +10,8 @@ const PAVE_TOP := 0.1  # blocks stand a kerb above the street
 const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
 const PAINT := 0.02
 const WATER_Y := -0.8
-const RIVER_Y := 0.03  # the river's surface, just over the street (its bridges read as road)
+const RIVER_Y := PAVE_TOP + 0.01  # the river's surface, inside its quays
+const RIVER_QUAY := 0.6  # the stone edge left showing along each bank
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
@@ -54,10 +55,11 @@ func _ready() -> void:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
 				_parking_bays(rect.grow(-0.6))
-			"river":
-				add_child(_river(walk))
+			"river":  # a stone quay; the water runs over it (_river)
+				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
 			_:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
+	_river(asphalt)
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
@@ -264,21 +266,42 @@ func _build_paint() -> MultiMeshInstance3D:
 
 ## The bay: dark, glossy water reaching to the horizon north of the quay.
 func _water() -> MeshInstance3D:
-	return _sheet(Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0), WATER_Y)
+	return _sheet(
+		Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0), WATER_Y, Look.color("water")
+	)
 
 
-## A river block: the same water, filling the block out to its kerbs.
-func _river(rect: Rect2) -> MeshInstance3D:
-	return _sheet(rect, RIVER_Y)
+## The river (CityRiver): glossy water, bluer and lighter than the bay's so it reads beside the
+## asphalt, running the length of its row inside the quays, with the cross streets carried over
+## it as bridges. A gap wider than any street is a landmark's site: the water stops at it.
+func _river(asphalt: Color) -> void:
+	var spans: Array[Rect2] = []
+	for block: Dictionary in plan["blocks"]:
+		if str(block["use"]) == "river":
+			var rect: Rect2 = block["rect"]
+			spans.append(rect)
+	spans.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.x < b.position.x)
+	var widest := Num.f(cfg["avenue_width"])
+	var run := Rect2()
+	for n: int in spans.size():
+		run = spans[n] if n == 0 else run.merge(spans[n])
+		var gap := INF if n == spans.size() - 1 else spans[n + 1].position.x - spans[n].end.x
+		if gap > widest:
+			var water := run.grow_individual(0, -RIVER_QUAY, 0, -RIVER_QUAY)
+			add_child(_sheet(water, RIVER_Y, Look.color("river")))
+			run = spans[n + 1] if n + 1 < spans.size() else run
+		else:
+			var bridge := Rect2(spans[n].end.x, run.position.y, gap, run.size.y)
+			_slab(bridge, Vector2(RIVER_Y + 0.02, 0.1), asphalt)
 
 
-## Dark, glossy water over rect (x, z) at height y.
-func _sheet(rect: Rect2, y: float) -> MeshInstance3D:
+## Glossy water of `color` over rect (x, z) at height y.
+func _sheet(rect: Rect2, y: float, color: Color) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = rect.size
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Look.color("water")
+	mat.albedo_color = color
 	mat.roughness = 0.12
 	mat.metallic_specular = 0.8
 	plane.material = mat
