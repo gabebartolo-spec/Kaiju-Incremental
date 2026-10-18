@@ -167,6 +167,34 @@ func _spaced(at: Vector2, others: Array[Vector2], arc: float, gap: float) -> boo
 	return true
 
 
+## Does the route from `from` through `points` pass inside the danger radius (any nearer the
+## kaiju than `from` itself, when it already stands inside)?
+func crosses_danger(from: Vector2, points: Array) -> bool:
+	var k := sim.kaiju_pos
+	var inner := minf(convoy.danger(), from.distance_to(k) - 0.5)
+	var a := from
+	for b: Vector2 in points:
+		if Geometry2D.get_closest_point_to_segment(k, a, b).distance_to(k) < inner:
+			return true
+		a = b
+	return false
+
+
+## Straight back along the road under the tank, away from the kaiju, to `follow` beyond the
+## danger radius (no further than that road's end): [path, legs], empty if it is already out.
+func fall_back(tank: RampageSim.Tank, r: ConvoyRoute) -> Array:
+	var e := graph.road_under(tank.pos, r.edge)
+	var axis := graph.axis(e)
+	var away := axis if axis.dot(tank.pos - sim.kaiju_pos) >= 0.0 else -axis
+	var na := graph.nodes[graph.edge_a[e]]
+	var nb := graph.nodes[graph.edge_b[e]]
+	var end := maxf((na - tank.pos).dot(away), (nb - tank.pos).dot(away))
+	var want := convoy.danger() + Num.f(cfg["follow"]) - tank.pos.distance_to(sim.kaiju_pos)
+	if want <= 0.0 or end <= 0.0:
+		return [[], []]
+	return [[tank.pos + away * minf(want, end)], [e]]
+
+
 ## Is the line from `from` to `to` (stopping short of the kaiju's body) clear of standing
 ## buildings at least cover x the kaiju's height (a lower one it fires over)?
 func clear_line(from: Vector2, to: Vector2) -> bool:

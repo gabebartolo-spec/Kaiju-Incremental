@@ -10,15 +10,20 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_military.gd -- --out=<dir> [--seconds=18]
 
-const SHOTS: Array[int] = [300, 480, 600, 720, 840, 960, 1060]
+const SHOTS: Array[int] = [300, 480, 600, 720, 780, 840, 900, 960, 1060]
 ## Where columns call in from, metres from the kaiju (the game's is army.spawn_radius).
 const CLIP_SPAWN := 44.0
 ## Where the kaiju stands: a crossing at the north end of the Behemoth city (the same spot as
 ## round 3's clip, so the critic compares like with like).
 const CLIP_AT := Vector2(5, -70)
+## Mid-clip the kaiju strides east down the avenue at the tanks posted there (frames, at 60 fps),
+## so the take shows them fall back out of its reach and post again.
+const WALK_FRAMES := Vector2i(540, 780)
+const WALK := Vector2(1, 0)
 
 var _out := "user://military"
 var _seconds := 18.0
+var _frame := 0
 
 
 func _initialize() -> void:
@@ -51,6 +56,7 @@ func _run() -> void:
 	sim.army["start_interval"] = 1.6
 	sim.army_units._spawn_timer = 0.3
 	for i: int in roundi(_seconds * 60.0):
+		_frame = i
 		await physics_frame
 		if SHOTS.has(i):
 			var path := _out.path_join("military_%04d.png" % i)
@@ -58,7 +64,12 @@ func _run() -> void:
 	quit()
 
 
-## The kaiju stands side-on to the camera.
+## The kaiju stands side-on to the camera, and strides at the tanks mid-clip (walk).
 func _input(sim: RampageSim) -> Dictionary:
 	sim.facing = Vector2(1, 0)
-	return {"move": Vector2.ZERO}
+	return {"move": walk(_frame)}
+
+
+## The clip's move at physics frame `frame`.
+static func walk(frame: int) -> Vector2:
+	return WALK if frame >= WALK_FRAMES.x and frame < WALK_FRAMES.y else Vector2.ZERO

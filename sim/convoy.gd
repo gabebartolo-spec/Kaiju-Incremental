@@ -180,6 +180,10 @@ func _plan(tank: RampageSim.Tank, r: ConvoyRoute, urgent: bool) -> void:
 		start["node"] = walk[1]
 	var way := graph.waypoints(tank.pos, start, chain, goal)
 	var points: Array = way[0]
+	if posts.crosses_danger(tank.pos, points):  # never past the kaiju's feet: back off instead
+		way = posts.fall_back(tank, r)
+		points = way[0]
+		goal["at"] = points[0] if not points.is_empty() else Vector2(INF, INF)
 	var legs: Array = way[1]
 	r.path.assign(points)
 	r.edges.assign(legs)
@@ -306,12 +310,17 @@ func _sweep_fits(tank: RampageSim.Tank, at: Vector2, to: Vector2) -> bool:
 	return true
 
 
-## At its post a tank squares its hull to its road (the nearer way); only its turret turns.
+## At its post a tank squares its hull to its road (the nearer way; parked at a crossing, the
+## road its hull lies nearer); only its turret turns.
 func _settle(tank: RampageSim.Tank, r: ConvoyRoute, rate: float) -> void:
 	if r.edge < 0 or r.front == Vector2.ZERO:
 		return
-	var axis := graph.axis(r.edge)
-	var want := axis if axis.dot(r.front) >= 0.0 else -axis
+	var want := Vector2.ZERO
+	for e: int in graph.roads_at(graph.cell_of(tank.pos)) + PackedInt32Array([r.edge]):
+		var axis := graph.axis(e) * (1.0 if graph.axis(e).dot(r.front) >= 0.0 else -1.0)
+		var on := e == r.edge or r.path.is_empty() and graph.on_edge(tank.pos, e)
+		if on and (want == Vector2.ZERO or axis.dot(r.front) > want.dot(r.front)):
+			want = axis
 	var front := r.front.rotated(clampf(r.front.angle_to(want), -rate, rate))
 	if _fits(tank, tank.pos, front):
 		r.front = front

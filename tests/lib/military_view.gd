@@ -3,9 +3,13 @@ extends "res://tests/lib/military_base.gd"
 ## capture_military.gd: a Behemoth at its crossing, columns calling in close) runs as the game
 ## runs it, measured every sim step through the drawn models: no two tanks' drawn parts (hull,
 ## turret, gun, from the voxels through the models' own transforms) ever touch, and no driving
-## hull lies more than DRIVE_DEG off its road. Prints the probe table (a VIEW line) for the PR.
+## hull lies more than DRIVE_DEG off its road; mid-clip the kaiju strides at the tanks and none
+## comes inside its danger radius (they fall back), and no tank's hull meets a car still on its
+## wheels (cars keep out of the tanks' way). Prints the probe table (a VIEW line) for the PR.
 
+const Clip := preload("res://tools/capture/capture_military.gd")
 const VIEW_SECONDS := 18.0
+const CAR_HALF := Vector2(1.0, 0.5)  # a car as drawn, half length x half width (m)
 
 var _shapes := {}  # tank part -> its footprint (_tank_shapes)
 
@@ -18,10 +22,16 @@ func _check_view() -> void:
 	print(
 		(
 			(
-				"\nVIEW Behemoth clip: tank drawn gap min %.2f m, touching %d pair-steps, yaw while"
-				+ " moving max %.1f deg (%d tank-steps)"
+				(
+					"\nVIEW Behemoth clip: tank drawn gap min %.2f m, touching %d pair-steps, yaw while"
+					+ " moving max %.1f deg (%d tank-steps)"
+				)
+				% [got["gap"], got["touching"], got["yaw"], got["moving"]]
 			)
-			% [got["gap"], got["touching"], got["yaw"], got["moving"]]
+			+ (
+				", closest to the kaiju %.1f m (danger %.1f), tank on a car %d tank-steps"
+				% [got["closest"], got["danger"], got["on_car"]]
+			)
 		)
 	)
 	check(
@@ -29,6 +39,16 @@ func _check_view() -> void:
 		(
 			"in the game view no two tanks' drawn parts touch (%d) and none drives skewed (%.1f deg)"
 			% [got["touching"], got["yaw"]]
+		)
+	)
+	check(
+		Num.f(got["closest"]) >= Num.f(got["danger"]) - 0.5 and Num.i(got["on_car"]) == 0,
+		(
+			(
+				"in the game view the kaiju strides at the tanks and they fall back (closest %.1f m,"
+				+ " danger %.1f m); no tank's hull meets a car (%d tank-steps)"
+			)
+			% [got["closest"], got["danger"], got["on_car"]]
 		)
 	)
 
@@ -40,13 +60,17 @@ func _view_run() -> Dictionary:
 	await physics_frame
 	_clip_overrides(rampage.sim)
 	var roads := _roads(rampage.sim)
-	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0}
+	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}
+	got["danger"] = rampage.sim.army_units.convoy.danger()
 	var last := {}
 	for i: int in roundi(VIEW_SECONDS * 60.0):
+		var frame := i
+		rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Clip.walk(frame)}
 		await physics_frame
 		rampage.sim.facing = Vector2(1, 0)
 		if i % 4 == 0:  # every sim step's worth (sim steps at 15 Hz)
 			_measure_tanks(rampage, roads, last, got)
+			_measure_cars(rampage, got)
 	rampage.queue_free()
 	await process_frame
 	return got
@@ -83,6 +107,24 @@ func _measure_tanks(rampage: Rampage, roads: Dictionary, last: Dictionary, got: 
 			got["touching"] = Num.i(got["touching"]) + (1 if g <= 0.0 else 0)
 
 
+## How near the kaiju the tanks come, and any tank hull over a car still on its wheels.
+func _measure_cars(rampage: Rampage, got: Dictionary) -> void:
+	var sim := rampage.sim
+	var street := rampage._city.street
+	for tank: RampageSim.Tank in sim.tanks:
+		got["closest"] = minf(Num.f(got["closest"]), tank.pos.distance_to(sim.kaiju_pos))
+		var u := sim.army_units.convoy.front(tank.id)
+		if street == null or u == Vector2.ZERO:
+			continue
+		var half := Vector2(HULL_LENGTH * 0.5, HULL_HALF_WIDTH)
+		for car: Traffic.Car in street.traffic.cars:
+			var d := car.pos - tank.pos
+			var lx := absf(d.dot(u)) - half.x - CAR_HALF.x
+			var ly := absf(d.dot(u.orthogonal())) - half.y - CAR_HALF.y
+			if not car.crushed and maxf(lx, ly) <= 0.0:
+				got["on_car"] = Num.i(got["on_car"]) + 1
+
+
 ## The hull's angle off the road it stands on (the least of them at a crossing).
 func _yaw_off_road(p: Vector2, front: Vector2, roads: Dictionary) -> float:
 	var best := 90.0
@@ -108,7 +150,7 @@ func _view_scene() -> Rampage:
 	var rampage := Rampage.new()
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	rampage.setup(species, stats, layout, 1)
-	rampage.sim.kaiju_pos = Vector2(5, -70)  # capture_military.CLIP_AT
+	rampage.sim.kaiju_pos = Clip.CLIP_AT
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	return rampage
 
