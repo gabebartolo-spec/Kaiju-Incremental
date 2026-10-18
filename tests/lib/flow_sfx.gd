@@ -3,6 +3,8 @@ extends RefCounted
 ## room under its 400-line cap): the Master limiter, the SFX bus, stomps landing on foot plants
 ## and the size-tier step pitch. Sound PRs add their own checks here.
 
+const FlowSounds := preload("res://tests/lib/flow_sounds.gd")
+
 
 ## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
 ## plays its tier and the ground crack instead of a footstep; steps pitch by size tier.
@@ -33,6 +35,8 @@ static func run(root: Node, check: Callable) -> void:
 		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
 		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
 	)
+	FlowSounds.crowd(check, sfx)
+	preload("res://tests/lib/flow_step_sounds.gd").check_walk(check, sfx)
 	var pitches: Array[float] = []
 	for tier: int in [1, 4]:
 		sfx.set_size_tier(tier)
@@ -43,4 +47,6 @@ static func run(root: Node, check: Callable) -> void:
 		pitches[0] > pitches[1] * 1.2,
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
+	FlowSounds.regen(check, sfx)
+	preload("res://tests/lib/flow_voice_sounds.gd").check_tail(check, sfx)
 	sfx.free()

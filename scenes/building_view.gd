@@ -30,7 +30,10 @@ var _slab_mat: ShaderMaterial
 ## built here, so a whole city can be built across worker threads before entering the tree.
 func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
 	b = p_building
-	voxels = BuildingVoxels.new(b, base, party)
+	if b.landmark == "":
+		voxels = BuildingVoxels.new(b, base, party)
+	else:
+		voxels = LandmarkVoxels.new(b, base)
 	mesher = BuildingMesher.new(voxels)
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))
@@ -41,6 +44,11 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	_slabs = _instance(mesher.slabs, _slab_mat)
 	_slabs.visible = false
 	add_child(_slabs)
+	if voxels is LandmarkVoxels and not (voxels as LandmarkVoxels).ground.cells.is_empty():
+		var ground := (voxels as LandmarkVoxels).ground
+		var mi := MeshInstance3D.new()
+		mi.mesh = ground.bake({}, BuildingVoxels.VOXEL, voxels.origin(), 0.0)
+		add_child(mi)
 
 
 ## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).
@@ -97,9 +105,12 @@ func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
 
 ## Bites ragged edges round a hole: some standing neighbours of the broken chunks lose a share
 ## of their voxels, so walls look chewed rather than cut along the chunk grid. Cosmetic only;
-## the sim's chunks are unchanged.
+## the sim's chunks are unchanged. Not for a landmark: its smooth walls would read as speckled
+## noise; its arcs (Arcs) come down whole instead.
 func chip(broken: Array[Vector3i], rng: RandomNumberGenerator) -> Array[Dictionary]:
 	_slabs.visible = true
+	if b.landmark != "":
+		return []
 	var bitten: Array[Vector3i] = []
 	for c: Vector3i in broken:
 		for d: Vector3i in BuildingMesher.NEIGHBOURS:

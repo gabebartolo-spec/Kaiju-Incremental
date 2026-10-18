@@ -13,6 +13,8 @@ var d: int
 var h: int
 var max_hp: float
 var alive_count: int
+## A ring landmark's arcs (Arcs): settle() first brings down every arc that lost a chunk.
+var arcs: Arcs
 var _hp: PackedFloat32Array
 
 
@@ -25,6 +27,18 @@ func _init(p_w: int, p_d: int, p_h: int, chunk_hp: float) -> void:
 	_hp.resize(w * d * h)
 	_hp.fill(chunk_hp)
 	alive_count = w * d * h
+
+
+## Keeps only the chunks a shape marks: one string per floor, a "1" per chunk that exists,
+## x fastest then z (a landmark's baked chunks). Every other chunk is gone from the start.
+func keep(layers: Array) -> void:
+	for y: int in h:
+		var row := str(layers[y]) if y < layers.size() else ""
+		for z: int in d:
+			for x: int in w:
+				var k := x + z * w
+				if k >= row.length() or row[k] != "1":
+					remove(Vector3i(x, y, z))
 
 
 func index(c: Vector3i) -> int:
@@ -69,6 +83,12 @@ func top_below(x: int, z: int, below_y: int) -> int:
 ## {"cells": Array[Vector3i], "kind": "drop"|"topple", "pivot": Vector3 (local), "dir": Vector2i}.
 func settle() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
+	if arcs != null:
+		for part: Dictionary in arcs.shed(self):
+			var fallen: Array[Vector3i] = part["cells"]
+			for c: Vector3i in fallen:
+				remove(c)
+			out.append(part)
 	var grounded := {}
 	var frontier: Array[Vector3i] = []
 	for x: int in w:
