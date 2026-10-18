@@ -66,6 +66,9 @@ session smokes it, and the director plays again.
   the same floors shape (expected_checks.txt conflicted on every merge tonight): propose it to the director post-demo.
 
 ## Decisions to log (next board PR)
+D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
+licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
+$12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
 D-091 (director): no building is 'too strong' for the baby; big ones just take longer, and he can tear out the base
 and topple them (replaces the tier gate + 'TOO STRONG'; evolve1 text changes). Owner: croc-contact-dash.
 D-089 (director): the demo exe waited for the #75 stall fix. D-090 (director): stadium rubble_bonus 4x -> 1.5x
