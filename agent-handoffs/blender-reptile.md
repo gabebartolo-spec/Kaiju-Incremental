@@ -1,14 +1,20 @@
-# blender-reptile handoff, 2026-10-18 12:15
-## State: running a check (capture chain bagkdqt14, queued behind military-ai 39085086356).
-## Director 10:5x: baby + adolescent APPROVED (D-073); slow stage 1 to a heavy toddler (D-074).
-## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
+# blender-reptile handoff, 2026-10-18 13:00
+## State: running a check (hp sweep bytdtcuz7: speed 0.6, hp_mult 1.0/1.5/2.0/2.5, pacing --runs=60
+## -> /tmp/sweep_<h>.txt; it rewrites data/tuning.json per step and restores /tmp/tuning_base.json at
+## the end - DO NOT commit tuning.json while it runs). Capture chain bagkdqt14 queued behind military-ai.
+## Director 10:5x: baby + adolescent APPROVED (D-073). Lead = "Kaiju: Lead" local_106fc100-d2a4-...
+## Art to the lead only.
 
-## D-074 COMMITTED + pushed 80b8aa4 (all 9 suites green; growth floor 25; young-pace check shown
-## failing at 1.0). Pacing evolve1 0.58 h -> 0.95 h; defeats 19/28 -> 30/45, city at evolve1 94% ->
-## 37% - flagged to lead 12:12 with options (a) ship 0.35 (default) (b) stage-0 hp/dmg (c) 0.5.
-## Captures: chain bagkdqt14 (scratchpad ci10/chain.sh): jaw_baby, jaw_adolescent (side, 14.5-15.6),
-## then game cam baby, adolescent; each waits for a free capture queue. Outputs scratchpad ci10/.
-## PR body draft: scratchpad ev/pr_p3.md (fill JAWS, CLIPS). Sim review needed (kaiju-sim-review).
+## D-074 REVISED (director 11:4x via lead 12:53): speed_mult ~0.6 + more stage-1 hp, tuned in data so
+## time to evolve1 stays ~0.6 h and ~half the early runs end in defeat. Re-pace; before/after table in
+## the PR. Order: P3 PR lands BEFORE #36 (army scales); #36 tunes its young stage against my numbers.
+## Pushed 80b8aa4 had the old 0.35 "move" section. Uncommitted now: section renamed "body"
+## {speed_mult, hp_mult} (top-level default 1.0/1.0; stage 0 0.6 / hp TBD from sweep); Growth.stage_stats
+## scales hp too; growth test adds an hp check (floor 25 -> 26; it FAILS at hp_mult 1.0 = shown failing).
+## Baseline (x1.0): evolve1 0.58 h, 28 runs, 19/28 defeated, 94% city. Old 0.35: 0.95 h, 30/45, 37%.
+## Next: pick hp_mult, full pacing run for the table, suites, commit, push BEFORE the chain reaches the
+## game-cam captures (jaw captures don't depend on tuning), jaw verdict, PR (body: scratchpad ev/pr_p3.md,
+## update the D-074 text + table).
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
