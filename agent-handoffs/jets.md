@@ -1,5 +1,5 @@
 # Jets handoff, 2026-10-18
-## State: awaiting lead (dodge-window question A/B/C sent; captures held until the demo chain)
+## State: available (D-080 done on all three branches; captures held until the demo chain)
 ## Task
 D-072 (director): all four jets go in, each its own PR into claude/look-options, report to
 "Kaiju: Lead". Director's answers (log under D-072): strikes wreck buildings as collateral but
@@ -26,12 +26,15 @@ Each branch: all 10 suites green locally + self-test (jets 12 / 17 / 18). Known-
 the dodge, warning and collateral checks. Headless dry runs (throwaway scripts, not committed):
 Colossus interceptor 240->210 hp, 47 roof chunks; attacker bombs land; Apex bomber at 27.4 under
 a camera at 40, 12 bombs.
-## Open question (LEAD -> director)
-Apex kaiju can't dodge (body radius 10.9 u vs a fixed 1.6 s warning; pacing --dodge: 14/19 Apex
-runs defeated, all 286 hits mid-dodge). Options sent: (A) warning lead = time to walk clear
-(body radius + blast) at its speed + 1 s [recommended]; (B) keep 1.6 s; (C) hit the body's core.
-Balance: don't tune against today's numbers; after #36 merges, sync and send LEAD the table
-(pacing.gd per species, jets off / on / on+--dodge: Colossus + Apex defeats, hours, jet hits).
+## Decisions built
+D-080 (director picked A): warning lead = (body radius + blast) / kaiju speed + react_seconds
+(1 s); a jet enters further out when the lead needs room (StrikeWing.warn_lead, Jet.lead,
+Jet.approach). tuning jets.react_seconds replaces warn_seconds.
+## Balance (pre-#36, reptilian pacing: defeats / jet hits per run)
+Colossus: off 0/66, 0 | on 0/65, 0.5 | dodging 3/69, 0.8.  Apex: off 0/18, 0 | on 0/18, 6.9 |
+dodging 0/18, 2.0. After #36 merges: sync all three, rerun pacing.gd per species with
+--no-jets / default / --dodge and send LEAD the full table (Colossus + Apex defeats, hours, hits).
+Bomb damage 8 / attacker rounds 8 are provisional (don't tune against today's numbers).
 ## Next
 When the watcher says the queue is clear (and nothing is in_progress): one capture at a time,
 1080p --movie: PR1 `capture_tanks.gd -- --species=reptilian --jets` (ref jets-interceptor);
@@ -50,5 +53,6 @@ below until it merges, or look-options after). Report each to LEAD.
 - Never raise chunks_destroyed past a tiny test city (it ends the run); lower the threshold.
 - Merging stacked test files can drop a closing paren at the hunk edge: compile before commit.
 - `git stash` is denied here (even `stash list`); don't use it.
+- Suite files near 400 lines: jets fixtures + bomb checks live in tests/lib/jets_base.gd.
 - Before every push: `git ls-files '*.gd' | xargs python -m gdtoolkit.formatter --check` and
   `... gdtoolkit.linter` (CI's gdlint job runs both; gdformat on Windows writes CRLF: sed it).
