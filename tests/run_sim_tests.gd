@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 
 const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
+const SimAlert := preload("res://tests/lib/sim_alert.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -26,6 +27,7 @@ func run_checks() -> void:
 	_check_species_differ()
 	_check_army()
 	SimRooftops.new(check, _sim, _autoplay).run()
+	SimAlert.new(check, _sim).run()
 	_check_save_migrate()
 	_check_looks()
 	_check_growth()

@@ -183,7 +183,7 @@
 		"escalation_per_chunk": 0.002,
 		"threat_per_chunk": 0.0005,
 		"young_damage_mult": 2.0,
-		"alert": {"delay": 4.0, "ramp_seconds": 30.0},
+		"alert": {"delay": 2.0, "ramp_seconds": 20.0},
 		"rooftop": {
 			"min_height": 4,
 			"chance": 1.0,

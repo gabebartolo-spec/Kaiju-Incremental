@@ -9,7 +9,9 @@ extends RefCounted
 ## goes (broken, dropped or toppled) or under any attack whose splash reaches its roof floor.
 ## The city is caught unaware (director playtest, D-083): an alert level climbs from 0 to 1 over
 ## army.alert's ramp_seconds after its delay; squads wake one by one across the ramp and the
-## tank and helicopter call-ins run at the alert level's pace.
+## tank and helicopter call-ins run at the alert level's pace. The clock runs only while the army
+## steps, so a run that opens with the kaiju rising from the river (Emergence holds the army
+## back) starts the ramp on landing.
 
 
 ## Armed citizens holding a roof: they stand on chunk `cell` of building `building`.
@@ -61,6 +63,11 @@ func alert() -> float:
 	if ramp <= 0.0:
 		return 1.0 if _alert_t >= 0.0 else 0.0
 	return clampf(_alert_t / ramp, 0.0, 1.0)
+
+
+## Fully roused at once, every squad awake (tests and captures of the firing itself).
+func rouse() -> void:
+	_alert_t = Num.f(cfg["alert"]["ramp_seconds"])
 
 
 func step(dt: float) -> void:

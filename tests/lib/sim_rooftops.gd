@@ -213,12 +213,13 @@ func _squad_spots(sim: RampageSim) -> Array[Vector3i]:
 	return out
 
 
-## Keeps only the first squad, ready to fire.
+## Keeps only the first squad, ready to fire, the city fully roused.
 func _one_squad(sim: RampageSim) -> RampageSim:
 	if not sim.army_units.squads.is_empty():
 		var first := sim.army_units.squads[0]
 		first.cooldown = 0.0
 		sim.army_units.squads.assign([first])
+	sim.army_units.rouse()
 	return sim
 
 

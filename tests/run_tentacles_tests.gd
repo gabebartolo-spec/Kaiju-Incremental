@@ -229,6 +229,7 @@ func _check_caps() -> void:
 	var sim := _sim("reptilian", {}, [], Vector2(0, 0))
 	sim.chunks_total = 1000000  # a big-city stand-in, so the run cannot end as "fallen"
 	sim.chunks_destroyed = Num.i(air["after_chunks"])
+	sim.army_units.rouse()
 	var first := _run(sim, 0.2, Vector2.ZERO)
 	var called := first.has("heli_spawned") and sim.air.helis.size() == 1
 	_run(sim, Num.f(air["interval"]) * 1.5, Vector2.ZERO)  # a long spell at the cap first
@@ -247,6 +248,7 @@ func _check_caps() -> void:
 	var swarm := _sim("reptilian", {"hide": 5, "titan_hide": 5}, [], Vector2(0, 0))
 	swarm.chunks_total = 1000000
 	swarm.chunks_destroyed = 99999
+	swarm.army_units.rouse()
 	var most := 0
 	for i: int in 30 * 60:
 		swarm.step(DT, Vector2.ZERO, false)
