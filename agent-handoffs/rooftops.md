@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: awaiting lead (round 2 proof sent: notes round2/PROOF_round2.md; rifle loudness call open)
+## State: awaiting lead (round 3 audio pushed c936f33; fresh critic on round 2 visuals running at LEAD)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -36,9 +36,10 @@ tier so each stage's damage per run holds within Â±5%; reptilian pacing within Â
 - Round 2 proof rendered LOCALLY (the director allowed it; LEAD dropped the baton: up to 4 windowed
   renders). round2/local_clip (6 s, -6 dB) and local_ab (12 s, -2 then -6 dB) + crops + reports.
   The CI run 39109733215 timed out (llvmpipe).
-- Audio finding: the rifle sits 2-5 dB under the kaiju's own stomp bed; -2 vs -6 makes no
-  measurable difference. The 0.3 s sfx gap gives a 0.30-0.33 s crack rhythm. Waiting on LEAD:
-  louder or brighter sample / 0 to +3 dB / jittered gap.
+- Round 3 audio (LEAD call, c936f33): rifle -6 -> +2 dB, sfx min_interval rifle 0.3 -> 0.1,
+  new sfx start_s {rifle: 0.13} (rifle.ogg has ~140 ms of silent lead-in, so cracks lagged the
+  flash ~0.2 s). Clip: notes round3/clip (-18.9 LUFS, -2.7 dBTP, crack about stomp level to +3).
+  Suites all 9 pass. Note: run_tests.sh needs GODOT=<console exe>.
 - Pacing posted on #63: evolve1 0%, tree -4.4%, totals +0.4/-0.3/+3.6/-0.5%. PR body is
   complete (no placeholders left).
 - To LEAD (not mine): city_view.gd:208 normalize errors + 171 collapse sounds at a mass collapse.
