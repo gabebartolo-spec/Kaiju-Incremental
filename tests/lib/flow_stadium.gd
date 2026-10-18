@@ -2,7 +2,8 @@ extends RefCounted
 ## D-078 for the flow suite: a match plays in the stadium (one sport of four, players of two
 ## kits and a ball kicked about), and the moment the stadium loses its first chunk every player
 ## runs for the tunnels; once out (or crushed) they are gone from the pitch. The stands are full
-## of seated fans (director 2026-10-18) who stand and stream out of the exits with the players.
+## of seated fans (director 2026-10-18) who stand and stream out of the exits with the players,
+## and a section of its stands bursts where it stands, never swinging over the pitch.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const PLAY_FRAMES := 240
@@ -74,8 +75,18 @@ static func run(tree: SceneTree, check: Callable) -> void:
 			% (crowd.running() if crowd != null else 0)
 		)
 	)
+	var view: CityView = GuiInput.find_script(rampage, CityView)
+	var falls := {"burst": 0, "over": 0}
 	for _i: int in FLEE_FRAMES:
 		await tree.physics_frame
+		_watch_falls(view, stadium, falls)
+	check.call(
+		falls["burst"] > 0 and falls["over"] == 0,
+		(
+			"its stands burst in place: %d sections burst, %d swung over the pitch"
+			% [falls["burst"], falls["over"]]
+		)
+	)
 	check.call(
 		game.escaped > 0 and game.on_pitch() < start,
 		(
@@ -92,3 +103,23 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	)
 	rampage.queue_free()
 	await tree.process_frame
+
+
+## Each falling piece once: a LandmarkBurst, or (over) a stadium section toppling toward its
+## middle, over the pitch.
+static func _watch_falls(view: CityView, stadium: RampageSim.Building, seen: Dictionary) -> void:
+	var falling: Dictionary = view.get("_falling")
+	for id: int in falling:
+		if seen.has(id):
+			continue
+		seen[id] = true
+		var f: Dictionary = falling[id]
+		var node: Node3D = f["node"]
+		if node is LandmarkBurst:
+			seen["burst"] += 1
+		elif str(f["kind"]) == "topple" and node.has_meta("pivot"):
+			var pivot: Vector3 = node.get_meta("pivot")
+			var dir: Vector2 = f["dir"]
+			var middle := Vector2(stadium.x - pivot.x, stadium.z - pivot.z)
+			var inside := absf(middle.x) < stadium.w * 0.5 and absf(middle.y) < stadium.d * 0.5
+			seen["over"] += 1 if inside and dir.dot(middle) > 0.0 else 0

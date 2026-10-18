@@ -2,11 +2,12 @@ class_name StadiumMatch
 extends Node3D
 ## A match on the stadium's pitch (D-078): one sport per run (data/sports.json), picked from a
 ## presentation stream seeded off the run, its markings and posts as voxel props, two kits of
-## street people (VoxelPerson) and a ball. Players drift toward the ball, which is kicked or
-## passed about; no rules. The moment the stadium loses its first chunk every player runs from
-## the kaiju for the tunnel farthest from it and is gone once through; stomps crush them like
-## any civilian. The stands hold the crowd (StadiumCrowd), who flee with the players.
-## Presentation only: the sim and the economy never know any of them exist.
+## street people (VoxelPerson) and a ball. Players spread loosely over the field and never
+## stand still: the few nearest chase the ball, the nearest kicks it on, the rest drift about
+## their spots. The moment the stadium loses its first chunk every player, after a moment's
+## shock, runs for one of the tunnel mouths round the pitch away from the kaiju and is gone once
+## inside; stomps crush them like any civilian. The stands hold the crowd (StadiumCrowd), who
+## flee with them. Presentation only: the sim and the economy never know any of them exist.
 
 ## The poses a player uses: a jog while playing, the arms-up run when fleeing.
 const POSES: Array[int] = [
@@ -16,7 +17,9 @@ const SKINS: Array[String] = ["e0b48e", "8d5a3b", "c58c5f"]
 const JOG_HZ := 5.0
 const RUN_HZ := 6.0
 const REACH := 0.6  # how near a player must be to the ball to play it
-const TUNNEL_REACH := 0.4
+const JOSTLE := 2.0  # how fast (rad/s) the players at the ball circle it
+const MOUTH_REACH := 0.15  # a fleeing player is gone this near the far end of a tunnel mouth
+const MOUTH_COLOR := Color("0b0b0d")
 
 ## Tests and captures: the sport to play instead of the seeded pick ("" = pick).
 static var force_sport := ""
@@ -31,6 +34,7 @@ class Player:
 	var skin := 0
 	var phase := 0.0
 	var pull := 0.5
+	var wait := 0.0
 	var exit := Vector2.ZERO
 
 
@@ -38,6 +42,8 @@ var sim: RampageSim
 var sport: Dictionary
 var players: Array[Player] = []
 var crowd: StadiumCrowd
+## Inside each tunnel mouth round the pitch's edge: where a fleeing player runs to.
+var mouths: Array[Vector2] = []
 var fleeing := false
 ## Running totals (tests and the capture tool read them).
 var escaped := 0
@@ -89,6 +95,7 @@ func _ready() -> void:
 	props.mesh = PitchProps.mesh(sport, _half, Num.f(_cfg["voxel"]))
 	props.position = Vector3(_centre.x, _top, _centre.y)
 	add_child(props)
+	_add_mouths()
 	var voxel := Num.f(Content.section("street")["person_voxel"])
 	var per_side := Num.i(sport["per_side"])
 	var kits: Array = sport["kits"]
@@ -111,35 +118,55 @@ func _ready() -> void:
 	var field := Vector2(PitchProps.field(sport, _half)) / PitchProps.RES
 	for team: int in kits.size():
 		for n: int in per_side:
-			_add_player(team, n, per_side, field)
+			_add_player(team, n, field)
 	_ball = _centre
 	_ball_from = _centre
 	_ball_to = _centre
 	_ball_node = MeshInstance3D.new()
-	_ball_node.mesh = _ball_mesh(voxel)
+	_ball_node.mesh = _ball_mesh(voxel * Num.f(_cfg["ball_scale"]))
 	add_child(_ball_node)
 	if StadiumCrowd.enabled:
 		crowd = StadiumCrowd.new(sim, _index, kits, _rng)
 		add_child(crowd)
 
 
-## A formation: each side holds its own half in rows, nearer its end the lower its number.
-func _add_player(team: int, n: int, per_side: int, field: Vector2) -> void:
+## Loose positions over the field, each side mostly in its own half; the first player starts by
+## the ball in the middle so the game opens with a kick.
+func _add_player(team: int, n: int, field: Vector2) -> void:
 	var p := Player.new()
-	var rows := 4
-	var row := n % rows
-	var col := floori(float(n) / rows)
-	var cols := ceili(float(per_side) / rows)
 	var end := -1.0 if team == 0 else 1.0
-	var x := end * field.x * (0.85 - 0.75 * float(row) / (rows - 1))
-	var z := field.y * (-0.75 + 1.5 * (float(col) + 0.5) / cols) + _rng.randf_range(-0.3, 0.3)
-	p.home = _centre + Vector2(x, z)
+	var at := Vector2(-0.04, 0.0)
+	while n + team > 0 and (at.x == -0.04 or at.length() > 0.9):  # inside the oval's edge
+		at = Vector2(end * _rng.randf_range(-0.2, 0.85), _rng.randf_range(-0.85, 0.85))
+	p.home = _centre + at * field
 	p.pos = p.home
 	p.team = team
 	p.skin = _rng.randi_range(0, SKINS.size() - 1)
 	p.phase = _rng.randf()
-	p.pull = _rng.randf_range(0.2, 0.6)
+	p.pull = _rng.randf_range(0.15, 0.45)
 	players.append(p)
+
+
+## Dark tunnel mouths evenly round the pitch's edge; each leads a short way under the stands to
+## the point a fleeing player runs to.
+func _add_mouths() -> void:
+	var count := Num.i(_cfg["mouths"])
+	var size: Array = _cfg["mouth"]
+	var box := BoxMesh.new()
+	box.size = Vector3(Num.f(size[0]), Num.f(size[1]), Num.f(size[2]))
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = MOUTH_COLOR
+	mat.roughness = 1.0
+	box.material = mat
+	for k: int in count:
+		var out := Vector2.from_angle((k + 0.5) * TAU / count)
+		var edge := _centre + out * _half
+		var mouth := MeshInstance3D.new()
+		mouth.mesh = box
+		mouth.position = Vector3(edge.x, _top + box.size.y * 0.5, edge.y)
+		mouth.rotation.y = atan2(-out.x, -out.y)
+		add_child(mouth)
+		mouths.append(edge + out * box.size.z * 0.5)
 
 
 ## Players still on the pitch.
@@ -174,61 +201,76 @@ func _process(delta: float) -> void:
 	_draw()
 
 
-## The wall gave: everyone makes for the tunnel farthest from the kaiju.
+## The wall gave: after a moment's shock each player makes for one of the two nearest tunnel
+## mouths on the side away from the kaiju.
 func _panic() -> void:
 	fleeing = true
 	var kaiju := sim.kaiju_pos
 	if crowd != null:
 		crowd.panic(kaiju)
-	var tunnels: Array[Vector2] = [
-		_centre + Vector2(_half.x, 0),
-		_centre - Vector2(_half.x, 0),
-		_centre + Vector2(0, _half.y),
-		_centre - Vector2(0, _half.y),
-	]
+	var toward := (kaiju - _centre).normalized()
+	var safe: Array[Vector2] = []
+	for m: Vector2 in mouths:
+		if (m - _centre).normalized().dot(toward) < 0.3:
+			safe.append(m)
+	var react: Array = _cfg["react"]
 	for p: Player in players:
-		var best := tunnels[0]
-		for t: Vector2 in tunnels:
-			if (
-				t.distance_to(kaiju) - t.distance_to(p.pos)
-				> best.distance_to(kaiju) - best.distance_to(p.pos)
-			):
-				best = t
-		p.exit = best
+		var near := p.pos
+		safe.sort_custom(
+			func(a: Vector2, b: Vector2) -> bool: return a.distance_to(near) < b.distance_to(near)
+		)
+		p.exit = safe[_rng.randi_range(0, mini(1, safe.size() - 1))]
+		p.wait = _rng.randf_range(Num.f(react[0]), Num.f(react[1]))
 
 
+## In shock they keep drifting; then each runs for its mouth and is gone once inside.
 func _flee(delta: float) -> void:
-	var step := Num.f(_cfg["flee_speed"]) * delta
 	for i: int in range(players.size() - 1, -1, -1):
 		var p := players[i]
-		var to := p.exit - p.pos
-		if to.length() < TUNNEL_REACH:
+		p.wait -= delta
+		var running := p.wait <= 0.0
+		var to := (p.exit if running else _drift(p)) - p.pos
+		if running and to.length() < MOUTH_REACH:
 			players.remove_at(i)
 			escaped += 1
 			continue
-		p.heading = to.normalized()
-		p.pos += p.heading * minf(step, to.length())
+		var speed := Num.f(_cfg["flee_speed"] if running else _cfg["player_speed"])
+		p.heading = to.normalized() if to.length() > 0.01 else p.heading
+		p.pos += p.heading * minf(speed * delta, to.length())
 	_ball_t = 1.0
 
 
-## Each player drifts from their spot toward the ball; the nearest runs onto it and, after a
-## moment, kicks it on to a team-mate or up the field.
+## A player's spot as the game sways: home, wandering a little, drawn toward the ball.
+func _drift(p: Player) -> Vector2:
+	var t := (_clock * Num.f(_cfg["drift_hz"]) + p.phase) * TAU
+	var wander := Vector2(sin(t), cos(t * 0.7 + p.phase)) * Num.f(_cfg["drift"])
+	return (p.home + wander).lerp(_ball_to, p.pull)
+
+
+## The few nearest the ball chase it and the nearest plays it; the rest drift about.
 func _play(delta: float) -> void:
 	_ball_t = minf(1.0, _ball_t + delta / _ball_time)
 	_ball = _ball_from.lerp(_ball_to, _ball_t)
-	var nearest: Player = null
-	for p: Player in players:
-		if nearest == null or p.pos.distance_to(_ball_to) < nearest.pos.distance_to(_ball_to):
-			nearest = p
+	var order := players.duplicate()
+	order.sort_custom(
+		func(a: Player, b: Player) -> bool:
+			return a.pos.distance_to(_ball_to) < b.pos.distance_to(_ball_to)
+	)
+	var chasers := Num.i(_cfg["chasers"])
 	var step := Num.f(_cfg["player_speed"]) * delta
-	for p: Player in players:
-		var goal := _ball_to if p == nearest else p.home.lerp(_ball_to, p.pull)
+	for i: int in order.size():
+		var p: Player = order[i]
+		var goal := _drift(p)
+		if i < chasers:  # the nearest on the ball, the next jostling round it; never still
+			var round := Vector2.from_angle(_clock * JOSTLE + p.phase * TAU)
+			goal = _ball_to + round * (REACH * 0.3 if i == 0 else REACH * 1.2)
 		var to := goal - p.pos
-		if to.length() > 0.05:
+		if to.length() > 0.02:
 			p.heading = to.normalized()
 			p.pos += p.heading * minf(step, to.length())
 	_kick_in -= delta
-	if nearest != null and _ball_t >= 1.0 and _kick_in <= 0.0:
+	if not order.is_empty() and _ball_t >= 1.0 and _kick_in <= 0.0:
+		var nearest: Player = order[0]
 		if nearest.pos.distance_to(_ball) < REACH:
 			_kick(nearest)
 

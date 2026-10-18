@@ -1,8 +1,9 @@
 extends SceneTree
-## The stadium's matches (D-078) at the game camera, in city 1 with a young kaiju at the
-## stadium's south kerb: a still of each sport in play (afl.png, nfl.png, soccer.png,
-## cricket.png), or with --clip an AFL match where the kaiju walks into the wall and every player
-## runs, with a same-seed before/after pair (pair with --write-movie: ci_capture.sh --movie).
+## The stadium's matches (D-078) at the game camera, in city 1 with a young kaiju just off the
+## stadium's south-south-east wall (its contact with the wall in sight of the game camera): a
+## still of each sport in play (afl.png, nfl.png, soccer.png, cricket.png), or with --clip an AFL
+## match where the kaiju walks into the wall and every player runs, with a same-seed
+## before/after pair (pair with --write-movie: ci_capture.sh --movie).
 ## --frametime instead times the AFL match's frames with the stadium's crowd off, then on.
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
@@ -18,7 +19,10 @@ const CLIP_FRAMES := 360
 ## The clip's same-seed pair: afl_before as the kaiju sets off, afl_after this long after the
 ## stadium's first chunk goes (players running for the tunnels).
 const AFTER_FLEE := 60
-const KERB := 2.5  # the kaiju's start, this far south of the stadium's footprint
+## The kaiju comes in from the south-south-east (clear of the corner masts), starting KERB out
+## from the wall's outer face.
+const APPROACH := Vector2(0.48, 0.88)
+const KERB := 3.5
 const TIMED := 300  # --frametime: frames timed per run, after PLAY_FRAMES to settle
 
 var _out := "user://matches"
@@ -121,7 +125,8 @@ func _time(crowd: bool) -> void:
 	await process_frame
 
 
-## City 1 with `id` in the stadium and the kaiju at its south kerb; walks in once walk["go"].
+## City 1 with `id` in the stadium and the kaiju off its south-east wall; walks in once
+## walk["go"].
 func _rampage(id: String, walk: Dictionary) -> Rampage:
 	StadiumMatch.force_sport = id
 	var species := Content.species_def("reptilian")
@@ -136,8 +141,10 @@ func _rampage(id: String, walk: Dictionary) -> Rampage:
 	for b: RampageSim.Building in sim.buildings:
 		if b.landmark == str(Content.sports()["pitch"]["landmark"]):
 			stadium = b
-	sim.kaiju_pos = Vector2(stadium.x, stadium.z + stadium.d * 0.5 + KERB)
-	sim.facing = Vector2(0, -1)
+	var out := APPROACH.normalized()
+	var wall := out / (out / (Vector2(stadium.w, stadium.d) * 0.5)).length()
+	sim.kaiju_pos = Vector2(stadium.x, stadium.z) + wall + out * KERB
+	sim.facing = -out
 	rampage.scripted = func(s: RampageSim) -> Dictionary:
 		if not walk["go"]:
 			return {"move": Vector2.ZERO}

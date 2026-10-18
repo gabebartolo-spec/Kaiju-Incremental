@@ -1,7 +1,8 @@
 class_name StadiumCrowd
 extends Node3D
 ## The stadium's crowd (director 2026-10-18, D-078): spectators seated on every seat tier of the
-## baked model, in the two teams' shirts and street clothes, bobbing as they watch. When the
+## baked model, in the two teams' shirts and street clothes, bobbing as they watch (in
+## crowd.gdshader: a seated crowd costs nothing per frame). When the
 ## match panics, the fans whose seats' chunks fall go with them (hidden), and the rest stand,
 ## run along their row to the nearest exit away from the kaiju, then up its aisle and out.
 ## One MultiMesh per outfit and pose. Presentation only; tuning in data/tuning.json "crowd".
@@ -10,6 +11,7 @@ enum State { SEATED, STANDING, ALONG, UP, GONE }
 
 const POSES := 3  # seated, then the arms-up run's two frames
 const RUN_HZ := 6.0
+const SHADER := preload("res://scenes/crowd.gdshader")
 
 ## Frame-time checks: false and the match seats no crowd.
 static var enabled := true
@@ -21,7 +23,6 @@ class Fan:
 	var heading := Vector2.ZERO
 	var outfit := 0
 	var phase := 0.0
-	var hz := 1.0
 	var state := State.SEATED
 	var wait := 0.0
 	var speed := 1.0
@@ -47,6 +48,7 @@ var _heights: Dictionary = {}
 var _mms: Array[MultiMesh] = []
 var _buffers: Array[PackedFloat32Array] = []
 var _alive := -1
+var _dirty := true
 var _clock := 0.0
 
 
@@ -64,7 +66,6 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 	var outfits := _outfits(kits)
 	var seats := _seats(LandmarkVoxels.voxels(b.landmark))
 	var share := Num.f(_cfg["team_share"])
-	var hz: Array = _cfg["bob_hz"]
 	for cell: Vector3i in seats:
 		var fan := Fan.new()
 		fan.pos = _origin + Vector3(cell.x, cell.y + 1, cell.z) * v
@@ -78,7 +79,6 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 			shirt * StadiumMatch.SKINS.size() + _rng.randi_range(0, StadiumMatch.SKINS.size() - 1)
 		)
 		fan.phase = _rng.randf()
-		fan.hz = _rng.randf_range(Num.f(hz[0]), Num.f(hz[1]))
 		fans.append(fan)
 	_build(outfits)
 
@@ -130,6 +130,7 @@ func crush(at: Vector3, radius: float) -> void:
 		if fan.state != State.GONE and Vector2(fan.pos.x, fan.pos.z).distance_to(c) <= radius:
 			fan.state = State.GONE
 			killed += 1
+			_dirty = true
 
 
 func _process(delta: float) -> void:
@@ -141,10 +142,13 @@ func _process(delta: float) -> void:
 			if fan.state != State.GONE and not frame.alive(_chunk(fan.pos)):
 				fan.state = State.GONE
 				fallen += 1
+				_dirty = true
 	if fleeing:
 		for fan: Fan in fans:
 			_move(fan, delta)
-	_draw()
+	if _dirty or fleeing:
+		_draw()
+		_dirty = false
 
 
 ## Standing: wait out the reaction, then along the row (at its own radius) to the exit's
@@ -252,6 +256,11 @@ func _build(outfits: Array[Dictionary]) -> void:
 	for fan: Fan in fans:
 		per[fan.outfit] += 1
 	var voxel := Num.f(Content.section("street")["person_voxel"])
+	var seated := ShaderMaterial.new()
+	seated.shader = SHADER
+	seated.set_shader_parameter("bob", Num.f(_cfg["bob"]))
+	var hz: Array = _cfg["bob_hz"]
+	seated.set_shader_parameter("bob_hz", Vector2(Num.f(hz[0]), Num.f(hz[1])))
 	for o: int in outfits.size():
 		for pose: int in POSES:
 			var mm := MultiMesh.new()
@@ -265,6 +274,7 @@ func _build(outfits: Array[Dictionary]) -> void:
 			mm.visible_instance_count = 0
 			var mmi := MultiMeshInstance3D.new()
 			mmi.multimesh = mm
+			mmi.material_override = seated if pose == 0 else null
 			add_child(mmi)
 			_mms.append(mm)
 			var buffer := PackedFloat32Array()
@@ -274,7 +284,6 @@ func _build(outfits: Array[Dictionary]) -> void:
 
 ## Writes each bucket's transforms as one buffer upload (cheaper than a call per fan).
 func _draw() -> void:
-	var bob := Num.f(_cfg["bob"])
 	var groups: Array[Array] = []
 	groups.resize(_mms.size())
 	for fan: Fan in fans:
@@ -293,9 +302,6 @@ func _draw() -> void:
 		var buf := _buffers[b]
 		var i := 0
 		for fan: Fan in group:
-			var lift := 0.0
-			if fan.state == State.SEATED:
-				lift = bob * maxf(0.0, sin((_clock * fan.hz + fan.phase) * TAU))
 			var yaw := atan2(-fan.heading.x, -fan.heading.y)
 			var c := cos(yaw)
 			var s := sin(yaw)
@@ -306,7 +312,7 @@ func _draw() -> void:
 			buf[i + 4] = 0.0
 			buf[i + 5] = 1.0
 			buf[i + 6] = 0.0
-			buf[i + 7] = fan.pos.y + lift
+			buf[i + 7] = fan.pos.y
 			buf[i + 8] = -s
 			buf[i + 9] = 0.0
 			buf[i + 10] = c

@@ -8,7 +8,14 @@
 		"player_speed": 1.4,
 		"flee_speed": 2.6,
 		"kick_every": [0.4, 1.0],
-		"kick_speed": 7.0
+		"kick_speed": 7.0,
+		"ball_scale": 2.0,
+		"chasers": 3,
+		"drift": 0.8,
+		"drift_hz": 0.25,
+		"react": [0.1, 0.7],
+		"mouths": 8,
+		"mouth": [0.9, 0.55, 0.6]
 	},
 	"sports": [
 		{
@@ -17,7 +24,7 @@
 			"posts": "afl",
 			"line": "f2f2ee",
 			"post_color": "f2f2ee",
-			"ball": "b0452c",
+			"ball": "f2d23a",
 			"per_side": 11,
 			"kits": [
 				{"shirt": "1d3b8f", "pants": "f2f2ee", "hair": "2a1f18"},
@@ -30,7 +37,7 @@
 			"posts": "uprights",
 			"line": "f2f2ee",
 			"post_color": "f2d03a",
-			"ball": "6b3f22",
+			"ball": "e8d2a0",
 			"per_side": 11,
 			"kits": [
 				{"shirt": "1f5a3a", "pants": "e8e2cc", "hair": "1f5a3a"},
@@ -56,7 +63,7 @@
 			"posts": "stumps",
 			"line": "f2f2ee",
 			"post_color": "e8dcb8",
-			"ball": "9e1f1a",
+			"ball": "f4f4f4",
 			"strip": "b8996a",
 			"per_side": 11,
 			"kits": [
