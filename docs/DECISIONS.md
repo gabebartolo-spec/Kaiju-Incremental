@@ -25,7 +25,8 @@ Why (15:4x): director's call on the jets PRs; applied on the jet branches (#58, 
 Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is closed unmerged.
 
 ## 2026-10-18 · D-078a · Director · The stadium stands are full of spectators watching the match
-Why (18:0x): "stadium stands full of spectators". Added to #59's brief; the AFL clip is re-rendered with the crowd.
+Why (18:0x): "the stadium needs to be full of people in the stands watching the sport, currently its empty".
+Added to #59's brief; the AFL clip is re-rendered with the crowd.
 
 ## 2026-10-18 · D-078 · Director · Stadium matches: one random sport per run, players flee when the wall caves in
 Why (14:1x): AFL, NFL, soccer or cricket, random per run; presentation only, low-effort visual flavour, in the demo.
