@@ -2,20 +2,19 @@ class_name Emergence
 extends RefCounted
 ## The start of a run (D-083, director 2026-10-19: "a city caught unaware - have our reptilian
 ## emerge from a river to start each run"): the kaiju waits submerged in the city's river
-## (CityRiver), rises out of it over tuning "emerge" "rise_seconds", wades onto the bank when
-## the river lies past the arena's edge (the young city), and then the run begins: the sim
+## (CityRiver), rises out of it over tuning "emerge" "rise_seconds", wades out onto the city's
+## bank (inside the arena), and then the run begins: the sim
 ## emits "kaiju_emerged" (the army's alert ramp starts from it). Until then nothing else
 ## happens: no clock, no stomps, no army. Only a run the game starts (Rampage.setup) emerges;
 ## a RampageSim built on its own starts on land, as before.
 
 var active := false
-## How far south the arena reaches (z, the playable city's edge past the river, CityRiver).
-var south: float
 var _t := 0.0
 var _rise: float
 var _depth: float
 var _wade: float
 var _spawn: Vector2
+var _bank: Vector2
 
 
 func _init(city: Dictionary, tuning: Dictionary) -> void:
@@ -25,7 +24,7 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_wade = Num.f(cfg["wade_speed"])
 	var plan := CityGen.map(city)
 	_spawn = plan.get("river_spawn", Vector2(INF, INF))
-	south = Num.f(plan.get("south", CityGen.half_extent(city)))
+	_bank = plan.get("river_bank", _spawn)
 
 
 ## Puts the kaiju under the river's surface; the run waits until it has risen. A city without
@@ -53,7 +52,7 @@ func step(sim: RampageSim, dt: float) -> bool:
 		sim.stand_y = -_depth * sim.body_scale() * (1.0 - smoothstep(0.0, 1.0, _t / _rise))
 		return true
 	sim.stand_y = 0.0
-	var bank := sim.clamp_to_arena(sim.kaiju_pos)
+	var bank := sim.clamp_to_arena(_bank)
 	var stride := sim.stat("speed") * _wade * dt
 	if sim.kaiju_pos.distance_to(bank) > stride:
 		sim.facing = sim.kaiju_pos.direction_to(bank)

@@ -78,7 +78,6 @@ var ability_ready_in := 0.0
 var over := false
 var end_reason := ""
 var arena_half: float
-var arena_south: float
 var next_fall_id := 0
 var collapse: Collapse
 ## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
@@ -126,8 +125,6 @@ func _init(
 		chunks_total += b.frame.alive_count
 	var city_half := CityGen.half_extent(city)
 	arena_half = city_half + Num.f(city["arena_margin"])
-	emerge = Emergence.new(city, tuning)
-	arena_south = emerge.south + Num.f(city["arena_margin"])  # past the river (D-083)
 	kaiju_pos = Vector2(0.0, city_half)  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	army_units = Army.new(self, rng)
@@ -135,6 +132,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	emerge = Emergence.new(city, tuning)
 
 
 func stat(stat_name: String) -> float:
@@ -240,7 +238,7 @@ func end(reason: String) -> void:
 
 
 func clamp_to_arena(pos: Vector2) -> Vector2:
-	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_south))
+	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
 
 
 func _stomp() -> void:

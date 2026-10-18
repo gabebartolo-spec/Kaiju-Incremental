@@ -26,22 +26,13 @@ const DIAGONAL := "diagonal"
 ## Blocks fill district by district, innermost first, so a district's lots draw the same
 ## numbers whichever stage is in play (only the stage's height caps change them). The river's
 ## blocks (CityRiver) still draw their lots and drop them, so every other building stays put.
-## Past the river, where the young city reaches beyond its ring (CityRiver.south), buildings
-## stay low enough for the young kaiju to break: the first thing in view as it rises.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
-	var half := half_extent(cfg)
-	var low := Num.i(cfg["tier_height"])  # the tallest a tier-1 building stands
 	var out: Array[Dictionary] = []
 	for ring: int in districts(cfg).size():
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
 				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
-				var rect: Rect2 = block["rect"]
-				if rect.end.y > half:
-					for lot: Dictionary in lots:
-						lot["h"] = mini(Num.i(lot["h"]), low)
-						lot["tier"] = tier_for_height(Num.i(lot["h"]), cfg)
 				if str(block["use"]) == "built":
 					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
@@ -305,8 +296,6 @@ static func _blocks(
 	cfg: Dictionary
 ) -> void:
 	var half := half_extent(cfg)
-	var south := CityRiver.south(zs, cfg)  # the city reaches past its river (D-083)
-	plan["south"] = south
 	var walk := Num.f(cfg["sidewalk"])
 	var blocks: Array[Dictionary] = plan["blocks"]
 	var inner: Array[int] = []
@@ -325,7 +314,7 @@ static func _blocks(
 				zs[j + 1] - inset.call(avenues_z.has(j + 1), alley_z.has(Vector2i(j + 1, i)))
 			)
 			var rect := Rect2(x0, z0, x1 - x0, z1 - z0)
-			var playable := maxf(maxf(absf(x0), absf(x1)), -z0) < half and z1 < south
+			var playable := maxf(maxf(absf(x0), absf(x1)), maxf(absf(z0), absf(z1))) < half
 			var use := "built" if playable else "outer"
 			var roll := rng.randf()
 			if CitySites.covers(plan, i, j):
@@ -357,9 +346,9 @@ static func _blocks(
 	var best_plaza := -1
 	var plaza_away := INF
 	for n: int in inner:
+		if str(blocks[n]["use"]) != "built":
+			continue  # the river (CityRiver)
 		var rect: Rect2 = blocks[n]["rect"]
-		if str(blocks[n]["use"]) != "built" or rect.end.y > half:
-			continue  # the river and the city's reach past it (CityRiver) keep their buildings
 		var ring := Num.i(blocks[n]["district"])
 		var town := CityLots.town_share(rect.get_center(), cfg)
 		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]

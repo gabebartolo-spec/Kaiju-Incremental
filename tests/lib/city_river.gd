@@ -4,7 +4,7 @@ extends RefCounted
 ## and map_seed. The city has a river, the same at every stage, with no building in it; a run
 ## the game starts puts the kaiju in the river, under the water; the run's clock waits while it
 ## rises and wades out; then the sim says "kaiju_emerged" once, with the kaiju standing on land
-## inside the arena.
+## inside the arena, out of the river (at every stage: the grown city's arena takes the river in).
 
 const DT := 1.0 / 30.0
 const LIMIT := 20.0  # seconds: the rise and the wade take a few
@@ -42,6 +42,8 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		waited += DT
 		clock_held = clock_held and (emerged > 0 or sim.time_left == clock)
 	var landed := sim.clamp_to_arena(sim.kaiju_pos) == sim.kaiju_pos and sim.stand_y == 0.0
+	for rect: Rect2 in rivers:
+		landed = landed and not rect.has_point(sim.kaiju_pos)
 	check_fn.call(
 		(
 			not rivers.is_empty()
@@ -57,7 +59,7 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 			(
 				"stage %d, map_seed %d: river start (%d river blocks, spawn %s in one: %s, %d"
 				+ " buildings in it, same river as stage 1: %s; rose from under the water: %s,"
-				+ " emerged after %.1f s: %s, clock held: %s, on land in the arena: %s)"
+				+ " emerged after %.1f s: %s, clock held: %s, out of the river, in the arena: %s)"
 			)
 			% [
 				tier,
