@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-19 01:30
-## State: available (#52 closed per D-079; capture_mix_log --out tiny PR open; #56 waits for #50; #36 last)
+# Ability VFX/SFX handoff, 2026-10-19 02:45
+## State: running a check (stomp-dust suites b6qooxa9n); #56 waits for #50; #36 last
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -18,7 +18,7 @@
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
 - **#52 CLOSED unmerged:** the director kept A, the full boom (D-079). shell_hit stays as it is.
-  - capture_mix_log --out moved to a tiny PR (branch claude/mixlog-out), so CI captures can write the log.
+  - capture_mix_log --out landed as #60.
   - Clip and notes stay in shared notes shellhit-ab/.
 - **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
   - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
@@ -44,6 +44,18 @@
   - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
   - APPROVED by the lead. It merges straight after #50 lands; then resync the flow floor only (the lead pings).
   - Limiter: at 24 voices the pre-dynamics peak is -3.3 dBFS and 0% of the run is over -1 dBFS (scratchpad/riflegap/peaks.py). This is in the body. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
+
+- **Footfall dust (lead, greenery finding): branch claude/stomp-dust off look-options e3b0c5a, uncommitted.**
+  - Problem: rampage._on_footfall called Fx.dust, the collapse cloud (2.6 s, 0.47 alpha, 2.2 m puffs), every step, so a walk piled into a grey haze.
+  - Fix:
+    - new Fx.footfall(at, size) with tuning fx "footfall_dust" {seconds 1.0, alpha 0.28, rise 1.6, max_live 3}, skipped while 3 are up;
+    - rampage.gd:298 now calls it (line count unchanged, 399).
+  - Check: tests/lib/city_footfall_dust.gd from run_city_tests (+1 city, 12 -> 13). It's a haze budget, puffs x alpha <= 0.9.
+    Shown failing at max_live 100 (haze 2.80).
+  - Stills: tools/capture/capture_walk_dust.gd --out --before --at=6,9,12 (--before replays the old Fx.dust per step on the same seed).
+  - Left to do: suites green, city floor 13, commit, push.
+    Then CI capture twice with an explicit renderer: `ci_capture.sh --renderer=forward_plus capture_walk_dust.gd -- --at=6,9,12`, once with --before.
+    Then the board, the PR, and the stills to the lead.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
@@ -82,5 +94,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- None.
+- b6qooxa9n: all suites on stomp-dust.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
