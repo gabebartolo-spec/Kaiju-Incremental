@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-19 06:45
+# Lead handoff, 2026-10-19 07:00
 ## State: running a check (final build PASSED, run 39116671378, artifact KaijuIncremental-8c24654 56.8 MB zip;
 ## smoke waits for the director to lift 'dont use godot'; #72 board MERGED 6614bc9)
 
@@ -23,6 +23,12 @@ Lead resynced #59, #66, #63 itself (floors-only conflicts): flow 148, growth 31,
   2. When Godot is allowed again: smoke = `godot_console --headless --main-pack <exe> --script tools/release/demo_smoke.gd`
      (title -> Continue -> evolve1 -> DEMO COMPLETE -> menu). The release exe ignores --script.
   3. Hand the exe to the director with a short note (P7 playtest). D-083: playtest fixes first.
+
+## Artifact verified (dry-run, no Godot): one exe 131.6 MB, pack 342 files; croc baby/adolescent .kvox byte-equal
+## to the repo; fonts real TTF. Saved at the dry-run scratchpad final_dl/. Smoke (~3 min headless) on lift.
+## STALL: 80-110 ms every ~0.7 s while the stadium collapses (crowd off too) -> stadium session diagnosing on CI
+## (claude/stadium-stall; compare 8c24654 vs pre-#59 5bc6b44). Fix before or right after handing the exe over.
+## Audit PRs #67-#71 are the helper's planted defects: red is EXPECTED; unbound from this session (auto-archive off).
 
 ## Open PRs / sessions
 - #72 board PR MERGED 6614bc9 (worktree removed): STATUS after the chain,
