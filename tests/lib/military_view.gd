@@ -1,20 +1,18 @@
-extends "res://tests/lib/military_air.gd"
-## The military suite's game-view checks (D-066 r4): the clip's scene (tools/capture/
+extends "res://tests/lib/military_frame.gd"
+## The military suite's game-view checks (D-066 r4). The clip's scene (tools/capture/
 ## capture_military.gd: a Behemoth at its crossing, columns calling in close, a pair up from the
-## start), then a Colossus and an Apex, run as the game runs them and measured every frame
-## through the game camera and the drawn models: helicopters whole in the frame and off the
-## HUD, and no two tanks' drawn parts (hull, turret, gun, from the voxels through the models'
-## own transforms) ever touching. Prints the probe table (VIEW lines) for the PR body.
+## start) runs as the game runs it, measured every sim step through the game camera and the
+## drawn models: helicopters whole in the frame and off the HUD, and no two tanks' drawn parts
+## (hull, turret, gun, from the voxels through the models' own transforms) ever touching. The
+## suite's whole rampages then frame every helicopter with the test's own camera (the view's
+## numbers, pinned to the real camera here) and the HUD plates measured here, per stage.
+## Prints the probe table (VIEW lines) for the PR body.
 
 const VIEW_SECONDS := 18.0
-## Share of the screen kept clear at each edge.
-const FRAME_MARGIN := 0.04
-## The runs: the clip's (Behemoth at the capture's crossing, its overrides), then a Colossus and
-## an Apex standing at their city's start with the sky open (helicopters up at once).
+## The runs through the real scene: the clip's (Behemoth at the capture's crossing, its
+## overrides). Whole cities' views are too slow to build on CI for more.
 const RUNS: Array[Dictionary] = [
 	{"name": "Behemoth clip", "levels": {"claws": 1, "evolve1": 1}, "clip": true},
-	{"name": "Colossus", "levels": {"evolve1": 1, "evolve2": 1}, "clip": false},
-	{"name": "Apex", "levels": {"evolve1": 1, "evolve2": 1, "evolve3": 1}, "clip": false},
 ]
 
 var _shapes := {}  # tank part -> its footprint (_tank_shapes)
@@ -82,9 +80,7 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 	if clip:
 		_clip_overrides(sim)
 	else:
-		sim.air.cfg["after_chunks"] = 0
-		sim.air.cfg["interval"] = 0.8
-		sim.chunks_destroyed = Num.i(sim.air.cfg["max_per_chunks"]) * 3
+		_open_sky(sim)
 	var roads := _roads(sim)
 	var cam: Camera3D = rampage._camera
 	var view: Dictionary = sim.air.cfg["view"]
@@ -101,7 +97,7 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 		"touching": 0,
 		"yaw": 0.0,
 		"drift": 0.0,
-		"fov_ok": is_equal_approx(cam.fov, Num.f(view["fov"])),
+		"fov_ok": is_equal_approx(cam.fov, Num.f(view["fov"])) and is_equal_approx(cam.fov, FOV),
 	}
 	var last := {}
 	for i: int in roundi(VIEW_SECONDS * 60.0):
@@ -109,7 +105,9 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 		sim.facing = Vector2(1, 0)
 		if i > 300:  # the camera has settled on the kaiju
 			var off := sim.air.space.camera()[0].distance_to(cam.global_position)
+			off = maxf(off, _eye(sim).distance_to(cam.global_position))
 			got["drift"] = maxf(Num.f(got["drift"]), off)
+			_hud_px = _plates(rampage._hud)
 		if i % 4 == 0:  # every sim step's worth (sim steps at 15 Hz)
 			_measure_air(sim, cam, _plates(rampage._hud), got)
 			_measure_tanks(rampage, roads, last, got)
@@ -247,13 +245,7 @@ func _plates(hud: Node) -> Array[Rect2]:
 ## 1 if any of it is under a HUD plate).
 func _heli_seen(cam: Camera3D, heli: AirWing.Heli, plates: Array[Rect2]) -> Vector2:
 	var size := root.get_viewport().get_visible_rect().size
-	var nose := heli.front if heli.front != Vector2.ZERO else Vector2(0, -1)
-	var c := Vector3(heli.pos.x, heli.alt, heli.pos.y)
-	var along := Vector3(nose.x, 0, nose.y) * HELI_HALF
-	var points: Array[Vector3] = [c + along, c - along]
-	for k: int in 8:
-		var d := Vector2.from_angle(k * TAU / 8.0) * 3.3  # the main rotor's radius
-		points.append(c + Vector3(d.x, 2.2, d.y))
+	var points := _airframe(heli)
 	var inside := 1.0
 	var covered := 0.0
 	for p: Vector3 in points:

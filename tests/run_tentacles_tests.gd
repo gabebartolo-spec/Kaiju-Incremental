@@ -156,7 +156,7 @@ func _check_helicopters() -> void:
 	var grabbed := false
 	var closest := INF
 	var kinds := []
-	for i: int in 30 * 8:
+	for i: int in 30 * 16:  # two attack runs: a car grabbed mid-run holds the limb 2.5 s
 		if octo.air.helis.has(prey):
 			closest = minf(closest, prey.pos.distance_to(octo.kaiju_pos))
 		for event: Dictionary in octo.step(DT, Vector2.ZERO, false):

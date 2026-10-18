@@ -15,6 +15,7 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await process_frame
+	await _check_view()  # first: it measures the HUD the rampages' framing uses
 	_check_rampages()
 	_check_heli_pairs()
 	_check_heli_faced()
@@ -22,7 +23,7 @@ func run_checks() -> void:
 	_check_heli_flight()
 	_check_rubble()
 	_check_face_down_effect()
-	await _check_view()
+	_check_framing()
 
 
 ## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every
@@ -52,7 +53,7 @@ func _check_rampages() -> void:
 	for tier: int in LEVELS:
 		for seed: int in SEEDS:
 			var sim := _rampage(tier, seed)
-			if tier == 2:  # the sky is open: helicopters up from the start
+			if tier >= 2:  # the sky is open: helicopters up from the start
 				sim.air.cfg["after_chunks"] = 0
 			var roads := _roads(sim)
 			var grid := _footprints(sim)
@@ -71,6 +72,7 @@ func _check_rampages() -> void:
 			while not sim.over:  # the game's own run length (run_seconds)
 				target = _autoplay(sim, steps, target)
 				steps += 1
+				_tally_frame(sim, tier)
 				var reach := _reach(sim)
 				var danger := _danger(sim)
 				for tank: RampageSim.Tank in sim.tanks:
