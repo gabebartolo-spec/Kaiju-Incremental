@@ -36,6 +36,11 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   floating slab 2x(1230-1290,720-830) support, olive/yellow off-palette rubble, plaza spill; stumps/heaps/seat rubble
   = post-demo follow-up with the wheel; cave-in judged on #59 AFL clip by fresh motion critic. Greenery: trample
   clip FAIL (no felled prop visible; contact radius?), GPU slot granted for re-shoot.
+- UNSENT to military (#50 fresh motion critic FAIL; I verified the tank frames myself in pair clip t=17 and 21.5 s):
+  tanks skewed 30-40 deg mid-street and hulls overlapping building corners/lots -> keep hull centre >= half-width
+  inside road polygon incl. corners, finish turn before deploying; helis fire while nose points away (8.6-8.8 s) ->
+  fire only within ~30 deg of bearing; hover-yaw against tower top (3.3-4 s) -> tower clearance + travelling arc;
+  add bank roll in turns. Re-shoot 720p gl_compat. Greenery: stomp-dust haze (ability_fx.gd:134) -> sound session.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
