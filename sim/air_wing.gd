@@ -11,8 +11,11 @@ extends RefCounted
 ## trailing it wing_gap back and wing_out wider. Between runs they orbit at cruise distance; every
 ## run_every seconds the lead turns in on an attack run down to attack_clear beyond the kaiju's
 ## body (never over or inside it), holds a strafing pass along its arc for run_hold seconds,
-## firing only on the run, and breaks back out. If the kaiju turns to face either of the
-## pair, they break off at once and reverse their sweep.
+## nose on the kaiju (guns only on the run, within fire_cone of the nose), and breaks back out.
+## If the kaiju turns to face either of the pair, they break off and reverse their sweep. A
+## reversal is flown, not pivoted: the sweep eases through reverse_s while it swings `swing`
+## wider, and the nose follows its flight at yaw_rate. Each flies roof_clear over the tallest
+## roof under its rotor (a kaiju reaching that high can hit it).
 
 const ORBIT := 0
 const RUN := 1
@@ -30,6 +33,9 @@ class Heli:
 	var run_t := 0.0  # seconds to its next attack run
 	var wing_of := -1  # the lead it flies wing for (-1: it leads)
 	var pos: Vector2
+	var omega := 0.0  # how fast it sweeps along its arc now (rad/s, signed)
+	var front := Vector2.ZERO  # where its nose points (the view draws it)
+	var alt := 0.0  # how high it flies
 	var hp: float
 	var cooldown: float
 	var coat_t := 0.0
@@ -83,13 +89,13 @@ func step(dt: float) -> void:
 			_wing(heli, dt)
 	for heli: Heli in helis:
 		_keep_clear(heli)
-		heli.pos = orbit_pos(heli)
+		_fly(heli, orbit_pos(heli), dt)
 		if heli.coat_t > 0.0:
 			heli.coat_t -= dt
 			heli.hp -= heli.coat_dps * dt
 			coated = true
 		heli.cooldown -= dt
-		if heli.cooldown <= 0.0 and heli.state == RUN:  # guns only on an attack run
+		if heli.cooldown <= 0.0 and heli.state == RUN and _on_target(heli):  # guns on a run only
 			heli.cooldown = Num.f(cfg["fire_interval"])
 			var army := sim.army
 			var hurt := Num.f(cfg["damage"]) - sim.stat("armor")
@@ -123,6 +129,8 @@ func spawn() -> Heli:
 		heli.angle = _slot(lead)
 		heli.r = lead.r + Num.f(_form["wing_out"])
 	heli.pos = orbit_pos(heli)
+	heli.front = (sim.kaiju_pos - heli.pos).normalized().orthogonal() * heli.turn
+	heli.alt = _alt_over(heli.pos)
 	heli.hp = Num.f(cfg["hp"])
 	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
 	helis.append(heli)
@@ -151,16 +159,25 @@ func attack_radius() -> float:
 
 ## The lead flies the pair's pattern: orbit, run in, break out; faced, it breaks off at once.
 func _lead(heli: Heli, dt: float) -> void:
-	heli.angle += heli.turn * Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius) * dt
+	var sweep := Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius)
+	var low := attack_radius()
+	var aim := heli.turn * sweep
+	if heli.state == RUN and heli.r > low + 0.01:  # the run is flown in at it, not round it
+		aim *= Num.f(_form["run_sweep"])
+	elif heli.state == RUN:  # the strafing pass, at run_speed along the arc
+		aim = heli.turn * Num.f(_form["run_speed"]) / maxf(1.0, heli.r)
+	heli.omega = move_toward(heli.omega, aim, 2.0 * sweep / Num.f(_form["reverse_s"]) * dt)
+	heli.angle += heli.omega * dt
 	var faced := _faced(heli)
 	for wing: Heli in helis:
 		if wing.wing_of == heli.id:
 			faced = faced or _faced(wing)
-	var low := attack_radius()
 	var out := maxf(heli.cruise, low)
+	# Turning about, it swings wide as its sweep slows, so it never stands still in the air.
+	var wide := out + Num.f(_form["swing"]) * clampf(1.0 - absf(heli.omega) / sweep, 0.0, 1.0)
 	match heli.state:
 		ORBIT:
-			heli.r = move_toward(heli.r, out, Num.f(_form["break_speed"]) * dt)
+			heli.r = move_toward(heli.r, wide, Num.f(_form["break_speed"]) * dt)
 			heli.run_t -= dt
 			if heli.run_t <= 0.0 and not faced:
 				heli.state = RUN
@@ -175,7 +192,7 @@ func _lead(heli: Heli, dt: float) -> void:
 			elif heli.r <= low + 0.01 and heli.run_t <= -Num.f(_form["run_hold"]):
 				heli.state = BREAK
 		BREAK:
-			heli.r = move_toward(heli.r, out, Num.f(_form["break_speed"]) * dt)
+			heli.r = move_toward(heli.r, wide, Num.f(_form["break_speed"]) * dt)
 			if heli.r >= out - 0.01:
 				heli.state = ORBIT
 				heli.run_t = _next_run()
@@ -194,14 +211,22 @@ func _wing(heli: Heli, dt: float) -> void:
 		return
 	heli.turn = lead.turn
 	heli.state = lead.state
+	heli.run_t = lead.run_t
 	heli.r = lead.r + Num.f(_form["wing_out"])
 	var rate := Num.f(cfg["orbit_speed"]) * 2.0 / maxf(1.0, heli.r) * dt
 	heli.angle += clampf(wrapf(_slot(lead) - heli.angle, -PI, PI), -rate, rate)
 
 
+## Behind its lead, or ahead of it while behind would be on the camera's side (just after the
+## lead turned back at the end of its arc).
 func _slot(lead: Heli) -> float:
 	var r := lead.r + Num.f(_form["wing_out"])
-	return lead.angle - lead.turn * Num.f(_form["wing_gap"]) / maxf(1.0, r)
+	var behind := lead.angle - lead.turn * Num.f(_form["wing_gap"]) / maxf(1.0, r)
+	var side := wrapf(behind - _bearing(), 0.0, TAU)
+	var arc := deg_to_rad(Num.f(cfg["clear_arc"]))
+	if side >= arc and side <= TAU - arc:
+		return behind
+	return lead.angle + lead.turn * Num.f(_form["wing_gap"]) / maxf(1.0, r)
 
 
 ## Is the kaiju facing this helicopter (within face_deg of its heading)?
@@ -220,23 +245,71 @@ func _bearing() -> float:
 	return deg_to_rad(Num.f(cfg["camera_bearing"]))
 
 
-## Turns a helicopter back at either end of its arc, so it never crosses the camera's side.
+## Turns a helicopter back before either end of its arc (in time for its eased reversal to
+## stop short of it), so it never crosses the camera's side; held at the end should it not.
 func _keep_clear(heli: Heli) -> void:
 	var arc := deg_to_rad(Num.f(cfg["clear_arc"]))
 	var side := wrapf(heli.angle - _bearing(), 0.0, TAU)
-	if side < arc:
-		heli.angle = _bearing() + arc
+	var sweep := Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius)
+	var stop := heli.omega * heli.omega * Num.f(_form["reverse_s"]) / (4.0 * sweep) + 0.05
+	if side < arc + stop and heli.turn < 0.0:
 		heli.turn = 1.0
-	elif side > TAU - arc:
-		heli.angle = _bearing() + TAU - arc
+	elif side > TAU - arc - stop and heli.turn > 0.0:
 		heli.turn = -1.0
+	if side < arc or side > TAU - arc:
+		heli.angle = _bearing() + (arc if side < PI else TAU - arc)
+		heli.omega = 0.0
 
 
-## An attack's force reaches helicopters only when reaches_air (else they fly too high).
-func hit(force: Callable, damage: float, reaches_air: bool) -> void:
-	if not reaches_air or helis.is_empty():
-		return
+## Moves a helicopter to `to`: its nose follows its flight at yaw_rate (lining up on the kaiju
+## just before a run, holding it on the run), and it keeps roof_clear over the roofs under it.
+func _fly(heli: Heli, to: Vector2, dt: float) -> void:
+	var moved := to - heli.pos
+	heli.pos = to
+	var want := heli.front
+	var line_up := PI * 0.5 / deg_to_rad(Num.f(_form["yaw_rate"]))  # turns in ahead of its run
+	if heli.state == RUN or heli.state == ORBIT and heli.run_t < line_up:
+		want = (sim.kaiju_pos - to).normalized()
+	elif moved.length() > 2.0 * dt:  # (below 2 m/s it holds its nose)
+		want = moved.normalized()
+	if heli.front == Vector2.ZERO:
+		heli.front = want
+	var slow := moved.length() < 3.0 * dt  # (near a hover it turns its nose only slowly)
+	var rate := deg_to_rad(Num.f(_form["hover_yaw" if slow else "yaw_rate"])) * dt
+	heli.front = heli.front.rotated(clampf(heli.front.angle_to(want), -rate, rate))
+	heli.alt = move_toward(heli.alt, _alt_over(to), Num.f(_form["climb"]) * dt)
+
+
+func _on_target(heli: Heli) -> bool:
+	var to := sim.kaiju_pos - heli.pos
+	return absf(heli.front.angle_to(to)) <= deg_to_rad(Num.f(_form["fire_cone"]))
+
+
+## Cruise altitude, or roof_clear over the tallest building within a rotor's reach of p (and
+## look_ahead beyond, so it is up before it gets there).
+func _alt_over(p: Vector2) -> float:
+	var top := 0.0
+	var graph := sim.army_units.convoy.graph
+	var rotor := Num.f(cfg["heli_radius"]) + Num.f(_form["rotor"]) + Num.f(_form["look_ahead"])
+	var lo := graph.cell_of(p - Vector2(rotor, rotor))
+	var hi := graph.cell_of(p + Vector2(rotor, rotor))
+	for cx: int in range(lo.x, hi.x + 1):
+		for cz: int in range(lo.y, hi.y + 1):
+			for i: int in graph.lots_at(Vector2i(cx, cz)):
+				var b := sim.buildings[i]
+				var half := Vector2(b.w, b.d) * 0.5
+				var near := p.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
+				if near.distance_to(p) < rotor:
+					top = maxf(top, float(b.height))
+	return maxf(altitude(), top + Num.f(_form["roof_clear"]))
+
+
+## An attack's force reaches a helicopter only when it reaches the air, or reaches as high as
+## that one flies (`top`: the kaiju's reach).
+func hit(force: Callable, damage: float, air: bool, top: float) -> void:
 	for heli: Heli in helis:
+		if not air and top < heli.alt:
+			continue
 		var k: float = force.call(heli.pos, Num.f(cfg["heli_radius"]))
 		heli.hp -= damage * k
 		if k > 0.0 and not sim.hit_coat.is_empty():

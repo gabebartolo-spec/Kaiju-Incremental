@@ -131,6 +131,16 @@ func _hull_in_building(p: Vector2, front: Vector2, grid: Dictionary) -> bool:
 	return false
 
 
+## The tallest building within `reach` of p on the ground (0 over open ground).
+func _roof_under(sim: RampageSim, p: Vector2, reach: float) -> float:
+	var top := 0.0
+	for b: RampageSim.Building in sim.buildings:
+		var half := Vector2(b.w, b.d) * 0.5
+		if p.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half).distance_to(p) < reach:
+			top = maxf(top, float(b.height))
+	return top
+
+
 ## The test's own separating-axis check (independent of Convoy's): hulls at p and q facing u
 ## and w, half length and half width `half`.
 static func _hulls_overlap(p: Vector2, u: Vector2, q: Vector2, w: Vector2, half: Vector2) -> bool:

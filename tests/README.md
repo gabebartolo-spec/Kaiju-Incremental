@@ -20,7 +20,7 @@ skill §6 and the `kaiju-godot-tests` skill: one runner per suite extending
 |---|---|---:|
 | `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up | 9 |
 | `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits | 14 |
-| `military` | the army moves and fights like a professional military (D-066): tanks drive the road plan, never into a building, a lot or an alley; hulls never overlap; parked tanks hold their firing band or reserve and leave the danger radius; road entries; helicopter pairs, attack runs, break-off when faced, never flying into the kaiju; a toppled tower re-routes a column; player-effect fixture (facing the helicopters down) | 12 |
+| `military` | the army moves and fights like a professional military (D-066): tanks drive the road plan, never into a building, a lot or an alley; hulls never overlap; parked tanks hold their firing band or reserve and leave the danger radius; road entries; helicopter pairs, attack runs, break-off when faced, never flying into the kaiju; a toppled tower re-routes a column; player-effect fixture (facing the helicopters down) | 15 |
 
 The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a suite short of
 its floor or without one, and that an untyped declaration does not compile.

@@ -1,4 +1,4 @@
-extends "res://tests/lib/military_base.gd"
+extends "res://tests/lib/military_air.gd"
 ## The army moves and fights like a professional military (D-066): tanks drive the road plan
 ## (never a building, a lot or an alley), keep their spacing, take firing posts at standoff range
 ## and fall back when the kaiju closes; helicopters fly in pairs, make deliberate attack runs that
@@ -18,6 +18,7 @@ func run_checks() -> void:
 	_check_heli_pairs()
 	_check_heli_faced()
 	_check_heli_run()
+	_check_heli_flight()
 	_check_rubble()
 	_check_face_down_effect()
 
@@ -194,70 +195,6 @@ func _check_rampages() -> void:
 			% [HELI_CLEAR, heli_gap, heli_samples]
 		)
 	)
-
-
-## Two helicopters fly as a pair: the second is the first one's wingman, close enough to read as
-## a pair, and their rotors never meet over 30 s of orbits, runs and break-offs.
-func _check_heli_pairs() -> void:
-	var sim := _rampage(2, 0)
-	sim.air.cfg["hp"] = 1000000.0  # the pair must not be shot down mid-check
-	var lead := sim.air.spawn()
-	var wing := sim.air.spawn()
-	var closest := INF
-	var together := 0
-	for i: int in roundi(30.0 / DT):
-		sim.step(DT, Vector2.ZERO, false)
-		closest = minf(closest, lead.pos.distance_to(wing.pos))
-		if lead.pos.distance_to(wing.pos) < 25.0:
-			together += 1
-	check(
-		wing.wing_of == lead.id and closest >= ROTOR_CLEAR and together > roundi(25.0 / DT),
-		(
-			(
-				"a second helicopter flies wing on the first: never closer than %.1f m, within"
-				+ " 25 m for %d of %d steps"
-			)
-			% [closest, together, roundi(30.0 / DT)]
-		)
-	)
-
-
-## Facing a helicopter makes it break off: a kaiju that keeps turning to face it for 10 s is
-## never dived on (its distance never falls more than 0.3 m after the first second).
-func _check_heli_faced() -> void:
-	var sim := _rampage(2, 0)
-	var heli := sim.air.spawn()
-	var start := INF
-	var fell := 0.0
-	for i: int in roundi(10.0 / DT):
-		sim.facing = (heli.pos - sim.kaiju_pos).normalized()
-		sim.step(DT, Vector2.ZERO, false)
-		var d := heli.pos.distance_to(sim.kaiju_pos)
-		if i == roundi(1.0 / DT):
-			start = d
-		if i > roundi(1.0 / DT):
-			fell = maxf(fell, start - d)
-			start = maxf(start, d)
-	check(fell <= 0.3, "a helicopter the kaiju faces never dives on it (closed %.2f m)" % fell)
-
-
-## With the kaiju looking away, a helicopter makes deliberate attack runs: in to its attack radius
-## and back out to cruise, more than once in 20 s.
-func _check_heli_run() -> void:
-	var sim := _rampage(2, 0)
-	var heli := sim.air.spawn()
-	var runs := 0
-	var inside := false
-	for i: int in roundi(20.0 / DT):
-		sim.facing = -(heli.pos - sim.kaiju_pos).normalized()
-		sim.step(DT, Vector2.ZERO, false)
-		var d := heli.pos.distance_to(sim.kaiju_pos)
-		if not inside and d <= sim.air.attack_radius() + 0.5:
-			inside = true
-			runs += 1
-		elif inside and d >= heli.cruise - 0.5:
-			inside = false
-	check(runs >= 2, "a helicopter makes deliberate attack runs in and out (%d in 20 s)" % runs)
 
 
 ## A tower toppled across a column's road closes it: tanks routed through it re-plan at once and

@@ -337,7 +337,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_t = Num.f(hit_coat["seconds"])
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
-	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+	air.hit(force, damage, hit_air, reach_top())
 
 
 ## Nearest standing ground-floor chunk to `from` (what an attacker walks to), or INF if none.
