@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-19 10:30
+# Lead handoff, 2026-10-19 (rewritten after compaction)
 ## State: running a check (demo playtest PAUSED by the director; 12 playtest fixes in flight -> demo exe 2)
 
 ## Who
@@ -48,8 +48,6 @@ Then: lead checks every PR at 2x (+ a fresh critic for visuals), merges, builds 
 session smokes it, and the director plays again.
 
 ## Other open work
-- #50 tanks & helis r4 (local_5325ef73): tanks fixed (drawn-extent spacing, yaw <= 8 deg); helis A = hold fire
-  off-screen when no in-frame spot (camera unchanged, lead call). CI fixes in progress. Fresh critic when done.
 - #55 greenery r15 PASS (b037f69): merge once the exe-2 scope is set (D-084 kept it out of exe 1). D-075 green lots
   (lattice, no RNG) is on claude/green-lots behind the playtest fixes; it needs a fresh sim reviewer.
 - #58 jets critic FIX: wings read forward-swept (mirror them), the "miss" does 30 HP (hit flash or a real miss),
@@ -79,13 +77,13 @@ session smokes it, and the director plays again.
 ## after #89 + dash merge (bars e1 0.26 h ±5%, young defeats 8 ±2 /15). Destruction spike session local_0a7e5cf8 running.
 ## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
 ## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
-## GPU FAN: director's PC = RTX 4070 SUPER, 4K @120 Hz monitor ON THE CARD (WMI wrongly lists it on the AMD iGPU).
-## Build session measuring off-screen 4K: caps 60/120/unlimited + nvidia-smi power/fan, per-effect GPU ms -> quality setting.
 ## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
 D-093 (director): 4K default = Graphics Balanced (0.75 FSR1, MSAA off) + 60 fps cap (half the power: 199 -> 110 W); High
 in Settings. Build session PR in flight. D-094 (director): full-game destruction = option A (Teardown-style carving +
-RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike report MERGED #91 docs/research/DESTRUCTION_SPIKE.md.
+RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike MERGED #91; build plan on branch
+claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #92 Graphics (build session): lead FIX =
+exe-1 settings.cfg saved fps_cap 120 -> overrides the 4K 60 default; version the cfg. Director in League: no local Godot.
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
 $12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
