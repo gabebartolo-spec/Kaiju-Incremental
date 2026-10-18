@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-19 01:40
-## State: awaiting lead (#59 round 3 sent for the critic; head a61467f)
+# Landmarks handoff, 2026-10-19 02:30
+## State: awaiting lead (#59 round 4, the last stadium round, sent; head b95893f)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -44,6 +44,12 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   shadow). Suite green there (flow 145). Frame time crowd off/on (1080p, before no-shadow):
   frame 12.8 -> 15.6 ms, GPU 10.5 -> 13.3 ms; re-time when the director is not fullscreen.
   Slot passed to croc #54 (then #50). Re-render on CI (director in a fullscreen game).
+- Round 4 (d119953, captures b95893f; LEAD's change of method): every landmark section bursts
+  in place on its break frame (LandmarkBurst: piece gone, ~120 voxels sprayed outward, dust; no
+  topple/strip/crush). Crowd flee all in crowd.gdshader (flee_t uniform; StadiumCrowd only
+  counts escapes with the same golden-ratio hash and hides fallen/crushed). 3965 fans: 53% out
+  at +1 s, all by +2.1 s. Pale kits dress fans in kit trim. Ball rolls and fades. Clip notes
+  landmarks/afl_crowd_r4_720p.mp4; far_stand_flee.png. Passes -> LEAD merges.
 - Round 3 (7baf9d1, captures a61467f): 3965 fans (spacing 2), static MultiMesh per outfit,
   runner pool 500, 16 exits; ball 3x lit + carried; landmark back faces 0.8 ("inside" in
   landmarks.json); landed landmark sections shrink 0.15 s (LandmarkBurst.retire); nearest of
