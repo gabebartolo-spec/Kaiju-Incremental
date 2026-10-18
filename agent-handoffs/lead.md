@@ -55,6 +55,8 @@ session smokes it, and the director plays again.
   the same floors shape (expected_checks.txt conflicted on every merge tonight): propose it to the director post-demo.
 
 ## Decisions to log (next board PR)
+D-091 (director): no building is 'too strong' for the baby; big ones just take longer, and he can tear out the base
+and topple them (replaces the tier gate + 'TOO STRONG'; evolve1 text changes). Owner: croc-contact-dash.
 D-089 (director): the demo exe waited for the #75 stall fix. D-090 (director): stadium rubble_bonus 4x -> 1.5x
 (replaces D-081). Lead calls: #50 helis A; playtest fix 9 option A (real south row).
 
