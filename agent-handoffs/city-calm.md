@@ -72,4 +72,5 @@ delete when allowed.
 - Headless MultiMesh keeps no instance transforms or colours: tests read a CPU mirror.
 - Never edit files under a running suite; other sessions share /tmp, read your own log.
 - Local windowed Godot: no_focus override.cfg first (Write tool), removed after.
+- Stopping a run loop: TaskStop can leave the inner bash alive; kill the loop bash, then its Godot.
 - Night/dusk lighting darkens debris and smoke: sample pixels at game camera before sending.
