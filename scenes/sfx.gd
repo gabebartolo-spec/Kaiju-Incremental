@@ -9,6 +9,9 @@ extends Node
 
 const POOL := 8
 const STOMPS := 3
+## How fast the regen bubbles fade once their cue is over, and where a fade ends.
+const REGEN_FADE_DB_PER_S := 40.0
+const SILENT_DB := -60.0
 
 ## Menu sounds played (Sfx.ui), in order; read by the flow suite.
 static var ui_played: Array[String] = []
@@ -24,6 +27,16 @@ var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _regen: AudioStreamPlayer
+var _healing := false
+var _regen_age := 0.0
+## The city's panic (crowd_panic loop), faded by the street's fleeing people and the
+## destruction rate; _street is null on a stage with no streets.
+var _crowd: AudioStreamPlayer
+var _street: StreetLife
+var _crowd_db := -80.0
+var _since_breath := INF
+var _chunks_before := 0
+var _chunk_rate := 0.0
 var _rotor: AudioStreamPlayer
 var _rng: RandomNumberGenerator
 var _tune: Dictionary
@@ -73,13 +86,16 @@ func _ready() -> void:
 		_pool.append(player)
 	_regen = _looping("regen_loop")
 	_rotor = _looping("heli_rotor")
+	_crowd = _looping("crowd_panic")
 
 
-## Rampage hands over its camera and its powers' view (helicopters) once, at start.
-func watch(camera: Node3D, powers: PowersView) -> void:
+## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
+## once, at start.
+func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 	listener = camera
 	_powers = powers
 	powers.sfx = self
+	_street = street
 
 
 func _process(delta: float) -> void:
@@ -87,6 +103,9 @@ func _process(delta: float) -> void:
 		rotors(_powers.helis())
 	_since_step += delta
 	_since_crack += delta
+	_since_breath += delta
+	_fade_regen(delta)
+	_update_crowd(delta)
 	if _pending == "":
 		return
 	_pending_age += delta
@@ -214,11 +233,27 @@ func _looping(sound: String) -> AudioStreamPlayer:
 
 
 ## Regeneration's bubbling, on while the kaiju heals.
+## Bubbles only for the first regen_seconds of each healing spell, then a fade: a cue that
+## healing began, not a bed under the whole rampage (mix report, 2026-10-18).
 func regen(healing: bool) -> void:
-	if healing and not _regen.playing:
+	if healing and not _healing:
 		played.append("regen_loop")
+		_regen_age = 0.0
+		_regen.volume_db = _volume("regen_loop")
 		_regen.play()
 	elif not healing and _regen.playing:
+		_regen.stop()
+	_healing = healing
+
+
+func _fade_regen(delta: float) -> void:
+	if not _regen.playing:
+		return
+	_regen_age += delta
+	if _regen_age < Num.f(_tune["regen_seconds"]):
+		return
+	_regen.volume_db -= REGEN_FADE_DB_PER_S * delta
+	if _regen.volume_db <= SILENT_DB:
 		_regen.stop()
 
 
@@ -226,6 +261,8 @@ func regen(healing: bool) -> void:
 ## and pitch shade a single play (steps and stomps also take the size-tier pitch).
 func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	played.append(sound)
+	if sound == "breath":
+		_since_breath = 0.0
 	var stream: AudioStream = _streams.get(sound)
 	if stream == null:
 		return
@@ -238,6 +275,39 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 		pitch *= _size_pitch
 	player.pitch_scale = pitch * (1.0 + _rng.randf_range(-jitter, jitter))
 	player.play()
+
+
+## The crowd's level in dB for a panic `intensity` (0..1), pulled down while Atomic Breath
+## roars (ducked); tuning "sfx" "crowd".
+func crowd_target(intensity: float, ducked: bool) -> float:
+	var cfg: Dictionary = _tune["crowd"]
+	if intensity <= Num.f(cfg["min_intensity"]):
+		return Num.f(cfg["silent_db"])
+	var level := lerpf(Num.f(cfg["quiet_db"]), _volume("crowd_panic"), clampf(intensity, 0.0, 1.0))
+	return level - (Num.f(cfg["duck_db"]) if ducked else 0.0)
+
+
+func _update_crowd(delta: float) -> void:
+	if _street == null or not is_instance_valid(_street):
+		return
+	var cfg: Dictionary = _tune["crowd"]
+	var chunks := _street.sim.chunks_destroyed
+	var rate := float(chunks - _chunks_before) / maxf(delta, 0.001)
+	_chunks_before = chunks
+	_chunk_rate = lerpf(_chunk_rate, rate, minf(1.0, delta * 2.0))
+	var intensity := (
+		clampf(float(_street.panicking()) / Num.f(cfg["full_panic"]), 0.0, 1.0) * 0.7
+		+ clampf(_chunk_rate / Num.f(cfg["full_rate"]), 0.0, 1.0) * 0.3
+	)
+	var target := crowd_target(intensity, _since_breath < Num.f(cfg["duck_seconds"]))
+	_crowd_db = move_toward(_crowd_db, target, Num.f(cfg["fade_db_per_s"]) * delta)
+	_crowd.volume_db = _crowd_db
+	var audible := _crowd_db > Num.f(cfg["silent_db"]) + 1.0
+	if audible and not _crowd.playing:
+		played.append("crowd_panic")
+		_crowd.play()
+	elif not audible and _crowd.playing:
+		_crowd.stop()
 
 
 ## The pitch of the latest play (the flow suite checks the size-tier pitch with it).
