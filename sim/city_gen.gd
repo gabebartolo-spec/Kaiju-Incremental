@@ -325,7 +325,14 @@ static func _blocks(
 			if playable and CityLots.town_share(rect.get_center(), cfg) < 0.2:
 				if roll < Num.f(cfg["parking_chance"]):
 					use = "parking"
-			blocks.append({"rect": rect, "use": use, "district": district_of(rect, cfg)})
+			blocks.append(
+				{
+					"rect": rect,
+					"use": use,
+					"district": district_of(rect, cfg),
+					"cell": Vector2i(i, j)
+				}
+			)
 			if playable:
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)

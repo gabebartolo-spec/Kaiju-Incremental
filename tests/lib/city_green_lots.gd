@@ -1,16 +1,17 @@
 extends RefCounted
 ## D-075 (director 2026-10-18: green lots at 8% of the city, answering D-065(b)): the city
 ## suite's green-lot checks, called from its D-062 loop for each stage and map_seed.
-##   1. Share and spread: parks, plazas and green lots cover at least city.green_lot_share of
-##      the playable city's block area (less SHARE_SLACK, a small city's blocks come in big
-##      steps) and at most SHARE_CAP, and no building stands more than SPREAD_BLOCKS of the
-##      city's longest blocks (city.block_long) from one.
+##   1. Share and spread: parks, plazas and green lots cover at least the green-lot share
+##      (one block in city.green_lot_every [a, b], less SHARE_SLACK: a small city's blocks come
+##      in big steps) of the playable city's block area and at most SHARE_CAP (D-065's brief:
+##      8-15%), and no building stands more than SPREAD_BLOCKS of the city's longest blocks
+##      (city.block_long) from one.
 ##   2. A green lot holds no building, and it is the same block at stage 1 and the Behemoth,
 ##      so an evolution never turns a park back into buildings.
 
 const Green := preload("res://tests/lib/city_green.gd")
 const SHARE_SLACK := 0.015
-const SHARE_CAP := 0.12
+const SHARE_CAP := 0.15
 const SPREAD_BLOCKS := 2.0
 
 
@@ -18,7 +19,8 @@ static func check(
 	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check_fn: Callable
 ) -> void:
 	var got: Dictionary = Green.measure(sim, decor)
-	var share := Num.f(sim.city.get("green_lot_share", 0.0))
+	var every: Array = sim.city.get("green_lot_every", [])
+	var share := 1.0 / (Num.f(every[0]) * Num.f(every[1])) if every.size() == 2 else 0.0
 	var pct := Num.f(got["green_pct"]) / 100.0
 	var long: Array = sim.city["block_long"]
 	var reach := SPREAD_BLOCKS * Num.f(long[1])
