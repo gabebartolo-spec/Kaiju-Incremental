@@ -1,12 +1,16 @@
-# Lead handoff, 2026-10-18 12:20
-## State: working (DIRECTOR BACK 10:4x, interviewed; all tabled items answered; executing)
+# Lead handoff, 2026-10-18 18:00
+## State: running a check (full speed to demo; #59 crowd + AFL re-clip, #55 r10 last round, board PR repurposed)
 
 ## Who
-Lead = session "Kaiju: Lead" (renamed from LEAD 06:3x; local_106fc100...). Owns: QA gates + fresh critics, PR review +
+Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
 merge (squash, `--match-head-commit`), STATUS/DECISIONS board PRs, director questions, this file, the local GPU slot.
-Sessions renamed 06:3x: Kaiju: Military AI / Rooftop defenders / City fill & greenery / Crease shader / Jet models /
-Tripo (old lead) / Sound effects / Landmark models / Lighting & breath FX / Croc rig & clips / Demo slice (done) /
-UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive space balancing" = director's own.
+Sessions renamed 18:0x (director: "named appropriately so i can survey"): Rooftop fire #63 / Stadium matches + crowd #59 /
+Tanks & helis #50 (last round) / Army balance #36 + SFX / Greenery + trample #55 (last round) / Croc baby & teen #54 /
+Board & decision log (repurposed UI, local_37cf489b: board PR D-062..D-084 + STATUS) / Jets #58 #61 (parked) /
+OLD lead (retired; NOT archived: archiving cascades to its idle children, e.g. croc #54). AFL session = other project.
+18:0x DIRECTOR: stadium stands full of spectators (D-078a; brief sent to #59, re-clip after). #55 r9 FAIL (critic:
+topple hidden by body, crescent-sprite dust, see-through crowns, dark stumps, falls along tail) -> D-084 (lead): one
+last round, else demo ships without #55. GPU slot: free after #59 AFL clip (no crowd yet; re-render with crowd).
 
 ## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
 - Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
