@@ -175,8 +175,8 @@ func fall_start(event: Dictionary) -> void:
 	var cells: Array[Vector3i] = event["cells"]
 	var pivot: Vector3 = event["pivot"]
 	var piece := _stream.view(index).lift_piece(cells, pivot)
-	if LandmarkBurst.inward(sim, event):  # never swings over its own middle (a pitch)
-		piece = LandmarkBurst.new(piece, fx)
+	if LandmarkBurst.bursts(sim, event):  # a landmark's section bursts where it stands
+		piece = LandmarkBurst.new(piece, self, event)
 	add_child(piece)
 	_falling[Num.i(event["id"])] = {
 		"node": piece,

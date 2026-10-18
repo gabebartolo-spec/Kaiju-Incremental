@@ -18,6 +18,9 @@ const JOG_HZ := 5.0
 const RUN_HZ := 6.0
 const REACH := 0.6  # how near a player must be to the ball to play it
 const JOSTLE := 2.0  # how fast (rad/s) the players at the ball circle it
+const ROLL := 2.0  # the dropped ball's speed when the wall goes, and its drag (1/s)
+const ROLL_DRAG := 1.5
+const BALL_FADE := 0.3  # seconds the ball takes to fade once the pitch is empty
 const MOUTH_REACH := 0.15  # a fleeing player is gone this near the far end of a tunnel mouth
 const MOUTH_COLOR := Color("0b0b0d")
 
@@ -63,6 +66,7 @@ var _ball_to := Vector2.ZERO
 var _ball_t := 1.0
 var _ball_time := 1.0
 var _kick_in := 0.0
+var _roll := Vector2.ZERO
 var _ball_node: MeshInstance3D
 var _mms: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
@@ -215,6 +219,7 @@ func _panic() -> void:
 	for m: Vector2 in mouths:
 		if (m - _centre).normalized().dot(toward) < 0.3:
 			safe.append(m)
+	_roll = (_ball_to - _ball_from).normalized() * ROLL
 	var react: Array = _cfg["react"]
 	for p: Player in players:
 		var near := p.pos
@@ -239,7 +244,14 @@ func _flee(delta: float) -> void:
 		var speed := Num.f(_cfg["flee_speed"] if running else _cfg["player_speed"])
 		p.heading = to.normalized() if to.length() > 0.01 else p.heading
 		p.pos += p.heading * minf(speed * delta, to.length())
+	# The ball, dropped: it rolls to a stop, and fades out once the last player is gone.
+	_ball += _roll * delta
+	_roll *= maxf(0.0, 1.0 - ROLL_DRAG * delta)
+	_ball_from = _ball
+	_ball_to = _ball
 	_ball_t = 1.0
+	if players.is_empty():
+		_ball_node.scale = _ball_node.scale.move_toward(Vector3.ZERO, delta / BALL_FADE)
 
 
 ## A player's spot as the game sways: home, wandering a little, drawn toward the ball.

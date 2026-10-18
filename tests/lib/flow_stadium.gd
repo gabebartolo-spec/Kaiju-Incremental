@@ -3,7 +3,7 @@ extends RefCounted
 ## kits and a ball kicked about), and the moment the stadium loses its first chunk every player
 ## runs for the tunnels; once out (or crushed) they are gone from the pitch. The stands are full
 ## of seated fans (director 2026-10-18) who stand and stream out of the exits with the players,
-## and a section of its stands bursts where it stands, never swinging over the pitch.
+## and every section it sheds bursts where it stands, never swinging over the pitch.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const PLAY_FRAMES := 240
@@ -83,7 +83,7 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	check.call(
 		falls["burst"] > 0 and falls["over"] == 0,
 		(
-			"its stands burst in place: %d sections burst, %d swung over the pitch"
+			"its sections burst in place: %d burst, %d swung over the pitch"
 			% [falls["burst"], falls["over"]]
 		)
 	)
