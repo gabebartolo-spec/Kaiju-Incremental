@@ -32,18 +32,16 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 - #54 P3 open: sim review PASS (my comment). Baby jaw 2x shows torn upper-jaw flap at mouth corner; gate = clean
   in-game jaw_baby crop at roar peak, then fresh critic on clips. CI capture order: shell-hit -> #50 720p -> P3 ->
   rooftops -> greenery/landmarks/jets. Local GPU slot: landmarks stills (after greenery).
-- UNSENT (messaging paused 15:1x) to landmarks: #57 r3 critic FAIL (2nd round) -> change method: fix only
-  floating slab 2x(1230-1290,720-830) support, olive/yellow off-palette rubble, plaza spill; stumps/heaps/seat rubble
-  = post-demo follow-up with the wheel; cave-in judged on #59 AFL clip by fresh motion critic. Greenery: trample
-  clip FAIL (no felled prop visible; contact radius?), GPU slot granted for re-shoot.
-- UNSENT to military (#50 fresh motion critic FAIL; I verified the tank frames myself in pair clip t=17 and 21.5 s):
+- SENT 15:4x to military (#50 fresh motion critic FAIL; I verified the tank frames myself in pair clip t=17 and 21.5 s):
   tanks skewed 30-40 deg mid-street and hulls overlapping building corners/lots -> keep hull centre >= half-width
   inside road polygon incl. corners, finish turn before deploying; helis fire while nose points away (8.6-8.8 s) ->
   fire only within ~30 deg of bearing; hover-yaw against tower top (3.3-4 s) -> tower clearance + travelling arc;
   add bank roll in turns. Re-shoot 720p gl_compat. Greenery: stomp-dust haze (ability_fx.gd:134) -> sound session.
-- UNSENT to UI (#51 screen-critic FAIL minor): do: stats below the 'Grows into' note with a half-line gap,
+- SENT to UI (#51 screen-critic FAIL minor): do: stats below the 'Grows into' note with a half-line gap,
   new number brighter; pin Level/Cost/buy to panel bottom; name the key on 'Press to buy' (KB + pad); align arrows
   if cheap. Skip: dropping 'You have' line. Then re-capture + merge. #59 sport stills PASS (lead 2x).
+- D-080 (director 15:4x): jet strike warning scales with kaiju size (jets PR1). #57 r3 triage + greenery GPU +
+  stomp-dust haze (sound) all SENT 15:4x. Messaging pauses after 10 sends without a director message.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
