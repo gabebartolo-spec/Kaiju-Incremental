@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 04:10
-## State: running a check (lead APPROVED A: young td 3.5 + Behemoth per_level 0.03, sweep beqmxy9qz; if A unsettled when #54+#63 merge, ship young only and A as follow-up PR; body draft scratchpad/d069a_body.md)
+## State: awaiting lead go (D-087 pick evolve1 cost 1778 -> 400: 0.26 h, young 8/14 defeated, no army override; test ratio /10 -> /20; applied LOCALLY uncommitted on army-scales-sync, suites + 130-run pacing running bln5hje5w)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -99,5 +99,6 @@
 - Scratch copy scratchpad/sweep36 (#36+#54+#63, floors sim 52 growth 31 flow 139); script scratchpad/young_sweep36.sh '<json>'... (N=runs). Deterministic.
 - 45-run results, young ended time/defeated/city: {} 8/26/0 of 34; td3 23/9/0; td3+si6 29/3/0; td3.5 14/18/0 (PICK); si6 18/14/0; td3.5+si5.5 20/12/0. evolve1 0.68-0.70 h for all. young_damage_mult is NOT a lever (damage to the kaiju's young).
 - 130-run on scratch: before young 8/26/0, Beh 31/9/0, Col 28/28/0, e1 0.70 e2 1.69, 81/87 3.24 h; td3.5 young 14/18/0, Beh 37/3/0, Col 27/31/0, e1 0.68 e2 1.68, 81/87 3.29 h. Behemoth drop flagged to lead with options A (Beh per_level 0.03, recommended) / B ship / C si6. scratchpad/beh_sweep.sh <f>...
+- D-087 (director: first evo ~15 min). 45-run cost sweep, no override: 1778 0.70 h 26/34; 900 0.54 h 21/27; 600 0.43 h 16/22; 400 0.26 h 8/14 (PICK, Beh 8/31); 250 0.15 h; 150 0.09 h 1/5. With td3.5: 400 same, 250 2/8. A and young override DROPPED (short stage gives ~half by itself). Helper copies scratchpad/sw_h1..h4, one_spec.sh.
 - When #54 + #63 land: resync #36, add "army": {"tank_damage": 3.5} to stages[0], 130-run pacing, before/after table in #36's body, Board/log line D-069a.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
