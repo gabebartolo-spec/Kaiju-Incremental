@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 16:30
-## State: awaiting lead (merge #49 first, then resync the 5 tabled sound PRs)
+# Ability VFX/SFX handoff, 2026-10-18 17:40
+## State: available (all 5 tabled sound PRs synced to look-options 434bb49 = #27 + #49; waiting for the director's picks)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -57,14 +57,17 @@
   So the PRs merge in any order with only a floor resync.
 - The lead merges them one at a time in the director's order and pings me. Resync each to the real count.
 
-## Blocker and fix (2026-10-18 16:30)
-- After #27, run_flow_tests.gd on look-options is 399/400 lines. Every tabled PR would break the gdlint cap.
-- **PR #49** claude/flow-sfx-split moves _check_stomp_timing into tests/lib/flow_sfx.gd (static run(root, check));
-  the flow file goes to 358 lines with the same 129 checks.
-- After #49 merges, resync #39, #42, #43, #45 and #46. Each one's edits to the old _check_stomp_timing block
-  now belong in tests/lib/flow_sfx.gd: #42 walk, #43 crowd, #45 regen (as calls to their own lib files),
-  and #46 rifle in _check_rampage. Floors = 129 + each PR's own checks.
-- #39 is at 1fc14bd, synced to the pre-#27 base.
+## Sync status (look-options 434bb49: #27 UI + #49 flow-sfx split merged; base flow 129)
+| PR | Head | Flow |
+|---|---|---|
+| #39 heli | 4761784 | 129 |
+| #42 footsteps | ef73246 | 130 |
+| #43 crowd | 0c1c451 | 130 |
+| #45 mix (on #43) | this push | 131 |
+| #46 rifle | e520b7b | 130 |
+- Sound unit checks live in tests/lib/flow_sfx.gd (from #49). Each PR's own checks sit in their own lib file
+  (flow_heli_sounds, flow_step_sounds, flow_sounds, flow_rifle_sounds), called from flow_sfx.gd or run_flow_tests.gd.
+  run_flow_tests.gd is at about 356-360 lines.
 
 ## Next
 - Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
