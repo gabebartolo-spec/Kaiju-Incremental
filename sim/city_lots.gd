@@ -6,6 +6,8 @@ extends RefCounted
 ## yards, where now and then a narrow pencil building shoots up. Lots the diagonal avenue cuts
 ## through are left as little plazas. Part of CityGen; split out to keep files small.
 
+const MIN_SIDE := 2  # a block narrower than this (cells) holds no lots
+
 
 ## The buildings of one block. height_scale shrinks them (the outskirts use it).
 static func fill_block(
@@ -20,7 +22,7 @@ static func fill_block(
 	var z0 := ceili(rect.position.y)
 	var w := floori(rect.end.x) - x0
 	var d := floori(rect.end.y) - z0
-	if w < 2 or d < 2:
+	if w < MIN_SIDE or d < MIN_SIDE:
 		return []
 	var downtown := town_share(rect.get_center(), cfg)
 	var grow := lot_grow(block, cfg)

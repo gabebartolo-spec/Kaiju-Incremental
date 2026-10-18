@@ -20,7 +20,6 @@ static func choose(plan: Dictionary, cfg: Dictionary) -> void:
 	var across := Num.i(every[0])
 	var down := Num.i(every[1])
 	var last := CityGen.districts(cfg).size()
-	var thin := Num.f(cfg["depth_min"]) * 2.0  # too thin for back-to-back lots: not a block
 	for block: Dictionary in plan["blocks"]:
 		var use := str(block["use"])
 		if block.has("site") or not (use == "built" or use == "outer"):
@@ -32,6 +31,6 @@ static func choose(plan: Dictionary, cfg: Dictionary) -> void:
 		var column := floori(float(cell.x) / across)
 		var row := cell.y + (down >> 1) * (column & 1)  # stagger every other column by half
 		if posmod(cell.x, across) == across >> 1 and posmod(row, down) == down >> 1:
-			if minf(rect.size.x, rect.size.y) >= thin:
+			if minf(rect.size.x, rect.size.y) >= CityLots.MIN_SIDE:
 				block["green"] = use
 				block["use"] = "park"
