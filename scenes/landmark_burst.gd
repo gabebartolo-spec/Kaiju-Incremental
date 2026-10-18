@@ -12,7 +12,8 @@ extends Node3D
 
 const SECONDS := 0.15  # a landed landmark section's shrink (retire)
 const GRAVITY := 20.0
-const DUST := Color(0.78, 0.76, 0.72)
+const DUST := Color(0.62, 0.61, 0.58)
+const SMOKE := preload("res://scenes/smoke.gdshader")  # Fx's soft step puff (#62), not a sphere
 
 var chunks := 0
 var _cfg: Dictionary
@@ -21,8 +22,9 @@ var _from := PackedVector3Array()
 var _vel := PackedVector3Array()
 var _size := PackedFloat32Array()
 var _spray: MultiMeshInstance3D
-var _clouds: Array[MeshInstance3D] = []
-var _cloud_mat: StandardMaterial3D
+var _clouds: MultiMeshInstance3D
+var _cloud_at := PackedVector3Array()
+var _cloud_size := 0.0
 
 
 ## True for any section a landmark sheds.
@@ -78,20 +80,17 @@ func _process(delta: float) -> void:
 			_spray = null
 		else:
 			_draw_spray(1.0 - clampf((_t - life * 0.6) / (life * 0.4), 0.0, 1.0))
-	if not _clouds.is_empty():
+	if _clouds != null:
 		var k := _t / Num.f(_cfg["cloud_life"])
 		if k >= 1.0:
-			for c: MeshInstance3D in _clouds:
-				c.queue_free()
-			_clouds.clear()
+			_clouds.queue_free()
+			_clouds = null
 		else:
-			for c: MeshInstance3D in _clouds:
-				c.scale = Vector3.ONE * (0.8 + 0.7 * k)
-			_cloud_mat.albedo_color.a = Num.f(_cfg["cloud_alpha"]) * (1.0 - k * k)
+			_draw_clouds(k)
 
 
 ## The spray: every so many of the section's voxels, as a chunk two or three voxels across in
-## its own colour (lit), thrown outward and up.
+## its own colour, darkened like broken concrete (a share darker still), thrown outward and up.
 func _throw(parts: Array, middle: Vector2, rng: RandomNumberGenerator) -> void:
 	var every := maxi(1, parts.size() / Num.i(_cfg["chunks"]))
 	var size: Array = _cfg["chunk_voxels"]
@@ -104,7 +103,7 @@ func _throw(parts: Array, middle: Vector2, rng: RandomNumberGenerator) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.vertex_color_is_srgb = true
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED  # lit: reads in the night city
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED  # its own albedo, not the night lighting
 	box.material = mat
 	mm.mesh = box
 	mm.instance_count = ceili(float(parts.size()) / every)
@@ -117,7 +116,9 @@ func _throw(parts: Array, middle: Vector2, rng: RandomNumberGenerator) -> void:
 		var out := _outward(pos, middle).rotated(Vector3.UP, rng.randf_range(-0.6, 0.6))
 		var fling := out * rng.randf_range(Num.f(speed[0]), Num.f(speed[1]))
 		_vel.append(fling + Vector3.UP * rng.randf_range(2.0, 6.0))
-		mm.set_instance_color(i, color.lightened(Num.f(_cfg["chunk_lift"])))
+		var dark := rng.randf() < Num.f(_cfg["chunk_dark_share"])
+		var shade := Num.f(_cfg["chunk_dark" if dark else "chunk_shade"])
+		mm.set_instance_color(i, Color(color * shade, 1.0))
 		_size.append(rng.randf_range(Num.f(size[0]), Num.f(size[1])))
 	chunks = _from.size()
 	_spray = MultiMeshInstance3D.new()
@@ -138,32 +139,44 @@ func _draw_spray(shrink: float) -> void:
 		mm.set_instance_transform(i, Transform3D(turn.scaled(Vector3.ONE * s), at))
 
 
-## The cloud on the break frame itself: dust balls over the opening, opaque at first, swelling
-## and thinning out.
+## The cloud on the break frame itself: soft camera-facing puffs over the opening, thick at
+## first, swelling and thinning out.
 func _cover(lo: Vector3, hi: Vector3, rng: RandomNumberGenerator) -> void:
-	_cloud_mat = StandardMaterial3D.new()
-	_cloud_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_cloud_mat.albedo_color = Color(DUST, Num.f(_cfg["cloud_alpha"]))
-	_cloud_mat.roughness = 1.0
 	var span := hi - lo
-	var radius := clampf(maxf(span.x, span.z) * 0.3, 0.6, Num.f(_cfg["cloud_max"]))
-	var sphere := SphereMesh.new()
-	sphere.radius = radius
-	sphere.height = radius * 1.6
-	sphere.radial_segments = 10
-	sphere.rings = 6
-	sphere.material = _cloud_mat
-	for n: int in Num.i(_cfg["clouds"]):
-		var c := MeshInstance3D.new()
-		c.mesh = sphere
-		c.top_level = true
-		c.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		c.position = Vector3(
-			rng.randf_range(lo.x, hi.x), rng.randf_range(lo.y, hi.y), rng.randf_range(lo.z, hi.z)
+	_cloud_size = clampf(maxf(span.x, span.z) * 0.3, 0.6, Num.f(_cfg["cloud_max"])) * 2.4
+	var quad := QuadMesh.new()
+	var mat := ShaderMaterial.new()
+	mat.shader = SMOKE
+	mat.set_shader_parameter("centre_keep", 1.0)  # the hole is by the kaiju, mid-screen
+	quad.material = mat
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = quad
+	mm.instance_count = Num.i(_cfg["clouds"])
+	for n: int in mm.instance_count:
+		_cloud_at.append(
+			Vector3(
+				rng.randf_range(lo.x, hi.x),
+				rng.randf_range(lo.y, hi.y),
+				rng.randf_range(lo.z, hi.z)
+			)
 		)
-		c.scale = Vector3.ONE * 0.8
-		add_child(c)
-		_clouds.append(c)
+	_clouds = MultiMeshInstance3D.new()
+	_clouds.multimesh = mm
+	_clouds.top_level = true
+	_clouds.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_clouds)
+	_draw_clouds(0.0)
+
+
+func _draw_clouds(k: float) -> void:
+	var mm := _clouds.multimesh
+	var alpha := Num.f(_cfg["cloud_alpha"]) * (1.0 - k * k)
+	for n: int in _cloud_at.size():
+		var s := _cloud_size * (0.8 + 0.7 * k)
+		mm.set_instance_transform(n, Transform3D(Basis.from_scale(Vector3.ONE * s), _cloud_at[n]))
+		mm.set_instance_color(n, Color(DUST, alpha))
 
 
 static func _outward(pos: Vector3, middle: Vector2) -> Vector3:
