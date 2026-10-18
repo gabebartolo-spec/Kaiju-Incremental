@@ -12,6 +12,7 @@ extends SceneTree
 ##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0] [--typical]
 ## --typical stands where a middling number of squads fire (the median of the spots where any
 ## do), not the most: what a rampage usually looks like (D-076).
+## --rifle-ab=A,B plays 6 s with the rifle cue at A dB, then 6 s more at B dB (the mix A/B).
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FRAMES := 60 * 6
@@ -28,6 +29,7 @@ const VIEW := Rect2(-24.0, -30.0, 48.0, 36.0)
 var _out := "user://rooftops"
 var _seed := 0
 var _typical := false
+var _rifle_ab: Array[float] = []
 var _stills: Array[Dictionary] = []
 var _volleys: Array[int] = []
 var _sparks: Array[Dictionary] = []
@@ -41,6 +43,9 @@ func _initialize() -> void:
 			_seed = arg.substr(7).to_int()
 		if arg == "--typical":
 			_typical = true
+		if arg.begins_with("--rifle-ab="):
+			for db: String in arg.substr(11).split(","):
+				_rifle_ab.append(db.to_float())
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -66,7 +71,11 @@ func _run() -> void:
 	var due := -1
 	var logged := 0
 	var size := Vector2(root.get_viewport().get_visible_rect().size)
-	for i: int in FRAMES:
+	var levels: Dictionary = Content.section("sfx")["volume_db"]
+	for i: int in FRAMES * maxi(1, _rifle_ab.size()):
+		if not _rifle_ab.is_empty() and i % FRAMES == 0:
+			levels["rifle"] = _rifle_ab[floori(i / float(FRAMES))]
+			print("rooftops: frame %d rifle at %.1f dB" % [i, levels["rifle"]])
 		await physics_frame
 		while logged < roofs.spark_log.size():
 			var at: Vector3 = roofs.spark_log[logged]["at"]
