@@ -50,7 +50,6 @@ func _match(id: String, clip: bool) -> void:
 	var rampage := Rampage.new()
 	rampage.setup(species, stats, layout, 0)
 	var sim := rampage.sim
-	sim.time_left = 1.0e6
 	var stadium: RampageSim.Building = null
 	for b: RampageSim.Building in sim.buildings:
 		if b.landmark == str(Content.sports()["pitch"]["landmark"]):
