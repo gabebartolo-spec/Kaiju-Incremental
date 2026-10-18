@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 21:00
-## State: awaiting lead (GPU slot for #59 crowd evidence; crowd pushed 9032216, suite green)
+# Landmarks handoff, 2026-10-18 22:30
+## State: awaiting GPU slot (greenery hands it over; #59 round 2 pushed d665eb5, suite green)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -32,7 +32,16 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   their row to the nearest of 8 exits away from the kaiju, then up the aisle; gone once off the
   seats for 0.6 (escaped). Draws 18 MultiMeshes seated (6 shirts x 3 skins), buffer uploads.
   tuning.json "crowd". Flow 144 (fail-first log: scratchpad crowd_failfirst_evidence.log).
-- NEXT on LEAD's GPU slot: scratchpad local_crowd.sh (stills, --frametime off/on, clip; mp4 to
+- Round 2 (AFL clip FAILED its motion critic; LEAD's 5 fixes) in d665eb5, no sim change:
+  match loose positions, 2x light ball (sports.json), 3 jostle at the ball, opening kick,
+  drift; LandmarkBurst (scenes/landmark_burst.gd): inward landmark topples burst in place,
+  no strip/crush (flow check failed first: 5 swung, 22 crushed); landmark debris flies out;
+  landmark drops no longer crush the whole stadium; 8 dark tunnel mouths, staggered flight;
+  crowd bob in crowd.gdshader; clip kaiju from the SSE (SE clipped the corner mast).
+  city_view kept at 395 lines (Fire.prewarm moved out). Flow 145.
+- After the slot: pass it on as LEAD/greenery say. If round 2 fails, LEAD changes method
+  (demo with sections bursting in place only).
+- NEXT on the GPU slot: scratchpad local_crowd.sh (stills, --frametime off/on, clip; mp4 to
   720p). Then: 2x crop of a stand, commit stills, clip to notes landmarks/, paths + frame times
   to LEAD, PR body update.
 - Earlier (pre-crowd): ready for review, base claude/look-options. Suite green at 3bc9f2e.
