@@ -46,7 +46,7 @@ func _ready() -> void:
 			"park":
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 				_slab(rect.grow(-0.5), Vector2(PAVE_TOP + 0.02, 0.3), Look.color("outskirts"))
-			"plaza":
+			"plaza", "landmark":  # a landmark stands on its own plaza
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
 			"parking":
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)

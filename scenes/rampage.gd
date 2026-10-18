@@ -295,7 +295,7 @@ func _update_powers() -> void:
 func _on_footfall(_side: String, strength: float, at: Vector3) -> void:
 	sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
-	_city.fx.dust(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
+	_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT)
 	_step_dip = maxf(
 		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
