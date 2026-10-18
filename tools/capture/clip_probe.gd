@@ -141,16 +141,19 @@ func _turn(turn_at: float, roar_at: float) -> String:
 func _roar(roar_at: float) -> String:
 	var above := Vector2(-1, -1)
 	var exit := -1.0
+	var low := Vector2(INF, -1)  # the tail tip's lowest point in the roar (height, time)
 	for i: int in _t.size():
 		if _t[i] < roar_at:
 			continue
+		if _tip_y[i] < low.x:
+			low = Vector2(_tip_y[i], _t[i])
 		if _tip_y[i] > _hip_y[i]:
 			above = Vector2(_t[i] if above.x < 0.0 else above.x, _t[i])
 		if exit < 0.0 and i > 0 and _states[i - 1] == "roar" and _states[i] != "roar":
 			exit = _t[i]
 	return (
-		"tip above the hip %.2f-%.2f s (%.2f s), back to standing (roar ends) %.2f s"
-		% [above.x, above.y, maxf(0.0, above.y - above.x), exit]
+		"tip above the hip %.2f-%.2f s (%.2f s), lowest %.2f hips up at %.2f s, roar ends %.2f s"
+		% [above.x, above.y, maxf(0.0, above.y - above.x), low.x / _hip_y[0], low.y, exit]
 	)
 
 

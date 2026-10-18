@@ -1,5 +1,6 @@
 extends "res://tests/lib/runner.gd"
-## Clips suite (D-047): the croc titan moves by its baked Blender clips (KaijuClips, ClipGait).
+## Clips suite (D-047): the croc titan moves by its baked Blender clips (KaijuClips, ClipGait) at
+## every stage (baby, adolescent, adult).
 ## The clip file loads and fits the rig it was baked for (same bones and order as the skin), a
 ## file for another skeleton is refused, the walk's phase follows the distance travelled, a
 ## standing heading change turns on the spot, the roar opens the jaw and ends, no bone goes NaN,
@@ -11,6 +12,10 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: nothing here draws random numbers (the gaits seed their own twitches).
 
 const CLIPS := "res://assets/kaiju/reptilian_adult.kclip"
+## Each croc titan stage and its Blender skin export (assets/kaiju/test/<name>.skin.json).
+const STAGES := {
+	"baby": "croctitan_baby", "adolescent": "croctitan_adolescent", "adult": "croctitan"
+}
 const DT := 1.0 / 60.0
 
 
@@ -40,62 +45,63 @@ func _rig_of(kaiju: KaijuModel) -> KaijuRig:
 	return kaiju.find_children("*", "KaijuRig", true, false)[0]
 
 
-## The clips list one track per game bone in the rig's order, each gathering the skin export's
-## bones of that game name, and every clip the gait plays is there.
+## Every croc titan stage's clips list one track per game bone in its rig's order, each gathering
+## its skin export's bones of that game name, and every clip the gait plays is there.
 func _check_file() -> void:
-	var clips := KaijuClips.read(CLIPS)
-	check(clips != null, "the croc titan's clip file loads")
-	if clips == null:
-		return
-	var skin: Dictionary = JSON.parse_string(
-		FileAccess.get_file_as_string("res://assets/kaiju/test/croctitan.skin.json")
-	)
-	var games: Array[String] = []
-	for b: Dictionary in skin["bones"]:
-		if not games.has(str(b["game"])):
-			games.append(str(b["game"]))
-	var same := games.size() == clips.bones.size()
-	for g: String in games:
-		same = same and clips.bones.has(g)
-	check(
-		same and clips.bones.size() == 27,
-		"the clips have one track per game bone of the skin export (%d)" % clips.bones.size()
-	)
-	var all := true
-	for clip: String in ["idle", "walk", "turn_left", "turn_right", "roar"]:
-		all = all and clips.has_clip(clip)
-	check(
-		all and clips.loops("walk") and not clips.loops("roar"),
-		"idle, walk, both turns and the roar are baked"
-	)
+	var tracks_ok := true
+	var all_ok := true
+	var report := ""
+	for stage: String in STAGES:
+		var clips := KaijuClips.read("res://assets/kaiju/reptilian_%s.kclip" % stage)
+		if clips == null:
+			tracks_ok = false
+			report += " %s: missing" % stage
+			continue
+		var skin: Dictionary = JSON.parse_string(
+			FileAccess.get_file_as_string("res://assets/kaiju/test/%s.skin.json" % STAGES[stage])
+		)
+		var games: Array[String] = []
+		for b: Dictionary in skin["bones"]:
+			if not games.has(str(b["game"])):
+				games.append(str(b["game"]))
+		var same := games.size() == clips.bones.size() and clips.bones.size() == 27
+		for g: String in games:
+			same = same and clips.bones.has(g)
+		tracks_ok = tracks_ok and same
+		report += " %s %d" % [stage, clips.bones.size()]
+		for clip: String in ["idle", "walk", "turn_left", "turn_right", "roar"]:
+			all_ok = all_ok and clips.has_clip(clip)
+		all_ok = all_ok and clips.loops("walk") and not clips.loops("roar")
+	check(tracks_ok, "each stage's clips have one track per game bone of its skin (%s)" % report)
+	check(all_ok, "every stage has idle, walk, both turns and the roar baked")
 
 
-## The adult reptilian (the croc titan) walks by clips; its other stages and the other species
-## keep their procedural gaits; clips baked for one skeleton are refused by another.
+## The croc titan moves by clips at every stage; the other species keep their procedural gaits;
+## clips baked for one skeleton are refused by another.
 func _check_who_uses_clips() -> void:
 	var adult := _model("reptilian", "adult")
 	var rig := _rig_of(adult)
 	check(rig.gait is ClipGait, "the croc titan adult moves by its clips")
+	var baby := _model("reptilian", "baby")
 	var young := _model("reptilian", "adolescent")
+	check(
+		_rig_of(baby).gait is ClipGait and _rig_of(young).gait is ClipGait,
+		"the croc titan baby and adolescent move by their clips"
+	)
 	var mantis := _model("insectoid", "adult")
 	var octopus := _model("cephalopod", "adult")
 	check(
-		(
-			not _rig_of(young).gait is ClipGait
-			and _rig_of(young).gait is BipedGait
-			and _rig_of(mantis).gait is HexapodGait
-			and _rig_of(octopus).gait is RadialGait
-		),
-		"the adolescent, the mantis and the octopus keep their procedural gaits"
+		_rig_of(mantis).gait is HexapodGait and _rig_of(octopus).gait is RadialGait,
+		"the mantis and the octopus keep their procedural gaits"
 	)
 	var clips := KaijuClips.read(CLIPS)
 	var bones_match := clips.fit(rig).is_empty()
-	var refused := not clips.fit(_rig_of(young)).is_empty()
+	var refused := not clips.fit(_rig_of(baby)).is_empty()
 	check(
 		bones_match and refused,
 		"the clips fit the croc titan's rig and are refused by another skeleton"
 	)
-	for kaiju: KaijuModel in [adult, young, mantis, octopus]:
+	for kaiju: KaijuModel in [adult, baby, young, mantis, octopus]:
 		kaiju.queue_free()
 	await process_frame
 
