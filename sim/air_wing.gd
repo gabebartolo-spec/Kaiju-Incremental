@@ -130,7 +130,7 @@ func spawn() -> Heli:
 		heli.r = lead.r + Num.f(_form["wing_out"])
 	heli.pos = orbit_pos(heli)
 	heli.front = (sim.kaiju_pos - heli.pos).normalized().orthogonal() * heli.turn
-	heli.alt = _alt_over(heli.pos)
+	heli.alt = _alt_over([heli.pos] as Array[Vector2])
 	heli.hp = Num.f(cfg["hp"])
 	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
 	helis.append(heli)
@@ -277,7 +277,8 @@ func _fly(heli: Heli, to: Vector2, dt: float) -> void:
 	var slow := moved.length() < 3.0 * dt  # (near a hover it turns its nose only slowly)
 	var rate := deg_to_rad(Num.f(_form["hover_yaw" if slow else "yaw_rate"])) * dt
 	heli.front = heli.front.rotated(clampf(heli.front.angle_to(want), -rate, rate))
-	heli.alt = move_toward(heli.alt, _alt_over(to), Num.f(_form["climb"]) * dt)
+	var over := _alt_over(_track(to, moved / dt))
+	heli.alt = move_toward(heli.alt, over, Num.f(_form["climb"]) * dt)
 
 
 func _on_target(heli: Heli) -> bool:
@@ -285,23 +286,45 @@ func _on_target(heli: Heli) -> bool:
 	return absf(heli.front.angle_to(to)) <= deg_to_rad(Num.f(_form["fire_cone"]))
 
 
-## Cruise altitude, or roof_clear over the tallest building within a rotor's reach of p (and
-## look_ahead beyond, so it is up before it gets there).
-func _alt_over(p: Vector2) -> float:
+## Cruise altitude, or roof_clear over the tallest building within a rotor's reach of `track`
+## (where it will be over the next look_ahead metres), so it is up before it gets there and stays
+## down, in sight, beside a tall landmark it is not flying over.
+func _alt_over(track: Array[Vector2]) -> float:
 	var top := 0.0
 	var graph := sim.army_units.convoy.graph
-	var rotor := Num.f(cfg["heli_radius"]) + Num.f(_form["rotor"]) + Num.f(_form["look_ahead"])
-	var lo := graph.cell_of(p - Vector2(rotor, rotor))
-	var hi := graph.cell_of(p + Vector2(rotor, rotor))
-	for cx: int in range(lo.x, hi.x + 1):
-		for cz: int in range(lo.y, hi.y + 1):
-			for i: int in graph.lots_at(Vector2i(cx, cz)):
-				var b := sim.buildings[i]
-				var half := Vector2(b.w, b.d) * 0.5
-				var near := p.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
-				if near.distance_to(p) < rotor:
-					top = maxf(top, float(b.height))
+	var rotor := Num.f(cfg["heli_radius"]) + Num.f(_form["rotor"])
+	var seen := {}
+	for at: Vector2 in track:
+		var lo := graph.cell_of(at - Vector2.ONE * rotor)
+		var hi := graph.cell_of(at + Vector2.ONE * rotor)
+		for cx: int in range(lo.x, hi.x + 1):
+			for cz: int in range(lo.y, hi.y + 1):
+				for i: int in graph.lots_at(Vector2i(cx, cz)):
+					var b := sim.buildings[i]
+					var half := Vector2(b.w, b.d) * 0.5
+					var near := at.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
+					if not seen.has(i) and near.distance_to(at) < rotor:
+						seen[i] = true
+						top = maxf(top, float(b.height))
 	return maxf(altitude(), top + Num.f(_form["roof_clear"]))
+
+
+## Where a helicopter at p moving at `vel` may be over the next look_ahead metres: straight on,
+## round the kaiju either way (a reversal), in on a run and out on a break, so whichever it does
+## next it is already up over the roofs on the way (and down, in sight, when none are tall).
+func _track(p: Vector2, vel: Vector2) -> Array[Vector2]:
+	var rel := p - sim.kaiju_pos
+	var reach := Num.f(_form["look_ahead"])
+	var sweep := reach / maxf(rel.length(), 1.0)
+	var out: Array[Vector2] = [p]
+	for k: int in range(1, 5):
+		var f := k / 4.0
+		out.append(p + vel.normalized() * reach * f)
+		out.append(sim.kaiju_pos + rel.rotated(sweep * f))
+		out.append(sim.kaiju_pos + rel.rotated(-sweep * f))
+		out.append(p - rel.normalized() * minf(reach, rel.length() - attack_radius()) * f)
+		out.append(p + rel.normalized() * reach * f)
+	return out
 
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high: the
