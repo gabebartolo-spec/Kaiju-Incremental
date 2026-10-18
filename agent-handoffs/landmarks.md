@@ -1,11 +1,13 @@
-# Landmarks handoff, 2026-10-19 08:40
-## State: awaiting lead (PR #75 stadium stall fix, head 5d3f4b0, tests green; needs a kaiju-sim-review reviewer)
+# Landmarks handoff, 2026-10-19 10:10
+## State: running a check (CI probe run 39123908001: 1500 frames, --no3d, at c8d999b)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: LEAD (demo build, merges, QA)", local_106fc100...).
-PR bodies <= 8 lines, never merge. NO LOCAL GODOT (director's movie): CI only.
+PR bodies <= 8 lines, never merge. Godot allowed again (LEAD): headless first; windowed only
+off-screen with the no_focus override.cfg, removed after.
 - #57 landmark sites and #59 stadium matches (D-078): both MERGED into claude/look-options.
-  The landmarks worktree is removed; one live worktree: ../Kaiju-Incremental-wt/stadium-stall.
+- #75 stadium stall fix MERGED, in the demo exe (44f56fd, D-089).
+- One live worktree: ../Kaiju-Incremental-wt/stall-probe, branch claude/stall-probe (c8d999b).
 - Now: LEAD's stall job. Windowed dry-run at 329e708 showed 80-110 ms stalls every ~0.7 s while
   the stadium falls, the same with the crowd off. Asked: find the cause, a CI timing probe at
   look-options 8c24654 and the pre-#59 base 5bc6b44, the smallest fix with before/after ms,
@@ -45,9 +47,16 @@ Read the logs: gh run download <id>, grep settle/lift_piece/slow f/worst. Probe 
 settle() time of the whole stadium, lift_piece of one north rim arc, every frame over 40 ms
 with Rampage.cost_usec per event kind, and worst/total per kind.
 
-## Next
-- PR #75 waits for a kaiju-sim-review reviewer (LEAD names one) and LEAD's merge. Auto-fix on.
-- Then post-demo work from LEAD (rubble polish, landmarks E/F).
+## Next (LEAD 2026-10-19, after #75)
+LEAD's dry-run probe at 44f56fd: settle() 5.4 ms, but sim.step worst 43.9, rooftop_fired
+worst 62 ms, 205x "on_event on Nil" at powers_view.gd:160. Asked: probe as the game builds it,
+CI at 1500 frames, report sim.step and per-event worst/total (<= 6 lines), new PR if code changes.
+- The on_event error does NOT reproduce headless at 5574366 (0 in 300 frames); Rampage is set
+  up exactly as main.gd does (setup, then into the tree), so PowersView gets its rooftops.
+- This PC is too noisy to time (sim.step worst 35-140 ms run to run; first stadium shed
+  showed fall_start 18-63 ms, likely first-use cost: check on CI).
+- Probe now has --no3d (root.disable_3d) so 1500 frames fit CI; prints frames over 16.7 ms
+  per kind. Then: report to LEAD; open a probe-only PR if LEAD wants it kept.
 
 ## Findings for the lead
 - A per-settle check that loops over every floor above every floor is O(h^2 w d): fine for a
