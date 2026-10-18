@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-19 (rewritten after compaction)
-## State: running a check (demo playtest PAUSED by the director; 12 playtest fixes in flight -> demo exe 2)
+## State: PAUSED by the director (2026-10-19). Resume: check each session's handoff, then re-send its open FIX list.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review + merge
@@ -13,9 +13,7 @@ a failed first send in a parallel batch cancels the rest.
 ## on police cars; hull swings at the post) -> r5 list sent: lane-locked hull, car keep-out, turret-only, standoff.
 ## RESUMED (director): all sessions told (river notes, stadium shared-burst-mesh fix approved: hits 40-48 ms windowed,
 ## fall_start makes new render resources per burst). Rifle-fire PR + breath snout fix queued at rooftops.
-## Sessions renamed: Gun audio + breath aim (1ac658ed), Stadium + frame probe (87d706ce), Load, smoke FX, builds
-## (37cf489b), River spawn + greenery (9af27a16), Biomass + army ramp (b38b3a6f), Tanks + helis #50 (5325ef73),
-## Croc contact + dash (1feb30ca), OLD lead (retired) (9fac90d2), this = Kaiju: LEAD.
+## Sessions: build 37cf489b, tanks 5325ef73, croc 1feb30ca, army b38b3a6f, river 9af27a16, rooftops 1ac658ed, stadium 87d706ce.
 
 ## Where we are
 - Demo exe 1 (44f56fd, #75 stall fix in; smoke 10/10; pacing e1 0.26 h) given to the director at
@@ -83,6 +81,9 @@ claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #9
 stale exe-1 fps_cap ignored; SubViewport menus stay High). Director in League: no local Godot.
 #81 smoke MERGED eb9a86e (lead 2x PASS). #84 load FIX: prune static _baked cache per build. #82 sfx gate FIX: max_wait_s.
 #89 fresh sim review FIX: _sim never enables the body (determinism/autoplay run bodyless); sweep end heading; bite_dps>0.
+#50 r5 fresh motion critic FIX (lead-confirmed 2x): lead tank under the snout 12-13.5 s; standoff = body edge + 8 m,
+reverse 3-4 m/s, hull vs turret overlays at 12.5/17.5 s, tank 2 parked skewed. Heli B clip (x1.4 ease) -> director question.
+PAUSE sent to tanks, croc-contact, build sessions (idle ones not woken).
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
 $12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
