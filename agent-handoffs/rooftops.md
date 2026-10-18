@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: running a check (pacing b0jeyrx8u on 9cff149) + awaiting GPU turn (asked stadium to pass it)
+## State: running a check (pacing b0jeyrx8u) + awaiting CI capture baton from croc #54
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -56,7 +56,14 @@ Fixed in 17e3570/9cff149 (suites all 9 pass):
   452/452, known-bad 73/453 exit 1 (notes round2/).
 - Sparks 6 frames x1.5; tracer 3-piece fading trail; PARAPET_IN 2 voxels.
 - sfx: rifle -12 -> -2 dB, gain_jitter_db {rifle: 3}. Rifle was played but buried.
-NEXT: render on GPU turn (override.cfg, --typical, out notes round2/clip), then spark_gain, gap
+LEAD 2026-10-18: local GPU BLOCKED (director gaming). Renders on CI capture.yml, baton order
+stadium -> croc -> ME -> greenery (local_9af27a16...) -> #50 (local_5325ef73...); croc hands to me.
+Rifle now -6 dB (4780aae); capture --rifle-ab=-2,-6 renders 12 s (6 s each) for the loudness A/B:
+report integrated loudness + peak per half; keep -6 unless -2 needed. Sim packet posted on #63.
+CI dispatch: tools/capture/ci_capture.sh --movie --renderer=gl_compatibility --fps=60
+--resolution=1280x720 --ref=claude/rooftop-density capture_rooftops.gd -- --typical --rifle-ab=-2,-6
+--out=<notes>/rooftops-density/round2/clip ; when done pass the baton to greenery.
+OLD NEXT: render on GPU turn (override.cfg, --typical, out notes round2/clip), then spark_gain, gap
 list, audio onset list (ffmpeg -> wav, rms flux), squads-in-reach probe, 2x crops; send LEAD;
 pass slot to croc #54 (local_bce75838...) -> #50 (local_5325ef73...). Then update PR body tables.
 ## Since PR open (head 51a2d5d)
