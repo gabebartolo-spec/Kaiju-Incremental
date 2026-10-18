@@ -1,7 +1,7 @@
 # Handoff: board (this session: "Kaiju: Load, smoke FX, builds")
 
-Updated: 2026-10-19 01:30
-State: awaiting lead (director playtest fixes for demo exe 2, D-083: all four PRs open into claude/look-options)
+Updated: 2026-10-19 03:00
+State: awaiting lead (playtest fix PRs open; 4K GPU proposal sent)
 
 ## Open PRs (each green locally on all suites after syncing look-options)
 - Fix 3 frame cap: #77 MERGED.
@@ -18,6 +18,12 @@ State: awaiting lead (director playtest fixes for demo exe 2, D-083: all four PR
 - Worktrees live: fps-cap (merged, remove), sfx-gate, run-load, smoke, integ-a, integ-a-export (lead said keep).
 - Load timing method: export with `--export-release "Windows Desktop"`, then
   `godot_console --headless --main-pack K.exe --script <probe.gd> -- --tier=N` (scratch APPDATA).
+
+## GPU at 4K (lead request, 2026-10-19)
+Measured at 4K off-screen (worktree gpu4k, detached look-options 54e407f; probe + split.py in the scratchpad).
+High, uncapped: 80 fps at stage 1, 200 W, fan 50%. Behemoth: 52 fps, GPU-bound.
+Balanced (0.75 FSR1, MSAA off), cap 60: 110 W at stage 1, and Behemoth holds 60.
+Proposal sent to the lead: a Graphics High/Balanced setting, with 60 as the 4K default. Waiting for go; not built.
 
 ## Next
 Lead review at 2x; follow-up for the first young load if the lead wants it.
