@@ -1,5 +1,8 @@
 # Lead handoff, 2026-10-18 18:00
-## State: running a check (full speed to demo; #59 crowd + AFL re-clip, #55 r10 last round, board PR repurposed)
+## State: blocked on messaging cap (10 sends; resumes at the director's next message)
+QUEUED (send first on resume): rooftops (local_1ac658ed) "GO: GPU slot yours; 4% height cull approved, keep the hide
+spark on culled squads' volleys; render, remove override.cfg, report slot free + clip, 0096 2x crop, spark stats".
+#59 AFL clip (no crowd) -> motion critic running; landmarks has the crowd brief (D-078a). #36 resynced 08291ea, pre-sweep running.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
