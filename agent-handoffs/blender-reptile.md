@@ -1,9 +1,10 @@
 # blender-reptile handoff, 2026-10-18 13:00
-## State: running a check (full pacing b7z5d0orv at speed 0.6 / hp_mult 1.15 -> /tmp/pacing_final.txt;
-## data/tuning.json already holds 0.6/1.15). Capture chain bagkdqt14 queued (2 other runs ahead).
-## Sweep (--runs=60, young stage): 0.6/1.0 0.72 h 24/34 def; 0.6/1.1 0.71 h 18/33; 0.6/1.15 0.71 h
-## 15/33 (45%), 87% city; 0.6/1.2 13/33; 0.65/1.1 0.69 h 15/32; 0.7/1.05 0.66 h 17/31 (55%), 71% city.
-## 0.6 h is NOT reachable with speed+hp at ~0.6 speed (floor ~0.66 h); tell the lead, offer 0.7/1.05.
+## State: running a check (bsbmaeg9k: full pacing at 0.6/1.15 -> /tmp/pacing_final.txt, then all
+## suites -> /tmp/suites_d074b.txt; the first full run hit a 900 s timeout). Capture chain bagkdqt14
+## queued behind shell-hit-hp + military-ai. P3 = TOP PRIORITY (last thing the demo build waits on).
+## Director chose 0.6 / hp_mult 1.15 (D-074b: "~0.6 h unreachable at 0.6 speed; accepts ~0.71 h").
+## Young sweep (--runs=60): 0.71 h, 15/33 defeated (45%), 87% city. Growth floor set to 26 (uncommitted).
+## PR lands BEFORE #36 (army scales). PR body draft scratchpad ev/pr_p3.md: fill table, JAWS, CLIPS.
 ## Director 10:5x: baby + adolescent APPROVED (D-073). Lead = "Kaiju: Lead" local_106fc100-d2a4-...
 ## Art to the lead only.
 
