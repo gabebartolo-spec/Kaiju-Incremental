@@ -1,15 +1,11 @@
 extends SceneTree
-## Records a kaiju's locomotion the way the game drives it (sim-style position and heading,
-## stomps on the sim's beat, a roar), for the motion review. Walk, curve, a sharp turn, stand,
-## roar, walk again. Prints the planted-foot drift and the rig's cost per frame at the end.
-##
+## Records a kaiju's locomotion as the game drives it (sim position, heading, stage speed, stomps on
+## the beat, a roar): walk, curve, turn, stand, roar, walk. Prints foot drift, rig cost.
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_motion.gd -- --species=reptilian --stage=adult --cam=game
-## --cam=side: one fixed side (world +x, no orbit); --cam=fixed holds still by the first walk (slide
-## by eye). Footfalls kick dust and dip the camera (eased) as in the rampage; events are labelled.
+## --cam=side: fixed side (+x); --cam=fixed holds by the first walk. Footfalls dust, dip as in play.
 ## --trace=<file.csv>: t, pelvis height and forward speed per frame (the rhythm plot).
-## --pose-trace=<file.csv>: per frame the scripted event, the body's world x/z and heading, a
-## hard hold (insectoid), and how far all the bones moved that frame (stillness and twitches).
+## --pose-trace=<file.csv>: per frame the event, body x/z and heading, a hard hold, bone motion.
 ## Headless (no movie) prints the measurements; slide also in cm (a world unit = a 3.5 m storey).
 
 const FPS := 60.0
@@ -108,7 +104,10 @@ func _run() -> void:
 	stage.add_child(ui)
 	var def: Dictionary = Content.species_def(_species)
 	var stats: Dictionary = def["stats"]
-	var speed := Num.f(stats["speed"])
+	var tuning := CityGrowth.tuning_for(
+		Content.tuning(), ["baby", "adolescent", "adult"].find(_stage) + 1
+	)
+	var speed := Num.f(Growth.stage_stats(stats, tuning)["speed"])
 	var interval := Num.f(stats["stomp_interval"])
 	var colors: Dictionary = def["colors"]
 	var kaiju := KaijuModel.new(_species, colors, _stage)
@@ -121,8 +120,10 @@ func _run() -> void:
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
 			var size := body_scale * (0.2 + strength)
-			city.fx.dust(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
-			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT)
+			var tail := side == "tail"  # a tail slam throws its own puffs (Fx.shockwave)
+			if not tail:
+				city.fx.footfall(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
+			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT, tail)
 			var dip := (
 				Rampage.FOOTFALL_DIP * maxf(Rampage.FOOTFALL_DIP_FLOOR, body_scale) * strength
 			)
@@ -178,8 +179,8 @@ func _run() -> void:
 		total_usec += spent
 		_label.text = _event_at(t)
 		_dip = move_toward(_dip, 0.0, dt * Rampage.DIP_RECOVER * _dip + dt * 0.05)
-		# Cameras follow the body as drawn (KaijuModel.focus), eased as in the rampage.
-		_focus = _focus.lerp(kaiju.focus(), minf(1.0, dt * Rampage.FOCUS_FOLLOW))
+		# Cameras lock to the body as drawn (KaijuModel.focus), from the first frame (PR #54).
+		_focus = kaiju.focus()
 		_place(
 			cam,
 			_focus if _cam in ["game", "side"] else at,
@@ -187,7 +188,7 @@ func _run() -> void:
 			body_scale
 		)
 		if _cam == "game":
-			_dip_shown = lerpf(_dip_shown, _dip, minf(1.0, dt * 5.0))
+			_dip_shown = _dip  # at once, as Rampage drops its camera (PR #54: eased, it was 1 px)
 			cam.position.y -= _dip_shown * (0.75 + 0.4 * body_scale)
 		_trace_feet(kaiju, t, feet)
 		if _pose_trace != "":
