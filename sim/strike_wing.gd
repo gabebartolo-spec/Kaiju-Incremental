@@ -179,7 +179,5 @@ func clear_dead() -> void:
 			continue
 		destroyed += 1
 		sim.rubble += Num.f(cfg["rubble"]) * sim.stat("rubble_mult")
-		sim.events.append(
-			{"type": "jet_destroyed", "jet": jet.id, "x": jet.pos.x, "z": jet.pos.y}
-		)
+		sim.events.append({"type": "jet_destroyed", "jet": jet.id, "x": jet.pos.x, "z": jet.pos.y})
 	jets = alive
