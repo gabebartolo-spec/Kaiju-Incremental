@@ -9,6 +9,9 @@ extends Node
 
 const POOL := 8
 const STOMPS := 3
+## How fast the regen bubbles fade once their cue is over, and where a fade ends.
+const REGEN_FADE_DB_PER_S := 40.0
+const SILENT_DB := -60.0
 
 ## Menu sounds played (Sfx.ui), in order; read by the flow suite.
 static var ui_played: Array[String] = []
@@ -24,6 +27,8 @@ var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _regen: AudioStreamPlayer
+var _healing := false
+var _regen_age := 0.0
 ## The city's panic (crowd_panic loop), faded by the street's fleeing people and the
 ## destruction rate; _street is null on a stage with no streets.
 var _crowd: AudioStreamPlayer
@@ -97,6 +102,7 @@ func _process(delta: float) -> void:
 	_since_step += delta
 	_since_crack += delta
 	_since_breath += delta
+	_fade_regen(delta)
 	_update_crowd(delta)
 	if _pending == "":
 		return
@@ -225,11 +231,27 @@ func _looping(sound: String) -> AudioStreamPlayer:
 
 
 ## Regeneration's bubbling, on while the kaiju heals.
+## Bubbles only for the first regen_seconds of each healing spell, then a fade: a cue that
+## healing began, not a bed under the whole rampage (mix report, 2026-10-18).
 func regen(healing: bool) -> void:
-	if healing and not _regen.playing:
+	if healing and not _healing:
 		played.append("regen_loop")
+		_regen_age = 0.0
+		_regen.volume_db = _volume("regen_loop")
 		_regen.play()
 	elif not healing and _regen.playing:
+		_regen.stop()
+	_healing = healing
+
+
+func _fade_regen(delta: float) -> void:
+	if not _regen.playing:
+		return
+	_regen_age += delta
+	if _regen_age < Num.f(_tune["regen_seconds"]):
+		return
+	_regen.volume_db -= REGEN_FADE_DB_PER_S * delta
+	if _regen.volume_db <= SILENT_DB:
 		_regen.stop()
 
 
