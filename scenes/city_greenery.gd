@@ -19,6 +19,7 @@ const PALETTE := {
 	"play_yellow": Color("d0a838"),
 	"play_blue": Color("3a6a98"),
 	"play_metal": Color("8a8e90"),
+	"play_chain": Color("34383c"),
 }
 
 ## What was planted: "street_trees" (positions), "avenue_m" (avenue length they line),
@@ -143,7 +144,7 @@ func _avenue_trees() -> void:
 		var lean: Vector2i = spot["lean"]
 		if not _clear_of_lamps(p, walk * 1.5):
 			continue
-		_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _street_tree(v, lean))
+		_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _street_tree(v, lean), true)
 		trunks.append(p)
 		if spot["playable"]:
 			trees.append(p)
@@ -309,17 +310,22 @@ func _flower_bed(v: VoxelBuilder, bloom: String) -> void:
 func _playground(v: VoxelBuilder) -> void:
 	var half := roundi(Num.f(_sim.city["playground_size"]) * 0.5 / CityDecor.PROP_VOXEL) - 1
 	v.box(Vector3i(-half, 0, -half), Vector3i(half, 0, half), "play_mat")
-	# The slide: a tower and a ramp down to the pad.
+	# The slide: a tower, a ladder up its front and a ramp down to the pad.
 	v.box(Vector3i(-half + 1, 1, -half + 1), Vector3i(-half + 2, 6, -half + 2), "play_red")
+	for x: int in [-half, -half + 3]:
+		v.box(Vector3i(x, 1, -half + 3), Vector3i(x, 6, -half + 3), "play_metal")  # rails
+	for y: int in [2, 4, 6]:
+		v.box(Vector3i(-half + 1, y, -half + 3), Vector3i(-half + 2, y, -half + 3), "play_yellow")
 	for k: int in 6:
 		var x := -half + 3 + k
 		v.box(Vector3i(x, 6 - k, -half + 1), Vector3i(x, 6 - k, -half + 2), "play_yellow")
-	# The swings: two posts, a top bar, two seats.
-	for x: int in [1, half - 1]:
-		v.box(Vector3i(x, 1, half - 2), Vector3i(x, 8, half - 2), "play_metal")
-	v.box(Vector3i(1, 8, half - 2), Vector3i(half - 1, 8, half - 2), "play_metal")
-	for x: int in [3, half - 3]:
-		v.box(Vector3i(x, 4, half - 2), Vector3i(x, 7, half - 2), "play_metal")  # the chain
+	# The swings: two posts and a top bar two cells deep, so the one-cell hangers (dark steel
+	# against the light frame) read thinner than it; two seats with open space between.
+	for x: int in [0, half]:
+		v.box(Vector3i(x, 1, half - 3), Vector3i(x, 8, half - 2), "play_metal")
+	v.box(Vector3i(0, 8, half - 3), Vector3i(half, 8, half - 2), "play_metal")
+	for x: int in [2, half - 2]:
+		v.box(Vector3i(x, 4, half - 2), Vector3i(x, 7, half - 2), "play_chain")  # the hanger
 		v.put(Vector3i(x, 3, half - 2), "play_blue")
 	# The climbing frame: four posts and a top rail.
 	var c0 := Vector3i(-half + 1, 1, 1)

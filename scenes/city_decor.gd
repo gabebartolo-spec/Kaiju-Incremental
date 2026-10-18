@@ -92,13 +92,14 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var at := sim.kaiju_pos
 	if at != _walked and _walked.x != INF and not sim.airborne:
-		crush(Vector3(at.x, 0, at.y), Num.f(sim.city["trample_body"]) * sim.body_scale())
+		var reach := Num.f(sim.city["trample_body"]) * sim.body_scale()
+		crush(Vector3(at.x, 0, at.y), reach, at - _walked)
 	_walked = at
 
 
 ## Flattens props under a stomp.
-func crush(at: Vector3, radius: float) -> void:
-	_props.crush(at, radius)
+func crush(at: Vector3, radius: float, heading := Vector2.ZERO) -> void:
+	_props.crush(at, radius, heading)
 	for lamp: OmniLight3D in _lamps.duplicate():
 		if Vector2(lamp.position.x - at.x, lamp.position.z - at.z).length() <= radius:
 			_lamps.erase(lamp)
@@ -190,6 +191,16 @@ func _streets() -> void:
 			t2 += LAMP_EVERY
 
 
+## Park trees keep city.park_tree_spacing apart (about a crown's width of lawn between them),
+## so a park reads as a lawn with trees and not as a wood (critic on #55).
+func _lawn_round(p: Vector2) -> bool:
+	var spacing := Num.f(sim.city["park_tree_spacing"])
+	for tree: Vector2 in _park_trees:
+		if tree.distance_to(p) < spacing:
+			return false
+	return true
+
+
 ## No street tree's trunk within city.street_tree_car_clear of a car body (the parking slot
 ## drops instead).
 func _clear_of_trees(body: Rect2) -> bool:
@@ -234,8 +245,8 @@ func _blocks() -> void:
 						_rng.randf_range(inner.position.y, inner.end.y)
 					)
 					var on_path := absf(p.x - rect.get_center().x) <= 1.2  # a path down the middle
-					if not on_path and not play.has_point(p):
-						_props.add(Vector3(p.x, 0, p.y), _tree)
+					if not on_path and not play.has_point(p) and _lawn_round(p):
+						_props.add(Vector3(p.x, 0, p.y), _tree, true)
 						_park_trees.append(p)
 			"plaza":
 				var ring := rect.grow(-1.2)
@@ -244,7 +255,7 @@ func _blocks() -> void:
 					for edge: int in 4:
 						var p := _on_edge(ring, edge, t)
 						if not _on_building(p):
-							_props.add(Vector3(p.x, 0, p.y), _tree)
+							_props.add(Vector3(p.x, 0, p.y), _tree, true)
 					t += 0.2
 			"parking":
 				var bays := rect.grow(-0.6)
@@ -292,7 +303,7 @@ func _diagonal_trees() -> void:
 				if _on_building(p) or (_near_street(p) if city else _on_road(p)):
 					continue
 				if off == kerb or _rng.randf() < 0.45:
-					_props.add(Vector3(p.x, 0, p.y), _tree)
+					_props.add(Vector3(p.x, 0, p.y), _tree, true)
 		t += 4.0
 
 
