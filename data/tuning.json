@@ -317,7 +317,7 @@
 			{
 				"city": {"half": 42, "coast_z": -112, "max_height": 26},
 				"air": {"max": 0},
-				"army": {"range": 40.0}
+				"army": {"range": 10.5, "tank_damage": 8, "fire_interval": 0.65}
 			},
 			{
 				"city": {"half": 70, "coast_z": -140, "max_height": 32, "tower_chance": 0.6,
