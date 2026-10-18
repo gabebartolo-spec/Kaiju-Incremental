@@ -8,6 +8,10 @@ f94-114 + one-frame pop, flee clump, kaiju hidden. One fix round + crowd sent; f
 #54 baby clip FAIL (critic + lead w1 check): skating stride, late start, tail snap at turn, turntable turn, late/popping
 slam ring; fix list sent (skip shockwave arcs, black frame; 9/10 post-demo). Board session -> "Demo build dry-run"
 (local_37cf489b): build.yml on look-options + exe smoke test, internal only.
+NEXT BOARD: D-085 (director, told rooftops directly): "shooters aren't firing in unison ... improvised, unrehearsed
+resistance" -> #63 51a2d5d interval_jitter 0.5 + rifle lag 2-14 f. D-086 (lead): #36 option A, Behemoth per_level army
+0.02->0.03 (young override cut Behemoth defeats 22%->8%); non-blocking, follow-up PR if not settled. GPU order now:
+rooftops -> greenery -> stadium -> croc -> #50.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
