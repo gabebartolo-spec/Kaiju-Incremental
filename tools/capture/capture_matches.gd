@@ -62,7 +62,7 @@ func _run() -> void:
 ## One rampage in city 1 playing `id`; a still after some play, or the clip of the wall going.
 func _match(id: String, clip: bool) -> void:
 	var walk := {"go": false}
-	var rampage := _rampage(id, walk)
+	var rampage := _rampage(id, walk if clip else {})
 	var game: StadiumMatch = GuiInput.find_script(rampage, StadiumMatch)
 	var crowd: StadiumCrowd = GuiInput.find_script(rampage, StadiumCrowd)
 	var start := game.on_pitch()
@@ -125,8 +125,9 @@ func _time(crowd: bool) -> void:
 	await process_frame
 
 
-## City 1 with `id` in the stadium and the kaiju off its south-east wall; walks in once
-## walk["go"].
+## City 1 with `id` in the stadium and the kaiju off its south-south-east wall, walking in once
+## walk["go"]; with no `walk` (the stills) it waits off the north wall instead, so the game
+## camera looks down over the whole pitch rather than across the near rim.
 func _rampage(id: String, walk: Dictionary) -> Rampage:
 	StadiumMatch.force_sport = id
 	var species := Content.species_def("reptilian")
@@ -141,12 +142,12 @@ func _rampage(id: String, walk: Dictionary) -> Rampage:
 	for b: RampageSim.Building in sim.buildings:
 		if b.landmark == str(Content.sports()["pitch"]["landmark"]):
 			stadium = b
-	var out := APPROACH.normalized()
+	var out := APPROACH.normalized() if not walk.is_empty() else Vector2(0, -1)
 	var wall := out / (out / (Vector2(stadium.w, stadium.d) * 0.5)).length()
 	sim.kaiju_pos = Vector2(stadium.x, stadium.z) + wall + out * KERB
 	sim.facing = -out
 	rampage.scripted = func(s: RampageSim) -> Dictionary:
-		if not walk["go"]:
+		if not walk.get("go", false):
 			return {"move": Vector2.ZERO}
 		var to := Vector2(stadium.x, stadium.z) - s.kaiju_pos
 		return {"move": to.normalized() if to.length() > 1.0 else Vector2.ZERO}

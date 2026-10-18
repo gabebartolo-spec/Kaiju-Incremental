@@ -226,7 +226,7 @@ func fall_land(event: Dictionary) -> void:
 		landed.append(at)
 		var color: Color = part["color"]
 		debris(at, color, Vector3.UP)
-	node.queue_free()
+	LandmarkBurst.retire(node, sim.buildings[Num.i(event["building"])].landmark != "")
 	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
 		var from: Vector2 = event["from"]
 		var to: Vector2 = event["to"]

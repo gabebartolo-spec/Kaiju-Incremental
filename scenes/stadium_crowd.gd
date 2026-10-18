@@ -1,18 +1,20 @@
 class_name StadiumCrowd
 extends Node3D
-## The stadium's crowd (director 2026-10-18, D-078): spectators seated on every seat tier of the
-## baked model, in the two teams' shirts and street clothes, bobbing as they watch (in
-## crowd.gdshader: a seated crowd costs nothing per frame). When the
-## match panics, the fans whose seats' chunks fall go with them (hidden), and the rest stand,
-## run along their row to the nearest exit away from the kaiju, then up its aisle and out.
-## One MultiMesh per outfit and pose. Presentation only; tuning in data/tuning.json "crowd".
+## The stadium's crowd (director 2026-10-18, D-078: "full of people"): a fan on nearly every
+## seat of the baked model, in the two teams' shirts and street clothes, bobbing as they watch.
+## When the match panics they all jump up, arms raised, hopping (crowd.gdshader, no CPU), and
+## stream out: a few hundred at a time leave their seat and run along their row to the nearest
+## exit away from the kaiju, then up its aisle and out, the next taking their place as they go.
+## Fans whose seats' chunks fall go with them. Seated and standing fans sit in one static
+## MultiMesh per outfit (written once; a fan who leaves is hidden in place); only the runners
+## are rewritten each frame. Presentation only; tuning in data/tuning.json "crowd".
 
 enum State { SEATED, STANDING, ALONG, UP, GONE }
 
-const POSES := 3  # seated, then the arms-up run's two frames
 const RUN_HZ := 6.0
-const STRIDE := 3  # a fleeing fan moves every third frame (a third of the cost; 20 steps a second)
+const STRIDE := 2  # a runner moves every other frame (half the cost; 30 steps a second)
 const SHADER := preload("res://scenes/crowd.gdshader")
+const HIDDEN := Transform3D(Basis(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO), Vector3.ZERO)
 
 ## Frame-time checks: false and the match seats no crowd.
 static var enabled := true
@@ -23,9 +25,10 @@ class Fan:
 	var pos := Vector3.ZERO
 	var heading := Vector2.ZERO
 	var outfit := 0
+	var slot := 0
 	var phase := 0.0
 	var state := State.SEATED
-	var wait := 0.0
+	var go_at := 0.0
 	var speed := 1.0
 	var radius := 0.0
 	var exit := 0.0
@@ -38,6 +41,7 @@ var fleeing := false
 var fallen := 0
 var escaped := 0
 var killed := 0
+var _left := 0
 var _sim: RampageSim
 var _index: int
 var _cfg: Dictionary
@@ -45,14 +49,22 @@ var _rng: RandomNumberGenerator
 var _centre := Vector2.ZERO
 var _origin := Vector3.ZERO
 var _corner := Vector2.ZERO
+var _reach := 0.0
 var _heights: Dictionary = {}
-var _mms: Array[MultiMesh] = []
-var _buffers: Array[PackedFloat32Array] = []
+## Seat chunk -> the fans seated in it (until it falls).
+var _by_chunk: Dictionary = {}
+var _static: Array[MultiMesh] = []
+var _standing: Array[ArrayMesh] = []
+var _static_mat: ShaderMaterial
+var _run_mms: Array[MultiMesh] = []
+var _queue: Array[Fan] = []
+var _next := 0
+var _runners: Array[Fan] = []
 var _alive := -1
-var _dirty := true
 var _tick := 0
 var _aisle := 0.0
 var _out_after := 0.0
+var _cap := 0
 var _clock := 0.0
 
 
@@ -64,15 +76,17 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 	_cfg = Content.section("crowd")
 	_aisle = Num.f(_cfg["aisle"])
 	_out_after = Num.f(_cfg["out_after"])
+	_cap = Num.i(_cfg["runners"])
 	var b := _sim.buildings[index]
 	_centre = Vector2(b.x, b.z)
 	_corner = Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5)
+	_reach = Vector2(b.w, b.d).length() * 0.5
 	var v := BuildingVoxels.VOXEL
 	_origin = Vector3(_corner.x + v * 0.5, 0.0, _corner.y + v * 0.5)
 	var outfits := _outfits(kits)
-	var seats := _seats(LandmarkVoxels.voxels(b.landmark))
 	var share := Num.f(_cfg["team_share"])
-	for cell: Vector3i in seats:
+	var skins := StadiumMatch.SKINS.size()
+	for cell: Vector3i in _seats(LandmarkVoxels.voxels(b.landmark)):
 		var fan := Fan.new()
 		fan.pos = _origin + Vector3(cell.x, cell.y + 1, cell.z) * v
 		fan.heading = (_centre - Vector2(fan.pos.x, fan.pos.z)).normalized()
@@ -81,62 +95,68 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 			if _rng.randf() < share
 			else _rng.randi_range(kits.size(), kits.size() + _neutral().size() - 1)
 		)
-		fan.outfit = (
-			shirt * StadiumMatch.SKINS.size() + _rng.randi_range(0, StadiumMatch.SKINS.size() - 1)
-		)
+		fan.outfit = shirt * skins + _rng.randi_range(0, skins - 1)
 		fan.phase = _rng.randf()
 		fans.append(fan)
+		var chunk := _chunk(fan.pos)
+		var list: Array = _by_chunk.get(chunk, [])
+		list.append(fan)
+		_by_chunk[chunk] = list
+	_left = fans.size()
 	_build(outfits)
 
 
-## Fans still in the stands (seated or on their way out).
+## Fans still in the stands (seated, standing or on their way out).
 func in_stands() -> int:
-	var n := 0
-	for fan: Fan in fans:
-		n += 1 if fan.state != State.GONE else 0
-	return n
+	return _left
 
 
-## Fans up and running (standing, along a row or up an aisle).
+## Fans on their feet: everyone left once the match panics.
 func running() -> int:
-	var n := 0
-	for fan: Fan in fans:
-		n += 1 if fan.state != State.GONE and fan.state != State.SEATED else 0
-	return n
+	return _left if fleeing else 0
 
 
-## The wall gave: every fan stands after a moment and makes for the nearest exit on the side of
-## the stadium away from the kaiju.
+## The wall gave: every fan jumps up, and in a staggered order, a few hundred at a time, makes
+## for the nearest exit round the ring that is not on the kaiju's side.
 func panic(kaiju: Vector2) -> void:
 	fleeing = true
 	var count := Num.i(_cfg["exits"])
 	var toward := (kaiju - _centre).normalized()
 	var react: Array = _cfg["react"]
 	var run: Array = _cfg["run_speed"]
+	for o: int in _static.size():
+		_static[o].mesh = _standing[o]
+	var panic_bob: Array = _cfg["panic_bob"]
+	_static_mat.set_shader_parameter("bob", Num.f(panic_bob[0]))
+	_static_mat.set_shader_parameter("bob_hz", Vector2(Num.f(panic_bob[1]), Num.f(panic_bob[2])))
 	for fan: Fan in fans:
+		if fan.state != State.SEATED:
+			continue
 		var at := Vector2(fan.pos.x, fan.pos.z) - _centre
 		fan.radius = at.length()
 		var best := INF
 		for k: int in count:
 			var angle := (k + 0.5) * TAU / count
 			var turn := absf(angle_difference(at.angle(), angle))
-			if Vector2.from_angle(angle).dot(toward) < 0.3 and turn < best:
+			if Vector2.from_angle(angle).dot(toward) < 0.7 and turn < best:
 				best = turn
 				fan.exit = angle
-		fan.wait = _rng.randf_range(Num.f(react[0]), Num.f(react[1]))
+		fan.go_at = _clock + _rng.randf_range(Num.f(react[0]), Num.f(react[1]))
 		fan.speed = _rng.randf_range(Num.f(run[0]), Num.f(run[1]))
-		if fan.state == State.SEATED:
-			fan.state = State.STANDING
+		fan.state = State.STANDING
+		_queue.append(fan)
+	_queue.sort_custom(func(a: Fan, b: Fan) -> bool: return a.go_at < b.go_at)
 
 
 ## Every fan within `radius` of `at` (in plan) is crushed.
 func crush(at: Vector3, radius: float) -> void:
 	var c := Vector2(at.x, at.z)
+	if c.distance_to(_centre) > _reach + radius:
+		return
 	for fan: Fan in fans:
 		if fan.state != State.GONE and Vector2(fan.pos.x, fan.pos.z).distance_to(c) <= radius:
-			fan.state = State.GONE
+			_gone(fan)
 			killed += 1
-			_dirty = true
 
 
 func _process(delta: float) -> void:
@@ -144,42 +164,62 @@ func _process(delta: float) -> void:
 	var frame := _sim.buildings[_index].frame
 	if frame.alive_count != _alive:
 		_alive = frame.alive_count
-		for fan: Fan in fans:
-			if fan.state != State.GONE and not frame.alive(_chunk(fan.pos)):
-				fan.state = State.GONE
+		_fall(frame)
+	if not fleeing:
+		return
+	while _next < _queue.size() and _runners.size() < _cap and _queue[_next].go_at <= _clock:
+		var fan := _queue[_next]
+		_next += 1
+		if fan.state == State.STANDING:
+			_static[fan.outfit].set_instance_transform(fan.slot, HIDDEN)
+			fan.state = State.ALONG
+			_runners.append(fan)
+	_tick += 1
+	for i: int in range(_tick % STRIDE, _runners.size(), STRIDE):
+		_move(_runners[i], delta * STRIDE)
+	_runners = _runners.filter(func(f: Fan) -> bool: return f.state != State.GONE)
+	_draw_runners()
+
+
+## Chunks went: every fan seated in a fallen one goes with it, and so does any runner on one.
+func _fall(frame: Structure) -> void:
+	for chunk: Vector3i in _by_chunk.keys():
+		if frame.alive(chunk):
+			continue
+		for fan: Fan in _by_chunk[chunk]:
+			if fan.state == State.SEATED or fan.state == State.STANDING:
+				_gone(fan)
 				fallen += 1
-				_dirty = true
-	if fleeing:
-		_tick += 1
-		for i: int in range(_tick % STRIDE, fans.size(), STRIDE):  # a share of the fans a frame
-			_move(fans[i], delta * STRIDE)
-	if _dirty or fleeing:
-		_draw()
-		_dirty = false
+		_by_chunk.erase(chunk)
+	for fan: Fan in _runners:
+		if fan.state != State.GONE and not frame.alive(_chunk(fan.pos)):
+			_gone(fan)
+			fallen += 1
 
 
-## Standing: wait out the reaction, then along the row (at its own radius) to the exit's
-## angle, then straight out up the aisle until past the back of the seats.
+func _gone(fan: Fan) -> void:
+	if fan.state == State.SEATED or fan.state == State.STANDING:
+		_static[fan.outfit].set_instance_transform(fan.slot, HIDDEN)
+	fan.state = State.GONE
+	_left -= 1
+
+
+## A runner: along the row (at its own radius) to the exit's angle, then straight out up the
+## aisle until past the back of the seats.
 func _move(fan: Fan, delta: float) -> void:
 	var step := fan.speed * delta
 	var at := Vector2(fan.pos.x, fan.pos.z) - _centre
-	match fan.state:
-		State.STANDING:
-			fan.wait -= delta
-			if fan.wait <= 0.0:
-				fan.state = State.ALONG
-		State.ALONG:
-			var turn := angle_difference(at.angle(), fan.exit)
-			if absf(turn) * fan.radius <= _aisle:
-				fan.state = State.UP
-				return
-			var angle := at.angle() + signf(turn) * minf(step / fan.radius, absf(turn))
-			var to := _centre + Vector2.from_angle(angle) * fan.radius
-			fan.heading = Vector2.from_angle(angle + signf(turn) * PI * 0.5)
-			_step(fan, to, 0.0)
-		State.UP:
-			fan.heading = at.normalized()
-			_step(fan, Vector2(fan.pos.x, fan.pos.z) + fan.heading * step, step)
+	if fan.state == State.ALONG:
+		var turn := angle_difference(at.angle(), fan.exit)
+		if absf(turn) * fan.radius <= _aisle:
+			fan.state = State.UP
+			return
+		var angle := at.angle() + signf(turn) * minf(step / fan.radius, absf(turn))
+		fan.heading = Vector2.from_angle(angle + signf(turn) * PI * 0.5)
+		_step(fan, _centre + Vector2.from_angle(angle) * fan.radius, 0.0)
+	elif fan.state == State.UP:
+		fan.heading = at.normalized()
+		_step(fan, Vector2(fan.pos.x, fan.pos.z) + fan.heading * step, step)
 
 
 ## Moves a fan in plan, its feet on the seats there; off the seats for long enough, it is out.
@@ -195,6 +235,7 @@ func _step(fan: Fan, to: Vector2, step: float) -> void:
 	fan.pos = Vector3(to.x, y, to.y)
 	if fan.missed > _out_after:
 		fan.state = State.GONE
+		_left -= 1
 		escaped += 1
 
 
@@ -257,74 +298,83 @@ func _outfits(kits: Array) -> Array[Dictionary]:
 	return out
 
 
+## One static MultiMesh per outfit, every fan's seat written once; and per outfit the two run
+## frames for the runners, sized to the runner cap.
 func _build(outfits: Array[Dictionary]) -> void:
-	var per := PackedInt32Array()
+	var per: Array[Array] = []
 	per.resize(outfits.size())
 	for fan: Fan in fans:
-		per[fan.outfit] += 1
+		fan.slot = per[fan.outfit].size()
+		per[fan.outfit].append(fan)
 	var voxel := Num.f(Content.section("street")["person_voxel"])
-	var seated := ShaderMaterial.new()
-	seated.shader = SHADER
-	seated.set_shader_parameter("bob", Num.f(_cfg["bob"]))
+	_static_mat = ShaderMaterial.new()
+	_static_mat.shader = SHADER
+	_static_mat.set_shader_parameter("bob", Num.f(_cfg["bob"]))
 	var hz: Array = _cfg["bob_hz"]
-	seated.set_shader_parameter("bob_hz", Vector2(Num.f(hz[0]), Num.f(hz[1])))
+	_static_mat.set_shader_parameter("bob_hz", Vector2(Num.f(hz[0]), Num.f(hz[1])))
 	for o: int in outfits.size():
-		for pose: int in POSES:
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = (
-				VoxelPerson.seated(outfits[o], voxel)
-				if pose == 0
-				else VoxelPerson.dressed(outfits[o], VoxelPerson.Pose.RUN_A + pose - 1, voxel)
+		var mm := _multimesh(VoxelPerson.seated(outfits[o], voxel), maxi(1, per[o].size()))
+		mm.buffer = _transforms(per[o], mm.instance_count)
+		mm.visible_instance_count = per[o].size()
+		_static.append(mm)
+		_add(mm, _static_mat)
+		_standing.append(VoxelPerson.dressed(outfits[o], VoxelPerson.Pose.RUN_A, voxel))
+		for frame: int in 2:
+			var pose := VoxelPerson.Pose.RUN_A + frame
+			var run := _multimesh(
+				VoxelPerson.dressed(outfits[o], pose, voxel), maxi(1, mini(per[o].size(), _cap))
 			)
-			mm.instance_count = maxi(1, per[o])
-			mm.visible_instance_count = 0
-			var mmi := MultiMeshInstance3D.new()
-			mmi.multimesh = mm
-			mmi.material_override = seated if pose == 0 else null
-			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # a third of their cost
-			add_child(mmi)
-			_mms.append(mm)
-			var buffer := PackedFloat32Array()
-			buffer.resize(mm.instance_count * 12)
-			_buffers.append(buffer)
+			_run_mms.append(run)
+			_add(run, null)
 
 
-## Writes each bucket's transforms as one buffer upload (cheaper than a call per fan).
-func _draw() -> void:
+func _multimesh(mesh: ArrayMesh, count: int) -> MultiMesh:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = count
+	mm.visible_instance_count = 0
+	return mm
+
+
+func _add(mm: MultiMesh, mat: Material) -> void:
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # a third of their cost
+	add_child(mmi)
+
+
+## The runners' two frames per outfit, each written as one buffer upload.
+func _draw_runners() -> void:
 	var groups: Array[Array] = []
-	groups.resize(_mms.size())
-	for fan: Fan in fans:
-		if fan.state == State.GONE:
+	groups.resize(_run_mms.size())
+	for fan: Fan in _runners:
+		groups[fan.outfit * 2 + int(_clock * RUN_HZ + fan.phase * 2.0) % 2].append(fan)
+	for b: int in _run_mms.size():
+		var mm := _run_mms[b]
+		if groups[b].is_empty() and mm.visible_instance_count == 0:
 			continue
-		var pose := 0
-		if fan.state == State.STANDING:
-			pose = 1
-		elif fan.state != State.SEATED:
-			pose = 1 + int(_clock * RUN_HZ + fan.phase * 2.0) % 2
-		groups[fan.outfit * POSES + pose].append(fan)
-	for b: int in _mms.size():
-		var group := groups[b]
-		if group.is_empty() and _mms[b].visible_instance_count == 0:
-			continue
-		var buf := _buffers[b]
-		var i := 0
-		for fan: Fan in group:
-			var c := -fan.heading.y  # the yaw that turns -Z onto the (unit) heading
-			var s := -fan.heading.x
-			buf[i] = c
-			buf[i + 1] = 0.0
-			buf[i + 2] = s
-			buf[i + 3] = fan.pos.x
-			buf[i + 4] = 0.0
-			buf[i + 5] = 1.0
-			buf[i + 6] = 0.0
-			buf[i + 7] = fan.pos.y
-			buf[i + 8] = -s
-			buf[i + 9] = 0.0
-			buf[i + 10] = c
-			buf[i + 11] = fan.pos.z
-			i += 12
-		_buffers[b] = buf
-		_mms[b].buffer = buf
-		_mms[b].visible_instance_count = group.size()
+		var group := groups[b].slice(0, mm.instance_count)
+		mm.buffer = _transforms(group, mm.instance_count)
+		mm.visible_instance_count = group.size()
+
+
+## A full buffer of `count` transforms, the fans' first: each faces its heading, feet at pos.
+static func _transforms(group: Array, count: int) -> PackedFloat32Array:
+	var buf := PackedFloat32Array()
+	buf.resize(count * 12)
+	var i := 0
+	for fan: Fan in group:
+		var c := -fan.heading.y  # the yaw that turns -Z onto the (unit) heading
+		var s := -fan.heading.x
+		buf[i] = c
+		buf[i + 2] = s
+		buf[i + 3] = fan.pos.x
+		buf[i + 5] = 1.0
+		buf[i + 7] = fan.pos.y
+		buf[i + 8] = -s
+		buf[i + 10] = c
+		buf[i + 11] = fan.pos.z
+		i += 12
+	return buf

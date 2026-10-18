@@ -123,7 +123,7 @@ func _ready() -> void:
 	_ball_from = _centre
 	_ball_to = _centre
 	_ball_node = MeshInstance3D.new()
-	_ball_node.mesh = _ball_mesh(voxel * Num.f(_cfg["ball_scale"]))
+	_ball_node.mesh = _ball_mesh(voxel * Num.f(_cfg["ball_scale"]), Num.f(_cfg["ball_glow"]))
 	add_child(_ball_node)
 	if StadiumCrowd.enabled:
 		crowd = StadiumCrowd.new(sim, _index, kits, _rng)
@@ -203,8 +203,8 @@ func _process(delta: float) -> void:
 	_draw()
 
 
-## The wall gave: after a moment's shock each player makes for one of the two nearest tunnel
-## mouths on the side away from the kaiju.
+## The wall gave: after a moment's shock each player makes for the nearest tunnel mouth that is
+## not on the kaiju's side.
 func _panic() -> void:
 	fleeing = true
 	var kaiju := sim.kaiju_pos
@@ -221,7 +221,7 @@ func _panic() -> void:
 		safe.sort_custom(
 			func(a: Vector2, b: Vector2) -> bool: return a.distance_to(near) < b.distance_to(near)
 		)
-		p.exit = safe[_rng.randi_range(0, mini(1, safe.size() - 1))]
+		p.exit = safe[0]
 		p.wait = _rng.randf_range(Num.f(react[0]), Num.f(react[1]))
 
 
@@ -260,6 +260,7 @@ func _play(delta: float) -> void:
 	)
 	var chasers := Num.i(_cfg["chasers"])
 	var step := Num.f(_cfg["player_speed"]) * delta
+	var sprint := step * Num.f(_cfg["sprint"])
 	for i: int in order.size():
 		var p: Player = order[i]
 		var goal := _drift(p)
@@ -269,8 +270,14 @@ func _play(delta: float) -> void:
 		var to := goal - p.pos
 		if to.length() > 0.02:
 			p.heading = to.normalized()
-			p.pos += p.heading * minf(step, to.length())
+			p.pos += p.heading * minf(sprint if i < chasers else step, to.length())
 	_kick_in -= delta
+	if not order.is_empty() and _ball_t >= 1.0:  # the nearest has it at their feet: never dead
+		var holder: Player = order[0]
+		if holder.pos.distance_to(_ball) < REACH:
+			_ball_to = holder.pos + holder.heading * REACH * 0.4
+			_ball_from = _ball_to
+			_ball = _ball_to
 	if not order.is_empty() and _ball_t >= 1.0 and _kick_in <= 0.0:
 		var nearest: Player = order[0]
 		if nearest.pos.distance_to(_ball) < REACH:
@@ -320,7 +327,14 @@ func _draw() -> void:
 	_ball_node.position = Vector3(_ball.x, _top + arc, _ball.y)
 
 
-func _ball_mesh(voxel: float) -> ArrayMesh:
+## The ball, lit (its colour glows at `glow`) with a pale highlight on top, so it reads at the
+## game camera on any grass.
+func _ball_mesh(voxel: float, glow: float) -> ArrayMesh:
 	var v := VoxelBuilder.new()
 	v.blob(Vector3(0, 1.5, 0), Vector3(1.6, 1.3, 1.3), "ball")
-	return v.bake({"ball": Color(str(sport["ball"]))}, voxel, Vector3.ZERO, 0.0)
+	v.put(Vector3i(0, 2, 0), "shine")
+	v.put(Vector3i(-1, 2, 0), "shine")
+	var ball := Color(str(sport["ball"]))
+	ball.a = 0.0  # the glow flag (voxel.gdshader)
+	var shine := Color(1, 1, 1, 0)
+	return v.bake({"ball": ball, "shine": shine}, voxel, Vector3.ZERO, glow)

@@ -9,12 +9,14 @@
 		"flee_speed": 2.6,
 		"kick_every": [0.4, 1.0],
 		"kick_speed": 7.0,
-		"ball_scale": 2.0,
+		"ball_scale": 3.0,
+		"ball_glow": 0.8,
+		"sprint": 1.6,
 		"chasers": 3,
 		"drift": 0.8,
 		"drift_hz": 0.25,
-		"react": [0.1, 0.7],
-		"mouths": 8,
+		"react": [0.1, 0.4],
+		"mouths": 12,
 		"mouth": [0.9, 0.55, 0.6]
 	},
 	"sports": [
@@ -37,7 +39,7 @@
 			"posts": "uprights",
 			"line": "f2f2ee",
 			"post_color": "f2d03a",
-			"ball": "e8d2a0",
+			"ball": "fff0c0",
 			"per_side": 11,
 			"kits": [
 				{"shirt": "1f5a3a", "pants": "e8e2cc", "hair": "1f5a3a"},

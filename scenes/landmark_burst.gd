@@ -24,6 +24,17 @@ static func inward(sim: RampageSim, event: Dictionary) -> bool:
 	return dir.dot(Vector2(b.x - pivot.x, b.z - pivot.z)) > 0.0
 
 
+## A section that has landed: an ordinary building's goes at once (its debris and rubble take
+## over); a landmark's shrinks into its hinge over SECONDS under the dust, so it never pops.
+static func retire(node: Node3D, landmark: bool) -> void:
+	if not landmark:
+		node.queue_free()
+		return
+	var tween := node.create_tween()
+	tween.tween_property(node, "scale", Vector3.ONE * 0.01, SECONDS)
+	tween.tween_callback(node.queue_free)
+
+
 ## piece: the lifted section (BuildingView.lift_piece). fx: for its dust.
 func _init(piece: Node3D, fx: Fx) -> void:
 	_piece = piece
