@@ -6,18 +6,19 @@ extends RefCounted
 
 static func check_distance(check: Callable, sfx: Sfx) -> void:
 	var ear := sfx.listener.global_position
+	var gap := Num.f(Content.tuning()["sfx"]["min_interval"]["rifle"])
+	sfx._process(gap)  # the live rampage's own volleys may have a gap open: let it close first
 	sfx.play_at("rifle", ear + Vector3(5, 0, 0))
 	var near_db := sfx.last_volume()
-	var gap := Num.f(Content.tuning()["sfx"]["min_interval"]["rifle"])
-	var before := sfx.played.size()
+	var before := sfx.played.count("rifle")  # Sfx._process may play other sounds meanwhile
 	sfx.play_at("rifle", ear + Vector3(5, 0, 0))
 	sfx._process(gap * 0.5)
 	sfx.play_at("rifle", ear + Vector3(5, 0, 0))
 	check.call(
-		sfx.played.size() == before,
+		sfx.played.count("rifle") == before,
 		(
 			"volleys inside the rifle's %.2f s gap stay silent (%d played)"
-			% [gap, sfx.played.size() - before]
+			% [gap, sfx.played.count("rifle") - before]
 		)
 	)
 	sfx._process(gap)

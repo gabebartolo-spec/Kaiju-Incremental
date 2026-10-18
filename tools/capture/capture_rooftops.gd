@@ -9,7 +9,11 @@ extends SceneTree
 ## no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0]
+##     --script tools/capture/capture_rooftops.gd -- --out=<dir> [--seed=0] [--typical]
+## --typical stands where a middling number of squads fire (the median of the open spots where
+## any do and MIN_SEEN are on screen), not the most: what a rampage usually looks like (D-076).
+## Every stand spot is open: no building within CLEAR of the kaiju, none between it and the camera.
+## --rifle-ab=A,B plays 6 s with the rifle cue at A dB, then 6 s more at B dB (the mix A/B).
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FRAMES := 60 * 6
@@ -22,12 +26,19 @@ const NEAR := 5.0  # a squad nearer than this to the stand spot does not count (
 ## The ground the game camera shows round the kaiju (x either way, z ahead / behind it): squads
 ## outside it would fire from off screen or from under the HUD.
 const VIEW := Rect2(-24.0, -30.0, 48.0, 36.0)
+const CLEAR := 5.0  # an open spot has no building footprint this close to the kaiju
+const MIN_SEEN := 5  # a --typical spot shows at least this many squads
+const CAMERA := Vector3(0, 27, 19)  # Rampage.CAMERA_OFFSET (before its size zoom)
+const SIGHT_STEPS := 24  # points tested along the camera's line of sight to the body
 
 var _out := "user://rooftops"
 var _seed := 0
+var _typical := false
+var _rifle_ab: Array[float] = []
 var _stills: Array[Dictionary] = []
 var _volleys: Array[int] = []
 var _sparks: Array[Dictionary] = []
+var _in_reach: Array[int] = []  # squads with the kaiju in reach, sampled once a second
 
 
 func _initialize() -> void:
@@ -36,6 +47,11 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		if arg.begins_with("--seed="):
 			_seed = arg.substr(7).to_int()
+		if arg == "--typical":
+			_typical = true
+		if arg.begins_with("--rifle-ab="):
+			for db: String in arg.substr(11).split(","):
+				_rifle_ab.append(db.to_float())
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -51,7 +67,7 @@ func _run() -> void:
 	var rampage := Rampage.new()
 	rampage.setup(species, stats, layout, _seed)
 	var sim := rampage.sim
-	sim.kaiju_pos = _stand(sim)
+	sim.kaiju_pos = _stand(sim, _typical)
 	sim.facing = Vector2(0, -1)
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	root.add_child(rampage)
@@ -61,8 +77,14 @@ func _run() -> void:
 	var due := -1
 	var logged := 0
 	var size := Vector2(root.get_viewport().get_visible_rect().size)
-	for i: int in FRAMES:
+	var levels: Dictionary = Content.section("sfx")["volume_db"]
+	for i: int in FRAMES * maxi(1, _rifle_ab.size()):
+		if not _rifle_ab.is_empty() and i % FRAMES == 0:
+			levels["rifle"] = _rifle_ab[floori(i / float(FRAMES))]
+			print("rooftops: frame %d rifle at %.1f dB" % [i, levels["rifle"]])
 		await physics_frame
+		if i % 60 == 0:
+			_in_reach.append(_reaching(sim))
 		while logged < roofs.spark_log.size():
 			var at: Vector3 = roofs.spark_log[logged]["at"]
 			var px := camera.unproject_position(at)
@@ -80,9 +102,13 @@ func _run() -> void:
 			due = -1
 			_still(rampage, roofs, camera, i)
 	var file := FileAccess.open(_out.path_join("rooftops.json"), FileAccess.WRITE)
-	file.store_string(
-		JSON.stringify({"stills": _stills, "volley_frames": _volleys, "sparks": _sparks}, "  ")
-	)
+	var record := {
+		"stills": _stills,
+		"volley_frames": _volleys,
+		"sparks": _sparks,
+		"in_reach_per_second": _in_reach,
+	}
+	file.store_string(JSON.stringify(record, "  "))
 	file.close()
 	print(
 		(
@@ -98,12 +124,23 @@ func _run() -> void:
 	quit()
 
 
+## How many live squads have the kaiju within range + stomp (the sim's rule) right now.
+func _reaching(sim: RampageSim) -> int:
+	var reach := Num.f(sim.army["rooftop"]["range"]) + sim.stomp_radius()
+	var count := 0
+	for squad: Army.Squad in sim.army_units.squads:
+		count += 1 if squad.pos.distance_to(sim.kaiju_pos) <= reach else 0
+	return count
+
+
 ## The spot (on a GRID over the arena) where the most squads in the camera's VIEW have the kaiju
-## in rifle range (none point-blank), then where the most squads are in VIEW.
-func _stand(sim: RampageSim) -> Vector2:
-	var reach := Num.f(sim.army["rooftop"]["range"]) * 0.95
+## in rifle range (none point-blank; range from its stomp edge, as the sim's), then where the most
+## squads are in VIEW. typical: the median of the spots where any fire, instead of the most.
+func _stand(sim: RampageSim, typical := false) -> Vector2:
+	var reach := (Num.f(sim.army["rooftop"]["range"]) + sim.stomp_radius()) * 0.95
 	var best := sim.kaiju_pos
 	var best_n := -1
+	var spots: Array[Vector3] = []  # x, z, score of every spot where any squad fires
 	var steps := int(sim.arena_half * 2.0 / GRID)
 	for gx: int in steps:
 		for gz: int in steps:
@@ -115,10 +152,19 @@ func _stand(sim: RampageSim) -> Vector2:
 				var shown := VIEW.has_point(squad.pos - at)
 				seen += 1 if shown else 0
 				firing += 1 if d > NEAR and d < reach and shown else 0
+			if firing == 0 or not _open(sim, at):
+				continue
 			var n := firing * 100 + seen  # most firing on screen, then most on screen
+			if firing > 0 and seen >= MIN_SEEN:
+				spots.append(Vector3(at.x, at.y, n))
 			if n > best_n:
 				best_n = n
 				best = at
+	if typical and not spots.is_empty():
+		spots.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.z < b.z)
+		var mid := spots[floori(spots.size() * 0.5)]
+		best = Vector2(mid.x, mid.y)
+		best_n = roundi(mid.z)
 	print(
 		(
 			"rooftops: standing at %s, %d squads firing on screen, %d on screen"
@@ -126,6 +172,25 @@ func _stand(sim: RampageSim) -> Vector2:
 		)
 	)
 	return best
+
+
+## No building footprint within CLEAR of `at`, and none standing in the game camera's line of
+## sight from behind and above to the kaiju's middle there: the whole body shows, not a strip.
+func _open(sim: RampageSim, at: Vector2) -> bool:
+	var scale := sim.body_scale()
+	var eye := Vector3(at.x, 0, at.y) + CAMERA * (0.75 + 0.4 * scale)  # Rampage._place_camera
+	var middle := Vector3(at.x, 3.0 * scale, at.y)
+	for b: RampageSim.Building in sim.buildings:
+		var rect := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
+		if rect.grow(CLEAR).has_point(at):
+			return false
+		if not rect.grow(eye.distance_to(middle)).has_point(at):
+			continue
+		for k: int in range(1, SIGHT_STEPS):
+			var p := middle.lerp(eye, k / float(SIGHT_STEPS))
+			if p.y < b.height and rect.has_point(Vector2(p.x, p.z)):
+				return false
+	return true
 
 
 func _still(rampage: Rampage, roofs: RooftopView, camera: Camera3D, frame: int) -> void:

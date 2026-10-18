@@ -304,12 +304,15 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	var player := _pool[_next]
 	_next = (_next + 1) % _pool.size()
 	var jitter := Num.f(_tune["pitch_jitter"])
+	var swings: Dictionary = _tune.get("gain_jitter_db", {})  # e.g. rifles: no two cracks alike
+	var swing := Num.f(swings.get(sound, 0.0))
 	player.stream = stream
-	player.volume_db = _volume(sound) + extra_db
+	player.volume_db = _volume(sound) + extra_db + _rng.randf_range(-swing, swing)
 	if sound.begins_with("footstep") or sound.begins_with("stomp"):
 		pitch *= _size_pitch
 	player.pitch_scale = pitch * (1.0 + _rng.randf_range(-jitter, jitter))
-	player.play()
+	var starts: Dictionary = _tune.get("start_s", {})  # skips a sample's silent lead-in
+	player.play(Num.f(starts.get(sound, 0.0)))
 
 
 ## The crowd's level in dB for a panic `intensity` (0..1), pulled down while Atomic Breath
