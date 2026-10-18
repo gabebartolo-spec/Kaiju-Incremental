@@ -33,6 +33,11 @@ scale along facing), body_radius x body scale wide.
 Proof still owed: the check failing first (4e8da0c pushed with the check only; its CI run was
 in progress, and pushing 0b8f625 probably cancelled it: re-run it with gh run rerun), CI suites
 green at the fix, a new CI clip of the same moment, both tanks' overlays, pacing on CI.
+- CI at the WIP head 085410a (run 39144397528, expected red, not fixed: paused): 3 military
+  fails. Body edge closest 4.6 m (bar 8); parked skewed 86 of 3522 tank-steps past 15 deg;
+  standoff 90% of 162 in band (bar 95%, sample floor 40 ok), danger 0.9 s ok. The wider
+  standoff leaves few in-band posts (8301 reserve) and more tanks mid-pivot: next to tackle.
+  The failing-first runs (1ce1cee, 4e8da0c) were both cancelled by later pushes.
 - Check: tests/lib/military_view.gd: got["edge"] (tank centre to body edge) >= EDGE_GAP 8 over
   the seeded clip run (Clip.walk stride), plus no hull on a car.
 - Pacing on CI: scratchpad pacing_military.gd (pacing.gd + damage tally) goes into
