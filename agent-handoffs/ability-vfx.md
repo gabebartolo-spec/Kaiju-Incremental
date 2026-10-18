@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 04:10
-## State: running a check (#36 pushed 08291ea; D-069a pick young army tank_damage 3.5, 130-run confirm running on scratch #36+#54+#63)
+## State: running a check (D-069a 130-run: young 26/34 -> 18/32 but Behemoth 9/40 -> 3/40; option A Behemoth per_level 0.03/0.04 sweeping, sent to lead)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -98,5 +98,6 @@
 ## Running jobs
 - Scratch copy scratchpad/sweep36 (#36+#54+#63, floors sim 52 growth 31 flow 139); script scratchpad/young_sweep36.sh '<json>'... (N=runs). Deterministic.
 - 45-run results, young ended time/defeated/city: {} 8/26/0 of 34; td3 23/9/0; td3+si6 29/3/0; td3.5 14/18/0 (PICK); si6 18/14/0; td3.5+si5.5 20/12/0. evolve1 0.68-0.70 h for all. young_damage_mult is NOT a lever (damage to the kaiju's young).
+- 130-run on scratch: before young 8/26/0, Beh 31/9/0, Col 28/28/0, e1 0.70 e2 1.69, 81/87 3.24 h; td3.5 young 14/18/0, Beh 37/3/0, Col 27/31/0, e1 0.68 e2 1.68, 81/87 3.29 h. Behemoth drop flagged to lead with options A (Beh per_level 0.03, recommended) / B ship / C si6. scratchpad/beh_sweep.sh <f>...
 - When #54 + #63 land: resync #36, add "army": {"tank_damage": 3.5} to stages[0], 130-run pacing, before/after table in #36's body, Board/log line D-069a.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
