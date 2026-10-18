@@ -73,17 +73,22 @@ func plant() -> void:
 	_yards()
 
 
-## A street tree every city.street_tree_gap metres down both pavements of every avenue in the
-## playable city, clear of the crossings (city.street_tree_clear), the lamps and the diagonal.
+## A street tree every city.street_tree_gap metres down both kerbs of every avenue and street
+## (city.street_tree_kinds) in the playable city, the trunk on the kerb line
+## (city.street_tree_kerb in from the road's edge) and the crown leaning out over the road, the
+## way real street trees stand clear of the facades. Clear of the crossings
+## (city.street_tree_clear), the lamps (a tree that would stand by one steps past it) and the
+## diagonal.
 func _avenue_trees() -> void:
 	var nodes: Array[Vector2] = _plan["nodes"]
-	var gap: Array = _sim.city["street_tree_gap"]
+	var gap := Num.f(_sim.city["street_tree_gap"])
 	var clear := Num.f(_sim.city["street_tree_clear"])
+	var kinds: Array = _sim.city["street_tree_kinds"]
 	var walk := Num.f(_sim.city["sidewalk"])
 	var diagonal := CityGen.width_of(CityGen.DIAGONAL, _sim.city) * 0.5 + walk
 	var trees: Array[Vector2] = green["street_trees"]
 	for street: Dictionary in _plan["streets"]:
-		if str(street["kind"]) != CityGen.AVENUE:
+		if not str(street["kind"]) in kinds:
 			continue
 		var a := nodes[Num.i(street["from"])]
 		var b := nodes[Num.i(street["to"])]
@@ -92,23 +97,32 @@ func _avenue_trees() -> void:
 		var dir := (b - a).normalized()
 		var side := Vector2(-dir.y, dir.x)
 		var length := a.distance_to(b)
-		var kerb := Num.f(street["width"]) * 0.5 + walk * 0.45
+		var kerb := Num.f(street["width"]) * 0.5 + Num.f(_sim.city["street_tree_kerb"])
 		green["avenue_m"] = Num.f(green["avenue_m"]) + length
 		for s: float in [-1.0, 1.0]:
-			var t := clear + _rng.randf_range(0.0, Num.f(gap[0]) * 0.5)
+			var lean := Vector2i(roundi(-side.x * s), roundi(-side.y * s))  # over the road
+			var t := clear + gap * 0.25
 			while t < length - clear:
 				var p := a + dir * t + side * s * kerb
-				var clear_of_lamps := true
-				for lamp: Vector2 in _lamps:
-					clear_of_lamps = clear_of_lamps and lamp.distance_to(p) > walk * 1.5
+				if not _clear_of_lamps(p, walk * 1.5):
+					p += dir * walk * 1.5  # step past the lamp
 				if (
-					clear_of_lamps
+					_clear_of_lamps(p, walk * 1.5)
 					and not _on_building.call(p)
 					and CityGen.diagonal_distance(_plan, p) > diagonal
 				):
-					_props.add(Vector3(p.x, 0, p.y), _street_tree)
+					_props.add(
+						Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _street_tree(v, lean)
+					)
 					trees.append(p)
-				t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
+				t += gap
+
+
+func _clear_of_lamps(p: Vector2, reach: float) -> bool:
+	for lamp: Vector2 in _lamps:
+		if lamp.distance_to(p) <= reach:
+			return false
+	return true
 
 
 ## Where a park's playground goes (city.playground_size square in its south-west corner), or
@@ -224,13 +238,18 @@ func _yards() -> void:
 			break
 
 
-## A street tree: slimmer than a park tree, so its crown stays over the pavement.
-func _street_tree(v: VoxelBuilder) -> void:
-	var tall := 5 + _rng.randi_range(0, 2)
+## A street tree: a tall trunk on the kerb and a crown (city.street_tree_crown voxels) that
+## leans `lean` out over the road, high enough to clear the parked cars and away from the
+## facades.
+func _street_tree(v: VoxelBuilder, lean: Vector2i) -> void:
+	var tall := 8 + _rng.randi_range(0, 2)
 	v.box(Vector3i(0, 0, 0), Vector3i(0, tall, 0), "bark")
-	var r := _rng.randf_range(1.6, 2.1)
-	v.blob(Vector3(0.0, tall + r * 0.7, 0.0), Vector3(r, r * 0.9, r), "leaf")
-	v.blob(Vector3(r * 0.4, tall + r * 0.4, 0.0), Vector3(r * 0.6, r * 0.5, r * 0.6), "leaf_dark")
+	var crown: Array = _sim.city["street_tree_crown"]
+	var r := _rng.randf_range(Num.f(crown[0]), Num.f(crown[1]))
+	var c := Vector3(lean.x * 2, tall + r * 0.6, lean.y * 2)
+	v.box(Vector3i(0, tall, 0), Vector3i(lean.x * 2, tall, lean.y * 2), "bark")
+	v.blob(c, Vector3(r, r * 0.8, r), "leaf")
+	v.blob(c + Vector3(r * 0.4, -r * 0.25, 0.0), Vector3(r * 0.6, r * 0.5, r * 0.6), "leaf_dark")
 
 
 ## A low round bush.

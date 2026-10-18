@@ -1,7 +1,7 @@
 extends RefCounted
 ## D-065 (director 2026-10-18: "make sure there are a believable amount of trees, bushes,
 ## floral areas, parks, gardens, playgrounds throughout the city"): measures a city's
-## greenery the way a real downtown is judged. Street trees per km of avenue, the parks and
+## greenery the way a real downtown is judged. Street trees per km of street, the parks and
 ## what is in them, front yards and their hedges, the share of the playable city's blocks
 ## that are green, and the furthest any building stands from a park. The city suite's green
 ## check lives here too (check_city), so run_city_tests.gd keeps room under its line cap.
@@ -62,10 +62,10 @@ static func check_city(
 	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check: Callable
 ) -> void:
 	var got: Dictionary = measure(sim, decor)
-	var gap: Array = sim.city["street_tree_gap"]
+	var gap := Num.f(sim.city["street_tree_gap"])
 	var per_km := Num.f(got["trees_per_km"])
-	var low := 1000.0 / Num.f(gap[1])  # one pavement's worth at the widest spacing
-	var high := 2000.0 / Num.f(gap[0])  # both pavements at the closest
+	var low := 1000.0 / gap  # one kerb's worth: crossings, lamps and the diagonal take the rest
+	var high := 2000.0 / gap  # both kerbs, every slot
 	var parks := Num.i(got["parks"])
 	check.call(
 		(
@@ -78,7 +78,7 @@ static func check_city(
 		),
 		(
 			(
-				"stage %d, map_seed %d: green city (%.0f street trees/km of avenue, want %.0f-%.0f;"
+				"stage %d, map_seed %d: green city (%.0f street trees/km of street, want %.0f-%.0f;"
 				+ " %d parks, %d playgrounds, %d bushes, %d flower beds, %d yards, %d hedges)"
 			)
 			% [

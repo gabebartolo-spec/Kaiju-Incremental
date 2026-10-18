@@ -57,7 +57,7 @@ func _run() -> void:
 			print(
 				(
 					(
-						"  green: %d street trees on %.2f km of avenue (%.0f/km), %d parks, %d playgrounds,"
+						"  green: %d street trees on %.2f km of street (%.0f/km), %d parks, %d playgrounds,"
 						+ " %d bushes, %d flower beds, %d yards with %d hedge bushes, %.1f%% green blocks,"
 						+ " furthest building %.0f m from a park"
 					)
