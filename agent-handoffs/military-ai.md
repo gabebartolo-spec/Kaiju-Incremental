@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r4 in progress)
-## State: running a check (CI tests.yml on 4e8d680 = r4 + look-options bf06cdd + per-stage view check printing VIEW lines (the probe table); STILL CI-ONLY (LEAD 2026-10-19: no local Godot, headless included); clip on capture.yml once claude/greenery run frees it; pacing waits)
+## State: running a check (CI tests.yml on eb7baf0; STILL CI-ONLY (LEAD: no local Godot, headless included); clip on capture.yml after tests are green; pacing waits)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -30,18 +30,18 @@ screen points vs the frame (4% margin) and HUD plates.
   helis >= 95% in frame + 0 under HUD, drawn tank parts never touch). DRIVE_DEG 10, FIRE_YAW 20.
 
 ## Next
-1. Read CI for the r4 head (gh run list -b claude/military-ai). The military_view thresholds
-   (95%, 0 HUD) never ran: a red result gives the real numbers. Fix on CI only.
-2. Clip on CI: capture.yml (tools/capture/ci_capture.sh capture_military.gd --movie), 720p,
-   gl_compatibility, one run at a time. Same spot, CLIP_AT (5,-70).
-3. Probe table for the PR body: grep the tests log for "VIEW " (military_view prints one line
-   per run: Behemoth clip, Colossus, Apex: heli in-frame %, HUD, pair lateral, facade,
-   rotor-roof, fire yaw, tank drawn gap, touching, yaw while moving).
-4. Young retune + pacing (needs local Godot, LEAD's go): bar evolve1 0.26 h +-5%, young
-   defeats within +-2 of the base count on the same seeds; measure the base the same way.
-   Re-measure damage per stage (balance +-5%).
-5. PR body r4 section, sim-review packet section 6 (TankSpacing, AirSpace, wing side), then
-   ping LEAD with the full SHA.
+CI history this round:
+- 6a0a5db..638171c: smoke compile caught bool(Variant).
+- 63c26b2: military shard killed. Cause: AirSpace rescanned lots per 1 m sample (fixed: roof cache per 2 m cell),
+  and the three real-scene view runs were too slow on CI (fixed eb7baf0: only the clip's scene;
+  per-stage framing comes from the sim rampages through the test's own camera, military_frame.gd).
+- Tentacles grab: the heli came within reach, but the grabs went to cars. The window is now 16 s.
+1. Read CI for eb7baf0 (rate limit: poll every 3 min, not 10 s). VIEW lines = probe table.
+2. Clip on CI: capture.yml (check gh run list -w capture.yml first: one at a time),
+   script capture_military.gd, --movie, renderer gl_compatibility, 1280x720, fps 60.
+3. PR body r4 section (pr_body.md in the scratchpad), sim-review packet section 7 is written.
+4. Pacing + young retune wait for LEAD's go (local Godot), or a CI dispatch.
+5. Ping LEAD with the full SHA.
 
 ## Findings for the lead
 - Numeric per-frame probes caught what crops missed: the "hulls interpenetrating" was a gun.
