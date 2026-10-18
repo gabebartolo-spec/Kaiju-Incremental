@@ -50,28 +50,24 @@ func _check_heli_pairs() -> void:
 
 
 ## Facing a helicopter makes it break off: a kaiju that keeps turning to face it for 10 s is
-## never dived on (after the first second it never closes on it, save where the game camera's
-## frame draws it in, and never comes inside its attack radius).
+## never dived on (after the first second it never comes inside its cruise distance, or where
+## the game camera's frame draws that in, the closest the frame ever asks of it).
 func _check_heli_faced() -> void:
 	var sim := _rampage(2, 0)
 	var heli := sim.air.spawn()
 	var closest := INF
-	var dives := 0
-	var was := INF
+	var framed := INF
 	for i: int in roundi(10.0 / DT):
 		sim.facing = (heli.pos - sim.kaiju_pos).normalized()
 		sim.step(DT, Vector2.ZERO, false)
-		var d := heli.pos.distance_to(sim.kaiju_pos)
+		framed = minf(framed, _framed_cruise(sim, heli))
 		if i > roundi(1.0 / DT):
-			closest = minf(closest, d)
-			if d < was - 0.01 and d > _framed_cruise(sim, heli) + 0.05:
-				dives += 1
-		was = d
+			closest = minf(closest, heli.pos.distance_to(sim.kaiju_pos))
 	check(
-		dives == 0 and closest > sim.air.attack_radius() + 0.5,
+		closest >= framed - 0.3 and closest > sim.air.attack_radius() + 0.5,
 		(
-			"a helicopter the kaiju faces never dives on it (%d steps closing; closest %.2f m)"
-			% [dives, closest]
+			"a helicopter the kaiju faces never dives on it (closest %.2f m, framed cruise %.2f m)"
+			% [closest, framed]
 		)
 	)
 

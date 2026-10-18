@@ -330,10 +330,10 @@ func axis(e: int) -> Vector2:
 	return (nodes[edge_b[e]] - nodes[edge_a[e]]).normalized()
 
 
-## Does a hull pointing along `front` lie along road e (within pivot_deg)? Any way off a road.
+## Does a hull pointing along `front` lie along road e (within skew_deg)? Any way off a road.
 func square(front: Vector2, e: int) -> bool:
 	var tilt := absf(front.cross(axis(e))) if e >= 0 else 0.0
-	return tilt <= sin(deg_to_rad(Num.f(cfg["pivot_deg"])))
+	return tilt <= sin(deg_to_rad(Num.f(cfg["skew_deg"])))
 
 
 ## How far off road e's centre line a hull's centre may stand.

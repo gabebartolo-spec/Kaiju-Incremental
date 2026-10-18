@@ -229,6 +229,7 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 		_plan(tank, r, r.retreating)
 	if r.path.is_empty():
 		_settle(tank, r, rate)
+		spacing.open_up(tank, r, back)  # the kaiju moved and a gun swung over a neighbour
 		return
 	var to := r.path[0] - tank.pos
 	var dist := to.length()
@@ -240,7 +241,10 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 		speed *= Num.f(cfg["reverse"])
 	var want := -dir if r.reversing else dir
 	r.front = want if r.front == Vector2.ZERO else r.front
-	var turn := r.front.angle_to(want) if dist > 1.0 else 0.0  # the last metre: no turn for it
+	var turn := r.front.angle_to(want)
+	if dist <= 1.0 and absf(turn) > rate:  # the last metre is not worth a turn: it is there
+		_arrive(r)
+		return
 	var front := r.front.rotated(clampf(turn, -rate, rate))
 	var move := 0.0 if absf(turn) > rate else minf(dist, speed * dt)  # squared first, then on
 	var next := tank.pos + dir * move
@@ -264,9 +268,14 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	if not r.edges.is_empty() and r.edges[0] >= 0:
 		r.edge = r.edges[0]
 	if move > 0.0 and move >= dist - 0.0001 or dist <= 0.0001:
-		r.path.remove_at(0)
-		r.edges.remove_at(0)
-		r.retreating = r.retreating and not r.path.is_empty()
+		_arrive(r)
+
+
+## At its next waypoint: on to the one after.
+func _arrive(r: ConvoyRoute) -> void:
+	r.path.remove_at(0)
+	r.edges.remove_at(0)
+	r.retreating = r.retreating and not r.path.is_empty()
 
 
 ## No room to pivot here: a step along the hull (forward or back) to where the whole turn fits.

@@ -62,7 +62,10 @@ func _check_view() -> void:
 			]
 		)
 	print(table)
-	check(drift < 1.0 and fov_ok, "air.view is the game camera: within %.2f m, same fov" % drift)
+	check(
+		drift < 0.3 and fov_ok,
+		"air.view is the game camera: its offset within %.2f m of the real one, same fov" % drift
+	)
 	check(
 		framed_ok and hud == 0,
 		"helicopters stay whole in the frame (>= 95%% each run) and off the HUD (%d)" % hud
@@ -103,9 +106,11 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 	for i: int in roundi(VIEW_SECONDS * 60.0):
 		await physics_frame
 		sim.facing = Vector2(1, 0)
-		if i > 300:  # the camera has settled on the kaiju
-			var off := sim.air.space.camera()[0].distance_to(cam.global_position)
-			off = maxf(off, _eye(sim).distance_to(cam.global_position))
+		if i > 300:  # the camera has settled on the kaiju (it follows the body as drawn)
+			var k := Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
+			var seen := cam.global_position - rampage._focus
+			var off := (sim.air.space.camera()[0] - k).distance_to(seen)
+			off = maxf(off, (_eye(sim) - k).distance_to(seen))
 			got["drift"] = maxf(Num.f(got["drift"]), off)
 			_hud_px = _plates(rampage._hud)
 		if i % 4 == 0:  # every sim step's worth (sim steps at 15 Hz)

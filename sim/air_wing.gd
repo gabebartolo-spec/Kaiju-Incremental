@@ -138,7 +138,7 @@ func spawn() -> Heli:
 		heli.angle = _slot(lead, heli)
 	heli.pos = orbit_pos(heli)
 	heli.front = (sim.kaiju_pos - heli.pos).normalized().orthogonal() * heli.turn
-	heli.alt = _alt(heli, [heli.pos] as Array[Vector2])
+	heli.alt = _alt(heli, heli.pos)
 	heli.hp = Num.f(cfg["hp"])
 	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
 	helis.append(heli)
@@ -318,7 +318,7 @@ func _fly(heli: Heli, to: Vector2, dt: float) -> void:
 	var slow := moved.length() < 3.0 * dt  # (near a hover it turns its nose only slowly)
 	var rate := deg_to_rad(Num.f(_form["hover_yaw" if slow else "yaw_rate"])) * dt
 	heli.front = heli.front.rotated(clampf(heli.front.angle_to(want), -rate, rate))
-	var over := _alt(heli, _track(to, moved / dt))
+	var over := _alt(heli, to)
 	heli.alt = move_toward(heli.alt, over, Num.f(_form["climb"]) * dt)
 
 
@@ -327,29 +327,11 @@ func _on_target(heli: Heli) -> bool:
 	return absf(heli.front.angle_to(to)) <= deg_to_rad(Num.f(_form["fire_cone"]))
 
 
-## How high it flies over `track` (AirSpace.alt_over, at least cruise altitude), a wingman
+## How high it flies at p (AirSpace.alt_at: the height its frame was planned for), a wingman
 ## `stagger` over that.
-func _alt(heli: Heli, track: Array[Vector2]) -> float:
+func _alt(heli: Heli, p: Vector2) -> float:
 	var up := Num.f(_form["stagger"]) if heli.wing_of >= 0 else 0.0
-	return maxf(altitude(), space.alt_over(track)) + up
-
-
-## Where a helicopter at p moving at `vel` may be over the next look_ahead metres: straight on,
-## round the kaiju either way (a reversal), in on a run and out on a break, so whichever it does
-## next it is already up over the roofs on the way (and down, in sight, when none are tall).
-func _track(p: Vector2, vel: Vector2) -> Array[Vector2]:
-	var rel := p - sim.kaiju_pos
-	var reach := Num.f(_form["look_ahead"])
-	var sweep := reach / maxf(rel.length(), 1.0)
-	var out: Array[Vector2] = [p]
-	for k: int in range(1, 5):
-		var f := k / 4.0
-		out.append(p + vel.normalized() * reach * f)
-		out.append(sim.kaiju_pos + rel.rotated(sweep * f))
-		out.append(sim.kaiju_pos + rel.rotated(-sweep * f))
-		out.append(p - rel.normalized() * minf(reach, rel.length() - attack_radius()) * f)
-		out.append(p + rel.normalized() * reach * f)
-	return out
+	return space.alt_at(p) + up
 
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high: the

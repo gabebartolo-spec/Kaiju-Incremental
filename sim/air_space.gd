@@ -2,8 +2,8 @@ class_name AirSpace
 extends RefCounted
 ## Where a helicopter may fly (D-066): inside the game camera's frame, clear of the HUD (air.view:
 ## the camera the view frames by, the safe share of the screen and the HUD's plates), and
-## roof_clear over every roof within `facade` metres of where it may be next, so it is never
-## beside a tower's face.
+## roof_clear over every roof within facade + look_ahead metres of it, so it is never beside a
+## tower's face and is up before it reaches one, whichever way it turns.
 ## Part of AirWing; pure geometry.
 
 ## The cell (metres) the roof heights are looked up by.
@@ -96,31 +96,27 @@ func reach(angle: float, lo: float, hi: float, up := 0.0) -> float:
 	var r := hi
 	while r >= lo:  # (hi, most often: one look)
 		var p := sim.kaiju_pos + dir * r
-		if in_frame(p, alt_over([p] as Array[Vector2]) + up):
+		if in_frame(p, alt_at(p) + up):
 			return r
 		r -= 1.0
 	return -1.0
 
 
-## Cruise altitude, or roof_clear over the tallest building within `facade` of `track` (where it
-## will be over the next look_ahead metres), so it is up before it gets there and stays down, in
-## sight, away from any tall one.
-func alt_over(track: Array[Vector2]) -> float:
-	var top := -INF
-	for at: Vector2 in track:
-		top = maxf(top, _top_near(at))
-	return maxf(cruise, top + Num.f(form["roof_clear"]))
+## How high a helicopter flies at p: cruise altitude, or roof_clear over the tallest building
+## within facade + look_ahead of it (and down again, in sight, away from any tall one).
+func alt_at(p: Vector2) -> float:
+	return maxf(cruise, _top_near(p) + Num.f(form["roof_clear"]))
 
 
-## The tallest roof within `facade` of anywhere in p's TOP_CELL cell (buildings keep their
-## height for the run, so each cell is looked up once).
+## The tallest roof within facade + look_ahead of anywhere in p's TOP_CELL cell (buildings keep
+## their height for the run, so each cell is looked up once).
 func _top_near(p: Vector2) -> float:
 	var cell := Vector2i(floori(p.x / TOP_CELL), floori(p.y / TOP_CELL))
 	if _tops.has(cell):
 		var known: float = _tops[cell]
 		return known
 	var centre := (Vector2(cell) + Vector2(0.5, 0.5)) * TOP_CELL
-	var room := Num.f(form["facade"]) + TOP_CELL * 0.71  # the cell's half-diagonal
+	var room := Num.f(form["facade"]) + Num.f(form["look_ahead"]) + TOP_CELL * 0.71
 	var graph := sim.army_units.convoy.graph
 	var top := -INF
 	var lo := graph.cell_of(centre - Vector2.ONE * room)

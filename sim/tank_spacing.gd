@@ -43,6 +43,25 @@ func blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.T
 	return null
 
 
+## A standing tank whose gun has swung over an older one's (the kaiju moved) steps along its own
+## hull away from it, `step` at a time, while that keeps it on the road and clear of others.
+func open_up(tank: RampageSim.Tank, r: ConvoyRoute, step: float) -> void:
+	if r.front == Vector2.ZERO:
+		return
+	for other: RampageSim.Tank in sim.tanks:
+		var o: ConvoyRoute = convoy.routes.get(other.id)
+		if other.id >= tank.id or o == null or o.front == Vector2.ZERO:
+			continue
+		if not clash(tank.pos, r.front, other.pos, o.front):
+			continue
+		var away := r.front if r.front.dot(tank.pos - other.pos) >= 0.0 else -r.front
+		var to := tank.pos + away * step
+		if convoy.graph.drivable(to, r.front) and blocker(tank, to, r.front) == null:
+			tank.pos = to
+			r.reversing = away.dot(r.front) < 0.0
+		return
+
+
 ## Do two tanks as drawn (hull along u / w, turret and gun on the kaiju), each grown by
 ## `clear`, touch?
 func clash(p: Vector2, u: Vector2, q: Vector2, w: Vector2) -> bool:
