@@ -1,56 +1,52 @@
-# City-calm handoff, 2026-10-18 14:25
-## State: running a check (#55 round 1 fixed and re-shot; final 2.5 trample clip waits on the demo chain)
+# City-calm handoff, 2026-10-18 20:40
+## State: awaiting lead (#55 r12 sent; #55 merges after the demo build per D-084)
 
 ## Task
-Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep: no questions
-to him; anything sim goes to the lead.
+Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
 - DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export, #37 no empty ground
   (D-062), D-065(b) green-lot table (lead), Landmarks city_gen review.
-- NOW: D-065(a) greenery PR into claude/look-options (presentation only, all crushable),
-  plus the lead's contact trample (CityDecor._process, city.trample_body 2.5 x body scale).
-- NEXT: D-075 = D-065(b) at 8% green lots, its own PR after this merges: city.green_lot_share
+- NOW: D-065(a) greenery + body trample, PR #55 into claude/look-options. r11 is the LAST critic
+  round (D-084 took the topple out of the demo): if it fails, #55 waits until after the demo.
+- NEXT: D-075 = D-065(b) at 8% green lots, its own PR after #55 merges: city.green_lot_share
   0.08 in CityGen/CityLots (data); parks/gardens/playgrounds/plazas spread so no building is
   more than ~2 blocks from one; crushable; pacing table near evolve1 0.64 h / tree 4.88 h;
-  kaiju-sim-review packet (changes generation); city checks failing first.
+  kaiju-sim-review packet; city checks failing first. Draft: notes greenery/D-075_packet_draft.md.
+  city_gen.gd is at 399 lines: the green-lot pass needs a new sim file.
 
 ## Branch and commit
 claude/greenery, worktree C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/greenery,
-PR #55, synced with look-options 830993d. A stray local branch claude/greenery-before exists; delete
-when allowed.
+PR #55 head: see git log (synced with look-options after r12). Stray local branch claude/greenery-before:
+delete when allowed.
 
-## What changed
-- scenes/city_greenery.gd (new, CityGreenery): street trees every 7 m on the kerb line of every
-  avenue and street out to the view edge, crowns leaning over the road (lead round 1), park garden (hedge
-  border, path hedges, flower beds, playground on playground_pad), front-yard hedges.
-- scenes/city_decor.gd: runs CityGreenery last; green counts; park trees skip the playground
-  pad; _process trample (body only: rampage.gd and city_view.gd are at the 400-line cap).
-- data/tuning.json city: street_tree_gap/_clear/_kinds/_kerb/_crown, garden_bush_gap,
-  park_flower_beds, flower_bloom, playground_size, yard_depth, trample_body.
-- tests/lib/city_green.gd (measure + check_city), called from the D-062 loop; city 12 -> 18.
-- tools/capture/capture_green.gd: close-ups, --trample clip, --park-stills (from the east:
-  straight down, a flattened tree looks the same as a standing one).
+## What #55 does
+- scenes/city_greenery.gd: street trees on every avenue/street kerb (city-wide spacing), park
+  garden, playground, front-yard hedges. All decor props, all crushable.
+- scenes/city_decor.gd (397 lines, cap 400): body trample in _process. Every prop whose base
+  is under the kaiju's ground box (scenes/kaiju_footprint.gd, from the kvox sculpt) goes down.
+- scenes/prop_field.gd: a tree is crushed in place (lead, rule 8 after ten topple rounds): a
+  pale stump (city.stump_color) stays, the cells above are hidden, 1 in 3 leaf cells and every
+  bark cell go to the decor's own DebrisField (size_scale/lift knobs) in city.tree_debris_leaf /
+  _bark, size 2x, speed 4, drained before the field processes (burst on the contact frame).
+  Fx.earth_puff: soft radial unlit tan sprites, alpha ramps in over 2-3 frames, gone at 1 s.
+  group["origins"]/["keys"] are kept because headless MultiMeshes keep no transforms.
+- tests/lib/city_trample.gd: tail tree goes down; crushed tree leaves stump + debris same frame.
+  city floor 53.
 
 ## Evidence (notes side-session-notes/local_9fac90d2-.../greenery/)
-- city_red_before.log 6 FAILs; suites green after the sync (run_tests_merged.log).
-- r2/side_by_side_s{1,2}.png, r2/crop_avenue_s1_2x.png (local GPU, round 1 fixes; tris +5-7%).
-- crop_{park,playground}_s1_2x.png (CI, round 0).
-- park_view_local/crop_park_{before,after}_2x.png: 9 of 56 park props flattened (local GPU).
-- trample2 clip (run 39082162565, body 1.5). Final 2.5 clip + CI park stills: pending.
+- r12/: trample/clip_720p.mp4 (from f0), fall_strip.png, contact_seq_2x.png, pair_r12_2x.png,
+  samples.txt, stump_accounting_2x.png (tree 643's stump behind a standing crown), proplog.
+- city_red_r11_crush.log (6 FAILs, debris off); run_tests_r14.log (full suite, r12 code).
+- Older rounds: r9/, r10/ (topple), r11b/ (crush v1), all failed. PR body: scratchpad pr_green.md.
 
 ## Next
-1. When the lead's queue clears (shell-hit, military-ai 720p, croc P3; nothing in progress or
-   queued): CI park stills, then the 1080p trample clip; add them to the PR body.
-2. Lead merges after a fresh critic; then remove this worktree and start D-075.
-
-## Findings for the lead
-- Trample evidence needs an oblique view: PropField flattens by squashing Y and widening XZ,
-  so from straight above nothing seems to change.
+1. The lead critics r12 after the demo build ships; fix findings, re-render locally (no GPU
+   baton while the director is away: own override.cfg, removed after). Then merge, D-075.
+2. Stomp shockwave tan crescents (rampage.gd:177) are not #55's; the lead excluded them.
 
 ## Rules learnt the hard way (under 10 lines)
 - Branch off origin/claude/look-options; confirm the worktree exists before git commands.
-- `git lfs pull` before suites/exports in a fresh worktree; never mid-run.
-- Template builds start fullscreen: seed settings.cfg fullscreen=false for smoke runs.
-- gdlint: 400-line file cap, <=4 function args, public vars before private.
-- Test a Godot --check-only's output before committing.
-- Local windowed Godot: the focus-guard hook needs the no_focus override.cfg in place first.
-- CI captures follow the lead's queue; a gated loop must be stopped when the queue changes.
+- Lint before push: python -m gdtoolkit.linter AND gdtoolkit.formatter --check.
+- Headless MultiMesh keeps no instance transforms or colours: tests read a CPU mirror.
+- Never edit files under a running suite; other sessions share /tmp, read your own log.
+- Local windowed Godot: no_focus override.cfg first (Write tool), removed after.
+- Night/dusk lighting darkens debris and smoke: sample pixels at game camera before sending.
