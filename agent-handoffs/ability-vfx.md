@@ -1,4 +1,4 @@
-# Ability VFX/SFX handoff, 2026-10-19 00:15
+# Ability VFX/SFX handoff, 2026-10-19 00:45
 ## State: running a check (#52 CI capture run 39089682447); voice-pool PR #56 open; #52 resynced onto b810d1a
 
 ## Who
@@ -49,7 +49,8 @@
     - 3 stomp + 1 breath reserved + 8: tanks 13 still cut. So choose a bigger pool.
   - Fail-first done: at voices 8 the check FAILS; tuning.json is back to 24.
   - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
-  - Merges any time before #36. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
+  - APPROVED by the lead. It merges straight after #50 lands; then resync the flow floor only (the lead pings).
+  - Limiter: at 24 voices the pre-dynamics peak is -3.3 dBFS and 0% of the run is over -1 dBFS (scratchpad/riflegap/peaks.py). This is in the body. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
