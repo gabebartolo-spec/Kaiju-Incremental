@@ -24,7 +24,7 @@ func run_checks() -> void:
 
 
 ## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every
-## building and no two hulls overlap; a tank standing still 3 s or more within range stands at
+## building and no two hulls overlap; a tank standing a second or more within range stands at
 ## standoff in its firing band, never up close, and none waits inside the danger radius (those
 ## beyond range are in reserve); tanks enter by road from outside the
 ## playable edge (in a city smaller than the spawn radius); helicopters never fly into the kaiju.
@@ -116,6 +116,7 @@ func _check_rampages() -> void:
 						var lies: Vector2 = heads[tank.id]
 						if not _along_road(tank.pos, lies, roads):
 							skewed += 1
+					if for_s >= 1.0:  # where a tank stands (a second or more)
 						if d >= danger - 0.5 and d <= reach + 1.0:
 							parked_in_band += 1
 						elif d > reach + 1.0:
@@ -206,7 +207,7 @@ func _check_rubble() -> void:
 	for steps: int in roundi(20.0 / DT):
 		target = _autoplay(sim, steps, target)
 		for t: RampageSim.Tank in sim.tanks:
-			var r: Convoy.Route = sim.army_units.convoy.routes[t.id]
+			var r: ConvoyRoute = sim.army_units.convoy.routes[t.id]
 			if tank == null and r.edges.size() >= 3:
 				tank = t
 		if tank != null:
@@ -215,7 +216,7 @@ func _check_rubble() -> void:
 		check(false, "a tank with a road route to close")
 		return
 	var convoy := sim.army_units.convoy
-	var route: Convoy.Route = convoy.routes[tank.id]
+	var route: ConvoyRoute = convoy.routes[tank.id]
 	var e := -1
 	for leg: int in route.edges:
 		if leg >= 0 and leg != route.edge:

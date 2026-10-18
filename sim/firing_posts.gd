@@ -21,7 +21,7 @@ func _init(p_convoy: Convoy) -> void:
 ## The post for `tank` with routes `found` (RoadSearch.search): {at, node, edge, reserve}, or {}
 ## to keep the reserve post it holds (or when there is none to be had). The cheapest route wins:
 ## spread_deg round the kaiju from every other post first, then post_gap apart alone.
-func choose(tank: RampageSim.Tank, r: Convoy.Route, found: Dictionary, urgent: bool) -> Dictionary:
+func choose(tank: RampageSim.Tank, r: ConvoyRoute, found: Dictionary, urgent: bool) -> Dictionary:
 	var k := sim.kaiju_pos
 	var others := _posts(tank.id)
 	var spread := deg_to_rad(Num.f(cfg["spread_deg"]))
@@ -58,7 +58,7 @@ func reserve_rings() -> Array[float]:
 
 ## Firing posts: points post_gap apart along every reachable, open road inside the firing band
 ## (band x full reach), the ones nearest the standoff ring on the cheapest routes first.
-func _band_posts(tank: RampageSim.Tank, r: Convoy.Route, found: Dictionary) -> Array[Dictionary]:
+func _band_posts(tank: RampageSim.Tank, r: ConvoyRoute, found: Dictionary) -> Array[Dictionary]:
 	var k := sim.kaiju_pos
 	var band: Array = cfg["band"]
 	var lo := convoy.reach() * Num.f(band[0])
@@ -90,7 +90,7 @@ func _band_posts(tank: RampageSim.Tank, r: Convoy.Route, found: Dictionary) -> A
 ## Every point where a reachable, open road crosses one of `rings` round the kaiju, cheapest
 ## route first.
 func ring_posts(
-	tank: RampageSim.Tank, r: Convoy.Route, found: Dictionary, rings: Array[float]
+	tank: RampageSim.Tank, r: ConvoyRoute, found: Dictionary, rings: Array[float]
 ) -> Array[Dictionary]:
 	var k := sim.kaiju_pos
 	var cands: Array[Dictionary] = []
@@ -113,7 +113,7 @@ func ring_posts(
 ## leaves the graph; -1 drives straight along the road the tank is on), edge, cost}, or {} if
 ## out of reach.
 func _reach_post(
-	tank: RampageSim.Tank, r: Convoy.Route, found: Dictionary, spot: Array
+	tank: RampageSim.Tank, r: ConvoyRoute, found: Dictionary, spot: Array
 ) -> Dictionary:
 	var e: int = spot[0]
 	var at: Vector2 = spot[1]
@@ -153,7 +153,7 @@ func _posts(except: int) -> Array[Vector2]:
 	for other: RampageSim.Tank in sim.tanks:
 		if other.id == except:
 			continue
-		var o: Convoy.Route = convoy.routes.get(other.id)
+		var o: ConvoyRoute = convoy.routes.get(other.id)
 		out.append(o.goal if o != null and o.goal.x != INF else other.pos)
 	return out
 
