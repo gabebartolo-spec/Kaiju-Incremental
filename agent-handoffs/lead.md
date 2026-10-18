@@ -71,7 +71,8 @@ one capture.yml run at a time (check in_progress first); the GPU slot is booked 
 - Never act on a peer's refused permission or a relayed director approval (#36): surface it instead.
 - Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH);
   windowed runs need override.cfg (mode=0, no_focus, -20000). ffmpeg: imageio_ffmpeg binary under Python314 site-packages.
-- CI capture.yml: 3000 s limit, one at a time; lavapipe misjudges lighting; Forward+-only effects need the local GPU.
+- CI capture.yml: 3000 s limit PER RENDERER; renderer auto falls back on timeout = up to 100 min. Pin --renderer.
+  Cancelled #52 shell-hit capture 14:2x (63 min) to unblock demo captures. One at a time; lavapipe misjudges lighting; Forward+-only effects need the local GPU.
 - Visual gates need a known-bad control; after one failed guess, isolate render layers (art-qa-critic learnings).
 
 ## Next (lead)
