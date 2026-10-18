@@ -207,7 +207,7 @@ func _nearest_first() -> Array[Army.Squad]:
 
 
 ## Whether a figure at `t` looms: on a roof so near the camera that it stands taller than
-## MAX_SCREEN_SHARE of the screen (D-076). It is not drawn and its volleys show nothing.
+## MAX_SCREEN_SHARE of the screen (D-076). It is not drawn; its volleys show only the spark.
 func _looms(t: Transform3D, camera: Camera3D) -> bool:
 	if camera == null or camera.is_position_behind(t.origin):
 		return false
@@ -250,8 +250,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 	for squad: Army.Squad in sim.army_units.squads:
 		if squad.id != squad_id:
 			continue
-		if not _shown.has(squad_id):
-			return  # not drawn (past max_drawn, or looming under the camera): no flash or tracer
+		var seen := _shown.has(squad_id)  # undrawn (looming, past max_drawn): only the hide spark
 		shots += 1
 		last_squad = squad_id
 		var t0 := Time.get_ticks_usec()
@@ -259,14 +258,14 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, MUZZLE_HEIGHT, -7.5) * _voxel)
 			var wait := 0 if k == 0 else _rng.randi_range(2, RAGGED_FRAMES)
-			if _flashes.size() < MAX_FLASHES:
+			if seen and _flashes.size() < MAX_FLASHES:
 				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
 				_flashes.append({"hit": {"at": muzzle + ahead}, "wait": wait, "left": FLASH_FRAMES})
 			var hit := _hide(kaiju_at, muzzle)
 			var to := _at(hit)
 			var flight := muzzle.distance_to(to) / TRACER_SPEED
 			var frames := roundi(flight * Engine.physics_ticks_per_second)
-			if frames < POINT_BLANK_FRAMES or _on_screen(muzzle, to) < SHORT_PIXELS:
+			if not seen or frames < POINT_BLANK_FRAMES or _on_screen(muzzle, to) < SHORT_PIXELS:
 				_spark(hit, wait + frames)  # flash and spark only: a stub of a tracer reads as noise
 			elif _tracers.size() < MAX_TRACERS:
 				_tracers.append(
