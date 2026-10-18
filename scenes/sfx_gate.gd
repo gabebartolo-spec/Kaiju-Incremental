@@ -11,9 +11,9 @@ var _drawn := false
 var _smooth := 0
 
 
-func _init(sfx: Sfx, gate: Dictionary) -> void:
+func _init(sfx: Sfx) -> void:
 	_sfx = sfx
-	_gate = gate
+	_gate = Content.section("sfx")["start_gate"]
 
 
 func _ready() -> void:

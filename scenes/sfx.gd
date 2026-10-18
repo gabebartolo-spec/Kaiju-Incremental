@@ -101,7 +101,7 @@ func _ready() -> void:
 	_regen = _looping("regen_loop")
 	_rotor = _looping("heli_rotor")
 	_crowd = _looping("crowd_panic")
-	add_child(SfxGate.new(self, _tune["start_gate"]))
+	add_child(SfxGate.new(self))
 
 
 ## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
