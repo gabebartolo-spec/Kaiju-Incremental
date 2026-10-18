@@ -133,7 +133,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
-	body = BodyContact.new(self, tuning.get("contact", {}))
+	body = BodyContact.new(self, tuning)
 
 
 func stat(stat_name: String) -> float:

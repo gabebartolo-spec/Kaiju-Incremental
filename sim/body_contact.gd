@@ -22,9 +22,10 @@ var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
 
 
-func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
+## tuning: the rampage's whole tuning; the body reads its "contact" section.
+func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	sim = p_sim
-	cfg = p_cfg
+	cfg = tuning["contact"]
 	heading = sim.facing
 	_last_heading = heading
 

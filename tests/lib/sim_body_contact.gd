@@ -65,7 +65,7 @@ func _walk(body: bool) -> Dictionary:
 	if body:
 		sim.body.use_species("reptilian")
 	else:
-		probe = BodyContact.new(sim, Content.section("contact"))
+		probe = BodyContact.new(sim, Content.tuning())
 		probe.use_species("reptilian")
 	var target := sim.nearest_standing(sim.kaiju_pos)
 	var dir := (target - sim.kaiju_pos).normalized()
