@@ -5,8 +5,8 @@
 Tanks unchanged. More squads + shorter interval; scale damage_by_tier down PER TIER so each stage's
 total stays within ±5% of baseline. PR table per stage: volleys/s, rifle HP/run, total vs baseline.
 Log D-076a in "Board and log". HUD: there is no hit flash for any damage; a ~0.15 HP chip shows no
-bar tick. Asked LEAD (msg sent): add an HP-bar pulse on any HP drop (recommended) or rely on hide
-sparks. Await that answer before touching rampage_hud.gd.
+bar tick. LEAD: NO HUD change (UI session's area, D-061). Gate instead: in the Behemoth CI clip
+at 2x the hide spark is visible on most volleys in range; 2x crops of three volleys in the PR.
 ## Superseded: LEAD first approved the tank_damage offset (option B); replaced by A
 LEAD: edge reach, more squads + shorter interval, offset per-stage tank_damage, ±5%; PR needs a
 volleys-per-run table per stage + CI clip of Behemoth under rooftop fire. LEAD says when #50 merges.
