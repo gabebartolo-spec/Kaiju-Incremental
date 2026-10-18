@@ -26,7 +26,8 @@ static func run(root: Node, check: Callable) -> void:
 	var early := sfx.played.duplicate()
 	var buses: Array[String] = []
 	for player: Node in sfx.get_children():
-		buses.append((player as AudioStreamPlayer).bus)
+		if player is AudioStreamPlayer:  # not the start gate (SfxGate)
+			buses.append((player as AudioStreamPlayer).bus)
 	check.call(
 		buses.all(func(b: String) -> bool: return b == "SFX"),
 		"every power sound plays on the SFX bus: %s" % [buses]
