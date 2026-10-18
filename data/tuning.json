@@ -1,4 +1,9 @@
 {
+	"display": {
+		"fps_caps": [60, 120, 0],
+		"fps_default": 120,
+		"menu_fps": 60
+	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
 		"stomp_damage": {"line": "Stomps hit harder", "fmt": "%.0f"},
