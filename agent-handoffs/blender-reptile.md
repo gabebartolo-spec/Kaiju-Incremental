@@ -1,5 +1,9 @@
-# blender-reptile handoff, 2026-10-19 00:40
-## State: awaiting lead (fresh critic on round-3 clips, notes p3/round3/). PR #54 head 47b8fe6, green.
+# blender-reptile handoff, 2026-10-19 01:30
+## State: awaiting lead (round-4 slam clips, notes p3/round4/; if the slam passes, #54 merges).
+## PR #54 head 5d8a003, suites green. Lead r3: all PASS except the slam ring -> round 4 (rule 8, method
+## change): custom ring deleted (shader reverted), tail slam = fx.shockwave(tail) -> 3 uncapped
+## fx.footfall puffs + rampage's centre puff; fired on the tip's measured lowest frame (_slam_tail
+## watches from f44, window 10); TAIL_SLAM_STRENGTH 5 -> 2; capture uses fx.footfall (no ghost dust).
 ## Round 3 (lead r2: baby CLOSE, adolescent FAIL): A start = capture camera lurch from origin + t=0
 ## plant rings (fixed: capture camera locks to KaijuModel.focus() from f0; ClipGait _feet_primed);
 ## "adolescent scroll halves" not real (world cam 5.6 u/s steady). B turn_cycle 24/26 (7/9 turn steps).
