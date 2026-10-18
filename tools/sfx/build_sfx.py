@@ -209,6 +209,20 @@ def build_footstep() -> None:
     place(x, grit / max(1e-9, np.max(np.abs(grit))), 0.02, 0.06)
     save("footstep", highpass(highpass(x, 28.0), 28.0), -3.0)
     print(f"  footstep: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
+    # Three more steps the game takes turns with, so a walk never repeats one sound: each has a
+    # different concrete thud and a slightly different sub drop and grit (same weight, same
+    # low end).
+    for k, (layer, top, bottom, grit_rate) in enumerate(
+        [("impactSoft_heavy_000", 60, 36, 70), ("impactSoft_heavy_001", 65, 40, 110),
+         ("impactSoft_heavy_004", 58, 37, 85)], start=1):
+        x = np.zeros(seconds(0.7))
+        place(x, thump(0.6, top, bottom), 0.0, 1.0)
+        thud = lowpass(lowpass(pitch(kenney(layer), 0.55 + 0.04 * k), 1800), 1800)
+        place(x, thud / max(1e-9, np.max(np.abs(thud))), 0.0, 0.7)
+        grit = lowpass(crackle(seconds(0.25), grit_rate, 0.08), 2200)
+        place(x, grit / max(1e-9, np.max(np.abs(grit))), 0.015 + 0.01 * k, 0.06)
+        save(f"footstep_{k}", highpass(highpass(x, 28.0), 28.0), -3.0)
+        print(f"  footstep_{k}: {low_share(x) * 100:.0f}% of the energy below 500 Hz")
 
 
 def build_stomp_crack() -> None:
