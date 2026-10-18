@@ -1,7 +1,6 @@
-# City-calm handoff, 2026-10-19 02:30
-## State: awaiting lead (#55 r15 pushed at 7154f43; lead's own 2x check, merges after the demo build)
-## NO LOCAL GODOT (director, via lead): no headless or windowed runs until the lead lifts it;
-## verify on CI only (tests.yml on push, capture.yml).
+# City-calm handoff, 2026-10-19 03:30
+## State: running a check (D-075 CI tests: red 39117893362, green 39117934874; pacing queued)
+## NO LOCAL GODOT (director, via lead): verify on CI only (tests.yml dispatch, capture.yml).
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
@@ -10,21 +9,29 @@ Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes
 - DONE: PR #66 collapse-cap MERGED (329e708). Worktree removed; local branch claude/collapse-cap
   is left (squash-merged; `branch -D` needs the lead/director's OK). POST-DEMO (lead): sim
   Structure._topple_check rounds an overhang under 0.005 cells to a zero dir; FallMotion covers it.
-- NOW: D-065(a) greenery + body trample, PR #55. Lead r14: core passes, no more critic rounds;
-  numeric tweaks only, then the lead merges after the demo build on its own 2x check.
-  r14 tweaks: puff peak 0.30 by f3, hold to f5, linear fade to 0 by f29 (Fx PUFF_*); leaf
-  debris 60ae43 (-25% sat/val); leaves start anywhere inside the crown + random side spread
-  (tree_leaf_spread 0.6); leaf speed tree_leaf_speed 2.5 (~150 px flight); tree debris casts
-  no shadow (DebrisField.shadows). capture_green --log-props prints puff alpha per frame.
-- NEXT: D-075 = D-065(b) at 8% green lots, its own PR after #55 merges: city.green_lot_share
-  0.08 in CityGen/CityLots (data); parks/gardens/playgrounds/plazas spread so no building is
-  more than ~2 blocks from one; crushable; pacing table near evolve1 0.64 h / tree 4.88 h;
-  kaiju-sim-review packet; city checks failing first. Draft: notes greenery/D-075_packet_draft.md.
-  city_gen.gd is at 399 lines: the green-lot pass needs a new sim file.
+- #55 r15 PASSED the lead's 2x check (CI green b037f69); lead merges after the demo exe. Push
+  nothing more to claude/greenery (only an Auto-fix conflict resolve if asked).
+- NOW: D-075 green lots 8%, branch claude/green-lots (from #55's head b037f69: it needs #55's
+  park gardens) in the SAME worktree Kaiju-Incremental-wt/greenery (D-053: one worktree;
+  switch back to claude/greenery only for a #55 Auto-fix, commit first, no stash). PR opens
+  after #55 merges (into claude/look-options).
+  - sim/city_green_lots.gd (CityGreenLots.choose from CityGen._blocks): farthest-point over
+    the FULL city's blocks (all districts, not the playable edge, so stage-stable), from the
+    block nearest cores[0], until city.green_lot_share 0.08 of block area; marks use "park",
+    keeps the old use under "green". CityGen.generate fills green lots and drops them (same
+    RNG draws for every other building).
+  - tests/lib/city_green_lots.gd from the D-062 loop: share in [6.5%, 12%] + furthest building
+    <= 2 x block_long[1] m from a park; no building on a green lot; same green blocks at
+    stage 1. city floor 65 (+12).
+  - tools/capture/pacing_ci.gd: pacing on capture.yml, --green-share=0.0 vs 0.08 (baseline
+    moved with D-074b, so pace both on this branch). One capture.yml run at a time.
+  - Still to do: CI results, pacing table, a look capture (CI) of the new parks, PR body with
+    the kaiju-sim-review packet (notes greenery/D-075_packet_draft.md), report to the lead.
+  - New .gd files have no .uid (no local import); CI imports them.
 
 ## Branch and commit
-claude/greenery, worktree C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/greenery,
-PR #55 head: see git log (synced with look-options after r12). Stray local branch claude/greenery-before:
+Worktree C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/greenery, now on claude/green-lots.
+#55 = claude/greenery head b037f69. Stray local branch claude/greenery-before:
 delete when allowed.
 
 ## What #55 does
@@ -53,7 +60,7 @@ delete when allowed.
 1. r15 is done (notes greenery/r15/: strip_f0_f36_2x.png, puff_alpha.txt, samples.txt,
    stump_f0_f3_4x.png, flight_*/ leaf-flight runs, trample/clip). Lead merges #55 after the
    demo build; keep it synced (merge origin/claude/look-options, floors = real counts, CI only).
-   Then remove the greenery worktree and start D-075.
+   After #55 and D-075 merge, remove the worktree.
 2. Stomp shockwave tan crescents (rampage.gd:177) are not #55's; the lead excluded them.
 
 ## Rules learnt the hard way (under 10 lines)
