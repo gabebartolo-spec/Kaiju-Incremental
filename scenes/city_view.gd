@@ -49,11 +49,11 @@ func _ready() -> void:
 	add_child(fx)
 	_debris = DebrisField.new(_rng, MAX_DEBRIS)
 	add_child(_debris)
-	_prewarm_fire()
+	Fire.prewarm(self)
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
 		add_child(_decor)
-		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0))
+		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
 		add_child(street)
 
 
@@ -144,14 +144,6 @@ func _base_color(b: RampageSim.Building) -> Color:
 	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
-## The first fire compiles its particle shaders; do it now, out of sight, not mid-rampage.
-func _prewarm_fire() -> void:
-	var f := Fire.new(0.5, 0.0)
-	f.position = Vector3(0, -60, 0)
-	add_child(f)
-	get_tree().create_timer(1.0).timeout.connect(f.queue_free)
-
-
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
 func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
 	var view := _stream.view(index)
@@ -159,7 +151,8 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	parts.append_array(view.chip(cells, _rng))
 	var b := sim.buildings[index]
 	var centre := Vector3(b.x, 0, b.z)
-	var away := (centre - Vector3(kaiju_at.x, 0, kaiju_at.z)).normalized()
+	var flip := -1.0 if b.landmark != "" else 1.0  # a landmark sheds out onto the street
+	var away := (centre - Vector3(kaiju_at.x, 0, kaiju_at.z)).normalized() * flip
 	var budget := mini(parts.size(), cells.size() * DEBRIS_PER_CHUNK)
 	for n: int in budget:
 		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
@@ -182,6 +175,8 @@ func fall_start(event: Dictionary) -> void:
 	var cells: Array[Vector3i] = event["cells"]
 	var pivot: Vector3 = event["pivot"]
 	var piece := _stream.view(index).lift_piece(cells, pivot)
+	if LandmarkBurst.bursts(sim, event):  # a landmark's section bursts where it stands
+		piece = LandmarkBurst.new(piece, self, event)
 	add_child(piece)
 	_falling[Num.i(event["id"])] = {
 		"node": piece,
@@ -230,8 +225,8 @@ func fall_land(event: Dictionary) -> void:
 		landed.append(at)
 		var color: Color = part["color"]
 		debris(at, color, Vector3.UP)
-	node.queue_free()
-	if str(event["kind"]) == "topple":
+	LandmarkBurst.retire(node, sim.buildings[Num.i(event["building"])].landmark != "")
+	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
 		var from: Vector2 = event["from"]
 		var to: Vector2 = event["to"]
 		var width := Num.f(event["width"])
@@ -244,8 +239,8 @@ func fall_land(event: Dictionary) -> void:
 			crush(a.lerp(b, float(i) / steps), width * 0.6)
 	elif not landed.is_empty():
 		fx.dust(landed[0], 1.5)
-		if street != null:  # the section came down round its own building
-			var b := sim.buildings[Num.i(event["building"])]
+		var b := sim.buildings[Num.i(event["building"])]
+		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
 			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH)
 
 
