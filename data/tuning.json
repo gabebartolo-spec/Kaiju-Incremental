@@ -186,7 +186,7 @@
 		"parked_gap": [1.9, 3.2],
 		"lane_stop_chance": 0.12,
 		"car_colors": ["6b6e70", "5b6b7a", "5a2a26", "8a8a84", "6b7a52", "6a5e48"],
-		"street_tree_gap": 7,
+		"street_tree_gap": 6,
 		"street_tree_clear": 3,
 		"street_tree_kinds": ["avenue", "street"],
 		"street_tree_kerb": 0.15,

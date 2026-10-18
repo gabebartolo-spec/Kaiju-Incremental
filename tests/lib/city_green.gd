@@ -55,7 +55,7 @@ static func measure(sim: RampageSim, decor: CityDecor) -> Dictionary:
 
 ## A believable amount of green (D-065, director 2026-10-18: "make sure there are a believable
 ## amount of trees, bushes, floral areas, parks, gardens, playgrounds throughout the city"):
-## street trees down the avenues at a real downtown spacing (both pavements, one every
+## street trees down every street at a real downtown spacing (both kerbs, one every
 ## city.street_tree_gap metres, fewer at crossings and lamps), a garden and a playground in
 ## every park, and a hedge in the front yards. Everything is a crushable decor prop.
 static func check_city(
@@ -64,7 +64,12 @@ static func check_city(
 	var got: Dictionary = measure(sim, decor)
 	var gap := Num.f(sim.city["street_tree_gap"])
 	var per_km := Num.f(got["trees_per_km"])
-	var low := 1000.0 / gap  # one kerb's worth: crossings, lamps and the diagonal take the rest
+	# Both kerbs, every slot, less the crossings (street_tree_clear each side of a node) on the
+	# city's shortest blocks; lamps and the diagonal take a few more.
+	var short: Array = sim.city["block_short"]
+	var shortest := Num.f(short[0])
+	var clear := Num.f(sim.city["street_tree_clear"])
+	var low := 2000.0 / gap * (1.0 - 2.0 * clear / shortest)
 	var high := 2000.0 / gap  # both kerbs, every slot
 	var parks := Num.i(got["parks"])
 	check.call(
@@ -96,10 +101,36 @@ static func check_city(
 			]
 		)
 	)
+	# A steady row down each kerb: neighbours one street_tree_gap apart, or two where a lamp
+	# took the slot between them, every trunk on the city-wide spacing (lead review round 4:
+	# pairs 6 m apart beside 20 m gaps).
+	var pairs := 0
+	var uneven := 0
+	var odd := 0.0
+	for row: Array in green_of(decor).get("rows", []):
+		for i: int in range(1, row.size()):
+			var here: Vector2 = row[i]
+			var before: Vector2 = row[i - 1]
+			var d := here.distance_to(before)
+			# ...and on one city-wide spacing, so the line carries on across the crossings.
+			var off := fposmod(here.dot((here - before).normalized()) + gap * 0.5, gap) - gap * 0.5
+			pairs += 1
+			if (absf(d - gap) > 0.05 and absf(d - gap * 2.0) > 0.05) or absf(off) > 0.05:
+				uneven += 1
+				odd = d
+	check.call(
+		uneven == 0 and pairs > 0,
+		(
+			(
+				"stage %d, map_seed %d: street trees stand a steady %.0f m apart down each kerb"
+				% [tier, map_seed, gap]
+			)
+			+ " (%d of %d neighbours are not, e.g. %.1f m)" % [uneven, pairs, odd]
+		)
+	)
 	# Trees and parking share the kerb: no car body within city.street_tree_car_clear of a trunk.
 	var reach := Num.f(sim.city["street_tree_car_clear"])
-	var green: Dictionary = decor.get("green") if decor.get("green") is Dictionary else {}
-	var trunks: Array = green.get("trunks", [])
+	var trunks: Array = green_of(decor).get("trunks", [])
 	var cars: Array = decor.get("cars") if decor.get("cars") is Array else []
 	var hits := 0
 	var near := Vector2.INF
@@ -119,3 +150,9 @@ static func check_city(
 			+ " (%d of %d trunks have one, e.g. at %s)" % [hits, trunks.size(), near]
 		)
 	)
+
+
+## decor.green, or {} for a CityDecor from before D-065.
+static func green_of(decor: CityDecor) -> Dictionary:
+	var got: Variant = decor.get("green")
+	return got if got is Dictionary else {}
