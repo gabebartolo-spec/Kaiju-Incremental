@@ -45,7 +45,8 @@ func _run() -> void:
 			if not sound in LOOPS:
 				fresh.append(sound)
 		for k: int in fresh.size():  # the k-th new sound went to the k-th player used this frame
-			var at := (sfx._next - fresh.size() + k + Sfx.POOL * 4) % Sfx.POOL
+			var voices := sfx._pool.size()
+			var at := (sfx._next - fresh.size() + k + voices * 4) % voices
 			var player: AudioStreamPlayer = sfx._pool[at]
 			log.store_line(
 				"SND %d %s %.2f %.4f" % [frame, fresh[k], player.volume_db, player.pitch_scale]

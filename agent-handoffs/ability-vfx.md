@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 02:45
-## State: available (footfall dust PR open, stills sent to the lead); #56 waits for #50; #36 last
+## State: available (#62 resynced onto 8fd6d7f, all suites green; stills with the lead); #36 last
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -42,7 +42,7 @@
     - 3 stomp + 1 breath reserved + 8: tanks 13 still cut. So choose a bigger pool.
   - Fail-first done: at voices 8 the check FAILS; tuning.json is back to 24.
   - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
-  - APPROVED by the lead. It merges straight after #50 lands; then resync the flow floor only (the lead pings).
+  - MERGED (look-options 37a0bd9).
   - Limiter: at 24 voices the pre-dynamics peak is -3.3 dBFS and 0% of the run is over -1 dBFS (scratchpad/riflegap/peaks.py). This is in the body. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
 
 - **Footfall dust (lead, greenery finding): branch claude/stomp-dust off look-options e3b0c5a, pushed 91d6d3c, no PR yet.**

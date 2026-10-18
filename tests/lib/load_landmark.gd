@@ -1,0 +1,122 @@
+extends RefCounted
+## The load suite's landmark check, split out to keep the runner small.
+
+## The farthest a fallen section's rubble may lie past the wall: short of the plaza's trees.
+const RUBBLE_REACH := 2.5
+
+var _check: Callable
+
+
+## check: the runner's check(condition, expectation).
+func _init(p_check: Callable) -> void:
+	_check = p_check
+
+
+## A landmark draws its baked model (LandmarkVoxels) on the building grid: every voxel inside its
+## footprint and in a chunk the sim builds, so each one breaks with its chunk; it meshes to real
+## faces and leaves debris samples in its chunks; hiding a chunk switches its voxels off.
+func run() -> void:
+	var shape: Dictionary = Content.landmarks().get("stadium", {})
+	var b := RampageSim.Building.new()
+	b.w = Num.i(shape.get("w", 1))
+	b.d = Num.i(shape.get("d", 1))
+	b.height = Num.i(shape.get("h", 1))
+	b.tier = 1
+	b.landmark = "stadium"
+	b.frame = Structure.new(b.w, b.d, b.height, 1.0)
+	var layers: Array = shape.get("chunks", [])
+	b.frame.keep(layers)
+	var t0 := Time.get_ticks_msec()
+	var view := BuildingView.new(b, Color.GRAY)
+	var build_ms := Time.get_ticks_msec() - t0
+	var cells: Dictionary = view.voxels.vox.cells
+	var res := BuildingVoxels.RES
+	var stray := 0
+	for c: Vector3i in cells:
+		if not b.frame.alive(Vector3i(c.x / res, c.y / res, c.z / res)):
+			stray += 1
+	_check.call(
+		view.voxels is LandmarkVoxels and cells.size() > 10000 and stray == 0,
+		(
+			"the stadium's %d voxels all sit in chunks the sim builds (%d stray)"
+			% [cells.size(), stray]
+		)
+	)
+	var shell := view.mesher.shell
+	var faces := shell.surface_get_array_len(0) / 4 if shell.get_surface_count() > 0 else 0
+	_check.call(
+		faces > cells.size() / 2 and faces < cells.size() * 4,
+		"the stadium meshes to its open faces only: %d faces for %d voxels" % [faces, cells.size()]
+	)
+	var sampled := view.mesher.samples.size()
+	_check.call(
+		sampled * 2 > b.frame.alive_count,
+		"most of its chunks throw debris when broken: %d of %d" % [sampled, b.frame.alive_count]
+	)
+	var ground: VoxelBuilder = (view.voxels as LandmarkVoxels).ground
+	_check.call(
+		(
+			ground.cells.size() > 5000
+			and ground.cells.keys().all(func(c: Vector3i) -> bool: return c.y == 0)
+		),
+		(
+			"its pitch also lies flat on the ground, so it stays green once broken: %d voxels"
+			% ground.cells.size()
+		)
+	)
+	# Holes along the rim's outer wall, mid-height: an ordinary building's neighbours get bitten.
+	var holes: Array[Vector3i] = []
+	for x: int in range(b.w / 4, b.w * 3 / 4):
+		for z: int in range(b.d - 1, -1, -1):
+			if b.frame.alive(Vector3i(x, 3, z)):
+				holes.append(Vector3i(x, 3, z))
+				break
+	var bitten := view.chip(holes, Seeds.make("fx", 0))
+	_check.call(
+		holes.size() > 8 and bitten.is_empty(),
+		(
+			"a landmark is never bitten round a hole (no speckle): %d holes, %d bites"
+			% [holes.size(), bitten.size()]
+		)
+	)
+	# A toppled section's rubble (Ruin.strip -> LandmarkRubble): within about a wall height of
+	# the wall, tallest against the stub it fell from, never a slab running on over the plaza.
+	var pile := LandmarkRubble.pile(
+		view.voxels as LandmarkVoxels, Vector3.ZERO, Vector3(0, 0, 6), 4.0
+	)
+	var far := 0.0
+	var near_top := 0
+	var far_top := 0
+	for c: Vector3i in pile.cells:
+		var z := c.z * BuildingVoxels.VOXEL
+		far = maxf(far, z)
+		if z < 1.0:
+			near_top = maxi(near_top, c.y)
+		elif z > 2.5:
+			far_top = maxi(far_top, c.y)
+	(
+		_check
+		. call(
+			pile.cells.size() > 100 and far <= RUBBLE_REACH and near_top > far_top * 1.5,
+			(
+				"a fallen section's rubble stays near the wall (%.1f of %.1f) and peaks at the stub (%d vs %d)"
+				% [far, RUBBLE_REACH, near_top, far_top]
+			)
+		)
+	)
+	var off_palette := 0
+	var sampled_colors := 0
+	var lv := view.voxels as LandmarkVoxels
+	for column: Vector2i in lv.rubble_colors:
+		var found: Array = lv.rubble_colors[column]
+		for c: Color in found:
+			sampled_colors += 1
+			var grey := maxf(c.r, maxf(c.g, c.b)) - minf(c.r, minf(c.g, c.b)) < 0.12
+			if not grey and not (c.r > c.g + 0.3 and c.r > c.b + 0.3):
+				off_palette += 1
+	_check.call(
+		sampled_colors > 100 and off_palette == 0,
+		"its rubble is wall grey and seat red only: %d of %d off" % [off_palette, sampled_colors]
+	)
+	print("landmark view: stadium built in %d ms" % build_ms)
+	view.free()
