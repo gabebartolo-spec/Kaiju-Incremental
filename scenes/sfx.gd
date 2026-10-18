@@ -21,10 +21,16 @@ static var _ui_player: AudioStreamPlayer
 
 ## Every sound played, in order; read by the flow suite.
 var played: Array[String] = []
+## False while the rampage is still loading: nothing plays until its first frame has drawn and
+## tuning "sfx" "start_gate" smooth_frames frames in a row came in under max_frame seconds
+## (director's playtest: "gunfire audio kicks in while the visuals are still loading").
+var live := false
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
 ## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
 var _powers: PowersView
+var _drawn := false
+var _smooth := 0
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
@@ -99,6 +105,8 @@ func _ready() -> void:
 	_regen = _looping("regen_loop")
 	_rotor = _looping("heli_rotor")
 	_crowd = _looping("crowd_panic")
+	_drawn = DisplayServer.get_name() == "headless"  # headless draws nothing: smooth frames only
+	RenderingServer.frame_post_draw.connect(func() -> void: _drawn = true, CONNECT_ONE_SHOT)
 
 
 ## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
@@ -111,6 +119,9 @@ func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 
 
 func _process(delta: float) -> void:
+	if not live:
+		_open_gate(delta)
+		return
 	_sound_landings()
 	if is_instance_valid(_powers):
 		rotors(_powers.helis())
@@ -221,6 +232,17 @@ func _release_stomp() -> void:
 	_pending = ""
 
 
+## Opens the start gate (see live); what was queued while loading is dropped.
+func _open_gate(delta: float) -> void:
+	var gate: Dictionary = _tune["start_gate"]
+	_smooth = _smooth + 1 if _drawn and delta <= Num.f(gate["max_frame"]) else 0
+	if _smooth < Num.i(gate["smooth_frames"]):
+		return
+	live = true
+	_landings.clear()
+	_pending = ""
+
+
 ## The army's sounds where they happen (tank_fire, shell_hit): quieter the further they are
 ## from the camera, down to a floor so a far tank is still heard.
 func play_at(sound: String, at: Vector3) -> void:
@@ -264,7 +286,7 @@ func _looping(sound: String) -> AudioStreamPlayer:
 ## Bubbles only for the first regen_seconds of each healing spell, then a fade: a cue that
 ## healing began, not a bed under the whole rampage (mix report, 2026-10-18).
 func regen(healing: bool) -> void:
-	if healing and not _healing:
+	if healing and not _healing and live:
 		played.append("regen_loop")
 		_regen_age = 0.0
 		_regen.volume_db = _volume("regen_loop")
@@ -290,6 +312,8 @@ func _fade_regen(delta: float) -> void:
 ## A sound with a "min_interval" in tuning is skipped while its last play is younger than that,
 ## so a burst of events (rooftop volleys) never machine-guns or eats the pool's voices.
 func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
+	if not live:
+		return
 	var gaps: Dictionary = _tune.get("min_interval", {})
 	if gaps.has(sound):
 		if Num.f(_since_sound.get(sound, INF)) < Num.f(gaps[sound]):

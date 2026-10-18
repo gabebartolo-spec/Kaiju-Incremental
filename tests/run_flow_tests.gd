@@ -45,6 +45,7 @@ func run_checks() -> void:
 	await _check_upgrade_screen()
 	await _check_rampage()
 	FlowSfx.run(root, check)
+	await FlowSfx.gate(root, check)
 	await FlowStadium.run(self, check)
 	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
@@ -239,6 +240,8 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	)
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
+	while not rampage.sfx.live:  # nothing sounds while the rampage loads (Sfx start gate)
+		await process_frame
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
 	var cues: Array[String] = [

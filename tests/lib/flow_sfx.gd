@@ -11,6 +11,7 @@ const FlowSounds := preload("res://tests/lib/flow_sounds.gd")
 static func run(root: Node, check: Callable) -> void:
 	var sfx := Sfx.new(Seeds.make("sfx", 0))
 	root.add_child(sfx)
+	sfx.live = true  # past the start gate (gate() checks the gate itself)
 	sfx.stomp(2.0, true)
 	var dynamics: Dictionary = Content.section("sfx")["dynamics"]
 	var ceiling := INF
@@ -50,3 +51,23 @@ static func run(root: Node, check: Callable) -> void:
 	FlowSounds.regen(check, sfx)
 	preload("res://tests/lib/flow_voice_sounds.gd").check_tail(check, sfx)
 	sfx.free()
+
+
+## Nothing plays while the rampage loads (director's playtest: "gunfire audio kicks in while the
+## visuals are still loading"): a fresh Sfx drops sounds until tuning "sfx" "start_gate"
+## smooth_frames smooth frames have passed, then plays them.
+static func gate(root: Node, check: Callable) -> void:
+	var sfx := Sfx.new(Seeds.make("sfx", 0))
+	root.add_child(sfx)
+	sfx.play("rifle")
+	sfx.play("tank_fire")
+	var early := sfx.played.duplicate()
+	var gate: Dictionary = Content.section("sfx")["start_gate"]
+	for _i: int in Num.i(gate["smooth_frames"]) + 2:
+		await root.get_tree().process_frame
+	sfx.play("rifle")
+	check.call(
+		early.is_empty() and sfx.live and sfx.played == ["rifle"],
+		"no rampage sound plays while it loads, then they do: %s then %s" % [early, sfx.played]
+	)
+	sfx.queue_free()
