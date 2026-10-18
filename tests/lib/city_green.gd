@@ -19,6 +19,7 @@ static func measure(sim: RampageSim, decor: CityDecor) -> Dictionary:
 	var half := CityGen.half_extent(sim.city)
 	var plan := CityGen.map(sim.city)
 	var parks: Array[Rect2] = []
+	var roomy := 0  # parks with room for a playground beside the path (CityGreenery)
 	var green_area := 0.0
 	var city_area := 0.0
 	for block: Dictionary in plan["blocks"]:
@@ -30,6 +31,11 @@ static func measure(sim: RampageSim, decor: CityDecor) -> Dictionary:
 		if str(block["use"]) in ["park", "plaza"]:
 			green_area += rect.get_area()
 			parks.append(rect)
+			if (
+				str(block["use"]) == "park"
+				and CityGreenery.playground_pad(rect, sim.city).has_area()
+			):
+				roomy += 1
 	var furthest := 0.0
 	for b: RampageSim.Building in sim.buildings:
 		var p := Vector2(b.x, b.z)
@@ -44,6 +50,7 @@ static func measure(sim: RampageSim, decor: CityDecor) -> Dictionary:
 		"trees_per_km": trees.size() / maxf(0.001, avenue_m / 1000.0),
 		"parks": parks.size(),
 		"playgrounds": Num.i(green.get("playgrounds", 0)),
+		"roomy_parks": roomy,
 		"bushes": Num.i(green.get("bushes", 0)),
 		"flower_beds": Num.i(green.get("flower_beds", 0)),
 		"yards": Num.i(green.get("yards", 0)),
@@ -56,8 +63,9 @@ static func measure(sim: RampageSim, decor: CityDecor) -> Dictionary:
 ## A believable amount of green (D-065, director 2026-10-18: "make sure there are a believable
 ## amount of trees, bushes, floral areas, parks, gardens, playgrounds throughout the city"):
 ## street trees down every street at a real downtown spacing (both kerbs, one every
-## city.street_tree_gap metres, fewer at crossings and lamps), a garden and a playground in
-## every park, and a hedge in the front yards. Everything is a crushable decor prop.
+## city.street_tree_gap metres, fewer at crossings and lamps), a garden in every park and a
+## playground in every park with room for one beside its path (a pocket park has none), and a
+## hedge in the front yards. Everything is a crushable decor prop.
 static func check_city(
 	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check: Callable
 ) -> void:
@@ -76,7 +84,7 @@ static func check_city(
 		(
 			per_km >= low
 			and per_km <= high
-			and Num.i(got["playgrounds"]) == parks
+			and Num.i(got["playgrounds"]) == Num.i(got["roomy_parks"])
 			and Num.i(got["bushes"]) > 0
 			and Num.i(got["flower_beds"]) > 0
 			and (Num.i(got["yards"]) == 0 or Num.i(got["hedges"]) > 0)

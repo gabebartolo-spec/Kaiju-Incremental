@@ -1,12 +1,14 @@
 extends "res://tests/lib/runner.gd"
 ## City suite: the seeded layout reads as a real city, not a grid of isolated towers
-## (director, 2026-10-16), and the street plan presentation builds on is fixed by the config.
+## (director, 2026-10-16), the street plan presentation builds on is fixed by the config, and a
+## landmark stands, pays and is placed in its own shape (tests/lib/city_landmarks.gd).
 ## Headless and seeded.
 ##   godot --headless --path . --script tests/run_city_tests.gd
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const Green := preload("res://tests/lib/city_green.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
+const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -19,6 +21,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
 	_check_calm_streets()
+	CityLandmarks.new(check).run()
 	_check_no_empty_ground()
 
 

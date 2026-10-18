@@ -281,7 +281,7 @@ func _blocks() -> void:
 					if not on_path and not play.has_point(p) and _lawn_round(p):
 						_props.add(Vector3(p.x, 0, p.y), _tree, true)
 						_park_trees.append(p)
-			"plaza":
+			"plaza", "landmark":  # trees round the plaza (round a landmark too)
 				var ring := rect.grow(-1.2)
 				var t := 0.0
 				while t < 1.0:
