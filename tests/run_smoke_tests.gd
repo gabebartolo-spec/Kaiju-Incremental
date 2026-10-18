@@ -33,8 +33,8 @@ func run_checks() -> void:
 	await _check_voxel_skin()
 	_check_tank()
 	_check_heli()
-	_check_jet()
 	_check_vehicle_fade()
+	_check_crease_pass()
 
 
 func _check_settings() -> void:
@@ -296,21 +296,6 @@ func _check_tank() -> void:
 ## The Blender helicopter (D-042) loads as body, main rotor, tail rotor and chin gun; both rotors
 ## spin about their own hubs, and the gun swings onto a target below and ahead with the muzzle
 ## at the nose.
-## The interceptor (D-072) draws the Blender voxels it was built from (vox_jet.py), its nose
-## (where its rounds leave) forward along -Z.
-func _check_jet() -> void:
-	var jet := JetModel.new("interceptor")
-	root.add_child(jet)
-	var mmi := jet.get_child(0) as MultiMeshInstance3D
-	var cubes := mmi.multimesh.instance_count if mmi != null else 0
-	var cells := Kvox.read("res://assets/vehicles/jet_interceptor_body.kvox").frames[0].cells.size()
-	check(
-		cubes > 0 and cubes <= cells and jet.nose().z < -2.0,
-		"the interceptor draws its Blender voxels (%d of %d), nose forward" % [cubes, cells]
-	)
-	jet.free()
-
-
 func _check_heli() -> void:
 	var heli := HelicopterModel.new()
 	root.add_child(heli)
@@ -372,3 +357,34 @@ func _check_vehicle_fade() -> void:
 	)
 	front.free()
 	side.free()
+
+
+## The crease pass (crease.gdshader) is built from the look, switched off by it, and does no
+## per-frame work of its own: nothing it caches can go stale on a resize, a UI-scale change or
+## fullscreen (the shader reads the viewport size and buffers each frame).
+func _check_crease_pass() -> void:
+	var crease := CreasePass.make()
+	var mat: ShaderMaterial = crease.material_override if crease != null else null
+	var wrong: Array[String] = []
+	for param: String in CreasePass.KEYS:
+		var want := Look.value(str(CreasePass.KEYS[param]))
+		if mat == null or not is_equal_approx(Num.f(mat.get_shader_parameter(param)), want):
+			wrong.append(param)
+	check(
+		mat != null and wrong.is_empty() and mat.render_priority == CreasePass.FIRST,
+		"the crease pass reads every strength from the look, drawn first (wrong: %s)" % [wrong]
+	)
+	var script: Script = CreasePass
+	var per_frame: Array[String] = []
+	for method: Dictionary in script.get_script_method_list():
+		if str(method["name"]) in ["_process", "_physics_process", "_notification"]:
+			per_frame.append(str(method["name"]))
+	check(per_frame.is_empty(), "the crease pass runs no per-frame script (%s)" % [per_frame])
+	var look := Content.look()
+	var kept: Variant = look["crease_strength"]
+	look["crease_strength"] = 0.0
+	var off := CreasePass.make()
+	look["crease_strength"] = kept
+	check(off == null, "crease_strength 0 in the look leaves the pass out")
+	if crease != null:
+		crease.free()
