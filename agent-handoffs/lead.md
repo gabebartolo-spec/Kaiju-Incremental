@@ -36,6 +36,10 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
   (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
   130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
+## Integration dry-run (23:xx, scratch, nothing pushed): A = #54+#63+#59+#36 all suites PASS (flow 146, growth 31;
+tuning.json stage 1 keeps #54 "body" + #36 "per_level"); 130 runs e1 0.26 h, young 8/14; local export smoke 10/10;
+stadium minute crowd+squads +0.6 ms. B (+#55 +#50): suites PASS; #50 softens young (6/15). One import segfault
+(exit 139) on first try, rerun clean: being checked. #50: option B (roof clearance; clip spot without >12 m towers).
 ## Build (after #36 merges)
 `gh workflow run build.yml --ref claude/look-options -f ref=claude/look-options`; artifact KaijuIncremental-<sha>.
 Dry run PASS on 6b27da9 (run 39106390742, 129.5 MB exe). Release smoke #65 MERGED (tools/release/demo_smoke.gd: title ->
