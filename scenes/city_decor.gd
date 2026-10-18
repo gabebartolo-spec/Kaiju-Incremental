@@ -10,11 +10,15 @@ extends Node3D
 const PROP_VOXEL := 0.25
 const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
+## Half the footprint of car(): 3 voxels across and 6 long (PROP_VOXEL), along its street.
+const CAR_HALF := Vector2(0.375, 0.75)
+const TREE_CELL := 4.0  # street-tree spots are filed by ground cell of this size
 
 var sim: RampageSim
 var plan: Dictionary
 ## D-065 greenery counts (CityGreenery.green), for the city suite and the report.
 var green: Dictionary = {}
+var cars: Array[Rect2] = []  # every car's ground footprint, parked or stopped
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
 var _half: float
@@ -26,6 +30,7 @@ var _paints := 0  # how many car paints
 var _walked := Vector2(INF, INF)  # where the kaiju stood last frame (trample)
 var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
+var _tree_cells := {}  # Vector2i cell -> the street-tree kerb spots in it
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -50,11 +55,17 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
+	# The street trees' kerb spots first, so the parking leaves room for them (D-065).
+	var greenery := CityGreenery.new(self, _rng)
+	for spot: Vector2 in greenery.kerb_spots():
+		var cell := Vector2i((spot / TREE_CELL).floor())
+		var in_cell: Array = _tree_cells.get(cell, [])
+		in_cell.append(spot)
+		_tree_cells[cell] = in_cell
 	_streets()
 	_blocks()
 	_diagonal_trees()
-	# D-065 greenery last, so the cars and trees before it keep their places.
-	var greenery := CityGreenery.new(self, _rng)
+	# D-065 greenery planted last, so the cars and trees before it keep their RNG draws.
 	greenery.plant()
 	green = greenery.green
 	var palette := {
@@ -149,11 +160,19 @@ func _streets() -> void:
 					)
 					var seen := _inside(p, _view - _half)
 					var roll := _rng.randf()
-					if roll < (chance if playable else chance_beyond) and not on_diagonal and seen:
+					var half := Vector2(CAR_HALF.y, CAR_HALF.x) if along_x else CAR_HALF
+					var body := Rect2(p - half, half * 2.0)
+					if (
+						roll < (chance if playable else chance_beyond)
+						and not on_diagonal
+						and seen
+						and _clear_of_trees(body)
+					):
 						_props.add(
 							Vector3(p.x, 0, p.y),
 							func(v: VoxelBuilder) -> void: car(v, color, along_x)
 						)
+						cars.append(body)
 					t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
 		if not playable:
 			continue  # past the edge: cars only (each lamp is a real light)
@@ -169,6 +188,20 @@ func _streets() -> void:
 			_lamp(p2, -side * flip)
 			flip = -flip
 			t2 += LAMP_EVERY
+
+
+## No street tree's trunk within city.street_tree_car_clear of a car body (the parking slot
+## drops instead).
+func _clear_of_trees(body: Rect2) -> bool:
+	var reach := Num.f(sim.city["street_tree_car_clear"])
+	var lo := Vector2i(((body.position - Vector2.ONE * reach) / TREE_CELL).floor())
+	var hi := Vector2i(((body.end + Vector2.ONE * reach) / TREE_CELL).floor())
+	for cx: int in range(lo.x, hi.x + 1):
+		for cy: int in range(lo.y, hi.y + 1):
+			for spot: Vector2 in _tree_cells.get(Vector2i(cx, cy), []):
+				if spot.clamp(body.position, body.end).distance_to(spot) < reach:
+					return false
+	return true
 
 
 ## A streetlight at p whose arm reaches toward `toward` (over the road), with a real light.

@@ -96,3 +96,26 @@ static func check_city(
 			]
 		)
 	)
+	# Trees and parking share the kerb: no car body within city.street_tree_car_clear of a trunk.
+	var reach := Num.f(sim.city["street_tree_car_clear"])
+	var green: Dictionary = decor.get("green") if decor.get("green") is Dictionary else {}
+	var trunks: Array = green.get("trunks", [])
+	var cars: Array = decor.get("cars") if decor.get("cars") is Array else []
+	var hits := 0
+	var near := Vector2.INF
+	for trunk: Vector2 in trunks:
+		for car: Rect2 in cars:
+			if trunk.clamp(car.position, car.end).distance_to(trunk) < reach:
+				hits += 1
+				near = trunk
+				break
+	check.call(
+		hits == 0 and trunks.size() > 0,
+		(
+			(
+				"stage %d, map_seed %d: no parked car within %.1f m of a street tree's trunk"
+				% [tier, map_seed, reach]
+			)
+			+ " (%d of %d trunks have one, e.g. at %s)" % [hits, trunks.size(), near]
+		)
+	)

@@ -23,9 +23,10 @@ const PALETTE := {
 
 ## What was planted: "street_trees" (positions), "avenue_m" (avenue length they line),
 ## "bushes", "flower_beds", "playgrounds", "parks", "yards" (building faces with a front yard),
-## "hedges" (bushes planted in those yards).
+## "hedges" (bushes planted in those yards), "trunks" (every street tree, the view band too).
 var green := {
 	"street_trees": [] as Array[Vector2],
+	"trunks": [] as Array[Vector2],
 	"avenue_m": 0.0,
 	"bushes": 0,
 	"flower_beds": 0,
@@ -42,6 +43,9 @@ var _on_building: Callable  # Callable(p: Vector2) -> bool
 var _lamps: Array[Vector2]
 var _park_trees: Array[Vector2]
 var _half: float
+var _beyond: float  # how far past the playable edge the camera sees (CityDecor's view band)
+var _spots: Array[Dictionary] = []  # kerb_spots(): {"p", "lean", "playable"} per street tree
+var _cars: Array[Rect2]
 
 
 ## decor: the CityDecor whose PropField this plants into (its lamps and park trees are kept
@@ -54,7 +58,9 @@ func _init(decor: CityDecor, rng: RandomNumberGenerator) -> void:
 	_on_building = decor._on_building
 	_lamps = decor._lamp_spots
 	_park_trees = decor._park_trees
+	_cars = decor.cars
 	_half = CityGen.half_extent(_sim.city)
+	_beyond = decor._view - _half
 
 
 func _inside(p: Vector2, margin: float) -> bool:
@@ -73,49 +79,76 @@ func plant() -> void:
 	_yards()
 
 
-## A street tree every city.street_tree_gap metres down both kerbs of every avenue and street
-## (city.street_tree_kinds) in the playable city, the trunk on the kerb line
-## (city.street_tree_kerb in from the road's edge) and the crown leaning out over the road, the
-## way real street trees stand clear of the facades. Clear of the crossings
-## (city.street_tree_clear), the lamps (a tree that would stand by one steps past it) and the
-## diagonal.
-func _avenue_trees() -> void:
+## Where the street trees will stand, worked out before CityDecor parks its cars so the
+## parking leaves room for them (lead review round 3: a car parked against a trunk): one every
+## city.street_tree_gap metres down both kerbs of every avenue and street
+## (city.street_tree_kinds) out to the edge of the view (D-062), the trunk on the kerb line
+## (city.street_tree_kerb in from the road's edge), clear of the crossings
+## (city.street_tree_clear), the buildings and the diagonal. Draws nothing from the RNG.
+func kerb_spots() -> Array[Vector2]:
 	var nodes: Array[Vector2] = _plan["nodes"]
 	var gap := Num.f(_sim.city["street_tree_gap"])
 	var clear := Num.f(_sim.city["street_tree_clear"])
 	var kinds: Array = _sim.city["street_tree_kinds"]
 	var walk := Num.f(_sim.city["sidewalk"])
 	var diagonal := CityGen.width_of(CityGen.DIAGONAL, _sim.city) * 0.5 + walk
-	var trees: Array[Vector2] = green["street_trees"]
+	var out: Array[Vector2] = []
 	for street: Dictionary in _plan["streets"]:
 		if not str(street["kind"]) in kinds:
 			continue
 		var a := nodes[Num.i(street["from"])]
 		var b := nodes[Num.i(street["to"])]
-		if not (_inside(a, 0.5) and _inside(b, 0.5)):
+		if not (_inside(a, _beyond) or _inside(b, _beyond)):
 			continue
+		var playable := _inside(a, 0.5) and _inside(b, 0.5)  # only these count in green
 		var dir := (b - a).normalized()
 		var side := Vector2(-dir.y, dir.x)
 		var length := a.distance_to(b)
 		var kerb := Num.f(street["width"]) * 0.5 + Num.f(_sim.city["street_tree_kerb"])
-		green["avenue_m"] = Num.f(green["avenue_m"]) + length
+		if playable:
+			green["avenue_m"] = Num.f(green["avenue_m"]) + length
 		for s: float in [-1.0, 1.0]:
 			var lean := Vector2i(roundi(-side.x * s), roundi(-side.y * s))  # over the road
 			var t := clear + gap * 0.25
 			while t < length - clear:
 				var p := a + dir * t + side * s * kerb
-				if not _clear_of_lamps(p, walk * 1.5):
-					p += dir * walk * 1.5  # step past the lamp
 				if (
-					_clear_of_lamps(p, walk * 1.5)
+					_inside(p, _beyond)
 					and not _on_building.call(p)
 					and CityGen.diagonal_distance(_plan, p) > diagonal
 				):
-					_props.add(
-						Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _street_tree(v, lean)
-					)
-					trees.append(p)
+					_spots.append({"p": p, "lean": lean, "playable": playable, "dir": dir})
+					out.append(p)
 				t += gap
+	return out
+
+
+## The crowns lean out over the road, the way real street trees stand clear of the facades. A
+## tree that would stand by a lamp steps past it, if no parked car is there.
+func _avenue_trees() -> void:
+	var walk := Num.f(_sim.city["sidewalk"])
+	var reach := Num.f(_sim.city["street_tree_car_clear"])
+	var trees: Array[Vector2] = green["street_trees"]
+	var trunks: Array[Vector2] = green["trunks"]
+	for spot: Dictionary in _spots:
+		var p: Vector2 = spot["p"]
+		var lean: Vector2i = spot["lean"]
+		var dir: Vector2 = spot["dir"]
+		if not _clear_of_lamps(p, walk * 1.5):
+			p += dir * walk * 1.5
+			if not (_clear_of_lamps(p, walk * 1.5) and _clear_of_cars(p, reach)):
+				continue
+		_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _street_tree(v, lean))
+		trunks.append(p)
+		if spot["playable"]:
+			trees.append(p)
+
+
+func _clear_of_cars(p: Vector2, reach: float) -> bool:
+	for car: Rect2 in _cars:
+		if p.clamp(car.position, car.end).distance_to(p) < reach:
+			return false
+	return true
 
 
 func _clear_of_lamps(p: Vector2, reach: float) -> bool:

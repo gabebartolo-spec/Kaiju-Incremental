@@ -1,5 +1,5 @@
-# City-calm handoff, 2026-10-18 14:00
-## State: running a check (PR up for lead QA; final 2.5 trample clip waits on the demo capture queue)
+# City-calm handoff, 2026-10-18 14:25
+## State: running a check (#55 round 1 fixed and re-shot; final 2.5 trample clip waits on the demo chain)
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep: no questions
@@ -15,15 +15,16 @@ to him; anything sim goes to the lead.
 
 ## Branch and commit
 claude/greenery, worktree C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/greenery,
-synced with look-options 89403b4. A stray local branch claude/greenery-before exists; delete
+PR #55, synced with look-options 830993d. A stray local branch claude/greenery-before exists; delete
 when allowed.
 
 ## What changed
-- scenes/city_greenery.gd (new, CityGreenery): street trees on avenues, park garden (hedge
+- scenes/city_greenery.gd (new, CityGreenery): street trees every 7 m on the kerb line of every
+  avenue and street out to the view edge, crowns leaning over the road (lead round 1), park garden (hedge
   border, path hedges, flower beds, playground on playground_pad), front-yard hedges.
 - scenes/city_decor.gd: runs CityGreenery last; green counts; park trees skip the playground
   pad; _process trample (body only: rampage.gd and city_view.gd are at the 400-line cap).
-- data/tuning.json city: street_tree_gap, street_tree_clear, garden_bush_gap,
+- data/tuning.json city: street_tree_gap/_clear/_kinds/_kerb/_crown, garden_bush_gap,
   park_flower_beds, flower_bloom, playground_size, yard_depth, trample_body.
 - tests/lib/city_green.gd (measure + check_city), called from the D-062 loop; city 12 -> 18.
 - tools/capture/capture_green.gd: close-ups, --trample clip, --park-stills (from the east:
@@ -31,7 +32,8 @@ when allowed.
 
 ## Evidence (notes side-session-notes/local_9fac90d2-.../greenery/)
 - city_red_before.log 6 FAILs; suites green after the sync (run_tests_merged.log).
-- side_by_side_s{1,2}.png, crop_{park,playground,avenue}_s1_2x.png (CI).
+- r2/side_by_side_s{1,2}.png, r2/crop_avenue_s1_2x.png (local GPU, round 1 fixes; tris +5-7%).
+- crop_{park,playground}_s1_2x.png (CI, round 0).
 - park_view_local/crop_park_{before,after}_2x.png: 9 of 56 park props flattened (local GPU).
 - trample2 clip (run 39082162565, body 1.5). Final 2.5 clip + CI park stills: pending.
 
