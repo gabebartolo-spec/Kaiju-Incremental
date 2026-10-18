@@ -29,10 +29,12 @@ static func check_tail(
 		kaiju.position = Vector3(at.x, 0, at.y)
 		decor._process(1.0 / 60.0)
 	var down := false
+	var felled := {}
 	for group: Dictionary in decor._props._groups:
 		var base: Vector3 = group["at"]
 		if Vector2(base.x, base.z).distance_to(tree) < 0.01:
 			down = group.get("crushed", false)
+			felled = group
 	check.call(
 		down and not trees.is_empty(),
 		(
@@ -43,4 +45,49 @@ static func check_tail(
 			+ " behind its middle, tree %.1f m behind)" % behind
 		)
 	)
+	if not felled.is_empty():
+		_check_lies(decor, felled, kaiju, foot, check)
 	kaiju.free()
+
+
+## Once down (critic on #55, r9), the felled tree lies on the ground, never sunk into it (a
+## half-buried crown reads as see-through); it lies east or west only, across the camera's view;
+## its crown lands clear of the body, so it is seen; and its stump has the one stump colour.
+static func _check_lies(
+	decor: CityDecor, group: Dictionary, kaiju: Node3D, foot: Rect2, check: Callable
+) -> void:
+	var props: PropField = decor._props
+	var heights: PackedInt32Array = group["heights"]
+	var base: Vector3 = group["at"]
+	var before: PackedVector3Array = group["origins"]
+	for frame: int in 30:
+		decor._process(1.0 / 30.0)
+	var after: PackedVector3Array = group["origins"]
+	var ground := INF
+	for k: int in heights.size():
+		if heights[k] == 0:
+			ground = after[k].y
+	var reach := absf(foot.position.x) * kaiju.scale.x
+	var sunk := 0
+	var along := 0
+	var hidden := 0
+	var stumps := 0
+	var painted: Color = group.get("stump_color", Color.BLACK)
+	for k: int in heights.size():
+		var now := after[k]
+		var was := before[k]
+		if heights[k] < PropField.STUMP:
+			stumps += 0 if painted == props.stump_color else 1
+			continue
+		sunk += 1 if now.y < ground - 0.01 else 0
+		along += 1 if absf(now.z - was.z) > 0.01 else 0
+		hidden += 1 if absf(now.x - kaiju.position.x) < reach else 0
+	check.call(
+		sunk + along + hidden + stumps == 0,
+		(
+			"felled tree at (%.1f, %.1f) lies on the ground east or west, clear of the body"
+			% [base.x, base.z]
+			+ " (%d cells sunk, %d moved north-south, %d under the body, %d stump cells not the stump colour)"
+			% [sunk, along, hidden, stumps]
+		)
+	)

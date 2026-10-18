@@ -89,7 +89,7 @@ func _ready() -> void:
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
 	_props.fall_seconds = Num.f(sim.city["fell_seconds"])
-	_props.fell_lighten = Num.f(sim.city["fell_lighten"])
+	_props.stump_color = Color(str(sim.city["stump_color"]))
 	add_child(_fx)
 
 
@@ -101,8 +101,8 @@ func _ready() -> void:
 ## only, the sim never knows.
 func _process(delta: float) -> void:
 	_props.tick(delta)
-	for stump: Vector3 in _props.felled:
-		_fx.earth_puff(stump + Vector3(0, 0.2, 0))
+	for lands: Vector3 in _props.felled:
+		_fx.earth_puff(lands + Vector3(0, 0.2, 0))
 	_props.felled.clear()
 	var at := sim.kaiju_pos
 	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
