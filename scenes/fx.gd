@@ -6,8 +6,16 @@ extends Node3D
 ## freezing the first time.
 
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
-## Puffs a tail slam throws out around the tip (shockwave(tail)).
+## A tail slam's puffs (shockwave(tail), lead review PR #54): one at the tip and SLAM_PUFFS around
+## it, each SLAM_SIZE x the ring radius it was given; they live SLAM_SECONDS, grow from 0.4 to full
+## over the first SLAM_GROW of it with their alpha rising from 0 to its peak at SLAM_PEAK, stop
+## growing by SLAM_HOLD and fade to nothing by the end (not the step puff's pop and slow climb).
 const SLAM_PUFFS := 3
+const SLAM_SIZE := 0.6
+const SLAM_SECONDS := 0.85
+const SLAM_GROW := 0.15
+const SLAM_PEAK := 0.18
+const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
@@ -19,6 +27,7 @@ var _puff_mesh: Mesh
 var _step_mat: ParticleProcessMaterial
 var _step_mesh: Mesh
 var _step_cfg: Dictionary
+var _slam_mat: ParticleProcessMaterial
 var _spark_mat: ParticleProcessMaterial
 var _spark_mesh: BoxMesh
 
@@ -53,6 +62,7 @@ func _ready() -> void:
 		}
 	)
 	_step_mesh = _puff(1.4)
+	_slam_mat = _slam_puff_mat(_step_mat, alpha)
 	_spark_mat = _particle_mat(
 		{
 			"spread": 60.0,
@@ -129,9 +139,10 @@ func sparks(at: Vector3) -> void:
 ## (lead review PR #54: three custom rings in a row popped; the step puff of #62 reads right).
 func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), tail := false) -> void:
 	if tail:
+		_slam_puff(at + Vector3(0, 0.2, 0), radius * SLAM_SIZE)
 		for k: int in SLAM_PUFFS:
 			var a := TAU * k / SLAM_PUFFS
-			footfall(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * 0.5, false)
+			_slam_puff(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * SLAM_SIZE * 0.8)
 		return
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
@@ -149,6 +160,36 @@ func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), tail
 		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45
 	)
 	tween.tween_callback(quad.queue_free)
+
+
+func _slam_puff(at: Vector3, size: float) -> void:
+	var p := _burst(_slam_mat, _step_mesh, roundi(6 * clampf(size, 0.5, 3.0)), SLAM_SECONDS)
+	p.position = at
+	var mat: ParticleProcessMaterial = p.process_material
+	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
+	mat.scale_min = 0.4 * size
+	mat.scale_max = 0.8 * size
+
+
+## The step puff's material with the slam's life curves (see SLAM_SECONDS).
+func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProcessMaterial:
+	var mat: ParticleProcessMaterial = step.duplicate()
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.4))
+	curve.add_point(Vector2(SLAM_GROW, 1.0))
+	curve.add_point(Vector2(SLAM_HOLD, 1.05))
+	curve.add_point(Vector2(1.0, 1.05))
+	var curve_tex := CurveTexture.new()
+	curve_tex.curve = curve
+	mat.scale_curve = curve_tex
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, SLAM_PEAK, 1.0])
+	var c := Color(0.24, 0.25, 0.26)
+	ramp.colors = PackedColorArray([Color(c, 0.0), Color(c, alpha), Color(c, 0.0)])
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	mat.color_ramp = ramp_tex
+	return mat
 
 
 func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:

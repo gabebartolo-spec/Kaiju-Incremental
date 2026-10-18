@@ -1,10 +1,9 @@
 extends SceneTree
-## Records a kaiju's locomotion as the game drives it (sim-style position, heading and stage speed,
-## stomps on the beat, a roar): walk, curve, turn, stand, roar, walk. Prints foot drift, rig cost.
+## Records a kaiju's locomotion as the game drives it (sim position, heading, stage speed, stomps on
+## the beat, a roar): walk, curve, turn, stand, roar, walk. Prints foot drift, rig cost.
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_motion.gd -- --species=reptilian --stage=adult --cam=game
-## --cam=side: one fixed side (world +x, no orbit); --cam=fixed holds still by the first walk (slide
-## by eye). Footfalls kick dust and dip the camera (eased) as in the rampage; events are labelled.
+## --cam=side: fixed side (+x); --cam=fixed holds by the first walk. Footfalls dust, dip as in play.
 ## --trace=<file.csv>: t, pelvis height and forward speed per frame (the rhythm plot).
 ## --pose-trace=<file.csv>: per frame the event, body x/z and heading, a hard hold, bone motion.
 ## Headless (no movie) prints the measurements; slide also in cm (a world unit = a 3.5 m storey).
@@ -121,9 +120,10 @@ func _run() -> void:
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
 			var size := body_scale * (0.2 + strength)
-			city.fx.footfall(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
-			var tint := Rampage.FOOTFALL_TINT
-			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, tint, side == "tail")
+			var tail := side == "tail"  # a tail slam throws its own puffs (Fx.shockwave)
+			if not tail:
+				city.fx.footfall(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
+			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT, tail)
 			var dip := (
 				Rampage.FOOTFALL_DIP * maxf(Rampage.FOOTFALL_DIP_FLOOR, body_scale) * strength
 			)
@@ -188,7 +188,7 @@ func _run() -> void:
 			body_scale
 		)
 		if _cam == "game":
-			_dip_shown = lerpf(_dip_shown, _dip, minf(1.0, dt * 5.0))
+			_dip_shown = _dip  # at once, as Rampage drops its camera (PR #54: eased, it was 1 px)
 			cam.position.y -= _dip_shown * (0.75 + 0.4 * body_scale)
 		_trace_feet(kaiju, t, feet)
 		if _pose_trace != "":
