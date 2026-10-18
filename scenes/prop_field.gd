@@ -8,7 +8,7 @@ extends RefCounted
 
 const BUCKET := 8.0  # props are filed by ground cell of this size, so a crush looks nearby only
 const STUMP := 2  # a crushed tree leaves its lowest cells this many high standing
-const LEAF_EVERY := 3  # a crushed tree throws one piece per this many of its leaf cells
+const LEAF_EVERY := 4  # a crushed tree throws one piece per this many of its leaf cells
 const BARK_EVERY := 1  # and every one of its bark cells above the stump
 
 var vox := VoxelBuilder.new()
@@ -17,6 +17,11 @@ var stump_color := Color(0.85, 0.77, 0.6)  # every crushed tree's stump: fresh-c
 var leaf_color := Color(0.42, 0.82, 0.24)  # a crushed tree's leaf debris (saturated: dusk light)
 var bark_color := Color(0.55, 0.35, 0.17)  # and its bark debris
 var throw_speed := 1.5  # how hard debris leaves a crushed tree, out and up
+var puff_size := 1.0  # the footfall puffs at a crushed tree's stump
+## Where crushed trees' debris flies, leaf and bark apart (bark bigger, to read); the owner adds
+## both to the scene before it processes.
+var leaf_field := DebrisField.new(Seeds.make("tree_leaf"), 160)
+var bark_field := DebrisField.new(Seeds.make("tree_bark"), 60)
 var stumps: Array[Vector3] = []  # trees crushed since the owner last drained this (earth puffs)
 ## Debris to throw since the owner last drained this: [position, colour, away] each.
 var debris: Array[Array] = []
@@ -133,21 +138,25 @@ func configure(city: Dictionary) -> void:
 	leaf_color = Color(str(city["tree_debris_leaf"]))
 	bark_color = Color(str(city["tree_debris_bark"]))
 	throw_speed = Num.f(city["tree_debris_speed"])
+	puff_size = Num.f(city["tree_puff_size"])
+	leaf_field.size_scale = Num.f(city["tree_debris_size"])
+	bark_field.size_scale = Num.f(city["tree_bark_size"])
+	leaf_field.lift = 0.0
+	bark_field.lift = 0.0
 
 
-## Sends what crushed trees left since the last call to `field` (null in tests) and an earth
-## puff at each stump. Called before `field` processes this frame, so the burst shows on the
-## frame the tree is crushed.
-func throw(field: DebrisField, fx: Fx) -> void:
+## Throws what crushed trees left since the last call (before the fields process this frame,
+## so the burst shows on the frame the tree goes), with two footfall puffs at each stump.
+func throw(fx: Fx) -> void:
 	for piece: Array in debris:
 		var from: Vector3 = piece[0]
 		var tint: Color = piece[1]
 		var away: Vector3 = piece[2]
-		if field != null:
-			field.spawn(from, tint, away)
+		(bark_field if tint == bark_color else leaf_field).spawn(from, tint, away)
 	debris.clear()
 	for stump: Vector3 in stumps:
-		fx.earth_puff(stump + Vector3(0, 0.2, 0))
+		for side: float in [-1.0, 1.0]:
+			fx.tree_puff(stump + Vector3(side * puff_size * 0.4, 0.2, 0), puff_size)
 	stumps.clear()
 
 
@@ -178,6 +187,8 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var keys: PackedStringArray = group["keys"]
 	var out := Vector3(base.x - at.x, 0, base.z - at.z).normalized()
 	var away := (out + Vector3.UP) * throw_speed
+	# Bark comes out toward the game camera (south, +z), from under the falling leaves at once.
+	var flung := (out + Vector3.BACK * 1.5 + Vector3.UP) * throw_speed
 	var thrown := 0
 	var gone := Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	for k: int in ids.size():
@@ -187,7 +198,7 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 		mm.set_instance_transform(ids[k], gone)
 		var bark := keys[k] == "bark"
 		if k % (BARK_EVERY if bark else LEAF_EVERY) == 0:
-			debris.append([origins[k], bark_color if bark else leaf_color, away])
+			debris.append([origins[k], bark_color if bark else leaf_color, flung if bark else away])
 			thrown += 1
 	group["stump_color"] = stump_color
 	group["debris"] = thrown
