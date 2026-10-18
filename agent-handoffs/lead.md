@@ -42,6 +42,9 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   if cheap. Skip: dropping 'You have' line. Then re-capture + merge. #59 sport stills PASS (lead 2x).
 - D-080 (director 15:4x): jet strike warning scales with kaiju size (jets PR1). #57 r3 triage + greenery GPU +
   stomp-dust haze (sound) all SENT 15:4x. Messaging pauses after 10 sends without a director message.
+- DIRECTOR 16:0x: D-081 landmark rubble_bonus 4x stays; D-082 #50 gets ONE more round, if it fails again the demo
+  ships without it; D-083 after the demo: playtest fixes first. #55 trample r7 FAIL (3rd): suspect camera-occlusion
+  fade on centre-line trees; per-prop log asked. Not demo-blocking.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
