@@ -7,7 +7,10 @@ extends SceneTree
 ## rubble per run, city destroyed, how runs ended) and when the tree is complete.
 ## Play time = rampage seconds + TREE_SECONDS per visit.
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400]
-##     [--verbose] [--flat]  (--flat: one fixed city and army, as before D-039)
+##     [--verbose] [--flat] [--no-jets] [--dodge]  (--flat: one fixed city and army, as before
+##     D-039; --no-jets: no jets at any stage (D-072); --dodge: once a jet warns, the player
+##     walks off its line across the camera's view, toward the arena's middle (a jet's line runs
+##     across the screen), and keeps away until that jet has gone and its bombs have landed)
 
 const DT := 1.0 / 15.0
 const TREE_SECONDS := 20.0
@@ -18,6 +21,8 @@ var _runs := 400
 var _only := ""
 var _verbose := false
 var _flat := false
+var _no_jets := false
+var _dodge := false
 var _cities: Dictionary = {}
 
 
@@ -29,6 +34,10 @@ func _initialize() -> void:
 			_flat = true
 		if arg == "--verbose":
 			_verbose = true
+		if arg == "--no-jets":
+			_no_jets = true
+		if arg == "--dodge":
+			_dodge = true
 		if arg.begins_with("--species="):
 			_only = arg.substr(10)
 	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
@@ -55,18 +64,10 @@ func _pace(species_id: String) -> void:
 		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run))
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
-		var target := Vector2(INF, INF)
-		var steps := 0
-		while not sim.over:
-			if steps % 8 == 0:
-				target = sim.nearest_standing(sim.kaiju_pos)
-			var move := Vector2.ZERO
-			if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
-				move = (target - sim.kaiju_pos).normalized()
-			var held := RampageSim.HELD if steps % 30 < 15 else 0
-			sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE)
-			steps += 1
+		var played := _rampage(sim)
+		var steps := Num.i(played[0])
 		var res := sim.result()
+		res["jet_hits"] = played[1]
 		clock += steps * DT + TREE_SECONDS
 		rubble += Num.i(res["rubble"])
 		run += 1
@@ -101,18 +102,24 @@ func _pace(species_id: String) -> void:
 						% [pick, clock / 3600.0, run, Num.f(res["destruction"]) * 100.0]
 					)
 				)
-	print("== %s%s" % [species_id, " (flat city)" if _flat else ""])
+	var notes := (" (flat city)" if _flat else "") + (" (no jets)" if _no_jets else "")
+	print("== %s%s%s" % [species_id, notes, " (dodging jets)" if _dodge else ""])
 	for line: String in marks:
 		print("  " + line)
 	print("  first species power bought after run %d" % first_power)
-	print("  | stage | runs | hours | rubble/run | city destroyed | ended: time/defeated/city |")
+	print(
+		(
+			"  | stage | runs | hours | rubble/run | city destroyed | ended: time/defeated/city"
+			+ " | jet hits/run |"
+		)
+	)
 	for tier: int in stages:
 		var s: Dictionary = stages[tier]
 		var n := Num.i(s["runs"])
 		var ends: Dictionary = s["ends"]
 		print(
 			(
-				"  | %s | %d | %.2f | %d -> %d | %.0f%% -> %.0f%% | %d/%d/%d |"
+				"  | %s | %d | %.2f | %d -> %d | %.0f%% -> %.0f%% | %d/%d/%d | %.1f |"
 				% [
 					STAGE_NAMES[mini(tier, 4) - 1],
 					n,
@@ -124,6 +131,7 @@ func _pace(species_id: String) -> void:
 					Num.i(ends.get("time", 0)),
 					Num.i(ends.get("defeated", 0)),
 					Num.i(ends.get("city_fallen", 0)),
+					Num.f(s["jet_hits"]) / maxf(1.0, n),
 				]
 			)
 		)
@@ -135,6 +143,45 @@ func _pace(species_id: String) -> void:
 	)
 
 
+## Plays one rampage to its end; [steps, jet hits taken].
+func _rampage(sim: RampageSim) -> Array[int]:
+	var target := Vector2(INF, INF)
+	var steps := 0
+	var warned := {}  # jets the player is keeping out of the way of (--dodge)
+	var off_line := Vector2.ZERO
+	var jet_hits := 0
+	while not sim.over:
+		if steps % 8 == 0:
+			target = sim.nearest_standing(sim.kaiju_pos)
+		var move := Vector2.ZERO
+		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+			move = (target - sim.kaiju_pos).normalized()
+		var held := RampageSim.HELD if steps % 30 < 15 else 0
+		if not warned.is_empty() or (_dodge and not sim.strike.bombs.is_empty()):
+			move = off_line
+			held = 0  # let go of the signature to run
+		var flags := held | RampageSim.ULTIMATE
+		for event: Dictionary in sim.step(DT, move, sim.ability_ready_in <= 0.0, flags):
+			var kind := str(event["type"])
+			if kind == "jet_inbound" and _dodge:
+				if warned.is_empty():
+					off_line = _off_line(sim)
+				warned[Num.i(event["jet"])] = true
+			if kind == "jet_left" or kind == "jet_destroyed":
+				warned.erase(Num.i(event["jet"]))
+			if (kind == "jet_strafe" or kind == "jet_bomb") and event["hit"]:
+				jet_hits += 1
+		steps += 1
+	return [steps, jet_hits]
+
+
+## Off a jet's line: along the camera's axis (square to every pass), toward the arena's middle so
+## a kaiju on its edge is never pinned against it.
+func _off_line(sim: RampageSim) -> Vector2:
+	var out := Vector2.from_angle(deg_to_rad(Num.f(sim.strike.cfg["camera_bearing"])))
+	return -out if sim.kaiju_pos.dot(out) > 0.0 else out
+
+
 func _tally(stages: Dictionary, tier: int, seconds: float, res: Dictionary) -> void:
 	if not stages.has(tier):
 		stages[tier] = {
@@ -143,10 +190,12 @@ func _tally(stages: Dictionary, tier: int, seconds: float, res: Dictionary) -> v
 			"first_rubble": res["rubble"],
 			"first_destruction": res["destruction"],
 			"ends": {},
+			"jet_hits": 0,
 		}
 	var s: Dictionary = stages[tier]
 	s["runs"] = Num.i(s["runs"]) + 1
 	s["seconds"] = Num.f(s["seconds"]) + seconds
+	s["jet_hits"] = Num.i(s["jet_hits"]) + Num.i(res["jet_hits"])
 	s["last_rubble"] = res["rubble"]
 	s["last_destruction"] = res["destruction"]
 	var ends: Dictionary = s["ends"]
@@ -159,6 +208,9 @@ func _city(tier: int) -> Array:
 	var stage := 0 if _flat else tier
 	if not _cities.has(stage):
 		var tuning := Content.tuning() if _flat else CityGrowth.tuning_for(Content.tuning(), stage)
+		if _no_jets:
+			tuning = tuning.duplicate(true)
+			tuning["jets"]["max"] = 0
 		var cfg: Dictionary = tuning["city"]
 		_cities[stage] = [tuning, CityGen.generate(Seeds.make("city", 0), cfg)]
 	return _cities[stage]
