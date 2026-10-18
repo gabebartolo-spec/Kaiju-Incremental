@@ -16,3 +16,21 @@ static func crowd(check: Callable, sfx: Sfx) -> void:
 			+ " (%.0f, %.0f, %.0f)" % [calm, panic, ducked]
 		)
 	)
+
+
+## The regen bubbles start on each heal, fade within seconds while healing goes on, and start
+## again on the next heal (a cue, not a bed: mix report, 2026-10-18).
+static func regen(check: Callable, sfx: Sfx) -> void:
+	sfx.regen(true)
+	var bubbling := sfx._regen.playing
+	for _i: int in 4:
+		sfx._process(1.0)
+		sfx.regen(true)  # still healing
+	var faded := not sfx._regen.playing
+	sfx.regen(false)
+	sfx.regen(true)
+	check.call(
+		bubbling and faded and sfx._regen.playing,
+		"regen bubbles start each heal and fade within seconds (%s, %s)" % [bubbling, faded]
+	)
+	sfx.regen(false)

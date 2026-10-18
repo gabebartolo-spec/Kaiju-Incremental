@@ -20,7 +20,7 @@ skill §6 and the `kaiju-godot-tests` skill: one runner per suite extending
 |---|---|---:|
 | `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up | 9 |
 | `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits | 14 |
-| `jets` | the jets' strafing pass (D-072): called in once the city is hurt, across the camera's view and off screen at both ends, warns before its rounds land, strafes a standing kaiju but not one that steps off the line (player effect), alternate sides, downed only by attacks that reach the air; its rounds wreck roofs but pay no biomass; a cephalopod can grab one; it flies over the kaiju's head | 11 |
+| `jets` | the jets' strafing pass (D-072): called in once the city is hurt, across the camera's view and off screen at both ends, warns before its rounds land, strafes a standing kaiju but not one that steps off the line (player effect), alternate sides, downed only by attacks that reach the air; its rounds wreck roofs but pay no biomass; a cephalopod can grab one; it flies over the kaiju's head; every jet draws its Blender voxels; kinds take turns; bombs land where warned, can be dodged (player effect) and wreck roofs for no biomass; the Apex's bomber flies higher and carpet-bombs | 18 |
 
 The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a suite short of
 its floor or without one, and that an untyped declaration does not compile.

@@ -19,6 +19,8 @@ const REACH_SHARE := 0.43
 const LIFT_SHARE := 0.22
 
 var sim: RampageSim
+## The rampage's sounds (Rampage sets it): the helicopters' gun and crash.
+var sfx: Sfx
 ## The rooftop defenders (D-063), drawn beside the helicopters; their events come through here.
 var rooftops: RooftopView
 ## The jets (D-072); their events come through here too.
@@ -240,6 +242,8 @@ func _heli_fired(id: int, kaiju_at: Vector3) -> void:
 	_streak(muzzle, target, TRACER, 0.12)
 	_city.flash(muzzle, TRACER, 3.0, 0.1)
 	_city.fx.sparks(target)
+	if sfx != null:
+		sfx.play_at("heli_gun", muzzle)
 
 
 func _heli_down(id: int, at: Vector2) -> void:
@@ -254,6 +258,8 @@ func _heli_down(id: int, at: Vector2) -> void:
 		)
 	_city.flash(ground + Vector3(0, 2.0, 0), Color("ff8a3a"), 8.0, 0.5)
 	_city.fire(ground, 0.6)
+	if sfx != null:
+		sfx.play_at("heli_crash", ground)
 
 
 ## The helicopter nodes now in the air.

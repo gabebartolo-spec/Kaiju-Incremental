@@ -20,6 +20,7 @@ func run_checks() -> void:
 	_check_dodge()
 	_check_next_pass()
 	_check_hit_back()
+	_check_jet()
 	_check_collateral()
 	_check_grab()
 	_check_height()
@@ -359,4 +360,25 @@ func _check_bomber() -> void:
 			"the bomber flies %.0f over the fighters' %.0f and carpet-bombs %d bombs along %.0f u"
 			% [sim.strike.altitude(bomber), sim.strike.altitude(fighter), landed.size(), carpet]
 		)
+	)
+
+
+## Every jet (D-072) draws the Blender voxels it was built from (vox_jet.py), its nose (where its
+## rounds leave) forward along -Z.
+func _check_jet() -> void:
+	var drawn: Array[String] = []
+	var heights: Dictionary = Content.section("vehicles")["jet_heights"]
+	for kind: String in heights:
+		var jet := JetModel.new(kind)
+		root.add_child(jet)
+		var mmi := jet.get_child(0) as MultiMeshInstance3D
+		var cubes := mmi.multimesh.instance_count if mmi != null else 0
+		var path := "res://assets/vehicles/jet_%s_body.kvox" % kind
+		var cells := Kvox.read(path).frames[0].cells.size()
+		if cubes > 0 and cubes <= cells and jet.nose().z < -1.5:
+			drawn.append(kind)
+		jet.free()
+	check(
+		drawn.size() == heights.size(),
+		"every jet draws its Blender voxels, nose forward: %s of %s" % [drawn, heights.keys()]
 	)
