@@ -47,6 +47,10 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   fade on centre-line trees; per-prop log asked. Not demo-blocking.
 - 17:1x: #55 trample r8 (kvox footprint, tail test, per-prop log) with fresh motion critic. Cancelled concurrent
   stomp-dust capture (sound told: do stills locally). #59 needs resync + AFL clip after P3 chain. Messaging cap hit.
+- UNSENT to greenery (#55 r8 critic FAIL, 4th): my 2x of r8/pair_trail_2x: trees DO fall, but along the walk
+  (north/south = camera depth axis) so a laid tree reads as an upright crown + trunk; the 30% lighten makes them
+  look like ghosts. Fix: fall sideways, away from the path centre-line (perpendicular to camera view); keep crown
+  colour opaque (lighten the stump only); puff at each trunk base. Clip start: log says f2 falls, clip shows laid at f0.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state

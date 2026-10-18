@@ -363,6 +363,7 @@
 	},
 	"fx": {
 		"power_max": 2.5,
+		"footfall_dust": {"seconds": 1.0, "alpha": 0.38, "rise": 1.6, "max_live": 2},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"breath_fade_in": 0.12,
