@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 02:45
-## State: running a check (CI stills for stomp-dust, bash bbjoendh4: after then before); #56 waits for #50; #36 last
+## State: running a check (stomp-dust city/smoke/flow on final values, bv1y1mmiw); #56 waits for #50; #36 last
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -54,8 +54,10 @@
     Shown failing at max_live 100 (haze 2.80).
   - Stills: tools/capture/capture_walk_dust.gd --out --before --at=6,9,12 (--before replays the old Fx.dust per step on the same seed).
   - Suites green (city 13, flow 134). The flow suite caught a freed puff in a typed filter lambda; fixed with a plain loop.
-  - Running: CI capture twice with an explicit renderer: `ci_capture.sh --renderer=forward_plus capture_walk_dust.gd -- --at=6,9,12`, once with --before.
-    Then the board, the PR, and the stills to the lead.
+  - The lead cancelled the CI capture (it clashed with P3's). Stills were made LOCALLY with the no-focus override.cfg (removed after).
+  - Final values (uncommitted): alpha 0.38, max_live 2, puff scale 0.4-0.8 x size (as wide as the foot). Haze 0.76.
+  - Stills in shared notes footfall-dust/: before_after_crops.jpg (Behemoth, 6/9/12 s) and after_puff_6.4s_crop.png.
+  - Left to do: tests green, commit, push, PR (body scratchpad/walkdust/pr.md: fill SUITES), send the stills to the lead.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
@@ -94,5 +96,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- bbjoendh4: CI stills to scratchpad/walkdust/{after,before}.
+- bv1y1mmiw: city, smoke and flow on stomp-dust.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
