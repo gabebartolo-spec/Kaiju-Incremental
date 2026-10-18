@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-19 00:50
-## State: awaiting lead (#59 round 2 local re-render sent; head ce56405)
+# Landmarks handoff, 2026-10-19 01:40
+## State: awaiting lead (#59 round 3 sent for the critic; head a61467f)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -44,6 +44,11 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   shadow). Suite green there (flow 145). Frame time crowd off/on (1080p, before no-shadow):
   frame 12.8 -> 15.6 ms, GPU 10.5 -> 13.3 ms; re-time when the director is not fullscreen.
   Slot passed to croc #54 (then #50). Re-render on CI (director in a fullscreen game).
+- Round 3 (7baf9d1, captures a61467f): 3965 fans (spacing 2), static MultiMesh per outfit,
+  runner pool 500, 16 exits; ball 3x lit + carried; landmark back faces 0.8 ("inside" in
+  landmarks.json); landed landmark sections shrink 0.15 s (LandmarkBurst.retire); nearest of
+  12 mouths, shock 0.1-0.4; stills use a pitch-aimed game-offset camera; clip 180 frames.
+  Clip notes landmarks/afl_crowd_r3_720p.mp4. LEAD merges after r3 if only polish is left.
 - Local re-render at a5073d4 (captures ce56405): clip notes landmarks/afl_crowd_r2_local_720p.mp4.
   Crowd CPU: calm 0.015 ms, flee 6.2 -> 1.5 ms (cached cfg, no trig, STRIDE 3). GPU 1080p
   off/on: frame 5.85/5.82, GPU 3.97/4.19 ms. Ball still small at game cam (offer 3x).
