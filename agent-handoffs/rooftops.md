@@ -68,7 +68,7 @@ Re-sync after P3 and re-check the per-stage totals.
 --out=<notes>/rooftops-density/clip. Delete that branch after the PR merges.
 capture.yml ORDER (LEAD): shell-hit -> military-ai 720p -> croc P3 chain -> MY clip -> others.
 Dispatch only after P3's chain is done and nothing is in_progress. 720p (--resolution=1280x720);
-asked LEAD whether "about 20 s" means clip length (default: 6 s render, trim 3 s).
+LEAD: full 6 s render, untrimmed, 720p/60 with audio.
 
 ## Coordination
 - "Kaiju: Sound effects" (local_24621710-3f9c-4f67-ae39-8fa4b6192106) adds a rifle sound gap
