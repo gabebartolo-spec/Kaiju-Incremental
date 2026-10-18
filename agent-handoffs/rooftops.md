@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: awaiting #50 merge (LEAD pings) + capture.yml slot (after the croc P3 chain)
+## State: running a check (PR #63 open; re-measure on look-options bvrm2j6wy; clip dispatch armed bibqqy81q)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -38,7 +38,17 @@ hide spark. PR into claude/look-options after #50 merges, synced; do not merge.
 - PR body: scratchpad pr_body.md (copy: notes pr_body_draft.md). Placeholders left: CLIP,
   CROPS, SPARKGAIN, AUDIO.
 
-## Next
+## Now (LEAD 2026-10-18 ~06:40 UTC: #50 in rework, don't wait; this PR goes first)
+- PR #63 https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/63, head 92bb053 = synced
+  with look-options af7eb05 (#56 #51 #57 #62 #53 in). Suites all 9 pass (suites_synced.txt).
+  Auto-fix on. Tables in the body are #50-head numbers, labelled; replace with look-options ones.
+- bvrm2j6wy: snap_lo (af7eb05) base pacing -> dump_lo.json -> replay base + cand (snap_lo_c =
+  92bb053) -> cand pacing. Outputs scratchpad pacing_lo.txt, replay_lo_*.txt, pacing_lo_c.txt.
+- bibqqy81q: waits for capture.yml empty, then dispatches the clip on claude/rooftop-density.
+- Then: hit gate + known-bad on the synced branch; spark_gain.py + three 2x crops; PR update.
+If #50 lands first: re-sync floors once.
+
+## Older plan (superseded where it conflicts)
 1. When LEAD says #50 merged: merge origin/claude/look-options into claude/rooftop-density
    (floors: keep the max of each), check sim/ + data/ match a0d3f36's (else re-run replay +
    pacing via scratchpad snapshots), run tools/run_tests.sh, push, open the PR with pr_body.md.
