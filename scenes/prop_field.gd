@@ -11,12 +11,11 @@ const STUMP := 2  # a felled tree leaves its lowest cells this many high standin
 var vox := VoxelBuilder.new()
 var voxel: float
 var fall_seconds := 0.4  # how long a felled tree takes to come down
-var fell_lighten := 0.0  # a felled tree's cells go this much toward white, to read on the grass
+var fell_lighten := 0.0  # a felled tree's stump goes this much toward white, to read as cut
 var felled: Array[Vector3] = []  # stumps whose tree landed since the owner last drained this
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
 var _mmi: MultiMeshInstance3D
-var _heading := Vector2.ZERO  # the way the current crush pushes, or zero for away from it
 var _falling: Array[Dictionary] = []  # trees still coming down (tick)
 
 
@@ -77,12 +76,10 @@ func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:
 	return _mmi
 
 
-## Flattens every prop whose base is within `radius` of `at` (ground plane); trees fall along
-## `heading`, or away from `at` when it is zero.
-func crush(at: Vector3, radius: float, heading := Vector2.ZERO) -> void:
+## Flattens every prop whose base is within `radius` of `at` (ground plane); trees fall.
+func crush(at: Vector3, radius: float) -> void:
 	if _mmi == null:
 		return
-	_heading = heading
 	var mm := _mmi.multimesh
 	var lo := Vector2i(floori((at.x - radius) / BUCKET), floori((at.z - radius) / BUCKET))
 	var hi := Vector2i(floori((at.x + radius) / BUCKET), floori((at.z + radius) / BUCKET))
@@ -98,11 +95,10 @@ func crush(at: Vector3, radius: float, heading := Vector2.ZERO) -> void:
 
 ## Flattens every prop whose base lies under a body: `foot` is its ground box (x across, y
 ## along) in the frame `body` (scale included), so the box turns and grows with it; trees fall
-## along `heading`.
-func crush_box(body: Transform3D, foot: Rect2, heading: Vector2) -> void:
+## away from its middle.
+func crush_box(body: Transform3D, foot: Rect2) -> void:
 	if _mmi == null:
 		return
-	_heading = heading
 	var mm := _mmi.multimesh
 	var reach := maxf(foot.position.length(), foot.end.length()) * body.basis.get_scale().x
 	var at := body.origin
@@ -159,15 +155,12 @@ func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 
 
 ## A tree falls: its cells above STUMP turn a quarter about the top of the stump, toward
-## _heading (or away from the blow), over fall_seconds (tick), and lie along the ground.
+## east or west, away from the blow, over fall_seconds (tick), and lie along the ground. Across
+## the game camera's view (it always looks north): a tree laid toward or away from the camera
+## reads as one still standing (critic on #55).
 func _fell(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var base: Vector3 = group["at"]
-	var away := _heading
-	if away.length() < 0.01:
-		away = Vector2(base.x - at.x, base.z - at.z)
-	if away.length() < 0.01:
-		away = Vector2.RIGHT
-	away = away.normalized()
+	var away := Vector2.RIGHT if base.x >= at.x else Vector2.LEFT
 	var axis := Vector3.UP.cross(Vector3(away.x, 0, away.y)).normalized()
 	var ids: PackedInt32Array = group["ids"]
 	var heights: PackedInt32Array = group["heights"]
@@ -183,8 +176,9 @@ func _fell(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var falls := PackedInt32Array()
 	var starts := PackedVector3Array()
 	for k: int in ids.size():
-		mm.set_instance_color(ids[k], mm.get_instance_color(ids[k]).lightened(fell_lighten))
-		if heights[k] >= STUMP:
+		if heights[k] < STUMP:  # the fresh-cut stump shows pale; the crown keeps its leaf colour
+			mm.set_instance_color(ids[k], mm.get_instance_color(ids[k]).lightened(fell_lighten))
+		else:
 			falls.append(ids[k])
 			starts.append(mm.get_instance_transform(ids[k]).origin)
 	_falling.append(

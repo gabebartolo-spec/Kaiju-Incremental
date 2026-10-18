@@ -94,10 +94,10 @@ func dust(at: Vector3, size: float) -> void:
 
 ## A small tan puff of earth where a felled tree lands (light, so it reads on dark grass).
 func earth_puff(at: Vector3) -> void:
-	var p := _burst(_earth_mat, _puff_mesh, 6, 0.8)
+	var p := _burst(_earth_mat, _dust_mesh, 10, 1.0)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
-	mat.emission_box_extents = Vector3(0.3, 0.1, 0.3)
+	mat.emission_box_extents = Vector3(0.5, 0.1, 0.5)
 	mat.initial_velocity_min = 0.3
 	mat.initial_velocity_max = 0.8
 

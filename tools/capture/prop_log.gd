@@ -1,16 +1,15 @@
 extends RefCounted
 ## Per-prop trample log for capture_green --log-props (the motion critic's third round on #55
 ## asked for evidence per tree, not another clip): for every decor prop in an area, the movie
-## frame its base first lies under the kaiju's body box, the frame it went down, the closest
+## frame its base first lies under the kaiju's body box, the frame it went down (both counted
+## as the clip's own frames, so f12 here is frame 12 of the --write-movie clip), the closest
 ## the box came to it, and where it stood on screen (1280x720) when the box first reached it.
 
 var _rows := {}  # prop group index -> its row
-var _start := 0
 var _scale := 1.0  # screen pixels of the log per viewport pixel
 
 
 func _init(decor: CityDecor, area: Rect2, viewport_height: float) -> void:
-	_start = Engine.get_process_frames()
 	_scale = 720.0 / viewport_height
 	var groups: Array[Dictionary] = decor._props._groups
 	for i: int in groups.size():
@@ -31,7 +30,7 @@ func sample(decor: CityDecor, camera: Camera3D) -> void:
 	var kaiju := decor._kaiju
 	if kaiju == null:
 		return
-	var frame := Engine.get_process_frames() - _start
+	var frame := Engine.get_frames_drawn()  # the movie writer's frame: f0 is the clip's first
 	var body := kaiju.global_transform
 	var into := body.affine_inverse()
 	var size := body.basis.get_scale().x

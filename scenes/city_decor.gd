@@ -107,7 +107,7 @@ func _process(delta: float) -> void:
 	var at := sim.kaiju_pos
 	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
 		var body := _kaiju.global_transform
-		_props.crush_box(body, _foot, at - _walked)
+		_props.crush_box(body, _foot)
 		var into := body.affine_inverse()
 		for lamp: OmniLight3D in _lamps.duplicate():
 			var local := into * Vector3(lamp.position.x, body.origin.y, lamp.position.z)
@@ -130,9 +130,9 @@ func _found_kaiju() -> bool:
 
 
 ## Flattens props under a stomp.
-func crush(at: Vector3, radius: float, heading := Vector2.ZERO) -> void:
+func crush(at: Vector3, radius: float) -> void:
 	if trampling:
-		_props.crush(at, radius, heading)
+		_props.crush(at, radius)
 	for lamp: OmniLight3D in _lamps.duplicate():
 		if Vector2(lamp.position.x - at.x, lamp.position.z - at.z).length() <= radius:
 			_lamps.erase(lamp)
