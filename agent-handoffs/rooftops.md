@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: awaiting lead (round 3 pushed 1d874df; LEAD checks 2x then merges, no new critic)
+## State: awaiting lead (playtest fixes pushed: rifle-fire a45f989, breath-aim 43652fa; no PRs yet)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -9,48 +9,62 @@ Worktree .claude/worktrees/festive-jemison-3fb73c. Report to LEAD (SendMessage, 
 Director D-076 "more squads, more often", made visible; director (here): "shooters arent firing in
 unison ... improvised, unrehearsed resistance". LEAD D-076a: tanks unchanged; rifle chip scaled per
 tier so each stage's damage per run holds within ±5%; reptilian pacing within ±5%. No HUD change
-(D-061): hit read = flash + tracer + hide spark. PR #63 into claude/look-options; do not merge.
+(D-061): hit read = flash + tracer + hide spark. PR #63 into claude/look-options; LEAD merges.
 
-## PR #63 (claude/rooftop-density), head dc957e1, synced with look-options a7bb4d9 (docs only new)
-- sim/army.gd: reach = range + stomp_radius(); next shot = interval × (1 ± jitter) on
+## Playtest fixes (D-083, director playtest, LEAD 2026-10-18); proof notes PLAYTEST_FIXES.md
+- claude/rifle-fire a45f989: rifle "type writer" -> near squads (12 u) crack, the rest rifle_far
+  pops (-14 dB, pitch 0.7); gaps 0.25 s +60% / 0.5 s +80%; pitch ±10%. 6.5 -> 1.2 cracks/s.
+- claude/breath-aim 43652fa: BreathAim wedge (scenes/breath_aim.gd) = RampageSim.cone() while
+  the breath is ready; flow check + known-bad; floor flow 149.
+- Both off look-options, all 9 suites pass. Awaiting LEAD: open PRs? merge?
+- #63 MERGED. Legs/tail hit WIP stays local on claude/rooftop-density (ea54ca5), post-demo.
+
+## Branch and commit
+- claude/rooftop-density. origin = 65e96f4 (synced with look-options 57617b0: #54 #36 #59 #66 in).
+  LEAD merges 65e96f4 on green CI.
+- Local only, NOT pushed: ea54ca5 (round 4 WIP below) and this handoff rewrite.
+
+## What #63 changes (at 65e96f4)
+- sim/army.gd: reach = range + stomp_radius(); next shot = interval × (1 ± interval_jitter) on
   Seeds.derive(rng, 0x2008); Army.volleys.
-- tuning army.rooftop: chance 1.0, max [30,96,96,120], interval 0.8, interval_jitter 0.5, range 24,
-  chip [0.01,0.012,0.03,0.05]. sfx rifle -6 dB, gain_jitter_db {rifle: 3}.
-- scenes/rooftop_view.gd (at its 400-line cap): nearest-first, hide looming (> 4% screen) squads but
-  keep their spark, 2-14 frame ragged men, 3-piece fading tracer, PARAPET_IN 2, spark 6 f x1.35.
-- scenes/rooftop_aim.gd (new): random of 3 nearest upper bones, 20-80% along.
-- scenes/sfx.gd gain jitter; tests/lib/flow_rifle_sounds.gd fix (#53's check).
-- capture_rooftops.gd: edge-reach stand, --typical, --rifle-ab=A,B, in_reach_per_second log.
-- tests/lib/sim_rooftops.gd: edge reach, Behemoth density >= 1.0/s, ragged gaps (all failed first).
-  Floor sim 53. Suites all pass on 9cff149.
+- tuning army.rooftop: chance 1.0, max [30,96,96,120], interval 0.8, jitter 0.5, range 24,
+  chip [0.01,0.012,0.03,0.05]. sfx: rifle +2 dB, gain_jitter_db {rifle: 3}, min_interval rifle 0.1,
+  start_s {rifle: 0.13} (rifle.ogg has ~140 ms silent lead-in).
+- scenes/rooftop_aim.gd: hit = shown voxel of a trunk/head bone facing the shooter (24 draws).
+- scenes/rooftop_view.gd (381 lines): nearest-first, looming squads hidden but spark kept, ragged
+  men 2-14 frames, fading tracer, figures clamped to their own roof level (_roof), PARAPET_IN 2.
+- scenes/sfx.gd: gain jitter + start offset from tuning. flow_rifle_sounds.gd fix (#53's check).
+- capture_rooftops.gd: open-spot --typical (CLEAR 5, sight line, MIN_SEEN 5), --rifle-ab=A,B,...,
+  in_reach_per_second. tests/lib/sim_rooftops.gd: edge reach, density, ragged gaps.
+- Floors = real counts: sim 53, growth 31, flow 148 (LEAD merged look-options 329e708, #66, at 65e96f4).
 
-## Evidence so far (notes rooftops-density/, round2/)
-- Replay vs look-options af7eb05, 28 states (replay_lo_base.txt / replay_chip3.txt row x|0):
-  totals -0.8/+2.6/+2.7/+0.2%. Behemoth volleys/run 5.3 -> 409, in reach while any 5.3, 3+ 52%.
-- Base pacing af7eb05: 0.59 h / 4.56 h (pacing_lo.txt). Candidate: b0jeyrx8u -> pacing_lo_c.txt.
-- Gate 452/452 exit 0; known-bad 73/453 exit 1 (round2/gate*.log). Sim packet posted on #63.
-- Headless dry run --typical: in reach per second [7 x9, then 1 x3] (6 squads die ~9 s), 71 volleys.
-  So the -6 dB half is quieter partly from fewer shots: compare per-onset peaks, not only LUFS.
+## Evidence (notes side-session-notes/local_106fc100.../rooftops-density/)
+- Replay vs af7eb05: totals -0.8/+2.6/+2.7/+0.2%. Pacing: evolve1 0%, tree -4.4% (before #36).
+- round3/PROOF_round3.md: plaza spot, gate 553/553 (known-bad 162/557 exit 1), audio crack +2.7 dB
+  over a stomp alone, -18.8 LUFS, -2.7 dBTP (LEAD ACCEPTED the audio).
 
-## Now (round 3, LEAD: critical path to the demo build)
-- Pushed 1d874df: synced with look-options 9d8ad11 (#54 #36 #59 in); all 9 suites pass, floors
-  = real counts (sim 53, growth 31, flow 146).
-- RooftopAim: hits land on a shown voxel of a trunk/head bone facing the shooter (24 random draws);
-  arms dropped (they hang in shadow). Gate 553/553 exit 0; known-bad 162/557 exit 1.
-- RooftopView._roof: figures clamped to the columns at their own roof height (no overhang).
-- capture --typical: open spots only (CLEAR 5 u, sight line, MIN_SEEN 5) -> plaza (-32.5,-48.5).
-- Audio: rifle +2 dB, gap 0.1 s, start_s 0.13. Stomp alone -5.8 dBFS, crack -3.1 (+2.7).
-- Proof: notes round3/PROOF_round3.md (clip2/, ab3/, gate logs). PR body updated.
-- Post-demo (LEAD): recoil, lulls between bursts. Not mine: city_view.gd:208 errors.
-- Totals were measured before #36 (the army learns inside a stage); re-measure if LEAD asks.
-Tools: scratchpad clip_report.py, rifle_level.py. The SND sound log needs a temporary print in the
-capture (restore it afterwards). run_tests.sh needs GODOT=<console exe>.
+## Unfinished changes (POST-DEMO, LEAD: no hits on tail or legs yet; local WIP ea54ca5, unverified)
+- Bar: on-screen sparks span >= 60% of the kaiju's screen width; no 20 px x-bin > 25%; hits over
+  torso, flanks, tail and legs, never in the air or in shadow. clip2 at 1d874df: 47% span, ~25% bin.
+- WIP: RooftopAim TARGETS + leg_l0/l1, leg_r0/r1, tail0-3, NEAREST 5; capture logs body_x_px.
+- Post-demo, when LEAD assigns it and Godot is allowed: headless --import first (FallMotion from #66 failed to parse
+  without it); headless --typical run + scratchpad/span.py; gate + known-bad; render the 6 s clip
+  (override.cfg, separate call; remove after); 4 stills; trimmed mp4 (first 5 frames); suites
+  (GODOT=<console exe> tools/run_tests.sh); new branch off look-options after #63 merges (ea54ca5 is local only).
 
-## Scratchpad (%TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad)
-snap_lo (af7eb05 base), snap_lo_c (9cff149), dump_lo.json, pr_body.md, clip_report.py.
-Replay: cd snap_x; APPDATA=<appdata_x> DUMP=<dump> CANDS='[{}]' godot --headless --path .
---script tools/roof_replay.gd
+## Attempts
+- CI capture.yml (llvmpipe) timed out at 50 min for 12 s at 720p60: render locally instead.
+- In-mix stomp peaks are contaminated by overlapping rifles: measure the stomp with rifles
+  muted (--rifle-ab=-80,...).
+- A Movie Maker clip at --resolution 1280x720 still came out 1920x1080, so spark coordinates are
+  in 1920 space.
+
+## Open decisions
+- Re-measure the ±5% totals after #36 (army learns inside a stage)? LEAD's call.
+- Post-demo (LEAD): recoil, lulls between bursts.
+
+## Running jobs
+None. Background watcher bj4wt7h0y (waits for PR 50 to close) may still be polling gh.
 
 ## Rules
-Kill Godot by PID only. Windowed runs need override.cfg written in a separate call first. Never
-git stash; stage by name. Don't touch scenes/rampage_hud.gd (no HUD change).
+Kill Godot by PID only. Never git stash; stage by name. Don't touch scenes/rampage_hud.gd.
