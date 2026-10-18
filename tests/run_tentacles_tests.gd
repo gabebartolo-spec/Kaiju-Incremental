@@ -152,13 +152,24 @@ func _check_helicopters() -> void:
 	)
 	var octo := _sim("cephalopod", {"c_grab": 1}, [_b(0, -7, Vector3i(3, 3, 3))], Vector2(0, 0))
 	_look_to_camera(octo)
-	octo.air.spawn()
+	var prey := octo.air.spawn()
 	var grabbed := false
+	var closest := INF
+	var kinds := []
 	for i: int in 30 * 8:
+		if octo.air.helis.has(prey):
+			closest = minf(closest, prey.pos.distance_to(octo.kaiju_pos))
 		for event: Dictionary in octo.step(DT, Vector2.ZERO, false):
-			if str(event["type"]) == "grab" and str(event["kind"]) == "heli":
-				grabbed = true
-	check(grabbed, "a cephalopod plucks a helicopter out of the sky")
+			if str(event["type"]) == "grab":
+				kinds.append(str(event["kind"]))
+				grabbed = grabbed or str(event["kind"]) == "heli"
+	check(
+		grabbed,
+		(
+			"a cephalopod plucks a helicopter out of the sky (closest %.1f m, reach %.1f m; grabbed %s)"
+			% [closest, Num.f(octo.powers_cfg.get("grab_reach", 0.0)) * octo.body_scale(), kinds]
+		)
+	)
 
 
 ## Helicopters keep off the camera's side of the kaiju (never between the player and it) and

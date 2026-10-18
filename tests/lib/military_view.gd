@@ -110,8 +110,9 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 		if i > 300:  # the camera has settled on the kaiju
 			var off := sim.air.space.camera()[0].distance_to(cam.global_position)
 			got["drift"] = maxf(Num.f(got["drift"]), off)
-		_measure_air(sim, cam, _plates(rampage._hud), got)
-		_measure_tanks(rampage, roads, last, got)
+		if i % 4 == 0:  # every sim step's worth (sim steps at 15 Hz)
+			_measure_air(sim, cam, _plates(rampage._hud), got)
+			_measure_tanks(rampage, roads, last, got)
 	rampage.queue_free()
 	await process_frame
 	return got
@@ -124,7 +125,7 @@ func _measure_air(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dic
 		var seen := _heli_seen(cam, heli, plates)
 		got["framed"] = Num.i(got["framed"]) + (1 if seen.x > 0.0 else 0)
 		got["under"] = Num.i(got["under"]) + (1 if seen.y > 0.0 else 0)
-		for b: RampageSim.Building in sim.buildings:
+		for b: RampageSim.Building in _near(sim, heli.pos, 12.0):
 			var half := Vector2(b.w, b.d) * 0.5
 			var near := heli.pos.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
 			var across := near.distance_to(heli.pos)
@@ -159,13 +160,36 @@ func _measure_tanks(rampage: Rampage, roads: Dictionary, last: Dictionary, got: 
 			var node: TankModel = rampage._tank_nodes[tank.id]
 			parts[tank.id] = _tank_drawn(node, _shapes)
 	var ids := parts.keys()
+	var at := {}
+	for tank: RampageSim.Tank in sim.tanks:
+		at[tank.id] = tank.pos
 	for a: int in ids.size():
 		for b: int in range(a + 1, ids.size()):
+			var pa: Vector2 = at[ids[a]]
+			var pb: Vector2 = at[ids[b]]
+			if pa.distance_to(pb) > 14.0:  # two tanks' full reach apart and more
+				continue
 			var one: Array[PackedVector2Array] = parts[ids[a]]
 			var two: Array[PackedVector2Array] = parts[ids[b]]
 			var g := _parts_gap(one, two)
 			got["gap"] = minf(Num.f(got["gap"]), g)
 			got["touching"] = Num.i(got["touching"]) + (1 if g <= 0.0 else 0)
+
+
+## The buildings with a lot within `room` of p (the plan's lot grid).
+func _near(sim: RampageSim, p: Vector2, room: float) -> Array[RampageSim.Building]:
+	var graph := sim.army_units.convoy.graph
+	var out: Array[RampageSim.Building] = []
+	var seen := {}
+	var lo := graph.cell_of(p - Vector2.ONE * room)
+	var hi := graph.cell_of(p + Vector2.ONE * room)
+	for cx: int in range(lo.x, hi.x + 1):
+		for cz: int in range(lo.y, hi.y + 1):
+			for i: int in graph.lots_at(Vector2i(cx, cz)):
+				if not seen.has(i):
+					seen[i] = true
+					out.append(sim.buildings[i])
+	return out
 
 
 ## The hull's angle off the road it stands on (the least of them at a crossing).

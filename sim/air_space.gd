@@ -6,10 +6,14 @@ extends RefCounted
 ## beside a tower's face.
 ## Part of AirWing; pure geometry.
 
+## The cell (metres) the roof heights are looked up by.
+const TOP_CELL := 2.0
+
 var sim: RampageSim
 var view: Dictionary
 var form: Dictionary
 var cruise: float  # air.altitude
+var _tops := {}  # TOP_CELL cell -> the tallest roof within facade of it (_top_near)
 
 
 func _init(p_sim: RampageSim, cfg: Dictionary) -> void:
@@ -82,19 +86,31 @@ func reach(angle: float, lo: float, hi: float, up := 0.0) -> float:
 ## sight, away from any tall one.
 func alt_over(track: Array[Vector2]) -> float:
 	var top := -INF
-	var graph := sim.army_units.convoy.graph
-	var room := Num.f(form["facade"])
-	var seen := {}
 	for at: Vector2 in track:
-		var lo := graph.cell_of(at - Vector2.ONE * room)
-		var hi := graph.cell_of(at + Vector2.ONE * room)
-		for cx: int in range(lo.x, hi.x + 1):
-			for cz: int in range(lo.y, hi.y + 1):
-				for i: int in graph.lots_at(Vector2i(cx, cz)):
-					var b := sim.buildings[i]
-					var half := Vector2(b.w, b.d) * 0.5
-					var near := at.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
-					if not seen.has(i) and near.distance_to(at) < room:
-						seen[i] = true
-						top = maxf(top, float(b.height))
+		top = maxf(top, _top_near(at))
 	return maxf(cruise, top + Num.f(form["roof_clear"]))
+
+
+## The tallest roof within `facade` of anywhere in p's TOP_CELL cell (buildings keep their
+## height for the run, so each cell is looked up once).
+func _top_near(p: Vector2) -> float:
+	var cell := Vector2i(floori(p.x / TOP_CELL), floori(p.y / TOP_CELL))
+	if _tops.has(cell):
+		var known: float = _tops[cell]
+		return known
+	var centre := (Vector2(cell) + Vector2(0.5, 0.5)) * TOP_CELL
+	var room := Num.f(form["facade"]) + TOP_CELL * 0.71  # the cell's half-diagonal
+	var graph := sim.army_units.convoy.graph
+	var top := -INF
+	var lo := graph.cell_of(centre - Vector2.ONE * room)
+	var hi := graph.cell_of(centre + Vector2.ONE * room)
+	for cx: int in range(lo.x, hi.x + 1):
+		for cz: int in range(lo.y, hi.y + 1):
+			for i: int in graph.lots_at(Vector2i(cx, cz)):
+				var b := sim.buildings[i]
+				var half := Vector2(b.w, b.d) * 0.5
+				var near := centre.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
+				if near.distance_to(centre) < room:
+					top = maxf(top, float(b.height))
+	_tops[cell] = top
+	return top
