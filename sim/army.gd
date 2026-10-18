@@ -24,10 +24,14 @@ var sim: RampageSim
 var cfg: Dictionary
 var rooftop: Dictionary
 var squads: Array[Squad] = []
+## Rooftop volleys fired this run (D-076: how often the player is shot at).
+var volleys := 0
 var rooftops_destroyed := 0
 ## Road movement and firing positions (D-066).
 var convoy: Convoy
 var _rng: RandomNumberGenerator
+## Each squad's next shot comes a seeded, ragged while later (D-076: no unison).
+var _ragged: RandomNumberGenerator
 var _spawn_timer: float
 var _next_id := 0
 var _column := -1
@@ -44,6 +48,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	var convoy_cfg: Dictionary = cfg["convoy"]
 	convoy = Convoy.new(sim, convoy_cfg)
 	_place_squads(Seeds.derive(rng, 0x2007))
+	_ragged = Seeds.derive(rng, 0x2008)
 
 
 func step(dt: float) -> void:
@@ -81,10 +86,12 @@ func step(dt: float) -> void:
 
 
 ## Each squad whose roof still stands fires a volley every fire_interval while the kaiju is in
-## range. True when a squad lost its roof (clear_dead removes it and pays its biomass).
+## range, measured from the edge of its stomp as the tanks' is (D-076: from its centre, a grown
+## kaiju's own reach killed squads before they got a shot). True when a squad lost its roof
+## (clear_dead removes it and pays its biomass).
 func _step_squads(dt: float) -> bool:
 	var lost := false
-	var reach := Num.f(rooftop["range"])
+	var reach := Num.f(rooftop["range"]) + sim.stomp_radius()
 	for squad: Squad in squads:
 		if not sim.buildings[squad.building].frame.alive(squad.cell):
 			squad.dead = true
@@ -93,8 +100,9 @@ func _step_squads(dt: float) -> bool:
 		squad.cooldown -= dt
 		if squad.cooldown > 0.0 or squad.pos.distance_to(sim.kaiju_pos) > reach:
 			continue
-		squad.cooldown = Num.f(rooftop["fire_interval"])
+		squad.cooldown = _next_shot()
 		sim.hp -= volley()
+		volleys += 1
 		sim.events.append({"type": "rooftop_fired", "squad": squad.id})
 	return lost
 
@@ -157,6 +165,13 @@ func clear_dead() -> void:
 				}
 			)
 		squads = holding
+
+
+## Seconds to a squad's next volley: fire_interval give or take interval_jitter of it, evenly
+## (the mean stays fire_interval), so squads never fall into step: improvised, not drilled.
+func _next_shot() -> float:
+	var jitter := Num.f(rooftop["interval_jitter"]) * (_ragged.randf() * 2.0 - 1.0)
+	return Num.f(rooftop["fire_interval"]) * (1.0 + jitter)
 
 
 ## How hard the army fights back: more the more of the city has fallen.

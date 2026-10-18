@@ -52,6 +52,13 @@ func face_mask(cell: Vector3i) -> int:
 	return Num.i(vox.flags.get(cell, 0))
 
 
+## A landmark's baked voxels by id (read once, shared with its views); empty if none.
+static func voxels(id: String) -> VoxelBuilder:
+	var shape: Dictionary = Content.landmarks().get(id, {})
+	var model := _read(str(shape.get("kvox", "")))
+	return VoxelBuilder.new() if model.frames.is_empty() else model.frames[0]
+
+
 static func _read(path: String) -> Kvox:
 	_lock.lock()
 	if not _cache.has(path):
