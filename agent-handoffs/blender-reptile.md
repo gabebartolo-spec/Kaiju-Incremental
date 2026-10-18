@@ -1,9 +1,12 @@
-# blender-reptile handoff, 2026-10-18 22:45
-## State: awaiting lead (fresh critic on round-2 clips). Rendered locally (director freed the screen),
-## override.cfg removed, GPU baton passed to rooftops #63 (-> greenery -> #50). Clips + sheets + feet 2x
-## in notes p3/round2/ (frames: scratchpad local_ado/out_{baby,adolescent}). px: baby ground 28 px per
-## footfall, toe 55 px per step (0.999x), swing ~35 px, drift 0; adolescent ~41 / 82 px (1.000x), drift 0.
-## On critic PASS: commit feet crop + sheets to docs/captures/2026-10-18-croctitan-stages/, update PR body.
+# blender-reptile handoff, 2026-10-19 00:40
+## State: awaiting lead (fresh critic on round-3 clips, notes p3/round3/). PR #54 head 47b8fe6, green.
+## Round 3 (lead r2: baby CLOSE, adolescent FAIL): A start = capture camera lurch from origin + t=0
+## plant rings (fixed: capture camera locks to KaijuModel.focus() from f0; ClipGait _feet_primed);
+## "adolescent scroll halves" not real (world cam 5.6 u/s steady). B turn_cycle 24/26 (7/9 turn steps).
+## C slam_gain 6.5 (adolescent tail tip 0.08 hips at contact); soft ring thin/small/fade-in, glow 0.55.
+## D roar_rest_from/_to 48/62 (adolescent); land 2.0. Probe prints tip lowest in roar.
+## Renders: local, windowed, override.cfg placed in a SEPARATE call first (guard checks before run).
+## Render rules (lead, director AFK): up to ~4 windowed at once; no baton.
 ## PR #54 head a33dc85: + RESTEP_REACH 0.98 -> 1.0 (adolescent re-stepped on every plant; pre-existing).
 ## Lead 19:0x: baby game-cam clip FAILED fresh critic. Fixes pushed dfcceea (suites green):
 ## 1/6 feet hid under the belly (planted drift was 0, turn had 5-6 steps) -> motion_test splay 10/12 m,
