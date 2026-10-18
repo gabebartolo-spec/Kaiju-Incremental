@@ -35,6 +35,7 @@ func run_checks() -> void:
 	_check_districts_kept()
 	_check_edges()
 	_check_defences()
+	preload("res://tests/lib/growth_army_learns.gd").check(check, _play)
 	_check_growth_matters()
 	_check_cost_curve()
 	_check_early_hook()
@@ -176,6 +177,10 @@ func _check_defences() -> void:
 	)
 
 
+## The army learns inside a stage (active-incremental finding 1, 2026-10-18): the levels bought
+## on the current tier's nodes harden the tanks and helicopters; an evolution resets that count.
+## Player-effect fixture: a fully bought Behemoth in its own city with the escalation on loses
+## more health to the army than with it off, so the clock is not the only thing that ends a run.
 ## Player-effect fixture: a Colossus in the young city flattens it before the clock runs out;
 ## in its own grown city the same rampage runs to the clock, earns more and leaves city
 ## standing: growth on vs off changes the city and the outcome.
@@ -224,6 +229,7 @@ func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) ->
 		steps += 1
 	var out := sim.result()
 	out["chunks"] = sim.chunks_total
+	out["hp_lost"] = Num.f(stats["hp"]) - sim.hp
 	return out
 
 
@@ -252,7 +258,7 @@ func _check_cost_curve() -> void:
 			for c: Variant in def["cost"]:
 				young_total += Num.i(c)
 	check(
-		e1 > young_total / 10,
+		e1 > young_total / 20,  # D-087: first evolution ~15 min; first buy is still run ~14
 		(
 			"the first evolution is a real goal, not a first-run buy (%d vs young nodes %d)"
 			% [e1, young_total]
