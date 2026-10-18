@@ -177,10 +177,11 @@ func _check_rampages() -> void:
 	)
 
 
-## Two helicopters fly as a pair: the second is the first one's wingman and the two never close
-## inside an airframe of each other over 30 s of orbits and runs.
+## Two helicopters fly as a pair: the second is the first one's wingman, close enough to read as
+## a pair, and their rotors never meet over 30 s of orbits, runs and break-offs.
 func _check_heli_pairs() -> void:
 	var sim := _rampage(2, 0)
+	sim.air.cfg["hp"] = 1000000.0  # the pair must not be shot down mid-check
 	var lead := sim.air.spawn()
 	var wing := sim.air.spawn()
 	var closest := INF
@@ -188,14 +189,14 @@ func _check_heli_pairs() -> void:
 	for i: int in roundi(30.0 / DT):
 		sim.step(DT, Vector2.ZERO, false)
 		closest = minf(closest, lead.pos.distance_to(wing.pos))
-		if lead.pos.distance_to(wing.pos) < 20.0:
+		if lead.pos.distance_to(wing.pos) < 25.0:
 			together += 1
 	check(
-		wing.wing_of == lead.id and closest >= HELI_HALF * 1.2 and together > roundi(25.0 / DT),
+		wing.wing_of == lead.id and closest >= ROTOR_CLEAR and together > roundi(25.0 / DT),
 		(
 			(
 				"a second helicopter flies wing on the first: never closer than %.1f m, within"
-				+ " 20 m for %d of %d steps"
+				+ " 25 m for %d of %d steps"
 			)
 			% [closest, together, roundi(30.0 / DT)]
 		)

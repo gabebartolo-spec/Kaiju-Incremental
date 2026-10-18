@@ -125,8 +125,8 @@
 			"attack_clear": 1.8,
 			"run_hold": 1.0,
 			"face_deg": 40.0,
-			"wing_gap": 10.0,
-			"wing_out": 7.0
+			"wing_gap": 12.0,
+			"wing_out": 13.0
 		},
 		"after_chunks": 120,
 		"interval": 12.0,

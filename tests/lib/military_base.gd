@@ -14,6 +14,9 @@ const HULL_LENGTH := 5.0
 const HELI_HALF := 5.0
 ## Head-room the test keeps between a helicopter's hit circle (air.heli_radius) and the body.
 const HELI_CLEAR := 0.5
+## Closest a wingman may come to its lead: two main rotors (each about an airframe across) with
+## 2 m between the tips, centre to centre.
+const ROTOR_CLEAR := HELI_HALF * 2.0 + 2.0
 
 
 ## A reptilian rampage at size tier `tier` on city seed `seed`, built the way the game does.
