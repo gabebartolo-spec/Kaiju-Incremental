@@ -1,5 +1,7 @@
 # UI handoff, 2026-10-18
-## State: running a check (D-077 plain stats: suites, then PR into claude/look-options, then one 4K-at-125% capture)
+## State: running a check (D-077: PR #51 open, suites green; 4K capture waits for the military-ai capture run)
+Lead session unreachable at 2026-10-18 ~12:00; report PR #51 to the next lead session: it needs a fresh screen-critic
+on the 4K tree capture once the capture lands.
 Branch claude/plain-stats (worktree ../Kaiju-Incremental-wt/plain-stats, off look-options 2d66383).
 D-077: the tree's side panel shows the cost plus only the stats the selected node changes, each one written in plain words
 from data/tuning.json "stat_text" (line, fmt, unit; "size" is hidden). The 12-number summary panel is gone.
