@@ -1,11 +1,9 @@
 # blender-reptile handoff, 2026-10-18 22:45
-## State: running a check. CI baton (lead 22:5x): chain br5yspo3l (bash PID 1401765, scratchpad
-## ci11/chain.sh) waits for stadium's 2 runs, then ci_capture gl_compatibility 720p baby, then
-## adolescent -> scratchpad ci11/{baby,adolescent}. Local GPU dropped (guard; override.cfg removed).
-## Then pass the CI baton to rooftops #63 local_1ac658ed-e1c7-4c67-a46c-cd51bba43e8c with: "CI capture
-## baton is yours (one capture.yml at a time; local GPU only if the director's fullscreen game has
-## ended). When done, pass it to the next in: greenery #55 local_9af27a16-0360-4923-b623-6a14a763ce49
-## -> #50 local_5325ef73-4643-4477-9507-1bb17f42af5b". Send clip paths to the lead (fresh critic).
+## State: awaiting lead (fresh critic on round-2 clips). Rendered locally (director freed the screen),
+## override.cfg removed, GPU baton passed to rooftops #63 (-> greenery -> #50). Clips + sheets + feet 2x
+## in notes p3/round2/ (frames: scratchpad local_ado/out_{baby,adolescent}). px: baby ground 28 px per
+## footfall, toe 55 px per step (0.999x), swing ~35 px, drift 0; adolescent ~41 / 82 px (1.000x), drift 0.
+## On critic PASS: commit feet crop + sheets to docs/captures/2026-10-18-croctitan-stages/, update PR body.
 ## PR #54 head a33dc85: + RESTEP_REACH 0.98 -> 1.0 (adolescent re-stepped on every plant; pre-existing).
 ## Lead 19:0x: baby game-cam clip FAILED fresh critic. Fixes pushed dfcceea (suites green):
 ## 1/6 feet hid under the belly (planted drift was 0, turn had 5-6 steps) -> motion_test splay 10/12 m,
