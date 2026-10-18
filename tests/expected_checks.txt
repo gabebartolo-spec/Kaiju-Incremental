@@ -2,7 +2,7 @@
 # run: checks went missing. Raise a floor in the PR that adds checks; floors only go
 # up (game-architecture §6). A suite with no line here fails until one is added.
 clips 14
-smoke 27
+smoke 28
 sim 50
 powers 24
 tentacles 18

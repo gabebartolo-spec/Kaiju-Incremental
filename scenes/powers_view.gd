@@ -21,6 +21,8 @@ const LIFT_SHARE := 0.22
 var sim: RampageSim
 ## The rooftop defenders (D-063), drawn beside the helicopters; their events come through here.
 var rooftops: RooftopView
+## The jets (D-072); their events come through here too.
+var jets: JetsView
 ## Every power event this view has drawn, by type (read by the flow suite).
 var played: Array[String] = []
 var _city: CityView
@@ -46,6 +48,8 @@ func _ready() -> void:
 	rooftops = RooftopView.new(sim, _city, rampage.sfx, Seeds.make("rooftop_fx"))
 	rooftops.body = _kaiju
 	add_child(rooftops)
+	jets = JetsView.new(sim, _city, rampage.sfx)
+	add_child(jets)
 
 
 func _hook(method: String, args: Array) -> void:
@@ -155,7 +159,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"heli_destroyed":
 			_heli_down(Num.i(event["heli"]), Vector2(Num.f(event["x"]), Num.f(event["z"])))
 		_:
-			return rooftops.on_event(event, kaiju_at)
+			return rooftops.on_event(event, kaiju_at) or jets.on_event(event, kaiju_at)
 	if not played.has(str(event["type"])):
 		played.append(str(event["type"]))
 	return true

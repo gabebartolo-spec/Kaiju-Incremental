@@ -33,6 +33,7 @@ func run_checks() -> void:
 	await _check_voxel_skin()
 	_check_tank()
 	_check_heli()
+	_check_jet()
 	_check_vehicle_fade()
 
 
@@ -295,6 +296,21 @@ func _check_tank() -> void:
 ## The Blender helicopter (D-042) loads as body, main rotor, tail rotor and chin gun; both rotors
 ## spin about their own hubs, and the gun swings onto a target below and ahead with the muzzle
 ## at the nose.
+## The interceptor (D-072) draws the Blender voxels it was built from (vox_jet.py), its nose
+## (where its rounds leave) forward along -Z.
+func _check_jet() -> void:
+	var jet := JetModel.new("interceptor")
+	root.add_child(jet)
+	var mmi := jet.get_child(0) as MultiMeshInstance3D
+	var cubes := mmi.multimesh.instance_count if mmi != null else 0
+	var cells := Kvox.read("res://assets/vehicles/jet_interceptor_body.kvox").frames[0].cells.size()
+	check(
+		cubes > 0 and cubes <= cells and jet.nose().z < -2.0,
+		"the interceptor draws its Blender voxels (%d of %d), nose forward" % [cubes, cells]
+	)
+	jet.free()
+
+
 func _check_heli() -> void:
 	var heli := HelicopterModel.new()
 	root.add_child(heli)

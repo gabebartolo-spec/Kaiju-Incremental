@@ -477,11 +477,45 @@ def build_regen() -> None:
     save("regen_loop", x, -6.0, loop=True)
 
 
+def build_jets() -> None:
+    """The jets (D-072), synthesized only: a fly-by that roars in, peaks as the jet crosses
+    the kaiju and falls away lower (a Doppler drop), and its cannon's short ripping burst."""
+    reseed("build_jets")
+    n = seconds(3.2)
+    t = np.arange(n) / RATE
+    over = 0.47  # share of the sound where the jet is overhead
+    swell = hump(n, over) ** 0.7
+    drop = np.where(t / t[-1] < over, 1.0, 0.62)  # pitch falls as it passes: Doppler
+    drop = lowpass(drop, 3.0)
+    roar = bandpass(noise(n), 800.0 * drop, 1.2) * 2.0
+    rumble = lowpass(noise(n), 180) * 4.0
+    whine = tone(1900.0 * drop, 3, 0.3) * 0.06
+    x = lowpass((roar + rumble + whine) * swell, 4500)
+    save("jet_flyby", x + tail(x.copy(), 1.0, 0.4, 900) * 0.2, -2.0)
+    x = np.zeros(seconds(0.75))
+    shot_n = seconds(0.05)
+    for k in range(14):  # about 25 rounds a second
+        shot = bandpass(noise(shot_n), np.full(shot_n, 1300.0), 0.8) * env(shot_n, 0.001, 0.012)
+        place(x, shot * 2.5, k * 0.04)
+        place(x, thump(0.08, 140, 80), k * 0.04, 0.25)
+    save("jet_cannon", x + tail(x.copy(), 0.6, 0.25, 1500) * 0.2, -4.0)
+
+
+BUILDERS = {"jets": build_jets}
+
+
 def main() -> None:
     global kenney_root
     parser = argparse.ArgumentParser()
-    parser.add_argument("--kenney", required=True, help="folder holding the unzipped Kenney packs")
-    kenney_root = pathlib.Path(parser.parse_args().kenney)
+    parser.add_argument("--kenney", help="folder holding the unzipped Kenney packs")
+    parser.add_argument("--only", choices=sorted(BUILDERS), help="rebuild one synthesized group")
+    args = parser.parse_args()
+    if args.only:  # synthesized only: needs no Kenney packs
+        BUILDERS[args.only]()
+        return
+    if not args.kenney:
+        parser.error("--kenney is required to rebuild everything")
+    kenney_root = pathlib.Path(args.kenney)
     build_stomps()
     build_footstep()
     build_stomp_crack()
@@ -496,6 +530,7 @@ def main() -> None:
     build_ready()
     build_deflect()
     build_regen()
+    build_jets()
 
 
 if __name__ == "__main__":

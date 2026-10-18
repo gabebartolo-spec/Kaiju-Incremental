@@ -32,9 +32,10 @@ var _next_id := 0
 var _side := 1.0
 
 
-func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> void:
+## `tuning` is the rampage's tuning; the jets read its "jets" section.
+func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
-	cfg = p_cfg
+	cfg = tuning["jets"]
 	_rng = rng
 	_spawn_timer = Num.f(cfg["first_delay"])
 

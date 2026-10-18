@@ -79,8 +79,7 @@ var next_fall_id := 0
 var collapse: Collapse
 ## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
 var army_units: Army
-## Species powers (SpeciesPowers), the helicopters (AirWing), the jets (StrikeWing) and the
-## insectoid's young (Brood).
+## Species powers, the helicopters (AirWing), the jets (StrikeWing), the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
 var strike: StrikeWing
@@ -137,8 +136,7 @@ func _init(
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
-	var jets_cfg: Dictionary = tuning["jets"]
-	strike = StrikeWing.new(self, jets_cfg, Seeds.derive(rng, 0x7E7))
+	strike = StrikeWing.new(self, tuning, Seeds.derive(rng, 0x7E7))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 
 
@@ -335,7 +333,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 							amounts.append(damage * k)
 		if not hit_coat.is_empty():
 			powers.coat(i, cells)
-		_apply(i, cells, amounts)
+		damage_cells(i, cells, amounts)
 	for tank: Tank in tanks:
 		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k
@@ -370,17 +368,12 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 	var amounts := PackedFloat32Array()
 	amounts.resize(cells.size())
 	amounts.fill(amount)
-	return _apply(index, cells, amounts)
+	return damage_cells(index, cells, amounts)
 
 
-## Damages chunks of one building, each by its own amount.
+## Damages chunks of one building, each by its own amount (tougher above the kaiju's size
+## tier). Broken chunks pay rubble; then whatever lost support starts to fall. Returns broken.
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
-	return _apply(index, cells, amounts)
-
-
-## A building above the kaiju's size tier is tougher. Broken chunks pay rubble; then whatever
-## lost support starts to fall. Returns chunks broken.
-func _apply(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 	var b := buildings[index]
 	var tough := b.tier > size_tier()
 	var mult := Num.f(city["tough_mult"]) if tough else 1.0

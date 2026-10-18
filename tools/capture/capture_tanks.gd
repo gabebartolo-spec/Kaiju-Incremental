@@ -4,28 +4,36 @@ extends SceneTree
 ## enough of the city is down the helicopters arrive. Stills along the way; pair with
 ## --write-movie (ci_capture.sh --movie) for the clip. With --air the helicopters are called in
 ## at once and the kaiju stands for 20 s: helicopters circling a baby kaiju that must stay in
-## view. Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
+## view. With --jets (D-072) a Behemoth stands while a jet makes its strafing pass through it:
+## the warning line, the rounds, the jet flying on out; a still every half second.
+## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_tanks.gd -- --species=<id> [--air] --out=<dir>
+##     --script tools/capture/capture_tanks.gd -- --species=<id> [--air|--jets] --out=<dir>
 
 const FRAMES := 60 * 40
 const SHOTS: Array[int] = [600, 900, 1200, 1500, 1800, 2100, 2340]
 const AIR_FRAMES := 60 * 20
 ## In --air mode, a still every this many frames.
 const AIR_EVERY := 120
+const JETS_FRAMES := 60 * 9
+const JETS_EVERY := 30
+## In --jets mode the first pass is called in after this many seconds.
+const JETS_FIRST := 1.0
 ## Frames between picking the next building to walk into.
 const RETARGET := 20
 const LEVELS := {
 	"reptilian": {"claws": 1},
 	"cephalopod": {"claws": 1, "c_grab": 3},
 }
+const BEHEMOTH := {"claws": 1, "evolve1": 1}
 
 var _out := "user://tanks"
 var _species := "reptilian"
 var _frame := 0
 var _target := Vector2(INF, INF)
 var _air := false
+var _jets := false
 
 
 func _initialize() -> void:
@@ -36,6 +44,8 @@ func _initialize() -> void:
 			_species = arg.substr(10)
 		if arg == "--air":
 			_air = true
+		if arg == "--jets":
+			_jets = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -43,7 +53,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var species := Content.species_def(_species)
-	var levels: Dictionary = LEVELS[_species]
+	var levels: Dictionary = BEHEMOTH if _jets else LEVELS[_species]
 	var tree := UpgradeTree.new(Content.upgrades(), levels, _species)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var rampage := Rampage.new()
@@ -58,10 +68,18 @@ func _run() -> void:
 		rampage.sim.chunks_destroyed = (
 			Num.i(air["after_chunks"]) + 2 * Num.i(air["max_per_chunks"])
 		)
-	for i: int in AIR_FRAMES if _air else FRAMES:
+	if _jets:  # jets are off in every stage until the director picks one (D-072): turn one on
+		var jets := rampage.sim.strike.cfg.duplicate()
+		jets["max"] = 1
+		jets["after_chunks"] = 0
+		jets["first_delay"] = JETS_FIRST
+		rampage.sim.strike = StrikeWing.new(rampage.sim, {"jets": jets}, Seeds.make("jets_capture"))
+	var frames := JETS_FRAMES if _jets else (AIR_FRAMES if _air else FRAMES)
+	var every := JETS_EVERY if _jets else AIR_EVERY
+	for i: int in frames:
 		await physics_frame
 		_frame = i
-		if (_air and i % AIR_EVERY == 0) or (not _air and SHOTS.has(i)):
+		if ((_air or _jets) and i % every == 0) or (not (_air or _jets) and SHOTS.has(i)):
 			var path := _out.path_join("tanks_%s_%04d.png" % [_species, i])
 			root.get_viewport().get_texture().get_image().save_png(path)
 	quit()
@@ -69,7 +87,7 @@ func _run() -> void:
 
 ## Walk into the nearest standing building and keep wrecking (in --air mode, stand).
 func _input(sim: RampageSim) -> Dictionary:
-	if _air:
+	if _air or _jets:
 		return {"move": Vector2.ZERO}
 	if _frame % RETARGET == 0:
 		_target = sim.nearest_standing(sim.kaiju_pos)
