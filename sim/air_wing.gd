@@ -100,7 +100,9 @@ func step(dt: float) -> void:
 			heli.hp -= heli.coat_dps * dt
 			coated = true
 		heli.cooldown -= dt
-		if heli.cooldown <= 0.0 and heli.state == RUN and _on_target(heli):  # guns on a run only
+		# Guns on a run only, and only in sight: off-screen (no room in the frame) it holds fire.
+		var seen := space.in_frame(heli.pos, heli.alt)
+		if heli.cooldown <= 0.0 and heli.state == RUN and _on_target(heli) and seen:
 			heli.cooldown = Num.f(cfg["fire_interval"])
 			var army := sim.army
 			var hurt := Num.f(cfg["damage"]) - sim.stat("armor")
@@ -291,7 +293,8 @@ func _keep_clear(heli: Heli) -> void:
 			var at := side + wrapf(_slot(heli, wing) - heli.angle, -PI, PI)
 			lo = minf(lo, at)
 			hi = maxf(hi, at)
-	if heli.wing_of < 0 and heli.turn * heli.omega > 0.0 and _blocked(heli, lo, hi, stop):
+	var roomy := space.reach(heli.angle, attack_radius(), maxf(heli.cruise, attack_radius())) >= 0.0
+	if roomy and heli.wing_of < 0 and heli.turn * heli.omega > 0.0 and _blocked(heli, lo, hi, stop):
 		heli.turn = -heli.turn  # a tall block ahead: it turns back short of it, not over it
 	elif lo < arc + stop and heli.turn < 0.0 and heli.wing_of < 0:
 		heli.turn = 1.0
@@ -303,7 +306,8 @@ func _keep_clear(heli: Heli) -> void:
 
 
 ## Moves a helicopter to `to`: its nose follows its flight at yaw_rate (lining up on the kaiju
-## just before a run, holding it on the run), and it keeps roof_clear over the roofs under it.
+## just before a run, holding it on the run), and it keeps roof_clear over the roofs round it
+## and those it will reach in the next climb_ahead seconds.
 func _fly(heli: Heli, to: Vector2, dt: float) -> void:
 	var moved := to - heli.pos
 	heli.pos = to
@@ -319,6 +323,9 @@ func _fly(heli: Heli, to: Vector2, dt: float) -> void:
 	var rate := deg_to_rad(Num.f(_form["hover_yaw" if slow else "yaw_rate"])) * dt
 	heli.front = heli.front.rotated(clampf(heli.front.angle_to(want), -rate, rate))
 	var over := _alt(heli, to)
+	var ahead := Num.f(_form["climb_ahead"])
+	for k: int in range(1, 5):  # up before it gets there, the way it is flying
+		over = maxf(over, _alt(heli, to + moved / dt * ahead * k / 4.0))
 	heli.alt = move_toward(heli.alt, over, Num.f(_form["climb"]) * dt)
 
 

@@ -72,7 +72,8 @@ func _check_rampages() -> void:
 			while not sim.over:  # the game's own run length (run_seconds)
 				target = _autoplay(sim, steps, target)
 				steps += 1
-				_tally_frame(sim, tier)
+				if tier >= 2:
+					_tally_frame(sim, tier)
 				var reach := _reach(sim)
 				var danger := _danger(sim)
 				for tank: RampageSim.Tank in sim.tanks:

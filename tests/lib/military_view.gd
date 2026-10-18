@@ -34,15 +34,17 @@ func _check_view() -> void:
 		var got := await _view_run(levels, clip)
 		var frames := Num.f(got["frames"])
 		var share := Num.f(got["framed"]) / maxf(1.0, frames)
-		framed_ok = framed_ok and frames > 300 and share >= 0.95
-		hud += Num.i(got["under"])
+		var with_room := Num.f(got["room_framed"]) / maxf(1.0, Num.f(got["room"]))
+		framed_ok = framed_ok and Num.i(got["room"]) > 300 and with_room >= 0.95
+		hud += Num.i(got["unseen"])
 		touching += Num.i(got["touching"])
 		drift = maxf(drift, Num.f(got["drift"]))
 		var same_fov: bool = got["fov_ok"]
 		fov_ok = fov_ok and same_fov
 		table += (
 			(
-				"\nVIEW %s: heli in frame %.1f%% of %d, under HUD %d, pair lateral min %.1f m,"
+				"\nVIEW %s: heli whole in sight %.1f%% of %d (%.1f%% with room), bursts out of"
+				+ " sight %d of %d, under HUD %d, pair lateral min %.1f m,"
 				+ " facade min %.1f m, rotor-roof min %.1f m, fire yaw max %.1f deg (%d bursts);"
 				+ " tank drawn gap min %.2f m, touching %d, yaw moving max %.1f deg"
 			)
@@ -50,6 +52,9 @@ func _check_view() -> void:
 				run["name"],
 				share * 100.0,
 				frames,
+				with_room * 100.0,
+				got["unseen"],
+				got["bursts"],
 				got["under"],
 				got["lateral"],
 				got["facade"],
@@ -68,7 +73,7 @@ func _check_view() -> void:
 	)
 	check(
 		framed_ok and hud == 0,
-		"helicopters stay whole in the frame (>= 95%% each run) and off the HUD (%d)" % hud
+		"helicopters fire only in sight (%d bursts not) and stay in sight where there is room" % hud
 	)
 	check(touching == 0, "no two tanks' drawn parts touch in the game view (%d)" % touching)
 
@@ -96,6 +101,9 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 		"rotor": INF,
 		"fire_yaw": 0.0,
 		"bursts": 0,
+		"unseen": 0,
+		"room": 0,
+		"room_framed": 0,
 		"gap": INF,
 		"touching": 0,
 		"yaw": 0.0,
@@ -113,6 +121,7 @@ func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
 			off = maxf(off, (_eye(sim) - k).distance_to(seen))
 			got["drift"] = maxf(Num.f(got["drift"]), off)
 			_hud_px = _plates(rampage._hud)
+		_measure_fire(sim, cam, _plates(rampage._hud), got)
 		if i % 4 == 0:  # every sim step's worth (sim steps at 15 Hz)
 			_measure_air(sim, cam, _plates(rampage._hud), got)
 			_measure_tanks(rampage, roads, last, got)
@@ -126,8 +135,13 @@ func _measure_air(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dic
 	for heli: AirWing.Heli in sim.air.helis:
 		got["frames"] = Num.i(got["frames"]) + 1
 		var seen := _heli_seen(cam, heli, plates)
-		got["framed"] = Num.i(got["framed"]) + (1 if seen.x > 0.0 else 0)
+		var whole := seen.x > 0.0 and seen.y == 0.0
+		var cruise := maxf(heli.cruise, sim.air.attack_radius())
+		var room := sim.air.space.reach(heli.angle, sim.air.attack_radius(), cruise) >= 0.0
+		got["framed"] = Num.i(got["framed"]) + (1 if whole else 0)
 		got["under"] = Num.i(got["under"]) + (1 if seen.y > 0.0 else 0)
+		got["room"] = Num.i(got["room"]) + (1 if room else 0)
+		got["room_framed"] = Num.i(got["room_framed"]) + (1 if room and whole else 0)
 		for b: RampageSim.Building in _near(sim, heli.pos, 12.0):
 			var half := Vector2(b.w, b.d) * 0.5
 			var near := heli.pos.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
@@ -139,6 +153,10 @@ func _measure_air(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dic
 		for lead: AirWing.Heli in sim.air.helis:
 			if lead.id == heli.wing_of:
 				got["lateral"] = minf(Num.f(got["lateral"]), heli.pos.distance_to(lead.pos))
+
+
+## This frame's bursts: the nose's yaw off the kaiju, and whether the gunship was in sight.
+func _measure_fire(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dictionary) -> void:
 	for event: Dictionary in sim.events:
 		if str(event["type"]) != "heli_fired":
 			continue
@@ -147,6 +165,8 @@ func _measure_air(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dic
 				var yaw := rad_to_deg(absf(heli.front.angle_to(sim.kaiju_pos - heli.pos)))
 				got["fire_yaw"] = maxf(Num.f(got["fire_yaw"]), yaw)
 				got["bursts"] = Num.i(got["bursts"]) + 1
+				var seen := _heli_seen(cam, heli, plates)
+				got["unseen"] = Num.i(got["unseen"]) + (0 if seen.x > 0.0 and seen.y == 0.0 else 1)
 
 
 ## The tanks this frame: their drawn parts' closest approach and the hull's yaw while moving.

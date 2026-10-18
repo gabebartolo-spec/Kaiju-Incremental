@@ -14,7 +14,7 @@ const FOV := 55.0
 const SCREEN := Vector2(1920, 1080)
 
 var _hud_px: Array[Rect2] = []  # the HUD's plates in the clip's scene (pixels)
-var _tally := {}  # stage tier -> [helicopter-steps, whole in frame, under the HUD]
+var _tally := {}  # stage tier -> its columns (_tally_frame)
 
 
 ## Helicopters up from the start, as many as the stage allows.
@@ -24,47 +24,81 @@ static func _open_sky(sim: RampageSim) -> void:
 	sim.chunks_destroyed = Num.i(sim.air.cfg["max_per_chunks"]) * 3
 
 
-## Counts this step's helicopters of stage `tier` whole in the frame and under the HUD, through
-## the test's own camera (_project).
+## Tallies stage `tier`'s step through the test's own camera (_project): each helicopter whole
+## in the frame and off the HUD or not, whether its bearing has room in the frame at all (where
+## none has, it holds off-screen: LEAD 2026-10-19), each burst fired from out of sight, and the
+## steps with one in sight. Columns: steps, steps with one seen, heli-steps, seen, with room,
+## seen with room, bursts, bursts unseen.
 func _tally_frame(sim: RampageSim, tier: int) -> void:
-	if sim.air.helis.is_empty():
-		return
-	var t: Array = _tally.get(tier, [0, 0, 0])
-	var lo := SCREEN * FRAME_MARGIN
+	var t: Array = _tally.get(tier, [0, 0, 0, 0, 0, 0, 0, 0])
+	t[0] = Num.i(t[0]) + 1
+	var any := 0
+	var seen := {}
 	for heli: AirWing.Heli in sim.air.helis:
-		var inside := 1
-		var covered := 0
-		for p: Vector3 in _airframe(heli):
-			var s := _project(sim, p)
-			var on := Vector2(s.x, s.y)
-			if s.z <= 0.0 or on.x < lo.x or on.y < lo.y or on.x > SCREEN.x - lo.x:
-				inside = 0
-			elif on.y > SCREEN.y - lo.y:
-				inside = 0
-			for plate: Rect2 in _hud_px:
-				if s.z > 0.0 and plate.has_point(on):
-					covered = 1
-		t[0] = Num.i(t[0]) + 1
-		t[1] = Num.i(t[1]) + inside
-		t[2] = Num.i(t[2]) + covered
+		var cruise := maxf(heli.cruise, sim.air.attack_radius())
+		var room := sim.air.space.reach(heli.angle, sim.air.attack_radius(), cruise) >= 0.0
+		var whole := _whole(sim, heli)
+		seen[heli.id] = whole
+		any = 1 if whole else any
+		t[2] = Num.i(t[2]) + 1
+		t[3] = Num.i(t[3]) + (1 if whole else 0)
+		t[4] = Num.i(t[4]) + (1 if room else 0)
+		t[5] = Num.i(t[5]) + (1 if room and whole else 0)
+	t[1] = Num.i(t[1]) + any
+	for event: Dictionary in sim.events:
+		if str(event["type"]) == "heli_fired":
+			t[6] = Num.i(t[6]) + 1
+			t[7] = Num.i(t[7]) + (0 if seen.get(Num.i(event["heli"]), false) else 1)
 	_tally[tier] = t
 
 
-## Per stage, through the test's own camera over the suite's rampages: whole in the frame on
-## 95% of helicopter-steps and never under the HUD.
+## Is the airframe whole inside the frame's margin and clear of every HUD plate?
+func _whole(sim: RampageSim, heli: AirWing.Heli) -> bool:
+	var lo := SCREEN * FRAME_MARGIN
+	for p: Vector3 in _airframe(heli):
+		var s := _project(sim, p)
+		var on := Vector2(s.x, s.y)
+		if s.z <= 0.0 or on.x < lo.x or on.y < lo.y or on.x > SCREEN.x - lo.x:
+			return false
+		if on.y > SCREEN.y - lo.y:
+			return false
+		for plate: Rect2 in _hud_px:
+			if plate.has_point(on):
+				return false
+	return true
+
+
+## Per stage, through the test's own camera over the suite's rampages: no burst fired from out
+## of sight, and whole in sight on 95% of the helicopter-steps whose bearing has room.
 func _check_framing() -> void:
-	var ok := not _tally.is_empty() and not _hud_px.is_empty()
+	var ok := not _hud_px.is_empty()
 	var table := ""
 	for tier: int in _tally:
 		var t: Array = _tally[tier]
-		var share := Num.f(t[1]) / maxf(1.0, Num.f(t[0]))
-		ok = ok and Num.i(t[0]) > 500 and share >= 0.95 and Num.i(t[2]) == 0
+		if Num.i(t[2]) == 0:
+			continue
+		var with_room := Num.f(t[5]) / maxf(1.0, Num.f(t[4]))
+		ok = ok and Num.i(t[4]) > 300 and with_room >= 0.95 and Num.i(t[7]) == 0
 		table += (
-			"\nVIEW tier %d rampages: heli whole in frame %.1f%% of %d heli-steps, under HUD %d"
-			% [tier, share * 100.0, t[0], t[2]]
+			(
+				"\nVIEW tier %d rampages: one or more helicopters in sight %.1f%% of %d steps;"
+				+ " heli whole in sight %.1f%% of %d heli-steps, %.1f%% of the %d with room;"
+				+ " bursts %d, from out of sight %d"
+			)
+			% [
+				tier,
+				100.0 * Num.f(t[1]) / maxf(1.0, Num.f(t[0])),
+				t[0],
+				100.0 * Num.f(t[3]) / maxf(1.0, Num.f(t[2])),
+				t[2],
+				with_room * 100.0,
+				t[4],
+				t[6],
+				t[7]
+			]
 		)
 	print(table)
-	check(ok, "over whole rampages, helicopters stay in frame and off the HUD per stage:%s" % table)
+	check(ok, "helicopters fire only in sight and stay in sight where there is room:%s" % table)
 
 
 ## Where the game camera stands for the kaiju as it is now (rampage.gd's own numbers).

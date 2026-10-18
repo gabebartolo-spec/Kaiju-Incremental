@@ -145,7 +145,14 @@ func _check_heli_flight() -> void:
 					var lag := (
 						(heli.alt - cruise) / Num.f(form["climb"]) * Num.f(form["break_speed"])
 					)
-					var reach := Num.f(form["facade"]) + Num.f(form["look_ahead"]) + lag * 1.5
+					var speed := 0.0
+					if before.size() > 2:
+						var at_was: Vector2 = before[0]
+						speed = heli.pos.distance_to(at_was) / DT
+					var ahead := speed * Num.f(form["climb_ahead"])
+					var reach := (
+						Num.f(form["facade"]) + Num.f(form["look_ahead"]) + ahead + lag * 1.5
+					)
 					if _roof_under(sim, heli.pos, reach) + Num.f(form["roof_clear"]) <= cruise:
 						stays += 1
 					if before.size() > 2 and heli.alt < Num.f(before[2]) - 0.001:
