@@ -12,6 +12,7 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
 const FlowRifleSounds := preload("res://tests/lib/flow_rifle_sounds.gd")
 const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
+const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
@@ -43,6 +44,7 @@ func run_checks() -> void:
 	await _check_upgrade_screen()
 	await _check_rampage()
 	FlowSfx.run(root, check)
+	await FlowStadium.run(self, check)
 	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})

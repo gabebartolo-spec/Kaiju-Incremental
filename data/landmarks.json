@@ -23,6 +23,7 @@
 			],
 			"h": 13,
 			"kvox": "res://assets/landmarks/stadium.kvox",
+			"inside": 0.8,
 			"w": 28
 		},
 		"wheel": {
@@ -58,6 +59,7 @@
 			"d": 8,
 			"h": 27,
 			"kvox": "res://assets/landmarks/wheel.kvox",
+			"inside": 0.8,
 			"w": 24
 		}
 	}
