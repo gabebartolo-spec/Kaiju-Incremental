@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r4 in progress)
-## State: blocked (local Godot paused by LEAD for the director's playtest; heli framing not converging on CI, next step is a local probe: scratchpad probe_room_miss.gd). Head e2882b5.
+## State: running a check (#50 = tanks only at d27a9d5: CI tests + CI clip queued; helis split to claude/heli-flight (f1ee22f); design note waits on local Godot for numbers)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -29,24 +29,20 @@ screen points vs the frame (4% margin) and HUD plates.
 - Checks: military 21 (stacked wingman; military_view.gd: air.view pinned to the camera,
   helis >= 95% in frame + 0 under HUD, drawn tank parts never touch). DRIVE_DEG 10, FIRE_YAW 20.
 
-## Next
-Decisions: LEAD A (2026-10-19). Helicopters fire only in sight. With no in-frame spot they hold
-off-screen and sweep for room. Camera unchanged. Rebalance any lost damage with heli fire rate,
-not tanks.
-Done locally, not yet green on CI:
-- Tanks: open_up after a gun swing, last metre, square = skew_deg. Probe: 0 touches, 0 yaw.
-- Helis: fire in sight only (CI: 0 bursts unseen).
-Still failing (CI e2882b5, military 6 of 22):
-- Heli in sight where there is room: Beh 22%, Apex 68% (bar 95%).
-- Helis in sight at all: Beh 8%, Apex 40% of rampage time.
-- Rotor-roof -5.2 m, faced closest 11.4 vs 13.2, altitude "stays" 5.
-- Bursts 2 at Behemoth (floor 20): damage collapse, so rebalance fire rate after the pacing.
-1. On LEAD's go: run probe_room_miss.gd from tests/ (copy it in, delete after) at TIERS=2,4.
-   Find why helis with room are not in sight (r vs plan, alt vs plan, state). After several failed
-   fixes, change method. Consider: target = in-frame point nearest the formation slot, flown
-   toward at a speed cap. That way in-sight follows from the plan, not from many easing rules.
-2. Pacing base (snapBase4 = look-options 24dc0a8) vs r4, same seeds; young and damage per run by tier.
-3. Clip on capture.yml (one at a time), PR body r4, ping LEAD with the full SHA.
+## Next (LEAD 2026-10-19: split; A not shippable, on screen 8% of Behemoth time)
+#50 = tanks only (d27a9d5). The helicopter code, tuning and tentacles test are the base's again.
+Military checks are tank-only, floor 10. Capture is tanks only at CLIP_AT.
+Helicopter work is kept on claude/heli-flight (f1ee22f: AirSpace, frame planning, option A).
+1. #50: CI green (watcher), CI clip 720p (watcher queued behind green-lots), then the probe
+   table. Clip-scene VIEW line in the tests log; local probes probe_clip/_probe_r4 when Godot
+   is allowed. Then pacing: base snapBase4 (24dc0a8) vs #50, same seeds. Young retune: evolve1
+   0.26 h +-5%, young defeats within +-2. Damage per run within 5% by tier.
+2. Design note for LEAD (10 lines, numbers), methods D (street canyons at visible height,
+   rotor 6 m off facades) and B (camera pulls back while helis are up). Probe ready:
+   scratchpad probe_note.gd (copy into tests/, run headless, delete). It gives the share of
+   time with a heli in sight per camera scale (today's height and roof-cleared), kaiju px,
+   and the share of steps with a wide street in frame.
+3. Ping LEAD with the full SHA and clip + table + pacing.
 
 ## Findings for the lead
 - Numeric per-frame probes caught what crops missed: the "hulls interpenetrating" was a gun.
