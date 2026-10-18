@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (re-baseline pacing on #50 head a0d3f36 -> scratchpad pacing_b2.txt / dump_b2.json)
+## State: running a check (pacing_b2 re-baseline; CI clip queued via bcqfpdzkn on claude/rooftops-capture)
 
 ## Decision (FINAL, LEAD 2026-10-18): option A = D-076a
 Tanks unchanged. More squads + shorter interval; scale damage_by_tier down PER TIER so each stage's
@@ -58,6 +58,14 @@ rampage draws >= 1.0 volleys/s" (1.98 now; 0.29 on old tuning: fail_first_densit
 rifle sound in rooftop_view on look-options -> expect a small merge in rooftop_view.gd).
 So re-baseline on a0d3f36 (snap_b2) and re-replay the chosen tuning (snap_b2 + edge reach) before
 the PR tables; verify sim/ + data/ unchanged between a0d3f36 and the merged #50.
+
+## Merge order (director via LEAD): #50 -> P3 (croc baby: speed 0.6, hp 1.15) -> rooftops -> #36 -> build
+Open the PR the moment #50 merges (body drafted: scratchpad pr_body.md, placeholders in CAPS).
+Re-sync after P3 and re-check the per-stage totals.
+## Capture branch claude/rooftops-capture (34854a5) = this branch + #50 head a0d3f36 + #53 rifle gap
+(dd72600); floors resolved flow 134, military 11. CI clip: ci_capture.sh --movie --fps=60
+--resolution=1920x1080 --ref=claude/rooftops-capture capture_rooftops.gd -- --typical
+--out=<notes>/rooftops-density/clip. Delete that branch after the PR merges.
 
 ## Coordination
 - "Kaiju: Sound effects" (local_24621710-3f9c-4f67-ae39-8fa4b6192106) adds a rifle sound gap
