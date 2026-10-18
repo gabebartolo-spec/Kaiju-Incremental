@@ -1,7 +1,7 @@
 # Handoff: board (this session: "Kaiju: Load, smoke FX, builds")
 
-Updated: 2026-10-19 03:20
-State: awaiting lead (#92 review fix + CI board pushed; resync after the lead's doc-caps fix)
+Updated: 2026-10-19 04:10
+State: running a check (#82 CI on ca29e9c; #84 818bebd and #81 e672ca6 green; #92 merged)
 
 ## Open PRs (each green locally on all suites after syncing look-options)
 - Fix 3 frame cap: #77 MERGED.
@@ -23,6 +23,9 @@ State: awaiting lead (#92 review fix + CI board pushed; resync after the lead's 
 Graphics High / Balanced (0.75 FSR1, MSAA off) + 4K default Balanced/60 in display.graphics_default.
 Stale settings.cfg fix (display version 2), flow 155. CI board docs/captures/2026-10-19-graphics/.
 No local Godot while the director plays League (lead's rule): use CI (capture.yml, gl_compatibility).
+
+## Sync after #92 (2026-10-19)
+#82's gate moved to scenes/sfx_gate.gd (SfxGate): sfx.gd hit the 400-line cap after the merge.
 
 ## Next
 Lead review at 2x; follow-up for the first young load if the lead wants it.
