@@ -38,7 +38,8 @@ Lead resynced #59, #66, #63 itself (floors-only conflicts): flow 148, growth 31,
   0 overlaps, min gap 0.82 m, yaw max 8 deg). Helis: lead picked A (6 m facade clearance + 4 m over tops, steer
   round blocks with no in-frame spot; never fall back near the kaiju). Proof via CI; pacing waits for Godot.
   Then a fresh motion critic -> merge -> second build.
-- #55 greenery (local_9af27a16): r14 numeric tweaks, strip via capture.yml; lead merges on 2x (after the build).
+- #55 greenery (local_9af27a16): r15 PASS lead 2x (b037f69, CI green). MERGE only after the director has the exe
+  (a stall-fix rebuild must not pull greenery into the demo, D-084). Build is Forward+ (no renderer override).
   Sim finding (post-demo): Structure._topple_check rounds a <0.005-cell overhang to a zero direction.
 - #58 #61 jets (local_b38b3a6f): synced onto 8c24654 (3062882/989e40e); CI captures allowed one at a time AFTER #50
   and #55's (lowest priority); balance table
