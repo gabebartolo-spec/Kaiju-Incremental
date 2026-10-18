@@ -9,6 +9,9 @@ Messaging: the app pauses SendMessage after 10 sends without a director message.
 everything; GPU + resync hand-offs go peer to peer; never ask the director to type to unblock
 (memory-shared/messaging-cap).
 
+## Verdicts 23:xx: #54 r2 baby FIX (walk-start lurch, ring pops big), adolescent FAIL (scroll halves 3.55 s, turn foot
+## creep, ring disc 55 px off tip, jaw frozen) -> r3 list. #59 r2 FAIL fix-list (fill 40-50%, dead ball, black
+## slivers/rect, street pop, 3/8 mouths, sports stills) -> r3, then merge if polish only.
 ## Demo chain (D-050; ends at the evolve1 reveal -> DEMO COMPLETE card). Merge order: #54 #63 (#59 #55 #50 if they
 ## pass) -> #36 last -> build.
 - #54 croc baby/teen (local_bce75838, head dfcceea): r1 game-cam FAIL (skating stride, late start, tail snap,
@@ -20,7 +23,8 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
 - #59 stadium matches + crowd (local_87d706ce): crowd in (9032216, up to 1000 fans, flee to exits). AFL r1 FAIL: team
   photo rows, no ball, rim slides INWARD, dark slabs f94-114 + pop, flee clump, kaiju contact hidden. 5 fixes + crowd
   in one run. Fail again -> burst in place only, no topple.
-- #55 greenery (local_9af27a16): trample topple failed r1-r10 -> topple OUT (D-084). Method change: crush in place
+- #55 greenery (local_9af27a16): r11 crush FAIL (vanish then late burst, grey-teal debris, grey slab puff 50+ f) ->
+  NOT in the demo (D-084); keeps fixing in parallel, critic after the build. Earlier: trample topple failed r1-r10 -> topple OUT (D-084). Method change: crush in place
   (debris path + pale stump + tan puff, no rotation). ONE critic round, else #55 after the demo. Stomp shockwave
   (rampage.gd:177, tan crescents) is NOT #55's: exclude from briefs.
 - #50 tanks & helis (local_5325ef73, bce6433): last round (D-082); re-measure then 720p clip after croc in GPU queue.
