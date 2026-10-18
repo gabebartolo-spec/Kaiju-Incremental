@@ -7,7 +7,7 @@ sim 50
 powers 24
 tentacles 18
 city 23
-growth 27
+growth 32
 load 13
 flow 139
 jets 19

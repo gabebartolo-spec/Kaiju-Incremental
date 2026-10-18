@@ -1,5 +1,5 @@
 # Jets handoff, 2026-10-18
-## State: available (#58 synced a412b94 on look-options, carried to bombs + bomber; captures held until the demo chain)
+## State: available (#36 merged; all three synced onto look-options 7efbfbd; balance table next)
 ## Task
 D-072 (director): all four jets go in, each its own PR into claude/look-options, report to
 "Kaiju: Lead". Director's answers (log under D-072): strikes wreck buildings as collateral but
@@ -54,7 +54,7 @@ below until it merges, or look-options after). Report each to LEAD.
 - Merging stacked test files can drop a closing paren at the hunk edge: compile before commit.
 - `git stash` is denied here (even `stash list`); don't use it.
 - Floors merges: take look-options' counts plus ours (growth +1, jets per branch), then dedupe
-  tests/expected_checks.txt (a hunk edge can leave city/growth twice). Floors now growth 27, flow 139 (a412b94).
+  tests/expected_checks.txt (a hunk edge can leave city/growth twice). Floors now growth 32, flow 139 (after #36).
 - Suite files near 400 lines: jets fixtures + bomb checks live in tests/lib/jets_base.gd.
 - Before every push: `git ls-files '*.gd' | xargs python -m gdtoolkit.formatter --check` and
   `... gdtoolkit.linter` (CI's gdlint job runs both; gdformat on Windows writes CRLF: sed it).

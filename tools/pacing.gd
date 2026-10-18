@@ -60,6 +60,10 @@ func _pace(species_id: String) -> void:
 		var tier := Num.i(stats["size"])
 		var city: Array = _city(tier)
 		var tuning: Dictionary = city[0]
+		if not _flat:
+			tuning = CityGrowth.hardened(
+				tuning, Content.tuning(), tier, Num.f(stats.get("stage_growth", 0.0))
+			)
 		var layout: Array[Dictionary] = city[1]
 		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run))
 		var ability: Dictionary = species["ability"]
