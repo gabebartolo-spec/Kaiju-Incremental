@@ -33,6 +33,9 @@ const TRACER_WIDTH := 0.05
 ## A tracer burns less over-range than a flash: a thin core with a soft glow, not a white rod.
 const TRACER_HOT := Color(2.0, 2.0, 2.0)
 const FIGURE_SCALE := 1.5
+const MUZZLE_HEIGHT := 8.5  # a figure's rifle is this many person voxels over its feet
+## A figure taller than this share of the screen (a roof under the camera; usually ~1%) is hidden.
+const MAX_SCREEN_SHARE := 0.04
 const SPACING := 0.55  # figures of a squad stand this far apart across their line of fire
 const BODY_MIDDLE := 3.0  # an unrigged body is struck this high (per body scale)
 ## The bones a round may strike: the upper body only (trunk, neck, head, upper arms), never a leg
@@ -68,6 +71,7 @@ var _frame := 0
 var _tracer_mm: MultiMesh
 var _flashes: Array[Dictionary] = []
 var _tracers: Array[Dictionary] = []
+var _shown := {}  # squad id -> true for the squads drawn this frame
 
 
 ## rng: the presentation's own seeded stream (where tracers strike the hide).
@@ -168,10 +172,15 @@ func _physics_process(delta: float) -> void:
 	_counts.fill(0)
 	drawn = 0
 	var cap := Num.i(_cfg["max_drawn"])
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	_shown.clear()
 	for squad: Army.Squad in _nearest_first():
-		for k: int in Num.i(_cfg["squad_size"]):
-			if drawn >= cap:
-				break
+		if drawn >= cap:
+			break
+		if _looms(stance(squad, 0), camera):
+			continue
+		_shown[squad.id] = true
+		for k: int in mini(Num.i(_cfg["squad_size"]), cap - drawn):
 			var outfit := (squad.id + k * 2) % _figures.size()
 			_figures[outfit].set_instance_transform(_counts[outfit], stance(squad, k))
 			_counts[outfit] += 1
@@ -186,8 +195,7 @@ func _physics_process(delta: float) -> void:
 	lit = Vector2i(_flash_mm.visible_instance_count, _tracer_mm.visible_instance_count)
 
 
-## The squads nearest the kaiju first: past max_drawn the far ones go undrawn, never the ones
-## in rifle range (D-076: more squads than figures drawn).
+## The squads nearest the kaiju first: past max_drawn the far ones go undrawn (D-076).
 func _nearest_first() -> Array[Army.Squad]:
 	var order := sim.army_units.squads.duplicate()
 	var at := sim.kaiju_pos
@@ -196,6 +204,16 @@ func _nearest_first() -> Array[Army.Squad]:
 			return a.pos.distance_squared_to(at) < b.pos.distance_squared_to(at)
 	)
 	return order
+
+
+## Whether a figure at `t` looms: on a roof so near the camera that it stands taller than
+## MAX_SCREEN_SHARE of the screen (D-076). It is not drawn and its volleys show nothing.
+func _looms(t: Transform3D, camera: Camera3D) -> bool:
+	if camera == null or camera.is_position_behind(t.origin):
+		return false
+	var top := t * (Vector3.UP * MUZZLE_HEIGHT * _voxel)
+	var tall := camera.unproject_position(t.origin).distance_to(camera.unproject_position(top))
+	return tall > get_viewport().get_visible_rect().size.y * MAX_SCREEN_SHARE
 
 
 ## The sim's rooftop events (true when it was one); the kaiju's drawn body stands with its feet
@@ -218,8 +236,6 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	return true
 
 
-## A squad's volley (sim rooftop_fired): a flash at each muzzle and a tracer from each at the
-## kaiju, whose drawn body stands at `kaiju_at` with its feet there.
 ## Where a squad stands (its first soldier), for the volley's sound to come from.
 func _squad_at(squad_id: int) -> Vector3:
 	for squad: Army.Squad in sim.army_units.squads:
@@ -228,16 +244,20 @@ func _squad_at(squad_id: int) -> Vector3:
 	return Vector3.ZERO
 
 
+## A squad's volley (sim rooftop_fired): a flash at each muzzle and a tracer from each at the
+## kaiju, whose drawn body stands at `kaiju_at` with its feet there.
 func fired(squad_id: int, kaiju_at: Vector3) -> void:
 	for squad: Army.Squad in sim.army_units.squads:
 		if squad.id != squad_id:
 			continue
+		if not _shown.has(squad_id):
+			return  # not drawn (past max_drawn, or looming under the camera): no flash or tracer
 		shots += 1
 		last_squad = squad_id
 		var t0 := Time.get_ticks_usec()
 		for k: int in Num.i(_cfg["squad_size"]):
 			var t := stance(squad, k)
-			var muzzle := t * (Vector3(0, 8.5, -7.5) * _voxel)
+			var muzzle := t * (Vector3(0, MUZZLE_HEIGHT, -7.5) * _voxel)
 			var wait := k * STAGGER_FRAMES
 			if _flashes.size() < MAX_FLASHES:
 				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
