@@ -8,9 +8,9 @@ extends SceneTree
 ##     --script tools/capture/capture_contact.gd -- --body=off --out=<dir>
 
 ## The walk, in physics steps at 60 Hz: forward into the building, a hard turn, back out.
-const FORWARD := 180
+const FORWARD := 480
 const TURN := 60
-const BACK := 90
+const BACK := 180
 const LEAD_IN := 20
 
 var _body := true

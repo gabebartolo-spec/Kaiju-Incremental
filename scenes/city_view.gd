@@ -20,6 +20,7 @@ var _stream: BuildingStream
 var _fade: BuildingFade
 var _falling: Dictionary = {}
 var _ruin_tasks: Array[int] = []
+var _ruins_due: Array[int] = []
 var _flame_mesh: BoxMesh
 var _flame_color := Color.BLACK
 var _decor: CityDecor
@@ -67,6 +68,7 @@ func crush(at: Vector3, radius: float) -> void:
 
 func _process(delta: float) -> void:
 	_animate_falls(delta)
+	_raise_ruins()
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
@@ -162,9 +164,9 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	var mid := Vector3.ZERO
 	for c: Vector3i in cells:
 		mid += b.chunk_world(c)
-	if cells.size() >= 4:  # only a real collapse throws up a dust cloud
+	if cells.size() >= 4 and not sim.body.over(index):  # a collapse, not the body's bite
 		fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
-	if _rng.randf() < 0.18:  # broken floors sometimes catch fire
+	if not sim.body.over(index) and _rng.randf() < 0.18:  # broken floors sometimes catch fire
 		fire(mid / maxi(1, cells.size()), 0.35)
 	_ruin_if_gone(index)
 
@@ -257,15 +259,23 @@ func _rubble_strip(building: int, a: Vector3, b: Vector3, width: float) -> void:
 
 
 ## Builds the ruin on a worker thread (it is thousands of voxels) and adds it when ready.
-func _add_ruin(index: int) -> void:
-	var voxels := _stream.view(index).voxels
-	var rng := Seeds.make("ruin", index)
-	var task := WorkerThreadPool.add_task(
-		func() -> void:
-			var mmi := Ruin.build(voxels, rng)
-			_attach_ruin.call_deferred(mmi)
-	)
-	_ruin_tasks.append(task)
+## A gone building's ruin rises once the body is off its footprint (its stubs read as walls).
+func _raise_ruins() -> void:
+	for index: int in _ruins_due.filter(func(i: int) -> bool: return not sim.body.over(i)):
+		_ruins_due.erase(index)
+		var b := sim.buildings[index]
+		var size := clampf(b.w * b.d / 9.0, 0.6, 2.5)
+		var heap_top := 2.4 + 0.9 * b.tier  # flames sit on top of the rubble heap
+		fire(Vector3(b.x, heap_top, b.z), size)
+		fire(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
+		var voxels := _stream.view(index).voxels
+		var rng := Seeds.make("ruin", index)
+		var task := WorkerThreadPool.add_task(
+			func() -> void:
+				var mmi := Ruin.build(voxels, rng)
+				_attach_ruin.call_deferred(mmi)
+		)
+		_ruin_tasks.append(task)
 
 
 func _attach_ruin(mmi: MultiMeshInstance3D) -> void:
@@ -286,11 +296,7 @@ func _ruin_if_gone(index: int) -> void:
 	var b := sim.buildings[index]
 	if b.frame.alive_count == 0 and not _stream.view(index).has_meta("ruined"):
 		_stream.view(index).set_meta("ruined", true)
-		var size := clampf(b.w * b.d / 9.0, 0.6, 2.5)
-		var heap_top := 2.4 + 0.9 * b.tier  # flames sit on top of the rubble heap
-		fire(Vector3(b.x, heap_top, b.z), size)
-		fire(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
-		_add_ruin(index)
+		_ruins_due.append(index)
 
 
 func debris(pos: Vector3, color: Color, away: Vector3) -> void:

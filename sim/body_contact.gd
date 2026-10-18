@@ -57,6 +57,20 @@ func step(dt: float) -> void:
 	_sweep(from, from_heading, sim.kaiju_pos, heading)
 
 
+## Whether the body overlaps building `index`'s footprint now (never without a body volume).
+func over(index: int) -> bool:
+	var b := sim.buildings[index]
+	var s := sim.body_scale()
+	for d: Array in _discs:
+		var c := sim.kaiju_pos + heading * Num.f(d[0]) * s
+		var gap := Vector2(
+			maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+		)
+		if gap.length() < Num.f(d[1]) * s:
+			return true
+	return false
+
+
 ## Every standing chunk inside the body at a pose: {building index: {Vector3i: true}}.
 func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 	var out: Dictionary = {}
