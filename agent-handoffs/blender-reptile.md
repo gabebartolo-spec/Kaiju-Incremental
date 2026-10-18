@@ -1,17 +1,18 @@
-# blender-reptile handoff, 2026-10-18 12:05
-## State: running a check (pacing bdfgdp7qa: tools/pacing.gd --species=reptilian, BEFORE with stage-1
-## speed_mult 1.0 -> /tmp/pacing_before.txt, then AFTER 0.35 -> /tmp/pacing_after.txt; the script
-## swaps data/tuning.json itself - DO NOT commit tuning.json until it restores 0.35 (copy in
-## /tmp/tuning_after.json)). Capture chains stopped; re-queue after the D-074 push.
+# blender-reptile handoff, 2026-10-18 12:15
+## State: running a check (suites b03vr2nul -> /tmp/suites_d074.txt; capture queue busy with
+## military-ai 39085086356 - dispatch mine only when free). Pacing DONE, tuning.json back at 0.35.
 ## Director 10:5x: baby + adolescent APPROVED (D-073); slow stage 1 to a heavy toddler (D-074).
 ## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
 
-## D-074 (uncommitted on claude/croctitan-p3): data/tuning.json "move": {"speed_mult": 1.0} and
-## growth.stages[0].move.speed_mult 0.35 (baby hip-heights/s = adolescent's: 1.63/4.91 = 0.33);
-## sim/growth.gd Growth.stage_stats(); sim/rampage_sim.gd `stats = Growth.stage_stats(p_stats,
-## tuning)` (file at the 400 cap); capture_motion.gd uses the same stage speed (doc lines merged to
-## stay at 400); growth suite +1 _check_young_pace (floor 24 -> 25 after it runs). Sim rule change:
-## the PR needs a sim review (kaiju-sim-review). Report pacing time to evolve1 before vs after.
+## D-074 (uncommitted on claude/croctitan-p3): tuning "move": {"speed_mult": 1.0}, growth.stages[0]
+## .move.speed_mult 0.35; sim/growth.gd Growth.stage_stats(); rampage_sim.gd uses it (400 cap);
+## capture_motion.gd same speed; growth +1 _check_young_pace (floor 24 -> real count after run).
+## Pacing evolve1 0.58 h (28 runs) -> 0.95 h (45 runs); tree 4.45 -> 4.82 h; BUT defeats 19/28 ->
+## 30/45 and city at evolve1 94% -> 37%. Flagged to lead 12:12 with options (a) ship 0.35 (default),
+## (b) stage-0 hp/damage, (c) 0.5. Raw: notes p3/pacing_{before,after}.txt. PR body draft:
+## scratchpad ev/pr_p3.md (fill SUITES, FLOORS, JAWS, CLIPS). Sim review needed (kaiju-sim-review).
+## Next: suites green -> set floor -> commit D-074 (tuning, growth, rampage_sim, capture_motion,
+## run_growth_tests, expected_checks) -> push -> captures one at a time -> jaw verdict -> PR.
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
