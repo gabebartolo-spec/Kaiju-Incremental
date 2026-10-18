@@ -3,11 +3,15 @@ extends Node3D
 ## The stadium's crowd (director 2026-10-18, D-078: "full of people"): a fan on nearly every
 ## seat of the baked model, in the two teams' colours and street clothes, bobbing as they watch.
 ## When the match panics every fan is on their feet at once, arms up, and each after its own
-## moment runs straight out up the stands and through the rim's exits, so the stands empty from
-## the back within a couple of seconds; fans whose seats' chunks fall first go with them. One
-## static MultiMesh per outfit, written once; the bob, the standing, the run and the exit are
-## all crowd.gdshader's (no CPU per fan per frame). This script only counts who is out and
-## hides who fell or was crushed. Presentation only; tuning in data/tuning.json "crowd".
+## moment runs straight out up the stands to the back and steps down out of sight through the
+## exits, so the stands empty over several seconds with the fans in view all the way (director
+## playtest, 2026-10-19: "shouldnt disappear so suddenly, let us kill them"). They die like any
+## civilian: under a blow where they are running (crush), or with the stand that falls under
+## them; each dead fan counts as a civilian crushed (StreetLife.civilians_killed). One static
+## MultiMesh per outfit, written once; the bob, the standing, the run and the exit are all
+## crowd.gdshader's. This script places fans with the shader's formula only when it needs to
+## (a blow, a fallen chunk), counts who is out and hides the dead. Presentation only; tuning in
+## data/tuning.json "crowd".
 
 enum State { SEATED, UP, GONE }
 
@@ -15,8 +19,6 @@ const SHADER := preload("res://scenes/crowd.gdshader")
 const HIDDEN := Transform3D(Basis(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO), Vector3.ZERO)
 ## The shader's per-fan hash of its instance id (crowd.gdshader): the share of the flee delay.
 const GOLDEN := 0.6180339887
-## A fleeing fan still at (or near) its seat this long into its run: it falls with its seat.
-const NEAR_SEAT := 0.3
 const PALE := 0.25  # a kit shirt this unsaturated (and bright) reads as an empty seat from above
 
 ## Frame-time checks: false and the match seats no crowd.
@@ -30,11 +32,14 @@ class Fan:
 	var slot := 0
 	var state := State.SEATED
 	var leaves := 0.0  # seconds after the panic it starts running
+	var run := 0.0  # metres from its seat to the back of the stands
 	var out_at := 0.0  # seconds after the panic it is through an exit
 
 
 var fans: Array[Fan] = []
 var fleeing := false
+## For the dust puff where fans die (StadiumMatch sets it); null in tests that build none.
+var fx: Fx
 ## Running totals (tests and the capture tool read them).
 var fallen := 0
 var escaped := 0
@@ -48,8 +53,13 @@ var _centre := Vector2.ZERO
 var _half := Vector2.ZERO
 var _corner := Vector2.ZERO
 var _reach := 0.0
-## Seat chunk -> the fans seated in it (until it falls).
-var _by_chunk: Dictionary = {}
+## The stadium's chunks as built: a chunk standing then and gone now has fallen.
+var _built := PackedFloat32Array()
+## Fans still to check against fallen chunks since the stadium last lost one, and where the
+## round-robin check is (check_per_frame a frame, so a break never costs a frame spike).
+var _to_check := 0
+var _cursor := 0
+var _puffs := 0
 var _static: Array[MultiMesh] = []
 var _standing: Array[ArrayMesh] = []
 var _mat: ShaderMaterial
@@ -85,10 +95,7 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 		)
 		fan.outfit = shirt * skins + _rng.randi_range(0, skins - 1)
 		fans.append(fan)
-		var chunk := _chunk(fan.pos)
-		var list: Array = _by_chunk.get(chunk, [])
-		list.append(fan)
-		_by_chunk[chunk] = list
+	_built = b.frame.standing().duplicate()
 	_left = fans.size()
 	_build(outfits)
 
@@ -103,7 +110,7 @@ func running() -> int:
 	return _left if fleeing else 0
 
 
-## The wall gave: every fan stands at once and runs for the rim's exits on its own beat.
+## The wall gave: every fan stands at once and runs for the exits at the back on its own beat.
 func panic(_kaiju: Vector2) -> void:
 	fleeing = true
 	_since = 0.0
@@ -112,32 +119,56 @@ func panic(_kaiju: Vector2) -> void:
 	var speed := Num.f(_cfg["flee_speed"])
 	var delay := Num.f(_cfg["flee_delay"])
 	var exit_r := Num.f(_cfg["exit_r"])
+	var sink := Num.f(_cfg["sink"])
 	for fan: Fan in fans:
 		if fan.state != State.SEATED:
 			continue
 		fan.state = State.UP
 		fan.leaves = fmod(fan.slot * GOLDEN, 1.0) * delay
-		fan.out_at = fan.leaves + _run_out(fan, exit_r) / speed
+		fan.run = _run_out(fan, exit_r)
+		fan.out_at = fan.leaves + (fan.run + sink) / speed
 		_queue.append(fan)
 	_queue.sort_custom(func(a: Fan, b: Fan) -> bool: return a.out_at < b.out_at)
 	_mat.set_shader_parameter("flee_t", 0.0)
 
 
-## Every fan within `radius` of `at` (in plan) is crushed.
-func crush(at: Vector3, radius: float) -> void:
+## Where a fan's feet are now: its seat, or as far along its run as crowd.gdshader draws it.
+func running_at(fan: Fan) -> Vector3:
+	if fan.state != State.UP:
+		return fan.pos
+	var moved := Num.f(_cfg["flee_speed"]) * maxf(0.0, _since - fan.leaves)
+	var along := minf(moved, fan.run)
+	var down := maxf(0.0, moved - fan.run)
+	var dir := (Vector2(fan.pos.x, fan.pos.z) - _centre).normalized()
+	var slope := Num.f(_cfg["flee_slope"])
+	return fan.pos + Vector3(dir.x * along, along * slope - down, dir.y * along)
+
+
+## Every fan within `radius` of `at` (in plan), where it is now, is crushed. Returns how many.
+func crush(at: Vector3, radius: float) -> int:
 	var c := Vector2(at.x, at.z)
 	if c.distance_to(_centre) > _reach + radius:
-		return
+		return 0
+	var dead := 0
+	_puffs = 0
 	for fan: Fan in fans:
-		if fan.state != State.GONE and Vector2(fan.pos.x, fan.pos.z).distance_to(c) <= radius:
-			_gone(fan)
-			killed += 1
+		if fan.state == State.GONE:
+			continue
+		var p := running_at(fan)
+		if Vector2(p.x, p.z).distance_to(c) <= radius:
+			_die(fan, p)
+			dead += 1
+	killed += dead
+	return dead
 
 
 func _process(delta: float) -> void:
 	var frame := _sim.buildings[_index].frame
 	if frame.alive_count != _alive:
 		_alive = frame.alive_count
+		_to_check = fans.size()
+		_puffs = 0
+	if _to_check > 0:
 		_fall(frame)
 	if not fleeing:
 		return
@@ -152,17 +183,33 @@ func _process(delta: float) -> void:
 			escaped += 1
 
 
-## Chunks went: every fan still at a seat in a fallen one goes with it.
+## Chunks went: every fan standing (or running) on a chunk that has fallen since the match
+## began goes with it. check_per_frame fans a frame, round robin, until all were checked.
 func _fall(frame: Structure) -> void:
-	for chunk: Vector3i in _by_chunk.keys():
-		if frame.alive(chunk):
+	var hp := frame.standing()
+	var n := mini(_to_check, Num.i(_cfg["check_per_frame"]))
+	_to_check -= n
+	for _i: int in n:
+		_cursor = (_cursor + 1) % fans.size()
+		var fan := fans[_cursor]
+		if fan.state == State.GONE:
 			continue
-		for fan: Fan in _by_chunk[chunk]:
-			var at_seat := not fleeing or _since < fan.leaves + NEAR_SEAT
-			if fan.state != State.GONE and at_seat:
-				_gone(fan)
-				fallen += 1
-		_by_chunk.erase(chunk)
+		var p := running_at(fan)
+		var c := _chunk(p)
+		if not frame.inside(c):
+			continue
+		var i := frame.index(c)
+		if _built[i] > 0.0 and hp[i] <= 0.0:
+			_die(fan, p)
+			fallen += 1
+
+
+## Dead where it stood: hidden, and a puff of dust (a few per blow or fall, not one per fan).
+func _die(fan: Fan, at: Vector3) -> void:
+	_gone(fan)
+	if fx != null and _puffs < Num.i(_cfg["max_puffs"]):
+		_puffs += 1
+		fx.puff(at + Vector3(0, 0.15, 0))
 
 
 func _gone(fan: Fan) -> void:
@@ -261,6 +308,7 @@ func _build(outfits: Array[Dictionary]) -> void:
 	_mat.set_shader_parameter("speed", Num.f(_cfg["flee_speed"]))
 	_mat.set_shader_parameter("slope", Num.f(_cfg["flee_slope"]))
 	_mat.set_shader_parameter("delay", Num.f(_cfg["flee_delay"]))
+	_mat.set_shader_parameter("sink", Num.f(_cfg["sink"]))
 	for o: int in outfits.size():
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
