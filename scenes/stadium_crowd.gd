@@ -275,6 +275,7 @@ func _build(outfits: Array[Dictionary]) -> void:
 			var mmi := MultiMeshInstance3D.new()
 			mmi.multimesh = mm
 			mmi.material_override = seated if pose == 0 else null
+			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # a third of their cost
 			add_child(mmi)
 			_mms.append(mm)
 			var buffer := PackedFloat32Array()

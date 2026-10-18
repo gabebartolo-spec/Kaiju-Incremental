@@ -136,8 +136,10 @@ func _add_player(team: int, n: int, field: Vector2) -> void:
 	var p := Player.new()
 	var end := -1.0 if team == 0 else 1.0
 	var at := Vector2(-0.04, 0.0)
-	while n + team > 0 and (at.x == -0.04 or at.length() > 0.9):  # inside the oval's edge
-		at = Vector2(end * _rng.randf_range(-0.2, 0.85), _rng.randf_range(-0.85, 0.85))
+	if n + team > 0:
+		at = Vector2.INF
+		while at.length() > 0.9:  # inside the oval's edge
+			at = Vector2(end * _rng.randf_range(-0.2, 0.85), _rng.randf_range(-0.85, 0.85))
 	p.home = _centre + at * field
 	p.pos = p.home
 	p.team = team
