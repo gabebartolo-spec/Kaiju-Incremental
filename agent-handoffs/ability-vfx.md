@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 22:30
-## State: running a check (CI mix-log capture run 39089682447 for draft PR #52, bash bue4oa2qy)
+# Ability VFX/SFX handoff, 2026-10-19 00:15
+## State: running a check (#52 CI capture run 39089682447); voice-pool PR #56 open; #52 resynced onto b810d1a
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -27,6 +27,30 @@
     Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
   - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
 
+- **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
+  - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
+    - rifle sounds 187 vs 60 (4.8/s vs 1.5/s while firing);
+    - stomps cut by the pool 50 vs 24;
+    - rifle never masks stomps.
+    The numbers are in #53's body. The lead merges on green before the rooftop clip.
+    Whichever of #50/#53 lands second resyncs the flow floor only.
+  - The rooftop session ("Kaiju: denser rooftop fire (D-076)") merged #53 into its claude/rooftops-capture branch.
+  - Temp branch tmp-rifle-measure (rifle-gap + 7000a1f) is still local; deleting it was denied, so it's left for the user or lead.
+  - FINDING (approved by the lead as job, see the voice-pool section below): even with the gap, 24 of 73 stomps (and 23 of 33 tank shots) are cut short because the 8-voice pool is shared.
+    Fix idea: give stomps and breath their own voices, or raise POOL. Measure with scratchpad/riflegap/measure.py.
+
+- **Voice pool (lead approved; separate PR, in the demo if green before #36): branch claude/sfx-voices, on look-options b810d1a (#53 in), flow 135, all suites green; PR #56.**
+  - Sfx: const POOL removed; voices come from tuning "sfx" "voices" (24).
+  - New `sounding(sound)` helper. New check tests/lib/flow_voice_sounds.gd check_tail (a stomp survives 12 more plays), called from flow_sfx.gd (+1 flow).
+  - Simulated on the logged gap-0.3 run (scratchpad/riflegap/pool_sim.py), cut short:
+    - 8 voices: stomps 24, tanks 23 (73 total);
+    - 16 voices: 9 total;
+    - 24 voices: 0;
+    - 3 stomp + 1 breath reserved + 8: tanks 13 still cut. So choose a bigger pool.
+  - Fail-first done: at voices 8 the check FAILS; tuning.json is back to 24.
+  - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
+  - Merges any time before #36. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
+
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
 - Pacing at 4b3146c (130 runs):
@@ -41,7 +65,7 @@
     Before any switch, confirm no bash process mentions young_sweep.
   - The sweep was stopped for #39 after the baseline only ({} gives 3/28/0). It still needs tank_damage 3, 2.5, and 3 with start_interval 6.
   - Tune young LAST, against #50's and P3's final numbers (P3: baby speed 0.6, more hp, demo ~35 min). Target stays ~half early defeats, with Scales where #36 puts it.
-  - Order: after #50 and P3 land, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
+  - Order (director): #50 -> P3 -> rooftop density -> #36 -> demo build. Targets: about half of early runs defeated, evolve1 near 0.71 h (D-074b). After those land, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
 
 ## Rules
 - Before every sync, check `git log origin/claude/look-options -1`.
@@ -64,5 +88,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- bue4oa2qy: CI capture of capture_mix_log.gd on claude/shell-hit-hp.
-- Local-only handoff commits on army-scales-sync: 7b0db6d, 3518703.
+- bue4oa2qy: CI capture for #52.
+- Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
