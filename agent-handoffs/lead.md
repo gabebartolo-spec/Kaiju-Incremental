@@ -8,6 +8,8 @@ Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the direct
 Messaging: one message per worker with everything; never ask the director to unblock. Send briefs ONE AT A TIME:
 a failed first send in a parallel batch cancels the rest.
 
+## River (9daef55, claude/river-start): far-bank park, emergence; lands AFTER the croc-contact D-091 PR (its 2 strict
+## checks need the tier gate gone). #50 tanks-only clip r4 (4f1ad4a) -> fresh motion critic running.
 ## RESUMED (director): all sessions told (river notes, stadium shared-burst-mesh fix approved: hits 40-48 ms windowed,
 ## fall_start makes new render resources per burst). Rifle-fire PR + breath snout fix queued at rooftops.
 ## Sessions renamed: Gun audio + breath aim (1ac658ed), Stadium + frame probe (87d706ce), Load, smoke FX, builds
