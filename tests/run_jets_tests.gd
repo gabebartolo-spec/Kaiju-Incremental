@@ -337,7 +337,7 @@ func _check_bomb_collateral() -> void:
 ## The Apex's set-piece: the heavy bomber flies higher and slower than the fighters, takes far
 ## more to down, and carpet-bombs a long line through the kaiju's spot.
 func _check_bomber() -> void:
-	var sim := _jet_sim(true, 2)
+	var sim := _jet_sim(2)
 	sim.strike.cfg["order"] = ["interceptor", "bomber"]
 	var fighter := sim.strike.spawn()
 	var bomber := sim.strike.spawn()
