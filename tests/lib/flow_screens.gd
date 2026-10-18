@@ -245,6 +245,7 @@ func _check_evolution_and_continue() -> void:
 	await FlowStats.plain(t, check, tree)
 	await FlowFps.caps(t, check)
 	await FlowFps.graphics(t, check)
+	FlowFps.stale_cap(check)
 	check.call(
 		(
 			tree.node_button("i_glide").role == "branch"

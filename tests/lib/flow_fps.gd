@@ -94,3 +94,24 @@ static func graphics(runner: SceneTree, check: Callable) -> void:
 	)
 	PlayerSettings.graphics = was
 	PlayerSettings.save()
+
+
+## A settings.cfg from before the 4K default (demo exe 1 saved the resolved cap, 120, as if the
+## player had chosen it) must not override the default: an unversioned display section's
+## fps_cap is ignored.
+static func stale_cap(check: Callable) -> void:
+	var was := PlayerSettings.fps_cap
+	var old := ConfigFile.new()
+	old.set_value("display", "fps_cap", 120)
+	old.save(PlayerSettings.PATH)
+	PlayerSettings.fps_cap = 60
+	PlayerSettings.load_saved(false)
+	check.call(
+		PlayerSettings.fps_cap == -1,
+		(
+			"an old settings.cfg's frame cap (120) gives way to the default: %d"
+			% PlayerSettings.fps_cap
+		)
+	)
+	PlayerSettings.fps_cap = was
+	PlayerSettings.save()
