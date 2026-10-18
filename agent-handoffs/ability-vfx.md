@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-19 02:00
-## State: available (#56 resynced onto look-options e3b0c5a with #60; it merges after #50; #36 last)
+# Ability VFX/SFX handoff, 2026-10-19 02:45
+## State: available (#62 resynced onto 8fd6d7f, all suites green; stills with the lead); #36 last
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -42,8 +42,22 @@
     - 3 stomp + 1 breath reserved + 8: tanks 13 still cut. So choose a bigger pool.
   - Fail-first done: at voices 8 the check FAILS; tuning.json is back to 24.
   - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
-  - APPROVED by the lead. It merges straight after #50 lands; then resync the flow floor only (the lead pings).
+  - MERGED (look-options 37a0bd9).
   - Limiter: at 24 voices the pre-dynamics peak is -3.3 dBFS and 0% of the run is over -1 dBFS (scratchpad/riflegap/peaks.py). This is in the body. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
+
+- **Footfall dust (lead, greenery finding): branch claude/stomp-dust off look-options e3b0c5a, pushed 91d6d3c, no PR yet.**
+  - Problem: rampage._on_footfall called Fx.dust, the collapse cloud (2.6 s, 0.47 alpha, 2.2 m puffs), every step, so a walk piled into a grey haze.
+  - Fix:
+    - new Fx.footfall(at, size) with tuning fx "footfall_dust" {seconds 1.0, alpha 0.28, rise 1.6, max_live 3}, skipped while 3 are up;
+    - rampage.gd:298 now calls it (line count unchanged, 399).
+  - Check: tests/lib/city_footfall_dust.gd from run_city_tests (+1 city, 12 -> 13). It's a haze budget, puffs x alpha <= 0.9.
+    Shown failing at max_live 100 (haze 2.80).
+  - Stills: tools/capture/capture_walk_dust.gd --out --before --at=6,9,12 (--before replays the old Fx.dust per step on the same seed).
+  - Suites green (city 13, flow 134). The flow suite caught a freed puff in a typed filter lambda; fixed with a plain loop.
+  - The lead cancelled the CI capture (it clashed with P3's). Stills were made LOCALLY with the no-focus override.cfg (removed after).
+  - Final values (committed): alpha 0.38, max_live 2, puff scale 0.4-0.8 x size (as wide as the foot). Haze 0.76.
+  - Stills in shared notes footfall-dust/: before_after_crops.jpg (Behemoth, 6/9/12 s) and after_puff_6.4s_crop.png.
+  - city 13, smoke and flow green on the final values. PR open; stills sent to the lead.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.

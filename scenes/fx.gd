@@ -1,15 +1,33 @@
 class_name Fx
 extends Node3D
 ## Particle and shader effects, presentation only: dust clouds from breaking floors and landing
-## towers, sparks from shell hits, embers, and the stomp shockwave. Every effect is built once
-## at start (prewarm) so its shaders compile before play instead of freezing the first time.
+## towers, a puff at each footfall, sparks from shell hits, embers, and the stomp shockwave.
+## Every effect is built once at start (prewarm) so its shaders compile before play instead of
+## freezing the first time.
 
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
+## A tail slam's puffs (shockwave(tail), lead review PR #54): one at the tip and SLAM_PUFFS around
+## it, each SLAM_SIZE x the ring radius it was given; they live SLAM_SECONDS, grow from 0.4 to full
+## over the first SLAM_GROW of it with their alpha rising from 0 to its peak at SLAM_PEAK, stop
+## growing by SLAM_HOLD and fade to nothing by the end (not the step puff's pop and slow climb).
+const SLAM_PUFFS := 3
+const SLAM_SIZE := 0.6
+const SLAM_SECONDS := 0.85
+const SLAM_GROW := 0.15
+const SLAM_PEAK := 0.18
+const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
+
+## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
+var steps_live: Array[GPUParticles3D] = []
 
 var _dust_mat: ParticleProcessMaterial
 var _dust_mesh: Mesh
 var _puff_mesh: Mesh
+var _step_mat: ParticleProcessMaterial
+var _step_mesh: Mesh
+var _step_cfg: Dictionary
+var _slam_mat: ParticleProcessMaterial
 var _spark_mat: ParticleProcessMaterial
 var _spark_mesh: BoxMesh
 
@@ -29,6 +47,22 @@ func _ready() -> void:
 	)
 	_dust_mesh = _puff(2.2)
 	_puff_mesh = _puff(0.5)
+	_step_cfg = Content.section("fx")["footfall_dust"]
+	var alpha := Num.f(_step_cfg["alpha"])
+	_step_mat = _particle_mat(
+		{
+			"spread": 55.0,
+			"gravity": Vector3(0, 0.2, 0),
+			"vmin": 0.5,
+			"vmax": Num.f(_step_cfg["rise"]),
+			"smin": 0.8,
+			"smax": 1.6,
+			"grow": true,
+			"colors": [Color(0.24, 0.25, 0.26, alpha), Color(0.22, 0.23, 0.24, 0.0)],
+		}
+	)
+	_step_mesh = _puff(1.4)
+	_slam_mat = _slam_puff_mat(_step_mat, alpha)
 	_spark_mat = _particle_mat(
 		{
 			"spread": 60.0,
@@ -44,6 +78,7 @@ func _ready() -> void:
 	_spark_mesh = _cube(0.12, true)
 	# Prewarm: one of each, out of sight, so the first real one does not stall a frame.
 	dust(Vector3(0, -50, 0), 0.5)
+	footfall(Vector3(0, -50, 0), 0.5)
 	sparks(Vector3(0, -50, 0))
 	shockwave(Vector3(0, -50, 0), 1.0)
 
@@ -54,6 +89,27 @@ func dust(at: Vector3, size: float) -> void:
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
+
+
+## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling
+## into a haze that greys out the ground (greenery review). Skipped while max_live are still up,
+## unless uncapped (a tail slam's puffs, shockwave(tail)).
+func footfall(at: Vector3, size: float, capped := true) -> void:
+	var alive: Array[GPUParticles3D] = []
+	for puff: Variant in steps_live:  # a finished puff is freed: check before using it
+		if is_instance_valid(puff):
+			alive.append(puff)
+	steps_live = alive
+	if capped and steps_live.size() >= Num.i(_step_cfg["max_live"]):
+		return
+	var amount := roundi(6 * clampf(size, 0.5, 3.0))
+	var p := _burst(_step_mat, _step_mesh, amount, Num.f(_step_cfg["seconds"]))
+	p.position = at
+	var mat: ParticleProcessMaterial = p.process_material
+	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
+	mat.scale_min = 0.4 * size  # as wide as the foot that threw it
+	mat.scale_max = 0.8 * size
+	steps_live.append(p)
 
 
 ## A small puff of dust: a person crushed underfoot.
@@ -79,7 +135,15 @@ func sparks(at: Vector3) -> void:
 
 
 ## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own.
-func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0)) -> void:
+## A tail slam (tail) draws no ring: a few footfall puffs thrown out around the tip instead
+## (lead review PR #54: three custom rings in a row popped; the step puff of #62 reads right).
+func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), tail := false) -> void:
+	if tail:
+		_slam_puff(at + Vector3(0, 0.2, 0), radius * SLAM_SIZE)
+		for k: int in SLAM_PUFFS:
+			var a := TAU * k / SLAM_PUFFS
+			_slam_puff(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * SLAM_SIZE * 0.8)
+		return
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * radius * 2.4
@@ -96,6 +160,36 @@ func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0)) -> v
 		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45
 	)
 	tween.tween_callback(quad.queue_free)
+
+
+func _slam_puff(at: Vector3, size: float) -> void:
+	var p := _burst(_slam_mat, _step_mesh, roundi(6 * clampf(size, 0.5, 3.0)), SLAM_SECONDS)
+	p.position = at
+	var mat: ParticleProcessMaterial = p.process_material
+	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
+	mat.scale_min = 0.4 * size
+	mat.scale_max = 0.8 * size
+
+
+## The step puff's material with the slam's life curves (see SLAM_SECONDS).
+func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProcessMaterial:
+	var mat: ParticleProcessMaterial = step.duplicate()
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.4))
+	curve.add_point(Vector2(SLAM_GROW, 1.0))
+	curve.add_point(Vector2(SLAM_HOLD, 1.05))
+	curve.add_point(Vector2(1.0, 1.05))
+	var curve_tex := CurveTexture.new()
+	curve_tex.curve = curve
+	mat.scale_curve = curve_tex
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, SLAM_PEAK, 1.0])
+	var c := Color(0.24, 0.25, 0.26)
+	ramp.colors = PackedColorArray([Color(c, 0.0), Color(c, alpha), Color(c, 0.0)])
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	mat.color_ramp = ramp_tex
+	return mat
 
 
 func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
