@@ -2,8 +2,9 @@ extends SceneTree
 ## The army at work (D-066) at the game camera: a Behemoth croc stands in the city while tank
 ## columns drive in by road and deploy to firing posts round it, and a helicopter pair makes an
 ## attack run; at TURN_AT the kaiju turns to face the pair and they break off. Clip-only
-## overrides, so it all happens inside 18 s (trimmed to a 10 s clip) and inside the frame: columns call in from CLIP_SPAWN
-## (not army.spawn_radius) every 1.6 s, the pair is up from the start (after_chunks 0, call-in
+## overrides, so it all happens inside 18 s (trimmed to a 10 s clip) and inside the frame:
+## columns call in from CLIP_SPAWN (not army.spawn_radius) every 1.6 s, the pair is up from
+## the start (after_chunks 0, call-in
 ## 0.8 s) and runs every 2.5 s; the kaiju cannot fall. Everything else is the game's own data and
 ## code. Stills along the way; pair with --write-movie (ci_capture.sh --movie) for the clip.
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
