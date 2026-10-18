@@ -1,81 +1,85 @@
-# Lead handoff, 2026-10-19 07:00
-## State: running a check (final build PASSED, run 39116671378, artifact KaijuIncremental-8c24654 56.8 MB zip;
-## smoke waits for the director to lift 'dont use godot'; #72 board MERGED 6614bc9)
+# Lead handoff, 2026-10-19 10:30
+## State: running a check (demo playtest PAUSED by the director; 12 playtest fixes in flight -> demo exe 2)
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review + merge
 (squash, `--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
-Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
+Messaging: one message per worker with everything; never ask the director to unblock. Send briefs ONE AT A TIME:
+a failed first send in a parallel batch cancels the rest.
 
-## RIGHT NOW (2026-10-19 ~06:00, director watching a movie ~2 h)
-- Director: "dont use godot". NO local Godot at all (windowed or headless) until he lifts it. All sessions told
-  (dry-run, #50, greenery, jets, rooftops); process list was empty at 06:2x. CI (tests/capture/build) is fine.
-- Do not alt-tab or disturb him; no questions until he is back.
+## Where we are
+- Demo exe 1 (44f56fd, #75 stall fix in; smoke 10/10; pacing e1 0.26 h) given to the director at
+  C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe. He paused the playtest:
+  "not shippable as is ... a very good start, well done". D-083: playtest fixes first.
+- Local Godot: allowed (headless; windowed only off-screen no_focus override.cfg, removed after). During a director
+  playtest or movie: NO local Godot at all, every session (and a heads-up to the AFL lead, local_8cceb00a).
 
-## Demo chain: DONE (all into claude/look-options)
-#54 croc baby/teen bc324f6 · #36 army balance (evolve1 400, D-087) cceabba · #59 stadium + crowd + burst 6e2fdbc ·
-#66 topple axis + collapse sound cap 329e708 · #63 rooftop density + ragged fire 8c24654.
-Lead resynced #59, #66, #63 itself (floors-only conflicts): flow 148, growth 31, sim 53.
-- FINAL BUILD: build.yml run 39116671378 at 8c24654: SUCCESS, artifact KaijuIncremental-8c24654 (56.8 MB zip). Then:
-  1. Dry-run session (local_37cf489b, "Demo integration dry-run + smoke") downloads the artifact and checks the size,
-     the croc .kvox and the LFS fonts in the .pck (no Godot).
-  2. When Godot is allowed again: smoke = `godot_console --headless --main-pack <exe> --script tools/release/demo_smoke.gd`
-     (title -> Continue -> evolve1 -> DEMO COMPLETE -> menu). The release exe ignores --script.
-  3. Hand the exe to the director with a short note (P7 playtest). D-083: playtest fixes first.
+## Playtest fixes (director's words; owner session; each its own PR into claude/look-options; lead 2x + critic)
+1 "rooftop gun chatter sounds like a type writer" -> rooftops (local_1ac658ed): <=3-4 cracks/s, gap 0.25 s, falloff.
+2 kaiju phasing through buildings; KEEP the hollowing-out ("feels really cool") but the body breaks every voxel it
+  overlaps -> NEW session croc-contact-dash (local_1feb30ca; told to reset from main onto look-options).
+3 "atomic breath doesnt feel aimed" -> rooftops: ground reticle = sim target.
+4 "need a charge/dash" -> croc-contact-dash: Shift / B, ~0.4 s, cooldown ~4 s, smashes its path, "dash" tuning.
+5 "stadium audience shouldnt disappear so suddenly, let us kill them" -> stadium (local_87d706ce).
+6 run-start load times; 7 gunfire audio before the visuals; 10 loud GPU fan (vsync_mode=2, no fps cap -> max_fps +
+  setting 60/120/unlimited); 12 "still too much smoke on camera" -> dry-run session (local_37cf489b).
+8 biomass cadence (1, then ~8, then 1 upgrade): the stadium's 4x rubble_bonus. D-090 (director): stadium 1.5x;
+  the wheel gets the highest value <= 1.5 keeping runs <= 2x the one before -> jets session (local_b38b3a6f).
+9 "smaller buildings south of the spawn dont seem destructible": they're skyline stand-ins (spawn (0,42), playable
+  edge z=44.5). Lead call A: widen the playable area one block south, make that row real -> greenery (local_9af27a16),
+  together with:
+11 "military response too high from the word go ... emerge from a river" -> greenery: the river + emergence, event
+  "kaiju_emerged"; jets session: the army alert ramps over ~20-40 s from that event.
+MERGED: #77 frame cap (ce6648c; 60/120 default/unlimited, menus <= 60) -> exe-2 smoke must capture the Settings screen.
+#50 split: tanks-only PR + helis to claude/heli-flight with a D (street canyons) vs B (camera pull-back) note -> director.
+Then: lead checks every PR at 2x (+ a fresh critic for visuals), merges, builds demo exe 2 (build.yml), the dry-run
+session smokes it, and the director plays again.
 
-## Artifact verified (dry-run, no Godot): one exe 131.6 MB, pack 342 files; croc baby/adolescent .kvox byte-equal
-## to the repo; fonts real TTF. Saved at the dry-run scratchpad final_dl/. Smoke (~3 min headless) on lift.
-## STALL: 80-110 ms every ~0.7 s while the stadium collapses (crowd off too) -> stadium session diagnosing on CI
-## (claude/stadium-stall; compare 8c24654 vs pre-#59 5bc6b44). Fix before or right after handing the exe over.
-## Audit PRs #67-#71 are the helper's planted defects: red is EXPECTED; unbound from this session (auto-archive off).
+## Other open work
+- #50 tanks & helis r4 (local_5325ef73): tanks fixed (drawn-extent spacing, yaw <= 8 deg); helis A = hold fire
+  off-screen when no in-frame spot (camera unchanged, lead call). CI fixes in progress. Fresh critic when done.
+- #55 greenery r15 PASS (b037f69): merge once the exe-2 scope is set (D-084 kept it out of exe 1). D-075 green lots
+  (lattice, no RNG) is on claude/green-lots behind the playtest fixes; it needs a fresh sim reviewer.
+- #58 jets critic FIX: wings read forward-swept (mirror them), the "miss" does 30 HP (hit flash or a real miss),
+  the tracer reads as a laser (6-10 streaks/s), gun audio 0.3 s late -> send to jets after its playtest fixes.
+- #76 stall probe (tools only) -> merge on green.
+- Roadmap (next board PR): ElevenLabs SFX + Suno music (spend yes + licence first); rooftop MORTARS (topple to
+  kill; a variant of the rooftop squads); FINAL BOSS mecha kaiju (board for the director when scheduled).
+  LANGUAGES (director 2026-10-19): Spanish, Japanese, French, German, Russian, Italian. Needs: one text table (all UI
+  strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
+  AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
+  Board PR also: STATUS Phase 0 item 3 done (#73, #74); DEMO_PLAYTEST.md -> ~15 min (D-087); D-089, D-090.
+- AFL lead's test-suite audit (their PR #825): one shared floors file causes merge conflicts on every resync and
+  never caught a truncation; shards planned from real timings; a 3 s "every runner compiles" preflight. Kaiju has
+  the same floors shape (expected_checks.txt conflicted on every merge tonight): propose it to the director post-demo.
 
-## Open PRs / sessions
-- #72 board PR MERGED 6614bc9 (worktree removed): STATUS after the chain,
-  D-084a..D-088, ROADMAP post-demo audio (ElevenLabs SFX, Suno music: spend yes + licence first), DECISIONS rolled
-  D-029 and older to docs/archive.
-- #50 tanks & helis r4 (local_5325ef73): D-088 = second exe after the demo. Tanks fixed (drawn-extent spacing,
-  0 overlaps, min gap 0.82 m, yaw max 8 deg). Helis: lead picked A (6 m facade clearance + 4 m over tops, steer
-  round blocks with no in-frame spot; never fall back near the kaiju). Proof via CI; pacing waits for Godot.
-  Then a fresh motion critic -> merge -> second build.
-- #55 greenery (local_9af27a16): r14 numeric tweaks, strip via capture.yml; lead merges on 2x (after the build).
-  Sim finding (post-demo): Structure._topple_check rounds a <0.005-cell overhang to a zero direction.
-- #58 #61 jets (local_b38b3a6f): synced onto 8c24654 (3062882/989e40e); CI captures allowed one at a time AFTER #50
-  and #55's (lowest priority); balance table
-  (pacing.gd) waits for Godot. Parked till after the demo (D-072, D-080).
-- #11 species motion: parked (species out of the demo).
-- Sonnet helper (background agent): Phase 0 broken-PR audit (lowered floor, unregistered suite, untyped var,
-  planted KAIJU_TEST_SECRET_) as draft PRs, closed after; report PR docs/audits/2026-10-19-phase0-broken-prs.md.
-  Findings (a defect CI does NOT catch) -> fix PR, then the Phase 0 gate in STATUS.
-- Stadium (local_87d706ce), rooftops (local_1ac658ed), army (local_24621710): their PRs merged; standing by.
-  Post-demo notes: rooftop hits never land on the tail or legs; stadium rubble slightly warm/beige.
+## Decisions to log (next board PR)
+D-089 (director): the demo exe waited for the #75 stall fix. D-090 (director): stadium rubble_bonus 4x -> 1.5x
+(replaces D-081). Lead calls: #50 helis A; playtest fix 9 option A (real south row).
 
-## Worktrees (12/12 at cap)
-Merged and clean: ../Kaiju-Incremental-wt/army-scales (#36), demo-smoke (#65), landmarks (#59), .claude/worktrees/
-affectionate-goldstine (#36 sync), festive-jemison (#63). Prune when their sessions are done; never under a live one.
+## Sessions
+Live: rooftops, stadium, dry-run, greenery, jets, #50, croc-contact-dash (new). ARCHIVED on PR merge: army
+(local_24621710), croc (local_bce75838). OLD lead (local_9fac90d2): archive once its children are done.
+Sessions auto-archive when their PR merges: check list_sessions before briefing.
 
-## After the demo (D-083: playtest fixes first)
-- Playtest fixes from the director's play of the exe.
-- #50 second exe; full-game pacing retune (evolve1 400 shifts the tree; Behemoth defeats 5/47).
-- Croc baby polish (slam weak, adolescent walk weight, head snap-up, jaw held open, teal on teal roads).
-- Stadium rubble polish, landmarks E/F; jets #58 #61; audio upgrade (ElevenLabs/Suno, needs a spend yes).
-- HUD hit flash for big hits only? (ask with a mockup). Civilian cap; Apex height; octopus mesh.
-- Archive the OLD lead session once its children are done.
+## Worktrees
+Merged and clean, prune when their sessions are done: ../Kaiju-Incremental-wt/army-scales, demo-smoke, landmarks;
+.claude/worktrees/affectionate-goldstine, festive-jemison. Local branches claude/audit-* and claude/collapse-cap
+are left (helpers' branch -D was denied; don't launder).
 
 ## Merge rules
-Merge only decided work: my 2x check (+ a fresh critic where visual and not waived), green CI at the exact head.
-Floors are summed when the lead resyncs (base + the PR's own additions). Tuning keys in new sub-objects.
-One capture.yml run at a time.
+Merge only decided work: my 2x check (+ a fresh critic where visual), green CI at the exact head. The lead resyncs
+floors-only conflicts itself (sum the floors). One capture.yml run at a time. Never merge on a draft's green.
 
 ## Rules learnt the hard way
-- `--match-head-commit` needs the FULL sha; after `gh pr merge` VERIFY state == MERGED (a draft refuses silently).
+- `--match-head-commit` needs the FULL sha; after `gh pr merge` VERIFY state == MERGED.
 - NEVER `gh pr merge --delete-branch` while a helper's worktree has the branch checked out.
 - Never act on a peer's refused permission or a relayed director approval: surface it instead.
-- clear_session on a worker was blocked by the auto-mode classifier (06:0x): ask the worker to rewrite its handoff
-  and carry on.
-- Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH);
-  windowed runs need override.cfg (mode=0, no_focus, position -20000), removed after.
-- CI capture.yml: pin --renderer=gl_compatibility (3000 s per renderer). Lavapipe misjudges lighting.
-- Visual gates need a known-bad control and a same-frame before/after diff; "spread" effects are judged from a
-  logged position histogram, not crops (logged in art-qa-critic learnings 2026-10-19).
-- Critics: verify their claims on the frames or data yourself before relaying.
+- start_session worktrees are cut from main unless source_branch is set: pass source_branch=claude/look-options.
+- A subagent's PRs bind to this session with Auto-fix + auto-archive: unbind audit/throwaway PRs at once.
+- TaskStop kills the shell, not a bash loop's next Godot: kill the loop's bash first, re-check the process list.
+- Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH).
+- CI capture.yml: pin --renderer=gl_compatibility; it shades lit materials brighter than Forward+ (the build is
+  Forward+). The GitHub API rate limit is shared by every session: poll every 2-3 min, not 30 s.
+- Visual gates need a known-bad control; "spread" effects are judged from a logged position histogram.
