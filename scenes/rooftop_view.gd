@@ -242,7 +242,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	if str(event["type"]) == "rooftop_fired":
 		var squad_id := Num.i(event["squad"])
 		fired(squad_id, kaiju_at)
-		_sfx.play_at("rifle", _squad_at(squad_id))
+		_sfx.play_near("rifle", _squad_at(squad_id), kaiju_at)
 		return true
 	if str(event["type"]) != "rooftop_destroyed":
 		return false
