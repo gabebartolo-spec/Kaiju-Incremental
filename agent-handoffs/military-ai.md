@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-18 (evening)
-## State: running a check (720p pair clip on CI -> notes military-ai/clip_pair, bash b4pp0pb28); PR #50 open, Auto-fix on
+## State: awaiting lead (pair clip sent for LEAD's fresh critic; PR #50 head 0d1fd53, Auto-fix on)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -10,7 +10,7 @@ column by road + heli pair run), top-down traces before/after, army-step timing,
 
 ## Branch and commit
 claude/military-ai (worktree ../Kaiju-Incremental-wt/military-ai), PR #50 into
-claude/look-options, head 7cb5432 (synced look-options 8410018, #46). Do not merge: LEAD merges.
+claude/look-options, head 0d1fd53 (synced look-options 78b5346, #53). Do not merge: LEAD merges.
 
 ## What is in it
 - sim/convoy.gd (routes, drive, spacing, right of way, re-route, bounding, fall back, rubble),
@@ -29,7 +29,7 @@ claude/look-options, head 7cb5432 (synced look-options 8410018, #46). Do not mer
   tools/capture/capture_military.gd (18 s clip, trim to 10 s).
 
 ## Evidence (all in the PR body)
-- Suites: all 10 green locally at 7cb5432 (smoke 30, flow 133, clips 14, military 11).
+- Suites: all 10 green locally at 7cb5432 (smoke 30, flow 133, clips 14, military 11); flow 134 + military at 0d1fd53.
 - 1080p clip (run 39085086356, notes clip_ci2) failed my 2x check: heli pair rotor to rotor.
   Fixed 3caf8e6: air.formation wing_out 13, wing_gap 12; pair check >= 12 m (old 7.0 fails).
 - Face-down exploit check (LEAD): always-face player 0 heli dmg but city 45% vs 90%: shipped.
@@ -41,10 +41,11 @@ claude/look-options, head 7cb5432 (synced look-options 8410018, #46). Do not mer
 - Timing: Apex army step mean 0.4 ms, p95 1.1 ms, max 3.0 ms (old 0.03 ms).
 
 ## Next
-1. LEAD ruled: no 1080p re-shoot; a 720p ~22 s clip at 3caf8e6+ proving the pair spacing over
-   one lead reversal and one camera-arc meeting (the log prints each turn-back and the closest
-   spacing). Check at 2x, send it + the heli damage table to LEAD; LEAD runs a fresh critic, merges.
+1. Pair clip (notes military-ai/clip_pair, run 39093467906, 0d1fd53) passed my 2x check and went
+   to LEAD: faced reversal 4.73 s, camera-arc turn-backs 9.65/16.58 s, closest 13.00 m. LEAD runs a
+   fresh critic, then merges. Fix any finding.
 2. Resync if look-options moves (floors to the real counts; keep military 11).
+3. Capture note: forward_plus at 1080p hit the 50 min cap on CI; pass --renderer=gl_compatibility.
 
 ## Findings for the lead
 - Replay pacing states (dump stats every 6th run, replay with candidate tunings) reproduced the
