@@ -22,6 +22,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   13:4x DIRECTOR: final demo build WAITS for rooftops + #36; 14:1x D-078 stadium matches (AFL/NFL/soccer/cricket, random
   per run, presentation only, low effort, players flee when the wall caves) ALSO in the demo (landmarks session).
   Order: #50 -> P3 #54 -> rooftops -> landmark sites -> matches -> #36 -> build. No interim builds.
+  Side merges (one floor resync each): #56 voices 8->24 and #51 stats trim right after #50. CI queue: shell-hit ->
+  #50 720p -> #51 UI-only -> P3 chain -> rooftops -> matches -> greenery/landmarks/jets. Archived: Kaiju tree research.
   13:2x D-074b: 0.6 h unreachable at 0.6 speed; director picked 0.6 speed / hp 1.15 (~43 min, 45% def, 87% city).
 - Rooftop density (local_1ac658ed): cause = rifle reach from kaiju centre; plan approved (reach from edge + more
   squads + shorter interval, tank_damage offset ±5%); branches after #50; PR needs volleys/run table + clip.
