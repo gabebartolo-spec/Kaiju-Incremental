@@ -6,7 +6,10 @@ extends "res://tests/lib/runner.gd"
 
 const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
+const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
@@ -37,7 +40,7 @@ func run_checks() -> void:
 	await _check_species_select()
 	await _check_upgrade_screen()
 	await _check_rampage()
-	_check_stomp_timing()
+	FlowSfx.run(root, check)
 	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
 	await _check_powers("insectoid", "leap", {})
@@ -73,7 +76,9 @@ func _check_species_select() -> void:
 	var select := SpeciesSelect.new()
 	root.add_child(select)
 	await process_frame
-	var buttons := select.find_children("*", "Button", true, false)
+	var buttons := select.find_children("*", "Button", true, false).filter(
+		func(b: Node) -> bool: return (b as Button).text == "CHOOSE"
+	)
 	check(buttons.size() == 3, "the species screen offers three choices, found %d" % buttons.size())
 	var picked: Array[String] = []
 	select.chosen.connect(func(id: String) -> void: picked.append(id))
@@ -162,6 +167,21 @@ func _check_rampage() -> void:
 		)
 		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
+	# Rooftop defenders (D-063): figures stand on the squads' roofs, at most max_drawn of them,
+	# and their volleys draw flashes and tracers and call the rifle cue.
+	var roofs: RooftopView = GuiInput.find_script(rampage, RooftopView)
+	var cap := Num.i(rampage.sim.army["rooftop"]["max_drawn"])
+	check(
+		roofs != null and roofs.most_drawn > 0 and roofs.most_drawn <= cap,
+		(
+			"armed citizens stand on the roofs, at most %d drawn (%d)"
+			% [cap, roofs.most_drawn if roofs else -1]
+		)
+	)
+	check(
+		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
+		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
+	)
 	check(
 		rampage.sim.chunks_destroyed > 0,
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed
@@ -174,6 +194,8 @@ func _check_rampage() -> void:
 		hud.beat_running() and hud.headline.text == str(want[0]),
 		"the end beat shows why it ended (%s: %s)" % [reason, hud.headline.text]
 	)
+	var hints := await FlowLayout.late_hints(self, rampage)
+	check(hints == 0, "no world hint shows behind the end beat: %d" % hints)
 	for _i: int in RampageHud.BEAT_FRAMES + 2:
 		await process_frame
 	check(
@@ -209,20 +231,37 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	root.add_child(rampage)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = ["stomp_2", "stomp_crack", "ready", "deflect", "regen_loop"]
+	var cues: Array[String] = [
+		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
+	]
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
 		want.append_array(["cracks", "ready", "deflect", "regen"])
+	var jets := 0
+	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		jets = maxi(jets, FlowBreath.jets(rampage))
+		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		if want.all(func(k: String) -> bool: return played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
 	var sound: String = SIGNATURE_SOUND[kind]
 	check(heard.has(sound), "%s's signature sounds its %s: %s" % [species_id, sound, heard])
+	if kind == "breath":
+		check(jets == 0, "the breath is the beam alone, no pale voxel-cube jet (%d jets)" % jets)
+		var first := Num.f(scorch_glow.get("first", -1.0))
+		var peak := Num.f(scorch_glow.get("peak", 0.0))
+		check(
+			first >= 0.0 and first < peak * 0.5,
+			(
+				"the breath scorch's molten cracks glow in, not at full on frame one (%.2f of %.2f)"
+				% [first, peak]
+			)
+		)
 	if levels.is_empty():
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
@@ -235,38 +274,6 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		)
 	rampage.queue_free()
 	await process_frame
-
-
-## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
-## plays its tier and the ground crack instead of a footstep; steps pitch by size tier.
-func _check_stomp_timing() -> void:
-	var sfx := Sfx.new(Seeds.make("sfx", 0))
-	root.add_child(sfx)
-	sfx.stomp(2.0, true)
-	var early := sfx.played.duplicate()
-	var buses: Array[String] = []
-	for player: Node in sfx.get_children():
-		buses.append((player as AudioStreamPlayer).bus)
-	check(
-		buses.all(func(b: String) -> bool: return b == "SFX"),
-		"every power sound plays on the SFX bus: %s" % [buses]
-	)
-	sfx.footstep(0.7)
-	check(
-		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
-		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
-	)
-	var pitches: Array[float] = []
-	for tier: int in [1, 4]:
-		sfx.set_size_tier(tier)
-		sfx._process(1.0)  # past footstep_min_interval
-		sfx.footstep(1.0)
-		pitches.append(sfx.last_pitch())
-	check(
-		pitches[0] > pitches[1] * 1.2,
-		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
-	)
-	sfx.free()
 
 
 ## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Atomic Breath
@@ -332,6 +339,10 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
+	check(
+		rampage.sfx.played.has("heli_rotor"),
+		"the %s's helicopters are heard: %s" % [species_id, rampage.sfx.played.slice(-8)]
+	)
 	rampage.queue_free()
 	await process_frame
 

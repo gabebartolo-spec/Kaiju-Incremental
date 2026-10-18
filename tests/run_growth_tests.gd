@@ -194,7 +194,8 @@ func _check_defences() -> void:
 ## more health to the army than with it off, so the clock is not the only thing that ends a run.
 func _check_army_learns() -> void:
 	var species := Content.species_def("reptilian")
-	var fresh := UpgradeTree.new(Content.upgrades(), {"claws": 5, "hide": 5, "rage": 5, "evolve1": 1}, "reptilian")
+	var young := {"claws": 5, "hide": 5, "rage": 5, "evolve1": 1}
+	var fresh := UpgradeTree.new(Content.upgrades(), young, "reptilian")
 	var fresh_stats := UpgradeTree.run_stats(Content.section("kaiju"), species, fresh)
 	check(
 		Num.i(fresh_stats["size"]) == 2 and Num.f(fresh_stats["stage_growth"]) == 0.0,
@@ -204,13 +205,17 @@ func _check_army_learns() -> void:
 		)
 	)
 	check(
-		fresh.tier_of("scales") == 1 and fresh.tier_of("regen") == 3 and fresh.tier_of("evolve1") == 1,
+		(
+			fresh.tier_of("scales") == 1
+			and fresh.tier_of("regen") == 3
+			and fresh.tier_of("evolve1") == 1
+		),
 		"Armoured Scales is a young node, Regeneration a Colossus node, the evolution its own tier's"
 	)
 	var grown := UpgradeTree.new(Content.upgrades(), BEHEMOTH_FULL, "reptilian")
 	var grown_stats := UpgradeTree.run_stats(Content.section("kaiju"), species, grown)
 	var stage_growth := Num.f(grown_stats["stage_growth"])
-	check(stage_growth >= 20.0, "a fully bought Behemoth has bought 20+ levels in its stage (%.0f)" % stage_growth)
+	check(stage_growth >= 20.0, "a full Behemoth owns 20+ stage levels (%.0f)" % stage_growth)
 	var off := _tuning(2)
 	var on := CityGrowth.tuning_for_stats(Content.tuning(), grown_stats)
 	check(
@@ -223,8 +228,12 @@ func _check_army_learns() -> void:
 		(
 			"the army learns: tanks %.0f -> %.0f hp, %.1f -> %.1f damage, every %.1f -> %.1f s"
 			% [
-				off["army"]["tank_hp"], on["army"]["tank_hp"], off["army"]["tank_damage"],
-				on["army"]["tank_damage"], off["army"]["start_interval"], on["army"]["start_interval"]
+				off["army"]["tank_hp"],
+				on["army"]["tank_hp"],
+				off["army"]["tank_damage"],
+				on["army"]["tank_damage"],
+				off["army"]["start_interval"],
+				on["army"]["start_interval"]
 			]
 		)
 	)

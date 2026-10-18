@@ -8,14 +8,15 @@ const PATH := "user://settings.cfg"
 ## UI scale steps on top of the 1080p canvas (D-027: already 2x on a 4K TV). Every screen fits
 ## at the largest step; the evolution tree scrolls when it has to.
 const UI_SCALES: Array[float] = [1.0, 1.15, 1.25]
-## The controls list the settings screen shows: action, keyboard, pad.
+## The controls list the settings screen shows: action, keyboard, pad, and for a species-only
+## row that species's id (hidden while Demo.allows() says it is not playable).
 const CONTROLS: Array[Array] = [
 	["Move", "WASD / arrows", "Left stick"],
 	["Signature attack", "Space", "A"],
-	["Glide (insectoid, hold)", "Hold Space", "Hold A"],
+	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
-	["Fullscreen", "F11", "-"],
+	["Fullscreen", "F11", "Keyboard only"],
 	["Confirm", "Enter / Space", "A"],
 	["Back", "Esc", "B"],
 ]
@@ -61,6 +62,7 @@ static func apply() -> void:
 		bus(bus_name)
 	_set_bus(0, volume)
 	_set_bus(bus("SFX"), sfx())
+	_dynamics()
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree != null:
 		tree.root.content_scale_factor = ui_scale
@@ -95,6 +97,33 @@ static func sfx() -> float:
 	if sfx_volume < 0.0:
 		return Num.f(Content.section("sfx")["default_volume"])
 	return sfx_volume
+
+
+## Keeps the loudest moments clean (tuning "sfx" "dynamics"): a gentle compressor on SFX
+## evens out a stack of big sounds, and a hard limiter on Master holds the peak under the
+## ceiling, so breath + collapses + tanks never clip. Added once, at the end of each chain.
+static func _dynamics() -> void:
+	var cfg: Dictionary = Content.section("sfx")["dynamics"]
+	var sfx_bus := bus("SFX")
+	if not _has_effect(sfx_bus, AudioEffectCompressor):
+		var comp := AudioEffectCompressor.new()
+		comp.threshold = Num.f(cfg["threshold_db"])
+		comp.ratio = Num.f(cfg["ratio"])
+		comp.attack_us = Num.f(cfg["attack_us"])
+		comp.release_ms = Num.f(cfg["release_ms"])
+		AudioServer.add_bus_effect(sfx_bus, comp)
+	if not _has_effect(0, AudioEffectHardLimiter):
+		var limiter := AudioEffectHardLimiter.new()
+		limiter.ceiling_db = Num.f(cfg["ceiling_db"])
+		limiter.release = Num.f(cfg["limiter_release"])
+		AudioServer.add_bus_effect(0, limiter)
+
+
+static func _has_effect(at: int, kind: Variant) -> bool:
+	for i: int in AudioServer.get_bus_effect_count(at):
+		if is_instance_of(AudioServer.get_bus_effect(at, i), kind):
+			return true
+	return false
 
 
 static func _set_bus(at: int, value: float) -> void:

@@ -7,9 +7,11 @@ extends RefCounted
 var defs: Dictionary = {}
 var order: Array[String] = []
 var levels: Dictionary = {}
-
+var _tiers: Dictionary = {}
 
 ## species_id "" keeps every branch (data checks); a game passes its kaiju's species.
+
+
 func _init(
 	definitions: Array[Dictionary], saved_levels: Dictionary = {}, species_id: String = ""
 ) -> void:
@@ -125,9 +127,6 @@ func levels_owned_at_tier(tier: int) -> int:
 		if tier_of(id) == tier:
 			total += level(id)
 	return total
-
-
-var _tiers: Dictionary = {}
 
 
 ## Stats for a run: the shared base, the species' own values over it, then upgrades.

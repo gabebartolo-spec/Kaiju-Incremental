@@ -12,7 +12,7 @@
 			"cost": [25, 152, 292, 559, 952], "requires": ["claws", "hide"], "effects": {"run_seconds": 6}},
 		{"id": "scales", "name": "Armoured Scales", "desc": "Each army hit does less damage.", "pos": [2, 3], "max_level": 4,
 			"cost": [330, 584, 952, 1651], "requires": ["rage"], "effects": {"armor": 0.6}},
-		{"id": "greed", "name": "Hoarder", "desc": "Earn more rubble from destruction.", "pos": [1, 4], "max_level": 5,
+		{"id": "greed", "name": "Hoarder", "desc": "Devour more of what you flatten.", "pos": [1, 4], "max_level": 5,
 			"cost": [44, 254, 521, 952, 1651], "requires": ["hide"], "effects": {"rubble_mult": 0.15}},
 		{"id": "frenzy", "name": "Frenzy", "desc": "Stomp more often.", "pos": [2, 1], "max_level": 4,
 			"cost": [76, 444, 851, 1524], "requires": ["quake"], "effects": {"stomp_interval": -0.05}},
