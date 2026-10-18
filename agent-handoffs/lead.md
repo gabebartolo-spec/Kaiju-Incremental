@@ -73,6 +73,8 @@ session smokes it, and the director plays again.
 ## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
 ## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
 ## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
+## #89 croc contact (body sweep, pay 0.2x, e1 0.27): lead 2x FIX: small building VANISHES on entry (show chunk debris,
+## keep untouched walls), add a tall-tower carve clip; D-091 unfinished (TOO STRONG text + stomp tier gate remain).
 ## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
 ## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
 ## GPU FAN: director's PC = RTX 4070 SUPER, 4K @120 Hz monitor ON THE CARD (WMI wrongly lists it on the AMD iGPU).
