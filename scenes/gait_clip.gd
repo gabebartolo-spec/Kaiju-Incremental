@@ -20,10 +20,11 @@ const LAG_DECAY := 10.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
-## The roar clip's frame where the tail tip hits the street (motion_test TAIL_SLAM), and how hard
+## The roar clip's frame where the tail tip hits the street (motion_test: hit 37 + TAIL_SLAM_DELAY
+## x the tip joint 9 = 44.2; the slam fires on contact, lead review PR #54), and how hard
 ## the hit lands as a footfall: about four steps' dust and ring and a camera dip of a few percent
 ## of the frame (the scene's footfall path; presentation only, no damage).
-const ROAR_SLAM_FRAME := 47.0
+const ROAR_SLAM_FRAME := 44.0
 const TAIL_SLAM_STRENGTH := 5.0
 ## A planted foot that ends this far from its clip spot (strides), or on a straight leg (fraction
 ## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip.

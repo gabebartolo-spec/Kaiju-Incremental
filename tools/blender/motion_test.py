@@ -103,7 +103,10 @@ KNOWN = {
         tail_lift=4.0, tail_roar_lift=5.0, tail_breathe=0.2,
         # The game moves the cub as fast as the adult on legs a third the size: the longest stride its
         # legs reach (44 m) and a slow tail (a wave every 3.5 strides) keep it quick, not frantic.
-        belly=12.0, stride=44.0, cycle=36.0, bounce=1.8, tail_strides=3.5, tail_sway=0.4),
+        belly=12.0, stride=44.0, cycle=36.0, bounce=1.8, tail_strides=3.5, tail_sway=0.4,
+        # Seen from the game camera its feet hid under the belly (lead review, PR #54): a toddler's
+        # sprawl, feet 10 m wider, and a high stomping lift.
+        splay=10.0, lift=0.18),
     # The adolescent (stage 2, Tripo 109910f0, imported turned 90 deg to face -Y): lanky, long legs,
     # arms hanging forward, the tail held level at hip height. A long, gangly stride.
     "CA": dict(
@@ -118,7 +121,9 @@ KNOWN = {
               V((0, 208, 64.8))],
         hands={"low": (1.0, -1.0, 1.0), "high": (3.0, 3.0, 8.0)},
         tail_lift=0.0, tail_roar_lift=2.5, tail_breathe=0.3,
-        belly=15.0, stride=56.0, cycle=48.0, bounce=1.2),
+        belly=15.0, stride=56.0, cycle=48.0, bounce=1.2,
+        # Its feet track under the body: set them out past the belly and lift them clear (PR #54).
+        splay=12.0, lift=0.15),
 }
 TAIL_BONES = 10
 
@@ -629,7 +634,11 @@ D = L.get("stride", 140.0 / 3)
 T = L.get("cycle", 48.0)
 DUTY = 0.62
 V_WALK = D / T
-BALL = {s: (L["leg"][3] if s == "L" else mir(L["leg"][3])) for s in ("L", "R")}
+# A model may set its feet wider than its rest leg ("splay", metres out from the body: a sprawl that
+# steps outside the belly seen from the game's high camera) and lift them higher ("lift", x hip height).
+SPLAY = V((L.get("splay", 0.0), 0, 0))
+BALL = {s: (L["leg"][3] + SPLAY if s == "L" else mir(L["leg"][3] + SPLAY)) for s in ("L", "R")}
+LIFT = L.get("lift", 0.085)
 PHASE = {"L": 0.0, "R": 0.5}
 
 
@@ -677,7 +686,7 @@ def foot_world(clip, side, f, P):
     e = s_ * s_ * (3 - 2 * s_)
     # Lift and toe pitch go as sin^2: the foot arrives with no downward speed (no snap at contact).
     lift = math.sin(math.pi * s_) ** 2
-    p = p0.lerp(p1, e) + V((0, 0, 0.085 * hip_h * lift))
+    p = p0.lerp(p1, e) + V((0, 0, LIFT * hip_h * lift))
     return p, y0 + (y1 - y0) * e, 16.0 * lift, False
 
 
@@ -687,7 +696,8 @@ TAIL_WALK_PERIOD = L.get("tail_strides", 1.75) * T  # frames per tail wave: seve
 WALK_CYCLES = 7  # the baked walk: whole strides and whole tail waves (tail_strides divides 7), so it loops
 TAIL_IDLE = (0.4, 0.2)  # the standing sway (72-frame period; at 0.6 in the roar)
 TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
-TAIL_WHIP = (7.8, 10.0)  # turn whip per unit of tail_whip()
+TAIL_DRAG = (1.5, 3.0)  # turn: degrees per joint at the turn's peak rate, swung to the outside
+TAIL_DRAG_TAU = 0.3  # s: how far the drag lags the body's turn rate (it eases in and out)
 TAIL_WHIP_DELAY = 0.5  # frames the whip takes per joint
 TAIL_LIFT = (6.0, -9.0)  # roar: the lift's arc per joint (root rises, mid curves up, tip trails)
 TAIL_SLAM = (1.15, 0.85)  # roar: the slam per joint as it lands, then where it rests, x (0.2 + 1.6 k)
@@ -699,20 +709,18 @@ _WHIP = {}
 ROAR_REST = (71, 99)
 
 
-def tail_whip(clip, P):
-    """The tail's swing from turning, by frame: a damped spring (the tail's mass) driven by the
-    body's yaw acceleration (deg/s^2 from the clip's path), so it drags wide as the turn starts,
-    swings through as the turn slows and overshoots, then settles once the body stops."""
+def tail_drag(clip, P):
+    """The tail's drag in a turn, by frame, -1..1: the body's turn rate (from the clip's path) through
+    a first-order lag, so the tail swings out late, after the body starts turning, and eases back
+    after it stops; positive (outward) for a left turn (lead review: no early curl into the turn, no
+    snap back)."""
     if clip not in _WHIP:
-        wn, zeta = TAIL_SPRING
-        x = v = 0.0
-        out = {}
-        h = 1.0 / (FPS * 8)
-        for f in range(min(P) + 1, max(P)):
-            acc = (P[f + 1][1] - 2 * P[f][1] + P[f - 1][1]) * FPS * FPS
-            for _ in range(8):
-                v += (-wn * wn * x - 2 * zeta * wn * v - acc) * h
-                x += v * h
+        rate = {f: (P[f + 1][1] - P[f - 1][1]) * 0.5 for f in range(min(P) + 1, max(P))}
+        top = max(abs(v) for v in rate.values()) or 1.0
+        k = 1.0 - math.exp(-1.0 / (FPS * TAIL_DRAG_TAU))
+        x, out = 0.0, {}
+        for f in sorted(rate):
+            x += (rate[f] / top - x) * k
             out[f] = x
         _WHIP[clip] = out
     return _WHIP[clip]
@@ -808,11 +816,11 @@ def pose_frame(clip, f, P):
     # Tail (director 2026-10-18: a heavy, mobile tail). Walk and idle: a wave travels root to tip,
     # each joint a fixed phase behind the one before, so the tip sweeps about three times as far as
     # the end of the thick root third; the idle keeps a slow sway that never stops. Turn: the tail's
-    # mass (a damped spring driven by the body's turning acceleration, tail_whip()) drags it wide,
-    # swings it through as the turn slows, overshoots and settles; the wave reaches the tip late.
+    # mass drags it to the outside of the turn, lagging the body's turn rate (tail_drag()), and it
+    # eases back once the body stops; the wave reaches the tip late.
     # Roar: lifted through the coil, slammed down at the peak (a wave down the tail), a rebound,
     # then it rests low until the recovery.
-    whip = tail_whip(clip, P) if clip == "turn" else None
+    whip = tail_drag(clip, P) if clip == "turn" else None
     for i in range(TAIL_BONES):
         k = i / (TAIL_BONES - 1)
         # The game turns standing: the turn clip's tail carries only the whip (no walk sway), so it
@@ -821,7 +829,7 @@ def pose_frame(clip, f, P):
         walk_yaw = (TAIL_WALK[0] + TAIL_WALK[1] * k) * L.get("tail_sway", 1.0)
         walk_yaw *= math.cos(2 * math.pi * f / TAIL_WALK_PERIOD - math.pi * DUTY - TAIL_LAG * i) * gait * settle_t
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
-        turn_yaw = (TAIL_WHIP[0] + TAIL_WHIP[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
+        turn_yaw = (TAIL_DRAG[0] + TAIL_DRAG[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
         roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3) - 1.2 * look * (i >= 3)
         # Lift: an arc, root first, the tip trailing; slam: a wave down the tail that speeds up into
         # the street (no ease at the bottom: it lands hard), a short bounce, then it rests low.

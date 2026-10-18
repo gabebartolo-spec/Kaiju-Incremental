@@ -1,7 +1,6 @@
 extends SceneTree
 ## Records a kaiju's locomotion as the game drives it (sim-style position, heading and stage speed,
 ## stomps on the beat, a roar): walk, curve, turn, stand, roar, walk. Prints foot drift, rig cost.
-##
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_motion.gd -- --species=reptilian --stage=adult --cam=game
 ## --cam=side: one fixed side (world +x, no orbit); --cam=fixed holds still by the first walk (slide
@@ -123,7 +122,8 @@ func _run() -> void:
 		func(side: String, strength: float, at: Vector3) -> void:
 			var size := body_scale * (0.2 + strength)
 			city.fx.dust(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
-			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT)
+			var tint := Rampage.FOOTFALL_TINT
+			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, tint, side == "tail")
 			var dip := (
 				Rampage.FOOTFALL_DIP * maxf(Rampage.FOOTFALL_DIP_FLOOR, body_scale) * strength
 			)
