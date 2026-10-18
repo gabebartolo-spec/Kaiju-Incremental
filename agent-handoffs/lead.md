@@ -64,6 +64,8 @@ Continue -> evolve1 -> DEMO COMPLETE -> menu, 10/10). The release exe ignores --
 - D-086 (lead): #36 option A (Behemoth army 0.03), superseded the same evening by D-087's pick; not applied.
 - D-087 (director 19:xx): first evolution at ~15 min ("no ones going to play 41 minutes of a demo if theyre still a
   baby"); picked 15 min from 10/15/20-25. Lever: evolve1 cost 400 (#36).
+- D-088 (director 2026-10-19 via AskUserQuestion): demo exe ships WITHOUT #50 ('Ship now, patch after');
+  #50 r4 started (fix list 1-6 + young retune on evolve1 400) -> second exe right after.
 - D-084 outcome: #55 topple out; crush-in-place method change (lead, rule 8).
 
 ## Sessions (renamed 18:0x for the director's survey)
