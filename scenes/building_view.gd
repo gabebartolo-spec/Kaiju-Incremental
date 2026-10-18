@@ -20,6 +20,9 @@ static var pair_checks := 0
 ## playtest: "load times when you start a run could be quicker"). Key: _key().
 static var _baked: Dictionary = {}
 static var _baked_lock := Mutex.new()
+## The city being built (begin_city); an entry not used by it is dropped at end_city, so only
+## the current city's buildings stay in memory as the city grows between runs.
+static var _generation := 0
 
 var b: RampageSim.Building
 var voxels: BuildingVoxels
@@ -38,6 +41,8 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	var key := _key(b, base, party)
 	_baked_lock.lock()
 	var kept: Array = _baked.get(key, [])
+	if not kept.is_empty():
+		kept[2] = _generation
 	_baked_lock.unlock()
 	if kept.is_empty():
 		if b.landmark == "":
@@ -46,7 +51,7 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 			voxels = LandmarkVoxels.new(b, base)
 		mesher = BuildingMesher.new(voxels)
 		_baked_lock.lock()
-		_baked[key] = [voxels, mesher]
+		_baked[key] = [voxels, mesher, _generation]
 		_baked_lock.unlock()
 	else:
 		voxels = kept[0]
@@ -67,12 +72,21 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 		add_child(mi)
 
 
+## A new city's build starts (BuildingStream): what it uses is marked as its own.
 static func begin_city() -> void:
-	pass
+	_baked_lock.lock()
+	_generation += 1
+	_baked_lock.unlock()
 
 
+## The city is done with (its rampage leaves): every kept building it did not use is dropped.
 static func end_city() -> void:
-	pass
+	_baked_lock.lock()
+	for key: String in _baked.keys():
+		var kept: Array = _baked[key]
+		if Num.i(kept[2]) != _generation:
+			_baked.erase(key)
+	_baked_lock.unlock()
 
 
 ## Buildings whose voxels and meshes are kept (tests).
