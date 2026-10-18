@@ -2,8 +2,8 @@ extends SceneTree
 ## The stadium's matches (D-078) at the game camera, in city 1 with a young kaiju at the
 ## stadium's south kerb: a still of each sport in play (afl.png, nfl.png, soccer.png,
 ## cricket.png), or with --clip an AFL match where the kaiju walks into the wall and every player
-## runs (pair with --write-movie: ci_capture.sh --movie). Needs a window and the no-focus
-## override.cfg (or CI: tools/capture/ci_capture.sh).
+## runs, with a same-seed before/after pair (pair with --write-movie: ci_capture.sh --movie).
+## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_matches.gd -- --out=<dir> [--clip]
@@ -11,8 +11,12 @@ extends SceneTree
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const SPORTS: Array[String] = ["afl", "nfl", "soccer", "cricket"]
 const PLAY_FRAMES := 150  # frames of play before a still: the ball has been kicked about
-const CLIP_PLAY := 45  # clip: frames of play before the kaiju walks into the wall
-const CLIP_FRAMES := 180  # clip: about 6 s at 30 fps
+## Clip lengths in physics frames (60 a second): play, then the kaiju walks into the wall.
+const CLIP_PLAY := 90
+const CLIP_FRAMES := 360
+## The clip's same-seed pair: afl_before as the kaiju sets off, afl_after this long after the
+## stadium's first chunk goes (players running for the tunnels).
+const AFTER_FLEE := 60
 const KERB := 2.5  # the kaiju's start, this far south of the stadium's footprint
 
 var _out := "user://matches"
@@ -69,8 +73,12 @@ func _match(id: String, clip: bool) -> void:
 	for i: int in CLIP_FRAMES if clip else PLAY_FRAMES:
 		await physics_frame
 		walk["go"] = clip and i >= CLIP_PLAY
+		if clip and i == CLIP_PLAY:
+			_shot("afl_before")
 		if game.fleeing and fled_at < 0:
 			fled_at = i
+		if clip and fled_at >= 0 and i == fled_at + AFTER_FLEE:
+			_shot("afl_after")
 	if not clip:
 		_shot(id)
 	print(
