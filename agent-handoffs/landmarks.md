@@ -1,5 +1,5 @@
 # Landmarks handoff, 2026-10-19 10:10
-## State: running a check (CI probe run 39123908001: 1500 frames, --no3d, at c8d999b)
+## State: awaiting lead (stall probe result sent; probe-only PR #76; local Godot PAUSED for the director's playtest)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: LEAD (demo build, merges, QA)", local_106fc100...).
@@ -56,7 +56,11 @@ CI at 1500 frames, report sim.step and per-event worst/total (<= 6 lines), new P
 - This PC is too noisy to time (sim.step worst 35-140 ms run to run; first stadium shed
   showed fall_start 18-63 ms, likely first-use cost: check on CI).
 - Probe now has --no3d (root.disable_3d) so 1500 frames fit CI; prints frames over 16.7 ms
-  per kind. Then: report to LEAD; open a probe-only PR if LEAD wants it kept.
+  per kind. CI 39123908001 (1500 frames): sim.step worst 6.9 ms, 0 frames over 16.7 ms;
+  rooftop_fired worst 0.9 (102 total), fall_start 2.3, chunks_broken 1.0, stomp 1.8, ability 5.6;
+  no on_event errors. Stadium 2592 -> 919. Reported to LEAD; PR #76 (probe only, Auto-fix on).
+- Not covered: render-thread costs (no3d). Offered a windowed off-screen local run once local
+  Godot is back. LOCAL GODOT PAUSED (LEAD) until LEAD says so.
 
 ## Findings for the lead
 - A per-settle check that loops over every floor above every floor is O(h^2 w d): fine for a
