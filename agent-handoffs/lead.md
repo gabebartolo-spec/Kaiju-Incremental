@@ -36,6 +36,11 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
   (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
   130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
+## 00:xx: #50 r3 FAIL (lead-verified 14.0 s overlapping tanks, 11.5 s yaw over police car) -> OUT of demo (D-082);
+## r4 list in military-ai.md eefefd1; its session is past 150k: clear_session it when idle + kick off r4 from handoff.
+## #54 r4 slam: timing PASS; 3 numeric tweaks (adolescent puff ramp, fade by 15.8 s, dip 6-10 px) -> merge on lead 2x.
+## #59 r3 FAIL (black cut faces f64-77, flee invisible f121, sport-still density): method change = ALL sections burst
+## in place, all fans stand + run fast to exits; last round. #55 r12: puff fail -> approved footfall puff (post-build).
 ## Integration dry-run (23:xx, scratch, nothing pushed): A = #54+#63+#59+#36 all suites PASS (flow 146, growth 31;
 tuning.json stage 1 keeps #54 "body" + #36 "per_level"); 130 runs e1 0.26 h, young 8/14; local export smoke 10/10;
 stadium minute crowd+squads +0.6 ms. B (+#55 +#50): suites PASS; #50 softens young (6/15). One import segfault
