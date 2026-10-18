@@ -1,14 +1,15 @@
-# City-calm handoff, 2026-10-19 01:00
-## State: working (#66 collapse-cap PR open; #55 r14 numeric tweaks in progress, local render next)
+# City-calm handoff, 2026-10-19 02:30
+## State: awaiting lead (#55 r15 pushed at 7154f43; lead's own 2x check, merges after the demo build)
+## NO LOCAL GODOT (director, via lead): no headless or windowed runs until the lead lifts it;
+## verify on CI only (tests.yml on push, capture.yml).
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
 - DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export, #37 no empty ground
   (D-062), D-065(b) green-lot table (lead), Landmarks city_gen review.
-- PR #66 collapse-cap (worktree Kaiju-Incremental-wt/collapse-cap, demo path): FallMotion zero-dir
-  axis fallback + sfx.collapse_per_frame 4 cap. Flow floor 141 after merging look-options.
-  Remove the worktree when it merges. Sim root cause (Structure._topple_check rounds tiny
-  overhang to zero dir) reported to the lead, not changed.
+- DONE: PR #66 collapse-cap MERGED (329e708). Worktree removed; local branch claude/collapse-cap
+  is left (squash-merged; `branch -D` needs the lead/director's OK). POST-DEMO (lead): sim
+  Structure._topple_check rounds an overhang under 0.005 cells to a zero dir; FallMotion covers it.
 - NOW: D-065(a) greenery + body trample, PR #55. Lead r14: core passes, no more critic rounds;
   numeric tweaks only, then the lead merges after the demo build on its own 2x check.
   r14 tweaks: puff peak 0.30 by f3, hold to f5, linear fade to 0 by f29 (Fx PUFF_*); leaf
@@ -49,8 +50,10 @@ delete when allowed.
 - Older rounds r9-r13 failed. Sample the lossless avi: mp4v bleeds colour on small pieces.
 
 ## Next
-1. r15 local render (scratchpad local_green.sh, own override.cfg), strip_2x.py f0-f36 at the
-   stump, alpha printout; push, update #55 body, report to the lead. Then merge, D-075.
+1. r15 is done (notes greenery/r15/: strip_f0_f36_2x.png, puff_alpha.txt, samples.txt,
+   stump_f0_f3_4x.png, flight_*/ leaf-flight runs, trample/clip). Lead merges #55 after the
+   demo build; keep it synced (merge origin/claude/look-options, floors = real counts, CI only).
+   Then remove the greenery worktree and start D-075.
 2. Stomp shockwave tan crescents (rampage.gd:177) are not #55's; the lead excluded them.
 
 ## Rules learnt the hard way (under 10 lines)
