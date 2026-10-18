@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 20:00
-## State: running a check (#39 resync suites, bash bf7dmkgzh; merge of look-options 0817cf6 uncommitted on claude/heli-sfx)
+# Ability VFX/SFX handoff, 2026-10-18 20:30
+## State: available (#39 resynced and pushed 7c7d722; next is #42 once #39 lands)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -14,12 +14,8 @@
 - #45 mix fixes (look-options 0817cf6).
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **#39 claude/heli-sfx (resyncing now, onto 0817cf6).** Conflicts resolved, keeping both sides:
-  - tuning heli_gun/heli_crash plus crowd_panic -6;
-  - provenance rows heli plus crowd;
-  - rampage.gd `sfx.watch(_camera, _powers, _city.street)`;
-  - sfx.gd `watch(camera, powers: PowersView, street: StreetLife)` sets listener, _powers, powers.sfx = self, _street.
-  - Left to do: read the real flow count (look-options floor 131), set tests/expected_checks.txt, lint, commit the merge, push, send the SHA to the lead.
+- **#39** claude/heli-sfx: resynced onto 0817cf6 and pushed 7c7d722, all suites green, flow 131. SHA sent to the lead.
+  Sfx.watch is now watch(camera, powers: PowersView, street).
 - **#42** claude/footstep-variants (ef73246): resync after #39 lands.
 - **#46** claude/rifle-sfx (e520b7b): resync after #42 lands.
 - **Gap job (a), after #46:** a small PR off look-options.
@@ -63,4 +59,4 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- bf7dmkgzh: lint and all suites on the #39 merge.
+- None. Checked out on claude/heli-sfx (clean).
