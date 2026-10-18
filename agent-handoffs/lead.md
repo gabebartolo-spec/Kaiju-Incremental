@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-19 07:00
+# Lead handoff, 2026-10-19 07:30
 ## State: running a check (final build PASSED, run 39116671378, artifact KaijuIncremental-8c24654 56.8 MB zip;
 ## smoke waits for the director to lift 'dont use godot'; #72 board MERGED 6614bc9)
 
@@ -44,9 +44,9 @@ Lead resynced #59, #66, #63 itself (floors-only conflicts): flow 148, growth 31,
   and #55's (lowest priority); balance table
   (pacing.gd) waits for Godot. Parked till after the demo (D-072, D-080).
 - #11 species motion: parked (species out of the demo).
-- Sonnet helper (background agent): Phase 0 broken-PR audit (lowered floor, unregistered suite, untyped var,
-  planted KAIJU_TEST_SECRET_) as draft PRs, closed after; report PR docs/audits/2026-10-19-phase0-broken-prs.md.
-  Findings (a defect CI does NOT catch) -> fix PR, then the Phase 0 gate in STATUS.
+- Phase 0 broken-PR audit DONE: report #73 MERGED (4/5 caught); the gap (runner not in ALL_SUITES stays green) is
+  fixed by #74 MERGED (plan job). Drafts skip the Godot checks: never merge on a draft's green. Local branches
+  claude/audit-* left (branch -D denied for the helper; don't launder). STATUS Phase 0 item 3 -> done in the next board PR.
 - Stadium (local_87d706ce), rooftops (local_1ac658ed), army (local_24621710): their PRs merged; standing by.
   Post-demo notes: rooftop hits never land on the tail or legs; stadium rubble slightly warm/beige.
 
