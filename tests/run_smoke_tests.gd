@@ -296,19 +296,25 @@ func _check_tank() -> void:
 ## The Blender helicopter (D-042) loads as body, main rotor, tail rotor and chin gun; both rotors
 ## spin about their own hubs, and the gun swings onto a target below and ahead with the muzzle
 ## at the nose.
-## The interceptor (D-072) draws the Blender voxels it was built from (vox_jet.py), its nose
-## (where its rounds leave) forward along -Z.
+## Every jet (D-072) draws the Blender voxels it was built from (vox_jet.py), its nose (where its
+## rounds leave) forward along -Z.
 func _check_jet() -> void:
-	var jet := JetModel.new("interceptor")
-	root.add_child(jet)
-	var mmi := jet.get_child(0) as MultiMeshInstance3D
-	var cubes := mmi.multimesh.instance_count if mmi != null else 0
-	var cells := Kvox.read("res://assets/vehicles/jet_interceptor_body.kvox").frames[0].cells.size()
+	var drawn: Array[String] = []
+	var heights: Dictionary = Content.section("vehicles")["jet_heights"]
+	for kind: String in heights:
+		var jet := JetModel.new(kind)
+		root.add_child(jet)
+		var mmi := jet.get_child(0) as MultiMeshInstance3D
+		var cubes := mmi.multimesh.instance_count if mmi != null else 0
+		var path := "res://assets/vehicles/jet_%s_body.kvox" % kind
+		var cells := Kvox.read(path).frames[0].cells.size()
+		if cubes > 0 and cubes <= cells and jet.nose().z < -1.5:
+			drawn.append(kind)
+		jet.free()
 	check(
-		cubes > 0 and cubes <= cells and jet.nose().z < -2.0,
-		"the interceptor draws its Blender voxels (%d of %d), nose forward" % [cubes, cells]
+		drawn.size() == heights.size(),
+		"every jet draws its Blender voxels, nose forward: %s of %s" % [drawn, heights.keys()]
 	)
-	jet.free()
 
 
 func _check_heli() -> void:

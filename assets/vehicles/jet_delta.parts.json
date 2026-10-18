@@ -1,0 +1,13 @@
+{
+ "height": 15,
+ "parts": {
+  "body": {
+   "kvox": "jet_delta_body.kvox",
+   "pivot": [
+    -0.5,
+    -3.862,
+    -1.707
+   ]
+  }
+ }
+}

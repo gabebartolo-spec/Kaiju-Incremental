@@ -479,7 +479,8 @@ def build_regen() -> None:
 
 def build_jets() -> None:
     """The jets (D-072), synthesized only: a fly-by that roars in, peaks as the jet crosses
-    the kaiju and falls away lower (a Doppler drop), and its cannon's short ripping burst."""
+    the kaiju and falls away lower (a Doppler drop), its cannon's short ripping burst, and a
+    bomb's blast: a deep boom with debris crackle and a city-sized echo."""
     reseed("build_jets")
     n = seconds(3.2)
     t = np.arange(n) / RATE
@@ -499,6 +500,12 @@ def build_jets() -> None:
         place(x, shot * 2.5, k * 0.04)
         place(x, thump(0.08, 140, 80), k * 0.04, 0.25)
     save("jet_cannon", x + tail(x.copy(), 0.6, 0.25, 1500) * 0.2, -4.0)
+    x = np.zeros(seconds(2.2))
+    burst_n = seconds(0.3)
+    place(x, lowpass(noise(burst_n), 2500) * env(burst_n, 0.002, 0.08) * 2.0, 0.0)
+    place(x, thump(1.2, 70, 30), 0.0, 1.0)
+    place(x, lowpass(crackle(seconds(1.2), 120, 0.4), 4000), 0.05, 0.35)
+    save("jet_bomb", x + tail(x.copy(), 1.6, 0.5, 700) * 0.3, -1.5)
 
 
 BUILDERS = {"jets": build_jets}

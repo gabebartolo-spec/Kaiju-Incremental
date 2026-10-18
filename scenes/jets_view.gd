@@ -1,10 +1,11 @@
 class_name JetsView
 extends Node3D
 ## The jets (D-072), presentation only: each pass the sim calls in (StrikeWing) drawn as its
-## Blender jet (JetModel) flying its line at its altitude; its warning as a row of hot marks along
-## the ground where the rounds will land, blinking until the pass has gone through, and the roar of
-## its fly-by building as it comes; each round a tracer from the nose to the kaiju's hide (sparks)
-## or the street (dust), the cannon's burst on the first. A downed jet falls as debris and fire.
+## Blender jet (JetModel) flying its line at its altitude; its warning as hot marks where its
+## rounds will land and hot rings round its bombs' spots, blinking until the pass has gone
+## through, and the roar of its fly-by building as it comes; each round a tracer from the nose to
+## the kaiju's hide (sparks) or the street (dust), the cannon's burst on the first; each bomb
+## falling from under it to a flash, shockwave and fire. A downed jet falls as debris and fire.
 ## Reads sim events and state; decides nothing. Part of PowersView.
 
 const TRACER := Color("ffd27a")
@@ -15,6 +16,10 @@ const MARK_BLINKS := 3
 const TRACER_SECONDS := 0.08
 const HIT_HEIGHT := 2.0  # a round strikes the hide this high (per body scale)
 const WRECK := Color("ff8a3a")
+## The warning lasts this many warn_seconds: it covers the pass from the warning to its end.
+const WARN_HOLD := 2.0
+const BOMB := Vector3(0.35, 0.35, 1.2)  # a falling bomb, per body scale
+const ORDNANCE := Color("d6cfbb")
 
 var sim: RampageSim
 var _city: CityView
@@ -23,6 +28,7 @@ var _jets: Dictionary = {}
 var _firing: Dictionary = {}  # jets whose burst has been heard
 var _warn_mat: StandardMaterial3D
 var _tracer_mat: StandardMaterial3D
+var _bomb_mat: StandardMaterial3D
 
 
 func _init(p_sim: RampageSim, city: CityView, sfx: Sfx) -> void:
@@ -31,6 +37,8 @@ func _init(p_sim: RampageSim, city: CityView, sfx: Sfx) -> void:
 	_sfx = sfx
 	_warn_mat = CityView.glow(WARN, 3.0)
 	_tracer_mat = CityView.glow(TRACER, 3.0)
+	_bomb_mat = StandardMaterial3D.new()
+	_bomb_mat.albedo_color = ORDNANCE
 
 
 ## Returns true when the event was a jet's.
@@ -44,10 +52,12 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			var dir: Vector2 = event["dir"]
 			_place(jet, from, dir)
 		"jet_inbound":
-			var from: Vector2 = event["from"]
-			var to: Vector2 = event["to"]
-			_warn_line(from, to)
+			_warn(event)
 			_sfx.play("jet_flyby")
+		"jet_bomb_drop":
+			_drop(event)
+		"jet_bomb":
+			_blast(event)
 		"jet_strafe":
 			_strafe(event, kaiju_at)
 		"jet_left", "jet_destroyed":
@@ -69,22 +79,56 @@ func _place(node: Node3D, at: Vector2, dir: Vector2) -> void:
 	node.rotation.y = atan2(-dir.x, -dir.y)
 
 
-## The rounds' line on the ground: hot marks that blink until the pass has gone through.
-func _warn_line(from: Vector2, to: Vector2) -> void:
-	var cfg := sim.strike.cfg
-	var marks := Num.i(cfg["rounds"])
-	var lasts := Num.f(cfg["warn_seconds"]) + from.distance_to(to) / Num.f(cfg["speed"])
-	var blink := lasts / (2.0 * MARK_BLINKS)
-	for k: int in marks:
-		var p := from.lerp(to, k / maxf(1.0, marks - 1.0))
+## Where the pass will land: a hot mark on each round's spot and a hot ring round each bomb's,
+## blinking until the pass has gone through.
+func _warn(event: Dictionary) -> void:
+	var rounds: PackedVector2Array = event["rounds"]
+	var drops: PackedVector2Array = event["bombs"]
+	var jet: JetModel = _jets.get(Num.i(event["jet"]))
+	var heading := jet.rotation.y if jet != null else 0.0
+	var lasts := Num.f(sim.strike.cfg["warn_seconds"]) * WARN_HOLD
+	for p: Vector2 in rounds:
 		var mark := _box(MARK, _warn_mat)
 		add_child(mark)
 		mark.position = Vector3(p.x, MARK.y, p.y)
-		mark.rotation.y = atan2(-(to - from).x, -(to - from).y)
-		var tween := mark.create_tween().set_loops(MARK_BLINKS)
-		tween.tween_property(mark, "scale", Vector3.ONE * 1.4, blink)
-		tween.tween_property(mark, "scale", Vector3.ONE, blink)
-		tween.finished.connect(mark.queue_free)
+		mark.rotation.y = heading
+		_blink(mark, lasts)
+	for p: Vector2 in drops:
+		_city.ring(Vector3(p.x, MARK.y, p.y), Num.f(event["radius"]), WARN, lasts)
+
+
+func _blink(node: Node3D, lasts: float) -> void:
+	var blink := lasts / (2.0 * MARK_BLINKS)
+	var tween := node.create_tween().set_loops(MARK_BLINKS)
+	tween.tween_property(node, "scale", Vector3.ONE * 1.4, blink)
+	tween.tween_property(node, "scale", Vector3.ONE, blink)
+	tween.finished.connect(node.queue_free)
+
+
+## A bomb leaving the jet: a pale bomb falling from under it onto its target.
+func _drop(event: Dictionary) -> void:
+	var from: Vector2 = event["from"]
+	var at: Vector2 = event["at"]
+	var bomb := _box(BOMB * sim.body_scale(), _bomb_mat)
+	add_child(bomb)
+	bomb.position = Vector3(from.x, sim.strike.altitude() - 0.5, from.y)
+	bomb.look_at(Vector3(at.x, 0, at.y), Vector3.UP)
+	var tween := bomb.create_tween()
+	tween.tween_property(bomb, "position", Vector3(at.x, 0.3, at.y), Num.f(event["seconds"]))
+	tween.tween_callback(bomb.queue_free)
+
+
+## A bomb landing: flash, shockwave and dust over its blast, fire where it struck.
+func _blast(event: Dictionary) -> void:
+	var p: Vector2 = event["at"]
+	var at := Vector3(p.x, 0.0, p.y)
+	var radius := Num.f(event["radius"])
+	_city.flash(at + Vector3(0, 1.5, 0), WRECK, 9.0, 0.45)
+	_city.fx.shockwave(at, radius * 1.3)
+	_city.fx.dust(at + Vector3(0, 0.4, 0), radius * 0.6)
+	_city.fire(at, 0.5)
+	_city.crush(at, radius)
+	_sfx.play_at("jet_bomb", at)
 
 
 ## A round landing: a tracer from the jet's nose to the kaiju (a hit) or the street (a miss).
