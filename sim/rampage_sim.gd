@@ -92,8 +92,7 @@ var stand_y := 0.0
 ## In the air (gliding): no stomps, no blocking.
 var airborne := false
 var ultimate_ready_in := 0.0
-## While set, every chunk and unit _hit_area damages is also coated with it:
-## {"kind": "burn"|"ink", "dps": float, "seconds": float}.
+## While set, everything _hit_area damages is coated: {"kind": "burn"|"ink", "dps", "seconds"}.
 var hit_coat: Dictionary = {}
 ## While true, _hit_area also reaches helicopters whatever the kaiju's height.
 var hit_air := false
@@ -152,6 +151,12 @@ func stomp_radius() -> float:
 
 func ability_reach() -> float:
 	return stat("ability_range") * body_scale()
+
+
+## The cone a breath burns now (what BreathAim draws): from the feet along the facing.
+func cone() -> Dictionary:
+	var half := deg_to_rad(Num.f(city["cone_half_angle_deg"]))
+	return {"origin": kaiju_pos, "dir": facing, "reach": ability_reach(), "half_angle": half}
 
 
 ## How high the kaiju can strike: a young one only reaches the lower floors.
@@ -251,8 +256,7 @@ func _stomp() -> void:
 	)
 
 
-## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a
-## wider crater, because more of the fading edge still beats what a chunk can take.
+## Full force within `radius`, fading to nothing at twice it: harder blows break wider craters.
 static func falloff(distance: float, radius: float) -> float:
 	if distance <= radius:
 		return 1.0
@@ -264,7 +268,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			var half_angle := deg_to_rad(Num.f(city["cone_half_angle_deg"]))
+			var half_angle := Num.f(cone()["half_angle"])  # what BreathAim shows
 			var origin := kaiju_pos
 			var dir := facing
 			_events.append({"type": "ability", "kind": "cone", "reach": reach})

@@ -30,3 +30,25 @@ static func track_scorch_glow(rampage: Rampage, glow: Dictionary) -> void:
 	if not glow.has("first"):
 		glow["first"] = widest.emission_energy
 	glow["peak"] = maxf(Num.f(glow.get("peak", 0.0)), widest.emission_energy)
+
+
+## The breath's aim (director playtest): while the breath is ready, BreathAim draws the very cone
+## the sim burns (RampageSim.cone()). Call each frame; tally {"shown", "hidden", "worst"} (the
+## largest mismatch seen: origin and reach in units, direction and half angle in radians).
+static func track_aim(rampage: Rampage, tally: Dictionary) -> void:
+	var aim := rampage.find_child("BreathAim", false, false) as BreathAim
+	if aim == null or not aim.visible:
+		tally["hidden"] = Num.i(tally.get("hidden", 0)) + 1
+		return
+	tally["shown"] = Num.i(tally.get("shown", 0)) + 1
+	var drawn := aim.drawn()
+	var sim := rampage.sim.cone()
+	var dir_a: Vector2 = drawn["dir"]
+	var dir_b: Vector2 = sim["dir"]
+	var at_a: Vector2 = drawn["origin"]
+	var at_b: Vector2 = sim["origin"]
+	var worst := Num.f(tally.get("worst", 0.0))
+	worst = maxf(worst, at_a.distance_to(at_b))
+	worst = maxf(worst, absf(dir_a.angle_to(dir_b)))
+	worst = maxf(worst, absf(Num.f(drawn["reach"]) - Num.f(sim["reach"])))
+	tally["worst"] = maxf(worst, absf(Num.f(drawn["half_angle"]) - Num.f(sim["half_angle"])))

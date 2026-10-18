@@ -88,6 +88,7 @@ func _ready() -> void:
 	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
 	add_child(ability_fx)
+	add_child(BreathAim.new(sim, Color(str(colors["eye"]))))  # where a ready breath will burn
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
@@ -309,8 +310,7 @@ func _spawn_tank_node(id: int) -> void:
 	_tank_nodes[id] = tank
 
 
-## Each tank's hull turns to the way it drives (to the kaiju when it stands) and its turret keeps
-## the gun on the kaiju.
+## Each tank's hull turns to the way it drives (or to the kaiju); its turret keeps on the kaiju.
 func _update_tanks(delta: float) -> void:
 	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
 	var turn := Num.f(Content.section("vehicles")["hull_turn"]) * delta
