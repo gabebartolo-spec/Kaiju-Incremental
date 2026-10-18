@@ -232,7 +232,7 @@ func _check_height() -> void:
 
 ## A delta-wing striker alone (bombs, no rounds), its city hurt.
 func _delta_sim(layout: Array[Dictionary] = []) -> RampageSim:
-	var sim := _jet_sim(true, 1, layout)
+	var sim := _jet_sim(1, layout)
 	sim.strike.cfg["order"] = ["delta"]
 	sim.strike.cfg["yaw_jitter"] = 0.0
 	return sim
@@ -240,7 +240,7 @@ func _delta_sim(layout: Array[Dictionary] = []) -> RampageSim:
 
 ## The kinds take turns in the stage's order, each with its own weapons and toughness.
 func _check_kinds() -> void:
-	var sim := _jet_sim(true, 3)
+	var sim := _jet_sim(3)
 	sim.strike.cfg["order"] = ["interceptor", "attacker", "delta"]
 	var kinds: Array[String] = []
 	var hp: Array[float] = []
