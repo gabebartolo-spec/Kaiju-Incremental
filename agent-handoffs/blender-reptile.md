@@ -4,6 +4,8 @@
 ## Game-cam baby DONE (run 39104147522): notes p3/gamecam/baby_*.mp4 + sheet, sent to lead 17:5x. Adolescent:
 ## LOCAL GPU only after the lead pings (landmarks first): cp scratchpad local_ado/override.cfg to
 ## the project, bash local_ado/run.sh, rm override.cfg. Send both clips to the lead at once (critic).
+## GPU chain (lead): rooftops -> stadium crowd -> greenery -> ME -> #50. When done, message #50
+## (local_5325ef73-4643-4477-9507-1bb17f42af5b) that the GPU is free.
 ## Post-#57 young pacing (--runs=60): evolve1 0.66 h, 12/31 defeated, 94% city (told lead; no retune).
 ## In-game jaw crops DONE and committed (docs/captures/2026-10-18-croctitan-stages/ingame_*): both PASS
 ## the lead's bar (solid, clean V corner, no flap/bridge/blocks). Sent to lead 17:2x.
