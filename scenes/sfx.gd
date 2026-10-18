@@ -91,6 +91,7 @@ func _ready() -> void:
 	names.append_array(STEPS)
 	for sound: String in names:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
+	_streams["rifle_far"] = _streams["rifle"]  # a distant squad: the same shot, softer and lower
 	# Enough voices that a stomp's or a tank shot's tail is not cut off by the plays after it
 	# (tuning "sfx" "voices"; 8 cut a third of the stomps short under rooftop fire).
 	for _i: int in Num.i(_tune["voices"]):
@@ -229,6 +230,16 @@ func play_at(sound: String, at: Vector3) -> void:
 	play(sound, _distance_db(at))
 
 
+## A shot from `at` near `centre` (the kaiju's feet): within the sound's "crack_within" (flat
+## distance) it plays as itself, a crack; further off as "<sound>_far", a soft low pop, so only
+## the nearest squads crack and the rest of the city is distant fire.
+func play_near(sound: String, at: Vector3, centre: Vector3) -> void:
+	var withins: Dictionary = _tune.get("crack_within", {})
+	var within := Num.f(withins.get(sound, INF))
+	var near := Vector2(at.x - centre.x, at.z - centre.z).length() <= within
+	play_at(sound if near else sound + "_far", at)
+
+
 ## The helicopters' rotor loop: on while any is flying, as loud as the nearest one.
 func rotors(helis: Array[Node3D]) -> void:
 	if helis.is_empty():
@@ -289,14 +300,18 @@ func _fade_regen(delta: float) -> void:
 
 ## One sound by name, slightly re-pitched each time so repeats do not sound copied; extra_db
 ## and pitch shade a single play (steps and stomps also take the size-tier pitch).
-## A sound with a "min_interval" in tuning is skipped while its last play is younger than that,
-## so a burst of events (rooftop volleys) never machine-guns or eats the pool's voices.
+## A sound with a "min_interval" in tuning is skipped while its last play is younger than that
+## (stretched by up to its "interval_jitter" share each time, so the gaps are ragged), so a burst
+## of events (rooftop volleys) never machine-guns, types or eats the pool's voices.
 func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	var gaps: Dictionary = _tune.get("min_interval", {})
 	if gaps.has(sound):
-		if Num.f(_since_sound.get(sound, INF)) < Num.f(gaps[sound]):
+		var gap := Num.f(gaps[sound])
+		if Num.f(_since_sound.get(sound, INF)) < gap:
 			return
-		_since_sound[sound] = 0.0
+		var stretches: Dictionary = _tune.get("interval_jitter", {})
+		var stretch := Num.f(stretches.get(sound, 0.0))
+		_since_sound[sound] = -gap * stretch * _rng.randf()
 	played.append(sound)
 	if sound == "breath":
 		_since_breath = 0.0
@@ -305,7 +320,10 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 		return
 	var player := _pool[_next]
 	_next = (_next + 1) % _pool.size()
-	var jitter := Num.f(_tune["pitch_jitter"])
+	var jitters: Dictionary = _tune.get("pitch_jitter_by", {})
+	var jitter := Num.f(jitters.get(sound, _tune["pitch_jitter"]))
+	var pitches: Dictionary = _tune.get("pitch_by", {})
+	pitch *= Num.f(pitches.get(sound, 1.0))
 	var swings: Dictionary = _tune.get("gain_jitter_db", {})  # e.g. rifles: no two cracks alike
 	var swing := Num.f(swings.get(sound, 0.0))
 	player.stream = stream

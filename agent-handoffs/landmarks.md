@@ -1,67 +1,60 @@
-# Landmarks handoff, 2026-10-19 08:40
-## State: awaiting lead (PR #75 stadium stall fix, head 5d3f4b0, tests green; needs a kaiju-sim-review reviewer)
+# Landmarks handoff, 2026-10-19 11:40
+## State: awaiting lead (PR #78 crowd kills, head 17dd62b; LEAD checks at 2x)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: LEAD (demo build, merges, QA)", local_106fc100...).
-PR bodies <= 8 lines, never merge. NO LOCAL GODOT (director's movie): CI only.
-- #57 landmark sites and #59 stadium matches (D-078): both MERGED into claude/look-options.
-  The landmarks worktree is removed; one live worktree: ../Kaiju-Incremental-wt/stadium-stall.
-- Now: LEAD's stall job. Windowed dry-run at 329e708 showed 80-110 ms stalls every ~0.7 s while
-  the stadium falls, the same with the crowd off. Asked: find the cause, a CI timing probe at
-  look-options 8c24654 and the pre-#59 base 5bc6b44, the smallest fix with before/after ms,
-  report in <= 8 lines.
+PR bodies <= 8 lines, never merge. Local Godot allowed (headless first; windowed only
+off-screen with the no_focus override.cfg written in its own call, removed after). LEAD can
+pause local Godot at any time (director playtesting): then CI only.
 
-## Branches
-- claude/stadium-stall (from look-options 2d2b54a; no scene/sim/data diff vs 8c24654):
-  9ee5fe0 probe tools/capture/probe_stadium_stall.gd; 7f61740 the fix (sim/structure.gd).
-  5d3f4b0 second fix (ground flood + Arcs counts over Structure.standing()). PR #75.
-- claude/stadium-stall-base (5bc6b44 + probe): deleted after its run.
+## Done
+- #57 landmark sites, #59 stadium matches (D-078): merged.
+- #75 stadium stall (Structure.settle per-floor rescans): merged, in demo exe (D-089).
+  sim.step per stadium hit 70-80 -> 10.6-12.9 ms (CI); local 57 -> 10 ms.
+- #76 stall probe --no3d: 1500 frames on CI, sim.step worst 6.9 ms, no event over 16.7 ms.
+  LEAD merges on green. Worktree ../Kaiju-Incremental-wt/stall-probe (remove when merged).
 
-## Result (CI probe, sim.step on each stadium hit, every 21 physics frames)
-head 8c24654 70-80 ms; pre-#59 5bc6b44 70-81 ms (#59 not the cause); topple fix 25-34 ms;
-5d3f4b0 10.6-12.9 ms. Whole-stadium settle(): 70.0 -> 28.1 -> 5.9 ms. View side per hit:
-fall_start <= 2.5, chunks_broken <= 1.2 ms (not the stall). tests.yml 39121385726 green.
-Local headless (director PC): sim.step worst 57.0 -> 10.0 ms, settle() 40.7 -> 3.6 ms.
-Probe at 1500 frames times out on CI's software renderer: use --frames=250.
-
-## Cause
-Structure._topple_check() (sim, runs in every settle(), i.e. after every chunk the stadium
-loses): for each level 1..h-1 it rescanned every floor above with alive() calls. The stadium is
-28 x 28 x 13 and, being a balanced ring, never topples, so the loop never exits early: ~66k
-alive() calls plus ~19k for the support rectangles, ~70-100 ms of GDScript per hit. Predates
-#59 (it is #57's stadium meeting an old O(h^2 w d) check). Smaller: settle()'s loose scan and
-Arcs._count/shed (~10k alive() each).
-Fix 7f61740: one pass sums each floor's mass and centre, loads are running totals from the top;
-direct _hp reads. Same result exactly (half-integer sums < 2^23 are exact in float). Sim change:
-needs a kaiju-sim-review packet in the PR (transition: settle; invariant: same falls, same
-order; evidence: the sim and flow suites' collapse checks unchanged).
-
-## CI runs (capture.yml, gl_compatibility, --frames=1500 --slow=40)
-- head (claude/stadium-stall @ 9ee5fe0): 39117043089
-- base (claude/stadium-stall-base): 39117044976
-- fix (7f61740): 39117126259; tests 39117124338 green
-- fix2 (5d3f4b0): 39121405300; tests 39121385726 green
-Read the logs: gh run download <id>, grep settle/lift_piece/slow f/worst. Probe prints the
-settle() time of the whole stadium, lift_piece of one north rim arc, every frame over 40 ms
-with Rampage.cost_usec per event kind, and worst/total per kind.
+## Director playtest fixes (D-083, demo exe 2)
+1. Crowd ("stadium audience shouldnt disappear so suddenly, let us kill them"): PR #78,
+   branch claude/crowd-kills, worktree ../Kaiju-Incremental-wt/spawn-south (named before the
+   split; holds the crowd branch).
+   - crowd.gdshader: fans run to the back (exit_r) then sink `sink` m out of sight at the exit.
+   - tuning crowd: flee_speed 3.0 -> 1.3, flee_delay 0.5 -> 2.5, sink 2.0, check_per_frame 400,
+     max_puffs 4.
+   - StadiumCrowd.running_at(fan) mirrors the shader; crush() kills where fans run; fallen
+     check: round robin 400 fans/frame after any chunk loss, vs the as-built chunk strengths
+     (a chunk standing then and gone now has fallen); dust puffs capped per blow.
+   - StadiumMatch.crush returns kills; StreetLife.civilians_killed() = street + players + fans
+     (killed + fallen), used by RampageHud.result; panicking() adds running fans.
+   - flow 148 -> 150: "fans stay in view ... 2 s after the panic" and "a blow on a running fan
+     kills it there and counts it", both failed first (0 of 3965; civilians 0 -> 0).
+   - Clip: capture_matches.gd --kills (11 s, one breath 45 frames after the wall goes, counts
+     each second). Notes landmarks/crowd_kills_720p.mp4 + crowd_kills_clip.log. In stands:
+     +1 s 3530, +4 s 1941, +7 s 25; 68 killed by breath, 456 fell, 3441 out; civilians 525.
+   - Captures docs/captures/2026-10-19-crowd-kills/ (kills_sheet.png, far_stand_2x.png).
+   - Full suite green at 17dd62b (sim 53, growth 31, flow 150).
+2. South of spawn ("smaller buildings ... dont seem destructible"): no sim building ignores
+   stomps. Spawn (0, 42); playable edge z=44.5; skyline stand-ins (never destroyed) in rows at
+   z=48/52/57, nearest 6 m away, in the camera's foreground; nearest sim buildings 20 m north.
+   LEAD chose A (make the first row past the south edge playable) and gave it to the greenery
+   session (it edits the same city edge). Not mine.
 
 ## Next
-- PR #75 waits for a kaiju-sim-review reviewer (LEAD names one) and LEAD's merge. Auto-fix on.
-- Then post-demo work from LEAD (rubble polish, landmarks E/F).
+- LEAD's 2x check of #78; fix what comes back.
+- Then post-demo work from LEAD: rubble polish (broken wheel, ragged stadium stumps, heaps),
+  landmarks E (spire) / F (megatower, needs a Performance look at ~816k voxels).
 
 ## Findings for the lead
 - A per-settle check that loops over every floor above every floor is O(h^2 w d): fine for a
   3x3 tower, ~100 ms on a 28x28x13 landmark. Profile the sim with the biggest building in it.
+- CI's software renderer runs ~4 s a frame: CPU timing probes there need 3D off (disable_3d).
 - gh shares one 5,000/h API budget across all agents: wait for the reset, never poll in a loop.
-- voxelize.py shells surfaces only: a solid disc bakes as a cap; build open parts as rings.
-- A check bounded by the constant it tests passes when sabotaged: bound it by the bar.
-- The dummy renderer keeps no MultiMesh transforms: test a builder's cells instead.
-- After a squash merge, resyncing a stacked branch can silently take old copies of files it
-  never touched: diff the result against the base before pushing.
+- A presentation-only crowd counted nowhere: kills a view counts must reach the one counter
+  the HUD reads (StreetLife.civilians_killed), or they silently do not exist.
 
 ## Rules learnt the hard way
 - gdlint: 400 lines per file, 4 arguments; gdformat writes CRLF on Windows (sed it off) and
   must run after the last edit (CI runs gdformat --check).
-- A failing check must run (not fail to parse): land the classes first, wire them second.
-- Post-demo queue from LEAD: rubble polish (broken wheel, ragged stadium stumps, heaps),
-  landmarks E (spire) / F (megatower, needs a Performance look at ~816k voxels).
+- A failing check must run (not fail to parse): land the API first, show the check failing,
+  then change the behaviour.
+- Never stash; stage by name; kill Godot only by recorded PID.
