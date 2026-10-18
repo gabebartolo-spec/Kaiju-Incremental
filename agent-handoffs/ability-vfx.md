@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 04:10
-## State: running a check (lead GO on D-087 evolve1 400, no young override, no option A; uncommitted on army-scales-sync: data/upgrades.json evolve1 400 + tests/run_growth_tests.gd:329 ratio /20 with D-087 comment; suites + 130-run pacing bln5hje5w)
+## State: awaiting #54 + #63 merge (#36 pushed 09192ce: D-087 evolve1 400, test /20; 130-run on local merge: e1 0.26 h, young 8/14, Beh 8/46, e2 1.39 h, tree 83/87 3.36 h; body updated)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -100,6 +100,6 @@
 - 45-run results, young ended time/defeated/city: {} 8/26/0 of 34; td3 23/9/0; td3+si6 29/3/0; td3.5 14/18/0 (PICK); si6 18/14/0; td3.5+si5.5 20/12/0. evolve1 0.68-0.70 h for all. young_damage_mult is NOT a lever (damage to the kaiju's young).
 - 130-run on scratch: before young 8/26/0, Beh 31/9/0, Col 28/28/0, e1 0.70 e2 1.69, 81/87 3.24 h; td3.5 young 14/18/0, Beh 37/3/0, Col 27/31/0, e1 0.68 e2 1.68, 81/87 3.29 h. Behemoth drop flagged to lead with options A (Beh per_level 0.03, recommended) / B ship / C si6. scratchpad/beh_sweep.sh <f>...
 - D-087 (director: first evo ~15 min). 45-run cost sweep, no override: 1778 0.70 h 26/34; 900 0.54 h 21/27; 600 0.43 h 16/22; 400 0.26 h 8/14 (PICK, Beh 8/31); 250 0.15 h; 150 0.09 h 1/5. With td3.5: 400 same, 250 2/8. A and young override DROPPED (short stage gives ~half by itself). Helper copies scratchpad/sw_h1..h4, one_spec.sh.
-- Lead GO: body = before/after table (evolve1 h, young + Behemoth defeats, tree h) + the 45-run sweep table + side-effect note (full-game tree pacing shifts, 130-run tree hours; full retune post-demo per D-083). After bln5hje5w is green: commit + push #36.
+- Lead GO: body = before/after table (evolve1 h, young + Behemoth defeats, tree h) + the 45-run sweep table + side-effect note (full-game tree pacing shifts, 130-run tree hours; full retune post-demo per D-083). DONE: pushed 09192ce, body updated (D-087 section + Board/log line).
 - When #54 + #63 land: resync #36, add "army": {"tank_damage": 3.5} to stages[0], 130-run pacing, before/after table in #36's body, Board/log: "D-087 first evolution at ~15 min (evolve1 cost 400); D-069a met by the shorter stage". Ping lead for the merge (last PR before the build).
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
