@@ -6,7 +6,8 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 (squash, `--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes (director 18:0x).
 Messaging: the app pauses SendMessage after 10 sends without a director message. Budget: one message per worker with
-everything; GPU + resync hand-offs go peer to peer; never ask the director to type to unblock (memory-shared/messaging-cap).
+everything; GPU + resync hand-offs go peer to peer; never ask the director to type to unblock
+(memory-shared/messaging-cap).
 
 ## Demo chain (D-050; ends at the evolve1 reveal -> DEMO COMPLETE card). Merge order: #54 #63 (#59 #55 #50 if they
 ## pass) -> #36 last -> build.
