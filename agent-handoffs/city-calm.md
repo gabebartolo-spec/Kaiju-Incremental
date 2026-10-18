@@ -5,8 +5,8 @@
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
 - DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export, #37 no empty ground
   (D-062), D-065(b) green-lot table (lead), Landmarks city_gen review.
-- NOW: D-065(a) greenery + body trample, PR #55 into claude/look-options. r11 is the LAST critic
-  round (D-084 took the topple out of the demo): if it fails, #55 waits until after the demo.
+- NOW: D-065(a) greenery + body trample, PR #55 into claude/look-options. Not in the demo build
+  (D-084, r11 failed); r12 waits for the lead's critic after the build ships, then merges.
 - NEXT: D-075 = D-065(b) at 8% green lots, its own PR after #55 merges: city.green_lot_share
   0.08 in CityGen/CityLots (data); parks/gardens/playgrounds/plazas spread so no building is
   more than ~2 blocks from one; crushable; pacing table near evolve1 0.64 h / tree 4.88 h;
