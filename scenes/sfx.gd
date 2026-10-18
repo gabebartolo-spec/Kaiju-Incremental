@@ -9,6 +9,9 @@ extends Node
 
 const POOL := 8
 const STOMPS := 3
+## Footstep sounds the steps take turns with (footstep, footstep_1..3), in this order: no two
+## steps in a row sound the same.
+const STEPS: Array[String] = ["footstep", "footstep_2", "footstep_1", "footstep_3"]
 ## How fast the regen bubbles fade once their cue is over, and where a fade ends.
 const REGEN_FADE_DB_PER_S := 40.0
 const SILENT_DB := -60.0
@@ -21,8 +24,8 @@ static var _ui_player: AudioStreamPlayer
 var played: Array[String] = []
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
-## Returns the helicopters in the air (Array[Node3D]); the rotor loop follows them.
-var _helis: Callable
+## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
+var _powers: PowersView
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
@@ -50,6 +53,8 @@ var _pending_age := 0.0
 ## footstep_min_interval, crack_min_interval).
 var _since_step := INF
 var _since_crack := INF
+## How many footsteps have played (picks the next of STEPS).
+var _step := 0
 
 
 ## rng: the presentation's own seeded stream (pitch variation only).
@@ -66,15 +71,17 @@ func _ready() -> void:
 		"lash",
 		"ready",
 		"deflect",
-		"footstep",
 		"stomp_crack",
 		"collapse",
 		"roar",
 		"tank_fire",
 		"shell_hit",
+		"heli_gun",
+		"heli_crash",
 	]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
+	names.append_array(STEPS)
 	for sound: String in names:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
 	for _i: int in POOL:
@@ -87,18 +94,18 @@ func _ready() -> void:
 	_crowd = _looping("crowd_panic")
 
 
-## Rampage hands over its camera, its helicopters (PowersView.helis) and its street (the
-## crowd) once, at start.
-func watch(camera: Node3D, helis: Callable, street: StreetLife) -> void:
+## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
+## once, at start.
+func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 	listener = camera
-	_helis = helis
+	_powers = powers
+	powers.sfx = self
 	_street = street
 
 
 func _process(delta: float) -> void:
-	if _helis.is_valid():
-		var helis: Array[Node3D] = _helis.call()
-		rotors(helis)
+	if is_instance_valid(_powers):
+		rotors(_powers.helis())
 	_since_step += delta
 	_since_crack += delta
 	_since_breath += delta
@@ -175,7 +182,8 @@ func footstep(strength: float) -> void:
 		return
 	_since_step = 0.0
 	var quiet := Num.f(_tune["footstep_quiet_db"]) * (1.0 - clampf(strength, 0.0, 1.0))
-	play("footstep", quiet)
+	play(STEPS[_step % STEPS.size()], quiet)
+	_step += 1
 
 
 ## A building part hits the ground (sim fall_land); a toppled tower is louder and deeper.
@@ -269,7 +277,7 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	var jitter := Num.f(_tune["pitch_jitter"])
 	player.stream = stream
 	player.volume_db = _volume(sound) + extra_db
-	if sound == "footstep" or sound.begins_with("stomp"):
+	if sound.begins_with("footstep") or sound.begins_with("stomp"):
 		pitch *= _size_pitch
 	player.pitch_scale = pitch * (1.0 + _rng.randf_range(-jitter, jitter))
 	player.play()
@@ -316,4 +324,6 @@ func last_pitch() -> float:
 func _volume(sound: String) -> float:
 	var levels: Dictionary = _tune["volume_db"]
 	var key := "stomp" if sound.begins_with("stomp_") and sound != "stomp_crack" else sound
+	if sound.begins_with("footstep"):
+		key = "footstep"
 	return Num.f(levels.get(key, 0.0))
