@@ -1,33 +1,32 @@
 extends RefCounted
 ## D-075 (director 2026-10-18: green lots at 8% of the city, answering D-065(b)): the city
 ## suite's green-lot checks, called from its D-062 loop for each stage and map_seed.
-##   1. Share and spread: parks, plazas and green lots cover at least city.green_lot_share of
-##      the playable city's block area (less SHARE_SLACK, a small city's blocks come in big
-##      steps) and at most SHARE_CAP, and no building stands more than SPREAD_BLOCKS of the
-##      city's longest blocks (city.block_long) from one.
+##   1. Share and spread: from the Behemoth on, the green lots cover the green-lot share (one
+##      block in city.green_lot_every [a, b]) of the playable city's block area, give or take
+##      SHARE_SLACK, on top of the parks and plaza it had; the young city (about 15 blocks,
+##      one lot in 12) needs at least one. No building stands more than SPREAD_BLOCKS of the
+##      city's longest blocks (city.block_long) from a park, plaza or green lot, counting the
+##      ones just past the playable edge (across the ring avenue, in view).
 ##   2. A green lot holds no building, and it is the same block at stage 1 and the Behemoth,
 ##      so an evolution never turns a park back into buildings.
 
-const Green := preload("res://tests/lib/city_green.gd")
-const SHARE_SLACK := 0.015
-const SHARE_CAP := 0.12
+const SHARE_SLACK := 0.035
 const SPREAD_BLOCKS := 2.0
 
 
-static func check(
-	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check_fn: Callable
-) -> void:
-	var got: Dictionary = Green.measure(sim, decor)
-	var share := Num.f(sim.city.get("green_lot_share", 0.0))
-	var pct := Num.f(got["green_pct"]) / 100.0
+static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable) -> void:
+	var every: Array = sim.city.get("green_lot_every", [])
+	var share := 1.0 / (Num.f(every[0]) * Num.f(every[1])) if every.size() == 2 else 0.0
+	var pct := _lot_share(sim.city)
 	var long: Array = sim.city["block_long"]
 	var reach := SPREAD_BLOCKS * Num.f(long[1])
-	var furthest := Num.f(got["furthest_from_park_m"])
+	var furthest := _furthest(sim)
+	var shared := absf(pct - share) <= SHARE_SLACK if tier > 1 else pct > 0.0
 	check_fn.call(
-		pct >= share - SHARE_SLACK and pct <= SHARE_CAP and share > 0.0 and furthest <= reach,
+		shared and share > 0.0 and furthest <= reach,
 		(
 			(
-				"stage %d, map_seed %d: green lots (%.1f%% of the blocks green, want %.1f-%.0f%%;"
+				"stage %d, map_seed %d: green lots (%.1f%% of the blocks, want %.1f-%.1f%%;"
 				+ " furthest building %.0f m from a park, want <= %.0f m)"
 			)
 			% [
@@ -35,7 +34,7 @@ static func check(
 				map_seed,
 				pct * 100.0,
 				(share - SHARE_SLACK) * 100.0,
-				SHARE_CAP * 100.0,
+				(share + SHARE_SLACK) * 100.0,
 				furthest,
 				reach
 			]
@@ -56,6 +55,39 @@ static func check(
 			% [tier, map_seed, lots.size(), inside, lots == first]
 		)
 	)
+
+
+## The green lots' share of the playable city's block area (blocks centred inside its edge).
+static func _lot_share(cfg: Dictionary) -> float:
+	var half := CityGen.half_extent(cfg)
+	var lots := 0.0
+	var all := 0.0
+	for block: Dictionary in CityGen.map(cfg)["blocks"]:
+		var rect: Rect2 = block["rect"]
+		var c := rect.get_center()
+		if maxf(absf(c.x), absf(c.y)) > half or str(block["use"]) == "outer":
+			continue
+		all += rect.get_area()
+		if block.has("green"):
+			lots += rect.get_area()
+	return lots / maxf(1.0, all)
+
+
+## How far the building furthest from every park, plaza and green lot stands from one.
+static func _furthest(sim: RampageSim) -> float:
+	var parks: Array[Rect2] = []
+	for block: Dictionary in CityGen.map(sim.city)["blocks"]:
+		if str(block["use"]) in ["park", "plaza"]:
+			var rect: Rect2 = block["rect"]
+			parks.append(rect)
+	var furthest := 0.0
+	for b: RampageSim.Building in sim.buildings:
+		var p := Vector2(b.x, b.z)
+		var nearest := INF
+		for rect: Rect2 in parks:
+			nearest = minf(nearest, p.clamp(rect.position, rect.end).distance_to(p))
+		furthest = maxf(furthest, nearest)
+	return furthest
 
 
 ## The green lots' rects, in plan order.

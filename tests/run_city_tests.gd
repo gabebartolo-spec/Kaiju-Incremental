@@ -169,6 +169,6 @@ func _check_no_empty_ground() -> void:
 				)
 			)
 			Green.check_city(tier, map_seed, sim, decor, check)
-			GreenLots.check(tier, map_seed, sim, decor, check)
+			GreenLots.check(tier, map_seed, sim, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			holder.free()
