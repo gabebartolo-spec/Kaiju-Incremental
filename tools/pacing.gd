@@ -9,8 +9,8 @@ extends SceneTree
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400]
 ##     [--verbose] [--flat] [--no-jets] [--dodge]  (--flat: one fixed city and army, as before
 ##     D-039; --no-jets: no jets at any stage (D-072); --dodge: once a jet warns, the player
-##     walks off its line across the camera's view, toward the arena's middle (a jet's line runs
-##     across the screen), and keeps away until that jet has gone and its bombs have landed)
+##     steps aside (along the camera's axis, a pass runs across it) until clear of every warned
+##     spot, then carries on smashing)
 
 const DT := 1.0 / 15.0
 const TREE_SECONDS := 20.0
@@ -147,8 +147,7 @@ func _pace(species_id: String) -> void:
 func _rampage(sim: RampageSim) -> Array[int]:
 	var target := Vector2(INF, INF)
 	var steps := 0
-	var warned := {}  # jets the player is keeping out of the way of (--dodge)
-	var off_line := Vector2.ZERO
+	var pending: Array[Vector2] = []  # warned spots still to be hit (--dodge)
 	var jet_hits := 0
 	while not sim.over:
 		if steps % 8 == 0:
@@ -157,29 +156,45 @@ func _rampage(sim: RampageSim) -> Array[int]:
 		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
 			move = (target - sim.kaiju_pos).normalized()
 		var held := RampageSim.HELD if steps % 30 < 15 else 0
-		if not warned.is_empty() or (_dodge and not sim.strike.bombs.is_empty()):
-			move = off_line
+		var away := _off_line(sim, pending)
+		if away != Vector2.ZERO:
+			move = away
 			held = 0  # let go of the signature to run
 		var flags := held | RampageSim.ULTIMATE
 		for event: Dictionary in sim.step(DT, move, sim.ability_ready_in <= 0.0, flags):
 			var kind := str(event["type"])
 			if kind == "jet_inbound" and _dodge:
-				if warned.is_empty():
-					off_line = _off_line(sim)
-				warned[Num.i(event["jet"])] = true
-			if kind == "jet_left" or kind == "jet_destroyed":
-				warned.erase(Num.i(event["jet"]))
-			if (kind == "jet_strafe" or kind == "jet_bomb") and event["hit"]:
-				jet_hits += 1
+				var rounds: PackedVector2Array = event["rounds"]
+				var drops: PackedVector2Array = event["bombs"]
+				pending.append_array(rounds)
+				pending.append_array(drops)
+			if kind == "jet_strafe" or kind == "jet_bomb":
+				pending.erase(event["at"])
+				if event["hit"]:
+					jet_hits += 1
 		steps += 1
 	return [steps, jet_hits]
 
 
-## Off a jet's line: along the camera's axis (square to every pass), toward the arena's middle so
-## a kaiju on its edge is never pinned against it.
-func _off_line(sim: RampageSim) -> Vector2:
-	var out := Vector2.from_angle(deg_to_rad(Num.f(sim.strike.cfg["camera_bearing"])))
-	return -out if sim.kaiju_pos.dot(out) > 0.0 else out
+## Where to step to get clear of the warned spots (ZERO once clear): along the camera's axis
+## (square to every pass), away from the nearest spot, as a player steps aside and carries on.
+func _off_line(sim: RampageSim, pending: Array[Vector2]) -> Vector2:
+	var clear := (
+		Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+		+ Num.f(sim.strike.cfg["bomb_radius"])
+		+ 1.0
+	)
+	var nearest := Vector2(INF, INF)
+	for p: Vector2 in pending:
+		if p.distance_to(sim.kaiju_pos) < nearest.distance_to(sim.kaiju_pos):
+			nearest = p
+	if nearest.distance_to(sim.kaiju_pos) > clear:
+		return Vector2.ZERO
+	var axis := Vector2.from_angle(deg_to_rad(Num.f(sim.strike.cfg["camera_bearing"])))
+	var side := signf((sim.kaiju_pos - nearest).dot(axis))
+	if side == 0.0 or absf(sim.kaiju_pos.dot(axis)) > sim.arena_half - clear:
+		side = -signf(sim.kaiju_pos.dot(axis))  # near the edge: toward the middle
+	return axis * (side if side != 0.0 else 1.0)
 
 
 func _tally(stages: Dictionary, tier: int, seconds: float, res: Dictionary) -> void:
