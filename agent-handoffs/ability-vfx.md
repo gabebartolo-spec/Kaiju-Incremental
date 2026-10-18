@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 18:30
-## State: running a check (pacing run for the #36 army-scales sync, bash beaz65ap4)
+# Ability VFX/SFX handoff, 2026-10-18 19:30
+## State: running a check (young-stage knob sweep for D-069a, pacing 45 runs x4)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
@@ -43,18 +43,15 @@
 - A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
 - When #43 merges, retarget #45 to look-options.
 
-## Current job (lead, 2026-10-18): sync PR #36 claude/army-scales (D-069, director approved)
-- I'm NOT using the AFL session's worktree. Local branch army-scales-sync tracks origin/claude/army-scales and is
-  pushed with `git push origin HEAD:claude/army-scales`.
-- Merge of look-options committed (e47fba1, not pushed).
-  - upgrades.json: kept #36's Armoured Scales row (pos [2,3], rage, 330..) with look-options' Hoarder text.
-  - Floors: city 12, growth 29.
-  - Fixed #36's three gdlint errors: two long lines in run_growth_tests.gd; var _tiers moved up in upgrade_tree.gd.
-  - All 9 suites green.
-- Left to do:
-  - tools/pacing.gd --species=reptilian --runs=130 (output: scratchpad/pacing/pacing.txt).
-  - Paste the stage table into #36's body, add D-069 to its Board and log.
-  - One push, SHA to the lead.
+## #36 claude/army-scales (D-069), pushed 4b3146c; waits for #50
+- Local branch army-scales-sync; push with `git push origin HEAD:claude/army-scales` (not the AFL worktree).
+- Pacing at 4b3146c (130 runs): young 31 runs 0.62 h ended 3/28/0; Behemoth 45 runs 37/7/1; Colossus 54 runs 29/25/0.
+- **D-069a (director, via lead):** young defeats 28/31 too punishing; aim ~half (before #36: 16/28).
+  - Cause: young per_level is {} already; #36 moved Armoured Scales behind Endless Rage (330 rubble).
+  - Fix in data only: a stages[0] "army" override (tank_damage, maybe start_interval). Keep Behemoth/Colossus.
+  - Sweep script: scratchpad/young_sweep.sh (edits and restores data/tuning.json; never commit while it runs).
+  - Order: after #50 lands, resync onto look-options, tune young, re-pace 130 runs,
+    before/after defeats per stage in #36's body, add "D-069a young stage softened to ~half defeats" to Board/log.
 
 ## Sync status (#39/#42/#43/#45 on look-options f71c527; #46 on 39acc0a; base flow is now 117)
 | PR | Head | Flow |
