@@ -113,15 +113,19 @@ func spawn() -> Jet:
 	jet.pos = jet.start
 	jet.hp = Num.f(cfg["hp"]) * Num.f(jet.cfg["hp_mult"])
 	jets.append(jet)
-	sim.events.append(
-		{
-			"type": "jet_spawned",
-			"jet": jet.id,
-			"kind": jet.kind,
-			"from": jet.start,
-			"dir": jet.dir,
-			"y": altitude(jet),
-		}
+	(
+		sim
+		. events
+		. append(
+			{
+				"type": "jet_spawned",
+				"jet": jet.id,
+				"kind": jet.kind,
+				"from": jet.start,
+				"dir": jet.dir,
+				"y": altitude(jet),
+			}
+		)
 	)
 	return jet
 
@@ -205,15 +209,19 @@ func _release(jet: Jet) -> void:
 		bomb.at = at
 		bomb.t = (land - jet.s) / Num.f(jet.cfg["speed"])
 		bombs.append(bomb)
-		sim.events.append(
-			{
-				"type": "jet_bomb_drop",
-				"jet": jet.id,
-				"from": jet.pos,
-				"y": altitude(jet),
-				"at": at,
-				"seconds": bomb.t,
-			}
+		(
+			sim
+			. events
+			. append(
+				{
+					"type": "jet_bomb_drop",
+					"jet": jet.id,
+					"from": jet.pos,
+					"y": altitude(jet),
+					"at": at,
+					"seconds": bomb.t,
+				}
+			)
 		)
 
 

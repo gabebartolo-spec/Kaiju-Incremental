@@ -170,10 +170,16 @@ func _check_defences() -> void:
 		bombers.append(order.count("bomber"))
 	check(
 		(
-			jets[0] == 0 and jets[1] == 0 and jets[2] > 0 and jets[3] > jets[2]
+			jets[0] == 0
+			and jets[1] == 0
+			and jets[2] > 0
+			and jets[3] > jets[2]
 			and bombers == [0, 0, 0, 1]
 		),
-		"jets from the Colossus on, more at Apex, whose set-piece is the bomber (D-072): %s" % [jets]
+		(
+			"jets from the Colossus on, more at Apex, whose set-piece is the bomber (D-072): %s"
+			% [jets]
+		)
 	)
 	check(
 		Num.i(Content.section("air")["max"]) > 0,
