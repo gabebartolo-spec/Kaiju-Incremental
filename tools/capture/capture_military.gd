@@ -16,6 +16,10 @@ extends SceneTree
 const SHOTS: Array[int] = [300, 480, 600, 720, 840, 960, 1060]
 ## Where columns call in from, metres from the kaiju (the game's is army.spawn_radius).
 const CLIP_SPAWN := 44.0
+## Where the kaiju stands: a crossing at the north end with no roof over 13 m within 40 m, so
+## the pair patrols low and in the frame (the start, by the 27 m wheel, sends it up over the
+## wheel and out of the game camera: the roof-clearance rule, LEAD 2026-10-18).
+const CLIP_AT := Vector2(5, -70)
 ## When the kaiju turns to face the helicopters.
 const TURN_AT := 13.0
 
@@ -45,6 +49,7 @@ func _run() -> void:
 	rampage.setup(
 		species, stats, CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0)), 1
 	)
+	rampage.sim.kaiju_pos = CLIP_AT  # before the view is built, so it starts there
 	rampage.scripted = _input
 	root.add_child(rampage)
 	await physics_frame

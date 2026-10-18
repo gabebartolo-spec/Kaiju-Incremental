@@ -80,7 +80,11 @@ func _check_heli_flight() -> void:
 	var lowest := INF
 	var hovers := 0
 	var turns := 0
-	var cone := Num.f(Content.section("air")["formation"]["fire_cone"]) + 1.0
+	var form: Dictionary = Content.section("air")["formation"]
+	var cone := Num.f(form["fire_cone"]) + 1.0
+	var highs := 0  # heli-steps above cruise
+	var drops := 0  # ... coming down
+	var stays := 0  # ... with no roof in reach to need it (it should be coming down)
 	for seed: int in SEEDS:
 		var sim := _rampage(2, seed)
 		sim.air.cfg["after_chunks"] = 0
@@ -104,6 +108,18 @@ func _check_heli_flight() -> void:
 			for heli: AirWing.Heli in sim.air.helis:
 				lowest = minf(lowest, heli.alt - _roof_under(sim, heli.pos, ROTOR_CLEAR * 0.5))
 				var before: Array = was.get(heli.id, [])
+				var cruise := sim.air.altitude()
+				if heli.alt > cruise + 0.05:
+					highs += 1
+					# Up only for a roof within its look-ahead, or one just passed (still coming down).
+					var lag := (
+						(heli.alt - cruise) / Num.f(form["climb"]) * Num.f(form["break_speed"])
+					)
+					var reach := ROTOR_CLEAR * 0.5 + Num.f(form["look_ahead"]) + lag * 1.5
+					if _roof_under(sim, heli.pos, reach) + Num.f(form["roof_clear"]) <= cruise:
+						stays += 1
+					if before.size() > 2 and heli.alt < Num.f(before[2]) - 0.001:
+						drops += 1
 				if not before.is_empty():
 					var at: Vector2 = before[0]
 					var nose: Vector2 = before[1]
@@ -111,7 +127,7 @@ func _check_heli_flight() -> void:
 						turns += 1
 						if heli.pos.distance_to(at) / DT < 3.0:
 							hovers += 1
-				was[heli.id] = [heli.pos, heli.front]
+				was[heli.id] = [heli.pos, heli.front, heli.alt]
 	check(
 		shots > 20 and bad_shots == 0,
 		(
@@ -120,6 +136,16 @@ func _check_heli_flight() -> void:
 		)
 	)
 	check(lowest >= 1.0, "a helicopter's rotor stays clear of every roof (lowest %.1f m)" % lowest)
+	check(
+		highs > 50 and drops > 20 and stays == 0,
+		(
+			(
+				"a helicopter climbs only for the roofs ahead and comes back down after (%d of %d"
+				% [stays, highs]
+			)
+			+ " steps up with no roof near, %d coming down)" % drops
+		)
+	)
 	check(
 		turns > 20 and hovers == 0,
 		(
