@@ -34,6 +34,8 @@ static var ui_scale := 1.0
 static var fps_cap := -1
 ## True while a rampage is on screen (main.gd); menus and pause run at tuning menu_fps at most.
 static var in_play := false
+## Graphics quality, a key of tuning "display" graphics; "" = graphics_default for this screen.
+static var graphics := ""
 
 
 static func set_volume(value: float) -> void:
@@ -77,9 +79,57 @@ static func _caps() -> Array[int]:
 	return out
 
 
-## The player's frame cap in play (0 = unlimited).
+## The player's frame cap in play (0 = unlimited); on a large (4K) screen the default is
+## tuning "display" graphics_default large_fps.
 static func cap() -> int:
-	return fps_cap if fps_cap >= 0 else Num.i(Content.section("display")["fps_default"])
+	if fps_cap >= 0:
+		return fps_cap
+	var display := Content.section("display")
+	if _large():
+		return Num.i(display["graphics_default"]["large_fps"])
+	return Num.i(display["fps_default"])
+
+
+## The graphics quality in use: the player's, else the default for this screen size.
+static func graphics_level() -> String:
+	if _levels().has(graphics):
+		return graphics
+	var defaults: Dictionary = Content.section("display")["graphics_default"]
+	return str(defaults["large"] if _large() else defaults["small"])
+
+
+## Steps the graphics quality to the next level (wrapping round).
+static func next_graphics() -> void:
+	var levels := _levels()
+	graphics = levels[(levels.find(graphics_level()) + 1) % levels.size()]
+	save()
+
+
+static func _levels() -> Array[String]:
+	var out: Array[String] = []
+	var table: Dictionary = Content.section("display")["graphics"]
+	for key: Variant in table.keys():
+		out.append(str(key))
+	return out
+
+
+## A screen at least graphics_default min_height tall (4K); never in headless runs.
+static func _large() -> bool:
+	if DisplayServer.get_name() == "headless":
+		return false
+	var tall := Num.i(Content.section("display")["graphics_default"]["min_height"])
+	return DisplayServer.screen_get_size().y >= tall
+
+
+## Puts the graphics level on a viewport's 3D render (msaa is Godot's Viewport.MSAA value: 2 = 4x,
+## the project's setting) (Settings does it each frame it changes).
+static func apply_graphics(view: Viewport) -> void:
+	var level: Dictionary = Content.section("display")["graphics"][graphics_level()]
+	view.scaling_3d_scale = Num.f(level["scale"])
+	view.scaling_3d_mode = (
+		Viewport.SCALING_3D_MODE_FSR if level["fsr"] == true else Viewport.SCALING_3D_MODE_BILINEAR
+	)
+	view.msaa_3d = Num.i(level["msaa"]) as Viewport.MSAA
 
 
 ## The frame cap right now: the player's in an unpaused rampage, never above tuning menu_fps in
@@ -171,7 +221,8 @@ static func save() -> void:
 	cfg.set_value("audio", "sfx_volume", sfx())
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
-	cfg.set_value("display", "fps_cap", cap())
+	cfg.set_value("display", "fps_cap", fps_cap)
+	cfg.set_value("display", "graphics", graphics)
 	cfg.save(PATH)
 
 
@@ -186,5 +237,7 @@ static func load_saved(start_full: bool) -> void:
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]
-	var saved_cap := Num.i(cfg.get_value("display", "fps_cap", cap()))
+	var saved_cap := Num.i(cfg.get_value("display", "fps_cap", fps_cap))
 	fps_cap = saved_cap if _caps().has(saved_cap) else -1
+	var saved := str(cfg.get_value("display", "graphics", graphics))
+	graphics = saved if _levels().has(saved) else ""
