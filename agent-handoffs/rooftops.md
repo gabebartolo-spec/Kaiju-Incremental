@@ -59,6 +59,13 @@ rifle sound in rooftop_view on look-options -> expect a small merge in rooftop_v
 So re-baseline on a0d3f36 (snap_b2) and re-replay the chosen tuning (snap_b2 + edge reach) before
 the PR tables; verify sim/ + data/ unchanged between a0d3f36 and the merged #50.
 
+## Coordination
+- "Kaiju: Sound effects" (local_24621710-3f9c-4f67-ae39-8fa4b6192106) adds a rifle sound gap
+  (claude/rifle-gap, sfx.min_interval.rifle 0.3). Record the clip's audio after it lands, or merge
+  claude/rifle-gap locally for the capture. They will send the PR number + head SHA.
+- Capture tool: 7000a1f adds --typical (median busy spot) + edge reach; use --typical for the PR clip.
+- Candidate snapshot snap_b2c = #50 head a0d3f36 + my sim/army.gd + tuning (patched).
+
 ## Branch changes
 - committed 1348478: scenes/rooftop_view.gd draws squads nearest the kaiju first (_nearest_first).
 - UNCOMMITTED -> committed with this file: sim/army.gd _step_squads reach = range +
