@@ -21,8 +21,8 @@ static var _ui_player: AudioStreamPlayer
 var played: Array[String] = []
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
-## Returns the helicopters in the air (Array[Node3D]); the rotor loop follows them.
-var _helis: Callable
+## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
+var _powers: PowersView
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
@@ -72,6 +72,8 @@ func _ready() -> void:
 		"roar",
 		"tank_fire",
 		"shell_hit",
+		"heli_gun",
+		"heli_crash",
 	]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
@@ -87,18 +89,18 @@ func _ready() -> void:
 	_crowd = _looping("crowd_panic")
 
 
-## Rampage hands over its camera, its helicopters (PowersView.helis) and its street (the
-## crowd) once, at start.
-func watch(camera: Node3D, helis: Callable, street: StreetLife) -> void:
+## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
+## once, at start.
+func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 	listener = camera
-	_helis = helis
+	_powers = powers
+	powers.sfx = self
 	_street = street
 
 
 func _process(delta: float) -> void:
-	if _helis.is_valid():
-		var helis: Array[Node3D] = _helis.call()
-		rotors(helis)
+	if is_instance_valid(_powers):
+		rotors(_powers.helis())
 	_since_step += delta
 	_since_crack += delta
 	_since_breath += delta

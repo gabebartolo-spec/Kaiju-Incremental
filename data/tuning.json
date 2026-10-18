@@ -262,6 +262,8 @@
 			"tank_fire": -8.0,
 			"shell_hit": -6.0,
 			"heli_rotor": -12.0,
+			"heli_gun": -9.0,
+			"heli_crash": -3.0,
 			"crowd_panic": -6.0,
 			"footstep": -9.0,
 			"stomp_crack": -5.0,
