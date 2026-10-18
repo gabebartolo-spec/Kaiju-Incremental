@@ -47,7 +47,8 @@ static func check(
 		for rect: Rect2 in lots:
 			if rect.has_point(Vector2(b.x, b.z)):
 				inside += 1
-	var first := _green_lots(CityGrowth.tuning_for(_with_seed(map_seed), 1)["city"])
+	var stage_one: Dictionary = CityGrowth.tuning_for(_with_seed(map_seed), 1)["city"]
+	var first := _green_lots(stage_one)
 	check_fn.call(
 		not lots.is_empty() and inside == 0 and lots == first,
 		(
