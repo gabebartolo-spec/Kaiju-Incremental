@@ -74,6 +74,7 @@ var _tail_at: Array[float] = []
 var _last_body_yaw := 0.0
 var _last_yaw_rate := 0.0
 var _tail_primed := false
+var _feet_primed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
 
 
@@ -286,7 +287,8 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 				leg.plant_at = target
 				leg.drift = 0.0
 				var side := "left" if leg.side < 0.0 else "right"
-				rig.foot_planted.emit(side, clampf(0.2 + speed_k(), 0.0, 1.0), target)
+				if _feet_primed:  # the first frame's feet were already down: no step, no ring
+					rig.foot_planted.emit(side, clampf(0.2 + speed_k(), 0.0, 1.0), target)
 			target = _lock[i]
 			_lag[i] = _lock[i] - clip_toe
 		else:
@@ -294,6 +296,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		leg.planted = planted
 		_was_planted[i] = planted
 		_reach(leg, target)
+	_feet_primed = true
 
 
 ## True when a planted foot has been left too far behind (or ahead) of its clip spot to hold.

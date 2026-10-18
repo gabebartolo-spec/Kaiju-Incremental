@@ -11,6 +11,9 @@ uniform float width = 0.18;
 uniform float edge = 0.03;
 uniform float glow = 2.0;
 uniform float alpha = 1.0;
+// How ragged the front is, and how much the ring fades as it runs out (0: the script fades it).
+uniform float rag = 0.04;
+uniform float self_fade = 1.0;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -20,10 +23,10 @@ void fragment() {
 	vec2 p = UV * 2.0 - 1.0;
 	float r = length(p);
 	float angle = atan(p.y, p.x);
-	float ragged = 0.04 * hash(vec2(floor(angle * 24.0), 1.0));
+	float ragged = rag * hash(vec2(floor(angle * 24.0), 1.0));
 	float front = progress + ragged;
 	float band = smoothstep(front - width, front, r) * (1.0 - smoothstep(front, front + edge, r));
 	float fade = 1.0 - progress;
 	ALBEDO = tint.rgb * glow;
-	ALPHA = band * fade * fade * alpha;
+	ALPHA = band * mix(1.0, fade * fade, self_fade) * alpha;
 }

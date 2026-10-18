@@ -6,10 +6,15 @@ extends Node3D
 ## freezing the first time.
 
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
-## The soft ring (tail slam): seconds alive, seconds to grow, and its shader look.
-const SOFT_SECONDS := 0.8
-const SOFT_GROW := 0.25
-const SOFT_RING := {"width": 0.4, "edge": 0.12, "glow": 0.9}
+## The soft ring (tail slam, lead review PR #54 r3): seconds alive, seconds to fade in, to grow
+## (eased out) and to fade out; where its front starts and ends (fractions of the radius); its look:
+## a thin, smooth, dim ring that the script fades (not a filled, spiky disc).
+const SOFT_SECONDS := 0.75
+const SOFT_IN := 0.08
+const SOFT_GROW := 0.3
+const SOFT_OUT := 0.38
+const SOFT_FRONT := Vector2(0.08, 0.8)
+const SOFT_RING := {"width": 0.09, "edge": 0.07, "glow": 0.9, "rag": 0.0, "self_fade": 0.0}
 const SMOKE := preload("res://scenes/smoke.gdshader")
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
@@ -126,8 +131,8 @@ func sparks(at: Vector3) -> void:
 
 
 ## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own. A soft
-## ring (the tail slam, lead review PR #54) starts small and grows over SOFT_GROW, fades in and out
-## over SOFT_SECONDS, and is wide, soft-edged and dimmer instead of a hard white pop.
+## ring (the tail slam, lead review PR #54) starts small at the hit and grows over SOFT_GROW, fades
+## in and out, and is thin, smooth-edged and dimmer instead of a hard white pop.
 func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), soft := false) -> void:
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
@@ -152,14 +157,15 @@ func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), soft
 	tween.tween_callback(quad.queue_free)
 
 
-## A soft ring at time fraction v: the front eases out to 0.6 of the radius over SOFT_GROW, then
-## creeps on; it fades in over the first frames and out over the last 0.4 s.
+## A soft ring at time fraction v: small at the hit, its front eases out over SOFT_GROW and then
+## creeps; it fades in over SOFT_IN and out over the last SOFT_OUT.
 func _soft_ring(mat: ShaderMaterial, v: float) -> void:
 	var t := v * SOFT_SECONDS
 	var grow := 1.0 - pow(1.0 - minf(1.0, t / SOFT_GROW), 3.0)
-	mat.set_shader_parameter("progress", 0.6 * grow + 0.4 * v)
-	var fade_in := minf(1.0, t / 0.07)
-	mat.set_shader_parameter("alpha", fade_in * minf(1.0, (SOFT_SECONDS - t) / 0.4))
+	var front := lerpf(SOFT_FRONT.x, SOFT_FRONT.y, 0.85 * grow + 0.15 * v)
+	mat.set_shader_parameter("progress", front)
+	var fade := minf(1.0, t / SOFT_IN) * minf(1.0, (SOFT_SECONDS - t) / SOFT_OUT)
+	mat.set_shader_parameter("alpha", smoothstep(0.0, 1.0, fade))
 
 
 func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:

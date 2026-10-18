@@ -106,7 +106,7 @@ KNOWN = {
         belly=12.0, stride=44.0, cycle=36.0, bounce=1.8, tail_strides=3.5, tail_sway=0.4,
         # Seen from the game camera its feet hid under the belly (lead review, PR #54): a toddler's
         # sprawl, feet 10 m wider, and a high stomping lift.
-        splay=10.0, lift=0.18),
+        splay=10.0, lift=0.18, turn_cycle=24.0),
     # The adolescent (stage 2, Tripo 109910f0, imported turned 90 deg to face -Y): lanky, long legs,
     # arms hanging forward, the tail held level at hip height. A long, gangly stride.
     "CA": dict(
@@ -123,7 +123,10 @@ KNOWN = {
         tail_lift=0.0, tail_roar_lift=2.5, tail_breathe=0.3,
         belly=15.0, stride=56.0, cycle=48.0, bounce=1.2,
         # Its feet track under the body: set them out past the belly and lift them clear (PR #54).
-        splay=12.0, lift=0.15),
+        splay=12.0, lift=0.15, turn_cycle=26.0,
+        # Its tail is held level at hip height: the slam needs more bend to reach the street; the
+        # roar closes by f62 (it ends the demo); a heavier drop on each plant.
+        slam_gain=6.5, roar_rest_from=48, roar_rest_to=62, land=2.0),
 }
 TAIL_BONES = 10
 
@@ -634,6 +637,9 @@ D = L.get("stride", 140.0 / 3)
 T = L.get("cycle", 48.0)
 DUTY = 0.62
 V_WALK = D / T
+# Frames per stepping cycle in the standing turn: quick short steps, 5-6 in the 3 s turn (lead
+# review PR #54: a slow walk-cadence swing read as a foot creeping across the street).
+TURN_T = L.get("turn_cycle", T)
 # A model may set its feet wider than its rest leg ("splay", metres out from the body: a sprawl that
 # steps outside the belly seen from the game's high camera) and lift them higher ("lift", x hip height).
 SPLAY = V((L.get("splay", 0.0), 0, 0))
@@ -667,12 +673,13 @@ def foot_world(clip, side, f, P):
     rest = BALL[side]
     if clip in ("roar", "idle"):
         return rest, 0.0, 0.0, True
-    c = f / T - PHASE[side]
+    Tc = TURN_T if clip == "turn" else T
+    c = f / Tc - PHASE[side]
     k = math.floor(c)
     u = c - k
 
     def plant(kk):
-        tm = int(round((kk + DUTY / 2 + PHASE[side]) * T))
+        tm = int(round((kk + DUTY / 2 + PHASE[side]) * Tc))
         tm = max(min(tm, FRAMES + 80), -80)
         p, yaw = P[tm]
         return p + Quaternion((0, 0, 1), math.radians(yaw)) @ rest, yaw
@@ -705,8 +712,9 @@ TAIL_TRAIL = 12.0  # roar: how far the outer tail curls up as the slam starts (p
 TAIL_SLAM_DELAY = 0.8  # frames the lift and the slam take per joint (the tip lands after the mid-tail)
 TAIL_SPRING = (14.0, 0.36)  # the tail's natural frequency (rad/s) and damping ratio
 _WHIP = {}
-# The roar's recovery (frames): about a second after the slam it returns to standing.
-ROAR_REST = (71, 99)
+# The roar's recovery (frames): about a second after the slam it returns to standing; a model may
+# close sooner ("roar_rest_from/_to": the adolescent's roar ends the demo, so it does not hold the gape).
+ROAR_REST = (L.get("roar_rest_from", 71), L.get("roar_rest_to", 99))
 
 
 def tail_drag(clip, P):
@@ -738,7 +746,8 @@ def pose_frame(clip, f, P):
     rig.location = root
     rig.rotation_mode = "XYZ"
     rig.rotation_euler = (0, 0, math.radians(yaw))
-    ph = 2 * math.pi * f / T
+    Tc = TURN_T if clip == "turn" else T  # the body bobs with the steps it is taking
+    ph = 2 * math.pi * f / Tc
     walking = clip in ("walk", "turn")
     def ramp(a, b, x):
         t = min(1.0, max(0.0, (x - a) / (b - a)))
@@ -764,7 +773,7 @@ def pose_frame(clip, f, P):
     breathe = math.sin(f * 2 * math.pi / 72) * (roar + idle)
     # One slow pulse at the peak (f55-73, about 0.7 Hz): the jaw snaps wider and the chest pushes, then
     # settles, so the peak is a second bellow rather than a statue.
-    pulse = (math.sin(math.pi * (f - 55) / 18.0) ** 2 if 55 <= f <= 73 else 0.0) * roar
+    pulse = (math.sin(math.pi * (f - 55) / 18.0) ** 2 if 55 <= f <= 73 else 0.0) * roar * (1 - ramp(*ROAR_REST, f))
     # A slow look across the street through the drift (head and tail), gone by the recovery.
     look = math.sin(math.pi * min(1.0, max(0.0, (f - 46) / 50.0))) * math.sin(2 * math.pi * (f - 46) / 50.0) * roar
     # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
@@ -773,10 +782,10 @@ def pose_frame(clip, f, P):
     # Weight lands on each contact: a short dip in the frames after a foot plants.
     land = 0.0
     for phs in PHASE.values():
-        d = ((f / T - phs) % 1.0) * T  # frames since this foot's contact
+        d = ((f / Tc - phs) % 1.0) * Tc  # frames since this foot's contact
         land += math.sin(math.pi * d / 10.0) ** 2 if d < 10.0 else 0.0  # sin^2: no velocity step
     bounce = L.get("bounce", 1.0)  # how high the body bobs on each step (a cub bounces)
-    bob = (-0.016 * bounce * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
+    bob = (-0.016 * bounce * hip_h * math.cos(2 * ph) * gait - 0.012 * L.get("land", 1.0) * hip_h * land * gait
            - 0.18 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe + 0.015 * hip_h * pulse)
     sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
@@ -850,7 +859,8 @@ def pose_frame(clip, f, P):
                                     + L.get("tail_roar_lift", 2.5) * rear * (i < 2) - 0.3 * rear * (i >= 2)
                                     + 2.0 * windup * (i < 4) + L.get("tail_breathe", 0.4) * breathe
                                     + L.get("tail_lift", 0.0) * (i == 0)
-                                    + (TAIL_LIFT[0] + TAIL_LIFT[1] * k) * lift + TAIL_TRAIL * k * trail - (0.2 + 1.6 * k) * (slam - 4.0 * TAIL_SLAM[1] * rebound)))
+                                    + (TAIL_LIFT[0] + TAIL_LIFT[1] * k) * lift + TAIL_TRAIL * k * trail
+                                    - L.get("slam_gain", 1.0) * (0.2 + 1.6 * k) * (slam - 4.0 * TAIL_SLAM[1] * rebound)))
     # Feet: world-fixed while planted (converted into the moving rig's space).
     # The rig's matrix for this frame (rig.matrix_world still holds the last evaluated frame).
     inv = (Matrix.Translation(root) @ Matrix.Rotation(math.radians(yaw), 4, "Z")).inverted()

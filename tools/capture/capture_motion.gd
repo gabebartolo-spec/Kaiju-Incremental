@@ -179,8 +179,8 @@ func _run() -> void:
 		total_usec += spent
 		_label.text = _event_at(t)
 		_dip = move_toward(_dip, 0.0, dt * Rampage.DIP_RECOVER * _dip + dt * 0.05)
-		# Cameras follow the body as drawn (KaijuModel.focus), eased as in the rampage.
-		_focus = _focus.lerp(kaiju.focus(), minf(1.0, dt * Rampage.FOCUS_FOLLOW))
+		# Cameras lock to the body as drawn (KaijuModel.focus), from the first frame (PR #54).
+		_focus = kaiju.focus()
 		_place(
 			cam,
 			_focus if _cam in ["game", "side"] else at,
