@@ -1,5 +1,9 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (baseline pacing on the #50 head; waiting for PR #50 to merge)
+## State: running a check (replay of 28 baseline states x 5 candidates -> scratchpad replay1.txt; #50 still open)
+
+## Baseline (post-#50 sim, 96d804d snapshot, reptilian pacing)
+evolve1 0.59 h, tree 4.52 h; young ended 7/22 time/defeated. Total damage/run (tank+heli+roof):
+young 179.8, Behemoth 197.5, Colossus 472.6, Apex 770.1 (pacing_base.txt, dump_base.json).
 
 ## Who
 Session "Rooftop density" started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
