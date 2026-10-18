@@ -1,8 +1,8 @@
 # UI handoff, 2026-10-18
-## State: awaiting lead (#51 head 50a9061; capture sent for a fresh screen-critic; lead merges after #50 and #56, then pings me to resync)
-Capture: docs/captures/2026-10-18-plain-stats/ (CI run 39097041004, gl_compatibility at 1440p: the lead's rule, because
-lavapipe hangs in forward_plus). Open nits for the critic: the stat lines sit before the evolution note; the panel has empty space
-below "Press to buy".
+## State: awaiting lead (#51 head c851316; critic round 1 fixed and re-captured locally; lead merges after #50, pings me to resync)
+Critic round 1 is fixed: stats come under the words with a half-line gap, arrows in one column (NOW_WIDTH), the buy block pinned to the
+bottom (flow check), "Press Enter / pad A to buy". Re-capture: docs/captures/2026-10-18-plain-stats/local4k/ and tree_panel_4k_2x.png.
+Floors: flow 137 (base 134 + 3).
 Branch claude/plain-stats (worktree ../Kaiju-Incremental-wt/plain-stats, off look-options 2d66383).
 D-077: the tree's side panel shows the cost plus only the stats the selected node changes, each one written in plain words
 from data/tuning.json "stat_text" (line, fmt, unit; "size" is hidden). The 12-number summary panel is gone.
