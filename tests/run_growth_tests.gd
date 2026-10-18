@@ -162,6 +162,13 @@ func _check_defences() -> void:
 		)
 	check(air_ok, "helicopters arrive from the Behemoth on, more each stage")
 	check(harder, "each stage's tanks are tougher and come faster")
+	var jets: Array[int] = []
+	for tier: int in range(1, 5):
+		jets.append(Num.i(_tuning(tier)["jets"]["max"]))
+	check(
+		jets[0] == 0 and jets[1] == 0 and jets[2] > 0 and jets[3] > jets[2],
+		"jets arrive from the Colossus on (director, D-072), more at Apex: %s" % [jets]
+	)
 	check(
 		Num.i(Content.section("air")["max"]) > 0,
 		"the base tuning keeps its helicopters (the stages override, never edit it)"

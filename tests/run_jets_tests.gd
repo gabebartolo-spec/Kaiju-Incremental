@@ -20,12 +20,21 @@ func run_checks() -> void:
 	_check_dodge()
 	_check_next_pass()
 	_check_hit_back()
+	_check_collateral()
+	_check_grab()
+	_check_height()
 
 
 ## A sim whose jets are on (`max`), its city hurt enough to call them in when `hurt` (the
 ## call-in mark lowered to the chunks already down: the test city is too small to reach it).
-func _jet_sim(hurt: bool, max_jets: int = 1) -> RampageSim:
-	var sim := _sim("reptilian", {}, [], AT)
+func _jet_sim(
+	hurt: bool,
+	max_jets: int = 1,
+	layout: Array[Dictionary] = [],
+	species: String = "reptilian",
+	levels: Dictionary = {}
+) -> RampageSim:
+	var sim := _sim(species, levels, layout, AT)
 	sim.strike.cfg = sim.strike.cfg.duplicate(true)
 	sim.strike.cfg["max"] = max_jets
 	if hurt:
@@ -154,4 +163,64 @@ func _check_hit_back() -> void:
 	check(
 		kept and sim.strike.jets.is_empty() and sim.strike.destroyed == 1 and sim.rubble > rubble,
 		"only attacks that reach the air down a jet, for rubble"
+	)
+
+
+## Collateral (director, D-072): rounds chew the roofs on their line, which fall like any other
+## chunks but pay the player no biomass. The same rampage with and without the pass.
+func _check_collateral() -> void:
+	var standing: Array[int] = []
+	var rubble: Array[float] = []
+	for pass_on: bool in [false, true]:
+		var sim := _jet_sim(true, 1, [_b(4.5, 0, Vector3i(3, 3, 3))])
+		sim.strike.cfg["yaw_jitter"] = 0.0  # the line along the street, through the building
+		if pass_on:
+			sim.strike.spawn()
+		else:
+			sim.strike.cfg["max"] = 0
+		_run(sim, 6.0, Vector2.ZERO)
+		standing.append(_alive(sim, 0))
+		rubble.append(sim.rubble)
+	check(
+		standing[1] < standing[0] and is_equal_approx(rubble[1], rubble[0]),
+		(
+			"its rounds wreck roofs on the line (%d vs %d chunks), paying no biomass (%.2f vs %.2f)"
+			% [standing[1], standing[0], rubble[1], rubble[0]]
+		)
+	)
+
+
+## The cephalopod (Grab and Throw) seizes a jet passing over and hurls it.
+func _check_grab() -> void:
+	var sim := _jet_sim(true, 1, [], "cephalopod", {"c_grab": 1})
+	var jet := sim.strike.spawn()
+	jet.s = Num.f(sim.strike.cfg["approach"]) - 1.0  # overhead now, before any car is taken
+	var grabbed := false
+	for i: int in roundi(2.0 / DT):  # before the next jet is called in
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "grab" and str(event["kind"]) == "jet":
+				grabbed = true
+	check(
+		grabbed and sim.strike.jets.is_empty() and sim.strike.destroyed == 1,
+		"a cephalopod plucks a jet out of the sky as it passes over"
+	)
+
+
+## A jet flies `clearance` over the kaiju's head, so it never flies through a grown body.
+func _check_height() -> void:
+	var young := _jet_sim(true)
+	var colossus := _jet_sim(true, 1, [], "reptilian", {"evolve1": 1, "evolve2": 1})
+	var gaps: Array[float] = []
+	for sim: RampageSim in [young, colossus]:
+		gaps.append(sim.strike.altitude() - sim.reach_height())
+	check(
+		(
+			gaps[0] > 0.0
+			and is_equal_approx(gaps[0], gaps[1])
+			and colossus.strike.altitude() > young.strike.altitude()
+		),
+		(
+			"a jet flies over the kaiju's head (%.1f young, %.1f Colossus)"
+			% [young.strike.altitude(), colossus.strike.altitude()]
+		)
 	)

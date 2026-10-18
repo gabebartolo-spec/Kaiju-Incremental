@@ -4,8 +4,9 @@ extends SceneTree
 ## enough of the city is down the helicopters arrive. Stills along the way; pair with
 ## --write-movie (ci_capture.sh --movie) for the clip. With --air the helicopters are called in
 ## at once and the kaiju stands for 20 s: helicopters circling a baby kaiju that must stay in
-## view. With --jets (D-072) a Behemoth stands while a jet makes its strafing pass through it:
-## the warning line, the rounds, the jet flying on out; a still every half second.
+## view. With --jets (D-072) a Colossus stands in its own city (jets come from the Colossus on)
+## while a jet makes its strafing pass through it: the warning line, the rounds chewing roofs,
+## the jet flying on out; a still every half second.
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
@@ -26,7 +27,7 @@ const LEVELS := {
 	"reptilian": {"claws": 1},
 	"cephalopod": {"claws": 1, "c_grab": 3},
 }
-const BEHEMOTH := {"claws": 1, "evolve1": 1}
+const COLOSSUS := {"claws": 1, "evolve1": 1, "evolve2": 1}
 
 var _out := "user://tanks"
 var _species := "reptilian"
@@ -53,13 +54,14 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var species := Content.species_def(_species)
-	var levels: Dictionary = BEHEMOTH if _jets else LEVELS[_species]
+	var levels: Dictionary = COLOSSUS if _jets else LEVELS[_species]
 	var tree := UpgradeTree.new(Content.upgrades(), levels, _species)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
+	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	if _jets:
+		layout = CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
+	rampage.setup(species, stats, layout, 1)
 	rampage.scripted = _input
 	root.add_child(rampage)
 	await physics_frame
@@ -68,9 +70,8 @@ func _run() -> void:
 		rampage.sim.chunks_destroyed = (
 			Num.i(air["after_chunks"]) + 2 * Num.i(air["max_per_chunks"])
 		)
-	if _jets:  # jets are off in every stage until the director picks one (D-072): turn one on
+	if _jets:  # called in at once (the stage's own call-in mark needs a long rampage)
 		var jets := rampage.sim.strike.cfg.duplicate()
-		jets["max"] = 1
 		jets["after_chunks"] = 0
 		jets["first_delay"] = JETS_FIRST
 		rampage.sim.strike = StrikeWing.new(rampage.sim, {"jets": jets}, Seeds.make("jets_capture"))

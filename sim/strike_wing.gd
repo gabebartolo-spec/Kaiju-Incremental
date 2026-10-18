@@ -4,9 +4,11 @@ extends RefCounted
 ## across the arena, strafing a line through where the kaiju stood when it was called in, then
 ## flies on and out; another follows after `interval`. Passes run across the game camera's view
 ## (at right angles to `camera_bearing`, give or take `yaw_jitter`), so a pass is seen edge to
-## edge and never flies at the lens. `warn_seconds` before the first round lands the sim says
-## so (jet_inbound): a kaiju that steps off the line takes nothing. Only an attack that reaches
-## the air hits a jet, and only near it. Unlike the helicopters (AirWing) a jet never circles.
+## edge and never flies at the lens; it flies `clearance` over the kaiju's head. `warn_seconds`
+## before the first round lands the sim says so (jet_inbound): a kaiju that steps off the line
+## takes nothing. Rounds also chew the roofs they land on: collateral that falls like any other
+## but pays the player no biomass (director, D-072). Only an attack that reaches the air (or a
+## cephalopod's grab) downs a jet. Unlike the helicopters (AirWing) a jet never circles.
 ## Part of RampageSim. Pure and seeded.
 
 
@@ -40,8 +42,9 @@ func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) ->
 	_spawn_timer = Num.f(cfg["first_delay"])
 
 
+## Its flying height: `clearance` over the kaiju's head, so it never flies through a grown body.
 func altitude() -> float:
-	return Num.f(cfg["altitude"])
+	return Num.f(cfg["clearance"]) + sim.reach_height()
 
 
 ## How many may be in the air at once: more the more of the city has fallen.
@@ -125,7 +128,32 @@ func _strafe(jet: Jet) -> void:
 		if hit:
 			var hurt := Num.f(cfg["damage"]) - sim.stat("armor")
 			sim.hp -= maxf(Num.f(sim.army["min_damage"]), hurt)
+		_wreck(at)
 		sim.events.append({"type": "jet_strafe", "jet": jet.id, "at": at, "hit": hit})
+
+
+## Collateral: a round chews the roof it lands on, the top standing chunk of each column within
+## `round_radius`; those chunks fall like any other, but the biomass they would pay is taken back.
+func _wreck(at: Vector2) -> void:
+	var radius := Num.f(cfg["round_radius"])
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		var reach := Vector2(b.w, b.d).length() * 0.5 + radius
+		if b.frame.alive_count == 0 or Vector2(b.x, b.z).distance_to(at) > reach:
+			continue
+		var cells: Array[Vector3i] = []
+		for x: int in b.w:
+			for z: int in b.d:
+				var p := b.chunk_world(Vector3i(x, 0, z))
+				if Vector2(p.x, p.z).distance_to(at) <= radius:
+					for y: int in range(b.height - 1, -1, -1):
+						if b.frame.alive(Vector3i(x, y, z)):
+							cells.append(Vector3i(x, y, z))
+							break
+		if not cells.is_empty():
+			var kept := sim.rubble
+			sim.damage_chunks(i, cells, Num.f(cfg["round_damage"]))
+			sim.rubble = kept
 
 
 ## The direction from the kaiju toward the game camera, on the ground plane.
@@ -133,14 +161,19 @@ func _toward_camera() -> Vector2:
 	return Vector2.from_angle(deg_to_rad(Num.f(cfg["camera_bearing"])))
 
 
-## An attack's force reaches jets only when reaches_air (else they fly too high).
+## An attack's force reaches jets only when reaches_air (else they fly too high and fast).
 func hit(force: Callable, damage: float, reaches_air: bool) -> void:
 	if not reaches_air or jets.is_empty():
 		return
+	for jet: Jet in jets:
+		jet.hp -= damage * Num.f(force.call(jet.pos, Num.f(cfg["jet_radius"])))
+	clear_dead()
+
+
+## Downed jets (hp 0: shot, or seized by a tentacle) pay rubble and leave the sky.
+func clear_dead() -> void:
 	var alive: Array[Jet] = []
 	for jet: Jet in jets:
-		var k: float = force.call(jet.pos, Num.f(cfg["jet_radius"]))
-		jet.hp -= damage * k
 		if jet.hp > 0.0:
 			alive.append(jet)
 			continue

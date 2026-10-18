@@ -106,11 +106,14 @@ func _units_within(reach: float) -> Array[Vector2]:
 	for heli: AirWing.Heli in sim.air.helis:
 		if heli.pos.distance_to(sim.kaiju_pos) <= reach:
 			out.append(heli.pos)
+	for jet: StrikeWing.Jet in sim.strike.jets:
+		if jet.pos.distance_to(sim.kaiju_pos) <= reach:
+			out.append(jet.pos)
 	return out
 
 
-## A tentacle seizes the nearest tank or helicopter and hurls it where the kaiju faces; with
-## none in reach for a while it settles for a car off the street.
+## A tentacle seizes the nearest tank, helicopter or jet (one passing over) and hurls it where
+## the kaiju faces; with none in reach for a while it settles for a car off the street.
 func _grab(dt: float) -> void:
 	_grab_cd -= dt
 	if sim.stat("throw_damage") <= 0.0 or _grab_cd > 0.0:
@@ -124,6 +127,7 @@ func _grab(dt: float) -> void:
 	var best := reach
 	var best_tank: RampageSim.Tank = null
 	var best_heli: AirWing.Heli = null
+	var best_jet: StrikeWing.Jet = null
 	for tank: RampageSim.Tank in sim.tanks:
 		var d := tank.pos.distance_to(sim.kaiju_pos)
 		if d <= best:
@@ -135,7 +139,17 @@ func _grab(dt: float) -> void:
 			best = d
 			best_heli = heli
 			best_tank = null
-	if best_heli != null:
+	for jet: StrikeWing.Jet in sim.strike.jets:
+		var d := jet.pos.distance_to(sim.kaiju_pos)
+		if d <= best:
+			best = d
+			best_jet = jet
+	if best_jet != null:
+		kind = "jet"
+		from = best_jet.pos
+		best_jet.hp = 0.0
+		sim.strike.clear_dead()
+	elif best_heli != null:
 		kind = "heli"
 		from = best_heli.pos
 		best_heli.hp = 0.0

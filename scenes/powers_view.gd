@@ -196,6 +196,8 @@ func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:
 			node = TankModel.new()
 		"heli":
 			node = HelicopterModel.new()
+		"jet":
+			node = JetModel.new(str(sim.strike.cfg["kind"]))
 		_:
 			node = _box(Vector3(1.0, 0.7, 2.0), CAR, false)
 	add_child(node)
