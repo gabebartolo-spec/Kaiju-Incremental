@@ -12,7 +12,11 @@ NEXT BOARD: D-085 (director, told rooftops directly): "shooters aren't firing in
 resistance" -> #63 51a2d5d interval_jitter 0.5 + rifle lag 2-14 f. D-086 (lead): #36 option A, Behemoth per_level army
 0.02->0.03 (young override cut Behemoth defeats 22%->8%); non-blocking, follow-up PR if not settled. GPU order now:
 rooftops -> greenery -> stadium -> croc -> #50. D-087 (director 19:xx): evolve1 at ~15 min ("no ones going to play
-41 minutes of a demo if theyre still a baby"); #36 does it via evolve1 cost, keep D-074b feel; last gate before build.
+41 minutes of a demo if theyre still a baby"); #36 does it via evolve1 cost, keep D-074b feel; last gate before build. #36 pick: evolve1 cost 1778->400 (0.26 h,
+8/14 young def, Behemoth 26%), no young override, no option A; growth test ratio /10->/20 (cite D-087); GO given; 130-run
+confirm after #54+#63. #63 clip r1 FAIL: one squad fires (all sparks at 912,441), no rifle audio, metronome cadence ->
+fix list sent. #55 r10 FAIL -> topple out (D-084); method change: crush in place (debris path + stump + puff), ONE round,
+else #55 after demo. #65 release smoke MERGED 7c3a9b6 (title->DEMO COMPLETE, 10/10); dry-run session stands by.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
