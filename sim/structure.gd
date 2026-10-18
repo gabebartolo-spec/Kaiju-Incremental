@@ -89,22 +89,14 @@ func settle() -> Array[Dictionary]:
 			for c: Vector3i in fallen:
 				remove(c)
 			out.append(part)
-	var grounded := {}
-	var frontier: Array[Vector3i] = []
-	for x: int in w:
-		for z: int in d:
-			var c := Vector3i(x, 0, z)
-			if alive(c):
-				grounded[c] = true
-				frontier.append(c)
-	_flood(frontier, grounded)
+	var grounded := _grounded()
 	var loose := {}
 	for y: int in h:
 		for x: int in w:
 			for z: int in d:
-				var c := Vector3i(x, y, z)
-				if alive(c) and not grounded.has(c) and not loose.has(c):
-					var part := _component(c, loose)
+				var i := x + z * w + y * w * d
+				if _hp[i] > 0.0 and grounded[i] == 0 and not loose.has(Vector3i(x, y, z)):
+					var part := _component(Vector3i(x, y, z), loose)
 					out.append(
 						{"cells": part, "kind": "drop", "pivot": Vector3.ZERO, "dir": Vector2i.ZERO}
 					)
@@ -119,6 +111,44 @@ func settle() -> Array[Dictionary]:
 			remove(c)
 		out.append(tipping)
 	return out
+
+
+## Every standing chunk joined to the ground floor (1 per chunk index), flooded over the raw
+## strengths: a Dictionary of Vector3i and an alive() call per step cost the stadium ~10 ms a
+## settle (lead, 2026-10-19).
+func _grounded() -> PackedByteArray:
+	var plan := w * d
+	var seen := PackedByteArray()
+	seen.resize(plan * h)
+	var frontier := PackedInt32Array()
+	for i: int in plan:
+		if _hp[i] > 0.0:
+			seen[i] = 1
+			frontier.append(i)
+	while not frontier.is_empty():
+		var i := frontier[frontier.size() - 1]
+		frontier.resize(frontier.size() - 1)
+		var x := i % w
+		var z := (i / w) % d
+		var y := i / plan
+		var next: Array[int] = [
+			i - 1 if x > 0 else -1,
+			i + 1 if x < w - 1 else -1,
+			i - w if z > 0 else -1,
+			i + w if z < d - 1 else -1,
+			i - plan if y > 0 else -1,
+			i + plan if y < h - 1 else -1,
+		]
+		for n: int in next:
+			if n >= 0 and seen[n] == 0 and _hp[n] > 0.0:
+				seen[n] = 1
+				frontier.append(n)
+	return seen
+
+
+## The raw chunk strengths, by index() (Arcs counts over them without a call per chunk).
+func standing() -> PackedFloat32Array:
+	return _hp
 
 
 func _flood(frontier: Array[Vector3i], seen: Dictionary) -> void:
