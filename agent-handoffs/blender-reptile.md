@@ -1,7 +1,7 @@
 # blender-reptile handoff, 2026-10-18 13:00
 ## State: running a check (bsbmaeg9k: full pacing at 0.6/1.15 -> /tmp/pacing_final.txt, then all
-## suites -> /tmp/suites_d074b.txt; the first full run hit a 900 s timeout). Capture chain bagkdqt14
-## queued behind shell-hit-hp + military-ai. P3 = TOP PRIORITY (last thing the demo build waits on).
+## suites -> /tmp/suites_d074b.txt). Capture chain bvyon7hgp (720p default) waits for military-ai's
+## re-shoot to complete (lead order: shell-hit -> military-ai -> me). P3 = TOP PRIORITY; PR may open before clips.
 ## Director chose 0.6 / hp_mult 1.15 (D-074b: "~0.6 h unreachable at 0.6 speed; accepts ~0.71 h").
 ## Young sweep (--runs=60): 0.71 h, 15/33 defeated (45%), 87% city. Growth floor set to 26 (uncommitted).
 ## PR lands BEFORE #36 (army scales). PR body draft scratchpad ev/pr_p3.md: fill table, JAWS, CLIPS.
