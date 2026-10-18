@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (replay2: edge-reach candidates -> scratchpad replay2.txt; #50 still open)
+## State: running a check (replay3: dense candidates, tiers 1-2 -> scratchpad replay3.txt; #50 still open)
 
 ## Who
 Session "Rooftop density" started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -24,6 +24,14 @@ run, Colossus/Apex 0%.
 Rifle reach was measured from the kaiju's centre (tanks: range + stomp_radius). Squads die to the
 grown kaiju's own reach (Behemoth 7-18 u, Colossus 22-43 u) before they get a shot. fire_interval
 1.0 alone: Behemoth 5.6 -> 5.7 volleys/run. Doubling squads alone: 15/run (0.2/s).
+
+## Replay2 (edge reach, 28 states)
+Shipped tuning: roof dmg 7.0 / 16.4 / 15.4 / 4.4 (total +-1/-1/+1/+0... Behemoth 190.8 vs 183 old
+reach). Behemoth 30 squads, chance 0.9, interval 0.8: 0.95 volleys/s overall, 2.43/s while a
+squad is in range (39% of the run), roof dmg 102 -> total 276 (+40%): tanks would have to drop
+by ~60%. Squads are spread over the whole 146 u city; reach ~23 u covers ~8% of it.
+Likely a director trade-off: several volleys/s at same chip => rifles become ~1/3+ of Behemoth
+damage and tank shells must hit much softer. Put to LEAD with numbers once replay3 lands.
 
 ## Branch changes
 - committed 1348478: scenes/rooftop_view.gd draws squads nearest the kaiju first (_nearest_first).
