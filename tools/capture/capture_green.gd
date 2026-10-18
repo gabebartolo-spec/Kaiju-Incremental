@@ -195,6 +195,7 @@ func _trample_clip() -> void:
 		frames += 1
 		if log != null:
 			log.sample(decor, rampage._camera)
+			_print_puffs(decor)
 		if frames == still:
 			var shot := (
 				"trample_game_%.1fs%s.png" % [_still_at, "_untouched" if _no_trample else ""]
@@ -206,8 +207,53 @@ func _trample_clip() -> void:
 	print("trample: ", _park_count(decor, park))
 	if log != null:
 		print(log.report())
+		_print_leaf_flight(decor, rampage._camera, rampage._kaiju.global_position)
 	if _park_stills:
 		await _park_view(rampage, park, "trample_park_after")
+
+
+## With --log-props, each crushed-tree dust puff's alpha this frame (lead, #55 r14: the
+## printout that shows it peaks by frame 3 and is gone by frame 30).
+func _print_puffs(decor: CityDecor) -> void:
+	var alphas := PackedStringArray()
+	for node: Node in decor._fx.get_children():
+		var quad := node as MeshInstance3D
+		if quad != null and quad.mesh is QuadMesh:
+			var mat := quad.mesh.surface_get_material(0) as StandardMaterial3D
+			alphas.append("%.3f" % mat.albedo_color.a)
+	if not alphas.is_empty():
+		print("puff frame %d alpha %s" % [Engine.get_frames_drawn(), " ".join(alphas)])
+
+
+## With --log-props, how far crushed trees' leaves landed from their stumps (lead, #55 r14:
+## they landed 300+ px away; about 150 asked): metres on the ground, each leaf from its nearest
+## stump, and pixels at the game camera's scale where the walk ended.
+func _print_leaf_flight(decor: CityDecor, camera: Camera3D, at: Vector3) -> void:
+	var stumps: Array[Vector2] = []
+	for group: Dictionary in decor._props._groups:
+		if group.get("fells", false) and group.get("crushed", false):
+			var base: Vector3 = group["at"]
+			stumps.append(Vector2(base.x, base.z))
+	var metres: Array[float] = []
+	for body: RigidBody3D in decor._props.leaf_field._bodies:
+		var near := INF
+		for base: Vector2 in stumps:
+			near = minf(near, base.distance_to(Vector2(body.position.x, body.position.z)))
+		metres.append(near)
+	metres.sort()
+	if metres.is_empty():
+		return
+	var scale := camera.unproject_position(at).distance_to(
+		camera.unproject_position(at + Vector3.RIGHT)
+	)
+	var median := metres[floori(metres.size() * 0.5)]
+	var most := metres[floori(metres.size() * 0.9)]
+	print(
+		(
+			"leaf flight m: median %.1f, 90%% %.1f, max %.1f of %d; %.0f px/m: median %.0f px, 90%% %.0f px"
+			% [median, most, metres[-1], metres.size(), scale, median * scale, most * scale]
+		)
+	)
 
 
 ## How many of the park's props are down so far.

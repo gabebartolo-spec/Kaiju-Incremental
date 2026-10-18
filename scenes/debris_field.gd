@@ -8,6 +8,7 @@ const SPAWN_PER_FRAME := 30
 
 var size_scale := 1.0  # pieces are this many times the building's size (trees: bigger, to read)
 var lift := -1.0  # toward white before shading; below 0, the look's debris_lift
+var shadows := true  # whether the pieces cast shadows
 
 var _rng: RandomNumberGenerator
 var _queue: Array[Array] = []
@@ -58,6 +59,8 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 	mi.mesh = _mesh(size)
 	var whiten := lift if lift >= 0.0 else Look.value("debris_lift")
 	mi.material_override = _material(Color(color, 1.0).lightened(whiten))
+	if not shadows:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	body.position = pos
 	add_child(body)

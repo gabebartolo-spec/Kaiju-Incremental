@@ -16,7 +16,9 @@ var voxel: float
 var stump_color := Color(0.85, 0.77, 0.6)  # every crushed tree's stump: fresh-cut wood
 var leaf_color := Color(0.42, 0.82, 0.24)  # a crushed tree's leaf debris (saturated: dusk light)
 var bark_color := Color(0.55, 0.35, 0.17)  # and its bark debris
-var throw_speed := 1.5  # how hard debris leaves a crushed tree, out and up
+var throw_speed := 1.5  # how hard bark leaves a crushed tree, out and up
+var leaf_speed := 1.0  # and leaves (slower: they land near the stump, not across the street)
+var leaf_spread := 0.5  # how far each leaf's flight turns off the blow, at random
 var puff_size := 1.0  # the dust puffs over a crushed tree's stump (m)
 var puff_alpha := 0.3  # and how opaque each is at its peak
 ## Where crushed trees' debris flies, leaf and bark apart (bark bigger, to read); the owner adds
@@ -26,6 +28,7 @@ var bark_field := DebrisField.new(Seeds.make("tree_bark"), 60)
 var stumps: Array[Vector3] = []  # trees crushed since the owner last drained this (earth puffs)
 ## Debris to throw since the owner last drained this: [position, colour, away] each.
 var debris: Array[Array] = []
+var _rng := Seeds.make("tree_burst")  # where in its crown each leaf starts, and its spread
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
 var _mmi: MultiMeshInstance3D
@@ -139,12 +142,18 @@ func configure(city: Dictionary) -> void:
 	leaf_color = Color(str(city["tree_debris_leaf"]))
 	bark_color = Color(str(city["tree_debris_bark"]))
 	throw_speed = Num.f(city["tree_debris_speed"])
+	leaf_speed = Num.f(city["tree_leaf_speed"])
+	leaf_spread = Num.f(city["tree_leaf_spread"])
 	puff_size = Num.f(city["tree_puff_size"])
 	puff_alpha = Num.f(city["tree_puff_alpha"])
 	leaf_field.size_scale = Num.f(city["tree_debris_size"])
 	bark_field.size_scale = Num.f(city["tree_bark_size"])
 	leaf_field.lift = 0.0
 	bark_field.lift = 0.0
+	# A crushed tree's debris casts no shadow (lead, #55 r14: a grey smudge by the stump on the
+	# contact frame, where the whole burst still sits together).
+	leaf_field.shadows = false
+	bark_field.shadows = false
 
 
 ## Throws what crushed trees left since the last call (before the fields process this frame,
@@ -180,7 +189,8 @@ func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 ## A tree is crushed in place, all on this frame: the stump (its lowest STUMP cells) turns the
 ## stump colour, every cell above it is hidden, and one in LEAF_EVERY leaf cells and one in
 ## BARK_EVERY bark cells is thrown as leaf-green or bark-brown debris, away from the blow and
-## up. Nothing rotates or slides.
+## up. Leaves start anywhere inside the crown, centre included, each turned off the blow at
+## random (lead, #55 r14: from the crown's shell they flew as a ring). Nothing rotates or slides.
 func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var base: Vector3 = group["at"]
 	var ids: PackedInt32Array = group["ids"]
@@ -188,7 +198,9 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var origins: PackedVector3Array = group["origins"]
 	var keys: PackedStringArray = group["keys"]
 	var out := Vector3(base.x - at.x, 0, base.z - at.z).normalized()
-	var away := (out + Vector3.UP) * throw_speed
+	var crown := _crown(origins, keys)
+	var mid: Vector3 = crown[0]
+	var reach: float = crown[1]
 	# Bark comes out toward the game camera (south, +z), from under the falling leaves at once.
 	var flung := (out + Vector3.BACK * 1.5 + Vector3.UP) * throw_speed
 	var thrown := 0
@@ -205,8 +217,31 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 			if bark:  # scattered round the trunk, so the bark bursts instead of rising as a stack
 				var turn := float(k) * 2.39996  # golden angle: evenly spread, the same every run
 				from += Vector3(cos(turn), 0, sin(turn)) * voxel * 3.0
-			debris.append([from, bark_color if bark else leaf_color, flung if bark else away])
+				debris.append([from, bark_color, flung])
+			else:
+				var aim := _rng.randf() * TAU
+				var side := Vector3(cos(aim), 0, sin(aim))
+				var lean := Vector3(cos(aim + 1.0), _rng.randf_range(-0.5, 0.5), sin(aim + 1.0))
+				from = mid + lean * _rng.randf() * reach
+				var away := (out + Vector3.UP + side * _rng.randf() * leaf_spread) * leaf_speed
+				debris.append([from, leaf_color, away])
 			thrown += 1
 	group["stump_color"] = stump_color
 	group["debris"] = thrown
 	stumps.append(base)
+
+
+## A tree's crown: the middle of its leaf cells and how far the farthest lies from it.
+func _crown(origins: PackedVector3Array, keys: PackedStringArray) -> Array:
+	var sum := Vector3.ZERO
+	var count := 0
+	for k: int in keys.size():
+		if keys[k] != "bark":
+			sum += origins[k]
+			count += 1
+	var mid := sum / maxf(count, 1)
+	var reach := 0.0
+	for k: int in keys.size():
+		if keys[k] != "bark":
+			reach = maxf(reach, mid.distance_to(origins[k]))
+	return [mid, reach]

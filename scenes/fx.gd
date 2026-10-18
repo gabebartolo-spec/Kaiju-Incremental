@@ -18,6 +18,11 @@ const SLAM_PEAK := 0.18
 const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
 const TREE_PUFF := Color(0.7, 0.6, 0.46)  # dusty earth, unlit: it reads the same in any light
+## A crushed tree's dust (lead, #55 r14): at its peak by frame 3, held to frame 5, then fading
+## evenly to nothing by frame 29 (30 fps).
+const PUFF_RISE := 0.1
+const PUFF_HOLD := 0.07
+const PUFF_FADE := 0.8
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
 var steps_live: Array[GPUParticles3D] = []
@@ -115,7 +120,7 @@ func footfall(at: Vector3, size: float, capped := true) -> void:
 
 
 ## A soft dust puff over a crushed tree's stump: one round camera-facing sprite, its alpha
-## falling off smoothly from the middle, that comes up to `peak` within two frames, holds, and is
+## falling off smoothly from the middle, that comes up to `peak` in PUFF_RISE, holds, and is
 ## gone in under a second (lead, #55 r13: the footfall puffs vanish in the smoke shader's
 ## screen-centre clearing, right where the kaiju walks).
 func tree_puff(at: Vector3, size: float, peak: float) -> void:
@@ -129,12 +134,12 @@ func tree_puff(at: Vector3, size: float, peak: float) -> void:
 	quad.position = at + Vector3(0, size * 0.35, 0)
 	add_child(quad)
 	mat.albedo_color = Color(TREE_PUFF, 0.0)
-	var tween := quad.create_tween()
-	tween.tween_property(mat, "albedo_color:a", peak, 0.06)
-	tween.parallel().tween_property(quad, "scale", Vector3.ONE * 1.35, 0.9)
-	tween.tween_interval(0.25)
-	tween.tween_property(mat, "albedo_color:a", 0.0, 0.55)
-	tween.tween_callback(quad.queue_free)
+	var tween := quad.create_tween().set_parallel()
+	tween.tween_property(mat, "albedo_color:a", peak, PUFF_RISE)
+	tween.tween_property(quad, "scale", Vector3.ONE * 1.35, PUFF_RISE + PUFF_HOLD + PUFF_FADE)
+	var fade := tween.tween_property(mat, "albedo_color:a", 0.0, PUFF_FADE)
+	fade.set_delay(PUFF_RISE + PUFF_HOLD)
+	tween.chain().tween_callback(quad.queue_free)
 
 
 ## A small puff of dust: a person crushed underfoot.

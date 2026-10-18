@@ -1,12 +1,20 @@
-# City-calm handoff, 2026-10-18 22:30
-## State: awaiting lead (#55 r14 sent; #55 merges after the demo build per D-084)
+# City-calm handoff, 2026-10-19 01:00
+## State: working (#66 collapse-cap PR open; #55 r14 numeric tweaks in progress, local render next)
 
 ## Task
 Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
 - DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export, #37 no empty ground
   (D-062), D-065(b) green-lot table (lead), Landmarks city_gen review.
-- NOW: D-065(a) greenery + body trample, PR #55 into claude/look-options. Not in the demo build
-  (D-084, r11 failed); r12 waits for the lead's critic after the build ships, then merges.
+- PR #66 collapse-cap (worktree Kaiju-Incremental-wt/collapse-cap, demo path): FallMotion zero-dir
+  axis fallback + sfx.collapse_per_frame 4 cap. Flow floor 141 after merging look-options.
+  Remove the worktree when it merges. Sim root cause (Structure._topple_check rounds tiny
+  overhang to zero dir) reported to the lead, not changed.
+- NOW: D-065(a) greenery + body trample, PR #55. Lead r14: core passes, no more critic rounds;
+  numeric tweaks only, then the lead merges after the demo build on its own 2x check.
+  r14 tweaks: puff peak 0.30 by f3, hold to f5, linear fade to 0 by f29 (Fx PUFF_*); leaf
+  debris 60ae43 (-25% sat/val); leaves start anywhere inside the crown + random side spread
+  (tree_leaf_spread 0.6); leaf speed tree_leaf_speed 2.5 (~150 px flight); tree debris casts
+  no shadow (DebrisField.shadows). capture_green --log-props prints puff alpha per frame.
 - NEXT: D-075 = D-065(b) at 8% green lots, its own PR after #55 merges: city.green_lot_share
   0.08 in CityGen/CityLots (data); parks/gardens/playgrounds/plazas spread so no building is
   more than ~2 blocks from one; crushable; pacing table near evolve1 0.64 h / tree 4.88 h;
@@ -41,8 +49,8 @@ delete when allowed.
 - Older rounds r9-r13 failed. Sample the lossless avi: mp4v bleeds colour on small pieces.
 
 ## Next
-1. The lead critics r14 after the demo build ships; fix findings, re-render locally (no GPU
-   baton while the director is away: own override.cfg, removed after). Then merge, D-075.
+1. r15 local render (scratchpad local_green.sh, own override.cfg), strip_2x.py f0-f36 at the
+   stump, alpha printout; push, update #55 body, report to the lead. Then merge, D-075.
 2. Stomp shockwave tan crescents (rampage.gd:177) are not #55's; the lead excluded them.
 
 ## Rules learnt the hard way (under 10 lines)
