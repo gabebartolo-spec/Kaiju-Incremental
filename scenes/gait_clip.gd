@@ -26,10 +26,11 @@ const JAW_HOLD_SECONDS := 0.15
 ## of the frame (the scene's footfall path; presentation only, no damage).
 const ROAR_SLAM_FRAME := 44.0
 const TAIL_SLAM_STRENGTH := 5.0
-## A planted foot that ends this far from its clip spot (strides), or on a straight leg (fraction
-## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip.
+## A planted foot that ends this far from its clip spot (strides), or past a straight leg (fraction
+## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip. At 0.98
+## the adolescent's long legs, nearly straight at heel strike, re-stepped on every plant (PR #54).
 const RESTEP_GAP := 0.3
-const RESTEP_REACH := 0.98
+const RESTEP_REACH := 1.0
 const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
 ## The tail's mass on turns the clips don't carry (curves while walking, idle heading drift): a
