@@ -6,8 +6,7 @@ extends Node3D
 
 signal finished(result: Dictionary)
 
-## Footfall: dust size and a pale ground ring (per body scale), and how far the camera dips
-## (world units at full strength) and how fast it comes back (1/s).
+## Footfall: dust and a pale ground ring (per body scale), camera dip (units) and its return (1/s).
 const FOOTFALL_DUST := 1.1
 const FOOTFALL_RING := 1.4
 const FOOTFALL_TINT := Color(0.86, 0.83, 0.76, 0.7)
@@ -59,8 +58,7 @@ var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
 var _autoplay_target := Vector2(INF, INF)
-## Physics steps this rampage has run: autoplay paces itself on this, never the engine clock,
-## so a run plays the same whatever ran before it.
+## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 
 
@@ -88,6 +86,7 @@ func _ready() -> void:
 	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
 	add_child(ability_fx)
+	add_child(BreathAim.new(sim, Color(str(colors["eye"]))))  # where a ready breath will burn
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
@@ -237,8 +236,10 @@ func _ability_fx(event: Dictionary) -> void:
 				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
 			)
 			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
-			var span := _kaiju_at + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
-			ability_fx.cone_origin = _kaiju_at
+			var from: Vector2 = event["from"]  # the sim's cone (BreathCone) starts at the snout
+			var snout := _to_world(from)
+			var span := snout + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
+			ability_fx.cone_origin = snout
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)

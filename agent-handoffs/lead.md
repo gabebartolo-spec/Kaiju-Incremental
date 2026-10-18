@@ -8,6 +8,15 @@ Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the direct
 Messaging: one message per worker with everything; never ask the director to unblock. Send briefs ONE AT A TIME:
 a failed first send in a parallel batch cancels the rest.
 
+## River (9daef55, claude/river-start): far-bank park, emergence; lands AFTER the croc-contact D-091 PR (its 2 strict
+## checks need the tier gate gone). #50 r4 critic FIX (lead-confirmed: drawn hull ~35-40 deg off the N-S street at 9-10.5 s,
+## on police cars; hull swings at the post) -> r5 list sent: lane-locked hull, car keep-out, turret-only, standoff.
+## RESUMED (director): all sessions told (river notes, stadium shared-burst-mesh fix approved: hits 40-48 ms windowed,
+## fall_start makes new render resources per burst). Rifle-fire PR + breath snout fix queued at rooftops.
+## Sessions renamed: Gun audio + breath aim (1ac658ed), Stadium + frame probe (87d706ce), Load, smoke FX, builds
+## (37cf489b), River spawn + greenery (9af27a16), Biomass + army ramp (b38b3a6f), Tanks + helis #50 (5325ef73),
+## Croc contact + dash (1feb30ca), OLD lead (retired) (9fac90d2), this = Kaiju: LEAD.
+
 ## Where we are
 - Demo exe 1 (44f56fd, #75 stall fix in; smoke 10/10; pacing e1 0.26 h) given to the director at
   C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe. He paused the playtest:
@@ -31,6 +40,8 @@ a failed first send in a parallel batch cancels the rest.
   together with:
 11 "military response too high from the word go ... emerge from a river" -> greenery: the river + emergence, event
   "kaiju_emerged"; jets session: the army alert ramps over ~20-40 s from that event.
+MERGED: #79 D-090 stadium + wheel 1.5x (2nd Behemoth run 2.5x spike -> full-game retune, past the demo); #78 crowd
+killable + gradual flee (f0634ee).
 MERGED: #77 frame cap (ce6648c; 60/120 default/unlimited, menus <= 60) -> exe-2 smoke must capture the Settings screen.
 #50 split: tanks-only PR + helis to claude/heli-flight with a D (street canyons) vs B (camera pull-back) note -> director.
 Then: lead checks every PR at 2x (+ a fresh critic for visuals), merges, builds demo exe 2 (build.yml), the dry-run
@@ -54,7 +65,19 @@ session smokes it, and the director plays again.
   never caught a truncation; shards planned from real timings; a 3 s "every runner compiles" preflight. Kaiju has
   the same floors shape (expected_checks.txt conflicted on every merge tonight): propose it to the director post-demo.
 
+## MERGED: #83 breath from the SNOUT (BreathCone.of; Beh/Col defeats up -> full-game retune), #80 rifle crack/pop (5d1a892).
+## #85 army ramp DRAFT: young defeats 8->2; one joint young retune AFTER D-091 (croc-contact). Order: D-091 -> #85+retune -> river.
+## SFX PASS (D-092): 13 sounds x 4 takes generated (ElevenLabs Starter, prompt influence 60%, fixed lengths, Explore
+## sharing DISABLED at his yes), 532/40,000 credits. 31 takes in assets/source/sfx_elevenlabs/ (uncommitted; MP3 per his
+## download OK). Rifle prompts came back near-SILENT (gunshots blanked?): keep rifle.ogg. Shootout page (loudness-matched,
+## picks): https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ -> his picks -> ogg in assets/sfx + LICENSING_REGISTER line
+## (ElevenLabs Starter commercial licence) + docs/provenance/sfx.md -> PR.
 ## Decisions to log (next board PR)
+D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
+licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
+$12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
+D-091 (director): no building is 'too strong' for the baby; big ones just take longer, and he can tear out the base
+and topple them (replaces the tier gate + 'TOO STRONG'; evolve1 text changes). Owner: croc-contact-dash.
 D-089 (director): the demo exe waited for the #75 stall fix. D-090 (director): stadium rubble_bonus 4x -> 1.5x
 (replaces D-081). Lead calls: #50 helis A; playtest fix 9 option A (real south row).
 
