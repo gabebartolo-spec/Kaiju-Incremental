@@ -255,6 +255,7 @@
 		"growth_per_level": 0.02,
 		"leap_distance": 8.0,
 		"cone_half_angle_deg": 36.0,
+		"breath_snout_ahead": [10.4, 10.4, 10.3, 13.5],
 		"chunk_hp": 7.0,
 		"tough_mult": 0.35,
 		"chunk_rubble": 0.05,

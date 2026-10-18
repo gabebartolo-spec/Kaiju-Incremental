@@ -59,8 +59,7 @@ var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
 var _autoplay_target := Vector2(INF, INF)
-## Physics steps this rampage has run: autoplay paces itself on this, never the engine clock,
-## so a run plays the same whatever ran before it.
+## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 
 
@@ -238,8 +237,9 @@ func _ability_fx(event: Dictionary) -> void:
 				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
 			)
 			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
-			var span := _kaiju_at + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
-			ability_fx.cone_origin = _kaiju_at
+			var snout := _to_world(event["from"] as Vector2)  # the sim's cone starts at the snout
+			var span := snout + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
+			ability_fx.cone_origin = snout
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)

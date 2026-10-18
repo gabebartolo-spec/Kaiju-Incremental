@@ -33,7 +33,7 @@ static func track_scorch_glow(rampage: Rampage, glow: Dictionary) -> void:
 
 
 ## The breath's aim (director playtest): while the breath is ready, BreathAim draws the very cone
-## the sim burns (RampageSim.cone()). Call each frame; tally {"shown", "hidden", "worst"} (the
+## the sim burns (BreathCone.of()). Call each frame; tally {"shown", "hidden", "worst"} (the
 ## largest mismatch seen: origin and reach in units, direction and half angle in radians).
 static func track_aim(rampage: Rampage, tally: Dictionary) -> void:
 	var aim := rampage.find_child("BreathAim", false, false) as BreathAim
@@ -42,7 +42,7 @@ static func track_aim(rampage: Rampage, tally: Dictionary) -> void:
 		return
 	tally["shown"] = Num.i(tally.get("shown", 0)) + 1
 	var drawn := aim.drawn()
-	var sim := rampage.sim.cone()
+	var sim := BreathCone.of(rampage.sim)
 	var dir_a: Vector2 = drawn["dir"]
 	var dir_b: Vector2 = sim["dir"]
 	var at_a: Vector2 = drawn["origin"]

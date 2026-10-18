@@ -2,7 +2,7 @@ class_name BreathAim
 extends MeshInstance3D
 ## Atomic Breath's aim (director playtest: "doesnt feel aimed, its hard to know where its going
 ## to land"), presentation only: while the breath is ready, a faint wedge on the street shows the
-## very cone the sim burns when it fires (RampageSim.cone(): from the feet along the facing, out
+## very cone the sim burns when it fires (BreathCone.of(): from the snout along the facing, out
 ## to the ability's reach), outlined, with a line down its middle. It follows the kaiju's turns,
 ## so the player aims by facing; it hides while the breath cools down. Drawn over the city, so a
 ## building between the kaiju and the camera never hides where the breath will land.
@@ -44,7 +44,7 @@ func showing() -> bool:
 	return _sim.ability_type == "cone" and _sim.ability_ready_in <= 0.0 and not _sim.over
 
 
-## The cone as drawn (as RampageSim.cone(): origin, dir, reach, half_angle), for the flow suite.
+## The cone as drawn (as BreathCone.of(): origin, dir, reach, half_angle), for the flow suite.
 func drawn() -> Dictionary:
 	var forward := Vector2(basis.z.x, basis.z.z).normalized()
 	var at := Vector2(position.x, position.z)
@@ -56,7 +56,7 @@ func _physics_process(_delta: float) -> void:
 	visible = showing()
 	if not visible:
 		return
-	var aim := _sim.cone()
+	var aim := BreathCone.of(_sim)
 	var reach := Num.f(aim["reach"])
 	var half := Num.f(aim["half_angle"])
 	if not is_equal_approx(_built.x, reach) or not is_equal_approx(_built.y, half):
