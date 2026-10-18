@@ -227,6 +227,17 @@
 		"pitch_jitter": 0.06,
 		"stomp_tiers": [1.4, 1.8],
 		"default_volume": 0.9,
+		"regen_seconds": 2.5,
+		"crowd": {
+			"full_panic": 40.0,
+			"full_rate": 30.0,
+			"min_intensity": 0.03,
+			"quiet_db": -24.0,
+			"silent_db": -60.0,
+			"duck_db": 9.0,
+			"duck_seconds": 2.3,
+			"fade_db_per_s": 30.0
+		},
 		"dynamics": {
 			"threshold_db": -6.0,
 			"ratio": 2.0,
@@ -250,7 +261,11 @@
 			"ui_deny": -10.0,
 			"tank_fire": -8.0,
 			"shell_hit": -6.0,
+			"rifle": -12.0,
 			"heli_rotor": -12.0,
+			"heli_gun": -9.0,
+			"heli_crash": -3.0,
+			"crowd_panic": -6.0,
 			"footstep": -9.0,
 			"stomp_crack": -5.0,
 			"collapse": -3.0,
@@ -261,7 +276,7 @@
 			"lash": -3.0,
 			"ready": -8.0,
 			"deflect": -10.0,
-			"regen_loop": -14.0
+			"regen_loop": -20.0
 		}
 	},
 	"body": {"speed_mult": 1.0, "hp_mult": 1.0},

@@ -157,6 +157,15 @@ func civilians() -> int:
 	return n
 
 
+## How many civilians are running from the kaiju now (the crowd-panic sound follows it).
+func panicking() -> int:
+	var n := 0
+	for p: Person in people:
+		if p.fleeing and not p.cop:
+			n += 1
+	return n
+
+
 ## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat.
 func crush(at: Vector3, radius: float) -> void:
 	var centre := Vector2(at.x, at.z)

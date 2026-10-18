@@ -111,7 +111,7 @@ func _ready() -> void:
 	_camera.fov = 55.0
 	add_child(_camera)
 	_camera.current = true
-	sfx.watch(_camera, _powers.helis)
+	sfx.watch(_camera, _powers, _city.street)
 	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)

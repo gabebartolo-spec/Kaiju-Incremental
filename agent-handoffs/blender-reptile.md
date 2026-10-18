@@ -1,23 +1,12 @@
-# blender-reptile handoff, 2026-10-18 13:00
-## State: running a check (bsbmaeg9k: full pacing at 0.6/1.15 -> /tmp/pacing_final.txt, then all
-## suites -> /tmp/suites_d074b.txt). Capture chain bvyon7hgp (720p default) waits for military-ai's
-## re-shoot to complete (lead order: shell-hit -> military-ai -> me). P3 = TOP PRIORITY; PR may open before clips.
-## Director chose 0.6 / hp_mult 1.15 (D-074b: "~0.6 h unreachable at 0.6 speed; accepts ~0.71 h").
-## Young sweep (--runs=60): 0.71 h, 15/33 defeated (45%), 87% city. Growth floor set to 26 (uncommitted).
-## PR lands BEFORE #36 (army scales). PR body draft scratchpad ev/pr_p3.md: fill table, JAWS, CLIPS.
-## Director 10:5x: baby + adolescent APPROVED (D-073). Lead = "Kaiju: Lead" local_106fc100-d2a4-...
-## Art to the lead only.
-
-## D-074 REVISED (director 11:4x via lead 12:53): speed_mult ~0.6 + more stage-1 hp, tuned in data so
-## time to evolve1 stays ~0.6 h and ~half the early runs end in defeat. Re-pace; before/after table in
-## the PR. Order: P3 PR lands BEFORE #36 (army scales); #36 tunes its young stage against my numbers.
-## Pushed 80b8aa4 had the old 0.35 "move" section. Uncommitted now: section renamed "body"
-## {speed_mult, hp_mult} (top-level default 1.0/1.0; stage 0 0.6 / hp TBD from sweep); Growth.stage_stats
-## scales hp too; growth test adds an hp check (floor 25 -> 26; it FAILS at hp_mult 1.0 = shown failing).
-## Baseline (x1.0): evolve1 0.58 h, 28 runs, 19/28 defeated, 94% city. Old 0.35: 0.95 h, 30/45, 37%.
-## Next: pick hp_mult, full pacing run for the table, suites, commit, push BEFORE the chain reaches the
-## game-cam captures (jaw captures don't depend on tuning), jaw verdict, PR (body: scratchpad ev/pr_p3.md,
-## update the D-074 text + table).
+# blender-reptile handoff, 2026-10-18 14:05
+## State: running a check. PR #54 OPEN (P3, into claude/look-options, Auto-fix on; head sent to lead).
+## Capture chain bvyon7hgp (720p) waits for military-ai's re-shoot, then jaw_baby, jaw_adolescent,
+## baby, adolescent one at a time -> scratchpad ci10/. Then: jaw verdict + 2x crops + clips into the
+## PR (commit to docs/captures/2026-10-18-croctitan-stages/, edit body PENDING lines), SHA to lead.
+## D-074b committed 5814b31 (stage 1 body 0.6 / 1.15; evolve1 0.71 h, 15/33 defeated, tree 4.55 h).
+## Merged look-options 89403b4 (floor conflict -> real counts: smoke 30, flow 134, growth 26; all green).
+## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
+## P3 is TOP PRIORITY (last thing the demo build waits on). #54 lands BEFORE #36. Needs kaiju-sim-review.
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
