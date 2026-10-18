@@ -1,55 +1,52 @@
-# Landmarks handoff, 2026-10-18 15:30
-## State: running a check (full suite on claude/stadium-matches; CI stills + clip wait for the slot)
+# Landmarks handoff, 2026-10-18 17:30
+## State: running a check (full suite on #59 at 80d8511; the AFL clip waits for the CI queue)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
-merge, LEAD does QA, critics and the director. Two PRs now, both in the demo chain:
+merge; LEAD does QA, critics, merges and the director. Both PRs are in the demo chain:
 1. #57 landmark sites (A stadium city 1, D Sky Wheel Behemoth; D-071), branch claude/landmarks,
-   base claude/look-options, head fd0e67c, open, CI pending. The app turned Auto-fix ON for it
-   (brief said off): told LEAD, left the switch alone.
-2. D-078 stadium matches, branch claude/stadium-matches (this worktree, cut from fd0e67c),
-   stacked on #57 (base claude/landmarks; retarget to look-options after #57 merges).
-E spire / F megatower bake is a later PR (F needs a Performance look at ~816k voxels).
+   base claude/look-options, head 14380de (7e4fb81 + gdformat). Auto-fix ON (LEAD: fine).
+2. #59 stadium matches (D-078), branch claude/stadium-matches, DRAFT, stacked on #57 (base
+   claude/landmarks; retarget to look-options once #57 merges), head 80d8511.
+One worktree (../Kaiju-Incremental-wt/landmarks) switches between the two branches.
 
-## D-078 (director via LEAD)
-A match inside the stadium, one sport per run at random (AFL, NFL, soccer, cricket), "not high
-effort, just a visual flavour". Presentation only. When the wall caves in every player runs.
-Evidence asked: flow check (shown failing first), a game-camera still per sport + 2x crops, one
-720p ~6 s clip of an AFL wall caving in and players fleeing. CI slot: after the rooftop clip
-(CI order: shell-hit -> military 720p -> croc P3 -> rooftops -> everyone else).
+## #57 rounds (LEAD 2x + fresh critic)
+- r1: ring stood as an ellipse speckled with holes, pitch grey -> sim `Arcs` (sim/arcs.gd: 24
+  sectors x rim/stands, stub 2, inner 0.6, rim 0.86; data city.landmarks stadium.arcs): an arc's
+  first lost chunk topples everything of it above the stub (rim out, stands in). No bites on
+  landmarks (BuildingView.chip). Pitch laid on the ground (bake.py --ground, LandmarkVoxels.ground).
+- Sim review: PASS; stand-as-built now loops every landmark (wheel included).
+- Critic r2: slab rubble, hedge tint, slab over the plaza -> scenes/landmark_rubble.gd (Ruin.strip
+  hands landmarks over): ragged heap tallest at the stub, <= 3.5 units past the wall, colours
+  from LandmarkVoxels.rubble_colors. Shared Ruin tint untouched.
+- Follow-up after the demo (in #57 body): broken wheel is a pancake -> bent rim section, a leg
+  stub, scattered capsules ~30% smaller and desaturated.
+- Pacing at 7e4fb81: no landmarks 0.58 / 4.45 h; arcs + bonus 4.0: 0.59 / 4.56 h (+1.7/+2.5%).
+- Floors: city 21, load 12 (#57); flow 137 (#59). Fail-first logs in scratchpad.
 
-## Done on claude/stadium-matches (8264d21 + uids)
-- data/sports.json: "pitch" (stadium, half 7.6 x 4.6, top 1.25 measured from the kvox, pace,
-  kicks) + 4 sports (shape, posts, colours, kits, ball, per_side 11).
-- scenes/pitch_props.gd (PitchProps: markings + posts as one voxel mesh, 8 cells per unit),
-  scenes/stadium_match.gd (StadiumMatch: formation, nearest player runs onto the ball, kick or
-  pass; panic on the stadium's first lost chunk -> tunnel farthest from the kaiju; crush()).
-- StreetLife creates one per stadium and forwards crush; CityView passes
-  Seeds.derive(_rng, 0x5907) (run fx stream) as the sport stream; city_view stays at 400 lines.
-- VoxelPerson.dressed(outfit, pose, voxel); Content.sports().
-- Flow +3 (tests/lib/flow_stadium.gd), floor 137. Fail-first log: scratchpad
-  flow_failfirst_evidence.log ("no match in the stadium", 135 checks, 1 failure); wired: 137/0.
-- tools/capture/capture_matches.gd: stills afl/nfl/soccer/cricket (Rampage + game camera, kaiju
-  at the stadium's south kerb), --clip = AFL, kaiju walks in at frame 45, wall gives at ~84
-  (30 fps), 11-13 of 22 out by frame 180.
-- PR body drafted: scratchpad pr_matches.md (EVIDENCE_LINE, SUITES_LINE, HEADSHA to fill).
+## #59 (D-078) state
+- Stills done (local GPU): docs/captures/2026-10-18-matches/{afl,nfl,soccer,cricket}{,_2x}.png.
+- Left: 720p ~6 s AFL clip on CI with --renderer=gl_compatibility after the rooftop clip:
+  tools/capture/ci_capture.sh --movie --renderer=gl_compatibility --resolution=1280x720 --fps=30
+  capture_matches.gd -- --clip --out=<dir> (wall gives at ~frame 84; 11-13 of 22 out by 180).
+- PR body draft: scratchpad pr59_new.md (fill SUITES59, then gh pr edit 59).
 
 ## Next
-1. Suite green -> open the stadium-matches PR (draft body), send LEAD both heads.
-2. When LEAD's CI order reaches me: ci_capture.sh --resolution=1920x1080 capture_matches.gd
-   -- --out=<dir>; then ci_capture.sh --movie --resolution=1280x720 --fps=30
-   capture_matches.gd -- --clip --out=<dir>. 2x crops of each sport; own check; commit to
-   docs/captures/2026-10-18-matches/; fill the PR body.
+1. #59 suite green -> edit #59 body, commit this handoff, tell LEAD both heads.
+2. Clip on CI when LEAD's queue reaches me; check it; commit under docs/captures/; un-draft #59.
+3. After #57 merges: retarget #59 to claude/look-options.
 
 ## Findings for the lead
 - voxelize.py shells surfaces only: a solid disc bakes as a cap; build open parts as rings.
 - Rotated geometry and slow tapers alias at 8 voxels per floor; axis-aligned boxes bake clean.
 - Godot --script with new class_names needs --import first; wrap probes in `timeout`.
-- Probe the sim events before changing a rule: the "landmark vanishes" still was the capture's
-  stage-2 signature, not a sim bug.
-- Ruin.build's office-wall stubs suit towers only; a landmark now leaves its heap only.
-- An "until nothing is running" capture watcher can jump a lead-set queue in a gap: hold by hand.
+- Probe the sim's events before changing a rule (the "vanishing" stadium was a stage-2 signature).
+- A check that compares against the constant it tests passes when sabotaged: bound it by the bar.
+- The dummy renderer (headless) keeps no MultiMesh transforms: test a builder's cells instead.
+- A pacing script that edits tuning.json and is killed mid-run leaves the edit behind: restore.
+- Merging into a branch that is not checked out: git merge-tree --write-tree + commit-tree.
 
 ## Rules learnt the hard way
-- gdlint caps files at 400 lines and functions at 4 arguments; gdformat writes CRLF on Windows.
+- gdlint caps files at 400 lines, functions at 4 arguments; gdformat writes CRLF on Windows and
+  must run after the last edit (CI runs gdformat --check).
 - A failing check must run (not fail to parse): land the classes first, wire them second.
