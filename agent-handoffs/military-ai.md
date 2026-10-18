@@ -1,57 +1,62 @@
-# Military AI handoff, 2026-10-18 (evening)
-## State: awaiting lead (pair clip sent for LEAD's fresh critic; PR #50 head 0d1fd53, Auto-fix on)
+# Military AI handoff, 2026-10-18 (night)
+## State: awaiting lead (helicopter altitude A/B/C asked; PR #50 head c034646, Auto-fix on)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
 not unnatural, they should look and operate like a professional military". Brief from LEAD
-(session "Kaiju: Lead", local_106fc100...). Gates: sim-review packet (LEAD reviews), seeded
-checks failing first, player-effect fixture, floors, a 6-10 s 1080p game-camera clip (tank
-column by road + heli pair run), top-down traces before/after, army-step timing, pacing.
+(session "Kaiju: LEAD", local_106fc100...). Critic round 2 FAILED (6 points); D-082: this is the
+LAST fix round. If the next fresh critic fails, the demo ships with today's army and #50 goes
+in the next build. Clip: 720p gl_compatibility, local GPU (peer chain: croc #54 hands the slot
+to us), self-check at 2x on all six points before sending. Then send LEAD clip + 2x checks +
+damage table in ONE message; remove override.cfg after the local render.
 
 ## Branch and commit
 claude/military-ai (worktree ../Kaiju-Incremental-wt/military-ai), PR #50 into
-claude/look-options, head 0d1fd53 (synced look-options 78b5346, #53). Do not merge: LEAD merges.
+claude/look-options, head c034646 (look-options 6b27da9 merged at bce6433). LEAD merges.
 
-## What is in it
-- sim/convoy.gd (routes, drive, spacing, right of way, re-route, bounding, fall back, rubble),
-  sim/road_graph.gd (graph, grids, drivable, waypoints, lanes), sim/road_search.gd (Dijkstra),
-  sim/firing_posts.gd (band posts, arc spread, reserve rings, line of fire).
-- sim/army.gd: spawn via Convoy, move = convoy.step, fire needs clear_line. sim/air_wing.gd:
-  lead/wingman, ORBIT/RUN(strafing pass, run_hold)/BREAK, break off when faced, guns on runs.
-- data/tuning.json: army.convoy, air.formation (new blocks); growth.stages army range per
-  stage 10.5/14.5/15/17.5 (base 11 untouched); young also tank_damage 8, fire_interval 0.7 so
-  every young shooter is on screen (LEAD review 1); air.dive now unused (left for board).
-- scenes/rampage.gd: reversing hull keeps its front to the kaiju (convoy.reversing).
-- tests/run_military_tests.gd + tests/lib/military_base.gd (11 checks, floor 11, shard 1).
-  Player effect = facing the helicopters down (0 vs 41 rounds; old code 7 vs 7). The charge
-  fixture was dropped: no effect at on-screen young range (backing tanks cannot outrun).
-- tools/capture/army_trace.gd (trace PNG + Army.step timing; runs on old code too),
-  tools/capture/capture_military.gd (18 s clip, trim to 10 s).
+## Round 2 work (on top of round 1, see the PR body)
+- 633424c: tanks own their pose (ConvoyRoute.front), oriented hull checks (SAT vs lots),
+  standing pivots > pivot_deg 15 at hull_turn 90 deg/s, crown pivots, settle when held.
+  Helicopters own yaw/alt (nose follows flight, line-up before runs, fire_cone 30, hover_yaw),
+  bank in powers_view (presentation only).
+- 853e5c1: retune vs af7eb05 baseline: young range 11 / tank_damage 10, Apex tank_damage 8.25.
+- 7fd2687: driving skew (found at 2x in the 633424c CI preview: tank crabbing ~30 deg down a
+  narrow street). RoadGraph._square_legs (skew_deg 8, square corner fallback), _sweep_fits
+  (pivot starts only if the whole sweep fits), no shuffle/back-off on a half-turned hull,
+  settle while yielding, re-plan after yielding. New check (military 16): driving hull within
+  20 deg of its road: old 739 of 26232 tank-steps, now 0.
+- c034646: helicopter altitude scans a fan of next paths (straight, both arcs, run in, break
+  out) instead of a 25 m disc.
 
-## Evidence (all in the PR body)
-- Suites: all 10 green locally at 7cb5432 (smoke 30, flow 133, clips 14, military 11); flow 134 + military at 0d1fd53.
-- 1080p clip (run 39085086356, notes clip_ci2) failed my 2x check: heli pair rotor to rotor.
-  Fixed 3caf8e6: air.formation wing_out 13, wing_gap 12; pair check >= 12 m (old 7.0 fails).
-- Face-down exploit check (LEAD): always-face player 0 heli dmg but city 45% vs 90%: shipped.
-- Failing first: 7/7 on old code; 4 mutants. Notes folder military-ai/ has traces, timing,
-  sim-review-packet.md.
-- Damage per run (tank + heli + rooftop), 27 replayed pacing states: -2.8/+3.8/+0.2/+2.1%.
-- Pacing reptilian at 4bc64c9: 0.60 h / 4.53 h, young 11/19 (bar 0.59 / 4.46).
-- Young camera ground measured: 13.7 m S, 21-49 m sides, 36 m N; young reach 11.8 m.
-- Timing: Apex army step mean 0.4 ms, p95 1.1 ms, max 3.0 ms (old 0.03 ms).
+## Open problem (asked LEAD, options A/B/C)
+Camera is ~40 m up at Behemoth; a pair clearing the 27 m Ferris wheel (by the clip's start)
+flies at 31 m and is out of frame for the whole clip. Flying round towers (lateral push) broke
+pair spacing, kaiju clearance and faced break-off: reverted (third failed fix: stopped).
+A = cap at 16 m (visible, rotors clip anything > 12 m); B = keep clearance (invisible near tall
+landmarks); C = proper avoidance, next build. For A: _alt_over returns min(ceiling, ...) and
+the roof-clear check must exempt roofs above ceiling - roof_clear (disclose in the PR body).
+
+## Damage per run (27 replayed pacing states, baseline af7eb05 = 178/202/478/669)
+At 633424c before retune: -20.5 / 0 / -3.8 / +33% (Apex pair now does 172). Young per-run
+damage saturates ~164 (defeats end runs): matched the damage RATE instead (3.35 vs 3.33/s);
+Apex 8.25 -> -1.1%. Re-measure at c034646 running (scratchpad balance_c.txt, pacing_c.txt,
+suites_c.txt, task b04wwzjeo).
 
 ## Next
-1. Pair clip (notes military-ai/clip_pair, run 39093467906, 0d1fd53) passed my 2x check and went
-   to LEAD: faced reversal 4.73 s, camera-arc turn-backs 9.65/16.58 s, closest 13.00 m. LEAD runs a
-   fresh critic, then merges. Fix any finding.
-2. Resync if look-options moves (floors to the real counts; keep military 11).
-3. Capture note: forward_plus at 1080p hit the 50 min cap on CI; pass --renderer=gl_compatibility.
+1. Apply LEAD's A/B/C. 2. Read b04wwzjeo results; retune if outside +-5%.
+3. Local GPU render when the slot reaches us (720p gl_compatibility, ~22 s), self-check 2x
+   (hull over lot, parked skew, driving skew, fire cone, hover-yaw at tower, bank, pair gap).
+4. PR body (draft scratchpad pr_body.md has a round-2 section with TABLE_R2/CLIP_R2 holes),
+   packet section 6, then one message to LEAD.
 
 ## Findings for the lead
-- Replay pacing states (dump stats every 6th run, replay with candidate tunings) reproduced the
-  old pacing exactly and measured balance shifts in minutes instead of 18-30 min pacing runs.
-- Run pacing on a tar snapshot of the worktree so edits do not leak into a running job.
+- Check the drawn model against the sim hull before blaming geometry: tank hull voxels
+  20 x 40 at 0.124 m = 2.48 x 4.95 m, matches the 5 x 2.5 sim hull.
+- A rotor-height clearance must be checked against the camera: anything above ~20 m near the
+  kaiju leaves the Behemoth frame.
+- Kill orphaned Godot children by PID after TaskStop (parent is timeout.exe; check start time).
 
 ## Rules learnt the hard way
-- gdlint caps (400 lines, 100 cols, 4 args, declaration order) bite late: lint early.
-- Probe scripts: typed locals for every Variant (warnings are errors).
+- gdformat on Windows writes CRLF: run sed -i 's/\r$//' after it (repo is eol=lf).
+- Python file writes: open(..., newline='') or CRLF creeps in.
+- Never edit sim files while a background run reads the worktree: snapshot with git archive.
