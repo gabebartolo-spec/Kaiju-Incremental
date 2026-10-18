@@ -83,6 +83,19 @@ func run() -> void:
 		far_shots == 0 and far.hp == far.max_hp,
 		"a squad out of range holds fire (%d shots)" % far_shots
 	)
+	# Range is measured from the edge of the kaiju's stomp, as the tanks' is (D-076): a Behemoth
+	# whose centre is past `range` but whose stomp edge is within it draws fire.
+	var edge := _one_squad(_new({"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}, grown))
+	var past := Num.f(cfg["range"]) + edge.stomp_radius() * 0.5
+	edge.kaiju_pos = edge.army_units.squads[0].pos + Vector2(past, 0)
+	var edge_shots := _steps_counting(edge, seconds, "rooftop_fired")
+	_check.call(
+		edge_shots >= 1,
+		(
+			"a squad fires at a Behemoth %.1f from its centre, inside range %.0f + stomp %.1f (%d)"
+			% [past, Num.f(cfg["range"]), edge.stomp_radius(), edge_shots]
+		)
+	)
 	# Its roof chunk gone (broken, dropped or toppled): the squad dies and pays biomass.
 	var roof := _one_squad(_new({}))
 	roof.kaiju_pos = Vector2(roof.arena_half, roof.arena_half)  # far off: no stomp lands

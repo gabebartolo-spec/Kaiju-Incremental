@@ -1,9 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (replay of 28 baseline states x 5 candidates -> scratchpad replay1.txt; #50 still open)
-
-## Baseline (post-#50 sim, 96d804d snapshot, reptilian pacing)
-evolve1 0.59 h, tree 4.52 h; young ended 7/22 time/defeated. Total damage/run (tank+heli+roof):
-young 179.8, Behemoth 197.5, Colossus 472.6, Apex 770.1 (pacing_base.txt, dump_base.json).
+## State: running a check (replay2: edge-reach candidates -> scratchpad replay2.txt; #50 still open)
 
 ## Who
 Session "Rooftop density" started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -18,28 +14,33 @@ Evidence: before/after tables, 3 s 1080p Behemoth game-camera clip (ask LEAD for
 CI capture.yml one at a time), rooftop_hit_gate (and its known-bad control still failing),
 kaiju-sim-review packet. New tuning keys inside army.rooftop only; new checks in tests/lib.
 
-## Done so far
-- PR #50 (military AI) still OPEN at da48ea0; its sim equals 96d804d (only a capture doc line
-  differs). Background watcher waits for it to leave OPEN.
-- Baseline: snapshot of 96d804d in scratchpad snap_base/ with tools/pacing_dmg.gd (copy of
-  military-ai's, plus heli + rooftop totals); running reptilian pacing with DUMP=dump_base.json
-  -> pacing_base.txt. Scratchpad: %TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad
-- roof_replay.gd (scratchpad): replays dumped states with CANDS (JSON overrides) and prints
-  damage by source, squads placed, volleys/s, volleys/s in range, busy-second share.
-- Uncommitted -> committed with this file: scenes/rooftop_view.gd draws the squads nearest the
-  kaiju first (_nearest_first), so with more squads than max_drawn the firing ones are drawn.
+## Baseline (post-#50 sim = 96d804d snapshot; #50 head da48ea0 differs only in a capture doc line)
+Reptilian pacing: evolve1 0.59 h, tree 4.52 h; young ended 7/22 time/defeated. Total damage/run
+(tank+heli+roof): young 179.8, Behemoth 197.5, Colossus 472.6, Apex 770.1.
+Replay (28 states): roof dmg 5.6 / 8.7 / 0 / 0; Behemoth kaiju in range of a live squad 3% of the
+run, Colossus/Apex 0%.
 
-## Findings
-- #50 table: rooftop damage/run young 5.6, Behemoth 10.6, Colossus 0, Apex 0 (squads spread
-  over the whole huge city rarely meet the kaiju). Behemoth ~0.3 volleys/s average now.
-- Per-stage tank_damage lives in growth.stages (Behemoth 6, Colossus 10, Apex 11; young uses
-  base army.tank_damage 4): the obvious compensation lever (existing keys).
+## Root cause (sent to LEAD)
+Rifle reach was measured from the kaiju's centre (tanks: range + stomp_radius). Squads die to the
+grown kaiju's own reach (Behemoth 7-18 u, Colossus 22-43 u) before they get a shot. fire_interval
+1.0 alone: Behemoth 5.6 -> 5.7 volleys/run. Doubling squads alone: 15/run (0.2/s).
+
+## Branch changes
+- committed 1348478: scenes/rooftop_view.gd draws squads nearest the kaiju first (_nearest_first).
+- UNCOMMITTED -> committed with this file: sim/army.gd _step_squads reach = range +
+  sim.stomp_radius(); tests/lib/sim_rooftops.gd new check "a squad fires at a Behemoth ... inside
+  range + stomp" (must be shown failing on the old reach before trusting it). Floor sim +1 later.
+
+## Scratchpad (%TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad)
+snap_base/ (96d804d + tools/pacing_dmg.gd, roof_replay.gd, roof_life.gd), snap_c/ (same + edge
+reach), dump_base.json, pacing_base.txt, replay1.txt, life1.txt, replay2.txt (pending).
+Run: cd snap_x; APPDATA=<appdata_x> DUMP=<dump> CANDS='[{}...]' godot --headless --path . --script tools/roof_replay.gd
 
 ## Next
-1. Read pacing_base.txt + dump_base.json; replay candidates (max_by_tier, chance,
-   fire_interval, maybe range) and pick the tank_damage compensation per stage.
-2. After #50 merges: merge look-options into this branch, re-verify baseline unchanged.
-3. Tests (floors), hit gate + known-bad control, pacing, sim packet, clip, PR, report LEAD.
+1. Read replay2; pick max_by_tier/chance/fire_interval for >= ~2-3 volleys/s in range at Behemoth;
+   offset with growth.stages[n].army.tank_damage (young: base army.tank_damage) to hold ±5%.
+2. After #50 merges: merge look-options in; tests + floors; hit gate + known-bad; pacing; packet;
+   clip (LEAD GPU slot / CI capture.yml); PR; report LEAD (<= 8 lines).
 
 ## Don't touch
 scenes/biped_swing.gd, scenes/gait_clip.gd, scenes/city_ground.gd, scenes/ui_kit.gd.

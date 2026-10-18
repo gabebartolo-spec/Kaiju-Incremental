@@ -76,10 +76,12 @@ func step(dt: float) -> void:
 
 
 ## Each squad whose roof still stands fires a volley every fire_interval while the kaiju is in
-## range. True when a squad lost its roof (clear_dead removes it and pays its biomass).
+## range, measured from the edge of its stomp as the tanks' is (D-076: from its centre, a grown
+## kaiju's own reach killed squads before they got a shot). True when a squad lost its roof
+## (clear_dead removes it and pays its biomass).
 func _step_squads(dt: float) -> bool:
 	var lost := false
-	var reach := Num.f(rooftop["range"])
+	var reach := Num.f(rooftop["range"]) + sim.stomp_radius()
 	for squad: Squad in squads:
 		if not sim.buildings[squad.building].frame.alive(squad.cell):
 			squad.dead = true
