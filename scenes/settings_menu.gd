@@ -15,6 +15,7 @@ var _volume_text: Label
 var _effects_text: Label
 var _fullscreen: Button
 var _scale: Button
+var _fps: Button
 
 
 func _ready() -> void:
@@ -54,6 +55,10 @@ func _ready() -> void:
 	_scale.custom_minimum_size = Vector2(300, 56)
 	_scale.pressed.connect(func() -> void: PlayerSettings.next_ui_scale())
 	_row(col, "UI scale  (TV distance)").add_child(_scale)
+	_fps = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	_fps.custom_minimum_size = Vector2(300, 56)
+	_fps.pressed.connect(func() -> void: PlayerSettings.next_fps_cap())
+	_row(col, "Frame cap  (quieter GPU)").add_child(_fps)
 
 	col.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
 	var grid := GridContainer.new()
@@ -102,6 +107,7 @@ func _refresh() -> void:
 	_effects_text.text = "%d%%" % roundi(effects.value)
 	_fullscreen.text = "ON" if _is_full() else "OFF"
 	_scale.text = "%d%%" % roundi(PlayerSettings.ui_scale * 100.0)
+	_fps.text = "UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
 
 
 func _is_full() -> bool:

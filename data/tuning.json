@@ -1,4 +1,9 @@
 {
+	"display": {
+		"fps_caps": [60, 120, 0],
+		"fps_default": 120,
+		"menu_fps": 60
+	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
 		"stomp_damage": {"line": "Stomps hit harder", "fmt": "%.0f"},
@@ -210,10 +215,10 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"id": "stadium", "anchor": [22, -24], "margin": 0, "tier": 1, "rubble_bonus": 4.0,
+				"id": "stadium", "anchor": [22, -24], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
-			{"id": "wheel", "anchor": [10, 56], "margin": 2, "tier": 2, "rubble_bonus": 4.0}
+			{"id": "wheel", "anchor": [10, 56], "margin": 2, "tier": 2, "rubble_bonus": 1.5}
 		],
 		"coverage_cell": 10,
 		"view_beyond": 30,
@@ -412,10 +417,13 @@
 		],
 		"bob": 0.05,
 		"bob_hz": [1.2, 2.4],
-		"flee_speed": 3.0,
-		"flee_delay": 0.5,
+		"flee_speed": 1.3,
+		"flee_delay": 2.5,
 		"flee_slope": 0.8,
-		"exit_r": 0.86
+		"exit_r": 0.86,
+		"sink": 2.0,
+		"check_per_frame": 400,
+		"max_puffs": 4
 	},
 	"street": {
 		"person_voxel": 0.065,
