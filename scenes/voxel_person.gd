@@ -40,6 +40,35 @@ static func mesh(outfit: int, pose: int, voxel: float) -> ArrayMesh:
 	return _bake(v, o, voxel)
 
 
+## A figure in any outfit ({shirt, pants, hair, skin} hex colours): a stadium's players (D-078).
+static func dressed(outfit: Dictionary, pose: int, voxel: float) -> ArrayMesh:
+	var v := VoxelBuilder.new()
+	v.salt = 53 + pose
+	_body(v, pose, false)
+	return _bake(v, outfit, voxel)
+
+
+## A stadium spectator (director 2026-10-18): seated facing -Z, hips on y = 0 and shins down
+## the seat's front to the row below, hands in the lap; 9 cells tall in all.
+static func seated(outfit: Dictionary, voxel: float) -> ArrayMesh:
+	var v := VoxelBuilder.new()
+	v.salt = 61
+	for x: int in [-2, 1]:
+		v.box(Vector3i(x, -2, -3), Vector3i(x, -1, -3), "pants")  # shins
+		v.put(Vector3i(x, -3, -3), "shoe")
+		v.put(Vector3i(x, -3, -4), "shoe")
+	v.box(Vector3i(-2, 0, -3), Vector3i(1, 0, 0), "pants")  # thighs and seat
+	v.box(Vector3i(-2, 1, -1), Vector3i(1, 3, 0), "shirt")  # torso
+	v.box(Vector3i(-1, 4, -1), Vector3i(0, 4, -1), "skin")  # face
+	v.box(Vector3i(-1, 4, 0), Vector3i(0, 4, 0), "hair")
+	v.box(Vector3i(-1, 5, -1), Vector3i(0, 5, 0), "hair")
+	for x: int in [-3, 2]:
+		v.box(Vector3i(x, 2, 0), Vector3i(x, 3, 0), "shirt")  # upper arms
+		v.put(Vector3i(x, 1, -1), "shirt")
+		v.put(Vector3i(x, 1, -2), "skin")  # hands on the knees
+	return _bake(v, outfit, voxel)
+
+
 ## A rooftop defender (D-063): the aiming pose with a rifle in place of the pistol, its barrel
 ## two cells wide and running three cells past the hands.
 static func rifleman(outfit: int, voxel: float) -> ArrayMesh:

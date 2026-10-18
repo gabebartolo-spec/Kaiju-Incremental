@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-19 02:45
-## State: available (#62 resynced onto 8fd6d7f, all suites green; stills with the lead); #36 last
+# Ability VFX/SFX handoff, 2026-10-19 04:10
+## State: awaiting lead merge (#36 head eb21e6b on look-options 5bc6b44, growth 31 flow 139, suites + gdlint green; real-head 130-run: e1 0.26 h, young 8/14, Beh 5/47, Col 36/69, e2 1.42 h, tree 82/87 3.37 h; body + SHA sent)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -59,7 +59,7 @@
   - Stills in shared notes footfall-dust/: before_after_crops.jpg (Behemoth, 6/9/12 s) and after_puff_6.4s_crop.png.
   - city 13, smoke and flow green on the final values. PR open; stills sent to the lead.
 
-## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
+## #36 claude/army-scales (D-069), resynced onto ca1f76d; director: full speed, tune without #50 once P3 #54 + rooftops #63 land
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
 - Pacing at 4b3146c (130 runs):
   - young: 31 runs, 0.62 h, ended 3/28/0;
@@ -96,5 +96,12 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- None.
+- Scratch copy scratchpad/sweep36 (#36+#54+#63, floors sim 52 growth 31 flow 139); script scratchpad/young_sweep36.sh '<json>'... (N=runs). Deterministic.
+- 45-run results, young ended time/defeated/city: {} 8/26/0 of 34; td3 23/9/0; td3+si6 29/3/0; td3.5 14/18/0 (PICK); si6 18/14/0; td3.5+si5.5 20/12/0. evolve1 0.68-0.70 h for all. young_damage_mult is NOT a lever (damage to the kaiju's young).
+- 130-run on scratch: before young 8/26/0, Beh 31/9/0, Col 28/28/0, e1 0.70 e2 1.69, 81/87 3.24 h; td3.5 young 14/18/0, Beh 37/3/0, Col 27/31/0, e1 0.68 e2 1.68, 81/87 3.29 h. Behemoth drop flagged to lead with options A (Beh per_level 0.03, recommended) / B ship / C si6. scratchpad/beh_sweep.sh <f>...
+- D-087 (director: first evo ~15 min). 45-run cost sweep, no override: 1778 0.70 h 26/34; 900 0.54 h 21/27; 600 0.43 h 16/22; 400 0.26 h 8/14 (PICK, Beh 8/31); 250 0.15 h; 150 0.09 h 1/5. With td3.5: 400 same, 250 2/8. A and young override DROPPED (short stage gives ~half by itself). Helper copies scratchpad/sw_h1..h4, one_spec.sh.
+- Lead GO: body = before/after table (evolve1 h, young + Behemoth defeats, tree h) + the 45-run sweep table + side-effect note (full-game tree pacing shifts, 130-run tree hours; full retune post-demo per D-083). DONE: pushed 09192ce, body updated (D-087 section + Board/log line).
+- DONE eb21e6b (army-learns checks moved to tests/lib/growth_army_learns.gd: growth suite was 434/400 after #54). After merge: remove scratch copies (scratchpad/sweep36, real36, sw_h1..4) and offer next job.
+- NEW ORDER (lead): #36 merges before #63/#59 (they resync onto it). After suites green: fix floors to printed counts, push HEAD:claude/army-scales, update body table with real-head 130-run (out in scratchpad/out_real.txt), ping lead with SHA + table.
+- (old) When #54 + #63 land: resync #36, add "army": {"tank_damage": 3.5} to stages[0], 130-run pacing, before/after table in #36's body, Board/log: "D-087 first evolution at ~15 min (evolve1 cost 400); D-069a met by the shorter stage". Ping lead for the merge (last PR before the build).
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
