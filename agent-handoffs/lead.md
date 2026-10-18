@@ -71,6 +71,8 @@ affectionate-goldstine (#36 sync), festive-jemison (#63). Prune when their sessi
 - Stadium rubble polish, landmarks E/F; jets #58 #61; audio upgrade (ElevenLabs/Suno, needs a spend yes).
 - Director 2026-10-19 (ROADMAP in the next board PR): rooftop MORTARS that fire on the kaiju; topple the building to
   kill them. Simplest: a mortar variant of the D-063 rooftop squads (same 'rooftop_destroyed' kill on collapse).
+- Director 2026-10-19 (ROADMAP, next board PR): FINAL BOSS = a mecha kaiju built to fight you. Big system: when it's
+  scheduled, ask the director (with a board) where it sits (end of Apex? its own city?) and the win/lose beat.
 - HUD hit flash for big hits only? (ask with a mockup). Civilian cap; Apex height; octopus mesh.
 - Archive the OLD lead session once its children are done.
 
