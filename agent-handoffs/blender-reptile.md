@@ -1,11 +1,18 @@
-# blender-reptile handoff, 2026-10-18 17:30
-## State: awaiting lead (landmarks ping for the local adolescent render; critic on the baby clip). PR #54 OPEN (P3 into claude/look-options), head 8f32f02, Auto-fix on, sim
-## review PASS. Synced look-options 6d44a95 (#62); floors real (city 23, load 13, flow 139); green.
-## Game-cam baby DONE (run 39104147522): notes p3/gamecam/baby_*.mp4 + sheet, sent to lead 17:5x. Adolescent:
-## LOCAL GPU only after the lead pings (landmarks first): cp scratchpad local_ado/override.cfg to
-## the project, bash local_ado/run.sh, rm override.cfg. Send both clips to the lead at once (critic).
-## GPU chain (lead): rooftops -> stadium crowd -> greenery -> ME -> #50. When done, message #50
-## (local_5325ef73-4643-4477-9507-1bb17f42af5b) that the GPU is free.
+# blender-reptile handoff, 2026-10-18 19:40
+## State: awaiting lead (GPU turn: rooftops -> greenery -> stadium -> ME -> #50). PR #54 head dfcceea.
+## Lead 19:0x: baby game-cam clip FAILED fresh critic. Fixes pushed dfcceea (suites green):
+## 1/6 feet hid under the belly (planted drift was 0, turn had 5-6 steps) -> motion_test splay 10/12 m,
+##   lift 0.18/0.15 (baby/adolescent), clips re-baked; 3 capture walk starts at 0.3 s (WALK_FROM);
+## 5 turn tail: tail_drag() (turn rate through a 0.3 s lag, outward) replaces the accel whip: probe
+##   +10..+19 deg outside, settles 0.33 s after stop, no snap; 7 ROAR_SLAM_FRAME 47 -> 44 (tip contact,
+##   probe slam 14.83 s); 8 fx.shockwave(soft) for the tail: grows 0.25 s, fades 0.4 s, wide/soft/dim.
+## Adult .kclip NOT re-baked (its turn keeps the old whip; ROAR_SLAM 44 applies to it too).
+## SKIP per lead: 2 shared stomp arcs, 4 black frame (trim), 9 jaw hold + 10 teal/smudge -> PR body
+## as after-demo polish (#62 dust likely fixes the smudge).
+## NEXT in GPU turn: cp scratchpad local_ado/override.cfg to project; bash local_ado/run.sh (both stages,
+## traces); rm override.cfg; message #50 local_5325ef73-4643-4477-9507-1bb17f42af5b GPU free.
+## Proof to lead: walk/turn/roar 3 s + full per stage (Blender encode ev/encode_intra30.py), 2x feet crop
+## at a plant, footfall-vs-ground px numbers; update PR body. D-087 (evolve1 ~15 min) is #36's, not mine.
 ## Post-#57 young pacing (--runs=60): evolve1 0.66 h, 12/31 defeated, 94% city (told lead; no retune).
 ## In-game jaw crops DONE and committed (docs/captures/2026-10-18-croctitan-stages/ingame_*): both PASS
 ## the lead's bar (solid, clean V corner, no flap/bridge/blocks). Sent to lead 17:2x.
