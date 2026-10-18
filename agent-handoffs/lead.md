@@ -11,7 +11,8 @@ slam ring; fix list sent (skip shockwave arcs, black frame; 9/10 post-demo). Boa
 NEXT BOARD: D-085 (director, told rooftops directly): "shooters aren't firing in unison ... improvised, unrehearsed
 resistance" -> #63 51a2d5d interval_jitter 0.5 + rifle lag 2-14 f. D-086 (lead): #36 option A, Behemoth per_level army
 0.02->0.03 (young override cut Behemoth defeats 22%->8%); non-blocking, follow-up PR if not settled. GPU order now:
-rooftops -> greenery -> stadium -> croc -> #50.
+rooftops -> greenery -> stadium -> croc -> #50. D-087 (director 19:xx): evolve1 at ~15 min ("no ones going to play
+41 minutes of a demo if theyre still a baby"); #36 does it via evolve1 cost, keep D-074b feel; last gate before build.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
