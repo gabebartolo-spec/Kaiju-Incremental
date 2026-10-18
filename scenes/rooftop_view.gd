@@ -18,8 +18,8 @@ const FLASH_SIZE := 0.5  # world units (about 15 px at the Behemoth's game camer
 const FLASH_AHEAD := 0.45  # the star burns this far out along the aim, clear of the shooter
 const RAGGED_FRAMES := 14  # each rifle after the first fires up to this late, seeded (no unison)
 ## A spark on the hide is drawn over everything (the body would hide it) for this long.
-const SPARK_FRAMES := 4
-const SPARK_SIZE := 0.9  # about 25 px at the Behemoth's game camera
+const SPARK_FRAMES := 6
+const SPARK_SIZE := 1.35  # about 38 px at the Behemoth's game camera
 const POINT_BLANK_FRAMES := 3  # a round arriving sooner than this draws no tracer...
 const SHORT_PIXELS := 60.0  # ...nor does one whose path on screen is shorter than this
 const STAR_PIXELS := 32
@@ -29,6 +29,8 @@ const GLOW := Color(1.0, 0.82, 0.45)
 const HOT := Color(4.0, 4.0, 4.0)
 const TRACER_SPEED := 60.0  # world units a second, muzzle to hide
 const TRACER_LENGTH := 1.75  # a tracer is a short streak this long, flying the whole way
+## Its streak is drawn in pieces, brightest at the head, fading along the trail behind it.
+const TRAIL: Array[float] = [1.0, 0.55, 0.25]
 const TRACER_WIDTH := 0.05
 ## A tracer burns less over-range than a flash: a thin core with a soft glow, not a white rod.
 const TRACER_HOT := Color(2.0, 2.0, 2.0)
@@ -37,11 +39,8 @@ const MUZZLE_HEIGHT := 8.5  # a figure's rifle is this many person voxels over i
 ## A figure taller than this share of the screen (a roof under the camera; usually ~1%) is hidden.
 const MAX_SCREEN_SHARE := 0.04
 const SPACING := 0.55  # figures of a squad stand this far apart across their line of fire
-const BODY_MIDDLE := 3.0  # an unrigged body is struck this high (per body scale)
-## The bones a round may strike: the upper body only (trunk, neck, head, upper arms), never a leg
-## or the tail.
-const TARGETS: Array[String] = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_r0"]
 const STONE_STEP := 2  # a stone roof's lowest step, in building voxels, under their feet
+const PARAPET_IN := 2  # figures stand this many building voxels in from a roof's edge
 
 ## Running totals and the figures drawn this frame (tests and the capture tool read them).
 var shots := 0
@@ -91,7 +90,7 @@ func _ready() -> void:
 	_counts.resize(_figures.size())
 	_flash_mm = _pool(_star(false), MAX_FLASHES, true)
 	_spark_mm = _pool(_star(true), MAX_SPARKS, true)
-	_tracer_mm = _pool(_glow_box(), MAX_TRACERS, true)
+	_tracer_mm = _pool(_glow_box(), MAX_TRACERS * TRAIL.size(), true)
 
 
 ## A unit quad that always faces the camera, painted with a soft four-point star: additive,
@@ -160,6 +159,8 @@ func stance(squad: Army.Squad, k: int) -> Transform3D:
 	var across := Vector2(-to.y, to.x)
 	var n := Num.i(_cfg["squad_size"])
 	var at := squad.pos + across * (k - (n - 1) * 0.5) * SPACING + to * 0.1 * (k % 2)
+	var inset := Vector2(b.w, b.d) * 0.5 - Vector2.ONE * PARAPET_IN * BuildingVoxels.VOXEL
+	at = at.clamp(Vector2(b.x, b.z) - inset, Vector2(b.x, b.z) + inset)  # in from the parapet
 	var feet := squad.cell.y + 1.0
 	if b.style % 4 == BuildingVoxels.STONE:
 		feet += STONE_STEP * BuildingVoxels.VOXEL
@@ -254,6 +255,8 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 		shots += 1
 		last_squad = squad_id
 		var t0 := Time.get_ticks_usec()
+		var rig := RooftopAim.rig_of(body)
+		var middle := kaiju_at + Vector3.UP * sim.body_scale() * RooftopAim.BODY_MIDDLE
 		for k: int in Num.i(_cfg["squad_size"]):
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, MUZZLE_HEIGHT, -7.5) * _voxel)
@@ -261,8 +264,8 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 			if seen and _flashes.size() < MAX_FLASHES:
 				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
 				_flashes.append({"hit": {"at": muzzle + ahead}, "wait": wait, "left": FLASH_FRAMES})
-			var hit := _hide(kaiju_at, muzzle)
-			var to := _at(hit)
+			var hit := RooftopAim.strike(rig, middle, muzzle, _rng)
+			var to := RooftopAim.at(hit)
 			var flight := muzzle.distance_to(to) / TRACER_SPEED
 			var frames := roundi(flight * Engine.physics_ticks_per_second)
 			if not seen or frames < POINT_BLANK_FRAMES or _on_screen(muzzle, to) < SHORT_PIXELS:
@@ -273,48 +276,6 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 				)
 		worst_aim_usec = maxi(worst_aim_usec, Time.get_ticks_usec() - t0)
 		return
-
-
-## Where a round from `muzzle` strikes: the centre of the upper-body bone (TARGETS) nearest the
-## shooter, held to the bone so it moves with the drawn skin. The body always surrounds a bone's
-## centre, so the spark there (drawn over everything) never sits on the street, and the tracer
-## (depth-tested) vanishes into the hide where it meets it. A body without a rig is struck at its
-## middle. Returns a strike for _at().
-func _hide(kaiju_at: Vector3, muzzle: Vector3) -> Dictionary:
-	var rig: KaijuRig = null
-	if body != null:
-		for node: Node in body.find_children("*", "KaijuRig", true, false):
-			rig = node as KaijuRig
-	if rig == null:
-		return {"at": kaiju_at + Vector3.UP * sim.body_scale() * BODY_MIDDLE}
-	var best := INF
-	var hit := {}
-	for bone_name: String in TARGETS:
-		if not rig.has_bone(bone_name):
-			continue
-		var bone := rig.bone(bone_name)
-		var centre := rig.dir_of(bone_name) * 0.5
-		var d := (bone.global_transform * centre).distance_squared_to(muzzle)
-		if d < best:
-			best = d
-			hit = {"bone": bone, "local": centre}
-	if hit.is_empty():
-		return {"at": kaiju_at + Vector3.UP * sim.body_scale() * BODY_MIDDLE}
-	return hit
-
-
-## Where a strike is now: on its bone as the body moves, or the fixed point it was given
-## (Vector3.INF once the bone is gone).
-func _at(hit: Dictionary) -> Vector3:
-	if hit.has("at"):
-		var fixed: Vector3 = hit["at"]
-		return fixed
-	var node: Variant = hit["bone"]
-	if not is_instance_valid(node):
-		return Vector3.INF
-	var bone: Node3D = node
-	var local: Vector3 = hit["local"]
-	return bone.global_transform * local
 
 
 ## How long the line from `a` to `b` is on screen, in pixels (INF without a camera).
@@ -350,7 +311,7 @@ func _draw_stars(stars: Array[Dictionary], mm: MultiMesh, size: float) -> int:
 			stars.erase(f)
 			continue
 		var struck: Dictionary = f["hit"]
-		var at := _at(struck)
+		var at := RooftopAim.at(struck)
 		if at == Vector3.INF:  # the bone it struck is gone (a stage change)
 			stars.erase(f)
 			continue
@@ -377,7 +338,7 @@ func _draw_tracers(delta: float) -> void:
 		tr["t"] = Num.f(tr["t"]) + delta / flight
 		var t := Num.f(tr["t"])
 		var hit: Dictionary = tr["hit"]
-		var to := _at(hit)
+		var to := RooftopAim.at(hit)
 		if t >= 1.0 or to == Vector3.INF:
 			if to != Vector3.INF:
 				_spark(hit, 0)
@@ -391,9 +352,11 @@ func _draw_tracers(delta: float) -> void:
 		if x.length() < 0.01:
 			x = Vector3.RIGHT
 		x = x.normalized()
-		var length := maxf(0.01, head.distance_to(tail))
-		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * length)
-		_tracer_mm.set_instance_transform(shown, Transform3D(basis, (head + tail) * 0.5))
-		_tracer_mm.set_instance_color(shown, TRACER_HOT)
-		shown += 1
+		var piece := maxf(0.01, head.distance_to(tail)) / TRAIL.size()
+		var basis := Basis(x * TRACER_WIDTH, z.cross(x) * TRACER_WIDTH, z * piece)
+		for i: int in TRAIL.size():  # head first, each piece behind the last and dimmer
+			var mid := head - z * piece * (i + 0.5)
+			_tracer_mm.set_instance_transform(shown, Transform3D(basis, mid))
+			_tracer_mm.set_instance_color(shown, TRACER_HOT * TRAIL[i])
+			shown += 1
 	_tracer_mm.visible_instance_count = shown
