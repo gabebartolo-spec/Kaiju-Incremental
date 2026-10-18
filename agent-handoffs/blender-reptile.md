@@ -1,7 +1,9 @@
 # blender-reptile handoff, 2026-10-18 17:30
 ## State: running a check. PR #54 OPEN (P3 into claude/look-options), head 8f32f02, Auto-fix on, sim
 ## review PASS. Synced look-options 6d44a95 (#62); floors real (city 23, load 13, flow 139); green.
-## Chain: jaw_adolescent rerun done; game-cam baby run 39104147522 running, adolescent next.
+## Game-cam baby: CI run 39104147522 (last CI run; chain killed, waiter b291gw9cf). Adolescent game-cam:
+## LOCAL GPU only after the lead pings (landmarks first): cp scratchpad local_ado/override.cfg to
+## the project, bash local_ado/run.sh, rm override.cfg. Send both clips to the lead at once (critic).
 ## Post-#57 young pacing (--runs=60): evolve1 0.66 h, 12/31 defeated, 94% city (told lead; no retune).
 ## In-game jaw crops DONE and committed (docs/captures/2026-10-18-croctitan-stages/ingame_*): both PASS
 ## the lead's bar (solid, clean V corner, no flap/bridge/blocks). Sent to lead 17:2x.
