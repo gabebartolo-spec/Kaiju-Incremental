@@ -53,7 +53,7 @@ func _ready() -> void:
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
 		add_child(_decor)
-		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0))
+		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
 		add_child(street)
 
 

@@ -40,6 +40,14 @@ static func mesh(outfit: int, pose: int, voxel: float) -> ArrayMesh:
 	return _bake(v, o, voxel)
 
 
+## A figure in any outfit ({shirt, pants, hair, skin} hex colours): a stadium's players (D-078).
+static func dressed(outfit: Dictionary, pose: int, voxel: float) -> ArrayMesh:
+	var v := VoxelBuilder.new()
+	v.salt = 53 + pose
+	_body(v, pose, false)
+	return _bake(v, outfit, voxel)
+
+
 ## A rooftop defender (D-063): the aiming pose with a rifle in place of the pistol, its barrel
 ## two cells wide and running three cells past the hands.
 static func rifleman(outfit: int, voxel: float) -> ArrayMesh:
