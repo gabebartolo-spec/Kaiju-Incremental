@@ -1,7 +1,9 @@
 # blender-reptile handoff, 2026-10-18 13:00
-## State: running a check (hp sweep bytdtcuz7: speed 0.6, hp_mult 1.0/1.5/2.0/2.5, pacing --runs=60
-## -> /tmp/sweep_<h>.txt; it rewrites data/tuning.json per step and restores /tmp/tuning_base.json at
-## the end - DO NOT commit tuning.json while it runs). Capture chain bagkdqt14 queued behind military-ai.
+## State: running a check (full pacing b7z5d0orv at speed 0.6 / hp_mult 1.15 -> /tmp/pacing_final.txt;
+## data/tuning.json already holds 0.6/1.15). Capture chain bagkdqt14 queued (2 other runs ahead).
+## Sweep (--runs=60, young stage): 0.6/1.0 0.72 h 24/34 def; 0.6/1.1 0.71 h 18/33; 0.6/1.15 0.71 h
+## 15/33 (45%), 87% city; 0.6/1.2 13/33; 0.65/1.1 0.69 h 15/32; 0.7/1.05 0.66 h 17/31 (55%), 71% city.
+## 0.6 h is NOT reachable with speed+hp at ~0.6 speed (floor ~0.66 h); tell the lead, offer 0.7/1.05.
 ## Director 10:5x: baby + adolescent APPROVED (D-073). Lead = "Kaiju: Lead" local_106fc100-d2a4-...
 ## Art to the lead only.
 
