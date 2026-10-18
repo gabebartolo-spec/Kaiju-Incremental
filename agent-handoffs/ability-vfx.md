@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 04:10
-## State: running a check (lead: #36 merges NOW; resynced onto look-options 5bc6b44 (#54 in) as local be84e3f, floors growth 31 flow 139 pending suites be8mqnfe5; real-head 130-run via helper on scratchpad/real36)
+## State: running a check (#36 resynced onto 5bc6b44 as local be84e3f; merged run_growth_tests.gd hit 434/400 lines, so _check_army_learns + BEHEMOTH_FULL moved UNCOMMITTED to tests/lib/growth_army_learns.gd (gdlint clean); suites b78tv4veg; real-head 130-run via helper)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
