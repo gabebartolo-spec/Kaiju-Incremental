@@ -18,6 +18,10 @@ None. override.cfg removed after the windowed runs.
 ## Attempts (fix-loop record)
 - Clip r1: inverted normals (building near black), island shattered whole into uniform cubes.
   r2: outward normals, island keeps cell materials, breaks only within 2.5 units of its lowest point.
+## Round 2 (lead, 2026-10-19)
+- Survey of proven voxel destruction (Teardown, RFG Geo-Mod 2.0, Instruments of Destruction, CityV, godot_voxel,
+  Terabase, Jolt determinism) added as section 1 with 17 sources; options re-based on it. Effort A 18 -> ~19 days
+  (RFG support rule added to A). CityV: no public tech found (cited the footage). Worktree base verified = look-options.
 ## Open decisions
 Director: option A (recommended, ~18 days) vs the 6-day cosmetic step vs B/C. Lead builds the board.
 ## Running jobs
