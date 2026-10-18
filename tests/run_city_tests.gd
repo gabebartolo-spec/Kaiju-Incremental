@@ -21,6 +21,7 @@ func run_checks() -> void:
 	_check_calm_streets()
 	CityLandmarks.new(check).run()
 	_check_no_empty_ground()
+	preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
 
 
 ## The city reads as a real city, not a grid of isolated towers (director, 2026-10-16): lots
