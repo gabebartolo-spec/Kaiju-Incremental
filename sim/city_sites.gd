@@ -103,7 +103,7 @@ static func add_blocks(plan: Dictionary, cfg: Dictionary) -> void:
 
 
 ## The landmarks standing in district `ring` of the playable city, as layout entries
-## (Landmarks.building): centred on their site, with their baked chunks, tier and bonus.
+## (Landmarks.building): centred on their site, with their baked chunks, tier, bonus and arcs.
 static func entries(plan: Dictionary, ring: int) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var sites: Array[Dictionary] = plan.get("sites", [] as Array[Dictionary])
@@ -131,6 +131,8 @@ static func entries(plan: Dictionary, ring: int) -> Array[Dictionary]:
 				}
 			)
 		)
+		if spec.has("arcs"):
+			out[-1]["arcs"] = spec["arcs"]
 	return out
 
 

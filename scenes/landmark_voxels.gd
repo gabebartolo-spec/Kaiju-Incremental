@@ -4,10 +4,17 @@ extends BuildingVoxels
 ## a generated facade, on the same grid (RES cells per sim unit, cells local to the footprint), so
 ## BuildingMesher and BuildingView draw and break it chunk by chunk like any building. Each voxel's
 ## .kvox flags hold the faces it shows (open to the air outside the model); nothing else is drawn.
+## Voxels in the shape's "ground" colours (a pitch) are also laid flat on the ground (`ground`),
+## drawn always, so the ground under them keeps their colour once their chunks are broken.
+
+## How near (per channel, 0-255) a voxel's colour must be to a ground colour.
+const GROUND_MATCH := 24
 
 ## Parsed .kvox per path: every view of a landmark shares one read.
 static var _cache: Dictionary = {}
 static var _lock := Mutex.new()
+
+var ground := VoxelBuilder.new()
 
 
 func _init(p_building: RampageSim.Building, base: Color) -> void:
@@ -16,6 +23,14 @@ func _init(p_building: RampageSim.Building, base: Color) -> void:
 	var model := _read(str(shape.get("kvox", "")))
 	if not model.frames.is_empty():
 		vox = model.frames[0]
+	var keys: Array = shape.get("ground", [])
+	for cell: Vector3i in vox.colors:
+		var c: Color = vox.colors[cell]
+		for key: String in keys:
+			var g := Color(key)
+			var off := Vector3(absf(c.r - g.r), absf(c.g - g.g), absf(c.b - g.b)) * 255.0
+			if maxf(off.x, maxf(off.y, off.z)) <= GROUND_MATCH:
+				ground.put_color(Vector3i(cell.x, 0, cell.z), c)
 
 
 func face_mask(cell: Vector3i) -> int:

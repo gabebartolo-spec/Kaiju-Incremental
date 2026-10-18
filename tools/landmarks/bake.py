@@ -2,7 +2,7 @@
 assets/landmarks/<id>.kvox for presentation and its structural chunk mask in data/landmarks.json
 for the sim, so a landmark breaks chunk by chunk like every other building.
 
-    python tools/landmarks/bake.py <raw.kvox> <id>
+    python tools/landmarks/bake.py <raw.kvox> <id> [--ground=3f8f3a,4fa346]
 
 The raw shell is baked at 8 voxels per floor (BuildingVoxels.RES): voxelize.py with height
 round(model_height * 8) + 1. This step:
@@ -13,7 +13,9 @@ round(model_height * 8) + 1. This step:
     byte (bit k = BuildingMesher.NEIGHBOURS[k]: -x, +x, +y, -y, -z, +z). The mesher draws exactly
     those faces: a closed volume's inside is never drawn, as a building's hollow is not;
   - marks a chunk (one sim unit, one floor) as part of the structure when any cell in it is not
-    outside air: a voxel, or air sealed inside the model. The sim builds only those chunks.
+    outside air: a voxel, or air sealed inside the model. The sim builds only those chunks;
+  - --ground lists colours (a pitch) that LandmarkVoxels also lays flat on the ground, so the
+    ground under them stays that colour once their chunks are broken.
 Pure Python + numpy.
 """
 import json
@@ -66,7 +68,7 @@ def outside_air(occ):
         out = grown
 
 
-def bake(src, ident):
+def bake(src, ident, ground=()):
     cells, cols = read_kvox(src)
     lo, hi = cells.min(axis=0), cells.max(axis=0)
     span = hi - lo + 1
@@ -106,6 +108,8 @@ def bake(src, ident):
             data = json.load(f)
     data["landmarks"][ident] = {"w": w, "d": d, "h": h, "kvox": "res://assets/landmarks/%s.kvox" % ident,
                                 "chunks": layers}
+    if ground:
+        data["landmarks"][ident]["ground"] = list(ground)
     with open(DATA, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, indent="\t", sort_keys=True)
         f.write("\n")
@@ -114,4 +118,5 @@ def bake(src, ident):
 
 
 if __name__ == "__main__":
-    bake(sys.argv[1], sys.argv[2])
+    extra = [a[len("--ground="):].split(",") for a in sys.argv[3:] if a.startswith("--ground=")]
+    bake(sys.argv[1], sys.argv[2], extra[0] if extra else [])

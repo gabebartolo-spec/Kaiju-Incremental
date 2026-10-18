@@ -6,7 +6,7 @@ smoke 30
 sim 50
 powers 24
 tentacles 18
-city 19
+city 21
 growth 24
-load 9
+load 11
 flow 134

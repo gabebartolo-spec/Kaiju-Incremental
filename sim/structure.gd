@@ -13,6 +13,8 @@ var d: int
 var h: int
 var max_hp: float
 var alive_count: int
+## A ring landmark's arcs (Arcs): settle() first brings down every arc that lost a chunk.
+var arcs: Arcs
 var _hp: PackedFloat32Array
 
 
@@ -81,6 +83,12 @@ func top_below(x: int, z: int, below_y: int) -> int:
 ## {"cells": Array[Vector3i], "kind": "drop"|"topple", "pivot": Vector3 (local), "dir": Vector2i}.
 func settle() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
+	if arcs != null:
+		for part: Dictionary in arcs.shed(self):
+			var fallen: Array[Vector3i] = part["cells"]
+			for c: Vector3i in fallen:
+				remove(c)
+			out.append(part)
 	var grounded := {}
 	var frontier: Array[Vector3i] = []
 	for x: int in w:

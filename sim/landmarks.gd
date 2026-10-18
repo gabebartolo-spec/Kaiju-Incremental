@@ -3,7 +3,8 @@ extends RefCounted
 ## Builds a rampage's buildings from the city layout's entries (CityGen). An entry with a
 ## "landmark" id is a landmark: its Structure keeps only the chunks its baked model fills
 ## ("chunks", from data/landmarks.json via tools/landmarks/bake.py), so it stands and breaks in
-## its own shape, and its chunks pay "rubble_bonus" times the usual rubble. Pure sim.
+## its own shape, and its chunks pay "rubble_bonus" times the usual rubble. A ring landmark's
+## "arcs" (Arcs) make a breach bring down a whole section of it. Pure sim.
 
 
 ## A building from one layout entry: x, z (centre), w, d, h, tier, style, and for a landmark
@@ -23,4 +24,7 @@ static func building(entry: Dictionary, chunk_hp: float) -> RampageSim.Building:
 	if entry.has("chunks"):
 		var shape: Array = entry["chunks"]
 		b.frame.keep(shape)
+	if entry.has("arcs"):
+		var arcs: Dictionary = entry["arcs"]
+		b.frame.arcs = Arcs.build(b.frame, arcs)
 	return b

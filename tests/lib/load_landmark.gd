@@ -50,5 +50,31 @@ func run() -> void:
 		sampled * 2 > b.frame.alive_count,
 		"most of its chunks throw debris when broken: %d of %d" % [sampled, b.frame.alive_count]
 	)
+	var ground: VoxelBuilder = (view.voxels as LandmarkVoxels).ground
+	_check.call(
+		(
+			ground.cells.size() > 5000
+			and ground.cells.keys().all(func(c: Vector3i) -> bool: return c.y == 0)
+		),
+		(
+			"its pitch also lies flat on the ground, so it stays green once broken: %d voxels"
+			% ground.cells.size()
+		)
+	)
+	# Holes along the rim's outer wall, mid-height: an ordinary building's neighbours get bitten.
+	var holes: Array[Vector3i] = []
+	for x: int in range(b.w / 4, b.w * 3 / 4):
+		for z: int in range(b.d - 1, -1, -1):
+			if b.frame.alive(Vector3i(x, 3, z)):
+				holes.append(Vector3i(x, 3, z))
+				break
+	var bitten := view.chip(holes, Seeds.make("fx", 0))
+	_check.call(
+		holes.size() > 8 and bitten.is_empty(),
+		(
+			"a landmark is never bitten round a hole (no speckle): %d holes, %d bites"
+			% [holes.size(), bitten.size()]
+		)
+	)
 	print("landmark view: stadium built in %d ms" % build_ms)
 	view.free()
