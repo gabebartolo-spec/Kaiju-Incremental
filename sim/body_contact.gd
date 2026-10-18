@@ -15,6 +15,8 @@ var cfg: Dictionary
 var heading := Vector2(0, -1)
 ## Chunks the body itself has broken this rampage.
 var broken := 0
+## The charge along the facing (Dash), which this body's sweep carries through the city.
+var dash: Dash
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -28,6 +30,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	cfg = tuning["contact"]
 	heading = sim.facing
 	_last_heading = heading
+	dash = Dash.new(self, cfg)
 
 
 ## Picks the body volume for a species at the sim's size tier (call after setting the species).
@@ -43,8 +46,25 @@ func active() -> bool:
 	return not _discs.is_empty()
 
 
-## Turns the body toward the facing, then breaks what it moved or turned into.
-func step(dt: float) -> void:
+## The discs at body scale 1: [forward offset, radius, bottom, top] each.
+func discs() -> Array:
+	return _discs
+
+
+## Snout to tail tip, world units.
+func length() -> float:
+	var front := 0.0
+	var back := 0.0
+	for d: Array in _discs:
+		front = maxf(front, Num.f(d[0]) + Num.f(d[1]))
+		back = minf(back, Num.f(d[0]) - Num.f(d[1]))
+	return (front - back) * sim.body_scale()
+
+
+## Turns the body toward the facing, carries a dash (dash_pressed: the button this step), then
+## breaks what the body moved or turned into.
+func step(dt: float, dash_pressed: bool = false) -> void:
+	dash.step(dt, dash_pressed)
 	var weight := minf(1.0, Num.f(cfg.get("turn_rate", 10.0)) * dt)
 	heading = Vector2.from_angle(lerp_angle(heading.angle(), sim.facing.angle(), weight))
 	if not active() or sim.airborne:
@@ -87,6 +107,7 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 	var travel := from.distance_to(to) + absf(turn) * reach
 	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
 	var hits: Dictionary = {}
+	var pay := Num.f(cfg["pay_mult"])
 	for n: int in range(1, samples + 1):
 		var t := float(n) / samples
 		_collect(from.lerp(to, t), from_heading.rotated(turn * t), hits, near)
@@ -97,9 +118,9 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 		var before := sim.rubble
 		var first := sim.events.size()
 		var n := sim.damage_chunks(index, cells, INF)
-		if n > 0:  # the body's own breaks pay pay_mult of a blow's (pacing); falls pay in full
-			sim.rubble = before + (sim.rubble - before) * Num.f(cfg["pay_mult"])
-			sim.events[first]["pay"] = Num.f(cfg["pay_mult"])
+		if n > 0:  # the body's own breaks pay a share of a blow's (pacing); falls pay in full
+			sim.rubble = before + (sim.rubble - before) * pay
+			sim.events[first]["pay"] = pay
 		broken += n
 
 

@@ -10,6 +10,8 @@ const DT := 1.0 / 30.0
 const FORWARD_STEPS := 90
 const TURN_STEPS := 30
 const BACK_STEPS := 45
+## Steps that cover one dash and its end.
+const DASH_STEPS := 20
 
 var _check: Callable
 var _make: Callable
@@ -56,6 +58,34 @@ func run() -> void:
 	)
 	var again := _walk(true)
 	_check.call(on == again, "the walk through a building replays identically")
+	_check_dash()
+
+
+## Playtest note 4: a dash at the nearest building carries the body through it at speed, and
+## the sweep still leaves nothing standing inside the body after any step.
+func _check_dash() -> void:
+	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	sim.body.use_species("reptilian")
+	var dir := (sim.nearest_standing(sim.kaiju_pos) - sim.kaiju_pos).normalized()
+	var from := sim.kaiju_pos
+	var worst := 0
+	for n: int in DASH_STEPS:
+		sim.step(DT, dir, false, Dash.BUTTON if n == 1 else 0)
+		var inside := sim.body.inside(sim.kaiju_pos, sim.body.heading)
+		for index: int in inside:
+			var cells: Dictionary = inside[index]
+			worst = maxi(worst, cells.size())
+	var moved := sim.kaiju_pos.distance_to(from)
+	_check.call(
+		sim.body.dash.dashes == 1 and moved > sim.body.length() and worst == 0,
+		(
+			(
+				"a dash carries the body %.1f m (body %.1f m) and leaves no chunk inside it (%d);"
+				+ " %d chunks broken"
+			)
+			% [moved, sim.body.length(), worst, sim.body.broken]
+		)
+	)
 
 
 ## One seeded walk; with `body` off the volume is only measured (a probe), never applied.

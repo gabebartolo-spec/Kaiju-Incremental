@@ -2,7 +2,8 @@ extends SceneTree
 ## Playtest note 2: the young reptilian walks into the nearest building, turns inside it and
 ## walks back out, at the game camera, with its body volume on (BodyContact) or off (the old
 ## stomp-only contact). Same city and seed both ways, so a pair is a before/after. Saves a still
-## every --every frames into --out for 2x crops. Needs a window and the no-focus override.cfg.
+## every --every frames into --out for 2x crops; --dash=N dashes on walk step N (note 4).
+## Needs a window and the no-focus override.cfg.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <out>.avi \
 ##     --script tools/capture/capture_contact.gd -- --body=off --out=<dir>
@@ -16,6 +17,8 @@ const LEAD_IN := 20
 var _body := true
 var _out := ""
 var _every := 30
+## --dash=N: press the dash on walk step N (playtest note 4); -1: never.
+var _dash_at := -1
 
 
 func _initialize() -> void:
@@ -26,6 +29,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg.begins_with("--every="):
 			_every = arg.substr(8).to_int()
+		elif arg.begins_with("--dash="):
+			_dash_at = arg.substr(7).to_int()
 	_run.call_deferred()
 
 
@@ -54,12 +59,17 @@ func _run() -> void:
 			move = dir.orthogonal()
 		elif n >= LEAD_IN:
 			move = dir
-		return {"move": move}
+		return {"move": move, "dash": n == _dash_at}
 	root.add_child(rampage)
 	var layer := CanvasLayer.new()
 	layer.layer = 10
 	var text := UiKit.label(
-		"BODY VOLUME ON (sweep)" if _body else "BODY VOLUME OFF (demo exe)", UiKit.SIZE_HEAD
+		(
+			("DASH (Shift)" if _dash_at >= 0 else "BODY VOLUME ON (sweep)")
+			if _body
+			else "BODY VOLUME OFF (demo exe)"
+		),
+		UiKit.SIZE_HEAD
 	)
 	text.position = Vector2(40, 160)
 	layer.add_child(text)
