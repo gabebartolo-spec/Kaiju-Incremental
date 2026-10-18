@@ -83,6 +83,9 @@ session smokes it, and the director plays again.
 ## Build session measuring off-screen 4K: caps 60/120/unlimited + nvidia-smi power/fan, per-effect GPU ms -> quality setting.
 ## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
+D-093 (director): 4K default = Graphics Balanced (0.75 FSR1, MSAA off) + 60 fps cap (half the power: 199 -> 110 W); High
+in Settings. Build session PR in flight. D-094 (director): full-game destruction = option A (Teardown-style carving +
+RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike report MERGED #91 docs/research/DESTRUCTION_SPIKE.md.
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
 $12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
