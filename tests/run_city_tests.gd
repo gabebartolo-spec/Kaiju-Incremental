@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
+const RiverStart := preload("res://tests/lib/city_river.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -165,4 +166,5 @@ func _check_no_empty_ground() -> void:
 					]
 				)
 			)
+			RiverStart.check(tier, map_seed, sim, check)
 			holder.free()

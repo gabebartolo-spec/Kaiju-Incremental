@@ -2,13 +2,15 @@ class_name CityGround
 extends Node3D
 ## The ground of the street plan (CityGen.map): asphalt streets, raised pavement blocks, the
 ## park lawn, the plaza, parking lots with painted bays, the diagonal avenue laid across the
-## blocks, quiet road paint, and the bay with its quay to the north. Flat boxes in a
+## blocks, quiet road paint, the river the kaiju rises from (CityRiver; its cross streets are
+## the bridges), and the bay with its quay to the north. Flat boxes in a
 ## few MultiMeshes; presentation only.
 
 const PAVE_TOP := 0.1  # blocks stand a kerb above the street
 const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
 const PAINT := 0.02
 const WATER_Y := -0.8
+const RIVER_Y := 0.03  # the river's surface, just over the street (its bridges read as road)
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
@@ -52,6 +54,8 @@ func _ready() -> void:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
 				_parking_bays(rect.grow(-0.6))
+			"river":
+				add_child(_river(walk))
 			_:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 	_diagonal(asphalt)
@@ -260,15 +264,26 @@ func _build_paint() -> MultiMeshInstance3D:
 
 ## The bay: dark, glossy water reaching to the horizon north of the quay.
 func _water() -> MeshInstance3D:
+	return _sheet(Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0), WATER_Y)
+
+
+## A river block: the same water, filling the block out to its kerbs.
+func _river(rect: Rect2) -> MeshInstance3D:
+	return _sheet(rect, RIVER_Y)
+
+
+## Dark, glossy water over rect (x, z) at height y.
+func _sheet(rect: Rect2, y: float) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(FAR * 4.0, FAR * 2.0)
+	plane.size = rect.size
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Look.color("water")
 	mat.roughness = 0.12
 	mat.metallic_specular = 0.8
 	plane.material = mat
 	mi.mesh = plane
-	mi.position = Vector3(0, WATER_Y, coast - FAR)
+	var mid := rect.get_center()
+	mi.position = Vector3(mid.x, y, mid.y)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi

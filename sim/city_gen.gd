@@ -24,14 +24,17 @@ const DIAGONAL := "diagonal"
 
 ## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style.
 ## Blocks fill district by district, innermost first, so a district's lots draw the same
-## numbers whichever stage is in play (only the stage's height caps change them).
+## numbers whichever stage is in play (only the stage's height caps change them). The river's
+## blocks (CityRiver) still draw their lots and drop them, so every other building stays put.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
 	for ring: int in districts(cfg).size():
 		for block: Dictionary in plan["blocks"]:
-			if str(block["use"]) == "built" and Num.i(block["district"]) == ring:
-				out.append_array(CityLots.fill_block(rng, plan, block, cfg, 1.0))
+			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
+				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
+				if str(block["use"]) == "built":
+					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
 	return out
 
@@ -319,10 +322,18 @@ static func _blocks(
 			if playable and CityLots.town_share(rect.get_center(), cfg) < 0.2:
 				if roll < Num.f(cfg["parking_chance"]):
 					use = "parking"
-			blocks.append({"rect": rect, "use": use, "district": district_of(rect, cfg)})
+			blocks.append(
+				{
+					"rect": rect,
+					"use": use,
+					"district": district_of(rect, cfg),
+					"cell": Vector2i(i, j)
+				}
+			)
 			if playable:
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
+	CityRiver.mark(plan, zs, cfg)
 	# One park per district: its biggest block between the towers and its ring. One plaza: the
 	# block at the heart of the first tower district.
 	var rings := districts(cfg)
@@ -335,6 +346,8 @@ static func _blocks(
 	var best_plaza := -1
 	var plaza_away := INF
 	for n: int in inner:
+		if str(blocks[n]["use"]) != "built":
+			continue  # the river (CityRiver)
 		var rect: Rect2 = blocks[n]["rect"]
 		var ring := Num.i(blocks[n]["district"])
 		var town := CityLots.town_share(rect.get_center(), cfg)

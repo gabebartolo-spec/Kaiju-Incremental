@@ -86,6 +86,7 @@ var army_units: Army
 var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
+var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -131,6 +132,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	emerge = Emergence.new(city, tuning)
 
 
 func stat(stat_name: String) -> float:
@@ -188,7 +190,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
-	if over:
+	if over or emerge.step(self, dt):
 		return _events
 	time_left -= dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
