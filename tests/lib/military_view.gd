@@ -32,14 +32,16 @@ func _check_view() -> void:
 	var table := ""
 	for run: Dictionary in RUNS:
 		var levels: Dictionary = run["levels"]
-		var got := await _view_run(levels, bool(run["clip"]))
+		var clip: bool = run["clip"]
+		var got := await _view_run(levels, clip)
 		var frames := Num.f(got["frames"])
 		var share := Num.f(got["framed"]) / maxf(1.0, frames)
 		framed_ok = framed_ok and frames > 300 and share >= 0.95
 		hud += Num.i(got["under"])
 		touching += Num.i(got["touching"])
 		drift = maxf(drift, Num.f(got["drift"]))
-		fov_ok = fov_ok and bool(got["fov_ok"])
+		var same_fov: bool = got["fov_ok"]
+		fov_ok = fov_ok and same_fov
 		table += (
 			(
 				"\nVIEW %s: heli in frame %.1f%% of %d, under HUD %d, pair lateral min %.1f m,"
