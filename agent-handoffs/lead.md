@@ -57,6 +57,9 @@ session smokes it, and the director plays again.
 - #76 stall probe (tools only) -> merge on green.
 - Roadmap (next board PR): ElevenLabs SFX + Suno music (spend yes + licence first); rooftop MORTARS (topple to
   kill; a variant of the rooftop squads); FINAL BOSS mecha kaiju (board for the director when scheduled).
+  DESTRUCTION (director 2026-10-19, post-demo, full game): "real dynamic destruction, actual physics and buildings than can
+  be carved by giant monsters"; today's is fine for the demo only. Start with a research spike (options, perf at 4K,
+  determinism vs sim authority), then a director board with clips.
   LANGUAGES (director 2026-10-19): Spanish, Japanese, French, German, Russian, Italian. Needs: one text table (all UI
   strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
   AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
