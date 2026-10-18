@@ -8,12 +8,15 @@ extends RefCounted
 
 const BUCKET := 8.0  # props are filed by ground cell of this size, so a crush looks nearby only
 const STUMP := 2  # a crushed tree leaves its lowest cells this many high standing
-const DEBRIS_EVERY := 4  # a crushed tree throws one piece of debris per this many of its cells
+const LEAF_EVERY := 3  # a crushed tree throws one piece per this many of its leaf cells
+const BARK_EVERY := 2  # and per this many of its bark cells above the stump
 
 var vox := VoxelBuilder.new()
 var voxel: float
 var stump_color := Color(0.85, 0.77, 0.6)  # every crushed tree's stump: fresh-cut wood
-var debris_lift := 0.0  # a tree's debris goes this much toward white, to read in the city's dusk
+var leaf_color := Color(0.42, 0.82, 0.24)  # a crushed tree's leaf debris (saturated: dusk light)
+var bark_color := Color(0.55, 0.35, 0.17)  # and its bark debris
+var throw_speed := 1.5  # how hard debris leaves a crushed tree, out and up
 var stumps: Array[Vector3] = []  # trees crushed since the owner last drained this (earth puffs)
 ## Debris to throw since the owner last drained this: [position, colour, away] each.
 var debris: Array[Array] = []
@@ -69,24 +72,18 @@ func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:
 		var ids := PackedInt32Array()
 		var heights := PackedInt32Array()  # each instance's prop-local cell height
 		var origins := PackedVector3Array()  # where each is drawn (kept here: headless keeps none)
-		var colors := PackedColorArray()  # and its colour, for debris
+		var keys := PackedStringArray()  # and its palette key (bark or leaf, for debris)
 		for cell: Vector3i in local.cells:
 			if index_of.has(cell + offset):
 				var idx: int = index_of[cell + offset]
 				ids.append(idx)
 				heights.append(cell.y)
 				origins.append(Vector3(cell + offset) * voxel + Vector3(0, voxel * 0.5, 0))
-				var key: String = vox.cells[cell + offset]
-				var tint: Color = (
-					vox.colors[cell + offset]
-					if key == VoxelBuilder.DIRECT
-					else palette.get(key, Color.MAGENTA)
-				)
-				colors.append(Look.jitter(tint, cell + offset, salt))
+				keys.append(str(vox.cells[cell + offset]))
 		group["ids"] = ids
 		group["heights"] = heights
 		group["origins"] = origins
-		group["colors"] = colors
+		group["keys"] = keys
 		group.erase("local")
 	return _mmi
 
@@ -130,15 +127,24 @@ func crush_box(body: Transform3D, foot: Rect2) -> void:
 					_crush_group(mm, group, at)
 
 
-## Sends what crushed trees left since the last call to the city's debris (none without a
-## city, as in tests) and an earth puff at each stump.
-func throw(city: CityView, fx: Fx) -> void:
+## Takes the crushed-tree look from tuning's city section.
+func configure(city: Dictionary) -> void:
+	stump_color = Color(str(city["stump_color"]))
+	leaf_color = Color(str(city["tree_debris_leaf"]))
+	bark_color = Color(str(city["tree_debris_bark"]))
+	throw_speed = Num.f(city["tree_debris_speed"])
+
+
+## Sends what crushed trees left since the last call to `field` (null in tests) and an earth
+## puff at each stump. Called before `field` processes this frame, so the burst shows on the
+## frame the tree is crushed.
+func throw(field: DebrisField, fx: Fx) -> void:
 	for piece: Array in debris:
 		var from: Vector3 = piece[0]
 		var tint: Color = piece[1]
 		var away: Vector3 = piece[2]
-		if city != null:
-			city.debris(from, tint, away)
+		if field != null:
+			field.spawn(from, tint, away)
 	debris.clear()
 	for stump: Vector3 in stumps:
 		fx.earth_puff(stump + Vector3(0, 0.2, 0))
@@ -161,15 +167,17 @@ func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 
 
 ## A tree is crushed in place, all on this frame: the stump (its lowest STUMP cells) turns the
-## stump colour, every cell above it is hidden, and one in DEBRIS_EVERY of those is thrown as
-## debris in its own leaf or bark colour, away from the blow and up. Nothing rotates or slides.
+## stump colour, every cell above it is hidden, and one in LEAF_EVERY leaf cells and one in
+## BARK_EVERY bark cells is thrown as leaf-green or bark-brown debris, away from the blow and
+## up. Nothing rotates or slides.
 func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var base: Vector3 = group["at"]
 	var ids: PackedInt32Array = group["ids"]
 	var heights: PackedInt32Array = group["heights"]
 	var origins: PackedVector3Array = group["origins"]
-	var colors: PackedColorArray = group["colors"]
+	var keys: PackedStringArray = group["keys"]
 	var out := Vector3(base.x - at.x, 0, base.z - at.z).normalized()
+	var away := (out + Vector3.UP) * throw_speed
 	var thrown := 0
 	var gone := Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	for k: int in ids.size():
@@ -177,8 +185,9 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 			mm.set_instance_color(ids[k], stump_color)
 			continue
 		mm.set_instance_transform(ids[k], gone)
-		if k % DEBRIS_EVERY == 0:
-			debris.append([origins[k], colors[k].lightened(debris_lift), out + Vector3(0, 1.0, 0)])
+		var bark := keys[k] == "bark"
+		if k % (BARK_EVERY if bark else LEAF_EVERY) == 0:
+			debris.append([origins[k], bark_color if bark else leaf_color, away])
 			thrown += 1
 	group["stump_color"] = stump_color
 	group["debris"] = thrown

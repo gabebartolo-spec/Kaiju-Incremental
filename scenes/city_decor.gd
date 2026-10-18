@@ -31,7 +31,8 @@ var _paints := 0  # how many car paints
 var _walked := Vector2(INF, INF)  # where the kaiju stood last frame (trample)
 var _kaiju: KaijuModel  # the drawn kaiju (found once), whose body tramples what it covers
 var _foot := Rect2()  # its ground box in its own frame: x across, y along (model z)
-var _fx := Fx.new()  # dust puffs where trees come down
+var _fx := Fx.new()  # earth puffs where trees are crushed
+var _debris := DebrisField.new(Seeds.make("tree_debris"), 160)  # what crushed trees throw
 var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
 var _tree_cells := {}  # Vector2i cell -> the street-tree kerb spots in it
@@ -88,9 +89,11 @@ func _ready() -> void:
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
-	_props.stump_color = Color(str(sim.city["stump_color"]))
-	_props.debris_lift = Num.f(sim.city["tree_debris_lift"])
+	_props.configure(sim.city)
+	_debris.size_scale = Num.f(sim.city["tree_debris_size"])
+	_debris.lift = 0.0
 	add_child(_fx)
+	add_child(_debris)
 
 
 ## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so
@@ -111,7 +114,7 @@ func _process(_delta: float) -> void:
 				_lamps.erase(lamp)
 				lamp.queue_free()
 	_walked = at
-	_props.throw(get_parent() as CityView, _fx)
+	_props.throw(_debris, _fx)
 
 
 ## Finds the drawn kaiju beside this city and its ground box (KaijuFootprint); false where

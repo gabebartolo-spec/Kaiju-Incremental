@@ -7,6 +7,7 @@ extends Node3D
 
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
 const SMOKE := preload("res://scenes/smoke.gdshader")
+const EARTH := Color(0.86, 0.6, 0.28)  # a crushed tree's earth puff: tan, unlit so it stays tan
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
 var steps_live: Array[GPUParticles3D] = []
@@ -14,6 +15,7 @@ var steps_live: Array[GPUParticles3D] = []
 var _dust_mat: ParticleProcessMaterial
 var _dust_mesh: Mesh
 var _earth_mat: ParticleProcessMaterial
+var _earth_mesh: QuadMesh
 var _puff_mesh: Mesh
 var _step_mat: ParticleProcessMaterial
 var _step_mesh: Mesh
@@ -47,6 +49,8 @@ func _ready() -> void:
 			"colors": [Color(1.0, 0.74, 0.42, 0.9), Color(0.9, 0.66, 0.38, 0.0)],
 		}
 	)
+	_earth_mat.color_ramp = _ramp(EARTH, [0.0, 0.7, 0.5, 0.0], [0.0, 0.08, 0.4, 1.0])
+	_earth_mesh = _soft_puff(1.6)
 	_dust_mesh = _puff(2.2)
 	_puff_mesh = _puff(0.5)
 	_step_cfg = Content.section("fx")["footfall_dust"]
@@ -92,17 +96,17 @@ func dust(at: Vector3, size: float) -> void:
 	mat.emission_box_extents = Vector3(size, 0.4, size)
 
 
-## A tan puff of earth where a tree is crushed (light, so it reads on dark grass), about three
-## stumps wide and held over a second.
+## A tan puff of earth where a tree is crushed: a few soft round sprites that come up over the
+## first 2-3 frames, hold, thin from about 0.4 s and are gone at 1 s.
 func earth_puff(at: Vector3) -> void:
-	var p := _burst(_earth_mat, _dust_mesh, 18, 1.4)
-	p.position = at
+	var p := _burst(_earth_mat, _earth_mesh, 6, 1.0)
+	p.position = at + Vector3(0, _earth_mesh.size.y * 0.4, 0)  # its lower rim clear of the grass
 	var mat: ParticleProcessMaterial = p.process_material
-	mat.emission_box_extents = Vector3(1.2, 0.2, 1.2)
-	mat.initial_velocity_min = 0.3
-	mat.initial_velocity_max = 0.9
-	mat.scale_min = 1.4
-	mat.scale_max = 2.2
+	mat.emission_box_extents = Vector3(0.5, 0.2, 0.5)
+	mat.initial_velocity_min = 0.4
+	mat.initial_velocity_max = 1.0
+	mat.scale_min = 0.7
+	mat.scale_max = 1.0
 
 
 ## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling
@@ -210,6 +214,44 @@ func _particle_mat(o: Dictionary) -> ParticleProcessMaterial:
 	ramp_tex.gradient = ramp
 	mat.color_ramp = ramp_tex
 	return mat
+
+
+## Alpha over life, in one colour: alphas at the given offsets (0..1 of the particle's life).
+func _ramp(tint: Color, alphas: Array[float], at: Array[float]) -> GradientTexture1D:
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array(at)
+	var colors := PackedColorArray()
+	for a: float in alphas:
+		colors.append(Color(tint, a))
+	ramp.colors = colors
+	var tex := GradientTexture1D.new()
+	tex.gradient = ramp
+	return tex
+
+
+## A round camera-facing sprite, opaque in the middle and fading to nothing at its rim, unlit so
+## its particle colour shows as it is (earth puffs: no noise, no banding, no lit slab).
+func _soft_puff(size: float) -> QuadMesh:
+	var rim := Gradient.new()
+	rim.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = rim
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	var draw := StandardMaterial3D.new()
+	draw.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	draw.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	draw.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	draw.vertex_color_use_as_albedo = true
+	draw.albedo_texture = tex
+	draw.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	draw.proximity_fade_enabled = true  # where it meets the ground: a soft edge, not a cut line
+	draw.proximity_fade_distance = 0.8
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * size
+	quad.material = draw
+	return quad
 
 
 ## A soft camera-facing puff (the smoke shader), for dust clouds.

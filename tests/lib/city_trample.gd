@@ -62,7 +62,7 @@ static func _check_crushed(group: Dictionary, check: Callable) -> void:
 	for h: int in heights:
 		above += 1 if h >= PropField.STUMP else 0
 	check.call(
-		thrown > 0 and thrown >= above / PropField.DEBRIS_EVERY and painted != Color.BLACK,
+		thrown > 0 and thrown >= above / PropField.LEAF_EVERY and painted != Color.BLACK,
 		(
 			(
 				"crushed tree at (%.1f, %.1f) leaves a stump and debris on the same frame"
