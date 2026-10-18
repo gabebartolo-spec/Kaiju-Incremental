@@ -33,6 +33,7 @@ var _rifle_ab: Array[float] = []
 var _stills: Array[Dictionary] = []
 var _volleys: Array[int] = []
 var _sparks: Array[Dictionary] = []
+var _in_reach: Array[int] = []  # squads with the kaiju in reach, sampled once a second
 
 
 func _initialize() -> void:
@@ -77,6 +78,8 @@ func _run() -> void:
 			levels["rifle"] = _rifle_ab[floori(i / float(FRAMES))]
 			print("rooftops: frame %d rifle at %.1f dB" % [i, levels["rifle"]])
 		await physics_frame
+		if i % 60 == 0:
+			_in_reach.append(_reaching(sim))
 		while logged < roofs.spark_log.size():
 			var at: Vector3 = roofs.spark_log[logged]["at"]
 			var px := camera.unproject_position(at)
@@ -94,9 +97,13 @@ func _run() -> void:
 			due = -1
 			_still(rampage, roofs, camera, i)
 	var file := FileAccess.open(_out.path_join("rooftops.json"), FileAccess.WRITE)
-	file.store_string(
-		JSON.stringify({"stills": _stills, "volley_frames": _volleys, "sparks": _sparks}, "  ")
-	)
+	var record := {
+		"stills": _stills,
+		"volley_frames": _volleys,
+		"sparks": _sparks,
+		"in_reach_per_second": _in_reach,
+	}
+	file.store_string(JSON.stringify(record, "  "))
 	file.close()
 	print(
 		(
@@ -110,6 +117,15 @@ func _run() -> void:
 		)
 	)
 	quit()
+
+
+## How many live squads have the kaiju within range + stomp (the sim's rule) right now.
+func _reaching(sim: RampageSim) -> int:
+	var reach := Num.f(sim.army["rooftop"]["range"]) + sim.stomp_radius()
+	var count := 0
+	for squad: Army.Squad in sim.army_units.squads:
+		count += 1 if squad.pos.distance_to(sim.kaiju_pos) <= reach else 0
+	return count
 
 
 ## The spot (on a GRID over the arena) where the most squads in the camera's VIEW have the kaiju
