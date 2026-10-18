@@ -190,8 +190,9 @@ func _physics_process(delta: float) -> void:
 ## at `kaiju_at`.
 func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 	if str(event["type"]) == "rooftop_fired":
-		fired(Num.i(event["squad"]), kaiju_at)
-		_sfx.play("rifle")
+		var squad_id := Num.i(event["squad"])
+		fired(squad_id, kaiju_at)
+		_sfx.play_at("rifle", _squad_at(squad_id))
 		return true
 	if str(event["type"]) != "rooftop_destroyed":
 		return false
@@ -207,6 +208,14 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 
 ## A squad's volley (sim rooftop_fired): a flash at each muzzle and a tracer from each at the
 ## kaiju, whose drawn body stands at `kaiju_at` with its feet there.
+## Where a squad stands (its first soldier), for the volley's sound to come from.
+func _squad_at(squad_id: int) -> Vector3:
+	for squad: Army.Squad in sim.army_units.squads:
+		if squad.id == squad_id:
+			return stance(squad, 0).origin
+	return Vector3.ZERO
+
+
 func fired(squad_id: int, kaiju_at: Vector3) -> void:
 	for squad: Army.Squad in sim.army_units.squads:
 		if squad.id != squad_id:

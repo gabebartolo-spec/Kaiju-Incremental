@@ -1,88 +1,80 @@
-# Ability VFX/SFX handoff, 2026-10-18 16:30
-## State: awaiting lead (merge #49 first, then resync the 5 tabled sound PRs)
+# Ability VFX/SFX handoff, 2026-10-18 23:45
+## State: running a check (#52 CI capture run 39089682447, bash bue4oa2qy); #53 ready for the lead to merge on green
 
 ## Who
-- Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It does QA gates and director listens.
-- The director is asleep, so anything for his ear is tabled with the lead.
+- Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
 - Report to the lead and ask for jobs, always naming 2-3 options. Never just "await".
 
 ## Merged
-- #8: power SFX, footsteps and stomps on plants, crack, collapse, roar on the reveal. D-052, D-055.
-- #33: SFX/Music buses, Sound effects slider, menu sounds, end-card Sfx.roar. D-064.
-- #34: tank fire, shell hit, heli rotor. D-067.
-- #41: Master limiter + SFX compressor.
+- #8 power SFX, steps and stomps, crack, collapse, roar (D-052, D-055).
+- #33 buses, slider, UI sounds (D-064).
+- #34 tank fire, shell hit, rotor (D-067).
+- #41 limiter and compressor.
+- #43 crowd.
+- #45 mix fixes (look-options 0817cf6).
+- #39 heli gun and crash (look-options d135937).
+- #42 footstep variants (look-options 71dc65b).
+- #46 rifle volleys (look-options e14854c). All five tabled sound PRs are in. The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
-## Open PRs (each → claude/look-options; all tabled for the director's listen, none merge tonight)
-- **#39** claude/heli-sfx, head 2ecdbe0, flow 113: heli gun and crash. Clip army-sfx/heli_gun_crash.mp4.
-- **#42** claude/footstep-variants, head aadc2f6, flow 114: footstep_1..3 round-robin. Clips in footsteps/.
-- **#43** claude/crowd-sfx, head 8d37511, flow 114: crowd_panic loop.
-  - Driven by StreetLife.panicking() and the destruction rate; ducks 9 dB under breath; high-passed at 300 Hz.
-  - Sfx.watch(camera, helis, street). Clips in crowd/.
-- The PRs collide on flow floors and on the sfx.watch line (#39 vs #43). Resync to the real counts as each lands.
+## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
+- **Gap job (a): branch claude/shell-hit-hp = DRAFT PR #52 (head 424c2f1, on look-options e14854c; Auto-fix on). The director listens before merge..**
+  - build_sfx.py: shell_hit high-passed at 120 Hz (energy below 120 Hz 82% -> 33%; below 300 Hz 97% -> 84%).
+  - The provenance row is updated. capture_mix_log.gd now takes --out=<dir>.
+  - Old file for the A/B: scratchpad/shellhp/shell_hit_before.ogg.
+  - CI capture (60 fps, 2 min) downloads to scratchpad/shellhp/ci.
+  - Next: run mix_report.py on that log twice (swap the old ogg into assets/sfx for "before", then restore).
+    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), fill #52's
+    Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
+  - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
 
-## Branch waiting
-- claude/rifle-sfx (b1a43d2, pushed, no PR): rifle.ogg plus the Sfx "rifle" stream, for #40 (rooftop defenders),
-  which calls Sfx.play("rifle").
-  - After #40 merges: merge look-options in, change rooftop_view's call to play_at("rifle", <squad pos>)
-    for the distance fade, add a flow check, record a clip, then open the PR.
-  - A/B listen: rifle/rifle_vs_tank.wav.
+- **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
+  - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
+    - rifle sounds 187 vs 60 (4.8/s vs 1.5/s while firing);
+    - stomps cut by the pool 50 vs 24;
+    - rifle never masks stomps.
+    The numbers are in #53's body. The lead merges on green before the rooftop clip.
+    Whichever of #50/#53 lands second resyncs the flow floor only.
+  - The rooftop session ("Kaiju: denser rooftop fire (D-076)") merged #53 into its claude/rooftops-capture branch.
+  - Temp branch tmp-rifle-measure (rifle-gap + 7000a1f) is still local; deleting it was denied, so it's left for the user or lead.
+  - FINDING to propose: even with the gap, 24 of 73 stomps (and 23 of 33 tank shots) are cut short because the 8-voice pool is shared.
+    Fix idea: give stomps and breath their own voices, or raise POOL. Measure with scratchpad/riflegap/measure.py.
 
-## Job (o): mix report DONE (shared notes mix-report/report.md, run clip, log, raw tables)
-- Master -21.4 LUFS, -3.9 dBTP. Loudness order is right.
-- Problems: crowd inaudible (-44 LUFS, 26 dB under); regen loop on 86% of the run; tank_fire's thump masks stomps.
-- Proposal (not applied, waits for the director's listen):
-  - crowd -14 → -6 dB, quiet_db -30 → -24;
-  - regen -20 dB, first 2.5 s per heal only;
-  - tank_fire high-passed at 120 Hz.
-- Tools: claude/mix-report (pushed, no PR) has tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py.
+## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
+- Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
+- Pacing at 4b3146c (130 runs):
+  - young: 31 runs, 0.62 h, ended 3/28/0;
+  - Behemoth: 45 runs, 37/7/1;
+  - Colossus: 54 runs, 29/25/0.
+- **D-069a:** young defeats of 28/31 are too punishing; aim for about half (before #36: 16/28).
+  - Cause: young per_level is already {}. #36 moved Armoured Scales behind Endless Rage (330 rubble).
+  - Fix in data only: a stages[0] "army" override (tank_damage, maybe start_interval).
+  - Sweep script: scratchpad/young_sweep.sh (45 runs per spec; edits and then restores data/tuning.json).
+    WARNING: stopping it left its shell alive, and it copied #36's tuning over the #39 merge after the branch switch.
+    Before any switch, confirm no bash process mentions young_sweep.
+  - The sweep was stopped for #39 after the baseline only ({} gives 3/28/0). It still needs tank_damage 3, 2.5, and 3 with start_interval 6.
+  - Tune young LAST, against #50's and P3's final numbers (P3: baby speed 0.6, more hp, demo ~35 min). Target stays ~half early defeats, with Scales where #36 puts it.
+  - Order (director): #50 -> P3 -> rooftop density -> #36 -> demo build. Targets: about half of early runs defeated, evolve1 near 0.71 h (D-074b). After those land, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
 
-## Job (o2) DONE: PR #45 claude/mix-levels → base claude/crowd-sfx (stacked on #43), flow 115
-- crowd -6 dB (quiet -24), regen -20 dB as a 2.5 s cue per heal, tank_fire high-passed at 120 Hz.
-- Re-measured: crowd gap -18.9 dB, regen on 6%, master -20.5 LUFS / -3.9 dBTP all met.
-  Stomps masked by army 15 → 8, not 0: it's shell_hit's thud; a 120 Hz high-pass on it is the next step if wanted.
-- A/B: mix-report/ab_before_after_20s.mp4. Report section 5 has the after numbers.
-- When #43 merges, retarget #45 to look-options.
-
-## Sync status (#39/#42/#43/#45 on look-options f71c527; #46 on 39acc0a; base flow is now 117)
-| PR | Head | Flow |
-|---|---|---|
-| #39 heli | bac13d7 | 116 |
-| #42 footsteps | dc8fd13 | 117 |
-| #43 crowd | c216ac0 | 117 |
-| #45 mix (on #43) | 9acb9e2 | 118 |
-| #46 rifle | c871803 (on 39acc0a) | 118 |
-
-- run_flow_tests.gd is at 393 lines on look-options. Each PR keeps its added checks in its own tests/lib file:
-  flow_heli_sounds, flow_step_sounds, flow_sounds (crowd + regen), flow_rifle_sounds.
-  So the PRs merge in any order with only a floor resync.
-- The lead merges them one at a time in the director's order and pings me. Resync each to the real count.
-
-## Blocker and fix (2026-10-18 16:30)
-- After #27, run_flow_tests.gd on look-options is 399/400 lines. Every tabled PR would break the gdlint cap.
-- **PR #49** claude/flow-sfx-split moves _check_stomp_timing into tests/lib/flow_sfx.gd (static run(root, check));
-  the flow file goes to 358 lines with the same 129 checks.
-- After #49 merges, resync #39, #42, #43, #45 and #46. Each one's edits to the old _check_stomp_timing block
-  now belong in tests/lib/flow_sfx.gd: #42 walk, #43 crowd, #45 regen (as calls to their own lib files),
-  and #46 rifle in _check_rampage. Floors = 129 + each PR's own checks.
-- #39 is at 1fc14bd, synced to the pre-#27 base.
-
-## Next
-- Queue: (h) Sonniss roars waits for the director; (k) Atomic Beam waits (outside the demo). Ask the lead for more.
-- Every sync: check `git log origin/claude/look-options -1` first.
-  - Squash merges: keep look-options' version of the merged PR's lines, then add only mine.
-  - Floors are the real counts the suite prints.
-  - Run gdlint over the whole tree before a push. rampage.gd is at the 400-line cap.
+## Rules
+- Before every sync, check `git log origin/claude/look-options -1`.
+- Squash merges: keep look-options' version of the merged PR's lines, then add only mine.
+- Floors are the real counts the suite prints.
+- Run gdlint over the whole tree before a push.
+- rampage.gd is at 399/400 lines.
+- run_flow_tests.gd is at about 359 lines. Each PR's checks live in a tests/lib file:
+  - flow_heli_sounds;
+  - flow_step_sounds;
+  - flow_rifle_sounds.
+- Kill Godot only by the PID I recorded. Another session runs its own tools/pacing.gd (no --runs); leave it alone.
+- Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
 
 ## How-to
 - Godot: /c/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe
-  - Tests: GODOT=<that> SUITES_ONLY=1 tools/run_tests.sh [suite...]
-  - Windowed captures need override.cfg written in its own command first (a hook checks), and deleted after.
-- Sounds: python tools/sfx/build_sfx.py --kenney C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl.
-  The Kenney CC0 packs are unzipped there, outside the repo. Revert unchanged rebuilt oggs (only the serial differs).
-- Clips: tools/capture/capture_sfx_clips.gd ("-- --army" for tanks and helis), capture_roar.gd,
-  capture_ui_sounds.gd, capture_loud.gd. Use --write-movie, then imageio_ffmpeg's ffmpeg.
-  Shared notes live at side-session-notes/local_9fac90d2.../.
-- Do NOT edit scenes/kaiju_rig.gd or scenes/kaiju_model.gd.
+  - Tests: `GODOT=<that> SUITES_ONLY=1 tools/run_tests.sh`
+  - Windowed captures need override.cfg written in its own command first, then deleted afterwards.
+- Sounds: `python tools/sfx/build_sfx.py --kenney C:/Users/DANTE/AppData/Local/Temp/claude/sfx_dl`. Revert unchanged rebuilt oggs (only the serial differs).
+- Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-CI on #39, #42 and #43. No Godot, no override.cfg.
+- bue4oa2qy: CI capture for #52 (run 39089682447).
+- Local-only handoff commits on army-scales-sync: 7b0db6d, 3518703.

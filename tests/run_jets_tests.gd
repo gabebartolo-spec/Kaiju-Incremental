@@ -20,6 +20,7 @@ func run_checks() -> void:
 	_check_dodge()
 	_check_next_pass()
 	_check_hit_back()
+	_check_jet()
 	_check_collateral()
 	_check_grab()
 	_check_height()
@@ -330,4 +331,25 @@ func _check_bomb_collateral() -> void:
 			"a bomb wrecks more than a roof (%d vs %d chunks), paying no biomass (%.2f vs %.2f)"
 			% [standing[1], standing[0], rubble[1], rubble[0]]
 		)
+	)
+
+
+## Every jet (D-072) draws the Blender voxels it was built from (vox_jet.py), its nose (where its
+## rounds leave) forward along -Z.
+func _check_jet() -> void:
+	var drawn: Array[String] = []
+	var heights: Dictionary = Content.section("vehicles")["jet_heights"]
+	for kind: String in heights:
+		var jet := JetModel.new(kind)
+		root.add_child(jet)
+		var mmi := jet.get_child(0) as MultiMeshInstance3D
+		var cubes := mmi.multimesh.instance_count if mmi != null else 0
+		var path := "res://assets/vehicles/jet_%s_body.kvox" % kind
+		var cells := Kvox.read(path).frames[0].cells.size()
+		if cubes > 0 and cubes <= cells and jet.nose().z < -1.5:
+			drawn.append(kind)
+		jet.free()
+	check(
+		drawn.size() == heights.size(),
+		"every jet draws its Blender voxels, nose forward: %s of %s" % [drawn, heights.keys()]
 	)
