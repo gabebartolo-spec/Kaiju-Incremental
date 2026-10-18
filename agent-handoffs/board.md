@@ -1,7 +1,7 @@
 # Handoff: board (this session: "Kaiju: Load, smoke FX, builds")
 
-Updated: 2026-10-19 02:45
-State: working (#92 open; 4K still pair waits on the focus guard)
+Updated: 2026-10-19 03:20
+State: awaiting lead (#92 review fix + CI board pushed; resync after the lead's doc-caps fix)
 
 ## Open PRs (each green locally on all suites after syncing look-options)
 - Fix 3 frame cap: #77 MERGED.
@@ -19,11 +19,10 @@ State: working (#92 open; 4K still pair waits on the focus guard)
 - Load timing method: export with `--export-release "Windows Desktop"`, then
   `godot_console --headless --main-pack K.exe --script <probe.gd> -- --tier=N` (scratch APPDATA).
 
-## GPU at 4K -> PR #92 (claude/graphics-setting, worktree graphics, head 4e68ff7)
+## GPU at 4K -> PR #92 (claude/graphics-setting, worktree graphics, head 18c8d0b)
 Graphics High / Balanced (0.75 FSR1, MSAA off) + 4K default Balanced/60 in display.graphics_default.
-Suites green (flow 154). PENDING: the High vs Balanced 4K still pair (stills.gd + 2x crops of the croc and a
-building edge). The focus guard blocks it while the director is in League; retry, then commit it to
-docs/captures and update the PR body. Note: the project MSAA is 4x, not 2x.
+Stale settings.cfg fix (display version 2), flow 155. CI board docs/captures/2026-10-19-graphics/.
+No local Godot while the director plays League (lead's rule): use CI (capture.yml, gl_compatibility).
 
 ## Next
 Lead review at 2x; follow-up for the first young load if the lead wants it.
