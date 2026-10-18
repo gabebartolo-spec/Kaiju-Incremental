@@ -65,6 +65,9 @@ func _run() -> void:
 			move = dir if n >= LEAD_IN else Vector2.ZERO
 		return {"move": move}
 	root.add_child(rampage)
+	for child: Node in rampage.get_children():
+		if child is BreathAim:  # the ready-breath wedge sits over the head and hides the bite
+			child.queue_free()
 	var layer := CanvasLayer.new()
 	layer.layer = 10
 	var text := UiKit.label(
