@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 19:30
-## State: awaiting lead (#59 ready for review, head 0379e4a; AFL clip sent for the motion critic)
+# Landmarks handoff, 2026-10-18 21:00
+## State: awaiting lead (GPU slot for #59 crowd evidence; crowd pushed 9032216, suite green)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -25,7 +25,17 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   E spire / F megatower bake (F needs a Performance look at ~816k voxels).
 
 ## #59 state
-- Ready for review (out of draft), base claude/look-options, head 0379e4a. Suite green at 3bc9f2e.
+- Director 2026-10-18 (via LEAD): "the stadium needs to be full of people in the stands". Done in
+  9032216: scenes/stadium_crowd.gd (StadiumCrowd, child of StadiumMatch). Up to 1000 fans on the
+  model's top-open seat voxels (b23d32 / 8e3029), one per 3x3 voxels, shuffled; kit shirts 60%,
+  else neutral; idle bob. Panic: fans on dead chunks hidden (fallen); rest stand, run along
+  their row to the nearest of 8 exits away from the kaiju, then up the aisle; gone once off the
+  seats for 0.6 (escaped). Draws 18 MultiMeshes seated (6 shirts x 3 skins), buffer uploads.
+  tuning.json "crowd". Flow 144 (fail-first log: scratchpad crowd_failfirst_evidence.log).
+- NEXT on LEAD's GPU slot: scratchpad local_crowd.sh (stills, --frametime off/on, clip; mp4 to
+  720p). Then: 2x crop of a stand, commit stills, clip to notes landmarks/, paths + frame times
+  to LEAD, PR body update.
+- Earlier (pre-crowd): ready for review, base claude/look-options. Suite green at 3bc9f2e.
 - AFL clip rendered on the local GPU (scratchpad local_clip.sh): notes landmarks/afl_cave_in_720p.mp4
   (mp4 is gitignored; Movie Maker wrote 1080p, scaled to 720p). Pair in docs/captures/2026-10-18-matches/.
 - Own check: ~3.4-4.0 s the stands sections toppling inward show their dark hollow undersides
