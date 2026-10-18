@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r4 in progress)
-## State: running a check (CI tests.yml on eb7baf0; STILL CI-ONLY (LEAD: no local Godot, headless included); clip on capture.yml after tests are green; pacing waits)
+## State: blocked (local Godot paused by LEAD for the director's playtest; heli framing not converging on CI, next step is a local probe: scratchpad probe_room_miss.gd). Head e2882b5.
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -30,18 +30,23 @@ screen points vs the frame (4% margin) and HUD plates.
   helis >= 95% in frame + 0 under HUD, drawn tank parts never touch). DRIVE_DEG 10, FIRE_YAW 20.
 
 ## Next
-CI history this round:
-- 6a0a5db..638171c: smoke compile caught bool(Variant).
-- 63c26b2: military shard killed. Cause: AirSpace rescanned lots per 1 m sample (fixed: roof cache per 2 m cell),
-  and the three real-scene view runs were too slow on CI (fixed eb7baf0: only the clip's scene;
-  per-stage framing comes from the sim rampages through the test's own camera, military_frame.gd).
-- Tentacles grab: the heli came within reach, but the grabs went to cars. The window is now 16 s.
-1. Read CI for eb7baf0 (rate limit: poll every 3 min, not 10 s). VIEW lines = probe table.
-2. Clip on CI: capture.yml (check gh run list -w capture.yml first: one at a time),
-   script capture_military.gd, --movie, renderer gl_compatibility, 1280x720, fps 60.
-3. PR body r4 section (pr_body.md in the scratchpad), sim-review packet section 7 is written.
-4. Pacing + young retune wait for LEAD's go (local Godot), or a CI dispatch.
-5. Ping LEAD with the full SHA.
+Decisions: LEAD A (2026-10-19). Helicopters fire only in sight. With no in-frame spot they hold
+off-screen and sweep for room. Camera unchanged. Rebalance any lost damage with heli fire rate,
+not tanks.
+Done locally, not yet green on CI:
+- Tanks: open_up after a gun swing, last metre, square = skew_deg. Probe: 0 touches, 0 yaw.
+- Helis: fire in sight only (CI: 0 bursts unseen).
+Still failing (CI e2882b5, military 6 of 22):
+- Heli in sight where there is room: Beh 22%, Apex 68% (bar 95%).
+- Helis in sight at all: Beh 8%, Apex 40% of rampage time.
+- Rotor-roof -5.2 m, faced closest 11.4 vs 13.2, altitude "stays" 5.
+- Bursts 2 at Behemoth (floor 20): damage collapse, so rebalance fire rate after the pacing.
+1. On LEAD's go: run probe_room_miss.gd from tests/ (copy it in, delete after) at TIERS=2,4.
+   Find why helis with room are not in sight (r vs plan, alt vs plan, state). After several failed
+   fixes, change method. Consider: target = in-frame point nearest the formation slot, flown
+   toward at a speed cap. That way in-sight follows from the plan, not from many easing rules.
+2. Pacing base (snapBase4 = look-options 24dc0a8) vs r4, same seeds; young and damage per run by tier.
+3. Clip on capture.yml (one at a time), PR body r4, ping LEAD with the full SHA.
 
 ## Findings for the lead
 - Numeric per-frame probes caught what crops missed: the "hulls interpenetrating" was a gun.
