@@ -14,7 +14,7 @@ const SOFT_IN := 0.08
 const SOFT_GROW := 0.3
 const SOFT_OUT := 0.38
 const SOFT_FRONT := Vector2(0.08, 0.8)
-const SOFT_RING := {"width": 0.09, "edge": 0.07, "glow": 0.9, "rag": 0.0, "self_fade": 0.0}
+const SOFT_RING := {"width": 0.09, "edge": 0.1, "glow": 0.55, "rag": 0.0, "self_fade": 0.0}
 const SMOKE := preload("res://scenes/smoke.gdshader")
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
