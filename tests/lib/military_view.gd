@@ -1,85 +1,197 @@
 extends "res://tests/lib/military_air.gd"
 ## The military suite's game-view checks (D-066 r4): the clip's scene (tools/capture/
 ## capture_military.gd: a Behemoth at its crossing, columns calling in close, a pair up from the
-## start) run as the game runs it, measured every frame through the game camera and the drawn
-## models: helicopters whole in the frame and off the HUD, and no two tanks' drawn parts (hull,
-## turret, gun, from the voxels through the models' own transforms) ever touching.
+## start), then a Colossus and an Apex, run as the game runs them and measured every frame
+## through the game camera and the drawn models: helicopters whole in the frame and off the
+## HUD, and no two tanks' drawn parts (hull, turret, gun, from the voxels through the models'
+## own transforms) ever touching. Prints the probe table (VIEW lines) for the PR body.
 
 const VIEW_SECONDS := 18.0
 ## Share of the screen kept clear at each edge.
 const FRAME_MARGIN := 0.04
+## The runs: the clip's (Behemoth at the capture's crossing, its overrides), then a Colossus and
+## an Apex standing at their city's start with the sky open (helicopters up at once).
+const RUNS: Array[Dictionary] = [
+	{"name": "Behemoth clip", "levels": {"claws": 1, "evolve1": 1}, "clip": true},
+	{"name": "Colossus", "levels": {"evolve1": 1, "evolve2": 1}, "clip": false},
+	{"name": "Apex", "levels": {"evolve1": 1, "evolve2": 1, "evolve3": 1}, "clip": false},
+]
+
+var _shapes := {}  # tank part -> its footprint (_tank_shapes)
 
 
+## Every run through the game camera; prints the probe table (PR body) and checks the bars.
 func _check_view() -> void:
 	root.size = Vector2i(1920, 1080)
-	var rampage := _clip_scene()
+	_shapes = _tank_shapes()
+	var framed_ok := true
+	var hud := 0
+	var touching := 0
+	var drift := 0.0
+	var fov_ok := true
+	var table := ""
+	for run: Dictionary in RUNS:
+		var levels: Dictionary = run["levels"]
+		var got := await _view_run(levels, bool(run["clip"]))
+		var frames := Num.f(got["frames"])
+		var share := Num.f(got["framed"]) / maxf(1.0, frames)
+		framed_ok = framed_ok and frames > 300 and share >= 0.95
+		hud += Num.i(got["under"])
+		touching += Num.i(got["touching"])
+		drift = maxf(drift, Num.f(got["drift"]))
+		fov_ok = fov_ok and bool(got["fov_ok"])
+		table += (
+			(
+				"\nVIEW %s: heli in frame %.1f%% of %d, under HUD %d, pair lateral min %.1f m,"
+				+ " facade min %.1f m, rotor-roof min %.1f m, fire yaw max %.1f deg (%d bursts);"
+				+ " tank drawn gap min %.2f m, touching %d, yaw moving max %.1f deg"
+			)
+			% [
+				run["name"],
+				share * 100.0,
+				frames,
+				got["under"],
+				got["lateral"],
+				got["facade"],
+				got["rotor"],
+				got["fire_yaw"],
+				got["bursts"],
+				got["gap"],
+				got["touching"],
+				got["yaw"]
+			]
+		)
+	print(table)
+	check(drift < 1.0 and fov_ok, "air.view is the game camera: within %.2f m, same fov" % drift)
+	check(
+		framed_ok and hud == 0,
+		"helicopters stay whole in the frame (>= 95%% each run) and off the HUD (%d)" % hud
+	)
+	check(touching == 0, "no two tanks' drawn parts touch in the game view (%d)" % touching)
+
+
+## One run, measured every frame: {frames, framed, under, lateral, facade, rotor, fire_yaw,
+## bursts, gap, touching, yaw, drift, fov_ok}.
+func _view_run(levels: Dictionary, clip: bool) -> Dictionary:
+	var rampage := _view_scene(levels, clip)
 	root.add_child(rampage)
 	await physics_frame
-	_clip_overrides(rampage.sim)
 	var sim := rampage.sim
-	var shapes := _tank_shapes()
+	if clip:
+		_clip_overrides(sim)
+	else:
+		sim.air.cfg["after_chunks"] = 0
+		sim.air.cfg["interval"] = 0.8
+		sim.chunks_destroyed = Num.i(sim.air.cfg["max_per_chunks"]) * 3
+	var roads := _roads(sim)
 	var cam: Camera3D = rampage._camera
-	var hud: Node = rampage._hud
-	var frames := 0
-	var framed := 0
-	var under := 0
-	var touching := 0
-	var gap := INF
-	var drift := 0.0
+	var view: Dictionary = sim.air.cfg["view"]
+	var got := {
+		"frames": 0,
+		"framed": 0,
+		"under": 0,
+		"lateral": INF,
+		"facade": INF,
+		"rotor": INF,
+		"fire_yaw": 0.0,
+		"bursts": 0,
+		"gap": INF,
+		"touching": 0,
+		"yaw": 0.0,
+		"drift": 0.0,
+		"fov_ok": is_equal_approx(cam.fov, Num.f(view["fov"])),
+	}
+	var last := {}
 	for i: int in roundi(VIEW_SECONDS * 60.0):
 		await physics_frame
 		sim.facing = Vector2(1, 0)
 		if i > 300:  # the camera has settled on the kaiju
-			drift = maxf(drift, sim.air.space.camera()[0].distance_to(cam.global_position))
-		var plates := _plates(hud)
-		for heli: AirWing.Heli in sim.air.helis:
-			frames += 1
-			var seen := _heli_seen(cam, heli, plates)
-			framed += 1 if seen.x > 0.0 else 0
-			under += 1 if seen.y > 0.0 else 0
-		var parts := {}
-		for tank: RampageSim.Tank in sim.tanks:
-			if rampage._tank_nodes.has(tank.id):
-				var node: TankModel = rampage._tank_nodes[tank.id]
-				parts[tank.id] = _tank_drawn(node, shapes)
-		var ids := parts.keys()
-		for a: int in ids.size():
-			for b: int in range(a + 1, ids.size()):
-				var one: Array[PackedVector2Array] = parts[ids[a]]
-				var two: Array[PackedVector2Array] = parts[ids[b]]
-				var g := _parts_gap(one, two)
-				gap = minf(gap, g)
-				touching += 1 if g <= 0.0 else 0
+			var off := sim.air.space.camera()[0].distance_to(cam.global_position)
+			got["drift"] = maxf(Num.f(got["drift"]), off)
+		_measure_air(sim, cam, _plates(rampage._hud), got)
+		_measure_tanks(rampage, roads, last, got)
 	rampage.queue_free()
-	var view: Dictionary = sim.air.cfg["view"]
-	check(
-		drift < 1.0 and is_equal_approx(cam.fov, Num.f(view["fov"])),
-		"air.view is the game camera: within %.2f m of it, fov %.0f" % [drift, cam.fov]
-	)
-	check(
-		frames > 600 and framed >= frames * 0.95 and under == 0,
-		(
-			"helicopters stay whole in the frame (%.0f%% of %d heli-frames) and off the HUD (%d)"
-			% [100.0 * framed / maxf(1.0, frames), frames, under]
-		)
-	)
-	check(
-		touching == 0 and gap < INF,
-		"no two tanks' drawn parts touch in the game view (%d; closest %.2f m)" % [touching, gap]
-	)
+	await process_frame
+	return got
 
 
-## The capture's scene: a Behemoth croc that cannot fall, at the capture's crossing.
-func _clip_scene() -> Rampage:
+## The helicopters this frame: framing, HUD, pair spacing, facades, roofs and fire yaw.
+func _measure_air(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dictionary) -> void:
+	for heli: AirWing.Heli in sim.air.helis:
+		got["frames"] = Num.i(got["frames"]) + 1
+		var seen := _heli_seen(cam, heli, plates)
+		got["framed"] = Num.i(got["framed"]) + (1 if seen.x > 0.0 else 0)
+		got["under"] = Num.i(got["under"]) + (1 if seen.y > 0.0 else 0)
+		for b: RampageSim.Building in sim.buildings:
+			var half := Vector2(b.w, b.d) * 0.5
+			var near := heli.pos.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half)
+			var across := near.distance_to(heli.pos)
+			if across < 3.3 + 0.8:  # under the rotor disc
+				got["rotor"] = minf(Num.f(got["rotor"]), heli.alt - b.height)
+			if b.height > heli.alt - 4.0:  # not well below it: a face it must keep off
+				got["facade"] = minf(Num.f(got["facade"]), across)
+		for lead: AirWing.Heli in sim.air.helis:
+			if lead.id == heli.wing_of:
+				got["lateral"] = minf(Num.f(got["lateral"]), heli.pos.distance_to(lead.pos))
+	for event: Dictionary in sim.events:
+		if str(event["type"]) != "heli_fired":
+			continue
+		for heli: AirWing.Heli in sim.air.helis:
+			if heli.id == Num.i(event["heli"]):
+				var yaw := rad_to_deg(absf(heli.front.angle_to(sim.kaiju_pos - heli.pos)))
+				got["fire_yaw"] = maxf(Num.f(got["fire_yaw"]), yaw)
+				got["bursts"] = Num.i(got["bursts"]) + 1
+
+
+## The tanks this frame: their drawn parts' closest approach and the hull's yaw while moving.
+func _measure_tanks(rampage: Rampage, roads: Dictionary, last: Dictionary, got: Dictionary) -> void:
+	var sim := rampage.sim
+	var parts := {}
+	for tank: RampageSim.Tank in sim.tanks:
+		var was: Vector2 = last.get(tank.id, tank.pos)
+		var front := sim.army_units.convoy.front(tank.id)
+		if tank.pos.distance_to(was) > 0.0005 and front != Vector2.ZERO:
+			got["yaw"] = maxf(Num.f(got["yaw"]), _yaw_off_road(tank.pos, front, roads))
+		last[tank.id] = tank.pos
+		if rampage._tank_nodes.has(tank.id):
+			var node: TankModel = rampage._tank_nodes[tank.id]
+			parts[tank.id] = _tank_drawn(node, _shapes)
+	var ids := parts.keys()
+	for a: int in ids.size():
+		for b: int in range(a + 1, ids.size()):
+			var one: Array[PackedVector2Array] = parts[ids[a]]
+			var two: Array[PackedVector2Array] = parts[ids[b]]
+			var g := _parts_gap(one, two)
+			got["gap"] = minf(Num.f(got["gap"]), g)
+			got["touching"] = Num.i(got["touching"]) + (1 if g <= 0.0 else 0)
+
+
+## The hull's angle off the road it stands on (the least of them at a crossing).
+func _yaw_off_road(p: Vector2, front: Vector2, roads: Dictionary) -> float:
+	var best := 90.0
+	for road: Array in roads.get(_cell4(p), []):
+		var a: Vector2 = road[0]
+		var b: Vector2 = road[1]
+		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
+		if q.distance_to(p) <= Num.f(road[2]) + 0.05:
+			var tilt := absf(front.cross((b - a).normalized()))
+			best = minf(best, rad_to_deg(asin(clampf(tilt, 0.0, 1.0))))
+	return best
+
+
+## The game's rampage scene for `levels`: a reptilian that cannot fall, standing at the
+## capture's crossing (clip) or its city's start.
+func _view_scene(levels: Dictionary, clip: bool) -> Rampage:
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), {"claws": 1, "evolve1": 1}, "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	stats["hp"] = 100000.0
 	var tier := Num.i(stats["size"])
 	var rampage := Rampage.new()
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	rampage.setup(species, stats, layout, 1)
-	rampage.sim.kaiju_pos = Vector2(5, -70)  # capture_military.CLIP_AT
+	if clip:
+		rampage.sim.kaiju_pos = Vector2(5, -70)  # capture_military.CLIP_AT
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": Vector2.ZERO}
 	return rampage
 
