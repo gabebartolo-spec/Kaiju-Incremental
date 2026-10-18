@@ -18,6 +18,7 @@ func run_checks() -> void:
 	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
 	_check_calm_streets()
 	_check_no_empty_ground()
+	preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
 
 
 ## The city reads as a real city, not a grid of isolated towers (director, 2026-10-16): lots
