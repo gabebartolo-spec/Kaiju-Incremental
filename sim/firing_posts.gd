@@ -118,7 +118,9 @@ func _reach_post(
 	var e: int = spot[0]
 	var at: Vector2 = spot[1]
 	if r.edge == e and graph.on_edge(tank.pos, e):
-		return {"at": at, "node": -1, "edge": e, "cost": tank.pos.distance_to(at)}
+		var turn := not r.path.is_empty() and (at - tank.pos).dot(r.heading) < 0.0
+		var extra := Num.f(cfg["uturn_cost"]) if turn else 0.0
+		return {"at": at, "node": -1, "edge": e, "cost": tank.pos.distance_to(at) + extra}
 	var cost: PackedFloat32Array = found["cost"]
 	var na := graph.edge_a[e]
 	var nb := graph.edge_b[e]

@@ -154,11 +154,15 @@ func _refresh_costs(near: float) -> void:
 			from = o.path[i]
 
 
-## A post is good while it is in the band between danger and full reach with a clear shot.
+## A post is good while it is in the band between danger and full reach with a clear shot (and,
+## on the way to it, while it is no further than commit x full reach: a tank does not turn back
+## every time the kaiju takes a step).
 func _goal_good(r: Route) -> bool:
 	if r.goal.x == INF:
 		return false
 	var d := r.goal.distance_to(sim.kaiju_pos)
+	if not r.path.is_empty():  # on its way it commits to the post, unless the kaiju drew off
+		return d >= danger() and d <= reach() * Num.f(cfg["commit"])
 	return d >= danger() and d <= reach() and clear_line(r.goal, sim.kaiju_pos)
 
 
@@ -231,6 +235,10 @@ func _start(tank: RampageSim.Tank, r: Route) -> Dictionary:
 	if r.skip.has(e) and not r.path.is_empty():  # only the end behind it
 		var ahead_b := nb.distance_to(r.path[0]) < na.distance_to(r.path[0])
 		from.erase(graph.edge_b[e] if ahead_b else graph.edge_a[e])
+	elif not r.path.is_empty() and r.heading != Vector2.ZERO:  # turning back costs more
+		var behind_b := (nb - p).dot(r.heading) < 0.0
+		var back := graph.edge_b[e] if behind_b else graph.edge_a[e]
+		from[back] = Num.f(from[back]) + Num.f(cfg["uturn_cost"])
 	return {"edge": e, "via": via, "from": from}
 
 
