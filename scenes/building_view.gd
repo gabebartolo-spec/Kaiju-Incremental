@@ -67,6 +67,19 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 		add_child(mi)
 
 
+static func begin_city() -> void:
+	pass
+
+
+static func end_city() -> void:
+	pass
+
+
+## Buildings whose voxels and meshes are kept (tests).
+static func cached() -> int:
+	return _baked.size()
+
+
 ## What makes two buildings bake alike: place, size, floors, landmark, wall colour, party walls.
 static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
 	return (

@@ -19,6 +19,7 @@ func run_checks() -> void:
 	_check_party_walls()
 	_check_building_fade()
 	_check_bake_kept()
+	_check_bake_pruned()
 	LoadLandmark.new(check).run()
 	await _check_stream()
 
@@ -55,6 +56,28 @@ func _check_bake_kept() -> void:
 	)
 	for view: BuildingView in [a, b, other]:
 		view.free()
+
+
+## The kept meshes are only the current city's: as the city grows between runs (other places,
+## other sizes) the old layouts' buildings are dropped, so a 3-5 h game does not hold every
+## city it ever had in memory.
+func _check_bake_pruned() -> void:
+	var counts: Array[int] = []
+	for tier: int in [1, 2]:
+		var sim := _sim_at(tier)
+		var party := BuildingView.party_walls(sim.buildings)
+		BuildingView.begin_city()
+		for n: int in sim.buildings.size():
+			BuildingView.new(sim.buildings[n], Color.GRAY, party[n]).free()
+		BuildingView.end_city()
+		counts.append(sim.buildings.size())
+	check(
+		BuildingView.cached() == counts[1],
+		(
+			"after two different cities only the second's buildings are kept: %d kept, %s built"
+			% [BuildingView.cached(), counts]
+		)
+	)
 
 
 ## Party walls (which sides a neighbour covers) come out the same as comparing every pair,
