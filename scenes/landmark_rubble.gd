@@ -1,16 +1,16 @@
 class_name LandmarkRubble
 extends RefCounted
 ## The heap a landmark's toppled section leaves (Ruin.strip hands landmarks here): highest against
-## the stub it broke from, thinning to nothing within about one wall height past the wall, with
-## a ragged outline, in the model's own colours near the breach (pale wall, red seats), never a
-## flat slab with grid edges. Cosmetic, seeded by where it lands, built once.
+## the stub it broke from, thinning to nothing within 2 units past the wall (clear of the plaza's
+## trees), with a ragged outline, in the model's own wall greys and seat reds near the breach,
+## never a flat slab with grid edges. Cosmetic, seeded by where it lands, built once.
 
 const RES := BuildingVoxels.RES
 ## How far behind the tipping edge the heap starts (over the stub), in sim units.
 const BACK := 2.0
 ## The share of the fall's length the heap reaches past the edge, and its cap (sim units).
 const REACH := 0.6
-const REACH_MAX := 3.5
+const REACH_MAX := 2.0
 ## Peak height (floors) against the stub.
 const PEAK := 1.4
 ## Colours are sampled from model voxels this near the tipping edge (sim units).

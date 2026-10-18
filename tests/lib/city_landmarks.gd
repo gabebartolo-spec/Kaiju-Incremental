@@ -143,6 +143,25 @@ func _arcs() -> void:
 	frame.damage(middle, 1.0e6)
 	var after := frame.settle()
 	_check.call(after.is_empty(), "a hit on the pitch brings nothing down: %d parts" % after.size())
+	# Break one foot chunk in every arc: every arc comes down, so nothing but the corner masts may
+	# still stand above the stub (no sliver of wall left outside the arcs).
+	var hit := {}
+	for x: int in w:
+		for z: int in d:
+			var arc := frame.arcs.arc_at(x, z)
+			if arc >= 0 and not hit.has(arc) and frame.alive(Vector3i(x, 0, z)):
+				hit[arc] = true
+				frame.damage(Vector3i(x, 0, z), 1.0e6)
+	frame.settle()
+	var standing := 0
+	for x: int in w:
+		for z: int in d:
+			var at := Vector2((x + 0.5) / (w * 0.5) - 1.0, (z + 0.5) / (d * 0.5) - 1.0)
+			if at.length() <= 1.1 and frame.top_below(x, z, frame.h) >= stub:
+				standing += 1
+	_check.call(
+		standing == 0, "once every arc falls only the corner masts stand: %d columns" % standing
+	)
 
 
 ## Landmark sites (city.landmarks): on the shipping map the stadium stands in the first city and

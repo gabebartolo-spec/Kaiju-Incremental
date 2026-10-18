@@ -9,14 +9,17 @@ extends BuildingVoxels
 
 ## How near (per channel, 0-255) a voxel's colour must be to a ground colour.
 const GROUND_MATCH := 24
+## Rubble colours: greys (channels within this of each other) and reds (red this far above both).
+const RUBBLE_GREY := 0.12
+const RUBBLE_RED := 0.3
 
 ## Parsed .kvox per path: every view of a landmark shares one read.
 static var _cache: Dictionary = {}
 static var _lock := Mutex.new()
 
 var ground := VoxelBuilder.new()
-## Sim-unit plan column -> a few of the model's own colours there (not its ground colours): the
-## tint of the rubble its sections leave (LandmarkRubble).
+## Sim-unit plan column -> a few of the model's own wall greys and seat reds there (never its
+## pitch, banner or lamp colours): the tint of the rubble its sections leave (LandmarkRubble).
 var rubble_colors: Dictionary = {}
 
 
@@ -34,7 +37,9 @@ func _init(p_building: RampageSim.Building, base: Color) -> void:
 			var off := Vector3(absf(c.r - g.r), absf(c.g - g.g), absf(c.b - g.b)) * 255.0
 			if maxf(off.x, maxf(off.y, off.z)) <= GROUND_MATCH:
 				ground.put_color(Vector3i(cell.x, 0, cell.z), c)
-		if c.g > c.r + 0.08 and c.g > c.b + 0.08 or absi(hash(cell)) % 6 != 0:
+		var grey := maxf(c.r, maxf(c.g, c.b)) - minf(c.r, minf(c.g, c.b)) < RUBBLE_GREY
+		var red := c.r > c.g + RUBBLE_RED and c.r > c.b + RUBBLE_RED
+		if not (grey or red) or absi(hash(cell)) % 6 != 0:
 			continue
 		var column := Vector2i(floori(float(cell.x) / RES), floori(float(cell.z) / RES))
 		var found: Array = rubble_colors.get(column, [])
