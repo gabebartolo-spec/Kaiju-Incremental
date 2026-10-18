@@ -7,7 +7,7 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_green.gd -- --out=<dir> [--stage=N]
 ##   ... --write-movie <clip> --fixed-fps 60 ... -- --trample [--seconds=5]
-##   ... -- --trample --park-stills  (no movie: top-down stills of the park before and after)
+##   ... -- --trample --park-stills  (no movie: stills of the park from the east, before and after)
 ## Every trample prints how many of the park's props the walk flattened.
 
 const SETTLE := 12
@@ -20,7 +20,10 @@ const AVENUE_ZOOM := 0.45
 const ROW_REACH := 15.0  # street trees this far either way along a pavement count as a row
 const START_OUTSIDE := 3.0  # the clip starts this far south of the park
 const OFF_PATH := 0.25  # ...and this share of its width east of the middle path, in the trees
-const TOP_DOWN := 26.0  # the park stills look straight down from this height
+## The park stills look west across the park from here (off its centre), so the walk's
+## north-south strip of flattened props crosses the frame; straight down, a flattened tree
+## looks like a standing one.
+const PARK_VIEW := Vector3(20, 13, 0)
 const AVENUE_MIN := 18.0  # the avenue close-up looks down the first block at least this long
 
 var _out := "user://green"
@@ -164,7 +167,7 @@ func _trample_clip() -> void:
 	rampage.sim.kaiju_pos = Vector2(x, park.end.y + START_OUTSIDE)
 	root.add_child(rampage)
 	if _park_stills:
-		await _top_down(rampage, park, "trample_park_before")
+		await _park_view(rampage, park, "trample_park_before")
 	Input.action_press("move_up")
 	var frames := 0
 	while frames < roundi(_seconds * Engine.physics_ticks_per_second) and not rampage.sim.over:
@@ -184,16 +187,16 @@ func _trample_clip() -> void:
 				standing += 1
 	print("trample: %d of %d park props flattened" % [flat, flat + standing])
 	if _park_stills:
-		await _top_down(rampage, park, "trample_park_after")
+		await _park_view(rampage, park, "trample_park_after")
 
 
-## A still of the park from straight above (the rampage's own camera is put back after).
-func _top_down(rampage: Rampage, park: Rect2, shot_name: String) -> void:
+## A still of the park from PARK_VIEW (the rampage's own camera is put back after).
+func _park_view(rampage: Rampage, park: Rect2, shot_name: String) -> void:
 	var cam := Camera3D.new()
 	cam.fov = 55.0
 	rampage.add_child(cam)
 	var c := park.get_center()
-	cam.position = Vector3(c.x, TOP_DOWN, c.y + 0.01)
+	cam.position = Vector3(c.x, 0, c.y) + PARK_VIEW
 	cam.look_at(Vector3(c.x, 0, c.y))
 	cam.current = true
 	for _i: int in SETTLE:
