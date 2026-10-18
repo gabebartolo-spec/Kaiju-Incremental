@@ -103,8 +103,7 @@ func _build_environment() -> void:
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = 1.1
-	# Light bounces: lamps, fires and the sun colour the streets and walls around them
-	# (screen-space; full SDFGI cost about a tenth of the frame for little gain here).
+	# Screen-space bounce light from lamps, fires and sun (SDFGI cost ~a tenth of the frame).
 	env.ssil_enabled = true
 	env.adjustment_enabled = true
 	env.adjustment_saturation = Look.value("saturation")
@@ -112,6 +111,7 @@ func _build_environment() -> void:
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
+	CreasePass.attach(self)  # creases darkened in screen space; off when the look says 0
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
 	sun.light_energy = Look.value("sun_energy")

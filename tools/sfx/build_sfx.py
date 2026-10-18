@@ -325,7 +325,8 @@ def build_army() -> None:
     place(x, kenney("lowFrequency_explosion_001"), 0.0, 0.7)
     place(x, thump(0.7, 90, 45), 0.0, 0.6)
     echo = tail(x.copy(), 1.2, 0.35, 1200)
-    save("tank_fire", x + echo * 0.25, -2.0)
+    # High-passed at 120 Hz so the cannon's thump stays off the stomps' band (mix report).
+    save("tank_fire", highpass(highpass(x + echo * 0.25, 120.0), 120.0), -2.0)
     x = np.zeros(seconds(0.9))
     place(x, pitch(kenney("impactPunch_heavy_001"), 0.7), 0.0, 1.0)
     place(x, pitch(kenney("impactMetal_light_002"), 0.8), 0.0, 0.35)

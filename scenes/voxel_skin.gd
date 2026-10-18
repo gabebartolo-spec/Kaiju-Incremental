@@ -159,6 +159,8 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_cubes.shader = CUBE_SHADER
 	_cubes.set_shader_parameter("voxel", voxel)
 	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
+	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
+	_cubes.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
 	var cubes := MultiMeshInstance3D.new()
 	_cube_node = cubes
 	cubes.multimesh = mm
@@ -207,6 +209,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
 		_fill = ShaderMaterial.new()
 		_fill.shader = FILL_SHADER
+		_fill.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
 		var fill := MeshInstance3D.new()
 		fill.mesh = mesh
 		fill.material_override = _fill
