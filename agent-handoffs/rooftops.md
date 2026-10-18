@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: running a check (bh8rshsag re-measure on 51a2d5d; clip2 sent to LEAD for the critic)
+## State: running a check (pacing b0jeyrx8u on 9cff149) + awaiting GPU turn (asked stadium to pass it)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -47,6 +47,18 @@ hide spark. PR into claude/look-options after #50 merges, synced; do not merge.
 - bibqqy81q: waits for capture.yml empty, then dispatches the clip on claude/rooftop-density.
 - Then: hit gate + known-bad on the synced branch; spark_gain.py + three 2x crops; PR update.
 If #50 lands first: re-sync floors once.
+## Critic round 1 FAILED (LEAD relay): one sniper, sparks on one pixel, metronome, no rifle audio
+Fixed in 17e3570/9cff149 (suites all 9 pass):
+- army.rooftop range 24, chance 1.0, max [30,96,96,120], chip [0.01,0.012,0.03,0.05]. Replay vs
+  look-options af7eb05 (replay_lo_base.txt / replay_chip3.txt): -0.8/+2.6/+2.7/+0.2%. Behemoth
+  squads in reach while any 5.3 (was 1.9), >=3 52% of run, 7.5 volleys/s in range.
+- scenes/rooftop_aim.gd (new, RooftopAim): random of 3 nearest bones, 20-80% along. Gate
+  452/452, known-bad 73/453 exit 1 (notes round2/).
+- Sparks 6 frames x1.5; tracer 3-piece fading trail; PARAPET_IN 2 voxels.
+- sfx: rifle -12 -> -2 dB, gain_jitter_db {rifle: 3}. Rifle was played but buried.
+NEXT: render on GPU turn (override.cfg, --typical, out notes round2/clip), then spark_gain, gap
+list, audio onset list (ffmpeg -> wav, rms flux), squads-in-reach probe, 2x crops; send LEAD;
+pass slot to croc #54 (local_bce75838...) -> #50 (local_5325ef73...). Then update PR body tables.
 ## Since PR open (head 51a2d5d)
 - f731cbe: rooftop_view hides squads whose figure would stand > 4% of screen (near-camera giants
   found in my local clip, zoom_near_tower_0096.png). File at its 400-line cap.
