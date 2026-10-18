@@ -53,8 +53,8 @@ func cap() -> int:
 func step(dt: float) -> void:
 	# The call-in clock only runs while the sky is short of helicopters: a kill is replaced
 	# after `interval`, never on the next step.
-	if helis.size() < cap():
-		_spawn_timer -= dt
+	if helis.size() < cap() and sim.army_units.alert() > 0.0:
+		_spawn_timer -= dt * sim.army_units.alert()
 		if _spawn_timer <= 0.0:
 			_spawn_timer = Num.f(cfg["interval"])
 			spawn()
