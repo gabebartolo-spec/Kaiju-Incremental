@@ -49,6 +49,9 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   stomp-dust capture (sound told: do stills locally). #59 needs resync + AFL clip after P3 chain. Messaging cap hit.
 - 16:4x SENT: greenery r8 fix (fall sideways, opaque crowns); rooftops open PR now, clip after croc P3; landmarks
   #59 AFL clip after rooftops. #62 footfall dust MERGED. #50 rework in progress (one round left, D-082).
+- 17:0x DIRECTOR "full speed ahead to demo build": remaining demo clips render on the LOCAL GPU (rooftops -> landmarks
+  AFL -> croc if needed), not CI. #36 pre-syncing + pre-sweeping. #63 sim review PASS (posted). #50 ships only if it
+  passes a fresh critic before #36 is tuned.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
