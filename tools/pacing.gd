@@ -7,10 +7,12 @@ extends SceneTree
 ## rubble per run, city destroyed, how runs ended) and when the tree is complete.
 ## Play time = rampage seconds + TREE_SECONDS per visit.
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400]
-##     [--verbose] [--flat] [--no-jets] [--dodge]  (--flat: one fixed city and army, as before
-##     D-039; --no-jets: no jets at any stage (D-072); --dodge: once a jet warns, the player
-##     steps aside (along the camera's axis, a pass runs across it) until clear of every warned
-##     spot, then carries on smashing)
+##     [--verbose] [--flat] [--seed=k] [--landmark=id] [--no-jets] [--dodge]  (--flat: one fixed
+##     city and army, as before D-039; --seed: another army stream per run; --verbose prints every
+##     run: what it paid, what it bought, how it ended; --landmark=id: the player heads for that
+##     landmark first, then the nearest building; --no-jets: no jets at any stage (D-072); --dodge:
+##     once a jet warns, the player steps aside (along the camera's axis, a pass runs across it)
+##     until clear of every warned spot, then carries on smashing)
 
 const DT := 1.0 / 15.0
 const TREE_SECONDS := 20.0
@@ -23,6 +25,8 @@ var _verbose := false
 var _flat := false
 var _no_jets := false
 var _dodge := false
+var _seed := 0
+var _landmark := ""
 var _cities: Dictionary = {}
 
 
@@ -32,6 +36,10 @@ func _initialize() -> void:
 			_runs = arg.substr(7).to_int()
 		if arg == "--flat":
 			_flat = true
+		if arg.begins_with("--landmark="):
+			_landmark = arg.substr(11)
+		if arg.begins_with("--seed="):
+			_seed = arg.substr(7).to_int()
 		if arg == "--verbose":
 			_verbose = true
 		if arg == "--no-jets":
@@ -65,7 +73,7 @@ func _pace(species_id: String) -> void:
 				tuning, Content.tuning(), tier, Num.f(stats.get("stage_growth", 0.0))
 			)
 		var layout: Array[Dictionary] = city[1]
-		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run))
+		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run + 100000 * _seed))
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
 		var played := _rampage(sim)
@@ -76,25 +84,13 @@ func _pace(species_id: String) -> void:
 		rubble += Num.i(res["rubble"])
 		run += 1
 		_tally(stages, tier, steps * DT + TREE_SECONDS, res)
-		if _verbose and run % 5 == 1:
-			print(
-				(
-					"  run %d (%s): +%d rubble in %.0f s, %.0f%% city, %s"
-					% [
-						run,
-						STAGE_NAMES[mini(tier, 4) - 1],
-						Num.i(res["rubble"]),
-						steps * DT,
-						Num.f(res["destruction"]) * 100.0,
-						sim.end_reason
-					]
-				)
-			)
+		var bought := 0
 		while true:
 			var pick := _cheapest(tree, rubble)
 			if pick == "":
 				break
 			rubble -= tree.buy(pick, rubble)
+			bought += 1
 			var def: Dictionary = tree.defs[pick]
 			var branch := str(def.get("species", "")) != ""
 			if branch and first_power < 0:
@@ -106,6 +102,21 @@ func _pace(species_id: String) -> void:
 						% [pick, clock / 3600.0, run, Num.f(res["destruction"]) * 100.0]
 					)
 				)
+		if _verbose:
+			print(
+				(
+					"  run %d (%s): +%d rubble in %.0f s, %.0f%% city, %s, bought %d"
+					% [
+						run,
+						STAGE_NAMES[mini(tier, 4) - 1],
+						Num.i(res["rubble"]),
+						steps * DT,
+						Num.f(res["destruction"]) * 100.0,
+						sim.end_reason,
+						bought,
+					]
+				)
+			)
 	var notes := (" (flat city)" if _flat else "") + (" (no jets)" if _no_jets else "")
 	print("== %s%s%s" % [species_id, notes, " (dodging jets)" if _dodge else ""])
 	for line: String in marks:
@@ -153,9 +164,12 @@ func _rampage(sim: RampageSim) -> Array[int]:
 	var steps := 0
 	var pending: Array[Vector2] = []  # warned spots still to be hit (--dodge)
 	var jet_hits := 0
+	var goal := _goal(sim)
 	while not sim.over:
 		if steps % 8 == 0:
-			target = sim.nearest_standing(sim.kaiju_pos)
+			target = sim.nearest_standing(goal if goal.x < INF else sim.kaiju_pos)
+			if target.x < INF and goal.x < INF and target.distance_to(goal) > 20.0:
+				goal = Vector2(INF, INF)  # the landmark is down: on to the nearest
 		var move := Vector2.ZERO
 		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
 			move = (target - sim.kaiju_pos).normalized()
@@ -233,6 +247,14 @@ func _city(tier: int) -> Array:
 		var cfg: Dictionary = tuning["city"]
 		_cities[stage] = [tuning, CityGen.generate(Seeds.make("city", 0), cfg)]
 	return _cities[stage]
+
+
+## Where the --landmark player heads first (INF when there is none in this city).
+func _goal(sim: RampageSim) -> Vector2:
+	for b: RampageSim.Building in sim.buildings:
+		if _landmark != "" and b.landmark == _landmark:
+			return Vector2(b.x, b.z)
+	return Vector2(INF, INF)
 
 
 func _cheapest(tree: UpgradeTree, rubble: int) -> String:

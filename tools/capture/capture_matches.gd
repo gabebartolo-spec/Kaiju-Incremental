@@ -8,7 +8,10 @@ extends SceneTree
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_matches.gd -- --out=<dir> [--clip | --frametime]
+##     --script tools/capture/capture_matches.gd -- --out=<dir> [--clip | --kills | --frametime]
+## --kills: the clip run on for KILL_FRAMES with one breath into the stands after the wall goes,
+## printing every second how many fans are out, still running, crushed and fallen, and the
+## civilians crushed in all (director playtest, 2026-10-19: "let us kill them").
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const SPORTS: Array[String] = ["afl", "nfl", "soccer", "cricket"]
@@ -23,10 +26,13 @@ const AFTER_FLEE := 60
 ## from the wall's outer face.
 const APPROACH := Vector2(0.48, 0.88)
 const KERB := 3.5
+const KILL_FRAMES := 660
+const BREATH_AFTER := 45  # --kills: frames after the wall goes that the kaiju breathes
 const TIMED := 300  # --frametime: frames timed per run, after PLAY_FRAMES to settle
 
 var _out := "user://matches"
 var _clip := false
+var _kills := false
 var _timed := false
 
 
@@ -36,6 +42,9 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--clip":
 			_clip = true
+		elif arg == "--kills":
+			_clip = true
+			_kills = true
 		elif arg == "--frametime":
 			_timed = true
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -69,9 +78,28 @@ func _match(id: String, clip: bool) -> void:
 	var crowd: StadiumCrowd = GuiInput.find_script(rampage, StadiumCrowd)
 	var start := game.on_pitch()
 	var fled_at := -1
-	for i: int in CLIP_FRAMES if clip else PLAY_FRAMES:
+	var street: StreetLife = GuiInput.find_script(rampage, StreetLife)
+	var frames := PLAY_FRAMES
+	if clip:
+		frames = KILL_FRAMES if _kills else CLIP_FRAMES
+	for i: int in frames:
 		await physics_frame
 		walk["go"] = clip and i >= CLIP_PLAY
+		walk["breathe"] = _kills and fled_at >= 0 and i == fled_at + BREATH_AFTER
+		if _kills and fled_at >= 0 and (i - fled_at) % 60 == 0:
+			print(
+				(
+					"+%ds: fans out %d, running %d, crushed %d, fell %d; civilians crushed %d"
+					% [
+						(i - fled_at) / 60,
+						crowd.escaped,
+						crowd.in_stands(),
+						crowd.killed,
+						crowd.fallen,
+						street.civilians_killed()
+					]
+				)
+			)
 		if clip and i == CLIP_PLAY:
 			_shot("afl_before")
 		if game.fleeing and fled_at < 0:
@@ -151,7 +179,8 @@ func _rampage(id: String, walk: Dictionary) -> Rampage:
 		if not walk.get("go", false):
 			return {"move": Vector2.ZERO}
 		var to := Vector2(stadium.x, stadium.z) - s.kaiju_pos
-		return {"move": to.normalized() if to.length() > 1.0 else Vector2.ZERO}
+		var move := to.normalized() if to.length() > 1.0 else Vector2.ZERO
+		return {"move": move, "signature": walk.get("breathe", false)}
 	root.add_child(rampage)
 	return rampage
 
