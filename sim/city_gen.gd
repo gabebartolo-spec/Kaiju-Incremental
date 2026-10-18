@@ -24,14 +24,20 @@ const DIAGONAL := "diagonal"
 
 ## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style.
 ## Blocks fill district by district, innermost first, so a district's lots draw the same
-## numbers whichever stage is in play (only the stage's height caps change them).
+## numbers whichever stage is in play (only the stage's height caps change them). A green lot
+## (CityGreenLots) still draws its lots and drops them, so every other building stays as it was.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
 	for ring: int in districts(cfg).size():
 		for block: Dictionary in plan["blocks"]:
-			if str(block["use"]) == "built" and Num.i(block["district"]) == ring:
-				out.append_array(CityLots.fill_block(rng, plan, block, cfg, 1.0))
+			if (
+				str(block.get("green", block["use"])) == "built"
+				and Num.i(block["district"]) == ring
+			):
+				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
+				if str(block["use"]) == "built":
+					out.append_array(lots)
 		out.append_array(CitySites.entries(plan, ring))
 	return out
 
@@ -323,6 +329,7 @@ static func _blocks(
 			if playable:
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
+	CityGreenLots.choose(plan, cfg)
 	# One park per district: its biggest block between the towers and its ring. One plaza: the
 	# block at the heart of the first tower district.
 	var rings := districts(cfg)
