@@ -9,6 +9,7 @@ const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
+const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
 const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
@@ -208,8 +209,11 @@ func _check_rampage() -> void:
 	)
 	var heard := rampage.sfx.played
 	check(
-		heard.has("footstep") and heard.has("collapse"),
-		"the kaiju's feet and falling buildings make sounds: %s" % [heard.slice(0, 12)]
+		heard.has("footstep") and heard.has("collapse") and heard.has("crowd_panic"),
+		(
+			"the kaiju's feet, falling buildings and the fleeing crowd are heard: %s"
+			% [heard.slice(0, 12)]
+		)
 	)
 	rampage.queue_free()
 	await process_frame
@@ -339,10 +343,7 @@ func _check_branch_view(species_id: String, levels: Dictionary, want: Array[Stri
 			break
 	var missing := want.filter(func(k: String) -> bool: return not view.played.has(k))
 	check(missing.is_empty(), "the %s's branch powers all show: missing %s" % [species_id, missing])
-	check(
-		rampage.sfx.played.has("heli_rotor"),
-		"the %s's helicopters are heard: %s" % [species_id, rampage.sfx.played.slice(-8)]
-	)
+	FlowHeliSounds.check_heard(check, rampage, view, species_id)
 	rampage.queue_free()
 	await process_frame
 

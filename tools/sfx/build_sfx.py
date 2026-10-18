@@ -339,7 +339,8 @@ def build_army() -> None:
     place(x, kenney("lowFrequency_explosion_001"), 0.0, 0.7)
     place(x, thump(0.7, 90, 45), 0.0, 0.6)
     echo = tail(x.copy(), 1.2, 0.35, 1200)
-    save("tank_fire", x + echo * 0.25, -2.0)
+    # High-passed at 120 Hz so the cannon's thump stays off the stomps' band (mix report).
+    save("tank_fire", highpass(highpass(x + echo * 0.25, 120.0), 120.0), -2.0)
     x = np.zeros(seconds(0.9))
     place(x, pitch(kenney("impactPunch_heavy_001"), 0.7), 0.0, 1.0)
     place(x, pitch(kenney("impactMetal_light_002"), 0.8), 0.0, 0.35)
@@ -362,6 +363,65 @@ def build_army() -> None:
     fade = np.linspace(0.0, 1.0, m)
     loop[:m] = full[:m] * fade + full[n:] * (1.0 - fade)
     save("heli_rotor", loop, -4.0, loop=True)
+    # Chin gun: a five-round burst at 11 rounds a second, each a sharp crack over a short thud.
+    reseed("build_heli_gun")
+    x = np.zeros(seconds(0.75))
+    for k in range(5):
+        shot_n = seconds(0.09)
+        crack = bandpass(noise(shot_n), np.full(shot_n, 2600.0), 0.8) * env(shot_n, 0.0005, 0.012)
+        body = lowpass(noise(shot_n), 600) * env(shot_n, 0.001, 0.03)
+        place(x, crack * 2.5 + body * 2.0, k / 11.0, 1.0 - 0.06 * k)
+    place(x, tail(x.copy(), 0.6, 0.18, 1500), 0.0, 0.2)
+    save("heli_gun", x, -3.0)
+    # Helicopter down: the turbine whine falling away, a blast, and metal raining on the street.
+    reseed("build_heli_crash")
+    x = np.zeros(seconds(2.6))
+    whine_n = seconds(0.6)
+    whine = np.sin(2 * np.pi * np.cumsum(np.linspace(2400, 700, whine_n)) / RATE) * np.linspace(0.3, 0.0, whine_n)
+    place(x, whine, 0.0, 0.5)
+    place(x, kenney("lowFrequency_explosion_000"), 0.15, 0.9)
+    place(x, pitch(kenney("explosionCrunch_003"), 0.85), 0.15, 0.8)
+    place(x, thump(0.9, 85, 40), 0.15, 0.6)
+    for i, at in enumerate([0.45, 0.7, 1.0, 1.35]):
+        clang = pitch(kenney(f"impactMetal_heavy_00{i}"), 0.75 + 0.05 * i)
+        place(x, clang, at, 0.4 - 0.07 * i)
+    save("heli_crash", x, -1.5)
+
+
+def build_crowd() -> None:
+    """The city panicking (D-050), as a 6 s loop the game fades with how many people flee and how
+    fast the city falls: a far-off murmur of many voices, shouts, and screams that rise and
+    break, with a hint of running feet. High-passed at 300 Hz and kept mid-heavy, so it sits above
+    the stomps (almost all below 500 Hz) instead of on them."""
+    reseed("build_crowd")
+    n = seconds(6.0)
+    m = seconds(1.0)
+    total = n + m
+    t = np.arange(total) / RATE
+    x = np.zeros(total)
+    for _ in range(14):  # murmur: voices as formant-filtered noise with a syllable rhythm
+        rate = rng.uniform(3.0, 6.0)
+        syl = np.clip(np.sin(2 * np.pi * rate * t + rng.uniform(0, 6.28)), 0, 1) ** 2
+        voice = bandpass(noise(total), np.full(total, rng.uniform(450, 900)), 2.0) * 0.6
+        voice += bandpass(noise(total), np.full(total, rng.uniform(1300, 2200)), 3.0) * 0.4
+        x += voice * syl * rng.uniform(0.3, 0.7)
+    for _ in range(9):  # screams and shouts: a rising, wavering tone through a mouth formant
+        length = seconds(rng.uniform(0.5, 1.1))
+        f0 = rng.uniform(500, 850)
+        glide = f0 * (1 + 0.5 * hump(length, 0.3)) + 25 * np.sin(np.linspace(0, 40, length))
+        scream = bandpass(tone(glide, 8, 0.6), np.full(length, rng.uniform(1100, 1700)), 2.0)
+        scream *= hump(length, 0.25)
+        place(x, scream * rng.uniform(0.25, 0.55), rng.uniform(0.0, 6.0 - 1.1))
+    feet = bandpass(crackle(total, 18, 0.03), np.full(total, 1500.0), 1.0)
+    x += feet * 0.15
+    x = lowpass(x, 3500)
+    x = x + tail(x.copy(), 1.2, 0.5, 2000) * 0.4  # off the buildings: far away, not in your ear
+    x = highpass(highpass(x, 300.0), 300.0)
+    loop = x[:n].copy()
+    fade = np.linspace(0.0, 1.0, m)
+    loop[:m] = x[:m] * fade + x[n:] * (1.0 - fade)
+    save("crowd_panic", loop, -6.0, loop=True)
+    print(f"  crowd_panic: {low_share(loop) * 100:.0f}% of the energy below 500 Hz")
 
 
 def build_breath() -> None:
@@ -466,6 +526,7 @@ def main() -> None:
     build_collapse()
     build_roar()
     build_ui()
+    build_crowd()
     build_army()
     build_breath()
     build_leap()
