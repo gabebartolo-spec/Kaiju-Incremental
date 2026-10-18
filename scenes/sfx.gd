@@ -7,7 +7,6 @@ extends Node
 ## Steps and stomps land on the feet: every foot plant plays a footstep, and a sim stomp waits
 ## for the next plant to play its heavy thump there (or plays alone if no foot lands soon).
 
-const POOL := 8
 const STOMPS := 3
 ## Footstep sounds the steps take turns with (footstep, footstep_1..3), in this order: no two
 ## steps in a row sound the same.
@@ -85,7 +84,9 @@ func _ready() -> void:
 	names.append_array(STEPS)
 	for sound: String in names:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
-	for _i: int in POOL:
+	# Enough voices that a stomp's or a tank shot's tail is not cut off by the plays after it
+	# (tuning "sfx" "voices"; 8 cut a third of the stomps short under rooftop fire).
+	for _i: int in Num.i(_tune["voices"]):
 		var player := AudioStreamPlayer.new()
 		player.bus = "SFX"
 		add_child(player)
@@ -274,7 +275,7 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	if stream == null:
 		return
 	var player := _pool[_next]
-	_next = (_next + 1) % POOL
+	_next = (_next + 1) % _pool.size()
 	var jitter := Num.f(_tune["pitch_jitter"])
 	player.stream = stream
 	player.volume_db = _volume(sound) + extra_db
@@ -319,12 +320,22 @@ func _update_crowd(delta: float) -> void:
 
 ## The volume (dB) of the latest play, its distance fade included (read by the flow suite).
 func last_volume() -> float:
-	return _pool[(_next + POOL - 1) % POOL].volume_db
+	return _pool[(_next + _pool.size() - 1) % _pool.size()].volume_db
+
+
+## How many voices are sounding `sound` right now (the flow suite checks tails are kept).
+func sounding(sound: String) -> int:
+	var stream: AudioStream = _streams.get(sound)
+	return (
+		_pool
+		. filter(func(p: AudioStreamPlayer) -> bool: return p.playing and p.stream == stream)
+		. size()
+	)
 
 
 ## The pitch of the latest play (the flow suite checks the size-tier pitch with it).
 func last_pitch() -> float:
-	return _pool[(_next + POOL - 1) % POOL].pitch_scale
+	return _pool[(_next + _pool.size() - 1) % _pool.size()].pitch_scale
 
 
 func _volume(sound: String) -> float:
