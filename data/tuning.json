@@ -204,7 +204,7 @@
 		"bay_width": 190,
 		"far_haze": 0.004,
 		"fog_scale": 1.0,
-		"load_chunks": 20000,
+		"load_chunks": 6000,
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
 		"landmarks": [

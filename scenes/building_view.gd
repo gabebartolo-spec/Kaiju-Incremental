@@ -15,6 +15,11 @@ const BITE_CHANCE := 0.5  # ...and this share of the chunks next to a hole are b
 const PARTY_CELL := 8.0
 ## Building pairs the last party_walls() call compared (tests check it grows about linearly).
 static var pair_checks := 0
+## A building's voxels and meshes never change in a rampage (damage is the alive texture), and
+## every run of a stage builds the same city, so they are kept for the next run (director's
+## playtest: "load times when you start a run could be quicker"). Key: _key().
+static var _baked: Dictionary = {}
+static var _baked_lock := Mutex.new()
 
 var b: RampageSim.Building
 var voxels: BuildingVoxels
@@ -30,11 +35,22 @@ var _slab_mat: ShaderMaterial
 ## built here, so a whole city can be built across worker threads before entering the tree.
 func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
 	b = p_building
-	if b.landmark == "":
-		voxels = BuildingVoxels.new(b, base, party)
+	var key := _key(b, base, party)
+	_baked_lock.lock()
+	var kept: Array = _baked.get(key, [])
+	_baked_lock.unlock()
+	if kept.is_empty():
+		if b.landmark == "":
+			voxels = BuildingVoxels.new(b, base, party)
+		else:
+			voxels = LandmarkVoxels.new(b, base)
+		mesher = BuildingMesher.new(voxels)
+		_baked_lock.lock()
+		_baked[key] = [voxels, mesher]
+		_baked_lock.unlock()
 	else:
-		voxels = LandmarkVoxels.new(b, base)
-	mesher = BuildingMesher.new(voxels)
+		voxels = kept[0]
+		mesher = kept[1]
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))
 	_alive_tex = ImageTexture.create_from_image(_alive)
@@ -49,6 +65,14 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 		var mi := MeshInstance3D.new()
 		mi.mesh = ground.bake({}, BuildingVoxels.VOXEL, voxels.origin(), 0.0)
 		add_child(mi)
+
+
+## What makes two buildings bake alike: place, size, floors, landmark, wall colour, party walls.
+static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
+	return (
+		"%s|%s|%d|%d|%d|%s|%s|%s"
+		% [at.x, at.z, at.w, at.d, at.height, at.landmark, base.to_html(), str(party)]
+	)
 
 
 ## Screen-door share (1 = solid): a building between the camera and the kaiju (BuildingFade).

@@ -18,6 +18,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	_check_party_walls()
 	_check_building_fade()
+	_check_bake_kept()
 	LoadLandmark.new(check).run()
 	await _check_stream()
 
@@ -37,6 +38,23 @@ func _sim_at(tier: int) -> RampageSim:
 		UpgradeTree.new(Content.upgrades())
 	)
 	return RampageSim.new(stats, _tuning(tier), _layout(tier), Seeds.make("army", 0))
+
+
+## The next run of a stage builds the same city (one city seed), so each building's voxels and
+## meshes are baked once and kept (director's playtest: run loads too slow): a second sim of the
+## stage gets the very same meshes, a different building does not.
+func _check_bake_kept() -> void:
+	var first := _sim_at(1)
+	var again := _sim_at(1)
+	var a := BuildingView.new(first.buildings[0], Color.GRAY)
+	var b := BuildingView.new(again.buildings[0], Color.GRAY)
+	var other := BuildingView.new(again.buildings[1], Color.GRAY)
+	check(
+		a.mesher == b.mesher and a.mesher.shell == b.mesher.shell and other.mesher != a.mesher,
+		"a stage's second run reuses each building's baked meshes, not another building's"
+	)
+	for view: BuildingView in [a, b, other]:
+		view.free()
 
 
 ## Party walls (which sides a neighbour covers) come out the same as comparing every pair,
