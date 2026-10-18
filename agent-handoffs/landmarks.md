@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 23:40
-## State: running a check (#59 round 2 re-render on CI: runs 39108683628 stills, 39108705294 clip)
+# Landmarks handoff, 2026-10-19 00:10
+## State: awaiting lead (#59 round 2 sent for the motion critic; head 1299868)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -44,7 +44,9 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   shadow). Suite green there (flow 145). Frame time crowd off/on (1080p, before no-shadow):
   frame 12.8 -> 15.6 ms, GPU 10.5 -> 13.3 ms; re-time when the director is not fullscreen.
   Slot passed to croc #54 (then #50). Re-render on CI (director in a fullscreen game).
-- On CI landing: copy stills to docs/captures/2026-10-18-matches/, crops (afl/nfl/soccer/
+- DONE: CI round 2 captures committed 1299868; clip notes landmarks/afl_crowd_r2_720p.mp4;
+  paths sent to LEAD. Open: re-time crowd with no shadows on the local GPU when allowed.
+- (was) On CI landing: copy stills to docs/captures/2026-10-18-matches/, crops (afl/nfl/soccer/
   cricket _2x, crowd_stand_2x, afl_after_2x), mp4 to notes landmarks/, PR body, paths to LEAD.
 - After the slot: pass it on as LEAD/greenery say. If round 2 fails, LEAD changes method
   (demo with sections bursting in place only).
