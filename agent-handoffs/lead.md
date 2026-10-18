@@ -57,6 +57,9 @@ session smokes it, and the director plays again.
 - #76 stall probe (tools only) -> merge on green.
 - Roadmap (next board PR): ElevenLabs SFX + Suno music (spend yes + licence first); rooftop MORTARS (topple to
   kill; a variant of the rooftop squads); FINAL BOSS mecha kaiju (board for the director when scheduled).
+  DESTRUCTION (director 2026-10-19, post-demo, full game): "real dynamic destruction, actual physics and buildings than can
+  be carved by giant monsters"; today's is fine for the demo only. Start with a research spike (options, perf at 4K,
+  determinism vs sim authority), then a director board with clips.
   LANGUAGES (director 2026-10-19): Spanish, Japanese, French, German, Russian, Italian. Needs: one text table (all UI
   strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
   AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
@@ -70,8 +73,14 @@ session smokes it, and the director plays again.
 ## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
 ## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
 ## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
+## #89 croc contact (body sweep, pay 0.2x, e1 0.27): lead 2x FIX: small building VANISHES on entry (show chunk debris,
+## keep untouched walls), add a tall-tower carve clip; D-091 unfinished (TOO STRONG text + stomp tier gate remain).
+## DASH: lead call A (briefed dash, bot dashes; evolve1 provisional ~575). ONE joint young retune by the army session
+## after #89 + dash merge (bars e1 0.26 h ±5%, young defeats 8 ±2 /15). Destruction spike session local_0a7e5cf8 running.
 ## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
 ## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
+## GPU FAN: director's PC = RTX 4070 SUPER, 4K @120 Hz monitor ON THE CARD (WMI wrongly lists it on the AMD iGPU).
+## Build session measuring off-screen 4K: caps 60/120/unlimited + nvidia-smi power/fan, per-effect GPU ms -> quality setting.
 ## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
