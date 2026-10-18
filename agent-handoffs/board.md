@@ -1,23 +1,23 @@
-# Release smoke handoff, 2026-10-18 21:00
-## State: awaiting lead (final build checked without Godot; demo_smoke waits for "dont use godot" to lift)
-Session "Demo build dry-run" (was UI, then Board). Role file: board.md.
-## Task
-Smoke-test the final demo build for the lead. Final build: build.yml run 39116671378 at look-options 8c24654 (#54 #36
-#59 #66 #63 in). Artifact downloaded to my scratchpad final_dl/KaijuIncremental-8c24654/KaijuIncremental.exe
-(131,568,168 B). tools/pck_check.py PASS (4 real fonts, 9 kvox byte-identical incl. croc P3 baby/adolescent).
-## Running jobs
-None. Director (via lead, ~20:40): "dont use godot" -> no local Godot, headless included, until the lead says so.
+# Handoff: board (this session: "Kaiju: Load, smoke FX, builds")
+
+Updated: 2026-10-19 01:00
+State: awaiting lead (director playtest fixes for demo exe 2, D-083: all four PRs open into claude/look-options)
+
+## Open PRs (each green locally on all suites after syncing look-options)
+- Fix 3 frame cap: #77 MERGED.
+- Fix 4 less camera smoke: #81, head cb09385. Boards in docs/captures/2026-10-19-less-smoke/ (frames 900/1500/2100).
+- Fix 2 sound gate: #82, head f6df6d0. Sfx `live` gate; powers check opens the gate itself.
+- Fix 1 faster run load: #84, head fcfe03d. Exported build: results->next rampage 13.0/10.5 -> 4.8/5.1 s (young),
+  25.6/18.2 -> 6.8/5.9 s (stage 2); title->stage 2 35.1/20.0 -> 10.0/7.3 s.
+  MISSED: title->first young rampage 14.0/8.9 -> 13.5/12.3 s (stadium build on a fresh launch; needs a follow-up).
+
+## Notes
+- SHAs could not be sent: no peer session is named lead (ListAgents). They are in each PR and here.
+- Auto-fix is on for this session's PRs.
+- Floors: every merge into look-options moves flow; resolve to the real count after the merge.
+- Worktrees live: fps-cap (merged, remove), sfx-gate, run-load, smoke, integ-a, integ-a-export (lead said keep).
+- Load timing method: export with `--export-release "Windows Desktop"`, then
+  `godot_console --headless --main-pack K.exe --script <probe.gd> -- --tier=N` (scratch APPDATA).
+
 ## Next
-When the lead lifts it: `APPDATA=<scratch> godot_console --headless --main-pack <exe> --script tools/release/demo_smoke.gd`
-(the release exe ignores --script), expect `DEMO_SMOKE PASS (0 failures)`, report in 4 lines.
-## Done today
-#51 D-077 stats (merged), #64 board D-062..D-084 (merged), #65 tools/release/demo_smoke.gd + README (merged).
-Integration dry-runs (local, scratch only): A = #54 #63 #59 #36 and B = +#55 #50 all suites green; pacing A e1 0.26 h,
-young 8/14; B e1 0.28 h, young 6/15. At 329e708: suites green (flow 148), local export + smoke 10/10.
-## Open findings for the lead
-- Stadium collapse stalls 80-110 ms every ~0.7 s while it falls (crowd on or off), measured windowed before the ban.
-- One import segfault (exit 139) under machine-wide import contention; 8/8 serial fresh imports clean.
-- 130-run pacing at 329e708/8c24654 not done (stopped by the ban): run on CI or later.
-## Worktrees / branches
-../Kaiju-Incremental-wt/integ-a (scratch/integration-a, local), integ-a-export (detached 8c24654): keep until the build
-ships, then remove. Local branch scratch/integration-b remains (my delete was denied). This worktree: demo-smoke.
+Lead review at 2x; follow-up for the first young load if the lead wants it.
