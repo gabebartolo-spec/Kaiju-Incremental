@@ -6,6 +6,9 @@ extends RefCounted
 ## without the Settings autoload (which loads them at start and owns the input actions and F11).
 
 const PATH := "user://settings.cfg"
+## settings.cfg's display section version. 2: fps_cap is the player's own choice (-1 = the
+## default for this screen); an older file saved the resolved cap, so its fps_cap is ignored.
+const DISPLAY_VERSION := 2
 ## UI scale steps on top of the 1080p canvas (D-027: already 2x on a 4K TV). Every screen fits
 ## at the largest step; the evolution tree scrolls when it has to.
 const UI_SCALES: Array[float] = [1.0, 1.15, 1.25]
@@ -221,6 +224,7 @@ static func save() -> void:
 	cfg.set_value("audio", "sfx_volume", sfx())
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
+	cfg.set_value("display", "version", DISPLAY_VERSION)
 	cfg.set_value("display", "fps_cap", fps_cap)
 	cfg.set_value("display", "graphics", graphics)
 	cfg.save(PATH)
@@ -237,7 +241,8 @@ static func load_saved(start_full: bool) -> void:
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]
-	var saved_cap := Num.i(cfg.get_value("display", "fps_cap", fps_cap))
-	fps_cap = saved_cap if _caps().has(saved_cap) else -1
+	var saved_cap := Num.i(cfg.get_value("display", "fps_cap", -1))
+	var current := Num.i(cfg.get_value("display", "version", 1)) >= DISPLAY_VERSION
+	fps_cap = saved_cap if current and _caps().has(saved_cap) else -1
 	var saved := str(cfg.get_value("display", "graphics", graphics))
 	graphics = saved if _levels().has(saved) else ""
