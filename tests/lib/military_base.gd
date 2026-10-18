@@ -16,12 +16,20 @@ const HELI_HALF := 5.0
 const HELI_CLEAR := 0.5
 ## How far a standing tank's hull may lie off its road's axis.
 const ALIGN_DEG := 15.0
-## A driving tank's hull off its road's axis, at most: a drift across the road while its hull
-## eases round, never a crab down a diagonal.
-const DRIVE_DEG := 20.0
+## A driving tank's hull off its road's axis, at most (D-066 r4: it turns standing, then drives).
+const DRIVE_DEG := 10.0
+## The tank as drawn (assets/vehicles/tank, measured): turret 3.1 x 2.23 m and the gun's reach
+## from the turret ring (3.54 m, 0.74 m across), both turned to the kaiju.
+const TURRET_HALF := Vector2(1.55, 1.12)
+const GUN_REACH := 3.54
+const GUN_HALF_WIDTH := 0.37
 ## Closest a wingman may come to its lead: two main rotors (each about an airframe across) with
 ## 2 m between the tips, centre to centre.
 const ROTOR_CLEAR := HELI_HALF * 2.0 + 2.0
+## Closest a wingman may come to its lead across the ground (D-066 r4).
+const PAIR_LATERAL := 13.0
+## Furthest a helicopter's nose may be off the kaiju when it fires (D-066 r4).
+const FIRE_YAW := 20.0
 
 
 ## A reptilian rampage at size tier `tier` on city seed `seed`, built the way the game does.
@@ -144,13 +152,37 @@ func _roof_under(sim: RampageSim, p: Vector2, reach: float) -> float:
 	return top
 
 
-## The test's own separating-axis check (independent of Convoy's): hulls at p and q facing u
-## and w, half length and half width `half`.
-static func _hulls_overlap(p: Vector2, u: Vector2, q: Vector2, w: Vector2, half: Vector2) -> bool:
+## Do two tanks as drawn touch: hull, turret and gun of each (turrets on `kaiju`)? The test's
+## own boxes from the measured model, independent of TankSpacing's.
+static func _tanks_touch(p: Vector2, u: Vector2, q: Vector2, w: Vector2, kaiju: Vector2) -> bool:
+	var a := _drawn(p, u, kaiju)
+	var b := _drawn(q, w, kaiju)
+	for i: int in range(0, a.size(), 3):
+		for j: int in range(0, b.size(), 3):
+			if _boxes_touch(a[i], a[i + 1], a[i + 2], b[j], b[j + 1], b[j + 2]):
+				return true
+	return false
+
+
+## Centre, long axis and half extents of the hull, the turret and the gun at p.
+static func _drawn(p: Vector2, front: Vector2, kaiju: Vector2) -> PackedVector2Array:
+	var aim := (kaiju - p).normalized()
+	var hull := Vector2(HULL_LENGTH * 0.5, HULL_HALF_WIDTH)
+	var gun := Vector2(GUN_REACH * 0.5, GUN_HALF_WIDTH)
+	return PackedVector2Array(
+		[p, front, hull, p, aim, TURRET_HALF, p + aim * GUN_REACH * 0.5, aim, gun]
+	)
+
+
+## The test's own separating-axis check (independent of TankSpacing's): boxes at p and q, long
+## axes u and w, half extents ha and hb.
+static func _boxes_touch(
+	p: Vector2, u: Vector2, ha: Vector2, q: Vector2, w: Vector2, hb: Vector2
+) -> bool:
 	var d := q - p
 	for axis: Vector2 in [u, u.orthogonal(), w, w.orthogonal()] as Array[Vector2]:
-		var ra := half.x * absf(u.dot(axis)) + half.y * absf(u.orthogonal().dot(axis))
-		var rb := half.x * absf(w.dot(axis)) + half.y * absf(w.orthogonal().dot(axis))
+		var ra := ha.x * absf(u.dot(axis)) + ha.y * absf(u.orthogonal().dot(axis))
+		var rb := hb.x * absf(w.dot(axis)) + hb.y * absf(w.orthogonal().dot(axis))
 		if absf(d.dot(axis)) > ra + rb:
 			return false
 	return true

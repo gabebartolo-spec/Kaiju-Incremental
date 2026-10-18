@@ -13,6 +13,7 @@ var cfg: Dictionary
 var graph: RoadGraph
 var search: RoadSearch
 var posts: FiringPosts
+var spacing: TankSpacing
 var routes: Dictionary = {}  # tank id -> ConvoyRoute
 var _plans_left := 0
 
@@ -23,6 +24,7 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
 	graph = RoadGraph.new(sim, cfg)
 	search = RoadSearch.new(graph, cfg)
 	posts = FiringPosts.new(self)
+	spacing = TankSpacing.new(self)
 
 
 ## Full reach and the danger radius for the kaiju as it is now.
@@ -210,9 +212,10 @@ func _start(tank: RampageSim.Tank, r: ConvoyRoute) -> Dictionary:
 
 
 ## Drives along the route at speed (reversing slower, front still to the kaiju, when it backs
-## off), hull on the carriageway and clear of others, `follow` behind one ahead in its lane. A
-## turn sharper than pivot_deg it makes standing at hull_turn (shuffling a hull's step forward or
-## back where the turn will not fit). Held up `stuck` seconds, it re-plans round what held it.
+## off), hull on the carriageway and clear of others, `follow` behind one ahead in its lane. It
+## drives only along its hull: a turn it makes standing at hull_turn first (shuffling a hull's
+## step forward or back where the turn will not fit). Held up `stuck` seconds, it re-plans
+## round what held it.
 func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	r.reversing = false
 	var back := Num.f(sim.army["speed"]) * Num.f(cfg["reverse"]) * dt
@@ -239,7 +242,7 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	r.front = want if r.front == Vector2.ZERO else r.front
 	var turn := r.front.angle_to(want) if dist > 1.0 else 0.0  # the last metre: no turn for it
 	var front := r.front.rotated(clampf(turn, -rate, rate))
-	var move := 0.0 if absf(turn) > deg_to_rad(Num.f(cfg["pivot_deg"])) else minf(dist, speed * dt)
+	var move := 0.0 if absf(turn) > rate else minf(dist, speed * dt)  # squared first, then on
 	var next := tank.pos + dir * move
 	var blocker := _blocker(tank, next, front)
 	var fits := graph.drivable(next, front) and (move > 0.0 or _sweep_fits(tank, tank.pos, want))
@@ -358,31 +361,8 @@ func _back_off(tank: RampageSim.Tank, older: RampageSim.Tank, step: float) -> vo
 		r.reversing = back.dot(own) < 0.0
 
 
-## The tank in the way of a move to `next` with its hull along `dir`, or null: never into a new
-## hull overlap (out of one only by opening up), never closer than `follow` behind one going its
-## way in its lane.
 func _blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.Tank:
-	var hull: Array = cfg["hull"]
-	var clear := Num.f(cfg["clear"])
-	var half := Vector2(Num.f(hull[0]), Num.f(hull[1])) * 0.5 + Vector2(clear, clear)
-	var follow := Num.f(cfg["follow"])
-	var mine: ConvoyRoute = routes[tank.id]
-	var own := mine.front if mine.front != Vector2.ZERO else dir
-	for other: RampageSim.Tank in sim.tanks:
-		var then := next.distance_to(other.pos)
-		if other.id == tank.id or then > follow + half.x:
-			continue
-		var now := tank.pos.distance_to(other.pos)
-		var o: ConvoyRoute = routes.get(other.id)
-		var facing := o.front if o != null and o.front != Vector2.ZERO else dir
-		if RoadGraph.hulls_overlap(next, dir, other.pos, facing, half):
-			if then <= now or not RoadGraph.hulls_overlap(tank.pos, own, other.pos, facing, half):
-				return other
-		var ahead := other.pos - tank.pos
-		var lane := dir.dot(ahead) > 0.0 and absf(dir.cross(ahead)) < half.y * 2.0
-		if then < now and lane and then < follow and facing.dot(dir) > 0.7:
-			return other
-	return null
+	return spacing.blocker(tank, next, dir)
 
 
 ## Toppled towers close their roads: a tank routed through one drops it and re-plans.

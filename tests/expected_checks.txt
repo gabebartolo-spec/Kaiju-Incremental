@@ -10,4 +10,4 @@ city 23
 growth 26
 load 13
 flow 139
-military 17
+military 21

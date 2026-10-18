@@ -5,7 +5,9 @@ extends "res://tests/lib/military_base.gd"
 
 
 ## Two helicopters fly as a pair: the second is the first one's wingman, close enough to read as
-## a pair, and their rotors never meet over 30 s of orbits, runs and break-offs.
+## a pair, never within PAIR_LATERAL of it across the ground (one never passes under the other),
+## stacked higher, and on the same side of it through every turn, over 30 s of orbits, runs and
+## break-offs.
 func _check_heli_pairs() -> void:
 	var sim := _rampage(2, 0)
 	sim.air.cfg["hp"] = 1000000.0  # the pair must not be shot down mid-check
@@ -13,42 +15,71 @@ func _check_heli_pairs() -> void:
 	var wing := sim.air.spawn()
 	var closest := INF
 	var together := 0
-	for i: int in roundi(30.0 / DT):
+	var stacked := 0
+	var swaps := 0
+	var was := 0.0
+	var steps := roundi(30.0 / DT)
+	for i: int in steps:
 		sim.step(DT, Vector2.ZERO, false)
 		closest = minf(closest, lead.pos.distance_to(wing.pos))
-		if lead.pos.distance_to(wing.pos) < 25.0:
+		if lead.pos.distance_to(wing.pos) < 30.0:
 			together += 1
+		if wing.alt >= lead.alt + 1.5:
+			stacked += 1
+		var side := signf(wrapf(wing.angle - lead.angle, -PI, PI))
+		if was != 0.0 and side != was:
+			swaps += 1
+		was = side
 	check(
-		wing.wing_of == lead.id and closest >= ROTOR_CLEAR and together > roundi(25.0 / DT),
+		wing.wing_of == lead.id and closest >= PAIR_LATERAL and together > roundi(25.0 / DT),
 		(
 			(
-				"a second helicopter flies wing on the first: never closer than %.1f m, within"
-				+ " 25 m for %d of %d steps"
+				"a second helicopter flies wing on the first: never within %.1f m across the ground"
+				% closest
 			)
-			% [closest, together, roundi(30.0 / DT)]
+			+ ", within 30 m for %d of %d steps" % [together, steps]
+		)
+	)
+	check(
+		stacked > steps * 0.9 and swaps == 0,
+		(
+			"the wingman flies stacked over its lead (%d of %d steps) and never crosses it (%d)"
+			% [stacked, steps, swaps]
 		)
 	)
 
 
 ## Facing a helicopter makes it break off: a kaiju that keeps turning to face it for 10 s is
-## never dived on (after the first second it never comes inside its cruise distance; it may
-## swing wider as it turns about).
+## never dived on (after the first second it never closes on it, save where the game camera's
+## frame draws it in, and never comes inside its attack radius).
 func _check_heli_faced() -> void:
 	var sim := _rampage(2, 0)
 	var heli := sim.air.spawn()
 	var closest := INF
+	var dives := 0
+	var was := INF
 	for i: int in roundi(10.0 / DT):
 		sim.facing = (heli.pos - sim.kaiju_pos).normalized()
 		sim.step(DT, Vector2.ZERO, false)
+		var d := heli.pos.distance_to(sim.kaiju_pos)
 		if i > roundi(1.0 / DT):
-			closest = minf(closest, heli.pos.distance_to(sim.kaiju_pos))
+			closest = minf(closest, d)
+			if d < was - 0.01 and d > _framed_cruise(sim, heli) + 0.05:
+				dives += 1
+		was = d
 	check(
-		closest >= heli.cruise - 0.3,
+		dives == 0 and closest > sim.air.attack_radius() + 0.5,
 		(
-			"a helicopter the kaiju faces never dives on it (closest %.2f m, cruise %.2f m)"
-			% [closest, heli.cruise]
+			"a helicopter the kaiju faces never dives on it (%d steps closing; closest %.2f m)"
+			% [dives, closest]
 		)
 	)
+
+
+## Its cruise on its bearing, drawn in to stay in the game camera's frame (AirSpace.reach).
+func _framed_cruise(sim: RampageSim, heli: AirWing.Heli) -> float:
+	var at := sim.air.space.reach(heli.angle, sim.air.attack_radius(), heli.cruise)
+	return at if at >= 0.0 else heli.cruise
 
 
 ## With the kaiju looking away, a helicopter makes deliberate attack runs: in to its attack radius
@@ -65,7 +96,7 @@ func _check_heli_run() -> void:
 		if not inside and d <= sim.air.attack_radius() + 0.5:
 			inside = true
 			runs += 1
-		elif inside and d >= heli.cruise - 0.5:
+		elif inside and d >= _framed_cruise(sim, heli) - 0.5:
 			inside = false
 	check(runs >= 2, "a helicopter makes deliberate attack runs in and out (%d in 20 s)" % runs)
 
@@ -81,7 +112,8 @@ func _check_heli_flight() -> void:
 	var hovers := 0
 	var turns := 0
 	var form: Dictionary = Content.section("air")["formation"]
-	var cone := Num.f(form["fire_cone"]) + 1.0
+	var cone := FIRE_YAW
+	var worst := 0.0
 	var highs := 0  # heli-steps above cruise
 	var drops := 0  # ... coming down
 	var stays := 0  # ... with no roof in reach to need it (it should be coming down)
@@ -100,6 +132,8 @@ func _check_heli_flight() -> void:
 				shots += 1
 				for heli: AirWing.Heli in sim.air.helis:
 					var off := rad_to_deg(absf(heli.front.angle_to(sim.kaiju_pos - heli.pos)))
+					if heli.id == Num.i(event["heli"]):
+						worst = maxf(worst, off)
 					if (
 						heli.id == Num.i(event["heli"])
 						and (off > cone or heli.state != AirWing.RUN)
@@ -115,7 +149,7 @@ func _check_heli_flight() -> void:
 					var lag := (
 						(heli.alt - cruise) / Num.f(form["climb"]) * Num.f(form["break_speed"])
 					)
-					var reach := ROTOR_CLEAR * 0.5 + Num.f(form["look_ahead"]) + lag * 1.5
+					var reach := Num.f(form["facade"]) + Num.f(form["look_ahead"]) + lag * 1.5
 					if _roof_under(sim, heli.pos, reach) + Num.f(form["roof_clear"]) <= cruise:
 						stays += 1
 					if before.size() > 2 and heli.alt < Num.f(before[2]) - 0.001:
@@ -131,8 +165,11 @@ func _check_heli_flight() -> void:
 	check(
 		shots > 20 and bad_shots == 0,
 		(
-			"helicopters fire only on a run, nose on the kaiju (%d of %d bursts not)"
-			% [bad_shots, shots]
+			(
+				"helicopters fire only on a run, nose within %.0f deg of the kaiju (%d of %d bursts not;"
+				% [FIRE_YAW, bad_shots, shots]
+			)
+			+ " worst %.1f deg)" % worst
 		)
 	)
 	check(lowest >= 1.0, "a helicopter's rotor stays clear of every roof (lowest %.1f m)" % lowest)

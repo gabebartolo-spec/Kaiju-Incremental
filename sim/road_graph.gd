@@ -377,14 +377,3 @@ static func _near(a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> float:
 	)
 	best = minf(best, Geometry2D.get_closest_point_to_segment(c, a, b).distance_to(c))
 	return minf(best, Geometry2D.get_closest_point_to_segment(d, a, b).distance_to(d))
-
-
-## Do two hulls (centres, headings, half length and half width) overlap? Separating axes.
-static func hulls_overlap(p: Vector2, u: Vector2, q: Vector2, w: Vector2, half: Vector2) -> bool:
-	var d := q - p
-	for axis: Vector2 in [u, u.orthogonal(), w, w.orthogonal()] as Array[Vector2]:
-		var ra := half.x * absf(u.dot(axis)) + half.y * absf(u.orthogonal().dot(axis))
-		var rb := half.x * absf(w.dot(axis)) + half.y * absf(w.orthogonal().dot(axis))
-		if absf(d.dot(axis)) > ra + rb:
-			return false
-	return true

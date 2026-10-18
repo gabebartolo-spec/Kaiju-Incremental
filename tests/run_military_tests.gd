@@ -1,10 +1,11 @@
-extends "res://tests/lib/military_air.gd"
+extends "res://tests/lib/military_view.gd"
 ## The army moves and fights like a professional military (D-066): tanks drive the road plan
 ## (never a building, a lot or an alley), keep their spacing, take firing posts at standoff range
 ## and fall back when the kaiju closes; helicopters fly in pairs, make deliberate attack runs that
 ## stop short of the kaiju's body, and break off when it faces them. Whole autoplayed rampages on
 ## generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where tanks
-## enter round the kaiju, D-039). Includes the player-effect fixture (facing the helicopters down).
+## enter round the kaiju, D-039), and the clip's scene through the game camera. Includes the
+## player-effect fixture (facing the helicopters down).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 
 
@@ -21,6 +22,7 @@ func run_checks() -> void:
 	_check_heli_flight()
 	_check_rubble()
 	_check_face_down_effect()
+	await _check_view()
 
 
 ## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every
@@ -98,12 +100,11 @@ func _check_rampages() -> void:
 					for other: RampageSim.Tank in sim.tanks:
 						if (
 							other.id > tank.id
-							and tank.pos.distance_to(other.pos) < HULL_LENGTH * 1.2
+							and tank.pos.distance_to(other.pos) < HULL_LENGTH * 2.5
 						):
 							var hu: Vector2 = heads[tank.id]
 							var hw: Vector2 = heads[other.id]
-							var hull := Vector2(HULL_LENGTH, HULL_HALF_WIDTH * 2.0) * 0.5
-							if _hulls_overlap(tank.pos, hu, other.pos, hw, hull):
+							if _tanks_touch(tank.pos, hu, other.pos, hw, sim.kaiju_pos):
 								overlaps += 1
 							closest = minf(closest, tank.pos.distance_to(other.pos))
 					var d := tank.pos.distance_to(sim.kaiju_pos)
@@ -186,7 +187,7 @@ func _check_rampages() -> void:
 	check(
 		overlaps == 0,
 		(
-			"no two tank hulls ever overlap (%d tank-step pairs; closest centres %.2f m)"
+			"no two tanks as drawn (hull, turret, gun) ever touch (%d pairs; closest %.2f m)"
 			% [overlaps, closest]
 		)
 	)
