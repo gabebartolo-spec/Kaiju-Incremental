@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (replay5: dense settings at today's chip, all tiers -> scratchpad replay5.txt)
+## State: running a check (re-baseline pacing on #50 head a0d3f36 -> scratchpad pacing_b2.txt / dump_b2.json)
 
 ## Decision (FINAL, LEAD 2026-10-18): option A = D-076a
 Tanks unchanged. More squads + shorter interval; scale damage_by_tier down PER TIER so each stage's
@@ -48,6 +48,16 @@ squad is in range (39% of the run), roof dmg 102 -> total 276 (+40%): tanks woul
 by ~60%. Squads are spread over the whole 146 u city; reach ~23 u covers ~8% of it.
 Likely a director trade-off: several volleys/s at same chip => rifles become ~1/3+ of Behemoth
 damage and tank shells must hit much softer. Put to LEAD with numbers once replay3 lands.
+
+## Chosen (D-076a), committed 836b519
+army.rooftop: chance 0.8, max_by_tier [20,48,48,60], fire_interval 0.8, damage_by_tier
+[0.03,0.04,0.08,0.12]. Replay vs 96d804d baseline: totals -1.2/+2.3/+1.1/+0.1%; Behemoth
+5.6 -> 107 volleys/run, 3.1/s in range (49% of run). Army.volleys counter + sim check "a Behemoth
+rampage draws >= 1.0 volleys/s" (1.98 now; 0.29 on old tuning: fail_first_density_sim.log); sim floor 52.
+#50 moved since: young stage army range 10.5, tank_damage 8, fire_interval 0.7 (+ sounds, #46
+rifle sound in rooftop_view on look-options -> expect a small merge in rooftop_view.gd).
+So re-baseline on a0d3f36 (snap_b2) and re-replay the chosen tuning (snap_b2 + edge reach) before
+the PR tables; verify sim/ + data/ unchanged between a0d3f36 and the merged #50.
 
 ## Branch changes
 - committed 1348478: scenes/rooftop_view.gd draws squads nearest the kaiju first (_nearest_first).
