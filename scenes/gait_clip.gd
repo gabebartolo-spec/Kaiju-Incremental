@@ -23,11 +23,11 @@ const JAW_HOLD_SECONDS := 0.15
 ## The roar's tail slam lands when the tip stops falling: watched from ROAR_SLAM_FRAME (motion_test:
 ## hit 37 + TAIL_SLAM_DELAY x the tip joint 9 = 44.2, the earliest it can land), fired on the tip's
 ## lowest frame, at the latest SLAM_WINDOW frames on (lead review PR #54: a fixed frame fired early
-## on the adolescent). How hard it lands as a footfall: a camera dip of about 9 px at 1080p (the
+## on the adolescent). How hard it lands as a footfall: the camera drops about 9 px at 1080p (the
 ## scene's footfall path, presentation only, no damage); its puffs are sized by Fx.shockwave.
 const ROAR_SLAM_FRAME := 44.0
 const SLAM_WINDOW := 10.0
-const TAIL_SLAM_STRENGTH := 0.8
+const TAIL_SLAM_STRENGTH := 1.6
 ## A planted foot that ends this far from its clip spot (strides), or past a straight leg (fraction
 ## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip. At 0.98
 ## the adolescent's long legs, nearly straight at heel strike, re-stepped on every plant (PR #54).
