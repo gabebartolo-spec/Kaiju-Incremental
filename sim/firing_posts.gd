@@ -76,7 +76,7 @@ func _band_posts(tank: RampageSim.Tank, r: ConvoyRoute, found: Dictionary) -> Ar
 		for n: int in floori(length) + 1:
 			var at := a.lerp(b, minf(1.0, n / maxf(length, 0.001)))
 			var d := at.distance_to(k)
-			if d < lo or d > hi or n - last < step:
+			if d < lo or d > hi or n - last < step or to_body(at) < convoy.danger():
 				continue
 			last = n
 			var c := _reach_post(tank, r, found, [e, at])
@@ -102,6 +102,8 @@ func ring_posts(
 		var b := graph.nodes[graph.edge_b[e]]
 		for ring: float in rings:
 			for t: float in _ring_hits(a, b, k, ring):
+				if to_body(a.lerp(b, t)) < convoy.danger():
+					continue
 				var c := _reach_post(tank, r, found, [e, a.lerp(b, t)])
 				if not c.is_empty():
 					cands.append(c)
@@ -167,14 +169,37 @@ func _spaced(at: Vector2, others: Array[Vector2], arc: float, gap: float) -> boo
 	return true
 
 
-## Does the route from `from` through `points` pass inside the danger radius (any nearer the
-## kaiju than `from` itself, when it already stands inside)?
+## The kaiju's head: its snout, where the breath starts (BreathCone). kaiju_pos is the model's
+## origin (on the croc its tail root); danger is measured from the body between the two.
+func head() -> Vector2:
+	var at: Vector2 = BreathCone.of(sim)["origin"]
+	return at
+
+
+## How far p is from the kaiju's body (the line from its origin to its head).
+func to_body(p: Vector2) -> float:
+	return Geometry2D.get_closest_point_to_segment(p, sim.kaiju_pos, head()).distance_to(p)
+
+
+## The roads within `near` of the kaiju's body (road -> true).
+func roads_by_body(near: float) -> Dictionary:
+	var h := head()
+	var out := {}
+	for e: int in graph.edges_within(sim.kaiju_pos, near + sim.kaiju_pos.distance_to(h)):
+		var a := graph.nodes[graph.edge_a[e]]
+		if RoadGraph._near(a, graph.nodes[graph.edge_b[e]], sim.kaiju_pos, h) < near:
+			out[e] = true
+	return out
+
+
+## Does the route from `from` through `points` pass inside the danger radius of the body (any
+## nearer it than `from` itself, when it already stands inside)?
 func crosses_danger(from: Vector2, points: Array) -> bool:
-	var k := sim.kaiju_pos
-	var inner := minf(convoy.danger(), from.distance_to(k) - 0.5)
+	var h := head()
+	var inner := minf(convoy.danger(), to_body(from) - 0.5)
 	var a := from
 	for b: Vector2 in points:
-		if Geometry2D.get_closest_point_to_segment(k, a, b).distance_to(k) < inner:
+		if RoadGraph._near(a, b, sim.kaiju_pos, h) < inner:
 			return true
 		a = b
 	return false
@@ -185,11 +210,12 @@ func crosses_danger(from: Vector2, points: Array) -> bool:
 func fall_back(tank: RampageSim.Tank, r: ConvoyRoute) -> Array:
 	var e := graph.road_under(tank.pos, r.edge)
 	var axis := graph.axis(e)
-	var away := axis if axis.dot(tank.pos - sim.kaiju_pos) >= 0.0 else -axis
+	var body := Geometry2D.get_closest_point_to_segment(tank.pos, sim.kaiju_pos, head())
+	var away := axis if axis.dot(tank.pos - body) >= 0.0 else -axis
 	var na := graph.nodes[graph.edge_a[e]]
 	var nb := graph.nodes[graph.edge_b[e]]
 	var end := maxf((na - tank.pos).dot(away), (nb - tank.pos).dot(away))
-	var want := convoy.danger() + Num.f(cfg["follow"]) - tank.pos.distance_to(sim.kaiju_pos)
+	var want := convoy.danger() + Num.f(cfg["follow"]) - tank.pos.distance_to(body)
 	if want <= 0.0 or end <= 0.0:
 		return [[], []]
 	return [[tank.pos + away * minf(want, end)], [e]]

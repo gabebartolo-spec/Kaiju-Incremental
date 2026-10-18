@@ -5,12 +5,15 @@ extends SceneTree
 ## CLIP_SPAWN (not army.spawn_radius) every 1.6 s; the kaiju cannot fall. Everything else is the
 ## game's own data and code (the helicopters are today's, at their own call-in: none come in
 ## 18 s). Stills along the way; pair with --write-movie (ci_capture.sh --movie) for the clip.
+## At each still the log gives every tank's drawn hull, turret and barrel outline on screen
+## (OUTLINE lines: frame, tank, part, x,y points), for hull-vs-turret overlays.
 ## Needs a window and the no-focus override.cfg (or CI: tools/capture/ci_capture.sh).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_military.gd -- --out=<dir> [--seconds=18]
 
-const SHOTS: Array[int] = [300, 480, 600, 720, 780, 840, 900, 960, 1060]
+const SHOTS: Array[int] = [300, 480, 600, 720, 750, 780, 840, 900, 960, 1050, 1060]
+const PARTS: Array[String] = ["hull", "turret", "barrel"]
 ## Where columns call in from, metres from the kaiju (the game's is army.spawn_radius).
 const CLIP_SPAWN := 44.0
 ## Where the kaiju stands: a crossing at the north end of the Behemoth city (the same spot as
@@ -24,6 +27,7 @@ const WALK := Vector2(1, 0)
 var _out := "user://military"
 var _seconds := 18.0
 var _frame := 0
+var _cells := {}  # tank part -> its voxel corners in the part's space
 
 
 func _initialize() -> void:
@@ -61,7 +65,43 @@ func _run() -> void:
 		if SHOTS.has(i):
 			var path := _out.path_join("military_%04d.png" % i)
 			root.get_viewport().get_texture().get_image().save_png(path)
+			_outlines(rampage, i)
 	quit()
+
+
+## Prints every drawn tank's part outlines on screen (convex hull of its voxels, projected).
+func _outlines(rampage: Rampage, frame: int) -> void:
+	if _cells.is_empty():
+		var parts := VehicleParts.new(
+			TankModel.BASE, Num.f(Content.section("vehicles")["tank_height"])
+		)
+		_cells["hull"] = _corners(parts, "hull", -parts.pivot("hull") * Vector3(1, 0, 1))
+		_cells["turret"] = _corners(parts, "turret", -parts.pivot("turret"))
+		_cells["barrel"] = _corners(parts, "barrel", -parts.pivot("barrel"))
+	var cam := root.get_viewport().get_camera_3d()
+	for id: int in rampage._tank_nodes:
+		var node: TankModel = rampage._tank_nodes[id]
+		var at: Array[Transform3D] = [
+			node.global_transform, node._turret.global_transform, node._barrel.global_transform
+		]
+		for k: int in PARTS.size():
+			var pts := PackedVector2Array()
+			var corners: PackedVector3Array = _cells[PARTS[k]]
+			for c: Vector3 in corners:
+				pts.append(cam.unproject_position(at[k] * c))
+			var line := "OUTLINE %d %d %s" % [frame, id, PARTS[k]]
+			for q: Vector2 in Geometry2D.convex_hull(pts):
+				line += " %.0f,%.0f" % [q.x, q.y]
+			print(line)
+
+
+static func _corners(parts: VehicleParts, part: String, origin: Vector3) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for c: Vector3i in parts._read(part).frames[0].cells:
+		for k: int in 8:
+			var d := Vector3(k & 1, (k >> 1) & 1, k >> 2)
+			out.append(origin + (Vector3(c) + d) * parts.voxel)
+	return out
 
 
 ## The kaiju stands side-on to the camera, and strides at the tanks mid-clip (walk).

@@ -32,8 +32,9 @@ func reach() -> float:
 	return Num.f(sim.army["range"]) + sim.stomp_radius()
 
 
-func danger() -> float:
-	return reach() * Num.f(cfg["danger"])
+func danger() -> float:  # from the body line: its edge (body_radius) + edge_gap, at least
+	var edge := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale() + Num.f(cfg["edge_gap"])
+	return maxf(reach() * Num.f(cfg["danger"]), edge)
 
 
 ## Is the line of fire from `from` to `to` clear (FiringPosts.clear_line)?
@@ -87,7 +88,7 @@ func step(dt: float) -> void:
 			r = ConvoyRoute.new()
 			routes[tank.id] = r
 		r.replan_t -= dt
-		var urgent := tank.pos.distance_to(sim.kaiju_pos) < near
+		var urgent := posts.to_body(tank.pos) < near
 		if not urgent and r.path.is_empty():
 			r.retreating = false
 		if urgent and not r.retreating:
@@ -105,10 +106,7 @@ func step(dt: float) -> void:
 
 ## The search costs this step: roads by the kaiju's feet, held at a post, and driven (which way).
 func _refresh_costs(near: float) -> void:
-	search.near_kaiju = {}
-	for e: int in graph.edges_within(sim.kaiju_pos, near):
-		if graph.off_line(sim.kaiju_pos, e) < near:
-			search.near_kaiju[e] = true
+	search.near_kaiju = posts.roads_by_body(near)
 	search.held = {}
 	search.driven = {}
 	for tank: RampageSim.Tank in sim.tanks:
@@ -130,9 +128,10 @@ func _goal_good(r: ConvoyRoute) -> bool:
 	if r.goal.x == INF:
 		return false
 	var d := r.goal.distance_to(sim.kaiju_pos)
+	var clear := posts.to_body(r.goal) >= danger()  # clear of the body, head to tail root
 	if not r.path.is_empty():  # on its way it commits to the post, unless the kaiju drew off
-		return d >= danger() and d <= reach() * Num.f(cfg["commit"])
-	return d >= danger() and d <= reach() and clear_line(r.goal, sim.kaiju_pos)
+		return clear and d <= reach() * Num.f(cfg["commit"])
+	return clear and d <= reach() and clear_line(r.goal, sim.kaiju_pos)
 
 
 ## Bounding overwatch: a tank at its post waits for its column's moving tank to settle first.
@@ -242,7 +241,8 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	var behind := r.front.dot(dir) < (0.0 if r.retreating else -0.5)  # back off, never turn tail
 	if behind and r.front != Vector2.ZERO:  # and back up rather than turn about in the road
 		r.reversing = true
-		speed *= Num.f(cfg["reverse"])
+		var clear_of := r.retreating and posts.to_body(tank.pos) < danger()  # out fast, then slow
+		speed = Num.f(cfg["retreat_speed"]) if clear_of else speed * Num.f(cfg["reverse"])
 	var want := -dir if r.reversing else dir
 	r.front = want if r.front == Vector2.ZERO else r.front
 	var turn := r.front.angle_to(want)
@@ -252,6 +252,10 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	var front := r.front.rotated(clampf(turn, -rate, rate))
 	var move := 0.0 if absf(turn) > rate else minf(dist, speed * dt)  # squared first, then on
 	var next := tank.pos + dir * move
+	if not r.retreating and move > 0.0 and posts.to_body(next) < danger():
+		r.path.clear()  # brake short of the standoff line: never across it
+		r.edges.clear()
+		return
 	var blocker := _blocker(tank, next, front)
 	var fits := graph.drivable(next, front) and (move > 0.0 or _sweep_fits(tank, tank.pos, want))
 	if blocker == null and not fits and graph.drivable(tank.pos, r.front):
