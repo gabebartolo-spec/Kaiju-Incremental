@@ -9,7 +9,7 @@ extends RefCounted
 const BUCKET := 8.0  # props are filed by ground cell of this size, so a crush looks nearby only
 const STUMP := 2  # a crushed tree leaves its lowest cells this many high standing
 const LEAF_EVERY := 3  # a crushed tree throws one piece per this many of its leaf cells
-const BARK_EVERY := 2  # and per this many of its bark cells above the stump
+const BARK_EVERY := 1  # and every one of its bark cells above the stump
 
 var vox := VoxelBuilder.new()
 var voxel: float

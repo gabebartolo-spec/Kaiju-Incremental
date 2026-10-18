@@ -235,7 +235,7 @@
 		"trample_share": 0.9,
 		"stump_color": "d9c49b",
 		"tree_debris_leaf": "5ee82a",
-		"tree_debris_bark": "9a5a24",
+		"tree_debris_bark": "b8692a",
 		"tree_debris_size": 2.0,
 		"tree_debris_speed": 4.0,
 		"block_long": [18, 26],
