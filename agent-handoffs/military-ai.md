@@ -46,9 +46,9 @@ claude/look-options. LEAD merges. Resync before the next clip.
 - Timing (noisy): Apex Army.step mean 1.0-1.4 ms, p95 3.2-5.0 ms (round 1: 0.4 / 1.1).
 
 ## Open
-- Pacing at 4146dbf tuning running: task b1w4jw0o1 -> session scratchpad pacing_c2.txt (may be
-  lost with this session; rerun tools/pacing.gd -- --species=reptilian on a git archive
-  snapshot if so). Bar 0.59 h / 4.46 h +-5%. PR body "Pacing" line still says running.
+- Pacing at 4146dbf tuning: evolve1 0.64 h (+8.5%), tree 4.70 h (+5.4%), young 9/25
+  time/defeated (bar 0.59 / 4.46 +-5%, 12/16). OUTSIDE the bar: young is too hard (rate
+  matching raised defeats). r4: retune young (e.g. tank_damage 8-9 at range 11) and re-pace.
 - Notes folder military-ai/: clip_r3 (+review), sim-review-packet.md (section 6 current to r3).
 
 ## Findings for the lead
