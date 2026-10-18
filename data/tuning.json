@@ -234,6 +234,7 @@
 		"yard_depth": [0.6, 1.6],
 		"trample_share": 0.9,
 		"stump_color": "d9c49b",
+		"tree_debris_lift": 0.3,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
 		"avenues": 1,

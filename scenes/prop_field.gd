@@ -13,6 +13,7 @@ const DEBRIS_EVERY := 4  # a crushed tree throws one piece of debris per this ma
 var vox := VoxelBuilder.new()
 var voxel: float
 var stump_color := Color(0.85, 0.77, 0.6)  # every crushed tree's stump: fresh-cut wood
+var debris_lift := 0.0  # a tree's debris goes this much toward white, to read in the city's dusk
 var stumps: Array[Vector3] = []  # trees crushed since the owner last drained this (earth puffs)
 ## Debris to throw since the owner last drained this: [position, colour, away] each.
 var debris: Array[Array] = []
@@ -177,7 +178,7 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 			continue
 		mm.set_instance_transform(ids[k], gone)
 		if k % DEBRIS_EVERY == 0:
-			debris.append([origins[k], colors[k], out + Vector3(0, 1.0, 0)])
+			debris.append([origins[k], colors[k].lightened(debris_lift), out + Vector3(0, 1.0, 0)])
 			thrown += 1
 	group["stump_color"] = stump_color
 	group["debris"] = thrown

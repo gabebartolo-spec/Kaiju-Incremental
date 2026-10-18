@@ -89,6 +89,7 @@ func _ready() -> void:
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
 	_props.stump_color = Color(str(sim.city["stump_color"]))
+	_props.debris_lift = Num.f(sim.city["tree_debris_lift"])
 	add_child(_fx)
 
 
