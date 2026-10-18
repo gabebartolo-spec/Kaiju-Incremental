@@ -36,6 +36,8 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
   (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
   130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
+## 05:xx: #36 MERGED cceabba (evolve1 0.26 h real head). #59 r6 PASS lead 2x; lead merged look-options in (64c618c,
+## floors growth 31 flow 146) -> merge on green. Then #66 (resolve floors: flow +2) -> merge -> #63 -> BUILD.
 ## 04:xx: #63 r3 audio ACCEPTED (c936f33); sparks STILL clustered (137, x 908-1011, 73 at 960) + no resync -> r2
 ## visual list resent. #66 (greenery: axis + collapse cap, red-first) -> lead merges on green before build.
 ## #59 r5 burst core PASS (lead 2x, burst_f60_75_2x.png). PR CONFLICTING, no CI at 0c01c61 -> resync onto 5bc6b44
