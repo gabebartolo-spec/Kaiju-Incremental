@@ -1,5 +1,9 @@
-# blender-reptile handoff, 2026-10-18 19:40
-## State: awaiting lead (GPU turn: rooftops -> greenery -> stadium -> ME -> #50). PR #54 head dfcceea.
+# blender-reptile handoff, 2026-10-18 22:45
+## State: blocked (I HOLD the local GPU slot since stadium 22:4x, but the focus guard blocks windowed
+## runs: director fullscreen League). override.cfg is IN the project folder (gitignored) - remove it when
+## done. Retry local every few min; CI waiter bxmrea7ga -> when CI free, ci_capture gl_compatibility 720p
+## baby then adolescent (one at a time). After: pass GPU to #50 local_5325ef73-4643-4477-9507-1bb17f42af5b.
+## PR #54 head a33dc85: + RESTEP_REACH 0.98 -> 1.0 (adolescent re-stepped on every plant; pre-existing).
 ## Lead 19:0x: baby game-cam clip FAILED fresh critic. Fixes pushed dfcceea (suites green):
 ## 1/6 feet hid under the belly (planted drift was 0, turn had 5-6 steps) -> motion_test splay 10/12 m,
 ##   lift 0.18/0.15 (baby/adolescent), clips re-baked; 3 capture walk starts at 0.3 s (WALK_FROM);
