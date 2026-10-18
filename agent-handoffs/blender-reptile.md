@@ -26,7 +26,7 @@
   TAIL_WALK_PERIOD = tail_strides * T; root travel stored in dm (adolescent overflowed cm).
 - Data: reptilian_{baby,adolescent}.{kvox,rig.json,vskin,kclip}; test/croctitan_{baby,adolescent}
   .skin.json/.skinw/.skinf; skin_weights.json lists all three. Mouth lines (re-origined on pelvis):
-  baby -87,81,-52,86.5; adolescent -79,86.8,-61,89.6. Voxel heights 100 / 130 (adult 160).
+  baby -87,81,-46,87.4 (gape line run back to the jaw hinge, 14:2x jaw fix); adolescent -79,86.8,-61,89.6. Voxel heights 100 / 130 (adult 160).
 - Recipe per stage: motion_test export <vox>; rig_voxel.py <glb> assets/kaiju/<name> reptilian <vox>;
   skin_faces.py; rig_from_skin.py <kvox> <skin.json> <mouth>; motion_test clips; bake_all.sh.
 - Tests: clips 14 (every stage on ClipGait); flow 130 (incl. end card's adult ClipGait + roars). New
