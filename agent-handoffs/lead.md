@@ -36,6 +36,9 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
   (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
   130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
+## 02:xx: #54 MERGED bc324f6 (r5 slam on lead 2x). #59 r4: burst numeric tweak, lead merges on 2x (critic's
+## 'sliced rows' overruled: on-style voxel breach). #63 r2 critic running + audio +5..8 dB, gap 0.1 s. Greenery session:
+## demo PR for city_view.gd:208 axis spam + collapse-sfx cap, then #55 numeric tweaks (lead merges post-build).
 ## 00:xx: #50 r3 FAIL (lead-verified 14.0 s overlapping tanks, 11.5 s yaw over police car) -> OUT of demo (D-082);
 ## r4 list in military-ai.md eefefd1; its session is past 150k: clear_session it when idle + kick off r4 from handoff.
 ## #54 r4 slam: timing PASS; 3 numeric tweaks (adolescent puff ramp, fade by 15.8 s, dip 6-10 px) -> merge on lead 2x.
