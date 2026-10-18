@@ -23,7 +23,7 @@ None. override.cfg removed after the windowed runs.
   Terabase, Jolt determinism) added as section 1 with 17 sources; options re-based on it. Effort A 18 -> ~19 days
   (RFG support rule added to A). CityV: no public tech found (cited the footage). Worktree base verified = look-options.
 ## Open decisions
-Director: option A (recommended, ~18 days) vs the 6-day cosmetic step vs B/C. Lead builds the board.
+Director: option A (recommended, ~19 days) vs the 6-day cosmetic step vs B/C. Lead builds the board.
 ## Running jobs
 None.
 ## Findings for the lead
