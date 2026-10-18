@@ -1,12 +1,16 @@
-# blender-reptile handoff, 2026-10-18 14:05
-## State: running a check. PR #54 OPEN (P3, into claude/look-options, Auto-fix on; head sent to lead).
+# blender-reptile handoff, 2026-10-18 14:30
+## State: running a check. PR #54 OPEN (P3 into claude/look-options), head 1134f93, Auto-fix on, sim
+## review PASS (lead). Synced look-options b810d1a; floors real (smoke 30, flow 135, growth 26); green.
+## Lead jaw review 13:59: baby mouth corner flap -> FIXED 1134f93 (mouth line run to the jaw hinge
+## -87,81,-46,87.4; jaw 3430 -> 3962 voxels; re-baked). Offline proxy (scratchpad jaw/open_sim.py:
+## .kvox split opened 45 deg, rigid hinge) before/after in notes p3/jaw_proxy_*. Adolescent proxy clean.
 ## Capture chain bvyon7hgp (720p) waits for military-ai's re-shoot, then jaw_baby, jaw_adolescent,
-## baby, adolescent one at a time -> scratchpad ci10/. Then: jaw verdict + 2x crops + clips into the
-## PR (commit to docs/captures/2026-10-18-croctitan-stages/, edit body PENDING lines), SHA to lead.
-## D-074b committed 5814b31 (stage 1 body 0.6 / 1.15; evolve1 0.71 h, 15/33 defeated, tree 4.55 h).
-## Merged look-options 89403b4 (floor conflict -> real counts: smoke 30, flow 134, growth 26; all green).
+## baby, adolescent one at a time -> scratchpad ci10/. Bar (lead): 2x at roar peak, clean upper and
+## lower jaw edges, no skin bridge/flap, no floating red/green blocks (adolescent: thin green shard).
+## Then: crops + clips into docs/captures/2026-10-18-croctitan-stages/, edit PR body PENDING lines,
+## SHA to lead; lead runs a fresh critic on the clips and merges. P3 = TOP PRIORITY, lands BEFORE #36.
+## D-074b in 5814b31 (stage 1 body 0.6 / 1.15; evolve1 0.71 h, 15/33 defeated, tree 4.55 h).
 ## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
-## P3 is TOP PRIORITY (last thing the demo build waits on). #54 lands BEFORE #36. Needs kaiju-sim-review.
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
