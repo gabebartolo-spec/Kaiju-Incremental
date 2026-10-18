@@ -60,30 +60,61 @@ func step(dt: float) -> void:
 ## Every standing chunk inside the body at a pose: {building index: {Vector3i: true}}.
 func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 	var out: Dictionary = {}
-	_collect(pos, facing, out)
+	_collect(pos, facing, out, _near(pos, pos, _reach()))
 	return out
 
 
 func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> void:
-	var s := sim.body_scale()
-	var reach := 0.0
-	for d: Array in _discs:
-		reach = maxf(reach, (absf(Num.f(d[0])) + Num.f(d[1])) * s)
+	var reach := _reach()
+	var near := _near(from, to, reach)
+	if near.is_empty():
+		return
 	var turn := from_heading.angle_to(to_heading)
 	var travel := from.distance_to(to) + absf(turn) * reach
 	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
 	var hits: Dictionary = {}
 	for n: int in range(1, samples + 1):
 		var t := float(n) / samples
-		_collect(from.lerp(to, t), from_heading.rotated(turn * t), hits)
+		_collect(from.lerp(to, t), from_heading.rotated(turn * t), hits, near)
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
 			cells.append(c)
-		broken += sim.damage_chunks(index, cells, INF)
+		var before := sim.rubble
+		var first := sim.events.size()
+		var n := sim.damage_chunks(index, cells, INF)
+		if n > 0:  # the body's own breaks pay pay_mult of a blow's (pacing); falls pay in full
+			sim.rubble = before + (sim.rubble - before) * Num.f(cfg["pay_mult"])
+			sim.events[first]["pay"] = Num.f(cfg["pay_mult"])
+		broken += n
 
 
-func _collect(pos: Vector2, facing: Vector2, into: Dictionary) -> void:
+## How far the body reaches from its position, world units.
+func _reach() -> float:
+	var reach := 0.0
+	for d: Array in _discs:
+		reach = maxf(reach, absf(Num.f(d[0])) + Num.f(d[1]))
+	return reach * sim.body_scale()
+
+
+## Standing buildings the body can touch moving from `from` to `to`: one pass over the city.
+func _near(from: Vector2, to: Vector2, reach: float) -> Array[int]:
+	var lo := Vector2(minf(from.x, to.x), minf(from.y, to.y)) - Vector2.ONE * reach
+	var hi := Vector2(maxf(from.x, to.x), maxf(from.y, to.y)) + Vector2.ONE * reach
+	var out: Array[int] = []
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.frame.alive_count == 0:
+			continue
+		if b.x + b.w * 0.5 < lo.x or b.x - b.w * 0.5 > hi.x:
+			continue
+		if b.z + b.d * 0.5 < lo.y or b.z - b.d * 0.5 > hi.y:
+			continue
+		out.append(i)
+	return out
+
+
+func _collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) -> void:
 	var s := sim.body_scale()
 	var skin := Num.f(cfg["skin"])
 	for d: Array in _discs:
@@ -93,10 +124,8 @@ func _collect(pos: Vector2, facing: Vector2, into: Dictionary) -> void:
 			continue
 		var y_lo := sim.stand_y + Num.f(d[2]) * s + skin
 		var y_hi := sim.stand_y + Num.f(d[3]) * s - skin
-		for i: int in sim.buildings.size():
+		for i: int in near:
 			var b := sim.buildings[i]
-			if b.frame.alive_count == 0:
-				continue
 			if absf(b.x - centre.x) > b.w * 0.5 + r or absf(b.z - centre.y) > b.d * 0.5 + r:
 				continue
 			# Local cell ranges the disc's square can touch.

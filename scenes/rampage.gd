@@ -185,7 +185,7 @@ func _on_event(event: Dictionary) -> void:
 			_ability_fx(event)
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]
-			_on_chunks_broken(Num.i(event["building"]), cells)
+			_on_chunks_broken(Num.i(event["building"]), cells, Num.f(event.get("pay", 1.0)))
 		"fall_start":
 			_city.fall_start(event)
 		"fall_land":
@@ -211,10 +211,11 @@ func _on_event(event: Dictionary) -> void:
 			_powers.on_event(event, _kaiju_at)
 
 
-func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
+func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 	_city.chunks_broken(index, cells, _kaiju_at)
 	var b := sim.buildings[index]
-	var gained := cells.size() * b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult")
+	var per := b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult") * pay
+	var gained := cells.size() * per
 	if gained >= 1.0:
 		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
 		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
@@ -392,9 +393,7 @@ func _place_camera(delta: float) -> void:
 func _autoplay_move() -> Vector2:
 	if _steps % 15 == 0 or _autoplay_target.x == INF:
 		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
-	if (
-		_autoplay_target.x == INF
-		or sim.kaiju_pos.distance_to(_autoplay_target) < sim.stomp_radius() * 0.5
-	):
+	var to := _autoplay_target - sim.kaiju_pos
+	if _autoplay_target.x == INF or to.length() < sim.stomp_radius() * 0.5:
 		return Vector2.ZERO
-	return (_autoplay_target - sim.kaiju_pos).normalized()
+	return to.normalized()
