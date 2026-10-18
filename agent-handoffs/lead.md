@@ -8,7 +8,9 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
 Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
 
-## RIGHT NOW (2026-10-19 ~06:00, director watching a movie ~2 h)
+## GODOT ALLOWED AGAIN (director ~08:xx 'godot is yours'): smoke on the exe running (dry-run session); stall
+## measured locally by stadium; #50 r4 local probes/pacing; jets balance table. Windowed = off-screen no_focus only.
+## (was) RIGHT NOW (2026-10-19 ~06:00, director watching a movie ~2 h)
 - Director: "dont use godot". NO local Godot at all (windowed or headless) until he lifts it. All sessions told
   (dry-run, #50, greenery, jets, rooftops); process list was empty at 06:2x. CI (tests/capture/build) is fine.
 - Do not alt-tab or disturb him; no questions until he is back.
