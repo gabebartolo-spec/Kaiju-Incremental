@@ -75,6 +75,8 @@ session smokes it, and the director plays again.
 ## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
 ## #89 croc contact (body sweep, pay 0.2x, e1 0.27): lead 2x FIX: small building VANISHES on entry (show chunk debris,
 ## keep untouched walls), add a tall-tower carve clip; D-091 unfinished (TOO STRONG text + stomp tier gate remain).
+## DASH: lead call A (briefed dash, bot dashes; evolve1 provisional ~575). ONE joint young retune by the army session
+## after #89 + dash merge (bars e1 0.26 h ±5%, young defeats 8 ±2 /15). Destruction spike session local_0a7e5cf8 running.
 ## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
 ## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
 ## GPU FAN: director's PC = RTX 4070 SUPER, 4K @120 Hz monitor ON THE CARD (WMI wrongly lists it on the AMD iGPU).
