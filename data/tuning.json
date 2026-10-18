@@ -182,7 +182,7 @@
 		"landmarks": [
 			{
 				"id": "stadium", "anchor": [22, -24], "margin": 0, "tier": 1, "rubble_bonus": 4.0,
-				"arcs": {"sectors": 24, "stub": 2, "inner": 0.6, "rim": 0.86}
+				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
 			{"id": "wheel", "anchor": [10, 56], "margin": 2, "tier": 2, "rubble_bonus": 4.0}
 		],

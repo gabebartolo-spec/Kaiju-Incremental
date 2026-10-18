@@ -1,8 +1,8 @@
 extends RefCounted
 ## The load suite's landmark check, split out to keep the runner small.
 
-## The farthest a fallen section's rubble may lie past the wall: inside one wall height (5.4).
-const RUBBLE_REACH := 4.0
+## The farthest a fallen section's rubble may lie past the wall: short of the plaza's trees.
+const RUBBLE_REACH := 2.5
 
 var _check: Callable
 
@@ -103,6 +103,20 @@ func run() -> void:
 				% [far, RUBBLE_REACH, near_top, far_top]
 			)
 		)
+	)
+	var off_palette := 0
+	var sampled_colors := 0
+	var lv := view.voxels as LandmarkVoxels
+	for column: Vector2i in lv.rubble_colors:
+		var found: Array = lv.rubble_colors[column]
+		for c: Color in found:
+			sampled_colors += 1
+			var grey := maxf(c.r, maxf(c.g, c.b)) - minf(c.r, minf(c.g, c.b)) < 0.12
+			if not grey and not (c.r > c.g + 0.3 and c.r > c.b + 0.3):
+				off_palette += 1
+	_check.call(
+		sampled_colors > 100 and off_palette == 0,
+		"its rubble is wall grey and seat red only: %d of %d off" % [off_palette, sampled_colors]
 	)
 	print("landmark view: stadium built in %d ms" % build_ms)
 	view.free()

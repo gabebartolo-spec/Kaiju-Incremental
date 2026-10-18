@@ -8,21 +8,22 @@ extends RefCounted
 
 var stub := 0
 var _w := 0
-## Plan column (x + z * w) -> arc, or -1 (outside the ring: the corner masts).
+## Plan column (x + z * w) -> arc, or -1 (the pitch, and the corner masts outside the ring).
 var _of := PackedInt32Array()
 var _dirs: Array[Vector2i] = []
 ## Standing chunks per arc when it last shed (or at the start).
 var _whole := PackedInt32Array()
 
 
-## cfg: {"sectors", "stub" (floors that stay standing), "inner" and "rim" (normalised radii where
-## the stands and the rim start: 0 is the middle, 1 the footprint's inscribed ellipse; the
-## pitch inside "inner" belongs to no arc)}.
+## cfg: {"sectors", "stub" (floors that stay standing), "rim" (normalised radius where the rim
+## starts: 0 is the middle, 1 the footprint's inscribed ellipse), "outer" (the wall's outermost
+## chunks reach past 1; the corner masts beyond it belong to no arc)}. Only columns that rise
+## above the stub belong to an arc: the pitch never does.
 static func build(frame: Structure, cfg: Dictionary) -> Arcs:
 	var a := Arcs.new()
 	var sectors := Num.i(cfg["sectors"])
 	var rim := Num.f(cfg["rim"])
-	var inner := Num.f(cfg["inner"])
+	var outer := Num.f(cfg["outer"])
 	a.stub = Num.i(cfg["stub"])
 	a._w = frame.w
 	a._of.resize(frame.w * frame.d)
@@ -30,7 +31,7 @@ static func build(frame: Structure, cfg: Dictionary) -> Arcs:
 	for x: int in frame.w:
 		for z: int in frame.d:
 			var at := Vector2((x + 0.5) / (frame.w * 0.5) - 1.0, (z + 0.5) / (frame.d * 0.5) - 1.0)
-			if at.length() > 1.0 or at.length() < inner:
+			if at.length() > outer or frame.top_below(x, z, frame.h) < a.stub:
 				continue
 			var band := 1 if at.length() >= rim else 0
 			var s := posmod(floori((at.angle() + PI) / TAU * sectors), sectors)
@@ -72,6 +73,11 @@ func shed(frame: Structure) -> Array[Dictionary]:
 				}
 			)
 	return out
+
+
+## The arc plan column (x, z) belongs to, or -1.
+func arc_at(x: int, z: int) -> int:
+	return _of[x + z * _w]
 
 
 func _count(frame: Structure) -> PackedInt32Array:
