@@ -3,7 +3,11 @@
 GPU queue (peer to peer, set 18:3x): rooftops #63 re-render -> landmarks #59 (crowd + AFL r2) -> greenery #55 r10 -> croc #54.
 #59 AFL r1 FAIL (fresh critic, lead-verified g030/g104): grid-row team photo, no ball, inward rim slide, dark slabs
 f94-114 + one-frame pop, flee clump, kaiju hidden. One fix round + crowd sent; fail again -> burst-in-place only.
-#36 resynced 08291ea, pre-sweep (+#54 +#63) running. #50 DIRTY (needs resync; last round).
+#36 D-069a pick: young override army tank_damage 3.5 (18/32 young defeated, evolve1 0.68 h); 130-run confirm after
+#54+#63 land. #50: re-measure then clip (~90 min), joins GPU queue after croc. #64 board MERGED 844217a (D-062..D-084).
+#54 baby clip FAIL (critic + lead w1 check): skating stride, late start, tail snap at turn, turntable turn, late/popping
+slam ring; fix list sent (skip shockwave arcs, black frame; 9/10 post-demo). Board session -> "Demo build dry-run"
+(local_37cf489b): build.yml on look-options + exe smoke test, internal only.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
