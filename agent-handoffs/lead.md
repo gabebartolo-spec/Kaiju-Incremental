@@ -9,7 +9,8 @@ Messaging: one message per worker with everything; never ask the director to unb
 a failed first send in a parallel batch cancels the rest.
 
 ## River (9daef55, claude/river-start): far-bank park, emergence; lands AFTER the croc-contact D-091 PR (its 2 strict
-## checks need the tier gate gone). #50 tanks-only clip r4 (4f1ad4a) -> fresh motion critic running.
+## checks need the tier gate gone). #50 r4 critic FIX (lead-confirmed: drawn hull ~35-40 deg off the N-S street at 9-10.5 s,
+## on police cars; hull swings at the post) -> r5 list sent: lane-locked hull, car keep-out, turret-only, standoff.
 ## RESUMED (director): all sessions told (river notes, stadium shared-burst-mesh fix approved: hits 40-48 ms windowed,
 ## fall_start makes new render resources per burst). Rifle-fire PR + breath snout fix queued at rooftops.
 ## Sessions renamed: Gun audio + breath aim (1ac658ed), Stadium + frame probe (87d706ce), Load, smoke FX, builds
