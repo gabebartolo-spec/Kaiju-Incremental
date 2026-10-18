@@ -208,8 +208,11 @@ func _check_rampage() -> void:
 	)
 	var heard := rampage.sfx.played
 	check(
-		heard.has("footstep") and heard.has("collapse"),
-		"the kaiju's feet and falling buildings make sounds: %s" % [heard.slice(0, 12)]
+		heard.has("footstep") and heard.has("collapse") and heard.has("crowd_panic"),
+		(
+			"the kaiju's feet, falling buildings and the fleeing crowd are heard: %s"
+			% [heard.slice(0, 12)]
+		)
 	)
 	rampage.queue_free()
 	await process_frame

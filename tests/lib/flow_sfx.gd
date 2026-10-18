@@ -33,6 +33,7 @@ static func run(root: Node, check: Callable) -> void:
 		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
 		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
 	)
+	preload("res://tests/lib/flow_sounds.gd").crowd(check, sfx)
 	var pitches: Array[float] = []
 	for tier: int in [1, 4]:
 		sfx.set_size_tier(tier)
