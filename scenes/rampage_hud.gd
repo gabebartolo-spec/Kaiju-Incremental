@@ -49,7 +49,7 @@ func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> vo
 
 ## The sim's result plus what only the view counts: the civilians it crushed.
 func result() -> Dictionary:
-	return sim.result().merged({"civilians": street.killed if street != null else 0})
+	return sim.result().merged({"civilians": street.civilians_killed() if street != null else 0})
 
 
 func _ready() -> void:
