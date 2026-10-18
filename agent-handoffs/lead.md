@@ -1,101 +1,100 @@
-# Lead handoff, 2026-10-18 12:20
-## State: working (DIRECTOR BACK 10:4x, interviewed; all tabled items answered; executing)
+# Lead handoff, 2026-10-18 21:30
+## State: running a check (demo chain; full speed; GPU queue runs peer to peer)
 
 ## Who
-Lead = session "Kaiju: Lead" (renamed from LEAD 06:3x; local_106fc100...). Owns: QA gates + fresh critics, PR review +
-merge (squash, `--match-head-commit`), STATUS/DECISIONS board PRs, director questions, this file, the local GPU slot.
-Sessions renamed 06:3x: Kaiju: Military AI / Rooftop defenders / City fill & greenery / Crease shader / Jet models /
-Tripo (old lead) / Sound effects / Landmark models / Lighting & breath FX / Croc rig & clips / Demo slice (done) /
-UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive space balancing" = director's own.
+Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review + merge
+(squash, `--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
+Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes (director 18:0x).
+Messaging: the app pauses SendMessage after 10 sends without a director message. Budget: one message per worker with
+everything; GPU + resync hand-offs go peer to peer; never ask the director to type to unblock
+(memory-shared/messaging-cap).
 
-## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
-- Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
-- D-069 merge #36 army scales (sound session syncing it; lands after #50 military). D-070 all sounds ship + new mix:
-  #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 MERGED (16:xx-17:1x); #52 shell_hit A/B: director kept A (D-079), PR closed; voice-pool PR next, each resynced by the sound session.
-- D-071 landmarks A stadium -> D wheel -> E spire -> F megatower (sites PR with A+D, then E/F). D-072 all four jets;
-  strikes wreck buildings, no biomass; jets from Colossus, bomber Apex set-piece; octopus can grab jets.
-- D-073 croc baby + adolescent approved; D-074 slow stage 1 (baby reads as toddler; pacing re-measured) in P3 PR.
-- D-075 green lots 8% (city session, after greenery (a)). D-076 rooftops: more squads, more often (fresh session card
-  proposed; after #50). D-077 trim the tree stats panel (UI session). D-066 heli mix shift OK.
-- 11:2x D-069a: soften #36's young stage to ~half early defeats (cause: Armoured Scales moved late). 11:4x D-074
-  revised: baby speed ~0.6 + more hp, demo ~35 min. ORDER: #50 -> P3 (art + baby tuning) -> #36 (resync, soften young last).
-  13:4x DIRECTOR: final demo build WAITS for rooftops + #36; 14:1x D-078 stadium matches (AFL/NFL/soccer/cricket, random
-  per run, presentation only, low effort, players flee when the wall caves) ALSO in the demo (landmarks session).
-  Order: #50 -> P3 #54 -> rooftops -> landmark sites -> matches -> #36 -> build. No interim builds.
-  Side merges (one floor resync each): #56 voices 8->24 and #51 stats trim right after #50. CI queue: shell-hit ->
-  #50 720p -> #51 UI-only -> P3 chain -> rooftops -> matches -> greenery/landmarks/jets. Archived: Kaiju tree research.
-  13:2x D-074b: 0.6 h unreachable at 0.6 speed; director picked 0.6 speed / hp 1.15 (~43 min, 45% def, 87% city).
-- Rooftop density (local_1ac658ed): cause = rifle reach from kaiju centre; plan approved (reach from edge + more
-  squads + shorter interval, tank_damage offset ±5%); branches after #50; PR needs volleys/run table + clip.
-  D-076a = A (chip scaled down per tier, tanks unchanged); no HUD change; hide spark is the hit (2x crops).
-  To ask the director: a HUD hit flash for big hits only (tank shells)? (UI session; taste).
-- #54 P3 open: sim review PASS (my comment). Baby jaw 2x shows torn upper-jaw flap at mouth corner; gate = clean
-  in-game jaw_baby crop at roar peak, then fresh critic on clips. CI capture order: shell-hit -> #50 720p -> P3 ->
-  rooftops -> greenery/landmarks/jets. Local GPU slot: landmarks stills (after greenery).
-- SENT 15:4x to military (#50 fresh motion critic FAIL; I verified the tank frames myself in pair clip t=17 and 21.5 s):
-  tanks skewed 30-40 deg mid-street and hulls overlapping building corners/lots -> keep hull centre >= half-width
-  inside road polygon incl. corners, finish turn before deploying; helis fire while nose points away (8.6-8.8 s) ->
-  fire only within ~30 deg of bearing; hover-yaw against tower top (3.3-4 s) -> tower clearance + travelling arc;
-  add bank roll in turns. Re-shoot 720p gl_compat. Greenery: stomp-dust haze (ability_fx.gd:134) -> sound session.
-- SENT to UI (#51 screen-critic FAIL minor): do: stats below the 'Grows into' note with a half-line gap,
-  new number brighter; pin Level/Cost/buy to panel bottom; name the key on 'Press to buy' (KB + pad); align arrows
-  if cheap. Skip: dropping 'You have' line. Then re-capture + merge. #59 sport stills PASS (lead 2x).
-- D-080 (director 15:4x): jet strike warning scales with kaiju size (jets PR1). #57 r3 triage + greenery GPU +
-  stomp-dust haze (sound) all SENT 15:4x. Messaging pauses after 10 sends without a director message.
-- DIRECTOR 16:0x: D-081 landmark rubble_bonus 4x stays; D-082 #50 gets ONE more round, if it fails again the demo
-  ships without it; D-083 after the demo: playtest fixes first. #55 trample r7 FAIL (3rd): suspect camera-occlusion
-  fade on centre-line trees; per-prop log asked. Not demo-blocking.
-- 17:1x: #55 trample r8 (kvox footprint, tail test, per-prop log) with fresh motion critic. Cancelled concurrent
-  stomp-dust capture (sound told: do stills locally). #59 needs resync + AFL clip after P3 chain. Messaging cap hit.
-- UNSENT to greenery (#55 r8 critic FAIL, 4th): my 2x of r8/pair_trail_2x: trees DO fall, but along the walk
-  (north/south = camera depth axis) so a laid tree reads as an upright crown + trunk; the 30% lighten makes them
-  look like ghosts. Fix: fall sideways, away from the path centre-line (perpendicular to camera view); keep crown
-  colour opaque (lighten the stump only); puff at each trunk base. Clip start: log says f2 falls, clip shows laid at f0.
-- Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
+## Verdicts 23:xx: #54 r2 baby FIX (walk-start lurch, ring pops big), adolescent FAIL (scroll halves 3.55 s, turn foot
+## creep, ring disc 55 px off tip, jaw frozen) -> r3 list. #59 r2 FAIL fix-list (fill 40-50%, dead ball, black
+## slivers/rect, street pop, 3/8 mouths, sports stills) -> r3, then merge if polish only.
+## Demo chain (D-050; ends at the evolve1 reveal -> DEMO COMPLETE card). Merge order: #54 #63 (#59 #55 #50 if they
+## pass) -> #36 last -> build.
+- #54 croc baby/teen (local_bce75838, head dfcceea): r1 game-cam FAIL (skating stride, late start, tail snap,
+  turntable turn, late/popping slam ring). Fixes pushed (wider stance + higher lift, tail lags outside, ring on contact
+  frame, soft). Awaiting its GPU render (baby + adolescent) -> fresh motion critic -> merge.
+- #63 rooftop fire (local_1ac658ed): looming fix OK; D-085 ragged fire in (51a2d5d). Clip r1 FAIL: ONE squad fires all
+  14 volleys (every spark at 912,441), no rifle audio in the track, metronome gaps. Fix list sent (3+ squads in reach,
+  spark spread, audio check, spark on tracer arrival). Re-render in its GPU turn -> fresh critic.
+- #59 stadium matches + crowd (local_87d706ce): crowd in (9032216, up to 1000 fans, flee to exits). AFL r1 FAIL: team
+  photo rows, no ball, rim slides INWARD, dark slabs f94-114 + pop, flee clump, kaiju contact hidden. 5 fixes + crowd
+  in one run. Fail again -> burst in place only, no topple.
+- #55 greenery (local_9af27a16): r11 crush FAIL (vanish then late burst, grey-teal debris, grey slab puff 50+ f) ->
+  NOT in the demo (D-084); keeps fixing in parallel, critic after the build. Earlier: trample topple failed r1-r10 -> topple OUT (D-084). Method change: crush in place
+  (debris path + pale stump + tan puff, no rotation). ONE critic round, else #55 after the demo. Stomp shockwave
+  (rampage.gd:177, tan crescents) is NOT #55's: exclude from briefs.
+- #50 tanks & helis (local_5325ef73, bce6433): last round (D-082); re-measure then 720p clip after croc in GPU queue.
+- #36 army balance (local_24621710): D-087 pick evolve1 cost 1778 -> 400 (0.26 h, 8/14 young defeated, Behemoth 26%);
+  no young override, no option A (D-086 void); growth test ratio /10 -> /20 citing D-087. GO given. After #54 + #63
+  merge: resync, 130-run confirm on the real head, body table, ping lead -> merge -> BUILD.
+- RENDERS (23:xx): director AFK, "use as much of my computing power as you can": local GPU, up to 4 windowed renders
+  at once, no baton; headless unlimited; helpers fan out sweeps. CI capture only while he games. Dry-run session
+  (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
+  130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
-## DEMO (D-050) state
-- Merged on look-options 2026-10-18 (late): #34 army sounds, #41 limiter, #37 city fill, #44 worktree cap, #40 rooftops,
-  #38 breath reads from behind (flame curtain), #47 scorch glow fade-in, #48 shader uid, #22 croc titan clips (D-047;
-  critic r3: walk PASS, roar/turn polish in a follow-up PR after P3; clip tabled for his look), #27 UI look A + biomass
-  + Block font (c3b7306). Earlier: #21 balance D, #24 #31 boards, #25 worktree cap, #26 streets, #23 demo slice,
-  #29 playtest sheet, #28 #30 export + CI artifact, #8 SFX, #32 perf hitches, #33 SFX bus + slider + menu sounds +
-  end-card roar sound. Decisions D-050..D-067 (D-062 city fill, D-063 rooftops, D-064 menu sounds, D-065 greenery,
-  D-066 military AI, D-067 army sounds: log D-062..D-067 in the next board PR).
-- Still to land for the demo: P3 croc baby/adolescent (claude/croctitan-p3; mouth check via in-game 2x jaw crops), then
-  the build: `gh workflow run build.yml --ref claude/look-options -f ref=claude/look-options`, `gh run download <run> -n
-  KaijuIncremental-<sha>`, local smoke; P7 = he plays it. Preview build dispatched 09:5x on c3b7306 (run 39079416758).
+## 02:xx: #54 MERGED bc324f6 (r5 slam on lead 2x). #59 r4: burst numeric tweak, lead merges on 2x (critic's
+## 'sliced rows' overruled: on-style voxel breach). #63 r2 critic running + audio +5..8 dB, gap 0.1 s. Greenery session:
+## demo PR for city_view.gd:208 axis spam + collapse-sfx cap, then #55 numeric tweaks (lead merges post-build).
+## 00:xx: #50 r3 FAIL (lead-verified 14.0 s overlapping tanks, 11.5 s yaw over police car) -> OUT of demo (D-082);
+## r4 list in military-ai.md eefefd1; its session is past 150k: clear_session it when idle + kick off r4 from handoff.
+## #54 r4 slam: timing PASS; 3 numeric tweaks (adolescent puff ramp, fade by 15.8 s, dip 6-10 px) -> merge on lead 2x.
+## #59 r3 FAIL (black cut faces f64-77, flee invisible f121, sport-still density): method change = ALL sections burst
+## in place, all fans stand + run fast to exits; last round. #55 r12: puff fail -> approved footfall puff (post-build).
+## Integration dry-run (23:xx, scratch, nothing pushed): A = #54+#63+#59+#36 all suites PASS (flow 146, growth 31;
+tuning.json stage 1 keeps #54 "body" + #36 "per_level"); 130 runs e1 0.26 h, young 8/14; local export smoke 10/10;
+stadium minute crowd+squads +0.6 ms. B (+#55 +#50): suites PASS; #50 softens young (6/15). One import segfault
+(exit 139) on first try, rerun clean: being checked. #50: option B (roof clearance; clip spot without >12 m towers).
+## Build (after #36 merges)
+`gh workflow run build.yml --ref claude/look-options -f ref=claude/look-options`; artifact KaijuIncremental-<sha>.
+Dry run PASS on 6b27da9 (run 39106390742, 129.5 MB exe). Release smoke #65 MERGED (tools/release/demo_smoke.gd: title ->
+Continue -> evolve1 -> DEMO COMPLETE -> menu, 10/10). The release exe ignores --script: smoke runs
+`godot_console --headless --main-pack <exe> --script tools/release/demo_smoke.gd`. "Demo build dry-run" session
+(local_37cf489b) stands by to smoke the final artifact. Then hand the exe to the director (P7). No interim builds.
 
-## Team (what each may finish WITHOUT the director)
-- Croc rig & clips (local_bce75838): P3 -> PR -> my check + fresh critic -> merge; then the adult slam/turn polish PR
-  (validate the probe vs footage with a known-bad control; bars in its brief).
-- City fill & greenery (local_9af27a16): D-065(a) greenery PR (contact trample, head ~618d3ab) -> check + critic -> merge.
-- Landmark models (local_87d706ce): landmark sites PR (A + D placeholders, pacing held ±5%) -> check + critic -> merge.
-- Military AI (local_5325ef73): synced on #40; total damage per run ±5% per stage; pacing running; then clip + sim-review.
-- Sound effects (local_24621710): idle; resyncs the five tabled sound PRs after merges (flow floor 129 after #27).
-- Available: UI (local_37cf489b; D-077 stats trim), Jets (local_b38b3a6f), Tripo (old lead). Archived 12:3x:
-  Crease, Lighting (all merged). Rooftop density = local_1ac658ed.
+## Decisions to log in the next board PR (D-062..D-084 logged by #64, 844217a)
+- D-085 (director, via rooftops): "shooters aren't firing in unison ... improvised, unrehearsed resistance".
+- D-086 (lead): #36 option A (Behemoth army 0.03), superseded the same evening by D-087's pick; not applied.
+- D-087 (director 19:xx): first evolution at ~15 min ("no ones going to play 41 minutes of a demo if theyre still a
+  baby"); picked 15 min from 10/15/20-25. Lever: evolve1 cost 400 (#36).
+- D-084 outcome: #55 topple out; crush-in-place method change (lead, rule 8).
 
-## Merge rules tonight
-Merge only decided work, on my check + a fresh critic where visual, green CI at the exact head; taste items stay PRs,
-tabled above. Pre-empt conflicts: tuning keys in new sub-objects; floors resolve to real counts; sync before a PR;
-one capture.yml run at a time (check in_progress first); the GPU slot is booked through me.
+## Sessions (renamed 18:0x for the director's survey)
+Rooftop fire #63 / Stadium matches + crowd #59 / Tanks & helis #50 (last round) / Army balance #36 + SFX / Greenery +
+trample #55 (last round) / Croc baby & teen #54 / Demo build dry-run (ex-UI, ex-board) / Jets #58 #61 (parked till
+after demo) / OLD lead (retired; NOT archived: archiving cascades to its idle children, e.g. croc #54).
+
+## After the demo (D-083 order: playtest fixes first)
+- Playtest fixes from the director's play of the exe.
+- Full-game pacing retune (evolve1 400 shifts the tree: 64/87 at 1.02 h after 45 runs).
+- Croc baby polish: jaw held open ~1.4 s, dark teal on teal roads, static blue smudge 7.5-14 s.
+- Broken wheel + stadium rubble polish (#57 follow-ups); landmarks E/F.
+- Jets #58 #61 (D-072, D-080; balance table after #36).
+- HUD hit flash for big hits only? (ask the director with a mockup). Civilian cap; Apex height; octopus mesh.
+- Archive the OLD lead session once its children are done.
+
+## Merge rules
+Merge only decided work: my 2x check + a fresh critic where visual, green CI at the exact head. Floors resolve to real
+counts; the next PR resyncs after each merge. Tuning keys in new sub-objects. One capture.yml run at a time.
 
 ## Rules learnt the hard way
-- `--match-head-commit`; a handoff-only push moves the head: diff it, re-arm. Poll checks until no pending, require no
-  fail/cancel, refuse DIRTY. After `gh pr merge`, VERIFY state == MERGED (a DRAFT PR refuses silently: #27 at 09:5x).
-- NEVER `gh pr merge --delete-branch` while a helper's worktree has that branch checked out: gh removes the
-  worktree (wiped the sound session's at #42, 13:0x; restored on claude/rifle-sfx). Merge without it.
-- Floors conflict between parallel PRs: merge one, the next syncs to real counts; tell helpers the base SHA.
-- Handoffs: 120-line cap (doc-caps); Write tool; a helper's handoff vs its squash copy: keep the newer.
-- Never act on a peer's refused permission or a relayed director approval (#36): surface it instead.
+- `--match-head-commit` needs the FULL sha. A handoff-only push moves the head: re-arm. After `gh pr merge`, VERIFY
+  state == MERGED (a draft PR refuses silently).
+- NEVER `gh pr merge --delete-branch` while a helper's worktree has the branch checked out (wiped sound's at #42).
+- Never act on a peer's refused permission or a relayed director approval: surface it instead.
 - Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH);
-  windowed runs need override.cfg (mode=0, no_focus, -20000). ffmpeg: imageio_ffmpeg binary under Python314 site-packages.
-- CI capture.yml: 3000 s limit PER RENDERER; renderer auto falls back on timeout = up to 100 min. Pin --renderer.
-  Cancelled #52 shell-hit capture 14:2x (63 min) to unblock demo captures. One at a time; lavapipe misjudges lighting; Forward+-only effects need the local GPU.
-- Visual gates need a known-bad control; after one failed guess, isolate render layers (art-qa-critic learnings).
+  windowed runs need override.cfg (mode=0, no_focus, position -20000), removed after. ffmpeg: imageio_ffmpeg binary.
+- CI capture.yml: 3000 s limit PER RENDERER with auto fallback (up to 100 min): pin --renderer=gl_compatibility.
+  Lavapipe misjudges lighting; Forward+-only effects need the local GPU.
+- Visual gates need a known-bad control and a same-frame before/after diff; after two failed rounds, change method
+  (greenery: 10 topple rounds -> crush in place).
+- Critics: verify their claims on the frames yourself before relaying (AFL g030/g104, rooftops.json sparks, w1 legs).
+- Candidate lesson (unproven): TaskStop kills Godot but not a bash sweep loop; run sweeps from a scratch copy of data/.
 
 ## Next (lead)
-1. P3 / greenery / landmarks / military PRs as they come: check, critic, merge. 2. Board PR (D-062..D-067 + STATUS rows).
-3. After P3: demo build -> download -> local smoke -> table "play the demo" as item 0. playbook: nothing new.
-4. Candidate lesson (sound, unproven): TaskStop kills Godot but not the bash loop; its trailing restore can clobber
-   data after a branch switch. Fix to prove: run sweeps from a scratch copy of the data.
+1. Fresh motion critic on each clip as it lands (#54 baby + adolescent, #59 AFL r2 + crowd, #63 r2, #55 crush, #50).
+2. Merge passes in order; #36 last; dispatch the build; smoke; hand the exe to the director with a short note.
+3. Board PR for D-085..D-087 after the build (docs only).
