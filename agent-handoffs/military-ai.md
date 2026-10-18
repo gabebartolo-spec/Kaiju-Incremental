@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r4 in progress)
-## State: running a check (#50 = tanks only at d27a9d5: CI tests + CI clip queued; helis split to claude/heli-flight (f1ee22f); design note waits on local Godot for numbers)
+## State: running a check (pacing base d18bba1 vs #50 4f1ad4a, headless, background; CI green at 4f1ad4a; tanks clip done: notes clip_r4/clip_720.mp4)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -29,20 +29,20 @@ screen points vs the frame (4% margin) and HUD plates.
 - Checks: military 21 (stacked wingman; military_view.gd: air.view pinned to the camera,
   helis >= 95% in frame + 0 under HUD, drawn tank parts never touch). DRIVE_DEG 10, FIRE_YAW 20.
 
-## Next (LEAD 2026-10-19: split; A not shippable, on screen 8% of Behemoth time)
-#50 = tanks only (d27a9d5). The helicopter code, tuning and tentacles test are the base's again.
-Military checks are tank-only, floor 10. Capture is tanks only at CLIP_AT.
-Helicopter work is kept on claude/heli-flight (f1ee22f: AirSpace, frame planning, option A).
-1. #50: CI green (watcher), CI clip 720p (watcher queued behind green-lots), then the probe
-   table. Clip-scene VIEW line in the tests log; local probes probe_clip/_probe_r4 when Godot
-   is allowed. Then pacing: base snapBase4 (24dc0a8) vs #50, same seeds. Young retune: evolve1
-   0.26 h +-5%, young defeats within +-2. Damage per run within 5% by tier.
-2. Design note for LEAD (10 lines, numbers), methods D (street canyons at visible height,
-   rotor 6 m off facades) and B (camera pulls back while helis are up). Probe ready:
-   scratchpad probe_note.gd (copy into tests/, run headless, delete). It gives the share of
-   time with a heli in sight per camera scale (today's height and roof-cleared), kaiju px,
-   and the share of steps with a wide street in frame.
-3. Ping LEAD with the full SHA and clip + table + pacing.
+## Next (LEAD 2026-10-19: #50 tanks only; helis on claude/heli-flight after a design note)
+#50 head 4f1ad4a, CI green (military 9 tank checks). Probe table so far (CI VIEW, clip scene):
+tank drawn gap min 0.87 m, 0 touching, yaw while moving max 8.0 deg (1084 tank-steps).
+Earlier local probe (Behemoth + Apex rampages, 3 seeds): 0 touches, 0 yaw > 10.
+Clip: local opengl3, off-screen override.cfg (removed), 18 s at 4f1ad4a:
+notes military-ai/clip_r4/clip_720.mp4 + stills.
+2x check: frame 600's near tank looks diagonal, but numerically it is on a N-S street at yaw 0
+(perspective at the frame edge). Tank 5 at 840 is a standing 37 deg pivot at the crossing.
+Tanks over parked cars: item 7, out.
+1. Pacing: scratchpad snapB5 (base) and snapM5 (#50), tools/pacing_dmg.gd (pacing + DMG per tier).
+   Output pacing_snapB5.txt / pacing_snapM5.txt. Bars: evolve1 within 5% of the base, young
+   defeats within 2, tank dmg/run within 5% per tier. Retune young if outside the bar.
+2. PR body (scratchpad pr_body.md: rewrite for tanks only) + gh pr edit 50.
+3. Design note (probe_note.gd, run headless after pacing), then ping LEAD with the full SHA.
 
 ## Findings for the lead
 - Numeric per-frame probes caught what crops missed: the "hulls interpenetrating" was a gun.
