@@ -1,13 +1,10 @@
-# Board & decision log handoff, 2026-10-18 18:40
-## State: running a check (board PR D-062..D-084 + STATUS live-PR rows; CI then PR number to the lead; never merge it)
-Session "Board & decision log" (repurposed UI session; was local_37cf489b). Worktree ../Kaiju-Incremental-wt/board,
-branch claude/board-d062-d084 off look-options. Docs only, never in the main checkout (the lead works there).
-Done in this PR:
-- docs/DECISIONS.md: D-062..D-084 with D-069a, D-074a/b, D-076a, D-078a, newest first, 1-3 lines each. Sources: the
-  merged PRs' "Board and log" sections (#33 #34 #35 #37 #40), open PR bodies (#36 #50 #54 #55 #63) and lead.md
-  ("DIRECTOR ANSWERS" block, D-062..D-067 list). Director quotes only where a source has them; no inferred reasons.
-- Cap 400: D-001..D-008 rolled unchanged to docs/archive/decisions_2026-10.md (DECISIONS.md 376 lines).
-- docs/STATUS.md: the 05:30 agents table is replaced by one row per live PR (#63 #59 #54 #55 #50 #36 #58 #61) with
-  its owner session and state, plus the demo merge order.
-Next: CI green -> send the lead the PR number. The lead merges. Then remove this worktree.
-Rules: only the merge role edits STATUS/DECISIONS; this session does so on the lead's order, in board PRs.
+# Release smoke handoff, 2026-10-18 19:30
+## State: running a check (PR: tools/release/demo_smoke.gd + README; then stand by for the final build's smoke)
+Session "Demo build dry-run" (was UI, then Board). Board PR #64 merged (844217a). Dry-run of build run 39106390742 PASS.
+Smoke: tools/release/demo_smoke.gd, run with the console editor binary on the exe's embedded pack (the release exe ignores
+--script): `godot_console --headless --main-pack KaijuIncremental.exe --script tools/release/demo_smoke.gd`, scratch
+APPDATA. 10 checks: title text + our fonts, croc-only species select, rampage with croc + city, Continue -> evolve1 ->
+reveal -> DEMO COMPLETE card (our font) -> MAIN MENU -> title. The end uses a SaveFile save one evolution short (as
+capture_demo.gd does); no cheat hook.
+Next: when the lead dispatches the final build: gh run download <run> -n KaijuIncremental-<sha>, run the smoke, report in
+4 lines. Remove the demo-smoke worktree after its PR merges.
