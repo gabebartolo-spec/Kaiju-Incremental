@@ -8,6 +8,7 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowSave := preload("res://tests/lib/flow_save.gd")
 const FlowStats := preload("res://tests/lib/flow_stats.gd")
+const FlowFps := preload("res://tests/lib/flow_fps.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -242,6 +243,7 @@ func _check_evolution_and_continue() -> void:
 	await layout.fits_at_scales(tree, "evolution tree")
 	layout.listen(tree, "tree")
 	await FlowStats.plain(t, check, tree)
+	await FlowFps.caps(t, check)
 	check.call(
 		(
 			tree.node_button("i_glide").role == "branch"

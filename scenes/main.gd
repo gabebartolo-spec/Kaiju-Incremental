@@ -27,6 +27,7 @@ func _swap(next: Node) -> void:
 	if _screen != null:
 		_screen.queue_free()
 	_screen = next
+	PlayerSettings.in_play = next is Rampage
 	add_child(next)
 
 
