@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-19 04:20
+# Lead handoff, 2026-10-19 06:00
 ## State: running a check (demo chain; full speed; GPU queue runs peer to peer)
 
 ## Who
@@ -36,7 +36,11 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
   (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
   130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
-## 05:xx: #59 MERGED 6e2fdbc. #66 resynced by lead (9c88fc0: both flow consts kept, flow 148) -> merge on green.
+## 06:xx DIRECTOR WATCHING A MOVIE ~2 h: NO windowed local runs (told dry-run, greenery, military, rooftops); CI captures.
+## #63 r3 PASS lead 2x; lead resynced 65e96f4 (flow 148) -> merge on green -> BUILD. Board PR prepared in
+## ../Kaiju-Incremental-wt/board-demo (D-084a..D-088, ROADMAP audio, DECISIONS rolled D-029.. to archive; STATUS
+## needs #63 SHA). Sonnet helper: Phase 0 broken-PR audit -> docs/audits report PR.
+## 05:xx: #59 MERGED 6e2fdbc; #66 MERGED 329e708 (flow 148).
 ## 05:xx: #36 MERGED cceabba (evolve1 0.26 h real head). #59 r6 PASS lead 2x; lead merged look-options in (64c618c,
 ## floors growth 31 flow 146) -> merge on green. Then #66 (resolve floors: flow +2) -> merge -> #63 -> BUILD.
 ## 04:xx: #63 r3 audio ACCEPTED (c936f33); sparks STILL clustered (137, x 908-1011, 73 at 960) + no resync -> r2
