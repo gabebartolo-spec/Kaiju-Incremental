@@ -8,6 +8,9 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
 Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
 
+## D-089 (director, AskUserQuestion 'Wait ~45 min'): the demo exe waits for #75, the stadium stall fix (sim
+## Structure.settle topple check 70-80 -> 11-13 ms per hit; pre-existing, not #59). Fresh sim reviewer agent running
+## (replay equality base vs head). PASS -> merge #75 -> rebuild build.yml -> smoke -> exe to the director.
 ## GODOT ALLOWED AGAIN (director ~08:xx 'godot is yours'): smoke on the exe running (dry-run session); stall
 ## measured locally by stadium; #50 r4 local probes/pacing; jets balance table. Windowed = off-screen no_focus only.
 ## (was) RIGHT NOW (2026-10-19 ~06:00, director watching a movie ~2 h)
