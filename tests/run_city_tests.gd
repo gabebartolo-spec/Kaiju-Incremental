@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const Green := preload("res://tests/lib/city_green.gd")
+const GreenLots := preload("res://tests/lib/city_green_lots.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
@@ -168,5 +169,6 @@ func _check_no_empty_ground() -> void:
 				)
 			)
 			Green.check_city(tier, map_seed, sim, decor, check)
+			GreenLots.check(tier, map_seed, sim, decor, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			holder.free()
