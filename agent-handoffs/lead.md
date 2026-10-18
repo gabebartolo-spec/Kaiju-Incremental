@@ -67,11 +67,10 @@ session smokes it, and the director plays again.
 
 ## MERGED: #83 breath from the SNOUT (BreathCone.of; Beh/Col defeats up -> full-game retune), #80 rifle crack/pop (5d1a892).
 ## #85 army ramp DRAFT: young defeats 8->2; one joint young retune AFTER D-091 (croc-contact). Order: D-091 -> #85+retune -> river.
-## SFX PASS (D-092): 13 sounds x 4 takes generated (ElevenLabs Starter, prompt influence 60%, fixed lengths, Explore
-## sharing DISABLED at his yes), 532/40,000 credits. 31 takes in assets/source/sfx_elevenlabs/ (uncommitted; MP3 per his
-## download OK). Rifle prompts came back near-SILENT (gunshots blanked?): keep rifle.ogg. Shootout page (loudness-matched,
-## picks): https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ -> his picks -> ogg in assets/sfx + LICENSING_REGISTER line
-## (ElevenLabs Starter commercial licence) + docs/provenance/sfx.md -> PR.
+## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
+## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
+## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
+## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
