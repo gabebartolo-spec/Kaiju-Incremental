@@ -79,9 +79,11 @@ var next_fall_id := 0
 var collapse: Collapse
 ## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
 var army_units: Army
-## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
+## Species powers (SpeciesPowers), the helicopters (AirWing), the jets (StrikeWing) and the
+## insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
+var strike: StrikeWing
 var brood: Brood
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
@@ -135,6 +137,8 @@ func _init(
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	var jets_cfg: Dictionary = tuning["jets"]
+	strike = StrikeWing.new(self, jets_cfg, Seeds.derive(rng, 0x7E7))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 
 
@@ -179,6 +183,7 @@ func result() -> Dictionary:
 		"destruction": destruction(),
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
+		"jets": strike.destroyed,
 		"rooftops": army_units.rooftops_destroyed,
 		"toppled": collapse.toppled,
 		"tallest_topple": collapse.tallest_topple,
@@ -223,6 +228,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	army_units.step(dt)
 	air.step(dt)
+	strike.step(dt)
 	if chunks_destroyed >= chunks_total:
 		end("city_fallen")
 	elif hp <= 0.0:
@@ -338,6 +344,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+	strike.hit(force, damage, hit_air or reach_top() >= strike.altitude())
 
 
 ## Nearest standing ground-floor chunk to `from` (what an attacker walks to), or INF if none.

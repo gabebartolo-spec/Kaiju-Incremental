@@ -1,0 +1,13 @@
+{
+ "height": 22,
+ "parts": {
+  "body": {
+   "kvox": "jet_interceptor_body.kvox",
+   "pivot": [
+    -0.5,
+    -5.682,
+    -0.994
+   ]
+  }
+ }
+}

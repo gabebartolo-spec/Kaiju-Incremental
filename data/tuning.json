@@ -137,6 +137,28 @@
 		"clear_arc": 60.0,
 		"clear_margin": 16.0
 	},
+	"jets": {
+		"kind": "interceptor",
+		"max": 0,
+		"after_chunks": 150,
+		"max_per_chunks": 600,
+		"first_delay": 4.0,
+		"interval": 11.0,
+		"speed": 22.0,
+		"altitude": 7.0,
+		"approach": 50.0,
+		"camera_bearing": 90.0,
+		"yaw_jitter": 20.0,
+		"lane_behind": 0.0,
+		"warn_seconds": 1.6,
+		"strafe_lead": 6.0,
+		"strafe_step": 1.4,
+		"rounds": 9,
+		"damage": 4,
+		"hp": 30,
+		"jet_radius": 1.6,
+		"rubble": 20
+	},
 	"army": {
 		"start_interval": 5.0,
 		"min_interval": 1.0,
