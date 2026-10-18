@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 11:15
+# Lead handoff, 2026-10-18 11:45
 ## State: working (DIRECTOR BACK 10:4x, interviewed; all tabled items answered; executing)
 
 ## Who
@@ -11,12 +11,14 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 ## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
 - Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
 - D-069 merge #36 army scales (sound session syncing it; lands after #50 military). D-070 all sounds ship + new mix:
-  #43 MERGED; merge chain #45 (rebase after #43) -> #39 -> #42 -> #46, each resynced by the sound session.
+  #43 #45 MERGED; next #39 -> #42 -> #46, each resynced by the sound session.
 - D-071 landmarks A stadium -> D wheel -> E spire -> F megatower (sites PR with A+D, then E/F). D-072 all four jets;
   strikes wreck buildings, no biomass; jets from Colossus, bomber Apex set-piece; octopus can grab jets.
 - D-073 croc baby + adolescent approved; D-074 slow stage 1 (baby reads as toddler; pacing re-measured) in P3 PR.
 - D-075 green lots 8% (city session, after greenery (a)). D-076 rooftops: more squads, more often (fresh session card
   proposed; after #50). D-077 trim the tree stats panel (UI session). D-066 heli mix shift OK.
+- 11:2x D-069a: soften #36's young stage to ~half early defeats (cause: Armoured Scales moved late). 11:4x D-074
+  revised: baby speed ~0.6 + more hp, demo ~35 min. ORDER: #50 -> P3 (art + baby tuning) -> #36 (resync, soften young last).
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
