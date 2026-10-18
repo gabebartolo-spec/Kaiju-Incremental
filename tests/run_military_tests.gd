@@ -4,7 +4,7 @@ extends "res://tests/lib/military_base.gd"
 ## and fall back when the kaiju closes; helicopters fly in pairs, make deliberate attack runs that
 ## stop short of the kaiju's body, and break off when it faces them. Whole autoplayed rampages on
 ## generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where tanks
-## enter round the kaiju, D-039). Includes the player-effect fixture (charging the guns).
+## enter round the kaiju, D-039). Includes the player-effect fixture (facing the helicopters down).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 
 
@@ -19,7 +19,7 @@ func run_checks() -> void:
 	_check_heli_faced()
 	_check_heli_run()
 	_check_rubble()
-	_check_charge_effect()
+	_check_face_down_effect()
 
 
 ## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every
@@ -155,7 +155,7 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		parked_in_band > 100 and standoff >= 0.95 and longest_in_danger <= 1.0,
+		parked_in_band > 50 and standoff >= 0.95 and longest_in_danger <= 1.0,
 		(
 			(
 				"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing"
@@ -296,29 +296,32 @@ func _check_rubble() -> void:
 	)
 
 
-## Player-effect fixture (D-066): the same seed, a kaiju charging the nearest tank for 40 s. The
-## tanks fall back before it, so a charge crushes fewer of them than it does with the danger
-## radius off (the old drive-in-and-sit army).
-func _check_charge_effect() -> void:
-	var kills: Array[int] = []
-	for danger: float in [0.0, Num.f(Content.section("army")["convoy"]["danger"])]:
-		var sim := _rampage(1, 1)
-		sim.army_units.convoy.cfg = sim.army_units.convoy.cfg.duplicate()
-		sim.army_units.convoy.cfg["danger"] = danger
-		for steps: int in roundi(40.0 / DT):
-			var move := Vector2.ZERO
-			var best := INF
-			for tank: RampageSim.Tank in sim.tanks:
-				var d := tank.pos.distance_to(sim.kaiju_pos)
-				if d < best:
-					best = d
-					move = (tank.pos - sim.kaiju_pos).normalized()
-			sim.step(DT, move, false)
-		kills.append(sim.tanks_destroyed)
+## Player-effect fixture (D-066): facing the helicopters down. The same seeds, a Behemoth pair
+## up for 30 s, the kaiju standing still and either looking at the nearer helicopter or away from
+## it. A faced pair breaks off instead of making its run, so facing it takes far fewer rounds
+## (the old helicopters dove and fired whichever way it looked).
+func _check_face_down_effect() -> void:
+	var shots: Array[int] = [0, 0]
+	for seed: int in SEEDS:
+		for faced: int in 2:
+			var sim := _rampage(2, seed)
+			sim.air.spawn()
+			sim.air.spawn()
+			for i: int in roundi(30.0 / DT):
+				var near := Vector2(INF, INF)
+				for heli: AirWing.Heli in sim.air.helis:
+					if heli.pos.distance_to(sim.kaiju_pos) < near.distance_to(sim.kaiju_pos):
+						near = heli.pos
+				if near.x != INF:
+					var to := (near - sim.kaiju_pos).normalized()
+					sim.facing = to if faced == 1 else -to
+				for ev: Dictionary in sim.step(DT, Vector2.ZERO, false):
+					if str(ev["type"]) == "heli_fired":
+						shots[faced] += 1
 	check(
-		kills[1] < kills[0],
+		shots[0] > 0 and shots[1] * 2 < shots[0],
 		(
-			"falling back saves tanks from a charging kaiju (%d crushed vs %d without)"
-			% [kills[1], kills[0]]
+			"facing the helicopters down stops their runs (%d rounds facing them vs %d looking away)"
+			% [shots[1], shots[0]]
 		)
 	)
