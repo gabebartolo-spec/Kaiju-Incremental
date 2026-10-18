@@ -21,6 +21,7 @@ PR bodies <= 8 lines, never merge. NO LOCAL GODOT (director's movie): CI only.
 head 8c24654 70-80 ms; pre-#59 5bc6b44 70-81 ms (#59 not the cause); topple fix 25-34 ms;
 5d3f4b0 10.6-12.9 ms. Whole-stadium settle(): 70.0 -> 28.1 -> 5.9 ms. View side per hit:
 fall_start <= 2.5, chunks_broken <= 1.2 ms (not the stall). tests.yml 39121385726 green.
+Local headless (director PC): sim.step worst 57.0 -> 10.0 ms, settle() 40.7 -> 3.6 ms.
 Probe at 1500 frames times out on CI's software renderer: use --frames=250.
 
 ## Cause
