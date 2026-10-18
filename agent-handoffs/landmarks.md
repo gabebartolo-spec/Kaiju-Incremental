@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 19:00
-## State: blocked (#59's AFL clip waits for my CI turn; LEAD pings)
+# Landmarks handoff, 2026-10-18 19:30
+## State: awaiting lead (#59 ready for review, head 0379e4a; AFL clip sent for the motion critic)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -24,14 +24,13 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   height, jagged per-column breaks, mounded chunk-sized heaps, seat rubble over the floor ring.
   E spire / F megatower bake (F needs a Performance look at ~816k voxels).
 
-## #59 next
-1. When LEAD says it's my CI turn (after croc P3, military re-shoot, rooftops):
-   tools/capture/ci_capture.sh --movie --renderer=gl_compatibility --resolution=1280x720 --fps=30
-   capture_matches.gd -- --clip --out=<dir> (wall gives ~frame 84; 11-13 of 22 out by 180).
-2. Check the clip (players jog, wall caves, they run for the tunnels), commit it under
-   docs/captures/2026-10-18-matches/, fill the body's Evidence, un-draft, tell LEAD (fresh motion
-   critic is LEAD's).
-Body draft: scratchpad pr59_new.md (already on GitHub).
+## #59 state
+- Ready for review (out of draft), base claude/look-options, head 0379e4a. Suite green at 3bc9f2e.
+- AFL clip rendered on the local GPU (scratchpad local_clip.sh): notes landmarks/afl_cave_in_720p.mp4
+  (mp4 is gitignored; Movie Maker wrote 1080p, scaled to 720p). Pair in docs/captures/2026-10-18-matches/.
+- Own check: ~3.4-4.0 s the stands sections toppling inward show their dark hollow undersides
+  over the pitch, then burst. Proposed fix if the critic fails it: landmark sections drop in place
+  instead of rotating over.
 
 ## Findings for the lead
 - voxelize.py shells surfaces only: a solid disc bakes as a cap; build open parts as rings.
