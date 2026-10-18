@@ -250,6 +250,7 @@
 		"stomp_wait": 0.4,
 		"footstep_min_interval": 0.25,
 		"crack_min_interval": 2.5,
+		"min_interval": {"rifle": 0.3},
 		"size_pitch": [1.3, 1.12, 1.0, 0.88],
 		"footstep_quiet_db": -8.0,
 		"drop_quiet_db": -5.0,

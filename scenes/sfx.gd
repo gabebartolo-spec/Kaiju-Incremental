@@ -52,6 +52,8 @@ var _pending_age := 0.0
 ## footstep_min_interval, crack_min_interval).
 var _since_step := INF
 var _since_crack := INF
+## Seconds since each gap-limited sound last played (tuning "sfx" "min_interval").
+var _since_sound: Dictionary = {}
 ## How many footsteps have played (picks the next of STEPS).
 var _step := 0
 
@@ -111,6 +113,8 @@ func _process(delta: float) -> void:
 	_since_step += delta
 	_since_crack += delta
 	_since_breath += delta
+	for sound: String in _since_sound:
+		_since_sound[sound] = Num.f(_since_sound[sound]) + delta
 	_fade_regen(delta)
 	_update_crowd(delta)
 	if _pending == "":
@@ -267,7 +271,14 @@ func _fade_regen(delta: float) -> void:
 
 ## One sound by name, slightly re-pitched each time so repeats do not sound copied; extra_db
 ## and pitch shade a single play (steps and stomps also take the size-tier pitch).
+## A sound with a "min_interval" in tuning is skipped while its last play is younger than that,
+## so a burst of events (rooftop volleys) never machine-guns or eats the pool's voices.
 func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
+	var gaps: Dictionary = _tune.get("min_interval", {})
+	if gaps.has(sound):
+		if Num.f(_since_sound.get(sound, INF)) < Num.f(gaps[sound]):
+			return
+		_since_sound[sound] = 0.0
 	played.append(sound)
 	if sound == "breath":
 		_since_breath = 0.0

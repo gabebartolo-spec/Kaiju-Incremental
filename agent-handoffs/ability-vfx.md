@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 00:15
-## State: running a check (sfx-voices all suites at 24 voices, brvnwnbhf; #52 CI capture run 39089682447)
+## State: running a check (#52 CI capture run 39089682447); voice-pool PR open, resyncing #52 next
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -39,7 +39,7 @@
   - FINDING (approved by the lead as job, see the voice-pool section below): even with the gap, 24 of 73 stomps (and 23 of 33 tank shots) are cut short because the 8-voice pool is shared.
     Fix idea: give stomps and breath their own voices, or raise POOL. Measure with scratchpad/riflegap/measure.py.
 
-- **Voice pool (lead approved; separate PR, in the demo if green before #36): branch claude/sfx-voices off look-options 89403b4, uncommitted.**
+- **Voice pool (lead approved; separate PR, in the demo if green before #36): branch claude/sfx-voices, on look-options b810d1a (#53 in), flow 135, all suites green; PR open.**
   - Sfx: const POOL removed; voices come from tuning "sfx" "voices" (24).
   - New `sounding(sound)` helper. New check tests/lib/flow_voice_sounds.gd check_tail (a stomp survives 12 more plays), called from flow_sfx.gd (+1 flow).
   - Simulated on the logged gap-0.3 run (scratchpad/riflegap/pool_sim.py), cut short:
@@ -48,7 +48,8 @@
     - 24 voices: 0;
     - 3 stomp + 1 breath reserved + 8: tanks 13 still cut. So choose a bigger pool.
   - Fail-first done: at voices 8 the check FAILS; tuning.json is back to 24.
-  - Left to do: suites green, flow floor +1, commit, PR (body scratchpad/riflegap/pr_voices.md, fill SUITES_PENDING), report to the lead.
+  - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
+  - Merges any time before #36. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
@@ -87,6 +88,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- brvnwnbhf: all suites at 24 voices.
 - bue4oa2qy: CI capture for #52.
 - Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
