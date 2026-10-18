@@ -85,9 +85,13 @@ static func _check_lies(
 	check.call(
 		sunk + along + hidden + stumps == 0,
 		(
-			"felled tree at (%.1f, %.1f) lies on the ground east or west, clear of the body"
-			% [base.x, base.z]
-			+ " (%d cells sunk, %d moved north-south, %d under the body, %d stump cells not the stump colour)"
-			% [sunk, along, hidden, stumps]
+			(
+				"felled tree at (%.1f, %.1f) lies on the ground east or west, clear of the body"
+				% [base.x, base.z]
+			)
+			+ (
+				" (%d cells sunk, %d moved north-south, %d under the body, %d stump cells off)"
+				% [sunk, along, hidden, stumps]
+			)
 		)
 	)

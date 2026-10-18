@@ -212,16 +212,19 @@ func _fell(mm: MultiMesh, group: Dictionary, at: Vector3, clear: float) -> void:
 	if falls.is_empty():
 		return
 	var shove := Vector3(side * maxf(0.0, clear - near), maxf(0.0, ground - low), 0)
-	_falling.append(
-		{
-			"ids": falls,
-			"ks": ks,
-			"group": group,
-			"starts": starts,
-			"pivot": pivot,
-			"axis": axis,
-			"t": 0.0,
-			"shove": shove,
-			"lands": lands / falls.size() + shove,
-		}
+	(
+		_falling
+		. append(
+			{
+				"ids": falls,
+				"ks": ks,
+				"group": group,
+				"starts": starts,
+				"pivot": pivot,
+				"axis": axis,
+				"t": 0.0,
+				"shove": shove,
+				"lands": lands / falls.size() + shove,
+			}
+		)
 	)
