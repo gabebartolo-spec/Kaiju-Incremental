@@ -1,10 +1,17 @@
-# blender-reptile handoff, 2026-10-18 11:00
-## State: running a check (P3 CI: b6vursfjd game-cam baby then adolescent -> ci9/{baby,adolescent};
-## then b61u7un3x side-cam roar 14.5-15.6 s -> ci9/jaw_{baby,adolescent}). Lead FIX (10:29): baby
-## open mouth shards - the Blender render shows the Tripo tear; the game draws voxels (baby 163,
-## adolescent 0 mouth-inside voxels). Judge on in-game 2x jaw crops; if bad: dark mouth fill in the
-## bake, else a smaller jaw angle. Baby speed tabled for the director (keep 5.5 u/s). Lead = "Kaiju: Lead"
-## local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Director asleep: never ask him; art to the lead only.
+# blender-reptile handoff, 2026-10-18 12:05
+## State: running a check (pacing bdfgdp7qa: tools/pacing.gd --species=reptilian, BEFORE with stage-1
+## speed_mult 1.0 -> /tmp/pacing_before.txt, then AFTER 0.35 -> /tmp/pacing_after.txt; the script
+## swaps data/tuning.json itself - DO NOT commit tuning.json until it restores 0.35 (copy in
+## /tmp/tuning_after.json)). Capture chains stopped; re-queue after the D-074 push.
+## Director 10:5x: baby + adolescent APPROVED (D-073); slow stage 1 to a heavy toddler (D-074).
+## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
+
+## D-074 (uncommitted on claude/croctitan-p3): data/tuning.json "move": {"speed_mult": 1.0} and
+## growth.stages[0].move.speed_mult 0.35 (baby hip-heights/s = adolescent's: 1.63/4.91 = 0.33);
+## sim/growth.gd Growth.stage_stats(); sim/rampage_sim.gd `stats = Growth.stage_stats(p_stats,
+## tuning)` (file at the 400 cap); capture_motion.gd uses the same stage speed (doc lines merged to
+## stay at 400); growth suite +1 _check_young_pace (floor 24 -> 25 after it runs). Sim rule change:
+## the PR needs a sim review (kaiju-sim-review). Report pacing time to evolve1 before vs after.
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
