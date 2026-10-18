@@ -72,6 +72,7 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
@@ -272,8 +273,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 	else:
 		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
-	var heading := atan2(-sim.facing.x, -sim.facing.y)
-	_kaiju.rotation.y = lerp_angle(_kaiju.rotation.y, heading, minf(1.0, delta * 10.0))
+	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	_kaiju.animate(delta, moving)
 
 

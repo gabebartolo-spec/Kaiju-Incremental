@@ -86,6 +86,8 @@ var army_units: Army
 var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
+## The body as a solid that breaks what it walks into; body.heading turns the drawn model.
+var body: BodyContact
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -131,6 +133,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	body = BodyContact.new(self, tuning.get("contact", {}))
 
 
 func stat(stat_name: String) -> float:
@@ -200,6 +203,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
 		facing = powers.turn_toward(facing, dir.normalized(), dt)
 	powers.after_move(dt, old_facing, moving)
+	body.step(dt)
 	_stomp_timer -= dt
 	if _stomp_timer <= 0.0:
 		_stomp_timer += maxf(0.1, stat("stomp_interval"))
