@@ -94,6 +94,8 @@ func footfall(at: Vector3, size: float) -> void:
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
+	mat.scale_min = 0.4 * size  # as wide as the foot that threw it
+	mat.scale_max = 0.8 * size
 	steps_live.append(p)
 
 

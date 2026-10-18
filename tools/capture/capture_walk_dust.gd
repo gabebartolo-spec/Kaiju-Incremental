@@ -2,13 +2,15 @@ extends SceneTree
 ## Stills of an autoplayed croc walk at the game camera, for the footfall dust (greenery review,
 ## 2026-10-18): saves walk_<seconds>s.png at each --at time and prints how many dust particles
 ## are in the air there. "--before" replays the old look on the same seed: every footfall threw
-## the collapse cloud (Fx.dust) instead of the footfall puff. Needs a window.
+## the collapse cloud (Fx.dust) instead of the footfall puff. "--behemoth" walks the evolved
+## croc (bigger feet, bigger dust). Each still also saves a crop around the kaiju. Needs a window.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_walk_dust.gd -- --out=<dir> [--before] [--at=6,9,12]
+##     --script tools/capture/capture_walk_dust.gd -- --out=<dir> [--before] [--behemoth] [--at=6,9]
 
 var _out := "user://walk_dust"
 var _before := false
+var _levels := {}
 var _at: Array[float] = [6.0, 9.0, 12.0]
 
 
@@ -18,6 +20,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--before":
 			_before = true
+		elif arg == "--behemoth":
+			_levels = {"claws": 3, "hide": 1, "evolve1": 1}
 		elif arg.begins_with("--at="):
 			_at.clear()
 			for t: String in arg.substr(5).split(","):
@@ -31,7 +35,7 @@ func _run() -> void:
 	var rampage := Rampage.new()
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), _levels)
 	)
 	rampage.setup(
 		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 0
@@ -55,7 +59,13 @@ func _run() -> void:
 			frame += 1
 		await RenderingServer.frame_post_draw
 		var name := "walk_%02ds%s.png" % [roundi(t), "_before" if _before else ""]
-		root.get_viewport().get_texture().get_image().save_png(_out.path_join(name))
+		var shot := root.get_viewport().get_texture().get_image()
+		shot.save_png(_out.path_join(name))
+		var cam := root.get_viewport().get_camera_3d()
+		var at := cam.unproject_position(rampage._kaiju.global_position)
+		var box := Rect2i(Vector2i(at) - Vector2i(400, 225), Vector2i(800, 450))
+		box.position = box.position.clamp(Vector2i.ZERO, shot.get_size() - box.size)
+		shot.get_region(box).save_png(_out.path_join(name.replace(".png", "_crop.png")))
 		print("%s: %d effect particles in the air" % [name, _particles(fx)])
 	quit()
 
