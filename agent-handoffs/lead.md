@@ -62,11 +62,8 @@ session smokes it, and the director plays again.
   strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
   AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
   Board PR also: STATUS Phase 0 item 3 done (#73, #74); DEMO_PLAYTEST.md -> ~15 min (D-087); D-089, D-090.
-- AFL lead's test-suite audit (their PR #825): one shared floors file causes merge conflicts on every resync and
-  never caught a truncation; shards planned from real timings; a 3 s "every runner compiles" preflight. Kaiju has
-  the same floors shape (expected_checks.txt conflicted on every merge tonight): propose it to the director post-demo.
+- Post-demo proposal: split the shared floors file (AFL lead's audit, their PR #825: conflicts on every resync).
 
-## MERGED: #83 breath from the SNOUT (BreathCone.of; Beh/Col defeats up -> full-game retune), #80 rifle crack/pop (5d1a892).
 ## #85 army ramp DRAFT: young defeats 8->2; one joint young retune AFTER D-091 (croc-contact). Order: D-091 -> #85+retune -> river.
 ## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
 ## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
@@ -84,6 +81,8 @@ in Settings. Build session PR in flight. D-094 (director): full-game destruction
 RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike MERGED #91; build plan on branch
 claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #92 Graphics MERGED 41d452f (cfg v2 =
 stale exe-1 fps_cap ignored; SubViewport menus stay High). Director in League: no local Godot.
+#81 smoke MERGED eb9a86e (lead 2x PASS). #84 load FIX: prune static _baked cache per build. #82 sfx gate FIX: max_wait_s.
+#89 fresh sim review FIX: _sim never enables the body (determinism/autoplay run bodyless); sweep end heading; bite_dps>0.
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
 $12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
