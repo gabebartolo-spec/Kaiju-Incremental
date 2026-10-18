@@ -6,11 +6,13 @@ render_mode cull_disabled;
 // 1 standing, 0 gone (its faces collapse to nothing), in between = bitten (that share of the
 // chunk's voxels gone), so breaking the building never rebuilds the mesh. Colour is sRGB; its
 // alpha is the glow flag (0 = glows at `glow`), as in voxel.gdshader. Only outward faces are
-// baked, so through a hole you see the backs of the walls: they draw as the dark inside.
+// baked, so through a hole you see the backs of the walls: they draw as the dark inside
+// (`inside` of their colour; a landmark's cut faces draw near their own colour instead).
 
 uniform sampler2D alive : filter_nearest;
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
+uniform float inside = 0.12;
 // Below 1, a screen-door fade (a building between the camera and the kaiju, D-025's rule as
 // the vehicles have it, voxel.gdshader): a share of its pixels is dropped in a fixed pattern.
 uniform float opacity = 1.0;
@@ -40,7 +42,7 @@ void fragment() {
 		ALBEDO = albedo;
 		EMISSION = albedo * glow * (1.0 - COLOR.a);
 	} else {
-		ALBEDO = albedo * 0.12;
+		ALBEDO = albedo * inside;
 		NORMAL = -NORMAL;
 	}
 }
