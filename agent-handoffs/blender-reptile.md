@@ -1,18 +1,14 @@
 # blender-reptile handoff, 2026-10-18 12:15
-## State: running a check (suites b03vr2nul -> /tmp/suites_d074.txt; capture queue busy with
-## military-ai 39085086356 - dispatch mine only when free). Pacing DONE, tuning.json back at 0.35.
+## State: running a check (capture chain bagkdqt14, queued behind military-ai 39085086356).
 ## Director 10:5x: baby + adolescent APPROVED (D-073); slow stage 1 to a heavy toddler (D-074).
 ## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
 
-## D-074 (uncommitted on claude/croctitan-p3): tuning "move": {"speed_mult": 1.0}, growth.stages[0]
-## .move.speed_mult 0.35; sim/growth.gd Growth.stage_stats(); rampage_sim.gd uses it (400 cap);
-## capture_motion.gd same speed; growth +1 _check_young_pace (floor 24 -> real count after run).
-## Pacing evolve1 0.58 h (28 runs) -> 0.95 h (45 runs); tree 4.45 -> 4.82 h; BUT defeats 19/28 ->
-## 30/45 and city at evolve1 94% -> 37%. Flagged to lead 12:12 with options (a) ship 0.35 (default),
-## (b) stage-0 hp/damage, (c) 0.5. Raw: notes p3/pacing_{before,after}.txt. PR body draft:
-## scratchpad ev/pr_p3.md (fill SUITES, FLOORS, JAWS, CLIPS). Sim review needed (kaiju-sim-review).
-## Next: suites green -> set floor -> commit D-074 (tuning, growth, rampage_sim, capture_motion,
-## run_growth_tests, expected_checks) -> push -> captures one at a time -> jaw verdict -> PR.
+## D-074 COMMITTED + pushed 80b8aa4 (all 9 suites green; growth floor 25; young-pace check shown
+## failing at 1.0). Pacing evolve1 0.58 h -> 0.95 h; defeats 19/28 -> 30/45, city at evolve1 94% ->
+## 37% - flagged to lead 12:12 with options (a) ship 0.35 (default) (b) stage-0 hp/dmg (c) 0.5.
+## Captures: chain bagkdqt14 (scratchpad ci10/chain.sh): jaw_baby, jaw_adolescent (side, 14.5-15.6),
+## then game cam baby, adolescent; each waits for a free capture queue. Outputs scratchpad ci10/.
+## PR body draft: scratchpad ev/pr_p3.md (fill JAWS, CLIPS). Sim review needed (kaiju-sim-review).
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
