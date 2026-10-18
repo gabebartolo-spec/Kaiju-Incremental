@@ -9,6 +9,7 @@ static var _species: Array[Dictionary] = []
 static var _looks: Array[Dictionary] = []
 static var _look_id := ""
 static var _landmarks: Dictionary = {}
+static var _sports: Dictionary = {}
 
 
 static func tuning() -> Dictionary:
@@ -44,6 +45,13 @@ static func species_def(id: String) -> Dictionary:
 static func landmarks() -> Dictionary:
 	_load()
 	return _landmarks
+
+
+## The stadium's matches (D-078, data/sports.json): "pitch" (where on the stadium, pace) and
+## "sports" (markings, posts, kits, ball). Presentation only.
+static func sports() -> Dictionary:
+	_load()
+	return _sports
 
 
 static func looks() -> Array[Dictionary]:
@@ -83,6 +91,7 @@ static func _load() -> void:
 	_looks = _list("res://data/looks.json", "looks")
 	_look_id = str(load_json("res://data/looks.json").get("default", ""))
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
+	_sports = load_json("res://data/sports.json")
 	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
 	var city: Dictionary = _tuning.get("city", {})
 	city["landmark_shapes"] = _landmarks

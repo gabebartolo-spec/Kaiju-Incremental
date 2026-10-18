@@ -56,6 +56,9 @@ var _since_crack := INF
 var _since_sound: Dictionary = {}
 ## How many footsteps have played (picks the next of STEPS).
 var _step := 0
+## Building parts that landed this frame, as their loudness in dB: the loudest few play once
+## the frame is over (tuning "sfx" "collapse_per_frame"), the rest are dropped.
+var _landings: Array[float] = []
 
 
 ## rng: the presentation's own seeded stream (pitch variation only).
@@ -110,6 +113,7 @@ func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 
 
 func _process(delta: float) -> void:
+	_sound_landings()
 	if is_instance_valid(_powers):
 		rotors(_powers.helis())
 	_since_step += delta
@@ -195,8 +199,20 @@ func footstep(strength: float) -> void:
 
 
 ## A building part hits the ground (sim fall_land); a toppled tower is louder and deeper.
+## Heard at the end of the frame, with every other landing of that frame: a mass collapse lands
+## a hundred parts at once (171 in two frames, rooftops #63), and only the loudest few play.
 func collapse(topple: bool) -> void:
-	play("collapse", 0.0 if topple else Num.f(_tune["drop_quiet_db"]), 0.85 if topple else 1.0)
+	_landings.append(0.0 if topple else Num.f(_tune["drop_quiet_db"]))
+
+
+func _sound_landings() -> void:
+	if _landings.is_empty():
+		return
+	_landings.sort()
+	_landings.reverse()
+	for db: float in _landings.slice(0, Num.i(_tune["collapse_per_frame"])):
+		play("collapse", db, 0.85 if db >= 0.0 else 1.0)
+	_landings.clear()
 
 
 func _release_stomp() -> void:

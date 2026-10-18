@@ -312,6 +312,7 @@
 		"size_pitch": [1.3, 1.12, 1.0, 0.88],
 		"footstep_quiet_db": -8.0,
 		"drop_quiet_db": -5.0,
+		"collapse_per_frame": 4,
 		"near_distance": 80.0,
 		"far_floor_db": -18.0,
 		"volume_db": {
@@ -408,6 +409,39 @@
 		"leap_trail_seconds": 0.4,
 		"regen_tint": "8cffb0",
 		"deflect_tint": "cfe6ff"
+	},
+	"landmark_burst": {
+		"chunks": 360,
+		"chunk_voxels": [2.0, 3.0],
+		"chunk_speed": [3.0, 7.0],
+		"chunk_life": 0.3,
+		"chunk_shade": 0.65,
+		"chunk_dark": 0.45,
+		"chunk_dark_share": 0.3,
+		"fragments": 40,
+		"clouds": 7,
+		"cloud_alpha": 0.9,
+		"cloud_life": 0.45,
+		"cloud_max": 2.5
+	},
+	"crowd": {
+		"max": 4000,
+		"spacing": 2,
+		"seats": ["b23d32", "8e3029"],
+		"seat_match": 24,
+		"team_share": 0.6,
+		"neutral": [
+			{"shirt": "3f5f7a", "pants": "2f3440", "hair": "2a1f18"},
+			{"shirt": "c08a2e", "pants": "3b3a36", "hair": "1a1714"},
+			{"shirt": "4f6a46", "pants": "57503f", "hair": "6a4a2a"},
+			{"shirt": "6a4a6e", "pants": "2a2a2e", "hair": "3a2a20"}
+		],
+		"bob": 0.05,
+		"bob_hz": [1.2, 2.4],
+		"flee_speed": 3.0,
+		"flee_delay": 0.5,
+		"flee_slope": 0.8,
+		"exit_r": 0.86
 	},
 	"street": {
 		"person_voxel": 0.065,

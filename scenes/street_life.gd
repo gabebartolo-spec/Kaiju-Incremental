@@ -42,6 +42,8 @@ var sim: RampageSim
 var traffic: Traffic
 var police: Police
 var people: Array[Person] = []
+## A match on each stadium's pitch (D-078).
+var matches: Array[StadiumMatch] = []
 ## Running totals (tests and the capture tool read them).
 var fled := 0
 var killed := 0
@@ -58,12 +60,17 @@ var _links: Array[Array] = []
 var _mms: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
 var _clock := 0.0
+var _sport_rng: RandomNumberGenerator
 
 
-func _init(p_sim: RampageSim, fx: Fx, rng: RandomNumberGenerator) -> void:
+## sport_rng: the run's presentation stream that picks each stadium's sport (null: a fixed one).
+func _init(
+	p_sim: RampageSim, fx: Fx, rng: RandomNumberGenerator, sport_rng: RandomNumberGenerator = null
+) -> void:
 	sim = p_sim
 	_fx = fx
 	_rng = rng
+	_sport_rng = sport_rng if sport_rng != null else Seeds.make("sport", 0)
 	_cfg = Content.section("street")
 	_voxel = Num.f(_cfg["person_voxel"])
 
@@ -93,6 +100,11 @@ func _ready() -> void:
 	_counts.resize(_mms.size())
 	police = Police.new(self, Seeds.make("police", 0))
 	add_child(police)
+	var stadium := str(Content.sports()["pitch"]["landmark"])
+	for i: int in sim.buildings.size():
+		if sim.buildings[i].landmark == stadium:
+			matches.append(StadiumMatch.new(sim, i, _fx, _sport_rng))
+			add_child(matches[-1])
 
 
 ## Pavement corners round every block of the playable city (4 per block), linked round the
@@ -170,6 +182,8 @@ func panicking() -> int:
 func crush(at: Vector3, radius: float) -> void:
 	var centre := Vector2(at.x, at.z)
 	traffic.crush(centre, radius)
+	for game: StadiumMatch in matches:
+		game.crush(at, radius)
 	var puffs := 0
 	for i: int in range(people.size() - 1, -1, -1):
 		var p := people[i]

@@ -31,6 +31,14 @@ func _init(size: float, seed_value: float) -> void:
 	add_child(_smoke(size))
 
 
+## The first fire compiles its particle shaders; do it now, out of sight, not mid-rampage.
+static func prewarm(parent: Node) -> void:
+	var f := Fire.new(0.5, 0.0)
+	f.position = Vector3(0, -60, 0)
+	parent.add_child(f)
+	parent.get_tree().create_timer(1.0).timeout.connect(f.queue_free)
+
+
 func _process(delta: float) -> void:
 	_t += delta
 	var flicker := 0.75 + 0.15 * sin(_t * 17.0 + _seed) + 0.1 * sin(_t * 31.0 + _seed * 2.0)
