@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 21:30
-## State: available (#46 resynced onto 71dc65b and pushed; next is the shell_hit A/B PR)
+# Ability VFX/SFX handoff, 2026-10-18 23:45
+## State: running a check (#52 CI capture run 39089682447, bash bue4oa2qy); #53 ready for the lead to merge on green
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -13,18 +13,31 @@
 - #43 crowd.
 - #45 mix fixes (look-options 0817cf6).
 - #39 heli gun and crash (look-options d135937).
-- #42 footstep variants (look-options 71dc65b). The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
+- #42 footstep variants (look-options 71dc65b).
+- #46 rifle volleys (look-options e14854c). All five tabled sound PRs are in. The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **#46** claude/rifle-sfx: resyncing onto 71dc65b. Conflicts kept both sides:
-  - provenance rows, sfx.gd stream list, crowd funcs plus last_volume;
-  - FlowHeli/FlowRifle preloads, build_crowd plus build_rifle;
-  - capture --army: helis plus rooftop range 60.
-  All 9 suites green, flow 133; pushed, SHA sent to the lead.
-- **Gap job (a), after #46:** a small PR off look-options.
-  - Change: shell_hit high-passed at 120 Hz in tools/sfx/build_sfx.py:335, as `highpass(highpass(x,120),120)`, like tank_fire.
-  - Evidence: an A/B clip plus masking numbers (capture_mix_log.gd plus mix_report.py; stomps masked by army is now 8).
-  - Tabled for the director's listen.
+- **Gap job (a): branch claude/shell-hit-hp = DRAFT PR #52 (head 424c2f1, on look-options e14854c; Auto-fix on). The director listens before merge..**
+  - build_sfx.py: shell_hit high-passed at 120 Hz (energy below 120 Hz 82% -> 33%; below 300 Hz 97% -> 84%).
+  - The provenance row is updated. capture_mix_log.gd now takes --out=<dir>.
+  - Old file for the A/B: scratchpad/shellhp/shell_hit_before.ogg.
+  - CI capture (60 fps, 2 min) downloads to scratchpad/shellhp/ci.
+  - Next: run mix_report.py on that log twice (swap the old ogg into assets/sfx for "before", then restore).
+    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), fill #52's
+    Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
+  - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
+
+- **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
+  - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
+    - rifle sounds 187 vs 60 (4.8/s vs 1.5/s while firing);
+    - stomps cut by the pool 50 vs 24;
+    - rifle never masks stomps.
+    The numbers are in #53's body. The lead merges on green before the rooftop clip.
+    Whichever of #50/#53 lands second resyncs the flow floor only.
+  - The rooftop session ("Kaiju: denser rooftop fire (D-076)") merged #53 into its claude/rooftops-capture branch.
+  - Temp branch tmp-rifle-measure (rifle-gap + 7000a1f) is still local; deleting it was denied, so it's left for the user or lead.
+  - FINDING to propose: even with the gap, 24 of 73 stomps (and 23 of 33 tank shots) are cut short because the 8-voice pool is shared.
+    Fix idea: give stomps and breath their own voices, or raise POOL. Measure with scratchpad/riflegap/measure.py.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
@@ -40,7 +53,7 @@
     Before any switch, confirm no bash process mentions young_sweep.
   - The sweep was stopped for #39 after the baseline only ({} gives 3/28/0). It still needs tank_damage 3, 2.5, and 3 with start_interval 6.
   - Tune young LAST, against #50's and P3's final numbers (P3: baby speed 0.6, more hp, demo ~35 min). Target stays ~half early defeats, with Scales where #36 puts it.
-  - Order: after #50 and P3 land, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
+  - Order (director): #50 -> P3 -> rooftop density -> #36 -> demo build. Targets: about half of early runs defeated, evolve1 near 0.71 h (D-074b). After those land, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
 
 ## Rules
 - Before every sync, check `git log origin/claude/look-options -1`.
@@ -63,5 +76,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- None.
+- bue4oa2qy: CI capture for #52 (run 39089682447).
 - Local-only handoff commits on army-scales-sync: 7b0db6d, 3518703.
