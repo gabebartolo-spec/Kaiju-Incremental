@@ -6,15 +6,8 @@ extends Node3D
 ## freezing the first time.
 
 const SHOCKWAVE := preload("res://scenes/shockwave.gdshader")
-## The soft ring (tail slam, lead review PR #54 r3): seconds alive, seconds to fade in, to grow
-## (eased out) and to fade out; where its front starts and ends (fractions of the radius); its look:
-## a thin, smooth, dim ring that the script fades (not a filled, spiky disc).
-const SOFT_SECONDS := 0.75
-const SOFT_IN := 0.08
-const SOFT_GROW := 0.3
-const SOFT_OUT := 0.38
-const SOFT_FRONT := Vector2(0.08, 0.8)
-const SOFT_RING := {"width": 0.09, "edge": 0.1, "glow": 0.55, "rag": 0.0, "self_fade": 0.0}
+## Puffs a tail slam throws out around the tip (shockwave(tail)).
+const SLAM_PUFFS := 3
 const SMOKE := preload("res://scenes/smoke.gdshader")
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
@@ -89,14 +82,15 @@ func dust(at: Vector3, size: float) -> void:
 
 
 ## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling
-## into a haze that greys out the ground (greenery review). Skipped while max_live are still up.
-func footfall(at: Vector3, size: float) -> void:
+## into a haze that greys out the ground (greenery review). Skipped while max_live are still up,
+## unless uncapped (a tail slam's puffs, shockwave(tail)).
+func footfall(at: Vector3, size: float, capped := true) -> void:
 	var alive: Array[GPUParticles3D] = []
 	for puff: Variant in steps_live:  # a finished puff is freed: check before using it
 		if is_instance_valid(puff):
 			alive.append(puff)
 	steps_live = alive
-	if steps_live.size() >= Num.i(_step_cfg["max_live"]):
+	if capped and steps_live.size() >= Num.i(_step_cfg["max_live"]):
 		return
 	var amount := roundi(6 * clampf(size, 0.5, 3.0))
 	var p := _burst(_step_mat, _step_mesh, amount, Num.f(_step_cfg["seconds"]))
@@ -130,10 +124,15 @@ func sparks(at: Vector3) -> void:
 	p.position = at
 
 
-## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own. A soft
-## ring (the tail slam, lead review PR #54) starts small at the hit and grows over SOFT_GROW, fades
-## in and out, and is thin, smooth-edged and dimmer instead of a hard white pop.
-func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), soft := false) -> void:
+## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own.
+## A tail slam (tail) draws no ring: a few footfall puffs thrown out around the tip instead
+## (lead review PR #54: three custom rings in a row popped; the step puff of #62 reads right).
+func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), tail := false) -> void:
+	if tail:
+		for k: int in SLAM_PUFFS:
+			var a := TAU * k / SLAM_PUFFS
+			footfall(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * 0.5, false)
+		return
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * radius * 2.4
@@ -146,26 +145,10 @@ func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), soft
 	quad.position = at + Vector3(0, 0.15, 0)
 	add_child(quad)
 	var tween := quad.create_tween()
-	if soft:
-		for key: String in SOFT_RING:
-			mat.set_shader_parameter(key, SOFT_RING[key])
-		tween.tween_method(func(v: float) -> void: _soft_ring(mat, v), 0.0, 1.0, SOFT_SECONDS)
-	else:
-		tween.tween_method(
-			func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45
-		)
+	tween.tween_method(
+		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45
+	)
 	tween.tween_callback(quad.queue_free)
-
-
-## A soft ring at time fraction v: small at the hit, its front eases out over SOFT_GROW and then
-## creeps; it fades in over SOFT_IN and out over the last SOFT_OUT.
-func _soft_ring(mat: ShaderMaterial, v: float) -> void:
-	var t := v * SOFT_SECONDS
-	var grow := 1.0 - pow(1.0 - minf(1.0, t / SOFT_GROW), 3.0)
-	var front := lerpf(SOFT_FRONT.x, SOFT_FRONT.y, 0.85 * grow + 0.15 * v)
-	mat.set_shader_parameter("progress", front)
-	var fade := minf(1.0, t / SOFT_IN) * minf(1.0, (SOFT_SECONDS - t) / SOFT_OUT)
-	mat.set_shader_parameter("alpha", smoothstep(0.0, 1.0, fade))
 
 
 func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:

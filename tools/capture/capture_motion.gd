@@ -121,7 +121,7 @@ func _run() -> void:
 	kaiju.foot_planted.connect(
 		func(side: String, strength: float, at: Vector3) -> void:
 			var size := body_scale * (0.2 + strength)
-			city.fx.dust(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
+			city.fx.footfall(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
 			var tint := Rampage.FOOTFALL_TINT
 			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, tint, side == "tail")
 			var dip := (
