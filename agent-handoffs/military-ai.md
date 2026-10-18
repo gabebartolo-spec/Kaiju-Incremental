@@ -1,67 +1,57 @@
-# Military AI handoff, 2026-10-18 (night, after r3 critic)
-## State: available (r3 FAILED fresh critic; demo ships WITHOUT #50 (D-082), merges after the build (D-083); r4 fix list below; PR #50 head c26bb39 (look-options merged 2026-10-19), Auto-fix on)
+# Military AI handoff, 2026-10-19 (r4 in progress)
+## State: running a check (r4 code 6a0a5db pushed to PR #50; CI is the only verification: NO LOCAL GODOT (director "dont use godot", LEAD); pacing waits for LEAD's go)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
 not unnatural, they should look and operate like a professional military". LEAD = session
-"Kaiju: LEAD" (local_106fc100...). Merges into claude/look-options after the demo build;
-playtest fixes come first (D-083). Compute is free (director AFK): no render cap; local
-windowed renders need override.cfg (create it in its own command first; focus-guard checks
-before the command runs), removed after. Captures: local GPU, gl_compatibility.
+"Kaiju: LEAD" (local_106fc100...). #50 ships in a second exe straight after the demo (D-088).
+r4 = LEAD's fix list 1-6 (item 7, tank vs car, stays out) plus a young retune.
 
 ## Branch
 claude/military-ai (worktree ../Kaiju-Incremental-wt/military-ai), PR #50 into
-claude/look-options. LEAD merges. Resync before the next clip.
+claude/look-options. LEAD merges. Resync onto look-options after #36 lands (evolve1 cost 400).
 
-## r4 fix list (LEAD, fresh critic on clip_r3 at 4146dbf, confirmed on 1080p frames)
-1. Tank A 9-12 s, narrow N-S street: hull yaw 30-40 deg while driving, a corner over the lot.
-   Finish the turn at the intersection; hold yaw within 10 deg of the road axis while moving.
-   (Test today: DRIVE_DEG 20 + skew_deg 8 + pivot_deg 15 residual. Tighten to 10 and find
-   what still drives skewed: likely the move during a <= pivot_deg turn, convoy._drive
-   `move` is along `dir` while `front` lags; consider move only when |turn| <= rate.)
-2. Tank pair 13-16 s: one perpendicular mid-street, hulls interpenetrating (my SAT check says
-   no overlap at 5 x 2.5 m: compare with the DRAWN hull + barrel + turret overhang, add a
-   margin). Tank-to-tank separation = footprint + margin; stagger deploy slots along the road;
-   never rotate in place inside another's footprint (sweep check vs other hulls with margin).
-3. Helis out of frame 11.3-15.0 s and under the HUD 3.0-4.5 s: clamp orbit and attack arcs to
-   the camera view with a margin (today only clear_arc on the camera side).
-4. Pair 5.9-6.4 s: one passes under the other. Enforce 13 m lateral offset + altitude stagger
-   (pair check measures 2D centre spacing only: make it 3D/lateral).
-5. Rotors over a tower facade 10.4-10.8 s and 17.5-18.7 s: keep 15 m horizontal clearance from
-   footprints (not just rotor over roof); no turn-back at a tower top.
-6. Assert heli yaw error at fire time < 20 deg, logged in the probe (9.5 s unclear).
-7. (LEAD: worth doing) tank vs car: tanks crush or push traffic/police cars (presentation:
-   scenes/traffic.gd, scenes/police.gd). I proposed it as a separate session (task_bd54430b);
-   fold it in here if r4 takes it, then dismiss that proposal.
+## r4 done (6a0a5db), measured with a headless clip probe before the Godot stop
+Probe: scratchpad probe_clip.gd = capture_military's scene; every frame it reads the drawn tank
+parts (voxel hulls through the models' transforms), yaw vs the plan's road, and helicopter
+screen points vs the frame (4% margin) and HUD plates.
+- Tanks (1, 2): TankSpacing = hull + turret + gun aimed at the kaiju, plus clear; post_gap 9.5;
+  a tank moves only once its hull is on the new heading (|turn| <= one step's rate).
+  r3: 169 overlap frame-pairs (the rear tank's BARREL over the front tank), yaw max 18 deg.
+  Now: 0 overlaps, min gap 0.82 m, yaw max 8.0 deg, 0 over a lot.
+- Helicopters (3-6), LEAD call A: AirSpace (air.view = camera + HUD plate rects) gives each
+  bearing the farthest r in frame at roof_clear over roofs within facade 6 m; the pair turns
+  back short of a bearing with nowhere (_blocked); fail-safe holds r (never in on the kaiju).
+  Wingman: wing_gap 14 along the arc, stagger 3 m up, fixed side (no crossing), covers at
+  cruise during the lead's run. fire_cone 18. In frame: r3 12% -> 77.5% at facade 15;
+  facade 6 not yet measured.
+  Room (bearings with an in-frame spot), facade 15 vs 6: Beh 23/65%, Col 48/82, Apex 66/86%.
+- Checks: military 21 (stacked wingman; military_view.gd: air.view pinned to the camera,
+  helis >= 95% in frame + 0 under HUD, drawn tank parts never touch). DRIVE_DEG 10, FIRE_YAW 20.
 
-## What is in #50 (round 2/3)
-- Tanks own pose (ConvoyRoute.front, oriented SAT vs lots, standing pivots, _sweep_fits,
-  _square_legs skew_deg 8 with square corners, settle when held/yielding, re-plan after yield).
-- Helicopters own yaw/alt (fire_cone 30, hover_yaw, line-up; altitude over roofs on a fan of
-  next paths, LEAD B: full roof clearance); bank in powers_view. Clip spot CLIP_AT (5,-70).
-- Retune vs af7eb05: young range 11 / tank_damage 10, Apex tank_damage 8.25. Damage per run:
-  young -8.7% (rate +3.9%, defeats cap per-run), Behemoth +4.6, Colossus -0.1, Apex +1.2%.
-- Checks: military 17 (driving skew 739 -> 0; old 0d1fd53: 24/24 bursts off nose, rotor -11 m,
-  13/966 hover turns; climb-only mutant fails altitude check). Suites all green at 4146dbf.
-- Timing (noisy): Apex Army.step mean 1.0-1.4 ms, p95 3.2-5.0 ms (round 1: 0.4 / 1.1).
-
-## Open
-- c26bb39 merge: base added young body speed 0.6 / hp 1.15; standoff check sample floor
-  50 -> 40 (47 samples, 100% in band, 0 s in danger). Floors: flow 139, growth 26, military 17.
-  Damage/pacing numbers above predate this base change: re-measure in r4.
-- Pacing at 4146dbf tuning: evolve1 0.64 h (+8.5%), tree 4.70 h (+5.4%), young 9/25
-  time/defeated (bar 0.59 / 4.46 +-5%, 12/16). OUTSIDE the bar: young is too hard (rate
-  matching raised defeats). r4: retune young (e.g. tank_damage 8-9 at range 11) and re-pace.
-- Notes folder military-ai/: clip_r3 (+review), sim-review-packet.md (section 6 current to r3).
+## Next
+1. Read CI for the r4 head (gh run list -b claude/military-ai). The military_view thresholds
+   (95%, 0 HUD) never ran: a red result gives the real numbers. Fix on CI only.
+2. Clip on CI: capture.yml (tools/capture/ci_capture.sh capture_military.gd --movie), 720p,
+   gl_compatibility, one run at a time. Same spot, CLIP_AT (5,-70).
+3. Probe table for the PR body: min drawn gap, max yaw while moving, heli in-frame % per
+   tier, min facade clearance, rotor-roof clearance, fire yaw. The view check prints the clip's
+   numbers; per-tier in-frame needs a CI probe or LEAD's go for local Godot.
+4. Young retune + pacing (needs local Godot, LEAD's go): bar evolve1 0.26 h +-5%, young
+   defeats within +-2 of the base count on the same seeds; measure the base the same way.
+   Re-measure damage per stage (balance +-5%).
+5. PR body r4 section, sim-review packet section 6 (TankSpacing, AirSpace, wing side), then
+   ping LEAD with the full SHA.
 
 ## Findings for the lead
-- My 2x self-check passed what the critic failed (interpenetration, skew, heli framing):
-  judging single crops is not enough; check every tank pair's DRAWN extents numerically per
-  frame (probe), and the heli's screen position vs the frame/HUD.
-- At 2x a turret turned to the target reads as a skewed hull: ask the sim for the hull pose.
-- Kill orphaned Godot children by PID after TaskStop (parent timeout.exe; match start time).
+- Numeric per-frame probes caught what crops missed: the "hulls interpenetrating" was a gun.
+- The Behemoth camera can't show a helicopter above ~13 m (16 m: not even over the kaiju),
+  so roof clearance + frame force going round tall blocks, not over them.
+- A headless Godot viewport is 1920x1920 unless root.size is set; screen probes need it.
 
 ## Rules learnt the hard way
 - gdformat on Windows writes CRLF: sed -i 's/\r$//' after it. Python: open(..., newline='').
+- Warnings are errors: Variant from a Dictionary/Array into a typed param needs a typed var.
 - Never edit sim files while a background run reads the worktree: git archive snapshots.
 - grep filters on probe output: match the probe's own prefix, or results are silently lost.
+- Kill orphaned Godot children by PID after TaskStop (parent timeout.exe; match start time).
