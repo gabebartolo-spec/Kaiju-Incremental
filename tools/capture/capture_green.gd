@@ -7,6 +7,8 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_green.gd -- --out=<dir> [--stage=N]
 ##   ... --write-movie <clip> --fixed-fps 60 ... -- --trample [--seconds=5]
+##   ... -- --trample --park-stills  (no movie: top-down stills of the park before and after)
+## Every trample prints how many of the park's props the walk flattened.
 
 const SETTLE := 12
 const SPECIES := "reptilian"
@@ -18,11 +20,13 @@ const AVENUE_ZOOM := 0.45
 const ROW_REACH := 15.0  # street trees this far either way along a pavement count as a row
 const START_OUTSIDE := 3.0  # the clip starts this far south of the park
 const OFF_PATH := 0.25  # ...and this share of its width east of the middle path, in the trees
+const TOP_DOWN := 26.0  # the park stills look straight down from this height
 const AVENUE_MIN := 18.0  # the avenue close-up looks down the first block at least this long
 
 var _out := "user://green"
 var _stage := 1
 var _trample := false
+var _park_stills := false
 var _seconds := 5.0
 
 
@@ -36,6 +40,8 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg == "--trample":
 			_trample = true
+		elif arg == "--park-stills":
+			_park_stills = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -157,6 +163,8 @@ func _trample_clip() -> void:
 	var x := park.get_center().x + park.size.x * OFF_PATH
 	rampage.sim.kaiju_pos = Vector2(x, park.end.y + START_OUTSIDE)
 	root.add_child(rampage)
+	if _park_stills:
+		await _top_down(rampage, park, "trample_park_before")
 	Input.action_press("move_up")
 	var frames := 0
 	while frames < roundi(_seconds * Engine.physics_ticks_per_second) and not rampage.sim.over:
@@ -164,3 +172,34 @@ func _trample_clip() -> void:
 		frames += 1
 	Input.action_release("move_up")
 	print("trample: kaiju from ", park.end.y + START_OUTSIDE, " to ", rampage.sim.kaiju_pos)
+	var flat := 0
+	var standing := 0
+	var decor: CityDecor = rampage._city._decor
+	for group: Dictionary in decor._props._groups:
+		var at: Vector3 = group["at"]
+		if park.has_point(Vector2(at.x, at.z)):
+			if group.get("crushed", false):
+				flat += 1
+			else:
+				standing += 1
+	print("trample: %d of %d park props flattened" % [flat, flat + standing])
+	if _park_stills:
+		await _top_down(rampage, park, "trample_park_after")
+
+
+## A still of the park from straight above (the rampage's own camera is put back after).
+func _top_down(rampage: Rampage, park: Rect2, shot_name: String) -> void:
+	var cam := Camera3D.new()
+	cam.fov = 55.0
+	rampage.add_child(cam)
+	var c := park.get_center()
+	cam.position = Vector3(c.x, TOP_DOWN, c.y + 0.01)
+	cam.look_at(Vector3(c.x, 0, c.y))
+	cam.current = true
+	for _i: int in SETTLE:
+		await process_frame
+	var path := _out.path_join(shot_name + ".png")
+	root.get_texture().get_image().save_png(path)
+	print("saved ", path)
+	rampage._camera.current = true
+	cam.queue_free()
