@@ -88,7 +88,6 @@ func _ready() -> void:
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
-	_props.fall_seconds = Num.f(sim.city["fell_seconds"])
 	_props.stump_color = Color(str(sim.city["stump_color"]))
 	add_child(_fx)
 
@@ -96,14 +95,10 @@ func _ready() -> void:
 ## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so
 ## a walk leaves a continuous trampled path (D-065): every prop whose base lies under the drawn
 ## body's ground box (the model's own, at its stage, species, scale and facing; the middle
-## city.trample_share of it, as the splayed feet and tail tip only reach its corners). Trees
-## fall along the walk with a puff of dust at the stump. On the ground only; presentation
-## only, the sim never knows.
-func _process(delta: float) -> void:
-	_props.tick(delta)
-	for lands: Vector3 in _props.felled:
-		_fx.earth_puff(lands + Vector3(0, 0.2, 0))
-	_props.felled.clear()
+## city.trample_share of it, as the splayed feet and tail tip only reach its corners). A tree
+## bursts into debris on the frame it is crushed, with an earth puff at its stump. On the
+## ground only; presentation only, the sim never knows.
+func _process(_delta: float) -> void:
 	var at := sim.kaiju_pos
 	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
 		var body := _kaiju.global_transform
@@ -115,6 +110,7 @@ func _process(delta: float) -> void:
 				_lamps.erase(lamp)
 				lamp.queue_free()
 	_walked = at
+	_props.throw(get_parent() as CityView, _fx)
 
 
 ## Finds the drawn kaiju beside this city and its ground box (KaijuFootprint); false where

@@ -46,52 +46,31 @@ static func check_tail(
 		)
 	)
 	if not felled.is_empty():
-		_check_lies(decor, felled, kaiju, foot, check)
+		_check_crushed(felled, check)
 	kaiju.free()
 
 
-## Once down (critic on #55, r9), the felled tree lies on the ground, never sunk into it (a
-## half-buried crown reads as see-through); it lies east or west only, across the camera's view;
-## its crown lands clear of the body, so it is seen; and its stump has the one stump colour.
-static func _check_lies(
-	decor: CityDecor, group: Dictionary, kaiju: Node3D, foot: Rect2, check: Callable
-) -> void:
-	var props: PropField = decor._props
-	var heights: PackedInt32Array = group["heights"]
+## On the frame it goes down (critic on #55, r10: a toppled tree never read), the tree is
+## crushed in place: a stump in the stump colour stays and the rest goes to debris, thrown on
+## that same frame.
+static func _check_crushed(group: Dictionary, check: Callable) -> void:
 	var base: Vector3 = group["at"]
-	var before: PackedVector3Array = group["origins"]
-	for frame: int in 30:
-		decor._process(1.0 / 30.0)
-	var after: PackedVector3Array = group["origins"]
-	var ground := INF
-	for k: int in heights.size():
-		if heights[k] == 0:
-			ground = after[k].y
-	var reach := absf(foot.position.x) * kaiju.scale.x
-	var sunk := 0
-	var along := 0
-	var hidden := 0
-	var stumps := 0
+	var thrown: int = group.get("debris", 0)
 	var painted: Color = group.get("stump_color", Color.BLACK)
-	for k: int in heights.size():
-		var now := after[k]
-		var was := before[k]
-		if heights[k] < PropField.STUMP:
-			stumps += 0 if painted == props.stump_color else 1
-			continue
-		sunk += 1 if now.y < ground - 0.01 else 0
-		along += 1 if absf(now.z - was.z) > 0.01 else 0
-		hidden += 1 if absf(now.x - kaiju.position.x) < reach else 0
+	var heights: PackedInt32Array = group["heights"]
+	var above := 0
+	for h: int in heights:
+		above += 1 if h >= PropField.STUMP else 0
 	check.call(
-		sunk + along + hidden + stumps == 0,
+		thrown > 0 and thrown >= above / PropField.DEBRIS_EVERY and painted != Color.BLACK,
 		(
 			(
-				"felled tree at (%.1f, %.1f) lies on the ground east or west, clear of the body"
+				"crushed tree at (%.1f, %.1f) leaves a stump and debris on the same frame"
 				% [base.x, base.z]
 			)
 			+ (
-				" (%d cells sunk, %d moved north-south, %d under the body, %d stump cells off)"
-				% [sunk, along, hidden, stumps]
+				" (%d debris for %d cells above the stump, stump colour %s)"
+				% [thrown, above, painted.to_html(false)]
 			)
 		)
 	)

@@ -44,7 +44,7 @@ func _ready() -> void:
 			"smin": 0.6,
 			"smax": 1.2,
 			"grow": true,
-			"colors": [Color(0.66, 0.56, 0.4, 0.55), Color(0.62, 0.53, 0.38, 0.0)],
+			"colors": [Color(0.7, 0.58, 0.4, 0.8), Color(0.66, 0.55, 0.38, 0.0)],
 		}
 	)
 	_dust_mesh = _puff(2.2)
@@ -92,14 +92,17 @@ func dust(at: Vector3, size: float) -> void:
 	mat.emission_box_extents = Vector3(size, 0.4, size)
 
 
-## A small tan puff of earth where a felled tree lands (light, so it reads on dark grass).
+## A tan puff of earth where a tree is crushed (light, so it reads on dark grass), about three
+## stumps wide and held over a second.
 func earth_puff(at: Vector3) -> void:
-	var p := _burst(_earth_mat, _dust_mesh, 10, 1.0)
+	var p := _burst(_earth_mat, _dust_mesh, 18, 1.4)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
-	mat.emission_box_extents = Vector3(0.5, 0.1, 0.5)
+	mat.emission_box_extents = Vector3(1.2, 0.2, 1.2)
 	mat.initial_velocity_min = 0.3
-	mat.initial_velocity_max = 0.8
+	mat.initial_velocity_max = 0.9
+	mat.scale_min = 1.4
+	mat.scale_max = 2.2
 
 
 ## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling

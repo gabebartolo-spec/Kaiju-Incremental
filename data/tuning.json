@@ -233,7 +233,6 @@
 		"playground_size": 4,
 		"yard_depth": [0.6, 1.6],
 		"trample_share": 0.9,
-		"fell_seconds": 0.4,
 		"stump_color": "d9c49b",
 		"block_long": [18, 26],
 		"block_short": [10, 13],

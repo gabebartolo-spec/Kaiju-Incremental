@@ -3,7 +3,7 @@ extends SceneTree
 ## a stretch of avenue trees) and, with --trample, a real rampage clip of the kaiju walking
 ## north across a park on player input ("move_up"), so the game's own body contact and stomps
 ## bring it down; it starts just inside the park, so no tower south of it hides the contact
-## from the game camera, and the felled trail lies between the camera and the kaiju.
+## from the game camera, and the crushed trail lies between the camera and the kaiju.
 ## Needs a window: run it on CI (tools/capture/ci_capture.sh [--movie] capture_green.gd).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
@@ -12,7 +12,7 @@ extends SceneTree
 ##   ... -- --trample --park-stills  (no movie: stills of the park from the east, before and after)
 ##   ... -- --trample --still-at=2.0 [--no-trample]  (a game-camera still at 2 s; with
 ##   --no-trample the same deterministic walk leaves the decor standing: the before frame)
-## Every trample prints how many of the park's props the walk felled or flattened.
+## Every trample prints how many of the park's props the walk crushed or flattened.
 
 const PropLog := preload("res://tools/capture/prop_log.gd")
 const SETTLE := 12
@@ -219,7 +219,7 @@ func _park_count(decor: CityDecor, park: Rect2) -> String:
 		if park.has_point(Vector2(at.x, at.z)):
 			all += 1
 			down += 1 if group.get("crushed", false) else 0
-	return "%d of %d park props felled or flattened" % [down, all]
+	return "%d of %d park props crushed or flattened" % [down, all]
 
 
 ## A still of the park from PARK_VIEW (the rampage's own camera is put back after).
