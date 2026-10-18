@@ -65,6 +65,11 @@ session smokes it, and the director plays again.
   never caught a truncation; shards planned from real timings; a 3 s "every runner compiles" preflight. Kaiju has
   the same floors shape (expected_checks.txt conflicted on every merge tonight): propose it to the director post-demo.
 
+## SFX PASS (D-092): 13 sounds x 4 takes generated (ElevenLabs Starter, prompt influence 60%, fixed lengths, Explore
+## sharing DISABLED at his yes), 532/40,000 credits. 31 takes in assets/source/sfx_elevenlabs/ (uncommitted; MP3 per his
+## download OK). Rifle prompts came back near-SILENT (gunshots blanked?): keep rifle.ogg. Shootout page (loudness-matched,
+## picks): https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ -> his picks -> ogg in assets/sfx + LICENSING_REGISTER line
+## (ElevenLabs Starter commercial licence) + docs/provenance/sfx.md -> PR.
 ## Decisions to log (next board PR)
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
