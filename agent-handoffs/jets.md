@@ -53,6 +53,8 @@ below until it merges, or look-options after). Report each to LEAD.
 - Never raise chunks_destroyed past a tiny test city (it ends the run); lower the threshold.
 - Merging stacked test files can drop a closing paren at the hunk edge: compile before commit.
 - `git stash` is denied here (even `stash list`); don't use it.
+- Floors merges: take look-options' counts plus ours (growth +1, jets per branch), then dedupe
+  tests/expected_checks.txt (a hunk edge can leave city/growth twice). Synced e5f28ad.
 - Suite files near 400 lines: jets fixtures + bomb checks live in tests/lib/jets_base.gd.
 - Before every push: `git ls-files '*.gd' | xargs python -m gdtoolkit.formatter --check` and
   `... gdtoolkit.linter` (CI's gdlint job runs both; gdformat on Windows writes CRLF: sed it).
