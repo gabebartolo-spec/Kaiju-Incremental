@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (boh1a5voq: replay base vs cand on dump_b2, then pacing on snap_b2c)
+## State: awaiting #50 merge + capture slot (everything else done; PR body ready)
 
 ## Decision (FINAL, LEAD 2026-10-18): option A = D-076a
 Tanks unchanged. More squads + shorter interval; scale damage_by_tier down PER TIER so each stage's
@@ -61,6 +61,14 @@ the PR tables; verify sim/ + data/ unchanged between a0d3f36 and the merged #50.
 
 ## Re-baseline on #50 head a0d3f36 (pacing_b2.txt): evolve1 0.60 h, tree 4.53 h; young 11/19
 time/defeated; totals/run 165.1 / 195.6 / 477.6 / 771.9. Use THIS as the PR's "before".
+## Done on #50 head (notes rooftops-density/)
+- Replay, same 28 states: totals -1.0/+1.9/+1.2/+0.1%. Pacing 0.60 -> 0.60 h, 4.53 -> 4.44 h.
+- Behemoth volleys/run 5.9 -> 110 (1.57/s run, 3.18/s in range, in range 3% -> 49%).
+- Hit gate on capture branch: 225/225 inside, exit 0; known-bad (+2.5 u): 58/225, exit 1.
+- Full suites on capture branch: all 10 pass (suites_capture_branch.txt).
+- PR body: scratchpad pr_body.md (copy notes pr_body_draft.md); left: CLIP, CROPS, SPARKGAIN,
+  EFFECT, AUDIO placeholders.
+## Clip: --renderer=gl_compatibility (LEAD: auto hangs on lavapipe), 1280x720, fps 60, full 6 s.
 ## Merge order (director via LEAD): #50 -> P3 (croc baby: speed 0.6, hp 1.15) -> rooftops -> #36 -> build
 Open the PR the moment #50 merges (body drafted: scratchpad pr_body.md, placeholders in CAPS).
 Re-sync after P3 and re-check the per-stage totals.
