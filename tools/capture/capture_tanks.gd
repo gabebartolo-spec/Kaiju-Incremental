@@ -31,7 +31,7 @@ const LEVELS := {
 const COLOSSUS := {"claws": 1, "evolve1": 1, "evolve2": 1}
 const APEX := {"claws": 1, "evolve1": 1, "evolve2": 1, "evolve3": 1}
 ## Seconds of rampage per kind (a slow bomber's pass is long).
-const JETS_SECONDS := {"bomber": 12}
+const JETS_SECONDS := {"bomber": 13}
 
 var _out := "user://tanks"
 var _species := "reptilian"
