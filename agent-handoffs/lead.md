@@ -1,5 +1,6 @@
-# Lead handoff, 2026-10-19 06:30
-## State: running a check (demo chain MERGED; final build run 39116671378; NO local Godot: director's movie)
+# Lead handoff, 2026-10-19 06:45
+## State: running a check (final build PASSED, run 39116671378, artifact KaijuIncremental-8c24654 56.8 MB zip;
+## smoke waits for the director to lift 'dont use godot'; #72 board MERGED 6614bc9)
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review + merge
@@ -16,7 +17,7 @@ Messaging: budget one message per worker with everything; hand-offs go peer to p
 #54 croc baby/teen bc324f6 · #36 army balance (evolve1 400, D-087) cceabba · #59 stadium + crowd + burst 6e2fdbc ·
 #66 topple axis + collapse sound cap 329e708 · #63 rooftop density + ragged fire 8c24654.
 Lead resynced #59, #66, #63 itself (floors-only conflicts): flow 148, growth 31, sim 53.
-- FINAL BUILD: build.yml run 39116671378 at 8c24654 (dispatched 06:2x). Then:
+- FINAL BUILD: build.yml run 39116671378 at 8c24654: SUCCESS, artifact KaijuIncremental-8c24654 (56.8 MB zip). Then:
   1. Dry-run session (local_37cf489b, "Demo integration dry-run + smoke") downloads the artifact and checks the size,
      the croc .kvox and the LFS fonts in the .pck (no Godot).
   2. When Godot is allowed again: smoke = `godot_console --headless --main-pack <exe> --script tools/release/demo_smoke.gd`
@@ -24,16 +25,17 @@ Lead resynced #59, #66, #63 itself (floors-only conflicts): flow 148, growth 31,
   3. Hand the exe to the director with a short note (P7 playtest). D-083: playtest fixes first.
 
 ## Open PRs / sessions
-- #72 board PR (claude/board-demo-chain, worktree ../Kaiju-Incremental-wt/board-demo): STATUS after the chain,
+- #72 board PR MERGED 6614bc9 (worktree removed): STATUS after the chain,
   D-084a..D-088, ROADMAP post-demo audio (ElevenLabs SFX, Suno music: spend yes + licence first), DECISIONS rolled
-  D-029 and older to docs/archive. Merge on green, then remove the worktree.
+  D-029 and older to docs/archive.
 - #50 tanks & helis r4 (local_5325ef73): D-088 = second exe after the demo. Tanks fixed (drawn-extent spacing,
   0 overlaps, min gap 0.82 m, yaw max 8 deg). Helis: lead picked A (6 m facade clearance + 4 m over tops, steer
   round blocks with no in-frame spot; never fall back near the kaiju). Proof via CI; pacing waits for Godot.
   Then a fresh motion critic -> merge -> second build.
 - #55 greenery (local_9af27a16): r14 numeric tweaks, strip via capture.yml; lead merges on 2x (after the build).
   Sim finding (post-demo): Structure._topple_check rounds a <0.005-cell overhang to a zero direction.
-- #58 #61 jets (local_b38b3a6f): synced to 3766569; needs one more floors resync onto 8c24654; balance table
+- #58 #61 jets (local_b38b3a6f): synced onto 8c24654 (3062882/989e40e); CI captures allowed one at a time AFTER #50
+  and #55's (lowest priority); balance table
   (pacing.gd) waits for Godot. Parked till after the demo (D-072, D-080).
 - #11 species motion: parked (species out of the demo).
 - Sonnet helper (background agent): Phase 0 broken-PR audit (lowered floor, unregistered suite, untyped var,
