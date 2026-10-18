@@ -7,6 +7,7 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --write-movie <dir>/mix.avi --script tools/capture/capture_mix_log.gd -- <dir>/mix_log.txt
+##   ("-- --out=<dir>" writes <dir>/mix_log.txt instead: the form ci_capture.sh passes)
 
 const SECONDS := 120.0
 const LEVELS := {"claws": 3, "evolve1": 1, "hide": 1, "regen": 1}
@@ -19,7 +20,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
-	var log := FileAccess.open(OS.get_cmdline_user_args()[0], FileAccess.WRITE)
+	var log := FileAccess.open(_log_path(), FileAccess.WRITE)
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), LEVELS)
@@ -44,7 +45,8 @@ func _run() -> void:
 			if not sound in LOOPS:
 				fresh.append(sound)
 		for k: int in fresh.size():  # the k-th new sound went to the k-th player used this frame
-			var at := (sfx._next - fresh.size() + k + Sfx.POOL * 4) % Sfx.POOL
+			var voices := sfx._pool.size()
+			var at := (sfx._next - fresh.size() + k + voices * 4) % voices
 			var player: AudioStreamPlayer = sfx._pool[at]
 			log.store_line(
 				"SND %d %s %.2f %.4f" % [frame, fresh[k], player.volume_db, player.pitch_scale]
@@ -56,3 +58,10 @@ func _run() -> void:
 			log.store_line("LOOP %d %s" % [frame, " ".join(loops)])
 	log.close()
 	quit()
+
+
+func _log_path() -> String:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			return arg.substr(6).path_join("mix_log.txt")
+	return OS.get_cmdline_user_args()[0]

@@ -1,6 +1,6 @@
 # Checks each suite must run (tools/run_tests.sh). A suite reporting fewer fails the
 # run: checks went missing. Raise a floor in the PR that adds checks; floors only go
-# up (game-architecture §6). A suite with no line here fails until one is added.
+# up (game-architecture Â§6). A suite with no line here fails until one is added.
 clips 14
 smoke 30
 sim 50
@@ -9,4 +9,4 @@ tentacles 18
 city 22
 growth 24
 load 13
-flow 134
+flow 135
