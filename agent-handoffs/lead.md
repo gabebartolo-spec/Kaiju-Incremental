@@ -82,8 +82,8 @@ session smokes it, and the director plays again.
 D-093 (director): 4K default = Graphics Balanced (0.75 FSR1, MSAA off) + 60 fps cap (half the power: 199 -> 110 W); High
 in Settings. Build session PR in flight. D-094 (director): full-game destruction = option A (Teardown-style carving +
 RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike MERGED #91; build plan on branch
-claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #92 Graphics (build session): lead FIX =
-exe-1 settings.cfg saved fps_cap 120 -> overrides the 4K 60 default; version the cfg. Director in League: no local Godot.
+claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #92 Graphics MERGED 41d452f (cfg v2 =
+stale exe-1 fps_cap ignored; SubViewport menus stay High). Director in League: no local Godot.
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
 $12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
