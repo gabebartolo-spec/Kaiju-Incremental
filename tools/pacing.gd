@@ -7,7 +7,9 @@ extends SceneTree
 ## rubble per run, city destroyed, how runs ended) and when the tree is complete.
 ## Play time = rampage seconds + TREE_SECONDS per visit.
 ##   godot --headless --path . --script tools/pacing.gd -- [--species=id] [--runs=400]
-##     [--verbose] [--flat]  (--flat: one fixed city and army, as before D-039)
+##     [--verbose] [--flat] [--seed=k]  (--flat: one fixed city and army, as before D-039;
+##     --seed: another army stream per run; --verbose prints every run: what it paid, what it
+##     bought, how it ended)
 
 const DT := 1.0 / 15.0
 const TREE_SECONDS := 20.0
@@ -18,6 +20,7 @@ var _runs := 400
 var _only := ""
 var _verbose := false
 var _flat := false
+var _seed := 0
 var _cities: Dictionary = {}
 
 
@@ -27,6 +30,8 @@ func _initialize() -> void:
 			_runs = arg.substr(7).to_int()
 		if arg == "--flat":
 			_flat = true
+		if arg.begins_with("--seed="):
+			_seed = arg.substr(7).to_int()
 		if arg == "--verbose":
 			_verbose = true
 		if arg.begins_with("--species="):
@@ -56,7 +61,7 @@ func _pace(species_id: String) -> void:
 				tuning, Content.tuning(), tier, Num.f(stats.get("stage_growth", 0.0))
 			)
 		var layout: Array[Dictionary] = city[1]
-		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run))
+		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run + 100000 * _seed))
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
 		var target := Vector2(INF, INF)
@@ -75,25 +80,13 @@ func _pace(species_id: String) -> void:
 		rubble += Num.i(res["rubble"])
 		run += 1
 		_tally(stages, tier, steps * DT + TREE_SECONDS, res)
-		if _verbose and run % 5 == 1:
-			print(
-				(
-					"  run %d (%s): +%d rubble in %.0f s, %.0f%% city, %s"
-					% [
-						run,
-						STAGE_NAMES[mini(tier, 4) - 1],
-						Num.i(res["rubble"]),
-						steps * DT,
-						Num.f(res["destruction"]) * 100.0,
-						sim.end_reason
-					]
-				)
-			)
+		var bought := 0
 		while true:
 			var pick := _cheapest(tree, rubble)
 			if pick == "":
 				break
 			rubble -= tree.buy(pick, rubble)
+			bought += 1
 			var def: Dictionary = tree.defs[pick]
 			var branch := str(def.get("species", "")) != ""
 			if branch and first_power < 0:
@@ -105,6 +98,21 @@ func _pace(species_id: String) -> void:
 						% [pick, clock / 3600.0, run, Num.f(res["destruction"]) * 100.0]
 					)
 				)
+		if _verbose:
+			print(
+				(
+					"  run %d (%s): +%d rubble in %.0f s, %.0f%% city, %s, bought %d"
+					% [
+						run,
+						STAGE_NAMES[mini(tier, 4) - 1],
+						Num.i(res["rubble"]),
+						steps * DT,
+						Num.f(res["destruction"]) * 100.0,
+						sim.end_reason,
+						bought,
+					]
+				)
+			)
 	print("== %s%s" % [species_id, " (flat city)" if _flat else ""])
 	for line: String in marks:
 		print("  " + line)
