@@ -15,6 +15,9 @@ class Building:
 	var tier: int
 	var style: int
 	var frame: Structure
+	## A landmark's id (data/landmarks.json) or ""; rubble_bonus multiplies what its chunks pay.
+	var landmark := ""
+	var rubble_bonus := 1.0
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -117,17 +120,9 @@ func _init(
 	max_hp = hp
 	time_left = stat("run_seconds")
 	for entry: Dictionary in layout:
-		var b := Building.new()
-		b.x = Num.f(entry["x"])
-		b.z = Num.f(entry["z"])
-		b.w = Num.i(entry["w"])
-		b.d = Num.i(entry["d"])
-		b.height = Num.i(entry["h"])
-		b.tier = Num.i(entry["tier"])
-		b.style = Num.i(entry["style"])
-		b.frame = Structure.new(b.w, b.d, b.height, Num.f(city["chunk_hp"]) * b.tier)
+		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
 		buildings.append(b)
-		chunks_total += b.w * b.d * b.height
+		chunks_total += b.frame.alive_count
 	var city_half := CityGen.half_extent(city)
 	arena_half = city_half + Num.f(city["arena_margin"])
 	kaiju_pos = Vector2(0.0, city_half)  # on the ring avenue, at the south edge
@@ -393,7 +388,8 @@ func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Arra
 
 func pay(b: Building, chunks: int, bonus: float) -> void:
 	chunks_destroyed += chunks
-	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * bonus * stat("rubble_mult")
+	var mult := bonus * b.rubble_bonus * stat("rubble_mult")
+	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * mult
 
 
 func clear_dead_tanks() -> void:
