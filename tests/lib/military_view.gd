@@ -4,8 +4,9 @@ extends "res://tests/lib/military_base.gd"
 ## runs it, measured every sim step through the drawn models: no two tanks' drawn parts (hull,
 ## turret, gun, from the voxels through the models' own transforms) ever touch, and no driving
 ## hull lies more than DRIVE_DEG off its road; mid-clip the kaiju strides at the tanks and none
-## comes inside its danger radius (they fall back), and no tank's hull meets a car still on its
-## wheels (cars keep out of the tanks' way). Prints the probe table (a VIEW line) for the PR.
+## comes within the danger radius of its head (the snout, BreathCone: they fall back), and no
+## tank's hull meets a car still on its wheels (cars keep out of the tanks' way). Prints the
+## probe table (a VIEW line) for the PR.
 
 const Clip := preload("res://tools/capture/capture_military.gd")
 const VIEW_SECONDS := 18.0
@@ -19,6 +20,10 @@ func _check_view() -> void:
 	root.size = Vector2i(1920, 1080)
 	_shapes = _tank_shapes()
 	var got := await _view_run()
+	var head := (
+		", closest to the kaiju's head %.1f m (to its origin %.1f, danger %.1f), tank on a car %d"
+		% [got["head"], got["closest"], got["danger"], got["on_car"]]
+	)
 	print(
 		(
 			(
@@ -28,10 +33,8 @@ func _check_view() -> void:
 				)
 				% [got["gap"], got["touching"], got["yaw"], got["moving"]]
 			)
-			+ (
-				", closest to the kaiju %.1f m (danger %.1f), tank on a car %d tank-steps"
-				% [got["closest"], got["danger"], got["on_car"]]
-			)
+			+ head
+			+ " tank-steps"
 		)
 	)
 	check(
@@ -42,13 +45,14 @@ func _check_view() -> void:
 		)
 	)
 	check(
-		Num.f(got["closest"]) >= Num.f(got["danger"]) - 0.5 and Num.i(got["on_car"]) == 0,
+		Num.f(got["head"]) >= Num.f(got["danger"]) - 0.5 and Num.i(got["on_car"]) == 0,
 		(
 			(
-				"in the game view the kaiju strides at the tanks and they fall back (closest %.1f m,"
-				+ " danger %.1f m); no tank's hull meets a car (%d tank-steps)"
+				"in the game view the kaiju strides at the tanks and they fall back: none comes"
+				+ " within danger of its head, the snout (closest %.1f m, danger %.1f m); no tank's"
+				+ " hull meets a car (%d tank-steps)"
 			)
-			% [got["closest"], got["danger"], got["on_car"]]
+			% [got["head"], got["danger"], got["on_car"]]
 		)
 	)
 
@@ -61,6 +65,7 @@ func _view_run() -> Dictionary:
 	_clip_overrides(rampage.sim)
 	var roads := _roads(rampage.sim)
 	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}
+	got["head"] = INF
 	got["danger"] = rampage.sim.army_units.convoy.danger()
 	var last := {}
 	for i: int in roundi(VIEW_SECONDS * 60.0):
@@ -113,6 +118,8 @@ func _measure_cars(rampage: Rampage, got: Dictionary) -> void:
 	var street := rampage._city.street
 	for tank: RampageSim.Tank in sim.tanks:
 		got["closest"] = minf(Num.f(got["closest"]), tank.pos.distance_to(sim.kaiju_pos))
+		var snout: Vector2 = BreathCone.of(sim)["origin"]
+		got["head"] = minf(Num.f(got["head"]), tank.pos.distance_to(snout))
 		var u := sim.army_units.convoy.front(tank.id)
 		if street == null or u == Vector2.ZERO:
 			continue
