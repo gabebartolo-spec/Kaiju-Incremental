@@ -156,7 +156,7 @@
 		"camera_bearing": 90.0,
 		"yaw_jitter": 20.0,
 		"lane_behind": 0.0,
-		"warn_seconds": 1.6,
+		"react_seconds": 1.0,
 		"strafe_lead": 6.0,
 		"strafe_step": 1.4,
 		"rounds": 9,
