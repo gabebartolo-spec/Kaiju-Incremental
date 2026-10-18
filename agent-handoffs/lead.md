@@ -1,12 +1,33 @@
-# Lead handoff, 2026-10-18 12:20
-## State: working (DIRECTOR BACK 10:4x, interviewed; all tabled items answered; executing)
+# Lead handoff, 2026-10-18 18:00
+## State: running a check (demo chain; messaging budget: batch, peer-to-peer GPU queue, never ask director to unblock)
+GPU queue (peer to peer, set 18:3x): rooftops #63 re-render -> landmarks #59 (crowd + AFL r2) -> greenery #55 r10 -> croc #54.
+#59 AFL r1 FAIL (fresh critic, lead-verified g030/g104): grid-row team photo, no ball, inward rim slide, dark slabs
+f94-114 + one-frame pop, flee clump, kaiju hidden. One fix round + crowd sent; fail again -> burst-in-place only.
+#36 D-069a pick: young override army tank_damage 3.5 (18/32 young defeated, evolve1 0.68 h); 130-run confirm after
+#54+#63 land. #50: re-measure then clip (~90 min), joins GPU queue after croc. #64 board MERGED 844217a (D-062..D-084).
+#54 baby clip FAIL (critic + lead w1 check): skating stride, late start, tail snap at turn, turntable turn, late/popping
+slam ring; fix list sent (skip shockwave arcs, black frame; 9/10 post-demo). Board session -> "Demo build dry-run"
+(local_37cf489b): build.yml on look-options + exe smoke test, internal only.
+NEXT BOARD: D-085 (director, told rooftops directly): "shooters aren't firing in unison ... improvised, unrehearsed
+resistance" -> #63 51a2d5d interval_jitter 0.5 + rifle lag 2-14 f. D-086 (lead): #36 option A, Behemoth per_level army
+0.02->0.03 (young override cut Behemoth defeats 22%->8%); non-blocking, follow-up PR if not settled. GPU order now:
+rooftops -> greenery -> stadium -> croc -> #50. D-087 (director 19:xx): evolve1 at ~15 min ("no ones going to play
+41 minutes of a demo if theyre still a baby"); #36 does it via evolve1 cost, keep D-074b feel; last gate before build. #36 pick: evolve1 cost 1778->400 (0.26 h,
+8/14 young def, Behemoth 26%), no young override, no option A; growth test ratio /10->/20 (cite D-087); GO given; 130-run
+confirm after #54+#63. #63 clip r1 FAIL: one squad fires (all sparks at 912,441), no rifle audio, metronome cadence ->
+fix list sent. #55 r10 FAIL -> topple out (D-084); method change: crush in place (debris path + stump + puff), ONE round,
+else #55 after demo. #65 release smoke MERGED 7c3a9b6 (title->DEMO COMPLETE, 10/10); dry-run session stands by.
 
 ## Who
-Lead = session "Kaiju: Lead" (renamed from LEAD 06:3x; local_106fc100...). Owns: QA gates + fresh critics, PR review +
+Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review +
 merge (squash, `--match-head-commit`), STATUS/DECISIONS board PRs, director questions, this file, the local GPU slot.
-Sessions renamed 06:3x: Kaiju: Military AI / Rooftop defenders / City fill & greenery / Crease shader / Jet models /
-Tripo (old lead) / Sound effects / Landmark models / Lighting & breath FX / Croc rig & clips / Demo slice (done) /
-UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive space balancing" = director's own.
+Sessions renamed 18:0x (director: "named appropriately so i can survey"): Rooftop fire #63 / Stadium matches + crowd #59 /
+Tanks & helis #50 (last round) / Army balance #36 + SFX / Greenery + trample #55 (last round) / Croc baby & teen #54 /
+Board & decision log (repurposed UI, local_37cf489b: board PR D-062..D-084 + STATUS) / Jets #58 #61 (parked) /
+OLD lead (retired; NOT archived: archiving cascades to its idle children, e.g. croc #54). AFL session = other project.
+18:0x DIRECTOR: stadium stands full of spectators (D-078a; brief sent to #59, re-clip after). #55 r9 FAIL (critic:
+topple hidden by body, crescent-sprite dust, see-through crowns, dark stumps, falls along tail) -> D-084 (lead): one
+last round, else demo ships without #55. GPU slot: free after #59 AFL clip (no crowd yet; re-render with crowd).
 
 ## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
 - Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
@@ -49,6 +70,9 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   stomp-dust capture (sound told: do stills locally). #59 needs resync + AFL clip after P3 chain. Messaging cap hit.
 - 16:4x SENT: greenery r8 fix (fall sideways, opaque crowns); rooftops open PR now, clip after croc P3; landmarks
   #59 AFL clip after rooftops. #62 footfall dust MERGED. #50 rework in progress (one round left, D-082).
+- 17:0x DIRECTOR "full speed ahead to demo build": remaining demo clips render on the LOCAL GPU (rooftops -> landmarks
+  AFL -> croc if needed), not CI. #36 pre-syncing + pre-sweeping. #63 sim review PASS (posted). #50 ships only if it
+  passes a fresh critic before #36 is tuned.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
