@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: running a check (pacing_b2 re-baseline; CI clip queued via bcqfpdzkn on claude/rooftops-capture)
+## State: running a check (pacing_b2 re-baseline); clip NOT dispatched (LEAD's capture order)
 
 ## Decision (FINAL, LEAD 2026-10-18): option A = D-076a
 Tanks unchanged. More squads + shorter interval; scale damage_by_tier down PER TIER so each stage's
@@ -66,6 +66,9 @@ Re-sync after P3 and re-check the per-stage totals.
 (dd72600); floors resolved flow 134, military 11. CI clip: ci_capture.sh --movie --fps=60
 --resolution=1920x1080 --ref=claude/rooftops-capture capture_rooftops.gd -- --typical
 --out=<notes>/rooftops-density/clip. Delete that branch after the PR merges.
+capture.yml ORDER (LEAD): shell-hit -> military-ai 720p -> croc P3 chain -> MY clip -> others.
+Dispatch only after P3's chain is done and nothing is in_progress. 720p (--resolution=1280x720);
+asked LEAD whether "about 20 s" means clip length (default: 6 s render, trim 3 s).
 
 ## Coordination
 - "Kaiju: Sound effects" (local_24621710-3f9c-4f67-ae39-8fa4b6192106) adds a rifle sound gap
