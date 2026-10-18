@@ -326,7 +326,7 @@ func _check_cost_curve() -> void:
 			for c: Variant in def["cost"]:
 				young_total += Num.i(c)
 	check(
-		e1 > young_total / 10,
+		e1 > young_total / 20,  # D-087: first evolution ~15 min; first buy is still run ~14
 		(
 			"the first evolution is a real goal, not a first-run buy (%d vs young nodes %d)"
 			% [e1, young_total]
