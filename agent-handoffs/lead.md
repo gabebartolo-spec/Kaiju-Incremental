@@ -44,8 +44,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 - Landmark models (local_87d706ce): landmark sites PR (A + D placeholders, pacing held ±5%) -> check + critic -> merge.
 - Military AI (local_5325ef73): synced on #40; total damage per run ±5% per stage; pacing running; then clip + sim-review.
 - Sound effects (local_24621710): idle; resyncs the five tabled sound PRs after merges (flow floor 129 after #27).
-- Available: UI (local_37cf489b), Lighting (local_b98f22d9), Rooftops (local_9e7b9f4b), Jets (local_b38b3a6f),
-  Crease (#35 tabled), Tripo (old lead). Performance stopped for the night.
+- Available: UI (local_37cf489b; D-077 stats trim), Jets (local_b38b3a6f), Tripo (old lead). Archived 12:3x:
+  Crease, Lighting (all merged). Rooftop density = local_1ac658ed.
 
 ## Merge rules tonight
 Merge only decided work, on my check + a fresh critic where visual, green CI at the exact head; taste items stay PRs,
