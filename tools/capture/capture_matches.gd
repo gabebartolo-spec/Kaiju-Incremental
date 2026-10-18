@@ -62,7 +62,9 @@ func _run() -> void:
 ## One rampage in city 1 playing `id`; a still after some play, or the clip of the wall going.
 func _match(id: String, clip: bool) -> void:
 	var walk := {"go": false}
-	var rampage := _rampage(id, walk if clip else {})
+	var rampage := _rampage(id, walk)
+	if not clip:
+		_pitch_camera(rampage)
 	var game: StadiumMatch = GuiInput.find_script(rampage, StadiumMatch)
 	var crowd: StadiumCrowd = GuiInput.find_script(rampage, StadiumCrowd)
 	var start := game.on_pitch()
@@ -126,8 +128,7 @@ func _time(crowd: bool) -> void:
 
 
 ## City 1 with `id` in the stadium and the kaiju off its south-south-east wall, walking in once
-## walk["go"]; with no `walk` (the stills) it waits off the north wall instead, so the game
-## camera looks down over the whole pitch rather than across the near rim.
+## walk["go"].
 func _rampage(id: String, walk: Dictionary) -> Rampage:
 	StadiumMatch.force_sport = id
 	var species := Content.species_def("reptilian")
@@ -142,7 +143,7 @@ func _rampage(id: String, walk: Dictionary) -> Rampage:
 	for b: RampageSim.Building in sim.buildings:
 		if b.landmark == str(Content.sports()["pitch"]["landmark"]):
 			stadium = b
-	var out := APPROACH.normalized() if not walk.is_empty() else Vector2(0, -1)
+	var out := APPROACH.normalized()
 	var wall := out / (out / (Vector2(stadium.w, stadium.d) * 0.5)).length()
 	sim.kaiju_pos = Vector2(stadium.x, stadium.z) + wall + out * KERB
 	sim.facing = -out
@@ -153,6 +154,23 @@ func _rampage(id: String, walk: Dictionary) -> Rampage:
 		return {"move": to.normalized() if to.length() > 1.0 else Vector2.ZERO}
 	root.add_child(rampage)
 	return rampage
+
+
+## The stills: the game camera's own offset and zoom, aimed at the pitch instead of the kaiju
+## (which follows the kaiju and shows the pitch only past the near rim).
+func _pitch_camera(rampage: Rampage) -> void:
+	var game: StadiumMatch = GuiInput.find_script(rampage, StadiumMatch)
+	var pitch := Vector3(game.sim.buildings[0].x, 0, 0)
+	for b: RampageSim.Building in game.sim.buildings:
+		if b.landmark == str(Content.sports()["pitch"]["landmark"]):
+			pitch = Vector3(b.x, Num.f(Content.sports()["pitch"]["top"]), b.z)
+	var zoom := 0.75 + 0.4 * game.sim.body_scale()
+	var camera := Camera3D.new()
+	camera.fov = 55.0
+	rampage.add_child(camera)
+	camera.position = pitch + Rampage.CAMERA_OFFSET * zoom
+	camera.look_at(pitch)
+	camera.make_current()
 
 
 func _shot(shot_name: String) -> void:
