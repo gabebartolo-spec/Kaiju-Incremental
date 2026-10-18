@@ -10,10 +10,6 @@ const LEVELS := {1: {}, 2: {"evolve1": 1}, 4: {"evolve1": 1, "evolve2": 1, "evol
 ## spacing the checks hold the tanks to.
 const HULL_HALF_WIDTH := 1.2
 const HULL_LENGTH := 5.0
-## Half a helicopter's airframe (assets/vehicles/heli body, 10 m nose to tail).
-const HELI_HALF := 5.0
-## Head-room the test keeps between a helicopter's hit circle (air.heli_radius) and the body.
-const HELI_CLEAR := 0.5
 ## How far a standing tank's hull may lie off its road's axis.
 const ALIGN_DEG := 15.0
 ## A driving tank's hull off its road's axis, at most (D-066 r4: it turns standing, then drives).
@@ -23,13 +19,6 @@ const DRIVE_DEG := 10.0
 const TURRET_HALF := Vector2(1.55, 1.12)
 const GUN_REACH := 3.54
 const GUN_HALF_WIDTH := 0.37
-## Closest a wingman may come to its lead: two main rotors (each about an airframe across) with
-## 2 m between the tips, centre to centre.
-const ROTOR_CLEAR := HELI_HALF * 2.0 + 2.0
-## Closest a wingman may come to its lead across the ground (D-066 r4).
-const PAIR_LATERAL := 13.0
-## Furthest a helicopter's nose may be off the kaiju when it fires (D-066 r4).
-const FIRE_YAW := 20.0
 
 
 ## A reptilian rampage at size tier `tier` on city seed `seed`, built the way the game does.
@@ -140,16 +129,6 @@ func _hull_in_building(p: Vector2, front: Vector2, grid: Dictionary) -> bool:
 				if absf(d.dot(front)) < half.x + rf and absf(d.dot(side)) < half.y + rs:
 					return true
 	return false
-
-
-## The tallest building within `reach` of p on the ground (0 over open ground).
-func _roof_under(sim: RampageSim, p: Vector2, reach: float) -> float:
-	var top := 0.0
-	for b: RampageSim.Building in sim.buildings:
-		var half := Vector2(b.w, b.d) * 0.5
-		if p.clamp(Vector2(b.x, b.z) - half, Vector2(b.x, b.z) + half).distance_to(p) < reach:
-			top = maxf(top, float(b.height))
-	return top
 
 
 ## Do two tanks as drawn touch: hull, turret and gun of each (turrets on `kaiju`)? The test's

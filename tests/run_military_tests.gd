@@ -1,11 +1,10 @@
 extends "res://tests/lib/military_view.gd"
-## The army moves and fights like a professional military (D-066): tanks drive the road plan
-## (never a building, a lot or an alley), keep their spacing, take firing posts at standoff range
-## and fall back when the kaiju closes; helicopters fly in pairs, make deliberate attack runs that
-## stop short of the kaiju's body, and break off when it faces them. Whole autoplayed rampages on
-## generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where tanks
-## enter round the kaiju, D-039), and the clip's scene through the game camera. Includes the
-## player-effect fixture (facing the helicopters down).
+## The tanks move and fight like a professional military (D-066): they drive the road plan
+## (never a building, a lot or an alley), keep their spacing as drawn (hull, turret and gun), take
+## firing posts at standoff range and fall back when the kaiju closes. Whole autoplayed rampages
+## on generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where
+## tanks enter round the kaiju, D-039), and the clip's scene through the game camera. The
+## helicopters are today's (their flight is its own branch, claude/heli-flight).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 
 
@@ -15,22 +14,16 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	await process_frame
-	await _check_view()  # first: it measures the HUD the rampages' framing uses
+	await _check_view()
 	_check_rampages()
-	_check_heli_pairs()
-	_check_heli_faced()
-	_check_heli_run()
-	_check_heli_flight()
 	_check_rubble()
-	_check_face_down_effect()
-	_check_framing()
 
 
 ## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every
 ## building and no two hulls overlap; a tank standing a second or more within range stands at
 ## standoff in its firing band, never up close, and none waits inside the danger radius (those
 ## beyond range are in reserve); tanks enter by road from outside the
-## playable edge (in a city smaller than the spawn radius); helicopters never fly into the kaiju.
+## playable edge (in a city smaller than the spawn radius).
 func _check_rampages() -> void:
 	var off_road := 0
 	var inside := 0
@@ -47,17 +40,12 @@ func _check_rampages() -> void:
 	var longest_in_danger := 0.0
 	var entries_ok := true
 	var entered := 0
-	var heli_gap := INF
-	var heli_samples := 0
 	var where := ""
 	for tier: int in LEVELS:
 		for seed: int in SEEDS:
 			var sim := _rampage(tier, seed)
-			if tier >= 2:  # the sky is open: helicopters up from the start
-				sim.air.cfg["after_chunks"] = 0
 			var roads := _roads(sim)
 			var grid := _footprints(sim)
-			var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
 			var half := CityGen.half_extent(sim.city)
 			var last := {}  # tank id -> position last step
 			var still := {}  # tank id -> seconds it has stood still
@@ -72,8 +60,6 @@ func _check_rampages() -> void:
 			while not sim.over:  # the game's own run length (run_seconds)
 				target = _autoplay(sim, steps, target)
 				steps += 1
-				if tier >= 2:
-					_tally_frame(sim, tier)
 				var reach := _reach(sim)
 				var danger := _danger(sim)
 				for tank: RampageSim.Tank in sim.tanks:
@@ -145,10 +131,6 @@ func _check_rampages() -> void:
 				hulls_was = heads.duplicate()
 				for tank: RampageSim.Tank in sim.tanks:
 					last[tank.id] = tank.pos
-				for heli: AirWing.Heli in sim.air.helis:
-					heli_samples += 1
-					var clear := Num.f(sim.air.cfg["heli_radius"])
-					heli_gap = minf(heli_gap, heli.pos.distance_to(sim.kaiju_pos) - body - clear)
 	check(
 		tank_samples > 2000 and inside == 0,
 		(
@@ -206,16 +188,6 @@ func _check_rampages() -> void:
 			% [standoff * 100.0, parked_in_band + parked_close, parked_reserve, longest_in_danger]
 		)
 	)
-	check(
-		heli_samples > 500 and heli_gap >= HELI_CLEAR,
-		(
-			(
-				"helicopters never fly into the kaiju: their hit circle stays %.1f m clear of its"
-				+ " body (closest %.2f m, %d samples)"
-			)
-			% [HELI_CLEAR, heli_gap, heli_samples]
-		)
-	)
 
 
 ## A tower toppled across a column's road closes it: tanks routed through it re-plan at once and
@@ -270,36 +242,5 @@ func _check_rubble() -> void:
 		(
 			"a toppled tower closes its road: the tank re-routes at once (%s) and never drives it (%s)"
 			% [rerouted, drove]
-		)
-	)
-
-
-## Player-effect fixture (D-066): facing the helicopters down. The same seeds, a Behemoth pair
-## up for 30 s, the kaiju standing still and either looking at the nearer helicopter or away from
-## it. A faced pair breaks off instead of making its run, so facing it takes far fewer rounds
-## (the old helicopters dove and fired whichever way it looked).
-func _check_face_down_effect() -> void:
-	var shots: Array[int] = [0, 0]
-	for seed: int in SEEDS:
-		for faced: int in 2:
-			var sim := _rampage(2, seed)
-			sim.air.spawn()
-			sim.air.spawn()
-			for i: int in roundi(30.0 / DT):
-				var near := Vector2(INF, INF)
-				for heli: AirWing.Heli in sim.air.helis:
-					if heli.pos.distance_to(sim.kaiju_pos) < near.distance_to(sim.kaiju_pos):
-						near = heli.pos
-				if near.x != INF:
-					var to := (near - sim.kaiju_pos).normalized()
-					sim.facing = to if faced == 1 else -to
-				for ev: Dictionary in sim.step(DT, Vector2.ZERO, false):
-					if str(ev["type"]) == "heli_fired":
-						shots[faced] += 1
-	check(
-		shots[0] > 0 and shots[1] * 2 < shots[0],
-		(
-			"facing the helicopters down stops their runs (%d rounds facing them vs %d looking away)"
-			% [shots[1], shots[0]]
 		)
 	)

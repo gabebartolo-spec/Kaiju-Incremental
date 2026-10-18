@@ -133,7 +133,6 @@ func _check_helicopters() -> void:
 	_run(calm, 15.0, Vector2.ZERO)
 	check(calm.air.helis.is_empty(), "no helicopters before the city has been hurt")
 	var young := _sim("reptilian", {}, [], Vector2(0, 0))
-	_look_to_camera(young)
 	var heli := young.air.spawn()
 	var start := heli.pos
 	var seen := _run(young, 8.0, Vector2.ZERO)
@@ -151,25 +150,13 @@ func _check_helicopters() -> void:
 		"a grown kaiju (reach %.1f) swats a diving helicopter" % grown.reach_top()
 	)
 	var octo := _sim("cephalopod", {"c_grab": 1}, [_b(0, -7, Vector3i(3, 3, 3))], Vector2(0, 0))
-	_look_to_camera(octo)
-	var prey := octo.air.spawn()
+	octo.air.spawn()
 	var grabbed := false
-	var closest := INF
-	var kinds := []
-	for i: int in 30 * 16:  # two attack runs: a car grabbed mid-run holds the limb 2.5 s
-		if octo.air.helis.has(prey):
-			closest = minf(closest, prey.pos.distance_to(octo.kaiju_pos))
+	for i: int in 30 * 8:
 		for event: Dictionary in octo.step(DT, Vector2.ZERO, false):
-			if str(event["type"]) == "grab":
-				kinds.append(str(event["kind"]))
-				grabbed = grabbed or str(event["kind"]) == "heli"
-	check(
-		grabbed,
-		(
-			"a cephalopod plucks a helicopter out of the sky (closest %.1f m, reach %.1f m; grabbed %s)"
-			% [closest, Num.f(octo.powers_cfg.get("grab_reach", 0.0)) * octo.body_scale(), kinds]
-		)
-	)
+			if str(event["type"]) == "grab" and str(event["kind"]) == "heli":
+				grabbed = true
+	check(grabbed, "a cephalopod plucks a helicopter out of the sky")
 
 
 ## Helicopters keep off the camera's side of the kaiju (never between the player and it) and
@@ -296,9 +283,3 @@ func _check_caps() -> void:
 			% [cap, full.brood.young.size()]
 		)
 	)
-
-
-## The kaiju looks toward the game camera, where no helicopter flies, so none breaks off its run
-## for being faced (D-066) while a fixture waits on it.
-func _look_to_camera(sim: RampageSim) -> void:
-	sim.facing = Vector2.from_angle(deg_to_rad(Num.f(sim.air.cfg["camera_bearing"])))

@@ -268,18 +268,16 @@ func helis() -> Array[Node3D]:
 ## kaiju's facing, and momentum's dust trail.
 func update(delta: float, kaiju_at: Vector3) -> void:
 	var bs := sim.body_scale()
-	var vehicles := Content.section("vehicles")
-	var bank_max := deg_to_rad(Num.f(vehicles["heli_bank_deg"]))
+	var turn := minf(1.0, delta * Num.f(Content.section("vehicles")["heli_turn"]))
 	for heli: AirWing.Heli in sim.air.helis:
 		if _helis.has(heli.id):
 			var node: HelicopterModel = _helis[heli.id]
-			node.position = _w(heli.pos, heli.alt)
-			if heli.front != Vector2.ZERO:  # the sim's nose; it banks into the turn it flies
-				var yaw := atan2(-heli.front.x, -heli.front.y)
-				var spin := wrapf(yaw - node.rotation.y, -PI, PI) / maxf(delta, 0.001)
-				node.rotation.y = yaw
-				var bank := clampf(spin * Num.f(vehicles["heli_bank"]), -bank_max, bank_max)
-				node.rotation.z = lerpf(node.rotation.z, bank, minf(1.0, delta * 4.0))
+			var at := _w(heli.pos, sim.air.altitude())
+			var to := at - node.position
+			node.position = at
+			if to.length() > 0.001:  # eased, so a turn at the end of its arc is a bank, not a snap
+				var heading := atan2(-to.x, -to.z)
+				node.rotation.y = lerp_angle(node.rotation.y, heading, turn)
 			node.aim(kaiju_at + Vector3(0, 3.0 * bs, 0))
 	var seen := {}
 	for y: Brood.Young in sim.brood.young:
