@@ -8,6 +8,10 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
 Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
 
+## #75 MERGED 44f56fd (fresh sim reviewer PASS: 30 replays + 200 fuzz byte-identical; suites green). REBUILD build.yml
+## run 39123363720 at 44f56fd -> dry-run session smokes + stall probe -> EXE TO THE DIRECTOR (download link + note).
+## 8c24654 build had smoke 10/10, pacing on target (e1 0.26 h, young 8/14). #50 helis: lead picked A (hold fire
+## off-screen when no in-frame spot; camera unchanged).
 ## D-089 (director, AskUserQuestion 'Wait ~45 min'): the demo exe waits for #75, the stadium stall fix (sim
 ## Structure.settle topple check 70-80 -> 11-13 ms per hit; pre-existing, not #59). Fresh sim reviewer agent running
 ## (replay equality base vs head). PASS -> merge #75 -> rebuild build.yml -> smoke -> exe to the director.
