@@ -7,8 +7,8 @@ merge; LEAD does QA, critics, merges and the director.
 - #57 landmark sites (A stadium city 1, D Sky Wheel Behemoth; D-071): MERGED as cce6309 into
   claude/look-options. Branch claude/landmarks stays on origin (never --delete-branch over a live
   worktree; LEAD prunes).
-- #59 stadium matches (D-078): branch claude/stadium-matches, base claude/look-options, DRAFT,
-  head 3bc9f2e. Full suite + harness green there (flow 141 = 138 + 3).
+- #59 stadium matches (D-078): branch claude/stadium-matches, base claude/look-options, ready
+  for review, head 0379e4a. Full suite + harness green there (flow 141 = 138 + 3).
 One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
 
 ## #57 as merged
