@@ -24,25 +24,6 @@ const COLOSSUS := {
 	"sig_recharge": 4,
 	"evolve2": 1
 }
-## Every Behemoth-tier node bought, the evolution to Colossus not yet.
-const BEHEMOTH_FULL := {
-	"claws": 5,
-	"hide": 5,
-	"stride": 4,
-	"quake": 4,
-	"rage": 5,
-	"greed": 5,
-	"frenzy": 4,
-	"evolve1": 1,
-	"r_tail": 4,
-	"r_momentum": 4,
-	"sig_power": 5,
-	"tail": 5,
-	"titan_hide": 5,
-	"scales": 4,
-	"sig_recharge": 4,
-	"r_shear": 3
-}
 
 
 func suite_name() -> String:
@@ -54,7 +35,7 @@ func run_checks() -> void:
 	_check_districts_kept()
 	_check_edges()
 	_check_defences()
-	_check_army_learns()
+	preload("res://tests/lib/growth_army_learns.gd").check(check, _play)
 	_check_growth_matters()
 	_check_cost_curve()
 	_check_early_hook()
@@ -193,63 +174,6 @@ func _check_defences() -> void:
 ## on the current tier's nodes harden the tanks and helicopters; an evolution resets that count.
 ## Player-effect fixture: a fully bought Behemoth in its own city with the escalation on loses
 ## more health to the army than with it off, so the clock is not the only thing that ends a run.
-func _check_army_learns() -> void:
-	var species := Content.species_def("reptilian")
-	var young := {"claws": 5, "hide": 5, "rage": 5, "evolve1": 1}
-	var fresh := UpgradeTree.new(Content.upgrades(), young, "reptilian")
-	var fresh_stats := UpgradeTree.run_stats(Content.section("kaiju"), species, fresh)
-	check(
-		Num.i(fresh_stats["size"]) == 2 and Num.f(fresh_stats["stage_growth"]) == 0.0,
-		(
-			"evolving resets the stage's growth to 0 (tier %d, stage growth %.0f)"
-			% [fresh_stats["size"], fresh_stats["stage_growth"]]
-		)
-	)
-	check(
-		(
-			fresh.tier_of("scales") == 1
-			and fresh.tier_of("regen") == 3
-			and fresh.tier_of("evolve1") == 1
-		),
-		"Armoured Scales is a young node, Regeneration a Colossus node, the evolution its own tier's"
-	)
-	var grown := UpgradeTree.new(Content.upgrades(), BEHEMOTH_FULL, "reptilian")
-	var grown_stats := UpgradeTree.run_stats(Content.section("kaiju"), species, grown)
-	var stage_growth := Num.f(grown_stats["stage_growth"])
-	check(stage_growth >= 20.0, "a full Behemoth owns 20+ stage levels (%.0f)" % stage_growth)
-	var off := _tuning(2)
-	var on := CityGrowth.tuning_for_stats(Content.tuning(), grown_stats)
-	check(
-		(
-			Num.f(on["army"]["tank_hp"]) > Num.f(off["army"]["tank_hp"]) * 1.3
-			and Num.f(on["army"]["tank_damage"]) > Num.f(off["army"]["tank_damage"]) * 1.3
-			and Num.f(on["army"]["start_interval"]) < Num.f(off["army"]["start_interval"])
-			and Num.f(on["air"]["damage"]) > Num.f(off["air"]["damage"])
-		),
-		(
-			"the army learns: tanks %.0f -> %.0f hp, %.1f -> %.1f damage, every %.1f -> %.1f s"
-			% [
-				off["army"]["tank_hp"],
-				on["army"]["tank_hp"],
-				off["army"]["tank_damage"],
-				on["army"]["tank_damage"],
-				off["army"]["start_interval"],
-				on["army"]["start_interval"]
-			]
-		)
-	)
-	var layout := _layout(2)
-	var soft := _play(off, layout, BEHEMOTH_FULL)
-	var hard := _play(on, layout, BEHEMOTH_FULL)
-	check(
-		Num.f(hard["hp_lost"]) > Num.f(soft["hp_lost"]) * 1.3,
-		(
-			"a full Behemoth loses more health to the army that learnt (%.0f vs %.0f of %.0f hp)"
-			% [hard["hp_lost"], soft["hp_lost"], grown_stats["hp"]]
-		)
-	)
-
-
 ## Player-effect fixture: a Colossus in the young city flattens it before the clock runs out;
 ## in its own grown city the same rampage runs to the clock, earns more and leaves city
 ## standing: growth on vs off changes the city and the outcome.
