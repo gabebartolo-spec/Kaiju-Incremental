@@ -21,6 +21,8 @@ var stage: String
 ## roar_sounds the croc roars heard with them (Sfx.roar, D-055).
 var clip_roar := false
 var roars := 0
+## The 3D frame (read by the flow suite).
+var view: SubViewportContainer
 var roar_sounds := 0
 var _colors: Dictionary
 var _scale: float
@@ -48,14 +50,9 @@ func _ready() -> void:
 	UiKit.full_rect(col)
 	col.offset_top = EvolutionReveal.EDGE_MARGIN
 	col.offset_bottom = -EvolutionReveal.EDGE_MARGIN
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
-	var view := SubViewportContainer.new()
-	view.stretch = true
-	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	view.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	view.resized.connect(func() -> void: _fit_view(view))
+	view = EvolutionReveal.frame_view(self)  # the reveal's frame, same size and place
 	col.add_child(view)
 	var viewport := SubViewport.new()
 	viewport.own_world_3d = true
@@ -77,7 +74,7 @@ func _ready() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 24)
 	col.add_child(row)
-	var title := _button(row, "TITLE", UiKit.ACCENT)
+	var title := _button(row, "MAIN MENU", UiKit.ACCENT)
 	title.pressed.connect(func() -> void: title_pressed.emit())
 	if not OS.has_feature("web"):
 		_button(row, "QUIT", UiKit.PANEL_EDGE).pressed.connect(func() -> void: get_tree().quit())
@@ -110,9 +107,3 @@ func _button(row: HBoxContainer, text: String, fill: Color) -> Button:
 	b.custom_minimum_size = Vector2(BUTTON_WIDTH, 0)
 	row.add_child(b)
 	return b
-
-
-## Keeps the view at the screen's spare height (capped like the reveal's), wide in its ratio.
-func _fit_view(view: SubViewportContainer) -> void:
-	var cap := EvolutionReveal.VIEW_MAX
-	view.custom_minimum_size.x = minf(cap.y, view.size.y) * cap.x / cap.y
