@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 21:00
-## State: available (#42 resynced onto d135937 and pushed; #46 is next once #42 lands)
+# Ability VFX/SFX handoff, 2026-10-18 21:30
+## State: available (#46 resynced onto 71dc65b and pushed; next is the shell_hit A/B PR)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -13,14 +13,14 @@
 - #43 crowd.
 - #45 mix fixes (look-options 0817cf6).
 - #39 heli gun and crash (look-options d135937).
+- #42 footstep variants (look-options 71dc65b). The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **#42** claude/footstep-variants: resyncing onto d135937. Conflicts kept both sides:
-  - STEPS plus regen fade consts in sfx.gd;
-  - flow_sfx.gd: FlowSounds.crowd, then check_walk;
-  - floor taken from look-options (131).
-  All 9 suites green, flow 132; pushed, SHA sent to the lead.
-- **#46** claude/rifle-sfx (e520b7b): resync after #42 lands.
+- **#46** claude/rifle-sfx: resyncing onto 71dc65b. Conflicts kept both sides:
+  - provenance rows, sfx.gd stream list, crowd funcs plus last_volume;
+  - FlowHeli/FlowRifle preloads, build_crowd plus build_rifle;
+  - capture --army: helis plus rooftop range 60.
+  All 9 suites green, flow 133; pushed, SHA sent to the lead.
 - **Gap job (a), after #46:** a small PR off look-options.
   - Change: shell_hit high-passed at 120 Hz in tools/sfx/build_sfx.py:335, as `highpass(highpass(x,120),120)`, like tank_fire.
   - Evidence: an A/B clip plus masking numbers (capture_mix_log.gd plus mix_report.py; stomps masked by army is now 8).
