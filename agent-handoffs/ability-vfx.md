@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 23:45
-## State: running a check (#52 CI capture run 39089682447, bash bue4oa2qy); #53 ready for the lead to merge on green
+# Ability VFX/SFX handoff, 2026-10-19 02:00
+## State: available (#56 resynced onto look-options e3b0c5a with #60; it merges after #50; #36 last)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -17,16 +17,9 @@
 - #46 rifle volleys (look-options e14854c). All five tabled sound PRs are in. The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **Gap job (a): branch claude/shell-hit-hp = DRAFT PR #52 (head 424c2f1, on look-options e14854c; Auto-fix on). The director listens before merge..**
-  - build_sfx.py: shell_hit high-passed at 120 Hz (energy below 120 Hz 82% -> 33%; below 300 Hz 97% -> 84%).
-  - The provenance row is updated. capture_mix_log.gd now takes --out=<dir>.
-  - Old file for the A/B: scratchpad/shellhp/shell_hit_before.ogg.
-  - CI capture (60 fps, 2 min) downloads to scratchpad/shellhp/ci.
-  - Next: run mix_report.py on that log twice (swap the old ogg into assets/sfx for "before", then restore).
-    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), fill #52's
-    Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
-  - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
-
+- **#52 CLOSED unmerged:** the director kept A, the full boom (D-079). shell_hit stays as it is.
+  - capture_mix_log --out landed as #60.
+  - Clip and notes stay in shared notes shellhit-ab/.
 - **Rifle gap = PR #53 (claude/rifle-gap): per-sound "min_interval" in tuning sfx, {"rifle": 0.3}; flow 134; check shown failing at gap 0.**
   - Measured with rooftop-density 7000a1f merged, seeded Behemoth, gap 0 vs 0.3:
     - rifle sounds 187 vs 60 (4.8/s vs 1.5/s while firing);
@@ -36,8 +29,21 @@
     Whichever of #50/#53 lands second resyncs the flow floor only.
   - The rooftop session ("Kaiju: denser rooftop fire (D-076)") merged #53 into its claude/rooftops-capture branch.
   - Temp branch tmp-rifle-measure (rifle-gap + 7000a1f) is still local; deleting it was denied, so it's left for the user or lead.
-  - FINDING to propose: even with the gap, 24 of 73 stomps (and 23 of 33 tank shots) are cut short because the 8-voice pool is shared.
+  - FINDING (approved by the lead as job, see the voice-pool section below): even with the gap, 24 of 73 stomps (and 23 of 33 tank shots) are cut short because the 8-voice pool is shared.
     Fix idea: give stomps and breath their own voices, or raise POOL. Measure with scratchpad/riflegap/measure.py.
+
+- **Voice pool (lead approved; separate PR, in the demo if green before #36): branch claude/sfx-voices, on look-options b810d1a (#53 in), flow 135, all suites green; PR #56.**
+  - Sfx: const POOL removed; voices come from tuning "sfx" "voices" (24).
+  - New `sounding(sound)` helper. New check tests/lib/flow_voice_sounds.gd check_tail (a stomp survives 12 more plays), called from flow_sfx.gd (+1 flow).
+  - Simulated on the logged gap-0.3 run (scratchpad/riflegap/pool_sim.py), cut short:
+    - 8 voices: stomps 24, tanks 23 (73 total);
+    - 16 voices: 9 total;
+    - 24 voices: 0;
+    - 3 stomp + 1 breath reserved + 8: tanks 13 still cut. So choose a bigger pool.
+  - Fail-first done: at voices 8 the check FAILS; tuning.json is back to 24.
+  - capture_mix_log.gd uses the pool size now (it read Sfx.POOL).
+  - APPROVED by the lead. It merges straight after #50 lands; then resync the flow floor only (the lead pings).
+  - Limiter: at 24 voices the pre-dynamics peak is -3.3 dBFS and 0% of the run is over -1 dBFS (scratchpad/riflegap/peaks.py). This is in the body. Demo chain (D-078): #50 -> P3 #54 -> rooftops -> landmark sites -> stadium matches -> #36 -> build.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
@@ -76,5 +82,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- bue4oa2qy: CI capture for #52 (run 39089682447).
-- Local-only handoff commits on army-scales-sync: 7b0db6d, 3518703.
+- None.
+- Local-only: army-scales-sync handoff commits 7b0db6d, 3518703; branch tmp-rifle-measure (delete was denied; leave it).
