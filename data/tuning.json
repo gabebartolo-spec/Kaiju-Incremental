@@ -2,7 +2,12 @@
 	"display": {
 		"fps_caps": [60, 120, 0],
 		"fps_default": 120,
-		"menu_fps": 60
+		"menu_fps": 60,
+		"graphics": {
+			"high": {"scale": 1.0, "fsr": false, "msaa": 2},
+			"balanced": {"scale": 0.75, "fsr": true, "msaa": 0}
+		},
+		"graphics_default": {"min_height": 2160, "large": "balanced", "large_fps": 60, "small": "high"}
 	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
