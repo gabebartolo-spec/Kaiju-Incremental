@@ -69,6 +69,8 @@ affectionate-goldstine (#36 sync), festive-jemison (#63). Prune when their sessi
 - #50 second exe; full-game pacing retune (evolve1 400 shifts the tree; Behemoth defeats 5/47).
 - Croc baby polish (slam weak, adolescent walk weight, head snap-up, jaw held open, teal on teal roads).
 - Stadium rubble polish, landmarks E/F; jets #58 #61; audio upgrade (ElevenLabs/Suno, needs a spend yes).
+- Director 2026-10-19 (ROADMAP in the next board PR): rooftop MORTARS that fire on the kaiju; topple the building to
+  kill them. Simplest: a mortar variant of the D-063 rooftop squads (same 'rooftop_destroyed' kill on collapse).
 - HUD hit flash for big hits only? (ask with a mockup). Civilian cap; Apex height; octopus mesh.
 - Archive the OLD lead session once its children are done.
 
