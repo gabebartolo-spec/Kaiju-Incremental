@@ -41,6 +41,9 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   inside road polygon incl. corners, finish turn before deploying; helis fire while nose points away (8.6-8.8 s) ->
   fire only within ~30 deg of bearing; hover-yaw against tower top (3.3-4 s) -> tower clearance + travelling arc;
   add bank roll in turns. Re-shoot 720p gl_compat. Greenery: stomp-dust haze (ability_fx.gd:134) -> sound session.
+- UNSENT to UI (#51 screen-critic FAIL minor): do: stats below the 'Grows into' note with a half-line gap,
+  new number brighter; pin Level/Cost/buy to panel bottom; name the key on 'Press to buy' (KB + pad); align arrows
+  if cheap. Skip: dropping 'You have' line. Then re-capture + merge. #59 sport stills PASS (lead 2x).
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
