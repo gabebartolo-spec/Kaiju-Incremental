@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 21:30
+# Lead handoff, 2026-10-19 04:20
 ## State: running a check (demo chain; full speed; GPU queue runs peer to peer)
 
 ## Who
@@ -9,6 +9,9 @@ Messaging: the app pauses SendMessage after 10 sends without a director message.
 everything; GPU + resync hand-offs go peer to peer; never ask the director to type to unblock
 (memory-shared/messaging-cap).
 
+## Verdicts 23:xx: #54 r2 baby FIX (walk-start lurch, ring pops big), adolescent FAIL (scroll halves 3.55 s, turn foot
+## creep, ring disc 55 px off tip, jaw frozen) -> r3 list. #59 r2 FAIL fix-list (fill 40-50%, dead ball, black
+## slivers/rect, street pop, 3/8 mouths, sports stills) -> r3, then merge if polish only.
 ## Demo chain (D-050; ends at the evolve1 reveal -> DEMO COMPLETE card). Merge order: #54 #63 (#59 #55 #50 if they
 ## pass) -> #36 last -> build.
 - #54 croc baby/teen (local_bce75838, head dfcceea): r1 game-cam FAIL (skating stride, late start, tail snap,
@@ -20,18 +23,33 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
 - #59 stadium matches + crowd (local_87d706ce): crowd in (9032216, up to 1000 fans, flee to exits). AFL r1 FAIL: team
   photo rows, no ball, rim slides INWARD, dark slabs f94-114 + pop, flee clump, kaiju contact hidden. 5 fixes + crowd
   in one run. Fail again -> burst in place only, no topple.
-- #55 greenery (local_9af27a16): trample topple failed r1-r10 -> topple OUT (D-084). Method change: crush in place
+- #55 greenery (local_9af27a16): r11 crush FAIL (vanish then late burst, grey-teal debris, grey slab puff 50+ f) ->
+  NOT in the demo (D-084); keeps fixing in parallel, critic after the build. Earlier: trample topple failed r1-r10 -> topple OUT (D-084). Method change: crush in place
   (debris path + pale stump + tan puff, no rotation). ONE critic round, else #55 after the demo. Stomp shockwave
   (rampage.gd:177, tan crescents) is NOT #55's: exclude from briefs.
 - #50 tanks & helis (local_5325ef73, bce6433): last round (D-082); re-measure then 720p clip after croc in GPU queue.
 - #36 army balance (local_24621710): D-087 pick evolve1 cost 1778 -> 400 (0.26 h, 8/14 young defeated, Behemoth 26%);
   no young override, no option A (D-086 void); growth test ratio /10 -> /20 citing D-087. GO given. After #54 + #63
   merge: resync, 130-run confirm on the real head, body table, ping lead -> merge -> BUILD.
-- RENDER BATON (22:4x): director in a fullscreen game -> local GPU blocked; renders on CI capture.yml (gl_compat,
-  one run at a time). Order: stadium (39108683628, 39108705294) -> croc -> rooftops -> greenery -> #50; peer to peer.
-  #59 r2 local render: players clumped (float-compare bug, fixed 6281641); rest OK; crowd +2.8 ms GPU at 1080p,
-  shadows now off.
+- RENDERS (23:xx): director AFK, "use as much of my computing power as you can": local GPU, up to 4 windowed renders
+  at once, no baton; headless unlimited; helpers fan out sweeps. CI capture only while he games. Dry-run session
+  (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
+  130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
+## 04:xx: #59 r5 burst core PASS (lead 2x, burst_f60_75_2x.png). PR CONFLICTING, no CI at 0c01c61 -> resync onto 5bc6b44
+## + chunks to wall albedo x0.6-0.7 (read as white confetti) + soft puff clouds (bubble rims) -> 2x strip -> lead merges.
+## 02:xx: #54 MERGED bc324f6 (r5 slam on lead 2x). #59 r4: burst numeric tweak, lead merges on 2x (critic's
+## 'sliced rows' overruled: on-style voxel breach). #63 r2 critic running + audio +5..8 dB, gap 0.1 s. Greenery session:
+## demo PR for city_view.gd:208 axis spam + collapse-sfx cap, then #55 numeric tweaks (lead merges post-build).
+## 00:xx: #50 r3 FAIL (lead-verified 14.0 s overlapping tanks, 11.5 s yaw over police car) -> OUT of demo (D-082);
+## r4 list in military-ai.md eefefd1; its session is past 150k: clear_session it when idle + kick off r4 from handoff.
+## #54 r4 slam: timing PASS; 3 numeric tweaks (adolescent puff ramp, fade by 15.8 s, dip 6-10 px) -> merge on lead 2x.
+## #59 r3 FAIL (black cut faces f64-77, flee invisible f121, sport-still density): method change = ALL sections burst
+## in place, all fans stand + run fast to exits; last round. #55 r12: puff fail -> approved footfall puff (post-build).
+## Integration dry-run (23:xx, scratch, nothing pushed): A = #54+#63+#59+#36 all suites PASS (flow 146, growth 31;
+tuning.json stage 1 keeps #54 "body" + #36 "per_level"); 130 runs e1 0.26 h, young 8/14; local export smoke 10/10;
+stadium minute crowd+squads +0.6 ms. B (+#55 +#50): suites PASS; #50 softens young (6/15). One import segfault
+(exit 139) on first try, rerun clean: being checked. #50: option B (roof clearance; clip spot without >12 m towers).
 ## Build (after #36 merges)
 `gh workflow run build.yml --ref claude/look-options -f ref=claude/look-options`; artifact KaijuIncremental-<sha>.
 Dry run PASS on 6b27da9 (run 39106390742, 129.5 MB exe). Release smoke #65 MERGED (tools/release/demo_smoke.gd: title ->
