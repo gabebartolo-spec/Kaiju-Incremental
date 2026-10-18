@@ -36,7 +36,9 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
   (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
   130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
-## 04:xx: #59 r5 burst core PASS (lead 2x, burst_f60_75_2x.png). PR CONFLICTING, no CI at 0c01c61 -> resync onto 5bc6b44
+## 04:xx: #63 r3 audio ACCEPTED (c936f33); sparks STILL clustered (137, x 908-1011, 73 at 960) + no resync -> r2
+## visual list resent. #66 (greenery: axis + collapse cap, red-first) -> lead merges on green before build.
+## #59 r5 burst core PASS (lead 2x, burst_f60_75_2x.png). PR CONFLICTING, no CI at 0c01c61 -> resync onto 5bc6b44
 ## + chunks to wall albedo x0.6-0.7 (read as white confetti) + soft puff clouds (bubble rims) -> 2x strip -> lead merges.
 ## 02:xx: #54 MERGED bc324f6 (r5 slam on lead 2x). #59 r4: burst numeric tweak, lead merges on 2x (critic's
 ## 'sliced rows' overruled: on-style voxel breach). #63 r2 critic running + audio +5..8 dB, gap 0.1 s. Greenery session:
@@ -62,6 +64,8 @@ Continue -> evolve1 -> DEMO COMPLETE -> menu, 10/10). The release exe ignores --
 - D-086 (lead): #36 option A (Behemoth army 0.03), superseded the same evening by D-087's pick; not applied.
 - D-087 (director 19:xx): first evolution at ~15 min ("no ones going to play 41 minutes of a demo if theyre still a
   baby"); picked 15 min from 10/15/20-25. Lever: evolve1 cost 400 (#36).
+- D-088 (director 2026-10-19 via AskUserQuestion): demo exe ships WITHOUT #50 ('Ship now, patch after');
+  #50 r4 started (fix list 1-6 + young retune on evolve1 400) -> second exe right after.
 - D-084 outcome: #55 topple out; crush-in-place method change (lead, rule 8).
 
 ## Sessions (renamed 18:0x for the director's survey)

@@ -317,10 +317,15 @@
 	},
 	"body": {"speed_mult": 1.0, "hp_mult": 1.0},
 	"growth": {
+		"per_level": {
+			"army": {"tank_hp": 0.03, "tank_damage": 0.03, "start_interval": -0.01},
+			"air": {"hp": 0.03, "damage": 0.03}
+		},
 		"stages": [
 			{
 				"city": {"half": 42, "coast_z": -112, "max_height": 26},
 				"air": {"max": 0},
+				"per_level": {},
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
@@ -328,7 +333,11 @@
 					"fog_scale": 0.6, "far_haze": 0.0024},
 				"army": {"start_interval": 4.0, "tank_hp": 45, "tank_damage": 6, "tank_rubble": 6,
 					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
-				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12}
+				"air": {"max": 2, "after_chunks": 300, "max_per_chunks": 900, "hp": 24, "rubble": 12},
+				"per_level": {
+					"army": {"tank_hp": 0.02, "tank_damage": 0.02, "start_interval": -0.01},
+					"air": {"hp": 0.02, "damage": 0.02}
+				}
 			},
 			{
 				"city": {"half": 125, "coast_z": -195, "max_height": 40, "tower_chance": 0.65,
