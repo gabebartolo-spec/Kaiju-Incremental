@@ -16,7 +16,7 @@
 			"cost": [44, 254, 521, 952, 1651], "requires": ["hide"], "effects": {"rubble_mult": 0.15}},
 		{"id": "frenzy", "name": "Frenzy", "desc": "Stomp more often.", "pos": [2, 1], "max_level": 4,
 			"cost": [76, 444, 851, 1524], "requires": ["quake"], "effects": {"stomp_interval": -0.05}},
-		{"id": "evolve1", "name": "EVOLVE: Behemoth", "desc": "Grow huge. Topple mid-rise towers.", "pos": [2, 2], "max_level": 1,
+		{"id": "evolve1", "name": "EVOLVE: Behemoth", "desc": "Grow huge. Tear through towers faster.", "pos": [2, 2], "max_level": 1,
 			"cost": [400], "requires": ["claws", "hide", "rage"], "effects": {"size": 1, "hp": 40, "stomp_damage": 4}},
 		{"id": "sig_power", "name": "Signature Power", "desc": "Your signature attack hits harder.", "pos": [3, 1], "max_level": 5,
 			"cost": [1524, 2794, 4699, 7493, 11176], "requires": ["evolve1"], "effects": {"ability_damage": 15}},

@@ -53,7 +53,6 @@ var _shake := 0.0
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
-var _too_tall_cooldown := 0.0
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
@@ -146,7 +145,6 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
 	_update_kaiju(delta, move.length())
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
@@ -191,11 +189,6 @@ func _on_event(event: Dictionary) -> void:
 			_city.fall_land(event)
 			sfx.collapse(str(event["kind"]) == "topple")
 			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
-		"tough":
-			if _too_tall_cooldown <= 0.0:
-				_too_tall_cooldown = 2.5
-				var b := sim.buildings[Num.i(event["building"])]
-				_city.float_text("TOO STRONG - UNDERMINE IT", Vector3(b.x, 4.0, b.z), UiKit.WARN)
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":

@@ -4,7 +4,9 @@ extends RefCounted
 ## sized per life stage to the drawn model (data/tuning.json "contact"), breaks every standing
 ## chunk it overlaps as it walks or turns, so the model never passes through an intact wall. The
 ## path between two steps is swept in samples, so a fast move or a quick turn of the long snout
-## or tail leaves nothing standing inside the body. Part of RampageSim; pure, no randomness.
+## or tail leaves nothing standing inside the body. A building that dwarfs the kaiju (D-091) is
+## chewed at bite_dps x Growth.dwarf_mult instead of broken outright, and holds the body at its
+## wall until its chunks give. Part of RampageSim; pure, no randomness.
 
 ## A chunk is one sim unit across: its centre is this far from its faces.
 const CHUNK_HALF := 0.5
@@ -15,11 +17,16 @@ var cfg: Dictionary
 var heading := Vector2(0, -1)
 ## Chunks the body itself has broken this rampage.
 var broken := 0
+## True on a step a wall that has not given yet held the body back.
+var held := false
+## The snout tip's forward offset from kaiju_pos at body scale 1, design units ("snout").
+var snout := 0.0
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
 var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
+var _dt := 0.0
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -36,11 +43,28 @@ func use_species(species_id: String) -> void:
 	var stages: Array = bodies.get(species_id, [])
 	_discs = []
 	if not stages.is_empty():
-		_discs = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
+		var stage: Dictionary = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
+		_discs = stage["discs"]
+		snout = Num.f(stage["snout"])
 
 
 func active() -> bool:
 	return not _discs.is_empty()
+
+
+## The discs at body scale 1: [forward offset, radius, bottom, top] each.
+func discs() -> Array:
+	return _discs
+
+
+## Snout to tail tip, world units.
+func length() -> float:
+	var front := 0.0
+	var back := 0.0
+	for d: Array in _discs:
+		front = maxf(front, Num.f(d[0]) + Num.f(d[1]))
+		back = minf(back, Num.f(d[0]) - Num.f(d[1]))
+	return (front - back) * sim.body_scale()
 
 
 ## Turns the body toward the facing, then breaks what it moved or turned into.
@@ -52,9 +76,28 @@ func step(dt: float) -> void:
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_heading := heading if _last_pos.x == INF else _last_heading
+	_dt = dt
+	_sweep(from, from_heading, sim.kaiju_pos, heading)
+	held = not inside(sim.kaiju_pos, heading).is_empty()
+	if held:
+		_hold(from, from_heading)
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
-	_sweep(from, from_heading, sim.kaiju_pos, heading)
+
+
+## A wall that has not given yet: the body slides along it if it can, else stays where it was.
+func _hold(from: Vector2, from_heading: Vector2) -> void:
+	var to := sim.kaiju_pos
+	var poses: Array[Array] = [
+		[Vector2(to.x, from.y), heading], [Vector2(from.x, to.y), heading], [from, heading]
+	]
+	for pose: Array in poses:
+		var at: Vector2 = pose[0]
+		if inside(at, heading).is_empty():
+			sim.kaiju_pos = at
+			return
+	sim.kaiju_pos = from
+	heading = from_heading
 
 
 ## Whether the body overlaps building `index`'s footprint now (never without a body volume).
@@ -96,10 +139,13 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 			cells.append(c)
 		var before := sim.rubble
 		var first := sim.events.size()
-		var n := sim.damage_chunks(index, cells, INF)
-		if n > 0:  # the body's own breaks pay pay_mult of a blow's (pacing); falls pay in full
-			sim.rubble = before + (sim.rubble - before) * Num.f(cfg["pay_mult"])
-			sim.events[first]["pay"] = Num.f(cfg["pay_mult"])
+		var b := sim.buildings[index]
+		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
+		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * _dt if dwarfs else INF)
+		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
+		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
+			sim.rubble = before + (sim.rubble - before) * pay
+			sim.events[first]["pay"] = pay
 		broken += n
 
 

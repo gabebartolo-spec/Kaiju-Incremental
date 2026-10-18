@@ -370,19 +370,16 @@ func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Arra
 	return _apply(index, cells, amounts)
 
 
-## A building above the kaiju's size tier is tougher. Broken chunks pay rubble; then whatever
-## lost support starts to fall. Returns chunks broken.
+## A building that dwarfs the kaiju takes less of each blow (Growth.dwarf_mult, D-091). Broken
+## chunks pay rubble; then whatever lost support starts to fall. Returns chunks broken.
 func _apply(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 	var b := buildings[index]
-	var tough := b.tier > size_tier()
-	var mult := Num.f(city["tough_mult"]) if tough else 1.0
+	var mult := Growth.dwarf_mult(size_tier(), b.tier, city)
 	var broken: Array[Vector3i] = []
 	for n: int in cells.size():
 		if b.frame.damage(cells[n], amounts[n] * mult):
 			broken.append(cells[n])
 	if broken.is_empty():
-		if tough and not cells.is_empty():
-			_events.append({"type": "tough", "building": index})
 		return 0
 	pay(b, broken.size(), 1.0)
 	_events.append({"type": "chunks_broken", "building": index, "cells": broken})
