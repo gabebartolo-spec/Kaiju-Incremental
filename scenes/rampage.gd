@@ -6,8 +6,7 @@ extends Node3D
 
 signal finished(result: Dictionary)
 
-## Footfall: dust size and a pale ground ring (per body scale), and how far the camera dips
-## (world units at full strength) and how fast it comes back (1/s).
+## Footfall: dust and a pale ground ring (per body scale), camera dip (units) and its return (1/s).
 const FOOTFALL_DUST := 1.1
 const FOOTFALL_RING := 1.4
 const FOOTFALL_TINT := Color(0.86, 0.83, 0.76, 0.7)
@@ -237,7 +236,8 @@ func _ability_fx(event: Dictionary) -> void:
 				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
 			)
 			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
-			var snout := _to_world(event["from"] as Vector2)  # the sim's cone starts at the snout
+			var from: Vector2 = event["from"]  # the sim's cone (BreathCone) starts at the snout
+			var snout := _to_world(from)
 			var span := snout + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
 			ability_fx.cone_origin = snout
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
