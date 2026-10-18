@@ -9,6 +9,8 @@ extends RefCounted
 ## a RampageSim built on its own starts on land, as before.
 
 var active := false
+## How far south the arena reaches (z, the playable city's edge past the river, CityRiver).
+var south: float
 var _t := 0.0
 var _rise: float
 var _depth: float
@@ -21,7 +23,9 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_rise = Num.f(cfg["rise_seconds"])
 	_depth = Num.f(cfg["depth"])
 	_wade = Num.f(cfg["wade_speed"])
-	_spawn = CityRiver.spawn(city)
+	var plan := CityGen.map(city)
+	_spawn = plan.get("river_spawn", Vector2(INF, INF))
+	south = Num.f(plan.get("south", CityGen.half_extent(city)))
 
 
 ## Puts the kaiju under the river's surface; the run waits until it has risen. A city without
