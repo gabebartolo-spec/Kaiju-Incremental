@@ -64,18 +64,11 @@ func run() -> void:
 	var off_first := _count(off, 10.0, "rooftop_fired")
 	var on_tank := _first(on, delay + ramp, "tank_spawned")
 	var off_tank := _first(off, delay + ramp, "tank_spawned")
-	(
-		_check
-		. call(
-			off_first >= 4 and on_first * 4 <= off_first and on_tank > off_tank,
-			(
-				(
-					"caught unaware: rooftop volleys in the first 10 s %d vs %d at full alert; first tank"
-					+ " %.1f s vs %.1f s"
-				)
-				% [on_first, off_first, on_tank + 10.0, off_tank + 10.0]
-			)
-		)
+	var line := "caught unaware: rooftop volleys in the first 10 s %d vs %d at full alert"
+	line += "; first tank %.1f s vs %.1f s" % [on_tank + 10.0, off_tank + 10.0]
+	_check.call(
+		off_first >= 4 and on_first * 4 <= off_first and on_tank > off_tank,
+		line % [on_first, off_first]
 	)
 
 
