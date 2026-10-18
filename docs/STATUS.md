@@ -7,18 +7,19 @@ PR's "Board and log" section. History rolls to `docs/archive/status_<month>.md`.
 Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor, a missing suite,
 an untyped declaration and a planted secret). Gate signer: the lead.
 
-## Live PRs (2026-10-18 18:30; demo order: #50 -> P3 #54 -> rooftops #63 -> landmarks -> matches #59 -> #36 -> build)
+## Live PRs (2026-10-19 06:00; demo chain merged, build next; #50 -> second exe, D-088)
 
 | PR | Owner session | State | Item | Branch | Since |
 |----|---------------|-------|------|--------|-------|
-| #63 | Rooftop fire | awaiting lead | D-076a rooftop density; sim review PASS; clip on the local GPU | claude/rooftop-density | 2026-10-18 |
-| #59 | Stadium matches + crowd | working | D-078 matches + D-078a full stands; AFL re-clip with the crowd | claude/stadium-matches | 2026-10-18 |
-| #54 | Croc baby & teen | awaiting lead | P3 bodies (D-073, D-074b); sim review PASS; gate: clean baby jaw crop | claude/croctitan-p3 | 2026-10-18 |
-| #55 | Greenery + trample | working | D-065(a) greenery; trample last round (D-084), else ships without | claude/greenery | 2026-10-18 |
-| #50 | Tanks & helis | working | D-066 military AI; last round (D-082); conflicts with base | claude/military-ai | 2026-10-18 |
-| #36 | Army balance + SFX | working | D-069 army scales + D-069a soften young; lands last before the build | claude/army-scales | 2026-10-18 |
+| #50 | Tanks & helis | working | D-066 military AI r4 (D-088: second exe after the demo) | claude/military-ai | 2026-10-18 |
+| #55 | Greenery + trample | working | D-065(a) greenery, crush in place (D-084a); after the build | claude/greenery | 2026-10-18 |
 | #58 | Jets | available (parked) | D-072 interceptor, D-080 warning; draft, after the demo | claude/jets-interceptor | 2026-10-18 |
 | #61 | Jets | available (parked) | D-072 delta + ground-attack bombs; draft, after the demo | claude/jets-bombs | 2026-10-18 |
+
+## Merged into look-options on 2026-10-18/19 (the demo chain)
+#54 croc baby + adolescent (bc324f6, D-073/074b) · #36 army balance, evolve1 400 (cceabba, D-087) ·
+#59 stadium matches + full stands (6e2fdbc, D-078/078a) · #66 topple axis + collapse sound cap (329e708) ·
+#63 rooftop density + ragged fire (8c24654, D-076a/085) · #64 decisions D-062..D-084 · #65 release smoke.
 
 Lead: "Kaiju: LEAD (demo build, merges, QA)", claude/look-options (#3 to main on hold). Board PRs: "Board & decision log".
 
