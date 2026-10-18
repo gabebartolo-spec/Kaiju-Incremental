@@ -19,6 +19,7 @@ var plan: Dictionary
 ## D-065 greenery counts (CityGreenery.green), for the city suite and the report.
 var green: Dictionary = {}
 var cars: Array[Rect2] = []  # every car's ground footprint, parked or stopped
+var trampling := true  # off only for a before/after capture of the same frame
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
 var _half: float
@@ -28,6 +29,9 @@ var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
 var _paints := 0  # how many car paints
 var _walked := Vector2(INF, INF)  # where the kaiju stood last frame (trample)
+var _kaiju: KaijuModel  # the drawn kaiju (found once), whose body tramples what it covers
+var _foot := Rect2()  # its ground box in its own frame: x across, y along (model z)
+var _fx := Fx.new()  # dust puffs where trees come down
 var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
 var _tree_cells := {}  # Vector2i cell -> the street-tree kerb spots in it
@@ -84,22 +88,50 @@ func _ready() -> void:
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
+	_props.fall_seconds = Num.f(sim.city["fell_seconds"])
+	add_child(_fx)
 
 
-## Whatever the kaiju's body walks through goes flat at once, not only what a stomp hits, so a
-## walk leaves a continuous trampled path (D-065): a city.trample_body radius at its body scale,
-## on the ground only. Presentation only: the sim never knows.
-func _process(_delta: float) -> void:
+## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so
+## a walk leaves a continuous trampled path (D-065): every prop whose base lies under the drawn
+## body's ground box (the model's own, at its stage, species, scale and facing; the middle
+## city.trample_share of it, as the splayed feet and tail tip only reach its corners). Trees
+## fall along the walk with a puff of dust at the stump. On the ground only; presentation
+## only, the sim never knows.
+func _process(delta: float) -> void:
+	_props.tick(delta)
+	for stump: Vector3 in _props.felled:
+		_fx.puff(stump + Vector3(0, 0.2, 0))
+	_props.felled.clear()
 	var at := sim.kaiju_pos
-	if at != _walked and _walked.x != INF and not sim.airborne:
-		var reach := Num.f(sim.city["trample_body"]) * sim.body_scale()
-		crush(Vector3(at.x, 0, at.y), reach, at - _walked)
+	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
+		var body := _kaiju.global_transform
+		_props.crush_box(body, _foot, at - _walked)
+		var into := body.affine_inverse()
+		for lamp: OmniLight3D in _lamps.duplicate():
+			var local := into * Vector3(lamp.position.x, body.origin.y, lamp.position.z)
+			if _foot.has_point(Vector2(local.x, local.z)):
+				_lamps.erase(lamp)
+				lamp.queue_free()
 	_walked = at
+
+
+## Finds the drawn kaiju beside this city and its ground box (KaijuFootprint); false where
+## there is none (stills, tests).
+func _found_kaiju() -> bool:
+	if is_instance_valid(_kaiju):
+		return true
+	_kaiju = KaijuFootprint.find(self)
+	if _kaiju == null:
+		return false
+	_foot = KaijuFootprint.of(_kaiju, Num.f(sim.city["trample_share"]))
+	return true
 
 
 ## Flattens props under a stomp.
 func crush(at: Vector3, radius: float, heading := Vector2.ZERO) -> void:
-	_props.crush(at, radius, heading)
+	if trampling:
+		_props.crush(at, radius, heading)
 	for lamp: OmniLight3D in _lamps.duplicate():
 		if Vector2(lamp.position.x - at.x, lamp.position.z - at.z).length() <= radius:
 			_lamps.erase(lamp)

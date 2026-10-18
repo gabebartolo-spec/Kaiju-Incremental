@@ -309,7 +309,7 @@ func _flower_bed(v: VoxelBuilder, bloom: String) -> void:
 ## A playground on a soft pad (city.playground_size): a slide, a swing frame, a climbing frame.
 func _playground(v: VoxelBuilder) -> void:
 	var half := roundi(Num.f(_sim.city["playground_size"]) * 0.5 / CityDecor.PROP_VOXEL) - 1
-	v.box(Vector3i(-half, 0, -half), Vector3i(half, 0, half), "play_mat")
+	v.box(Vector3i(-half - 1, 0, -half - 1), Vector3i(half + 1, 0, half + 1), "play_mat")
 	# The slide: a tower, a ladder up its front and a ramp down to the pad.
 	v.box(Vector3i(-half + 1, 1, -half + 1), Vector3i(-half + 2, 6, -half + 2), "play_red")
 	for x: int in [-half, -half + 3]:
@@ -319,6 +319,8 @@ func _playground(v: VoxelBuilder) -> void:
 	for k: int in 6:
 		var x := -half + 3 + k
 		v.box(Vector3i(x, 6 - k, -half + 1), Vector3i(x, 6 - k, -half + 2), "play_yellow")
+		for z: int in [-half, -half + 3]:  # the chute's side walls, so it reads as a slide
+			v.put(Vector3i(x, 7 - k, z), "play_red")
 	# The swings: two posts and a top bar two cells deep, so the one-cell hangers (dark steel
 	# against the light frame) read thinner than it; two seats with open space between.
 	for x: int in [0, half]:

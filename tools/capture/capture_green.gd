@@ -1,14 +1,18 @@
 extends SceneTree
 ## D-065 evidence: stills of the greenery at the game camera's angle (a park, its playground,
 ## a stretch of avenue trees) and, with --trample, a real rampage clip of the kaiju walking
-## north across a park on player input ("move_up"), so the game's own stomps flatten it.
+## north across a park on player input ("move_up"), so the game's own body contact and stomps
+## bring it down; it starts just inside the park, so no tower south of it hides the contact
+## from the game camera, and the felled trail lies between the camera and the kaiju.
 ## Needs a window: run it on CI (tools/capture/ci_capture.sh [--movie] capture_green.gd).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_green.gd -- --out=<dir> [--stage=N]
 ##   ... --write-movie <clip> --fixed-fps 60 ... -- --trample [--seconds=5]
 ##   ... -- --trample --park-stills  (no movie: stills of the park from the east, before and after)
-## Every trample prints how many of the park's props the walk flattened.
+##   ... -- --trample --still-at=2.0 [--no-trample]  (a game-camera still at 2 s; with
+##   --no-trample the same deterministic walk leaves the decor standing: the before frame)
+## Every trample prints how many of the park's props the walk felled or flattened.
 
 const SETTLE := 12
 const SPECIES := "reptilian"
@@ -18,7 +22,7 @@ const PARK_ZOOM := 0.6
 const PLAYGROUND_ZOOM := 0.25
 const AVENUE_ZOOM := 0.45
 const ROW_REACH := 15.0  # street trees this far either way along a pavement count as a row
-const START_OUTSIDE := 3.0  # the clip starts this far south of the park
+const START_INSIDE := 2.0  # the clip starts this far inside the park's south edge
 const OFF_PATH := 0.25  # ...and this share of its width east of the middle path, in the trees
 ## The park stills look west across the park from here (off its centre), so the walk's
 ## north-south strip of flattened props crosses the frame; straight down, a flattened tree
@@ -31,6 +35,8 @@ var _stage := 1
 var _trample := false
 var _park_stills := false
 var _seconds := 5.0
+var _still_at := -1.0  # --still-at: a game-camera still this many seconds into the walk
+var _no_trample := false  # --no-trample: the same walk with the decor left standing
 
 
 func _initialize() -> void:
@@ -45,6 +51,10 @@ func _initialize() -> void:
 			_trample = true
 		elif arg == "--park-stills":
 			_park_stills = true
+		elif arg.begins_with("--still-at="):
+			_still_at = arg.substr(11).to_float()
+		elif arg == "--no-trample":
+			_no_trample = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -164,30 +174,41 @@ func _trample_clip() -> void:
 	)
 	var park := _park(rampage.sim.city)
 	var x := park.get_center().x + park.size.x * OFF_PATH
-	rampage.sim.kaiju_pos = Vector2(x, park.end.y + START_OUTSIDE)
+	rampage.sim.kaiju_pos = Vector2(x, park.end.y - START_INSIDE)
 	root.add_child(rampage)
+	var decor: CityDecor = rampage._city._decor
+	decor.trampling = not _no_trample
 	if _park_stills:
 		await _park_view(rampage, park, "trample_park_before")
 	Input.action_press("move_up")
 	var frames := 0
+	var still := roundi(_still_at * Engine.physics_ticks_per_second)
 	while frames < roundi(_seconds * Engine.physics_ticks_per_second) and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		if frames == still:
+			var shot := (
+				"trample_game_%.1fs%s.png" % [_still_at, "_untouched" if _no_trample else ""]
+			)
+			root.get_texture().get_image().save_png(_out.path_join(shot))
+			print("saved %s: %s" % [shot, _park_count(decor, park)])
 	Input.action_release("move_up")
-	print("trample: kaiju from ", park.end.y + START_OUTSIDE, " to ", rampage.sim.kaiju_pos)
-	var flat := 0
-	var standing := 0
-	var decor: CityDecor = rampage._city._decor
+	print("trample: kaiju from ", park.end.y - START_INSIDE, " to ", rampage.sim.kaiju_pos)
+	print("trample: ", _park_count(decor, park))
+	if _park_stills:
+		await _park_view(rampage, park, "trample_park_after")
+
+
+## How many of the park's props are down so far.
+func _park_count(decor: CityDecor, park: Rect2) -> String:
+	var down := 0
+	var all := 0
 	for group: Dictionary in decor._props._groups:
 		var at: Vector3 = group["at"]
 		if park.has_point(Vector2(at.x, at.z)):
-			if group.get("crushed", false):
-				flat += 1
-			else:
-				standing += 1
-	print("trample: %d of %d park props flattened" % [flat, flat + standing])
-	if _park_stills:
-		await _park_view(rampage, park, "trample_park_after")
+			all += 1
+			down += 1 if group.get("crushed", false) else 0
+	return "%d of %d park props felled or flattened" % [down, all]
 
 
 ## A still of the park from PARK_VIEW (the rampage's own camera is put back after).

@@ -10,10 +10,13 @@ const STUMP := 2  # a felled tree leaves its lowest cells this many high standin
 
 var vox := VoxelBuilder.new()
 var voxel: float
+var fall_seconds := 0.3  # how long a felled tree takes to come down
+var felled: Array[Vector3] = []  # stumps felled since the owner last drained this
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
 var _mmi: MultiMeshInstance3D
 var _heading := Vector2.ZERO  # the way the current crush pushes, or zero for away from it
+var _falling: Array[Dictionary] = []  # trees still coming down (tick)
 
 
 func _init(p_voxel: float) -> void:
@@ -86,14 +89,60 @@ func crush(at: Vector3, radius: float, heading := Vector2.ZERO) -> void:
 		for bz: int in range(lo.y, hi.y + 1):
 			var bucket: Array = _buckets.get(Vector2i(bx, bz), [])
 			for index: int in bucket:
-				_crush_group(mm, _groups[index], at, radius)
+				var group: Dictionary = _groups[index]
+				var base: Vector3 = group["at"]
+				if Vector2(base.x - at.x, base.z - at.z).length() <= radius:
+					_crush_group(mm, group, at)
 
 
-func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3, radius: float) -> void:
-	if group.get("crushed", false):
+## Flattens every prop whose base lies under a body: `foot` is its ground box (x across, y
+## along) in the frame `body` (scale included), so the box turns and grows with it; trees fall
+## along `heading`.
+func crush_box(body: Transform3D, foot: Rect2, heading: Vector2) -> void:
+	if _mmi == null:
 		return
-	var base: Vector3 = group["at"]
-	if Vector2(base.x - at.x, base.z - at.z).length() > radius:
+	_heading = heading
+	var mm := _mmi.multimesh
+	var reach := maxf(foot.position.length(), foot.end.length()) * body.basis.get_scale().x
+	var at := body.origin
+	var into := body.affine_inverse()
+	var lo := Vector2i(floori((at.x - reach) / BUCKET), floori((at.z - reach) / BUCKET))
+	var hi := Vector2i(floori((at.x + reach) / BUCKET), floori((at.z + reach) / BUCKET))
+	for bx: int in range(lo.x, hi.x + 1):
+		for bz: int in range(lo.y, hi.y + 1):
+			var bucket: Array = _buckets.get(Vector2i(bx, bz), [])
+			for index: int in bucket:
+				var group: Dictionary = _groups[index]
+				var base: Vector3 = group["at"]
+				var local := into * Vector3(base.x, at.y, base.z)
+				if foot.has_point(Vector2(local.x, local.z)):
+					_crush_group(mm, group, at)
+
+
+## Brings the felling trees down a step: each turns its quarter over fall_seconds, slow at
+## first and fast at the end, the way a trunk goes over.
+func tick(delta: float) -> void:
+	if _mmi == null:
+		return
+	var mm := _mmi.multimesh
+	for fall: Dictionary in _falling.duplicate():
+		var done := minf(1.0, Num.f(fall["t"]) + delta / maxf(0.01, fall_seconds))
+		fall["t"] = done
+		var axis: Vector3 = fall["axis"]
+		var turn := Basis(axis, PI * 0.5 * done * done)
+		var pivot: Vector3 = fall["pivot"]
+		var ids: PackedInt32Array = fall["ids"]
+		var starts: PackedVector3Array = fall["starts"]
+		for k: int in ids.size():
+			var t := mm.get_instance_transform(ids[k])
+			t.origin = pivot + turn * (starts[k] - pivot)
+			mm.set_instance_transform(ids[k], t)
+		if done >= 1.0:
+			_falling.erase(fall)
+
+
+func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
+	if group.get("crushed", false):
 		return
 	group["crushed"] = true
 	if group.get("fells", false):
@@ -108,7 +157,7 @@ func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3, radius: float) 
 
 
 ## A tree falls: its cells above STUMP turn a quarter about the top of the stump, toward
-## _heading (or away from the blow), and lie along the ground.
+## _heading (or away from the blow), over fall_seconds (tick), and lie along the ground.
 func _fell(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var base: Vector3 = group["at"]
 	var away := _heading
@@ -117,7 +166,7 @@ func _fell(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	if away.length() < 0.01:
 		away = Vector2.RIGHT
 	away = away.normalized()
-	var turn := Basis(Vector3.UP.cross(Vector3(away.x, 0, away.y)).normalized(), PI * 0.5)
+	var axis := Vector3.UP.cross(Vector3(away.x, 0, away.y)).normalized()
 	var ids: PackedInt32Array = group["ids"]
 	var heights: PackedInt32Array = group["heights"]
 	var pivot := Vector3.INF
@@ -127,9 +176,12 @@ func _fell(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 			break
 	if pivot == Vector3.INF:
 		return
+	felled.append(pivot)
 	pivot.y += STUMP * voxel
+	var falls := PackedInt32Array()
+	var starts := PackedVector3Array()
 	for k: int in ids.size():
 		if heights[k] >= STUMP:
-			var t := mm.get_instance_transform(ids[k])
-			t.origin = pivot + turn * (t.origin - pivot)
-			mm.set_instance_transform(ids[k], t)
+			falls.append(ids[k])
+			starts.append(mm.get_instance_transform(ids[k]).origin)
+	_falling.append({"ids": falls, "starts": starts, "pivot": pivot, "axis": axis, "t": 0.0})
