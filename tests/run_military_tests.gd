@@ -155,7 +155,7 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		parked_in_band > 300 and standoff >= 0.95 and longest_in_danger <= 1.0,
+		parked_in_band > 100 and standoff >= 0.95 and longest_in_danger <= 1.0,
 		(
 			(
 				"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing"

@@ -300,7 +300,7 @@
 			{
 				"city": {"half": 125, "coast_z": -195, "max_height": 40, "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
-				"army": {"range": 15.5, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10,
+				"army": {"range": 15.0, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10,
 					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.0004, "threat_per_chunk": 0.00008},
 				"air": {"max": 4, "after_chunks": 500, "max_per_chunks": 1500, "hp": 45, "damage": 6,
 					"rubble": 30}
