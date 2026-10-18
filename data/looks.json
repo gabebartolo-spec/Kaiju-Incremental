@@ -18,7 +18,7 @@
 			"glow": 0.8,
 			"voxel_inset": 0.99,
 			"color_noise": 0.08,
-			"crease_strength": 0.6,
+			"crease_strength": 0.3,
 			"crease_radius": 1.5,
 			"crease_depth_step": 0.02,
 			"crease_normal_step": 0.25,

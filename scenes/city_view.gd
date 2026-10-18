@@ -8,6 +8,7 @@ const MAX_DEBRIS := 600
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
 const MAX_FIRES := 30
+const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
 var sim: RampageSim
@@ -102,8 +103,7 @@ func _build_environment() -> void:
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = 1.1
-	# Light bounces: lamps, fires and the sun colour the streets and walls around them
-	# (screen-space; full SDFGI cost about a tenth of the frame for little gain here).
+	# Screen-space bounce light from lamps, fires and sun (SDFGI cost ~a tenth of the frame).
 	env.ssil_enabled = true
 	env.adjustment_enabled = true
 	env.adjustment_saturation = Look.value("saturation")
@@ -390,6 +390,7 @@ func float_text(text: String, pos: Vector3, color: Color) -> void:
 	l.outline_size = 24
 	l.modulate = color
 	l.no_depth_test = true
+	l.add_to_group(FLOAT_TEXT)
 	l.position = pos
 	add_child(l)
 	var tween := l.create_tween()

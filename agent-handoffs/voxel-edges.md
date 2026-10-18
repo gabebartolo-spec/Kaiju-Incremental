@@ -1,5 +1,5 @@
-# Voxel-edges (crease shader) handoff, 2026-10-18 11:00
-## State: available (#35 tabled for the director's morning: A vs B; lead QA PASS + motion FIX done)
+# Voxel-edges (crease shader) handoff, 2026-10-18
+## State: awaiting lead (D-068: B 0.3 set; #35 synced and pushed; lead merges on green)
 ## Task
 Director, 2026-10-18: first "prototype voxel edge shading", then (via the lead, after it proved
 invisible at the game camera) "(a) crease pass prototype": screen-space, depth + normal breaks darkened,
@@ -26,8 +26,9 @@ gate). A stray local branch claude/voxel-edges (no commits) can be deleted.
 1. Per-voxel bevel: compile fix (varyings only in vertex()), then invisible at game scale. Method changed.
 2. Crease at 0.6: too strong (ink look, kaiju speckle). The board is re-scoped to A 0 / B 0.3 / C 0.6.
 ## Open decisions
-Director (through the lead): A vs B (C shown as too strong). After the pick: set crease_strength in
-looks.json, update the PR body's Board and log, push.
+none: director picked B (D-068); crease_strength 0.3 in looks.json; PR body Board and log updated.
+After the merge: remove the worktree (../Kaiju-Incremental-wt/voxel-edges) and the stray local branch
+claude/voxel-edges.
 ## Round 2 (eacddc1)
 - Kaiju mask: kaiju roughness 0.85 tags it in the normal buffer; crease discards it (silhouette shadow
   only). Static kaiju flicker A 2.48 / B 2.65; walk residual 3.68 / 4.45; 4K GPU 12.0 / 12.7 ms.
