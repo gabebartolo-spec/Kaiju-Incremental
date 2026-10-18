@@ -9,6 +9,8 @@ extends SceneTree
 ##     --script tools/capture/capture_landmarks.gd -- --out=<dir> [--tier=2]
 
 const SETTLE := 4
+## Frames after the rampage before the broken still: the dust of the last falls clears.
+const AFTER := 150
 const SPECIES := "reptilian"
 ## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
 const GAME_CAMERA := Vector3(0, 27, 19)
@@ -83,7 +85,7 @@ func _stage(tier: int) -> void:
 		_shot("%s_standing" % b.landmark)
 		var before := b.frame.alive_count
 		await _break(n, kaiju)
-		await _frames(SETTLE * 3)
+		await _frames(AFTER)
 		_shot("%s_broken" % b.landmark)
 		print(
 			(

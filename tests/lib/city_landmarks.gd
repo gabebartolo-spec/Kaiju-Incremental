@@ -1,8 +1,8 @@
 extends RefCounted
 ## The city suite's landmark checks, split out to keep the runner small: a landmark is a
-## Structure with only its baked model's chunks (it stands as built, and pays rubble_bonus times
-## an ordinary building's chunks: the player-effect fixture), and on the shipping map each
-## landmark gets its own plaza of merged blocks (CitySites).
+## Structure with only its baked model's chunks (every one stands as built, and pays rubble_bonus
+## times an ordinary building's chunks: the player-effect fixture), a breach brings down a whole
+## arc of the stadium, and on the shipping map each landmark gets its own plaza (CitySites).
 
 var _check: Callable
 
@@ -14,6 +14,7 @@ func _init(p_check: Callable) -> void:
 
 func run() -> void:
 	_structure()
+	_arcs()
 	_sites()
 
 
@@ -37,7 +38,29 @@ func _structure() -> void:
 		frame.alive_count == marked and marked > 0 and marked < w * d * h,
 		"a landmark keeps exactly its model's chunks: %d of %d" % [frame.alive_count, w * d * h]
 	)
-	_check.call(frame.settle().is_empty(), "a landmark stands as built: nothing loose at the start")
+	# Every baked landmark (the wheel is the likeliest to drop or topple), with its arcs if any.
+	var loose: Array[String] = []
+	var specs: Dictionary = {}
+	for entry: Dictionary in Content.section("city")["landmarks"]:
+		specs[str(entry["id"])] = entry
+	for id: String in Content.landmarks():
+		var each: Dictionary = Content.landmarks()[id]
+		var built := Structure.new(Num.i(each["w"]), Num.i(each["d"]), Num.i(each["h"]), 10.0)
+		var rows: Array = each["chunks"]
+		built.keep(rows)
+		var spec: Dictionary = specs.get(id, {})
+		if spec.has("arcs"):
+			var arcs: Dictionary = spec["arcs"]
+			built.arcs = Arcs.build(built, arcs)
+		if not built.settle().is_empty():
+			loose.append(id)
+	_check.call(
+		loose.is_empty() and Content.landmarks().size() >= 2,
+		(
+			"every landmark stands as built, nothing loose at the start: %s (loose: %s)"
+			% [Content.landmarks().keys(), loose]
+		)
+	)
 	var plain := {"x": -40.0, "z": 0.0, "w": w, "d": d, "h": h, "tier": 2, "style": 0}
 	var mark := plain.duplicate()
 	mark["x"] = 40.0
@@ -72,6 +95,54 @@ func _structure() -> void:
 		plain_broken == 6 and mark_broken == 6 and is_equal_approx(mark_pay, plain_pay * 3.0),
 		"a landmark's chunks pay 3x an ordinary building's: %.2f vs %.2f" % [mark_pay, plain_pay]
 	)
+
+
+## The stadium's arcs (Arcs, player-effect fixture): a hit at the foot of its rim brings that
+## whole section of wall down outward above a stub, as one toppling part; a hit on the pitch
+## (inside every arc) brings nothing down.
+func _arcs() -> void:
+	var shape: Dictionary = Content.landmarks()["stadium"]
+	var spec: Dictionary = {}
+	for entry: Dictionary in Content.section("city")["landmarks"]:
+		if str(entry["id"]) == "stadium":
+			spec = entry
+	var w := Num.i(shape["w"])
+	var d := Num.i(shape["d"])
+	var frame := Structure.new(w, d, Num.i(shape["h"]), 10.0)
+	var layers: Array = shape["chunks"]
+	var arcs: Dictionary = spec["arcs"]
+	frame.keep(layers)
+	frame.arcs = Arcs.build(frame, arcs)
+	var stub := frame.arcs.stub
+	var foot := Vector3i(w / 2, 0, d - 1)
+	while foot.z > 0 and not frame.alive(foot):
+		foot.z -= 1
+	frame.damage(foot, 1.0e6)
+	var parts := frame.settle()
+	var part: Dictionary = parts[0] if parts.size() == 1 else {}
+	var cells: Array[Vector3i] = part.get("cells", [] as Array[Vector3i])
+	var above := cells.all(func(c: Vector3i) -> bool: return c.y >= stub)
+	(
+		_check
+		. call(
+			(
+				str(part.get("kind", "")) == "topple"
+				and part.get("dir", Vector2i.ZERO) == Vector2i(0, 1)
+				and cells.size() >= 10
+				and above
+				and frame.alive(foot + Vector3i(0, 1, 0))
+				and not frame.alive(foot + Vector3i(0, stub, 0))
+			),
+			(
+				"a hit at the foot of the rim brings its arc down outward over a %d-floor stub: %d chunks, %s"
+				% [stub, cells.size(), part.get("dir", "none")]
+			)
+		)
+	)
+	var middle := Vector3i(w / 2, 0, d / 2)
+	frame.damage(middle, 1.0e6)
+	var after := frame.settle()
+	_check.call(after.is_empty(), "a hit on the pitch brings nothing down: %d parts" % after.size())
 
 
 ## Landmark sites (city.landmarks): on the shipping map the stadium stands in the first city and
