@@ -64,7 +64,7 @@ func _check_heli_faced() -> void:
 		if i > roundi(1.0 / DT):
 			closest = minf(closest, heli.pos.distance_to(sim.kaiju_pos))
 	check(
-		closest >= framed - 0.3 and closest > sim.air.attack_radius() + 0.5,
+		closest >= framed - 1.0 and closest > sim.air.attack_radius() + 0.5,  # (1 m: its samples)
 		(
 			"a helicopter the kaiju faces never dives on it (closest %.2f m, framed cruise %.2f m)"
 			% [closest, framed]
@@ -74,7 +74,7 @@ func _check_heli_faced() -> void:
 
 ## Its cruise on its bearing, drawn in to stay in the game camera's frame (AirSpace.reach).
 func _framed_cruise(sim: RampageSim, heli: AirWing.Heli) -> float:
-	var at := sim.air.space.reach(heli.angle, sim.air.attack_radius(), heli.cruise)
+	var at := sim.air.space.reach(heli.angle, Vector2(sim.air.attack_radius(), heli.cruise))
 	return at if at >= 0.0 else heli.cruise
 
 
@@ -139,6 +139,8 @@ func _check_heli_flight() -> void:
 				lowest = minf(lowest, heli.alt - _roof_under(sim, heli.pos, ROTOR_CLEAR * 0.5))
 				var before: Array = was.get(heli.id, [])
 				var cruise := sim.air.altitude()
+				if heli.wing_of >= 0:  # a wingman flies stacked over its lead
+					cruise += Num.f(form["stagger"])
 				if heli.alt > cruise + 0.05:
 					highs += 1
 					# Up only for a roof within its look-ahead, or one just passed (still coming down).

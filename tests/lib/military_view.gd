@@ -137,7 +137,7 @@ func _measure_air(sim: RampageSim, cam: Camera3D, plates: Array[Rect2], got: Dic
 		var seen := _heli_seen(cam, heli, plates)
 		var whole := seen.x > 0.0 and seen.y == 0.0
 		var cruise := maxf(heli.cruise, sim.air.attack_radius())
-		var room := sim.air.space.reach(heli.angle, sim.air.attack_radius(), cruise) >= 0.0
+		var room := sim.air.space.reach(heli.angle, Vector2(sim.air.attack_radius(), cruise)) >= 0.0
 		got["framed"] = Num.i(got["framed"]) + (1 if whole else 0)
 		got["under"] = Num.i(got["under"]) + (1 if seen.y > 0.0 else 0)
 		got["room"] = Num.i(got["room"]) + (1 if room else 0)

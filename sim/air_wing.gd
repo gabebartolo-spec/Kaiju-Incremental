@@ -38,6 +38,7 @@ class Heli:
 	var pos: Vector2
 	var omega := 0.0  # how fast it sweeps along its arc now (rad/s, signed)
 	var front := Vector2.ZERO  # where its nose points (the view draws it)
+	var vel := Vector2.ZERO  # how it moved last step (m/s)
 	var alt := 0.0  # how high it flies
 	var hp: float
 	var cooldown: float
@@ -216,7 +217,7 @@ func _lead(heli: Heli, dt: float) -> void:
 func _framed(heli: Heli, r: float) -> float:
 	var low := minf(r, attack_radius())
 	var up := Num.f(_form["stagger"]) if heli.wing_of >= 0 else 0.0
-	var at := space.reach(heli.angle, low, r, up)
+	var at := space.reach(heli.angle, Vector2(low, r), up, heli.vel)
 	return at if at >= 0.0 else r
 
 
@@ -263,7 +264,7 @@ func orbit_pos(heli: Heli) -> Vector2:
 func _blocked(heli: Heli, lo: float, hi: float, stop: float) -> bool:
 	var front := (hi if heli.turn > 0.0 else lo) + _bearing()
 	var ahead := front + heli.turn * (stop + Num.f(_form["look_ahead"]) / maxf(1.0, heli.r))
-	return space.reach(ahead, attack_radius(), maxf(heli.cruise, attack_radius())) < 0.0
+	return space.reach(ahead, Vector2(attack_radius(), maxf(heli.cruise, attack_radius()))) < 0.0
 
 
 ## How far `angle` lies outside the camera's side (clear_arc either side of camera_bearing):
@@ -293,7 +294,9 @@ func _keep_clear(heli: Heli) -> void:
 			var at := side + wrapf(_slot(heli, wing) - heli.angle, -PI, PI)
 			lo = minf(lo, at)
 			hi = maxf(hi, at)
-	var roomy := space.reach(heli.angle, attack_radius(), maxf(heli.cruise, attack_radius())) >= 0.0
+	var roomy := (
+		space.reach(heli.angle, Vector2(attack_radius(), maxf(heli.cruise, attack_radius()))) >= 0.0
+	)
 	if roomy and heli.wing_of < 0 and heli.turn * heli.omega > 0.0 and _blocked(heli, lo, hi, stop):
 		heli.turn = -heli.turn  # a tall block ahead: it turns back short of it, not over it
 	elif lo < arc + stop and heli.turn < 0.0 and heli.wing_of < 0:
@@ -322,10 +325,8 @@ func _fly(heli: Heli, to: Vector2, dt: float) -> void:
 	var slow := moved.length() < 3.0 * dt  # (near a hover it turns its nose only slowly)
 	var rate := deg_to_rad(Num.f(_form["hover_yaw" if slow else "yaw_rate"])) * dt
 	heli.front = heli.front.rotated(clampf(heli.front.angle_to(want), -rate, rate))
+	heli.vel = moved / dt
 	var over := _alt(heli, to)
-	var ahead := Num.f(_form["climb_ahead"])
-	for k: int in range(1, 5):  # up before it gets there, the way it is flying
-		over = maxf(over, _alt(heli, to + moved / dt * ahead * k / 4.0))
 	heli.alt = move_toward(heli.alt, over, Num.f(_form["climb"]) * dt)
 
 
@@ -334,11 +335,11 @@ func _on_target(heli: Heli) -> bool:
 	return absf(heli.front.angle_to(to)) <= deg_to_rad(Num.f(_form["fire_cone"]))
 
 
-## How high it flies at p (AirSpace.alt_at: the height its frame was planned for), a wingman
-## `stagger` over that.
+## How high it flies at p (AirSpace.alt_ahead at its speed: the height its frame was planned
+## for), a wingman `stagger` over that.
 func _alt(heli: Heli, p: Vector2) -> float:
 	var up := Num.f(_form["stagger"]) if heli.wing_of >= 0 else 0.0
-	return space.alt_at(p) + up
+	return space.alt_ahead(p, heli.vel) + up
 
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high: the

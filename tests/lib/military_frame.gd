@@ -36,7 +36,7 @@ func _tally_frame(sim: RampageSim, tier: int) -> void:
 	var seen := {}
 	for heli: AirWing.Heli in sim.air.helis:
 		var cruise := maxf(heli.cruise, sim.air.attack_radius())
-		var room := sim.air.space.reach(heli.angle, sim.air.attack_radius(), cruise) >= 0.0
+		var room := sim.air.space.reach(heli.angle, Vector2(sim.air.attack_radius(), cruise)) >= 0.0
 		var whole := _whole(sim, heli)
 		seen[heli.id] = whole
 		any = 1 if whole else any

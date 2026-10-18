@@ -88,15 +88,17 @@ func _aim() -> void:
 	_up = _right.cross(_fwd)
 
 
-## The farthest out (at most hi, at least lo, a metre at a time) a helicopter on `angle` round
-## the kaiju can fly, `up` over the roofs there, and stay in the frame; -1 where none can (a tall
-## block: it goes round, not over and out of sight).
-func reach(angle: float, lo: float, hi: float, up := 0.0) -> float:
+## The farthest out (span.y at most, span.x at least, a metre at a time) a helicopter on `angle`
+## round the kaiju can fly, `up` over the roofs there at `vel`, and stay in the frame; -1 where
+## none can (a tall block: it goes round, not over and out of sight).
+func reach(angle: float, span: Vector2, up := 0.0, vel := Vector2.ZERO) -> float:
+	var lo := span.x
+	var hi := span.y
 	var dir := Vector2.from_angle(angle)
 	var r := hi
 	while r >= lo:  # (hi, most often: one look)
 		var p := sim.kaiju_pos + dir * r
-		if in_frame(p, alt_at(p) + up):
+		if in_frame(p, alt_ahead(p, vel) + up):
 			return r
 		r -= 1.0
 	return -1.0
@@ -106,6 +108,16 @@ func reach(angle: float, lo: float, hi: float, up := 0.0) -> float:
 ## within facade + look_ahead of it (and down again, in sight, away from any tall one).
 func alt_at(p: Vector2) -> float:
 	return maxf(cruise, _top_near(p) + Num.f(form["roof_clear"]))
+
+
+## How high a helicopter at p moving at `vel` flies: alt_at over where it is and where it will be
+## over the next climb_ahead seconds, so it is up before it gets there.
+func alt_ahead(p: Vector2, vel: Vector2) -> float:
+	var top := alt_at(p)
+	var ahead := Num.f(form["climb_ahead"])
+	for k: int in range(1, 5):
+		top = maxf(top, alt_at(p + vel * ahead * k / 4.0))
+	return top
 
 
 ## The tallest roof within facade + look_ahead of anywhere in p's TOP_CELL cell (buildings keep
