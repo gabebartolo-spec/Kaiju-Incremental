@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 20:30
-## State: available (#39 resynced and pushed 7c7d722; next is #42 once #39 lands)
+# Ability VFX/SFX handoff, 2026-10-18 21:00
+## State: available (#42 resynced onto d135937 and pushed; #46 is next once #42 lands)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -12,18 +12,21 @@
 - #41 limiter and compressor.
 - #43 crowd.
 - #45 mix fixes (look-options 0817cf6).
+- #39 heli gun and crash (look-options d135937).
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **#39** claude/heli-sfx: resynced onto 0817cf6 and pushed 7c7d722, all suites green, flow 131. SHA sent to the lead.
-  Sfx.watch is now watch(camera, powers: PowersView, street).
-- **#42** claude/footstep-variants (ef73246): resync after #39 lands.
+- **#42** claude/footstep-variants: resyncing onto d135937. Conflicts kept both sides:
+  - STEPS plus regen fade consts in sfx.gd;
+  - flow_sfx.gd: FlowSounds.crowd, then check_walk;
+  - floor taken from look-options (131).
+  All 9 suites green, flow 132; pushed, SHA sent to the lead.
 - **#46** claude/rifle-sfx (e520b7b): resync after #42 lands.
 - **Gap job (a), after #46:** a small PR off look-options.
   - Change: shell_hit high-passed at 120 Hz in tools/sfx/build_sfx.py:335, as `highpass(highpass(x,120),120)`, like tank_fire.
   - Evidence: an A/B clip plus masking numbers (capture_mix_log.gd plus mix_report.py; stomps masked by army is now 8).
   - Tabled for the director's listen.
 
-## #36 claude/army-scales (D-069), pushed 4b3146c; waits for #50
+## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
 - Pacing at 4b3146c (130 runs):
   - young: 31 runs, 0.62 h, ended 3/28/0;
@@ -36,7 +39,8 @@
     WARNING: stopping it left its shell alive, and it copied #36's tuning over the #39 merge after the branch switch.
     Before any switch, confirm no bash process mentions young_sweep.
   - The sweep was stopped for #39 after the baseline only ({} gives 3/28/0). It still needs tank_damage 3, 2.5, and 3 with start_interval 6.
-  - Order: after #50 lands, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
+  - Tune young LAST, against #50's and P3's final numbers (P3: baby speed 0.6, more hp, demo ~35 min). Target stays ~half early defeats, with Scales where #36 puts it.
+  - Order: after #50 and P3 land, resync, tune, re-pace 130 runs, put before/after per stage in #36's body, and add "D-069a young stage softened to ~half defeats" to the Board and log.
 
 ## Rules
 - Before every sync, check `git log origin/claude/look-options -1`.
@@ -59,4 +63,5 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- None. Checked out on claude/heli-sfx (clean).
+- None.
+- Local-only handoff commits on army-scales-sync: 7b0db6d, 3518703.

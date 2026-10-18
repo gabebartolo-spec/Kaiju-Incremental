@@ -36,6 +36,7 @@ static func run(root: Node, check: Callable) -> void:
 		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
 	)
 	FlowSounds.crowd(check, sfx)
+	preload("res://tests/lib/flow_step_sounds.gd").check_walk(check, sfx)
 	var pitches: Array[float] = []
 	for tier: int in [1, 4]:
 		sfx.set_size_tier(tier)
