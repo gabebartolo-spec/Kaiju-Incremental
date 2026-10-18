@@ -1,109 +1,59 @@
-# Rooftops handoff, 2026-10-18 (D-076 density)
-## State: awaiting #50 merge + capture slot (everything else done; PR body ready)
-
-## Decision (FINAL, LEAD 2026-10-18): option A = D-076a
-Tanks unchanged. More squads + shorter interval; scale damage_by_tier down PER TIER so each stage's
-total stays within ±5% of baseline. PR table per stage: volleys/s, rifle HP/run, total vs baseline.
-Log D-076a in "Board and log". HUD: there is no hit flash for any damage; a ~0.15 HP chip shows no
-bar tick. LEAD: NO HUD change (UI session's area, D-061). Gate instead: in the Behemoth CI clip
-at 2x the hide spark is visible on most volleys in range; 2x crops of three volleys in the PR.
-## Superseded: LEAD first approved the tank_damage offset (option B); replaced by A
-LEAD: edge reach, more squads + shorter interval, offset per-stage tank_damage, ±5%; PR needs a
-volleys-per-run table per stage + CI clip of Behemoth under rooftop fire. LEAD says when #50 merges.
-## Earlier decision note (notes folder rooftops-density/ has all tables)
-Same chip + ±5% total + several volleys/s cannot all hold. Behemoth volley ~1.6 hp (0.5 x threat ~3).
-40 squads @1.0 s: 2.3 volleys/s in range (47% of run), rifles 120 hp/run, total 294 vs 197.
-60 squads @1.0 s: 3.0 volleys/s in range, rifles 178 hp/run.
-A (recommended) chip to ~1/10, tanks unchanged; B keep chip, Behemoth tank shells 6 -> ~2;
-C keep chip, total +~50% (measure pacing).
+# Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
+## State: awaiting #50 merge (LEAD pings) + capture.yml slot (after the croc P3 chain)
 
 ## Who
-Session "Rooftop density" started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
-Worktree .claude/worktrees/festive-jemison-3fb73c, branch claude/rooftop-density (off
-origin/claude/look-options 0817cf6). PR into claude/look-options; do not merge.
+Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
+Worktree .claude/worktrees/festive-jemison-3fb73c. Report to LEAD (SendMessage, <= 8 lines).
 
-## Task (D-076, director 2026-10-18)
-"more squads, more often", same chip damage per volley. Raise army.rooftop max_by_tier / chance,
-shorten fire_interval so several volleys a second cross the screen at Behemoth. Hold total damage
-per run per stage (tank + heli + rooftop) within ±5% of post-#50, and reptilian pacing within ±5%.
-Evidence: before/after tables, 3 s 1080p Behemoth game-camera clip (ask LEAD for the GPU slot;
-CI capture.yml one at a time), rooftop_hit_gate (and its known-bad control still failing),
-kaiju-sim-review packet. New tuning keys inside army.rooftop only; new checks in tests/lib.
+## Task
+Director D-076 "more squads, more often", made visible. LEAD's balance call D-076a: tanks
+unchanged; rifle chip scaled down per tier so each stage's total damage per run holds within ±5%;
+reptilian pacing within ±5%. No HUD change (UI's area, D-061): the hit read is flash + tracer +
+hide spark. PR into claude/look-options after #50 merges, synced; do not merge.
 
-## Baseline (post-#50 sim = 96d804d snapshot; #50 head da48ea0 differs only in a capture doc line)
-Reptilian pacing: evolve1 0.59 h, tree 4.52 h; young ended 7/22 time/defeated. Total damage/run
-(tank+heli+roof): young 179.8, Behemoth 197.5, Colossus 472.6, Apex 770.1.
-Replay (28 states): roof dmg 5.6 / 8.7 / 0 / 0; Behemoth kaiju in range of a live squad 3% of the
-run, Colossus/Apex 0%.
+## Branches
+- claude/rooftop-density (PR branch, pushed), off look-options 0817cf6. Not yet synced: needs
+  look-options with #50 (+ #53 rifle gap, already on look-options).
+- claude/rooftops-capture (pushed, 34854a5) = PR branch (at 7000a1f) + #50 head a0d3f36 + #53.
+  Used for gate, suites and the clip. Delete after the PR merges.
 
-## Root cause (sent to LEAD)
-Rifle reach was measured from the kaiju's centre (tanks: range + stomp_radius). Squads die to the
-grown kaiju's own reach (Behemoth 7-18 u, Colossus 22-43 u) before they get a shot. fire_interval
-1.0 alone: Behemoth 5.6 -> 5.7 volleys/run. Doubling squads alone: 15/run (0.2/s).
+## What the PR branch changes
+- sim/army.gd: rifle reach = range + sim.stomp_radius() (as tanks); Army.volleys counter.
+- data/tuning.json army.rooftop: chance 0.3 -> 0.8, max_by_tier [6,10,14,18] -> [20,48,48,60],
+  fire_interval 2.0 -> 0.8, damage_by_tier [0.3,0.5,0.8,1.2] -> [0.03,0.04,0.08,0.12].
+- scenes/rooftop_view.gd: _nearest_first (draw the squads nearest the kaiju, cap max_drawn 36).
+- tools/capture/capture_rooftops.gd: stand search uses edge reach; --typical (median busy spot).
+- tests/lib/sim_rooftops.gd: edge-reach check + Behemoth density check (>= 1.0 volleys/s);
+  both shown failing first. tests/expected_checks.txt sim 50 -> 52.
 
-## Replay2 (edge reach, 28 states)
-Shipped tuning: roof dmg 7.0 / 16.4 / 15.4 / 4.4 (total +-1/-1/+1/+0... Behemoth 190.8 vs 183 old
-reach). Behemoth 30 squads, chance 0.9, interval 0.8: 0.95 volleys/s overall, 2.43/s while a
-squad is in range (39% of the run), roof dmg 102 -> total 276 (+40%): tanks would have to drop
-by ~60%. Squads are spread over the whole 146 u city; reach ~23 u covers ~8% of it.
-Likely a director trade-off: several volleys/s at same chip => rifles become ~1/3+ of Behemoth
-damage and tank shells must hit much softer. Put to LEAD with numbers once replay3 lands.
-
-## Chosen (D-076a), committed 836b519
-army.rooftop: chance 0.8, max_by_tier [20,48,48,60], fire_interval 0.8, damage_by_tier
-[0.03,0.04,0.08,0.12]. Replay vs 96d804d baseline: totals -1.2/+2.3/+1.1/+0.1%; Behemoth
-5.6 -> 107 volleys/run, 3.1/s in range (49% of run). Army.volleys counter + sim check "a Behemoth
-rampage draws >= 1.0 volleys/s" (1.98 now; 0.29 on old tuning: fail_first_density_sim.log); sim floor 52.
-#50 moved since: young stage army range 10.5, tank_damage 8, fire_interval 0.7 (+ sounds, #46
-rifle sound in rooftop_view on look-options -> expect a small merge in rooftop_view.gd).
-So re-baseline on a0d3f36 (snap_b2) and re-replay the chosen tuning (snap_b2 + edge reach) before
-the PR tables; verify sim/ + data/ unchanged between a0d3f36 and the merged #50.
-
-## Re-baseline on #50 head a0d3f36 (pacing_b2.txt): evolve1 0.60 h, tree 4.53 h; young 11/19
-time/defeated; totals/run 165.1 / 195.6 / 477.6 / 771.9. Use THIS as the PR's "before".
-## Done on #50 head (notes rooftops-density/)
-- Replay, same 28 states: totals -1.0/+1.9/+1.2/+0.1%. Pacing 0.60 -> 0.60 h, 4.53 -> 4.44 h.
-- Behemoth volleys/run 5.9 -> 110 (1.57/s run, 3.18/s in range, in range 3% -> 49%).
-- Hit gate on capture branch: 225/225 inside, exit 0; known-bad (+2.5 u): 58/225, exit 1.
-- Full suites on capture branch: all 10 pass (suites_capture_branch.txt).
-- PR body: scratchpad pr_body.md (copy notes pr_body_draft.md); left: CLIP, CROPS, SPARKGAIN,
-  EFFECT, AUDIO placeholders.
-## Clip: --renderer=gl_compatibility (LEAD: auto hangs on lavapipe), 1280x720, fps 60, full 6 s.
-## Merge order (director via LEAD): #50 -> P3 (croc baby: speed 0.6, hp 1.15) -> rooftops -> #36 -> build
-Open the PR the moment #50 merges (body drafted: scratchpad pr_body.md, placeholders in CAPS).
-Re-sync after P3 and re-check the per-stage totals.
-## Capture branch claude/rooftops-capture (34854a5) = this branch + #50 head a0d3f36 + #53 rifle gap
-(dd72600); floors resolved flow 134, military 11. CI clip: ci_capture.sh --movie --fps=60
---resolution=1920x1080 --ref=claude/rooftops-capture capture_rooftops.gd -- --typical
---out=<notes>/rooftops-density/clip. Delete that branch after the PR merges.
-capture.yml ORDER (LEAD): shell-hit -> military-ai 720p -> croc P3 chain -> MY clip -> others.
-Dispatch only after P3's chain is done and nothing is in_progress. 720p (--resolution=1280x720);
-LEAD: full 6 s render, untrimmed, 720p/60 with audio.
-
-## Coordination
-- "Kaiju: Sound effects" (local_24621710-3f9c-4f67-ae39-8fa4b6192106) adds a rifle sound gap
-  (claude/rifle-gap, sfx.min_interval.rifle 0.3). Record the clip's audio after it lands, or merge
-  claude/rifle-gap locally for the capture. They will send the PR number + head SHA.
-- Capture tool: 7000a1f adds --typical (median busy spot) + edge reach; use --typical for the PR clip.
-- Candidate snapshot snap_b2c = #50 head a0d3f36 + my sim/army.gd + tuning (patched).
-
-## Branch changes
-- committed 1348478: scenes/rooftop_view.gd draws squads nearest the kaiju first (_nearest_first).
-- UNCOMMITTED -> committed with this file: sim/army.gd _step_squads reach = range +
-  sim.stomp_radius(); tests/lib/sim_rooftops.gd new check "a squad fires at a Behemoth ... inside
-  range + stomp": shown FAILING on the old reach (rooftops-density/fail_first_edge_reach_sim.log),
-  passing on the new; sim floor 50 -> 51 (740e385).
-
-## Scratchpad (%TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad)
-snap_base/ (96d804d + tools/pacing_dmg.gd, roof_replay.gd, roof_life.gd), snap_c/ (same + edge
-reach), dump_base.json, pacing_base.txt, replay1.txt, life1.txt, replay2.txt (pending).
-Run: cd snap_x; APPDATA=<appdata_x> DUMP=<dump> CANDS='[{}...]' godot --headless --path . --script tools/roof_replay.gd
+## Evidence (notes folder rooftops-density/, side-session-notes/local_106fc100...)
+- Root cause: from the centre, the kaiju's own reach killed squads before they had it in range
+  (Behemoth in range 3% of the run, Colossus/Apex 0%). replay1-3, life1.txt.
+- Baseline = #50 head a0d3f36: pacing 0.60 h / 4.53 h (pacing_b2.txt).
+- Same 28 replayed states, totals -1.0/+1.9/+1.2/+0.1% (replay_b2_base/cand.txt).
+  Pacing after 0.60 h / 4.44 h (-2.0%) (pacing_b2c.txt). Behemoth volleys/run 5.9 -> 110.
+- Effect fixture on #50 head: hp halfway 239.8 vs 242.0, biomass 344 vs 326, 1.55 volleys/s.
+- Hit gate (capture branch): 225/225 inside, exit 0; known-bad +2.5 u: 58/225, exit 1.
+- Suites on capture branch: all 10 pass (suites_capture_branch.txt). gdlint/gdformat clean.
+- PR body: scratchpad pr_body.md (copy: notes pr_body_draft.md). Placeholders left: CLIP,
+  CROPS, SPARKGAIN, AUDIO.
 
 ## Next
-1. Read replay2; pick max_by_tier/chance/fire_interval for >= ~2-3 volleys/s in range at Behemoth;
-   offset with growth.stages[n].army.tank_damage (young: base army.tank_damage) to hold ±5%.
-2. After #50 merges: merge look-options in; tests + floors; hit gate + known-bad; pacing; packet;
-   clip (LEAD GPU slot / CI capture.yml); PR; report LEAD (<= 8 lines).
+1. When LEAD says #50 merged: merge origin/claude/look-options into claude/rooftop-density
+   (floors: keep the max of each), check sim/ + data/ match a0d3f36's (else re-run replay +
+   pacing via scratchpad snapshots), run tools/run_tests.sh, push, open the PR with pr_body.md.
+2. Clip: only after the croc P3 chain is done and nothing is in_progress on capture.yml:
+   tools/capture/ci_capture.sh --movie --renderer=gl_compatibility --fps=60
+   --resolution=1280x720 --ref=<synced branch> capture_rooftops.gd -- --typical
+   --out=<notes>/rooftops-density/clip. Keep the full 6 s, with audio. Then spark_gain.py and
+   2x crops of three hide sparks; fill the placeholders; send to LEAD (it runs the critic).
+3. After P3 merges (baby speed 0.6, hp 1.15): sync again, re-check the per-stage totals.
+
+## Scratchpad (%TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad)
+snap_b2 (#50 head + tools/pacing_dmg.gd, roof_replay.gd), snap_b2c (same + my sim/tuning),
+dump_b2.json. Replay: cd snap_x; APPDATA=<appdata_x> DUMP=<dump> CANDS='[{}]' godot --headless
+--path . --script tools/roof_replay.gd
 
 ## Don't touch
-scenes/biped_swing.gd, scenes/gait_clip.gd, scenes/city_ground.gd, scenes/ui_kit.gd.
+scenes/biped_swing.gd, scenes/gait_clip.gd, scenes/city_ground.gd, scenes/ui_kit.gd,
+scenes/rampage_hud.gd (LEAD: no HUD change in this PR).
