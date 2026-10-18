@@ -97,11 +97,7 @@ func run() -> void:
 	(
 		_check
 		. call(
-			(
-				pile.cells.size() > 100
-				and far <= RUBBLE_REACH
-				and near_top > far_top * 1.5
-			),
+			pile.cells.size() > 100 and far <= RUBBLE_REACH and near_top > far_top * 1.5,
 			(
 				"a fallen section's rubble stays near the wall (%.1f of %.1f) and peaks at the stub (%d vs %d)"
 				% [far, RUBBLE_REACH, near_top, far_top]
