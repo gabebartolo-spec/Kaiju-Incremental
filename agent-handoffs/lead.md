@@ -27,10 +27,10 @@ everything; GPU + resync hand-offs go peer to peer; never ask the director to ty
 - #36 army balance (local_24621710): D-087 pick evolve1 cost 1778 -> 400 (0.26 h, 8/14 young defeated, Behemoth 26%);
   no young override, no option A (D-086 void); growth test ratio /10 -> /20 citing D-087. GO given. After #54 + #63
   merge: resync, 130-run confirm on the real head, body table, ping lead -> merge -> BUILD.
-- RENDER BATON (22:4x): director in a fullscreen game -> local GPU blocked; renders on CI capture.yml (gl_compat,
-  one run at a time). Order: stadium (39108683628, 39108705294) -> croc -> rooftops -> greenery -> #50; peer to peer.
-  #59 r2 local render: players clumped (float-compare bug, fixed 6281641); rest OK; crowd +2.8 ms GPU at 1080p,
-  shadows now off.
+- RENDERS (23:xx): director AFK, "use as much of my computing power as you can": local GPU, up to 4 windowed renders
+  at once, no baton; headless unlimited; helpers fan out sweeps. CI capture only while he games. Dry-run session
+  (local_37cf489b, "Demo integration dry-run + smoke") merges #54 #63 #59 #36 (+#55 #50 variant) in scratch: suites,
+  130-run pacing, local export + smoke, stadium frame time with crowd + squads.
 
 ## Build (after #36 merges)
 `gh workflow run build.yml --ref claude/look-options -f ref=claude/look-options`; artifact KaijuIncremental-<sha>.
