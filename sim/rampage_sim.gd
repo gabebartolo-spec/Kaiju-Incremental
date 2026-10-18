@@ -184,9 +184,8 @@ func result() -> Dictionary:
 	}
 
 
-## Advances the rampage by dt with the player's move vector, the signature button pressed
-## this step, and the other buttons as flags (HELD: signature held down, ULTIMATE: pressed).
-## Returns the events of this step for presentation.
+## Advances the rampage by dt: the move vector, the signature pressed this step, and buttons
+## as flags (HELD: signature held down; ULTIMATE: pressed). Returns the step's events.
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
