@@ -15,7 +15,7 @@ extends RefCounted
 ## If the kaiju turns to face either of the pair, they break off and reverse their sweep. A
 ## reversal is flown, not pivoted: the sweep eases through reverse_s while it swings `swing`
 ## wider, and the nose follows its flight at yaw_rate. Each flies roof_clear over the tallest
-## roof under its rotor (a kaiju reaching that high can hit it).
+## roof under its rotor.
 
 const ORBIT := 0
 const RUN := 1
@@ -304,12 +304,12 @@ func _alt_over(p: Vector2) -> float:
 	return maxf(altitude(), top + Num.f(_form["roof_clear"]))
 
 
-## An attack's force reaches a helicopter only when it reaches the air, or reaches as high as
-## that one flies (`top`: the kaiju's reach).
-func hit(force: Callable, damage: float, air: bool, top: float) -> void:
+## An attack's force reaches helicopters only when reaches_air (else they fly too high: the
+## air layer is `altitude`, D-037; clearing a roof is how high one is drawn, not a reprieve).
+func hit(force: Callable, damage: float, reaches_air: bool) -> void:
+	if not reaches_air or helis.is_empty():
+		return
 	for heli: Heli in helis:
-		if not air and top < heli.alt:
-			continue
 		var k: float = force.call(heli.pos, Num.f(cfg["heli_radius"]))
 		heli.hp -= damage * k
 		if k > 0.0 and not sim.hit_coat.is_empty():
