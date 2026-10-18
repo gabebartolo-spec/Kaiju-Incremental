@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-19 10:30
+# Lead handoff, 2026-10-19 (rewritten after compaction)
 ## State: running a check (demo playtest PAUSED by the director; 12 playtest fixes in flight -> demo exe 2)
 
 ## Who
@@ -48,8 +48,6 @@ Then: lead checks every PR at 2x (+ a fresh critic for visuals), merges, builds 
 session smokes it, and the director plays again.
 
 ## Other open work
-- #50 tanks & helis r4 (local_5325ef73): tanks fixed (drawn-extent spacing, yaw <= 8 deg); helis A = hold fire
-  off-screen when no in-frame spot (camera unchanged, lead call). CI fixes in progress. Fresh critic when done.
 - #55 greenery r15 PASS (b037f69): merge once the exe-2 scope is set (D-084 kept it out of exe 1). D-075 green lots
   (lattice, no RNG) is on claude/green-lots behind the playtest fixes; it needs a fresh sim reviewer.
 - #58 jets critic FIX: wings read forward-swept (mirror them), the "miss" does 30 HP (hit flash or a real miss),
@@ -57,6 +55,9 @@ session smokes it, and the director plays again.
 - #76 stall probe (tools only) -> merge on green.
 - Roadmap (next board PR): ElevenLabs SFX + Suno music (spend yes + licence first); rooftop MORTARS (topple to
   kill; a variant of the rooftop squads); FINAL BOSS mecha kaiju (board for the director when scheduled).
+  DESTRUCTION (director 2026-10-19, post-demo, full game): "real dynamic destruction, actual physics and buildings than can
+  be carved by giant monsters"; today's is fine for the demo only. Start with a research spike (options, perf at 4K,
+  determinism vs sim authority), then a director board with clips.
   LANGUAGES (director 2026-10-19): Spanish, Japanese, French, German, Russian, Italian. Needs: one text table (all UI
   strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
   AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
@@ -70,8 +71,19 @@ session smokes it, and the director plays again.
 ## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
 ## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
 ## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
+## #89 croc contact (body sweep, pay 0.2x, e1 0.27): lead 2x FIX: small building VANISHES on entry (show chunk debris,
+## keep untouched walls), add a tall-tower carve clip; D-091 unfinished (TOO STRONG text + stomp tier gate remain).
+## DASH: lead call A (briefed dash, bot dashes; evolve1 provisional ~575). ONE joint young retune by the army session
+## after #89 + dash merge (bars e1 0.26 h ±5%, young defeats 8 ±2 /15). Destruction spike session local_0a7e5cf8 running.
+## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
+## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
 ## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
+D-093 (director): 4K default = Graphics Balanced (0.75 FSR1, MSAA off) + 60 fps cap (half the power: 199 -> 110 W); High
+in Settings. Build session PR in flight. D-094 (director): full-game destruction = option A (Teardown-style carving +
+RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike MERGED #91; build plan on branch
+claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #92 Graphics MERGED 41d452f (cfg v2 =
+stale exe-1 fps_cap ignored; SubViewport menus stay High). Director in League: no local Godot.
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
 licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
 $12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
