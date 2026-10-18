@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r4 in progress)
-## State: running a check (r4 code 6a0a5db pushed to PR #50; CI is the only verification: NO LOCAL GODOT (director "dont use godot", LEAD); pacing waits for LEAD's go)
+## State: running a check (r4 code 6a0a5db + look-options bf06cdd merged at fbd4817 (#36/#59/#63/#66/#72; young keeps army override + per_level; flow 148, military 21); CI tests.yml on fbd4817; NO LOCAL GODOT until LEAD confirms (asked: is headless OK?); pacing waits)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -9,7 +9,7 @@ r4 = LEAD's fix list 1-6 (item 7, tank vs car, stays out) plus a young retune.
 
 ## Branch
 claude/military-ai (worktree ../Kaiju-Incremental-wt/military-ai), PR #50 into
-claude/look-options. LEAD merges. Resync onto look-options after #36 lands (evolve1 cost 400).
+claude/look-options. LEAD merges. Synced onto look-options bf06cdd (#36 in: evolve1 cost 400, per_level army scaling).
 
 ## r4 done (6a0a5db), measured with a headless clip probe before the Godot stop
 Probe: scratchpad probe_clip.gd = capture_military's scene; every frame it reads the drawn tank
