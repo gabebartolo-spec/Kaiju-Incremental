@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r4 in progress)
-## State: running a check (r4 code 6a0a5db + look-options bf06cdd merged at fbd4817 (#36/#59/#63/#66/#72; young keeps army override + per_level; flow 148, military 21); CI tests.yml on fbd4817; NO LOCAL GODOT until LEAD confirms (asked: is headless OK?); pacing waits)
+## State: running a check (CI tests.yml on 4e8d680 = r4 + look-options bf06cdd + per-stage view check printing VIEW lines (the probe table); STILL CI-ONLY (LEAD 2026-10-19: no local Godot, headless included); clip on capture.yml once claude/greenery run frees it; pacing waits)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -34,9 +34,9 @@ screen points vs the frame (4% margin) and HUD plates.
    (95%, 0 HUD) never ran: a red result gives the real numbers. Fix on CI only.
 2. Clip on CI: capture.yml (tools/capture/ci_capture.sh capture_military.gd --movie), 720p,
    gl_compatibility, one run at a time. Same spot, CLIP_AT (5,-70).
-3. Probe table for the PR body: min drawn gap, max yaw while moving, heli in-frame % per
-   tier, min facade clearance, rotor-roof clearance, fire yaw. The view check prints the clip's
-   numbers; per-tier in-frame needs a CI probe or LEAD's go for local Godot.
+3. Probe table for the PR body: grep the tests log for "VIEW " (military_view prints one line
+   per run: Behemoth clip, Colossus, Apex: heli in-frame %, HUD, pair lateral, facade,
+   rotor-roof, fire yaw, tank drawn gap, touching, yaw while moving).
 4. Young retune + pacing (needs local Godot, LEAD's go): bar evolve1 0.26 h +-5%, young
    defeats within +-2 of the base count on the same seeds; measure the base the same way.
    Re-measure damage per stage (balance +-5%).
