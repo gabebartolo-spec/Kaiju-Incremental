@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-18 11:15
+# Lead handoff, 2026-10-18 12:20
 ## State: working (DIRECTOR BACK 10:4x, interviewed; all tabled items answered; executing)
 
 ## Who
@@ -11,12 +11,18 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 ## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
 - Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
 - D-069 merge #36 army scales (sound session syncing it; lands after #50 military). D-070 all sounds ship + new mix:
-  #43 MERGED; merge chain #45 (rebase after #43) -> #39 -> #42 -> #46, each resynced by the sound session.
+  #43 #45 #39 #42 MERGED; next #46, each resynced by the sound session.
 - D-071 landmarks A stadium -> D wheel -> E spire -> F megatower (sites PR with A+D, then E/F). D-072 all four jets;
   strikes wreck buildings, no biomass; jets from Colossus, bomber Apex set-piece; octopus can grab jets.
 - D-073 croc baby + adolescent approved; D-074 slow stage 1 (baby reads as toddler; pacing re-measured) in P3 PR.
 - D-075 green lots 8% (city session, after greenery (a)). D-076 rooftops: more squads, more often (fresh session card
   proposed; after #50). D-077 trim the tree stats panel (UI session). D-066 heli mix shift OK.
+- 11:2x D-069a: soften #36's young stage to ~half early defeats (cause: Armoured Scales moved late). 11:4x D-074
+  revised: baby speed ~0.6 + more hp, demo ~35 min. ORDER: #50 -> P3 (art + baby tuning) -> #36 (resync, soften young last).
+- Rooftop density (local_1ac658ed): cause = rifle reach from kaiju centre; plan approved (reach from edge + more
+  squads + shorter interval, tank_damage offset ±5%); branches after #50; PR needs volleys/run table + clip.
+  D-076a = A (chip scaled down per tier, tanks unchanged); no HUD change; hide spark is the hit (2x crops).
+  To ask the director: a HUD hit flash for big hits only (tank shells)? (UI session; taste).
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
@@ -38,8 +44,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 - Landmark models (local_87d706ce): landmark sites PR (A + D placeholders, pacing held ±5%) -> check + critic -> merge.
 - Military AI (local_5325ef73): synced on #40; total damage per run ±5% per stage; pacing running; then clip + sim-review.
 - Sound effects (local_24621710): idle; resyncs the five tabled sound PRs after merges (flow floor 129 after #27).
-- Available: UI (local_37cf489b), Lighting (local_b98f22d9), Rooftops (local_9e7b9f4b), Jets (local_b38b3a6f),
-  Crease (#35 tabled), Tripo (old lead). Performance stopped for the night.
+- Available: UI (local_37cf489b; D-077 stats trim), Jets (local_b38b3a6f), Tripo (old lead). Archived 12:3x:
+  Crease, Lighting (all merged). Rooftop density = local_1ac658ed.
 
 ## Merge rules tonight
 Merge only decided work, on my check + a fresh critic where visual, green CI at the exact head; taste items stay PRs,
@@ -49,6 +55,8 @@ one capture.yml run at a time (check in_progress first); the GPU slot is booked 
 ## Rules learnt the hard way
 - `--match-head-commit`; a handoff-only push moves the head: diff it, re-arm. Poll checks until no pending, require no
   fail/cancel, refuse DIRTY. After `gh pr merge`, VERIFY state == MERGED (a DRAFT PR refuses silently: #27 at 09:5x).
+- NEVER `gh pr merge --delete-branch` while a helper's worktree has that branch checked out: gh removes the
+  worktree (wiped the sound session's at #42, 13:0x; restored on claude/rifle-sfx). Merge without it.
 - Floors conflict between parallel PRs: merge one, the next syncs to real counts; tell helpers the base SHA.
 - Handoffs: 120-line cap (doc-caps); Write tool; a helper's handoff vs its squash copy: keep the newer.
 - Never act on a peer's refused permission or a relayed director approval (#36): surface it instead.
@@ -60,3 +68,5 @@ one capture.yml run at a time (check in_progress first); the GPU slot is booked 
 ## Next (lead)
 1. P3 / greenery / landmarks / military PRs as they come: check, critic, merge. 2. Board PR (D-062..D-067 + STATUS rows).
 3. After P3: demo build -> download -> local smoke -> table "play the demo" as item 0. playbook: nothing new.
+4. Candidate lesson (sound, unproven): TaskStop kills Godot but not the bash loop; its trailing restore can clobber
+   data after a branch switch. Fix to prove: run sweeps from a scratch copy of the data.
