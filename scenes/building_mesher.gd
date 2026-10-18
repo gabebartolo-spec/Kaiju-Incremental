@@ -70,6 +70,9 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 	for cell: Vector3i in cells:
 		var key: String = all[cell]
 		var base: Color = _v.palette.get(key, Color.MAGENTA)
+		if key == VoxelBuilder.DIRECT:
+			base = _v.vox.colors[cell]
+		var mask := _v.face_mask(cell)
 		var color := Look.jitter(base, cell, salt)
 		var centre := origin + Vector3(cell) * voxel
 		var chunk := chunk_index(cell)
@@ -77,9 +80,13 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 		var clump := Vector3i(cell.x >> 1, cell.y >> 1, cell.z >> 1)
 		var h := float(absi(hash(clump * 7 + Vector3i(salt, 3, 11))) % 997) / 997.0
 		var faces := 0
-		for d: Vector3i in NEIGHBOURS:
+		for k: int in NEIGHBOURS.size():
+			var d := NEIGHBOURS[k]
 			var n := cell + d
-			if all.has(n) or (hollow_is_solid and _inside(n)) or (n.y < 0):
+			if mask >= 0:
+				if mask & (1 << k) == 0:
+					continue
+			elif all.has(n) or (hollow_is_solid and _inside(n)) or (n.y < 0):
 				continue
 			faces += 1
 			var at := verts.size()

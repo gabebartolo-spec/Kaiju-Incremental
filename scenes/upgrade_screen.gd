@@ -12,40 +12,9 @@ signal menu_pressed
 
 ## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
 const SIDE_WIDTH := 330
+## The stat rows' "now" column: one width for every row, so the arrows sit in one column.
+const NOW_WIDTH := 64
 const NBSP := " "
-## Stat, how it reads in play, format ("inv" shows 1/value per second), short name for the
-## two-column summary.
-const STAT_LINES: Array[Array] = [
-	["hp", "Health", "%d", "Health"],
-	["stomp_damage", "Stomp power", "%.0f", "Stomp"],
-	["stomp_radius", "Stomp reach", "%.1f", "Reach"],
-	["stomp_interval", "Stomps / sec", "inv", "Stomps/s"],
-	["speed", "Speed", "%.1f", "Speed"],
-	["armor", "Armour", "%.1f", "Armour"],
-	["run_seconds", "Rampage time", "%ds", "Time"],
-	["ability_damage", "Signature power", "%.0f", "Signature"],
-	["ability_cooldown", "Signature recharge", "%.1fs", "Recharge"],
-	["size", "Size", "%d", "Size"],
-]
-## Stats only some nodes change: shown in a node's details, not the summary.
-const EXTRA_STATS: Array[Array] = [
-	["regen", "Healing / sec", "%.1f"],
-	["rubble_mult", "Biomass earned", "x%.2f"],
-	["ability_range", "Signature reach", "%.1f"],
-	["tail_damage", "Tail sweep power", "%.0f"],
-	["tail_reach", "Tail reach", "%.1f"],
-	["tail_floors", "Floors the tail cuts", "%d"],
-	["momentum", "Momentum", "%.1f"],
-	["beam_dps", "Atomic Beam damage / sec", "%.0f"],
-	["glide_seconds", "Glide time", "%.1fs"],
-	["climb", "Climbing", "%d"],
-	["brood_count", "Young per clutch", "%d"],
-	["limbs", "Free tentacles", "%d"],
-	["squeeze", "Squeeze", "%.1f"],
-	["throw_damage", "Throw damage", "%.0f"],
-	["ink_dps", "Ink damage / sec", "%.0f"],
-]
-
 var tree: UpgradeTree
 var rubble: int
 var species: Dictionary
@@ -55,9 +24,8 @@ var _rubble_label: Label
 var _info_title: Label
 var _info_role: Label
 var _info_body: RichTextLabel
+var _info_stats: VBoxContainer
 var _info_status: Label
-var _stats_title: Label
-var _stats_grid: GridContainer
 var _selected := ""
 var _ultimate_cooldown := 0.0
 
@@ -128,24 +96,20 @@ func _build_side() -> Control:
 	info_col.add_child(_info_role)
 	_info_body = UiKit.rich(UiKit.SIZE_SMALL, UiKit.MUTED.lightened(0.2))
 	info_col.add_child(_info_body)
+	# The node's stats sit half a line below its words, in columns: the arrows line up (D-077).
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_SMALL / 2.0)
+	info_col.add_child(gap)
+	_info_stats = VBoxContainer.new()
+	_info_stats.add_theme_constant_override("separation", 2)
+	info_col.add_child(_info_stats)
+	# Level, cost and the buy line stay on the panel's bottom edge on every node.
+	var push := Control.new()
+	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info_col.add_child(push)
 	_info_status = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
-	var stats_panel := UiKit.panel()
-	side.add_child(stats_panel)
-	var stats_col := VBoxContainer.new()
-	stats_panel.add_child(stats_col)
-	_stats_title = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
-	stats_col.add_child(_stats_title)
-	_stats_grid = GridContainer.new()
-	_stats_grid.columns = 4
-	_stats_grid.add_theme_constant_override("h_separation", 12)
-	stats_col.add_child(_stats_grid)
-	for entry: Array in STAT_LINES:
-		_stats_grid.add_child(UiKit.label(str(entry[3]), UiKit.SIZE_SMALL, UiKit.MUTED))
-		var value := UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
-		value.name = str(entry[0])
-		_stats_grid.add_child(value)
 	var go := UiKit.button("RAMPAGE  >", UiKit.SIZE_HEAD)
 	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
@@ -196,15 +160,7 @@ func _select(id: String) -> void:
 	_info_body.clear()
 	_info_body.append_text(str(def["desc"]))
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
-	var effects: Dictionary = def.get("effects", {})
 	var steps := 0 if tree.is_maxed(id) else 1
-	for stat: String in effects:
-		var now := Num.f(stats.get(stat, 0.0))
-		_info_body.append_text("\n%s  %s" % [_stat_name(stat), _fmt(stat, now)])
-		if steps > 0:
-			_info_body.append_text("  ")
-			_info_body.add_image(UiKit.arrow(), UiKit.SIZE_SMALL, 0, UiKit.GOOD)
-			_info_body.append_text("  " + _fmt(stat, now + Num.f(effects[stat])))
 	if role == "evolve" and steps > 0:
 		var stage := KaijuModel.stage_for(Num.i(stats.get("size", 1)) + 1)
 		_info_body.append_text("\nGrows into the %s." % stage)
@@ -214,6 +170,8 @@ func _select(id: String) -> void:
 		_info_body.append_text(
 			"\nPress E / pad Y in a rampage; recharges in %ds." % roundi(_ultimate_cooldown)
 		)
+	var effects: Dictionary = def.get("effects", {})
+	_show_stats(effects, stats, steps)
 	_info_status.text = _status_line(id)
 	var b := node_button(id)
 	var tint: Color = {"buy": UiKit.GOOD, "poor": UiKit.BAD, "maxed": UiKit.WARN}.get(
@@ -239,27 +197,52 @@ func _status_line(id: String) -> String:
 	var nl := String.chr(10)
 	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]
 	if tree.can_buy(id, rubble):
-		return head + have + "Press to buy"
+		return head + have + "Press Enter / pad A to buy"
 	return head + have + "%d more needed" % (tree.cost(id) - rubble)
 
 
-func _stat_name(stat: String) -> String:
-	for entry: Array in STAT_LINES + EXTRA_STATS:
-		if entry[0] == stat:
-			return str(entry[1])
-	return stat.replace("_", " ").capitalize()
+## Only the stats this node changes, each in plain words from data (D-077): the words, then
+## "13  ->  16" under them, the new value brighter than the old and the unit written once.
+func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
+	for child: Node in _info_stats.get_children():
+		_info_stats.remove_child(child)
+		child.queue_free()
+	var words: Dictionary = Content.section("stat_text")
+	for stat: String in effects:
+		var entry: Dictionary = words.get(stat, {})
+		if entry.get("hidden", false):
+			continue
+		var now := Num.f(stats.get(stat, 0.0))
+		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_SMALL, UiKit.MUTED)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_info_stats.add_child(line)
+		# The values under the words; the "now" column is one fixed width, so arrows line up.
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_info_stats.add_child(row)
+		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_SMALL, UiKit.MUTED)
+		was.custom_minimum_size = Vector2(NOW_WIDTH, 0)
+		row.add_child(was)
+		if steps > 0:
+			var arrow := TextureRect.new()
+			arrow.texture = UiKit.arrow()
+			arrow.modulate = UiKit.GOOD
+			arrow.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+			row.add_child(arrow)
+			var after := _fmt(entry, now + Num.f(effects[stat]), true)
+			row.add_child(UiKit.label(after, UiKit.SIZE_SMALL, UiKit.TEXT))
+	_info_stats.visible = _info_stats.get_child_count() > 0
 
 
-func _fmt(stat: String, value: float) -> String:
-	var fmt := "%.1f"
-	for entry: Array in STAT_LINES + EXTRA_STATS:
-		if entry[0] == stat:
-			fmt = str(entry[2])
+## A stat's value as its data line formats it ("inv" shows 1 / value, a rate), with its unit.
+func _fmt(entry: Dictionary, value: float, with_unit: bool) -> String:
+	var fmt := str(entry.get("fmt", "%.1f"))
+	var unit := str(entry.get("unit", "")) if with_unit else ""
 	if fmt == "inv":
-		return "%.1f" % (1.0 / maxf(0.1, value))
+		return ("%.1f" % (1.0 / maxf(0.1, value))) + unit
 	if fmt.contains("%d"):
-		return fmt % roundi(value)
-	return fmt % value
+		return (fmt % roundi(value)) + unit
+	return (fmt % value) + unit
 
 
 func _refresh() -> void:
@@ -267,17 +250,6 @@ func _refresh() -> void:
 	for id: String in tree.order:
 		node_button(id).show_state(tree, rubble)
 	_area.queue_redraw()
-	var stats := UpgradeTree.run_stats(base_stats, species, tree)
-	_stats_title.text = (
-		"%s  -  evolution %d%%"
-		% [
-			str(species["name"]).to_upper(),
-			roundi(100.0 * tree.levels_owned() / maxf(1.0, tree.levels_total()))
-		]
-	)
-	for entry: Array in STAT_LINES:
-		var value: Label = _stats_grid.get_node(str(entry[0]))
-		value.text = _fmt(str(entry[0]), Num.f(stats.get(str(entry[0]), 0.0)))
 	if _selected != "":
 		_select(_selected)
 
