@@ -1,12 +1,15 @@
 # Rooftops handoff, 2026-10-18 (D-076 density)
-## State: awaiting lead (A/B/C balance decision sent 2026-10-18; #50 still open, watcher bj4wt7h0y)
+## State: running a check (replay4: Behemoth 24/30 squads @1.0 s x tank_damage 6..3 -> scratchpad replay4.txt)
 
-## Open decision (sent to LEAD; notes folder rooftops-density/ has all tables)
+## Decision: LEAD approved the tank_damage offset (option B); acked, A still open to LEAD
+LEAD: edge reach, more squads + shorter interval, offset per-stage tank_damage, ±5%; PR needs a
+volleys-per-run table per stage + CI clip of Behemoth under rooftop fire. LEAD says when #50 merges.
+## Earlier decision note (notes folder rooftops-density/ has all tables)
 Same chip + ±5% total + several volleys/s cannot all hold. Behemoth volley ~1.6 hp (0.5 x threat ~3).
 40 squads @1.0 s: 2.3 volleys/s in range (47% of run), rifles 120 hp/run, total 294 vs 197.
 60 squads @1.0 s: 3.0 volleys/s in range, rifles 178 hp/run.
 A (recommended) chip to ~1/10, tanks unchanged; B keep chip, Behemoth tank shells 6 -> ~2;
-C keep chip, total +~50% (measure pacing). Wait for the answer; do not tune before it.
+C keep chip, total +~50% (measure pacing).
 
 ## Who
 Session "Rooftop density" started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
