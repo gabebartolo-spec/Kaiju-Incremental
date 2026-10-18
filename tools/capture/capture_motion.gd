@@ -1,15 +1,13 @@
 extends SceneTree
-## Records a kaiju's locomotion the way the game drives it (sim-style position and heading,
-## stomps on the sim's beat, a roar), for the motion review. Walk, curve, a sharp turn, stand,
-## roar, walk again. Prints the planted-foot drift and the rig's cost per frame at the end.
+## Records a kaiju's locomotion as the game drives it (sim-style position, heading and stage speed,
+## stomps on the beat, a roar): walk, curve, turn, stand, roar, walk. Prints foot drift, rig cost.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_motion.gd -- --species=reptilian --stage=adult --cam=game
 ## --cam=side: one fixed side (world +x, no orbit); --cam=fixed holds still by the first walk (slide
 ## by eye). Footfalls kick dust and dip the camera (eased) as in the rampage; events are labelled.
 ## --trace=<file.csv>: t, pelvis height and forward speed per frame (the rhythm plot).
-## --pose-trace=<file.csv>: per frame the scripted event, the body's world x/z and heading, a
-## hard hold (insectoid), and how far all the bones moved that frame (stillness and twitches).
+## --pose-trace=<file.csv>: per frame the event, body x/z and heading, a hard hold, bone motion.
 ## Headless (no movie) prints the measurements; slide also in cm (a world unit = a 3.5 m storey).
 
 const FPS := 60.0
@@ -108,7 +106,10 @@ func _run() -> void:
 	stage.add_child(ui)
 	var def: Dictionary = Content.species_def(_species)
 	var stats: Dictionary = def["stats"]
-	var speed := Num.f(stats["speed"])
+	var tuning := CityGrowth.tuning_for(
+		Content.tuning(), ["baby", "adolescent", "adult"].find(_stage) + 1
+	)
+	var speed := Num.f(Growth.stage_stats(stats, tuning)["speed"])
 	var interval := Num.f(stats["stomp_interval"])
 	var colors: Dictionary = def["colors"]
 	var kaiju := KaijuModel.new(_species, colors, _stage)

@@ -39,6 +39,7 @@ func run_checks() -> void:
 	_check_cost_curve()
 	_check_early_hook()
 	_check_determinism()
+	_check_young_pace()
 
 
 func _tuning(tier: int) -> Dictionary:
@@ -315,3 +316,29 @@ func _check_determinism() -> void:
 	var one := _play(_tuning(2), _layout(2), {"claws": 3, "evolve1": 1})
 	var two := _play(_tuning(2), _layout(2), {"claws": 3, "evolve1": 1})
 	check(one == two, "a rampage in a grown city replays identically: %s vs %s" % [one, two])
+
+
+## The young stage walks as a heavy toddler (D-074): the stage's "move.speed_mult" slows the cub
+## so its stride reads as heavy as the adolescent's; from the first evolution on it walks at full
+## speed. Walked distance, not just the stat.
+func _check_young_pace() -> void:
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades())
+	)
+	var walked: Array[float] = []
+	for tier: int in [1, 2]:
+		var sim := RampageSim.new(stats, _tuning(tier), _layout(tier), Seeds.make("army", 0))
+		var start := sim.kaiju_pos
+		for frame: int in 30:
+			sim.step(1.0 / 30.0, Vector2(1, 0), false)
+		walked.append((sim.kaiju_pos - start).length())
+	var mult := Num.f(_tuning(1)["move"]["speed_mult"])
+	check(
+		mult < 1.0 and absf(walked[0] / maxf(0.001, walked[1]) - mult) < 0.02,
+		(
+			"the young stage walks at %.2f of full speed (walked %.2f vs %.2f)"
+			% [mult, walked[0], walked[1]]
+		)
+	)
