@@ -290,7 +290,56 @@ func waypoints(from: Vector2, start: Dictionary, chain: Array[int], goal: Dictio
 			out.append(centre)
 		out_legs.append(e)
 		last = centre
+	_square_legs(from, Num.i(start["edge"]), out, out_legs)
 	return [out, out_legs]
+
+
+## Draws each waypoint in so the leg to it runs within skew_deg of its road's axis: a tank set off
+## from a post near the kerb drifts back across the road as it drives, never crabbing down a
+## diagonal. A leg that cannot (it would cut a corner) turns the corner square instead: along the
+## road the tank is on to the crossing, a pivot there, then along the next road.
+func _square_legs(from: Vector2, on: int, out: Array[Vector2], out_legs: Array[int]) -> void:
+	var slope := tan(deg_to_rad(Num.f(cfg["skew_deg"])))
+	var cur := from
+	var was := on
+	var i := 0
+	while i < out.size():
+		var e := out_legs[i]
+		if e >= 0:
+			var a := axis(e)
+			var v := out[i] - cur
+			var cap := absf(v.dot(a)) * slope
+			var to := cur + a * v.dot(a) + a.orthogonal() * clampf(v.dot(a.orthogonal()), -cap, cap)
+			if off_line(to, e) <= _room(e):
+				out[i] = to
+			elif was >= 0 and absf(axis(was).cross(a)) > 0.5:
+				var corner := (
+					cur + axis(was) * (nodes[edge_a[e]] - cur).cross(a) / axis(was).cross(a)
+				)
+				if off_line(corner, was) <= _room(was) and off_line(corner, e) <= _room(e):
+					out.insert(i, corner)
+					out_legs.insert(i, was)
+					e = was
+			was = e
+		cur = out[i]
+		i += 1
+
+
+## Road e's direction (a to b).
+func axis(e: int) -> Vector2:
+	return (nodes[edge_b[e]] - nodes[edge_a[e]]).normalized()
+
+
+## Does a hull pointing along `front` lie along road e (within pivot_deg)? Any way off a road.
+func square(front: Vector2, e: int) -> bool:
+	var tilt := absf(front.cross(axis(e))) if e >= 0 else 0.0
+	return tilt <= sin(deg_to_rad(Num.f(cfg["pivot_deg"])))
+
+
+## How far off road e's centre line a hull's centre may stand.
+func _room(e: int) -> float:
+	var hull: Array = cfg["hull"]
+	return edge_half[e] + Num.f(sim.city["sidewalk"]) - Num.f(hull[1]) * 0.5 - 0.1
 
 
 ## Closes the roads under every tower that toppled this step (fall_land topple events). True

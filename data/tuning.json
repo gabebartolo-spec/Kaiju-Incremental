@@ -212,7 +212,8 @@
 			"reverse": 0.6,
 			"grid": 8.0,
 			"hull_turn": 90.0,
-			"pivot_deg": 15.0
+			"pivot_deg": 15.0,
+			"skew_deg": 8.0
 		},
 		"start_interval": 5.0,
 		"min_interval": 1.0,

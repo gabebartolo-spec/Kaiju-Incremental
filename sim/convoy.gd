@@ -216,11 +216,14 @@ func _start(tank: RampageSim.Tank, r: ConvoyRoute) -> Dictionary:
 func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	r.reversing = false
 	var back := Num.f(sim.army["speed"]) * Num.f(cfg["reverse"]) * dt
+	var rate := deg_to_rad(Num.f(cfg["hull_turn"])) * dt
 	if r.yield_t > 0.0:
 		_yielding(tank, r, dt, back)
+		_settle(tank, r, rate)  # giving way mid-pivot: it waits squared to its road
 		return
-	r.yield_all = 0.0
-	var rate := deg_to_rad(Num.f(cfg["hull_turn"])) * dt
+	if r.yield_all > 0.0:  # backed off its path: set off again from where it stands
+		r.yield_all = 0.0
+		_plan(tank, r, r.retreating)
 	if r.path.is_empty():
 		_settle(tank, r, rate)
 		return
@@ -239,9 +242,9 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	var move := 0.0 if absf(turn) > deg_to_rad(Num.f(cfg["pivot_deg"])) else minf(dist, speed * dt)
 	var next := tank.pos + dir * move
 	var blocker := _blocker(tank, next, front)
-	var fits := graph.drivable(next, front) and (move > 0.0 or _fits(tank, tank.pos, want))
+	var fits := graph.drivable(next, front) and (move > 0.0 or _sweep_fits(tank, tank.pos, want))
 	if blocker == null and not fits and graph.drivable(tank.pos, r.front):
-		if move == 0.0 and _shuffle(tank, r, front, back):
+		if move == 0.0 and _shuffle(tank, r, want, back):
 			return
 		blocker = tank  # the hull would leave the road, or the turn has no room: held up
 	if blocker != null:
@@ -263,11 +266,13 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 		r.retreating = r.retreating and not r.path.is_empty()
 
 
-## No room to pivot here: a step along the hull (forward or back) to where the turn fits.
+## No room to pivot here: a step along the hull (forward or back) to where the whole turn fits.
 func _shuffle(tank: RampageSim.Tank, r: ConvoyRoute, turned: Vector2, step: float) -> bool:
+	if not graph.square(r.front, r.edge):  # never along a half-turned hull
+		return false
 	for way: Vector2 in [r.front, -r.front]:
 		var to := tank.pos + way * step
-		if _fits(tank, to, turned):
+		if _fits(tank, to, r.front) and _sweep_fits(tank, to, turned):
 			tank.pos = to
 			return true
 	return false
@@ -277,11 +282,23 @@ func _fits(tank: RampageSim.Tank, at: Vector2, front: Vector2) -> bool:
 	return graph.drivable(at, front) and _blocker(tank, at, front) == null
 
 
+## Room to swing the hull round to `to` standing at `at`, every pivot_deg of the way: a pivot
+## starts only when it can finish.
+func _sweep_fits(tank: RampageSim.Tank, at: Vector2, to: Vector2) -> bool:
+	var r: ConvoyRoute = routes[tank.id]
+	var turn := r.front.angle_to(to)
+	var steps := ceili(absf(turn) / deg_to_rad(Num.f(cfg["pivot_deg"])))
+	for k: int in range(1, steps + 1):
+		if not _fits(tank, at, r.front.rotated(turn * k / steps)):
+			return false
+	return true
+
+
 ## At its post a tank squares its hull to its road (the nearer way); only its turret turns.
 func _settle(tank: RampageSim.Tank, r: ConvoyRoute, rate: float) -> void:
 	if r.edge < 0 or r.front == Vector2.ZERO:
 		return
-	var axis := (graph.nodes[graph.edge_b[r.edge]] - graph.nodes[graph.edge_a[r.edge]]).normalized()
+	var axis := graph.axis(r.edge)
 	var want := axis if axis.dot(r.front) >= 0.0 else -axis
 	var front := r.front.rotated(clampf(r.front.angle_to(want), -rate, rate))
 	if _fits(tank, tank.pos, front):
@@ -332,6 +349,8 @@ func _back_off(tank: RampageSim.Tank, older: RampageSim.Tank, step: float) -> vo
 	if o == null or o.stuck_t <= 0.0:
 		return
 	var own := r.front if r.front != Vector2.ZERO else (tank.pos - older.pos).normalized()
+	if not graph.square(r.front, r.edge):
+		return  # half turned: it squares up first (_settle), then backs
 	var back := own if own.dot(tank.pos - older.pos) > 0.0 else -own
 	var to := tank.pos + back * step
 	if graph.drivable(to, own) and _blocker(tank, to, own) == null:

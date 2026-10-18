@@ -16,6 +16,9 @@ const HELI_HALF := 5.0
 const HELI_CLEAR := 0.5
 ## How far a standing tank's hull may lie off its road's axis.
 const ALIGN_DEG := 15.0
+## A driving tank's hull off its road's axis, at most: a drift across the road while its hull
+## eases round, never a crab down a diagonal.
+const DRIVE_DEG := 20.0
 ## Closest a wingman may come to its lead: two main rotors (each about an airframe across) with
 ## 2 m between the tips, centre to centre.
 const ROTOR_CLEAR := HELI_HALF * 2.0 + 2.0
@@ -94,14 +97,14 @@ func _footprints(sim: RampageSim) -> Dictionary:
 	return grid
 
 
-## Does a hull at p pointing along `front` lie along a road it stands on (within ALIGN_DEG)?
-func _along_road(p: Vector2, front: Vector2, roads: Dictionary) -> bool:
+## Does a hull at p pointing along `front` lie along a road it stands on (within `deg`)?
+func _along_road(p: Vector2, front: Vector2, roads: Dictionary, deg := ALIGN_DEG) -> bool:
 	for road: Array in roads.get(_cell4(p), []):
 		var a: Vector2 = road[0]
 		var b: Vector2 = road[1]
 		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
 		if q.distance_to(p) <= Num.f(road[2]) + 0.05:
-			if absf(front.cross((b - a).normalized())) <= sin(deg_to_rad(ALIGN_DEG)):
+			if absf(front.cross((b - a).normalized())) <= sin(deg_to_rad(deg)):
 				return true
 	return false
 

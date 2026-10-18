@@ -36,6 +36,8 @@ func _check_rampages() -> void:
 	var overlaps := 0
 	var parked := 0
 	var skewed := 0
+	var driving := 0
+	var crabbing := 0
 	var parked_in_band := 0
 	var parked_reserve := 0
 	var parked_close := 0
@@ -110,6 +112,10 @@ func _check_rampages() -> void:
 					var head_now: Vector2 = heads[tank.id]
 					var standing := tank.pos.distance_to(was) < 0.001 and turned == head_now
 					var for_s := Num.f(still.get(tank.id, 0.0)) + DT if standing else 0.0
+					if was.x != INF and tank.pos.distance_to(was) >= 0.001:
+						driving += 1
+						if not _along_road(tank.pos, head_now, roads, DRIVE_DEG):
+							crabbing += 1
 					still[tank.id] = for_s
 					if for_s >= 3.0:
 						parked += 1
@@ -154,6 +160,16 @@ func _check_rampages() -> void:
 				+ " tank-steps skewed past %.0f degrees)"
 			)
 			% [skewed, parked, ALIGN_DEG]
+		)
+	)
+	check(
+		driving > 1000 and crabbing == 0,
+		(
+			(
+				"a driving tank keeps its hull along its road (%d of %d driving tank-steps past %.0f"
+				% [crabbing, driving, DRIVE_DEG]
+			)
+			+ " degrees)"
 		)
 	)
 	check(
