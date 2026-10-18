@@ -262,7 +262,7 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 		_settle(tank, r, rate)  # held up, or no room to turn: it waits squared to its road
 		r.stuck_t += dt
 		_give_way(tank, blocker, back)
-		if r.stuck_t >= Num.f(cfg["stuck"]):
+		if r.stuck_t >= Num.f(cfg["stuck"]) * (0.5 if r.retreating else 1.0):  # falling back: sooner
 			_held_up(tank, r, blocker)
 		return
 	r.stuck_t = 0.0
