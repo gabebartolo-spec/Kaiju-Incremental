@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-19 04:10
-## State: running a check (D-069a 130-run: young 26/34 -> 18/32 but Behemoth 9/40 -> 3/40; option A Behemoth per_level 0.03/0.04 sweeping, sent to lead)
+## State: running a check (lead APPROVED A: young td 3.5 + Behemoth per_level 0.03, sweep beqmxy9qz; if A unsettled when #54+#63 merge, ship young only and A as follow-up PR; body draft scratchpad/d069a_body.md)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
