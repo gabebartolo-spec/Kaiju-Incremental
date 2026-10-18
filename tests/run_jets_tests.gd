@@ -27,6 +27,7 @@ func run_checks() -> void:
 	_check_bombs()
 	_check_bomb_dodge()
 	_check_bomb_collateral()
+	_check_bomber()
 
 
 ## A sim whose jets are on (`max`), its city hurt enough to call them in when `hurt` (the
@@ -329,5 +330,33 @@ func _check_bomb_collateral() -> void:
 		(
 			"a bomb wrecks more than a roof (%d vs %d chunks), paying no biomass (%.2f vs %.2f)"
 			% [standing[1], standing[0], rubble[1], rubble[0]]
+		)
+	)
+
+
+## The Apex's set-piece: the heavy bomber flies higher and slower than the fighters, takes far
+## more to down, and carpet-bombs a long line through the kaiju's spot.
+func _check_bomber() -> void:
+	var sim := _jet_sim(true, 2)
+	sim.strike.cfg["order"] = ["interceptor", "bomber"]
+	var fighter := sim.strike.spawn()
+	var bomber := sim.strike.spawn()
+	var landed := PackedVector2Array()
+	for i: int in roundi(14.0 / DT):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "jet_bomb" and Num.i(event["jet"]) == bomber.id:
+				var at: Vector2 = event["at"]
+				landed.append(at)
+	var carpet := landed[0].distance_to(landed[-1]) if landed.size() > 1 else 0.0
+	check(
+		(
+			sim.strike.altitude(bomber) > sim.strike.altitude(fighter)
+			and bomber.hp > fighter.hp * 3.0
+			and landed.size() == Num.i(bomber.cfg["bombs"])
+			and carpet > 20.0
+		),
+		(
+			"the bomber flies %.0f over the fighters' %.0f and carpet-bombs %d bombs along %.0f u"
+			% [sim.strike.altitude(bomber), sim.strike.altitude(fighter), landed.size(), carpet]
 		)
 	)

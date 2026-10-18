@@ -143,7 +143,9 @@
 			"interceptor": {},
 			"delta": {"speed": 26.0, "rounds": 0, "bombs": 4},
 			"attacker": {"speed": 15.0, "rounds": 8, "strafe_step": 1.2, "bombs": 2, "bomb_step": 6.0,
-				"hp_mult": 1.8}
+				"hp_mult": 1.8},
+			"bomber": {"speed": 12.0, "clearance": 9.0, "approach": 70.0, "rounds": 0, "bombs": 12,
+				"bomb_step": 2.4, "drop_seconds": 1.4, "hp_mult": 5.0}
 		},
 		"max": 0,
 		"after_chunks": 150,
@@ -346,8 +348,9 @@
 					"tank_rubble": 35, "speed": 3.5, "escalation_per_chunk": 0.0002, "threat_per_chunk": 0.00003},
 				"air": {"max": 6, "interval": 9.0, "after_chunks": 800, "max_per_chunks": 2500, "hp": 80,
 					"damage": 7, "rubble": 60},
-				"jets": {"order": ["interceptor", "attacker", "delta"], "max": 2, "interval": 9.0, "after_chunks": 900, "max_per_chunks": 3000, "hp": 80,
-					"damage": 7, "rubble": 80}
+				"jets": {"order": ["interceptor", "attacker", "delta", "bomber"], "max": 2,
+					"interval": 9.0, "after_chunks": 900, "max_per_chunks": 3000, "hp": 80, "damage": 7,
+					"rubble": 80}
 			}
 		]
 	},
@@ -406,6 +409,6 @@
 		"fade_seconds": 0.25,
 		"tank_clear": 2.0,
 		"heli_clear": 5.0,
-		"jet_heights": {"interceptor": 2.58, "delta": 1.76, "attacker": 2.73}
+		"jet_heights": {"interceptor": 2.58, "delta": 1.76, "attacker": 2.73, "bomber": 3.62}
 	}
 }

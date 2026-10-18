@@ -6,7 +6,8 @@ extends RefCounted
 ## across the game camera's view (at right angles to `camera_bearing`, give or take
 ## `yaw_jitter`), so a pass is seen edge to edge and never flies at the lens; a jet flies
 ## `clearance` over the kaiju's head. Each kind (`kinds`, over the shared keys) strafes a line of
-## `rounds`, drops `bombs` that fall `drop_seconds` and blast `bomb_radius`, or both.
+## `rounds`, drops `bombs` that fall `drop_seconds` and blast `bomb_radius`, or both; the Apex's
+## heavy bomber (its set-piece, once a turn of the order) flies high and slow and carpet-bombs.
 ## `warn_seconds` before the first round or bomb lands the sim says where (jet_inbound): a kaiju
 ## that gets out of the way takes nothing. Rounds and blasts also wreck the roofs they hit:
 ## collateral that falls like any other but pays the player no biomass (director, D-072). Only an
@@ -54,9 +55,11 @@ func _init(p_sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) ->
 	_spawn_timer = Num.f(cfg["first_delay"])
 
 
-## Its flying height: `clearance` over the kaiju's head, so it never flies through a grown body.
-func altitude() -> float:
-	return Num.f(cfg["clearance"]) + sim.reach_height()
+## A jet's flying height (the shared one without a jet): `clearance` over the kaiju's head, so it
+## never flies through a grown body.
+func altitude(jet: Jet = null) -> float:
+	var own := jet.cfg if jet != null else cfg
+	return Num.f(own["clearance"]) + sim.reach_height()
 
 
 ## How many may be in the air at once: more the more of the city has fallen.
@@ -81,7 +84,7 @@ func step(dt: float) -> void:
 		_warn(jet)
 		_strafe(jet)
 		_release(jet)
-		if jet.s >= 2.0 * Num.f(cfg["approach"]):
+		if jet.s >= 2.0 * Num.f(jet.cfg["approach"]):
 			gone.append(jet)
 	for jet: Jet in gone:
 		jets.erase(jet)
@@ -106,12 +109,19 @@ func spawn() -> Jet:
 	jet.dir = (across * _side).rotated(_rng.randf_range(-jitter, jitter))
 	_side = -_side
 	var centre := sim.kaiju_pos - _toward_camera() * Num.f(cfg["lane_behind"])
-	jet.start = centre - jet.dir * Num.f(cfg["approach"])
+	jet.start = centre - jet.dir * Num.f(jet.cfg["approach"])
 	jet.pos = jet.start
 	jet.hp = Num.f(cfg["hp"]) * Num.f(jet.cfg["hp_mult"])
 	jets.append(jet)
 	sim.events.append(
-		{"type": "jet_spawned", "jet": jet.id, "kind": jet.kind, "from": jet.start, "dir": jet.dir}
+		{
+			"type": "jet_spawned",
+			"jet": jet.id,
+			"kind": jet.kind,
+			"from": jet.start,
+			"dir": jet.dir,
+			"y": altitude(jet),
+		}
 	)
 	return jet
 
@@ -129,7 +139,7 @@ func targets(jet: Jet) -> PackedVector2Array:
 
 func _spread(jet: Jet, count: int, step: float) -> PackedVector2Array:
 	var out := PackedVector2Array()
-	var first := Num.f(cfg["approach"]) - step * (count - 1) * 0.5
+	var first := Num.f(jet.cfg["approach"]) - step * (count - 1) * 0.5
 	for k: int in count:
 		out.append(jet.start + jet.dir * (first + step * k))
 	return out
@@ -192,7 +202,14 @@ func _release(jet: Jet) -> void:
 		bomb.t = (land - jet.s) / Num.f(jet.cfg["speed"])
 		bombs.append(bomb)
 		sim.events.append(
-			{"type": "jet_bomb_drop", "jet": jet.id, "from": jet.pos, "at": at, "seconds": bomb.t}
+			{
+				"type": "jet_bomb_drop",
+				"jet": jet.id,
+				"from": jet.pos,
+				"y": altitude(jet),
+				"at": at,
+				"seconds": bomb.t,
+			}
 		)
 
 

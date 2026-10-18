@@ -50,7 +50,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_jets[Num.i(event["jet"])] = jet
 			var from: Vector2 = event["from"]
 			var dir: Vector2 = event["dir"]
-			_place(jet, from, dir)
+			_place(jet, from, dir, Num.f(event["y"]))
 		"jet_inbound":
 			_warn(event)
 			_sfx.play("jet_flyby")
@@ -71,11 +71,11 @@ func _process(_delta: float) -> void:
 	for jet: StrikeWing.Jet in sim.strike.jets:
 		if _jets.has(jet.id):
 			var node: Node3D = _jets[jet.id]
-			_place(node, jet.pos, jet.dir)
+			_place(node, jet.pos, jet.dir, sim.strike.altitude(jet))
 
 
-func _place(node: Node3D, at: Vector2, dir: Vector2) -> void:
-	node.position = Vector3(at.x, sim.strike.altitude(), at.y)
+func _place(node: Node3D, at: Vector2, dir: Vector2, y: float) -> void:
+	node.position = Vector3(at.x, y, at.y)
 	node.rotation.y = atan2(-dir.x, -dir.y)
 
 
@@ -111,7 +111,7 @@ func _drop(event: Dictionary) -> void:
 	var at: Vector2 = event["at"]
 	var bomb := _box(BOMB * sim.body_scale(), _bomb_mat)
 	add_child(bomb)
-	bomb.position = Vector3(from.x, sim.strike.altitude() - 0.5, from.y)
+	bomb.position = Vector3(from.x, Num.f(event["y"]) - 0.5, from.y)
 	bomb.look_at(Vector3(at.x, 0, at.y), Vector3.UP)
 	var tween := bomb.create_tween()
 	tween.tween_property(bomb, "position", Vector3(at.x, 0.3, at.y), Num.f(event["seconds"]))

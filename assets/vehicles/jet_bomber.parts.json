@@ -1,0 +1,13 @@
+{
+ "height": 30,
+ "parts": {
+  "body": {
+   "kvox": "jet_bomber_body.kvox",
+   "pivot": [
+    -0.5,
+    -12.706,
+    3.38
+   ]
+  }
+ }
+}
