@@ -21,6 +21,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   revised: baby speed ~0.6 + more hp, demo ~35 min. ORDER: #50 -> P3 (art + baby tuning) -> #36 (resync, soften young last).
 - Rooftop density (local_1ac658ed): cause = rifle reach from kaiju centre; plan approved (reach from edge + more
   squads + shorter interval, tank_damage offset ±5%); branches after #50; PR needs volleys/run table + clip.
+  D-076a = A (chip scaled down per tier, tanks unchanged); no HUD change; hide spark is the hit (2x crops).
+  To ask the director: a HUD hit flash for big hits only (tank shells)? (UI session; taste).
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
