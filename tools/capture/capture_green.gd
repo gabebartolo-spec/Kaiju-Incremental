@@ -14,6 +14,7 @@ extends SceneTree
 ##   --no-trample the same deterministic walk leaves the decor standing: the before frame)
 ## Every trample prints how many of the park's props the walk felled or flattened.
 
+const PropLog := preload("res://tools/capture/prop_log.gd")
 const SETTLE := 12
 const SPECIES := "reptilian"
 ## Rampage.CAMERA_OFFSET: the game camera's direction, scaled down for the close-ups.
@@ -37,6 +38,7 @@ var _park_stills := false
 var _seconds := 5.0
 var _still_at := -1.0  # --still-at: a game-camera still this many seconds into the walk
 var _no_trample := false  # --no-trample: the same walk with the decor left standing
+var _log_props := false  # --log-props: per-prop table (PropLog) after the walk
 
 
 func _initialize() -> void:
@@ -55,6 +57,8 @@ func _initialize() -> void:
 			_still_at = arg.substr(11).to_float()
 		elif arg == "--no-trample":
 			_no_trample = true
+		elif arg == "--log-props":
+			_log_props = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -181,11 +185,16 @@ func _trample_clip() -> void:
 	if _park_stills:
 		await _park_view(rampage, park, "trample_park_before")
 	Input.action_press("move_up")
+	var log: PropLog = null
+	if _log_props:
+		log = PropLog.new(decor, park.grow(4.0), root.get_visible_rect().size.y)
 	var frames := 0
 	var still := roundi(_still_at * Engine.physics_ticks_per_second)
 	while frames < roundi(_seconds * Engine.physics_ticks_per_second) and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		if log != null:
+			log.sample(decor, rampage._camera)
 		if frames == still:
 			var shot := (
 				"trample_game_%.1fs%s.png" % [_still_at, "_untouched" if _no_trample else ""]
@@ -195,6 +204,8 @@ func _trample_clip() -> void:
 	Input.action_release("move_up")
 	print("trample: kaiju from ", park.end.y - START_INSIDE, " to ", rampage.sim.kaiju_pos)
 	print("trample: ", _park_count(decor, park))
+	if log != null:
+		print(log.report())
 	if _park_stills:
 		await _park_view(rampage, park, "trample_park_after")
 

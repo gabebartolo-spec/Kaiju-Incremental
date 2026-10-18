@@ -10,8 +10,9 @@ const STUMP := 2  # a felled tree leaves its lowest cells this many high standin
 
 var vox := VoxelBuilder.new()
 var voxel: float
-var fall_seconds := 0.3  # how long a felled tree takes to come down
-var felled: Array[Vector3] = []  # stumps felled since the owner last drained this
+var fall_seconds := 0.4  # how long a felled tree takes to come down
+var fell_lighten := 0.0  # a felled tree's cells go this much toward white, to read on the grass
+var felled: Array[Vector3] = []  # stumps whose tree landed since the owner last drained this
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
 var _mmi: MultiMeshInstance3D
@@ -138,6 +139,7 @@ func tick(delta: float) -> void:
 			t.origin = pivot + turn * (starts[k] - pivot)
 			mm.set_instance_transform(ids[k], t)
 		if done >= 1.0:
+			felled.append(fall["stump"])
 			_falling.erase(fall)
 
 
@@ -176,12 +178,15 @@ func _fell(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 			break
 	if pivot == Vector3.INF:
 		return
-	felled.append(pivot)
+	var stump := pivot
 	pivot.y += STUMP * voxel
 	var falls := PackedInt32Array()
 	var starts := PackedVector3Array()
 	for k: int in ids.size():
+		mm.set_instance_color(ids[k], mm.get_instance_color(ids[k]).lightened(fell_lighten))
 		if heights[k] >= STUMP:
 			falls.append(ids[k])
 			starts.append(mm.get_instance_transform(ids[k]).origin)
-	_falling.append({"ids": falls, "starts": starts, "pivot": pivot, "axis": axis, "t": 0.0})
+	_falling.append(
+		{"ids": falls, "starts": starts, "pivot": pivot, "axis": axis, "t": 0.0, "stump": stump}
+	)

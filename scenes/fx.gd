@@ -9,6 +9,7 @@ const SMOKE := preload("res://scenes/smoke.gdshader")
 
 var _dust_mat: ParticleProcessMaterial
 var _dust_mesh: Mesh
+var _earth_mat: ParticleProcessMaterial
 var _puff_mesh: Mesh
 var _spark_mat: ParticleProcessMaterial
 var _spark_mesh: BoxMesh
@@ -25,6 +26,18 @@ func _ready() -> void:
 			"smax": 2.6,
 			"grow": true,
 			"colors": [Color(0.22, 0.24, 0.26, 0.47), Color(0.2, 0.22, 0.24, 0.0)],
+		}
+	)
+	_earth_mat = _particle_mat(
+		{
+			"spread": 80.0,
+			"gravity": Vector3(0, 0.3, 0),
+			"vmin": 0.3,
+			"vmax": 0.8,
+			"smin": 0.6,
+			"smax": 1.2,
+			"grow": true,
+			"colors": [Color(0.66, 0.56, 0.4, 0.55), Color(0.62, 0.53, 0.38, 0.0)],
 		}
 	)
 	_dust_mesh = _puff(2.2)
@@ -54,6 +67,16 @@ func dust(at: Vector3, size: float) -> void:
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
+
+
+## A small tan puff of earth where a felled tree lands (light, so it reads on dark grass).
+func earth_puff(at: Vector3) -> void:
+	var p := _burst(_earth_mat, _puff_mesh, 6, 0.8)
+	p.position = at
+	var mat: ParticleProcessMaterial = p.process_material
+	mat.emission_box_extents = Vector3(0.3, 0.1, 0.3)
+	mat.initial_velocity_min = 0.3
+	mat.initial_velocity_max = 0.8
 
 
 ## A small puff of dust: a person crushed underfoot.

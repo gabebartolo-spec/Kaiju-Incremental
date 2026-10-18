@@ -89,6 +89,7 @@ func _ready() -> void:
 	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
 	_props.fall_seconds = Num.f(sim.city["fell_seconds"])
+	_props.fell_lighten = Num.f(sim.city["fell_lighten"])
 	add_child(_fx)
 
 
@@ -101,7 +102,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_props.tick(delta)
 	for stump: Vector3 in _props.felled:
-		_fx.puff(stump + Vector3(0, 0.2, 0))
+		_fx.earth_puff(stump + Vector3(0, 0.2, 0))
 	_props.felled.clear()
 	var at := sim.kaiju_pos
 	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
@@ -119,13 +120,13 @@ func _process(delta: float) -> void:
 ## Finds the drawn kaiju beside this city and its ground box (KaijuFootprint); false where
 ## there is none (stills, tests).
 func _found_kaiju() -> bool:
-	if is_instance_valid(_kaiju):
+	if is_instance_valid(_kaiju) and _foot.has_area():
 		return true
 	_kaiju = KaijuFootprint.find(self)
 	if _kaiju == null:
 		return false
-	_foot = KaijuFootprint.of(_kaiju, Num.f(sim.city["trample_share"]))
-	return true
+	_foot = KaijuFootprint.of(_kaiju, sim.size_tier(), Num.f(sim.city["trample_share"]))
+	return _foot.has_area()
 
 
 ## Flattens props under a stomp.
