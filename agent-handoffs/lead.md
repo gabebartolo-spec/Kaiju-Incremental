@@ -32,6 +32,10 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 - #54 P3 open: sim review PASS (my comment). Baby jaw 2x shows torn upper-jaw flap at mouth corner; gate = clean
   in-game jaw_baby crop at roar peak, then fresh critic on clips. CI capture order: shell-hit -> #50 720p -> P3 ->
   rooftops -> greenery/landmarks/jets. Local GPU slot: landmarks stills (after greenery).
+- UNSENT (messaging paused 15:1x) to landmarks: #57 r3 critic FAIL (2nd round) -> change method: fix only
+  floating slab 2x(1230-1290,720-830) support, olive/yellow off-palette rubble, plaza spill; stumps/heaps/seat rubble
+  = post-demo follow-up with the wheel; cave-in judged on #59 AFL clip by fresh motion critic. Greenery: trample
+  clip FAIL (no felled prop visible; contact radius?), GPU slot granted for re-shoot.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
