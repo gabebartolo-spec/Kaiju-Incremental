@@ -8,6 +8,12 @@ Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the direct
 Messaging: one message per worker with everything; never ask the director to unblock. Send briefs ONE AT A TIME:
 a failed first send in a parallel batch cancels the rest.
 
+## RESUMED (director): all sessions told (river notes, stadium shared-burst-mesh fix approved: hits 40-48 ms windowed,
+## fall_start makes new render resources per burst). Rifle-fire PR + breath snout fix queued at rooftops.
+## Sessions renamed: Gun audio + breath aim (1ac658ed), Stadium + frame probe (87d706ce), Load, smoke FX, builds
+## (37cf489b), River spawn + greenery (9af27a16), Biomass + army ramp (b38b3a6f), Tanks + helis #50 (5325ef73),
+## Croc contact + dash (1feb30ca), OLD lead (retired) (9fac90d2), this = Kaiju: LEAD.
+
 ## Where we are
 - Demo exe 1 (44f56fd, #75 stall fix in; smoke 10/10; pacing e1 0.26 h) given to the director at
   C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe. He paused the playtest:
