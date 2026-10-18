@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-18 (night, after r3 critic)
-## State: available (r3 FAILED fresh critic; demo ships WITHOUT #50 (D-082), merges after the build (D-083); r4 fix list below; PR #50 head 55cacbc, Auto-fix on)
+## State: available (r3 FAILED fresh critic; demo ships WITHOUT #50 (D-082), merges after the build (D-083); r4 fix list below; PR #50 head c26bb39 (look-options merged 2026-10-19), Auto-fix on)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -46,6 +46,9 @@ claude/look-options. LEAD merges. Resync before the next clip.
 - Timing (noisy): Apex Army.step mean 1.0-1.4 ms, p95 3.2-5.0 ms (round 1: 0.4 / 1.1).
 
 ## Open
+- c26bb39 merge: base added young body speed 0.6 / hp 1.15; standoff check sample floor
+  50 -> 40 (47 samples, 100% in band, 0 s in danger). Floors: flow 139, growth 26, military 17.
+  Damage/pacing numbers above predate this base change: re-measure in r4.
 - Pacing at 4146dbf tuning: evolve1 0.64 h (+8.5%), tree 4.70 h (+5.4%), young 9/25
   time/defeated (bar 0.59 / 4.46 +-5%, 12/16). OUTSIDE the bar: young is too hard (rate
   matching raised defeats). r4: retune young (e.g. tank_damage 8-9 at range 11) and re-pace.
