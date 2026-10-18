@@ -1,5 +1,5 @@
 # City-calm handoff, 2026-10-19 03:30
-## State: running a check (D-075 CI tests: red 39117893362, green 39117934874; pacing queued)
+## State: running a check (D-075 green on CI; capture.yml queue: probe, pacing x2, aerials x4)
 ## NO LOCAL GODOT (director, via lead): verify on CI only (tests.yml dispatch, capture.yml).
 
 ## Task
@@ -15,18 +15,21 @@ Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes
   park gardens) in the SAME worktree Kaiju-Incremental-wt/greenery (D-053: one worktree;
   switch back to claude/greenery only for a #55 Auto-fix, commit first, no stash). PR opens
   after #55 merges (into claude/look-options).
-  - sim/city_green_lots.gd (CityGreenLots.choose from CityGen._blocks): farthest-point over
-    the FULL city's blocks (all districts, not the playable edge, so stage-stable), from the
-    block nearest cores[0], until city.green_lot_share 0.08 of block area; marks use "park",
-    keeps the old use under "green". CityGen.generate fills green lots and drops them (same
-    RNG draws for every other building).
-  - tests/lib/city_green_lots.gd from the D-062 loop: share in [6.5%, 12%] + furthest building
-    <= 2 x block_long[1] m from a park; no building on a green lot; same green blocks at
-    stage 1. city floor 65 (+12).
-  - tools/capture/pacing_ci.gd: pacing on capture.yml, --green-share=0.0 vs 0.08 (baseline
-    moved with D-074b, so pace both on this branch). One capture.yml run at a time.
-  - Still to do: CI results, pacing table, a look capture (CI) of the new parks, PR body with
-    the kaiju-sim-review packet (notes greenery/D-075_packet_draft.md), report to the lead.
+  - sim/city_green_lots.gd (CityGreenLots.choose from CityGen._blocks): a staggered lattice
+    on the street grid, one block in city.green_lot_every [3, 4] (8.3%), keyed by the block's
+    "cell" (i, j) that CityGen._blocks now stores; skips landmark sites ("site": outer at
+    stage 1, landmark later), parks/plazas/parking, outskirts. Marks use "park", old use under
+    "green". generate fills green lots and drops them (same RNG draws). Farthest-point by
+    area was tried first and failed (67 m spread, stage-unstable via landmark sites).
+  - tests/lib/city_green_lots.gd from the D-062 loop: lots' own share 8.3% +-3.5 from the
+    Behemoth, >= 1 lot at stage 1; furthest building <= 52 m from any park/plaza/lot (past the
+    edge too); no building on a lot; same blocks as stage 1. city floor 65 (+12).
+  - CI: red claude/green-lots-red run 39122099360 (12 FAILs); green 39122101734 (all pass).
+  - Queue (scratchpad d075_ci.sh, polls 2-3 min; the API limit is shared, ci_capture.sh
+    polls every 4-15 s): green_lots_probe.gd, pacing_ci.gd (+ --no-green), capture_growth
+    --stage=1/2 --quick on green-lots and green-lots-red. Output: notes green-lots/.
+  - Then: PR body (scratchpad pr_d075.md draft) + lead report; PR opens after #55 merges.
+    Delete claude/green-lots-red after (ask the lead).
   - New .gd files have no .uid (no local import); CI imports them.
 
 ## Branch and commit
