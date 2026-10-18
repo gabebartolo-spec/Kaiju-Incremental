@@ -8,6 +8,7 @@ extends SceneTree
 ##     --write-movie <dir>/powers.avi --script tools/capture/capture_powers.gd -- --out=<dir>
 ## --species=reptilian: only that species; --signature-only: skip the upgrade effects after it.
 ## --side: watch from the kaiju's right side, level with its chest, instead of the game camera.
+## --young: the same build before its first evolution (the young stage, not the Behemoth).
 
 const SETTLE := 90
 const SIDE_DISTANCE := 26.0
@@ -35,6 +36,7 @@ var _out := "user://powers"
 var _species: Array[String] = ["reptilian", "insectoid", "cephalopod"]
 var _signature_only := false
 var _side := false
+var _young := false
 
 
 func _initialize() -> void:
@@ -47,6 +49,8 @@ func _initialize() -> void:
 			_signature_only = true
 		elif arg == "--side":
 			_side = true
+		elif arg == "--young":
+			_young = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -60,7 +64,10 @@ func _run() -> void:
 
 func _species_shots(species_id: String) -> void:
 	var species := Content.species_def(species_id)
-	var levels: Dictionary = SHOWN[species_id]
+	var shown: Dictionary = SHOWN[species_id]
+	var levels := shown.duplicate()
+	if _young:
+		levels.erase("evolve1")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
 	)
