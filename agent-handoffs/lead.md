@@ -10,6 +10,9 @@ Tripo (old lead) / Sound effects / Landmark models / Lighting & breath FX / Croc
 UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive space balancing" = director's own.
 
 ## TABLED FOR THE DIRECTOR (ask in this order when he is back; images/clips first)
+0. PREVIEW DEMO EXE (smoke PASS 10:0x, 450 frames, 0 errors): out\demo-preview-c3b7306\KaijuIncremental.exe + the
+   playtest sheet. Has #22 croc clips, #27 UI, SFX, rooftops, breath; baby/adolescent are still the OLD models (P3
+   pending). Offer: play the preview now, or wait for the P3 build.
 1. #35 crease shader: A off vs B 0.3 (C 0.6 "too strong"). Board docs/captures/2026-10-18-crease/crease_board_ABC.jpg on
    claude/voxel-edge-shading; my QA PASS; fresh motion-critic on crease_B_pan.mp4 (verdict pending: agent "critic").
 2. #22 croc titan clips MERGED 09:3x (AFTER reads heavier on the roar, even elsewhere; no regression). Show him the
