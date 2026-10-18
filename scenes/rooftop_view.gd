@@ -168,7 +168,7 @@ func _physics_process(delta: float) -> void:
 	_counts.fill(0)
 	drawn = 0
 	var cap := Num.i(_cfg["max_drawn"])
-	for squad: Army.Squad in sim.army_units.squads:
+	for squad: Army.Squad in _nearest_first():
 		for k: int in Num.i(_cfg["squad_size"]):
 			if drawn >= cap:
 				break
@@ -184,6 +184,18 @@ func _physics_process(delta: float) -> void:
 	_draw_tracers(delta)
 	_draw_sparks()
 	lit = Vector2i(_flash_mm.visible_instance_count, _tracer_mm.visible_instance_count)
+
+
+## The squads nearest the kaiju first: past max_drawn the far ones go undrawn, never the ones
+## in rifle range (D-076: more squads than figures drawn).
+func _nearest_first() -> Array[Army.Squad]:
+	var order := sim.army_units.squads.duplicate()
+	var at := sim.kaiju_pos
+	order.sort_custom(
+		func(a: Army.Squad, b: Army.Squad) -> bool:
+			return a.pos.distance_squared_to(at) < b.pos.distance_squared_to(at)
+	)
+	return order
 
 
 ## The sim's rooftop events (true when it was one); the kaiju's drawn body stands with its feet
