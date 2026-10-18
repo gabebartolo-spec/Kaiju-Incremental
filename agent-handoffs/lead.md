@@ -1,4 +1,4 @@
-# Lead handoff, 2026-10-19 07:30
+# Lead handoff, 2026-10-19 09:00
 ## State: running a check (final build PASSED, run 39116671378, artifact KaijuIncremental-8c24654 56.8 MB zip;
 ## smoke waits for the director to lift 'dont use godot'; #72 board MERGED 6614bc9)
 
@@ -8,6 +8,11 @@ Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gate
 Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
 Messaging: budget one message per worker with everything; hand-offs go peer to peer; never ask the director to unblock.
 
+## EXE HANDED TO THE DIRECTOR (P7): C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe
+## (run 39123363720; smoke 10/10, pack PASS). Next = his playtest notes (D-083: fixes first), then #55 merge, #50.
+## Probe at 44f56fd (noisy box): settle 5.4 ms fixed; sim.step worst 43.9 ms, rooftop_fired 62 ms + 205 Nil errors
+## = probe set-up (PowersView.rooftops only under Rampage). Stadium session: real-scene probe on CI.
+## docs/DEMO_PLAYTEST.md still says 20-35 min / 0.59 h: update to ~15 min (D-087) in the next board PR.
 ## #75 MERGED 44f56fd (fresh sim reviewer PASS: 30 replays + 200 fuzz byte-identical; suites green). REBUILD build.yml
 ## run 39123363720 at 44f56fd -> dry-run session smokes + stall probe -> EXE TO THE DIRECTOR (download link + note).
 ## 8c24654 build had smoke 10/10, pacing on target (e1 0.26 h, young 8/14). #50 helis: lead picked A (hold fire
