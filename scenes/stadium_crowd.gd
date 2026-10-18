@@ -11,6 +11,7 @@ enum State { SEATED, STANDING, ALONG, UP, GONE }
 
 const POSES := 3  # seated, then the arms-up run's two frames
 const RUN_HZ := 6.0
+const STRIDE := 3  # a fleeing fan moves every third frame (a third of the cost; 20 steps a second)
 const SHADER := preload("res://scenes/crowd.gdshader")
 
 ## Frame-time checks: false and the match seats no crowd.
@@ -49,6 +50,9 @@ var _mms: Array[MultiMesh] = []
 var _buffers: Array[PackedFloat32Array] = []
 var _alive := -1
 var _dirty := true
+var _tick := 0
+var _aisle := 0.0
+var _out_after := 0.0
 var _clock := 0.0
 
 
@@ -58,6 +62,8 @@ func _init(p_sim: RampageSim, index: int, kits: Array, rng: RandomNumberGenerato
 	_index = index
 	_rng = rng
 	_cfg = Content.section("crowd")
+	_aisle = Num.f(_cfg["aisle"])
+	_out_after = Num.f(_cfg["out_after"])
 	var b := _sim.buildings[index]
 	_centre = Vector2(b.x, b.z)
 	_corner = Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5)
@@ -144,8 +150,9 @@ func _process(delta: float) -> void:
 				fallen += 1
 				_dirty = true
 	if fleeing:
-		for fan: Fan in fans:
-			_move(fan, delta)
+		_tick += 1
+		for i: int in range(_tick % STRIDE, fans.size(), STRIDE):  # a share of the fans a frame
+			_move(fans[i], delta * STRIDE)
 	if _dirty or fleeing:
 		_draw()
 		_dirty = false
@@ -163,7 +170,7 @@ func _move(fan: Fan, delta: float) -> void:
 				fan.state = State.ALONG
 		State.ALONG:
 			var turn := angle_difference(at.angle(), fan.exit)
-			if absf(turn) * fan.radius <= Num.f(_cfg["aisle"]):
+			if absf(turn) * fan.radius <= _aisle:
 				fan.state = State.UP
 				return
 			var angle := at.angle() + signf(turn) * minf(step / fan.radius, absf(turn))
@@ -186,7 +193,7 @@ func _step(fan: Fan, to: Vector2, step: float) -> void:
 	else:
 		fan.missed += step
 	fan.pos = Vector3(to.x, y, to.y)
-	if fan.missed > Num.f(_cfg["out_after"]):
+	if fan.missed > _out_after:
 		fan.state = State.GONE
 		escaped += 1
 
@@ -303,9 +310,8 @@ func _draw() -> void:
 		var buf := _buffers[b]
 		var i := 0
 		for fan: Fan in group:
-			var yaw := atan2(-fan.heading.x, -fan.heading.y)
-			var c := cos(yaw)
-			var s := sin(yaw)
+			var c := -fan.heading.y  # the yaw that turns -Z onto the (unit) heading
+			var s := -fan.heading.x
 			buf[i] = c
 			buf[i + 1] = 0.0
 			buf[i + 2] = s
