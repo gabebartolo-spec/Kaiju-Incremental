@@ -1,6 +1,9 @@
 extends RefCounted
 ## The load suite's landmark check, split out to keep the runner small.
 
+## The farthest a fallen section's rubble may lie past the wall: inside one wall height (5.4).
+const RUBBLE_REACH := 4.0
+
 var _check: Callable
 
 
@@ -74,6 +77,35 @@ func run() -> void:
 		(
 			"a landmark is never bitten round a hole (no speckle): %d holes, %d bites"
 			% [holes.size(), bitten.size()]
+		)
+	)
+	# A toppled section's rubble (Ruin.strip -> LandmarkRubble): within about a wall height of
+	# the wall, tallest against the stub it fell from, never a slab running on over the plaza.
+	var pile := LandmarkRubble.pile(
+		view.voxels as LandmarkVoxels, Vector3.ZERO, Vector3(0, 0, 6), 4.0
+	)
+	var far := 0.0
+	var near_top := 0
+	var far_top := 0
+	for c: Vector3i in pile.cells:
+		var z := c.z * BuildingVoxels.VOXEL
+		far = maxf(far, z)
+		if z < 1.0:
+			near_top = maxi(near_top, c.y)
+		elif z > 2.5:
+			far_top = maxi(far_top, c.y)
+	(
+		_check
+		. call(
+			(
+				pile.cells.size() > 100
+				and far <= RUBBLE_REACH
+				and near_top > far_top * 1.5
+			),
+			(
+				"a fallen section's rubble stays near the wall (%.1f of %.1f) and peaks at the stub (%d vs %d)"
+				% [far, RUBBLE_REACH, near_top, far_top]
+			)
 		)
 	)
 	print("landmark view: stadium built in %d ms" % build_ms)

@@ -15,6 +15,9 @@ static var _cache: Dictionary = {}
 static var _lock := Mutex.new()
 
 var ground := VoxelBuilder.new()
+## Sim-unit plan column -> a few of the model's own colours there (not its ground colours): the
+## tint of the rubble its sections leave (LandmarkRubble).
+var rubble_colors: Dictionary = {}
 
 
 func _init(p_building: RampageSim.Building, base: Color) -> void:
@@ -31,6 +34,13 @@ func _init(p_building: RampageSim.Building, base: Color) -> void:
 			var off := Vector3(absf(c.r - g.r), absf(c.g - g.g), absf(c.b - g.b)) * 255.0
 			if maxf(off.x, maxf(off.y, off.z)) <= GROUND_MATCH:
 				ground.put_color(Vector3i(cell.x, 0, cell.z), c)
+		if c.g > c.r + 0.08 and c.g > c.b + 0.08 or absi(hash(cell)) % 6 != 0:
+			continue
+		var column := Vector2i(floori(float(cell.x) / RES), floori(float(cell.z) / RES))
+		var found: Array = rubble_colors.get(column, [])
+		if found.size() < 8:
+			found.append(c)
+			rubble_colors[column] = found
 
 
 func face_mask(cell: Vector3i) -> int:
