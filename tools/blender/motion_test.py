@@ -85,6 +85,48 @@ KNOWN = {
         # the roar's pelvis tip, breathe it less (degrees).
         tail_lift=3.0, tail_roar_lift=5.0, tail_breathe=0.15,
         belly=31.0),
+    # The croc titan baby (stage 1, Tripo edf7bb50): a cub's big head and squat legs, arms in a T-pose
+    # (straight out at shoulder height), a long tail lying on the street. Measured on 1 m grid side,
+    # front and head renders. Quick and bouncy: a shorter stride in a 36-frame cycle (four per clip).
+    "CB": dict(
+        spine=[V((0, 88, 38)), V((0, 76, 48)), V((0, 64, 58)), V((0, 54, 66))],
+        neck=[V((0, 54, 66)), V((0, 47, 74)), V((0, 42, 80))],
+        snout=V((0, 0.5, 82.5)), jaw=(V((0, 39, 85)), V((0, 2, 79.5))),
+        mouth=(V((0, 1, 81)), V((0, 36, 86.5))),
+        arm=[V((6, 56, 64)), V((17, 56, 62)), V((38, 56, 61)), V((56, 56, 60)), V((67, 56, 59))],
+        leg=[V((18, 80, 33)), V((24, 68, 20)), V((28, 82, 7)), V((30, 68, 2)), V((30, 58, 1))],
+        tail=[V((0, 96, 36)), V((0, 104, 30)), V((0, 112, 25)), V((0, 120, 19)), V((0, 132, 14)),
+              V((0, 144, 11)), V((0, 156, 9.5)), V((0, 168, 8.5)), V((0, 180, 8)), V((0, 192, 6.5)),
+              V((0, 211, 3.5))],
+        # T-pose arms: the hands come down in front of the belly (in, back, up from the rest wrist).
+        hands={"low": (42.0, -8.0, -12.0), "high": (44.0, -6.0, 2.0)},
+        tail_lift=4.0, tail_roar_lift=5.0, tail_breathe=0.2,
+        # The game moves the cub as fast as the adult on legs a third the size: the longest stride its
+        # legs reach (44 m) and a slow tail (a wave every 3.5 strides) keep it quick, not frantic.
+        belly=12.0, stride=44.0, cycle=36.0, bounce=1.8, tail_strides=3.5, tail_sway=0.4,
+        # Seen from the game camera its feet hid under the belly (lead review, PR #54): a toddler's
+        # sprawl, feet 10 m wider, and a high stomping lift.
+        splay=10.0, lift=0.18, turn_cycle=24.0),
+    # The adolescent (stage 2, Tripo 109910f0, imported turned 90 deg to face -Y): lanky, long legs,
+    # arms hanging forward, the tail held level at hip height. A long, gangly stride.
+    "CA": dict(
+        spine=[V((0, 80, 60)), V((0, 66, 64)), V((0, 52, 70)), V((0, 42, 76))],
+        neck=[V((0, 42, 76)), V((0, 35, 82)), V((0, 28, 87))],
+        snout=V((0, 0.3, 88)), jaw=(V((0, 21, 88)), V((0, 2, 85.5))),
+        mouth=(V((0, 1, 86.8)), V((0, 19, 89.6))),
+        arm=[V((6, 44, 74)), V((17, 40, 72)), V((20, 32, 63)), V((22, 24, 56)), V((22, 20, 50))],
+        leg=[V((12, 72, 55)), V((13, 78, 24)), V((14, 73, 8)), V((16, 62, 2)), V((18, 52, 0.5))],
+        tail=[V((0, 86, 59)), V((0, 98, 58)), V((0, 110, 57.5)), V((0, 122, 58)), V((0, 134, 58.5)),
+              V((0, 146, 60)), V((0, 158, 61.5)), V((0, 170, 63)), V((0, 182, 64)), V((0, 195, 64.8)),
+              V((0, 208, 64.8))],
+        hands={"low": (1.0, -1.0, 1.0), "high": (3.0, 3.0, 8.0)},
+        tail_lift=0.0, tail_roar_lift=2.5, tail_breathe=0.3,
+        belly=15.0, stride=56.0, cycle=48.0, bounce=1.2,
+        # Its feet track under the body: set them out past the belly and lift them clear (PR #54).
+        splay=12.0, lift=0.15, turn_cycle=26.0,
+        # Its tail is held level at hip height: the slam needs more bend to reach the street; the
+        # roar closes by f62 (it ends the demo); a heavier drop on each plant.
+        slam_gain=6.5, roar_rest_from=48, roar_rest_to=62, land=2.0),
 }
 TAIL_BONES = 10
 
@@ -588,11 +630,21 @@ def set_loc(name, delta):
 
 
 hip_h = L["leg"][0].z
-D = 140.0 / 3  # stride per cycle (~46.7 m): 3 cycles travel 140 m = 7 checker periods (20 m), so the clip loops
-T = 48.0  # frames per cycle: three cycles in the 144-frame clip, so the walk loops seamlessly
+# Stride per cycle (adult ~46.7 m: 3 cycles travel 140 m = 7 checker periods, so the render loops) and
+# frames per cycle (a whole number of cycles in the 144-frame clip, so the walk loops seamlessly);
+# a model's landmarks may set its own (a cub's quick short steps, an adolescent's long ones).
+D = L.get("stride", 140.0 / 3)
+T = L.get("cycle", 48.0)
 DUTY = 0.62
 V_WALK = D / T
-BALL = {s: (L["leg"][3] if s == "L" else mir(L["leg"][3])) for s in ("L", "R")}
+# Frames per stepping cycle in the standing turn: quick short steps, 5-6 in the 3 s turn (lead
+# review PR #54: a slow walk-cadence swing read as a foot creeping across the street).
+TURN_T = L.get("turn_cycle", T)
+# A model may set its feet wider than its rest leg ("splay", metres out from the body: a sprawl that
+# steps outside the belly seen from the game's high camera) and lift them higher ("lift", x hip height).
+SPLAY = V((L.get("splay", 0.0), 0, 0))
+BALL = {s: (L["leg"][3] + SPLAY if s == "L" else mir(L["leg"][3] + SPLAY)) for s in ("L", "R")}
+LIFT = L.get("lift", 0.085)
 PHASE = {"L": 0.0, "R": 0.5}
 
 
@@ -621,12 +673,13 @@ def foot_world(clip, side, f, P):
     rest = BALL[side]
     if clip in ("roar", "idle"):
         return rest, 0.0, 0.0, True
-    c = f / T - PHASE[side]
+    Tc = TURN_T if clip == "turn" else T
+    c = f / Tc - PHASE[side]
     k = math.floor(c)
     u = c - k
 
     def plant(kk):
-        tm = int(round((kk + DUTY / 2 + PHASE[side]) * T))
+        tm = int(round((kk + DUTY / 2 + PHASE[side]) * Tc))
         tm = max(min(tm, FRAMES + 80), -80)
         p, yaw = P[tm]
         return p + Quaternion((0, 0, 1), math.radians(yaw)) @ rest, yaw
@@ -640,16 +693,18 @@ def foot_world(clip, side, f, P):
     e = s_ * s_ * (3 - 2 * s_)
     # Lift and toe pitch go as sin^2: the foot arrives with no downward speed (no snap at contact).
     lift = math.sin(math.pi * s_) ** 2
-    p = p0.lerp(p1, e) + V((0, 0, 0.085 * hip_h * lift))
+    p = p0.lerp(p1, e) + V((0, 0, LIFT * hip_h * lift))
     return p, y0 + (y1 - y0) * e, 16.0 * lift, False
 
 
 # Tail motion (degrees per joint, base -> tip: base + extra * k, k = 0 at the root, 1 at the tip).
 TAIL_WALK = (1.0, 2.5)  # the walk's side-to-side S-wave
-TAIL_WALK_PERIOD = 84  # frames per tail wave: seven strides carry four waves (a heavy tail, not an eel)
+TAIL_WALK_PERIOD = L.get("tail_strides", 1.75) * T  # frames per tail wave: seven strides carry four
+WALK_CYCLES = 7  # the baked walk: whole strides and whole tail waves (tail_strides divides 7), so it loops
 TAIL_IDLE = (0.4, 0.2)  # the standing sway (72-frame period; at 0.6 in the roar)
 TAIL_LAG = 0.42  # phase (rad) each joint trails the one before (0.6 of a wave along the tail)
-TAIL_WHIP = (7.8, 10.0)  # turn whip per unit of tail_whip()
+TAIL_DRAG = (1.5, 3.0)  # turn: degrees per joint at the turn's peak rate, swung to the outside
+TAIL_DRAG_TAU = 0.3  # s: how far the drag lags the body's turn rate (it eases in and out)
 TAIL_WHIP_DELAY = 0.5  # frames the whip takes per joint
 TAIL_LIFT = (6.0, -9.0)  # roar: the lift's arc per joint (root rises, mid curves up, tip trails)
 TAIL_SLAM = (1.15, 0.85)  # roar: the slam per joint as it lands, then where it rests, x (0.2 + 1.6 k)
@@ -657,24 +712,23 @@ TAIL_TRAIL = 12.0  # roar: how far the outer tail curls up as the slam starts (p
 TAIL_SLAM_DELAY = 0.8  # frames the lift and the slam take per joint (the tip lands after the mid-tail)
 TAIL_SPRING = (14.0, 0.36)  # the tail's natural frequency (rad/s) and damping ratio
 _WHIP = {}
-# The roar's recovery (frames): about a second after the slam it returns to standing.
-ROAR_REST = (71, 99)
+# The roar's recovery (frames): about a second after the slam it returns to standing; a model may
+# close sooner ("roar_rest_from/_to": the adolescent's roar ends the demo, so it does not hold the gape).
+ROAR_REST = (L.get("roar_rest_from", 71), L.get("roar_rest_to", 99))
 
 
-def tail_whip(clip, P):
-    """The tail's swing from turning, by frame: a damped spring (the tail's mass) driven by the
-    body's yaw acceleration (deg/s^2 from the clip's path), so it drags wide as the turn starts,
-    swings through as the turn slows and overshoots, then settles once the body stops."""
+def tail_drag(clip, P):
+    """The tail's drag in a turn, by frame, -1..1: the body's turn rate (from the clip's path) through
+    a first-order lag, so the tail swings out late, after the body starts turning, and eases back
+    after it stops; positive (outward) for a left turn (lead review: no early curl into the turn, no
+    snap back)."""
     if clip not in _WHIP:
-        wn, zeta = TAIL_SPRING
-        x = v = 0.0
-        out = {}
-        h = 1.0 / (FPS * 8)
-        for f in range(min(P) + 1, max(P)):
-            acc = (P[f + 1][1] - 2 * P[f][1] + P[f - 1][1]) * FPS * FPS
-            for _ in range(8):
-                v += (-wn * wn * x - 2 * zeta * wn * v - acc) * h
-                x += v * h
+        rate = {f: (P[f + 1][1] - P[f - 1][1]) * 0.5 for f in range(min(P) + 1, max(P))}
+        top = max(abs(v) for v in rate.values()) or 1.0
+        k = 1.0 - math.exp(-1.0 / (FPS * TAIL_DRAG_TAU))
+        x, out = 0.0, {}
+        for f in sorted(rate):
+            x += (rate[f] / top - x) * k
             out[f] = x
         _WHIP[clip] = out
     return _WHIP[clip]
@@ -692,7 +746,8 @@ def pose_frame(clip, f, P):
     rig.location = root
     rig.rotation_mode = "XYZ"
     rig.rotation_euler = (0, 0, math.radians(yaw))
-    ph = 2 * math.pi * f / T
+    Tc = TURN_T if clip == "turn" else T  # the body bobs with the steps it is taking
+    ph = 2 * math.pi * f / Tc
     walking = clip in ("walk", "turn")
     def ramp(a, b, x):
         t = min(1.0, max(0.0, (x - a) / (b - a)))
@@ -718,7 +773,7 @@ def pose_frame(clip, f, P):
     breathe = math.sin(f * 2 * math.pi / 72) * (roar + idle)
     # One slow pulse at the peak (f55-73, about 0.7 Hz): the jaw snaps wider and the chest pushes, then
     # settles, so the peak is a second bellow rather than a statue.
-    pulse = (math.sin(math.pi * (f - 55) / 18.0) ** 2 if 55 <= f <= 73 else 0.0) * roar
+    pulse = (math.sin(math.pi * (f - 55) / 18.0) ** 2 if 55 <= f <= 73 else 0.0) * roar * (1 - ramp(*ROAR_REST, f))
     # A slow look across the street through the drift (head and tail), gone by the recovery.
     look = math.sin(math.pi * min(1.0, max(0.0, (f - 46) / 50.0))) * math.sin(2 * math.pi * (f - 46) / 50.0) * roar
     # Walk: pelvis bobs twice a cycle and shifts its weight over the stance foot; the chest drifts
@@ -727,9 +782,10 @@ def pose_frame(clip, f, P):
     # Weight lands on each contact: a short dip in the frames after a foot plants.
     land = 0.0
     for phs in PHASE.values():
-        d = ((f / T - phs) % 1.0) * T  # frames since this foot's contact
+        d = ((f / Tc - phs) % 1.0) * Tc  # frames since this foot's contact
         land += math.sin(math.pi * d / 10.0) ** 2 if d < 10.0 else 0.0  # sin^2: no velocity step
-    bob = (-0.016 * hip_h * math.cos(2 * ph) * gait - 0.012 * hip_h * land * gait
+    bounce = L.get("bounce", 1.0)  # how high the body bobs on each step (a cub bounces)
+    bob = (-0.016 * bounce * hip_h * math.cos(2 * ph) * gait - 0.012 * L.get("land", 1.0) * hip_h * land * gait
            - 0.18 * hip_h * drop + 0.035 * hip_h * rear + 0.012 * hip_h * breathe + 0.015 * hip_h * pulse)
     sway = 0.045 * hip_h * math.cos(w) * gait
     set_loc("pelvis", (sway, 0, bob))
@@ -769,20 +825,20 @@ def pose_frame(clip, f, P):
     # Tail (director 2026-10-18: a heavy, mobile tail). Walk and idle: a wave travels root to tip,
     # each joint a fixed phase behind the one before, so the tip sweeps about three times as far as
     # the end of the thick root third; the idle keeps a slow sway that never stops. Turn: the tail's
-    # mass (a damped spring driven by the body's turning acceleration, tail_whip()) drags it wide,
-    # swings it through as the turn slows, overshoots and settles; the wave reaches the tip late.
+    # mass drags it to the outside of the turn, lagging the body's turn rate (tail_drag()), and it
+    # eases back once the body stops; the wave reaches the tip late.
     # Roar: lifted through the coil, slammed down at the peak (a wave down the tail), a rebound,
     # then it rests low until the recovery.
-    whip = tail_whip(clip, P) if clip == "turn" else None
+    whip = tail_drag(clip, P) if clip == "turn" else None
     for i in range(TAIL_BONES):
         k = i / (TAIL_BONES - 1)
         # The game turns standing: the turn clip's tail carries only the whip (no walk sway), so it
         # settles to the idle pose when the body stops.
         settle_t = 0.0 if clip == "turn" else 1.0
-        walk_yaw = TAIL_WALK[0] + TAIL_WALK[1] * k
+        walk_yaw = (TAIL_WALK[0] + TAIL_WALK[1] * k) * L.get("tail_sway", 1.0)
         walk_yaw *= math.cos(2 * math.pi * f / TAIL_WALK_PERIOD - math.pi * DUTY - TAIL_LAG * i) * gait * settle_t
         idle_yaw = (TAIL_IDLE[0] + TAIL_IDLE[1] * k) * math.sin(2 * math.pi * f / 72 - TAIL_LAG * i) * (idle + 0.6 * roar)
-        turn_yaw = (TAIL_WHIP[0] + TAIL_WHIP[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
+        turn_yaw = (TAIL_DRAG[0] + TAIL_DRAG[1] * k) * lagged(whip, f - TAIL_WHIP_DELAY * i) if whip else 0.0
         roar_yaw = (0.6 + 2.2 * k) * rear * (1 if i >= 2 else 0.3) - 1.2 * look * (i >= 3)
         # Lift: an arc, root first, the tip trailing; slam: a wave down the tail that speeds up into
         # the street (no ease at the bottom: it lands hard), a short bounce, then it rests low.
@@ -803,7 +859,8 @@ def pose_frame(clip, f, P):
                                     + L.get("tail_roar_lift", 2.5) * rear * (i < 2) - 0.3 * rear * (i >= 2)
                                     + 2.0 * windup * (i < 4) + L.get("tail_breathe", 0.4) * breathe
                                     + L.get("tail_lift", 0.0) * (i == 0)
-                                    + (TAIL_LIFT[0] + TAIL_LIFT[1] * k) * lift + TAIL_TRAIL * k * trail - (0.2 + 1.6 * k) * (slam - 4.0 * TAIL_SLAM[1] * rebound)))
+                                    + (TAIL_LIFT[0] + TAIL_LIFT[1] * k) * lift + TAIL_TRAIL * k * trail
+                                    - L.get("slam_gain", 1.0) * (0.2 + 1.6 * k) * (slam - 4.0 * TAIL_SLAM[1] * rebound)))
     # Feet: world-fixed while planted (converted into the moving rig's space).
     # The rig's matrix for this frame (rig.matrix_world still holds the last evaluated frame).
     inv = (Matrix.Translation(root) @ Matrix.Rotation(math.radians(yaw), 4, "Z")).inverted()
@@ -1267,7 +1324,7 @@ GAME_BONES = ["spine0", "spine1", "spine2", "head0", "head1", "arm_l0", "arm_l1"
               f"tail{i}" for i in range(9)] + ["jaw"]
 # Clips the game plays: name -> (motion_test clip, frames kept, loops). The walk keeps one 48-frame
 # cycle and the idle one 72-frame breath (both loop seamlessly); turn_right is turn_left mirrored.
-GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", FRAMES, True), ("turn_left", "turn", 144, False),
+GAME_CLIPS = [("idle", "idle", 72, True), ("walk", "walk", int(WALK_CYCLES * T), True), ("turn_left", "turn", 144, False),
               ("turn_right", "turn", 144, False), ("roar", "roar", 108, False)]
 Q16 = 32767.0  # int16 scale of a quaternion component (positions are stored in cm)
 
@@ -1349,7 +1406,7 @@ def clips_export():
     header length, the header (JSON: game bones in rig.json order and the skin bones each gathers,
     their rest heads, fps, the walk's stride per cycle, the clip table), then every clip's frames:
     27 x int16[4] local quaternion (x y z w, /32767), int16[3] pelvis offset, int16[6] left then
-    right toe tip (rig space, cm), int16 root yaw (centidegrees), int16[2] root travel (x z, cm),
+    right toe tip (rig space, cm), int16 root yaw (centidegrees), int16[2] root travel (x z, dm; unused by the game),
     u8 contacts (bit 0 left, 1 right), u8 pad: 242 bytes a frame. Game axes, metres x 100."""
     import struct
     first, last = game_chains()
@@ -1382,7 +1439,7 @@ def clips_export():
             body += struct.pack("<3h", *cm(off))
             body += struct.pack("<6h", *(cm(feet[0]) + cm(feet[1])))
             body += struct.pack("<h", int(round(yaw * 100)))
-            body += struct.pack("<2h", *cm((travel.x, travel.z)))
+            body += struct.pack("<2h", *(int(round(c * 10.0)) for c in (travel.x, travel.z)))  # dm
             body += struct.pack("<BB", (1 if contact[0] else 0) | (2 if contact[1] else 0), 0)
         table.append({"name": name, "first": start, "frames": n, "loop": loop,
                       "cycles": round(n / T) if clip == "walk" else 1})

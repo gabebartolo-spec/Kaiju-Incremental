@@ -111,7 +111,7 @@ var _events: Array[Dictionary] = []
 func _init(
 	p_stats: Dictionary, tuning: Dictionary, layout: Array[Dictionary], rng: RandomNumberGenerator
 ) -> void:
-	stats = p_stats
+	stats = Growth.stage_stats(p_stats, tuning)
 	army = tuning["army"]
 	city = tuning["city"]
 	powers_cfg = tuning["powers"]

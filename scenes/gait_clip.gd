@@ -20,15 +20,19 @@ const LAG_DECAY := 10.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
-## The roar clip's frame where the tail tip hits the street (motion_test TAIL_SLAM), and how hard
-## the hit lands as a footfall: about four steps' dust and ring and a camera dip of a few percent
-## of the frame (the scene's footfall path; presentation only, no damage).
-const ROAR_SLAM_FRAME := 47.0
-const TAIL_SLAM_STRENGTH := 5.0
-## A planted foot that ends this far from its clip spot (strides), or on a straight leg (fraction
-## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip.
+## The roar's tail slam lands when the tip stops falling: watched from ROAR_SLAM_FRAME (motion_test:
+## hit 37 + TAIL_SLAM_DELAY x the tip joint 9 = 44.2, the earliest it can land), fired on the tip's
+## lowest frame, at the latest SLAM_WINDOW frames on (lead review PR #54: a fixed frame fired early
+## on the adolescent). How hard it lands as a footfall: the camera drops about 9 px at 1080p (the
+## scene's footfall path, presentation only, no damage); its puffs are sized by Fx.shockwave.
+const ROAR_SLAM_FRAME := 44.0
+const SLAM_WINDOW := 10.0
+const TAIL_SLAM_STRENGTH := 1.6
+## A planted foot that ends this far from its clip spot (strides), or past a straight leg (fraction
+## of the leg's length), takes a quick catch step (s, lift in hip heights) back to the clip. At 0.98
+## the adolescent's long legs, nearly straight at heel strike, re-stepped on every plant (PR #54).
 const RESTEP_GAP := 0.3
-const RESTEP_REACH := 0.98
+const RESTEP_REACH := 1.0
 const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
 ## The tail's mass on turns the clips don't carry (curves while walking, idle heading drift): a
@@ -72,6 +76,10 @@ var _tail_at: Array[float] = []
 var _last_body_yaw := 0.0
 var _last_yaw_rate := 0.0
 var _tail_primed := false
+var _feet_primed := false
+## The roar's tail slam: the tip's lowest point so far, and whether it has landed.
+var _slam_low := Vector3(0, INF, 0)
+var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
 
 
@@ -228,10 +236,21 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 
 ## The roar's tail slam lands as a heavy footfall where the tip meets the street.
 func _slam_tail(roar_was: float) -> void:
-	if state == "roar" and roar_was < ROAR_SLAM_FRAME and clip_time >= ROAR_SLAM_FRAME:
-		var tip := rig.tail_world(_tail_tip)
-		tip.y = rig.global_position.y
-		rig.foot_planted.emit("tail", TAIL_SLAM_STRENGTH, tip)
+	if state != "roar":
+		return
+	if roar_was < 0.0 or clip_time < roar_was:  # a new roar
+		_slam_low = Vector3(0, INF, 0)
+		_slammed = false
+	if _slammed or clip_time < ROAR_SLAM_FRAME:
+		return
+	var tip := rig.tail_world(_tail_tip)
+	if tip.y < _slam_low.y and clip_time < ROAR_SLAM_FRAME + SLAM_WINDOW:
+		_slam_low = tip
+		return
+	_slammed = true  # the tip rose: it was lowest last frame
+	var at := _slam_low if _slam_low.y < INF else tip
+	at.y = rig.global_position.y
+	rig.foot_planted.emit("tail", TAIL_SLAM_STRENGTH, at)
 
 
 ## The tail lags the body's turns: the spring is pushed by the body's turning acceleration while
@@ -284,7 +303,8 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 				leg.plant_at = target
 				leg.drift = 0.0
 				var side := "left" if leg.side < 0.0 else "right"
-				rig.foot_planted.emit(side, clampf(0.2 + speed_k(), 0.0, 1.0), target)
+				if _feet_primed:  # the first frame's feet were already down: no step, no ring
+					rig.foot_planted.emit(side, clampf(0.2 + speed_k(), 0.0, 1.0), target)
 			target = _lock[i]
 			_lag[i] = _lock[i] - clip_toe
 		else:
@@ -292,6 +312,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		leg.planted = planted
 		_was_planted[i] = planted
 		_reach(leg, target)
+	_feet_primed = true
 
 
 ## True when a planted foot has been left too far behind (or ahead) of its clip spot to hold.

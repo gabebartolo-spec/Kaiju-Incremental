@@ -14,6 +14,8 @@ extends "res://tools/capture/capture_motion.gd"
 ## (each is the frame drawn before that step, one frame behind the label).
 
 const TURN_AT := 8.5
+## The walk starts this soon (s): a short stand, not a second of nothing (lead review, PR #54).
+const WALK_FROM := 0.3
 const ROAR_AT := 13.0
 
 var _gait: ClipGait
@@ -51,7 +53,7 @@ func _initialize() -> void:
 
 
 func _input_at(t: float) -> Vector2:
-	if t < 1.0 or t >= 7.0:
+	if t < WALK_FROM or t >= 7.0:
 		return Vector2.ZERO
 	return Vector2(0, -1)
 
