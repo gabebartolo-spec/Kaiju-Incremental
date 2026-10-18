@@ -53,7 +53,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_place(jet, from, dir, Num.f(event["y"]))
 		"jet_inbound":
 			_warn(event)
-			_sfx.play("jet_flyby")
+			_sfx.play("jet_flyby", 0.0, _flyby_pitch(Num.i(event["jet"])))
 		"jet_bomb_drop":
 			_drop(event)
 		"jet_bomb":
@@ -72,6 +72,16 @@ func _process(_delta: float) -> void:
 		if _jets.has(jet.id):
 			var node: Node3D = _jets[jet.id]
 			_place(node, jet.pos, jet.dir, sim.strike.altitude(jet))
+
+
+## The fly-by's pitch for this jet's kind (vehicles.jet_flyby_pitch; 1 if it has none): the
+## heavy bomber drones lower.
+func _flyby_pitch(id: int) -> float:
+	var pitches: Dictionary = Content.section("vehicles")["jet_flyby_pitch"]
+	for jet: StrikeWing.Jet in sim.strike.jets:
+		if jet.id == id:
+			return Num.f(pitches.get(jet.kind, 1.0))
+	return 1.0
 
 
 func _place(node: Node3D, at: Vector2, dir: Vector2, y: float) -> void:
