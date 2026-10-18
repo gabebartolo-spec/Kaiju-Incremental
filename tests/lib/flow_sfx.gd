@@ -48,4 +48,5 @@ static func run(root: Node, check: Callable) -> void:
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
 	FlowSounds.regen(check, sfx)
+	preload("res://tests/lib/flow_voice_sounds.gd").check_tail(check, sfx)
 	sfx.free()
