@@ -72,6 +72,8 @@ session smokes it, and the director plays again.
 ## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
 ## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
 ## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
+## GPU FAN: director's PC = RTX 4070 SUPER, 4K @120 Hz monitor ON THE CARD (WMI wrongly lists it on the AMD iGPU).
+## Build session measuring off-screen 4K: caps 60/120/unlimited + nvidia-smi power/fan, per-effect GPU ms -> quality setting.
 ## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
