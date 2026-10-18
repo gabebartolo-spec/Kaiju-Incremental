@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r5 in progress)
-## State: running a check (suites on the r5 edits; then merge look-options 615930c, clip, pacing)
+## State: awaiting lead (#50 r5 at 98d21cc, CI green; heli design note sent)
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -37,12 +37,17 @@ CAR, CLOSE lines.
 Tests: military_view.gd uses Clip.walk; new check (closest >= danger-0.5, no hull on a car).
 military floor 10, README row updated.
 
+## r5 done (head 98d21cc, synced look-options c64fa34; PR body + packet updated)
+- Fixes after the suite: settle at a crossing (parked) to the nearer road; a falling-back tank
+  held up re-plans after 1 s (CI caught 1.1 s in danger at Apex seed 2).
+- Clip: notes military-ai/clip_r5/clip_720.mp4 + stills (450c96a). Known look issue: the lead
+  tank backs out under the snout at 13-16 s (10.3 m, danger 9.3; reverse 1.5 m/s).
+- Pacing vs 83af6d6 (snapB6 / snapM7): evolve1 0.27 vs 0.26 h, young 7/8 vs 6/8, tree 4.79 vs
+  4.82 h; tank dmg/run young 133 vs 167 (outcome-matched), Beh 309/299, Col 651/656, Apex 686/660.
+
 ## Next
-1. Suites (scratchpad suites_r5.txt). 2. Merge origin/claude/look-options (no rebase).
-3. Clip local windowed off-screen (override.cfg first, own command; remove after) -> notes
-   military-ai/clip_r5/. 4. Pacing base snapshot vs r5 (pacing_dmg.gd via make_pacing_dmg.py;
-   pacing.gd changed in base: regenerate). 5. PR body rewrite (tanks only), push, ping LEAD
-   with full SHA. 6. Heli design note (probe_note.gd).
+1. CI green at 98d21cc -> ping LEAD (full SHA, clip, overlay, probe table, pacing).
+2. Heli design note DONE: notes military-ai/heli-design-note.md (D impossible: 8 m facades; B x1.6 23%/44%).
 
 ## Findings for the lead
 - Numeric per-frame probes caught what crops missed; screen-space part outlines settle
