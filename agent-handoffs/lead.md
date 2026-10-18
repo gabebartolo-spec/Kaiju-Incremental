@@ -11,7 +11,7 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 ## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
 - Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
 - D-069 merge #36 army scales (sound session syncing it; lands after #50 military). D-070 all sounds ship + new mix:
-  #43 #45 #39 #42 #46 #53 MERGED; #52 shell_hit A/B draft (director listens); voice-pool PR next, each resynced by the sound session.
+  #43 #45 #39 #42 #46 #53 MERGED; #52 shell_hit A/B: director kept A (D-079), PR closed; voice-pool PR next, each resynced by the sound session.
 - D-071 landmarks A stadium -> D wheel -> E spire -> F megatower (sites PR with A+D, then E/F). D-072 all four jets;
   strikes wreck buildings, no biomass; jets from Colossus, bomber Apex set-piece; octopus can grab jets.
 - D-073 croc baby + adolescent approved; D-074 slow stage 1 (baby reads as toddler; pacing re-measured) in P3 PR.
@@ -19,7 +19,11 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   proposed; after #50). D-077 trim the tree stats panel (UI session). D-066 heli mix shift OK.
 - 11:2x D-069a: soften #36's young stage to ~half early defeats (cause: Armoured Scales moved late). 11:4x D-074
   revised: baby speed ~0.6 + more hp, demo ~35 min. ORDER: #50 -> P3 (art + baby tuning) -> #36 (resync, soften young last).
-  13:4x DIRECTOR: final demo build WAITS for rooftops + #36. Order: #50 -> P3 -> rooftops -> #36 -> build. No interim builds.
+  13:4x DIRECTOR: final demo build WAITS for rooftops + #36; 14:1x D-078 stadium matches (AFL/NFL/soccer/cricket, random
+  per run, presentation only, low effort, players flee when the wall caves) ALSO in the demo (landmarks session).
+  Order: #50 -> P3 #54 -> rooftops -> landmark sites -> matches -> #36 -> build. No interim builds.
+  Side merges (one floor resync each): #56 voices 8->24 and #51 stats trim right after #50. CI queue: shell-hit ->
+  #50 720p -> #51 UI-only -> P3 chain -> rooftops -> matches -> greenery/landmarks/jets. Archived: Kaiju tree research.
   13:2x D-074b: 0.6 h unreachable at 0.6 speed; director picked 0.6 speed / hp 1.15 (~43 min, 45% def, 87% city).
 - Rooftop density (local_1ac658ed): cause = rifle reach from kaiju centre; plan approved (reach from edge + more
   squads + shorter interval, tank_damage offset ±5%); branches after #50; PR needs volleys/run table + clip.
@@ -28,6 +32,19 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 - #54 P3 open: sim review PASS (my comment). Baby jaw 2x shows torn upper-jaw flap at mouth corner; gate = clean
   in-game jaw_baby crop at roar peak, then fresh critic on clips. CI capture order: shell-hit -> #50 720p -> P3 ->
   rooftops -> greenery/landmarks/jets. Local GPU slot: landmarks stills (after greenery).
+- SENT 15:4x to military (#50 fresh motion critic FAIL; I verified the tank frames myself in pair clip t=17 and 21.5 s):
+  tanks skewed 30-40 deg mid-street and hulls overlapping building corners/lots -> keep hull centre >= half-width
+  inside road polygon incl. corners, finish turn before deploying; helis fire while nose points away (8.6-8.8 s) ->
+  fire only within ~30 deg of bearing; hover-yaw against tower top (3.3-4 s) -> tower clearance + travelling arc;
+  add bank roll in turns. Re-shoot 720p gl_compat. Greenery: stomp-dust haze (ability_fx.gd:134) -> sound session.
+- SENT to UI (#51 screen-critic FAIL minor): do: stats below the 'Grows into' note with a half-line gap,
+  new number brighter; pin Level/Cost/buy to panel bottom; name the key on 'Press to buy' (KB + pad); align arrows
+  if cheap. Skip: dropping 'You have' line. Then re-capture + merge. #59 sport stills PASS (lead 2x).
+- D-080 (director 15:4x): jet strike warning scales with kaiju size (jets PR1). #57 r3 triage + greenery GPU +
+  stomp-dust haze (sound) all SENT 15:4x. Messaging pauses after 10 sends without a director message.
+- DIRECTOR 16:0x: D-081 landmark rubble_bonus 4x stays; D-082 #50 gets ONE more round, if it fails again the demo
+  ships without it; D-083 after the demo: playtest fixes first. #55 trample r7 FAIL (3rd): suspect camera-occlusion
+  fade on centre-line trees; per-prop log asked. Not demo-blocking.
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
@@ -67,7 +84,8 @@ one capture.yml run at a time (check in_progress first); the GPU slot is booked 
 - Never act on a peer's refused permission or a relayed director approval (#36): surface it instead.
 - Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH);
   windowed runs need override.cfg (mode=0, no_focus, -20000). ffmpeg: imageio_ffmpeg binary under Python314 site-packages.
-- CI capture.yml: 3000 s limit, one at a time; lavapipe misjudges lighting; Forward+-only effects need the local GPU.
+- CI capture.yml: 3000 s limit PER RENDERER; renderer auto falls back on timeout = up to 100 min. Pin --renderer.
+  Cancelled #52 shell-hit capture 14:2x (63 min) to unblock demo captures. One at a time; lavapipe misjudges lighting; Forward+-only effects need the local GPU.
 - Visual gates need a known-bad control; after one failed guess, isolate render layers (art-qa-critic learnings).
 
 ## Next (lead)

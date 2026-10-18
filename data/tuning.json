@@ -252,6 +252,7 @@
 	},
 	"sfx": {
 		"pitch_jitter": 0.06,
+		"voices": 24,
 		"stomp_tiers": [1.4, 1.8],
 		"default_volume": 0.9,
 		"regen_seconds": 2.5,
