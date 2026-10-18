@@ -34,6 +34,7 @@ func _check_rampages() -> void:
 	var closest := INF
 	var overlaps := 0
 	var parked := 0
+	var skewed := 0
 	var parked_in_band := 0
 	var parked_reserve := 0
 	var parked_close := 0
@@ -54,7 +55,8 @@ func _check_rampages() -> void:
 			var half := CityGen.half_extent(sim.city)
 			var last := {}  # tank id -> position last step
 			var still := {}  # tank id -> seconds it has stood still
-			var heads := {}  # tank id -> the way it last moved (or faces the kaiju)
+			var heads := {}  # tank id -> where its hull points
+			var hulls_was := {}  # ... and the step before (a hull still turning is not still)
 			var danger_t := {}  # tank id -> seconds parked inside the danger radius
 			var convoy: Dictionary = sim.army.get("convoy", {})
 			var box := sim.arena_half + Num.f(convoy.get("entry_depth", 0.0))
@@ -78,13 +80,17 @@ func _check_rampages() -> void:
 							where = (
 								"tier %d seed %d tank %d at %v" % [tier, seed, tank.id, tank.pos]
 							)
-					if _in_building(tank.pos, grid):
-						inside += 1
 					var was_at: Vector2 = last.get(tank.id, tank.pos)
-					if tank.pos.distance_to(was_at) > 0.001:
+					var drawn := sim.army_units.convoy.front(tank.id)  # the hull the view draws
+					if drawn != Vector2.ZERO:
+						heads[tank.id] = drawn
+					elif tank.pos.distance_to(was_at) > 0.001:
 						heads[tank.id] = (tank.pos - was_at).normalized()
 					elif not heads.has(tank.id):
 						heads[tank.id] = (sim.kaiju_pos - tank.pos).normalized()
+					var head: Vector2 = heads[tank.id]
+					if _hull_in_building(tank.pos, head, grid):
+						inside += 1
 				for tank: RampageSim.Tank in sim.tanks:
 					for other: RampageSim.Tank in sim.tanks:
 						if (
@@ -99,14 +105,16 @@ func _check_rampages() -> void:
 							closest = minf(closest, tank.pos.distance_to(other.pos))
 					var d := tank.pos.distance_to(sim.kaiju_pos)
 					var was: Vector2 = last.get(tank.id, Vector2(INF, INF))
-					var for_s := (
-						Num.f(still.get(tank.id, 0.0)) + DT
-						if tank.pos.distance_to(was) < 0.001
-						else 0.0
-					)
+					var turned: Vector2 = hulls_was.get(tank.id, Vector2.ZERO)
+					var head_now: Vector2 = heads[tank.id]
+					var standing := tank.pos.distance_to(was) < 0.001 and turned == head_now
+					var for_s := Num.f(still.get(tank.id, 0.0)) + DT if standing else 0.0
 					still[tank.id] = for_s
 					if for_s >= 3.0:
 						parked += 1
+						var lies: Vector2 = heads[tank.id]
+						if not _along_road(tank.pos, lies, roads):
+							skewed += 1
 						if d >= danger - 0.5 and d <= reach + 1.0:
 							parked_in_band += 1
 						elif d > reach + 1.0:
@@ -122,6 +130,7 @@ func _check_rampages() -> void:
 					else:
 						danger_t[tank.id] = 0.0
 				last = {}
+				hulls_was = heads.duplicate()
 				for tank: RampageSim.Tank in sim.tanks:
 					last[tank.id] = tank.pos
 				for heli: AirWing.Heli in sim.air.helis:
@@ -133,6 +142,16 @@ func _check_rampages() -> void:
 		(
 			"no tank hull ever overlaps a building footprint (%d of %d tank-steps)"
 			% [inside, tank_samples]
+		)
+	)
+	check(
+		parked > 100 and skewed == 0,
+		(
+			(
+				"a tank standing still lies along its road, never mid-pivot (%d of %d parked"
+				+ " tank-steps skewed past %.0f degrees)"
+			)
+			% [skewed, parked, ALIGN_DEG]
 		)
 	)
 	check(

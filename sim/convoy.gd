@@ -1,13 +1,12 @@
 class_name Convoy
 extends RefCounted
-## How the tanks move (D-066): like an army, not a swarm. They enter by road from the city's
-## edge and drive the street plan (RoadGraph: never an alley, a lot or a building) in columns
-## that keep their gap. Each takes a firing post on a road at standoff range with a clear line
-## of fire, spread round the kaiju on an arc (FiringPosts), holds it while it is good, bounds to
-## a new one when the kaiju moves (one tank of a column at a time, the other covering), backs
-## off when the kaiju closes inside the danger radius, re-routes round a tank in its way or a
-## toppled tower across its road, and gives way to an older tank. Pure and seeded; Army owns
-## spawning, firing and damage and calls in here. Numbers: army.convoy in data/tuning.json.
+## How the tanks move (D-066): like an army, not a swarm. They enter by road and drive the street
+## plan (RoadGraph: never an alley, a lot or a building) in columns that keep their gap, pivoting
+## at turns. Each takes a firing post on a road at standoff with a clear line of fire, spread on
+## an arc (FiringPosts), holds it while good, bounds to a new one when the kaiju moves (one tank
+## of a column at a time), backs off inside the danger radius, re-routes round a tank or a toppled
+## tower in its way, and gives way to an older tank. Pure and seeded; Army owns spawning, firing
+## and damage. Numbers: army.convoy in data/tuning.json.
 
 
 ## A tank's route and drive state: one per tank (by id) in `routes`.
@@ -26,6 +25,7 @@ class Route:
 	var yield_t := 0.0
 	var yield_all := 0.0  # how long it has been giving way this time
 	var heading := Vector2.ZERO  # the way it last drove
+	var front := Vector2.ZERO  # where its hull points: the pose the view draws
 	var reversing := false  # backing off with its front still to the kaiju
 
 
@@ -60,10 +60,10 @@ func clear_line(from: Vector2, to: Vector2) -> bool:
 	return posts.clear_line(from, to)
 
 
-## Is tank `id` backing off with its front to the kaiju (presentation keeps its hull so)?
-func reversing(id: int) -> bool:
+## Where tank `id`'s hull points (ZERO before it has a route): the view draws exactly this.
+func front(id: int) -> Vector2:
 	var r: Route = routes.get(id)
-	return r != null and r.reversing
+	return r.front if r != null else Vector2.ZERO
 
 
 ## Where a new tank enters at `node` (pick_entry): records its route and returns where it
@@ -74,34 +74,23 @@ func enter(id: int, column: int, node: int) -> Vector2:
 	for tank: RampageSim.Tank in sim.tanks:
 		if tank.pos.distance_to(graph.nodes[node]) < Num.f(cfg["follow"]):
 			return Vector2(INF, INF)
+	var e := graph.links[node][0]
+	var far := graph.edge_b[e] if graph.edge_a[e] == node else graph.edge_a[e]
+	var into := (graph.nodes[far] - graph.nodes[node]).normalized()  # facing into its road
+	if not graph.drivable(graph.nodes[node], into):  # a stub too short for the hull
+		return Vector2(INF, INF)
 	var r := Route.new()
 	r.column = column
-	r.edge = graph.links[node][0]
-	var e := r.edge
-	var far := graph.edge_b[e] if graph.edge_a[e] == node else graph.edge_a[e]
-	r.heading = (graph.nodes[far] - graph.nodes[node]).normalized()  # facing into its road
+	r.edge = e
+	r.heading = into
+	r.front = into
 	routes[id] = r
 	return graph.nodes[node]
 
 
-## The way in for a column on `bearing`: the road entry at the city's edge on that side, or, in
-## a city grown past the spawn radius, the road crossing nearest spawn_radius from the kaiju
-## (D-039).
+## The way in for a column on `bearing` (RoadGraph.pick_entry).
 func pick_entry(bearing: float) -> int:
-	var dir := Vector2.from_angle(bearing)
-	var spawn_radius := Num.f(sim.army["spawn_radius"])
-	var edge := graph.box <= spawn_radius
-	var aim := dir * graph.box * 2.0 if edge else sim.kaiju_pos + dir * spawn_radius
-	var pool: Array[int] = []
-	pool.assign(graph.entries if edge else PackedInt32Array(range(graph.nodes.size())))
-	var best := -1
-	var best_d := INF
-	for n: int in pool:
-		var d := graph.nodes[n].distance_squared_to(aim)
-		if d < best_d and not graph.links[n].is_empty():
-			best_d = d
-			best = n
-	return best
+	return graph.pick_entry(bearing, sim.kaiju_pos, Num.f(sim.army["spawn_radius"]))
 
 
 ## One step for every tank: read what fell across the roads, re-plan where needed (at most
@@ -243,8 +232,9 @@ func _start(tank: RampageSim.Tank, r: Route) -> Dictionary:
 
 
 ## Drives along the route at speed (reversing slower, front still to the kaiju, when it backs
-## off), its hull never off the carriageway or overlapping another's, holding `follow` behind
-## one ahead of it in its lane; held up `stuck` seconds, it re-plans round what held it.
+## off), hull on the carriageway and clear of others, `follow` behind one ahead in its lane. A
+## turn sharper than pivot_deg it makes standing at hull_turn (shuffling a hull's step forward or
+## back where the turn will not fit). Held up `stuck` seconds, it re-plans round what held it.
 func _drive(tank: RampageSim.Tank, r: Route, dt: float) -> void:
 	r.reversing = false
 	var back := Num.f(sim.army["speed"]) * Num.f(cfg["reverse"]) * dt
@@ -252,21 +242,33 @@ func _drive(tank: RampageSim.Tank, r: Route, dt: float) -> void:
 		_yielding(tank, r, dt, back)
 		return
 	r.yield_all = 0.0
+	var rate := deg_to_rad(Num.f(cfg["hull_turn"])) * dt
 	if r.path.is_empty():
+		_settle(tank, r, rate)
 		return
 	var to := r.path[0] - tank.pos
 	var dist := to.length()
-	var dir := to / dist if dist > 0.0001 else Vector2.ZERO
+	var dir := to / dist if dist > 0.0001 else r.front
 	var speed := Num.f(sim.army["speed"])
-	if r.retreating and dir.dot(sim.kaiju_pos - tank.pos) < 0.0:
+	var behind := r.front.dot(dir) < (0.0 if r.retreating else -0.5)  # back off, never turn tail
+	if behind and r.front != Vector2.ZERO:  # and back up rather than turn about in the road
 		r.reversing = true
 		speed *= Num.f(cfg["reverse"])
-	var move := minf(dist, speed * dt)
+	var want := -dir if r.reversing else dir
+	r.front = want if r.front == Vector2.ZERO else r.front
+	var turn := r.front.angle_to(want) if dist > 1.0 else 0.0  # the last metre: no turn for it
+	var front := r.front.rotated(clampf(turn, -rate, rate))
+	var move := 0.0 if absf(turn) > deg_to_rad(Num.f(cfg["pivot_deg"])) else minf(dist, speed * dt)
 	var next := tank.pos + dir * move
-	var blocker := _blocker(tank, next, dir)
-	if blocker == null and not graph.drivable(next) and graph.drivable(tank.pos):
-		blocker = tank  # the move would put its hull off the road: held up all the same
+	var blocker := _blocker(tank, next, front)
+	var fits := graph.drivable(next, front) and (move > 0.0 or _fits(tank, tank.pos, want))
+	if blocker == null and not fits and graph.drivable(tank.pos, r.front):
+		if move == 0.0 and _shuffle(tank, r, front, back):
+			return
+		blocker = tank  # the hull would leave the road, or the turn has no room: held up
 	if blocker != null:
+		if move > 0.0:  # held up on the way: it waits squared to its road
+			_settle(tank, r, rate)
 		r.stuck_t += dt
 		_give_way(tank, blocker, back)
 		if r.stuck_t >= Num.f(cfg["stuck"]):
@@ -274,13 +276,39 @@ func _drive(tank: RampageSim.Tank, r: Route, dt: float) -> void:
 		return
 	r.stuck_t = 0.0
 	r.heading = dir
+	r.front = front
 	tank.pos = next
 	if not r.edges.is_empty() and r.edges[0] >= 0:
 		r.edge = r.edges[0]
-	if move >= dist - 0.0001:
+	if move > 0.0 and move >= dist - 0.0001 or dist <= 0.0001:
 		r.path.remove_at(0)
 		r.edges.remove_at(0)
 		r.retreating = r.retreating and not r.path.is_empty()
+
+
+## No room to pivot: a step along the hull (forward or back) to where the turn fits.
+func _shuffle(tank: RampageSim.Tank, r: Route, turned: Vector2, step: float) -> bool:
+	for way: Vector2 in [r.front, -r.front]:
+		var to := tank.pos + way * step
+		if _fits(tank, to, turned):
+			tank.pos = to
+			return true
+	return false
+
+
+func _fits(tank: RampageSim.Tank, at: Vector2, front: Vector2) -> bool:
+	return graph.drivable(at, front) and _blocker(tank, at, front) == null
+
+
+## At its post a tank squares its hull to its road (the nearer way); only its turret turns.
+func _settle(tank: RampageSim.Tank, r: Route, rate: float) -> void:
+	if r.edge < 0 or r.front == Vector2.ZERO:
+		return
+	var axis := (graph.nodes[graph.edge_b[r.edge]] - graph.nodes[graph.edge_a[r.edge]]).normalized()
+	var want := axis if axis.dot(r.front) >= 0.0 else -axis
+	var front := r.front.rotated(clampf(r.front.angle_to(want), -rate, rate))
+	if _fits(tank, tank.pos, front):
+		r.front = front
 
 
 ## Held up too long: re-plan off this road, and round the roads under the tank in its way.
@@ -294,8 +322,7 @@ func _held_up(tank: RampageSim.Tank, r: Route, blocker: RampageSim.Tank) -> void
 	_plan(tank, r, r.retreating)
 
 
-## Giving way: back up while the older tank is still held up (a while longer if it still is,
-## up to 3 x stuck), then wait.
+## Giving way: back up while the older tank is held up (up to 3 x stuck), then wait.
 func _yielding(tank: RampageSim.Tank, r: Route, dt: float, back: float) -> void:
 	r.yield_t -= dt
 	for older: RampageSim.Tank in sim.tanks:
@@ -327,33 +354,33 @@ func _back_off(tank: RampageSim.Tank, older: RampageSim.Tank, step: float) -> vo
 	var r: Route = routes[tank.id]
 	if o == null or o.stuck_t <= 0.0:
 		return
-	var own := r.heading if r.heading != Vector2.ZERO else (tank.pos - older.pos).normalized()
+	var own := r.front if r.front != Vector2.ZERO else (tank.pos - older.pos).normalized()
 	var back := own if own.dot(tank.pos - older.pos) > 0.0 else -own
 	var to := tank.pos + back * step
-	if graph.drivable(to) and _blocker(tank, to, own) == null:
+	if graph.drivable(to, own) and _blocker(tank, to, own) == null:
 		tank.pos = to
 		r.reversing = back.dot(own) < 0.0
 
 
-## The tank in the way of a move to `next` heading `dir`, or null: never into a new hull
-## overlap (out of one only by opening up), never closer than `follow` behind one going its way
-## in its lane.
+## The tank in the way of a move to `next` with its hull along `dir`, or null: never into a new
+## hull overlap (out of one only by opening up), never closer than `follow` behind one going its
+## way in its lane.
 func _blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.Tank:
 	var hull: Array = cfg["hull"]
 	var clear := Num.f(cfg["clear"])
 	var half := Vector2(Num.f(hull[0]), Num.f(hull[1])) * 0.5 + Vector2(clear, clear)
 	var follow := Num.f(cfg["follow"])
 	var mine: Route = routes[tank.id]
-	var own := mine.heading if mine.heading != Vector2.ZERO else dir
+	var own := mine.front if mine.front != Vector2.ZERO else dir
 	for other: RampageSim.Tank in sim.tanks:
 		var then := next.distance_to(other.pos)
 		if other.id == tank.id or then > follow + half.x:
 			continue
 		var now := tank.pos.distance_to(other.pos)
 		var o: Route = routes.get(other.id)
-		var facing := o.heading if o != null and o.heading != Vector2.ZERO else dir
-		if hulls_overlap(next, dir, other.pos, facing, half):
-			if then <= now or not hulls_overlap(tank.pos, own, other.pos, facing, half):
+		var facing := o.front if o != null and o.front != Vector2.ZERO else dir
+		if RoadGraph.hulls_overlap(next, dir, other.pos, facing, half):
+			if then <= now or not RoadGraph.hulls_overlap(tank.pos, own, other.pos, facing, half):
 				return other
 		var ahead := other.pos - tank.pos
 		var lane := dir.dot(ahead) > 0.0 and absf(dir.cross(ahead)) < half.y * 2.0
@@ -362,28 +389,10 @@ func _blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.
 	return null
 
 
-## Do two hulls (centres, headings, half length and half width) overlap? Separating axes.
-static func hulls_overlap(p: Vector2, u: Vector2, q: Vector2, w: Vector2, half: Vector2) -> bool:
-	var d := q - p
-	for axis: Vector2 in [u, u.orthogonal(), w, w.orthogonal()] as Array[Vector2]:
-		var ra := half.x * absf(u.dot(axis)) + half.y * absf(u.orthogonal().dot(axis))
-		var rb := half.x * absf(w.dot(axis)) + half.y * absf(w.orthogonal().dot(axis))
-		if absf(d.dot(axis)) > ra + rb:
-			return false
-	return true
-
-
 ## A tower that toppled across a road closes it for the rest of the rampage: tanks on a route
 ## through it re-plan at once.
 func _read_rubble() -> void:
-	var closed := false
-	for event: Dictionary in sim.events:
-		if str(event["type"]) != "fall_land" or str(event.get("kind", "")) != "topple":
-			continue
-		var from: Vector2 = event["from"]
-		var to: Vector2 = event["to"]
-		closed = graph.close_strip(from, to, Num.f(event["width"])) or closed
-	if not closed:
+	if not graph.read_rubble(sim.events):
 		return
 	for tank: RampageSim.Tank in sim.tanks:
 		var r: Route = routes.get(tank.id)

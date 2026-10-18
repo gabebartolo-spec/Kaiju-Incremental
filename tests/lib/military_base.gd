@@ -14,6 +14,8 @@ const HULL_LENGTH := 5.0
 const HELI_HALF := 5.0
 ## Head-room the test keeps between a helicopter's hit circle (air.heli_radius) and the body.
 const HELI_CLEAR := 0.5
+## How far a standing tank's hull may lie off its road's axis.
+const ALIGN_DEG := 15.0
 ## Closest a wingman may come to its lead: two main rotors (each about an airframe across) with
 ## 2 m between the tips, centre to centre.
 const ROTOR_CLEAR := HELI_HALF * 2.0 + 2.0
@@ -92,14 +94,39 @@ func _footprints(sim: RampageSim) -> Dictionary:
 	return grid
 
 
-## Does a tank hull (a circle of half its width) at p overlap any building footprint?
-func _in_building(p: Vector2, grid: Dictionary) -> bool:
-	var key := _cell4(p)
-	for dx: int in [-1, 0, 1]:
-		for dz: int in [-1, 0, 1]:
-			for rect: Rect2 in grid.get(key + Vector2i(dx, dz), []):
-				var nearest := p.clamp(rect.position, rect.end)
-				if nearest.distance_to(p) < HULL_HALF_WIDTH:
+## Does a hull at p pointing along `front` lie along a road it stands on (within ALIGN_DEG)?
+func _along_road(p: Vector2, front: Vector2, roads: Dictionary) -> bool:
+	for road: Array in roads.get(_cell4(p), []):
+		var a: Vector2 = road[0]
+		var b: Vector2 = road[1]
+		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
+		if q.distance_to(p) <= Num.f(road[2]) + 0.05:
+			if absf(front.cross((b - a).normalized())) <= sin(deg_to_rad(ALIGN_DEG)):
+				return true
+	return false
+
+
+## Does the tank hull as drawn (HULL_LENGTH long, front along `front`) at p overlap any building
+## footprint? The test's own separating axes (independent of RoadGraph's), corners and all.
+func _hull_in_building(p: Vector2, front: Vector2, grid: Dictionary) -> bool:
+	var half := Vector2(HULL_LENGTH * 0.5, HULL_HALF_WIDTH)
+	var side := front.orthogonal()
+	var ext := absf(front.x) * half.x + absf(side.x) * half.y
+	var ezt := absf(front.y) * half.x + absf(side.y) * half.y
+	var seen := {}
+	for cx: int in range(floori((p.x - ext) / 4.0), floori((p.x + ext) / 4.0) + 1):
+		for cz: int in range(floori((p.y - ezt) / 4.0), floori((p.y + ezt) / 4.0) + 1):
+			for rect: Rect2 in grid.get(Vector2i(cx, cz), []):
+				if seen.has(rect):
+					continue
+				seen[rect] = true
+				var d := rect.get_center() - p
+				var hb := rect.size * 0.5
+				if absf(d.x) >= ext + hb.x or absf(d.y) >= ezt + hb.y:
+					continue
+				var rf := hb.x * absf(front.x) + hb.y * absf(front.y)
+				var rs := hb.x * absf(side.x) + hb.y * absf(side.y)
+				if absf(d.dot(front)) < half.x + rf and absf(d.dot(side)) < half.y + rs:
 					return true
 	return false
 

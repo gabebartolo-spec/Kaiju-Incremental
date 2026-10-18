@@ -173,7 +173,9 @@
 			"search_margin": 30.0,
 			"stuck": 2.0,
 			"reverse": 0.6,
-			"grid": 8.0
+			"grid": 8.0,
+			"hull_turn": 90.0,
+			"pivot_deg": 15.0
 		},
 		"start_interval": 5.0,
 		"min_interval": 1.0,
@@ -395,7 +397,6 @@
 		"gun_elevation": 0.35,
 		"recoil": 0.3,
 		"recoil_seconds": 0.45,
-		"hull_turn": 3.0,
 		"heli_height": 2.75,
 		"main_rotor_spin": 28.0,
 		"tail_rotor_spin": 45.0,
