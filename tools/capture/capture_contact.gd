@@ -17,6 +17,9 @@ const LEAD_IN := 20
 var _body := true
 var _out := ""
 var _every := 30
+## --tower: start at the south face of the nearest tall tier-2 tower and chew north into its
+## base until it falls (D-091), instead of the walk-through.
+var _tower := false
 ## --dash=N: press the dash on walk step N (playtest note 4); -1: never.
 var _dash_at := -1
 
@@ -29,6 +32,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg.begins_with("--every="):
 			_every = arg.substr(8).to_int()
+		elif arg == "--tower":
+			_tower = true
 		elif arg.begins_with("--dash="):
 			_dash_at = arg.substr(7).to_int()
 	_run.call_deferred()
@@ -48,6 +53,8 @@ func _run() -> void:
 		rampage.sim.body.use_species("")  # no volume: the stomp-only contact the demo shipped
 	var target := rampage.sim.nearest_standing(rampage.sim.kaiju_pos)
 	var dir := (target - rampage.sim.kaiju_pos).normalized()
+	if _tower:
+		dir = _at_tower(rampage.sim)
 	var steps := [0]
 	rampage.scripted = func(_sim: RampageSim) -> Dictionary:
 		var n: int = steps[0]
@@ -59,6 +66,8 @@ func _run() -> void:
 			move = dir.orthogonal()
 		elif n >= LEAD_IN:
 			move = dir
+		if _tower:
+			move = dir if n >= LEAD_IN else Vector2.ZERO
 		return {"move": move, "dash": n == _dash_at}
 	root.add_child(rampage)
 	var layer := CanvasLayer.new()
@@ -87,3 +96,21 @@ func _run() -> void:
 	var sim := rampage.sim
 	print("body broke %d chunks, %d broken in all" % [sim.body.broken, sim.chunks_destroyed])
 	quit()
+
+
+## Puts the kaiju just south of the nearest tall tier-2 tower, facing it; returns the way in.
+func _at_tower(sim: RampageSim) -> Vector2:
+	var best := -1
+	var best_d := INF
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.tier == 2 and b.landmark == "" and b.height >= 10 and mini(b.w, b.d) >= 4:
+			var d := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
+			if d < best_d:
+				best = i
+				best_d = d
+	var t := sim.buildings[best]
+	sim.kaiju_pos = Vector2(t.x, t.z + t.d * 0.5 + sim.body.length() * 0.6)
+	sim.facing = Vector2(0, -1)
+	sim.body.heading = sim.facing
+	return sim.facing
