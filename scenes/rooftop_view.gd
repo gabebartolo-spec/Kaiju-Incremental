@@ -16,7 +16,7 @@ const MAX_TRACERS := 48
 const FLASH_FRAMES := 3
 const FLASH_SIZE := 0.5  # world units (about 15 px at the Behemoth's game camera), a star
 const FLASH_AHEAD := 0.45  # the star burns this far out along the aim, clear of the shooter
-const STAGGER_FRAMES := 1  # each rifle of a squad fires this many frames after the one before
+const RAGGED_FRAMES := 14  # each rifle after the first fires up to this late, seeded (no unison)
 ## A spark on the hide is drawn over everything (the body would hide it) for this long.
 const SPARK_FRAMES := 4
 const SPARK_SIZE := 0.9  # about 25 px at the Behemoth's game camera
@@ -258,7 +258,7 @@ func fired(squad_id: int, kaiju_at: Vector3) -> void:
 		for k: int in Num.i(_cfg["squad_size"]):
 			var t := stance(squad, k)
 			var muzzle := t * (Vector3(0, MUZZLE_HEIGHT, -7.5) * _voxel)
-			var wait := k * STAGGER_FRAMES
+			var wait := 0 if k == 0 else _rng.randi_range(2, RAGGED_FRAMES)
 			if _flashes.size() < MAX_FLASHES:
 				var ahead := -t.basis.z.normalized() * FLASH_AHEAD
 				_flashes.append({"hit": {"at": muzzle + ahead}, "wait": wait, "left": FLASH_FRAMES})

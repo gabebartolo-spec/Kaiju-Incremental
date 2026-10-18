@@ -86,6 +86,22 @@ func run() -> void:
 		far_shots == 0 and far.hp == far.max_hp,
 		"a squad out of range holds fire (%d shots)" % far_shots
 	)
+	# Improvised, not drilled (D-076): one squad's shots come at ragged gaps, never a metronome.
+	var ragged := _one_squad(_new({}))
+	ragged.kaiju_pos = ragged.army_units.squads[0].pos + Vector2(Num.f(cfg["range"]) * 0.5, 0)
+	var times: Array[float] = []
+	for i: int in ceili(Num.f(cfg["fire_interval"]) * 8.0 / DT):
+		for event: Dictionary in ragged.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "rooftop_fired":
+				times.append(i * DT)
+	var gaps: Array[float] = []
+	for i: int in range(1, times.size()):
+		gaps.append(times[i] - times[i - 1])
+	var spread: float = (gaps.max() - gaps.min()) if gaps.size() >= 3 else 0.0
+	_check.call(
+		spread >= Num.f(cfg["fire_interval"]) * 0.3,
+		"a squad fires at ragged gaps, not in step (%d gaps, spread %.2f s)" % [gaps.size(), spread]
+	)
 	# Range is measured from the edge of the kaiju's stomp, as the tanks' is (D-076): a Behemoth
 	# whose centre is past `range` but whose stomp edge is within it draws fire.
 	var edge := _one_squad(_new({"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}, grown))

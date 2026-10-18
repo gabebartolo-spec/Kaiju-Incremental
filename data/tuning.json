@@ -184,6 +184,7 @@
 			"max_by_tier": [20, 48, 48, 60],
 			"squad_size": 3,
 			"fire_interval": 0.8,
+			"interval_jitter": 0.5,
 			"range": 16.0,
 			"damage_by_tier": [0.03, 0.04, 0.08, 0.12],
 			"rooftop_rubble": [1, 3, 8, 18],
