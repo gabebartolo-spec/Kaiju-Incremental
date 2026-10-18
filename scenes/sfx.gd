@@ -78,6 +78,7 @@ func _ready() -> void:
 		"shell_hit",
 		"heli_gun",
 		"heli_crash",
+		"rifle",
 	]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
@@ -314,6 +315,11 @@ func _update_crowd(delta: float) -> void:
 		_crowd.play()
 	elif not audible and _crowd.playing:
 		_crowd.stop()
+
+
+## The volume (dB) of the latest play, its distance fade included (read by the flow suite).
+func last_volume() -> float:
+	return _pool[(_next + POOL - 1) % POOL].volume_db
 
 
 ## The pitch of the latest play (the flow suite checks the size-tier pitch with it).
