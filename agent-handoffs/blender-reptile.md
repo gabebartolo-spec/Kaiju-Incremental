@@ -4,7 +4,7 @@
 ## Lead jaw review 13:59: baby mouth corner flap -> FIXED 1134f93 (mouth line run to the jaw hinge
 ## -87,81,-46,87.4; jaw 3430 -> 3962 voxels; re-baked). Offline proxy (scratchpad jaw/open_sim.py:
 ## .kvox split opened 45 deg, rigid hinge) before/after in notes p3/jaw_proxy_*. Adolescent proxy clean.
-## Capture chain b2254a1tn (720p) waits for military-ai re-shoot AND #51 plain-stats, then jaw_baby, jaw_adolescent,
+## Capture chain b15grpqgf (gl_compatibility 720p: forward_plus hangs on lavapipe) waits for military-ai re-shoot AND #51 plain-stats, then jaw_baby, jaw_adolescent,
 ## baby, adolescent one at a time -> scratchpad ci10/. Bar (lead): 2x at roar peak, clean upper and
 ## lower jaw edges, no skin bridge/flap, no floating red/green blocks (adolescent: thin green shard), open jaw
 ## SOLID at 2x (proxy checkerboard was my rasterising; cube proxy p3/jaw_proxy_baby_after_cubes.png is solid).
