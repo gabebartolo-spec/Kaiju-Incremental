@@ -12,6 +12,8 @@ signal menu_pressed
 
 ## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
 const SIDE_WIDTH := 330
+## The stat rows' "now" column: one width for every row, so the arrows sit in one column.
+const NOW_WIDTH := 64
 const NBSP := " "
 var tree: UpgradeTree
 var rubble: int
@@ -22,6 +24,7 @@ var _rubble_label: Label
 var _info_title: Label
 var _info_role: Label
 var _info_body: RichTextLabel
+var _info_stats: VBoxContainer
 var _info_status: Label
 var _selected := ""
 var _ultimate_cooldown := 0.0
@@ -93,6 +96,17 @@ func _build_side() -> Control:
 	info_col.add_child(_info_role)
 	_info_body = UiKit.rich(UiKit.SIZE_SMALL, UiKit.MUTED.lightened(0.2))
 	info_col.add_child(_info_body)
+	# The node's stats sit half a line below its words, in columns: the arrows line up (D-077).
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_SMALL / 2.0)
+	info_col.add_child(gap)
+	_info_stats = VBoxContainer.new()
+	_info_stats.add_theme_constant_override("separation", 2)
+	info_col.add_child(_info_stats)
+	# Level, cost and the buy line stay on the panel's bottom edge on every node.
+	var push := Control.new()
+	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info_col.add_child(push)
 	_info_status = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
@@ -146,21 +160,7 @@ func _select(id: String) -> void:
 	_info_body.clear()
 	_info_body.append_text(str(def["desc"]))
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
-	var effects: Dictionary = def.get("effects", {})
 	var steps := 0 if tree.is_maxed(id) else 1
-	# Only the stats this node changes, each in plain words from data (D-077):
-	# "Stomps hit harder: 13 -> 16".
-	var words: Dictionary = Content.section("stat_text")
-	for stat: String in effects:
-		var entry: Dictionary = words.get(stat, {})
-		if entry.get("hidden", false):
-			continue
-		var now := Num.f(stats.get(stat, 0.0))
-		_info_body.append_text("\n%s:  %s" % [str(entry.get("line", stat)), _fmt(entry, now)])
-		if steps > 0:
-			_info_body.append_text("  ")
-			_info_body.add_image(UiKit.arrow(), UiKit.SIZE_SMALL, 0, UiKit.GOOD)
-			_info_body.append_text("  " + _fmt(entry, now + Num.f(effects[stat])))
 	if role == "evolve" and steps > 0:
 		var stage := KaijuModel.stage_for(Num.i(stats.get("size", 1)) + 1)
 		_info_body.append_text("\nGrows into the %s." % stage)
@@ -170,6 +170,8 @@ func _select(id: String) -> void:
 		_info_body.append_text(
 			"\nPress E / pad Y in a rampage; recharges in %ds." % roundi(_ultimate_cooldown)
 		)
+	var effects: Dictionary = def.get("effects", {})
+	_show_stats(effects, stats, steps)
 	_info_status.text = _status_line(id)
 	var b := node_button(id)
 	var tint: Color = {"buy": UiKit.GOOD, "poor": UiKit.BAD, "maxed": UiKit.WARN}.get(
@@ -195,14 +197,47 @@ func _status_line(id: String) -> String:
 	var nl := String.chr(10)
 	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]
 	if tree.can_buy(id, rubble):
-		return head + have + "Press to buy"
+		return head + have + "Press Enter / pad A to buy"
 	return head + have + "%d more needed" % (tree.cost(id) - rubble)
 
 
+## Only the stats this node changes, each in plain words from data (D-077): the words, then
+## "13  ->  16" under them, the new value brighter than the old and the unit written once.
+func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
+	for child: Node in _info_stats.get_children():
+		_info_stats.remove_child(child)
+		child.queue_free()
+	var words: Dictionary = Content.section("stat_text")
+	for stat: String in effects:
+		var entry: Dictionary = words.get(stat, {})
+		if entry.get("hidden", false):
+			continue
+		var now := Num.f(stats.get(stat, 0.0))
+		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_SMALL, UiKit.MUTED)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_info_stats.add_child(line)
+		# The values under the words; the "now" column is one fixed width, so arrows line up.
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		_info_stats.add_child(row)
+		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_SMALL, UiKit.MUTED)
+		was.custom_minimum_size = Vector2(NOW_WIDTH, 0)
+		row.add_child(was)
+		if steps > 0:
+			var arrow := TextureRect.new()
+			arrow.texture = UiKit.arrow()
+			arrow.modulate = UiKit.GOOD
+			arrow.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+			row.add_child(arrow)
+			var after := _fmt(entry, now + Num.f(effects[stat]), true)
+			row.add_child(UiKit.label(after, UiKit.SIZE_SMALL, UiKit.TEXT))
+	_info_stats.visible = _info_stats.get_child_count() > 0
+
+
 ## A stat's value as its data line formats it ("inv" shows 1 / value, a rate), with its unit.
-func _fmt(entry: Dictionary, value: float) -> String:
+func _fmt(entry: Dictionary, value: float, with_unit: bool) -> String:
 	var fmt := str(entry.get("fmt", "%.1f"))
-	var unit := str(entry.get("unit", ""))
+	var unit := str(entry.get("unit", "")) if with_unit else ""
 	if fmt == "inv":
 		return ("%.1f" % (1.0 / maxf(0.1, value))) + unit
 	if fmt.contains("%d"):

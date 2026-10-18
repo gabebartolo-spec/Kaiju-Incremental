@@ -12,10 +12,12 @@ static func plain(runner: SceneTree, check: Callable, screen: UpgradeScreen) -> 
 	var lines: Dictionary = Content.section("stat_text")
 	var raw: Array[String] = []
 	var wrong: Array[String] = []
+	var buy_rows: Dictionary = {}
 	for id: String in screen.tree.order:
 		screen.node_button(id).grab_focus()
 		await runner.process_frame
 		var shown := _side_text(screen)
+		buy_rows[_buy_row(screen)] = id
 		# A node's own name is the player's word, not a stat label ("Signature Recharge").
 		var words := shown
 		for other: String in screen.tree.order:
@@ -45,6 +47,19 @@ static func plain(runner: SceneTree, check: Callable, screen: UpgradeScreen) -> 
 		wrong.is_empty() and not lines.is_empty(),
 		"each node's panel names exactly the stats it changes (D-077): %s" % [wrong.slice(0, 6)]
 	)
+	check.call(
+		buy_rows.size() == 1,
+		"level, cost and the buy line sit at one height on every node (D-077): %s" % [buy_rows]
+	)
+
+
+## Where the panel's "Level n / m" block ends on screen, rounded to the pixel.
+static func _buy_row(screen: UpgradeScreen) -> int:
+	for node: Node in screen.find_children("*", "Label", true, false):
+		var label := node as Label
+		if label.is_visible_in_tree() and label.text.begins_with("Level "):
+			return roundi(label.get_global_rect().end.y)
+	return -1
 
 
 ## Every visible text on the screen outside the tree's nodes (the side panels and header).
