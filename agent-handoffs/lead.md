@@ -43,8 +43,8 @@ ound3\croctitan_before_after_game.mp4; slam/turn polish follow-up queued after P
    (notes mix-report/report.md): master -21.4 LUFS; crowd inaudible, regen loop masks army, tank thump masks
    stomps. Proposal = PR #45 (stacked on #43): A/B mix-report/ab_before_after_20s.mp4 (one listen); crowd audible,
    regen loop 86% -> 6%, master -20.5 LUFS. #46 rifle volley (rifle/rifle_volleys_in_game.mp4). Sound session idle;
-   approved sound PRs merge one at a time in his order (each resyncs the flow floor). Heads 09:2x: #39 bac13d7,
-   #42 dc8fd13, #43 c216ac0, #45 4ec9618 (on #43), #46 61ecda9; checks moved to own tests/lib files, any order.
+   approved sound PRs merge one at a time in his order (each resyncs the flow floor). Heads 10:3x (synced on #27+#49, any order, #45 after #43): #39 4761784,
+   #42 ef73246, #43 0c1c451, #45 aa15cc7, #46 e520b7b.
 9. Jets ("Kaiju: Jet models", local_b38b3a6f...): board ...side-session-notes\local_9fac90d2...\jets\jet_board.png,
    1 interceptor / 2 ground-attack / 3 heavy bomber / 4 delta; round 4 after 3 fresh critics: no real-aircraft
    copies; my game-cam check PASS (render\gamecam.png). Ask "which jets" (pick one or more); bomber stays 2x (lead call, D-042). Outside the demo.
