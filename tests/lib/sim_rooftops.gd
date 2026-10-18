@@ -6,6 +6,9 @@ extends RefCounted
 
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
+## D-076: the seeded Behemoth fixture draws at least this many rooftop volleys a second over its
+## run (1.98 with D-076a; 0.29 with the old squads and interval).
+const MIN_BEHEMOTH_VOLLEYS := 1.0
 
 var _check: Callable
 var _make: Callable
@@ -156,6 +159,16 @@ func run() -> void:
 				Num.i(off_result["rubble"]),
 				Num.i(on_result.get("rooftops", 0))
 			]
+		)
+	)
+	# D-076 "more squads, more often": over the whole Behemoth rampage the roofs keep firing.
+	var played := Num.f(on.stat("run_seconds")) - maxf(0.0, on.time_left)
+	var rate := on.army_units.volleys / maxf(1.0, played)
+	_check.call(
+		rate >= MIN_BEHEMOTH_VOLLEYS,
+		(
+			"a Behemoth rampage draws %.2f rooftop volleys a second (%d in %.0f s), at least %.1f"
+			% [rate, on.army_units.volleys, played, MIN_BEHEMOTH_VOLLEYS]
 		)
 	)
 	_check.call(

@@ -23,6 +23,8 @@ var sim: RampageSim
 var cfg: Dictionary
 var rooftop: Dictionary
 var squads: Array[Squad] = []
+## Rooftop volleys fired this run (D-076: how often the player is shot at).
+var volleys := 0
 var rooftops_destroyed := 0
 var _rng: RandomNumberGenerator
 var _spawn_timer: float
@@ -92,6 +94,7 @@ func _step_squads(dt: float) -> bool:
 			continue
 		squad.cooldown = Num.f(rooftop["fire_interval"])
 		sim.hp -= volley()
+		volleys += 1
 		sim.events.append({"type": "rooftop_fired", "squad": squad.id})
 	return lost
 
