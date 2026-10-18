@@ -70,6 +70,8 @@ session smokes it, and the director plays again.
 ## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
 ## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
 ## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
+## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
+## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
 ## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
 ## Decisions to log (next board PR)
 D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
