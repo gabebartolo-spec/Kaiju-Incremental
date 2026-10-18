@@ -1,5 +1,5 @@
-# Ability VFX/SFX handoff, 2026-10-18 21:30
-## State: available (#46 resynced onto 71dc65b and pushed; next is the shell_hit A/B PR)
+# Ability VFX/SFX handoff, 2026-10-18 23:00
+## State: running a check (rifle-gap suites bkwi9t3g0; #52 CI capture run 39089682447, bash bue4oa2qy)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -13,18 +13,28 @@
 - #43 crowd.
 - #45 mix fixes (look-options 0817cf6).
 - #39 heli gun and crash (look-options d135937).
-- #42 footstep variants (look-options 71dc65b). The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
+- #42 footstep variants (look-options 71dc65b).
+- #46 rifle volleys (look-options e14854c). All five tabled sound PRs are in. The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **#46** claude/rifle-sfx: resyncing onto 71dc65b. Conflicts kept both sides:
-  - provenance rows, sfx.gd stream list, crowd funcs plus last_volume;
-  - FlowHeli/FlowRifle preloads, build_crowd plus build_rifle;
-  - capture --army: helis plus rooftop range 60.
-  All 9 suites green, flow 133; pushed, SHA sent to the lead.
-- **Gap job (a), after #46:** a small PR off look-options.
-  - Change: shell_hit high-passed at 120 Hz in tools/sfx/build_sfx.py:335, as `highpass(highpass(x,120),120)`, like tank_fire.
-  - Evidence: an A/B clip plus masking numbers (capture_mix_log.gd plus mix_report.py; stomps masked by army is now 8).
-  - Tabled for the director's listen.
+- **Gap job (a): branch claude/shell-hit-hp = DRAFT PR #52 (head 424c2f1, on look-options e14854c; Auto-fix on). The director listens before merge..**
+  - build_sfx.py: shell_hit high-passed at 120 Hz (energy below 120 Hz 82% -> 33%; below 300 Hz 97% -> 84%).
+  - The provenance row is updated. capture_mix_log.gd now takes --out=<dir>.
+  - Old file for the A/B: scratchpad/shellhp/shell_hit_before.ogg.
+  - CI capture (60 fps, 2 min) downloads to scratchpad/shellhp/ci.
+  - Next: run mix_report.py on that log twice (swap the old ogg into assets/sfx for "before", then restore).
+    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), fill #52's
+    Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
+  - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
+
+- **Rifle gap (lead, for D-076a rooftop density at about 3 volleys/s): branch claude/rifle-gap off look-options e14854c, not pushed.**
+  - Sfx.play skips any sound listed in tuning "sfx" "min_interval" ({"rifle": 0.3}) while its last play is younger than that (`_since_sound`).
+  - Check in tests/lib/flow_rifle_sounds.gd (+1 flow). The run in progress does flow at gap 0.0 (expect FAIL), then all suites at 0.3.
+    The bash job edits data/tuning.json between runs: make sure it reads 0.3 before committing.
+  - Next: commit, push, open the PR, then measure masking at 3/s.
+    - Measurement: temp branch = rifle-gap + local commit 7000a1f (claude/rooftop-density, checked out in that session's worktree; don't touch it).
+    - Run capture_mix_log headless, gap 0.3 vs 0.0, then mix_report. Delete the temp branch afterwards.
+  - Coordinate with "Kaiju: denser rooftop fire (D-076)" (SendMessage by that name): its clip audio comes after this PR lands.
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
 - Local branch army-scales-sync (handoff commit 7b0db6d is local only). Push with `git push origin HEAD:claude/army-scales`.
@@ -63,5 +73,6 @@
 - Mix tools: tools/capture/capture_mix_log.gd and tools/sfx/mix_report.py. The report is in shared notes, mix-report/.
 
 ## Running jobs
-- None.
+- bkwi9t3g0: rifle-gap suites (it edits tuning.json mid-run).
+- bue4oa2qy: CI capture for #52.
 - Local-only handoff commits on army-scales-sync: 7b0db6d, 3518703.
