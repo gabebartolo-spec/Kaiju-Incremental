@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: running a check (CI clip run 39109733215 + pacing b0jeyrx8u); I hold the CI baton
+## State: awaiting lead (round 2 proof sent: notes round2/PROOF_round2.md; rifle loudness call open)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -33,16 +33,18 @@ tier so each stage's damage per run holds within Â±5%; reptilian pacing within Â
   So the -6 dB half is quieter partly from fewer shots: compare per-onset peaks, not only LUFS.
 
 ## Now
-1. CI run 39109733215 (b0obuuf6k) downloads to notes round2/clip. Then:
-   python scratchpad/clip_report.py <clip dir> <ffmpeg> (LUFS + peak per half, onsets, merged
-   gaps, spark spread, in reach) + tools/capture/spark_gain.py + 2x crops of 3 sparks.
-2. Pass the CI baton: greenery (local_9af27a16-0360-4923-b623-6a14a763ce49) then #50
-   (local_5325ef73-4643-4477-9507-1bb17f42af5b): "GPU slot is yours ... next in: <list>".
-3. Send LEAD the round 2 proof (<= 8 lines) for a fresh critic; recommend -6 unless -2 needed.
-4. Pacing done -> post full table on #63; fill PACING_TABLE / CLIP / AUDIO / PROOF lines in
-   scratchpad pr_body.md and `gh pr edit 63 --body-file`.
-5. Board note in the body: D-076a log says "a tenth of the chip"; shipped is ~1/30-1/40.
-Later: re-sync after P3 and #50 land; re-check totals. #36's 130-run runs on my merged head.
+- Round 2 proof rendered LOCALLY (the director allowed it; LEAD dropped the baton: up to 4 windowed
+  renders). round2/local_clip (6 s, -6 dB) and local_ab (12 s, -2 then -6 dB) + crops + reports.
+  The CI run 39109733215 timed out (llvmpipe).
+- Audio finding: the rifle sits 2-5 dB under the kaiju's own stomp bed; -2 vs -6 makes no
+  measurable difference. The 0.3 s sfx gap gives a 0.30-0.33 s crack rhythm. Waiting on LEAD:
+  louder or brighter sample / 0 to +3 dB / jittered gap.
+- Pacing posted on #63: evolve1 0%, tree -4.4%, totals +0.4/-0.3/+3.6/-0.5%. PR body is
+  complete (no placeholders left).
+- To LEAD (not mine): city_view.gd:208 normalize errors + 171 collapse sounds at a mass collapse.
+Later: re-sync after P3 and #50 land; re-check the totals. #36's 130-run check runs on my head.
+Tools: scratchpad clip_report.py, rifle_level.py (needs an SND log from a temporary print in
+the capture; restore the file afterwards).
 
 ## Scratchpad (%TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad)
 snap_lo (af7eb05 base), snap_lo_c (9cff149), dump_lo.json, pr_body.md, clip_report.py.
