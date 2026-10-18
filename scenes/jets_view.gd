@@ -16,7 +16,7 @@ const MARK_BLINKS := 3
 const TRACER_SECONDS := 0.08
 const HIT_HEIGHT := 2.0  # a round strikes the hide this high (per body scale)
 const WRECK := Color("ff8a3a")
-## The warning lasts this many warn_seconds: it covers the pass from the warning to its end.
+## The warning lasts this many times the jet's lead: from the warning to the pass's end.
 const WARN_HOLD := 2.0
 const BOMB := Vector3(0.35, 0.35, 1.2)  # a falling bomb, per body scale
 const ORDNANCE := Color("d6cfbb")
@@ -96,7 +96,7 @@ func _warn(event: Dictionary) -> void:
 	var drops: PackedVector2Array = event["bombs"]
 	var jet: JetModel = _jets.get(Num.i(event["jet"]))
 	var heading := jet.rotation.y if jet != null else 0.0
-	var lasts := Num.f(sim.strike.cfg["warn_seconds"]) * WARN_HOLD
+	var lasts := Num.f(event["lead"]) * WARN_HOLD
 	for p: Vector2 in rounds:
 		var mark := _box(MARK, _warn_mat)
 		add_child(mark)

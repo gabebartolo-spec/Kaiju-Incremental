@@ -8,11 +8,13 @@ extends RefCounted
 ## `clearance` over the kaiju's head. Each kind (`kinds`, over the shared keys) strafes a line of
 ## `rounds`, drops `bombs` that fall `drop_seconds` and blast `bomb_radius`, or both; the Apex's
 ## heavy bomber (its set-piece, once a turn of the order) flies high and slow and carpet-bombs.
-## `warn_seconds` before the first round or bomb lands the sim says where (jet_inbound): a kaiju
-## that gets out of the way takes nothing. Rounds and blasts also wreck the roofs they hit:
-## collateral that falls like any other but pays the player no biomass (director, D-072). Only an
-## attack that reaches the air (or a cephalopod's grab) downs a jet; unlike the helicopters
-## (AirWing) a jet never circles. Part of RampageSim. Pure and seeded.
+## Before the first round or bomb lands the sim says where (jet_inbound), as long before as the
+## kaiju needs to walk clear at its size and speed plus `react_seconds` (D-080; a jet enters
+## further out when it needs the room): a kaiju that gets out of the way takes nothing. Rounds
+## and blasts also wreck the roofs they hit: collateral that falls like any other but pays the
+## player no biomass (director, D-072). Only an attack that reaches the air (or a cephalopod's
+## grab) downs a jet; unlike the helicopters (AirWing) a jet never circles. Part of RampageSim.
+## Pure and seeded.
 
 
 class Jet:
@@ -20,6 +22,8 @@ class Jet:
 	var kind: String
 	var cfg: Dictionary  # the shared keys with its kind's on top
 	var start: Vector2  # where it enters, `approach` short of the pass's centre
+	var approach: float  # how far short: `approach`, or further when the warning needs it
+	var lead: float  # seconds of warning before its first round or bomb lands
 	var dir: Vector2  # its heading on the ground plane
 	var s := 0.0  # distance flown from start
 	var pos: Vector2
@@ -84,7 +88,7 @@ func step(dt: float) -> void:
 		_warn(jet)
 		_strafe(jet)
 		_release(jet)
-		if jet.s >= 2.0 * Num.f(jet.cfg["approach"]):
+		if jet.s >= 2.0 * jet.approach:
 			gone.append(jet)
 	for jet: Jet in gone:
 		jets.erase(jet)
@@ -109,7 +113,15 @@ func spawn() -> Jet:
 	jet.dir = (across * _side).rotated(_rng.randf_range(-jitter, jitter))
 	_side = -_side
 	var centre := sim.kaiju_pos - _toward_camera() * Num.f(cfg["lane_behind"])
-	jet.start = centre - jet.dir * Num.f(jet.cfg["approach"])
+	var bombs := Num.i(jet.cfg["bombs"]) > 0
+	jet.lead = warn_lead(Num.f(cfg["bomb_radius"]) if bombs else 0.0)
+	var speed := Num.f(jet.cfg["speed"])
+	var rounds_half := Num.f(jet.cfg["strafe_step"]) * (Num.i(jet.cfg["rounds"]) - 1) * 0.5
+	var bombs_half := Num.f(jet.cfg["bomb_step"]) * (Num.i(jet.cfg["bombs"]) - 1) * 0.5
+	var half := maxf(rounds_half + Num.f(jet.cfg["strafe_lead"]), bombs_half)
+	var room := speed * (jet.lead + Num.f(cfg["react_seconds"])) + half
+	jet.approach = maxf(Num.f(jet.cfg["approach"]), room)
+	jet.start = centre - jet.dir * jet.approach
 	jet.pos = jet.start
 	jet.hp = Num.f(cfg["hp"]) * Num.f(jet.cfg["hp_mult"])
 	jets.append(jet)
@@ -143,13 +155,13 @@ func targets(jet: Jet) -> PackedVector2Array:
 
 func _spread(jet: Jet, count: int, step: float) -> PackedVector2Array:
 	var out := PackedVector2Array()
-	var first := Num.f(jet.cfg["approach"]) - step * (count - 1) * 0.5
+	var first := jet.approach - step * (count - 1) * 0.5
 	for k: int in count:
 		out.append(jet.start + jet.dir * (first + step * k))
 	return out
 
 
-## `warn_seconds` before its first round or bomb lands: where they all will.
+## Its `lead` before its first round or bomb lands: where they all will.
 func _warn(jet: Jet) -> void:
 	if jet.warned:
 		return
@@ -160,7 +172,7 @@ func _warn(jet: Jet) -> void:
 		first = jet.start.distance_to(rounds[0]) - Num.f(jet.cfg["strafe_lead"])
 	if not drops.is_empty():
 		first = minf(first, jet.start.distance_to(drops[0]))
-	if jet.s < first - Num.f(jet.cfg["speed"]) * Num.f(cfg["warn_seconds"]):
+	if jet.s < first - Num.f(jet.cfg["speed"]) * jet.lead:
 		return
 	jet.warned = true
 	(
@@ -173,6 +185,7 @@ func _warn(jet: Jet) -> void:
 				"rounds": rounds,
 				"bombs": drops,
 				"radius": Num.f(jet.cfg["bomb_radius"]),
+				"lead": jet.lead,
 			}
 		)
 	)
@@ -246,6 +259,12 @@ func _fall(dt: float) -> void:
 
 func _body() -> float:
 	return Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+
+
+## D-080: seconds of warning the kaiju needs to walk clear of a hit `blast` wide (its body
+## radius plus the blast, at its speed) plus `react_seconds` to see it.
+func warn_lead(blast: float) -> float:
+	return (_body() + blast) / maxf(0.1, sim.stat("speed")) + Num.f(cfg["react_seconds"])
 
 
 ## The kaiju takes `damage` less its armour, at least the army's minimum, as from a tank shell.
