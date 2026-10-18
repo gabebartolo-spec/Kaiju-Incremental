@@ -44,6 +44,9 @@ session smokes it, and the director plays again.
 - #76 stall probe (tools only) -> merge on green.
 - Roadmap (next board PR): ElevenLabs SFX + Suno music (spend yes + licence first); rooftop MORTARS (topple to
   kill; a variant of the rooftop squads); FINAL BOSS mecha kaiju (board for the director when scheduled).
+  LANGUAGES (director 2026-10-19): Spanish, Japanese, French, German, Russian, Italian. Needs: one text table (all UI
+  strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
+  AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
   Board PR also: STATUS Phase 0 item 3 done (#73, #74); DEMO_PLAYTEST.md -> ~15 min (D-087); D-089, D-090.
 - AFL lead's test-suite audit (their PR #825): one shared floors file causes merge conflicts on every resync and
   never caught a truncation; shards planned from real timings; a 3 s "every runner compiles" preflight. Kaiju has
