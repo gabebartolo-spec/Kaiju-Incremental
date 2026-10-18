@@ -30,10 +30,9 @@ func run_checks() -> void:
 	_check_bomb_collateral()
 
 
-## A sim whose jets are on (`max`), its city hurt enough to call them in when `hurt` (the
-## call-in mark lowered to the chunks already down: the test city is too small to reach it).
+## A sim whose jets are on (`max`), its city hurt enough to call them in (the call-in mark
+## lowered to the chunks already down: the test city is too small to reach the real one).
 func _jet_sim(
-	hurt: bool,
 	max_jets: int = 1,
 	layout: Array[Dictionary] = [],
 	species: String = "reptilian",
@@ -42,8 +41,7 @@ func _jet_sim(
 	var sim := _sim(species, levels, layout, AT)
 	sim.strike.cfg = sim.strike.cfg.duplicate(true)
 	sim.strike.cfg["max"] = max_jets
-	if hurt:
-		sim.strike.cfg["after_chunks"] = sim.chunks_destroyed
+	sim.strike.cfg["after_chunks"] = sim.chunks_destroyed
 	return sim
 
 
@@ -57,11 +55,12 @@ func _until(sim: RampageSim, type: String, seconds: float, move := Vector2.ZERO)
 
 
 func _check_call_in() -> void:
-	var calm := _jet_sim(false)
+	var calm := _jet_sim()
+	calm.strike.cfg["after_chunks"] = Num.i(Content.section("jets")["after_chunks"])
 	var none_calm := _until(calm, "jet_spawned", 20.0) == INF
-	var off := _jet_sim(true, 0)
+	var off := _jet_sim(0)
 	var none_off := _until(off, "jet_spawned", 20.0) == INF
-	var hurt := _jet_sim(true)
+	var hurt := _jet_sim()
 	var called := _until(hurt, "jet_spawned", Num.f(hurt.strike.cfg["first_delay"]) + 1.0)
 	check(
 		none_calm and none_off and called < INF,
@@ -72,7 +71,7 @@ func _check_call_in() -> void:
 ## Across the camera's view (within yaw_jitter of square to camera_bearing), entering and
 ## leaving `approach` from the kaiju: off screen at both ends, never popping in or out in view.
 func _check_pass_shape() -> void:
-	var sim := _jet_sim(true)
+	var sim := _jet_sim()
 	var jet := sim.strike.spawn()
 	var cfg := sim.strike.cfg
 	var toward := Vector2.from_angle(deg_to_rad(Num.f(cfg["camera_bearing"])))
@@ -92,7 +91,7 @@ func _check_pass_shape() -> void:
 
 ## The warning comes warn_seconds before the first round lands, and a standing kaiju is hit.
 func _check_warning() -> void:
-	var sim := _jet_sim(true)
+	var sim := _jet_sim()
 	sim.strike.spawn()
 	var warned := INF
 	var first := INF
@@ -120,7 +119,7 @@ func _check_dodge() -> void:
 	var hits: Array[int] = []
 	var hurt: Array[float] = []
 	for dodge: bool in [false, true]:
-		var sim := _jet_sim(true)
+		var sim := _jet_sim()
 		sim.strike.spawn()
 		var move := Vector2.ZERO
 		var n := 0
@@ -144,7 +143,7 @@ func _check_dodge() -> void:
 
 ## Another jet comes `interval` after the last was called in, from the other side.
 func _check_next_pass() -> void:
-	var sim := _jet_sim(true)
+	var sim := _jet_sim()
 	var dirs: Array[Vector2] = []
 	for i: int in roundi(30.0 / DT):
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
@@ -158,7 +157,7 @@ func _check_next_pass() -> void:
 
 ## Only an attack that reaches the air hits a jet; a downed jet pays rubble and is gone.
 func _check_hit_back() -> void:
-	var sim := _jet_sim(true)
+	var sim := _jet_sim()
 	sim.strike.spawn()
 	var all := func(_p: Vector2, _r: float) -> float: return 1.0
 	sim.strike.hit(all, 1000.0, false)
@@ -177,7 +176,7 @@ func _check_collateral() -> void:
 	var standing: Array[int] = []
 	var rubble: Array[float] = []
 	for pass_on: bool in [false, true]:
-		var sim := _jet_sim(true, 1, [_b(4.5, 0, Vector3i(3, 3, 3))])
+		var sim := _jet_sim(1, [_b(4.5, 0, Vector3i(3, 3, 3))])
 		sim.strike.cfg["yaw_jitter"] = 0.0  # the line along the street, through the building
 		if pass_on:
 			sim.strike.spawn()
@@ -197,7 +196,7 @@ func _check_collateral() -> void:
 
 ## The cephalopod (Grab and Throw) seizes a jet passing over and hurls it.
 func _check_grab() -> void:
-	var sim := _jet_sim(true, 1, [], "cephalopod", {"c_grab": 1})
+	var sim := _jet_sim(1, [], "cephalopod", {"c_grab": 1})
 	var jet := sim.strike.spawn()
 	jet.s = Num.f(sim.strike.cfg["approach"]) - 1.0  # overhead now, before any car is taken
 	var grabbed := false
@@ -213,8 +212,8 @@ func _check_grab() -> void:
 
 ## A jet flies `clearance` over the kaiju's head, so it never flies through a grown body.
 func _check_height() -> void:
-	var young := _jet_sim(true)
-	var colossus := _jet_sim(true, 1, [], "reptilian", {"evolve1": 1, "evolve2": 1})
+	var young := _jet_sim()
+	var colossus := _jet_sim(1, [], "reptilian", {"evolve1": 1, "evolve2": 1})
 	var gaps: Array[float] = []
 	for sim: RampageSim in [young, colossus]:
 		gaps.append(sim.strike.altitude() - sim.reach_height())
