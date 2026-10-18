@@ -1,5 +1,5 @@
 # Ability VFX/SFX handoff, 2026-10-18 22:30
-## State: running a check (CI mix-log capture for the shell_hit PR, bash bue4oa2qy)
+## State: running a check (CI mix-log capture run 39089682447 for draft PR #52, bash bue4oa2qy)
 
 ## Who
 - Lead is "Kaiju: Lead", local_106fc100-d2a4-4091-bc9a-4bda31df13ac. It runs the QA gates and the director's listens.
@@ -17,14 +17,14 @@
 - #46 rifle volleys (look-options e14854c). All five tabled sound PRs are in. The lead's --delete-branch removed this worktree; it was restored on claude/rifle-sfx and nothing was lost. The lead no longer uses --delete-branch.
 
 ## Merge chain (D-070, director shipped all sounds). The lead merges one at a time; I resync each right after the previous lands
-- **Gap job (a): branch claude/shell-hit-hp (look-options e14854c merged in; open it as a DRAFT PR, the director listens before merge).**
+- **Gap job (a): branch claude/shell-hit-hp = DRAFT PR #52 (head 424c2f1, on look-options e14854c; Auto-fix on). The director listens before merge..**
   - build_sfx.py: shell_hit high-passed at 120 Hz (energy below 120 Hz 82% -> 33%; below 300 Hz 97% -> 84%).
   - The provenance row is updated. capture_mix_log.gd now takes --out=<dir>.
   - Old file for the A/B: scratchpad/shellhp/shell_hit_before.ogg.
   - CI capture (60 fps, 2 min) downloads to scratchpad/shellhp/ci.
   - Next: run mix_report.py on that log twice (swap the old ogg into assets/sfx for "before", then restore).
-    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), open the PR
-    (tabled for the director's listen), and send the lead the numbers.
+    Compare stomps masked by army, build an A/B clip (stem sums muxed on the video), fill #52's
+    Evidence and A/B sections (body draft: scratchpad/shellhp/pr.md), and send the clip to the lead first.
   - Clip: a clean A then B on the same moment. Trial on the old mix2 run: stomps masked by army 8 -> 0 (scratchpad/ab_shell.py).
 
 ## #36 claude/army-scales (D-069), pushed 4b3146c; waits for BOTH #50 and the croc P3 PR (P3 also tunes young: D-074 revised)
