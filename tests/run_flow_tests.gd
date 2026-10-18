@@ -10,6 +10,7 @@ const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
+const FlowRifleSounds := preload("res://tests/lib/flow_rifle_sounds.gd")
 const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
@@ -183,6 +184,7 @@ func _check_rampage() -> void:
 		roofs != null and roofs.shots > 0 and rampage.sfx.played.has("rifle"),
 		"rooftop squads open fire with the rifle cue (%d volleys)" % [roofs.shots if roofs else -1]
 	)
+	FlowRifleSounds.check_distance(check, rampage.sfx)
 	check(
 		rampage.sim.chunks_destroyed > 0,
 		"the autoplayed kaiju destroys buildings (%d chunks)" % rampage.sim.chunks_destroyed

@@ -24,6 +24,7 @@ Sources:
 | heli_gun.ogg (a helicopter's chin-gun burst) | synth only: five rounds at 11 a second, each a band-passed noise crack over a low-passed thud, plus a synth echo tail. Added 2026-10-18 (D-050). |
 | heli_crash.ogg (a helicopter shot down) | synth falling turbine whine + Kenney `lowFrequency_explosion_000` + `explosionCrunch_003` pitched 0.85 + synth thump + Kenney `impactMetal_heavy_000..003` pitched 0.75-0.9 (metal raining down). Added 2026-10-18 (D-050). |
 | crowd_panic.ogg (seamless 6 s loop; faded by fleeing civilians and the destruction rate) | synth only: 14 murmuring voices (formant-filtered noise with a syllable rhythm), 9 screams and shouts (wavering harmonic glides through a mouth formant), running-feet crackle, low-passed at 3.5 kHz with a synth echo off the buildings, high-passed at 300 Hz so it stays clear of the stomps; the 1 s overrun is crossfaded into the start. Added 2026-10-18 (D-050). |
+| rifle.ogg (a rooftop squad's volley) | synth only: five band-passed noise cracks (2.8-3.8 kHz) with 380 Hz bodies, scattered over 0.22 s, plus a short synth slapback tail. Added 2026-10-18 (D-063). |
 | breath.ogg | synth rising hum (0-0.45 s) + synth roar (swept band-passed noise + 55 Hz buzz) + Kenney `thrusterFire_000` pitched 0.7 + synth sizzle (hiss + crackle) |
 | leap_whoosh.ogg | synth swept whoosh + Kenney `impactPlate_light_001` pitched 1.3 (chitin clack) |
 | leap_land.ogg | Kenney `lowFrequency_explosion_000` + `explosionCrunch_002` pitched 0.8 + synth sub thump + synth crackle |
