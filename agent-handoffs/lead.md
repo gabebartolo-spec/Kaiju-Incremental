@@ -9,6 +9,9 @@ Messaging: one message per worker with everything; never ask the director to unb
 a failed first send in a parallel batch cancels the rest.
 
 ## PAUSE (director, ~11:xx): 25 min, all sessions told to stop Godot and hold; resume them all after.
+## ON RESUME send greenery (msg cap hit): wheel anchor (10,-56) OK; fix the 5 failures by obeying the growth
+## invariants (don't loosen); autoplay starts after kaiju_emerged. Rooftops: rifle-fire a45f989 PASS -> open PR;
+## breath-aim FIX: cone origin at the SNOUT (was the tail-root origin; flames landed beside the body) + re-pace.
 ## Sessions renamed: Gun audio + breath aim (1ac658ed), Stadium + frame probe (87d706ce), Load, smoke FX, builds
 ## (37cf489b), River spawn + greenery (9af27a16), Biomass + army ramp (b38b3a6f), Tanks + helis #50 (5325ef73),
 ## Croc contact + dash (1feb30ca), OLD lead (retired) (9fac90d2), this = Kaiju: LEAD.
