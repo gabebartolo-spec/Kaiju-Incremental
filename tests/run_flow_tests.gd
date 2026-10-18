@@ -240,8 +240,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	)
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
-	while not rampage.sfx.live:  # nothing sounds while the rampage loads (Sfx start gate)
-		await process_frame
+	rampage.sfx.live = true  # past the start gate (FlowSfx.gate checks the gate itself)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
 	var cues: Array[String] = [
