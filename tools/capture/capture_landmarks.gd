@@ -12,7 +12,8 @@ const SETTLE := 4
 const SPECIES := "reptilian"
 ## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
 const GAME_CAMERA := Vector3(0, 27, 19)
-const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}
+## Upgrades of a typical run on reaching each city stage (stage 2 = after the first evolution).
+const LEVELS := [{"claws": 3, "hide": 2}, {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}]
 ## Sim time of the rampage into each landmark, and sim steps per drawn frame.
 const RAMPAGE_SECONDS := 9.0
 const STEPS_PER_FRAME := 3
@@ -21,7 +22,6 @@ const DT := 1.0 / 30.0
 const FRAME := 1.7
 
 var _out := "user://landmarks"
-var _tier := 2
 var _sim: RampageSim
 var _city: CityView
 var _kaiju_at := Vector3.ZERO
@@ -31,19 +31,25 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
-		elif arg.begins_with("--tier="):
-			_tier = arg.substr(7).to_int()
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	for tier: int in range(1, LEVELS.size() + 1):
+		await _stage(tier)
+	quit()
+
+
+## The city of stage `tier` with that stage's kaiju; shoots each landmark of that tier.
+func _stage(tier: int) -> void:
 	var species := Content.species_def(SPECIES)
-	var tree := UpgradeTree.new(Content.upgrades(), LEVELS, SPECIES)
+	var levels: Dictionary = LEVELS[tier - 1]
+	var tree := UpgradeTree.new(Content.upgrades(), levels, SPECIES)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var tuning := CityGrowth.tuning_for(Content.tuning(), _tier)
-	var layout := CityGrowth.layout(Content.tuning(), _tier, Seeds.make("city", 0))
+	var tuning := CityGrowth.tuning_for(Content.tuning(), tier)
+	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	_sim = RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	_sim.time_left = 1.0e6
 	var stage := Node3D.new()
@@ -61,7 +67,7 @@ func _run() -> void:
 	cam.current = true
 	for n: int in _sim.buildings.size():
 		var b := _sim.buildings[n]
-		if b.landmark == "":
+		if b.landmark == "" or b.tier != tier:
 			continue
 		# South of it, in the plaza by the kerb, facing it, as a player walking up would be.
 		_kaiju_at = Vector3(b.x, 0, b.z + b.d * 0.5 + 2.0)
@@ -75,16 +81,18 @@ func _run() -> void:
 		cam.look_at(centre)
 		await _frames(SETTLE)
 		_shot("%s_standing" % b.landmark)
+		var before := b.frame.alive_count
 		await _break(n, kaiju)
 		await _frames(SETTLE * 3)
 		_shot("%s_broken" % b.landmark)
 		print(
 			(
 				"%s: %d of %d chunks standing after the break"
-				% [b.landmark, b.frame.alive_count, b.w * b.d * b.height]
+				% [b.landmark, b.frame.alive_count, before]
 			)
 		)
-	quit()
+	root.remove_child(stage)
+	stage.free()
 
 
 ## A short rampage into it: the kaiju walks from the kerb toward the landmark's middle, stomping

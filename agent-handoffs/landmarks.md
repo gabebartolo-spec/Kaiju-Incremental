@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 12:00
-## State: blocked (CI stills held: LEAD's capture queue is shell-hit -> military-ai 720p -> croc P3 first)
+# Landmarks handoff, 2026-10-18 14:10
+## State: running a check (full suite after the ruin fix; then the PR into claude/look-options)
 
 ## Task
 Original city landmarks, modelled in Blender and voxel-baked so they break chunk by chunk like any
@@ -29,14 +29,16 @@ smoke 27, sim 50, powers 24, tentacles 18, city 19, growth 24, load 9, flow 129,
 - PR body drafted (scratchpad pr_body.md; RUNID and HEADSHA to fill).
 
 ## Next
-1. When LEAD's three captures are done (check `gh run list --workflow capture.yml`: nothing
-   in_progress or queued, and croc P3's chain finished), dispatch:
-   tools/capture/ci_capture.sh --resolution=1920x1080 capture_landmarks.gd -- --out=<dir>
-   (stadium/wheel _standing and _broken, game-camera angle, 9 s scripted rampage).
-2. Own check + 2x crop of the break; commit to docs/captures/2026-10-18-landmarks/.
-3. Open the PR into claude/look-options, Auto-fix off, bind with ccd_pr, send to LEAD. Board/log:
-   D-071 + rubble_bonus 4.0 balance note.
-Follow-ups: E/F bake (PR 2); the wheel drawn past the edge at stage 1 as a lure.
+1. Stills done on the local GPU slot LEAD booked (CI skipped on LEAD's word): off-screen no_focus
+   override.cfg, removed after; docs/captures/2026-10-18-landmarks/ (standing, broken, 2x crops).
+   capture_landmarks.gd now shoots each landmark in its own city stage with that stage's kaiju
+   (the stage-2 signature erased the tier-1 stadium in one step: 2416 of 2592 chunks).
+   Fix from the 2x check: Ruin.build gave a gone landmark office-wall stubs and window panels;
+   a landmark now leaves its heap only (scenes/ruin.gd).
+2. Full suite green -> commit, push, open the PR from scratchpad pr_body.md (Auto-fix off),
+   bind it with ccd_pr, send it to LEAD. Board/log: D-071 + rubble_bonus 4.0 balance note.
+Follow-ups: E/F bake (PR 2); the wheel drawn past the edge at stage 1 as a lure. Known look:
+through a broken landmark you see the dark backs of its shell (the game's broken-building rule).
 
 ## Findings for the lead
 - voxelize.py shells surfaces only: a solid disc bakes as a cap; build open parts as rings.
@@ -45,6 +47,8 @@ Follow-ups: E/F bake (PR 2); the wheel drawn past the edge at stage 1 as a lure.
 - A critic that reads a stale copy of the source reports fixed defects: point it at the current file.
 - Godot --script with new class_names needs --import first; a runtime script error makes a
   headless --script hang: wrap probes in `timeout`.
+- A probe of the sim events (chunks broken per step) found the "landmark vanishes" still was the
+  capture's stage-2 signature, not a sim bug: probe before changing a rule.
 - An "until nothing is running" capture watcher can jump a lead-set queue in the gap between two
   runs: hold dispatch by hand when the lead orders the queue.
 
