@@ -77,6 +77,8 @@ after demo) / OLD lead (retired; NOT archived: archiving cascades to its idle ch
 
 ## After the demo (D-083 order: playtest fixes first)
 - Playtest fixes from the director's play of the exe.
+- Director 2026-10-19 (add to ROADMAP in the board PR): better sounds (ElevenLabs), music (Suno). Both paid for
+  commercial use: written spend yes in DECISIONS + LICENSING_REGISTER CLEARED before any asset lands.
 - Full-game pacing retune (evolve1 400 shifts the tree: 64/87 at 1.02 h after 45 runs).
 - Croc baby polish: jaw held open ~1.4 s, dark teal on teal roads, static blue smudge 7.5-14 s.
 - Broken wheel + stadium rubble polish (#57 follow-ups); landmarks E/F.
