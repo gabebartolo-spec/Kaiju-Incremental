@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: awaiting lead (round 3 audio pushed c936f33; fresh critic on round 2 visuals running at LEAD)
+## State: awaiting lead (round 3 pushed 1d874df; LEAD checks 2x then merges, no new critic)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -32,20 +32,19 @@ tier so each stage's damage per run holds within Â±5%; reptilian pacing within Â
 - Headless dry run --typical: in reach per second [7 x9, then 1 x3] (6 squads die ~9 s), 71 volleys.
   So the -6 dB half is quieter partly from fewer shots: compare per-onset peaks, not only LUFS.
 
-## Now
-- Round 2 proof rendered LOCALLY (the director allowed it; LEAD dropped the baton: up to 4 windowed
-  renders). round2/local_clip (6 s, -6 dB) and local_ab (12 s, -2 then -6 dB) + crops + reports.
-  The CI run 39109733215 timed out (llvmpipe).
-- Round 3 audio (LEAD call, c936f33): rifle -6 -> +2 dB, sfx min_interval rifle 0.3 -> 0.1,
-  new sfx start_s {rifle: 0.13} (rifle.ogg has ~140 ms of silent lead-in, so cracks lagged the
-  flash ~0.2 s). Clip: notes round3/clip (-18.9 LUFS, -2.7 dBTP, crack about stomp level to +3).
-  Suites all 9 pass. Note: run_tests.sh needs GODOT=<console exe>.
-- Pacing posted on #63: evolve1 0%, tree -4.4%, totals +0.4/-0.3/+3.6/-0.5%. PR body is
-  complete (no placeholders left).
-- To LEAD (not mine): city_view.gd:208 normalize errors + 171 collapse sounds at a mass collapse.
-Later: re-sync after P3 and #50 land; re-check the totals. #36's 130-run check runs on my head.
-Tools: scratchpad clip_report.py, rifle_level.py (needs an SND log from a temporary print in
-the capture; restore the file afterwards).
+## Now (round 3, LEAD: critical path to the demo build)
+- Pushed 1d874df: synced with look-options 9d8ad11 (#54 #36 #59 in); all 9 suites pass, floors
+  = real counts (sim 53, growth 31, flow 146).
+- RooftopAim: hits land on a shown voxel of a trunk/head bone facing the shooter (24 random draws);
+  arms dropped (they hang in shadow). Gate 553/553 exit 0; known-bad 162/557 exit 1.
+- RooftopView._roof: figures clamped to the columns at their own roof height (no overhang).
+- capture --typical: open spots only (CLEAR 5 u, sight line, MIN_SEEN 5) -> plaza (-32.5,-48.5).
+- Audio: rifle +2 dB, gap 0.1 s, start_s 0.13. Stomp alone -5.8 dBFS, crack -3.1 (+2.7).
+- Proof: notes round3/PROOF_round3.md (clip2/, ab3/, gate logs). PR body updated.
+- Post-demo (LEAD): recoil, lulls between bursts. Not mine: city_view.gd:208 errors.
+- Totals were measured before #36 (the army learns inside a stage); re-measure if LEAD asks.
+Tools: scratchpad clip_report.py, rifle_level.py. The SND sound log needs a temporary print in the
+capture (restore it afterwards). run_tests.sh needs GODOT=<console exe>.
 
 ## Scratchpad (%TEMP%/claude/C--...festive-jemison-3fb73c/ff78c0a3.../scratchpad)
 snap_lo (af7eb05 base), snap_lo_c (9cff149), dump_lo.json, pr_body.md, clip_report.py.
