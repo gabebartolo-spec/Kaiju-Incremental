@@ -1,7 +1,7 @@
 # blender-reptile handoff, 2026-10-18 17:30
-## State: running a check. PR #54 OPEN (P3 into claude/look-options), head 8f32f02, Auto-fix on, sim
+## State: awaiting lead (landmarks ping for the local adolescent render; critic on the baby clip). PR #54 OPEN (P3 into claude/look-options), head 8f32f02, Auto-fix on, sim
 ## review PASS. Synced look-options 6d44a95 (#62); floors real (city 23, load 13, flow 139); green.
-## Game-cam baby: CI run 39104147522 (last CI run; chain killed, waiter b291gw9cf). Adolescent game-cam:
+## Game-cam baby DONE (run 39104147522): notes p3/gamecam/baby_*.mp4 + sheet, sent to lead 17:5x. Adolescent:
 ## LOCAL GPU only after the lead pings (landmarks first): cp scratchpad local_ado/override.cfg to
 ## the project, bash local_ado/run.sh, rm override.cfg. Send both clips to the lead at once (critic).
 ## Post-#57 young pacing (--runs=60): evolve1 0.66 h, 12/31 defeated, 94% city (told lead; no retune).
