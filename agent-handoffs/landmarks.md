@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-18 22:30
-## State: awaiting GPU slot (greenery hands it over; #59 round 2 pushed d665eb5, suite green)
+# Landmarks handoff, 2026-10-18 23:40
+## State: running a check (#59 round 2 re-render on CI: runs 39108683628 stills, 39108705294 clip)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
@@ -39,6 +39,13 @@ One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
   landmark drops no longer crush the whole stadium; 8 dark tunnel mouths, staggered flight;
   crowd bob in crowd.gdshader; clip kaiju from the SSE (SE clipped the corner mast).
   city_view kept at 395 lines (Fire.prewarm moved out). Flow 145.
+- Local GPU render (greenery's slot) showed every player in one midfield clump: the loose-
+  placement loop compared a float32 to -0.04 and never ran. Fixed 6281641 (+ crowd casts no
+  shadow). Suite green there (flow 145). Frame time crowd off/on (1080p, before no-shadow):
+  frame 12.8 -> 15.6 ms, GPU 10.5 -> 13.3 ms; re-time when the director is not fullscreen.
+  Slot passed to croc #54 (then #50). Re-render on CI (director in a fullscreen game).
+- On CI landing: copy stills to docs/captures/2026-10-18-matches/, crops (afl/nfl/soccer/
+  cricket _2x, crowd_stand_2x, afl_after_2x), mp4 to notes landmarks/, PR body, paths to LEAD.
 - After the slot: pass it on as LEAD/greenery say. If round 2 fails, LEAD changes method
   (demo with sections bursting in place only).
 - NEXT on the GPU slot: scratchpad local_crowd.sh (stills, --frametime off/on, clip; mp4 to
