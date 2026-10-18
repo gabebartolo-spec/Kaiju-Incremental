@@ -204,8 +204,7 @@ func _animate_falls(delta: float) -> void:
 		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
 		if str(f["kind"]) == "topple":
 			var dir: Vector2 = f["dir"]
-			var axis := Vector3(dir.y, 0, -dir.x).normalized()
-			node.basis = Basis(axis, PI * 0.5 * k * k)
+			node.basis = FallMotion.topple_basis(dir, k)
 		else:
 			node.position.y = (
 				node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
