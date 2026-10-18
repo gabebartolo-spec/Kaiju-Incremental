@@ -136,10 +136,14 @@ func run() -> void:
 	# Player effect: the same seeded Behemoth rampage (the demo's last stage) with and without
 	# rooftop squads, in the Behemoth's grown city: hp left halfway (both still standing), then
 	# the biomass at the end.
-	var off_tune := grown.duplicate(true)
+	# Landmarks off in both: the scripted walk goes to the nearest building, and the Behemoth's
+	# wheel stands by the start in a plaza no rooftop squad covers, so it would never meet one.
+	var on_tune := grown.duplicate(true)
+	on_tune["city"]["landmarks"] = []
+	var off_tune := on_tune.duplicate(true)
 	off_tune["army"]["rooftop"]["max_by_tier"] = [0, 0, 0, 0]
 	var build := {"claws": 3, "hide": 5, "rage": 3, "evolve1": 1}
-	var on: RampageSim = _new(build, grown)
+	var on: RampageSim = _new(build, on_tune)
 	var off: RampageSim = _new(build, off_tune)
 	var half := roundi(Num.f(on.time_left) * 0.5 / DT)
 	_play.call(on, half)

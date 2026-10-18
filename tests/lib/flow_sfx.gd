@@ -36,6 +36,7 @@ static func run(root: Node, check: Callable) -> void:
 		"a stomp sounds on the next foot plant, not before: %s then %s" % [early, sfx.played]
 	)
 	FlowSounds.crowd(check, sfx)
+	preload("res://tests/lib/flow_step_sounds.gd").check_walk(check, sfx)
 	var pitches: Array[float] = []
 	for tier: int in [1, 4]:
 		sfx.set_size_tier(tier)
@@ -47,4 +48,5 @@ static func run(root: Node, check: Callable) -> void:
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
 	FlowSounds.regen(check, sfx)
+	preload("res://tests/lib/flow_voice_sounds.gd").check_tail(check, sfx)
 	sfx.free()

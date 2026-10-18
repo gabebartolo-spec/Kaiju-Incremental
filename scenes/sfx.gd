@@ -7,8 +7,10 @@ extends Node
 ## Steps and stomps land on the feet: every foot plant plays a footstep, and a sim stomp waits
 ## for the next plant to play its heavy thump there (or plays alone if no foot lands soon).
 
-const POOL := 8
 const STOMPS := 3
+## Footstep sounds the steps take turns with (footstep, footstep_1..3), in this order: no two
+## steps in a row sound the same.
+const STEPS: Array[String] = ["footstep", "footstep_2", "footstep_1", "footstep_3"]
 ## How fast the regen bubbles fade once their cue is over, and where a fade ends.
 const REGEN_FADE_DB_PER_S := 40.0
 const SILENT_DB := -60.0
@@ -21,8 +23,8 @@ static var _ui_player: AudioStreamPlayer
 var played: Array[String] = []
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
-## Returns the helicopters in the air (Array[Node3D]); the rotor loop follows them.
-var _helis: Callable
+## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
+var _powers: PowersView
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
@@ -50,6 +52,10 @@ var _pending_age := 0.0
 ## footstep_min_interval, crack_min_interval).
 var _since_step := INF
 var _since_crack := INF
+## Seconds since each gap-limited sound last played (tuning "sfx" "min_interval").
+var _since_sound: Dictionary = {}
+## How many footsteps have played (picks the next of STEPS).
+var _step := 0
 
 
 ## rng: the presentation's own seeded stream (pitch variation only).
@@ -66,18 +72,23 @@ func _ready() -> void:
 		"lash",
 		"ready",
 		"deflect",
-		"footstep",
 		"stomp_crack",
 		"collapse",
 		"roar",
 		"tank_fire",
 		"shell_hit",
+		"heli_gun",
+		"heli_crash",
+		"rifle",
 	]
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
+	names.append_array(STEPS)
 	for sound: String in names:
 		_streams[sound] = load("res://assets/sfx/%s.ogg" % sound)
-	for _i: int in POOL:
+	# Enough voices that a stomp's or a tank shot's tail is not cut off by the plays after it
+	# (tuning "sfx" "voices"; 8 cut a third of the stomps short under rooftop fire).
+	for _i: int in Num.i(_tune["voices"]):
 		var player := AudioStreamPlayer.new()
 		player.bus = "SFX"
 		add_child(player)
@@ -87,21 +98,23 @@ func _ready() -> void:
 	_crowd = _looping("crowd_panic")
 
 
-## Rampage hands over its camera, its helicopters (PowersView.helis) and its street (the
-## crowd) once, at start.
-func watch(camera: Node3D, helis: Callable, street: StreetLife) -> void:
+## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
+## once, at start.
+func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 	listener = camera
-	_helis = helis
+	_powers = powers
+	powers.sfx = self
 	_street = street
 
 
 func _process(delta: float) -> void:
-	if _helis.is_valid():
-		var helis: Array[Node3D] = _helis.call()
-		rotors(helis)
+	if is_instance_valid(_powers):
+		rotors(_powers.helis())
 	_since_step += delta
 	_since_crack += delta
 	_since_breath += delta
+	for sound: String in _since_sound:
+		_since_sound[sound] = Num.f(_since_sound[sound]) + delta
 	_fade_regen(delta)
 	_update_crowd(delta)
 	if _pending == "":
@@ -175,7 +188,8 @@ func footstep(strength: float) -> void:
 		return
 	_since_step = 0.0
 	var quiet := Num.f(_tune["footstep_quiet_db"]) * (1.0 - clampf(strength, 0.0, 1.0))
-	play("footstep", quiet)
+	play(STEPS[_step % STEPS.size()], quiet)
+	_step += 1
 
 
 ## A building part hits the ground (sim fall_land); a toppled tower is louder and deeper.
@@ -257,7 +271,14 @@ func _fade_regen(delta: float) -> void:
 
 ## One sound by name, slightly re-pitched each time so repeats do not sound copied; extra_db
 ## and pitch shade a single play (steps and stomps also take the size-tier pitch).
+## A sound with a "min_interval" in tuning is skipped while its last play is younger than that,
+## so a burst of events (rooftop volleys) never machine-guns or eats the pool's voices.
 func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
+	var gaps: Dictionary = _tune.get("min_interval", {})
+	if gaps.has(sound):
+		if Num.f(_since_sound.get(sound, INF)) < Num.f(gaps[sound]):
+			return
+		_since_sound[sound] = 0.0
 	played.append(sound)
 	if sound == "breath":
 		_since_breath = 0.0
@@ -265,11 +286,11 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	if stream == null:
 		return
 	var player := _pool[_next]
-	_next = (_next + 1) % POOL
+	_next = (_next + 1) % _pool.size()
 	var jitter := Num.f(_tune["pitch_jitter"])
 	player.stream = stream
 	player.volume_db = _volume(sound) + extra_db
-	if sound == "footstep" or sound.begins_with("stomp"):
+	if sound.begins_with("footstep") or sound.begins_with("stomp"):
 		pitch *= _size_pitch
 	player.pitch_scale = pitch * (1.0 + _rng.randf_range(-jitter, jitter))
 	player.play()
@@ -308,12 +329,29 @@ func _update_crowd(delta: float) -> void:
 		_crowd.stop()
 
 
+## The volume (dB) of the latest play, its distance fade included (read by the flow suite).
+func last_volume() -> float:
+	return _pool[(_next + _pool.size() - 1) % _pool.size()].volume_db
+
+
+## How many voices are sounding `sound` right now (the flow suite checks tails are kept).
+func sounding(sound: String) -> int:
+	var stream: AudioStream = _streams.get(sound)
+	return (
+		_pool
+		. filter(func(p: AudioStreamPlayer) -> bool: return p.playing and p.stream == stream)
+		. size()
+	)
+
+
 ## The pitch of the latest play (the flow suite checks the size-tier pitch with it).
 func last_pitch() -> float:
-	return _pool[(_next + POOL - 1) % POOL].pitch_scale
+	return _pool[(_next + _pool.size() - 1) % _pool.size()].pitch_scale
 
 
 func _volume(sound: String) -> float:
 	var levels: Dictionary = _tune["volume_db"]
 	var key := "stomp" if sound.begins_with("stomp_") and sound != "stomp_crack" else sound
+	if sound.begins_with("footstep"):
+		key = "footstep"
 	return Num.f(levels.get(key, 0.0))
