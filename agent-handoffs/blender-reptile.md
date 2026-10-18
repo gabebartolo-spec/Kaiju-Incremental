@@ -1,17 +1,15 @@
-# blender-reptile handoff, 2026-10-18 14:30
-## State: running a check. PR #54 OPEN (P3 into claude/look-options), head 1134f93, Auto-fix on, sim
-## review PASS (lead). Synced look-options b810d1a; floors real (smoke 30, flow 135, growth 26); green.
-## Lead jaw review 13:59: baby mouth corner flap -> FIXED 1134f93 (mouth line run to the jaw hinge
-## -87,81,-46,87.4; jaw 3430 -> 3962 voxels; re-baked). Offline proxy (scratchpad jaw/open_sim.py:
-## .kvox split opened 45 deg, rigid hinge) before/after in notes p3/jaw_proxy_*. Adolescent proxy clean.
-## Capture chain b15grpqgf (gl_compatibility 720p: forward_plus hangs on lavapipe) waits for military-ai re-shoot AND #51 plain-stats, then jaw_baby, jaw_adolescent,
-## baby, adolescent one at a time -> scratchpad ci10/. Bar (lead): 2x at roar peak, clean upper and
-## lower jaw edges, no skin bridge/flap, no floating red/green blocks (adolescent: thin green shard), open jaw
-## SOLID at 2x (proxy checkerboard was my rasterising; cube proxy p3/jaw_proxy_baby_after_cubes.png is solid).
-## Then: crops + clips into docs/captures/2026-10-18-croctitan-stages/, edit PR body PENDING lines,
-## SHA to lead; lead runs a fresh critic on the clips and merges. P3 = TOP PRIORITY, lands BEFORE #36.
+# blender-reptile handoff, 2026-10-18 17:30
+## State: running a check. PR #54 OPEN (P3 into claude/look-options), head 1dc2dc6, Auto-fix on, sim
+## review PASS. Synced look-options 997f516 (#51); floors real (smoke 30, flow 139, growth 26); green.
+## In-game jaw crops DONE and committed (docs/captures/2026-10-18-croctitan-stages/ingame_*): both PASS
+## the lead's bar (solid, clean V corner, no flap/bridge/blocks). Sent to lead 17:2x.
+## Remaining: chain b15grpqgf (bash PID 1298975, gl_compatibility 720p): jaw_adolescent rerun in flight
+## (39102659504), then game-cam baby + adolescent clips -> scratchpad ci10/{baby,adolescent}. Then 3 s
+## clips per stage (walk/turn/roar) to notes p3/ + the PR, SHA to lead; lead runs a fresh critic, merges.
+## KILL BY PID: TaskStop left old chain scripts alive (killed 1278033, 1293452 after duplicate runs).
 ## D-074b in 5814b31 (stage 1 body 0.6 / 1.15; evolve1 0.71 h, 15/33 defeated, tree 4.55 h).
-## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only.
+## Baby jaw fix 1134f93 (mouth line -87,81,-46,87.4). PR body source: scratchpad ev/pr_p3.md.
+## Lead = "Kaiju: Lead" local_106fc100-d2a4-4091-bc9a-4bda31df13ac. Art to the lead only. P3 lands BEFORE #36.
 
 ## Done
 - #22 (D-047 croc titan adult clips + tail + species cards) MERGED into look-options at 8065ebd.
@@ -51,6 +49,8 @@
 - LF writes (gdformat writes CRLF: normalise). Stage by name; no stash; Blender -b only.
 
 ## Findings for the lead (theirs to record)
+- TaskStop on a background bash chain left the script alive; it kept dispatching CI captures. Kill by PID.
+- forward_plus on lavapipe can hang at movie recording; gl_compatibility 720p is the fast path (lead).
 - Concurrent lavapipe captures double each run (25 -> 50 min) and trip the 3000 s timeout.
 - A clip's fixed stride turns the game's speed straight into cadence: check hip-heights/s per stage.
 - int16 cm overflows past 327 m: long baked walks need dm (the travel field).
