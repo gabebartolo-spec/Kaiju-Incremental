@@ -315,6 +315,7 @@
 			"regen_loop": -20.0
 		}
 	},
+	"body": {"speed_mult": 1.0, "hp_mult": 1.0},
 	"growth": {
 		"per_level": {
 			"army": {"tank_hp": 0.03, "tank_damage": 0.03, "start_interval": -0.01},
@@ -324,7 +325,8 @@
 			{
 				"city": {"half": 42, "coast_z": -112, "max_height": 26},
 				"air": {"max": 0},
-				"per_level": {}
+				"per_level": {},
+				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
 				"city": {"half": 70, "coast_z": -140, "max_height": 32, "tower_chance": 0.6,

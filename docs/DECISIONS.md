@@ -4,6 +4,107 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-18 · D-084 · Lead · #55 trample gets one last round, else the demo ships without it
+Why (18:0x, same rule as D-082): r9 failed the critic (topple hidden by the body, sprite dust, see-through crowns, dark
+stumps, falls along the tail). One more round; if it fails, greenery's trample is not in the demo.
+
+## 2026-10-18 · D-083 · Director · After the demo, playtest fixes come first
+Why (16:0x): director's call for after the demo build (P7 playtest); no new feature work jumps ahead of its fixes.
+
+## 2026-10-18 · D-082 · Director · #50 military AI gets one more round, else the demo ships without it
+Why (16:0x): the fresh motion critic failed #50 (tanks skewed mid-street, helis firing nose-away). One last round,
+and #50 ships only if it passes a fresh critic before #36 is tuned.
+
+## 2026-10-18 · D-081 · Director · Landmark rubble_bonus stays 4x
+Why (16:0x): asked whether to change it; kept as built in the landmark sites work.
+
+## 2026-10-18 · D-080 · Director · The jet strike warning scales with the kaiju's size
+Why (15:4x): director's call on the jets PRs; applied on the jet branches (#58, #61).
+
+## 2026-10-18 · D-079 · Director · shell_hit keeps its full boom (A); #52 closed
+Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is closed unmerged.
+
+## 2026-10-18 · D-078a · Director · The stadium stands are full of spectators watching the match
+Why (18:0x): "the stadium needs to be full of people in the stands watching the sport, currently its empty".
+Added to #59's brief; the AFL clip is re-rendered with the crowd.
+
+## 2026-10-18 · D-078 · Director · Stadium matches: one random sport per run, players flee when the wall caves in
+Why (14:1x): AFL, NFL, soccer or cricket, random per run; presentation only, low-effort visual flavour, in the demo.
+Real cities make the sport deliberate later. Lands in #59 (landmarks session).
+
+## 2026-10-18 · D-077 · Director · The tree's stats panel shows only what the selected node changes, in plain words
+Why (10:5x): the 12-number summary (STOMPS/S, RECHARGE, ARMOUR 0.0, SIZE 1 -> 2) read as software. Now the cost and
+the node's own stats ("Stomps hit harder: 13 -> 16"), lines from data/tuning.json "stat_text". MERGED #51 (997f516).
+
+## 2026-10-18 · D-076a · Lead · Rooftop density: reach from the stomp edge, more squads, a tenth of the chip
+Why: for D-076 at the same threat. Option A: chip per volley scaled down per tier so each stage's damage per run
+holds within ±5%; tanks unchanged; no HUD change (the hide spark is the hit read). PR #63.
+
+## 2026-10-18 · D-076 · Director · Rooftops: more squads, firing more often
+Why (10:5x): "more squads, more often". Cause found: rifle reach was measured from the kaiju's centre. Plan in D-076a.
+
+## 2026-10-18 · D-075 · Director · Green lots at 8% of the city
+Why (10:5x): answers D-065(b), the green-lot share tabled with its chunk and pacing table. City session, after
+greenery (a).
+
+## 2026-10-18 · D-074b · Director · Stage 1 at speed 0.6 and hp 1.15 (~43 min demo)
+Why (13:2x): ~0.6 h to evolve1 is unreachable at 0.6 speed (the sweep floors at ~0.66 h). Accepted ~0.71 h: about
+45% of early runs end in defeat and 87% of the city is destroyed by evolve1. PR #54.
+
+## 2026-10-18 · D-074a · Director · Baby speed ~0.6 with more hp; demo ~35 min
+Why (11:4x): revises D-074 with a target; superseded by the measured numbers in D-074b.
+
+## 2026-10-18 · D-074 · Director · Slow stage 1: the baby reads as a toddler
+Why (10:5x): slow stage 1 so the baby reads as a toddler; pacing re-measured in the P3 PR (#54).
+
+## 2026-10-18 · D-073 · Director · Croc baby and adolescent approved
+Why (10:5x): the P3 bodies from the croc titan design (D-059) are approved for the demo; clips kept, slam polish
+later. PR #54.
+
+## 2026-10-18 · D-072 · Director · All four jets; strikes wreck buildings but give no biomass
+Why (10:5x): jets arrive from Colossus; the bomber is the Apex set-piece; the octopus can grab jets. PRs #58, #61
+(parked until after the demo).
+
+## 2026-10-18 · D-071 · Director · Landmarks in order: A stadium, D wheel, E spire, F megatower
+Why (10:5x): picked from the landmark board. A sites PR with A and D first, then E and F.
+
+## 2026-10-18 · D-070 · Director · All tabled sounds ship, with a new mix
+Why (10:5x): #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 #62 merged, each resynced by the sound session; #52 decided by
+D-079.
+
+## 2026-10-18 · D-069a · Director · Soften #36's young stage to about half the early defeats
+Why (11:2x): about half the early defeats; cause: Armoured Scales moved late in the tree. #36 lands last before the build.
+
+## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
+Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
+priced late. Merge #36 after #50 and P3.
+
+## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
+Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
+camera). MERGED #35.
+
+## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
+Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
+
+## 2026-10-18 · D-066 · Director · Tanks and helicopters move and fight like a professional military
+Why: road-bound tank columns with firing posts and fallbacks, helicopter pairs with attack runs; total damage per run
+held within ±5%; helicopters a real threat to dodge ("overall difficulty unchanged"). PR #50; heli mix shift OK.
+
+## 2026-10-18 · D-065 · Director · A believable amount of greenery throughout the city
+Why (06:2x): "make sure there are a believable amount of trees, bushes, floral areas, parks, gardens, playgrounds
+throughout the city". (a) street trees, gardens, playgrounds, hedges, all crushable: PR #55; (b) green lots: D-075.
+
+## 2026-10-18 · D-064 · Director · Menu sounds and the SFX volume slider shipped as heard
+Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard". MERGED #33.
+
+## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
+Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
+do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
+
+## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
+Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
+smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
+
 ## 2026-10-18 · D-061 · Director · UI look A "Emergency Broadcast" for every screen
 Why: picked from three mockups (A broadcast, B concrete and rubble, C monster hide) for a "thematically rich, beautiful
 and intuitive" UI (UI session, 2026-10-18). Changes: UiKit palette (hazard yellow, alert red, near-black), hazard tape,
@@ -274,40 +375,3 @@ pick for making lights read; the director may move the time of day.
 
 ## 2026-10-16 · D-009 · Director · The kaiju starts young, outscaled by the city, and grows as you play
 Changes: body scale = young 0.5 x evolution tier x (1 + 2% per upgrade level owned); reach grows with it.
-
-## 2026-10-16 · D-008 · Director · Look C (Concrete Realism), far more detailed; more voxels
-Why: chosen from A Toy / B Night / C Concrete on the labelled board; "theres not enough voxels".
-Changes: buildings at 4 voxels per floor with window grids, sills, balconies, awnings, roof gear;
-kaiju at 5 voxels per design unit with teeth, claws, scales, plates; streets with lane markings,
-cars, trees, streetlights that flatten underfoot. Looks A and B removed.
-
-## 2026-10-16 · D-007 · Director · The third species is the Cephalopod
-Why: chosen from Cephalopod / Primate / Crystalline / Mechanical; the clearest contrast to a brawler
-lizard and a fast bug. Changes: data/species.json, Tentacle Lash (ring attack, huge reach, slow).
-
-## 2026-10-16 · D-006 · Director · Players choose a species at the start: Reptilian, Insectoid, a third
-Why: customisation. Each species has its own body, stats and signature attack (rule: a choice must
-change play). One species per save; "New kaiju" starts over. Changes: species select screen.
-
-## 2026-10-16 · D-005 · Director · Voxel graphics
-Changes: buildings, kaiju, army and debris are voxels; destruction removes layers and spills blocks.
-
-## 2026-10-16 · D-004 · Director · Controls: move + auto attacks, one signature button
-Why: focus on positioning and builds; works on controller and the TV.
-
-## 2026-10-16 · D-003 · Director · Short rampages (1-3 min) between visits to the upgrade tree
-Why: tight loop, the evolution tree is the spine (Nodebuster / Brotato shape).
-
-## 2026-10-16 · D-002 · Director · Active action game, NOT idle: deep upgrade tree, deliberate pacing,
-3-5 hours of content, zero AFK progression
-Why: director's words at kickoff. Changes: nothing accrues while closed; no passive income.
-
-## 2026-10-16 · D-002a · Lead · Godot 4.7.2, PC first with a web export; private GitHub repo
-Why: director chose Godot (PC + web). The repo-visibility question went unanswered; private is the
-standard default and is reversible.
-
-## 2026-10-16 · D-001 · Director · Kaiju Incremental is started with the shared kickoff scaffold
-Why: the project-kickoff skill (~/.claude/skills) produced the repo skeleton: CLAUDE.md, CI with
-check floors, PR template, board and log, project skills extending github-hygiene and
-game-architecture.
-Changes: the first commit.

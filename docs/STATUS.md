@@ -7,20 +7,20 @@ PR's "Board and log" section. History rolls to `docs/archive/status_<month>.md`.
 Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor, a missing suite,
 an untyped declaration and a planted secret). Gate signer: the lead.
 
-## Agents (2026-10-18 05:30)
+## Live PRs (2026-10-18 18:30; demo order: #50 -> P3 #54 -> rooftops #63 -> landmarks -> matches #59 -> #36 -> build)
 
-| Agent | State | Item | Branch / PR | Since |
-|-------|-------|------|-------------|-------|
-| LEAD | working | demo D-050: QA gates, merges, board, GPU slot | claude/look-options (#3 to main on hold) | 2026-10-18 |
-| Tripo (old lead session) | available | P3 meshes delivered (D-059); octopus six-view check | none; provenance rows via the lead | 2026-10-18 |
-| blender-reptile | working | #22 round 2 evidence; then P3 baby/adolescent rig + export | #22 | 2026-10-18 |
-| ability-vfx | working | SFX bus + volume slider PR; UI sounds; army sounds PR | claude/sfx-bus | 2026-10-18 |
-| city-calm | awaiting lead | #30 artifact smoke; then available | claude/ci-export | 2026-10-18 |
-| UI | working | #27 look A (D-061), biomass (D-056), body font (D-058) | #27 | 2026-10-18 |
-| Performance | working | hitch fixes PR (prewarm angle, VehicleParts cache) | claude/perf-hitches | 2026-10-18 |
-| lighting | working | legacy breath voxel jet removal; fixed-fps still captures | new branch | 2026-10-18 |
-| voxel-edges | running a check | edge-shading A/B board for the director | claude/voxel-edge-shading | 2026-10-18 |
-| species-plan | available | plan only (D-060); worktree species-a parked | none | 2026-10-18 |
+| PR | Owner session | State | Item | Branch | Since |
+|----|---------------|-------|------|--------|-------|
+| #63 | Rooftop fire | awaiting lead | D-076a rooftop density; sim review PASS; clip on the local GPU | claude/rooftop-density | 2026-10-18 |
+| #59 | Stadium matches + crowd | working | D-078 matches + D-078a full stands; AFL re-clip with the crowd | claude/stadium-matches | 2026-10-18 |
+| #54 | Croc baby & teen | awaiting lead | P3 bodies (D-073, D-074b); sim review PASS; gate: clean baby jaw crop | claude/croctitan-p3 | 2026-10-18 |
+| #55 | Greenery + trample | working | D-065(a) greenery; trample last round (D-084), else ships without | claude/greenery | 2026-10-18 |
+| #50 | Tanks & helis | working | D-066 military AI; last round (D-082); conflicts with base | claude/military-ai | 2026-10-18 |
+| #36 | Army balance + SFX | working | D-069 army scales + D-069a soften young; lands last before the build | claude/army-scales | 2026-10-18 |
+| #58 | Jets | available (parked) | D-072 interceptor, D-080 warning; draft, after the demo | claude/jets-interceptor | 2026-10-18 |
+| #61 | Jets | available (parked) | D-072 delta + ground-attack bombs; draft, after the demo | claude/jets-bombs | 2026-10-18 |
+
+Lead: "Kaiju: LEAD (demo build, merges, QA)", claude/look-options (#3 to main on hold). Board PRs: "Board & decision log".
 
 States: working · running a check · awaiting director · blocked · available.
 
