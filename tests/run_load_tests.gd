@@ -5,6 +5,8 @@ extends "res://tests/lib/runner.gd"
 ## screen door (BuildingFade, D-025). Headless; the stream check meshes a Behemoth city.
 ##   godot --headless --path . --script tests/run_load_tests.gd
 
+const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
+
 ## Real time to wait for the stream to finish (headless frames are not real seconds).
 const STREAM_WAIT_MS := 120000
 
@@ -16,6 +18,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	_check_party_walls()
 	_check_building_fade()
+	LoadLandmark.new(check).run()
 	await _check_stream()
 
 
@@ -97,7 +100,6 @@ func _check_building_fade() -> void:
 	)
 
 
-## A big city loads its nearest buildings up to the chunk budget and streams the rest in;
 ## a building touched before its turn is built on the spot; in the end every building is real.
 func _check_stream() -> void:
 	var sim := _sim_at(2)

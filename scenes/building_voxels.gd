@@ -37,8 +37,11 @@ var _lit_chance: float
 var _party: Dictionary = {}
 
 
-## party: side (from SIDES) -> floors of that side a touching neighbour covers.
-func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
+## party: side (from SIDES) -> floors of that side a touching neighbour covers. facade: false
+## leaves `vox` empty for a subclass to fill (LandmarkVoxels).
+func _init(
+	p_building: RampageSim.Building, base: Color, party: Dictionary = {}, facade: bool = true
+) -> void:
 	b = p_building
 	_party = party
 	_w = b.w * RES
@@ -46,11 +49,19 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	_h = b.height * RES
 	_lit_chance = Look.value("window_lit")
 	_make_palette(base)
+	if not facade:
+		return
 	for side: Vector2i in SIDES:
 		_face(side)
 	_slabs()
 	_roof()
 	_sign()
+
+
+## Which faces of `cell` BuildingMesher draws, one bit per BuildingMesher.NEIGHBOURS entry; -1:
+## any face open to air, with the standing building's hollow counted as solid.
+func face_mask(_cell: Vector3i) -> int:
+	return -1
 
 
 func archetype() -> int:
