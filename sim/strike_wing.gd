@@ -159,14 +159,18 @@ func _warn(jet: Jet) -> void:
 	if jet.s < first - Num.f(jet.cfg["speed"]) * Num.f(cfg["warn_seconds"]):
 		return
 	jet.warned = true
-	sim.events.append(
-		{
-			"type": "jet_inbound",
-			"jet": jet.id,
-			"rounds": rounds,
-			"bombs": drops,
-			"radius": Num.f(jet.cfg["bomb_radius"]),
-		}
+	(
+		sim
+		. events
+		. append(
+			{
+				"type": "jet_inbound",
+				"jet": jet.id,
+				"rounds": rounds,
+				"bombs": drops,
+				"radius": Num.f(jet.cfg["bomb_radius"]),
+			}
+		)
 	)
 
 
@@ -295,7 +299,5 @@ func clear_dead() -> void:
 			continue
 		destroyed += 1
 		sim.rubble += Num.f(cfg["rubble"]) * sim.stat("rubble_mult")
-		sim.events.append(
-			{"type": "jet_destroyed", "jet": jet.id, "x": jet.pos.x, "z": jet.pos.y}
-		)
+		sim.events.append({"type": "jet_destroyed", "jet": jet.id, "x": jet.pos.x, "z": jet.pos.y})
 	jets = alive
