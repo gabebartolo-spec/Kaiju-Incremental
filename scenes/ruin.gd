@@ -88,6 +88,8 @@ static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 static func strip(
 	voxels: BuildingVoxels, from: Vector3, to: Vector3, width: float
 ) -> MultiMeshInstance3D:
+	if voxels is LandmarkVoxels:  # a ragged heap against the stub, in the model's colours
+		return LandmarkRubble.heap(voxels as LandmarkVoxels, from, to, width)
 	var vox := VoxelBuilder.new()
 	var keys: Array[String] = ["wall", "wall", "wall", "pillar", "trim", "slab", "window", "char"]
 	var along := to - from
