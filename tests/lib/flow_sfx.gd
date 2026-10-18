@@ -71,3 +71,24 @@ static func gate(root: Node, check: Callable) -> void:
 		"no rampage sound plays while it loads, then they do: %s then %s" % [early, sfx.played]
 	)
 	sfx.queue_free()
+
+
+## A PC that never holds smooth frames (under 20 fps, e.g. a weak GPU at 4K) still hears the
+## rampage: the gate opens anyway after tuning "sfx" "start_gate" max_wait_s.
+static func gate_timeout(root: Node, check: Callable) -> void:
+	var sfx := Sfx.new(Seeds.make("sfx", 0))
+	root.add_child(sfx)
+	var gate: SfxGate = null
+	for child: Node in sfx.get_children():
+		if child is SfxGate:
+			gate = child as SfxGate
+	gate.set_process(false)  # stepped by hand with slow frames
+	var steps := 0
+	while not sfx.live and steps < 100:
+		gate._process(0.1)  # 10 fps: never a smooth frame
+		steps += 1
+	check.call(
+		sfx.live and steps <= 40,
+		"slow frames (10 fps) still open the sound gate within seconds: %.1f s" % (steps * 0.1)
+	)
+	sfx.queue_free()

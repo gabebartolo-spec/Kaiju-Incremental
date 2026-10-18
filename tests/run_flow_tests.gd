@@ -46,6 +46,7 @@ func run_checks() -> void:
 	await _check_rampage()
 	FlowSfx.run(root, check)
 	await FlowSfx.gate(root, check)
+	FlowSfx.gate_timeout(root, check)
 	await FlowStadium.run(self, check)
 	await _check_warm_start()
 	await _check_powers("reptilian", "breath", UPGRADED)
