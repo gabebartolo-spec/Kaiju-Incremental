@@ -367,6 +367,26 @@
 		"regen_tint": "8cffb0",
 		"deflect_tint": "cfe6ff"
 	},
+	"crowd": {
+		"max": 1000,
+		"spacing": 3,
+		"seats": ["b23d32", "8e3029"],
+		"seat_match": 24,
+		"team_share": 0.6,
+		"neutral": [
+			{"shirt": "c9c2b0", "pants": "2f3440", "hair": "2a1f18"},
+			{"shirt": "3f5f7a", "pants": "3b3a36", "hair": "1a1714"},
+			{"shirt": "e8e4d8", "pants": "57503f", "hair": "6a4a2a"},
+			{"shirt": "c08a2e", "pants": "2a2a2e", "hair": "3a2a20"}
+		],
+		"bob": 0.05,
+		"bob_hz": [1.2, 2.4],
+		"react": [0.1, 0.9],
+		"run_speed": [1.2, 1.8],
+		"exits": 8,
+		"aisle": 0.3,
+		"out_after": 0.6
+	},
 	"street": {
 		"person_voxel": 0.065,
 		"civilians_per_lot": 3,

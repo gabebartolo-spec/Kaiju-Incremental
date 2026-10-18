@@ -1,7 +1,8 @@
 extends RefCounted
 ## D-078 for the flow suite: a match plays in the stadium (one sport of four, players of two
 ## kits and a ball kicked about), and the moment the stadium loses its first chunk every player
-## runs for the tunnels; once out (or crushed) they are gone from the pitch.
+## runs for the tunnels; once out (or crushed) they are gone from the pitch. The stands are full
+## of seated fans (director 2026-10-18) who stand and stream out of the exits with the players.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const PLAY_FRAMES := 240
@@ -21,6 +22,12 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	await tree.process_frame
 	var game: StadiumMatch = GuiInput.find_script(rampage, StadiumMatch)
 	var start := game.on_pitch() if game != null else 0
+	var crowd: StadiumCrowd = GuiInput.find_script(rampage, StadiumCrowd)
+	var seated := crowd.in_stands() if crowd != null else 0
+	check.call(
+		crowd != null and seated >= 500 and crowd.running() == 0,
+		"the stands are full: %d fans seated to watch" % seated
+	)
 	for _i: int in PLAY_FRAMES:
 		await tree.physics_frame
 	check.call(
@@ -59,6 +66,14 @@ static func run(tree: SceneTree, check: Callable) -> void:
 			% [frames, broke_at]
 		)
 	)
+	await tree.physics_frame
+	check.call(
+		crowd != null and crowd.fleeing and crowd.running() > seated / 2,
+		(
+			"and the crowd with them: %d fans up and running"
+			% (crowd.running() if crowd != null else 0)
+		)
+	)
 	for _i: int in FLEE_FRAMES:
 		await tree.physics_frame
 	check.call(
@@ -66,6 +81,13 @@ static func run(tree: SceneTree, check: Callable) -> void:
 		(
 			"the players flee the pitch: %d out through the tunnels, %d crushed, %d left"
 			% [game.escaped, game.killed, game.on_pitch()]
+		)
+	)
+	check.call(
+		crowd != null and crowd.escaped > 0 and crowd.in_stands() < seated,
+		(
+			"fans stream out of the exits: %d out, %d gone with the fallen seats, %d crushed"
+			% ([crowd.escaped, crowd.fallen, crowd.killed] if crowd != null else [0, 0, 0])
 		)
 	)
 	rampage.queue_free()

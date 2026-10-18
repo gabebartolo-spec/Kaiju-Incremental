@@ -5,7 +5,8 @@ extends Node3D
 ## street people (VoxelPerson) and a ball. Players drift toward the ball, which is kicked or
 ## passed about; no rules. The moment the stadium loses its first chunk every player runs from
 ## the kaiju for the tunnel farthest from it and is gone once through; stomps crush them like
-## any civilian. Presentation only: the sim and the economy never know any of them exist.
+## any civilian. The stands hold the crowd (StadiumCrowd), who flee with the players.
+## Presentation only: the sim and the economy never know any of them exist.
 
 ## The poses a player uses: a jog while playing, the arms-up run when fleeing.
 const POSES: Array[int] = [
@@ -36,6 +37,7 @@ class Player:
 var sim: RampageSim
 var sport: Dictionary
 var players: Array[Player] = []
+var crowd: StadiumCrowd
 var fleeing := false
 ## Running totals (tests and the capture tool read them).
 var escaped := 0
@@ -116,6 +118,9 @@ func _ready() -> void:
 	_ball_node = MeshInstance3D.new()
 	_ball_node.mesh = _ball_mesh(voxel)
 	add_child(_ball_node)
+	if StadiumCrowd.enabled:
+		crowd = StadiumCrowd.new(sim, _index, kits, _rng)
+		add_child(crowd)
 
 
 ## A formation: each side holds its own half in rows, nearer its end the lower its number.
@@ -154,6 +159,8 @@ func crush(at: Vector3, radius: float) -> void:
 			_fx.puff(Vector3(players[i].pos.x, _top + 0.15, players[i].pos.y))
 		players.remove_at(i)
 		killed += 1
+	if crowd != null:
+		crowd.crush(at, radius)
 
 
 func _process(delta: float) -> void:
@@ -171,6 +178,8 @@ func _process(delta: float) -> void:
 func _panic() -> void:
 	fleeing = true
 	var kaiju := sim.kaiju_pos
+	if crowd != null:
+		crowd.panic(kaiju)
 	var tunnels: Array[Vector2] = [
 		_centre + Vector2(_half.x, 0),
 		_centre - Vector2(_half.x, 0),
