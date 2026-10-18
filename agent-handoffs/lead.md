@@ -11,7 +11,7 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
 ## DIRECTOR ANSWERS 2026-10-18 10:4x-11:1x (log D-068..D-077 in the next board PR)
 - Plays the preview exe now (out\demo-preview-c3b7306). D-068 crease B 0.3 (#35 MERGED). Croc clips kept + slam polish.
 - D-069 merge #36 army scales (sound session syncing it; lands after #50 military). D-070 all sounds ship + new mix:
-  #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 MERGED (16:xx-17:1x); #52 shell_hit A/B: director kept A (D-079), PR closed; voice-pool PR next, each resynced by the sound session.
+  #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 #62 MERGED; #52 shell_hit A/B: director kept A (D-079), PR closed; voice-pool PR next, each resynced by the sound session.
 - D-071 landmarks A stadium -> D wheel -> E spire -> F megatower (sites PR with A+D, then E/F). D-072 all four jets;
   strikes wreck buildings, no biomass; jets from Colossus, bomber Apex set-piece; octopus can grab jets.
 - D-073 croc baby + adolescent approved; D-074 slow stage 1 (baby reads as toddler; pacing re-measured) in P3 PR.
@@ -47,10 +47,8 @@ UI look & fonts; AFL: Management game research / Kaiju tree research. "Hardrive 
   fade on centre-line trees; per-prop log asked. Not demo-blocking.
 - 17:1x: #55 trample r8 (kvox footprint, tail test, per-prop log) with fresh motion critic. Cancelled concurrent
   stomp-dust capture (sound told: do stills locally). #59 needs resync + AFL clip after P3 chain. Messaging cap hit.
-- UNSENT to greenery (#55 r8 critic FAIL, 4th): my 2x of r8/pair_trail_2x: trees DO fall, but along the walk
-  (north/south = camera depth axis) so a laid tree reads as an upright crown + trunk; the 30% lighten makes them
-  look like ghosts. Fix: fall sideways, away from the path centre-line (perpendicular to camera view); keep crown
-  colour opaque (lighten the stump only); puff at each trunk base. Clip start: log says f2 falls, clip shows laid at f0.
+- 16:4x SENT: greenery r8 fix (fall sideways, opaque crowns); rooftops open PR now, clip after croc P3; landmarks
+  #59 AFL clip after rooftops. #62 footfall dust MERGED. #50 rework in progress (one round left, D-082).
 - Still open: civilian cap (after Perf's no-feel pass), octopus mesh FIX (if species resume), Apex height (park).
 
 ## DEMO (D-050) state
