@@ -17,6 +17,10 @@
 ##    + time cap. 5 QUAY_REACH reads tuning; PR body wrongly says autoplay waits for kaiju_emerged.
 ##  Reviewer left scratch C:/r88tmp (deletion blocked; director to delete).
 ## Context guard hit 200k: no new work in this session; hand off to a fresh lead once these subagents report.
+## #89 head 8e7f2d2 = review fixes (6583607) + claw swipe D-095; croc builder at ~185k, report pending.
+## Security flag (Git Destructive) on the croc builder 10-20: checked, croc-contact history linear, look-options
+## intact; likely its tmp fail-first branches. Delete tmp/croc-failfirst, tmp/croc-swipe-failfirst,
+## claude/tmp-military-diag once reported.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
 ## Who
