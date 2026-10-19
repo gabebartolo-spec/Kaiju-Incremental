@@ -32,3 +32,28 @@ Sources:
 | ready.ogg | synth growl (formant-filtered buzz) + synth chime |
 | deflect.ogg | Kenney `impactMetal_heavy_001` + `impactBell_heavy_002` pitched 1.2 |
 | regen_loop.ogg | synth bubbles (seamless 2 s loop) |
+
+## ElevenLabs replacements (2026-10-19, D-092; picked by the director from a loudness-matched shootout)
+
+Generated in ElevenLabs Sound Effects (Starter plan, prompt influence 60%, fixed duration, loop where noted; 4 takes per
+generation, 532 credits for all 13 generations). Each pick was converted to mono 44.1 kHz Vorbis 96 kb/s, its gain set so
+its loud-part RMS matches the sound it replaces (within 0.5 dB, so the mix in `data/tuning.json` holds), peak-limited.
+They replace the synth/Kenney mixes listed above for these files; shell_hit.ogg keeps the old mix (the director's pick).
+
+| File | Take | Prompt (ElevenLabs) |
+|---|---|---|
+| roar.ogg | roar t2, 4.0 s | High-quality, professionally recorded giant reptile monster roar, one-shot. Deep guttural bellow rising into a ragged, rasping scream, enormous creature, slight outdoor reverb. Cinematic creature sound effect, no music, no voices. |
+| breath.ogg | breath t1, 3.0 s | High-quality cinematic energy breath weapon, one-shot. A giant monster's searing atomic beam: hissing plasma roar with crackling fire, sustained and powerful. Sound effects foley, no music, no voices. |
+| stomp_0.ogg | stomp_small t1, 1.5 s | High-quality, professionally recorded heavy creature footstep on asphalt, one-shot impact. Deep thud with a short crunch of cracking pavement. Sound effects foley, no music. |
+| stomp_1.ogg | stomp_mid t2, 2.0 s | High-quality, professionally recorded giant monster footstep impact on a city street, one-shot. Very deep ground-shaking thud, cracking concrete and a short low rumble tail. Sound effects foley, no music. |
+| stomp_2.ogg | stomp_heavy t2, 2.5 s | High-quality cinematic colossal monster footstep, one-shot impact. Earth-shaking sub-bass boom, shattering concrete, debris rattle and a rolling low rumble tail. Sound effects, no music. |
+| collapse.ogg | collapse t2, 4.0 s | High-quality, professionally recorded concrete building collapse, one-shot. Crumbling walls, heavy rubble cascade, breaking glass and a deep dusty rumble. Sound effects foley, no music, no voices. |
+| rifle.ogg | rifle_near t2, 1.0 s (raised 24 dB; the take was quiet) | High-quality, professionally recorded single rifle shot outdoors in a city, one-shot. Sharp supersonic crack with a short slap echo off buildings. Sound effects foley, no music. Its onset is at 2 ms, so `sfx.start_s` for rifle and rifle_far is now 0.0 (was 0.13 for the old sample's silent lead-in). |
+| tank_fire.ogg | tank_fire t2, 2.5 s | High-quality, professionally recorded tank main gun firing outdoors, one-shot. Massive cannon boom with a pressure-wave thump and a rolling echo between buildings. Sound effects, no music. |
+| heli_rotor.ogg | heli_rotor t1, 5.0 s loop | High-quality, professionally recorded military attack helicopter hovering nearby, steady rotor blade thump and turbine whine, loop. Sound effects, no music. |
+| crowd_panic.ogg | crowd_panic t1, 6.0 s loop | High-quality recording of a large stadium crowd panicking, thousands of people screaming and running, chaotic, loop. Sound effects ambience, no music. |
+| footstep.ogg, footstep_1..3.ogg | footstep_small t1, 1.0 s; the variants are the same take at pitch 0.96 / 1.04 / 0.92 | High-quality, professionally recorded small reptile creature footstep on concrete, one-shot. Soft heavy pad thud with a light scrape. Sound effects foley, no music. |
+
+Not usable: the distant-rifle prompt (and one near-rifle take) came back near-silent (peak about -45 dBFS); rifle_far keeps
+playing the rifle sample pitched 0.7, as before.
+
