@@ -21,6 +21,7 @@ func settle(index: int) -> void:
 	var b := sim.buildings[index]
 	var g := Num.f(sim.city["fall_gravity"])
 	for part: Dictionary in b.frame.settle():
+		var rule_dir: Vector2i = part["dir"]
 		var f := RampageSim.Fall.new()
 		f.id = sim.next_fall_id
 		sim.next_fall_id += 1
@@ -41,12 +42,12 @@ func settle(index: int) -> void:
 				toppled += 1
 			var dir: Vector2i = part["dir"]
 			var pivot: Vector3 = part["pivot"]
-			# D-096 readability: every topple goes over away from the kaiju (cardinal, like the
-			# structure's), from its far edge, so the player sees it fall and what it crushes.
-			var away := _away(_base_centre(b, f.cells, lowest) - sim.kaiju_pos, dir)
-			if away != dir or f.kind != str(part["kind"]):
-				pivot = _edge(f.cells, lowest, away)
-				dir = away
+			# D-099: it falls by its own physics, toward the side that was cut away (the support
+			# rule's dir), onto the kaiju if that is the side. A gutted drop has no rule dir: its
+			# whole base went, and the chew came from the kaiju's side, so it goes that way.
+			if dir == Vector2i.ZERO:
+				dir = _toward(_base_centre(b, f.cells, lowest) - sim.kaiju_pos)
+				pivot = _edge(f.cells, lowest, dir)
 			f.dir = Vector2(dir)
 			f.pivot = b.local_to_world(pivot)
 			f.duration = sqrt(2.0 * f.height / g) * 1.8
@@ -67,6 +68,7 @@ func settle(index: int) -> void:
 					"kind": f.kind,
 					"pivot": f.pivot,
 					"dir": f.dir,
+					"cut_dir": Vector2(rule_dir),
 					"drop": f.drop,
 					"duration": f.duration,
 				}
@@ -104,14 +106,14 @@ static func _base_centre(b: RampageSim.Building, cells: Array[Vector3i], lowest:
 	return sum / maxi(1, count)
 
 
-## The level direction (one of the four, like Structure's) from the kaiju to the tower's base;
-## `fallback` when the kaiju stands on the base's centre.
-static func _away(to_base: Vector2, fallback: Vector2i) -> Vector2i:
+## The level direction (one of the four, like Structure's) from the tower's base to the kaiju;
+## north when the kaiju stands on the base's centre.
+static func _toward(to_base: Vector2) -> Vector2i:
 	if to_base.is_zero_approx():
-		return fallback
+		return Vector2i(0, -1)
 	if absf(to_base.x) > absf(to_base.y):
-		return Vector2i(signi(roundi(to_base.x * 100.0)), 0)
-	return Vector2i(0, signi(roundi(to_base.y * 100.0)))
+		return Vector2i(-signi(roundi(to_base.x * 100.0)), 0)
+	return Vector2i(0, -signi(roundi(to_base.y * 100.0)))
 
 
 ## The pivot edge (local frame) a part tips over going `dir`: its far side at its lowest floor,

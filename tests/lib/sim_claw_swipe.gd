@@ -4,7 +4,7 @@ extends RefCounted
 ## other species keep Claws as a stomp upgrade. Includes the player-effect fixture "kaiju.swipe":
 ## the same seeded rampages with the swipe off destroy less of the city. Both swipe comparisons
 ## average FIXTURE_RUNS seeded run indices: one seed alone flips with chaos (PR #89: towers the
-## body undermines now fall away from the kaiju into the city, D-096).
+## body undermines fall by their own physics, D-099).
 
 ## The player-effect fixture's seeded run indices, averaged.
 const FIXTURE_RUNS := 5
