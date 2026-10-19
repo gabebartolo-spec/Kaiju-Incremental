@@ -1,17 +1,19 @@
-# Lead handoff, 2026-10-20 (new lead session, replaces "Boot up as lead on kaiju project")
-## State: working. Agents: military-ai (#50), croc-contact (#89 push+capture), river-start (#88 review notes a/b), ci-audit (read-only), board (playtest notes chapter + D-095/096 PR).
+# Lead handoff, 2026-10-20 (lead session 2 of 10-20 hit 200k; next lead: read this, then GitHub)
+## State: working. Running subagents of the OLD lead (report to it, not to you): croc-contact (#89 push+capture), military-ai (#50), capture-speed (read-only). Old lead hands off once they report.
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
-## D-095 (director 10-20): Claws = CLAW SWIPE (croc only for demo). D-096 (director 10-20, question tool): "Swipes undermine towers" (swipe hits count as base chew; undermined towers fall AWAY from the kaiju, lead call). Both go on the board PR.
-## #89 GREEN 8e7f2d2 (tests 39270770359); swipe 2 s, reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; claws5 101 vs 72 chunks.
-##  Topple clip (run 39266833950): critic FIX (pop at impact f214->216, no lean, noisy heap, falls over croc); lead confirmed 2x.
-##  Topple+swipe+D-096 committed 7600273 (local suites green; fail-first falls-away + swiped-topples-sooner). Fresh croc-contact builder: push, capture --both, PR body. Then lead 2x + fresh motion critic + show director, merge.
-## #88 head 2d6ce9b: sim re-review PASS (10-20). Only the 2 expected city reds (tier gate). Merge after #89: resync, rerun CI.
-##  Fold into that resync push (non-blocking): river_inset read via cfg.get after row<0 (city_river.gd:24); assert emerge.max_seconds > rise_seconds.
-## #50 head 0854411: tests 39271829662 GREEN. Builder military-ai doing CI clip, overlays f750/f1050, pacing, PR body.
-## Director said YES (10-20) to deleting tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag, C:/r88tmp; lead delete REFUSED by permissions: director runs it.
-## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
-
-## Who
+## Captures may run in PARALLEL (capture.yml has no concurrency group; one-at-a-time rule retired 10-20). They take 15-32 min: capture-speed audit pending.
+## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
+## #89: fixes + D-096 pushed by croc-contact (sha in PR; was local 7600273); capture run 39277970463 (--both: topple + swipe). NEXT: lead 2x (pop at impact gone?
+##  croc visible? arm rake big, streaks fan from claw, break on rake frame), fresh motion critic, show director the swipe clip (ask-the-director), merge --match-head-commit full sha.
+##  Swipe adds only ~4% mean destruction (5-seed); joint young retune is the director's after #89/#90. 21-frame spikes = stomps, swipe 2.0 s (no bug).
+## #88 head dca0e988cd4f34c640c2349fc40699c0a40032b3: re-review PASS + notes a/b done. Only 2 expected city reds (tier gate). After #89 merges: resync, CI, merge.
+## #50 head 0854411 tests 39271829662 GREEN; builder military-ai: clip, overlays f750/f1050, pacing, PR body -> lead 2x + fresh motion critic -> merge.
+## #95 board PR (docs: playtest chapter docs/roadmap/2026-10-19-director-playtest.md, D-095, D-096), head 6662b7d: check lint, merge.
+##  Playtest notes with no PR: 9 (small buildings south of spawn not destructible = tier gate, should clear with #89 + #88 river check: verify in play), 12 destruction option A (after exe 2).
+## #90 dash: resync after #89 -> fresh motion critic -> merge. Then #85 joint young retune (director's balance call). Then demo exe 2 (build session).
+## CI audit (10-20): PR runs 3-5 min, meets the rules; optional: re-time tools/ci_timings.txt (10 of 18 suites listed), try 3 shards (~1 min saving).
+## Director said YES to deleting tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag, C:/r88tmp; lead's delete REFUSED by permissions; commands given to him.
+## Director 10-20: "work faster, spawn help", "employ multiple sonnet workers": run several Sonnet lanes in parallel.
 Lead = "Kaiju: LEAD (demo build, merges, QA)". Owns: QA gates + fresh critics, PR review + merge (squash,
 `--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
 Helpers: Opus at MEDIUM effort or Sonnet only (Opus high / Fable need the director's yes).
