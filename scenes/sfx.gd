@@ -21,6 +21,7 @@ static var _ui_player: AudioStreamPlayer
 
 ## Every sound played, in order; read by the flow suite.
 var played: Array[String] = []
+var live := false  # nothing sounds until SfxGate opens it, once the rampage has loaded
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
 ## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
@@ -100,6 +101,7 @@ func _ready() -> void:
 	_regen = _looping("regen_loop")
 	_rotor = _looping("heli_rotor")
 	_crowd = _looping("crowd_panic")
+	add_child(SfxGate.new(self))
 
 
 ## Rampage hands over its camera, its powers' view (helicopters) and its street (the crowd)
@@ -112,6 +114,8 @@ func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 
 
 func _process(delta: float) -> void:
+	if not live:
+		return
 	_sound_landings()
 	if is_instance_valid(_powers):
 		rotors(_powers.helis())
@@ -275,7 +279,7 @@ func _looping(sound: String) -> AudioStreamPlayer:
 ## Bubbles only for the first regen_seconds of each healing spell, then a fade: a cue that
 ## healing began, not a bed under the whole rampage (mix report, 2026-10-18).
 func regen(healing: bool) -> void:
-	if healing and not _healing:
+	if healing and not _healing and live:
 		played.append("regen_loop")
 		_regen_age = 0.0
 		_regen.volume_db = _volume("regen_loop")
@@ -302,6 +306,8 @@ func _fade_regen(delta: float) -> void:
 ## (stretched by up to its "interval_jitter" share each time, so the gaps are ragged), so a burst
 ## of events (rooftop volleys) never machine-guns, types or eats the pool's voices.
 func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
+	if not live:
+		return
 	var gaps: Dictionary = _tune.get("min_interval", {})
 	if gaps.has(sound):
 		var gap := Num.f(gaps[sound])

@@ -1,5 +1,5 @@
 # Rooftops handoff, 2026-10-18 (D-076 / D-076a rooftop density)
-## State: awaiting lead (PRs #80 rifles a06b6d9, #83 breath snout 70e3de9 open; Auto-fix on)
+## State: running a check (PR #86 legs/tail hits open; CI clip b13ev6vis queued behind green-lots)
 
 ## Who
 Session "Rooftop density", started by "Kaiju: Lead" (local_106fc100-d2a4-4091-bc9a-4bda31df13ac).
@@ -10,6 +10,15 @@ Director D-076 "more squads, more often", made visible; director (here): "shoote
 unison ... improvised, unrehearsed resistance". LEAD D-076a: tanks unchanged; rifle chip scaled per
 tier so each stage's damage per run holds within ±5%; reptilian pacing within ±5%. No HUD change
 (D-061): hit read = flash + tracer + hide spark. PR #63 into claude/look-options; LEAD merges.
+
+## Now: #86 claude/rooftop-hits-body (post-demo, LEAD 2026-10-19)
+- RooftopAim TARGETS + legs/tail (13 bones, NEAREST 5); capture logs body_x_px. Headless span
+  292/296 px = 99% (bar >= 60%), top 20 px bin 15% (bar <= 25%). Gate 561/561; known-bad 174/564.
+  Suites all 9 pass (54e94f8).
+- Clip: local windowed blocked (director in League fullscreen); CI job b13ev6vis waits for the
+  capture.yml queue, then downloads to notes round4/ci. Then: span.py on it, 2x strip, fill the
+  PR body's Clip line (gh pr edit 86), ping LEAD.
+- #80 and #83 MERGED (5d1a892). Defeat rise -> full-game retune list (LEAD).
 
 ## Playtest fixes (D-083, director playtest, LEAD); proof notes PLAYTEST_FIXES.md, breath-snout/
 - #80 claude/rifle-fire a06b6d9: near squads (12 u) crack, the rest rifle_far pops (-14 dB,

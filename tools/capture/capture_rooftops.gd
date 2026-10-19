@@ -107,6 +107,7 @@ func _run() -> void:
 		"volley_frames": _volleys,
 		"sparks": _sparks,
 		"in_reach_per_second": _in_reach,
+		"body_x_px": _body_span(rampage, camera),
 	}
 	file.store_string(JSON.stringify(record, "  "))
 	file.close()
@@ -122,6 +123,21 @@ func _run() -> void:
 		)
 	)
 	quit()
+
+
+## The kaiju's width on screen now (x px, min and max): every bone's head and tail projected.
+func _body_span(rampage: Rampage, camera: Camera3D) -> Array[int]:
+	var lo := INF
+	var hi := -INF
+	for node: Node in rampage.find_children("*", "KaijuRig", true, false):
+		var rig := node as KaijuRig
+		for bone_name: String in rig.bone_names():
+			for at: Vector3 in [rig.bone(bone_name).global_position, rig.tail_world(bone_name)]:
+				lo = minf(lo, camera.unproject_position(at).x)
+				hi = maxf(hi, camera.unproject_position(at).x)
+	if lo > hi:
+		return []
+	return [roundi(lo), roundi(hi)]
 
 
 ## How many live squads have the kaiju within range + stomp (the sim's rule) right now.

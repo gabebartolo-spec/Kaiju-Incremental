@@ -13,10 +13,9 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await process_frame
-	await _check_view()
-	_check_rampages()
-	_check_rubble()
+	await _t("_check_view")
+	await _t("_check_rampages")
+	await _t("_check_rubble")
 
 
 ## Autoplayed rampages to the clock: every tank, every step, stays on a road and off every

@@ -28,6 +28,7 @@ func _init(p_sim: RampageSim, colors: Array[Color]) -> void:
 
 
 func _ready() -> void:
+	BuildingView.begin_city()
 	var count := _sim.buildings.size()
 	_views.resize(count)
 	_state.resize(count)
@@ -195,3 +196,4 @@ func _exit_tree() -> void:
 	for pair: Array in _take_ready():  # finished after the last frame: never entered the tree
 		var orphan: BuildingView = pair[1]
 		orphan.free()
+	BuildingView.end_city()  # streaming is done: keep only this city's buildings

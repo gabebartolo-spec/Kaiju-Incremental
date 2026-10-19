@@ -10,17 +10,20 @@ GODOT=/path/to/godot_console tools/run_tests.sh smoke      # some suites
 Every run gets its own user data (APPDATA and the XDG dirs point at a temp dir), so two
 agents' runs never share saves, settings or caches. The rules are the `game-architecture`
 skill §6 and the `kaiju-godot-tests` skill: one runner per suite extending
-`tests/lib/runner.gd`; a floor per suite in `expected_checks.txt` that only goes up; a
-`SCRIPT ERROR` fails the suite; seeds pinned; a new suite registered in `ALL_SUITES`
-(`tools/run_tests.sh`), `tools/ci_shards.txt`, `expected_checks.txt` and the table below.
+`tests/lib/runner.gd`; each test a `_check_*` method called through `await _t(...)`, so the
+suite line "K of M functions" fails one that never ran or made no check (no floors); a
+`SCRIPT ERROR` fails the suite; seeds pinned. Suites are found by filename and CI shards come
+from `tools/ci_timings.txt`, so a new suite needs only its file and a row below.
+
+`tools/run_tests.sh --quick <suite>` skips the re-import for the local loop.
 
 ## Suites
 
-| Suite | Covers | Floor |
-|---|---|---:|
-| `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up | 9 |
-| `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits | 14 |
-| `military` | the tanks move and fight like a professional military (D-066): they drive the road plan, never into a building, a lot or an alley; no two tanks as drawn (hull, turret, gun) ever touch; a driving tank keeps its hull within 10 degrees of its road and a parked one squares to it; parked tanks hold their firing band or reserve and leave the danger radius; road entries; a toppled tower re-routes a column; the clip scene through the drawn models (parts never touch, no skewed driving; the kaiju strides at them and they fall back; no hull on a car) | 10 |
+| Suite | Covers |
+|---|---|
+| `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up |
+| `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits |
+| `military` | the tanks move and fight like a professional military (D-066): they drive the road plan, never into a building, a lot or an alley; no two tanks as drawn (hull, turret, gun) ever touch; a driving tank keeps its hull within 10 degrees of its road and a parked one squares to it; parked tanks hold their firing band or reserve and leave the danger radius; road entries; a toppled tower re-routes a column; the clip scene through the drawn models (parts never touch, no skewed driving; the kaiju strides at them and they fall back; no hull on a car) |
 
-The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a suite short of
-its floor or without one, and that an untyped declaration does not compile.
+The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a `_check_*`
+method that is never called or makes no check, and that an untyped declaration does not compile.

@@ -14,6 +14,9 @@ static func check_heard(
 		{"type": "heli_destroyed", "heli": 999, "x": at.x + 10.0, "z": at.z},
 	]:
 		view.on_event(event, at)
+		if event["type"] == "heli_spawned":
+			rampage.sfx.live = true  # past the start gate (a fresh rampage)
+			rampage.sfx.rotors(view.helis())  # the next sound tick starts the rotor
 	var heard := rampage.sfx.played
 	check.call(
 		["heli_rotor", "heli_gun", "heli_crash"].all(func(k: String) -> bool: return heard.has(k)),

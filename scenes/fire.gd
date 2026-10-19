@@ -68,8 +68,8 @@ func _smoke(size: float) -> GPUParticles3D:
 		PackedColorArray(
 			[
 				Color(0.05, 0.05, 0.05, 0.0),
-				Color(0.1, 0.1, 0.11, 0.61),
-				Color(0.2, 0.2, 0.22, 0.43),
+				Color(0.1, 0.1, 0.11, 0.46),
+				Color(0.2, 0.2, 0.22, 0.32),
 				Color(0.22, 0.23, 0.25, 0.0),
 			]
 		),
@@ -80,7 +80,7 @@ func _smoke(size: float) -> GPUParticles3D:
 	var draw := ShaderMaterial.new()
 	draw.shader = SMOKE_SHADER
 	quad.material = draw
-	var p := _system(mat, quad, roundi(95 * maxf(1.0, size)), 10.0)
+	var p := _system(mat, quad, roundi(70 * maxf(1.0, size)), 10.0)
 	p.position.y = 1.8  # smoke starts above the flames, so their light does not wash it out
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20), Vector3(40, 50, 40))
 	return p
