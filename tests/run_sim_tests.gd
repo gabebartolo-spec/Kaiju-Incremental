@@ -51,7 +51,6 @@ func _sim(
 	var city: Dictionary = tune["city"]
 	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
-	sim.body.use_species(species_id)
 	return sim
 
 

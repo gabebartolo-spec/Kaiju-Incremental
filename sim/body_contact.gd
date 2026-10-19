@@ -162,8 +162,6 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 static func sweep_pose(
 	from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2, t: float
 ) -> Array:
-	if t >= 1.0:
-		return [to, to_heading]
 	return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]
 
 
