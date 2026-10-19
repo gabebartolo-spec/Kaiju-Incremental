@@ -4,8 +4,8 @@ extends RefCounted
 ## claw swipes ate a 13-floor tower's whole base in one tick, and the 9 floors above dropped half
 ## a second and vanished: no topple, no crumble. And towers the swipe undermined toppled toward
 ## the kaiju (D-096, superseded by D-099). Over seeded runs (the tower take at 60 Hz as the capture
-## plays it, and scripted rampages with Claws): every gutted tower part (nothing under it, taller than deep) topples
-## instead of dropping as one piece, and every topple falls toward its cut-away side (D-099).
+## plays it, and scripted rampages with Claws): every gutted tower part (nothing under it, taller
+## than deep) topples instead of dropping as one piece, and every topple falls toward its cut-away side (D-099).
 
 ## The capture's tower take (tools/capture/capture_contact.gd --tower), in 60 Hz steps.
 const TAKE_DT := 1.0 / 60.0
