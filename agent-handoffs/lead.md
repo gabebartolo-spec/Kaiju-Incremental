@@ -1,35 +1,14 @@
-# Lead handoff, 2026-10-20 (resumed on the other account)
-## State: working. Lead resumed 2026-10-20; old team sessions are on the other account (not visible here).
-## Since the pause: #94 (function-count tests, no floors, shards from timings), #86, #55 MERGED; #85 CLOSED.
-## All 4 work PRs (#89 #90 #88 #50) CONFLICTING since #94 deleted tests/expected_checks.txt.
+# Lead handoff, 2026-10-20 (new lead session, replaces "Boot up as lead on kaiju project")
+## State: working. Builders running (Agent names): river-start (#88 FIX), military-ai (#50 r6 proof); motion critic on topple.
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
-## All subagents of the 10-20 lead reported (none running). Earlier: croc-contact (#89 resync + FIX 1-3 +
-## clips, opus), river-start (#88 push 3 commits + resync + FIX, sonnet), military-ai (#50 resync + r6, opus).
-## D-095 (director 10-20): body made Claws useless -> Claws = CLAW SWIPE (forward rake every few s, levels =
-## harder + wider; croc only for demo), built in #89 (fixes a/b/c pushed 6583607). Add D-095 to the board PR.
-## #88 r-FIX done, head 7f38eaf (channel, bridges, quay cars, check_look); CI only the 2 expected reds (wait #89).
-## Lead 2x PASS on capture run 39266482235 (rise/landed.png in ../Kaiju-Incremental-wt/greenery/ci-capture-out/
-## river/). Fresh sim review = FIX (next: fresh builder on #88, then re-review, merge after #89):
-##  1 check_look passes on the pre-fix parent; car part can't fail (tests/lib/city_river.gd:116): test vs
-##    channel.grow(0.5 + CityDecor.CAR_HALF.y); show it failing first. 2 the 2 reds are honest (tier gate, #89).
-##  3 assert no building footprint meets channels[0] (landmark in river row, sim/city_river.gd:37,70).
-##  4 soft lock: SPAWN_INSET 2.0 vs sidewalk (sim/city_river.gd:20,56; emergence.gd:66) -> inset from tuning
-##    + time cap. 5 QUAY_REACH reads tuning; PR body wrongly says autoplay waits for kaiju_emerged.
-##  Reviewer left scratch C:/r88tmp (deletion blocked; director to delete).
-## Context guard hit 200k: no new work in this session; hand off to a fresh lead once these subagents report.
-## #89 GREEN at 8e7f2d2 (tests 39270770359): review fixes a/b/c (fail-first 39266665117) + claw swipe D-095
-## (sim/claw_swipe.gd, every 2 s; reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; other species keep +3 stomp; claws5
-## 101 vs 72 chunks, fail-first 39270749254; e1 0.26->0.25 h, young defeats 3->5/13, not retuned).
-## NEXT on #89: lead 2x of topple clip (run 39266833950, %TEMP%/kcap/capture-39266833950-0, pre-swipe) and
-## swipe clip (run 39270794927, gh run download if missing) -> fresh motion critic -> show the director the swipe
-## -> merge with --match-head-commit. Croc builder done (state available).
-## tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag: builder's delete was REFUSED by the
-## permission check; ask the director, don't delete on its behalf.
-## #50 r6 pushed 0854411032ca8af4d1c64a54ae7a25cea7ebf197, MERGEABLE; tests 39271829662 was running (confirm).
-## Local military 11/11, old sim fails 4 (fail-first). Standoff 8.8 m from body edge (lookahead 3 s, tunable
-## army.convoy.lookahead), retreat 3.5 m/s, skew 0/3268 parked, firing band 100%. Builder at 200k, done.
-## NEXT: fresh builder from ../Kaiju-Incremental-wt/military-ai/agent-handoffs/military-ai.md (its State line is
-## uncommitted): CI clip, hull/turret overlays f750/f1050, pacing on CI, PR body. tank_damage retune = director.
+## D-095 (director 10-20): Claws = CLAW SWIPE (croc only for demo), built in #89. Add D-095 to the board PR.
+## #89 GREEN 8e7f2d2 (tests 39270770359); swipe 2 s, reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; claws5 101 vs 72 chunks.
+##  Topple clip (run 39266833950, %TEMP%/kcap/capture-39266833950-0): lead 2x PASS (debug label must be off for him).
+##  Swipe clip run 39270794927 (capture) -> lead 2x -> fresh motion critic -> show director -> merge --match-head-commit.
+## #88 head 7f38eaf: sim review FIX 1-5 given to builder river-start (check_look car part fail-first, no footprint on
+##  channels[0], SPAWN_INSET to tuning + time cap, QUAY_REACH tuning, PR body). 2 strict city reds wait #89. Merge after #89.
+## #50 head 0854411 (tests 39271829662): builder military-ai doing CI clip, overlays f750/f1050, pacing, PR body.
+## Director asks open: delete tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag, C:/r88tmp.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
 ## Who
