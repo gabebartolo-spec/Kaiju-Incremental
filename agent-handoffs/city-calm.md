@@ -1,78 +1,65 @@
-# City-calm handoff, 2026-10-18 07:05
-## State: awaiting lead (#37 complete: frame cost + look-options sync pushed; lead merges on green)
+# City-calm handoff, 2026-10-19 02:30
+## State: awaiting lead (#55 r15 pushed at 7154f43; lead's own 2x check, merges after the demo build)
+## NO LOCAL GODOT (director, via lead): no headless or windowed runs until the lead lifts it;
+## verify on CI only (tests.yml on push, capture.yml).
 
 ## Task
-Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Director asleep from 06:4x:
-no questions to him; sim changes (destructible props) go to the lead.
-- DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export (artifact smoke PASS).
-- NOW: D-062, director 05:27 "there should never be vast empty spaces with nothing to smash or
-  kill". Arena cells need smashables, band cells (past the edge, as far as the camera sees)
-  need dressing; both floors 0; 3 map_seed cities; stills, crops, frame cost; PR to the lead.
-- NEXT: D-065 (director 06:2x): believable trees, bushes, floral areas, parks, gardens,
-  playgrounds; targets in tuning; everything crushable; separate PR. Brief in the lead's
-  message: street trees every 8-15 m on avenues/main streets, 8-15% green lots, none more than
-  ~2 blocks from one, yards where lots have yard_chance; parks count as filled cells.
+Role city-calm (helper). Lead: "Kaiju: Lead" (local_106fc100). Anything sim goes to the lead.
+- DONE: #26 calm streets (D-054), #28 export-windows, #30 ci-export, #37 no empty ground
+  (D-062), D-065(b) green-lot table (lead), Landmarks city_gen review.
+- DONE: PR #66 collapse-cap MERGED (329e708). Worktree removed; local branch claude/collapse-cap
+  is left (squash-merged; `branch -D` needs the lead/director's OK). POST-DEMO (lead): sim
+  Structure._topple_check rounds an overhang under 0.005 cells to a zero dir; FallMotion covers it.
+- NOW: D-065(a) greenery + body trample, PR #55. Lead r14: core passes, no more critic rounds;
+  numeric tweaks only, then the lead merges after the demo build on its own 2x check.
+  r14 tweaks: puff peak 0.30 by f3, hold to f5, linear fade to 0 by f29 (Fx PUFF_*); leaf
+  debris 60ae43 (-25% sat/val); leaves start anywhere inside the crown + random side spread
+  (tree_leaf_spread 0.6); leaf speed tree_leaf_speed 2.5 (~150 px flight); tree debris casts
+  no shadow (DebrisField.shadows). capture_green --log-props prints puff alpha per frame.
+- NEXT: D-075 = D-065(b) at 8% green lots, its own PR after #55 merges: city.green_lot_share
+  0.08 in CityGen/CityLots (data); parks/gardens/playgrounds/plazas spread so no building is
+  more than ~2 blocks from one; crushable; pacing table near evolve1 0.64 h / tree 4.88 h;
+  kaiju-sim-review packet; city checks failing first. Draft: notes greenery/D-075_packet_draft.md.
+  city_gen.gd is at 399 lines: the green-lot pass needs a new sim file.
 
 ## Branch and commit
-claude/no-empty-space off origin/claude/look-options 3df0f6b, worktree
-C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/no-empty-space.
+claude/greenery, worktree C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/greenery,
+PR #55 head: see git log (synced with look-options after r12). Stray local branch claude/greenery-before:
+delete when allowed.
 
-## What changed (D-062)
-- tests/lib/city_coverage.gd: 10 m cells over arena + city.view_beyond (30).
-- tests/run_city_tests.gd _check_no_empty_ground: stage 1 + 2 x map_seed 7301/1234/98765,
-  floor city 6 -> 12.
-- scenes/city_decor.gd: parked cars run past the edge to arena + view_beyond (no lamps there);
-  short blocks past the edge get a mid-kerb car; cars may stand where a street runs into the
-  diagonal past the edge; the diagonal's kerb trees run on past the edge.
-- data/tuning.json: city.coverage_cell 10, city.view_beyond 30; street.parked_chance 0.7,
-  parked_chance_beyond 0.9, parked_gap [1.9, 3.2], lane_stop_chance 0.12.
-- tools/coverage_probe.gd prints the maps.
+## What #55 does
+- scenes/city_greenery.gd: street trees on every avenue/street kerb (city-wide spacing), park
+  garden, playground, front-yard hedges. All decor props, all crushable.
+- scenes/city_decor.gd (397 lines, cap 400): body trample in _process. Every prop whose base
+  is under the kaiju's ground box (scenes/kaiju_footprint.gd, from the kvox sculpt) goes down.
+- scenes/prop_field.gd: a tree is crushed in place (lead, rule 8 after ten topple rounds): a
+  pale stump (city.stump_color) stays, the cells above are hidden, 1 in 4 leaf cells and every
+  bark cell go to PropField's leaf_field / bark_field (DebrisField, size_scale/lift knobs; the
+  decor adds them), bark dark brown, scattered at spawn, flung toward the camera; drained before
+  they process (contact frame). Stump: bark sides, warm cut top. Fx.tree_puff: soft unlit radial
+  sprite, 30% peak in 2 frames, gone <1 s (footfall puffs vanish in the smoke centre clearing).
+  group["origins"]/["keys"] are kept because headless MultiMeshes keep no transforms.
+- tests/lib/city_trample.gd: tail tree goes down; crushed tree leaves stump + debris same frame.
+  city floor 53.
 
-## Evidence so far
-notes = C:\Users\DANTE\.claude-desktop-work\side-session-notes\local_9fac90d2-...\no-empty-space
-- Red on the original decor (city_red_original_decor.log): empty past the edge, stage 1
-  17/17/12, Behemoth 19/13/12; arena 0 everywhere. Green: all 0 (city_green.log).
-- All suites green (run_tests_all.log): smoke 27, sim 39, powers 24, tentacles 18, city 12,
-  growth 24, load 6, flow 100, self-test ok.
-- Camera past the arena edge: stage 1 south 14, sides 22-50, north 37 m; Behemoth 16.5,
-  27-67, 51 m. The kaiju is clamped to half + 2.5.
-
-## PR #37 (D-062), head 90738cf
-- Lead stage 1 check PASS; nit fixed: car paints now city.car_colors (tuning), 2a3138/3a4236
-  lifted to 5b6b7a/6b7a52; gdlint fix (literal newline) + gdformat.
-- BEFORE runs 39060231519 (s1), before_s2 run in notes; AFTER re-captures -> notes after2_s1/2.
-- Local suites not re-run after 90738cf (pacing holds my Godot slot); CI tests on the PR.
-
-## D-065(b) table for the lead (green-lot share, data unchanged; local hack in
-sim/city_lots.gd via KAIJU_GREEN_SHARE env, NEVER commit; tools/_chunks_probe.gd untracked)
-- chunks stage1/2/3/4: 0%: 12286/25811/107259/350448; 8%: 10556/23323/98594/322765;
-  12%: 10310/22241/95995/307730; 15%: 10214/21695/91092/297409.
-- pacing.gd reptilian: shares 0/0.08/0.12 done (notes pacing_green_<share>.log); 0.15 was stopped
-  for the GPU slot and must be re-run. Then revert the hack and send the lead the table.
-- #37 frame cost: about +0.2-0.3 ms GPU, +3-5% triangles (notes timed/).
+## Evidence (notes side-session-notes/local_9fac90d2-.../greenery/)
+- r14/: trample/clip_720p.mp4 + lossless clip.avi (from f0), fall_strip.png, contact_seq_2x.png,
+  stump_puff_bark_3x.png, pair_r14_2x.png, samples.txt (from the avi), proplog.
+  r12/stump_accounting_2x.png (tree 643's stump behind a standing crown).
+- city_red_r11_crush.log (6 FAILs, debris off); run_tests_r16.log (full suite, r14 code).
+- Older rounds r9-r13 failed. Sample the lossless avi: mp4v bleeds colour on small pieces.
 
 ## Next
-1. CI captures (capture_growth --stage=1/2 --quick, 1920x1080): BEFORE on look-options,
-   AFTER on this branch; labelled stills; 2x crops of the ring and the south band.
-2. Frame cost: local timed capture_growth run after the lead's GPU go (~06:35).
-3. PR with D-062 in Board and log; report to Kaiju: Lead (<=8 lines). Then D-065.
-
-## Attempts (fix-loop record)
-- Coverage measure: 30 m cells found nothing; 10 m used. Rect sampling first skipped far edges
-  (inflated empties to 26); fixed by sampling edges too.
-
-## Open decisions
-none (the lead decided: dress the band).
-
-## Running jobs
-CI capture runs (see notes).
-
-## Findings for the lead
-- A worktree removed under a live session sends its next git command into the main checkout
-  (05:28, restored at once). Check `git rev-parse --show-toplevel` first.
-- Seeds.make("city", n) does not change the street plan; city.map_seed does.
+1. r15 is done (notes greenery/r15/: strip_f0_f36_2x.png, puff_alpha.txt, samples.txt,
+   stump_f0_f3_4x.png, flight_*/ leaf-flight runs, trample/clip). Lead merges #55 after the
+   demo build; keep it synced (merge origin/claude/look-options, floors = real counts, CI only).
+   Then remove the greenery worktree and start D-075.
+2. Stomp shockwave tan crescents (rampage.gd:177) are not #55's; the lead excluded them.
 
 ## Rules learnt the hard way (under 10 lines)
-- Before any git command in a worktree, confirm it still exists (show-toplevel).
-- `git lfs pull` before suites/exports in a fresh worktree; never mid-run.
-- Template builds start fullscreen: seed settings.cfg fullscreen=false for smoke runs.
+- Branch off origin/claude/look-options; confirm the worktree exists before git commands.
+- Lint before push: python -m gdtoolkit.linter AND gdtoolkit.formatter --check.
+- Headless MultiMesh keeps no instance transforms or colours: tests read a CPU mirror.
+- Never edit files under a running suite; other sessions share /tmp, read your own log.
+- Local windowed Godot: no_focus override.cfg first (Write tool), removed after.
+- Night/dusk lighting darkens debris and smoke: sample pixels at game camera before sending.

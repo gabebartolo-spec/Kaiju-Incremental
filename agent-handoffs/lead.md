@@ -1,119 +1,97 @@
-# Lead handoff, 2026-10-19 (rewritten after compaction)
-## State: PAUSED by the director (2026-10-19). Resume: check each session's handoff, then re-send its open FIX list.
+# Lead handoff, 2026-10-19 (account handover)
+## State: team ARCHIVED by the director for the account handover. Resume = the "First moves" list below.
 
 ## Who
-Lead = "Kaiju: LEAD (demo build, merges, QA)" (local_106fc100...). Owns: QA gates + fresh critics, PR review + merge
-(squash, `--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
-Helpers: Opus at MEDIUM effort or Sonnet only; Opus high / Fable need the director's yes.
-Messaging: one message per worker with everything; never ask the director to unblock. Send briefs ONE AT A TIME:
-a failed first send in a parallel batch cancels the rest.
-
-## River (9daef55, claude/river-start): far-bank park, emergence; lands AFTER the croc-contact D-091 PR (its 2 strict
-## checks need the tier gate gone). #50 r4 critic FIX (lead-confirmed: drawn hull ~35-40 deg off the N-S street at 9-10.5 s,
-## on police cars; hull swings at the post) -> r5 list sent: lane-locked hull, car keep-out, turret-only, standoff.
-## RESUMED (director): all sessions told (river notes, stadium shared-burst-mesh fix approved: hits 40-48 ms windowed,
-## fall_start makes new render resources per burst). Rifle-fire PR + breath snout fix queued at rooftops.
-## Sessions: build 37cf489b, tanks 5325ef73, croc 1feb30ca, army b38b3a6f, river 9af27a16, rooftops 1ac658ed, stadium 87d706ce.
+Lead = "Kaiju: LEAD (demo build, merges, QA)". Owns: QA gates + fresh critics, PR review + merge (squash,
+`--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
+Helpers: Opus at MEDIUM effort or Sonnet only (Opus high / Fable need the director's yes).
+Messaging: one message per worker with everything, sent ONE AT A TIME (a failed first send cancels a parallel batch).
+Never ask the director to unblock messaging. Ask him the ask-the-director way: one decision, recommended option first.
 
 ## Where we are
-- Demo exe 1 (44f56fd, #75 stall fix in; smoke 10/10; pacing e1 0.26 h) given to the director at
-  C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe. He paused the playtest:
-  "not shippable as is ... a very good start, well done". D-083: playtest fixes first.
-- Local Godot: allowed (headless; windowed only off-screen no_focus override.cfg, removed after). During a director
-  playtest or movie: NO local Godot at all, every session (and a heads-up to the AFL lead, local_8cceb00a).
+- Demo exe 1 (44f56fd) played; director paused the playtest: "not shippable as is ... a very good start". D-083:
+  playtest fixes first, then demo exe 2 (build.yml from claude/look-options), build session smokes it, he plays.
+- Board current to D-094 (#93 MERGED b09c4a9): DECISIONS, ROADMAP post-demo items, STATUS live-PR table.
+- Godot rules: director playing a game / watching a movie = NO local Godot at all (headless too), CI only. Director AFK
+  = local GPU, windowed runs only off-screen (no_focus override.cfg at -20000, removed after). Pause = sessions must
+  also cancel their background watchers (a CI watcher woke the croc session after the pause; lead stopped it).
 
-## Playtest fixes (director's words; owner session; each its own PR into claude/look-options; lead 2x + critic)
-1 "rooftop gun chatter sounds like a type writer" -> rooftops (local_1ac658ed): <=3-4 cracks/s, gap 0.25 s, falloff.
-2 kaiju phasing through buildings; KEEP the hollowing-out ("feels really cool") but the body breaks every voxel it
-  overlaps -> NEW session croc-contact-dash (local_1feb30ca; told to reset from main onto look-options).
-3 "atomic breath doesnt feel aimed" -> rooftops: ground reticle = sim target.
-4 "need a charge/dash" -> croc-contact-dash: Shift / B, ~0.4 s, cooldown ~4 s, smashes its path, "dash" tuning.
-5 "stadium audience shouldnt disappear so suddenly, let us kill them" -> stadium (local_87d706ce).
-6 run-start load times; 7 gunfire audio before the visuals; 10 loud GPU fan (vsync_mode=2, no fps cap -> max_fps +
-  setting 60/120/unlimited); 12 "still too much smoke on camera" -> dry-run session (local_37cf489b).
-8 biomass cadence (1, then ~8, then 1 upgrade): the stadium's 4x rubble_bonus. D-090 (director): stadium 1.5x;
-  the wheel gets the highest value <= 1.5 keeping runs <= 2x the one before -> jets session (local_b38b3a6f).
-9 "smaller buildings south of the spawn dont seem destructible": they're skyline stand-ins (spawn (0,42), playable
-  edge z=44.5). Lead call A: widen the playable area one block south, make that row real -> greenery (local_9af27a16),
-  together with:
-11 "military response too high from the word go ... emerge from a river" -> greenery: the river + emergence, event
-  "kaiju_emerged"; jets session: the army alert ramps over ~20-40 s from that event.
-MERGED: #79 D-090 stadium + wheel 1.5x (2nd Behemoth run 2.5x spike -> full-game retune, past the demo); #78 crowd
-killable + gradual flee (f0634ee).
-MERGED: #77 frame cap (ce6648c; 60/120 default/unlimited, menus <= 60) -> exe-2 smoke must capture the Settings screen.
-#50 split: tanks-only PR + helis to claude/heli-flight with a D (street canyons) vs B (camera pull-back) note -> director.
-Then: lead checks every PR at 2x (+ a fresh critic for visuals), merges, builds demo exe 2 (build.yml), the dry-run
-session smokes it, and the director plays again.
+## Merged today (playtest fixes)
+#75 stall · #77 frame cap · #78 crowd killable · #79 stadium 1.5x · #80 rifle crack · #83 breath from snout ·
+#73/#74 lints · #76 stall probe · #81 less camera smoke · #84 faster run load (cache pruned per city) ·
+#87 ElevenLabs SFX (D-092) · #91 destruction spike · #92 Graphics Balanced + 60 at 4K (D-093) · #93 board.
+#82 sound gate (3 s timeout) MERGED 0c70480 after a lead floors resync (load 15, flow 157).
 
-## Other open work
-- #55 greenery r15 PASS (b037f69): merge once the exe-2 scope is set (D-084 kept it out of exe 1). D-075 green lots
-  (lattice, no RNG) is on claude/green-lots behind the playtest fixes; it needs a fresh sim reviewer.
-- #58 jets critic FIX: wings read forward-swept (mirror them), the "miss" does 30 HP (hit flash or a real miss),
-  the tracer reads as a laser (6-10 streaks/s), gun audio 0.3 s late -> send to jets after its playtest fixes.
-- #76 stall probe (tools only) -> merge on green.
-- Roadmap (next board PR): ElevenLabs SFX + Suno music (spend yes + licence first); rooftop MORTARS (topple to
-  kill; a variant of the rooftop squads); FINAL BOSS mecha kaiju (board for the director when scheduled).
-  DESTRUCTION (director 2026-10-19, post-demo, full game): "real dynamic destruction, actual physics and buildings than can
-  be carved by giant monsters"; today's is fine for the demo only. Start with a research spike (options, perf at 4K,
-  determinism vs sim authority), then a director board with clips.
-  LANGUAGES (director 2026-10-19): Spanish, Japanese, French, German, Russian, Italian. Needs: one text table (all UI
-  strings by key), fallback fonts with Cyrillic + CJK glyphs (licence CLEARED; our display fonts are Latin-only?),
-  AI-drafted translations reviewed by a native speaker before shipping; a language option in Settings.
-  Board PR also: STATUS Phase 0 item 3 done (#73, #74); DEMO_PLAYTEST.md -> ~15 min (D-087); D-089, D-090.
-- Post-demo proposal: split the shared floors file (AFL lead's audit, their PR #825: conflicts on every resync).
+## Open PRs and their next step (all into claude/look-options)
+- #89 croc contact (session "Kaiju: Croc contact + dash", local_1feb30ca): D-091 rework done (no TOO STRONG; dwarf
+  factor (size/tier)^1.5; tower topples after 3.3 s). Fresh sim review FIX, sent: (1 blocks) tests/run_sim_tests.gd
+  `_sim` never calls body.use_species() so determinism/autoplay run bodyless -> RampageSim picks the body itself,
+  autoplay never held > N s; (2) body_contact.gd:135 final sample uses from_heading.rotated, hold test uses heading;
+  (3) validate bite_dps > 0. Round-2 clips (tower topple, torn pieces) on CI: lead 2x check, then motion critic.
+- #90 dash (same session, stacked on #89): resynced + lint fix, head 9f7194a, CI green; evolve1 cost 425 -> 0.26 h, young defeats 6/13. Fresh motion critic
+  after #89 merges.
+- #85 army ramp DRAFT (b38b3a6f): after #89 + #90, ONE joint young retune: e1 0.26 h ±5%, young defeats 8 ±2 per 15.
+- #88 river emergence (9af27a16): lead FIX: continuous sunk channel + quay wall, real bridges, no cars on quays,
+  breakable buildings within 10-15 m of the landing (no-empty-space). Then fresh sim reviewer; merges after #89.
+  CI RED (expected): its 2 strict city checks (1 building near the rise point unbroken by a stomp) pass only once
+  #89 removes the tier gate. Push the 3 unpushed commits in ../Kaiju-Incremental-wt/greenery first.
+- #50 tanks (5325ef73, worktree ../Kaiju-Incremental-wt/military-ai): r6 WIP, head ad1e7ab, CONFLICTS with
+  look-options (floors; resync first), CI RED (expected): closest
+  tank 4.6 m from body edge vs 8 m bar; 86/3522 parked steps skewed > 15°. r5 critic FIX (lead-confirmed at 2x): tank
+  under the snout 12-13.5 s -> standoff = body edge + 8 m, brake before it; reverse 3-4 m/s; hull vs turret overlays at
+  12.5/17.5 s; tank 2 parked skewed -> square it. Proof: sim check failing first, CI clip, overlays, pacing.
+  Helis: D can't fit the streets; render a B clip (camera eased to x1.4 while a pair is up) + a still of today's
+  camera -> one director question. Not built into #50.
+- #86 rooftop hits on legs/tail (1ac658ed): post-demo polish; CI clip pending.
+- #55 greenery r15 PASS: merge when exe-2 scope is set. #58/#61 jets drafts parked (#58 f175d03 CONFLICTS again); #58 critic FIX (mirror wings,
+  the "miss" does 30 HP, laser tracer, gun audio 0.3 s late). #11 species motion, #3 look-options -> main: on hold.
 
-## #85 army ramp DRAFT: young defeats 8->2; one joint young retune AFTER D-091 (croc-contact). Order: D-091 -> #85+retune -> river.
-## SFX PASS (D-092) DONE: director picked 12 (shell_hit kept) on https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ ->
-## PR #87 (14 ogg loudness-matched +-0.5 dB to the old files, rifle start_s 0, LICENSING row + provenance). Auto-fix on;
-## merge on green. Raw takes: C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 (outside repo).
-## #89 croc contact (body sweep, pay 0.2x, e1 0.27): lead 2x FIX: small building VANISHES on entry (show chunk debris,
-## keep untouched walls), add a tall-tower carve clip; D-091 unfinished (TOO STRONG text + stomp tier gate remain).
-## DASH: lead call A (briefed dash, bot dashes; evolve1 provisional ~575). ONE joint young retune by the army session
-## after #89 + dash merge (bars e1 0.26 h ±5%, young defeats 8 ±2 /15). Destruction spike session local_0a7e5cf8 running.
-## #88 river (greenery): lead 2x FIX -> continuous sunk channel + quay wall, real bridges, no cars on quays, breakable
-## buildings within 10-15 m of the landing (no-empty-space rule). Then fresh sim reviewer; merges after D-091.
-## #86 rooftop hits on legs/tail (post-demo polish) open; its CI clip pending.
-## Decisions to log (next board PR)
-D-093 (director): 4K default = Graphics Balanced (0.75 FSR1, MSAA off) + 60 fps cap (half the power: 199 -> 110 W); High
-in Settings. Build session PR in flight. D-094 (director): full-game destruction = option A (Teardown-style carving +
-RFG support, C++ GDExtension, ~19 agent-days), AFTER demo exe 2 (D-083). Spike MERGED #91; build plan on branch
-claude/destruction-plan 3ad6815 (agent-handoffs/destruction-spike.md, no PR). #92 Graphics MERGED 41d452f (cfg v2 =
-stale exe-1 fps_cap ignored; SubViewport menus stay High). Director in League: no local Godot.
-#81 smoke MERGED eb9a86e (lead 2x PASS). #84 load FIX: prune static _baked cache per build. #82 sfx gate FIX: max_wait_s.
-#89 fresh sim review FIX: _sim never enables the body (determinism/autoplay run bodyless); sweep end heading; bite_dps>0.
-#50 r5 fresh motion critic FIX (lead-confirmed 2x): lead tank under the snout 12-13.5 s; standoff = body edge + 8 m,
-reverse 3-4 m/s, hull vs turret overlays at 12.5/17.5 s, tank 2 parked skewed. Heli B clip (x1.4 ease) -> director question.
-PAUSE sent to tanks, croc-contact, build sessions (idle ones not woken).
-D-092 (director 2026-10-19, AskUserQuestion): SFX via ElevenLabs Starter ($1 first month, then $6/mo, commercial
-licence; the free plan has NO commercial licence). Suno music deferred (free = no commercial rights, no downloads; Pro
-$12/mo). He subscribes himself in the browser pane; then the SFX pass, with LICENSING_REGISTER CLEARED per file.
-D-091 (director): no building is 'too strong' for the baby; big ones just take longer, and he can tear out the base
-and topple them (replaces the tier gate + 'TOO STRONG'; evolve1 text changes). Owner: croc-contact-dash.
-D-089 (director): the demo exe waited for the #75 stall fix. D-090 (director): stadium rubble_bonus 4x -> 1.5x
-(replaces D-081). Lead calls: #50 helis A; playtest fix 9 option A (real south row).
+## First moves on resume
+1. Wake croc session: finish #89 FIX 1-3, clips. 2. Tanks session: r6. 3. River session: #88 FIX.
+4. After #89/#90 merge: army session joint retune (#85). 5. Build exe 2, smoke, director.
 
-## Sessions
-Live: rooftops, stadium, dry-run, greenery, jets, #50, croc-contact-dash (new). ARCHIVED on PR merge: army
-(local_24621710), croc (local_bce75838). OLD lead (local_9fac90d2): archive once its children are done.
-Sessions auto-archive when their PR merges: check list_sessions before briefing.
+## Sessions (names in the sidebar)
+Build "Kaiju: Load, smoke FX, builds" 37cf489b (handoff board.md in ../Kaiju-Incremental-wt/demo-smoke) · tanks 5325ef73 ·
+croc + dash 1feb30ca · army b38b3a6f · river 9af27a16 · rooftops 1ac658ed · stadium 87d706ce · destruction spike
+0a7e5cf8 (done) · OLD lead 9fac90d2 (retired: archive). Sessions auto-archive when their PR merges.
+
+## After demo exe 2
+Destruction option A (D-094, ~19 agent-days; 3-4 parallel sessions): plan on branch claude/destruction-plan 3ad6815
+(agent-handoffs/destruction-spike.md, no PR), prototype on claude/destruction-proto. Roadmap: mortars, mecha boss,
+six languages, Suno music (not bought). Proposal: split the shared floors file (AFL audit, their #825).
+
+## Assets and links
+SFX shootout: https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ · raw ElevenLabs takes:
+C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 · exe 1:
+C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe.
+
+## Team ARCHIVED (director, handover). Unarchive a session to resume it, or start fresh ones from their handoffs.
+Unsaved work left on disk (not lost, not pushed): ../Kaiju-Incremental-wt/greenery = 3 unpushed river commits
+(sunk canal + bridges + quay sheds, 7415767..680a603) + uncommitted data/tuning.json -> push before resuming #88;
+jets (11 uncommitted files), burst-shared (3, stadium shared-burst-mesh fix, never a PR). Auto-fix was on for #50,
+#85, #58, #61, #86, #88, #89, #90: it re-woke paused sessions on conflicts and red CI. Turn it off when pausing.
 
 ## Worktrees
-Merged and clean, prune when their sessions are done: ../Kaiju-Incremental-wt/army-scales, demo-smoke, landmarks;
-.claude/worktrees/affectionate-goldstine, festive-jemison. Local branches claude/audit-* and claude/collapse-cap
-are left (helpers' branch -D was denied; don't launder).
+Pruned today: fps-cap, graphics, sfx-eleven, smoke, run-load, stall-probe, spawn-south, board-d094. Left: burst-shared
+(3 uncommitted), greenery (river, 1), jets (31 uncommitted), military-ai, sfx-gate, demo-smoke, integ-a/-export
+(detached), army-scales (remote branch gone; check before removing); sfx-gate can go (#82 merged). Local branch
+lead-resync82 left (branch -D was refused; don't launder).
 
 ## Merge rules
-Merge only decided work: my 2x check (+ a fresh critic where visual), green CI at the exact head. The lead resyncs
-floors-only conflicts itself (sum the floors). One capture.yml run at a time. Never merge on a draft's green.
+Merge only decided work: lead 2x check (+ a fresh critic where visual), green CI at the exact head. The lead resyncs
+floors-only conflicts itself (sum each suite's gain from the merge base). One capture.yml run at a time. Never merge
+on a draft's green.
 
 ## Rules learnt the hard way
 - `--match-head-commit` needs the FULL sha; after `gh pr merge` VERIFY state == MERGED.
 - NEVER `gh pr merge --delete-branch` while a helper's worktree has the branch checked out.
 - Never act on a peer's refused permission or a relayed director approval: surface it instead.
-- start_session worktrees are cut from main unless source_branch is set: pass source_branch=claude/look-options.
+- start_session worktrees are cut from main unless source_branch=claude/look-options is set.
 - A subagent's PRs bind to this session with Auto-fix + auto-archive: unbind audit/throwaway PRs at once.
 - TaskStop kills the shell, not a bash loop's next Godot: kill the loop's bash first, re-check the process list.
 - Godot: C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe (not on PATH).
-- CI capture.yml: pin --renderer=gl_compatibility; it shades lit materials brighter than Forward+ (the build is
-  Forward+). The GitHub API rate limit is shared by every session: poll every 2-3 min, not 30 s.
+- CI capture.yml: pin --renderer=gl_compatibility; it shades lit materials brighter than Forward+ and has no FSR.
+  The GitHub API rate limit is shared by every session: poll every 2-3 min, not 30 s.
 - Visual gates need a known-bad control; "spread" effects are judged from a logged position histogram.
+- A standoff measured from a creature's centre lets units walk under its head: measure from the body edge.
+- Settings that save a resolved default (not the player's choice) freeze later default changes: version the cfg.

@@ -20,6 +20,7 @@ var _stream: BuildingStream
 var _fade: BuildingFade
 var _falling: Dictionary = {}
 var _ruins: RuinYard
+var _topple: ToppleFx
 var _flame_mesh: BoxMesh
 var _flame_color := Color.BLACK
 var _decor: CityDecor
@@ -51,6 +52,8 @@ func _ready() -> void:
 	add_child(_debris)
 	_ruins = RuinYard.new(sim, _stream.view, fire)
 	add_child(_ruins)
+	_topple = ToppleFx.new(self, _rng)
+	add_child(_topple)
 	Fire.prewarm(self)
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
@@ -207,8 +210,7 @@ func _animate_falls(delta: float) -> void:
 		f["t"] = Num.f(f["t"]) + delta
 		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
 		if str(f["kind"]) == "topple":
-			var dir: Vector2 = f["dir"]
-			node.basis = FallMotion.topple_basis(dir, k)
+			_topple.pose(f, delta)
 		else:
 			node.position.y = (
 				node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
@@ -225,6 +227,9 @@ func fall_land(event: Dictionary) -> void:
 	_falling.erase(id)
 	var node: Node3D = f["node"]
 	var parts: Array = node.get_meta("parts", [])
+	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
+		_topple_land(node, event)
+		return
 	var landed: Array[Vector3] = []
 	for n: int in mini(parts.size(), DEBRIS_PER_LANDING):
 		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
@@ -234,30 +239,34 @@ func fall_land(event: Dictionary) -> void:
 		landed.append(at)
 		var color: Color = part["color"]
 		debris(at, color, Vector3.UP)
-	LandmarkBurst.retire(node, sim.buildings[Num.i(event["building"])].landmark != "")
-	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
-		var from: Vector2 = event["from"]
-		var to: Vector2 = event["to"]
-		var width := Num.f(event["width"])
-		var a := Vector3(from.x, 0, from.y)
-		var b := Vector3(to.x, 0, to.y)
-		fx.dust_line(a, b, width)
-		_rubble_strip(Num.i(event["building"]), a, b, width)
-		var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
-		for i: int in steps + 1:
-			crush(a.lerp(b, float(i) / steps), width * 0.6)
-	elif not landed.is_empty():
+	if sim.buildings[Num.i(event["building"])].landmark != "":
+		LandmarkBurst.retire(node, true)
+	else:
+		_topple.crumble(node)  # crumbles into the street over a moment, never a one-frame pop
+	if not landed.is_empty():
 		fx.dust(landed[0], 1.5)
 		var b := sim.buildings[Num.i(event["building"])]
 		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
 			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH)
 
 
-## A rubble pile where a tower came down across the street, built on a worker thread (a tall
-## tower's strip is thousands of voxels) and added when ready.
-func _rubble_strip(building: int, a: Vector3, b: Vector3, width: float) -> void:
-	var voxels := _stream.view(building).voxels
-	_ruins.build(func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width))
+## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what
+## the strip covers is crushed.
+func _topple_land(node: Node3D, event: Dictionary) -> void:
+	_topple.land(node, event, _stream.view(Num.i(event["building"])).voxels)
+	var from: Vector2 = event["from"]
+	var to: Vector2 = event["to"]
+	var width := Num.f(event["width"])
+	var a := Vector3(from.x, 0, from.y)
+	var b := Vector3(to.x, 0, to.y)
+	var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
+	for i: int in steps + 1:
+		crush(a.lerp(b, float(i) / steps), width * 0.6)
+
+
+## The ruins of the rampage (ToppleFx builds its rubble strips through it).
+func ruins() -> RuinYard:
+	return _ruins
 
 
 func debris(pos: Vector3, color: Color, away: Vector3) -> void:

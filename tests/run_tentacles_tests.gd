@@ -10,13 +10,13 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_hydra()
-	_check_squeeze()
-	_check_grab()
-	_check_ink()
-	_check_helicopters()
-	_check_caps()
-	_check_replay()
+	await _t("_check_hydra")
+	await _t("_check_squeeze")
+	await _t("_check_grab")
+	await _t("_check_ink")
+	await _t("_check_helicopters")
+	await _t("_check_caps")
+	await _t("_check_replay")
 
 
 ## Hydra Limbs: standing out of stomp reach, freed tentacles still strike the buildings and
@@ -141,7 +141,7 @@ func _check_helicopters() -> void:
 		"a helicopter circles and strafes the kaiju (%d bursts)" % Num.i(seen.get("heli_fired", 0))
 	)
 	check(heli.hp > 0.0, "a young kaiju's stomps cannot reach a helicopter")
-	_check_heli_keeps_clear()
+	await _t("_check_heli_keeps_clear")
 	var grown := _sim("reptilian", {"evolve1": 1, "claws": 5, "hide": 5}, [], Vector2(0, 0))
 	grown.air.spawn()
 	var swatted := _run(grown, 12.0, Vector2.ZERO)
