@@ -9,7 +9,13 @@
 ## harder + wider; croc only for demo), built in #89 (fixes a/b/c pushed 6583607). Add D-095 to the board PR.
 ## #88 r-FIX done, head 7f38eaf (channel, bridges, quay cars, check_look); CI only the 2 expected reds (wait #89).
 ## Lead 2x PASS on capture run 39266482235 (rise/landed.png in ../Kaiju-Incremental-wt/greenery/ci-capture-out/
-## river/). Fresh sim reviewer "river-review" running (also proves check_look fail-first). Merge after #89.
+## river/). Fresh sim review = FIX (next: fresh builder on #88, then re-review, merge after #89):
+##  1 check_look passes on the pre-fix parent; car part can't fail (tests/lib/city_river.gd:116): test vs
+##    channel.grow(0.5 + CityDecor.CAR_HALF.y); show it failing first. 2 the 2 reds are honest (tier gate, #89).
+##  3 assert no building footprint meets channels[0] (landmark in river row, sim/city_river.gd:37,70).
+##  4 soft lock: SPAWN_INSET 2.0 vs sidewalk (sim/city_river.gd:20,56; emergence.gd:66) -> inset from tuning
+##    + time cap. 5 QUAY_REACH reads tuning; PR body wrongly says autoplay waits for kaiju_emerged.
+##  Reviewer left scratch C:/r88tmp (deletion blocked; director to delete).
 ## Context guard hit 200k: no new work in this session; hand off to a fresh lead once these subagents report.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
