@@ -1,7 +1,7 @@
 # Lead handoff, 2026-10-20 (new lead session, replaces "Boot up as lead on kaiju project")
 ## State: working. Builders (Agent names): river-start (#88 FIX), military-ai (#50 r6 proof), croc-contact (#89 topple FIX, holds push for swipe fixes).
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
-## D-095 (director 10-20): Claws = CLAW SWIPE (croc only for demo), built in #89. Add D-095 to the board PR.
+## D-095 (director 10-20): Claws = CLAW SWIPE (croc only for demo). D-096 (director 10-20, question tool): "Swipes undermine towers" (swipe hits count as base chew; undermined towers fall AWAY from the kaiju, lead call). Both go on the board PR.
 ## #89 GREEN 8e7f2d2 (tests 39270770359); swipe 2 s, reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; claws5 101 vs 72 chunks.
 ##  Topple clip (run 39266833950): critic FIX (pop at impact f214->216, no lean, noisy heap, falls over croc); lead confirmed 2x.
 ##  Swipe clip (run 39270794927): critic FIX (arm motion invisible, hairline streaks, no break on the rake frame, maybe 0.7 s cadence); sent to croc-contact: one push + one capture (both clips).
