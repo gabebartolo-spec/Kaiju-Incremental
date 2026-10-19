@@ -213,7 +213,9 @@ func _shoot(t: float) -> void:
 		var name := "%s_%s_f%04d" % [_scene, e["kind"], _frame]
 		shot.save_png(_out.path_join(name + ".png"))
 		var at: Vector3 = e["at"]
-		var p := Vector2i(cam.unproject_position(at))
+		# unproject_position is in the viewport's 2D space, which a stretch mode scales.
+		var scale := Vector2(shot.get_size()) / root.get_viewport().get_visible_rect().size
+		var p := Vector2i(cam.unproject_position(at) * scale)
 		var box := Rect2i(p - CROP / 2, CROP)
 		box.position = box.position.clamp(Vector2i.ZERO, shot.get_size() - CROP)
 		var crop := shot.get_region(box)
