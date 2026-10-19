@@ -109,8 +109,8 @@ func _check_tree() -> void:
 	check(not tree.can_buy("stride", 1000), "an upgrade with unmet prerequisites is locked")
 	var price := tree.buy("claws", 100)
 	check(
-		price == 15 and tree.level("claws") == 1,
-		"buying claws costs 15 and gives level 1, got %d / %d" % [price, tree.level("claws")]
+		price == 45 and tree.level("claws") == 1,
+		"buying claws costs 45 and gives level 1, got %d / %d" % [price, tree.level("claws")]
 	)
 	check(tree.is_unlocked("stride"), "owning claws unlocks Long Stride")
 	var maxed := _tree({"evolve1": 1})

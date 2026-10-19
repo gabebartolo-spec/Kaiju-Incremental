@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_growth_tests.gd
 
 const DT := 1.0 / 15.0
+const EARLY_HOOK_RUNS := 6  # the first power costs 200 now (D-098): about six young rampages with no upgrades
 ## Upgrades owned at the start of each stage (enough body to be that stage's kaiju).
 const COLOSSUS := {
 	"claws": 5,
@@ -270,7 +271,7 @@ func _check_cost_curve() -> void:
 		)
 
 
-## The early hook: two young rampages pay for the first species power, so the third rampage
+## The early hook: a few young rampages pay for the first species power, so the next rampage
 ## has it (D-035), for every species.
 func _check_early_hook() -> void:
 	for species_id: String in ["reptilian", "insectoid", "cephalopod"]:
@@ -280,7 +281,7 @@ func _check_early_hook() -> void:
 				first = minf(first, Num.f(def["cost"][0]))
 		var species := Content.species_def(species_id)
 		var earned := 0
-		for run: int in 2:
+		for run: int in EARLY_HOOK_RUNS:
 			var tree := UpgradeTree.new(Content.upgrades(), {}, species_id)
 			var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 			var sim := RampageSim.new(stats, _tuning(1), _layout(1), Seeds.make("army", run))
@@ -300,8 +301,8 @@ func _check_early_hook() -> void:
 		check(
 			earned >= first,
 			(
-				"%s: two young rampages (%d rubble) buy the first power (%d)"
-				% [species_id, earned, first]
+				"%s: %d young rampages (%d rubble) buy the first power (%d)"
+				% [species_id, EARLY_HOOK_RUNS, earned, first]
 			)
 		)
 

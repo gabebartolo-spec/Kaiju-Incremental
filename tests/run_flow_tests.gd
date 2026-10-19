@@ -97,7 +97,7 @@ func _check_species_select() -> void:
 func _check_upgrade_screen() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
 	var screen := UpgradeScreen.new()
-	screen.setup(tree, 30, Content.species_def("reptilian"), Content.section("kaiju"))
+	screen.setup(tree, 60, Content.species_def("reptilian"), Content.section("kaiju"))
 	root.add_child(screen)
 	await process_frame
 	var buttons := screen.find_children("*", "Button", true, false)
@@ -125,7 +125,7 @@ func _check_upgrade_screen() -> void:
 		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
 		check(
 			tree.level("claws") == 1 and screen.rubble == 15,
-			"pressing Sharpened Claws buys it for 15 (rubble %d)" % screen.rubble
+			"pressing Sharpened Claws buys it for 45 (rubble %d)" % screen.rubble
 		)
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)  # level 2 costs more than the 15 left
