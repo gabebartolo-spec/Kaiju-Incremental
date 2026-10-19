@@ -5,6 +5,8 @@
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## Builders running (subagents of this lead): croc-contact (#89 resync + FIX 1-3 +
 ## clips, opus), river-start (#88 push 3 commits + resync + FIX, sonnet), military-ai (#50 resync + r6, opus).
+## D-095 (director 10-20): body made Claws useless -> Claws = CLAW SWIPE (forward rake every few s, levels =
+## harder + wider; croc only for demo), built in #89 (fixes a/b/c pushed 6583607). Add D-095 to the board PR.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
 ## Who
