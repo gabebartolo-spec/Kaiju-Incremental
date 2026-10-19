@@ -272,13 +272,15 @@ func _roof() -> void:
 				vox.box(at, at + Vector3i(4, 3, 3), "gear")
 				vox.box(at + Vector3i(1, 4, 1), at + Vector3i(3, 4, 2), "vent")
 				vox.box(at + Vector3i(5, 1, 1), at + Vector3i(8, 1, 1), "pipe")
-		BRICK:  # a water tank on legs
+		BRICK:  # a water tank on legs, a riser pipe under its middle holding it to the roof
 			var c := Vector3(_w * 0.65, top + 11.0, _d * 0.4)
 			for leg: Vector3i in [
 				Vector3i(-4, 0, -4), Vector3i(4, 0, -4), Vector3i(-4, 0, 4), Vector3i(4, 0, 4)
 			]:
 				var foot := Vector3i(roundi(c.x), top, roundi(c.z)) + leg
 				vox.box(foot, foot + Vector3i(0, 6, 0), "gear")
+			var riser := Vector3i(roundi(c.x), top, roundi(c.z))
+			vox.box(riser, riser + Vector3i(0, 5, 0), "pipe")
 			vox.blob(c, Vector3(5.2, 5.6, 5.2), "tank")
 			vox.box(
 				Vector3i(roundi(c.x), roundi(c.y) + 6, roundi(c.z)),
@@ -348,3 +350,8 @@ func _sign() -> void:
 					else "neon%d" % ((colour + band) % NEON.size())
 				)
 				vox.put(_at(side, along + a, y, out), key)
+		# An office face has nothing proud for the sign to touch: a bracket at each frame
+		# edge, on every spandrel row, holds it to the wall (BuildingCells does the same).
+		if archetype() == OFFICE and y % RES == 1:
+			for a: int in [0, 3]:
+				vox.put(_at(side, along + a, y, -1), "sign_frame")

@@ -89,12 +89,22 @@ func archetype() -> int:
 	return b.style % 4
 
 
-## Empties every cell of a structural chunk (one sim unit, one floor) that is gone.
+## Empties every cell of a structural chunk (one sim unit, one floor) that is gone. The chunks
+## are the view's (BuildingMesher.chunk_index): a boundary chunk also owns what stands proud of
+## its face (sills, awnings, signs) and a top-floor chunk the roof gear above it, so their
+## range runs on to the grid's edge.
 func clear_chunk(chunk: Vector3i) -> void:
 	var lo := chunk * res - offset
-	for y: int in range(maxi(lo.y, 0), mini(lo.y + res, dims.y)):
-		for z: int in range(maxi(lo.z, 0), mini(lo.z + res, dims.z)):
-			for x: int in range(maxi(lo.x, 0), mini(lo.x + res, dims.x)):
+	var hi := lo + Vector3i.ONE * res
+	var last := Vector3i(b.w, b.height, b.d) - Vector3i.ONE
+	for axis: int in 3:
+		if chunk[axis] == 0:
+			lo[axis] = 0
+		if chunk[axis] == last[axis]:
+			hi[axis] = dims[axis]
+	for y: int in range(maxi(lo.y, 0), mini(hi.y, dims.y)):
+		for z: int in range(maxi(lo.z, 0), mini(hi.z, dims.z)):
+			for x: int in range(maxi(lo.x, 0), mini(hi.x, dims.x)):
 				cells[index(Vector3i(x, y, z))] = 0
 
 
@@ -306,7 +316,8 @@ func _ac_units(top: int) -> void:
 		_box(at + Vector3i(5, 1, 1), at + Vector3i(8, 1, 1), "pipe")
 
 
-## A water tank on legs.
+## A water tank on legs, a riser pipe under its middle (the legs stand clear of the tank's
+## curve; the riser is what holds it to the roof).
 func _water_tank(top: int) -> void:
 	var c := Vector3(_w * 0.65, top + 11.0, _d * 0.4)
 	for leg: Vector3i in [
@@ -314,6 +325,8 @@ func _water_tank(top: int) -> void:
 	]:
 		var foot := Vector3i(roundi(c.x), top, roundi(c.z)) + leg
 		_box(foot, foot + Vector3i(0, 6, 0), "gear")
+	var riser := Vector3i(roundi(c.x), top, roundi(c.z))
+	_box(riser, riser + Vector3i(0, 5, 0), "pipe")
 	_blob(c, Vector3(5.2, 5.6, 5.2), "tank")
 	_box(
 		Vector3i(roundi(c.x), roundi(c.y) + 6, roundi(c.z)),
@@ -369,3 +382,8 @@ func _sign() -> void:
 					"sign_frame" if edge or band == 3 else "neon%d" % ((colour + band) % NEON_COUNT)
 				)
 				_mark(_at(side, along + a, y, out), key)
+		# An office face has nothing proud for the sign to touch: a bracket at each frame
+		# edge, on every spandrel row, holds it to the wall.
+		if archetype() == OFFICE and y % res == 1:
+			for a: int in [0, 3]:
+				_mark(_at(side, along + a, y, -1), "sign_frame")
