@@ -7,6 +7,11 @@ extends RefCounted
 ## fire rifles at the kaiju in range, a sting far below a tank shell, scaled by its size tier and
 ## by the same threat the tanks' armour grows with. A squad dies when the roof chunk under it
 ## goes (broken, dropped or toppled) or under any attack whose splash reaches its roof floor.
+## The city is caught unaware (director playtest, D-083): an alert level climbs from 0 to 1 over
+## army.alert's ramp_seconds after its delay; squads wake one by one across the ramp and the
+## tank and helicopter call-ins run at the alert level's pace. The clock runs only while the army
+## steps, so a run that opens with the kaiju rising from the river (Emergence holds the army
+## back) starts the ramp on landing.
 
 
 ## Armed citizens holding a roof: they stand on chunk `cell` of building `building`.
@@ -17,6 +22,8 @@ class Squad:
 	var pos: Vector2
 	var cooldown: float
 	var dead := false
+	## Seconds into the alert when this squad takes up arms.
+	var wake: float
 
 
 var sim: RampageSim
@@ -31,6 +38,8 @@ var _rng: RandomNumberGenerator
 var _ragged: RandomNumberGenerator
 var _spawn_timer: float
 var _next_id := 0
+## Seconds since the alert began (it begins `delay` seconds into the rampage).
+var _alert_t: float
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
@@ -41,10 +50,29 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_spawn_timer = Num.f(cfg["start_interval"])
 	_place_squads(Seeds.derive(rng, 0x2007))
 	_ragged = Seeds.derive(rng, 0x2008)
+	var alert_cfg: Dictionary = cfg["alert"]
+	_alert_t = -Num.f(alert_cfg["delay"])
+	var wakes := Seeds.derive(rng, 0x2009)
+	for squad: Squad in squads:
+		squad.wake = wakes.randf() * Num.f(alert_cfg["ramp_seconds"])
+
+
+## How alert the city is: 0 (caught unaware) to 1 (fully roused), climbing over the ramp.
+func alert() -> float:
+	var ramp := Num.f(cfg["alert"]["ramp_seconds"])
+	if ramp <= 0.0:
+		return 1.0 if _alert_t >= 0.0 else 0.0
+	return clampf(_alert_t / ramp, 0.0, 1.0)
+
+
+## Fully roused at once, every squad awake (tests and captures of the firing itself).
+func rouse() -> void:
+	_alert_t = Num.f(cfg["alert"]["ramp_seconds"])
 
 
 func step(dt: float) -> void:
-	_spawn_timer -= dt
+	_alert_t += dt
+	_spawn_timer -= dt * alert()
 	if _spawn_timer <= 0.0:
 		_spawn()
 		_spawn_timer = maxf(
@@ -91,6 +119,8 @@ func _step_squads(dt: float) -> bool:
 		if not sim.buildings[squad.building].frame.alive(squad.cell):
 			squad.dead = true
 			lost = true
+			continue
+		if _alert_t < squad.wake:
 			continue
 		squad.cooldown -= dt
 		if squad.cooldown > 0.0 or squad.pos.distance_to(sim.kaiju_pos) > reach:
