@@ -1,38 +1,31 @@
 # carve-wp5 handoff (builder, WP5 physics presentation of carving)
-## State: stopped at the 200k guard after a save point (pushed 079f0a6 + this handoff); restart from 'Next'
+## State: life 2. Pushed 2a5f7af; CI captures (tower, swipe, block) running sequentially; then crops + PR body
 ## Task
 WP5 of option A (D-094): island bodies follow the sim topple ~1 s then break up from the bottom on hard
 hits; carved-cell debris one MultiMesh per building; live cap ~2,000 city-wide; settled pieces frozen into a
 static rubble MultiMesh; dust/fire hooks. Not wired into the rampage (WP7). No PR (lead opens it).
 ## Branch
-claude/carve-wp5 from origin/claude/look-options, worktree ../Kaiju-Incremental-wt/carve-wp5.
-## Plan / files (all written)
-- scenes/carve_site.gd (CarveSite): grid placement/size/palette; scenes/carve_mesh.gd (CarveMesh):
-  outward-normal voxel face mesher; scenes/carve_collider.gd (CarveCollider): static boxes per brick.
-- scenes/carve_physics.gd (CarvePhysics): city-wide manager, budget, building colliders, hooks.
-- scenes/island_body.gd (IslandBody): per-brick meshes + boxes, follow phase, bottom break.
-- scenes/carve_debris.gd (CarveDebris): per building PhysicsServer3D debris + live/rubble MultiMesh.
-- data/tuning.json "carve_physics" section (after landmark_burst, away from WP1's edits).
-- tools/capture/carve_grid_stub.gd: capture-only copy of spike carve_grid + cell topple rule (swap to
-  VoxelFrame when carve-wp1 pushes).
-- tools/capture/capture_carve_physics.gd: --scene=tower|swipe|block, stills + stats.
-## Evidence
-- Local headless tower (Desktop Godot console exe, APPDATA=scratchpad/appdata, --fixed-fps 30), run 3:
-  topple island 46,915 cells at t=2.53, 7 bottom breaks, 2,548 pieces, 1 fire; live max 2,112 (cap 2,000
-  soft, fading excess), all bodies max 5,411 (< Jolt 10,240), rubble 4,793. Break 23 ms avg / 39 max
-  (was 270: brick spans now cached); wall 88 ms avg; phys 53 avg / 139 p95 (headless, shared PC, not GPU).
-- Fixed on the way: pieces seated in the road (lift on spawn, no freeze below ground); headless never quit
-  (await frame_post_draw); wake churn (street rubble no longer woken; static -> rigid in place).
-## Next (in order)
-1. Open issue: ~4% of live pieces (sunk=30-54 of ~1,200) reach >0.03 below the road while moving (tiny 1/8
-   boxes under piles; lowest -0.14). Try: Jolt CCD already on; raise debris size floor or lower
-   debris_per_carve, or a thicker min box; re-measure 'sunk' in the SEC lines.
-2. Headless swipe + block runs (--scene=swipe|block) for errors and counts.
-3. CI captures: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
-   (then swipe, block; run sequentially, the helper picks the newest run). 2x crops: *_crop2x.png.
-4. Fill pr_body_wp5.md (untracked) Evidence/Not exercised; report run ids to the lead. No PR.
+claude/carve-wp5 (from origin/claude/look-options), worktree ../Kaiju-Incremental-wt/carve-wp5.
+Merged origin/claude/carve-wp1 (d8174d4) at a085399: clean swap, stub deleted.
+## Files
+- scenes/carve_site.gd (offset, from_local for VoxelFrame's building-local pivot, indices(event) reads
+  "index"), carve_mesh.gd, carve_collider.gd, carve_physics.gd, island_body.gd, carve_debris.gd.
+- data/tuning.json "carve_physics". Capture: tools/capture/capture_carve_physics.gd (VoxelFrame via
+  tests/lib/destruction_paths.gd office()), carve_view_stub.gd (stands in for WP4 mesher).
+## Evidence (local headless, console exe, isolated APPDATA, --fixed-fps 30; scratchpad g.sh)
+- Swap check: tower numbers identical to the stub run (island 46,915 cells t=2.53, 7 breaks, 2,548 pieces).
+- Sinking: before (life 1) sunk=30-54 per SEC sample, lowest -0.142. Fix = CarveDebris._raise: a live piece
+  below ground_y - ground_slop is lifted onto the road (in _physics_process before the freeze check and in
+  _draw_live before drawing, so no drawn frame shows it sunk). After, tower: sunk 0-6 in the physics state
+  sampled before the draw fix, end lowest -0.020 (= slop); 4,812 lifts, deepest 0.255.
+- Swipe: 0 islands, 2,531 bodies, live max 1,785, phys 4 ms avg, lowest -0.019.
+- Block: 6 islands, 38 breaks, 14,350 pieces, 12 fires; live max 3,216 (cap soft, fading), all max 7,732
+  (< Jolt 10,240); phys 64 avg / 147 p95; sim (GDScript carve) 131 avg; 23,022 lifts (pile pressure).
+- Tried and reverted: island mass power-law (mass_power): sinking lower (block sunk <=15) but breaks fell
+  38->14 / 7->2 and a resting island never slept (phys 181 ms idle). Linear mass kept.
+## Next
+1. CI captures -> scratchpad ci_<scene>; crops of contact/break frames (*_crop2x.png); view crops only.
+2. Fill pr_body_wp5.md Evidence / Not exercised (untracked); report to lead.
 ## Open issues
-- WP1 event shape for cells/pivot unknown: adapter accepts PackedInt32Array indices or Array[Vector3i];
-  pivot read in local cell units (CarveSite.to_world). Swap the stub for VoxelFrame when wp1 pushes.
-- Rubble MultiMesh grows unbounded per building (4,793 a tower); no merge yet.
-- GDScript island meshing per brick: first spawn of a 47k-cell island not timed separately yet.
+- Block: many repeated lifts under piles may read as jitter; check the block clip at contact.
+- Rubble MultiMesh grows unbounded per building; no merge yet. Sim carve cost is GDScript (WP2 native).
