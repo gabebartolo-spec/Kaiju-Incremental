@@ -1,12 +1,29 @@
-# Lead handoff, 2026-10-20 (resumed on the other account)
-## State: working. Lead resumed 2026-10-20; old team sessions are on the other account (not visible here).
-## Since the pause: #94 (function-count tests, no floors, shards from timings), #86, #55 MERGED; #85 CLOSED.
-## All 4 work PRs (#89 #90 #88 #50) CONFLICTING since #94 deleted tests/expected_checks.txt.
-## Builders running (subagents of this lead, CI only, no local Godot): croc-contact (#89 resync + FIX 1-3 +
-## clips, opus), river-start (#88 push 3 commits + resync + FIX, sonnet), military-ai (#50 resync + r6, opus).
-## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
-
-## Who
+# Lead handoff, 2026-10-20 (lead session 4 of 10-20; next lead: read lines 1-12, then GitHub)
+## State: lead 4 at 200k: no new work; hands off once its subagents report (they die with it). Successor: respawn any not reported from their handoffs. Builders are in-process subagents of lead 4 (die with it: respawn from handoffs).
+## Team (subagents): carve-wp5 life 3 (Sonnet; critic fixes 1-4, re-capture; handoff ../Kaiju-Incremental-wt/carve-wp5/agent-handoffs/carve-wp5.md) ·
+##  carve-wp4 (Opus med; view mesher, claude/carve-wp4, merges wp2+wp3) · carve-wp6 (Sonnet; landmarks, claude/carve-wp6, merges wp3) ·
+##  croc-contact (Sonnet; #89 D-099: drop "fall away" override in sim/collapse.gd, sim_topple_read asserts cut side, CI capture) ·
+##  review-wp1 / review-wp3 (Opus med, kaiju-sim-review of #97/#98) · critic-50 (motion critic, #50 r6 clip). WP4/WP6 cards task_2e6abbed/task_78d578ee superseded.
+## PRs: #97 WP1 d8174d4 review FIX (comment 6279596456: re-flood after topple, adopt guard, dir/pivot in replay) -> carve-wp1 life 2 fixing + fixture rule; WP7 needs a wear rule (tough_mult 0.35, no wear) · #98 WP3 631d1e0 review FIX (comment 6279562193) -> carve-wp3 life 2 fixing · #99 WP2 c3c5fec gdlint RED (run 39340822128): fix it · #100 board D-099 MERGED.
+## #98 lead call: panes/signs held by edge = material flag "fixture" in data/materials.json; fixture cells ground by 26-neighbour contact, structural 6-neighbour.
+##  WP1 must add that rule in sim/voxel_support.gd (batch with review-wp1's findings into one carve-wp1 life). Tank with no contact = generator fix (+BuildingVoxels).
+## #50 r6 critic FIX (lead-confirmed): overlays drawn ~90 px off the tanks, a parked hull ~20 deg off its street, a tank against the snout on screen -> military-ai r7 running.
+## #89 lead call (D-099): align before merge (override removed), NOT merge-then-replace: the demo exe must not ship a rule he overruled.
+##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
+## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
+## retune-a DONE claude/young-retune 67e0b1a (e1 0.24 h, young defeats 5.4/12; body pr_body_retune.md in its worktree): PR after #89/#90 merge.
+## WP5 life-2 clips: tower 39293335670, swipe 39293938036, block 39294467556 (critic FIX 1-3 + rubble cap -> life 3).
+## WP5 PR opens after life 3's fresh critic passes and the director sees the clips.
+## Captures run in PARALLEL. claude/capture-fast 4af91b4 (no PR): --fast default (gl_compatibility llvmpipe, 960x540, 20 fps, no SSAO/glow; --full = old look); tower take 32 -> 19.8 min (run 39280140412), still readable. PR after #89 merges (needs capture_contact.gd). Director to delete tmp/capture-fast-test (worker delete refused).
+## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
+##  Swipe adds only ~4% mean destruction (5-seed); joint young retune is the director's after #89/#90. 21-frame spikes = stomps, swipe 2.0 s (no bug).
+## #88 head dca0e988cd4f34c640c2349fc40699c0a40032b3: re-review PASS + notes a/b done. Only 2 expected city reds (tier gate). After #89 merges: resync, CI, merge.
+## #95 board PR (docs: playtest chapter docs/roadmap/2026-10-19-director-playtest.md, D-095, D-096), head 6662b7d: check lint, merge.
+##  Playtest notes with no PR: 9 (small buildings south of spawn not destructible = tier gate, should clear with #89 + #88 river check: verify in play), 12 destruction option A (after exe 2).
+##  Note 9 = backdrop boxes south of the old spawn; fixed by #88 (start moves to the river); fix #95 row 9. #88 own red (seed 98765 bldg 90, tier 2, chunk HP 14, young stomp 3.54/chunk after dwarf_mult) is the CHECK, not the game: tests/lib/city_spawn_view.gd:38-39 stomps once; D-091 says big ones take longer. Lead call: change it to "a young kaiju walking in brings every building within 12 m of the rise point down within N s" (probe: gone by 3 s; swipe ~2 s). Do it in the #88 resync after #89 (keep-both conflicts: rampage_sim.gd emerge+body; rampage.gd emerge.start + body.use_species). Empty folder ../Kaiju-Incremental-wt/note9: delete refused, director.
+## claude/ci-shards 67e2873 (no PR): timings refreshed, 2->3 shards, gain ~25 s only (9 suites, flow 109 s is the floor). Low priority: PR when a slot frees, or drop.
+## Retune = one balance pass on the baby/young croc after #89+#90+#85 (notes 8, 11; e1 ~0.26 h; young defeats ~8/15). Director asked if tools/pacing.gd plays like a human: NO (nearest building, cheapest upgrade, no dodge/aim/dash). young-retune told to calibrate vs his note-8 cadence (1 -> 8 -> 1) first and caveat its numbers. Explain every label to him the first time.
+## young-retune milestone: note 8 cause = cost ladder (8 L1 nodes 15-76 = 283 total, next 91, rest 114-178+). Merged baseline: e1 0.16 h (dash), young defeats ~6/15, army quiet 0-20 s then steep. Bot under-earns vs director (no topple/stadium aim). Options pending -> ask director.
 Lead = "Kaiju: LEAD (demo build, merges, QA)". Owns: QA gates + fresh critics, PR review + merge (squash,
 `--match-head-commit <full sha>`), STATUS/DECISIONS board PRs, director questions, this file.
 Helpers: Opus at MEDIUM effort or Sonnet only (Opus high / Fable need the director's yes).
