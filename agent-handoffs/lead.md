@@ -1,12 +1,12 @@
 # Lead handoff, 2026-10-20 (new lead session, replaces "Boot up as lead on kaiju project")
-## State: working. Builders (Agent names): river-start (#88 FIX), military-ai (#50 r6 proof), croc-contact (#89 topple FIX, holds push for swipe fixes).
+## State: working. Agents: military-ai (#50 r6 proof), croc-contact (#89 topple+swipe+D-096, one push pending), river-review (#88).
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## D-095 (director 10-20): Claws = CLAW SWIPE (croc only for demo). D-096 (director 10-20, question tool): "Swipes undermine towers" (swipe hits count as base chew; undermined towers fall AWAY from the kaiju, lead call). Both go on the board PR.
 ## #89 GREEN 8e7f2d2 (tests 39270770359); swipe 2 s, reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; claws5 101 vs 72 chunks.
 ##  Topple clip (run 39266833950): critic FIX (pop at impact f214->216, no lean, noisy heap, falls over croc); lead confirmed 2x.
 ##  Swipe clip (run 39270794927): critic FIX (arm motion invisible, hairline streaks, no break on the rake frame, maybe 0.7 s cadence); sent to croc-contact: one push + one capture (both clips).
-## #88 head 7f38eaf: sim review FIX 1-5 given to builder river-start (check_look car part fail-first, no footprint on
-##  channels[0], SPAWN_INSET to tuning + time cap, QUAY_REACH tuning, PR body). 2 strict city reds wait #89. Merge after #89.
+## #88 head 2d6ce9b: FIX 1-5 done (tests 39275880036: only the 2 expected city reds at seed 98765, verified). Fresh sim re-review running (Agent river-review).
+##  Merge after #89 (its tier-gate removal clears the 2 reds; rerun CI after #89 merges).
 ## #50 head 0854411: tests 39271829662 GREEN. Builder military-ai doing CI clip, overlays f750/f1050, pacing, PR body.
 ## Director said YES (10-20) to deleting tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag, C:/r88tmp; lead delete REFUSED by permissions: director runs it.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
