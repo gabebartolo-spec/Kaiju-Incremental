@@ -3,7 +3,7 @@
 ## Since the pause: #94 (function-count tests, no floors, shards from timings), #86, #55 MERGED; #85 CLOSED.
 ## All 4 work PRs (#89 #90 #88 #50) CONFLICTING since #94 deleted tests/expected_checks.txt.
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
-## Builders running (subagents of this lead): croc-contact (#89 resync + FIX 1-3 +
+## All subagents of the 10-20 lead reported (none running). Earlier: croc-contact (#89 resync + FIX 1-3 +
 ## clips, opus), river-start (#88 push 3 commits + resync + FIX, sonnet), military-ai (#50 resync + r6, opus).
 ## D-095 (director 10-20): body made Claws useless -> Claws = CLAW SWIPE (forward rake every few s, levels =
 ## harder + wider; croc only for demo), built in #89 (fixes a/b/c pushed 6583607). Add D-095 to the board PR.
@@ -25,6 +25,11 @@
 ## -> merge with --match-head-commit. Croc builder done (state available).
 ## tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag: builder's delete was REFUSED by the
 ## permission check; ask the director, don't delete on its behalf.
+## #50 r6 pushed 0854411032ca8af4d1c64a54ae7a25cea7ebf197, MERGEABLE; tests 39271829662 was running (confirm).
+## Local military 11/11, old sim fails 4 (fail-first). Standoff 8.8 m from body edge (lookahead 3 s, tunable
+## army.convoy.lookahead), retreat 3.5 m/s, skew 0/3268 parked, firing band 100%. Builder at 200k, done.
+## NEXT: fresh builder from ../Kaiju-Incremental-wt/military-ai/agent-handoffs/military-ai.md (its State line is
+## uncommitted): CI clip, hull/turret overlays f750/f1050, pacing on CI, PR body. tank_damage retune = director.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
 ## Who
