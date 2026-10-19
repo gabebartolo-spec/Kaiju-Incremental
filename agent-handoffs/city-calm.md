@@ -1,4 +1,4 @@
-# City-calm handoff, 2026-10-19
+# City-calm handoff, 2026-10-20 (builder pass: lead FIX on #88 pushed; one channel, bridges at every gap, cars clear of quays, city check_look; no local Godot, CI only)
 ## State: awaiting lead (PR #88 river emergence open; merges after D-091; full suite on the look-options merge running)
 
 ## Task

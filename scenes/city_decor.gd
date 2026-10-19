@@ -56,7 +56,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_paints = car_colors().size()
 	_view = sim.arena_half + Num.f(sim.city["view_beyond"])
 	for channel: Rect2 in CityRiver.channels(plan, sim.city):
-		_water.append(channel.grow(0.5))
+		_water.append(channel.grow(0.5 + CAR_HALF.y))  # a car at a bridge end clears the wall
 	for b: RampageSim.Building in sim.buildings:
 		_footprints.append(Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d).grow(0.4))
 
@@ -193,15 +193,13 @@ func _streets() -> void:
 							< CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 1.0
 						)
 					)
-					var seen := _inside(p, _view - _half)
-					var roll := _rng.randf()
+					var seen := _inside(p, _view - _half) and not _on_building(p)
 					var half := Vector2(CAR_HALF.y, CAR_HALF.x) if along_x else CAR_HALF
 					var body := Rect2(p - half, half * 2.0)
 					if (
-						roll < (chance if playable else chance_beyond)
+						_rng.randf() < (chance if playable else chance_beyond)
 						and not on_diagonal
 						and seen
-						and not _on_building(p)
 						and _clear_of_trees(body)
 					):
 						_props.add(

@@ -56,28 +56,30 @@ static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 		plan["river_bank"] = Vector2(spawn.x, band.x - SPAWN_INSET)
 
 
-## The river's open water (x, z), west to east: each run of river blocks with their sidewalks,
-## joined across the streets between them (CityRiver.bridges carries those over it). A gap
-## wider than any street is a landmark's site: the water stops there. Empty without a river.
+## The river's open water (x, z): ONE channel from the west end of the street grid to the east
+## end, however many blocks and gaps lie along it (a gap is a street or a landmark's site; each
+## is carried over the water by CityRiver.bridges, so the water runs on under all of them and is
+## never cut short). Empty without a river.
 static func channels(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var spans := _spans(plan, cfg)
-	for n: int in spans.size():
-		if n > 0 and _crossing(spans[n - 1], spans[n], cfg):
-			out[-1] = out[-1].merge(spans[n])
-		else:
-			out.append(spans[n])
+	if spans.is_empty():
+		return out
+	var whole := spans[0]
+	for span: Rect2 in spans:
+		whole = whole.merge(span)
+	out.append(whole)
 	return out
 
 
-## The streets across the river (x, z): one deck over the water in each gap between
-## neighbouring river blocks of a channel.
+## The roads across the river (x, z): one deck over the water in every gap between neighbouring
+## river blocks, a street's or a site's.
 static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var spans := _spans(plan, cfg)
 	for n: int in range(1, spans.size()):
-		if _crossing(spans[n - 1], spans[n], cfg):
-			var from := spans[n - 1].end.x
+		var from := spans[n - 1].end.x
+		if spans[n].position.x - from > 0.01:
 			out.append(
 				Rect2(from, spans[n].position.y, spans[n].position.x - from, spans[n].size.y)
 			)
@@ -149,8 +151,3 @@ static func _spans(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 			out.append(rect.grow(Num.f(cfg["sidewalk"])))
 	out.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.x < b.position.x)
 	return out
-
-
-## Whether the gap between two neighbouring river spans is a street (a bridge), not a site.
-static func _crossing(west: Rect2, east: Rect2, cfg: Dictionary) -> bool:
-	return east.position.x - west.end.x <= Num.f(cfg["avenue_width"]) + 0.01

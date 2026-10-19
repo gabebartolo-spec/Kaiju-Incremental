@@ -7,6 +7,7 @@ extends RefCounted
 ## inside the arena, out of the river (at every stage: the grown city's arena takes the river in).
 
 const DT := 1.0 / 30.0
+const QUAY_REACH := 15.0  # m: a breakable building this near where the kaiju lands
 const LIMIT := 20.0  # seconds: the rise and the wade take a few
 
 
@@ -74,6 +75,76 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 				emerged == 1,
 				clock_held,
 				landed
+			]
+		)
+	)
+
+
+## The river's look, from the plan and the decor (lead FIX 2026-10-19 on #88): one sunk channel
+## from the west end of the street grid to the east, bridges in every gap along it and none
+## over solid ground, no parked car touching the water or its quay walls, and a building
+## within QUAY_REACH of where the kaiju steps out (no empty space at the landing).
+static func check_look(
+	tier: int, map_seed: int, sim: RampageSim, decor: CityDecor, check_fn: Callable
+) -> void:
+	var plan := CityGen.map(sim.city)
+	if not plan.has("river"):
+		return
+	var channels := CityRiver.channels(plan, sim.city)
+	var bridges := CityRiver.bridges(plan, sim.city)
+	var spans := 0
+	var covered := true
+	var west := INF
+	var east := -INF
+	for block: Dictionary in plan["blocks"]:
+		if str(block["use"]) == "river":
+			var rect: Rect2 = block["rect"]
+			spans += 1
+			west = minf(west, rect.position.x)
+			east = maxf(east, rect.end.x)
+			covered = covered and not channels.is_empty() and channels[0].encloses(rect)
+	var whole := (
+		channels.size() == 1 and channels[0].position.x <= west and channels[0].end.x >= east
+	)
+	var bridged := true
+	for deck: Rect2 in bridges:
+		bridged = bridged and not channels.is_empty() and channels[0].encloses(deck)
+		for block: Dictionary in plan["blocks"]:
+			if str(block["use"]) == "river":
+				var rect: Rect2 = block["rect"]
+				bridged = bridged and not rect.intersects(deck)
+	var in_water := 0
+	for car: Rect2 in decor.cars:
+		for channel: Rect2 in channels:
+			if channel.intersects(car):
+				in_water += 1
+	var bank: Vector2 = plan.get("river_bank", Vector2(INF, INF))
+	var landing := sim.clamp_to_arena(bank)
+	var near := 0
+	for b: RampageSim.Building in sim.buildings:
+		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
+		if landing.clamp(foot.position, foot.end).distance_to(landing) <= QUAY_REACH:
+			near += 1
+	check_fn.call(
+		whole and covered and bridged and in_water == 0 and near > 0,
+		(
+			(
+				"stage %d, map_seed %d: river look (%d river blocks in %d channel(s) spanning them:"
+				+ " %s, %d bridges, all over water: %s, %d cars on the water or its quays, %d"
+				+ " buildings within %.0f m of the landing %s)"
+			)
+			% [
+				tier,
+				map_seed,
+				spans,
+				channels.size(),
+				whole and covered,
+				bridges.size(),
+				bridged,
+				in_water,
+				near,
+				QUAY_REACH,
+				landing
 			]
 		)
 	)
