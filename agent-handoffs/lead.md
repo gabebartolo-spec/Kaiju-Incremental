@@ -11,7 +11,7 @@
 ## #95 board PR (docs: playtest chapter docs/roadmap/2026-10-19-director-playtest.md, D-095, D-096), head 6662b7d: check lint, merge.
 ##  Playtest notes with no PR: 9 (small buildings south of spawn not destructible = tier gate, should clear with #89 + #88 river check: verify in play), 12 destruction option A (after exe 2).
 ##  Note 9 = backdrop stand-in boxes south of the old spawn (found 10-19, spawn-south session; director reminded 10-20). Fixed by #88 moving the start to the river; fix #95 row 9 to say so. SEPARATE: #88 strict check still red on #89+#88 merge: arena tier-2 bldg (-12.5,37) seed 98765 takes 0 voxels from a stomp; note9-check (opus) root-causing for #88 green. #88 resync after #89 = keep both sides (rampage_sim.gd emerge+body; rampage.gd emerge.start + body.use_species).
-## CI audit (10-20): PR runs 3-5 min, meets the rules; optional: re-time tools/ci_timings.txt (10 of 18 suites listed), try 3 shards (~1 min saving).
+## claude/ci-shards 67e2873 (no PR): timings refreshed, 2->3 shards, gain ~25 s only (9 suites, flow 109 s is the floor). Low priority: PR when a slot frees, or drop.
 ## Director said YES to deleting tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag, C:/r88tmp; lead's delete REFUSED by permissions; commands given to him.
 ## Director 10-20: "work faster, spawn help", "employ multiple sonnet workers": run several Sonnet lanes in parallel.
 Lead = "Kaiju: LEAD (demo build, merges, QA)". Owns: QA gates + fresh critics, PR review + merge (squash,
