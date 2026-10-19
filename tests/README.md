@@ -24,6 +24,7 @@ from `tools/ci_timings.txt`, so a new suite needs only its file and a row below.
 | `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up |
 | `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits |
 | `cells` | the sim's fine destruction grid of a building (BuildingCells, D-094) is BuildingVoxels' layout cell for cell on every archetype, party walls, a sign and a seeded city sample; built twice the same; counts and digests pinned; materials table valid; no clock or RNG in the module; a building gets its grid only on its first hit (CellPromoter) |
+| `landmarkcells` | the sim's fine grid of a landmark (LandmarkCells, D-094 WP6) is LandmarkVoxels' cells one for one, each in its colour class, in the chunks the sim builds; counts and digests pinned; the stadium's arcs shed a whole section on cells as they do on chunks (not before arc_shed_cells lost); a landmark is promoted on its first hit; no clock or RNG in the modules |
 
 The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a `_check_*`
 method that is never called or makes no check, and that an untyped declaration does not compile.

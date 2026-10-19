@@ -1,5 +1,5 @@
 class_name BuildingCells
-extends RefCounted
+extends CellGrid
 ## One building's fine destruction grid (D-094), made in the sim from its footprint, floors,
 ## tier and style: RES cells per sim unit (data/tuning.json "destruction"), one byte per cell
 ## (0 empty, else a data/materials.json id), x fastest, then z, then y. The layout is
@@ -19,15 +19,6 @@ const SIGN_CHANCE := 0.3
 ## Sides, as the outward step in cells: -x, +x, -z, +z.
 const SIDES: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
 
-## Cells per sim unit.
-var res: int
-## Grid size in cells.
-var dims: Vector3i
-## The building-local cell (BuildingVoxels' coordinates) of grid cell (0, 0, 0): the grid also
-## holds what stands proud of the footprint (sills, awnings, signs) and the roof gear.
-var offset: Vector3i
-## One byte per cell, index x + z * dims.x + y * dims.x * dims.z.
-var cells: PackedByteArray
 var b: RampageSim.Building
 var _w: int
 var _d: int
@@ -55,47 +46,8 @@ func _init(p_building: RampageSim.Building, party: Dictionary = {}) -> void:
 	_pack()
 
 
-## Cells per sim unit, from data/tuning.json.
-static func cell_res() -> int:
-	return Num.i(Content.section("destruction").get("res", 0))
-
-
-## Material name -> id (data/materials.json).
-static func material_ids() -> Dictionary:
-	var out := {}
-	for m: Dictionary in Content.materials():
-		out[str(m["name"])] = Num.i(m["id"])
-	return out
-
-
-func index(c: Vector3i) -> int:
-	return c.x + c.z * dims.x + c.y * dims.x * dims.z
-
-
-## The material at a building-local cell (BuildingVoxels' coordinates); 0 outside the grid.
-func at(local: Vector3i) -> int:
-	var c := local - offset
-	if c.x < 0 or c.y < 0 or c.z < 0 or c.x >= dims.x or c.y >= dims.y or c.z >= dims.z:
-		return 0
-	return cells[index(c)]
-
-
-## Cells that are not empty.
-func count() -> int:
-	return cells.size() - cells.count(0)
-
-
 func archetype() -> int:
 	return b.style % 4
-
-
-## Empties every cell of a structural chunk (one sim unit, one floor) that is gone.
-func clear_chunk(chunk: Vector3i) -> void:
-	var lo := chunk * res - offset
-	for y: int in range(maxi(lo.y, 0), mini(lo.y + res, dims.y)):
-		for z: int in range(maxi(lo.z, 0), mini(lo.z + res, dims.z)):
-			for x: int in range(maxi(lo.x, 0), mini(lo.x + res, dims.x)):
-				cells[index(Vector3i(x, y, z))] = 0
 
 
 func _mark(cell: Vector3i, key: String) -> void:
