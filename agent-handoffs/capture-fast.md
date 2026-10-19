@@ -4,8 +4,7 @@
 Title: capture: --fast review mode as the CI default (gl_compatibility, 960x540, 20 fps, SSAO/glow off)
 
 Why: CI captures took 15-32 min; 97% was software render. Runs 39270794927 / 39266833950 used
-`renderer=auto` = forward_plus on lavapipe (2.2-5 s/frame). An explicit gl_compatibility WAS honoured
-by the workflow (`gateway: gl_compatibility) run_one gl_compatibility opengl3`); the default `auto` was
+`renderer=auto` = forward_plus on lavapipe (2.2-5 s/frame). An explicit gl_compatibility was already honoured by the workflow; the default `auto` was
 the cause: nobody passed it.
 
 What:
@@ -19,7 +18,8 @@ What:
 Evidence: see "Measurement" below (filled after the run).
 
 ## Measurement
-(run id, wall time, readability verdict: filled in by the builder)
+Run 39280140412 (tower take, --fast): job 19m50s vs 32 min before. RENDERER.txt: OpenGL 4.5 Mesa llvmpipe, 960x540 @ 20 fps. Frames 150/450/690: croc, tower fall, debris, fire all clear; flatter shading, no glow.
+Clip: C:/Users/DANTE/AppData/Local/Temp/kcap/fast-39280140412/capture-39280140412-0/clip.mp4
 
 ## State
 Branch claude/capture-fast pushed, no PR (cap). Measurement ran on tmp/capture-fast-test
