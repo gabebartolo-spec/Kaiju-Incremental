@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-20 (lead session 2 of 10-20 hit 200k; next lead: read this, then GitHub)
-## State: running a check. Old lead waits on croc-contact (#89), military-ai (#50), capture-fast (branch claude/capture-fast, --fast capture mode, test dispatch; PR after #89 merges) reports, then hands off.
+## State: running a check. Old lead waits on croc-contact (#89), military-ai (#50), capture-fast (run 39280140412), ci-shards (branch claude/ci-shards), note9-check reports, then hands off.
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## Captures run in PARALLEL (no concurrency group). 97% of capture time = software render, forward_plus on lavapipe (2-5 s/frame) although --renderer=gl_compatibility is our rule. Next: one test dispatch gl_compatibility + 960x540 + --fps=20 (est. 3-5 min vs 15-32); a --fast flag off SSAO/glow (scenes/city_view.gd:99-106). Motion reviews only; look sign-off stays on GPU.
 ## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
@@ -10,7 +10,7 @@
 ## #50 head 0854411 tests 39271829662 GREEN; builder military-ai: clip, overlays f750/f1050, pacing, PR body -> lead 2x + fresh motion critic -> merge.
 ## #95 board PR (docs: playtest chapter docs/roadmap/2026-10-19-director-playtest.md, D-095, D-096), head 6662b7d: check lint, merge.
 ##  Playtest notes with no PR: 9 (small buildings south of spawn not destructible = tier gate, should clear with #89 + #88 river check: verify in play), 12 destruction option A (after exe 2).
-## #90 dash: resync after #89 -> fresh motion critic -> merge. Then #85 joint young retune (director's balance call). Then demo exe 2 (build session).
+##  Note 9 NOT fixed by #89+#88 (local merge 10-20): seed 98765 tier-2 bldg (-12.5,37) 10 high takes 0 voxels from a stomp. note9-check (opus) root-causing. #88 resync conflicts = keep both (rampage_sim.gd emerge+body, rampage.gd emerge.start + body.use_species).
 ## CI audit (10-20): PR runs 3-5 min, meets the rules; optional: re-time tools/ci_timings.txt (10 of 18 suites listed), try 3 shards (~1 min saving).
 ## Director said YES to deleting tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag, C:/r88tmp; lead's delete REFUSED by permissions; commands given to him.
 ## Director 10-20: "work faster, spawn help", "employ multiple sonnet workers": run several Sonnet lanes in parallel.
