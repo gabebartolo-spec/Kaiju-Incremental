@@ -8,7 +8,8 @@
 ## #98 lead call: panes/signs held by edge = material flag "fixture" in data/materials.json; fixture cells ground by 26-neighbour contact, structural 6-neighbour.
 ##  WP1 must add that rule in sim/voxel_support.gd (batch with review-wp1's findings into one carve-wp1 life). Tank with no contact = generator fix (+BuildingVoxels).
 ## carve-wp6 DONE claude/carve-wp6 b083346 (LandmarkCells, CellGrid base moved out of BuildingCells, Arcs shed on cells; body pr_body_wp6.md in its worktree). Merges carve-wp3: open after #98 merges, resync first (carve-wp3 life 2 also edits building_cells.gd), then fresh kaiju-sim-review. Lead call: arc_shed_cells 32 kept (= today's trigger; balance is his playtest).
-## #50 r6 critic FIX (lead-confirmed): overlays drawn ~90 px off the tanks, a parked hull ~20 deg off its street, a tank against the snout on screen -> military-ai r7 running.
+## ASK DIRECTOR (tabled, he was AFK): carved-hole floor slab colour, board docs/captures/2026-10-20-carve/slab_A_vs_B.png: A 2b2d30 today (holes read dark) vs B 8a8780 concrete (floors read as floors; also lightens today's broken baked buildings). Recommend B. carve-wp4 keeps A, one palette line to swap.
+## #50 r7: proof bug was the overlay (1920x1080 coords on 1280x720 stills); hulls 0.0 deg, no snap. Hull-edge standoff fixed (7.8 m min). Lead call A: a cornered tank with no road out holds and fires, reported as its own check.
 ## #89 lead call (D-099): align before merge (override removed), NOT merge-then-replace: the demo exe must not ship a rule he overruled.
 ##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
 ## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
