@@ -4,6 +4,16 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-20 · D-096 · Director · Swipes undermine towers
+Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
+Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89
+(sim/claw_swipe.gd chews the building face; tuning is a seeded 5-seed mean, not a single seed).
+
+## 2026-10-20 · D-095 · Director · Claws = a claw swipe, for the croc only in the demo
+Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
+Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
+two species keep Claws as +3 stomp. Built in #89.
+
 ## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
 Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
 from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
