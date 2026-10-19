@@ -7,14 +7,24 @@ PR's "Board and log" section. History rolls to `docs/archive/status_<month>.md`.
 Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor, a missing suite,
 an untyped declaration and a planted secret). Gate signer: the lead.
 
-## Live PRs (2026-10-19 06:00; demo chain merged, build next; #50 -> second exe, D-088)
+## Live PRs (2026-10-19, team PAUSED by the director; account handover; playtest fixes -> demo exe 2, D-083)
 
 | PR | Owner session | State | Item | Branch | Since |
 |----|---------------|-------|------|--------|-------|
-| #50 | Tanks & helis | working | D-066 military AI r4 (D-088: second exe after the demo) | claude/military-ai | 2026-10-18 |
-| #55 | Greenery + trample | working | D-065(a) greenery, crush in place (D-084a); after the build | claude/greenery | 2026-10-18 |
-| #58 | Jets | available (parked) | D-072 interceptor, D-080 warning; draft, after the demo | claude/jets-interceptor | 2026-10-18 |
-| #61 | Jets | available (parked) | D-072 delta + ground-attack bombs; draft, after the demo | claude/jets-bombs | 2026-10-18 |
+| #89 | Croc contact + dash | paused (sim-review FIX) | playtest 2, D-091 body breaks what it walks into | claude/croc-contact | 2026-10-19 |
+| #90 | Croc contact + dash | paused (stacked on #89) | playtest 4, dash | claude/croc-dash | 2026-10-19 |
+| #85 | Biomass + army ramp | paused (draft) | playtest 11, army ramp; joint young retune after #89/#90 | claude/army-ramp | 2026-10-19 |
+| #88 | River spawn + greenery | paused (lead FIX) | playtest 9/11, river emergence; after D-091 | claude/river-start | 2026-10-19 |
+| #50 | Tanks + helis | paused (r6 WIP, red) | D-066 military AI; r5 critic FIX: standoff body edge + 8 m | claude/military-ai | 2026-10-18 |
+| #86 | Gun audio + breath aim | available | rooftop hits on legs and tail (post-demo) | claude/rooftop-hits-body | 2026-10-19 |
+| #55 | Greenery + trample | available | D-065(a) greenery, crush in place (D-084a) | claude/greenery | 2026-10-18 |
+| #58 | Jets | available (parked, critic FIX) | D-072 interceptor, D-080 warning; draft | claude/jets-interceptor | 2026-10-18 |
+| #61 | Jets | available (parked) | D-072 delta + ground-attack bombs; draft | claude/jets-bombs | 2026-10-18 |
+
+## Merged into look-options on 2026-10-19 (playtest fixes)
+#75 stall fix · #77 frame cap · #78 crowd killable · #79 stadium 1.5x (D-090) · #80 rifle crack · #83 breath from the
+snout · #73/#74 Phase 0 lints · #76 stall probe · #81 less camera smoke · #84 faster run load · #87 ElevenLabs SFX
+(D-092) · #91 destruction spike (D-094) · #92 Graphics Balanced at 4K (D-093).
 
 ## Merged into look-options on 2026-10-18/19 (the demo chain)
 #54 croc baby + adolescent (bc324f6, D-073/074b) · #36 army balance, evolve1 400 (cceabba, D-087) ·
