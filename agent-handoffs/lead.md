@@ -2,7 +2,8 @@
 ## State: working. Lead resumed 2026-10-20; old team sessions are on the other account (not visible here).
 ## Since the pause: #94 (function-count tests, no floors, shards from timings), #86, #55 MERGED; #85 CLOSED.
 ## All 4 work PRs (#89 #90 #88 #50) CONFLICTING since #94 deleted tests/expected_checks.txt.
-## Builders running (subagents of this lead, CI only, no local Godot): croc-contact (#89 resync + FIX 1-3 +
+## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
+## Builders running (subagents of this lead): croc-contact (#89 resync + FIX 1-3 +
 ## clips, opus), river-start (#88 push 3 commits + resync + FIX, sonnet), military-ai (#50 resync + r6, opus).
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
