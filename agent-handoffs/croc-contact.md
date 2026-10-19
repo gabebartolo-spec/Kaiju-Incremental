@@ -1,4 +1,5 @@
 # croc-contact handoff (builder for the lead), 2026-10-20
+## LATEST (life 4, D-099): override removed, head 677718e, tests 39342572775 + lint green, capture 39341631409 ok (clip not reviewed). Topples now follow part[dir] (gutted drop -> toward kaiju). Body updated (update 3). Done; awaiting lead.
 ## State: pushing claude/croc-contact (PR #89, base claude/look-options) then one capture; fresh life 2.
 ## Worktree .claude/worktrees/blender-reptile-f5388e. Remaining: capture run, PR body, tests result.
 
