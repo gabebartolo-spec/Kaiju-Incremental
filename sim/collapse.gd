@@ -38,8 +38,13 @@ func settle(index: int) -> void:
 				_toppled_ids[index] = true
 				toppled += 1
 			var dir: Vector2i = part["dir"]
-			f.dir = Vector2(dir)
 			var pivot: Vector3 = part["pivot"]
+			if sim.body.over(index):  # undermined by the body: it goes over away from the kaiju
+				var away := _away(Vector2(b.x, b.z) - sim.kaiju_pos, dir)
+				if away != dir:
+					pivot = _edge(f.cells, lowest, away)
+					dir = away
+			f.dir = Vector2(dir)
 			f.pivot = b.local_to_world(pivot)
 			f.duration = sqrt(2.0 * f.height / g) * 1.8
 		else:
@@ -64,6 +69,33 @@ func settle(index: int) -> void:
 				}
 			)
 		)
+
+
+## The level direction (one of the four, like Structure's) from the kaiju to the tower's base;
+## `fallback` when the kaiju stands on the base's centre.
+static func _away(to_base: Vector2, fallback: Vector2i) -> Vector2i:
+	if to_base.is_zero_approx():
+		return fallback
+	if absf(to_base.x) > absf(to_base.y):
+		return Vector2i(signi(roundi(to_base.x * 100.0)), 0)
+	return Vector2i(0, signi(roundi(to_base.y * 100.0)))
+
+
+## The pivot edge (local frame) a part tips over going `dir`: its far side at its lowest floor,
+## centred across the fall.
+static func _edge(cells: Array[Vector3i], lowest: int, dir: Vector2i) -> Vector3:
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for c: Vector3i in cells:
+		if c.y == lowest:
+			lo = Vector2(minf(lo.x, c.x), minf(lo.y, c.z))
+			hi = Vector2(maxf(hi.x, c.x + 1), maxf(hi.y, c.z + 1))
+	var mid := (lo + hi) * 0.5
+	return Vector3(
+		hi.x if dir.x > 0 else (lo.x if dir.x < 0 else mid.x),
+		lowest,
+		hi.y if dir.y > 0 else (lo.y if dir.y < 0 else mid.y)
+	)
 
 
 ## How far a loose part drops before it meets what still stands below it (or the ground).

@@ -53,6 +53,7 @@ var _shake := 0.0
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
+var _topple_cfg: Dictionary = Content.section("topple_fx")
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
@@ -188,7 +189,8 @@ func _on_event(event: Dictionary) -> void:
 		"fall_land":
 			_city.fall_land(event)
 			sfx.collapse(str(event["kind"]) == "topple")
-			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
+			var topple := str(event["kind"]) == "topple"
+			_shake = maxf(_shake, Num.f(_topple_cfg["shake"]) if topple else 0.3)
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":

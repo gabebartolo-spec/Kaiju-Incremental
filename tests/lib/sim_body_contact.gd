@@ -133,29 +133,92 @@ func _count(inside: Dictionary) -> int:
 ## chews straight into the base of the nearest tall tier-2 tower until it comes down.
 func _check_topple() -> void:
 	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
-	sim.body.use_species("reptilian")
-	var index := _nearest(sim, 2, 10, 4)
-	var b := sim.buildings[index]
+	var b := sim.buildings[_nearest(sim, 2, 10, 4)]
 	var start := b.frame.alive_count
-	var into := Vector2(0, -1)  # from the tower's south face, across its base
-	_place(sim, Vector2(b.x, b.z + b.d * 0.5 + sim.body.length() * 0.6), into)
-	var steps := 0
-	var worst := 0
-	var fell := false
-	while steps < TOPPLE_STEPS and not fell:
-		sim.step(DT, into, false)
-		worst = maxi(worst, _count(sim.body.inside(sim.kaiju_pos, sim.body.heading)))
-		for f: RampageSim.Fall in sim.falls:
-			fell = fell or (f.building == index and f.kind == "topple")
-		steps += 1
+	var chew := _chew_to_topple(sim)
+	var fall: RampageSim.Fall = chew["fall"]
 	_check.call(
-		fell and worst == 0,
+		fall != null and Num.i(chew["worst"]) == 0,
 		(
 			(
 				"the baby topples a %d-floor tier-2 tower by eating its base: %s after %.1f s"
 				+ " (%d of %d chunks standing, none inside the body: %d)"
 			)
-			% [b.height, fell, steps * DT, b.frame.alive_count, start, worst]
+			% [
+				b.height,
+				fall != null,
+				Num.i(chew["steps"]) * DT,
+				b.frame.alive_count,
+				start,
+				Num.i(chew["worst"])
+			]
+		)
+	)
+	_check_falls_away(sim, b, fall)
+	_check_swipe_undermines(Num.i(chew["steps"]))
+
+
+## D-096 (director 2026-10-20, "Swipes undermine towers"): a claw hit on a tower's base counts as
+## chewing it, so the same chew with the swipe on brings the tower down sooner than with it off.
+func _check_swipe_undermines(swiped_steps: int) -> void:
+	var off: RampageSim = _make.call("reptilian", {}, 0, {})
+	off.stats["swipe_damage"] = 0.0
+	var chew := _chew_to_topple(off)
+	var fell := chew["fall"] != null
+	_check.call(
+		fell and swiped_steps < Num.i(chew["steps"]),
+		(
+			"a swiped tower topples sooner: %.1f s with the swipe vs %.1f s without (fell: %s)"
+			% [swiped_steps * DT, Num.i(chew["steps"]) * DT, fell]
+		)
+	)
+
+
+## The baby chews straight north into the nearest tall tier-2 tower's base from its south face
+## until the tower topples: {"steps", "worst" (chunks ever inside the body), "fall" (or null)}.
+func _chew_to_topple(sim: RampageSim) -> Dictionary:
+	sim.body.use_species("reptilian")
+	var index := _nearest(sim, 2, 10, 4)
+	var b := sim.buildings[index]
+	var into := Vector2(0, -1)  # from the tower's south face, across its base
+	_place(sim, Vector2(b.x, b.z + b.d * 0.5 + sim.body.length() * 0.6), into)
+	var steps := 0
+	var worst := 0
+	var fall: RampageSim.Fall = null
+	while steps < TOPPLE_STEPS and fall == null:
+		sim.step(DT, into, false)
+		worst = maxi(worst, _count(sim.body.inside(sim.kaiju_pos, sim.body.heading)))
+		for f: RampageSim.Fall in sim.falls:
+			if f.building == index and f.kind == "topple":
+				fall = f
+		steps += 1
+	return {"steps": steps, "worst": worst, "fall": fall}
+
+
+## Readability (PR #89 motion review): a tower the body undermined goes over away from the kaiju,
+## so the player sees it fall and what it crushes instead of losing the kaiju under it. The
+## strip it lands on runs from its base away from the kaiju.
+func _check_falls_away(sim: RampageSim, b: RampageSim.Building, fall: RampageSim.Fall) -> void:
+	var away := Vector2(b.x, b.z) - sim.kaiju_pos
+	var landed: Dictionary = {}
+	var steps := 0
+	while fall != null and landed.is_empty() and steps < TOPPLE_STEPS:
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "fall_land" and Num.i(event["id"]) == fall.id:
+				landed = event
+		steps += 1
+	var from: Vector2 = landed.get("from", Vector2.ZERO)
+	var to: Vector2 = landed.get("to", Vector2.ZERO)
+	_check.call(
+		(
+			fall != null
+			and fall.dir.dot(away) > 0.0
+			and not landed.is_empty()
+			and (to - from).dot(away) > 0.0
+		),
+		(
+			"the undermined tower falls away from the kaiju: dir %s, kaiju->base %s, strip %s -> %s"
+			% [fall.dir if fall != null else Vector2.ZERO, away.round(), from.round(), to.round()]
 		)
 	)
 

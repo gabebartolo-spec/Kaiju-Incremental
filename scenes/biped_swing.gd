@@ -42,16 +42,10 @@ const ARM_BRACE := 0.25
 const ARM_BRACE_MAX := 0.2
 const ARM_OMEGA := 18.0
 const ARM_ZETA := 0.9
-## Claw rake (Claws, D-095): one arm lifts up and out, rakes forward and down across the chest,
-## then hangs again; the shares of RAKE_SECONDS at which the lift and the strike end.
-const RAKE_SECONDS := 0.45
-const RAKE_LIFT := 0.25
-const RAKE_STRIKE := 0.5
-const ARM_UPPER_RAKE := Vector3(0.5, 0.25, -0.8)
-const ARM_FORE_RAKE := Vector3(0.3, 0.75, -0.6)
-const ARM_UPPER_ACROSS := Vector3(-0.35, -0.45, -0.85)
-const ARM_FORE_ACROSS := Vector3(-0.55, -0.35, -0.75)
-const ARM_HAND_ACROSS := Vector3(-0.45, -0.55, -0.7)
+## Claw rake (Claws, D-095; PR #89 motion review): on the sim's swipe_windup one arm swings up
+## and out wide of the body, then on the swipe it rakes hard across the front to the far side
+## (the sim's rake lands as it crosses the snout line) and hangs again; the arm reaches further
+## (scaled) for the rake, more on a young body. Poses and timings: the "claw_fx" tuning.
 
 var rig: KaijuRig
 ## The pelvis's drop speed (hip heights/s) and how young the body is (0..1), set each frame.
@@ -65,8 +59,9 @@ var _whip := 0.0  # 1 -> 0 over a tail whip
 var _whip_side := 1.0
 var _arm_swing := Vector2.ZERO
 var _arm_brace := Vector2.ZERO
-var _rake := 0.0  # 1 -> 0 over a claw rake
+var _rake_t := -1.0  # seconds into a claw rake; negative when none runs
 var _rake_side := 1.0
+var _claw: Dictionary = _claw_timing()
 
 
 func _init(p_rig: KaijuRig) -> void:
@@ -92,14 +87,50 @@ func whip(side: float) -> void:
 	_whip_side = side
 
 
-## A species power's strike to one side (-1 left, +1 right): limb "claw" rakes that arm (Claws),
-## anything else whips the tail.
+## A species power's strike to one side (-1 left, +1 right): limb "claw_windup" lifts that arm,
+## "claw" rakes it (the rake crosses now, synced to the sim), anything else whips the tail.
 func strike(limb: String, side: float) -> void:
-	if limb == "claw":
-		_rake = 1.0
+	if limb == "claw_windup":
+		_rake_t = 0.0
+		_rake_side = side
+	elif limb == "claw":
+		_rake_t = _rake_cross()
 		_rake_side = side
 	else:
 		whip(side)
+
+
+## The "claw_fx" tuning plus lift_s: the lift lasts until half a strike before the sim's rake
+## lands (powers.swipe_windup after its windup cue), so the arm crosses as the hits land.
+static func _claw_timing() -> Dictionary:
+	var cfg: Dictionary = Content.section("claw_fx").duplicate()
+	var windup := Num.f(Content.section("powers")["swipe_windup"])
+	cfg["lift_s"] = maxf(0.05, windup - Num.f(cfg["strike_s"]) * 0.5)
+	return cfg
+
+
+## When (s into the rake) the arm crosses the snout line: the lift, then half the strike.
+func _rake_cross() -> float:
+	return Num.f(_claw["lift_s"]) + Num.f(_claw["strike_s"]) * 0.5
+
+
+## The raking arm's sweep for the slash streaks: {"centre": shoulder (world), "radius": its reach
+## now}, or {} when no arm on that side.
+func claw_arc(side: float) -> Dictionary:
+	var body := rig.global_transform.basis.orthonormalized()
+	for s: String in ["l", "r"]:
+		if not rig.has_bone("arm_%s0" % s):
+			continue
+		var shoulder := rig.bone("arm_%s0" % s).global_position
+		if signf((body.inverse() * (rig.tail_world("arm_%s0" % s) - shoulder)).x) != side:
+			continue
+		var reach := 0.0
+		for i: int in 3:
+			var n := "arm_%s%d" % [s, i]
+			if rig.has_bone(n):
+				reach += (rig.tail_world(n) - rig.bone(n).global_position).length()
+		return {"centre": shoulder, "radius": reach}
+	return {}
 
 
 ## Runs the whip down by dt (a gait that poses the tail itself calls this, then whip_yaw()).
@@ -117,7 +148,11 @@ func whip_yaw(i: int) -> float:
 
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 	tick_whip(dt)
-	_rake = maxf(0.0, _rake - dt / RAKE_SECONDS)
+	if _rake_t >= 0.0:
+		_rake_t += dt
+		var total := _rake_cross() + Num.f(_claw["strike_s"]) * 0.5 + Num.f(_claw["recover_s"])
+		if _rake_t > total:
+			_rake_t = -1.0
 	var tail := rig.chain_named("tail0")
 	if tail != null:
 		var n := tail.drive.size()
@@ -182,34 +217,63 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 			swing * ARM_FORE.lerp(ARM_FORE_ROAR, roar),
 			swing * ARM_HAND,
 		]
-		if _rake > 0.0 and out == _rake_side:
-			dirs = _rake_dirs(1.0 - _rake)
+		var raking := _rake_t >= 0.0 and out == _rake_side
+		if raking:
+			dirs = _rake_dirs(_rake_t)
 		for i: int in names.size():
 			var n := names[i]
 			var from := rig.bone(n).global_position
 			var length := (rig.tail_world(n) - from).length()
 			var d := (dirs[i] * Vector3(out, 1, 1)).normalized()
 			rig.aim(n, from, from + body * d * length)
+		if raking:  # the whole arm reaches further for the rake (uniform: the hand follows)
+			var reach := lerpf(
+				Num.f(_claw["arm_reach_adult"]), Num.f(_claw["arm_reach_young"]), youth
+			)
+			rig.bone(names[0]).scale = Vector3.ONE * lerpf(1.0, reach, _rake_reach(_rake_t))
 
 
-## The raking arm's upper, fore and hand directions at t (0..1) through the rake.
+## The raking arm's upper, fore and hand directions t seconds into the rake: rest -> up and out
+## (lift_s), -> across the front (strike_s, fast), -> rest (recover_s).
 func _rake_dirs(t: float) -> Array[Vector3]:
 	var rest: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
-	var up: Array[Vector3] = [ARM_UPPER_RAKE, ARM_FORE_RAKE, ARM_FORE_RAKE]
-	var across: Array[Vector3] = [ARM_UPPER_ACROSS, ARM_FORE_ACROSS, ARM_HAND_ACROSS]
+	var up := _pose("arm_up")
+	var across := _pose("arm_across")
+	var lift := Num.f(_claw["lift_s"])
+	var strike := Num.f(_claw["strike_s"])
 	var from := rest
 	var to := up
-	var k := t / RAKE_LIFT
-	if t >= RAKE_STRIKE:
+	var k := t / lift
+	if t >= lift + strike:
 		from = across
 		to = rest
-		k = (t - RAKE_STRIKE) / (1.0 - RAKE_STRIKE)
-	elif t >= RAKE_LIFT:
+		k = (t - lift - strike) / Num.f(_claw["recover_s"])
+	elif t >= lift:
 		from = up
 		to = across
-		k = (t - RAKE_LIFT) / (RAKE_STRIKE - RAKE_LIFT)
-	k = smoothstep(0.0, 1.0, k)
+		k = (t - lift) / strike
+	k = smoothstep(0.0, 1.0, clampf(k, 0.0, 1.0))
 	var out: Array[Vector3] = []
 	for i: int in rest.size():
 		out.append(from[i].lerp(to[i], k))
+	return out
+
+
+## How far into its extra reach the raking arm is (0..1): out over the lift, held through the
+## strike, back over the recovery.
+func _rake_reach(t: float) -> float:
+	var lift := Num.f(_claw["lift_s"])
+	var strike := Num.f(_claw["strike_s"])
+	if t < lift:
+		return smoothstep(0.0, 1.0, t / lift)
+	if t < lift + strike:
+		return 1.0
+	return 1.0 - smoothstep(0.0, 1.0, (t - lift - strike) / Num.f(_claw["recover_s"]))
+
+
+## A "claw_fx" arm pose: [upper, fore, hand] directions in the heading frame (x outward).
+func _pose(key: String) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for v: Array in _claw[key]:
+		out.append(Vector3(Num.f(v[0]), Num.f(v[1]), Num.f(v[2])))
 	return out

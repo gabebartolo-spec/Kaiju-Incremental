@@ -104,9 +104,13 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_city.ring(kaiju_at, Num.f(event["reach"]), UiKit.WARN, 0.35)
 			var behind := kaiju_at - _w(sim.facing) * Num.f(event["reach"]) * 0.7
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
+		"swipe_windup":
+			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
-			_hook("tail_sweep", [Num.f(event["side"]), "claw"])
-			ClawSlash.play(self, kaiju_at, _w(sim.facing), event, _tint)
+			var arc: Dictionary = {}
+			if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
+				arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
+			ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
 			if sfx != null:
 				sfx.play("lash")
 			var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)

@@ -27,9 +27,12 @@ func mark(index: int) -> void:
 		_due.append(index)
 
 
-## Builds make() -> MultiMeshInstance3D on a worker thread and adds it when ready.
-func build(make: Callable) -> void:
-	_tasks.append(WorkerThreadPool.add_task(func() -> void: _attach.call_deferred(make.call())))
+## Builds make() -> MultiMeshInstance3D on a worker thread and adds it when ready; ready(mmi), if
+## given, runs once it is in the tree (a toppled tower's heap settles).
+func build(make: Callable, ready := Callable()) -> void:
+	_tasks.append(
+		WorkerThreadPool.add_task(func() -> void: _attach.call_deferred(make.call(), ready))
+	)
 
 
 func _process(_delta: float) -> void:
@@ -46,9 +49,11 @@ func _process(_delta: float) -> void:
 		build(func() -> MultiMeshInstance3D: return Ruin.build(voxels, rng))
 
 
-func _attach(mmi: MultiMeshInstance3D) -> void:
+func _attach(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
 	if is_inside_tree():
 		add_child(mmi)
+		if ready.is_valid():
+			ready.call(mmi)
 	else:
 		mmi.free()
 

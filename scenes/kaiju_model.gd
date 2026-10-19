@@ -1,9 +1,8 @@
 class_name KaijuModel
 extends Node3D
-## A species' kaiju built from fine voxels (data colours, code shapes). Faces -Z. Shapes are
-## written in design units and drawn at RES cells per unit, so detail (teeth, claws, scales,
-## suckers, compound eyes) has room. About 10 units tall at body scale 1. Animation is
-## presentation only: bob while walking, squash on stomp.
+## A species' kaiju of fine voxels (data colours, code shapes), facing -Z. Shapes in design units
+## drawn at RES cells per unit, so detail (teeth, claws, scales, suckers, eyes) has room. About 10
+## units tall at body scale 1. Animation is presentation only: walk bob, stomp squash.
 
 ## Re-emits KaijuRig.foot_planted (see there) so the scene connects in one place.
 signal foot_planted(side: String, strength: float, at: Vector3)
@@ -82,8 +81,7 @@ static func stage_for(size_tier: int) -> String:
 	return "adolescent" if size_tier == 2 else "adult"
 
 
-## A cool rim light from behind and above that only lights the kaiju (render layer 2), so a dark
-## hide still shows its shape against a dark city.
+## A cool rim light from behind, above, on the kaiju only (layer 2): a dark hide shows in the dark.
 func _add_rim_light() -> void:
 	var rim := DirectionalLight3D.new()
 	rim.light_color = Color("9fc4ff")
@@ -116,8 +114,7 @@ func foot_drift() -> float:
 
 
 ## Where the body is drawn now (world): its root bone, which can lag or lead the node (an insect's
-## hold and dart, an octopus's drag and surge). Cameras follow this, not the node, so a hold is
-## still on screen and a dart bursts. The node's position for unrigged bodies.
+## hold and dart, an octopus's surge); cameras follow this. The node's position when unrigged.
 func focus() -> Vector3:
 	if _rig == null:
 		return global_position
@@ -130,18 +127,21 @@ func hip_height() -> float:
 	return _rig.gait.hip_height * _rig.gait.s if _rig != null else 0.0
 
 
-## Lets a tentacled body grip buildings: finder(point: Vector3, radius: float) -> Vector3 gives the
-## nearest building corner or edge (Vector3.INF if none).
+## Lets a tentacled body grip buildings: finder(point, radius) -> nearest corner/edge or INF.
 func set_grip_finder(finder: Callable) -> void:
 	if _rig != null and _rig.gait is RadialGait:
 		(_rig.gait as RadialGait).grip_finder = finder
 
 
 ## Species-power hooks (no-ops on a body without the limb):
-## a fast tail whip to one side (-1 left, +1 right), or limb "claw": an arm's rake - the reptilian.
-func tail_sweep(side: float, limb: String = "tail") -> void:
+## a fast tail whip to one side (-1 left, +1 right), or limb "claw_windup"/"claw": an arm's lift
+## and rake - the reptilian; a rake returns the arm's sweep (BipedSwing.claw_arc), else {}.
+func tail_sweep(side: float, limb: String = "tail") -> Dictionary:
 	if _rig != null and _rig.gait is BipedGait:
-		(_rig.gait as BipedGait).swing.strike(limb, side)
+		var swing := (_rig.gait as BipedGait).swing
+		swing.strike(limb, side)
+		return swing.claw_arc(side) if limb == "claw" else {}
+	return {}
 
 
 ## The maw held open (the beam) or shut again - the reptilian.
