@@ -11,23 +11,18 @@ extends RefCounted
 ## destructible?").
 ## Part of CityGen.map, split out to keep files small.
 
+
 ## Turns the river's row of blocks into "river" and the row past it into a "park" in `plan`
 ## (CityGen.map's; each keeps its old use under "was", for CityGen.generate), and records the
 ## river's band (z from, z to) as plan["river"] and the kaiju's rise point as
 ## plan["river_spawn"]: on the city's north-south axis (x 0), in the river block across it or
-## the nearest one, at least SPAWN_INSET in from its ends, and where it wades to as
-## plan["river_bank"]: SPAWN_INSET onto the city side, across the ring avenue from it.
-const SPAWN_INSET := 2.0
-
-
+## the nearest one, at least city "river_inset" in from its ends, and where it wades to as
+## plan["river_bank"]: "river_inset" onto the city side, across the ring avenue from it.
+## (Emergence caps the wade at tuning "emerge" "max_seconds", so a bank point that lands in the
+## water can never stall the run's start.)
 static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
-	if not cfg.get("river", false):
-		return
-	var edge := CityGen.districts(cfg)[0]
-	var row := -1
-	for j: int in zs.size() - 1:
-		if is_equal_approx(zs[j], edge):
-			row = j
+	var inset := Num.f(cfg["river_inset"])
+	var row := river_row(zs, cfg)
 	if row < 0:
 		return
 	var band := Vector2(INF, -INF)
@@ -48,12 +43,26 @@ static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 		var gap := absf(clampf(0.0, rect.position.x, rect.end.x))
 		if gap < off:
 			off = gap
-			var x := clampf(0.0, rect.position.x + SPAWN_INSET, rect.end.x - SPAWN_INSET)
+			var x := clampf(0.0, rect.position.x + inset, rect.end.x - inset)
 			spawn = Vector2(x, rect.get_center().y)
 	if spawn.x < INF:
 		plan["river"] = band
 		plan["river_spawn"] = spawn
-		plan["river_bank"] = Vector2(spawn.x, band.x - SPAWN_INSET)
+		plan["river_bank"] = Vector2(spawn.x, band.x - inset)
+
+
+## The street-grid row (z cell) the river runs along: the one just south of district 0's ring
+## line; -1 without a river. CitySites keeps every landmark's site out of it (sim review FIX
+## 2026-10-20 on #88: a landmark in this row would stand in the water).
+static func river_row(zs: Array[float], cfg: Dictionary) -> int:
+	if not cfg.get("river", false):
+		return -1
+	var edge := CityGen.districts(cfg)[0]
+	var row := -1
+	for j: int in zs.size() - 1:
+		if is_equal_approx(zs[j], edge):
+			row = j
+	return row
 
 
 ## The river's open water (x, z): ONE channel from the west end of the street grid to the east

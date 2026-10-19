@@ -1,6 +1,5 @@
-# City-calm handoff, 2026-10-20 (builder pass: lead FIX on #88 pushed; one channel, bridges at every gap, cars clear of quays, city check_look; no local Godot, CI only)
-## State: awaiting lead (PR #88 river emergence open; merges after D-091; full suite on the look-options merge running)
-
+# City-calm handoff, 2026-10-20 (builder river-start: sim review FIX list on #88 applied, one push)
+## State: awaiting lead (PR #88 river emergence; CI on the FIX push; merges after D-091)
 ## Task
 Role city-calm (greenery session, local_9fac90d2). Lead: "Kaiju: LEAD" (local_106fc100).
 Jets / army ramp: local_b38b3a6f (told the event name "kaiju_emerged" and PR #88).
@@ -13,7 +12,11 @@ Jets / army ramp: local_b38b3a6f (told the event name "kaiju_emerged" and PR #88
   look-options (tuning conflict: wheel anchor [10,-56] + rubble_bonus 1.5).
   - city 33/35: the 2 spawn-view failures (seed 98765, stages 1-2) are the tier gate D-091
     removes (croc-contact-dash). Lead: keep the check strict, merge #88 after D-091.
-  - Needs a fresh kaiju-sim-review reviewer (the lead names one).
+  - Sim review FIX (2026-10-20) applied: check_look car test uses the CityDecor margin (car
+    centre in channel.grow(0.5 + CAR_HALF.y)); no building meets the channel; CitySites keeps
+    sites out of CityRiver.river_row (check_sites); city "river_inset" + emerge "max_seconds"
+    (8 s cap, check_cap in the stage-2 city); quay reach read from tuning. All shown failing
+    first locally (city 10 then 3 failures), then only the 2 D-091 reds. Logs: $TMP/river_*.log.
 - **#55 greenery** (claude/greenery, b037f69): r15 PASS; lead merges after the demo exe.
   Push nothing; only resolve Auto-fix conflicts if asked (merge, never rebase).
 - **D-075 green lots** (claude/green-lots, 4446f21, built on #55): post-demo PR into

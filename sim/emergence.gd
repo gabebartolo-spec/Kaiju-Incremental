@@ -6,13 +6,16 @@ extends RefCounted
 ## bank (inside the arena), and then the run begins: the sim
 ## emits "kaiju_emerged" (the army's alert ramp starts from it). Until then nothing else
 ## happens: no clock, no stomps, no army. Only a run the game starts (Rampage.setup) emerges;
-## a RampageSim built on its own starts on land, as before.
+## a RampageSim built on its own starts on land, as before. The whole start never takes longer
+## than "emerge" "max_seconds": past it the kaiju steps onto the bank point at once, so nothing
+## (a bank point in the water, a wade that cannot finish) can stall a run before it begins.
 
 var active := false
 var _t := 0.0
 var _rise: float
 var _depth: float
 var _wade: float
+var _cap: float
 var _bed: float  # how far the river's water lies below the street (city "river_depth")
 var _spawn: Vector2
 var _bank: Vector2
@@ -24,6 +27,7 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_rise = Num.f(cfg["rise_seconds"])
 	_depth = Num.f(cfg["depth"])
 	_wade = Num.f(cfg["wade_speed"])
+	_cap = Num.f(cfg["max_seconds"])
 	_bed = Num.f(city.get("river_depth", 0.0))
 	var plan := CityGen.map(city)
 	_water = CityRiver.channels(plan, city)
@@ -52,6 +56,10 @@ func step(sim: RampageSim, dt: float) -> bool:
 	if not active:
 		return false
 	_t += dt
+	if _t >= _cap:  # never stalls: out on the bank, on its feet
+		sim.stand_y = 0.0
+		_land(sim, sim.clamp_to_arena(_bank))
+		return true
 	if _t < _rise:
 		var up := smoothstep(0.0, 1.0, _t / _rise)
 		sim.stand_y = lerpf(-_depth * sim.body_scale(), -_bed, up)  # up to wading depth
@@ -67,7 +75,11 @@ func step(sim: RampageSim, dt: float) -> bool:
 		sim.facing = sim.kaiju_pos.direction_to(bank) if sim.kaiju_pos != bank else sim.facing
 		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)
 		return true
+	_land(sim, bank)
+	return true
+
+
+func _land(sim: RampageSim, bank: Vector2) -> void:
 	sim.kaiju_pos = bank
 	active = false
 	sim.events.append({"type": "kaiju_emerged"})
-	return true

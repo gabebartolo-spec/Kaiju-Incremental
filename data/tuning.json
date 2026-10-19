@@ -202,7 +202,7 @@
 			"max_drawn": 36
 		}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0},
+	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0},
 	"city": {
 		"map_seed": 7301,
 		"half": 42,
@@ -267,6 +267,7 @@
 		"plaza_blocks": 0,
 		"river": true,
 		"river_depth": 1.6,
+		"river_inset": 2.0,
 		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1},
 		"diagonal_through": [-6, 4],
 		"diagonal_deg": 27,
