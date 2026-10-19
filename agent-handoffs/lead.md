@@ -8,6 +8,8 @@
 ## #89 lead call (D-099): align before merge (override removed), NOT merge-then-replace: the demo exe must not ship a rule he overruled.
 ##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
 ## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
+## retune-a DONE claude/young-retune 67e0b1a (e1 0.24 h, young defeats 5.4/12; body pr_body_retune.md in its worktree): PR after #89/#90 merge.
+## WP5 life-2 clips: tower 39293335670, swipe 39293938036, block 39294467556 (critic FIX 1-3 + rubble cap -> life 3).
 ## WP5 PR opens after life 3's fresh critic passes and the director sees the clips.
 ## Captures run in PARALLEL. claude/capture-fast 4af91b4 (no PR): --fast default (gl_compatibility llvmpipe, 960x540, 20 fps, no SSAO/glow; --full = old look); tower take 32 -> 19.8 min (run 39280140412), still readable. PR after #89 merges (needs capture_contact.gd). Director to delete tmp/capture-fast-test (worker delete refused).
 ## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
