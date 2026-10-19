@@ -20,8 +20,7 @@ Never ask the director to unblock messaging. Ask him the ask-the-director way: o
 #75 stall · #77 frame cap · #78 crowd killable · #79 stadium 1.5x · #80 rifle crack · #83 breath from snout ·
 #73/#74 lints · #76 stall probe · #81 less camera smoke · #84 faster run load (cache pruned per city) ·
 #87 ElevenLabs SFX (D-092) · #91 destruction spike · #92 Graphics Balanced + 60 at 4K (D-093) · #93 board.
-#82 sound gate (3 s timeout): lead resynced floors (load 15, flow 157) at 1df2233; CI was running at handover ->
-merge on green (`gh pr checks 82`), else read the red.
+#82 sound gate (3 s timeout) MERGED 0c70480 after a lead floors resync (load 15, flow 157).
 
 ## Open PRs and their next step (all into claude/look-options)
 - #89 croc contact (session "Kaiju: Croc contact + dash", local_1feb30ca): D-091 rework done (no TOO STRONG; dwarf
@@ -45,8 +44,8 @@ merge on green (`gh pr checks 82`), else read the red.
   the "miss" does 30 HP, laser tracer, gun audio 0.3 s late). #11 species motion, #3 look-options -> main: on hold.
 
 ## First moves on resume
-1. `gh pr checks 82` -> merge #82. 2. Wake croc session: finish #89 FIX 1-3, clips. 3. Tanks session: r6.
-4. River session: #88 FIX. 5. After #89/#90 merge: army session joint retune (#85). 6. Build exe 2, smoke, director.
+1. Wake croc session: finish #89 FIX 1-3, clips. 2. Tanks session: r6. 3. River session: #88 FIX.
+4. After #89/#90 merge: army session joint retune (#85). 5. Build exe 2, smoke, director.
 
 ## Sessions (names in the sidebar)
 Build "Kaiju: Load, smoke FX, builds" 37cf489b (handoff board.md in ../Kaiju-Incremental-wt/demo-smoke) · tanks 5325ef73 ·
@@ -66,7 +65,8 @@ C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe.
 ## Worktrees
 Pruned today: fps-cap, graphics, sfx-eleven, smoke, run-load, stall-probe, spawn-south, board-d094. Left: burst-shared
 (3 uncommitted), greenery (river, 1), jets (31 uncommitted), military-ai, sfx-gate, demo-smoke, integ-a/-export
-(detached), army-scales (remote branch gone; check before removing), lead-resync82 (remove after #82 merges).
+(detached), army-scales (remote branch gone; check before removing); sfx-gate can go (#82 merged). Local branch
+lead-resync82 left (branch -D was refused; don't launder).
 
 ## Merge rules
 Merge only decided work: lead 2x check (+ a fresh critic where visual), green CI at the exact head. The lead resyncs
