@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-19 (account handover)
-## State: PAUSED by the director. Whole team idle; nothing running. Resume = the "First moves" list below.
+## State: team ARCHIVED by the director for the account handover. Resume = the "First moves" list below.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)". Owns: QA gates + fresh critics, PR review + merge (squash,
@@ -61,6 +61,12 @@ six languages, Suno music (not bought). Proposal: split the shared floors file (
 SFX shootout: https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ · raw ElevenLabs takes:
 C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 · exe 1:
 C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe.
+
+## Team ARCHIVED (director, handover). Unarchive a session to resume it, or start fresh ones from their handoffs.
+Unsaved work left on disk (not lost, not pushed): ../Kaiju-Incremental-wt/greenery = 3 unpushed river commits
+(sunk canal + bridges + quay sheds, 7415767..680a603) + uncommitted data/tuning.json -> push before resuming #88;
+jets (11 uncommitted files), burst-shared (3, stadium shared-burst-mesh fix, never a PR). Auto-fix was on for #50,
+#85, #58, #61, #86, #88, #89, #90: it re-woke paused sessions on conflicts and red CI. Turn it off when pausing.
 
 ## Worktrees
 Pruned today: fps-cap, graphics, sfx-eleven, smoke, run-load, stall-probe, spawn-south, board-d094. Left: burst-shared
