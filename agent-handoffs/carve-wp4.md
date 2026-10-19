@@ -1,5 +1,5 @@
 # carve-wp4 handoff (builder, WP4 of real carving, D-094)
-## State: stopped at 200k (lead restarts); code, tests, bench, capture done; PR body left
+## State: WP4 complete; CI run 39343371928 on a4fe572 pending; capture docs/captures/2026-10-20-carve-view; pr_body_wp4.md written (untracked)
 ## Task
 WP4: draw a carved building from its fine grid (WP3 BuildingCells), 16^3 regions, remesh only touched
 regions on WorkerThreadPool, native mesher (WP2 extension) with GDScript oracle. Not wired into rampage (WP7).
