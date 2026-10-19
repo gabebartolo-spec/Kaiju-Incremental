@@ -1,16 +1,30 @@
 class_name RooftopAim
 extends RefCounted
 ## Where rooftop rifle rounds strike the kaiju (D-063, D-076), presentation only, for
-## RooftopView. A round strikes one of the trunk and head bones (TARGETS) nearest its shooter,
+## RooftopView. A round strikes one of the body bones (TARGETS) nearest its shooter,
 ## picked at random from the NEAREST few, on one of that bone's own shown voxels facing the
 ## shooter: a squad on the left hits the left flank, hits spread over the flank's width instead of
 ## stacking on one column, and a spark always sits on the hide (drawn over everything), never on
 ## the street. The tracer (depth-tested) vanishes into the hide where it meets it.
 
-## The bones a round may strike: the trunk, neck and head only. Never a limb (an arm hangs in the
-## body's shadow, off the silhouette from above) or the tail.
-const TARGETS: Array[String] = ["spine0", "spine1", "spine2", "head0", "head1"]
-const NEAREST := 3  # a round picks among this many of the TARGETS nearest its shooter
+## The bones a round may strike: trunk, head, legs and tail, all over the silhouette seen from
+## above. Never an arm: it hangs in the body's shadow, off the silhouette from above.
+const TARGETS: Array[String] = [
+	"spine0",
+	"spine1",
+	"spine2",
+	"head0",
+	"head1",
+	"leg_l0",
+	"leg_l1",
+	"leg_r0",
+	"leg_r1",
+	"tail0",
+	"tail1",
+	"tail2",
+	"tail3",
+]
+const NEAREST := 5  # a round picks among this many of the TARGETS nearest its shooter
 ## A voxel faces the shooter when its bearing from the bone (flat) is within this cosine of the
 ## shooter's.
 const FACING := 0.2
