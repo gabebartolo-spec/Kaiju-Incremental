@@ -4,7 +4,9 @@ extends RefCounted
 ## every step no standing chunk sits inside its body volume, for a building it outsizes (broken
 ## outright) and one that dwarfs it (chewed at a reduced rate while its wall holds the body). It
 ## topples a tier-2 tower by eating its base. Includes the player-effect fixture "kaiju.contact":
-## the same seeded walk with the body volume off leaves chunks inside the body (it phases).
+## the same seeded walk with the body volume off leaves chunks inside the body (it phases). The
+## runner's scripted rampage carries the body and no wall holds it long; the sweep's last sample
+## is the pose the hold reads; the "contact" tuning is valid.
 
 const DT := 1.0 / 30.0
 ## The scripted walk: forward into the building, a hard turn, then back out (steps).
@@ -13,15 +15,21 @@ const TURN_STEPS := 30
 const BACK_STEPS := 45
 ## The tower test: the baby chews across a tier-2 tower's base for at most this long (steps).
 const TOPPLE_STEPS := 30 * 60
+## A scripted young rampage: no wall holds the body longer than this at a stretch (a quarter of
+## its 40 s). A body stuck on a wall would hold for the rest of the run.
+const HOLD_LIMIT_S := 10.0
 
 var _check: Callable
 var _make: Callable
+var _autoplay: Callable
 
 
-## check: the runner's check; make(species, levels, run_index, tuning) -> RampageSim.
-func _init(p_check: Callable, make: Callable) -> void:
+## check: the runner's check; make(species, levels, run_index, tuning) -> RampageSim;
+## autoplay(sim) -> result, the runner's scripted player.
+func _init(p_check: Callable, make: Callable, autoplay: Callable) -> void:
 	_check = p_check
 	_make = make
+	_autoplay = autoplay
 
 
 func run() -> void:
@@ -57,6 +65,9 @@ func run() -> void:
 	)
 	_check.call(on == _walk(true, 1), "the walk through a building replays identically")
 	_check_topple()
+	_check_autoplay()
+	_check_sweep_end()
+	_check_contact_data()
 
 
 ## The nearest standing building of exactly this tier (no landmark) to the kaiju; `min_height`
@@ -83,6 +94,7 @@ func _walk(body: bool, tier: int) -> Dictionary:
 	if body:
 		sim.body.use_species("reptilian")
 	else:
+		sim.body.use_species("")  # no volume: the walk only measures it with the probe
 		probe = BodyContact.new(sim, Content.tuning())
 		probe.use_species("reptilian")
 	var b := sim.buildings[_nearest(sim, tier)]
@@ -146,3 +158,57 @@ func _check_topple() -> void:
 			% [b.height, fell, steps * DT, b.frame.alive_count, start, worst]
 		)
 	)
+
+
+## The runner's scripted rampage (determinism, upgrade effects, rooftops) runs with the body.
+func _check_autoplay() -> void:
+	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	var active := sim.body.active()
+	var result: Dictionary = _autoplay.call(sim)
+	_check.call(
+		active and sim.body.broken > 0 and sim.body.longest_hold <= HOLD_LIMIT_S,
+		(
+			(
+				"the scripted young rampage carries the body (%s), which breaks %d chunks; no wall"
+				+ " holds it over %.0f s at a stretch (longest %.2f s, ended by %s)"
+			)
+			% [active, sim.body.broken, HOLD_LIMIT_S, sim.body.longest_hold, result["reason"]]
+		)
+	)
+
+
+## The sweep's last sample is exactly the end pose the hold test reads, whatever the turn.
+func _check_sweep_end() -> void:
+	var off := 0
+	var to := Vector2(3.7, -11.3)
+	for deg: int in 360:
+		var from_heading := Vector2.from_angle(deg * 0.37)
+		var to_heading := Vector2.from_angle(deg_to_rad(deg))
+		var pose := BodyContact.sweep_pose(Vector2(1.1, 2.9), from_heading, to, to_heading, 1.0)
+		off += 0 if pose[0] == to and pose[1] == to_heading else 1
+	_check.call(
+		off == 0, "the sweep ends on the hold's pose for every turn, off for %d of 360" % off
+	)
+
+
+## The "contact" tuning: every rate positive, the pay share a fraction. A zero bite_dps would
+## leave a tower that dwarfs the body holding it forever (the D-091 "too strong" wall).
+func _check_contact_data() -> void:
+	var cfg: Dictionary = Content.tuning()["contact"]
+	var bad := cfg.duplicate()
+	bad["bite_dps"] = 0.0
+	_check.call(
+		contact_errors(cfg).is_empty() and "bite_dps" in str(contact_errors(bad)),
+		"the contact tuning is valid (%s) and a zero bite_dps is caught" % [contact_errors(cfg)]
+	)
+
+
+static func contact_errors(cfg: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	for key: String in ["bite_dps", "sample", "turn_rate"]:
+		if Num.f(cfg.get(key, 0.0)) <= 0.0:
+			out.append("%s must be > 0, is %s" % [key, cfg.get(key, 0.0)])
+	var pay := Num.f(cfg.get("pay_mult", -1.0))
+	if pay <= 0.0 or pay > 1.0:
+		out.append("pay_mult must be in (0, 1], is %s" % pay)
+	return out

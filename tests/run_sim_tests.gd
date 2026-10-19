@@ -27,7 +27,7 @@ func run_checks() -> void:
 	await _t("_check_species_differ")
 	await _t("_check_army")
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
-	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim).run())
+	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
 	await _t("_check_save_migrate")
 	await _t("_check_looks")
 	await _t("_check_growth")
@@ -51,6 +51,7 @@ func _sim(
 	var city: Dictionary = tune["city"]
 	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.body.use_species(species_id)
 	return sim
 
 
