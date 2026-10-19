@@ -1,10 +1,13 @@
 # Lead handoff, 2026-10-20 (lead session 4 of 10-20; next lead: read lines 1-12, then GitHub)
-## State: working. Lead 4 booted 2026-10-20; lead 3 archived. Builders are in-process subagents of lead 4 (die with it: respawn from handoffs).
+## State: lead 4 at 200k: no new work; hands off once its subagents report (they die with it). Successor: respawn any not reported from their handoffs. Builders are in-process subagents of lead 4 (die with it: respawn from handoffs).
 ## Team (subagents): carve-wp5 life 3 (Sonnet; critic fixes 1-4, re-capture; handoff ../Kaiju-Incremental-wt/carve-wp5/agent-handoffs/carve-wp5.md) ·
 ##  carve-wp4 (Opus med; view mesher, claude/carve-wp4, merges wp2+wp3) · carve-wp6 (Sonnet; landmarks, claude/carve-wp6, merges wp3) ·
 ##  croc-contact (Sonnet; #89 D-099: drop "fall away" override in sim/collapse.gd, sim_topple_read asserts cut side, CI capture) ·
 ##  review-wp1 / review-wp3 (Opus med, kaiju-sim-review of #97/#98) · critic-50 (motion critic, #50 r6 clip). WP4/WP6 cards task_2e6abbed/task_78d578ee superseded.
-## PRs: #97 WP1 d8174d4 · #98 WP3 631d1e0 · #99 WP2 c3c5fec (bodies: lead scratchpad body_wp*.md) · #100 board D-099 (merge-on-green watcher).
+## PRs: #97 WP1 d8174d4 (review-wp1 pending) · #98 WP3 631d1e0 review FIX (comment 6279562193) -> carve-wp3 life 2 fixing · #99 WP2 c3c5fec gdlint RED (run 39340822128): fix it · #100 board D-099 MERGED.
+## #98 lead call: panes/signs held by edge = material flag "fixture" in data/materials.json; fixture cells ground by 26-neighbour contact, structural 6-neighbour.
+##  WP1 must add that rule in sim/voxel_support.gd (batch with review-wp1's findings into one carve-wp1 life). Tank with no contact = generator fix (+BuildingVoxels).
+## #50 r6 critic FIX (lead-confirmed): overlays drawn ~90 px off the tanks, a parked hull ~20 deg off its street, a tank against the snout on screen -> military-ai r7 running.
 ## #89 lead call (D-099): align before merge (override removed), NOT merge-then-replace: the demo exe must not ship a rule he overruled.
 ##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
 ## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
