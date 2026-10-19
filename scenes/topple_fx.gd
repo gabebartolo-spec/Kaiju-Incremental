@@ -85,7 +85,7 @@ func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
 	_city.fx.dust(b + lift, Num.f(_cfg["impact_dust"]), dust)
 	_city.fx.dust(a.lerp(b, 0.6) + lift, Num.f(_cfg["impact_dust"]) * 0.7, dust)
 	_city.fx.dust_line(a, b, width, dust)
-	_breaking.append({"node": node, "t": 0.0, "basis": node.global_transform})
+	_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
 	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
 	_city.ruins().build(
@@ -95,12 +95,25 @@ func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
 	_chunks(parts, a, b, width)
 
 
+## A dropped part landed (the sim's fall_land): it crumbles down into the street over
+## drop_crumble_s with debris in waves instead of vanishing on the landing frame (PR #89 review,
+## capture 39277970463 frames 505-506).
+func crumble(node: Node3D) -> void:
+	_break_up(node, Num.f(_cfg["drop_crumble_s"]), Num.f(_cfg["drop_crumble_debris"]))
+
+
+func _break_up(node: Node3D, span: float, debris: float) -> void:
+	_breaking.append(
+		{"node": node, "t": 0.0, "basis": node.global_transform, "span": span, "debris": debris}
+	)
+
+
 func _process(delta: float) -> void:
-	var span := Num.f(_cfg["breakup_s"])
-	var per_s := Num.f(_cfg["impact_debris"]) / span
 	for i: int in range(_breaking.size() - 1, -1, -1):
 		var br: Dictionary = _breaking[i]
 		var node: Node3D = br["node"]
+		var span := Num.f(br["span"])
+		var per_s := Num.f(br["debris"]) / span
 		br["t"] = Num.f(br["t"]) + delta
 		var k := clampf(Num.f(br["t"]) / span, 0.0, 1.0)
 		if not is_instance_valid(node) or k >= 1.0:

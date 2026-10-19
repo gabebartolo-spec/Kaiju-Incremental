@@ -404,6 +404,8 @@
 		"crumble_dust": 0.8,
 		"breakup_s": 0.15,
 		"breakup_flatten": 0.25,
+		"drop_crumble_s": 0.6,
+		"drop_crumble_debris": 60,
 		"impact_debris": 160,
 		"impact_dust": 3.0,
 		"dust_lift": 1.0,

@@ -33,17 +33,20 @@ func settle(index: int) -> void:
 			lowest = mini(lowest, c.y)
 			highest = maxi(highest, c.y)
 		f.height = highest - lowest + 1
+		if f.kind == "drop" and b.landmark == "" and _gutted(b, f.cells, lowest, f.height):
+			f.kind = "topple"  # its whole base went at once: it goes over, it never pops
 		if f.kind == "topple":
 			if not _toppled_ids.has(index):
 				_toppled_ids[index] = true
 				toppled += 1
 			var dir: Vector2i = part["dir"]
 			var pivot: Vector3 = part["pivot"]
-			if sim.body.over(index):  # undermined by the body: it goes over away from the kaiju
-				var away := _away(Vector2(b.x, b.z) - sim.kaiju_pos, dir)
-				if away != dir:
-					pivot = _edge(f.cells, lowest, away)
-					dir = away
+			# D-096 readability: every topple goes over away from the kaiju (cardinal, like the
+			# structure's), from its far edge, so the player sees it fall and what it crushes.
+			var away := _away(_base_centre(b, f.cells, lowest) - sim.kaiju_pos, dir)
+			if away != dir or f.kind != str(part["kind"]):
+				pivot = _edge(f.cells, lowest, away)
+				dir = away
 			f.dir = Vector2(dir)
 			f.pivot = b.local_to_world(pivot)
 			f.duration = sqrt(2.0 * f.height / g) * 1.8
@@ -69,6 +72,36 @@ func settle(index: int) -> void:
 				}
 			)
 		)
+
+
+## A part with nothing under it that is taller than it is deep (its narrower side at its lowest
+## floor): a tower whose base the kaiju ate in one go. It topples instead of dropping a few floors
+## and vanishing whole (PR #89 review, capture 39277970463 frames 505-506).
+static func _gutted(
+	b: RampageSim.Building, cells: Array[Vector3i], lowest: int, height: int
+) -> bool:
+	var lo := Vector2i(9999, 9999)
+	var hi := Vector2i(-1, -1)
+	for c: Vector3i in cells:
+		if c.y != lowest:
+			continue
+		if b.frame.top_below(c.x, c.z, c.y) >= 0:
+			return false
+		lo = Vector2i(mini(lo.x, c.x), mini(lo.y, c.z))
+		hi = Vector2i(maxi(hi.x, c.x), maxi(hi.y, c.z))
+	return height > mini(hi.x - lo.x, hi.y - lo.y) + 1
+
+
+## The world centre of a part's lowest floor (ground plane).
+static func _base_centre(b: RampageSim.Building, cells: Array[Vector3i], lowest: int) -> Vector2:
+	var sum := Vector2.ZERO
+	var count := 0
+	for c: Vector3i in cells:
+		if c.y == lowest:
+			var p := b.chunk_world(c)
+			sum += Vector2(p.x, p.z)
+			count += 1
+	return sum / maxi(1, count)
 
 
 ## The level direction (one of the four, like Structure's) from the kaiju to the tower's base;
