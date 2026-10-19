@@ -28,6 +28,9 @@ var _spans: Dictionary = {}  # brick -> world AABB of its cells at spawn (a bric
 var _com := Vector3.ZERO  # world centre of mass at spawn = the body's origin at spawn
 var _follow := {}  # pivot, dir, duration, until, t (empty: not following)
 var _v_prev := Vector3.ZERO
+var _recent: Array[Vector4] = []  # (velocity, clock) over the last break_window seconds
+var _clock := 0.0
+var _stage := {}  # a break in progress: keys (bottom first), v, done, t
 var _still := 0.0
 var _cooldown := 0.0
 
@@ -83,12 +86,16 @@ func _physics_process(delta: float) -> void:
 	if not _follow.is_empty():
 		_step_follow(delta)
 		return
+	_clock += delta
+	if not _stage.is_empty():
+		_step_stage(delta)
+		return
 	_cooldown = maxf(0.0, _cooldown - delta)
 	var v := linear_velocity
-	var jolt := (_v_prev - v).length()
 	var speed := Num.f(_cfg["break_speed"])
-	if _cooldown == 0.0 and _v_prev.length() > speed and jolt > speed * Num.f(_cfg["break_jolt"]):
-		_break_low(_v_prev)
+	var hit := _hit(v, speed)
+	if _cooldown == 0.0 and hit.length() > 0.0:
+		_start_break(hit)
 		_cooldown = 0.1
 	_v_prev = linear_velocity
 	var spin := angular_velocity.length()
@@ -98,6 +105,25 @@ func _physics_process(delta: float) -> void:
 			_settle()
 	else:
 		_still = 0.0
+
+
+## The velocity the body had just before a hard hit, or ZERO: the fastest recent velocity above
+## `speed` that the body has since lost more than break_jolt of. Looking back break_window
+## seconds, not one step, catches a slab that lands on a pile and slows over several steps.
+func _hit(v: Vector3, speed: float) -> Vector3:
+	var window := Num.f(_cfg["break_window"])
+	_recent.append(Vector4(v.x, v.y, v.z, _clock))
+	while _recent[0].w < _clock - window:
+		_recent.pop_front()
+	var out := Vector3.ZERO
+	var worst := speed * Num.f(_cfg["break_jolt"])
+	for r: Vector4 in _recent:
+		var old := Vector3(r.x, r.y, r.z)
+		var lost := (old - v).length()
+		if old.length() > speed and lost > worst:
+			worst = lost
+			out = old
+	return out
 
 
 ## The kinematic turn: the angle grows with the square of time, as FallMotion and the sim's
@@ -131,10 +157,10 @@ func _settle() -> void:
 	settled.emit()
 
 
-## The bricks whose centres are within break_depth of the lowest one break into half-brick
-## pieces in their own material; neighbours of the gap are remeshed so no hole shows through.
-func _break_low(v: Vector3) -> void:
-	var t0 := Time.get_ticks_usec()
+## The bricks whose centres are within break_depth of the lowest one (all of a small remainder)
+## are lined up bottom first and let go over break_stage seconds, each in half-brick pieces in
+## its own material, so a slab crumbles from the foot up rather than bursting at once.
+func _start_break(v: Vector3) -> void:
 	var xf := global_transform
 	var centre := {}
 	var low := INF
@@ -143,25 +169,50 @@ func _break_low(v: Vector3) -> void:
 		centre[key] = y
 		low = minf(low, y)
 	var whole := _bricks.size() < Num.i(_cfg["break_whole_bricks"])
-	var broken: Array[Vector3i] = []
+	var keys: Array[Vector3i] = []
 	for key: Vector3i in _bricks:
 		if whole or Num.f(centre[key]) < low + Num.f(_cfg["break_depth"]):
-			broken.append(key)
+			keys.append(key)
+	keys.sort_custom(func(a: Vector3i, b: Vector3i) -> bool: return Num.f(centre[a]) < Num.f(centre[b]))
+	_stage = {"keys": keys, "v": v, "done": 0, "t": 0.0}
+	_step_stage(0.0)
+
+
+## Lets go the next share of the staged bricks; the last share frees an emptied island.
+func _step_stage(delta: float) -> void:
+	var t0 := Time.get_ticks_usec()
+	var t := Num.f(_stage["t"]) + delta
+	_stage["t"] = t
+	var keys: Array[Vector3i] = _stage["keys"]
+	var done := Num.i(_stage["done"])
+	var share := minf(1.0, t / maxf(0.01, Num.f(_cfg["break_stage"])))
+	var upto := keys.size() if share >= 1.0 else ceili(share * keys.size())
+	if upto <= done:
+		return
+	var xf := global_transform
+	var v: Vector3 = _stage["v"]
 	var pieces: Array[Dictionary] = []
 	var at := Vector3.ZERO
-	for key: Vector3i in broken:
+	var low := INF
+	for k: int in range(done, upto):
+		var key := keys[k]
 		_pieces_of(key, xf, v, pieces)
-		at += xf * (_brick_span(key).get_center() - _com)
+		var here := xf * (_brick_span(key).get_center() - _com)
+		at += here
+		low = minf(low, here.y)
 		_drop_brick(key)
-	at /= maxi(1, broken.size())
+	at /= upto - done
 	at.y = low
 	var touched := {}
-	for key: Vector3i in broken:
+	for k: int in range(done, upto):
 		for step: Vector3i in CarveMesh.STEPS:
-			if _bricks.has(key + step):
-				touched[key + step] = true
+			if _bricks.has(keys[k] + step):
+				touched[keys[k] + step] = true
 	for key: Vector3i in touched:
 		_mesh_brick(key)
+	_stage["done"] = upto
+	if upto >= keys.size():
+		_stage = {}
 	last_break_us = Time.get_ticks_usec() - t0
 	broke.emit(pieces, at)
 	if _bricks.is_empty():

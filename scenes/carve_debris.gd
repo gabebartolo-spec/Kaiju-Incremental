@@ -13,6 +13,12 @@ const SHRINK_MIN := 0.01  # a fading piece's last scale
 var raised := 0  # live pieces lifted out of the road so far (captures)
 var max_raise := 0.0  # the deepest of them
 
+var skid_max := 0.0  # how far a settled piece slid along the road from first touch, in its widths
+var dropped := 0  # rubble pieces dropped past rubble_cap so far
+var skid_sum := 0.0
+var skid_over := 0  # settled pieces that slid more than 5 of their widths
+var skid_n := 0
+
 var _cfg: Dictionary
 var _space: RID
 var _shapes: Dictionary = {}  # snapped size -> BoxShape3D (kept alive for its RID)
@@ -25,6 +31,7 @@ var _colors := PackedColorArray()
 var _still := PackedFloat32Array()
 var _age := PackedFloat32Array()
 var _fade := PackedFloat32Array()  # < 0: not fading; else seconds since it began to fade
+var _touch := PackedVector3Array()  # where it first met the road (y = NAN until it does)
 # Rubble, parallel arrays; an invalid RID is rubble with no collider left.
 var _rubble_rids: Array[RID] = []
 var _rubble := PackedFloat32Array()  # FLOATS per piece
@@ -80,6 +87,14 @@ func spawn(xf: Transform3D, size: Vector3, color: Color, motion: Array) -> void:
 	PhysicsServer3D.body_set_space(rid, _space)
 	PhysicsServer3D.body_set_param(rid, PhysicsServer3D.BODY_PARAM_MASS, m)
 	PhysicsServer3D.body_set_param(rid, PhysicsServer3D.BODY_PARAM_GRAVITY_SCALE, gravity)
+	PhysicsServer3D.body_set_param(rid, PhysicsServer3D.BODY_PARAM_LINEAR_DAMP_MODE, 1)  # replace
+	PhysicsServer3D.body_set_param(rid, PhysicsServer3D.BODY_PARAM_ANGULAR_DAMP_MODE, 1)
+	PhysicsServer3D.body_set_param(
+		rid, PhysicsServer3D.BODY_PARAM_LINEAR_DAMP, Num.f(_cfg["piece_linear_damp"])
+	)
+	PhysicsServer3D.body_set_param(
+		rid, PhysicsServer3D.BODY_PARAM_ANGULAR_DAMP, Num.f(_cfg["piece_angular_damp"])
+	)
 	PhysicsServer3D.body_set_enable_continuous_collision_detection(rid, true)
 	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM, xf)
 	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, v)
@@ -94,6 +109,7 @@ func _adopt(rid: RID, size: Vector3, color: Color) -> void:
 	_still.append(0.0)
 	_age.append(0.0)
 	_fade.append(-1.0)
+	_touch.append(Vector3(0, NAN, 0))
 
 
 ## The lowest point of any piece, live or rubble (the capture's through-the-ground check).
@@ -114,6 +130,17 @@ func sunk(y: float) -> int:
 		if _low(k) < y:
 			n += 1
 	return n
+
+
+## The fastest live piece's speed (captures).
+func fastest() -> float:
+	var top := 0.0
+	for k: int in _rids.size():
+		var v: Vector3 = PhysicsServer3D.body_get_state(
+			_rids[k], PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY
+		)
+		top = maxf(top, v.length())
+	return top
 
 
 ## Live piece k's lowest point.
@@ -206,6 +233,9 @@ func _physics_process(delta: float) -> void:
 			if low < floor_y:
 				_raise(rid, ground - low, v)
 				low = ground
+			_note_touch(k, low)
+			if low <= ground + Num.f(_cfg["ground_slop"]) * 3.0:
+				_drag(rid, v, w, delta)
 			_still[k] = _still[k] + delta if v.length() < rest_v and w.length() < rest_w else 0.0
 			if _still[k] >= rest_t:
 				_freeze(k)
@@ -214,6 +244,7 @@ func _physics_process(delta: float) -> void:
 
 func _process(_delta: float) -> void:
 	_draw_live()
+	_cap_rubble()
 	if _rubble_dirty:
 		_rubble_dirty = false
 		var n := _rubble_rids.size()
@@ -222,6 +253,22 @@ func _process(_delta: float) -> void:
 		buf.resize(_rubble_mm.instance_count * FLOATS)
 		_rubble_mm.buffer = buf
 		_rubble_mm.visible_instance_count = n
+
+
+## Past rubble_cap the oldest rubble (the bottom of the pile, under newer pieces) is dropped,
+## its collider with it, so one building's rubble MultiMesh stops growing.
+func _cap_rubble() -> void:
+	var over := _rubble_rids.size() - Num.i(_cfg["rubble_cap"])
+	if over <= 0:
+		return
+	for k: int in over:
+		if _rubble_rids[k].is_valid():
+			PhysicsServer3D.free_rid(_rubble_rids[k])
+			_statics -= 1
+	_rubble_rids = _rubble_rids.slice(over)
+	_rubble = _rubble.slice(over * FLOATS)
+	_rubble_dirty = true
+	dropped += over
 
 
 func _draw_live() -> void:
@@ -252,6 +299,26 @@ func _draw_live() -> void:
 	_live_mm.visible_instance_count = n
 
 
+## A piece on the road loses ground_drag of its sideways speed and spin a second: a cube that
+## lands rolls and skids a little, not across the street (the road's friction alone leaves it
+## tumbling for seconds).
+func _drag(rid: RID, v: Vector3, w: Vector3, delta: float) -> void:
+	var keep := maxf(0.0, 1.0 - Num.f(_cfg["ground_drag"]) * delta)
+	PhysicsServer3D.body_set_state(
+		rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, Vector3(v.x * keep, v.y, v.z * keep)
+	)
+	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_ANGULAR_VELOCITY, w * keep)
+
+
+## Remembers where piece k first met the road, for the skid figure.
+func _note_touch(k: int, low: float) -> void:
+	if is_nan(_touch[k].y) and low <= Num.f(_cfg["ground_y"]) + Num.f(_cfg["ground_slop"]) * 2.0:
+		var xf: Transform3D = PhysicsServer3D.body_get_state(
+			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
+		)
+		_touch[k] = Vector3(xf.origin.x, 0.0, xf.origin.z)
+
+
 ## A live piece pressed into the road (a small box under a pile: Jolt's position correction is
 ## soft, so it can sit up to a box deep in the ground) is lifted `by` onto it and stops sinking.
 ## The view is cosmetic, so a positional fix-up is honest; `raised` counts them for captures.
@@ -272,6 +339,13 @@ func _freeze(k: int) -> void:
 	var rid := _rids[k]
 	var xf: Transform3D = PhysicsServer3D.body_get_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM)
 	PhysicsServer3D.body_set_mode(rid, PhysicsServer3D.BODY_MODE_STATIC)
+	if not is_nan(_touch[k].y):
+		var slid := Vector2(xf.origin.x - _touch[k].x, xf.origin.z - _touch[k].z).length()
+		var width := maxf(_sizes[k].x, maxf(_sizes[k].y, _sizes[k].z))
+		skid_max = maxf(skid_max, slid / width)
+		skid_sum += slid / width
+		skid_n += 1
+		skid_over += 1 if slid > 5.0 * width else 0
 	var o := _rubble.size()
 	_rubble.resize(o + FLOATS)
 	_pack(_rubble, o, Transform3D(xf.basis.scaled_local(_sizes[k]), xf.origin), _colors[k])
@@ -295,6 +369,7 @@ func _drop(k: int) -> void:
 	_still.remove_at(k)
 	_age.remove_at(k)
 	_fade.remove_at(k)
+	_touch.remove_at(k)
 
 
 func _remove_floats(k: int) -> void:

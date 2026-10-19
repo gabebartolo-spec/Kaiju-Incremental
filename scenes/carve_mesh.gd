@@ -54,6 +54,11 @@ static func material() -> StandardMaterial3D:
 		_material = StandardMaterial3D.new()
 		_material.vertex_color_use_as_albedo = true
 		_material.roughness = 0.9
+		# A fill light: a face the sun and sky cannot reach (the inside of a gouge, a slab's
+		# underside) keeps a floor of light, so it reads as concrete, not a black hole.
+		var fill := Num.f(Content.section("carve_physics")["fill_light"])
+		_material.emission_enabled = fill > 0.0
+		_material.emission = Color(fill, fill, fill)
 	return _material
 
 

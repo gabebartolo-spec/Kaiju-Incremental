@@ -179,6 +179,48 @@ func raised() -> Array:
 	return [n, deepest]
 
 
+## Horizontal skid of settled pieces, in their own widths: [max, mean, count, over 5 widths] (captures).
+func skid() -> Array:
+	var worst := 0.0
+	var total := 0.0
+	var n := 0
+	var over := 0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		over += d.skid_over
+		worst = maxf(worst, d.skid_max)
+		total += d.skid_sum
+		n += d.skid_n
+	return [worst, total / maxi(1, n), n, over]
+
+
+## The most rubble pieces any one building holds.
+func rubble_max() -> int:
+	var most := 0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		most = maxi(most, d.rubble())
+	return most
+
+
+## Rubble pieces dropped past rubble_cap so far, city-wide.
+func rubble_dropped() -> int:
+	var n := 0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		n += d.dropped
+	return n
+
+
+## The fastest live piece's speed, city-wide.
+func live_speed() -> float:
+	var fastest := 0.0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		fastest = maxf(fastest, d.fastest())
+	return fastest
+
+
 func islands() -> Array[IslandBody]:
 	return _islands
 

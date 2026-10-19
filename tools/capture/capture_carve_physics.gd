@@ -33,7 +33,9 @@ var _stats := {
 	"live": [], "all": [], "wall": [], "phys": [], "proc": [], "sim": [], "gpu": [], "break": []
 }
 var _last_us := 0
+var _last_live_t := 0.0  # the last time any live piece or island body was still moving
 var _counts := {"islands": 0, "breaks": 0, "pieces": 0, "fires": 0}
+var _holds: Array[Dictionary] = []  # per island: when it last began to fall free or broke, and the gaps
 
 
 func _initialize() -> void:
@@ -178,6 +180,16 @@ func _blow(n: int, b: Dictionary, t: float) -> void:
 		print("ISLAND t=%.2f building=%d kind=%s cells=%d" % [t, n, event["kind"], cells.size()])
 		island.released.connect(func() -> void: _event("release", island.global_position))
 		island.broke.connect(_on_broke)
+		var hold := {"island": island, "t_peak": 0.0, "holds": [], "n": n}
+		_holds.append(hold)
+		island.released.connect(func() -> void: hold["t_peak"] = _frame / 30.0)
+		island.broke.connect(
+			func(_p: Array[Dictionary], _at: Vector3) -> void:
+				var held: Array = hold["holds"]
+				var now := _frame / 30.0
+				held.append([Num.f(hold["t_peak"]), now])
+				hold["t_peak"] = now
+		)
 
 
 func _on_broke(pieces: Array[Dictionary], at: Vector3) -> void:
@@ -226,6 +238,8 @@ func _shoot(t: float) -> void:
 
 
 func _record(sim_ms: float) -> void:
+	if _phys.live_bodies() > 0:
+		_last_live_t = _frame / 30.0
 	var vp := root.get_viewport_rid()
 	_push("live", _phys.live_bodies())
 	_push("all", _phys.all_bodies())
@@ -279,6 +293,35 @@ func _report() -> void:
 		)
 	)
 	print("  rubble=%d lowest=%.3f" % [_phys.rubble_pieces(), _phys.lowest_point()])
+	var skid := _phys.skid()
+	print("  SKID max %.1f widths, mean %.2f, over 5 widths %d of %d pieces" % [skid[0], skid[1], skid[3], skid[2]])
+	print(
+		(
+			"  RUBBLE per building max %d (cap %d), dropped %d"
+			% [
+				_phys.rubble_max(),
+				Num.i(Content.section("carve_physics").get("rubble_cap", 0)),
+				_phys.rubble_dropped(),
+			]
+		)
+	)
+	var live_speed := _phys.live_speed()
+	print("  LIVE at end %d, fastest %.3f, last live t=%.2f" % [_phys.live_bodies(), live_speed, _last_live_t])
+	for h: Dictionary in _holds:
+		var held: Array = h["holds"]
+		var worst := 0.0
+		var at := 0.0
+		for pair: Array in held:
+			var gap := Num.f(pair[1]) - Num.f(pair[0])
+			if gap > worst:
+				worst = gap
+				at = Num.f(pair[1])
+		print(
+			(
+				"  HOLD building %d: %d break steps, longest wait from release or the last break %.2f s (at t=%.2f)"
+				% [h["n"], held.size(), worst, at]
+			)
+		)
 	for key: String in _stats:
 		var a: Array = _stats[key]
 		if a.is_empty():
