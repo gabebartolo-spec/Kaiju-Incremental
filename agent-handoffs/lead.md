@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-20 (lead session 2 of 10-20 hit 200k; next lead: read this, then GitHub)
-## State: running a check. Old lead waits on croc-contact (#89), military-ai (#50), capture-fast (run 39280140412), ci-shards (branch claude/ci-shards), note9-check reports, then hands off.
+## State: running a check. Old lead waits on croc-contact (#89 capture 39277970463), military-ai (#50 re-capture 720p30), capture-fast (run 39280140412), young-retune (opus: local merge #89+#90+#85, baseline + 2-3 data-only retune options for the director; no push).
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## Captures run in PARALLEL (no concurrency group). 97% of capture time = software render, forward_plus on lavapipe (2-5 s/frame) although --renderer=gl_compatibility is our rule. Next: one test dispatch gl_compatibility + 960x540 + --fps=20 (est. 3-5 min vs 15-32); a --fast flag off SSAO/glow (scenes/city_view.gd:99-106). Motion reviews only; look sign-off stays on GPU.
 ## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
