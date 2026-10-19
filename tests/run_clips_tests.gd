@@ -24,13 +24,13 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_file()
-	await _check_who_uses_clips()
-	await _check_walk_phase()
-	await _check_turn_and_roar()
-	await _check_tail_lag()
-	await _check_tail_owner()
-	await _check_tail_slam()
+	await _t("_check_file")
+	await _t("_check_who_uses_clips")
+	await _t("_check_walk_phase")
+	await _t("_check_turn_and_roar")
+	await _t("_check_tail_lag")
+	await _t("_check_tail_owner")
+	await _t("_check_tail_slam")
 
 
 func _model(species: String, stage: String) -> KaijuModel:

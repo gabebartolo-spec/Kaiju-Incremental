@@ -74,6 +74,9 @@ func _process(delta: float) -> void:
 		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
 		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
 		_fade.update(camera.global_position, sight, delta)
+		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
+		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
+		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
 
 
 func _build_environment() -> void:
