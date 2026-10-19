@@ -129,7 +129,7 @@ jobs:
       - name: Run the suites in this shard
         env:
           SUITES: ${{ matrix.suites }}
-        run: SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
+        run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
 
       - name: Upload test logs
         if: failure()
@@ -158,7 +158,7 @@ jobs:
       - uses: ./.github/actions/setup-godot
 
       - name: Run the harness self-test
-        run: EXTRAS_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh
+        run: VERBOSE=1 EXTRAS_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh
 
       - name: Upload test logs
         if: failure()
@@ -190,7 +190,7 @@ jobs:
       - name: Run the slow suites
         env:
           SUITES: ${{ needs.plan.outputs.slow }}
-        run: SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
+        run: VERBOSE=1 SUITES_ONLY=1 GODOT="$HOME/godot/godot" LOG_DIR="$RUNNER_TEMP/test-logs" tools/run_tests.sh $SUITES
 
   # The required check. Its name stays "test" so branch protection never changes.
   test:

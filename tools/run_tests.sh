@@ -26,6 +26,7 @@
 #   GODOT=/path/to/godot tools/run_tests.sh          # everything
 #   SUITE_TIMEOUT=300 tools/run_tests.sh data smoke   # just some suites
 #   tools/run_tests.sh --quick data                   # the local loop: no re-import (QUICK=1 too)
+#   tools/run_tests.sh --verbose                      # every suite's line (VERBOSE=1 too)
 #   TIMINGS_FILE=tools/ci_timings.txt tools/run_tests.sh   # re-measure the CI shard plan
 #
 # Exits nonzero if anything failed.
@@ -40,11 +41,18 @@ RUNNER_DIR="${RUNNER_DIR:-tests}"
 # QUICK=1 skips the project import: the local loop after one full run, when only scripts
 # changed. CI and any asset change run the import.
 QUICK="${QUICK:-0}"
-# --quick as the first argument is the same as QUICK=1: the local one-suite loop.
-if [ "${1:-}" = "--quick" ]; then
-	QUICK=1
+# Quiet by default (director 2026-10-19): only failures and a one-line summary, so a run
+# costs an agent a few lines of context. VERBOSE=1 or --verbose prints every suite's line,
+# the import and the log dir. --quick is the same as QUICK=1: the local one-suite loop.
+VERBOSE="${VERBOSE:-0}"
+while [ "${1:-}" = "--quick" ] || [ "${1:-}" = "--verbose" ]; do
+	[ "$1" = "--quick" ] && QUICK=1
+	[ "$1" = "--verbose" ] && VERBOSE=1
 	shift
-fi
+done
+say() {  # a line printed only with VERBOSE=1
+	if [ "$VERBOSE" = 1 ]; then echo "$@"; fi
+}
 # SUITES_ONLY=1 skips the harness self-test after the suites.
 # EXTRAS_ONLY=1 runs only the self-test, no suites.
 # CI splits the work this way: shards run SUITES_ONLY, one job runs EXTRAS_ONLY.
@@ -82,11 +90,11 @@ note_error() {  # message
 	if [ "$in_ci" = 1 ]; then echo "::error::$1"; else echo "ERROR: $1"; fi
 }
 
-echo "== Godot: $("$GODOT" --headless --version 2> /dev/null | tail -1)"
+say "== Godot: $("$GODOT" --headless --version 2> /dev/null | tail -1)"
 if [ "$QUICK" = 1 ]; then
-	echo "== Quick: skipping the import (run once without QUICK=1 after asset changes)"
+	say "== Quick: skipping the import (run once without QUICK=1 after asset changes)"
 else
-echo "== Importing the project"
+say "== Importing the project"
 timeout "$IMPORT_TIMEOUT" "$GODOT" --headless --path . --editor --import > "$LOG_DIR/import.log" 2>&1
 import_code=$?
 if [ "$import_code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$LOG_DIR/import.log"; then
@@ -143,7 +151,9 @@ for suite in ${SUITES[@]+"${SUITES[@]}"}; do
 	if [ "$skipped" -gt 0 ]; then
 		detail="$detail ($skipped skipped on purpose)"
 	fi
-	printf '%-5s %-11s %4ss  %s\n' "$status" "$suite" "$secs" "$detail"
+	if [ "$VERBOSE" = 1 ] || [ "$status" = FAIL ]; then
+		printf '%-5s %-11s %4ss  %s\n' "$status" "$suite" "$secs" "$detail"
+	fi
 	if [ "$status" = FAIL ]; then
 		failed=1
 		note_error "suite '$suite' failed: $detail"
@@ -167,7 +177,7 @@ done
 # The harness checks itself: a test function that never ran or made no check must fail,
 # and an untyped declaration must not compile.
 if [ "$SUITES_ONLY" != 1 ] && [ "$#" -eq 0 ]; then
-	echo "== Harness self-test"
+	say "== Harness self-test"
 	if GODOT="$GODOT" tools/test_run_tests.sh > "$LOG_DIR/harness_selftest.log" 2>&1; then
 		summary+=("| harness_selftest | pass | |")
 	else
@@ -213,6 +223,11 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
 		printf '%s\n' "${summary[@]}"
 	} >> "$GITHUB_STEP_SUMMARY"
 fi
-echo "Logs: $LOG_DIR"
-[ "$failed" = 0 ] && echo "All checks passed." || echo "Some checks FAILED."
+n_suites=${#timings[@]}
+if [ "$failed" = 0 ]; then
+	say "Logs: $LOG_DIR"
+	echo "All checks passed ($n_suites suites)."
+else
+	echo "Some checks FAILED ($n_suites suites run). Logs: $LOG_DIR"
+fi
 exit "$failed"

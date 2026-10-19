@@ -20,6 +20,8 @@ time limit, and with no suite named also runs the harness self-test (`tools/test
 Every run gets its own temp user-data dir. `SUITES_ONLY=1` / `EXTRAS_ONLY=1` split the work the
 way CI does. The local loop: `tools/run_tests.sh --quick <suite>` skips the re-import after one
 full run (scripts changed, no assets). Run only the suites you touched; leave the full set to CI.
+Output is quiet by default: failures and one summary line; `--verbose` (or `VERBOSE=1`, as CI
+uses) prints every suite's line.
 
 - One Godot process per agent; never kill by image name; stop only your recorded PID.
 - A fresh worktree has no `.godot/`; its first run imports everything. Revert `*.import` churn
