@@ -7,6 +7,10 @@
 ## clips, opus), river-start (#88 push 3 commits + resync + FIX, sonnet), military-ai (#50 resync + r6, opus).
 ## D-095 (director 10-20): body made Claws useless -> Claws = CLAW SWIPE (forward rake every few s, levels =
 ## harder + wider; croc only for demo), built in #89 (fixes a/b/c pushed 6583607). Add D-095 to the board PR.
+## #88 r-FIX done, head 7f38eaf (channel, bridges, quay cars, check_look); CI only the 2 expected reds (wait #89).
+## Lead 2x PASS on capture run 39266482235 (rise/landed.png in ../Kaiju-Incremental-wt/greenery/ci-capture-out/
+## river/). Fresh sim reviewer "river-review" running (also proves check_look fail-first). Merge after #89.
+## Context guard hit 200k: no new work in this session; hand off to a fresh lead once these subagents report.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
 ## Who
