@@ -1,7 +1,7 @@
 # Lead handoff, 2026-10-20 (lead session 2 of 10-20 hit 200k; next lead: read this, then GitHub)
-## State: working. Running subagents of the OLD lead (report to it, not to you): croc-contact (#89 push+capture), military-ai (#50), capture-speed (read-only). Old lead hands off once they report.
+## State: running a check. Old lead waits on croc-contact (#89 capture 39277970463) + military-ai (#50, capture 39273121713 45+ min) reports, then hands off.
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
-## Captures may run in PARALLEL (capture.yml has no concurrency group; one-at-a-time rule retired 10-20). They take 15-32 min: capture-speed audit pending.
+## Captures run in PARALLEL (no concurrency group). 97% of capture time = software render, forward_plus on lavapipe (2-5 s/frame) although --renderer=gl_compatibility is our rule. Next: one test dispatch gl_compatibility + 960x540 + --fps=20 (est. 3-5 min vs 15-32); a --fast flag off SSAO/glow (scenes/city_view.gd:99-106). Motion reviews only; look sign-off stays on GPU.
 ## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
 ## #89: fixes + D-096 pushed by croc-contact (sha in PR; was local 7600273); capture run 39277970463 (--both: topple + swipe). NEXT: lead 2x (pop at impact gone?
 ##  croc visible? arm rake big, streaks fan from claw, break on rake frame), fresh motion critic, show director the swipe clip (ask-the-director), merge --match-head-commit full sha.
