@@ -10,6 +10,7 @@ static var _looks: Array[Dictionary] = []
 static var _look_id := ""
 static var _landmarks: Dictionary = {}
 static var _sports: Dictionary = {}
+static var _materials: Array[Dictionary] = []
 
 
 static func tuning() -> Dictionary:
@@ -54,6 +55,13 @@ static func sports() -> Dictionary:
 	return _sports
 
 
+## Building cell materials (data/materials.json, D-094): {id (the byte a fine grid cell
+## holds, 1..255; 0 is empty), name (its BuildingVoxels palette key), strength, debris}.
+static func materials() -> Array[Dictionary]:
+	_load()
+	return _materials
+
+
 static func looks() -> Array[Dictionary]:
 	_load()
 	return _looks
@@ -92,6 +100,7 @@ static func _load() -> void:
 	_look_id = str(load_json("res://data/looks.json").get("default", ""))
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
 	_sports = load_json("res://data/sports.json")
+	_materials = _list("res://data/materials.json", "materials")
 	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
 	var city: Dictionary = _tuning.get("city", {})
 	city["landmark_shapes"] = _landmarks
