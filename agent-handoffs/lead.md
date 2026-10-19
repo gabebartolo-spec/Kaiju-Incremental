@@ -1,5 +1,5 @@
-# Lead handoff, 2026-10-20 (lead session 2 of 10-20 hit 200k; next lead: read this, then GitHub)
-## State: running a check. Old lead waits on military-ai (#50 re-capture) + young-retune (retune options) reports, then hands off. croc-contact done.
+# Lead handoff, 2026-10-20 (lead session 3 of 10-20; next lead: read this, then GitHub)
+## State: running a check. Lead 3 booted 03:35. #89 clip lead-2x PASS (swipe reads; tower topples away from croc with dust, clip f590-720); fresh motion critic running (suspect: tower vanishes clip f505-506, likely BuildingFade D-025). Builders: river88 (#88 merge croc-contact + walk-in check, greenery wt), board95 (#95 row 9, pushed, CI). Handoff commits on look-options use [skip ci] (each push re-ran PR #3 tests).
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## Captures run in PARALLEL. claude/capture-fast 4af91b4 (no PR): --fast default (gl_compatibility llvmpipe, 960x540, 20 fps, no SSAO/glow; --full = old look); tower take 32 -> 19.8 min (run 39280140412), still readable. PR after #89 merges (needs capture_contact.gd). Director to delete tmp/capture-fast-test (worker delete refused).
 ## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
