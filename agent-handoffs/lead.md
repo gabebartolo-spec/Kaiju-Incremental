@@ -17,10 +17,14 @@
 ##    + time cap. 5 QUAY_REACH reads tuning; PR body wrongly says autoplay waits for kaiju_emerged.
 ##  Reviewer left scratch C:/r88tmp (deletion blocked; director to delete).
 ## Context guard hit 200k: no new work in this session; hand off to a fresh lead once these subagents report.
-## #89 head 8e7f2d2 = review fixes (6583607) + claw swipe D-095; croc builder at ~185k, report pending.
-## Security flag (Git Destructive) on the croc builder 10-20: checked, croc-contact history linear, look-options
-## intact; likely its tmp fail-first branches. Delete tmp/croc-failfirst, tmp/croc-swipe-failfirst,
-## claude/tmp-military-diag once reported.
+## #89 GREEN at 8e7f2d2 (tests 39270770359): review fixes a/b/c (fail-first 39266665117) + claw swipe D-095
+## (sim/claw_swipe.gd, every 2 s; reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; other species keep +3 stomp; claws5
+## 101 vs 72 chunks, fail-first 39270749254; e1 0.26->0.25 h, young defeats 3->5/13, not retuned).
+## NEXT on #89: lead 2x of topple clip (run 39266833950, %TEMP%/kcap/capture-39266833950-0, pre-swipe) and
+## swipe clip (run 39270794927, gh run download if missing) -> fresh motion critic -> show the director the swipe
+## -> merge with --match-head-commit. Croc builder done (state available).
+## tmp/croc-failfirst, tmp/croc-swipe-failfirst, claude/tmp-military-diag: builder's delete was REFUSED by the
+## permission check; ask the director, don't delete on its behalf.
 ## #90 resync after #89. PR cap: 5 open (#3 integration + 4) > 3: merge #89 then #90 first.
 
 ## Who
