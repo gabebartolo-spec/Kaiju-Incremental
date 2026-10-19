@@ -18,7 +18,6 @@
 ## WP5 life-2 clips: tower 39293335670, swipe 39293938036, block 39294467556 (critic FIX 1-3 + rubble cap -> life 3).
 ## WP5 PR opens after life 3's fresh critic passes and the director sees the clips.
 ## Captures run in PARALLEL. claude/capture-fast 4af91b4 (no PR): --fast default (gl_compatibility llvmpipe, 960x540, 20 fps, no SSAO/glow; --full = old look); tower take 32 -> 19.8 min (run 39280140412), still readable. PR after #89 merges (needs capture_contact.gd). Director to delete tmp/capture-fast-test (worker delete refused).
-##  Swipe adds only ~4% mean destruction (5-seed); joint young retune is the director's after #89/#90. 21-frame spikes = stomps, swipe 2.0 s (no bug).
 ## #88 head dca0e988cd4f34c640c2349fc40699c0a40032b3: re-review PASS + notes a/b done. Only 2 expected city reds (tier gate). After #89 merges: resync, CI, merge.
 ## #95 board PR (docs: playtest chapter docs/roadmap/2026-10-19-director-playtest.md, D-095, D-096), head 6662b7d: check lint, merge.
 ##  Playtest notes with no PR: 9 (small buildings south of spawn not destructible = tier gate, should clear with #89 + #88 river check: verify in play), 12 destruction option A (after exe 2).
