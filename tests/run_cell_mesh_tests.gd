@@ -29,6 +29,8 @@ const CARVE_AT: Array[Vector3] = [
 ]
 const CARVE_R: Array[float] = [5.0, 7.0, 6.0, 4.0, 3.0]
 
+const CellFaces := preload("res://tests/lib/cell_faces.gd")
+
 var _native := false
 
 
@@ -74,45 +76,11 @@ func _fixture(name: String) -> Array:
 
 func _mesher(f: Array, use_native: bool) -> CellMesher:
 	var b := _building(f)
-	return CellMesher.new(BuildingVoxels.new(b, Color("8a7f72"), _party(f)), BuildingCells.new(b, _party(f)), use_native)
-
-
-## Empties every cell whose centre is in the sphere (KaijuCarve's rule); returns the box it
-## touched as [lo, hi].
-func _carve(cells: PackedByteArray, dims: Vector3i, centre: Vector3, radius: float) -> Array[Vector3i]:
-	var lo := Vector3i(floori(centre.x - radius), floori(centre.y - radius), floori(centre.z - radius))
-	var hi := Vector3i(ceili(centre.x + radius), ceili(centre.y + radius), ceili(centre.z + radius))
-	lo = lo.max(Vector3i.ZERO)
-	hi = hi.min(dims - Vector3i.ONE)
-	for y: int in range(lo.y, hi.y + 1):
-		for z: int in range(lo.z, hi.z + 1):
-			for x: int in range(lo.x, hi.x + 1):
-				var p := Vector3(x + 0.5, y + 0.5, z + 0.5) - centre
-				if p.length_squared() <= radius * radius:
-					cells[x + z * dims.x + y * dims.x * dims.z] = 0
-	return [lo, hi] as Array[Vector3i]
-
-
-## Face key -> colour, for every quad of these arrays (key: first corner on a 1/64 grid, normal).
-func _faces(arrays: Array, into: Dictionary) -> void:
-	var verts: PackedVector3Array = arrays[0]
-	var normals: PackedVector3Array = arrays[1]
-	var colors: PackedColorArray = arrays[2]
-	for q: int in range(0, verts.size(), 4):
-		into[[Vector3i((verts[q] * 64.0).round()), Vector3i(normals[q])]] = colors[q]
-
-
-func _colour(faces: Dictionary, key: Array) -> Color:
-	var c: Color = faces[key]
-	return c
-
-
-## A baked mesh stores vertex colour in 8 bits a channel (truncated, clamped to 1): one step
-## apart at most once clamped, as the GPU sees both.
-func _same_colour(raw: Color, b: Color) -> bool:
-	var a := raw.clamp()
-	var e := 1.0 / 255.0
-	return absf(a.r - b.r) <= e and absf(a.g - b.g) <= e and absf(a.b - b.b) <= e and absf(a.a - b.a) <= e
+	return CellMesher.new(
+		BuildingVoxels.new(b, Color("8a7f72"), _party(f)),
+		BuildingCells.new(b, _party(f)),
+		use_native
+	)
 
 
 func _part(view: CellView, r: Vector3i) -> MeshInstance3D:
@@ -120,47 +88,14 @@ func _part(view: CellView, r: Vector3i) -> MeshInstance3D:
 	return part
 
 
-func _mesh_faces(mesh: ArrayMesh, into: Dictionary) -> void:
-	if mesh != null and mesh.get_surface_count() > 0:
-		var a := mesh.surface_get_arrays(0)
-		_faces([a[Mesh.ARRAY_VERTEX], a[Mesh.ARRAY_NORMAL], a[Mesh.ARRAY_COLOR], a[Mesh.ARRAY_INDEX]], into)
-
-
-func _cell_faces(m: CellMesher, cells: PackedByteArray) -> Dictionary:
-	var out := {}
-	for r: Vector3i in m.all_regions():
-		_faces(m.mesh_region(cells, r), out)
-	return out
-
-
-func _solid(cells: PackedByteArray) -> int:
-	return cells.size() - cells.count(0)
-
-
-## Solid-to-air boundaries of a grid (each must be exactly one drawn face).
-func _boundaries(m: CellMesher, cells: PackedByteArray) -> int:
-	var dims := m.dims
-	var n := 0
-	for i: int in cells.size():
-		if cells[i] == 0:
-			continue
-		var c := Vector3i(i % dims.x, i / (dims.x * dims.z), (i / dims.x) % dims.z)
-		for d: Vector3i in CellMesher.NEIGHBOURS:
-			var o := c + d
-			if o.y + m.offset.y < 0:
-				continue
-			if o.x < 0 or o.y < 0 or o.z < 0 or o.x >= dims.x or o.y >= dims.y or o.z >= dims.z:
-				n += 1
-			elif cells[o.x + o.z * dims.x + o.y * dims.x * dims.z] == 0:
-				n += 1
-	return n
-
-
 func _check_native_loaded() -> void:
 	if _native:
 		check(true, "the KaijuMesher class is registered by the extension")
 	elif OS.get_environment("KAIJU_NATIVE_REQUIRED") == "1":
-		check(false, "native library is required here (KAIJU_NATIVE_REQUIRED=1) but KaijuMesher is not registered")
+		check(
+			false,
+			"native library is required here (KAIJU_NATIVE_REQUIRED=1) but KaijuMesher is not registered"
+		)
 	else:
 		print("SKIP: KaijuMesher is not registered; build native/ to run the native checks")
 		check(true, "native library not built: native checks skipped on purpose")
@@ -176,15 +111,15 @@ func _check_matches_baked_view() -> void:
 		var cells := BuildingCells.new(b, _party(f))
 		var m := CellMesher.new(voxels, cells, false)
 		var old := {}
-		_mesh_faces(baked.shell, old)
-		_mesh_faces(baked.slabs, old)
-		var now := _cell_faces(m, cells.cells)
+		CellFaces.mesh_faces(baked.shell, old)
+		CellFaces.mesh_faces(baked.slabs, old)
+		var now := CellFaces.cell_faces(m, cells.cells)
 		var missing := 0
 		var recoloured := 0
 		for key: Array in old:
 			if not now.has(key):
 				missing += 1
-			elif not _same_colour(_colour(now, key), _colour(old, key)):
+			elif not CellFaces.same_colour(CellFaces.colour(now, key), CellFaces.colour(old, key)):
 				recoloured += 1
 		var extra := 0
 		var stray := 0
@@ -201,15 +136,27 @@ func _check_matches_baked_view() -> void:
 			var corner := Vector3(at) / 64.0
 			var centre := corner - m._corners[CellMesher.NEIGHBOURS.find(normal)][0]
 			var lift := Vector3(0, BuildingVoxels.VOXEL * 0.5, 0)  # the baked cells' centre height
-			var local := Vector3i(((centre - voxels.origin() - lift) / BuildingVoxels.VOXEL).round()) + normal
+			var local := (
+				Vector3i(((centre - voxels.origin() - lift) / BuildingVoxels.VOXEL).round())
+				+ normal
+			)
 			var inside := local.x >= 1 and local.x <= w - 2 and local.z >= 1 and local.z <= d - 2
 			if not (inside and local.y >= 0 and local.y < h - 1):
 				stray += 1
 		check(
 			missing == 0 and recoloured == 0,
-			"%s: every baked face is drawn in its colour (%d missing, %d recoloured of %d)" % [f[0], missing, recoloured, old.size()]
+			(
+				"%s: every baked face is drawn in its colour (%d missing, %d recoloured of %d)"
+				% [f[0], missing, recoloured, old.size()]
+			)
 		)
-		check(stray == 0 and extra > 0, "%s: the only extra faces look into the hollow (%d extra, %d stray)" % [f[0], extra, stray])
+		check(
+			stray == 0 and extra > 0,
+			(
+				"%s: the only extra faces look into the hollow (%d extra, %d stray)"
+				% [f[0], extra, stray]
+			)
+		)
 
 
 ## After the carve sequence every solid cell meets air through exactly one face per side:
@@ -218,13 +165,22 @@ func _check_closed_surface_after_carves() -> void:
 	for name: String in ["office", "glass"]:
 		var m := _mesher(_fixture(name), false)
 		var cells := BuildingCells.new(_building(_fixture(name)), {}).cells
-		var solid := _solid(cells)
+		var solid := CellFaces.solid(cells)
 		for k: int in CARVE_AT.size():
-			_carve(cells, m.dims, CARVE_AT[k], CARVE_R[k])
-		var faces := _cell_faces(m, cells)
-		var bounds := _boundaries(m, cells)
-		check(_solid(cells) < solid, "%s: the carves removed cells (%d -> %d)" % [name, solid, _solid(cells)])
-		check(faces.size() == bounds, "%s: one face per solid-air boundary (%d faces, %d boundaries)" % [name, faces.size(), bounds])
+			CellFaces.carve(cells, m.dims, CARVE_AT[k], CARVE_R[k])
+		var faces := CellFaces.cell_faces(m, cells)
+		var bounds := CellFaces.boundaries(m, cells)
+		check(
+			CellFaces.solid(cells) < solid,
+			"%s: the carves removed cells (%d -> %d)" % [name, solid, CellFaces.solid(cells)]
+		)
+		check(
+			faces.size() == bounds,
+			(
+				"%s: one face per solid-air boundary (%d faces, %d boundaries)"
+				% [name, faces.size(), bounds]
+			)
+		)
 
 
 ## A carve inside one block remeshes that block only; one across a block corner remeshes the
@@ -235,26 +191,41 @@ func _check_only_touched_regions() -> void:
 	var view := CellView.new(m, cells, StandardMaterial3D.new())
 	view.flush()
 	var total := m.all_regions().size()
-	check(view.remeshed == total, "the first build meshes every block (%d of %d)" % [view.remeshed, total])
+	check(
+		view.remeshed == total,
+		"the first build meshes every block (%d of %d)" % [view.remeshed, total]
+	)
 	var meshes := {}
 	for r: Vector3i in view.parts:
 		meshes[r] = _part(view, r).mesh
 	cells = cells.duplicate()
-	var box := _carve(cells, m.dims, Vector3(8.0, 40.0, 1.0), 3.0)  # inside block (0, 2, 0)
+	var box := CellFaces.carve(cells, m.dims, Vector3(8.0, 40.0, 1.0), 3.0)  # inside block (0, 2, 0)
 	view.carved(cells, box[0], box[1])
 	view.flush()
-	check(view.last_batch == [Vector3i(0, 2, 0)], "a carve inside one block remeshes it alone: %s" % [view.last_batch])
+	check(
+		view.last_batch == [Vector3i(0, 2, 0)],
+		"a carve inside one block remeshes it alone: %s" % [view.last_batch]
+	)
 	var kept := 0
 	for r: Vector3i in meshes:
 		if r != Vector3i(0, 2, 0) and view.parts.has(r) and _part(view, r).mesh == meshes[r]:
 			kept += 1
-	check(kept == meshes.size() - 1, "every other block keeps its mesh (%d of %d)" % [kept, meshes.size() - 1])
+	check(
+		kept == meshes.size() - 1,
+		"every other block keeps its mesh (%d of %d)" % [kept, meshes.size() - 1]
+	)
 	cells = cells.duplicate()
-	box = _carve(cells, m.dims, Vector3(16.0, 16.0, 16.0), 2.0)  # on a block corner
+	box = CellFaces.carve(cells, m.dims, Vector3(16.0, 16.0, 16.0), 2.0)  # on a block corner
 	view.carved(cells, box[0], box[1])
 	view.flush()
-	check(view.last_batch.size() == 8, "a carve on a block corner remeshes the 8 blocks round it (%d)" % view.last_batch.size())
-	check(view.remeshed == total + 9, "nine blocks remeshed in all for the two carves (%d)" % (view.remeshed - total))
+	check(
+		view.last_batch.size() == 8,
+		"a carve on a block corner remeshes the 8 blocks round it (%d)" % view.last_batch.size()
+	)
+	check(
+		view.remeshed == total + 9,
+		"nine blocks remeshed in all for the two carves (%d)" % (view.remeshed - total)
+	)
 	view.free()
 
 
@@ -271,7 +242,7 @@ func _check_incremental_equals_fresh() -> void:
 		var off := 0
 		for k: int in CARVE_AT.size():
 			cells = cells.duplicate()
-			var box := _carve(cells, m.dims, CARVE_AT[k], CARVE_R[k])
+			var box := CellFaces.carve(cells, m.dims, CARVE_AT[k], CARVE_R[k])
 			view.carved(cells, box[0], box[1])
 			if not queued:
 				view.flush()
@@ -280,7 +251,9 @@ func _check_incremental_equals_fresh() -> void:
 		off += _stale_blocks(m, view, cells)
 		var how := "queued on a running batch" if queued else "each drawn before the next"
 		check(view.settled(), "the view has drawn every carve (%s)" % how)
-		check(off == 0, "every block shows a fresh mesh of the grid, carves %s (%d off)" % [how, off])
+		check(
+			off == 0, "every block shows a fresh mesh of the grid, carves %s (%d off)" % [how, off]
+		)
 		view.free()
 
 
@@ -308,17 +281,26 @@ func _check_native_matches_oracle() -> void:
 	for f: Array in FIXTURES:
 		var oracle := _mesher(f, false)
 		var fast := _mesher(f, true)
-		check(fast.native != null and oracle.native == null, "%s: one path native, one GDScript" % f[0])
+		check(
+			fast.native != null and oracle.native == null,
+			"%s: one path native, one GDScript" % f[0]
+		)
 		var cells := BuildingCells.new(_building(f), _party(f)).cells
 		for step: int in CARVE_AT.size() + 1:
 			if step > 0:
-				_carve(cells, oracle.dims, CARVE_AT[step - 1], CARVE_R[step - 1])
+				CellFaces.carve(cells, oracle.dims, CARVE_AT[step - 1], CARVE_R[step - 1])
 			for r: Vector3i in oracle.all_regions():
 				blocks += 1
 				var a := CellMesher.digest(oracle.mesh_region_gd(cells, r))
 				if a != CellMesher.digest(fast.mesh_region(cells, r)):
 					off += 1
-	check(off == 0, "native == GDScript on %d blocks of %d fixtures, uncarved and through the carves (%d off)" % [blocks, FIXTURES.size(), off])
+	check(
+		off == 0,
+		(
+			"native == GDScript on %d blocks of %d fixtures, uncarved and through the carves (%d off)"
+			% [blocks, FIXTURES.size(), off]
+		)
+	)
 
 
 ## Promoted, a building draws from its grid with the baked shader, and BuildingFade's
@@ -329,13 +311,21 @@ func _check_promote_keeps_fade() -> void:
 	var view := BuildingView.new(b, Color("8a7f72"), _party(f))
 	var cv := view.promote(BuildingCells.new(b, _party(f)))
 	cv.flush()
-	check(view.promote(BuildingCells.new(b, _party(f))) == cv, "promoting twice keeps one cell view")
+	check(
+		view.promote(BuildingCells.new(b, _party(f))) == cv, "promoting twice keeps one cell view"
+	)
 	check(cv.parts.size() > 0, "the promoted building has region meshes (%d)" % cv.parts.size())
 	var mat := cv.material as ShaderMaterial
-	check(mat != null and mat.shader == BuildingView.SHADER, "the region meshes use the baked building shader")
+	check(
+		mat != null and mat.shader == BuildingView.SHADER,
+		"the region meshes use the baked building shader"
+	)
 	view.set_opacity(0.4)
 	var opacity: Variant = mat.get_shader_parameter("opacity")
-	check(opacity is float and is_equal_approx(Num.f(opacity), 0.4), "set_opacity (BuildingFade) reaches the cell view")
+	check(
+		opacity is float and is_equal_approx(Num.f(opacity), 0.4),
+		"set_opacity (BuildingFade) reaches the cell view"
+	)
 	var shown := 0
 	for child: Node in view.get_children():
 		if child is MeshInstance3D and (child as MeshInstance3D).visible:
