@@ -23,6 +23,8 @@ var coats: Dictionary = {}
 ## The cephalopod's limbs: hydra strikes, grab and throw (Tentacles).
 var tentacles: Tentacles
 var tail_sweeps := 0
+## The reptilian's claw rake (Claws, D-095).
+var swipe: ClawSwipe
 ## Chunks broken by tail sweeps themselves (not what falls after).
 var tail_cut := 0
 var _rng: RandomNumberGenerator
@@ -37,6 +39,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	cfg = sim.powers_cfg
 	_rng = rng
 	tentacles = Tentacles.new(sim, rng)
+	swipe = ClawSwipe.new(sim, cfg)
 
 
 func _bs() -> float:
@@ -121,6 +124,7 @@ func after_move(dt: float, old_facing: Vector2, moving: bool) -> void:
 		_tail_sweep(signf(old_facing.cross(sim.facing)))
 	_climb(dt)
 	_ram(dt)
+	swipe.step(dt)
 
 
 ## Stomp (and ram) damage multiplier from momentum.

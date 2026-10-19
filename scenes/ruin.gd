@@ -84,9 +84,12 @@ static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 
 
 ## The pile a toppled tower leaves along the street: chunky voxels in its own colours, a floor or
-## two high along the middle of the strip, thinning at the edges.
+## two high along the middle of the strip, thinning at the edges. cfg (the "topple_fx" tuning,
+## optional): rubble_block cells per colour block and per lump step, rubble_lump (floors a block
+## rises or sinks), rubble_tint/rubble_tint_mix (pale concrete, so the heap stands out of the
+## dark street).
 static func strip(
-	voxels: BuildingVoxels, from: Vector3, to: Vector3, width: float
+	voxels: BuildingVoxels, from: Vector3, to: Vector3, width: float, cfg: Dictionary = {}
 ) -> MultiMeshInstance3D:
 	if voxels is LandmarkVoxels:  # a ragged heap against the stub, in the model's colours
 		return LandmarkRubble.heap(voxels as LandmarkVoxels, from, to, width)
@@ -98,16 +101,31 @@ static func strip(
 	var side := Vector3(-dir.z, 0, dir.x)
 	var cells := roundi(length * RES)
 	var half := roundi(width * 0.5 * RES) + 1
+	var blk: Array = cfg.get("rubble_block", [3, 2, 3])
+	var bx := Num.f(blk[0])
+	var by := Num.f(blk[1])
+	var bz := Num.f(blk[2])
+	var lump := Num.f(cfg.get("rubble_lump", 0.0)) * RES
 	for t: int in cells:
 		for s: int in range(-half, half + 1):
 			var across := absf(float(s)) / half
+			# Big blocks rise or sink together, so the heap reads as slabs, not voxel noise.
+			var slab := Vector2i(floori(t / bx), floori(s / bz))
+			var step := (float(absi(hash(slab)) % 3) - 1.0) * lump
 			var h := roundi(
-				RES * 1.6 * (1.0 - across * across) + float(absi(hash(Vector2i(t, s))) % 3)
+				RES * 1.6 * (1.0 - across * across) + step + float(absi(hash(Vector2i(t, s))) % 2)
 			)
 			var p := from + dir * (t / float(RES)) + side * (s / float(RES))
 			var base := Vector3i((p / BuildingVoxels.VOXEL).round())
 			for y: int in maxi(1, h):
-				var block := Vector3i(floori(t / 3.0), floori(y / 2.0), floori(s / 3.0))
+				var block := Vector3i(slab.x, floori(y / by), slab.y)
 				vox.put(base + Vector3i(0, y, 0), keys[absi(hash(block)) % keys.size()])
 	vox.salt = 57
-	return vox.build(rubble_palette(voxels), BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
+	var palette := rubble_palette(voxels)
+	if cfg.has("rubble_tint"):
+		var tint := Color(str(cfg["rubble_tint"]))
+		for key: String in palette:
+			if key != "ember":
+				var c: Color = palette[key]
+				palette[key] = Color(c.lerp(tint, Num.f(cfg["rubble_tint_mix"])), c.a)
+	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
