@@ -42,6 +42,16 @@ const ARM_BRACE := 0.25
 const ARM_BRACE_MAX := 0.2
 const ARM_OMEGA := 18.0
 const ARM_ZETA := 0.9
+## Claw rake (Claws, D-095): one arm lifts up and out, rakes forward and down across the chest,
+## then hangs again; the shares of RAKE_SECONDS at which the lift and the strike end.
+const RAKE_SECONDS := 0.45
+const RAKE_LIFT := 0.25
+const RAKE_STRIKE := 0.5
+const ARM_UPPER_RAKE := Vector3(0.5, 0.25, -0.8)
+const ARM_FORE_RAKE := Vector3(0.3, 0.75, -0.6)
+const ARM_UPPER_ACROSS := Vector3(-0.35, -0.45, -0.85)
+const ARM_FORE_ACROSS := Vector3(-0.55, -0.35, -0.75)
+const ARM_HAND_ACROSS := Vector3(-0.45, -0.55, -0.7)
 
 var rig: KaijuRig
 ## The pelvis's drop speed (hip heights/s) and how young the body is (0..1), set each frame.
@@ -55,6 +65,8 @@ var _whip := 0.0  # 1 -> 0 over a tail whip
 var _whip_side := 1.0
 var _arm_swing := Vector2.ZERO
 var _arm_brace := Vector2.ZERO
+var _rake := 0.0  # 1 -> 0 over a claw rake
+var _rake_side := 1.0
 
 
 func _init(p_rig: KaijuRig) -> void:
@@ -80,6 +92,16 @@ func whip(side: float) -> void:
 	_whip_side = side
 
 
+## A species power's strike to one side (-1 left, +1 right): limb "claw" rakes that arm (Claws),
+## anything else whips the tail.
+func strike(limb: String, side: float) -> void:
+	if limb == "claw":
+		_rake = 1.0
+		_rake_side = side
+	else:
+		whip(side)
+
+
 ## Runs the whip down by dt (a gait that poses the tail itself calls this, then whip_yaw()).
 func tick_whip(dt: float) -> void:
 	_whip = maxf(0.0, _whip - dt / WHIP_SECONDS)
@@ -95,6 +117,7 @@ func whip_yaw(i: int) -> float:
 
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 	tick_whip(dt)
+	_rake = maxf(0.0, _rake - dt / RAKE_SECONDS)
 	var tail := rig.chain_named("tail0")
 	if tail != null:
 		var n := tail.drive.size()
@@ -159,9 +182,34 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 			swing * ARM_FORE.lerp(ARM_FORE_ROAR, roar),
 			swing * ARM_HAND,
 		]
+		if _rake > 0.0 and out == _rake_side:
+			dirs = _rake_dirs(1.0 - _rake)
 		for i: int in names.size():
 			var n := names[i]
 			var from := rig.bone(n).global_position
 			var length := (rig.tail_world(n) - from).length()
 			var d := (dirs[i] * Vector3(out, 1, 1)).normalized()
 			rig.aim(n, from, from + body * d * length)
+
+
+## The raking arm's upper, fore and hand directions at t (0..1) through the rake.
+func _rake_dirs(t: float) -> Array[Vector3]:
+	var rest: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
+	var up: Array[Vector3] = [ARM_UPPER_RAKE, ARM_FORE_RAKE, ARM_FORE_RAKE]
+	var across: Array[Vector3] = [ARM_UPPER_ACROSS, ARM_FORE_ACROSS, ARM_HAND_ACROSS]
+	var from := rest
+	var to := up
+	var k := t / RAKE_LIFT
+	if t >= RAKE_STRIKE:
+		from = across
+		to = rest
+		k = (t - RAKE_STRIKE) / (1.0 - RAKE_STRIKE)
+	elif t >= RAKE_LIFT:
+		from = up
+		to = across
+		k = (t - RAKE_LIFT) / (RAKE_STRIKE - RAKE_LIFT)
+	k = smoothstep(0.0, 1.0, k)
+	var out: Array[Vector3] = []
+	for i: int in rest.size():
+		out.append(from[i].lerp(to[i], k))
+	return out

@@ -239,8 +239,8 @@ func _check_rampage() -> void:
 
 
 ## Each signature attack plays its own effect; the upgraded kaiju also shows its upgrades
-## (cracking stomps, ready pulse, glancing shells, healing motes) and a plain one does not crack
-## the street.
+## (cracking stomps, or the croc's claw swipe (D-095), ready pulse, glancing shells, healing
+## motes) and a plain one does not crack the street.
 func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void:
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(
@@ -255,13 +255,16 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	rampage.sfx.live = true  # past the start gate (FlowSfx.gate checks the gate itself)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = [
-		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
-	]
+	var swipes := Num.f(stats.get("swipe_damage", 0.0)) > 0.0
+	# Claws sounds as the swipe's rake for the croc, as heavier, cracking stomps for the others.
+	var cues: Array[String] = ["ready", "deflect", "regen_loop", "tank_fire"]
+	cues.append_array(["lash"] if swipes else ["stomp_2", "stomp_crack"])
+	var marks: Array[String] = ["swipe" if swipes else "cracks", "ready", "deflect", "regen"]
+	var powers: PowersView = rampage.get("_powers")
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
-		want.append_array(["cracks", "ready", "deflect", "regen"])
+		want.append_array(marks)
 	var jets := 0
 	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
 	var aim := {}  # BreathAim against the sim's cone, every frame
@@ -271,7 +274,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		FlowBreath.track_aim(rampage, aim)
-		if want.all(func(k: String) -> bool: return played.has(k)):
+		if want.all(func(k: String) -> bool: return played.has(k) or powers.played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
@@ -296,8 +299,11 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
 	else:
-		for k: String in ["cracks", "ready", "deflect", "regen"]:
-			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
+		for k: String in marks:
+			check(
+				played.has(k) or powers.played.has(k),
+				"the upgraded %s shows %s: %s" % [species_id, k, played + powers.played]
+			)
 		check(
 			cues.all(func(c: String) -> bool: return heard.has(c)),
 			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]

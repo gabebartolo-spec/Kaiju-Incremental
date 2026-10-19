@@ -5,7 +5,8 @@ extends Node3D
 ## events and state; decides nothing. Part of Rampage.
 ##
 ## Rig hooks (agreed with kaiju-motion, called only when the model has them):
-## tail_sweep(side), grab(limb, at), throw(toward), limb_tip(limb), jaw_open(open), climbing(on).
+## tail_sweep(side[, "claw"]), grab(limb, at), throw(toward), limb_tip(limb), jaw_open(open),
+## climbing(on).
 
 const INK := Color("7dff3a")
 const EGG := Color("e8dcb8")
@@ -103,6 +104,13 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_city.ring(kaiju_at, Num.f(event["reach"]), UiKit.WARN, 0.35)
 			var behind := kaiju_at - _w(sim.facing) * Num.f(event["reach"]) * 0.7
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
+		"swipe":
+			_hook("tail_sweep", [Num.f(event["side"]), "claw"])
+			ClawSlash.play(self, kaiju_at, _w(sim.facing), event, _tint)
+			if sfx != null:
+				sfx.play("lash")
+			var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
+			_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
 		"beam_start":
 			_hook("jaw_open", [true])
 			_beam = _box(Vector3.ONE, _tint.lightened(0.5))

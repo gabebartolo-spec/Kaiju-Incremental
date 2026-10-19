@@ -138,10 +138,10 @@ func set_grip_finder(finder: Callable) -> void:
 
 
 ## Species-power hooks (no-ops on a body without the limb):
-## a fast tail whip to one side (-1 left, +1 right) - the reptilian.
-func tail_sweep(side: float) -> void:
+## a fast tail whip to one side (-1 left, +1 right), or limb "claw": an arm's rake - the reptilian.
+func tail_sweep(side: float, limb: String = "tail") -> void:
 	if _rig != null and _rig.gait is BipedGait:
-		(_rig.gait as BipedGait).swing.whip(side)
+		(_rig.gait as BipedGait).swing.strike(limb, side)
 
 
 ## The maw held open (the beam) or shut again - the reptilian.

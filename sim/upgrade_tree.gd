@@ -88,14 +88,14 @@ func levels_total() -> int:
 
 
 ## Base stats with every bought level's effects added.
-func apply(base: Dictionary) -> Dictionary:
+func apply(base: Dictionary, species_id: String = "") -> Dictionary:
 	var out: Dictionary = base.duplicate()
 	for id: String in order:
 		var owned := level(id)
 		if owned == 0:
 			continue
 		var def: Dictionary = defs[id]
-		var effects: Dictionary = def.get("effects", {})
+		var effects := effects_for(def, species_id)
 		for stat: String in effects:
 			out[stat] = Num.f(out.get(stat, 0.0)) + Num.f(effects[stat]) * owned
 	return out
@@ -137,7 +137,21 @@ static func run_stats(base: Dictionary, species: Dictionary, tree: UpgradeTree) 
 	var own: Dictionary = species.get("stats", {})
 	for stat: String in own:
 		stats[stat] = Num.f(own[stat])
-	var out := tree.apply(stats)
+	var out := tree.apply(stats, str(species.get("id", "")))
 	out["growth"] = float(tree.levels_owned())
 	out["stage_growth"] = float(tree.levels_owned_at_tier(Num.i(out.get("size", 1))))
 	return out
+
+
+## An upgrade's effects for a species: its "species_effects" entry when it has one (Claws rakes
+## for the reptilian and stomps harder for the others, D-095), else its "effects".
+static func effects_for(def: Dictionary, species_id: String) -> Dictionary:
+	var own: Dictionary = def.get("species_effects", {})
+	var effects: Dictionary = own.get(species_id, def.get("effects", {}))
+	return effects
+
+
+## An upgrade's description for a species: its "species_desc" entry when it has one, else "desc".
+static func desc_for(def: Dictionary, species_id: String) -> String:
+	var own: Dictionary = def.get("species_desc", {})
+	return str(own.get(species_id, def.get("desc", "")))

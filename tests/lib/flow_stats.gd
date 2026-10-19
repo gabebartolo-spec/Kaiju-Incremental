@@ -33,12 +33,12 @@ static func plain(runner: SceneTree, check: Callable, screen: UpgradeScreen) -> 
 			if entry.get("hidden", false):
 				continue
 			var node_def: Dictionary = screen.tree.defs[id]
-			var node_effects: Dictionary = node_def.get("effects", {})
+			var node_effects := UpgradeTree.effects_for(node_def, str(screen.species["id"]))
 			var changes := node_effects.has(key)
 			if shown.contains(str(entry["line"])) != changes:
 				wrong.append("%s %s %s" % [id, "misses" if changes else "shows", key])
 		var def: Dictionary = screen.tree.defs[id]
-		var effects: Dictionary = def.get("effects", {})
+		var effects := UpgradeTree.effects_for(def, str(screen.species["id"]))
 		for key: String in effects:
 			if not lines.has(key):
 				wrong.append("%s: no stat_text line for %s" % [id, key])

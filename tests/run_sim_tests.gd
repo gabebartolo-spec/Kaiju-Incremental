@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
+const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -28,6 +29,7 @@ func run_checks() -> void:
 	await _t("_check_army")
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
+	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
 	await _t("_check_save_migrate")
 	await _t("_check_looks")
 	await _t("_check_growth")
@@ -125,8 +127,8 @@ func _check_tree() -> void:
 		Content.section("kaiju"), Content.species_def("reptilian"), _tree({"claws": 2})
 	)
 	check(
-		is_equal_approx(Num.f(stats["stomp_damage"]), 16.0),
-		"two levels of claws add 6 stomp power to a reptilian's 10, got %s" % stats["stomp_damage"]
+		is_equal_approx(Num.f(stats["swipe_damage"]), 18.0),
+		"two levels of claws add 10 swipe power to a reptilian's 8, got %s" % stats["swipe_damage"]
 	)
 	var clamped := _tree({"claws": 99, "ghost": 3})
 	check(
@@ -248,15 +250,6 @@ func _check_determinism() -> void:
 
 
 func _check_upgrade_effects() -> void:
-	var base := _autoplay(_sim("reptilian", {}))
-	var claws := _autoplay(_sim("reptilian", {"claws": 5}))
-	check(
-		Num.f(claws["destruction"]) > Num.f(base["destruction"]) * 1.15,
-		(
-			"five levels of claws break clearly more of the city (%.3f vs %.3f)"
-			% [Num.f(claws["destruction"]), Num.f(base["destruction"])]
-		)
-	)
 	# Thick hide so both runs last to the clock: a defeat would end them at the same moment.
 	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5, "rage": 5}))
 	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5}))

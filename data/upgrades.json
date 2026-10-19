@@ -1,7 +1,9 @@
 {
 	"upgrades": [
-		{"id": "claws", "name": "Sharpened Claws", "desc": "Stomps hit harder.", "pos": [0, 1], "max_level": 5,
-			"cost": [15, 91, 178, 330, 584], "requires": [], "effects": {"stomp_damage": 3}},
+		{"id": "claws", "name": "Sharpened Claws", "desc": "Your claws rake what is ahead, harder and wider.",
+			"species_desc": {"insectoid": "Stomps hit harder.", "cephalopod": "Stomps hit harder."}, "pos": [0, 1], "max_level": 5,
+			"cost": [15, 91, 178, 330, 584], "requires": [], "effects": {"swipe_damage": 5, "swipe_width": 0.35},
+			"species_effects": {"insectoid": {"stomp_damage": 3}, "cephalopod": {"stomp_damage": 3}}},
 		{"id": "hide", "name": "Thick Hide", "desc": "More health.", "pos": [0, 3], "max_level": 5,
 			"cost": [15, 91, 178, 330, 584], "requires": [], "effects": {"hp": 20}},
 		{"id": "stride", "name": "Long Stride", "desc": "Move faster.", "pos": [1, 0], "max_level": 4,
