@@ -32,6 +32,13 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/vsync/vsync_mode=2
 
+[shader_globals]
+
+smoke_focus={
+"type": "float",
+"value": 0.0
+}
+
 [gui]
 
 theme/custom_font="res://assets/fonts/kaiju_block.ttf"

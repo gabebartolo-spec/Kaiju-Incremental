@@ -2,15 +2,24 @@ class_name CityDecor
 extends Node3D
 ## Street life on the street plan (CityGen.map): cars parked along the kerbs, streetlights at
 ## the crossings and down the long blocks, trees in the park, round the plaza and along the
-## diagonal avenue, and parking lots full of cars. All seeded, all voxels; cars, trees and
-## lights flatten under the kaiju's feet. Presentation only.
+## diagonal avenue, and parking lots full of cars; street trees down the avenues, gardens and
+## a playground in every park, hedges and flowers in the front yards (D-065). All seeded, all
+## voxels; cars, trees, bushes, flowers, swings and lights flatten under the kaiju's feet.
+## Presentation only.
 
 const PROP_VOXEL := 0.25
 const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
+## Half the footprint of car(): 3 voxels across and 6 long (PROP_VOXEL), along its street.
+const CAR_HALF := Vector2(0.375, 0.75)
+const TREE_CELL := 4.0  # street-tree spots are filed by ground cell of this size
 
 var sim: RampageSim
 var plan: Dictionary
+## D-065 greenery counts (CityGreenery.green), for the city suite and the report.
+var green: Dictionary = {}
+var cars: Array[Rect2] = []  # every car's ground footprint, parked or stopped
+var trampling := true  # off only for a before/after capture of the same frame
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
 var _half: float
@@ -20,6 +29,13 @@ var _lamps: Array[OmniLight3D] = []
 var _footprints: Array[Rect2] = []
 var _water: Array[Rect2] = []  # the river and its bridges (CityRiver): no car parks, no lamp
 var _paints := 0  # how many car paints
+var _walked := Vector2(INF, INF)  # where the kaiju stood last frame (trample)
+var _kaiju: KaijuModel  # the drawn kaiju (found once), whose body tramples what it covers
+var _foot := Rect2()  # its ground box in its own frame: x across, y along (model z)
+var _fx := Fx.new()  # puffs where trees are crushed
+var _lamp_spots: Array[Vector2] = []
+var _park_trees: Array[Vector2] = []
+var _tree_cells := {}  # Vector2i cell -> the street-tree kerb spots in it
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -46,9 +62,19 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
+	# The street trees' kerb spots first, so the parking leaves room for them (D-065).
+	var greenery := CityGreenery.new(self, _rng)
+	for spot: Vector2 in greenery.kerb_spots():
+		var cell := Vector2i((spot / TREE_CELL).floor())
+		var in_cell: Array = _tree_cells.get(cell, [])
+		in_cell.append(spot)
+		_tree_cells[cell] = in_cell
 	_streets()
 	_blocks()
 	_diagonal_trees()
+	# D-065 greenery planted last, so the cars and trees before it keep their RNG draws.
+	greenery.plant()
+	green = greenery.green
 	var palette := {
 		"glass": Color("2b3640"),
 		"wheel": Color("1a1a1a"),
@@ -63,12 +89,51 @@ func _ready() -> void:
 	var paints := car_colors()
 	for i: int in paints.size():
 		palette["car%d" % i] = paints[i]
+	palette.merge(CityGreenery.PALETTE)
 	add_child(_props.build(palette, 31, 3.0))
+	_props.configure(sim.city)
+	add_child(_fx)
+	add_child(_props.leaf_field)
+	add_child(_props.bark_field)
+
+
+## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so
+## a walk leaves a continuous trampled path (D-065): every prop whose base lies under the drawn
+## body's ground box (the model's own, at its stage, species, scale and facing; the middle
+## city.trample_share of it, as the splayed feet and tail tip only reach its corners). A tree
+## bursts into debris on the frame it is crushed, with an earth puff at its stump. On the
+## ground only; presentation only, the sim never knows.
+func _process(_delta: float) -> void:
+	var at := sim.kaiju_pos
+	if at != _walked and _walked.x != INF and not sim.airborne and trampling and _found_kaiju():
+		var body := _kaiju.global_transform
+		_props.crush_box(body, _foot)
+		var into := body.affine_inverse()
+		for lamp: OmniLight3D in _lamps.duplicate():
+			var local := into * Vector3(lamp.position.x, body.origin.y, lamp.position.z)
+			if _foot.has_point(Vector2(local.x, local.z)):
+				_lamps.erase(lamp)
+				lamp.queue_free()
+	_walked = at
+	_props.throw(_fx)
+
+
+## Finds the drawn kaiju beside this city and its ground box (KaijuFootprint); false where
+## there is none (stills, tests).
+func _found_kaiju() -> bool:
+	if is_instance_valid(_kaiju) and _foot.has_area():
+		return true
+	_kaiju = KaijuFootprint.find(self)
+	if _kaiju == null:
+		return false
+	_foot = KaijuFootprint.of(_kaiju, sim.size_tier(), Num.f(sim.city["trample_share"]))
+	return _foot.has_area()
 
 
 ## Flattens props under a stomp.
 func crush(at: Vector3, radius: float) -> void:
-	_props.crush(at, radius)
+	if trampling:
+		_props.crush(at, radius)
 	for lamp: OmniLight3D in _lamps.duplicate():
 		if Vector2(lamp.position.x - at.x, lamp.position.z - at.z).length() <= radius:
 			_lamps.erase(lamp)
@@ -130,12 +195,20 @@ func _streets() -> void:
 					)
 					var seen := _inside(p, _view - _half)
 					var roll := _rng.randf()
-					var parked := roll < (chance if playable else chance_beyond)
-					if parked and not on_diagonal and seen and not _on_building(p):
+					var half := Vector2(CAR_HALF.y, CAR_HALF.x) if along_x else CAR_HALF
+					var body := Rect2(p - half, half * 2.0)
+					if (
+						roll < (chance if playable else chance_beyond)
+						and not on_diagonal
+						and seen
+						and not _on_building(p)
+						and _clear_of_trees(body)
+					):
 						_props.add(
 							Vector3(p.x, 0, p.y),
 							func(v: VoxelBuilder) -> void: car(v, color, along_x)
 						)
+						cars.append(body)
 					t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
 		if not playable:
 			continue  # past the edge: cars only (each lamp is a real light)
@@ -153,11 +226,36 @@ func _streets() -> void:
 			t2 += LAMP_EVERY
 
 
+## Park trees keep city.park_tree_spacing apart (about a crown's width of lawn between them),
+## so a park reads as a lawn with trees and not as a wood (critic on #55).
+func _lawn_round(p: Vector2) -> bool:
+	var spacing := Num.f(sim.city["park_tree_spacing"])
+	for tree: Vector2 in _park_trees:
+		if tree.distance_to(p) < spacing:
+			return false
+	return true
+
+
+## No street tree's trunk within city.street_tree_car_clear of a car body (the parking slot
+## drops instead).
+func _clear_of_trees(body: Rect2) -> bool:
+	var reach := Num.f(sim.city["street_tree_car_clear"])
+	var lo := Vector2i(((body.position - Vector2.ONE * reach) / TREE_CELL).floor())
+	var hi := Vector2i(((body.end + Vector2.ONE * reach) / TREE_CELL).floor())
+	for cx: int in range(lo.x, hi.x + 1):
+		for cy: int in range(lo.y, hi.y + 1):
+			for spot: Vector2 in _tree_cells.get(Vector2i(cx, cy), []):
+				if spot.clamp(body.position, body.end).distance_to(spot) < reach:
+					return false
+	return true
+
+
 ## A streetlight at p whose arm reaches toward `toward` (over the road), with a real light.
 func _lamp(p: Vector2, toward: Vector2) -> void:
 	if _on_building(p):
 		return
 	var arm := Vector2i(roundi(signf(toward.x)), roundi(signf(toward.y)))
+	_lamp_spots.append(p)
 	_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _streetlight(v, arm))
 	var light := OmniLight3D.new()
 	light.light_color = Color("ffd59a")
@@ -175,13 +273,16 @@ func _blocks() -> void:
 		match str(block["use"]):
 			"park":
 				var inner := rect.grow(-1.6)
+				var play := CityGreenery.playground_pad(rect, sim.city).grow(0.5)
 				for n: int in roundi(rect.get_area() / 9.0):
 					var p := Vector2(
 						_rng.randf_range(inner.position.x, inner.end.x),
 						_rng.randf_range(inner.position.y, inner.end.y)
 					)
-					if absf(p.x - rect.get_center().x) > 1.2:  # a path down the middle
-						_props.add(Vector3(p.x, 0, p.y), _tree)
+					var on_path := absf(p.x - rect.get_center().x) <= 1.2  # a path down the middle
+					if not on_path and not play.has_point(p) and _lawn_round(p):
+						_props.add(Vector3(p.x, 0, p.y), _tree, true)
+						_park_trees.append(p)
 			"plaza", "landmark":  # trees round the plaza (round a landmark too)
 				var ring := rect.grow(-1.2)
 				var t := 0.0
@@ -189,7 +290,7 @@ func _blocks() -> void:
 					for edge: int in 4:
 						var p := _on_edge(ring, edge, t)
 						if not _on_building(p):
-							_props.add(Vector3(p.x, 0, p.y), _tree)
+							_props.add(Vector3(p.x, 0, p.y), _tree, true)
 					t += 0.2
 			"parking":
 				var bays := rect.grow(-0.6)
@@ -237,7 +338,7 @@ func _diagonal_trees() -> void:
 				if _on_building(p) or (_near_street(p) if city else _on_road(p)):
 					continue
 				if off == kerb or _rng.randf() < 0.45:
-					_props.add(Vector3(p.x, 0, p.y), _tree)
+					_props.add(Vector3(p.x, 0, p.y), _tree, true)
 		t += 4.0
 
 

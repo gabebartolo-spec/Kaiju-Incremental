@@ -1,10 +1,15 @@
 extends SceneTree
 ## Base for every suite runner. A suite is one file, tests/run_<suite>_tests.gd, that
 ## starts with `extends "res://tests/lib/runner.gd"`, overrides suite_name() and
-## run_checks(), and calls check() once per check. The base prints
-## "<Suite> tests: N checks, M failures" (tools/run_tests.sh reads that line) and quits
-## non-zero when any check failed.
+## run_checks(), keeps its tests in `_check_*` methods that run_checks() calls through
+## `await _t("_check_name")` (and tests/lib helpers through `await _h(...)`), and calls
+## check() once per check. The base prints "<Suite> tests: K of M functions, N checks,
+## F failures" (tests/lib/functions_ran.gd; tools/run_tests.sh reads that line) and quits
+## non-zero when any check failed. A `_check_*` method never called, or a test that made no
+## check, is a failure by name; there is no floor file to keep (director 2026-10-19).
 ##   godot --headless --path . --script tests/run_<suite>_tests.gd
+
+const Ran := preload("res://tests/lib/functions_ran.gd")
 
 var _checks: int = 0
 var _failures: Array[String] = []
@@ -18,7 +23,7 @@ func _start() -> void:
 	# Autoloads are in the tree once the first frame has run.
 	await process_frame
 	await run_checks()
-	print("%s tests: %d checks, %d failures" % [suite_name(), _checks, _failures.size()])
+	print(Ran.line(suite_name(), self))
 	quit(0 if _failures.is_empty() else 1)
 
 
@@ -27,9 +32,19 @@ func suite_name() -> String:
 	return "Unnamed"
 
 
-## Each suite overrides this. It may await (scene checks wait for frames).
+## Each suite overrides this: one `await _t("_check_x")` per test function.
 func run_checks() -> void:
 	await process_frame
+
+
+## Runs one test function; it must make at least one check (tests/lib/functions_ran.gd).
+func _t(test: String, args: Array = []) -> Variant:
+	return await Ran.one(self, test, args)
+
+
+## Runs one tests/lib helper; it must make at least one check.
+func _h(label: String, run: Callable) -> void:
+	await Ran.helper(self, label, run)
 
 
 ## Records one check. `expectation` says what should be true; a failure prints

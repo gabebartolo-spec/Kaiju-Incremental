@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Splits the Godot suites across CI shards from measured times, so no list of suites or
+# shards is kept by hand (director 2026-10-19, github-hygiene §4). Suites are found by
+# filename (tests/run_<suite>_tests.gd). tools/ci_timings.txt holds "<suite> <seconds>"
+# lines from a recent run and one "shards <n>" line; a suite with no timing yet counts as
+# DEFAULT_SECS. Longest suite first, each into the lightest shard. Aim for a PR run of
+# about 10-12 minutes: raise "shards" when the heaviest shard passes about 8 minutes.
+#
+#   tools/plan_ci_shards.sh            # print the plan
+#   tools/plan_ci_shards.sh --matrix   # the GitHub matrix as JSON (tests.yml plan job)
+#   tools/plan_ci_shards.sh --slow     # the "pr_skip" suites: pushes to main only
+#
+# Re-measure at least weekly and after adding a slow suite:
+#   TIMINGS_FILE=tools/ci_timings.txt tools/run_tests.sh
+set -u
+mode="${1:-}"
+cd "$(dirname "$0")/.." || exit 1
+TIMINGS="${CI_TIMINGS:-tools/ci_timings.txt}"
+DEFAULT_SECS="${DEFAULT_SECS:-60}"
+
+skip=" $(awk '$1 == "pr_skip" {for (i = 2; i <= NF; i++) printf "%s ", $i}' "$TIMINGS" 2> /dev/null)"
+if [ "$mode" = "--slow" ]; then
+	echo "${skip# }" | xargs
+	exit 0
+fi
+rows=""
+for runner_file in tests/run_*_tests.gd; do
+	[ -e "$runner_file" ] || continue
+	suite="${runner_file#tests/run_}"
+	suite="${suite%_tests.gd}"
+	case "$skip" in *" $suite "*) continue ;; esac
+	secs=$(awk -v s="$suite" '$1 == s {print $2}' "$TIMINGS" 2> /dev/null | head -1)
+	rows+="$suite ${secs:-$DEFAULT_SECS}"$'\n'
+done
+if [ -z "$rows" ]; then
+	echo "ERROR: no tests/run_*_tests.gd suites" >&2
+	exit 1
+fi
+shards=$(awk '$1 == "shards" {print $2}' "$TIMINGS" 2> /dev/null | head -1)
+
+printf '%s' "$rows" | sort -k2,2nr -k1,1 | awk -v n="${shards:-1}" -v mode="$mode" '
+	{ name[NR] = $1; secs[NR] = $2 }
+	END {
+		if (n < 1) n = 1
+		if (n > NR) n = NR
+		for (i = 1; i <= NR; i++) {
+			best = 1
+			for (j = 2; j <= n; j++) if (load[j] < load[best]) best = j
+			load[best] += secs[i]
+			list[best] = list[best] (list[best] == "" ? "" : " ") name[i]
+		}
+		if (mode == "--matrix") {
+			out = "{\"include\":["
+			for (j = 1; j <= n; j++) out = out (j > 1 ? "," : "") "{\"shard\":\"" j "\",\"suites\":\"" list[j] "\"}"
+			print out "]}"
+		} else {
+			for (j = 1; j <= n; j++) printf "shard %d (~%ds): %s\n", j, load[j], list[j]
+		}
+	}'
