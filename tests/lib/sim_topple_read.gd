@@ -153,7 +153,10 @@ func _check_falls_by_physics(log: Array[Dictionary]) -> void:
 		var dir: Vector2 = f["dir"]
 		var cut: Vector2 = f["cut_dir"]
 		var to_part: Vector2 = f["to_part"]
-		if (cut != Vector2.ZERO and dir != cut) or (cut == Vector2.ZERO and dir.dot(to_part) >= 0.0):
+		if (
+			(cut != Vector2.ZERO and dir != cut)
+			or (cut == Vector2.ZERO and dir.dot(to_part) >= 0.0)
+		):
 			wrong.append("dir %s cut %s kaiju->part %s" % [dir, cut, to_part.round()])
 		if dir.dot(to_part) < 0.0:
 			onto += 1
