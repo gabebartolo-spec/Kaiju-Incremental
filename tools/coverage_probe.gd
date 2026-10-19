@@ -1,9 +1,11 @@
 extends SceneTree
-## Prints the D-062 coverage map (tests/lib/city_coverage.gd) for stage 1 and the Behemoth,
+## Prints the D-062 coverage map (tests/lib/city_coverage.gd) and the D-065 greenery numbers
+## (tests/lib/city_green.gd) for stage 1 and the Behemoth,
 ## three map_seed cities. Headless:
 ##   godot --headless --path . --script tools/coverage_probe.gd
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
+const Green := preload("res://tests/lib/city_green.gd")
 
 
 func _initialize() -> void:
@@ -51,5 +53,28 @@ func _run() -> void:
 				)
 			)
 			print("empty at ", empty)
+			var g: Dictionary = Green.measure(sim, decor)
+			print(
+				(
+					(
+						"  green: %d street trees on %.2f km of street (%.0f/km), %d parks, %d playgrounds,"
+						+ " %d bushes, %d flower beds, %d yards with %d hedge bushes, %.1f%% green blocks,"
+						+ " furthest building %.0f m from a park"
+					)
+					% [
+						g["street_trees"],
+						g["avenue_km"],
+						g["trees_per_km"],
+						g["parks"],
+						g["playgrounds"],
+						g["bushes"],
+						g["flower_beds"],
+						g["yards"],
+						g["hedges"],
+						g["green_pct"],
+						g["furthest_from_park_m"]
+					]
+				)
+			)
 			holder.free()
 	quit()

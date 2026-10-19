@@ -6,6 +6,10 @@ extends Node3D
 
 const SPAWN_PER_FRAME := 30
 
+var size_scale := 1.0  # pieces are this many times the building's size (trees: bigger, to read)
+var lift := -1.0  # toward white before shading; below 0, the look's debris_lift
+var shadows := true  # whether the pieces cast shadows
+
 var _rng: RandomNumberGenerator
 var _queue: Array[Array] = []
 var _cap: int
@@ -43,6 +47,7 @@ func spawn(pos: Vector3, color: Color, away: Vector3) -> void:
 
 func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 	var size := BuildingVoxels.VOXEL * (_rng.randf_range(0.35, 0.8) if _rng.randf() < 0.8 else 1.0)
+	size *= size_scale
 	var body := RigidBody3D.new()
 	body.gravity_scale = 2.2
 	var shape := CollisionShape3D.new()
@@ -52,7 +57,10 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
 	mi.mesh = _mesh(size)
-	mi.material_override = _material(Color(color, 1.0).lightened(Look.value("debris_lift")))
+	var whiten := lift if lift >= 0.0 else Look.value("debris_lift")
+	mi.material_override = _material(Color(color, 1.0).lightened(whiten))
+	if not shadows:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	body.position = pos
 	add_child(body)
