@@ -21,21 +21,25 @@ on:
         description: "Arguments after the -- (e.g. --species=reptilian --stage=adult). --out=<dir> is added for you"
         required: false
         default: ""
+      fast:
+        description: "Fast review mode (tools/capture/capture_modes.env): gl_compatibility, 960x540, 20 fps, SSAO and glow off. Untick for the full look"
+        type: boolean
+        default: true
       renderer:
-        description: "auto = Forward+ on lavapipe, else gl_compatibility"
+        description: "Override the mode's renderer (auto = Forward+ on lavapipe, else gl_compatibility); leave on mode to use the mode's"
         type: choice
-        default: auto
-        options: [auto, forward_plus, mobile, gl_compatibility]
+        default: mode
+        options: [mode, auto, forward_plus, mobile, gl_compatibility]
       movie:
         description: "Record a clip with --write-movie (and convert it to MP4)"
         type: boolean
         default: false
       fps:
-        description: "Fixed fps for the clip"
-        default: "30"
+        description: "Fixed fps for the clip (empty = the mode's)"
+        default: ""
       resolution:
-        description: "WIDTHxHEIGHT"
-        default: "1280x720"
+        description: "WIDTHxHEIGHT (empty = the mode's)"
+        default: ""
       ref:
         description: "Git ref to capture (default: the ref the workflow was dispatched on)"
         required: false
@@ -93,15 +97,23 @@ jobs:
         env:
           SCRIPT: ${{ inputs.script }}
           ARGS: ${{ inputs.args }}
-          RENDERER: ${{ inputs.renderer || 'auto' }}
+          RENDERER: ${{ inputs.renderer || 'mode' }}
           MOVIE: ${{ inputs.movie }}
-          FPS: ${{ inputs.fps || '30' }}
-          RES: ${{ inputs.resolution || '1280x720' }}
+          FAST: ${{ inputs.fast }}
+          FPS: ${{ inputs.fps }}
+          RES: ${{ inputs.resolution }}
         run: |
+          . tools/capture/capture_modes.env
+          if [ "$FAST" != false ]; then FAST=true; M=FAST; else M=FULL; fi
+          mr="${M}_RENDERER"; mres="${M}_RES"; mfps="${M}_FPS"
+          [ "$RENDERER" = mode ] && RENDERER="${!mr}"
+          RES="${RES:-${!mres}}"; FPS="${FPS:-${!mfps}}"
+          echo "mode: fast=$FAST renderer=$RENDERER res=$RES fps=$FPS"
           case "$SCRIPT" in *[!A-Za-z0-9_.]*|"") echo "::error::bad script name"; exit 1;; esac
           test -f "tools/capture/$SCRIPT" || { echo "::error::tools/capture/$SCRIPT does not exist"; exit 1; }
           out="$PWD/out"; mkdir -p "$out"
           user_args="$ARGS"
+          if [ "$FAST" = true ]; then user_args="$user_args --fast"; fi
           case "$user_args" in *--out=*) ;; *) user_args="$user_args --out=$out";; esac
           export LIBGL_ALWAYS_SOFTWARE=1
           vulkaninfo --summary 2>&1 | grep -E "deviceName|driverName" | head -3 || true
@@ -111,7 +123,7 @@ jobs:
             # (a 0.45 s effect was in some runs' stills and not others).
             local movie_args=(--fixed-fps "$FPS")
             if [ "$MOVIE" = true ]; then movie_args+=(--write-movie "$out/clip.avi"); fi
-            echo "=== $1 on $2 ===" | tee -a "$out/RENDERER.txt"
+            echo "=== $1 on $2 (fast=$FAST $RES @ $FPS fps) ===" | tee -a "$out/RENDERER.txt"
             # $user_args is split on purpose: it is a list of --flag=value words.
             # shellcheck disable=SC2086
             timeout 3000 xvfb-run -a -s "-screen 0 ${RES}x24" \
@@ -132,6 +144,8 @@ jobs:
             forward_plus|mobile) run_one "$RENDERER" vulkan || code=$?;;
             gl_compatibility) run_one gl_compatibility opengl3 || code=$?;;
           esac
+          # What Godot really rendered with (the engine banner), next to what we asked for.
+          grep -hE -m2 "^(OpenGL API|Vulkan API)" "$out"/godot-*.log | tee -a "$out/RENDERER.txt" || true
           tail -n 60 "$out"/godot-*.log
           exit "$code"
 

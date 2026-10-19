@@ -96,14 +96,17 @@ func _build_environment() -> void:
 		env.ambient_light_color = Look.color("ambient_color")
 	env.ambient_light_energy = Look.value("ambient")
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.ssao_enabled = true
+	# CI review captures pass --fast (tools/capture/capture_modes.env): SSAO and glow cost seconds
+	# a frame in software rendering. Only that flag turns them off; the shipped game never sees it.
+	var fast_capture := OS.get_cmdline_user_args().has("--fast")
+	env.ssao_enabled = not fast_capture
 	env.ssao_intensity = 2.5
 	env.ssao_radius = 1.5
 	env.fog_enabled = Look.value("fog_density") > 0.0
 	env.fog_light_color = Look.color("fog_color")
 	# A grown city (D-039) thins the fog with its size, so its far edge still reads as skyline.
 	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
-	env.glow_enabled = Look.value("glow") > 0.0
+	env.glow_enabled = Look.value("glow") > 0.0 and not fast_capture
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = 1.1
 	# Screen-space bounce light from lamps, fires and sun (SDFGI cost ~a tenth of the frame).

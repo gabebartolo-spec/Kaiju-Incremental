@@ -5,16 +5,19 @@
 #   tools/capture/ci_capture.sh capture_rig.gd -- --species=reptilian --stage=adult --out=dir
 #   tools/capture/ci_capture.sh capture_looks.gd -- --out=dir
 #
-# Options before the script name: --movie (record a clip), --renderer=auto|forward_plus|
+# Options before the script name: --fast (default: gl_compatibility, 960x540, 20 fps, SSAO and
+# glow off; numbers in capture_modes.env) or --full (the shipped look), --movie (record a clip), --renderer=auto|forward_plus|
 # mobile|gl_compatibility, --fps=N, --resolution=WxH, --ref=<branch> (default: current
 # branch; it must be pushed). `--out=<dir>` among the script args is the LOCAL download
 # directory (default: ./ci-capture-out); it is not forwarded to the script.
 set -euo pipefail
 
-movie=false renderer=auto fps=30 res=1280x720 ref="" script=""
+movie=false fast=true renderer=mode fps="" res="" ref="" script=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --movie) movie=true;;
+    --fast) fast=true;;
+    --full) fast=false;;
     --renderer=*) renderer="${1#*=}";;
     --fps=*) fps="${1#*=}";;
     --resolution=*) res="${1#*=}";;
@@ -42,7 +45,7 @@ git ls-remote --exit-code --heads origin "$ref" >/dev/null || { echo "branch $re
 
 before="$(gh run list --workflow=capture.yml --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
 gh workflow run capture.yml --ref "$ref" -f script="$script" -f args="${args[*]:-}" \
-  -f renderer="$renderer" -f movie="$movie" -f fps="$fps" -f resolution="$res"
+  -f fast="$fast" -f renderer="$renderer" -f movie="$movie" -f fps="$fps" -f resolution="$res"
 
 echo "dispatched; waiting for the run to appear..."
 run=""
