@@ -1,5 +1,5 @@
-# Landmarks handoff, 2026-10-19 11:40
-## State: awaiting lead (PR #78 crowd kills, head 17dd62b; LEAD checks at 2x)
+# Landmarks handoff, 2026-10-19 12:10
+## State: working (#76 resynced for merge; then a windowed off-screen stall check on look-options)
 
 ## Task
 Landmarks role, reporting to LEAD ("Kaiju: LEAD (demo build, merges, QA)", local_106fc100...).
@@ -15,7 +15,8 @@ pause local Godot at any time (director playtesting): then CI only.
   LEAD merges on green. Worktree ../Kaiju-Incremental-wt/stall-probe (remove when merged).
 
 ## Director playtest fixes (D-083, demo exe 2)
-1. Crowd ("stadium audience shouldnt disappear so suddenly, let us kill them"): PR #78,
+1. Crowd ("stadium audience shouldnt disappear so suddenly, let us kill them"): PR #78 MERGED
+   (f0634ee, LEAD's 2x PASS),
    branch claude/crowd-kills, worktree ../Kaiju-Incremental-wt/spawn-south (named before the
    split; holds the crowd branch).
    - crowd.gdshader: fans run to the back (exit_r) then sink `sink` m out of sight at the exit.
@@ -40,7 +41,9 @@ pause local Godot at any time (director playtesting): then CI only.
    session (it edits the same city edge). Not mine.
 
 ## Next
-- LEAD's 2x check of #78; fix what comes back.
+- LEAD: merge #76 once green (LEAD delegated this merge), then a windowed off-screen stall
+  check on the local GPU at current look-options (render-thread costs), stadium collapse
+  driven by script: worst frame ms and any frame over 33 ms with its cause. <= 5 lines.
 - Then post-demo work from LEAD: rubble polish (broken wheel, ragged stadium stumps, heaps),
   landmarks E (spire) / F (megatower, needs a Performance look at ~816k voxels).
 

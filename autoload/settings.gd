@@ -5,6 +5,8 @@ extends Node
 
 const DEADZONE := 0.2
 
+var _graphics := ""
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -25,6 +27,10 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	Engine.max_fps = PlayerSettings.frame_cap(get_tree().paused)
+	var level := PlayerSettings.graphics_level()
+	if level != _graphics:
+		_graphics = level
+		PlayerSettings.apply_graphics(get_tree().root)
 
 
 func _unhandled_input(event: InputEvent) -> void:

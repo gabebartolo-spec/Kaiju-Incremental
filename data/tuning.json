@@ -2,7 +2,12 @@
 	"display": {
 		"fps_caps": [60, 120, 0],
 		"fps_default": 120,
-		"menu_fps": 60
+		"menu_fps": 60,
+		"graphics": {
+			"high": {"scale": 1.0, "fsr": false, "msaa": 2},
+			"balanced": {"scale": 0.75, "fsr": true, "msaa": 0}
+		},
+		"graphics_default": {"min_height": 2160, "large": "balanced", "large_fps": 60, "small": "high"}
 	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
@@ -209,7 +214,7 @@
 		"bay_width": 190,
 		"far_haze": 0.004,
 		"fog_scale": 1.0,
-		"load_chunks": 20000,
+		"load_chunks": 6000,
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
 		"landmarks": [
@@ -296,7 +301,7 @@
 		"gain_jitter_db": {"rifle": 3.0, "rifle_far": 3.0},
 		"pitch_jitter_by": {"rifle": 0.1, "rifle_far": 0.1},
 		"pitch_by": {"rifle_far": 0.7},
-		"start_s": {"rifle": 0.13, "rifle_far": 0.13},
+		"start_s": {"rifle": 0.0, "rifle_far": 0.0},
 		"crack_within": {"rifle": 12.0},
 		"size_pitch": [1.3, 1.12, 1.0, 0.88],
 		"footstep_quiet_db": -8.0,
