@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-20 (r6 fix pushed; builder stopped at 200k, fresh builder continues)
-## State: r6 FIX pushed to #50 (head: see git log; CI run id in the lead report). Lead = "main".
+## State: r6 head 0854411 tests GREEN (run 39271829662). 1080p60 clip run 39273121713 timed out at ~f800; re-running 1280x720 30fps + pacing (tools/capture/pacing_military.gd, throwaway: remove after). Next: overlays, PR body.
 ## Local headless allowed (director 2026-10-20): tools/run_tests.sh --quick military, GODOT wrapper
 ## adding --audio-driver Dummy. Captures stay on CI. Don't merge. Helis not in #50.
 
