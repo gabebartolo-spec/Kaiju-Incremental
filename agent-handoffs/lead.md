@@ -1,10 +1,10 @@
 # Lead handoff, 2026-10-20 (lead session 2 of 10-20 hit 200k; next lead: read this, then GitHub)
-## State: running a check. Old lead waits on croc-contact (#89 capture 39277970463), military-ai (#50 re-capture), young-retune (opus, retune options) reports, then hands off.
+## State: running a check. Old lead waits on military-ai (#50 re-capture) + young-retune (retune options) reports, then hands off. croc-contact done.
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## Captures run in PARALLEL. claude/capture-fast 4af91b4 (no PR): --fast default (gl_compatibility llvmpipe, 960x540, 20 fps, no SSAO/glow; --full = old look); tower take 32 -> 19.8 min (run 39280140412), still readable. PR after #89 merges (needs capture_contact.gd). Director to delete tmp/capture-fast-test (worker delete refused).
 ## D-095 Claws = claw swipe (croc only). D-096 (director 10-20 via question tool) "Swipes undermine towers"; lead call: undermined towers fall AWAY from the kaiju.
-## #89: fixes + D-096 pushed by croc-contact (sha in PR; was local 7600273); capture run 39277970463 (--both: topple + swipe). NEXT: lead 2x (pop at impact gone?
-##  croc visible? arm rake big, streaks fan from claw, break on rake frame), fresh motion critic, show director the swipe clip (ask-the-director), merge --match-head-commit full sha.
+## #89 head fcca85546fcd9c766c6a822493f846ad1e4b1902, tests 39277701784 GREEN, PR body done. Capture 39277970463 timed out (3000 s, --both too long) but clip uploaded: %TEMP%/kcap/croc2/capture-39277970463-0/clip.mp4 (swipes f122/242/362/482/602/722; tower end may be cut).
+##  NEXT: lead 2x on that clip (swipe readable? tower falls away, no pop?); re-capture tower part alone with --fast if cut; fresh motion critic; show director the swipe; merge --match-head-commit full sha.
 ##  Swipe adds only ~4% mean destruction (5-seed); joint young retune is the director's after #89/#90. 21-frame spikes = stomps, swipe 2.0 s (no bug).
 ## #88 head dca0e988cd4f34c640c2349fc40699c0a40032b3: re-review PASS + notes a/b done. Only 2 expected city reds (tier gate). After #89 merges: resync, CI, merge.
 ## #50 head 0854411 tests 39271829662 GREEN; builder military-ai: clip, overlays f750/f1050, pacing, PR body -> lead 2x + fresh motion critic -> merge.
