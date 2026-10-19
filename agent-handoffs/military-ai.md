@@ -1,5 +1,5 @@
 # Military AI handoff, 2026-10-19 (r6 paused)
-## State: paused (director; LEAD 2026-10-19). #50 head 0b8f625 = WIP r6, pushed, PR body says WIP.
+## State: paused (director, account handover). #50 head 085410a = WIP r6, CI red as expected; Auto-fix OFF (re-enable at r6 start). Local handoff commits not pushed.
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
