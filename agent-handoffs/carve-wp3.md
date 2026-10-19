@@ -1,5 +1,5 @@
 # carve-wp3 handoff (builder, WP3 of real carving, D-094)
-## State: review FIX (comment 6279562193) done and pushed; CI pending; awaiting lead
+## State: review FIX done, head dec83bc, CI green (tests 39342624070, lint 39342624311); PR body + reply posted; awaiting lead
 ## Task
 WP3: a pure sim generator of a building's fine grid (BuildingVoxels' layout cell for cell), materials
 from data/, lazy promotion helper (not wired, WP7), new `cells` suite. PR #98.
