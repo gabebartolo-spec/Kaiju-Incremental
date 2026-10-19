@@ -36,32 +36,45 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	var demo := FlowDemo.new(self, check)
-	await demo.run()
+	await _h("FlowDemo", func() -> void: await demo.run())
 	# The full game (every species, every evolution) with the demo switched off.
 	demo.demo_off()
-	await FlowScreens.new(self, check).run()
-	_check_display_font()
-	await _check_species_select()
-	await _check_upgrade_screen()
-	await _check_rampage()
-	FlowSfx.run(root, check)
-	await FlowStadium.run(self, check)
-	await _check_warm_start()
-	await _check_powers("reptilian", "breath", UPGRADED)
-	await _check_powers("insectoid", "leap", {})
-	await _check_powers("cephalopod", "lash", {})
-	await _check_branch_view(
-		"reptilian",
-		{"r_tail": 2, "r_momentum": 2, "r_beam": 1},
-		["tail_sweep", "beam_start", "coated", "heli_spawned", "heli_fired"]
+	await _h("FlowScreens", func() -> void: await FlowScreens.new(self, check).run())
+	await _t("_check_display_font")
+	await _t("_check_species_select")
+	await _t("_check_upgrade_screen")
+	await _t("_check_rampage")
+	await _h("FlowSfx.run", func() -> void: FlowSfx.run(root, check))
+	await _h("FlowSfx.gate", func() -> void: await FlowSfx.gate(root, check))
+	await _h("FlowSfx.gate_timeout", func() -> void: FlowSfx.gate_timeout(root, check))
+	await _h("FlowStadium", func() -> void: await FlowStadium.run(self, check))
+	await _t("_check_warm_start")
+	await _t("_check_powers", ["reptilian", "breath", UPGRADED])
+	await _t("_check_powers", ["insectoid", "leap", {}])
+	await _t("_check_powers", ["cephalopod", "lash", {}])
+	await _t(
+		"_check_branch_view",
+		[
+			"reptilian",
+			{"r_tail": 2, "r_momentum": 2, "r_beam": 1},
+			["tail_sweep", "beam_start", "coated", "heli_spawned", "heli_fired"] as Array[String],
+		]
 	)
-	await _check_branch_view(
-		"insectoid",
-		{"i_glide": 1, "i_climb": 1, "i_brood": 1},
-		["glide_start", "eggs_laid", "brood_hatched", "brood_bite"]
+	await _t(
+		"_check_branch_view",
+		[
+			"insectoid",
+			{"i_glide": 1, "i_climb": 1, "i_brood": 1},
+			["glide_start", "eggs_laid", "brood_hatched", "brood_bite"] as Array[String],
+		]
 	)
-	await _check_branch_view(
-		"cephalopod", {"c_hydra": 2, "c_grab": 1, "c_ink": 1}, ["limb", "grab", "throw_land", "ink"]
+	await _t(
+		"_check_branch_view",
+		[
+			"cephalopod",
+			{"c_hydra": 2, "c_grab": 1, "c_ink": 1},
+			["limb", "grab", "throw_land", "ink"] as Array[String],
+		]
 	)
 	demo.demo_restore()
 
@@ -239,6 +252,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	)
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
+	rampage.sfx.live = true  # past the start gate (FlowSfx.gate checks the gate itself)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
 	var cues: Array[String] = [

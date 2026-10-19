@@ -1,17 +1,23 @@
 ---
 name: kaiju-handoff
-description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, rewrite not append, and when to hand off. Use it when a task is done or you switch to unrelated work, when your context is getting long (past about 150k tokens), before the director restarts or clears a session, and at the start of any new session.
+description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when your context nears about 200k tokens, before the director restarts or clears a session, and at the start of any new session.
 ---
 
 # Handoffs
 
-Fresh session at every task boundary; routine work at 50-100k tokens, past 150k hand off. Write
-the handoff first, then start the new session from it. The user-level Stop hook blocks a turn
+Fresh session at every task boundary; routine work at 50-100k tokens, hand off at about 200k
+(never run past it for convenience). Write the handoff first, then start the new session from it.
+A helper (builder, critic) cannot restart itself: at the first context-guard note it messages its
+lead "at Nk, restart me after <step>", finishes only that step, reports and stops; the lead
+respawns a fresh one with the same name, which reads the report or handoff. A top-level session
+starts its own successor only when safe (nothing of its own running, no half-done push or merge,
+no unanswered director question), gives it the same title, and archives itself. The user-level Stop hook blocks a turn
 that changed the project without a fresh handoff; write it, never ask the director to remind you.
 
 ## Where
 
-`agent-handoffs/<role>.md`, cap 120 lines (CI checks it), **rewritten not appended**, on your
+`agent-handoffs/<role>.md`, cap 120 lines (CI checks it), **edited when state changes, never appended as a log and not
+rewritten from scratch every turn**, on your
 task branch so it travels with the PR. The skeleton is `agent-handoffs/README.md`.
 
 ## What it says

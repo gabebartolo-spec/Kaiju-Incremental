@@ -16,21 +16,21 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_data()
-	_check_tree()
-	_check_city()
-	_check_structure()
-	_check_topple_crush()
-	_check_toughness()
-	_check_determinism()
-	_check_upgrade_effects()
-	_check_species_differ()
-	_check_army()
-	SimRooftops.new(check, _sim, _autoplay).run()
-	SimBodyContact.new(check, _sim).run()
-	_check_save_migrate()
-	_check_looks()
-	_check_growth()
+	await _t("_check_data")
+	await _t("_check_tree")
+	await _t("_check_city")
+	await _t("_check_structure")
+	await _t("_check_topple_crush")
+	await _t("_check_toughness")
+	await _t("_check_determinism")
+	await _t("_check_upgrade_effects")
+	await _t("_check_species_differ")
+	await _t("_check_army")
+	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
+	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim).run())
+	await _t("_check_save_migrate")
+	await _t("_check_looks")
+	await _t("_check_growth")
 
 
 func _tree(levels: Dictionary = {}) -> UpgradeTree:

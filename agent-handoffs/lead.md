@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-19 (account handover)
-## State: PAUSED by the director. Whole team idle; nothing running. Resume = the "First moves" list below.
+## State: team ARCHIVED by the director for the account handover. Resume = the "First moves" list below.
 
 ## Who
 Lead = "Kaiju: LEAD (demo build, merges, QA)". Owns: QA gates + fresh critics, PR review + merge (squash,
@@ -20,8 +20,7 @@ Never ask the director to unblock messaging. Ask him the ask-the-director way: o
 #75 stall · #77 frame cap · #78 crowd killable · #79 stadium 1.5x · #80 rifle crack · #83 breath from snout ·
 #73/#74 lints · #76 stall probe · #81 less camera smoke · #84 faster run load (cache pruned per city) ·
 #87 ElevenLabs SFX (D-092) · #91 destruction spike · #92 Graphics Balanced + 60 at 4K (D-093) · #93 board.
-#82 sound gate (3 s timeout): lead resynced floors (load 15, flow 157) at 1df2233; CI was running at handover ->
-merge on green (`gh pr checks 82`), else read the red.
+#82 sound gate (3 s timeout) MERGED 0c70480 after a lead floors resync (load 15, flow 157).
 
 ## Open PRs and their next step (all into claude/look-options)
 - #89 croc contact (session "Kaiju: Croc contact + dash", local_1feb30ca): D-091 rework done (no TOO STRONG; dwarf
@@ -29,24 +28,27 @@ merge on green (`gh pr checks 82`), else read the red.
   `_sim` never calls body.use_species() so determinism/autoplay run bodyless -> RampageSim picks the body itself,
   autoplay never held > N s; (2) body_contact.gd:135 final sample uses from_heading.rotated, hold test uses heading;
   (3) validate bite_dps > 0. Round-2 clips (tower topple, torn pieces) on CI: lead 2x check, then motion critic.
-- #90 dash (same session, stacked on #89): green; evolve1 cost 425 -> 0.26 h, young defeats 6/13. Fresh motion critic
+- #90 dash (same session, stacked on #89): resynced + lint fix, head 9f7194a, CI green; evolve1 cost 425 -> 0.26 h, young defeats 6/13. Fresh motion critic
   after #89 merges.
 - #85 army ramp DRAFT (b38b3a6f): after #89 + #90, ONE joint young retune: e1 0.26 h ±5%, young defeats 8 ±2 per 15.
 - #88 river emergence (9af27a16): lead FIX: continuous sunk channel + quay wall, real bridges, no cars on quays,
   breakable buildings within 10-15 m of the landing (no-empty-space). Then fresh sim reviewer; merges after #89.
-- #50 tanks (5325ef73, worktree ../Kaiju-Incremental-wt/military-ai): r6 WIP at 085410a, CI RED (expected): closest
+  CI RED (expected): its 2 strict city checks (1 building near the rise point unbroken by a stomp) pass only once
+  #89 removes the tier gate. Push the 3 unpushed commits in ../Kaiju-Incremental-wt/greenery first.
+- #50 tanks (5325ef73, worktree ../Kaiju-Incremental-wt/military-ai): r6 WIP, head ad1e7ab, CONFLICTS with
+  look-options (floors; resync first), CI RED (expected): closest
   tank 4.6 m from body edge vs 8 m bar; 86/3522 parked steps skewed > 15°. r5 critic FIX (lead-confirmed at 2x): tank
   under the snout 12-13.5 s -> standoff = body edge + 8 m, brake before it; reverse 3-4 m/s; hull vs turret overlays at
   12.5/17.5 s; tank 2 parked skewed -> square it. Proof: sim check failing first, CI clip, overlays, pacing.
   Helis: D can't fit the streets; render a B clip (camera eased to x1.4 while a pair is up) + a still of today's
   camera -> one director question. Not built into #50.
 - #86 rooftop hits on legs/tail (1ac658ed): post-demo polish; CI clip pending.
-- #55 greenery r15 PASS: merge when exe-2 scope is set. #58/#61 jets drafts parked; #58 critic FIX (mirror wings,
+- #55 greenery r15 PASS: merge when exe-2 scope is set. #58/#61 jets drafts parked (#58 f175d03 CONFLICTS again); #58 critic FIX (mirror wings,
   the "miss" does 30 HP, laser tracer, gun audio 0.3 s late). #11 species motion, #3 look-options -> main: on hold.
 
 ## First moves on resume
-1. `gh pr checks 82` -> merge #82. 2. Wake croc session: finish #89 FIX 1-3, clips. 3. Tanks session: r6.
-4. River session: #88 FIX. 5. After #89/#90 merge: army session joint retune (#85). 6. Build exe 2, smoke, director.
+1. Wake croc session: finish #89 FIX 1-3, clips. 2. Tanks session: r6. 3. River session: #88 FIX.
+4. After #89/#90 merge: army session joint retune (#85). 5. Build exe 2, smoke, director.
 
 ## Sessions (names in the sidebar)
 Build "Kaiju: Load, smoke FX, builds" 37cf489b (handoff board.md in ../Kaiju-Incremental-wt/demo-smoke) · tanks 5325ef73 ·
@@ -63,10 +65,17 @@ SFX shootout: https://claude.ai/artifact/RJyirrk8y6eTvzqB6woHpZ · raw ElevenLab
 C:/Users/DANTE/Documents/GitHub/Kaiju-Assets-Raw/elevenlabs_2026-10-19 · exe 1:
 C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/KaijuIncremental-demo-44f56fd.exe.
 
+## Team ARCHIVED (director, handover). Unarchive a session to resume it, or start fresh ones from their handoffs.
+Unsaved work left on disk (not lost, not pushed): ../Kaiju-Incremental-wt/greenery = 3 unpushed river commits
+(sunk canal + bridges + quay sheds, 7415767..680a603) + uncommitted data/tuning.json -> push before resuming #88;
+jets (11 uncommitted files), burst-shared (3, stadium shared-burst-mesh fix, never a PR). Auto-fix was on for #50,
+#85, #58, #61, #86, #88, #89, #90: it re-woke paused sessions on conflicts and red CI. Turn it off when pausing.
+
 ## Worktrees
 Pruned today: fps-cap, graphics, sfx-eleven, smoke, run-load, stall-probe, spawn-south, board-d094. Left: burst-shared
 (3 uncommitted), greenery (river, 1), jets (31 uncommitted), military-ai, sfx-gate, demo-smoke, integ-a/-export
-(detached), army-scales (remote branch gone; check before removing), lead-resync82 (remove after #82 merges).
+(detached), army-scales (remote branch gone; check before removing); sfx-gate can go (#82 merged). Local branch
+lead-resync82 left (branch -D was refused; don't launder).
 
 ## Merge rules
 Merge only decided work: lead 2x check (+ a fresh critic where visual), green CI at the exact head. The lead resyncs

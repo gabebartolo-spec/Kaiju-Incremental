@@ -1,6 +1,6 @@
 ---
 name: kaiju-pr
-description: Opening, syncing and handing over a pull request the Kaiju Incremental way - worktree and branch, the PR body sections and [MERGE NOTE], floors, director gates, who merges, the Board and log section. Extends the general github-hygiene skill (~/.claude/skills) with this repo's template, board rules and roles. Use it whenever you are about to open a PR, update one after main moved, resolve a conflict in tests/expected_checks.txt, or tell another agent about a PR or CI result.
+description: Opening, syncing and handing over a pull request the Kaiju Incremental way - worktree and branch, the PR body sections and [MERGE NOTE], director gates, who merges, the Board and log section. Extends the general github-hygiene skill (~/.claude/skills) with this repo's template, board rules and roles. Use it whenever you are about to open a PR, update one after main moved, resolve a conflict, or tell another agent about a PR or CI result.
 ---
 
 # A PR the Kaiju Incremental way
@@ -37,8 +37,12 @@ records them in a board PR after the merge.
 
 - You do not merge unless you are the merge role. Green + eligible = merge, for the exact head
   commit, after any required review and director gate. Never enable auto-merge.
-- Sync your own branch when main moves under it; a floor conflict resolves to the real count
-  after the merge. Remove your worktree when the PR merges.
+- Sync your own branch when main moves under it; never leave it conflicting over an hour. There
+  is no floor or shard file to conflict over (a branch that still edits
+  `tests/expected_checks.txt` or `tools/ci_shards.txt` resolves by deleting them; route the
+  suite's tests through `_t`, see kaiju-godot-tests). Remove your worktree when the PR merges.
+- At most 3 open PRs on the repo; merge green, approved PRs at once. Docs-only PRs skip the Godot
+  jobs. Wait for CI in the background (one notification), never in polling turns.
 - Hand over at task boundaries: `agent-handoffs/<role>.md` (see kaiju-handoff).
 
 ## Learnings

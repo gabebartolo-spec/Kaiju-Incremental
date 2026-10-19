@@ -6,6 +6,8 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_city_tests.gd
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
+const Green := preload("res://tests/lib/city_green.gd")
+const Trample := preload("res://tests/lib/city_trample.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
@@ -17,11 +19,16 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_city_layout(CityGen.generate(Seeds.make("city", 0), Content.section("city")))
-	_check_calm_streets()
-	CityLandmarks.new(check).run()
-	_check_no_empty_ground()
-	preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
+	await _t(
+		"_check_city_layout", [CityGen.generate(Seeds.make("city", 0), Content.section("city"))]
+	)
+	await _t("_check_calm_streets")
+	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
+	await _t("_check_no_empty_ground")
+	await _h(
+		"city_footfall_dust",
+		func() -> void: preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
+	)
 
 
 ## The city reads as a real city, not a grid of isolated towers (director, 2026-10-16): lots
@@ -165,4 +172,6 @@ func _check_no_empty_ground() -> void:
 					]
 				)
 			)
+			Green.check_city(tier, map_seed, sim, decor, check)
+			Trample.check_tail(tier, map_seed, sim, decor, check)
 			holder.free()
