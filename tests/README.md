@@ -23,7 +23,8 @@ from `tools/ci_timings.txt`, so a new suite needs only its file and a row below.
 |---|---|
 | `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up |
 | `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits |
-| `destruction` | the carving sim grid (VoxelFrame, D-094 WP1): sphere and capsule carves, material strength, the ground flood and islands, the support rule on islands and on the grounded remainder (Structure-shaped events), grid offset, no clock or RNG in the module, the spike's island pins (8,415 / 35,428) and replay digests for the tower and the block of six at RES 4 and 8 |
+| `destruction` | the carving sim grid (VoxelFrame, D-094 WP1): sphere and capsule carves, material strength, the ground flood and islands, grid offset, no clock or RNG in the module, the spike's island pins (8,415 / 35,428), replay digests for the tower and the block of six at RES 4 and 8, and pinned replay traces (each event's size, kind, direction and pivot) |
+| `voxel_support` | VoxelFrame's support rule on small grids (D-094 WP1): topples off a post and off an island's landing, adopt's guard (ground is grid layer 0), re-settling what hung from a toppled load, and fixtures (panes, signs) that hang by a face, edge or corner and hold nothing up |
 
 The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a `_check_*`
 method that is never called or makes no check, and that an untyped declaration does not compile.

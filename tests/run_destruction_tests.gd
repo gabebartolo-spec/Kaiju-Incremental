@@ -25,6 +25,14 @@ const ISLAND_RES8 := 35428
 ## Block of six at RES 8 replays this many ticks (the base cuts of the first buildings);
 ## the full 10 s runs at RES 4 and for the tower.
 const BLOCK_RES8_TICKS := 200
+## Pinned replay traces (hash of the trace: digest, carved count and each event's size, kind,
+## dir and pivot), so a wrong fall direction or pivot fails here and WP2's native port is held
+## to them. Key: "<path> RES <res>" with the support rule. Re-pinned on #97's review FIX.
+const TRACE_PINS := {
+	"tower RES 4": 3951767490,
+	"tower RES 8": 2034646805,
+	"block RES 4": 3520931729,
+}
 
 var _replays: Dictionary = {}
 
@@ -42,11 +50,10 @@ func run_checks() -> void:
 	await _t("_check_offset")
 	await _t("_check_tunnel")
 	await _t("_check_base_cut")
-	await _t("_check_overhang")
-	await _t("_check_island_support")
 	await _t("_check_island_pin")
 	await _t("_check_replay_tower")
 	await _t("_check_replay_block")
+	await _t("_check_trace_pins")
 
 
 ## RES from data (8); `res` overrides it for the RES 4 fixtures.
@@ -274,57 +281,6 @@ func _check_base_cut() -> void:
 		check(f.top_below(1, 1, f.h) < 3 * f.res, "nothing above the cut is left standing")
 
 
-## Structure's topple rule at cell level on the grounded part: a slab hung out past the post
-## holding it topples over the post's edge (RFG's fix for "held up by a chimney"); the same
-## slab centred on the post stands.
-func _check_overhang() -> void:
-	var out: Array[Array] = []
-	for shift: int in [0, -2]:
-		var f := _frame(Vector3i(6, 4, 1), 4)
-		var wall := f.material_id("wall")
-		var post := 2 * f.res if shift == -2 else 0
-		f.fill(Vector3i(post, 0, 0), Vector3i(post + f.res, 3 * f.res, f.d), wall)
-		f.fill(Vector3i(0, 3 * f.res, 0), Vector3i(f.w, 4 * f.res, f.d), wall)
-		out.append(f.settle())
-	var hung: Array = out[0]
-	check(
-		hung.size() == 1 and str(hung[0]["kind"]) == "topple",
-		"the overhung slab topples: %s" % [_kinds(hung)]
-	)
-	if hung.size() == 1:
-		var e: Dictionary = hung[0]
-		check(
-			e["dir"] is Vector2i and e["pivot"] is Vector3 and e["cells"] is Array, "settle shape"
-		)
-		var dir: Vector2i = e["dir"]
-		var pivot: Vector3 = e["pivot"]
-		check(
-			dir == Vector2i(1, 0) and is_equal_approx(pivot.x, 1.0),
-			"it tips +x over the post's edge at x 1: %s %s" % [dir, pivot]
-		)
-	var centred: Array = out[1]
-	check(centred.is_empty(), "the slab centred on its post stands: %s" % [_kinds(centred)])
-
-
-## The support rule on islands: a loose block lands on the cells nearest below it; hung past
-## them it topples over their edge, centred on them it drops.
-func _check_island_support() -> void:
-	var kinds: Array[String] = []
-	var dirs: Array[Vector2i] = []
-	for post_x: int in [0, 2]:
-		var f := _frame(Vector3i(5, 5, 1), 4)
-		var wall := f.material_id("wall")
-		f.fill(Vector3i(post_x * f.res, 0, 0), Vector3i((post_x + 1) * f.res, 2 * f.res, f.d), wall)
-		f.fill(Vector3i(0, 3 * f.res, 0), Vector3i(f.w, 4 * f.res, f.d), wall)
-		var parts := f.settle()
-		kinds.append(",".join(_kinds(parts)))
-		dirs.append(parts[0]["dir"] if parts.size() == 1 else Vector2i(9, 9))
-	check(
-		kinds == ["topple", "drop"] and dirs[0] == Vector2i(1, 0),
-		"a loose block off its post topples +x, centred it drops: %s %s" % [kinds, dirs]
-	)
-
-
 func _kinds(parts: Array) -> Array[String]:
 	var out: Array[String] = []
 	for part: Dictionary in parts:
@@ -379,3 +335,17 @@ func _check_replay_block() -> void:
 				% [res, trace.size(), islands]
 			)
 		)
+
+
+## The pinned traces: the support rule's events, their directions and pivots, tick by tick.
+func _check_trace_pins() -> void:
+	var runs := {
+		"tower RES 4": _replay(4, false, true, _full_ticks()),
+		"tower RES 8": _replay(8, false, true, _full_ticks()),
+		"block RES 4": _replay(4, true, true, _full_ticks()),
+	}
+	for key: String in TRACE_PINS:
+		var got: Array[Dictionary] = runs[key]
+		var trace: PackedInt64Array = got[0]["trace"]
+		var want: int = TRACE_PINS[key]
+		check(hash(trace) == want, "%s trace is pinned: %d (want %d)" % [key, hash(trace), want])

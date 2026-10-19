@@ -9,14 +9,16 @@ const TICK := 1.0 / 30.0
 const RADIUS := 2.4
 const UNITS := Vector3i(6, 16, 6)
 const SECONDS := 10.0
-## A fixture material list in data/materials.json's shape ({id, name, strength, debris}; id 0
-## is empty). Strengths differ so the suite proves the strength rule while the data's are
-## all 1.0; the names are BuildingVoxels palette keys (the spike's column is a pillar).
+## A fixture material list in data/materials.json's shape ({id, name, strength, debris, fixture};
+## id 0 is empty). Strengths differ so the suite proves the strength rule while the data's are
+## all 1.0; the names are BuildingVoxels palette keys (the spike's column is a pillar). A
+## window is a fixture (lead rule on #97: attached by face, edge or corner, holds nothing up).
 const MATERIALS: Array[Dictionary] = [
 	{"id": 1, "name": "wall", "strength": 7.0, "debris": "wall"},
 	{"id": 2, "name": "slab", "strength": 7.0, "debris": "slab"},
 	{"id": 3, "name": "glass", "strength": 2.0, "debris": "glass"},
 	{"id": 4, "name": "pillar", "strength": 14.0, "debris": "pillar"},
+	{"id": 5, "name": "window", "strength": 2.0, "debris": "window", "fixture": true},
 ]
 
 
@@ -73,7 +75,8 @@ static func units(block: bool, n: int) -> Vector3i:
 ## The spike's replay at `res`: every tick, each building's blow carves, then the frame splits
 ## (support false: detach(), the spike's rule) or settles (support true: settle(), with the
 ## support rule). Returns {"trace": PackedInt64Array (digest, carved count, then each event's
-## size and kind per building per tick), "islands": PackedInt32Array (every event's size)}.
+## size, kind, dir x and z and pivot in half cells, per building per tick), "islands":
+## PackedInt32Array (every event's size)}. A wrong fall direction changes the trace.
 static func replay(res: int, block: bool, support: bool, ticks: int) -> Dictionary:
 	var trace := PackedInt64Array()
 	var sizes := PackedInt32Array()
@@ -98,5 +101,9 @@ static func replay(res: int, block: bool, support: bool, ticks: int) -> Dictiona
 				var cells: Array[Vector3i] = part["cells"]
 				trace.append(cells.size())
 				trace.append(1 if str(part["kind"]) == "topple" else 0)
+				var dir: Vector2i = part["dir"]
+				var pivot: Vector3 = part["pivot"]
+				var half := Vector3i((pivot * 2.0 * res).round())
+				trace.append_array([dir.x, dir.y, half.x, half.y, half.z])
 				sizes.append(cells.size())
 	return {"trace": trace, "islands": sizes}
