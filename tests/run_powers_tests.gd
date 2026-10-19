@@ -11,18 +11,18 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_branches()
-	_check_tail()
-	_check_momentum()
-	_check_shear()
-	_check_beam()
-	_check_scuttle()
-	_check_glide()
-	_check_climb()
-	_check_brood()
-	_check_streets()
-	_check_base_unchanged()
-	_check_levels()
+	await _t("_check_branches")
+	await _t("_check_tail")
+	await _t("_check_momentum")
+	await _t("_check_shear")
+	await _t("_check_beam")
+	await _t("_check_scuttle")
+	await _t("_check_glide")
+	await _t("_check_climb")
+	await _t("_check_brood")
+	await _t("_check_streets")
+	await _t("_check_base_unchanged")
+	await _t("_check_levels")
 
 
 func _check_branches() -> void:

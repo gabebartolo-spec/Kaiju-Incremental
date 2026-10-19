@@ -1,0 +1,13 @@
+# Seconds per suite from tools/run_tests.sh (TIMINGS_FILE=...), 2026-10-19 (PR run 39224258854).
+# Nobody edits this per PR: a new suite counts as DEFAULT_SECS until the next re-measure (at least weekly).
+# tools/plan_ci_shards.sh splits the suites across shards from these.
+shards 2
+smoke 8
+sim 9
+powers 1
+tentacles 5
+city 11
+growth 12
+load 44
+flow 93
+clips 11

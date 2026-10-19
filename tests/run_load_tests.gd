@@ -16,12 +16,12 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_party_walls()
-	_check_building_fade()
-	_check_bake_kept()
-	_check_bake_pruned()
-	LoadLandmark.new(check).run()
-	await _check_stream()
+	await _t("_check_party_walls")
+	await _t("_check_building_fade")
+	await _t("_check_bake_kept")
+	await _t("_check_bake_pruned")
+	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
+	await _t("_check_stream")
 
 
 func _tuning(tier: int) -> Dictionary:

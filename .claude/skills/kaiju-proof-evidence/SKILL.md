@@ -19,7 +19,7 @@ passes on one lucky seed, a green validator on an art change nobody looked at.
 | Visual or art | validators green, labelled capture at game scale, art-qa-critic pass, then the director's approval |
 | Animation | the assets suite plus a short clip |
 | Save or lifecycle | reload, old-save fixture, failure paths, `kaiju-sim-review` |
-| Performance | perf suite numbers against floors |
+| Performance | perf numbers against the budget in `data/`, before and after |
 
 Scale the effort to the change (see the shared `testing-at-milestones` memory).
 
@@ -50,7 +50,7 @@ art-qa-critic pass, then the director from labelled images (a clip for motion). 
 
 ## Write it down
 
-**Evidence:** suites with counts, fixture and seed, capture or clip by path, the player-effect
+**Evidence:** suites with their "K of M functions, N checks" lines, fixture and seed, capture or clip by path, the player-effect
 fixture id. **Not exercised:** what you did not cover, explicitly. After two similar failed fixes,
 change the evidence before writing another fix.
 
