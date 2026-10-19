@@ -467,7 +467,7 @@
 		"piece_angular_damp": 1.0,
 		"ground_drag": 5.0,
 		"rubble_cap": 2000,
-		"fill_light": 0.12,
+		"fill_light": 0.25,
 		"ground_y": 0.0,
 		"ground_slop": 0.02,
 		"fade_seconds": 0.4,
