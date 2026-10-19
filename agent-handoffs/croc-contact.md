@@ -1,7 +1,6 @@
 # croc-contact handoff (builder for the lead), 2026-10-20
-## State: committed locally on claude/croc-contact (NOT pushed). Context hit 200k: restart a fresh
-## builder for the push + capture. PR #89, base claude/look-options,
-## worktree .claude/worktrees/blender-reptile-f5388e.
+## State: pushing claude/croc-contact (PR #89, base claude/look-options) then one capture; fresh life 2.
+## Worktree .claude/worktrees/blender-reptile-f5388e. Remaining: capture run, PR body, tests result.
 
 ## Lead instructions still open
 - PUSH once to claude/croc-contact (lead already said: after topple 1-4 + swipe 1-6 in and local
