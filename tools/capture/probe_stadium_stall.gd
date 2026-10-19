@@ -4,12 +4,16 @@ extends SceneTree
 ## its wall-clock gap and Rampage's own per-frame costs (sim.step and each event kind), and every
 ## frame over --slow ms is printed with its breakdown. Also times one settle() of the whole
 ## stadium and the view's lift_piece of one section. Uses nothing newer than #57, so it runs at
-## the pre-#59 base too. Runs on CI (capture.yml); never on the director's PC.
+## the pre-#59 base too. --no3d stops drawing the 3D world (the view still builds every node),
+## so CI's software renderer can run 1500 frames inside its time limit; its timings are CPU only.
 ##
-##   godot --path . --script tools/capture/probe_stadium_stall.gd -- --frames=1500 --slow=40
+##   godot --path . --script tools/capture/probe_stadium_stall.gd -- --frames=1500 --slow=40 --no3d
 
 var _frames := 1500
 var _slow := 40.0
+var _no3d := false
+## Per event kind (and sim.step): frames it took over one 60 Hz frame, 16.7 ms.
+var _over := {}
 
 
 func _initialize() -> void:
@@ -18,11 +22,14 @@ func _initialize() -> void:
 			_frames = arg.substr(9).to_int()
 		elif arg.begins_with("--slow="):
 			_slow = arg.substr(7).to_float()
+		elif arg == "--no3d":
+			_no3d = true
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
+	root.disable_3d = _no3d
 	var rampage := Rampage.new()
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
@@ -73,6 +80,8 @@ func _run() -> void:
 			var ms := Num.f(rampage.cost_usec[k]) / 1000.0
 			totals[k] = Num.f(totals.get(k, 0.0)) + ms
 			worst[k] = maxf(Num.f(worst.get(k, 0.0)), ms)
+			if ms > 16.7:
+				_over[k] = Num.i(_over.get(k, 0)) + 1
 			if ms >= 1.0:
 				parts.append("%s %.1f" % [k, ms])
 		var physics := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
@@ -96,7 +105,12 @@ func _run() -> void:
 			break
 	print("frames over %.0f ms: %d, worst gap %.1f ms" % [_slow, slow, gap_max])
 	for k: String in worst:
-		print("  %s: worst %.1f ms, total %.0f ms" % [k, worst[k], totals[k]])
+		print(
+			(
+				"  %s: worst %.1f ms, total %.0f ms, %d frames over 16.7 ms"
+				% [k, worst[k], totals[k], Num.i(_over.get(k, 0))]
+			)
+		)
 	print("stadium left: %d of %d chunks" % [stadium.frame.alive_count, whole])
 	quit()
 
