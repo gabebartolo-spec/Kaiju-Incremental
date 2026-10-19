@@ -10,6 +10,9 @@ extends Node3D
 const FLOATS := 16  # per MultiMesh instance: a 3x4 transform, then a colour
 const SHRINK_MIN := 0.01  # a fading piece's last scale
 
+var raised := 0  # live pieces lifted out of the road so far (captures)
+var max_raise := 0.0  # the deepest of them
+
 var _cfg: Dictionary
 var _space: RID
 var _shapes: Dictionary = {}  # snapped size -> BoxShape3D (kept alive for its RID)
@@ -28,8 +31,6 @@ var _rubble := PackedFloat32Array()  # FLOATS per piece
 var _rubble_dirty := false
 var _fading := 0  # live pieces fading out
 var _statics := 0  # rubble pieces that still have a (static) body
-var raised := 0  # live pieces lifted out of the road so far (captures)
-var max_raise := 0.0  # the deepest of them
 
 
 func _init() -> void:
