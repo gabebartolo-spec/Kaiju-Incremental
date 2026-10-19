@@ -68,7 +68,6 @@ func run() -> void:
 	_check.call(on == _walk(true, 1), "the walk through a building replays identically")
 	_check_topple()
 	_check_dash()
-
 	_check_autoplay()
 	_check_sweep_end()
 	_check_contact_data()
