@@ -4,6 +4,19 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-20 · D-098 · Director · Young croc retune = option A "steady upgrades"
+Why: playtest note 8 (cadence 1 -> 8 -> 1 upgrades per death); he picked A of three via the question tool. Values:
+level-1 costs about half of level 2 (claws 45, hide 45, stride 80, quake 100, rage 75, greed 125, frenzy 220, r_tail 200,
+r_momentum 400), evolve1 400 -> 600, young rooftop rifle sting 0.01 -> 0.05. Bot: e1 0.24-0.27 h, young defeats ~8.5/15,
+2-4 buys per death. Built on claude/young-retune (with #89, #90 and the army ramp from closed #85). Settled only when his
+playtest passes.
+
+## 2026-10-20 · D-097 · Director · True physics and carving are top priority, started now
+Why: "true phyiscs should be top priority. carving included. its a game about destroying cities, the city destruction has
+to be good"; earlier the same day he chose "start now, 2 builders". Supersedes D-094's "after demo exe 2". Changes: WP1
+(sim grid, claude/carve-wp1), WP2 (native C++, claude/carve-wp2), WP3 (building cells, claude/carve-wp3) and WP5 (physics
+presentation, claude/carve-wp5) are running in parallel with the demo fixes; carving PRs, CI and reviews go first.
+
 ## 2026-10-20 · D-096 · Director · Swipes undermine towers
 Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
 Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89

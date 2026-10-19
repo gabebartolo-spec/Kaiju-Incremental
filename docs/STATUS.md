@@ -7,13 +7,17 @@ PR's "Board and log" section. History rolls to `docs/archive/status_<month>.md`.
 Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor, a missing suite,
 an untyped declaration and a planted secret). Gate signer: the lead.
 
+## Carving lane (D-097, top priority, started 2026-10-20; 4 branches, no PRs yet)
+WP1 sim grid `claude/carve-wp1` · WP2 native C++ `claude/carve-wp2` · WP3 building cells `claude/carve-wp3` · WP5 physics
+presentation `claude/carve-wp5`. Carving PRs, CI and reviews go first. #95 merged (ed456ea). #85 closed; its army ramp is
+carried by `claude/young-retune` (D-098, with #89, #90).
+
 ## Live PRs (2026-10-19, team PAUSED by the director; account handover; playtest fixes -> demo exe 2, D-083)
 
 | PR | Owner session | State | Item | Branch | Since |
 |----|---------------|-------|------|--------|-------|
 | #89 | Croc contact + dash | paused (sim-review FIX) | playtest 2, D-091 body breaks what it walks into | claude/croc-contact | 2026-10-19 |
 | #90 | Croc contact + dash | paused (stacked on #89) | playtest 4, dash | claude/croc-dash | 2026-10-19 |
-| #85 | Biomass + army ramp | paused (draft) | playtest 11, army ramp; joint young retune after #89/#90 | claude/army-ramp | 2026-10-19 |
 | #88 | River spawn + greenery | paused (lead FIX) | playtest 9/11, river emergence; after D-091 | claude/river-start | 2026-10-19 |
 | #50 | Tanks + helis | paused (r6 WIP, red) | D-066 military AI; r5 critic FIX: standoff body edge + 8 m | claude/military-ai | 2026-10-18 |
 | #86 | Gun audio + breath aim | available | rooftop hits on legs and tail (post-demo) | claude/rooftop-hits-body | 2026-10-19 |
