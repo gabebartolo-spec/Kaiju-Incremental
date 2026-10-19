@@ -3,10 +3,10 @@ extends Node3D
 ## A carved building's look (D-094 WP4): one MeshInstance3D per REGION^3 block of its fine grid
 ## (CellMesher), so a carve rebuilds only the blocks it touched. Meshing runs on the
 ## WorkerThreadPool (one task per block, native when the extension is loaded); the finished
-## meshes are swapped in on the main thread. A carve that lands while a batch is still meshing
-## waits for it, then the blocks it touched are meshed again from the newest grid, so the view
-## never shows an older grid after a newer one. Presentation only: it reads the grid the sim
-## carves and decides nothing.
+## arrays become meshes and are swapped in on the main thread. A carve that lands while a
+## batch is still meshing waits for it, then the blocks it touched are meshed again from the
+## newest grid, so the view never shows an older grid after a newer one. Presentation only:
+## it reads the grid the sim carves and decides nothing.
 
 ## Meshes in their own world space (CellMesher.origin is world), as BuildingView's are.
 var mesher: CellMesher
@@ -89,12 +89,13 @@ func _start() -> void:
 	)
 
 
-## One worker task: block batch[i] of `cells`, as [arrays, mesh] into results[i].
+## One worker task: block batch[i] of `cells`, its arrays into results[i]. The mesh resource is
+## made on the main thread (_finish): a mesh RID made on a worker raced the dummy renderer's
+## allocator in the headless bench ("Initializing already initialized RID").
 static func _mesh_one(
 	i: int, m: CellMesher, cells: PackedByteArray, batch: Array[Vector3i], results: Array
 ) -> void:
-	var a := m.mesh_region(cells, batch[i])
-	results[i] = [a, CellMesher.to_mesh(a)]
+	results[i] = m.mesh_region(cells, batch[i])
 
 
 func _finish() -> void:
@@ -102,9 +103,9 @@ func _finish() -> void:
 	for i: int in _batch.size():
 		var r := _batch[i]
 		var done: Array = _results[i]
-		var mesh: ArrayMesh = done[1]
+		var mesh := CellMesher.to_mesh(done)
 		if keep_arrays:
-			arrays[r] = done[0]
+			arrays[r] = done
 		var part: MeshInstance3D = parts.get(r, null)
 		if mesh == null:
 			if part != null:

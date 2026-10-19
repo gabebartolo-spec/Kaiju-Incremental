@@ -1,5 +1,5 @@
 # carve-wp4 handoff (builder, WP4 of real carving, D-094)
-## State: working (code + tests green locally; bench and capture next)
+## State: stopped at 200k (lead restarts); code, tests, bench, capture done; PR body left
 ## Task
 WP4: draw a carved building from its fine grid (WP3 BuildingCells), 16^3 regions, remesh only touched
 regions on WorkerThreadPool, native mesher (WP2 extension) with GDScript oracle. Not wired into rampage (WP7).
@@ -22,5 +22,18 @@ cell_mesh 7/7 fns 38 checks green, native 16, cells 33 green. Fail-first: M1 reg
 M3 edge faces, M4 fade, M5 stale grid, M6 native salt (870/990 blocks off).
 ## Local build
 scratchpad build_native.bat (vcvars64 + python -m SCons platform=windows target=template_debug).
+## Bench (local, Windows, 16 threads; tools/capture/bench_cell_mesh.gd headless, 60 carves)
+- glass 6x6x16 native: remesh/carve p95 2.0 ms (r6), 2.8 ms (r12); GDScript 7.8-12 ms. office 3x3x6 native
+  p95 1.2/3.8 ms. Promotion: grid+voxels ~140 ms, looks ~50 ms, first build 40 ms native (126 GDScript).
+- 4K (capture_carve_view.gd --bench, SubViewport 3840x2160, game camera, stage 2): baked city GPU 8.1-8.6 ms,
+  with 21 buildings promoted+carved (898k tris) GPU 8.4 ms (noise), CPU render +0.8-1.5 ms.
+## Capture (local, director away, allowed by lead): capture_carve_view.gd at 1920x1080, kaiju hidden (covers
+  tower). Boards in session scratchpad: board_sequence.png, board_slab.png (A 2b2d30 vs B 8a8780).
+- Lead ruling: keep A (slab 2b2d30, one palette line in BuildingVoxels._make_palette); lead asks director.
+## Fix applied
+- Meshes now built on the main thread (worker-made mesh RIDs raced the dummy renderer:
+  "Initializing already initialized RID"); workers return arrays.
 ## Left
-bench line (remesh ms per carve, p95, native vs GDScript); capture before/after at game camera; PR body.
+- CI run 39342476788 (dispatched before the bench/capture commit) result; re-dispatch after this commit.
+- Rerender capture after bite moved to the street face (panel 3 was invisible on the east face).
+- pr_body_wp4.md (untracked, worktree root; all template sections incl. Not exercised).
