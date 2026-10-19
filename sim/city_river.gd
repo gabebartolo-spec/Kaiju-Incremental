@@ -21,10 +21,10 @@ extends RefCounted
 ## (Emergence caps the wade at tuning "emerge" "max_seconds", so a bank point that lands in the
 ## water can never stall the run's start.)
 static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
-	var inset := Num.f(cfg["river_inset"])
 	var row := river_row(zs, cfg)
 	if row < 0:
 		return
+	var inset := Num.f(cfg["river_inset"])
 	var band := Vector2(INF, -INF)
 	var spawn := Vector2(INF, INF)
 	var off := INF  # how far the chosen block lies from the axis

@@ -1,5 +1,6 @@
 # City-calm handoff, 2026-10-20 (builder river-start: sim review FIX list on #88 applied, one push)
 ## State: awaiting lead (PR #88 river emergence; CI on the FIX push; merges after D-091)
+
 ## Task
 Role city-calm (greenery session, local_9fac90d2). Lead: "Kaiju: LEAD" (local_106fc100).
 Jets / army ramp: local_b38b3a6f (told the event name "kaiju_emerged" and PR #88).
