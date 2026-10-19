@@ -1,5 +1,5 @@
 # Lead handoff, 2026-10-20 (new lead session, replaces "Boot up as lead on kaiju project")
-## State: working. Agents: military-ai (#50 r6 proof), croc-contact (#89 topple+swipe+D-096, one push pending).
+## State: working. Agents: military-ai (#50), croc-contact (#89 push+capture), river-start (#88 review notes a/b), ci-audit (read-only), board (playtest notes chapter + D-095/096 PR).
 ## Local headless Godot ON (director 2026-10-20): touched suites, --quick; windowed + full suite on CI.
 ## D-095 (director 10-20): Claws = CLAW SWIPE (croc only for demo). D-096 (director 10-20, question tool): "Swipes undermine towers" (swipe hits count as base chew; undermined towers fall AWAY from the kaiju, lead call). Both go on the board PR.
 ## #89 GREEN 8e7f2d2 (tests 39270770359); swipe 2 s, reptile dmg 8 +5/lvl, width 1.6 +0.35/lvl; claws5 101 vs 72 chunks.
