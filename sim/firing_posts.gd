@@ -176,18 +176,45 @@ func head() -> Vector2:
 	return at
 
 
-## How far p is from the kaiju's body (the line from its origin to its head).
+## The ground the kaiju's body covers now and over the next `lookahead` seconds at the pace it
+## walks (Convoy.kaiju_vel): the line from its origin to its head, swept along its walk. A
+## striding kaiju's path ahead is danger already, so the tanks clear it in time.
+func body() -> PackedVector2Array:
+	var h := head()
+	var ahead := convoy.kaiju_vel * Num.f(cfg["lookahead"])
+	return PackedVector2Array([sim.kaiju_pos, h, h + ahead, sim.kaiju_pos + ahead])
+
+
+## How far p is from the kaiju's body (body(): 0 inside it).
 func to_body(p: Vector2) -> float:
-	return Geometry2D.get_closest_point_to_segment(p, sim.kaiju_pos, head()).distance_to(p)
+	var at := body()
+	if at[0].distance_to(at[3]) > 0.001 and Geometry2D.is_point_in_polygon(p, at):
+		return 0.0
+	var best := INF
+	for n: int in 4:
+		var q := Geometry2D.get_closest_point_to_segment(p, at[n], at[(n + 1) % 4])
+		best = minf(best, q.distance_to(p))
+	return best
+
+
+## How near the road a-b comes to the kaiju's body (body()).
+func near_body(a: Vector2, b: Vector2) -> float:
+	var at := body()
+	if Geometry2D.is_point_in_polygon(a, at) or Geometry2D.is_point_in_polygon(b, at):
+		return 0.0
+	var best := INF
+	for n: int in 4:
+		best = minf(best, RoadGraph._near(a, b, at[n], at[(n + 1) % 4]))
+	return best
 
 
 ## The roads within `near` of the kaiju's body (road -> true).
 func roads_by_body(near: float) -> Dictionary:
-	var h := head()
+	var at := body()
+	var span := maxf(at[0].distance_to(at[1]), at[0].distance_to(at[2]))
 	var out := {}
-	for e: int in graph.edges_within(sim.kaiju_pos, near + sim.kaiju_pos.distance_to(h)):
-		var a := graph.nodes[graph.edge_a[e]]
-		if RoadGraph._near(a, graph.nodes[graph.edge_b[e]], sim.kaiju_pos, h) < near:
+	for e: int in graph.edges_within(sim.kaiju_pos, near + span):
+		if near_body(graph.nodes[graph.edge_a[e]], graph.nodes[graph.edge_b[e]]) < near:
 			out[e] = true
 	return out
 
@@ -195,30 +222,54 @@ func roads_by_body(near: float) -> Dictionary:
 ## Does the route from `from` through `points` pass inside the danger radius of the body (any
 ## nearer it than `from` itself, when it already stands inside)?
 func crosses_danger(from: Vector2, points: Array) -> bool:
-	var h := head()
 	var inner := minf(convoy.danger(), to_body(from) - 0.5)
 	var a := from
 	for b: Vector2 in points:
-		if RoadGraph._near(a, b, sim.kaiju_pos, h) < inner:
+		if near_body(a, b) < inner:
 			return true
 		a = b
 	return false
 
 
-## Straight back along the road under the tank, away from the kaiju, to `follow` beyond the
-## danger radius (no further than that road's end): [path, legs], empty if it is already out.
+## Back off along a road under the tank (at a crossing, whichever road and way leaves it
+## furthest from where the body will be after `lookahead` seconds, counting the time to swing
+## the hull), to `follow` beyond the danger radius or as far as it can drive in that time (no
+## further than that road's end): [path, legs], empty if it is already out.
 func fall_back(tank: RampageSim.Tank, r: ConvoyRoute) -> Array:
-	var e := graph.road_under(tank.pos, r.edge)
-	var axis := graph.axis(e)
-	var body := Geometry2D.get_closest_point_to_segment(tank.pos, sim.kaiju_pos, head())
-	var away := axis if axis.dot(tank.pos - body) >= 0.0 else -axis
-	var na := graph.nodes[graph.edge_a[e]]
-	var nb := graph.nodes[graph.edge_b[e]]
-	var end := maxf((na - tank.pos).dot(away), (nb - tank.pos).dot(away))
-	var want := convoy.danger() + Num.f(cfg["follow"]) - tank.pos.distance_to(body)
-	if want <= 0.0 or end <= 0.0:
+	var want := convoy.danger() + Num.f(cfg["follow"]) - to_body(tank.pos)
+	if want <= 0.0:
 		return [[], []]
-	return [[tank.pos + away * minf(want, end)], [e]]
+	var t := Num.f(cfg["lookahead"])
+	var ahead := convoy.kaiju_vel * t
+	var tail := sim.kaiju_pos + ahead
+	var snout := head() + ahead
+	var fast := Num.f(cfg["retreat_speed"])
+	var turn := deg_to_rad(Num.f(cfg["hull_turn"]))
+	var go := maxf(want, fast * t)
+	var under := graph.road_under(tank.pos, r.edge)
+	var best := -INF
+	var out: Array = [[], []]
+	for e: int in graph.roads_at(graph.cell_of(tank.pos)) + PackedInt32Array([under]):
+		if e != under and not graph.on_edge(tank.pos, e):
+			continue
+		var na := graph.nodes[graph.edge_a[e]]
+		var nb := graph.nodes[graph.edge_b[e]]
+		for away: Vector2 in [graph.axis(e), -graph.axis(e)]:
+			var end := maxf((na - tank.pos).dot(away), (nb - tank.pos).dot(away))
+			if end <= 0.5:
+				continue
+			var swing := (
+				acos(clampf(absf(r.front.dot(away)), 0.0, 1.0)) if r.front != Vector2.ZERO else 0.0
+			)
+			var drive := minf(end, fast * maxf(0.0, t - swing / turn))
+			var then := tank.pos + away * drive
+			var clear := Geometry2D.get_closest_point_to_segment(then, tail, snout).distance_to(
+				then
+			)
+			if clear > best + 0.01:
+				best = clear
+				out = [[tank.pos + away * minf(go, end)], [e]]
+	return out
 
 
 ## Is the line from `from` to `to` (stopping short of the kaiju's body) clear of standing

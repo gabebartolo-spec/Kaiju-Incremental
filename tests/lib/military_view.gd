@@ -12,6 +12,9 @@ const Clip := preload("res://tools/capture/capture_military.gd")
 const VIEW_SECONDS := 18.0
 const EDGE_GAP := 8.0  # standoff: a tank's centre this far from the kaiju's body edge (LEAD r6)
 const CAR_HALF := Vector2(1.0, 0.5)  # a car as drawn, half length x half width (m)
+## How fast a tank backs out from inside the danger line, at least and at most (m/s, LEAD r6:
+## 3-4 m/s, never a creep that reads as stuck).
+const RETREAT_PACE := Vector2(3.0, 4.0)
 
 var _shapes := {}  # tank part -> its footprint (_tank_shapes)
 
@@ -38,7 +41,10 @@ func _check_view() -> void:
 				% [got["gap"], got["touching"], got["yaw"], got["moving"]]
 			)
 			+ head
-			+ " tank-steps"
+			+ (
+				" tank-steps, falling back %.1f-%.1f m/s (%d tank-steps)"
+				% [got["retreat_min"], got["retreat_max"], got["retreat_steps"]]
+			)
 		)
 	)
 	check(
@@ -59,6 +65,29 @@ func _check_view() -> void:
 			% [EDGE_GAP, got["edge"], got["on_car"]]
 		)
 	)
+	var steps := Num.i(got["retreat_steps"])
+	check(
+		(
+			steps >= 5
+			and Num.i(got["retreat_ok"]) >= 0.9 * steps
+			and Num.f(got["retreat_max"]) <= RETREAT_PACE.y
+		),
+		(
+			(
+				"a tank falling back from inside the danger line moves out at %.0f-%.0f m/s, never"
+				+ " a creep (%d of %d tank-steps, at least 90%%, a pivot on the way the rest;"
+				+ " %.1f-%.1f m/s)"
+			)
+			% [
+				RETREAT_PACE.x,
+				RETREAT_PACE.y,
+				got["retreat_ok"],
+				steps,
+				got["retreat_min"],
+				got["retreat_max"]
+			]
+		)
+	)
 
 
 ## The clip's run, measured every sim step: {gap, touching, yaw, moving}.
@@ -70,6 +99,7 @@ func _view_run() -> Dictionary:
 	var roads := _roads(rampage.sim)
 	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}
 	got["edge"] = INF
+	got.merge({"retreat_steps": 0, "retreat_ok": 0, "retreat_min": INF, "retreat_max": 0.0})
 	got["danger"] = rampage.sim.army_units.convoy.danger()
 	var last := {}
 	for i: int in roundi(VIEW_SECONDS * 60.0):
@@ -92,6 +122,7 @@ func _measure_tanks(rampage: Rampage, roads: Dictionary, last: Dictionary, got: 
 	for tank: RampageSim.Tank in sim.tanks:
 		var was: Vector2 = last.get(tank.id, tank.pos)
 		var front := sim.army_units.convoy.front(tank.id)
+		_measure_retreat(sim, tank, was, got)
 		if tank.pos.distance_to(was) > 0.0005 and front != Vector2.ZERO:
 			got["yaw"] = maxf(Num.f(got["yaw"]), _yaw_off_road(tank.pos, front, roads))
 			got["moving"] = Num.i(got["moving"]) + 1
@@ -114,6 +145,28 @@ func _measure_tanks(rampage: Rampage, roads: Dictionary, last: Dictionary, got: 
 			var g := _parts_gap(one, two)
 			got["gap"] = minf(Num.f(got["gap"]), g)
 			got["touching"] = Num.i(got["touching"]) + (1 if g <= 0.0 else 0)
+
+
+## A tank falling back from inside the danger line: its pace over the last sim step (m/s).
+func _measure_retreat(
+	sim: RampageSim, tank: RampageSim.Tank, was: Vector2, got: Dictionary
+) -> void:
+	var convoy := sim.army_units.convoy
+	var r: ConvoyRoute = convoy.routes.get(tank.id)
+	var moved := tank.pos.distance_to(was)
+	if (
+		r == null
+		or not r.retreating
+		or moved < 0.01
+		or convoy.posts.to_body(was) >= convoy.danger()
+	):
+		return
+	var pace := moved / (4.0 / 60.0)
+	got["retreat_steps"] = Num.i(got["retreat_steps"]) + 1
+	if pace >= RETREAT_PACE.x and pace <= RETREAT_PACE.y:
+		got["retreat_ok"] = Num.i(got["retreat_ok"]) + 1
+	got["retreat_min"] = minf(Num.f(got["retreat_min"]), pace)
+	got["retreat_max"] = maxf(Num.f(got["retreat_max"]), pace)
 
 
 ## How near the kaiju the tanks come, and any tank hull over a car still on its wheels.

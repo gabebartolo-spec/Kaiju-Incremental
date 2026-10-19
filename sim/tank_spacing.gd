@@ -1,8 +1,9 @@
 class_name TankSpacing
 extends RefCounted
-## Tank-to-tank spacing (D-066): no tank drives, pivots or backs any part of itself into
-## another. A tank is what the view draws: its hull along its front, its turret and gun turned to
-## the kaiju (the turret tracks it), each grown by `clear`. Part of Convoy; numbers are
+## Tank-to-tank spacing and right of way (D-066): no tank drives, pivots or backs any part of
+## itself into another; a younger tank gives way to an older one held up. A tank is what the
+## view draws: its hull along its front, its turret and gun turned to the kaiju (the turret
+## tracks it), each grown by `clear`. Part of Convoy; numbers are
 ## army.convoy (hull, turret, gun, clear, follow) in data/tuning.json.
 
 var convoy: Convoy
@@ -33,7 +34,13 @@ func blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.T
 		var now := tank.pos.distance_to(other.pos)
 		var o: ConvoyRoute = convoy.routes.get(other.id)
 		var facing := o.front if o != null and o.front != Vector2.ZERO else dir
-		if clash(next, dir, other.pos, facing):
+		if next.distance_to(tank.pos) < 0.0001:  # a pivot in place: only its hull swings
+			if (
+				hull_clash(next, dir, other.pos, facing)
+				and not hull_clash(next, own, other.pos, facing)
+			):
+				return other
+		elif clash(next, dir, other.pos, facing):
 			if then <= now or not clash(tank.pos, own, other.pos, facing):
 				return other
 		var ahead := other.pos - tank.pos
@@ -62,6 +69,48 @@ func open_up(tank: RampageSim.Tank, r: ConvoyRoute, step: float) -> void:
 		return
 
 
+## Giving way: back up while the older tank is held up (up to 3 x stuck), then wait.
+func yielding(tank: RampageSim.Tank, r: ConvoyRoute, dt: float, back: float) -> void:
+	r.yield_t -= dt
+	for older: RampageSim.Tank in sim.tanks:
+		if older.id != r.give_to:
+			continue
+		back_off(tank, older, back)
+		var o: ConvoyRoute = convoy.routes.get(older.id)
+		var held := o != null and o.stuck_t > 0.0
+		if held and r.yield_t <= 0.0 and r.yield_all < Num.f(cfg["stuck"]) * 3.0:
+			r.yield_t = dt
+		r.yield_all += dt
+
+
+## Right of way: blocked by an older tank that is itself held up trying to move, the younger
+## one gives way for `stuck` seconds.
+func give_way(tank: RampageSim.Tank, blocker: RampageSim.Tank, back: float) -> void:
+	var o: ConvoyRoute = convoy.routes.get(blocker.id)
+	if blocker.id >= tank.id or o == null or o.path.is_empty() or o.stuck_t <= 0.0:
+		return
+	var r: ConvoyRoute = convoy.routes[tank.id]
+	r.give_to = blocker.id
+	r.yield_t = Num.f(cfg["stuck"])
+	back_off(tank, blocker, back)
+
+
+## Straight back along its hull, away from the older tank, only while the hull stays on the road.
+func back_off(tank: RampageSim.Tank, older: RampageSim.Tank, step: float) -> void:
+	var o: ConvoyRoute = convoy.routes.get(older.id)
+	var r: ConvoyRoute = convoy.routes[tank.id]
+	if o == null or o.stuck_t <= 0.0:
+		return
+	var own := r.front if r.front != Vector2.ZERO else (tank.pos - older.pos).normalized()
+	if not convoy.graph.square(r.front, r.edge):
+		return  # half turned: it squares up first (_settle), then backs
+	var back := own if own.dot(tank.pos - older.pos) > 0.0 else -own
+	var to := tank.pos + back * step
+	if convoy.graph.drivable(to, own) and blocker(tank, to, own) == null:
+		tank.pos = to
+		r.reversing = back.dot(own) < 0.0
+
+
 ## Do two tanks as drawn (hull along u / w, turret and gun on the kaiju), each grown by
 ## `clear`, touch?
 func clash(p: Vector2, u: Vector2, q: Vector2, w: Vector2) -> bool:
@@ -72,6 +121,21 @@ func clash(p: Vector2, u: Vector2, q: Vector2, w: Vector2) -> bool:
 			var at := theirs[j]
 			if boxes_overlap(mine[i], mine[i + 1], mine[i + 2], at, theirs[j + 1], theirs[j + 2]):
 				return true
+	return false
+
+
+## Does the hull at p (along u) touch any part of the tank at q (hull along w), or its hull
+## touch this tank's turret or gun? (A pivot moves only the hull: turrets track the kaiju.)
+func hull_clash(p: Vector2, u: Vector2, q: Vector2, w: Vector2) -> bool:
+	var mine := _boxes(p, u)
+	var theirs := _boxes(q, w)
+	for j: int in range(0, 9, 3):
+		var at := theirs[j]
+		if boxes_overlap(mine[0], mine[1], mine[2], at, theirs[j + 1], theirs[j + 2]):
+			return true
+	for i: int in range(3, 9, 3):
+		if boxes_overlap(mine[i], mine[i + 1], mine[i + 2], theirs[0], theirs[1], theirs[2]):
+			return true
 	return false
 
 

@@ -325,6 +325,21 @@ func _square_legs(from: Vector2, on: int, out: Array[Vector2], out_legs: Array[i
 		i += 1
 
 
+## The point `to` drawn in so the leg from `from` runs within skew_deg of road e's axis (as
+## _square_legs), or `to` itself when that would leave the road.
+func square_leg(from: Vector2, to: Vector2, e: int) -> Vector2:
+	if e < 0:
+		return to
+	var a := axis(e)
+	var v := to - from
+	var cap := absf(v.dot(a)) * tan(deg_to_rad(Num.f(cfg["skew_deg"])))
+	var side := v.dot(a.orthogonal())
+	if absf(side) <= cap:
+		return to
+	var drawn := from + a * v.dot(a) + a.orthogonal() * clampf(side, -cap, cap)
+	return drawn if off_line(drawn, e) <= _room(e) else to
+
+
 ## Road e's direction (a to b).
 func axis(e: int) -> Vector2:
 	return (nodes[edge_b[e]] - nodes[edge_a[e]]).normalized()

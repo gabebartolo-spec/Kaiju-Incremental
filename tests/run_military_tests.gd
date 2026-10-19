@@ -130,6 +130,13 @@ func _check_rampages() -> void:
 				hulls_was = heads.duplicate()
 				for tank: RampageSim.Tank in sim.tanks:
 					last[tank.id] = tank.pos
+	var in_band := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
+	print(
+		(
+			"RAMPAGES parked skewed %d of %d, driving skewed %d of %d, in band %.0f%% of %d"
+			% [skewed, parked, crabbing, driving, in_band * 100.0, parked_in_band + parked_close]
+		)
+	)
 	check(
 		tank_samples > 2000 and inside == 0,
 		(

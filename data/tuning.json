@@ -191,6 +191,7 @@
 			"danger": 0.55,
 			"edge_gap": 8.0,
 			"retreat_speed": 3.5,
+			"lookahead": 3.0,
 			"danger_cost": 200.0,
 			"held_cost": 300.0,
 			"oncoming_cost": 80.0,

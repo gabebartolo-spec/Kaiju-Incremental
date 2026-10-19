@@ -1,5 +1,38 @@
-# Military AI handoff, 2026-10-19 (r6 paused)
-## State: paused (director, account handover). #50 head 085410a = WIP r6, CI red as expected; Auto-fix OFF (re-enable at r6 start). Local handoff commits not pushed.
+# Military AI handoff, 2026-10-20 (r6 fix pushed; builder stopped at 200k, fresh builder continues)
+## State: r6 FIX pushed to #50 (head: see git log; CI run id in the lead report). Lead = "main".
+## Local headless allowed (director 2026-10-20): tools/run_tests.sh --quick military, GODOT wrapper
+## adding --audio-driver Dummy. Captures stay on CI. Don't merge. Helis not in #50.
+
+## r6 done (local military suite 11/11 green at the push; old sim fails 4, shown failing first)
+- Merge of look-options (d26b5ea): floors and shard registry deleted; military suite uses _t.
+- Standoff from the body EDGE + 8 m, braking before it: Convoy tracks kaiju_vel; FiringPosts.body()
+  = tail root to snout swept along the walk for army.convoy.lookahead 3 s (new tunable); to_body,
+  near_body, roads_by_body and crosses_danger use it. fall_back picks the road and way at a crossing
+  that leaves the tank furthest from the body after lookahead, counting hull-swing time.
+  View: closest to body edge 8.8 m (was 4.6; lookahead 2 s gave 8.0 exactly).
+- Falling back at 3-4 m/s: retreat_speed 3.5 now forward too (was 2.5 forward). New check
+  (military_view RETREAT_PACE): >= 90% of fall-back steps in 3-4 m/s, max <= 4: 41/42, 2.6-3.5
+  (old code 0/30 at 2.5).
+- Parked squared: skewed 0 of 3268 (was 86/3521). Causes: a pivot was blocked by a neighbour's
+  turret/gun clash (TankSpacing.hull_clash: a pivot in place checks only the swinging hull), and
+  _settle now falls back to any road under it at a crossing. Driving skewed 0 of 30894:
+  RoadGraph.square_leg re-squares each leg as driven. In band 100% of 144 (was 90%).
+- Right-of-way functions moved Convoy -> TankSpacing (yielding/give_way/back_off; 400-line cap).
+- Run prints VIEW and RAMPAGES lines (numbers above).
+
+## Left for the fresh builder
+1. Confirm CI green on #50 at the pushed head (tests.yml).
+2. One CI clip: ci_capture.sh --movie --fps=60 --resolution=1920x1080 --renderer=gl_compatibility
+   capture_military.gd -- --out=<dir> (check gh run list -w capture.yml first: one at a time).
+3. Hull/turret overlays at frames 750 and 1050 from the clip log's OUTLINE lines: scratch script
+   overlay.py (log, stills dir, out dir, frames) draws hull red / turret cyan / barrel yellow and
+   prints each hull's screen long-axis angle; 2x crops. Lead checks them.
+4. Pacing line on CI: a throwaway tools/capture/pacing_military.gd (extends res://tools/pacing.gd)
+   on a tmp branch, via ci_capture.sh. Base (83af6d6): evolve1 0.26 h, young 6/8, tree 4.82 h.
+   The wider standoff cuts tank damage: the tank_damage retune is the lead's/director's call.
+5. PR body: evidence above + "Not exercised" (other species' body lines, dash/glide velocity
+   spikes in kaiju_vel, helicopters).
+6. Delete tmp branch claude/tmp-military-diag if still there.
 
 ## Task
 D-066 (director 2026-10-18): "make sure the tanks and helicopters path finding is logical and
@@ -11,41 +44,6 @@ capture.yml first). LEAD merges.
 ## Branch
 claude/military-ai (worktree ../Kaiju-Incremental-wt/military-ai), PR #50 into
 claude/look-options, synced to c64fa34. r5 verified head 98d21cc (CI green, clip_r5, pacing).
-
-## r6 (LEAD's fresh-critic FIX of r5, 2026-10-19) - where it stands
-Standoff rule (replaces LEAD's earlier head-only call): a tank's centre >= 8 m from the
-kaiju's BODY EDGE. #89 body_contact is not in look-options, so the body = the line from
-kaiju_pos (the croc's tail root) to the head (BreathCone origin: breath_snout_ahead x body
-scale along facing), body_radius x body scale wide.
-1. Lead tank charges under the snout at 12-13.5 s: CODE WRITTEN, NOT VERIFIED.
-   - Convoy.danger() = max(reach x danger, body_radius x bs + edge_gap 8), from the body line.
-   - FiringPosts.head()/to_body()/roads_by_body(); urgent, near-kaiju road cost, post validity
-     (band and ring posts), _goal_good, crosses_danger and fall_back all use it.
-   - _drive brakes: a non-retreating move whose next point is inside the line clears the path.
-2. Creeping back reads as stuck: CODE WRITTEN, NOT VERIFIED. A retreating tank inside the line
-   reverses at army.convoy.retreat_speed 3.5 m/s, then at speed x reverse.
-3. Hull swing 25-30 deg at 12.5 / 17.5 s: NOT DONE. capture_military.gd now logs OUTLINE lines
-   (frame, tank, part, screen points) at every still, including 750 and 1050. Run the CI clip,
-   then draw the overlays with scratchpad overlay.py (reads POLY lines: adapt the prefix to
-   OUTLINE). If it is the hull, clamp hull yaw to the road tangent on straights.
-4. Second tank skewed at the snout, 13.5-18 s: NOT DONE. Same standoff rule; overlay it too;
-   square it to the street once parked.
-Proof still owed: the check failing first (4e8da0c pushed with the check only; its CI run was
-in progress, and pushing 0b8f625 probably cancelled it: re-run it with gh run rerun), CI suites
-green at the fix, a new CI clip of the same moment, both tanks' overlays, pacing on CI.
-- CI at the WIP head 085410a (run 39144397528, expected red, not fixed: paused): 3 military
-  fails. Body edge closest 4.6 m (bar 8); parked skewed 86 of 3522 tank-steps past 15 deg;
-  standoff 90% of 162 in band (bar 95%, sample floor 40 ok), danger 0.9 s ok. The wider
-  standoff leaves few in-band posts (8301 reserve) and more tanks mid-pivot: next to tackle.
-  The failing-first runs (1ce1cee, 4e8da0c) were both cancelled by later pushes.
-- Check: tests/lib/military_view.gd: got["edge"] (tank centre to body edge) >= EDGE_GAP 8 over
-  the seeded clip run (Clip.walk stride), plus no hull on a car.
-- Pacing on CI: scratchpad pacing_military.gd (pacing.gd + damage tally) goes into
-  tools/capture/ on a throwaway branch (plumbing commit, no checkout), dispatched via
-  ci_capture.sh; the log has the DMG/evolve lines. Base numbers (83af6d6, snapB6): evolve1
-  0.26 h, young 6/8, tree 4.82 h, tank dmg/run 167 / 299 / 656 / 660. The r6 standoff will cut
-  tank damage again: retune growth.stages tank_damage after.
-- Firing range is still measured from kaiju_pos (tail root); not changed.
 
 ## Helicopters (LEAD 2026-10-19 call 2): B clip, NOT YET RUN
 claude/heli-flight head 20b06ff adds tools/capture/capture_heli_b.gd: camera eased to x1.4
