@@ -6,6 +6,9 @@ extends RefCounted
 
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
+## D-076: the seeded Behemoth fixture draws at least this many rooftop volleys a second over its
+## run (1.55 with D-076a and #50; 0.29 with the old squads and interval).
+const MIN_BEHEMOTH_VOLLEYS := 1.0
 
 var _check: Callable
 var _make: Callable
@@ -83,6 +86,35 @@ func run() -> void:
 		far_shots == 0 and far.hp == far.max_hp,
 		"a squad out of range holds fire (%d shots)" % far_shots
 	)
+	# Improvised, not drilled (D-076): one squad's shots come at ragged gaps, never a metronome.
+	var ragged := _one_squad(_new({}))
+	ragged.kaiju_pos = ragged.army_units.squads[0].pos + Vector2(Num.f(cfg["range"]) * 0.5, 0)
+	var times: Array[float] = []
+	for i: int in ceili(Num.f(cfg["fire_interval"]) * 8.0 / DT):
+		for event: Dictionary in ragged.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "rooftop_fired":
+				times.append(i * DT)
+	var gaps: Array[float] = []
+	for i: int in range(1, times.size()):
+		gaps.append(times[i] - times[i - 1])
+	var spread: float = (gaps.max() - gaps.min()) if gaps.size() >= 3 else 0.0
+	_check.call(
+		spread >= Num.f(cfg["fire_interval"]) * 0.3,
+		"a squad fires at ragged gaps, not in step (%d gaps, spread %.2f s)" % [gaps.size(), spread]
+	)
+	# Range is measured from the edge of the kaiju's stomp, as the tanks' is (D-076): a Behemoth
+	# whose centre is past `range` but whose stomp edge is within it draws fire.
+	var edge := _one_squad(_new({"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}, grown))
+	var past := Num.f(cfg["range"]) + edge.stomp_radius() * 0.5
+	edge.kaiju_pos = edge.army_units.squads[0].pos + Vector2(past, 0)
+	var edge_shots := _steps_counting(edge, seconds, "rooftop_fired")
+	_check.call(
+		edge_shots >= 1,
+		(
+			"a squad fires at a Behemoth %.1f from its centre, inside range %.0f + stomp %.1f (%d)"
+			% [past, Num.f(cfg["range"]), edge.stomp_radius(), edge_shots]
+		)
+	)
 	# Its roof chunk gone (broken, dropped or toppled): the squad dies and pays biomass.
 	var roof := _one_squad(_new({}))
 	roof.kaiju_pos = Vector2(roof.arena_half, roof.arena_half)  # far off: no stomp lands
@@ -147,6 +179,16 @@ func run() -> void:
 				Num.i(off_result["rubble"]),
 				Num.i(on_result.get("rooftops", 0))
 			]
+		)
+	)
+	# D-076 "more squads, more often": over the whole Behemoth rampage the roofs keep firing.
+	var played := Num.f(on.stat("run_seconds")) - maxf(0.0, on.time_left)
+	var rate := on.army_units.volleys / maxf(1.0, played)
+	_check.call(
+		rate >= MIN_BEHEMOTH_VOLLEYS,
+		(
+			"a Behemoth rampage draws %.2f rooftop volleys a second (%d in %.0f s), at least %.1f"
+			% [rate, on.army_units.volleys, played, MIN_BEHEMOTH_VOLLEYS]
 		)
 	)
 	_check.call(

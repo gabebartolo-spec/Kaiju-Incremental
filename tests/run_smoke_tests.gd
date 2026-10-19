@@ -24,17 +24,17 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_settings()
-	_check_autoloads()
-	_check_scripts_compile()
-	await _check_main_scene()
-	await _check_planted_feet()
-	_check_skins_fresh()
-	await _check_voxel_skin()
-	_check_tank()
-	_check_heli()
-	_check_vehicle_fade()
-	_check_crease_pass()
+	await _t("_check_settings")
+	await _t("_check_autoloads")
+	await _t("_check_scripts_compile")
+	await _t("_check_main_scene")
+	await _t("_check_planted_feet")
+	await _t("_check_skins_fresh")
+	await _t("_check_voxel_skin")
+	await _t("_check_tank")
+	await _t("_check_heli")
+	await _t("_check_vehicle_fade")
+	await _t("_check_crease_pass")
 
 
 func _check_settings() -> void:
@@ -161,7 +161,7 @@ func _check_voxel_skin() -> void:
 		"the skin's bone matrices stay finite while walking (broken: %s)" % [broken]
 	)
 	check(mantle_ok, "the octopus mantle's breathing scale reaches its skin")
-	await _check_skin_mouth()
+	await _t("_check_skin_mouth")
 	VoxelSkin.show_rigid_voxels = true
 	var rex: Dictionary = Content.species_def("reptilian")
 	var rex_colors: Dictionary = rex["colors"]
@@ -211,7 +211,7 @@ func _check_skin_mouth() -> void:
 ## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
 func _check_planted_feet() -> void:
 	for species: String in ["reptilian", "insectoid"]:
-		await _check_feet_of(species)
+		await _t("_check_feet_of", [species])
 
 
 func _check_feet_of(species_id: String) -> void:

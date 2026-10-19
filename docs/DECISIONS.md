@@ -4,6 +4,54 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
+Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
+from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
+support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
+(D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).
+
+## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
+Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
+(199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
+cap saved by demo exe 1 no longer overrides it.
+
+## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
+Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
+subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
+has no commercial rights; Pro $12/mo; not bought.
+
+## 2026-10-19 · D-091 · Director · No building is too strong for the baby; big ones just take longer
+Why: "the buildings shouldnt be too strong for our little kaiju, it should just take him longer ... hes more than
+capable of tearing the roots out and toppling the large buildings". Replaces the tier gate and "TOO STRONG"; evolve1
+text "Grow huge. Tear through towers faster." In #89 (croc contact).
+
+## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
+Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
+
+## 2026-10-19 · D-089 · Director · Demo exe 1 waited for the stall fix
+Why: the windowed stall (Structure.settle rescanning every floor) had to be fixed first; #75 MERGED, exe 44f56fd.
+
+## 2026-10-19 · D-088 · Director · The demo exe ships without #50; the military AI follows in a second exe
+Why (AskUserQuestion, "Ship now, patch after"): tanks and helicopters are already in the demo; #50 is their smarter
+movement and failed its r3 critic. #50 r4 (tank overlap and skew, helis in frame, rotor clearance, young retune
+on evolve1 400) runs now; a fresh critic, then a second exe.
+
+## 2026-10-19 · D-084a · Lead · #55 trample: topple out, crush in place instead (rule 8)
+Why: ten topple rounds failed; method change to crushing trees in place (debris, stump, footfall puff). Still after
+the demo build per D-084.
+
+## 2026-10-18 · D-087 · Director · The first evolution comes at about 15 minutes
+Why (19:xx): "try to get the first evo earlier, no ones going to play 41 minutes of a demo if theyre still a baby";
+picked "About 15 min" from 10 / 15 / 20-25. Lever: evolve1 cost 1778 -> 400 (#36, MERGED cceabba): 130 runs on the
+real head give evolve1 0.26 h, young defeats 8/14, tree 82/87 at 3.37 h. The growth test ratio moved /10 -> /20.
+
+## 2026-10-18 · D-086 · Lead · #36 option A (Behemoth army 0.03), void
+Why: proposed for Behemoth defeats; superseded the same evening by D-087's pick and never applied.
+
+## 2026-10-18 · D-085 · Director · Rooftop squads fire raggedly, never in unison
+Why (via the rooftops session): "shooters arent firing in unison ... improvised, unrehearsed resistance". Seeded
+ragged gaps per squad (51a2d5d); in #63.
+
 ## 2026-10-18 · D-084 · Lead · #55 trample gets one last round, else the demo ships without it
 Why (18:0x, same rule as D-082): r9 failed the critic (topple hidden by the body, sprite dust, see-through crowns, dark
 stumps, falls along the tail). One more round; if it fails, greenery's trample is not in the demo.
@@ -284,94 +332,3 @@ Why: "download the free stuff, synthesize in-house when we can get better result
 GDC bundles, Kenney (CC0) and Freesound CC0 only; each source CLEARED in the licence register first;
 no paid packs. Also: fullscreen now starts only in exported builds (a project-wide fullscreen start put
 agent capture windows on the director's screen).
-
-## 2026-10-16 · D-029 · Director · Real city districts from OpenStreetMap, starting with Melbourne CBD
-Why: "could we have real cities with real layouts... imagine how fun it would be to destroy your own
-city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
-(ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
-area. No player-imported cities, ever: new cities ship as patches (director, 2026-10-16).
-TABLED (director, 2026-10-16): "focus on proofing the game before we expand to that feature";
-the helper pauses at a clean point on its WIP branch.
-
-## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
-Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
-fidelity". Kaiju are ~16 voxels per floor-unit, buildings 4. Changes: city-layout raises building
-RES (8-12) with recessed, framed facades and rooftop clutter, distance LOD if perf needs it.
-
-## 2026-10-16 · D-027 · Director · The game targets a 4K 120 Hz TV
-Why: "i want the game to display on a 4k tv" (Beyond TV, 3840x2160, 120 Hz VRR, HDR, 400 nits).
-Changes: starts fullscreen, stretch aspect "expand", adaptive vsync (VRR); UI stays a 1920x1080
-canvas scaled 2x. The TV is plugged into the 4070 SUPER (director, 2026-10-16). Still open:
-TV-distance text sizes, HDR output, perf at native 4K.
-
-## 2026-10-16 · D-026 · Director · Ability powers get proper VFX and SFX (later milestone)
-Why: "we will eventually need some nice vfx and sfx for our powers/abilities that we will unlock".
-Changes: none yet. Any SFX source must clear the licence register first.
-
-## 2026-10-16 · D-025 · Director · Smoke must not obscure the camera view
-Why: "a little smog in the camera is good and immersive, too much and it just ruins the view".
-Changes: smoke.gdshader fades smoke near the camera (clear inside 8 units, full from 22) and keeps
-55% of it over the screen centre where the kaiju stands. This is the rule for every future smoke,
-dust or fog effect.
-
-## 2026-10-16 · D-024 · Director · The city must read as a real city with believable edges
-Why: "it seems like our city exists in a void... far too gridlike"; "not saying our map has to be
-infinite, but it has to make sense visually". Changes: helper session city-layout (branch city-layout).
-
-## 2026-10-16 · D-023 · Director · Tripo credits: quality over cost
-Why: "dont worry about credit cost, just get good results, the credits ar there to be spent".
-Changes: no per-session cap for kaiju/vehicle/landmark generation; every task is still logged in
-docs/provenance/tripo.md.
-
-## 2026-10-16 · D-022 · Director · The insectoid is a mantis: two raptorial arms plus four legs
-Why: "the insectoids are looking a bit armless, they should have legs and arms"; "keep pursuing
-the mantis look". Changes: adult = mantis_a (Tripo 9668b815); the rig needs a hexapod skeleton.
-
-## 2026-10-16 · D-016 · Director · ~1,000 Tripo credits approved for 9 rig-ready kaiju this session
-Why: "Yes, ~1,000 credits". Smart Mesh P2.0 (100 each, 4 variants per run) + auto-rig (~20 each).
-
-## 2026-10-16 · D-015 · Director · Every kaiju is animatable, with physics on tails, limbs and antennae
-Why: "all must be animatable too"; "i want nice physics for the tail/limbs/antennae".
-Changes: kaiju become skeletons carrying voxel chunks per bone; spring-bone physics on tail chains,
-antennae and tentacles. Rig-ready meshes (Smart Mesh), Tripo auto-rig for the reptile, Blender rigs
-for the insectoid and cephalopod.
-
-## 2026-10-16 · D-014 · Director · Three models per kaiju: baby, adolescent, adult
-Why: "we should probably have 3 models per kaiju though". The first reptile sculpt: "he looks
-wonderful" (adult). Stages map to the evolutions: baby (start), adolescent (EVOLVE 1), adult (EVOLVE 2+).
-
-## 2026-10-16 · D-021 · Director · Game font: "Kaiju Claw" (direction B) for headings and big buttons
-Why: picked from the A/B/C font board (docs/captures/2026-10-16-font/font_board.png) in the font
-session. Ours (built with fontTools); body text below 36 px keeps the default font. PR #4.
-
-## 2026-10-16 · D-020 · Director · Tripo sculpts for military vehicles and landmarks (~350 credits)
-Why: "do military vehicles and landmarks". Tank, attack helicopter, fighter jet, APC; stadium, radio
-mast, bridge. Vehicles voxelized as rigid models (rotors/turrets split); landmarks voxelized and cut
-into structural chunks so they still collapse.
-
-## 2026-10-16 · D-019 · Director · Civilians and moving traffic in the streets ("we also need civilians in the streets", "cars, etc")
-
-## 2026-10-16 · D-018 · Director · Smoke dialled back ~15% for visibility (opacity and particle count)
-
-## 2026-10-16 · D-017 · Director · A unique game font that fits the flavour (queued after the kaiju)
-
-## 2026-10-16 · D-013 · Director · Terrifying monsters, not toys; buildings are real structures
-Why: "the kaiju currently look like childrens toys, they should look like terrifying monsters";
-"towers falling like jenga ... they should be actual structures"; "need shaders and particle effects".
-Reference footage: WATCH THIS.mp4 (CityV voxel destruction) and the CG Cookie detailed-voxel trailer.
-Changes: Structure (chunks, support, drops, toppling), dust/shockwave/sparks, kaiju rebuilt from models.
-
-## 2026-10-16 · D-012 · Director · Kaiju models come from Tripo, voxelized in Blender
-Why: realistic anatomy and skin texture in dense voxels (the raptor in the reference trailer).
-Spend: approved at "roughly a few hundred credits per species with retries"; the lead asks before
-going past 500 credits in one session. Every model passes a six-view inspection before use; every
-task id, credit cost and verdict goes in docs/provenance/tripo.md.
-
-## 2026-10-16 · D-010 · Director · Real light sources; no sterile lighting
-Why: "lighting is very sterile too, should be real light sources in the game". Changes: evening sun
-with long shadows, streetlamps that light the street, lit windows, burning ruins and wrecks, muzzle
-flashes, explosion and breath light, screen-space bounce light. The evening setting is the lead's
-pick for making lights read; the director may move the time of day.
-
-## 2026-10-16 · D-009 · Director · The kaiju starts young, outscaled by the city, and grows as you play
-Changes: body scale = young 0.5 x evolution tier x (1 + 2% per upgrade level owned); reach grows with it.

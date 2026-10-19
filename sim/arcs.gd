@@ -53,6 +53,8 @@ static func build(frame: Structure, cfg: Dictionary) -> Arcs:
 func shed(frame: Structure) -> Array[Dictionary]:
 	var now := _count(frame)
 	var out: Array[Dictionary] = []
+	var hp := frame.standing()
+	var plan := frame.w * frame.d
 	for g: int in now.size():
 		if now[g] >= _whole[g]:
 			continue
@@ -60,7 +62,7 @@ func shed(frame: Structure) -> Array[Dictionary]:
 		for y: int in range(stub, frame.h):
 			for z: int in frame.d:
 				for x: int in frame.w:
-					if _of[x + z * _w] == g and frame.alive(Vector3i(x, y, z)):
+					if _of[x + z * _w] == g and hp[x + z * _w + y * plan] > 0.0:
 						cells.append(Vector3i(x, y, z))
 		_whole[g] = now[g] - cells.size()
 		if not cells.is_empty():
@@ -80,15 +82,16 @@ func arc_at(x: int, z: int) -> int:
 	return _of[x + z * _w]
 
 
+## Standing chunks per arc, read straight off the chunk strengths (Structure.standing()).
 func _count(frame: Structure) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	out.resize(_dirs.size())
-	for y: int in frame.h:
-		for z: int in frame.d:
-			for x: int in frame.w:
-				var g := _of[x + z * _w]
-				if g >= 0 and frame.alive(Vector3i(x, y, z)):
-					out[g] += 1
+	var hp := frame.standing()
+	var plan := _of.size()
+	for i: int in hp.size():
+		var g := _of[i % plan]
+		if g >= 0 and hp[i] > 0.0:
+			out[g] += 1
 	return out
 
 

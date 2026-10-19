@@ -9,6 +9,9 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const PLAY_FRAMES := 240
 const BREAK_FRAMES := 900
 const FLEE_FRAMES := 240
+## Director playtest (2026-10-19): "stadium audience shouldnt disappear so suddenly, let us kill
+## them". This long after the panic at least half the fans are still in view, on their way out.
+const VISIBLE_FRAMES := 120
 
 
 static func run(tree: SceneTree, check: Callable) -> void:
@@ -77,9 +80,11 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	)
 	var view: CityView = GuiInput.find_script(rampage, CityView)
 	var falls := {"burst": 0, "over": 0}
-	for _i: int in FLEE_FRAMES:
+	for i: int in FLEE_FRAMES:
 		await tree.physics_frame
 		_watch_falls(view, stadium, falls)
+		if i == VISIBLE_FRAMES and crowd != null:
+			_check_crowd_kill(check, rampage, crowd, seated)
 	check.call(
 		falls["burst"] > 0 and falls["over"] == 0,
 		(
@@ -103,6 +108,46 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	)
 	rampage.queue_free()
 	await tree.process_frame
+
+
+## The fans stay in view while they run, and the kaiju can kill them where they run: a blow on
+## a running fan's spot (not its seat) kills it, and it counts as a civilian crushed.
+static func _check_crowd_kill(
+	check: Callable, rampage: Rampage, crowd: StadiumCrowd, seated: int
+) -> void:
+	check.call(
+		crowd.in_stands() * 2 >= seated,
+		(
+			"fans stay in view on their way out: %d of %d in the stands %.0f s after the panic"
+			% [crowd.in_stands(), seated, VISIBLE_FRAMES / 60.0]
+		)
+	)
+	var street: StreetLife = GuiInput.find_script(rampage, StreetLife)
+	var view: CityView = GuiInput.find_script(rampage, CityView)
+	var target: StadiumCrowd.Fan = null
+	for fan: StadiumCrowd.Fan in crowd.fans:
+		if crowd.running_at(fan).distance_to(fan.pos) > 1.0:
+			target = fan
+			break
+	var before := street.civilians_killed()
+	var dead := crowd.killed
+	if target != null:
+		view.crush(crowd.running_at(target), 0.3)
+	(
+		check
+		. call(
+			(
+				target != null
+				and target.state == StadiumCrowd.State.GONE
+				and crowd.killed > dead
+				and street.civilians_killed() > before
+			),
+			(
+				"a blow on a running fan kills it there and counts it: %d fans killed, civilians %d -> %d"
+				% [crowd.killed - dead, before, street.civilians_killed()]
+			)
+		)
+	)
 
 
 ## Each falling piece once: a LandmarkBurst, or (over) a stadium section toppling toward its

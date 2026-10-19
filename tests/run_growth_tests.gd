@@ -31,16 +31,19 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_stages_grow()
-	_check_districts_kept()
-	_check_edges()
-	_check_defences()
-	preload("res://tests/lib/growth_army_learns.gd").check(check, _play)
-	_check_growth_matters()
-	_check_cost_curve()
-	_check_early_hook()
-	_check_determinism()
-	_check_young_pace()
+	await _t("_check_stages_grow")
+	await _t("_check_districts_kept")
+	await _t("_check_edges")
+	await _t("_check_defences")
+	await _h(
+		"growth_army_learns",
+		func() -> void: preload("res://tests/lib/growth_army_learns.gd").check(check, _play)
+	)
+	await _t("_check_growth_matters")
+	await _t("_check_cost_curve")
+	await _t("_check_early_hook")
+	await _t("_check_determinism")
+	await _t("_check_young_pace")
 
 
 func _tuning(tier: int) -> Dictionary:

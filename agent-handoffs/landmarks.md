@@ -1,90 +1,63 @@
-# Landmarks handoff, 2026-10-19 04:40
-## State: awaiting lead (#59 r5 tweaks + resync pushed, head 4229d5f; LEAD checks the strip at 2x and merges on green)
+# Landmarks handoff, 2026-10-19 12:10
+## State: working (#76 resynced for merge; then a windowed off-screen stall check on look-options)
 
 ## Task
-Landmarks role, reporting to LEAD ("Kaiju: Lead", local_106fc100...). PR bodies <= 8 lines, never
-merge; LEAD does QA, critics, merges and the director.
-- #57 landmark sites (A stadium city 1, D Sky Wheel Behemoth; D-071): MERGED as cce6309 into
-  claude/look-options. Branch claude/landmarks stays on origin (never --delete-branch over a live
-  worktree; LEAD prunes).
-- #59 stadium matches (D-078): branch claude/stadium-matches, base claude/look-options, ready
-  for review, head 4229d5f. Full suite green there (flow 146 = 139 + 7).
-One worktree (../Kaiju-Incremental-wt/landmarks), now on claude/stadium-matches.
+Landmarks role, reporting to LEAD ("Kaiju: LEAD (demo build, merges, QA)", local_106fc100...).
+PR bodies <= 8 lines, never merge. Local Godot allowed (headless first; windowed only
+off-screen with the no_focus override.cfg written in its own call, removed after). LEAD can
+pause local Godot at any time (director playtesting): then CI only.
 
-## #57 as merged
-- Sim `Arcs` (sim/arcs.gd): 24 sectors x rim/stands; a column belongs to an arc if it rises above
-  the 2-floor stub, out to r 1.1 (the corner masts are outside). An arc's first lost chunk
-  topples everything of it above the stub (rim out, stands in). Data: city.landmarks stadium.arcs.
-- View: no bites on landmarks; pitch laid on the ground (bake.py --ground); LandmarkRubble heaps
-  (ragged, tallest at the stub, <= 2 units past the wall, wall greys + seat reds only).
-- Pacing: no landmarks 0.58 / 4.45 h; arcs + bonus 4.0: 0.59 / 4.56 h (+1.7/+2.5%). D-081: the
-  4x bonus stays.
-- Follow-ups after the demo (in #57's body / LEAD's list): broken wheel is a pancake (bent rim
-  section, leg stub, capsules ~30% smaller, desaturated); stadium: ragged stumps of varying
-  height, jagged per-column breaks, mounded chunk-sized heaps, seat rubble over the floor ring.
-  E spire / F megatower bake (F needs a Performance look at ~816k voxels).
+## Done
+- #57 landmark sites, #59 stadium matches (D-078): merged.
+- #75 stadium stall (Structure.settle per-floor rescans): merged, in demo exe (D-089).
+  sim.step per stadium hit 70-80 -> 10.6-12.9 ms (CI); local 57 -> 10 ms.
+- #76 stall probe --no3d: 1500 frames on CI, sim.step worst 6.9 ms, no event over 16.7 ms.
+  LEAD merges on green. Worktree ../Kaiju-Incremental-wt/stall-probe (remove when merged).
 
-## #59 state
-- Director 2026-10-18 (via LEAD): "the stadium needs to be full of people in the stands". Done in
-  9032216: scenes/stadium_crowd.gd (StadiumCrowd, child of StadiumMatch). Up to 1000 fans on the
-  model's top-open seat voxels (b23d32 / 8e3029), one per 3x3 voxels, shuffled; kit shirts 60%,
-  else neutral; idle bob. Panic: fans on dead chunks hidden (fallen); rest stand, run along
-  their row to the nearest of 8 exits away from the kaiju, then up the aisle; gone once off the
-  seats for 0.6 (escaped). Draws 18 MultiMeshes seated (6 shirts x 3 skins), buffer uploads.
-  tuning.json "crowd". Flow 144 (fail-first log: scratchpad crowd_failfirst_evidence.log).
-- Round 2 (AFL clip FAILED its motion critic; LEAD's 5 fixes) in d665eb5, no sim change:
-  match loose positions, 2x light ball (sports.json), 3 jostle at the ball, opening kick,
-  drift; LandmarkBurst (scenes/landmark_burst.gd): inward landmark topples burst in place,
-  no strip/crush (flow check failed first: 5 swung, 22 crushed); landmark debris flies out;
-  landmark drops no longer crush the whole stadium; 8 dark tunnel mouths, staggered flight;
-  crowd bob in crowd.gdshader; clip kaiju from the SSE (SE clipped the corner mast).
-  city_view kept at 395 lines (Fire.prewarm moved out). Flow 145.
-- Local GPU render (greenery's slot) showed every player in one midfield clump: the loose-
-  placement loop compared a float32 to -0.04 and never ran. Fixed 6281641 (+ crowd casts no
-  shadow). Suite green there (flow 145). Frame time crowd off/on (1080p, before no-shadow):
-  frame 12.8 -> 15.6 ms, GPU 10.5 -> 13.3 ms; re-time when the director is not fullscreen.
-  Slot passed to croc #54 (then #50). Re-render on CI (director in a fullscreen game).
-- Round 5b (LEAD's 2x check: core PASS): merged look-options with #54 (ad0a773; floors city 23,
-  growth 26, flow 146); 4229d5f: chunks in the wall's albedo x0.65, 30% at x0.45, unshaded
-  (tuning chunk_shade / chunk_dark / chunk_dark_share); dust = 7 soft smoke.gdshader billboards
-  (Fx's step puff, MultiMesh, centre_keep 1) instead of spheres. Strip re-rendered
-  (scratchpad local_strip.sh). Proof LEAD asked: strip only + suite. Chunks read warm beige.
-- Round 5 (2821786, captures 0c01c61): r4 passed bar one blocker (burst read as a vanish).
-  LandmarkBurst now: 7 opaque dust balls on the break frame + ~360 lit 2-3 voxel chunks flung
-  outward for 0.3 s + 40 physics fragments (tuning.json "landmark_burst"). Strip
-  burst_f60_75_2x.png; clip notes landmarks/afl_crowd_r5_720p.mp4. No new critic; LEAD checks
-  and merges. Post-demo (LEAD): break position vs head, far-ring exit timing, fans streaming
-  out by the breach, spreading the sports-still clusters.
-- Round 4 (d119953, captures b95893f; LEAD's change of method): every landmark section bursts
-  in place on its break frame (LandmarkBurst: piece gone, ~120 voxels sprayed outward, dust; no
-  topple/strip/crush). Crowd flee all in crowd.gdshader (flee_t uniform; StadiumCrowd only
-  counts escapes with the same golden-ratio hash and hides fallen/crushed). 3965 fans: 53% out
-  at +1 s, all by +2.1 s. Pale kits dress fans in kit trim. Ball rolls and fades. Clip notes
-  landmarks/afl_crowd_r4_720p.mp4; far_stand_flee.png. Passes -> LEAD merges.
-- Round 3 (7baf9d1, captures a61467f): 3965 fans (spacing 2), static MultiMesh per outfit,
-  runner pool 500, 16 exits; ball 3x lit + carried; landmark back faces 0.8 ("inside" in
-  landmarks.json); landed landmark sections shrink 0.15 s (LandmarkBurst.retire); nearest of
-  12 mouths, shock 0.1-0.4; stills use a pitch-aimed game-offset camera; clip 180 frames.
-  Clip notes landmarks/afl_crowd_r3_720p.mp4. LEAD merges after r3 if only polish is left.
-- Local re-render at a5073d4 (captures ce56405): clip notes landmarks/afl_crowd_r2_local_720p.mp4.
-  Crowd CPU: calm 0.015 ms, flee 6.2 -> 1.5 ms (cached cfg, no trig, STRIDE 3). GPU 1080p
-  off/on: frame 5.85/5.82, GPU 3.97/4.19 ms. Ball still small at game cam (offer 3x).
-  No GPU baton now (LEAD: up to 3 windowed at once while the director is away).
-- Own check: ~3.4-4.0 s the stands sections toppling inward show their dark hollow undersides
-  over the pitch, then burst. Proposed fix if the critic fails it: landmark sections drop in place
-  instead of rotating over.
+## Director playtest fixes (D-083, demo exe 2)
+1. Crowd ("stadium audience shouldnt disappear so suddenly, let us kill them"): PR #78 MERGED
+   (f0634ee, LEAD's 2x PASS),
+   branch claude/crowd-kills, worktree ../Kaiju-Incremental-wt/spawn-south (named before the
+   split; holds the crowd branch).
+   - crowd.gdshader: fans run to the back (exit_r) then sink `sink` m out of sight at the exit.
+   - tuning crowd: flee_speed 3.0 -> 1.3, flee_delay 0.5 -> 2.5, sink 2.0, check_per_frame 400,
+     max_puffs 4.
+   - StadiumCrowd.running_at(fan) mirrors the shader; crush() kills where fans run; fallen
+     check: round robin 400 fans/frame after any chunk loss, vs the as-built chunk strengths
+     (a chunk standing then and gone now has fallen); dust puffs capped per blow.
+   - StadiumMatch.crush returns kills; StreetLife.civilians_killed() = street + players + fans
+     (killed + fallen), used by RampageHud.result; panicking() adds running fans.
+   - flow 148 -> 150: "fans stay in view ... 2 s after the panic" and "a blow on a running fan
+     kills it there and counts it", both failed first (0 of 3965; civilians 0 -> 0).
+   - Clip: capture_matches.gd --kills (11 s, one breath 45 frames after the wall goes, counts
+     each second). Notes landmarks/crowd_kills_720p.mp4 + crowd_kills_clip.log. In stands:
+     +1 s 3530, +4 s 1941, +7 s 25; 68 killed by breath, 456 fell, 3441 out; civilians 525.
+   - Captures docs/captures/2026-10-19-crowd-kills/ (kills_sheet.png, far_stand_2x.png).
+   - Full suite green at 17dd62b (sim 53, growth 31, flow 150).
+2. South of spawn ("smaller buildings ... dont seem destructible"): no sim building ignores
+   stomps. Spawn (0, 42); playable edge z=44.5; skyline stand-ins (never destroyed) in rows at
+   z=48/52/57, nearest 6 m away, in the camera's foreground; nearest sim buildings 20 m north.
+   LEAD chose A (make the first row past the south edge playable) and gave it to the greenery
+   session (it edits the same city edge). Not mine.
+
+## Next
+- LEAD: merge #76 once green (LEAD delegated this merge), then a windowed off-screen stall
+  check on the local GPU at current look-options (render-thread costs), stadium collapse
+  driven by script: worst frame ms and any frame over 33 ms with its cause. <= 5 lines.
+- Then post-demo work from LEAD: rubble polish (broken wheel, ragged stadium stumps, heaps),
+  landmarks E (spire) / F (megatower, needs a Performance look at ~816k voxels).
 
 ## Findings for the lead
-- voxelize.py shells surfaces only: a solid disc bakes as a cap; build open parts as rings.
-- Probe the sim's events before changing a rule (the "vanishing" stadium was a stage-2 signature).
-- A check bounded by the constant it tests passes when sabotaged: bound it by the bar.
-- The dummy renderer keeps no MultiMesh transforms: test a builder's cells instead.
-- A pacing script that edits tuning.json and is killed mid-run leaves the edit: restore it.
-- Merging into a branch not checked out: git merge-tree --write-tree + commit-tree, then push.
-- After a squash merge, resyncing a stacked branch can silently take old copies of files it
-  never touched (lead.md here): diff the result against the base before pushing.
+- A per-settle check that loops over every floor above every floor is O(h^2 w d): fine for a
+  3x3 tower, ~100 ms on a 28x28x13 landmark. Profile the sim with the biggest building in it.
+- CI's software renderer runs ~4 s a frame: CPU timing probes there need 3D off (disable_3d).
+- gh shares one 5,000/h API budget across all agents: wait for the reset, never poll in a loop.
+- A presentation-only crowd counted nowhere: kills a view counts must reach the one counter
+  the HUD reads (StreetLife.civilians_killed), or they silently do not exist.
 
 ## Rules learnt the hard way
-- gdlint: 400 lines per file, 4 arguments; gdformat writes CRLF on Windows and must run after
-  the last edit (CI runs gdformat --check).
-- A failing check must run (not fail to parse): land the classes first, wire them second.
+- gdlint: 400 lines per file, 4 arguments; gdformat writes CRLF on Windows (sed it off) and
+  must run after the last edit (CI runs gdformat --check).
+- A failing check must run (not fail to parse): land the API first, show the check failing,
+  then change the behaviour.
+- Never stash; stage by name; kill Godot only by recorded PID.

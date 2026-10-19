@@ -1,11 +1,15 @@
 extends Node
 ## Input actions (keyboard and controller), the F11 toggle, and loading the player's settings
-## at start (PlayerSettings, autoload/player_settings.gd, holds and saves them).
+## at start (PlayerSettings, autoload/player_settings.gd, holds and saves them), and the frame cap
+## each frame (PlayerSettings.frame_cap: lower in menus and pause).
 
 const DEADZONE := 0.2
 
+var _graphics := ""
+
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_axis_action("move_left", [KEY_A, KEY_LEFT], JOY_AXIS_LEFT_X, -1.0)
 	_axis_action("move_right", [KEY_D, KEY_RIGHT], JOY_AXIS_LEFT_X, 1.0)
 	_axis_action("move_up", [KEY_W, KEY_UP], JOY_AXIS_LEFT_Y, -1.0)
@@ -18,6 +22,14 @@ func _ready() -> void:
 	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
 	PlayerSettings.load_saved(OS.has_feature("template"))
 	PlayerSettings.apply()
+
+
+func _process(_delta: float) -> void:
+	Engine.max_fps = PlayerSettings.frame_cap(get_tree().paused)
+	var level := PlayerSettings.graphics_level()
+	if level != _graphics:
+		_graphics = level
+		PlayerSettings.apply_graphics(get_tree().root)
 
 
 func _unhandled_input(event: InputEvent) -> void:
