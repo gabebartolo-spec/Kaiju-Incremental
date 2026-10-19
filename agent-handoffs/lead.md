@@ -28,19 +28,22 @@ Never ask the director to unblock messaging. Ask him the ask-the-director way: o
   `_sim` never calls body.use_species() so determinism/autoplay run bodyless -> RampageSim picks the body itself,
   autoplay never held > N s; (2) body_contact.gd:135 final sample uses from_heading.rotated, hold test uses heading;
   (3) validate bite_dps > 0. Round-2 clips (tower topple, torn pieces) on CI: lead 2x check, then motion critic.
-- #90 dash (same session, stacked on #89): green; evolve1 cost 425 -> 0.26 h, young defeats 6/13. Fresh motion critic
+- #90 dash (same session, stacked on #89): resynced + lint fix, head 9f7194a, CI green; evolve1 cost 425 -> 0.26 h, young defeats 6/13. Fresh motion critic
   after #89 merges.
 - #85 army ramp DRAFT (b38b3a6f): after #89 + #90, ONE joint young retune: e1 0.26 h ±5%, young defeats 8 ±2 per 15.
 - #88 river emergence (9af27a16): lead FIX: continuous sunk channel + quay wall, real bridges, no cars on quays,
   breakable buildings within 10-15 m of the landing (no-empty-space). Then fresh sim reviewer; merges after #89.
-- #50 tanks (5325ef73, worktree ../Kaiju-Incremental-wt/military-ai): r6 WIP at 085410a, CI RED (expected): closest
+  CI RED (expected): its 2 strict city checks (1 building near the rise point unbroken by a stomp) pass only once
+  #89 removes the tier gate. Push the 3 unpushed commits in ../Kaiju-Incremental-wt/greenery first.
+- #50 tanks (5325ef73, worktree ../Kaiju-Incremental-wt/military-ai): r6 WIP, head ad1e7ab, CONFLICTS with
+  look-options (floors; resync first), CI RED (expected): closest
   tank 4.6 m from body edge vs 8 m bar; 86/3522 parked steps skewed > 15°. r5 critic FIX (lead-confirmed at 2x): tank
   under the snout 12-13.5 s -> standoff = body edge + 8 m, brake before it; reverse 3-4 m/s; hull vs turret overlays at
   12.5/17.5 s; tank 2 parked skewed -> square it. Proof: sim check failing first, CI clip, overlays, pacing.
   Helis: D can't fit the streets; render a B clip (camera eased to x1.4 while a pair is up) + a still of today's
   camera -> one director question. Not built into #50.
 - #86 rooftop hits on legs/tail (1ac658ed): post-demo polish; CI clip pending.
-- #55 greenery r15 PASS: merge when exe-2 scope is set. #58/#61 jets drafts parked; #58 critic FIX (mirror wings,
+- #55 greenery r15 PASS: merge when exe-2 scope is set. #58/#61 jets drafts parked (#58 f175d03 CONFLICTS again); #58 critic FIX (mirror wings,
   the "miss" does 30 HP, laser tracer, gun audio 0.3 s late). #11 species motion, #3 look-options -> main: on hold.
 
 ## First moves on resume
