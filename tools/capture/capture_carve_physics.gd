@@ -1,7 +1,7 @@
 extends SceneTree
-## WP5 proof (D-094): the carving physics view (CarvePhysics) driven by a capture-only stub grid
-## (carve_grid_stub.gd, the spike's algorithm; WP1's VoxelFrame replaces it). The orange sphere is
-## the blow. Saves a still every 0.5 s, a still plus a 2x crop at each island release and at its
+## WP5 proof (D-094): the carving physics view (CarvePhysics) driven by WP1's sim grid
+## (VoxelFrame, the spike's office block from tests/lib/destruction_paths.gd). The orange sphere
+## is the blow. Saves a still every 0.5 s, a still plus a 2x crop at each island release and at its
 ## first breaks, and prints body counts, frame cost and a through-the-ground check.
 ##   --scene=tower   a base cut in two passes: the tower topples, follows the sim ~1 s, breaks up
 ##   --scene=swipe   two swipes across a facade: carved-cell debris, nothing falls
@@ -10,7 +10,7 @@ extends SceneTree
 ## CI: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
 @warning_ignore_start("integer_division")
 
-const GRID_STUB := preload("res://tools/capture/carve_grid_stub.gd")
+const PATHS := preload("res://tests/lib/destruction_paths.gd")
 const VIEW_STUB := preload("res://tools/capture/carve_view_stub.gd")
 const RES := 8
 const SHOT_EVERY := 15  # frames between timeline stills
@@ -22,7 +22,7 @@ var _scene := "tower"
 var _out := "user://carve_physics"
 var _seconds := 0.0
 var _phys: CarvePhysics
-var _grids: Array[GRID_STUB] = []
+var _grids: Array[VoxelFrame] = []
 var _views: Array[VIEW_STUB] = []
 var _spheres: Array[MeshInstance3D] = []
 var _world: Node3D
@@ -102,7 +102,8 @@ func _setup() -> void:
 		var units: Vector3i = b["units"]
 		var at: Vector3 = b["at"]
 		var site := CarveSite.new(n, at - Vector3(units.x, 0, units.z) * 0.5, units * RES, RES)
-		var grid: GRID_STUB = GRID_STUB.new(site)
+		var grid := PATHS.office(units, RES)
+		site.offset = grid.offset
 		_grids.append(grid)
 		_phys.add_site(site, grid.cells)
 		var view: VIEW_STUB = VIEW_STUB.new(site)
@@ -151,10 +152,17 @@ func _blow(n: int, b: Dictionary, t: float) -> void:
 	sphere.position = centre
 	var grid := _grids[n]
 	var view := _views[n]
-	var cut: Dictionary = grid.carve(centre, Num.f(b["radius"]))
-	var removed: PackedInt32Array = cut["cells"]
+	var before := grid.cells
+	var site := _phys.site(n)
+	var local := centre - site.origin + Vector3(grid.offset) / RES
+	var removed := grid.carve_sphere(local, Num.f(b["radius"]))
 	if removed.is_empty():
 		return
+	var mats := PackedByteArray()
+	mats.resize(removed.size())
+	for k: int in removed.size():
+		mats[k] = before[removed[k]]
+	var cut := {"cells": removed, "mats": mats}
 	var ahead: Variant = _path(b, t + 1.0 / 30.0)
 	cut["push"] = Vector3.ZERO
 	if ahead != null:
@@ -163,7 +171,7 @@ func _blow(n: int, b: Dictionary, t: float) -> void:
 	view.touched(grid.cells, removed)
 	_phys.carved(n, grid.cells, cut)
 	for event: Dictionary in grid.settle():
-		var cells: PackedInt32Array = event["cells"]
+		var cells: PackedInt32Array = event["index"]
 		view.touched(grid.cells, cells)
 		var island := _phys.fell(n, grid.cells, event)
 		_counts["islands"] += 1
@@ -229,7 +237,7 @@ func _record(sim_ms: float) -> void:
 	if _frame % 30 == 0:
 		print(
 			(
-				"SEC %d live=%d all=%d rubble=%d islands=%d lowest=%.3f sunk=%d phys=%.1fms"
+				"SEC %d live=%d all=%d rubble=%d islands=%d lowest=%.3f sunk=%d raised=%d/%.3f phys=%.1fms"
 				% [
 					_frame / 30,
 					_phys.live_bodies(),
@@ -238,6 +246,8 @@ func _record(sim_ms: float) -> void:
 					_phys.islands().size(),
 					_phys.lowest_point(),
 					_phys.sunk(SUNK),
+					_phys.raised()[0],
+					_phys.raised()[1],
 					_stats["phys"][-1],
 				]
 			)

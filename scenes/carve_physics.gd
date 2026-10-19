@@ -86,12 +86,13 @@ func carved(key: int, grid: PackedByteArray, cut: Dictionary) -> void:
 	_carve_dust(key, box, cells.size())
 
 
-## A part lost support: `event` is the sim's settle shape {"cells", "kind": "drop"|"topple",
-## "pivot" (grid cells), "dir": Vector2i} plus "mats" (the cells' materials, parallel) and
-## optionally "duration" (the sim's fall time); `grid` is after the part left it.
+## A part lost support: `event` is VoxelFrame.settle()'s shape {"cells" (building-local),
+## "index" (grid indices), "kind": "drop"|"topple", "pivot" (building-local sim units),
+## "dir": Vector2i, "mats" (the cells' materials, parallel)} and optionally "duration" (the
+## sim's fall time); `grid` is after the part left it.
 func fell(key: int, grid: PackedByteArray, event: Dictionary) -> IslandBody:
 	var s: CarveSite = _sites[key]
-	var cells := s.indices(event["cells"])
+	var cells := s.indices(event)
 	var mats: PackedByteArray = event.get("mats", PackedByteArray())
 	if mats.size() != cells.size():
 		mats.resize(cells.size())
@@ -108,7 +109,7 @@ func fell(key: int, grid: PackedByteArray, event: Dictionary) -> IslandBody:
 	var box := _box(s, cells)
 	if str(event["kind"]) == "topple":
 		var raw_pivot: Vector3 = event["pivot"]
-		var pivot := s.to_world(raw_pivot)
+		var pivot := s.from_local(raw_pivot)
 		var dir := _dir(event["dir"])
 		var g := Num.f(Content.section("city")["fall_gravity"])
 		var duration := sqrt(2.0 * box.size.y / g) * Num.f(_cfg["topple_slow"])
@@ -165,6 +166,17 @@ func sunk(depth: float) -> int:
 		var d: CarveDebris = _debris[key]
 		n += d.sunk(y)
 	return n
+
+
+## Pieces lifted out of the road so far and the deepest lift, city-wide: [count, depth].
+func raised() -> Array:
+	var n := 0
+	var deepest := 0.0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		n += d.raised
+		deepest = maxf(deepest, d.max_raise)
+	return [n, deepest]
 
 
 func islands() -> Array[IslandBody]:

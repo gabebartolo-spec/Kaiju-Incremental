@@ -28,6 +28,8 @@ var _rubble := PackedFloat32Array()  # FLOATS per piece
 var _rubble_dirty := false
 var _fading := 0  # live pieces fading out
 var _statics := 0  # rubble pieces that still have a (static) body
+var raised := 0  # live pieces lifted out of the road so far (captures)
+var max_raise := 0.0  # the deepest of them
 
 
 func _init() -> void:
@@ -182,7 +184,8 @@ func _physics_process(delta: float) -> void:
 	var rest_w := Num.f(_cfg["settle_spin"])
 	var rest_t := Num.f(_cfg["settle_seconds"])
 	var fade_t := Num.f(_cfg["fade_seconds"])
-	var floor_y := Num.f(_cfg["ground_y"]) - Num.f(_cfg["ground_slop"])
+	var ground := Num.f(_cfg["ground_y"])
+	var floor_y := ground - Num.f(_cfg["ground_slop"])
 	var k := _rids.size() - 1
 	while k >= 0:
 		var rid := _rids[k]
@@ -198,8 +201,12 @@ func _physics_process(delta: float) -> void:
 			var w: Vector3 = PhysicsServer3D.body_get_state(
 				rid, PhysicsServer3D.BODY_STATE_ANGULAR_VELOCITY
 			)
+			var low := _low(k)
+			if low < floor_y:
+				_raise(rid, ground - low, v)
+				low = ground
 			_still[k] = _still[k] + delta if v.length() < rest_v and w.length() < rest_w else 0.0
-			if _still[k] >= rest_t and _low(k) >= floor_y:
+			if _still[k] >= rest_t:
 				_freeze(k)
 		k -= 1
 
@@ -222,16 +229,40 @@ func _draw_live() -> void:
 	var buf := PackedFloat32Array()
 	buf.resize(_live_mm.instance_count * FLOATS)
 	var fade_t := Num.f(_cfg["fade_seconds"])
+	var ground := Num.f(_cfg["ground_y"])
+	var floor_y := ground - Num.f(_cfg["ground_slop"])
 	for k: int in n:
 		var xf: Transform3D = PhysicsServer3D.body_get_state(
 			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
 		)
+		var low := _low(k)
+		if low < floor_y:
+			# The physics steps since the last fix can press a piece in again: never draw it so.
+			var v: Vector3 = PhysicsServer3D.body_get_state(
+				_rids[k], PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY
+			)
+			_raise(_rids[k], ground - low, v)
+			xf.origin.y += ground - low
 		var scale := _sizes[k]
 		if _fade[k] >= 0.0:
 			scale *= maxf(SHRINK_MIN, 1.0 - _fade[k] / fade_t)
 		_pack(buf, k * FLOATS, Transform3D(xf.basis.scaled_local(scale), xf.origin), _colors[k])
 	_live_mm.buffer = buf
 	_live_mm.visible_instance_count = n
+
+
+## A live piece pressed into the road (a small box under a pile: Jolt's position correction is
+## soft, so it can sit up to a box deep in the ground) is lifted `by` onto it and stops sinking.
+## The view is cosmetic, so a positional fix-up is honest; `raised` counts them for captures.
+func _raise(rid: RID, by: float, v: Vector3) -> void:
+	var xf: Transform3D = PhysicsServer3D.body_get_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM)
+	xf.origin.y += by
+	PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_TRANSFORM, xf)
+	if v.y < 0.0:
+		v.y = 0.0
+		PhysicsServer3D.body_set_state(rid, PhysicsServer3D.BODY_STATE_LINEAR_VELOCITY, v)
+	raised += 1
+	max_raise = maxf(max_raise, by)
 
 
 ## A resting piece becomes rubble where it lies: its body turns static, its look moves to the

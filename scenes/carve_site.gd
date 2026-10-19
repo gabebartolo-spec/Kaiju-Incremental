@@ -8,6 +8,9 @@ var key: int
 var origin: Vector3  # world position of cell (0, 0, 0)'s lower corner
 var size: Vector3i  # cells along x, y, z
 var res: int
+## The building-local cell of grid cell (0, 0, 0) (VoxelFrame.offset); events name cells and
+## pivots building-local, the grid is indexed from here.
+var offset := Vector3i.ZERO
 var palette: Dictionary = {}  # material id (int) -> Color; missing ids use the fallback
 var fallback := Color("9a948a")
 
@@ -50,9 +53,14 @@ func world(c: Vector3i) -> Vector3:
 	return origin + (Vector3(c) + Vector3.ONE * 0.5) / res
 
 
-## A point in grid space (cells, as the sim's pivot) in the world.
+## A point in grid space (cells) in the world.
 func to_world(p: Vector3) -> Vector3:
 	return origin + p / res
+
+
+## A building-local point in sim units (VoxelFrame's pivot) in the world.
+func from_local(p: Vector3) -> Vector3:
+	return origin + (p * res - Vector3(offset)) / res
 
 
 func color(m: int) -> Color:
@@ -60,12 +68,13 @@ func color(m: int) -> Color:
 	return out
 
 
-## The cells of a settle event as indices: the sim may hand cell indices or Vector3i cells.
-func indices(cells: Variant) -> PackedInt32Array:
-	if cells is PackedInt32Array:
-		return cells
+## The grid indices of a settle event: VoxelFrame's "index", else its building-local cells.
+func indices(event: Dictionary) -> PackedInt32Array:
+	if event.has("index"):
+		var given: PackedInt32Array = event["index"]
+		return given
 	var out := PackedInt32Array()
-	var list: Array = cells
+	var list: Array = event["cells"]
 	for c: Vector3i in list:
-		out.append(index(c))
+		out.append(index(c - offset))
 	return out
