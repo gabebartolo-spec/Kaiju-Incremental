@@ -1,26 +1,23 @@
-# Lead handoff, 2026-10-20 (lead session 5 of 10-20; next lead: read lines 1-14, then GitHub)
-## State: lead 5 working. Helpers are in-process subagents of lead 5 (die with it: respawn from the handoffs named here).
-## Team (lead 5): review-wp1b (Opus med, fresh re-review #97 @42a1f55, posts PR comment) · wp2-lint (Sonnet, #99 gdlint; 1st push 96f4180 still red) ·
-##  wp4-slab (Sonnet, slab 8a8780 + re-capture on claude/carve-wp4) · wp3-still (Sonnet, before/after stills of tank riser + sign brackets -> C:/Users/DANTE/AppData/Local/Temp/claude/wp3-still/) ·
-##  wp5-recap (Sonnet, debug blow sphere OFF by default (lead 2x found it in block clip), head e9c7582, 3 CI captures one at a time -> Temp/claude/wp5-recap/) ·
-##  critic-89 / critic-50 / critic-wp5 (fresh motion critics; wp5 on old clips, motion only). Lead 2x done: #50 r7 crops PASS (hull outlines on model, centred between kerbs); #89 frames OK.
-## #50 MERGED cb8bbed (lead 5; critic-50 FIX filtered: fb4 601-781 shows the reverse). WP4 slab 8a8780 pushed 609ea71 (stills lead 2x OK); PR after #98/#99.
-## #89: critic-89 FIX confirmed at 2x (white flat debris slabs, slab hovers, abrupt topple) -> croc89-fix (Sonnet) in its worktree. WP5: critic-wp5 FIX (slab never breaks up, block staircase shear, debris visible in glass) = round 2 -> show director after wp5-recap clips.
-## CI at head: lead pushed empty 'CI at head' commits: #98 fb19f4a (lint green, tests running), #89 d259939 (lint green, tests running). #97 42a1f55 green.
+# Lead handoff, 2026-10-20 (lead 5 of 10-20; next lead: read lines 1-16, then GitHub)
+## State: lead 5 at 200k: no new work; hands off once its subagents report (in-process, die with it). Successor: respawn any not reported, from the briefs below + their handoffs.
+## Live helpers (lead 5): carve-wp1 life 3 (Sonnet): #97 add 3 fixture-rule checks that fail under mutation + layer-0 fixture check + 2 .uid files (re-review FIX comment 6281572240; code PASS) ·
+##  carve-wp3 life 3 (Sonnet): #98 lead decision (c) = structural columns inside glass towers (spacing in tuning.json, sim+view parity), fix tests/lib/cells_flood_until_wp1.gd to WP1's rule
+##   (fixtures never carry structural), 0 islands every style (probe: lead-5 scratchpad probe_wp3b.gd), before/after glass still -> Temp/claude/wp3-still/frame/ (re-review FIX comment 6281639153) ·
+##  wp2-lint (Sonnet): #99 gdlint, 1st push 96f4180 still red, retrying · wp5-recap (Sonnet): debug blow sphere off (--markers opt-in), 3 CI captures one at a time -> Temp/claude/wp5-recap/ci_<scene> ·
+##  croc89-fix (Sonnet): #89 critic FIX A (flat white off-palette debris slabs + intact slab hovering ~7.4-8.4 s, lead-confirmed critic-89/z1.png) + B (0.3-0.5 s lean before topple).
+## MERGED: #50 cb8bbed (critic-50 FIX filtered: fb4 601-781 shows the reverse). #98 view change (riser, brackets) lead 2x PASS. WP4 slab 8a8780 pushed 609ea71, stills lead 2x OK: PR after #98/#99.
+## LEAD DECISIONS today (record in next board PR): slab colour B 8a8780 (director); fixture on grid layer 0 is grounded (shopfront on street); glass towers get structural columns (c).
+## WP5: critic-wp5 round 2 FIX (tower slab never breaks up after landing, block towers shear in a regular staircase, debris seen inside glass on swipe). No-marginal-gains: ASK DIRECTOR with clean
+##  wp5-recap clips: one more fix round now (rec) or carry into WP7. Then open WP5 PR. #89 after croc89-fix: lead 2x, merge on green (#89 CI head was d259939; croc89-fix push supersedes).
+## Order: #97 + #98 merge on re-review PASS + green at head -> #99 -> WP4 PR -> WP6 PR (resync on #98, fresh sim review) -> WP5 PR. Then #89 -> #88 -> #90 -> young-retune.
 ## PRs: #97 WP1 d8174d4 review FIX (comment 6279596456: re-flood after topple, adopt guard, dir/pivot in replay) -> carve-wp1 life 2 fixing + fixture rule; WP7 needs a wear rule (tough_mult 0.35, no wear) · #98 WP3 FIX DONE code dec83bc (tests 39342624070 + lint green; head 38ab0d2 handoff-only [skip ci]): islands 0/120, fixtures window/mullion/glass/shop/sign_frame/neon0-3; VIEW CHANGE (water-tank pipe riser, neon sign brackets) -> needs a still + lead 2x, then fresh re-review, merge · #99 WP2 c3c5fec gdlint RED (run 39340822128): fix it · #100 board D-099 MERGED.
 ## #98 lead call: panes/signs held by edge = material flag "fixture" in data/materials.json; fixture cells ground by 26-neighbour contact, structural 6-neighbour.
 ##  WP1 must add that rule in sim/voxel_support.gd (batch with review-wp1's findings into one carve-wp1 life). Tank with no contact = generator fix (+BuildingVoxels).
 ## carve-wp6 DONE claude/carve-wp6 b083346 (LandmarkCells, CellGrid base moved out of BuildingCells, Arcs shed on cells; body pr_body_wp6.md in its worktree). Merges carve-wp3: open after #98 merges, resync first (carve-wp3 life 2 also edits building_cells.gd), then fresh kaiju-sim-review. Lead call: arc_shed_cells 32 kept (= today's trigger; balance is his playtest).
 ## carve-wp4 DONE claude/carve-wp4 8be4cfc (code a4fe572 tests 39343371928 GREEN); captures docs/captures/2026-10-20-carve-view/ (a_baked, b_promoted, c_carve1-4; lead 2x not done); body pr_body_wp4.md in worktree. PR after #99/#98 merge; lead 2x + motion critic on stills.
-## DIRECTOR 2026-10-20 (question tool): carved-hole floor slab = B concrete 8a8780 (was 2b2d30). Swap "slab" in BuildingVoxels._make_palette on claude/carve-wp4, re-capture; record as a D-id in the next board PR.
-## CI at exact head: #98 head 163a56b and #89 head a7d0834 are [skip ci] handoff commits with NO checks: re-dispatch tests.yml on each head before merging. #99 gdlint still RED.
-## #50 r7 pushed a4e7198 (body updated): tests 39346031458 + lint GREEN at a4e7198, capture 39346082013 OK (builder scratchpad r7/ci). Overlays fixed (r7/ov2 in the military-ai builder scratchpad); hulls 0.0 deg; hull-edge standoff min 8.1 m (cornered tank 7.8 m, lead call A); fall-back clip r7/fb4 (3.5 m/s readout), game clip r7/game2. NEXT: lead 2x on crops, fresh motion critic, merge full sha. Builder stopped at 202k.
 ## #89 D-099 ALIGNED: code 677718e (head a7d0834 handoff-only), tests 39342572775 + lint GREEN; topples follow the cut dir (58/58; 40 toward kaiju, 2 away; gutted drops go toward the chewing kaiju). Clip 39341631409: lead scratchpad cap/capture-39341631409-0/clip.mp4 (unwatched). Young pacing not rerun.
 ##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
-## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
 ## retune-a DONE claude/young-retune 67e0b1a (e1 0.24 h, young defeats 5.4/12; body pr_body_retune.md in its worktree): PR after #89/#90 merge.
-## carve-wp5 life 3 DONE claude/carve-wp5 (4 critic fixes: break wait tower 1.17->0.13 s, block 1.43->0.47 s (goal 0.3); gouge dark px 1021->0; rubble_cap 2000; bottom-up break 0.4 s). Clips tower 39345155884, swipe 39344743509, block 39345232517 in lead scratchpad ci_<scene>/ (UNWATCHED). Body pr_body_wp5.md in worktree. NEXT: lead 2x, fresh motion critic, show director, open PR.
-## WP5 PR opens after life 3's fresh critic passes and the director sees the clips.
 ## #88 head dca0e988cd4f34c640c2349fc40699c0a40032b3: re-review PASS + notes a/b done. Only 2 expected city reds (tier gate). After #89 merges: resync, CI, merge.
 ## #95 board PR (docs: playtest chapter docs/roadmap/2026-10-19-director-playtest.md, D-095, D-096), head 6662b7d: check lint, merge.
 ##  Playtest notes with no PR: 9 (small buildings south of spawn not destructible = tier gate, should clear with #89 + #88 river check: verify in play), 12 destruction option A (after exe 2).
