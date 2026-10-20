@@ -8,6 +8,7 @@ const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
 const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
+const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -30,6 +31,7 @@ func run_checks() -> void:
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
 	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
+	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
 	await _t("_check_save_migrate")
 	await _t("_check_looks")
 	await _t("_check_growth")
@@ -197,6 +199,7 @@ func _check_topple_crush() -> void:
 		for z: int in 3:
 			base.append(Vector3i(x, 0, z))
 	var before := sim.buildings[1].frame.alive_count
+	sim.kaiju_pos = Vector2(10.0, 0.0)  # east of it; the topple follows its own cut side (D-099)
 	sim.damage_chunks(0, base, 999.0)
 	check(
 		sim.falls.size() == 1 and sim.falls[0].kind == "topple",

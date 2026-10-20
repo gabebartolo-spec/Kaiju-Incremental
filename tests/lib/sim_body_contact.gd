@@ -154,7 +154,7 @@ func _check_topple() -> void:
 			]
 		)
 	)
-	_check_falls_away(sim, b, fall)
+	_check_falls_by_physics(sim, fall)
 	_check_swipe_undermines(Num.i(chew["steps"]))
 
 
@@ -195,11 +195,9 @@ func _chew_to_topple(sim: RampageSim) -> Dictionary:
 	return {"steps": steps, "worst": worst, "fall": fall}
 
 
-## Readability (PR #89 motion review): a tower the body undermined goes over away from the kaiju,
-## so the player sees it fall and what it crushes instead of losing the kaiju under it. The
-## strip it lands on runs from its base away from the kaiju.
-func _check_falls_away(sim: RampageSim, b: RampageSim.Building, fall: RampageSim.Fall) -> void:
-	var away := Vector2(b.x, b.z) - sim.kaiju_pos
+## D-099: the undermined tower falls by its own physics, toward the side that was cut away (here
+## the kaiju's), and the strip it lands on runs from its base along that fall.
+func _check_falls_by_physics(sim: RampageSim, fall: RampageSim.Fall) -> void:
 	var landed: Dictionary = {}
 	var steps := 0
 	while fall != null and landed.is_empty() and steps < TOPPLE_STEPS:
@@ -210,15 +208,10 @@ func _check_falls_away(sim: RampageSim, b: RampageSim.Building, fall: RampageSim
 	var from: Vector2 = landed.get("from", Vector2.ZERO)
 	var to: Vector2 = landed.get("to", Vector2.ZERO)
 	_check.call(
+		fall != null and not landed.is_empty() and (to - from).dot(fall.dir) > 0.0,
 		(
-			fall != null
-			and fall.dir.dot(away) > 0.0
-			and not landed.is_empty()
-			and (to - from).dot(away) > 0.0
-		),
-		(
-			"the undermined tower falls away from the kaiju: dir %s, kaiju->base %s, strip %s -> %s"
-			% [fall.dir if fall != null else Vector2.ZERO, away.round(), from.round(), to.round()]
+			"the undermined tower lands along its fall dir %s: strip %s -> %s"
+			% [fall.dir if fall != null else Vector2.ZERO, from.round(), to.round()]
 		)
 	)
 

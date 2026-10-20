@@ -239,7 +239,10 @@ func fall_land(event: Dictionary) -> void:
 		landed.append(at)
 		var color: Color = part["color"]
 		debris(at, color, Vector3.UP)
-	LandmarkBurst.retire(node, sim.buildings[Num.i(event["building"])].landmark != "")
+	if sim.buildings[Num.i(event["building"])].landmark != "":
+		LandmarkBurst.retire(node, true)
+	else:
+		_topple.crumble(node)  # crumbles into the street over a moment, never a one-frame pop
 	if not landed.is_empty():
 		fx.dust(landed[0], 1.5)
 		var b := sim.buildings[Num.i(event["building"])]

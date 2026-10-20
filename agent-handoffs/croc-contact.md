@@ -1,6 +1,22 @@
 # croc-contact handoff (builder for the lead), 2026-10-20
+## LIFE 5 (croc-fix): critic A = the 7 "chunks" were flat BoxMesh+StandardMaterial (pale, unlike voxels); now Ruin.chunk voxel lumps in the building's facade palette. B: lean_deg 3->8, lean_curve 3.2->2.6 (lean visible ~0.6 s). Local Forward+ ok; awaiting CI capture + lead.
+## LATEST (life 4, D-099): override removed, head 677718e, tests 39342572775 + lint green, capture 39341631409 ok (clip not reviewed). Topples now follow part[dir] (gutted drop -> toward kaiju). Body updated (update 3). Done; awaiting lead.
 ## State: pushing claude/croc-contact (PR #89, base claude/look-options) then one capture; fresh life 2.
 ## Worktree .claude/worktrees/blender-reptile-f5388e. Remaining: capture run, PR body, tests result.
+
+## Life 3 (croc89fix, 2026-10-20): review fixes A (pop) and B (direction), PR #89
+- Cause A: chew + D-096 swipe (2 rows at once) ate a 13-floor tower's whole base in one tick
+  (capture tower take, physics f241): Structure.settle made the 9 floors above a "drop" of 4, which
+  landed 0.5 s later and CityView.fall_land queue_free'd it whole (rubble 12.4 -> 29.2 = clip 505-506).
+- Fix A: Collapse._gutted - a non-landmark drop part with nothing under it, taller than its narrower
+  side, topples instead; every other drop crumbles over topple_fx.drop_crumble_s (ToppleFx.crumble).
+- Cause/fix B: only body-overlapped topples went away; swipe-undermined ones (b95-97) fell toward the
+  kaiju. Now every topple goes away from the kaiju (cardinal, from the part's base centre).
+- Checks: tests/lib/sim_topple_read.gd (failed first: 13 gutted drops, 6 of 31 topples toward the
+  kaiju; now 16 gutted toppled, 58 of 58 away), flow_collapse _check_drop_crumbles (failed first:
+  "there after landing false"). _check_topple_crush puts the kaiju east of the tower.
+- Swipe fixture mean moved 0.248 -> 0.299 vs 0.239 (more topples); claws-5 498.4 vs 345.4.
+- State: commit + push, ONE capture --tower, PR body Evidence; report to lead.
 
 ## Lead instructions still open
 - PUSH once to claude/croc-contact (lead already said: after topple 1-4 + swipe 1-6 in and local

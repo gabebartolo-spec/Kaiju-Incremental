@@ -85,22 +85,34 @@ func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
 	_city.fx.dust(b + lift, Num.f(_cfg["impact_dust"]), dust)
 	_city.fx.dust(a.lerp(b, 0.6) + lift, Num.f(_cfg["impact_dust"]) * 0.7, dust)
 	_city.fx.dust_line(a, b, width, dust)
-	_breaking.append({"node": node, "t": 0.0, "basis": node.global_transform})
+	_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
 	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
 	_city.ruins().build(
 		func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
 	)
-	var parts: Array = node.get_meta("parts", [])
-	_chunks(parts, a, b, width)
+	_chunks(voxels, a, b, width)
+
+
+## A dropped part landed (the sim's fall_land): it crumbles down into the street over
+## drop_crumble_s with debris in waves instead of vanishing on the landing frame (PR #89 review,
+## capture 39277970463 frames 505-506).
+func crumble(node: Node3D) -> void:
+	_break_up(node, Num.f(_cfg["drop_crumble_s"]), Num.f(_cfg["drop_crumble_debris"]))
+
+
+func _break_up(node: Node3D, span: float, debris: float) -> void:
+	_breaking.append(
+		{"node": node, "t": 0.0, "basis": node.global_transform, "span": span, "debris": debris}
+	)
 
 
 func _process(delta: float) -> void:
-	var span := Num.f(_cfg["breakup_s"])
-	var per_s := Num.f(_cfg["impact_debris"]) / span
 	for i: int in range(_breaking.size() - 1, -1, -1):
 		var br: Dictionary = _breaking[i]
 		var node: Node3D = br["node"]
+		var span := Num.f(br["span"])
+		var per_s := Num.f(br["debris"]) / span
 		br["t"] = Num.f(br["t"]) + delta
 		var k := clampf(Num.f(br["t"]) / span, 0.0, 1.0)
 		if not is_instance_valid(node) or k >= 1.0:
@@ -134,23 +146,15 @@ func _settle(mmi: MultiMeshInstance3D) -> void:
 
 
 ## A few big wall chunks thrown along the strip that slide on and settle, tilted, half sunk.
-func _chunks(parts: Array, a: Vector3, b: Vector3, width: float) -> void:
-	if parts.is_empty():
-		return
+func _chunks(voxels: BuildingVoxels, a: Vector3, b: Vector3, width: float) -> void:
 	var along := (b - a).normalized()
 	var side := Vector3(-along.z, 0, along.x)
 	var sizes: Array = _cfg["chunk_size"]
 	for n: int in Num.i(_cfg["chunks"]):
-		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
 		var size := _rng.randf_range(Num.f(sizes[0]), Num.f(sizes[1]))
-		var box := BoxMesh.new()
-		box.size = Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3))
-		var mat := StandardMaterial3D.new()
-		var color: Color = part["color"]
-		mat.albedo_color = color.lerp(Color(str(_cfg["dust_color"])), 0.25)
-		box.material = mat
-		var chunk := MeshInstance3D.new()
-		chunk.mesh = box
+		var chunk := Ruin.chunk(
+			voxels, Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3)), _rng
+		)
 		add_child(chunk)
 		var t := _rng.randf_range(0.35, 1.0)
 		var at := a.lerp(b, t) + side * _rng.randf_range(-0.4, 0.4) * width

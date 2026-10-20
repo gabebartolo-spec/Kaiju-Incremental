@@ -129,3 +129,31 @@ static func strip(
 				var c: Color = palette[key]
 				palette[key] = Color(c.lerp(tint, Num.f(cfg["rubble_tint_mix"])), c.a)
 	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
+
+
+## One big wall chunk thrown from a toppled tower: a lump of the building's own facade voxels
+## (its wall and window colours, shaded like every other voxel), `size` sim units wide, centred
+## on the node's origin. Replaces the flat-coloured boxes that read as untextured placeholders.
+static func chunk(
+	voxels: BuildingVoxels, size: Vector3, rng: RandomNumberGenerator
+) -> MultiMeshInstance3D:
+	var vox := VoxelBuilder.new()
+	var palette := rubble_palette(voxels)
+	var n := Vector3i((size * RES).round())
+	var keys: Array[String] = []
+	for key: String in ["stub_wall", "stub_wall", "stub_wall", "stub_pillar", "stub_trim"]:
+		if palette.has(key):
+			keys.append(key)  # a landmark's palette has its own key names
+	var windows := palette.has("stub_window")
+	if keys.is_empty():
+		keys.append(str(palette.keys()[0]))
+	for x: int in n.x:
+		for y: int in n.y:
+			for z: int in n.z:
+				var key := keys[absi(hash(Vector3i(x / 3, y / 2, z / 3))) % keys.size()]
+				if windows and x % 6 > 1 and y % RES in [2, 3, 4, 5]:
+					key = "stub_window"
+				vox.put(Vector3i(x, y, z), key)
+	vox.salt = rng.randi() % 997
+	var centre := -Vector3(n) * 0.5 * BuildingVoxels.VOXEL
+	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, centre)
