@@ -17,8 +17,35 @@ var indices := PackedInt32Array()
 var owners: Array = []
 
 
-## cells: Vector3i -> anything (a key present means filled). relax: smoothing passes.
-func build(cells: Dictionary, relax: int) -> void:
+## cells: Vector3i -> anything (a key present means filled). relax: smoothing passes. up: mesh
+## on a grid this many times finer (each cell split into up^3), so the rounding and the relaxation
+## act on a fraction of a cell: small models (cars, people) keep their size, wheels and cabin.
+## Positions and owners come back in the caller's cells either way.
+func build(cells_in: Dictionary, relax: int, up := 1) -> void:
+	var cells := cells_in
+	if up > 1:
+		cells = {}
+		for cell: Vector3i in cells_in:
+			for dx: int in up:
+				for dy: int in up:
+					for dz: int in up:
+						cells[cell * up + Vector3i(dx, dy, dz)] = cell
+	_build(cells, relax)
+	if up > 1:
+		for i: int in positions.size():
+			positions[i] = (positions[i] + Vector3.ONE * 0.5) / float(up) - Vector3.ONE * 0.5
+		var mapped: Array = []
+		for own: Variant in owners:
+			var list: Array[Vector3i] = []
+			for sub: Variant in own:
+				var c: Vector3i = cells[sub]
+				if not list.has(c):
+					list.append(c)
+			mapped.append(list)
+		owners = mapped
+
+
+func _build(cells: Dictionary, relax: int) -> void:
 	var sum := {}
 	var count := {}
 	# Pass 1: every (filled, empty) neighbour pair is a crossing edge; its midpoint pulls on the

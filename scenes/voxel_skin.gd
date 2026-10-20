@@ -12,6 +12,9 @@ const FILL_SHADER := preload("res://scenes/voxel_skin_fill.gdshader")
 const SMOOTH_SHADER := preload("res://scenes/voxel_skin_smooth.gdshader")
 const SMOOTH_MESHER := preload("res://scenes/smooth_mesher.gd")
 static var smooth := "--smooth" in OS.get_cmdline_user_args()
+## Smooth kaiju: grid refinement and relaxation passes (b2-20 round 2; "--kaiju-up=" overrides).
+static var kaiju_up := VoxelBuilder.arg_int("--kaiju-up=", 2)
+const SMOOTH_RELAX := 2
 ## Bones the shaders take (the hydra has 79).
 const MAX_BONES := 128
 ## Gzip'd .vskin layout version this reader understands (tools/kaiju_skin/bake.py).
@@ -160,7 +163,9 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mm.set_instance_color(i, tint)
 		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
 		if smooth:
-			scells[cell] = [base, raw[at + 10], raw[at + 11], raw[at + 12], raw[at + 13], raw[at + 14]]
+			scells[cell] = [
+				base, raw[at + 10], raw[at + 11], raw[at + 12], raw[at + 13], raw[at + 14], raw[at + 9]
+			]
 		at += 15
 	_cubes = ShaderMaterial.new()
 	_cubes.shader = CUBE_SHADER
@@ -231,62 +236,44 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	_hide_rig_voxels()
 
 
-## Phase B (b2-20): the same cells as one smooth skinned surface (SmoothMesher), each vertex taking
-## the colour and bone weights of the cells around it. cells: Vector3i -> [colour, bone 0..2,
-## weight 0, weight 1 (0..255)].
+## Phase B (b2-20): the same cells as smooth skinned surfaces (SmoothMesher), each vertex taking
+## the colour and bone weights of the cells around it. The jaw and the mouth's inside are meshed
+## apart from the rest, so the skin never bridges the mouth and the head keeps its jaw line.
+## cells: Vector3i -> [colour, bone 0..2, weight 0, weight 1 (0..255), mouth flag].
 func _add_smooth(cells: Dictionary, voxel: float) -> void:
-	var sm := SMOOTH_MESHER.new()
-	sm.build(cells, 2)
-	var count: int = sm.positions.size()
+	var jaw := _rig.bone_names().find("jaw")
+	var parts: Array[Dictionary] = [{}, {}, {}]  # body, jaw, mouth inside
+	for cell: Vector3i in cells:
+		var info: Array = cells[cell]
+		var part := 2 if Num.i(info[6]) > 0 else (1 if Num.i(info[1]) == jaw else 0)
+		parts[part][cell] = info
 	var pos := PackedVector3Array()
+	var nrm := PackedVector3Array()
 	var col := PackedColorArray()
 	var custom0 := PackedFloat32Array()
 	var custom1 := PackedFloat32Array()
-	pos.resize(count)
-	col.resize(count)
-	custom0.resize(count * 4)
-	custom1.resize(count * 4)
-	for i: int in count:
-		pos[i] = (sm.positions[i] + HALF_UP) * voxel
-		var tint := Vector3.ZERO
-		var wsum := {}
-		var owners: Array = sm.owners[i]
-		for owner: Variant in owners:
-			var cell: Vector3i = owner
-			var info: Array = cells[cell]
-			var c: Color = info[0]
-			tint += Vector3(c.r, c.g, c.b)
-			var w0 := Num.f(info[4]) / 255.0
-			var w1 := Num.f(info[5]) / 255.0
-			wsum[Num.i(info[1])] = Num.f(wsum.get(Num.i(info[1]), 0.0)) + w0
-			wsum[Num.i(info[2])] = Num.f(wsum.get(Num.i(info[2]), 0.0)) + w1
-			wsum[Num.i(info[3])] = Num.f(wsum.get(Num.i(info[3]), 0.0)) + maxf(0.0, 1.0 - w0 - w1)
-		tint /= float(maxi(1, owners.size()))
-		col[i] = Color(tint.x, tint.y, tint.z)
-		var bones: Array = wsum.keys()
-		bones.sort_custom(func(a: int, b: int) -> bool: return Num.f(wsum[a]) > Num.f(wsum[b]))
-		var total := 0.0
-		for k: int in mini(3, bones.size()):
-			total += Num.f(wsum[bones[k]])
-		var ids: Array[int] = [0, 0, 0]
-		var ws: Array[float] = [0.0, 0.0, 0.0]
-		for k: int in mini(3, bones.size()):
-			ids[k] = Num.i(bones[k])
-			ws[k] = Num.f(wsum[bones[k]]) / maxf(total, 0.0001)
-		custom0[i * 4] = ids[0]
-		custom0[i * 4 + 1] = ids[1]
-		custom0[i * 4 + 2] = ids[2]
-		custom0[i * 4 + 3] = ws[0]
-		custom1[i * 4] = ws[1]
-		custom1[i * 4 + 1] = ws[2]
+	var idx := PackedInt32Array()
+	for part: int in parts.size():
+		if parts[part].is_empty():
+			continue
+		var sm := SMOOTH_MESHER.new()
+		sm.build(parts[part], SMOOTH_RELAX, kaiju_up)
+		var base := pos.size()
+		for t: int in sm.indices:
+			idx.append(base + t)
+		nrm.append_array(sm.normals)
+		for i: int in sm.positions.size():
+			pos.append((sm.positions[i] + HALF_UP) * voxel)
+			var own: Array = sm.owners[i]
+			_smooth_vertex(parts[part], own, part == 2, col, custom0, custom1)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = pos
-	arrays[Mesh.ARRAY_NORMAL] = sm.normals
+	arrays[Mesh.ARRAY_NORMAL] = nrm
 	arrays[Mesh.ARRAY_COLOR] = col
 	arrays[Mesh.ARRAY_CUSTOM0] = custom0
 	arrays[Mesh.ARRAY_CUSTOM1] = custom1
-	arrays[Mesh.ARRAY_INDEX] = sm.indices
+	arrays[Mesh.ARRAY_INDEX] = idx
 	var flags := (
 		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
 		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
@@ -302,6 +289,43 @@ func _add_smooth(cells: Dictionary, voxel: float) -> void:
 	skin.custom_aabb = BOUNDS
 	skin.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 	add_child(skin)
+
+
+## One smooth vertex: the mean colour of its cells, their three heaviest bones (CUSTOM0 = bones
+## 0-2 and weight 0, CUSTOM1.xy = weights 1-2, CUSTOM1.z = 1 for the mouth's inside).
+func _smooth_vertex(
+	cells: Dictionary,
+	owners: Array,
+	mouth: bool,
+	col: PackedColorArray,
+	custom0: PackedFloat32Array,
+	custom1: PackedFloat32Array
+) -> void:
+	var tint := Vector3.ZERO
+	var wsum := {}
+	for owner: Variant in owners:
+		var info: Array = cells[owner]
+		var c: Color = info[0]
+		tint += Vector3(c.r, c.g, c.b)
+		var w0 := Num.f(info[4]) / 255.0
+		var w1 := Num.f(info[5]) / 255.0
+		for k: int in 3:
+			var w := w0 if k == 0 else (w1 if k == 1 else maxf(0.0, 1.0 - w0 - w1))
+			wsum[Num.i(info[1 + k])] = Num.f(wsum.get(Num.i(info[1 + k]), 0.0)) + w
+	tint /= float(maxi(1, owners.size()))
+	col.append(Color(tint.x, tint.y, tint.z))
+	var bones: Array = wsum.keys()
+	bones.sort_custom(func(a: int, b: int) -> bool: return Num.f(wsum[a]) > Num.f(wsum[b]))
+	var total := 0.0
+	for k: int in mini(3, bones.size()):
+		total += Num.f(wsum[bones[k]])
+	var ids: Array[float] = [0.0, 0.0, 0.0]
+	var ws: Array[float] = [0.0, 0.0, 0.0]
+	for k: int in mini(3, bones.size()):
+		ids[k] = float(Num.i(bones[k]))
+		ws[k] = Num.f(wsum[bones[k]]) / maxf(total, 0.0001)
+	custom0.append_array(PackedFloat32Array([ids[0], ids[1], ids[2], ws[0]]))
+	custom1.append_array(PackedFloat32Array([ws[1], ws[2], 1.0 if mouth else 0.0, 0.0]))
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps
@@ -330,6 +354,8 @@ func sync() -> void:
 	if _fill != null:
 		_fill.set_shader_parameter("bones", pose)
 	mouth_open = _mouth_showing()
+	if smooth:
+		_fill.set_shader_parameter("mouth_open", 1.0 if mouth_open else 0.0)
 	_cubes.set_shader_parameter("mouth_open", 1.0 if mouth_open else 0.0)
 
 

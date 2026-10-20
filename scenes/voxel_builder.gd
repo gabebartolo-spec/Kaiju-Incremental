@@ -36,6 +36,18 @@ var inset := 1.0
 static var smooth := "--smooth" in OS.get_cmdline_user_args()
 const SMOOTH_MESHER := preload("res://scenes/smooth_mesher.gd")
 const SMOOTH_SHADER := preload("res://scenes/smooth_vertex.gdshader")
+## b2-20 round 2: props, cars and people mesh on a grid this many times finer, so the rounding
+## eats a fraction of a cell and a car keeps its size, wheels and cabin ("--smooth-up=" overrides).
+static var smooth_up := arg_int("--smooth-up=", 3)
+static var smooth_relax := arg_int("--smooth-relax=", 2)
+
+
+## An integer option after "--" ("--name=4"), or `default`.
+static func arg_int(prefix: String, default: int) -> int:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with(prefix):
+			return int(arg.substr(prefix.length()))
+	return default
 
 
 ## All cells as one smooth mesh, coloured by the palette (alpha 0 = a glowing cell, as in build()).
@@ -45,7 +57,7 @@ func smooth_mesh(palette: Dictionary, voxel: float, origin: Vector3, glow: float
 		var key: String = cells[cell]
 		filled[cell] = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
 	var sm := SMOOTH_MESHER.new()
-	sm.build(filled, 2)
+	sm.build(filled, smooth_relax, smooth_up)
 	var count: int = sm.positions.size()
 	var pos := PackedVector3Array()
 	var col := PackedColorArray()

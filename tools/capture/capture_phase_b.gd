@@ -24,6 +24,10 @@ var _route: Array = []
 var _target := Vector2(INF, INF)
 var _steps := 0
 var _cam := Vector3.INF  ## a closer camera rest offset (the game's is in data/tuning.json "camera")
+## "--face=x,z,steps": with --route=idle, walk `steps` sim steps toward (x, z) after rising, then
+## stand, so the standing shots show the kaiju's face and 3/4 front, not its back (b2-20 round 2).
+var _face := Vector2.ZERO
+var _face_steps := 0
 
 
 func _initialize() -> void:
@@ -45,6 +49,10 @@ func _initialize() -> void:
 		elif arg.begins_with("--cam="):
 			var p := arg.substr(6).split(",")
 			_cam = Vector3(float(p[0]), float(p[1]), float(p[2]))
+		elif arg.begins_with("--face="):
+			var f := arg.substr(7).split(",")
+			_face = Vector2(float(f[0]), float(f[1])).normalized()
+			_face_steps = int(f[2])
 		elif arg.begins_with("--label="):
 			_label = arg.substr(8)
 	_run.call_deferred()
@@ -107,8 +115,11 @@ func _run() -> void:
 ## Autoplay's own rules (Rampage._autoplay_move), but the target of each 15 steps comes from the
 ## recorded route in "replay", so a different voxel density cannot send the kaiju elsewhere.
 func _scripted(sim: RampageSim) -> Dictionary:
-	if sim.emerge.active or _route_mode == "idle":
-		return {}  # idle: the kaiju stands where it rose and nothing is broken
+	if sim.emerge.active:
+		return {}
+	if _route_mode == "idle":  # the kaiju stands where it rose (after --face turns it) and nothing is broken
+		_steps += 1
+		return {"move": _face} if _steps <= _face_steps else {}
 	var input := {}
 	if _route_mode == "replay":
 		var at: Array = _route[mini(_steps, _route.size() - 1)]
