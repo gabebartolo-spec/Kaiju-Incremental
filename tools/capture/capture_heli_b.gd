@@ -12,11 +12,7 @@ extends SceneTree
 const SHOTS: Array[int] = [60, 180, 300, 420, 540, 660, 780, 900]
 const CLIP_SPAWN := 44.0
 const CLIP_AT := Vector2(5, -70)
-## Seconds the pull takes to ramp in and to ramp back (smoothstep: zero speed at both ends).
-const RAMP := 1.6
-## How far the view slides from the kaiju toward the helicopters' middle at full pull.
-const FRAME_SHIFT := 0.3
-## The helicopters leave (shot down) at these frames, so the clip shows the zoom-back.
+## The helicopters are shot down (hp to 0, through the sim) at these frames: the zoom-back.
 const LEAVE_AT: Array[int] = [480, 540]
 ## Half the footprint of a helicopter with its rotor, metres, for the fully-in-frame test.
 const HELI_HALF := 6.0
@@ -38,12 +34,15 @@ class CameraPull:
 	var target := 1.2
 	var p := 0.0
 	var k := 1.0
-	var shift := Vector2.ZERO
+	var shift := Vector2.ZERO  # the damped slide, followed toward `goal`
+	var goal := Vector2.ZERO
+	var slide_v := Vector2.ZERO
 
 	func _process(delta: float) -> void:
 		var sim := rampage.sim
+		var cfg := Content.section("heli_cam")
 		var up := not sim.air.helis.is_empty()
-		p = clampf(p + (1.0 if up else -1.0) * delta / RAMP, 0.0, 1.0)
+		p = clampf(p + (1.0 if up else -1.0) * delta / Num.f(cfg["ramp"]), 0.0, 1.0)
 		var e := p * p * (3.0 - 2.0 * p) if target > 1.0 else 0.0
 		k = 1.0 + (target - 1.0) * e
 		var cam := rampage._camera
@@ -53,7 +52,17 @@ class CameraPull:
 			for heli: AirWing.Heli in sim.air.helis:
 				mid += heli.pos
 			mid /= float(sim.air.helis.size())
-			shift = (mid - sim.kaiju_pos) * FRAME_SHIFT  # kept as the helicopters leave
+			goal = (mid - sim.kaiju_pos) * Num.f(cfg["frame_shift"])  # kept as they leave
+		# The goal jumps when a helicopter joins or leaves; the view follows it critically
+		# damped (smooth_time = slide_time), so position AND speed stay continuous: no step in
+		# speed at the jump either.
+		var w := 2.0 / Num.f(cfg["slide_time"])
+		var x := w * delta
+		var damp := 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x)
+		var change := shift - goal
+		var tmp := (slide_v + change * w) * delta
+		slide_v = (slide_v - tmp * w) * damp
+		shift = goal + (change + tmp) * damp
 		look += Vector3(shift.x, 0, shift.y) * e
 		cam.position = look + (cam.position - look) * k
 		cam.look_at(look)
@@ -111,7 +120,11 @@ func _run() -> void:
 	for i: int in roundi(_seconds * 60.0):
 		await physics_frame
 		if LEAVE_AT.has(i) and not sim.air.helis.is_empty():
-			sim.air.helis.pop_back()
+			# Burning for good: the sim's own step takes its hp, clear_dead raises heli_destroyed
+			# and the view frees the node (events are rebuilt each step, so the kill must be in one).
+			var doomed: AirWing.Heli = sim.air.helis.back()
+			doomed.coat_t = 1.0
+			doomed.coat_dps = 100000.0
 			sim.chunks_destroyed = -1  # no replacements: the sky stays clear
 		if i == 30:
 			hud = _hud_rects(rampage._hud, root.get_viewport().get_visible_rect())

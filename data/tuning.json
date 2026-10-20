@@ -514,6 +514,11 @@
 		"cop_fire_interval": 0.7,
 		"max_police_cars": 8
 	},
+	"heli_cam": {
+		"ramp": 1.6,
+		"frame_shift": 0.3,
+		"slide_time": 1.2
+	},
 	"vehicles": {
 		"tank_height": 1.61,
 		"turret_turn": 2.5,
