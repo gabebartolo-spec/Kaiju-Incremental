@@ -35,6 +35,8 @@ var sfx: Sfx
 var autoplay_signature := true
 ## Capture hook: when set, called with the sim each physics frame for the player's input.
 var scripted: Callable
+## Where each stomp landed (the foot's ground point), for the capture and the tests.
+var stomp_ring_at: Array[Vector3] = []
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -63,8 +65,6 @@ var _steps := 0
 var _stomp_radius := 0.0
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-## Where each stomp landed (the foot's ground point), for the capture and the tests.
-var stomp_ring_at: Array[Vector3] = []
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army.
@@ -357,22 +357,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 	var target := at + Vector3(0, 1.0, 0)
 	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
 		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	var muzzle := node.fire()
-	var shell := TankModel.box(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
-	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
-	add_child(shell)
-	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
-	sfx.play_at("tank_fire", muzzle)
-	var tween := shell.create_tween()
-	tween.tween_property(shell, "position", target, 0.22)
-	if sim.stat("armor") > 0.0:
-		var away := (node.position - target).normalized() + Vector3.UP * 0.5
-		tween.tween_callback(func() -> void: ability_fx.deflect(target, away))
-		tween.tween_callback(func() -> void: sfx.play("deflect"))
-	else:
-		tween.tween_callback(func() -> void: _city.fx.sparks(target))
-		tween.tween_callback(func() -> void: sfx.play_at("shell_hit", target))
-	tween.tween_callback(shell.queue_free)
+	TankFx.fire_shell(self, node, target)
 	_shake = maxf(_shake, 0.08)
 
 
@@ -381,14 +366,8 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 		var node: Node3D = _tank_nodes[id]
 		node.queue_free()
 		_tank_nodes.erase(id)
-	for n: int in 8:
-		_city.debris(
-			pos + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
-		)
-	_city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
-	_city.fire(pos, 0.6)
 	var gained := Num.f(sim.army["tank_rubble"]) * sim.stat("rubble_mult")
-	_city.float_text("+%d" % Num.i(gained), pos + Vector3(0, 2, 0), UiKit.WARN)
+	TankFx.wreck(_city, pos, gained)
 
 
 func _place_camera(delta: float) -> void:

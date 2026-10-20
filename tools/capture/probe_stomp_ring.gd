@@ -35,16 +35,22 @@ func _run() -> void:
 				var tip: Vector3 = kaiju._rig.tail_world(gait._tail_tip)
 				var rt: Vector3 = rampage._kaiju_at
 				print(
-					"stomp %d: ring-to-foot %.2f  ring-to-root %.2f  ring-to-tailtip %.2f  (old ring was at root: root-to-foot %.2f, root-to-tailtip %.2f, root-to-other-foot %.2f)"
-					% [
-						seen[0],
-						ring.distance_to(at),
-						ring.distance_to(rt),
-						ring.distance_to(Vector3(tip.x, ring.y, tip.z)),
-						rt.distance_to(at),
-						rt.distance_to(Vector3(tip.x, rt.y, tip.z)),
-						_other(feet, side, rt),
-					]
+					(
+						"stomp %d: ring-to-foot %.2f  ring-to-root %.2f  ring-to-tailtip %.2f  "
+						+ "(old ring was at root: root-to-foot %.2f, root-to-tailtip %.2f, "
+						+ (
+							"root-to-other-foot %.2f)"
+							% [
+								seen[0],
+								ring.distance_to(at),
+								ring.distance_to(rt),
+								ring.distance_to(Vector3(tip.x, ring.y, tip.z)),
+								rt.distance_to(at),
+								rt.distance_to(Vector3(tip.x, rt.y, tip.z)),
+								_other(feet, side, rt),
+							]
+						)
+					)
 				)
 	)
 	for _i: int in 60 * 25:
