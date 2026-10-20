@@ -134,7 +134,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"glide_start":
 			_city.fx.dust(kaiju_at + Vector3(0, 0.3, 0), bs * 1.5)
 		"glide_land":
-			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]) * 1.2, _tint)
+			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]) * 1.2)
 			_city.crush(kaiju_at, Num.f(event["reach"]))
 		"eggs_laid":
 			var eggs: Array = event["at"]
@@ -164,7 +164,6 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_city.crush(at, radius)
 		"ink":
 			_city.ring(kaiju_at, Num.f(event["reach"]), INK, 0.8)
-			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]), INK)
 		"heli_spawned":
 			var heli := HelicopterModel.new()
 			add_child(heli)

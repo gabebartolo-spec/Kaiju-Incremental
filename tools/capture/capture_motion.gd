@@ -123,7 +123,7 @@ func _run() -> void:
 			var tail := side == "tail"  # a tail slam throws its own puffs (Fx.shockwave)
 			if not tail:
 				city.fx.footfall(at + Vector3(0, 0.2, 0), Rampage.FOOTFALL_DUST * size)
-			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, Rampage.FOOTFALL_TINT, tail)
+			city.fx.shockwave(at, Rampage.FOOTFALL_RING * size, tail)
 			var dip := (
 				Rampage.FOOTFALL_DIP * maxf(Rampage.FOOTFALL_DIP_FLOOR, body_scale) * strength
 			)
