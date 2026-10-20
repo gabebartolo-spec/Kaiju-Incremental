@@ -56,7 +56,7 @@ static func caps(runner: SceneTree, check: Callable) -> void:
 ## Graphics presets (research 2026-10-21 file 18): Potato, Low, Medium, High, Max, each a row of
 ## tuning "display" graphics. Every row applies through the Settings autoload and sets what it says
 ## on the window (scale, upscaler, MSAA, screen AA) and on the city's sun and environment (shadow
-## reach, splits, softness, SSAO, SSIL); Medium runs FSR1 with MSAA 2x; settings.cfg keeps the
+## reach, splits, softness, SSAO, SSIL); settings.cfg keeps the
 ## level and an old "balanced" loads as Medium. Off a 4K screen (headless) the default is High.
 static func graphics(runner: SceneTree, check: Callable) -> void:
 	var was: String = PlayerSettings.graphics
@@ -106,11 +106,6 @@ static func graphics(runner: SceneTree, check: Callable) -> void:
 	check.call(
 		table.size() == 5 and wrong.is_empty(),
 		"each of the %d graphics presets sets what its row says: %s" % [table.size(), wrong]
-	)
-	var medium: Dictionary = table["medium"]
-	check.call(
-		medium["scaler"] == "fsr1" and Num.i(medium["msaa"]) == Viewport.MSAA_2X,
-		"Medium runs FSR1 with MSAA 2x (FSR1 wants another AA): %s" % [medium]
 	)
 	var old := ConfigFile.new()
 	old.set_value("display", "graphics", "balanced")

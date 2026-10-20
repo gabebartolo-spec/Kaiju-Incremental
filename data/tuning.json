@@ -6,7 +6,7 @@
 		"graphics": {
 			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false},
 			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false},
-			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 0, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
 			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
 			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true}
 		},
