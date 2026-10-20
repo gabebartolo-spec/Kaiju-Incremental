@@ -1,25 +1,39 @@
 # carve-wp1 handoff (builder, WP1 of real carving destruction, D-094)
-## State: done, awaiting lead (lead opens the PR into claude/look-options)
-## Task
-WP1 per `git show origin/claude/destruction-plan:agent-handoffs/destruction-spike.md` ("First PR scope (WP1)").
-Pure sim VoxelFrame (sim/voxel_frame.gd + sim/voxel_support.gd), RES in data/tuning.json "destruction"
-(identical blob to carve-wp3), new `destruction` suite, bench tools/destruction_bench.gd. Not wired into
-RampageSim. PR body: pr_body_wp1.md in the worktree (untracked).
-## Branch and worktree
-claude/carve-wp1 from origin/claude/look-options; worktree ../Kaiju-Incremental-wt/carve-wp1 (remove after merge).
-## Done
-- VoxelFrame: carve_sphere/carve_capsule (force vs material strength), damage/remove/alive/top_below,
-  adopt(dims, offset, cells) for WP3's BuildingCells (offset = building-local cell of grid 0),
-  detach() (spike rule) and settle() (support rule), Structure-shaped events + "mats" + "index".
-- Materials: caller passes the list (data/materials.json shape, WP7 passes Content.materials()); no
-  materials table added here (coordinator: wp3 owns data/materials.json).
-- Tests green: destruction 13/13 functions, 45 checks; sim 13/13, 53 checks. Fail-first: stub run 21 red,
-  offset stub 4 red, mutation run (unclamped carve + res 4) 13 red incl. outside no-op and data.
-- Island pins hold: RES 4 [8415], RES 8 [35428] (detach). With the support rule the tower path gives one
-  topple of 38,866 cells instead (it tips after the first base pass).
-- Bench RES 8 (local, shared PC): tower tick avg 23.9 / p95 63.2 ms; block of six avg 146 / p95 371 ms.
+## State: life 3, re-review FIX (tests) pushed on #97; awaiting CI and the lead. Do not merge (lead's call).
+## Task (life 2)
+Answer review-wp1's FIX on PR #97 (comment 6279596456) and add the lead's fixture rule (from #98's
+review, comment 6279562193). Branch claude/carve-wp1, worktree ../Kaiju-Incremental-wt/carve-wp1.
+## Done (life 2)
+1. settle() re-floods after topples: a fresh VoxelSupport, its islands taken and landed like the
+   first pass (`_drop_islands`). Reviewer's repro is `_check_resettle`: [topple 832, drop 32], then
+   detach() finds nothing. Failed first ([topple] only, 1 part left floating).
+2. adopt() returns bool; refuses (push_error, frame unchanged) offset.y != 0, a dim < 1, or
+   dims product != bytes. `_check_adopt_guard` (failed first: true true).
+3. Replay trace adds per event dir.x, dir.y and the pivot in half cells (round(pivot*2*res)).
+   Pinned hashes in TRACE_PINS: tower RES 4 3951767490, tower RES 8 2034646805, block RES 4
+   3520931729. Mutation (dir flipped in _tip) fails all three pins and the two topple checks.
+   The re-flood did not change these paths (no hung loads on them).
+4. Fixture rule: materials' "fixture" (bool, default false) -> VoxelFrame.fixtures (by id) and
+   has_fixtures. Structural flood 6-neighbour, structural only; then fixtures join a grounded part
+   by 26-neighbour touch (to a labelled cell or a joined fixture), or stand on layer 0. Islands:
+   joined by a face, or any touch when either cell is a fixture. Topple box counts structural on
+   structural only (fixtures weigh, hold nothing). Tests: edge-only pane stays (same cells as wall
+   drop), pane cut free drops whole (16 window cells), wall cell held only by a pane drops.
+5. Notes only (PR body): pivot float32; damage() has no wear vs tough_mult 0.35 (WP7 rule).
+## Suites
+- New suite `voxel_support` (7 functions, 14 checks, about 1 s): moved `_check_overhang` and
+  `_check_island_support` there plus the 5 new checks (destruction hit the 400-line cap).
+- destruction: 12 of 12 functions, 43 checks, 0 failures (174 s local).
+- Bench RES 8 tower, back to back on the shared PC: old settle avg 24.1 / p95 88.3 ms, new avg
+  27.9 / p95 80.8 ms (the structural-only check in the flood; no fixtures on the bench path).
+## API changes (VoxelFrame)
+- adopt() now returns bool (was void). New public: fixtures (PackedByteArray[256]),
+  has_fixtures. Everything else unchanged.
 ## Open / for the lead
-- Suite takes 125-228 s locally (replays at RES 8 twice): re-measure CI timings after merge.
-- Interpretation: island support = landing on the least-gap columns (topple if COM past them).
-- Seam for WP2: grid is `cells` (public PackedByteArray) + adopt(); native carve takes cell units
-  (VoxelFrame converts: centre * res - offset).
+- settle() does not re-check the remaining grounded parts for a topple after the re-flood (the
+  next settle does). Islands landing on a fixture land on it (landing reads any cell).
+- Which materials are fixtures is carve-wp3's data change (claude/carve-wp3).
+- Not probed: WP3's real buildings with the fixture rule (needs wp3's fixture list).
+
+## Life 3 (re-review of 42a1f55, test gaps)
+Added 4 checks in voxel_support (now 11 functions, 19 checks): face-touching pane grounds nothing (M3), fixtures weigh but hold nothing in the topple box (M5), pane falls with its wall chunk (M4), fixture on layer 0 grounded (M6, lead decision, commented in voxel_support.gd _attach_fixtures). Each failed under its mutation first. Added the 2 missing .uid files.

@@ -1,14 +1,18 @@
 class_name VoxelSupport
 extends RefCounted
 ## The ground flood and the support rule behind VoxelFrame.settle() (split out to keep files
-## small). Made fresh for each settle: it labels every 6-connected part joined to the ground
-## floor (1, 2, ... in scan order of its first ground cell; 0 not grounded), then answers:
-##  - islands(): the ungrounded parts, scan order (Teardown's split);
+## small). Made fresh for each settle: it labels every 6-connected structural part joined to the
+## ground floor, grid layer 0 (1, 2, ... in scan order of its first ground cell; 0 not
+## grounded). Fixtures (VoxelFrame.fixtures: panes, signs) then join a part when they touch it,
+## or a fixture already joined, by a face, an edge or a corner (26 neighbours), or stand on
+## layer 0; they never carry a structural cell (lead rule on #97). It then answers:
+##  - islands(): the ungrounded parts, scan order (Teardown's split); two cells are in one
+##    part when they share a face, or touch at all and one of them is a fixture;
 ##  - landing(part): an island lands on the columns with the smallest gap below it; hung past
 ##    them it topples over their edge, else it drops;
 ##  - topple(): Structure._topple_check per grounded part: the lowest level whose load (the
-##    part's cells at or above it) has its centre of mass outside the box of the cells there
-##    standing on a cell below.
+##    part's cells at or above it) has its centre of mass outside the box of the structural
+##    cells there standing on a structural cell below (fixtures weigh but hold nothing).
 ## Centres of mass are compared in integers (sums of 2x + 1), so the outcome is exact.
 
 ## Per cell: the grounded part's label (> 0), 0 for not grounded, -1 once taken by an island.
@@ -16,25 +20,30 @@ var labels := PackedInt32Array()
 var count := 0
 var _f: VoxelFrame
 var _cells: PackedByteArray
+var _fix: PackedByteArray
 var _plan: int
 
 
 func _init(frame: VoxelFrame) -> void:
 	_f = frame
 	_cells = frame.cells
+	_fix = frame.fixtures
 	_plan = frame.w * frame.d
 	labels.resize(_cells.size())
 	var stack := PackedInt32Array()
 	stack.resize(_cells.size())
 	for start: int in _plan:
-		if _cells[start] != VoxelFrame.EMPTY and labels[start] == 0:
+		var m := _cells[start]
+		if m != VoxelFrame.EMPTY and _fix[m] == 0 and labels[start] == 0:
 			count += 1
 			labels[start] = count
 			stack[0] = start
 			_flood(stack, count)
+	if frame.has_fixtures:
+		_attach_fixtures(stack)
 
 
-## Floods `label` over every alive unlabelled cell joined to stack[0] (iterative, packed stack;
+## Floods `label` over every structural unlabelled cell joined to stack[0] (iterative, packed stack;
 ## the six neighbours written out: an array per cell costs the flood about a third more).
 func _flood(stack: PackedInt32Array, label: int) -> void:
 	var w := _f.w
@@ -48,34 +57,97 @@ func _flood(stack: PackedInt32Array, label: int) -> void:
 		var x := i % w
 		var z := (i / w) % d
 		var y := i / plan
-		if x > 0 and labels[i - 1] == 0 and _cells[i - 1] != 0:
+		if x > 0 and labels[i - 1] == 0 and _cells[i - 1] != 0 and _fix[_cells[i - 1]] == 0:
 			labels[i - 1] = label
 			stack[top] = i - 1
 			top += 1
-		if x < w - 1 and labels[i + 1] == 0 and _cells[i + 1] != 0:
+		if x < w - 1 and labels[i + 1] == 0 and _cells[i + 1] != 0 and _fix[_cells[i + 1]] == 0:
 			labels[i + 1] = label
 			stack[top] = i + 1
 			top += 1
-		if z > 0 and labels[i - w] == 0 and _cells[i - w] != 0:
+		if z > 0 and labels[i - w] == 0 and _cells[i - w] != 0 and _fix[_cells[i - w]] == 0:
 			labels[i - w] = label
 			stack[top] = i - w
 			top += 1
-		if z < d - 1 and labels[i + w] == 0 and _cells[i + w] != 0:
+		if z < d - 1 and labels[i + w] == 0 and _cells[i + w] != 0 and _fix[_cells[i + w]] == 0:
 			labels[i + w] = label
 			stack[top] = i + w
 			top += 1
-		if y > 0 and labels[i - plan] == 0 and _cells[i - plan] != 0:
+		if (
+			y > 0
+			and labels[i - plan] == 0
+			and _cells[i - plan] != 0
+			and _fix[_cells[i - plan]] == 0
+		):
 			labels[i - plan] = label
 			stack[top] = i - plan
 			top += 1
-		if y < h - 1 and labels[i + plan] == 0 and _cells[i + plan] != 0:
+		if (
+			y < h - 1
+			and labels[i + plan] == 0
+			and _cells[i + plan] != 0
+			and _fix[_cells[i + plan]] == 0
+		):
 			labels[i + plan] = label
 			stack[top] = i + plan
 			top += 1
 
 
-## Every alive, ungrounded cell, split into 6-connected islands (scan order of first cell,
-## cells in flood order); marks them -1. The caller removes them.
+## Joins each fixture to a grounded part: scan order, a fixture touching a labelled cell takes
+## its label (one on layer 0 touching none starts a new part), then floods it over the fixtures
+## it touches (26 neighbours). Fixtures never pass a label on to a structural cell.
+func _attach_fixtures(stack: PackedInt32Array) -> void:
+	for start: int in _cells.size():
+		var m := _cells[start]
+		if m == VoxelFrame.EMPTY or _fix[m] == 0 or labels[start] != 0:
+			continue
+		var label := 0
+		var ring := _ring(start)
+		for r: int in range(0, ring.size(), 2):
+			if labels[ring[r]] > 0:
+				label = labels[ring[r]]
+				break
+		if label == 0:
+			# Lead rule (#97): a fixture on grid layer 0 is grounded though it touches nothing else
+			# (a ground-floor shopfront rests on the street).
+			if start >= _plan:
+				continue
+			count += 1
+			label = count
+		labels[start] = label
+		stack[0] = start
+		var top := 1
+		while top > 0:
+			top -= 1
+			var around := _ring(stack[top])
+			for r: int in range(0, around.size(), 2):
+				var n := around[r]
+				if labels[n] == 0 and _cells[n] != VoxelFrame.EMPTY and _fix[_cells[n]] != 0:
+					labels[n] = label
+					stack[top] = n
+					top += 1
+
+
+## The 26 neighbours of cell `i` inside the grid, as pairs [index, 1 if it shares a face].
+func _ring(i: int) -> PackedInt32Array:
+	var w := _f.w
+	var d := _f.d
+	var x := i % w
+	var z := (i / w) % d
+	var y := i / _plan
+	var out := PackedInt32Array()
+	for dy: int in range(maxi(-y, -1), mini(_f.h - y, 2)):
+		for dz: int in range(maxi(-z, -1), mini(d - z, 2)):
+			for dx: int in range(maxi(-x, -1), mini(w - x, 2)):
+				var step := absi(dx) + absi(dy) + absi(dz)
+				if step > 0:
+					out.append(i + dx + dz * w + dy * _plan)
+					out.append(int(step == 1))
+	return out
+
+
+## Every alive, ungrounded cell, split into islands (scan order of first cell,
+## cells in flood order; joined as the header says); marks them -1. The caller removes them.
 func islands() -> Array[PackedInt32Array]:
 	var out: Array[PackedInt32Array] = []
 	var w := _f.w
@@ -90,6 +162,9 @@ func islands() -> Array[PackedInt32Array]:
 		while k < part.size():
 			var i := part[k]
 			k += 1
+			if _f.has_fixtures:
+				_join(i, part)
+				continue
 			var x := i % w
 			var z := (i / w) % d
 			var y := i / _plan
@@ -106,6 +181,20 @@ func islands() -> Array[PackedInt32Array]:
 					part.append(n)
 		out.append(part)
 	return out
+
+
+## Adds to `part` the unclaimed neighbours of `i` it is joined to: a face, or any touch when
+## either cell is a fixture.
+func _join(i: int, part: PackedInt32Array) -> void:
+	var loose := _fix[_cells[i]] != 0
+	var ring := _ring(i)
+	for r: int in range(0, ring.size(), 2):
+		var n := ring[r]
+		if labels[n] != 0 or _cells[n] == VoxelFrame.EMPTY:
+			continue
+		if loose or ring[r + 1] == 1 or _fix[_cells[n]] != 0:
+			labels[n] = -1
+			part.append(n)
 
 
 ## Where an island (already removed from the grid) lands: {kind, pivot, dir}.
@@ -195,7 +284,8 @@ func _floors() -> Dictionary:
 		mass[at] += 1
 		sx[at] += 2 * x + 1
 		sz[at] += 2 * z + 1
-		if y > 0 and _cells[i - _plan] != VoxelFrame.EMPTY:
+		var below := _cells[i - _plan] if y > 0 else VoxelFrame.EMPTY
+		if below != VoxelFrame.EMPTY and _fix[below] == 0 and _fix[_cells[i]] == 0:
 			var b := (k * h + y) * 4
 			var fresh := box[b + 2] < 0
 			box[b] = x if fresh else mini(box[b], x)

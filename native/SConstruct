@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+# Builds the Kaiju native core (GDExtension). From native/:
+#   scons platform=windows target=template_debug     (MSVC; run in a vcvars64 shell)
+#   scons platform=linux target=template_debug
+# Output: native/bin/libkaiju_carve.<platform>.<target>.<arch>.<dll|so>
+env = SConscript("godot-cpp/SConstruct")
+env.Append(CPPPATH=["src/"])
+sources = Glob("src/*.cpp")
+library = env.SharedLibrary(
+	"bin/libkaiju_carve{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+	source=sources,
+)
+Default(library)

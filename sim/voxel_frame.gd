@@ -4,8 +4,10 @@ extends RefCounted
 ## Red Faction: Guerrilla's support rule). RES cells per sim unit (data/tuning.json
 ## "destruction"), one byte per cell: 0 empty, else a material id from the caller's material
 ## list (data/materials.json's shape: {id, name, strength}). Cells run x fastest, then z, then y,
-## as in Structure. Positions passed in are building-local sim units: local cell (x, y, z) fills
-## [x, x + 1] / RES on each axis; grid cell 0 is local cell `offset`.
+## as in Structure. A material marked "fixture" (a window pane, a sign) hangs on its neighbours:
+## it is attached when it touches an attached cell by a face, an edge or a corner, and it holds
+## no structural cell up (lead rule on #97). Positions passed in are building-local sim units:
+## local cell (x, y, z) fills [x, x + 1] / RES on each axis; grid cell 0 is local cell `offset`.
 ##
 ## A blow carves a sphere (stomp) or a capsule (swipe); settle() then finds what lost support,
 ## with Structure.settle()'s event shape ({cells, kind "drop"|"topple", pivot, dir}) so Collapse
@@ -30,6 +32,11 @@ var alive_count := 0
 ## building-local; only "index" is a grid index.
 var offset := Vector3i.ZERO
 var cells := PackedByteArray()
+## By material id: 1 when the material is a fixture (data/materials.json "fixture", default
+## false), else 0. VoxelSupport reads it.
+var fixtures := PackedByteArray()
+## True when any material in the list is a fixture (the flood skips the fixture pass if not).
+var has_fixtures := false
 ## By material id: the blow needed to break a cell of it.
 var _strength := PackedFloat64Array()
 var _ids: Dictionary = {}
@@ -42,21 +49,37 @@ func _init(units: Vector3i, p_res: int, materials: Array[Dictionary]) -> void:
 	h = units.y * res
 	cells.resize(w * d * h)
 	_strength.resize(256)
+	fixtures.resize(256)
 	for m: Dictionary in materials:
 		var id := Num.i(m["id"])
 		if id > EMPTY and id < 256:
 			_strength[id] = Num.f(m.get("strength", 1.0))
 			_ids[str(m["name"])] = id
+			if m.get("fixture", false) == true:
+				fixtures[id] = 1
+				has_fixtures = true
 
 
 ## Takes a generated grid (WP3's BuildingCells: dims, offset, cells), a copy of its bytes.
-func adopt(dims: Vector3i, p_offset: Vector3i, p_cells: PackedByteArray) -> void:
+## The ground is grid layer 0, so offset.y must be 0; dims must match the bytes. A grid that
+## breaks either is refused (an error, false) and the frame is left as it was.
+func adopt(dims: Vector3i, p_offset: Vector3i, p_cells: PackedByteArray) -> bool:
+	var size := dims.x * dims.y * dims.z
+	if p_offset.y != 0 or mini(mini(dims.x, dims.y), dims.z) < 1 or size != p_cells.size():
+		push_error(
+			(
+				"VoxelFrame.adopt refused: dims %s, offset %s, %d bytes"
+				% [dims, p_offset, p_cells.size()]
+			)
+		)
+		return false
 	w = dims.x
 	d = dims.z
 	h = dims.y
 	offset = p_offset
 	cells = p_cells.duplicate()
 	alive_count = cells.size() - cells.count(EMPTY)
+	return true
 
 
 ## The id of a material by name, or EMPTY when the list has no such material.
@@ -200,15 +223,14 @@ func detach() -> Array[Dictionary]:
 ## Removes and returns every part that lost support, as Structure.settle() does:
 ## {"cells": Array[Vector3i], "kind": "drop"|"topple", "pivot": Vector3 (local sim units),
 ## "dir": Vector2i, "mats": PackedByteArray (each cell's material), "index": PackedInt32Array}.
-## Islands first (scan order), then at most one topple per grounded part (lowest level).
+## Islands first (scan order), then at most one topple per grounded part (lowest level), then
+## what hung from a toppled load below its level: a fresh flood, its islands land as the first
+## ones do (review FIX on #97: nothing is left floating).
 func settle() -> Array[Dictionary]:
 	var support := VoxelSupport.new(self)
 	var out: Array[Dictionary] = []
-	for part: PackedInt32Array in support.islands():
-		out.append(_take(part))
-	for event: Dictionary in out:
-		var index: PackedInt32Array = event["index"]
-		event.merge(support.landing(index), true)
+	_drop_islands(support, out)
+	var first := out.size()
 	var plan := w * d
 	for tip: Dictionary in support.topple():
 		var label: int = tip["label"]
@@ -222,7 +244,19 @@ func settle() -> Array[Dictionary]:
 		event["pivot"] = tip["pivot"]
 		event["dir"] = tip["dir"]
 		out.append(event)
+	if out.size() > first:
+		_drop_islands(VoxelSupport.new(self), out)
 	return out
+
+
+## Takes every island `support` finds and appends it to `out`, each with where it lands.
+func _drop_islands(support: VoxelSupport, out: Array[Dictionary]) -> void:
+	var start := out.size()
+	for part: PackedInt32Array in support.islands():
+		out.append(_take(part))
+	for k: int in range(start, out.size()):
+		var index: PackedInt32Array = out[k]["index"]
+		out[k].merge(support.landing(index), true)
 
 
 ## A digest of the grid, for replay checks.
