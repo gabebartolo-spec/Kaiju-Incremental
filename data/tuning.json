@@ -469,6 +469,7 @@
 		"turn_rate": 10.0,
 		"pay_mult": 0.2,
 		"bite_dps": 140.0,
+		"dash": {"lengths": 1.5, "seconds": 0.4, "cooldown": 4.0, "tank_damage": 60.0},
 		"bodies": {
 			"reptilian": [
 				{"snout": 10.5, "discs": [[8.8, 2.0, 3.0, 10.0], [5.0, 3.6, 0.0, 10.0], [2.0, 3.0, 0.0, 8.0],
@@ -525,6 +526,7 @@
 	"fx": {
 		"power_max": 2.5,
 		"footfall_dust": {"seconds": 1.0, "alpha": 0.38, "rise": 1.6, "max_live": 2},
+		"shockwave": {"radius_scale": 0.6, "seconds": 0.35, "alpha": 0.22, "soft": 0.4},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"breath_fade_in": 0.12,
@@ -617,6 +619,7 @@
 	},
 	"destruction": {
 		"res": 8,
+		"arc_shed_cells": 32,
 		"column_bay": 8
 	}
 }
