@@ -4,7 +4,6 @@ extends RefCounted
 ## part joined to the ground before any carve (no pane, sign or roof tank falls off on a
 ## building's first hit).
 
-const Flood := preload("res://tests/lib/cells_flood_until_wp1.gd")
 ## City buildings checked for islands: this many from each of three seeded cities (tiers 1-3).
 const ISLAND_SAMPLE := 40
 
@@ -23,7 +22,7 @@ func _init(p_check: Callable, fixtures: Array, make: Callable) -> void:
 
 func run() -> void:
 	_promotion_clears_edge_chunks()
-	_flood_follows_wp1_rule()
+	_pane_under_wall_is_cut_off()
 	_no_islands_before_carving()
 	_glass_towers_stand()
 
@@ -69,27 +68,36 @@ func _promotion_clears_edge_chunks() -> void:
 		)
 
 
-## The flood is WP1's rule: a shop pane on the ground with two wall cells on it leaves those two
+## Cells of a grid VoxelSupport (WP1's rule) finds in islands: no ground-joined structure.
+func _cut(dims: Vector3i, offset: Vector3i, cells: PackedByteArray) -> int:
+	var frame := VoxelFrame.new(Vector3i.ONE, BuildingCells.cell_res(), Content.materials())
+	if not frame.adopt(dims, offset, cells):
+		return -1
+	var n := 0
+	for part: PackedInt32Array in VoxelSupport.new(frame).islands():
+		n += part.size()
+	return n
+
+
+## VoxelSupport's rule: a shop pane on the ground with two wall cells on it leaves those two
 ## cells cut off (a fixture never carries a structural cell), the pane alone rests on the street,
 ## and a wall column on the street carries the cells above it.
-func _flood_follows_wp1_rule() -> void:
-	var fixture := Flood.fixture_ids()
+func _pane_under_wall_is_cut_off() -> void:
 	var ids := BuildingCells.material_ids()
 	var shop: int = ids["shop"]
 	var wall: int = ids["wall"]
 	var dims := Vector3i(1, 3, 1)
-	var on_pane := Flood.ungrounded(dims, PackedByteArray([shop, wall, wall]), fixture)
-	_check.call(on_pane.size() == 2, "wall on a pane is cut off (%d cells)" % on_pane.size())
-	var pane := Flood.ungrounded(dims, PackedByteArray([shop, 0, 0]), fixture)
-	_check.call(pane.is_empty(), "a pane on layer 0 is grounded")
-	var column := Flood.ungrounded(dims, PackedByteArray([wall, wall, shop]), fixture)
-	_check.call(column.is_empty(), "wall carries the pane above it")
+	var on_pane := _cut(dims, Vector3i.ZERO, PackedByteArray([shop, wall, wall]))
+	_check.call(on_pane == 2, "wall on a pane is cut off (%d cells)" % on_pane)
+	var pane := _cut(dims, Vector3i.ZERO, PackedByteArray([shop, 0, 0]))
+	_check.call(pane == 0, "a pane on layer 0 is grounded")
+	var column := _cut(dims, Vector3i.ZERO, PackedByteArray([wall, wall, shop]))
+	_check.call(column == 0, "wall carries the pane above it")
 
 
 ## Every glass-style building of three seeded cities, party walls in, stands under WP1's rule:
 ## the curtain wall is all fixtures, so the columns inside it have to carry the slabs and roof.
 func _glass_towers_stand() -> void:
-	var fixture := Flood.fixture_ids()
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"),
 		Content.species_def("reptilian"),
@@ -108,20 +116,19 @@ func _glass_towers_stand() -> void:
 				continue
 			glass += 1
 			var g := BuildingCells.new(b, party[n])
-			bad += 0 if Flood.ungrounded(g.dims, g.cells, fixture).is_empty() else 1
-	_check.call(glass > 0 and bad == 0, "%d of %d glass-style buildings have an island" % [bad, glass])
+			bad += 0 if _cut(g.dims, g.offset, g.cells) == 0 else 1
+	_check.call(
+		glass > 0 and bad == 0, "%d of %d glass-style buildings have an island" % [bad, glass]
+	)
 
 
 ## Before any carve, every fixture and every building of three seeded cities (tiers 1-3, real
-## party walls) is one part joined to the ground under the fixture rule (Flood).
+## party walls) is one part joined to the ground under VoxelSupport's rule.
 func _no_islands_before_carving() -> void:
-	var fixture := Flood.fixture_ids()
-	var structural := PackedByteArray()
-	structural.resize(256)
 	for f: Array in _fixtures:
 		var party: Dictionary = f[8]
 		var g := BuildingCells.new(_building(f), party)
-		var cells := Flood.ungrounded(g.dims, g.cells, fixture).size()
+		var cells := _cut(g.dims, g.offset, g.cells)
 		_check.call(
 			cells == 0, "%s has no island before any carve (%d cells cut off)" % [f[0], cells]
 		)
@@ -132,7 +139,6 @@ func _no_islands_before_carving() -> void:
 	)
 	var checked := 0
 	var bad := 0
-	var bad_six := 0
 	var cut := 0
 	for k: int in 3:
 		var tuning := CityGrowth.tuning_for(Content.tuning(), k + 1)
@@ -147,19 +153,12 @@ func _no_islands_before_carving() -> void:
 			taken += 1
 			checked += 1
 			var g := BuildingCells.new(b, party[n])
-			var off := Flood.ungrounded(g.dims, g.cells, fixture).size()
+			var off := _cut(g.dims, g.offset, g.cells)
 			cut += off
 			bad += 1 if off > 0 else 0
-			bad_six += 0 if Flood.ungrounded(g.dims, g.cells, structural).is_empty() else 1
 	_check.call(
 		checked == ISLAND_SAMPLE * 3 and bad == 0,
-		(
-			(
-				"%d of %d city buildings have an island before any carve (%d cells; %d without the"
-				+ " fixture rule)"
-			)
-			% [bad, checked, cut, bad_six]
-		)
+		"%d of %d city buildings have an island before any carve (%d cells)" % [bad, checked, cut]
 	)
 
 

@@ -1,5 +1,5 @@
 # carve-wp3 handoff (builder, WP3 of real carving, D-094)
-## State: re-review FIX (glass frame) pushed, CI pending on the new head; awaiting lead
+## State: merged base (WP1 in), cells checks use VoxelSupport, flood file deleted; CI pending on the new head
 ## Task
 WP3: a pure sim generator of a building's fine grid (BuildingVoxels' layout cell for cell), materials
 from data/, lazy promotion helper (not wired, WP7), new `cells` suite. PR #98.
