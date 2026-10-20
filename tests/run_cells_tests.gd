@@ -50,7 +50,10 @@ const FORBIDDEN: Array[String] = [
 	"await ",
 ]
 const MODULES: Array[String] = [
-	"res://sim/building_cells.gd", "res://sim/cell_grid.gd", "res://sim/cell_promoter.gd"
+	"res://sim/building_cells.gd",
+	"res://sim/cell_grid.gd",
+	"res://sim/cell_promoter.gd",
+	"res://sim/glass_frame.gd",
 ]
 
 
