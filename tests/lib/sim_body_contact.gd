@@ -13,10 +13,10 @@ const DT := 1.0 / 30.0
 const FORWARD_STEPS := 90
 const TURN_STEPS := 30
 const BACK_STEPS := 45
-## The tower test: the baby chews across a tier-2 tower's base for at most this long (steps).
-const TOPPLE_STEPS := 30 * 60
 ## Steps that cover one dash and its end.
 const DASH_STEPS := 20
+## The tower test: the baby chews across a tier-2 tower's base for at most this long (steps).
+const TOPPLE_STEPS := 30 * 60
 ## A scripted young rampage: no wall holds the body longer than this at a stretch (a quarter of
 ## its 40 s). A body stuck on a wall would hold for the rest of the run.
 const HOLD_LIMIT_S := 10.0
@@ -66,13 +66,42 @@ func run() -> void:
 		)
 	)
 	_check.call(on == _walk(true, 1), "the walk through a building replays identically")
-	_check_topple()
 	_check_dash()
+	_check_topple()
 	_check_autoplay()
 	_check_sweep_end()
 	_check_contact_data()
 
 
+## Playtest note 4: a dash at the nearest building carries the body through it at speed, and
+## the sweep still leaves nothing standing inside the body after any step.
+func _check_dash() -> void:
+	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	sim.body.use_species("reptilian")
+	var dir := (sim.nearest_standing(sim.kaiju_pos) - sim.kaiju_pos).normalized()
+	var from := sim.kaiju_pos
+	var worst := 0
+	for n: int in DASH_STEPS:
+		sim.step(DT, dir, false, Dash.BUTTON if n == 1 else 0)
+		var inside := sim.body.inside(sim.kaiju_pos, sim.body.heading)
+		for index: int in inside:
+			var cells: Dictionary = inside[index]
+			worst = maxi(worst, cells.size())
+	var moved := sim.kaiju_pos.distance_to(from)
+	_check.call(
+		sim.body.dash.dashes == 1 and moved > sim.body.length() and worst == 0,
+		(
+			(
+				"a dash carries the body %.1f m (body %.1f m) and leaves no chunk inside it (%d);"
+				+ " %d chunks broken"
+			)
+			% [moved, sim.body.length(), worst, sim.body.broken]
+		)
+	)
+
+
+## The nearest standing building of exactly this tier (no landmark) to the kaiju; `min_height`
+## and `min_side` narrow it.
 ## The nearest standing building of exactly this tier (no landmark) to the kaiju; `min_height`
 ## and `min_side` narrow it.
 func _nearest(sim: RampageSim, tier: int, min_height: int = 0, min_side: int = 0) -> int:
@@ -271,30 +300,3 @@ static func contact_errors(cfg: Dictionary) -> Array[String]:
 	if pay <= 0.0 or pay > 1.0:
 		out.append("pay_mult must be in (0, 1], is %s" % pay)
 	return out
-
-
-## Playtest note 4: a dash at the nearest building carries the body through it at speed, and
-## the sweep still leaves nothing standing inside the body after any step.
-func _check_dash() -> void:
-	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
-	sim.body.use_species("reptilian")
-	var dir := (sim.nearest_standing(sim.kaiju_pos) - sim.kaiju_pos).normalized()
-	var from := sim.kaiju_pos
-	var worst := 0
-	for n: int in DASH_STEPS:
-		sim.step(DT, dir, false, Dash.BUTTON if n == 1 else 0)
-		var inside := sim.body.inside(sim.kaiju_pos, sim.body.heading)
-		for index: int in inside:
-			var cells: Dictionary = inside[index]
-			worst = maxi(worst, cells.size())
-	var moved := sim.kaiju_pos.distance_to(from)
-	_check.call(
-		sim.body.dash.dashes == 1 and moved > sim.body.length() and worst == 0,
-		(
-			(
-				"a dash carries the body %.1f m (body %.1f m) and leaves no chunk inside it (%d);"
-				+ " %d chunks broken"
-			)
-			% [moved, sim.body.length(), worst, sim.body.broken]
-		)
-	)

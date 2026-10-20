@@ -27,11 +27,15 @@ static var _generation := 0
 var b: RampageSim.Building
 var voxels: BuildingVoxels
 var mesher: BuildingMesher
+## The fine-grid view once the building is carved (promote); null while it is on its chunks.
+var cells_view: CellView
 var _alive: Image
 var _alive_tex: ImageTexture
 var _slabs: MeshInstance3D
 var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
+var _shell: MeshInstance3D
+var _cells_mat: ShaderMaterial
 
 
 ## party: side (BuildingVoxels.SIDES) -> floors a neighbour covers there. The voxels and meshes are
@@ -61,7 +65,8 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	_alive_tex = ImageTexture.create_from_image(_alive)
 	_shell_mat = _material(_alive_tex)
 	_slab_mat = _material(_alive_tex)
-	add_child(_instance(mesher.shell, _shell_mat))
+	_shell = _instance(mesher.shell, _shell_mat)
+	add_child(_shell)
 	_slabs = _instance(mesher.slabs, _slab_mat)
 	_slabs.visible = false
 	add_child(_slabs)
@@ -106,6 +111,25 @@ static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> Str
 func set_opacity(value: float) -> void:
 	_shell_mat.set_shader_parameter("opacity", value)
 	_slab_mat.set_shader_parameter("opacity", value)
+	if cells_view != null:
+		cells_view.set_opacity(value)
+
+
+## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
+## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
+## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
+func promote(grid: BuildingCells) -> CellView:
+	if cells_view != null:
+		return cells_view
+	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
+	whole.fill(Color(1, 1, 1))
+	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
+	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
+	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
+	add_child(cells_view)
+	_shell.visible = false
+	_slabs.visible = false
+	return cells_view
 
 
 func _material(tex: Texture2D) -> ShaderMaterial:

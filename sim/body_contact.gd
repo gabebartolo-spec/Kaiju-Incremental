@@ -91,7 +91,7 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	longest_hold = maxf(longest_hold, _hold_s)
 	if held:
 		_hold(from, from_heading)
-		dash.left = 0.0  # a dash into a wall that has not given stops at it
+		dash.left = 0.0  # a dash into a wall that has not given yet stops at it
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
 

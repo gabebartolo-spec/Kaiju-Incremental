@@ -2,9 +2,8 @@ extends SceneTree
 ## Playtest note 2: the young reptilian walks into the nearest building, turns inside it and
 ## walks back out, at the game camera, with its body volume on (BodyContact) or off (the old
 ## stomp-only contact). Same city and seed both ways, so a pair is a before/after. Saves a still
-## every --every frames into --out for 2x crops; --dash=N dashes on walk step N (note 4).
-## Needs a window and the no-focus override.cfg.
 ## every --every frames into --out for 2x crops. Needs a window and the no-focus override.cfg.
+## --dash=N dashes on walk step N (note 4).
 ## --both: the walk-through (claw swipes) and then the tower topple in one clip, for one CI run.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <out>.avi \
@@ -22,9 +21,9 @@ var _every := 30
 ## --tower: start at the south face of the nearest tall tier-2 tower and chew north into its
 ## base until it falls (D-091), instead of the walk-through.
 var _tower := false
+var _both := false
 ## --dash=N: press the dash on walk step N (playtest note 4); -1: never.
 var _dash_at := -1
-var _both := false
 
 
 func _initialize() -> void:
@@ -37,10 +36,10 @@ func _initialize() -> void:
 			_every = arg.substr(8).to_int()
 		elif arg == "--tower":
 			_tower = true
-		elif arg.begins_with("--dash="):
-			_dash_at = arg.substr(7).to_int()
 		elif arg == "--both":
 			_both = true
+		elif arg.begins_with("--dash="):
+			_dash_at = arg.substr(7).to_int()
 	_run.call_deferred()
 
 
@@ -88,19 +87,6 @@ func _play(tower: bool) -> void:
 			move = dir if n >= LEAD_IN else Vector2.ZERO
 		return {"move": move, "dash": n == _dash_at}
 	root.add_child(rampage)
-	var layer := CanvasLayer.new()
-	layer.layer = 10
-	var text := UiKit.label(
-		(
-			("DASH (Shift)" if _dash_at >= 0 else "BODY VOLUME ON (sweep)")
-			if _body
-			else "BODY VOLUME OFF (demo exe)"
-		),
-		UiKit.SIZE_HEAD
-	)
-	text.position = Vector2(40, 160)
-	layer.add_child(text)
-	root.add_child(layer)
 	for child: Node in rampage.get_children():
 		if child is BreathAim:  # the ready-breath wedge sits over the head and hides the bite
 			child.queue_free()

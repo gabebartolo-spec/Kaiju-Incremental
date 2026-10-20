@@ -129,10 +129,9 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 		scorch.basis = Basis.looking_at(flat.normalized(), Vector3.UP)
 
 
-## Leap Slam lift-off: a kick of dust and a small ring where the kaiju left the ground.
+## Leap Slam lift-off: a kick of dust where the kaiju left the ground.
 func leap_takeoff(at: Vector3) -> void:
 	_city.fx.dust(at + Vector3(0, 0.3, 0), 1.2 * _scale)
-	_city.fx.shockwave(at, 2.5 * _scale, _tint)
 
 
 ## The streak behind the kaiju while it is in the air; on: false stops the trail.
@@ -141,7 +140,7 @@ func leap_trail(at: Vector3, on: bool) -> void:
 	_trail.emitting = on
 
 
-## Leap Slam landing: a glowing crater with radial cracks, two shockwaves, street chunks
+## Leap Slam landing: a glowing crater with radial cracks, one dust ripple, street chunks
 ## thrown outward and a low ring of dust.
 func leap_land(at: Vector3, reach: float, strength: float) -> void:
 	played.append("leap")
@@ -153,8 +152,7 @@ func leap_land(at: Vector3, reach: float, strength: float) -> void:
 		"tint": _tint,
 	}
 	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
-	_city.fx.shockwave(at, reach * 1.3, _tint)
-	_city.fx.shockwave(at, reach * 0.8)
+	_city.fx.shockwave(at, reach * 1.3)  # one ripple: the crater and debris are the impact
 	for n: int in 12:
 		var out := Vector3.FORWARD.rotated(Vector3.UP, TAU * n / 12.0)
 		_city.debris(at + out * 0.8 + Vector3(0, 0.4, 0), STREET, out + Vector3(0, 1.2, 0))
@@ -212,11 +210,10 @@ func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
 	return true
 
 
-## Signature ready again: one ring runs out from the feet and the eyes flare in the species
-## colour (not the whole body, which read as taking damage).
-func ready_pulse(feet: Vector3, head: Vector3) -> void:
+## Signature ready again: the eyes flare in the species colour (not the whole body, which read
+## as taking damage). No ground ring: nothing hits the ground.
+func ready_pulse(_feet: Vector3, head: Vector3) -> void:
 	played.append("ready")
-	_city.fx.shockwave(feet, 4.0 * _scale, _tint)
 	_flare(head, 3.0 * _scale, _tint, 0.5)
 
 
