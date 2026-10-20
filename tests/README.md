@@ -23,6 +23,7 @@ from `tools/ci_timings.txt`, so a new suite needs only its file and a row below.
 |---|---|
 | `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up |
 | `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits |
+| `military` | the tanks move and fight like a professional military (D-066): they drive the road plan, never into a building, a lot or an alley; no two tanks as drawn (hull, turret, gun) ever touch; a driving tank keeps its hull within 10 degrees of its road and a parked one squares to it; parked tanks hold their firing band or reserve and leave the danger radius; road entries; a toppled tower re-routes a column; the clip scene through the drawn models (parts never touch, no skewed driving; the kaiju strides at them and they fall back; no hull on a car) |
 
 The harness self-test (`tools/test_run_tests.sh`) proves the runner fails a `_check_*`
 method that is never called or makes no check, and that an untyped declaration does not compile.
