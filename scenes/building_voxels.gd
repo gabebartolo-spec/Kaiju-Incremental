@@ -96,7 +96,7 @@ func _make_palette(base: Color) -> void:
 		"awning": AWNINGS[posmod(roundi(b.x + b.z * 3.0), AWNINGS.size())],
 		"band": SIGN_BANDS[posmod(roundi(b.x * 7.0 + b.z), SIGN_BANDS.size())],
 		"rail": Color("2a2c2e"),
-		"slab": Color("2b2d30"),
+		"slab": Color("8a8780"),
 		"roof": Look.color("roof"),
 		"gear": Color("a9aaa4"),
 		"vent": Color("3a3c3e"),
