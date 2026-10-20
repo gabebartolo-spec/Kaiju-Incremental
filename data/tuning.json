@@ -531,6 +531,7 @@
 		"heli_clear": 5.0
 	},
 	"destruction": {
-		"res": 8
+		"res": 8,
+		"column_bay": 8
 	}
 }
