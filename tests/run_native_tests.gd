@@ -2,7 +2,8 @@ extends "res://tests/lib/runner.gd"
 ## Native core suite (WP2): the GDExtension's KaijuCarve gives the same removed-cell counts and
 ## the same grid digest as the GDScript oracle (the spike's carve_grid.gd algorithm, copied
 ## below as the test oracle) on one fixed fixture. Skips with a SKIP line where the library is
-## not built; CI builds it and sets KAIJU_NATIVE_REQUIRED=1, which turns a missing library into a failure.
+## not built; CI builds it and sets KAIJU_NATIVE_REQUIRED=1, which turns a missing library
+## into a failure.
 ##   godot --headless --path . --script tests/run_native_tests.gd
 
 const RES := 4
@@ -34,9 +35,11 @@ func _check_loaded() -> void:
 	if _available:
 		check(true, "the KaijuCarve class is registered by the extension")
 	elif OS.get_environment("KAIJU_NATIVE_REQUIRED") == "1":
-		check(false, "native library is required here (KAIJU_NATIVE_REQUIRED=1) but KaijuCarve is not registered")
+		check(false, "native library is required here (KAIJU_NATIVE_REQUIRED=1) "
+				+ "but KaijuCarve is not registered")
 	else:
-		print("SKIP: KaijuCarve is not registered; build native/ (see native/SConstruct) to run the native checks")
+		print("SKIP: KaijuCarve is not registered; build native/ (see native/SConstruct) "
+				+ "to run the native checks")
 		check(true, "native library not built: skipped on purpose")
 
 
@@ -108,7 +111,11 @@ func _dims() -> Vector3i:
 
 ## Centres and radii in cell units, exact in float32 so the oracle and C++ agree bit for bit.
 func _spheres() -> Array:
-	return [[Vector3(12.0, 24.0, 12.0), 18.0], [Vector3(3.5, 6.25, 20.0), 6.0], [Vector3(20.0, 40.0, 4.0), 5.0]]
+	return [
+		[Vector3(12.0, 24.0, 12.0), 18.0],
+		[Vector3(3.5, 6.25, 20.0), 6.0],
+		[Vector3(20.0, 40.0, 4.0), 5.0],
+	]
 
 
 ## The spike's hollow block: slab per floor, shell with window bands, interior columns.

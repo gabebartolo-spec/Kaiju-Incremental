@@ -6,4 +6,4 @@ Done: godot-cpp submodule (godot-4.5-stable, no 4.7 tag); native/{SConstruct,kai
 (5 functions, 16 checks, passes vs GDScript oracle); tests.yml `native` job + artifact to shards/extras; build.yml builds the
 Windows release dll and uploads it beside the exe; LICENSING_REGISTER rows.
 Local: build via a vcvars64 .bat then `python -m SCons platform=windows target=template_debug -j8` in native/.
-Left: CI run result; capture.yml/lint.yml not touched (Godot there logs a missing-library error only).
+Lint fix: wrapped 4 over-100-char lines in tests/run_native_tests.gd (no behaviour change); gdtoolkit clean locally.
