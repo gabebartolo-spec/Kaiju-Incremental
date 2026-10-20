@@ -77,6 +77,16 @@ func shed(frame: Structure) -> Array[Dictionary]:
 	return out
 
 
+## The direction arc g falls toward (the rim outward, the stands inward).
+func dir_of(g: int) -> Vector2i:
+	return _dirs[g]
+
+
+## How many arcs there are.
+func arc_count() -> int:
+	return _dirs.size()
+
+
 ## The arc plan column (x, z) belongs to, or -1.
 func arc_at(x: int, z: int) -> int:
 	return _of[x + z * _w]
