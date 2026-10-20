@@ -86,9 +86,11 @@ static func _leave_mid_build(tree: SceneTree, check: Callable) -> void:
 	for _i: int in 5:
 		await tree.process_frame
 	check.call(not is_instance_valid(rampage), "leaving mid-build frees the run without a stall")
+	var alive := 0
+	for s: Variant in streams:
+		alive += 1 if is_instance_valid(s) else 0
 	check.call(
-		streams.all(func(n: Node) -> bool: return not is_instance_valid(n)),
-		"its building stream went with it (%d were up)" % streams.size()
+		alive == 0, "its building stream went with it (%d of %d left)" % [alive, streams.size()]
 	)
 
 
