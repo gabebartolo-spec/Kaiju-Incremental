@@ -11,6 +11,7 @@ const Trample := preload("res://tests/lib/city_trample.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
+const Reach := preload("res://tests/lib/city_reach.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -27,6 +28,7 @@ func run_checks() -> void:
 	await _t("_check_calm_streets")
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
+	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
 	await _h(
@@ -181,7 +183,14 @@ func _check_no_empty_ground() -> void:
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
+			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
+
+
+## Every block the kaiju can reach is real, destroyable buildings at every stage
+## (tests/lib/city_reach.gd; director, build 2 note 6).
+func _check_reach_is_real() -> void:
+	Reach.check_plan(COVERAGE_SEEDS, check)
 
 
 ## The run's start can never stall in the river (tests/lib/city_river.gd check_cap).

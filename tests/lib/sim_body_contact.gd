@@ -111,6 +111,8 @@ func _nearest(sim: RampageSim, tier: int, min_height: int = 0, min_side: int = 0
 		var b := sim.buildings[i]
 		if b.tier != tier or b.landmark != "" or b.height < min_height or mini(b.w, b.d) < min_side:
 			continue
+		if not b.in_arena:
+			continue  # the real band past the edge (CityBand): out of the kaiju's walk
 		var d := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
 		if d < best_d:
 			best = i
