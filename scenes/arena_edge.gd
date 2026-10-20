@@ -78,12 +78,7 @@ static func spots(sim: RampageSim, trees: Array[Vector2]) -> Array[Vector3]:
 
 ## The street trees' trunk spots CityDecor planted (none without decor).
 static func trees_of(decor: CityDecor) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	if decor != null:
-		for spots_in: Array in decor._tree_cells.values():
-			for spot: Vector2 in spots_in:
-				out.append(spot)
-	return out
+	return decor._kerb.all() if decor != null else ([] as Array[Vector2])
 
 
 ## The streets near the bollard line as [from, to, half width + a little] (alleys too: a

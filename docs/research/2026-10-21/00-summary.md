@@ -111,6 +111,18 @@ The rest angle is already decided (D-105: framing C, offset (0, 16, 30), FOV 60)
 2. Drive the intro camera from the rise's own progress inside the existing `_place_camera`, easing from a low water shot to the play angle, with no Tween or addon. The sim keeps running the rise, which holds the clock, army and input; a skip runs the remaining ticks faster, so replays still match. Cost: about half a day plus one clip.
 3. Roar when the head breaks the water, keep presses from the last 0.2 s for the first live tick (today they are dropped), and pace the evolution reveal by fixed ticks (today it counts frames: 3.8 s at 60 Hz, 1.6 s at 144 Hz). Cost: about 3 h.
 
+## 21. Water that reacts to the kaiju (21-water.md)
+Today the river is a flat, glossy sheet with no shader; the sim already emits every event the water needs.
+1. River shader with up to 64 ripples from sim events and footfalls (vertex ripple field timed on the sim clock, same in both renderers), with a stepped, flat-shaded toon look and a flow scroll. Cost: about 1-1.5 days.
+2. The rise and wading: a 19.47 deg wake V, a bulge before the head breaks the surface and foam around the body, all from the existing rise state. Cost: about half a day.
+3. Cube-droplet splashes through the existing particle helper (crowns on stomps and impacts, sheets falling off the body during the rise), plus floating rubble bobbing on the same ripples. Cost: about 1 day.
+
+## 22. Flung tanks and vehicles (22-flung-vehicles.md)
+Today a throw is a 0.7 s timer with one blast where it lands: no flight-path check (thrown tanks pass through towers), a straight-line view and credit paid at the grab.
+1. Arc the existing throw in the view (parabola, spin, squash, skid), sim unchanged. Cost: about half a day.
+2. Make the throw a sim ballistic at fixed 60 Hz: swept hits against the voxel grid that carve through the existing code, credit at landing, pinned-seed tests and a sim review. Plain floats are deterministic enough within one build. Cost: about 2-3 days.
+3. Turn the ram's instant move into a low launch, then add capped chain hits on tanks and helicopters as the upgrade hook. Jolt only throws the turret, the tracks and the dust, never the hull. Cost: about 2 days.
+
 ## Honest gaps
 - **01:** No developer postmortems or cost tables. The timing targets come from one AI-assisted blog post, and the review themes from aggregators.
 - **02:** These rest on fan wikis or a vendor page, or have no primary source: the Shin Godzilla heights, the GigaBash reasoning, haze as a scale tool and delayed sound. The legal notes are not legal advice.
@@ -132,6 +144,8 @@ The rest angle is already decided (D-105: framing C, offset (0, 16, 30), FOV 60)
 - **18:** No published per-setting millisecond costs for Godot at 4K, so they must be measured on the director's GPU. Godot cannot report total VRAM. `police.gd` was not checked for sim coupling, so police counts stay out of the presets.
 - **19:** Eiserloh and Nesky were read second-hand. There are no primary camera specs for GigaBash, War of the Monsters or Godzilla PS4, and all per-stage numbers are estimates. Unchecked: whether a carved building still fades at its original full height.
 - **20:** Sources for Hades, Rocket League, Shadow of the Colossus and the cutscene-skip guideline are thin or missing. The intro length is estimated from the tuning values, not measured.
+- **21:** Every millisecond cost is an estimate, nothing measured on the director's GPU. Depth foam in gl_compatibility needs a different depth formula and is untested in the repo.
+- **22:** The 50-unit cost is an unmeasured estimate and needs a fixed building lookup grid. Unconfirmed: whether `Engine.time_scale` changes the sim step, whether the ram can leave a tank inside a building, and the Rocket League claims (from a talk summary).
 - **Where the files disagree:**
   - 03 leans on Godot's Skeleton3D IK nodes, but 09, 13 and 14 found the repo's rig has one node per bone, so those nodes would need a rig migration.
   - 14's fixes target `gait_biped.gd`, but 11 found that the reptilian walks on ClipGait. Check which code path runs before tuning.

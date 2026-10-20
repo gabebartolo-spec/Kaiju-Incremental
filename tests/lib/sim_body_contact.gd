@@ -205,6 +205,7 @@ func _check_topple() -> void:
 	)
 	_check_falls_by_physics(sim, fall)
 	_check_swipe_undermines(Num.i(chew["steps"]))
+	_check_swipe_occlusion()
 
 
 ## D-096 (director 2026-10-20, "Swipes undermine towers"): a claw hit on a tower's base counts as
@@ -219,6 +220,44 @@ func _check_swipe_undermines(swiped_steps: int) -> void:
 		(
 			"a swiped tower topples sooner: %.1f s with the swipe vs %.1f s without (fell: %s)"
 			% [swiped_steps * DT, Num.i(chew["steps"]) * DT, fell]
+		)
+	)
+
+
+## A claw can't reach through a tower into the block behind it: one swipe at the tier-2 tower's
+## south face, with a building standing right against its far (north) side, chews the tower and
+## leaves the building behind it whole (the chewed rows are the nearest standing ones per lane).
+func _check_swipe_occlusion() -> void:
+	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+	var index := _nearest(sim, 2, 10, 4)
+	var tower := sim.buildings[index]
+	var behind_index := -1
+	for i: int in sim.buildings.size():
+		var other := sim.buildings[i]
+		if i != index and other.tier == 2 and other.landmark == "" and other.in_arena:
+			behind_index = i
+			break
+	var behind := sim.buildings[behind_index]
+	for other: RampageSim.Building in sim.buildings:
+		if other != tower and other != behind:
+			other.x += 1000.0  # a clear street: nothing else stands in the band
+	behind.x = tower.x
+	behind.z = tower.z - tower.d * 0.5 - behind.d * 0.5  # touching the tower's far face
+	var into := Vector2(0, -1)
+	_place(sim, Vector2(tower.x, tower.z + tower.d * 0.5 + sim.body.length() * 0.25), into)
+	var tower_before := tower.frame.alive_count
+	var behind_before := behind.frame.alive_count
+	sim.powers.swipe._rake()
+	var tower_lost := tower_before - tower.frame.alive_count
+	var behind_lost := behind_before - behind.frame.alive_count
+	_check.call(
+		tower_lost > 0 and behind_lost == 0,
+		(
+			(
+				"a swipe chews the tower it hits (%d chunks off) and not the building right behind"
+				+ " it (%d of %d off)"
+			)
+			% [tower_lost, behind_lost, behind_before]
 		)
 	)
 
