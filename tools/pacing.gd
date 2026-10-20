@@ -68,6 +68,7 @@ func _pace(species_id: String) -> void:
 		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run + 100000 * _seed))
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
+		sim.body.use_species(species_id)
 		var target := Vector2(INF, INF)
 		var steps := 0
 		var goal := _goal(sim)
@@ -80,7 +81,9 @@ func _pace(species_id: String) -> void:
 			if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
 				move = (target - sim.kaiju_pos).normalized()
 			var held := RampageSim.HELD if steps % 30 < 15 else 0
-			sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE)
+			sim.step(
+				DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE | Dash.BUTTON
+			)
 			steps += 1
 		var res := sim.result()
 		clock += steps * DT + TREE_SECONDS

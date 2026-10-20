@@ -9,7 +9,7 @@ signal finished(result: Dictionary)
 ## Footfall: dust and a pale ground ring (per body scale), camera dip (units) and its return (1/s).
 const FOOTFALL_DUST := 1.1
 const FOOTFALL_RING := 1.4
-const FOOTFALL_TINT := Color(0.86, 0.83, 0.76, 0.7)
+const STOMP_WAIT := 0.6  # s, about one stride: the next footfall is the stomp
 const FOOTFALL_DIP := 0.35
 ## The dip scales with body size, but never below this: a baby still shakes the street.
 const FOOTFALL_DIP_FLOOR := 1.0
@@ -27,14 +27,15 @@ var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
 var cost_usec: Dictionary = {}
 var species: Dictionary
-## The look of the signature attack and the upgrades (read by the flow suite).
+## The look and the sounds of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
-## Their sounds (read by the flow suite).
 var sfx: Sfx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
 ## Capture hook: when set, called with the sim each physics frame for the player's input.
 var scripted: Callable
+## Where each stomp landed (the foot's ground point), for the capture and the tests.
+var stomp_ring_at: Array[Vector3] = []
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -53,13 +54,16 @@ var _shake := 0.0
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
-var _too_tall_cooldown := 0.0
+var _topple_cfg: Dictionary = Content.section("topple_fx")
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
 var _autoplay_target := Vector2(INF, INF)
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
+var _stomp_radius := 0.0
+## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
+var _stomp_wait := 0.0
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army.
@@ -70,6 +74,8 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
+	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
@@ -94,11 +100,11 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	# Build one tank and one helicopter now, so the army's first spawn reuses their voxels.
-	TankModel.new().free()
+	add_child(RiverView.new(sim, _city.fx))
+	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
-	_kaiju_at = _to_world(sim.kaiju_pos)
+	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
 	_focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
@@ -125,8 +131,10 @@ func _physics_process(delta: float) -> void:
 	var signature := Input.is_action_just_pressed("signature")
 	var held := Input.is_action_pressed("signature")
 	var ultimate := Input.is_action_just_pressed("ultimate")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate"} per frame
+	var buttons := Dash.BUTTON if Input.is_action_just_pressed("dash") else 0
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
 		var input: Dictionary = scripted.call(sim)
+		buttons = Dash.BUTTON if input.get("dash", false) else 0
 		move = input.get("move", Vector2.ZERO)
 		signature = input.get("signature", false)
 		held = input.get("held", false)
@@ -138,15 +146,14 @@ func _physics_process(delta: float) -> void:
 		ultimate = autoplay_signature
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
-	var buttons := (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
+	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
-	_update_kaiju(delta, move.length())
+	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
 	_update_tanks(delta)
@@ -157,6 +164,10 @@ func _process(delta: float) -> void:
 	_place_camera(delta)
 	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
+	if _stomp_wait > 0.0:
+		_stomp_wait -= delta
+		if _stomp_wait <= 0.0:  # no foot came down: the sound, no ring or cracks
+			sfx.stomp(_power("stomp_damage"), false)
 
 
 ## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
@@ -173,28 +184,24 @@ func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
 			_kaiju.stomp()
-			_city.fx.shockwave(_kaiju_at, Num.f(event["radius"]) * 1.3)
-			var heavy := _power("stomp_damage")
-			sfx.stomp(heavy, ability_fx.stomp_cracks(_kaiju_at, Num.f(event["radius"]), heavy))
-			_city.crush(_kaiju_at, Num.f(event["radius"]))
+			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
+			# delivers the stomp (_on_footfall), so they land where and when a foot does.
+			_stomp_radius = Num.f(event["radius"])
+			_stomp_wait = STOMP_WAIT
 			_shake = maxf(_shake, 0.15)
 		"ability":
 			_kaiju.roar()
 			_ability_fx(event)
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]
-			_on_chunks_broken(Num.i(event["building"]), cells)
+			_on_chunks_broken(Num.i(event["building"]), cells, Num.f(event.get("pay", 1.0)))
 		"fall_start":
 			_city.fall_start(event)
 		"fall_land":
 			_city.fall_land(event)
 			sfx.collapse(str(event["kind"]) == "topple")
-			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
-		"tough":
-			if _too_tall_cooldown <= 0.0:
-				_too_tall_cooldown = 2.5
-				var b := sim.buildings[Num.i(event["building"])]
-				_city.float_text("TOO STRONG - UNDERMINE IT", Vector3(b.x, 4.0, b.z), UiKit.WARN)
+			var topple := str(event["kind"]) == "topple"
+			_shake = maxf(_shake, Num.f(_topple_cfg["shake"]) if topple else 0.3)
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":
@@ -209,10 +216,11 @@ func _on_event(event: Dictionary) -> void:
 			_powers.on_event(event, _kaiju_at)
 
 
-func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
+func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 	_city.chunks_broken(index, cells, _kaiju_at)
 	var b := sim.buildings[index]
-	var gained := cells.size() * b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult")
+	var per := b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult") * pay
+	var gained := cells.size() * per
 	if gained >= 1.0:
 		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
 		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
@@ -232,9 +240,7 @@ func _ability_fx(event: Dictionary) -> void:
 	match str(event["kind"]):
 		"cone":
 			var facing := _to_world(sim.facing)
-			var chest := (
-				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
-			)
+			var chest := _kaiju_at + (Vector3(0, 6.0, 0) + facing) * sim.body_scale()
 			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
 			var from: Vector2 = event["from"]  # the sim's cone (BreathCone) starts at the snout
 			var snout := _to_world(from)
@@ -271,10 +277,9 @@ func _update_kaiju(delta: float, moving: float) -> void:
 			sfx.play("leap_land")
 			_shake = maxf(_shake, 0.5)
 	else:
-		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
+		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
-	var heading := atan2(-sim.facing.x, -sim.facing.y)
-	_kaiju.rotation.y = lerp_angle(_kaiju.rotation.y, heading, minf(1.0, delta * 10.0))
+	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	_kaiju.animate(delta, moving)
 
 
@@ -294,14 +299,28 @@ func _update_powers() -> void:
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
 ## was waiting for this foot), so what you hear lands with what you see.
 func _on_footfall(side: String, strength: float, at: Vector3) -> void:
+	var stomped := _stomp_wait > 0.0 and side != "tail"
+	if stomped:
+		_land_stomp(at)
 	sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
-	_city.fx.shockwave(at, FOOTFALL_RING * size, FOOTFALL_TINT, side == "tail")
+	var ring := _stomp_radius * 1.3 if stomped else FOOTFALL_RING * size
+	_city.fx.shockwave(at, ring, side == "tail")
 	_step_dip = maxf(
 		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
 	)
+
+
+## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street
+## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
+func _land_stomp(at: Vector3) -> void:
+	_stomp_wait = 0.0
+	var heavy := _power("stomp_damage")
+	sfx.stomp(heavy, ability_fx.stomp_cracks(at, _stomp_radius, heavy))
+	_city.crush(at, _stomp_radius)
+	stomp_ring_at.append(at)
 
 
 func _spawn_tank_node(id: int) -> void:
@@ -334,22 +353,7 @@ func _tank_fired(id: int, at: Vector3) -> void:
 	var target := at + Vector3(0, 1.0, 0)
 	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
 		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	var muzzle := node.fire()
-	var shell := TankModel.box(Vector3.ONE * 0.35, muzzle, UiKit.WARN)
-	shell.material_override = CityView.glow(UiKit.WARN, 4.0)
-	add_child(shell)
-	_city.flash(muzzle, Color("ffc070"), 4.0, 0.12)
-	sfx.play_at("tank_fire", muzzle)
-	var tween := shell.create_tween()
-	tween.tween_property(shell, "position", target, 0.22)
-	if sim.stat("armor") > 0.0:
-		var away := (node.position - target).normalized() + Vector3.UP * 0.5
-		tween.tween_callback(func() -> void: ability_fx.deflect(target, away))
-		tween.tween_callback(func() -> void: sfx.play("deflect"))
-	else:
-		tween.tween_callback(func() -> void: _city.fx.sparks(target))
-		tween.tween_callback(func() -> void: sfx.play_at("shell_hit", target))
-	tween.tween_callback(shell.queue_free)
+	TankFx.fire_shell(self, node, target)
 	_shake = maxf(_shake, 0.08)
 
 
@@ -358,14 +362,8 @@ func _tank_destroyed(id: int, pos: Vector3) -> void:
 		var node: Node3D = _tank_nodes[id]
 		node.queue_free()
 		_tank_nodes.erase(id)
-	for n: int in 8:
-		_city.debris(
-			pos + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.ACCENT, Vector3.UP
-		)
-	_city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
-	_city.fire(pos, 0.6)
 	var gained := Num.f(sim.army["tank_rubble"]) * sim.stat("rubble_mult")
-	_city.float_text("+%d" % Num.i(gained), pos + Vector3(0, 2, 0), UiKit.WARN)
+	TankFx.wreck(_city, pos, gained)
 
 
 func _place_camera(delta: float) -> void:
@@ -385,9 +383,7 @@ func _place_camera(delta: float) -> void:
 func _autoplay_move() -> Vector2:
 	if _steps % 15 == 0 or _autoplay_target.x == INF:
 		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
-	if (
-		_autoplay_target.x == INF
-		or sim.kaiju_pos.distance_to(_autoplay_target) < sim.stomp_radius() * 0.5
-	):
+	var to := _autoplay_target - sim.kaiju_pos
+	if _autoplay_target.x == INF or to.length() < sim.stomp_radius() * 0.5:
 		return Vector2.ZERO
-	return (_autoplay_target - sim.kaiju_pos).normalized()
+	return to.normalized()

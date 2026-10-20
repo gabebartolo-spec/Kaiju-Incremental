@@ -5,7 +5,8 @@ extends Node3D
 ## events and state; decides nothing. Part of Rampage.
 ##
 ## Rig hooks (agreed with kaiju-motion, called only when the model has them):
-## tail_sweep(side), grab(limb, at), throw(toward), limb_tip(limb), jaw_open(open), climbing(on).
+## tail_sweep(side[, "claw"]), grab(limb, at), throw(toward), limb_tip(limb), jaw_open(open),
+## climbing(on).
 
 const INK := Color("7dff3a")
 const EGG := Color("e8dcb8")
@@ -103,6 +104,17 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_city.ring(kaiju_at, Num.f(event["reach"]), UiKit.WARN, 0.35)
 			var behind := kaiju_at - _w(sim.facing) * Num.f(event["reach"]) * 0.7
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
+		"swipe_windup":
+			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
+		"swipe":
+			var arc: Dictionary = {}
+			if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
+				arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
+			ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
+			if sfx != null:
+				sfx.play("lash")
+			var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
+			_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
 		"beam_start":
 			_hook("jaw_open", [true])
 			_beam = _box(Vector3.ONE, _tint.lightened(0.5))
@@ -114,10 +126,15 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 				_beam = null
 		"coated":
 			_coated(event)
+		"dash":  # the charge: a whoosh and a dust streak along the path
+			var ahead := _w(event["dir"]) * sim.body.length()
+			_city.fx.dust_line(kaiju_at, kaiju_at + ahead + Vector3(0, 0.5, 0), bs * 2.0)
+			if sfx != null:
+				sfx.play("leap_whoosh")
 		"glide_start":
 			_city.fx.dust(kaiju_at + Vector3(0, 0.3, 0), bs * 1.5)
 		"glide_land":
-			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]) * 1.2, _tint)
+			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]) * 1.2)
 			_city.crush(kaiju_at, Num.f(event["reach"]))
 		"eggs_laid":
 			var eggs: Array = event["at"]
@@ -147,7 +164,6 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_city.crush(at, radius)
 		"ink":
 			_city.ring(kaiju_at, Num.f(event["reach"]), INK, 0.8)
-			_city.fx.shockwave(kaiju_at, Num.f(event["reach"]), INK)
 		"heli_spawned":
 			var heli := HelicopterModel.new()
 			add_child(heli)
@@ -268,6 +284,9 @@ func helis() -> Array[Node3D]:
 ## kaiju's facing, and momentum's dust trail.
 func update(delta: float, kaiju_at: Vector3) -> void:
 	var bs := sim.body_scale()
+	if sim.body.dash.on():  # a dash knocks down the people and police in its way
+		var reach := sim.body.length() * 0.3
+		_city.crush(kaiju_at + _w(sim.facing) * reach, reach)
 	var turn := minf(1.0, delta * Num.f(Content.section("vehicles")["heli_turn"]))
 	for heli: AirWing.Heli in sim.air.helis:
 		if _helis.has(heli.id):

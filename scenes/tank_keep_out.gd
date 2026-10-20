@@ -9,6 +9,7 @@ extends RefCounted
 const KEEP := 6.5
 const LANE := 0.8  # beyond the hull's side, how far a car's lane still meets it (half a car + room)
 const PULL_BACK := 9.0  # how far a cruiser pulls back
+const CAR_HALF := Vector2(1.0, 0.5)  # a car as drawn, half length x half width (m)
 
 
 ## Is a tank in the lane ahead of a car at `pos` driving along `dir` (its drawn hull, any way
@@ -34,6 +35,22 @@ static func in_lane(sim: RampageSim, car: Traffic.Car, dir: Vector2) -> bool:
 			continue
 		var ahead := rel.dot(dir)
 		if ahead > -long and ahead < KEEP + long:
+			return true
+	return false
+
+
+## Does a tank's drawn hull lie over the car (a car it could not keep clear of)? Then the tank
+## runs it over and the caller flattens it.
+static func run_over(sim: RampageSim, car: Traffic.Car) -> bool:
+	var hull: Array = sim.army["convoy"]["hull"]
+	for tank: RampageSim.Tank in sim.tanks:
+		var front := sim.army_units.convoy.front(tank.id)
+		if front == Vector2.ZERO:
+			continue
+		var rel := car.pos - tank.pos
+		var along := absf(rel.dot(front)) - Num.f(hull[0]) * 0.5 - CAR_HALF.x
+		var across := absf(rel.dot(front.orthogonal())) - Num.f(hull[1]) * 0.5 - CAR_HALF.y
+		if maxf(along, across) <= 0.0:
 			return true
 	return false
 

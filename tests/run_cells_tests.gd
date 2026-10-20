@@ -51,6 +51,7 @@ const FORBIDDEN: Array[String] = [
 ]
 const MODULES: Array[String] = [
 	"res://sim/building_cells.gd",
+	"res://sim/cell_grid.gd",
 	"res://sim/cell_promoter.gd",
 	"res://sim/glass_frame.gd",
 ]
@@ -184,7 +185,8 @@ func _check_materials_table() -> void:
 		var debris: Variant = m.get("debris")
 		var fixture: Variant = m.get("fixture")
 		ok = ok and (id is float or id is int) and Num.i(id) >= 1 and Num.i(id) <= 255
-		ok = ok and mname is String and str(mname) != "" and palette.has(str(mname))
+		ok = ok and mname is String and str(mname) != ""
+		ok = ok and (palette.has(str(mname)) or str(mname).begins_with("landmark_"))
 		ok = ok and (strength is float or strength is int) and Num.f(strength) > 0.0
 		ok = ok and debris is String and palette.has(str(debris))
 		ok = ok and fixture is bool and fixture == (str(mname) in FIXTURES_EXPECTED)
@@ -340,7 +342,7 @@ func _check_no_clock_or_rng() -> void:
 
 
 ## A building has no fine grid until its first hit; the first hit makes it, with the chunks the
-## Structure already lost emptied; later hits get the same grid; landmarks are left alone.
+## Structure already lost emptied; later hits get the same grid; a landmark gets its own grid kind.
 func _check_promotion_lazy() -> void:
 	var p := CellPromoter.new()
 	var b := _building(FIXTURES[0])
@@ -363,7 +365,10 @@ func _check_promotion_lazy() -> void:
 	check(p.on_hit(0, b) == g and p.grids.size() == 1, "a second hit keeps the same grid")
 	var mark := _building(FIXTURES[1])
 	mark.landmark = "stadium"
-	check(p.on_hit(1, mark) == null and not p.promoted(1), "a landmark stays on its chunks")
+	check(
+		p.on_hit(1, mark) is LandmarkCells and p.promoted(1),
+		"a landmark gets its LandmarkCells (see run_landmarkcells_tests.gd)"
+	)
 
 
 ## A lit window is a look: the lit view holds the same cells as the unlit one and differs only

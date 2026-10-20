@@ -92,6 +92,7 @@ func _check_momentum() -> void:
 	var out: Array[Dictionary] = []
 	for levels: Dictionary in [{"r_tail": 1}, {"r_tail": 1, "r_momentum": 3}]:
 		var sim := _sim("reptilian", levels, row, Vector2(0, 0))
+		sim.stats["swipe_damage"] = 0.0  # the claw swipe would break the whole row either way
 		_run(sim, 6.0, EAST)
 		out.append({"x": sim.kaiju_pos.x, "broken": sim.chunks_destroyed, "sim": sim})
 	check(

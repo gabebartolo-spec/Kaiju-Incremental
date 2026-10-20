@@ -2,13 +2,16 @@ class_name CityGround
 extends Node3D
 ## The ground of the street plan (CityGen.map): asphalt streets, raised pavement blocks, the
 ## park lawn, the plaza, parking lots with painted bays, the diagonal avenue laid across the
-## blocks, quiet road paint, and the bay with its quay to the north. Flat boxes in a
+## blocks, quiet road paint, the river the kaiju rises from (CityRiver; its cross streets are
+## the bridges), and the bay with its quay to the north. Flat boxes in a
 ## few MultiMeshes; presentation only.
 
 const PAVE_TOP := 0.1  # blocks stand a kerb above the street
 const DIAG_TOP := 0.11  # the diagonal avenue is laid over the blocks it crosses
 const PAINT := 0.02
 const WATER_Y := -0.8
+const RIVER_QUAY := 0.6  # the stone quay wall along each bank, its top a narrow walk
+const PARAPET := Vector2(0.9, 0.3)  # a bridge parapet's height over the deck, and its width
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
@@ -31,9 +34,13 @@ func _ready() -> void:
 	var asphalt := Look.color("asphalt")
 	var pavement := Look.color("lot")
 	var outer := Num.f(cfg["outer_half"])
-	# Land: asphalt under everything south of the quay, darker beyond the drawn streets.
-	_slab(Rect2(-FAR, coast, FAR * 2.0, FAR), Vector2(-0.01, 0.4), asphalt.darkened(0.25))
-	_slab(Rect2(-outer, coast, outer * 2.0, outer - coast), Vector2(0.001, 0.4), asphalt)
+	# Land: asphalt under everything south of the quay, darker beyond the drawn streets, open
+	# where the river runs.
+	var channels := CityRiver.channels(plan, cfg)
+	for land: Rect2 in _cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
+		_slab(land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
+	for land: Rect2 in _cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
+		_slab(land, Vector2(0.001, 0.4), asphalt)
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		if rect.position.y < coast:
@@ -52,8 +59,11 @@ func _ready() -> void:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
 				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
 				_parking_bays(rect.grow(-0.6))
+			"river":
+				pass  # its water and quays: _river
 			_:
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
+	_river(channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
@@ -260,15 +270,67 @@ func _build_paint() -> MultiMeshInstance3D:
 
 ## The bay: dark, glossy water reaching to the horizon north of the quay.
 func _water() -> MeshInstance3D:
+	return _sheet(
+		Rect2(-FAR * 2.0, coast - FAR * 2.0, FAR * 4.0, FAR * 2.0), WATER_Y, Look.color("water")
+	)
+
+
+## The river (CityRiver): a channel sunk city "river_depth" below the street, glossy water
+## bluer and lighter than the bay's between stone quay walls, running on under its bridges:
+## a deck at street level with a parapet along each side for every street that crosses it.
+func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
+	var depth := Num.f(cfg.get("river_depth", 0.0))
+	var bridges := CityRiver.bridges(plan, cfg)
+	var wall := Vector2(PAVE_TOP, depth + 0.5)
+	for channel: Rect2 in channels:
+		add_child(_sheet(channel, -depth, Look.color("river")))
+		var x0 := channel.position.x
+		var z0 := channel.position.y
+		var banks: Array[Rect2] = [
+			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
+			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
+		]
+		for side: Rect2 in _cut(banks, bridges):
+			_slab(side, wall, stone)
+		_slab(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone)
+		_slab(Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone)
+	for deck: Rect2 in bridges:
+		_slab(deck, Vector2(0.001, 0.5), asphalt)
+		for x: float in [deck.position.x, deck.end.x - PARAPET.y]:
+			_slab(Rect2(x, deck.position.y, PARAPET.y, deck.size.y), Vector2(PARAPET.x, 1.0), stone)
+
+
+## rects with every hole cut out of them, as the rects left over.
+static func _cut(rects: Array[Rect2], holes: Array[Rect2]) -> Array[Rect2]:
+	var out: Array[Rect2] = rects.duplicate()
+	for hole: Rect2 in holes:
+		var left: Array[Rect2] = []
+		for r: Rect2 in out:
+			var common := r.intersection(hole)
+			if not r.intersects(hole) or common.get_area() <= 0.0:
+				left.append(r)
+				continue
+			left.append(Rect2(r.position, Vector2(r.size.x, common.position.y - r.position.y)))
+			left.append(Rect2(r.position.x, common.end.y, r.size.x, r.end.y - common.end.y))
+			var mid := Rect2(r.position.x, common.position.y, 0.0, common.size.y)
+			left.append(Rect2(mid.position, Vector2(common.position.x - r.position.x, mid.size.y)))
+			left.append(Rect2(common.end.x, mid.position.y, r.end.x - common.end.x, mid.size.y))
+		out.assign(left.filter(func(q: Rect2) -> bool: return q.size.x > 0.0 and q.size.y > 0.0))
+	return out
+
+
+## Glossy water of `color` over rect (x, z) at height y.
+func _sheet(rect: Rect2, y: float, color: Color) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(FAR * 4.0, FAR * 2.0)
+	plane.size = rect.size
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Look.color("water")
+	mat.albedo_color = color
 	mat.roughness = 0.12
 	mat.metallic_specular = 0.8
 	plane.material = mat
 	mi.mesh = plane
-	mi.position = Vector3(0, WATER_Y, coast - FAR)
+	var mid := rect.get_center()
+	mi.position = Vector3(mid.x, y, mid.y)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi

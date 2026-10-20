@@ -6,6 +6,10 @@ extends "res://tests/lib/runner.gd"
 
 const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
+const SimArmy := preload("res://tests/lib/sim_army.gd")
+const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
+const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
+const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -24,8 +28,11 @@ func run_checks() -> void:
 	await _t("_check_determinism")
 	await _t("_check_upgrade_effects")
 	await _t("_check_species_differ")
-	await _t("_check_army")
+	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
+	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
+	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
+	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
 	await _t("_check_save_migrate")
 	await _t("_check_looks")
 	await _t("_check_growth")
@@ -49,6 +56,7 @@ func _sim(
 	var city: Dictionary = tune["city"]
 	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.body.use_species(species_id)
 	return sim
 
 
@@ -122,8 +130,8 @@ func _check_tree() -> void:
 		Content.section("kaiju"), Content.species_def("reptilian"), _tree({"claws": 2})
 	)
 	check(
-		is_equal_approx(Num.f(stats["stomp_damage"]), 16.0),
-		"two levels of claws add 6 stomp power to a reptilian's 10, got %s" % stats["stomp_damage"]
+		is_equal_approx(Num.f(stats["swipe_damage"]), 18.0),
+		"two levels of claws add 10 swipe power to a reptilian's 8, got %s" % stats["swipe_damage"]
 	)
 	var clamped := _tree({"claws": 99, "ghost": 3})
 	check(
@@ -192,6 +200,7 @@ func _check_topple_crush() -> void:
 		for z: int in 3:
 			base.append(Vector3i(x, 0, z))
 	var before := sim.buildings[1].frame.alive_count
+	sim.kaiju_pos = Vector2(10.0, 0.0)  # east of it; the topple follows its own cut side (D-099)
 	sim.damage_chunks(0, base, 999.0)
 	check(
 		sim.falls.size() == 1 and sim.falls[0].kind == "topple",
@@ -245,15 +254,6 @@ func _check_determinism() -> void:
 
 
 func _check_upgrade_effects() -> void:
-	var base := _autoplay(_sim("reptilian", {}))
-	var claws := _autoplay(_sim("reptilian", {"claws": 5}))
-	check(
-		Num.f(claws["destruction"]) > Num.f(base["destruction"]) * 1.15,
-		(
-			"five levels of claws break clearly more of the city (%.3f vs %.3f)"
-			% [Num.f(claws["destruction"]), Num.f(base["destruction"])]
-		)
-	)
 	# Thick hide so both runs last to the clock: a defeat would end them at the same moment.
 	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5, "rage": 5}))
 	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5}))
@@ -294,24 +294,6 @@ func _check_species_differ() -> void:
 	var ring := _sim("cephalopod", {})
 	var reach_ok := ring.ability_reach() > ring.stomp_radius()
 	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
-
-
-func _check_army() -> void:
-	var soft := _sim("reptilian", {})
-	var armoured := _sim("reptilian", {"hide": 1, "scales": 4})
-	for i: int in 30 * 30:
-		soft.step(DT, Vector2.ZERO, false)
-		armoured.step(DT, Vector2.ZERO, false)
-	var soft_loss := soft.max_hp - soft.hp
-	var armoured_loss := armoured.max_hp - armoured.hp
-	check(
-		soft.tanks.size() > 0 and soft_loss > 0.0,
-		"standing still, the army arrives and hurts the kaiju (lost %.1f)" % soft_loss
-	)
-	check(
-		armoured_loss < soft_loss,
-		"armoured scales cut the damage taken (%.1f vs %.1f)" % [armoured_loss, soft_loss]
-	)
 
 
 func _check_save_migrate() -> void:

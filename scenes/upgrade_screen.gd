@@ -158,7 +158,7 @@ func _select(id: String) -> void:
 		"ultimate": "ULTIMATE  -  %s BRANCH CAPSTONE" % str(species["name"]).to_upper(),
 	}[role]
 	_info_body.clear()
-	_info_body.append_text(str(def["desc"]))
+	_info_body.append_text(UpgradeTree.desc_for(def, str(species["id"])))
 	var stats := UpgradeTree.run_stats(base_stats, species, tree)
 	var steps := 0 if tree.is_maxed(id) else 1
 	if role == "evolve" and steps > 0:
@@ -170,8 +170,7 @@ func _select(id: String) -> void:
 		_info_body.append_text(
 			"\nPress E / pad Y in a rampage; recharges in %ds." % roundi(_ultimate_cooldown)
 		)
-	var effects: Dictionary = def.get("effects", {})
-	_show_stats(effects, stats, steps)
+	_show_stats(UpgradeTree.effects_for(def, str(species["id"])), stats, steps)
 	_info_status.text = _status_line(id)
 	var b := node_button(id)
 	var tint: Color = {"buy": UiKit.GOOD, "poor": UiKit.BAD, "maxed": UiKit.WARN}.get(
