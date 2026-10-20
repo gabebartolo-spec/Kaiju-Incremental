@@ -7,6 +7,11 @@ extends Node3D
 ## turn is built on the spot, so a blow never lands on a stand-in. Small cities fit the budget
 ## and load exactly as before. Presentation only.
 
+## Phase B look test (b2-20, never merged): "--smooth" after "--" keeps non-landmark buildings as
+## clean facade boxes (no voxels) and never streams them in.
+static var smooth := "--smooth" in OS.get_cmdline_user_args()
+const CLEAN_FACADE := preload("res://scenes/facade_clean.gdshader")
+
 var _sim: RampageSim
 var _colors: Array[Color]
 var _party: Array[Dictionary]
@@ -43,7 +48,12 @@ func _ready() -> void:
 	var chunks := 0
 	for n: int in order:
 		var b := _sim.buildings[n]
-		if chunks < budget:
+		if smooth:  # Phase B (b2-20): only the landmarks are meshed; every other building is a clean box
+			if b.landmark != "":
+				now.append(n)
+			else:
+				_rest.append(n)
+		elif chunks < budget:
 			now.append(n)
 			chunks += b.w * b.d * b.height
 		else:
@@ -57,7 +67,8 @@ func _ready() -> void:
 		add_child(_views[n])
 	if not _rest.is_empty():
 		_build_stand_ins()
-		_task = WorkerThreadPool.add_group_task(_stream_one, _rest.size())
+		if not smooth:
+			_task = WorkerThreadPool.add_group_task(_stream_one, _rest.size())
 
 
 func _make(n: int) -> BuildingView:
@@ -170,7 +181,10 @@ func _build_stand_ins() -> void:
 	_stand_ins.use_colors = true
 	_stand_ins.use_custom_data = true
 	var mesh := BoxMesh.new()
-	mesh.material = CitySkyline.facade_material(0.0)
+	var facade := CitySkyline.facade_material(0.0)
+	if smooth:
+		facade.shader = CLEAN_FACADE
+	mesh.material = facade
 	_stand_ins.mesh = mesh
 	_stand_ins.instance_count = _rest.size()
 	for k: int in _rest.size():

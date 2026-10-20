@@ -31,6 +31,52 @@ var built_cells: Array[Vector3i] = []
 var inset := 1.0
 
 
+## Phase B (b2-20), never merged: "--smooth" after "--" bakes props, cars and people as one smooth
+## surface (SmoothMesher) instead of cubes.
+static var smooth := "--smooth" in OS.get_cmdline_user_args()
+const SMOOTH_MESHER := preload("res://scenes/smooth_mesher.gd")
+const SMOOTH_SHADER := preload("res://scenes/smooth_vertex.gdshader")
+
+
+## All cells as one smooth mesh, coloured by the palette (alpha 0 = a glowing cell, as in build()).
+func smooth_mesh(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> ArrayMesh:
+	var filled := {}
+	for cell: Vector3i in cells:
+		var key: String = cells[cell]
+		filled[cell] = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
+	var sm := SMOOTH_MESHER.new()
+	sm.build(filled, 2)
+	var count: int = sm.positions.size()
+	var pos := PackedVector3Array()
+	var col := PackedColorArray()
+	pos.resize(count)
+	col.resize(count)
+	for i: int in count:
+		pos[i] = origin + (sm.positions[i] + Vector3(0, 0.5, 0)) * voxel
+		var sum := Vector3.ZERO
+		var alpha := 1.0
+		var owners: Array = sm.owners[i]
+		for owner: Variant in owners:
+			var c: Color = filled[owner]
+			sum += Vector3(c.r, c.g, c.b)
+			alpha = minf(alpha, c.a)
+		sum /= float(maxi(1, owners.size()))
+		col[i] = Color(sum.x, sum.y, sum.z, alpha)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = pos
+	arrays[Mesh.ARRAY_NORMAL] = sm.normals
+	arrays[Mesh.ARRAY_COLOR] = col
+	arrays[Mesh.ARRAY_INDEX] = sm.indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mat := ShaderMaterial.new()
+	mat.shader = SMOOTH_SHADER
+	mat.set_shader_parameter("glow", maxf(glow, 1.0))
+	mesh.surface_set_material(0, mat)
+	return mesh
+
+
 static func _read_prop_k() -> float:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--prop-k="):
@@ -196,6 +242,8 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 ## One merged mesh (vertex colours, hidden faces culled) for a small model that moves as a
 ## whole: people and moving cars. palette as build(); `origin` offsets every cell.
 func bake(palette: Dictionary, voxel: float, origin: Vector3, glow: float) -> ArrayMesh:
+	if smooth:
+		return smooth_mesh(palette, voxel, origin, glow)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var lift := Vector3(0, voxel * 0.5, 0)

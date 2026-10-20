@@ -8,6 +8,10 @@ extends Node3D
 
 const CUBE_SHADER := preload("res://scenes/voxel_skin.gdshader")
 const FILL_SHADER := preload("res://scenes/voxel_skin_fill.gdshader")
+## Phase B look test (b2-20, never merged): "--smooth" after "--" draws the kaiju as one smooth skin.
+const SMOOTH_SHADER := preload("res://scenes/voxel_skin_smooth.gdshader")
+const SMOOTH_MESHER := preload("res://scenes/smooth_mesher.gd")
+static var smooth := "--smooth" in OS.get_cmdline_user_args()
 ## Bones the shaders take (the hydra has 79).
 const MAX_BONES := 128
 ## Gzip'd .vskin layout version this reader understands (tools/kaiju_skin/bake.py).
@@ -146,6 +150,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	mm.mesh = box
 	mm.instance_count = cells
 	mm.custom_aabb = BOUNDS
+	var scells := {}
 	for i: int in cells:
 		var cell := Vector3i(raw.decode_s16(at), raw.decode_s16(at + 2), raw.decode_s16(at + 4))
 		var base := Color8(raw[at + 6], raw[at + 7], raw[at + 8])
@@ -154,6 +159,8 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mm.set_instance_transform(i, Transform3D(Basis(), (Vector3(cell) + HALF_UP) * voxel))
 		mm.set_instance_color(i, tint)
 		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
+		if smooth:
+			scells[cell] = [base, raw[at + 10], raw[at + 11], raw[at + 12], raw[at + 13], raw[at + 14]]
 		at += 15
 	_cubes = ShaderMaterial.new()
 	_cubes.shader = CUBE_SHADER
@@ -167,7 +174,12 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	cubes.material_override = _cubes
 	cubes.custom_aabb = BOUNDS
 	cubes.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
+	cubes.visible = not smooth
 	add_child(cubes)
+	if smooth:
+		_add_smooth(scells, voxel)
+		_hide_rig_voxels()
+		return
 	var verts := raw.decode_u32(at)
 	at += 4
 	var pos := PackedVector3Array()
@@ -217,6 +229,79 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		fill.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 		add_child(fill)
 	_hide_rig_voxels()
+
+
+## Phase B (b2-20): the same cells as one smooth skinned surface (SmoothMesher), each vertex taking
+## the colour and bone weights of the cells around it. cells: Vector3i -> [colour, bone 0..2,
+## weight 0, weight 1 (0..255)].
+func _add_smooth(cells: Dictionary, voxel: float) -> void:
+	var sm := SMOOTH_MESHER.new()
+	sm.build(cells, 2)
+	var count: int = sm.positions.size()
+	var pos := PackedVector3Array()
+	var col := PackedColorArray()
+	var custom0 := PackedFloat32Array()
+	var custom1 := PackedFloat32Array()
+	pos.resize(count)
+	col.resize(count)
+	custom0.resize(count * 4)
+	custom1.resize(count * 4)
+	for i: int in count:
+		pos[i] = (sm.positions[i] + HALF_UP) * voxel
+		var tint := Vector3.ZERO
+		var wsum := {}
+		var owners: Array = sm.owners[i]
+		for owner: Variant in owners:
+			var cell: Vector3i = owner
+			var info: Array = cells[cell]
+			var c: Color = info[0]
+			tint += Vector3(c.r, c.g, c.b)
+			var w0 := Num.f(info[4]) / 255.0
+			var w1 := Num.f(info[5]) / 255.0
+			wsum[Num.i(info[1])] = Num.f(wsum.get(Num.i(info[1]), 0.0)) + w0
+			wsum[Num.i(info[2])] = Num.f(wsum.get(Num.i(info[2]), 0.0)) + w1
+			wsum[Num.i(info[3])] = Num.f(wsum.get(Num.i(info[3]), 0.0)) + maxf(0.0, 1.0 - w0 - w1)
+		tint /= float(maxi(1, owners.size()))
+		col[i] = Color(tint.x, tint.y, tint.z)
+		var bones: Array = wsum.keys()
+		bones.sort_custom(func(a: int, b: int) -> bool: return Num.f(wsum[a]) > Num.f(wsum[b]))
+		var total := 0.0
+		for k: int in mini(3, bones.size()):
+			total += Num.f(wsum[bones[k]])
+		var ids: Array[int] = [0, 0, 0]
+		var ws: Array[float] = [0.0, 0.0, 0.0]
+		for k: int in mini(3, bones.size()):
+			ids[k] = Num.i(bones[k])
+			ws[k] = Num.f(wsum[bones[k]]) / maxf(total, 0.0001)
+		custom0[i * 4] = ids[0]
+		custom0[i * 4 + 1] = ids[1]
+		custom0[i * 4 + 2] = ids[2]
+		custom0[i * 4 + 3] = ws[0]
+		custom1[i * 4] = ws[1]
+		custom1[i * 4 + 1] = ws[2]
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = pos
+	arrays[Mesh.ARRAY_NORMAL] = sm.normals
+	arrays[Mesh.ARRAY_COLOR] = col
+	arrays[Mesh.ARRAY_CUSTOM0] = custom0
+	arrays[Mesh.ARRAY_CUSTOM1] = custom1
+	arrays[Mesh.ARRAY_INDEX] = sm.indices
+	var flags := (
+		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
+		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
+	)
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
+	_fill = ShaderMaterial.new()
+	_fill.shader = SMOOTH_SHADER
+	_fill.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	var skin := MeshInstance3D.new()
+	skin.mesh = mesh
+	skin.material_override = _fill
+	skin.custom_aabb = BOUNDS
+	skin.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
+	add_child(skin)
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps

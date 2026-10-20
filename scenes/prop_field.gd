@@ -72,6 +72,12 @@ func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:
 	vox.salt = salt
 	_mmi = vox.build(palette, voxel, glow, Vector3.ZERO)
 	_mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if VoxelBuilder.smooth:  # Phase B (b2-20): the cubes stay (crushing indexes them) but draw nothing
+		_mmi.multimesh.visible_instance_count = 0
+		var skin := MeshInstance3D.new()
+		skin.mesh = vox.smooth_mesh(palette, voxel, Vector3.ZERO, glow)
+		skin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_mmi.add_child(skin)
 	# Each prop remembers which instances are its voxels, so crushing touches only those.
 	var index_of := {}
 	for i: int in vox.built_cells.size():
