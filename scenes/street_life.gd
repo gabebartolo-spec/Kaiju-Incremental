@@ -113,8 +113,9 @@ func _build_pavements() -> void:
 	var half := CityGen.half_extent(sim.city)
 	for block: Dictionary in CityGen.map(sim.city)["blocks"]:
 		var rect: Rect2 = block["rect"]
-		if str(block["use"]) == "outer" or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
-			continue
+		var use := str(block["use"])
+		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
+			continue  # past the edge, or the river (CityRiver): no one walks on the water
 		var ring := rect.grow(PAVEMENT)
 		var size := ring.size * 0.5
 		for c: Vector2 in CORNERS:

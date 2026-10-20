@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 
 const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
+const SimArmy := preload("res://tests/lib/sim_army.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
 const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
 const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
@@ -27,7 +28,7 @@ func run_checks() -> void:
 	await _t("_check_determinism")
 	await _t("_check_upgrade_effects")
 	await _t("_check_species_differ")
-	await _t("_check_army")
+	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
 	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
@@ -293,24 +294,6 @@ func _check_species_differ() -> void:
 	var ring := _sim("cephalopod", {})
 	var reach_ok := ring.ability_reach() > ring.stomp_radius()
 	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
-
-
-func _check_army() -> void:
-	var soft := _sim("reptilian", {})
-	var armoured := _sim("reptilian", {"hide": 1, "scales": 4})
-	for i: int in 30 * 30:
-		soft.step(DT, Vector2.ZERO, false)
-		armoured.step(DT, Vector2.ZERO, false)
-	var soft_loss := soft.max_hp - soft.hp
-	var armoured_loss := armoured.max_hp - armoured.hp
-	check(
-		soft.tanks.size() > 0 and soft_loss > 0.0,
-		"standing still, the army arrives and hurts the kaiju (lost %.1f)" % soft_loss
-	)
-	check(
-		armoured_loss < soft_loss,
-		"armoured scales cut the damage taken (%.1f vs %.1f)" % [armoured_loss, soft_loss]
-	)
 
 
 func _check_save_migrate() -> void:

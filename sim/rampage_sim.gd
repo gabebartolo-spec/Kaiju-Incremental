@@ -89,6 +89,7 @@ var army_units: Army
 var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
+var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; body.heading turns the drawn model.
 var body: BodyContact
 var powers_cfg: Dictionary
@@ -137,6 +138,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
 
 
@@ -194,7 +196,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
-	if over:
+	if over or emerge.step(self, dt):
 		return _events
 	time_left -= dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
