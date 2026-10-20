@@ -68,17 +68,19 @@ var _stomp_radius := 0.0
 var _stomp_wait := 0.0
 
 
-## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army.
 ## The camera's rest offset from data (tests and captures read it here).
 static func camera_offset() -> Vector3:
 	var o: Array = Content.section("camera")["offset"]
 	return Vector3(Num.f(o[0]), Num.f(o[1]), Num.f(o[2]))
 
 
+## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
+## picks the time of day.
 func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
+	Content.set_time(Content.time_for_run(run_index))
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])

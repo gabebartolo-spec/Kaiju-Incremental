@@ -363,6 +363,10 @@ func _check_vehicle_fade() -> void:
 ## per-frame work of its own: nothing it caches can go stale on a resize, a UI-scale change or
 ## fullscreen (the shader reads the viewport size and buffers each frame).
 func _check_crease_pass() -> void:
+	var look := Content.look()
+	var shipped: Variant = look["crease_strength"]
+	if Num.f(shipped) <= 0.0:  # the look ships it off (D-104): test the pass switched on
+		look["crease_strength"] = 0.3
 	var crease := CreasePass.make()
 	var mat: ShaderMaterial = crease.material_override if crease != null else null
 	var wrong: Array[String] = []
@@ -380,7 +384,7 @@ func _check_crease_pass() -> void:
 		if str(method["name"]) in ["_process", "_physics_process", "_notification"]:
 			per_frame.append(str(method["name"]))
 	check(per_frame.is_empty(), "the crease pass runs no per-frame script (%s)" % [per_frame])
-	var look := Content.look()
+	look["crease_strength"] = shipped
 	var kept: Variant = look["crease_strength"]
 	look["crease_strength"] = 0.0
 	var off := CreasePass.make()

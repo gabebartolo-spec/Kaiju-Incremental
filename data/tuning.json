@@ -431,7 +431,7 @@
 		"fade_s": 0.3,
 		"puff": 1.6
 	},
-	"camera": {"offset": [0, 27, 19], "fov": 55.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0},
 	"topple_fx": {
 		"shudder_s": 0.4,
 		"shudder_max_share": 0.3,

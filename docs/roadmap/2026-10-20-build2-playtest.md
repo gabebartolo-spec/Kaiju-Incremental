@@ -14,8 +14,8 @@ owner, PR and status; update the row when a PR merges.
 | 3 | "frame rate issues, not serious, but some slow frames during periods of heavy destruction" | C | - | open |
 | 4 | "carving is improved but not perfect yet - it should feel effortless for even a baby Kaiju to destroy building matter - a building shouldnt have a health bar, it should be a phyiscal structure which obeys the laws of physics and simply must be dismantled" | C | - | open |
 | 5 | "buildings seem to ALWAYS collapse toward our kaiju, i dont care if its realistic, make the collapse directions more varied" | C | - | open |
-| 6 | "there are a lot of indestructible buildings in the game, they must be removed from the play area if theyre indestructible, ALL buildings in the play area must be destroyable" | A | - | open |
-| 7 | "the camera doesnt let us see much of the city, reconsider its angle and distance" | B (director picks) | - | open |
+| 6 | "there are a lot of indestructible buildings in the game, they must be removed from the play area if theyre indestructible, ALL buildings in the play area must be destroyable" | A | builder / #110 | merged (real band past the edge; stand-ins only past view_beyond) |
+| 7 | "the camera doesnt let us see much of the city, reconsider its angle and distance" | B (director picks) | lead / claude/camera-options | decided: C (D-105) |
 | 8 | "the stadium attendants still disappear too quickly, visually, maybe theyre still there in code, but it makes no sense how tens of thousands of people disappear in a heart beat" | C | - | open |
 | 9 | "stomping tanks should feel more responsive, not like you're whittling a health bar down, tanks should be shoved or flung out of the way into buildings, civilians, and other military vehicles" | D | - | open |
 | 10 | "reassess our UI. The timer at the top is good. Biomass can be a boxless figure in the bottom right. we dont need button/keyboard tutorials on screen, just once at the start of the game/a controls menu" | F | - | open |
@@ -29,12 +29,12 @@ owner, PR and status; update the row when a PR merges.
 | 18 | "more visual feedback for atomic breath required, needs a VFX pass" | D | - | open |
 | 19 | "investigate whether lowering/increasing our voxel count will create better visuals"; he added: "when i say voxel count i mean everything, not just our kaiju, the buildings and other things too" | B (director picks) | lead + asset session / claude/vox-half, claude/vox-double | in progress |
 | 20 | "investigate whether abandoning the voxel aesthetic will create better visuals" | B (director picks) | - | open |
-| 21 | "the stadium is free biomass, it needs to be placed as far away from our spawn spot as possible to make it less farmable" | A | - | open |
+| 21 | "the stadium is free biomass, it needs to be placed as far away from our spawn spot as possible to make it less farmable" | A | lead (builder finding) | open: already on the furthest stage-1 site (75-78 u); farther needs a rule change |
 | 22 | "building surfaces which are touching other buildings seem to be plain with no features or art, so when you destroy the building its touching, you see a big blank rectangle instead of a building" | C | - | open |
 | 23 | "when you highlight the ULTIMATE ATOMIC BEAM in the upgrade tree, the whole shape of the screen changes because the size of the tooltip is wider than other abilities" | F | - | open |
 | 24 | "copy issue: "reptilian branch capstone", over explain, stop explaining every single thing in opaque language the player wont understand it, thats copy that you should only show me, not the player" | E | - | open |
 | 25 | "pc fans still go kinda crazy during gameplay, needs to be performance audited but do not do this until we've perfected our visuals" | G (after visuals, by his order) | - | open |
-| 26 | "atomic blast seemingly having no impact on trees?" | A | - | open |
+| 26 | "atomic blast seemingly having no impact on trees?" | A | lead / claude/b2-26-breath-trees | in progress (breath flattened props only round the feet) |
 | 27 | "what is the meaning of "reptilian branch" on the upgrade tree? the entire upgrade tree is reptilian..." | E | - | open |
 | 28 | "we need a lot more upgrade nodes, ideally double or even triple" | E | - | open |
 | 29 | "quitting the game freezes the screen for 2-3 seconds" | C (end) | - | open |
