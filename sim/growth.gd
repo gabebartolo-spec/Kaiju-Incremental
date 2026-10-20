@@ -15,6 +15,12 @@ static func stage_stats(stats: Dictionary, tuning: Dictionary) -> Dictionary:
 	return out
 
 
+## How much of a blow a building takes from a kaiju of this size tier (D-091): one that dwarfs
+## the kaiju takes (size / tier)^dwarf_exp of it, so it takes longer to tear down, never forever.
+static func dwarf_mult(size_tier: int, tier: int, city: Dictionary) -> float:
+	return minf(1.0, pow(float(size_tier) / maxf(1.0, tier), Num.f(city["dwarf_exp"])))
+
+
 static func body_scale(stats: Dictionary, city: Dictionary) -> float:
 	var size := Num.f(stats.get("size", 1.0))
 	var tier := 1.0 + Num.f(city["size_scale_per_tier"]) * (size - 1.0)

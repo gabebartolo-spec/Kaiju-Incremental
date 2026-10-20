@@ -68,6 +68,7 @@ func _pace(species_id: String) -> void:
 		var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", run + 100000 * _seed))
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
+		sim.body.use_species(species_id)
 		var target := Vector2(INF, INF)
 		var steps := 0
 		var goal := _goal(sim)
