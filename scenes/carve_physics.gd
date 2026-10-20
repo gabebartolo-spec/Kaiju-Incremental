@@ -144,8 +144,9 @@ func _split(key: int, parts: Array[Dictionary], parent: IslandBody) -> void:
 		var own: PackedInt32Array = part["cells"]
 		var own_mats: PackedByteArray = part["mats"]
 		var chunk := _island(key, own, own_mats)
-		chunk.collision_layer = parent.collision_layer  # the owner's layers and look, not defaults
-		chunk.collision_mask = parent.collision_mask
+		var layers: Array = part["layers"]  # the parent's, not the defaults
+		chunk.collision_layer = Num.i(layers[0])
+		chunk.collision_mask = Num.i(layers[1])
 		chunk.cell_material = parent.cell_material
 		chunk.global_transform = part["xf"]
 		chunk.linear_velocity = part["v"]

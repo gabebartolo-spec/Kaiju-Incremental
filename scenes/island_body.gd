@@ -17,14 +17,14 @@ extends RigidBody3D
 ## `at` is the lowest point of the impact.
 signal broke(pieces: Array[Dictionary], at: Vector3)
 ## The island split into chunks: each {"cells", "mats" (parallel), "xf" (the chunk body's
-## transform), "v", "w"}; the owner makes each an IslandBody. This body is gone after it.
+## transform), "v", "w", "layers": [layer, mask]}; the owner makes each an IslandBody.
+## This body is gone after it.
 signal split(parts: Array[Dictionary])
 signal settled
 signal released
 
 var site: CarveSite
-## The look of this island's bricks (the building's own material); null keeps the vertex-coloured
-## default. Also applied to bricks meshed later, and inherited by the chunks of a split.
+## The look of the bricks (the building's material; null: vertex colours), kept on remeshes.
 var cell_material: Material:
 	set(m):
 		cell_material = m
@@ -79,7 +79,6 @@ func _init(
 		_shape_brick(key)
 	_mass()
 	continuous_cd = true
-	can_sleep = true
 	contact_monitor = true
 	max_contacts_reported = 1
 	body_entered.connect(_touched)
@@ -106,10 +105,13 @@ func cell_count() -> int:
 	return n
 
 
-## A first touch of something solid: a hard one breaks the island on the next step (the contact
-## frame), without waiting for the body to lose its speed.
+## A hard first touch of something solid breaks the island next step, not once its speed bleeds off.
 func _touched(other: Node) -> void:
-	if other is StaticBody3D and _follow.is_empty() and _v_prev.length() > Num.f(_cfg["break_speed"]):
+	if (
+		other is StaticBody3D
+		and _follow.is_empty()
+		and _v_prev.length() > Num.f(_cfg["break_speed"])
+	):
 		_contact_hit = _v_prev
 
 
@@ -131,8 +133,7 @@ func _physics_process(delta: float) -> void:
 	var v := linear_velocity
 	var speed := Num.f(_cfg["break_speed"])
 	var hit := _hit(v, speed)
-	if hit == Vector3.ZERO and _contact_hit.length() > speed:
-		hit = _contact_hit  # the contact step itself, not once the speed has bled off
+	hit = _contact_hit if hit == Vector3.ZERO else hit  # the contact step, not once speed bleeds
 	_contact_hit = Vector3.ZERO
 	if _cooldown == 0.0 and hit.length() > 0.0:
 		_start_break(hit)
@@ -270,6 +271,7 @@ func _split(v: Vector3) -> void:
 					"xf": Transform3D(xf.basis, at),
 					"v": keep + out + angular_velocity.cross(at - global_position),
 					"w": angular_velocity + w * spin,
+					"layers": [collision_layer, collision_mask],
 				}
 			)
 		)
