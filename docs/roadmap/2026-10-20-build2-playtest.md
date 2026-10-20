@@ -29,12 +29,12 @@ owner, PR and status; update the row when a PR merges.
 | 18 | "more visual feedback for atomic breath required, needs a VFX pass" | D | - | open |
 | 19 | "investigate whether lowering/increasing our voxel count will create better visuals"; he added: "when i say voxel count i mean everything, not just our kaiju, the buildings and other things too" | B (director picks) | lead + asset session / claude/vox-half, claude/vox-double | in progress |
 | 20 | "investigate whether abandoning the voxel aesthetic will create better visuals" | B (director picks) | - | open |
-| 21 | "the stadium is free biomass, it needs to be placed as far away from our spawn spot as possible to make it less farmable" | A | lead (builder finding) | open: already on the furthest stage-1 site (75-78 u); farther needs a rule change |
+| 21 | "the stadium is free biomass, it needs to be placed as far away from our spawn spot as possible to make it less farmable" | A | lead / claude/b2-21-stadium-north | in review: past the baby's edge (director picked "A past the edge"), 105-108 m from the rise |
 | 22 | "building surfaces which are touching other buildings seem to be plain with no features or art, so when you destroy the building its touching, you see a big blank rectangle instead of a building" | C | - | open |
 | 23 | "when you highlight the ULTIMATE ATOMIC BEAM in the upgrade tree, the whole shape of the screen changes because the size of the tooltip is wider than other abilities" | F | - | open |
 | 24 | "copy issue: "reptilian branch capstone", over explain, stop explaining every single thing in opaque language the player wont understand it, thats copy that you should only show me, not the player" | E | - | open |
 | 25 | "pc fans still go kinda crazy during gameplay, needs to be performance audited but do not do this until we've perfected our visuals" | G (after visuals, by his order) | - | open |
-| 26 | "atomic blast seemingly having no impact on trees?" | A | lead / claude/b2-26-breath-trees | in progress (breath flattened props only round the feet) |
+| 26 | "atomic blast seemingly having no impact on trees?" | A | lead / #111 | merged |
 | 27 | "what is the meaning of "reptilian branch" on the upgrade tree? the entire upgrade tree is reptilian..." | E | - | open |
 | 28 | "we need a lot more upgrade nodes, ideally double or even triple" | E | - | open |
 | 29 | "quitting the game freezes the screen for 2-3 seconds" | C (end) | - | open |

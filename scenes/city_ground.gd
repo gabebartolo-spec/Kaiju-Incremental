@@ -48,7 +48,7 @@ func _ready() -> void:
 		if str(block["use"]) == "outer" and minf(rect.size.x, rect.size.y) < MIN_BUILDABLE:
 			continue  # a sliver too thin to build on stays road, not a pale strip
 		# The block's pavement reaches out over its sidewalks (and meets across an alley).
-		var walk := rect.grow(Num.f(cfg["sidewalk"]))
+		var walk := CityGen.pavement(block, cfg)
 		match str(block["use"]):
 			"park":
 				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)

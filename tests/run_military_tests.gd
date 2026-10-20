@@ -15,6 +15,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_view")
 	await _t("_check_rampages")
+	await _t("_check_standoff_held")
 	await _t("_check_pivot_beside_parked")
 	await _t("_check_rubble")
 
@@ -185,7 +186,7 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		parked_in_band > 40 and standoff >= 0.95 and longest_in_danger <= 1.0,
+		parked_in_band > 0 and standoff >= 0.95 and longest_in_danger <= 1.0,
 		(
 			(
 				"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing"
@@ -193,6 +194,49 @@ func _check_rampages() -> void:
 				+ " radius over 1 s (%.1f s)"
 			)
 			% [standoff * 100.0, parked_in_band + parked_close, parked_reserve, longest_in_danger]
+		)
+	)
+
+
+## Tanks take firing posts at standoff when the kaiju gives them time (D-066): it stands where it
+## spawns at the young stage for a whole run on each seed; tanks that stand a second or more
+## within range are in the firing band, not up close, and there are enough of them to say so.
+## (The rampages above only see this when the autoplay happens to linger: the stage-2 stadium
+## used to hold it, red-115.)
+func _check_standoff_held() -> void:
+	var in_band := 0
+	var close := 0
+	for seed: int in SEEDS:
+		var sim := _rampage(2, seed)
+		var still := {}  # tank id -> seconds it has stood still
+		var last := {}
+		while not sim.over:
+			sim.step(DT, Vector2.ZERO, false)
+			var reach := _reach(sim)
+			var danger := _danger(sim)
+			var now := {}
+			for tank: RampageSim.Tank in sim.tanks:
+				var was: Vector2 = last.get(tank.id, Vector2(INF, INF))
+				var standing := tank.pos.distance_to(was) < 0.001
+				var for_s := Num.f(still.get(tank.id, 0.0)) + DT if standing else 0.0
+				still[tank.id] = for_s
+				now[tank.id] = tank.pos
+				var d := tank.pos.distance_to(sim.kaiju_pos)
+				if for_s >= 1.0 and d <= reach + 1.0:
+					if d >= danger - 0.5:
+						in_band += 1
+					else:
+						close += 1
+			last = now
+	var share := float(in_band) / maxf(1.0, float(in_band + close))
+	check(
+		in_band > 40 and share >= 0.95,
+		(
+			(
+				"with the kaiju standing still, tanks take firing posts at standoff: %d tank-steps"
+				+ " in the band, %d up close (%.0f%%)"
+			)
+			% [in_band, close, share * 100.0]
 		)
 	)
 
