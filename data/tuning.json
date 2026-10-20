@@ -529,5 +529,8 @@
 		"fade_seconds": 0.25,
 		"tank_clear": 2.0,
 		"heli_clear": 5.0
+	},
+	"destruction": {
+		"res": 8
 	}
 }
