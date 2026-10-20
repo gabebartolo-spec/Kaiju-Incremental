@@ -15,7 +15,7 @@
 ##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
 ## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
 ## retune-a DONE claude/young-retune 67e0b1a (e1 0.24 h, young defeats 5.4/12; body pr_body_retune.md in its worktree): PR after #89/#90 merge.
-## WP5 life-2 clips: tower 39293335670, swipe 39293938036, block 39294467556 (critic FIX 1-3 + rubble cap -> life 3).
+## carve-wp5 life 3 DONE claude/carve-wp5 (4 critic fixes: break wait tower 1.17->0.13 s, block 1.43->0.47 s (goal 0.3); gouge dark px 1021->0; rubble_cap 2000; bottom-up break 0.4 s). Clips tower 39345155884, swipe 39344743509, block 39345232517 in lead scratchpad ci_<scene>/ (UNWATCHED). Body pr_body_wp5.md in worktree. NEXT: lead 2x, fresh motion critic, show director, open PR.
 ## WP5 PR opens after life 3's fresh critic passes and the director sees the clips.
 ## Captures run in PARALLEL. claude/capture-fast 4af91b4 (no PR): --fast default (gl_compatibility llvmpipe, 960x540, 20 fps, no SSAO/glow; --full = old look); tower take 32 -> 19.8 min (run 39280140412), still readable. PR after #89 merges (needs capture_contact.gd). Director to delete tmp/capture-fast-test (worker delete refused).
 ## #88 head dca0e988cd4f34c640c2349fc40699c0a40032b3: re-review PASS + notes a/b done. Only 2 expected city reds (tier gate). After #89 merges: resync, CI, merge.
