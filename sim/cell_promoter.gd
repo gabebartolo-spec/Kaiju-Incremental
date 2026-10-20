@@ -5,7 +5,7 @@ extends RefCounted
 ## Structure has already lost emptied, and kept for every later hit. A whole city of fine grids
 ## would be ~100 MB (docs/research/DESTRUCTION_SPIKE.md), so only buildings the kaiju touches
 ## pay for one. A landmark gets a LandmarkCells grid (its baked model, and the arcs of a ring);
-## a building a BuildingCells. Not wired into RampageSim yet (WP7).
+## a building a BuildingCells. RampageSim promotes through Carving (WP7).
 
 ## Building index -> BuildingCells or LandmarkCells, for the buildings hit so far.
 var grids: Dictionary = {}

@@ -40,6 +40,7 @@ class Fall:
 	var dir: Vector2
 	var drop: float
 	var height: float
+	var width := -1.0  # across a topple, sim units (a carved part's; < 0: from its chunks)
 	var t := 0.0
 	var duration: float
 
@@ -82,6 +83,8 @@ var end_reason := ""
 var arena_half: float
 var next_fall_id := 0
 var collapse: Collapse
+## The fine destruction grid (Carving): buildings carved cell by cell once first hit.
+var carving: Carving
 ## The tanks' behaviour (Army); the tanks themselves are in `tanks`.
 var army_units: Army
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
@@ -130,6 +133,7 @@ func _init(
 		chunks_total += b.frame.alive_count if b.in_arena else 0
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
+	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
@@ -187,8 +191,7 @@ func result() -> Dictionary:
 	}
 
 
-## Advances the rampage by dt: the move vector, the signature pressed this step, and buttons
-## as flags (HELD: signature held; ULTIMATE, Dash.BUTTON: pressed). Returns the step's events.
+## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
@@ -315,6 +318,9 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 	for i: int in buildings.size():
 		var b := buildings[i]
 		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
+		if near > 0.0 and carving.takes(i):
+			carving.hit(i, force, damage, Vector2i(y_lo, top))  # coats what it reaches too
+			continue
 		if near <= 0.0 or b.frame.alive_count == 0:
 			continue
 		var cells: Array[Vector3i] = []
@@ -331,7 +337,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 							amounts.append(damage * k)
 		if not hit_coat.is_empty():
 			powers.coat(i, cells)
-		_apply(i, cells, amounts)
+		damage_cells(i, cells, amounts)
 	for tank: Tank in tanks:
 		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k
@@ -365,17 +371,15 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 	var amounts := PackedFloat32Array()
 	amounts.resize(cells.size())
 	amounts.fill(amount)
-	return _apply(index, cells, amounts)
+	return damage_cells(index, cells, amounts)
 
 
-## Damages chunks of one building, each by its own amount.
+## Damages chunks of one building, each by its own amount. A building that dwarfs the kaiju
+## takes less of each blow (Growth.dwarf_mult, D-091). Broken chunks pay rubble; then whatever
+## lost support starts to fall. Returns chunks broken. A carved building goes to Carving.
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
-	return _apply(index, cells, amounts)
-
-
-## A building that dwarfs the kaiju takes less of each blow (Growth.dwarf_mult, D-091). Broken
-## chunks pay rubble; then whatever lost support starts to fall. Returns chunks broken.
-func _apply(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
+	if carving.takes(index):
+		return carving.apply(index, cells, amounts)
 	var b := buildings[index]
 	var mult := Growth.dwarf_mult(size_tier(), b.tier, city)
 	var broken: Array[Vector3i] = []
@@ -394,7 +398,3 @@ func pay(b: Building, chunks: int, bonus: float) -> void:
 	chunks_destroyed += chunks if b.in_arena else 0
 	var mult := bonus * b.rubble_bonus * stat("rubble_mult")
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * mult
-
-
-func clear_dead_tanks() -> void:
-	army_units.clear_dead()

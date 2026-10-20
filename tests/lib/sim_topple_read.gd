@@ -61,6 +61,19 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 				lo = Vector2i(mini(lo.x, c.x), mini(lo.y, c.z))
 				hi = Vector2i(maxi(hi.x, c.x), maxi(hi.y, c.z))
 				under = under or b.frame.top_below(c.x, c.z, c.y) >= 0
+		var size := Vector2i(highest - lowest + 1, mini(hi.x - lo.x, hi.y - lo.y) + 1)
+		if e.has("index"):  # a carved part (D-094 WP7): measured on its fine cells instead
+			var index: PackedInt32Array = e["index"]
+			var fine := _fine(b, sim.carving.frame(Num.i(e["building"])), index)
+			size = fine[0]
+			under = fine[1]
+			if str(e["kind"]) == "drop":
+				# Read at settle time (the drop lands on what stood under it then): a later blow
+				# in the same step can take that support before this note is made.
+				var pivot: Vector3 = e["pivot"]
+				under = Num.f(e["drop"]) < pivot.y - 0.01
+			base = fine[2]
+			count = 1
 		(
 			log
 			. append(
@@ -68,8 +81,8 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 					"kind": str(e["kind"]),
 					"landmark": b.landmark != "",
 					"cells": cells.size(),
-					"height": highest - lowest + 1,
-					"span": mini(hi.x - lo.x, hi.y - lo.y) + 1,
+					"height": size.x,
+					"span": size.y,
 					"under": under,
 					"dir": e["dir"],
 					"cut_dir": e["cut_dir"],
@@ -77,6 +90,36 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 				}
 			)
 		)
+
+
+## A carved part (already out of its grid) measured on its fine cells: [Vector2i(height, the
+## narrower side of its lowest layer) in cells, true when a cell stands under that layer, the
+## world centre (x, z) of that layer].
+static func _fine(b: RampageSim.Building, f: VoxelFrame, index: PackedInt32Array) -> Array:
+	var plan := f.w * f.d
+	var low := f.h
+	var top := -1
+	for i: int in index:
+		low = mini(low, i / plan)
+		top = maxi(top, i / plan)
+	var lo := Vector2i(f.w, f.d)
+	var hi := Vector2i(-1, -1)
+	var sum := Vector2.ZERO
+	var count := 0
+	var under := false
+	for i: int in index:
+		if i / plan != low:
+			continue
+		var c := Vector2i(i % f.w, (i / f.w) % f.d)
+		lo = lo.min(c)
+		hi = hi.max(c)
+		sum += Vector2(c) + Vector2(0.5, 0.5)
+		count += 1
+		under = under or f.column_top(c.x, c.y, low) >= 0
+	var mid := sum / maxi(1, count) + Vector2(f.offset.x, f.offset.z)
+	var p := b.local_to_world(Vector3(mid.x, 0.0, mid.y) / f.res)
+	var size := Vector2i(top - low + 1, mini(hi.x - lo.x, hi.y - lo.y) + 1)
+	return [size, under, Vector2(p.x, p.z)]
 
 
 ## The capture's tower take: south of the nearest tall tier-2 tower, chewing north into it.

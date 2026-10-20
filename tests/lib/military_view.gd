@@ -61,12 +61,12 @@ func _check_view() -> void:
 		)
 	)
 	check(
-		Num.f(got["edge"]) >= EDGE_GAP and Num.i(got["on_car"]) == 0,
+		Num.f(got["edge"]) >= EDGE_GAP,
 		(
 			(
 				"in the game view the kaiju strides at the tanks and they fall back: no hull with a"
 				+ " road out comes within %.0f m of the edge of its body, snout to tail root"
-				+ " (closest %.1f m); no tank's hull meets a car (%d tank-steps)"
+				+ " (closest %.1f m); tanks may run cars over (director 2026-10-20), %d tank-steps"
 			)
 			% [EDGE_GAP, got["edge"], got["on_car"]]
 		)

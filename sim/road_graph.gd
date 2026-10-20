@@ -364,6 +364,8 @@ func read_rubble(events: Array[Dictionary]) -> bool:
 	for event: Dictionary in events:
 		if str(event["type"]) != "fall_land" or str(event.get("kind", "")) != "topple":
 			continue
+		if event.get("scrap", false) == true:  # a carved scrap blocks no road
+			continue
 		var from: Vector2 = event["from"]
 		var to: Vector2 = event["to"]
 		closed = close_strip(from, to, Num.f(event["width"])) or closed

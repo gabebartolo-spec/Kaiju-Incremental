@@ -16,11 +16,13 @@ func _init(p_sim: RampageSim) -> void:
 	sim = p_sim
 
 
-## Turns every part of building `index` that lost support into a Fall.
+## Turns every part of building `index` that lost support into a Fall. A carved building's
+## parts (Carving.settle) also carry their fine cells, which the fall_start event passes on.
 func settle(index: int) -> void:
 	var b := sim.buildings[index]
 	var g := Num.f(sim.city["fall_gravity"])
-	for part: Dictionary in b.frame.settle():
+	var parts := sim.carving.settle(index) if sim.carving.promoted(index) else b.frame.settle()
+	for part: Dictionary in parts:
 		var rule_dir: Vector2i = part["dir"]
 		var f := RampageSim.Fall.new()
 		f.id = sim.next_fall_id
@@ -34,10 +36,19 @@ func settle(index: int) -> void:
 			lowest = mini(lowest, c.y)
 			highest = maxi(highest, c.y)
 		f.height = highest - lowest + 1
-		if f.kind == "drop" and b.landmark == "" and _gutted(b, f.cells, lowest, f.height):
+		var low := float(lowest)
+		var carved := part.has("index")
+		if carved:  # its size from its fine cells
+			low = Num.f(part["low"])
+			f.height = Num.f(part["height"])
+			f.width = Num.f(part["width"])
+		var gutted: bool = (
+			part.get("gutted", false) if carved else _gutted(b, f.cells, lowest, int(f.height))
+		)
+		if f.kind == "drop" and b.landmark == "" and gutted:
 			f.kind = "topple"  # its whole base went at once: it goes over, it never pops
 		if f.kind == "topple":
-			if not _toppled_ids.has(index):
+			if not f.cells.is_empty() and not _toppled_ids.has(index):
 				_toppled_ids[index] = true
 				toppled += 1
 			var dir: Vector2i = part["dir"]
@@ -46,34 +57,38 @@ func settle(index: int) -> void:
 			# rule's dir), onto the kaiju if that is the side. A gutted drop has no rule dir: its
 			# whole base went, and the chew came from the kaiju's side, so it goes that way.
 			if dir == Vector2i.ZERO:
-				dir = _toward(_base_centre(b, f.cells, lowest) - sim.kaiju_pos)
-				pivot = _edge(f.cells, lowest, dir)
+				var base: Rect2 = part["base"] if carved else _base(f.cells, lowest)
+				var centre := b.local_to_world(
+					Vector3(base.get_center().x, low, base.get_center().y)
+				)
+				dir = _toward(Vector2(centre.x, centre.z) - sim.kaiju_pos)
+				pivot = _edge(base, low, dir)
+				if carved:
+					f.width = base.size.y if dir.x != 0 else base.size.x
 			f.dir = Vector2(dir)
 			f.pivot = b.local_to_world(pivot)
 			f.duration = sqrt(2.0 * f.height / g) * 1.8
 		else:
-			f.drop = _drop_distance(b, f.cells, lowest)
-			f.pivot = b.local_to_world(Vector3(b.w * 0.5, lowest, b.d * 0.5))
+			f.drop = Num.f(part["drop"]) if part.has("drop") else _drop_distance(b, f, low)
+			f.pivot = b.local_to_world(Vector3(b.w * 0.5, low, b.d * 0.5))
 			f.duration = sqrt(2.0 * f.drop / g)
 		sim.falls.append(f)
-		(
-			sim
-			. events
-			. append(
-				{
-					"type": "fall_start",
-					"id": f.id,
-					"building": index,
-					"cells": f.cells,
-					"kind": f.kind,
-					"pivot": f.pivot,
-					"dir": f.dir,
-					"cut_dir": Vector2(rule_dir),
-					"drop": f.drop,
-					"duration": f.duration,
-				}
-			)
-		)
+		var event := {
+			"type": "fall_start",
+			"id": f.id,
+			"building": index,
+			"cells": f.cells,
+			"kind": f.kind,
+			"pivot": f.pivot,
+			"dir": f.dir,
+			"cut_dir": Vector2(rule_dir),
+			"drop": f.drop,
+			"duration": f.duration,
+		}
+		if carved:
+			event["index"] = part["index"]
+			event["mats"] = part["mats"]
+		sim.events.append(event)
 
 
 ## A part with nothing under it that is taller than it is deep (its narrower side at its lowest
@@ -94,16 +109,15 @@ static func _gutted(
 	return height > mini(hi.x - lo.x, hi.y - lo.y) + 1
 
 
-## The world centre of a part's lowest floor (ground plane).
-static func _base_centre(b: RampageSim.Building, cells: Array[Vector3i], lowest: int) -> Vector2:
-	var sum := Vector2.ZERO
-	var count := 0
+## The footprint (local x, z) of a part's lowest floor.
+static func _base(cells: Array[Vector3i], lowest: int) -> Rect2:
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
 	for c: Vector3i in cells:
 		if c.y == lowest:
-			var p := b.chunk_world(c)
-			sum += Vector2(p.x, p.z)
-			count += 1
-	return sum / maxi(1, count)
+			lo = Vector2(minf(lo.x, c.x), minf(lo.y, c.z))
+			hi = Vector2(maxf(hi.x, c.x + 1), maxf(hi.y, c.z + 1))
+	return Rect2(lo, hi - lo)
 
 
 ## The level direction (one of the four, like Structure's) from the tower's base to the kaiju;
@@ -116,27 +130,23 @@ static func _toward(to_base: Vector2) -> Vector2i:
 	return Vector2i(0, -signi(roundi(to_base.y * 100.0)))
 
 
-## The pivot edge (local frame) a part tips over going `dir`: its far side at its lowest floor,
-## centred across the fall.
-static func _edge(cells: Array[Vector3i], lowest: int, dir: Vector2i) -> Vector3:
-	var lo := Vector2(INF, INF)
-	var hi := Vector2(-INF, -INF)
-	for c: Vector3i in cells:
-		if c.y == lowest:
-			lo = Vector2(minf(lo.x, c.x), minf(lo.y, c.z))
-			hi = Vector2(maxf(hi.x, c.x + 1), maxf(hi.y, c.z + 1))
-	var mid := (lo + hi) * 0.5
+## The pivot edge (local frame) a part tips over going `dir`: the far side of its base (the
+## footprint of its lowest floor, at height `low`), centred across the fall.
+static func _edge(base: Rect2, low: float, dir: Vector2i) -> Vector3:
+	var lo := base.position
+	var hi := base.end
+	var mid := base.get_center()
 	return Vector3(
 		hi.x if dir.x > 0 else (lo.x if dir.x < 0 else mid.x),
-		lowest,
+		low,
 		hi.y if dir.y > 0 else (lo.y if dir.y < 0 else mid.y)
 	)
 
 
 ## How far a loose part drops before it meets what still stands below it (or the ground).
-func _drop_distance(b: RampageSim.Building, cells: Array[Vector3i], lowest: int) -> float:
-	var drop := float(lowest)
-	for c: Vector3i in cells:
+func _drop_distance(b: RampageSim.Building, f: RampageSim.Fall, lowest: float) -> float:
+	var drop := lowest
+	for c: Vector3i in f.cells:
 		var below := b.frame.top_below(c.x, c.z, c.y)
 		drop = minf(drop, c.y - below - 1)
 	return maxf(0.5, drop)
@@ -159,22 +169,28 @@ func _land(f: RampageSim.Fall) -> void:
 	var b := sim.buildings[f.building]
 	var bonus := Num.f(sim.city["topple_bonus"]) if f.kind == "topple" else 1.0
 	sim.pay(b, f.cells.size(), bonus)
-	if f.kind == "topple":
-		tallest_topple = maxi(tallest_topple, f.height)
 	var impact := Num.f(sim.city["impact_damage"])
 	var event := {"type": "fall_land", "id": f.id, "kind": f.kind, "building": f.building}
+	# A carved scrap (less than a chunk's worth, "scrap"): it lands, and smashes nothing.
+	var scrap := f.cells.is_empty()
+	event["scrap"] = scrap
 	if f.kind == "topple":
 		var start := Vector2(f.pivot.x, f.pivot.z)
 		var finish := start + f.dir * f.height
 		var across := Vector2(-f.dir.y, f.dir.x)
-		var half_width := _width_across(b, f.cells, across) * 0.5 + 0.5
+		var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
+		var half_width := width * 0.5 + 0.5
 		event["from"] = start
 		event["to"] = finish
 		event["width"] = half_width * 2.0
 		sim.events.append(event)
-		_crush_strip(start, finish, half_width, f.building)
+		if not scrap:
+			tallest_topple = maxi(tallest_topple, roundi(f.height))
+			_crush_strip(start, finish, half_width, f.building)
 	else:
 		sim.events.append(event)
+		if scrap:
+			return
 		var hit: Array[Vector3i] = []
 		for c: Vector3i in f.cells:
 			var below := b.frame.top_below(c.x, c.z, c.y)
@@ -226,4 +242,4 @@ func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) 
 		var struck: bool = in_strip.call(tank.pos, 0.6)
 		if struck:
 			tank.hp = 0.0
-	sim.clear_dead_tanks()
+	sim.army_units.clear_dead()
