@@ -10,7 +10,8 @@ extends RefCounted
 ## (streets, traffic, the outskirts) can rebuild it without the run's seed. Streets run at
 ## irregular spacing with a ring avenue on the playable edge, a couple of avenues, alleys that
 ## split some blocks, and one diagonal avenue cutting across. Blocks between them are built up,
-## a park, a plaza or a parking lot; blocks past the edge are "outer" (drawn, never destroyed).
+## a park, a plaza or a parking lot. Past the edge, blocks as far as the camera shows are built
+## up too (real, destroyable, out of the kaiju's walk); beyond them "outer" (drawn stand-ins).
 ##
 ## generate(rng, cfg): the buildings of the playable blocks (CityLots fills each block). Each
 ## building is its own Structure, so neighbours touch but fall separately. Its tier (from
@@ -31,7 +32,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
 	var bare: Array[Dictionary] = []  # the first district's built blocks too thin for a lot
-	for ring: int in districts(cfg).size():
+	for ring: int in districts(cfg).size() + 1:  # + 1: the real blocks past the last district
 		for block: Dictionary in plan["blocks"]:
 			if str(block.get("was", block["use"])) == "built" and Num.i(block["district"]) == ring:
 				var lots := CityLots.fill_block(rng, plan, block, cfg, 1.0)
@@ -300,7 +301,7 @@ static func _blocks(
 	rng: RandomNumberGenerator,
 	cfg: Dictionary
 ) -> void:
-	var half := half_extent(cfg)
+	var full := districts(cfg)[-1]
 	var walk := Num.f(cfg["sidewalk"])
 	var blocks: Array[Dictionary] = plan["blocks"]
 	var inner: Array[int] = []
@@ -319,12 +320,14 @@ static func _blocks(
 				zs[j + 1] - inset.call(avenues_z.has(j + 1), alley_z.has(Vector2i(j + 1, i)))
 			)
 			var rect := Rect2(x0, z0, x1 - x0, z1 - z0)
-			var playable := maxf(maxf(absf(x0), absf(x1)), maxf(absf(z0), absf(z1))) < half
-			var use := "built" if playable else "outer"
+			# Inside the last district a block takes the use it has once that district is in
+			# play, whatever the stage, so its lots never change (CityBand holds it back).
+			var city := maxf(maxf(absf(x0), absf(x1)), maxf(absf(z0), absf(z1))) < full
+			var use := "built" if city or CityBand.real(rect, cfg) else "outer"
 			var roll := rng.randf()
 			if CitySites.covers(plan, i, j):
 				continue  # one of a landmark's merged cells
-			if playable and CityLots.town_share(rect.get_center(), cfg) < 0.2:
+			if city and CityLots.town_share(rect.get_center(), cfg) < 0.2:
 				if roll < Num.f(cfg["parking_chance"]):
 					use = "parking"
 			blocks.append(
@@ -335,7 +338,7 @@ static func _blocks(
 					"cell": Vector2i(i, j)
 				}
 			)
-			if playable:
+			if city:
 				inner.append(blocks.size() - 1)
 	CitySites.add_blocks(plan, cfg)
 	CityRiver.mark(plan, zs, cfg)
@@ -370,3 +373,4 @@ static func _blocks(
 			blocks[n]["use"] = "park"
 	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
 		blocks[best_plaza]["use"] = "plaza"
+	CityBand.hold_back(plan, inner, cfg)

@@ -164,9 +164,11 @@ func _arcs() -> void:
 	)
 
 
-## Landmark sites (city.landmarks): on the shipping map the stadium stands in the first city and
-## the wheel joins it at the Behemoth, each centred on its own plaza of merged blocks: no street
-## runs through a site, the landmark fits inside its kerbs, and no other building touches it.
+## Landmark sites (city.landmarks): on the shipping map the stadium and the wheel both stand in
+## the first city (the wheel past the edge, in the real band the camera shows, CityBand:
+## build 2 note 6) and at the Behemoth, each centred on its own plaza of merged
+## blocks: no street runs through a site, the landmark fits inside its kerbs, and no other
+## building touches it.
 func _sites() -> void:
 	for tier: int in [1, 2]:
 		var base := Content.tuning()
@@ -197,9 +199,7 @@ func _sites() -> void:
 				if other != e and _footprint(other).intersects(foot):
 					touching += 1
 		ids.sort()
-		var want: Array[String] = ["stadium"]
-		if tier == 2:
-			want.append("wheel")
+		var want: Array[String] = ["stadium", "wheel"]
 		(
 			_check
 			. call(
