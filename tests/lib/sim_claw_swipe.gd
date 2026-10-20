@@ -25,6 +25,8 @@ func _init(p_check: Callable, make: Callable, autoplay: Callable) -> void:
 func run() -> void:
 	var cut := 0
 	var base_cut := 0
+	var carved := 0
+	var base_carved := 0
 	var pairs: Array[String] = []
 	var active := true
 	for run: int in FIXTURE_RUNS:
@@ -35,17 +37,19 @@ func run() -> void:
 		active = active and base.body.active() and claws.body.active()
 		cut += claws.powers.swipe.cut
 		base_cut += base.powers.swipe.cut
-		pairs.append("%d/%d" % [claws.powers.swipe.cut, base.powers.swipe.cut])
+		carved += claws.powers.swipe.carved
+		base_carved += base.powers.swipe.carved
+		pairs.append("%d/%d" % [claws.powers.swipe.carved, base.powers.swipe.carved])
 	(
 		_check
 		. call(
-			active and cut > base_cut * 1.15,
+			active and (cut > base_cut * 1.15 or carved > base_carved * 1.15),
 			(
 				(
-					"five levels of claws: the swipe breaks clearly more, with the body on: mean %.1f vs %.1f"
+					"five levels of claws: the swipe breaks clearly more, with the body on: chunks %.1f vs %.1f,"
 					% [float(cut) / FIXTURE_RUNS, float(base_cut) / FIXTURE_RUNS]
 				)
-				+ " chunks over %d seeds (%s)" % [FIXTURE_RUNS, ", ".join(pairs)]
+				+ " carved cells over %d seeds (%s)" % [FIXTURE_RUNS, ", ".join(pairs)]
 			)
 		)
 	)

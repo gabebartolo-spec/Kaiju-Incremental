@@ -14,6 +14,8 @@ var cfg: Dictionary
 ## Swipes so far, and the chunks they broke themselves (not what falls after).
 var swipes := 0
 var cut := 0
+## Fine cells the swipes carved themselves (carving on, D-094 WP7).
+var carved := 0
 var _timer := 0.0
 var _side := 1.0
 var _wound := false
@@ -57,6 +59,7 @@ func _rake() -> void:
 		{"type": "swipe", "side": _side, "near": near, "far": far, "width": half, "top": top}
 	)
 	var before := sim.chunks_destroyed
+	var before_cells := sim.carving.cells_carved
 	var band := func(p: Vector2, r: float) -> float:
 		var to := p - centre
 		var along := to.dot(ahead)
@@ -66,6 +69,7 @@ func _rake() -> void:
 	sim.hit_area(band, sim.stat("swipe_damage") * sim.powers.hit_mult(), floor_lo, ceili(top))
 	_undermine(band, Vector2i(floor_lo, ceili(top)), centre, ahead)
 	cut += sim.chunks_destroyed - before
+	carved += sim.carving.cells_carved - before_cells
 
 
 ## D-096: a building the band reaches has its base face chewed: up to the rake's top (arm
