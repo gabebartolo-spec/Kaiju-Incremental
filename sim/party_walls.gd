@@ -1,7 +1,7 @@
 class_name PartyWalls
 extends RefCounted
-## Which sides of each building a touching neighbour covers, and how many floors up: the blank
-## party wall BuildingCells (sim) and BuildingVoxels (view) both build, so the sim's fine grid
+## Which sides of each building a touching neighbour covers, and how many floors up (no sign
+## hangs off a covered side), the same answer for BuildingCells (sim) and BuildingVoxels (view), so the sim's fine grid
 ## and the drawn building agree. Moved out of BuildingView for the gameplay port (WP7): the sim
 ## promotes a building to its fine grid on its first hit and needs the same answer. Pure.
 

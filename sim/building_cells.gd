@@ -28,8 +28,8 @@ var _ids: Dictionary = {}
 var _put: Dictionary = {}
 
 
-## party: side (SIDES) -> floors of that side a touching neighbour covers (blank party wall up to
-## there), as PartyWalls.of() gives the sim and the view.
+## party: side (SIDES) -> floors of that side a touching neighbour covers (no sign hangs
+## off that side), as PartyWalls.of() gives the sim and the view.
 func _init(p_building: RampageSim.Building, party: Dictionary = {}) -> void:
 	b = p_building
 	_party = party

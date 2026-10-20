@@ -68,6 +68,7 @@ func run_checks() -> void:
 	await _t("_check_grid_layout")
 	await _t("_check_deterministic")
 	await _t("_check_pinned")
+	await _t("_check_party_sides_carry_facade")
 	await _t("_check_fixtures_match_view")
 	await _t("_check_city_matches_view")
 	await _t("_check_no_clock_or_rng")
@@ -271,6 +272,37 @@ func _check_pinned() -> void:
 		var want: Array = PINNED.get(f[0], [])
 		var have: Array = got[f[0]]
 		check(want == have, "%s pinned at %s (got %s)" % [f[0], want, have])
+
+
+## A side touching a neighbour carries the same facade as a free side (build 2 note 22: no blank
+## party walls): the "party" fixture built with its neighbours and without them differs only in
+## its sign cells (signs hang only off faces with no neighbour), and no cell is "party".
+func _check_party_sides_carry_facade() -> void:
+	var ids := CellGrid.material_ids()
+	var signs := {}
+	for name: String in ["sign_frame", "neon0", "neon1", "neon2", "neon3"]:
+		signs[Num.i(ids[name])] = true
+	for f: Array in FIXTURES:
+		if _party(f).is_empty():
+			continue
+		var touching := BuildingCells.new(_building(f), _party(f))
+		var free := BuildingCells.new(_building(f), {})
+		var other := 0
+		var blank := 0
+		for i: int in touching.cells.size():
+			var a := touching.cells[i]
+			var b := free.cells[i]
+			if a == Num.i(ids["party"]):
+				blank += 1
+			if a != b and not signs.has(a) and not signs.has(b):
+				other += 1
+		check(
+			touching.dims == free.dims and other == 0 and blank == 0,
+			(
+				"%s: touching sides carry the facade (%d cells differ beyond signs, %d blank party cells)"
+				% [f[0], other, blank]
+			)
+		)
 
 
 ## The fixtures (each archetype, party walls, a one-unit lot, a neon sign) are the view's
