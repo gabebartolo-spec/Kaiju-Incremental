@@ -240,8 +240,24 @@ func topple() -> Array[Dictionary]:
 	var sx: PackedInt64Array = floors["sx"]
 	var sz: PackedInt64Array = floors["sz"]
 	var box: PackedInt32Array = floors["box"]
-	var h := _f.h
-	for k: int in count:
+	return scan_levels(mass, sx, sz, box, count, _f.h, _f.offset, _f.res)
+
+
+## The topple rule over per-part, per-level loads (the layout _floors documents), for `parts`
+## grounded parts in a grid `h` cells tall whose cell 0 is building-local `offset` at `res`
+## cells a unit. Static so VoxelSettleCache runs it on loads it keeps up to date.
+static func scan_levels(
+	mass: PackedInt64Array,
+	sx: PackedInt64Array,
+	sz: PackedInt64Array,
+	box: PackedInt32Array,
+	parts: int,
+	h: int,
+	offset: Vector3i,
+	res: int
+) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for k: int in parts:
 		for level: int in range(1, h):
 			var at := k * (h + 1) + level
 			if mass[at] == 0:
@@ -250,7 +266,7 @@ func topple() -> Array[Dictionary]:
 			if box[b + 2] < 0:
 				continue  # nothing stands on a cell below at this level
 			var rect := Rect2i(box[b], box[b + 1], box[b + 2] - box[b], box[b + 3] - box[b + 1])
-			var tip := _tip(PackedInt64Array([sx[at], sz[at], mass[at]]), rect, level)
+			var tip := tip_of(PackedInt64Array([sx[at], sz[at], mass[at]]), rect, level, offset, res)
 			if not tip.is_empty():
 				tip["label"] = k + 1
 				tip["level"] = level
@@ -304,6 +320,12 @@ func _floors() -> Dictionary:
 ## Structure's tip test: a load (sums [2x + 1, 2z + 1, mass]) whose centre lies outside `box`
 ## (cells) tips over the box edge it passes furthest, at height `y` (cells). {} if inside.
 func _tip(sums: PackedInt64Array, box: Rect2i, y: int) -> Dictionary:
+	return tip_of(sums, box, y, _f.offset, _f.res)
+
+
+static func tip_of(
+	sums: PackedInt64Array, box: Rect2i, y: int, offset: Vector3i, res: int
+) -> Dictionary:
 	var over_x := _over(sums[0], sums[2], box.position.x, box.end.x)
 	var over_z := _over(sums[1], sums[2], box.position.y, box.end.y)
 	if over_x == 0 and over_z == 0:
@@ -318,7 +340,7 @@ func _tip(sums: PackedInt64Array, box: Rect2i, y: int) -> Dictionary:
 	var pz := com.y
 	if dir.y != 0:
 		pz = box.end.y if dir.y > 0 else box.position.y
-	var pivot := (Vector3(px, y, pz) + Vector3(_f.offset)) / _f.res
+	var pivot := (Vector3(px, y, pz) + Vector3(offset)) / res
 	return {"kind": "topple", "pivot": pivot, "dir": dir}
 
 

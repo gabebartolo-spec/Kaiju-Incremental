@@ -40,6 +40,12 @@ var has_fixtures := false
 ## By material id: the blow needed to break a cell of it.
 var _strength := PackedFloat64Array()
 var _ids: Dictionary = {}
+## The cells emptied since the last settle and what each held, kept while the settle cache
+## (VoxelSettleCache) is valid; any other change to the grid drops the cache.
+static var PROF := {}
+var gone := PackedInt32Array()
+var gone_mats := PackedByteArray()
+var _cache: VoxelSettleCache = null
 
 
 func _init(units: Vector3i, p_res: int, materials: Array[Dictionary]) -> void:
@@ -78,6 +84,7 @@ func adopt(dims: Vector3i, p_offset: Vector3i, p_cells: PackedByteArray) -> bool
 	h = dims.y
 	offset = p_offset
 	cells = p_cells.duplicate()
+	_cache = null
 	alive_count = cells.size() - cells.count(EMPTY)
 	return true
 
@@ -108,6 +115,10 @@ func set_cell(c: Vector3i, material: int) -> void:
 	if not inside(c):
 		return
 	var i := index(c)
+	if material == EMPTY:
+		_note(i)
+	else:
+		_cache = null
 	alive_count += int(material != EMPTY) - int(cells[i] != EMPTY)
 	cells[i] = material
 
@@ -129,6 +140,7 @@ func damage(c: Vector3i, amount: float) -> bool:
 	var i := index(c)
 	if amount < _strength[cells[i]]:
 		return false
+	_note(i)
 	cells[i] = EMPTY
 	alive_count -= 1
 	return true
@@ -138,6 +150,7 @@ func damage(c: Vector3i, amount: float) -> bool:
 func clear_index(i: int) -> int:
 	var m := cells[i]
 	if m != EMPTY:
+		_note(i)
 		cells[i] = EMPTY
 		alive_count -= 1
 	return m
@@ -145,6 +158,7 @@ func clear_index(i: int) -> int:
 
 func remove(c: Vector3i) -> void:
 	if alive(c):
+		_note(index(c))
 		cells[index(c)] = EMPTY
 		alive_count -= 1
 
@@ -184,6 +198,7 @@ func carve_sphere(centre: Vector3, radius: float, force: float = INF) -> PackedI
 				if m == EMPTY or _strength[m] > force:
 					continue
 				if Vector3(x + 0.5, y + 0.5, z + 0.5).distance_squared_to(c) <= r2:
+					_note(i)
 					cells[i] = EMPTY
 					removed.append(i)
 	alive_count -= removed.size()
@@ -213,6 +228,7 @@ func carve_capsule(a: Vector3, b: Vector3, radius: float, force: float = INF) ->
 				var p := Vector3(x + 0.5, y + 0.5, z + 0.5)
 				var t := clampf((p - ca).dot(ab) / len2, 0.0, 1.0)
 				if p.distance_squared_to(ca + ab * t) <= r2:
+					_note(i)
 					cells[i] = EMPTY
 					removed.append(i)
 	alive_count -= removed.size()
@@ -236,6 +252,24 @@ func detach() -> Array[Dictionary]:
 ## what hung from a toppled load below its level: a fresh flood, its islands land as the first
 ## ones do (review FIX on #97: nothing is left floating).
 func settle() -> Array[Dictionary]:
+	var t0 := Time.get_ticks_usec()
+	if _cache != null and _cache.try_fast(self):
+		gone.clear()
+		gone_mats.clear()
+		PROF["fast_ok"] = PROF.get("fast_ok", 0) + Time.get_ticks_usec() - t0
+		PROF["fast_ok_n"] = PROF.get("fast_ok_n", 0) + 1
+		return []
+	var t1 := Time.get_ticks_usec()
+	PROF["fast_fail"] = PROF.get("fast_fail", 0) + t1 - t0
+	var r := settle_full()
+	PROF["full"] = PROF.get("full", 0) + Time.get_ticks_usec() - t1
+	PROF["full_n"] = PROF.get("full_n", 0) + 1
+	return r
+
+
+## settle() by the flood alone (the oracle the cache is held to; also what runs when the cache
+## cannot prove the cells lost leave the rest as it was).
+func settle_full() -> Array[Dictionary]:
 	var support := VoxelSupport.new(self)
 	var out: Array[Dictionary] = []
 	_drop_islands(support, out)
@@ -253,8 +287,15 @@ func settle() -> Array[Dictionary]:
 		event["pivot"] = tip["pivot"]
 		event["dir"] = tip["dir"]
 		out.append(event)
+	var last := support
 	if out.size() > first:
-		_drop_islands(VoxelSupport.new(self), out)
+		last = VoxelSupport.new(self)
+		_drop_islands(last, out)
+	if _cache == null:
+		_cache = VoxelSettleCache.new()
+	gone.clear()
+	gone_mats.clear()
+	_cache.adopt(cells, last.count, out.size())
 	return out
 
 
@@ -266,6 +307,13 @@ func _drop_islands(support: VoxelSupport, out: Array[Dictionary]) -> void:
 	for k: int in range(start, out.size()):
 		var index: PackedInt32Array = out[k]["index"]
 		out[k].merge(support.landing(index), true)
+
+
+## Remembers that grid cell `i` is about to be emptied (see `gone`).
+func _note(i: int) -> void:
+	if _cache != null:
+		gone.append(i)
+		gone_mats.append(cells[i])
 
 
 ## A digest of the grid, for replay checks.
