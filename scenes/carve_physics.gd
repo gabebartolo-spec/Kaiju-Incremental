@@ -14,6 +14,8 @@ extends Node3D
 ## Sits at the world origin: its children are placed in world space.
 
 signal ignited(at: Vector3, size: float)
+## A chunk split off an island became an island of its own (captures follow its breaks).
+signal spawned(island: IslandBody)
 
 var fx: Fx
 var _cfg: Dictionary
@@ -25,9 +27,11 @@ var _islands: Array[IslandBody] = []
 var _dust_at: Dictionary = {}  # key -> clock of its last carve dust
 var _clock := 0.0  # presentation seconds, for dust spacing only
 var _gravity := 1.0  # the sim's fall gravity over the engine's
+var _seed := 0
 
 
 func _init(seed_value: int) -> void:
+	_seed = seed_value
 	_rng.seed = seed_value
 	_cfg = Content.section("carve_physics")
 	var engine := Num.f(ProjectSettings.get_setting("physics/3d/default_gravity"))
@@ -43,6 +47,8 @@ func add_site(site: CarveSite, grid: PackedByteArray) -> void:
 	collider.build(grid)
 	_colliders[site.key] = collider
 	var debris := CarveDebris.new()
+	debris.site = site
+	debris.grid = grid
 	add_child(debris)
 	_debris[site.key] = debris
 
@@ -65,6 +71,7 @@ func carved(key: int, grid: PackedByteArray, cut: Dictionary) -> void:
 	collider.touched(grid, cells)
 	var box := _box(s, cells)
 	var debris: CarveDebris = _debris[key]
+	debris.grid = grid
 	debris.wake(_above(s, box))
 	var n := mini(Num.i(_cfg["debris_per_carve"]), cells.size())
 	if live_bodies() >= Num.i(_cfg["live_cap"]):
@@ -98,14 +105,9 @@ func fell(key: int, grid: PackedByteArray, event: Dictionary) -> IslandBody:
 		mats.resize(cells.size())
 	var collider: CarveCollider = _colliders[key]
 	collider.touched(grid, cells)
-	var island := IslandBody.new(s, cells, mats)
-	island.gravity_scale = _gravity
-	add_child(island)
-	_islands.append(island)
-	island.tree_exited.connect(func() -> void: _islands.erase(island))
-	island.broke.connect(
-		func(pieces: Array[Dictionary], at: Vector3) -> void: _broke(key, pieces, at)
-	)
+	var d: CarveDebris = _debris[key]
+	d.grid = grid
+	var island := _island(key, cells, mats)
 	var box := _box(s, cells)
 	if str(event["kind"]) == "topple":
 		var raw_pivot: Vector3 = event["pivot"]
@@ -119,6 +121,33 @@ func fell(key: int, grid: PackedByteArray, event: Dictionary) -> IslandBody:
 		island.follow(pivot, dir, duration, seconds)
 		_dust(pivot + Vector3.UP * 0.5, box.size.x * 0.3)
 	return island
+
+
+## A new island body of building `key`'s cells, its breaks and splits wired to this view.
+func _island(key: int, cells: PackedInt32Array, mats: PackedByteArray) -> IslandBody:
+	var s: CarveSite = _sites[key]
+	var island := IslandBody.new(s, cells, mats, hash([_seed, key]))
+	island.gravity_scale = _gravity
+	add_child(island)
+	_islands.append(island)
+	island.tree_exited.connect(func() -> void: _islands.erase(island))
+	island.broke.connect(
+		func(pieces: Array[Dictionary], at: Vector3) -> void: _broke(key, pieces, at)
+	)
+	island.split.connect(func(parts: Array[Dictionary]) -> void: _split(key, parts))
+	return island
+
+
+## An island split: each chunk becomes an island where it lay, with the chunk's speed and spin.
+func _split(key: int, parts: Array[Dictionary]) -> void:
+	for part: Dictionary in parts:
+		var own: PackedInt32Array = part["cells"]
+		var own_mats: PackedByteArray = part["mats"]
+		var chunk := _island(key, own, own_mats)
+		chunk.global_transform = part["xf"]
+		chunk.linear_velocity = part["v"]
+		chunk.angular_velocity = part["w"]
+		spawned.emit(chunk)
 
 
 func live_bodies() -> int:
@@ -179,7 +208,8 @@ func raised() -> Array:
 	return [n, deepest]
 
 
-## Horizontal skid of settled pieces, in their own widths: [max, mean, count, over 5 widths] (captures).
+## Horizontal skid of settled pieces, in their own widths (captures):
+## [max, mean, count, over 5 widths].
 func skid() -> Array:
 	var worst := 0.0
 	var total := 0.0
@@ -209,6 +239,36 @@ func rubble_dropped() -> int:
 	for key: int in _debris:
 		var d: CarveDebris = _debris[key]
 		n += d.dropped
+	return n
+
+
+## Pieces that vanished at full size in one frame so far, city-wide (should stay 0).
+func vanished() -> int:
+	var n := 0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		n += d.vanished
+	return n
+
+
+## Pieces faded out because they lay indoors, city-wide (captures).
+func culled() -> int:
+	var n := 0
+	for key: int in _debris:
+		var d: CarveDebris = _debris[key]
+		n += d.culled
+	return n
+
+
+## Pieces whose centre lies inside a building's box shrunk by `margin` and above the street
+## by `margin` (captures: debris left hovering inside a glass tower).
+func enclosed(margin: float) -> int:
+	var n := 0
+	for key: int in _debris:
+		var s: CarveSite = _sites[key]
+		var box := AABB(s.origin, Vector3(s.size) / s.res).grow(-margin)
+		var d: CarveDebris = _debris[key]
+		n += d.inside(box)
 	return n
 
 
