@@ -12,10 +12,12 @@ extends MultiMeshInstance3D
 var posts: Array[Vector3] = []
 
 
-func _init(sim: RampageSim) -> void:
+## trees: the street trees' trunk spots (CityDecor); a bollard never stands in one.
+func _init(sim: RampageSim, trees: Array[Vector2] = []) -> void:
 	var cfg: Dictionary = Content.tuning()["arena_edge"]
 	var half := sim.arena_half + Num.f(cfg["out"])
 	var step := Num.f(cfg["spacing"])
+	var clear := Num.f(cfg["tree_clear"])
 	var size: Array = cfg["size"]
 	var box := Vector3(Num.f(size[0]), Num.f(size[1]), Num.f(size[0]))
 	var plan := CityGen.map(sim.city)
@@ -34,6 +36,8 @@ func _init(sim: RampageSim) -> void:
 				water.any(func(r: Rect2) -> bool: return r.has_point(ground))
 				or _on_road(ground, roads)
 			):
+				continue
+			if trees.any(func(tr: Vector2) -> bool: return tr.distance_to(ground) < clear):
 				continue
 			posts.append(at)
 	var mesh := BoxMesh.new()
