@@ -1,10 +1,19 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
-Godot 4.7.2, GDScript (static typing on). Read this file, then your handoff (`agent-handoffs/<role>.md`), then only the
-roadmap section you were assigned (`docs/ROADMAP.md`, by section, never whole). The general
+Godot 4.7.2, GDScript (static typing on). Read this file, then your handoff (`agent-handoffs/<role>.md`), then the core
+docs this file imports ("Always loaded" below; they load in full automatically). The general
 rules every project shares live in `~/.claude/CLAUDE.md` and the skills it names
 (`ask-the-director`, `ai-game-dev-playbook`, `github-hygiene`, `game-architecture`,
 `art-qa-critic`); this file holds only what is true for Kaiju Incremental.
+
+## Always loaded
+
+Claude Code imports these core documents in full at every session start (the `@` lines below),
+so they are part of this file: read them as rules, never skim or skip them.
+
+@docs/VISION.md
+@docs/ROADMAP.md
+@docs/STATUS.md
 
 ## Philosophy (permanent)
 
@@ -49,8 +58,9 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
 - Only the merge role edits `docs/STATUS.md` and `docs/DECISIONS.md`, in a docs-only board PR
   after each merge; every other PR states its board and log changes in its body.
 - Stage files by name, never `git add -A`; never `git stash`; revert `.import` churn.
-- Windowed Godot or Blender runs never steal the director's focus (no_focus override.cfg,
-  `blender -b`, captures on CI).
+- Never slow down, defer or pause work for what the director is doing on the PC. The one limit:
+  Godot or Blender windows never pop up or steal his focus (no_focus override.cfg,
+  `blender -b`, captures on CI), except while he has said he is away.
 
 ## Sessions and context
 
