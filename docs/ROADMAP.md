@@ -43,7 +43,13 @@ emissive + glow, so gl_compatibility's 32-per-frame cap never drops lights at ra
 HardLimiter + one Hero (roar, stomp, big collapse) to Bed sidechain duck, values in data (R 8.1) · tentacle Verlet
 chains on a fixed 1/60 s substep, their tunables into data (R 9.1) · "no empty space" as a suite: built footprint per
 district, no built block with zero lots, max gap along a street, a timing line per stage (R 6.1) · a headless parse
-step on every agent-written script (Godot 3 names) (R 5.6).
+step on every agent-written script (Godot 3 names) (R 5.6) · graphics: the existing `display.graphics` table (high,
+balanced) grows to Potato/Low/Medium/High/Max rows and Medium gets MSAA 2x under FSR1 (balanced runs FSR without AA,
+which the docs advise against) (R 18.1) · bugs found by research 20: a dash, signature or ultimate pressed in the
+last 0.2 s before control returns is dropped (latch it for the first live tick, with a scripted-input test) (R 20.3);
+the evolution reveal counts frames, so it lasts 3.8 s at 60 Hz and 1.6 s at 144 Hz (count fixed ticks) (R 20.5) ·
+the camera's zoom curve (hard-coded 0.75 + 0.4 x body scale) into data, with a test that the kaiju's screen share
+rises every stage and stays at or under about 35% (R 19.1).
 
 **A. Close what is in flight; fix what no later choice changes.**
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
@@ -56,13 +62,17 @@ worktree and branch cleanup. Gate: build 3.
 **B. Look foundations: director decisions, captures only, no production code.**
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
 (labelled captures of the same street) · b2-19 voxel count down / today / up, same shot · b2-7 camera angle and
-distance (2-3 framings as clips) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
+distance (done: D-105 framing C, low and cinematic; open: how it grows per stage, his pick of A today plus
+look-ahead, B grows on screen to about 34%, C low hero at adult (pitch to about 15 deg), each a 2x2 clip of stages 1
+and 4 (R 19, framings)) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
 morning, noon, dusk and night, he picks one (director 2026-10-20) · heli-cam A/B (parked; folded into the camera choice). Gate: his four picks
 recorded in DECISIONS.
 Research inputs to these boards: one shader candidate is Godot's own toon shading + a next_pass outline (R 7.1); every
 candidate puts a low sun or moon behind the kaiju with fog sun scatter and aerial perspective, normal bias (not bias)
 raised for voxel edges (R 12.3), and a time-of-day rim light plus a warm fire under-fill on the kaiju only (R 12.4);
-haze thickens with stage (R 2.5); the camera candidates pull back less than the kaiju grows and keep cars, people and
+haze thickens with stage (R 2.5); shake rebuilt as trauma squared on smooth noise, rotation only, capped at 2-3 deg,
+heavier per stage, with one camera-motion setting (R 19.2); look-ahead toward the move input after a 0.3 s hold
+(R 19.3); BuildingFade fixes (a carved stump never fades) before any cutaway (R 19.4); the camera candidates pull back less than the kaiju grows and keep cars, people and
 bollards near its feet in frame at every stage, so growth never reads as shrinking (R 2.2).
 
 **C. Destruction core, on the picked look.**
@@ -82,8 +92,33 @@ Gate: build 4.
 
 **D. Kaiju body and combat feel.**
 Turning with weight: lumbering and unstoppable yet responsive, the head turns toward the new heading before the body follows, no sliding pivot (comments #16, 2026-10-20) · b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
-shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 breath VFX pass, re-themed from atomic to hot lightning: forked white-hot bolts, scorch and sparks, the name
-and every "atomic" word in player text changed in the copy pass (director 2026-10-21; sim rules unchanged) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
+shoved and flung into buildings, people and vehicles (uses C's physics); found by research 22: a thrown tank today
+flies a straight line through towers (a 0.7 s timer, one blast where it lands), kill credit is paid at the grab, and
+the ram may leave a tank inside a building; how: the throw arcs in the view first (R 22.1), then becomes a sim
+ballistic at a fixed step that sweeps cells, carves the building it hits through Carving.hit and pays credit at
+landing, with pinned-seed tests and a sim review (R 22.2) · the ram launches the tank low instead of teleporting it,
+and a survivor re-joins its road (R 22.3) · capped chain hits on other units, the hook for upgrade nodes he picks
+(ricochet, domino, wrecking ball) (R 22.4) · people and parked cars tumble along the path as presentation (R 22.5) ·
+Jolt throws only turrets, tracks and panels, never the hull (R 22.6) · hit-stop by skipping sim steps, never
+Engine.time_scale (R 22.7) · b2-18 breath VFX pass, re-themed from atomic to hot lightning: forked white-hot bolts, scorch and sparks, the name
+and every "atomic" word in player text changed in the copy pass (director 2026-10-21; sim rules unchanged). How
+(research 17): one ribbon mesh replaces the straight beam: a main channel from the jaw to the first hit, its shape
+fixed for the breath, and 3-5 branches fanning across the sim's BreathCone that re-draw on each stroke (R 17.1) ·
+one stroke schedule (a dim feeler, then 2-3 bright strokes, never more than 3 flashes a second, no saturated red)
+drives the pooled lights and the zap, crackle and thunder sounds (R 17.2) · a per-breath presentation seed, never the
+sim's (R 17.3) · in gl_compatibility the halo is real geometry because glow is LDR (R 17.4) · arcs to struck vehicles
+only if the fan alone does not read electric (R 17.5) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11); how (research 20): the sim's rise retuned to fit 3 s (today about 3.5-5.5 s) with a
+180-tick test (R 20.1), the intro camera driven by the rise's own progress, no Tween, handing over on kaiju_emerged
+(R 20.2), the roar on the surface break (R 20.3), full intro on the first run and after an evolution, a 1.5 s cut
+otherwise, any press skips by running the sim ticks faster so replays match (R 20.4), the run starts at last run's
+zoom and eases out so growth shows (R 19.5) · evolution reveal polish: low start, tilt up the tower, silhouette pulse
+(3 a second or fewer), stinger, bars (R 20.6, his taste) · water that reacts to the kaiju with physics (#12); how (research 21, presentation only, both renderers): the flat
+glossy river becomes one shader on a subdivided plane, rippling from the last 64 sim events (stomps, sweeps, falls,
+throws, footfalls in a channel) on the sim clock, with stepped flat toon tones (R 21.1) · a wake V and bow foam while
+wading, a bulge before the head breaks the surface, foam round the body during the rise (R 21.2) · cube-droplet
+splashes and water sheeting off the body as it rises (R 21.3) · rubble that reaches the water floats on the same
+ripples (R 21.4) · foam lines where the water meets quays, legs and rubble (R 21.5) · the bay matches the river
+(R 21.6) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86) · more motion in the shoulders and head while it walks (comments 2026-10-21 #4) · the
 walk is "not great" and the turn should step "rather than swivelling on the spot like a plastic toy" (2026-10-21 #3).
@@ -112,6 +147,18 @@ through upgrades to a ceiling; start value set by his playtest (R 1.2) · about 
 does or sees (a verb, prey, district, the next stage); reveal only the next ring (R 1.4) · the city scales with the
 kaiju so the late game never goes AFK (taller blocks, more tanks and helicopters; prestige = harder enemies, bigger
 rewards), the genre's top complaint (R 1.3) · target 3-5 h to the ending.
+How (research 16, a beautiful tree whose paths set the pace, director 2026-10-21): today the tree thins as the
+kaiju grows (11 / 6 / 5 / 1 nodes per stage, 87 levels, gone in about 0.9 h); write 50-65 nodes per species as rings
+that grow outward (about 14 / 16 / 18 / 10), each node a `kind` (stat, verb, stage), a cheap 3-4 node burst just past
+each evolution and a dearer climb before the next; the pacing bot asserts 1-4 buys a visit, at most 5 runs between
+verb or stage nodes, evolutions within 20% of their target times (b2-28 and p1-8 are one sum) (R 16.1) · buying is an
+event: the node pops, light runs along the link to each node it opens, the sound rises a step per level, an
+evolution gets a bigger beat before the reveal (R 16.2) · the next step shown in full, the next stage as silhouettes,
+the next evolution always visible as a landmark (R 16.3) · kind read by shape and size, not colour: small round stat
+nodes, larger verb nodes with an icon, the largest evolution keystones (R 16.4) · an outward map that pans but never
+zooms, so text keeps its size; it remembers the view, has a home key, and moves itself only for an evolution reveal;
+d-pad focus by geometry (R 16.5; 50-65 nodes do not fit the 8 x 6 grid, so b2-28 forces it; layout picked here in E,
+skin in F) · last, a flowing shader on owned links (R 16.6).
 
 **F. UI redesign, on the final camera and tree.**
 b2-10 HUD: timer stays, biomass a boxless figure bottom right, controls shown once at the start and in a controls
@@ -119,13 +166,29 @@ menu · b2-12 breath cooldown as an icon with a circular fill · b2-13 health ba
 species select: the kaiju centred, spinning in frame · b2-23 tooltips one fixed width (the ultimate no longer
 reshapes the screen) · b2-14 bespoke original UI assets (boxes, cards) for every screen · a screen-shake setting
 (R 1.5). Gate: screen critic, build 7.
+How (research 15, a really minimal HUD, director 2026-10-21): strip the HUD to his rulings: delete the controls hint,
+the HP plate and both plates, keep the boxed timer, biomass one boxless outlined figure bottom right, no HUD text
+under 24 px (today's 20 px HP text and "CITY DESTROYED" break it), margins into the TV title-safe area (about 96 px
+sides, 54 px top and bottom at 1080p, in data) (R 15.1) · breath as a ring drawn with draw_arc, a pulse and a sound
+when ready, bottom centre where the health bar was (R 15.2) · health as a red edge vignette that widens as HP falls,
+a heartbeat under about 30% and a hit flash on the kaiju, so it never relies on colour alone (R 15.3) · one shared
+outlined text style, checked at 4K for body height and 4.5:1 contrast over the brightest fire (R 15.4) · biomass
+rolls toward its value and pops on big gains (R 15.5) · a first-run controls card plus the settings CONTROLS list
+from pause (R 15.6) · fixed tooltip width with a test over every node (R 15.7) · a stage-up notice (R 15.8) · later:
+a minimal / full HUD setting and a UI scale (R 15.9).
 
 **G. Performance audit, after the visuals are final (his order).**
 b2-25 fans and GPU load: a measured audit at 4K, frame cap and per-system cost (light counts and any Jolt body
 budget measured on his PC, not taken from published numbers) · graphics settings with five presets, Potato, Low,
 Medium, High, Max (director 2026-10-21), built from the audit's per-system costs (shadows, light pool size, SSAO/SSIL,
 fog, glow, debris and crowd caps, render scale, draw distance), each preset measured in fps at 1080p and 4K, chosen
-in a settings menu that matches Phase F's UI · CI shard timings (claude/ci-shards). Gate: build 8.
+in a settings menu that matches Phase F's UI. How (research 18): shadow splits, distance, size, filter, PCSS (first
+to go below High), SSAO, SSIL and glow per preset in the live applier, city_view.gd reading them instead of its
+hard-coded values (R 18.2) · debris, fire, carve-physics, crowd and civilian caps and particle amount per preset,
+applied at the next rampage start (R 18.3) · light pool 8/12/16/24/32 by preset (R 18.4) · default chosen by renderer
+and GPU type, then a 4 s frame-time sample that only ever steps down, said once in settings (R 18.5) · Potato =
+gl_compatibility behind a restart, last (R 18.6) · the shader baker on for exports, presets applied only from menus
+or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
 **H. Content after the slice (already decided, unchanged order).**
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
@@ -159,6 +222,10 @@ pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored fin
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
 species follow the croc, and their verbs (research 02) · H: spend on music stems, and Tripo octopod rigs (R 3.5, 8.7) ·
+D: which throw upgrade nodes (R 22.4) · B: how the camera grows per stage, A/B/C clips (R 19) · D: the lightning halo colour (hot amber, species-eye tint, or white with a violet fringe), 3 labelled 4K stills
+(R 17.6) · E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
+ultimate get rings like breath; health removed or shown only when hit; what happens to the "CITY DESTROYED" bar
+(R 15.2, 15.3, 15.9) ·
 legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
