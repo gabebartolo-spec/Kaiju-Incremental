@@ -410,6 +410,14 @@
 			"regen_loop": -20.0
 		}
 	},
+	"chain": {
+		"step_hz": 60.0,
+		"max_substeps": 4,
+		"stiffness": 9.0,
+		"damping": 0.9,
+		"gravity_y": -6.0,
+		"passes": 3
+	},
 	"claw_fx": {
 		"strike_s": 0.12,
 		"recover_s": 0.35,
