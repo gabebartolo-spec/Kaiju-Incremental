@@ -80,8 +80,9 @@ static func covers(plan: Dictionary, i: int, j: int) -> bool:
 	return false
 
 
-## Each site's block: "landmark" while it lies in the playable city, else "outer" (it stands
-## past the edge with the rest of the outskirts until an evolution reaches it).
+## Each site's block: "landmark" while it lies in the playable city or the real band the camera
+## shows past its edge (CityBand), else "outer" (a stand-in until an evolution
+## brings it near).
 static func add_blocks(plan: Dictionary, cfg: Dictionary) -> void:
 	var blocks: Array[Dictionary] = plan["blocks"]
 	var half := CityGen.half_extent(cfg)
@@ -97,7 +98,7 @@ static func add_blocks(plan: Dictionary, cfg: Dictionary) -> void:
 			. append(
 				{
 					"rect": rect,
-					"use": "landmark" if reach < half else "outer",
+					"use": "landmark" if reach < half or CityBand.real(rect, cfg) else "outer",
 					"district": CityGen.district_of(rect, cfg),
 					"site": n,
 				}

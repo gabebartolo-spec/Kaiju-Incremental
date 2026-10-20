@@ -53,6 +53,11 @@ func _ready() -> void:
 	add_child(Aircraft.new(_rng))
 
 
+## Every painted stand-in building (near and far), as {"size": Vector3, "at": Vector3 centre}.
+func stand_ins() -> Array[Dictionary]:
+	return _near + _far
+
+
 ## Stand-ins on every outer block: the same lots as the playable city, a little lower, with a
 ## few far tower districts so the skyline rises again past the edge.
 func _outer_blocks() -> void:
