@@ -1,10 +1,28 @@
 # carve-play handoff (integration builder: carving in the playable build, D-094/D-097/D-099)
-## State: life 1 stood down at the context guard. Head e0f8c7c pushed to claude/carve-play (no PR).
-Build run 39373735540 (build.yml dispatched on claude/carve-play); result goes in the report.
-## Task (lead brief 2026-10-20)
-Integration branch turning carving WPs into a playable Windows exe: hit buildings switch from the baked
-mesh to the WP4 cell view, carved chunks remesh, loose parts become WP5 physics islands, rubble cap kept.
-Data flag data/tuning.json destruction.carving_enabled (default true; false = old chunk path).
+## State: life 2 stood down after step 2 (lead: no subagents, a fresh session continues). Branch
+claude/carve-play pushed with the WP5 7503e06 merge; no PR (the lead opens it).
+- Build run 39373735540 (e0f8c7c, life 1 head): GREEN, artifact KaijuIncremental-e0f8c7c (57 MB).
+- WP5 7503e06 merged clean. Headless probe after it (--fixed-fps 60, --seconds=18): first carved
+  fall step 631 (10.5 s), 4 promoted, 10 carves, 2 falls, islands peak 10 (WP5 splits), live back
+  to 0, rubble 1597 (max/building 823, 0 dropped; life 1 was 400 / 120: WP5 round 2 makes far
+  more rubble, flag to the lead). Headless costs: fell 888 ms, take 96, carved 120, colliders 104.
+- Suites green after the merge: smoke 13/13 fn 30 checks, cell_mesh 7/7 38, cells 10/10 50,
+  destruction 12/12 43.
+## Next life: steps 3-5 of the lead brief (2026-10-20)
+3. Island fall hitch. WIP (unverified, not committed) in ../Kaiju-Incremental-wt/carve-play-wip/:
+   hitch.patch (git apply in this worktree) + island_mesher.gd (copy to scenes/). It adds
+   IslandMesher (worker fills CarveMesh.arrays_at, take() builds ArrayMesh), CarveMesh.from_arrays/
+   arrays_at split, IslandBody.mesh_on_worker + look (material setter) + _ready meshing, split
+   chunks keep layer/mask/look (BUG on branch now: WP5 split chunks spawn on default layers and flat
+   white material, since only the first island is dressed), CarvePhysics.mesh_on_worker set by
+   CarveCity. To do: gdformat carve_city.gd; move CarvePhysics.mesh_on_worker below the vars in
+   order (gdlint class-definitions-order); island_body.gd is 493 lines > gdlint 400 (437 already
+   from WP5: tell the lead). Then take 22 ms: _take_chunks row-wise (index = x + z*dx + y*dx*dz,
+   iterate the x run from one base index). Bench on vs off (--bench --graphics=balanced 1080p).
+4. WP7 (origin/claude/carve-wp7 255f2fd) handoff still says "working" with an open lead question
+   (military suite): skip, do not wait.
+5. Push, gh workflow run build.yml --ref claude/carve-play, report run id; 1080p clip of the stomp
+   (capture_carve_play.gd --write-movie) to the lead.
 ## Branch
 Worktree ../Kaiju-Incremental-wt/carve-play from origin/claude/carve-wp4 (10ed48b) + merge of
 origin/claude/carve-wp5 at cecfac8 (WP5's old WP1 copies of sim/voxel_frame, voxel_support,
@@ -39,7 +57,7 @@ native/bin has WP4's debug dll copied (gitignored); godot-cpp submodule initiali
 1. Island caught on a neighbour's CarveCollider stopped dead at 35 deg (v 0 at release) -> islands collide with
    the ground layer only; the sim's Collapse strip decides what a fall crushes.
 2. Islands drew flat white (CarveMesh StandardMaterial) -> building's cell ShaderMaterial on island meshes.
-## Left (next life, in order)
+## Left from life 1 (items 1-2 done; 3-4 = steps 4, 3 above)
 1. Report build 39373735540 artifact (KaijuIncremental-<sha>) to the lead.
 2. Merge origin/claude/carve-wp5 7503e06 (round-2 motion fixes) and re-run the probe.
 3. WP7 (origin/claude/carve-wp7 486a21e, life 1) emits "cells_promoted" {building, dims, offset, cells},
