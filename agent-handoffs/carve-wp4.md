@@ -29,7 +29,7 @@ scratchpad build_native.bat (vcvars64 + python -m SCons platform=windows target=
   with 21 buildings promoted+carved (898k tris) GPU 8.4 ms (noise), CPU render +0.8-1.5 ms.
 ## Capture (local, director away, allowed by lead): capture_carve_view.gd at 1920x1080, kaiju hidden (covers
   tower). Boards in session scratchpad: board_sequence.png, board_slab.png (A 2b2d30 vs B 8a8780).
-- Lead ruling: keep A (slab 2b2d30, one palette line in BuildingVoxels._make_palette); lead asks director.
+- Director ruling 2026-10-20: slab is B 8a8780 (palette line changed; no test pin, materials.json has no colour). Stills re-taken + crop2x.
 ## Fix applied
 - Meshes now built on the main thread (worker-made mesh RIDs raced the dummy renderer:
   "Initializing already initialized RID"); workers return arrays.
