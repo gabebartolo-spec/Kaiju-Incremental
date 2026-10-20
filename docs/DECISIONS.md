@@ -4,6 +4,30 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-20 · D-103 · Lead · Carving build calls (WP4-WP7)
+Why: small calls made while building, none changes the vision. (1) WP4 slab colour B 8a8780 is the director's pick (D-101).
+(2) A fixture cell on grid layer 0 counts as grounded. (3) Glass towers get structural columns, spacing in
+`tuning.json`. (4) WP6 `arc_shed_cells` stays 32. (5) WP5 ships after critic round 3; its remaining motion items (block
+shear sawtooth, chunks behind panes on a swipe, tower slab propped on its teeth) are carried into WP7 integration
+(no-marginal-gains), which narrows D-102's "fix now". (6) D-098's young rooftop sting 0.05 is executed with the Behemoth
+sting scaled by the same factor so the size order holds.
+
+## 2026-10-20 · D-102 · Lead · WP5 gets one more fix round before its PR
+Why: the round-2 motion critic's three findings are defects, not taste (lead 2x on the clean CI clips): the fallen tower
+slab lands whole and then vanishes, block towers shear in a regular staircase, debris floats visibly inside glass.
+Carving is top priority (D-097), so they are fixed now on claude/carve-wp5 rather than carried into WP7.
+
+## 2026-10-20 · D-101 · Director · Carved slab colour B (8a8780)
+Why: picked from the WP4 slab stills. Changes: carved floor slabs and cut faces in the WP4 view mesher use 8a8780
+(claude/carve-wp4 609ea71).
+
+## 2026-10-20 · D-100 · Lead · Carving support rules for attached parts and glass towers
+Why: the WP3 review found islands before any carve (panes, signs, tanks, glass curtain walls). Changes: materials carry a
+`fixture` flag (window, mullion, glass, shop, sign_frame, neon0-3); a structural cell is grounded by 6-face contact, a
+fixture by 26-neighbour touch, and a fixture never carries a structural cell; grid layer 0 is the ground (a shopfront on
+the street stands). Glass towers get a hidden structural frame (columns every `destruction.column_bay` cells, a beam
+behind the transom row), in sim and view alike. Built in #97 (WP1) and #98 (WP3).
+
 ## 2026-10-20 · D-099 · Director · Carved towers fall by real physics, even onto the kaiju
 Why (asked through the question tool): true physics is the headline (D-097); a cut tower goes over toward the side that
 was cut away, wherever the kaiju stands, and can land on it. Supersedes D-096's lead call "an undermined tower falls away

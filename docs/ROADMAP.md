@@ -26,3 +26,4 @@ Also after the demo (director 2026-10-19): rooftop mortars (topple the building 
 kaiju built to fight you; languages Spanish, Japanese, French, German, Russian, Italian (one text table, CJK +
 Cyrillic fallback fonts CLEARED, native-speaker review); full-game destruction option A (D-094).
 Director playtest of demo exe 1, every note with owner, PR and status: `docs/roadmap/2026-10-19-director-playtest.md`.
+Director comments of 2026-10-20 (shockwave, carving build goal): `docs/roadmap/2026-10-20-director-comments.md`.
