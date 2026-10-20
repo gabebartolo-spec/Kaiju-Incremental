@@ -8,6 +8,7 @@ const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
+const FlowTanks := preload("res://tests/lib/flow_tanks.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
 const FlowRifleSounds := preload("res://tests/lib/flow_rifle_sounds.gd")
@@ -16,6 +17,9 @@ const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
+## A kaiju that has not drawn tank fire by now is walked to the nearest tank (the sim's army holds
+## its standoff, and a rampage that clears the city fast may never pass in reach of one).
+const TANK_WALK_FRAMES := 60 * 30
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
 const UPGRADED := {
@@ -36,32 +40,45 @@ func suite_name() -> String:
 
 func run_checks() -> void:
 	var demo := FlowDemo.new(self, check)
-	await demo.run()
+	await _h("FlowDemo", func() -> void: await demo.run())
 	# The full game (every species, every evolution) with the demo switched off.
 	demo.demo_off()
-	await FlowScreens.new(self, check).run()
-	_check_display_font()
-	await _check_species_select()
-	await _check_upgrade_screen()
-	await _check_rampage()
-	FlowSfx.run(root, check)
-	await FlowStadium.run(self, check)
-	await _check_warm_start()
-	await _check_powers("reptilian", "breath", UPGRADED)
-	await _check_powers("insectoid", "leap", {})
-	await _check_powers("cephalopod", "lash", {})
-	await _check_branch_view(
-		"reptilian",
-		{"r_tail": 2, "r_momentum": 2, "r_beam": 1},
-		["tail_sweep", "beam_start", "coated", "heli_spawned", "heli_fired"]
+	await _h("FlowScreens", func() -> void: await FlowScreens.new(self, check).run())
+	await _t("_check_display_font")
+	await _t("_check_species_select")
+	await _t("_check_upgrade_screen")
+	await _t("_check_rampage")
+	await _h("FlowSfx.run", func() -> void: FlowSfx.run(root, check))
+	await _h("FlowSfx.gate", func() -> void: await FlowSfx.gate(root, check))
+	await _h("FlowSfx.gate_timeout", func() -> void: FlowSfx.gate_timeout(root, check))
+	await _h("FlowStadium", func() -> void: await FlowStadium.run(self, check))
+	await _t("_check_warm_start")
+	await _t("_check_powers", ["reptilian", "breath", UPGRADED])
+	await _t("_check_powers", ["insectoid", "leap", {}])
+	await _t("_check_powers", ["cephalopod", "lash", {}])
+	await _t(
+		"_check_branch_view",
+		[
+			"reptilian",
+			{"r_tail": 2, "r_momentum": 2, "r_beam": 1},
+			["tail_sweep", "beam_start", "coated", "heli_spawned", "heli_fired"] as Array[String],
+		]
 	)
-	await _check_branch_view(
-		"insectoid",
-		{"i_glide": 1, "i_climb": 1, "i_brood": 1},
-		["glide_start", "eggs_laid", "brood_hatched", "brood_bite"]
+	await _t(
+		"_check_branch_view",
+		[
+			"insectoid",
+			{"i_glide": 1, "i_climb": 1, "i_brood": 1},
+			["glide_start", "eggs_laid", "brood_hatched", "brood_bite"] as Array[String],
+		]
 	)
-	await _check_branch_view(
-		"cephalopod", {"c_hydra": 2, "c_grab": 1, "c_ink": 1}, ["limb", "grab", "throw_land", "ink"]
+	await _t(
+		"_check_branch_view",
+		[
+			"cephalopod",
+			{"c_hydra": 2, "c_grab": 1, "c_ink": 1},
+			["limb", "grab", "throw_land", "ink"] as Array[String],
+		]
 	)
 	demo.demo_restore()
 
@@ -226,8 +243,8 @@ func _check_rampage() -> void:
 
 
 ## Each signature attack plays its own effect; the upgraded kaiju also shows its upgrades
-## (cracking stomps, ready pulse, glancing shells, healing motes) and a plain one does not crack
-## the street.
+## (cracking stomps, or the croc's claw swipe (D-095), ready pulse, glancing shells, healing
+## motes) and a plain one does not crack the street.
 func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void:
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(
@@ -239,25 +256,31 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	)
 	rampage.set_autoplay(true)
 	root.add_child(rampage)
+	rampage.sfx.live = true  # past the start gate (FlowSfx.gate checks the gate itself)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = [
-		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
-	]
+	var swipes := Num.f(stats.get("swipe_damage", 0.0)) > 0.0
+	# Claws sounds as the swipe's rake for the croc, as heavier, cracking stomps for the others.
+	var cues: Array[String] = ["ready", "deflect", "regen_loop", "tank_fire"]
+	cues.append_array(["lash"] if swipes else ["stomp_2", "stomp_crack"])
+	var marks: Array[String] = ["swipe" if swipes else "cracks", "ready", "deflect", "regen"]
+	var powers: PowersView = rampage.get("_powers")
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
-		want.append_array(["cracks", "ready", "deflect", "regen"])
+		want.append_array(marks)
 	var jets := 0
 	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
 	var aim := {}  # BreathAim against the sim's cone, every frame
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		if frames == TANK_WALK_FRAMES and not levels.is_empty() and not heard.has("tank_fire"):
+			FlowTanks.walk_to_nearest(rampage.sim)
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		FlowBreath.track_aim(rampage, aim)
-		if want.all(func(k: String) -> bool: return played.has(k)):
+		if want.all(func(k: String) -> bool: return played.has(k) or powers.played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
@@ -282,8 +305,11 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
 	else:
-		for k: String in ["cracks", "ready", "deflect", "regen"]:
-			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
+		for k: String in marks:
+			check(
+				played.has(k) or powers.played.has(k),
+				"the upgraded %s shows %s: %s" % [species_id, k, played + powers.played]
+			)
 		check(
 			cues.all(func(c: String) -> bool: return heard.has(c)),
 			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]

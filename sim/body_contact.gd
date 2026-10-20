@@ -19,6 +19,8 @@ var heading := Vector2(0, -1)
 var broken := 0
 ## True on a step a wall that has not given yet held the body back.
 var held := false
+## The longest unbroken time a wall has held the body this rampage, seconds.
+var longest_hold := 0.0
 ## The snout tip's forward offset from kaiju_pos at body scale 1, design units ("snout").
 var snout := 0.0
 ## The charge along the facing (Dash), which this body's sweep carries through the city.
@@ -29,6 +31,7 @@ var _discs: Array = []
 var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
 var _dt := 0.0
+var _hold_s := 0.0
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -84,9 +87,11 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	_dt = dt
 	_sweep(from, from_heading, sim.kaiju_pos, heading)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
+	_hold_s = _hold_s + dt if held else 0.0
+	longest_hold = maxf(longest_hold, _hold_s)
 	if held:
 		_hold(from, from_heading)
-		dash.left = 0.0  # a dash into a wall that has not given stops at it
+		dash.left = 0.0  # a dash into a wall that has not given yet stops at it
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
 
@@ -137,8 +142,10 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
 	var hits: Dictionary = {}
 	for n: int in range(1, samples + 1):
-		var t := float(n) / samples
-		_collect(from.lerp(to, t), from_heading.rotated(turn * t), hits, near)
+		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
+		var at: Vector2 = pose[0]
+		var facing: Vector2 = pose[1]
+		_collect(at, facing, hits, near)
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
@@ -153,6 +160,17 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 			sim.rubble = before + (sim.rubble - before) * pay
 			sim.events[first]["pay"] = pay
 		broken += n
+
+
+## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is
+## exactly the end pose, the one the hold test reads, so a rounding error in the turn can never
+## leave a chunk the sweep missed but the hold sees.
+static func sweep_pose(
+	from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2, t: float
+) -> Array:
+	if t >= 1.0:
+		return [to, to_heading]
+	return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]
 
 
 ## How far the body reaches from its position, world units.

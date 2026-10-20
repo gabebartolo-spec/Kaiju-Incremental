@@ -41,25 +41,30 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
 
 ## Machine rules (shared PC, one GPU)
 
-- One Godot process per agent; isolate every run (`tools/run_tests.sh` does; a direct run sets
+- **Director away = do whatever is fastest** ("not necessary if im away, do whatever is fastest", 2026-10-20;
+  "i hate that you keep limiting yourself for no reason"). While he is away (afk, out, not at the PC): parallel
+  Godot runs, windowed or on screen, local GPU renders and captures, no off-screen override and no CI detour
+  needed. The limits below apply only while he is at the PC: gaming, a movie, or he asks for quiet.
+- Godot runs: no cap on headless runs; isolate every run (`tools/run_tests.sh` does; a direct run sets
   `APPDATA=<your scratch dir>`). Never kill Godot by image name; kill by the PID you recorded.
-- GPU jobs (renders, generation, local models) one at a time; the art role owns them.
+- Generation jobs (ComfyUI, local models) one at a time on the GPU; renders up to 3 at once when he is not gaming.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`. Remove
   the worktree when the PR merges. One live worktree per live session (D-053); the lead prunes dead
   ones, and `tools/lint/worktrees.sh` caps the total.
 - Only the merge role edits `docs/STATUS.md` and `docs/DECISIONS.md`, in a docs-only board PR
   after each merge; every other PR states its board and log changes in its body.
 - Stage files by name, never `git add -A`; never `git stash`; revert `.import` churn.
-- Windowed Godot or Blender runs never steal the director's focus (no_focus override.cfg,
-  `blender -b`, captures on CI).
-- Captures and clips render on CI by default: `tools/capture/ci_capture.sh <script.gd> -- <args>
-  --out=<dir>` (workflow `capture.yml`, xvfb + software rendering). Local windowed runs only when
-  the director is away; the focus-guard hook blocks them while a fullscreen app is in front.
+- While he is at the PC, windowed Godot or Blender runs never steal his focus (no_focus override.cfg,
+  `blender -b`); the focus-guard hook blocks them while a fullscreen app is in front.
+- Captures and clips: pick the fastest route. Local GPU when he is not gaming; CI
+  (`tools/capture/ci_capture.sh <script.gd> -- <args> --out=<dir>`, workflow `capture.yml`, xvfb) while he
+  games or for gl_compatibility renderer checks.
 
 ## Sessions and context
 
 - Fresh session at every task boundary; write `agent-handoffs/<role>.md` first (120-line cap,
-  rewrite not append). Routine work at 50-100k tokens; past 150k, hand off.
+  edited when state changes, never appended). Routine work at 50-100k tokens; hand off at
+  about 200k (`~/.claude/memory-shared/token-and-ci-efficiency.md`).
 - End every turn with your state: working, running a check, awaiting director, blocked, available.
 
 ## Skills

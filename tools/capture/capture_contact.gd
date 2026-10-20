@@ -2,8 +2,8 @@ extends SceneTree
 ## Playtest note 2: the young reptilian walks into the nearest building, turns inside it and
 ## walks back out, at the game camera, with its body volume on (BodyContact) or off (the old
 ## stomp-only contact). Same city and seed both ways, so a pair is a before/after. Saves a still
-## every --every frames into --out for 2x crops; --dash=N dashes on walk step N (note 4).
-## Needs a window and the no-focus override.cfg.
+## every --every frames into --out for 2x crops. Needs a window and the no-focus override.cfg.
+## --dash=N dashes on walk step N (note 4). --both: the walk-through (claw swipes) and then the tower topple in one clip, for one CI run.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <out>.avi \
 ##     --script tools/capture/capture_contact.gd -- --body=off --out=<dir>
@@ -20,6 +20,7 @@ var _every := 30
 ## --tower: start at the south face of the nearest tall tier-2 tower and chew north into its
 ## base until it falls (D-091), instead of the walk-through.
 var _tower := false
+var _both := false
 ## --dash=N: press the dash on walk step N (playtest note 4); -1: never.
 var _dash_at := -1
 
@@ -34,6 +35,8 @@ func _initialize() -> void:
 			_every = arg.substr(8).to_int()
 		elif arg == "--tower":
 			_tower = true
+		elif arg == "--both":
+			_both = true
 		elif arg.begins_with("--dash="):
 			_dash_at = arg.substr(7).to_int()
 	_run.call_deferred()
@@ -41,6 +44,19 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
+	if _both:
+		print("clip part 1: walk-through (swipes) from frame 0")
+		await _play(false)
+		print("clip part 2: tower topple from physics frame %d" % Engine.get_physics_frames())
+		await _play(true)
+	else:
+		await _play(_tower)
+	quit()
+
+
+## One take: the walk-through (tower false) or the tower chew, its rampage freed afterwards.
+func _play(tower: bool) -> void:
+	_tower = tower
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
@@ -70,19 +86,10 @@ func _run() -> void:
 			move = dir if n >= LEAD_IN else Vector2.ZERO
 		return {"move": move, "dash": n == _dash_at}
 	root.add_child(rampage)
-	var layer := CanvasLayer.new()
-	layer.layer = 10
-	var text := UiKit.label(
-		(
-			("DASH (Shift)" if _dash_at >= 0 else "BODY VOLUME ON (sweep)")
-			if _body
-			else "BODY VOLUME OFF (demo exe)"
-		),
-		UiKit.SIZE_HEAD
-	)
-	text.position = Vector2(40, 160)
-	layer.add_child(text)
-	root.add_child(layer)
+	for child: Node in rampage.get_children():
+		if child is BreathAim:  # the ready-breath wedge sits over the head and hides the bite
+			child.queue_free()
+	var events := [0, 0]  # swipes, topples, logged with their physics frame for the review
 	if _out != "":
 		DirAccess.make_dir_recursive_absolute(_out)
 	var frames := 0
@@ -92,10 +99,19 @@ func _run() -> void:
 		if _out != "" and frames % _every == 0:
 			await process_frame
 			var still := root.get_texture().get_image()
-			still.save_png("%s/%s_%04d.png" % [_out, "on" if _body else "off", frames])
+			var tag := ("tower" if _tower else "walk") if _both else ("on" if _body else "off")
+			still.save_png("%s/%s_%04d.png" % [_out, tag, frames])
+		var swipes := rampage.sim.powers.swipe.swipes
+		if swipes != events[0]:
+			events[0] = swipes
+			print("swipe %d at take frame %d" % [swipes, frames])
+		if rampage.sim.collapse.toppled != events[1]:
+			events[1] = rampage.sim.collapse.toppled
+			print("topple starts at take frame %d" % frames)
 	var sim := rampage.sim
 	print("body broke %d chunks, %d broken in all" % [sim.body.broken, sim.chunks_destroyed])
-	quit()
+	rampage.queue_free()
+	await process_frame
 
 
 ## Puts the kaiju just south of the nearest tall tier-2 tower, facing it; returns the way in.

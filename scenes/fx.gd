@@ -17,6 +17,12 @@ const SLAM_GROW := 0.15
 const SLAM_PEAK := 0.18
 const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
+const TREE_PUFF := Color(0.7, 0.6, 0.46)  # dusty earth, unlit: it reads the same in any light
+## A crushed tree's dust (lead, #55 r14): at its peak by frame 3, held to frame 5, then fading
+## evenly to nothing by frame 29 (30 fps).
+const PUFF_RISE := 0.1
+const PUFF_HOLD := 0.07
+const PUFF_FADE := 0.8
 
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
 var steps_live: Array[GPUParticles3D] = []
@@ -29,6 +35,7 @@ var _step_mesh: Mesh
 var _step_cfg: Dictionary
 var _slam_mat: ParticleProcessMaterial
 var _spark_mat: ParticleProcessMaterial
+var _tree_puff_mat := _soft_sprite()
 var _spark_mesh: BoxMesh
 
 
@@ -84,11 +91,18 @@ func _ready() -> void:
 
 
 ## A billowing dust cloud; size ~ the width of what came down.
-func dust(at: Vector3, size: float) -> void:
+## tint (alpha > 0): the puff's colour instead of the grey (a toppled tower's pale concrete).
+func dust(at: Vector3, size: float, tint := Color(0, 0, 0, 0)) -> void:
 	var p := _burst(_dust_mat, _dust_mesh, roundi(12 * clampf(size, 0.5, 4.0)), 2.6)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
+	if tint.a > 0.0:
+		var ramp := Gradient.new()
+		ramp.colors = PackedColorArray([tint, Color(tint, 0.0)])
+		var tex := GradientTexture1D.new()
+		tex.gradient = ramp
+		mat.color_ramp = tex
 
 
 ## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling
@@ -112,6 +126,29 @@ func footfall(at: Vector3, size: float, capped := true) -> void:
 	steps_live.append(p)
 
 
+## A soft dust puff over a crushed tree's stump: one round camera-facing sprite, its alpha
+## falling off smoothly from the middle, that comes up to `peak` in PUFF_RISE, holds, and is
+## gone in under a second (lead, #55 r13: the footfall puffs vanish in the smoke shader's
+## screen-centre clearing, right where the kaiju walks).
+func tree_puff(at: Vector3, size: float, peak: float) -> void:
+	var mat := _tree_puff_mat.duplicate() as StandardMaterial3D
+	var quad := MeshInstance3D.new()
+	var plane := QuadMesh.new()
+	plane.size = Vector2.ONE * size
+	plane.material = mat
+	quad.mesh = plane
+	quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	quad.position = at + Vector3(0, size * 0.35, 0)
+	add_child(quad)
+	mat.albedo_color = Color(TREE_PUFF, 0.0)
+	var tween := quad.create_tween().set_parallel()
+	tween.tween_property(mat, "albedo_color:a", peak, PUFF_RISE)
+	tween.tween_property(quad, "scale", Vector3.ONE * 1.35, PUFF_RISE + PUFF_HOLD + PUFF_FADE)
+	var fade := tween.tween_property(mat, "albedo_color:a", 0.0, PUFF_FADE)
+	fade.set_delay(PUFF_RISE + PUFF_HOLD)
+	tween.chain().tween_callback(quad.queue_free)
+
+
 ## A small puff of dust: a person crushed underfoot.
 func puff(at: Vector3) -> void:
 	var p := _burst(_dust_mat, _puff_mesh, 6, 1.2)
@@ -123,10 +160,10 @@ func puff(at: Vector3) -> void:
 
 
 ## Dust along a line: where a toppled tower hits the street.
-func dust_line(from: Vector3, to: Vector3, width: float) -> void:
+func dust_line(from: Vector3, to: Vector3, width: float, tint := Color(0, 0, 0, 0)) -> void:
 	var steps := maxi(2, ceili(from.distance_to(to) / 2.5))
 	for i: int in steps + 1:
-		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6)
+		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6, tint)
 
 
 func sparks(at: Vector3) -> void:
@@ -235,6 +272,29 @@ func _particle_mat(o: Dictionary) -> ParticleProcessMaterial:
 	ramp_tex.gradient = ramp
 	mat.color_ramp = ramp_tex
 	return mat
+
+
+## Unlit, camera-facing, alpha from a smooth radial falloff (no flat disc, no hard rim).
+static func _soft_sprite() -> StandardMaterial3D:
+	var falloff := Gradient.new()
+	falloff.offsets = PackedFloat32Array([0.0, 0.35, 0.7, 1.0])
+	falloff.colors = PackedColorArray(
+		[Color(1, 1, 1, 1), Color(1, 1, 1, 0.7), Color(1, 1, 1, 0.2), Color(1, 1, 1, 0)]
+	)
+	var tex := GradientTexture2D.new()
+	tex.gradient = falloff
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	var draw := StandardMaterial3D.new()
+	draw.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	draw.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	draw.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	draw.albedo_texture = tex
+	draw.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	draw.proximity_fade_enabled = true  # where it meets the ground: soft, never a cut line
+	draw.proximity_fade_distance = 0.6
+	return draw
 
 
 ## A soft camera-facing puff (the smoke shader), for dust clouds.

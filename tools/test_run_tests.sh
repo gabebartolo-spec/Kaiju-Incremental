@@ -1,47 +1,42 @@
 #!/usr/bin/env bash
-# The harness must not report green when it should not. Using the quick smoke suite
-# through tools/run_tests.sh:
-#   1. with its real floor           -> must pass
-#   2. with an impossibly high floor -> must fail ("checks went missing")
-#   3. with no floor at all          -> must fail ("has no floor")
-# and, with Godot directly, that the project's typing rules hold:
+# The harness must not report green when it should not. Through tools/run_tests.sh:
+#   1. the quick smoke suite                                 -> must pass
+#   2. a fixture with a _check_ function nobody calls         -> must fail ("functions short")
+#   3. a fixture with a _check_ function that makes no check  -> must fail, by name
+# (the fixtures are tests/fixtures/run_<name>_tests.gd), and, with Godot directly, that the
+# project's typing rules hold:
 #   4. tests/fixtures/compile/untyped_var.gd must fail to parse ("has no static type")
 #   5. tests/fixtures/compile/typed_ok.gd must parse
 set -u
 cd "$(dirname "$0")/.." || exit 1
 GODOT="${GODOT:-godot}"
-SUITE=smoke
-real=$(grep -E "^$SUITE[[:space:]]" tests/expected_checks.txt | awk '{print $2}')
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 bad=0
 
-printf '%s %s\n' "$SUITE" "$real" > "$tmp/ok.txt"
-printf '%s %s\n' "$SUITE" 100000 > "$tmp/high.txt"
-printf 'nothing 1\n' > "$tmp/none.txt"
-
-run() {  # floor file
-	EXPECTED_CHECKS="$1" SUITES_ONLY=1 tools/run_tests.sh "$SUITE" > "$tmp/out.txt" 2>&1
-}
-
-if run "$tmp/ok.txt"; then echo "ok: the real floor passes"; else
-	echo "FAIL: the real floor should pass"
+if SUITES_ONLY=1 tools/run_tests.sh smoke > "$tmp/out.txt" 2>&1; then echo "ok: the smoke suite passes"; else
+	echo "FAIL: the smoke suite should pass"
 	cat "$tmp/out.txt"
 	bad=1
 fi
-if run "$tmp/high.txt"; then
-	echo "FAIL: a suite short of its floor passed"
+# The fixtures reuse the import the first run made.
+if QUICK=1 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh uncalled > "$tmp/out.txt" 2>&1; then
+	echo "FAIL: a suite with an uncalled test function passed"
 	bad=1
-elif grep -q "checks went missing" "$tmp/out.txt"; then echo "ok: missing checks fail the run"; else
-	echo "FAIL: a short suite failed without saying why"
+elif grep -q "functions short" "$tmp/out.txt" && grep -q "_check_x is never called" "$tmp/out.txt"; then
+	echo "ok: an uncalled test function fails the run, by name"
+else
+	echo "FAIL: the uncalled fixture failed without saying why"
 	cat "$tmp/out.txt"
 	bad=1
 fi
-if run "$tmp/none.txt"; then
-	echo "FAIL: a suite with no floor passed"
+if QUICK=1 RUNNER_DIR=tests/fixtures SUITES_ONLY=1 tools/run_tests.sh nocheck > "$tmp/out.txt" 2>&1; then
+	echo "FAIL: a test function with no check passed"
 	bad=1
-elif grep -q "has no floor" "$tmp/out.txt"; then echo "ok: a suite with no floor fails"; else
-	echo "FAIL: an unfloored suite failed without saying why"
+elif grep -q "_check_empty made no checks" "$tmp/out.txt"; then
+	echo "ok: a test function with no check fails the run, by name"
+else
+	echo "FAIL: the no-check fixture failed without saying why"
 	cat "$tmp/out.txt"
 	bad=1
 fi
