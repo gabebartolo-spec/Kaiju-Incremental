@@ -90,14 +90,15 @@ func _check_pure() -> void:
 
 
 ## Player-effect fixture "carving" (D-094 WP7): the same seeded rampage (the kaiju stomping
-## beside the tower's east face for 4 s) with carving on and off. On: the tower is promoted,
-## cells are carved in a crater no wider than the stomp's reach, and some chunks are only
-## partly carved (finer than a chunk); off: no grid, no cell, only whole chunks.
+## beside the tower's east face for 4 s, claws off) with carving on and off. On: the tower is
+## promoted, cells are carved in a crater no wider than the stomp's reach, and some chunks are
+## only partly carved (finer than a chunk); off: no grid, no cell, only whole chunks.
 func _check_effect() -> void:
 	var layout: Array[Dictionary] = [TOWER.duplicate()]
 	var runs: Array = []
 	for carve: bool in [true, false]:
 		var sim := _sim(layout, carve)
+		sim.stats["swipe_damage"] = 0.0  # stomps only: the claw rake (D-095) reaches past them
 		runs.append([sim, _stand(sim, Vector2(2.6, 0.0), 60)])
 	var on: RampageSim = runs[0][0]
 	var off: RampageSim = runs[1][0]
@@ -209,19 +210,18 @@ func _check_topple_toward_cut() -> void:
 		)
 
 
-## Wear (the WP1 review's rule): a building tougher than the kaiju takes tough_mult of each
+## Wear (the WP1 review's rule): a building that dwarfs the kaiju takes dwarf_mult of each
 ## blow, so one blow below its strength breaks nothing, but the blows add up until cells go;
 ## the chunk Structure breaks on the same blow with carving off.
 func _check_wear() -> void:
 	var tower := TOWER.duplicate()
 	tower["tier"] = 3
 	var hp := Num.f(Content.section("city")["chunk_hp"]) * 3.0
-	var tough := Num.f(Content.section("city")["tough_mult"])
-	var blow := hp / tough / 2.5  # 2.5 blows break it
 	var chunk: Array[Vector3i] = [Vector3i(1, 2, 0)]
 	var broke := {}
 	for carve: bool in [true, false]:
 		var sim := _sim([tower] as Array[Dictionary], carve)
+		var blow := hp / Growth.dwarf_mult(sim.size_tier(), 3, sim.city) / 2.5  # 2.5 blows break it
 		var first := -1
 		for n: int in 5:
 			var before := sim.carving.cells_carved if carve else sim.chunks_destroyed

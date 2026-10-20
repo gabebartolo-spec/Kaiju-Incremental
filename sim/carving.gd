@@ -9,7 +9,8 @@ extends RefCounted
 ## Wear: each grid column keeps, per floor, the sum of every blow that reached it (the force at
 ## that column, so a stomp's falloff carves a round crater); a cell breaks once its column's sum
 ## reaches its material's strength x the building's chunk_hp, today's chunk rule cell by cell
-## (a tougher building's blows are scaled down by tough_mult, as before, and still add up).
+## (a building that dwarfs the kaiju takes Growth.dwarf_mult of each blow, D-091, and they
+## still add up).
 ##
 ## The chunk Structure stays as a coarse mirror for what still reads chunks (army squads, the
 ## kaiju's climb and blocking, nearest_standing): a chunk is gone once at most chunk_alive_share
@@ -161,7 +162,9 @@ func apply(n: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 ## What lost support in building n since its last settle, in Collapse's part shape: "cells"
 ## are the chunks the part took with it (they pay when it lands), and the fine part rides along
 ## ("index": grid indices, "mats": their materials, "low" and "height" in floors, "width"
-## across a topple and "drop" for the rest, in sim units).
+## across a topple and "drop" for the rest, in sim units; "base": the footprint of its lowest
+## layer, building-local x, z; "gutted": nothing under that layer and taller than its narrower
+## side, Collapse's rule for a tower whose base went at once, D-099).
 func settle(n: int) -> Array[Dictionary]:
 	var g: Grid = grids[n]
 	var f := g.frame
@@ -190,6 +193,21 @@ func settle(n: int) -> Array[Dictionary]:
 			"height": ceilf(float(span.y) / f.res),
 			"width": float(span.z if dir.x != 0 else span.x) / f.res,
 		}
+		var base := Rect2i(-1, -1, 0, 0)
+		var under := false
+		for i: int in index:
+			if i / plan == lo.y:
+				var x := i % f.w
+				var z := (i / f.w) % f.d
+				var cell := Rect2i(x, z, 1, 1)
+				base = cell if base.position.x < 0 else base.merge(cell)
+				under = under or f.column_top(x, z, lo.y) >= 0
+		var foot := Rect2(
+			Vector2(base.position + Vector2i(f.offset.x, f.offset.z)) / f.res,
+			Vector2(base.size) / f.res
+		)
+		event["base"] = foot
+		event["gutted"] = not under and span.y > mini(base.size.x, base.size.y)
 		if str(part["kind"]) != "topple":
 			event["drop"] = _drop(f, index)
 		out.append(event)
@@ -273,8 +291,6 @@ func _finish(n: int, g: Grid) -> int:
 	g.removed = PackedInt32Array()
 	g.mats = PackedByteArray()
 	if removed.is_empty():
-		if b.tier > sim.size_tier():
-			sim.events.append({"type": "tough", "building": n})
 		return 0
 	cells_carved += removed.size()
 	sim.events.append({"type": "cells_carved", "building": n, "index": removed, "mats": mats})
@@ -301,7 +317,7 @@ func _deaths(n: int, g: Grid) -> Array[Vector3i]:
 
 
 func _mult(b: RampageSim.Building) -> float:
-	return Num.f(sim.city["tough_mult"]) if b.tier > sim.size_tier() else 1.0
+	return Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city)
 
 
 ## How far an island (already out of the grid) drops before it meets what stands below it,

@@ -89,6 +89,8 @@ var army_units: Army
 var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
+## The body as a solid that breaks what it walks into; body.heading turns the drawn model.
+var body: BodyContact
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -135,6 +137,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	body = BodyContact.new(self, tuning)
 
 
 func stat(stat_name: String) -> float:
@@ -185,9 +188,8 @@ func result() -> Dictionary:
 	}
 
 
-## Advances the rampage by dt with the player's move vector, the signature button pressed
-## this step, and the other buttons as flags (HELD: signature held down, ULTIMATE: pressed).
-## Returns the events of this step for presentation.
+## Advances the rampage by dt: the move vector, the signature pressed this step, and buttons
+## as flags (HELD: signature held down; ULTIMATE: pressed). Returns the step's events.
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
@@ -204,6 +206,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
 		facing = powers.turn_toward(facing, dir.normalized(), dt)
 	powers.after_move(dt, old_facing, moving)
+	body.step(dt)
 	_stomp_timer -= dt
 	if _stomp_timer <= 0.0:
 		_stomp_timer += maxf(0.1, stat("stomp_interval"))
@@ -369,22 +372,19 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 	return damage_cells(index, cells, amounts)
 
 
-## Damages chunks of one building, each by its own amount. A building above the kaiju's size
-## tier is tougher. Broken chunks pay rubble; then whatever
+## Damages chunks of one building, each by its own amount. A building that dwarfs the kaiju
+## takes less of each blow (Growth.dwarf_mult, D-091). Broken chunks pay rubble; then whatever
 ## lost support starts to fall. Returns chunks broken. A carved building goes to Carving.
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 	if carving.takes(index):
 		return carving.apply(index, cells, amounts)
 	var b := buildings[index]
-	var tough := b.tier > size_tier()
-	var mult := Num.f(city["tough_mult"]) if tough else 1.0
+	var mult := Growth.dwarf_mult(size_tier(), b.tier, city)
 	var broken: Array[Vector3i] = []
 	for n: int in cells.size():
 		if b.frame.damage(cells[n], amounts[n] * mult):
 			broken.append(cells[n])
 	if broken.is_empty():
-		if tough and not cells.is_empty():
-			_events.append({"type": "tough", "building": index})
 		return 0
 	pay(b, broken.size(), 1.0)
 	_events.append({"type": "chunks_broken", "building": index, "cells": broken})
