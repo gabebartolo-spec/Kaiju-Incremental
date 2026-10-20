@@ -3,9 +3,10 @@ extends RefCounted
 ## split out to keep the runner small. In the capture's tower take the young reptilian's chew and
 ## claw swipes ate a 13-floor tower's whole base in one tick, and the 9 floors above dropped half
 ## a second and vanished: no topple, no crumble. And towers the swipe undermined toppled toward
-## the kaiju. Over seeded runs (the tower take at 60 Hz as the capture plays it, and scripted
-## rampages with Claws): every gutted tower part (nothing under it, taller than deep) topples
-## instead of dropping as one piece, and every topple falls away from the kaiju.
+## the kaiju (D-096, superseded by D-099). Over seeded runs (the tower take at 60 Hz as the capture
+## plays it, and scripted rampages with Claws): every gutted tower part (nothing under it, taller
+## than deep) topples instead of dropping as one piece, and every topple falls toward its
+## cut-away side (D-099).
 
 ## The capture's tower take (tools/capture/capture_contact.gd --tower), in 60 Hz steps.
 const TAKE_DT := 1.0 / 60.0
@@ -32,7 +33,7 @@ func run() -> void:
 	for run: int in RUNS:
 		_rampage(run, notes)
 	_check_gutted_topple(notes)
-	_check_falls_away(notes)
+	_check_falls_by_physics(notes)
 
 
 ## Every fall_start in a run, with the kaiju's position and the part's measures at that tick.
@@ -71,6 +72,7 @@ func _note(sim: RampageSim, events: Array[Dictionary], log: Array[Dictionary]) -
 					"span": mini(hi.x - lo.x, hi.y - lo.y) + 1,
 					"under": under,
 					"dir": e["dir"],
+					"cut_dir": e["cut_dir"],
 					"to_part": base / maxi(1, count) - sim.kaiju_pos,
 				}
 			)
@@ -114,7 +116,7 @@ func _rampage(run: int, log: Array[Dictionary]) -> void:
 
 
 ## A part with nothing under it that is taller than it is deep is a tower whose base is gone:
-## it topples (away from the kaiju), it never drops and vanishes as one block.
+## it topples, it never drops and vanishes as one block.
 func _check_gutted_topple(log: Array[Dictionary]) -> void:
 	var dropped: Array[String] = []
 	var toppled := 0
@@ -135,19 +137,36 @@ func _check_gutted_topple(log: Array[Dictionary]) -> void:
 	)
 
 
-## Every topple falls away from the kaiju: dot(fall dir, part base - kaiju) > 0.
-func _check_falls_away(log: Array[Dictionary]) -> void:
-	var toward: Array[String] = []
+## D-099 (director 2026-10-20, "towers fall by real physics, toward the cut-away side, even onto
+## the kaiju"): every topple goes the way the support rule says (its cut_dir); a gutted drop, which
+## has no rule direction, goes toward the kaiju whose chew cut it. And at least one seeded topple
+## has its cut side facing the kaiju and falls toward it.
+func _check_falls_by_physics(log: Array[Dictionary]) -> void:
+	var wrong: Array[String] = []
 	var count := 0
+	var onto := 0
+	var away := 0
 	for f: Dictionary in log:
 		if str(f["kind"]) != "topple":
 			continue
 		count += 1
 		var dir: Vector2 = f["dir"]
+		var cut: Vector2 = f["cut_dir"]
 		var to_part: Vector2 = f["to_part"]
-		if dir.dot(to_part) <= 0.0:
-			toward.append("dir %s kaiju->part %s" % [dir, to_part.round()])
+		if (
+			(cut != Vector2.ZERO and dir != cut)
+			or (cut == Vector2.ZERO and dir.dot(to_part) >= 0.0)
+		):
+			wrong.append("dir %s cut %s kaiju->part %s" % [dir, cut, to_part.round()])
+		if dir.dot(to_part) < 0.0:
+			onto += 1
+		else:
+			away += 1
 	_check.call(
-		toward.is_empty() and count > 0,
-		"all %d topples fall away from the kaiju; toward it: %s" % [count, toward]
+		wrong.is_empty() and count > 0,
+		"all %d topples fall toward their cut side; not: %s" % [count, wrong]
+	)
+	_check.call(
+		onto > 0 and away > 0,
+		"seeded topples fall onto the kaiju (%d) as well as away from it (%d)" % [onto, away]
 	)

@@ -91,8 +91,7 @@ func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
 	_city.ruins().build(
 		func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
 	)
-	var parts: Array = node.get_meta("parts", [])
-	_chunks(parts, a, b, width)
+	_chunks(voxels, a, b, width)
 
 
 ## A dropped part landed (the sim's fall_land): it crumbles down into the street over
@@ -147,23 +146,15 @@ func _settle(mmi: MultiMeshInstance3D) -> void:
 
 
 ## A few big wall chunks thrown along the strip that slide on and settle, tilted, half sunk.
-func _chunks(parts: Array, a: Vector3, b: Vector3, width: float) -> void:
-	if parts.is_empty():
-		return
+func _chunks(voxels: BuildingVoxels, a: Vector3, b: Vector3, width: float) -> void:
 	var along := (b - a).normalized()
 	var side := Vector3(-along.z, 0, along.x)
 	var sizes: Array = _cfg["chunk_size"]
 	for n: int in Num.i(_cfg["chunks"]):
-		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
 		var size := _rng.randf_range(Num.f(sizes[0]), Num.f(sizes[1]))
-		var box := BoxMesh.new()
-		box.size = Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3))
-		var mat := StandardMaterial3D.new()
-		var color: Color = part["color"]
-		mat.albedo_color = color.lerp(Color(str(_cfg["dust_color"])), 0.25)
-		box.material = mat
-		var chunk := MeshInstance3D.new()
-		chunk.mesh = box
+		var chunk := Ruin.chunk(
+			voxels, Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3)), _rng
+		)
 		add_child(chunk)
 		var t := _rng.randf_range(0.35, 1.0)
 		var at := a.lerp(b, t) + side * _rng.randf_range(-0.4, 0.4) * width

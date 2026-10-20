@@ -201,7 +201,7 @@ func _check_topple_crush() -> void:
 		for z: int in 3:
 			base.append(Vector3i(x, 0, z))
 	var before := sim.buildings[1].frame.alive_count
-	sim.kaiju_pos = Vector2(10.0, 0.0)  # east of it: a topple goes over away from the kaiju (D-096)
+	sim.kaiju_pos = Vector2(10.0, 0.0)  # east of it; the topple follows its own cut side (D-099)
 	sim.damage_chunks(0, base, 999.0)
 	check(
 		sim.falls.size() == 1 and sim.falls[0].kind == "topple",
