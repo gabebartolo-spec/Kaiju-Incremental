@@ -30,7 +30,7 @@ claude/carve-wp3 from origin/claude/look-options; worktree ../Kaiju-Incremental-
 - Pins moved: office 9227, brick 6674, party 6277 (+6 cells each: brackets / riser).
 ## Re-review FIX (life 3, WP1 real rule)
 - Test flood now = WP1 exactly (structural 6-face from structural layer 0; fixtures 26-touch, never carry structural; layer-0 fixture grounded). Failing first: glass 12,029 cells cut, 285 of 299 glass-style buildings.
-- Glass buildings get a structural frame one cell inside the curtain wall (BuildingCells._frame and BuildingVoxels._frame, same cells): "pillar" columns at corners and every destruction.column_bay (8) cells, ground to roof; "frame" beam behind the transom row (y%res==4, above ground floor). Pin glass 24805 -> 27213 (2ea7122061040817).
+- Glass buildings get a structural frame one cell inside the curtain wall (sim/glass_frame.gd GlassFrame, one layout used by BuildingCells and BuildingVoxels; building_cells.gd was over the 400-line lint cap): "pillar" columns at corners and every destruction.column_bay (8) cells, ground to roof; "frame" beam behind the transom row (y%res==4, above ground floor). Pin glass 24805 -> 27213 (2ea7122061040817).
 - New checks: wall-on-pane (2 cut), pane on layer 0, column carries pane; all glass-style buildings of 3 cities stand.
 - Probe with WP1's real VoxelSupport (reviewer's probe): 7 fixtures + 1234 buildings, 0 islands, 0 settle events.
 - Still: C:/Users/DANTE/AppData/Local/Temp/claude/wp3-still/frame (before/after, crops). Columns are invisible from outside at normal camera (glass is opaque there); only see-through/carved glass shows them.

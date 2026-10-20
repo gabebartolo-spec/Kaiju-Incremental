@@ -260,22 +260,13 @@ func _stone(r: int, q: int, course: bool, top_row: bool) -> Array[String]:
 	return ["wall", "", "", ""]
 
 
-## A glass building's curtain wall is all fixtures, which carry nothing: columns one cell inside
-## the glass (at each corner and every column_bay cells, ground to roof) and a beam behind the
-## transom row ground the slabs, the roof and the transoms through structure.
+## A glass building's structural frame (GlassFrame).
 func _frame() -> void:
 	if archetype() != GLASS:
 		return
-	var bay := maxi(1, Num.i(Content.section("destruction").get("column_bay", 0)))
-	for side: Vector2i in SIDES:
-		var length := _d if side.x != 0 else _w
-		for p: int in range(1, length - 1):
-			var column := p == 1 or p == length - 2 or p % bay == 0
-			for y: int in _h:
-				if column:
-					_mark(_at(side, p, y, 1), "pillar")
-				elif y >= res and y % res == 4:
-					_mark(_at(side, p, y, 1), "frame")
+	var frame := GlassFrame.cells(_w, _d, _h, res)
+	for cell: Vector3i in frame:
+		_mark(cell, str(frame[cell]))
 
 
 ## A slab per floor inside the shell, and the roof deck.
