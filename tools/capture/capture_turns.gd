@@ -56,6 +56,7 @@ func _input(sim: RampageSim) -> Dictionary:
 		return {"move": Vector2.ZERO}
 	if _since < 0.0:
 		_since = 0.0
+		print("the zigzag starts at frame %d" % Engine.get_physics_frames())
 	if _last.x != INF:
 		_slide += absf((sim.kaiju_pos - _last).dot(sim.body.heading.orthogonal()))
 	_last = sim.kaiju_pos

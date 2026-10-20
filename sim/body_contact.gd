@@ -93,7 +93,7 @@ func steer(dt: float, want: Vector2) -> float:
 		return 0.0
 	turn_left = sim.facing.angle_to(want)
 	var keep := lerpf(1.0, Num.f(cfg["turn_slow"]), absf(turn_left) / PI)
-	var ease := minf(1.0, Num.f(cfg["stride_ease"]) * dt)
+	var ease := minf(1.0, Num.f(cfg["stride_ease"]) * dt) if stride > 0.0 else 1.0  # sets off at once
 	stride = lerpf(stride, want.length() * keep, ease)
 	var top := lerpf(Num.f(cfg["turn_rate_still"]), Num.f(cfg["turn_rate"]), stride)
 	var accel := Num.f(cfg["turn_accel"])

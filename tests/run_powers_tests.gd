@@ -116,7 +116,7 @@ func _check_momentum() -> void:
 	)
 	var charged: RampageSim = out[1]["sim"]
 	var before := charged.powers.momentum
-	_run(charged, 0.1, -EAST)
+	_run(charged, 1.0, -EAST)  # the U-turn itself takes about a second (BodyContact.steer)
 	check(
 		before > 0.6 and charged.powers.momentum < 0.2,
 		"a U-turn bleeds momentum (%.2f to %.2f)" % [before, charged.powers.momentum]
