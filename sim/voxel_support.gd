@@ -108,6 +108,8 @@ func _attach_fixtures(stack: PackedInt32Array) -> void:
 				label = labels[ring[r]]
 				break
 		if label == 0:
+			# Lead rule (#97): a fixture on grid layer 0 is grounded though it touches nothing else
+			# (a ground-floor shopfront rests on the street).
 			if start >= _plan:
 				continue
 			count += 1

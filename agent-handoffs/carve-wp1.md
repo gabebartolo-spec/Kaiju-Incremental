@@ -1,5 +1,5 @@
 # carve-wp1 handoff (builder, WP1 of real carving destruction, D-094)
-## State: life 2, review FIX on #97 pushed; awaiting CI and the lead. Do not merge (lead's call).
+## State: life 3, re-review FIX (tests) pushed on #97; awaiting CI and the lead. Do not merge (lead's call).
 ## Task (life 2)
 Answer review-wp1's FIX on PR #97 (comment 6279596456) and add the lead's fixture rule (from #98's
 review, comment 6279562193). Branch claude/carve-wp1, worktree ../Kaiju-Incremental-wt/carve-wp1.
@@ -34,3 +34,6 @@ review, comment 6279562193). Branch claude/carve-wp1, worktree ../Kaiju-Incremen
   next settle does). Islands landing on a fixture land on it (landing reads any cell).
 - Which materials are fixtures is carve-wp3's data change (claude/carve-wp3).
 - Not probed: WP3's real buildings with the fixture rule (needs wp3's fixture list).
+
+## Life 3 (re-review of 42a1f55, test gaps)
+Added 4 checks in voxel_support (now 11 functions, 19 checks): face-touching pane grounds nothing (M3), fixtures weigh but hold nothing in the topple box (M5), pane falls with its wall chunk (M4), fixture on layer 0 grounded (M6, lead decision, commented in voxel_support.gd _attach_fixtures). Each failed under its mutation first. Added the 2 missing .uid files.

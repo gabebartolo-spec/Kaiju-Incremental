@@ -24,6 +24,10 @@ func run_checks() -> void:
 	await _t("_check_fixture_edge")
 	await _t("_check_fixture_cut_free")
 	await _t("_check_fixture_holds_nothing")
+	await _t("_check_fixture_face_grounds_nothing")
+	await _t("_check_fixture_weight_only")
+	await _t("_check_pane_falls_with_wall")
+	await _t("_check_fixture_on_ground")
 
 
 func _frame(units: Vector3i, res: int = RES) -> VoxelFrame:
@@ -166,6 +170,67 @@ func _check_fixture_holds_nothing() -> void:
 		lone = cells == [Vector3i(5, 4, 1)]
 	check(lone, "a wall cell held only by a pane drops: %s" % [_kinds(events)])
 	check(f.alive(Vector3i(4, 4, 1)), "the pane itself stays")
+
+
+## Fixtures never ground a structural cell even by a face: the pane touches the wall by a face
+## and the wall cell beyond it touches only the pane. Review FIX (mutation: flood through fixtures).
+func _check_fixture_face_grounds_nothing() -> void:
+	var f := _frame(Vector3i(2, 2, 1))
+	f.fill(Vector3i(0, 0, 0), Vector3i(4, 8, 1), f.material_id("wall"))
+	f.set_cell(Vector3i(4, 4, 0), f.material_id("window"))
+	f.set_cell(Vector3i(5, 4, 0), f.material_id("wall"))
+	var events := f.settle()
+	var lone := events.size() == 1
+	if lone:
+		var cells: Array[Vector3i] = events[0]["cells"]
+		lone = cells == [Vector3i(5, 4, 0)]
+	check(lone, "a wall cell held by a pane's face drops: %s" % [_kinds(events)])
+	check(f.alive(Vector3i(4, 4, 0)), "the pane stays")
+
+
+## Fixtures weigh but hold nothing in the topple box: a slab resting on a pane beside its post
+## still topples over the post (RES 4, 8x8x1 units).
+func _check_fixture_weight_only() -> void:
+	var f := _frame(Vector3i(8, 8, 1))
+	var wall := f.material_id("wall")
+	f.fill(Vector3i(8, 0, 0), Vector3i(16, 24, f.d), wall)
+	f.fill(Vector3i(8, 24, 0), Vector3i(26, 28, f.d), wall)
+	f.fill(Vector3i(16, 20, 0), Vector3i(20, 24, f.d), f.material_id("window"))
+	var events := f.settle()
+	var sizes: Array[int] = []
+	for e: Dictionary in events:
+		var cells: Array[Vector3i] = e["cells"]
+		sizes.append(cells.size())
+	var dir: Vector2i = events[0]["dir"] if events.size() == 1 else Vector2i.ZERO
+	check(
+		_kinds(events) == ["topple"] and sizes == [384] and dir == Vector2i(1, 0),
+		"the slab on a pane topples +x: %s %s" % [_kinds(events), sizes]
+	)
+
+
+## A pane falls with its wall chunk: an edge-only pane on a loose chunk joins its island.
+func _check_pane_falls_with_wall() -> void:
+	var f := _frame(Vector3i(2, 2, 1))
+	f.fill(Vector3i(0, 2, 0), Vector3i(4, 8, 1), f.material_id("wall"))
+	f.fill(Vector3i(4, 3, 1), Vector3i(8, 7, 2), f.material_id("window"))
+	var events := f.settle()
+	var sizes: Array[int] = []
+	for e: Dictionary in events:
+		var cells: Array[Vector3i] = e["cells"]
+		sizes.append(cells.size())
+	check(sizes == [40], "the chunk and its edge-only pane drop as one part: %s" % [sizes])
+
+
+## Lead rule: a fixture standing on grid layer 0 is grounded though it touches nothing else.
+func _check_fixture_on_ground() -> void:
+	var f := _frame(Vector3i(2, 2, 1))
+	f.fill(Vector3i(2, 0, 0), Vector3i(6, 4, 1), f.material_id("window"))
+	var lifted := _frame(Vector3i(2, 2, 1))
+	lifted.fill(Vector3i(2, 2, 0), Vector3i(6, 6, 1), lifted.material_id("window"))
+	check(
+		f.settle().is_empty() and lifted.settle().size() == 1,
+		"a lone pane on layer 0 stands, the same pane lifted off it drops"
+	)
 
 
 func _kinds(parts: Array) -> Array[String]:
