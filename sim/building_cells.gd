@@ -49,6 +49,7 @@ func _init(p_building: RampageSim.Building, party: Dictionary = {}) -> void:
 	_h = b.height * res
 	for side: Vector2i in SIDES:
 		_face(side)
+	_frame()
 	_slabs()
 	_roof()
 	_sign()
@@ -257,6 +258,24 @@ func _stone(r: int, q: int, course: bool, top_row: bool) -> Array[String]:
 	if r == 7 and q >= 3 and q <= 4:
 		return ["trim", "", "trim", ""]  # keystone
 	return ["wall", "", "", ""]
+
+
+## A glass building's curtain wall is all fixtures, which carry nothing: columns one cell inside
+## the glass (at each corner and every column_bay cells, ground to roof) and a beam behind the
+## transom row ground the slabs, the roof and the transoms through structure.
+func _frame() -> void:
+	if archetype() != GLASS:
+		return
+	var bay := maxi(1, Num.i(Content.section("destruction").get("column_bay", 0)))
+	for side: Vector2i in SIDES:
+		var length := _d if side.x != 0 else _w
+		for p: int in range(1, length - 1):
+			var column := p == 1 or p == length - 2 or p % bay == 0
+			for y: int in _h:
+				if column:
+					_mark(_at(side, p, y, 1), "pillar")
+				elif y >= res and y % res == 4:
+					_mark(_at(side, p, y, 1), "frame")
 
 
 ## A slab per floor inside the shell, and the roof deck.

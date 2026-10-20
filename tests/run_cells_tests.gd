@@ -23,7 +23,7 @@ const FIXTURES: Array = [
 const PINNED := {
 	"office": [9227, "494795997a4e992a"],
 	"brick": [6674, "ac8dcb1ff799745a"],
-	"glass": [24805, "430bec1e4d68d246"],
+	"glass": [27213, "2ea7122061040817"],
 	"stone": [13385, "04da84b429e548bc"],
 	"party": [6277, "6217a45fdf6352a2"],
 	"tiny": [776, "8c0f4755ac5a6536"],
