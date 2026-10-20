@@ -284,11 +284,6 @@ func _cull(k: int) -> void:
 	culled += 1
 
 
-## Counts a piece leaving the screen at `scale` of its size (over half: it popped).
-func _gone(scale: float) -> void:
-	_rubble.gone(scale)
-
-
 func _draw_live() -> void:
 	var n := _rids.size()
 	CarveRubble.fit(_live_mm, n)
@@ -312,7 +307,12 @@ func _draw_live() -> void:
 		var scale := _sizes[k]
 		if _fade[k] >= 0.0:
 			scale *= maxf(SHRINK_MIN, 1.0 - _fade[k] / fade_t)
-		CarveRubble.pack(buf, k * CarveRubble.FLOATS, Transform3D(xf.basis.scaled_local(scale), xf.origin), _colors[k])
+		CarveRubble.pack(
+			buf,
+			k * CarveRubble.FLOATS,
+			Transform3D(xf.basis.scaled_local(scale), xf.origin),
+			_colors[k]
+		)
 	_live_mm.buffer = buf
 	_live_mm.visible_instance_count = n
 
@@ -370,7 +370,7 @@ func _freeze(k: int) -> void:
 
 ## A faded piece is gone.
 func _forget(k: int) -> void:
-	_gone(maxf(SHRINK_MIN, 1.0 - _fade[k] / Num.f(_cfg["fade_seconds"])))
+	_rubble.gone(maxf(SHRINK_MIN, 1.0 - _fade[k] / Num.f(_cfg["fade_seconds"])))
 	PhysicsServer3D.free_rid(_rids[k])
 	_fading -= 1
 	_drop(k)

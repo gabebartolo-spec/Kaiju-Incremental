@@ -134,16 +134,19 @@ func _island(key: int, cells: PackedInt32Array, mats: PackedByteArray) -> Island
 	island.broke.connect(
 		func(pieces: Array[Dictionary], at: Vector3) -> void: _broke(key, pieces, at)
 	)
-	island.split.connect(func(parts: Array[Dictionary]) -> void: _split(key, parts))
+	island.split.connect(func(parts: Array[Dictionary]) -> void: _split(key, parts, island))
 	return island
 
 
 ## An island split: each chunk becomes an island where it lay, with the chunk's speed and spin.
-func _split(key: int, parts: Array[Dictionary]) -> void:
+func _split(key: int, parts: Array[Dictionary], parent: IslandBody) -> void:
 	for part: Dictionary in parts:
 		var own: PackedInt32Array = part["cells"]
 		var own_mats: PackedByteArray = part["mats"]
 		var chunk := _island(key, own, own_mats)
+		chunk.collision_layer = parent.collision_layer  # the owner's layers and look, not defaults
+		chunk.collision_mask = parent.collision_mask
+		chunk.cell_material = parent.cell_material
 		chunk.global_transform = part["xf"]
 		chunk.linear_velocity = part["v"]
 		chunk.angular_velocity = part["w"]
@@ -325,7 +328,9 @@ func _broke(key: int, pieces: Array[Dictionary], at: Vector3) -> void:
 	var reach := Vector3.ONE * Num.f(_cfg["break_depth"])
 	d.wake(AABB(at - reach, reach * 2.0))
 	_dust(at + Vector3.UP * 0.3, 0.5 + pieces.size() * 0.05)
-	if _rng.randf() < Num.f(_cfg["fire_chance"]):
+	# A fire stands on the ground: a break in mid-air starts none (it would hover where it began).
+	var high := at.y - Num.f(_cfg["ground_y"]) > Num.f(_cfg["fire_ground"])
+	if _rng.randf() < Num.f(_cfg["fire_chance"]) and not high:
 		ignited.emit(at, 0.35)
 
 

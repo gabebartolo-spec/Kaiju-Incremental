@@ -23,6 +23,13 @@ signal settled
 signal released
 
 var site: CarveSite
+## The look of this island's bricks (the building's own material); null keeps the vertex-coloured
+## default. Also applied to bricks meshed later, and inherited by the chunks of a split.
+var cell_material: Material:
+	set(m):
+		cell_material = m
+		for mi: MeshInstance3D in _meshes.values():
+			mi.material_override = m
 var cells: PackedInt32Array
 var mats: PackedByteArray
 var settled_now := false
@@ -45,6 +52,7 @@ var _clock := 0.0
 var _stage := {}  # a break in progress: keys (bottom first), v, done, t
 var _still := 0.0
 var _cooldown := 0.0
+var _contact_hit := Vector3.ZERO  # the speed before a first touch of the ground, taken next step
 var _seed := 0  # the building's seed: its fracture noise and its splits
 var _noise := FastNoiseLite.new()
 
@@ -72,6 +80,9 @@ func _init(
 	_mass()
 	continuous_cd = true
 	can_sleep = true
+	contact_monitor = true
+	max_contacts_reported = 1
+	body_entered.connect(_touched)
 
 
 ## Follows the sim's topple: turns about `pivot` (world) toward `dir` over `duration` (the
@@ -95,6 +106,13 @@ func cell_count() -> int:
 	return n
 
 
+## A first touch of something solid: a hard one breaks the island on the next step (the contact
+## frame), without waiting for the body to lose its speed.
+func _touched(other: Node) -> void:
+	if other is StaticBody3D and _follow.is_empty() and _v_prev.length() > Num.f(_cfg["break_speed"]):
+		_contact_hit = _v_prev
+
+
 func following() -> bool:
 	return not _follow.is_empty()
 
@@ -113,6 +131,9 @@ func _physics_process(delta: float) -> void:
 	var v := linear_velocity
 	var speed := Num.f(_cfg["break_speed"])
 	var hit := _hit(v, speed)
+	if hit == Vector3.ZERO and _contact_hit.length() > speed:
+		hit = _contact_hit  # the contact step itself, not once the speed has bled off
+	_contact_hit = Vector3.ZERO
 	if _cooldown == 0.0 and hit.length() > 0.0:
 		_start_break(hit)
 		_cooldown = 0.1
@@ -359,6 +380,7 @@ func _mesh_brick(key: Vector3i) -> void:
 		add_child(mi)
 		_meshes[key] = mi
 	mi.mesh = mesh
+	mi.material_override = cell_material
 
 
 func _shape_brick(key: Vector3i) -> void:
