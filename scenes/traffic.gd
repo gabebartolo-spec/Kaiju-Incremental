@@ -117,7 +117,8 @@ func _car_palette() -> Dictionary:
 
 func _bake(v: VoxelBuilder, palette: Dictionary) -> ArrayMesh:
 	# Car cells span z -3..2: shift half a cell so the car's middle sits on its position.
-	var voxel := CityDecor.PROP_VOXEL
+	var voxel := CityDecor.PROP_VOXEL / VoxelBuilder.prop_k
+	v = v.rescaled(VoxelBuilder.prop_k)
 	return v.bake(palette, voxel, Vector3(0, 0, voxel * 0.5), LIGHT_GLOW)
 
 

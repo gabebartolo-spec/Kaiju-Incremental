@@ -80,7 +80,9 @@ static func rifleman(outfit: int, voxel: float) -> ArrayMesh:
 	return _bake(v, ROOFTOP_OUTFITS[outfit], voxel)
 
 
-static func _bake(v: VoxelBuilder, o: Dictionary, voxel: float) -> ArrayMesh:
+static func _bake(v: VoxelBuilder, o: Dictionary, voxel_in: float) -> ArrayMesh:
+	var voxel := voxel_in / VoxelBuilder.prop_k
+	v = v.rescaled(VoxelBuilder.prop_k)
 	var palette := {
 		"shirt": Color(str(o["shirt"])),
 		"pants": Color(str(o["pants"])),

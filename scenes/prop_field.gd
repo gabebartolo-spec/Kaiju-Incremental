@@ -35,7 +35,7 @@ var _mmi: MultiMeshInstance3D
 
 
 func _init(p_voxel: float) -> void:
-	voxel = p_voxel
+	voxel = p_voxel / VoxelBuilder.prop_k
 
 
 ## Adds a prop: `shape` fills a VoxelBuilder in prop-local cells; `at` is its world base.
@@ -44,6 +44,7 @@ func _init(p_voxel: float) -> void:
 func add(at: Vector3, shape: Callable, fells := false) -> void:
 	var local := VoxelBuilder.new()
 	shape.call(local)
+	local = local.rescaled(VoxelBuilder.prop_k)
 	var offset := Vector3i((at / voxel).round())
 	offset.y = 0
 	var before := vox.cells.size()
@@ -204,10 +205,11 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	# Bark comes out toward the game camera (south, +z), from under the falling leaves at once.
 	var flung := (out + Vector3.BACK * 1.5 + Vector3.UP) * throw_speed
 	var thrown := 0
+	var stump := maxi(1, roundi(STUMP * VoxelBuilder.prop_k))
 	var gone := Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	for k: int in ids.size():
-		if heights[k] < STUMP:  # the cut top shows fresh wood; the stump's sides keep their bark
-			if heights[k] == STUMP - 1:
+		if heights[k] < stump:  # the cut top shows fresh wood; the stump's sides keep their bark
+			if heights[k] == stump - 1:
 				mm.set_instance_color(ids[k], stump_color)
 			continue
 		mm.set_instance_transform(ids[k], gone)

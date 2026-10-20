@@ -10,6 +10,10 @@ const NEIGHBOURS: Array[Vector3i] = [
 	Vector3i.LEFT, Vector3i.RIGHT, Vector3i.UP, Vector3i.DOWN, Vector3i.FORWARD, Vector3i.BACK
 ]
 
+## Phase B (b2-19) look test, never merged: props, cars and people are drawn at this many times
+## today's voxel density per axis (2 = half-size cubes, 0.5 = double-size), from "--prop-k=" after "--".
+static var prop_k := _read_prop_k()
+
 var cells: Dictionary = {}
 ## Per-cell colours for cells keyed DIRECT (models voxelized from a texture).
 var colors: Dictionary = {}
@@ -25,6 +29,43 @@ var sorted_y: PackedInt32Array = PackedInt32Array()
 var built_cells: Array[Vector3i] = []
 ## Drawn size of each cube as a share of a cell (build()).
 var inset := 1.0
+
+
+static func _read_prop_k() -> float:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--prop-k="):
+			return float(arg.substr(9))
+	return 1.0
+
+
+## This model on a grid k times finer (k = 2: each cell is 2x2x2) or coarser (k = 0.5: 2x2x2 cells
+## become one if any is filled). Same silhouette, drawn at voxel / k.
+func rescaled(k: float) -> VoxelBuilder:
+	if is_equal_approx(k, 1.0):
+		return self
+	var out := VoxelBuilder.new()
+	out.salt = salt
+	out.inset = inset
+	out.height_hint = height_hint
+	if k > 1.0:
+		var n := roundi(k)
+		for cell: Vector3i in cells:
+			for dx: int in n:
+				for dy: int in n:
+					for dz: int in n:
+						var to := cell * n + Vector3i(dx, dy, dz)
+						out.cells[to] = cells[cell]
+						if colors.has(cell):
+							out.colors[to] = colors[cell]
+	else:
+		var n := roundi(1.0 / k)
+		for cell: Vector3i in cells:
+			var to := Vector3i(floori(float(cell.x) / n), floori(float(cell.y) / n), floori(float(cell.z) / n))
+			if not out.cells.has(to):
+				out.cells[to] = cells[cell]
+				if colors.has(cell):
+					out.colors[to] = colors[cell]
+	return out
 
 
 func put(cell: Vector3i, key: String) -> void:
