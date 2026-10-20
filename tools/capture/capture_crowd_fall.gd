@@ -18,7 +18,7 @@ const FRAMES := 1200
 const HUGE := 1.0e9
 ## Where the camera looks: the east stand, from the pitch (offsets from the stadium's middle).
 const LOOK := Vector3(11.0, 3.0, 0.0)
-const EYE := Vector3(-6.0, 9.0, 8.0)
+const EYE := Vector3(-1.0, 12.0, 0.0)
 
 var _out := "user://crowd_fall"
 var _stadium: RampageSim.Building
@@ -57,7 +57,7 @@ func _run() -> void:
 	var crowd: StadiumCrowd = GuiInput.find_script(rampage, StadiumCrowd)
 	var middle := Vector3(_stadium.x, Num.f(Content.sports()["pitch"]["top"]), _stadium.z)
 	var camera := Camera3D.new()
-	camera.fov = 60.0
+	camera.fov = 40.0
 	rampage.add_child(camera)
 	camera.position = middle + EYE
 	camera.look_at(middle + LOOK)
