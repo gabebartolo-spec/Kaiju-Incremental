@@ -114,7 +114,8 @@ jobs:
           path: native/bin/*.so
           retention-days: 3
 
-  # Compile-only: imports the project and fails on any script error in about a minute,
+  # Compile-only: imports the project, then parses and compiles every GDScript file, and fails on
+  # any script error in about a minute,
   # before the shards spend their time.
   preflight:
     needs: plan
@@ -124,7 +125,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-godot
-      - name: Import the project and compile every script
+      - name: Import the project (compiles the scripts it loads)
         run: |
           code=0
           timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
@@ -134,6 +135,11 @@ jobs:
             echo "::error::the project failed to import or compile (exit $code)"
             exit 1
           fi
+      # The import compiles only what it loads; this loads every .gd file with Godot's parser, so
+      # a Godot 3 name (yield, onready, instance(), Spatial, rand_range, ...) or a parse error in
+      # any script fails here (R 5.6, tools/check_scripts.sh). About 30 s.
+      - name: Parse and compile every GDScript file
+        run: GODOT="$HOME/godot/godot" tools/check_scripts.sh
 
   shard:
     name: shard ${{ matrix.shard }}
