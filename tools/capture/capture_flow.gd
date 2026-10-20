@@ -95,6 +95,7 @@ func _run() -> void:
 	tree.start_pressed.emit()
 	await _frames(2)
 	var rampage := _screen() as Rampage
+	await rampage.wait_loaded()
 	rampage.set_autoplay(true)
 	var fight := RAMPAGE_FRAMES
 	if _clip:

@@ -15,6 +15,7 @@ const FlowRifleSounds := preload("res://tests/lib/flow_rifle_sounds.gd")
 const FlowSfx := preload("res://tests/lib/flow_sfx.gd")
 const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
+const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
 ## A kaiju that has not drawn tank fire by now is walked to the nearest tank (the sim's army holds
@@ -52,6 +53,7 @@ func run_checks() -> void:
 	await _h("FlowSfx.gate", func() -> void: await FlowSfx.gate(root, check))
 	await _h("FlowSfx.gate_timeout", func() -> void: FlowSfx.gate_timeout(root, check))
 	await _h("FlowStadium", func() -> void: await FlowStadium.run(self, check))
+	await _h("FlowStagedStart", func() -> void: await FlowStagedStart.run(self, check))
 	await _t("_check_warm_start")
 	await _t("_check_powers", ["reptilian", "breath", UPGRADED])
 	await _t("_check_powers", ["insectoid", "leap", {}])

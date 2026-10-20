@@ -243,6 +243,13 @@ static func diagonal_distance(plan: Dictionary, p: Vector2) -> float:
 	return absf((p - at).cross(dir))
 
 
+## A block's pavement: its rect grown over the sidewalk, except a landmark's plaza, which already
+## runs out to the kerb (CitySites._inset), so its pavement never spills into the street.
+static func pavement(block: Dictionary, cfg: Dictionary) -> Rect2:
+	var rect: Rect2 = block["rect"]
+	return rect if block.has("site") else rect.grow(Num.f(cfg["sidewalk"]))
+
+
 static func width_of(kind: String, cfg: Dictionary) -> float:
 	match kind:
 		AVENUE, DIAGONAL:

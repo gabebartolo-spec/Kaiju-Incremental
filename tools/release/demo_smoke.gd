@@ -47,6 +47,7 @@ func _run() -> void:
 	var rampage := _screen()
 	_check("rampage loads", rampage is Rampage, str(rampage))
 	if rampage is Rampage:
+		await (rampage as Rampage).wait_loaded()
 		(rampage as Rampage).set_autoplay(true)
 		await _frames(240)
 		var models := rampage.find_children("*", "KaijuModel", true, false)

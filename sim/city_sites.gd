@@ -174,10 +174,12 @@ static func _is_ring(line: float, rings: Array[float]) -> bool:
 	return false
 
 
-## How far a block's kerb sits in from street line k (half its width and the sidewalk).
+## How far a plaza's edge sits in from street line k: half the street's width. A landmark's plaza
+## runs out to the kerb, taking the sidewalk in (so the stadium fits between district 1's ring
+## avenues, past the baby's play area: build 2 note 21).
 static func _inset(avenues: Dictionary, k: int, cfg: Dictionary) -> float:
 	var kind := CityGen.AVENUE if avenues.has(k) else CityGen.STREET
-	return CityGen.width_of(kind, cfg) * 0.5 + Num.f(cfg["sidewalk"])
+	return CityGen.width_of(kind, cfg) * 0.5
 
 
 ## True when the diagonal avenue (with its half width) passes through the rect.
