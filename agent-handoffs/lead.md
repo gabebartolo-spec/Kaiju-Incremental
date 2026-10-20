@@ -1,9 +1,10 @@
-# Lead handoff, 2026-10-20 (lead session 4 of 10-20; next lead: read lines 1-12, then GitHub)
-## State: lead 4 at 200k: no new work; hands off once its subagents report (they die with it). Successor: respawn any not reported from their handoffs. Builders are in-process subagents of lead 4 (die with it: respawn from handoffs).
-## Team (subagents): carve-wp5 life 3 (Sonnet; critic fixes 1-4, re-capture; handoff ../Kaiju-Incremental-wt/carve-wp5/agent-handoffs/carve-wp5.md) ·
-##  carve-wp4 (Opus med; view mesher, claude/carve-wp4, merges wp2+wp3) · carve-wp6 (Sonnet; landmarks, claude/carve-wp6, merges wp3) ·
-##  croc-contact (Sonnet; #89 D-099: drop "fall away" override in sim/collapse.gd, sim_topple_read asserts cut side, CI capture) ·
-##  review-wp1 / review-wp3 (Opus med, kaiju-sim-review of #97/#98) · critic-50 (motion critic, #50 r6 clip). WP4/WP6 cards task_2e6abbed/task_78d578ee superseded.
+# Lead handoff, 2026-10-20 (lead session 5 of 10-20; next lead: read lines 1-14, then GitHub)
+## State: lead 5 working. Helpers are in-process subagents of lead 5 (die with it: respawn from the handoffs named here).
+## Team (lead 5): review-wp1b (Opus med, fresh re-review #97 @42a1f55, posts PR comment) · wp2-lint (Sonnet, #99 gdlint; 1st push 96f4180 still red) ·
+##  wp4-slab (Sonnet, slab 8a8780 + re-capture on claude/carve-wp4) · wp3-still (Sonnet, before/after stills of tank riser + sign brackets -> C:/Users/DANTE/AppData/Local/Temp/claude/wp3-still/) ·
+##  wp5-recap (Sonnet, debug blow sphere OFF by default (lead 2x found it in block clip), head e9c7582, 3 CI captures one at a time -> Temp/claude/wp5-recap/) ·
+##  critic-89 / critic-50 / critic-wp5 (fresh motion critics; wp5 on old clips, motion only). Lead 2x done: #50 r7 crops PASS (hull outlines on model, centred between kerbs); #89 frames OK.
+## CI at head: lead pushed empty 'CI at head' commits: #98 fb19f4a (lint green, tests running), #89 d259939 (lint green, tests running). #97 42a1f55 green.
 ## PRs: #97 WP1 d8174d4 review FIX (comment 6279596456: re-flood after topple, adopt guard, dir/pivot in replay) -> carve-wp1 life 2 fixing + fixture rule; WP7 needs a wear rule (tough_mult 0.35, no wear) · #98 WP3 FIX DONE code dec83bc (tests 39342624070 + lint green; head 38ab0d2 handoff-only [skip ci]): islands 0/120, fixtures window/mullion/glass/shop/sign_frame/neon0-3; VIEW CHANGE (water-tank pipe riser, neon sign brackets) -> needs a still + lead 2x, then fresh re-review, merge · #99 WP2 c3c5fec gdlint RED (run 39340822128): fix it · #100 board D-099 MERGED.
 ## #98 lead call: panes/signs held by edge = material flag "fixture" in data/materials.json; fixture cells ground by 26-neighbour contact, structural 6-neighbour.
 ##  WP1 must add that rule in sim/voxel_support.gd (batch with review-wp1's findings into one carve-wp1 life). Tank with no contact = generator fix (+BuildingVoxels).
