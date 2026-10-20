@@ -130,7 +130,9 @@ static func map(cfg: Dictionary) -> Dictionary:
 		"xs": xs,
 		"zs": zs,
 	}
-	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
+	var avenues := [avenues_x, avenues_z]
+	plan["avenues"] = avenues  # x and z line indices that are avenues
+	plan["sites"] = CitySites.find(plan, rings, avenues, cfg)
 	var index := {}
 	# x-lines (streets running along z), split at every crossing and where the diagonal crosses.
 	for i: int in xs.size():

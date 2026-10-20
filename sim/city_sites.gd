@@ -1,7 +1,8 @@
 class_name CitySites
 extends RefCounted
 ## Landmark sites (part of CityGen.map, split out to keep files small). Each landmark in
-## city.landmarks takes the street-grid cells round its anchor, as many as its baked footprint
+## city.landmarks takes the street-grid cells round its anchor (or, anchor "far", round the
+## spot furthest from the kaiju's river rise where it fits), as many as its baked footprint
 ## (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a margin needs, as one
 ## plaza: the streets inside it are never laid, so traffic and the ground go round it. A site
 ## stays inside one district (it never swallows a ring avenue), clear of the diagonal avenue and
@@ -26,39 +27,106 @@ static func find(
 		var shape: Dictionary = shapes.get(str(spec["id"]), {})
 		if shape.is_empty():
 			continue
-		var pad := 2.0 * Num.f(spec["margin"])
-		var at: Array = spec["anchor"]
-		var along_x := {"lines": xs, "rings": rings, "avenues": av_x, "cfg": cfg}
-		var along_z := {"lines": zs, "rings": rings, "avenues": av_z, "cfg": cfg}
-		var i := _span(along_x, Num.f(at[0]), Num.f(shape["w"]) + pad)
-		var j := _span(along_z, Num.f(at[1]), Num.f(shape["d"]) + pad)
-		if i.x < 0 or j.x < 0:
-			continue
-		var river := CityRiver.river_row(zs, cfg)
-		if river >= 0 and j.x <= river and j.y >= river:
-			continue  # never in the river's row (CityRiver): it would stand in the water
-		var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
-		if _crosses_diagonal(plan, outer, cfg):
-			continue
-		var x0 := xs[i.x] + _inset(av_x, i.x, cfg)
-		var z0 := zs[j.x] + _inset(av_z, j.x, cfg)
-		var x1 := xs[i.y + 1] - _inset(av_x, i.y + 1, cfg)
-		var z1 := zs[j.y + 1] - _inset(av_z, j.y + 1, cfg)
-		(
-			out
-			. append(
-				{
-					"id": str(spec["id"]),
-					"spec": spec,
-					"shape": shape,
-					"i": i,
-					"j": j,
-					"outer": outer,
-					"rect": Rect2(x0, z0, x1 - x0, z1 - z0),
-				}
-			)
-		)
+		var axes := [
+			{"lines": xs, "rings": rings, "avenues": av_x, "cfg": cfg},
+			{"lines": zs, "rings": rings, "avenues": av_z, "cfg": cfg},
+		]
+		var site := {}
+		if spec["anchor"] is String:  # "far": as far from the kaiju's river rise as it fits
+			site = farthest(plan, axes, spec, shape, out)
+		else:
+			var at: Array = spec["anchor"]
+			site = _site(plan, axes, Vector2(Num.f(at[0]), Num.f(at[1])), spec, shape, out)
+		if not site.is_empty():
+			out.append(site)
 	return out
+
+
+## Where the kaiju rises (CityRiver: the middle of the river's row, on the axis), worked out
+## from the street lines alone so a site can be chosen before the blocks are; without a river,
+## the south edge of the first district.
+static func rise_point(zs: Array[float], rings: Array[float], cfg: Dictionary) -> Vector2:
+	var row := CityRiver.river_row(zs, cfg)
+	if row < 0:
+		return Vector2(0.0, rings[0])
+	return Vector2(0.0, (zs[row] + zs[row + 1]) * 0.5)
+
+
+## The site, of every one this landmark fits in the first district (one per pair of grid cells
+## as its anchor), whose middle lies furthest from the kaiju's rise (director, build 2 note 21:
+## "the stadium is free biomass, it needs to be placed as far away from our spawn spot as
+## possible"). {} when none fits.
+static func farthest(
+	plan: Dictionary, axes: Array, spec: Dictionary, shape: Dictionary, taken: Array[Dictionary]
+) -> Dictionary:
+	var xs: Array[float] = axes[0]["lines"]
+	var zs: Array[float] = axes[1]["lines"]
+	var rings: Array[float] = axes[0]["rings"]
+	var cfg: Dictionary = axes[0]["cfg"]
+	var rise := rise_point(zs, rings, cfg)
+	var best := {}
+	var best_d := -1.0
+	for i: int in xs.size() - 1:
+		for j: int in zs.size() - 1:
+			var at := Vector2(xs[i] + xs[i + 1], zs[j] + zs[j + 1]) * 0.5
+			if maxf(absf(at.x), absf(at.y)) >= rings[0]:
+				continue
+			var site := _site(plan, axes, at, spec, shape, taken)
+			if site.is_empty():
+				continue
+			var rect: Rect2 = site["rect"]
+			var d := rect.get_center().distance_to(rise)
+			if d > best_d:
+				best = site
+				best_d = d
+	return best
+
+
+## The site round anchor `at` for this landmark, or {} when it cannot have one there (no run
+## of cells wide enough, the river's row, the diagonal avenue, or another site in the way).
+static func _site(
+	plan: Dictionary,
+	axes: Array,
+	at: Vector2,
+	spec: Dictionary,
+	shape: Dictionary,
+	taken: Array[Dictionary]
+) -> Dictionary:
+	var along_x: Dictionary = axes[0]
+	var along_z: Dictionary = axes[1]
+	var xs: Array[float] = along_x["lines"]
+	var zs: Array[float] = along_z["lines"]
+	var av_x: Dictionary = along_x["avenues"]
+	var av_z: Dictionary = along_z["avenues"]
+	var cfg: Dictionary = along_x["cfg"]
+	var pad := 2.0 * Num.f(spec["margin"])
+	var i := _span(along_x, at.x, Num.f(shape["w"]) + pad)
+	var j := _span(along_z, at.y, Num.f(shape["d"]) + pad)
+	if i.x < 0 or j.x < 0:
+		return {}
+	var river := CityRiver.river_row(zs, cfg)
+	if river >= 0 and j.x <= river and j.y >= river:
+		return {}  # never in the river's row (CityRiver): it would stand in the water
+	var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
+	if _crosses_diagonal(plan, outer, cfg):
+		return {}
+	for other: Dictionary in taken:
+		var theirs: Rect2 = other["outer"]
+		if theirs.intersects(outer):
+			return {}
+	var x0 := xs[i.x] + _inset(av_x, i.x, cfg)
+	var z0 := zs[j.x] + _inset(av_z, j.x, cfg)
+	var x1 := xs[i.y + 1] - _inset(av_x, i.y + 1, cfg)
+	var z1 := zs[j.y + 1] - _inset(av_z, j.y + 1, cfg)
+	return {
+		"id": str(spec["id"]),
+		"spec": spec,
+		"shape": shape,
+		"i": i,
+		"j": j,
+		"outer": outer,
+		"rect": Rect2(x0, z0, x1 - x0, z1 - z0),
+	}
 
 
 ## True when the street from a to b would run through a site (its middle lies inside one).

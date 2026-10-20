@@ -266,7 +266,7 @@
 		"zebra_junctions": 1,
 		"landmarks": [
 			{
-				"id": "stadium", "anchor": [22, -24], "margin": 0, "tier": 1, "rubble_bonus": 1.5,
+				"id": "stadium", "anchor": "far", "margin": 0, "tier": 1, "rubble_bonus": 1.5,
 				"arcs": {"sectors": 24, "stub": 2, "rim": 0.86, "outer": 1.1}
 			},
 			{"id": "wheel", "anchor": [10, -56], "margin": 2, "tier": 2, "rubble_bonus": 1.5}

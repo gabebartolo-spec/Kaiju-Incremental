@@ -11,6 +11,7 @@ const Trample := preload("res://tests/lib/city_trample.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
+const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -27,6 +28,7 @@ func run_checks() -> void:
 	await _t("_check_calm_streets")
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
+	await _t("_check_stadium_far")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
 	await _h(
@@ -182,6 +184,11 @@ func _check_no_empty_ground() -> void:
 			Green.check_city(tier, map_seed, sim, decor, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			holder.free()
+
+
+## The stadium stands as far from the kaiju's rise as it fits (tests/lib/city_stadium_far.gd).
+func _check_stadium_far() -> void:
+	StadiumFar.check(COVERAGE_SEEDS, check)
 
 
 ## The run's start can never stall in the river (tests/lib/city_river.gd check_cap).
