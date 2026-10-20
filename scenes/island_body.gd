@@ -6,11 +6,19 @@ extends RigidBody3D
 ## speed it had, so the hand-over has no jump. On each hard impact only the bricks near its
 ## lowest point break off (destruction spike clip r2: the whole island shattering on its first
 ## hit read as fake); the rest stays one body and breaks again on its next hard hit. A small
-## remainder breaks up whole. Cosmetic: nothing here reaches the sim.
+## remainder breaks up whole. Once few enough bricks are left (a slab, a stump), a hard hit splits
+## it along its own bricks into seeded chunks that fly apart as islands of their own and break
+## again on their own hits, so a slab never lands whole and stays. The bricks a break takes are
+## chosen against a noise seeded per building (break_ragged), so the fracture front is ragged, not
+## a flat cut that reads as a regular staircase on a tilted slab. Cosmetic: nothing here reaches
+## the sim.
 
 ## Pieces broken off: each {"xf": Transform3D, "size": Vector3, "color": Color, "v": Vector3};
 ## `at` is the lowest point of the impact.
 signal broke(pieces: Array[Dictionary], at: Vector3)
+## The island split into chunks: each {"cells", "mats" (parallel), "xf" (the chunk body's
+## transform), "v", "w"}; the owner makes each an IslandBody. This body is gone after it.
+signal split(parts: Array[Dictionary])
 signal settled
 signal released
 
@@ -19,6 +27,10 @@ var cells: PackedInt32Array
 var mats: PackedByteArray
 var settled_now := false
 var last_break_us := 0  # how long the last break took (meshing and colliders), for benches
+## Per staged break, the spread (standard deviation, world units) of the heights of the bricks
+## left bordering the break: near 0 the fracture front is a plane, which reads as a staircase on
+## a tilted slab (captures).
+var front_spreads: Array[float] = []
 var _cfg: Dictionary
 var _solid := PackedByteArray()  # site-sized, 1 where this island still owns a cell
 var _bricks: Dictionary = {}  # brick -> PackedInt32Array of positions in `cells`
@@ -33,13 +45,20 @@ var _clock := 0.0
 var _stage := {}  # a break in progress: keys (bottom first), v, done, t
 var _still := 0.0
 var _cooldown := 0.0
+var _seed := 0  # the building's seed: its fracture noise and its splits
+var _noise := FastNoiseLite.new()
 
 
-func _init(p_site: CarveSite, p_cells: PackedInt32Array, p_mats: PackedByteArray) -> void:
+func _init(
+	p_site: CarveSite, p_cells: PackedInt32Array, p_mats: PackedByteArray, p_seed: int
+) -> void:
 	site = p_site
 	cells = p_cells
 	mats = p_mats
+	_seed = p_seed
 	_cfg = Content.section("carve_physics")
+	_noise.seed = p_seed
+	_noise.frequency = Num.f(_cfg["break_ragged_freq"])
 	_solid.resize(site.count())
 	for i: int in cells:
 		_solid[i] = 1
@@ -169,13 +188,129 @@ func _start_break(v: Vector3) -> void:
 		centre[key] = y
 		low = minf(low, y)
 	var whole := _bricks.size() < Num.i(_cfg["break_whole_bricks"])
+	if not whole and _bricks.size() <= Num.i(_cfg["split_bricks"]):
+		_split(v)
+		return
+	var ragged := Num.f(_cfg["break_ragged"])
 	var keys: Array[Vector3i] = []
 	for key: Vector3i in _bricks:
-		if whole or Num.f(centre[key]) < low + Num.f(_cfg["break_depth"]):
+		var jag := ragged * _noise.get_noise_3dv(Vector3(key))
+		if whole or Num.f(centre[key]) + jag < low + Num.f(_cfg["break_depth"]):
 			keys.append(key)
-	keys.sort_custom(func(a: Vector3i, b: Vector3i) -> bool: return Num.f(centre[a]) < Num.f(centre[b]))
+	keys.sort_custom(
+		func(a: Vector3i, b: Vector3i) -> bool: return Num.f(centre[a]) < Num.f(centre[b])
+	)
+	if not whole:
+		_note_front(keys, centre)
 	_stage = {"keys": keys, "v": v, "done": 0, "t": 0.0}
 	_step_stage(0.0)
+
+
+## Splits the island along its bricks into chunks of about split_chunk bricks (each brick joins
+## the nearest of seeded seed bricks); a lone brick breaks into half-brick pieces. The chunks keep
+## piece_keep of the speed before the hit, spread from the centre at up to split_spread and spin
+## by up to split_spin: they tumble apart where the slab hit, then settle or break on their own.
+func _split(v: Vector3) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([_seed, cells.size(), _bricks.size()])
+	var keys: Array = _bricks.keys()
+	var seeds: Array = keys.duplicate()
+	for k: int in range(seeds.size() - 1, 0, -1):
+		var j := rng.randi_range(0, k)
+		var swap: Variant = seeds[k]
+		seeds[k] = seeds[j]
+		seeds[j] = swap
+	seeds.resize(ceili(keys.size() / maxf(1.0, Num.f(_cfg["split_chunk"]))))
+	var groups: Array[Array] = []
+	for _s: Variant in seeds:
+		groups.append([])
+	for key: Vector3i in keys:
+		var best := 0
+		var near := INF
+		for s: int in seeds.size():
+			var seed_key: Vector3i = seeds[s]
+			var d := Vector3(key - seed_key).length_squared()
+			if d < near:
+				near = d
+				best = s
+		groups[best].append(key)
+	var xf := global_transform
+	var keep := v * Num.f(_cfg["piece_keep"])
+	var spread := Num.f(_cfg["split_spread"])
+	var spin := Num.f(_cfg["split_spin"])
+	var parts: Array[Dictionary] = []
+	var pieces: Array[Dictionary] = []
+	for group: Array in groups:
+		if group.size() == 1:
+			var lone: Vector3i = group[0]
+			_pieces_of(lone, xf, v, pieces)
+			continue
+		var own := PackedInt32Array()
+		var own_mats := PackedByteArray()
+		var com := Vector3.ZERO
+		for key: Vector3i in group:
+			var ks: PackedInt32Array = _bricks[key]
+			for k: int in ks:
+				own.append(cells[k])
+				own_mats.append(mats[k])
+				com += site.world(site.cell(cells[k]))
+		com /= own.size()
+		var at := xf * (com - _com)
+		var out := at - global_position
+		out.y = 0.0
+		out = out.normalized() * spread * rng.randf_range(0.5, 1.0)
+		var w := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1))
+		(
+			parts
+			. append(
+				{
+					"cells": own,
+					"mats": own_mats,
+					"xf": Transform3D(xf.basis, at),
+					"v": keep + out + angular_velocity.cross(at - global_position),
+					"w": angular_velocity + w * spin,
+				}
+			)
+		)
+	_settle_out()
+	split.emit(parts)
+	if not pieces.is_empty():
+		broke.emit(pieces, global_position)
+	queue_free()
+
+
+## Takes this body out of the world at once (its chunks take its place this step).
+func _settle_out() -> void:
+	settled_now = true
+	visible = false
+	collision_layer = 0
+	collision_mask = 0
+	freeze = true
+
+
+## Records the height spread of the bricks that will border this break (see front_spreads).
+func _note_front(keys: Array[Vector3i], centre: Dictionary) -> void:
+	var gone := {}
+	for key: Vector3i in keys:
+		gone[key] = true
+	var ys: Array[float] = []
+	var seen := {}
+	for key: Vector3i in keys:
+		for step: Vector3i in CarveMesh.STEPS:
+			var n := key + step
+			if _bricks.has(n) and not gone.has(n) and not seen.has(n):
+				seen[n] = true
+				ys.append(Num.f(centre[n]))
+	if ys.size() < 2:
+		return
+	var mean := 0.0
+	for y: float in ys:
+		mean += y
+	mean /= ys.size()
+	var sq := 0.0
+	for y: float in ys:
+		sq += (y - mean) * (y - mean)
+	front_spreads.append(sqrt(sq / ys.size()))
 
 
 ## Lets go the next share of the staged bricks; the last share frees an emptied island.

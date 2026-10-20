@@ -1,7 +1,8 @@
 extends SceneTree
 ## WP5 proof (D-094): the carving physics view (CarvePhysics) driven by WP1's sim grid
-## (VoxelFrame, the spike's office block from tests/lib/destruction_paths.gd). With --markers the orange sphere
-## is the blow. Saves a still every 0.5 s, a still plus a 2x crop at each island release and at its
+## (VoxelFrame, the spike's office block from tests/lib/destruction_paths.gd). With --markers the
+## orange sphere is the blow. Saves a still every 0.5 s, a still plus a 2x crop at each island
+## release and at its
 ## first breaks, and prints body counts, frame cost and a through-the-ground check.
 ##   --scene=tower   a base cut in two passes: the tower topples, follows the sim ~1 s, breaks up
 ##   --scene=swipe   two swipes across a facade: carved-cell debris, nothing falls
@@ -17,6 +18,7 @@ const SHOT_EVERY := 15  # frames between timeline stills
 const CROP := Vector2i(320, 180)  # crop round an event, saved at 2x
 const MAX_EVENT_SHOTS := 8
 const SUNK := 0.03  # a piece reaching this far below the road counts as sunk into it
+const ENCLOSED := 0.5  # a piece this far inside a building's box (and off the street) is inside it
 
 var _scene := "tower"
 var _out := "user://carve_physics"
@@ -36,7 +38,10 @@ var _stats := {
 var _last_us := 0
 var _last_live_t := 0.0  # the last time any live piece or island body was still moving
 var _counts := {"islands": 0, "breaks": 0, "pieces": 0, "fires": 0}
-var _holds: Array[Dictionary] = []  # per island: when it last began to fall free or broke, and the gaps
+## Per island: when it last began to fall free or broke, and the gaps.
+var _holds: Array[Dictionary] = []
+var _enclosed: Array[int] = []  # pieces inside a building, once a second
+var _front: Array[float] = []  # fracture-front height spreads of every staged break (IslandBody)
 
 
 func _initialize() -> void:
@@ -101,6 +106,7 @@ func _setup() -> void:
 	_phys.fx = fx
 	_world.add_child(_phys)
 	_phys.ignited.connect(_on_ignited)
+	_phys.spawned.connect(func(chunk: IslandBody) -> void: chunk.broke.connect(_on_broke))
 	var layout := _layout()
 	for n: int in layout.size():
 		var b := layout[n]
@@ -183,8 +189,11 @@ func _blow(n: int, b: Dictionary, t: float) -> void:
 		print("ISLAND t=%.2f building=%d kind=%s cells=%d" % [t, n, event["kind"], cells.size()])
 		island.released.connect(func() -> void: _event("release", island.global_position))
 		island.broke.connect(_on_broke)
-		var hold := {"island": island, "t_peak": 0.0, "holds": [], "n": n}
+		var hold := {"island": island, "t_peak": 0.0, "holds": [], "n": n, "fronts": []}
 		_holds.append(hold)
+		island.tree_exiting.connect(
+			func() -> void: hold["fronts"] = island.front_spreads.duplicate()
+		)
 		island.released.connect(func() -> void: hold["t_peak"] = _frame / 30.0)
 		island.broke.connect(
 			func(_p: Array[Dictionary], _at: Vector3) -> void:
@@ -254,9 +263,13 @@ func _record(sim_ms: float) -> void:
 	_last_us = now
 	_push("gpu", RenderingServer.viewport_get_measured_render_time_gpu(vp))
 	if _frame % 30 == 0:
+		_enclosed.append(_phys.enclosed(ENCLOSED))
 		print(
 			(
-				"SEC %d live=%d all=%d rubble=%d islands=%d lowest=%.3f sunk=%d raised=%d/%.3f phys=%.1fms"
+				(
+					"SEC %d live=%d all=%d rubble=%d islands=%d lowest=%.3f sunk=%d"
+					+ " raised=%d/%.3f inside=%d largest=%d phys=%.1fms"
+				)
 				% [
 					_frame / 30,
 					_phys.live_bodies(),
@@ -267,10 +280,19 @@ func _record(sim_ms: float) -> void:
 					_phys.sunk(SUNK),
 					_phys.raised()[0],
 					_phys.raised()[1],
+					_enclosed[-1],
+					_largest(),
 					_stats["phys"][-1],
 				]
 			)
 		)
+
+
+func _largest() -> int:
+	var most := 0
+	for island: IslandBody in _phys.islands():
+		most = maxi(most, island.cell_count())
+	return most
 
 
 func _push(key: String, value: float) -> void:
@@ -297,7 +319,12 @@ func _report() -> void:
 	)
 	print("  rubble=%d lowest=%.3f" % [_phys.rubble_pieces(), _phys.lowest_point()])
 	var skid := _phys.skid()
-	print("  SKID max %.1f widths, mean %.2f, over 5 widths %d of %d pieces" % [skid[0], skid[1], skid[3], skid[2]])
+	print(
+		(
+			"  SKID max %.1f widths, mean %.2f, over 5 widths %d of %d pieces"
+			% [skid[0], skid[1], skid[3], skid[2]]
+		)
+	)
 	print(
 		(
 			"  RUBBLE per building max %d (cap %d), dropped %d"
@@ -308,8 +335,37 @@ func _report() -> void:
 			]
 		)
 	)
+	var spread := 0.0
+	var fronts := 0
+	for h: Dictionary in _holds:
+		var held_island: Variant = h["island"]
+		var list: Array = h["fronts"]
+		if is_instance_valid(held_island):
+			var island: IslandBody = held_island
+			list = island.front_spreads
+		for f: float in list:
+			spread += f
+			fronts += 1
+	print(
+		(
+			"  FRONT spread mean %.3f units over %d staged breaks (0 = a plane: staircase)"
+			% [spread / maxi(1, fronts), fronts]
+		)
+	)
+	print(
+		(
+			"  LARGEST island at end %d cells, VANISHED in one frame %d"
+			% [_largest(), _phys.vanished()]
+		)
+	)
+	print("  INSIDE buildings per second %s, culled indoors %d" % [_enclosed, _phys.culled()])
 	var live_speed := _phys.live_speed()
-	print("  LIVE at end %d, fastest %.3f, last live t=%.2f" % [_phys.live_bodies(), live_speed, _last_live_t])
+	print(
+		(
+			"  LIVE at end %d, fastest %.3f, last live t=%.2f"
+			% [_phys.live_bodies(), live_speed, _last_live_t]
+		)
+	)
 	for h: Dictionary in _holds:
 		var held: Array = h["holds"]
 		var worst := 0.0
@@ -321,7 +377,10 @@ func _report() -> void:
 				at = Num.f(pair[1])
 		print(
 			(
-				"  HOLD building %d: %d break steps, longest wait from release or the last break %.2f s (at t=%.2f)"
+				(
+					"  HOLD building %d: %d break steps, longest wait from release or the last"
+					+ " break %.2f s (at t=%.2f)"
+				)
 				% [h["n"], held.size(), worst, at]
 			)
 		)

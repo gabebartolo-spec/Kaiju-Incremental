@@ -4,8 +4,10 @@ extends Node3D
 ## piece is a bare Jolt body (PhysicsServer3D, no node) drawn by ONE MultiMesh for the building;
 ## a piece that comes to rest is frozen in place into a second, static rubble MultiMesh and its
 ## body turns static (no simulation cost) until the city's static cap, past which the oldest
-## rubble keeps its look but loses its collider. Pieces retired to make room shrink away over
-## fade_seconds, never vanishing in one frame. Cosmetic: nothing here reaches the sim.
+## rubble keeps its look but loses its collider. Pieces retired to make room, rubble past
+## rubble_cap and pieces left indoors (inside the footprint under cells that still stand, seen
+## through the glass: hovering on slabs the view does not draw) shrink away over fade_seconds,
+## never vanishing in one frame. Cosmetic: nothing here reaches the sim.
 
 const FLOATS := 16  # per MultiMesh instance: a 3x4 transform, then a colour
 const SHRINK_MIN := 0.01  # a fading piece's last scale
@@ -15,6 +17,11 @@ var max_raise := 0.0  # the deepest of them
 
 var skid_max := 0.0  # how far a settled piece slid along the road from first touch, in its widths
 var dropped := 0  # rubble pieces dropped past rubble_cap so far
+var vanished := 0  # pieces that left the screen at over half size in one frame (captures; 0)
+var culled := 0  # pieces faded out because they lay indoors (captures)
+## The building and its grid (the sim's, after the last carve): what counts as indoors.
+var site: CarveSite
+var grid := PackedByteArray()
 var skid_sum := 0.0
 var skid_over := 0  # settled pieces that slid more than 5 of their widths
 var skid_n := 0
@@ -35,6 +42,8 @@ var _touch := PackedVector3Array()  # where it first met the road (y = NAN until
 # Rubble, parallel arrays; an invalid RID is rubble with no collider left.
 var _rubble_rids: Array[RID] = []
 var _rubble := PackedFloat32Array()  # FLOATS per piece
+var _rubble_fade := PackedFloat32Array()  # < 0: not fading; else seconds since it began
+var _rubble_fading := 0
 var _rubble_dirty := false
 var _fading := 0  # live pieces fading out
 var _statics := 0  # rubble pieces that still have a (static) body
@@ -132,6 +141,19 @@ func sunk(y: float) -> int:
 	return n
 
 
+## Live and rubble pieces whose centre lies inside `box` (captures: debris inside a building).
+func inside(box: AABB) -> int:
+	var n := 0
+	for k: int in _rids.size():
+		var xf: Transform3D = PhysicsServer3D.body_get_state(
+			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
+		)
+		n += 1 if box.has_point(xf.origin) else 0
+	for o: int in range(0, _rubble.size(), FLOATS):
+		n += 1 if box.has_point(Vector3(_rubble[o + 3], _rubble[o + 7], _rubble[o + 11])) else 0
+	return n
+
+
 ## The fastest live piece's speed (captures).
 func fastest() -> float:
 	var top := 0.0
@@ -174,7 +196,8 @@ func wake(box: AABB) -> int:
 		var o := k * FLOATS
 		var at := Vector3(_rubble[o + 3], _rubble[o + 7], _rubble[o + 11])
 		var reach := absf(_rubble[o + 4]) + absf(_rubble[o + 5]) + absf(_rubble[o + 6])
-		if box.has_point(at) and at.y - 0.5 * reach > floor_y:
+		var resting := _rubble_fade[k] < 0.0
+		if resting and box.has_point(at) and at.y - 0.5 * reach > floor_y:
 			var rid := _rubble_rids[k]
 			var xf := _unpack(_rubble, o)
 			var color := Color(_rubble[o + 12], _rubble[o + 13], _rubble[o + 14])
@@ -189,8 +212,7 @@ func wake(box: AABB) -> int:
 				spawn(xf, size, color, motion)
 				_fade[_fade.size() - 1] = 0.0
 				_fading += 1
-			_rubble_rids.remove_at(k)
-			_remove_floats(k)
+			_remove_rubble(k)
 			woke += 1
 		k -= 1
 	return woke
@@ -214,10 +236,14 @@ func _physics_process(delta: float) -> void:
 	var fade_t := Num.f(_cfg["fade_seconds"])
 	var ground := Num.f(_cfg["ground_y"])
 	var floor_y := ground - Num.f(_cfg["ground_slop"])
+	var indoor_t := Num.f(_cfg["indoor_seconds"])
 	var k := _rids.size() - 1
 	while k >= 0:
 		var rid := _rids[k]
 		_age[k] += delta
+		var aged := _age[k] >= indoor_t and _age[k] - delta < indoor_t
+		if _fade[k] < 0.0 and aged and _indoors(k):
+			_cull(k)
 		if _fade[k] >= 0.0:
 			_fade[k] += delta
 			if _fade[k] >= fade_t:
@@ -238,13 +264,17 @@ func _physics_process(delta: float) -> void:
 				_drag(rid, v, w, delta)
 			_still[k] = _still[k] + delta if v.length() < rest_v and w.length() < rest_w else 0.0
 			if _still[k] >= rest_t:
-				_freeze(k)
+				if _indoors(k):
+					_cull(k)
+				else:
+					_freeze(k)
 		k -= 1
 
 
 func _process(_delta: float) -> void:
 	_draw_live()
 	_cap_rubble()
+	_fade_rubble(_delta)
 	if _rubble_dirty:
 		_rubble_dirty = false
 		var n := _rubble_rids.size()
@@ -255,20 +285,89 @@ func _process(_delta: float) -> void:
 		_rubble_mm.visible_instance_count = n
 
 
-## Past rubble_cap the oldest rubble (the bottom of the pile, under newer pieces) is dropped,
-## its collider with it, so one building's rubble MultiMesh stops growing.
+## Past rubble_cap the oldest rubble (the bottom of the pile, under newer pieces) loses its
+## collider and shrinks away over fade_seconds, so one building's rubble MultiMesh stops growing
+## and nothing leaves in one frame.
 func _cap_rubble() -> void:
-	var over := _rubble_rids.size() - Num.i(_cfg["rubble_cap"])
-	if over <= 0:
+	var over := _rubble_rids.size() - _rubble_fading - Num.i(_cfg["rubble_cap"])
+	var k := 0
+	while over > 0 and k < _rubble_rids.size():
+		if _rubble_fade[k] < 0.0:
+			_rubble_fade[k] = 0.0
+			_rubble_fading += 1
+			over -= 1
+			dropped += 1
+			if _rubble_rids[k].is_valid():
+				PhysicsServer3D.free_rid(_rubble_rids[k])
+				_rubble_rids[k] = RID()
+				_statics -= 1
+		k += 1
+
+
+## Shrinks fading rubble about its centre; a piece that has shrunk away is removed.
+func _fade_rubble(delta: float) -> void:
+	if _rubble_fading == 0:
 		return
-	for k: int in over:
-		if _rubble_rids[k].is_valid():
-			PhysicsServer3D.free_rid(_rubble_rids[k])
-			_statics -= 1
-	_rubble_rids = _rubble_rids.slice(over)
-	_rubble = _rubble.slice(over * FLOATS)
-	_rubble_dirty = true
-	dropped += over
+	var fade_t := Num.f(_cfg["fade_seconds"])
+	var k := _rubble_rids.size() - 1
+	while k >= 0:
+		var f := _rubble_fade[k]
+		if f >= 0.0:
+			var before := maxf(SHRINK_MIN, 1.0 - f / fade_t)
+			f += delta
+			_rubble_fade[k] = f
+			if f >= fade_t:
+				_gone(before)
+				_remove_rubble(k)
+				_rubble_fading -= 1
+			else:
+				var ratio := maxf(SHRINK_MIN, 1.0 - f / fade_t) / before
+				var o := k * FLOATS
+				for c: int in [0, 1, 2, 4, 5, 6, 8, 9, 10]:
+					_rubble[o + c] *= ratio
+				_rubble_dirty = true
+		k -= 1
+
+
+## True when live piece k lies indoors: inside its building's footprint, more than
+## indoor_margin from the walls, under a cell that still stands (a floor or roof above it).
+func _indoors(k: int) -> bool:
+	if site == null or grid.is_empty():
+		return false
+	var xf: Transform3D = PhysicsServer3D.body_get_state(
+		_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
+	)
+	var margin := Num.f(_cfg["indoor_margin"])
+	var span := Vector3(site.size) / site.res
+	var box := AABB(site.origin, span).grow(-margin)
+	box.position.y = site.origin.y
+	box.size.y = span.y
+	if not box.has_point(xf.origin):
+		return false
+	var c := Vector3i(((xf.origin - site.origin) * site.res).floor())
+	for y: int in range(c.y + 1, site.size.y):
+		if grid[site.index(Vector3i(c.x, y, c.z))] != 0:
+			return true
+	return false
+
+
+## Live piece k begins to shrink away because it lies indoors.
+func _cull(k: int) -> void:
+	_fade[k] = 0.0
+	_fading += 1
+	culled += 1
+
+
+## Counts a piece leaving the screen at `scale` of its size (over half: it popped).
+func _gone(scale: float) -> void:
+	if scale > 0.5:
+		vanished += 1
+
+
+func _remove_rubble(k: int) -> void:
+	_rubble_rids.remove_at(k)
+	_rubble_fade.remove_at(k)
+	_remove_floats(k)
 
 
 func _draw_live() -> void:
@@ -350,6 +449,7 @@ func _freeze(k: int) -> void:
 	_rubble.resize(o + FLOATS)
 	_pack(_rubble, o, Transform3D(xf.basis.scaled_local(_sizes[k]), xf.origin), _colors[k])
 	_rubble_rids.append(rid)
+	_rubble_fade.append(-1.0)
 	_statics += 1
 	_rubble_dirty = true
 	_drop(k)
@@ -357,6 +457,7 @@ func _freeze(k: int) -> void:
 
 ## A faded piece is gone.
 func _forget(k: int) -> void:
+	_gone(maxf(SHRINK_MIN, 1.0 - _fade[k] / Num.f(_cfg["fade_seconds"])))
 	PhysicsServer3D.free_rid(_rids[k])
 	_fading -= 1
 	_drop(k)
