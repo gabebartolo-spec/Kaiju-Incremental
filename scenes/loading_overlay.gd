@@ -5,8 +5,12 @@ extends CanvasLayer
 ## Each stage the builder reports (advance) is drawn before the next one starts.
 
 const LAYER := 60
-## The stages a rampage build reports (CityView and Rampage); the meter is full at this many.
-const STAGES := 12
+## The stages a rampage build reports (Rampage 3, CityView with decor 4); the meter is full at
+## this many (pinned by tests/lib/flow_staged_start.gd).
+const STAGES := 7
+## The meter's size and the gap between the word and the meter (px).
+const BAR_SIZE := Vector2(720, 26)
+const GAP := 24
 
 var _bar: ProgressBar
 var _done := 0
@@ -21,17 +25,22 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 24)
+	col.add_theme_constant_override("separation", GAP)
 	add_child(col)
 	var word := UiKit.label("LOADING", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(word)
-	_bar = UiKit.bar(UiKit.ACCENT, 26, true)
-	_bar.custom_minimum_size = Vector2(720, 26)
+	_bar = UiKit.bar(UiKit.ACCENT, int(BAR_SIZE.y), true)
+	_bar.custom_minimum_size = BAR_SIZE
 	_bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_bar.max_value = STAGES
 	_bar.value = _done
 	col.add_child(_bar)
+
+
+## How many stages are built so far.
+func done() -> int:
+	return _done
 
 
 ## One more stage is built.

@@ -62,7 +62,7 @@ func _ready() -> void:
 	for n: int in now:
 		_state[n] = 1  # claimed: view(n) waits for it rather than meshing it a second time
 	_initial = WorkerThreadPool.add_group_task(
-		func(k: int) -> void: _pre[k] = _make(_now[k]), now.size()
+		func(k: int) -> void: _pre[k] = null if _stop else _make(_now[k]), now.size()
 	)
 	if not defer_initial:
 		finish_initial()

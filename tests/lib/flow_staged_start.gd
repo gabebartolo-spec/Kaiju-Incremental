@@ -37,10 +37,20 @@ static func _staged_build(tree: SceneTree, check: Callable) -> void:
 		"a loading screen is up while it builds"
 	)
 	var risen := rampage.sim.emerge.risen()
+	var overlay: LoadingOverlay = rampage.find_children("*", "LoadingOverlay", false, false)[0]
+	var shown := 0
 	var frames := 0
 	while not rampage.is_loaded and frames < LOAD_FRAME_CAP:
+		if is_instance_valid(overlay):
+			shown = overlay.done()
 		await tree.physics_frame
 		frames += 1
+	if is_instance_valid(overlay):
+		shown = overlay.done()
+	check.call(
+		shown == LoadingOverlay.STAGES,
+		"the loading meter fills before it goes (%d of %d stages)" % [shown, LoadingOverlay.STAGES]
+	)
 	check.call(rampage.is_loaded, "the staged build finishes (%d frames)" % frames)
 	check.call(frames >= MIN_STAGES, "it is built over several frames, not one call: %d" % frames)
 	check.call(
@@ -71,10 +81,15 @@ static func _leave_mid_build(tree: SceneTree, check: Callable) -> void:
 	for _i: int in 3:
 		await tree.process_frame
 	check.call(not rampage.is_loaded, "three frames in, the run is still building")
+	var streams := rampage.find_children("*", "BuildingStream", true, false)
 	rampage.queue_free()
 	for _i: int in 5:
 		await tree.process_frame
 	check.call(not is_instance_valid(rampage), "leaving mid-build frees the run without a stall")
+	check.call(
+		streams.all(func(n: Node) -> bool: return not is_instance_valid(n)),
+		"its building stream went with it (%d were up)" % streams.size()
+	)
 
 
 static func _plain_build(tree: SceneTree, check: Callable) -> void:
