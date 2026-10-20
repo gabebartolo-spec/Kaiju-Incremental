@@ -1,5 +1,54 @@
 {
 	"default": "concrete",
+	"times": {
+		"_note": "Director 2026-10-20: all four times of day; runs rotate through them in this order (Content.time_for_run). Each entry overrides the look's keys; dusk is the look as written.",
+		"order": [
+			"dusk",
+			"night",
+			"morning",
+			"noon"
+		],
+		"dusk": {},
+		"night": {
+			"sun_pitch": -45,
+			"sun_color": "8ea8ff",
+			"sun_energy": 0.35,
+			"sky_top": "0c1428",
+			"sky_horizon": "2a3a5e",
+			"ambient": 1.4,
+			"ambient_color": "40547e",
+			"fog_color": "1e2a46",
+			"fog_density": 0.01,
+			"window_lit": 0.55,
+			"lamp_energy": 4.0
+		},
+		"morning": {
+			"sun_pitch": -18,
+			"sun_color": "ffd2a0",
+			"sun_energy": 1.1,
+			"sky_top": "6f9ccc",
+			"sky_horizon": "e8d2b8",
+			"ambient": 0.9,
+			"ambient_color": "9fb4c8",
+			"fog_color": "c8d6e0",
+			"fog_density": 0.003,
+			"window_lit": 0.08,
+			"lamp_energy": 0.0
+		},
+		"noon": {
+			"sun_pitch": -62,
+			"sun_color": "fff6e8",
+			"sun_energy": 1.6,
+			"sky_top": "3f7fc4",
+			"sky_horizon": "b8d4ea",
+			"ambient": 1.0,
+			"ambient_color": "a8c0d8",
+			"fog_color": "c4d6e4",
+			"fog_density": 0.005,
+			"window_lit": 0.0,
+			"lamp_energy": 0.0
+		}
+	},
 	"looks": [
 		{
 			"id": "concrete",
@@ -14,11 +63,11 @@
 			"fog_color": "4d7380",
 			"fog_density": 0.012,
 			"saturation": 0.9,
-			"contrast": 1.12,
-			"glow": 0.8,
+			"contrast": 1.3,
+			"glow": 1.0,
 			"voxel_inset": 0.99,
 			"color_noise": 0.08,
-			"crease_strength": 0.3,
+			"crease_strength": 0.0, "ssao": 3.0, "ssao_power": 2.0, "glow_threshold": 0.9,
 			"crease_radius": 1.5,
 			"crease_depth_step": 0.02,
 			"crease_normal_step": 0.25,
@@ -45,7 +94,8 @@
 			"water": "1c2c34",
 			"river": "2a5a6c",
 			"lamp_energy": 2.6,
-			"ambient_color": "5d8a98"
+			"ambient_color": "5d8a98",
+			"lamp_energy": 0.0
 		}
 	]
 }

@@ -1,7 +1,8 @@
 class_name Ruin
 extends RefCounted
-## What is left when a building is gone: a heap of its own voxels spilling past the footprint,
-## with ragged wall stubs still standing on a couple of sides (not for a landmark). Cosmetic,
+## What is left when a building is gone: a low heap of its own voxels spilling past the
+## footprint, nothing standing (director 2026-10-20: "they were previously reduced to rubble then
+## emerge from the ground as flaming buildings"; the wall stubs that rose here are gone). Cosmetic,
 ## seeded, built once.
 
 const RES := BuildingVoxels.RES
@@ -9,6 +10,13 @@ const RES := BuildingVoxels.RES
 
 ## Builds the ruin for a building whose palette and footprint come from `voxels`.
 static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMeshInstance3D:
+	return heap(voxels, rng).build(
+		rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin()
+	)
+
+
+## The ruin's cells (tests read them; build() draws them).
+static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBuilder:
 	var b := voxels.b
 	var w := b.w * RES
 	var d := b.d * RES
@@ -37,47 +45,17 @@ static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMe
 				elif y >= h - 1 and near_core and absi(hash(block)) % 2 == 0:
 					key = "char"  # scorch around the fire only
 				vox.put(Vector3i(x, y, z), key)
-	# A landmark (a stadium, a wheel) leaves only its heap: no office wall stubs or window panels.
-	if b.landmark == "":
-		for corner: int in 2:  # standing stumps: two corners keep 1-3 floors of wall
-			var cx0 := 0 if corner == 0 else w - RES * 2
-			var cz0 := 0 if corner == 0 else d - RES * 2
-			var floors := rng.randi_range(1, 2)
-			for x: int in range(cx0, mini(w, cx0 + RES * 2)):
-				for z: int in range(cz0, mini(d, cz0 + RES * 2)):
-					var edge := x == 0 or z == 0 or x == w - 1 or z == d - 1 or x == cx0 or z == cz0
-					if not edge:
-						continue
-					var top := roundi(peak) + RES * floors - rng.randi_range(0, RES * 2)  # jagged, above the pile
-					for y: int in maxi(RES, top):
-						var key := (
-							"stub_window"
-							if y % RES in [2, 3, 4, 5] and (x + z) % 6 > 1
-							else "stub_wall"
-						)
-						vox.put(Vector3i(x, y, z), key)
-		for slab_n: int in 3:  # big wall panels with window frames lying on the pile
-			var sx := rng.randi_range(0, maxi(0, w - RES * 2))
-			var sz := rng.randi_range(0, maxi(0, d - RES * 2))
-			var lift := roundi(peak * 0.6)
-			for px: int in RES * 2:
-				for pz: int in roundi(RES * 1.5):
-					var key := (
-						"stub_window" if px % 6 > 1 and pz % 8 in [2, 3, 4, 5] else "stub_wall"
-					)
-					vox.put(Vector3i(sx + px, lift + roundi(pz * 0.3), sz + pz), key)
 	vox.salt = b.style + 91
-	return vox.build(rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin())
+	return vox
 
 
-## Rubble is mostly pale broken concrete with a little of the building's own colour; the stubs
-## keep the facade colours (keys starting "stub_"); coals and scorch only near the fire.
+## Rubble is mostly pale broken concrete with a little of the building's own colour; coals and
+## scorch only near the fire.
 static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 	var palette := {}
 	for key: String in voxels.palette:
 		var c: Color = voxels.palette[key]
 		palette[key] = Color(c.lerp(Color("6e706e"), 0.8), 1.0)
-		palette["stub_" + key] = c
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
 	palette["char"] = Color("2a2624")
 	return palette

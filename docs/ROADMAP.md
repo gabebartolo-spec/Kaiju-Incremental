@@ -39,27 +39,28 @@ Each phase ends with a build the director plays (its gate). Copy rule (b2-15/16/
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
 chapter) · repo CLAUDE.md + kaiju-handoff skill to the 300k/500k context rule · b2-6 every building in the play area
 destroyable, any that cannot be is removed from it · b2-21 stadium placed as far from the spawn as the map allows ·
-b2-26 atomic breath hurts trees · b2-2 first half: find out why the tail swipe does not fire, fix that bug only ·
+b2-26 atomic breath hurts trees · a destroyed building stays rubble, never a burning shell (comments #14, #111) · the kaiju rises out of the river water, never the asphalt (comments 2026-10-20 #10) · b2-2 first half: find out why the tail swipe does not fire, fix that bug only ·
 p1-9 confirm in play that the south-of-spawn buildings are gone (#88) · sim check "armoured scales cut the damage"
 (fails locally on look-options) · worktree and branch cleanup. Gate: build 3.
 
 **B. Look foundations: director decisions, captures only, no production code.**
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
 (labelled captures of the same street) · b2-19 voxel count down / today / up, same shot · b2-7 camera angle and
-distance (2-3 framings as clips) · heli-cam A/B (parked; folded into the camera choice). Gate: his three picks
+distance (2-3 framings as clips) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
+morning, noon, dusk and night, he picks one (director 2026-10-20) · heli-cam A/B (parked; folded into the camera choice). Gate: his four picks
 recorded in DECISIONS.
 
 **C. Destruction core, on the picked look.**
 b2-4 effortless carving even for a baby kaiju: no building HP, a structure dismantled by physics · b2-5 varied
 collapse directions (not always onto the kaiju; revisits D-099's "onto the kaiju" lean) · b2-22 shared walls get
 real facades · rubble cap (823 pieces from one building) · WP6 follow-ups (landmarks promote to cells; stadium first
-hit 246 ms hitch) · b2-8 stadium crowd thins over time, never vanishes · b2-3 slow frames in heavy destruction
+hit 246 ms hitch) · b2-8 stadium crowd thins over time, never vanishes · stadium spectators on a broken stand fall or die, never hang with their feet in the air (comments #17) · b2-3 slow frames in heavy destruction
 (profiled in the carving path, fixed there) · b2-30 run start freezes 2-3 s · b2-29 quitting freezes 2-3 s.
 Gate: build 4.
 
 **D. Kaiju body and combat feel.**
-b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
-shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 atomic breath VFX pass · #104
+Turning with weight: lumbering and unstoppable yet responsive, the head turns toward the new heading before the body follows, no sliding pivot (comments #16, 2026-10-20) · b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
+shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 atomic breath VFX pass · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86). Gate: clips through the motion critic, then build 5.
 

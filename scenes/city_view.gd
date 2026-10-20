@@ -70,6 +70,12 @@ func crush(at: Vector3, radius: float) -> void:
 		street.crush(at, radius)
 
 
+## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
+func crush_cone(cone: Dictionary) -> void:
+	for c: Vector3 in BreathCone.cover(cone):
+		crush(Vector3(c.x, 0.0, c.y), c.z)
+
+
 func _process(delta: float) -> void:
 	_animate_falls(delta)
 	var camera := get_viewport().get_camera_3d()
@@ -102,7 +108,8 @@ func _build_environment() -> void:
 	env.ambient_light_energy = Look.value("ambient")
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.ssao_enabled = true
-	env.ssao_intensity = 2.5
+	env.ssao_intensity = Look.value("ssao")
+	env.ssao_power = Look.value("ssao_power")
 	env.ssao_radius = 1.5
 	env.fog_enabled = Look.value("fog_density") > 0.0
 	env.fog_light_color = Look.color("fog_color")
@@ -110,7 +117,7 @@ func _build_environment() -> void:
 	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
-	env.glow_hdr_threshold = 1.1
+	env.glow_hdr_threshold = Look.value("glow_threshold")
 	# Screen-space bounce light from lamps, fires and sun (SDFGI cost ~a tenth of the frame).
 	env.ssil_enabled = true
 	env.adjustment_enabled = true

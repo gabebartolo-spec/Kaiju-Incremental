@@ -10,6 +10,7 @@ extends "res://tests/lib/runner.gd"
 const CellsSupport := preload("res://tests/lib/cells_support.gd")
 
 ## Each fixture: [name, x, z, w, d, floors, tier, style, party].
+const RuinRubble := preload("res://tests/lib/cells_ruin.gd")
 const FIXTURES: Array = [
 	["office", 10.5, 4.5, 3, 3, 6, 2, 0, {}],
 	["brick", 20.5, 4.5, 3, 2, 5, 1, 1, {}],
@@ -73,6 +74,7 @@ func run_checks() -> void:
 	await _t("_check_promotion_lazy")
 	await _h("CellsSupport", func() -> void: CellsSupport.new(check, FIXTURES, _building).run())
 	await _t("_check_lit_is_a_look")
+	await _h("RuinRubble", func() -> void: RuinRubble.run(check, FIXTURES, _building))
 
 
 ## The view with no window lit: every voxel carries its material's palette key.

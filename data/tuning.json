@@ -113,7 +113,7 @@
 		"swipe_top": 7.0,
 		"swipe_chew_s": 1.0,
 		"swipe_chew_rows": 2.0,
-		"tail_reach": 6.0,
+		"tail_reach": 11.0,
 		"tail_floor_lo": 1,
 		"tail_floors": 3,
 		"momentum_build_seconds": 2.5,
@@ -431,6 +431,7 @@
 		"fade_s": 0.3,
 		"puff": 1.6
 	},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0},
 	"topple_fx": {
 		"shudder_s": 0.4,
 		"shudder_max_share": 0.3,
