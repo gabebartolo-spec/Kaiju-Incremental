@@ -19,6 +19,7 @@ var _graphics := ""
 var _species := "reptilian"
 var _out := ""
 var _carving := ""
+var _islands := false
 var _held := {}
 var _rampage: Rampage
 var _target := -1
@@ -28,6 +29,8 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
+		elif arg == "--islands":
+			_islands = true
 		elif arg == "--bench":
 			_bench = true
 		elif arg.begins_with("--graphics="):
@@ -86,6 +89,8 @@ func _run() -> void:
 			print("CARVE first carved fall at step %d (%.1fs)" % [step, float(step) / Engine.physics_ticks_per_second])
 		if step % 150 == 0:
 			_report(step)
+		if _islands and fell_at > 0 and (step - fell_at) % 15 == 0 and step - fell_at <= 300:
+			_report_islands(step)
 		if _bench:
 			frames += 1
 			var gpu := RenderingServer.viewport_get_measured_render_time_gpu(vp)
@@ -121,6 +126,11 @@ func _run() -> void:
 	print("CARVE worst costs (ms): ", _rampage.cost_usec.keys().map(
 		func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(_rampage.cost_usec[k]) / 1000.0]
 	))
+	if _city().carve != null:
+		var cc := _city().carve.cost_usec
+		print("CARVE carve costs (ms): ", cc.keys().map(
+			func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(cc[k]) / 1000.0]
+		))
 	PlayerSettings.graphics = ""
 	_rampage.queue_free()
 	await process_frame
@@ -198,3 +208,22 @@ func _report(step: int) -> void:
 			]
 		)
 	print(line)
+
+
+## Each island's tilt from upright (degrees), height of its centre, speed, spin and state.
+func _report_islands(step: int) -> void:
+	for island: IslandBody in _city().carve.physics.islands():
+		var tilt := rad_to_deg(island.global_basis.y.angle_to(Vector3.UP))
+		var low := INF
+		var high := -INF
+		for child: Node in island.get_children():
+			if child is MeshInstance3D and (child as MeshInstance3D).mesh != null:
+				var mi := child as MeshInstance3D
+				var box := mi.global_transform * mi.mesh.get_aabb()
+				low = minf(low, box.position.y)
+				high = maxf(high, box.end.y)
+		print("CARVE island step %d b%d cells %d: tilt %.0f, y %.1f (%.1f..%.1f), v %.2f, w %.2f, %s" % [
+			step, island.site.key, island.cell_count(), tilt, island.global_position.y, low, high,
+			island.linear_velocity.length(), island.angular_velocity.length(),
+			"settled" if island.settled_now else ("following" if island.following() else "free")
+		])

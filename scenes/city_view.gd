@@ -142,6 +142,7 @@ func _build_ground() -> void:
 	shape.shape = box_shape
 	shape.position.y = -0.5
 	ground.add_child(shape)
+	ground.collision_layer = 1 | CarveCity.ISLAND_GROUND  # carved islands land on it too
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
 	add_child(streets)

@@ -15,6 +15,13 @@ extends Node3D
 
 signal ignited(at: Vector3, size: float)
 
+## Physics layers: a falling island collides only with the ground (ISLAND_GROUND, which
+## CityView's ground also sits on), never with a standing building's colliders, the debris or
+## another island. The sim decides what a fall crushes (Collapse's strip, carved on landing);
+## an island caught on a neighbour's wall stopped dead at 35 degrees in play (step 691, b44).
+const ISLAND_LAYER := 4
+const ISLAND_GROUND := 8
+
 var physics: CarvePhysics
 ## Building index -> its BuildingCells grid (drawn and carved here), once promoted.
 var grids: Dictionary = {}
@@ -24,6 +31,8 @@ var sites: Dictionary = {}
 var promoted := 0
 var carves := 0
 var falls := 0
+## Worst main-thread cost per step (microseconds): take, carved, fell, promote, colliders.
+var cost_usec: Dictionary = {}
 
 var _sim: RampageSim
 var _stream: BuildingStream
@@ -83,7 +92,9 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> boo
 	want(index)
 	if not grids.has(index):
 		return false
+	var t0 := Time.get_ticks_usec()
 	var taken := _take_chunks(index, cells)
+	t0 = _note("take", t0)
 	var removed: PackedInt32Array = taken[0]
 	if removed.is_empty():
 		return true
@@ -94,6 +105,7 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> boo
 	physics.carved(index, grid.cells, {
 		"cells": removed, "mats": taken[1], "push": push
 	})
+	_note("carved", t0)
 	carves += 1
 	return true
 
@@ -105,7 +117,9 @@ func fall_start(event: Dictionary) -> bool:
 	if not grids.has(index):
 		return false
 	var cells: Array[Vector3i] = event["cells"]
+	var t0 := Time.get_ticks_usec()
 	var taken := _take_chunks(index, cells)
+	t0 = _note("take", t0)
 	var removed: PackedInt32Array = taken[0]
 	if removed.is_empty():
 		return true
@@ -120,7 +134,14 @@ func fall_start(event: Dictionary) -> bool:
 		"duration": Num.f(event["duration"]),
 	}
 	var grid: BuildingCells = grids[index]
-	physics.fell(index, grid.cells, fall)
+	var island := physics.fell(index, grid.cells, fall)
+	island.collision_layer = ISLAND_LAYER
+	island.collision_mask = ISLAND_GROUND
+	var mat := _stream.view(index).cells_material()  # the building's own look, not a flat one
+	for child: Node in island.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).material_override = mat
+	_note("fell", t0)
 	falls += 1
 	return true
 
@@ -169,6 +190,7 @@ func _take_made() -> void:
 		var pair: Array = ready[index]
 		var grid: BuildingCells = pair[0]
 		var mesher: CellMesher = pair[1]
+		var t0 := Time.get_ticks_usec()
 		var b := _sim.buildings[index]
 		for y: int in b.frame.h:
 			for z: int in b.frame.d:
@@ -182,11 +204,20 @@ func _take_made() -> void:
 			index, mesher.origin - Vector3.ONE * mesher.voxel * 0.5, grid.dims, grid.res
 		)
 		site.offset = grid.offset
+		t0 = _note("promote", t0)
 		physics.add_site(site, grid.cells)
+		_note("colliders", t0)
 		_palette(site, view.voxels)
 		grids[index] = grid
 		sites[index] = site
 		promoted += 1
+
+
+## Keeps the worst cost of `what` since `since` (usec); returns now.
+func _note(what: String, since: int) -> int:
+	var now := Time.get_ticks_usec()
+	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), now - since)
+	return now
 
 
 ## Debris and islands in the building's own colours (its view palette by material name).

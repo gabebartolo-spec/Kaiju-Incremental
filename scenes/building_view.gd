@@ -138,6 +138,11 @@ func promote(grid: BuildingCells, mesher: CellMesher = null, keep_baked: bool = 
 	return cells_view
 
 
+## The material its cell view draws with (null before promote): carved parts that fall share it.
+func cells_material() -> ShaderMaterial:
+	return _cells_mat
+
+
 ## The cell view alone draws the building from now on (after promote).
 func show_cells() -> void:
 	_cells_shown = true
