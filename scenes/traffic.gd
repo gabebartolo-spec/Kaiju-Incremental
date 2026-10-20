@@ -273,6 +273,8 @@ func update(delta: float) -> void:
 			continue
 		if car.police and swap:
 			car.body.mesh = _police_meshes[lit]
+		if car.parked:
+			TankKeepOut.make_way(sim, car)
 		if car.arrive_t >= 0.0:
 			_arrive(car, delta)
 		elif not car.parked:
@@ -353,6 +355,9 @@ func _blocked(car: Car) -> bool:
 		var ahead := rel.dot(dir)
 		if ahead > 0.0 and ahead < gap and absf(rel.cross(dir)) < LANE_HALF:
 			return true
+	if TankKeepOut.in_lane(sim, car, dir):  # a tank: no waiting it out, turn round at once
+		car.blocked = maxf(car.blocked, UTURN_AFTER)
+		return true
 	return false
 
 
