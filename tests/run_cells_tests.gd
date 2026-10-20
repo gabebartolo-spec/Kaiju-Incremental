@@ -49,7 +49,11 @@ const FORBIDDEN: Array[String] = [
 	"Node",
 	"await ",
 ]
-const MODULES: Array[String] = ["res://sim/building_cells.gd", "res://sim/cell_promoter.gd"]
+const MODULES: Array[String] = [
+	"res://sim/building_cells.gd",
+	"res://sim/cell_promoter.gd",
+	"res://sim/glass_frame.gd",
+]
 
 
 func suite_name() -> String:

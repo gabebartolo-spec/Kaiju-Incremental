@@ -1,5 +1,5 @@
 # carve-wp3 handoff (builder, WP3 of real carving, D-094)
-## State: merged base (WP1 in), cells checks use VoxelSupport, flood file deleted; CI pending on the new head
+## State: life 4 re-review items done (flood .uid removed, glass_frame.gd in guard MODULES, PR body updated, 50 checks); CI pending on the new head
 ## Task
 WP3: a pure sim generator of a building's fine grid (BuildingVoxels' layout cell for cell), materials
 from data/, lazy promotion helper (not wired, WP7), new `cells` suite. PR #98.
@@ -38,5 +38,5 @@ claude/carve-wp3 from origin/claude/look-options; worktree ../Kaiju-Incremental-
 - Grid bytes: x fastest, then z, then y; offset = building-local cell of grid (0,0,0), offset.y = 0.
 - Lit windows are a view look: the sim stores window/mullion/shop/glass.
 ## Open
-- Lead: still of the riser and sign brackets (view change); WP1 builder adds fixture rule.
+- Ground-floor corner still (A before / B after) in C:/Users/DANTE/AppData/Local/Temp/claude/wp3-corner/ (corner_ground_4x_AB.png, full.png per side): awning hides the ground floor at the game camera, no visible change beyond lit-window rolls. Lead decides riser/bracket still.
 - party_walls still in scenes/building_view.gd; move to sim in WP7.
