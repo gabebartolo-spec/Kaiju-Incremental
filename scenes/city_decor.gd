@@ -12,7 +12,6 @@ const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
 ## Half the footprint of car(): 3 voxels across and 6 long (PROP_VOXEL), along its street.
 const CAR_HALF := Vector2(0.375, 0.75)
-const TREE_CELL := 4.0  # street-tree spots are filed by ground cell of this size
 
 var sim: RampageSim
 var plan: Dictionary
@@ -35,7 +34,8 @@ var _foot := Rect2()  # its ground box in its own frame: x across, y along (mode
 var _fx := Fx.new()  # puffs where trees are crushed
 var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
-var _tree_cells := {}  # Vector2i cell -> the street-tree kerb spots in it
+var _kerb := TreeSpots.new()  # the street trees' kerb spots (CityGreenery.kerb_spots)
+var _trees: CityTrees  # the park, plaza ring and diagonal trees
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -65,13 +65,11 @@ func _ready() -> void:
 	# The street trees' kerb spots first, so the parking leaves room for them (D-065).
 	var greenery := CityGreenery.new(self, _rng)
 	for spot: Vector2 in greenery.kerb_spots():
-		var cell := Vector2i((spot / TREE_CELL).floor())
-		var in_cell: Array = _tree_cells.get(cell, [])
-		in_cell.append(spot)
-		_tree_cells[cell] = in_cell
+		_kerb.add(spot)
 	_streets()
+	_trees = CityTrees.new(self, _rng)
 	_blocks()
-	_diagonal_trees()
+	_trees.diagonal()
 	# D-065 greenery planted last, so the cars and trees before it keep their RNG draws.
 	greenery.plant()
 	green = greenery.green
@@ -224,28 +222,10 @@ func _streets() -> void:
 			t2 += LAMP_EVERY
 
 
-## Park trees keep city.park_tree_spacing apart (about a crown's width of lawn between them),
-## so a park reads as a lawn with trees and not as a wood (critic on #55).
-func _lawn_round(p: Vector2) -> bool:
-	var spacing := Num.f(sim.city["park_tree_spacing"])
-	for tree: Vector2 in _park_trees:
-		if tree.distance_to(p) < spacing:
-			return false
-	return true
-
-
 ## No street tree's trunk within city.street_tree_car_clear of a car body (the parking slot
 ## drops instead).
 func _clear_of_trees(body: Rect2) -> bool:
-	var reach := Num.f(sim.city["street_tree_car_clear"])
-	var lo := Vector2i(((body.position - Vector2.ONE * reach) / TREE_CELL).floor())
-	var hi := Vector2i(((body.end + Vector2.ONE * reach) / TREE_CELL).floor())
-	for cx: int in range(lo.x, hi.x + 1):
-		for cy: int in range(lo.y, hi.y + 1):
-			for spot: Vector2 in _tree_cells.get(Vector2i(cx, cy), []):
-				if spot.clamp(body.position, body.end).distance_to(spot) < reach:
-					return false
-	return true
+	return not _kerb.near_box(body, Num.f(sim.city["street_tree_car_clear"]))
 
 
 ## A streetlight at p whose arm reaches toward `toward` (over the road), with a pooled light.
@@ -270,26 +250,9 @@ func _blocks() -> void:
 		var rect: Rect2 = block["rect"]
 		match str(block["use"]):
 			"park":
-				var inner := rect.grow(-1.6)
-				var play := CityGreenery.playground_pad(rect, sim.city).grow(0.5)
-				for n: int in roundi(rect.get_area() / 9.0):
-					var p := Vector2(
-						_rng.randf_range(inner.position.x, inner.end.x),
-						_rng.randf_range(inner.position.y, inner.end.y)
-					)
-					var on_path := absf(p.x - rect.get_center().x) <= 1.2  # a path down the middle
-					if not on_path and not play.has_point(p) and _lawn_round(p):
-						_props.add(Vector3(p.x, 0, p.y), _tree, true)
-						_park_trees.append(p)
+				_trees.park(rect)
 			"plaza", "landmark":  # trees round the plaza (round a landmark too)
-				var ring := rect.grow(-1.2)
-				var t := 0.0
-				while t < 1.0:
-					for edge: int in 4:
-						var p := _on_edge(ring, edge, t)
-						if not _on_building(p):
-							_props.add(Vector3(p.x, 0, p.y), _tree, true)
-					t += 0.2
+				_trees.ring(rect)
 			"parking":
 				var bays := rect.grow(-0.6)
 				var x := bays.position.x + 1.65
@@ -302,66 +265,6 @@ func _blocks() -> void:
 								func(v: VoxelBuilder) -> void: car(v, color, false)
 							)
 					x += 1.3
-
-
-func _on_edge(r: Rect2, edge: int, t: float) -> Vector2:
-	match edge:
-		0:
-			return Vector2(lerpf(r.position.x, r.end.x, t), r.position.y)
-		1:
-			return Vector2(lerpf(r.position.x, r.end.x, t), r.end.y)
-		2:
-			return Vector2(r.position.x, lerpf(r.position.y, r.end.y, t))
-	return Vector2(r.end.x, lerpf(r.position.y, r.end.y, t))
-
-
-## Street trees down both sides of the diagonal, and in the leftover corners it cuts out of
-## the blocks (little plazas, the way Broadway leaves them). Past the playable edge the kerb row
-## runs on as far as the camera sees (D-062), clear of the skyline's stand-ins.
-func _diagonal_trees() -> void:
-	var diag: Dictionary = plan["diagonal"]
-	var at: Vector2 = diag["at"]
-	var dir: Vector2 = diag["dir"]
-	var side := Vector2(-dir.y, dir.x)
-	var kerb := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5 + 0.6
-	var reach := maxf(_half * 1.6, _view / absf(dir.x))
-	var t := -reach
-	while t < reach:
-		for s: float in [-1.0, 1.0]:
-			for off: float in [kerb, kerb + 2.5, kerb + 5.0]:
-				var p := at + dir * t + side * s * off
-				var city := _inside(p, -1.0)
-				if not city and (off != kerb or not _inside(p, _view - _half)):
-					continue
-				if _on_building(p) or (_near_street(p) if city else _on_road(p)):
-					continue
-				if off == kerb or _rng.randf() < 0.45:
-					_props.add(Vector3(p.x, 0, p.y), _tree, true)
-		t += 4.0
-
-
-## Whether p lies on a grid street's carriageway (past the edge, where stand-ins fill the blocks
-## and a tree may stand on the pavement).
-func _on_road(p: Vector2) -> bool:
-	var nodes: Array[Vector2] = plan["nodes"]
-	for street: Dictionary in plan["streets"]:
-		if str(street["kind"]) == CityGen.DIAGONAL:
-			continue
-		var a := nodes[Num.i(street["from"])]
-		var b := nodes[Num.i(street["to"])]
-		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
-		if q.distance_to(p) < Num.f(street["width"]) * 0.5 + 0.3:
-			return true
-	return false
-
-
-## Whether p lies on a grid street (not on a block).
-func _near_street(p: Vector2) -> bool:
-	for block: Dictionary in plan["blocks"]:
-		var rect: Rect2 = block["rect"]
-		if rect.has_point(p):
-			return false
-	return true
 
 
 ## A car (about 1.5 long at PROP_VOXEL), nose to -Z (to -X when along_x). Traffic reuses it.
@@ -388,13 +291,3 @@ func _streetlight(v: VoxelBuilder, arm: Vector2i) -> void:
 	v.box(Vector3i(0, 0, 0), Vector3i(0, 11, 0), "pole")
 	v.box(Vector3i(0, 11, 0), reach + Vector3i(0, 11, 0), "pole")
 	v.put(reach + Vector3i(0, 10, 0), "lamp")
-
-
-func _tree(v: VoxelBuilder) -> void:
-	var tall := 4 + _rng.randi_range(0, 3)
-	v.box(Vector3i(0, 0, 0), Vector3i(1, tall, 1), "bark")
-	var r := _rng.randf_range(2.6, 3.6)
-	v.blob(Vector3(0.5, tall + r * 0.8, 0.5), Vector3(r, r * 0.85, r), "leaf")
-	v.blob(
-		Vector3(0.5 + r * 0.5, tall + r * 0.5, 0.0), Vector3(r * 0.7, r * 0.6, r * 0.7), "leaf_dark"
-	)

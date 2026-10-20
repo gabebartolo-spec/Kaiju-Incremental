@@ -80,6 +80,49 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 2. Gate body yaw on foot phase: full turn rate while a foot swings and about a 0.15-0.25 share when both feet are down. The head and neck take the rest, and the lag is capped at about 30-40 deg. Cost: about 20 lines.
 3. Lead order through the body: the head turns at once (clamped), the chest takes about half, the hips take what the feet allow, and the tail counter-swings. Cost: about 30 lines.
 
+## 15. Minimal in-run HUD (15-minimal-hud.md)
+1. Strip the HUD to the rulings. Delete the controls hint, the HP plate and the dark plates, and keep the timer as it is. Biomass becomes one boxless, outlined label bottom right at 36-72 px. No HUD text is below 24 px, and the margins move out to the TV title-safe area (about 96 px at the sides and 54 px top and bottom, at 1080p). Cost: about 2-3 h, HUD script only.
+2. The breath shows as an icon with a ring drawn round it (`draw_arc` from the sim's cooldown, no texture assets), with a pulse and a sound when it is ready. It sits bottom centre, in the old health bar's space. Whether dash and the ultimate get the same ring is the director's call. Cost: about 2-3 h plus one icon.
+3. Show health as a red edge vignette whose width grows, plus a heartbeat below about 30% and a flash on the kaiju when hit, so it never relies on colour alone. Test it over the brightest fire. A thin bar that appears only when hit is the "repurposed" alternative, and the choice is his. Cost: about half a day.
+
+## 16. Upgrade tree look, pathing and cadence (16-upgrade-tree.md)
+1. Write the 2-3x tree (b2-28) as rings per stage that grow larger outward. Today's tree thins from 11 to 6 to 5 to 1 nodes per stage, and it should grow instead. About 1 node in 4 is a verb, each evolution opens with a cheap burst of new nodes, and the pacing bot asserts 1-4 buys per visit and no more than 5 runs between verbs. Cost: 1-2 days of data plus half a day of bot checks.
+2. Make buying an event, in presentation only: the node pops, the line lights up as it travels to newly opened nodes, they fade in, and the pitch rises per level. An evolution gets a flash and then the existing reveal. Cost: about 1 day.
+3. Show the next step in full, nodes further out as silhouettes, and the next evolution as a landmark always in view. Drop the "branch" band and the role text (b2-24, b2-27). Cost: about half a day.
+
+## 17. Lightning breath (17-lightning-breath.md)
+1. Replace the straight core and curtain in `scenes/breath_beam.gd` with a forked bolt fan: one main channel that keeps its shape and side branches that re-randomise on each stroke, spread across the sim's BreathCone, all in one mesh rebuilt per stroke. Cost: about 1 day, under 500 vertices.
+2. One stroke schedule (a dim feeler, then 2-3 bright strokes about 40-50 ms apart) drives the mouth light, the strike light and the zap, crackle and thunder sounds. `CityView.flash()` moves onto the light pool, which this branch does not have yet. Keep flashes under 3 a second and avoid saturated red. Cost: half a day plus 3 cleared sounds.
+3. Each breath gets its own seed (`Seeds.make("breath_bolt", ...)`), never the sim RNG, so replays and captures repeat exactly. Cost: about 10 lines.
+
+## 18. Graphics presets (18-graphics-presets.md)
+1. Grow the existing `display.graphics` (`high`/`balanced` in `data/tuning.json`) to Potato/Low/Medium/High/Max, and give Medium 2x MSAA with FSR1 (today's `balanced` turns MSAA off under FSR1, which the docs advise against). Cost: data and schema only, under an hour.
+2. Add shadow and effect settings to `PlayerSettings.apply_graphics`, all applied live: sun splits, shadow distance and size, PCSS off below High, SSAO/SSIL tiers, glow filter. Switching renderer needs a restart. Cost: about half a day plus captures.
+3. Move the hard-coded caps (`MAX_DEBRIS`, `MAX_FIRES`, Jolt `live_cap`, crowd counts, particle ratio) into the preset rows, presentation only, so the sim never changes. Pick the default from GPU type plus a 4 s frame-time sample. Cost: about 1.5 days.
+
+## 19. Camera per stage (19-camera.md)
+The rest angle is already decided (D-105: framing C, offset (0, 16, 30), FOV 60). These cover what D-105 left open.
+1. Move the zoom curve (`0.75 + 0.4 x scale`, hard-coded in `_place_camera`) into `data/tuning.json`, with a test that the kaiju's screen share rises each stage and stays at or under 35%. Cost: about 2 h.
+2. Rebuild shake as trauma squared on smooth noise, rotation only with no roll, capped at 2-3 deg and scaled by stage, plus one "camera motion 0-100%" setting covering shake, the footstep dip and the breath swing. Cost: about half a day plus two clips.
+3. Add look-ahead toward the stick direction (about 3 units at baby, 7.5 at adult, eased in after about 0.3 s of input), and start each run at last run's zoom and ease out (the Katamari beat, inside the intro). Cost: about half a day plus a clip. Framings to capture for his pick: A "today plus lead", B "grows on screen", C "low hero at adult".
+
+## 20. Run intro and evolution reveal (20-set-pieces.md)
+1. Retune the rise in `data/tuning.json` to end in 3 s or less, with a test that fails above 180 ticks. The rise from #113 runs in the sim and is estimated at 3.5-5.5 s, already over his 3 s. Cost: 1-2 h.
+2. Drive the intro camera from the rise's own progress inside the existing `_place_camera`, easing from a low water shot to the play angle, with no Tween or addon. The sim keeps running the rise, which holds the clock, army and input; a skip runs the remaining ticks faster, so replays still match. Cost: about half a day plus one clip.
+3. Roar when the head breaks the water, keep presses from the last 0.2 s for the first live tick (today they are dropped), and pace the evolution reveal by fixed ticks (today it counts frames: 3.8 s at 60 Hz, 1.6 s at 144 Hz). Cost: about 3 h.
+
+## 21. Water that reacts to the kaiju (21-water.md)
+Today the river is a flat, glossy sheet with no shader; the sim already emits every event the water needs.
+1. River shader with up to 64 ripples from sim events and footfalls (vertex ripple field timed on the sim clock, same in both renderers), with a stepped, flat-shaded toon look and a flow scroll. Cost: about 1-1.5 days.
+2. The rise and wading: a 19.47 deg wake V, a bulge before the head breaks the surface and foam around the body, all from the existing rise state. Cost: about half a day.
+3. Cube-droplet splashes through the existing particle helper (crowns on stomps and impacts, sheets falling off the body during the rise), plus floating rubble bobbing on the same ripples. Cost: about 1 day.
+
+## 22. Flung tanks and vehicles (22-flung-vehicles.md)
+Today a throw is a 0.7 s timer with one blast where it lands: no flight-path check (thrown tanks pass through towers), a straight-line view and credit paid at the grab.
+1. Arc the existing throw in the view (parabola, spin, squash, skid), sim unchanged. Cost: about half a day.
+2. Make the throw a sim ballistic at fixed 60 Hz: swept hits against the voxel grid that carve through the existing code, credit at landing, pinned-seed tests and a sim review. Plain floats are deterministic enough within one build. Cost: about 2-3 days.
+3. Turn the ram's instant move into a low launch, then add capped chain hits on tanks and helicopters as the upgrade hook. Jolt only throws the turret, the tracks and the dust, never the hull. Cost: about 2 days.
+
 ## Honest gaps
 - **01:** No developer postmortems or cost tables. The timing targets come from one AI-assisted blog post, and the review themes from aggregators.
 - **02:** These rest on fan wikis or a vendor page, or have no primary source: the Shin Godzilla heights, the GigaBash reasoning, haze as a scale tool and delayed sound. The legal notes are not legal advice.
@@ -95,6 +138,14 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 - **12:** No benchmark of light counts at 4K. Neither the fake beam in Compatibility nor HDR output per renderer has been tested.
 - **13:** No source shows how shipped games handle limbs against buildings. The cell-read budget is arithmetic, not a profile.
 - **14:** The twist threshold, the steps per 90 deg and the lag cap are inferences to tune from clips.
+- **15:** No primary source for the HUD details of Shadow of the Colossus, Inside, Limbo, Metro or Teardown, nor for the in-run HUDs of Nodebuster, Astro Prospector and Chef Knight. The thesis and the Dead Space talk were read only through summaries. The 4K text height of the caps-only font is unmeasured, and the culprit behind the tooltip widening is inferred from code.
+- **16:** No developer source on the tree screens of Nodebuster, Astro Prospector, Chef Knight or Brotato, and no cost tables. The Nodebuster node count (97) is my own count from a removed Steam guide. The tree-juice and fog techniques are design inference. The cadence table and target times are estimates for the pacing bot to verify. The required move from the 8 x 6 grid to a pannable map (50-65 nodes do not fit 48 cells) is a look decision for the director.
+- **17:** The film and game examples were not sourced, and there are no 4K overdraw numbers. The halo colour is the director's call (3 labelled stills). Decal scorch marks do not render in gl_compatibility, which has no HDR glow, so the coloured halo must be geometry.
+- **18:** No published per-setting millisecond costs for Godot at 4K, so they must be measured on the director's GPU. Godot cannot report total VRAM. `police.gd` was not checked for sim coupling, so police counts stay out of the presets.
+- **19:** Eiserloh and Nesky were read second-hand. There are no primary camera specs for GigaBash, War of the Monsters or Godzilla PS4, and all per-stage numbers are estimates. Unchecked: whether a carved building still fades at its original full height.
+- **20:** Sources for Hades, Rocket League, Shadow of the Colossus and the cutscene-skip guideline are thin or missing. The intro length is estimated from the tuning values, not measured.
+- **21:** Every millisecond cost is an estimate, nothing measured on the director's GPU. Depth foam in gl_compatibility needs a different depth formula and is untested in the repo.
+- **22:** The 50-unit cost is an unmeasured estimate and needs a fixed building lookup grid. Unconfirmed: whether `Engine.time_scale` changes the sim step, whether the ram can leave a tank inside a building, and the Rocket League claims (from a talk summary).
 - **Where the files disagree:**
   - 03 leans on Godot's Skeleton3D IK nodes, but 09, 13 and 14 found the repo's rig has one node per bone, so those nodes would need a rig migration.
   - 14's fixes target `gait_biped.gd`, but 11 found that the reptilian walks on ClipGait. Check which code path runs before tuning.
