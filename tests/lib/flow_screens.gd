@@ -4,6 +4,7 @@ extends RefCounted
 ## count-up, the evolution tree, the evolution reveal, settings, and quit-and-continue on the
 ## save. Every step is real input (mouse clicks at a control, key presses), not a handler call.
 
+const FlowDash := preload("res://tests/lib/flow_dash.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowSave := preload("res://tests/lib/flow_save.gd")
@@ -87,6 +88,7 @@ func _check_new_game() -> void:
 		main.queue_free()
 		return
 	layout.listen(rampage, "HUD")
+	await FlowDash.run(t, check, rampage)
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(rampage, PauseMenu)
 	layout.listen(rampage, "pause")

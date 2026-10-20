@@ -34,6 +34,7 @@ var _rubble: Label
 var _destruction: ProgressBar
 var _ability: Label
 var _ultimate: Label
+var _dash: Label
 ## The HUD's bars and hints: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
 var _clock_box: HazardBox
@@ -110,6 +111,9 @@ func _ready() -> void:
 	_ultimate = UiKit.label("", UiKit.SIZE_BODY)
 	_ultimate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bottom.add_child(_ultimate)
+	_dash = UiKit.label("", UiKit.SIZE_BODY)
+	_dash.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bottom.add_child(_dash)
 	var hint := UiKit.label(
 		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_BODY, UiKit.MUTED
 	)
@@ -162,6 +166,14 @@ func refresh() -> void:
 	else:
 		_ultimate.text = "ULTIMATE  %.0fs" % sim.ultimate_ready_in
 		_ultimate.add_theme_color_override("font_color", UiKit.MUTED)
+	var dash := sim.body.dash
+	_dash.visible = dash.available()
+	if dash.ready_in <= 0.0:
+		_dash.text = "DASH  READY  [Shift / B]"
+		_dash.add_theme_color_override("font_color", UiKit.GOOD)
+	else:
+		_dash.text = "DASH  %.1fs" % dash.ready_in
+		_dash.add_theme_color_override("font_color", UiKit.MUTED)
 
 
 ## The rampage is over (the sim said so): show why, and tell the rest of the game.

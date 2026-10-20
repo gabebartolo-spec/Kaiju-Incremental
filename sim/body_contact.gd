@@ -23,6 +23,8 @@ var held := false
 var longest_hold := 0.0
 ## The snout tip's forward offset from kaiju_pos at body scale 1, design units ("snout").
 var snout := 0.0
+## The charge along the facing (Dash), which this body's sweep carries through the city.
+var dash: Dash
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -38,6 +40,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	cfg = tuning["contact"]
 	heading = sim.facing
 	_last_heading = heading
+	dash = Dash.new(self, cfg)
 
 
 ## Picks the body volume for a species at the sim's size tier (call after setting the species).
@@ -70,8 +73,10 @@ func length() -> float:
 	return (front - back) * sim.body_scale()
 
 
-## Turns the body toward the facing, then breaks what it moved or turned into.
-func step(dt: float) -> void:
+## Turns the body toward the facing, carries a dash (dash_pressed: the button this step), then
+## breaks what the body moved or turned into.
+func step(dt: float, dash_pressed: bool = false) -> void:
+	dash.step(dt, dash_pressed)
 	var weight := minf(1.0, Num.f(cfg.get("turn_rate", 10.0)) * dt)
 	heading = Vector2.from_angle(lerp_angle(heading.angle(), sim.facing.angle(), weight))
 	if not active() or sim.airborne:
@@ -86,6 +91,7 @@ func step(dt: float) -> void:
 	longest_hold = maxf(longest_hold, _hold_s)
 	if held:
 		_hold(from, from_heading)
+		dash.left = 0.0  # a dash into a wall that has not given yet stops at it
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
 

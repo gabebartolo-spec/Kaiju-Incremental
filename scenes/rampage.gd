@@ -126,8 +126,10 @@ func _physics_process(delta: float) -> void:
 	var signature := Input.is_action_just_pressed("signature")
 	var held := Input.is_action_pressed("signature")
 	var ultimate := Input.is_action_just_pressed("ultimate")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate"} per frame
+	var buttons := Dash.BUTTON if Input.is_action_just_pressed("dash") else 0
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
 		var input: Dictionary = scripted.call(sim)
+		buttons = Dash.BUTTON if input.get("dash", false) else 0
 		move = input.get("move", Vector2.ZERO)
 		signature = input.get("signature", false)
 		held = input.get("held", false)
@@ -139,14 +141,14 @@ func _physics_process(delta: float) -> void:
 		ultimate = autoplay_signature
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
-	var buttons := (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
+	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_update_kaiju(delta, move.length())
+	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
 	_update_tanks(delta)
@@ -229,9 +231,7 @@ func _ability_fx(event: Dictionary) -> void:
 	match str(event["kind"]):
 		"cone":
 			var facing := _to_world(sim.facing)
-			var chest := (
-				_kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale() + facing * sim.body_scale()
-			)
+			var chest := _kaiju_at + (Vector3(0, 6.0, 0) + facing) * sim.body_scale()
 			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
 			var from: Vector2 = event["from"]  # the sim's cone (BreathCone) starts at the snout
 			var snout := _to_world(from)
@@ -268,7 +268,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 			sfx.play("leap_land")
 			_shake = maxf(_shake, 0.5)
 	else:
-		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
+		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	_kaiju.animate(delta, moving)
