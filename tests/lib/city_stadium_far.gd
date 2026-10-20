@@ -25,7 +25,10 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		check_fn.call(
 			inside,
 			(
-				"stage %d, map_seed %d: the stadium is real and inside the play area (reach %.1f, edge %.1f)"
+				(
+					"stage %d, map_seed %d: the stadium is real and inside the play area (reach"
+					+ " %.1f, edge %.1f)"
+				)
 				% [tier, map_seed, _reach(rect), here]
 			)
 		)
@@ -35,14 +38,20 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 	check_fn.call(
 		CityBand.near_edge(rect) > here and far >= FAR,
 		(
-			"stage 1, map_seed %d: the stadium stands %.0f m from the rise (>= %.0f), its near side %.1f m past the baby's edge %.1f"
+			(
+				"stage 1, map_seed %d: the stadium stands %.0f m from the rise (>= %.0f), its near"
+				+ " side %.1f m past the baby's edge %.1f"
+			)
 			% [map_seed, far, FAR, CityBand.near_edge(rect) - here, here]
 		)
 	)
 	check_fn.call(
 		CityBand.near_edge(wheel_rect) > here and not wheel_rect.intersects(rect),
 		(
-			"stage 1, map_seed %d: the wheel stands past the baby's edge (near side %.1f, edge %.1f) clear of the stadium"
+			(
+				"stage 1, map_seed %d: the wheel stands past the baby's edge (near side %.1f, edge"
+				+ " %.1f) clear of the stadium"
+			)
 			% [map_seed, CityBand.near_edge(wheel_rect), here]
 		)
 	)
@@ -79,7 +88,10 @@ static func _check_lots(
 				hits += 1
 	check_fn.call(
 		hits == 0,
-		"stage %d, map_seed %d: no block lot overlaps a landmark plaza (%d)" % [tier, map_seed, hits]
+		(
+			"stage %d, map_seed %d: no block lot overlaps a landmark plaza (%d)"
+			% [tier, map_seed, hits]
+		)
 	)
 
 

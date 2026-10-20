@@ -166,11 +166,17 @@ func _check_stream() -> void:
 			last_mark = k
 		elif first_plain == queue.size():
 			first_plain = k
+	var marks := 0  # every landmark: built at load, or queued ahead of every ordinary building
+	for n: int in sim.buildings.size():
+		marks += 1 if sim.buildings[n].landmark != "" else 0
 	check(
-		last_mark >= 0 and last_mark < first_plain,
+		marks > 0 and last_mark < first_plain,
 		(
-			"landmarks stream before any ordinary building, never long as a box (last landmark %d, first other %d)"
-			% [last_mark, first_plain]
+			(
+				"landmarks stream before any ordinary building, never long as a box (%d landmarks,"
+				+ " last queued %d, first other %d)"
+			)
+			% [marks, last_mark, first_plain]
 		)
 	)
 	var far := 0
