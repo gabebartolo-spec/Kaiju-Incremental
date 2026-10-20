@@ -60,6 +60,8 @@ func _ready() -> void:
 		add_child(_decor)
 		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
 		add_child(street)
+	# Where the kaiju's walk ends (comments #18).
+	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed.
