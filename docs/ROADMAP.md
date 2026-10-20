@@ -39,7 +39,7 @@ Each phase ends with a build the director plays (its gate). Copy rule (b2-15/16/
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
 chapter) · repo CLAUDE.md + kaiju-handoff skill to the 300k/500k context rule · b2-6 every building in the play area
 destroyable, any that cannot be is removed from it · b2-21 stadium placed as far from the spawn as the map allows ·
-b2-26 atomic breath hurts trees · b2-2 first half: find out why the tail swipe does not fire, fix that bug only ·
+b2-26 atomic breath hurts trees · the kaiju rises out of the river water, never the asphalt (comments 2026-10-20 #10) · b2-2 first half: find out why the tail swipe does not fire, fix that bug only ·
 p1-9 confirm in play that the south-of-spawn buildings are gone (#88) · sim check "armoured scales cut the damage"
 (fails locally on look-options) · worktree and branch cleanup. Gate: build 3.
 
@@ -60,7 +60,7 @@ Gate: build 4.
 
 **D. Kaiju body and combat feel.**
 b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
-shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 atomic breath VFX pass · #104
+shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 atomic breath VFX pass · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86). Gate: clips through the motion critic, then build 5.
 

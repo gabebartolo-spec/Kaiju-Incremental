@@ -14,3 +14,7 @@ Quotes are verbatim from his messages. Rule: every comment of his goes here with
 | 6 | "dont spawn multiple helpers. I will allow you ONE Opus Medium helper, and from there any helpers must be sonnet critics/readers, only you and the other Opus session should build" | lead | rule (RULEBOOK, CLAUDE.md) |
 | 7 | "add to roadmap: find a few different shaders and create side by side comparisons at different times of day so i can assess and choose which goes into the game" | lead / Phase B (claude/camera-options) | planned |
 | 8 | "dont worry about \"stealing focus\", work unhampered, i am not using the pc" and "all of the gpu and cpu is yours, use as many godot/gpu/ci lanes as you need" | all | standing while he is away |
+| 9 | "allow tanks to run over cars, thats fine with me, clumsy military" | lead / #109 (military check drops the car rule; tanks flatten cars) | done in #109 |
+| 10 | "make sure the river entrance shows our kaiju actually emerging from the water, not from the asphalt." | Phase A (bug) | open |
+| 11 | "have this as a quick, dramatic camera shot, zoomed in on the water which begins to ripple and fount before our kaiju emerges, roaring with rage before the camera zooms out into the play angle and the run begins. the entire scene should run for no longer than 3 seconds" | Phase D (after the Phase B camera pick) | open |
+| 12 | "water needs physics and to react to the kaiju" | Phase D | open |
