@@ -43,7 +43,9 @@ emissive + glow, so gl_compatibility's 32-per-frame cap never drops lights at ra
 HardLimiter + one Hero (roar, stomp, big collapse) to Bed sidechain duck, values in data (R 8.1) · tentacle Verlet
 chains on a fixed 1/60 s substep, their tunables into data (R 9.1) · "no empty space" as a suite: built footprint per
 district, no built block with zero lots, max gap along a street, a timing line per stage (R 6.1) · a headless parse
-step on every agent-written script (Godot 3 names) (R 5.6).
+step on every agent-written script (Godot 3 names) (R 5.6) · graphics: the existing `display.graphics` table (high,
+balanced) grows to Potato/Low/Medium/High/Max rows and Medium gets MSAA 2x under FSR1 (balanced runs FSR without AA,
+which the docs advise against) (R 18.1).
 
 **A. Close what is in flight; fix what no later choice changes.**
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
@@ -83,7 +85,13 @@ Gate: build 4.
 **D. Kaiju body and combat feel.**
 Turning with weight: lumbering and unstoppable yet responsive, the head turns toward the new heading before the body follows, no sliding pivot (comments #16, 2026-10-20) · b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
 shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 breath VFX pass, re-themed from atomic to hot lightning: forked white-hot bolts, scorch and sparks, the name
-and every "atomic" word in player text changed in the copy pass (director 2026-10-21; sim rules unchanged) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
+and every "atomic" word in player text changed in the copy pass (director 2026-10-21; sim rules unchanged). How
+(research 17): one ribbon mesh replaces the straight beam: a main channel from the jaw to the first hit, its shape
+fixed for the breath, and 3-5 branches fanning across the sim's BreathCone that re-draw on each stroke (R 17.1) ·
+one stroke schedule (a dim feeler, then 2-3 bright strokes, never more than 3 flashes a second, no saturated red)
+drives the pooled lights and the zap, crackle and thunder sounds (R 17.2) · a per-breath presentation seed, never the
+sim's (R 17.3) · in gl_compatibility the halo is real geometry because glow is LDR (R 17.4) · arcs to struck vehicles
+only if the fan alone does not read electric (R 17.5) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86) · more motion in the shoulders and head while it walks (comments 2026-10-21 #4) · the
 walk is "not great" and the turn should step "rather than swivelling on the spot like a plastic toy" (2026-10-21 #3).
@@ -147,7 +155,13 @@ b2-25 fans and GPU load: a measured audit at 4K, frame cap and per-system cost (
 budget measured on his PC, not taken from published numbers) · graphics settings with five presets, Potato, Low,
 Medium, High, Max (director 2026-10-21), built from the audit's per-system costs (shadows, light pool size, SSAO/SSIL,
 fog, glow, debris and crowd caps, render scale, draw distance), each preset measured in fps at 1080p and 4K, chosen
-in a settings menu that matches Phase F's UI · CI shard timings (claude/ci-shards). Gate: build 8.
+in a settings menu that matches Phase F's UI. How (research 18): shadow splits, distance, size, filter, PCSS (first
+to go below High), SSAO, SSIL and glow per preset in the live applier, city_view.gd reading them instead of its
+hard-coded values (R 18.2) · debris, fire, carve-physics, crowd and civilian caps and particle amount per preset,
+applied at the next rampage start (R 18.3) · light pool 8/12/16/24/32 by preset (R 18.4) · default chosen by renderer
+and GPU type, then a 4 s frame-time sample that only ever steps down, said once in settings (R 18.5) · Potato =
+gl_compatibility behind a restart, last (R 18.6) · the shader baker on for exports, presets applied only from menus
+or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
 **H. Content after the slice (already decided, unchanged order).**
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
@@ -181,7 +195,8 @@ pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored fin
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
 species follow the croc, and their verbs (research 02) · H: spend on music stems, and Tripo octopod rigs (R 3.5, 8.7) ·
-E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
+D: the lightning halo colour (hot amber, species-eye tint, or white with a violet fringe), 3 labelled 4K stills
+(R 17.6) · E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
 ultimate get rings like breath; health removed or shown only when hit; what happens to the "CITY DESTROYED" bar
 (R 15.2, 15.3, 15.9) ·
 legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath

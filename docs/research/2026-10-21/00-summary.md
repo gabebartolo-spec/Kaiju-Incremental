@@ -90,6 +90,16 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 2. Make buying an event, in presentation only: the node pops, the line lights up as it travels to newly opened nodes, they fade in, and the pitch rises per level. An evolution gets a flash and then the existing reveal. Cost: about 1 day.
 3. Show the next step in full, nodes further out as silhouettes, and the next evolution as a landmark always in view. Drop the "branch" band and the role text (b2-24, b2-27). Cost: about half a day.
 
+## 17. Lightning breath (17-lightning-breath.md)
+1. Replace the straight core and curtain in `scenes/breath_beam.gd` with a forked bolt fan: one main channel that keeps its shape and side branches that re-randomise on each stroke, spread across the sim's BreathCone, all in one mesh rebuilt per stroke. Cost: about 1 day, under 500 vertices.
+2. One stroke schedule (a dim feeler, then 2-3 bright strokes about 40-50 ms apart) drives the mouth light, the strike light and the zap, crackle and thunder sounds. `CityView.flash()` moves onto the light pool, which this branch does not have yet. Keep flashes under 3 a second and avoid saturated red. Cost: half a day plus 3 cleared sounds.
+3. Each breath gets its own seed (`Seeds.make("breath_bolt", ...)`), never the sim RNG, so replays and captures repeat exactly. Cost: about 10 lines.
+
+## 18. Graphics presets (18-graphics-presets.md)
+1. Grow the existing `display.graphics` (`high`/`balanced` in `data/tuning.json`) to Potato/Low/Medium/High/Max, and give Medium 2x MSAA with FSR1 (today's `balanced` turns MSAA off under FSR1, which the docs advise against). Cost: data and schema only, under an hour.
+2. Add shadow and effect settings to `PlayerSettings.apply_graphics`, all applied live: sun splits, shadow distance and size, PCSS off below High, SSAO/SSIL tiers, glow filter. Switching renderer needs a restart. Cost: about half a day plus captures.
+3. Move the hard-coded caps (`MAX_DEBRIS`, `MAX_FIRES`, Jolt `live_cap`, crowd counts, particle ratio) into the preset rows, presentation only, so the sim never changes. Pick the default from GPU type plus a 4 s frame-time sample. Cost: about 1.5 days.
+
 ## Honest gaps
 - **01:** No developer postmortems or cost tables. The timing targets come from one AI-assisted blog post, and the review themes from aggregators.
 - **02:** These rest on fan wikis or a vendor page, or have no primary source: the Shin Godzilla heights, the GigaBash reasoning, haze as a scale tool and delayed sound. The legal notes are not legal advice.
@@ -107,6 +117,8 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 - **14:** The twist threshold, the steps per 90 deg and the lag cap are inferences to tune from clips.
 - **15:** No primary source for the HUD details of Shadow of the Colossus, Inside, Limbo, Metro or Teardown, nor for the in-run HUDs of Nodebuster, Astro Prospector and Chef Knight. The thesis and the Dead Space talk were read only through summaries. The 4K text height of the caps-only font is unmeasured, and the culprit behind the tooltip widening is inferred from code.
 - **16:** No developer source on the tree screens of Nodebuster, Astro Prospector, Chef Knight or Brotato, and no cost tables. The Nodebuster node count (97) is my own count from a removed Steam guide. The tree-juice and fog techniques are design inference. The cadence table and target times are estimates for the pacing bot to verify. The required move from the 8 x 6 grid to a pannable map (50-65 nodes do not fit 48 cells) is a look decision for the director.
+- **17:** The film and game examples were not sourced, and there are no 4K overdraw numbers. The halo colour is the director's call (3 labelled stills). Decal scorch marks do not render in gl_compatibility, which has no HDR glow, so the coloured halo must be geometry.
+- **18:** No published per-setting millisecond costs for Godot at 4K, so they must be measured on the director's GPU. Godot cannot report total VRAM. `police.gd` was not checked for sim coupling, so police counts stay out of the presets.
 - **Where the files disagree:**
   - 03 leans on Godot's Skeleton3D IK nodes, but 09, 13 and 14 found the repo's rig has one node per bone, so those nodes would need a rig migration.
   - 14's fixes target `gait_biped.gd`, but 11 found that the reptilian walks on ClipGait. Check which code path runs before tuning.
