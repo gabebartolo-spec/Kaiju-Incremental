@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-20 · D-099 · Director · Carved towers fall by real physics, even onto the kaiju
+Why (asked through the question tool): true physics is the headline (D-097); a cut tower goes over toward the side that
+was cut away, wherever the kaiju stands, and can land on it. Supersedes D-096's lead call "an undermined tower falls away
+from the kaiju". Changes: carving WP1/WP5 keep the support rule's own direction; #89 drops its "every topple falls away"
+override (croc-contact builder, 2026-10-20) before it merges.
+
 ## 2026-10-20 · D-098 · Director · Young croc retune = option A "steady upgrades"
 Why: playtest note 8 (cadence 1 -> 8 -> 1 upgrades per death); he picked A of three via the question tool. Values:
 level-1 costs about half of level 2 (claws 45, hide 45, stride 80, quake 100, rage 75, greed 125, frenzy 220, r_tail 200,
