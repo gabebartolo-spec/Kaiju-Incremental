@@ -3,7 +3,7 @@
 ## Live helpers (lead 5): carve-wp1 life 3 (Sonnet): #97 add 3 fixture-rule checks that fail under mutation + layer-0 fixture check + 2 .uid files (re-review FIX comment 6281572240; code PASS) ·
 ##  carve-wp3 life 3 (Sonnet): #98 lead decision (c) = structural columns inside glass towers (spacing in tuning.json, sim+view parity), fix tests/lib/cells_flood_until_wp1.gd to WP1's rule
 ##   (fixtures never carry structural), 0 islands every style (probe: lead-5 scratchpad probe_wp3b.gd), before/after glass still -> Temp/claude/wp3-still/frame/ (re-review FIX comment 6281639153) ·
-##  wp2-lint (Sonnet): #99 gdlint, 1st push 96f4180 still red, retrying · wp5-recap (Sonnet): debug blow sphere off (--markers opt-in), 3 CI captures one at a time -> Temp/claude/wp5-recap/ci_<scene> ·
+##  #99 head 1f337dd: gdlint + tests GREEN (39356570213/39356570205); doc-caps red only from lead.md 123 lines on the old merge ref (now 119): next push/resync clears it · wp5-recap (Sonnet): debug blow sphere off (--markers opt-in), 3 CI captures one at a time -> Temp/claude/wp5-recap/ci_<scene> ·
 ##  croc89-fix (Sonnet): #89 critic FIX A (flat white off-palette debris slabs + intact slab hovering ~7.4-8.4 s, lead-confirmed critic-89/z1.png) + B (0.3-0.5 s lean before topple).
 ## MERGED: #50 cb8bbed (critic-50 FIX filtered: fb4 601-781 shows the reverse). #98 view change (riser, brackets) lead 2x PASS. WP4 slab 8a8780 pushed 609ea71, stills lead 2x OK: PR after #98/#99.
 ## LEAD DECISIONS today (record in next board PR): slab colour B 8a8780 (director); fixture on grid layer 0 is grounded (shopfront on street); glass towers get structural columns (c).
