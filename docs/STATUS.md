@@ -8,21 +8,17 @@ Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor
 an untyped declaration and a planted secret). Gate signer: the lead.
 
 ## Carving lane (D-097 top priority; D-099 real-physics falls; lead 4, 2026-10-20)
-PRs: #97 WP1 sim grid (sim review running) · #98 WP3 building cells (sim review running) · #99 WP2 native C++ core.
-Builders: WP4 view mesher `claude/carve-wp4` · WP5 physics presentation `claude/carve-wp5` (critic FIX round) · WP6
-landmarks `claude/carve-wp6`. WP7 (gameplay port) after WP1-WP5. Carving PRs, CI and reviews go first.
+Merged today: #97 WP1 sim grid, #98 WP3 building cells, #99 WP2 native core, #103 WP4 view mesher, #50 military AI.
+Ready without a PR (in progress): WP5 physics presentation `claude/carve-wp5`, WP6 landmarks `claude/carve-wp6`, young-retune
+`claude/young-retune`, carve-play `claude/carve-play`, carve-wp7 gameplay port (after WP1-WP5). Carving PRs, CI and reviews go first.
 
 ## Live PRs (2026-10-20)
 
 | PR | Owner | State | Item | Branch | Since |
 |----|-------|-------|------|--------|-------|
-| #97 | lead / carve-wp1 | sim review | D-094 WP1 VoxelFrame, islands, support rule | claude/carve-wp1 | 2026-10-20 |
-| #98 | lead / carve-wp3 | sim review | D-094 WP3 BuildingCells, lazy promotion | claude/carve-wp3 | 2026-10-20 |
-| #99 | lead / carve-wp2 | CI | D-094 WP2 native KaijuCarve (GDExtension) | claude/carve-wp2 | 2026-10-20 |
 | #89 | croc-contact | D-099 rework | playtest 2, D-091 body contact; topples to the cut side | claude/croc-contact | 2026-10-19 |
 | #90 | croc-contact | after #89 | playtest 4, dash | claude/croc-dash | 2026-10-19 |
 | #88 | river | after #89 | playtest 9/11, river emergence | claude/river-start | 2026-10-19 |
-| #50 | lead | motion critic r6 | D-066 military AI (tanks) | claude/military-ai | 2026-10-18 |
 
 ## Merged into look-options on 2026-10-19 (playtest fixes)
 #75 stall fix · #77 frame cap · #78 crowd killable · #79 stadium 1.5x (D-090) · #80 rifle crack · #83 breath from the
