@@ -18,6 +18,8 @@ class Building:
 	## A landmark's id (data/landmarks.json) or ""; rubble_bonus multiplies what its chunks pay.
 	var landmark := ""
 	var rubble_bonus := 1.0
+	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
+	var in_arena := true
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -98,8 +100,7 @@ var stand_y := 0.0
 ## In the air (gliding): no stomps, no blocking.
 var airborne := false
 var ultimate_ready_in := 0.0
-## While set, every chunk and unit _hit_area damages is also coated with it:
-## {"kind": "burn"|"ink", "dps": float, "seconds": float}.
+## While set, every chunk and unit _hit_area damages is coated: {"kind", "dps", "seconds"}.
 var hit_coat: Dictionary = {}
 ## While true, _hit_area also reaches helicopters whatever the kaiju's height.
 var hit_air := false
@@ -124,13 +125,13 @@ func _init(
 	hp = stat("hp")
 	max_hp = hp
 	time_left = stat("run_seconds")
+	arena_half = CityGen.half_extent(city) + Num.f(city["arena_margin"])
 	for entry: Dictionary in layout:
 		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
+		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
 		buildings.append(b)
-		chunks_total += b.frame.alive_count
-	var city_half := CityGen.half_extent(city)
-	arena_half = city_half + Num.f(city["arena_margin"])
-	kaiju_pos = Vector2(0.0, city_half)  # on the ring avenue, at the south edge
+		chunks_total += b.frame.alive_count if b.in_arena else 0
+	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
@@ -348,12 +349,12 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
 
 
-## Nearest standing ground-floor chunk to `from` (what an attacker walks to), or INF if none.
+## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
 func nearest_standing(from: Vector2) -> Vector2:
 	var best := Vector2(INF, INF)
 	var best_d := INF
 	for b: Building in buildings:
-		if b.frame.alive_count == 0:
+		if b.frame.alive_count == 0 or not b.in_arena:
 			continue
 		for x: int in b.w:
 			for z: int in b.d:
@@ -395,6 +396,6 @@ func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Arra
 
 
 func pay(b: Building, chunks: int, bonus: float) -> void:
-	chunks_destroyed += chunks
+	chunks_destroyed += chunks if b.in_arena else 0
 	var mult := bonus * b.rubble_bonus * stat("rubble_mult")
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * mult

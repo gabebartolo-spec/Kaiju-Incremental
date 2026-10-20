@@ -102,8 +102,8 @@ func _check_districts_kept() -> void:
 
 
 ## The edges still read (D-024) at every size: the bay lies past the north ring with room for
-## the waterfront, the outskirts run on past the last district, and the kaiju starts in the
-## street.
+## the waterfront, the outskirts run on past the last district, no block past the real band
+## the camera shows (CityBand) is built up, and the kaiju starts in the street.
 func _check_edges() -> void:
 	var bad: Array[String] = []
 	for tier: int in range(1, 5):
@@ -132,12 +132,8 @@ func _check_edges() -> void:
 		var built := 0
 		for block: Dictionary in plan["blocks"]:
 			var rect: Rect2 = block["rect"]
-			var inside := maxf(
-				maxf(absf(rect.position.x), absf(rect.end.x)),
-				maxf(absf(rect.position.y), absf(rect.end.y))
-			)
-			if str(block["use"]) == "built" and inside >= half:
-				bad.append("%d: a built block past the ring" % tier)
+			if str(block["use"]) == "built" and not CityBand.real(rect, cfg):
+				bad.append("%d: a built block past the real band" % tier)
 			built += 1 if str(block["use"]) == "built" else 0
 		if built == 0:
 			bad.append("%d: no built blocks" % tier)
