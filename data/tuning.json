@@ -674,5 +674,24 @@
 		"column_bay": 8,
 		"carve": true,
 		"chunk_alive_share": 0.5
+	},
+	"lights": {
+		"_note": "Positional lights (street lamps, fires, police beacons; R 12.1, R 12.2). Only the pool_size lights nearest the camera are real lights (gl_compatibility ignores every positional light past 32 a frame, rendering/limits/opengl/max_renderable_lights); the rest are their emissive voxels and glow. Each light also fades out with camera distance: begin and length in metres.",
+		"pool_size": 24,
+		"repick_seconds": 0.25,
+		"repick_distance": 2.0,
+		"fade_seconds": 0.3,
+		"lamp": {
+			"fade_begin": 90.0,
+			"fade_length": 30.0
+		},
+		"fire": {
+			"fade_begin": 120.0,
+			"fade_length": 40.0
+		},
+		"beacon": {
+			"fade_begin": 100.0,
+			"fade_length": 30.0
+		}
 	}
 }
