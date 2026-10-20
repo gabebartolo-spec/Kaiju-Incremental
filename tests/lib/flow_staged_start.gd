@@ -4,6 +4,7 @@ extends RefCounted
 ## it is built, and leaving mid-build is safe (queued workers stop, nothing waits on them).
 ## Seeded by design: the city layout and the army use pinned streams; no check reads the clock.
 
+const FlowHandover := preload("res://tests/lib/flow_handover.gd")
 ## Frames a staged build may take at most; a hung build fails here instead of hanging the suite.
 const LOAD_FRAME_CAP := 6000
 ## A staged build spans at least this many frames (a one-call build spans none).
@@ -14,6 +15,7 @@ static func run(tree: SceneTree, check: Callable) -> void:
 	await _staged_build(tree, check)
 	await _leave_mid_build(tree, check)
 	await _plain_build(tree, check)
+	await FlowHandover.run(tree, check)  # the run's start, then its hand-over (research 19, 20)
 
 
 static func _rampage(staged: bool) -> Rampage:
