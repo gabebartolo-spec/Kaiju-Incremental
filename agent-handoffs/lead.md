@@ -1,54 +1,54 @@
-# Lead handoff, 2026-10-21 (lead 8 -> lead 9; lead 8 stood down at 500k)
+# Lead handoff, 2026-10-21 (lead 9, session local_df2c2989, CLI 07ae5487; registered in context-guard-leads)
 ## Next lead: register (empty file named by your CLI session id in ~/.claude/context-guard-leads/), read this, then
 ## GitHub (open PRs), then list_sessions. Director's /goal: playable build with building carving first draft.
 ## Plan = docs/ROADMAP.md "Post-demo plan" phases A-H; every comment in docs/roadmap/2026-10-20-build2-playtest.md
-## (30 notes) and docs/roadmap/2026-10-20-director-comments.md (rows 1-17; rows 18-19 still to add, see below).
+## (30 notes) and docs/roadmap/2026-10-20-director-comments.md (rows 1-19; 18-19 added in #115).
 
 ## Team (director 2026-10-20/21)
-- Builders: the lead only ("No, I'll do Phase A"). Helpers: TWO Sonnet-high readers/critics he gave ("i afforded you
-  two sonnet high helpers, use them wisely", "keep your devs working"): Senior dev 1 (local_130ddd7e, briefed: fresh
-  review of #113 + read-only trace of b2-30/b2-29 freezes, NOT yet reported) and Senior dev 2 (local_87436601,
-  excellent; last brief: save its maps to the notes folder + draft new copy for every upgrade string). Keep both busy
-  with read/critic work every turn; they write no code. They report to the lead session id: re-point them to you.
-- Notes folder (maps, copy draft): C:\Users\DANTE\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\
-  local_962460da-74da-4903-8671-f465e00da040\ (phase-maps.md, phase-maps-copy.md once senior2 writes them).
+- Builders: the lead only ("No, I'll do Phase A"). Helpers: TWO Sonnet-high read-only reviewers/critics ("i afforded
+  you two sonnet high helpers, use them wisely", "keep your devs working", 2026-10-21 "both your devs are idle get them
+  working"). Keep both busy every turn; they write no code. Restart each at 300k as a fresh session (same title);
+  the app only lets you start sessions on a turn the director drove.
+- SENIOR DEV (local_66da64f8, fresh 2026-10-21): on kerb-fixes.md (cars on plaza edges, bunched trees, city-wide scan).
+- Senior2 reader/critic: predecessor local_87436601 at 300k, idle, could not be archived (background job): archive it
+  and start "Senior2 reader/critic" fresh with the b2-30 re-review brief (b2-30/b2-30-review.md items).
+- Notes: C:\Users\DANTE\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\
+  (freeze-trace.md, stadium-review.md, landmark-box/, b2-22-review.md, phase-a-audit.md, b2-30/). Phase maps (FINAL):
+  ...\local_962460da-...\phase-maps.md, phase-maps-copy.md. Senior dev's stadium-pr-review.md is in ...\local_df2c2989-...\.
 
-## Open PRs / branches (all into claude/look-options; mog.sh watchers die with lead 8: re-arm)
-- #113 river rise along the channel, head 29d3c61: CI shard 2 was queued a long time; merge on green.
-- #114 edge bollards (comments #18), head 1468da3: critic FIX applied (taller/denser/glow/tree clear, band-filtered
-  perf, per-side test). City + smoke green locally. Merge on green.
-- claude/b2-21-stadium-north 71b6d74 (pushed, NO PR): stadium past the baby's edge (director picked "A past the
-  edge"): anchor [-24,-57], wheel [30,-56], landmark plaza to the kerb (sim/city_sites.gd _inset, no sidewalk), test
-  tests/lib/city_stadium_far.gd failed first (75-78 m) -> 105-108 m. City green. Wide suites (growth flow sim
-  landmarkcells load military smoke) were running: rerun them, then merge look-options in, add roadmap rows 18
-  (edge: "the edge of the play area needs to be indicated somehow (not too loud)") + 19 (two Sonnet helpers) +
-  b2-21 status, drop "armoured scales" from Phase A (passes: senior2), open the PR. A wider district ring (72/73/74)
-  was tried and broke other city checks: do not go back to it.
-- claude/b2-22-party-facades 162427a (pushed, NO PR, Phase C prep): blank party walls removed in sim + view, pin
-  updated. Suites (cells cell_mesh city load) were running. Needs a capture + lead 2x before PR; PR only after build 3.
-- PR cap 3. Merged today: #109 WP7, #110, #111, #112.
+## Merged today: #113 river rise (6b119f7), #114 edge bollards (6494ba2). Earlier: #109-#112.
+## Open PRs / branches (into claude/look-options)
+- #115 stadium past the baby's edge + landmarks stream first (b2-21), head dc3c05b4c6ac656ed8f552bbb2dc8d8160f10321,
+  mog.sh watcher armed. Senior reviews SHIP (code + 8 captures). Polish for Phase C: parked cars straddle the plaza
+  edge (no sidewalk now), street + plaza-ring trees bunch.
+- claude/b2-30-run-start-freeze 4d7c869 (pushed, no PR): senior dev 1's staged run start (loading screen, stream stop
+  flag, hide-then-quit) + lead fixes for senior2's review (meter 7 stages pinned, consts, initial worker honours _stop).
+  Merged look-options in. Flow/smoke/load suites rerunning. Will conflict with #115 in BuildingStream._ready: keep
+  `_landmarks_first(_rest)` after the _rest loop, before `_now = now`; add `_landmarks_first` and `queued()`.
+  Open gaps from the review: QuitGame/WM_CLOSE test, staged-vs-plain same-seed equality, tests/lib/flow_demo.gd:97.
+- claude/b2-22-party-facades b06451a (pushed, no PR, Phase C): facade on touching sides + behaviour check (red on
+  base). Needs a capture of a demolished neighbour (proud awnings) before its PR.
 
 ## NEXT
-1. Re-arm merges for #113, #114; finish the stadium PR (above). Then build 3 = Phase A gate:
-   `gh workflow run build.yml --ref claude/look-options` (build 2 came from carve-play 3998051). Smoke the exe, put it
-   in C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/, tell him with a 5-line what-changed list.
-2. Director question at Phase C start (senior2 draft, phase-maps.md): b2-4 "effortless carving even for a baby" vs
-   D-091 (big buildings take the baby longer). Options A effortless + size shows in bite size (rec), B floor the
-   slowdown (<=2x), C keep D-091, fix feel with VFX. Also drop VISION.md:26-27 tier-gate sentence (stale since D-091).
-3. Phase C/D/E/F maps with file:line are in the notes folder (senior2). Phase D turning: sim.facing is instant, only
-   body.heading lags (turn_rate 10): move along body.heading, turn_rate ~3-4, head yaw leads (biped_head.gd).
+1. #115 merges -> PR b2-30 (resolve the conflict above) if its suites are green; then build 3 = Phase A gate:
+   `gh workflow run build.yml --ref claude/look-options`. Smoke the exe, put it in
+   C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/, tell him with the 5-line note (draft in notes/phase-a-audit.md).
+2. Director question at Phase C start (phase-maps.md): b2-4 "effortless carving even for a baby" vs D-091. Options
+   A effortless + size shows in bite size (rec), B floor the slowdown (<=2x), C keep D-091, fix feel with VFX. Also drop
+   VISION.md:26-27 tier-gate sentence (stale since D-091).
+3. Phase D turning: sim.facing is instant, only body.heading lags (turn_rate 10): move along body.heading, turn_rate
+   ~3-4, head yaw leads (biped_head.gd).
 
-## Findings this session (evidence in PR bodies)
-- Tail sweep fired but cut 0: reach shorter than its own tip (fixed #111). Smooth stick turns never sweep (Phase D).
-- Ruin wall stubs were the "burning buildings" (fixed #111). Breath crushed only round the feet (fixed #111).
-- Kaiju rose facing the bank: head over the road (#113). Headless Godot: MultiMesh transforms/AABB read back empty:
-  test cells/positions, not meshes. Fresh worktree after a new class_name needs `--editor --import`.
-- [skip ci] on a PR head leaves no checks: push an empty commit. Painted road lines read as lane markings.
+## Findings this session
+- Local runs without native/bin/*.dll take the GDScript carving path: sim ("a swiped tower topples sooner") and military
+  ("tanks hold standoff") each fail one check that passes on CI. Copy carve-play/native/bin/*.dll in first.
+- Far landmarks drew as office boxes until streamed in (BuildingStream stand-ins); captures shot them at 4 frames.
+- Swapping files in a worktree while its suites run poisons the run: never do it; use another worktree.
+- Two long-running Godot prof.gd processes (tools/tmp_wp7, PIDs 925029/929069) are not ours: carve-wp7 worktree kept.
 
 ## Tools
-- mog.sh: lead 8 scratchpad (b5e2e23e/scratchpad/mog.sh <pr> <full sha>); copy it to your scratchpad.
-- Captures: tools/capture/capture_shaders.gd (--shader=today --time=dusk|night|morning|noon); probe cameras in
-  arena-edge worktree tests/_probe/edge_shot.gd. override.cfg in the worktree first (separate call).
-- Worktrees to remove once merged: arena-edge, river-rise, b2-26, camera-opts, carve-wp7, res4, res16.
+- mog.sh in lead 9 scratchpad (07ae5487.../scratchpad/mog.sh <pr> <full sha>); copy it to yours.
+- Captures: tools/capture/capture_landmarks.gd (--tier=), capture_shaders.gd; override.cfg in the worktree first.
+- Worktrees removed today: river-rise, b2-26, camera-opts, carve-wp1..6, board-d096, board-d098 (39 left).
 
-Lead = "Kaiju: LEAD". Owns QA gates, merges, DECISIONS/STATUS, director questions, this file.
+Lead = "Kaiju: LEAD 9". Owns QA gates, merges, DECISIONS/STATUS, director questions, this file. playbook: nothing new.
