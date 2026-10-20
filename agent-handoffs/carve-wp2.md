@@ -1,5 +1,5 @@
 # carve-wp2 (builder) handoff
-Branch claude/carve-wp2 (worktree ../Kaiju-Incremental-wt/carve-wp2), from origin/claude/look-options. No PR (lead opens).
+Branch claude/carve-wp2 (PR #99), merged origin/claude/look-options (WP1 #97) cleanly; native + voxel_support suites pass locally.
 State: toolchain + KaijuCarve done and tested locally on Windows; Linux/CI path unproven until pushed run.
 Done: godot-cpp submodule (godot-4.5-stable, no 4.7 tag); native/{SConstruct,kaiju_carve.gdextension,src/}; KaijuCarve
 (set_grid, get_grid, carve_sphere, ground_flood; stateful because a PackedByteArray argument is a copy); tests/run_native_tests.gd
