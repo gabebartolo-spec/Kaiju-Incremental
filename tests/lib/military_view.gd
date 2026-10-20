@@ -10,7 +10,9 @@ extends "res://tests/lib/military_base.gd"
 
 const Clip := preload("res://tools/capture/capture_military.gd")
 const VIEW_SECONDS := 18.0
-const EDGE_GAP := 8.0  # standoff: a tank's centre this far from the kaiju's body edge (LEAD r6)
+## Standoff: a tank's hull (its nearest corner or side) this far from the kaiju's body edge
+## (LEAD r6; r7: from the hull, not its centre).
+const EDGE_GAP := 8.0
 const CAR_HALF := Vector2(1.0, 0.5)  # a car as drawn, half length x half width (m)
 ## How fast a tank backs out from inside the danger line, at least and at most (m/s, LEAD r6:
 ## 3-4 m/s, never a creep that reads as stuck).
@@ -26,10 +28,14 @@ func _check_view() -> void:
 	var got := await _view_run()
 	var head := (
 		(
-			", closest to the kaiju's body edge %.1f m (to its origin %.1f, danger %.1f), tank on a"
+			", closest hull to the kaiju's body edge %.1f m (to its origin %.1f, danger %.1f), tank on a"
 			% [got["edge"], got["closest"], got["danger"]]
 		)
 		+ " car %d" % got["on_car"]
+		+ (
+			", cornered (no road out) %d tank-steps, closest %.1f m"
+			% [got["cornered"], got["cornered_edge"]]
+		)
 	)
 	print(
 		(
@@ -58,11 +64,22 @@ func _check_view() -> void:
 		Num.f(got["edge"]) >= EDGE_GAP and Num.i(got["on_car"]) == 0,
 		(
 			(
-				"in the game view the kaiju strides at the tanks and they fall back: none comes"
-				+ " within %.0f m of the edge of its body, snout to tail root (closest %.1f m); no tank's"
-				+ " hull meets a car (%d tank-steps)"
+				"in the game view the kaiju strides at the tanks and they fall back: no hull with a"
+				+ " road out comes within %.0f m of the edge of its body, snout to tail root"
+				+ " (closest %.1f m); no tank's hull meets a car (%d tank-steps)"
 			)
 			% [EDGE_GAP, got["edge"], got["on_car"]]
+		)
+	)
+	check(
+		Num.i(got["cornered_closer"]) == 0,
+		(
+			(
+				"a tank nearer the kaiju than %.0f m is only one with no road out (every way ends"
+				+ " nearer its body): it holds and fires, never drives at it (%d tank-steps"
+				+ " cornered, closest %.1f m; %d drove nearer)"
+			)
+			% [EDGE_GAP, got["cornered"], got["cornered_edge"], got["cornered_closer"]]
 		)
 	)
 	var steps := Num.i(got["retreat_steps"])
@@ -99,6 +116,7 @@ func _view_run() -> Dictionary:
 	var roads := _roads(rampage.sim)
 	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}
 	got["edge"] = INF
+	got.merge({"cornered": 0, "cornered_edge": INF, "cornered_closer": 0, "was_at": {}})
 	got.merge({"retreat_steps": 0, "retreat_ok": 0, "retreat_min": INF, "retreat_max": 0.0})
 	got["danger"] = rampage.sim.army_units.convoy.danger()
 	var last := {}
@@ -175,13 +193,19 @@ func _measure_cars(rampage: Rampage, got: Dictionary) -> void:
 	var street := rampage._city.street
 	for tank: RampageSim.Tank in sim.tanks:
 		got["closest"] = minf(Num.f(got["closest"]), tank.pos.distance_to(sim.kaiju_pos))
-		var snout: Vector2 = BreathCone.of(sim)["origin"]
-		var body := Geometry2D.get_closest_point_to_segment(tank.pos, sim.kaiju_pos, snout)
-		var edge := (
-			tank.pos.distance_to(body) - Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-		)
-		got["edge"] = minf(Num.f(got["edge"]), edge)
 		var u := sim.army_units.convoy.front(tank.id)
+		var edge := _hull_to_body(sim, tank.pos, u)
+		var seen: Dictionary = got["was_at"]
+		var was_at: Vector2 = seen.get(tank.id, tank.pos)
+		seen[tank.id] = tank.pos
+		var was := _hull_to_body(sim, was_at, u)  # where it stood a sim step ago, body as now
+		if edge < EDGE_GAP and _cornered(sim, tank.pos):  # LEAD r7: it holds and fires
+			got["cornered"] = Num.i(got["cornered"]) + 1
+			got["cornered_edge"] = minf(Num.f(got["cornered_edge"]), edge)
+			if edge < was - 0.05:  # it drove nearer the body (not the body nearer it)
+				got["cornered_closer"] = Num.i(got["cornered_closer"]) + 1
+		else:
+			got["edge"] = minf(Num.f(got["edge"]), edge)
 		if street == null or u == Vector2.ZERO:
 			continue
 		var half := Vector2(HULL_LENGTH * 0.5, HULL_HALF_WIDTH)
@@ -191,6 +215,49 @@ func _measure_cars(rampage: Rampage, got: Dictionary) -> void:
 			var ly := absf(d.dot(u.orthogonal())) - half.y - CAR_HALF.y
 			if not car.crushed and maxf(lx, ly) <= 0.0:
 				got["on_car"] = Num.i(got["on_car"]) + 1
+
+
+## Has the tank at p no road out: every way along every army road it stands on (RoadGraph: the
+## plan clipped to the box the army operates in) ends nearer the kaiju's body line than it stands
+## now? (A stub out to the box's edge with the kaiju at its mouth.)
+static func _cornered(sim: RampageSim, p: Vector2) -> bool:
+	var graph := sim.army_units.convoy.graph
+	var snout: Vector2 = BreathCone.of(sim)["origin"]
+	var here := Geometry2D.get_closest_point_to_segment(p, sim.kaiju_pos, snout).distance_to(p)
+	for e: int in graph.roads_at(graph.cell_of(p)):
+		if not graph.on_edge(p, e):
+			continue
+		for end: Vector2 in [graph.nodes[graph.edge_a[e]], graph.nodes[graph.edge_b[e]]]:
+			var q := Geometry2D.get_closest_point_to_segment(end, sim.kaiju_pos, snout)
+			if end.distance_to(p) > 0.5 and end.distance_to(q) > here:
+				return false
+	return true
+
+
+## How far the hull's nearest corner or side (HULL_LENGTH x 2 HULL_HALF_WIDTH along `u`; a
+## circle that wide before it has a pose) is from the kaiju's body edge: the line from its
+## origin (tail root) to its snout, body_radius wide (LEAD r7: the ground gap, head included).
+static func _hull_to_body(sim: RampageSim, p: Vector2, u: Vector2) -> float:
+	var snout: Vector2 = BreathCone.of(sim)["origin"]
+	var radius := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+	var half := Vector2(HULL_LENGTH * 0.5, HULL_HALF_WIDTH)
+	if u == Vector2.ZERO:
+		var q := Geometry2D.get_closest_point_to_segment(p, sim.kaiju_pos, snout)
+		return p.distance_to(q) - radius - half.length()
+	var s := u.orthogonal()
+	var hull := PackedVector2Array()
+	for k: Vector2 in [Vector2(1, 1), Vector2(1, -1), Vector2(-1, -1), Vector2(-1, 1)]:
+		hull.append(p + u * half.x * k.x + s * half.y * k.y)
+	var spine := PackedVector2Array([sim.kaiju_pos, snout])
+	if not Geometry2D.intersect_polyline_with_polygon(spine, hull).is_empty():
+		return -radius
+	var best := INF
+	for i: int in 4:
+		var a := hull[i]
+		var b := hull[(i + 1) % 4]
+		var on_body := Geometry2D.get_closest_points_between_segments(a, b, sim.kaiju_pos, snout)
+		best = minf(best, on_body[0].distance_to(on_body[1]))
+	return best - radius
 
 
 ## The hull's angle off the road it stands on (the least of them at a crossing).

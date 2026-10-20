@@ -234,7 +234,8 @@ func crosses_danger(from: Vector2, points: Array) -> bool:
 ## Back off along a road under the tank (at a crossing, whichever road and way leaves it
 ## furthest from where the body will be after `lookahead` seconds, counting the time to swing
 ## the hull), to `follow` beyond the danger radius or as far as it can drive in that time (no
-## further than that road's end): [path, legs], empty if it is already out.
+## further than that road's end): [path, legs], empty if it is already out or no way leaves it
+## clearer than holding.
 func fall_back(tank: RampageSim.Tank, r: ConvoyRoute) -> Array:
 	var want := convoy.danger() + Num.f(cfg["follow"]) - to_body(tank.pos)
 	if want <= 0.0:
@@ -247,7 +248,9 @@ func fall_back(tank: RampageSim.Tank, r: ConvoyRoute) -> Array:
 	var turn := deg_to_rad(Num.f(cfg["hull_turn"]))
 	var go := maxf(want, fast * t)
 	var under := graph.road_under(tank.pos, r.edge)
-	var best := -INF
+	# Never a way that ends nearer the body than standing fast (a stub with the kaiju at its far
+	# end, at the box's edge): hold rather than drive at it (LEAD r7).
+	var best := Geometry2D.get_closest_point_to_segment(tank.pos, tail, snout).distance_to(tank.pos)
 	var out: Array = [[], []]
 	for e: int in graph.roads_at(graph.cell_of(tank.pos)) + PackedInt32Array([under]):
 		if e != under and not graph.on_edge(tank.pos, e):

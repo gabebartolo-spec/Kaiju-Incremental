@@ -1,7 +1,22 @@
-# Military AI handoff, 2026-10-20 (r6 fix pushed; builder stopped at 200k, fresh builder continues)
-## State: r6 proof done: tests green 0854411; clip run 39285260591 (720p30), overlays made; pacing NOT measured (too slow). Awaiting lead.
+# Military AI handoff, 2026-10-20 (r7: proof tool fixed, hull-edge standoff, fall-back capture)
+## State: r7 pushed (see PR #50 checks); local clips done; CI capture dispatched. Awaiting lead.
 ## Local headless allowed (director 2026-10-20): tools/run_tests.sh --quick military, GODOT wrapper
-## adding --audio-driver Dummy. Captures stay on CI. Don't merge. Helis not in #50.
+## adding --audio-driver Dummy. Director away 2026-10-20 ~11:00: local windowed renders allowed. Don't merge.
+
+## r7 done (military suite 12 checks green locally; both new failures shown first)
+- Overlay bug: Camera3D.unproject_position returns CANVAS coords (1920x1080 under the project's
+  canvas_items stretch), the stills were 1280x720 -> boxes scaled 1.5x, paired with wrong tanks.
+  capture_military now: stills after RenderingServer.frame_post_draw (what was drawn is measured),
+  outlines from each part's MultiMeshInstance3D voxels x its global transform, scaled to still px;
+  POSE lines (off deg, lat, kerb, hull-to-body m, screen angles) and KERB lines (road kerbs/centre).
+  --probe = POSE only, headless. --mode=fallback = entry camera, then fixed cam on the first tank
+  falling back + m/s readout (capture only).
+- Item 2 not real: parked hulls 0.0 deg off, tracks >= 0.56 m inside the carriageway (perspective).
+- Item 3 real: tank 6 hull corner 6.5 m from the body edge (centre 9.3). Fix: danger() adds the
+  hull half-diagonal; fall_back never picks a way ending nearer the body than holding (one tank
+  drove back up its stub). View check now from the hull: 6.1 m old -> 8.1 m; tank cornered on its
+  entry stub at the box edge holds at 7.8 m (LEAD call A: named check, never drives nearer).
+- Scratch: <scratchpad>/r7 (overlay2.py, game2/clip.mp4 1080p30 18 s, fb4/clip.mp4, ov2/, crops).
 
 ## r6 done (local military suite 11/11 green at the push; old sim fails 4, shown failing first)
 - Merge of look-options (d26b5ea): floors and shard registry deleted; military suite uses _t.
