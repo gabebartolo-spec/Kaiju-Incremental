@@ -189,7 +189,7 @@ func result() -> Dictionary:
 
 
 ## Advances the rampage by dt: the move vector, the signature pressed this step, and buttons
-## as flags (HELD: signature held down; ULTIMATE: pressed). Returns the step's events.
+## as flags (HELD: signature held; ULTIMATE, Dash.BUTTON: pressed). Returns the step's events.
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
@@ -206,7 +206,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
 		facing = powers.turn_toward(facing, dir.normalized(), dt)
 	powers.after_move(dt, old_facing, moving)
-	body.step(dt)
+	body.step(dt, buttons & Dash.BUTTON != 0)
 	_stomp_timer -= dt
 	if _stomp_timer <= 0.0:
 		_stomp_timer += maxf(0.1, stat("stomp_interval"))

@@ -126,6 +126,11 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 				_beam = null
 		"coated":
 			_coated(event)
+		"dash":  # the charge: a whoosh and a dust streak along the path
+			var ahead := _w(event["dir"]) * sim.body.length()
+			_city.fx.dust_line(kaiju_at, kaiju_at + ahead + Vector3(0, 0.5, 0), bs * 2.0)
+			if sfx != null:
+				sfx.play("leap_whoosh")
 		"glide_start":
 			_city.fx.dust(kaiju_at + Vector3(0, 0.3, 0), bs * 1.5)
 		"glide_land":
@@ -280,6 +285,9 @@ func helis() -> Array[Node3D]:
 ## kaiju's facing, and momentum's dust trail.
 func update(delta: float, kaiju_at: Vector3) -> void:
 	var bs := sim.body_scale()
+	if sim.body.dash.on():  # a dash knocks down the people and police in its way
+		var reach := sim.body.length() * 0.3
+		_city.crush(kaiju_at + _w(sim.facing) * reach, reach)
 	var turn := minf(1.0, delta * Num.f(Content.section("vehicles")["heli_turn"]))
 	for heli: AirWing.Heli in sim.air.helis:
 		if _helis.has(heli.id):
