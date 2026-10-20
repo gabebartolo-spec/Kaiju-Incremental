@@ -12,3 +12,5 @@ Quotes are verbatim from his messages. Rule: every comment of his goes here with
 | 4 | "change lead context limit to 500k so we can actually get something done" and "increase to 300k (450k hard cutoff) for all helpers" | lead 8 / ~/.claude hook + RULEBOOK | done |
 | 5 | "dont waste time chasing marginal gains, get things implemented and we can polish later" | all | rule (no-marginal-gains) |
 | 6 | "dont spawn multiple helpers. I will allow you ONE Opus Medium helper, and from there any helpers must be sonnet critics/readers, only you and the other Opus session should build" | lead | rule (RULEBOOK, CLAUDE.md) |
+| 7 | "add to roadmap: find a few different shaders and create side by side comparisons at different times of day so i can assess and choose which goes into the game" | lead / Phase B (claude/camera-options) | planned |
+| 8 | "dont worry about \"stealing focus\", work unhampered, i am not using the pc" and "all of the gpu and cpu is yours, use as many godot/gpu/ci lanes as you need" | all | standing while he is away |

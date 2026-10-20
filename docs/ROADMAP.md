@@ -46,7 +46,8 @@ p1-9 confirm in play that the south-of-spawn buildings are gone (#88) · sim che
 **B. Look foundations: director decisions, captures only, no production code.**
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
 (labelled captures of the same street) · b2-19 voxel count down / today / up, same shot · b2-7 camera angle and
-distance (2-3 framings as clips) · heli-cam A/B (parked; folded into the camera choice). Gate: his three picks
+distance (2-3 framings as clips) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
+morning, noon, dusk and night, he picks one (director 2026-10-20) · heli-cam A/B (parked; folded into the camera choice). Gate: his four picks
 recorded in DECISIONS.
 
 **C. Destruction core, on the picked look.**
