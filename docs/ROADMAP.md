@@ -112,6 +112,18 @@ through upgrades to a ceiling; start value set by his playtest (R 1.2) · about 
 does or sees (a verb, prey, district, the next stage); reveal only the next ring (R 1.4) · the city scales with the
 kaiju so the late game never goes AFK (taller blocks, more tanks and helicopters; prestige = harder enemies, bigger
 rewards), the genre's top complaint (R 1.3) · target 3-5 h to the ending.
+How (research 16, a beautiful tree whose paths set the pace, director 2026-10-21): today the tree thins as the
+kaiju grows (11 / 6 / 5 / 1 nodes per stage, 87 levels, gone in about 0.9 h); write 50-65 nodes per species as rings
+that grow outward (about 14 / 16 / 18 / 10), each node a `kind` (stat, verb, stage), a cheap 3-4 node burst just past
+each evolution and a dearer climb before the next; the pacing bot asserts 1-4 buys a visit, at most 5 runs between
+verb or stage nodes, evolutions within 20% of their target times (b2-28 and p1-8 are one sum) (R 16.1) · buying is an
+event: the node pops, light runs along the link to each node it opens, the sound rises a step per level, an
+evolution gets a bigger beat before the reveal (R 16.2) · the next step shown in full, the next stage as silhouettes,
+the next evolution always visible as a landmark (R 16.3) · kind read by shape and size, not colour: small round stat
+nodes, larger verb nodes with an icon, the largest evolution keystones (R 16.4) · an outward map that pans but never
+zooms, so text keeps its size; it remembers the view, has a home key, and moves itself only for an evolution reveal;
+d-pad focus by geometry (R 16.5; 50-65 nodes do not fit the 8 x 6 grid, so b2-28 forces it; layout picked here in E,
+skin in F) · last, a flowing shader on owned links (R 16.6).
 
 **F. UI redesign, on the final camera and tree.**
 b2-10 HUD: timer stays, biomass a boxless figure bottom right, controls shown once at the start and in a controls
@@ -119,6 +131,16 @@ menu · b2-12 breath cooldown as an icon with a circular fill · b2-13 health ba
 species select: the kaiju centred, spinning in frame · b2-23 tooltips one fixed width (the ultimate no longer
 reshapes the screen) · b2-14 bespoke original UI assets (boxes, cards) for every screen · a screen-shake setting
 (R 1.5). Gate: screen critic, build 7.
+How (research 15, a really minimal HUD, director 2026-10-21): strip the HUD to his rulings: delete the controls hint,
+the HP plate and both plates, keep the boxed timer, biomass one boxless outlined figure bottom right, no HUD text
+under 24 px (today's 20 px HP text and "CITY DESTROYED" break it), margins into the TV title-safe area (about 96 px
+sides, 54 px top and bottom at 1080p, in data) (R 15.1) · breath as a ring drawn with draw_arc, a pulse and a sound
+when ready, bottom centre where the health bar was (R 15.2) · health as a red edge vignette that widens as HP falls,
+a heartbeat under about 30% and a hit flash on the kaiju, so it never relies on colour alone (R 15.3) · one shared
+outlined text style, checked at 4K for body height and 4.5:1 contrast over the brightest fire (R 15.4) · biomass
+rolls toward its value and pops on big gains (R 15.5) · a first-run controls card plus the settings CONTROLS list
+from pause (R 15.6) · fixed tooltip width with a test over every node (R 15.7) · a stage-up notice (R 15.8) · later:
+a minimal / full HUD setting and a UI scale (R 15.9).
 
 **G. Performance audit, after the visuals are final (his order).**
 b2-25 fans and GPU load: a measured audit at 4K, frame cap and per-system cost (light counts and any Jolt body
@@ -159,6 +181,9 @@ pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored fin
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
 species follow the croc, and their verbs (research 02) · H: spend on music stems, and Tripo octopod rigs (R 3.5, 8.7) ·
+E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
+ultimate get rings like breath; health removed or shown only when hit; what happens to the "CITY DESTROYED" bar
+(R 15.2, 15.3, 15.9) ·
 legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,

@@ -80,6 +80,16 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 2. Gate body yaw on foot phase: full turn rate while a foot swings and about a 0.15-0.25 share when both feet are down. The head and neck take the rest, and the lag is capped at about 30-40 deg. Cost: about 20 lines.
 3. Lead order through the body: the head turns at once (clamped), the chest takes about half, the hips take what the feet allow, and the tail counter-swings. Cost: about 30 lines.
 
+## 15. Minimal in-run HUD (15-minimal-hud.md)
+1. Strip the HUD to the rulings. Delete the controls hint, the HP plate and the dark plates, and keep the timer as it is. Biomass becomes one boxless, outlined label bottom right at 36-72 px. No HUD text is below 24 px, and the margins move out to the TV title-safe area (about 96 px at the sides and 54 px top and bottom, at 1080p). Cost: about 2-3 h, HUD script only.
+2. The breath shows as an icon with a ring drawn round it (`draw_arc` from the sim's cooldown, no texture assets), with a pulse and a sound when it is ready. It sits bottom centre, in the old health bar's space. Whether dash and the ultimate get the same ring is the director's call. Cost: about 2-3 h plus one icon.
+3. Show health as a red edge vignette whose width grows, plus a heartbeat below about 30% and a flash on the kaiju when hit, so it never relies on colour alone. Test it over the brightest fire. A thin bar that appears only when hit is the "repurposed" alternative, and the choice is his. Cost: about half a day.
+
+## 16. Upgrade tree look, pathing and cadence (16-upgrade-tree.md)
+1. Write the 2-3x tree (b2-28) as rings per stage that grow larger outward. Today's tree thins from 11 to 6 to 5 to 1 nodes per stage, and it should grow instead. About 1 node in 4 is a verb, each evolution opens with a cheap burst of new nodes, and the pacing bot asserts 1-4 buys per visit and no more than 5 runs between verbs. Cost: 1-2 days of data plus half a day of bot checks.
+2. Make buying an event, in presentation only: the node pops, the line lights up as it travels to newly opened nodes, they fade in, and the pitch rises per level. An evolution gets a flash and then the existing reveal. Cost: about 1 day.
+3. Show the next step in full, nodes further out as silhouettes, and the next evolution as a landmark always in view. Drop the "branch" band and the role text (b2-24, b2-27). Cost: about half a day.
+
 ## Honest gaps
 - **01:** No developer postmortems or cost tables. The timing targets come from one AI-assisted blog post, and the review themes from aggregators.
 - **02:** These rest on fan wikis or a vendor page, or have no primary source: the Shin Godzilla heights, the GigaBash reasoning, haze as a scale tool and delayed sound. The legal notes are not legal advice.
@@ -95,6 +105,8 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 - **12:** No benchmark of light counts at 4K. Neither the fake beam in Compatibility nor HDR output per renderer has been tested.
 - **13:** No source shows how shipped games handle limbs against buildings. The cell-read budget is arithmetic, not a profile.
 - **14:** The twist threshold, the steps per 90 deg and the lag cap are inferences to tune from clips.
+- **15:** No primary source for the HUD details of Shadow of the Colossus, Inside, Limbo, Metro or Teardown, nor for the in-run HUDs of Nodebuster, Astro Prospector and Chef Knight. The thesis and the Dead Space talk were read only through summaries. The 4K text height of the caps-only font is unmeasured, and the culprit behind the tooltip widening is inferred from code.
+- **16:** No developer source on the tree screens of Nodebuster, Astro Prospector, Chef Knight or Brotato, and no cost tables. The Nodebuster node count (97) is my own count from a removed Steam guide. The tree-juice and fog techniques are design inference. The cadence table and target times are estimates for the pacing bot to verify. The required move from the 8 x 6 grid to a pannable map (50-65 nodes do not fit 48 cells) is a look decision for the director.
 - **Where the files disagree:**
   - 03 leans on Godot's Skeleton3D IK nodes, but 09, 13 and 14 found the repo's rig has one node per bone, so those nodes would need a rig migration.
   - 14's fixes target `gait_biped.gd`, but 11 found that the reptilian walks on ClipGait. Check which code path runs before tuning.
