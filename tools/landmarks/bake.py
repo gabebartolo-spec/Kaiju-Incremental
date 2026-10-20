@@ -32,7 +32,7 @@ import sys
 
 import numpy as np
 
-RES = 8
+RES = 4
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA = os.path.join(ROOT, "data", "landmarks.json")
 STEPS = [(-1, 0, 0), (1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, -1), (0, 0, 1)]
