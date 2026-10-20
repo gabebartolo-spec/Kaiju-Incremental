@@ -107,6 +107,9 @@ func _run() -> void:
 		for _i: int in 3:
 			await process_frame
 		var image := root.get_viewport().get_texture().get_image()
+		if image == null:  # headless: nothing is drawn
+			print("PHASEB no image (headless) t=%d" % int(at))
+			continue
 		image.save_png("%s/%s_t%02d.png" % [_out, _label, int(at)])
 		print("PHASEB shot t=%d" % int(at))
 	_finish()
