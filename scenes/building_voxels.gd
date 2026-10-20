@@ -7,9 +7,9 @@ extends RefCounted
 ## (ribbon windows over spandrel bands, AC plant), brick residential (punched windows, balconies
 ## with railings, water tank), glass tower (flush curtain wall, mast with beacon), stone classic
 ## (pilasters, cornices and string courses, stepped roof). Ground floors are shopfronts under a
-## sign band and an awning. A side shared with a neighbour carries the same facade (build 2 note 22); some shops hang
-## a vertical neon sign off a street face (Tokyo). Hollow shell plus a floor slab per floor, so a
-## broken building shows its floors.
+## sign band and an awning. A side shared with a neighbour carries the same facade (build 2 note
+## 22), so it shows when the neighbour falls; some shops hang a vertical neon sign off a street face
+## (Tokyo). Hollow shell plus a floor slab per floor, so a broken building shows its floors.
 
 const RES := 8
 const VOXEL := 1.0 / RES
