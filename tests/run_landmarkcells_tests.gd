@@ -15,20 +15,7 @@ const PINNED := {
 const PINNED_CLASSES: Array = [61528, 24066, 7864, 2035]
 ## The stadium section a foot hit brings down: [cells, digest of its cells].
 const PINNED_SECTION: Array = [1820, "2a1f5d63b106c629"]
-const FORBIDDEN: Array[String] = [
-	"randi(",
-	"randf(",
-	"randomize(",
-	"RandomNumberGenerator",
-	"Seeds.",
-	"Time.",
-	"OS.",
-	"Engine.",
-	"Look.",
-	"Node",
-	"await ",
-	"scenes/",
-]
+const L := preload("res://tests/lib/landmark_cells_lib.gd")
 const MODULES: Array[String] = [
 	"res://sim/cell_grid.gd", "res://sim/landmark_cells.gd", "res://sim/cell_promoter.gd"
 ]
@@ -75,42 +62,6 @@ func _landmark(id: String) -> RampageSim.Building:
 	return Landmarks.building(entry, 1.0)
 
 
-func _digest(g: CellGrid) -> String:
-	var ctx := HashingContext.new()
-	ctx.start(HashingContext.HASH_SHA256)
-	ctx.update(var_to_bytes([g.dims, g.offset]))
-	ctx.update(g.cells)
-	return ctx.finish().hex_encode().substr(0, 16)
-
-
-## The class a baked colour falls in, worked out here on 0-255 channels (the module uses floats).
-func _class_of(c: Color, ground: Array) -> String:
-	var r := c.r8
-	var g := c.g8
-	var b := c.b8
-	for key: Variant in ground:
-		var k := Color(str(key))
-		if maxi(absi(r - k.r8), maxi(absi(g - k.g8), absi(b - k.b8))) <= 24:
-			return "landmark_pitch"
-	if maxi(r, maxi(g, b)) - mini(r, mini(g, b)) <= 30:
-		return "landmark_wall"
-	if r - g >= 77 and r - b >= 77:
-		return "landmark_seat"
-	return "landmark_other"
-
-
-func _chunk(cell: Vector3i) -> Vector3i:
-	var r := CellGrid.cell_res()
-	return Vector3i(floori(float(cell.x) / r), floori(float(cell.y) / r), floori(float(cell.z) / r))
-
-
-## The building-local cell of grid index i.
-func _cell(g: CellGrid, i: int) -> Vector3i:
-	var plan := g.dims.x * g.dims.z
-	return Vector3i(i % g.dims.x, i / plan, (i / g.dims.x) % g.dims.z) + g.offset
-
-
-## The four landmark_ classes exist in data/materials.json and the grids use all four.
 func _check_materials() -> void:
 	var ids := CellGrid.material_ids()
 	check(CLASSES.all(func(k: String) -> bool: return ids.has(k)), "the landmark_ materials exist")
@@ -142,14 +93,14 @@ func _check_matches_view() -> void:
 		var seen := {}
 		for cell: Vector3i in view.vox.colors:
 			var colour: Color = view.vox.colors[cell]
-			var want := Num.i(ids[_class_of(colour, ground)])
+			var want := Num.i(ids[L.class_of(colour, ground)])
 			bad += 0 if g.at(cell) == want else 1
-			stray += 0 if b.frame.alive(_chunk(cell)) else 1
-			seen[_chunk(cell)] = true
+			stray += 0 if b.frame.alive(L.chunk(cell)) else 1
+			seen[L.chunk(cell)] = true
 		var mine := {}
 		for i: int in g.cells.size():
 			if g.cells[i] != 0:
-				mine[_chunk(_cell(g, i))] = 1
+				mine[L.chunk(L.cell(g, i))] = 1
 		check(
 			bad == 0 and stray == 0 and mine.size() == seen.size() and g.count() > 10000,
 			(
@@ -163,7 +114,7 @@ func _check_pinned() -> void:
 	var tally := [0, 0, 0, 0]
 	for id: String in ["stadium", "wheel"]:
 		var g := LandmarkCells.new(_landmark(id))
-		var have: Array = [g.count(), _digest(g)]
+		var have: Array = [g.count(), L.digest(g)]
 		var want: Array = PINNED[id]
 		check(want == have, "%s pinned at %s (got %s)" % [id, want, have])
 		if id == "stadium":
@@ -259,16 +210,16 @@ func _check_arcs_foot_hit() -> void:
 	var chunks := {}
 	for c: Vector3i in chunk_part:
 		chunks[c] = true
-	var inside := section.all(func(c: Vector3i) -> bool: return chunks.has(_chunk(c)))
+	var inside := section.all(func(c: Vector3i) -> bool: return chunks.has(L.chunk(c)))
 	var mine := {}
 	for c: Vector3i in section:
-		mine[_chunk(c)] = true
+		mine[L.chunk(c)] = true
 	# A chunk of the Structure's section that holds no model cell has none to shed.
 	var occupied := {}
 	var whole := LandmarkCells.new(_landmark("stadium"))
 	for i: int in whole.cells.size():
-		if whole.cells[i] != 0 and chunks.has(_chunk(_cell(whole, i))):
-			occupied[_chunk(_cell(whole, i))] = true
+		if whole.cells[i] != 0 and chunks.has(L.chunk(L.cell(whole, i))):
+			occupied[L.chunk(L.cell(whole, i))] = true
 	check(
 		inside and mine.size() == occupied.size() and mine.size() >= 20,
 		(
@@ -327,10 +278,10 @@ func _check_arcs_all() -> void:
 	var sections := 0
 	var first: Array[Vector3i] = []
 	for i: int in g.cells.size():
-		var arc := g.arc_of(_cell(g, i)) if g.cells[i] != 0 else -1
+		var arc := g.arc_of(L.cell(g, i)) if g.cells[i] != 0 else -1
 		if arc >= 0 and hit.get(arc, 0) < need:
 			hit[arc] = hit.get(arc, 0) + 1
-			first.append(_cell(g, i))
+			first.append(L.cell(g, i))
 	for c: Vector3i in first:
 		g.clear_cell(c)
 	for part: Dictionary in g.shed():
@@ -341,7 +292,7 @@ func _check_arcs_all() -> void:
 	var left := 0
 	for i: int in g.cells.size():
 		if g.cells[i] != 0:
-			var c := _cell(g, i)
+			var c := L.cell(g, i)
 			left += 1 if c.y >= stub and g.arc_of(c) >= 0 else 0
 	check(
 		sections == hit.size() and left == 0,
@@ -380,18 +331,8 @@ func _check_promotion() -> void:
 	check(wheel.shed().is_empty(), "a landmark without arcs never sheds")
 
 
-func _forbidden(text: String) -> Array[String]:
-	var hits: Array[String] = []
-	for line: String in text.split("\n"):
-		var code := line.get_slice("#", 0)
-		for token: String in FORBIDDEN:
-			if code.contains(token):
-				hits.append("%s: %s" % [token, line.strip_edges()])
-	return hits
-
-
 func _check_no_clock_or_rng() -> void:
-	var bad := _forbidden(
+	var bad := L.forbidden(
 		'var t := Time.get_ticks_msec()\nvar r := randi() # Look.\nload("res://scenes/x.gd")'
 	)
 	check(
@@ -399,7 +340,7 @@ func _check_no_clock_or_rng() -> void:
 		"the grep catches a clock, an RNG call and a scenes/ path (%d)" % bad.size()
 	)
 	for path: String in MODULES:
-		var hits := _forbidden(FileAccess.get_file_as_string(path))
+		var hits := L.forbidden(FileAccess.get_file_as_string(path))
 		check(
 			FileAccess.file_exists(path) and hits.is_empty(),
 			"%s reads no clock or RNG: %s" % [path, hits]
