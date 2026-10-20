@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 
 const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
+const SimArmy := preload("res://tests/lib/sim_army.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
 const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
 const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
@@ -27,7 +28,7 @@ func run_checks() -> void:
 	await _t("_check_determinism")
 	await _t("_check_upgrade_effects")
 	await _t("_check_species_differ")
-	await _t("_check_army")
+	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
 	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
@@ -293,44 +294,6 @@ func _check_species_differ() -> void:
 	var ring := _sim("cephalopod", {})
 	var reach_ok := ring.ability_reach() > ring.stomp_radius()
 	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
-
-
-func _check_army() -> void:
-	var soft := _sim("reptilian", {})
-	var armoured := _sim("reptilian", {"hide": 1, "scales": 4})
-	# The run starts at the river bank (D-083); let the first tank arrive, then the kaiju stands
-	# where it is, so both kaiju meet the same army.
-	for i: int in 30 * 15:
-		soft.step(DT, Vector2.ZERO, false)
-		armoured.step(DT, Vector2.ZERO, false)
-	if soft.tanks.size() > 0:
-		soft.kaiju_pos = soft.tanks[0].pos
-		armoured.kaiju_pos = soft.tanks[0].pos
-	var soft_hit := 0.0
-	var armoured_hit := 0.0
-	for i: int in 30 * 15:
-		soft_hit = maxf(soft_hit, _tank_hit(soft))
-		armoured_hit = maxf(armoured_hit, _tank_hit(armoured))
-	check(
-		soft.tanks.size() > 0 and soft_hit > 0.0,
-		"standing still, the army arrives and hurts the kaiju (a tank shot took %.1f)" % soft_hit
-	)
-	check(
-		armoured_hit > 0.0 and armoured_hit < soft_hit,
-		"armoured scales cut the damage a tank shot does (%.1f vs %.1f)" % [armoured_hit, soft_hit]
-	)
-
-
-## One step; the health a tank shot took off the kaiju this step (0 when none fired, or when a
-## rooftop volley landed too, so the shot is not mixed with another).
-func _tank_hit(sim: RampageSim) -> float:
-	var before := sim.hp
-	var fired := false
-	var other := false
-	for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
-		fired = fired or str(event["type"]) == "tank_fired" and event.has("tank")
-		other = other or str(event["type"]) == "rooftop_fired"
-	return before - sim.hp if fired and not other else 0.0
 
 
 func _check_save_migrate() -> void:
