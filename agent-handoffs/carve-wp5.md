@@ -1,5 +1,5 @@
 # carve-wp5 handoff (builder, WP5 physics presentation of carving)
-## State: life 3 DONE, reported. Head = fill_light 0.25 commit. CI clips: tower 39345155884, swipe 39344743509, block 39345232517 (scratchpad ci_<scene>/). pr_body_wp5.md updated (untracked).
+## State: life 3 DONE. Head = sphere-off commit. CI clips (no sphere): tower 39356130302, swipe 39356732686, block 39357091553 (wp5-recap/ci_<scene>/). pr_body_wp5.md updated (untracked).
 ## Fixes (local headless, fixed-fps 30, tower/block; scratchpad before_*/oldphys_*/after2_*.log)
 1. Hit detect over break_window 0.3 s (IslandBody._hit): longest wait between breaks tower 1.17 -> 0.13 s, block 1.43 -> 0.33.
 2. Staged break bottom-up over break_stage 0.4 s; ground_drag 5/s, piece damp, settle 0.4/1.0/0.3 s.
@@ -9,4 +9,4 @@
 ## Open
 - Capture "breaks" now count break steps (130/821), not whole breaks.
 - Black px: swipe lum<45 up to 1021 -> 0, darkest gouge px 73. Slab undersides now mid-grey.
-- Capture blow sphere (test overlay) now off by default; --markers opts in. Re-captured clean: see run ids in pr_body_wp5.md / below.
+- Capture blow sphere (test overlay) off by default; --markers opts in. 2 stills per scene viewed, none shown.
