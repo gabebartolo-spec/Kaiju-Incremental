@@ -2,7 +2,7 @@ extends RefCounted
 ## The playtest note (director 2026-10-19: "smaller buildings south of the spawn position dont
 ## seem destructible?"): the city suite's spawn-view check, called from its D-062 loop for each
 ## stage and map_seed. Within the game camera's reach of where the kaiju rises (its ground
-## distance behind the kaiju, Rampage.CAMERA_OFFSET.z, plus a margin, scaled by body size like
+## distance behind the kaiju, Rampage.camera_offset().z, plus a margin, scaled by body size like
 ## the camera), no skyline stand-in stands, and every building there is a real one a stomp
 ## breaks, and there is at least one (lead check 2026-10-19: his first steps out of the water
 ## hit something; CityRiver's quay sheds). Distances run from the nearer of the rise point (in
@@ -26,7 +26,7 @@ static func check(
 	var spawn: Vector2 = CityGen.map(sim.city).get("river_spawn", sim.kaiju_pos)
 	var bank: Vector2 = CityGen.map(sim.city).get("river_bank", spawn)
 	var land := sim.clamp_to_arena(bank)
-	var reach := (Rampage.CAMERA_OFFSET.z + MARGIN) * sim.body_scale()
+	var reach := (Rampage.camera_offset().z + MARGIN) * sim.body_scale()
 	var stand_ins := 0
 	for box: Dictionary in skyline._near:
 		var at: Vector3 = box["at"]

@@ -320,6 +320,9 @@ func _check_looks() -> void:
 		"saturation",
 		"contrast",
 		"glow",
+		"glow_threshold",
+		"ssao",
+		"ssao_power",
 		"voxel_inset",
 		"color_noise",
 		"crease_strength",
@@ -353,6 +356,21 @@ func _check_looks() -> void:
 	check(
 		str(Content.look()["id"]) == default_id,
 		"the default look %s is the one in use" % default_id
+	)
+	# Times of day (director 2026-10-20: "all of them"): keys the look has; runs rotate from dusk.
+	var times: Dictionary = Content.load_json("res://data/looks.json")["times"]
+	var own := Content.looks()[0]
+	var bad := []
+	for id: String in Content.times():
+		var over: Dictionary = times[id]
+		bad.append_array(over.keys().filter(func(k: String) -> bool: return not own.has(k)))
+	Content.set_time(Content.time_for_run(1))
+	var night_sun := Look.value("sun_energy")
+	Content.set_time(Content.time_for_run(0))
+	var rotates := Content.time_for_run(0) == "dusk" and Content.time_for_run(4) == "dusk"
+	check(
+		bad.is_empty() and rotates and night_sun != Look.value("sun_energy"),
+		"four times of day override look keys only and runs rotate through them: %s" % [bad]
 	)
 
 

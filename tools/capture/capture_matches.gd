@@ -197,7 +197,7 @@ func _pitch_camera(rampage: Rampage) -> void:
 	var camera := Camera3D.new()
 	camera.fov = 55.0
 	rampage.add_child(camera)
-	camera.position = pitch + Rampage.CAMERA_OFFSET * zoom
+	camera.position = pitch + Rampage.camera_offset() * zoom
 	camera.look_at(pitch)
 	camera.make_current()
 
