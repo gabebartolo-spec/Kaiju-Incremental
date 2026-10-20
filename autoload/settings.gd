@@ -21,7 +21,8 @@ func _ready() -> void:
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
 	# The shipped game starts fullscreen (D-027). Editor-binary runs (agent captures) stay windowed:
 	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
-	for problem: String in GraphicsPresets.errors(Content.section("display")["graphics"]):
+	var presets: Dictionary = Content.section("display")["graphics"]
+	for problem: String in GraphicsPresets.errors(presets):
 		push_error("tuning.json: " + problem)
 	PlayerSettings.load_saved(OS.has_feature("template"))
 	PlayerSettings.apply()

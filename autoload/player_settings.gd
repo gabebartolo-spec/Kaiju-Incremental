@@ -126,7 +126,8 @@ static func _large() -> bool:
 
 ## The row of tuning "display" graphics in use.
 static func graphics_row() -> Dictionary:
-	return Content.section("display")["graphics"][graphics_level()]
+	var table: Dictionary = Content.section("display")["graphics"]
+	return table[graphics_level()]
 
 
 ## Puts the graphics level on a viewport's 3D render, the shadows and the city's sun and

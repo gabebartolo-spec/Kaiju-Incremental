@@ -45,7 +45,8 @@ func _run() -> void:
 	if not kaiju.is_empty():
 		at = (kaiju[0] as Node3D).global_position
 	var levels: Array[String] = []
-	for level: Variant in Content.section("display")["graphics"].keys():
+	var table: Dictionary = Content.section("display")["graphics"]
+	for level: Variant in table.keys():
 		levels.append(str(level))
 		if level == "medium":
 			levels.append("balanced_old")
