@@ -3,7 +3,7 @@ extends Node3D
 ## The ruins of a rampage, split out of CityView: a gone building's heap (Ruin.build) and a
 ## toppled tower's rubble strip (Ruin.strip), each built on a worker thread (thousands of voxels)
 ## and added when ready. A gone building's ruin rises only once the kaiju's body is off its
-## footprint: raised round the body, its heap and wall stubs read as walls it stands inside
+## footprint: raised round the body, its heap would read as walls it stands inside
 ## (playtest note 2).
 
 var sim: RampageSim

@@ -257,6 +257,7 @@ func _ability_fx(event: Dictionary) -> void:
 			var span := snout + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
 			ability_fx.cone_origin = snout
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
+			_city.crush_cone(BreathCone.of(sim))  # trees and cars burn flat along it
 			sfx.play("breath")
 			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
