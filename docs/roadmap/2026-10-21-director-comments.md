@@ -14,3 +14,4 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 8 | "ours is like a crocodile in a t-rex body, not godzilla shaped" | lead; ROADMAP legal look check closed for the shape | done |
 | 9 | "put the research bot on the task of researching how to create a really minimal in-run UI/HUD" | research agent, research/15-minimal-hud.md; feeds Phase F | in progress |
 | 10 | "also research how to make the upgrade tree beautiful and with pathing unlocks which set the pace of the game, how to use the upgrade tree to determine the cadence of the game and maximise the feeling of constantly gaining power" | research agent, research/16-upgrade-tree.md; feeds Phase E | in progress |
+| 11 | "im going afk for maybe 5 hours ... the gpu, cpu and ram are all yours at your disposal with no restraints ... please continue working until usage runs out" | lead: full team, windowed captures allowed while away, keep slots filled | standing until he is back |
