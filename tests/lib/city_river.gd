@@ -175,9 +175,15 @@ static func check_cap(check_fn: Callable) -> void:
 	var wet := false
 	for channel: Rect2 in CityRiver.channels(CityGen.map(city), city):
 		wet = wet or channel.has_point(bank)
-	check_fn.call(
-		cap > Num.f(base["emerge"]["rise_seconds"]),
-		"tuning emerge max_seconds (%.1f) is longer than rise_seconds (the cap cannot cut the rise)" % cap
+	(
+		check_fn
+		. call(
+			cap > Num.f(base["emerge"]["rise_seconds"]),
+			(
+				"tuning emerge max_seconds (%.1f) is longer than rise_seconds (the cap cannot cut the rise)"
+				% cap
+			)
+		)
 	)
 	var uncapped: Dictionary = base.duplicate(true)
 	uncapped["emerge"]["max_seconds"] = INF
