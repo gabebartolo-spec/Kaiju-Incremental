@@ -1,5 +1,10 @@
 # carve-play handoff (integration builder: carving in the playable build, D-094/D-097/D-099)
-## State: life 3 (2026-10-20). Step 3 done, head 4d65b48 pushed; build 39379786766 dispatched on it.
+## State: life 3 paused (director: helpers finish, pause, archive), 2026-10-20. Head 3998051 pushed
+(no PR). Build 1: run 39379786766 on 4d65b48, KaijuIncremental-4d65b48, smoke PASS, exe headless clean.
+Build 2: run 39383890892 on 3998051 (+ #89 croc body contact, look-options c08e770); release smoke PASS (0 failures),
+exe headless clean, artifact KaijuIncremental-3998051. #89 merge: city_view takes RuinYard/ToppleFx, carved buildings get no ruin heap
+(_mark_ruin); flow_collapse.gd picks non-carving buildings. 9 suites green locally (smoke, cell_mesh,
+cells, destruction, flow, military, native, powers, sim).
 - Island fall hitch fixed: IslandMesher (scenes/island_mesher.gd) meshes bricks in a WorkerThreadPool
   group task and scans an island's cells once; split chunks keep layer/mask/look (were white on default
   layers); CarveCity._take_chunks row-wise. Bench 1080p balanced 18 s, carving on (2 runs): mean 16.6-16.7,
@@ -11,11 +16,13 @@
 - Clip: C:/Users/DANTE/AppData/Local/Temp/claude/carve-play3/carve_play_tower.mp4 (1080p 30 fps, game
   camera; sheet_fall.png beside it: tower topples right in its own look 11.1-12.6 s, dust).
 - Lint debt (lead): island_body.gd 490 lines, carve_debris.gd 539 (WP5) > gdlint 400.
-## Next
-4. WP7 (origin/claude/carve-wp7 367bb7e, handoff "life 1 stands down, work left", no PR): merge when
-   PR-ready. Dry merge-tree: conflicts only data/tuning.json + tests/README.md (mechanical). Then CarveCity
-   reads cells_promoted / cells_carved / fall_start index+mats (see "Left from life 1" item 3).
-5. After WP7: rebuild, release smoke, clip, bench again.
+## Next (a fresh life)
+4. WP7 (origin/claude/carve-wp7 367bb7e, "life 1 stands down, work left", no PR): merge when PR-ready.
+   Its dry merge conflicts only in data/tuning.json + tests/README.md. Then CarveCity reads
+   cells_promoted / cells_carved / fall_start index+mats (see "Left from life 1" item 3).
+5. Spikes left (bench --bench "slow step" lines): CarveCollider build on promote 63 ms, carved debris
+   + chunks_broken 25-42 ms per carve, engine physics ~30 ms on the fall frame.
+6. Rebuild, smoke, clip, bench after each.
 ## Branch
 Worktree ../Kaiju-Incremental-wt/carve-play from origin/claude/carve-wp4 (10ed48b) + merge of
 origin/claude/carve-wp5 at cecfac8 (WP5's old WP1 copies of sim/voxel_frame, voxel_support,
