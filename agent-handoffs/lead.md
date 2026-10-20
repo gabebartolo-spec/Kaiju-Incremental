@@ -1,10 +1,9 @@
 # Lead handoff, 2026-10-20 (lead 5 of 10-20; next lead: read lines 1-16, then GitHub)
-## State: lead 5 at 200k: no new work; hands off once its subagents report (in-process, die with it). Successor: respawn any not reported, from the briefs below + their handoffs.
-## Live helpers (lead 5): carve-wp1 DONE (#97 merged) ·
+## State: lead 5 stood down at 225k; NO live helpers. Successor (lead 6): start at the NEXT list on line 3.
+## NEXT: (1) #98 fresh re-review #3 at 3ad26fcd (green) -> merge full sha. (2) #89 head f3991ea (white slabs = ToppleFx BoxMesh -> Ruin.chunk voxel lumps; lean 3->8 deg; CI capture 39358335521, lead 2x PASS on crop) -> check tests/lint at head, merge. (3) Ask director WP5 (line below). (4) #99 resync (doc-caps) -> merge. (5) WP4 PR, WP6 PR.
 ##  carve-wp3 DONE: #98 head 3ad26fcd (base merged, WP1 in; GlassFrame sim/glass_frame.gd shared sim+view; cells checks on real VoxelSupport; tests 39360777422 + lint 39360777395 GREEN) -> NEXT: fresh re-review #3 (Opus med), merge full sha. Was: #98 lead decision (c) = structural columns inside glass towers (spacing in tuning.json, sim+view parity), fix tests/lib/cells_flood_until_wp1.gd to WP1's rule
 ##   (fixtures never carry structural), 0 islands every style (probe: lead-5 scratchpad probe_wp3b.gd), before/after glass still -> Temp/claude/wp3-still/frame/ (re-review FIX comment 6281639153) ·
 ##  #99 head 1f337dd: gdlint + tests GREEN (39356570213/39356570205); doc-caps red only from lead.md 123 lines on the old merge ref (now 119): next push/resync clears it · wp5-recap DONE ·
-##  croc89-fix (Sonnet): #89 critic FIX A (flat white off-palette debris slabs + intact slab hovering ~7.4-8.4 s, lead-confirmed critic-89/z1.png) + B (0.3-0.5 s lean before topple).
 ## MERGED: #97 WP1 (lead 5, after test-gap fix d825e41). #50 cb8bbed (critic-50 FIX filtered: fb4 601-781 shows the reverse). #98 view change (riser, brackets) lead 2x PASS. WP4 slab 8a8780 pushed 609ea71, stills lead 2x OK: PR after #98/#99.
 ## LEAD DECISIONS today (record in next board PR): slab colour B 8a8780 (director); fixture on grid layer 0 is grounded (shopfront on street); glass towers get structural columns (c).
 ## WP5: critic-wp5 round 2 FIX (tower slab never breaks up after landing, block towers shear in a regular staircase, debris seen inside glass on swipe). No-marginal-gains: ASK DIRECTOR with clean
