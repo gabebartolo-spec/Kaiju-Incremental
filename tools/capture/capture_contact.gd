@@ -3,7 +3,8 @@ extends SceneTree
 ## walks back out, at the game camera, with its body volume on (BodyContact) or off (the old
 ## stomp-only contact). Same city and seed both ways, so a pair is a before/after. Saves a still
 ## every --every frames into --out for 2x crops. Needs a window and the no-focus override.cfg.
-## --dash=N dashes on walk step N (note 4). --both: the walk-through (claw swipes) and then the tower topple in one clip, for one CI run.
+## --dash=N dashes on walk step N (note 4).
+## --both: the walk-through (claw swipes) and then the tower topple in one clip, for one CI run.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <out>.avi \
 ##     --script tools/capture/capture_contact.gd -- --body=off --out=<dir>
