@@ -130,14 +130,10 @@ func _at(side: Vector2i, p: int, y: int, layer: int) -> Vector3i:
 ## One face: the wall plane, recessed glass, and what stands proud of it.
 func _face(side: Vector2i) -> void:
 	var length := _d if side.x != 0 else _w
-	var covered := Num.i(_party.get(side, 0)) * RES
 	for y: int in _h:
 		for p: int in length:
 			if p == 0 or p == length - 1:  # corner piers are shared by two faces
 				vox.put(_at(side, p, y, 0), "pillar")
-				continue
-			if y < covered:
-				vox.put(_at(side, p, y, 0), "party")
 				continue
 			var spec := _ground(y, p) if y < RES else _upper(y, p)
 			var plane: String = spec[0]
