@@ -92,7 +92,15 @@ Gate: build 4.
 
 **D. Kaiju body and combat feel.**
 Turning with weight: lumbering and unstoppable yet responsive, the head turns toward the new heading before the body follows, no sliding pivot (comments #16, 2026-10-20) · b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
-shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 breath VFX pass, re-themed from atomic to hot lightning: forked white-hot bolts, scorch and sparks, the name
+shoved and flung into buildings, people and vehicles (uses C's physics); found by research 22: a thrown tank today
+flies a straight line through towers (a 0.7 s timer, one blast where it lands), kill credit is paid at the grab, and
+the ram may leave a tank inside a building; how: the throw arcs in the view first (R 22.1), then becomes a sim
+ballistic at a fixed step that sweeps cells, carves the building it hits through Carving.hit and pays credit at
+landing, with pinned-seed tests and a sim review (R 22.2) · the ram launches the tank low instead of teleporting it,
+and a survivor re-joins its road (R 22.3) · capped chain hits on other units, the hook for upgrade nodes he picks
+(ricochet, domino, wrecking ball) (R 22.4) · people and parked cars tumble along the path as presentation (R 22.5) ·
+Jolt throws only turrets, tracks and panels, never the hull (R 22.6) · hit-stop by skipping sim steps, never
+Engine.time_scale (R 22.7) · b2-18 breath VFX pass, re-themed from atomic to hot lightning: forked white-hot bolts, scorch and sparks, the name
 and every "atomic" word in player text changed in the copy pass (director 2026-10-21; sim rules unchanged). How
 (research 17): one ribbon mesh replaces the straight beam: a main channel from the jaw to the first hit, its shape
 fixed for the breath, and 3-5 branches fanning across the sim's BreathCone that re-draw on each stroke (R 17.1) ·
@@ -104,7 +112,13 @@ only if the fan alone does not read electric (R 17.5) · run intro: a <=3 s shot
 (R 20.2), the roar on the surface break (R 20.3), full intro on the first run and after an evolution, a 1.5 s cut
 otherwise, any press skips by running the sim ticks faster so replays match (R 20.4), the run starts at last run's
 zoom and eases out so growth shows (R 19.5) · evolution reveal polish: low start, tilt up the tower, silhouette pulse
-(3 a second or fewer), stinger, bars (R 20.6, his taste) · water that reacts to the kaiju with physics (#12) · #104
+(3 a second or fewer), stinger, bars (R 20.6, his taste) · water that reacts to the kaiju with physics (#12); how (research 21, presentation only, both renderers): the flat
+glossy river becomes one shader on a subdivided plane, rippling from the last 64 sim events (stomps, sweeps, falls,
+throws, footfalls in a channel) on the sim clock, with stepped flat toon tones (R 21.1) · a wake V and bow foam while
+wading, a bulge before the head breaks the surface, foam round the body during the rise (R 21.2) · cube-droplet
+splashes and water sheeting off the body as it rises (R 21.3) · rubble that reaches the water floats on the same
+ripples (R 21.4) · foam lines where the water meets quays, legs and rubble (R 21.5) · the bay matches the river
+(R 21.6) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86) · more motion in the shoulders and head while it walks (comments 2026-10-21 #4) · the
 walk is "not great" and the turn should step "rather than swivelling on the spot like a plastic toy" (2026-10-21 #3).
@@ -208,7 +222,7 @@ pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored fin
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
 species follow the croc, and their verbs (research 02) · H: spend on music stems, and Tripo octopod rigs (R 3.5, 8.7) ·
-B: how the camera grows per stage, A/B/C clips (R 19) · D: the lightning halo colour (hot amber, species-eye tint, or white with a violet fringe), 3 labelled 4K stills
+D: which throw upgrade nodes (R 22.4) · B: how the camera grows per stage, A/B/C clips (R 19) · D: the lightning halo colour (hot amber, species-eye tint, or white with a violet fringe), 3 labelled 4K stills
 (R 17.6) · E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
 ultimate get rings like breath; health removed or shown only when hit; what happens to the "CITY DESTROYED" bar
 (R 15.2, 15.3, 15.9) ·
