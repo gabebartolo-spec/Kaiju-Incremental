@@ -24,7 +24,9 @@ func run_checks() -> void:
 ## building and no two hulls overlap; a tank standing a second or more within range stands at
 ## standoff in its firing band, never up close, and none waits inside the danger radius (those
 ## beyond range are in reserve); tanks enter by road from outside the
-## playable edge (in a city smaller than the spawn radius).
+## playable edge (in a city smaller than the spawn radius). Whether tanks park in range at all
+## here is the autoplay's luck (its route changes with every turn the body makes): that tanks
+## do take posts is _check_standoff_held's, with the kaiju standing still.
 func _check_rampages() -> void:
 	var off_road := 0
 	var inside := 0
@@ -186,7 +188,7 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		parked_in_band > 0 and standoff >= 0.95 and longest_in_danger <= 1.0,
+		(parked_in_band + parked_close == 0 or standoff >= 0.95) and longest_in_danger <= 1.0,
 		(
 			(
 				"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing"
