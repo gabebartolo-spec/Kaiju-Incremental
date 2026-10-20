@@ -1,28 +1,21 @@
 # carve-play handoff (integration builder: carving in the playable build, D-094/D-097/D-099)
-## State: life 2 stood down after step 2 (lead: no subagents, a fresh session continues). Branch
-claude/carve-play pushed with the WP5 7503e06 merge; no PR (the lead opens it).
-- Build run 39373735540 (e0f8c7c, life 1 head): GREEN, artifact KaijuIncremental-e0f8c7c (57 MB).
-- WP5 7503e06 merged clean. Headless probe after it (--fixed-fps 60, --seconds=18): first carved
-  fall step 631 (10.5 s), 4 promoted, 10 carves, 2 falls, islands peak 10 (WP5 splits), live back
-  to 0, rubble 1597 (max/building 823, 0 dropped; life 1 was 400 / 120: WP5 round 2 makes far
-  more rubble, flag to the lead). Headless costs: fell 888 ms, take 96, carved 120, colliders 104.
-- Suites green after the merge: smoke 13/13 fn 30 checks, cell_mesh 7/7 38, cells 10/10 50,
-  destruction 12/12 43.
-## Next life: steps 3-5 of the lead brief (2026-10-20)
-3. Island fall hitch. WIP (unverified, not committed) in ../Kaiju-Incremental-wt/carve-play-wip/:
-   hitch.patch (git apply in this worktree) + island_mesher.gd (copy to scenes/). It adds
-   IslandMesher (worker fills CarveMesh.arrays_at, take() builds ArrayMesh), CarveMesh.from_arrays/
-   arrays_at split, IslandBody.mesh_on_worker + look (material setter) + _ready meshing, split
-   chunks keep layer/mask/look (BUG on branch now: WP5 split chunks spawn on default layers and flat
-   white material, since only the first island is dressed), CarvePhysics.mesh_on_worker set by
-   CarveCity. To do: gdformat carve_city.gd; move CarvePhysics.mesh_on_worker below the vars in
-   order (gdlint class-definitions-order); island_body.gd is 493 lines > gdlint 400 (437 already
-   from WP5: tell the lead). Then take 22 ms: _take_chunks row-wise (index = x + z*dx + y*dx*dz,
-   iterate the x run from one base index). Bench on vs off (--bench --graphics=balanced 1080p).
-4. WP7 (origin/claude/carve-wp7 255f2fd) handoff still says "working" with an open lead question
-   (military suite): skip, do not wait.
-5. Push, gh workflow run build.yml --ref claude/carve-play, report run id; 1080p clip of the stomp
-   (capture_carve_play.gd --write-movie) to the lead.
+## State: life 3 (2026-10-20). Step 3 done, head 4d65b48 pushed; build 39379786766 dispatched on it.
+- Island fall hitch fixed: IslandMesher (scenes/island_mesher.gd) meshes bricks in a WorkerThreadPool
+  group task and scans an island's cells once; split chunks keep layer/mask/look (were white on default
+  layers); CarveCity._take_chunks row-wise. Bench 1080p balanced 18 s, carving on (2 runs): mean 16.6-16.7,
+  p95 23.9-25.8, worst 94.6-97.5, 9-11 > 33 ms; off: mean 16.7, p95 17.3, worst 52.7, 3 > 33 ms.
+  Carve costs now: fell 103 -> 14-18 ms, take 22 -> 5, carved 25-36, colliders 63-66 (promote).
+- --bench prints "CARVE slow step" lines with what each slow frame spent. Remaining spikes, by the
+  trace: CarveCollider build on promote (63 ms, step ~555), carved debris spawn + chunks_broken
+  (25-42 ms each at a carve), engine physics on the fall frame (~30 ms). Next targets, in that order.
+- Clip: C:/Users/DANTE/AppData/Local/Temp/claude/carve-play3/carve_play_tower.mp4 (1080p 30 fps, game
+  camera; sheet_fall.png beside it: tower topples right in its own look 11.1-12.6 s, dust).
+- Lint debt (lead): island_body.gd 490 lines, carve_debris.gd 539 (WP5) > gdlint 400.
+## Next
+4. WP7 (origin/claude/carve-wp7 367bb7e, handoff "life 1 stands down, work left", no PR): merge when
+   PR-ready. Dry merge-tree: conflicts only data/tuning.json + tests/README.md (mechanical). Then CarveCity
+   reads cells_promoted / cells_carved / fall_start index+mats (see "Left from life 1" item 3).
+5. After WP7: rebuild, release smoke, clip, bench again.
 ## Branch
 Worktree ../Kaiju-Incremental-wt/carve-play from origin/claude/carve-wp4 (10ed48b) + merge of
 origin/claude/carve-wp5 at cecfac8 (WP5's old WP1 copies of sim/voxel_frame, voxel_support,
