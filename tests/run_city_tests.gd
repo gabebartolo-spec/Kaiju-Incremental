@@ -192,6 +192,7 @@ func _check_no_empty_ground() -> void:
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			StadiumFar.check(tier, map_seed, sim, check)
 			Kerb.check(tier, map_seed, sim, decor, check)
+			Kerb.check_walkers(tier, map_seed, sim, street, check)
 			BreathTrees.check(tier, map_seed, sim, decor, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
