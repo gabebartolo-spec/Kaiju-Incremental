@@ -25,9 +25,6 @@ const CONTROLS: Array[Array] = [
 	["Back", "Esc", "B"],
 ]
 
-## Mixer buses under Master: every game sound plays on SFX; Music waits for the music.
-const BUSES: Array[String] = ["SFX", "Music"]
-
 static var volume := 0.8
 ## The SFX bus volume (0..1); the default is tuning "sfx" default_volume.
 static var sfx_volume := -1.0
@@ -145,11 +142,9 @@ static func frame_cap(paused: bool) -> int:
 
 
 static func apply() -> void:
-	for bus_name: String in BUSES:
-		bus(bus_name)
+	AudioBuses.apply()
 	_set_bus(0, volume)
 	_set_bus(bus("SFX"), sfx())
-	_dynamics()
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree != null:
 		tree.root.content_scale_factor = ui_scale
@@ -167,7 +162,8 @@ static func apply() -> void:
 		)
 
 
-## The index of a bus in BUSES, made (sending to Master) the first time it is asked for.
+## The index of a bus, made (sending to Master) the first time it is asked for; AudioBuses
+## then sets its real send.
 static func bus(bus_name: String) -> int:
 	var at := AudioServer.get_bus_index(bus_name)
 	if at >= 0:
@@ -184,33 +180,6 @@ static func sfx() -> float:
 	if sfx_volume < 0.0:
 		return Num.f(Content.section("sfx")["default_volume"])
 	return sfx_volume
-
-
-## Keeps the loudest moments clean (tuning "sfx" "dynamics"): a gentle compressor on SFX
-## evens out a stack of big sounds, and a hard limiter on Master holds the peak under the
-## ceiling, so breath + collapses + tanks never clip. Added once, at the end of each chain.
-static func _dynamics() -> void:
-	var cfg: Dictionary = Content.section("sfx")["dynamics"]
-	var sfx_bus := bus("SFX")
-	if not _has_effect(sfx_bus, AudioEffectCompressor):
-		var comp := AudioEffectCompressor.new()
-		comp.threshold = Num.f(cfg["threshold_db"])
-		comp.ratio = Num.f(cfg["ratio"])
-		comp.attack_us = Num.f(cfg["attack_us"])
-		comp.release_ms = Num.f(cfg["release_ms"])
-		AudioServer.add_bus_effect(sfx_bus, comp)
-	if not _has_effect(0, AudioEffectHardLimiter):
-		var limiter := AudioEffectHardLimiter.new()
-		limiter.ceiling_db = Num.f(cfg["ceiling_db"])
-		limiter.release = Num.f(cfg["limiter_release"])
-		AudioServer.add_bus_effect(0, limiter)
-
-
-static func _has_effect(at: int, kind: Variant) -> bool:
-	for i: int in AudioServer.get_bus_effect_count(at):
-		if is_instance_of(AudioServer.get_bus_effect(at, i), kind):
-			return true
-	return false
 
 
 static func _set_bus(at: int, value: float) -> void:

@@ -3,15 +3,16 @@ extends Node
 ## The sounds of the powers (D-026, D-030), presentation only: Rampage calls a sound where it
 ## calls the matching AbilityFx effect. Files in assets/sfx are built by tools/sfx/build_sfx.py
 ## from Kenney CC0 layers and in-house synthesis; loudness lives in data/tuning.json "sfx".
-## A small pool of players lets sounds overlap; Regeneration is one looping player.
-## Steps and stomps land on the feet: every foot plant plays a footstep, and a sim stomp waits
-## for the next plant to play its heavy thump there (or plays alone if no foot lands soon).
+## A small pool of players lets sounds overlap; Regeneration is one looping player. Each sound
+## plays on its mix bus (AudioBuses.of): the roar, stomps and toppling towers are Hero, which
+## ducks the Bed. Steps and stomps land on the feet: a foot plant plays a footstep, and a sim
+## stomp waits for the next plant to play its heavy thump there (or alone if no foot lands soon).
 
 const STOMPS := 3
 ## Footstep sounds the steps take turns with (footstep, footstep_1..3), in this order: no two
 ## steps in a row sound the same.
 const STEPS: Array[String] = ["footstep", "footstep_2", "footstep_1", "footstep_3"]
-## How fast the regen bubbles fade once their cue is over, and where a fade ends.
+## How fast the regen bubbles fade once their cue is over (dB a second), and where a fade ends.
 const REGEN_FADE_DB_PER_S := 40.0
 const SILENT_DB := -60.0
 
@@ -24,16 +25,14 @@ var played: Array[String] = []
 var live := false  # nothing sounds until SfxGate opens it, once the rampage has loaded
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
-## The powers' view: its helicopters drive the rotor loop, and it plays their gun and crash here.
-var _powers: PowersView
+var _powers: PowersView  # its helicopters drive the rotor loop and play their gun and crash here
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _regen: AudioStreamPlayer
 var _healing := false
 var _regen_age := 0.0
-## The city's panic (crowd_panic loop), faded by the street's fleeing people and the
-## destruction rate; _street is null on a stage with no streets.
+## The city's panic loop, faded by the fleeing people and the destruction rate.
 var _crowd: AudioStreamPlayer
 var _street: StreetLife
 var _crowd_db := -80.0
@@ -49,16 +48,14 @@ var _size_pitch := 1.0
 var _pending := ""
 var _pending_crack := false
 var _pending_age := 0.0
-## Seconds since the last footstep and the last ground crack (the director's dials:
-## footstep_min_interval, crack_min_interval).
+## Seconds since the last footstep and ground crack (footstep_min_interval, crack_min_interval).
 var _since_step := INF
 var _since_crack := INF
 ## Seconds since each gap-limited sound last played (tuning "sfx" "min_interval").
 var _since_sound: Dictionary = {}
 ## How many footsteps have played (picks the next of STEPS).
 var _step := 0
-## Building parts that landed this frame, as their loudness in dB: the loudest few play once
-## the frame is over (tuning "sfx" "collapse_per_frame"), the rest are dropped.
+## Building parts landed this frame, in dB: the loudest few ("collapse_per_frame") play at its end.
 var _landings: Array[float] = []
 
 
@@ -149,7 +146,7 @@ static func ui(sound: String) -> void:
 		return
 	if not is_instance_valid(_ui_player):
 		_ui_player = AudioStreamPlayer.new()
-		_ui_player.bus = "SFX"
+		_ui_player.bus = AudioBuses.of(sound)
 		_ui_player.max_polyphony = 4
 		tree.root.add_child.call_deferred(_ui_player)
 	var levels: Dictionary = Content.section("sfx")["volume_db"]
@@ -165,7 +162,7 @@ static func ui(sound: String) -> void:
 ## rampage, such as the evolution reveal and the demo end card, call this). Returns the player.
 static func roar(parent: Node) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
-	player.bus = "SFX"
+	player.bus = AudioBuses.of("roar")
 	player.stream = load("res://assets/sfx/roar.ogg")
 	var levels: Dictionary = Content.section("sfx")["volume_db"]
 	player.volume_db = Num.f(levels["roar"])
@@ -214,7 +211,9 @@ func _sound_landings() -> void:
 	_landings.sort()
 	_landings.reverse()
 	for db: float in _landings.slice(0, Num.i(_tune["collapse_per_frame"])):
-		play("collapse", db, 0.85 if db >= 0.0 else 1.0)
+		var drop := db < 0.0  # a dropped part is debris; a toppled tower is a hero sound
+		var bus := AudioBuses.of("collapse_drop") if drop else &""
+		play("collapse", db, 1.0 if drop else 0.85, bus)
 	_landings.clear()
 
 
@@ -266,7 +265,7 @@ func _distance_db(at: Vector3) -> float:
 
 func _looping(sound: String) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
-	player.bus = "SFX"
+	player.bus = AudioBuses.of(sound)
 	var loop: AudioStreamOggVorbis = load("res://assets/sfx/%s.ogg" % sound)
 	loop.loop = true
 	player.stream = loop
@@ -300,12 +299,12 @@ func _fade_regen(delta: float) -> void:
 		_regen.stop()
 
 
-## One sound by name, slightly re-pitched each time so repeats do not sound copied; extra_db
-## and pitch shade a single play (steps and stomps also take the size-tier pitch).
+## One sound by name, re-pitched a little each time; extra_db and pitch shade a single play
+## (steps and stomps also take the size-tier pitch); its bus is tuning "audio" "sounds" if unset.
 ## A sound with a "min_interval" in tuning is skipped while its last play is younger than that
 ## (stretched by up to its "interval_jitter" share each time, so the gaps are ragged), so a burst
 ## of events (rooftop volleys) never machine-guns, types or eats the pool's voices.
-func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
+func play(sound: String, extra_db := 0.0, pitch := 1.0, bus := &"") -> void:
 	if not live:
 		return
 	var gaps: Dictionary = _tune.get("min_interval", {})
@@ -331,6 +330,7 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0) -> void:
 	var swings: Dictionary = _tune.get("gain_jitter_db", {})  # e.g. rifles: no two cracks alike
 	var swing := Num.f(swings.get(sound, 0.0))
 	player.stream = stream
+	player.bus = bus if bus != &"" else AudioBuses.of(sound)
 	player.volume_db = _volume(sound) + extra_db + _rng.randf_range(-swing, swing)
 	if sound.begins_with("footstep") or sound.begins_with("stomp"):
 		pitch *= _size_pitch

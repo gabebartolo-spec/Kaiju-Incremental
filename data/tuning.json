@@ -410,6 +410,68 @@
 			"regen_loop": -20.0
 		}
 	},
+	"audio": {
+		"buses": [
+			{"name": "SFX", "send": "Master"},
+			{"name": "Music", "send": "Master", "duck": "music"},
+			{"name": "Hero", "send": "SFX"},
+			{"name": "Bed", "send": "SFX", "duck": "bed"},
+			{"name": "Debris", "send": "Bed"},
+			{"name": "Crowd", "send": "Bed"},
+			{"name": "Military", "send": "Bed"},
+			{"name": "Ambience", "send": "Bed"},
+			{"name": "UI", "send": "SFX"}
+		],
+		"ducks": {
+			"music": {
+				"sidechain": "Hero",
+				"threshold_db": -18.0,
+				"ratio": 2.5,
+				"attack_us": 500.0,
+				"release_ms": 400.0,
+				"mix": 1.0
+			},
+			"bed": {
+				"sidechain": "Hero",
+				"threshold_db": -24.0,
+				"ratio": 5.0,
+				"attack_us": 500.0,
+				"release_ms": 800.0,
+				"mix": 1.0
+			}
+		},
+		"sounds": {
+			"roar": "Hero",
+			"stomp_0": "Hero",
+			"stomp_1": "Hero",
+			"stomp_2": "Hero",
+			"stomp_crack": "Hero",
+			"collapse": "Hero",
+			"collapse_drop": "Debris",
+			"crowd_panic": "Crowd",
+			"tank_fire": "Military",
+			"shell_hit": "Military",
+			"rifle": "Military",
+			"rifle_far": "Military",
+			"heli_gun": "Military",
+			"heli_crash": "Military",
+			"heli_rotor": "Military",
+			"breath": "SFX",
+			"leap_whoosh": "SFX",
+			"leap_land": "SFX",
+			"lash": "SFX",
+			"ready": "SFX",
+			"deflect": "SFX",
+			"regen_loop": "SFX",
+			"footstep": "SFX",
+			"footstep_1": "SFX",
+			"footstep_2": "SFX",
+			"footstep_3": "SFX",
+			"ui_click": "UI",
+			"ui_confirm": "UI",
+			"ui_deny": "UI"
+		}
+	},
 	"claw_fx": {
 		"strike_s": 0.12,
 		"recover_s": 0.35,
