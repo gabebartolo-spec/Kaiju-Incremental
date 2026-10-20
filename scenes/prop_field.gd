@@ -65,6 +65,16 @@ func add(at: Vector3, shape: Callable, fells := false) -> void:
 	bucket.append(_groups.size() - 1)
 
 
+## Where every tree (a prop added with fells) stands, on the ground plane.
+func felled() -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for group: Dictionary in _groups:
+		if group.get("fells", false):
+			var at: Vector3 = group["at"]
+			out.append(Vector2(at.x, at.z))
+	return out
+
+
 ## glow: strength for palette colours with alpha 0 (lamps).
 ## glow: strength for palette colours with alpha 0 (lamps).
 func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:

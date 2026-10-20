@@ -85,7 +85,9 @@ func plant() -> void:
 ## city.street_tree_gap metres down both kerbs of every avenue and street
 ## (city.street_tree_kinds) out to the edge of the view (D-062), the trunk on the kerb line
 ## (city.street_tree_kerb in from the road's edge), clear of the crossings
-## (city.street_tree_clear), the buildings and the diagonal. Draws nothing from the RNG.
+## (city.street_tree_clear), the buildings and the diagonal, and city.tree_min_apart from every
+## spot kept before it (a crossing's two streets would stand 1.2 m apart). Draws nothing from
+## the RNG.
 func kerb_spots() -> Array[Vector2]:
 	var nodes: Array[Vector2] = _plan["nodes"]
 	var gap := Num.f(_sim.city["street_tree_gap"])
@@ -94,6 +96,8 @@ func kerb_spots() -> Array[Vector2]:
 	var walk := Num.f(_sim.city["sidewalk"])
 	var diagonal := CityGen.width_of(CityGen.DIAGONAL, _sim.city) * 0.5 + walk
 	var out: Array[Vector2] = []
+	var apart := Num.f(_sim.city["tree_min_apart"])
+	var taken := TreeSpots.new()  # the spots kept so far
 	var rows: Array = green["rows"]
 	for street: Dictionary in _plan["streets"]:
 		if not str(street["kind"]) in kinds:
@@ -121,12 +125,14 @@ func kerb_spots() -> Array[Vector2]:
 					_inside(p, _beyond)
 					and not _on_building.call(p)
 					and CityGen.diagonal_distance(_plan, p) > diagonal
+					and not taken.crowded(p, apart)
 				):
 					if row < 0 and playable:
 						rows.append([] as Array[Vector2])
 						row = rows.size() - 1
 					_spots.append({"p": p, "lean": lean, "playable": playable, "row": row})
 					out.append(p)
+					taken.add(p)
 				else:
 					row = -1
 				t += gap

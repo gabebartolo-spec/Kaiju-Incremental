@@ -12,7 +12,7 @@ const CROSSING_CLEAR := 3.0  # no parking this close to a crossing
 const LAMP_EVERY := 13.0
 ## Half the footprint of car(): 3 voxels across and 6 long (PROP_VOXEL), along its street.
 const CAR_HALF := Vector2(0.375, 0.75)
-const TREE_CELL := 4.0  # street-tree spots are filed by ground cell of this size
+const RING_STEPS := 5  # a plaza's ring trees per edge, less the far corner
 
 var sim: RampageSim
 var plan: Dictionary
@@ -35,7 +35,8 @@ var _foot := Rect2()  # its ground box in its own frame: x across, y along (mode
 var _fx := Fx.new()  # puffs where trees are crushed
 var _lamp_spots: Array[Vector2] = []
 var _park_trees: Array[Vector2] = []
-var _tree_cells := {}  # Vector2i cell -> the street-tree kerb spots in it
+var _kerb := TreeSpots.new()  # the street trees' kerb spots (CityGreenery.kerb_spots)
+var _others := TreeSpots.new()  # the plaza ring, park and diagonal trees
 
 
 ## Parked and moving car paints (city.car_colors), each light enough to read against the
@@ -65,10 +66,7 @@ func _ready() -> void:
 	# The street trees' kerb spots first, so the parking leaves room for them (D-065).
 	var greenery := CityGreenery.new(self, _rng)
 	for spot: Vector2 in greenery.kerb_spots():
-		var cell := Vector2i((spot / TREE_CELL).floor())
-		var in_cell: Array = _tree_cells.get(cell, [])
-		in_cell.append(spot)
-		_tree_cells[cell] = in_cell
+		_kerb.add(spot)
 	_streets()
 	_blocks()
 	_diagonal_trees()
@@ -224,6 +222,12 @@ func _streets() -> void:
 			t2 += LAMP_EVERY
 
 
+## Whether a tree at p keeps city.tree_min_apart from every tree planted so far.
+func _tree_room(p: Vector2) -> bool:
+	var apart := Num.f(sim.city["tree_min_apart"])
+	return not _kerb.crowded(p, apart) and not _others.crowded(p, apart)
+
+
 ## Park trees keep city.park_tree_spacing apart (about a crown's width of lawn between them),
 ## so a park reads as a lawn with trees and not as a wood (critic on #55).
 func _lawn_round(p: Vector2) -> bool:
@@ -237,15 +241,7 @@ func _lawn_round(p: Vector2) -> bool:
 ## No street tree's trunk within city.street_tree_car_clear of a car body (the parking slot
 ## drops instead).
 func _clear_of_trees(body: Rect2) -> bool:
-	var reach := Num.f(sim.city["street_tree_car_clear"])
-	var lo := Vector2i(((body.position - Vector2.ONE * reach) / TREE_CELL).floor())
-	var hi := Vector2i(((body.end + Vector2.ONE * reach) / TREE_CELL).floor())
-	for cx: int in range(lo.x, hi.x + 1):
-		for cy: int in range(lo.y, hi.y + 1):
-			for spot: Vector2 in _tree_cells.get(Vector2i(cx, cy), []):
-				if spot.clamp(body.position, body.end).distance_to(spot) < reach:
-					return false
-	return true
+	return not _kerb.near_box(body, Num.f(sim.city["street_tree_car_clear"]))
 
 
 ## A streetlight at p whose arm reaches toward `toward` (over the road), with a real light.
@@ -278,18 +274,20 @@ func _blocks() -> void:
 						_rng.randf_range(inner.position.y, inner.end.y)
 					)
 					var on_path := absf(p.x - rect.get_center().x) <= 1.2  # a path down the middle
-					if not on_path and not play.has_point(p) and _lawn_round(p):
+					if not on_path and not play.has_point(p) and _lawn_round(p) and _tree_room(p):
 						_props.add(Vector3(p.x, 0, p.y), _tree, true)
 						_park_trees.append(p)
+						_others.add(p)
 			"plaza", "landmark":  # trees round the plaza (round a landmark too)
 				var ring := rect.grow(-1.2)
-				var t := 0.0
-				while t < 1.0:
+				# Every edge runs corner to corner, so each corner is met twice: the second
+				# tree is dropped by the min-apart rule, and the far corner is planted too.
+				for step: int in RING_STEPS + 1:
 					for edge: int in 4:
-						var p := _on_edge(ring, edge, t)
-						if not _on_building(p):
+						var p := _on_edge(ring, edge, float(step) / RING_STEPS)
+						if not _on_building(p) and _tree_room(p):
 							_props.add(Vector3(p.x, 0, p.y), _tree, true)
-					t += 0.2
+							_others.add(p)
 			"parking":
 				var bays := rect.grow(-0.6)
 				var x := bays.position.x + 1.65
@@ -335,8 +333,9 @@ func _diagonal_trees() -> void:
 					continue
 				if _on_building(p) or (_near_street(p) if city else _on_road(p)):
 					continue
-				if off == kerb or _rng.randf() < 0.45:
+				if (off == kerb or _rng.randf() < 0.45) and _tree_room(p):
 					_props.add(Vector3(p.x, 0, p.y), _tree, true)
+					_others.add(p)
 		t += 4.0
 
 
