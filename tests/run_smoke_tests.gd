@@ -332,7 +332,7 @@ func _check_vehicle_fade() -> void:
 	var side := HelicopterModel.new()
 	root.add_child(front)
 	root.add_child(side)
-	var eye := Rampage.CAMERA_OFFSET
+	var eye := Rampage.camera_offset()
 	front.position = eye * 0.5
 	side.position = Vector3(20, 9, 0)
 	var nodes: Array[Node3D] = [front, side]
@@ -346,7 +346,7 @@ func _check_vehicle_fade() -> void:
 		is_equal_approx(a, low) and b == 1.0,
 		"a helicopter in front of the kaiju fades to %.2f, one at the side stays %.2f" % [a, b]
 	)
-	var bearing := rad_to_deg(atan2(Rampage.CAMERA_OFFSET.z, Rampage.CAMERA_OFFSET.x))
+	var bearing := rad_to_deg(atan2(Rampage.camera_offset().z, Rampage.camera_offset().x))
 	var air := Num.f(Content.section("air")["camera_bearing"])
 	check(
 		is_equal_approx(bearing, air),
