@@ -4,8 +4,8 @@ extends RefCounted
 ## city.landmarks takes the street-grid cells round its anchor, as many as its baked footprint
 ## (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a margin needs, as one
 ## plaza: the streets inside it are never laid, so traffic and the ground go round it. A site
-## stays inside one district (it never swallows a ring avenue) and clear of the diagonal avenue;
-## a landmark that cannot get one is left out.
+## stays inside one district (it never swallows a ring avenue), clear of the diagonal avenue and
+## out of the river's row (CityRiver.river_row); a landmark that cannot get one is left out.
 ## Pure: the same city config always gives the same sites.
 
 
@@ -34,6 +34,9 @@ static func find(
 		var j := _span(along_z, Num.f(at[1]), Num.f(shape["d"]) + pad)
 		if i.x < 0 or j.x < 0:
 			continue
+		var river := CityRiver.river_row(zs, cfg)
+		if river >= 0 and j.x <= river and j.y >= river:
+			continue  # never in the river's row (CityRiver): it would stand in the water
 		var outer := Rect2(xs[i.x], zs[j.x], xs[i.y + 1] - xs[i.x], zs[j.y + 1] - zs[j.x])
 		if _crosses_diagonal(plan, outer, cfg):
 			continue
