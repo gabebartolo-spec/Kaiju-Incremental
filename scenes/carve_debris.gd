@@ -9,15 +9,12 @@ extends Node3D
 ## through the glass: hovering on slabs the view does not draw) shrink away over fade_seconds,
 ## never vanishing in one frame. Cosmetic: nothing here reaches the sim.
 
-const FLOATS := 16  # per MultiMesh instance: a 3x4 transform, then a colour
 const SHRINK_MIN := 0.01  # a fading piece's last scale
 
 var raised := 0  # live pieces lifted out of the road so far (captures)
 var max_raise := 0.0  # the deepest of them
 
 var skid_max := 0.0  # how far a settled piece slid along the road from first touch, in its widths
-var dropped := 0  # rubble pieces dropped past rubble_cap so far
-var vanished := 0  # pieces that left the screen at over half size in one frame (captures; 0)
 var culled := 0  # pieces faded out because they lay indoors (captures)
 ## The building and its grid (the sim's, after the last carve): what counts as indoors.
 var site: CarveSite
@@ -30,7 +27,7 @@ var _cfg: Dictionary
 var _space: RID
 var _shapes: Dictionary = {}  # snapped size -> BoxShape3D (kept alive for its RID)
 var _live_mm: MultiMesh
-var _rubble_mm: MultiMesh
+var _rubble: CarveRubble
 # Live pieces, parallel arrays.
 var _rids: Array[RID] = []
 var _sizes := PackedVector3Array()
@@ -39,14 +36,7 @@ var _still := PackedFloat32Array()
 var _age := PackedFloat32Array()
 var _fade := PackedFloat32Array()  # < 0: not fading; else seconds since it began to fade
 var _touch := PackedVector3Array()  # where it first met the road (y = NAN until it does)
-# Rubble, parallel arrays; an invalid RID is rubble with no collider left.
-var _rubble_rids: Array[RID] = []
-var _rubble := PackedFloat32Array()  # FLOATS per piece
-var _rubble_fade := PackedFloat32Array()  # < 0: not fading; else seconds since it began
-var _rubble_fading := 0
-var _rubble_dirty := false
 var _fading := 0  # live pieces fading out
-var _statics := 0  # rubble pieces that still have a (static) body
 
 
 func _init() -> void:
@@ -55,16 +45,15 @@ func _init() -> void:
 
 func _ready() -> void:
 	_space = get_world_3d().space
-	_live_mm = _multimesh()
-	_rubble_mm = _multimesh()
+	_live_mm = CarveRubble.multimesh(self)
+	_rubble = CarveRubble.new(CarveRubble.multimesh(self), _cfg)
 
 
 func _exit_tree() -> void:
-	for rid: RID in _rids + _rubble_rids:
-		if rid.is_valid():
-			PhysicsServer3D.free_rid(rid)
+	for rid: RID in _rids:
+		PhysicsServer3D.free_rid(rid)
 	_rids.clear()
-	_rubble_rids.clear()
+	_rubble.free_bodies()
 
 
 ## Live pieces still counted against the cap (fading ones excluded: they are on their way out).
@@ -77,11 +66,21 @@ func bodies() -> int:
 
 
 func rubble() -> int:
-	return _rubble_rids.size()
+	return _rubble.count()
+
+
+## Rubble pieces dropped past rubble_cap so far.
+func dropped() -> int:
+	return _rubble.dropped
+
+
+## Pieces that left the screen at over half size in one frame (captures; 0).
+func vanished() -> int:
+	return _rubble.vanished
 
 
 func static_bodies() -> int:
-	return _statics
+	return _rubble.statics
 
 
 ## A new live piece at `xf`, `size` (world); motion is [velocity, spin, gravity scale, mass].
@@ -126,10 +125,7 @@ func lowest_point() -> float:
 	var low := INF
 	for k: int in _rids.size():
 		low = minf(low, _low(k))
-	for o: int in range(0, _rubble.size(), FLOATS):
-		var reach := absf(_rubble[o + 4]) + absf(_rubble[o + 5]) + absf(_rubble[o + 6])
-		low = minf(low, _rubble[o + 7] - 0.5 * reach)
-	return low
+	return minf(low, _rubble.lowest())
 
 
 ## How many live pieces reach below `y` (a capture's sunk-into-the-road count).
@@ -149,9 +145,7 @@ func inside(box: AABB) -> int:
 			_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
 		)
 		n += 1 if box.has_point(xf.origin) else 0
-	for o: int in range(0, _rubble.size(), FLOATS):
-		n += 1 if box.has_point(Vector3(_rubble[o + 3], _rubble[o + 7], _rubble[o + 11])) else 0
-	return n
+	return n + _rubble.inside(box)
 
 
 ## The fastest live piece's speed (captures).
@@ -188,23 +182,26 @@ func retire(n: int) -> void:
 ## Rubble inside `box` and off the ground loses its rest (what held it up was carved or fell):
 ## a piece with a collider turns live again where it lies; one without shrinks away. Rubble on
 ## the street never needs waking. Returns how many woke.
+## Rubble inside `box` and off the ground loses its rest (what held it up was carved or fell):
+## a piece with a collider turns live again where it lies; one without shrinks away. Rubble on
+## the street never needs waking. Returns how many woke.
 func wake(box: AABB) -> int:
 	var woke := 0
 	var floor_y := Num.f(_cfg["ground_y"]) + Num.f(_cfg["ground_slop"]) * 2.0
-	var k := _rubble_rids.size() - 1
+	var r := _rubble
+	var k := r.count() - 1
 	while k >= 0:
-		var o := k * FLOATS
-		var at := Vector3(_rubble[o + 3], _rubble[o + 7], _rubble[o + 11])
-		var reach := absf(_rubble[o + 4]) + absf(_rubble[o + 5]) + absf(_rubble[o + 6])
-		var resting := _rubble_fade[k] < 0.0
-		if resting and box.has_point(at) and at.y - 0.5 * reach > floor_y:
-			var rid := _rubble_rids[k]
-			var xf := _unpack(_rubble, o)
-			var color := Color(_rubble[o + 12], _rubble[o + 13], _rubble[o + 14])
+		var o := k * CarveRubble.FLOATS
+		var at := Vector3(r.buf[o + 3], r.buf[o + 7], r.buf[o + 11])
+		var reach := absf(r.buf[o + 4]) + absf(r.buf[o + 5]) + absf(r.buf[o + 6])
+		if r.fade[k] < 0.0 and box.has_point(at) and at.y - 0.5 * reach > floor_y:
+			var rid := r.rids[k]
+			var xf := CarveRubble.unpack(r.buf, o)
+			var color := Color(r.buf[o + 12], r.buf[o + 13], r.buf[o + 14])
 			var size := Vector3(xf.basis.x.length(), xf.basis.y.length(), xf.basis.z.length())
 			if rid.is_valid():
 				PhysicsServer3D.body_set_mode(rid, PhysicsServer3D.BODY_MODE_RIGID)
-				_statics -= 1
+				r.statics -= 1
 				_adopt(rid, size, color)
 			else:
 				xf.basis = xf.basis.orthonormalized()
@@ -212,7 +209,7 @@ func wake(box: AABB) -> int:
 				spawn(xf, size, color, motion)
 				_fade[_fade.size() - 1] = 0.0
 				_fading += 1
-			_remove_rubble(k)
+			r.remove(k)
 			woke += 1
 		k -= 1
 	return woke
@@ -220,13 +217,7 @@ func wake(box: AABB) -> int:
 
 ## Drops colliders from the oldest rubble until at most `keep` static bodies remain here.
 func trim_static(keep: int) -> void:
-	for k: int in _rubble_rids.size():
-		if _statics <= keep:
-			return
-		if _rubble_rids[k].is_valid():
-			PhysicsServer3D.free_rid(_rubble_rids[k])
-			_rubble_rids[k] = RID()
-			_statics -= 1
+	_rubble.trim_static(keep)
 
 
 func _physics_process(delta: float) -> void:
@@ -271,84 +262,19 @@ func _physics_process(delta: float) -> void:
 		k -= 1
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_draw_live()
-	_cap_rubble()
-	_fade_rubble(_delta)
-	if _rubble_dirty:
-		_rubble_dirty = false
-		var n := _rubble_rids.size()
-		_fit(_rubble_mm, n)
-		var buf := _rubble.duplicate()
-		buf.resize(_rubble_mm.instance_count * FLOATS)
-		_rubble_mm.buffer = buf
-		_rubble_mm.visible_instance_count = n
+	_rubble.update(delta)
 
 
-## Past rubble_cap the oldest rubble (the bottom of the pile, under newer pieces) loses its
-## collider and shrinks away over fade_seconds, so one building's rubble MultiMesh stops growing
-## and nothing leaves in one frame.
-func _cap_rubble() -> void:
-	var over := _rubble_rids.size() - _rubble_fading - Num.i(_cfg["rubble_cap"])
-	var k := 0
-	while over > 0 and k < _rubble_rids.size():
-		if _rubble_fade[k] < 0.0:
-			_rubble_fade[k] = 0.0
-			_rubble_fading += 1
-			over -= 1
-			dropped += 1
-			if _rubble_rids[k].is_valid():
-				PhysicsServer3D.free_rid(_rubble_rids[k])
-				_rubble_rids[k] = RID()
-				_statics -= 1
-		k += 1
-
-
-## Shrinks fading rubble about its centre; a piece that has shrunk away is removed.
-func _fade_rubble(delta: float) -> void:
-	if _rubble_fading == 0:
-		return
-	var fade_t := Num.f(_cfg["fade_seconds"])
-	var k := _rubble_rids.size() - 1
-	while k >= 0:
-		var f := _rubble_fade[k]
-		if f >= 0.0:
-			var before := maxf(SHRINK_MIN, 1.0 - f / fade_t)
-			f += delta
-			_rubble_fade[k] = f
-			if f >= fade_t:
-				_gone(before)
-				_remove_rubble(k)
-				_rubble_fading -= 1
-			else:
-				var ratio := maxf(SHRINK_MIN, 1.0 - f / fade_t) / before
-				var o := k * FLOATS
-				for c: int in [0, 1, 2, 4, 5, 6, 8, 9, 10]:
-					_rubble[o + c] *= ratio
-				_rubble_dirty = true
-		k -= 1
-
-
-## True when live piece k lies indoors: inside its building's footprint, more than
-## indoor_margin from the walls, under a cell that still stands (a floor or roof above it).
+## True when live piece k lies indoors (see CarveSite.indoors).
 func _indoors(k: int) -> bool:
 	if site == null or grid.is_empty():
 		return false
 	var xf: Transform3D = PhysicsServer3D.body_get_state(
 		_rids[k], PhysicsServer3D.BODY_STATE_TRANSFORM
 	)
-	var margin := Num.f(_cfg["indoor_margin"])
-	var span := Vector3(site.size) / site.res
-	var box := AABB(site.origin, span).grow(-margin)
-	box.position.y = site.origin.y
-	box.size.y = span.y
-	if not box.has_point(xf.origin):
-		return false
-	var c := Vector3i(((xf.origin - site.origin) * site.res).floor())
-	for y: int in range(c.y + 1, site.size.y):
-		if grid[site.index(Vector3i(c.x, y, c.z))] != 0:
-			return true
-	return false
+	return site.indoors(grid, xf.origin, Num.f(_cfg["indoor_margin"]))
 
 
 ## Live piece k begins to shrink away because it lies indoors.
@@ -360,21 +286,14 @@ func _cull(k: int) -> void:
 
 ## Counts a piece leaving the screen at `scale` of its size (over half: it popped).
 func _gone(scale: float) -> void:
-	if scale > 0.5:
-		vanished += 1
-
-
-func _remove_rubble(k: int) -> void:
-	_rubble_rids.remove_at(k)
-	_rubble_fade.remove_at(k)
-	_remove_floats(k)
+	_rubble.gone(scale)
 
 
 func _draw_live() -> void:
 	var n := _rids.size()
-	_fit(_live_mm, n)
+	CarveRubble.fit(_live_mm, n)
 	var buf := PackedFloat32Array()
-	buf.resize(_live_mm.instance_count * FLOATS)
+	buf.resize(_live_mm.instance_count * CarveRubble.FLOATS)
 	var fade_t := Num.f(_cfg["fade_seconds"])
 	var ground := Num.f(_cfg["ground_y"])
 	var floor_y := ground - Num.f(_cfg["ground_slop"])
@@ -393,7 +312,7 @@ func _draw_live() -> void:
 		var scale := _sizes[k]
 		if _fade[k] >= 0.0:
 			scale *= maxf(SHRINK_MIN, 1.0 - _fade[k] / fade_t)
-		_pack(buf, k * FLOATS, Transform3D(xf.basis.scaled_local(scale), xf.origin), _colors[k])
+		CarveRubble.pack(buf, k * CarveRubble.FLOATS, Transform3D(xf.basis.scaled_local(scale), xf.origin), _colors[k])
 	_live_mm.buffer = buf
 	_live_mm.visible_instance_count = n
 
@@ -445,13 +364,7 @@ func _freeze(k: int) -> void:
 		skid_sum += slid / width
 		skid_n += 1
 		skid_over += 1 if slid > 5.0 * width else 0
-	var o := _rubble.size()
-	_rubble.resize(o + FLOATS)
-	_pack(_rubble, o, Transform3D(xf.basis.scaled_local(_sizes[k]), xf.origin), _colors[k])
-	_rubble_rids.append(rid)
-	_rubble_fade.append(-1.0)
-	_statics += 1
-	_rubble_dirty = true
+	_rubble.add(rid, Transform3D(xf.basis.scaled_local(_sizes[k]), xf.origin), _colors[k])
 	_drop(k)
 
 
@@ -473,14 +386,6 @@ func _drop(k: int) -> void:
 	_touch.remove_at(k)
 
 
-func _remove_floats(k: int) -> void:
-	var o := k * FLOATS
-	var tail := _rubble.slice(o + FLOATS)
-	_rubble.resize(o)
-	_rubble.append_array(tail)
-	_rubble_dirty = true
-
-
 func _shape(size: Vector3) -> BoxShape3D:
 	var key := size.snapped(Vector3.ONE * 0.01)
 	if not _shapes.has(key):
@@ -489,51 +394,3 @@ func _shape(size: Vector3) -> BoxShape3D:
 		_shapes[key] = box
 	var out: BoxShape3D = _shapes[key]
 	return out
-
-
-func _multimesh() -> MultiMesh:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	var cube := BoxMesh.new()  # unit cube, scaled per instance to the piece's size
-	cube.material = CarveMesh.material()
-	mm.mesh = cube
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.top_level = true
-	add_child(mmi)
-	return mm
-
-
-## Grows the MultiMesh's capacity (doubling) so `n` pieces fit; it never shrinks.
-static func _fit(mm: MultiMesh, n: int) -> void:
-	if mm.instance_count >= n:
-		return
-	mm.instance_count = maxi(64, nearest_po2(n))
-
-
-static func _pack(buf: PackedFloat32Array, o: int, xf: Transform3D, c: Color) -> void:
-	var b := xf.basis
-	buf[o] = b.x.x
-	buf[o + 1] = b.y.x
-	buf[o + 2] = b.z.x
-	buf[o + 3] = xf.origin.x
-	buf[o + 4] = b.x.y
-	buf[o + 5] = b.y.y
-	buf[o + 6] = b.z.y
-	buf[o + 7] = xf.origin.y
-	buf[o + 8] = b.x.z
-	buf[o + 9] = b.y.z
-	buf[o + 10] = b.z.z
-	buf[o + 11] = xf.origin.z
-	buf[o + 12] = c.r
-	buf[o + 13] = c.g
-	buf[o + 14] = c.b
-	buf[o + 15] = 1.0
-
-
-static func _unpack(buf: PackedFloat32Array, o: int) -> Transform3D:
-	var bx := Vector3(buf[o], buf[o + 4], buf[o + 8])
-	var by := Vector3(buf[o + 1], buf[o + 5], buf[o + 9])
-	var bz := Vector3(buf[o + 2], buf[o + 6], buf[o + 10])
-	return Transform3D(Basis(bx, by, bz), Vector3(buf[o + 3], buf[o + 7], buf[o + 11]))

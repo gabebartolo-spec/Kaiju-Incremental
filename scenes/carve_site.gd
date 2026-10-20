@@ -78,3 +78,19 @@ func indices(event: Dictionary) -> PackedInt32Array:
 	for c: Vector3i in list:
 		out.append(index(c - offset))
 	return out
+
+
+## True when world point `p` lies indoors: inside the footprint, more than `margin` from the
+## walls, under a cell of `grid` that still stands (a floor or roof above it).
+func indoors(grid: PackedByteArray, p: Vector3, margin: float) -> bool:
+	var span := Vector3(size) / res
+	var box := AABB(origin, span).grow(-margin)
+	box.position.y = origin.y
+	box.size.y = span.y
+	if not box.has_point(p):
+		return false
+	var c := Vector3i(((p - origin) * res).floor())
+	for y: int in range(c.y + 1, size.y):
+		if grid[index(Vector3i(c.x, y, c.z))] != 0:
+			return true
+	return false

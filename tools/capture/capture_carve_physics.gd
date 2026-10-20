@@ -13,6 +13,7 @@ extends SceneTree
 
 const PATHS := preload("res://tests/lib/destruction_paths.gd")
 const VIEW_STUB := preload("res://tools/capture/carve_view_stub.gd")
+const STAGE := preload("res://tools/capture/carve_stage.gd")
 const RES := 8
 const SHOT_EVERY := 15  # frames between timeline stills
 const CROP := Vector2i(320, 180)  # crop round an event, saved at 2x
@@ -98,8 +99,8 @@ func _path(b: Dictionary, t: float) -> Variant:
 func _setup() -> void:
 	_world = Node3D.new()
 	root.add_child(_world)
-	_environment()
-	_ground()
+	STAGE.environment(_world)
+	STAGE.ground(_world)
 	var fx := Fx.new()
 	_world.add_child(fx)
 	_phys = CarvePhysics.new(7)
@@ -121,7 +122,7 @@ func _setup() -> void:
 		_world.add_child(view)
 		view.build(grid.cells)
 		_views.append(view)
-		_spheres.append(_sphere(Num.f(b["radius"])))
+		_spheres.append(STAGE.sphere(_world, Num.f(b["radius"])))
 	var cam := Camera3D.new()
 	cam.fov = 55.0
 	_world.add_child(cam)
@@ -366,95 +367,5 @@ func _report() -> void:
 			% [_phys.live_bodies(), live_speed, _last_live_t]
 		)
 	)
-	for h: Dictionary in _holds:
-		var held: Array = h["holds"]
-		var worst := 0.0
-		var at := 0.0
-		for pair: Array in held:
-			var gap := Num.f(pair[1]) - Num.f(pair[0])
-			if gap > worst:
-				worst = gap
-				at = Num.f(pair[1])
-		print(
-			(
-				(
-					"  HOLD building %d: %d break steps, longest wait from release or the last"
-					+ " break %.2f s (at t=%.2f)"
-				)
-				% [h["n"], held.size(), worst, at]
-			)
-		)
-	for key: String in _stats:
-		var a: Array = _stats[key]
-		if a.is_empty():
-			continue
-		var sorted := a.duplicate()
-		sorted.sort()
-		var total := 0.0
-		for x: float in a:
-			total += x
-		print(
-			(
-				"  %-5s avg %7.2f  p95 %7.2f  max %7.2f"
-				% [key, total / maxi(1, a.size()), sorted[int(sorted.size() * 0.95)], sorted[-1]]
-			)
-		)
-
-
-func _environment() -> void:
-	var env := Environment.new()
-	var sky := Sky.new()
-	sky.sky_material = ProceduralSkyMaterial.new()
-	env.background_mode = Environment.BG_SKY
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.ssao_enabled = true
-	env.ssao_intensity = 2.0
-	env.glow_enabled = true
-	env.fog_enabled = true
-	env.fog_density = 0.004
-	var we := WorldEnvironment.new()
-	we.environment = env
-	_world.add_child(we)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-50, -35, 0)
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 120.0
-	_world.add_child(sun)
-
-
-func _ground() -> void:
-	var ground := StaticBody3D.new()
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(400, 2, 400)
-	shape.shape = box
-	shape.position.y = -1.0
-	ground.add_child(shape)
-	var mesh := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(400, 400)
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color("4a4d50")
-	plane.material = mat
-	mesh.mesh = plane
-	ground.add_child(mesh)
-	_world.add_child(ground)
-
-
-func _sphere(radius: float) -> MeshInstance3D:
-	var s := MeshInstance3D.new()
-	var sm := SphereMesh.new()
-	sm.radius = radius
-	sm.height = radius * 2.0
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.45, 0.2, 0.3)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	sm.material = mat
-	s.mesh = sm
-	s.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	s.visible = false
-	_world.add_child(s)
-	return s
+	STAGE.print_holds(_holds)
+	STAGE.print_stats(_stats)

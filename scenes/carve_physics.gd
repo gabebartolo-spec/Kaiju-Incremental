@@ -238,7 +238,7 @@ func rubble_dropped() -> int:
 	var n := 0
 	for key: int in _debris:
 		var d: CarveDebris = _debris[key]
-		n += d.dropped
+		n += d.dropped()
 	return n
 
 
@@ -247,7 +247,7 @@ func vanished() -> int:
 	var n := 0
 	for key: int in _debris:
 		var d: CarveDebris = _debris[key]
-		n += d.vanished
+		n += d.vanished()
 	return n
 
 

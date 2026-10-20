@@ -213,27 +213,7 @@ func _start_break(v: Vector3) -> void:
 func _split(v: Vector3) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([_seed, cells.size(), _bricks.size()])
-	var keys: Array = _bricks.keys()
-	var seeds: Array = keys.duplicate()
-	for k: int in range(seeds.size() - 1, 0, -1):
-		var j := rng.randi_range(0, k)
-		var swap: Variant = seeds[k]
-		seeds[k] = seeds[j]
-		seeds[j] = swap
-	seeds.resize(ceili(keys.size() / maxf(1.0, Num.f(_cfg["split_chunk"]))))
-	var groups: Array[Array] = []
-	for _s: Variant in seeds:
-		groups.append([])
-	for key: Vector3i in keys:
-		var best := 0
-		var near := INF
-		for s: int in seeds.size():
-			var seed_key: Vector3i = seeds[s]
-			var d := Vector3(key - seed_key).length_squared()
-			if d < near:
-				near = d
-				best = s
-		groups[best].append(key)
+	var groups := IslandFracture.group_bricks(_bricks.keys(), rng, Num.f(_cfg["split_chunk"]))
 	var xf := global_transform
 	var keep := v * Num.f(_cfg["piece_keep"])
 	var spread := Num.f(_cfg["split_spread"])
@@ -290,27 +270,9 @@ func _settle_out() -> void:
 
 ## Records the height spread of the bricks that will border this break (see front_spreads).
 func _note_front(keys: Array[Vector3i], centre: Dictionary) -> void:
-	var gone := {}
-	for key: Vector3i in keys:
-		gone[key] = true
-	var ys: Array[float] = []
-	var seen := {}
-	for key: Vector3i in keys:
-		for step: Vector3i in CarveMesh.STEPS:
-			var n := key + step
-			if _bricks.has(n) and not gone.has(n) and not seen.has(n):
-				seen[n] = true
-				ys.append(Num.f(centre[n]))
-	if ys.size() < 2:
-		return
-	var mean := 0.0
-	for y: float in ys:
-		mean += y
-	mean /= ys.size()
-	var sq := 0.0
-	for y: float in ys:
-		sq += (y - mean) * (y - mean)
-	front_spreads.append(sqrt(sq / ys.size()))
+	var spread := IslandFracture.front_spread(keys, _bricks, centre)
+	if spread >= 0.0:
+		front_spreads.append(spread)
 
 
 ## Lets go the next share of the staged bricks; the last share frees an emptied island.
@@ -356,33 +318,10 @@ func _step_stage(delta: float) -> void:
 	_mass()
 
 
-## Half-brick pieces (res/2 cells a side) round this brick's cells, each in its first material.
+## Half-brick pieces round this brick's cells, each in its first material.
 func _pieces_of(key: Vector3i, xf: Transform3D, v: Vector3, out: Array[Dictionary]) -> void:
-	var half := maxi(1, site.res >> 1)
-	var groups := {}
 	var own: PackedInt32Array = _bricks[key]
-	for k: int in own:
-		var sub := site.cell(cells[k]) / half
-		if not groups.has(sub):
-			groups[sub] = PackedInt32Array()
-		var list: PackedInt32Array = groups[sub]
-		list.append(k)
-		groups[sub] = list
-	for sub: Vector3i in groups:
-		var ks: PackedInt32Array = groups[sub]
-		var box := CarveMesh.span(site, cells, ks)
-		var at := xf * (box.get_center() - _com)
-		(
-			out
-			. append(
-				{
-					"xf": Transform3D(xf.basis, at),
-					"size": box.size,
-					"color": site.color(mats[ks[0]]),
-					"v": v,
-				}
-			)
-		)
+	IslandFracture.pieces_of(site, cells, mats, own, [xf, _com, v], out)
 
 
 func _drop_brick(key: Vector3i) -> void:
