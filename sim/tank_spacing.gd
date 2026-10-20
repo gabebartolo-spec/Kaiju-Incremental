@@ -9,6 +9,8 @@ extends RefCounted
 var convoy: Convoy
 var sim: RampageSim
 var cfg: Dictionary
+## The clearance grown round each part while a touch (not a clash) is asked; below 0, the tuned one.
+var _margin := -1.0
 
 
 func _init(p_convoy: Convoy) -> void:
@@ -35,9 +37,14 @@ func blocker(tank: RampageSim.Tank, next: Vector2, dir: Vector2) -> RampageSim.T
 		var o: ConvoyRoute = convoy.routes.get(other.id)
 		var facing := o.front if o != null and o.front != Vector2.ZERO else dir
 		if next.distance_to(tank.pos) < 0.0001:  # a pivot in place: only its hull swings
+			# Never into a new clash; and from inside one (it parked within `clear` of a
+			# neighbour) never to where the drawn parts themselves touch (0 m margin).
 			if (
-				hull_clash(next, dir, other.pos, facing)
-				and not hull_clash(next, own, other.pos, facing)
+				(
+					hull_clash(next, dir, other.pos, facing)
+					and not hull_clash(next, own, other.pos, facing)
+				)
+				or hull_touch(next, dir, other.pos, facing)
 			):
 				return other
 		elif clash(next, dir, other.pos, facing):
@@ -139,6 +146,14 @@ func hull_clash(p: Vector2, u: Vector2, q: Vector2, w: Vector2) -> bool:
 	return false
 
 
+## hull_clash with no clearance grown: do the drawn parts themselves touch?
+func hull_touch(p: Vector2, u: Vector2, q: Vector2, w: Vector2) -> bool:
+	_margin = 0.0
+	var touching := hull_clash(p, u, q, w)
+	_margin = -1.0
+	return touching
+
+
 ## Centre, long axis and half extents, in turn, for the hull, the turret and the gun at p.
 func _boxes(p: Vector2, front: Vector2) -> PackedVector2Array:
 	var aim := (sim.kaiju_pos - p).normalized()
@@ -152,7 +167,7 @@ func _boxes(p: Vector2, front: Vector2) -> PackedVector2Array:
 
 func _half(part: String) -> Vector2:
 	var size: Array = cfg[part]
-	var clear := Num.f(cfg["clear"])
+	var clear := Num.f(cfg["clear"]) if _margin < 0.0 else _margin
 	return Vector2(Num.f(size[0]), Num.f(size[1])) * 0.5 + Vector2(clear, clear)
 
 

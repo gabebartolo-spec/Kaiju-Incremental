@@ -54,7 +54,7 @@ var _shake := 0.0
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _fx_rng: RandomNumberGenerator
-var _too_tall_cooldown := 0.0
+var _topple_cfg: Dictionary = Content.section("topple_fx")
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
@@ -71,6 +71,7 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
@@ -146,7 +147,6 @@ func _physics_process(delta: float) -> void:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
-	_too_tall_cooldown = maxf(0.0, _too_tall_cooldown - delta)
 	_update_kaiju(delta, move.length())
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
@@ -185,18 +185,14 @@ func _on_event(event: Dictionary) -> void:
 			_ability_fx(event)
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]
-			_on_chunks_broken(Num.i(event["building"]), cells)
+			_on_chunks_broken(Num.i(event["building"]), cells, Num.f(event.get("pay", 1.0)))
 		"fall_start":
 			_city.fall_start(event)
 		"fall_land":
 			_city.fall_land(event)
 			sfx.collapse(str(event["kind"]) == "topple")
-			_shake = maxf(_shake, 0.6 if str(event["kind"]) == "topple" else 0.3)
-		"tough":
-			if _too_tall_cooldown <= 0.0:
-				_too_tall_cooldown = 2.5
-				var b := sim.buildings[Num.i(event["building"])]
-				_city.float_text("TOO STRONG - UNDERMINE IT", Vector3(b.x, 4.0, b.z), UiKit.WARN)
+			var topple := str(event["kind"]) == "topple"
+			_shake = maxf(_shake, Num.f(_topple_cfg["shake"]) if topple else 0.3)
 		"tank_spawned":
 			_spawn_tank_node(Num.i(event["tank"]))
 		"tank_fired":
@@ -211,10 +207,11 @@ func _on_event(event: Dictionary) -> void:
 			_powers.on_event(event, _kaiju_at)
 
 
-func _on_chunks_broken(index: int, cells: Array[Vector3i]) -> void:
+func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
 	_city.chunks_broken(index, cells, _kaiju_at)
 	var b := sim.buildings[index]
-	var gained := cells.size() * b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult")
+	var per := b.tier * Num.f(sim.city["chunk_rubble"]) * sim.stat("rubble_mult") * pay
+	var gained := cells.size() * per
 	if gained >= 1.0:
 		var at := b.chunk_world(cells[0]) + Vector3(0, 2.0, 0)
 		_city.float_text("+%d" % Num.i(gained), at, UiKit.WARN)
@@ -275,8 +272,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 	else:
 		_kaiju_at = _kaiju_at.lerp(target, minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
-	var heading := atan2(-sim.facing.x, -sim.facing.y)
-	_kaiju.rotation.y = lerp_angle(_kaiju.rotation.y, heading, minf(1.0, delta * 10.0))
+	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	_kaiju.animate(delta, moving)
 
 
@@ -387,9 +383,7 @@ func _place_camera(delta: float) -> void:
 func _autoplay_move() -> Vector2:
 	if _steps % 15 == 0 or _autoplay_target.x == INF:
 		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
-	if (
-		_autoplay_target.x == INF
-		or sim.kaiju_pos.distance_to(_autoplay_target) < sim.stomp_radius() * 0.5
-	):
+	var to := _autoplay_target - sim.kaiju_pos
+	if _autoplay_target.x == INF or to.length() < sim.stomp_radius() * 0.5:
 		return Vector2.ZERO
-	return (_autoplay_target - sim.kaiju_pos).normalized()
+	return to.normalized()

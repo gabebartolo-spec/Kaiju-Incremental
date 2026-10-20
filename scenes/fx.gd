@@ -91,11 +91,18 @@ func _ready() -> void:
 
 
 ## A billowing dust cloud; size ~ the width of what came down.
-func dust(at: Vector3, size: float) -> void:
+## tint (alpha > 0): the puff's colour instead of the grey (a toppled tower's pale concrete).
+func dust(at: Vector3, size: float, tint := Color(0, 0, 0, 0)) -> void:
 	var p := _burst(_dust_mat, _dust_mesh, roundi(12 * clampf(size, 0.5, 4.0)), 2.6)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
+	if tint.a > 0.0:
+		var ramp := Gradient.new()
+		ramp.colors = PackedColorArray([tint, Color(tint, 0.0)])
+		var tex := GradientTexture1D.new()
+		tex.gradient = ramp
+		mat.color_ramp = tex
 
 
 ## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling
@@ -153,10 +160,10 @@ func puff(at: Vector3) -> void:
 
 
 ## Dust along a line: where a toppled tower hits the street.
-func dust_line(from: Vector3, to: Vector3, width: float) -> void:
+func dust_line(from: Vector3, to: Vector3, width: float, tint := Color(0, 0, 0, 0)) -> void:
 	var steps := maxi(2, ceili(from.distance_to(to) / 2.5))
 	for i: int in steps + 1:
-		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6)
+		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6, tint)
 
 
 func sparks(at: Vector3) -> void:

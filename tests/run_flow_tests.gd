@@ -8,6 +8,7 @@ const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
+const FlowTanks := preload("res://tests/lib/flow_tanks.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
 const FlowRifleSounds := preload("res://tests/lib/flow_rifle_sounds.gd")
@@ -16,6 +17,9 @@ const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
+## A kaiju that has not drawn tank fire by now is walked to the nearest tank (the sim's army holds
+## its standoff, and a rampage that clears the city fast may never pass in reach of one).
+const TANK_WALK_FRAMES := 60 * 30
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
 const UPGRADED := {
@@ -239,8 +243,8 @@ func _check_rampage() -> void:
 
 
 ## Each signature attack plays its own effect; the upgraded kaiju also shows its upgrades
-## (cracking stomps, ready pulse, glancing shells, healing motes) and a plain one does not crack
-## the street.
+## (cracking stomps, or the croc's claw swipe (D-095), ready pulse, glancing shells, healing
+## motes) and a plain one does not crack the street.
 func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void:
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(
@@ -255,23 +259,28 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	rampage.sfx.live = true  # past the start gate (FlowSfx.gate checks the gate itself)
 	var played := rampage.ability_fx.played
 	var heard := rampage.sfx.played
-	var cues: Array[String] = [
-		"stomp_2", "stomp_crack", "ready", "deflect", "regen_loop", "tank_fire"
-	]
+	var swipes := Num.f(stats.get("swipe_damage", 0.0)) > 0.0
+	# Claws sounds as the swipe's rake for the croc, as heavier, cracking stomps for the others.
+	var cues: Array[String] = ["ready", "deflect", "regen_loop", "tank_fire"]
+	cues.append_array(["lash"] if swipes else ["stomp_2", "stomp_crack"])
+	var marks: Array[String] = ["swipe" if swipes else "cracks", "ready", "deflect", "regen"]
+	var powers: PowersView = rampage.get("_powers")
 	var frames := 0
 	var want: Array[String] = [kind]
 	if not levels.is_empty():
-		want.append_array(["cracks", "ready", "deflect", "regen"])
+		want.append_array(marks)
 	var jets := 0
 	var scorch_glow := {}  # the breath scorch's glow on the frame it first appears, and its peak
 	var aim := {}  # BreathAim against the sim's cone, every frame
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		if frames == TANK_WALK_FRAMES and not levels.is_empty() and not heard.has("tank_fire"):
+			FlowTanks.walk_to_nearest(rampage.sim)
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		FlowBreath.track_aim(rampage, aim)
-		if want.all(func(k: String) -> bool: return played.has(k)):
+		if want.all(func(k: String) -> bool: return played.has(k) or powers.played.has(k)):
 			if levels.is_empty() or cues.all(func(c: String) -> bool: return heard.has(c)):
 				break
 	check(played.has(kind), "%s's signature plays its %s effect: %s" % [species_id, kind, played])
@@ -296,8 +305,11 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 		if species_id == "cephalopod":
 			check(not played.has("cracks"), "an unupgraded kaiju's stomps do not crack the street")
 	else:
-		for k: String in ["cracks", "ready", "deflect", "regen"]:
-			check(played.has(k), "the upgraded %s shows %s: %s" % [species_id, k, played])
+		for k: String in marks:
+			check(
+				played.has(k) or powers.played.has(k),
+				"the upgraded %s shows %s: %s" % [species_id, k, played + powers.played]
+			)
 		check(
 			cues.all(func(c: String) -> bool: return heard.has(c)),
 			"the upgraded %s's upgrades each have a sound: %s" % [species_id, heard]
