@@ -27,7 +27,7 @@ owner, PR and status; update the row when a PR merges.
 | 16 | "repetitive text in the upgrades: "moves faster... moves faster" etc. the description can be less scientific, more humorous or referential, for example "Long Stride > "gotta go fast" > Move faster"" | E | - | open |
 | 17 | ""towers now fall to you" - this sentence makes no sense and is an over explain, we dont need to explain building physics, players just need to smash, buy upgrades, smash some more" | E | - | open |
 | 18 | "more visual feedback for atomic breath required, needs a VFX pass" | D | - | open |
-| 19 | "investigate whether lowering/increasing our voxel count will create better visuals" | B (director picks) | - | open |
+| 19 | "investigate whether lowering/increasing our voxel count will create better visuals"; he added: "when i say voxel count i mean everything, not just our kaiju, the buildings and other things too" | B (director picks) | lead + asset session / claude/vox-half, claude/vox-double | in progress |
 | 20 | "investigate whether abandoning the voxel aesthetic will create better visuals" | B (director picks) | - | open |
 | 21 | "the stadium is free biomass, it needs to be placed as far away from our spawn spot as possible to make it less farmable" | A | - | open |
 | 22 | "building surfaces which are touching other buildings seem to be plain with no features or art, so when you destroy the building its touching, you see a big blank rectangle instead of a building" | C | - | open |
