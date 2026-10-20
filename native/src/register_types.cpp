@@ -1,5 +1,6 @@
 #include "register_types.h"
 #include "kaiju_carve.h"
+#include "kaiju_mesher.h"
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/godot.hpp>
 
@@ -8,6 +9,7 @@ using namespace godot;
 void initialize_kaiju_carve(ModuleInitializationLevel level) {
 	if (level != MODULE_INITIALIZATION_LEVEL_SCENE) return;
 	GDREGISTER_CLASS(KaijuCarve);
+	GDREGISTER_CLASS(KaijuMesher);
 }
 
 void uninitialize_kaiju_carve(ModuleInitializationLevel level) {
