@@ -150,6 +150,7 @@ func _build_ground() -> void:
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
+	add_child(ArenaEdge.new(sim))  # where the kaiju's walk ends (comments #18)
 	if _with_decor:
 		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 
