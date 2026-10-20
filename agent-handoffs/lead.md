@@ -19,9 +19,12 @@
 
 ## Merged 2026-10-21: #113 river rise, #114 edge bollards, #116 staged start/quit (636734f), #115 stadium (479a15d).
 ## Build 3 = carve-build3-87bf093 in C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/ (demo smoke PASS; told him).
-## Open PRs: #117 swipe occlusion (ae2df57 + hygiene's resync) red on military "a driving tank keeps its hull along
-## its road" (2 of 31716 steps past 10 deg): lead probe tools/tmp_crab_probe.gd in the swipe worktree finds which tank;
-## a real steering defect, fix it, never widen DRIVE_DEG. #118 CI shard balance (4 shards). #3 look-options -> main.
+## Open PRs: #117 swipe occlusion, red on military "a driving tank keeps its hull along its road" (2 of 31716 steps
+## past 10 deg). Traced (tools/tmp_crab_probe.gd, uncommitted, swipe worktree .claude/worktrees/agent-abf46f19a3619b8c5):
+## seed 2 adult tank 17 at a crossing pivots onto a <1 m askew lane point and crabs at -36 deg. Fix UNCOMMITTED in
+## that worktree's sim/convoy.gd (_square_here: a sub-metre leg askew to every road under it counts as reached);
+## probe + military rerun in background. Push it on top of hygiene's #117 resync (ask it for the head), then CI.
+## #118 CI shard balance (4 shards). #3 look-options -> main. Also research topics 15 (HUD), 16 (tree) running.
 
 ## NEXT
 1. #117 tank crab fix, then rebuild (build 4 candidate: stadium move + swipe fix + whatever lands).
