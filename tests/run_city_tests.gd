@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const Green := preload("res://tests/lib/city_green.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
+const StadiumFar := preload("res://tests/lib/city_stadium_far.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
@@ -183,6 +184,7 @@ func _check_no_empty_ground() -> void:
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)
+			StadiumFar.check(tier, map_seed, sim, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
 
