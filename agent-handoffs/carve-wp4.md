@@ -1,5 +1,5 @@
 # carve-wp4 handoff (builder, WP4 of real carving, D-094)
-## State: WP4 complete; CI run 39343371928 on a4fe572 pending; capture docs/captures/2026-10-20-carve-view; pr_body_wp4.md written (untracked)
+## State: WP4 complete; branch merged with look-options (WP1) and carve-wp3 (e193740); captures re-shot after critic FIX; lead opens the PR; pr_body_wp4.md untracked
 ## Task
 WP4: draw a carved building from its fine grid (WP3 BuildingCells), 16^3 regions, remesh only touched
 regions on WorkerThreadPool, native mesher (WP2 extension) with GDScript oracle. Not wired into rampage (WP7).
@@ -34,6 +34,6 @@ scratchpad build_native.bat (vcvars64 + python -m SCons platform=windows target=
 - Meshes now built on the main thread (worker-made mesh RIDs raced the dummy renderer:
   "Initializing already initialized RID"); workers return arrays.
 ## Left
-- CI run 39342476788 (dispatched before the bench/capture commit) result; re-dispatch after this commit.
-- Rerender capture after bite moved to the street face (panel 3 was invisible on the east face).
-- pr_body_wp4.md (untracked, worktree root; all template sections incl. Not exercised).
+- Lead opens the PR (after #98 merges); CI result at the final head goes in the report.
+- Critic FIX done: a/b one frozen state (diff 0 px), 4x crops, carves ~2x bigger, lit close-up d_closeup_lit, pockets = shaded glass cells.
+- Capture needs an untracked override.cfg (no_focus, off-screen) while windowed; delete after.

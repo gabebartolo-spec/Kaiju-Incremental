@@ -85,14 +85,20 @@ func _run() -> void:
 	_cam.look_at(at + Vector3(0, 3.5 * scale, 0))
 	var stream: BuildingStream = _city._stream
 	var view := stream.view(n)
-	await _shot("a_baked")
+	# One load state for a and b: let the stream finish, then freeze the city (traffic, people)
+	# so the only change between the two shots is the building's own mesh.
+	for _i: int in 40:
+		await process_frame
+	_city.process_mode = Node.PROCESS_MODE_DISABLED
+	var a_img := await _shot("a_baked")
 	var party := BuildingView.party_walls(_sim.buildings)
 	var grid := BuildingCells.new(b, party[n])
 	if _slab != "":
 		view.voxels.palette["slab"] = Color(_slab)
 	var cv := view.promote(grid)
 	cv.flush()
-	await _shot("b_promoted_uncarved")
+	var b_img := await _shot("b_promoted_uncarved")
+	_diff(a_img, b_img, _rect(cv.mesher), "diff_a_b")
 	var cells := grid.cells
 	var k := 0
 	for carve: Array in _carves(grid):
@@ -101,7 +107,11 @@ func _run() -> void:
 		var box := _carve(cells, grid.dims, carve)
 		cv.carved(cells, box[0], box[1])
 		cv.flush()
-		await _shot("c_carve%d" % k)
+		var img := await _shot("c_carve%d" % k)
+		var at_px := _cam.unproject_position(_world(cv.mesher, _centre(carve)))
+		_crop4x(img, at_px, "c_carve%d_crop4x" % k)
+		if k == 1:
+			await _closeup(cv.mesher, _world(cv.mesher, _centre(carve)))
 	if _bench:
 		await _bench_city(n, party)
 	quit()
@@ -132,12 +142,12 @@ func _carves(g: BuildingCells) -> Array:
 	var d := g.b.d * g.res
 	var h := g.b.height * g.res
 	var o := Vector3(-g.offset)  # building-local -> grid
-	var bite := [[o + Vector3(w * 0.3, h * 0.62, d - 1), 9.0]]
-	var gouge := [[o + Vector3(w - 2, h * 0.38, d - 2), 13.0]]
-	var stomp := [[o + Vector3(w * 0.55, h, d * 0.5), 15.0]]
+	var bite := [[o + Vector3(w * 0.3, h * 0.62, d - 1), 20.0]]
+	var gouge := [[o + Vector3(w - 2, h * 0.38, d - 2), 26.0]]
+	var stomp := [[o + Vector3(w * 0.55, h, d * 0.5), 28.0]]
 	var swipe := []
-	for i: int in 6:
-		swipe.append([o + Vector3(w * (0.15 + i * 0.12), h * 0.22 + i * 1.5, d - 1), 6.0])
+	for i: int in 7:
+		swipe.append([o + Vector3(w * (0.1 + i * 0.13), h * 0.2 + i * 2.5, d - 1), 13.0])
 	return [bite, gouge, stomp, swipe]
 
 
@@ -160,12 +170,86 @@ func _carve(cells: PackedByteArray, dims: Vector3i, spheres: Array) -> Array[Vec
 	return [lo, hi] as Array[Vector3i]
 
 
-func _shot(name: String) -> void:
+func _shot(name: String) -> Image:
 	for _i: int in SETTLE_FRAMES:
 		await process_frame
 	var path := _out.path_join(name + ".png")
-	root.get_texture().get_image().save_png(path)
+	var img := root.get_texture().get_image()
+	img.save_png(path)
 	print("saved %s" % path)
+	return img
+
+
+## The first sphere's centre of a carve (grid cells).
+func _centre(carve: Array) -> Vector3:
+	return carve[0][0]
+
+
+func _world(m: CellMesher, cell: Vector3) -> Vector3:
+	return m.origin + cell * m.voxel
+
+
+## The building's screen rectangle (its grid box projected through the current camera).
+func _rect(m: CellMesher) -> Rect2i:
+	var lo := Vector2(1.0e9, 1.0e9)
+	var hi := Vector2(-1.0e9, -1.0e9)
+	for i: int in 8:
+		var corner := Vector3(m.dims) * Vector3(i & 1, (i >> 1) & 1, (i >> 2) & 1)
+		var p := _cam.unproject_position(_world(m, corner))
+		lo = lo.min(p)
+		hi = hi.max(p)
+	return Rect2i(Vector2i(lo.floor()), Vector2i((hi - lo).ceil())).intersection(
+		Rect2i(0, 0, 1920, 1080)
+	)
+
+
+## Pixel diff of two shots inside `rect` (the promoted building): prints the share of pixels that
+## differ by more than 2/255 in any channel and the largest step, saves the diff (x8, 0 = black).
+func _diff(a: Image, b: Image, rect: Rect2i, name: String) -> void:
+	var out := Image.create(rect.size.x, rect.size.y, false, Image.FORMAT_RGB8)
+	var bad := 0
+	var worst := 0.0
+	for y: int in rect.size.y:
+		for x: int in rect.size.x:
+			var ca := a.get_pixel(rect.position.x + x, rect.position.y + y)
+			var cb := b.get_pixel(rect.position.x + x, rect.position.y + y)
+			var d := maxf(absf(ca.r - cb.r), maxf(absf(ca.g - cb.g), absf(ca.b - cb.b)))
+			worst = maxf(worst, d)
+			if d > 2.0 / 255.0:
+				bad += 1
+			out.set_pixel(x, y, Color(d * 8, d * 8, d * 8))
+	out.save_png(_out.path_join(name + ".png"))
+	print(
+		(
+			"diff %s: rect %s, %d of %d px differ >2/255 (%.3f%%), max step %.1f/255"
+			% [name, rect, bad, rect.get_area(), 100.0 * bad / rect.get_area(), worst * 255.0]
+		)
+	)
+
+
+## A 480x270 window of the full-resolution shot around `at`, scaled 4x (nearest) to 1920x1080.
+func _crop4x(img: Image, at: Vector2, name: String) -> void:
+	var x := clampi(int(at.x) - 240, 0, 1920 - 480)
+	var y := clampi(int(at.y) - 135, 0, 1080 - 270)
+	var c := img.get_region(Rect2i(x, y, 480, 270))
+	c.resize(1920, 1080, Image.INTERPOLATE_NEAREST)
+	c.save_png(_out.path_join(name + ".png"))
+
+
+## A close camera on the cut with a capture-only fill light, so slab and cut face read apart.
+func _closeup(m: CellMesher, at: Vector3) -> void:
+	var saved := _cam.global_transform
+	var light := OmniLight3D.new()
+	light.omni_range = 14.0
+	light.light_energy = 2.0
+	_cam.get_parent().add_child(light)
+	light.global_position = at + Vector3(2.0, 3.0, 6.0)
+	_cam.global_position = at + Vector3(2.5, 3.0, 7.0)
+	_cam.look_at(at)
+	var img := await _shot("d_closeup_lit")
+	_crop4x(img, _cam.unproject_position(at), "d_closeup_lit_crop4x")
+	light.queue_free()
+	_cam.global_transform = saved
 
 
 ## GPU and CPU render ms over BENCH_FRAMES, then the same after the BENCH_BUILDINGS nearest the
