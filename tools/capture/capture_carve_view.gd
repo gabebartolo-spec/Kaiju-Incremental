@@ -110,8 +110,6 @@ func _run() -> void:
 		var img := await _shot("c_carve%d" % k)
 		var at_px := _cam.unproject_position(_world(cv.mesher, _centre(carve)))
 		_crop4x(img, at_px, "c_carve%d_crop4x" % k)
-		if k == 1:
-			await _closeup(cv.mesher, _world(cv.mesher, _centre(carve)))
 	if _bench:
 		await _bench_city(n, party)
 	quit()
@@ -234,22 +232,6 @@ func _crop4x(img: Image, at: Vector2, name: String) -> void:
 	var c := img.get_region(Rect2i(x, y, 480, 270))
 	c.resize(1920, 1080, Image.INTERPOLATE_NEAREST)
 	c.save_png(_out.path_join(name + ".png"))
-
-
-## A close camera on the cut with a capture-only fill light, so slab and cut face read apart.
-func _closeup(m: CellMesher, at: Vector3) -> void:
-	var saved := _cam.global_transform
-	var light := OmniLight3D.new()
-	light.omni_range = 14.0
-	light.light_energy = 2.0
-	_cam.get_parent().add_child(light)
-	light.global_position = at + Vector3(2.0, 3.0, 6.0)
-	_cam.global_position = at + Vector3(2.5, 3.0, 7.0)
-	_cam.look_at(at)
-	var img := await _shot("d_closeup_lit")
-	_crop4x(img, _cam.unproject_position(at), "d_closeup_lit_crop4x")
-	light.queue_free()
-	_cam.global_transform = saved
 
 
 ## GPU and CPU render ms over BENCH_FRAMES, then the same after the BENCH_BUILDINGS nearest the
