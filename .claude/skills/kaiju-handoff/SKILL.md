@@ -1,11 +1,11 @@
 ---
 name: kaiju-handoff
-description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when your context nears about 200k tokens, before the director restarts or clears a session, and at the start of any new session.
+description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when your context nears about 300k tokens (a lead 500k), before the director restarts or clears a session, and at the start of any new session.
 ---
 
 # Handoffs
 
-Fresh session at every task boundary; routine work at 50-100k tokens, hand off at about 200k
+Fresh session at every task boundary; routine work at 50-100k tokens, hand off at about 300k (leads 500k)
 (never run past it for convenience). Write the handoff first, then start the new session from it.
 A helper (builder, critic) cannot restart itself: at the first context-guard note it messages its
 lead "at Nk, restart me after <step>", finishes only that step, reports and stops; the lead

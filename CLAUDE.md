@@ -64,7 +64,8 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
 
 - Fresh session at every task boundary; write `agent-handoffs/<role>.md` first (120-line cap,
   edited when state changes, never appended). Routine work at 50-100k tokens; hand off at
-  about 200k (`~/.claude/memory-shared/token-and-ci-efficiency.md`).
+  about 300k, leads 500k (`~/.claude/memory-shared/RULEBOOK.md`). Builders: the lead plus ONE Opus-medium
+  helper session; every other helper is a Sonnet critic or reader and writes no code (director 2026-10-20).
 - End every turn with your state: working, running a check, awaiting director, blocked, available.
 
 ## Skills
