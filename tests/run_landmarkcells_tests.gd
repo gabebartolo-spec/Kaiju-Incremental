@@ -46,6 +46,7 @@ func run_checks() -> void:
 	await _t("_check_matches_view")
 	await _t("_check_pinned")
 	await _t("_check_deterministic")
+	await _t("_check_no_islands")
 	await _t("_check_arcs_foot_hit")
 	await _t("_check_arcs_small_hit")
 	await _t("_check_arcs_all")
@@ -171,6 +172,32 @@ func _check_pinned() -> void:
 	check(
 		tally == PINNED_CLASSES, "stadium classes pinned at %s (got %s)" % [PINNED_CLASSES, tally]
 	)
+
+
+## The fixture rule (0 islands before any carve, as for buildings) is NOT met by the baked models
+## under VoxelSupport's real rule: parts of both touch the rest only along an edge or a corner
+## (diagonal voxel steps), so the 6-neighbour flood cuts them off. Pinned here as the known gap
+## [islands, cells cut off]; a change in either number fails. WP7 must close it (bake or rule)
+## before a landmark is carved: a carve would drop these parts on the first hit.
+const ISLANDS_PINNED := {"stadium": [157, 49443], "wheel": [56, 53348]}
+
+
+func _check_no_islands() -> void:
+	for id: String in ["stadium", "wheel"]:
+		var g := LandmarkCells.new(_landmark(id))
+		var frame := VoxelFrame.new(Vector3i.ONE, g.res, Content.materials())
+		var adopted := frame.adopt(g.dims, g.offset, g.cells)
+		var parts := 0
+		var cut := 0
+		if adopted:
+			for part: PackedInt32Array in VoxelSupport.new(frame).islands():
+				parts += 1
+				cut += part.size()
+		var want: Array = ISLANDS_PINNED[id]
+		check(
+			adopted and [parts, cut] == want,
+			"%s islands before any carve: %d parts, %d cells (pinned %s)" % [id, parts, cut, want]
+		)
 
 
 func _check_deterministic() -> void:
