@@ -45,7 +45,11 @@ chains on a fixed 1/60 s substep, their tunables into data (R 9.1) · "no empty 
 district, no built block with zero lots, max gap along a street, a timing line per stage (R 6.1) · a headless parse
 step on every agent-written script (Godot 3 names) (R 5.6) · graphics: the existing `display.graphics` table (high,
 balanced) grows to Potato/Low/Medium/High/Max rows and Medium gets MSAA 2x under FSR1 (balanced runs FSR without AA,
-which the docs advise against) (R 18.1).
+which the docs advise against) (R 18.1) · bugs found by research 20: a dash, signature or ultimate pressed in the
+last 0.2 s before control returns is dropped (latch it for the first live tick, with a scripted-input test) (R 20.3);
+the evolution reveal counts frames, so it lasts 3.8 s at 60 Hz and 1.6 s at 144 Hz (count fixed ticks) (R 20.5) ·
+the camera's zoom curve (hard-coded 0.75 + 0.4 x body scale) into data, with a test that the kaiju's screen share
+rises every stage and stays at or under about 35% (R 19.1).
 
 **A. Close what is in flight; fix what no later choice changes.**
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
@@ -58,13 +62,17 @@ worktree and branch cleanup. Gate: build 3.
 **B. Look foundations: director decisions, captures only, no production code.**
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
 (labelled captures of the same street) · b2-19 voxel count down / today / up, same shot · b2-7 camera angle and
-distance (2-3 framings as clips) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
+distance (done: D-105 framing C, low and cinematic; open: how it grows per stage, his pick of A today plus
+look-ahead, B grows on screen to about 34%, C low hero at adult (pitch to about 15 deg), each a 2x2 clip of stages 1
+and 4 (R 19, framings)) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
 morning, noon, dusk and night, he picks one (director 2026-10-20) · heli-cam A/B (parked; folded into the camera choice). Gate: his four picks
 recorded in DECISIONS.
 Research inputs to these boards: one shader candidate is Godot's own toon shading + a next_pass outline (R 7.1); every
 candidate puts a low sun or moon behind the kaiju with fog sun scatter and aerial perspective, normal bias (not bias)
 raised for voxel edges (R 12.3), and a time-of-day rim light plus a warm fire under-fill on the kaiju only (R 12.4);
-haze thickens with stage (R 2.5); the camera candidates pull back less than the kaiju grows and keep cars, people and
+haze thickens with stage (R 2.5); shake rebuilt as trauma squared on smooth noise, rotation only, capped at 2-3 deg,
+heavier per stage, with one camera-motion setting (R 19.2); look-ahead toward the move input after a 0.3 s hold
+(R 19.3); BuildingFade fixes (a carved stump never fades) before any cutaway (R 19.4); the camera candidates pull back less than the kaiju grows and keep cars, people and
 bollards near its feet in frame at every stage, so growth never reads as shrinking (R 2.2).
 
 **C. Destruction core, on the picked look.**
@@ -91,7 +99,12 @@ fixed for the breath, and 3-5 branches fanning across the sim's BreathCone that 
 one stroke schedule (a dim feeler, then 2-3 bright strokes, never more than 3 flashes a second, no saturated red)
 drives the pooled lights and the zap, crackle and thunder sounds (R 17.2) · a per-breath presentation seed, never the
 sim's (R 17.3) · in gl_compatibility the halo is real geometry because glow is LDR (R 17.4) · arcs to struck vehicles
-only if the fan alone does not read electric (R 17.5) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
+only if the fan alone does not read electric (R 17.5) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11); how (research 20): the sim's rise retuned to fit 3 s (today about 3.5-5.5 s) with a
+180-tick test (R 20.1), the intro camera driven by the rise's own progress, no Tween, handing over on kaiju_emerged
+(R 20.2), the roar on the surface break (R 20.3), full intro on the first run and after an evolution, a 1.5 s cut
+otherwise, any press skips by running the sim ticks faster so replays match (R 20.4), the run starts at last run's
+zoom and eases out so growth shows (R 19.5) · evolution reveal polish: low start, tilt up the tower, silhouette pulse
+(3 a second or fewer), stinger, bars (R 20.6, his taste) · water that reacts to the kaiju with physics (#12) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86) · more motion in the shoulders and head while it walks (comments 2026-10-21 #4) · the
 walk is "not great" and the turn should step "rather than swivelling on the spot like a plastic toy" (2026-10-21 #3).
@@ -195,7 +208,7 @@ pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored fin
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
 species follow the croc, and their verbs (research 02) · H: spend on music stems, and Tripo octopod rigs (R 3.5, 8.7) ·
-D: the lightning halo colour (hot amber, species-eye tint, or white with a violet fringe), 3 labelled 4K stills
+B: how the camera grows per stage, A/B/C clips (R 19) · D: the lightning halo colour (hot amber, species-eye tint, or white with a violet fringe), 3 labelled 4K stills
 (R 17.6) · E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
 ultimate get rings like breath; health removed or shown only when hit; what happens to the "CITY DESTROYED" bar
 (R 15.2, 15.3, 15.9) ·

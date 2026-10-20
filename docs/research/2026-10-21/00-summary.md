@@ -100,6 +100,17 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 2. Add shadow and effect settings to `PlayerSettings.apply_graphics`, all applied live: sun splits, shadow distance and size, PCSS off below High, SSAO/SSIL tiers, glow filter. Switching renderer needs a restart. Cost: about half a day plus captures.
 3. Move the hard-coded caps (`MAX_DEBRIS`, `MAX_FIRES`, Jolt `live_cap`, crowd counts, particle ratio) into the preset rows, presentation only, so the sim never changes. Pick the default from GPU type plus a 4 s frame-time sample. Cost: about 1.5 days.
 
+## 19. Camera per stage (19-camera.md)
+The rest angle is already decided (D-105: framing C, offset (0, 16, 30), FOV 60). These cover what D-105 left open.
+1. Move the zoom curve (`0.75 + 0.4 x scale`, hard-coded in `_place_camera`) into `data/tuning.json`, with a test that the kaiju's screen share rises each stage and stays at or under 35%. Cost: about 2 h.
+2. Rebuild shake as trauma squared on smooth noise, rotation only with no roll, capped at 2-3 deg and scaled by stage, plus one "camera motion 0-100%" setting covering shake, the footstep dip and the breath swing. Cost: about half a day plus two clips.
+3. Add look-ahead toward the stick direction (about 3 units at baby, 7.5 at adult, eased in after about 0.3 s of input), and start each run at last run's zoom and ease out (the Katamari beat, inside the intro). Cost: about half a day plus a clip. Framings to capture for his pick: A "today plus lead", B "grows on screen", C "low hero at adult".
+
+## 20. Run intro and evolution reveal (20-set-pieces.md)
+1. Retune the rise in `data/tuning.json` to end in 3 s or less, with a test that fails above 180 ticks. The rise from #113 runs in the sim and is estimated at 3.5-5.5 s, already over his 3 s. Cost: 1-2 h.
+2. Drive the intro camera from the rise's own progress inside the existing `_place_camera`, easing from a low water shot to the play angle, with no Tween or addon. The sim keeps running the rise, which holds the clock, army and input; a skip runs the remaining ticks faster, so replays still match. Cost: about half a day plus one clip.
+3. Roar when the head breaks the water, keep presses from the last 0.2 s for the first live tick (today they are dropped), and pace the evolution reveal by fixed ticks (today it counts frames: 3.8 s at 60 Hz, 1.6 s at 144 Hz). Cost: about 3 h.
+
 ## Honest gaps
 - **01:** No developer postmortems or cost tables. The timing targets come from one AI-assisted blog post, and the review themes from aggregators.
 - **02:** These rest on fan wikis or a vendor page, or have no primary source: the Shin Godzilla heights, the GigaBash reasoning, haze as a scale tool and delayed sound. The legal notes are not legal advice.
@@ -119,6 +130,8 @@ Synthesis of the 14 topic files (01-14, researched 2026-10-21). Each topic's thr
 - **16:** No developer source on the tree screens of Nodebuster, Astro Prospector, Chef Knight or Brotato, and no cost tables. The Nodebuster node count (97) is my own count from a removed Steam guide. The tree-juice and fog techniques are design inference. The cadence table and target times are estimates for the pacing bot to verify. The required move from the 8 x 6 grid to a pannable map (50-65 nodes do not fit 48 cells) is a look decision for the director.
 - **17:** The film and game examples were not sourced, and there are no 4K overdraw numbers. The halo colour is the director's call (3 labelled stills). Decal scorch marks do not render in gl_compatibility, which has no HDR glow, so the coloured halo must be geometry.
 - **18:** No published per-setting millisecond costs for Godot at 4K, so they must be measured on the director's GPU. Godot cannot report total VRAM. `police.gd` was not checked for sim coupling, so police counts stay out of the presets.
+- **19:** Eiserloh and Nesky were read second-hand. There are no primary camera specs for GigaBash, War of the Monsters or Godzilla PS4, and all per-stage numbers are estimates. Unchecked: whether a carved building still fades at its original full height.
+- **20:** Sources for Hades, Rocket League, Shadow of the Colossus and the cutscene-skip guideline are thin or missing. The intro length is estimated from the tuning values, not measured.
 - **Where the files disagree:**
   - 03 leans on Godot's Skeleton3D IK nodes, but 09, 13 and 14 found the repo's rig has one node per bone, so those nodes would need a rig migration.
   - 14's fixes target `gait_biped.gd`, but 11 found that the reptilian walks on ClipGait. Check which code path runs before tuning.
