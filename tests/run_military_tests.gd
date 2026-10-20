@@ -15,6 +15,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_view")
 	await _t("_check_rampages")
+	await _t("_check_pivot_beside_parked")
 	await _t("_check_rubble")
 
 
@@ -192,6 +193,37 @@ func _check_rampages() -> void:
 				+ " radius over 1 s (%.1f s)"
 			)
 			% [standoff * 100.0, parked_in_band + parked_close, parked_reserve, longest_in_danger]
+		)
+	)
+
+
+## The named case behind a red PR #89 (tier 1, city seed 2, steps 531-535): a tank entering at the
+## city edge stopped 4.9 m from one parked in the next road, inside each other's `clear` margin,
+## and both then pivoted (one flip-flopping 6 degrees a step) until their drawn hulls touched. A
+## pivot from inside that margin must never end with the drawn parts touching.
+func _check_pivot_beside_parked() -> void:
+	var sim := _rampage(1, 2)
+	var target := Vector2(INF, INF)
+	var touching := 0
+	var checked := 0
+	for steps: int in 600:
+		target = _autoplay(sim, steps, target)
+		for tank: RampageSim.Tank in sim.tanks:
+			for other: RampageSim.Tank in sim.tanks:
+				if other.id <= tank.id or tank.pos.distance_to(other.pos) > HULL_LENGTH * 2.5:
+					continue
+				var hu: Vector2 = sim.army_units.convoy.front(tank.id)
+				var hw: Vector2 = sim.army_units.convoy.front(other.id)
+				if hu == Vector2.ZERO or hw == Vector2.ZERO:
+					continue
+				checked += 1
+				if _tanks_touch(tank.pos, hu, other.pos, hw, sim.kaiju_pos):
+					touching += 1
+	check(
+		checked > 100 and touching == 0,
+		(
+			"tier 1 seed 2, first 600 steps: tanks pivoting beside a parked one never touch as"
+			+ " drawn (%d touching of %d close pair-steps)" % [touching, checked]
 		)
 	)
 

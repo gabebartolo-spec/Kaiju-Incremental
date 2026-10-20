@@ -4,10 +4,10 @@ extends RefCounted
 ## until its first hit; then its BuildingCells grid is made, once, with every chunk the
 ## Structure has already lost emptied, and kept for every later hit. A whole city of fine grids
 ## would be ~100 MB (docs/research/DESTRUCTION_SPIKE.md), so only buildings the kaiju touches
-## pay for one. Not wired into RampageSim yet (WP7). Landmarks keep their baked chunk shape
-## until the landmark port (WP6): on_hit() gives them null.
+## pay for one. A landmark gets a LandmarkCells grid (its baked model, and the arcs of a ring);
+## a building a BuildingCells. Not wired into RampageSim yet (WP7).
 
-## Building index -> BuildingCells, for the buildings hit so far.
+## Building index -> BuildingCells or LandmarkCells, for the buildings hit so far.
 var grids: Dictionary = {}
 
 
@@ -16,23 +16,23 @@ func promoted(n: int) -> bool:
 
 
 ## The fine grid of building n, or null while it has not been hit.
-func grid(n: int) -> BuildingCells:
+func grid(n: int) -> CellGrid:
 	return grids.get(n, null)
 
 
 ## Building n (b) was hit: its fine grid, made now if this is the first hit. party: as
-## BuildingCells' (the floors a neighbour covers per side).
-func on_hit(n: int, b: RampageSim.Building, party: Dictionary = {}) -> BuildingCells:
+## BuildingCells' (a landmark takes none; the floors a neighbour covers per side).
+func on_hit(n: int, b: RampageSim.Building, party: Dictionary = {}) -> CellGrid:
 	if grids.has(n):
 		return grids[n]
-	if b.landmark != "":
-		return null
-	var cells := BuildingCells.new(b, party)
+	var cells: CellGrid = LandmarkCells.new(b) if b.landmark != "" else BuildingCells.new(b, party)
 	if b.frame != null:
 		for y: int in b.frame.h:
 			for z: int in b.frame.d:
 				for x: int in b.frame.w:
 					if not b.frame.alive(Vector3i(x, y, z)):
 						cells.clear_chunk(Vector3i(x, y, z))
+	if cells is LandmarkCells:  # sections the chunks already shed are not new losses
+		(cells as LandmarkCells).rebase()
 	grids[n] = cells
 	return cells

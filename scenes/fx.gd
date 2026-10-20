@@ -91,11 +91,18 @@ func _ready() -> void:
 
 
 ## A billowing dust cloud; size ~ the width of what came down.
-func dust(at: Vector3, size: float) -> void:
+## tint (alpha > 0): the puff's colour instead of the grey (a toppled tower's pale concrete).
+func dust(at: Vector3, size: float, tint := Color(0, 0, 0, 0)) -> void:
 	var p := _burst(_dust_mat, _dust_mesh, roundi(12 * clampf(size, 0.5, 4.0)), 2.6)
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
+	if tint.a > 0.0:
+		var ramp := Gradient.new()
+		ramp.colors = PackedColorArray([tint, Color(tint, 0.0)])
+		var tex := GradientTexture1D.new()
+		tex.gradient = ramp
+		mat.color_ramp = tex
 
 
 ## A footfall's puff: short-lived and thin, so a walk leaves a puff per step instead of piling
@@ -153,10 +160,10 @@ func puff(at: Vector3) -> void:
 
 
 ## Dust along a line: where a toppled tower hits the street.
-func dust_line(from: Vector3, to: Vector3, width: float) -> void:
+func dust_line(from: Vector3, to: Vector3, width: float, tint := Color(0, 0, 0, 0)) -> void:
 	var steps := maxi(2, ceili(from.distance_to(to) / 2.5))
 	for i: int in steps + 1:
-		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6)
+		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6, tint)
 
 
 func sparks(at: Vector3) -> void:
@@ -164,30 +171,36 @@ func sparks(at: Vector3) -> void:
 	p.position = at
 
 
-## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own.
+## A soft ripple of dust that runs out across the ground from a landing (no glow, no tint: a ring
+## with no visible impact behind it is not drawn by the callers). Size, life and opacity are
+## tuning "fx" "shockwave": small and faint so it reads as dust kicked off the street.
 ## A tail slam (tail) draws no ring: a few footfall puffs thrown out around the tip instead
 ## (lead review PR #54: three custom rings in a row popped; the step puff of #62 reads right).
-func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), tail := false) -> void:
+func shockwave(at: Vector3, radius: float, tail := false) -> void:
 	if tail:
 		_slam_puff(at + Vector3(0, 0.2, 0), radius * SLAM_SIZE)
 		for k: int in SLAM_PUFFS:
 			var a := TAU * k / SLAM_PUFFS
 			_slam_puff(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * SLAM_SIZE * 0.8)
 		return
+	var cfg: Dictionary = Content.section("fx")["shockwave"]
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2.ONE * radius * 2.4
+	plane.size = Vector2.ONE * radius * Num.f(cfg["radius_scale"]) * 2.4
 	var mat := ShaderMaterial.new()
 	mat.shader = SHOCKWAVE
-	if tint.a > 0.0:
-		mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("peak", Num.f(cfg["alpha"]))
+	mat.set_shader_parameter("soft", Num.f(cfg["soft"]))
 	plane.material = mat
 	quad.mesh = plane
 	quad.position = at + Vector3(0, 0.15, 0)
 	add_child(quad)
 	var tween := quad.create_tween()
 	tween.tween_method(
-		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45
+		func(v: float) -> void: mat.set_shader_parameter("progress", v),
+		0.0,
+		1.0,
+		Num.f(cfg["seconds"])
 	)
 	tween.tween_callback(quad.queue_free)
 
