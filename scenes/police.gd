@@ -152,6 +152,8 @@ func _start_blockade(kaiju: Vector2) -> void:
 		if facing < AHEAD:
 			continue
 		var taken := false
+		for tank: RampageSim.Tank in sim.tanks:  # never across a tank's road
+			taken = taken or tank.pos.distance_to(at) < TankKeepOut.KEEP * 2.0
 		for other: Blockade in _blockades:
 			taken = taken or other.at.distance_to(at) < 1.0
 		var score := absf(dist - want) - facing * 4.0
