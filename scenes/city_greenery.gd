@@ -113,6 +113,7 @@ func kerb_spots() -> Array[Vector2]:
 		var kerb := Num.f(street["width"]) * 0.5 + Num.f(_sim.city["street_tree_kerb"])
 		if playable:
 			green["avenue_m"] = Num.f(green["avenue_m"]) + length
+		var along: Array[Vector2] = [dir, -dir]
 		for s: float in [-1.0, 1.0]:
 			var lean := Vector2i(roundi(-side.x * s), roundi(-side.y * s))  # over the road
 			# One city-wide spacing (trunks where along-street position is a whole number of gaps),
@@ -121,18 +122,41 @@ func kerb_spots() -> Array[Vector2]:
 			var row := -1  # a new row starts after anything but a lamp breaks the line
 			while t < length - clear:
 				var p := a + dir * t + side * s * kerb
-				if (
-					_inside(p, _beyond)
-					and not _on_building.call(p)
-					and CityGen.diagonal_distance(_plan, p) > diagonal
-					and not taken.crowded(p, apart)
-				):
+				var fits := func(q: Vector2) -> bool:
+					return (
+						_inside(q, _beyond)
+						and not _on_building.call(q)
+						and CityGen.diagonal_distance(_plan, q) > diagonal
+					)
+				var slid := false
+				if fits.call(p) and taken.crowded(p, apart):
+					# Too close to a tree already kept (a crossing's other street): slide along
+					# the kerb to the nearest free spot, and start a row of its own there.
+					slid = true
+					p = TreeSpots.nearest(
+						p,
+						along,
+						_sim.city,
+						func(q: Vector2) -> bool:
+							var at := (q - a).dot(dir)
+							return (
+								at >= clear
+								and at <= length - clear
+								and fits.call(q)
+								and not taken.crowded(q, apart)
+							)
+					)
+				if p.is_finite() and fits.call(p):
+					if slid:
+						row = -1
 					if row < 0 and playable:
 						rows.append([] as Array[Vector2])
 						row = rows.size() - 1
 					_spots.append({"p": p, "lean": lean, "playable": playable, "row": row})
 					out.append(p)
 					taken.add(p)
+					if slid:
+						row = -1
 				else:
 					row = -1
 				t += gap

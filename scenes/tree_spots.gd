@@ -47,3 +47,18 @@ func near_box(body: Rect2, reach: float) -> bool:
 				if spot.clamp(body.position, body.end).distance_to(spot) < reach:
 					return true
 	return false
+
+
+## The nearest spot to p along `dirs` (tried in order, step by step out to city.tree_slide_reach)
+## that `ok` accepts, or an infinite vector when there is none. Deterministic.
+static func nearest(p: Vector2, dirs: Array[Vector2], cfg: Dictionary, ok: Callable) -> Vector2:
+	var reach := Num.f(cfg["tree_slide_reach"])
+	var step := Num.f(cfg["tree_slide_step"])
+	var r := step
+	while r <= reach:
+		for dir: Vector2 in dirs:
+			var q := p + dir * r
+			if ok.call(q):
+				return q
+		r += step
+	return Vector2(INF, INF)

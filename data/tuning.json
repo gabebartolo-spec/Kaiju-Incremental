@@ -286,6 +286,8 @@
 		"street_tree_car_clear": 1.0,
 		"park_tree_spacing": 3.0,
 		"tree_min_apart": 2.5,
+		"tree_slide_reach": 3.0,
+		"tree_slide_step": 0.25,
 		"garden_bush_gap": 1.4,
 		"park_flower_beds": 2,
 		"flower_bloom": 0.55,
