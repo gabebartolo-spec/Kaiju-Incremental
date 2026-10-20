@@ -54,7 +54,7 @@ recorded in DECISIONS.
 b2-4 effortless carving even for a baby kaiju: no building HP, a structure dismantled by physics · b2-5 varied
 collapse directions (not always onto the kaiju; revisits D-099's "onto the kaiju" lean) · b2-22 shared walls get
 real facades · rubble cap (823 pieces from one building) · WP6 follow-ups (landmarks promote to cells; stadium first
-hit 246 ms hitch) · b2-8 stadium crowd thins over time, never vanishes · b2-3 slow frames in heavy destruction
+hit 246 ms hitch) · b2-8 stadium crowd thins over time, never vanishes · stadium spectators on a broken stand fall or die, never hang with their feet in the air (comments #17) · b2-3 slow frames in heavy destruction
 (profiled in the carving path, fixed there) · b2-30 run start freezes 2-3 s · b2-29 quitting freezes 2-3 s.
 Gate: build 4.
 
