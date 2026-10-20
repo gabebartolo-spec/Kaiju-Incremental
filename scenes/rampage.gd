@@ -27,9 +27,8 @@ var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
 var cost_usec: Dictionary = {}
 var species: Dictionary
-## The look of the signature attack and the upgrades (read by the flow suite).
+## The look and the sounds of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
-## Their sounds (read by the flow suite).
 var sfx: Sfx
 ## Autoplay fires the signature whenever it is ready (captures turn this off to time it).
 var autoplay_signature := true
@@ -75,6 +74,7 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
@@ -100,11 +100,11 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	# Build one tank and one helicopter now, so the army's first spawn reuses their voxels.
-	TankModel.new().free()
+	add_child(RiverView.new(sim, _city.fx))
+	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
-	_kaiju_at = _to_world(sim.kaiju_pos)
+	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
 	_focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()

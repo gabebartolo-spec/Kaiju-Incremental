@@ -112,6 +112,8 @@ func _view_run() -> Dictionary:
 	var rampage := _view_scene()
 	root.add_child(rampage)
 	await physics_frame
+	while rampage.sim.emerge.active:  # the river rise holds the sim back (D-083)
+		await physics_frame
 	_clip_overrides(rampage.sim)
 	var roads := _roads(rampage.sim)
 	var got := {"gap": INF, "touching": 0, "yaw": 0.0, "moving": 0, "closest": INF, "on_car": 0}

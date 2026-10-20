@@ -10,6 +10,8 @@ const SETTLE_FRAMES := 40
 
 static func run(t: SceneTree, check: Callable, rampage: Rampage) -> void:
 	var sim := rampage.sim
+	while sim.emerge.active:  # the river rise holds the sim back (D-083)
+		await t.physics_frame
 	var from := sim.kaiju_pos
 	var facing := sim.facing
 	await GuiInput.key(t, KEY_SHIFT)
