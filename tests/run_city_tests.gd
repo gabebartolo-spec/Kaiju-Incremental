@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const Green := preload("res://tests/lib/city_green.gd")
+const RiverBody := preload("res://tests/lib/city_river_body.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
@@ -178,6 +179,7 @@ func _check_no_empty_ground() -> void:
 					]
 				)
 			)
+			RiverBody.check(tier, map_seed, sim, check)
 			RiverStart.check(tier, map_seed, sim, check)
 			RiverStart.check_look(tier, map_seed, sim, decor, check)
 			SpawnView.check(tier, map_seed, sim, skyline, check)
