@@ -44,6 +44,12 @@ const TAIL_SPRING := Vector2(14.0, 0.36)
 const TAIL_GAIN := Vector2(7.8, 10.0)
 const TAIL_DELAY := 0.021
 const TAIL_MAX := 0.008
+## The head looks into a turn before the body makes it (director comments #16): it eases (1/s)
+## toward the yaw still to turn (KaijuGait.turn_ahead), at most HEAD_LEAD_MAX (rad), the neck
+## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
+const HEAD_LEAD_MAX := 0.6
+const HEAD_LEAD_EASE := 10.0
+const NECK_SHARE := 0.4
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -81,6 +87,7 @@ var _feet_primed := false
 var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
+var _look := 0.0  # the head's look-ahead into the turn (rad)
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -116,6 +123,7 @@ func update(delta: float) -> void:
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
 	_apply(pose, dt)
+	_look_ahead(dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
 	_measure_slide()
@@ -232,6 +240,17 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 			q = Quaternion(Vector3.UP, bend) * q
 		var offset := pose.offset * clips.rig_scale if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
+
+
+## Turns the neck and skull about the world's up into the turn still to make (after the clip).
+func _look_ahead(dt: float) -> void:
+	var ahead := clampf(0.0 if turn_ahead == INF else turn_ahead, -HEAD_LEAD_MAX, HEAD_LEAD_MAX)
+	_look = lerpf(_look, ahead, minf(1.0, dt * HEAD_LEAD_EASE))
+	for bone_name: String in ["head0", "head1"]:
+		if rig.has_bone(bone_name):
+			var share := NECK_SHARE if bone_name == "head0" else 1.0 - NECK_SHARE
+			var b := rig.bone(bone_name).global_transform.basis.orthonormalized()
+			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 
 
 ## The roar's tail slam lands as a heavy footfall where the tip meets the street.

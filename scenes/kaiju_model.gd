@@ -1,8 +1,7 @@
 class_name KaijuModel
 extends Node3D
-## A species' kaiju of fine voxels (data colours, code shapes), facing -Z. Shapes in design units
-## drawn at RES cells per unit, so detail (teeth, claws, scales, suckers, eyes) has room. About 10
-## units tall at body scale 1. Animation is presentation only: walk bob, stomp squash.
+## A species' kaiju of fine voxels (data colours, code shapes), facing -Z, in design units drawn at
+## RES cells per unit so detail has room; ~10 units tall at body scale 1. Presentation only.
 
 ## Re-emits KaijuRig.foot_planted (see there) so the scene connects in one place.
 signal foot_planted(side: String, strength: float, at: Vector3)
@@ -91,11 +90,12 @@ func _add_rim_light() -> void:
 	add_child(rim)
 
 
-## moving: 0..1 how hard the kaiju is walking this frame.
-func animate(delta: float, moving: float) -> void:
+## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it.
+func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _rig != null:
+		_rig.gait.turn_ahead = turn_ahead
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
 		VoxelSkin.sync_if(_skin)
 		return

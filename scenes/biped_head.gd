@@ -78,7 +78,8 @@ func update(dt: float, standing: bool) -> void:
 			g.rng.randf_range(-SCAN_YAW, SCAN_YAW), g.rng.randf_range(-SCAN_PITCH, SCAN_PITCH * 0.5)
 		)
 	var glance := _scan if standing else Vector2.ZERO  # walking, it looks where it goes
-	var target_yaw := g.model_yaw + clampf(g.yaw_rate * HEAD_LEAD, -0.6, 0.6) + glance.x
+	var lead := g.yaw_rate * HEAD_LEAD if g.turn_ahead == INF else g.turn_ahead
+	var target_yaw := g.model_yaw + clampf(lead, -0.6, 0.6) + glance.x
 	var err := wrapf(target_yaw - _head_yaw, -PI, PI)
 	if not _head_started:
 		_head_yaw = target_yaw

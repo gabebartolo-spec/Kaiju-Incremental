@@ -468,7 +468,11 @@
 	"contact": {
 		"skin": 0.15,
 		"sample": 0.5,
-		"turn_rate": 10.0,
+		"turn_rate": 3.5,
+		"turn_rate_still": 6.0,
+		"turn_accel": 14.0,
+		"turn_slow": 0.5,
+		"stride_ease": 5.0,
 		"pay_mult": 0.2,
 		"bite_dps": 140.0,
 		"dash": {"lengths": 1.5, "seconds": 0.4, "cooldown": 4.0, "tank_damage": 60.0},

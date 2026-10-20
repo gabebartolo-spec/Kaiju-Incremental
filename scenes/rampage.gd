@@ -291,7 +291,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	_kaiju.animate(delta, moving)
+	_kaiju.animate(delta, moving, -sim.body.turn_left)  # sim angle to model yaw: the sign flips
 
 
 ## Signature Recharge's ready pulse and Regeneration's motes.

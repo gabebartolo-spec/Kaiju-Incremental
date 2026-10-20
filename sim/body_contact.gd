@@ -13,8 +13,13 @@ const CHUNK_HALF := 0.5
 
 var sim: RampageSim
 var cfg: Dictionary
-## Where the drawn body faces: it turns toward sim.facing at turn_rate (the model reads it).
+## Where the drawn body faces (the model reads it): sim.facing, which steer() turns with weight;
+## a facing set from outside (the rise from the river, a test) is turned to at turn_rate_still.
 var heading := Vector2(0, -1)
+## The stride, 0..1 of full speed: it eases toward the stick's push, less the harder the turn.
+var stride := 0.0
+## The turn still to make (rad, signed as Vector2.angle_to): the head looks ahead by it.
+var turn_left := 0.0
 ## Chunks the body itself has broken this rampage.
 var broken := 0
 ## True on a step a wall that has not given yet held the body back.
@@ -32,6 +37,7 @@ var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
 var _dt := 0.0
 var _hold_s := 0.0
+var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -73,12 +79,40 @@ func length() -> float:
 	return (front - back) * sim.body_scale()
 
 
-## Turns the body toward the facing, carries a dash (dash_pressed: the button this step), then
-## breaks what the body moved or turned into.
+## Turns sim.facing toward `want` (the stick, length 0..1; zero: standing) with weight
+## (director comments #16, "lumbering and unstoppable"): the turn gathers speed at turn_accel up
+## to turn_rate (turn_rate_still at a standstill) and slows before it lands, never overshooting,
+## while the stride eases down in a hard turn (to turn_slow at an about-face) and back up after.
+## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
+func steer(dt: float, want: Vector2) -> float:
+	if want == Vector2.ZERO:
+		stride = 0.0
+		turn_left = 0.0
+		_spin = 0.0
+		_face(dt)
+		return 0.0
+	turn_left = sim.facing.angle_to(want)
+	var keep := lerpf(1.0, Num.f(cfg["turn_slow"]), absf(turn_left) / PI)
+	var ease := minf(1.0, Num.f(cfg["stride_ease"]) * dt)
+	stride = lerpf(stride, want.length() * keep, ease)
+	var top := lerpf(Num.f(cfg["turn_rate_still"]), Num.f(cfg["turn_rate"]), stride)
+	var accel := Num.f(cfg["turn_accel"])
+	var aim := signf(turn_left) * minf(top, sqrt(2.0 * accel * absf(turn_left)))
+	_spin = move_toward(_spin, aim, accel * dt)
+	var turn := _spin * dt
+	if signf(turn) == signf(turn_left) and absf(turn) >= absf(turn_left):
+		turn = turn_left  # lands on the new way exactly
+		_spin = 0.0
+	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
+	_face(dt)
+	return stride
+
+
+## Carries a dash (dash_pressed: the button this step), faces the body where sim.facing points,
+## then breaks what the body moved or turned into.
 func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
-	var weight := minf(1.0, Num.f(cfg.get("turn_rate", 10.0)) * dt)
-	heading = Vector2.from_angle(lerp_angle(heading.angle(), sim.facing.angle(), weight))
+	_face(dt)
 	if not active() or sim.airborne:
 		_last_pos = Vector2(INF, INF)
 		return
@@ -109,6 +143,15 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 			return
 	sim.kaiju_pos = from
 	heading = from_heading
+	sim.facing = from_heading  # the body could not turn here: neither does what it aims
+	_spin = 0.0
+
+
+## The heading turns to sim.facing, at most turn_rate_still: steer() turns the facing no faster,
+## so the two stay one; only a facing set from outside is caught up with.
+func _face(dt: float) -> void:
+	var most := Num.f(cfg["turn_rate_still"]) * dt
+	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
 
 
 ## Whether the body overlaps building `index`'s footprint now (never without a body volume).
