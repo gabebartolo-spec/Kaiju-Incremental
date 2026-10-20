@@ -245,6 +245,7 @@ func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 		spacing.open_up(tank, r, back)  # the kaiju moved and a gun swung over a neighbour
 		return
 	r.path[0] = graph.square_leg(tank.pos, r.path[0], r.edges[0])  # never down a diagonal
+	r.path[0] = _onto_axis(tank.pos, r.path[0], r.edge)  # nor crabbing where it could not square
 	var to := r.path[0] - tank.pos
 	var dist := to.length()
 	var dir := to / dist if dist > 0.0001 else r.front
@@ -297,6 +298,24 @@ func _arrive(r: ConvoyRoute) -> void:
 	r.path.remove_at(0)
 	r.edges.remove_at(0)
 	r.retreating = r.retreating and not r.path.is_empty()
+
+
+## A leg askew to every road under the tank (a lane point past a crossing's centre, or one
+## square_leg could not square) is driven along the nearest of those roads: never crabbing.
+func _onto_axis(at: Vector2, to: Vector2, edge: int) -> Vector2:
+	var v := to - at
+	if v.length() < 0.0001:
+		return to
+	var way := v.normalized()
+	var best := Vector2.ZERO
+	for e: int in graph.roads_at(graph.cell_of(at)) + PackedInt32Array([edge]):
+		if e < 0 or not graph.on_edge(at, e):
+			continue
+		if graph.square(way, e):
+			return to
+		if absf(way.dot(graph.axis(e))) > absf(way.dot(best)):
+			best = graph.axis(e)
+	return to if best == Vector2.ZERO else at + best * v.dot(best)
 
 
 ## No room to pivot here: a step along the hull (forward or back) to where the whole turn fits.
