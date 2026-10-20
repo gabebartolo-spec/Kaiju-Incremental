@@ -140,8 +140,10 @@ static func graphics_rows(check: Callable) -> void:
 	var table: Dictionary = Content.section("display")["graphics"]
 	var shipped := GraphicsPresets.errors(table)
 	var broken := table.duplicate(true)
-	(broken["medium"] as Dictionary).erase("msaa")
-	(broken["low"] as Dictionary)["scaler"] = "fsr9"
+	var medium: Dictionary = broken["medium"]
+	var low: Dictionary = broken["low"]
+	medium.erase("msaa")
+	low["scaler"] = "fsr9"
 	var found := GraphicsPresets.errors(broken)
 	check.call(
 		(
