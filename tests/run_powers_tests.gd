@@ -5,6 +5,8 @@ extends "res://tests/lib/powers_base.gd"
 ## The cephalopod and the helicopters are in run_tentacles_tests.gd.
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
+const TailCity := preload("res://tests/lib/powers_tail_city.gd")
+
 
 func suite_name() -> String:
 	return "Powers"
@@ -13,6 +15,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_branches")
 	await _t("_check_tail")
+	await _h("TailCity", func() -> void: TailCity.check(check))
 	await _t("_check_momentum")
 	await _t("_check_shear")
 	await _t("_check_beam")
