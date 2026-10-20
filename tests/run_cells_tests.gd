@@ -26,7 +26,7 @@ const PINNED := {
 	"brick": [6674, "ac8dcb1ff799745a"],
 	"glass": [27213, "2ea7122061040817"],
 	"stone": [13385, "04da84b429e548bc"],
-	"party": [6277, "6217a45fdf6352a2"],
+	"party": [6674, "6c9f344bc615d940"],  # b2-22: party walls carry the facade
 	"tiny": [776, "8c0f4755ac5a6536"],
 	"sign": [10911, "1c39938e3ebe6249"],
 }
