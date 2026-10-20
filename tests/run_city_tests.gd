@@ -7,10 +7,12 @@ extends "res://tests/lib/runner.gd"
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const Green := preload("res://tests/lib/city_green.gd")
+const RiverBody := preload("res://tests/lib/city_river_body.gd")
 const Trample := preload("res://tests/lib/city_trample.gd")
 const BreathTrees := preload("res://tests/lib/city_breath_trees.gd")
 const CityLandmarks := preload("res://tests/lib/city_landmarks.gd")
 const RiverStart := preload("res://tests/lib/city_river.gd")
+const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
@@ -179,8 +181,10 @@ func _check_no_empty_ground() -> void:
 					]
 				)
 			)
+			RiverBody.check(tier, map_seed, sim, check)
 			RiverStart.check(tier, map_seed, sim, check)
 			RiverStart.check_look(tier, map_seed, sim, decor, check)
+			EdgeMark.check(tier, map_seed, sim, decor, check)
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)

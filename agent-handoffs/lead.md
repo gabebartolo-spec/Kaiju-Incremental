@@ -1,41 +1,54 @@
-# Lead handoff, 2026-10-20 late (lead 8, session b5e2e23e, registered lead: hands off at 500k)
-## State: lead 8 running, ~310k. Director's /goal: playable build with building carving first draft. Plan = docs/ROADMAP.md
-## "Post-demo plan" phases A-H; every director comment in docs/roadmap/2026-10-20-build2-playtest.md (30 notes) and
-## docs/roadmap/2026-10-20-director-comments.md (rows 1-18). Director answered "No, I'll do Phase A": NO builder helper now;
-## the lead builds. Asset session (voxel density) archived by him: density comparison not running.
+# Lead handoff, 2026-10-21 (lead 9, session local_df2c2989, CLI 07ae5487; registered in context-guard-leads)
+## Next lead: register (empty file named by your CLI session id in ~/.claude/context-guard-leads/), read this, then
+## GitHub (open PRs), then list_sessions. Director's /goal: playable build with building carving first draft.
+## Plan = docs/ROADMAP.md "Post-demo plan" phases A-H; every comment in docs/roadmap/2026-10-20-build2-playtest.md
+## (30 notes) and docs/roadmap/2026-10-20-director-comments.md (rows 1-19; 18-19 added in #115).
 
-## NEXT (in order)
-1. MERGED today: #109 WP7 carving, #110 b2-6 real band, #111 (breath trees, tail reach, rubble ruins), #112 (Cinematic
-   D-104, camera C D-105, times of day D-106). Open: #113 river rise along the channel (head 29d3c61, mog armed).
-2. Stadium past the baby's edge (b2-21, director picked "A past the edge"): worktree ../Kaiju-Incremental-wt/stadium-north
-   (branch claude/b2-21-stadium-north, uncommitted): data/tuning.json stadium anchor [-24,-57] + districts[1] 70->72 (the
-   stadium is 22 m deep; ring 42..70 left 20 m), test tests/lib/city_stadium_far.gd (failed first: 75-78 m, inside the
-   baby's area; now 106-110 m, just past it, inside stage 2). Wide suites were running (city growth flow sim
-   landmarkcells load military smoke). Then add the edge marker (3) to the same PR.
-3. Play-area edge marker (comments #18, "not too loud"): scenes/arena_edge.gd written (dashed amber line on the street
-   at sim.arena_half, none over water). TODO: tuning "arena_edge" {dash 1.6, gap 1.2, width 0.3, color "c9a24a",
-   glow 0.25}; CityView._ready adds ArenaEdge.new(sim) after CityGround; a capture at dusk and night, lead 2x.
-4. Phase A leftovers: p1-9 confirm south-of-spawn buildings gone (#88/#110 likely cover it); sim check "armoured scales
-   cut the damage"; worktree cleanup (res4, res16, carve-wp7, camera-opts, b2-26, river-rise once merged). Gate: build 3
-   (build.yml from claude/look-options), he plays.
-5. Then Phase C (destruction core), D (body feel: turning weight + head leads the body #16, tail autonomous limb,
-   intro shot, reactive water), E tree, F UI, G perf.
+## Team (director 2026-10-20/21)
+- Builders: the lead only ("No, I'll do Phase A"). Helpers: TWO Sonnet-high read-only reviewers/critics ("i afforded
+  you two sonnet high helpers, use them wisely", "keep your devs working", 2026-10-21 "both your devs are idle get them
+  working"). Keep both busy every turn; they write no code. Restart each at 300k as a fresh session (same title);
+  the app only lets you start sessions on a turn the director drove.
+- SENIOR DEV (local_66da64f8, fresh 2026-10-21): on kerb-fixes.md (cars on plaza edges, bunched trees, city-wide scan).
+- Senior2 reader/critic: predecessor local_87436601 at 300k, idle, could not be archived (background job): archive it
+  and start "Senior2 reader/critic" fresh with the b2-30 re-review brief (b2-30/b2-30-review.md items).
+- Notes: C:\Users\DANTE\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\
+  (freeze-trace.md, stadium-review.md, landmark-box/, b2-22-review.md, phase-a-audit.md, b2-30/). Phase maps (FINAL):
+  ...\local_962460da-...\phase-maps.md, phase-maps-copy.md. Senior dev's stadium-pr-review.md is in ...\local_df2c2989-...\.
 
-## Findings this session (evidence in PR bodies)
-- Tail sweep fired but cut 0 chunks in the real city: reach ended short of its own tip. Smooth stick turns never sweep
-  (Phase D autonomous limb fixes that).
-- Breath crushed props only round the feet; BreathCone.cover now covers the cone.
-- Ruin wall stubs rose above the heap = the "burning buildings" he saw.
-- Kaiju rose facing the bank: head over the quay/road. Now along the channel.
-- Headless Godot returns empty MultiMesh transforms and AABBs: test cells, not meshes.
-- A fresh worktree after a new class_name needs `--editor --import` before scripts run.
-- [skip ci] on a PR head leaves no checks for the watcher: push an empty commit.
+## Merged today: #113 river rise (6b119f7), #114 edge bollards (6494ba2). Earlier: #109-#112.
+## Open PRs / branches (into claude/look-options)
+- #115 stadium past the baby's edge + landmarks stream first (b2-21), head dc3c05b4c6ac656ed8f552bbb2dc8d8160f10321,
+  mog.sh watcher armed. Senior reviews SHIP (code + 8 captures). Polish for Phase C: parked cars straddle the plaza
+  edge (no sidewalk now), street + plaza-ring trees bunch.
+- claude/b2-30-run-start-freeze 4d7c869 (pushed, no PR): senior dev 1's staged run start (loading screen, stream stop
+  flag, hide-then-quit) + lead fixes for senior2's review (meter 7 stages pinned, consts, initial worker honours _stop).
+  Merged look-options in. Flow/smoke/load suites rerunning. Will conflict with #115 in BuildingStream._ready: keep
+  `_landmarks_first(_rest)` after the _rest loop, before `_now = now`; add `_landmarks_first` and `queued()`.
+  Open gaps from the review: QuitGame/WM_CLOSE test, staged-vs-plain same-seed equality, tests/lib/flow_demo.gd:97.
+- claude/b2-22-party-facades b06451a (pushed, no PR, Phase C): facade on touching sides + behaviour check (red on
+  base). Needs a capture of a demolished neighbour (proud awnings) before its PR.
+
+## NEXT
+1. #115 merges -> PR b2-30 (resolve the conflict above) if its suites are green; then build 3 = Phase A gate:
+   `gh workflow run build.yml --ref claude/look-options`. Smoke the exe, put it in
+   C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/, tell him with the 5-line note (draft in notes/phase-a-audit.md).
+2. Director question at Phase C start (phase-maps.md): b2-4 "effortless carving even for a baby" vs D-091. Options
+   A effortless + size shows in bite size (rec), B floor the slowdown (<=2x), C keep D-091, fix feel with VFX. Also drop
+   VISION.md:26-27 tier-gate sentence (stale since D-091).
+3. Phase D turning: sim.facing is instant, only body.heading lags (turn_rate 10): move along body.heading, turn_rate
+   ~3-4, head yaw leads (biped_head.gd).
+
+## Findings this session
+- Local runs without native/bin/*.dll take the GDScript carving path: sim ("a swiped tower topples sooner") and military
+  ("tanks hold standoff") each fail one check that passes on CI. Copy carve-play/native/bin/*.dll in first.
+- Far landmarks drew as office boxes until streamed in (BuildingStream stand-ins); captures shot them at 4 frames.
+- Swapping files in a worktree while its suites run poisons the run: never do it; use another worktree.
+- Two long-running Godot prof.gd processes (tools/tmp_wp7, PIDs 925029/929069) are not ours: carve-wp7 worktree kept.
 
 ## Tools
-- mog.sh (scratchpad b5e2e23e/scratchpad/mog.sh <pr> <full sha>): polls 150 s, squash-merges with --match-head-commit.
-- Captures: tools/capture/capture_shaders.gd (--shader --time), capture_framing.gd (--offset --fov). override.cfg in the
-  worktree first (separate call). Sheets: scratchpad cam/sheet.py.
-- Probes: tests/_probe/ (untracked) in b2-26 and stadium-north worktrees: tail_probe.gd, map_dump.gd, anchor_scan2.gd.
+- mog.sh in lead 9 scratchpad (07ae5487.../scratchpad/mog.sh <pr> <full sha>); copy it to yours.
+- Captures: tools/capture/capture_landmarks.gd (--tier=), capture_shaders.gd; override.cfg in the worktree first.
+- Worktrees removed today: river-rise, b2-26, camera-opts, carve-wp1..6, board-d096, board-d098 (39 left).
 
-Lead = "Kaiju: LEAD". Owns QA gates, merges, DECISIONS/STATUS, director questions, this file. Ask him the
-ask-the-director way: one decision, recommended option first, a labelled image for anything visual.
+Lead = "Kaiju: LEAD 9". Owns QA gates, merges, DECISIONS/STATUS, director questions, this file. playbook: nothing new.

@@ -44,6 +44,11 @@ func start(sim: RampageSim) -> void:
 	_t = 0.0
 	sim.kaiju_pos = _spawn
 	sim.stand_y = -_depth * sim.body_scale()
+	# It lies along the channel, the way the water runs, so its whole body rises out of the
+	# water; facing the bank, its head would come up over the quay, out of the street
+	# (director 2026-10-20: "emerging from the water, not from the asphalt").
+	sim.facing = _along()
+	sim.body.heading = sim.facing
 
 
 ## How far through its rise the kaiju is, 0 (under) to 1 (wading in the river).
@@ -83,3 +88,11 @@ func _land(sim: RampageSim, bank: Vector2) -> void:
 	sim.kaiju_pos = bank
 	active = false
 	sim.events.append({"type": "kaiju_emerged"})
+
+
+## Along the river, toward its longer reach of water from the rise point.
+func _along() -> Vector2:
+	if _water.is_empty():
+		return Vector2(0, -1)
+	var w := _water[0]
+	return Vector2.RIGHT if w.end.x - _spawn.x >= _spawn.x - w.position.x else Vector2.LEFT
