@@ -164,30 +164,33 @@ func sparks(at: Vector3) -> void:
 	p.position = at
 
 
-## A ring that runs out across the ground from a stomp; tint alpha 0 keeps the shader's own.
+## A soft ripple of dust that runs out across the ground from a landing (no glow, no tint: a ring
+## with no visible impact behind it is not drawn by the callers). Size, life and opacity are
+## tuning "fx" "shockwave": small and faint so it reads as dust kicked off the street.
 ## A tail slam (tail) draws no ring: a few footfall puffs thrown out around the tip instead
 ## (lead review PR #54: three custom rings in a row popped; the step puff of #62 reads right).
-func shockwave(at: Vector3, radius: float, tint: Color = Color(0, 0, 0, 0), tail := false) -> void:
+func shockwave(at: Vector3, radius: float, tail := false) -> void:
 	if tail:
 		_slam_puff(at + Vector3(0, 0.2, 0), radius * SLAM_SIZE)
 		for k: int in SLAM_PUFFS:
 			var a := TAU * k / SLAM_PUFFS
 			_slam_puff(at + Vector3(cos(a), 0.4, sin(a)) * radius * 0.35, radius * SLAM_SIZE * 0.8)
 		return
+	var cfg: Dictionary = Content.section("fx")["shockwave"]
 	var quad := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2.ONE * radius * 2.4
+	plane.size = Vector2.ONE * radius * Num.f(cfg["radius_scale"]) * 2.4
 	var mat := ShaderMaterial.new()
 	mat.shader = SHOCKWAVE
-	if tint.a > 0.0:
-		mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("peak", Num.f(cfg["alpha"]))
+	mat.set_shader_parameter("soft", Num.f(cfg["soft"]))
 	plane.material = mat
 	quad.mesh = plane
 	quad.position = at + Vector3(0, 0.15, 0)
 	add_child(quad)
 	var tween := quad.create_tween()
 	tween.tween_method(
-		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, 0.45
+		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, Num.f(cfg["seconds"])
 	)
 	tween.tween_callback(quad.queue_free)
 
