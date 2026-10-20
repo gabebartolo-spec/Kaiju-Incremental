@@ -77,7 +77,9 @@ func _ready() -> void:
 	var title := _button(row, "MAIN MENU", UiKit.ACCENT)
 	title.pressed.connect(func() -> void: title_pressed.emit())
 	if not OS.has_feature("web"):
-		_button(row, "QUIT", UiKit.PANEL_EDGE).pressed.connect(func() -> void: get_tree().quit())
+		_button(row, "QUIT", UiKit.PANEL_EDGE).pressed.connect(
+			func() -> void: QuitGame.now(get_tree())
+		)
 	title.grab_focus.call_deferred()
 
 

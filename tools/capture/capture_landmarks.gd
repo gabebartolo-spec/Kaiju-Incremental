@@ -9,6 +9,8 @@ extends SceneTree
 ##     --script tools/capture/capture_landmarks.gd -- --out=<dir> [--tier=2]
 
 const SETTLE := 4
+## Real time to wait for every building to stream in before the standing still.
+const STREAM_WAIT_MS := 120000
 ## Frames after the rampage before the broken still: the dust of the last falls clears.
 const AFTER := 150
 const SPECIES := "reptilian"
@@ -82,6 +84,9 @@ func _stage(tier: int) -> void:
 		cam.position = centre + GAME_CAMERA.normalized() * reach
 		cam.look_at(centre)
 		await _frames(SETTLE)
+		var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
+		while not _city._stream.complete() and Time.get_ticks_msec() < deadline:
+			await process_frame  # a far landmark stands as a box until it streams in
 		_shot("%s_standing" % b.landmark)
 		var before := b.frame.alive_count
 		await _break(n, kaiju)

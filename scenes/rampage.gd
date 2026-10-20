@@ -5,6 +5,8 @@ extends Node3D
 ## sim ends, the HUD plays the end beat, then `finished` reports the result. Esc pauses.
 
 signal finished(result: Dictionary)
+## The run's scene is built and the sim is stepping (see `staged`).
+signal loaded
 
 ## Footfall: dust and a pale ground ring (per body scale), camera dip (units) and its return (1/s).
 const FOOTFALL_DUST := 1.1
@@ -23,6 +25,12 @@ const AUTOPLAY_GLIDE_CYCLE := 90
 const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
+## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
+## LoadingOverlay, and nothing runs until it is done, so starting a run never freezes the screen
+## (b2-30). false (tests, captures): _ready builds it all at once, as before.
+var staged := false
+## Whether the scene is built (always true after _ready when not staged).
+var is_loaded := false
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
 var cost_usec: Dictionary = {}
 var species: Dictionary
@@ -55,6 +63,7 @@ var _camera: Camera3D
 var _shake := 0.0
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
+var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
 var _topple_cfg: Dictionary = Content.section("topple_fx")
 var _autoplay := false
@@ -90,29 +99,52 @@ func setup(
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
 
+## Returns once the scene is built (at once when it is; flow suites and captures that start a run
+## through Main wait here, as the staged build takes a number of frames).
+func wait_loaded() -> void:
+	while not is_loaded and is_inside_tree():
+		await get_tree().process_frame
+
+
 ## Test hook: the kaiju walks toward the nearest building it can topple on its own.
 func set_autoplay(on: bool) -> void:
 	_autoplay = on
 
 
 func _ready() -> void:
+	var stages := BuildStages.new()
+	stages.on = staged
+	if staged:
+		stages.overlay = LoadingOverlay.new()
+		add_child(stages.overlay)
+		if not await stages.next(self):
+			return
 	_city = CityView.new(sim, _fx_rng)
+	_city.stages = stages
 	add_child(_city)
+	while not _city.is_loaded:  # staged: the city builds itself over the next frames
+		if not await stages.next(self, false):
+			return
 	var colors: Dictionary = species["colors"]
 	var cone := deg_to_rad(Num.f(sim.city["cone_half_angle_deg"]))
 	ability_fx = AbilityFx.new(_city, Color(str(colors["eye"])), sim.body_scale(), cone)
 	add_child(ability_fx)
+	if not await stages.next(self):
+		return
 	add_child(BreathAim.new(sim, Color(str(colors["eye"]))))  # where a ready breath will burn
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
 	add_child(_kaiju)
+	if not await stages.next(self):
+		return
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
+	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
@@ -131,11 +163,15 @@ func _ready() -> void:
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
+	if stages.overlay != null:
+		stages.overlay.queue_free()
+	is_loaded = true
+	loaded.emit()
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
 
 func _physics_process(delta: float) -> void:
-	if sim.over:
+	if not is_loaded or sim.over:
 		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var signature := Input.is_action_just_pressed("signature")
@@ -166,11 +202,13 @@ func _physics_process(delta: float) -> void:
 	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
 	_update_powers()
 	_powers.update(delta, _kaiju_at)
-	_update_tanks(delta)
+	_tanks.update(delta, _kaiju_at, _steps)
 	_hud.refresh()
 
 
 func _process(delta: float) -> void:
+	if not is_loaded:
+		return
 	_place_camera(delta)
 	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	_shake = maxf(0.0, _shake - delta * 3.0)
@@ -213,13 +251,14 @@ func _on_event(event: Dictionary) -> void:
 			var topple := str(event["kind"]) == "topple"
 			_shake = maxf(_shake, Num.f(_topple_cfg["shake"]) if topple else 0.3)
 		"tank_spawned":
-			_spawn_tank_node(Num.i(event["tank"]))
+			_tanks.spawn(Num.i(event["tank"]))
 		"tank_fired":
 			var at: Vector2 = event.get("at", sim.kaiju_pos)
-			_tank_fired(Num.i(event["tank"]), _to_world(at))
+			if _tanks.fire(Num.i(event["tank"]), _to_world(at), _kaiju_at):
+				_shake = maxf(_shake, 0.08)
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
-			_tank_destroyed(Num.i(event["tank"]), at)
+			_tanks.destroy(Num.i(event["tank"]), at)
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
@@ -332,49 +371,6 @@ func _land_stomp(at: Vector3) -> void:
 	sfx.stomp(heavy, ability_fx.stomp_cracks(at, _stomp_radius, heavy))
 	_city.crush(at, _stomp_radius)
 	stomp_ring_at.append(at)
-
-
-func _spawn_tank_node(id: int) -> void:
-	var tank := TankModel.new()
-	add_child(tank)
-	_tank_nodes[id] = tank
-
-
-## Hull to the way it drives (front to the kaiju when it stands or backs off), turret on the kaiju.
-func _update_tanks(delta: float) -> void:
-	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
-	var convoy := sim.army_units.convoy
-	for tank: RampageSim.Tank in sim.tanks:
-		if flatten:
-			_city.crush(_to_world(tank.pos), 1.4)
-		if not _tank_nodes.has(tank.id):
-			continue
-		var node: TankModel = _tank_nodes[tank.id]
-		node.position = _to_world(tank.pos)
-		var front := convoy.front(tank.id)  # the sim's hull pose: it pivots, then drives
-		if front != Vector2.ZERO:
-			node.rotation.y = atan2(-front.x, -front.y)
-		node.aim(_kaiju_at + Vector3(0, 2.0 * sim.body_scale(), 0), delta)
-
-
-func _tank_fired(id: int, at: Vector3) -> void:
-	if not _tank_nodes.has(id):
-		return
-	var node: TankModel = _tank_nodes[id]
-	var target := at + Vector3(0, 1.0, 0)
-	if at.distance_to(_to_world(sim.kaiju_pos)) < 0.01:
-		target = _kaiju_at + Vector3(0, 4.0 * sim.body_scale(), 0)
-	TankFx.fire_shell(self, node, target)
-	_shake = maxf(_shake, 0.08)
-
-
-func _tank_destroyed(id: int, pos: Vector3) -> void:
-	if _tank_nodes.has(id):
-		var node: Node3D = _tank_nodes[id]
-		node.queue_free()
-		_tank_nodes.erase(id)
-	var gained := Num.f(sim.army["tank_rubble"]) * sim.stat("rubble_mult")
-	TankFx.wreck(_city, pos, gained)
 
 
 func _place_camera(delta: float) -> void:

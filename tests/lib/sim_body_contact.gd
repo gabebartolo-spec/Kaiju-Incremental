@@ -105,11 +105,26 @@ func _check_dash() -> void:
 ## The nearest standing building of exactly this tier (no landmark) to the kaiju; `min_height`
 ## and `min_side` narrow it.
 func _nearest(sim: RampageSim, tier: int, min_height: int = 0, min_side: int = 0) -> int:
+	return _nearest_of(sim, tier, Vector2i(min_height, min_side), -1)
+
+
+## The nearest tall tier-2 office tower (BuildingCells.OFFICE): the topple and swipe fixture.
+func _nearest_office(sim: RampageSim) -> int:
+	return _nearest_of(sim, 2, Vector2i(10, 4), BuildingCells.OFFICE)
+
+
+## _nearest, with `at_least` (min height, min side) and `archetype` (a BuildingCells style, -1
+## any) narrowing it.
+func _nearest_of(sim: RampageSim, tier: int, at_least: Vector2i, archetype: int) -> int:
+	var min_height := at_least.x
+	var min_side := at_least.y
 	var best := -1
 	var best_d := INF
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		if b.tier != tier or b.landmark != "" or b.height < min_height or mini(b.w, b.d) < min_side:
+			continue
+		if archetype >= 0 and b.style % 4 != archetype:
 			continue
 		if not b.in_arena:
 			continue  # the real band past the edge (CityBand): out of the kaiju's walk
@@ -167,7 +182,7 @@ func _count(inside: Dictionary) -> int:
 ## chews straight into the base of the nearest tall tier-2 tower until it comes down.
 func _check_topple() -> void:
 	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
-	var b := sim.buildings[_nearest(sim, 2, 10, 4)]
+	var b := sim.buildings[_nearest_office(sim)]
 	var start := b.frame.alive_count
 	var chew := _chew_to_topple(sim)
 	var fall: RampageSim.Fall = chew["fall"]
@@ -208,11 +223,14 @@ func _check_swipe_undermines(swiped_steps: int) -> void:
 	)
 
 
-## The baby chews straight north into the nearest tall tier-2 tower's base from its south face
+## An office tower, so the fixture does not hang on whichever style stands nearest: one swipe
+## clears a brick tower's two front rows without tipping it sooner (red-115, senior dev review).
+## The baby chews straight north into the nearest tall tier-2 office tower's base from its
+## south face
 ## until the tower topples: {"steps", "worst" (chunks ever inside the body), "fall" (or null)}.
 func _chew_to_topple(sim: RampageSim) -> Dictionary:
 	sim.body.use_species("reptilian")
-	var index := _nearest(sim, 2, 10, 4)
+	var index := _nearest_office(sim)
 	var b := sim.buildings[index]
 	var into := Vector2(0, -1)  # from the tower's south face, across its base
 	_place(sim, Vector2(b.x, b.z + b.d * 0.5 + sim.body.length() * 0.6), into)
