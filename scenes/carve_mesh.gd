@@ -75,6 +75,24 @@ static func build(
 static func build_at(
 	site: CarveSite, cells: PackedInt32Array, src: Array, offset: Vector3
 ) -> ArrayMesh:
+	return from_arrays(arrays_at(site, cells, src, offset))
+
+
+## An ArrayMesh of arrays_at()'s result in CarveMesh's material; null when it is empty.
+static func from_arrays(arrays: Array) -> ArrayMesh:
+	if arrays.is_empty():
+		return null
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, material())
+	return mesh
+
+
+## build_at()'s surface arrays (empty when no face shows). Touches no node or resource, so a
+## worker thread may run it (islands mesh off the main thread in play).
+static func arrays_at(
+	site: CarveSite, cells: PackedInt32Array, src: Array, offset: Vector3
+) -> Array:
 	var mats: PackedByteArray = src[0]
 	var solid: PackedByteArray = src[1]
 	var verts := PackedVector3Array()
@@ -98,16 +116,13 @@ static func build_at(
 				normals.append(n)
 				colors.append(col)
 	if verts.is_empty():
-		return null
+		return []
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_COLOR] = colors
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, material())
-	return mesh
+	return arrays
 
 
 ## Cells grouped by brick (res^3 cells, one sim unit): brick -> PackedInt32Array of positions

@@ -27,6 +27,17 @@ var cells: PackedInt32Array
 var mats: PackedByteArray
 var settled_now := false
 var last_break_us := 0  # how long the last break took (meshing and colliders), for benches
+## Mesh the bricks on a worker (IslandMesher; set before the body enters the tree): the body
+## falls unseen for the frame or two that takes, instead of a main-thread hitch.
+var mesh_on_worker := false
+## The material every brick mesh draws with (null: CarveMesh's vertex colours); in play the
+## building's own cell material, so an island keeps its look.
+var look: Material:
+	set(value):
+		look = value
+		for key: Vector3i in _meshes:
+			var mi: MeshInstance3D = _meshes[key]
+			mi.material_override = value
 ## Per staged break, the spread (standard deviation, world units) of the heights of the bricks
 ## left bordering the break: near 0 the fracture front is a plane, which reads as a staircase on
 ## a tilted slab (captures).
@@ -47,6 +58,7 @@ var _still := 0.0
 var _cooldown := 0.0
 var _seed := 0  # the building's seed: its fracture noise and its splits
 var _noise := FastNoiseLite.new()
+var _mesher: IslandMesher  # meshing the bricks on a worker, null when none
 
 
 func _init(
@@ -59,19 +71,52 @@ func _init(
 	_cfg = Content.section("carve_physics")
 	_noise.seed = p_seed
 	_noise.frequency = Num.f(_cfg["break_ragged_freq"])
-	_solid.resize(site.count())
-	for i: int in cells:
-		_solid[i] = 1
-		_com += site.world(site.cell(i))
-	_com /= maxi(1, cells.size())
+	var scan := IslandMesher.scan(site, cells)  # one pass over the cells (falls are big)
+	_solid = scan["solid"]
+	_bricks = scan["bricks"]
+	_spans = scan["spans"]
+	_com = scan["com"]
 	position = _com
-	_bricks = CarveMesh.bricks(site, cells)
 	for key: Vector3i in _bricks:
-		_mesh_brick(key)
 		_shape_brick(key)
 	_mass()
 	continuous_cd = true
 	can_sleep = true
+
+
+func _ready() -> void:
+	if not mesh_on_worker:
+		for key: Vector3i in _bricks:
+			_mesh_brick(key)
+		return
+	_mesher = IslandMesher.new(site, [cells, mats, _solid], _bricks.duplicate(), _com)
+
+
+func _exit_tree() -> void:
+	if _mesher != null:
+		_mesher.wait()
+
+
+## The worker's meshes, once it is done (false while it still runs).
+func _take_meshes() -> bool:
+	if not _mesher.done():
+		return false
+	var made := _mesher.take()
+	_mesher = null
+	for key: Vector3i in made:
+		if _bricks.has(key):
+			var mesh: ArrayMesh = made[key]
+			_put_mesh(key, mesh)
+	return true
+
+
+## The world box round the island's cells at spawn.
+func spawn_box() -> AABB:
+	var out := AABB()
+	for key: Vector3i in _spans:
+		var box: AABB = _spans[key]
+		out = box if out.size == Vector3.ZERO else out.merge(box)
+	return out
 
 
 ## Follows the sim's topple: turns about `pivot` (world) toward `dir` over `duration` (the
@@ -101,6 +146,10 @@ func following() -> bool:
 
 func _physics_process(delta: float) -> void:
 	if settled_now:
+		return
+	if _mesher != null and not _take_meshes():
+		if not _follow.is_empty():
+			_step_follow(delta)
 		return
 	if not _follow.is_empty():
 		_step_follow(delta)
@@ -269,6 +318,9 @@ func _split(v: Vector3) -> void:
 					"xf": Transform3D(xf.basis, at),
 					"v": keep + out + angular_velocity.cross(at - global_position),
 					"w": angular_velocity + w * spin,
+					"layer": collision_layer,
+					"mask": collision_mask,
+					"look": look,
 				}
 			)
 		)
@@ -408,15 +460,16 @@ func _brick_span(key: Vector3i) -> AABB:
 
 func _mesh_brick(key: Vector3i) -> void:
 	var ks: PackedInt32Array = _bricks[key]
-	var own := PackedInt32Array()
-	var own_mats := PackedByteArray()
-	for k: int in ks:
-		own.append(cells[k])
-		own_mats.append(mats[k])
-	var mesh := CarveMesh.build_at(site, own, [own_mats, _solid], _com)
+	var job := IslandMesher.job(cells, mats, ks)
+	var own: PackedInt32Array = job[0]
+	_put_mesh(key, CarveMesh.build_at(site, own, [job[1], _solid], _com))
+
+
+func _put_mesh(key: Vector3i, mesh: ArrayMesh) -> void:
 	var mi: MeshInstance3D = _meshes.get(key)
 	if mi == null:
 		mi = MeshInstance3D.new()
+		mi.material_override = look
 		add_child(mi)
 		_meshes[key] = mi
 	mi.mesh = mesh

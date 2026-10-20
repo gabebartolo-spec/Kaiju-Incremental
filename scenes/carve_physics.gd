@@ -18,6 +18,8 @@ signal ignited(at: Vector3, size: float)
 signal spawned(island: IslandBody)
 
 var fx: Fx
+## New islands mesh on a worker thread (IslandBody.mesh_on_worker); play sets it.
+var mesh_on_worker := false
 var _cfg: Dictionary
 var _rng := RandomNumberGenerator.new()
 var _sites: Dictionary = {}  # key -> CarveSite
@@ -108,7 +110,7 @@ func fell(key: int, grid: PackedByteArray, event: Dictionary) -> IslandBody:
 	var d: CarveDebris = _debris[key]
 	d.grid = grid
 	var island := _island(key, cells, mats)
-	var box := _box(s, cells)
+	var box := island.spawn_box()
 	if str(event["kind"]) == "topple":
 		var raw_pivot: Vector3 = event["pivot"]
 		var pivot := s.from_local(raw_pivot)
@@ -128,6 +130,7 @@ func _island(key: int, cells: PackedInt32Array, mats: PackedByteArray) -> Island
 	var s: CarveSite = _sites[key]
 	var island := IslandBody.new(s, cells, mats, hash([_seed, key]))
 	island.gravity_scale = _gravity
+	island.mesh_on_worker = mesh_on_worker
 	add_child(island)
 	_islands.append(island)
 	island.tree_exited.connect(func() -> void: _islands.erase(island))
@@ -144,6 +147,10 @@ func _split(key: int, parts: Array[Dictionary]) -> void:
 		var own: PackedInt32Array = part["cells"]
 		var own_mats: PackedByteArray = part["mats"]
 		var chunk := _island(key, own, own_mats)
+		if part.has("layer"):  # a chunk keeps its island's collision layers and look
+			chunk.collision_layer = Num.i(part["layer"])
+			chunk.collision_mask = Num.i(part["mask"])
+			chunk.look = part["look"]
 		chunk.global_transform = part["xf"]
 		chunk.linear_velocity = part["v"]
 		chunk.angular_velocity = part["w"]

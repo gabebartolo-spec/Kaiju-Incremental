@@ -33,6 +33,7 @@ var carves := 0
 var falls := 0
 ## Worst main-thread cost per step (microseconds): take, carved, fell, promote, colliders.
 var cost_usec: Dictionary = {}
+var frame_usec: Dictionary = {}  # per kind, usec summed since the bench last cleared it
 
 var _sim: RampageSim
 var _stream: BuildingStream
@@ -56,6 +57,7 @@ func _init(p_sim: RampageSim, stream: BuildingStream, seed_value: int) -> void:
 	_stream = stream
 	_cfg = Content.section("destruction")
 	physics = CarvePhysics.new(seed_value)
+	physics.mesh_on_worker = true
 	physics.ignited.connect(func(at: Vector3, size: float) -> void: ignited.emit(at, size))
 
 
@@ -102,9 +104,7 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> boo
 	var away := Vector3(b.x - kaiju_at.x, 0.0, b.z - kaiju_at.z).normalized()
 	var push := (away + Vector3.UP * Num.f(_cfg["carve_lift"])).normalized()
 	var grid: BuildingCells = grids[index]
-	physics.carved(index, grid.cells, {
-		"cells": removed, "mats": taken[1], "push": push
-	})
+	physics.carved(index, grid.cells, {"cells": removed, "mats": taken[1], "push": push})
 	_note("carved", t0)
 	carves += 1
 	return true
@@ -137,10 +137,7 @@ func fall_start(event: Dictionary) -> bool:
 	var island := physics.fell(index, grid.cells, fall)
 	island.collision_layer = ISLAND_LAYER
 	island.collision_mask = ISLAND_GROUND
-	var mat := _stream.view(index).cells_material()  # the building's own look, not a flat one
-	for child: Node in island.get_children():
-		if child is MeshInstance3D:
-			(child as MeshInstance3D).material_override = mat
+	island.look = _stream.view(index).cells_material()  # the building's own look, not a flat one
 	_note("fell", t0)
 	falls += 1
 	return true
@@ -217,6 +214,7 @@ func _take_made() -> void:
 func _note(what: String, since: int) -> int:
 	var now := Time.get_ticks_usec()
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), now - since)
+	frame_usec[what] = Num.i(frame_usec.get(what, 0)) + now - since
 	return now
 
 
@@ -236,21 +234,29 @@ func _take_chunks(index: int, chunks: Array[Vector3i]) -> Array:
 	var mats := PackedByteArray()
 	var lo := grid.dims
 	var hi := -Vector3i.ONE
+	var cells := grid.cells  # one local copy, scanned row by row (a fall takes whole storeys)
+	var dx := grid.dims.x
+	var layer := dx * grid.dims.z
 	for chunk: Vector3i in chunks:
 		var box := _chunk_box(grid, chunk)
 		var a: Vector3i = box[0]
 		var c: Vector3i = box[1]
 		for y: int in range(a.y, c.y):
 			for z: int in range(a.z, c.z):
-				for x: int in range(a.x, c.x):
-					var i := grid.index(Vector3i(x, y, z))
-					var m := grid.cells[i]
+				var row := z * dx + y * layer
+				var hit := false
+				for i: int in range(row + a.x, row + c.x):
+					var m := cells[i]
 					if m != 0:
 						removed.append(i)
 						mats.append(m)
-						grid.cells[i] = 0
-						lo = lo.min(Vector3i(x, y, z))
-						hi = hi.max(Vector3i(x, y, z))
+						cells[i] = 0
+						hit = true
+				if hit:  # the whole box row bounds the remesh; a few spare cells cost nothing
+					lo = lo.min(Vector3i(a.x, y, z))
+					hi = hi.max(Vector3i(c.x - 1, y, z))
+	if not removed.is_empty():
+		grid.cells = cells
 	var view := _stream.view(index)
 	view.hide_chunks(chunks)  # the baked meshes agree while they still show
 	if not removed.is_empty() and view.cells_view != null:

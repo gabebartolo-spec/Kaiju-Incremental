@@ -26,6 +26,7 @@ const AUTOPLAY_GLIDE_HELD := 50
 var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
 var cost_usec: Dictionary = {}
+var frame_usec: Dictionary = {}  # per kind, usec summed since the bench last cleared it
 var species: Dictionary
 ## The look of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
@@ -163,6 +164,7 @@ func _process(delta: float) -> void:
 func _note_cost(what: String, since: int) -> void:
 	var spent := Time.get_ticks_usec() - since
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
+	frame_usec[what] = Num.i(frame_usec.get(what, 0)) + spent
 
 
 func _to_world(p: Vector2) -> Vector3:

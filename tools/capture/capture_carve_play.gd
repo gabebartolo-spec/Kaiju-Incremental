@@ -65,9 +65,12 @@ func _run() -> void:
 	var sim := _rampage.sim
 	_target = _tallest(sim)
 	var t := sim.buildings[_target]
-	print("CARVE target building %d: %dx%dx%d tier %d at (%.1f, %.1f), kaiju tier %d" % [
-		_target, t.w, t.d, t.height, t.tier, t.x, t.z, sim.size_tier()
-	])
+	print(
+		(
+			"CARVE target building %d: %dx%dx%d tier %d at (%.1f, %.1f), kaiju tier %d"
+			% [_target, t.w, t.d, t.height, t.tier, t.x, t.z, sim.size_tier()]
+		)
+	)
 	var vp := root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var frames := 0
@@ -86,7 +89,12 @@ func _run() -> void:
 		_steer(sim, t)
 		if fell_at < 0 and _city().carve != null and _city().carve.falls > 0:
 			fell_at = step
-			print("CARVE first carved fall at step %d (%.1fs)" % [step, float(step) / Engine.physics_ticks_per_second])
+			print(
+				(
+					"CARVE first carved fall at step %d (%.1fs)"
+					% [step, float(step) / Engine.physics_ticks_per_second]
+				)
+			)
 		if step % 150 == 0:
 			_report(step)
 		if _islands and fell_at > 0 and (step - fell_at) % 15 == 0 and step - fell_at <= 300:
@@ -104,6 +112,10 @@ func _run() -> void:
 				gap_max = maxf(gap_max, gap)
 				if gap > 33.4:
 					slow += 1
+					_report_slow(step, gap)
+			_rampage.frame_usec.clear()
+			if _city().carve != null:
+				_city().carve.frame_usec.clear()
 	_release_all()
 	_report(step)
 	if _bench and not gaps.is_empty():
@@ -115,22 +127,27 @@ func _run() -> void:
 		mean /= gaps.size()
 		print(
 			(
-				"CARVE bench %s graphics %s: %d frames, mean %.1fms (%.0f fps), p95 %.1fms, worst %.1fms,"
-				+ " %d over 33 ms, gpu avg %.1fms max %.1fms"
+				(
+					"CARVE bench %s graphics %s: %d frames, mean %.1fms (%.0f fps), p95 %.1fms, worst %.1fms,"
+					+ " %d over 33 ms, gpu avg %.1fms max %.1fms"
+				)
+				% [
+					_species,
+					PlayerSettings.graphics_level(),
+					gaps.size(),
+					mean,
+					1000.0 / mean,
+					sorted[floori(sorted.size() * 0.95)],
+					gap_max,
+					slow,
+					gpu_sum / maxi(1, frames),
+					gpu_max
+				]
 			)
-			% [
-				_species, PlayerSettings.graphics_level(), gaps.size(), mean, 1000.0 / mean,
-				sorted[floori(sorted.size() * 0.95)], gap_max, slow, gpu_sum / maxi(1, frames), gpu_max
-			]
 		)
-	print("CARVE worst costs (ms): ", _rampage.cost_usec.keys().map(
-		func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(_rampage.cost_usec[k]) / 1000.0]
-	))
+	print("CARVE worst costs (ms): ", _costs(_rampage.cost_usec))
 	if _city().carve != null:
-		var cc := _city().carve.cost_usec
-		print("CARVE carve costs (ms): ", cc.keys().map(
-			func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(cc[k]) / 1000.0]
-		))
+		print("CARVE carve costs (ms): ", _costs(_city().carve.cost_usec))
 	PlayerSettings.graphics = ""
 	_rampage.queue_free()
 	await process_frame
@@ -149,7 +166,9 @@ func _tallest(sim: RampageSim) -> int:
 			best = n
 		elif b.height == sim.buildings[best].height:
 			var here := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
-			var there := Vector2(sim.buildings[best].x, sim.buildings[best].z).distance_to(sim.kaiju_pos)
+			var there := Vector2(sim.buildings[best].x, sim.buildings[best].z).distance_to(
+				sim.kaiju_pos
+			)
 			if here < there:
 				best = n
 	return best
@@ -195,19 +214,39 @@ func _city() -> CityView:
 func _report(step: int) -> void:
 	var city := _city()
 	var t := _rampage.sim.buildings[_target]
-	var line := "CARVE step %d: target alive %d/%d chunks" % [
-		step, t.frame.alive_count, t.w * t.d * t.height
-	]
+	var line := (
+		"CARVE step %d: target alive %d/%d chunks"
+		% [step, t.frame.alive_count, t.w * t.d * t.height]
+	)
 	if city.carve != null:
 		var c := city.carve
-		line += (
-			", promoted %d, carves %d, falls %d, islands %d, live %d, rubble %d (max/building %d, dropped %d)"
-			% [
-				c.promoted, c.carves, c.falls, c.physics.islands().size(), c.physics.live_bodies(),
-				c.physics.rubble_pieces(), c.physics.rubble_max(), c.physics.rubble_dropped()
-			]
-		)
+		var form := ", promoted %d, carves %d, falls %d, islands %d, live %d, rubble %d"
+		form += " (max/building %d, dropped %d)"
+		var islands := c.physics.islands().size()
+		var live := c.physics.live_bodies()
+		var rubble := [
+			c.physics.rubble_pieces(), c.physics.rubble_max(), c.physics.rubble_dropped()
+		]
+		line += form % ([c.promoted, c.carves, c.falls, islands, live] + rubble)
 	print(line)
+
+
+## "name ms" per worst cost (usec).
+func _costs(usec: Dictionary) -> Array[String]:
+	var out: Array[String] = []
+	for k: String in usec:
+		out.append("%s %.1f" % [k, Num.f(usec[k]) / 1000.0])
+	return out
+
+
+## A frame over 33 ms (--bench): what the rampage and the carving spent in it.
+func _report_slow(step: int, gap: float) -> void:
+	var c := _city().carve
+	var live := c.physics.live_bodies() if c != null else 0
+	var spent := _costs(_rampage.frame_usec)
+	if c != null:
+		spent.append_array(_costs(c.frame_usec))
+	print("CARVE slow step %d: %.1fms, live %d, spent (ms) %s" % [step, gap, live, spent])
 
 
 ## Each island's tilt from upright (degrees), height of its centre, speed, spin and state.
@@ -222,8 +261,24 @@ func _report_islands(step: int) -> void:
 				var box := mi.global_transform * mi.mesh.get_aabb()
 				low = minf(low, box.position.y)
 				high = maxf(high, box.end.y)
-		print("CARVE island step %d b%d cells %d: tilt %.0f, y %.1f (%.1f..%.1f), v %.2f, w %.2f, %s" % [
-			step, island.site.key, island.cell_count(), tilt, island.global_position.y, low, high,
-			island.linear_velocity.length(), island.angular_velocity.length(),
-			"settled" if island.settled_now else ("following" if island.following() else "free")
-		])
+		print(
+			(
+				"CARVE island step %d b%d cells %d: tilt %.0f, y %.1f (%.1f..%.1f), v %.2f, w %.2f, %s"
+				% [
+					step,
+					island.site.key,
+					island.cell_count(),
+					tilt,
+					island.global_position.y,
+					low,
+					high,
+					island.linear_velocity.length(),
+					island.angular_velocity.length(),
+					(
+						"settled"
+						if island.settled_now
+						else ("following" if island.following() else "free")
+					)
+				]
+			)
+		)
