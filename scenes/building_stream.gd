@@ -137,6 +137,11 @@ func view(n: int) -> BuildingView:
 	return _views[n]
 
 
+## Building n's party walls (BuildingView.party_walls: side -> floors a neighbour covers).
+func party(n: int) -> Dictionary:
+	return _party[n]
+
+
 ## Building n's view if it is built yet, else null (never builds it).
 func built(n: int) -> BuildingView:
 	return _views[n]

@@ -1,0 +1,200 @@
+extends SceneTree
+## Carving in the real rampage (D-094 in play): an upgraded croc titan walks to the tallest
+## tower it can break, by real key presses (W/A/S/D events through Input, never the sim's
+## step or a handler), and stomps at its base until the tower comes down; the camera is the
+## game's. Prints the carve counts (buildings promoted, carves, falls, islands, live bodies,
+## rubble) and, with --bench, frame times from the engine's own timers. Headless gives the
+## counts only.
+##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 30 \
+##     --write-movie <dir>/clip.avi --script tools/capture/capture_carve_play.gd -- --seconds=30
+##   godot --path . --resolution 1920x1080 --windowed --script tools/capture/capture_carve_play.gd \
+##     -- --bench --graphics=balanced --seconds=30
+## --carving=off runs the same input on the chunk path (data flag destruction.carving_enabled).
+
+const KEYS := {"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D}
+
+var _seconds := 30.0
+var _bench := false
+var _graphics := ""
+var _species := "reptilian"
+var _out := ""
+var _carving := ""
+var _held := {}
+var _rampage: Rampage
+var _target := -1
+
+
+func _initialize() -> void:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--seconds="):
+			_seconds = arg.substr(10).to_float()
+		elif arg == "--bench":
+			_bench = true
+		elif arg.begins_with("--graphics="):
+			_graphics = arg.substr(11)
+		elif arg.begins_with("--species="):
+			_species = arg.substr(10)
+		elif arg.begins_with("--out="):
+			_out = arg.substr(6)
+		elif arg.begins_with("--carving="):
+			_carving = arg.substr(10)
+	_run.call_deferred()
+
+
+func _run() -> void:
+	await process_frame
+	if _carving != "":
+		Content.section("destruction")["carving_enabled"] = _carving == "on"
+	if _graphics != "":
+		PlayerSettings.graphics = _graphics
+		PlayerSettings.apply_graphics(root)
+	var species := Content.species_def(_species)
+	var levels := {"claws": 4, "hide": 3, "rage": 3, "quake": 2, "evolve1": 1, "sig_power": 2}
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
+	)
+	_rampage = Rampage.new()
+	_rampage.setup(
+		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 2
+	)
+	_rampage.autoplay_signature = false
+	root.add_child(_rampage)
+	var sim := _rampage.sim
+	_target = _tallest(sim)
+	var t := sim.buildings[_target]
+	print("CARVE target building %d: %dx%dx%d tier %d at (%.1f, %.1f), kaiju tier %d" % [
+		_target, t.w, t.d, t.height, t.tier, t.x, t.z, sim.size_tier()
+	])
+	var vp := root.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	var frames := 0
+	var gpu_sum := 0.0
+	var gpu_max := 0.0
+	var gap_max := 0.0
+	var slow := 0
+	var gaps := PackedFloat32Array()
+	var last := Time.get_ticks_usec()
+	var steps := roundi(_seconds * Engine.physics_ticks_per_second)
+	var step := 0
+	var fell_at := -1
+	while step < steps and not sim.over:
+		await physics_frame
+		step += 1
+		_steer(sim, t)
+		if fell_at < 0 and _city().carve != null and _city().carve.falls > 0:
+			fell_at = step
+			print("CARVE first carved fall at step %d (%.1fs)" % [step, float(step) / Engine.physics_ticks_per_second])
+		if step % 150 == 0:
+			_report(step)
+		if _bench:
+			frames += 1
+			var gpu := RenderingServer.viewport_get_measured_render_time_gpu(vp)
+			gpu_sum += gpu
+			gpu_max = maxf(gpu_max, gpu)
+			var now := Time.get_ticks_usec()
+			var gap := (now - last) / 1000.0
+			last = now
+			if frames > 30:
+				gaps.append(gap)
+				gap_max = maxf(gap_max, gap)
+				if gap > 33.4:
+					slow += 1
+	_release_all()
+	_report(step)
+	if _bench and not gaps.is_empty():
+		var sorted := gaps.duplicate()
+		sorted.sort()
+		var mean := 0.0
+		for g: float in gaps:
+			mean += g
+		mean /= gaps.size()
+		print(
+			(
+				"CARVE bench %s graphics %s: %d frames, mean %.1fms (%.0f fps), p95 %.1fms, worst %.1fms,"
+				+ " %d over 33 ms, gpu avg %.1fms max %.1fms"
+			)
+			% [
+				_species, PlayerSettings.graphics_level(), gaps.size(), mean, 1000.0 / mean,
+				sorted[floori(sorted.size() * 0.95)], gap_max, slow, gpu_sum / maxi(1, frames), gpu_max
+			]
+		)
+	print("CARVE worst costs (ms): ", _rampage.cost_usec.keys().map(
+		func(k: Variant) -> String: return "%s %.1f" % [k, Num.f(_rampage.cost_usec[k]) / 1000.0]
+	))
+	PlayerSettings.graphics = ""
+	_rampage.queue_free()
+	await process_frame
+	await process_frame
+	quit()
+
+
+## The tallest standing tower the kaiju can break (tier at most its own), nearest first on ties.
+func _tallest(sim: RampageSim) -> int:
+	var best := -1
+	for n: int in sim.buildings.size():
+		var b := sim.buildings[n]
+		if b.landmark != "" or b.tier > sim.size_tier():
+			continue
+		if best < 0 or b.height > sim.buildings[best].height:
+			best = n
+		elif b.height == sim.buildings[best].height:
+			var here := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
+			var there := Vector2(sim.buildings[best].x, sim.buildings[best].z).distance_to(sim.kaiju_pos)
+			if here < there:
+				best = n
+	return best
+
+
+## Holds the keys toward the tower's near face while it stands; then stands still.
+func _steer(sim: RampageSim, t: RampageSim.Building) -> void:
+	var want := Vector2.ZERO
+	if t.frame.alive_count > 0:
+		var to := Vector2(t.x, t.z) - sim.kaiju_pos
+		var stop := maxf(t.w, t.d) * 0.5 + sim.stomp_radius() * 0.4
+		if to.length() > stop:
+			want = to.normalized()
+	_hold("right", want.x > 0.38)
+	_hold("left", want.x < -0.38)
+	_hold("down", want.y > 0.38)
+	_hold("up", want.y < -0.38)
+
+
+func _hold(dir: String, on: bool) -> void:
+	if _held.get(dir, false) == on:
+		return
+	_held[dir] = on
+	var event := InputEventKey.new()
+	event.keycode = KEYS[dir]
+	event.physical_keycode = KEYS[dir]
+	event.pressed = on
+	Input.parse_input_event(event)
+
+
+func _release_all() -> void:
+	for dir: String in KEYS:
+		_hold(dir, false)
+
+
+func _city() -> CityView:
+	for node: Node in _rampage.get_children():
+		if node is CityView:
+			return node
+	return null
+
+
+func _report(step: int) -> void:
+	var city := _city()
+	var t := _rampage.sim.buildings[_target]
+	var line := "CARVE step %d: target alive %d/%d chunks" % [
+		step, t.frame.alive_count, t.w * t.d * t.height
+	]
+	if city.carve != null:
+		var c := city.carve
+		line += (
+			", promoted %d, carves %d, falls %d, islands %d, live %d, rubble %d (max/building %d, dropped %d)"
+			% [
+				c.promoted, c.carves, c.falls, c.physics.islands().size(), c.physics.live_bodies(),
+				c.physics.rubble_pieces(), c.physics.rubble_max(), c.physics.rubble_dropped()
+			]
+		)
+	print(line)

@@ -572,6 +572,11 @@
 	},
 	"destruction": {
 		"res": 8,
-		"column_bay": 8
+		"column_bay": 8,
+		"carving_enabled": true,
+		"carve_lift": 0.6,
+		"prefetch_seconds": 0.25,
+		"prefetch_reach": 6.0,
+		"prefetch_tasks": 2
 	}
 }

@@ -36,6 +36,7 @@ var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
 var _cells_mat: ShaderMaterial
+var _cells_shown := false
 
 
 ## party: side (BuildingVoxels.SIDES) -> floors a neighbour covers there. The voxels and meshes are
@@ -118,18 +119,30 @@ func set_opacity(value: float) -> void:
 ## Switches this building to its fine grid (D-094): from now on it is drawn by a CellView of
 ## `grid` (its region meshes, remeshed as it is carved) and the baked chunk meshes are hidden.
 ## The same shader draws both, so fade and glow carry over. Not for a landmark (WP6).
-func promote(grid: BuildingCells) -> CellView:
+## mesher: one already made for `grid` (a worker made it in play), else made here. keep_baked:
+## the baked meshes stay up until show_cells() (in play, once the first batch is drawn, so the
+## building never blinks out while its blocks mesh).
+func promote(grid: BuildingCells, mesher: CellMesher = null, keep_baked: bool = false) -> CellView:
 	if cells_view != null:
 		return cells_view
 	var whole := Image.create(1, 1, false, Image.FORMAT_R8)
 	whole.fill(Color(1, 1, 1))
 	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
 	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
-	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
+	if mesher == null:
+		mesher = CellMesher.new(voxels, grid)
+	cells_view = CellView.new(mesher, grid.cells, _cells_mat)
 	add_child(cells_view)
+	if not keep_baked:
+		show_cells()
+	return cells_view
+
+
+## The cell view alone draws the building from now on (after promote).
+func show_cells() -> void:
+	_cells_shown = true
 	_shell.visible = false
 	_slabs.visible = false
-	return cells_view
 
 
 func _material(tex: Texture2D) -> ShaderMaterial:
@@ -172,7 +185,7 @@ func _parts(cells: Array[Vector3i]) -> Array[Dictionary]:
 
 ## Hides these chunks; returns world positions and colours to throw as debris.
 func hide_chunks(cells: Array[Vector3i]) -> Array[Dictionary]:
-	_slabs.visible = true
+	_slabs.visible = not _cells_shown
 	var out := _parts(cells)
 	for c: Vector3i in cells:
 		_put_state(c, 0.0)

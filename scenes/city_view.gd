@@ -15,6 +15,8 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
+## Carved buildings (D-094): fine grids, cell views and their physics; null when carving is off.
+var carve: CarveCity
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
@@ -49,6 +51,11 @@ func _ready() -> void:
 	add_child(fx)
 	_debris = DebrisField.new(_rng, MAX_DEBRIS)
 	add_child(_debris)
+	if CarveCity.enabled():
+		carve = CarveCity.new(sim, _stream, Seeds.make("carve", 0).seed)
+		carve.physics.fx = fx
+		carve.ignited.connect(fire)
+		add_child(carve)
 	Fire.prewarm(self)
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
@@ -149,6 +156,9 @@ func _base_color(b: RampageSim.Building) -> Color:
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
 func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
+	if carve != null and carve.chunks_broken(index, cells, kaiju_at):
+		_broken_fx(index, cells)
+		return
 	var view := _stream.view(index)
 	var parts := view.hide_chunks(cells)
 	parts.append_array(view.chip(cells, _rng))
@@ -162,6 +172,12 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 		var pos: Vector3 = part["pos"]
 		var color: Color = part["color"]
 		debris(pos, color, away)
+	_broken_fx(index, cells)
+
+
+## Dust over a real collapse, sometimes a fire, the ruin once the building is gone.
+func _broken_fx(index: int, cells: Array[Vector3i]) -> void:
+	var b := sim.buildings[index]
 	var mid := Vector3.ZERO
 	for c: Vector3i in cells:
 		mid += b.chunk_world(c)
@@ -175,6 +191,12 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 ## A section starts to fall: lift its voxels into a piece that topples or drops.
 func fall_start(event: Dictionary) -> void:
 	var index := Num.i(event["building"])
+	if carve != null and carve.fall_start(event):  # an IslandBody follows the sim's fall
+		_falling[Num.i(event["id"])] = {"carved": true}
+		var at: Vector3 = event["pivot"]
+		fx.dust(at + Vector3(0, 0.5, 0), 1.0)
+		_ruin_if_gone(index)
+		return
 	var cells: Array[Vector3i] = event["cells"]
 	var pivot: Vector3 = event["pivot"]
 	var piece := _stream.view(index).lift_piece(cells, pivot)
@@ -197,6 +219,8 @@ func fall_start(event: Dictionary) -> void:
 func _animate_falls(delta: float) -> void:
 	for id: int in _falling:
 		var f: Dictionary = _falling[id]
+		if f.has("carved"):
+			continue
 		var node: Node3D = f["node"]
 		f["t"] = Num.f(f["t"]) + delta
 		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
@@ -217,6 +241,9 @@ func fall_land(event: Dictionary) -> void:
 		return
 	var f: Dictionary = _falling[id]
 	_falling.erase(id)
+	if f.has("carved"):
+		_carved_land(event)
+		return
 	var node: Node3D = f["node"]
 	var parts: Array = node.get_meta("parts", [])
 	var landed: Array[Vector3] = []
@@ -245,6 +272,24 @@ func fall_land(event: Dictionary) -> void:
 		var b := sim.buildings[Num.i(event["building"])]
 		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
 			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH)
+
+
+## A carved part landed (sim time): its island lies where physics put it, so only the dust and
+## the crushed street follow the sim; the rubble is the island's own pieces.
+func _carved_land(event: Dictionary) -> void:
+	var b := sim.buildings[Num.i(event["building"])]
+	if str(event["kind"]) == "topple":
+		var from: Vector2 = event["from"]
+		var to: Vector2 = event["to"]
+		var width := Num.f(event["width"])
+		var a := Vector3(from.x, 0, from.y)
+		var c := Vector3(to.x, 0, to.y)
+		fx.dust_line(a, c, width)
+		var steps := maxi(1, ceili(a.distance_to(c) / 1.5))
+		for i: int in steps + 1:
+			crush(a.lerp(c, float(i) / steps), width * 0.6)
+	elif street != null:
+		street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH)
 
 
 ## A rubble pile where a tower came down across the street, built on a worker thread (a tall
@@ -293,7 +338,8 @@ func _ruin_if_gone(index: int) -> void:
 		var heap_top := 2.4 + 0.9 * b.tier  # flames sit on top of the rubble heap
 		fire(Vector3(b.x, heap_top, b.z), size)
 		fire(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
-		_add_ruin(index)
+		if carve == null or not carve.carving(index):  # a carved one lies as its own rubble
+			_add_ruin(index)
 
 
 func debris(pos: Vector3, color: Color, away: Vector3) -> void:
