@@ -7,6 +7,10 @@ extends Node3D
 ## turn is built on the spot, so a blow never lands on a stand-in. Small cities fit the budget
 ## and load exactly as before. Presentation only.
 
+## true: _ready starts meshing the nearest buildings on workers and returns at once; the owner
+## polls initial_done() and calls finish_initial() (a loading screen keeps drawing meanwhile).
+var defer_initial := false
+
 var _sim: RampageSim
 var _colors: Array[Color]
 var _party: Array[Dictionary]
@@ -20,6 +24,11 @@ var _rest: Array[int] = []
 var _task := -1
 var _stand_ins: MultiMesh
 var _slot := {}  # building index -> stand-in instance
+var _now: Array[int] = []
+var _pre: Array[BuildingView] = []
+var _initial := -1  # the initial group task while it is out, else -1
+## Set on leaving the tree: workers still queued skip their building (quitting never waits on them).
+var _stop := false
 
 
 func _init(p_sim: RampageSim, colors: Array[Color]) -> void:
@@ -48,13 +57,35 @@ func _ready() -> void:
 			chunks += b.w * b.d * b.height
 		else:
 			_rest.append(n)
-	var task := WorkerThreadPool.add_group_task(
-		func(k: int) -> void: _views[now[k]] = _make(now[k]), now.size()
-	)
-	WorkerThreadPool.wait_for_group_task_completion(task)
+	_now = now
+	_pre.resize(now.size())
 	for n: int in now:
+		_state[n] = 1  # claimed: view(n) waits for it rather than meshing it a second time
+	_initial = WorkerThreadPool.add_group_task(
+		func(k: int) -> void: _pre[k] = _make(_now[k]), now.size()
+	)
+	if not defer_initial:
+		finish_initial()
+
+
+## Whether the nearest buildings are meshed (finish_initial will not wait).
+func initial_done() -> bool:
+	return _initial < 0 or WorkerThreadPool.is_group_task_completed(_initial)
+
+
+## Takes the nearest buildings into the tree, then starts streaming the rest. Waits for the
+## workers if they are not done; a no-op once it has run.
+func finish_initial() -> void:
+	if _initial < 0:
+		return
+	WorkerThreadPool.wait_for_group_task_completion(_initial)
+	_initial = -1
+	for k: int in _now.size():
+		var n := _now[k]
 		_state[n] = 2
-		add_child(_views[n])
+		_views[n] = _pre[k]
+		add_child(_pre[k])
+	_pre.clear()
 	if not _rest.is_empty():
 		_build_stand_ins()
 		_task = WorkerThreadPool.add_group_task(_stream_one, _rest.size())
@@ -71,6 +102,8 @@ func _dist(n: int, from: Vector2) -> float:
 
 ## Worker thread: mesh the k-th building of the rest, unless the main thread took it first.
 func _stream_one(k: int) -> void:
+	if _stop:
+		return
 	var n := _rest[k]
 	_mutex.lock()
 	var mine := _state[n] == 0
@@ -114,6 +147,9 @@ func _take_ready() -> Array[Array]:
 func view(n: int) -> BuildingView:
 	if _views[n] != null:
 		return _views[n]
+	finish_initial()  # n may be one of the nearest buildings, still on its worker
+	if _views[n] != null:
+		return _views[n]
 	_mutex.lock()
 	var waiting := _state[n] == 0
 	if waiting:
@@ -144,7 +180,7 @@ func built(n: int) -> BuildingView:
 
 ## Whether every building's mesh is in (captures wait on it).
 func complete() -> bool:
-	return _task < 0
+	return _task < 0 and _initial < 0
 
 
 ## How many buildings were meshed before the rampage started.
@@ -190,6 +226,14 @@ func _build_stand_ins() -> void:
 
 
 func _exit_tree() -> void:
+	_stop = true
+	if _initial >= 0:
+		WorkerThreadPool.wait_for_group_task_completion(_initial)
+		_initial = -1
+		for pending: BuildingView in _pre:
+			if pending != null:
+				pending.free()  # meshed, never entered the tree
+		_pre.clear()
 	if _task >= 0:
 		WorkerThreadPool.wait_for_group_task_completion(_task)
 		_task = -1
