@@ -9,3 +9,4 @@
 ## Open
 - Capture "breaks" now count break steps (130/821), not whole breaks.
 - Black px: swipe lum<45 up to 1021 -> 0, darkest gouge px 73. Slab undersides now mid-grey.
+- Capture blow sphere (test overlay) now off by default; --markers opts in. Re-captured clean: see run ids in pr_body_wp5.md / below.

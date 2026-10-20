@@ -1,12 +1,12 @@
 extends SceneTree
 ## WP5 proof (D-094): the carving physics view (CarvePhysics) driven by WP1's sim grid
-## (VoxelFrame, the spike's office block from tests/lib/destruction_paths.gd). The orange sphere
+## (VoxelFrame, the spike's office block from tests/lib/destruction_paths.gd). With --markers the orange sphere
 ## is the blow. Saves a still every 0.5 s, a still plus a 2x crop at each island release and at its
 ## first breaks, and prints body counts, frame cost and a through-the-ground check.
 ##   --scene=tower   a base cut in two passes: the tower topples, follows the sim ~1 s, breaks up
 ##   --scene=swipe   two swipes across a facade: carved-cell debris, nothing falls
 ##   --scene=block   six towers cut at the base at once (drops and topples), the city-wide cap
-##   --seconds=N  --out=<dir>
+##   --seconds=N  --out=<dir>  --markers (show the blow sphere; off by default)
 ## CI: tools/capture/ci_capture.sh --movie capture_carve_physics.gd -- --scene=tower --out=<dir>
 @warning_ignore_start("integer_division")
 
@@ -21,6 +21,7 @@ const SUNK := 0.03  # a piece reaching this far below the road counts as sunk in
 var _scene := "tower"
 var _out := "user://carve_physics"
 var _seconds := 0.0
+var _markers := false  # --markers: show the blow sphere (a test overlay, off by default)
 var _phys: CarvePhysics
 var _grids: Array[VoxelFrame] = []
 var _views: Array[VIEW_STUB] = []
@@ -44,6 +45,8 @@ func _initialize() -> void:
 			_scene = arg.substr(8)
 		elif arg.begins_with("--out="):
 			_out = arg.substr(6)
+		elif arg == "--markers":
+			_markers = true
 		elif arg.begins_with("--seconds="):
 			_seconds = arg.substr(10).to_float()
 	if _seconds <= 0.0:
@@ -147,7 +150,7 @@ func _on_frame() -> void:
 func _blow(n: int, b: Dictionary, t: float) -> void:
 	var sphere := _spheres[n]
 	var at: Variant = _path(b, t) if t >= 0.0 else null
-	sphere.visible = at != null
+	sphere.visible = _markers and at != null
 	if at == null:
 		return
 	var centre: Vector3 = at
