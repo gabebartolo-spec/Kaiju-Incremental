@@ -162,4 +162,4 @@ species follow the croc, and their verbs (research 02) · H: spend on music stem
 legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
-b2-18); the croc's silhouette gets the same check at the species silhouette gate before release.
+b2-18). Shape closed (director 2026-10-21): "ours is like a crocodile in a t-rex body, not godzilla shaped".
