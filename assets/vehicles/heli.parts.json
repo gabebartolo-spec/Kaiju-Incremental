@@ -1,36 +1,36 @@
 {
- "height": 23,
+ "height": 46,
  "parts": {
   "body": {
    "kvox": "heli_body.kvox",
    "pivot": [
     -0.5,
     0.0,
-    -2.755
+    -5.113
    ]
   },
   "main_rotor": {
    "kvox": "heli_main_rotor.kvox",
    "pivot": [
     -0.5,
-    17.587,
-    -4.213
+    35.973,
+    -8.094
    ]
   },
   "tail_rotor": {
    "kvox": "heli_tail_rotor.kvox",
    "pivot": [
-    -2.055,
-    16.761,
-    37.326
+    -3.68,
+    34.284,
+    76.871
    ]
   },
   "gun": {
    "kvox": "heli_gun.kvox",
    "pivot": [
     -0.5,
-    4.178,
-    -35.694
+    8.546,
+    -72.488
    ]
   }
  }
