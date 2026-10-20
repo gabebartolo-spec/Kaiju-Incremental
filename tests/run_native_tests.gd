@@ -35,11 +35,20 @@ func _check_loaded() -> void:
 	if _available:
 		check(true, "the KaijuCarve class is registered by the extension")
 	elif OS.get_environment("KAIJU_NATIVE_REQUIRED") == "1":
-		check(false, "native library is required here (KAIJU_NATIVE_REQUIRED=1) "
-				+ "but KaijuCarve is not registered")
+		check(
+			false,
+			(
+				"native library is required here (KAIJU_NATIVE_REQUIRED=1) "
+				+ "but KaijuCarve is not registered"
+			)
+		)
 	else:
-		print("SKIP: KaijuCarve is not registered; build native/ (see native/SConstruct) "
-				+ "to run the native checks")
+		print(
+			(
+				"SKIP: KaijuCarve is not registered; build native/ (see native/SConstruct) "
+				+ "to run the native checks"
+			)
+		)
 		check(true, "native library not built: skipped on purpose")
 
 
@@ -105,6 +114,7 @@ func _check_replay() -> void:
 
 # ---- fixture and oracle -------------------------------------------------------------------
 
+
 func _dims() -> Vector3i:
 	return Vector3i(UNITS.x * RES, UNITS.y * RES, UNITS.z * RES)
 
@@ -147,7 +157,10 @@ func _oracle_carve(cells: PackedByteArray, c: Vector3, r: float) -> int:
 		for z: int in range(maxi(0, int(floorf(c.z - r))), mini(d.z, int(ceilf(c.z + r)) + 1)):
 			for x: int in range(maxi(0, int(floorf(c.x - r))), mini(d.x, int(ceilf(c.x + r)) + 1)):
 				var i := x + z * d.x + y * d.x * d.z
-				if cells[i] != EMPTY and Vector3(x + 0.5, y + 0.5, z + 0.5).distance_squared_to(c) <= r2:
+				if (
+					cells[i] != EMPTY
+					and Vector3(x + 0.5, y + 0.5, z + 0.5).distance_squared_to(c) <= r2
+				):
 					cells[i] = EMPTY
 					removed += 1
 	return removed
@@ -170,9 +183,12 @@ func _oracle_flood(cells: PackedByteArray) -> int:
 		var z := (i / d.x) % d.z
 		var y := i / plan
 		for n: int in [
-			i - 1 if x > 0 else -1, i + 1 if x < d.x - 1 else -1,
-			i - d.x if z > 0 else -1, i + d.x if z < d.z - 1 else -1,
-			i - plan if y > 0 else -1, i + plan if y < d.y - 1 else -1
+			i - 1 if x > 0 else -1,
+			i + 1 if x < d.x - 1 else -1,
+			i - d.x if z > 0 else -1,
+			i + d.x if z < d.z - 1 else -1,
+			i - plan if y > 0 else -1,
+			i + plan if y < d.y - 1 else -1
 		]:
 			if n >= 0 and seen[n] == 0 and cells[n] != EMPTY:
 				seen[n] = 1
