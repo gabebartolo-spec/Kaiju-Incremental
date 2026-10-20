@@ -11,7 +11,7 @@
 ## carve-wp4 DONE claude/carve-wp4 8be4cfc (code a4fe572 tests 39343371928 GREEN); captures docs/captures/2026-10-20-carve-view/ (a_baked, b_promoted, c_carve1-4; lead 2x not done); body pr_body_wp4.md in worktree. PR after #99/#98 merge; lead 2x + motion critic on stills.
 ## ASK DIRECTOR (tabled, he was AFK): carved-hole floor slab colour, board docs/captures/2026-10-20-carve/slab_A_vs_B.png: A 2b2d30 today (holes read dark) vs B 8a8780 concrete (floors read as floors; also lightens today's broken baked buildings). Recommend B. carve-wp4 keeps A, one palette line to swap.
 ## #50 r7: proof bug was the overlay (1920x1080 coords on 1280x720 stills); hulls 0.0 deg, no snap. Hull-edge standoff fixed (7.8 m min). Lead call A: a cornered tank with no road out holds and fires, reported as its own check.
-## #89 lead call (D-099): align before merge (override removed), NOT merge-then-replace: the demo exe must not ship a rule he overruled.
+## #89 D-099 ALIGNED: code 677718e (head a7d0834 handoff-only), tests 39342572775 + lint GREEN; topples follow the cut dir (58/58; 40 toward kaiju, 2 away; gutted drops go toward the chewing kaiju). Clip 39341631409: lead scratchpad cap/capture-39341631409-0/clip.mp4 (unwatched). Young pacing not rerun.
 ##  Then: lead 2x on the new tower capture, fresh motion critic, merge full sha -> #88 (4f45ca2) resync/merge -> #90 -> young-retune PR.
 ## #50: tests 39304886469 GREEN at 1eed939; r6 builder finished (no respawn needed). Next: critic-50 verdict + lead 2x crops -> merge full sha.
 ## retune-a DONE claude/young-retune 67e0b1a (e1 0.24 h, young defeats 5.4/12; body pr_body_retune.md in its worktree): PR after #89/#90 merge.
