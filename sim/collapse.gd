@@ -98,11 +98,9 @@ func _land(f: RampageSim.Fall) -> void:
 	sim.pay(b, f.cells.size(), bonus)
 	var impact := Num.f(sim.city["impact_damage"])
 	var event := {"type": "fall_land", "id": f.id, "kind": f.kind, "building": f.building}
-	if f.cells.is_empty():  # a carved scrap (less than a chunk's worth): it lands, no more
-		sim.events.append(event)
-		return
-	if f.kind == "topple":
-		tallest_topple = maxi(tallest_topple, roundi(f.height))
+	# A carved scrap (less than a chunk's worth, "scrap"): it lands, and smashes nothing.
+	var scrap := f.cells.is_empty()
+	event["scrap"] = scrap
 	if f.kind == "topple":
 		var start := Vector2(f.pivot.x, f.pivot.z)
 		var finish := start + f.dir * f.height
@@ -113,9 +111,13 @@ func _land(f: RampageSim.Fall) -> void:
 		event["to"] = finish
 		event["width"] = half_width * 2.0
 		sim.events.append(event)
-		_crush_strip(start, finish, half_width, f.building)
+		if not scrap:
+			tallest_topple = maxi(tallest_topple, roundi(f.height))
+			_crush_strip(start, finish, half_width, f.building)
 	else:
 		sim.events.append(event)
+		if scrap:
+			return
 		var hit: Array[Vector3i] = []
 		for c: Vector3i in f.cells:
 			var below := b.frame.top_below(c.x, c.z, c.y)
