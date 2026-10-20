@@ -14,7 +14,7 @@ claude/carve-wp6 = merges of origin/claude/look-options and origin/claude/carve-
 - rebase() after promotion so settled chunk losses are not new arc loss.
 ## Resync notes
 - BuildingCells keeps WP3's clear_chunk override; CellGrid's generic one serves landmarks. materials.json: WP3's fixture flag on all, ids 27-30 added (fixture false).
-- OPEN for lead: landmark grids fail the fixture rule (157 / 56 islands); pinned in _check_no_islands, not zero.
+- Islands closed in the bake (lead call): bake.py --connect added 154 / 57 cells; _check_no_islands asserts 0; pins re-taken.
 ## Evidence
 landmarkcells, cells, smoke, city green locally; gdlint/gdformat clean; mutation fail-first in pr_body_wp6.md.
 ## Open

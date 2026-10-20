@@ -8,11 +8,11 @@ extends "res://tests/lib/runner.gd"
 
 ## Per landmark: [cells, digest] (first 16 hex digits of the grid's SHA-256 with its dims).
 const PINNED := {
-	"stadium": [95339, "d7099c00ff2a5af3"],
-	"wheel": [61520, "227fb6cc6308ca8f"],
+	"stadium": [95493, "94482793d0eef362"],
+	"wheel": [61577, "84994f8dff691b8c"],
 }
 ## Stadium material counts [wall, seat, pitch, other].
-const PINNED_CLASSES: Array = [61381, 24060, 7863, 2035]
+const PINNED_CLASSES: Array = [61528, 24066, 7864, 2035]
 ## The stadium section a foot hit brings down: [cells, digest of its cells].
 const PINNED_SECTION: Array = [1820, "2a1f5d63b106c629"]
 const FORBIDDEN: Array[String] = [
@@ -174,14 +174,10 @@ func _check_pinned() -> void:
 	)
 
 
-## The fixture rule (0 islands before any carve, as for buildings) is NOT met by the baked models
-## under VoxelSupport's real rule: parts of both touch the rest only along an edge or a corner
-## (diagonal voxel steps), so the 6-neighbour flood cuts them off. Pinned here as the known gap
-## [islands, cells cut off]; a change in either number fails. WP7 must close it (bake or rule)
-## before a landmark is carved: a carve would drop these parts on the first hit.
-const ISLANDS_PINNED := {"stadium": [157, 49443], "wheel": [56, 53348]}
-
-
+## The fixture rule: before any carve a landmark is one part joined to the ground under
+## VoxelSupport's real rule. The raw shell was not (stadium 157 loose parts / 49,443 cells, wheel
+## 56 / 53,348, joined only by an edge or corner); `bake.py --connect` adds the missing cells to
+## the baked file, which the view and the sim both read.
 func _check_no_islands() -> void:
 	for id: String in ["stadium", "wheel"]:
 		var g := LandmarkCells.new(_landmark(id))
@@ -193,10 +189,9 @@ func _check_no_islands() -> void:
 			for part: PackedInt32Array in VoxelSupport.new(frame).islands():
 				parts += 1
 				cut += part.size()
-		var want: Array = ISLANDS_PINNED[id]
 		check(
-			adopted and [parts, cut] == want,
-			"%s islands before any carve: %d parts, %d cells (pinned %s)" % [id, parts, cut, want]
+			adopted and parts == 0 and cut == 0,
+			"%s has no island before any carve (%d parts, %d cells cut off)" % [id, parts, cut]
 		)
 
 
