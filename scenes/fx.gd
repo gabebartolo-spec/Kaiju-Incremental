@@ -190,7 +190,10 @@ func shockwave(at: Vector3, radius: float, tail := false) -> void:
 	add_child(quad)
 	var tween := quad.create_tween()
 	tween.tween_method(
-		func(v: float) -> void: mat.set_shader_parameter("progress", v), 0.0, 1.0, Num.f(cfg["seconds"])
+		func(v: float) -> void: mat.set_shader_parameter("progress", v),
+		0.0,
+		1.0,
+		Num.f(cfg["seconds"])
 	)
 	tween.tween_callback(quad.queue_free)
 
