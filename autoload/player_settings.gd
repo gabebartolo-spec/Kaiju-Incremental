@@ -124,15 +124,15 @@ static func _large() -> bool:
 	return DisplayServer.screen_get_size().y >= tall
 
 
-## Puts the graphics level on a viewport's 3D render (msaa is Godot's Viewport.MSAA value: 2 = 4x,
-## the project's setting) (Settings does it each frame it changes).
+## The row of tuning "display" graphics in use.
+static func graphics_row() -> Dictionary:
+	return Content.section("display")["graphics"][graphics_level()]
+
+
+## Puts the graphics level on a viewport's 3D render, the shadows and the city's sun and
+## environment (GraphicsPresets) (Settings does it each frame it changes).
 static func apply_graphics(view: Viewport) -> void:
-	var level: Dictionary = Content.section("display")["graphics"][graphics_level()]
-	view.scaling_3d_scale = Num.f(level["scale"])
-	view.scaling_3d_mode = (
-		Viewport.SCALING_3D_MODE_FSR if level["fsr"] == true else Viewport.SCALING_3D_MODE_BILINEAR
-	)
-	view.msaa_3d = Num.i(level["msaa"]) as Viewport.MSAA
+	GraphicsPresets.apply(graphics_row(), view)
 
 
 ## The frame cap right now: the player's in an unpaused rampage, never above tuning menu_fps in
@@ -245,4 +245,7 @@ static func load_saved(start_full: bool) -> void:
 	var current := Num.i(cfg.get_value("display", "version", 1)) >= DISPLAY_VERSION
 	fps_cap = saved_cap if current and _caps().has(saved_cap) else -1
 	var saved := str(cfg.get_value("display", "graphics", graphics))
+	# A level renamed since (tuning "display" graphics_renamed: balanced is now medium).
+	var renamed: Dictionary = Content.section("display")["graphics_renamed"]
+	saved = str(renamed.get(saved, saved))
 	graphics = saved if _levels().has(saved) else ""

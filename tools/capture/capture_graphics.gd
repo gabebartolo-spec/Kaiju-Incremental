@@ -1,14 +1,18 @@
 extends SceneTree
-## Graphics High vs Balanced (PR #92) on the same paused frame of a young rampage: high.png,
-## balanced.png, and 2x crops of the kaiju (kaiju_*.png) and of a stretch of buildings
-## (edge_*.png). Run at 3840x2160 on CI:
+## Every graphics preset (tuning "display" graphics, GraphicsPresets) on the same paused frame of
+## a young rampage (reptilian, city seed 0, PLAY_FRAMES physics ticks): <level>.png, 2x crops of
+## the kaiju (kaiju_*.png) and of a stretch of buildings (edge_*.png), and one GRAPHICS line per
+## level with the GPU render time averaged over TIME_FRAMES frames. "balanced_old" is Medium with
+## MSAA off (the Balanced row before the presets), for the 4K default's cost check. Run locally:
 ##
-##   tools/capture/ci_capture.sh --renderer=gl_compatibility --resolution=3840x2160 \
-##     capture_graphics.gd -- --out=<dir>
+##   godot --fixed-fps 60 --resolution 1920x1080 --script capture_graphics.gd -- --out=<dir>
+## or on CI: tools/capture/ci_capture.sh --resolution=3840x2160 capture_graphics.gd -- --out=<dir>
 
 const PLAY_FRAMES := 300  # autoplay before the shot: the kaiju is into the city
 const CROP := Vector2i(480, 270)  # crop size at 4K, shown at 2x
 const EDGE_AT := Vector2(0.3, 0.3)  # the building crop's centre, as a fraction of the frame
+const SETTLE_FRAMES := 20  # frames after a level change before the shot
+const TIME_FRAMES := 120  # frames the GPU time is averaged over
 
 var _out := "user://graphics"
 
@@ -40,10 +44,28 @@ func _run() -> void:
 	var at := Vector3.ZERO
 	if not kaiju.is_empty():
 		at = (kaiju[0] as Node3D).global_position
-	for level: String in ["high", "balanced"]:
-		PlayerSettings.graphics = level
-		for _i: int in 20:
+	var levels: Array[String] = []
+	for level: Variant in Content.section("display")["graphics"].keys():
+		levels.append(str(level))
+		if level == "medium":
+			levels.append("balanced_old")
+	var rid := root.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(rid, true)
+	for level: String in levels:
+		PlayerSettings.graphics = "medium" if level == "balanced_old" else level
+		for _i: int in SETTLE_FRAMES:
 			await process_frame
+		if level == "balanced_old":
+			root.msaa_3d = Viewport.MSAA_DISABLED
+			for _i: int in SETTLE_FRAMES:
+				await process_frame
+		var total := 0.0
+		for _i: int in TIME_FRAMES:
+			await process_frame
+			total += RenderingServer.viewport_get_measured_render_time_gpu(rid)
+		print(
+			"GRAPHICS %s gpu %.2f ms avg over %d frames" % [level, total / TIME_FRAMES, TIME_FRAMES]
+		)
 		var shot := root.get_texture().get_image()
 		shot.save_png(_out.path_join(level + ".png"))
 		var size := Vector2(shot.get_size())
