@@ -532,6 +532,7 @@
 	},
 	"destruction": {
 		"res": 8,
-		"arc_shed_cells": 32
+		"arc_shed_cells": 32,
+		"column_bay": 8
 	}
 }

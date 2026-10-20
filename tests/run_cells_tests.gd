@@ -7,6 +7,8 @@ extends "res://tests/lib/runner.gd"
 ## sample is CityGrowth's layout from Seeds "city" 0.
 ##   godot --headless --path . --script tests/run_cells_tests.gd
 
+const CellsSupport := preload("res://tests/lib/cells_support.gd")
+
 ## Each fixture: [name, x, z, w, d, floors, tier, style, party].
 const FIXTURES: Array = [
 	["office", 10.5, 4.5, 3, 3, 6, 2, 0, {}],
@@ -19,16 +21,20 @@ const FIXTURES: Array = [
 ]
 ## Per fixture: [cells, digest] (first 16 hex digits of the grid's SHA-256 with its dims).
 const PINNED := {
-	"office": [9221, "23a055b32649134a"],
-	"brick": [6668, "05d4554a822deeb3"],
-	"glass": [24805, "430bec1e4d68d246"],
+	"office": [9227, "494795997a4e992a"],
+	"brick": [6674, "ac8dcb1ff799745a"],
+	"glass": [27213, "2ea7122061040817"],
 	"stone": [13385, "04da84b429e548bc"],
-	"party": [6271, "d0974705caa4b425"],
+	"party": [6277, "6217a45fdf6352a2"],
 	"tiny": [776, "8c0f4755ac5a6536"],
 	"sign": [10911, "1c39938e3ebe6249"],
 }
 ## City buildings compared with the view cell for cell.
 const CITY_SAMPLE := 40
+## Materials that hang on by an edge or a corner (data/materials.json "fixture").
+const FIXTURES_EXPECTED: Array[String] = [
+	"window", "mullion", "glass", "shop", "sign_frame", "neon0", "neon1", "neon2", "neon3"
+]
 ## Text that must not appear in the module (comments stripped): RNG, clock, engine, view.
 const FORBIDDEN: Array[String] = [
 	"randi(",
@@ -62,6 +68,19 @@ func run_checks() -> void:
 	await _t("_check_city_matches_view")
 	await _t("_check_no_clock_or_rng")
 	await _t("_check_promotion_lazy")
+	await _h("CellsSupport", func() -> void: CellsSupport.new(check, FIXTURES, _building).run())
+	await _t("_check_lit_is_a_look")
+
+
+## The view with no window lit: every voxel carries its material's palette key.
+class UnlitVoxels:
+	extends BuildingVoxels
+
+	func _lit_or(key: String, _side: Vector2i, _p: int, _y: int) -> String:
+		return key
+
+	func _lit_cell(_p: int, _y: int) -> bool:
+		return false
 
 
 func _building(f: Array) -> RampageSim.Building:
@@ -90,32 +109,36 @@ func _digest(g: BuildingCells) -> String:
 	return ctx.finish().hex_encode().substr(0, 16)
 
 
-## The materials a view cell may be in the sim: the view's lit window is a look, not a
-## material (a lit window lights its mullions too; a lit curtain panel is glass).
-func _expected(key: String, cell: Vector3i, g: BuildingCells, ids: Dictionary) -> Array[int]:
-	var keys: Array[String] = [key]
-	if key == "shop_lit":
-		keys = ["shop"]
-	elif key == "lit" and g.archetype() == BuildingCells.GLASS and cell.y >= g.res:
-		keys = ["glass"]
-	elif key == "lit":
-		keys = ["window", "mullion"]
-	var out: Array[int] = []
-	for k: String in keys:
-		out.append(Num.i(ids.get(k, -1)))
-	return out
-
-
-## Mismatched cells between the view's voxels and the sim grid (0 = the same grid).
+## Mismatched cells between the unlit view's voxels and the sim grid (0 = the same grid): each
+## view voxel's palette key is exactly its sim cell's material name.
 func _mismatches(b: RampageSim.Building, party: Dictionary) -> int:
 	var g := BuildingCells.new(b, party)
-	var vox := BuildingVoxels.new(b, Color.GRAY, party)
+	var vox := UnlitVoxels.new(b, Color.GRAY, party)
 	var ids := BuildingCells.material_ids()
 	var bad := absi(g.count() - vox.vox.cells.size())
 	for cell: Vector3i in vox.vox.cells:
-		if not g.at(cell) in _expected(str(vox.vox.cells[cell]), cell, g, ids):
+		if g.at(cell) != Num.i(ids.get(str(vox.vox.cells[cell]), -1)):
 			bad += 1
 	return bad
+
+
+## [cells where the lit view is not the unlit one, of them not a lit pane over a window,
+## mullion, glass or shop cell]; the two views must hold the same cells.
+func _lit_changes(b: RampageSim.Building, party: Dictionary) -> Array[int]:
+	var lit := BuildingVoxels.new(b, Color.GRAY, party).vox.cells
+	var unlit := UnlitVoxels.new(b, Color.GRAY, party).vox.cells
+	var changed := 0
+	var bad := absi(lit.size() - unlit.size())
+	for cell: Vector3i in unlit:
+		var was := str(unlit[cell])
+		var now := str(lit.get(cell, ""))
+		if now == was:
+			continue
+		changed += 1
+		var pane := now == "lit" and was in ["window", "mullion", "glass"]
+		if not pane and not (now == "shop_lit" and was == "shop"):
+			bad += 1
+	return [changed, bad]
 
 
 ## The structural chunk (one sim unit, one floor) a building-local cell is in.
@@ -157,17 +180,22 @@ func _check_materials_table() -> void:
 		var mname: Variant = m.get("name")
 		var strength: Variant = m.get("strength")
 		var debris: Variant = m.get("debris")
+		var fixture: Variant = m.get("fixture")
 		ok = ok and (id is float or id is int) and Num.i(id) >= 1 and Num.i(id) <= 255
 		ok = ok and mname is String and str(mname) != ""
 		ok = ok and (palette.has(str(mname)) or str(mname).begins_with("landmark_"))
 		ok = ok and (strength is float or strength is int) and Num.f(strength) > 0.0
 		ok = ok and debris is String and palette.has(str(debris))
+		ok = ok and fixture is bool and fixture == (str(mname) in FIXTURES_EXPECTED)
 		ok = ok and not ids.has(Num.i(id)) and not names.has(str(mname))
 		ids[Num.i(id)] = true
 		names[str(mname)] = true
 	check(
 		ok,
-		"every material has a unique id 1..255, a unique palette name, strength > 0, a palette debris key"
+		(
+			"every material has a unique id 1..255, a unique palette name, strength > 0, a palette"
+			+ " debris key, a fixture flag (true for %s only)" % [FIXTURES_EXPECTED]
+		)
 	)
 	var used := {}
 	for f: Array in FIXTURES:
@@ -319,10 +347,11 @@ func _check_promotion_lazy() -> void:
 	var whole := BuildingCells.new(_building(FIXTURES[0]), {})
 	var lost := Vector3i(0, 2, 0)
 	var in_chunk := 0
-	for y: int in range(lost.y * whole.res, (lost.y + 1) * whole.res):
-		for z: int in whole.res:
-			for x: int in whole.res:
-				in_chunk += 1 if whole.at(Vector3i(x, y, z)) != 0 else 0
+	var plan := whole.dims.x * whole.dims.z
+	for i: int in whole.cells.size():
+		var c := Vector3i(i % whole.dims.x, i / plan, (i / whole.dims.x) % whole.dims.z)
+		var mine := CellsSupport.clamped_chunk(c + whole.offset, b, whole.res) == lost
+		in_chunk += 1 if mine and whole.cells[i] != 0 else 0
 	b.frame.remove(lost)
 	var g := p.on_hit(0, b)
 	check(p.promoted(0) and g != null and p.grid(0) == g, "the first hit makes the grid")
@@ -336,4 +365,19 @@ func _check_promotion_lazy() -> void:
 	check(
 		p.on_hit(1, mark) is LandmarkCells and p.promoted(1),
 		"a landmark gets its LandmarkCells (see run_landmarkcells_tests.gd)"
+	)
+
+
+## A lit window is a look: the lit view holds the same cells as the unlit one and differs only
+## where a window, mullion, curtain panel or shop pane is lit.
+func _check_lit_is_a_look() -> void:
+	var changed := 0
+	var bad := 0
+	for f: Array in FIXTURES:
+		var got := _lit_changes(_building(f), _party(f))
+		changed += got[0]
+		bad += got[1]
+	check(
+		changed > 0 and bad == 0,
+		"the lit view only lights panes (%d lit cells, %d other changes)" % [changed, bad]
 	)
