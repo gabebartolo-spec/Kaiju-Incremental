@@ -82,7 +82,8 @@ Gate: build 4.
 
 **D. Kaiju body and combat feel.**
 Turning with weight: lumbering and unstoppable yet responsive, the head turns toward the new heading before the body follows, no sliding pivot (comments #16, 2026-10-20) · b2-1 claw and arm animation reads as a swipe, no twitching · b2-2 tail as an autonomous extra limb · b2-9 tanks
-shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 atomic breath VFX pass · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
+shoved and flung into buildings, people and vehicles (uses C's physics) · b2-18 breath VFX pass, re-themed from atomic to hot lightning: forked white-hot bolts, scorch and sparks, the name
+and every "atomic" word in player text changed in the copy pass (director 2026-10-21; sim rules unchanged) · run intro: a <=3 s shot, close on the water that ripples and fountains, the kaiju bursts out roaring, the camera pulls out to the play angle (#11) · water that reacts to the kaiju with physics (#12) · #104
 follow-ups (ring under the foot renders; leap slam clip) · river splash colour (lost in the #88 resync) · rooftop
 hits on legs and tail (#86) · more motion in the shoulders and head while it walks (comments 2026-10-21 #4) · the
 walk is "not great" and the turn should step "rather than swivelling on the spot like a plastic toy" (2026-10-21 #3).
@@ -159,5 +160,6 @@ D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) 
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
 species follow the croc, and their verbs (research 02) · H: spend on music stems, and Tripo octopod rigs (R 3.5, 8.7) ·
 legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath
-beam (Toho enforces the Godzilla look); the croc line has an upright reptile with atomic breath, so he reviews the
-croc against that before release (research 02 finding 9; not legal advice).
+beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
+2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
+b2-18); the croc's silhouette gets the same check at the species silhouette gate before release.

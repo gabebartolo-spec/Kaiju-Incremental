@@ -10,3 +10,4 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 4 | "kaiju needs more motion in the shoulders and head while it walks" | turn-weight builder next, claude/walk-motion (with walk cadence, footfall impact, step-turns; joins comments #16) | queued |
 | 5 | "i quite liked all its suggestions. read the entire document again and incorporate the best findings into our roadmap" | lead; docs/ROADMAP.md Post-demo plan ("R n.m" refs), research copied to docs/research/2026-10-21/ | done |
 | 6 | "add to roadmap: graphics settings potato - low - medium-high-max" | Phase G (built from the 4K performance audit) | roadmap |
+| 7 | "we could have our croc shoot hot lightning instead of atomic theme" (after the research flagged the upright-reptile + breath-beam look) | Phase D b2-18 breath VFX pass + copy pass | roadmap |
