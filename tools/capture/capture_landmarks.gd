@@ -82,6 +82,8 @@ func _stage(tier: int) -> void:
 		cam.position = centre + GAME_CAMERA.normalized() * reach
 		cam.look_at(centre)
 		await _frames(SETTLE)
+		while not _city._stream.complete():  # a far landmark stands as a box until it streams in
+			await process_frame
 		_shot("%s_standing" % b.landmark)
 		var before := b.frame.alive_count
 		await _break(n, kaiju)

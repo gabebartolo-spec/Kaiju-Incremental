@@ -3,7 +3,8 @@ extends Node3D
 ## The city's buildings (BuildingView), built so a big city loads fast (D-039): before the
 ## rampage starts only the buildings nearest the kaiju are meshed, up to city.load_chunks
 ## structural chunks; the rest stand as plain facade boxes while worker threads mesh them,
-## nearest first, and each swaps in as it is ready. A building the rampage touches before its
+## landmarks first (a stadium never stands as a box: lead 9, 2026-10-21), then nearest first,
+## and each swaps in as it is ready. A building the rampage touches before its
 ## turn is built on the spot, so a blow never lands on a stand-in. Small cities fit the budget
 ## and load exactly as before. Presentation only.
 
@@ -48,6 +49,7 @@ func _ready() -> void:
 			chunks += b.w * b.d * b.height
 		else:
 			_rest.append(n)
+	_landmarks_first(_rest)
 	var task := WorkerThreadPool.add_group_task(
 		func(k: int) -> void: _views[now[k]] = _make(now[k]), now.size()
 	)
@@ -58,6 +60,21 @@ func _ready() -> void:
 	if not _rest.is_empty():
 		_build_stand_ins()
 		_task = WorkerThreadPool.add_group_task(_stream_one, _rest.size())
+
+
+## Reorders `queue` so its landmarks stream before every ordinary building, each group keeping
+## its nearest-first order.
+func _landmarks_first(queue: Array[int]) -> void:
+	var marks: Array[int] = []
+	var others: Array[int] = []
+	for n: int in queue:
+		(marks if _sim.buildings[n].landmark != "" else others).append(n)
+	queue.assign(marks + others)
+
+
+## The buildings still to stream after load, in the order the workers take them.
+func queued() -> Array[int]:
+	return _rest.duplicate()
 
 
 func _make(n: int) -> BuildingView:
