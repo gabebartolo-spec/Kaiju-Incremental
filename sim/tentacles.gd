@@ -144,7 +144,7 @@ func _grab(dt: float) -> void:
 		kind = "tank"
 		from = best_tank.pos
 		best_tank.hp = 0.0
-		sim.clear_dead_tanks()
+		sim.army_units.clear_dead()
 	var throw := Thrown.new()
 	throw.kind = kind
 	throw.from = from

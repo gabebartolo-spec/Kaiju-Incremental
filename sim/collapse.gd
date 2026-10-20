@@ -16,25 +16,31 @@ func _init(p_sim: RampageSim) -> void:
 	sim = p_sim
 
 
-## Turns every part of building `index` that lost support into a Fall.
+## Turns every part of building `index` that lost support into a Fall. A carved building's
+## parts (Carving.settle) also carry their fine cells, which the fall_start event passes on.
 func settle(index: int) -> void:
 	var b := sim.buildings[index]
 	var g := Num.f(sim.city["fall_gravity"])
-	for part: Dictionary in b.frame.settle():
+	var parts := sim.carving.settle(index) if sim.carving.promoted(index) else b.frame.settle()
+	for part: Dictionary in parts:
 		var f := RampageSim.Fall.new()
 		f.id = sim.next_fall_id
 		sim.next_fall_id += 1
 		f.building = index
 		f.cells = part["cells"]
 		f.kind = str(part["kind"])
-		var lowest := 9999
+		var lowest := 9999.0
 		var highest := 0
 		for c: Vector3i in f.cells:
-			lowest = mini(lowest, c.y)
+			lowest = minf(lowest, c.y)
 			highest = maxi(highest, c.y)
 		f.height = highest - lowest + 1
+		if part.has("index"):  # carved: its size from its fine cells
+			lowest = Num.f(part["low"])
+			f.height = Num.f(part["height"])
+			f.width = Num.f(part["width"])
 		if f.kind == "topple":
-			if not _toppled_ids.has(index):
+			if not f.cells.is_empty() and not _toppled_ids.has(index):
 				_toppled_ids[index] = true
 				toppled += 1
 			var dir: Vector2i = part["dir"]
@@ -43,33 +49,31 @@ func settle(index: int) -> void:
 			f.pivot = b.local_to_world(pivot)
 			f.duration = sqrt(2.0 * f.height / g) * 1.8
 		else:
-			f.drop = _drop_distance(b, f.cells, lowest)
+			f.drop = Num.f(part["drop"]) if part.has("drop") else _drop_distance(b, f, lowest)
 			f.pivot = b.local_to_world(Vector3(b.w * 0.5, lowest, b.d * 0.5))
 			f.duration = sqrt(2.0 * f.drop / g)
 		sim.falls.append(f)
-		(
-			sim
-			. events
-			. append(
-				{
-					"type": "fall_start",
-					"id": f.id,
-					"building": index,
-					"cells": f.cells,
-					"kind": f.kind,
-					"pivot": f.pivot,
-					"dir": f.dir,
-					"drop": f.drop,
-					"duration": f.duration,
-				}
-			)
-		)
+		var event := {
+			"type": "fall_start",
+			"id": f.id,
+			"building": index,
+			"cells": f.cells,
+			"kind": f.kind,
+			"pivot": f.pivot,
+			"dir": f.dir,
+			"drop": f.drop,
+			"duration": f.duration,
+		}
+		if part.has("index"):
+			event["index"] = part["index"]
+			event["mats"] = part["mats"]
+		sim.events.append(event)
 
 
 ## How far a loose part drops before it meets what still stands below it (or the ground).
-func _drop_distance(b: RampageSim.Building, cells: Array[Vector3i], lowest: int) -> float:
-	var drop := float(lowest)
-	for c: Vector3i in cells:
+func _drop_distance(b: RampageSim.Building, f: RampageSim.Fall, lowest: float) -> float:
+	var drop := lowest
+	for c: Vector3i in f.cells:
 		var below := b.frame.top_below(c.x, c.z, c.y)
 		drop = minf(drop, c.y - below - 1)
 	return maxf(0.5, drop)
@@ -92,15 +96,19 @@ func _land(f: RampageSim.Fall) -> void:
 	var b := sim.buildings[f.building]
 	var bonus := Num.f(sim.city["topple_bonus"]) if f.kind == "topple" else 1.0
 	sim.pay(b, f.cells.size(), bonus)
-	if f.kind == "topple":
-		tallest_topple = maxi(tallest_topple, f.height)
 	var impact := Num.f(sim.city["impact_damage"])
 	var event := {"type": "fall_land", "id": f.id, "kind": f.kind, "building": f.building}
+	if f.cells.is_empty():  # a carved scrap (less than a chunk's worth): it lands, no more
+		sim.events.append(event)
+		return
+	if f.kind == "topple":
+		tallest_topple = maxi(tallest_topple, roundi(f.height))
 	if f.kind == "topple":
 		var start := Vector2(f.pivot.x, f.pivot.z)
 		var finish := start + f.dir * f.height
 		var across := Vector2(-f.dir.y, f.dir.x)
-		var half_width := _width_across(b, f.cells, across) * 0.5 + 0.5
+		var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
+		var half_width := width * 0.5 + 0.5
 		event["from"] = start
 		event["to"] = finish
 		event["width"] = half_width * 2.0
@@ -159,4 +167,4 @@ func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) 
 		var struck: bool = in_strip.call(tank.pos, 0.6)
 		if struck:
 			tank.hp = 0.0
-	sim.clear_dead_tanks()
+	sim.army_units.clear_dead()

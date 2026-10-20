@@ -134,6 +134,15 @@ func damage(c: Vector3i, amount: float) -> bool:
 	return true
 
 
+## Empties grid cell `i` (a grid index, not a cell); returns the material it held.
+func clear_index(i: int) -> int:
+	var m := cells[i]
+	if m != EMPTY:
+		cells[i] = EMPTY
+		alive_count -= 1
+	return m
+
+
 func remove(c: Vector3i) -> void:
 	if alive(c):
 		cells[index(c)] = EMPTY

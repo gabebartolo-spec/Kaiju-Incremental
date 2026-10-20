@@ -4,7 +4,7 @@ extends RefCounted
 ## until its first hit; then its BuildingCells grid is made, once, with every chunk the
 ## Structure has already lost emptied, and kept for every later hit. A whole city of fine grids
 ## would be ~100 MB (docs/research/DESTRUCTION_SPIKE.md), so only buildings the kaiju touches
-## pay for one. Not wired into RampageSim yet (WP7). Landmarks keep their baked chunk shape
+## pay for one. RampageSim promotes through Carving (WP7). Landmarks keep their baked chunk shape
 ## until the landmark port (WP6): on_hit() gives them null.
 
 ## Building index -> BuildingCells, for the buildings hit so far.
