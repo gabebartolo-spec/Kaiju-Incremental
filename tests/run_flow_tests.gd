@@ -8,6 +8,7 @@ const FlowScreens := preload("res://tests/lib/flow_screens.gd")
 const FlowDemo := preload("res://tests/lib/flow_demo.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowBreath := preload("res://tests/lib/flow_breath.gd")
+const FlowTanks := preload("res://tests/lib/flow_tanks.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowHeliSounds := preload("res://tests/lib/flow_heli_sounds.gd")
 const FlowRifleSounds := preload("res://tests/lib/flow_rifle_sounds.gd")
@@ -16,6 +17,9 @@ const FlowCollapse := preload("res://tests/lib/flow_collapse.gd")
 const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
+## A kaiju that has not drawn tank fire by now is walked to the nearest tank (the sim's army holds
+## its standoff, and a rampage that clears the city fast may never pass in reach of one).
+const TANK_WALK_FRAMES := 60 * 30
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
 const UPGRADED := {
@@ -271,6 +275,8 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
+		if frames == TANK_WALK_FRAMES and not levels.is_empty() and not heard.has("tank_fire"):
+			FlowTanks.walk_to_nearest(rampage.sim)
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)
 		FlowBreath.track_aim(rampage, aim)

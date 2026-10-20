@@ -52,11 +52,19 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
           lfs: true
+          submodules: true # native/godot-cpp
 
       # tools/pck_check.py reads the zstd-compressed resources with compression.zstd (3.14+).
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+
+      # The native core (native/): the export copies the Windows release library next to the exe,
+      # and the exe logs an error at launch without it, so build it before the export.
+      - name: Build the native extension (Windows x86_64, release)
+        run: |
+          python -m pip install scons
+          cd native && python -m SCons platform=windows target=template_release arch=x86_64 -j4
 
       - name: Cache Godot and its Windows export templates
         id: godot-cache
@@ -115,7 +123,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KaijuIncremental-windows
-          path: out/windows/KaijuIncremental.exe
+          path: |
+            out/windows/KaijuIncremental.exe
+            out/windows/*.dll
           retention-days: 30
 
       - name: Upload the build for the dispatched ref
@@ -123,7 +133,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KaijuIncremental-${{ env.sha }}
-          path: out/windows/KaijuIncremental.exe
+          path: |
+            out/windows/KaijuIncremental.exe
+            out/windows/*.dll
           retention-days: 7
 
       - name: Upload the logs
