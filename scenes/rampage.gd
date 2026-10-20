@@ -310,27 +310,20 @@ func _spawn_tank_node(id: int) -> void:
 	_tank_nodes[id] = tank
 
 
-## Each tank's hull turns to the way it drives (or to the kaiju); its turret keeps on the kaiju.
+## Hull to the way it drives (front to the kaiju when it stands or backs off), turret on the kaiju.
 func _update_tanks(delta: float) -> void:
 	var flatten := _steps % 10 == 0  # tanks roll over cars and lamps
-	var turn := Num.f(Content.section("vehicles")["hull_turn"]) * delta
+	var convoy := sim.army_units.convoy
 	for tank: RampageSim.Tank in sim.tanks:
 		if flatten:
 			_city.crush(_to_world(tank.pos), 1.4)
 		if not _tank_nodes.has(tank.id):
 			continue
 		var node: TankModel = _tank_nodes[tank.id]
-		var at := _to_world(tank.pos)
-		var drive := at - node.position
-		node.position = at
-		var heading := Vector2(drive.x, drive.z)
-		if heading.length() < 0.001:
-			var to := sim.kaiju_pos - tank.pos
-			heading = Vector2(to.x, to.y)
-		if heading.length() > 0.001:
-			var want := atan2(-heading.x, -heading.y)
-			var diff := wrapf(want - node.rotation.y, -PI, PI)
-			node.rotation.y += clampf(diff, -turn, turn)
+		node.position = _to_world(tank.pos)
+		var front := convoy.front(tank.id)  # the sim's hull pose: it pivots, then drives
+		if front != Vector2.ZERO:
+			node.rotation.y = atan2(-front.x, -front.y)
 		node.aim(_kaiju_at + Vector3(0, 2.0 * sim.body_scale(), 0), delta)
 
 
