@@ -4,6 +4,12 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-107 · Director · Voxel size: the city stays at today's size, the kaiju gets double voxels (b2-19)
+Why: asked from labelled stills of half / today / double (same seed and tick, game and close camera), he answered "b but
+kaiju with double voxels". Double everywhere ran at 5.6 fps with a 13 s stall; at the game camera the city sizes looked nearly
+alike. Changes: city, cars, people keep today's cell size; the kaiju model is voxelised at twice the resolution per axis
+(finer silhouette and skin), every stage, measured for fps before it ships (claude/kaiju-double).
+
 ## 2026-10-21 · D-108 · Director · The croc's breath is hot lightning, not atomic; its shape is a croc in a t-rex body
 Why: research 02 flagged the upright reptile + dorsal plates + glowing breath beam combination as the Godzilla look; he
 answered "we could have our croc shoot hot lightning instead of atomic theme" and "ours is like a crocodile in a t-rex
