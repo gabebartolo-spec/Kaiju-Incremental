@@ -1,6 +1,6 @@
-# Lead handoff, 2026-10-20 (lead 5 of 10-20; next lead: read lines 1-16, then GitHub)
-## State: lead 5 stood down at 225k; NO live helpers. Successor (lead 6): start at the NEXT list on line 3.
-## NEXT: (1) #98 fresh re-review #3 at 3ad26fcd (green) -> merge full sha. (2) #89 head f3991ea (white slabs = ToppleFx BoxMesh -> Ruin.chunk voxel lumps; lean 3->8 deg; CI capture 39358335521, lead 2x PASS on crop) -> check tests/lint at head, merge. (3) Ask director WP5 (line below). (4) #99 resync (doc-caps) -> merge. (5) WP4 PR, WP6 PR.
+# Lead handoff, 2026-10-20 (lead 6 of 10-20; next lead: read lines 1-16, then GitHub)
+## State: lead 6 working. Helpers (Agent tool, this session): review-98 (Opus, re-review #3), croc89-sync (#89 resync: tanks/flow/doc-caps red at f3991ea), wp2-sync (#99 resync), carve-wp5 life 4 (Opus: 3 critic defects).
+## NEXT: (1) #98 merge on review-98 PASS. (2) #89 green -> merge -> #88, #90, young-retune. (3) WP5: lead call = fix round now (life 4), no director ask; then fresh motion critic, WP5 PR. (4) #99 merge. (5) WP4 PR, WP6 PR. (6) board PR.
 ##  carve-wp3 DONE: #98 head 3ad26fcd (base merged, WP1 in; GlassFrame sim/glass_frame.gd shared sim+view; cells checks on real VoxelSupport; tests 39360777422 + lint 39360777395 GREEN) -> NEXT: fresh re-review #3 (Opus med), merge full sha. Was: #98 lead decision (c) = structural columns inside glass towers (spacing in tuning.json, sim+view parity), fix tests/lib/cells_flood_until_wp1.gd to WP1's rule
 ##   (fixtures never carry structural), 0 islands every style (probe: lead-5 scratchpad probe_wp3b.gd), before/after glass still -> Temp/claude/wp3-still/frame/ (re-review FIX comment 6281639153) ·
 ##  #99 head 1f337dd: gdlint + tests GREEN (39356570213/39356570205); doc-caps red only from lead.md 123 lines on the old merge ref (now 119): next push/resync clears it · wp5-recap DONE ·
