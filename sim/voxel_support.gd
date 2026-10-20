@@ -15,6 +15,13 @@ extends RefCounted
 ##    cells there standing on a structural cell below (fixtures weigh but hold nothing).
 ## Centres of mass are compared in integers (sums of 2x + 1), so the outcome is exact.
 
+## The native flood (native/src/kaiju_settle.cpp, KaijuSettle) does the whole-grid passes of this
+## class when the extension is loaded, and gives what the GDScript below gives, which stays the
+## reference: the "native port must match its digests" rule, held by tests/lib/settle_replay.gd,
+## which switches this off to settle the same carves both ways.
+static var use_native := true
+static var _native: Object = null
+
 ## Per cell: the grounded part's label (> 0), 0 for not grounded, -1 once taken by an island.
 var labels := PackedInt32Array()
 var count := 0
@@ -29,6 +36,12 @@ func _init(frame: VoxelFrame) -> void:
 	_cells = frame.cells
 	_fix = frame.fixtures
 	_plan = frame.w * frame.d
+	var nat := VoxelSupport.native()
+	if nat != null:
+		var got: Array = nat.call("label", _cells, _fix, _dims(), frame.has_fixtures)
+		labels = got[0]
+		count = got[1]
+		return
 	labels.resize(_cells.size())
 	var stack := PackedInt32Array()
 	stack.resize(_cells.size())
@@ -41,6 +54,19 @@ func _init(frame: VoxelFrame) -> void:
 			_flood(stack, count)
 	if frame.has_fixtures:
 		_attach_fixtures(stack)
+
+
+## The native flood, or null (switched off, or the extension is not loaded).
+static func native() -> Object:
+	if not use_native:
+		return null
+	if _native == null and ClassDB.class_exists("KaijuSettle"):
+		_native = ClassDB.instantiate("KaijuSettle")
+	return _native
+
+
+func _dims() -> Vector3i:
+	return Vector3i(_f.w, _f.h, _f.d)
 
 
 ## Floods `label` over every structural unlabelled cell joined to stack[0] (iterative, packed stack;
@@ -150,6 +176,11 @@ func _ring(i: int) -> PackedInt32Array:
 ## cells in flood order; joined as the header says); marks them -1. The caller removes them.
 func islands() -> Array[PackedInt32Array]:
 	var out: Array[PackedInt32Array] = []
+	var nat := VoxelSupport.native()
+	if nat != null:  # the labels stay as they were: the caller takes these cells out of the grid
+		var got: Array = nat.call("islands", labels, _cells, _fix, _dims(), _f.has_fixtures)
+		out.assign(got)
+		return out
 	var w := _f.w
 	var d := _f.d
 	var h := _f.h
@@ -266,7 +297,9 @@ static func scan_levels(
 			if box[b + 2] < 0:
 				continue  # nothing stands on a cell below at this level
 			var rect := Rect2i(box[b], box[b + 1], box[b + 2] - box[b], box[b + 3] - box[b + 1])
-			var tip := tip_of(PackedInt64Array([sx[at], sz[at], mass[at]]), rect, level, offset, res)
+			var tip := tip_of(
+				PackedInt64Array([sx[at], sz[at], mass[at]]), rect, level, offset, res
+			)
 			if not tip.is_empty():
 				tip["label"] = k + 1
 				tip["level"] = level
@@ -279,6 +312,9 @@ static func scan_levels(
 ## k * (h + 1) + y) and the box [x0, z0, x1, z1) of its cells standing on a cell below (at
 ## (k * h + y) * 4; x1 < 0 when there are none).
 func _floors() -> Dictionary:
+	var nat := VoxelSupport.native()
+	if nat != null:
+		return nat.call("floors", labels, _cells, _fix, _dims(), count)
 	var w := _f.w
 	var d := _f.d
 	var h := _f.h

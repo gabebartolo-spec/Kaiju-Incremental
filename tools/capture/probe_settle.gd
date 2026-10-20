@@ -53,12 +53,23 @@ func _run() -> void:
 		var t4 := Time.get_ticks_usec()
 		print(
 			(
-				("b%d %dx%dx%d grid %d cells: flood %.1f ms, islands %.1f (%d), topple %.1f (%d);"
-				+ " whole settle %.1f ms (%d parts)")
+				(
+					"b%d %dx%dx%d grid %d cells: flood %.1f ms, islands %.1f (%d), topple %.1f (%d);"
+					+ " whole settle %.1f ms (%d parts)"
+				)
 				% [
-					order[k], b.w, b.height, b.d, f.cells.size(), (t1 - t) / 1000.0,
-					(t2 - t1) / 1000.0, islands, (t3 - t2) / 1000.0, topples,
-					(t4 - t3) / 1000.0, parts.size()
+					order[k],
+					b.w,
+					b.height,
+					b.d,
+					f.cells.size(),
+					(t1 - t) / 1000.0,
+					(t2 - t1) / 1000.0,
+					islands,
+					(t3 - t2) / 1000.0,
+					topples,
+					(t4 - t3) / 1000.0,
+					parts.size()
 				]
 			)
 		)

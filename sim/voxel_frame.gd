@@ -37,14 +37,13 @@ var cells := PackedByteArray()
 var fixtures := PackedByteArray()
 ## True when any material in the list is a fixture (the flood skips the fixture pass if not).
 var has_fixtures := false
+## The cells emptied since the last settle and what each held, kept while the settle cache
+## (VoxelSettleCache) is valid; any other change to the grid drops the cache.
+var gone := PackedInt32Array()
+var gone_mats := PackedByteArray()
 ## By material id: the blow needed to break a cell of it.
 var _strength := PackedFloat64Array()
 var _ids: Dictionary = {}
-## The cells emptied since the last settle and what each held, kept while the settle cache
-## (VoxelSettleCache) is valid; any other change to the grid drops the cache.
-static var PROF := {}
-var gone := PackedInt32Array()
-var gone_mats := PackedByteArray()
 var _cache: VoxelSettleCache = null
 
 
@@ -252,19 +251,25 @@ func detach() -> Array[Dictionary]:
 ## what hung from a toppled load below its level: a fresh flood, its islands land as the first
 ## ones do (review FIX on #97: nothing is left floating).
 func settle() -> Array[Dictionary]:
-	var t0 := Time.get_ticks_usec()
-	if _cache != null and _cache.try_fast(self):
+	# The native flood settles a building in a millisecond or two; the cache is the GDScript
+	# fallback (where the extension is not loaded), and slower than that flood.
+	if _cache != null and VoxelSupport.native() == null and _cache.try_fast(self):
 		gone.clear()
 		gone_mats.clear()
-		PROF["fast_ok"] = PROF.get("fast_ok", 0) + Time.get_ticks_usec() - t0
-		PROF["fast_ok_n"] = PROF.get("fast_ok_n", 0) + 1
 		return []
-	var t1 := Time.get_ticks_usec()
-	PROF["fast_fail"] = PROF.get("fast_fail", 0) + t1 - t0
-	var r := settle_full()
-	PROF["full"] = PROF.get("full", 0) + Time.get_ticks_usec() - t1
-	PROF["full_n"] = PROF.get("full_n", 0) + 1
-	return r
+	return settle_full()
+
+
+## True once a settle has run (the settle cache exists).
+func settled() -> bool:
+	return _cache != null
+
+
+## Builds, ahead of the first fast settle, what the settle cache keeps (a no-op when it is not
+## valid or already built, or when the native flood settles instead).
+func prepare() -> void:
+	if _cache != null and VoxelSupport.native() == null:
+		_cache.prepare(self)
 
 
 ## settle() by the flood alone (the oracle the cache is held to; also what runs when the cache

@@ -25,9 +25,6 @@ const AUTOPLAY_GLIDE_HELD := 50
 var sim: RampageSim
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
 var cost_usec: Dictionary = {}
-## Cost summed per sim step / event kind since the benchmark last cleared it (microseconds).
-var spent_usec: Dictionary = {}
-var worst_tick: Dictionary = {}
 var species: Dictionary
 ## The look and the sounds of the signature attack and the upgrades (read by the flow suite).
 var ability_fx: AbilityFx
@@ -162,10 +159,6 @@ func _physics_process(delta: float) -> void:
 	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
-	var tick := Time.get_ticks_usec() - t0
-	if tick > Num.i(worst_tick.get("usec", 0)):
-		worst_tick = {"usec": tick, "prof": VoxelFrame.PROF.duplicate(), "at": _steps}
-	VoxelFrame.PROF.clear()
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
@@ -191,7 +184,6 @@ func _process(delta: float) -> void:
 func _note_cost(what: String, since: int) -> void:
 	var spent := Time.get_ticks_usec() - since
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
-	spent_usec[what] = Num.i(spent_usec.get(what, 0)) + spent
 
 
 func _to_world(p: Vector2) -> Vector3:

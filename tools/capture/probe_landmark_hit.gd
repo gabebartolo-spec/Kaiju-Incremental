@@ -38,7 +38,8 @@ func _run() -> void:
 				% [
 					k,
 					(Time.get_ticks_usec() - t) / 1000.0,
-					sim.carving.promoted(index), sim.carving.grids.size(),
+					sim.carving.promoted(index),
+					sim.carving.grids.size(),
 					b.frame.alive_count,
 					b.w * b.height * b.d
 				]
@@ -55,8 +56,12 @@ func _run() -> void:
 		print(
 			(
 				"promote (%s): %.1f ms for %d cells (sim built in %.0f ms)"
-				% ["cold" if k == 0 else "warm", (Time.get_ticks_usec() - t) / 1000.0,
-					cells.cells.size(), made]
+				% [
+					"cold" if k == 0 else "warm",
+					(Time.get_ticks_usec() - t) / 1000.0,
+					cells.cells.size(),
+					made
+				]
 			)
 		)
 	quit()

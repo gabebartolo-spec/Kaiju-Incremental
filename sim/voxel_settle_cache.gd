@@ -84,9 +84,7 @@ func try_fast(f: VoxelFrame) -> bool:
 	if hash(_cells) != _hash:
 		return _stop(f, 0, "hash")
 	if not _built:
-		var tb := Time.get_ticks_usec()
 		_build()
-		VoxelFrame.PROF["build"] = VoxelFrame.PROF.get("build", 0) + Time.get_ticks_usec() - tb
 	for k: int in n:
 		var i := gone[k]
 		_take_out(i, Vector3i(i % _w, i / _plan, (i / _w) % _d), _fix[_cells[i]] != 0)
@@ -114,6 +112,20 @@ func try_fast(f: VoxelFrame) -> bool:
 	removed += n
 	fast += 1
 	return true
+
+
+## Builds the loads now (the frame has just been settled in full and is as the cache adopted it).
+func prepare(f: VoxelFrame) -> void:
+	if not valid or _built or not f.gone.is_empty():
+		return
+	_cells = f.cells
+	_fix = f.fixtures
+	_w = f.w
+	_d = f.d
+	_h = f.h
+	_plan = _w * _d
+	_build()
+	_cells = PackedByteArray()
 
 
 func _fail(reason: String) -> bool:

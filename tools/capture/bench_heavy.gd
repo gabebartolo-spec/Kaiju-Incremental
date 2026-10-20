@@ -52,7 +52,7 @@ func _run() -> void:
 	var over := 0
 	var last := Time.get_ticks_usec()
 	var start := Time.get_ticks_msec()
-	rampage.spent_usec.clear()
+	rampage.cost_usec.clear()
 	while Time.get_ticks_msec() - start < _seconds * 1000.0 and not rampage.sim.over:
 		await process_frame
 		var now := Time.get_ticks_usec()
@@ -61,8 +61,8 @@ func _run() -> void:
 		frames += 1
 		gap_sum += gap
 		gap_max = maxf(gap_max, gap)
-		var row := _row(rampage, city, vp, gap, (Time.get_ticks_msec() - start) / 1000.0)
-		rampage.spent_usec.clear()
+		var row := _row(rampage, city, gap, (Time.get_ticks_msec() - start) / 1000.0)
+		rampage.cost_usec.clear()
 		if gap > _slow:
 			over += 1
 			_worst.append(row)
@@ -80,9 +80,7 @@ func _run() -> void:
 			]
 		)
 	)
-	print("worst single sim tick: ", rampage.worst_tick)
 	print(_cache_tally(rampage))
-	print("settle time (ms) over the run: ", VoxelFrame.PROF)
 	_worst.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["gap"] > b["gap"])
 	print("WORST 12:")
 	for k: int in mini(12, _worst.size()):
@@ -90,13 +88,14 @@ func _run() -> void:
 	quit()
 
 
-func _row(rampage: Rampage, city: CityView, vp: RID, gap: float, at: float) -> Dictionary:
+func _row(rampage: Rampage, city: CityView, gap: float, at: float) -> Dictionary:
+	var vp := root.get_viewport_rid()
 	var debris: DebrisField = city.get("_debris")
 	var bodies: Array = debris.get("_bodies")
 	var queue: Array = debris.get("_queue")
 	var costs := {}
-	for key: Variant in rampage.spent_usec:
-		var ms := Num.f(rampage.spent_usec[key]) / 1000.0
+	for key: Variant in rampage.cost_usec:  # the frame's worst of each kind
+		var ms := Num.f(rampage.cost_usec[key]) / 1000.0
 		if ms >= 1.0:
 			costs[key] = snappedf(ms, 0.1)
 	return {
@@ -132,7 +131,10 @@ func _cache_tally(rampage: Rampage) -> String:
 		full += cache.full
 		for k: Variant in cache.why:
 			why[k] = Num.i(why.get(k, 0)) + Num.i(cache.why[k])
-	return "settle cache: %d fast, %d full (%d without a fall); gave up: %s" % [fast, full, quiet, str(why)]
+	return (
+		"settle cache: %d fast, %d full (%d without a fall); gave up: %s"
+		% [fast, full, quiet, str(why)]
+	)
 
 
 func _line(r: Dictionary) -> String:
