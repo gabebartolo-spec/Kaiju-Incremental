@@ -7,18 +7,22 @@ PR's "Board and log" section. History rolls to `docs/archive/status_<month>.md`.
 Current phase: **0 — Foundations** (gate: CI proves it rejects a lowered floor, a missing suite,
 an untyped declaration and a planted secret). Gate signer: the lead.
 
-## Carving lane (D-097 top priority; D-099 real-physics falls; lead 4, 2026-10-20)
-Merged today: #97 WP1 sim grid, #98 WP3 building cells, #99 WP2 native core, #103 WP4 view mesher, #50 military AI.
-Ready without a PR (in progress): WP5 physics presentation `claude/carve-wp5`, WP6 landmarks `claude/carve-wp6`, young-retune
-`claude/young-retune`, carve-play `claude/carve-play`, carve-wp7 gameplay port (after WP1-WP5). Carving PRs, CI and reviews go first.
+## Lead 10 (2026-10-21): plan = ROADMAP "Post-demo plan" A-H; Phase B boards for the director
+Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (demo smoke PASS). Done since build 3: b2-21 stadium far from spawn,
+landmarks never boxes (#115) · b2-29/b2-30 no freeze at run start or quit (#116) · claw swipe occlusion + tank crab (#117) ·
+CI four shards (#118) · street trees 2.5 m apart (#119).
+In flight (branches, no PR yet): turn-weight + walk m2 (comments #16, R 11, R 14) · b2-3 slow frames part 2
+`claude/rubble-cap` · R 20.3/20.5/19.1 `claude/handover-fixes` · R 9.1 `claude/tentacle-substep` · R 8.1
+`claude/audio-duck` · walkers on pavement `claude/walkers-on-pavement` · R 18.1 `claude/graphics-presets` ·
+R 12.1/12.2 `claude/light-pool` · b2-20 board fix `claude/phase-b-boards` (never merged).
 
-## Live PRs (2026-10-20)
+## Live PRs (2026-10-21)
 
 | PR | Owner | State | Item | Branch | Since |
 |----|-------|-------|------|--------|-------|
-| #89 | croc-contact | D-099 rework | playtest 2, D-091 body contact; topples to the cut side | claude/croc-contact | 2026-10-19 |
-| #90 | croc-contact | after #89 | playtest 4, dash | claude/croc-dash | 2026-10-19 |
-| #88 | river | after #89 | playtest 9/11, river emergence | claude/river-start | 2026-10-19 |
+| #120 | hygiene | CI | stadium fans fall with their stand | claude/stadium-crowd | 2026-10-21 |
+| #121 | hygiene | CI | b2-22 shared walls carry the facade | claude/b2-22-party-facades | 2026-10-21 |
+| #3 | lead | on hold | look-options -> main, once the slice ships | claude/look-options | 2026-10-15 |
 
 ## Merged into look-options on 2026-10-19 (playtest fixes)
 #75 stall fix · #77 frame cap · #78 crowd killable · #79 stadium 1.5x (D-090) · #80 rifle crack · #83 breath from the
