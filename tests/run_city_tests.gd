@@ -182,7 +182,7 @@ func _check_no_empty_ground() -> void:
 			)
 			RiverStart.check(tier, map_seed, sim, check)
 			RiverStart.check_look(tier, map_seed, sim, decor, check)
-			EdgeMark.check(tier, map_seed, sim, check)
+			EdgeMark.check(tier, map_seed, sim, decor, check)
 			SpawnView.check(tier, map_seed, sim, skyline, check)
 			Green.check_city(tier, map_seed, sim, decor, check)
 			Trample.check_tail(tier, map_seed, sim, decor, check)

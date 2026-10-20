@@ -60,7 +60,8 @@ func _ready() -> void:
 		add_child(_decor)
 		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
 		add_child(street)
-	add_child(ArenaEdge.new(sim, _trees()))  # where the kaiju's walk ends (comments #18)
+	# Where the kaiju's walk ends (comments #18).
+	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed.
@@ -376,13 +377,3 @@ func float_text(text: String, pos: Vector3, color: Color) -> void:
 	tween.tween_property(l, "position", pos + Vector3(0, 3, 0), 1.0)
 	tween.tween_property(l, "modulate:a", 0.0, 1.0).set_delay(0.4)
 	tween.chain().tween_callback(l.queue_free)
-
-
-## The street trees' trunk spots (none without decor), so the edge's bollards keep clear.
-func _trees() -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	if _decor != null:
-		for spots: Array in _decor._tree_cells.values():
-			for spot: Vector2 in spots:
-				out.append(spot)
-	return out
