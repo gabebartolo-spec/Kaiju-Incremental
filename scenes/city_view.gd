@@ -70,6 +70,12 @@ func crush(at: Vector3, radius: float) -> void:
 		street.crush(at, radius)
 
 
+## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
+func crush_cone(cone: Dictionary) -> void:
+	for c: Vector3 in BreathCone.cover(cone):
+		crush(Vector3(c.x, 0.0, c.y), c.z)
+
+
 func _process(delta: float) -> void:
 	_animate_falls(delta)
 	var camera := get_viewport().get_camera_3d()
