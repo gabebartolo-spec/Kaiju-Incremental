@@ -5,7 +5,6 @@ extends Node
 ## big one as the body breaks the surface, and a last one as it steps out. Rings from the
 ## existing Fx, tinted like spray; presentation only.
 
-const SPRAY := Color(0.82, 0.9, 0.96, 0.85)
 const SURFACE_AT := 0.45  # how far risen the head breaks the surface
 const RING := 5.0  # ring radius per body scale
 
@@ -33,4 +32,4 @@ func _splash(size: float, tail: bool) -> void:
 	_beat += 1
 	var water := -Num.f(_sim.city.get("river_depth", 0.0))
 	var at := Vector3(_sim.kaiju_pos.x, maxf(_sim.stand_y, water) + 0.02, _sim.kaiju_pos.y)
-	_fx.shockwave(at, RING * _sim.body_scale() * size, SPRAY, tail)
+	_fx.shockwave(at, RING * _sim.body_scale() * size, tail)
