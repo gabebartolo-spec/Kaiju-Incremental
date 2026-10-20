@@ -271,6 +271,9 @@ func update(delta: float) -> void:
 	for car: Car in cars:
 		if car.crushed:
 			continue
+		if TankKeepOut.run_over(sim, car):  # a tank drives over it: flattened, as by the kaiju
+			crush(car.pos, 0.0)
+			continue
 		if car.police and swap:
 			car.body.mesh = _police_meshes[lit]
 		if car.parked:
