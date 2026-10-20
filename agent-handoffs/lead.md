@@ -17,20 +17,19 @@
   comments #4 + ROADMAP D "How (research), walk/turn"; R 11.1-11.4, 14.1-14.3; clips at game speed).
 - Notes: C:\Users\DANTE\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\
 
-## Merged 2026-10-21: #113 river rise, #114 edge bollards, #116 staged start/quit (636734f), #115 stadium (479a15d).
+## Merged 2026-10-21: #113, #114, #116 (636734f), #115 stadium (479a15d), #118 CI 4 shards (slowest 9m32).
 ## Build 3 = carve-build3-87bf093 in C:/Users/DANTE/Documents/GitHub/Kaiju-Builds/ (demo smoke PASS; told him).
-## Open PRs: #117 swipe occlusion (hygiene resync head 71ce806), red on military "a driving tank keeps its hull
-## along its road". Probe tools/tmp_crab_probe.gd (uncommitted) in .claude/worktrees/agent-abf46f19a3619b8c5 (now
-## detached at 71ce806): seed 2 adult tank 17 at a crossing crabs at -36 deg onto a short askew leg. Attempt 1
-## (arrive on a sub-metre askew leg) made it worse (6 steps, skipped crown points): reverted. Attempt 2 UNCOMMITTED in
-## that worktree's sim/convoy.gd: _onto_axis drives an askew leg along the nearest road under the tank; military +
-## sim + probe running (task b6fms0i6i). Green -> commit, push to claude/swipe-occlusion, tell hygiene the sha.
-## #118 CI shard balance (4 shards). #3 look-options -> main. Research topics 15 (HUD), 16 (tree) running.
-## Director AFK ~5 h from 2026-10-21 (comments #11): whole PC ours, keep 8 builders busy until usage runs out.
-## rubble-cap restarted fresh (part 2 brief: spread promotion, skip wasted fast settles, native flood if >200 ms).
+## Open PRs (hygiene agent merges any green PR at its exact head unless the lead says hold):
+## - #117 swipe occlusion + tank crab fix e60182b (convoy.gd _onto_axis; attempt 1 "arrive early" made it worse and
+##   was reverted; local sim+military green, probe tools/tmp_crab_probe.gd 0 crabs). CI running.
+## - #119 tree-apart (resynced 6d0695d). Next PR queued: claude/stadium-crowd 867e006 (lead QC passed).
+## Director AFK ~5 h (comments #11): whole PC ours, keep 8 builders busy until usage runs out.
+## Builders: phase-b-boards (b2-19 FIX round), b2-22, rubble part 2 (fresh; native flood if >200 ms), turn-weight
+## (finishing ~264k, then walk-motion goes to a fresh builder), walkers-on-pavement, light-pool, audio-duck +
+## tentacle-substep, hygiene, research (19 camera, 20 set pieces). Research 01-18 all in ROADMAP ("R n.m").
 
 ## NEXT
-1. #117 tank crab fix, then rebuild (build 4 candidate: stadium move + swipe fix + whatever lands).
+1. When #117 merges, rebuild (build 4 candidate: stadium move + swipe fix + whatever lands).
 2. Phase B: when the boards pass QC, ask him b2-19 then b2-20 (AskUserQuestion, labelled images first).
 3. Phase C start question (phase-maps.md): b2-4 effortless carving vs D-091 (A rec / B floor <=2x / C keep D-091);
    drop VISION.md:26-27 tier-gate sentence. Then b2-5.
