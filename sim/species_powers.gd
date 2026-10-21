@@ -25,6 +25,8 @@ var tentacles: Tentacles
 var tail_sweeps := 0
 ## The reptilian's claw rake (Claws, D-095).
 var swipe: ClawSwipe
+## Fire that spreads building to building once City Ablaze is owned (D-126).
+var fire: FireSpread
 ## Chunks broken by tail sweeps themselves (not what falls after).
 var tail_cut := 0
 var _rng: RandomNumberGenerator
@@ -40,6 +42,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	tentacles = Tentacles.new(sim, rng)
 	swipe = ClawSwipe.new(sim, cfg)
+	fire = FireSpread.new(sim, cfg["fire"], Seeds.derive(rng, 0xF12E))
 
 
 func _bs() -> float:
@@ -238,6 +241,7 @@ func step(dt: float, held: bool) -> void:
 	_beam(dt)
 	tentacles.step(dt)
 	_coats(dt)
+	fire.step(dt)
 
 
 func _glide(dt: float, held: bool) -> void:
@@ -331,6 +335,8 @@ func coat(index: int, cells: Array[Vector3i]) -> void:
 		sim.events.append(
 			{"type": "coated", "building": index, "cells": fresh, "kind": sim.hit_coat["kind"]}
 		)
+	if str(sim.hit_coat["kind"]) == "burn":
+		fire.ignite(index)
 
 
 func _coats(dt: float) -> void:
