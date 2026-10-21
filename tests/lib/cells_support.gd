@@ -28,6 +28,7 @@ func run() -> void:
 	_no_islands_before_carving()
 	_glass_towers_stand()
 	SettleReplay.new(_check).run()
+	_party_sides_carry_facade()
 
 
 ## The structural chunk the view gives building-local cell `c` (BuildingMesher.chunk_index):
@@ -168,3 +169,35 @@ func _no_islands_before_carving() -> void:
 func _building(f: Array) -> RampageSim.Building:
 	var b: RampageSim.Building = _make.call(f)
 	return b
+
+
+## A side touching a neighbour carries the same facade as a free side (build 2 note 22: no blank
+## party walls): the "party" fixture built with its neighbours and without them differs only in
+## its sign cells (signs hang only off faces with no neighbour), and no cell is "party".
+func _party_sides_carry_facade() -> void:
+	var ids := CellGrid.material_ids()
+	var signs := {}
+	for name: String in ["sign_frame", "neon0", "neon1", "neon2", "neon3"]:
+		signs[Num.i(ids[name])] = true
+	for f: Array in _fixtures:
+		var party: Dictionary = f[8]
+		if party.is_empty():
+			continue
+		var touching := BuildingCells.new(_building(f), party)
+		var free := BuildingCells.new(_building(f), {})
+		var other := 0
+		var blank := 0
+		for i: int in touching.cells.size():
+			var a := touching.cells[i]
+			var b := free.cells[i]
+			if a == Num.i(ids["party"]):
+				blank += 1
+			if a != b and not signs.has(a) and not signs.has(b):
+				other += 1
+		_check.call(
+			touching.dims == free.dims and other == 0 and blank == 0,
+			(
+				"%s: touching sides carry the facade (%d differ beyond signs, %d blank)"
+				% [f[0], other, blank]
+			)
+		)

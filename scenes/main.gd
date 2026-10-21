@@ -18,6 +18,12 @@ func _ready() -> void:
 	_show_title()
 
 
+## The window's own close (Alt+F4, the X): the same hidden-first quit as the QUIT buttons.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		QuitGame.now(get_tree())
+
+
 ## The screen on show (the flow suite and captures read it).
 func screen() -> Node:
 	return _screen
@@ -93,6 +99,7 @@ func _start_rampage() -> void:
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))
 	var rampage := Rampage.new()
+	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
 	rampage.setup(_species(), stats, layout, Num.i(_save.get("runs", 0)))
 	rampage.finished.connect(_on_rampage_finished)
 	_swap(rampage)

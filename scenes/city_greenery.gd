@@ -85,7 +85,9 @@ func plant() -> void:
 ## city.street_tree_gap metres down both kerbs of every avenue and street
 ## (city.street_tree_kinds) out to the edge of the view (D-062), the trunk on the kerb line
 ## (city.street_tree_kerb in from the road's edge), clear of the crossings
-## (city.street_tree_clear), the buildings and the diagonal. Draws nothing from the RNG.
+## (city.street_tree_clear), the buildings and the diagonal, and city.tree_min_apart from every
+## spot kept before it (a crossing's two streets would stand 1.2 m apart). Draws nothing from
+## the RNG.
 func kerb_spots() -> Array[Vector2]:
 	var nodes: Array[Vector2] = _plan["nodes"]
 	var gap := Num.f(_sim.city["street_tree_gap"])
@@ -94,6 +96,8 @@ func kerb_spots() -> Array[Vector2]:
 	var walk := Num.f(_sim.city["sidewalk"])
 	var diagonal := CityGen.width_of(CityGen.DIAGONAL, _sim.city) * 0.5 + walk
 	var out: Array[Vector2] = []
+	var apart := Num.f(_sim.city["tree_min_apart"])
+	var taken := TreeSpots.new()  # the spots kept so far
 	var rows: Array = green["rows"]
 	for street: Dictionary in _plan["streets"]:
 		if not str(street["kind"]) in kinds:
@@ -109,6 +113,7 @@ func kerb_spots() -> Array[Vector2]:
 		var kerb := Num.f(street["width"]) * 0.5 + Num.f(_sim.city["street_tree_kerb"])
 		if playable:
 			green["avenue_m"] = Num.f(green["avenue_m"]) + length
+		var along: Array[Vector2] = [dir, -dir]
 		for s: float in [-1.0, 1.0]:
 			var lean := Vector2i(roundi(-side.x * s), roundi(-side.y * s))  # over the road
 			# One city-wide spacing (trunks where along-street position is a whole number of gaps),
@@ -117,16 +122,41 @@ func kerb_spots() -> Array[Vector2]:
 			var row := -1  # a new row starts after anything but a lamp breaks the line
 			while t < length - clear:
 				var p := a + dir * t + side * s * kerb
-				if (
-					_inside(p, _beyond)
-					and not _on_building.call(p)
-					and CityGen.diagonal_distance(_plan, p) > diagonal
-				):
+				var fits := func(q: Vector2) -> bool:
+					return (
+						_inside(q, _beyond)
+						and not _on_building.call(q)
+						and CityGen.diagonal_distance(_plan, q) > diagonal
+					)
+				var slid := false
+				if fits.call(p) and taken.crowded(p, apart):
+					# Too close to a tree already kept (a crossing's other street): slide along
+					# the kerb to the nearest free spot, and start a row of its own there.
+					slid = true
+					p = TreeSpots.nearest(
+						p,
+						along,
+						_sim.city,
+						func(q: Vector2) -> bool:
+							var at := (q - a).dot(dir)
+							return (
+								at >= clear
+								and at <= length - clear
+								and fits.call(q)
+								and not taken.crowded(q, apart)
+							)
+					)
+				if p.is_finite() and fits.call(p):
+					if slid:
+						row = -1
 					if row < 0 and playable:
 						rows.append([] as Array[Vector2])
 						row = rows.size() - 1
 					_spots.append({"p": p, "lean": lean, "playable": playable, "row": row})
 					out.append(p)
+					taken.add(p)
+					if slid:
+						row = -1
 				else:
 					row = -1
 				t += gap
