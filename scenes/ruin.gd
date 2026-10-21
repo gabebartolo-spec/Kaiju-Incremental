@@ -6,6 +6,8 @@ extends RefCounted
 ## seeded, built once.
 
 const RES := BuildingVoxels.RES
+## A chunk's voxel shading salt is drawn below this (chunk()).
+const SALTS := 997
 
 
 ## Builds the ruin for a building whose palette and footprint come from `voxels`.
@@ -112,9 +114,7 @@ static func strip(
 ## One big wall chunk thrown from a toppled tower: a lump of the building's own facade voxels
 ## (its wall and window colours, shaded like every other voxel), `size` sim units wide, centred
 ## on the node's origin. Replaces the flat-coloured boxes that read as untextured placeholders.
-static func chunk(
-	voxels: BuildingVoxels, size: Vector3, rng: RandomNumberGenerator
-) -> MultiMeshInstance3D:
+static func chunk(voxels: BuildingVoxels, size: Vector3, salt: int) -> MultiMeshInstance3D:
 	var vox := VoxelBuilder.new()
 	var palette := rubble_palette(voxels)
 	var n := Vector3i((size * RES).round())
@@ -132,6 +132,6 @@ static func chunk(
 				if windows and x % 6 > 1 and y % RES in [2, 3, 4, 5]:
 					key = "stub_window"
 				vox.put(Vector3i(x, y, z), key)
-	vox.salt = rng.randi() % 997
+	vox.salt = salt
 	var centre := -Vector3(n) * 0.5 * BuildingVoxels.VOXEL
 	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, centre)
