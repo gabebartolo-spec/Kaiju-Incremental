@@ -107,7 +107,7 @@
 	},
 	"powers": {
 		"fire": {
-			"_doc": "Fire spread (D-126, sim/fire_spread.gd). A burning building heats each neighbour within reach m of its footprint (plus ember_reach m per Ember Rain level) by heat_rate a second at a touching wall, less with the gap, x (1 + fire_rate) x (1 + fire_wind x downwind) x flammability by building style; heat cools at cool_rate a second with no fire near. At heat 1 it glows glow_seconds, then burns burn_seconds + burn_per_floor x floors and burns out: every chunk takes burn_out_damage and it pays burn_pay of a smash x the conflagration (+conflag_step a burn-out, to conflag_max, decaying conflag_decay a second), x far_pay past far_radius m from the kaiju. grid: the footprint index cell, m. Firestorm blasts grow firestorm_grow a level past the first.",
+			"_doc": "Fire spread (D-126, sim/fire_spread.gd). A burning building heats each neighbour within reach m of its footprint (plus ember_reach m per Ember Rain level) by heat_rate a second at a touching wall, less with the gap, x (1 + fire_rate) x (1 + fire_wind x downwind) x flammability by building style; heat cools at cool_rate a second with no fire near. At heat 1 it glows glow_seconds, then burns burn_seconds + burn_per_floor x floors and burns out: its lowest burn_out_floors floors take burn_out_damage a chunk and the rest collapses and topples like a smashed building (D-129); what it drops pays burn_pay of a smash x the conflagration (+conflag_step a burn-out, to conflag_max, decaying conflag_decay a second), x far_pay past far_radius m from the kaiju. Ignition (D-129): the beam's burning coat always, each building the breath reaches with chance breath_ignite, a stray army shell within shell_reach m with chance shell_ignite. grid: the footprint index cell, m. Firestorm blasts grow firestorm_grow a level past the first. PLACEHOLDERS flagged for tuning (D-129): every number here and the five nodes' places and costs in data/upgrades.json (r_ablaze .. r_firestorm).",
 			"heat_rate": 0.35,
 			"reach": 3.0,
 			"ember_reach": 4.0,
@@ -116,6 +116,10 @@
 			"burn_seconds": 6.0,
 			"burn_per_floor": 0.25,
 			"burn_out_damage": 1000000.0,
+			"burn_out_floors": 1,
+			"breath_ignite": 0.35,
+			"shell_ignite": 0.5,
+			"shell_reach": 1.0,
 			"burn_pay": 0.6,
 			"far_radius": 60.0,
 			"far_pay": 0.25,

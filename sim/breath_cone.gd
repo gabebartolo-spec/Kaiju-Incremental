@@ -17,6 +17,25 @@ static func of(sim: RampageSim) -> Dictionary:
 	return {"origin": at, "dir": sim.facing, "reach": sim.ability_reach(), "half_angle": half}
 
 
+## Fires the breath (the signature): burns what BreathAim shows by `damage`, reaches up to the
+## helicopters, and with City Ablaze owned can set the buildings it hits alight (D-129).
+static func breathe(sim: RampageSim, reach: float, damage: float) -> void:
+	var aim := of(sim)
+	var half_angle := Num.f(aim["half_angle"])
+	var origin: Vector2 = aim["origin"]
+	var dir := sim.facing
+	sim.events.append({"type": "ability", "kind": "cone", "reach": reach, "from": origin})
+	var cone := func(p: Vector2, r: float) -> float:
+		var to := p - origin
+		if to.length() > reach + r:
+			return 0.0
+		return 1.0 if to.length() <= r or absf(dir.angle_to(to)) <= half_angle else 0.0
+	sim.hit_air = true  # fire reaches up to the helicopters
+	sim.hit_area(cone, damage)
+	sim.hit_air = false
+	sim.powers.fire.scorch(Rect2(origin - Vector2.ONE * reach, Vector2.ONE * reach * 2.0), cone)
+
+
 ## Circles (x, y centre, z radius) that together cover the cone `of` gives, out to its reach,
 ## so presentation can flatten everything the breath burns (build 2 note 26: trees stood).
 static func cover(cone: Dictionary, count := 12) -> Array[Vector3]:

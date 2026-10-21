@@ -5,9 +5,11 @@ extends RefCounted
 ## neighbours by the gap between them, the wind (Fire Front: fixed per run, D-115) and how well the
 ## neighbour burns (tuning fire.flammability by style). A building whose heat reaches 1 glows first
 ## (event fire_glow, glow_seconds, seeded) so the kaiju can still smash it as a firebreak, then
-## burns (fire_burning) and burns out to rubble (fire_burnt): every chunk left breaks at once, so no
-## burning shell is ever left (#111), and it pays burn_pay of a smash, times a conflagration
-## multiplier that climbs with each burn-out and decays, and far_pay far from the kaiju.
+## burns (fire_burning) and burns out (fire_burnt): its ground floors give way and the rest
+## collapses and topples like a smashed building (D-129), so no burning shell is ever left (#111).
+## What it drops pays burn_pay of a smash, times a conflagration multiplier that climbs with each
+## burn-out and decays, and far_pay far from the kaiju. Fires start from the beam's burning coat,
+## the breath (scorch) and stray army shells (shelled) once City Ablaze is owned (D-129).
 ## Neighbours come from a grid of footprints built once; each tick touches only the buildings
 ## that are heating, glowing or burning. Part of SpeciesPowers; pure and seeded (its own stream).
 
@@ -67,7 +69,33 @@ func ignite(i: int) -> void:
 	_burn(i)
 
 
+## The breath swept `area` (D-129): each building `force` (position, own radius -> 0..1) reaches
+## catches with chance breath_ignite.
+func scorch(area: Rect2, force: Callable) -> void:
+	if not on():
+		return
+	var chance := Num.f(cfg["breath_ignite"])
+	for i: int in _around(area, 0.0):
+		var b := sim.buildings[i]
+		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
+		if near > 0.0 and _rng.randf() < chance:
+			ignite(i)
+
+
+## A stray army shell landed at `at` (D-129): a building within shell_reach catches with chance
+## shell_ignite. The clumsy army (claude/clumsy-army, StrayShell.land) calls this once it merges.
+func shelled(at: Vector2) -> void:
+	if not on():
+		return
+	var reach := Num.f(cfg["shell_reach"])
+	var spot := Rect2(at, Vector2.ZERO)
+	for i: int in _around(spot, reach):
+		if _gap(_rect(i), spot) <= reach and _rng.randf() < Num.f(cfg["shell_ignite"]):
+			ignite(i)
+
+
 ## An explosive site went off at `at` (Firestorm, D-126): every building within `radius` catches.
+## Nothing calls it until explosive sites merge (claude/city-explosives): Firestorm is a stub.
 func blast(at: Vector2, radius: float) -> void:
 	if sim.stat("firestorm") <= 0.0:
 		return
@@ -145,29 +173,28 @@ func _burn(i: int) -> void:
 	sim.events.append({"type": "fire_burning", "building": i, "seconds": timer[i]})
 
 
-## Every chunk left breaks at once (rubble, never a burning shell), paying burn_pay of a smash
-## times the conflagration, and far_pay of that when the kaiju is far away.
+## It burns out: its ground floors (burn_out_floors) give way and the rest collapses and topples
+## like a smashed building (D-129), so no burning shell is left (#111). Everything it drops pays
+## burn_pay of a smash times the conflagration, and far_pay of that when the kaiju is far away.
 func _burn_out(i: int) -> void:
 	var b := sim.buildings[i]
+	var share := Num.f(cfg["burn_pay"]) * conflagration
+	if Vector2(b.x, b.z).distance_to(sim.kaiju_pos) > Num.f(cfg["far_radius"]):
+		share *= Num.f(cfg["far_pay"])
+	b.pay_share = share
 	var cells: Array[Vector3i] = []
-	for y: int in b.height:
+	for y: int in mini(Num.i(cfg["burn_out_floors"]), b.height):
 		for x: int in b.w:
 			for z: int in b.d:
 				cells.append(Vector3i(x, y, z))
 	var amounts := PackedFloat32Array()
 	amounts.resize(cells.size())
 	amounts.fill(Num.f(cfg["burn_out_damage"]))
-	var share := Num.f(cfg["burn_pay"]) * conflagration
-	if Vector2(b.x, b.z).distance_to(sim.kaiju_pos) > Num.f(cfg["far_radius"]):
-		share *= Num.f(cfg["far_pay"])
-	var before := sim.rubble
 	sim.damage_cells(i, cells, amounts)
-	var paid := (sim.rubble - before) * share
-	sim.rubble = before + paid
 	burnt_out += 1
 	conflagration = minf(Num.f(cfg["conflag_max"]), conflagration + Num.f(cfg["conflag_step"]))
 	_drop(i, State.BURNT)
-	sim.events.append({"type": "fire_burnt", "building": i, "paid": paid})
+	sim.events.append({"type": "fire_burnt", "building": i, "share": share})
 
 
 func _drop(i: int, to: State) -> void:
