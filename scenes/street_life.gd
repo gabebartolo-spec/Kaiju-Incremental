@@ -80,7 +80,7 @@ func _ready() -> void:
 	add_child(traffic)
 	_build_pavements()
 	# A few people per building, spread over the blocks.
-	var per_lot := Num.i(_cfg["civilians_per_lot"])
+	var per_lot := int(GraphicsPresets.cap("civilians"))
 	var blocks := _nodes.size() >> 2
 	for n: int in per_lot * sim.buildings.size():
 		_spawn_civilian(n % maxi(1, blocks))

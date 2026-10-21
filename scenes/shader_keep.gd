@@ -18,6 +18,7 @@ func hold(key: String, mat: Material) -> void:
 	if mat is ParticleProcessMaterial:
 		var particles := GPUParticles3D.new()
 		particles.emitting = false
+		particles.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 		particles.process_material = mat
 		node = particles
 	else:
