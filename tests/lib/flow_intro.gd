@@ -6,6 +6,7 @@ extends RefCounted
 ## the handover on (R 20.2-20.4). Seeded and clock-free: the city, the army and the rise are pinned
 ## and every check counts physics frames.
 
+const FlowIntroMain := preload("res://tests/lib/flow_intro_main.gd")
 const FRAME_CAP := 60 * 10
 ## Frames into the rise the skip key is pressed (under the water still, before the break).
 const SKIP_AT := 20
@@ -17,6 +18,7 @@ const POP_SHARE := 0.02
 
 
 static func run(tree: SceneTree, check: Callable) -> void:
+	await FlowIntroMain.run(tree, check)  # which intro Main picks, from a real save
 	var full := await _play(tree, true, -1)
 	var skipped := await _play(tree, true, SKIP_AT)
 	var short := await _play(tree, false, -1)
