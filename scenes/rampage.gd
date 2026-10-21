@@ -380,6 +380,8 @@ func _place_camera(delta: float) -> void:
 	# and its dart bursts ahead of the camera.
 	var rest := _breath_camera.offset(camera_rest, delta)
 	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom, 0), delta)
+	var hold := sim.body.dash.on() or _leap_time > 0.0
+	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(_follow.look_at(sim.body_scale()) + jitter)

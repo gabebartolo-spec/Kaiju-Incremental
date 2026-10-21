@@ -1,8 +1,8 @@
 extends SceneTree
 ## Camera growth candidates (research 19, ROADMAP B): the same seeded run (city seed 0, the
 ## reptilian, run 0) at a stage's body, with the gameplay camera's "camera" tuning overridden by a
-## candidate from tools/capture/camera_candidates.json, plus the candidate's look-ahead lead
-## (added here, after Rampage places the camera: no production code reads the candidates).
+## candidate from tools/capture/camera_candidates.json (no production code reads them); the
+## look-ahead is the game's own (camera A, D-121: CameraFollow, tuning "camera" lead_*).
 ## From the handover tick it saves every frame as JPG to <out>/frames (for the labelled clips),
 ## a still at --still=<s>, and prints the self-check per frame summarised: the kaiju's share of
 ## screen height (its drawn box, the sim's kaiju_height x body scale, its highest bone), its feet
@@ -18,13 +18,6 @@ extends SceneTree
 const CANDIDATES := "res://tools/capture/camera_candidates.json"
 const Growth := preload("res://tools/capture/capture_growth.gd")
 const SPECIES := "reptilian"
-## Look-ahead (research 19.3): starts after the kaiju has moved this long (s), eases at this rate
-## (1/s), leads this much more toward the camera (+z), where the street ahead is cramped.
-const LEAD_HOLD := 0.3
-const LEAD_EASE := 1.75
-const LEAD_TOWARD_CAMERA := 1.3
-## The kaiju moves when its focus travels faster than this (units/s).
-const MOVING := 0.5
 ## Ground in front of the feet that must stay in frame (R 2.2): this many body scales toward the
 ## camera.
 const GROUND_AHEAD := 4.0
@@ -41,10 +34,6 @@ var _mode := "rampage"
 var _out := "user://camera_growth"
 var _seconds := 8.0
 var _still := 4.0
-var _lead_units := 0.0
-var _lead := Vector3.ZERO
-var _moving_for := 0.0
-var _last := Vector3.INF
 var _rampage: Rampage
 var _camera: Camera3D
 var _frames := 0
@@ -57,6 +46,8 @@ var _feet_out := 0
 var _ground_out := 0
 var _inside := 0
 var _hidden := 0
+var _fall_hidden := 0
+var _fall_over := 0
 var _check_only := false
 
 
@@ -87,7 +78,6 @@ func _apply_candidate() -> void:
 	var cam := Content.section("camera")
 	for key: String in ["offset", "fov", "zoom_base", "zoom_per_scale"]:
 		cam[key] = block[key]
-	_lead_units = Num.f(block["lead"])
 
 
 func _run() -> void:
@@ -125,17 +115,17 @@ func _run() -> void:
 				off.y,
 				pitch,
 				CameraTuning.fov(),
-				_lead_units
+				CameraTuning.lead(scale)
 			]
 		)
 	)
 	var frames := int(_seconds * 60.0)
 	for frame: int in frames:
-		await process_frame
-		_lead_camera(1.0 / 60.0)
-		if _check_only:
+		if _check_only:  # the next tick's physics_frame: after this frame's _process (fades, camera)
+			await physics_frame
 			_check_frame(int(root.get_viewport().get_visible_rect().size.y))
 			continue
+		await process_frame
 		await RenderingServer.frame_post_draw
 		var image := root.get_viewport().get_texture().get_image()
 		image.save_jpg(_out.path_join("frames/f%04d.jpg" % frame), JPG_QUALITY)
@@ -146,7 +136,8 @@ func _run() -> void:
 	var fmt := "CAMCHECK %s stage %d %s: model share mean %.1f%% min %.1f%% max %.1f%%,"
 	fmt += " sim height %.1f%%, highest bone %.1f%%;"
 	fmt += " feet out %d, ground ahead out %d, camera inside a solid building %d,"
-	fmt += " feet hidden behind a solid building %d, of %d frames"
+	fmt += " feet hidden behind a solid building %d, body behind a falling section %d (solid %d),"
+	fmt += " of %d frames"
 	var row := [
 		_candidate,
 		_stage,
@@ -160,34 +151,12 @@ func _run() -> void:
 		_ground_out,
 		_inside,
 		_hidden,
+		_fall_over,
+		_fall_hidden,
 		n
 	]
 	print(fmt % row)
 	quit()
-
-
-## Research 19.3's lead, toward where the kaiju is going, after Rampage placed the camera this
-## frame: the camera slides (its aim with it), so the framing itself is the candidate's.
-func _lead_camera(delta: float) -> void:
-	var at := _kaiju().global_position
-	var target := _lead
-	if _last != Vector3.INF:
-		var v := (at - _last) / delta
-		v.y = 0.0
-		_moving_for = (
-			_moving_for + delta if v.length() > MOVING * _rampage.sim.body_scale() else 0.0
-		)
-		if _rampage.sim.body.dash.on():
-			target = _lead  # no new lead during a dash or leap: the eased follow handles them
-		elif _moving_for >= LEAD_HOLD:
-			var dir := v.normalized()
-			var toward := 1.0 + (LEAD_TOWARD_CAMERA - 1.0) * maxf(0.0, dir.z)
-			target = dir * _lead_units * toward
-		else:
-			target = Vector3.ZERO
-	_last = at
-	_lead = _lead.lerp(target, minf(1.0, delta * LEAD_EASE))
-	_camera.global_position += _lead
 
 
 func _kaiju() -> KaijuModel:
@@ -238,6 +207,17 @@ func _check_frame(height: int) -> void:
 			break
 	if _blocked(eye, feet + Vector3(0, FEET_SIGHT, 0), opaque):
 		_hidden += 1
+	var city: CityView = _rampage.get("_city")
+	var falls: FallFade = city.get("_fall_fade")  # null before FallFade is wired in: every piece solid
+	var sight := BuildingFade.sight_of(_rampage.sim)
+	var over := false
+	var solid_over := false
+	for piece: Node3D in city.falling_pieces():
+		if FallFade.covers(piece, eye, sight):
+			over = true  # a falling section over the body (today's game drew every one solid)
+			solid_over = solid_over or falls == null or falls.opacity(piece) >= 1.0
+	_fall_over += 1 if over else 0
+	_fall_hidden += 1 if solid_over else 0
 
 
 ## The buildings drawn solid this frame (BuildingFade's opacity 1): a faded one hides nothing.

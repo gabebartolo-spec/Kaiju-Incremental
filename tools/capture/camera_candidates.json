@@ -1,9 +1,10 @@
 {
-	"_comment": "Camera growth candidates (research 19, ROADMAP B): per candidate and stage, an override of data/tuning.json \"camera\" (offset, fov, zoom_base, zoom_per_scale) plus the look-ahead lead in world units that tools/capture/capture_camera_growth.gd adds (no production code reads this file).",
+	"_comment": "Camera growth candidates (research 19, ROADMAP B): per candidate and stage, an override of data/tuning.json \"camera\" (offset, fov, zoom_base, zoom_per_scale) plus the look-ahead lead in world units it was shown with (camera A is now the game's own, D-121: tuning \"camera\" lead_*) (no production code reads this file).",
 	"A": {
 		"label": "A  today + look-ahead",
 		"stages": {
 			"1": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 3.0},
+			"3": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 3.0},
 			"4": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 7.5}
 		}
 	},
