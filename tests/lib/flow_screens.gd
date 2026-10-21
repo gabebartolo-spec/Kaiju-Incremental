@@ -87,6 +87,7 @@ func _check_new_game() -> void:
 	if rampage == null:
 		main.queue_free()
 		return
+	await rampage.wait_loaded()  # Main builds the run over several frames behind a loading screen
 	layout.listen(rampage, "HUD")
 	await FlowDash.run(t, check, rampage)
 	await GuiInput.key(t, KEY_ESCAPE)

@@ -71,7 +71,7 @@ func _show_main() -> void:
 	_add("NEW KAIJU", fresh_fill, _on_new)
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
 	if not OS.has_feature("web"):
-		_add("QUIT", UiKit.PANEL_EDGE, func() -> void: get_tree().quit())
+		_add("QUIT", UiKit.PANEL_EDGE, func() -> void: QuitGame.now(get_tree()))
 
 
 func _on_new() -> void:

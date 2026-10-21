@@ -116,7 +116,8 @@ func _build_pavements() -> void:
 		var use := str(block["use"])
 		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
 			continue  # past the edge, or the river (CityRiver): no one walks on the water
-		var ring := rect.grow(PAVEMENT)
+		# The pavement line, the same distance in from the kerb as round every other block.
+		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
 		var size := ring.size * 0.5
 		for c: Vector2 in CORNERS:
 			_nodes.append(ring.get_center() + c * size)

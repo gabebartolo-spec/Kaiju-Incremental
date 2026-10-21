@@ -1,13 +1,21 @@
-# Seconds per suite from tools/run_tests.sh (TIMINGS_FILE=...), 2026-10-19 (PR run 39224258854).
+# Seconds per suite from tools/run_tests.sh, mean of tests runs 39436600440 and 39428356383 (2026-10-20).
 # Nobody edits this per PR: a new suite counts as DEFAULT_SECS until the next re-measure (at least weekly).
-# tools/plan_ci_shards.sh splits the suites across shards from these.
-shards 2
+# tools/plan_ci_shards.sh splits the suites across shards from these. sim is ~9 min alone, so 4 shards is the floor for a ~10 min run.
+shards 4
+sim 540
+destruction 260
+military 245
+growth 242
+flow 188
+tentacles 98
+load 95
+city 44
+cells 38
+powers 20
+landmarkcells 10
+clips 10
+cell_mesh 9
 smoke 8
-sim 9
-powers 1
-tentacles 5
-city 11
-growth 12
-load 44
-flow 93
-clips 11
+carving 5
+native 0
+voxel_support 0

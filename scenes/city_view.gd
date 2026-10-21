@@ -11,6 +11,12 @@ const MAX_FIRES := 30
 const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
+## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
+## screen between them (b2-30: building the whole city in one call froze the screen for seconds).
+var stages := BuildStages.new()
+## Whether the city is built (always true after _ready when not staged).
+var is_loaded := false
+
 var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
@@ -38,12 +44,17 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = tru
 
 
 func _ready() -> void:
-	_build_environment()
+	if stages.on:
+		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
+	CityEnvironment.attach(self, sim)
 	_build_ground()
+	if not await stages.next(self):
+		return
 	var colors: Array[Color] = []
 	for b: RampageSim.Building in sim.buildings:
 		colors.append(_base_color(b))
 	_stream = BuildingStream.new(sim, colors)
+	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
 	add_child(_stream)
 	_fade = BuildingFade.new(sim.buildings, _stream.built)
 	fx = Fx.new()
@@ -55,13 +66,25 @@ func _ready() -> void:
 	_topple = ToppleFx.new(self, _rng)
 	add_child(_topple)
 	Fire.prewarm(self)
+	if not await stages.next(self):
+		return
 	if _with_decor:
 		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
 		add_child(_decor)
+		if not await stages.next(self):
+			return
 		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
 		add_child(street)
+		if not await stages.next(self):
+			return
 	# Where the kaiju's walk ends (comments #18).
 	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
+	while stages.on and not _stream.initial_done():
+		if not await stages.next(self, false):
+			return
+	_stream.finish_initial()
+	process_mode = Node.PROCESS_MODE_INHERIT
+	is_loaded = true
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed.
@@ -88,6 +111,8 @@ func crush_all(spots: Array[Vector3]) -> void:
 
 
 func _process(delta: float) -> void:
+	if not is_loaded:
+		return
 	_animate_falls(delta)
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
@@ -99,54 +124,6 @@ func _process(delta: float) -> void:
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
-
-
-func _build_environment() -> void:
-	var env := Environment.new()
-	var sky := Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Look.color("sky_top")
-	sky_mat.sky_horizon_color = Look.color("sky_horizon")
-	sky_mat.ground_horizon_color = Look.color("sky_horizon")
-	sky_mat.ground_bottom_color = Look.color("sky_horizon")
-	sky.sky_material = sky_mat
-	env.background_mode = Environment.BG_SKY
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	if Content.look().has("ambient_color"):
-		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Look.color("ambient_color")
-	env.ambient_light_energy = Look.value("ambient")
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.ssao_enabled = true
-	env.ssao_intensity = Look.value("ssao")
-	env.ssao_power = Look.value("ssao_power")
-	env.ssao_radius = 1.5
-	env.fog_enabled = Look.value("fog_density") > 0.0
-	env.fog_light_color = Look.color("fog_color")
-	# A grown city (D-039) thins the fog with its size, so its far edge still reads as skyline.
-	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
-	env.glow_enabled = Look.value("glow") > 0.0
-	env.glow_intensity = Look.value("glow")
-	env.glow_hdr_threshold = Look.value("glow_threshold")
-	# Screen-space bounce light from lamps, fires and sun (SDFGI cost ~a tenth of the frame).
-	env.ssil_enabled = true
-	env.adjustment_enabled = true
-	env.adjustment_saturation = Look.value("saturation")
-	env.adjustment_contrast = Look.value("contrast")
-	var world_env := WorldEnvironment.new()
-	world_env.environment = env
-	add_child(world_env)
-	CreasePass.attach(self)  # creases darkened in screen space; off when the look says 0
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(Look.value("sun_pitch"), -35, 0)
-	sun.light_energy = Look.value("sun_energy")
-	sun.light_color = Look.color("sun_color")
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 160.0
-	sun.shadow_blur = 1.5
-	sun.light_angular_distance = 1.0
-	add_child(sun)
 
 
 ## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
