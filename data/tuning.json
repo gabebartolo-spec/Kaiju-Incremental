@@ -248,7 +248,7 @@
 			"max_drawn": 36
 		}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0},
+	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
 		"map_seed": 7301,
 		"half": 42,
@@ -434,7 +434,7 @@
 		"fade_s": 0.3,
 		"puff": 1.6
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4},
 	"topple_fx": {
 		"shudder_s": 0.4,
 		"shudder_max_share": 0.3,
@@ -679,7 +679,8 @@
 		"arc_shed_cells": 32,
 		"column_bay": 8,
 		"carve": true,
-		"chunk_alive_share": 0.5
+		"chunk_alive_share": 0.5,
+		"warm_margin": 3
 	},
 	"lights": {
 		"_note": "Positional lights (street lamps, fires, police beacons; R 12.1, R 12.2). Only the pool_size lights nearest the camera are real lights (gl_compatibility ignores every positional light past 32 a frame, rendering/limits/opengl/max_renderable_lights); the rest are their emissive voxels and glow. Each light also fades out with camera distance: begin and length in metres.",

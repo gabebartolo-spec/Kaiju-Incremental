@@ -12,16 +12,22 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## Team. Lead 9 (session local_df2c2989) is still up until ITS subagents report: rubble part 2, walk-motion m1
-## (turn-weight reds), audio-duck + tentacle substep, hygiene (#121). It forwards branch/sha; lead 10 takes the PRs.
-## Lead 10's own subagents (die with this session; re-brief from <task>\handoff.md in the NEW notes folder):
-- prs (Sonnet): handover-fixes PR (fail-first, push 760b99a, merge on green), then light-pool PR. Log: hygiene\state.md.
-- walkers (Opus med): fill the empty diagonal sliver cell (stage 2 seed 1234 (60,40)) with decor, never relax the check; resync.
-- phase-b (Opus med): fix b2-20 board (smooth head flat, cars blobs, idle from behind; label "destruction still cubes").
-- presets (Opus med): R 18.1 Potato..Max; lead said yes to Medium (balanced + MSAA 2x) as 4K default IF MSAA < ~15% gpu.
-  When it lands record D-107 (number reserved) in DECISIONS.
-- Next to brief: walk m2 (R 11.1-11.4, 14.1-14.3) once m1 lands; worktree Kaiju-Incremental-wt/walk-motion (claude/walk-m1
-  54b23f5 = turn-weight + look-options, unused) can be reused or removed.
+## USAGE LIMIT hit ~04:30 2026-10-21: lead 10 stopped all subagents mid-task. Lead 9 archived. Re-brief from these
+## (worktree work is on disk; notes in NEW folder <task>\handoff.md unless marked OLD):
+- prs: #122 handover-fixes open (resynced for doc-caps). Then in order, PR cap 3: claude/b2-3-slow-frames 437f151 (check no
+  PROF timers, base look-options), claude/parse-step 1605c88, claude/light-pool af66971 (resync), claude/audio-duck 03516ca,
+  claude/tentacle-substep bfcdd74, claude/graphics-presets 9f37429 (record D-109 lead: Medium 4K default, +6.5% gpu),
+  claude/bridge-land 2ceb079 (QC CI captures first, comments #12), claude/turn-weight (after military fix), ci-sim-split last.
+- parse-step: sim split claude/ci-sim-split (CI timing pending); then military fixture on claude/turn-weight: restore the
+  "tanks take posts" check, re-pin seed/route (probe seeds 0-11 was running), min-samples guard >= 20, fail-first.
+- presets agent -> kaiju-double (D-107, reptilian only): claude/kaiju-double in Kaiju-Incremental-wt/kaiju-double; suites,
+  then 4K fps A/B, before/after stills; insectoid/cephalopod follow-up.
+- phase-b: b2-20 round 2 coded on claude/phase-b-boards; standing shots passed 2x self-check; rampage + clip renders left;
+  lead QC, then ask the director b2-20.
+- walkers: fill empty diagonal sliver cell, resync (OLD notes\walkers). rubble3: claude/b2-3-part3 (sim worst < 100 ms).
+- view-spikes: claude/view-spikes (fall_land 349 ms, debris queue). bridge: done pending capture QC.
+- Next to brief: walk m2 (R 11.1-11.4, 14.1-14.3) after turn-weight lands; R 6.1 no-empty-space suite after walkers.
+- Worktrees: ~50 vs cap 12; safe ones (hygiene, hygiene2-5, ci-balance) need --force, refused: ask the director.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
 ## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
