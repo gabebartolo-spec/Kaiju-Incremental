@@ -46,6 +46,8 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+## Seconds the sim still waits after a dash broke through a wall (a tiny hit-stop, comment #34).
+var _hit_stop := 0.0
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -167,6 +169,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
+	if _hit_stop > 0.0:
+		_hit_stop -= delta
+		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var signature := Input.is_action_just_pressed("signature")
 	var held := Input.is_action_pressed("signature")
@@ -250,6 +255,11 @@ func _on_event(event: Dictionary) -> void:
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]
 			_on_chunks_broken(Num.i(event["building"]), cells, Num.f(event.get("pay", 1.0)))
+		"dash_wall":  # the wall gives: a tiny hit-stop and a camera jolt per building
+			var dash_cfg := sim.body.dash.cfg
+			_hit_stop = minf(_hit_stop + Num.f(dash_cfg["wall_hit_stop"]), Num.f(dash_cfg["hit_stop_cap"]))
+			var wall_at: Vector2 = event["at"]
+			add_trauma(shake.source("dash_wall"), _to_world(wall_at))
 		"fall_start":
 			_city.fall_start(event)
 		"fall_land":

@@ -16,6 +16,8 @@ var ready_in := 0.0
 var left := 0.0
 var dir := Vector2.ZERO
 var dashes := 0
+## True on a step the dash carried the body: its sweep breaks everything and nothing holds it.
+var carried := false
 var _speed := 0.0
 var _hit: Dictionary = {}  # tank ids this dash already struck
 
@@ -38,12 +40,14 @@ func available() -> bool:
 ## Starts a dash when pressed and ready, then carries the body along it. Before the sweep.
 func step(dt: float, pressed: bool) -> void:
 	ready_in = maxf(0.0, ready_in - dt)
+	carried = false
 	if pressed and ready_in <= 0.0 and left <= 0.0 and available() and not sim.airborne:
 		left = Num.f(cfg["seconds"])
 		ready_in = Num.f(cfg["cooldown"])
 		dir = sim.facing
 		_speed = Num.f(cfg["lengths"]) * body.length() / left
 		_hit = {}
+		body.burst_through = {}
 		dashes += 1
 		sim.events.append({"type": "dash", "from": sim.kaiju_pos, "dir": dir, "seconds": left})
 	if left <= 0.0:
@@ -52,6 +56,7 @@ func step(dt: float, pressed: bool) -> void:
 	sim.kaiju_pos = sim.clamp_to_arena(from + dir * _speed * minf(dt, left))
 	sim.facing = dir
 	left -= dt
+	carried = true
 	_strike(from, sim.kaiju_pos)
 
 

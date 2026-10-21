@@ -25,6 +25,8 @@ var longest_hold := 0.0
 var snout := 0.0
 ## The charge along the facing (Dash), which this body's sweep carries through the city.
 var dash: Dash
+## Buildings this dash has already burst through ({index: true}), one "dash_wall" event each.
+var burst_through: Dictionary = {}
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -32,6 +34,9 @@ var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
 var _dt := 0.0
 var _hold_s := 0.0
+## True once a wall has held the body shove_s: from then on it breaks outright until he is clear.
+var _shoved := false
+var _touching := false  # the last sweep found chunks in the body's path
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -86,14 +91,30 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	var from_heading := heading if _last_pos.x == INF else _last_heading
 	_dt = dt
 	_sweep(from, from_heading, sim.kaiju_pos, heading)
-	held = not inside(sim.kaiju_pos, heading).is_empty()
+	held = not dash.carried and not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
+	if _hold_s >= Num.f(cfg["shove_s"]):
+		_shoved = true  # about a second of pushing and the wall gives way (D-118)
+	elif not held and not _touching:
+		_shoved = false
 	longest_hold = maxf(longest_hold, _hold_s)
 	if held:
 		_hold(from, from_heading)
-		dash.left = 0.0  # a dash into a wall that has not given yet stops at it
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
+
+
+## The `count` of `cells` (building `b`'s chunks) nearest the kaiju: the ones he is pushing on.
+func _nearest_cells(b: RampageSim.Building, cells: Array[Vector3i], count: int) -> Array[Vector3i]:
+	var keyed: Array[Array] = []
+	for c: Vector3i in cells:
+		var p := b.chunk_world(c)
+		keyed.append([Vector2(p.x, p.z).distance_squared_to(sim.kaiju_pos), c.y, c])
+	keyed.sort_custom(func(a: Array, z: Array) -> bool: return a[0] < z[0] or (a[0] == z[0] and a[1] < z[1]))
+	var out: Array[Vector3i] = []
+	for k: int in mini(count, keyed.size()):
+		out.append(keyed[k][2])
+	return out
 
 
 ## A wall that has not given yet: the body slides along it if it can, else stays where it was.
@@ -133,6 +154,7 @@ func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 
 
 func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> void:
+	_touching = false
 	var reach := _reach()
 	var near := _near(from, to, reach)
 	if near.is_empty():
@@ -146,6 +168,7 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 		var at: Vector2 = pose[0]
 		var facing: Vector2 = pose[1]
 		_collect(at, facing, hits, near)
+	_touching = not hits.is_empty()
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
@@ -153,13 +176,35 @@ func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vecto
 		var before := sim.rubble
 		var first := sim.events.size()
 		var b := sim.buildings[index]
-		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
-		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * _dt if dwarfs else INF)
+		var big := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
+		var dwarfs := big and not dash.carried and not _shoved
+		var n := 0
+		if dwarfs:  # D-118: every contact visibly loses chunks (the nearest few), the rest is chewed
+			var pushed := _nearest_cells(b, cells, Num.i(cfg["shove_chunks"]))
+			n = sim.damage_chunks(index, pushed, INF)
+			var rest: Array[Vector3i] = []
+			for c: Vector3i in cells:
+				if not pushed.has(c):
+					rest.append(c)
+			if not rest.is_empty():
+				n += sim.damage_chunks(index, rest, Num.f(cfg["bite_dps"]) * _dt)
+		else:
+			n = sim.damage_chunks(index, cells, INF)
+		if dash.carried:  # a carved wall can keep a chunk through a blow: strike what stands again
+			var standing: Array[Vector3i] = []
+			for c: Vector3i in cells:
+				if b.frame.alive(c):
+					standing.append(c)
+			if not standing.is_empty():
+				n += sim.damage_chunks(index, standing, INF)
 		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
 		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
 			sim.rubble = before + (sim.rubble - before) * pay
 			sim.events[first]["pay"] = pay
 		broken += n
+		if n > 0 and dash.carried and not burst_through.has(index):
+			burst_through[index] = true  # the wall gives: presentation kicks (hit-stop, camera)
+			sim.events.append({"type": "dash_wall", "building": index, "at": Vector2(b.x, b.z)})
 
 
 ## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is

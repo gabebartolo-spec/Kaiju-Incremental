@@ -13,6 +13,12 @@ const DT := 1.0 / 30.0
 const FORWARD_STEPS := 90
 const TURN_STEPS := 30
 const BACK_STEPS := 45
+## The walk-through: steps walked, the steps after contact in which chunks must already be
+## gone, how many, and the longest a wall may hold the body (seconds).
+const WALK_STEPS := 150
+const EARLY_STEPS := 6
+const EARLY_CHUNKS := 3
+const SHOVE_LIMIT_S := 1.0
 ## Steps that cover one dash and its end.
 const DASH_STEPS := 20
 ## The tower test: the baby chews across a tier-2 tower's base for at most this long (steps).
@@ -67,6 +73,8 @@ func run() -> void:
 	)
 	_check.call(on == _walk(true, 1), "the walk through a building replays identically")
 	_check_dash()
+	_check_dash_burst()
+	_check_walk_through()
 	_check_topple()
 	_check_autoplay()
 	_check_sweep_end()
@@ -98,6 +106,128 @@ func _check_dash() -> void:
 			% [moved, sim.body.length(), worst, sim.body.broken]
 		)
 	)
+
+
+## Comment #34: a dash from point-blank bursts through whatever it meets: the full distance
+## (1.5 body lengths), every chunk its body passes through broken (a building that dwarfs the
+## baby too, and a landmark), a "dash_wall" event per building broken, one kick each.
+func _check_dash_burst() -> void:
+	for kind: String in ["low", "dwarfing", "landmark", "open"]:
+		var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+		sim.body.use_species("reptilian")
+		sim.arena_half = 400.0  # the landmark sites lie in the band past the play area
+		var dir := Vector2(1, 0)
+		var index := -1
+		match kind:
+			"low":
+				index = _nearest(sim, 1)
+			"dwarfing":
+				index = _nearest(sim, 2, 10, 4)
+			"landmark":
+				for i: int in sim.buildings.size():
+					if sim.buildings[i].landmark != "":
+						index = i
+						break
+		if kind == "open":
+			var spot := _open_run(sim)
+			_place(sim, spot, dir)
+		else:
+			var b := sim.buildings[index]
+			_place(sim, Vector2(b.x - b.w * 0.5 - 0.3, b.z), dir)
+		var from := sim.kaiju_pos
+		var dist := Num.f(sim.body.dash.cfg["lengths"]) * sim.body.length()
+		var expect := _swept(sim, from, dir, dist)
+		var walls := 0
+		var wall_buildings := {}
+		for n: int in DASH_STEPS:
+			for e: Dictionary in sim.step(DT, Vector2.ZERO, false, Dash.BUTTON if n == 1 else 0):
+				if str(e["type"]) == "dash_wall":
+					walls += 1
+					wall_buildings[Num.i(e["building"])] = true
+		var moved := sim.kaiju_pos.distance_to(from)
+		var left := 0
+		for key: Vector4i in expect:
+			if sim.buildings[key.w].frame.alive(Vector3i(key.x, key.y, key.z)):
+				left += 1
+		_check.call(
+			absf(moved - dist) <= dist * 0.05 and left == 0 and walls == wall_buildings.size() and (expect.is_empty() or walls >= 1),
+			(
+				"%s: a dash from point-blank travels %.1f of %.1f m, %d of %d swept chunks left, %d kicks"
+				% [kind, moved, dist, left, expect.size(), walls]
+			)
+		)
+		if kind == "open":
+			_check.call(
+				expect.is_empty() and walls == 0 and sim.body.dash.dashes == 1,
+				"the open dash breaks nothing and kicks nothing"
+			)
+
+
+## D-118 (director 2026-10-21): "even big building should take visible damage, it should be easy
+## for him to tear through them": walking into a building that dwarfs him loses chunks at once on
+## contact and gives way after a short shove (SHOVE_LIMIT_S at most), never a dead stop.
+func _check_walk_through() -> void:
+	var top := 0
+	var probe: RampageSim = _make.call("reptilian", {}, 0, {})
+	for b in probe.buildings:
+		if b.landmark == "" and b.in_arena and b.height >= 6 and mini(b.w, b.d) >= 4:
+			top = maxi(top, b.tier)
+	for tier: int in range(2, top + 1):
+		var sim: RampageSim = _make.call("reptilian", {}, 0, {})
+		sim.body.use_species("reptilian")
+		var index := _nearest_of(sim, tier, Vector2i(6, 4), -1)
+		var b := sim.buildings[index]
+		var dir := Vector2(1, 0)
+		_place(sim, Vector2(b.x - b.w * 0.5 - sim.body.length() * 0.6, b.z), dir)
+		var start_x := sim.kaiju_pos.x
+		var contact := -1
+		var early := 0
+		for n: int in WALK_STEPS:
+			sim.step(DT, dir, false)
+			if contact < 0 and sim.body.held:
+				contact = n
+			if contact >= 0 and n == contact + EARLY_STEPS:
+				early = sim.body.broken
+		var depth := sim.kaiju_pos.x - (b.x - b.w * 0.5)
+		_check.call(
+			contact >= 0 and early >= EARLY_CHUNKS and sim.body.longest_hold <= SHOVE_LIMIT_S + DT,
+			(
+				"tier %d (%dx%dx%d) walked into: contact at step %d, %d chunks gone within %.1f s,"
+				+ " longest hold %.2f s, body %.1f m inside after %.0f s"
+			)
+			% [tier, b.w, b.d, b.height, contact, early, EARLY_STEPS * DT, sim.body.longest_hold, depth, WALK_STEPS * DT]
+		)
+
+
+## A start inside the arena with a clear run along +x for a dash and a body length beyond.
+func _open_run(sim: RampageSim) -> Vector2:
+	var dist := Num.f(sim.body.dash.cfg["lengths"]) * sim.body.length()
+	var half := sim.arena_half - 2.0
+	var z := -half
+	while z <= half:
+		var x := -half
+		while x + dist + sim.body.length() <= half:
+			var at := Vector2(x, z)
+			if _swept(sim, at, Vector2(1, 0), dist).is_empty():
+				return at
+			x += 2.0
+		z += 2.0
+	return sim.kaiju_pos
+
+
+## Every standing chunk {Vector4i(x, y, z, building): true} the body overlaps along a straight run.
+func _swept(sim: RampageSim, from: Vector2, dir: Vector2, dist: float) -> Dictionary:
+	var out: Dictionary = {}
+	# The sweep's own samples: each 30 Hz step of the dash is cut into sample-sized pieces.
+	var ticks := roundi(Num.f(sim.body.dash.cfg["seconds"]) / DT)
+	var steps := ticks * ceili(dist / ticks / Num.f(sim.body.cfg["sample"]))
+	for n: int in range(1, steps + 1):  # the start pose is the player's, never swept
+		var at := from + dir * dist * float(n) / steps
+		var inside := sim.body.inside(at, dir)
+		for index: int in inside:
+			for c: Vector3i in inside[index]:
+				out[Vector4i(c.x, c.y, c.z, index)] = true
+	return out
 
 
 ## The nearest standing building of exactly this tier (no landmark) to the kaiju; `min_height`
@@ -204,16 +334,18 @@ func _check_topple() -> void:
 		)
 	)
 	_check_falls_by_physics(sim, fall)
-	_check_swipe_undermines(Num.i(chew["steps"]))
+	_check_swipe_undermines()
 	_check_swipe_occlusion()
 
 
 ## D-096 (director 2026-10-20, "Swipes undermine towers"): a claw hit on a tower's base counts as
 ## chewing it, so the same chew with the swipe on brings the tower down sooner than with it off.
-func _check_swipe_undermines(swiped_steps: int) -> void:
+func _check_swipe_undermines() -> void:
+	var on: RampageSim = _make.call("reptilian", {}, 0, {})
+	var swiped_steps := Num.i(_chew_to_topple(on, true)["steps"])
 	var off: RampageSim = _make.call("reptilian", {}, 0, {})
 	off.stats["swipe_damage"] = 0.0
-	var chew := _chew_to_topple(off)
+	var chew := _chew_to_topple(off, true)
 	var fell := chew["fall"] != null
 	_check.call(
 		fell and swiped_steps < Num.i(chew["steps"]),
@@ -267,8 +399,12 @@ func _check_swipe_occlusion() -> void:
 ## The baby chews straight north into the nearest tall tier-2 office tower's base from its
 ## south face
 ## until the tower topples: {"steps", "worst" (chunks ever inside the body), "fall" (or null)}.
-func _chew_to_topple(sim: RampageSim) -> Dictionary:
+func _chew_to_topple(sim: RampageSim, chew_only: bool = false) -> Dictionary:
 	sim.body.use_species("reptilian")
+	if chew_only:  # no shove (D-118): the tower yields to the bite alone, so a swipe's help shows
+		sim.body.cfg = sim.body.cfg.duplicate()
+		sim.body.cfg["shove_chunks"] = 0
+		sim.body.cfg["shove_s"] = 1.0e9
 	var index := _nearest_office(sim)
 	var b := sim.buildings[index]
 	var into := Vector2(0, -1)  # from the tower's south face, across its base
