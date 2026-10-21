@@ -93,15 +93,19 @@ func finish_initial() -> void:
 		_task = WorkerThreadPool.add_group_task(_stream_one, _rest.size())
 
 
-## Reorders `queue` so its landmarks stream before every ordinary building, each group keeping
-## its nearest-first order.
+## Reorders `queue` so its landmarks stream before every other building, then the red-barrel
+## sites (their models are not the stand-in box either), each group keeping its nearest-first order.
 func _landmarks_first(queue: Array[int]) -> void:
 	var marks: Array[int] = []
+	var hazards: Array[int] = []
 	var others: Array[int] = []
 	for n: int in queue:
 		var b := _sim.buildings[n]
-		(marks if b.landmark != "" or b.hazard != "" else others).append(n)
-	queue.assign(marks + others)
+		if b.landmark != "":
+			marks.append(n)
+		else:
+			(hazards if b.hazard != "" else others).append(n)
+	queue.assign(marks + hazards + others)
 
 
 ## The buildings still to stream after load, in the order the workers take them.

@@ -24,23 +24,29 @@ const FIREBALL_AT: Array[float] = [0.0, 0.14, 0.45, 0.72, 1.0]
 const FLASH: Array[Color] = [Color(5.0, 4.4, 3.2, 1.0), Color(3.4, 2.0, 0.6, 1.0)]
 
 
-## Glowing voxels thrown up and out of the site's box, cooling to soot as they rise and slow.
+## Glowing voxels thrown up and out of the site's box (at least fireball.spread_scale blast
+## radii wide), cooling to soot as they slow; damped so none climbs past fireball.top_scale times
+## the site's height (a voxel at speed v stops after v^2 / 2 damping).
 static func fireball(
 	host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: Dictionary
 ) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = half
+	var wide := radius * Num.f(cfg["spread_scale"])
+	mat.emission_box_extents = Vector3(maxf(half.x, wide), half.y, maxf(half.z, wide))
 	mat.direction = Vector3.UP
 	mat.spread = 80.0
-	mat.initial_velocity_min = radius * 1.0
-	mat.initial_velocity_max = radius * 2.6
-	mat.gravity = Vector3(0, radius * 0.6, 0)  # hot air: it rises as it burns out
-	mat.damping_min = radius * 0.6
-	mat.damping_max = radius * 1.0
+	var speed := radius * Num.f(cfg["speed_scale"])
+	var size := radius * Num.f(cfg["size"])
+	var rise := maxf(0.2, half.y * 2.0 * Num.f(cfg["top_scale"]) - half.y * 2.0 - size * 0.7)
+	mat.initial_velocity_min = speed * 0.5
+	mat.initial_velocity_max = speed
+	mat.gravity = Vector3.ZERO
+	mat.damping_min = speed * speed / (2.0 * rise)
+	mat.damping_max = mat.damping_min * 1.3
 	mat.angular_velocity_min = -90.0
 	mat.angular_velocity_max = 90.0
-	curve(mat, Vector2(0.6, 1.4) * radius * Num.f(cfg["size"]), [0.7, 1.5, 0.8])
+	curve(mat, Vector2(0.6, 1.4) * size, [0.7, 1.4, 0.6])
 	mat.color_ramp = ramp(FIREBALL, FIREBALL_AT)
 	var life := Num.f(cfg["seconds"])
 	var amount := roundi(Num.f(cfg["amount"]) * clampf(radius / 5.0, 0.5, 1.6))
@@ -123,7 +129,9 @@ static func toxic_cloud(
 	var green := Color(str(cfg["color"]))
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = half * Num.f(cfg["size_scale"])
+	var wide := radius * Num.f(cfg["cloud_share"])
+	var box := half * Num.f(cfg["size_scale"])
+	mat.emission_box_extents = Vector3(maxf(box.x, wide), box.y, maxf(box.z, wide))
 	mat.direction = Vector3.UP
 	mat.spread = 90.0
 	mat.initial_velocity_min = 0.4
