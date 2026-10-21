@@ -240,6 +240,7 @@ func _check_rampage() -> void:
 			% [heard.slice(0, 12)]
 		)
 	)
+	await preload("res://tests/lib/flow_ruin_fire.gd").run(self, check, rampage)  # #111
 	rampage.queue_free()
 	await process_frame
 

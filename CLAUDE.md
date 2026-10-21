@@ -1,6 +1,7 @@
 # Kaiju Incremental: working rules for every Claude Code session
 
-Godot 4.7.2, GDScript (static typing on). Read this file, then your handoff (`agent-handoffs/<role>.md`), then only the
+Godot 4.7.2, GDScript (static typing on). Read this file, then `docs/DESIGN.md` in full (the one design document: what the game is,
+every standing ruling), then your handoff (`agent-handoffs/<role>.md`), then only the
 roadmap section you were assigned (`docs/ROADMAP.md`, by section, never whole). The general
 rules every project shares live in `~/.claude/CLAUDE.md` and the skills it names
 (`ask-the-director`, `ai-game-dev-playbook`, `github-hygiene`, `game-architecture`,
@@ -17,7 +18,7 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
   assigned. When an assigned task is done: stop, report with evidence, recommend the next step, wait.
 - **Simplest viable option first.** Fewer systems, fewer numbers, fewer files. Challenge
   over-ambitious items and say what the simpler alternative is.
-- **Challenge the director** when a request conflicts with these rules or `docs/VISION.md`. One
+- **Challenge the director** when a request conflicts with these rules or `docs/DESIGN.md`. One
   paragraph, a better option, then do what the director decides.
 - **Ask, don't ponder.** A judgement call that is the director's is asked at once, the
   `ask-the-director` way. Never park a question in a wall of text; never guess at a visual.

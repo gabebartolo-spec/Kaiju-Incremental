@@ -38,7 +38,7 @@ var _stats := {
 }
 var _last_us := 0
 var _last_live_t := 0.0  # the last time any live piece or island body was still moving
-var _counts := {"islands": 0, "breaks": 0, "pieces": 0, "fires": 0}
+var _counts := {"islands": 0, "breaks": 0, "pieces": 0}
 ## Per island: when it last began to fall free or broke, and the gaps.
 var _holds: Array[Dictionary] = []
 var _enclosed: Array[int] = []  # pieces inside a building, once a second
@@ -106,7 +106,6 @@ func _setup() -> void:
 	_phys = CarvePhysics.new(7)
 	_phys.fx = fx
 	_world.add_child(_phys)
-	_phys.ignited.connect(_on_ignited)
 	_phys.spawned.connect(func(chunk: IslandBody) -> void: chunk.broke.connect(_on_broke))
 	var layout := _layout()
 	for n: int in layout.size():
@@ -215,13 +214,6 @@ func _on_broke(pieces: Array[Dictionary], at: Vector3) -> void:
 	_event("break", at)
 
 
-func _on_ignited(at: Vector3, size: float) -> void:
-	_counts["fires"] += 1
-	var fire := Fire.new(size, Num.f(_counts["fires"]))
-	fire.position = at
-	_world.add_child(fire)
-
-
 func _event(kind: String, at: Vector3) -> void:
 	if _event_shots >= MAX_EVENT_SHOTS:
 		return
@@ -305,7 +297,7 @@ func _report() -> void:
 	var size := DisplayServer.window_get_size()
 	print(
 		(
-			"CARVE_PHYS scene=%s frames=%d window=%dx%d islands=%d breaks=%d pieces=%d fires=%d"
+			"CARVE_PHYS scene=%s frames=%d window=%dx%d islands=%d breaks=%d pieces=%d"
 			% [
 				_scene,
 				_frame,
@@ -314,7 +306,6 @@ func _report() -> void:
 				_counts["islands"],
 				_counts["breaks"],
 				_counts["pieces"],
-				_counts["fires"],
 			]
 		)
 	)
