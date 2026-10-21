@@ -179,6 +179,10 @@ ignition, windows glow 1-3 s first so a firebreak is possible; intact -> heating
 only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (R 26.3) · nodes Kindle,
 Fan the flames, Tailwind, Ember storm, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
 visual tiers (R 26.5). His questions: a spark source for non-breath species; wind fixed/rotatable or drifting.
+Fire crews (director 2026-10-22, comment #50: "fire fighting crews including helicopters and firetrucks will attempt to fight
+the fires, bonus biomass awarded for killing these humans"): fire trucks and helicopters head for burning buildings and
+try to put them out; killing the crews pays bonus biomass above a normal person (amount a placeholder flagged for tuning).
+Built after the fire spread lands (it needs fires to fight); how hard they fight a fire is asked at that phase.
 Explosive sites (comments #19, #20): fuel silos, fireworks factories and chemical labs placed through the city as the
 "red barrel": any damage (kaiju, rubble, a clumsy army shell, #18) arms a fuse, blasts carve and chain. Their explosions
 get really good SFX and VFX (his words): a visible shockwave ring and air distortion, a sonic boom delayed by distance,
