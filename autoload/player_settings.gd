@@ -1,7 +1,7 @@
 class_name PlayerSettings
 extends RefCounted
-## The player's settings: volume (overall and sound effects), fullscreen, UI scale and the frame
-## cap, kept in
+## The player's settings: volume (overall and sound effects), camera motion, fullscreen, UI scale
+## and the frame cap, kept in
 ## their own file apart from the save. Static so the settings screen and tests reach them
 ## without the Settings autoload (which loads them at start and owns the input actions and F11).
 
@@ -28,6 +28,9 @@ const CONTROLS: Array[Array] = [
 static var volume := 0.8
 ## The SFX bus volume (0..1); the default is tuning "sfx" default_volume.
 static var sfx_volume := -1.0
+## Camera motion (0..1): scales the shake, the footfall dip and the breath swing together (XAG
+## 117); -1 = tuning "camera_shake" default_motion.
+static var camera_motion := -1.0
 static var fullscreen := false
 static var ui_scale := 1.0
 ## Frames a second at most in play (0 = unlimited); -1 = tuning "display" fps_default.
@@ -48,6 +51,18 @@ static func set_sfx_volume(value: float) -> void:
 	sfx_volume = clampf(value, 0.0, 1.0)
 	apply()
 	save()
+
+
+static func set_camera_motion(value: float) -> void:
+	camera_motion = clampf(value, 0.0, 1.0)
+	save()
+
+
+## The camera-motion setting in use, its tuning default until the player sets one.
+static func motion() -> float:
+	if camera_motion < 0.0:
+		return Num.f(Content.section("camera_shake")["default_motion"])
+	return camera_motion
 
 
 static func set_fullscreen(on: bool) -> void:
@@ -192,6 +207,7 @@ static func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "volume", volume)
 	cfg.set_value("audio", "sfx_volume", sfx())
+	cfg.set_value("display", "camera_motion", motion())
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
 	cfg.set_value("display", "version", DISPLAY_VERSION)
@@ -208,6 +224,7 @@ static func load_saved(start_full: bool) -> void:
 		return
 	volume = clampf(Num.f(cfg.get_value("audio", "volume", volume)), 0.0, 1.0)
 	sfx_volume = clampf(Num.f(cfg.get_value("audio", "sfx_volume", sfx())), 0.0, 1.0)
+	camera_motion = clampf(Num.f(cfg.get_value("display", "camera_motion", motion())), 0.0, 1.0)
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]
