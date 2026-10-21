@@ -29,6 +29,7 @@ var _flame_mesh: BoxMesh
 var _flame_color := Color.BLACK
 var _decor: CityDecor
 var _fires: Array[Fire] = []
+var _chunk_fires := BuildingFires.new()
 var _debris: DebrisField
 
 var _with_decor := true
@@ -59,7 +60,7 @@ func _ready() -> void:
 	add_child(fx)
 	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
 	add_child(_debris)
-	_ruins = RuinYard.new(sim, _stream.view, fire)
+	_ruins = RuinYard.new(sim, _stream.view)
 	add_child(_ruins)
 	_topple = ToppleFx.new(self, _rng)
 	add_child(_topple)
@@ -151,7 +152,7 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	var view := _stream.view(index)
 	if sim.body.over(index):  # the body's bite tears a piece off (BodyBite)
 		BodyBite.tear(self, view, cells, kaiju_at, _rng)
-		_ruins.mark(index)
+		_broke(index, cells)
 		return
 	var parts := view.hide_chunks(cells)
 	parts.append_array(view.chip(cells, _rng))
@@ -170,9 +171,7 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 		mid += b.chunk_world(c)
 	if cells.size() >= 4:  # only a real collapse throws up a dust cloud
 		fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
-	if _rng.randf() < 0.18:  # broken floors sometimes catch fire
-		fire(mid / maxi(1, cells.size()), 0.35)
-	_ruins.mark(index)
+	_broke(index, cells)
 
 
 ## A section starts to fall: lift its voxels into a piece that topples or drops.
@@ -193,7 +192,7 @@ func fall_start(event: Dictionary) -> void:
 		"t": 0.0,
 	}
 	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
-	_ruins.mark(index)
+	_broke(index, cells)
 
 
 ## Gravity drives it: the angle (topple) or the drop grows with the square of time.
@@ -270,8 +269,9 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 	_debris.spawn(pos, color, away)
 
 
-## A fire that keeps burning (ruins, wrecks); the oldest goes out past the cap.
-func fire(at: Vector3, size: float) -> void:
+## A fire that keeps burning on the ground (wrecks, a crash, a thrown landing); the oldest goes
+## out past the cap. Nothing lights one on a collapse: rubble never burns (#111).
+func fire(at: Vector3, size: float) -> Fire:
 	var f := Fire.new(size, _rng.randf() * 10.0)
 	f.position = at
 	add_child(f)
@@ -279,6 +279,24 @@ func fire(at: Vector3, size: float) -> void:
 	if _fires.size() > int(GraphicsPresets.cap("max_fires")):
 		var old: Fire = _fires.pop_front()
 		old.queue_free()
+	return f
+
+
+## A fire the sim lit on one chunk (the beam's coat): it goes out when that chunk breaks or falls.
+func burn_chunk(index: int, cell: Vector3i, size: float) -> void:
+	var f := fire(sim.buildings[index].chunk_world(cell), size)
+	_chunk_fires.add(index, cell, f)
+
+
+## Chunks broke or fell: fires on them go out, all of the building's once none stand (#111).
+func _broke(index: int, cells: Array[Vector3i]) -> void:
+	var out := _chunk_fires.cells_gone(index, cells)
+	if sim.buildings[index].frame.alive_count == 0:
+		out.append_array(_chunk_fires.building_gone(index))
+	for f: Fire in out:
+		_fires.erase(f)
+		f.go_out()
+	_ruins.mark(index)
 
 
 ## A short burst of real light (muzzle flash, explosion, breath).
