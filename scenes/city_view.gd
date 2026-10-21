@@ -288,8 +288,8 @@ func ruins() -> RuinYard:
 
 ## `big`: how many times the usual fragment size (a shattering band's chunks).
 ## One cube of `size` thrown now (a band bursting).
-func debris_cube(pos: Vector3, color: Color, away: Vector3, size: float) -> void:
-	_debris.cube(pos, color, away, size)
+func debris_cube(pos: Vector3, color: Color, away: Vector3, size: float, stay: float) -> void:
+	_debris.cube(pos, color, away, size, stay)
 
 
 func debris(pos: Vector3, color: Color, away: Vector3, big := 1.0) -> void:

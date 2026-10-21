@@ -268,6 +268,7 @@ func _split(f: Dictionary, view: BuildingView) -> bool:
 		total += parts.size()
 	for band: Node3D in bands:
 		_measure(band, total)
+		band.set_meta("palette", view.voxels.palette)  # its cubes take the facade's colours
 	f["bands"] = bands
 	return true
 

@@ -5,6 +5,7 @@ extends Node3D
 ## Meshes and materials are shared by size and colour. Oldest pieces go first past the cap.
 
 const SPAWN_PER_FRAME := 30
+const SINK := 1.5  # a burst band's cube sinks this many of its sizes below where it lay
 
 var size_scale := 1.0  # pieces are this many times the building's size (trees: bigger, to read)
 var lift := -1.0  # toward white before shading; below 0, the look's debris_lift
@@ -68,14 +69,15 @@ func _compact() -> void:
 
 
 ## A fragment of exactly `size` now (a band bursting into its cubes), past the queue.
-func cube(pos: Vector3, color: Color, away: Vector3, size: float) -> void:
-	_spawn_now(pos, color, away, 1.0, size)
+## It lies about `stay` seconds, then sinks into the heap that rises over it.
+func cube(pos: Vector3, color: Color, away: Vector3, size: float, stay: float) -> void:
+	_spawn_now(pos, color, away, 1.0, size, stay)
 	while _bodies.size() > _cap:
 		var old: RigidBody3D = _bodies.pop_front()
 		old.queue_free()
 
 
-func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0, fixed := 0.0) -> void:
+func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0, fixed := 0.0, stay := 0.0) -> void:
 	var size := BuildingVoxels.VOXEL * (_rng.randf_range(0.35, 0.8) if _rng.randf() < 0.8 else 1.0)
 	size *= size_scale * big
 	if fixed > 0.0:
@@ -106,6 +108,13 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0, fixed := 
 		_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6)
 	)
 	_bodies.append(body)
+	if fixed > 0.0:
+		var sink := body.create_tween()
+		sink.tween_interval(stay * _rng.randf_range(0.8, 1.2))
+		sink.tween_callback(func() -> void: body.freeze = true)
+		sink.tween_property(body, "position:y", -size * SINK, 0.7).as_relative()
+		sink.tween_callback(func() -> void: _forget(body))
+		return
 	var tween := mi.create_tween()
 	tween.tween_interval(_rng.randf_range(5.0, 8.0))
 	tween.tween_property(mi, "scale", Vector3.ONE * 0.01, 0.8)

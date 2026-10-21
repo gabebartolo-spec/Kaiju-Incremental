@@ -99,7 +99,7 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 		var bands: Array = fall["bands"]
 		_rubble.add(_bands.land(fall, slabs), voxels, false, true, true)
 		_bands.begin(fall)
-		hold = _bands.tail_s(bands.size())
+		hold = _bands.tail_s(bands.size()) + Num.f(_cfg["cube_stay_s"]) * 0.8
 		slabs = []
 	else:
 		_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
@@ -159,15 +159,21 @@ func shatter(band: Node3D) -> void:
 	var pivot: Vector3 = band.get_meta("pivot", Vector3.ZERO)
 	var count := mini(parts.size(), Num.i(_cfg["shatter_cubes"]))
 	var size := pow(float(parts.size()) / maxi(1, count), 1.0 / 3.0) * Num.f(_cfg["shatter_cube"])
+	var palette: Dictionary = band.get_meta("palette", {})
+	var keys: Array = _cfg["cube_keys"]
 	for k: int in count:
 		var part: Dictionary = parts[k * parts.size() / count]
 		var pos: Vector3 = part["pos"]
 		var color: Color = part["color"]
+		var key := str(keys[_rng.randi_range(0, keys.size() - 1)])
+		if palette.has(key):  # the facade's own albedo at this height (wall, pillar, window...)
+			var base: Color = palette[key]
+			color = Look.jitter(base, Vector3i(k, roundi(pos.y), roundi(pos.x)), k)
 		var world := xf * (pos - pivot)
 		var out := Vector3(world.x - at.x, 0.0, world.z - at.z)
 		var away := out.normalized() * Num.f(_cfg["shatter_out"])
 		away += Vector3.UP * Num.f(_cfg["shatter_up"])
-		_city.debris_cube(world, color, away, size)
+		_city.debris_cube(world, color, away, size, Num.f(_cfg["cube_stay_s"]))
 		cubes += 1
 	var gravel := roundi(Num.f(_cfg["impact_debris"]) * share * Num.f(_cfg["shatter_gravel"]))
 	for n: int in gravel:
