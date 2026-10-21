@@ -1,18 +1,28 @@
 extends RefCounted
-## The adult at its spawn (R 19.4): a stage-4 kaiju (capture_growth's adult upgrades, city seed 0)
-## stands where it rose from the river for SECONDS, the gameplay camera at rest behind it
-## (CameraTuning offset x zoom). With BuildingFade's rule deciding which buildings fade, the
-## feet must be in sight (no standing chunk of an unfaded building on the line from the eye) on
-## at least FEET_SHARE of the frames, and the eye never inside a standing chunk of an unfaded
-## building. Headless and sim-only: the camera is the rest framing, without easing, shake or lead.
+## The rise from the river in sight (R 19.4, comment #27 "Kaiju spawn seems to be blocked by
+## buildings in the foreground"): for each stage (capture_growth's upgrades, the city and army a
+## real first run gets), the kaiju rises from the river, wades in and stands SECONDS, while the
+## camera follows it the way Rampage does (CameraFollow from its first frame, the body eased in
+## at the model's 12/s) and BuildingFade, fed the eye and CityView's sight points, fades what it
+## decides. The kaiju is seen on a frame when the eye is not in a standing chunk of a building
+## that still hides (opacity above HIDES) and the line to the middle of its body above the water
+## is clear of them; it must be seen on SEEN_SHARE of the frames it is above the water, and its
+## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
 
 const Growth := preload("res://tools/capture/capture_growth.gd")
-const STAGE := 4
+const STAGES := 4
 const SECONDS := 4.0
-const FEET_SHARE := 0.95
-## The feet sight line ends this high above the ground (units), sampled every SIGHT_STEP units.
+const SEEN_SHARE := 0.95
+## A building still hides what is behind it while more of its screen door than this is drawn.
+const HIDES := 0.5
+## The body's top (share of its height) and the feet sight line's end above the ground (units).
+const TOP := 0.9
 const FEET_SIGHT := 0.5
+## The sight lines are sampled every SIGHT_STEP units; the model eases to the sim at BODY_FOLLOW/s
+## (Rampage._update_kaiju).
 const SIGHT_STEP := 0.5
+const BODY_FOLLOW := 12.0
+const DT := 1.0 / 60.0
 
 var _check: Callable
 
@@ -22,42 +32,60 @@ func _init(p_check: Callable) -> void:
 
 
 func run() -> void:
+	for stage: int in range(1, STAGES + 1):
+		_stage(stage)
+
+
+func _stage(stage: int) -> void:
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[STAGE - 1], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var layout := CityGrowth.layout(Content.tuning(), STAGE, Seeds.make("city", 0))
+	var tier := Num.i(stats["size"])
+	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
 	sim.emerge.start(sim)
-	var dt := 1.0 / 60.0
-	while sim.emerge.active:
-		sim.step(dt, Vector2.ZERO, false, 0)
-	var frames := int(SECONDS * 60.0)
-	var seen := 0
-	var inside := 0
-	for _f: int in frames:
-		sim.step(dt, Vector2.ZERO, false, 0)
-		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var eye := feet + CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
-		var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
-		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
-		var opaque: Array[RampageSim.Building] = []
-		for b: RampageSim.Building in sim.buildings:
-			if not BuildingFade.blocks(eye, sight, b):
-				opaque.append(b)
-		seen += 0 if _blocked(eye, feet + Vector3(0, FEET_SIGHT, 0), opaque) else 1
-		inside += 1 if _blocked(eye, eye, opaque) else 0
-	(
-		_check
-		. call(
-			seen >= FEET_SHARE * frames and inside == 0,
+	var water := -Num.f(sim.city.get("river_depth", 0.0))
+	var body := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+	var zoom := CameraTuning.zoom(sim.body_scale())
+	var follow := CameraFollow.new(body, CameraTuning.offset())
+	follow.step(body, CameraTuning.offset() * zoom, 1.0)  # Rampage._ready's first placement
+	var fade := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
+	var shown := 0
+	var above := 0
+	var feet_seen := 0
+	var standing := 0
+	var left := int(SECONDS / DT)
+	while left > 0:
+		var rising := sim.emerge.active
+		sim.step(DT, Vector2.ZERO, false, 0)
+		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
+		follow.step(body, CameraTuning.offset() * zoom, DT)
+		var eye := follow.eye()
+		fade.update(eye, BuildingFade.sight_of(sim), DT)
+		var hiding: Array[RampageSim.Building] = []
+		for n: int in sim.buildings.size():
+			if fade.opacity(n) > HIDES:
+				hiding.append(sim.buildings[n])
+		var inside := _blocked(eye, eye, hiding)
+		var top := sim.stand_y + sim.reach_height() * TOP
+		if top > water:
+			above += 1
+			var mid := Vector3(at.x, (maxf(sim.stand_y, water) + top) * 0.5, at.z)
+			shown += 0 if inside or _blocked(eye, mid, hiding) else 1
+		if not rising:
+			left -= 1
+			standing += 1
+			var feet := at + Vector3(0, FEET_SIGHT, 0)
+			feet_seen += 0 if inside or _blocked(eye, feet, hiding) else 1
+	_check.call(
+		shown >= SEEN_SHARE * above and feet_seen >= SEEN_SHARE * standing,
+		(
 			(
-				(
-					"the adult's feet are in sight at its spawn on %d of %d frames (>= %d%%) and the camera"
-					+ " is inside an opaque tower on %d"
-				)
-				% [seen, frames, roundi(FEET_SHARE * 100.0), inside]
+				"stage %d: the kaiju is in sight on %d of %d frames above the water through the"
+				+ " rise and walk-in, and its feet on %d of %d standing frames (>= %d%% each)"
 			)
+			% [stage, shown, above, feet_seen, standing, roundi(SEEN_SHARE * 100.0)]
 		)
 	)
 

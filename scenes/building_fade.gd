@@ -17,6 +17,7 @@ var _cfg: Dictionary
 var _buildings: Array[RampageSim.Building]
 var _views: Callable
 var _faded := {}  # building index -> current opacity (only those below 1)
+var _started := false
 
 
 ## views: building index -> its BuildingView, or null while it is not built yet.
@@ -27,13 +28,27 @@ func _init(buildings: Array[RampageSim.Building], views: Callable) -> void:
 
 
 ## The points over a kaiju standing at `feet`, `height` tall, facing `ahead` (one body radius
-## long, ground plane) that must stay in sight.
-static func targets(feet: Vector3, height: float, ahead: Vector3) -> PackedVector3Array:
+## long, ground plane) that must stay in sight. Under water (the rise from the river, comment
+## #27) only the part above `surface` shows, so the heights spread over that part.
+static func targets(
+	feet: Vector3, height: float, ahead: Vector3, surface := -INF
+) -> PackedVector3Array:
+	var top := feet.y + height
+	var base := clampf(surface, feet.y, top)
 	var out := PackedVector3Array()
 	for share: float in HEIGHTS:
 		for steps: float in AHEAD:
-			out.append(feet + Vector3(0, height * share, 0) + ahead * steps)
+			out.append(Vector3(feet.x, lerpf(base, top, share), feet.z) + ahead * steps)
 	return out
+
+
+## The sight points of the sim's kaiju now (CityView fades by them; the tests replay them).
+static func sight_of(sim: RampageSim) -> PackedVector3Array:
+	var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+	var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
+	var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
+	var surface := -Num.f(sim.city.get("river_depth", 0.0))
+	return targets(feet, sim.reach_height(), ahead, surface)
 
 
 func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
@@ -45,6 +60,8 @@ func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
 		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
 	var hit := {}
+	var first := not _started  # the run's first frame: what blocks starts faded, no pop-in
+	_started = true
 	for n: int in _buildings.size():
 		var b := _buildings[n]
 		# Cheap reject: the sight lines stay inside the eye-to-kaiju rectangle on the ground.
@@ -56,17 +73,22 @@ func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 			hit[n] = true
 	for n: int in hit:
 		if not _faded.has(n):
-			_faded[n] = 1.0
+			_faded[n] = low if first else 1.0
 	for n: int in _faded.keys():
 		var now: float = _faded[n]
 		var next := move_toward(now, low if hit.has(n) else 1.0, step)
 		var view: BuildingView = _views.call(n)
-		if view != null and next != now:
+		if view != null and (next != now or next < 1.0):  # a view streamed in late gets it too
 			view.set_opacity(next)
 		if next >= 1.0:
 			_faded.erase(n)
 		else:
 			_faded[n] = next
+
+
+## Building n's opacity now (1 = solid; tests read it).
+func opacity(n: int) -> float:
+	return _faded.get(n, 1.0)
 
 
 ## Whether building b stands in a sight line from the eye to any of the kaiju's points, or the

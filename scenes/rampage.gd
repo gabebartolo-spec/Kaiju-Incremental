@@ -16,8 +16,6 @@ const FOOTFALL_DIP := 0.35
 ## The dip scales with body size, but never below this: a baby still shakes the street.
 const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
-## How fast the camera's aim catches up with the kaiju's drawn body (1/s).
-const FOCUS_FOLLOW := 12.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
@@ -55,8 +53,7 @@ var _leap_power := 1.0
 var _hud: RampageHud
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
-var _focus := Vector3.ZERO
-var _cam_offset := camera_rest
+var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _leap_time := 0.0
 var _leap_from := Vector3.ZERO
 var _camera: Camera3D
@@ -144,7 +141,7 @@ func _ready() -> void:
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
-	_focus = _kaiju_at
+	_follow.focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
 	_kaiju.set_grip_finder(
 		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
@@ -381,10 +378,8 @@ func _place_camera(delta: float) -> void:
 	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
-	_focus = _focus.lerp(_kaiju.focus(), minf(1.0, delta * FOCUS_FOLLOW))
 	var rest := _breath_camera.offset(camera_rest, delta)
-	var offset := rest * zoom - Vector3(0, _step_dip * zoom, 0)
-	_cam_offset = _cam_offset.lerp(offset, minf(1.0, delta * 5.0))
-	_camera.position = _focus + _cam_offset
+	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom, 0), delta)
+	_camera.position = _follow.eye()
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
-	_camera.look_at(_focus + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
+	_camera.look_at(_follow.look_at(sim.body_scale()) + jitter)

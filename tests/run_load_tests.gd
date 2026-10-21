@@ -19,6 +19,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_building_fade")
+	await _t("_check_fade_rise")
 	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
@@ -152,6 +153,47 @@ func _check_building_fade() -> void:
 				tower.frame.remove(Vector3i(x, y, z))
 	var stump := BuildingFade.blocks(eye, sight, tower)
 	check(around and not stump, "a tower round the camera fades; a carved stump never does")
+
+
+## The rise from the river (comment #27): the sight points spread over the part of the body above
+## the water, so a low block in front of the surfacing kaiju fades; and a building already in the
+## way on the run's first frame starts faded instead of easing in over the kaiju.
+func _check_fade_rise() -> void:
+	var eye := Vector3(0, 8, 40)
+	var feet := Vector3(0, -20, 0)  # sunk: only the top of a 22-tall body is above the water
+	var low := RampageSim.Building.new()
+	low.w = 6
+	low.d = 2
+	low.height = 2
+	low.z = 15.0
+	var dry := BuildingFade.blocks(eye, BuildingFade.targets(feet, 22.0, Vector3.ZERO), low)
+	var wet := BuildingFade.targets(feet, 22.0, Vector3.ZERO, -1.6)
+	var above := true
+	for p: Vector3 in wet:
+		above = above and p.y >= -1.6
+	check(
+		above and not dry and BuildingFade.blocks(eye, wet, low),
+		"under water the sight points cover the body above the surface, so a low block in front fades"
+	)
+	var buildings: Array[RampageSim.Building] = [low]
+	var fade := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
+	fade.update(eye, wet, 1.0 / 60.0)
+	var first := fade.opacity(0)
+	fade.update(eye, wet, 1.0 / 60.0)
+	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
+	later.update(eye, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
+	later.update(eye, wet, 1.0 / 60.0)
+	var floor_opacity := Num.f(Content.section("vehicles")["fade_opacity"])
+	check(
+		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
+		(
+			(
+				"a building in the way on the first frame starts faded (%.2f); one that comes in later"
+				+ " eases (%.2f)"
+			)
+			% [first, later.opacity(0)]
+		)
+	)
 
 
 ## a building touched before its turn is built on the spot; in the end every building is real.
