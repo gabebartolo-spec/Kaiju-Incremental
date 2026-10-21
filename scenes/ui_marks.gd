@@ -57,3 +57,34 @@ class Scanlines:
 		while y < size.y:
 			draw_rect(Rect2(0.0, y, size.x, UiKit.SCANLINE_STEP / 2.0), line)
 			y += UiKit.SCANLINE_STEP
+
+
+## A stat meter of whole cells: `filled` of `cells` lit hazard yellow, the rest dark with a faint
+## edge, each cell at least MIN_CELL px wide at 1080p so "6 of 8" reads at a glance.
+class Cells:
+	extends Control
+
+	const MIN_CELL := 14.0
+	const GAP := 4.0
+
+	var cells := 8
+	var filled := 0
+
+	func _init(p_cells: int = 8, p_filled: int = 0) -> void:
+		cells = p_cells
+		filled = p_filled
+		custom_minimum_size = Vector2(cells * MIN_CELL + (cells - 1) * GAP, 26.0)
+
+	## One cell's drawn width (px) at the current size.
+	func cell_width() -> float:
+		return (size.x - GAP * (cells - 1)) / cells
+
+	func _draw() -> void:
+		var w := cell_width()
+		for i: int in cells:
+			var r := Rect2(i * (w + GAP), 0.0, w, size.y)
+			if i < filled:
+				draw_rect(r, UiKit.ACCENT)
+			else:
+				draw_rect(r, Color(0, 0, 0, 0.75))
+				draw_rect(r, UiKit.MUTED, false, 2.0)

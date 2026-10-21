@@ -8,8 +8,22 @@ signal chosen(species_id: String)
 ## Back to the title (Esc / B, or the BACK button); nothing has changed yet.
 signal back_pressed
 
-## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
-const PREVIEW_SIZE := Vector2i(390, 220)
+## With one species the card is wide: kaiju preview on the left, name, stats and CHOOSE on the
+## right; the card is this share of the screen and the preview sized off the screen's height.
+## With several, each card is a narrow column and the preview stays small, so all fit the TV at
+## the largest UI scale (125%).
+const WIDE_CARD_SHARE := 0.58
+const WIDE_PREVIEW_HEIGHT_SHARE := 0.42
+const WIDE_PREVIEW_ASPECT := 1.3
+## The gap between the preview and the info column, and that column's width (px at 1080p).
+const WIDE_GAP := 24.0
+const INFO_WIDTH := 320.0
+const NARROW_PREVIEW := Vector2i(390, 220)
+## The stat meters: a cell per step, each stat's value out of its maximum in COMPARE.
+const STAT_CELLS := 8
+const SIZE_STAT := 32
+## Space above BACK (px at 1080p).
+const BACK_GAP := 28
 ## The preview camera looks down this way (the old fixed camera's view) through a fairly long lens
 ## (deg; a near limb swinging toward a wide lens would push the kaiju small); the spinning kaiju
 ## fills at most this much of the card's width and keeps this margin (of the height) top and bottom.
@@ -24,8 +38,8 @@ const PREVIEW_YAW := PI * 0.62
 const PREVIEW_SAMPLES := 16
 const PREVIEW_STRIDE := 13
 const BACK_WIDTH := 360
-## The stat name column in a card (px), wide enough for HEALTH and SPEED.
-const STAT_NAME_WIDTH := 96
+## The stat name column in a card (px), wide enough for Health and Speed at SIZE_STAT.
+const STAT_NAME_WIDTH := 140
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
 	["Speed", "speed", 8.0],
@@ -35,6 +49,9 @@ const COMPARE: Array[Array] = [
 
 ## Each preview's turntable: the kaiju sits on it with its footprint's middle on the axis.
 var turntables: Array[Node3D] = []
+## Each species' card, in order.
+var cards: Array[Control] = []
+var _wide := false
 var _models: Array[KaijuModel] = []
 var _spin := 0.0
 
@@ -63,10 +80,14 @@ func _ready() -> void:
 	row.add_theme_constant_override("separation", 32)
 	col.add_child(row)
 	var first: Button = null
+	_wide = Demo.species().size() == 1
 	for def: Dictionary in Demo.species():
 		var pick := _card(row, def)
 		if first == null:
 			first = pick
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, BACK_GAP)
+	col.add_child(gap)
 	var back := UiKit.button("BACK  (ESC / B)", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	back.custom_minimum_size = Vector2(BACK_WIDTH, 0)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -103,7 +124,7 @@ func _centre(model: KaijuModel) -> void:
 ## Frames the preview on the kaiju's skin at every angle of a full turn: aimed at the spin axis
 ## and stood back along the old camera's view until it fits the card's width and, with a margin
 ## top and bottom, its height (a long tail, a tall head never leave the card).
-func _frame(cam: Camera3D, model: KaijuModel) -> void:
+func _frame(cam: Camera3D, model: KaijuModel, size: Vector2i) -> void:
 	var points := _skin_points(model)
 	for i: int in points.size():
 		points[i] += model.position
@@ -118,7 +139,7 @@ func _frame(cam: Camera3D, model: KaijuModel) -> void:
 	var up := look.cross(Vector3.UP).cross(look).normalized()
 	var right := look.cross(up)
 	var tan_v := tan(deg_to_rad(cam.fov) * 0.5) * (1.0 - 2.0 * PREVIEW_MARGIN)
-	var tan_h := tan(deg_to_rad(cam.fov) * 0.5) * PREVIEW_FILL * PREVIEW_SIZE.x / PREVIEW_SIZE.y
+	var tan_h := tan(deg_to_rad(cam.fov) * 0.5) * PREVIEW_FILL * size.x / size.y
 	var back := 0.0
 	for turn: Basis in turns:
 		for p: Vector3 in points:
@@ -146,20 +167,37 @@ func _skin_points(model: KaijuModel) -> PackedVector3Array:
 	return points
 
 
+## The preview's size: beside the stats it takes what the wide card has left (one species), else
+## the small narrow size.
+func _preview_size() -> Vector2i:
+	if not _wide:
+		return NARROW_PREVIEW
+	var view := get_viewport_rect().size
+	var inner := view.x * WIDE_CARD_SHARE - 2.0 * UiKit.panel_inset() - WIDE_GAP - INFO_WIDTH
+	var h := minf(view.y * WIDE_PREVIEW_HEIGHT_SHARE, inner / WIDE_PREVIEW_ASPECT)
+	return Vector2i(roundi(inner), roundi(h))
+
+
 func _card(row: HBoxContainer, def: Dictionary) -> Button:
+	var size := _preview_size()
 	var panel := UiKit.panel()
-	panel.custom_minimum_size = Vector2(PREVIEW_SIZE.x + 28, 0)
+	if _wide:
+		panel.custom_minimum_size = Vector2(get_viewport_rect().size.x * WIDE_CARD_SHARE, 0)
+	else:
+		panel.custom_minimum_size = Vector2(size.x + 28, 0)
 	row.add_child(panel)
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 6)
-	panel.add_child(col)
+	cards.append(panel)
+	var body: BoxContainer = HBoxContainer.new() if _wide else VBoxContainer.new()
+	body.add_theme_constant_override("separation", int(WIDE_GAP) if _wide else 6)
+	panel.add_child(body)
 
 	var view := SubViewportContainer.new()
 	view.stretch = true
-	view.custom_minimum_size = Vector2(PREVIEW_SIZE)
-	col.add_child(view)
+	view.custom_minimum_size = Vector2(size)
+	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	body.add_child(view)
 	var viewport := SubViewport.new()
-	viewport.size = PREVIEW_SIZE
+	viewport.size = size
 	viewport.own_world_3d = true
 	viewport.transparent_bg = true
 	view.add_child(viewport)
@@ -175,7 +213,7 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	var cam := Camera3D.new()
 	cam.fov = PREVIEW_FOV
 	viewport.add_child(cam)
-	_frame(cam, model)
+	_frame(cam, model, size)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-40, -30, 0)
 	viewport.add_child(sun)
@@ -185,31 +223,39 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	fill.light_energy = 0.8
 	viewport.add_child(fill)
 
+	var col := VBoxContainer.new()
+	col.custom_minimum_size = Vector2(INFO_WIDTH if _wide else 0.0, 0)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 10 if _wide else 6)
+	body.add_child(col)
 	col.add_child(UiKit.header(str(def["name"]).to_upper(), UiKit.SIZE_HEAD))
 	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_BODY, UiKit.TEXT)
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(blurb)
 	var ability: Dictionary = def["ability"]
-	col.add_child(UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN))
+	var sig := UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN)
+	sig.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(sig)
 
 	var stats: Dictionary = def["stats"]
-	# Two meters a row, so the card (and CHOOSE) fits the TV at 125% inside the title-safe area.
+	# One stat a row beside the preview; two a row when several cards share the screen.
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 1 if _wide else 2
 	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("v_separation", 6)
 	col.add_child(grid)
 	for entry: Array in COMPARE:
 		var line := HBoxContainer.new()
 		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		line.add_theme_constant_override("separation", 8)
-		var name_label := UiKit.label(str(entry[0]), UiKit.SIZE_BODY)
+		line.add_theme_constant_override("separation", 12)
+		var name_label := UiKit.label(str(entry[0]), SIZE_STAT)
 		name_label.custom_minimum_size = Vector2(STAT_NAME_WIDTH, 0)
 		line.add_child(name_label)
-		var meter := UiKit.bar(UiKit.ACCENT, 18)
+		var share := Num.f(stats.get(str(entry[1]), 0.0)) / Num.f(entry[2])
+		var meter := UiMarks.Cells.new(STAT_CELLS, clampi(roundi(share * STAT_CELLS), 1, STAT_CELLS))
 		meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		meter.max_value = Num.f(entry[2])
-		meter.value = Num.f(stats.get(str(entry[1]), 0.0))
 		line.add_child(meter)
 		grid.add_child(line)
 

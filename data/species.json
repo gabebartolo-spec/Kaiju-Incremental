@@ -6,7 +6,7 @@
 			"blurb": "Balanced brawler. Tough hide, heavy stomps.",
 			"ability": {
 				"type": "cone",
-				"name": "Atomic Breath",
+				"name": "Lightning Breath",
 				"hint": "Burns everything in front of you."
 			},
 			"stats": {

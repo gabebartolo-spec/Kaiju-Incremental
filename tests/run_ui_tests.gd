@@ -26,6 +26,8 @@ func run_checks() -> void:
 	await _h("HudChecks", func() -> void: await HudChecks.new(self, check).run())
 	await _t("_check_tooltip_width")
 	await _t("_check_species_centred")
+	await _t("_check_species_card")
+	await _t("_check_no_atomic")
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
@@ -68,7 +70,7 @@ func _check_text_style() -> void:
 
 
 ## b2-23: the details panel is one width for every node of every species' tree, the ultimate
-## (ULTIMATE ATOMIC BEAM) included.
+## (ULTIMATE: THUNDER BEAM) included.
 func _check_tooltip_width() -> void:
 	var window := root.size
 	root.size = CANVAS
@@ -146,3 +148,68 @@ func _skin_box(model: KaijuModel, table: Node3D) -> AABB:
 	for p: Vector3 in points:
 		box = box.expand(to_table * p)
 	return box
+
+
+## Critic r1 item 1: with one species the card is wide (about 55% of the screen), the kaiju
+## preview twice the old 390 px, one stat per row at 32 px or more, every meter cell 12 px or wider,
+## and a gap above BACK; D-112: the signature reads "Lightning Breath".
+func _check_species_card() -> void:
+	var window := root.size
+	root.size = CANVAS
+	var select := SpeciesSelect.new()
+	root.add_child(select)
+	await process_frame
+	await process_frame
+	var cards: Array = select.get("cards") if select.get("cards") != null else []
+	var wide := 0.0
+	for c: Control in cards:
+		wide = maxf(wide, c.size.x)
+	check(
+		not cards.is_empty() and wide >= CANVAS.x * 0.5,
+		"the lone species card is about 55%% of the screen wide (%.0f px)" % wide
+	)
+	var preview := 0
+	for table: Node3D in select.turntables:
+		preview = maxi(preview, (table.get_parent() as SubViewport).size.x)
+	check(preview >= 640, "the kaiju preview is far bigger than the old 390 px (%d)" % preview)
+	var small: Array[String] = []
+	var texts: Array[String] = []
+	for node: Node in select.find_children("*", "Label", true, false):
+		var l: Label = node
+		texts.append(l.text)
+		if l.text in ["HEALTH", "Health", "Speed", "Power", "Reach"]:
+			if l.get_theme_font_size("font_size") < 32:
+				small.append(l.text)
+	check(small.is_empty() and texts.has("Health"), "stat names are 32 px or more: %s" % [small])
+	var cells := select.find_children("*", "Control", true, false).filter(
+		func(n: Node) -> bool: return n.has_method("cell_width")
+	)
+	var thin := 0
+	for c: Control in cells:
+		if c.call("cell_width") < 12.0:
+			thin += 1
+	check(cells.size() >= 4 and thin == 0, "%d stat meters, %d with cells under 12 px" % [cells.size(), thin])
+	var rows := {}
+	for c: Control in cells:
+		rows[roundi(c.global_position.y)] = true
+	check(cells.size() >= 4 and rows.size() == cells.size(), "one stat per row (%d rows for %d meters)" % [rows.size(), cells.size()])
+	check(
+		texts.any(func(t: String) -> bool: return t.to_lower().contains("lightning breath")),
+		"the signature reads Lightning Breath: %s" % [texts]
+	)
+	select.queue_free()
+	await process_frame
+	root.size = window
+
+
+## D-108 / D-112: no string the player can read says "atomic": every name, hint, blurb, line and
+## description in the data.
+func _check_no_atomic() -> void:
+	var hits: Array[String] = []
+	for file: String in ["species", "upgrades", "tuning"]:
+		var text := FileAccess.get_file_as_string("res://data/%s.json" % file)
+		for line: String in text.split("
+"):
+			if line.to_lower().contains("atomic"):
+				hits.append("%s: %s" % [file, line.strip_edges().left(60)])
+	check(hits.is_empty(), "no visible string says atomic: %s" % [hits])

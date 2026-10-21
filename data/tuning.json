@@ -70,7 +70,7 @@
 		"tail_reach": {"line": "Tail reaches further", "fmt": "%.1f"},
 		"tail_floors": {"line": "Tail cuts through more floors", "fmt": "%d"},
 		"momentum": {"line": "Charges hit harder", "fmt": "%.1f"},
-		"beam_dps": {"line": "Atomic Beam burns hotter", "fmt": "%.0f", "unit": " a second"},
+		"beam_dps": {"line": "Thunder Beam burns hotter", "fmt": "%.0f", "unit": " a second"},
 		"glide_seconds": {"line": "Glides longer", "fmt": "%.1f", "unit": " seconds"},
 		"climb": {"line": "Climbs taller towers", "fmt": "%d"},
 		"brood_count": {"line": "More young per clutch", "fmt": "%d"},

@@ -176,11 +176,16 @@ static func panel(color: Color = PANEL) -> PanelContainer:
 	return p
 
 
+## How far a card's content sits inside its edge on the sides and bottom (px).
+static func panel_inset() -> float:
+	return HazardBox.CORNER_GAP + HazardBox.CORNER_WIDTH + 3.0 + CARD_PAD
+
+
 ## A card's box: hazard tape across the top, a yellow edge, brackets in the lower corners.
 static func panel_box(color: Color = PANEL) -> HazardBox:
 	var s := hazard(color, ACCENT, 3.0, HazardBox.Band.TOP)
 	s.corners = true
-	var clear := HazardBox.CORNER_GAP + HazardBox.CORNER_WIDTH + 3.0 + CARD_PAD
+	var clear := panel_inset()
 	s.content_margin_left = clear
 	s.content_margin_right = clear
 	s.content_margin_bottom = clear
