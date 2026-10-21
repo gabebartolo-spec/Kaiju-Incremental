@@ -50,6 +50,14 @@ last 0.2 s before control returns is dropped (latch it for the first live tick, 
 the evolution reveal counts frames, so it lasts 3.8 s at 60 Hz and 1.6 s at 144 Hz (count fixed ticks) (R 20.5) ·
 the camera's zoom curve (hard-coded 0.75 + 0.4 x body scale) into data, with a test that the kaiju's screen share
 rises every stage and stays at or under about 35% (R 19.1).
+**Next (director 2026-10-21, "Build it sooner"):** the run-intro cinematic (comments 2026-10-20 #11, his words: "a quick,
+dramatic camera shot, zoomed in on the water which begins to ripple and fount before our kaiju emerges, roaring with rage
+before the camera zooms out into the play angle and the run begins. the entire scene should run for no longer than 3
+seconds"), with R 20.1-20.4 from Phase D, ahead of the rest of D; it ends on today's play angle until the camera growth pick.
+**Now, in parallel (director 2026-10-21: "id also like to bump the UI design up the priority list, its annoying me to
+look at our current design every day"; picked: start now, HUD and menus first, keep Emergency Broadcast D-061):** Phase F's
+HUD (b2-10..13, R 15.1-15.8) and every menu (title, pause, settings, results, species select b2-11, loading) with bespoke
+original assets (b2-14), fonts and copy; the upgrade-tree screen waits for E's bigger tree. Builder: claude/ui-redesign.
 
 **A. Close what is in flight; fix what no later choice changes.**
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this
@@ -160,6 +168,21 @@ zooms, so text keeps its size; it remembers the view, has a home key, and moves 
 d-pad focus by geometry (R 16.5; 50-65 nodes do not fit the 8 x 6 grid, so b2-28 forces it; layout picked here in E,
 skin in F) · last, a flowing shader on owned links (R 16.6).
 
+Fire (director 2026-10-21, comments #15: "im still interested in Fire as a source of lighting and gameplay (perhaps natural
+flame that can spread (unlockable in skill tree) and add to your biomass collection)"): a tree node that lets fires spread
+building to building on their own (sim-decided, seeded spread timer, burns out to rubble, never a burning shell per #111);
+burning buildings and the people in them pay biomass; fires stay the city's moving light sources (light pool, R 12). Research
+first (spread rules that read and stay cheap, how it feeds the biomass curve), then his node pick.
+How (research 26): first delete the view's random fire on 18% of collapses (city_view.gd, presentation RNG, burns rubble:
+breaks determinism and #111) (R 26.1) · a heat meter per building filled by neighbours (distance, wind, material), seeded
+ignition, windows glow 1-3 s first so a firebreak is possible; intact -> heating -> burning -> rubble (R 26.2) · biomass
+only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (R 26.3) · nodes Kindle,
+Fan the flames, Tailwind, Ember storm, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
+visual tiers (R 26.5). His questions: a spark source for non-breath species; wind fixed/rotatable or drifting.
+Explosive sites (comments #19, #20): fuel silos, fireworks factories and chemical labs placed through the city as the
+"red barrel": any damage (kaiju, rubble, a clumsy army shell, #18) arms a fuse, blasts carve and chain. Their explosions
+get really good SFX and VFX (his words): a visible shockwave ring and air distortion, a sonic boom delayed by distance,
+layered blast sound from CC0 sources, through the motion critic at game speed.
 **F. UI redesign, on the final camera and tree.**
 b2-10 HUD: timer stays, biomass a boxless figure bottom right, controls shown once at the start and in a controls
 menu · b2-12 breath cooldown as an icon with a circular fill · b2-13 health bar removed or repurposed · b2-11
@@ -191,6 +214,10 @@ gl_compatibility behind a restart, last (R 18.6) · the shader baker on for expo
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
 **H. Content after the slice (already decided, unchanged order).**
+Background city rampage (director 2026-10-21, comments #16: "would be cool if our distant background city had a kaiju
+rampaging in it, and the skyline was on fire"): a far silhouette kaiju stomping through the backdrop skyline, towers
+dropping, fire glow and smoke columns on the horizon, distant booms; presentation only, cheap (impostors). A labelled
+capture for his yes before it is built in full.
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
 music (Suno, needs his spend yes) · greenery (#55) · look-options -> main (#3) once the slice ships.
 Sound (research): a pooled SFX manager with voice caps per category from data, hero voices reserved, quietest or
@@ -232,6 +259,11 @@ a charge that sticks in a building, thrown tanks after R 22's Flung (R 23.4) · 
 as the one HUD exception (his yes) (R 23.5) · it falls like the biggest tower, quiet, then results and credits
 (R 23.6) · voxel model, rig, 6-8 clips through the Blender pipeline, concept board first (R 23.7). Estimate 3-5 weeks.
 
+Audio tools (research 25, comments #22-#23): ElevenLabs Starter (owned) covers SFX and Eleven Music; test music briefs there
+first (indie-game use capped at $500k lifetime revenue). Suno Pro $10/mo if he buys it: commercial rights per downloaded song,
+no copyright, no API, label suits pending. The director generates in his browser and holds the keys; agents write prompt
+sheets, ingest, QA and register each file. Explosions: ElevenLabs crack + body, in-house sub thump, delayed debris, a
+separate low tail and a distance-delayed sonic boom, mixed to about -24 LUFS. Steam AI-content survey needs an entry.
 **Director questions the research raised (ask each at its phase, the ask-the-director way).**
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original

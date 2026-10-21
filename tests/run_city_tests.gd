@@ -18,6 +18,7 @@ const RiverStart := preload("res://tests/lib/city_river.gd")
 const EdgeMark := preload("res://tests/lib/city_arena_edge.gd")
 const SpawnView := preload("res://tests/lib/city_spawn_view.gd")
 const Reach := preload("res://tests/lib/city_reach.gd")
+const BridgeLand := preload("res://tests/lib/city_bridge_land.gd")
 ## Three different street plans (city.map_seed), so the coverage rule holds for cities other
 ## than the one we ship today.
 const COVERAGE_SEEDS: Array[int] = [7301, 1234, 98765]
@@ -34,9 +35,18 @@ func run_checks() -> void:
 	await _t("_check_calm_streets")
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
+	await _h(
+		"city_diag_fill",
+		func() -> void: preload("res://tests/lib/city_diag_fill.gd").new(check, root).run()
+	)
 	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
+	await _t("_check_bridges_meet_land")
+	await _h(
+		"city_light_pool",
+		func() -> void: preload("res://tests/lib/city_light_pool.gd").check(root, check)
+	)
 	await _h(
 		"city_footfall_dust",
 		func() -> void: preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
@@ -194,6 +204,7 @@ func _check_no_empty_ground() -> void:
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			StadiumFar.check(tier, map_seed, sim, check)
 			Kerb.check(tier, map_seed, sim, decor, check)
+			Kerb.check_walkers(tier, map_seed, sim, street, check)
 			BreathTrees.check(tier, map_seed, sim, decor, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()
@@ -213,3 +224,9 @@ func _check_emerge_cap() -> void:
 ## No landmark's site in the river (tests/lib/city_river.gd check_sites).
 func _check_river_sites() -> void:
 	RiverStart.check_sites(check)
+
+
+## Every bridge meets land on both banks, stages 1-4 (tests/lib/city_bridge_land.gd; director,
+## build 4 comments 2026-10-21 #12).
+func _check_bridges_meet_land() -> void:
+	BridgeLand.check(COVERAGE_SEEDS, check)

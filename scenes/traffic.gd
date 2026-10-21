@@ -93,6 +93,7 @@ func _ready() -> void:
 	while cars.size() < Num.i(_cfg["cars"]) and tries < 500:
 		tries += 1
 		_spawn_random()
+	DiagonalParking.park(self, sim)
 
 
 func _car_palette() -> Dictionary:

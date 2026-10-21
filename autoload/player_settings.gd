@@ -1,7 +1,7 @@
 class_name PlayerSettings
 extends RefCounted
-## The player's settings: volume (overall and sound effects), fullscreen, UI scale and the frame
-## cap, kept in
+## The player's settings: volume (overall and sound effects), camera motion, fullscreen, UI scale
+## and the frame cap, kept in
 ## their own file apart from the save. Static so the settings screen and tests reach them
 ## without the Settings autoload (which loads them at start and owns the input actions and F11).
 
@@ -25,12 +25,12 @@ const CONTROLS: Array[Array] = [
 	["Back", "Esc", "B"],
 ]
 
-## Mixer buses under Master: every game sound plays on SFX; Music waits for the music.
-const BUSES: Array[String] = ["SFX", "Music"]
-
 static var volume := 0.8
 ## The SFX bus volume (0..1); the default is tuning "sfx" default_volume.
 static var sfx_volume := -1.0
+## Camera motion (0..1): scales the shake, the footfall dip and the breath swing together (XAG
+## 117); -1 = tuning "camera_shake" default_motion.
+static var camera_motion := -1.0
 static var fullscreen := false
 static var ui_scale := 1.0
 ## Frames a second at most in play (0 = unlimited); -1 = tuning "display" fps_default.
@@ -51,6 +51,18 @@ static func set_sfx_volume(value: float) -> void:
 	sfx_volume = clampf(value, 0.0, 1.0)
 	apply()
 	save()
+
+
+static func set_camera_motion(value: float) -> void:
+	camera_motion = clampf(value, 0.0, 1.0)
+	save()
+
+
+## The camera-motion setting in use, its tuning default until the player sets one.
+static func motion() -> float:
+	if camera_motion < 0.0:
+		return Num.f(Content.section("camera_shake")["default_motion"])
+	return camera_motion
 
 
 static func set_fullscreen(on: bool) -> void:
@@ -124,15 +136,16 @@ static func _large() -> bool:
 	return DisplayServer.screen_get_size().y >= tall
 
 
-## Puts the graphics level on a viewport's 3D render (msaa is Godot's Viewport.MSAA value: 2 = 4x,
-## the project's setting) (Settings does it each frame it changes).
+## The row of tuning "display" graphics in use.
+static func graphics_row() -> Dictionary:
+	var table: Dictionary = Content.section("display")["graphics"]
+	return table[graphics_level()]
+
+
+## Puts the graphics level on a viewport's 3D render, the shadows and the city's sun and
+## environment (GraphicsPresets) (Settings does it each frame it changes).
 static func apply_graphics(view: Viewport) -> void:
-	var level: Dictionary = Content.section("display")["graphics"][graphics_level()]
-	view.scaling_3d_scale = Num.f(level["scale"])
-	view.scaling_3d_mode = (
-		Viewport.SCALING_3D_MODE_FSR if level["fsr"] == true else Viewport.SCALING_3D_MODE_BILINEAR
-	)
-	view.msaa_3d = Num.i(level["msaa"]) as Viewport.MSAA
+	GraphicsPresets.apply(graphics_row(), view)
 
 
 ## The frame cap right now: the player's in an unpaused rampage, never above tuning menu_fps in
@@ -145,11 +158,9 @@ static func frame_cap(paused: bool) -> int:
 
 
 static func apply() -> void:
-	for bus_name: String in BUSES:
-		bus(bus_name)
+	AudioBuses.apply()
 	_set_bus(0, volume)
 	_set_bus(bus("SFX"), sfx())
-	_dynamics()
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree != null:
 		tree.root.content_scale_factor = ui_scale
@@ -167,7 +178,8 @@ static func apply() -> void:
 		)
 
 
-## The index of a bus in BUSES, made (sending to Master) the first time it is asked for.
+## The index of a bus, made (sending to Master) the first time it is asked for; AudioBuses
+## then sets its real send.
 static func bus(bus_name: String) -> int:
 	var at := AudioServer.get_bus_index(bus_name)
 	if at >= 0:
@@ -186,33 +198,6 @@ static func sfx() -> float:
 	return sfx_volume
 
 
-## Keeps the loudest moments clean (tuning "sfx" "dynamics"): a gentle compressor on SFX
-## evens out a stack of big sounds, and a hard limiter on Master holds the peak under the
-## ceiling, so breath + collapses + tanks never clip. Added once, at the end of each chain.
-static func _dynamics() -> void:
-	var cfg: Dictionary = Content.section("sfx")["dynamics"]
-	var sfx_bus := bus("SFX")
-	if not _has_effect(sfx_bus, AudioEffectCompressor):
-		var comp := AudioEffectCompressor.new()
-		comp.threshold = Num.f(cfg["threshold_db"])
-		comp.ratio = Num.f(cfg["ratio"])
-		comp.attack_us = Num.f(cfg["attack_us"])
-		comp.release_ms = Num.f(cfg["release_ms"])
-		AudioServer.add_bus_effect(sfx_bus, comp)
-	if not _has_effect(0, AudioEffectHardLimiter):
-		var limiter := AudioEffectHardLimiter.new()
-		limiter.ceiling_db = Num.f(cfg["ceiling_db"])
-		limiter.release = Num.f(cfg["limiter_release"])
-		AudioServer.add_bus_effect(0, limiter)
-
-
-static func _has_effect(at: int, kind: Variant) -> bool:
-	for i: int in AudioServer.get_bus_effect_count(at):
-		if is_instance_of(AudioServer.get_bus_effect(at, i), kind):
-			return true
-	return false
-
-
 static func _set_bus(at: int, value: float) -> void:
 	AudioServer.set_bus_volume_db(at, linear_to_db(maxf(value, 0.0001)))
 	AudioServer.set_bus_mute(at, value <= 0.0)
@@ -222,6 +207,7 @@ static func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "volume", volume)
 	cfg.set_value("audio", "sfx_volume", sfx())
+	cfg.set_value("display", "camera_motion", motion())
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.set_value("display", "ui_scale", ui_scale)
 	cfg.set_value("display", "version", DISPLAY_VERSION)
@@ -238,6 +224,7 @@ static func load_saved(start_full: bool) -> void:
 		return
 	volume = clampf(Num.f(cfg.get_value("audio", "volume", volume)), 0.0, 1.0)
 	sfx_volume = clampf(Num.f(cfg.get_value("audio", "sfx_volume", sfx())), 0.0, 1.0)
+	camera_motion = clampf(Num.f(cfg.get_value("display", "camera_motion", motion())), 0.0, 1.0)
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]
@@ -245,4 +232,7 @@ static func load_saved(start_full: bool) -> void:
 	var current := Num.i(cfg.get_value("display", "version", 1)) >= DISPLAY_VERSION
 	fps_cap = saved_cap if current and _caps().has(saved_cap) else -1
 	var saved := str(cfg.get_value("display", "graphics", graphics))
+	# A level renamed since (tuning "display" graphics_renamed: balanced is now medium).
+	var renamed: Dictionary = Content.section("display")["graphics_renamed"]
+	saved = str(renamed.get(saved, saved))
 	graphics = saved if _levels().has(saved) else ""

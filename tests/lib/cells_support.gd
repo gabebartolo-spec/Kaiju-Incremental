@@ -4,6 +4,8 @@ extends RefCounted
 ## part joined to the ground before any carve (no pane, sign or roof tank falls off on a
 ## building's first hit).
 
+const SettleReplay := preload("res://tests/lib/settle_replay.gd")
+
 ## City buildings checked for islands: this many from each of three seeded cities (tiers 1-3).
 const ISLAND_SAMPLE := 40
 
@@ -25,6 +27,7 @@ func run() -> void:
 	_pane_under_wall_is_cut_off()
 	_no_islands_before_carving()
 	_glass_towers_stand()
+	SettleReplay.new(_check).run()
 	_party_sides_carry_facade()
 
 

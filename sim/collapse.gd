@@ -88,6 +88,10 @@ func settle(index: int) -> void:
 		if carved:
 			event["index"] = part["index"]
 			event["mats"] = part["mats"]
+		if f.kind == "topple":  # where it will land, so the street knows who is under it
+			var strip := _strip(f)
+			event["to"] = strip[1]
+			event["width"] = Num.f(strip[2]) * 2.0
 		sim.events.append(event)
 
 
@@ -161,6 +165,7 @@ func step(dt: float) -> void:
 	for f: RampageSim.Fall in landed:
 		sim.falls.erase(f)
 		_land(f)
+	sim.carving.warm()  # one stage of getting the next building ready for its first hit
 
 
 ## A falling part hits: its chunks become rubble (a bonus for toppled towers) and it smashes
@@ -175,11 +180,10 @@ func _land(f: RampageSim.Fall) -> void:
 	var scrap := f.cells.is_empty()
 	event["scrap"] = scrap
 	if f.kind == "topple":
-		var start := Vector2(f.pivot.x, f.pivot.z)
-		var finish := start + f.dir * f.height
-		var across := Vector2(-f.dir.y, f.dir.x)
-		var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
-		var half_width := width * 0.5 + 0.5
+		var strip := _strip(f)
+		var start: Vector2 = strip[0]
+		var finish: Vector2 = strip[1]
+		var half_width := Num.f(strip[2])
 		event["from"] = start
 		event["to"] = finish
 		event["width"] = half_width * 2.0
@@ -197,6 +201,15 @@ func _land(f: RampageSim.Fall) -> void:
 			if below >= 0 and not hit.has(Vector3i(c.x, below, c.z)):
 				hit.append(Vector3i(c.x, below, c.z))
 		sim.damage_chunks(f.building, hit, impact)
+
+
+## A topple's landing strip: [from, to, half width] (street level, world).
+func _strip(f: RampageSim.Fall) -> Array:
+	var start := Vector2(f.pivot.x, f.pivot.z)
+	var across := Vector2(-f.dir.y, f.dir.x)
+	var b := sim.buildings[f.building]
+	var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
+	return [start, start + f.dir * f.height, width * 0.5 + 0.5]
 
 
 func _width_across(b: RampageSim.Building, cells: Array[Vector3i], across: Vector2) -> float:

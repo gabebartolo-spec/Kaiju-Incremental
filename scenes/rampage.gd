@@ -16,8 +16,6 @@ const FOOTFALL_DIP := 0.35
 ## The dip scales with body size, but never below this: a baby still shakes the street.
 const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
-## How fast the camera's aim catches up with the kaiju's drawn body (1/s).
-const FOCUS_FOLLOW := 12.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
 ## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
@@ -44,8 +42,10 @@ var scripted: Callable
 ## Where each stomp landed (the foot's ground point), for the capture and the tests.
 var stomp_ring_at: Array[Vector3] = []
 ## The gameplay camera at rest (data/tuning.json "camera"): offset from the kaiju's focus, FOV.
-var camera_rest := Rampage.camera_offset()
-var camera_fov := Num.f(Content.section("camera")["fov"])
+var camera_rest := CameraTuning.offset()
+var camera_fov := CameraTuning.fov()
+## The camera's shake (trauma); any hit adds to it through add_trauma.
+var shake := CameraShake.new()
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -55,32 +55,25 @@ var _leap_power := 1.0
 var _hud: RampageHud
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
-var _focus := Vector3.ZERO
-var _cam_offset := camera_rest
+var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _leap_time := 0.0
 var _leap_from := Vector3.ZERO
 var _camera: Camera3D
-var _shake := 0.0
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
-var _topple_cfg: Dictionary = Content.section("topple_fx")
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
-var _autoplay_target := Vector2(INF, INF)
+var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-
-
-## The camera's rest offset from data (tests and captures read it here).
-static func camera_offset() -> Vector3:
-	var o: Array = Content.section("camera")["offset"]
-	return Vector3(Num.f(o[0]), Num.f(o[1]), Num.f(o[2]))
+## Presses made while the rise from the river holds the sim back, kept for its first live tick.
+var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
@@ -89,6 +82,7 @@ func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
+	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
 	Content.set_time(Content.time_for_run(run_index))
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
@@ -148,7 +142,7 @@ func _ready() -> void:
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
-	_focus = _kaiju_at
+	_follow.focus = _kaiju_at
 	_kaiju.scale = Vector3.ONE * sim.body_scale()
 	_kaiju.set_grip_finder(
 		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
@@ -177,21 +171,28 @@ func _physics_process(delta: float) -> void:
 	var signature := Input.is_action_just_pressed("signature")
 	var held := Input.is_action_pressed("signature")
 	var ultimate := Input.is_action_just_pressed("ultimate")
-	var buttons := Dash.BUTTON if Input.is_action_just_pressed("dash") else 0
+	var dash := Input.is_action_just_pressed("dash")
 	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
 		var input: Dictionary = scripted.call(sim)
-		buttons = Dash.BUTTON if input.get("dash", false) else 0
+		dash = input.get("dash", false)
 		move = input.get("move", Vector2.ZERO)
 		signature = input.get("signature", false)
 		held = input.get("held", false)
 		ultimate = input.get("ultimate", false)
 	elif _autoplay:
-		move = _autoplay_move()
+		move = _walk.move(sim, _steps)
 		signature = autoplay_signature and sim.ability_ready_in <= 0.0
 		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
 		ultimate = autoplay_signature
+	# The sim ignores input while it rises from the river: a tap before the handover is kept.
+	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
+	now = _latch.through(sim.emerge.active, now, delta)
+	signature = now["signature"]
+	ultimate = now["ultimate"]
+	dash = now["dash"]
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
+	var buttons := Dash.BUTTON if dash else 0
 	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
@@ -211,11 +212,17 @@ func _process(delta: float) -> void:
 		return
 	_place_camera(delta)
 	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
-	_shake = maxf(0.0, _shake - delta * 3.0)
+	shake.update(delta)
 	if _stomp_wait > 0.0:
 		_stomp_wait -= delta
 		if _stomp_wait <= 0.0:  # no foot came down: the sound, no ring or cracks
 			sfx.stomp(_power("stomp_damage"), false)
+
+
+## Shakes the camera (CameraShake): `amount` trauma from a hit at `at` (Vector3.INF: at the
+## kaiju), fading with its distance from the camera's focus. Explosions and every other hit use it.
+func add_trauma(amount: float, at := Vector3.INF) -> void:
+	shake.add(amount, at, _follow.focus, sim.body_scale())
 
 
 ## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
@@ -236,7 +243,7 @@ func _on_event(event: Dictionary) -> void:
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
 			_stomp_wait = STOMP_WAIT
-			_shake = maxf(_shake, 0.15)
+			add_trauma(shake.source("stomp"))
 		"ability":
 			_kaiju.roar()
 			_ability_fx(event)
@@ -248,14 +255,15 @@ func _on_event(event: Dictionary) -> void:
 		"fall_land":
 			_city.fall_land(event)
 			sfx.collapse(str(event["kind"]) == "topple")
+			var b := sim.buildings[Num.i(event["building"])]
 			var topple := str(event["kind"]) == "topple"
-			_shake = maxf(_shake, Num.f(_topple_cfg["shake"]) if topple else 0.3)
+			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
 		"tank_spawned":
 			_tanks.spawn(Num.i(event["tank"]))
 		"tank_fired":
 			var at: Vector2 = event.get("at", sim.kaiju_pos)
 			if _tanks.fire(Num.i(event["tank"]), _to_world(at), _kaiju_at):
-				_shake = maxf(_shake, 0.08)
+				add_trauma(shake.source("tank_fire"))
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)
@@ -284,7 +292,7 @@ func _power(stat_name: String) -> float:
 func _ability_fx(event: Dictionary) -> void:
 	var reach := Num.f(event["reach"])
 	var strength := _power("ability_damage")
-	_shake = maxf(_shake, 0.45)
+	add_trauma(shake.source("ability"))
 	_city.crush(_to_world(sim.kaiju_pos), reach * (0.5 if str(event["kind"]) == "cone" else 1.0))
 	match str(event["kind"]):
 		"cone":
@@ -325,7 +333,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 			_kaiju_at = target
 			ability_fx.leap_land(target, _leap_reach, _leap_power)
 			sfx.play("leap_land")
-			_shake = maxf(_shake, 0.5)
+			add_trauma(shake.source("leap_land"))
 	else:
 		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
@@ -369,28 +377,20 @@ func _land_stomp(at: Vector3) -> void:
 	_stomp_wait = 0.0
 	var heavy := _power("stomp_damage")
 	sfx.stomp(heavy, ability_fx.stomp_cracks(at, _stomp_radius, heavy))
-	_city.crush(at, _stomp_radius)
+	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
+	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
+	_city.crush(at, _stomp_radius + catch)
 	stomp_ring_at.append(at)
 
 
 func _place_camera(delta: float) -> void:
-	var zoom := 0.75 + 0.4 * sim.body_scale()
+	var zoom := CameraTuning.zoom(sim.body_scale())
 	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
+	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip, breath swing
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
-	_focus = _focus.lerp(_kaiju.focus(), minf(1.0, delta * FOCUS_FOLLOW))
-	var rest := _breath_camera.offset(camera_rest, delta)
-	var offset := rest * zoom - Vector3(0, _step_dip * zoom, 0)
-	_cam_offset = _cam_offset.lerp(offset, minf(1.0, delta * 5.0))
-	_camera.position = _focus + _cam_offset
-	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
-	_camera.look_at(_focus + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
-
-
-func _autoplay_move() -> Vector2:
-	if _steps % 15 == 0 or _autoplay_target.x == INF:
-		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
-	var to := _autoplay_target - sim.kaiju_pos
-	if _autoplay_target.x == INF or to.length() < sim.stomp_radius() * 0.5:
-		return Vector2.ZERO
-	return to.normalized()
+	var rest := camera_rest.lerp(_breath_camera.offset(camera_rest, delta), motion)
+	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta)
+	_camera.position = _follow.eye()
+	_camera.look_at(_follow.look_at(sim.body_scale()))
+	shake.apply(_camera, sim.body_scale(), motion)

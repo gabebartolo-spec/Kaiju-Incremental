@@ -16,6 +16,7 @@ func run_checks() -> void:
 	await _t("_check_ink")
 	await _t("_check_helicopters")
 	await _t("_check_caps")
+	await _t("_check_chain_rate")
 	await _t("_check_replay")
 
 
@@ -282,4 +283,35 @@ func _check_caps() -> void:
 			"the brood never passes %d young, and a full brood lays nothing (%d)"
 			% [cap, full.brood.young.size()]
 		)
+	)
+
+
+## The rig's spring chains step at a fixed rate (tuning "chain"), so a whipped, driven tentacle
+## ends a 2 s run in the same pose at 30, 60 and 144 fps (R 9.1: the old variable step felt
+## different at every frame rate and no two captures matched).
+func _check_chain_rate() -> void:
+	var ends: Array[PackedVector3Array] = []
+	var moved := 0.0
+	for fps: int in [60, 30, 144]:
+		var colors: Dictionary = Content.species_def("cephalopod")["colors"]
+		var rig := CephalopodStandIn.build(colors, 10.0, 1.5)
+		root.add_child(rig)
+		rig.simulate_chains(0.0)  # lays the chains out at rest
+		var chain: KaijuRig.SpringChain = rig.chains[0]
+		var start := chain.pos.duplicate()
+		chain.kick(Vector3(8.0, 4.0, 0.0), 1.0 / 60.0)
+		chain.drive[2] = Basis(Vector3.BACK, 0.6)
+		for _frame: int in roundi(2.0 * fps):
+			rig.simulate_chains(1.0 / fps)
+		ends.append(chain.pos.duplicate())
+		moved = maxf(moved, start[start.size() - 1].distance_to(chain.pos[start.size() - 1]))
+		rig.free()
+	var worst := 0.0
+	for run: int in range(1, ends.size()):
+		for i: int in ends[0].size():
+			worst = maxf(worst, ends[0][i].distance_to(ends[run][i]))
+	check(moved > 0.5, "the driven tentacle really moves in 2 s (tip %.2f)" % moved)
+	check(
+		worst < 0.05,
+		"a tentacle ends 2 s in the same pose at 30, 60, 144 fps (worst joint off %.3f)" % worst
 	)

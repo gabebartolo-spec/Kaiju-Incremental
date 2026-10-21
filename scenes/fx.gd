@@ -24,6 +24,8 @@ const PUFF_RISE := 0.1
 const PUFF_HOLD := 0.07
 const PUFF_FADE := 0.8
 
+## One hidden user of each effect material, so no shader is compiled again mid-rampage.
+var keep := ShaderKeep.new()
 ## Footfall puffs still in the air (at most tuning "fx" "footfall_dust" "max_live").
 var steps_live: Array[GPUParticles3D] = []
 
@@ -83,6 +85,12 @@ func _ready() -> void:
 		}
 	)
 	_spark_mesh = _cube(0.12, true)
+	add_child(keep)
+	var claws := ClawSlash.marks_material(Content.section("claw_fx"))
+	var kept: Array[Material] = [_dust_mat, _step_mat, _slam_mat, _spark_mat, _tree_puff_mat]
+	kept.append_array([claws, LandmarkBurst.chunk_material()])
+	for mat: Material in kept:
+		keep.hold(str(mat.get_instance_id()), mat)
 	# Prewarm: one of each, out of sight, so the first real one does not stall a frame.
 	dust(Vector3(0, -50, 0), 0.5)
 	footfall(Vector3(0, -50, 0), 0.5)
@@ -237,6 +245,7 @@ func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProc
 
 func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
+	p.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 	p.process_material = mat.duplicate()
 	p.draw_pass_1 = mesh
 	p.amount = amount
