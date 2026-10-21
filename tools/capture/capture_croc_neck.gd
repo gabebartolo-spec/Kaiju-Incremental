@@ -46,6 +46,8 @@ func _run() -> void:
 	)
 	var steps := [0]
 	rampage.scripted = func(sim: RampageSim) -> Dictionary:
+		if sim.emerge.active:  # the river rise holds the sim back (D-083): the take starts after it
+			return {"move": Vector2.ZERO, "dash": false}
 		var n: int = steps[0]
 		steps[0] = n + 1
 		var move := Vector2.ZERO
@@ -64,6 +66,8 @@ func _run() -> void:
 	var frames := 0
 	while frames < total and not rampage.sim.over:
 		await physics_frame
+		if rampage.sim.emerge.active:
+			continue
 		frames += 1
 		if frames >= DASH_AT - 6 and frames % _every == 0:
 			await process_frame
