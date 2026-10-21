@@ -100,11 +100,7 @@ func _throw(parts: Array, middle: Vector2, rng: RandomNumberGenerator) -> void:
 	mm.use_colors = true
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * BuildingVoxels.VOXEL
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED  # its own albedo, not the night lighting
-	box.material = mat
+	box.material = chunk_material()
 	mm.mesh = box
 	mm.instance_count = ceili(float(parts.size()) / every)
 	for n: int in range(0, parts.size(), every):
@@ -177,6 +173,16 @@ func _draw_clouds(k: float) -> void:
 		var s := _cloud_size * (0.8 + 0.7 * k)
 		mm.set_instance_transform(n, Transform3D(Basis.from_scale(Vector3.ONE * s), _cloud_at[n]))
 		mm.set_instance_color(n, Color(DUST, alpha))
+
+
+## The thrown chunks' material: their own vertex colours, unshaded, not the night lighting (Fx
+## keeps one compiled: ShaderKeep).
+static func chunk_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.vertex_color_is_srgb = true
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	return mat
 
 
 static func _outward(pos: Vector3, middle: Vector2) -> Vector3:

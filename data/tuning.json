@@ -684,8 +684,6 @@
 		"indoor_margin": 0.5,
 		"dust_interval": 0.25,
 		"dust_per_cell": 0.004,
-		"fire_chance": 0.25,
-		"fire_ground": 1.5,
 		"colors": {"1": "b9ad98", "2": "5d5a55", "3": "3d6d7a", "4": "8a8378"},
 		"color_fallback": "9a948a"
 	},

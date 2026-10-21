@@ -31,6 +31,7 @@ var _flame_mesh: BoxMesh
 var _flame_color := Color.BLACK
 var _decor: CityDecor
 var _fires: Array[Fire] = []
+var _chunk_fires := BuildingFires.new()
 var _debris: DebrisField
 var _streets: CityGround
 
@@ -62,7 +63,7 @@ func _ready() -> void:
 	add_child(fx)
 	_debris = DebrisField.new(_rng, MAX_DEBRIS)
 	add_child(_debris)
-	_ruins = RuinYard.new(sim, _stream.view, fire)
+	_ruins = RuinYard.new(sim, _stream.view)
 	add_child(_ruins)
 	_topple = ToppleFx.new(self, _rng)
 	add_child(_topple)
@@ -99,8 +100,17 @@ func crush(at: Vector3, radius: float) -> void:
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
 func crush_cone(cone: Dictionary) -> void:
-	for c: Vector3 in BreathCone.cover(cone):
-		crush(Vector3(c.x, 0.0, c.y), c.z)
+	crush_all(BreathCone.cover(cone))
+
+
+## Everything on the ground within any of `spots` (x, z, radius), as crush() on each in turn,
+## with one pass over the people (b2-3: a cone or a topple strip crushes a dozen spots at once).
+func crush_all(spots: Array[Vector3]) -> void:
+	if _decor != null:
+		for s: Vector3 in spots:
+			_decor.crush(Vector3(s.x, 0.0, s.y), s.z)
+	if street != null:
+		street.crush_all(spots)
 
 
 func _process(delta: float) -> void:
@@ -110,10 +120,7 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
-		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
-		_fade.update(camera.global_position, sight, delta)
+		_fade.update(camera.global_position, BuildingFade.sight_of(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
@@ -154,7 +161,7 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	var view := _stream.view(index)
 	if sim.body.over(index):  # the body's bite tears a piece off (BodyBite)
 		BodyBite.tear(self, view, cells, kaiju_at, _rng)
-		_ruins.mark(index)
+		_broke(index, cells)
 		return
 	var parts := view.hide_chunks(cells)
 	parts.append_array(view.chip(cells, _rng))
@@ -173,9 +180,7 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 		mid += b.chunk_world(c)
 	if cells.size() >= 4:  # only a real collapse throws up a dust cloud
 		fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
-	if _rng.randf() < 0.18:  # broken floors sometimes catch fire
-		fire(mid / maxi(1, cells.size()), 0.35)
-	_ruins.mark(index)
+	_broke(index, cells)
 
 
 ## A section starts to fall: lift its voxels into a piece that topples or drops.
@@ -196,7 +201,7 @@ func fall_start(event: Dictionary) -> void:
 		"t": 0.0,
 	}
 	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
-	_ruins.mark(index)
+	_broke(index, cells)
 
 
 ## Gravity drives it: the angle (topple) or the drop grows with the square of time.
@@ -257,8 +262,11 @@ func _topple_land(node: Node3D, event: Dictionary) -> void:
 	var a := Vector3(from.x, 0, from.y)
 	var b := Vector3(to.x, 0, to.y)
 	var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
+	var spots: Array[Vector3] = []
 	for i: int in steps + 1:
-		crush(a.lerp(b, float(i) / steps), width * 0.6)
+		var at := a.lerp(b, float(i) / steps)
+		spots.append(Vector3(at.x, at.z, width * 0.6))
+	crush_all(spots)
 
 
 ## The ruins of the rampage (ToppleFx builds its rubble strips through it).
@@ -270,8 +278,9 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 	_debris.spawn(pos, color, away)
 
 
-## A fire that keeps burning (ruins, wrecks); the oldest goes out past the cap.
-func fire(at: Vector3, size: float) -> void:
+## A fire that keeps burning on the ground (wrecks, a crash, a thrown landing); the oldest goes
+## out past the cap. Nothing lights one on a collapse: rubble never burns (#111).
+func fire(at: Vector3, size: float) -> Fire:
 	var f := Fire.new(size, _rng.randf() * 10.0)
 	f.position = at
 	add_child(f)
@@ -279,6 +288,24 @@ func fire(at: Vector3, size: float) -> void:
 	if _fires.size() > MAX_FIRES:
 		var old: Fire = _fires.pop_front()
 		old.queue_free()
+	return f
+
+
+## A fire the sim lit on one chunk (the beam's coat): it goes out when that chunk breaks or falls.
+func burn_chunk(index: int, cell: Vector3i, size: float) -> void:
+	var f := fire(sim.buildings[index].chunk_world(cell), size)
+	_chunk_fires.add(index, cell, f)
+
+
+## Chunks broke or fell: fires on them go out, all of the building's once none stand (#111).
+func _broke(index: int, cells: Array[Vector3i]) -> void:
+	var out := _chunk_fires.cells_gone(index, cells)
+	if sim.buildings[index].frame.alive_count == 0:
+		out.append_array(_chunk_fires.building_gone(index))
+	for f: Fire in out:
+		_fires.erase(f)
+		f.go_out()
+	_ruins.mark(index)
 
 
 ## A short burst of real light (muzzle flash, explosion, breath).
