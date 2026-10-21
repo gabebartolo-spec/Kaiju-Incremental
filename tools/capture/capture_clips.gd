@@ -8,6 +8,7 @@ extends "res://tools/capture/capture_motion.gd"
 ## Prints "CLIPSTATE t <from> -> <to>" at each cross-fade start and "CLIPSEAM t <clip>" each time a
 ## looping clip wraps (for the per-frame difference plot); nothing on a kaiju without clips.
 ## --procedural: the same moves on the procedural gait (ClipGait.off), the "before".
+## --bare: the clips without the walk's weight (ClipWeight.off: no stride stretch, shoulders, bob).
 ## --probe: no pictures needed (run it --headless); prints the ClipProbe numbers at the end.
 ## --frames=N saves every Nth frame as PNG to <out>/frames (--out=<dir>, default user://clips),
 ## optionally only from --from=<s> to --to=<s>: lossless frames for the difference plot and clips
@@ -34,6 +35,8 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg == "--procedural":
 			ClipGait.off = true
+		elif arg == "--bare":
+			ClipWeight.off = true
 		elif arg == "--probe":
 			_probe = ClipProbe.new()
 		elif arg.begins_with("--out="):

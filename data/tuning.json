@@ -434,6 +434,24 @@
 		"fade_s": 0.3,
 		"puff": 1.6
 	},
+	"walk": {
+		"_doc": "The clip walk's weight (ClipWeight, presentation only; director 2026-10-21 #4: more motion in the shoulders and head; research 11 and 14). Pairs are [baby, adult], lerped by body scale.",
+		"playback_max": 1.2,
+		"warp_max": {"reptilian_baby": 1.7, "reptilian_adolescent": 1.15, "reptilian_adult": 1.35},
+		"warp_ease": 3.0,
+		"shoulder_twist": 1.8,
+		"shoulder_roll": 2.0,
+		"head_counter": 0.7,
+		"head_bob": 0.04,
+		"head_spring": [9.0, 0.32],
+		"head_kick": 0.6,
+		"drop": [0.02, 0.045],
+		"drop_spring": [18.0, 0.5],
+		"jaw_kick": 0.08,
+		"start_blend": [0.3, 0.7],
+		"stop_blend": 0.2,
+		"chest_lead": 0.5
+	},
 	"camera": {"offset": [0, 16, 30], "fov": 60.0},
 	"topple_fx": {
 		"shudder_s": 0.4,

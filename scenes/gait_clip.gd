@@ -55,6 +55,8 @@ const NECK_SHARE := 0.4
 static var off := false
 
 var clips: KaijuClips
+## The walk's weight on top of the clips (ClipWeight: stride from speed, shoulders, head, footfall).
+var weight: ClipWeight
 ## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
 var state := "idle"
 var clip_time := 0.0
@@ -67,6 +69,7 @@ var tail_shown := 0.0
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
+var _blend_seconds := BLEND_SECONDS
 var _roar_queued := false
 var _turn_from := 0.0
 var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
@@ -104,6 +107,7 @@ static func or_biped(p_rig: KaijuRig, p_clips: Variant) -> KaijuGait:
 func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	super(p_rig)
 	clips = p_clips
+	weight = ClipWeight.new(clips)
 	for turn: String in ["turn_left", "turn_right"]:
 		_turn_span[turn] = _yaw_span(turn)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
@@ -116,13 +120,18 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 func update(delta: float) -> void:
 	track(delta)
 	var dt := minf(delta, 1.0 / 20.0)
+	weight.ease_warp(speed, base_stride(), dt)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
+	var walk := smoothstep(0.0, 1.0, _blend)
+	walk = (walk if state == "walk" else 0.0) + (1.0 - walk if _from == "walk" else 0.0)
+	weight.shape(pose, clips.rig_scale, walk, s)
 	_apply(pose, dt)
+	weight.upper(rig, pose, dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
@@ -134,8 +143,13 @@ func roar() -> void:
 	_roar_queued = true
 
 
-## World length of one walk cycle.
+## World length of one walk cycle: the baked stride, stretched by speed (ClipWeight.warp).
 func stride() -> float:
+	return base_stride() * weight.warp
+
+
+## World length of one walk cycle as baked.
+func base_stride() -> float:
 	return clips.stride_m * clips.rig_scale * s
 
 
@@ -171,12 +185,13 @@ func _choose(dt: float) -> void:
 		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
 	else:
 		clip_time += dt * clips.fps
-	_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
+	_blend = minf(1.0, _blend + dt / _blend_seconds)
 	if state.begins_with("turn"):
 		_steer_turn()
 
 
 func _go(next: String, at: float) -> void:
+	_blend_seconds = weight.blend_seconds(next, state, s, BLEND_SECONDS)
 	_from = state
 	_from_time = clip_time
 	_blend = 0.0
@@ -246,9 +261,12 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 func _look_ahead(dt: float) -> void:
 	var ahead := clampf(0.0 if turn_ahead == INF else turn_ahead, -HEAD_LEAD_MAX, HEAD_LEAD_MAX)
 	_look = lerpf(_look, ahead, minf(1.0, dt * HEAD_LEAD_EASE))
-	for bone_name: String in ["head0", "head1"]:
+	var chest := 0.0 if ClipWeight.off else weight.at("chest_lead", s)  # the chest half, R 14.3
+	for bone_name: String in ["spine2", "head0", "head1"]:
 		if rig.has_bone(bone_name):
-			var share := NECK_SHARE if bone_name == "head0" else 1.0 - NECK_SHARE
+			var share := chest
+			if bone_name != "spine2":
+				share = (1.0 - chest) * (NECK_SHARE if bone_name == "head0" else 1.0 - NECK_SHARE)
 			var b := rig.bone(bone_name).global_transform.basis.orthonormalized()
 			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 
@@ -323,7 +341,11 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 				leg.drift = 0.0
 				var side := "left" if leg.side < 0.0 else "right"
 				if _feet_primed:  # the first frame's feet were already down: no step, no ring
-					rig.foot_planted.emit(side, clampf(0.2 + speed_k(), 0.0, 1.0), target)
+					var strength := clampf(0.2 + speed_k(), 0.0, 1.0)
+					if not ClipWeight.off:  # an adult's step lands harder than a cub's (R 11.3)
+						strength *= ClipWeight.stage_weight(s)
+					weight.land(strength, hip_height, s)
+					rig.foot_planted.emit(side, strength, target)
 			target = _lock[i]
 			_lag[i] = _lock[i] - clip_toe
 		else:

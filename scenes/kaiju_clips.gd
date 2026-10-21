@@ -26,6 +26,8 @@ class Pose:
 	var yaw := 0.0  ## root yaw, degrees (+ = left)
 
 
+## The file's name without folder or extension ("reptilian_adult"): data keyed per clip set.
+var source := ""
 var bones: Array[String] = []
 var fps := 24.0
 var stride_m := 1.0
@@ -59,6 +61,7 @@ static func read(path: String) -> KaijuClips:
 		return null
 	var header: Dictionary = parsed
 	var clips := KaijuClips.new()
+	clips.source = path.get_file().get_basename()
 	if not clips._load(header, raw, 12 + length):
 		push_warning("KaijuClips: %s does not match its header" % path)
 		return null
