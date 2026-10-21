@@ -130,6 +130,6 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
   must not sound like a typewriter (playtest 1).
 
 ## Open for the director (ask at its phase, the ask-the-director way)
-Camera growth per stage (R 19) · walk: slower speed vs faster cadence (R 11.2) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · tree map layout (R 16.5) ·
+walk: slower speed vs faster cadence (R 11.2) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · tree map layout (R 16.5) ·
 mecha concept (R 23.1, finale = mecha boss after 3 cities, D-113) · which original species follow the croc
 (research 02).
