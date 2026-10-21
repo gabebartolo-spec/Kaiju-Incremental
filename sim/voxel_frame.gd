@@ -37,14 +37,11 @@ var cells := PackedByteArray()
 var fixtures := PackedByteArray()
 ## True when any material in the list is a fixture (the flood skips the fixture pass if not).
 var has_fixtures := false
-## The cells emptied since the last settle and what each held, kept while the settle cache
-## (VoxelSettleCache) is valid; any other change to the grid drops the cache.
-var gone := PackedInt32Array()
-var gone_mats := PackedByteArray()
+## True once a settle has run (Carving.warm's first-settle stage looks).
+var settled_once := false
 ## By material id: the blow needed to break a cell of it.
 var _strength := PackedFloat64Array()
 var _ids: Dictionary = {}
-var _cache: VoxelSettleCache = null
 
 
 func _init(units: Vector3i, p_res: int, materials: Array[Dictionary]) -> void:
@@ -83,7 +80,6 @@ func adopt(dims: Vector3i, p_offset: Vector3i, p_cells: PackedByteArray) -> bool
 	h = dims.y
 	offset = p_offset
 	cells = p_cells.duplicate()
-	_cache = null
 	alive_count = cells.size() - cells.count(EMPTY)
 	return true
 
@@ -114,10 +110,6 @@ func set_cell(c: Vector3i, material: int) -> void:
 	if not inside(c):
 		return
 	var i := index(c)
-	if material == EMPTY:
-		_note(i)
-	else:
-		_cache = null
 	alive_count += int(material != EMPTY) - int(cells[i] != EMPTY)
 	cells[i] = material
 
@@ -139,7 +131,6 @@ func damage(c: Vector3i, amount: float) -> bool:
 	var i := index(c)
 	if amount < _strength[cells[i]]:
 		return false
-	_note(i)
 	cells[i] = EMPTY
 	alive_count -= 1
 	return true
@@ -149,7 +140,6 @@ func damage(c: Vector3i, amount: float) -> bool:
 func clear_index(i: int) -> int:
 	var m := cells[i]
 	if m != EMPTY:
-		_note(i)
 		cells[i] = EMPTY
 		alive_count -= 1
 	return m
@@ -157,7 +147,6 @@ func clear_index(i: int) -> int:
 
 func remove(c: Vector3i) -> void:
 	if alive(c):
-		_note(index(c))
 		cells[index(c)] = EMPTY
 		alive_count -= 1
 
@@ -197,7 +186,6 @@ func carve_sphere(centre: Vector3, radius: float, force: float = INF) -> PackedI
 				if m == EMPTY or _strength[m] > force:
 					continue
 				if Vector3(x + 0.5, y + 0.5, z + 0.5).distance_squared_to(c) <= r2:
-					_note(i)
 					cells[i] = EMPTY
 					removed.append(i)
 	alive_count -= removed.size()
@@ -227,7 +215,6 @@ func carve_capsule(a: Vector3, b: Vector3, radius: float, force: float = INF) ->
 				var p := Vector3(x + 0.5, y + 0.5, z + 0.5)
 				var t := clampf((p - ca).dot(ab) / len2, 0.0, 1.0)
 				if p.distance_squared_to(ca + ab * t) <= r2:
-					_note(i)
 					cells[i] = EMPTY
 					removed.append(i)
 	alive_count -= removed.size()
@@ -238,10 +225,7 @@ func carve_capsule(a: Vector3, b: Vector3, radius: float, force: float = INF) ->
 ## no longer joined to the ground floor, in scan order of its first cell, each a "drop".
 func detach() -> Array[Dictionary]:
 	var support := VoxelSupport.new(self)
-	var out: Array[Dictionary] = []
-	for part: PackedInt32Array in support.islands():
-		out.append(_take(part))
-	return out
+	return _take_all(support.islands())
 
 
 ## Removes and returns every part that lost support, as Structure.settle() does:
@@ -249,81 +233,71 @@ func detach() -> Array[Dictionary]:
 ## "dir": Vector2i, "mats": PackedByteArray (each cell's material), "index": PackedInt32Array}.
 ## Islands first (scan order), then at most one topple per grounded part (lowest level), then
 ## what hung from a toppled load below its level: a fresh flood, its islands land as the first
-## ones do (review FIX on #97: nothing is left floating).
+## ones do (review FIX on #97: nothing is left floating). The native flood and cell loops
+## (KaijuSettle) run it where the extension is loaded; with VoxelSupport.use_native off this is
+## the GDScript reference they are held to (tests/lib/settle_replay.gd).
 func settle() -> Array[Dictionary]:
-	# The native flood settles a building in a millisecond or two; the cache is the GDScript
-	# fallback (where the extension is not loaded), and slower than that flood.
-	if _cache != null and VoxelSupport.native() == null and _cache.try_fast(self):
-		gone.clear()
-		gone_mats.clear()
-		return []
-	return settle_full()
-
-
-## True once a settle has run (the settle cache exists).
-func settled() -> bool:
-	return _cache != null
-
-
-## Builds, ahead of the first fast settle, what the settle cache keeps (a no-op when it is not
-## valid or already built, or when the native flood settles instead).
-func prepare() -> void:
-	if _cache != null and VoxelSupport.native() == null:
-		_cache.prepare(self)
-
-
-## settle() by the flood alone (the oracle the cache is held to; also what runs when the cache
-## cannot prove the cells lost leave the rest as it was).
-func settle_full() -> Array[Dictionary]:
+	settled_once = true
 	var support := VoxelSupport.new(self)
 	var out: Array[Dictionary] = []
 	_drop_islands(support, out)
 	var first := out.size()
 	var plan := w * d
-	for tip: Dictionary in support.topple():
+	var tips := support.topple()
+	for tip: Dictionary in tips:
 		var label: int = tip["label"]
 		var level: int = tip["level"]
 		var part := PackedInt32Array()
-		for i: int in range(level * plan, cells.size()):
-			if support.labels[i] == label and cells[i] != EMPTY:
-				part.append(i)
-		var event := _take(part)
+		var nat := VoxelSupport.native()
+		if nat != null:
+			part = nat.call("gather", support.labels, cells, level * plan, label)
+		else:
+			for i: int in range(level * plan, cells.size()):
+				if support.labels[i] == label and cells[i] != EMPTY:
+					part.append(i)
+		var event := _take_all([part])[0]
 		event["kind"] = "topple"
 		event["pivot"] = tip["pivot"]
 		event["dir"] = tip["dir"]
 		out.append(event)
-	var last := support
 	if out.size() > first:
-		last = VoxelSupport.new(self)
-		_drop_islands(last, out)
-	if _cache == null:
-		_cache = VoxelSettleCache.new()
-	gone.clear()
-	gone_mats.clear()
-	_cache.adopt(cells, last.count, out.size())
+		_drop_islands(VoxelSupport.new(self), out)
 	return out
 
 
 ## Takes every island `support` finds and appends it to `out`, each with where it lands.
 func _drop_islands(support: VoxelSupport, out: Array[Dictionary]) -> void:
 	var start := out.size()
-	for part: PackedInt32Array in support.islands():
-		out.append(_take(part))
+	var isl := support.islands()
+	out.append_array(_take_all(isl))
 	for k: int in range(start, out.size()):
 		var index: PackedInt32Array = out[k]["index"]
 		out[k].merge(support.landing(index), true)
 
 
-## Remembers that grid cell `i` is about to be emptied (see `gone`).
-func _note(i: int) -> void:
-	if _cache != null:
-		gone.append(i)
-		gone_mats.append(cells[i])
-
-
 ## A digest of the grid, for replay checks.
 func digest() -> int:
 	return hash(cells)
+
+
+## Removes the cells of each part and returns them as "drop" events (natively where loaded).
+func _take_all(parts: Array[PackedInt32Array]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var nat := VoxelSupport.native()
+	if nat == null:
+		for part: PackedInt32Array in parts:
+			out.append(_take(part))
+		return out
+	var got: Array = nat.call("take", cells, parts, Vector3i(w, h, d), offset)
+	cells = got[0]
+	for k: int in parts.size():
+		var list: Array[Vector3i] = []
+		var raw: Array = got[2][k]
+		list.assign(raw)
+		alive_count -= parts[k].size()
+		var mats: PackedByteArray = got[1][k]
+		out.append(_drop_event(list, mats, parts[k]))
+	return out
 
 
 ## Removes the cells of `part` and returns them as a "drop" event.
@@ -338,6 +312,12 @@ func _take(part: PackedInt32Array) -> Dictionary:
 		cells[i] = EMPTY
 		list.append(Vector3i(i % w, i / plan, (i / w) % d) + offset)
 	alive_count -= part.size()
+	return _drop_event(list, mats, part)
+
+
+static func _drop_event(
+	list: Array[Vector3i], mats: PackedByteArray, part: PackedInt32Array
+) -> Dictionary:
 	return {
 		"cells": list,
 		"kind": "drop",

@@ -52,8 +52,10 @@ var sim: RampageSim
 ## Off: every building stays on its chunk Structure (data/tuning.json destruction.carve).
 var on := false
 var alive_share := 0.5
-## How far beyond the kaiju's strike reach a building is warmed (sim units, tuning destruction).
+## How far beyond the kaiju's strike reach a building is warmed (sim units, tuning destruction),
+## and how far while it emerges (it strikes nothing then, so the nearest are made ready first).
 var warm_margin := 3.0
+var warm_emerge_margin := 3.0
 var promoter := CellPromoter.new()
 ## Building index -> Grid, for the buildings hit so far.
 var grids: Dictionary = {}
@@ -75,6 +77,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	on = cfg.get("carve", false) == true
 	alive_share = Num.f(cfg.get("chunk_alive_share", 0.5))
 	warm_margin = Num.f(cfg.get("warm_margin", 3.0))
+	warm_emerge_margin = Num.f(cfg.get("warm_emerge_margin", warm_margin))
 	_materials = Content.materials()
 	_strength.resize(256)
 	for m: Dictionary in _materials:
@@ -100,15 +103,16 @@ func frame(n: int) -> VoxelFrame:
 ## Pre-promotion (b2-3): one stage of the work a building's first hit would otherwise do all at
 ## once, per sim step, on the nearest buildings the kaiju can reach (or is about to) that are not
 ## promoted yet: stage 0 generates its cells, stage 1 makes the fine grid, stage 2 does its first
-## settle, stage 3 builds what the GDScript settle cache keeps. A hit that arrives first just
-## does the stages it finds undone. Nearest first, ties by building index: the same order for the
-## same run. Nothing a hit would not do is done, only sooner: the first settle's falls (if the
-## generated grid had any) start as any settle's do.
-func warm() -> void:
+## settle. A hit that arrives first just does the stages it finds undone. Nearest first, ties
+## by building index: the same order for the same run. Nothing a hit would not do is done, only
+## sooner: the first settle's falls (if the generated grid had any) start as any settle's do.
+## While the kaiju emerges (Emergence.step) it warms out to warm_emerge_margin instead.
+func warm(emerging: bool = false) -> void:
 	if not on:
 		return
 	if _warming < 0:
-		_warming = WarmOrder.next_cold(self, sim.buildings, warm_margin)
+		var margin := warm_emerge_margin if emerging else warm_margin
+		_warming = WarmOrder.next_cold(self, sim.buildings, margin)
 		_warm_stage = 0
 		if _warming < 0:
 			return
@@ -117,12 +121,10 @@ func warm() -> void:
 		_cells_of(n)
 	elif _warm_stage == 1:
 		_promote(n)
-	elif _warm_stage == 2 and not frame(n).settled():
+	elif _warm_stage == 2 and not frame(n).settled_once:
 		sim.collapse.settle(n)
-	elif _warm_stage == 3:
-		frame(n).prepare()
 	_warm_stage += 1
-	if _warm_stage > 3:
+	if _warm_stage > 2:
 		_warming = -1
 
 
@@ -153,9 +155,11 @@ func hit(n: int, force: Callable, damage: float, floors: Vector2i) -> void:
 	var at := PackedFloat32Array()  # the force at each grid column, sampled once
 	at.resize(f.w * f.d)
 	at.fill(-1.0)
+	var spans := PackedInt32Array()  # per chunk: its grid columns and floor
 	for c: Vector3i in chunks:
 		var xs := _span(c.x, b.w, f.offset.x, f.w, res)
 		var zs := _span(c.z, b.d, f.offset.z, f.d, res)
+		spans.append_array([xs.x, xs.y, zs.x, zs.y, c.y])
 		for gz: int in range(zs.x, zs.y):
 			for gx: int in range(xs.x, xs.y):
 				var col := gx + gz * f.w
@@ -164,8 +168,7 @@ func hit(n: int, force: Callable, damage: float, floors: Vector2i) -> void:
 					var p := b.local_to_world(local)
 					var k: float = force.call(Vector2(p.x, p.z), 0.5 / res)
 					at[col] = maxf(0.0, k)
-				if at[col] > 0.0:
-					_wear(g, col, c.y, damage * at[col] * mult)
+	CarvingCells.wear(self, g, spans, at, PackedFloat32Array(), damage, mult)
 	_finish(n, g)
 
 
@@ -183,14 +186,15 @@ func apply(n: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 		return 0
 	g = _promote(n)
 	var f := g.frame
-	var mult := _mult(b)
+	var spans := PackedInt32Array()  # per chunk hit: its grid columns and floor, and its blow
+	var each := PackedFloat32Array()
 	for k: int in hits:
 		var c := cells[k]
 		var xs := _span(c.x, b.w, f.offset.x, f.w, f.res)
 		var zs := _span(c.z, b.d, f.offset.z, f.d, f.res)
-		for gz: int in range(zs.x, zs.y):
-			for gx: int in range(xs.x, xs.y):
-				_wear(g, gx + gz * f.w, c.y, amounts[k] * mult)
+		spans.append_array([xs.x, xs.y, zs.x, zs.y, c.y])
+		each.append(amounts[k])
+	CarvingCells.wear(self, g, spans, PackedFloat32Array(), each, 0.0, _mult(b))
 	return _finish(n, g)
 
 
@@ -203,22 +207,21 @@ func apply(n: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 func settle(n: int) -> Array[Dictionary]:
 	var g: Grid = grids[n]
 	var f := g.frame
-	var plan := f.w * f.d
 	var out: Array[Dictionary] = []
-	for part: Dictionary in f.settle():
+	var parts := f.settle()
+	for part: Dictionary in parts:
 		var index: PackedInt32Array = part["index"]
-		var lo := Vector3i(f.w, f.h, f.d)
-		var hi := -Vector3i.ONE
-		for i: int in index:
-			g.live[g.chunk(i)] -= 1
-			var c := Vector3i(i % f.w, i / plan, (i / f.w) % f.d)
-			lo = lo.min(c)
-			hi = hi.max(c)
+		var info := CarvingCells.fallen(g, index)  # g.live loses its cells
+		var lo: Vector3i = info[0]
+		var hi: Vector3i = info[1]
+		var base: Rect2i = info[2]
+		var under: bool = info[3]
 		cells_fallen += index.size()
 		var dir: Vector2i = part["dir"]
 		var span := hi - lo + Vector3i.ONE
+		var dl := _deaths(n, g)
 		var event := {
-			"cells": _deaths(n, g),
+			"cells": dl,
 			"kind": part["kind"],
 			"pivot": part["pivot"],
 			"dir": dir,
@@ -228,15 +231,6 @@ func settle(n: int) -> Array[Dictionary]:
 			"height": ceilf(float(span.y) / f.res),
 			"width": float(span.z if dir.x != 0 else span.x) / f.res,
 		}
-		var base := Rect2i(-1, -1, 0, 0)
-		var under := false
-		for i: int in index:
-			if i / plan == lo.y:
-				var x := i % f.w
-				var z := (i / f.w) % f.d
-				var cell := Rect2i(x, z, 1, 1)
-				base = cell if base.position.x < 0 else base.merge(cell)
-				under = under or f.column_top(x, z, lo.y) >= 0
 		var foot := Rect2(
 			Vector2(base.position + Vector2i(f.offset.x, f.offset.z)) / f.res,
 			Vector2(base.size) / f.res
@@ -244,7 +238,7 @@ func settle(n: int) -> Array[Dictionary]:
 		event["base"] = foot
 		event["gutted"] = not under and span.y > mini(base.size.x, base.size.y)
 		if str(part["kind"]) != "topple":
-			event["drop"] = _drop(f, index)
+			event["drop"] = CarvingCells.drop(f, index)
 		out.append(event)
 	return out
 
@@ -275,12 +269,8 @@ func _promote(n: int) -> Grid:
 	g.fy = _owners(f.h, f.offset.y, f.res, b.height)
 	g.wear.resize(f.w * f.d * b.height)
 	var chunks := b.w * b.d * b.height
-	g.full.resize(chunks)
+	g.full = CarvingCells.counts(g, chunks)
 	g.dead.resize(chunks)
-	var bytes := f.cells
-	for i: int in bytes.size():
-		if bytes[i] != VoxelFrame.EMPTY:
-			g.full[g.chunk(i)] += 1
 	g.live = g.full.duplicate()
 	for ci: int in chunks:
 		g.dead[ci] = int(not b.frame.alive(_chunk_cell(g, ci)))
@@ -301,9 +291,18 @@ func _promote(n: int) -> Grid:
 	return g
 
 
+## By material id, the blow (in chunk_hp) that breaks a cell of it; and the weakest of them.
+func strengths() -> PackedFloat32Array:
+	return _strength
+
+
+func weakest() -> float:
+	return _weakest
+
+
 ## A blow of `amount` on grid column `col` (x + z * w) at floor `floor_y`: breaks every cell
 ## there whose material its worn total now reaches (into g.removed and g.mats).
-func _wear(g: Grid, col: int, floor_y: int, amount: float) -> void:
+func wear_column(g: Grid, col: int, floor_y: int, amount: float) -> void:
 	var f := g.frame
 	var wi := col + floor_y * f.w * f.d
 	g.wear[wi] += amount
@@ -358,23 +357,6 @@ func _deaths(n: int, g: Grid) -> Array[Vector3i]:
 
 func _mult(b: RampageSim.Building) -> float:
 	return Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city)
-
-
-## How far an island (already out of the grid) drops before it meets what stands below it,
-## in sim units.
-func _drop(f: VoxelFrame, index: PackedInt32Array) -> float:
-	var plan := f.w * f.d
-	var low: Dictionary = {}
-	for i: int in index:
-		var col := i % plan
-		var y := i / plan
-		if not low.has(col) or y < Num.i(low[col]):
-			low[col] = y
-	var gap := f.h
-	for col: int in low:
-		var y: int = low[col]
-		gap = mini(gap, y - f.column_top(col % f.w, col / f.w, y) - 1)
-	return maxf(0.5, float(gap) / f.res)
 
 
 static func _chunk_cell(g: Grid, ci: int) -> Vector3i:

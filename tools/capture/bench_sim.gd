@@ -111,7 +111,6 @@ func _run() -> void:
 			]
 		)
 	)
-	print(_cache_tally(sim))
 	quit()
 
 
@@ -128,19 +127,3 @@ func _cells_digest(sim: RampageSim) -> int:
 		if cells < whole:  # carved ones
 			d = hash([d, n, g.frame.digest()])
 	return d
-
-
-func _cache_tally(sim: RampageSim) -> String:
-	var fast := 0
-	var full := 0
-	var why := {}
-	for n: Variant in sim.carving.grids:
-		var g: Carving.Grid = sim.carving.grids[n]
-		var cache: VoxelSettleCache = g.frame.get("_cache")
-		if cache == null:
-			continue
-		fast += cache.fast
-		full += cache.full
-		for k: Variant in cache.why:
-			why[k] = Num.i(why.get(k, 0)) + Num.i(cache.why[k])
-	return "settle cache: %d fast, %d full; gave up: %s" % [fast, full, str(why)]
