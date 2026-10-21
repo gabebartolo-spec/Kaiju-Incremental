@@ -118,7 +118,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
 - **Minimal HUD:** the boxed timer at the top; biomass a boxless figure bottom right; breath cooldown an icon with a
   circular fill; health bar removed or repurposed; controls shown once and in a controls menu; fixed tooltip width;
   species select with the kaiju centred (b2-10..13, b2-23, b2-11). Text 24 px or more at 1080p.
-- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default 60 fps on the balanced preset (D-093). Looks
+- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default Medium at 60 fps (D-093, D-109). Looks
   first, performance after the visuals are final (D-032, b2-25).
 
 ## Audio
