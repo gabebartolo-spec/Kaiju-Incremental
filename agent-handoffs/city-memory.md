@@ -30,6 +30,6 @@ Branch claude/city-memory (worktree ../Kaiju-Incremental-wt/city-memory). No PR 
   mean replan 1-12 ms. Test asserts the median phase worst <= 50 ms.
 
 ## Left
-1. Full suite (tuning.json touched) run in the background; result goes to the lead.
+1. Full suite (tuning.json touched): started, STOPPED by the hand-off before finishing; rerun `GODOT=<console exe> tools/run_tests.sh --quick`. The streamview suite alone passed (16 checks); load suite not rerun after the change.
 2. Lead: look call on landmarks (13192 chunks always meshed) and the dash.
 3. Optional: real GPU run of stage4_memory.gd.
