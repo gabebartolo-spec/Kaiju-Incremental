@@ -85,21 +85,28 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 	var lift := Vector3(0, Num.f(_cfg["dust_lift"]), 0)
 	var dust := Color(str(_cfg["dust_color"]))
 	var impact := Num.f(_cfg["contact_dust" if event.has("hit") else "impact_dust"])
-	_city.fx.dust(b + lift, impact, dust)  # on the kaiju: only a puff where it met him
-	_city.fx.dust(a.lerp(b, 0.6) + lift, impact * 0.7, dust)
-	_city.fx.dust_line(a, b, width, dust)
+	var banded := fall.has("bands") and not event.has("hit")
+	if not banded:  # bands shatter in view: their own puffs, no cloud over the break
+		_city.fx.dust(b + lift, impact, dust)  # on the kaiju: only a puff where it met him
+		_city.fx.dust(a.lerp(b, 0.6) + lift, impact * 0.7, dust)
+		_city.fx.dust_line(a, b, width, dust)
+	var slabs: Array = event.get("slabs", [])
+	var hold := 0.0  # the heap and its dust wait for the last band to break
 	if event.has("hit"):
 		_fold(node, event, view, fall)
-	elif fall.has("bands"):
-		_bands.land(fall)
+	elif banded:
+		var bands: Array = fall["bands"]
+		_rubble.add(_bands.land(fall, slabs), voxels, false, true, true)
+		_bands.begin(fall)
+		hold = _bands.tail_s(bands.size())
+		slabs = []
 	else:
 		_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
-	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
+	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi, hold)
 	_city.ruins().build(
 		func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
 	)
-	var slabs: Array = event.get("slabs", [])
 	_rubble.add(slabs, voxels, true)
 
 
@@ -240,7 +247,13 @@ func _process(delta: float) -> void:
 
 
 ## The heap slumps: built taller than it rests, it settles down over settle_s.
-func _settle(mmi: MultiMeshInstance3D) -> void:
+func _settle(mmi: MultiMeshInstance3D, hold := 0.0) -> void:
+	if hold > 0.0:  # out of sight until the bands have broken
+		mmi.visible = false
+		await _city.get_tree().create_timer(hold).timeout
+		if not is_instance_valid(mmi):
+			return
+		mmi.visible = true
 	mmi.scale = Vector3(1, Num.f(_cfg["settle_heap"]), 1)
 	var tween := mmi.create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)

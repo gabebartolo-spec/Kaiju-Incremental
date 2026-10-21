@@ -13,6 +13,8 @@ var _cfg: Dictionary
 var _nodes: Dictionary = {}  # slab id -> MultiMeshInstance3D once built
 var _waiting: Dictionary = {}  # slab id -> its slab_break event, broken before it was built
 var _hidden: Dictionary = {}  # slab id -> true while it waits for a fold to end (reveal())
+var _held: Dictionary = {}  # slab id -> true while its move waits for reveal()
+var _tweens: Dictionary = {}  # slab id -> its paused move tween, once built
 var _parent: Dictionary = {}  # piece id -> the broken slab it replaces once it is out
 var _rng: RandomNumberGenerator
 
@@ -25,14 +27,20 @@ func _init(city: CityView, cfg: Dictionary, rng: RandomNumberGenerator) -> void:
 
 ## Builds and places the sim's slab dicts. `sliding`: they slide in from "from" (a landing
 ## strip); else they are knocked out of a breaking slab or fold and tumble there over piece_s.
-## `hidden`: they stay out of sight until reveal() (a fold still on its way down).
-func add(slabs: Array, voxels: BuildingVoxels, sliding: bool, hidden := false) -> void:
+## `hidden`: they stay out of sight until reveal() (a fold still on its way down). `held`
+## (with hidden): their move waits too, so reveal() breaks them out of their band (the tween
+## runs from the reveal, not from when the chunk was built).
+func add(
+	slabs: Array, voxels: BuildingVoxels, sliding: bool, hidden := false, held := false
+) -> void:
 	for slab: Dictionary in slabs:
 		var id := Num.i(slab["id"])
 		var dims: Vector3 = slab["dims"]
 		var salt := id % Ruin.SALTS
 		if hidden:
 			_hidden[id] = true
+		if held:
+			_held[id] = true
 		var place := func(chunk: MultiMeshInstance3D) -> void: _place(chunk, slab, sliding)
 		_city.ruins().build(
 			func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place
@@ -44,9 +52,14 @@ func reveal(ids: Array) -> void:
 	for raw: Variant in ids:
 		var id := Num.i(raw)
 		_hidden.erase(id)
+		_held.erase(id)
 		var node: MultiMeshInstance3D = _nodes.get(id)
 		if node != null:
 			node.visible = true
+		var move: Tween = _tweens.get(id)
+		if move != null and move.is_valid():
+			move.play()
+		_tweens.erase(id)
 		if node != null and _waiting.has(id):  # broken while it was still coming down: seen
 			var event: Dictionary = _waiting[id]  # lying there for reveal_hold_s, then it breaks
 			_waiting.erase(id)
@@ -110,6 +123,9 @@ func _place(chunk: MultiMeshInstance3D, slab: Dictionary, sliding: bool) -> void
 	chunk.rotation = start
 	var seconds := Num.f(_cfg["settle_s"]) if sliding else Num.f(_cfg["piece_s"])
 	var tween := chunk.create_tween()
+	if _held.has(id):
+		tween.pause()
+		_tweens[id] = tween
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 	tween.tween_property(chunk, "position", rest.origin, seconds)
 	tween.parallel().tween_property(chunk, "rotation", rest.basis.get_euler(), seconds)

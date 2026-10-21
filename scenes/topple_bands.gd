@@ -3,9 +3,10 @@ extends RefCounted
 ## A toppling tower as floor bands (director 2026-10-21, comment #30: "each section of the
 ## building needs to shatter as it hits the ground in sequence"). At its first pose the lifted
 ## piece splits into bands of band_floors floors (at most band_max). They turn together about the
-## pivot until the last bend_s of the fall, when each lower band leads so the bands come down base
-## first, band_gap_s apart, the top one at the sim's landing; each shatters (ToppleFx.shatter) the
-## moment it lies on the street. Broken on the kaiju (the sim's "hit", comments #24 #25), the bands
+## pivot until the last bend_s of the fall, when each upper band lags so the bands come down base
+## first, band_gap_s apart, the base one at the sim's landing (so the slabs it left are known);
+## each shatters (ToppleFx.shatter) the moment it lies on the street, and its share of the sim's
+## slabs breaks out of it right there (comment #30: "each section ... shatter as it hits"). Broken on the kaiju (the sim's "hit", comments #24 #25), the bands
 ## below the crack come down in front of him base first over fold_lower_s; the ones above it fold
 ## off his side onto the sim's fold slabs, nearest the crack first, by fold_s, each shattering as
 ## it lands and showing its slab. No point of a band is ever below the street (lift()).
@@ -17,6 +18,7 @@ const FLAT := PI * 0.5
 var _fx: ToppleFx
 var _cfg: Dictionary
 var _moving: Array[Dictionary] = []
+var _landed: Array[Dictionary] = []  # falls the sim landed whose upper bands are still coming down
 
 
 func _init(fx: ToppleFx, cfg: Dictionary) -> void:
@@ -29,37 +31,117 @@ func _init(fx: ToppleFx, cfg: Dictionary) -> void:
 func pose(f: Dictionary, view: BuildingView, t: float, duration: float) -> bool:
 	if not f.has("bands") and not _split(f, view):
 		return false
-	var bands: Array = f["bands"]
-	var n := bands.size()
-	var dir: Vector2 = f["dir"]
-	var rigid := ToppleFx.tilt(_cfg, t, duration)
-	var gap := Num.f(_cfg["band_gap_s"])
-	var bend_from := maxf(0.0, duration - gap * (n - 1) - Num.f(_cfg["bend_s"]))
-	for i: int in n:
-		var band := _live(bands[i])
-		if band == null:
-			continue
-		var down_at := duration - gap * (n - 1 - i)  # when this band lies on the street
-		var angle := rigid
-		if i < n - 1 and t > bend_from:
-			var lead := FLAT - ToppleFx.tilt(_cfg, down_at, duration)
-			angle += lead * clampf((t - bend_from) / maxf(0.001, down_at - bend_from), 0.0, 1.0)
-		angle = minf(angle, FLAT)
-		_turn(band, dir, angle)
-		if i < n - 1 and angle >= FLAT:
-			_fx.shatter(band)
+	_turn_all(f, t, duration)
 	return true
 
 
-## The sim landed it on the street: whatever is not down yet lies flat and shatters.
-func land(f: Dictionary) -> void:
-	_release(f)
+## Band i lags i * band_gap_s behind the base at the end: it lies flat at duration + that.
+func _turn_all(f: Dictionary, t: float, duration: float) -> void:
+	var bands: Array = f["bands"]
 	var dir: Vector2 = f["dir"]
-	for raw: Variant in f["bands"]:
-		var band := _live(raw)
+	var gap := Num.f(_cfg["band_gap_s"])
+	var bend := Num.f(_cfg["bend_s"])
+	var ramp := clampf((t - (duration - bend)) / maxf(0.001, bend), 0.0, 1.0)
+	for i: int in bands.size():
+		var band := _live(bands[i])
 		if band != null:
-			_turn(band, dir, FLAT)
+			_turn(band, dir, minf(ToppleFx.tilt(_cfg, t - gap * i * ramp, duration), FLAT))
+
+
+## The sim landed it on the street (slabs: its "slabs"): the base band lies flat and shatters
+## now, the ones above as they reach the street; each band's share of the slabs (by where along
+## the fall they lie) is returned held, to be revealed (reveal) as that band shatters, breaking
+## out of it from its middle.
+func land(f: Dictionary, slabs: Array) -> Array[Dictionary]:
+	_release(f)
+	var bands: Array = f["bands"]
+	var dir: Vector2 = f["dir"]
+	var held: Array[Dictionary] = []
+	var ids: Array = []
+	for i: int in bands.size():
+		ids.append([])
+	for slab: Dictionary in slabs:
+		var pos: Vector2 = slab["pos"]
+		var i := _band_at(bands, dir, pos)
+		if i < 0:
+			i = 0  # every band is already gone: it shows with the first
+		var out := slab.duplicate()
+		var node: Node3D = bands[i]
+		var centre := _flat_centre(node, dir)
+		out["from"] = Vector2(centre.x, centre.z)
+		held.append(out)
+		var mine: Array = ids[i]
+		mine.append(slab["id"])
+	f["band_ids"] = ids
+	f["run"] = Num.f(f["t"])
+	return held
+
+
+## Starts the landed fall's bands shattering (after the held slabs were added).
+func begin(f: Dictionary) -> void:
+	_landed.append(f)
+	_advance(f, 0.0)
+
+
+## Seconds from the sim's landing until the last band has shattered.
+func tail_s(n: int) -> float:
+	return Num.f(_cfg["band_gap_s"]) * maxi(0, n - 1) + Num.f(_cfg["shatter_s"])
+
+
+## The index of the band lying over `pos` (its height range up the tower holds pos's distance
+## along the fall, else the nearest); -1 when there are no live bands.
+func _band_at(bands: Array, dir: Vector2, pos: Vector2) -> int:
+	var best := -1
+	var near := INF
+	for i: int in bands.size():
+		var band := _live(bands[i])
+		if band == null:
+			continue
+		var pivot: Vector3 = band.get_meta("pivot")
+		var along := (pos - Vector2(pivot.x, pivot.z)).dot(dir)
+		var corners: PackedVector3Array = band.get_meta("corners")
+		var lo := INF
+		var hi := -INF
+		for c: Vector3 in corners:
+			lo = minf(lo, c.y)
+			hi = maxf(hi, c.y)
+		var miss := maxf(lo - along, along - hi)
+		if miss < near:
+			near = miss
+			best = i
+	return best
+
+
+## Where a band's middle is once it lies flat along dir.
+static func _flat_centre(band: Node3D, dir: Vector2) -> Vector3:
+	var pivot: Vector3 = band.get_meta("pivot")
+	var centre: Vector3 = band.get_meta("centre")
+	return pivot + FallMotion.topple_turn(dir, FLAT) * centre
+
+
+## One step of a landed fall: bands still coming down turn on, each that lies flat shatters and
+## shows its slabs.
+func _advance(f: Dictionary, delta: float) -> void:
+	var duration := Num.f(f["duration"])
+	var run := Num.f(f["run"]) + delta
+	f["run"] = run
+	_turn_all(f, run, duration)
+	var gap := Num.f(_cfg["band_gap_s"])
+	var bands: Array = f["bands"]
+	var ids: Array = f["band_ids"]
+	var done := true
+	for i: int in bands.size():
+		var band := _live(bands[i])
+		if band == null:
+			continue
+		if run >= duration + gap * i:
 			_fx.shatter(band)
+			var shows: Array = ids[i]
+			_fx.reveal(shows)
+		else:
+			done = false
+	if done:
+		_landed.erase(f)
 
 
 ## It broke on the kaiju (the sim's hit: "crack" up its axis, "pieces" with "large" fold slabs
@@ -106,6 +188,8 @@ func fold(f: Dictionary, hit: Dictionary) -> void:
 
 
 func process(delta: float) -> void:
+	for f: Dictionary in _landed.duplicate():
+		_advance(f, delta)
 	for i: int in range(_moving.size() - 1, -1, -1):
 		var m: Dictionary = _moving[i]
 		var band := _live(m["band"])

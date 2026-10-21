@@ -7,13 +7,18 @@ extends RefCounted
 ## through CityView and ToppleFx; on every frame every piece of it is measured from its chunks:
 ##  - no point of any piece is ever below the street;
 ##  - the pieces (floor bands) touch the ground in order from the base to the top;
-##  - right after the last one lands, no piece is left intact (each shattering or gone).
+##  - right after the last one lands, no piece is left intact (each shattering or gone);
+##  - the slabs the sim leaves on the street appear as the band lying over them shatters
+##    (within SLAB_LAG of its first touch), not all at once after the last one.
 ## Seeded by design: a fixed building of the flow run's city, fixed times, no randomness read.
 
 const ID := 900101
+const SLABS := 5
 const DT := 1.0 / 60.0
 const GROUND_EPS := 0.12  # a piece this close to the street touches it
 const BELOW_EPS := 0.02
+const SLAB_LAG := 0.1  # a band's slabs show this soon after it touches the street
+const SLAB_ID := 910000
 const HALF_CELL := 0.5  # a part's "pos" is its chunk's centre
 
 
@@ -73,6 +78,10 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 	var contact: Dictionary = {}  # piece id -> first time it touched the street
 	var order: Dictionary = {}  # piece id -> its height up the tower (mean of its chunks)
 	var intact := -1
+	var span: Dictionary = {}  # piece id -> its height range up the tower
+	var broke: Dictionary = {}  # piece id -> when it began to shatter
+	var shown: Dictionary = {}  # slab id -> when it left the held set (appeared)
+	var held := false
 	var check_at := INF
 	while t < land_at + 2.0:
 		t += DT
@@ -81,11 +90,18 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 			var ctx := {"id": id, "building": index, "from": from, "dir": dir, "height": height}
 			ctx.merge({"width": float(b.d), "lean": ToppleFx.tilt(_cfg(), t, duration)})
 			city.fall_land(_landing(ctx, on_kaiju))
-			var fold_end := Num.f(_cfg()["fold_s"]) if on_kaiju else 0.0
+			var tail := Num.f(_cfg()["band_gap_s"]) * (Num.i(_cfg()["band_max"]) - 1)
+			var fold_end := Num.f(_cfg()["fold_s"]) if on_kaiju else tail
 			check_at = t + fold_end + DT * 2.0
 		elif not landed:
 			city._animate_falls(DT)
 		city._topple._process(DT)
+		if landed:
+			var waiting: Dictionary = city._topple._rubble._hidden
+			for k: int in SLABS:
+				held = held or waiting.has(SLAB_ID + k)
+				if held and not waiting.has(SLAB_ID + k) and not shown.has(SLAB_ID + k):
+					shown[SLAB_ID + k] = t
 		for tween: Tween in city.get_tree().get_processed_tweens():
 			tween.custom_step(DT)
 		var pieces := _pieces(city, pivot)
@@ -95,8 +111,11 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 			var key := piece.get_instance_id()
 			if not order.has(key):
 				order[key] = _height(piece)
+				span[key] = _range(piece)
 			if low <= GROUND_EPS and not contact.has(key):
 				contact[key] = t
+			if piece.has_meta("breaking") and not broke.has(key):
+				broke[key] = t
 		if intact < 0 and t >= check_at:
 			intact = 0
 			for piece: Node3D in pieces:
@@ -122,6 +141,59 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 		rising, "its bands touch the ground in order from the base to the top (%s)" % [_fmt(times)]
 	)
 	check.call(intact == 0, "after it lands no band is left intact (%d)" % intact)
+	if not on_kaiju:
+		var breaks: Array[float] = []
+		for key: int in keys:
+			breaks.append(Num.f(broke.get(key, INF)))
+		var in_order := breaks.size() >= 2 and breaks[-1] < INF
+		for k: int in range(1, breaks.size()):
+			in_order = in_order and breaks[k] > breaks[k - 1]
+		check.call(in_order, "its bands shatter in order from the base (%s)" % [_fmt(breaks)])
+		_check_slabs(check, [shown, span, broke], height)
+
+
+## Each slab the street got shows within SLAB_LAG of its band shattering on the street (the band
+## whose height range up the tower holds its distance along the fall, else the nearest).
+## seen: [slab id -> when it appeared, piece id -> height range, piece id -> when it began to shatter].
+static func _check_slabs(check: Callable, seen: Array, height: float) -> void:
+	var shown: Dictionary = seen[0]
+	var span: Dictionary = seen[1]
+	var broke: Dictionary = seen[2]
+	var worst := 0.0
+	var missing := 0
+	for k: int in SLABS:
+		var along := _slab_along(k, height)
+		var best := INF
+		var band := -1
+		for key: int in span:
+			var range: Vector2 = span[key]
+			var gap := maxf(range.x - along, along - range.y)
+			if gap < best:
+				best = gap
+				band = key
+		if not shown.has(SLAB_ID + k) or not broke.has(band):
+			missing += 1
+			continue
+		worst = maxf(worst, absf(Num.f(shown[SLAB_ID + k]) - Num.f(broke[band])))
+	check.call(
+		missing == 0 and worst <= SLAB_LAG,
+		"each slab shows as its band shatters (%d missing, worst lag %.2f s)" % [missing, worst]
+	)
+
+
+static func _slab_along(k: int, height: float) -> float:
+	return height * (0.12 + 0.17 * k)
+
+
+static func _slabs(from: Vector2, dir: Vector2, height: float) -> Array:
+	var out: Array = []
+	for k: int in SLABS:
+		var pos := from + dir * _slab_along(k, height) + Vector2(dir.y, -dir.x) * 1.0
+		var dims := Vector3(2.0, 1.1, 3.0)
+		out.append(
+			{"id": SLAB_ID + k, "from": from, "pos": pos, "dims": dims, "yaw": 0.0, "base": 0.0}
+		)
+	return out
 
 
 static func _cfg() -> Dictionary:
@@ -145,6 +217,7 @@ static func _landing(ctx: Dictionary, on_kaiju: bool) -> Dictionary:
 		"slabs": [],
 	}
 	if not on_kaiju:
+		event["slabs"] = _slabs(from, dir, height)
 		return event
 	var crack := height * 0.5
 	var lean := Num.f(ctx["lean"])
@@ -199,6 +272,16 @@ static func _low(piece: Node3D) -> float:
 		var pos: Vector3 = part["pos"]
 		low = minf(low, (xf * (pos - pivot)).y - half)
 	return low
+
+
+## The heights (up the tower, from its pivot) its chunks cover.
+static func _range(piece: Node3D) -> Vector2:
+	var pivot: Vector3 = piece.get_meta("pivot")
+	var out := Vector2(INF, -INF)
+	for part: Dictionary in piece.get_meta("parts", []):
+		var pos: Vector3 = part["pos"]
+		out = Vector2(minf(out.x, pos.y - pivot.y - HALF_CELL), maxf(out.y, pos.y - pivot.y + HALF_CELL))
+	return out
 
 
 static func _height(piece: Node3D) -> float:
