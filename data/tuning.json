@@ -266,6 +266,7 @@
 		"far_haze": 0.004,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
+		"stream_chunks": 24000,
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
 		"landmarks": [

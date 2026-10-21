@@ -15,10 +15,11 @@ const SAMPLES_PER_CHUNK := 12
 ## The shell (walls, windows, roof, gear) and the hidden floor slabs.
 var shell: ArrayMesh
 var slabs: ArrayMesh
-## Chunk index -> Array of {"pos": world Vector3, "color": Color} (debris sources).
+## Chunk index -> [PackedVector3Array positions, PackedColorArray colours] (debris sources; parts_of).
 var samples: Dictionary = {}
 
-var _v: BuildingVoxels
+var _v: BuildingVoxels  # only while baking: a kept mesher must not hold the voxels
+var _b: RampageSim.Building
 var _res: int
 var _w: int
 var _d: int
@@ -27,6 +28,7 @@ var _h: int
 
 func _init(voxels: BuildingVoxels) -> void:
 	_v = voxels
+	_b = voxels.b
 	_res = BuildingVoxels.RES
 	_w = _v.b.w * _res
 	_d = _v.b.d * _res
@@ -40,11 +42,12 @@ func _init(voxels: BuildingVoxels) -> void:
 			shell_cells.append(cell)
 	shell = _bake(shell_cells, true)
 	slabs = _bake(slab_cells, false)
+	_v = null  # the voxel dictionary is the bulk of a building's memory: BuildingView rebuilds it on demand
 
 
 ## Index of the structural chunk a cell belongs to (cells outside the footprint clamp in).
 func chunk_index(cell: Vector3i) -> int:
-	var b := _v.b
+	var b := _b
 	var cx := clampi(floori(float(cell.x) / _res), 0, b.w - 1)
 	var cy := clampi(floori(float(cell.y) / _res), 0, b.height - 1)
 	var cz := clampi(floori(float(cell.z) / _res), 0, b.d - 1)
@@ -119,9 +122,29 @@ func _bake(cells: Array[Vector3i], hollow_is_solid: bool) -> ArrayMesh:
 
 func _sample(chunk: int, pos: Vector3, color: Color) -> void:
 	if not samples.has(chunk):
-		samples[chunk] = []
+		samples[chunk] = [PackedVector3Array(), PackedColorArray()]
 	var list: Array = samples[chunk]
-	if list.size() < SAMPLES_PER_CHUNK:
-		list.append({"pos": pos, "color": color})
+	var at: PackedVector3Array = list[0]
+	var tint: PackedColorArray = list[1]
+	if at.size() < SAMPLES_PER_CHUNK:
+		at.append(pos)
+		tint.append(color)
 	elif absi(hash(pos)) % 7 == 0:  # spread the samples over the chunk, not just its corner
-		list[absi(hash(pos * 3.0)) % SAMPLES_PER_CHUNK] = {"pos": pos, "color": color}
+		var k := absi(hash(pos * 3.0)) % SAMPLES_PER_CHUNK
+		at[k] = pos
+		tint[k] = color
+	list[0] = at
+	list[1] = tint
+
+
+## Chunk `chunk`'s debris sources as {"pos", "color"} (kept as two packed arrays: a dictionary
+## per sample cost ~1.4 KB, more than the rest of a small building).
+func parts_of(chunk: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if samples.has(chunk):
+		var list: Array = samples[chunk]
+		var at: PackedVector3Array = list[0]
+		var tint: PackedColorArray = list[1]
+		for k: int in at.size():
+			out.append({"pos": at[k], "color": tint[k]})
+	return out
