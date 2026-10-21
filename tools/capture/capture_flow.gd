@@ -23,6 +23,7 @@ const CLIP_SIZE := Vector2i(1280, 720)
 const UI_ONLY_RAMPAGE_FRAMES := 45
 ## Capture only: at most this many 1/60 s steps to finish the rise, and the share of the city
 ## the meter shows destroyed.
+const BEAT_SHOT_FRAMES := 40
 const RISE_STEPS := 1200
 const METER_SHARE := 0.4
 ## Frames into the staged city build before the loading-screen shot (it has 7 stages).
@@ -129,6 +130,9 @@ func _run() -> void:
 	elif _ui_only:
 		fight = UI_ONLY_RAMPAGE_FRAMES
 	await _frames(fight)
+	# Capture only: a clean frame, no hit flash left from a shell (the vignette fades by itself).
+	rampage.sim.hp = rampage.sim.max_hp
+	await _frames(CARD_FADE_FRAMES)
 	_shot("04_rampage")
 	var hud: RampageHud = rampage.find_children("*", "RampageHud", true, false)[0]
 	if not _clip and hud.has_method("dismiss_controls"):
@@ -153,7 +157,8 @@ func _run() -> void:
 			break
 		rampage.sim.time_left = minf(rampage.sim.time_left, 0.05)
 		await process_frame
-	await _frames(18)
+	# After the orange flash has faded (it is a 0.6 s tween), so the shot shows the beat itself.
+	await _frames(BEAT_SHOT_FRAMES)
 	_shot("06_end_beat")
 	if _clip:
 		await _frames(CLIP_BEAT_FRAMES)
@@ -185,14 +190,15 @@ func _run() -> void:
 	await _frames(EvolutionReveal.GROW_FRAMES + 30)
 	_shot("10_reveal_after")
 	await _frames(EvolutionReveal.END_FRAME - EvolutionReveal.SWAP_FRAME)
-	await _frames(SETTLE)
-	_shot("11_tree_after")
-	# The demo-complete card, over everything else (the reveal's own set and camera).
-	var card := DemoEnd.new()
-	card.setup(Content.species_def(_species), Content.section("kaiju"))
-	root.add_child(card)
 	await _frames(SETTLE * 4)
 	_shot("12_demo_complete")
+	# On from the demo card: the title, then Continue, to the tree as the player finds it after
+	# the evolution.
+	_press(_screen(), "MAIN MENU")
+	await _frames(SETTLE)
+	_press(_screen(), "CONTINUE")
+	await _frames(SETTLE)
+	_shot("11_tree_after")
 	SaveFile.delete_save()
 	quit()
 

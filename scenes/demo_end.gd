@@ -13,6 +13,10 @@ signal title_pressed
 ## clip gait idles in between).
 const ROAR_EVERY := 360
 const BUTTON_WIDTH := 320
+## The card draws the scene at 80% and shifted right by this share of the picture, so the croc
+## keeps a clear margin on every side (critic r2: head cut at the left, feet at the bottom).
+const VIEW_BACK := 1.25
+const VIEW_SHIFT := 0.1
 
 ## What the card stages (read by the flow suite).
 var species_id: String
@@ -57,7 +61,7 @@ func _ready() -> void:
 	var viewport := SubViewport.new()
 	viewport.own_world_3d = true
 	view.add_child(viewport)
-	RevealStage.build(viewport, _scale, _floors)
+	RevealStage.build(viewport, _scale, _floors, VIEW_BACK, VIEW_SHIFT)
 	_kaiju = KaijuModel.new(species_id, _colors, stage)
 	_kaiju.scale = Vector3.ONE * _scale
 	_kaiju.rotation.y = PI * 0.8

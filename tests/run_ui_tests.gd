@@ -15,6 +15,8 @@ const CANVAS := Vector2i(1920, 1080)
 const BRIGHTEST := Color.WHITE
 ## The text floor at 1080p (director, DESIGN "Minimal HUD").
 const MIN_TEXT := 24
+## The kaiju keeps this clear of the 3D view's edge (1080p px; 60 px at 4K).
+const MARGIN_PX := 30.0
 
 
 func suite_name() -> String:
@@ -32,6 +34,7 @@ func run_checks() -> void:
 	await _t("_check_pause")
 	await _t("_check_reveal_frame")
 	await _t("_check_results_verdict")
+	await _t("_check_tree_layout")
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
@@ -316,7 +319,7 @@ func _check_reveal_frame() -> void:
 		reveal.skip_hint.get_theme_font_size("font_size") >= 30,
 		"the skip prompt is 25%% bigger than 24 px (%d)" % reveal.skip_hint.get_theme_font_size("font_size")
 	)
-	var out: Array[String] = _outside(reveal.view)
+	var out: Array[String] = await _outside(reveal.view)
 	check(out.is_empty(), "the evolved kaiju stays inside the reveal view: %s" % [out])
 	reveal.free()
 	var card := DemoEnd.new()
@@ -325,42 +328,43 @@ func _check_reveal_frame() -> void:
 	for _i: int in 10:
 		await physics_frame
 	await process_frame
-	out = _outside(card.view)
+	out = await _outside(card.view)
 	check(out.is_empty(), "the demo-complete card keeps the croc inside its view: %s" % [out])
 	card.free()
 	await process_frame
 	root.size = window
 
 
-## The sampled skin points of the kaiju in `view` that project outside it (or within 3% of its edge).
+## The kaiju's sampled skin points in `view` that project outside it or within MARGIN_PX of its
+## edge (critic r2: the croc's head was cut and its feet touched the bottom). Checked over a
+## stretch of frames, so the roar and the walk cycle count.
 func _outside(view: SubViewportContainer) -> Array[String]:
 	var viewport: SubViewport = view.get_child(0)
 	var cam := viewport.get_camera_3d()
 	var model: KaijuModel = viewport.find_children("*", "KaijuModel", true, false)[0]
-	var rect := Rect2(Vector2.ZERO, Vector2(viewport.size)).grow_individual(
-		-viewport.size.x * 0.03, -viewport.size.y * 0.03, -viewport.size.x * 0.03, -viewport.size.y * 0.03
-	)
+	var rect := Rect2(Vector2.ZERO, Vector2(viewport.size)).grow(-MARGIN_PX)
 	var missed := 0
 	var worst := Vector2.ZERO
-	for p: Vector3 in _skin_world(model):
-		var at := cam.unproject_position(p)
-		if not rect.has_point(at):
-			missed += 1
-			worst = at
+	for round: int in 3:
+		for _i: int in 30:
+			await physics_frame
+		for p: Vector3 in _skin_world(model):
+			var at := cam.unproject_position(p)
+			if not rect.has_point(at):
+				missed += 1
+				worst = at
 	var out: Array[String] = []
 	if missed > 0:
 		out.append("%d points outside, e.g. %s of %s" % [missed, worst, viewport.size])
 	return out
-
-
 ## Critic r1 item 8: the line under the title never says "short of your best" while a row beside
 ## it carries a NEW BEST tag; with no records it still says how far short.
 func _check_results_verdict() -> void:
 	var mixed := ResultsScreen.new({"rubble": 10, "toppled": 5}, {"rubble": 69.0, "toppled": 2.0})
 	var plain := ResultsScreen.new({"rubble": 10, "toppled": 1}, {"rubble": 69.0, "toppled": 2.0})
 	check(
-		mixed.is_new_best("toppled") and not mixed.verdict().contains("SHORT OF YOUR BEST"),
-		"with a record on the table the verdict does not say short of your best: %s" % mixed.verdict()
+		mixed.is_new_best("toppled") and mixed.verdict() == "59 SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS",
+		"with a record on the table the verdict says so: %s" % mixed.verdict()
 	)
 	check(
 		plain.verdict() == "59 BIOMASS SHORT OF YOUR BEST",
@@ -368,3 +372,60 @@ func _check_results_verdict() -> void:
 	)
 	mixed.free()
 	plain.free()
+
+
+## Critic r2 item 4: the species band starts below the row above it (no node straddles it), its
+## caption touches no node and no line, reads "<Species> powers: only the <Species> can grow
+## these", and the side panel's text is the nodes' size or more. At 100% and 125%.
+func _check_tree_layout() -> void:
+	var window := root.size
+	var bad: Array[String] = []
+	var copy := ""
+	var body := 99
+	for size: Vector2i in [CANVAS, Vector2i(1536, 864)]:
+		root.size = size
+		var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
+		var screen := UpgradeScreen.new()
+		screen.setup(tree, 400, Content.species_def("reptilian"), Content.section("kaiju"))
+		root.add_child(screen)
+		await process_frame
+		await process_frame
+		var area: TreeArea = screen.get("_area")
+		var band: ColorRect = area.get("_band")
+		var cap: Label = area.get("_caption")
+		copy = cap.text
+		var caprect := Rect2(cap.position, cap.get_combined_minimum_size())
+		for node: String in tree.order:
+			var b := screen.node_button(node)
+			var r := Rect2(b.position, b.size)
+			var starts_above := r.position.y < band.position.y and r.end.y > band.position.y
+			if starts_above:
+				bad.append("%s straddles the band at %s" % [node, size])
+			if r.intersects(caprect):
+				bad.append("%s covers the caption at %s" % [node, size])
+			var def: Dictionary = tree.defs[node]
+			var requires: Array = def.get("requires", [])
+			for req: String in requires:
+				var from := screen.node_button(req)
+				var a := from.position + from.size / 2.0
+				var z := b.position + b.size / 2.0
+				if _segment_hits(a, z, caprect):
+					bad.append("line %s-%s crosses the caption at %s" % [req, node, size])
+		if caprect.end.y > area.size.y:
+			bad.append("the caption leaves the tree area at %s" % size)
+		var info: RichTextLabel = screen.get("_info_body")
+		body = mini(body, info.get_theme_font_size("normal_font_size"))
+		screen.queue_free()
+		await process_frame
+	root.size = window
+	check(bad.is_empty(), "the species band and caption are clear of nodes and lines: %s" % [bad.slice(0, 8)])
+	check(copy == "Reptilian powers: only the Reptilian can grow these", "the band reads: %s" % copy)
+	check(body >= 24, "the side panel text is 24 px or more (%d)" % body)
+
+
+## True when the segment a-b passes through `r` (sampled along its length).
+func _segment_hits(a: Vector2, b: Vector2, r: Rect2) -> bool:
+	for i: int in 41:
+		if r.has_point(a.lerp(b, i / 40.0)):
+			return true
+	return false

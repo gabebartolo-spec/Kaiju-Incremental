@@ -6,6 +6,8 @@ extends PanelContainer
 ## The first-run card lists only these (the full list stays in Settings > CONTROLS).
 const FIRST_RUN: Array[String] = ["Move", "Signature attack", "Dash"]
 const PROMPT := "PRESS ANY KEY"
+## Extra room under the full controls list (px at 1080p).
+const BOTTOM_PAD := 20
 
 ## The card's width (px at 1080p): tuning "ui" controls_card width.
 var width: float
@@ -37,6 +39,11 @@ func _init(p_compact: bool = false) -> void:
 		grid.add_child(action)
 		grid.add_child(UiKit.label(str(entry[1]), UiKit.SIZE_BODY, UiKit.MUTED))
 		grid.add_child(UiKit.label(str(entry[2]), UiKit.SIZE_BODY, UiKit.MUTED))
+	if not compact:
+		var tail := Control.new()
+		tail.custom_minimum_size = Vector2(0, BOTTOM_PAD)
+		tail.name = "Tail"
+		col.add_child(tail)
 	if compact:
 		var prompt := UiKit.label(PROMPT, UiKit.SIZE_BODY, UiKit.ACCENT)
 		prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

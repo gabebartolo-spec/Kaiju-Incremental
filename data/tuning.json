@@ -26,15 +26,15 @@
 		"hurt": {
 			"color": "c0140c",
 			"width_max": 0.55,
-			"alpha_max": 0.42,
+			"alpha_max": 0.28,
 			"ease_rate": 5.0,
 			"heartbeat_below": 0.3,
 			"heartbeat_hz": 1.3,
 			"heartbeat_depth": 0.35,
 			"flash_s": 0.3,
-			"flash_alpha": 0.3
+			"flash_alpha": 0.2
 		},
-		"controls_card": {"seconds": 9.0, "fade_s": 0.6, "width": 760, "first_run_width": 620, "first_run_top": 170},
+		"controls_card": {"seconds": 9.0, "fade_s": 0.6, "width": 760, "first_run_width": 620},
 		"tooltip_width": 330,
 		"species_spin_rate": 0.6,
 		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"]

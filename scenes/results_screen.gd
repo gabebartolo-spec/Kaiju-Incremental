@@ -21,6 +21,8 @@ const ROWS: Array[Array] = [
 const COUNT_FRAMES := 36
 const ROW_GAP_FRAMES := 12
 const LAYER := 20
+## Space under EVOLVE inside the card (px at 1080p).
+const BOTTOM_PAD := 20
 ## The stat the headline under the title compares with the best (its row shows no best badge).
 const VERDICT_STAT := "rubble"
 
@@ -83,6 +85,9 @@ func _ready() -> void:
 	_go.custom_minimum_size = Vector2(0, 80)
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
+	var pad := Control.new()
+	pad.custom_minimum_size = Vector2(0, BOTTOM_PAD)
+	col.add_child(pad)
 	_go.grab_focus.call_deferred()
 	var crawl := NewsTicker.new(news(result))
 	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -139,7 +144,7 @@ func verdict() -> String:
 	# A record on another row beside "short of your best" would read as a contradiction.
 	for row: Array in ROWS:
 		if str(row[0]) != VERDICT_STAT and is_new_best(str(row[0])):
-			return "%d BIOMASS SHORT, BUT NEW RECORDS" % ceili(best - rubble)
+			return "%d SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS" % ceili(best - rubble)
 	return "%d BIOMASS SHORT OF YOUR BEST" % ceili(best - rubble)
 
 

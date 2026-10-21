@@ -51,6 +51,8 @@ var vignette: HurtVignette
 var controls_card: ControlsCard
 var _time: Label
 var _clock: PanelContainer
+## The clock and its city meter: hidden while the end beat's headline is up.
+var _clock_column: Control
 var city_meter: ProgressBar
 ## Everything on the HUD: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
@@ -129,6 +131,7 @@ func _build_clock() -> Control:
 	city_meter.custom_minimum_size.x = Num.f(meter[0])
 	city_meter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(city_meter)
+	_clock_column = col
 	return col
 
 
@@ -228,11 +231,13 @@ func _input(event: InputEvent) -> void:
 ## seconds; Settings > CONTROLS has them for good.
 func _show_controls(safe: Control) -> void:
 	controls_card = ControlsCard.new(true)
-	controls_card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	controls_card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	# Bottom left, clear of the kaiju (screen centre) and of the rings (bottom centre).
+	controls_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	controls_card.size_flags_vertical = Control.SIZE_SHRINK_END
 	var place := MarginContainer.new()
 	place.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	place.add_theme_constant_override("margin_top", Num.i(UiKit.ui()["controls_card"]["first_run_top"]))
+	place.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	place.size_flags_vertical = Control.SIZE_SHRINK_END
 	place.add_child(controls_card)
 	safe.add_child(place)
 	_card_left = Num.f(UiKit.ui()["controls_card"]["seconds"])
@@ -332,6 +337,7 @@ func show_end_beat(reason: String) -> void:
 	if _beat_frame >= 0:
 		return
 	_beat_frame = 0
+	_clock_column.visible = false
 	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.55, 0.25, 0.45)
@@ -360,6 +366,11 @@ func show_end_beat(reason: String) -> void:
 	headline.scale = Vector2.ONE * 2.4
 	tween.tween_property(headline, "scale", Vector2.ONE, 0.35)
 	tween.parallel().tween_property(flash, "color:a", 0.0, 0.6)
+
+
+## True while the clock and its city meter are on screen.
+func clock_visible() -> bool:
+	return _clock_column.is_visible_in_tree()
 
 
 func beat_running() -> bool:

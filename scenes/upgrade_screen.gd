@@ -95,14 +95,14 @@ func _build_side() -> Control:
 	_info_title = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
 	_info_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_title)
-	_info_role = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
+	_info_role = UiKit.label("", UiKit.SIZE_BODY, UiKit.WARN)
 	_info_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_role)
-	_info_body = UiKit.rich(UiKit.SIZE_SMALL, UiKit.MUTED.lightened(0.2))
+	_info_body = UiKit.rich(UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.2))
 	info_col.add_child(_info_body)
 	# The node's stats sit half a line below its words, in columns: the arrows line up (D-077).
 	var gap := Control.new()
-	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_SMALL / 2.0)
+	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_BODY / 2.0)
 	info_col.add_child(gap)
 	_info_stats = VBoxContainer.new()
 	_info_stats.add_theme_constant_override("separation", 2)
@@ -111,7 +111,7 @@ func _build_side() -> Control:
 	var push := Control.new()
 	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	info_col.add_child(push)
-	_info_status = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
+	_info_status = UiKit.label("", UiKit.SIZE_BODY, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
 	var go := UiKit.button("RAMPAGE  >", UiKit.SIZE_HEAD)
@@ -216,14 +216,14 @@ func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
 		if entry.get("hidden", false):
 			continue
 		var now := Num.f(stats.get(stat, 0.0))
-		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_SMALL, UiKit.MUTED)
+		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_BODY, UiKit.MUTED)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_info_stats.add_child(line)
 		# The values under the words; the "now" column is one fixed width, so arrows line up.
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		_info_stats.add_child(row)
-		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_SMALL, UiKit.MUTED)
+		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_BODY, UiKit.MUTED)
 		was.custom_minimum_size = Vector2(NOW_WIDTH, 0)
 		row.add_child(was)
 		if steps > 0:
@@ -233,7 +233,7 @@ func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
 			arrow.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 			row.add_child(arrow)
 			var after := _fmt(entry, now + Num.f(effects[stat]), true)
-			row.add_child(UiKit.label(after, UiKit.SIZE_SMALL, UiKit.TEXT))
+			row.add_child(UiKit.label(after, UiKit.SIZE_BODY, UiKit.TEXT))
 	_info_stats.visible = _info_stats.get_child_count() > 0
 
 

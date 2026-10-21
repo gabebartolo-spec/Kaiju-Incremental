@@ -130,10 +130,10 @@ func _card(hud: RampageHud) -> void:
 		"the first-run card says to press any key: %s" % [texts]
 	)
 	var view := t.root.get_visible_rect()
+	var spot := card.get_global_rect()
 	check.call(
-		absf(card.get_global_rect().get_center().x - view.size.x / 2.0) < 8.0
-		and card.get_global_rect().position.y > hud.city_meter.get_global_rect().end.y,
-		"the card is centred below the timer and its meter (%s)" % [card.get_global_rect()]
+		spot.end.x < view.size.x * 0.5 and spot.position.y > view.size.y * 0.4,
+		"the card sits bottom left, clear of the kaiju and the rings (%s)" % [spot]
 	)
 	var full: Array[String] = []
 	for entry: Array in PlayerSettings.CONTROLS:
@@ -205,7 +205,7 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 		hud.vignette.step(DT)
 		peak = maxf(peak, hud.vignette.strength)
 	sim.hp = sim.max_hp
-	check.call(peak <= 0.45, "the hurt vignette peaks at about half the old opacity (%.2f)" % peak)
+	check.call(peak <= 0.32, "the hurt vignette peaks at a third of its old opacity (%.2f)" % peak)
 	sim.chunks_destroyed = 0
 
 
@@ -239,7 +239,9 @@ func _beat(hud: RampageHud) -> void:
 	var box := hud.headline.get_global_rect()
 	var parent: Control = hud.headline.get_parent()
 	var low := parent.get_global_rect().end.y
+	var clock_gone := not hud.clock_visible()
 	hud.finish_beat()
+	check.call(clock_gone, "the timer and its meter are hidden while the end beat shows")
 	check.call(
 		low <= view.size.y / 3.0 + 1.0 and box.position.y >= 0.0,
 		"the end beat sits in the top third (ends at %.0f of %.0f)" % [low, view.size.y]

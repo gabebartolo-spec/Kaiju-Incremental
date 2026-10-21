@@ -14,7 +14,11 @@ static func tower_floors(size_tier: int, city: Dictionary) -> int:
 
 
 ## Builds the set into `viewport` for a kaiju scaled `body_scale` beside a `floors` tower.
-static func build(viewport: SubViewport, body_scale: float, floors: int) -> Camera3D:
+## `back` stands the camera further off (1.25 draws everything at 80%) and `shift` moves the kaiju
+## right by that share of the picture's width (the demo card: its croc was cut at the left edge).
+static func build(
+	viewport: SubViewport, body_scale: float, floors: int, back := 1.0, shift := 0.0
+) -> Camera3D:
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
 	env.environment.background_mode = Environment.BG_COLOR
@@ -40,7 +44,10 @@ static func build(viewport: SubViewport, body_scale: float, floors: int) -> Came
 	var camera := Camera3D.new()
 	camera.fov = 40.0
 	var aim := Vector3(tower_x * 0.5, tallest * 0.5, 0.0)
-	camera.position = aim + Vector3(0.0, tallest * 0.15, tallest * 1.55 + 8.0)
+	var dist := (tallest * 1.55 + 8.0) * back
+	var wide := 2.0 * dist * tan(deg_to_rad(camera.fov) * 0.5) * EvolutionReveal.VIEW_MAX.x / EvolutionReveal.VIEW_MAX.y
+	aim.x -= shift * wide
+	camera.position = aim + Vector3(0.0, tallest * 0.15 * back, dist)
 	viewport.add_child(camera)
 	camera.look_at(aim)
 	return camera
