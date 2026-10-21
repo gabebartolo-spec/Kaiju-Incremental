@@ -96,7 +96,7 @@ func shoot(tank: RampageSim.Tank, dist: float, reach: float) -> void:
 		sim.events.append({"type": "tank_fired", "tank": tank.id})
 		return
 	misses += 1
-	var at := StrayShell.landing(sim, tank.pos, _aim)
+	var at := StrayShell.landing(sim, _aim)
 	sim.events.append({"type": "tank_fired", "tank": tank.id, "at": at, "miss": true})
 	StrayShell.land(sim, at)
 

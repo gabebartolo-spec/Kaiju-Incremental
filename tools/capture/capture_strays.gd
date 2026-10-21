@@ -54,7 +54,19 @@ func _run() -> void:
 			shots += 1
 			if e.get("miss", false):
 				misses += 1
-				print("MISS frame %d lands at %v" % [i, e["at"]])
+				var at: Vector2 = e["at"]
+				var eye := root.get_viewport().get_camera_3d()
+				var px := (
+					eye.unproject_position(Vector3(at.x, 0.0, at.y))
+					if eye != null
+					else Vector2.ZERO
+				)
+				print(
+					(
+						"MISS frame %d lands at %v (kaiju %v), on screen %v"
+						% [i, at, rampage.sim.kaiju_pos, px.round()]
+					)
+				)
 	var killed := 0
 	if rampage._city.street != null:
 		killed = rampage._city.street.army_killed

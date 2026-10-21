@@ -4,8 +4,7 @@ extends RefCounted
 ## i really like the idea of a clumsy military which destroys parts of its own city
 ## occasionally"). A tank's shot at the kaiju hits with a chance that falls from hit_near at
 ## point blank to hit_far at full reach; a hit does the shot's damage / that chance, so the
-## kaiju takes what it took before on average. A miss flies on past the kaiju, scattered, and
-## lands in the city: it breaks the chunks it reaches on the low floors like any blow (the
+## kaiju takes what it took before on average. A miss lands in the city round the kaiju: it breaks the chunks it reaches on the low floors like any blow (the
 ## carving path for carved buildings). Seeded by the army's own stream; numbers are army.miss in
 ## data/tuning.json.
 
@@ -17,18 +16,15 @@ static func chance(cfg: Dictionary, dist: float, reach: float) -> float:
 	return lerpf(Num.f(miss["hit_near"]), Num.f(miss["hit_far"]), t)
 
 
-## Where a missed shell fired from `from` lands: beside the kaiju, not behind it (director,
-## 2026-10-21: "land beside him", so the player sees it break the buildings next to him): up to
-## scatter on past it along the line of fire, and off to one side by the body's radius plus up to
-## side more.
-static func landing(sim: RampageSim, from: Vector2, rng: RandomNumberGenerator) -> Vector2:
+## Where a missed shell lands: beside the kaiju (director, 2026-10-21: "land beside him", so the
+## player sees it break the buildings next to him), on a ring round it at a random angle, from
+## ring_near to ring_far out past its body. Not along the line of fire: a tank to one side would
+## put it behind the kaiju from the camera.
+static func landing(sim: RampageSim, rng: RandomNumberGenerator) -> Vector2:
 	var miss: Dictionary = sim.army["miss"]
-	var line := (sim.kaiju_pos - from).normalized()
 	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	var on := rng.randf_range(0.0, 1.0) * Num.f(miss["scatter"])
-	var lean := rng.randf_range(-1.0, 1.0)
-	var side := signf(lean) * (body + absf(lean) * Num.f(miss["side"]))
-	return sim.kaiju_pos + line * on + line.orthogonal() * side
+	var out := body + rng.randf_range(Num.f(miss["ring_near"]), Num.f(miss["ring_far"]))
+	return sim.kaiju_pos + Vector2.from_angle(rng.randf_range(0.0, TAU)) * out
 
 
 ## The shell lands at `at`: every standing chunk within radius on the floors below `floors` takes
