@@ -8,9 +8,9 @@ extends SceneTree
 const LEAD_IN := 40
 const DASH_AT := 70
 ## Walk on after the dash, then swing the stick back and forth: a sharp turn each time.
-const WALK_AFTER := 70
-const TURN_SWAP := 36
-const TURNS := 5
+const WALK_AFTER := 90
+const TURN_SWAP := 70
+const TURNS := 2
 ## Growth upgrades that make the adolescent and the adult (capture_growth.gd's levels).
 const LEVELS: Array[Dictionary] = [
 	{"claws": 2, "hide": 2},
