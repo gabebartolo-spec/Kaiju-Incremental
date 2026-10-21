@@ -85,12 +85,13 @@ func _ready() -> void:
 	is_loaded = true
 
 
-## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife).
-func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
+## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
+## by_army: a stray shell did it).
+func crush(at: Vector3, radius: float, by_tank: bool = false, by_army: bool = false) -> void:
 	if _decor != null:
 		_decor.crush(at, radius)
 	if street != null:
-		street.crush(at, radius, by_tank)
+		street.crush(at, radius, by_tank, by_army)
 
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.

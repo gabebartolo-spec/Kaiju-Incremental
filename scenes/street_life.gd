@@ -50,6 +50,7 @@ var fled := 0
 var killed := 0
 ## Of those killed, the ones tanks rolled over (the rest the kaiju crushed: stomps, falls, claws).
 var run_over := 0
+var army_killed := 0  # civilians the army's own stray shells killed (StrayShell)
 ## Per-frame cost of street life, in microseconds: worst and running total (benchmarking).
 var worst_usec := 0
 var total_usec := 0
@@ -185,16 +186,17 @@ func panicking() -> int:
 
 
 ## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat.
-## by_tank: a tank rolled over them, not the kaiju (counted in run_over too).
-func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
+## by_tank: a tank rolled over them, not the kaiju (counted in run_over too). by_army: a stray
+## shell did it, so they count as the army's casualties (army_killed), not the kaiju's.
+func crush(at: Vector3, radius: float, by_tank: bool = false, by_army: bool = false) -> void:
 	var spot: Array[Vector3] = [Vector3(at.x, at.z, radius)]
-	crush_all(spot, by_tank)
+	crush_all(spot, by_tank, by_army)
 
 
 ## Everyone within any of `spots` (x, z, radius) is crushed, spot by spot as crush() would, with
 ## one pass over the people (each goes to the first spot that holds it; puffs capped per spot).
-## by_tank: tanks rolled over them (run_over), not the kaiju.
-func crush_all(spots: Array[Vector3], by_tank: bool = false) -> void:
+## by_tank: tanks rolled over them (run_over), not the kaiju. by_army: stray shells (army_killed).
+func crush_all(spots: Array[Vector3], by_tank: bool = false, by_army: bool = false) -> void:
 	var lo := Vector2.INF
 	var hi := -Vector2.INF
 	for s: Vector3 in spots:
@@ -218,8 +220,11 @@ func crush_all(spots: Array[Vector3], by_tank: bool = false) -> void:
 				puffs[k] += 1
 				_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
 			_remove(i)
-			killed += 1
-			run_over += 1 if by_tank else 0
+			if by_army:
+				army_killed += 1
+			else:
+				killed += 1
+				run_over += 1 if by_tank else 0
 			break
 
 
