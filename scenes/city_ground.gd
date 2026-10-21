@@ -25,6 +25,11 @@ var holes: Array[Rect2] = []
 var holes_ns: Array[Rect2] = []  # the same in the north-south decks (Emergence.burst_ns)
 var deck_burst: DeckBurst  # the pieces over the holes, broken on the sim's "deck_burst"
 var _slabs: Array[Dictionary] = []
+## The shore and the bridges, drawn apart so the run intro can fade them (set_intro_opacity).
+var _faded_slabs: Array[Dictionary] = []
+var _into: Array[Dictionary] = _slabs  # where _slab and CityShore put the next box
+var _faded_mat: StandardMaterial3D
+var _faded_view: MultiMeshInstance3D
 var _paint: Array[Transform3D] = []
 var _basin: Array[Rect2] = []  # the river's bay the kaiju rises in (CityRiver.bay): no pavement
 
@@ -74,7 +79,10 @@ func _ready() -> void:
 	_diagonal(asphalt)
 	_markings()
 	_quay(pavement)
-	add_child(_build_slabs())
+	add_child(_build_slabs(_slabs))
+	_faded_view = _build_slabs(_faded_slabs)
+	_faded_mat = (_faded_view.multimesh.mesh as BoxMesh).material as StandardMaterial3D
+	add_child(_faded_view)
 	add_child(_build_paint())
 	add_child(_water())
 
@@ -94,7 +102,7 @@ func _slab(rect: Rect2, y: Vector2, color: Color, angle: float = 0.0) -> void:
 		Basis(Vector3.UP, angle) * Basis.from_scale(Vector3(rect.size.x, thick, rect.size.y))
 	)
 	(
-		_slabs
+		_into
 		. append(
 			{
 				"t": Transform3D(basis, Vector3(centre.x, top - thick * 0.5, centre.y)),
@@ -241,7 +249,17 @@ func _quay(pavement: Color) -> void:
 	)
 
 
-func _build_slabs() -> MultiMeshInstance3D:
+## How solid the shore and the bridges are (1: whole; the run intro fades them while the kaiju
+## rises so nothing in the foreground hides it, comment #27).
+func set_intro_opacity(value: float) -> void:
+	_faded_view.visible = value > 0.0
+	_faded_mat.albedo_color.a = value
+	_faded_mat.transparency = (
+		BaseMaterial3D.TRANSPARENCY_DISABLED if value >= 1.0 else BaseMaterial3D.TRANSPARENCY_ALPHA
+	)
+
+
+func _build_slabs(list: Array[Dictionary]) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -252,10 +270,10 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mat.roughness = 1.0
 	box.material = mat
 	mm.mesh = box
-	mm.instance_count = _slabs.size()
-	for i: int in _slabs.size():
-		var t: Transform3D = _slabs[i]["t"]
-		var c: Color = _slabs[i]["c"]
+	mm.instance_count = list.size()
+	for i: int in list.size():
+		var t: Transform3D = list[i]["t"]
+		var c: Color = list[i]["c"]
 		mm.set_instance_transform(i, t)
 		mm.set_instance_color(i, c)
 	var mmi := MultiMeshInstance3D.new()
@@ -309,6 +327,7 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 		var others: Array[Rect2] = channels.filter(func(o: Rect2) -> bool: return o != channel)
 		for side: Rect2 in _cut(_cut(banks, bridges), others):
 			_slab(side, wall, stone)
+	_into = _faded_slabs
 	CityShore.draw(self, plan, cfg, depth)
 	var across := CityRiver.decks_after(plan, cfg, holes)  # east-west decks: parapets along x
 	var inside := CityRiver.bay_bridges_ns(plan, cfg)  # the bay's own north-south decks
@@ -323,6 +342,7 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			step = Vector2(0.0, deck.size.y - PARAPET.y)
 		for edge: float in [0.0, 1.0]:
 			_slab(Rect2(deck.position + step * edge, rail), Vector2(PARAPET.x, 1.0), stone)
+	_into = _slabs
 	if not (holes.is_empty() and holes_ns.is_empty()):
 		deck_burst = DeckBurst.new(holes, holes_ns, asphalt, stone)
 		add_child(deck_burst)

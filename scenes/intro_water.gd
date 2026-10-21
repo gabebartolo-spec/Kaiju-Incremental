@@ -11,18 +11,23 @@ var _sim: RampageSim
 var _fx: Fx
 var _cfg: Dictionary
 var _rings := 0
+var _ground: Callable  # CityView.ground_opacity
+var _fade: IntroFade
 var _fount: GPUParticles3D
 var _burst: GPUParticles3D
 var _burst_done := false
 
 
-func _init(sim: RampageSim, fx: Fx) -> void:
+func _init(sim: RampageSim, fx: Fx, ground: Callable) -> void:
 	_sim = sim
 	_fx = fx
+	_ground = ground
+	_fade = IntroFade.new(sim.emerge.active)
 	_cfg = Content.section("intro")["water"]
 
 
 func _ready() -> void:
+	_ground.call(_fade.opacity())
 	if not _sim.emerge.active:
 		return
 	var s := _sim.body_scale()
@@ -35,8 +40,9 @@ func _ready() -> void:
 	_fount.visible = false
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var emerge := _sim.emerge
+	_ground.call(_fade.step(delta, emerge.active))  # the shore and bridges, out of the shot
 	if _fount == null:
 		return
 	var t := emerge.progress() * emerge.total()

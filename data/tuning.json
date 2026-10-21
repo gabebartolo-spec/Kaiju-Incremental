@@ -253,7 +253,7 @@
 		}
 	},
 	"emerge": {"hold_seconds": 0.8, "rise_seconds": 1.0, "wade_seconds": 1.0, "depth": 0.6, "max_seconds": 3.0, "input_latch_seconds": 0.2},
-	"intro": {"yaw_deg": 90.0, "distance": 28.0, "height": 16.0, "push_in": 0.15, "fov": 45.0, "aim_ahead": 8.8, "aim_height": 0.5, "aim_head": 0.75, "pull_from_seconds": 1.5, "short_seconds": 1.5, "short_lead_seconds": 0.15, "skip_ticks": 8, "roar_jaw_seconds": 1.3,
+	"intro": {"yaw_deg": 90.0, "distance": 28.0, "height": 16.0, "push_in": 0.15, "fov": 45.0, "aim_ahead": 8.8, "aim_height": 0.5, "aim_head": 0.75, "pull_from_seconds": 1.5, "short_seconds": 1.5, "short_lead_seconds": 0.15, "skip_ticks": 8, "roar_jaw_seconds": 1.3, "ground_opacity": 0.12,
 		"water": {"ripple_seconds": 0.2, "ripple_radius": 2.0, "ripple_grow": 0.8, "fount_from_seconds": 0.3, "fount_amount": 160, "fount_speed": 9.0, "fount_spread": 10.0, "burst_amount": 260, "burst_speed": 14.0, "burst_spread": 30.0, "gravity": 9.8, "life": 1.0, "drop": 0.2, "drop_min": 0.35, "width": 0.35, "colors": ["f6fbff", "c4d9e6", "8ea8ba"]}},
 	"city": {
 		"map_seed": 7301,

@@ -127,6 +127,11 @@ func _process(delta: float) -> void:
 
 
 ## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
+## Fades the shore and bridges (the run intro, IntroFade).
+func ground_opacity(value: float) -> void:
+	_streets.set_intro_opacity(value)
+
+
 func _build_ground() -> void:
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()

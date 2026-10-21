@@ -14,6 +14,11 @@ const QUAY := 0.6
 const HEAD := [1.0, 0.0]
 const NECK := [0.7, 0.15]
 const SHOULDERS := [0.45, 0.3]
+## The body below the shoulders (comment #27: the rise is seen whole, not only its head).
+const CHEST := [0.3, 0.55]
+const HIPS := [0.1, 0.85]
+const BACK := [-0.5, 0.5]  # behind the body's centre: the back and the tail's root
+const REAR := [-1.0, 0.6]
 ## A part counts once it stands this far above the water.
 const SHOWS := 0.1
 
@@ -42,7 +47,7 @@ static func parts(sim: RampageSim) -> PackedVector3Array:
 	var reach := sim.reach_height()
 	var water := -Num.f(sim.city.get("river_depth", 0.0))
 	var head := sim.facing * Num.f(Content.section("intro")["aim_ahead"]) * sim.body_scale()
-	for part: Array in [HEAD, NECK, SHOULDERS]:
+	for part: Array in [HEAD, NECK, SHOULDERS, CHEST, HIPS, BACK, REAR]:
 		var y: float = sim.stand_y + reach * (0.95 - Num.f(part[1]))
 		if y > water + SHOWS:
 			var at: Vector2 = sim.kaiju_pos + head * Num.f(part[0])
@@ -51,19 +56,22 @@ static func parts(sim: RampageSim) -> PackedVector3Array:
 
 
 ## Whether stonework stands on the sight line eye -> to (the last half unit before `to` excluded).
-func hides(eye: Vector3, to: Vector3, burst_open: bool) -> bool:
+func hides(eye: Vector3, to: Vector3, burst_open: bool, faded := false) -> bool:
 	var steps := maxi(1, ceili(eye.distance_to(to) / STEP))
 	var reach_end := maxi(1, steps - ceili(0.5 / STEP))
 	for i: int in range(0, reach_end + 1):
-		if solid(eye.lerp(to, float(i) / steps), burst_open):
+		if solid(eye.lerp(to, float(i) / steps), burst_open, faded):
 			return true
 	return false
 
 
-func solid(p: Vector3, burst_open: bool) -> bool:
+## `faded`: the shore and the bridges are faded out (IntroFade), so they hide nothing.
+func solid(p: Vector3, burst_open: bool, faded := false) -> bool:
 	var at := Vector2(p.x, p.z)
-	if p.y < _ground(at):
+	if p.y < _ground(at, faded):
 		return true
+	if faded:
+		return false
 	for hole: Rect2 in _holes:
 		if burst_open and hole.has_point(at):
 			return false
@@ -86,8 +94,10 @@ func _deck(p: Vector3, at: Vector2, deck: Rect2, across: bool) -> bool:
 
 ## The ground's top at (x, z): the street, the river's floor, the shore's slope, a quay wall
 ## up to the street along the water's edge.
-func _ground(at: Vector2) -> float:
+func _ground(at: Vector2, faded: bool) -> float:
 	var top := CityRiver.floor_at(_plan, _cfg, at)
+	if faded and CityRiver.shore(_plan, _cfg).has_point(at):
+		return -Num.f(_cfg.get("river_depth", 0.0))  # the sand gone: the river's floor
 	if top >= 0.0:
 		return top
 	for w: Rect2 in _water:
