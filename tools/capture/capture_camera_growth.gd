@@ -48,7 +48,13 @@ var _inside := 0
 var _hidden := 0
 var _fall_hidden := 0
 var _fall_over := 0
+var _top_out := 0
+var _centre_out := 0
+var _sim_min := 9.0
+var _sim_max := 0.0
 var _check_only := false
+## --depth-share=<f>: overrides tuning camera.lead_depth_share (a before/after of the lead).
+var _depth_share := -1.0
 
 
 func _initialize() -> void:
@@ -65,6 +71,8 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg == "--check-only":
 			_check_only = true
+		elif arg.begins_with("--depth-share="):
+			_depth_share = arg.substr(14).to_float()
 		elif arg.begins_with("--still="):
 			_still = arg.substr(8).to_float()
 	DirAccess.make_dir_recursive_absolute(_out.path_join("frames"))
@@ -78,6 +86,8 @@ func _apply_candidate() -> void:
 	var cam := Content.section("camera")
 	for key: String in ["offset", "fov", "zoom_base", "zoom_per_scale"]:
 		cam[key] = block[key]
+	if _depth_share >= 0.0:
+		cam["lead_depth_share"] = _depth_share
 
 
 func _run() -> void:
@@ -134,7 +144,8 @@ func _run() -> void:
 		_check_frame(image.get_height())
 	var n := maxi(1, _frames)
 	var fmt := "CAMCHECK %s stage %d %s: model share mean %.1f%% min %.1f%% max %.1f%%,"
-	fmt += " sim height %.1f%%, highest bone %.1f%%;"
+	fmt += " sim height %.1f%% (min %.1f%% max %.1f%%), highest bone %.1f%%;"
+	fmt += " head in the top margin %d, centre outside the middle %d;"
 	fmt += " feet out %d, ground ahead out %d, camera inside a solid building %d,"
 	fmt += " feet hidden behind a solid building %d, body behind a falling section %d (solid %d),"
 	fmt += " of %d frames"
@@ -146,7 +157,11 @@ func _run() -> void:
 		100.0 * _share_min,
 		100.0 * _share_max,
 		100.0 * _sim_sum / n,
+		100.0 * _sim_min,
+		100.0 * _sim_max,
 		100.0 * _rig_sum / n,
+		_top_out,
+		_centre_out,
 		_feet_out,
 		_ground_out,
 		_inside,
@@ -183,7 +198,24 @@ func _check_frame(height: int) -> void:
 	_frames += 1
 	_share_sum += share
 	var tall := feet + Vector3(0, _rampage.sim.reach_height(), 0)
-	_sim_sum += (feet_y - _camera.unproject_position(tall).y) / height
+	var top_y2 := _camera.unproject_position(tall).y
+	var sim_share := (feet_y - top_y2) / height
+	_sim_sum += sim_share
+	_sim_min = minf(_sim_min, sim_share)
+	_sim_max = maxf(_sim_max, sim_share)
+	var cam_cfg := Content.section("camera")
+	var skull := tall
+	var head_rig: KaijuRig = kaiju.get("_rig")
+	if head_rig != null and head_rig.bone_names().has("head0"):
+		skull = head_rig.bone("head0").global_position  # the drawn head, ahead of the feet
+	var skull_y := _camera.unproject_position(skull).y
+	if minf(skull_y, top_y2) < Num.f(cam_cfg["safe_top"]) * height:
+		_top_out += 1  # the head within safe_top of the frame's top (or above it)
+	var width := float(root.get_viewport().get_visible_rect().size.x)
+	var mid := (_camera.unproject_position(feet) + _camera.unproject_position(skull)) * 0.5
+	var margin := (1.0 - Num.f(cam_cfg["safe_centre"])) * 0.5
+	if absf(mid.x / width - 0.5) > 0.5 - margin or absf(mid.y / height - 0.5) > 0.5 - margin:
+		_centre_out += 1  # the body's middle outside the middle safe_centre of the frame
 	var head := feet.y
 	var rig: KaijuRig = kaiju.get("_rig")
 	if rig != null:
@@ -209,7 +241,7 @@ func _check_frame(height: int) -> void:
 		_hidden += 1
 	var city: CityView = _rampage.get("_city")
 	var falls: FallFade = city.get("_fall_fade")  # null before FallFade is wired in: every piece solid
-	var sight := BuildingFade.sight_of(_rampage.sim)
+	var sight := BuildingFade.sight_of(_rampage.sim, eye)
 	var over := false
 	var solid_over := false
 	for piece: Node3D in city.falling_pieces():

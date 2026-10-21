@@ -120,7 +120,7 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var sight := BuildingFade.sight_of(sim)
+		var sight := BuildingFade.sight_of(sim, camera.global_position)
 		_fade.update(camera.global_position, sight, delta)
 		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).

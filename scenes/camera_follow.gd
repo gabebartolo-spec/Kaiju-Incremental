@@ -5,7 +5,9 @@ extends RefCounted
 ## toward its rest (CameraTuning offset x zoom), and the eye is the aim plus the offset. Camera A
 ## (D-121, research 19.3): once the kaiju has moved for "lead_hold" s, the camera slides, its aim
 ## with it, toward where it is going (CameraTuning.lead units, more toward the camera), eased at
-## "lead_ease"/s; no new lead during a dash or leap. Presentation only.
+## "lead_ease"/s; no new lead during a dash or leap. Only "lead_depth_share" of it runs along
+## the view (the camera's z): a lead toward or away from the camera would change the kaiju's
+## distance, so its size would bob and its head ride up the frame. Presentation only.
 
 ## How fast the aim catches up with the kaiju's drawn body, and the offset with its rest (1/s).
 const FOCUS_FOLLOW := 12.0
@@ -47,6 +49,7 @@ func step_lead(at: Vector3, body_scale: float, hold: bool, delta: float) -> void
 			var dir := v.normalized()
 			var toward := 1.0 + (Num.f(_cfg["lead_toward_camera"]) - 1.0) * maxf(0.0, dir.z)
 			target = dir * CameraTuning.lead(body_scale) * toward
+			target.z *= Num.f(_cfg["lead_depth_share"])
 	_last = at
 	lead = lead.lerp(target, minf(1.0, delta * Num.f(_cfg["lead_ease"])))
 
