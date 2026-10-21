@@ -12,21 +12,21 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## USAGE LIMIT hit ~04:30 2026-10-21: lead 10 stopped all subagents mid-task. Lead 9 archived. Re-brief from these
-## (worktree work is on disk; notes in NEW folder <task>\handoff.md unless marked OLD):
-- prs: #122 handover-fixes open (resynced for doc-caps). Then in order, PR cap 3: claude/b2-3-slow-frames 437f151 (check no
-  PROF timers, base look-options), claude/parse-step 1605c88, claude/light-pool af66971 (resync), claude/audio-duck 03516ca,
-  claude/tentacle-substep bfcdd74, claude/graphics-presets 9f37429 (record D-109 lead: Medium 4K default, +6.5% gpu),
-  claude/bridge-land 2ceb079 (QC CI captures first, comments #12), claude/turn-weight (after military fix), ci-sim-split last.
-- parse-step: sim split claude/ci-sim-split (CI timing pending); then military fixture on claude/turn-weight: restore the
-  "tanks take posts" check, re-pin seed/route (probe seeds 0-11 was running), min-samples guard >= 20, fail-first.
-- presets agent -> kaiju-double (D-107, reptilian only): claude/kaiju-double in Kaiju-Incremental-wt/kaiju-double; suites,
-  then 4K fps A/B, before/after stills; insectoid/cephalopod follow-up.
-- phase-b: b2-20 round 2 coded on claude/phase-b-boards; standing shots passed 2x self-check; rampage + clip renders left;
-  lead QC, then ask the director b2-20.
-- walkers: fill empty diagonal sliver cell, resync (OLD notes\walkers). rubble3: claude/b2-3-part3 (sim worst < 100 ms).
-- view-spikes: claude/view-spikes (fall_land 349 ms, debris queue). bridge: done pending capture QC.
-- Next to brief: walk m2 (R 11.1-11.4, 14.1-14.3) after turn-weight lands; R 6.1 no-empty-space suite after walkers.
+## Director is BACK at the PC (from ~03:30; plays League at times: focus guard blocks windowed Godot -> CI captures).
+## Team (lead 10's subagents, die with this session; re-brief from NEW notes <task>\handoff.md):
+- prs (Sonnet): PR queue, squash-only (`gh pr merge N --squash --match-head-commit`), cap 3: parse-step 1605c88,
+  light-pool, audio-duck, tentacle-substep, graphics-presets 9f37429 (+D-109 lead Medium 4K +6.5%), bridge-land 2ceb079
+  (QC PASS), kaiju-double 47ac4da (QC PASS), later walkers-on-pavement, turn-weight, ci-sim-split (after turn-weight + b2-3).
+- parse-step: turn-weight: military fixture fixed (42a3a99); tank threat fell 41-50% with the arcing walk -> fixing
+  FiringPosts to lead the target (bar within 15% of base 4e401c6, two variants max). Sim split green, re-timed shards.
+- phase-b: b2-20 boards in NEW notes phase-b\ pass lead QC; clip rendering -> then ASK the director b2-20.
+- walkers: deterministic diagonal fill, then comments #17 emerge facing the city + shoreline + wider river (claude/emerge-shore),
+  then R 6.1 no-empty-space suite.
+- rubble3: b2-3 part 3 worst step 71-79 ms (bar met), pushing; then D-110 destructible slabs (claude/rubble-break).
+- view-spikes: fall_land 349 ms + debris queue (claude/view-spikes). bridge agent -> walk m2 (claude/walk-m2 off turn-weight).
+- skyline: prototype background kaiju rampage + burning skyline (comments #16), off by default, stills+clip for his yes.
+- Next: fire research (comments #15, ROADMAP E) when a slot frees; insectoid/cephalopod double voxels follow-up.
+## Merged since build 4: #120 #121 #122 #123. Decisions today: D-107 voxels, D-108 lightning, D-110 destructible slabs.
 - Worktrees: ~50 vs cap 12; safe ones (hygiene, hygiene2-5, ci-balance) need --force, refused: ask the director.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
