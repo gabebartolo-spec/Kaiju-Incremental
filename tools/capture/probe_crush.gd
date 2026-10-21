@@ -108,8 +108,8 @@ func _near(what: String, street: StreetLife, at: Vector3, frames: int) -> void:
 	var c := Vector2(at.x, at.z)
 	var near := INF
 	var within := [0, 0, 0, 0]  # people within 3, 4, 6 and 8 m
-	for person: StreetLife.Person in street.people:
-		var d := person.pos.distance_to(c)
+	for at: Vector2 in street.pos:
+		var d := at.distance_to(c)
 		near = minf(near, d)
 		for k: int in 4:
 			within[k] += 1 if d <= [3.0, 4.0, 6.0, 8.0][k] else 0
@@ -126,14 +126,14 @@ func _landed(e: Dictionary, sim: RampageSim, street: StreetLife, frames: int) ->
 		var from: Vector2 = e["from"]
 		var to: Vector2 = e["to"]
 		reach = Num.f(e["width"]) * 0.6
-		for person: StreetLife.Person in street.people:
-			var q := Geometry2D.get_closest_point_to_segment(person.pos, from, to)
-			near = minf(near, person.pos.distance_to(q))
+		for at: Vector2 in street.pos:
+			var q := Geometry2D.get_closest_point_to_segment(at, from, to)
+			near = minf(near, at.distance_to(q))
 	else:
 		var b := sim.buildings[Num.i(e["building"])]
 		reach = maxf(b.w, b.d) * 0.5 + 0.8
-		for person: StreetLife.Person in street.people:
-			near = minf(near, person.pos.distance_to(Vector2(b.x, b.z)))
+		for at: Vector2 in street.pos:
+			near = minf(near, at.distance_to(Vector2(b.x, b.z)))
 	print(
 		(
 			"  t %.1f %s lands: crushes within %.1f, nearest person %.1f"
