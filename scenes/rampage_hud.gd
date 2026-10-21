@@ -26,6 +26,8 @@ const END_SLOWMO := 0.3
 const ROLL_SNAP := 0.5
 ## The clock's digits keep at least this width, so the box does not jump as they change.
 const CLOCK_MIN_WIDTH := 96.0
+## The first-run card ignores keys for this long, so the key that started the run is not "any key".
+const CARD_MIN_SHOWN := 0.6
 
 var sim: RampageSim
 var species: Dictionary
@@ -38,12 +40,16 @@ var biomass: Label
 var breath_ring: HudRing
 var dash_ring: HudRing
 var ultimate_ring: HudRing
+## The key (or pad button) under each ring; it follows the last device used.
+var breath_key: Label
+var dash_key: Label
+var ultimate_key: Label
 var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
 var _time: Label
 var _clock: PanelContainer
-var _destruction: ProgressBar
+var city_meter: ProgressBar
 ## Everything on the HUD: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
 var _clock_box: HazardBox
@@ -52,7 +58,11 @@ var _shown_biomass := 0.0
 var _last_biomass := 0.0
 var _last_second := -1
 var _pop: Tween
+var _dash_column: Control
+var _ultimate_column: Control
+var _pad := false
 var _card_left := 0.0
+var _card_age := 0.0
 var _card_fading := false
 var _beat_frame := -1
 var _beat_done := false
@@ -113,10 +123,10 @@ func _build_clock() -> Control:
 	_time.custom_minimum_size = Vector2(CLOCK_MIN_WIDTH, 0)
 	_clock.add_child(_time)
 	var meter: Array = _hud["meter_size"]
-	_destruction = UiKit.bar(UiKit.ACCENT, Num.i(meter[1]), true)
-	_destruction.custom_minimum_size.x = Num.f(meter[0])
-	_destruction.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(_destruction)
+	city_meter = UiKit.bar(UiKit.ACCENT, Num.i(meter[1]), true)
+	city_meter.custom_minimum_size.x = Num.f(meter[0])
+	city_meter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_child(city_meter)
 	return col
 
 
@@ -127,7 +137,7 @@ func _build_biomass() -> Control:
 	col.size_flags_horizontal = Control.SIZE_SHRINK_END
 	col.add_theme_constant_override("separation", 0)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var word := UiKit.label("BIOMASS", UiKit.SIZE_BODY, UiKit.TEXT)
+	var word := UiKit.label("BIOMASS", Num.i(_hud["biomass_label_size"]), UiKit.TEXT)
 	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	col.add_child(word)
 	biomass = UiKit.label("0", Num.i(_hud["biomass_size"]), UiKit.ACCENT)
@@ -139,7 +149,8 @@ func _build_biomass() -> Control:
 
 ## The breath ring bottom centre, where the health bar was (b2-12, b2-13); dash and the
 ## ultimate in smaller rings either side, each shown only when the kaiju has it (a missing one
-## keeps its place, unseen, so the breath ring stays dead centre).
+## keeps its place, unseen, so the breath ring stays dead centre). A key cap under each ring
+## names its button; every column is the same width so the breath column is centred.
 func _build_rings() -> Control:
 	var row := HBoxContainer.new()
 	row.size_flags_vertical = Control.SIZE_SHRINK_END
@@ -153,19 +164,75 @@ func _build_rings() -> Control:
 	dash_ring = HudRing.new(HudRing.Icon.DASH, small, w)
 	breath_ring = HudRing.new(HudRing.Icon.BREATH, big, w)
 	ultimate_ring = HudRing.new(HudRing.Icon.ULTIMATE, small, w)
-	for ring: HudRing in [dash_ring, breath_ring, ultimate_ring]:
-		ring.size_flags_vertical = Control.SIZE_SHRINK_END
-		row.add_child(ring)
+	_dash_column = _ring_column(dash_ring)
+	row.add_child(_dash_column)
+	row.add_child(_ring_column(breath_ring))
+	_ultimate_column = _ring_column(ultimate_ring)
+	row.add_child(_ultimate_column)
+	dash_key = _dash_column.get_child(1).get_child(0)
+	breath_key = row.get_child(1).get_child(1).get_child(0)
+	ultimate_key = _ultimate_column.get_child(1).get_child(0)
+	_set_keys()
 	return row
+
+
+## A ring with its key cap under it, in a column of the shared width.
+func _ring_column(ring: HudRing) -> Control:
+	var col := VBoxContainer.new()
+	col.custom_minimum_size = Vector2(Num.f(_hud["ring_column"]), 0)
+	col.add_theme_constant_override("separation", 6)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	ring.size_flags_vertical = Control.SIZE_SHRINK_END
+	col.alignment = BoxContainer.ALIGNMENT_END
+	col.add_child(ring)
+	var cap := PanelContainer.new()
+	cap.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box := UiKit.box(Color(UiKit.BG, 0.8), UiKit.MUTED, 2)
+	box.set_content_margin_all(2)
+	box.content_margin_left = 12
+	box.content_margin_right = 12
+	cap.add_theme_stylebox_override("panel", box)
+	var key := UiKit.label("", Num.i(_hud["key_size"]), UiKit.TEXT)
+	key.set_meta("keycap", true)
+	cap.add_child(key)
+	col.add_child(cap)
+	return col
+
+
+## The key caps' text for the last device used: keyboard keys, or the pad's buttons.
+func _set_keys() -> void:
+	breath_key.text = "A" if _pad else "SPACE"
+	dash_key.text = "B" if _pad else "SHIFT"
+	ultimate_key.text = "Y" if _pad else "E"
+
+
+func _input(event: InputEvent) -> void:
+	var pad := event is InputEventJoypadButton or event is InputEventJoypadMotion
+	var key := event is InputEventKey
+	if (pad or key) and pad != _pad and not (event is InputEventJoypadMotion and absf((event as InputEventJoypadMotion).axis_value) < 0.5):
+		_pad = pad
+		_set_keys()
+	var pressed := (
+		(key and (event as InputEventKey).pressed and not (event as InputEventKey).echo)
+		or (event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed)
+	)
+	if pressed and controls_card != null and _card_age > CARD_MIN_SHOWN:
+		dismiss_controls()
 
 
 ## The controls, once (b2-10): a card on the left that fades after tuning "ui" controls_card
 ## seconds; Settings > CONTROLS has them for good.
 func _show_controls(safe: Control) -> void:
-	controls_card = ControlsCard.new()
-	controls_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	controls_card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	safe.add_child(controls_card)
+	controls_card = ControlsCard.new(true)
+	controls_card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	controls_card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var place := MarginContainer.new()
+	place.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	place.add_theme_constant_override("margin_top", Num.i(UiKit.ui()["controls_card"]["first_run_top"]))
+	place.add_child(controls_card)
+	safe.add_child(place)
 	_card_left = Num.f(UiKit.ui()["controls_card"]["seconds"])
 	PlayerSettings.mark_controls_seen()
 
@@ -178,7 +245,7 @@ func dismiss_controls() -> void:
 	var card := controls_card
 	var tween := create_tween()
 	tween.tween_property(card, "modulate:a", 0.0, Num.f(UiKit.ui()["controls_card"]["fade_s"]))
-	tween.tween_callback(card.queue_free)
+	tween.tween_callback(card.get_parent().queue_free)
 	tween.tween_callback(func() -> void: controls_card = null)
 
 
@@ -193,18 +260,18 @@ func refresh() -> void:
 		_clock.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])
 		create_tween().tween_property(_clock, "scale", Vector2.ONE, Num.f(_hud["hurry_pulse_s"]))
 	_last_second = second
-	_destruction.value = sim.destruction() * 100.0
+	city_meter.value = sim.destruction() * 100.0
 	var gain := sim.rubble - _last_biomass
 	_last_biomass = sim.rubble
 	if gain >= Num.f(_hud["biomass_pop_gain"]):
 		_pop_biomass()
 	# The sim's own floor on the cooldown (rampage_sim.gd), so the ring matches the button.
 	breath_ring.set_ratio(1.0 - sim.ability_ready_in / maxf(0.5, sim.stat("ability_cooldown")))
-	ultimate_ring.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
+	_ultimate_column.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
 	var ult_cd := Num.f(sim.powers_cfg["ultimate_cooldown"])
 	ultimate_ring.set_ratio(1.0 - sim.ultimate_ready_in / maxf(0.001, ult_cd))
 	var dash := sim.body.dash
-	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
+	_dash_column.modulate.a = 1.0 if dash.available() else 0.0
 	if dash.available():
 		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
 
@@ -213,6 +280,7 @@ func _process(delta: float) -> void:
 	_roll_biomass(delta)
 	if controls_card != null and not _card_fading:
 		_card_left -= delta
+		_card_age += delta
 		if _card_left <= 0.0:
 			dismiss_controls()
 	if not beat_running():

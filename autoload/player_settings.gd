@@ -21,7 +21,7 @@ const CONTROLS: Array[Array] = [
 	["Dash", "Shift", "B"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
-	["Fullscreen", "F11", "Keyboard only"],
+	["Fullscreen", "F11", "-"],
 	["Confirm", "Enter / Space", "A"],
 	["Back", "Esc", "B"],
 ]

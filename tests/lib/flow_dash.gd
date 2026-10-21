@@ -28,6 +28,6 @@ static func run(t: SceneTree, check: Callable, rampage: Rampage) -> void:
 	var hud: RampageHud = rampage.find_children("*", "RampageHud", true, false)[0]
 	var ring := hud.dash_ring
 	check.call(
-		ring.modulate.a > 0.0 and ring.ratio > 0.0 and not ring.is_ready(),
+		ring.get_parent().modulate.a > 0.0 and ring.ratio > 0.0 and not ring.is_ready(),
 		"the HUD's dash ring shows the dash recharging after it (%.2f full)" % ring.ratio
 	)
