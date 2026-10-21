@@ -1,31 +1,35 @@
 # ui-redesign handoff, 2026-10-21
-## State: working
+## State: running a check (4K captures on CI)
 ## Task
-Lead-10 builder. In-run HUD (b2-10..13, R 15.1-15.8) and menus (title, pause, settings, results, species
-select, loading) in UI look A "Emergency Broadcast" with bespoke original drawn assets; fonts Claw/Block;
-one shared outlined text style; fixed tooltip width (b2-23); copy rule. UI only, values in data. Push, no PR.
+Lead-10 builder. In-run HUD (b2-10..13, R 15.1-15.7) and menus (title, pause, settings, results, species
+select, loading) in UI look A "Emergency Broadcast" with bespoke drawn assets; fonts Claw/Block; one shared
+outlined text style; fixed tooltip width (b2-23); copy rule. UI only, values in data. Push, no PR.
+Director (via lead): dash + ultimate as small rings either side of breath; CITY DESTROYED a thin text-less
+tape meter under the timer. Both built.
 ## Branch and commit
 claude/ui-redesign (worktree ../Kaiju-Incremental-wt/ui-redesign) from claude/look-options f4fedeec.
-fc1391b6: capture_flow shoots the loading screen. Scratch branch claude/ui-redesign-before (delete at end).
-## Unfinished changes (uncommitted in the worktree until the suites pass)
-Done in code: data/tuning.json "ui" section; UiKit text_style/safe_area/header/panel_box; UiMarks (tape,
-ticks, alert tag, scanlines); HazardBox corner brackets + focus chevron; RampageHud rewrite (clock+thin
-city meter, boxless biomass roll/pop, HudRing x3, HurtVignette shader, first-run ControlsCard with
-PlayerSettings.controls_seen in settings.cfg); Settings CONTROLS page; species select turntable centred;
-results/pause/loading headers; results "Tallest tower toppled" in STOREYS; tree details panel fixed width
-(role label wraps, BRANCH/CAPSTONE copy gone); new tests/run_ui_tests.gd + tests/lib/ui_hud.gd; flow tests
-updated (dash ring, HUD hidden on pause, settings CONTROLS page, demo controls via ControlsCard).
-Left: suites green, after captures, title screen polish, report.
-Asked lead: dash/ultimate rings (built as rings) and CITY DESTROYED (built as a thin text-less meter).
+fc1391b6 capture_flow loading shot; 6df247f0 the redesign. Scratch branches claude/ui-redesign-before
+(fc1391b6) and claude/ui-redesign-after (6df247f0): DELETE both when the captures are in.
+## What changed (6df247f0)
+data/tuning.json "ui" (safe margin 96/54, text style, hud, hurt, controls_card, tooltip_width, spin rate,
+loading news). UiKit text_style/safe_area/header/panel_box; UiMarks (tape, ticks, alert tag, scanlines);
+HazardBox corner brackets + focus chevron. RampageHud rewrite + HudRing, HurtVignette(.gdshader),
+ControlsCard (first run, PlayerSettings.controls_seen in settings.cfg "ui"); Settings CONTROLS page;
+Dash row added to CONTROLS. Species select turntable spin about the footprint middle. Results/pause/loading/
+title alert headers; results "Tallest tower toppled" N STOREYS (no "floors"); tree details panel fixed width,
+role label wraps, "BRANCH"/"CAPSTONE" copy gone. Loading word LOADING -> INCOMING.
 ## Evidence so far
-Before captures dispatched (4K, 125% and 100%): NOTES/ui-redesign/before-125, before-100 (log before.log).
-## Attempts (fix-loop record)
-none
-## Open decisions
-none
+Suites (local, --quick): ui 3/3 fn 18 checks, flow 7/7 fn 203 checks, smoke 13/13 fn 30 checks, all pass.
+Known-bad: model shifted 3 m -> centring check FAILS; old role copy without wrap -> panel 330/399/400/415 px
+FAILS (b2-23 reproduced: r_beam 399). Faint-outline contrast case fails inside the suite itself.
+Captures: NOTES/ui-redesign/before-125, before-100, after-125, after-100 (logs before.log, after.log).
+## Not done / not exercised
+R 15.8 stage-up notice (no in-run stage event exists); heartbeat SOUND (no asset; vignette beats visually);
+hit flash is on the screen edge, not on the kaiju model; species ability name "Atomic Breath" still in
+species.json (D-108 says never "atomic"; not my string). Tree screen look untouched (waits for bigger tree).
 ## Running jobs
-background ci_capture of the before shots.
+background: wait for before captures, then dispatch after captures (task b8d1l2x54).
 ## Findings for the lead
-none yet
+gdformat/gdlint are in ~/AppData/Roaming/Python/Python314/Scripts (not on PATH).
 ## Rules learnt the hard way (under 10 lines)
-gdformat/gdlint live in ~/AppData/Roaming/Python/Python314/Scripts (not on PATH).
+python open(p,'w') on Windows writes CRLF: always newline=''.
