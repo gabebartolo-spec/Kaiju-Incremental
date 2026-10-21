@@ -170,10 +170,8 @@ func _physics_process(delta: float) -> void:
 	var move: Vector2 = now["move"]
 	var signature: bool = now["signature"]
 	_steps += 1
-	var buttons := Dash.BUTTON if now["dash"] else 0
-	buttons |= (
-		(RampageSim.HELD if now["held"] else 0) | (RampageSim.ULTIMATE if now["ultimate"] else 0)
-	)
+	var buttons := (Dash.BUTTON if now["dash"] else 0) | (RampageSim.HELD if now["held"] else 0)
+	buttons |= RampageSim.ULTIMATE if now["ultimate"] else 0
 	var wading := sim.emerge.risen() >= 1.0 and sim.emerge.active
 	var ticks := _intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
 	for k: int in ticks:
@@ -262,6 +260,8 @@ func _on_event(event: Dictionary) -> void:
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)
+		"kaiju_emerged":
+			_hud.visible = true
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
@@ -391,9 +391,9 @@ func _place_camera(delta: float) -> void:
 		_follow.hold(eye)
 		aim = shot["aim"]
 		_camera.fov = Num.f(shot["fov"])
+		_hud.visible = get_tree().paused  # no HUD over the intro (the pause menu shows)
 	else:
 		_camera.fov = camera_fov
-	_hud.visible = not sim.emerge.active or get_tree().paused  # no HUD over the intro's shot
 	_camera.position = _follow.eye()
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(aim + jitter)
