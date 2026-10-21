@@ -1,15 +1,15 @@
 ---
 name: kaiju-handoff
-description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when your context nears about 300k tokens (a lead 500k), before the director restarts or clears a session, and at the start of any new session.
+description: Writing and starting from a Kaiju Incremental agent handoff - the file agent-handoffs/ROLE.md inside the repo that lets a fresh session continue without the old transcript, its 120-line cap, edited not appended, and when to hand off. Use it when a task is done or you switch to unrelated work, when a lead's context nears 500k, before the director restarts or clears a session, and at the start of any new session.
 ---
 
 # Handoffs
 
-Fresh session at every task boundary; routine work at 50-100k tokens, hand off at about 300k (leads 500k)
-(never run past it for convenience). Write the handoff first, then start the new session from it.
-A helper (builder, critic) cannot restart itself: at the first context-guard note it messages its
-lead "at Nk, restart me after <step>", finishes only that step, reports and stops; the lead
-respawns a fresh one with the same name, which reads the report or handoff. A top-level session
+Fresh session at every task boundary for a lead; a lead hands off at about 500k (hard stop 600k).
+Write the handoff first, then start the new session from it.
+A helper (builder, critic, subagent) never stops or hands off for context size: it auto-compacts and keeps its
+handoff and commits current at each milestone. The lead respawns one with the same name from its handoff only if
+it cannot compact or drifts after compacting (director 2026-10-21). A top-level session
 starts its own successor only when safe (nothing of its own running, no half-done push or merge,
 no unanswered director question), gives it the same title, and archives itself. The user-level Stop hook blocks a turn
 that changed the project without a fresh handoff; write it, never ask the director to remind you.
