@@ -57,3 +57,4 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 51 | Turn remedy after +5% failed (asked): "Small turns smooth" | D-130; turn builder, claude/turn-weight (#144): corrections under ~20 deg smooth, real turns step | in progress |
 | 52 | Fire ignition (asked): "Breath, beam and army shells" | D-129; fire gameplay (claude/fire-spread, Nimbalyst 016) | in progress |
 | 53 | Burn-out (asked): "Collapses" | D-129; claude/fire-spread | in progress |
+| 54 | Turn remedy after small-turns-smooth missed the rise point (asked): "Baby turns smoothly" (2026-10-22) | D-131; turn builder, claude/turn-weight (#144): baby smooth at pre-stepped rates, adolescent and adult step real turns | in progress |
