@@ -24,7 +24,7 @@ var _props := PropField.new(PROP_VOXEL)
 var _half: float
 var _view: float  # parked cars reach this far from the centre: the arena and what the camera
 # shows past its edge (city.view_beyond)
-var _lamps: Array[OmniLight3D] = []
+var _lamps: Array[PooledLight] = []
 var _footprints: Array[Rect2] = []
 var _water: Array[Rect2] = []  # the river and its bridges (CityRiver): no car parks, no lamp
 var _paints := 0  # how many car paints
@@ -107,7 +107,7 @@ func _process(_delta: float) -> void:
 		var body := _kaiju.global_transform
 		_props.crush_box(body, _foot)
 		var into := body.affine_inverse()
-		for lamp: OmniLight3D in _lamps.duplicate():
+		for lamp: PooledLight in _lamps.duplicate():
 			var local := into * Vector3(lamp.position.x, body.origin.y, lamp.position.z)
 			if _foot.has_point(Vector2(local.x, local.z)):
 				_lamps.erase(lamp)
@@ -132,7 +132,7 @@ func _found_kaiju() -> bool:
 func crush(at: Vector3, radius: float) -> void:
 	if trampling:
 		_props.crush(at, radius)
-	for lamp: OmniLight3D in _lamps.duplicate():
+	for lamp: PooledLight in _lamps.duplicate():
 		if Vector2(lamp.position.x - at.x, lamp.position.z - at.z).length() <= radius:
 			_lamps.erase(lamp)
 			lamp.queue_free()
@@ -207,7 +207,7 @@ func _streets() -> void:
 						cars.append(body)
 					t += _rng.randf_range(Num.f(gap[0]), Num.f(gap[1]))
 		if not playable:
-			continue  # past the edge: cars only (each lamp is a real light)
+			continue  # past the edge: cars only (lamps only on the streets)
 		for end: int in [Num.i(street["from"]), Num.i(street["to"])]:
 			if not lit_nodes.has(end) and kind != CityGen.DIAGONAL:
 				lit_nodes[end] = true
@@ -228,16 +228,16 @@ func _clear_of_trees(body: Rect2) -> bool:
 	return not _kerb.near_box(body, Num.f(sim.city["street_tree_car_clear"]))
 
 
-## A streetlight at p whose arm reaches toward `toward` (over the road), with a real light.
+## A streetlight at p whose arm reaches toward `toward` (over the road), with a pooled light.
 func _lamp(p: Vector2, toward: Vector2) -> void:
 	if _on_building(p):
 		return
 	var arm := Vector2i(roundi(signf(toward.x)), roundi(signf(toward.y)))
 	_lamp_spots.append(p)
 	_props.add(Vector3(p.x, 0, p.y), func(v: VoxelBuilder) -> void: _streetlight(v, arm))
-	var light := OmniLight3D.new()
+	var light := PooledLight.new("lamp")
 	light.light_color = Color("ffd59a")
-	light.light_energy = Look.value("lamp_energy")
+	light.set_energy(Look.value("lamp_energy"))
 	light.omni_range = 6.0
 	light.position = Vector3(p.x + arm.x * 0.5, 2.4, p.y + arm.y * 0.5)
 	add_child(light)
