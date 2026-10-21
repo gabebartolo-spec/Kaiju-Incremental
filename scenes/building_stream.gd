@@ -99,7 +99,8 @@ func _landmarks_first(queue: Array[int]) -> void:
 	var marks: Array[int] = []
 	var others: Array[int] = []
 	for n: int in queue:
-		(marks if _sim.buildings[n].landmark != "" else others).append(n)
+		var b := _sim.buildings[n]
+		(marks if b.landmark != "" or b.hazard != "" else others).append(n)
 	queue.assign(marks + others)
 
 

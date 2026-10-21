@@ -69,22 +69,9 @@ func _init(rng: RandomNumberGenerator) -> void:
 
 
 func _ready() -> void:
-	var names: Array[String] = [
-		"breath",
-		"leap_whoosh",
-		"leap_land",
-		"lash",
-		"ready",
-		"deflect",
-		"stomp_crack",
-		"collapse",
-		"roar",
-		"tank_fire",
-		"shell_hit",
-		"heli_gun",
-		"heli_crash",
-		"rifle",
-	]
+	var files: Array = _tune["files"]  # every one-shot in assets/sfx (tuning "sfx" "files")
+	var names: Array[String] = []
+	names.assign(files)
 	for k: int in STOMPS:
 		names.append("stomp_%d" % k)
 	names.append_array(STEPS)
@@ -228,8 +215,8 @@ func _release_stomp() -> void:
 
 ## The army's sounds where they happen (tank_fire, shell_hit): quieter the further they are
 ## from the camera, down to a floor so a far tank is still heard.
-func play_at(sound: String, at: Vector3) -> void:
-	play(sound, _distance_db(at))
+func play_at(sound: String, at: Vector3, extra_db := 0.0) -> void:
+	play(sound, _distance_db(at) + extra_db)
 
 
 ## A shot from `at` near `centre` (the kaiju's feet): within the sound's "crack_within" (flat
