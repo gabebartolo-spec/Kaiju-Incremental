@@ -6,7 +6,8 @@ extends Node3D
 ## off the roof and gas hisses while the fuse burns. explosion: a white core, a fireball of
 ## glowing voxels, both out of the site's own box; a ring of voxel chunks and dust racing out
 ## along the street (BlastShock); the site blowing apart top first, its pieces thrown out and up
-## (BlastBreak); a flash of real light, smoke and a fire left burning. The camera kicks on the
+## (BlastBreak); a flash of real light and lit smoke cubes (no city fire: its soft smoke column
+## sheeted over the facades, motion critic round 5). The camera kicks on the
 ## flash and shakes by distance (trauma squared, capped), the sim holds still a moment
 ## (hit_stop: a few steps skipped, never Engine.time_scale), and the blast is heard as crack +
 ## body + rumble, with the sonic boom arriving later the further the camera is (speed of sound
@@ -183,7 +184,6 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	var tint := Color(str(_c("flash")["chem_color" if kind == "chem_lab" else "color"]))
 	_flash(high, tint, Num.f(_c("flash")["energy"]) * radius / 5.0)
 	_throw(kind, high, half)
-	_city.fire(at, Num.f(_cfg["fire_size"]) * radius / 5.0)
 	var trauma: Dictionary = _c("shake")["trauma"]
 	var near := _add_trauma(Num.f(trauma[kind]), at, focus)
 	_kick = maxf(_kick, Num.f(_c("kick")["amount"]) * near)
