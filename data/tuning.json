@@ -248,9 +248,16 @@
 			"max_drawn": 36
 		}
 	},
+	"explosives": {
+		"fuse_s": 1.2, "chain_fuse_s": 0.35,
+		"fuel_silo": {"radius": 5.0, "damage": 80.0, "height": 16},
+		"fireworks_factory": {"radius": 3.0, "damage": 50.0, "height": 10, "bursts": 8, "burst_spread": 9.0, "burst_every_s": 0.25, "burst_radius": 1.5, "burst_damage": 25.0, "burn_dps": 4.0, "burn_seconds": 4.0},
+		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_dps": 6.0, "cloud_squad_seconds": 1.5}
+	},
 	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
 		"map_seed": 7301,
+		"hazards": {"kinds": ["fuel_silo", "fireworks_factory", "chem_lab"], "count": [2, 3, 4, 5], "min_spacing": 12.0, "spawn_clear": 16.0, "edge_share": 0.45, "max_height": 10},
 		"half": 42,
 		"districts": [42, 70, 125, 210],
 		"district_lot_grow": [0, 1, 2, 3],
