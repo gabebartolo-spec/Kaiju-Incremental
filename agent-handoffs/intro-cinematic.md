@@ -52,16 +52,18 @@ Scratch: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHu
 - Known look issues for the lead: sand shore slab large in the left foreground; a channel-end block hides the
   body below the head at 1.6 s; jaw reads closed in the 1.6 s still; spray cubes are flat unshaded squares.
 
-## Done since (intro-fix builder, 2026-10-21; commits df009a9f + the eye-farther one)
-1. Foreground: tests/lib/river_sight.gd (quay walls, decks+parapets, shore as solids) used by fade_spawn: head,
-   neck, shoulders in sight on every frame 1.45-1.6 s. Fail-first on old framing (height 4): stage 1 22/27, FAIL.
-   Fix is data: tuning intro distance 28, height 16 (was 20/4). CI still 39581561041 (distance 20, height 12)
-   still showed the sand slab big at left and a wall hiding the lower body; farther/higher run 39584674092 (still),
-   39584753285 (clip) to judge.
-2. Jaw: KaijuModel.roar(open_seconds) -> BipedHead.hold_open; tuning intro roar_jaw_seconds 1.3. Open in the still.
+## Done since (intro-fix builder, 2026-10-21)
+1. Foreground: director ruled keep the framing, no fade (the fade commit a637dd91 is reverted by 8d754c1e).
+   tests/lib/river_sight.gd (quay walls, decks+parapets, shore as solids) used by fade_spawn: head, neck,
+   shoulders in sight on every frame 1.45-1.6 s; fail-first on the old framing (height 4): stage 1 22/27.
+   Fix is data: tuning intro distance 28, height 16 (was 20/4). The dark deck block still hides the lower body.
+2. Jaw: KaijuModel.roar(open_seconds) -> BipedHead.hold_open; tuning intro roar_jaw_seconds 1.3. Open at 1.6 s.
 3. Spray: lit material, tones from tuning intro.water.colors (3), drop_min 0.35 for small cubes.
-Local: full suite: only growth ("lots of young city at Apex, 16 moved") and military (tank fall-back, known on base)
-failed; growth not yet checked on the base.
+4. Shore slab: CityShore now builds it from 0.125 voxel columns (CELL), sand shade varied +-10% (GRAIN), the
+   same slope the sim climbs (floor_at); stills l8s/l8c in the scratchpad ic folder (local GPU).
+Local: full suite: only growth ("lots of young city at Apex, 16 moved") and military (tank fall-back, known on
+base) fail; growth not checked on the base.
+## Follow-up: none open from this task.
 ## Open decisions
 - none yet (yaw side, distances are data; lead judges the clip).
 ## Findings for the lead
