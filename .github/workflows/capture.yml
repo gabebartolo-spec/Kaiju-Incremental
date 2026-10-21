@@ -58,6 +58,14 @@ jobs:
           # The display fonts are LFS (3 files, ~26 KB): without them every label logs a
           # FreeType error with a backtrace and the render crawls past the time limit.
           lfs: true
+          # native/godot-cpp is a submodule: the native core below builds from it.
+          submodules: true
+
+      # The native core (native/, GDExtension on godot-cpp), built the way tests.yml builds it
+      # (one cache, keyed on the sources and the pinned godot-cpp commit) into native/bin, where
+      # native/kaiju_carve.gdextension looks for it. Without it the game logs "libkaiju_carve...
+      # so not found" and falls back to its slow paths, which software rendering cannot afford.
+      - uses: ./.github/actions/native-build
 
       - name: Cache Godot
         id: godot-cache
@@ -88,6 +96,20 @@ jobs:
         run: |
           timeout 900 "$HOME/godot/godot" --headless --path . --import > import.log 2>&1 || { cat import.log; exit 1; }
           if grep -qE "SCRIPT ERROR|Parse Error|Compile Error" import.log; then cat import.log; exit 1; fi
+
+      # One clear line in the log: did Godot register the native library (the class
+      # tests/run_native_tests.gd looks for)? A warning, not a failure: captures still run
+      # without it, only slowly.
+      - name: Report the native library
+        run: |
+          ls -la native/bin/*.so || true
+          printf 'extends SceneTree\nfunc _initialize() -> void:\n\tprint("NATIVE_CLASS ", ClassDB.class_exists("KaijuCarve"))\n\tquit()\n' > "$RUNNER_TEMP/native_check.gd"
+          loaded="$("$HOME/godot/godot" --headless --path . --script "$RUNNER_TEMP/native_check.gd" 2>&1 | grep -o 'NATIVE_CLASS [a-z]*' || true)"
+          if [ "$loaded" = "NATIVE_CLASS true" ]; then
+            echo "native library: LOADED (KaijuCarve registered)"
+          else
+            echo "::warning::native library: NOT loaded (${loaded:-no answer}); captures fall back to slow paths"
+          fi
 
       - name: Capture
         env:

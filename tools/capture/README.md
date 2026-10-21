@@ -41,3 +41,12 @@ Software rendering is slow: a 40 s 1080p clip hit the 3000 s step limit (PR #18)
 stage-4 city killed runners (PR #16). Keep CI clips short (about 20 s, 720p). Render heavier
 scenes locally with the off-screen no_focus override, only when the focus guard allows it.
 CI checkouts need `lfs: true` (fonts are in LFS).
+
+## The native library on CI
+
+capture.yml builds the Linux GDExtension (`native/`) with the same cached
+`.github/actions/native-build` action as tests.yml, so the run no longer logs `libkaiju_carve...
+so not found` and falls back to the slow paths; expect the 50-minute timeouts to shrink (to be
+measured on the first test capture). The log prints one line, `native library: LOADED` or a
+`NOT loaded` warning. Checkouts need `submodules: true` for it.
+
