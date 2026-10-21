@@ -112,7 +112,7 @@ func _apply(rampage: Rampage) -> void:
 			env.adjustment_saturation = 1.5
 			env.adjustment_contrast = 1.08
 			# In focus at the kaiju (the camera's rest distance, zoomed by body size as Rampage does).
-			var focus := rampage.camera_rest.length() * (0.75 + 0.4 * rampage.sim.body_scale())
+			var focus := rampage.camera_rest.length() * CameraTuning.zoom(rampage.sim.body_scale())
 			var attrs := CameraAttributesPractical.new()
 			attrs.dof_blur_far_enabled = true
 			attrs.dof_blur_far_distance = focus + 8.0

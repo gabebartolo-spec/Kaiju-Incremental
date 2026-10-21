@@ -52,6 +52,8 @@ var sim: RampageSim
 ## Off: every building stays on its chunk Structure (data/tuning.json destruction.carve).
 var on := false
 var alive_share := 0.5
+## How far beyond the kaiju's strike reach a building is warmed (sim units, tuning destruction).
+var warm_margin := 3.0
 var promoter := CellPromoter.new()
 ## Building index -> Grid, for the buildings hit so far.
 var grids: Dictionary = {}
@@ -62,6 +64,9 @@ var _materials: Array[Dictionary] = []
 var _strength := PackedFloat32Array()
 var _weakest := INF
 var _party: Array[Dictionary] = []
+## The building being warmed and the stage it is at (see warm()); -1 when none.
+var _warming := -1
+var _warm_stage := 0
 
 
 func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
@@ -69,6 +74,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	var cfg: Dictionary = tuning.get("destruction", {})
 	on = cfg.get("carve", false) == true
 	alive_share = Num.f(cfg.get("chunk_alive_share", 0.5))
+	warm_margin = Num.f(cfg.get("warm_margin", 3.0))
 	_materials = Content.materials()
 	_strength.resize(256)
 	for m: Dictionary in _materials:
@@ -89,6 +95,35 @@ func promoted(n: int) -> bool:
 func frame(n: int) -> VoxelFrame:
 	var g: Grid = grids.get(n, null)
 	return g.frame if g != null else null
+
+
+## Pre-promotion (b2-3): one stage of the work a building's first hit would otherwise do all at
+## once, per sim step, on the nearest buildings the kaiju can reach (or is about to) that are not
+## promoted yet: stage 0 generates its cells, stage 1 makes the fine grid, stage 2 does its first
+## settle, stage 3 builds what the GDScript settle cache keeps. A hit that arrives first just
+## does the stages it finds undone. Nearest first, ties by building index: the same order for the
+## same run. Nothing a hit would not do is done, only sooner: the first settle's falls (if the
+## generated grid had any) start as any settle's do.
+func warm() -> void:
+	if not on:
+		return
+	if _warming < 0:
+		_warming = WarmOrder.next_cold(self, sim.buildings, warm_margin)
+		_warm_stage = 0
+		if _warming < 0:
+			return
+	var n := _warming
+	if _warm_stage == 0:
+		_cells_of(n)
+	elif _warm_stage == 1:
+		_promote(n)
+	elif _warm_stage == 2 and not frame(n).settled():
+		sim.collapse.settle(n)
+	elif _warm_stage == 3:
+		frame(n).prepare()
+	_warm_stage += 1
+	if _warm_stage > 3:
+		_warming = -1
 
 
 ## A force-shaped blow (RampageSim.hit_area's force and damage) on floors floors.x..floors.y-1
@@ -214,14 +249,19 @@ func settle(n: int) -> Array[Dictionary]:
 	return out
 
 
+## Building n's generated cells (made once; promotion takes them).
+func _cells_of(n: int) -> CellGrid:
+	if _party.is_empty():
+		_party = PartyWalls.of(sim.buildings)
+	return promoter.on_hit(n, sim.buildings[n], _party[n])
+
+
 ## Building n's grid, made on its first hit (a cells_promoted event for the view).
 func _promote(n: int) -> Grid:
 	if grids.has(n):
 		return grids[n]
 	var b := sim.buildings[n]
-	if _party.is_empty():
-		_party = PartyWalls.of(sim.buildings)
-	var cells := promoter.on_hit(n, b, _party[n])
+	var cells := _cells_of(n)
 	var g := Grid.new()
 	var f := VoxelFrame.new(Vector3i(b.w, b.height, b.d), cells.res, _materials)
 	f.adopt(cells.dims, cells.offset, cells.cells)
