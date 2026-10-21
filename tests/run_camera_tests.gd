@@ -62,14 +62,16 @@ func _check_turn() -> void:
 	var shake := CameraShake.new()
 	var cap := deg_to_rad(Num.f(_cfg()["max_deg"]))
 	shake.add(1.0, Vector3.INF, Vector3.ZERO, ADULT)
+	var halved := CameraShake.new()
 	var full := 0.0
 	var half := 0.0
 	for _i: int in 120:
 		shake.trauma = 1.0
 		shake.update(FRAME)
 		full = maxf(full, shake.turn(ADULT, 1.0).length())
-		shake.trauma = 0.5
-		half = maxf(half, shake.turn(ADULT, 1.0).length())
+		halved.trauma = 0.5
+		halved.update(FRAME)
+		half = maxf(half, halved.turn(ADULT, 1.0).length())
 	shake.trauma = 1.0
 	var off := shake.turn(ADULT, 0.0)
 	var coarse := _largest_step(FRAME)
@@ -155,6 +157,7 @@ func _check_rampage() -> void:
 	var rest := camera.global_transform
 	rampage.shake.update(0.37)  # off the noise's zero at time 0
 	rampage.add_trauma(1.0)
+	rampage.shake.update(0.2)  # the shake swells over a few frames (rise_per_s)
 	PlayerSettings.camera_motion = 0.0
 	rampage._place_camera(0.0)
 	var still := camera.global_transform

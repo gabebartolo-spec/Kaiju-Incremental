@@ -510,16 +510,18 @@
 	},
 	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4},
 	"camera_shake": {
-		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
-		"decay_per_s": 0.8,
-		"noise_hz": 18.0,
+		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz noise units a second; 1.6 keeps a 60 fps frame under 5 px at 1080p at the 2 deg cap, motion critic 2026-10-21), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
+		"decay_per_s": 1.2,
+		"rise_per_s": 6.0,
+		"noise_gain": 2.0,
+		"noise_hz": 1.6,
 		"noise_seed": 1902,
-		"deg_per_root_scale": 1.9,
+		"deg_per_root_scale": 1.95,
 		"max_deg": 2.5,
 		"near_per_scale": 20.0,
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
-		"sources": {"stomp": 0.15, "topple": 0.6, "drop": 0.3, "tank_fire": 0.08, "ability": 0.45, "leap_land": 0.5}
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
 	},
 	"topple_fx": {
 		"shudder_s": 0.4,

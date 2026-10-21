@@ -15,6 +15,9 @@ var trauma := 0.0
 var _cfg: Dictionary
 var _noise := FastNoiseLite.new()
 var _time := 0.0
+## The shake's strength on screen: trauma squared, but rising at most "rise_per_s" a second, so a
+## big hit swells over a few frames instead of jumping the frame (motion critic 2026-10-21).
+var _shown := 0.0
 
 
 func _init() -> void:
@@ -46,6 +49,8 @@ func add(amount: float, at: Vector3, focus: Vector3, scale: float) -> void:
 func update(delta: float) -> void:
 	_time += delta
 	trauma = maxf(0.0, trauma - Num.f(_cfg["decay_per_s"]) * delta)
+	var goal := trauma * trauma
+	_shown = goal if goal < _shown else move_toward(_shown, goal, Num.f(_cfg["rise_per_s"]) * delta)
 
 
 ## The largest turn (radians) full trauma gives a body of `scale`, before the player's setting.
@@ -57,13 +62,12 @@ func max_turn(scale: float) -> float:
 ## This frame's turn in radians (x yaw, y pitch; together never past the cap); motion is the
 ## player's 0..1 setting.
 func turn(scale: float, motion: float) -> Vector2:
-	var amp := max_turn(scale) * trauma * trauma * clampf(motion, 0.0, 1.0)
+	var amp := max_turn(scale) * _shown * clampf(motion, 0.0, 1.0)
 	if amp <= 0.0:
 		return Vector2.ZERO
 	var t := _time * Num.f(_cfg["noise_hz"])
-	return (
-		Vector2(_noise.get_noise_2d(t, 0.0), _noise.get_noise_2d(t, 100.0)).limit_length(1.0) * amp
-	)
+	var wave := Vector2(_noise.get_noise_2d(t, 0.0), _noise.get_noise_2d(t, 100.0))
+	return (wave * Num.f(_cfg["noise_gain"])).limit_length(1.0) * amp
 
 
 ## Turns `camera` (already aimed) by this frame's shake.
