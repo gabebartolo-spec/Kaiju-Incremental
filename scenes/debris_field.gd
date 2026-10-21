@@ -90,6 +90,8 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0, fixed := 
 	var mi := MeshInstance3D.new()
 	mi.mesh = _mesh(size)
 	var whiten := lift if lift >= 0.0 else Look.value("debris_lift")
+	if fixed > 0.0:
+		whiten = 0.0  # a burst band's cubes keep the building's own colours
 	mi.material_override = _material(Color(color, 1.0).lightened(whiten))
 	if not shadows:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
