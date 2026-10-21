@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-117 · Director · Run timer stays 40 s at the start, 100 s at most
+Why: Asked 2026-10-21 (R 1.2). No change to data.
+
+## 2026-10-21 · D-118 · Director · Walking into buildings: small ones crumble; big ones take visible damage and tear easily with a little more effort
+Why: His words 2026-10-21: "even big building should take visible damage, it should be easy for him to tear through them, it just requires slightly more effort / the game isnt meant to be extremely challenging or frustrating, its meant to be a thrill". Closes R 13.3.
+
+## 2026-10-21 · D-119 · Director · Skins and body-part mutations are stretch goals
+Why: Asked 2026-10-21 (customisation beyond species).
+
+## 2026-10-21 · D-120 · Director · The background skyline rampage stays after the slice (section H)
+Why: Asked 2026-10-21.
+
 ## 2026-10-21 · D-113 · Director · The game ends in a finale boss fight against a giant military mecha, after 3 cities
 Why: Asked 2026-10-21 (open list: finale shape, how many cities). Changes: ROADMAP finale (R 23) builds a mecha boss; city count 3.
 

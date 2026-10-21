@@ -6,7 +6,7 @@ only by the lead when the director rules; replace the old line, never append his
 
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
-sees, decides or remembers is cut, not polished. Designed by the director; agents execute and push back.
+sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
 
 ## The game
 - An **active action game** with incremental progression, the Nodebuster / Brotato shape. No idle, no AFK, no offline
@@ -130,8 +130,6 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   must not sound like a typewriter (playtest 1).
 
 ## Open for the director (ask at its phase, the ask-the-director way)
-Camera growth per stage (R 19) · walk: slower speed vs faster cadence (R 11.2) · when contact carves vs yields
-(R 13.3) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · rampage timer start and ceiling (R 1.2) · tree map layout (R 16.5) · HUD: rings for
-dash and ultimate, health shown only when hit, the "CITY DESTROYED" bar (R 15) · background skyline rampage yes/no ·
+Camera growth per stage (R 19) · walk: slower speed vs faster cadence (R 11.2) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · tree map layout (R 16.5) ·
 mecha concept (R 23.1, finale = mecha boss after 3 cities, D-113) · which original species follow the croc
-(research 02) · customisation beyond species.
+(research 02).
