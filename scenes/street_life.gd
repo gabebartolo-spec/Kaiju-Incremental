@@ -29,7 +29,8 @@ class Person:
 	var from_node := 0
 	var to_node := 0
 	var fleeing := false
-	## Under a falling tower until this clock time: frozen, looking up (nobody outruns one).
+	## Standing still until this clock time: gawking at the kaiju a moment before running, or
+	## frozen under a falling tower (nobody outruns one).
 	var pinned_until := -1.0
 	var cop := false
 	var state := 0  # officers: 0 to post, 1 holding, 2 fleeing
@@ -272,15 +273,18 @@ func _update_civilian(p: Person, delta: float, kaiju: Vector2) -> void:
 	if p.pinned_until > _clock:
 		return
 	var d := p.pos.distance_to(kaiju)
-	if not p.fleeing and d < Num.f(_cfg["panic_radius"]):
+	var panic := _panic_radius()
+	if not p.fleeing and d < panic:
 		p.fleeing = true
 		fled += 1
+		p.pinned_until = _clock + Num.f(_cfg["panic_gawk"])  # a moment to take it in
+		p.heading = (kaiju - p.pos).normalized()
 		var ahead := _nodes[p.to_node] - p.pos
 		if ahead.dot(kaiju - p.pos) > 0.0:  # walking toward it: turn round
 			var swap := p.from_node
 			p.from_node = p.to_node
 			p.to_node = swap
-	elif p.fleeing and d > Num.f(_cfg["calm_radius"]):
+	elif p.fleeing and d > panic * Num.f(_cfg["calm_radius"]) / Num.f(_cfg["panic_radius"]):
 		p.fleeing = false
 	var speed := Num.f(_cfg["run_speed"]) if p.fleeing else Num.f(_cfg["walk_speed"])
 	var to := _nodes[p.to_node] - p.pos
@@ -324,7 +328,16 @@ func _next_node(p: Person, kaiju: Vector2) -> int:
 	return pick[_rng.randi_range(0, pick.size() - 1)]
 
 
+## How near the kaiju comes before people run: panic_per_scale x body scale, at most
+## panic_radius (an adult's): a young kaiju is noticed late, so it reaches the street's people.
+func _panic_radius() -> float:
+	var r := Num.f(_cfg["panic_per_scale"]) * sim.body_scale()
+	return minf(Num.f(_cfg["panic_radius"]), r)
+
+
 func _pose(p: Person) -> int:
+	if p.pinned_until > _clock and not p.cop:  # gawking, or frozen under a fall: standing
+		return VoxelPerson.Pose.WALK_A
 	var running := p.fleeing or (p.cop and p.state == 2)
 	if p.cop and p.state == 1:
 		return VoxelPerson.Pose.AIM
