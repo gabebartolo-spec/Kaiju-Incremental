@@ -5,7 +5,6 @@ extends Node
 ## big one as the body breaks the surface, and a last one as it steps out. Rings from the
 ## existing Fx, tinted like spray; presentation only.
 
-const SURFACE_AT := 0.45  # how far risen the head breaks the surface
 const RING := 5.0  # ring radius per body scale
 
 var _sim: RampageSim
@@ -22,7 +21,7 @@ func _process(_delta: float) -> void:
 	var emerge := _sim.emerge
 	if _beat == 0 and emerge.active:
 		_splash(0.6, false)
-	elif _beat == 1 and emerge.risen() >= SURFACE_AT:
+	elif _beat == 1 and emerge.surfaced:  # the head breaks the surface
 		_splash(1.4, true)
 	elif _beat == 2 and not emerge.active:
 		_splash(1.0, false)

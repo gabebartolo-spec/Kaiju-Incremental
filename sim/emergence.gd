@@ -2,13 +2,15 @@ class_name Emergence
 extends RefCounted
 ## The start of a run (D-083, director 2026-10-19: "a city caught unaware - have our reptilian
 ## emerge from a river to start each run"): the kaiju waits submerged in the city's river
-## (CityRiver), rises out of it over tuning "emerge" "rise_seconds", wades out onto the city's
-## bank (inside the arena), and then the run begins: the sim
-## emits "kaiju_emerged" (the army's alert ramp starts from it). Until then nothing else
-## happens: no clock, no stomps, no army. Only a run the game starts (Rampage.setup) emerges;
-## a RampageSim built on its own starts on land, as before. The whole start never takes longer
-## than "emerge" "max_seconds": past it the kaiju steps onto the bank point at once, so nothing
-## (a bank point in the water, a wade that cannot finish) can stall a run before it begins.
+## (CityRiver) for "emerge" "hold_seconds" (the water ripples and founts over it), rises out of
+## it over "rise_seconds", wades onto the city's bank (inside the arena) over "wade_seconds", and
+## then the run begins: the sim emits "kaiju_emerged" (the army's alert ramp starts from it).
+## Until then nothing else happens: no clock, no stomps, no army. The whole start fits the run
+## intro's 3 s (director 2026-10-20 #11: "the entire scene should run for no longer than 3
+## seconds"; R 20.1). Only a run the game starts (Rampage.setup) emerges; a RampageSim built on
+## its own starts on land. The start never takes longer than "emerge" "max_seconds": past it the
+## kaiju steps onto the bank point at once, so nothing (a bank point in the water, a wade that
+## cannot finish) can stall a run before it begins.
 
 var active := false
 ## The holes (x, z) the rise breaks in the bay's decks (CityRiver.bay_bridges): over the body's
@@ -17,11 +19,16 @@ var active := false
 ## through": he rises up through the bridge deck and breaks it; the street grid stays whole).
 var burst: Array[Rect2] = []
 var burst_ns: Array[Rect2] = []  # the same over the north-south decks (bay_bridges_ns)
+## Whether its head has broken the water's surface yet (the "surface_break" event; the intro
+## roars on it, R 20.3).
+var surfaced := false
 var _broke := false
 var _t := 0.0
+var _hold: float
 var _rise: float
 var _depth: float
 var _wade: float
+var _start_y := 0.0
 var _cap: float
 var _bed: float  # how far the river's water lies below the street (city "river_depth")
 var _spawn: Vector2
@@ -32,9 +39,10 @@ var _city: Dictionary
 
 func _init(city: Dictionary, tuning: Dictionary) -> void:
 	var cfg: Dictionary = tuning["emerge"]
+	_hold = Num.f(cfg["hold_seconds"])
 	_rise = Num.f(cfg["rise_seconds"])
 	_depth = Num.f(cfg["depth"])
-	_wade = Num.f(cfg["wade_speed"])
+	_wade = Num.f(cfg["wade_seconds"])
 	_cap = Num.f(cfg["max_seconds"])
 	_bed = Num.f(city.get("river_depth", 0.0))
 	_city = city
@@ -50,8 +58,12 @@ func start(sim: RampageSim) -> void:
 		return
 	active = true
 	_t = 0.0
+	surfaced = false
 	sim.kaiju_pos = _rise_point(sim)
-	sim.stand_y = -_depth * sim.body_scale()
+	# Wholly under the water at first, its top "depth" (per body scale) below the surface, so the
+	# water ripples and founts before anything shows (#11).
+	_start_y = -_bed - sim.reach_height() - _depth * sim.body_scale()
+	sim.stand_y = _start_y
 	# It rises already facing the city, the way it will walk out (director 2026-10-21 #17: "have
 	# him emerging facing the city so he can walk straight in"), in the river's bay, wide enough
 	# for its whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
@@ -63,9 +75,34 @@ func start(sim: RampageSim) -> void:
 	_broke = false
 
 
-## How far through its rise the kaiju is, 0 (under) to 1 (wading in the river).
+## How far through its rise the kaiju is, 0 (under, still holding) to 1 (wading in the river).
 func risen() -> float:
-	return clampf(_t / _rise, 0.0, 1.0) if active else 1.0
+	return clampf((_t - _hold) / _rise, 0.0, 1.0) if active else 1.0
+
+
+## How far through the whole start (hold, rise and wade) it is, 0 to 1; 1 once it has emerged.
+func progress() -> float:
+	return clampf(_t / total(), 0.0, 1.0) if active else 1.0
+
+
+## Seconds the whole start lasts when nothing stalls it.
+func total() -> float:
+	return _hold + _rise + _wade
+
+
+## Seconds into the start the head breaks the surface (the intro's short cut starts near it).
+func break_at(sim: RampageSim) -> float:
+	var up := (-_bed - sim.reach_height() - _start_y) / maxf(0.001, -_bed - _start_y)
+	# smoothstep's inverse, by bisection (the rise eases in and out)
+	var lo := 0.0
+	var hi := 1.0
+	for _i: int in 20:
+		var mid := (lo + hi) * 0.5
+		if smoothstep(0.0, 1.0, mid) < up:
+			lo = mid
+		else:
+			hi = mid
+	return _hold + hi * _rise
 
 
 ## Advances the rise; true while it holds the rest of the sim back. While it does, the
@@ -84,22 +121,39 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 		sim.stand_y = 0.0
 		_land(sim, sim.clamp_to_arena(_bank))
 		return true
-	if not _broke and not (burst.is_empty() and burst_ns.is_empty()):  # the first step
-		_broke = true  # he breaks up through the deck
-		sim.events.append({"type": "deck_burst", "holes": burst, "holes_ns": burst_ns})
-	if _t < _rise:
-		var up := smoothstep(0.0, 1.0, _t / _rise)
-		sim.stand_y = lerpf(-_depth * sim.body_scale(), -_bed, up)  # up to wading depth
+	if _t < _hold:
+		return true  # still under: the water ripples over it
+	if _t < _hold + _rise:
+		var up := smoothstep(0.0, 1.0, (_t - _hold) / _rise)
+		sim.stand_y = lerpf(_start_y, -_bed, up)  # up to wading depth
+		_surface(sim)
 		return true
+	_surface(sim)
 	var bank := sim.clamp_to_arena(_bank)
-	var stride := sim.stat("speed") * _wade * dt
+	# The wade takes "wade_seconds" whatever the body's size, so the start's length never grows
+	# with the stage (a Behemoth wades further, in proportion to its body).
+	var left := maxf(1.0, roundf((total() - _t) / dt) + 1.0)
+	var stride := sim.kaiju_pos.distance_to(bank) / left
 	var floor_y := CityRiver.floor_at(_plan, _city, sim.kaiju_pos)
-	sim.stand_y = move_toward(sim.stand_y, floor_y, stride)  # climbs the shore
+	var climb := maxf(stride, absf(floor_y - sim.stand_y) / left)
+	sim.stand_y = move_toward(sim.stand_y, floor_y, climb)  # climbs the shore
 	if sim.kaiju_pos.distance_to(bank) > stride or sim.stand_y < 0.0:
 		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)  # straight ahead: it never turns
 		return true
 	_land(sim, bank)
 	return true
+
+
+## The tick its top clears the water: "surface_break", and he breaks up through any deck over him
+## (the deck's holes, "deck_burst").
+func _surface(sim: RampageSim) -> void:
+	if surfaced or sim.stand_y + sim.reach_height() < -_bed:
+		return
+	surfaced = true
+	sim.events.append({"type": "surface_break"})
+	if not _broke and not (burst.is_empty() and burst_ns.is_empty()):
+		_broke = true
+		sim.events.append({"type": "deck_burst", "holes": burst, "holes_ns": burst_ns})
 
 
 func _land(sim: RampageSim, bank: Vector2) -> void:

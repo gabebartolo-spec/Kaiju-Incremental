@@ -252,7 +252,9 @@
 			"max_drawn": 36
 		}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
+	"emerge": {"hold_seconds": 0.8, "rise_seconds": 1.0, "wade_seconds": 1.0, "depth": 0.6, "max_seconds": 3.0, "input_latch_seconds": 0.2},
+	"intro": {"yaw_deg": 100.0, "distance": 22.0, "height": 1.2, "push_in": 0.15, "fov": 42.0, "aim_ahead": 6.0, "aim_height": 0.5, "aim_by_seconds": 1.5, "pull_from_seconds": 1.5, "short_seconds": 1.5, "short_lead_seconds": 0.15, "skip_ticks": 8,
+		"water": {"ripple_seconds": 0.2, "ripple_radius": 2.0, "ripple_grow": 0.8, "fount_from_seconds": 0.3, "fount_amount": 160, "fount_speed": 9.0, "fount_spread": 10.0, "burst_amount": 260, "burst_speed": 14.0, "burst_spread": 30.0, "gravity": 9.8, "life": 1.0, "drop": 0.25, "width": 0.35, "color": "d8ecf2e6"}},
 	"city": {
 		"map_seed": 7301,
 		"half": 42,

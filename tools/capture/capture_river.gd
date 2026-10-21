@@ -8,6 +8,8 @@ extends SceneTree
 ##   ... -- --still-at=<s> --out=<dir>  (also a PNG of the frame that many seconds in)
 ##   ... -- --side=<m>  (a close side camera that far east of the rise point, at the street,
 ##   looking west across the bay: the deck he bursts through and the shore he climbs)
+##   ... -- --short  (the run intro's short cut, as on a run with nothing new to show; default:
+##   the whole intro, as on the first run)
 
 const LEVELS: Array[Dictionary] = [{"claws": 2, "hide": 2}, {"claws": 3, "evolve1": 1}]
 
@@ -16,6 +18,7 @@ var _seconds := 4.5
 var _still_at := -1.0
 var _out := "user://river"
 var _side := 0.0
+var _full := true
 
 
 func _initialize() -> void:
@@ -28,6 +31,8 @@ func _initialize() -> void:
 			_still_at = arg.substr(11).to_float()
 		elif arg.begins_with("--side="):
 			_side = arg.substr(7).to_float()
+		elif arg == "--short":
+			_full = false
 		elif arg.begins_with("--out="):
 			_out = arg.substr(6)
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -40,6 +45,7 @@ func _run() -> void:
 	var tree := UpgradeTree.new(Content.upgrades(), LEVELS[_stage - 1])
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var rampage := Rampage.new()
+	rampage.full_intro = _full
 	rampage.setup(
 		species, stats, CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0)), 0
 	)

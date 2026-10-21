@@ -13,6 +13,8 @@ const LOOK_UP := 3.5
 
 var focus: Vector3
 var offset: Vector3
+## The rest offset the last step eased toward (the run intro ends on focus + rest).
+var rest: Vector3
 
 
 func _init(p_focus: Vector3, p_offset: Vector3) -> void:
@@ -20,10 +22,16 @@ func _init(p_focus: Vector3, p_offset: Vector3) -> void:
 	offset = p_offset
 
 
-## Eases toward the body at `target` and the rest offset `rest` (already zoomed).
-func step(target: Vector3, rest: Vector3, delta: float) -> void:
+## Eases toward the body at `target` and the rest offset `p_rest` (already zoomed).
+func step(target: Vector3, p_rest: Vector3, delta: float) -> void:
 	focus = focus.lerp(target, minf(1.0, delta * FOCUS_FOLLOW))
-	offset = offset.lerp(rest, minf(1.0, delta * OFFSET_FOLLOW))
+	offset = offset.lerp(p_rest, minf(1.0, delta * OFFSET_FOLLOW))
+	rest = p_rest
+
+
+## Puts the eye at `at` (the run intro's shot, RunIntro): the offset then eases on from there.
+func hold(at: Vector3) -> void:
+	offset = at - focus
 
 
 func eye() -> Vector3:

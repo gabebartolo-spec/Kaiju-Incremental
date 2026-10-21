@@ -2,9 +2,10 @@ extends RefCounted
 ## The rise from the river in sight (R 19.4, comment #27 "Kaiju spawn seems to be blocked by
 ## buildings in the foreground"): for each stage (capture_growth's upgrades, the city and army a
 ## real first run gets), the kaiju rises from the river, wades in and stands SECONDS, while the
-## camera follows it the way Rampage does (CameraFollow from its first frame, the body eased in
-## at the model's 12/s) and BuildingFade, fed the eye and CityView's sight points, fades what it
-## decides. The kaiju is seen on a frame when the eye is not in a standing chunk of a building
+## camera follows it the way Rampage does (the run intro's shot, RunIntro, over CameraFollow from
+## its first frame, the body eased in at the model's 12/s) and BuildingFade, fed the eye and
+## CityView's sight points, fades what it decides. The kaiju is seen on a frame when the eye is
+## not in a standing chunk of a building
 ## that still hides (opacity above HIDES) and the line to the middle of its body above the water
 ## is clear of them; it must be seen on SEEN_SHARE of the frames it is above the water, and its
 ## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
@@ -61,6 +62,9 @@ func _stage(stage: int) -> void:
 		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
 		follow.step(body, CameraTuning.offset() * zoom, DT)
+		if sim.emerge.active:  # the run intro's shot, as Rampage._place_camera takes it
+			var shot: Vector3 = RunIntro.shot(sim, follow, CameraTuning.fov(), 0.0)["eye"]
+			follow.hold(shot)
 		var eye := follow.eye()
 		fade.update(eye, BuildingFade.sight_of(sim), DT)
 		var hiding: Array[RampageSim.Building] = []
