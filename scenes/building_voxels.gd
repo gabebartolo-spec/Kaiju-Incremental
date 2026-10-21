@@ -7,9 +7,9 @@ extends RefCounted
 ## (ribbon windows over spandrel bands, AC plant), brick residential (punched windows, balconies
 ## with railings, water tank), glass tower (flush curtain wall, mast with beacon), stone classic
 ## (pilasters, cornices and string courses, stepped roof). Ground floors are shopfronts under a
-## sign band and an awning. A side shared with a neighbour is a blank party wall; some shops hang
-## a vertical neon sign off a street face (Tokyo). Hollow shell plus a floor slab per floor, so a
-## broken building shows its floors.
+## sign band and an awning. A side shared with a neighbour carries the same facade (build 2 note
+## 22), so it shows when the neighbour falls; some shops hang a vertical neon sign off a street face
+## (Tokyo). Hollow shell plus a floor slab per floor, so a broken building shows its floors.
 
 const RES := 8
 const VOXEL := 1.0 / RES
@@ -33,7 +33,7 @@ var _w: int
 var _d: int
 var _h: int
 var _lit_chance: float
-## Side -> floors of it a neighbour covers: blank party wall up to there, facade above.
+## Side -> floors of it a neighbour covers (no sign hangs off that side).
 var _party: Dictionary = {}
 
 
@@ -130,14 +130,10 @@ func _at(side: Vector2i, p: int, y: int, layer: int) -> Vector3i:
 ## One face: the wall plane, recessed glass, and what stands proud of it.
 func _face(side: Vector2i) -> void:
 	var length := _d if side.x != 0 else _w
-	var covered := Num.i(_party.get(side, 0)) * RES
 	for y: int in _h:
 		for p: int in length:
 			if p == 0 or p == length - 1:  # corner piers are shared by two faces
 				vox.put(_at(side, p, y, 0), "pillar")
-				continue
-			if y < covered:
-				vox.put(_at(side, p, y, 0), "party")
 				continue
 			var spec := _ground(y, p) if y < RES else _upper(y, p)
 			var plane: String = spec[0]

@@ -12,16 +12,22 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## Team. Lead 9 (session local_df2c2989) is still up until ITS subagents report: rubble part 2, walk-motion m1
-## (turn-weight reds), audio-duck + tentacle substep, hygiene (#121). It forwards branch/sha; lead 10 takes the PRs.
-## Lead 10's own subagents (die with this session; re-brief from <task>\handoff.md in the NEW notes folder):
-- prs (Sonnet): handover-fixes PR (fail-first, push 760b99a, merge on green), then light-pool PR. Log: hygiene\state.md.
-- walkers (Opus med): fill the empty diagonal sliver cell (stage 2 seed 1234 (60,40)) with decor, never relax the check; resync.
-- phase-b (Opus med): fix b2-20 board (smooth head flat, cars blobs, idle from behind; label "destruction still cubes").
-- presets (Opus med): R 18.1 Potato..Max; lead said yes to Medium (balanced + MSAA 2x) as 4K default IF MSAA < ~15% gpu.
-  When it lands record D-107 (number reserved) in DECISIONS.
-- Next to brief: walk m2 (R 11.1-11.4, 14.1-14.3) once m1 lands; worktree Kaiju-Incremental-wt/walk-motion (claude/walk-m1
-  54b23f5 = turn-weight + look-options, unused) can be reused or removed.
+## Director is BACK at the PC (from ~03:30; plays League at times: focus guard blocks windowed Godot -> CI captures).
+## Team (lead 10's subagents, die with this session; re-brief from NEW notes <task>\handoff.md):
+- prs (Sonnet): PR queue, squash-only (`gh pr merge N --squash --match-head-commit`), cap 3: parse-step 1605c88,
+  light-pool, audio-duck, tentacle-substep, graphics-presets 9f37429 (+D-109 lead Medium 4K +6.5%), bridge-land 2ceb079
+  (QC PASS), kaiju-double 47ac4da (QC PASS), later walkers-on-pavement, turn-weight, ci-sim-split (after turn-weight + b2-3).
+- parse-step: turn-weight: military fixture fixed (42a3a99); tank threat fell 41-50% with the arcing walk -> fixing
+  FiringPosts to lead the target (bar within 15% of base 4e401c6, two variants max). Sim split green, re-timed shards.
+- phase-b: b2-20 boards in NEW notes phase-b\ pass lead QC; clip rendering -> then ASK the director b2-20.
+- walkers: deterministic diagonal fill, then comments #17 emerge facing the city + shoreline + wider river (claude/emerge-shore),
+  then R 6.1 no-empty-space suite.
+- rubble3: b2-3 part 3 worst step 71-79 ms (bar met), pushing; then D-110 destructible slabs (claude/rubble-break).
+- view-spikes: fall_land 349 ms + debris queue (claude/view-spikes). bridge agent -> walk m2 (claude/walk-m2 off turn-weight).
+- skyline: prototype background kaiju rampage + burning skyline (comments #16), off by default, stills+clip for his yes.
+- Next: fire research (comments #15, ROADMAP E) when a slot frees; insectoid/cephalopod double voxels follow-up.
+## Merged since build 4: #120 #121 #122 #123. Decisions today: D-107 voxels, D-108 lightning, D-110 destructible slabs.
+- Worktrees: ~50 vs cap 12; safe ones (hygiene, hygiene2-5, ci-balance) need --force, refused: ask the director.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
 ## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
