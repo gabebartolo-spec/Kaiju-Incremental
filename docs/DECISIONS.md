@@ -386,19 +386,3 @@ and feet PASS), so poor in-game motion comes from our auto rig, not the mesh. Th
 A's originality ("less a blatant Godzilla copy"). Options: new Tripo design (picked), Blender A, current Tripo B.
 Changes: new Tripo reptile steered away from Godzilla (croc snout, pale back plates, long low tail), then rigged in
 Blender with the hand rig; Blender weights feed the game in place of rig_voxel's guessed bone ownership.
-
-## 2026-10-17 · D-044 · Director · Locomotion paused until the kaiju models are decided
-Why: "pause locomotion until we decide on the models because theyre doing work they might have to replace
-if we change our models"; octopus capture showed "head detached, limbs a static, awkward mesh".
-Changes: species-motion and kaiju-motion stop; PR #11 stays open, unmerged. The Blender motion test
-(one hand-weighted rig on the Blender and Tripo reptiles) decides the model pipeline first.
-
-## 2026-10-17 · D-043 · Director · Make the repo public to restore GitHub Actions
-Why: Actions stopped starting jobs (account spending limit); options were raise the limit ($), run locally,
-or go public (free minutes). Picked public. Changes: repo visibility public (the director flips it), main
-protected per github-hygiene, failed CI rerun. Commit email and all code/docs become readable.
-
-## 2026-10-17 · D-042 · Director · Military vehicles at 2x real size, desert tan; modelled in Blender
-Why: tank board docs/captures/2026-10-17-vehicles/tank_board.png (modelled through the Blender MCP);
-picked 2x (readable from the game camera beside a growing kaiju) and desert tan (olive goes near-black
-in blue-hour light). Changes: TankModel uses the voxelized Blender tank; helicopters follow the same way.
