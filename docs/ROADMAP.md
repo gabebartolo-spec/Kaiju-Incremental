@@ -160,6 +160,15 @@ zooms, so text keeps its size; it remembers the view, has a home key, and moves 
 d-pad focus by geometry (R 16.5; 50-65 nodes do not fit the 8 x 6 grid, so b2-28 forces it; layout picked here in E,
 skin in F) · last, a flowing shader on owned links (R 16.6).
 
+Fire (director 2026-10-21, comments #15: "im still interested in Fire as a source of lighting and gameplay (perhaps natural
+flame that can spread (unlockable in skill tree) and add to your biomass collection)"): a tree node that lets fires spread
+building to building on their own (sim-decided, seeded spread timer, burns out to rubble, never a burning shell per #111);
+burning buildings and the people in them pay biomass; fires stay the city's moving light sources (light pool, R 12). Research
+first (spread rules that read and stay cheap, how it feeds the biomass curve), then his node pick.
+Explosive sites (comments #19, #20): fuel silos, fireworks factories and chemical labs placed through the city as the
+"red barrel": any damage (kaiju, rubble, a clumsy army shell, #18) arms a fuse, blasts carve and chain. Their explosions
+get really good SFX and VFX (his words): a visible shockwave ring and air distortion, a sonic boom delayed by distance,
+layered blast sound from CC0 sources, through the motion critic at game speed.
 **F. UI redesign, on the final camera and tree.**
 b2-10 HUD: timer stays, biomass a boxless figure bottom right, controls shown once at the start and in a controls
 menu · b2-12 breath cooldown as an icon with a circular fill · b2-13 health bar removed or repurposed · b2-11
@@ -191,6 +200,10 @@ gl_compatibility behind a restart, last (R 18.6) · the shader baker on for expo
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
 **H. Content after the slice (already decided, unchanged order).**
+Background city rampage (director 2026-10-21, comments #16: "would be cool if our distant background city had a kaiju
+rampaging in it, and the skyline was on fire"): a far silhouette kaiju stomping through the backdrop skyline, towers
+dropping, fire glow and smoke columns on the horizon, distant booms; presentation only, cheap (impostors). A labelled
+capture for his yes before it is built in full.
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
 music (Suno, needs his spend yes) · greenery (#55) · look-options -> main (#3) once the slice ships.
 Sound (research): a pooled SFX manager with voice caps per category from data, hero voices reserved, quietest or
