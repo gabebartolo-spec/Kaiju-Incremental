@@ -142,8 +142,8 @@ func _run() -> void:
 	var n := maxi(1, _frames)
 	var fmt := "CAMCHECK %s stage %d %s: model share mean %.1f%% min %.1f%% max %.1f%%,"
 	fmt += " sim height %.1f%%, highest bone %.1f%%;"
-	fmt += " feet out %d, ground ahead out %d, camera inside a building %d,"
-	fmt += " feet hidden behind a standing building %d, of %d frames"
+	fmt += " feet out %d, ground ahead out %d, camera inside a solid building %d,"
+	fmt += " feet hidden behind a solid building %d, of %d frames"
 	var row := [
 		_candidate,
 		_stage,
@@ -227,22 +227,33 @@ func _check_frame(height: int) -> void:
 	if ahead_y > height or _camera.is_position_behind(ahead):
 		_ground_out += 1
 	var eye := _camera.global_position
-	for b: RampageSim.Building in _rampage.sim.buildings:
+	var opaque := _opaque()
+	for b: RampageSim.Building in opaque:
 		var c := Vector3i((eye - Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5)).floor())
 		if b.frame != null and b.frame.inside(c) and b.frame.alive(c):
-			_inside += 1  # the eye in a standing chunk of the building
+			_inside += 1  # the eye in a standing chunk of a building drawn solid
 			break
-	if _blocked(eye, feet + Vector3(0, FEET_SIGHT, 0)):
+	if _blocked(eye, feet + Vector3(0, FEET_SIGHT, 0), opaque):
 		_hidden += 1
 
 
-## Whether a standing chunk of any building lies on the segment from `eye` to `to` (sampled
-## every SIGHT_STEP units), so the player cannot see that point.
-func _blocked(eye: Vector3, to: Vector3) -> bool:
+## The buildings drawn solid this frame (BuildingFade's opacity 1): a faded one hides nothing.
+func _opaque() -> Array[RampageSim.Building]:
+	var fade: BuildingFade = _rampage.get("_city").get("_fade")
+	var out: Array[RampageSim.Building] = []
+	for n: int in _rampage.sim.buildings.size():
+		if fade == null or fade.opacity(n) >= 1.0:
+			out.append(_rampage.sim.buildings[n])
+	return out
+
+
+## Whether a standing chunk of one of `buildings` lies on the segment from `eye` to `to`
+## (sampled every SIGHT_STEP units), so the player cannot see that point.
+func _blocked(eye: Vector3, to: Vector3, buildings: Array[RampageSim.Building]) -> bool:
 	var lo := Vector2(minf(eye.x, to.x), minf(eye.z, to.z))
 	var hi := Vector2(maxf(eye.x, to.x), maxf(eye.z, to.z))
 	var steps := ceili(eye.distance_to(to) / SIGHT_STEP)
-	for b: RampageSim.Building in _rampage.sim.buildings:
+	for b: RampageSim.Building in buildings:
 		if b.frame == null:
 			continue
 		if b.x + b.w * 0.5 < lo.x or b.x - b.w * 0.5 > hi.x:
