@@ -6,6 +6,7 @@ extends RefCounted
 ## sounds a frame. A dropped part that lands crumbles into the street over "topple_fx"
 ## drop_crumble_s instead of vanishing on the landing frame (PR #89 review, capture 39277970463).
 
+const FlowToppleGround := preload("res://tests/lib/flow_topple_ground.gd")
 const LANDINGS := 171  # as many landings in one frame as that collapse had
 const ID := 900001  # a fall id the sim never hands out in a flow run
 
@@ -14,6 +15,7 @@ static func check_all(check: Callable, rampage: Rampage) -> void:
 	_check_still_topple(check, rampage)
 	_check_sound_cap(check, rampage.sfx)
 	_check_drop_crumbles(check, rampage)
+	FlowToppleGround.check_all(check, rampage)
 
 
 static func _check_still_topple(check: Callable, rampage: Rampage) -> void:

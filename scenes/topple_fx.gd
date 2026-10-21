@@ -4,10 +4,9 @@ extends Node3D
 ## the sim: its base shudders and crumbles, it leans slowly, then gravity takes it; on landing the
 ## slab breaks up over a few frames (debris in waves, a burst of pale dust at the far end) instead
 ## of swapping to rubble at once, the sim's slabs slide to rest (RubbleView) and the heap slumps
-## down into place. A tower that broke on the kaiju (the sim's "hit", comments #24 #25) cracks
-## at the contact: the part below comes down in front of him, the part above folds over him and
-## slides off his side, the impact edge crumbles. Every timing and size is the "topple_fx"
-## tuning. Presentation only. Part of CityView.
+## down into place. A tower comes down as floor bands that shatter one by one as each reaches
+## the street, base first, also when it broke on the kaiju (ToppleBands, comments #24 #25 #30).
+## Every timing and size is the "topple_fx" tuning. Presentation only. Part of CityView.
 
 ## Half a chunk's height (a part's "pos" is its chunk's centre).
 const HALF_CELL := 0.5
@@ -17,6 +16,7 @@ var _cfg: Dictionary
 var _rng: RandomNumberGenerator
 var _breaking: Array[Dictionary] = []
 var _rubble: RubbleView
+var _bands: ToppleBands
 
 
 func _init(city: CityView, rng: RandomNumberGenerator) -> void:
@@ -24,6 +24,7 @@ func _init(city: CityView, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	_cfg = Content.section("topple_fx")
 	_rubble = RubbleView.new(city, _cfg, rng)
+	_bands = ToppleBands.new(self, _cfg)
 
 
 ## The piece's tilt (radians) t seconds into a fall the sim times at `duration` (the sim's own
@@ -39,7 +40,9 @@ func pose(f: Dictionary, delta: float) -> void:
 	var t := Num.f(f["t"])
 	var duration := Num.f(f["duration"])
 	var dir: Vector2 = f["dir"]
-	node.basis = FallMotion.topple_turn(dir, tilt(_cfg, t, duration))
+	var view: BuildingView = f.get("view")
+	if not _bands.pose(f, view, t, duration):
+		node.basis = FallMotion.topple_turn(dir, tilt(_cfg, t, duration))
 	var shudder := minf(Num.f(_cfg["shudder_s"]), duration * Num.f(_cfg["shudder_max_share"]))
 	if t > shudder or not node.has_meta("pivot"):  # a landmark's burst crumbles on its own
 		return
@@ -87,6 +90,8 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 	_city.fx.dust_line(a, b, width, dust)
 	if event.has("hit"):
 		_fold(node, event, view, fall)
+	elif fall.has("bands"):
+		_bands.land(fall)
 	else:
 		_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
@@ -108,145 +113,45 @@ func slab_break(event: Dictionary, voxels: BuildingVoxels) -> void:
 	_rubble.smash(event, voxels)
 
 
-## A tower broke on the kaiju: it cracks at the contact (hit "crack", up its own axis). Below the
-## crack it keeps turning and comes down in front of him over fold_lower_s, then breaks up; above
-## it the tower folds on over the contact (hinged there) while it slides off his side and drops,
-## over fold_s, and breaks up where the sim's fold slabs lie, which show then. The contact edge
-## sheds edge_debris at once, a puff of dust there, and the small edge slabs tumble out.
+## A tower broke on the kaiju (the sim's "hit"): its bands come down (ToppleBands.fold); the
+## fold slabs show as their bands land, the small edge slabs tumble out at once. A piece that
+## never split (a landmark's) breaks up where it is.
 func _fold(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary) -> void:
 	var hit: Dictionary = event["hit"]
-	var crack := Num.f(hit["crack"])
-	var at: Vector3 = hit["at"]
-	var side: Vector2 = hit["side"]
-	var dir: Vector2 = fall["dir"]
-	var lean := tilt(_cfg, Num.f(fall["t"]), Num.f(fall["duration"]))
-	var pivot: Vector3 = node.get_meta("pivot")
-	var cells: Array[Vector3i] = fall["cells"]
-	var upper: Array[Vector3i] = []
-	for c: Vector3i in cells:
-		if c.y + 0.5 - pivot.y >= crack:
-			upper.append(c)
-	_edge(node, crack, hit)
-	var lower := node
-	var top: Node3D = null
-	if upper.size() == cells.size():
-		top = node
-		lower = null
-	elif not upper.is_empty():
-		top = _bands(node, view, upper, hit)
-		node.get_parent().add_child(top)
-		top.global_transform = node.global_transform
-	if lower != null:
-		var turn := func(a: float) -> void: lower.basis = FallMotion.topple_turn(dir, a)
-		var tween := lower.create_tween()
-		tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-		tween.tween_method(turn, lean, PI * 0.5, Num.f(_cfg["fold_lower_s"]))
-		var lower_debris := (
-			Num.f(_cfg["impact_debris"]) * (1.0 - float(upper.size()) / cells.size())
-		)
-		var down := func() -> void: _break_up(lower, Num.f(_cfg["breakup_s"]), lower_debris)
-		tween.tween_callback(down)
 	var pieces: Array = hit["pieces"]
 	var large := Num.i(hit["large"])
-	var voxels := view.voxels
-	_rubble.add(pieces.slice(large), voxels, false)
-	_rubble.add(pieces.slice(0, large), voxels, false, true)
-	if top == null:
+	_rubble.add(pieces.slice(large), view.voxels, false)
+	if fall.has("bands"):
+		_rubble.add(pieces.slice(0, large), view.voxels, false, true)
+		_bands.fold(fall, hit)
 		return
-	var ids: Array = []
-	var clear := 0.0
-	for slab: Dictionary in pieces.slice(0, large):
-		ids.append(slab["id"])
-		var p: Vector2 = slab["pos"]
-		clear = maxf(clear, (p - Vector2(at.x, at.z)).dot(side))
-	var fold := {"at": at, "dir": dir, "side": side, "turn": PI * 0.5 - lean, "clear": clear}
-	fold["ids"] = ids
-	_hinge(top, fold)
+	_rubble.add(pieces.slice(0, large), view.voxels, false)
+	edge(node, Num.f(hit["crack"]), hit)
+	_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 
 
-## The part above the hit's "crack" as its "large" count of bands up its length (one piece each,
-## children of the returned node), so it comes apart into the sim's large slabs, not one block.
-func _bands(node: Node3D, view: BuildingView, upper: Array[Vector3i], hit: Dictionary) -> Node3D:
-	var crack := Num.f(hit["crack"])
-	var count := Num.i(hit["large"])
-	var pivot: Vector3 = node.get_meta("pivot")
-	var high := crack
-	for c: Vector3i in upper:
-		high = maxf(high, c.y + 1.0 - pivot.y)
-	var holder := Node3D.new()
-	holder.set_meta("pivot", pivot)
-	var step := (high - crack) / maxi(count, 1)
-	for i: int in range(maxi(count, 1) - 1, -1, -1):  # top band first: split_piece takes parts above
-		var low := crack + step * i
-		var band: Array[Vector3i] = []
-		for c: Vector3i in upper:
-			var y := c.y + 0.5 - pivot.y
-			if y >= low and (i == count - 1 or y < low + step):
-				band.append(c)
-		if band.is_empty():
-			continue
-		var piece := view.split_piece(node, band, low)
-		piece.transform = Transform3D.IDENTITY
-		piece.set_meta("band", i)
-		piece.set_meta("low", low)
-		holder.add_child(piece)
-	return holder
+## A band reached the street: it shatters where it lies, its share of the impact debris thrown
+## up over shatter_s while it crumbles in on itself (never into the street), a puff of dust.
+func shatter(band: Node3D) -> void:
+	if band.has_meta("breaking"):
+		return
+	var share := Num.f(band.get_meta("share", 1.0))
+	_break_up(band, Num.f(_cfg["shatter_s"]), Num.f(_cfg["impact_debris"]) * share)
+	_breaking[-1]["crush"] = false  # it shrinks in on its middle instead
+	var centre: Vector3 = band.get_meta("centre", Vector3.ZERO)
+	var at := band.global_transform * centre
+	_city.fx.dust(Vector3(at.x, Num.f(_cfg["dust_lift"]), at.z), Num.f(_cfg["band_dust"]))
 
 
-## Hinges the part above the crack at the contact (fold "at") and folds it: it turns on by
-## "turn" plus fold_over_deg (gravity's ease) about the fall "dir"'s axis, slides "clear" off
-## his "side" and drops to the street over fold_s; its bands (_bands) crack apart as it goes,
-## each further band turning fold_break_deg more about its own lower edge; then they break up and
-## the fold slabs "ids" show.
-func _hinge(top: Node3D, fold_at: Dictionary) -> void:
-	var at: Vector3 = fold_at["at"]
-	var dir: Vector2 = fold_at["dir"]
-	var side: Vector2 = fold_at["side"]
-	var ids: Array = fold_at["ids"]
-	var hinge := Node3D.new()
-	_city.add_child(hinge)
-	hinge.global_position = at
-	var xf := top.global_transform
-	top.get_parent().remove_child(top)
-	hinge.add_child(top)
-	top.global_transform = xf
-	var axis := Vector3(dir.y, 0, -dir.x)
-	axis = FallMotion.STILL_AXIS if axis.is_zero_approx() else axis.normalized()
-	var total := Num.f(fold_at["turn"]) + deg_to_rad(Num.f(_cfg["fold_over_deg"]))
-	var slide := Vector3(side.x, 0, side.y) * Num.f(fold_at["clear"])
-	var drop := at.y - Num.f(_cfg["fold_ground"])
-	var local_axis := (top.transform.basis.inverse() * axis).normalized()
-	var crack_turn := deg_to_rad(Num.f(_cfg["fold_break_deg"]))
-	var bands := top.get_children().filter(func(c: Node) -> bool: return c.has_meta("band"))
-	var fold := func(k: float) -> void:
-		var g := k * k
-		var spin := lerpf(k, g, Num.f(_cfg["fold_gravity"]))  # it keeps the speed it fell at
-		hinge.transform = Transform3D(
-			Basis(axis, total * spin), at + slide * k + Vector3.DOWN * drop * g
-		)
-		for band: Node3D in bands:  # the far end droops more: the cracks between bands open
-			var edge := Vector3(0, Num.f(band.get_meta("low")), 0)
-			var turn := Basis(local_axis, crack_turn * Num.i(band.get_meta("band")) * g)
-			band.transform = Transform3D(turn, edge - turn * edge)
-	var seconds := Num.f(_cfg["fold_s"])
-	var tween := hinge.create_tween()
-	tween.tween_method(fold, 0.0, 1.0, seconds)
-	var land := func() -> void:
-		var each := Num.f(_cfg["fold_debris"]) / maxi(bands.size(), 1)
-		for band: Node3D in bands:
-			_break_up(band, Num.f(_cfg["breakup_s"]), each)
-		if bands.is_empty():
-			_break_up(top, Num.f(_cfg["breakup_s"]), each)
-		_city.fx.dust(top.global_position, Num.f(_cfg["contact_dust"]))
+## Shows the fold slabs RubbleView kept hidden (their band landed).
+func reveal(ids: Array) -> void:
+	if not ids.is_empty():
 		_rubble.reveal(ids)
-	tween.tween_callback(land)
-	tween.tween_interval(Num.f(_cfg["breakup_s"]) + 0.1)
-	tween.tween_callback(hinge.queue_free)
 
 
 ## The impact edge: debris from the piece's parts near the crack, thrown off his side (hit
 ## "side"), and a puff of dust where it met him (hit "at").
-func _edge(node: Node3D, crack: float, hit: Dictionary) -> void:
+func edge(node: Node3D, crack: float, hit: Dictionary) -> void:
 	var pivot: Vector3 = node.get_meta("pivot")
 	var at: Vector3 = hit["at"]
 	var side: Vector2 = hit["side"]
@@ -280,10 +185,11 @@ func crumble(node: Node3D) -> void:
 
 ## floor: the world height it landed on (the street, or the floors a drop came down on).
 func _break_up(node: Node3D, span: float, debris: float, floor_y := 0.0) -> void:
+	node.set_meta("breaking", true)
 	var xf := node.global_transform
-	_breaking.append(
-		{"node": node, "t": 0.0, "basis": xf, "span": span, "debris": debris, "floor": floor_y}
-	)
+	var br := {"node": node, "t": 0.0, "basis": xf, "span": span, "debris": debris}
+	br.merge({"floor": floor_y, "crush": true})
+	_breaking.append(br)
 
 
 ## A breaking piece at rest pose `rest`, crushed to `flat` of its height down onto floor_y (the
@@ -294,6 +200,7 @@ static func crushed(rest: Transform3D, flat: float, floor_y: float) -> Transform
 
 
 func _process(delta: float) -> void:
+	_bands.process(delta)
 	for i: int in range(_breaking.size() - 1, -1, -1):
 		var br: Dictionary = _breaking[i]
 		var node: Node3D = br["node"]
@@ -302,13 +209,25 @@ func _process(delta: float) -> void:
 		br["t"] = Num.f(br["t"]) + delta
 		var k := clampf(Num.f(br["t"]) / span, 0.0, 1.0)
 		if not is_instance_valid(node) or k >= 1.0:
-			if is_instance_valid(node):
+			if is_instance_valid(node) and node.has_meta("keep"):
+				node.visible = false  # the fall's own piece: CityView frees it when it lands
+			elif is_instance_valid(node):
 				node.queue_free()
 			_breaking.remove_at(i)
 			continue
-		var flat := lerpf(1.0, Num.f(_cfg["breakup_flatten"]), k)
 		var rest: Transform3D = br["basis"]
-		node.global_transform = crushed(rest, flat, Num.f(br["floor"]))
+		if br["crush"]:
+			var flat := lerpf(1.0, Num.f(_cfg["breakup_flatten"]), k)
+			node.global_transform = crushed(rest, flat, Num.f(br["floor"]))
+		else:
+			var size := lerpf(1.0, Num.f(_cfg["shatter_shrink"]), k)
+			var centre: Vector3 = node.get_meta("centre", Vector3.ZERO)
+			var corners: PackedVector3Array = node.get_meta("corners", PackedVector3Array())
+			var mid := rest * centre  # it shrinks onto the middle of its underside
+			mid.y = ToppleBands.lowest(rest, corners)
+			node.global_transform = (
+				Transform3D(Basis.from_scale(Vector3.ONE * size), mid - mid * size) * rest
+			)
 		var parts: Array = node.get_meta("parts", [])
 		if parts.is_empty():
 			continue

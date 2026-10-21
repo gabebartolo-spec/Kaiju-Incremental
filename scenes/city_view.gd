@@ -194,6 +194,7 @@ func fall_start(event: Dictionary) -> void:
 		"duration": maxf(0.05, Num.f(event["duration"])),
 		"t": 0.0,
 		"cells": cells,
+		"view": _stream.view(index),
 	}
 	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
 	_ruins.mark(index)

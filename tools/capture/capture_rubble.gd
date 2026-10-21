@@ -5,8 +5,9 @@ extends SceneTree
 ## room to fall; its west base is cut so it topples west onto him (D-099). After it is down he
 ## walks west along the strip through the slabs, then turns north. A fixed camera at the game
 ## camera's angle frames the whole strip. Prints the falls and slab breaks as they happen.
-## --ground: the same tower topples onto the open street, the kaiju standing north of it, still
-## (comment #26: it breaks against the ground into slabs that stay on top of it).
+## --ground: a 6 s clip at the game camera: the same tower topples west onto the open street
+## (cleared its whole length) while the kaiju stands still well east of it, facing it (comments
+## #26 #30: it breaks band by band against the ground, base first, into slabs on top of it).
 ## Needs a window and the no-focus override.cfg. With --write-movie the run is the clip.
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
@@ -22,8 +23,11 @@ const FRAMES := 780
 ## The kaiju's centre this far west of the tower's west face; the strip it must leave clear.
 const STAND_OFF := 7.5
 const CLEAR := 18.0
-## --ground: the kaiju stands this far north of the tower's north face, inside the cleared strip.
-const GROUND_OFF := 5.0
+## --ground: the kaiju stands this far east of the tower's east face; the strip west is cleared
+## this far; the clip's length.
+const GROUND_OFF := 12.0
+const GROUND_CLEAR := 32.0
+const GROUND_FRAMES := 360
 ## The camera: from the south and above, looking at the strip's middle.
 const EYE := Vector3(-2.0, 15.0, 27.0)
 
@@ -61,23 +65,25 @@ func _run() -> void:
 	var b := _sim.buildings[_index]
 	var west := b.x - b.w * 0.5
 	_sim.kaiju_pos = Vector2(west - STAND_OFF, b.z)
-	if _ground:  # north of the strip it falls along (cleared), off its line
-		_sim.kaiju_pos = Vector2(west - STAND_OFF, b.z - b.d * 0.5 - GROUND_OFF)
 	_sim.facing = Vector2(0, -1)
+	if _ground:  # well east of it, facing it: the game camera looks west past him
+		_sim.kaiju_pos = Vector2(b.x + b.w * 0.5 + GROUND_OFF, b.z)
+		_sim.facing = Vector2(-1, 0)
 	_sim.body.heading = _sim.facing
 	print("tower %d at (%.1f, %.1f) %dx%d, %d floors" % [_index, b.x, b.z, b.w, b.d, b.height])
 	rampage.scripted = func(_s: RampageSim) -> Dictionary: return {"move": _move}
 	root.add_child(rampage)
 	while not rampage.is_loaded:
 		await process_frame
-	var camera := Camera3D.new()
-	camera.fov = 50.0
-	rampage.add_child(camera)
-	var middle := Vector3(west - STAND_OFF, 0.0, b.z)
-	camera.position = middle + EYE
-	camera.look_at(middle + Vector3(0, 2.0, 0))
-	camera.make_current()
-	for i: int in FRAMES:
+	if not _ground:
+		var camera := Camera3D.new()
+		camera.fov = 50.0
+		rampage.add_child(camera)
+		var middle := Vector3(west - STAND_OFF, 0.0, b.z)
+		camera.position = middle + EYE
+		camera.look_at(middle + Vector3(0, 2.0, 0))
+		camera.make_current()
+	for i: int in GROUND_FRAMES if _ground else FRAMES:
 		await physics_frame
 		if i == CUT_AT:
 			_cut()
@@ -106,12 +112,16 @@ func _clear(layout: Array[Dictionary]) -> Array[Dictionary]:
 			best = i
 	var t := layout[best]
 	var west := Num.f(t["x"]) - Num.i(t["w"]) * 0.5
+	var clear := GROUND_CLEAR if _ground else CLEAR
 	var strip := Rect2(
-		west - CLEAR, Num.f(t["z"]) - Num.i(t["d"]) * 0.5 - 6.0, CLEAR, Num.i(t["d"]) + 12.0
+		west - clear, Num.f(t["z"]) - Num.i(t["d"]) * 0.5 - 6.0, clear, Num.i(t["d"]) + 12.0
 	)
 	# and nothing between the kaiju and the camera (south of him), so the fall reads side on
 	var stand := west - STAND_OFF
 	var view := Rect2(stand - 14.0, Num.f(t["z"]), 28.0, 34.0)
+	if _ground:  # where he stands, east of it
+		var east := Num.f(t["x"]) + Num.i(t["w"]) * 0.5
+		view = Rect2(east + 2.0, Num.f(t["z"]) - 12.0, GROUND_OFF + 12.0, 24.0)
 	var out: Array[Dictionary] = [t]
 	for i: int in layout.size():
 		var e := layout[i]
