@@ -3,7 +3,7 @@ extends SceneTree
 ## reptilian, run 0) at a stage's body, with the gameplay camera's "camera" tuning overridden by a
 ## candidate from tools/capture/camera_candidates.json, plus the candidate's look-ahead lead
 ## (added here, after Rampage places the camera: no production code reads the candidates).
-## From the handover tick it saves every frame as PNG to <out>/frames (for the labelled clips),
+## From the handover tick it saves every frame as JPG to <out>/frames (for the labelled clips),
 ## a still at --still=<s>, and prints the self-check per frame summarised: the kaiju's share of
 ## screen height (its drawn box, the sim's kaiju_height x body scale, its highest bone), its feet
 ## and the ground just in front of them in frame, and the camera inside a standing chunk of a
@@ -28,6 +28,9 @@ const MOVING := 0.5
 ## Ground in front of the feet that must stay in frame (R 2.2): this many body scales toward the
 ## camera.
 const GROUND_AHEAD := 4.0
+## Clip frames are JPG at this quality: a 1080p PNG takes ~300 ms to save, and the city keeps
+## streaming in on its workers meanwhile (memory grows with wall time); JPG takes ~30 ms.
+const JPG_QUALITY := 0.95
 ## The feet sight line ends this high above the ground (units) and is sampled this often.
 const FEET_SIGHT := 0.5
 const SIGHT_STEP := 0.5
@@ -135,7 +138,7 @@ func _run() -> void:
 			continue
 		await RenderingServer.frame_post_draw
 		var image := root.get_viewport().get_texture().get_image()
-		image.save_png(_out.path_join("frames/f%04d.png" % frame))
+		image.save_jpg(_out.path_join("frames/f%04d.jpg" % frame), JPG_QUALITY)
 		if frame == int(_still * 60.0):
 			image.save_png(_out.path_join("still.png"))
 		_check_frame(image.get_height())
