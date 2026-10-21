@@ -6,7 +6,8 @@ changes. Only the merge role edits this file, from the "Board and log" section o
 
 ## 2026-10-21 · D-124 · Director · No octopus work until the croc is 100% shippable
 Why: his words, "no octopus work until the croc is 100% shippable". D-123 is recorded design only; no cephalopod builds, captures
-or assets start before the croc ships.
+or assets start before the croc ships. The insectoid waits too. "Shippable" = a full croc playthrough: all 3 cities, the mecha
+finale, music, menus and the Steam build, polished, with only the croc playable (asked 2026-10-21).
 
 ## 2026-10-21 · D-123 · Director · One of the 3 cities is a water city; the octopus swims fast and can submerge
 Why: his words, "im planning the octopus to be in a city with lots of water so it can move quickly through it". Asked: the water
