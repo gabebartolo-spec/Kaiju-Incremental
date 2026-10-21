@@ -7,7 +7,7 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
 ## Philosophy
 - **Designed by a person, developed with AI, never designed by AI.** **You are the disaster: every rampage must feel
   bigger than the last**; a system that does not change what the player sees, decides or remembers is cut.
-- A roadmap item is context, not authorisation: start only what `docs/STATUS.md` (or your lead) assigns; when done,
+- A roadmap item is context, not authorisation: start only what your lead (or the director) assigns; when done,
   stop, report with evidence, recommend the next step.
 - Simplest viable option first (fewer systems, numbers, files). Challenge the director when a request conflicts with
   these rules or DESIGN.md: one paragraph, a better option, then do what he decides. Ask his judgement calls at once,
@@ -32,7 +32,8 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/claude/look-options`; remove
   when the PR merges; `tools/lint/worktrees.sh` caps the total (D-053). Revert `.import` churn.
-- Only the merge role (lead) edits `docs/STATUS.md`, `docs/DECISIONS.md` and `docs/DESIGN.md`; other PRs state their
+- Only the lead edits `docs/DECISIONS.md` and `docs/DESIGN.md`; `docs/STATUS.md` is generated (`python tools/status.py`,
+  never by hand) after merges. Other PRs state their
   board and log changes in the body.
 
 ## Skills
