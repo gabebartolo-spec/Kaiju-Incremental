@@ -32,6 +32,8 @@ func _process(_delta: float) -> void:
 		var color: Color = item[1]
 		var away: Vector3 = item[2]
 		_spawn_now(pos, color, away)
+	if pending() > _cap:  # what is left over the cap is dropped, oldest first
+		_head = _queue.size() - _cap
 	_compact()
 	while _bodies.size() > _cap:
 		var old: RigidBody3D = _bodies.pop_front()
@@ -42,17 +44,18 @@ func _process(_delta: float) -> void:
 ## falling heavily to settle on the street, then crumbling away.
 ## Queues a fragment; at most SPAWN_PER_FRAME are created each frame so a big collapse never
 ## stalls a frame.
-## Past the cap the oldest queued fragment is dropped as a new one comes (b2-3: a heavy swipe
-## queued 4000+ in one frame), so the queue never holds more than the cap.
+## Past the cap and one frame's worth the oldest queued fragment is dropped as a new one comes
+## (b2-3: a heavy swipe queued 4000+ in one frame); the same count is thrown each frame as when
+## the queue was trimmed only after throwing, so the shared fx random stream is unchanged.
 func spawn(pos: Vector3, color: Color, away: Vector3) -> void:
 	_queue.append([pos, color, away])
-	if pending() > _cap:
+	if pending() > _cap + SPAWN_PER_FRAME:
 		_head += 1
 	if _head >= _cap:
 		_compact()
 
 
-## Fragments queued and not yet thrown (never more than the cap).
+## Fragments queued and not yet thrown (never more than the cap and one frame's worth).
 func pending() -> int:
 	return _queue.size() - _head
 
