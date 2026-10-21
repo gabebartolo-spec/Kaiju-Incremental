@@ -1,5 +1,5 @@
 # intro-cinematic handoff, 2026-10-21
-## State: working (suites running; clips not yet made)
+## State: running a check (final CI clip + 4K still on a0022b79)
 ## Task
 Run intro (#11): "a quick, dramatic camera shot, zoomed in on the water which begins to ripple and fount before our
 kaiju emerges, roaring with rage before the camera zooms out into the play angle ... no longer than 3 seconds".
@@ -34,9 +34,17 @@ Scratch: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHu
   tests/lib/fade_spawn.gd replays the intro camera (load suite).
 - Fail-first (IC/ff_rise.log): old 2.5 s rise + 2 s wade -> 181 ticks, 6/6 FAIL; shipped 6/6 PASS.
 
+## Since the first push
+- 6befd2c2 tests/lib/flow_intro_main.gd: Main's whole/short rule through a real save and clicks (fail-first:
+  always-whole fails). No-pop fail-first: max_seconds 2.0 -> 0.81 of offset, FAIL.
+- 43a8f166/a0022b79: first 4K still failed my 2x look (camera inside the channel under the deck, head cut,
+  HUD on). Now: eye 8x scale over water at yaw 110, aim tracks the head (aim_head 0.75), HUD hidden in the
+  intro, shown on kaiju_emerged. capture_river --still-at takes a list. Stills sheet IC/sheet2.png (43a8f166).
+- military "tank falling back 21 of 24" fails on the base too: lead handles it separately.
+
 ## Left
-- suites city load flow smoke (IC/suites2.log); then push; CI clips: 3 s intro 1080p movie + 4K still
-  (one clip per change, director rule via lead). Then report.
+- CI runs 39560818384 (stills), 39560822471 (1080p clip), 39560826525 (4K still 1.6 s) -> IC/r3-<run>;
+  review at 2x, report paths to the lead. Local load+flow on a0022b79 (IC/suites6.log).
 ## Open decisions
 - none yet (yaw side, distances are data; lead judges the clip).
 ## Findings for the lead
