@@ -200,7 +200,7 @@ func _status_line(id: String) -> String:
 	var nl := String.chr(10)
 	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]
 	if tree.can_buy(id, rubble):
-		return head + have + "Press Enter / pad A to buy"
+		return head + have + "Enter / pad A to buy"
 	return head + have + "%d more needed" % (tree.cost(id) - rubble)
 
 

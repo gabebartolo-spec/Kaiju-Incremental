@@ -48,13 +48,11 @@ skip hint 30. 8 verdict "N BIOMASS SHORT, BUT NEW RECORDS" when another row is a
 ui suite: new checks each shown failing first. capture_flow: skips river rise, meter 40%, 12_demo_complete shot.
 Local runner: scratchpad/ui/suite.sh <suite>.
 
-## Remaining steps (ui-fix stopped: the director needs the PC)
-1. Not run locally: powers suite (only a check message changed), full suite (tuning.json changed: key_size,
-   ring_column, biomass_label_size, first_run_*, hurt alpha); CI runs the full suite on the push.
-2. 4K captures at 125% and 100% on CI: tools/capture/ci_capture.sh --renderer=forward_plus --resolution=3840x2160
-   capture_flow.gd -- --ui-scale=1.25 --ui-only --out=<dir> (and without --ui-scale for 100%); copy into
-   side-session-notes/.../ui-redesign/after2-125 and after2-100. New shot 12_demo_complete; 04 shows the
-   meter 40% filled and skips the river rise (capture only).
-3. Check each screen at 2x: species card (single species is wide, 3 species narrow), HUD key caps, first-run card,
-   tree text/caption, pause, end beat top third, reveal frame, demo card croc not clipped, results verdict.
-4. Wide species card never checked at 125% by a capture; the flow suite fits-check passes at all scales.
+## Round 2 fix pass (critic r2), done and pushed
+Beat hides clock+meter; DemoEnd/RevealStage camera back 1.25 + shift 0.1 (croc clear of edges); first-run card bottom
+left; tree band starts below row above, caption under band ("Reptilian powers: only the Reptilian can grow these"),
+side panel text 24; hurt alpha 0.28 / flash 0.2; results "N SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS" + 20 px pad;
+controls card +20 px; capture_flow: clean 04/06 frames, hurt at beat peak, 11_tree_after = full game (demo flag off)
+after the card (the demo never reaches a tree after its end evolution), 12_demo_complete = the card.
+Captures (local RTX 4070 SUPER, 3840x2097 window): side-session-notes/.../ui-redesign/after3-125, after3-100.
+Suites green: ui 52, flow 203, smoke 30. Not run locally: powers, full suite (CI does).

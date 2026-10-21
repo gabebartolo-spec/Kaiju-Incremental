@@ -24,6 +24,9 @@ const UI_ONLY_RAMPAGE_FRAMES := 45
 ## Capture only: at most this many 1/60 s steps to finish the rise, and the share of the city
 ## the meter shows destroyed.
 const BEAT_SHOT_FRAMES := 40
+## The hurt shot waits up to this many frames for a heartbeat peak (share of the full strength).
+const HURT_WAIT_FRAMES := 180
+const HURT_PEAK_SHARE := 0.9
 const RISE_STEPS := 1200
 const METER_SHARE := 0.4
 ## Frames into the staged city build before the loading-screen shot (it has 7 stages).
@@ -139,8 +142,17 @@ func _run() -> void:
 		hud.call("dismiss_controls")
 		await _frames(CARD_FADE_FRAMES)
 		_shot("04b_hud")
-		rampage.sim.hp = rampage.sim.max_hp * HURT_SHARE  # capture only: show the hurt vignette
+		# Capture only: show the hurt vignette at its heartbeat's peak (a clean frame: held health,
+		# no shell flash), not in a trough between two beats.
 		await _frames(CARD_FADE_FRAMES)
+		var peak := 0.0
+		for _i: int in HURT_WAIT_FRAMES:
+			rampage.sim.hp = rampage.sim.max_hp * HURT_SHARE
+			await process_frame
+			peak = maxf(peak, hud.vignette.strength)
+			if hud.vignette.strength >= HURT_PEAK_SHARE * Num.f(UiKit.ui()["hurt"]["alpha_max"]) * sqrt(hud.vignette.hurt()):
+				break
+		print("hurt vignette strength ", hud.vignette.strength, " peak seen ", peak)
 		_shot("04c_hurt")
 	if not _clip:
 		hud.pause()
@@ -192,8 +204,9 @@ func _run() -> void:
 	await _frames(EvolutionReveal.END_FRAME - EvolutionReveal.SWAP_FRAME)
 	await _frames(SETTLE * 4)
 	_shot("12_demo_complete")
-	# On from the demo card: the title, then Continue, to the tree as the player finds it after
-	# the evolution.
+	# On from the demo card: the demo off (the full game), the title, then Continue, to the tree
+	# as the player finds it after the evolution (the demo itself ends on the card).
+	Content.section("demo")["enabled"] = false
 	_press(_screen(), "MAIN MENU")
 	await _frames(SETTLE)
 	_press(_screen(), "CONTINUE")
