@@ -55,6 +55,8 @@ var _sim_max := 0.0
 var _check_only := false
 ## --depth-share=<f>: overrides tuning camera.lead_depth_share (a before/after of the lead).
 var _depth_share := -1.0
+## --trace: one TRACE line per frame (time, sim share, head top, eye distance, lead, offset).
+var _trace := false
 
 
 func _initialize() -> void:
@@ -71,6 +73,8 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg == "--check-only":
 			_check_only = true
+		elif arg == "--trace":
+			_trace = true
 		elif arg.begins_with("--depth-share="):
 			_depth_share = arg.substr(14).to_float()
 		elif arg.begins_with("--still="):
@@ -216,6 +220,12 @@ func _check_frame(height: int) -> void:
 	var margin := (1.0 - Num.f(cam_cfg["safe_centre"])) * 0.5
 	if absf(mid.x / width - 0.5) > 0.5 - margin or absf(mid.y / height - 0.5) > 0.5 - margin:
 		_centre_out += 1  # the body's middle outside the middle safe_centre of the frame
+	if _trace:
+		var follow: CameraFollow = _rampage.get("_follow")
+		var row := [_frames, sim_share * 100.0, 100.0 * minf(skull_y, top_y2) / height]
+		row += [_camera.global_position.distance_to(feet), follow.lead.x, follow.lead.z]
+		row += [follow.offset.length(), follow.offset.y]
+		print("TRACE %d sim %.1f top %.1f dist %.2f lead %.2f %.2f off %.2f y %.2f" % row)
 	var head := feet.y
 	var rig: KaijuRig = kaiju.get("_rig")
 	if rig != null:
