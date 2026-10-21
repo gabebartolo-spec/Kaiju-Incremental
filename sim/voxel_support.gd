@@ -230,6 +230,17 @@ func _join(i: int, part: PackedInt32Array) -> void:
 
 ## Where an island (already removed from the grid) lands: {kind, pivot, dir}.
 func landing(part: PackedInt32Array) -> Dictionary:
+	var nat := VoxelSupport.native()
+	if nat != null:
+		var r: PackedInt64Array = nat.call("land", part, _f.cells, _dims())
+		var at := _tip(
+			PackedInt64Array([r[0], r[1], r[2]]), Rect2i(r[3], r[4], r[5] - r[3], r[6] - r[4]), r[7]
+		)
+		return (
+			at
+			if not at.is_empty()
+			else {"kind": "drop", "pivot": Vector3.ZERO, "dir": Vector2i.ZERO}
+		)
 	var low: Dictionary = {}
 	var sums := PackedInt64Array([0, 0, part.size()])
 	for i: int in part:
@@ -276,7 +287,7 @@ func topple() -> Array[Dictionary]:
 
 ## The topple rule over per-part, per-level loads (the layout _floors documents), for `parts`
 ## grounded parts in a grid `h` cells tall whose cell 0 is building-local `offset` at `res`
-## cells a unit. Static so VoxelSettleCache runs it on loads it keeps up to date.
+## cells a unit.
 static func scan_levels(
 	mass: PackedInt64Array,
 	sx: PackedInt64Array,
