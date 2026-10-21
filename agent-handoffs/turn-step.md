@@ -1,5 +1,5 @@
 # turn-step handoff, 2026-10-21
-## State: done, reported to lead 10 (head 7952c006 + this file)
+## State: handing off at ~245k context; option B (stepped turn) is NEXT, test written, no code yet
 ## Task
 Lead 10: fix the turn (comments #16, 2026-10-21 #3 "swivelling on the spot like a plastic toy") on
 PR #144 (claude/turn-weight). Lead's ruling (director 2026-10-21 "bigger = slower but not TOO
@@ -33,9 +33,32 @@ that overlap the other foot's swing.
 hold yaw aloft (body lag 0.8 rad, HeadLead slide fails); defer re-step (foot dragged 20 m);
 hurry other foot down (drag 10 m); turning cadence 1.4/2.0 (more aloft); sim pivot about the feet
 (12 aloft); pivot + forward-speed cycles (16 aloft).
-## Open decisions
-Lead chose A. B (gait rework: sim pivot about the feet + turn-aware foot placement) goes to the
-director only if the clip still reads as a swivel.
+## Option B (lead 10 QC FIX, 2026-10-21): the turn still reads as a swivel
+Pass bar (tests/lib/smoke_step_turn.gd, extended; on d24fe80e it FAILS aloft 36 and slices 50%,
+passes the rest, so smoke is red on #144 until B lands): adult 90 deg in
+1.0-1.25 s; >=3 distinct (alternating-side) footfalls; 0 frames yawing with both feet up; >=70%
+of the yaw in the 0.15 s after a footfall (slices, not a smooth swivel); drift <5 cm; baby 90 deg
+within 10% of 0.60 s. Then ONE ~6 s adult turn90 clip at --cam=game with the label OFF (add a
+--no-label arg to capture_walks.gd). Commit by name, push HEAD:claude/turn-weight.
+Design (sim stays the authority, it decides the steps; the gait follows):
+1. Pivot about the feet in the sim (tried once, worked as designed): per-stage "pivot" in
+   contact.bodies = planted-feet mean local z 4.7 / 5.2 / 8.6 (baby/adol/adult, body units);
+   in BodyContact.steer: `was := heading` before the facing turn, after _face():
+   `sim.kaiju_pos += (was - heading) * pivot * sim.body_scale()`. Alone it gave 12 aloft frames
+   because the gait cycled from |node velocity| (the tail-end swing); forward-only speed made it
+   16: the gait must not time steps off the node's speed at all (step 3).
+2. A sim step clock in BodyContact: phase += travelled / step_len (step_len per stage, from the
+   clip stride: world stride baby 2.19 adol 5.12 adult 6.29 at their scale, half a stride per
+   step; shorter while turning so 3 steps fit 1.1 s). Each footfall (phase crosses a half) opens
+   a yaw slice: facing may turn only for the first part of each step (a data share), at the rate
+   that lands 90 deg in ~3 slices; between slices facing holds (turn_left keeps growing -> the
+   head/neck lead via _look_ahead, already there).
+3. ClipGait reads the sim's step phase (pass it through KaijuModel.animate like turn_ahead) and
+   sets the walk clip_time from it, aligned so the clip's plant frames (compute at init from
+   pose.planted, as _yaw_span does) land on the sim's footfalls. Then footfalls = yaw slices,
+   and no re-step shuffles if pivot (1) keeps the planted feet put.
+Watch: seed-sensitive fixtures (military RAMPAGE_SEEDS, city rise-point 10 s, claws, powers
+beam graze); re-probe and re-pin, never loosen. Baby must stay within 10%.
 ## Running jobs
 none. Clip: CI run 39584466780 (ci_capture.sh took the run id from gh's output), notes
 walk-m2/clips/turn_adult_turn90_after.mp4, 6 s 60 fps game cam, drift 0.0 cm.
