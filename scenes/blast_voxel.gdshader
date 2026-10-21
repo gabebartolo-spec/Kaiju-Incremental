@@ -1,17 +1,22 @@
 shader_type spatial;
-render_mode cull_back, shadows_disabled;
+render_mode cull_back, shadows_disabled, fog_disabled;
 // A blast's solid voxel (BlastParts fireball, smoke, chem cloud; BlastShock ring; lead QC
 // 2026-10-21: "opaque, lit voxel cubes"): an opaque, lit cube in the particle's colour, so it
 // sorts and hides like any other block in the city (trees and cars in front of it cover it, it
-// covers what is behind). Colour above 1 (HDR, the fireball's white-hot core) glows: the excess
-// over `glow_from` becomes emission, so hot cubes burn and soot, smoke and gas are plain lit
-// blocks. It never fades by alpha: a voxel goes by shrinking (the particle's scale curve).
+// covers what is behind). The city's fog never pales it (fog_disabled: a fireball read peach
+// and the gas mint through it). Colour brighter than 1 (HDR: the fireball's yellow-white core
+// about 4x, its orange about 2x) is driven by emission at that strength (`glow` times the
+// colour, eased in as the brightest channel passes 1), so the tonemapper keeps hot cubes
+// saturated instead of whiting them out through albedo; soot, smoke,
+// dust and gas are plain lit blocks. It never fades by alpha: a voxel goes by shrinking (the
+// particle's scale curve).
 
-uniform float glow_from = 0.6;
-uniform float glow = 1.6;
+uniform float glow = 1.0;
 
 void fragment() {
-	ALBEDO = clamp(COLOR.rgb, 0.0, 1.0);
-	EMISSION = max(COLOR.rgb - vec3(glow_from), vec3(0.0)) * glow;
+	vec3 c = COLOR.rgb;
+	float hot = clamp(max(c.r, max(c.g, c.b)) - 1.0, 0.0, 1.0);
+	ALBEDO = c / max(1.0, max(c.r, max(c.g, c.b)));  // the hue, never paled to white
+	EMISSION = c * hot * glow;
 	ROUGHNESS = 0.9;
 }
