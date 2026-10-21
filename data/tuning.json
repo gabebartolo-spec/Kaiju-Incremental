@@ -4,10 +4,14 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"high": {"scale": 1.0, "fsr": false, "msaa": 2},
-			"balanced": {"scale": 0.75, "fsr": true, "msaa": 0}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true}
 		},
-		"graphics_default": {"min_height": 2160, "large": "balanced", "large_fps": 60, "small": "high"}
+		"graphics_renamed": {"balanced": "medium"},
+		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
 	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
@@ -413,6 +417,14 @@
 			"deflect": -10.0,
 			"regen_loop": -20.0
 		}
+	},
+	"chain": {
+		"step_hz": 60.0,
+		"max_substeps": 4,
+		"stiffness": 9.0,
+		"damping": 0.9,
+		"gravity_y": -6.0,
+		"passes": 3
 	},
 	"audio": {
 		"buses": [
