@@ -1,32 +1,39 @@
 class_name BlastParts
 extends RefCounted
 ## The pieces a red-barrel blast is drawn from (BlastFx; director comments #19, #20), each a
-## one-shot node that frees itself: the white-hot voxel flash that marks the instant, the
-## fireball (glowing voxels cooling from white-hot to soot), the smoke column, fireworks bursts
-## and the chem lab's green voxel cloud. All start from the site's own box (`half`: its half
-## extents, `at` its centre), so a blast always comes out of a building, never out of the air.
-## The ground shock and the visible sonic boom are BlastShock. Sizes come from the sim's blast
-## radius, looks from data/tuning.json "blast_fx". Presentation only.
+## one-shot node that frees itself, every one of them voxels (lead QC 2026-10-21: one art style,
+## no smooth blobs): the white-hot flash that marks the instant, the fireball (opaque, lit cubes:
+## a yellow-white core, orange, a dark red-brown rim, then smoke cubes, rising a little and
+## shrinking out), the smoke column (dark cubes), fireworks bursts and the chem lab's billowing
+## green cubes. All start from the site's own box (`half`: its half extents, `at` its centre), so
+## a blast always comes out of a building, never out of the air. The ground shock and the visible
+## sonic boom are BlastShock. Sizes come from the sim's blast radius, looks from data/tuning.json
+## "blast_fx". Presentation only.
 
-const SMOKE := preload("res://scenes/smoke.gdshader")
 const EMBER := preload("res://scenes/blast_ember.gdshader")
-## The fireball's colour over its life: white-hot, orange, red, soot, gone (HDR: the bloom).
-## The soot is short and thin (critic 2026-10-21: "shorter dark phase").
+const VOXEL := preload("res://scenes/blast_voxel.gdshader")
+## The fireball's colour over its life (HDR above 1 glows): yellow-white core, orange, dark
+## red-brown rim, smoke. Each cube's starting shade (FIREBALL_SHADES) darkens some from the start,
+## so the outside of the ball reads darker than its core.
 const FIREBALL: Array[Color] = [
-	Color(3.0, 2.4, 1.3, 1.0),
-	Color(2.0, 0.8, 0.12, 1.0),
-	Color(1.1, 0.24, 0.04, 1.0),
-	Color(0.3, 0.1, 0.05, 0.7),
-	Color(0.12, 0.1, 0.09, 0.0),
+	Color(2.6, 2.3, 1.4),
+	Color(2.0, 0.9, 0.15),
+	Color(0.55, 0.14, 0.05),
+	Color(0.2, 0.17, 0.15),
 ]
-const FIREBALL_AT: Array[float] = [0.0, 0.14, 0.45, 0.72, 1.0]
+const FIREBALL_AT: Array[float] = [0.0, 0.22, 0.55, 1.0]
+const FIREBALL_SHADES: Array[Color] = [
+	Color(1, 1, 1), Color(0.75, 0.7, 0.65), Color(0.45, 0.4, 0.38)
+]
 ## The flash's voxels: hotter than the fireball, gone in a few frames.
 const FLASH: Array[Color] = [Color(5.0, 4.4, 3.2, 1.0), Color(3.4, 2.0, 0.6, 1.0)]
+## Smoke cubes: soot to ash.
+const SMOKE: Array[Color] = [Color(0.12, 0.11, 0.1), Color(0.3, 0.29, 0.28)]
 
 
-## Glowing voxels thrown up and out of the site's box (at least fireball.spread_scale blast
-## radii wide), cooling to soot as they slow; damped so none climbs past fireball.top_scale times
-## the site's height (a voxel at speed v stops after v^2 / 2 damping).
+## Opaque, lit cubes thrown up and out of the site's box (at least fireball.spread_scale blast
+## radii wide), cooling from white-hot to smoke as they slow and shrink; damped so none climbs past
+## fireball.top_scale times the site's height (a cube at speed v stops after v^2 / 2 damping).
 static func fireball(
 	host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: Dictionary
 ) -> void:
@@ -35,22 +42,23 @@ static func fireball(
 	var wide := radius * Num.f(cfg["spread_scale"])
 	mat.emission_box_extents = Vector3(maxf(half.x, wide), half.y, maxf(half.z, wide))
 	mat.direction = Vector3.UP
-	mat.spread = 80.0
+	mat.spread = 70.0
 	var speed := radius * Num.f(cfg["speed_scale"])
 	var size := radius * Num.f(cfg["size"])
-	var rise := maxf(0.2, half.y * 2.0 * Num.f(cfg["top_scale"]) - half.y * 2.0 - size * 0.7)
+	var rise := maxf(0.4, half.y * 2.0 * Num.f(cfg["top_scale"]) - half.y * 2.0)
 	mat.initial_velocity_min = speed * 0.5
 	mat.initial_velocity_max = speed
-	mat.gravity = Vector3.ZERO
+	mat.gravity = Vector3(0, Num.f(cfg["lift"]), 0)  # hot air: a little rise as it burns out
 	mat.damping_min = speed * speed / (2.0 * rise)
 	mat.damping_max = mat.damping_min * 1.3
 	mat.angular_velocity_min = -90.0
 	mat.angular_velocity_max = 90.0
-	curve(mat, Vector2(0.6, 1.4) * size, [0.7, 1.4, 0.6])
+	curve(mat, Vector2(0.6, 1.3) * size, [0.8, 1.2, 0.0])
 	mat.color_ramp = ramp(FIREBALL, FIREBALL_AT)
+	mat.color_initial_ramp = _shades(FIREBALL_SHADES)
 	var life := Num.f(cfg["seconds"])
 	var amount := roundi(Num.f(cfg["amount"]) * clampf(radius / 5.0, 0.5, 1.6))
-	emit(host, mat, ember_cube(), amount, life, at)
+	emit(host, mat, voxel_cube(), amount, life, at)
 
 
 ## The instant: white-hot voxels bursting out of the whole site and gone in core.seconds (a few
@@ -71,32 +79,25 @@ static func core(host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: D
 	emit(host, mat, ember_cube(), amount, seconds, at)
 
 
-## Dark smoke boiling up from the site after the fireball.
+## Dark smoke cubes boiling up from the site after the fireball, turning to ash and shrinking.
 static func smoke(host: Node3D, at: Vector3, radius: float, cfg: Dictionary) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	mat.emission_sphere_radius = radius * 0.5
+	mat.emission_sphere_radius = radius * 0.4
 	mat.direction = Vector3.UP
 	mat.spread = 25.0
-	mat.initial_velocity_min = radius * 0.5
-	mat.initial_velocity_max = radius * 1.1
-	mat.gravity = Vector3(1.2, radius * 0.25, 0.5)
+	mat.initial_velocity_min = radius * 0.4
+	mat.initial_velocity_max = radius * 0.9
+	mat.gravity = Vector3(0.8, radius * 0.15, 0.3)
 	mat.damping_min = 0.4
 	mat.damping_max = 0.8
-	curve(mat, Vector2(1.0, 1.8) * radius * 0.45, [0.6, 1.4, 2.2])
-	var dark := Color(0.16, 0.15, 0.14)
-	var alpha := Num.f(cfg["alpha"])
-	mat.color_ramp = ramp(
-		[
-			Color(dark, 0.0),
-			Color(dark, alpha),
-			Color(0.26, 0.26, 0.27, alpha * 0.5),
-			Color(0.3, 0.3, 0.31, 0.0)
-		],
-		[0.0, 0.15, 0.6, 1.0]
-	)
-	var p := emit(host, mat, _puff(), Num.i(cfg["amount"]), Num.f(cfg["seconds"]), at)
-	p.explosiveness = 0.5
+	mat.angular_velocity_min = -40.0
+	mat.angular_velocity_max = 40.0
+	var sizes: Array = cfg["size"]
+	curve(mat, Vector2(Num.f(sizes[0]), Num.f(sizes[1])), [0.6, 1.2, 0.0])
+	mat.color_ramp = ramp(SMOKE, [0.0, 1.0])
+	var p := emit(host, mat, voxel_cube(), Num.i(cfg["amount"]), Num.f(cfg["seconds"]), at)
+	p.explosiveness = 0.4
 
 
 ## One fireworks shell bursting: a sphere of coloured sparks falling as they fade.
@@ -120,13 +121,13 @@ static func firework(host: Node3D, at: Vector3, color: Color, cfg: Dictionary) -
 	emit(host, mat, ember_cube(), Num.i(cfg["sparks"]), Num.f(cfg["seconds"]), at)
 
 
-## The chem lab's cloud: a billow of glowing green voxels twice the lab's size (`half` is the
-## lab's half extents) for cloud.billow_seconds, then a thin green haze over the sim's cloud
-## (`radius`) for as long as the sim keeps it (`seconds`).
+## The chem lab's cloud: green cubes in cloud.shades, billowing up and out of a box twice the
+## lab's size (at least cloud_share of the sim cloud's radius wide; `half` is the lab's half
+## extents): a burst at once, then a steady boil for as long as the sim keeps the cloud
+## (`seconds`), each cube growing and then shrinking away.
 static func toxic_cloud(
 	host: Node3D, at: Vector3, half: Vector3, radius: float, seconds: float, cfg: Dictionary
 ) -> void:
-	var green := Color(str(cfg["color"]))
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	var wide := radius * Num.f(cfg["cloud_share"])
@@ -136,57 +137,49 @@ static func toxic_cloud(
 	mat.spread = 90.0
 	mat.initial_velocity_min = 0.4
 	mat.initial_velocity_max = 1.6
-	mat.gravity = Vector3(0.3, 0.2, 0.15)
+	mat.gravity = Vector3(0.3, 0.35, 0.15)
 	mat.damping_min = 0.3
 	mat.damping_max = 0.6
 	mat.angular_velocity_min = -25.0
 	mat.angular_velocity_max = 25.0
 	var sizes: Array = cfg["voxel"]
-	curve(mat, Vector2(Num.f(sizes[0]), Num.f(sizes[1])), [0.6, 1.2, 0.0])
-	var alpha := Num.f(cfg["alpha"])
-	mat.color_ramp = ramp(
-		[
-			Color(green * 1.6, 0.0),
-			Color(green * 1.6, alpha),
-			Color(green, alpha * 0.8),
-			Color(green.darkened(0.4), 0.0)
-		],
-		[0.0, 0.1, 0.7, 1.0]
-	)
-	var billow := Num.f(cfg["billow_seconds"])
-	var p := emit(host, mat, ember_cube(), Num.i(cfg["amount"]), billow, at)
-	p.explosiveness = 0.8
-	_haze(host, at, radius, seconds, cfg)
-
-
-## The thin haze that marks where the sim's cloud still hurts, after the billow.
-static func _haze(
-	host: Node3D, at: Vector3, radius: float, seconds: float, cfg: Dictionary
-) -> void:
-	var mat := ParticleProcessMaterial.new()
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(radius * 0.8, 0.6, radius * 0.8)
-	mat.direction = Vector3.UP
-	mat.spread = 60.0
-	mat.initial_velocity_min = 0.2
-	mat.initial_velocity_max = 0.9
-	mat.gravity = Vector3(0.4, 0.15, 0.2)
-	curve(mat, Vector2(0.8, 1.4) * radius * 0.45, [0.5, 1.2, 1.6])
-	var green := Color(str(cfg["color"]))
-	var alpha := Num.f(cfg["haze_alpha"])
-	mat.color_ramp = ramp(
-		[Color(green, 0.0), Color(green, alpha), Color(green.darkened(0.3), 0.0)], [0.0, 0.3, 1.0]
-	)
-	var life := Num.f(cfg["life"])
-	var lift := Vector3(at.x, 0.8, at.z)
-	var p := emit(host, mat, _soft_quad(), Num.i(cfg["haze_amount"]), life, lift, seconds + life)
-	p.one_shot = false
-	p.explosiveness = 0.0
+	curve(mat, Vector2(Num.f(sizes[0]), Num.f(sizes[1])), [0.5, 1.2, 0.0])
+	var shades: Array = cfg["shades"]
+	mat.color_initial_ramp = _shades(shades.map(func(c: String) -> Color: return Color(c)))
+	var life := Num.f(cfg["billow_seconds"])
+	var burst := emit(host, mat, voxel_cube(), Num.i(cfg["amount"]), life, at)
+	burst.explosiveness = 0.8
+	var boil := emit(host, mat, voxel_cube(), Num.i(cfg["boil_amount"]), life, at, seconds + life)
+	boil.one_shot = false
+	boil.explosiveness = 0.0
 	host.get_tree().create_timer(seconds).timeout.connect(
 		func() -> void:
-			if is_instance_valid(p):
-				p.emitting = false
+			if is_instance_valid(boil):
+				boil.emitting = false
 	)
+
+
+## A unit voxel drawn opaque and lit (blast_voxel.gdshader): fireball, smoke, gas, dust.
+static func voxel_cube() -> BoxMesh:
+	var cube := BoxMesh.new()
+	var mat := ShaderMaterial.new()
+	mat.shader = VOXEL
+	cube.material = mat
+	return cube
+
+
+## Each particle's starting shade, picked from `colors` at random (no blend between them).
+static func _shades(colors: Array) -> GradientTexture1D:
+	var g := Gradient.new()
+	g.colors = PackedColorArray(colors)
+	g.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	var offsets := PackedFloat32Array()
+	for k: int in colors.size():
+		offsets.append(float(k) / colors.size())
+	g.offsets = offsets
+	var tex := GradientTexture1D.new()
+	tex.gradient = g
+	return tex
 
 
 ## A unit voxel drawn with the blast's own ember shader (bright, no haze).
@@ -247,39 +240,3 @@ static func ramp(colors: Array, offsets: Array) -> GradientTexture1D:
 	tex.use_hdr = true
 	tex.gradient = g
 	return tex
-
-
-## A soft smoke puff (the city's smoke shader, lit dimly by the scene).
-static func _puff() -> QuadMesh:
-	var quad := QuadMesh.new()
-	var mat := ShaderMaterial.new()
-	mat.shader = SMOKE
-	quad.material = mat
-	return quad
-
-
-## A round, soft-edged, camera-facing sprite in the particle's colour (unshaded: it glows).
-static func _soft_quad() -> QuadMesh:
-	var falloff := Gradient.new()
-	falloff.offsets = PackedFloat32Array([0.0, 0.4, 0.75, 1.0])
-	falloff.colors = PackedColorArray(
-		[Color(1, 1, 1, 1), Color(1, 1, 1, 0.65), Color(1, 1, 1, 0.18), Color(1, 1, 1, 0)]
-	)
-	var tex := GradientTexture2D.new()
-	tex.gradient = falloff
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	var mat := StandardMaterial3D.new()
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	mat.vertex_color_use_as_albedo = true
-	mat.albedo_texture = tex
-	mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	mat.proximity_fade_enabled = true
-	mat.proximity_fade_distance = 0.8
-	mat.roughness = 1.0
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	var quad := QuadMesh.new()
-	quad.material = mat
-	return quad
