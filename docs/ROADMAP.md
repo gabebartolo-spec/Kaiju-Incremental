@@ -54,6 +54,10 @@ rises every stage and stays at or under about 35% (R 19.1).
 dramatic camera shot, zoomed in on the water which begins to ripple and fount before our kaiju emerges, roaring with rage
 before the camera zooms out into the play angle and the run begins. the entire scene should run for no longer than 3
 seconds"), with R 20.1-20.4 from Phase D, ahead of the rest of D; it ends on today's play angle until the camera growth pick.
+**Now, in parallel (director 2026-10-21: "id also like to bump the UI design up the priority list, its annoying me to
+look at our current design every day"; picked: start now, HUD and menus first, keep Emergency Broadcast D-061):** Phase F's
+HUD (b2-10..13, R 15.1-15.8) and every menu (title, pause, settings, results, species select b2-11, loading) with bespoke
+original assets (b2-14), fonts and copy; the upgrade-tree screen waits for E's bigger tree. Builder: claude/ui-redesign.
 
 **A. Close what is in flight; fix what no later choice changes.**
 WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) · board PR (D-100..D-103, this

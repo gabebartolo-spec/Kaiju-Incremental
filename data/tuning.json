@@ -4,11 +4,11 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false},
-			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false},
-			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
-			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
-			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4}
 		},
 		"graphics_renamed": {"balanced": "medium"},
 		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
@@ -281,6 +281,8 @@
 		"parked_chance_beyond": 0.9,
 		"parked_gap": [1.9, 3.2],
 		"lane_stop_chance": 0.12,
+		"diagonal_parked_lane": 2.2,
+		"traffic_island": {"half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "lane_clear": 0.95, "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
 		"car_colors": ["6b6e70", "5b6b7a", "5a2a26", "8a8a84", "6b7a52", "6a5e48"],
 		"street_tree_gap": 6,
 		"street_tree_clear": 3,
@@ -353,6 +355,39 @@
 	"sfx": {
 		"pitch_jitter": 0.06,
 		"voices": 24,
+		"_voice_caps": "SfxVoices (R 8.2): voices each category may hold at once; hero categories are never stolen and reserve_hero voices stay free for them; others steal their quietest voice; the same sound is not restarted within retrigger_ms",
+		"voice_caps": {
+			"reserve_hero": 8,
+			"retrigger_ms": 30.0,
+			"default": "body",
+			"categories": {
+				"hero": {"cap": 2, "hero": true, "retrigger_ms": 0.0},
+				"stomp": {"cap": 3, "hero": true, "retrigger_ms": 0.0},
+				"collapse": {"cap": 3, "hero": true},
+				"explosion": {"cap": 4, "hero": true},
+				"debris": {"cap": 6},
+				"weapon": {"cap": 10},
+				"crowd": {"cap": 3},
+				"body": {"cap": 6},
+				"ui": {"cap": 3}
+			},
+			"sounds": {
+				"roar": "hero",
+				"stomp_0": "stomp",
+				"stomp_1": "stomp",
+				"stomp_2": "stomp",
+				"stomp_crack": "stomp",
+				"collapse": "collapse",
+				"tank_fire": "weapon",
+				"shell_hit": "weapon",
+				"rifle": "weapon",
+				"rifle_far": "weapon",
+				"heli_gun": "weapon",
+				"heli_crash": "weapon",
+				"ready": "ui",
+				"deflect": "ui"
+			}
+		},
 		"start_gate": {"smooth_frames": 10, "max_frame": 0.05, "max_wait_s": 3.0},
 		"stomp_tiers": [1.4, 1.8],
 		"default_volume": 0.9,
@@ -509,6 +544,20 @@
 		"puff": 1.6
 	},
 	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4},
+	"camera_shake": {
+		"_note": "CameraShake (R 19.2): hits add trauma 0..1 (sources), it fades at decay_per_s; the camera turns by trauma squared on smooth noise (noise_hz noise units a second; 1.6 keeps a 60 fps frame under 5 px at 1080p at the 2 deg cap, motion critic 2026-10-21), yaw and pitch only, full trauma = deg_per_root_scale x sqrt(body scale) degrees, at most max_deg. A hit away from the focus fades from near_per_scale to far_per_scale body scales. default_motion: the camera-motion setting's default (0..1).",
+		"decay_per_s": 1.2,
+		"rise_per_s": 6.0,
+		"noise_gain": 2.0,
+		"noise_hz": 1.6,
+		"noise_seed": 1902,
+		"deg_per_root_scale": 1.95,
+		"max_deg": 2.5,
+		"near_per_scale": 20.0,
+		"far_per_scale": 120.0,
+		"default_motion": 1.0,
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+	},
 	"topple_fx": {
 		"shudder_s": 0.4,
 		"shudder_max_share": 0.3,
@@ -534,7 +583,6 @@
 		"chunks": 7,
 		"chunk_size": [1.2, 2.6],
 		"chunk_slide": 2.5,
-		"shake": 0.6,
 		"rubble_tint": "b8b0a0",
 		"rubble_tint_mix": 0.55,
 		"rubble_block": [8, 3, 6],
@@ -640,8 +688,6 @@
 		"cloud_max": 2.5
 	},
 	"carve_physics": {
-		"live_cap": 2000,
-		"static_cap": 4000,
 		"debris_per_carve": 40,
 		"debris_gravity": 2.2,
 		"debris_push": 4.0,
@@ -687,7 +733,6 @@
 		"color_fallback": "9a948a"
 	},
 	"crowd": {
-		"max": 4000,
 		"spacing": 2,
 		"seats": ["b23d32", "8e3029"],
 		"seat_match": 24,
@@ -713,7 +758,6 @@
 	},
 	"street": {
 		"person_voxel": 0.065,
-		"civilians_per_lot": 3,
 		"walk_speed": 0.8,
 		"run_speed": 2.4,
 		"panic_radius": 25.0,

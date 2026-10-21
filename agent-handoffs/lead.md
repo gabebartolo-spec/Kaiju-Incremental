@@ -15,15 +15,19 @@
 ## State 2026-10-21 evening: director at the PC (no windowed Godot; CI captures). Design = docs/DESIGN.md (one doc, lead edits).
 ## Merged today: #122-#135 (parse-step, light-pool, b2-3-part3, audio-duck, tentacle, graphics, cells-native, bridge,
 ## kaiju-double, view-spikes, no-rubble-fire, carve-no-fire). Open: #3 only. D-109 recorded.
-## Team (lead 10 subagents; re-brief from NEW notes <task>\handoff.md):
-- prs: preset-caps (shader_keep ratio fix), walkers-on-pavement, sfx-pool, shake-trauma 260aa17 (lead accepted 1.8 deg /
-  9.5 px), empty-space-suite, ci-sim-split last; turn-weight held for crush-people.
-- walk-m2b: crush-people option A (panic radius by body size + 1 s gawk), bar 10/12 seeds; then walk-m2 clips.
-- rubble-polish: claude/rubble-break clip polish + bench + #26 (fallen buildings break against the ground, never sink).
-- emerge-clips: claude/emerge-shore, director picked BURST THROUGH the bridge deck; check + CI clips.
-- explosions-fix: claude/city-explosives 6fb45b69, CI clips running; then motion critic round 2.
-- cells-native: R 19.4 BuildingFade fix (claude/building-fade) then re-render camera boards (claude/camera-growth 8db4122).
-- clumsy-army: claude/clumsy-army clips rendering. sfx-pool stood down (shake handoff in notes).
+## Team (lead 10 subagents). New rules today: ASK before any new work (RULEBOOK Working); ONE ~6 s clip per change;
+## one state file per task = agent-handoffs/<task>.md (older tasks keep NOTES/<task>/handoff.md); STATUS.md via tools/status.py.
+- prs: preset-caps #136, walkers, sfx-pool, shake-trauma, crush-people 6cab1072, turn-weight 90edbe8, building-fade, empty-space,
+  ci-sim-split last; also claude/status-script 6cbdd64 (tools/status.py) needs a PR.
+- rubble-polish: claude/rubble-break de85ea1 (#24-#26 done in sim), bench + one CI clip, then motion critic.
+- explosions-fix: claude/city-explosives 6fb45b69, one CI clip, then motion critic round 2.
+- camera-fade: claude/building-fade (R 19.4 + #27 rise occlusion), then A/B/C boards (director-facing).
+- ui-redesign: claude/ui-redesign, HUD + menus now (director: start now, keep Emergency Broadcast, dash/ult rings, tape meter).
+- clumsy-army: c3623e4, strays scatter to the sides (director pick), one CI clip.
+- intro-cinematic: claude/intro-cinematic from emerge-shore 1498501e (#11, "build it sooner").
+- emerge-shore 1498501e done (burst through decks; bay fits max-growth body, director pick); lead QCs CI runs 39552644858.
+- rule-dedupe: applying director rulings (six model views, mixed art his call, full suite for shared data, SHIP/FIX/REJECT).
+- NEXT when a slot frees: walk-m2 clips on CI, about 4 (straight + 90 deg turn, adult + baby, game camera), claude/walk-m2 0f9e0d2c.
 - Director questions left: camera growth (after occlusion fix), walk cadence R 11.2, Suno vs ElevenLabs Music, fire spark
   + wind, background skyline, blast numbers, worktree cleanup permission. Insectoid = brood mother (DESIGN; code still
   has Leap Slam as signature: fix when species work starts).

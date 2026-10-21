@@ -35,6 +35,10 @@ func run_checks() -> void:
 	await _t("_check_calm_streets")
 	await _h("CityLandmarks", func() -> void: CityLandmarks.new(check).run())
 	await _t("_check_no_empty_ground")
+	await _h(
+		"city_diag_fill",
+		func() -> void: preload("res://tests/lib/city_diag_fill.gd").new(check, root).run()
+	)
 	await _t("_check_reach_is_real")
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
@@ -200,6 +204,7 @@ func _check_no_empty_ground() -> void:
 			Trample.check_tail(tier, map_seed, sim, decor, check)
 			StadiumFar.check(tier, map_seed, sim, check)
 			Kerb.check(tier, map_seed, sim, decor, check)
+			Kerb.check_walkers(tier, map_seed, sim, street, check)
 			BreathTrees.check(tier, map_seed, sim, decor, check)
 			Reach.check_city(tier, map_seed, sim, skyline, check)  # last: it breaks every building
 			holder.free()

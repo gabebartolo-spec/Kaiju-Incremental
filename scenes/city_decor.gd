@@ -18,6 +18,7 @@ var plan: Dictionary
 ## D-065 greenery counts (CityGreenery.green), for the city suite and the report.
 var green: Dictionary = {}
 var cars: Array[Rect2] = []  # every car's ground footprint, parked or stopped
+var islands: Array[Vector2] = []  # traffic islands' middles (TrafficIsland), for the tests
 var trampling := true  # off only for a before/after capture of the same frame
 var _rng: RandomNumberGenerator
 var _props := PropField.new(PROP_VOXEL)
@@ -73,6 +74,7 @@ func _ready() -> void:
 	# D-065 greenery planted last, so the cars and trees before it keep their RNG draws.
 	greenery.plant()
 	green = greenery.green
+	TrafficIsland.plant(self)  # last: an all-junction cell left with nothing gets an island
 	var palette := {
 		"glass": Color("2b3640"),
 		"wheel": Color("1a1a1a"),
@@ -88,6 +90,9 @@ func _ready() -> void:
 	for i: int in paints.size():
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
+	var island: Dictionary = sim.city["traffic_island"]["colors"]
+	for key: String in island:
+		palette[key] = Color(str(island[key]))
 	add_child(_props.build(palette, 31, 3.0))
 	_props.configure(sim.city)
 	add_child(_fx)

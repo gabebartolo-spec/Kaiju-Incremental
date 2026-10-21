@@ -4,10 +4,8 @@ extends Node3D
 ## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
 ## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
 
-const MAX_DEBRIS := 600
 const DEBRIS_PER_CHUNK := 8
 const DEBRIS_PER_LANDING := 160
-const MAX_FIRES := 30
 const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
 
@@ -60,7 +58,7 @@ func _ready() -> void:
 	_fade = BuildingFade.new(sim.buildings, _stream.built)
 	fx = Fx.new()
 	add_child(fx)
-	_debris = DebrisField.new(_rng, MAX_DEBRIS)
+	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
 	add_child(_debris)
 	_ruins = RuinYard.new(sim, _stream.view)
 	add_child(_ruins)
@@ -119,10 +117,7 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
-		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
-		_fade.update(camera.global_position, sight, delta)
+		_fade.update(camera.global_position, BuildingFade.sight_of(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
@@ -278,7 +273,7 @@ func fire(at: Vector3, size: float) -> Fire:
 	f.position = at
 	add_child(f)
 	_fires.append(f)
-	if _fires.size() > MAX_FIRES:
+	if _fires.size() > int(GraphicsPresets.cap("max_fires")):
 		var old: Fire = _fires.pop_front()
 		old.queue_free()
 	return f

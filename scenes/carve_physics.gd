@@ -73,7 +73,7 @@ func carved(key: int, grid: PackedByteArray, cut: Dictionary) -> void:
 	debris.grid = grid
 	debris.wake(_above(s, box))
 	var n := mini(Num.i(_cfg["debris_per_carve"]), cells.size())
-	if live_bodies() >= Num.i(_cfg["live_cap"]):
+	if live_bodies() >= int(GraphicsPresets.cap("debris_live")):
 		n = 0
 	var sizes: Array = _cfg["debris_sizes"]
 	for _k: int in n:
@@ -290,7 +290,7 @@ func islands() -> Array[IslandBody]:
 
 func _physics_process(delta: float) -> void:
 	_clock += delta
-	var over := live_bodies() - Num.i(_cfg["live_cap"])
+	var over := live_bodies() - int(GraphicsPresets.cap("debris_live"))
 	if over > 0:
 		var live := maxi(1, live_bodies())
 		for key: int in _debris:
@@ -300,7 +300,7 @@ func _physics_process(delta: float) -> void:
 	for key: int in _debris:
 		var d: CarveDebris = _debris[key]
 		statics += d.static_bodies()
-	var cap := Num.i(_cfg["static_cap"])
+	var cap := int(GraphicsPresets.cap("debris_static"))
 	if statics > cap:
 		for key: int in _debris:
 			var d: CarveDebris = _debris[key]
