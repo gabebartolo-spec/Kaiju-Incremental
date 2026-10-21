@@ -2,18 +2,34 @@ class_name Collapse
 extends RefCounted
 ## What happens after a building loses support: parts that drop straight down, towers that
 ## topple over an edge, and what they smash when they land (the floors below, or a strip of
-## street, buildings and tanks). Part of RampageSim; split out to keep files small.
+## street, buildings and tanks). A part that meets the kaiju's body on the way down breaks on
+## him (comments #24, FallContact): a topple cracks where it touched, the part below the crack
+## comes down in front of him and the rest folds over and slides off his side as a few large
+## slabs; a drop lands on him and crumbles. What lands leaves slabs the kaiju can break (D-110,
+## RubbleSlabs). Part of RampageSim; split out to keep files small.
 
 var sim: RampageSim
 ## Buildings that toppled over sideways (each counted once) and the tallest of them, in floors:
 ## the results screen's biggest collapse.
 var toppled := 0
 var tallest_topple := 0
+## The slabs lying on the street.
+var slabs: RubbleSlabs
+## False: a falling part passes through the kaiju (the sim suite's fixture for the old game).
+var breaks_on_kaiju := true
 var _toppled_ids: Dictionary = {}
+var _tilt: Dictionary  # the "topple_fx" lean curve (FallContact.tilt)
+var _rubble: Dictionary
+var _across: Dictionary = {}  # fall id -> half width across a topple, for contact tests
+var _feet: Dictionary = {}  # fall id -> its chunks' world centres, for a drop's contact tests
 
 
-func _init(p_sim: RampageSim) -> void:
+## tuning: the rampage's tuning ("rubble", "topple_fx"; either missing turns its part off).
+func _init(p_sim: RampageSim, tuning: Dictionary = {}, rng: RandomNumberGenerator = null) -> void:
 	sim = p_sim
+	_tilt = tuning.get("topple_fx", {})
+	_rubble = tuning.get("rubble", {})
+	slabs = RubbleSlabs.new(sim, _rubble, rng if rng != null else RandomNumberGenerator.new())
 
 
 ## Turns every part of building `index` that lost support into a Fall. A carved building's
@@ -153,14 +169,19 @@ func _drop_distance(b: RampageSim.Building, f: RampageSim.Fall, lowest: float) -
 
 
 func step(dt: float) -> void:
+	var discs: Array = []
+	if breaks_on_kaiju and sim.body != null and sim.body.active() and not sim.airborne:
+		discs = sim.body.world_discs(sim.kaiju_pos, sim.body.heading)
 	var landed: Array[RampageSim.Fall] = []
 	for f: RampageSim.Fall in sim.falls:
 		f.t += dt
-		if f.t >= f.duration:
+		if f.t >= f.duration or (not discs.is_empty() and _meets(f, discs)):
 			landed.append(f)
 	for f: RampageSim.Fall in landed:
 		sim.falls.erase(f)
 		_land(f)
+		_across.erase(f.id)
+		_feet.erase(f.id)
 	sim.carving.warm()  # one stage of getting the next building ready for its first hit
 
 
@@ -177,10 +198,10 @@ func _land(f: RampageSim.Fall) -> void:
 	event["scrap"] = scrap
 	if f.kind == "topple":
 		var start := Vector2(f.pivot.x, f.pivot.z)
-		var finish := start + f.dir * f.height
-		var across := Vector2(-f.dir.y, f.dir.x)
-		var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
-		var half_width := width * 0.5 + 0.5
+		var half_width := _half_width(f)
+		# What comes down in line: all of it, or up to his body when it broke on the kaiju.
+		var reach := f.height if f.hit.is_empty() else Num.f(f.hit["s"])
+		var finish := start + f.dir * reach
 		event["from"] = start
 		event["to"] = finish
 		event["width"] = half_width * 2.0
@@ -188,9 +209,14 @@ func _land(f: RampageSim.Fall) -> void:
 		if not scrap:
 			tallest_topple = maxi(tallest_topple, roundi(f.height))
 			_crush_strip(start, finish, half_width, f.building)
+			event["slabs"] = _strip_slabs(f, [start, finish, half_width], reach)
+			if not f.hit.is_empty():
+				event["hit"] = _fold(f, half_width)
 	else:
+		if not f.hit.is_empty():
+			event["hit"] = {"at": f.hit["at"]}
 		sim.events.append(event)
-		if scrap:
+		if scrap or not f.hit.is_empty():  # it broke on the kaiju, not on the floors below
 			return
 		var hit: Array[Vector3i] = []
 		for c: Vector3i in f.cells:
@@ -198,6 +224,98 @@ func _land(f: RampageSim.Fall) -> void:
 			if below >= 0 and not hit.has(Vector3i(c.x, below, c.z)):
 				hit.append(Vector3i(c.x, below, c.z))
 		sim.damage_chunks(f.building, hit, impact)
+
+
+## Whether a falling part meets the kaiju's body now (FallContact); records where in f.hit.
+func _meets(f: RampageSim.Fall, discs: Array) -> bool:
+	if f.cells.is_empty():
+		return false  # a carved scrap smashes nothing
+	if f.kind == "topple":
+		var lean := FallContact.tilt(_tilt, f.t, f.duration)
+		f.hit = FallContact.topple(f, lean, _half_width(f), discs)
+	else:
+		if not _feet.has(f.id):
+			var b := sim.buildings[f.building]
+			var feet: Array[Vector3] = []
+			for c: Vector3i in f.cells:
+				feet.append(b.chunk_world(c))
+			_feet[f.id] = feet
+		var k := f.t / f.duration
+		var at: Array[Vector3] = _feet[f.id]
+		f.hit = FallContact.drop(f.pivot.y - f.drop * k * k, f.height, at, discs)
+	return not f.hit.is_empty()
+
+
+## Half a topple's width across its fall, plus half a chunk (cached per fall).
+func _half_width(f: RampageSim.Fall) -> float:
+	if not _across.has(f.id):
+		var b := sim.buildings[f.building]
+		var across := Vector2(-f.dir.y, f.dir.x)
+		var width := f.width if f.width >= 0.0 else _width_across(b, f.cells, across)
+		_across[f.id] = width * 0.5 + 0.5
+	return Num.f(_across[f.id])
+
+
+## The slabs a topple leaves along the strip it came down on: "slabs" of them for a whole
+## tower, fewer when it broke on the kaiju and only `reach` of it came down in line.
+## A landmark leaves none (its sections burst, LandmarkBurst).
+## line: [start, finish, half_width].
+func _strip_slabs(f: RampageSim.Fall, line: Array, reach: float) -> Array[Dictionary]:
+	if not slabs.on() or sim.buildings[f.building].landmark != "" or reach < 1.0:
+		return []
+	var count := maxi(1, roundi(Num.f(_rubble["slabs"]) * reach / maxf(1.0, f.height)))
+	var discs: Array = []
+	if not f.hit.is_empty():
+		discs = sim.body.world_discs(sim.kaiju_pos, sim.body.heading)
+	return slabs.strip(f.building, line, count, discs)
+
+
+## A topple broke on the kaiju: what was above the crack folds over him and slides off his side
+## (the side of the tower's centre line he stood on, else by the fall's id) as up to
+## fold_pieces large slabs, and the impact edge leaves edge_pieces small ones beside him. What
+## they land on is smashed. Returns the event's "hit": {"at", "crack", "s", "side" (unit,
+## across the fall), "pieces" (slab dicts, the large ones first), "large" (how many)}.
+func _fold(f: RampageSim.Fall, half_width: float) -> Dictionary:
+	var hit := f.hit
+	var crack := Num.f(hit["crack"])
+	var at: Vector3 = hit["at"]
+	var sign := Num.f(hit["side"])
+	if sign == 0.0:
+		sign = 1.0 if f.id % 2 == 0 else -1.0
+	var side := Vector2(-f.dir.y, f.dir.x) * sign
+	var out := {"at": at, "crack": crack, "s": hit["s"], "side": side, "pieces": [], "large": 0}
+	var rest := f.height - crack
+	if not slabs.on() or rest < 1.0 or sim.buildings[f.building].landmark != "":
+		return out
+	var contact := Vector2(at.x, at.z)
+	var radius := Num.f(hit["radius"])
+	var clear := radius + half_width + Num.f(_rubble["fold_clear"])
+	var most := Num.f(_rubble["fold_max"])
+	var n := clampi(ceili(rest / Num.f(_rubble["fold_length"])), 1, Num.i(_rubble["fold_pieces"]))
+	var size := minf(half_width * 2.0, most)
+	var piece := rest / n
+	var reach := Num.f(_rubble["fold_reach"])
+	var pieces: Array[Dictionary] = []
+	var lo := contact + side * clear
+	var yaw := atan2(f.dir.x, f.dir.y)  # its length along the fall
+	var discs := sim.body.world_discs(sim.kaiju_pos, sim.body.heading)
+	var step := Num.f(_rubble["clear_step"])
+	var tries := ceili(sim.body.length() / step) + 1
+	for k: int in n:
+		var dims := Vector3(size, size * Num.f(_rubble["depth"]), minf(piece, most))
+		var to := lo + f.dir * piece * (k + 0.5) * reach
+		to = RubbleSlabs.clear_of(to, dims, yaw, side, discs, step, tries)
+		pieces.append(slabs.place(f.building, [contact, to], dims, yaw))
+	_crush_strip(lo, lo + f.dir * rest * reach, size * 0.5, f.building)
+	var edge: Array = _rubble["edge_size"]
+	var small := Vector3(Num.f(edge[0]), Num.f(edge[1]), Num.f(edge[0]))
+	for k: int in Num.i(_rubble["edge_pieces"]):
+		var to := contact + side * (radius + small.x) + f.dir * (k - 1) * small.x
+		to = RubbleSlabs.clear_of(to, small, yaw + k, side, discs, step, tries)
+		pieces.append(slabs.place(f.building, [contact, to], small, yaw + k))
+	out["pieces"] = pieces
+	out["large"] = n
+	return out
 
 
 func _width_across(b: RampageSim.Building, cells: Array[Vector3i], across: Vector2) -> float:

@@ -193,6 +193,7 @@ func fall_start(event: Dictionary) -> void:
 		"drop": Num.f(event["drop"]),
 		"duration": maxf(0.05, Num.f(event["duration"])),
 		"t": 0.0,
+		"cells": cells,
 	}
 	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
 	_ruins.mark(index)
@@ -224,8 +225,12 @@ func fall_land(event: Dictionary) -> void:
 	var node: Node3D = f["node"]
 	var parts: Array = node.get_meta("parts", [])
 	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
-		_topple_land(node, event)
+		_topple_land(node, event, f)
 		return
+	if event.has("hit"):  # it came down on the kaiju: dust where it met him
+		var hit: Dictionary = event["hit"]
+		var met: Vector3 = hit["at"]
+		fx.dust(met, Num.f(_topple_cfg()["contact_dust"]))
 	var landed: Array[Vector3] = []
 	for n: int in mini(parts.size(), DEBRIS_PER_LANDING):
 		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
@@ -248,8 +253,8 @@ func fall_land(event: Dictionary) -> void:
 
 ## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what
 ## the strip covers is crushed.
-func _topple_land(node: Node3D, event: Dictionary) -> void:
-	_topple.land(node, event, _stream.view(Num.i(event["building"])).voxels)
+func _topple_land(node: Node3D, event: Dictionary, f: Dictionary) -> void:
+	_topple.land(node, event, _stream.view(Num.i(event["building"])), f)
 	var from: Vector2 = event["from"]
 	var to: Vector2 = event["to"]
 	var width := Num.f(event["width"])
@@ -261,6 +266,15 @@ func _topple_land(node: Node3D, event: Dictionary) -> void:
 		var at := a.lerp(b, float(i) / steps)
 		spots.append(Vector3(at.x, at.z, width * 0.6))
 	crush_all(spots)
+
+
+## The sim broke a slab on the street (D-110): its pieces tumble out (ToppleFx, RubbleView).
+func slab_break(event: Dictionary) -> void:
+	_topple.slab_break(event, _stream.view(Num.i(event["building"])).voxels)
+
+
+static func _topple_cfg() -> Dictionary:
+	return Content.section("topple_fx")
 
 
 ## The ruins of the rampage (ToppleFx builds its rubble strips through it).

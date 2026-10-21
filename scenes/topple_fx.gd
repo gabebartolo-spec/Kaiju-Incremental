@@ -3,36 +3,30 @@ extends Node3D
 ## A toppling tower's weight (PR #89 motion review), inside the sim's fall time so nothing lags
 ## the sim: its base shudders and crumbles, it leans slowly, then gravity takes it; on landing the
 ## slab breaks up over a few frames (debris in waves, a burst of pale dust at the far end) instead
-## of swapping to rubble at once, a few big chunks slide to rest and the heap slumps down into
-## place. Every timing and size is the "topple_fx" tuning. Presentation only. Part of CityView.
+## of swapping to rubble at once, the sim's slabs slide to rest (RubbleView) and the heap slumps
+## down into place. A tower that broke on the kaiju (the sim's "hit", comments #24 #25) cracks
+## at the contact: the part below comes down in front of him, the part above folds over him and
+## slides off his side, the impact edge crumbles. Every timing and size is the "topple_fx"
+## tuning. Presentation only. Part of CityView.
 
 var _city: CityView
 var _cfg: Dictionary
 var _rng: RandomNumberGenerator
 var _breaking: Array[Dictionary] = []
+var _rubble: RubbleView
 
 
 func _init(city: CityView, rng: RandomNumberGenerator) -> void:
 	_city = city
 	_rng = rng
 	_cfg = Content.section("topple_fx")
+	_rubble = RubbleView.new(city, _cfg, rng)
 
 
-## The piece's tilt (radians) t seconds into a fall the sim times at `duration`: a shudder that
-## creeps to lean_deg, then a slow lean that accelerates (sinh, like a tipping column) to 90 deg
-## exactly when the sim lands it.
+## The piece's tilt (radians) t seconds into a fall the sim times at `duration` (the sim's own
+## curve, FallContact.tilt, so where the sim says a tower met the kaiju is where it is drawn).
 static func tilt(cfg: Dictionary, t: float, duration: float) -> float:
-	var shudder := minf(Num.f(cfg["shudder_s"]), duration * Num.f(cfg["shudder_max_share"]))
-	var lean := deg_to_rad(Num.f(cfg["lean_deg"]))
-	if t < shudder:
-		var k := t / shudder
-		var wobble := (
-			sin(t * TAU * Num.f(cfg["shudder_hz"])) * deg_to_rad(Num.f(cfg["shudder_deg"]))
-		)
-		return lean * k * k + wobble * (1.0 - k * 0.5)
-	var u := clampf((t - shudder) / maxf(0.001, duration - shudder), 0.0, 1.0)
-	var c := Num.f(cfg["lean_curve"])
-	return lean + (PI * 0.5 - lean) * sinh(c * u) / sinh(c)
+	return FallContact.tilt(cfg, t, duration)
 
 
 ## Poses a falling topple (CityView's fall record) for this frame; its base crumbles while it
@@ -74,7 +68,9 @@ func pose(f: Dictionary, delta: float) -> void:
 ## A topple landed (the sim's fall_land): the slab breaks up over breakup_s instead of vanishing,
 ## pale dust bursts at the far end and along the strip, and the heap built off-thread slumps
 ## into place with a few big chunks sliding to rest on it.
-func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
+## fall: CityView's fall record (its "t", "dir", "cells"); view: the building's.
+func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary) -> void:
+	var voxels := view.voxels
 	var from: Vector2 = event["from"]
 	var to: Vector2 = event["to"]
 	var width := Num.f(event["width"])
@@ -85,13 +81,137 @@ func land(node: Node3D, event: Dictionary, voxels: BuildingVoxels) -> void:
 	_city.fx.dust(b + lift, Num.f(_cfg["impact_dust"]), dust)
 	_city.fx.dust(a.lerp(b, 0.6) + lift, Num.f(_cfg["impact_dust"]) * 0.7, dust)
 	_city.fx.dust_line(a, b, width, dust)
-	_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
+	if event.has("hit"):
+		_fold(node, event, view, fall)
+	else:
+		_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
 	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
 	_city.ruins().build(
 		func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
 	)
-	_chunks(voxels, a, b, width)
+	var slabs: Array = event.get("slabs", [])
+	_rubble.add(slabs, voxels, true)
+
+
+## The sim broke a slab (RubbleSlabs): RubbleView shows it.
+func slab_break(event: Dictionary, voxels: BuildingVoxels) -> void:
+	_rubble.smash(event, voxels)
+
+
+## A tower broke on the kaiju: it cracks at the contact (hit "crack", up its own axis). Below the
+## crack it keeps turning and comes down in front of him over fold_lower_s, then breaks up; above
+## it the tower folds on over the contact (hinged there) while it slides off his side and drops,
+## over fold_s, and breaks up where the sim's fold slabs lie, which show then. The contact edge
+## sheds edge_debris at once, a puff of dust there, and the small edge slabs tumble out.
+func _fold(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary) -> void:
+	var hit: Dictionary = event["hit"]
+	var crack := Num.f(hit["crack"])
+	var at: Vector3 = hit["at"]
+	var side: Vector2 = hit["side"]
+	var dir: Vector2 = fall["dir"]
+	var lean := tilt(_cfg, Num.f(fall["t"]), Num.f(fall["duration"]))
+	var pivot: Vector3 = node.get_meta("pivot")
+	var cells: Array[Vector3i] = fall["cells"]
+	var upper: Array[Vector3i] = []
+	for c: Vector3i in cells:
+		if c.y + 0.5 - pivot.y >= crack:
+			upper.append(c)
+	_edge(node, crack, hit)
+	var lower := node
+	var top: Node3D = null
+	if upper.size() == cells.size():
+		top = node
+		lower = null
+	elif not upper.is_empty():
+		top = view.split_piece(node, upper, crack)
+		node.get_parent().add_child(top)
+		top.global_transform = node.global_transform
+	if lower != null:
+		var turn := func(a: float) -> void: lower.basis = FallMotion.topple_turn(dir, a)
+		var tween := lower.create_tween()
+		tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		tween.tween_method(turn, lean, PI * 0.5, Num.f(_cfg["fold_lower_s"]))
+		var lower_debris := (
+			Num.f(_cfg["impact_debris"]) * (1.0 - float(upper.size()) / cells.size())
+		)
+		var down := func() -> void: _break_up(lower, Num.f(_cfg["breakup_s"]), lower_debris)
+		tween.tween_callback(down)
+	var pieces: Array = hit["pieces"]
+	var large := Num.i(hit["large"])
+	var voxels := view.voxels
+	_rubble.add(pieces.slice(large), voxels, false)
+	_rubble.add(pieces.slice(0, large), voxels, false, true)
+	if top == null:
+		return
+	var ids: Array = []
+	var clear := 0.0
+	for slab: Dictionary in pieces.slice(0, large):
+		ids.append(slab["id"])
+		var p: Vector2 = slab["pos"]
+		clear = maxf(clear, (p - Vector2(at.x, at.z)).dot(side))
+	var fold := {"at": at, "dir": dir, "side": side, "turn": PI * 0.5 - lean, "clear": clear}
+	fold["ids"] = ids
+	_hinge(top, fold)
+
+
+## Hinges the part above the crack at the contact (fold "at") and folds it: it turns on by
+## "turn" plus fold_over_deg (gravity's ease) about the fall "dir"'s axis, slides "clear" off
+## his "side" and drops to the street over fold_s; then it breaks up and the fold slabs "ids"
+## show.
+func _hinge(top: Node3D, fold_at: Dictionary) -> void:
+	var at: Vector3 = fold_at["at"]
+	var dir: Vector2 = fold_at["dir"]
+	var side: Vector2 = fold_at["side"]
+	var ids: Array = fold_at["ids"]
+	var hinge := Node3D.new()
+	_city.add_child(hinge)
+	hinge.global_position = at
+	var xf := top.global_transform
+	top.get_parent().remove_child(top)
+	hinge.add_child(top)
+	top.global_transform = xf
+	var axis := Vector3(dir.y, 0, -dir.x)
+	axis = FallMotion.STILL_AXIS if axis.is_zero_approx() else axis.normalized()
+	var total := Num.f(fold_at["turn"]) + deg_to_rad(Num.f(_cfg["fold_over_deg"]))
+	var slide := Vector3(side.x, 0, side.y) * Num.f(fold_at["clear"])
+	var drop := at.y - Num.f(_cfg["fold_ground"])
+	var fold := func(k: float) -> void:
+		var g := k * k
+		hinge.transform = Transform3D(
+			Basis(axis, total * g), at + slide * k + Vector3.DOWN * drop * g
+		)
+	var seconds := Num.f(_cfg["fold_s"])
+	var tween := hinge.create_tween()
+	tween.tween_method(fold, 0.0, 1.0, seconds)
+	var land := func() -> void:
+		_break_up(top, Num.f(_cfg["breakup_s"]), Num.f(_cfg["fold_debris"]))
+		_city.fx.dust(top.global_position, Num.f(_cfg["contact_dust"]))
+		_rubble.reveal(ids)
+	tween.tween_callback(land)
+	tween.tween_interval(Num.f(_cfg["breakup_s"]) + 0.1)
+	tween.tween_callback(hinge.queue_free)
+
+
+## The impact edge: debris from the piece's parts near the crack, thrown off his side (hit
+## "side"), and a puff of dust where it met him (hit "at").
+func _edge(node: Node3D, crack: float, hit: Dictionary) -> void:
+	var pivot: Vector3 = node.get_meta("pivot")
+	var at: Vector3 = hit["at"]
+	var side: Vector2 = hit["side"]
+	var near: Array = []
+	for part: Dictionary in node.get_meta("parts", []):
+		var pos: Vector3 = part["pos"]
+		if absf(pos.y - pivot.y - crack) < Num.f(_cfg["edge_band"]):
+			near.append(part)
+	var away := Vector3(side.x, Num.f(_cfg["gravel_up"]), side.y)
+	if not near.is_empty():
+		for n: int in Num.i(_cfg["edge_debris"]):
+			var part: Dictionary = near[_rng.randi_range(0, near.size() - 1)]
+			var pos: Vector3 = part["pos"]
+			var color: Color = part["color"]
+			_city.debris(node.global_transform * (pos - pivot), color, away)
+	_city.fx.dust(at, Num.f(_cfg["contact_dust"]))
 
 
 ## A dropped part landed (the sim's fall_land): it crumbles down into the street over
@@ -143,42 +263,3 @@ func _settle(mmi: MultiMeshInstance3D) -> void:
 	var tween := mmi.create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 	tween.tween_property(mmi, "scale:y", 1.0, Num.f(_cfg["settle_s"]))
-
-
-## A few big wall chunks thrown along the strip that slide on and settle, tilted, half sunk.
-func _chunks(voxels: BuildingVoxels, a: Vector3, b: Vector3, width: float) -> void:
-	var along := (b - a).normalized()
-	var side := Vector3(-along.z, 0, along.x)
-	var sizes: Array = _cfg["chunk_size"]
-	for n: int in Num.i(_cfg["chunks"]):
-		var size := _rng.randf_range(Num.f(sizes[0]), Num.f(sizes[1]))
-		var dims := Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3))
-		var salt := _rng.randi() % Ruin.SALTS
-		var t := _rng.randf_range(0.35, 1.0)
-		var at := a.lerp(b, t) + side * _rng.randf_range(-0.4, 0.4) * width
-		var slide := along * Num.f(_cfg["chunk_slide"]) * _rng.randf_range(0.4, 1.0)
-		var turn := Vector3(_rng.randf_range(-0.6, 0.6), _rng.randf(), _rng.randf_range(-0.6, 0.6))
-		var rest := at + slide + Vector3(0, Num.f(_cfg["heap_top"]) + size * 0.1, 0)
-		var start := at + Vector3(0, size, 0)
-		var place := func(chunk: MultiMeshInstance3D) -> void: _slide(chunk, start, turn, rest)
-		# Thousands of voxels each: built on a worker like the strip (b2-3: 7 chunks on the
-		# landing frame took up to 250 ms), every random draw made here, in the same order.
-		_city.ruins().build(
-			func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place
-		)
-
-
-## A thrown chunk, once built: it starts at `start`, turned by `turn`, and slides to rest,
-## tilting flatter.
-func _slide(chunk: MultiMeshInstance3D, start: Vector3, turn: Vector3, rest: Vector3) -> void:
-	chunk.position = start
-	chunk.rotation = turn
-	var tween := chunk.create_tween()
-	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(chunk, "position", rest, Num.f(_cfg["settle_s"]))
-	tween.parallel().tween_property(
-		chunk, "rotation:x", chunk.rotation.x * 0.3, Num.f(_cfg["settle_s"])
-	)
-	tween.parallel().tween_property(
-		chunk, "rotation:z", chunk.rotation.z * 0.3, Num.f(_cfg["settle_s"])
-	)

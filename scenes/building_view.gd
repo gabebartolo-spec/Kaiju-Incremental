@@ -216,7 +216,40 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 		piece.add_child(mi)
 	piece.set_meta("parts", parts)
 	piece.set_meta("pivot", pivot)
+	piece.set_meta("alive", piece_alive)
+	piece.set_meta("tex", tex)
 	return piece
+
+
+## Splits a lifted piece (lift_piece) in two: its chunks `upper` (and the debris sources
+## `crack` or more above its pivot) leave it as a new piece, same pivot, not yet in the tree;
+## the piece keeps the rest. A tower that cracks on the kaiju (ToppleFx).
+func split_piece(piece: Node3D, upper: Array[Vector3i], crack: float) -> Node3D:
+	var alive: Image = piece.get_meta("alive")
+	var own := Image.create(alive.get_width(), 1, false, Image.FORMAT_R8)
+	own.fill(Color(0, 0, 0))
+	for c: Vector3i in upper:
+		own.set_pixel(_index(c), 0, alive.get_pixel(_index(c), 0))
+		alive.set_pixel(_index(c), 0, Color(0, 0, 0))
+	var tex: ImageTexture = piece.get_meta("tex")
+	tex.update(alive)
+	var pivot: Vector3 = piece.get_meta("pivot")
+	var top := Node3D.new()
+	var own_tex := ImageTexture.create_from_image(own)
+	for mesh: ArrayMesh in [mesher.shell, mesher.slabs]:
+		var mi := _instance(mesh, _material(own_tex))
+		mi.position = -pivot
+		top.add_child(mi)
+	var below: Array[Dictionary] = []
+	var above: Array[Dictionary] = []
+	for part: Dictionary in piece.get_meta("parts", []):
+		var pos: Vector3 = part["pos"]
+		(above if pos.y - pivot.y >= crack else below).append(part)
+	piece.set_meta("parts", below)
+	top.set_meta("parts", above)
+	top.set_meta("pivot", pivot)
+	top.transform = piece.transform
+	return top
 
 
 ## Every building's view, its voxels and meshes built across worker threads (thousands of

@@ -42,6 +42,7 @@ func _run() -> void:
 	var costs: Array[int] = []
 	var worst: Array[Dictionary] = []
 	var digest := 0
+	var on_kaiju := 0  # falls that broke on the kaiju (comments #24)
 	var steps := int(_seconds * 60.0)
 	for s: int in steps:
 		if sim.over:
@@ -65,6 +66,7 @@ func _run() -> void:
 		for e: Dictionary in events:
 			if e["type"] != "cells_promoted":  # when a building is promoted is not an outcome
 				digest = hash([digest, str(e["type"])])
+			on_kaiju += int(e.has("hit"))
 	var sorted := costs.duplicate()
 	sorted.sort()
 	var total := 0
@@ -109,6 +111,13 @@ func _run() -> void:
 				digest,
 				_cells_digest(sim)
 			]
+		)
+	)
+	var slabs := sim.collapse.slabs
+	print(
+		(
+			"slabs: %d lying, %d broken, digest %d; falls broken on the kaiju %d"
+			% [slabs.slabs.size(), slabs.broken, slabs.digest(), on_kaiju]
 		)
 	)
 	quit()

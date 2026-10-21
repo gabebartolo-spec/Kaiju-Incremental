@@ -253,6 +253,8 @@ func _on_event(event: Dictionary) -> void:
 			sfx.collapse(str(event["kind"]) == "topple")
 			var topple := str(event["kind"]) == "topple"
 			_shake = maxf(_shake, Num.f(_topple_cfg["shake"]) if topple else 0.3)
+		"slab_break":
+			_city.slab_break(event)
 		"tank_spawned":
 			_tanks.spawn(Num.i(event["tank"]))
 		"tank_fired":

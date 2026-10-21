@@ -86,6 +86,8 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	var from_heading := heading if _last_pos.x == INF else _last_heading
 	_dt = dt
 	_sweep(from, from_heading, sim.kaiju_pos, heading)
+	var poses := PackedVector2Array([from, from_heading, sim.kaiju_pos, heading])
+	sim.collapse.slabs.touch(poses, self)  # D-110: what the body moves into breaks
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)
@@ -123,6 +125,21 @@ func over(index: int) -> bool:
 		if gap.length() < Num.f(d[1]) * s:
 			return true
 	return false
+
+
+## The body's discs at a pose as world cylinders, skin trimmed as the chunk test has it:
+## [centre (Vector2), radius, bottom y, top y] each (RubbleSlabs, FallContact).
+func world_discs(pos: Vector2, facing: Vector2) -> Array:
+	var out: Array = []
+	var s := sim.body_scale()
+	var skin := Num.f(cfg["skin"])
+	for d: Array in _discs:
+		var r := Num.f(d[1]) * s - skin
+		if r > 0.0:
+			var y_lo := sim.stand_y + Num.f(d[2]) * s + skin
+			var y_hi := sim.stand_y + Num.f(d[3]) * s - skin
+			out.append([pos + facing * Num.f(d[0]) * s, r, y_lo, y_hi])
+	return out
 
 
 ## Every standing chunk inside the body at a pose: {building index: {Vector3i: true}}.

@@ -1,9 +1,8 @@
 class_name RampageSim
 extends RefCounted
-## One rampage, as pure simulation: the kaiju, the city's buildings as real structures
-## (Structure: chunks that fall when unsupported and towers that topple), the army.
-## Presentation feeds input to step() and draws the events it returns; it never decides an
-## outcome. Ground-plane coordinates are Vector2(x, z); chunk centres are world Vector3.
+## One rampage, as pure simulation: the kaiju, the city's buildings as real structures (Structure:
+## chunks that fall unsupported, towers that topple), the army. Presentation feeds input to step()
+## and draws its events; it never decides an outcome. Ground plane Vector2(x, z); chunks world.
 
 
 class Building:
@@ -43,6 +42,7 @@ class Fall:
 	var width := -1.0  # across a topple, sim units (a carved part's; < 0: from its chunks)
 	var t := 0.0
 	var duration: float
+	var hit := {}  # where it met the kaiju's body on the way down (FallContact), else empty
 
 
 class Tank:
@@ -58,8 +58,7 @@ class Tank:
 ## step() button flags.
 const HELD := 1
 const ULTIMATE := 2
-## A tank's footprint radius for area hits.
-const TANK_RADIUS := 0.6
+const TANK_RADIUS := 0.6  # a tank's footprint radius for area hits
 
 var stats: Dictionary
 var army: Dictionary
@@ -132,7 +131,7 @@ func _init(
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
-	collapse = Collapse.new(self)
+	collapse = Collapse.new(self, tuning, Seeds.derive(rng, 0x5AB5))
 	carving = Carving.new(self, tuning)
 	army_units = Army.new(self, rng)
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
@@ -315,6 +314,7 @@ func _signature() -> void:
 ## 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
 	var top := ceili(reach_height()) if y_hi < 0 else y_hi
+	collapse.slabs.hit(force, damage, y_lo)  # the slabs on the street break too (D-110)
 	for i: int in buildings.size():
 		var b := buildings[i]
 		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)

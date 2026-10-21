@@ -10,6 +10,7 @@ const SimArmy := preload("res://tests/lib/sim_army.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
 const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
 const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
+const SimRubbleSlabs := preload("res://tests/lib/sim_rubble_slabs.gd")
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
 
@@ -33,6 +34,7 @@ func run_checks() -> void:
 	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
 	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
 	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
+	await _h("SimRubbleSlabs", func() -> void: SimRubbleSlabs.new(check).run())
 	await _t("_check_save_migrate")
 	await _t("_check_looks")
 	await _t("_check_growth")
