@@ -116,11 +116,6 @@ func repaint(fn: Callable) -> void:
 		cells[cell] = next
 
 
-## Instances needed to show every cell with y below `y` (cells are drawn bottom-up).
-func count_below(y: int) -> int:
-	return sorted_y.bsearch(y, true)
-
-
 ## One MultiMesh for every visible cell. palette: key -> Color (alpha 0 = glows at `glow`).
 ## A cell's centre sits at origin + cell * voxel, lifted half a voxel so y = 0 rests on the ground.
 ## Cubes are drawn at `inset` of their size (below 1: a filler layer that hides inside a skin).

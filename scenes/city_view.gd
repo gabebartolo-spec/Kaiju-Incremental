@@ -25,8 +25,6 @@ var _fade: BuildingFade
 var _falling: Dictionary = {}
 var _ruins: RuinYard
 var _topple: ToppleFx
-var _flame_mesh: BoxMesh
-var _flame_color := Color.BLACK
 var _decor: CityDecor
 var _fires: Array[Fire] = []
 var _chunk_fires := BuildingFires.new()
@@ -311,30 +309,6 @@ func flash(at: Vector3, color: Color, energy: float, seconds: float) -> void:
 	var tween := light.create_tween()
 	tween.tween_property(light, "light_energy", 0.0, seconds)
 	tween.tween_callback(light.queue_free)
-
-
-## A burst of glowing voxels from `from` over a cone along `span` (direction times reach).
-func flame_cone(from: Vector3, ground_at: Vector3, span: Vector3, color: Color) -> void:
-	for _n: int in 40:
-		var spread := span.rotated(Vector3.UP, _rng.randf_range(-0.5, 0.5))
-		var target := ground_at + spread * _rng.randf_range(0.4, 1.0) + Vector3(0, 0.5, 0)
-		_flame_voxel(from, target, color)
-
-
-func _flame_voxel(from: Vector3, to: Vector3, color: Color) -> void:
-	if _flame_mesh == null or _flame_mesh.material != null and _flame_color != color:
-		_flame_color = color
-		_flame_mesh = BoxMesh.new()
-		_flame_mesh.material = glow(color, 3.0)
-	var mi := MeshInstance3D.new()
-	mi.mesh = _flame_mesh
-	mi.scale = Vector3.ONE * _rng.randf_range(0.5, 1.1)
-	mi.position = from
-	add_child(mi)
-	var tween := mi.create_tween()
-	tween.tween_property(mi, "position", to, _rng.randf_range(0.18, 0.35))
-	tween.tween_property(mi, "scale", Vector3.ONE * 0.01, 0.2)
-	tween.tween_callback(mi.queue_free)
 
 
 static func glow(color: Color, energy: float) -> StandardMaterial3D:

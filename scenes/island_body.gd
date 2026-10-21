@@ -93,10 +93,6 @@ func follow(pivot: Vector3, dir: Vector2, duration: float, seconds: float) -> vo
 	freeze = true
 
 
-func brick_count() -> int:
-	return _bricks.size()
-
-
 func cell_count() -> int:
 	var n := 0
 	for key: Vector3i in _bricks:
