@@ -114,6 +114,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # Two seconds of Python, before Godot: a tuning key read in code exists in data/tuning.json
+      # (audit 2026-10-21 #5), and no function newly breaks the 40-line / complexity-12 limits (#25).
+      - name: Tuning keys and complexity ratchet
+        run: |
+          python3 tools/lint/tuning_keys.py
+          python3 tools/lint/complexity_ratchet.py
       - uses: ./.github/actions/setup-godot
       - name: Import the project (compiles the scripts it loads)
         run: |

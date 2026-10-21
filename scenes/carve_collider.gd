@@ -45,14 +45,6 @@ func refresh(grid: PackedByteArray, regions: Dictionary) -> void:
 		_rebuild(grid, key)
 
 
-func shape_count() -> int:
-	var n := 0
-	for key: Vector3i in _regions:
-		var body: Node = _regions[key]
-		n += body.get_child_count()
-	return n
-
-
 func _rebuild(grid: PackedByteArray, region: Vector3i) -> void:
 	var boxes: Array[AABB] = []
 	for y: int in REGION:
