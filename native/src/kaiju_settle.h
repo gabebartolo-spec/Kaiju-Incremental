@@ -74,6 +74,12 @@ public:
 			const PackedFloat32Array &p_strength, const PackedFloat64Array &p_nums,
 			const PackedInt32Array &p_ints, const PackedInt32Array &p_cx, const PackedInt32Array &p_cz,
 			const PackedInt32Array &p_fy, const PackedInt32Array &p_live) const;
+
+	// BuildingCells' generation (b2-3 part 4, kaiju_cells.cpp): [offset, dims, cells] as
+	// sim/building_cells.gd makes them, or an empty Array when a mark falls outside its margin.
+	// ints [w, d, floors, res, style, tier, column_bay, party side bits, neon count], nums [x, z,
+	// sign chance], ids: material id per BuildingCells.NATIVE_KEYS.
+	Array cells(const PackedInt32Array &p_ints, const PackedFloat64Array &p_nums, const PackedInt32Array &p_ids) const;
 };
 
 } // namespace godot
