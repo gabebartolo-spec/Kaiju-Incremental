@@ -63,3 +63,13 @@ in last 10 s), 220x6 strip, biomass 44 px + 24 px word swelling on gains >= 3. F
 90 px above the rings (lead to ask the director). tools/capture/capture_hud.gd measures HUD share (before 3.19%, after
 1.37% at 100% 4K; 1.31% at 125%). Captures: side-session-notes/.../ui-redesign/hud-after, hud-after-125 (before design:
 after3-100/04_rampage.png); 2x crops in crops3/hudA_*. Suites green: ui 53, flow 203, smoke 30.
+
+## Critic fix pass (2026-10-22), committed and pushed; state: capture still to do
+Done: rings both 80 px (radius 16) centred on one line; icons are separate TextureRect nodes in HudRing loaded from
+data/tuning.json ui.hud.icons (assets/ui/icons/*.png built by tools/ui/build_icons.py, registered in
+docs/LICENSING_REGISTER.md); biomass number 28 px; one 60 logical (120 px 4K) bottom margin for rings and biomass
+(RampageHud._lifted, figure_gap); timer outline unchanged. Suites: ui 57, flow 203 green (smoke not re-run).
+Left: recapture 04_rampage only at 100% 4K (override.cfg off-screen, tools/capture/capture_hud.gd -- --out=<dir>, local
+GPU), view 2x crops of both bottom corners (check the biomass glyph bottom really sits 120 px up; figure_gap is a
+font-metric estimate), report to the lead in 4 lines. Then update pr-body.md (HUD share numbers stay; mention icons +
+register row). No Godot running.
