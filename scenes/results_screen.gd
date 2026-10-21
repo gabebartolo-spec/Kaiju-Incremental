@@ -136,6 +136,10 @@ func verdict() -> String:
 		if best <= 0.0:
 			return "BIGGER THAN EVER"
 		return "BIGGER THAN LAST TIME  +%d%% BIOMASS" % roundi(100.0 * (rubble - best) / best)
+	# A record on another row beside "short of your best" would read as a contradiction.
+	for row: Array in ROWS:
+		if str(row[0]) != VERDICT_STAT and is_new_best(str(row[0])):
+			return "%d BIOMASS SHORT, BUT NEW RECORDS" % ceili(best - rubble)
 	return "%d BIOMASS SHORT OF YOUR BEST" % ceili(best - rubble)
 
 

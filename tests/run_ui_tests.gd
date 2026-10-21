@@ -31,6 +31,7 @@ func run_checks() -> void:
 	await _t("_check_tree_text")
 	await _t("_check_pause")
 	await _t("_check_reveal_frame")
+	await _t("_check_results_verdict")
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
@@ -350,3 +351,20 @@ func _outside(view: SubViewportContainer) -> Array[String]:
 	if missed > 0:
 		out.append("%d points outside, e.g. %s of %s" % [missed, worst, viewport.size])
 	return out
+
+
+## Critic r1 item 8: the line under the title never says "short of your best" while a row beside
+## it carries a NEW BEST tag; with no records it still says how far short.
+func _check_results_verdict() -> void:
+	var mixed := ResultsScreen.new({"rubble": 10, "toppled": 5}, {"rubble": 69.0, "toppled": 2.0})
+	var plain := ResultsScreen.new({"rubble": 10, "toppled": 1}, {"rubble": 69.0, "toppled": 2.0})
+	check(
+		mixed.is_new_best("toppled") and not mixed.verdict().contains("SHORT OF YOUR BEST"),
+		"with a record on the table the verdict does not say short of your best: %s" % mixed.verdict()
+	)
+	check(
+		plain.verdict() == "59 BIOMASS SHORT OF YOUR BEST",
+		"with no record it says how far short: %s" % plain.verdict()
+	)
+	mixed.free()
+	plain.free()

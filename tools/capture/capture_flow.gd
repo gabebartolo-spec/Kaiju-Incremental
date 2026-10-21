@@ -21,6 +21,10 @@ const CLIP_BEAT_FRAMES := 90
 ## With --write-movie the project's 1920x1080 wins over --resolution; the clip sets the window.
 const CLIP_SIZE := Vector2i(1280, 720)
 const UI_ONLY_RAMPAGE_FRAMES := 45
+## Capture only: at most this many 1/60 s steps to finish the rise, and the share of the city
+## the meter shows destroyed.
+const RISE_STEPS := 1200
+const METER_SHARE := 0.4
 ## Frames into the staged city build before the loading-screen shot (it has 7 stages).
 const LOADING_FRAMES := 2
 ## Frames for the first-run controls card to fade, and for the hurt vignette to settle.
@@ -112,6 +116,13 @@ func _run() -> void:
 		_shot("03b_loading")
 	await rampage.wait_loaded()
 	rampage.set_autoplay(true)
+	# Capture only: skip the river rise (its camera looks at water and a dark wall) and show the
+	# city meter part-filled, as it would be mid-run.
+	var steps := 0
+	while rampage.sim.emerge.active and steps < RISE_STEPS:
+		rampage.sim.emerge.step(rampage.sim, 1.0 / 60.0)
+		steps += 1
+	rampage.sim.chunks_destroyed = roundi(rampage.sim.chunks_total * METER_SHARE)
 	var fight := RAMPAGE_FRAMES
 	if _clip:
 		fight = CLIP_RAMPAGE_FRAMES
@@ -176,6 +187,12 @@ func _run() -> void:
 	await _frames(EvolutionReveal.END_FRAME - EvolutionReveal.SWAP_FRAME)
 	await _frames(SETTLE)
 	_shot("11_tree_after")
+	# The demo-complete card, over everything else (the reveal's own set and camera).
+	var card := DemoEnd.new()
+	card.setup(Content.species_def(_species), Content.section("kaiju"))
+	root.add_child(card)
+	await _frames(SETTLE * 4)
+	_shot("12_demo_complete")
 	SaveFile.delete_save()
 	quit()
 
