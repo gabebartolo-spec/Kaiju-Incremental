@@ -4,23 +4,31 @@ extends Node3D
 ## the explosions including shockwaves and sonicboom"). Rampage hands it the sim's explosives
 ## events; it never decides an outcome. hazard_armed: the site's warning lamp blinks, sparks spit
 ## off the roof and gas hisses while the fuse burns. explosion: a white core, a fireball of
-## glowing voxels, a dust shock racing out over the street, a shell of bent air, a flash of real
-## light, debris in the site's colours, smoke and a fire left burning; the camera shakes by
-## distance (trauma squared, capped) and the blast is heard as crack + body + rumble, with the
-## sonic boom arriving later the further the camera is (speed of sound scaled to the map).
-## firework_burst: a coloured shell bursting over the point it hits. toxic_cloud: a green cloud
-## for as long as the sim keeps it. Looks and timings: data/tuning.json "blast_fx".
+## glowing voxels, both out of the site's own box; a ring of voxel chunks and dust racing out
+## along the street (BlastShock); the site blowing apart top first, its pieces thrown out and up
+## (BlastBreak); a flash of real light, smoke and a fire left burning. The camera kicks on the
+## flash and shakes by distance (trauma squared, capped), the sim holds still a moment
+## (hit_stop: a few steps skipped, never Engine.time_scale), and the blast is heard as crack +
+## body + rumble, with the sonic boom arriving later the further the camera is (speed of sound
+## scaled to the map) and the screen rippling out from the blast as it does.
+## firework_burst: a coloured shell bursting over the point it hits. toxic_cloud: a billow of
+## green voxels, then a thin haze for as long as the sim keeps the cloud. Looks and timings:
+## data/tuning.json "blast_fx" (motion critic fix round 2026-10-21).
 
 ## Blasts drawn so far, by kind (read by the flow suite and the capture).
 var drawn: Dictionary = {}
-## The sonic booms waiting for their sound to arrive: [seconds left, where].
+## The sonic booms on their way to the camera: [seconds left, where, heard (a sound as well)].
 var booms: Array[Array] = []
+## Hit-stops so far (captures).
+var holds := 0
 var _cfg: Dictionary
 var _city: CityView
 var _sfx: Sfx
 var _sim: RampageSim
 var _rng: RandomNumberGenerator
 var _trauma := 0.0
+var _kick := 0.0  # the flash's own shake, in trauma-squared units, gone over kick.seconds
+var _hold := 0.0  # seconds of sim still to skip
 var _flashes := 0
 ## Armed sites' blinking lamps: building index -> [node, seconds left].
 var _fuses: Dictionary = {}
@@ -33,25 +41,35 @@ func _init(sim: RampageSim, city: CityView, sfx: Sfx, rng: RandomNumberGenerator
 	_sfx = sfx
 	_rng = rng
 	_cfg = Content.section("blast_fx")
+	_city.blast_break = BlastBreak.new(city, rng, _c("break"))
+	add_child(_city.blast_break)
 
 
 func _ready() -> void:
 	# Prewarm: one of each, out of sight, so the first real blast does not stall a frame.
 	var under := Vector3(0, -60, 0)
-	BlastParts.fireball(self, under, 1.0, _c("fireball"))
-	BlastParts.core(self, under, 1.0, _c("core"))
+	BlastParts.fireball(self, under, Vector3.ONE, 1.0, _c("fireball"))
+	BlastParts.core(self, under, Vector3.ONE, 1.0, _c("core"))
 	BlastParts.smoke(self, under, 1.0, _c("smoke"))
-	BlastParts.ground_shock(self, under, 1.0, _c("shock"))
-	BlastParts.haze(self, under, 1.0, _c("haze"))
+	BlastShock.ground(self, under, 1.0, _c("shock"))
 	BlastParts.firework(self, under, Color.WHITE, _c("fireworks"))
-	BlastParts.toxic_cloud(self, under, 1.0, 0.2, _c("cloud"))
+	BlastParts.toxic_cloud(self, under, Vector3.ONE, 1.0, 0.2, _c("cloud"))
 
 
 ## Camera shake now, in units of aim jitter: trauma squared, so small blasts barely nudge and big
-## ones slam, capped at shake.max.
+## ones slam, capped at shake.max; the flash's kick on top of it for its first instant.
 func shake() -> float:
 	var s: Dictionary = _c("shake")
-	return minf(Num.f(s["max"]), _trauma * _trauma) * Num.f(s["amplitude"])
+	return maxf(minf(Num.f(s["max"]), _trauma * _trauma), _kick) * Num.f(s["amplitude"])
+
+
+## Hit-stop: true while a blast holds the sim still (Rampage skips that step); counts down by
+## the step it skipped.
+func hold(delta: float) -> bool:
+	if _hold <= 0.0:
+		return false
+	_hold -= delta
+	return true
 
 
 ## Takes the explosives' events; false for any other event.
@@ -60,14 +78,16 @@ func on_event(event: Dictionary, focus: Vector3) -> bool:
 		"hazard_armed":
 			_arm(Num.i(event["building"]), Num.f(event["fuse"]))
 		"explosion":
-			_explode(str(event["kind"]), _at(event), Num.f(event["radius"]), focus)
+			_explode(str(event["kind"]), event, focus)
 		"firework_burst":
 			_burst(_at(event), focus)
 		"toxic_cloud":
-			var at := _at(event)
-			BlastParts.toxic_cloud(
-				self, at, Num.f(event["radius"]), Num.f(event["seconds"]), _c("cloud")
-			)
+			var box := _site(event)
+			var at: Vector3 = box[0]
+			var half: Vector3 = box[1]
+			var radius := Num.f(event["radius"])
+			var seconds := Num.f(event["seconds"])
+			BlastParts.toxic_cloud(self, at, half, radius, seconds, _c("cloud"))
 			_sfx.play_at("chem_hiss", at)
 		_:
 			return false
@@ -76,13 +96,17 @@ func on_event(event: Dictionary, focus: Vector3) -> bool:
 
 func _process(delta: float) -> void:
 	_trauma = maxf(0.0, _trauma - delta * Num.f(_c("shake")["decay_per_s"]))
+	var kick: Dictionary = _c("kick")
+	_kick = maxf(0.0, _kick - delta * Num.f(kick["amount"]) / Num.f(kick["seconds"]))
 	var left: Array[Array] = []
 	for boom: Array in booms:
 		boom[0] = Num.f(boom[0]) - delta
 		if Num.f(boom[0]) > 0.0:
 			left.append(boom)
-		else:
-			var where: Vector3 = boom[1]
+			continue
+		var where: Vector3 = boom[1]
+		BlastShock.ripple(self, where, _c("ripple"))
+		if boom[2]:
 			_sfx.play_at("sonic_boom", where)
 	booms = left
 	_blink(delta)
@@ -95,6 +119,15 @@ func _c(key: String) -> Dictionary:
 
 func _at(event: Dictionary) -> Vector3:
 	return Vector3(Num.f(event["x"]), 0.0, Num.f(event["z"]))
+
+
+## The site's box as it stands now: [centre, half extents]. A site already knocked flat blows
+## out of its rubble (site_rubble high), never out of thin air.
+func _site(event: Dictionary) -> Array:
+	var b := _sim.buildings[Num.i(event["building"])]
+	var high := float(b.height) if b.frame.alive_count > 0 else Num.f(_cfg["site_rubble"])
+	var half := Vector3(b.w, high, b.d) * 0.5
+	return [Vector3(b.x, half.y, b.z), half]
 
 
 ## The fuse burns: the site's lamp blinks fast and its roof spits sparks until it blows.
@@ -132,27 +165,46 @@ func _blink(delta: float) -> void:
 			_city.fx.sparks(lamp.position)
 
 
-## One site going up (the sim's explosion event): everything at once, sized by its radius.
-func _explode(kind: String, at: Vector3, radius: float, focus: Vector3) -> void:
+## One site going up (the sim's explosion event): everything at once, out of the site's box,
+## sized by the blast's radius.
+func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	drawn[kind] = Num.i(drawn.get(kind, 0)) + 1
-	var high := at + Vector3(0, radius * 0.5, 0)
-	BlastParts.core(self, high, radius, _c("core"))
-	BlastParts.fireball(self, high, radius, _c("fireball"))
-	BlastParts.ground_shock(self, at, radius, _c("shock"))
-	BlastParts.haze(self, high, radius, _c("haze"))
+	var radius := Num.f(event["radius"])
+	var at := _at(event)
+	var box := _site(event)
+	var high: Vector3 = box[0]
+	var half: Vector3 = box[1]
+	BlastParts.core(self, high, half, radius, _c("core"))
+	BlastParts.fireball(self, high, half, radius, _c("fireball"))
+	var reach := BlastShock.reach(maxf(half.x, half.z) * 2.0, radius, _c("shock"))
+	BlastShock.ground(self, at, reach, _c("shock"))
+	_city.blast_break.blew(at, reach)
 	BlastParts.smoke(self, high, radius, _c("smoke"))
 	var tint := Color(str(_c("flash")["chem_color" if kind == "chem_lab" else "color"]))
 	_flash(high, tint, Num.f(_c("flash")["energy"]) * radius / 5.0)
-	var colours: Array = _c("debris_colors")[kind]
-	for n: int in Num.i(_cfg["debris"]):
-		var away := Vector3(
-			_rng.randf_range(-1, 1), _rng.randf_range(0.6, 1.4), _rng.randf_range(-1, 1)
-		)
-		_city.debris(high, Color(str(colours[n % colours.size()])), away)
+	_throw(kind, high, half)
 	_city.fire(at, Num.f(_cfg["fire_size"]) * radius / 5.0)
 	var trauma: Dictionary = _c("shake")["trauma"]
-	_add_trauma(Num.f(trauma[kind]), at, focus)
+	var near := _add_trauma(Num.f(trauma[kind]), at, focus)
+	_kick = maxf(_kick, Num.f(_c("kick")["amount"]) * near)
+	if near > 0.0:
+		_hold = maxf(_hold, Num.f(_cfg["hit_stop"]))
+		holds += 1
 	_sound(kind, at)
+
+
+## The site's skin thrown out of its whole box, outward and up, in its own colours: the first
+## pieces off, before its broken floors (BlastBreak) follow.
+func _throw(kind: String, centre: Vector3, half: Vector3) -> void:
+	var colours: Array = _c("debris_colors")[kind]
+	var push := Num.f(_c("break")["push"])
+	var up := Num.f(_c("break")["up"])
+	for n: int in Num.i(_cfg["debris"]):
+		var spot := Vector3(_rng.randf_range(-1, 1), _rng.randf(), _rng.randf_range(-1, 1))
+		var p := centre + half * spot
+		var out := Vector3(spot.x, 0.0, spot.z).normalized()
+		var away := out * push + Vector3.UP * up * _rng.randf_range(0.8, 1.4)
+		_city.debris(p, Color(str(colours[n % colours.size()])), away)
 
 
 ## Crack (only near), body and rumble now; the sonic boom when the air carries it to the camera.
@@ -165,8 +217,8 @@ func _sound(kind: String, at: Vector3) -> void:
 		_sfx.play_at("blast_crack", at, small)
 	_sfx.play_at("blast_body", at, small)
 	_sfx.play_at("blast_rumble", at, small)
-	if far >= Num.f(s["boom_from"]):
-		booms.append([minf(Num.f(s["boom_max_delay"]), far / Num.f(s["speed"])), at])
+	var heard := far >= Num.f(s["boom_from"])
+	booms.append([minf(Num.f(s["boom_max_delay"]), far / Num.f(s["speed"])), at, heard])
 
 
 func _burst(at: Vector3, focus: Vector3) -> void:
@@ -183,10 +235,11 @@ func _burst(at: Vector3, focus: Vector3) -> void:
 
 
 ## The one place a blast shakes the camera: `amount` of trauma, less the further `at` is from the
-## kaiju (`focus`), none past shake.reach.
-func _add_trauma(amount: float, at: Vector3, focus: Vector3) -> void:
+## kaiju (`focus`), none past shake.reach. Returns that nearness (0..1).
+func _add_trauma(amount: float, at: Vector3, focus: Vector3) -> float:
 	var near := 1.0 - clampf(at.distance_to(focus) / Num.f(_c("shake")["reach"]), 0.0, 1.0)
 	_trauma = minf(1.0, _trauma + amount * near)
+	return near
 
 
 ## A burst of real light, at most flash.max_live at once: the city's lamps and fires already take

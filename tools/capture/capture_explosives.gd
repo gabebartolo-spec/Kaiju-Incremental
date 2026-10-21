@@ -1,8 +1,10 @@
 extends SceneTree
 ## The red barrels going off (director comments #19, #20): a seeded day rampage (city seed 0, the
 ## reptilian standing still once it has risen from the river) with a short chain of hazard sites
-## tagged on the low buildings in front of the game camera (fuel silo, fireworks factory, chem
-## lab, fuel silo, each within the last one's blast), the first armed as a shell would arm it.
+## tagged on the low buildings in front of the game camera and off to one side of the kaiju, so
+## its body never covers them (fuel silo, fireworks factory, chem lab, fuel silo, each within the
+## last one's blast), the first armed as a shell would arm it. It prints "film from frame N": the
+## movie's frames before N are the rise from the river (the camera inside a facade); cut there.
 ## --view=game films from the game camera, --view=close from a camera near the chain,
 ## --view=models takes stills of the three models before anything blows. Stills (--stills=a,b,..
 ## seconds after the arming) go to --out; record a clip with Godot's --write-movie. --perf prints
@@ -14,6 +16,7 @@ extends SceneTree
 
 const KINDS: Array[String] = ["fuel_silo", "fireworks_factory", "chem_lab", "fuel_silo"]
 const STEP := 1.0 / 30.0
+const SIDE := 9.0  # the first site sits at least this far to the kaiju's side (units)
 
 var _view := "game"
 var _out := "user://explosives"
@@ -22,6 +25,7 @@ var _perf := false
 var _stills: Array[float] = []
 var _time := "day"
 var _arm := true
+var _side := Vector2.ZERO  # the side of the kaiju the chain is on (unit, ground plane)
 
 
 func _initialize() -> void:
@@ -96,7 +100,8 @@ func _pick_chain(stats: Dictionary, layout: Array[Dictionary]) -> Array[int]:
 	var ahead := -Vector2(rest.x, rest.z).normalized()
 	var at := sim.kaiju_pos
 	var chain: Array[int] = []
-	var last := at + ahead * 14.0
+	var side := Vector2(-ahead.y, ahead.x)
+	var last := at + ahead * 14.0 + side * 12.0
 	for _k: int in KINDS.size():
 		var best := -1
 		var best_d := INF
@@ -106,7 +111,9 @@ func _pick_chain(stats: Dictionary, layout: Array[Dictionary]) -> Array[int]:
 			var reach := 3.0 if chain.is_empty() else 7.0
 			if b.landmark != "" or b.height > 10 or chain.has(i) or b.w * b.d < 4:
 				continue
-			if (p - at).dot(ahead) < 6.0 or p.distance_to(at) > 40.0:
+			if (p - at).dot(ahead) < 4.0 or p.distance_to(at) > 40.0:
+				continue
+			if (p - at).dot(side) < (SIDE if chain.is_empty() else SIDE * 0.6):
 				continue
 			var d := p.distance_to(last)
 			if d < best_d and d >= reach:
@@ -116,6 +123,7 @@ func _pick_chain(stats: Dictionary, layout: Array[Dictionary]) -> Array[int]:
 			break
 		chain.append(best)
 		last = Vector2(sim.buildings[best].x, sim.buildings[best].z)
+	_side = side
 	return chain
 
 
@@ -130,8 +138,9 @@ func _close_camera(rampage: Rampage, centre: Vector3) -> void:
 	rampage.add_child(cam)
 	var back := CameraTuning.offset()
 	back.y = 0.0
-	cam.position = centre + back.normalized() * 30.0 + Vector3(-8.0, 14.0, 0.0)
-	cam.look_at(centre + Vector3(0, 3.0, 0))
+	var side := Vector3(_side.x, 0.0, _side.y)  # further out on the chain's side: the kaiju is off it
+	cam.position = centre + back.normalized() * 24.0 + side * 12.0 + Vector3(0.0, 12.0, 0.0)
+	cam.look_at(centre + Vector3(0, 2.5, 0))
 	cam.current = true
 
 
@@ -167,6 +176,7 @@ func _film(rampage: Rampage) -> void:
 	var frames := 0
 	var t := 0.0
 	var next_still := 0
+	print("film from frame ", Engine.get_frames_drawn())
 	while t < _seconds:
 		await process_frame
 		frames += 1
@@ -192,4 +202,4 @@ func _film(rampage: Rampage) -> void:
 		print("worst cost per sim step / event kind: ", costs)
 	if not fx.is_empty():
 		var blasts: BlastFx = fx[0]
-		print("drawn: ", blasts.drawn)
+		print("drawn: ", blasts.drawn, " hit-stops: ", blasts.holds)

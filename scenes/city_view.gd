@@ -21,6 +21,8 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
+## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
+var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
@@ -144,6 +146,9 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	var view := _stream.view(index)
 	if sim.body.over(index):  # the body's bite tears a piece off (BodyBite)
 		BodyBite.tear(self, view, cells, kaiju_at, _rng)
+		_ruins.mark(index)
+		return
+	if blast_break != null and blast_break.takes(index, cells, view):
 		_ruins.mark(index)
 		return
 	var parts := view.hide_chunks(cells)
