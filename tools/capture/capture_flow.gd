@@ -27,6 +27,8 @@ const LOADING_FRAMES := 2
 const CARD_FADE_FRAMES := 45
 ## The health share the hurt shot shows (under the heartbeat line).
 const HURT_SHARE := 0.2
+## At most this many frames for the rise to land and the end beat to start.
+const BEAT_WAIT_FRAMES := 900
 ## Clip: how long the report counts, then how long it holds, before EVOLVE.
 const CLIP_COUNT_FRAMES := 45
 const CLIP_HOLD_FRAMES := 45
@@ -133,7 +135,13 @@ func _run() -> void:
 		for menu: Node in rampage.find_children("*", "PauseMenu", true, false):
 			menu.queue_free()
 		await _frames(2)
-	rampage.sim.time_left = 0.05  # capture only: run the clock out now
+	# Capture only: run the clock out now. The river rise holds the clock (D-083), so keep it
+	# run out until the end beat starts (a --ui-only shot comes before the kaiju has landed).
+	for _i: int in BEAT_WAIT_FRAMES:
+		if hud.beat_running():
+			break
+		rampage.sim.time_left = minf(rampage.sim.time_left, 0.05)
+		await process_frame
 	await _frames(18)
 	_shot("06_end_beat")
 	if _clip:
