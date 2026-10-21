@@ -15,6 +15,8 @@ var _light: PooledLight
 var _base_energy: float
 var _t := 0.0
 var _seed: float
+var _life := 0.0  # the longest particle lifetime: what is in the air when it goes out
+var _out := false
 
 
 func _init(size: float, seed_value: float) -> void:
@@ -37,6 +39,27 @@ static func prewarm(parent: Node) -> void:
 	f.position = Vector3(0, -60, 0)
 	parent.add_child(f)
 	parent.get_tree().create_timer(1.0).timeout.connect(f.queue_free)
+
+
+## Stops burning: the light goes off and no new flame, ember or smoke rises; what is already in the
+## air finishes its life, then the node frees itself.
+func go_out() -> void:
+	if _out:
+		return
+	_out = true
+	_base_energy = 0.0
+	_light.set_energy(0.0)
+	for child: Node in get_children():
+		if child is GPUParticles3D:
+			(child as GPUParticles3D).emitting = false
+	if is_inside_tree():
+		get_tree().create_timer(_life).timeout.connect(queue_free)
+	else:
+		queue_free()
+
+
+func is_out() -> bool:
+	return _out
 
 
 func _process(delta: float) -> void:
@@ -124,10 +147,12 @@ func _ramp(
 
 func _system(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
+	p.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 	p.process_material = mat
 	p.draw_pass_1 = mesh
 	p.amount = amount
 	p.lifetime = life
+	_life = maxf(_life, life)
 	p.position = Vector3(0, 0.2, 0)
 	return p
 

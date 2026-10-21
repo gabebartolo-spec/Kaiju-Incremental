@@ -42,6 +42,7 @@ void KaijuSettle::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("islands", "labels", "cells", "fixtures", "dims", "has_fixtures"),
 			&KaijuSettle::islands);
 	ClassDB::bind_method(D_METHOD("floors", "labels", "cells", "fixtures", "dims", "count"), &KaijuSettle::floors);
+	ClassDB::bind_method(D_METHOD("cells", "ints", "nums", "ids"), &KaijuSettle::cells);
 	ClassDB::bind_method(D_METHOD("gather", "labels", "cells", "from", "label"), &KaijuSettle::gather);
 	ClassDB::bind_method(D_METHOD("take", "cells", "parts", "dims", "offset"), &KaijuSettle::take);
 	ClassDB::bind_method(D_METHOD("land", "part", "cells", "dims"), &KaijuSettle::land);
