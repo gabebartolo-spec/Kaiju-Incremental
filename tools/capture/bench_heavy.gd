@@ -8,10 +8,15 @@ extends SceneTree
 ##   godot --path . --windowed --resolution 1920x1080 --script tools/capture/bench_heavy.gd \
 ##     -- --species=reptilian --seconds=60 --slow=50
 
+const HANDLER_MS := 16.0  # a view handler over this in one frame is a spike
+
 var _species := "reptilian"
 var _seconds := 60.0
 var _slow := 50.0
 var _worst: Array[Dictionary] = []
+var _handler_max: Dictionary = {}  # event kind -> worst ms in one frame, over the run
+var _handler_over := 0  # frames where any view handler took more than HANDLER_MS
+var _queue_max := 0
 
 
 func _initialize() -> void:
@@ -63,6 +68,7 @@ func _run() -> void:
 		gap_max = maxf(gap_max, gap)
 		var row := _row(rampage, city, gap, (Time.get_ticks_msec() - start) / 1000.0)
 		rampage.cost_usec.clear()
+		_tally(row)
 		if gap > _slow:
 			over += 1
 			_worst.append(row)
@@ -80,6 +86,13 @@ func _run() -> void:
 			]
 		)
 	)
+	print(
+		(
+			"HANDLER worst ms per kind: %s; frames with a handler over %.0f ms: %d"
+			% [str(_handler_max), HANDLER_MS, _handler_over]
+		)
+	)
+	print("QUEUE max debris queued after a frame: %d" % _queue_max)
 	_worst.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["gap"] > b["gap"])
 	print("WORST 12:")
 	for k: int in mini(12, _worst.size()):
@@ -87,11 +100,25 @@ func _run() -> void:
 	quit()
 
 
+## Folds one frame into the run's worst handler costs and debris queue.
+func _tally(row: Dictionary) -> void:
+	_queue_max = maxi(_queue_max, Num.i(row["queued"]))
+	var costs: Dictionary = row["costs"]
+	var over := false
+	for key: Variant in costs:
+		if str(key) == "sim.step":
+			continue
+		var ms := Num.f(costs[key])
+		_handler_max[key] = maxf(Num.f(_handler_max.get(key, 0.0)), ms)
+		over = over or ms > HANDLER_MS
+	if over:
+		_handler_over += 1
+
+
 func _row(rampage: Rampage, city: CityView, gap: float, at: float) -> Dictionary:
 	var vp := root.get_viewport_rid()
 	var debris: DebrisField = city.get("_debris")
 	var bodies: Array = debris.get("_bodies")
-	var queue: Array = debris.get("_queue")
 	var costs := {}
 	for key: Variant in rampage.cost_usec:  # the frame's worst of each kind
 		var ms := Num.f(rampage.cost_usec[key]) / 1000.0
@@ -105,7 +132,7 @@ func _row(rampage: Rampage, city: CityView, gap: float, at: float) -> Dictionary
 		"gpu": RenderingServer.viewport_get_measured_render_time_gpu(vp),
 		"rcpu": RenderingServer.viewport_get_measured_render_time_cpu(vp),
 		"debris": bodies.size(),
-		"queued": queue.size(),
+		"queued": debris.pending(),
 		"active": int(Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS)),
 		"pairs": int(Performance.get_monitor(Performance.PHYSICS_3D_COLLISION_PAIRS)),
 		"nodes": int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),

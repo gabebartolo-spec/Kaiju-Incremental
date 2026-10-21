@@ -2,10 +2,13 @@ class_name Ruin
 extends RefCounted
 ## What is left when a building is gone: a low heap of its own voxels spilling past the
 ## footprint, nothing standing (director 2026-10-20: "they were previously reduced to rubble then
-## emerge from the ground as flaming buildings"; the wall stubs that rose here are gone). Cosmetic,
-## seeded, built once.
+## emerge from the ground as flaming buildings"; the wall stubs that rose here are gone). Cold
+## broken concrete and brick: no glowing coals or scorch ("we are removing the smouldering
+## ruins", #111, R 26.1). Cosmetic, seeded, built once.
 
 const RES := BuildingVoxels.RES
+## A chunk's voxel shading salt is drawn below this (chunk()).
+const SALTS := 997
 
 
 ## Builds the ruin for a building whose palette and footprint come from `voxels`.
@@ -24,7 +27,6 @@ static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBui
 	var keys: Array[String] = ["wall", "wall", "wall", "wall", "pillar", "trim", "slab", "window"]
 	var peak := RES * (2.4 + b.tier * 0.9)
 	var spill := RES + 2
-	var hot := Vector2(w * rng.randf_range(0.35, 0.65), d * rng.randf_range(0.35, 0.65))
 	for x: int in range(-spill, w + spill):
 		for z: int in range(-spill, d + spill):
 			var cx := (x - w * 0.5) / (w * 0.5 + spill)
@@ -35,28 +37,22 @@ static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBui
 			if fall <= 0.0:
 				continue
 			var h := maxi(1, roundi(peak * pow(fall, 0.8) + rng.randf_range(-1.5, 1.5)))
-			var near_core := Vector2(x, z).distance_to(hot) < RES * 1.2
 			for y: int in maxi(0, h):
 				# Rubble comes down in chunks: one key per 2-4 cell block, not per voxel.
 				var block := Vector3i(floori(x / 3.0), floori(y / 2.0), floori(z / 3.0))
 				var key := keys[absi(hash(block + Vector3i(b.style, 0, 0))) % keys.size()]
-				if y == h - 1 and near_core and rng.randf() < 0.55:
-					key = "ember"  # one concentrated bed of glowing coals
-				elif y >= h - 1 and near_core and absi(hash(block)) % 2 == 0:
-					key = "char"  # scorch around the fire only
 				vox.put(Vector3i(x, y, z), key)
 	vox.salt = b.style + 91
 	return vox
 
 
-## Rubble is mostly pale broken concrete with a little of the building's own colour; coals and
-## scorch only near the fire.
+## Rubble is mostly pale broken concrete with a little of the building's own colour, and some
+## dark broken blocks ("char", the toppled strip's variety).
 static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
 	var palette := {}
 	for key: String in voxels.palette:
 		var c: Color = voxels.palette[key]
 		palette[key] = Color(c.lerp(Color("6e706e"), 0.8), 1.0)
-	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
 	palette["char"] = Color("2a2624")
 	return palette
 
@@ -103,18 +99,15 @@ static func strip(
 	if cfg.has("rubble_tint"):
 		var tint := Color(str(cfg["rubble_tint"]))
 		for key: String in palette:
-			if key != "ember":
-				var c: Color = palette[key]
-				palette[key] = Color(c.lerp(tint, Num.f(cfg["rubble_tint_mix"])), c.a)
+			var c: Color = palette[key]
+			palette[key] = Color(c.lerp(tint, Num.f(cfg["rubble_tint_mix"])), c.a)
 	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
 
 
 ## One big wall chunk thrown from a toppled tower: a lump of the building's own facade voxels
 ## (its wall and window colours, shaded like every other voxel), `size` sim units wide, centred
 ## on the node's origin. Replaces the flat-coloured boxes that read as untextured placeholders.
-static func chunk(
-	voxels: BuildingVoxels, size: Vector3, rng: RandomNumberGenerator
-) -> MultiMeshInstance3D:
+static func chunk(voxels: BuildingVoxels, size: Vector3, salt: int) -> MultiMeshInstance3D:
 	var vox := VoxelBuilder.new()
 	var palette := rubble_palette(voxels)
 	var n := Vector3i((size * RES).round())
@@ -132,6 +125,6 @@ static func chunk(
 				if windows and x % 6 > 1 and y % RES in [2, 3, 4, 5]:
 					key = "stub_window"
 				vox.put(Vector3i(x, y, z), key)
-	vox.salt = rng.randi() % 997
+	vox.salt = salt
 	var centre := -Vector3(n) * 0.5 * BuildingVoxels.VOXEL
 	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, centre)

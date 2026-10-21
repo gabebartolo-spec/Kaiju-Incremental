@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_load_tests.gd
 
 const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
+const FadeSpawn := preload("res://tests/lib/fade_spawn.gd")
 
 ## Real time to wait for the stream to finish (headless frames are not real seconds).
 const STREAM_WAIT_MS := 120000
@@ -18,6 +19,8 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_building_fade")
+	await _t("_check_fade_rise")
+	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
@@ -117,9 +120,9 @@ func _check_party_walls() -> void:
 	)
 
 
-## The sight test behind the building screen door (D-025): a tower between the camera and the
-## kaiju's body fades; one behind the kaiju, beside the sight line, or one the camera is in,
-## does not.
+## The sight test behind the building screen door (D-025, R 19.4): a tower between the camera
+## and the kaiju's body or feet fades, and so does one the camera is in; one behind the kaiju,
+## beside the sight line, or carved down to a stump below every sight line does not.
 func _check_building_fade() -> void:
 	var eye := Vector3(0, 30, 40)
 	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3(0, 0, -3))
@@ -138,6 +141,58 @@ func _check_building_fade() -> void:
 	check(
 		front and not behind and not beside,
 		"a tower fades only when it stands between camera and kaiju"
+	)
+	tower.x = 0.0
+	tower.z = 40.0
+	tower.frame = Structure.new(tower.w, tower.d, tower.height, 1.0)
+	var around := BuildingFade.blocks(Vector3(0, 20, 40), sight, tower)
+	tower.z = 15.0
+	for y: int in range(1, tower.height):
+		for z: int in tower.d:
+			for x: int in tower.w:
+				tower.frame.remove(Vector3i(x, y, z))
+	var stump := BuildingFade.blocks(eye, sight, tower)
+	check(around and not stump, "a tower round the camera fades; a carved stump never does")
+
+
+## The rise from the river (comment #27): the sight points spread over the part of the body above
+## the water, so a low block in front of the surfacing kaiju fades; and a building already in the
+## way on the run's first frame starts faded instead of easing in over the kaiju.
+func _check_fade_rise() -> void:
+	var eye := Vector3(0, 8, 40)
+	var feet := Vector3(0, -20, 0)  # sunk: only the top of a 22-tall body is above the water
+	var low := RampageSim.Building.new()
+	low.w = 6
+	low.d = 2
+	low.height = 2
+	low.z = 15.0
+	var dry := BuildingFade.blocks(eye, BuildingFade.targets(feet, 22.0, Vector3.ZERO), low)
+	var wet := BuildingFade.targets(feet, 22.0, Vector3.ZERO, -1.6)
+	var above := true
+	for p: Vector3 in wet:
+		above = above and p.y >= -1.6
+	check(
+		above and not dry and BuildingFade.blocks(eye, wet, low),
+		"under water the sight points cover the body above the surface, so a low block in front fades"
+	)
+	var buildings: Array[RampageSim.Building] = [low]
+	var fade := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
+	fade.update(eye, wet, 1.0 / 60.0)
+	var first := fade.opacity(0)
+	fade.update(eye, wet, 1.0 / 60.0)
+	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
+	later.update(eye, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
+	later.update(eye, wet, 1.0 / 60.0)
+	var floor_opacity := Num.f(Content.section("vehicles")["fade_opacity"])
+	check(
+		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
+		(
+			(
+				"a building in the way on the first frame starts faded (%.2f); one that comes in later"
+				+ " eases (%.2f)"
+			)
+			% [first, later.opacity(0)]
+		)
 	)
 
 

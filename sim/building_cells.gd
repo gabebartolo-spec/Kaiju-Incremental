@@ -38,6 +38,8 @@ func _init(p_building: RampageSim.Building, party: Dictionary = {}) -> void:
 	_w = b.w * res
 	_d = b.d * res
 	_h = b.height * res
+	if BuildingCellsNative.fill(self, _ids, _party):
+		return
 	for side: Vector2i in SIDES:
 		_face(side)
 	_frame()
