@@ -81,9 +81,9 @@ static func shot(sim: RampageSim, follow: CameraFollow, rest_fov: float, frac: f
 	var w := smoothstep(pull_from, total, t)  # 0: the water shot, 1: the gameplay camera
 	var rest := rest_eye - focus
 	var behind := Vector2(rest.x, rest.z)
-	var close := (
-		Num.f(cfg["distance"]) * s * (1.0 - Num.f(cfg["push_in"]) * minf(1.0, t / pull_from))
-	)
+	# A slow push in over the wait, ending at the break on the shot's distance; then one pull-out.
+	var wait := 1.0 - smoothstep(0.0, emerge.break_at(sim), t)
+	var close := Num.f(cfg["distance"]) * s * (1.0 + Num.f(cfg["push_in"]) * wait)
 	# The shot turns about the head (where the water founts and it breaks the surface), then about
 	# the body as it pulls out: yaw 90 looks along the river, across the bay's open water.
 	var ahead := sim.facing * Num.f(cfg["aim_ahead"]) * s
@@ -96,6 +96,10 @@ static func shot(sim: RampageSim, follow: CameraFollow, rest_fov: float, frac: f
 	# It looks at the water over the head, then follows the head up as it rises.
 	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])
 	var low := water + Num.f(cfg["aim_height"]) * s
-	var head_aim := Vector3(head_at.x, maxf(low, head), head_at.y)
+	# A soft max, so the aim eases off the water as the head climbs (a hard one starts at a jerk).
+	var rise := head - low
+	var soft := Num.f(cfg["aim_soft"]) * s
+	var aim_y := low + 0.5 * (rise + sqrt(rise * rise + soft * soft))
+	var head_aim := Vector3(head_at.x, aim_y, head_at.y)
 	var fov := lerpf(Num.f(cfg["fov"]), rest_fov, w)
 	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}

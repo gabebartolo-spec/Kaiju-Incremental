@@ -14,6 +14,7 @@ var _rings := 0
 var _fount: GPUParticles3D
 var _burst: GPUParticles3D
 var _burst_done := false
+var _break := 0.0  # seconds into the rise the head's top breaks the water
 
 
 func _init(sim: RampageSim, fx: Fx) -> void:
@@ -25,6 +26,7 @@ func _init(sim: RampageSim, fx: Fx) -> void:
 func _ready() -> void:
 	if not _sim.emerge.active:
 		return
+	_break = _sim.emerge.break_at(_sim)
 	var s := _sim.body_scale()
 	var ahead := _sim.facing * Num.f(Content.section("intro")["aim_ahead"]) * s
 	var water := -Num.f(_sim.city.get("river_depth", 0.0))
@@ -45,7 +47,11 @@ func _process(_delta: float) -> void:
 		_rings += 1  # one ring a frame at most, so a fast-forward never stacks them
 		var grow := 1.0 + Num.f(_cfg["ripple_grow"]) * t
 		_fx.shockwave(global_position, Num.f(_cfg["ripple_radius"]) * _sim.body_scale() * grow)
-	var due := emerge.active and t >= Num.f(_cfg["fount_from_seconds"]) and not emerge.surfaced
+	# It builds to its peak as the head breaks and plays on while the head clears the water.
+	var from := Num.f(_cfg["fount_from_seconds"])
+	var due := emerge.active and t >= from and t < _break + Num.f(_cfg["fount_after_seconds"])
+	var build := clampf((t - from) / maxf(0.001, _break - from), 0.0, 1.0)
+	_fount.amount_ratio = lerpf(Num.f(_cfg["fount_start"]), 1.0, build)
 	_fount.visible = due
 	_fount.emitting = due
 	if emerge.surfaced and not _burst_done:

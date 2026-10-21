@@ -261,7 +261,7 @@ func _on_event(event: Dictionary) -> void:
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)
 		"kaiju_emerged":
-			_hud.visible = true
+			_hud.fade_in(Num.f(Content.section("intro")["hud_fade_seconds"]))
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:

@@ -59,10 +59,13 @@ Scratch: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHu
    Fix is data: tuning intro distance 28, height 16 (was 20/4). The dark deck block still hides the lower body.
 2. Jaw: KaijuModel.roar(open_seconds) -> BipedHead.hold_open; tuning intro roar_jaw_seconds 1.3. Open at 1.6 s.
 3. Spray: lit material, tones from tuning intro.water.colors (3), drop_min 0.35 for small cubes.
-4. Shore slab: CityShore now builds it from 0.125 voxel columns (CELL), sand shade varied +-10% (GRAIN), the
-   same slope the sim climbs (floor_at); stills l8s/l8c in the scratchpad ic folder (local GPU).
-Local: full suite: only growth ("lots of young city at Apex, 16 moved") and military (tank fall-back, known on
-base) fail; growth not checked on the base.
+4. Shore slab: slab plus a nearest-filtered speckle sheet (CELL 0.125, GRAIN 0.065), no streaks (CityShore).
+5. Motion critic FIX (l12 clip): DeckBurst pieces removed (hole open from frame 0, no pop at the break; the
+   break still shakes and throws fragments); ripple from 0 s, fount from 0.1 s, builds to the break and plays on
+   0.4 s after; slow push-in to the break (push_in 0.3), pull-out from 1.2 s, aim soft-max (aim_soft) so it
+   no longer starts with a jerk; HUD (RampageHud.fade_in) and BreathAim fade in over 0.2 s at the hand-over.
+Local full suite: only growth and military fail. Growth also fails at 64b8cc89 (before these fixes): it is in the
+branch (emerge-shore / building-fade merge), not in this work. Military is known on base.
 ## Follow-up: none open from this task.
 ## Open decisions
 - none yet (yaw side, distances are data; lead judges the clip).

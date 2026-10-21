@@ -19,6 +19,7 @@ var _tint: Color
 var _built := Vector2(-1.0, -1.0)  # (reach, half angle) the mesh was built for
 var _material: StandardMaterial3D
 var _age := 0.0
+var _shown := 0.0  # 0 to 1 over intro "aim_fade_seconds" once it shows (no pop after the intro)
 
 
 func _init(sim: RampageSim, tint: Color) -> void:
@@ -56,6 +57,7 @@ func drawn() -> Dictionary:
 func _physics_process(_delta: float) -> void:
 	visible = showing()
 	if not visible:
+		_shown = 0.0
 		return
 	var aim := BreathCone.of(_sim)
 	var reach := Num.f(aim["reach"])
@@ -71,7 +73,9 @@ func _physics_process(_delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
-	_material.albedo_color = Color(1, 1, 1, 0.75 + 0.25 * sin(_age * TAU * PULSE_HZ))
+	_shown = move_toward(_shown, 1.0, delta / Num.f(Content.section("intro")["aim_fade_seconds"]))
+	var pulse := 0.75 + 0.25 * sin(_age * TAU * PULSE_HZ)
+	_material.albedo_color = Color(1, 1, 1, pulse * _shown)
 
 
 ## A flat wedge (+Z forward, apex at the origin) of this reach and half angle: a faint fill, its
