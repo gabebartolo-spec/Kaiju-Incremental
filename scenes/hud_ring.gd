@@ -31,7 +31,9 @@ const BURST_INNER := 0.45
 const ICON_SHARE := 0.62
 const SEGMENTS := 64
 ## The dark outline around the ring and icon (px each side), for contrast over fire.
-const OUTLINE := 3.0
+const OUTLINE := 2.0
+## The icon's dark edge (px each side): thin, the icons are small.
+const ICON_OUTLINE := 1.0
 
 var icon: Icon
 ## 0 = just used, 1 = ready.
@@ -86,7 +88,7 @@ func _draw() -> void:
 	for shape: PackedVector2Array in _shapes(c, half):
 		var closed := shape.duplicate()
 		closed.append(shape[0])
-		draw_polyline(closed, dark, OUTLINE * 2.0, true)
+		draw_polyline(closed, dark, ICON_OUTLINE * 2.0, true)
 		draw_colored_polygon(shape, tint)
 
 

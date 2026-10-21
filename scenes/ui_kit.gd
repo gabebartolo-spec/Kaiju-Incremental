@@ -256,11 +256,15 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 
 
 ## A meter: square, white-edged on black. `taped` fills it with hazard tape in `fill`.
-static func bar(fill: Color, height: int = 26, taped: bool = false) -> ProgressBar:
+static func bar(
+	fill: Color, height: int = 26, taped: bool = false, ticks: bool = true
+) -> ProgressBar:
 	var p := ProgressBar.new()
 	p.show_percentage = false
 	p.custom_minimum_size = Vector2(0, height)
-	p.add_theme_stylebox_override("background", box(Color(0, 0, 0, 0.75), TEXT, 2))
+	var back := box(Color(0, 0, 0, 0.75), TEXT, 1 if height < 12 else 2)
+	back.set_content_margin_all(0)
+	p.add_theme_stylebox_override("background", back)
 	var inner := hazard(fill, fill, 0.0)
 	if taped:
 		inner.band = HazardBox.Band.TOP
@@ -269,10 +273,11 @@ static func bar(fill: Color, height: int = 26, taped: bool = false) -> ProgressB
 		inner.tape_off = fill.darkened(0.2)
 	inner.set_content_margin_all(0)
 	p.add_theme_stylebox_override("fill", inner)
-	var ticks := UiMarks.Ticks.new()
-	full_rect(ticks)
-	ticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(ticks)
+	if ticks:
+		var marks := UiMarks.Ticks.new()
+		full_rect(marks)
+		marks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(marks)
 	return p
 
 

@@ -35,7 +35,7 @@ func run() -> void:
 	_ring(hud, sim)
 	_vignette(hud, sim)
 	_meter(hud, sim)
-	await _keys(hud)
+	_minimal(hud, sim)
 	await _beat(hud)
 	hud.queue_free()
 	var again := RampageHud.new(sim, Content.species_def("reptilian"), null)
@@ -78,8 +78,7 @@ func _layout(hud: RampageHud) -> void:
 			if l.get_theme_font_size("font_size") < MIN_TEXT:
 				small.append(l.text)
 			for word: String in ["WASD", "SPACE", "SHIFT", "/ ", "HP"]:
-				var keycap: bool = l.get_meta("keycap", false)
-				if l.text.to_upper().contains(word) and l.get_parent() is not GridContainer and not keycap:
+				if l.text.to_upper().contains(word) and not _in_card(l):
 					said.append(l.text)
 	check.call(small.is_empty(), "no HUD text under %d px: %s" % [MIN_TEXT, small])
 	check.call(outside.is_empty(), "the HUD sits inside the TV title-safe area: %s" % [outside])
@@ -100,8 +99,8 @@ func _layout(hud: RampageHud) -> void:
 	)
 	var ring := hud.breath_ring.get_global_rect().get_center()
 	check.call(
-		absf(ring.x - view.size.x / 2.0) < 8.0 and ring.y > view.size.y * 0.8,
-		"the breath ring sits bottom centre (%s)" % [ring]
+		ring.x < view.size.x * 0.2 and ring.y > view.size.y * 0.85,
+		"the rings are tucked into the bottom left corner (%s)" % [ring]
 	)
 
 
@@ -131,8 +130,10 @@ func _card(hud: RampageHud) -> void:
 	)
 	var view := t.root.get_visible_rect()
 	var spot := card.get_global_rect()
+	var rings := hud.breath_ring.get_global_rect().merge(hud.ultimate_ring.get_global_rect())
 	check.call(
-		spot.end.x < view.size.x * 0.5 and spot.position.y > view.size.y * 0.4,
+		spot.end.x < view.size.x * 0.5 and spot.position.y > view.size.y * 0.4
+		and not spot.intersects(rings),
 		"the card sits bottom left, clear of the kaiju and the rings (%s)" % [spot]
 	)
 	var full: Array[String] = []
@@ -196,8 +197,8 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 	hud.refresh()
 	var meter: ProgressBar = hud.city_meter
 	check.call(
-		absf(meter.value - 35.0) < 0.5 and meter.size.y >= 16.0 and meter.size.x >= 300.0,
-		"the city meter is %s and reads 35%% when 35%% is destroyed (value %.1f)" % [meter.size, meter.value]
+		absf(meter.value - 35.0) < 0.5 and meter.size.y >= 4.0 and meter.size.y <= 8.0,
+		"the city meter is a thin strip (%s) that reads 35%% when 35%% is destroyed (%.1f)" % [meter.size, meter.value]
 	)
 	var peak := 0.0
 	sim.hp = sim.max_hp * 0.2
@@ -209,25 +210,54 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 	sim.chunks_destroyed = 0
 
 
-## Critic r1 item 2: a key (or pad button) under each ring, 24 px or more, following the last
-## device used.
-func _keys(hud: RampageHud) -> void:
-	var names := {"breath_key": ["Space", "A"], "dash_key": ["Shift", "B"], "ultimate_key": ["E", "Y"]}
-	var rings := {"breath_key": hud.breath_ring, "dash_key": hud.dash_ring, "ultimate_key": hud.ultimate_ring}
-	for key: String in names:
-		var l: Label = hud.get(key)
-		var ring: Control = rings[key]
-		check.call(
-			l != null and l.text.to_upper() == str(names[key][0]).to_upper()
-			and l.get_theme_font_size("font_size") >= MIN_TEXT
-			and l.get_global_rect().position.y >= ring.get_global_rect().get_center().y,
-			"%s shows %s under its ring at %d px or more" % [key, names[key][0], MIN_TEXT]
-		)
-	hud.call("_input", InputEventJoypadButton.new())
-	await t.process_frame
-	var pad: Label = hud.get("dash_key")
-	check.call(pad != null and pad.text.to_upper() == "B", "the dash key turns to the pad's B after a pad press")
-	hud.call("_input", InputEventKey.new())
+## The director's minimal HUD (2026-10-21): rings about a third of the old size, no key labels and
+## no controls text anywhere, the clock a plain outlined number with no box that turns red only in
+## the last seconds, biomass a small number that swells when it grows.
+func _minimal(hud: RampageHud, sim: RampageSim) -> void:
+	var rings: Array[HudRing] = [hud.breath_ring, hud.dash_ring, hud.ultimate_ring]
+	var widest := 0.0
+	for ring: HudRing in rings:
+		widest = maxf(widest, ring.size.x)
+	check.call(widest <= 44.0, "each ring is small: at most 44 px across (%.0f; it was 109)" % widest)
+	var keys: Array[String] = []
+	for node: Node in hud.find_children("*", "Label", true, false):
+		var l: Label = node
+		if not _in_card(l) and l.text.to_upper() in ["SPACE", "SHIFT", "E", "A", "B", "Y"]:
+			keys.append(l.text)
+	check.call(keys.is_empty(), "no key labels under the rings: %s" % [keys])
+	var boxed := false
+	var up: Node = hud.clock_label().get_parent()
+	while up != hud:
+		boxed = boxed or up is PanelContainer
+		up = up.get_parent()
+	sim.time_left = 60.0
+	hud.refresh()
+	var calm := hud.clock_label().get_theme_color("font_color")
+	sim.time_left = 5.0
+	hud.refresh()
+	var red := hud.clock_label().get_theme_color("font_color")
+	check.call(
+		not boxed and calm.r > 0.9 and calm.g > 0.9 and red == UiKit.ALERT,
+		"the clock is a plain number: white (%s) until the last seconds, then alert red" % [calm]
+	)
+	var size := hud.clock_label().get_theme_font_size("font_size")
+	check.call(size >= MIN_TEXT and size <= 48, "the clock is a modest %d px number" % size)
+	sim.time_left = 60.0
+	hud.refresh()
+	hud.biomass.scale = Vector2.ONE
+	sim.rubble += 5.0
+	hud.refresh()
+	check.call(hud.biomass.scale.x > 1.1, "biomass swells on a small gain (%.2f)" % hud.biomass.scale.x)
+
+
+## True when `node` sits inside the first-run controls card.
+func _in_card(node: Node) -> bool:
+	var up := node
+	while up != null:
+		if up is ControlsCard:
+			return true
+		up = up.get_parent()
+	return false
 
 
 ## Critic r1 item 6: the end beat's headline and its line sit in the top third, so the kaiju and

@@ -1,9 +1,10 @@
 class_name RampageHud
 extends CanvasLayer
-## The rampage HUD, kept minimal (b2-10..13, research 15): the boxed clock at the top with a thin
-## city-destroyed meter under it, biomass as one boxless figure bottom right, the breath (with
-## dash and the ultimate beside it) as rings bottom centre, health as a red edge vignette, and
-## the controls on a card at the start of the first rampage only. Everything sits inside the TV
+## The rampage HUD, as little as it can be so the kaiju and the city's fall fill the screen
+## (director 2026-10-21): a plain outlined clock at the top (red in the last seconds) with a thin
+## city-destroyed strip under it, biomass a small number bottom right that swells when it grows,
+## the breath, dash and ultimate as three small rings in the bottom left corner, health as a red
+## edge vignette, and the controls on a card at the start of the first rampage only. Everything sits inside the TV
 ## title-safe area; no text under 24 px. Then the end beat (why it ended, big). Reads the sim;
 ## reports the beat's end through `beat_done`. Sizes and timings: tuning "ui".
 
@@ -42,29 +43,20 @@ var biomass: Label
 var breath_ring: HudRing
 var dash_ring: HudRing
 var ultimate_ring: HudRing
-## The key (or pad button) under each ring; it follows the last device used.
-var breath_key: Label
-var dash_key: Label
-var ultimate_key: Label
 var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
 var _time: Label
-var _clock: PanelContainer
 ## The clock and its city meter: hidden while the end beat's headline is up.
 var _clock_column: Control
 var city_meter: ProgressBar
 ## Everything on the HUD: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
-var _clock_box: HazardBox
 var _hud: Dictionary
 var _shown_biomass := 0.0
 var _last_biomass := 0.0
 var _last_second := -1
 var _pop: Tween
-var _dash_column: Control
-var _ultimate_column: Control
-var _pad := false
 var _card_left := 0.0
 var _card_age := 0.0
 var _card_fading := false
@@ -106,28 +98,20 @@ func _ready() -> void:
 	refresh()
 
 
-## The boxed clock (b2-10: "the timer at the top is good") and the city meter under it.
+## The clock, a plain outlined number (red only in the last seconds), and the city strip under it.
 func _build_clock() -> Control:
 	var col := VBoxContainer.new()
 	col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	col.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_theme_constant_override("separation", 8)
+	col.add_theme_constant_override("separation", Num.i(_hud["meter_gap"]))
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_clock_box = UiKit.hazard(UiKit.ALERT, UiKit.ALERT, 0.0)
-	_clock_box.set_content_margin_all(6)
-	_clock_box.content_margin_left = 18
-	_clock_box.content_margin_right = 18
-	_clock = PanelContainer.new()
-	_clock.add_theme_stylebox_override("panel", _clock_box)
-	_clock.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_clock.resized.connect(func() -> void: _clock.pivot_offset = _clock.size / 2.0)
-	col.add_child(_clock)
 	_time = UiKit.label("", Num.i(_hud["clock_size"]))
 	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_time.custom_minimum_size = Vector2(CLOCK_MIN_WIDTH, 0)
-	_clock.add_child(_time)
+	_time.resized.connect(func() -> void: _time.pivot_offset = _time.size / 2.0)
+	col.add_child(_time)
 	var meter: Array = _hud["meter_size"]
-	city_meter = UiKit.bar(UiKit.ACCENT, Num.i(meter[1]), true)
+	city_meter = UiKit.bar(UiKit.ACCENT, Num.i(meter[1]), false, false)
 	city_meter.custom_minimum_size.x = Num.f(meter[0])
 	city_meter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(city_meter)
@@ -142,7 +126,7 @@ func _build_biomass() -> Control:
 	col.size_flags_horizontal = Control.SIZE_SHRINK_END
 	col.add_theme_constant_override("separation", 0)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var word := UiKit.label("BIOMASS", Num.i(_hud["biomass_label_size"]), UiKit.TEXT)
+	var word := UiKit.label("BIOMASS", UiKit.SIZE_BODY, UiKit.TEXT)
 	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	col.add_child(word)
 	biomass = UiKit.label("0", Num.i(_hud["biomass_size"]), UiKit.ACCENT)
@@ -152,78 +136,31 @@ func _build_biomass() -> Control:
 	return col
 
 
-## The breath ring bottom centre, where the health bar was (b2-12, b2-13); dash and the
-## ultimate in smaller rings either side, each shown only when the kaiju has it (a missing one
-## keeps its place, unseen, so the breath ring stays dead centre). A key cap under each ring
-## names its button; every column is the same width so the breath column is centred.
+## Three small rings in the bottom left corner: the breath, dash and the ultimate, each an icon
+## with a charge ring that fills clockwise. Dash and the ultimate show only when the kaiju has
+## them (a missing one keeps its place, unseen, so the others never shift).
 func _build_rings() -> Control:
 	var row := HBoxContainer.new()
 	row.size_flags_vertical = Control.SIZE_SHRINK_END
-	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	row.add_theme_constant_override("separation", Num.i(_hud["ring_gap"]))
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var big := Num.f(_hud["ring_radius"])
 	var small := Num.f(_hud["ring_small_radius"])
 	var w := Num.f(_hud["ring_width"])
-	dash_ring = HudRing.new(HudRing.Icon.DASH, small, w)
 	breath_ring = HudRing.new(HudRing.Icon.BREATH, big, w)
+	dash_ring = HudRing.new(HudRing.Icon.DASH, small, w)
 	ultimate_ring = HudRing.new(HudRing.Icon.ULTIMATE, small, w)
-	_dash_column = _ring_column(dash_ring)
-	row.add_child(_dash_column)
-	row.add_child(_ring_column(breath_ring))
-	_ultimate_column = _ring_column(ultimate_ring)
-	row.add_child(_ultimate_column)
-	dash_key = _dash_column.get_child(1).get_child(0)
-	breath_key = row.get_child(1).get_child(1).get_child(0)
-	ultimate_key = _ultimate_column.get_child(1).get_child(0)
-	_set_keys()
+	for ring: HudRing in [breath_ring, dash_ring, ultimate_ring]:
+		ring.size_flags_vertical = Control.SIZE_SHRINK_END
+		row.add_child(ring)
 	return row
 
 
-## A ring with its key cap under it, in a column of the shared width.
-func _ring_column(ring: HudRing) -> Control:
-	var col := VBoxContainer.new()
-	col.custom_minimum_size = Vector2(Num.f(_hud["ring_column"]), 0)
-	col.add_theme_constant_override("separation", 6)
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ring.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	ring.size_flags_vertical = Control.SIZE_SHRINK_END
-	col.alignment = BoxContainer.ALIGNMENT_END
-	col.add_child(ring)
-	var cap := PanelContainer.new()
-	cap.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var box := UiKit.box(Color(UiKit.BG, 0.8), UiKit.MUTED, 2)
-	box.set_content_margin_all(2)
-	box.content_margin_left = 12
-	box.content_margin_right = 12
-	cap.add_theme_stylebox_override("panel", box)
-	var key := UiKit.label("", Num.i(_hud["key_size"]), UiKit.TEXT)
-	key.set_meta("keycap", true)
-	cap.add_child(key)
-	col.add_child(cap)
-	return col
-
-
-## The key caps' text for the last device used: keyboard keys, or the pad's buttons.
-func _set_keys() -> void:
-	breath_key.text = "A" if _pad else "SPACE"
-	dash_key.text = "B" if _pad else "SHIFT"
-	ultimate_key.text = "Y" if _pad else "E"
-
-
 func _input(event: InputEvent) -> void:
-	var pad := event is InputEventJoypadButton or event is InputEventJoypadMotion
-	var key := event is InputEventKey
-	if (pad or key) and pad != _pad and not (event is InputEventJoypadMotion and absf((event as InputEventJoypadMotion).axis_value) < 0.5):
-		_pad = pad
-		_set_keys()
-	var pressed := (
-		(key and (event as InputEventKey).pressed and not (event as InputEventKey).echo)
-		or (event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed)
-	)
-	if pressed and controls_card != null and _card_age > CARD_MIN_SHOWN:
+	var key := event is InputEventKey and (event as InputEventKey).pressed
+	var pad := event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed
+	if (key or pad) and controls_card != null and _card_age > CARD_MIN_SHOWN:
 		dismiss_controls()
 
 
@@ -238,6 +175,8 @@ func _show_controls(safe: Control) -> void:
 	place.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	place.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	place.size_flags_vertical = Control.SIZE_SHRINK_END
+	# Above the rings in the corner.
+	place.add_theme_constant_override("margin_bottom", Num.i(UiKit.ui()["controls_card"]["first_run_lift"]))
 	place.add_child(controls_card)
 	safe.add_child(place)
 	_card_left = Num.f(UiKit.ui()["controls_card"]["seconds"])
@@ -259,13 +198,12 @@ func dismiss_controls() -> void:
 func refresh() -> void:
 	var second := ceili(maxf(0.0, sim.time_left))
 	_time.text = "%d" % second
-	# The last seconds: the clock turns from alert red to hazard yellow and pulses each second.
+	# The last seconds: the clock turns red and pulses each second; otherwise it is plain white.
 	var hurry := sim.time_left < Num.f(_hud["hurry_seconds"])
-	_clock_box.fill = UiKit.ACCENT if hurry else UiKit.ALERT
-	_time.add_theme_color_override("font_color", UiKit.BG if hurry else Color.WHITE)
+	_time.add_theme_color_override("font_color", UiKit.ALERT if hurry else Color.WHITE)
 	if hurry and second != _last_second and _last_second >= 0 and not sim.over:
-		_clock.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])
-		create_tween().tween_property(_clock, "scale", Vector2.ONE, Num.f(_hud["hurry_pulse_s"]))
+		_time.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])
+		create_tween().tween_property(_time, "scale", Vector2.ONE, Num.f(_hud["hurry_pulse_s"]))
 	_last_second = second
 	city_meter.value = sim.destruction() * 100.0
 	var gain := sim.rubble - _last_biomass
@@ -274,11 +212,11 @@ func refresh() -> void:
 		_pop_biomass()
 	# The sim's own floor on the cooldown (rampage_sim.gd), so the ring matches the button.
 	breath_ring.set_ratio(1.0 - sim.ability_ready_in / maxf(0.5, sim.stat("ability_cooldown")))
-	_ultimate_column.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
+	ultimate_ring.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
 	var ult_cd := Num.f(sim.powers_cfg["ultimate_cooldown"])
 	ultimate_ring.set_ratio(1.0 - sim.ultimate_ready_in / maxf(0.001, ult_cd))
 	var dash := sim.body.dash
-	_dash_column.modulate.a = 1.0 if dash.available() else 0.0
+	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
 	if dash.available():
 		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
 
@@ -366,6 +304,11 @@ func show_end_beat(reason: String) -> void:
 	headline.scale = Vector2.ONE * 2.4
 	tween.tween_property(headline, "scale", Vector2.ONE, 0.35)
 	tween.parallel().tween_property(flash, "color:a", 0.0, 0.6)
+
+
+## The clock's number (read by the ui suite).
+func clock_label() -> Label:
+	return _time
 
 
 ## True while the clock and its city meter are on screen.
