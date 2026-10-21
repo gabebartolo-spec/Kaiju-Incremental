@@ -10,6 +10,7 @@ const DEBRIS_PER_LANDING := 160
 const MAX_FIRES := 30
 const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
 const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
+const SKYLINE_SALT := 16  # the far rampage's stream, drawn from the run's fx seed
 
 ## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
 ## screen between them (b2-30: building the whole city in one call froze the screen for seconds).
@@ -130,7 +131,10 @@ func _build_ground() -> void:
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
 	if _with_decor:
-		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
+		var skyline := CitySkyline.new(streets, Seeds.make("skyline", 0))
+		add_child(skyline)
+		if Content.section("skyline_rampage").get("on", false):  # the prototype, off by default
+			add_child(SkylineRampage.new(skyline, Seeds.derive(_rng, SKYLINE_SALT)))
 
 
 func _base_color(b: RampageSim.Building) -> Color:
