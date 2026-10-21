@@ -1,5 +1,5 @@
 # turn-step handoff, 2026-10-21
-## State: running a check (one CI clip)
+## State: done, reported to lead 10 (head 7952c006 + this file)
 ## Task
 Lead 10: fix the turn (comments #16, 2026-10-21 #3 "swivelling on the spot like a plastic toy") on
 PR #144 (claude/turn-weight). Lead's ruling (director 2026-10-21 "bigger = slower but not TOO
@@ -37,8 +37,11 @@ hurry other foot down (drag 10 m); turning cadence 1.4/2.0 (more aloft); sim piv
 Lead chose A. B (gait rework: sim pivot about the feet + turn-aware foot placement) goes to the
 director only if the clip still reads as a swivel.
 ## Running jobs
-one CI clip: ci_capture.sh --movie --fps=60 capture_walks.gd -- --stage=adult --course=turn90
---cam=game --seconds=6
+none. Clip: CI run 39584466780 (ci_capture.sh took the run id from gh's output), notes
+walk-m2/clips/turn_adult_turn90_after.mp4, 6 s 60 fps game cam, drift 0.0 cm.
+Review (10 fps crops 3.3-4.8 s): head leads at 3.6 s; the body swings over ~0.8 s (was 0.4 s),
+tail sweeping wide; leg poses change through it, but from the game cam it still reads as a smooth
+pivot more than distinct steps. B (gait rework) is the lead's call to the director.
 ## Findings for the lead
 Both-feet-up frames in a turn come only from overreach re-steps (straight walking has 0); the
 node turns ~8.6 body units behind the adult's feet.
