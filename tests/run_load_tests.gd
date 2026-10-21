@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_load_tests.gd
 
 const LoadLandmark := preload("res://tests/lib/load_landmark.gd")
+const FadeSpawn := preload("res://tests/lib/fade_spawn.gd")
 
 ## Real time to wait for the stream to finish (headless frames are not real seconds).
 const STREAM_WAIT_MS := 120000
@@ -18,6 +19,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_building_fade")
+	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
@@ -117,9 +119,9 @@ func _check_party_walls() -> void:
 	)
 
 
-## The sight test behind the building screen door (D-025): a tower between the camera and the
-## kaiju's body fades; one behind the kaiju, beside the sight line, or one the camera is in,
-## does not.
+## The sight test behind the building screen door (D-025, R 19.4): a tower between the camera
+## and the kaiju's body or feet fades, and so does one the camera is in; one behind the kaiju,
+## beside the sight line, or carved down to a stump below every sight line does not.
 func _check_building_fade() -> void:
 	var eye := Vector3(0, 30, 40)
 	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3(0, 0, -3))
@@ -139,6 +141,17 @@ func _check_building_fade() -> void:
 		front and not behind and not beside,
 		"a tower fades only when it stands between camera and kaiju"
 	)
+	tower.x = 0.0
+	tower.z = 40.0
+	tower.frame = Structure.new(tower.w, tower.d, tower.height, 1.0)
+	var around := BuildingFade.blocks(Vector3(0, 20, 40), sight, tower)
+	tower.z = 15.0
+	for y: int in range(1, tower.height):
+		for z: int in tower.d:
+			for x: int in tower.w:
+				tower.frame.remove(Vector3i(x, y, z))
+	var stump := BuildingFade.blocks(eye, sight, tower)
+	check(around and not stump, "a tower round the camera fades; a carved stump never does")
 
 
 ## a building touched before its turn is built on the spot; in the end every building is real.

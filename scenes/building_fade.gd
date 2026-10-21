@@ -7,9 +7,10 @@ extends RefCounted
 ## building's box; one that cuts a line eases down to vehicles.fade_opacity, the rest ease
 ## back. The camera never moves for it. Presentation only.
 
-## Heights up the kaiju's body (shares of its height) and steps forward along its facing (in
-## body radii) that must stay in sight.
-const HEIGHTS := [0.3, 0.6, 0.9]
+## Heights up the kaiju's body (shares of its height: the feet, the pelvis, the torso, the head)
+## and steps forward along its facing (in body radii) that must stay in sight (R 19.4: the feet
+## too, so the street round them reads).
+const HEIGHTS := [0.03, 0.3, 0.6, 0.9]
 const AHEAD := [0.0, 1.0, 2.0]
 
 var _cfg: Dictionary
@@ -68,11 +69,34 @@ func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 			_faded[n] = next
 
 
-## Whether building b stands in a sight line from the eye to any of the kaiju's points.
+## Whether building b stands in a sight line from the eye to any of the kaiju's points, or the
+## eye is inside it (R 19.4: a tower the camera sits in fades too, never a black screen). The box
+## is the building as it stands now: a carved stump below every sight line never fades.
 static func blocks(eye: Vector3, sight: PackedVector3Array, b: RampageSim.Building) -> bool:
-	var box := AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, b.height, b.d))
+	if not _cuts(eye, sight, b, b.height):
+		return false  # the cheap test on the whole box first
+	var top := standing_top(b)
+	return top > 0 and _cuts(eye, sight, b, top)
+
+
+## The building's standing height now (floors): one above its highest standing chunk, 0 when
+## razed; its full height when it has no chunk frame.
+static func standing_top(b: RampageSim.Building) -> int:
+	if b.frame == null:
+		return b.height
+	var top := -1
+	for z: int in b.frame.d:
+		for x: int in b.frame.w:
+			top = maxi(top, b.frame.top_below(x, z, b.frame.h))
+	return top + 1
+
+
+static func _cuts(
+	eye: Vector3, sight: PackedVector3Array, b: RampageSim.Building, top: int
+) -> bool:
+	var box := AABB(Vector3(b.x - b.w * 0.5, 0.0, b.z - b.d * 0.5), Vector3(b.w, top, b.d))
 	if box.has_point(eye):
-		return false  # the camera inside a tower: nothing sensible to fade
+		return true
 	for target: Vector3 in sight:
 		if box.has_point(target):
 			continue  # that point of the body is inside the building (wading through it)
