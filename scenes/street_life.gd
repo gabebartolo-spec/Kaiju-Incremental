@@ -52,6 +52,7 @@ var army_killed := 0  # civilians the army's own stray shells killed (StrayShell
 var worst_usec := 0
 var total_usec := 0
 var frames := 0
+var _army_fans := 0  # of those, players and fans in a stadium (not the kaiju's kills)
 var _cfg: Dictionary
 var _fx: Fx
 var _rng: RandomNumberGenerator
@@ -173,9 +174,9 @@ func civilians() -> int:
 
 
 ## Civilians crushed so far: on the streets, on the pitch and in the stands (fans crushed or
-## gone with their stand: director playtest, 2026-10-19).
+## gone with their stand: director playtest, 2026-10-19); fans a stray shell killed are the army's.
 func civilians_killed() -> int:
-	var n := killed
+	var n := killed - _army_fans
 	for game: StadiumMatch in matches:
 		n += game.killed
 		if game.crowd != null:
@@ -201,7 +202,10 @@ func crush(at: Vector3, radius: float, by_army: bool = false) -> void:
 	var centre := Vector2(at.x, at.z)
 	traffic.crush(centre, radius)
 	for game: StadiumMatch in matches:
-		game.crush(at, radius)
+		var fans := game.crush(at, radius)
+		if by_army:
+			army_killed += fans
+			_army_fans += fans
 	var puffs := 0
 	for i: int in range(people.size() - 1, -1, -1):
 		var p := people[i]
