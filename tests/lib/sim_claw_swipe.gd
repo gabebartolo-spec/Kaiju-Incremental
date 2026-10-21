@@ -74,8 +74,12 @@ func run() -> void:
 	)
 
 
-## "kaiju.swipe": the swipe on vs off over FIXTURE_RUNS seeded rampages; the mean destroyed share
-## must be higher with it (the same bar as the single-seed check it replaces).
+## "kaiju.swipe": the swipe on vs off over FIXTURE_RUNS seeded rampages, each in its own city
+## (city and army seed = the run index); the mean destroyed share must be higher with it (the same
+## bar as the single-seed check it replaces). Its own cities because the army seed alone changes
+## nothing in the 40 s scripted run: five army seeds on city 0 gave five identical pairs, one
+## sample, and that one flipped to 0.160/0.161 when the body turned on arcs (turn-weight), while
+## cities 1-11 kept the swipe ahead (probe, lead 10, 2026-10-21).
 func _check_fixture() -> void:
 	var on_sum := 0.0
 	var off_sum := 0.0
@@ -83,8 +87,8 @@ func _check_fixture() -> void:
 	var off_swipes := 0
 	var pairs: Array[String] = []
 	for run: int in FIXTURE_RUNS:
-		var on: RampageSim = _make.call("reptilian", {}, run, {})
-		var off: RampageSim = _make.call("reptilian", {}, run, {})
+		var on := _fixture_sim(run)
+		var off := _fixture_sim(run)
 		off.stats["swipe_damage"] = 0.0
 		var on_end: Dictionary = _autoplay.call(on)
 		var off_end: Dictionary = _autoplay.call(off)
@@ -109,3 +113,19 @@ func _check_fixture() -> void:
 			]
 		)
 	)
+
+
+## The fixture's young reptilian (no upgrades) in city `run` with army seed `run`: the runner's
+## _sim, but in its own city (the runner's always builds city 0).
+func _fixture_sim(run: int) -> RampageSim:
+	var species := Content.species_def("reptilian")
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
+	)
+	var tune := Content.tuning()
+	var city: Dictionary = tune["city"]
+	var layout := CityGen.generate(Seeds.make("city", run), city)
+	var sim := RampageSim.new(stats, tune, layout, Seeds.make("army", run))
+	sim.ability_type = str(species["ability"]["type"])
+	sim.body.use_species("reptilian")
+	return sim

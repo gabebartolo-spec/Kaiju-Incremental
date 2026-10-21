@@ -11,8 +11,10 @@ extends "res://tests/lib/military_view.gd"
 const MIN_PARKED_IN_RANGE := 20
 ## The rampages' city and army seeds, pinned so the autoplay lingers where tanks take posts:
 ## since the body turns on arcs (turn-weight) seeds 0-2 saw none; a probe of seeds 0-11 found
-## tanks parked in range only at the Behemoth tier, most on seeds 4 (26) and 8 (66).
-const RAMPAGE_SEEDS: Array[int] = [0, 4, 8]
+## tanks parked in range only at the Behemoth tier, most on seeds 4 (26) and 8 (66). Re-probed
+## after look-options' city changes (2026-10-21): Behemoth seeds 2 (25), 4 (6) and 8 (6), all in
+## the band; seed 0 saw none.
+const RAMPAGE_SEEDS: Array[int] = [2, 4, 8]
 
 
 func suite_name() -> String:

@@ -165,6 +165,12 @@ flame that can spread (unlockable in skill tree) and add to your biomass collect
 building to building on their own (sim-decided, seeded spread timer, burns out to rubble, never a burning shell per #111);
 burning buildings and the people in them pay biomass; fires stay the city's moving light sources (light pool, R 12). Research
 first (spread rules that read and stay cheap, how it feeds the biomass curve), then his node pick.
+How (research 26): first delete the view's random fire on 18% of collapses (city_view.gd, presentation RNG, burns rubble:
+breaks determinism and #111) (R 26.1) · a heat meter per building filled by neighbours (distance, wind, material), seeded
+ignition, windows glow 1-3 s first so a firebreak is possible; intact -> heating -> burning -> rubble (R 26.2) · biomass
+only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (R 26.3) · nodes Kindle,
+Fan the flames, Tailwind, Ember storm, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
+visual tiers (R 26.5). His questions: a spark source for non-breath species; wind fixed/rotatable or drifting.
 Explosive sites (comments #19, #20): fuel silos, fireworks factories and chemical labs placed through the city as the
 "red barrel": any damage (kaiju, rubble, a clumsy army shell, #18) arms a fuse, blasts carve and chain. Their explosions
 get really good SFX and VFX (his words): a visible shockwave ring and air distortion, a sonic boom delayed by distance,
