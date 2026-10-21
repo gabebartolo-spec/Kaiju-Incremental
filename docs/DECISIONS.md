@@ -4,6 +4,64 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-22 · D-127 · Director · HUD skill icons: Tripo-made kaiju moves, up to 3000 credits
+
+After the minimal HUD (comments #45-47: "ui looks sooo much better, but id say make the skill icons bottom left like 15% bigger. we can generate nice icons with tripo please"): the rings grow to 80 px; the icons show the move itself ("Kaiju moves": breath = croc jaws with lightning, dash = clawed foot mid-charge, ultimate likewise); render style "try both and show me" (voxelized in the game look vs smooth 3D render); spend "as many as you need, up to 3000" Tripo credits on the paid plan, every task Private, rows in docs/provenance/tripo.md.
+
+## 2026-10-21 · D-126 · Director · Fire gameplay: a tree unlock, 60% payout, five headline-named nodes
+
+Asked before fire gameplay (R 26): spreading is unlocked by a tree node ("Tree node"); a building that burns down pays about 60% of a smashed one ("A bit less, ~60%"), so smashing stays the best payout; the five-node line fits, "but less AI slop names, more kaiju themed", then he picked the "Disaster headlines" set: City Ablaze (unlocks spread) / Five-Alarm (faster spread) / Fire Front (downwind, wind fixed per run, D-115) / Ember Rain (jumps streets) / Firestorm (explosive sites set off big fires).
+
+## 2026-10-21 · D-125 · Director · Music builds up in layers
+
+Asked how music reacts during a rampage (options: layers, switch tracks, one track per run), he picked "Layers build up": one track per city, split into stems (drums, bass, lead...) that fade in as the destruction ramps up, on one locked tempo (the Metal: Hellsinger model, research 011). Godot: AudioStreamSynchronized layers. Suno Pro stem split costs plan credits, no extra spend (D-114).
+
+## 2026-10-21 · D-124 · Director · No octopus work until the croc is 100% shippable
+Why: his words, "no octopus work until the croc is 100% shippable". D-123 is recorded design only; no cephalopod builds, captures
+or assets start before the croc ships. The insectoid waits too. "Shippable" = a full croc playthrough: all 3 cities, the mecha
+finale, music, menus and the Steam build, polished, with only the croc playable (asked 2026-10-21).
+
+## 2026-10-21 · D-123 · Director · One of the 3 cities is a water city; the octopus swims fast and can submerge
+Why: his words, "im planning the octopus to be in a city with lots of water so it can move quickly through it". Asked: the water
+city is one of the 3 every species plays; in water the octopus is fast and the others move normally; it can also dive to
+dodge the army and burst out under buildings. Water becomes gameplay for the cephalopod (amends D-122's 'no gameplay effect').
+
+## 2026-10-21 · D-122 · Director · Water = the R 21 plan (presentation physics), built after fire gameplay
+Why: asked whether "proper water with physics" (#12) means the planned ripples, wakes, splashes and floating rubble with no
+gameplay effect, or gameplay water or a fluid sim: the plan. Order: fire gameplay (R 26), then water (R 21).
+
+## 2026-10-21 · D-121 · Director · Camera growth: A (today's camera plus look-ahead); walk contact built now
+Why: picked from the A/B/C stage-4 boards (kaiju 51% / 33% / 47% of screen height). Falling towers fade like standing ones.
+The D-118 walk contact is built now, ahead of fire gameplay (his yes 2026-10-21).
+
+## 2026-10-21 · D-117 · Director · Run timer stays 40 s at the start, 100 s at most
+Why: Asked 2026-10-21 (R 1.2). No change to data.
+
+## 2026-10-21 · D-118 · Director · Walking into buildings: small ones crumble; big ones take visible damage and tear easily with a little more effort
+Why: His words 2026-10-21: "even big building should take visible damage, it should be easy for him to tear through them, it just requires slightly more effort / the game isnt meant to be extremely challenging or frustrating, its meant to be a thrill". Closes R 13.3.
+
+## 2026-10-21 · D-119 · Director · Skins and body-part mutations are stretch goals
+Why: Asked 2026-10-21 (customisation beyond species).
+
+## 2026-10-21 · D-120 · Director · The background skyline rampage stays after the slice (section H)
+Why: Asked 2026-10-21.
+
+## 2026-10-21 · D-113 · Director · The game ends in a finale boss fight against a giant military mecha, after 3 cities
+Why: Asked 2026-10-21 (open list: finale shape, how many cities). Changes: ROADMAP finale (R 23) builds a mecha boss; city count 3.
+
+## 2026-10-21 · D-114 · Director · Music: Suno Pro (director's written yes to the spend; he subscribes and generates)
+Why: Asked 2026-10-21 (Suno Pro vs ElevenLabs Music). Agents never enter keys; he generates, the lead cuts loops and registers licences.
+
+## 2026-10-21 · D-115 · Director · Fire: wind fixed per run; non-breath species light fires through tree augments
+Why: Asked 2026-10-21. His words: "fire augmentation possible in the upgrade tree, i.e. insectoid 'searing venom' cephalopod 'flammable oil spray'". Fire as gameplay (R 26) is the next build after the current batch.
+
+## 2026-10-21 · D-116 · Director · Heartbeat sound: the director makes it in ElevenLabs
+Why: Asked 2026-10-21; the lead gives the prompt and length, then wires and tunes it.
+
+## 2026-10-21 · D-112 · Director · The croc's signature is "Lightning Breath", its ultimate "Thunder Beam"
+Why: D-108 retired "Atomic Breath" for the forked white-hot lightning; asked during the UI redesign QC (species card
+and tree still said Atomic Breath / Atomic Beam). Changes: species.json, the species card, HUD and tree copy.
+
 ## 2026-10-21 · D-109 · Lead · Medium (balanced + MSAA 2x) is the 4K default
 Why: R 18.1 grew the graphics table to Potato/Low/Medium/High/Max; balanced ran FSR1 with no AA, which the Godot docs advise
 against. Medium = balanced + MSAA 2x costs about +6.5% GPU and keeps D-093's 60 fps cap. Built in #129. Supersedes D-093's
@@ -326,64 +384,3 @@ roar still read as a 5 m lizard (fresh critic: rear-up, no settle, the jaw drops
 counterbalance. Options: play the Blender clips (picked), or keep procedural and tune by hand. Changes: the croc
 titan's roar, turn and idle play from exported Blender clips; the walk is the Blender cycle layered over the
 procedural foot planting (root motion and terrain stay procedural). Other species follow once their models are decided.
-
-## 2026-10-17 · D-046 · Director · New reptile look: A "Croc titan"
-Why: board docs/captures/2026-10-17-reptile-design/reptile_directions.png (Tripo GPT Image 2.5, free quota):
-A croc titan, B armoured monitor titan, C lean apex predator. Picked A: croc snout and pale flat bone scutes
-carried over from the Blender model, bulk with grace. Changes: A goes to T-pose and multi-view references, then
-Tripo Smart Mesh, texture and the Blender hand rig (D-045); the baby and adolescent follow from it.
-
-## 2026-10-17 · D-045 · Director · Reptile body: a NEW original Tripo design, rigged in Blender
-Why: Blender motion test (blender-reptile 4ab6781, clips in notes blender-reptile/motion-test/): one hand-made
-skeleton with welded falloff weights moved BOTH the Blender model and the Tripo model cleanly (critic: deformation
-and feet PASS), so poor in-game motion comes from our auto rig, not the mesh. The director prefers Tripo's detail but
-A's originality ("less a blatant Godzilla copy"). Options: new Tripo design (picked), Blender A, current Tripo B.
-Changes: new Tripo reptile steered away from Godzilla (croc snout, pale back plates, long low tail), then rigged in
-Blender with the hand rig; Blender weights feed the game in place of rig_voxel's guessed bone ownership.
-
-## 2026-10-17 · D-044 · Director · Locomotion paused until the kaiju models are decided
-Why: "pause locomotion until we decide on the models because theyre doing work they might have to replace
-if we change our models"; octopus capture showed "head detached, limbs a static, awkward mesh".
-Changes: species-motion and kaiju-motion stop; PR #11 stays open, unmerged. The Blender motion test
-(one hand-weighted rig on the Blender and Tripo reptiles) decides the model pipeline first.
-
-## 2026-10-17 · D-043 · Director · Make the repo public to restore GitHub Actions
-Why: Actions stopped starting jobs (account spending limit); options were raise the limit ($), run locally,
-or go public (free minutes). Picked public. Changes: repo visibility public (the director flips it), main
-protected per github-hygiene, failed CI rerun. Commit email and all code/docs become readable.
-
-## 2026-10-17 · D-042 · Director · Military vehicles at 2x real size, desert tan; modelled in Blender
-Why: tank board docs/captures/2026-10-17-vehicles/tank_board.png (modelled through the Blender MCP);
-picked 2x (readable from the game camera beside a growing kaiju) and desert tan (olive goes near-black
-in blue-hour light). Changes: TankModel uses the voxelized Blender tank; helicopters follow the same way.
-
-## 2026-10-17 · D-041 · Director · Kaiju render as voxel cubes on a smooth skin (look test C)
-Why: "its looking very rough so far, would this work better if our kaiju werent voxel?"; side-by-side
-docs/captures/2026-10-17-look-test/look_test_abc.mp4 (A per-bone voxels / B smooth skinned / C voxel cubes
-on a skinned lattice); picked C. Changes: one skinned mesh per kaiju, cubes move rigidly with their bone
-over a watertight lattice: no joint gaps or speckle, keeps the voxel look. A kept as a debug fallback.
-
-## 2026-10-17 · D-040 · Director · Ultimates get their own button
-Why: picked "own button" over replacing the signature. Changes: E / pad Y, long cooldown (18 s);
-the signature stays (the insect keeps Leap Slam for hold-to-glide). As built in PR #12.
-
-## 2026-10-16 · D-039 · Director · The city grows with each evolution
-Why: species-powers' pacing sim (tools/pacing.gd) clears the tree in 0.9 h because the one city is
-flattened by run 11; the director picked "bigger city each stage" over a new city per stage or raised
-costs. Changes: each evolution unlocks more districts, taller towers, harder defences; costs re-tuned
-after that (a follow-up task); species-powers paces only its branches against the current curve.
-
-## 2026-10-16 · D-038 · Director · Mantis skin = dark chitin, red eyes, rusty scythe tips; octopus baby 6176590f
-Why: approved docs/captures/2026-10-16-stages/mantis_skin_v2.png ("Yes, use it"); the cephalopod baby
-"i love him" (Tripo 6176590f, big round eyes). Changes: same mantis prompt on all three insect stages.
-
-## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
-Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
-hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
-in a per-species branch (data/upgrades.json), ultimate at the branch end.
-
-## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
-Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
-over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".
-Changes: the radial rig takes its tentacle count from the mesh; baby/adolescent keep the many-limb plan.
-Also: a jaw bone for the reptile ("him opening his maw is a key part of his design").

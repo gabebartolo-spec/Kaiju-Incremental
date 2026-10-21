@@ -2,6 +2,67 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-17 · D-046 · Director · New reptile look: A "Croc titan"
+Why: board docs/captures/2026-10-17-reptile-design/reptile_directions.png (Tripo GPT Image 2.5, free quota):
+A croc titan, B armoured monitor titan, C lean apex predator. Picked A: croc snout and pale flat bone scutes
+carried over from the Blender model, bulk with grace. Changes: A goes to T-pose and multi-view references, then
+Tripo Smart Mesh, texture and the Blender hand rig (D-045); the baby and adolescent follow from it.
+
+## 2026-10-17 · D-045 · Director · Reptile body: a NEW original Tripo design, rigged in Blender
+Why: Blender motion test (blender-reptile 4ab6781, clips in notes blender-reptile/motion-test/): one hand-made
+skeleton with welded falloff weights moved BOTH the Blender model and the Tripo model cleanly (critic: deformation
+and feet PASS), so poor in-game motion comes from our auto rig, not the mesh. The director prefers Tripo's detail but
+A's originality ("less a blatant Godzilla copy"). Options: new Tripo design (picked), Blender A, current Tripo B.
+Changes: new Tripo reptile steered away from Godzilla (croc snout, pale back plates, long low tail), then rigged in
+Blender with the hand rig; Blender weights feed the game in place of rig_voxel's guessed bone ownership.
+
+## 2026-10-17 · D-044 · Director · Locomotion paused until the kaiju models are decided
+Why: "pause locomotion until we decide on the models because theyre doing work they might have to replace
+if we change our models"; octopus capture showed "head detached, limbs a static, awkward mesh".
+Changes: species-motion and kaiju-motion stop; PR #11 stays open, unmerged. The Blender motion test
+(one hand-weighted rig on the Blender and Tripo reptiles) decides the model pipeline first.
+
+## 2026-10-17 · D-043 · Director · Make the repo public to restore GitHub Actions
+Why: Actions stopped starting jobs (account spending limit); options were raise the limit ($), run locally,
+or go public (free minutes). Picked public. Changes: repo visibility public (the director flips it), main
+protected per github-hygiene, failed CI rerun. Commit email and all code/docs become readable.
+
+## 2026-10-17 · D-042 · Director · Military vehicles at 2x real size, desert tan; modelled in Blender
+Why: tank board docs/captures/2026-10-17-vehicles/tank_board.png (modelled through the Blender MCP);
+picked 2x (readable from the game camera beside a growing kaiju) and desert tan (olive goes near-black
+in blue-hour light). Changes: TankModel uses the voxelized Blender tank; helicopters follow the same way.
+
+## 2026-10-17 · D-041 · Director · Kaiju render as voxel cubes on a smooth skin (look test C)
+Why: "its looking very rough so far, would this work better if our kaiju werent voxel?"; side-by-side
+docs/captures/2026-10-17-look-test/look_test_abc.mp4 (A per-bone voxels / B smooth skinned / C voxel cubes
+on a skinned lattice); picked C. Changes: one skinned mesh per kaiju, cubes move rigidly with their bone
+over a watertight lattice: no joint gaps or speckle, keeps the voxel look. A kept as a debug fallback.
+
+## 2026-10-17 · D-040 · Director · Ultimates get their own button
+Why: picked "own button" over replacing the signature. Changes: E / pad Y, long cooldown (18 s);
+the signature stays (the insect keeps Leap Slam for hold-to-glide). As built in PR #12.
+
+## 2026-10-16 · D-039 · Director · The city grows with each evolution
+Why: species-powers' pacing sim (tools/pacing.gd) clears the tree in 0.9 h because the one city is
+flattened by run 11; the director picked "bigger city each stage" over a new city per stage or raised
+costs. Changes: each evolution unlocks more districts, taller towers, harder defences; costs re-tuned
+after that (a follow-up task); species-powers paces only its branches against the current curve.
+
+## 2026-10-16 · D-038 · Director · Mantis skin = dark chitin, red eyes, rusty scythe tips; octopus baby 6176590f
+Why: approved docs/captures/2026-10-16-stages/mantis_skin_v2.png ("Yes, use it"); the cephalopod baby
+"i love him" (Tripo 6176590f, big round eyes). Changes: same mantis prompt on all three insect stages.
+
+## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
+Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
+hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
+in a per-species branch (data/upgrades.json), ultimate at the branch end.
+
+## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
+Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
+over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".
+Changes: the radial rig takes its tentacle count from the mesh; baby/adolescent keep the many-limb plan.
+Also: a jaw bone for the reptile ("him opening his maw is a key part of his design").
+
 ## 2026-10-16 · D-035 · Director · Three species, three ways to play (docs/SPECIES.md)
 Why: the director's species brief: reptilian = strongest (tail shears buildings, unstoppable momentum,
 ultimate atomic beam); insectoid = fastest (scuttle, jump/hover, climbs towers, ultimate egg brood that

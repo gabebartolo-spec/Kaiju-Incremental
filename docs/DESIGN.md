@@ -6,7 +6,7 @@ only by the lead when the director rules; replace the old line, never append his
 
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
-sees, decides or remembers is cut, not polished. Designed by the director; agents execute and push back.
+sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
 
 ## The game
 - An **active action game** with incremental progression, the Nodebuster / Brotato shape. No idle, no AFK, no offline
@@ -38,7 +38,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
 - **Cephalopod: the most cunning, a hydra of limbs.** Adult = 10+ barnacled tentacles (D-036). Kit: 360 deg limb
   attacks, each limb picking its own target; grab and throw tanks, cars and helicopters (a thrown tank explodes like
   a grenade); pulls itself along building edges, climbs, squeezes through gaps. Ultimate: corrosive ink that
-  dissolves coated buildings and units. Slides and grabs, never tip-toes (D-031).
+  dissolves coated buildings and units. Slides and grabs, never tip-toes (D-031). Swims fast in water and can dive to dodge the army, bursting out under buildings; one of the 3 cities is a water city (D-123).
 - **Growth:** baby (start, a toddler: slow, outscaled by the city) -> adolescent (EVOLVE 1, lanky, oversized feet,
   half-grown feature) -> adult (EVOLVE 2+, massive). Each stage a new body plan like Simba's, never only bigger
   (D-009, D-014, D-074). Body scale grows with every upgrade owned. No building is too strong for the baby; big ones
@@ -130,9 +130,6 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   must not sound like a typewriter (playtest 1).
 
 ## Open for the director (ask at its phase, the ask-the-director way)
-Camera growth per stage (R 19) · walk: slower speed vs faster cadence (R 11.2) · when contact carves vs yields
-(R 13.3) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · fire: spark source for non-breath species,
-wind fixed or drifting (R 26) · rampage timer start and ceiling (R 1.2) · tree map layout (R 16.5) · HUD: rings for
-dash and ultimate, health shown only when hit, the "CITY DESTROYED" bar (R 15) · background skyline rampage yes/no ·
-Suno Pro or ElevenLabs Music · finale shape and mecha concept (R 23.1) · which original species follow the croc
-(research 02) · how many cities and what ends the game · customisation beyond species.
+walk: slower speed vs faster cadence (R 11.2) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · tree map layout (R 16.5) ·
+mecha concept (R 23.1, finale = mecha boss after 3 cities, D-113) · which original species follow the croc
+(research 02).
