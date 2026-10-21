@@ -1,5 +1,5 @@
 # intro-cinematic handoff, 2026-10-21
-## State: running a check (final CI clip + 4K still on a0022b79)
+## State: reported to lead; awaiting their 2x review (head 6ca955ed + this file)
 ## Task
 Run intro (#11): "a quick, dramatic camera shot, zoomed in on the water which begins to ripple and fount before our
 kaiju emerges, roaring with rage before the camera zooms out into the play angle ... no longer than 3 seconds".
@@ -42,9 +42,16 @@ Scratch: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHu
   intro, shown on kaiju_emerged. capture_river --still-at takes a list. Stills sheet IC/sheet2.png (43a8f166).
 - military "tank falling back 21 of 24" fails on the base too: lead handles it separately.
 
-## Left
-- CI runs 39560818384 (stills), 39560822471 (1080p clip), 39560826525 (4K still 1.6 s) -> IC/r3-<run>;
-  review at 2x, report paths to the lead. Local load+flow on a0022b79 (IC/suites6.log).
+## Latest (6ca955ed)
+- Shot pivots on the head (yaw 90: eye due west along the river, 4x scale over water); breath-aim cone hidden in
+  the intro; camera first placed after the HUD exists. Probe: stage 1 sight line eye->head clear of decks;
+  stage 2 head sits at the deck's edge (z 50), so the fount there is partly hidden.
+- Local: load, flow, city, smoke all pass on 6ca955ed (IC/suites8.log).
+- CI: stills 39564287560 (IC/sheet4.png), 1080p clip 39564292772 (IC/r4-39564292772/*/clip.mp4, emerged
+  frame 168 = 2.80 s), 4K still 39564296988 (IC/r4-39564296988/*/river_s1_1.60s.png, crop IC/crop4k_head.png).
+- Known look issues for the lead: sand shore slab large in the left foreground; a channel-end block hides the
+  body below the head at 1.6 s; jaw reads closed in the 1.6 s still; spray cubes are flat unshaded squares.
+
 ## Open decisions
 - none yet (yaw side, distances are data; lead judges the clip).
 ## Findings for the lead
