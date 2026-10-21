@@ -593,8 +593,9 @@
 	"contact": {
 		"skin": 0.15,
 		"sample": 0.5,
-		"turn_rate": 3.5,
-		"turn_rate_still": 6.0,
+		"turn_rate": 1.85,
+		"turn_rate_still": 3.0,
+		"turn_size_exp": 1.0,
 		"turn_accel": 14.0,
 		"turn_slow": 0.5,
 		"stride_ease": 5.0,

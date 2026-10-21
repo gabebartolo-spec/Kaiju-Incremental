@@ -81,7 +81,8 @@ func length() -> float:
 
 ## Turns sim.facing toward `want` (the stick, length 0..1; zero: standing) with weight
 ## (director comments #16, "lumbering and unstoppable"): the turn gathers speed at turn_accel up
-## to turn_rate (turn_rate_still at a standstill) and slows before it lands, never overshooting,
+## to turn_rate (turn_rate_still at a standstill; both slower for a bigger body, _rate) and slows
+## before it lands, never overshooting,
 ## while the stride eases down in a hard turn (to turn_slow at an about-face) and back up after.
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
@@ -95,7 +96,7 @@ func steer(dt: float, want: Vector2) -> float:
 	var keep := lerpf(1.0, Num.f(cfg["turn_slow"]), absf(turn_left) / PI)
 	var ease := minf(1.0, Num.f(cfg["stride_ease"]) * dt) if stride > 0.0 else 1.0  # sets off at once
 	stride = lerpf(stride, want.length() * keep, ease)
-	var top := lerpf(Num.f(cfg["turn_rate_still"]), Num.f(cfg["turn_rate"]), stride)
+	var top := lerpf(_rate("turn_rate_still"), _rate("turn_rate"), stride)
 	var accel := Num.f(cfg["turn_accel"])
 	var aim := signf(turn_left) * minf(top, sqrt(2.0 * accel * absf(turn_left)))
 	_spin = move_toward(_spin, aim, accel * dt)
@@ -150,8 +151,14 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 ## The heading turns to sim.facing, at most turn_rate_still: steer() turns the facing no faster,
 ## so the two stay one; only a facing set from outside is caught up with.
 func _face(dt: float) -> void:
-	var most := Num.f(cfg["turn_rate_still"]) * dt
+	var most := _rate("turn_rate_still") * dt
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
+
+
+## A turn rate (rad/s) for this body: bigger is slower, by body scale to the turn_size_exp
+## ("bigger = slower but not TOO slow, lumbering within reason", director 2026-10-21).
+func _rate(key: String) -> float:
+	return Num.f(cfg[key]) / pow(maxf(sim.body_scale(), 0.01), Num.f(cfg["turn_size_exp"]))
 
 
 ## Whether the body overlaps building `index`'s footprint now (never without a body volume).

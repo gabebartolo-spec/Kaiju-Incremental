@@ -1,7 +1,8 @@
 extends RefCounted
 ## The sim suite's claw swipe checks (Claws, D-095), split out to keep the runner small: five
 ## levels of Claws make the young reptilian's swipe break clearly more, with the body on; the
-## other species keep Claws as a stomp upgrade. Includes the player-effect fixture "kaiju.swipe":
+## other species keep Claws as a stomp upgrade (each run in its own city, _fixture_sim).
+## Includes the player-effect fixture "kaiju.swipe":
 ## the same seeded rampages with the swipe off destroy less of the city. Both swipe comparisons
 ## average FIXTURE_RUNS seeded run indices: one seed alone flips with chaos (PR #89: towers the
 ## body undermines fall by their own physics, D-099).
@@ -30,8 +31,8 @@ func run() -> void:
 	var pairs: Array[String] = []
 	var active := true
 	for run: int in FIXTURE_RUNS:
-		var base: RampageSim = _make.call("reptilian", {}, run, {})
-		var claws: RampageSim = _make.call("reptilian", {"claws": 5}, run, {})
+		var base := _fixture_sim(run)
+		var claws := _fixture_sim(run, {"claws": 5})
 		_autoplay.call(base)
 		_autoplay.call(claws)
 		active = active and base.body.active() and claws.body.active()
@@ -115,12 +116,13 @@ func _check_fixture() -> void:
 	)
 
 
-## The fixture's young reptilian (no upgrades) in city `run` with army seed `run`: the runner's
-## _sim, but in its own city (the runner's always builds city 0).
-func _fixture_sim(run: int) -> RampageSim:
+## The young reptilian (with `levels`) in city `run` with army seed `run`: the runner's _sim, but
+## in its own city (the runner's always builds city 0, so its run indices were one sample: the
+## claws pairs came out five times the same, and flipped when the turn slowed, turn-step).
+func _fixture_sim(run: int, levels: Dictionary = {}) -> RampageSim:
 	var species := Content.species_def("reptilian")
 	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
+		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
 	)
 	var tune := Content.tuning()
 	var city: Dictionary = tune["city"]

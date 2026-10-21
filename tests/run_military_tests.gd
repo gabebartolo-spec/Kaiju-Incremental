@@ -13,8 +13,9 @@ const MIN_PARKED_IN_RANGE := 20
 ## since the body turns on arcs (turn-weight) seeds 0-2 saw none; a probe of seeds 0-11 found
 ## tanks parked in range only at the Behemoth tier, most on seeds 4 (26) and 8 (66). Re-probed
 ## after look-options' city changes (2026-10-21): Behemoth seeds 2 (25), 4 (6) and 8 (6), all in
-## the band; seed 0 saw none.
-const RAMPAGE_SEEDS: Array[int] = [2, 4, 8]
+## the band; seed 0 saw none. Re-probed seeds 0-11 when bigger bodies turned slower (turn-step,
+## 2026-10-21): seeds 2, 4, 8 fell to 5 in all; Behemoth seeds 3 (27), 6 (73), 9 (54), 10 (31).
+const RAMPAGE_SEEDS: Array[int] = [3, 6, 9]
 
 
 func suite_name() -> String:
