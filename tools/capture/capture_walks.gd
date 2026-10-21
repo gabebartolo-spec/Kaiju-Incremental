@@ -4,7 +4,9 @@ extends SceneTree
 ## head leads by turn_left), walks a course on an empty lot while a camera dollies with it.
 ## --course=straight (7 s), zigzag (the stick swings 70 deg every 1.5 s) or turn90 (a walking
 ## 90 deg turn left). --cam=side (low, square to the walk) or front34 (ahead and to one side,
-## head height). The cameras follow the walk's heading, eased, so a turn swings them round.
+## head height) or game (the rampage camera: CameraTuning offset and zoom, eased focus, no
+## shake). The side and front34 cameras follow the walk's heading, eased, so a turn swings
+## them round.
 ## --bare: the clips without the walk's weight (ClipWeight.off), the "before". Prints the worst
 ## planted-foot drift (cm; a world unit is a 3.5 m storey) at the end.
 ##
@@ -26,6 +28,7 @@ var _course := "straight"
 var _cam_kind := "side"
 var _seconds := 9.0
 var _label := ""
+var _focus := Vector3.INF  # the game camera's eased focus
 
 
 func _initialize() -> void:
@@ -89,7 +92,7 @@ func _run() -> void:
 	kaiju.scale = Vector3.ONE * bs
 	world.add_child(kaiju)
 	var cam := Camera3D.new()
-	cam.fov = 40.0
+	cam.fov = CameraTuning.fov() if _cam_kind == "game" else 40.0
 	world.add_child(cam)
 	var ui := CanvasLayer.new()
 	var text := Label.new()
@@ -146,6 +149,14 @@ func _place(cam: Camera3D, kaiju: KaijuModel, way: Vector2, bs: float) -> void:
 	var right := fwd.cross(Vector3.UP)
 	var at := kaiju.position
 	var hip := kaiju.hip_height()
+	if _cam_kind == "game":  # as Rampage._place_camera, without the step dip and shake
+		var aim := kaiju.focus()
+		_focus = (
+			aim if _focus == Vector3.INF else _focus.lerp(aim, minf(1.0, DT * Rampage.FOCUS_FOLLOW))
+		)
+		cam.position = _focus + CameraTuning.offset() * CameraTuning.zoom(bs)
+		cam.look_at(_focus + Vector3(0, 3.5 * bs, 0))
+		return
 	if _cam_kind == "front34":
 		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 5.0, 0)) * bs
 		cam.look_at(at + Vector3(0, hip * 1.1, 0))
