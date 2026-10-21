@@ -49,6 +49,10 @@ func _run() -> void:
 		quit(1)
 		return
 	var at := decor.islands[0]
+	for i: int in 900:  # the rise out of the river owns the kaiju's place until it ends
+		if not rampage.sim.emerge.active:
+			break
+		await process_frame
 	rampage.sim.kaiju_pos = at + Vector2(-14, -6)
 	for i: int in 90:
 		await process_frame
@@ -56,8 +60,8 @@ func _run() -> void:
 	root.get_texture().get_image().save_png(game)
 	var cam := Camera3D.new()
 	root.add_child(cam)
-	cam.global_position = Vector3(at.x + 5.0, 3.5, at.y + 5.0)
-	cam.look_at(Vector3(at.x, 0.6, at.y))
+	cam.global_position = Vector3(at.x + 4.0, 2.4, at.y + 2.0)
+	cam.look_at(Vector3(at.x, 1.1, at.y))
 	cam.fov = 50.0
 	cam.make_current()
 	for i: int in 10:

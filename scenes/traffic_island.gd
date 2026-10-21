@@ -168,16 +168,21 @@ static func _mark_rect(sim: RampageSim, r: Rect2, into: Dictionary) -> void:
 			into[Vector2i(i, j)] = true
 
 
-## A kerbed slab (half_cells either side of its middle) with a signal pole and a three-lamp head.
-## Bollards stand on its corners as their own props (cells from 1 up, never sharing one).
+## A kerbed slab (half_cells either side of its middle), a signal pole (pole_cells, under a street
+## lamp's height) and on its top a dark signal housing, 2 voxels wide, three lamps tall under a
+## cap. Its two faces along x (the way the island's traffic mostly runs) carry the red, amber and
+## green lamps: red lit (a glowing palette key), amber and green unlit. Bollards stand on the
+## slab's corners as their own props (cells from 1 up, never shared).
 static func _island(v: VoxelBuilder, cfg: Dictionary) -> void:
 	var h := Num.i(cfg["half_cells"])
 	var pole := Num.i(cfg["pole_cells"])
 	v.box(Vector3i(-h, 0, -h), Vector3i(h, 0, h), "island_kerb")
 	v.box(Vector3i(0, 1, 0), Vector3i(0, pole, 0), "pole")
-	v.put(Vector3i(0, pole + 1, 0), "signal_green")
-	v.put(Vector3i(0, pole + 2, 0), "signal_amber")
-	v.put(Vector3i(0, pole + 3, 0), "signal_red")
+	v.box(Vector3i(-1, pole + 1, 0), Vector3i(1, pole + 4, 1), "signal_housing")  # + a cap row
+	var lamps: Array[String] = ["signal_green", "signal_amber", "signal_red"]
+	for face: int in [-1, 1]:
+		for row: int in lamps.size():
+			v.box(Vector3i(face, pole + 1 + row, 0), Vector3i(face, pole + 1 + row, 1), lamps[row])
 
 
 static func _bollard(v: VoxelBuilder, cfg: Dictionary) -> void:
