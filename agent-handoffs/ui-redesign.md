@@ -56,3 +56,10 @@ controls card +20 px; capture_flow: clean 04/06 frames, hurt at beat peak, 11_tr
 after the card (the demo never reaches a tree after its end evolution), 12_demo_complete = the card.
 Captures (local RTX 4070 SUPER, 3840x2097 window): side-session-notes/.../ui-redesign/after3-125, after3-100.
 Suites green: ui 52, flow 203, smoke 30. Not run locally: powers, full suite (CI does).
+
+## Minimal HUD pass (director 2026-10-21), done and pushed
+Rings 16/12 px radius bottom-left corner (breath, dash, ultimate), NO key labels, plain outlined 44 px clock (white, red
+in last 10 s), 220x6 strip, biomass 44 px + 24 px word swelling on gains >= 3. First-run controls card kept as is, lifted
+90 px above the rings (lead to ask the director). tools/capture/capture_hud.gd measures HUD share (before 3.19%, after
+1.37% at 100% 4K; 1.31% at 125%). Captures: side-session-notes/.../ui-redesign/hud-after, hud-after-125 (before design:
+after3-100/04_rampage.png); 2x crops in crops3/hudA_*. Suites green: ui 53, flow 203, smoke 30.

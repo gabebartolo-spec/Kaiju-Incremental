@@ -72,8 +72,8 @@ func _run() -> void:
 	# The same frame twice with the HUD on, then off: the world holds still (paused).
 	paused = true
 	await _frames(2)
+	root.get_texture().get_image().save_png(_out.path_join("04_rampage.png"))
 	var with_hud := _grab()
-	with_hud.save_png(_out.path_join("04_rampage.png"))
 	var widgets: Control = hud.get("_widgets")
 	widgets.visible = false
 	await _frames(2)
@@ -87,7 +87,7 @@ func _run() -> void:
 	print("HUD share ", snappedf(100.0 * maxf(0.0, share - noise) / (without.get_width() * without.get_height()), 0.001), " percent (diff ", share, " noise ", noise, " of ", without.get_width() * without.get_height(), ")")
 	rampage.sim.time_left = LAST_SECONDS
 	await _frames(LAST_FRAMES)
-	_grab().save_png(_out.path_join("04d_last_seconds.png"))
+	root.get_texture().get_image().save_png(_out.path_join("04d_last_seconds.png"))
 	SaveFile.delete_save()
 	quit()
 
