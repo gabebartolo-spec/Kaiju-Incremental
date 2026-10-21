@@ -9,7 +9,7 @@ signal chosen(species_id: String)
 signal back_pressed
 
 ## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
-const PREVIEW_SIZE := Vector2i(440, 270)
+const PREVIEW_SIZE := Vector2i(390, 220)
 ## The preview camera looks down this way (the old fixed camera's view) through a fairly long lens
 ## (deg; a near limb swinging toward a wide lens would push the kaiju small); the spinning kaiju
 ## fills at most this much of the card's width and keeps this margin (of the height) top and bottom.
@@ -24,6 +24,8 @@ const PREVIEW_YAW := PI * 0.62
 const PREVIEW_SAMPLES := 16
 const PREVIEW_STRIDE := 13
 const BACK_WIDTH := 360
+## The stat name column in a card (px), wide enough for HEALTH and SPEED.
+const STAT_NAME_WIDTH := 96
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
 	["Speed", "speed", 8.0],
@@ -45,11 +47,14 @@ func _ready() -> void:
 	top.offset_bottom = 18.0
 	add_child(top)
 	_spin = Num.f(UiKit.ui()["species_spin_rate"])
+	var safe := MarginContainer.new()
+	UiKit.full_rect(safe)
+	UiKit.safe_area(safe)
+	add_child(safe)
 	var col := VBoxContainer.new()
-	UiKit.full_rect(col)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 16)
-	add_child(col)
+	safe.add_child(col)
 	var title := UiKit.header("CHOOSE YOUR KAIJU")
 	title.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(title)
@@ -188,10 +193,17 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	col.add_child(UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN))
 
 	var stats: Dictionary = def["stats"]
+	# Two meters a row, so the card (and CHOOSE) fits the TV at 125% inside the title-safe area.
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 20)
+	col.add_child(grid)
 	for entry: Array in COMPARE:
 		var line := HBoxContainer.new()
+		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		line.add_theme_constant_override("separation", 8)
 		var name_label := UiKit.label(str(entry[0]), UiKit.SIZE_BODY)
-		name_label.custom_minimum_size = Vector2(130, 0)
+		name_label.custom_minimum_size = Vector2(STAT_NAME_WIDTH, 0)
 		line.add_child(name_label)
 		var meter := UiKit.bar(UiKit.ACCENT, 18)
 		meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -199,7 +211,7 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 		meter.max_value = Num.f(entry[2])
 		meter.value = Num.f(stats.get(str(entry[1]), 0.0))
 		line.add_child(meter)
-		col.add_child(line)
+		grid.add_child(line)
 
 	var pick := UiKit.button("CHOOSE", UiKit.SIZE_HEAD)
 	var id := str(def["id"])

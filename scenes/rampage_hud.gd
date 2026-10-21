@@ -138,7 +138,8 @@ func _build_biomass() -> Control:
 
 
 ## The breath ring bottom centre, where the health bar was (b2-12, b2-13); dash and the
-## ultimate in smaller rings either side, each shown only when the kaiju has it.
+## ultimate in smaller rings either side, each shown only when the kaiju has it (a missing one
+## keeps its place, unseen, so the breath ring stays dead centre).
 func _build_rings() -> Control:
 	var row := HBoxContainer.new()
 	row.size_flags_vertical = Control.SIZE_SHRINK_END
@@ -199,11 +200,11 @@ func refresh() -> void:
 		_pop_biomass()
 	# The sim's own floor on the cooldown (rampage_sim.gd), so the ring matches the button.
 	breath_ring.set_ratio(1.0 - sim.ability_ready_in / maxf(0.5, sim.stat("ability_cooldown")))
-	ultimate_ring.visible = sim.powers.has_ultimate()
+	ultimate_ring.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
 	var ult_cd := Num.f(sim.powers_cfg["ultimate_cooldown"])
 	ultimate_ring.set_ratio(1.0 - sim.ultimate_ready_in / maxf(0.001, ult_cd))
 	var dash := sim.body.dash
-	dash_ring.visible = dash.available()
+	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
 	if dash.available():
 		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
 

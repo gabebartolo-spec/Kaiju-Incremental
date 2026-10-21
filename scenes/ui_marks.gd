@@ -36,7 +36,7 @@ class AlertTag:
 		draw_rect(Rect2(Vector2.ZERO, size), UiKit.BG)
 		var s := minf(size.x, size.y)
 		var c := size / 2.0
-		var h := s * 0.62
+		var h := s * 0.8
 		var top := c + Vector2(0.0, -h * 0.55)
 		var tri := PackedVector2Array(
 			[top, c + Vector2(h * 0.58, h * 0.45), c + Vector2(-h * 0.58, h * 0.45)]

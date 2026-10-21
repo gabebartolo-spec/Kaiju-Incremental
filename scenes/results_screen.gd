@@ -79,7 +79,7 @@ func _ready() -> void:
 		badge.modulate.a = 0.0
 		grid.add_child(badge)
 		_badges.append(badge)
-	_go = UiKit.button("EVOLVE  >", UiKit.SIZE_HEAD)
+	_go = UiKit.button("EVOLVE", UiKit.SIZE_HEAD)
 	_go.custom_minimum_size = Vector2(0, 80)
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
@@ -171,7 +171,7 @@ func _show_frame() -> void:
 			_badges[n].text = "NEW BEST"
 			_badges[n].add_theme_color_override("font_color", UiKit.GOOD)
 	_verdict.modulate.a = 0.0 if counting() else 1.0
-	_go.text = "SKIP" if counting() else "EVOLVE  >"
+	_go.text = "SKIP" if counting() else "EVOLVE"
 
 
 func _shown(row: Array, value: float) -> String:

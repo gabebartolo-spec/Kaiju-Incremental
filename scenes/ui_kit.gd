@@ -26,6 +26,8 @@ const BRIGHT_FILL := 0.45
 ## The hazard band along a button's left edge and a panel's top (px at 1080p).
 const BUTTON_BAND := 22.0
 const PANEL_BAND := 14.0
+## A card's content sits this far inside its corner brackets.
+const CARD_PAD := 12.0
 ## Scanlines over a backdrop: one line every SCANLINE_STEP px, this faint.
 const SCANLINE_STEP := 4.0
 const SCANLINE_ALPHA := 0.035
@@ -178,6 +180,10 @@ static func panel(color: Color = PANEL) -> PanelContainer:
 static func panel_box(color: Color = PANEL) -> HazardBox:
 	var s := hazard(color, ACCENT, 3.0, HazardBox.Band.TOP)
 	s.corners = true
+	var clear := HazardBox.CORNER_GAP + HazardBox.CORNER_WIDTH + 3.0 + CARD_PAD
+	s.content_margin_left = clear
+	s.content_margin_right = clear
+	s.content_margin_bottom = clear
 	return s
 
 
