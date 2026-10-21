@@ -11,7 +11,7 @@ const FLAME_COLORS: Array[Color] = [
 ]
 const WIND := Vector3(2.2, 0.0, 0.9)
 
-var _light: OmniLight3D
+var _light: PooledLight
 var _base_energy: float
 var _t := 0.0
 var _seed: float
@@ -20,10 +20,10 @@ var _seed: float
 func _init(size: float, seed_value: float) -> void:
 	_seed = seed_value
 	_base_energy = 2.5 + size * 1.2
-	_light = OmniLight3D.new()
+	_light = PooledLight.new("fire")
 	_light.light_color = Color("ff9a4a")
 	_light.omni_range = 4.0 + size * 2.0
-	_light.light_energy = _base_energy
+	_light.set_energy(_base_energy)
 	_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 	add_child(_light)
 	add_child(_flames(size))
@@ -42,7 +42,7 @@ static func prewarm(parent: Node) -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	var flicker := 0.75 + 0.15 * sin(_t * 17.0 + _seed) + 0.1 * sin(_t * 31.0 + _seed * 2.0)
-	_light.light_energy = _base_energy * flicker
+	_light.set_energy(_base_energy * flicker)
 
 
 func _flames(size: float) -> GPUParticles3D:
