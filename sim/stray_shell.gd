@@ -4,9 +4,9 @@ extends RefCounted
 ## i really like the idea of a clumsy military which destroys parts of its own city
 ## occasionally"). A tank's shot at the kaiju hits with a chance that falls from hit_near at
 ## point blank to hit_far at full reach; a hit does the shot's damage / that chance, so the
-## kaiju takes what it took before on average. A miss lands in the city round the kaiju: it breaks the chunks it reaches on the low floors like any blow (the
-## carving path for carved buildings). Seeded by the army's own stream; numbers are army.miss in
-## data/tuning.json.
+## kaiju takes what it took before on average. A miss lands in the city round the kaiju: it
+## breaks the chunks it reaches on the low floors like any blow (the carving path for carved
+## buildings). Seeded by the army's own stream; numbers are army.miss in data/tuning.json.
 
 
 ## The chance a shot from `dist` hits, with the tanks' full reach `reach`.
