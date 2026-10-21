@@ -161,6 +161,7 @@ func step(dt: float) -> void:
 	for f: RampageSim.Fall in landed:
 		sim.falls.erase(f)
 		_land(f)
+	sim.carving.warm()  # one stage of getting the next building ready for its first hit
 
 
 ## A falling part hits: its chunks become rubble (a bonus for toppled towers) and it smashes

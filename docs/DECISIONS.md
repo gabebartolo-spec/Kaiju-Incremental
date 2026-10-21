@@ -4,6 +4,17 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-111 · Director · The look stays voxel (b2-20)
+Why: asked from labelled boards and an 8 s side-by-side clip of today's voxels vs the same models meshed smooth (same seed and
+tick; destruction stays cubes in both), he picked A, voxels. Changes: none to the game; claude/phase-b-boards stays a
+capture-only branch. Phase B left: camera growth per stage (R 19).
+
+## 2026-10-21 · D-110 · Director · Fallen slabs are destructible: anything the kaiju touches breaks
+Why: playtest of build 4, "rubble blocks are probably too big, the kaiju is gonna clip through them; alternatively make the
+rubble blocks destructible too" (comments #14, docs/roadmap/2026-10-21-rubble-slabs.webp). Asked smaller slabs vs
+destructible vs both, he picked destructible. Changes: a landed slab stays big, but a stomp, swipe, dash or the body walking
+into it breaks it into smaller chunks and gravel (sim decides, deterministic); the kaiju never clips through rubble.
+
 ## 2026-10-21 · D-107 · Director · Voxel size: the city stays at today's size, the kaiju gets double voxels (b2-19)
 Why: asked from labelled stills of half / today / double (same seed and tick, game and close camera), he answered "b but
 kaiju with double voxels". Double everywhere ran at 5.6 fps with a 13 s stall; at the game camera the city sizes looked nearly
@@ -371,41 +382,3 @@ Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (1
 over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".
 Changes: the radial rig takes its tentacle count from the mesh; baby/adolescent keep the many-limb plan.
 Also: a jaw bone for the reptile ("him opening his maw is a key part of his design").
-
-## 2026-10-16 · D-035 · Director · Three species, three ways to play (docs/SPECIES.md)
-Why: the director's species brief: reptilian = strongest (tail shears buildings, unstoppable momentum,
-ultimate atomic beam); insectoid = fastest (scuttle, jump/hover, climbs towers, ultimate egg brood that
-devours civilians and fights the military); cephalopod = most cunning (360 hydra limbs, grab and throw
-tanks and helicopters, push/pull/climb/squeeze, ultimate corrosive ink). Changes: SPECIES.md is the spec;
-build after locomotion (PR #10) lands; three open questions listed there.
-
-## 2026-10-16 · D-034 · Director · Kaiju get real Tripo-textured skins; reptile = dark olive crocodile
-Why: "i hope this isnt our final textured look"; "should be greener, less grey"; picked C (dark olive
-middle ground) over B (bright green) on docs/captures/2026-10-16-stages/reptile_skin_options.png.
-Also: "spend as many tripo credits as u want". Changes: rig_voxel.py samples the base-colour texture
-when present; every stage of every species gets a matching texture pass (same prompt per species).
-
-## 2026-10-16 · D-033 · Director · Kaiju growth stages picked
-Why: stage board docs/captures/2026-10-16-stages/stages_board.png. Reptile adolescent = B (Tripo
-f9cf6ba7, slimmer version of the adult); mantis baby 06ed8a12, adolescent 0161ad14, adult 9668b815
-("yes, use them"). Changes: reptilian_adolescent re-rigged at 130 voxels; mantis rigs wait on the
-hexapod skeleton (kaiju-motion).
-
-## 2026-10-16 · D-032 · Director · Looks first, performance tuning later
-Why: "lets worry later about frame rate/performance issues. focus on getting the best looking game
-we can and then we can tune it". Changes: perf budgets no longer block visual work; benches are still
-recorded in PRs (so tuning has a baseline) but a slower frame is not a reason to cut detail. A perf
-pass comes after the look is locked.
-
-## 2026-10-16 · D-031 · Director · Kaiju move like killing machines, each species its own way
-Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness (posture a
-medium between Godzilla and T-rex, ~20-30° lean: "my t-rex comparison was mostly the gracefulness");
-insectoid = disturbing skitter, twitches, exoskeletal motion; cephalopod = slides, pushes, pulls,
-grabs building edges with tentacles, never tip-toes. Changes: helper kaiju-motion rebuilds rig
-locomotion (foot IK, weight shift, tail counterbalance, hexapod and radial rigs).
-
-## 2026-10-16 · D-030 · Director · SFX: free libraries, synthesized in-house where that sounds better
-Why: "download the free stuff, synthesize in-house when we can get better results". Changes: Sonniss
-GDC bundles, Kenney (CC0) and Freesound CC0 only; each source CLEARED in the licence register first;
-no paid packs. Also: fullscreen now starts only in exported builds (a project-wide fullscreen start put
-agent capture windows on the director's screen).

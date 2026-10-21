@@ -12,16 +12,23 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## Team. Lead 9 (session local_df2c2989) is still up until ITS subagents report: rubble part 2, walk-motion m1
-## (turn-weight reds), audio-duck + tentacle substep, hygiene (#121). It forwards branch/sha; lead 10 takes the PRs.
-## Lead 10's own subagents (die with this session; re-brief from <task>\handoff.md in the NEW notes folder):
-- prs (Sonnet): handover-fixes PR (fail-first, push 760b99a, merge on green), then light-pool PR. Log: hygiene\state.md.
-- walkers (Opus med): fill the empty diagonal sliver cell (stage 2 seed 1234 (60,40)) with decor, never relax the check; resync.
-- phase-b (Opus med): fix b2-20 board (smooth head flat, cars blobs, idle from behind; label "destruction still cubes").
-- presets (Opus med): R 18.1 Potato..Max; lead said yes to Medium (balanced + MSAA 2x) as 4K default IF MSAA < ~15% gpu.
-  When it lands record D-107 (number reserved) in DECISIONS.
-- Next to brief: walk m2 (R 11.1-11.4, 14.1-14.3) once m1 lands; worktree Kaiju-Incremental-wt/walk-motion (claude/walk-m1
-  54b23f5 = turn-weight + look-options, unused) can be reused or removed.
+## Director AFK again (~13:00 2026-10-21): "work until usage is empty". Windowed Godot fine while away.
+## Team (lead 10's subagents; die with this session; re-brief from NEW notes <task>\handoff.md):
+- prs (Sonnet): squash-only queue, cap 3. Merged #124 parse-step, #125 light-pool. #126 b2-3-part3 in CI. Then cells-native
+  223f8ba (after #126), audio-duck, tentacle-substep, graphics-presets 9f37429 (+D-109 lead: Medium 4K default), bridge-land
+  2ceb079, kaiju-double 47ac4da, view-spikes 32555d9, walkers-on-pavement, turn-weight (HOLD: walk-m2b re-pins 3 seed flips),
+  ci-sim-split 39e9f44 last.
+- walk-m2b: fix turn-weight seed flips (swipe 0.160 vs 0.161, crush people 0, tanks in range 12<20) then walk-m2 clips.
+  Director question later: young stages walk 2.2x/1.9x authored speed (R 11.2: slower young speed vs Blender re-bake).
+- parse-step: clumsy army (#18) claude/clumsy-army; ~254k context, hands off at 280k.
+- explosives-view: VFX/SFX/models on claude/city-explosives (sim done 971a372; blast numbers first-pass, lead judges clip).
+- rubble-break: D-110 + #24/#25 (falling towers break believably on the kaiju) claude/rubble-break.
+- walkers: deterministic diagonal fill, then #17 emerge facing city + shoreline + wider river, then R 6.1.
+- skyline: background kaiju rampage prototype (#16), off by default. no-random-fire: R 26.1. cells-native: camera growth boards (R 19).
+- Director questions when back: camera growth pick (R 19 boards), walk cadence (R 11.2), Suno Pro $10/mo or ElevenLabs Music
+  (R 25), fire: spark source for non-breath species + wind fixed or drifting (R 26), background skyline yes/no, blast numbers.
+- Decisions today: D-107 voxels, D-108 lightning, D-110 destructible slabs, D-111 look stays voxel. Comments #12-#25 logged.
+- Build 5 once the queue lands: dispatch build.yml on look-options, smoke from repo root, Kaiju-Builds/carve-build5-<sha>.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
 ## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
