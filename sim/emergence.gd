@@ -16,6 +16,7 @@ var active := false
 ## start(); the first rise step emits them as "deck_burst" (director 2026-10-21: "burst
 ## through": he rises up through the bridge deck and breaks it; the street grid stays whole).
 var burst: Array[Rect2] = []
+var burst_ns: Array[Rect2] = []  # the same over the north-south decks (bay_bridges_ns)
 var _broke := false
 var _t := 0.0
 var _rise: float
@@ -56,7 +57,9 @@ func start(sim: RampageSim) -> void:
 	# for its whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
 	sim.facing = _ahead()
 	sim.body.heading = sim.facing
-	burst = _holes(sim)
+	var foot := _footprint(sim)
+	burst = _holes(foot, CityRiver.bay_bridges(_plan, _city), true)
+	burst_ns = _holes(foot, CityRiver.bay_bridges_ns(_plan, _city), false)
 	_broke = false
 
 
@@ -81,9 +84,9 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 		sim.stand_y = 0.0
 		_land(sim, sim.clamp_to_arena(_bank))
 		return true
-	if not _broke and not burst.is_empty():  # the first step: he breaks up through the deck
-		_broke = true
-		sim.events.append({"type": "deck_burst", "holes": burst})
+	if not _broke and not (burst.is_empty() and burst_ns.is_empty()):  # the first step
+		_broke = true  # he breaks up through the deck
+		sim.events.append({"type": "deck_burst", "holes": burst, "holes_ns": burst_ns})
 	if _t < _rise:
 		var up := smoothstep(0.0, 1.0, _t / _rise)
 		sim.stand_y = lerpf(-_depth * sim.body_scale(), -_bed, up)  # up to wading depth
@@ -120,10 +123,8 @@ func _rise_point(sim: RampageSim) -> Vector2:
 	return Vector2(_spawn.x, sand.end.y + nose * sim.body_scale() + gap)
 
 
-## The body's footprint at the rise (its discs' bounds, grown by the burst margin) cut across
-## each bay deck it covers, the deck's full depth (so no sliver of deck is left inside it).
-func _holes(sim: RampageSim) -> Array[Rect2]:
-	var out: Array[Rect2] = []
+## The body's footprint at the rise: its discs' bounds, grown by the burst margin.
+func _footprint(sim: RampageSim) -> Rect2:
 	var s := sim.body_scale()
 	var foot := Rect2()
 	for d: Array in sim.body.discs():
@@ -132,14 +133,25 @@ func _holes(sim: RampageSim) -> Array[Rect2]:
 		var disc := Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
 		foot = disc if not foot.has_area() else foot.merge(disc)
 	if not foot.has_area():
-		return out
+		return foot
 	var bay: Dictionary = _city.get("river_bay", {})
-	foot = foot.grow(Num.f(bay.get("burst_margin", 0.0)))
-	for deck: Rect2 in CityRiver.bay_bridges(_plan, _city):
-		if deck.intersects(foot):
-			var x0 := maxf(deck.position.x, foot.position.x)
-			var x1 := minf(deck.end.x, foot.end.x)
-			out.append(Rect2(x0, deck.position.y, x1 - x0, deck.size.y))
+	return foot.grow(Num.f(bay.get("burst_margin", 0.0)))
+
+
+## The footprint cut across each deck it covers, the deck's full width (so no sliver of deck is
+## left inside it): across x for an east-west deck (along_x), across z for a north-south one.
+func _holes(foot: Rect2, decks: Array[Rect2], along_x: bool) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not foot.has_area():
+		return out
+	for deck: Rect2 in decks:
+		if not deck.intersects(foot):
+			continue
+		var cut := deck.intersection(foot)
+		if along_x:
+			out.append(Rect2(cut.position.x, deck.position.y, cut.size.x, deck.size.y))
+		else:
+			out.append(Rect2(deck.position.x, cut.position.y, deck.size.x, cut.size.y))
 	return out
 
 

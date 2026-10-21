@@ -10,25 +10,37 @@ const CHUNKS_PER_M2 := 1.2  # fragments thrown per square metre of broken deck
 const MAX_CHUNKS := 60  # per hole
 const THROW_UP := 1.5  # how much more up than sideways the fragments fly
 
-var _holes: Array[Rect2]
+var _holes: Array[Rect2]  # east-west decks' holes, then north-south ones
+var _ns_from: int  # the first north-south hole
 var _asphalt: Color
 var _stone: Color
 var _pieces: Array[MeshInstance3D] = []
 
 
-func _init(holes: Array[Rect2], asphalt: Color, stone: Color) -> void:
-	_holes = holes
+func _init(holes: Array[Rect2], holes_ns: Array[Rect2], asphalt: Color, stone: Color) -> void:
+	_holes = holes.duplicate()
+	_ns_from = _holes.size()
+	_holes.append_array(holes_ns)
 	_asphalt = asphalt
 	_stone = stone
 
 
 func _ready() -> void:
 	var rail := CityGround.PARAPET
-	for hole: Rect2 in _holes:
+	for k: int in _holes.size():
+		var hole := _holes[k]
 		_box(hole, Vector2(0.001, 0.5), _asphalt)
-		for edge: float in [0.0, 1.0]:
-			var z := hole.position.y + (hole.size.y - rail.y) * edge
-			_box(Rect2(hole.position.x, z, hole.size.x, rail.y), Vector2(rail.x, 1.0), _stone)
+		for edge: float in [0.0, 1.0]:  # a parapet along each side of the deck
+			var r := Rect2(hole.position.x, hole.position.y, hole.size.x, rail.y)
+			r.position.y += (hole.size.y - rail.y) * edge
+			if k >= _ns_from:
+				r = Rect2(
+					hole.position.x + (hole.size.x - rail.y) * edge,
+					hole.position.y,
+					rail.y,
+					hole.size.y
+				)
+			_box(r, Vector2(rail.x, 1.0), _stone)
 
 
 ## The deck breaks: its pieces vanish, fragments fly up and out from the hole, dust rises.

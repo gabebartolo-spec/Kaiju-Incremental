@@ -189,6 +189,58 @@ static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	return out
 
 
+## The north-south decks over the bay (x, z): the river's own bridges (CityRiver.bridges) that
+## the bay reaches, and every north-south street's carriageway and sidewalks where it crosses
+## the bay south of the channel (a bay sized to the biggest body spans several of them).
+static func bay_bridges_ns(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var basin := bay(plan, cfg)
+	if basin.is_empty():
+		return out
+	var span := basin[0]
+	for r: Rect2 in basin:
+		span = span.merge(r)
+	for deck: Rect2 in bridges(plan, cfg):
+		if deck.intersects(span):
+			out.append(deck)
+	var south := channels(plan, cfg)[0].end.y
+	var nodes: Array[Vector2] = plan["nodes"]
+	var side := Num.f(cfg["sidewalk"])
+	for street: Dictionary in plan["streets"]:
+		var a := nodes[Num.i(street["from"])]
+		var b := nodes[Num.i(street["to"])]
+		if not is_equal_approx(a.x, b.x):
+			continue
+		var half := Num.f(street["width"]) * 0.5 + side
+		var z0 := maxf(minf(a.y, b.y), south)
+		var road := Rect2(a.x - half, z0, half * 2.0, maxf(a.y, b.y) - z0)
+		if road.size.y > 0.0 and road.intersects(span):
+			out.append(road.intersection(span))
+	return out
+
+
+## bay_bridges_ns left standing once the kaiju has burst through them: each with every hole
+## cut out of it, north and south of the hole.
+static func decks_after_ns(plan: Dictionary, cfg: Dictionary, holes: Array[Rect2]) -> Array[Rect2]:
+	var out := bay_bridges_ns(plan, cfg)
+	for hole: Rect2 in holes:
+		var left: Array[Rect2] = []
+		for deck: Rect2 in out:
+			if not deck.intersects(hole):
+				left.append(deck)
+				continue
+			if hole.position.y > deck.position.y:
+				left.append(
+					Rect2(deck.position, Vector2(deck.size.x, hole.position.y - deck.position.y))
+				)
+			if hole.end.y < deck.end.y:
+				left.append(
+					Rect2(deck.position.x, hole.end.y, deck.size.x, deck.end.y - hole.end.y)
+				)
+		out = left
+	return out
+
+
 ## The bay's decks (bay_bridges) left standing once the kaiju has burst up through them
 ## (Emergence.burst, director 2026-10-21: "burst through": he rises through the bridge deck and
 ## breaks it): each deck with every hole cut out of it, west and east of the hole.
@@ -209,6 +261,21 @@ static func decks_after(plan: Dictionary, cfg: Dictionary, holes: Array[Rect2]) 
 					Rect2(hole.end.x, deck.position.y, deck.end.x - hole.end.x, deck.size.y)
 				)
 		out = left
+	return out
+
+
+## The buildings of `entries` (CityGen.generate's) that stand clear of the river's bay: the
+## bay sized to the stage's biggest body (EmergeReach.fit) reaches past the park into built
+## blocks, and nothing stands in its water.
+static func dry(plan: Dictionary, cfg: Dictionary, entries: Array[Dictionary]) -> Array[Dictionary]:
+	var basin := bay(plan, cfg)
+	var out: Array[Dictionary] = []
+	for e: Dictionary in entries:
+		var w := Num.f(e.get("w", 0.0))
+		var d := Num.f(e.get("d", 0.0))
+		var r := Rect2(Num.f(e["x"]) - w * 0.5, Num.f(e["z"]) - d * 0.5, w, d)
+		if not basin.any(func(b: Rect2) -> bool: return b.intersects(r)):
+			out.append(e)
 	return out
 
 

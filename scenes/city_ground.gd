@@ -22,6 +22,7 @@ var cfg: Dictionary
 var coast: float
 ## The holes the kaiju's rise breaks in the bay's decks (Emergence.burst; set before it is added).
 var holes: Array[Rect2] = []
+var holes_ns: Array[Rect2] = []  # the same in the north-south decks (Emergence.burst_ns)
 var deck_burst: DeckBurst  # the pieces over the holes, broken on the sim's "deck_burst"
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
@@ -310,7 +311,10 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			_slab(side, wall, stone)
 	CityShore.draw(self, plan, cfg, depth)
 	var across := CityRiver.decks_after(plan, cfg, holes)  # east-west decks: parapets along x
-	for deck: Rect2 in bridges + across:
+	var inside := CityRiver.bay_bridges_ns(plan, cfg)  # the bay's own north-south decks
+	var along := bridges.filter(func(d: Rect2) -> bool: return not d in inside)
+	along.append_array(CityRiver.decks_after_ns(plan, cfg, holes_ns))
+	for deck: Rect2 in along + across:
 		_slab(deck, Vector2(0.001, 0.5), asphalt)
 		var rail := Vector2(PARAPET.y, deck.size.y)
 		var step := Vector2(deck.size.x - PARAPET.y, 0.0)
@@ -319,8 +323,8 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			step = Vector2(0.0, deck.size.y - PARAPET.y)
 		for edge: float in [0.0, 1.0]:
 			_slab(Rect2(deck.position + step * edge, rail), Vector2(PARAPET.x, 1.0), stone)
-	if not holes.is_empty():
-		deck_burst = DeckBurst.new(holes, asphalt, stone)
+	if not (holes.is_empty() and holes_ns.is_empty()):
+		deck_burst = DeckBurst.new(holes, holes_ns, asphalt, stone)
 		add_child(deck_burst)
 
 

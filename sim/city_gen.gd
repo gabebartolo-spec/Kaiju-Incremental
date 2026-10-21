@@ -42,7 +42,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
 	out.append_array(CityRiver.sheds(plan, bare, cfg))
-	return out
+	return CityRiver.dry(plan, cfg, out)
 
 
 ## Half-extents of the nested districts, smallest first (just [half] for a one-district city).

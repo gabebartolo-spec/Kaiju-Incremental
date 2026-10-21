@@ -159,6 +159,7 @@ func _build_ground() -> void:
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
 	streets.holes = sim.emerge.burst
+	streets.holes_ns = sim.emerge.burst_ns
 	add_child(streets)
 	_streets = streets
 	if _with_decor:
