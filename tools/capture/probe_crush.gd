@@ -80,6 +80,9 @@ func _one(seed: int) -> Array:
 		await physics_frame
 		frames += 1
 		if is_instance_valid(street):  # the street goes with the rampage's end beat
+			if _trace and street.kaiju_killed() > by_kaiju:
+				var more := street.kaiju_killed() - by_kaiju
+				print("  t %.2f the kaiju crushes %d" % [frames / 60.0, more])
 			by_kaiju = street.kaiju_killed()
 			by_tanks = street.run_over
 		if _trace and is_instance_valid(street) and rampage.stomp_ring_at.size() > rings:
@@ -110,7 +113,8 @@ func _near(what: String, street: StreetLife, at: Vector3, frames: int) -> void:
 		near = minf(near, d)
 		for k: int in 4:
 			within[k] += 1 if d <= [3.0, 4.0, 6.0, 8.0][k] else 0
-	print("  t %.1f %s: nearest person %.1f, within 3/4/6/8 m %s" % [frames / 60.0, what, near, within])
+	var line := "  t %.1f %s: nearest person %.1f, within 3/4/6/8 m %s"
+	print(line % [frames / 60.0, what, near, within])
 
 
 ## How close the people were to a landing fall: a topple's strip (from..to, half its width) or
