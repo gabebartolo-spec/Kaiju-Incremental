@@ -23,6 +23,7 @@ static func tuning_for(tuning: Dictionary, tier: int) -> Dictionary:
 		var over: Dictionary = stage[section]
 		for key: String in over:
 			into[key] = _copy(over[key])
+	EmergeReach.fit(out, Content.upgrades(), tier)  # the bay holds this stage's biggest body
 	return out
 
 

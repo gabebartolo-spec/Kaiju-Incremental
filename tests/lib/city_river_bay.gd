@@ -55,21 +55,42 @@ static func _check_walk_in(tier: int, map_seed: int, sim: RampageSim, check_fn: 
 	)
 
 
-## The kaiju that emerges at this stage (size tier = stage, as Main starts a run) bursts up
-## through the bay's decks (director 2026-10-21, "burst through"): once risen, no deck left
-## standing (CityRiver.decks_after) lies under any of its body's discs, and the sim said so.
+## The biggest kaiju that can emerge at this stage (size tier = stage, as Main starts a run;
+## the most growth it can own there, EmergeReach: director 2026-10-21, "Fit the biggest
+## possible") rises in open water and bursts up through the bay's decks ("burst through"):
+## through the rise no part of its body's discs is over solid ground (outside
+## CityRiver.water), and once risen no deck left standing (CityRiver.decks_after) lies under
+## any disc, and the sim said so.
 static func check_burst(tier: int, map_seed: int, check_fn: Callable) -> void:
-	var sim := _fresh(tier, map_seed, tier)
+	var grown := EmergeReach.max_growth(Content.upgrades(), "reptilian", tier)
+	var sim := _fresh(tier, map_seed, tier, grown)
 	sim.emerge.start(sim)
 	var plan := CityGen.map(sim.city)
+	var water := CityRiver.water(plan, sim.city)
 	var said := false
 	var t := 0.0
+	var dry := 0
 	while sim.emerge.active and sim.emerge.risen() < 1.0:
 		sim.step(DT, Vector2.ZERO, false)
 		t += DT
 		for e: Dictionary in sim.events:
 			said = said or str(e["type"]) == "deck_burst"
+		dry = maxi(dry, _on_ground(sim, water))
+	(
+		check_fn
+		. call(
+			dry == 0,
+			(
+				(
+					"stage %d, map_seed %d: the size-%d kaiju at growth %d (%.1f m) rises in open water:"
+					+ " %d points of its body over solid ground"
+				)
+				% [tier, map_seed, sim.size_tier(), grown, sim.body.length(), dry]
+			)
+		)
+	)
 	var left := CityRiver.decks_after(plan, sim.city, sim.emerge.burst)
+	left.append_array(CityRiver.decks_after_ns(plan, sim.city, sim.emerge.burst_ns))
 	var s := sim.body_scale()
 	var under := 0
 	for d: Array in sim.body.discs():
@@ -82,7 +103,7 @@ static func check_burst(tier: int, map_seed: int, check_fn: Callable) -> void:
 			if near.distance_to(c) < r:
 				under += 1
 	check_fn.call(
-		under == 0 and (said or sim.emerge.burst.is_empty()),
+		under == 0 and (said or sim.emerge.burst.is_empty() and sim.emerge.burst_ns.is_empty()),
 		(
 			(
 				"stage %d, map_seed %d: the size-%d kaiju (%.1f m) bursts up through the bay's"
@@ -93,8 +114,11 @@ static func check_burst(tier: int, map_seed: int, check_fn: Callable) -> void:
 				map_seed,
 				sim.size_tier(),
 				sim.body.length(),
-				CityRiver.bay_bridges(plan, sim.city).size(),
-				sim.emerge.burst.size(),
+				(
+					CityRiver.bay_bridges(plan, sim.city).size()
+					+ CityRiver.bay_bridges_ns(plan, sim.city).size()
+				),
+				sim.emerge.burst.size() + sim.emerge.burst_ns.size(),
 				under,
 				t,
 				said
@@ -103,9 +127,24 @@ static func check_burst(tier: int, map_seed: int, check_fn: Callable) -> void:
 	)
 
 
+## How many sample points of the body's discs (centre, and eight round the rim) lie outside
+## the water.
+static func _on_ground(sim: RampageSim, water: Array[Rect2]) -> int:
+	var s := sim.body_scale()
+	var out := 0
+	for d: Array in sim.body.discs():
+		var c := sim.kaiju_pos + sim.facing * Num.f(d[0]) * s
+		var r := Num.f(d[1]) * s
+		for k: int in 9:
+			var p := c if k == 8 else c + Vector2.from_angle(k * PI / 4.0) * r
+			if not water.any(func(w: Rect2) -> bool: return w.has_point(p)):
+				out += 1
+	return out
+
+
 ## A sim of its own for the walk (it steps, and its stomps break things); size: the kaiju's
-## size tier (0: the run stats' own, the young kaiju).
-static func _fresh(tier: int, map_seed: int, size: int = 0) -> RampageSim:
+## size tier (0: the run stats' own, the young kaiju), growth its upgrade levels owned.
+static func _fresh(tier: int, map_seed: int, size: int = 0, growth: int = 0) -> RampageSim:
 	var base: Dictionary = Content.tuning().duplicate(true)
 	base["city"]["map_seed"] = map_seed
 	var stats := UpgradeTree.run_stats(
@@ -115,6 +154,7 @@ static func _fresh(tier: int, map_seed: int, size: int = 0) -> RampageSim:
 	)
 	if size > 0:
 		stats["size"] = size
+		stats["growth"] = float(growth)
 	var sim := RampageSim.new(
 		stats,
 		CityGrowth.tuning_for(base, tier),
