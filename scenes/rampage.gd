@@ -393,6 +393,7 @@ func _place_camera(delta: float) -> void:
 		_camera.fov = Num.f(shot["fov"])
 	else:
 		_camera.fov = camera_fov
+	_hud.visible = not sim.emerge.active or get_tree().paused  # no HUD over the intro's shot
 	_camera.position = _follow.eye()
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(aim + jitter)

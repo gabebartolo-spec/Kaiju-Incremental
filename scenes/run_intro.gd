@@ -88,11 +88,10 @@ static func shot(sim: RampageSim, follow: CameraFollow, rest_fov: float, frac: f
 	var side := behind.normalized().rotated(yaw) * lerpf(close, behind.length(), w)
 	var eye := Vector3(focus.x + side.x, 0.0, focus.z + side.y)
 	eye.y = lerpf(water + Num.f(cfg["height"]) * s, rest_eye.y, w)
+	# It looks at the water over the head, then follows the head up as it rises.
 	var ahead := sim.facing * Num.f(cfg["aim_ahead"]) * s
-	var water_aim := Vector3(
-		focus.x + ahead.x, water + Num.f(cfg["aim_height"]) * s, focus.z + ahead.y
-	)
-	var from := emerge.break_at(sim) - Num.f(cfg["short_lead_seconds"])
-	var up := smoothstep(from, Num.f(cfg["aim_by_seconds"]), t)
+	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])
+	var low := water + Num.f(cfg["aim_height"]) * s
+	var head_aim := Vector3(focus.x + ahead.x, maxf(low, head), focus.z + ahead.y)
 	var fov := lerpf(Num.f(cfg["fov"]), rest_fov, w)
-	return {"eye": eye, "aim": water_aim.lerp(rest_aim, maxf(up, w)), "fov": fov}
+	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}
