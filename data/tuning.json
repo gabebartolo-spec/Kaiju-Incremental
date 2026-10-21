@@ -282,6 +282,7 @@
 		"parked_gap": [1.9, 3.2],
 		"lane_stop_chance": 0.12,
 		"diagonal_parked_lane": 2.2,
+		"traffic_island": {"half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "lane_clear": 0.95, "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
 		"car_colors": ["6b6e70", "5b6b7a", "5a2a26", "8a8a84", "6b7a52", "6a5e48"],
 		"street_tree_gap": 6,
 		"street_tree_clear": 3,
