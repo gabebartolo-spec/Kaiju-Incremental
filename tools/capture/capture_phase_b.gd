@@ -84,7 +84,12 @@ func _run() -> void:
 	print("PHASEB stream complete, buildings=%d" % rampage.sim.buildings.size())
 	rampage.set_physics_process(true)
 	if _route_mode == "replay":
-		_route = JSON.parse_string(FileAccess.get_file_as_string(_route_file))
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(_route_file))
+		if not parsed is Array:
+			push_error("PHASEB no route at %s" % _route_file)
+			quit(1)
+			return
+		_route = parsed
 	if _route_mode != "":
 		rampage.scripted = _scripted
 	else:
