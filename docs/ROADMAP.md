@@ -245,6 +245,11 @@ a charge that sticks in a building, thrown tanks after R 22's Flung (R 23.4) · 
 as the one HUD exception (his yes) (R 23.5) · it falls like the biggest tower, quiet, then results and credits
 (R 23.6) · voxel model, rig, 6-8 clips through the Blender pipeline, concept board first (R 23.7). Estimate 3-5 weeks.
 
+Audio tools (research 25, comments #22-#23): ElevenLabs Starter (owned) covers SFX and Eleven Music; test music briefs there
+first (indie-game use capped at $500k lifetime revenue). Suno Pro $10/mo if he buys it: commercial rights per downloaded song,
+no copyright, no API, label suits pending. The director generates in his browser and holds the keys; agents write prompt
+sheets, ingest, QA and register each file. Explosions: ElevenLabs crack + body, in-house sub thump, delayed debris, a
+separate low tail and a distance-delayed sonic boom, mixed to about -24 LUFS. Steam AI-content survey needs an entry.
 **Director questions the research raised (ask each at its phase, the ask-the-director way).**
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
 cadence, if the long stride cannot fit (R 11.2) · E: rampage timer start and ceiling (R 1.2) · H: which original
