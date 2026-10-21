@@ -250,6 +250,23 @@ static func pavement(block: Dictionary, cfg: Dictionary) -> Rect2:
 	return rect if block.has("site") else rect.grow(Num.f(cfg["sidewalk"]))
 
 
+## The non-alley street whose carriageway holds p (between its two crossings), or {}. Alleys
+## have no pavement and carry people, so they do not count.
+static func road_at(plan: Dictionary, p: Vector2) -> Dictionary:
+	var nodes: Array[Vector2] = plan["nodes"]
+	for street: Dictionary in plan["streets"]:
+		if str(street["kind"]) == ALLEY:
+			continue
+		var from: Vector2 = nodes[Num.i(street["from"])]
+		var to: Vector2 = nodes[Num.i(street["to"])]
+		var dir := (to - from).normalized()
+		var along := (p - from).dot(dir)
+		var half := Num.f(street["width"]) * 0.5
+		if along > 0.0 and along < from.distance_to(to) and absf((p - from).cross(dir)) < half:
+			return street
+	return {}
+
+
 static func width_of(kind: String, cfg: Dictionary) -> float:
 	match kind:
 		AVENUE, DIAGONAL:

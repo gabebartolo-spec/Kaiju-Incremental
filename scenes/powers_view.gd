@@ -185,7 +185,8 @@ func _coated(event: Dictionary) -> void:
 	var cells: Array[Vector3i] = event["cells"]
 	var ink := str(event["kind"]) == "ink"
 	for n: int in mini(COATS_SHOWN, cells.size()):
-		var at := b.chunk_world(cells[n * cells.size() / mini(COATS_SHOWN, cells.size())])
+		var cell := cells[n * cells.size() / mini(COATS_SHOWN, cells.size())]
+		var at := b.chunk_world(cell)
 		if ink:
 			var blob := _box(Vector3.ONE * 1.05, INK)
 			blob.position = at
@@ -196,7 +197,7 @@ func _coated(event: Dictionary) -> void:
 			)
 			tween.tween_callback(blob.queue_free)
 		else:
-			_city.fire(at, 0.45)
+			_city.burn_chunk(Num.i(event["building"]), cell, 0.45)
 
 
 func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:

@@ -1,0 +1,69 @@
+class_name Pavements
+extends RefCounted
+## The pavement graph StreetLife's people walk (split out of StreetLife for gdlint's 400-line
+## file cap): corner nodes and the links between them.
+
+const CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
+const PAVEMENT := 0.45  # pavement line, out from the block's edge (its buildings' walls)
+const CROSSWALK := 9.5  # longest crossing to the corner of the block across the street
+
+var nodes := PackedVector2Array()
+var links: Array[Array] = []
+var in_road := PackedByteArray()  # per node: 1 when the corner lies in a carriageway
+
+
+## Pavement corners round every block of the playable city (4 per block), linked round the
+## block and across the streets to the nearest corner of the block opposite. The diagonal avenue
+## runs through the blocks it crosses: a corner of theirs in its carriageway has no links, and
+## neither has a pavement line that would cross it, so people never walk in the road.
+func _init(sim: RampageSim) -> void:
+	var half := CityGen.half_extent(sim.city)
+	var plan := CityGen.map(sim.city)
+	var avenue: Array[Dictionary] = []  # only the diagonal runs through a block
+	for road: Dictionary in plan["streets"]:
+		if str(road["kind"]) == CityGen.DIAGONAL:
+			avenue.append(road)
+	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
+	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
+	for block: Dictionary in plan["blocks"]:
+		var rect: Rect2 = block["rect"]
+		var use := str(block["use"])
+		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
+			continue  # past the edge, or the river (CityRiver): no one walks on the water
+		# The pavement line, the same distance in from the kerb as round every other block.
+		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
+		var size := ring.size * 0.5
+		var cut := CityGen.diagonal_distance(plan, ring.get_center()) < size.length() + reach
+		var first := nodes.size()
+		for c: Vector2 in CORNERS:
+			nodes.append(ring.get_center() + c * size)
+			links.append([])
+			in_road.append(1 if cut and not CityGen.road_at(diagonal, nodes[-1]).is_empty() else 0)
+		for c: int in 4:
+			var a := first + c
+			var b := first + (c + 1) % 4
+			if in_road[a] == 0 and in_road[b] == 0:
+				_link(a, b)
+	# Crossings: a corner links to the nearest corner of another block straight across a street.
+	for a: int in nodes.size():
+		if in_road[a] == 1:
+			continue
+		for axis: int in 2:
+			var best := -1
+			for b: int in nodes.size():
+				if a >> 2 == b >> 2 or in_road[b] == 1:
+					continue
+				var d := nodes[b] - nodes[a]
+				var along := absf(d.x) if axis == 0 else absf(d.y)
+				var off := absf(d.y) if axis == 0 else absf(d.x)
+				if off > 1.0 or along > CROSSWALK:
+					continue
+				if best < 0 or along < nodes[best].distance_to(nodes[a]):
+					best = b
+			if best >= 0 and not links[a].has(best):
+				_link(a, best)
+
+
+func _link(a: int, b: int) -> void:
+	links[a].append(b)
+	links[b].append(a)

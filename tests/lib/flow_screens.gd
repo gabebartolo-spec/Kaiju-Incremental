@@ -249,6 +249,7 @@ func _check_evolution_and_continue() -> void:
 	await FlowFps.caps(t, check)
 	await FlowFps.graphics(t, check)
 	FlowFps.graphics_rows(check)
+	await preload("res://tests/lib/flow_preset_caps.gd").check(t, check)
 	FlowFps.stale_cap(check)
 	check.call(
 		(
