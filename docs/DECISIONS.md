@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-122 · Director · Water = the R 21 plan (presentation physics), built after fire gameplay
+Why: asked whether "proper water with physics" (#12) means the planned ripples, wakes, splashes and floating rubble with no
+gameplay effect, or gameplay water or a fluid sim: the plan. Order: fire gameplay (R 26), then water (R 21).
+
 ## 2026-10-21 · D-121 · Director · Camera growth: A (today's camera plus look-ahead); walk contact built now
 Why: picked from the A/B/C stage-4 boards (kaiju 51% / 33% / 47% of screen height). Falling towers fade like standing ones.
 The D-118 walk contact is built now, ahead of fire gameplay (his yes 2026-10-21).
