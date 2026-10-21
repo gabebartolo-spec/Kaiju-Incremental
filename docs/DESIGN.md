@@ -6,7 +6,7 @@ only by the lead when the director rules; replace the old line, never append his
 
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
-sees, decides or remembers is cut, not polished. Designed by the director; agents execute and push back.
+sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
 
 ## The game
 - An **active action game** with incremental progression, the Nodebuster / Brotato shape. No idle, no AFK, no offline
@@ -28,7 +28,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   shaped" (D-108): croc snout, pale flat bone scutes, charcoal spines, short reptilian arms, long low tail, ~20-30
   deg lean, graceful like a JP T-rex (D-031, D-046, D-048). Kit: claw swipe raking ahead every 2 s that undermines
   towers (D-095, D-096); tail as an autonomous extra limb that shears buildings (a tree node, b2-2); momentum
-  (straight lines hit harder, turning bleeds it); dash. Signature: a breath of **hot forked white-hot lightning**,
+  (straight lines hit harder, turning bleeds it); dash (bursts through every building in its path, landmarks too, a kick per wall, #34). Signature: a breath of **hot forked white-hot lightning**,
   never "atomic" (D-108); its ultimate is a long sustained beam swept by steering.
 - **Insectoid, the mantis: fast, and the brood mother.** Its identity: it **lays eggs that hatch elephant-sized
   young which run through the city on their own, destroying, devouring civilians and fighting the military**
@@ -44,7 +44,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   (D-009, D-014, D-074). Body scale grows with every upgrade owned. No building is too strong for the baby; big ones
   just take longer (D-091). The reveal is titled by the node bought (BEHEMOTH), with the roar (D-051, D-055).
 - **Motion:** terrifying monsters, not toys (D-013). Turns with weight, "lumbering and unstoppable" yet responsive:
-  the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
+  bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
   shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
   antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
@@ -130,9 +130,6 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   must not sound like a typewriter (playtest 1).
 
 ## Open for the director (ask at its phase, the ask-the-director way)
-Camera growth per stage (R 19) · walk: slower speed vs faster cadence (R 11.2) · when contact carves vs yields
-(R 13.3) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · fire: spark source for non-breath species,
-wind fixed or drifting (R 26) · rampage timer start and ceiling (R 1.2) · tree map layout (R 16.5) · HUD: rings for
-dash and ultimate, health shown only when hit, the "CITY DESTROYED" bar (R 15) · background skyline rampage yes/no ·
-Suno Pro or ElevenLabs Music · finale shape and mecha concept (R 23.1) · which original species follow the croc
-(research 02) · how many cities and what ends the game · customisation beyond species.
+walk: slower speed vs faster cadence (R 11.2) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · tree map layout (R 16.5) ·
+mecha concept (R 23.1, finale = mecha boss after 3 cities, D-113) · which original species follow the croc
+(research 02).
