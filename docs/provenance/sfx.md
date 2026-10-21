@@ -32,6 +32,12 @@ Sources:
 | ready.ogg | synth growl (formant-filtered buzz) + synth chime |
 | deflect.ogg | Kenney `impactMetal_heavy_001` + `impactBell_heavy_002` pitched 1.2 |
 | regen_loop.ogg | synth bubbles (seamless 2 s loop) |
+| blast_crack.ogg (a red barrel's first instant, near the camera only) | synth high-passed noise snap + Kenney `explosionCrunch_004` pitched 1.15, high-passed at 400 Hz + synth band-passed noise sweep 3.2-0.9 kHz. High-passed at 150 Hz. Added 2026-10-21 (comments #19, #20); a stand-in until an ElevenLabs take (wanted list in the PR). |
+| blast_body.ogg (the blast itself) | Kenney `explosionCrunch_000` pitched 0.5 + `explosionCrunch_002` pitched 0.62 + `lowFrequency_explosion_000` pitched 0.7 + synth sub thump (62 to 30 Hz) + synth fire whoosh (low-passed noise) + synth crackle + Kenney `impactMining_002..004` pitched 0.55 (debris, high-passed at 300 Hz). High-passed at 28 Hz. Added 2026-10-21. |
+| blast_rumble.ogg (the tail) | synth brown-noise rumble low-passed at 320 Hz with a slow swell + Kenney `lowFrequency_explosion_001` pitched 0.6, low-passed at 900 Hz + synth echo. High-passed at 25 Hz. Added 2026-10-21. |
+| sonic_boom.ogg (played late by distance, BlastFx) | two synth thumps 0.11 s apart (75 to 32 Hz and 170 to 85 Hz each, the N-wave's double shock) + low-passed noise clicks + synth echo. High-passed at 28 Hz. Added 2026-10-21. |
+| fireworks_crackle.ogg (each fireworks burst) | 14 seeded synth pops (300 to 120 Hz thumps with noise clicks) + synth crackle low-passed at 5 kHz + two synth rising whistles (1.4 to 2.6 kHz). High-passed at 80 Hz. Added 2026-10-21. |
+| chem_hiss.ogg (a fuse burning, a chem lab's cloud) | synth band-passed noise hiss (3.4 kHz) + Kenney `impactMetal_heavy_002/003` pitched 0.45, low-passed at 2.5 kHz (metal creak). High-passed at 60 Hz. Added 2026-10-21. |
 
 ## ElevenLabs replacements (2026-10-19, D-092; picked by the director from a loudness-matched shootout)
 

@@ -37,7 +37,7 @@ var _corners: Array[PackedVector3Array] = []
 
 ## voxels: the building's view voxels (its palette and lit roll); cells: its grid. use_native:
 ## false forces the GDScript path (the oracle).
-func _init(voxels: BuildingVoxels, cells: BuildingCells, use_native: bool = true) -> void:
+func _init(voxels: BuildingVoxels, cells: CellGrid, use_native: bool = true) -> void:
 	dims = cells.dims
 	offset = cells.offset
 	voxel = BuildingVoxels.VOXEL

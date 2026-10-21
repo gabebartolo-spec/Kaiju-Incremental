@@ -497,6 +497,23 @@
 		"fireworks_factory": {"radius": 3.0, "damage": 50.0, "height": 10, "bursts": 8, "burst_spread": 9.0, "burst_every_s": 0.25, "burst_radius": 1.5, "burst_damage": 25.0, "burn_dps": 4.0, "burn_seconds": 4.0},
 		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_dps": 6.0, "cloud_squad_seconds": 1.5}
 	},
+	"blast_fx": {
+		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake: trauma added per blast (times 1 - distance/reach from the kaiju), shake = min(max, trauma^2) * amplitude (units of camera aim jitter), trauma falls decay_per_s. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires).",
+		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6}, "reach": 70.0, "decay_per_s": 1.3, "max": 0.85, "amplitude": 2.2},
+		"flash": {"energy": 16.0, "seconds": 0.5, "max_live": 3, "color": "ffb468", "chem_color": "b4ff8a"},
+		"core": {"grow_seconds": 0.05, "fade_seconds": 0.12, "radius_scale": 0.8},
+		"fireball": {"seconds": 1.7, "amount": 220},
+		"smoke": {"seconds": 6.5, "amount": 26},
+		"shock": {"seconds": 0.9, "radius_scale": 2.6, "alpha": 0.95, "soft": 0.18, "band_tint": "4a443b", "tint": "6f6556", "dust_amount": 64, "dust_alpha": 0.5},
+		"haze": {"seconds": 0.55, "radius_scale": 2.4, "strength": 0.04},
+		"fireworks": {"height": 7.0, "sparks": 70, "seconds": 1.5, "speed": 9.0, "spark_size": 0.22, "flash_energy": 6.0, "fire_size": 0.5, "trauma": 0.12, "colors": ["ff4f8b", "4fd8ff", "ffd34f", "8dff6a", "ffffff", "c77dff"]},
+		"cloud": {"amount": 36, "life": 3.0, "color": "86ff5c", "alpha": 0.42},
+		"fuse": {"blink_hz": 6.0, "spark_every_s": 0.2, "lamp_size": 0.6, "color": "ff3a1e"},
+		"debris": 18,
+		"debris_colors": {"fuel_silo": ["d9d7cf", "f2c21b", "222224"], "fireworks_factory": ["7a3b2e", "c8312a", "2f62c9", "f2c21b"], "chem_lab": ["e6e9e3", "6bd85f", "2d5ca3"]},
+		"fire_size": 1.6,
+		"sound": {"speed": 98.0, "boom_from": 25.0, "boom_max_delay": 1.2, "crack_within": 45.0, "small_db": -3.0}
+	},
 	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
 		"map_seed": 7301,
@@ -603,6 +620,7 @@
 		"topple_bonus": 1.5
 	},
 	"sfx": {
+		"files": ["breath", "leap_whoosh", "leap_land", "lash", "ready", "deflect", "stomp_crack", "collapse", "roar", "tank_fire", "shell_hit", "heli_gun", "heli_crash", "rifle", "blast_crack", "blast_body", "blast_rumble", "sonic_boom", "fireworks_crackle", "chem_hiss"],
 		"pitch_jitter": 0.06,
 		"voices": 24,
 		"_voice_caps": "SfxVoices (R 8.2): voices each category may hold at once; hero categories are never stolen and reserve_hero voices stay free for them; others steal their quietest voice; the same sound is not restarted within retrigger_ms",
@@ -663,7 +681,7 @@
 		"stomp_wait": 0.4,
 		"footstep_min_interval": 0.25,
 		"crack_min_interval": 2.5,
-		"min_interval": {"rifle": 0.25, "rifle_far": 0.5},
+		"min_interval": {"rifle": 0.25, "rifle_far": 0.5, "fireworks_crackle": 0.3, "chem_hiss": 0.5, "blast_crack": 0.08},
 		"interval_jitter": {"rifle": 0.6, "rifle_far": 0.8},
 		"gain_jitter_db": {"rifle": 3.0, "rifle_far": 3.0},
 		"pitch_jitter_by": {"rifle": 0.1, "rifle_far": 0.1},
