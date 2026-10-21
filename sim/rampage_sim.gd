@@ -316,28 +316,7 @@ func _signature() -> void:
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
 	var top := ceili(reach_height()) if y_hi < 0 else y_hi
 	for i: int in buildings.size():
-		var b := buildings[i]
-		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
-		if near > 0.0 and carving.takes(i):
-			carving.hit(i, force, damage, Vector2i(y_lo, top))  # coats what it reaches too
-			continue
-		if near <= 0.0 or b.frame.alive_count == 0:
-			continue
-		var cells: Array[Vector3i] = []
-		var amounts := PackedFloat32Array()
-		for y: int in range(maxi(0, y_lo), mini(top, b.height)):
-			for x: int in b.w:
-				for z: int in b.d:
-					var c := Vector3i(x, y, z)
-					if b.frame.alive(c):
-						var p := b.chunk_world(c)
-						var k: float = force.call(Vector2(p.x, p.z), 0.5)
-						if k > 0.0:
-							cells.append(c)
-							amounts.append(damage * k)
-		if not hit_coat.is_empty():
-			powers.coat(i, cells)
-		damage_cells(i, cells, amounts)
+		_hit_building(i, force, damage, Vector2i(y_lo, top))
 	for tank: Tank in tanks:
 		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k
@@ -346,6 +325,32 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+
+
+## hit_area's damage to building i on floors floors.x..floors.y-1 (a carved one through Carving).
+func _hit_building(i: int, force: Callable, damage: float, floors: Vector2i) -> void:
+	var b := buildings[i]
+	var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
+	if near > 0.0 and carving.takes(i):
+		carving.hit(i, force, damage, floors)  # coats what it reaches too
+		return
+	if near <= 0.0 or b.frame.alive_count == 0:
+		return
+	var cells: Array[Vector3i] = []
+	var amounts := PackedFloat32Array()
+	for y: int in range(maxi(0, floors.x), mini(floors.y, b.height)):
+		for x: int in b.w:
+			for z: int in b.d:
+				var c := Vector3i(x, y, z)
+				if b.frame.alive(c):
+					var p := b.chunk_world(c)
+					var k: float = force.call(Vector2(p.x, p.z), 0.5)
+					if k > 0.0:
+						cells.append(c)
+						amounts.append(damage * k)
+	if not hit_coat.is_empty():
+		powers.coat(i, cells)
+	damage_cells(i, cells, amounts)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.

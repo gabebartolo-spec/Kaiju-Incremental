@@ -23,76 +23,97 @@ func settle(index: int) -> void:
 	var g := Num.f(sim.city["fall_gravity"])
 	var parts := sim.carving.settle(index) if sim.carving.promoted(index) else b.frame.settle()
 	for part: Dictionary in parts:
-		var rule_dir: Vector2i = part["dir"]
-		var f := RampageSim.Fall.new()
-		f.id = sim.next_fall_id
-		sim.next_fall_id += 1
-		f.building = index
-		f.cells = part["cells"]
-		f.kind = str(part["kind"])
-		var lowest := 9999
-		var highest := 0
-		for c: Vector3i in f.cells:
-			lowest = mini(lowest, c.y)
-			highest = maxi(highest, c.y)
-		f.height = highest - lowest + 1
-		var low := float(lowest)
-		var carved := part.has("index")
-		if carved:  # its size from its fine cells
-			low = Num.f(part["low"])
-			f.height = Num.f(part["height"])
-			f.width = Num.f(part["width"])
-		var gutted: bool = (
-			part.get("gutted", false) if carved else _gutted(b, f.cells, lowest, int(f.height))
-		)
-		if f.kind == "drop" and b.landmark == "" and gutted:
-			f.kind = "topple"  # its whole base went at once: it goes over, it never pops
-		if f.kind == "topple":
-			if not f.cells.is_empty() and not _toppled_ids.has(index):
-				_toppled_ids[index] = true
-				toppled += 1
-			var dir: Vector2i = part["dir"]
-			var pivot: Vector3 = part["pivot"]
-			# D-099: it falls by its own physics, toward the side that was cut away (the support
-			# rule's dir), onto the kaiju if that is the side. A gutted drop has no rule dir: its
-			# whole base went, and the chew came from the kaiju's side, so it goes that way.
-			if dir == Vector2i.ZERO:
-				var base: Rect2 = part["base"] if carved else _base(f.cells, lowest)
-				var centre := b.local_to_world(
-					Vector3(base.get_center().x, low, base.get_center().y)
-				)
-				dir = _toward(Vector2(centre.x, centre.z) - sim.kaiju_pos)
-				pivot = _edge(base, low, dir)
-				if carved:
-					f.width = base.size.y if dir.x != 0 else base.size.x
-			f.dir = Vector2(dir)
-			f.pivot = b.local_to_world(pivot)
-			f.duration = sqrt(2.0 * f.height / g) * 1.8
-		else:
-			f.drop = Num.f(part["drop"]) if part.has("drop") else _drop_distance(b, f, low)
-			f.pivot = b.local_to_world(Vector3(b.w * 0.5, low, b.d * 0.5))
-			f.duration = sqrt(2.0 * f.drop / g)
+		var f := _fall(index, part, g)
 		sim.falls.append(f)
-		var event := {
-			"type": "fall_start",
-			"id": f.id,
-			"building": index,
-			"cells": f.cells,
-			"kind": f.kind,
-			"pivot": f.pivot,
-			"dir": f.dir,
-			"cut_dir": Vector2(rule_dir),
-			"drop": f.drop,
-			"duration": f.duration,
-		}
+		sim.events.append(_fall_event(f, part))
+
+
+## Building `index`'s part as a Fall: its cells and size (a carved part's from its fine cells),
+## its kind (a drop whose whole base went topples), and how it goes down.
+func _fall(index: int, part: Dictionary, g: float) -> RampageSim.Fall:
+	var b := sim.buildings[index]
+	var f := RampageSim.Fall.new()
+	f.id = sim.next_fall_id
+	sim.next_fall_id += 1
+	f.building = index
+	f.cells = part["cells"]
+	f.kind = str(part["kind"])
+	var lowest := 9999
+	var highest := 0
+	for c: Vector3i in f.cells:
+		lowest = mini(lowest, c.y)
+		highest = maxi(highest, c.y)
+	f.height = highest - lowest + 1
+	var low := float(lowest)
+	var carved := part.has("index")
+	if carved:  # its size from its fine cells
+		low = Num.f(part["low"])
+		f.height = Num.f(part["height"])
+		f.width = Num.f(part["width"])
+	var gutted: bool = (
+		part.get("gutted", false) if carved else _gutted(b, f.cells, lowest, int(f.height))
+	)
+	if f.kind == "drop" and b.landmark == "" and gutted:
+		f.kind = "topple"  # its whole base went at once: it goes over, it never pops
+	if f.kind == "topple":
+		_topple(f, part, Vector2(lowest, low), g)
+	else:
+		f.drop = Num.f(part["drop"]) if part.has("drop") else _drop_distance(b, f, low)
+		f.pivot = b.local_to_world(Vector3(b.w * 0.5, low, b.d * 0.5))
+		f.duration = sqrt(2.0 * f.drop / g)
+	return f
+
+
+## A toppling Fall's way over: counted once per building, then its direction, pivot edge and
+## time. floors: its lowest chunk floor (x) and the height it stands from (y, a carved part's).
+func _topple(f: RampageSim.Fall, part: Dictionary, floors: Vector2, g: float) -> void:
+	var b := sim.buildings[f.building]
+	var carved := part.has("index")
+	var low := floors.y
+	if not f.cells.is_empty() and not _toppled_ids.has(f.building):
+		_toppled_ids[f.building] = true
+		toppled += 1
+	var dir: Vector2i = part["dir"]
+	var pivot: Vector3 = part["pivot"]
+	# D-099: it falls by its own physics, toward the side that was cut away (the support
+	# rule's dir), onto the kaiju if that is the side. A gutted drop has no rule dir: its
+	# whole base went, and the chew came from the kaiju's side, so it goes that way.
+	if dir == Vector2i.ZERO:
+		var base: Rect2 = part["base"] if carved else _base(f.cells, int(floors.x))
+		var centre := b.local_to_world(Vector3(base.get_center().x, low, base.get_center().y))
+		dir = _toward(Vector2(centre.x, centre.z) - sim.kaiju_pos)
+		pivot = _edge(base, low, dir)
 		if carved:
-			event["index"] = part["index"]
-			event["mats"] = part["mats"]
-		if f.kind == "topple":  # where it will land, so the street knows who is under it
-			var strip := _strip(f)
-			event["to"] = strip[1]
-			event["width"] = Num.f(strip[2]) * 2.0
-		sim.events.append(event)
+			f.width = base.size.y if dir.x != 0 else base.size.x
+	f.dir = Vector2(dir)
+	f.pivot = b.local_to_world(pivot)
+	f.duration = sqrt(2.0 * f.height / g) * 1.8
+
+
+## The fall_start event for `f`: what the view needs to play it, a carved part's fine cells, and
+## for a topple where it will land, so the street knows who is under it.
+func _fall_event(f: RampageSim.Fall, part: Dictionary) -> Dictionary:
+	var rule_dir: Vector2i = part["dir"]
+	var event := {
+		"type": "fall_start",
+		"id": f.id,
+		"building": f.building,
+		"cells": f.cells,
+		"kind": f.kind,
+		"pivot": f.pivot,
+		"dir": f.dir,
+		"cut_dir": Vector2(rule_dir),
+		"drop": f.drop,
+		"duration": f.duration,
+	}
+	if part.has("index"):
+		event["index"] = part["index"]
+		event["mats"] = part["mats"]
+	if f.kind == "topple":
+		var strip := _strip(f)
+		event["to"] = strip[1]
+		event["width"] = Num.f(strip[2]) * 2.0
+	return event
 
 
 ## A part with nothing under it that is taller than it is deep (its narrower side at its lowest

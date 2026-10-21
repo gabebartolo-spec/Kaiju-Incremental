@@ -182,6 +182,27 @@ func _component(start: Vector3i, seen: Dictionary) -> Array[Vector3i]:
 ## calls per settle, a frame stall at every hit (lead, 2026-10-19). The sums are of half-integers
 ## well under 2^23, exact in float, so the order of adding does not change the result.
 func _topple_check() -> Dictionary:
+	var loads := _floor_loads()
+	var floor_mass: PackedInt32Array = loads[0]
+	var floor_sum: PackedVector2Array = loads[1]
+	for level: int in range(1, h):
+		var mass := floor_mass[level]
+		if mass == 0:
+			return {}
+		var com := floor_sum[level] / mass
+		var held := _held_across(level)
+		if held[0].x == INF:
+			continue  # nothing touches across this floor: settle()'s drop handles it
+		var over := _overhang(com, held)
+		if over == Vector2.ZERO:
+			continue
+		return _tip(level, com, held, over)
+	return {}
+
+
+## Each floor's chunk count and summed chunk centres, as running totals from the top down:
+## [PackedInt32Array, PackedVector2Array], h + 1 long (the last 0).
+func _floor_loads() -> Array:
 	var floor_mass := PackedInt32Array()
 	floor_mass.resize(h + 1)
 	var floor_sum := PackedVector2Array()
@@ -196,40 +217,49 @@ func _topple_check() -> Dictionary:
 	for y: int in range(h - 1, -1, -1):
 		floor_mass[y] += floor_mass[y + 1]
 		floor_sum[y] += floor_sum[y + 1]
-	for level: int in range(1, h):
-		var mass := floor_mass[level]
-		if mass == 0:
-			return {}
-		var com := floor_sum[level] / mass
-		var lo := Vector2(INF, INF)
-		var hi := Vector2(-INF, -INF)
+	return [floor_mass, floor_sum]
+
+
+## The box of the chunks on `level` that stand on a chunk below: [lo, hi] (lo.x INF: none).
+func _held_across(level: int) -> PackedVector2Array:
+	var plan := w * d
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for x: int in w:
+		for z: int in d:
+			var k := x + z * w + level * plan
+			if _hp[k] > 0.0 and _hp[k - plan] > 0.0:
+				lo = Vector2(minf(lo.x, x), minf(lo.y, z))
+				hi = Vector2(maxf(hi.x, x + 1), maxf(hi.y, z + 1))
+	return PackedVector2Array([lo, hi])
+
+
+## How far the centre of mass `com` lies outside the held box on each axis (0 inside it).
+static func _overhang(com: Vector2, held: PackedVector2Array) -> Vector2:
+	var lo := held[0]
+	var hi := held[1]
+	return Vector2(
+		com.x - hi.x if com.x > hi.x else (com.x - lo.x if com.x < lo.x else 0.0),
+		com.y - hi.y if com.y > hi.y else (com.y - lo.y if com.y < lo.y else 0.0)
+	)
+
+
+## The part above `level` toppling over the held box's edge on the side it overhangs most.
+func _tip(level: int, com: Vector2, held: PackedVector2Array, over: Vector2) -> Dictionary:
+	var lo := held[0]
+	var hi := held[1]
+	var dir := Vector2i(signi(roundi(over.x * 100.0)), 0)
+	if absf(over.y) > absf(over.x):
+		dir = Vector2i(0, signi(roundi(over.y * 100.0)))
+	var pivot := Vector3(
+		hi.x if dir.x > 0 else (lo.x if dir.x < 0 else com.x),
+		level,
+		hi.y if dir.y > 0 else (lo.y if dir.y < 0 else com.y)
+	)
+	var cells: Array[Vector3i] = []
+	for y: int in range(level, h):
 		for x: int in w:
 			for z: int in d:
-				var k := x + z * w + level * plan
-				if _hp[k] > 0.0 and _hp[k - plan] > 0.0:
-					lo = Vector2(minf(lo.x, x), minf(lo.y, z))
-					hi = Vector2(maxf(hi.x, x + 1), maxf(hi.y, z + 1))
-		if lo.x == INF:
-			continue  # nothing touches across this floor: settle()'s drop handles it
-		var over := Vector2(
-			com.x - hi.x if com.x > hi.x else (com.x - lo.x if com.x < lo.x else 0.0),
-			com.y - hi.y if com.y > hi.y else (com.y - lo.y if com.y < lo.y else 0.0)
-		)
-		if over == Vector2.ZERO:
-			continue
-		var dir := Vector2i(signi(roundi(over.x * 100.0)), 0)
-		if absf(over.y) > absf(over.x):
-			dir = Vector2i(0, signi(roundi(over.y * 100.0)))
-		var pivot := Vector3(
-			hi.x if dir.x > 0 else (lo.x if dir.x < 0 else com.x),
-			level,
-			hi.y if dir.y > 0 else (lo.y if dir.y < 0 else com.y)
-		)
-		var cells: Array[Vector3i] = []
-		for y: int in range(level, h):
-			for x: int in w:
-				for z: int in d:
-					if alive(Vector3i(x, y, z)):
-						cells.append(Vector3i(x, y, z))
-		return {"cells": cells, "kind": "topple", "pivot": pivot, "dir": dir}
-	return {}
+				if alive(Vector3i(x, y, z)):
+					cells.append(Vector3i(x, y, z))
+	return {"cells": cells, "kind": "topple", "pivot": pivot, "dir": dir}
