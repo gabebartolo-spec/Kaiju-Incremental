@@ -41,7 +41,9 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 					if lots.is_empty() and ring == 0:
 						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
+	var quay_from := out.size()
 	out.append_array(CityRiver.sheds(plan, bare, cfg))
+	CityHazards.tag(out, plan, cfg, quay_from)  # comments #19: the city's red barrels
 	return out
 
 
