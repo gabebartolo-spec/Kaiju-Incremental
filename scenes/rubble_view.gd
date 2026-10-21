@@ -47,10 +47,12 @@ func reveal(ids: Array) -> void:
 		var node: MultiMeshInstance3D = _nodes.get(id)
 		if node != null:
 			node.visible = true
-		if node != null and _waiting.has(id):  # broken while it was still coming down
-			var event: Dictionary = _waiting[id]
+		if node != null and _waiting.has(id):  # broken while it was still coming down: seen
+			var event: Dictionary = _waiting[id]  # lying there for reveal_hold_s, then it breaks
 			_waiting.erase(id)
-			smash(event, null)
+			var tween := node.create_tween()
+			tween.tween_interval(Num.f(_cfg["reveal_hold_s"]))
+			tween.tween_callback(func() -> void: smash(event, null))
 
 
 ## The slab's rest pose: its yaw, a tilt of its own (seeded by its id), sunk into what it rests on.

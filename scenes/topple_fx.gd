@@ -125,7 +125,7 @@ func _fold(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary
 		top = node
 		lower = null
 	elif not upper.is_empty():
-		top = view.split_piece(node, upper, crack)
+		top = _bands(node, view, upper, hit)
 		node.get_parent().add_child(top)
 		top.global_transform = node.global_transform
 	if lower != null:
@@ -156,10 +156,40 @@ func _fold(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary
 	_hinge(top, fold)
 
 
+## The part above the hit's "crack" as its "large" count of bands up its length (one piece each,
+## children of the returned node), so it comes apart into the sim's large slabs, not one block.
+func _bands(node: Node3D, view: BuildingView, upper: Array[Vector3i], hit: Dictionary) -> Node3D:
+	var crack := Num.f(hit["crack"])
+	var count := Num.i(hit["large"])
+	var pivot: Vector3 = node.get_meta("pivot")
+	var high := crack
+	for c: Vector3i in upper:
+		high = maxf(high, c.y + 1.0 - pivot.y)
+	var holder := Node3D.new()
+	holder.set_meta("pivot", pivot)
+	var step := (high - crack) / maxi(count, 1)
+	for i: int in range(maxi(count, 1) - 1, -1, -1):  # top band first: split_piece takes parts above
+		var low := crack + step * i
+		var band: Array[Vector3i] = []
+		for c: Vector3i in upper:
+			var y := c.y + 0.5 - pivot.y
+			if y >= low and (i == count - 1 or y < low + step):
+				band.append(c)
+		if band.is_empty():
+			continue
+		var piece := view.split_piece(node, band, low)
+		piece.transform = Transform3D.IDENTITY
+		piece.set_meta("band", i)
+		piece.set_meta("low", low)
+		holder.add_child(piece)
+	return holder
+
+
 ## Hinges the part above the crack at the contact (fold "at") and folds it: it turns on by
 ## "turn" plus fold_over_deg (gravity's ease) about the fall "dir"'s axis, slides "clear" off
-## his "side" and drops to the street over fold_s; then it breaks up and the fold slabs "ids"
-## show.
+## his "side" and drops to the street over fold_s; its bands (_bands) crack apart as it goes,
+## each further band turning fold_break_deg more about its own lower edge; then they break up and
+## the fold slabs "ids" show.
 func _hinge(top: Node3D, fold_at: Dictionary) -> void:
 	var at: Vector3 = fold_at["at"]
 	var dir: Vector2 = fold_at["dir"]
@@ -177,17 +207,28 @@ func _hinge(top: Node3D, fold_at: Dictionary) -> void:
 	var total := Num.f(fold_at["turn"]) + deg_to_rad(Num.f(_cfg["fold_over_deg"]))
 	var slide := Vector3(side.x, 0, side.y) * Num.f(fold_at["clear"])
 	var drop := at.y - Num.f(_cfg["fold_ground"])
+	var local_axis := (top.transform.basis.inverse() * axis).normalized()
+	var crack_turn := deg_to_rad(Num.f(_cfg["fold_break_deg"]))
+	var bands := top.get_children().filter(func(c: Node) -> bool: return c.has_meta("band"))
 	var fold := func(k: float) -> void:
 		var g := k * k
 		var spin := lerpf(k, g, Num.f(_cfg["fold_gravity"]))  # it keeps the speed it fell at
 		hinge.transform = Transform3D(
 			Basis(axis, total * spin), at + slide * k + Vector3.DOWN * drop * g
 		)
+		for band: Node3D in bands:  # the far end droops more: the cracks between bands open
+			var edge := Vector3(0, Num.f(band.get_meta("low")), 0)
+			var turn := Basis(local_axis, crack_turn * Num.i(band.get_meta("band")) * g)
+			band.transform = Transform3D(turn, edge - turn * edge)
 	var seconds := Num.f(_cfg["fold_s"])
 	var tween := hinge.create_tween()
 	tween.tween_method(fold, 0.0, 1.0, seconds)
 	var land := func() -> void:
-		_break_up(top, Num.f(_cfg["breakup_s"]), Num.f(_cfg["fold_debris"]))
+		var each := Num.f(_cfg["fold_debris"]) / maxi(bands.size(), 1)
+		for band: Node3D in bands:
+			_break_up(band, Num.f(_cfg["breakup_s"]), each)
+		if bands.is_empty():
+			_break_up(top, Num.f(_cfg["breakup_s"]), each)
 		_city.fx.dust(top.global_position, Num.f(_cfg["contact_dust"]))
 		_rubble.reveal(ids)
 	tween.tween_callback(land)

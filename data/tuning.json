@@ -495,6 +495,8 @@
 		"fold_lower_s": 0.35,
 		"fold_s": 0.8,
 		"fold_gravity": 0.4,
+		"fold_break_deg": 9.0,
+		"reveal_hold_s": 0.5,
 		"fold_over_deg": 12.0,
 		"fold_ground": 0.5,
 		"fold_debris": 90,
