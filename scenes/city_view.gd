@@ -96,8 +96,17 @@ func crush(at: Vector3, radius: float) -> void:
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
 func crush_cone(cone: Dictionary) -> void:
-	for c: Vector3 in BreathCone.cover(cone):
-		crush(Vector3(c.x, 0.0, c.y), c.z)
+	crush_all(BreathCone.cover(cone))
+
+
+## Everything on the ground within any of `spots` (x, z, radius), as crush() on each in turn,
+## with one pass over the people (b2-3: a cone or a topple strip crushes a dozen spots at once).
+func crush_all(spots: Array[Vector3]) -> void:
+	if _decor != null:
+		for s: Vector3 in spots:
+			_decor.crush(Vector3(s.x, 0.0, s.y), s.z)
+	if street != null:
+		street.crush_all(spots)
 
 
 func _process(delta: float) -> void:
@@ -245,8 +254,11 @@ func _topple_land(node: Node3D, event: Dictionary) -> void:
 	var a := Vector3(from.x, 0, from.y)
 	var b := Vector3(to.x, 0, to.y)
 	var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
+	var spots: Array[Vector3] = []
 	for i: int in steps + 1:
-		crush(a.lerp(b, float(i) / steps), width * 0.6)
+		var at := a.lerp(b, float(i) / steps)
+		spots.append(Vector3(at.x, at.z, width * 0.6))
+	crush_all(spots)
 
 
 ## The ruins of the rampage (ToppleFx builds its rubble strips through it).

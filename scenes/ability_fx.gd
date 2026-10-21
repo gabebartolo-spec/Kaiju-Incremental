@@ -38,6 +38,7 @@ var _body: Node3D
 var _overlay_on := false
 var _healing := false
 var _beam: BreathBeam
+var _warming := false  # the prewarm's emitters' materials are kept compiled (ShaderKeep)
 
 
 ## tint: the species' eye colour; body_scale: the kaiju's size this run; cone: Atomic
@@ -65,12 +66,14 @@ func _ready() -> void:
 	# Prewarm every shader and decal texture out of sight so first use does not stall a frame.
 	var away := Vector3(0, -50, 0)
 	cone_origin = away
+	_warming = true  # and keep each one's shader for the run (b2-3: 8-10 ms a breath otherwise)
 	breath(away, Vector3.FORWARD * 4.0, cone_half_angle, 1.0)
 	leap_land(away, 2.0, 1.0)
 	lash(away, 2.0, 1.0)
 	stomp_cracks(away, 2.0, 3.0)
 	ready_pulse(away, away)
 	deflect(away, Vector3.UP)
+	_warming = false
 	played.clear()
 
 
@@ -241,10 +244,18 @@ func deflect(at: Vector3, away: Vector3) -> void:
 ## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).
 func _first_hit(from: Vector3, span: Vector3) -> float:
 	var steps := maxi(4, ceili(span.length() / 0.5))
+	var to := from + span
+	var near: Array[RampageSim.Building] = []  # b2-3: every building at every step was 20 ms
+	for b: RampageSim.Building in _city.sim.buildings:
+		var x0 := b.x - b.w * 0.5
+		var z0 := b.z - b.d * 0.5
+		if x0 <= maxf(from.x, to.x) and x0 + b.w >= minf(from.x, to.x):
+			if z0 <= maxf(from.z, to.z) and z0 + b.d >= minf(from.z, to.z):
+				near.append(b)
 	for i: int in range(1, steps + 1):
 		var t := float(i) / steps
 		var p := from + span * t
-		for b: RampageSim.Building in _city.sim.buildings:
+		for b: RampageSim.Building in near:
 			var lx := p.x - (b.x - b.w * 0.5)
 			var lz := p.z - (b.z - b.d * 0.5)
 			if lx < 0.0 or lz < 0.0 or lx >= b.w or lz >= b.d:
@@ -301,6 +312,8 @@ func _emitter(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float
 	p.emitting = false
 	p.visibility_aabb = AABB(Vector3(-20, -10, -20), Vector3(40, 30, 40))
 	add_child(p)
+	if _warming:
+		_city.fx.keep.hold("ability_%d" % mat.get_instance_id(), mat)
 	return p
 
 
