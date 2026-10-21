@@ -67,7 +67,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
 - **The city grows with each evolution:** more districts, taller towers, harder defences (D-039).
 - **Start:** the kaiju rises out of the river water facing the city, from a wider bay onto a small shoreline, and
   walks straight in (#10, #17); where a bridge deck sits over the rise he bursts up through it and breaks it
-  (director 2026-10-21). Bridges always meet the land (#12).
+  (director 2026-10-21). Bridges always meet the land (#12). Nothing in the foreground hides the rise (#27).
 - **Landmarks:** stadium, wheel, spire, megatower, in that order (D-071). The stadium plays one random sport per run
   (AFL, NFL, soccer, cricket), full stands; players flee; the crowd is killable, thins over time and falls with a
   broken stand, never vanishes or dangles (D-078, D-078a, b2-8, #17). It sits far from the spawn (b2-21); bonus 1.5x
