@@ -11,6 +11,12 @@ extends RefCounted
 ## (a bank point in the water, a wade that cannot finish) can stall a run before it begins.
 
 var active := false
+## The holes (x, z) the rise breaks in the bay's decks (CityRiver.bay_bridges): over the body's
+## footprint, grown by city "river_bay" "burst_margin", each the deck's full depth. Set by
+## start(); the first rise step emits them as "deck_burst" (director 2026-10-21: "burst
+## through": he rises up through the bridge deck and breaks it; the street grid stays whole).
+var burst: Array[Rect2] = []
+var _broke := false
 var _t := 0.0
 var _rise: float
 var _depth: float
@@ -50,6 +56,8 @@ func start(sim: RampageSim) -> void:
 	# for its whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
 	sim.facing = _ahead()
 	sim.body.heading = sim.facing
+	burst = _holes(sim)
+	_broke = false
 
 
 ## How far through its rise the kaiju is, 0 (under) to 1 (wading in the river).
@@ -73,6 +81,9 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 		sim.stand_y = 0.0
 		_land(sim, sim.clamp_to_arena(_bank))
 		return true
+	if not _broke and not burst.is_empty():  # the first step: he breaks up through the deck
+		_broke = true
+		sim.events.append({"type": "deck_burst", "holes": burst})
 	if _t < _rise:
 		var up := smoothstep(0.0, 1.0, _t / _rise)
 		sim.stand_y = lerpf(-_depth * sim.body_scale(), -_bed, up)  # up to wading depth
@@ -107,6 +118,29 @@ func _rise_point(sim: RampageSim) -> Vector2:
 		return _spawn  # no body yet (a bare sim): the bay's middle
 	var gap := Num.f(_city["river_bay"]["nose_gap"])
 	return Vector2(_spawn.x, sand.end.y + nose * sim.body_scale() + gap)
+
+
+## The body's footprint at the rise (its discs' bounds, grown by the burst margin) cut across
+## each bay deck it covers, the deck's full depth (so no sliver of deck is left inside it).
+func _holes(sim: RampageSim) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var s := sim.body_scale()
+	var foot := Rect2()
+	for d: Array in sim.body.discs():
+		var c := sim.kaiju_pos + sim.facing * Num.f(d[0]) * s
+		var r := Num.f(d[1]) * s
+		var disc := Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
+		foot = disc if not foot.has_area() else foot.merge(disc)
+	if not foot.has_area():
+		return out
+	var bay: Dictionary = _city.get("river_bay", {})
+	foot = foot.grow(Num.f(bay.get("burst_margin", 0.0)))
+	for deck: Rect2 in CityRiver.bay_bridges(_plan, _city):
+		if deck.intersects(foot):
+			var x0 := maxf(deck.position.x, foot.position.x)
+			var x1 := minf(deck.end.x, foot.end.x)
+			out.append(Rect2(x0, deck.position.y, x1 - x0, deck.size.y))
+	return out
 
 
 ## From the rise point to the bank point it wades to: into the city.

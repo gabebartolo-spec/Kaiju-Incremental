@@ -20,6 +20,9 @@ var plan: Dictionary
 var cfg: Dictionary
 ## Where the land ends and the bay begins (z of the quay); north of it is water.
 var coast: float
+## The holes the kaiju's rise breaks in the bay's decks (Emergence.burst; set before it is added).
+var holes: Array[Rect2] = []
+var deck_burst: DeckBurst  # the pieces over the holes, broken on the sim's "deck_burst"
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
 var _basin: Array[Rect2] = []  # the river's bay the kaiju rises in (CityRiver.bay): no pavement
@@ -306,7 +309,7 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 		for side: Rect2 in _cut(_cut(banks, bridges), others):
 			_slab(side, wall, stone)
 	CityShore.draw(self, plan, cfg, depth)
-	var across := CityRiver.bay_bridges(plan, cfg)  # east-west decks: parapets along x
+	var across := CityRiver.decks_after(plan, cfg, holes)  # east-west decks: parapets along x
 	for deck: Rect2 in bridges + across:
 		_slab(deck, Vector2(0.001, 0.5), asphalt)
 		var rail := Vector2(PARAPET.y, deck.size.y)
@@ -316,6 +319,9 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			step = Vector2(0.0, deck.size.y - PARAPET.y)
 		for edge: float in [0.0, 1.0]:
 			_slab(Rect2(deck.position + step * edge, rail), Vector2(PARAPET.x, 1.0), stone)
+	if not holes.is_empty():
+		deck_burst = DeckBurst.new(holes, asphalt, stone)
+		add_child(deck_burst)
 
 
 ## rects with every hole cut out of them, as the rects left over.

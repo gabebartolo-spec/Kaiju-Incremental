@@ -33,6 +33,7 @@ var _decor: CityDecor
 var _fires: Array[Fire] = []
 var _chunk_fires := BuildingFires.new()
 var _debris: DebrisField
+var _streets: CityGround
 
 var _with_decor := true
 
@@ -157,7 +158,9 @@ func _build_ground() -> void:
 	ground.add_child(shape)
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
+	streets.holes = sim.emerge.burst
 	add_child(streets)
+	_streets = streets
 	if _with_decor:
 		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 
@@ -165,6 +168,12 @@ func _build_ground() -> void:
 func _base_color(b: RampageSim.Building) -> Color:
 	var styles := Look.styles()
 	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
+
+
+## The kaiju burst up through the bay's deck (the sim's "deck_burst"): its pieces break away.
+func deck_burst() -> void:
+	if _streets and _streets.deck_burst:
+		_streets.deck_burst.burst(_debris, fx, _rng)
 
 
 ## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.

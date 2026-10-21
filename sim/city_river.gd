@@ -189,6 +189,29 @@ static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	return out
 
 
+## The bay's decks (bay_bridges) left standing once the kaiju has burst up through them
+## (Emergence.burst, director 2026-10-21: "burst through": he rises through the bridge deck and
+## breaks it): each deck with every hole cut out of it, west and east of the hole.
+static func decks_after(plan: Dictionary, cfg: Dictionary, holes: Array[Rect2]) -> Array[Rect2]:
+	var out := bay_bridges(plan, cfg)
+	for hole: Rect2 in holes:
+		var left: Array[Rect2] = []
+		for deck: Rect2 in out:
+			if not deck.intersects(hole):
+				left.append(deck)
+				continue
+			if hole.position.x > deck.position.x:
+				left.append(
+					Rect2(deck.position, Vector2(hole.position.x - deck.position.x, deck.size.y))
+				)
+			if hole.end.x < deck.end.x:
+				left.append(
+					Rect2(hole.end.x, deck.position.y, deck.end.x - hole.end.x, deck.size.y)
+				)
+		out = left
+	return out
+
+
 ## Quay sheds (lead check 2026-10-19: the young city's first steps out of the water must hit
 ## something): small buildings lining the pavement of each bare built block of the first
 ## district (one whose lots came out empty, a sliver between close street lines) within

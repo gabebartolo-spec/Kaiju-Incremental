@@ -44,6 +44,7 @@ func run_checks() -> void:
 	await _t("_check_emerge_cap")
 	await _t("_check_river_sites")
 	await _t("_check_bridges_meet_land")
+	await _t("_check_rise_bursts_decks")
 	await _h(
 		"city_light_pool",
 		func() -> void: preload("res://tests/lib/city_light_pool.gd").check(root, check)
@@ -233,3 +234,11 @@ func _check_river_sites() -> void:
 ## build 4 comments 2026-10-21 #12).
 func _check_bridges_meet_land() -> void:
 	BridgeLand.check(COVERAGE_SEEDS, check)
+
+
+## The kaiju of each stage 1-3 bursts up through the bay's decks: none left inside its body
+## (tests/lib/city_river_bay.gd check_burst; director 2026-10-21, "burst through").
+func _check_rise_bursts_decks() -> void:
+	for tier: int in [1, 2, 3]:
+		for map_seed: int in COVERAGE_SEEDS:
+			RiverBay.check_burst(tier, map_seed, check)
