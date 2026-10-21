@@ -65,6 +65,7 @@ func _ready() -> void:
 	add_child(_ruins)
 	_topple = ToppleFx.new(self, _rng)
 	add_child(_topple)
+	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
 	Fire.prewarm(self)
 	if not await stages.next(self):
 		return

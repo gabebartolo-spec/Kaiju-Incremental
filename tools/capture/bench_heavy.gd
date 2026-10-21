@@ -86,7 +86,6 @@ func _run() -> void:
 			]
 		)
 	)
-	print(_cache_tally(rampage))
 	print(
 		(
 			"HANDLER worst ms per kind: %s; frames with a handler over %.0f ms: %d"
@@ -140,28 +139,6 @@ func _row(rampage: Rampage, city: CityView, gap: float, at: float) -> Dictionary
 		"draws": int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
 		"costs": costs,
 	}
-
-
-## The settle cache's tally over every carved building: fast and full settles, and why it gave up.
-func _cache_tally(rampage: Rampage) -> String:
-	var fast := 0
-	var full := 0
-	var quiet := 0
-	var why := {}
-	for n: Variant in rampage.sim.carving.grids:
-		var g: Carving.Grid = rampage.sim.carving.grids[n]
-		var cache: VoxelSettleCache = g.frame.get("_cache")
-		if cache == null:
-			continue
-		fast += cache.fast
-		quiet += cache.quiet
-		full += cache.full
-		for k: Variant in cache.why:
-			why[k] = Num.i(why.get(k, 0)) + Num.i(cache.why[k])
-	return (
-		"settle cache: %d fast, %d full (%d without a fall); gave up: %s"
-		% [fast, full, quiet, str(why)]
-	)
 
 
 func _line(r: Dictionary) -> String:
