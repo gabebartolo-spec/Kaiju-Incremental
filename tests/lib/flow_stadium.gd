@@ -148,6 +148,35 @@ static func _check_crowd_kill(
 			)
 		)
 	)
+	_check_stray_fan(check, street, view, crowd)
+
+
+## A stray tank shell (CityView.crush by_army) on a running fan kills it too, but the army did
+## it: it counts in StreetLife.army_killed, not as the kaiju's civilian kill (comments #18).
+static func _check_stray_fan(
+	check: Callable, street: StreetLife, view: CityView, crowd: StadiumCrowd
+) -> void:
+	var target: StadiumCrowd.Fan = null
+	for fan: StadiumCrowd.Fan in crowd.fans:
+		if not fan.is_dead() and crowd.running_at(fan).distance_to(fan.pos) > 1.0:
+			target = fan
+			break
+	var before := street.civilians_killed()
+	var army := street.army_killed
+	if target != null:
+		view.crush(crowd.running_at(target), 0.3, true)
+	check.call(
+		(
+			target != null
+			and target.is_dead()
+			and street.army_killed > army
+			and street.civilians_killed() == before
+		),
+		(
+			"a stray shell on a fan is the army's kill: army %d -> %d, kaiju's civilians %d -> %d"
+			% [army, street.army_killed, before, street.civilians_killed()]
+		)
+	)
 
 
 ## Each falling piece once: a LandmarkBurst, or (over) a stadium section toppling toward its
