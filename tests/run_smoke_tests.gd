@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 
 const AUTOLOADS: Array[String] = ["Debug", "EventBus", "GameData", "Rng", "SaveSystem", "Settings"]
 const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
+const CrocNeck := preload("res://tests/lib/smoke_croc_neck.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
 const MAX_FOOT_DRIFT := 0.02
@@ -31,6 +32,7 @@ func run_checks() -> void:
 	await _t("_check_main_scene")
 	await _t("_check_planted_feet")
 	await _h("HeadLead", func() -> void: HeadLead.check(check, root))
+	await _h("CrocNeck", func() -> void: CrocNeck.check(check, root))
 	await _t("_check_skins_fresh")
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")

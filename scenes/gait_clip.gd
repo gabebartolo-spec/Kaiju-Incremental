@@ -49,7 +49,7 @@ const TAIL_MAX := 0.008
 ## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
 const HEAD_LEAD_MAX := 0.6
 const HEAD_LEAD_EASE := 10.0
-const NECK_SHARE := 0.4
+const NECK_SHARE := 0.75
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
