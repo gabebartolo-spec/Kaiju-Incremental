@@ -44,7 +44,7 @@ func _ready() -> void:
 	_outer_lamps()
 	add_child(_facades(_near, 0.0))
 	var far := _facades(_far, Num.f(cfg["far_haze"]))
-	var far_mesh: BoxMesh = far.multimesh.mesh
+	var far_mesh: BoxMesh = far.mesh
 	var far_mat: ShaderMaterial = far_mesh.material
 	far_mat.set_shader_parameter("grain", FAR_GRAIN)
 	add_child(far)
@@ -286,15 +286,20 @@ func _box(turn: Basis, box: AABB, color: Color, hazy: bool = false) -> void:
 	_plain.append({"t": t, "c": color, "hazy": hazy})
 
 
-func _facades(boxes: Array[Dictionary], haze: float) -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.use_custom_data = true
+## The painted stand-ins as ground tiles (each culled on its own), in `boxes` order.
+func _facades(boxes: Array[Dictionary], haze: float) -> MeshTiles:
+	var template := MultiMesh.new()
+	template.transform_format = MultiMesh.TRANSFORM_3D
+	template.use_colors = true
+	template.use_custom_data = true
 	var mesh := BoxMesh.new()
 	mesh.material = facade_material(haze)
-	mm.mesh = mesh
-	mm.instance_count = boxes.size()
+	template.mesh = mesh
+	var centres := PackedVector3Array()
+	for box: Dictionary in boxes:
+		var centre: Vector3 = box["at"]
+		centres.append(centre)
+	var mm := MeshTiles.new(template, Num.f(cfg["skyline_tile"]), centres)
 	for i: int in boxes.size():
 		var box: Dictionary = boxes[i]
 		var size: Vector3 = box["size"]
@@ -304,11 +309,9 @@ func _facades(boxes: Array[Dictionary], haze: float) -> MultiMeshInstance3D:
 		var custom: Color = box["custom"]
 		mm.set_instance_color(i, color)
 		mm.set_instance_custom_data(i, custom)
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
 	if haze > 0.0:
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mmi
+		mm.cast_shadows(GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	return mm
 
 
 static func facade_material(haze: float) -> ShaderMaterial:
@@ -328,45 +331,44 @@ static func facade_material(haze: float) -> ShaderMaterial:
 func _plain_boxes() -> Node3D:
 	var holder := Node3D.new()
 	for hazy: bool in [false, true]:
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_colors = true
-		mm.use_custom_data = true
+		var template := MultiMesh.new()
+		template.transform_format = MultiMesh.TRANSFORM_3D
+		template.use_colors = true
+		template.use_custom_data = true
 		var mesh := BoxMesh.new()
 		var mat := facade_material(Num.f(cfg["far_haze"]) * 1.6 if hazy else 0.0)
 		mat.set_shader_parameter("plain", true)
 		mesh.material = mat
-		mm.mesh = mesh
+		template.mesh = mesh
 		var picked: Array[Dictionary] = []
+		var centres := PackedVector3Array()
 		for box: Dictionary in _plain:
 			var is_hazy: bool = box["hazy"]
 			if is_hazy == hazy:
 				picked.append(box)
-		mm.instance_count = picked.size()
+				var t: Transform3D = box["t"]
+				centres.append(t.origin)
+		var mm := MeshTiles.new(template, Num.f(cfg["skyline_tile"]), centres)
 		for i: int in picked.size():
 			var t: Transform3D = picked[i]["t"]
 			var c: Color = picked[i]["c"]
 			mm.set_instance_transform(i, t)
 			mm.set_instance_color(i, c)
 			mm.set_instance_custom_data(i, Color(0, 0, 0, 0))
-		var mmi := MultiMeshInstance3D.new()
-		mmi.multimesh = mm
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		holder.add_child(mmi)
+		mm.cast_shadows(GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+		holder.add_child(mm)
 	return holder
 
 
-func _lamp_heads() -> MultiMeshInstance3D:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
+func _lamp_heads() -> MeshTiles:
+	var template := MultiMesh.new()
+	template.transform_format = MultiMesh.TRANSFORM_3D
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(0.35, 0.2, 0.35)
 	mesh.material = CityView.glow(Color("ffd59a"), 4.0)
-	mm.mesh = mesh
-	mm.instance_count = _lamps.size()
+	template.mesh = mesh
+	var mm := MeshTiles.new(template, Num.f(cfg["skyline_tile"]), PackedVector3Array(_lamps))
 	for i: int in _lamps.size():
 		mm.set_instance_transform(i, Transform3D(Basis(), _lamps[i]))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return mmi
+	mm.cast_shadows(GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	return mm

@@ -120,18 +120,8 @@ func repaint(fn: Callable) -> void:
 ## A cell's centre sits at origin + cell * voxel, lifted half a voxel so y = 0 rests on the ground.
 ## Cubes are drawn at `inset` of their size (below 1: a filler layer that hides inside a skin).
 func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> MultiMeshInstance3D:
-	var shown: Array[Vector3i] = []
-	for cell: Vector3i in cells:
-		if not buried(cell):
-			shown.append(cell)
-	shown.sort_custom(func(a: Vector3i, b: Vector3i) -> bool: return a.y < b.y)
-	sorted_y = PackedInt32Array()
-	sorted_y.resize(shown.size())
-	built_cells = shown
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = Look.voxel_mesh(voxel, glow)
+	var shown := _shown()
+	var mm := _template(voxel, glow)
 	mm.instance_count = shown.size()
 	var lift := Vector3(0, voxel * 0.5, 0)
 	for i: int in shown.size():
@@ -145,6 +135,48 @@ func build(palette: Dictionary, voxel: float, glow: float, origin: Vector3) -> M
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	return mmi
+
+
+## build()'s instances, the same and in the same order (origin at zero), split into ground tiles
+## of `tile` m (MeshTiles: each tile is culled on its own); instance i is still built_cells[i].
+func build_tiled(palette: Dictionary, voxel: float, glow: float, tile: float) -> MeshTiles:
+	var shown := _shown()
+	var lift := Vector3(0, voxel * 0.5, 0)
+	var at := PackedVector3Array()
+	for cell: Vector3i in shown:
+		at.append(Vector3(cell) * voxel + lift)
+	var tiles := MeshTiles.new(_template(voxel, glow), tile, at)
+	tiles.cast_shadows(GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
+	for i: int in shown.size():
+		var cell := shown[i]
+		sorted_y[i] = cell.y
+		var key: String = cells[cell]
+		var base: Color = colors[cell] if key == DIRECT else palette.get(key, Color.MAGENTA)
+		var cube := Basis().scaled(Vector3.ONE * inset)
+		tiles.set_instance_transform(i, Transform3D(cube, Vector3(cell) * voxel + lift))
+		tiles.set_instance_color(i, Look.jitter(base, cell, salt))
+	return tiles
+
+
+## Every cell that can be seen, bottom-up (kept as built_cells; sorted_y sized to match).
+func _shown() -> Array[Vector3i]:
+	var shown: Array[Vector3i] = []
+	for cell: Vector3i in cells:
+		if not buried(cell):
+			shown.append(cell)
+	shown.sort_custom(func(a: Vector3i, b: Vector3i) -> bool: return a.y < b.y)
+	sorted_y = PackedInt32Array()
+	sorted_y.resize(shown.size())
+	built_cells = shown
+	return shown
+
+
+func _template(voxel: float, glow: float) -> MultiMesh:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = Look.voxel_mesh(voxel, glow)
+	return mm
 
 
 ## One merged mesh (vertex colours, hidden faces culled) for a small model that moves as a

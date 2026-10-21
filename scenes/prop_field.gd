@@ -1,7 +1,8 @@
 class_name PropField
 extends RefCounted
-## Many small static props (cars, trees, streetlights) in one MultiMesh, each prop a group of
-## instances that can be crushed when the kaiju stomps on it or walks over it. A car, bush or
+## Many small static props (cars, trees, streetlights) as voxel instances in ground tiles (one
+## MultiMesh each, so what is off screen is culled), each prop a group of instances that can be
+## crushed when the kaiju stomps on it or walks over it. A car, bush or
 ## lamp flattens; a tree bursts: its trunk and crown go to voxel debris in their own colours
 ## (thrown like a building's) and a pale stump stays (critic on #55: a toppled tree never read).
 ## Presentation only: the sim never knows props exist.
@@ -31,7 +32,7 @@ var debris: Array[Array] = []
 var _rng := Seeds.make("tree_burst")  # where in its crown each leaf starts, and its spread
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
-var _mmi: MultiMeshInstance3D
+var _tiles: MeshTiles
 
 
 func _init(p_voxel: float) -> void:
@@ -75,12 +76,11 @@ func felled() -> Array[Vector2]:
 	return out
 
 
-## glow: strength for palette colours with alpha 0 (lamps).
-## glow: strength for palette colours with alpha 0 (lamps).
-func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:
+## glow: strength for palette colours with alpha 0 (lamps); tile: the ground tiles' side (m).
+func build(palette: Dictionary, salt: int, glow: float, tile: float) -> MeshTiles:
 	vox.salt = salt
-	_mmi = vox.build(palette, voxel, glow, Vector3.ZERO)
-	_mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_tiles = vox.build_tiled(palette, voxel, glow, tile)
+	_tiles.cast_shadows(GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
 	# Each prop remembers which instances are its voxels, so crushing touches only those.
 	var index_of := {}
 	for i: int in vox.built_cells.size():
@@ -104,14 +104,13 @@ func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:
 		group["origins"] = origins
 		group["keys"] = keys
 		group.erase("local")
-	return _mmi
+	return _tiles
 
 
 ## Flattens every prop whose base is within `radius` of `at` (ground plane); trees burst.
 func crush(at: Vector3, radius: float) -> void:
-	if _mmi == null:
+	if _tiles == null:
 		return
-	var mm := _mmi.multimesh
 	var lo := Vector2i(floori((at.x - radius) / BUCKET), floori((at.z - radius) / BUCKET))
 	var hi := Vector2i(floori((at.x + radius) / BUCKET), floori((at.z + radius) / BUCKET))
 	for bx: int in range(lo.x, hi.x + 1):
@@ -121,15 +120,14 @@ func crush(at: Vector3, radius: float) -> void:
 				var group: Dictionary = _groups[index]
 				var base: Vector3 = group["at"]
 				if Vector2(base.x - at.x, base.z - at.z).length() <= radius:
-					_crush_group(mm, group, at)
+					_crush_group(group, at)
 
 
 ## Flattens every prop whose base lies under a body: `foot` is its ground box (x across, y
 ## along) in the frame `body` (scale included), so the box turns and grows with it.
 func crush_box(body: Transform3D, foot: Rect2) -> void:
-	if _mmi == null:
+	if _tiles == null:
 		return
-	var mm := _mmi.multimesh
 	var reach := maxf(foot.position.length(), foot.end.length()) * body.basis.get_scale().x
 	var at := body.origin
 	var into := body.affine_inverse()
@@ -143,7 +141,7 @@ func crush_box(body: Transform3D, foot: Rect2) -> void:
 				var base: Vector3 = group["at"]
 				var local := into * Vector3(base.x, at.y, base.z)
 				if foot.has_point(Vector2(local.x, local.z)):
-					_crush_group(mm, group, at)
+					_crush_group(group, at)
 
 
 ## Takes the crushed-tree look from tuning's city section.
@@ -181,19 +179,19 @@ func throw(fx: Fx) -> void:
 	stumps.clear()
 
 
-func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
+func _crush_group(group: Dictionary, at: Vector3) -> void:
 	if group.get("crushed", false):
 		return
 	group["crushed"] = true
 	if group.get("fells", false):
-		_burst(mm, group, at)
+		_burst(group, at)
 		return
 	var ids: PackedInt32Array = group["ids"]
 	for i: int in ids:
-		var t := mm.get_instance_transform(i)
+		var t := _tiles.get_instance_transform(i)
 		t.origin.y = t.origin.y * 0.2 + voxel * 0.1
 		t.basis = Basis.from_scale(Vector3(1.15, 0.25, 1.15))
-		mm.set_instance_transform(i, t)
+		_tiles.set_instance_transform(i, t)
 
 
 ## A tree is crushed in place, all on this frame: the stump (its lowest STUMP cells) turns the
@@ -201,7 +199,7 @@ func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 ## BARK_EVERY bark cells is thrown as leaf-green or bark-brown debris, away from the blow and
 ## up. Leaves start anywhere inside the crown, centre included, each turned off the blow at
 ## random (lead, #55 r14: from the crown's shell they flew as a ring). Nothing rotates or slides.
-func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
+func _burst(group: Dictionary, at: Vector3) -> void:
 	var base: Vector3 = group["at"]
 	var ids: PackedInt32Array = group["ids"]
 	var heights: PackedInt32Array = group["heights"]
@@ -218,9 +216,9 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	for k: int in ids.size():
 		if heights[k] < STUMP:  # the cut top shows fresh wood; the stump's sides keep their bark
 			if heights[k] == STUMP - 1:
-				mm.set_instance_color(ids[k], stump_color)
+				_tiles.set_instance_color(ids[k], stump_color)
 			continue
-		mm.set_instance_transform(ids[k], gone)
+		_tiles.set_instance_transform(ids[k], gone)
 		var bark := keys[k] == "bark"
 		if k % (BARK_EVERY if bark else LEAF_EVERY) == 0:
 			var from := origins[k]

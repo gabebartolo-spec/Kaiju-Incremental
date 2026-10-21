@@ -300,6 +300,8 @@
 		"playground_size": 4,
 		"yard_depth": [0.6, 1.6],
 		"trample_share": 0.9,
+		"prop_tile": 32.0,
+		"skyline_tile": 96.0,
 		"stump_color": "f0b868",
 		"tree_debris_leaf": "60ae43",
 		"tree_debris_bark": "6a3c1c",

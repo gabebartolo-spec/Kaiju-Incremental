@@ -93,7 +93,7 @@ func _ready() -> void:
 	var island: Dictionary = sim.city["traffic_island"]["colors"]
 	for key: String in island:
 		palette[key] = Color(str(island[key]))
-	add_child(_props.build(palette, 31, 3.0))
+	add_child(_props.build(palette, 31, 3.0, Num.f(sim.city["prop_tile"])))
 	_props.configure(sim.city)
 	add_child(_fx)
 	add_child(_props.leaf_field)
