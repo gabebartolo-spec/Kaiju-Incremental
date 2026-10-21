@@ -28,6 +28,12 @@ var body_yaw := 0.0
 ## The yaw the body still has to turn (rad, set by the scene from the sim; INF: not told): the
 ## head looks ahead by it, a beat before the body turns (comments #16).
 var turn_ahead := INF
+## Steps the sim has walked (INF: not told; BodyContact.phase): an integer is a footfall, even the
+## left foot, odd the right. A clip gait plants its feet on it, so the legs step where the sim
+## turns the body.
+var step_phase := INF
+## How long this step is next to a full stride, 0..1 (BodyContact.step_ratio).
+var step_ratio := 1.0
 var time := 0.0
 ## Top turn rate (rad/s at scale 1); a gait may change it (a skittering insect turns fast).
 var turn_max := BODY_TURN_MAX

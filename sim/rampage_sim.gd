@@ -206,6 +206,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
 		var speed := stat("speed") * powers.speed_mult() * stride
 		kaiju_pos = clamp_to_arena(kaiju_pos + body.heading * speed * dt)
+		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	_stomp_timer -= dt

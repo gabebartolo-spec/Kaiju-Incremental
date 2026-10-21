@@ -90,12 +90,22 @@ func _add_rim_light() -> void:
 	add_child(rim)
 
 
-## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it.
-func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
+## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it;
+## step_phase: the sim's step clock (BodyContact.step_clock), the legs step on it, each step
+## step_ratio of a full stride long.
+func animate(
+	delta: float,
+	moving: float,
+	turn_ahead: float = INF,
+	step_phase: float = INF,
+	step_ratio: float = 1.0
+) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)
 	_squash = maxf(0.0, _squash - delta * 5.0)
 	if _rig != null:
 		_rig.gait.turn_ahead = turn_ahead
+		_rig.gait.step_phase = step_phase
+		_rig.gait.step_ratio = step_ratio
 		_rig.animate(delta, moving)  # the rig carries its own weight: no bob, no squash
 		VoxelSkin.sync_if(_skin)
 		return

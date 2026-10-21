@@ -28,6 +28,8 @@ const STILL_YAW := 0.0005
 ## A planted foot may drift at most this far (cm; a world unit is a 3.5 m storey).
 const MAX_DRIFT_CM := 5.0
 const CM_PER_UNIT := 350.0
+## The sim's step length may differ this much from half the walk clip's stride.
+const STEP_LEN_TOL := 0.02
 
 
 static func check(check: Callable, root: Node) -> void:
@@ -56,6 +58,15 @@ static func check(check: Callable, root: Node) -> void:
 		adult["drift"] < MAX_DRIFT_CM,
 		"a planted foot holds its spot (%.1f cm < %.1f)" % [adult["drift"], MAX_DRIFT_CM]
 	)
+	var one_step: float = adult["stride"]
+	var sim_step: float = adult["step_len"]
+	check.call(
+		absf(one_step / sim_step - 1.0) < STEP_LEN_TOL,
+		(
+			"the sim's step is half the clip's stride, so planted feet are passed at the pace the body walks (%.3f vs %.3f)"
+			% [sim_step, one_step]
+		)
+	)
 	var baby := _turn({}, root)
 	var baby_took: float = baby["took"]
 	check.call(
@@ -67,7 +78,8 @@ static func check(check: Callable, root: Node) -> void:
 	)
 
 
-## One walk north then a 90 deg turn west at `levels`: {took, steps, aloft, drift}.
+## One walk north then a 90 deg turn west at `levels`: {took, steps, aloft, sliced, drift, stride,
+## step_len} (the last two: one step by the clip and by the sim, world units).
 static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 	var def := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
@@ -103,7 +115,7 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 		sim.step(DT, move, false, 0)
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-		kaiju.animate(DT, 1.0, -sim.body.turn_left)
+		kaiju.animate(DT, 1.0, -sim.body.turn_left, sim.body.step_clock(), sim.body.step_ratio)
 		var dyaw := absf(wrapf(gait.body_yaw - last_yaw, -PI, PI))
 		var yawed := dyaw > STILL_YAW
 		last_yaw = gait.body_yaw
@@ -117,6 +129,8 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 			yaws.append(Vector2(t, dyaw))
 			if absf(sim.body.turn_left) < LANDED:
 				landed = t
+	var stride: float = (gait as ClipGait).stride() * 0.5  # one step: half a cycle
+	var step_len := Num.f(Content.tuning()["contact"]["step_len"]) * sim.body_scale()
 	kaiju.free()
 	var steps := 0
 	var side := ""
@@ -140,6 +154,8 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 		"steps": steps,
 		"aloft": aloft,
 		"drift": drift,
+		"stride": stride,
+		"step_len": step_len,
 		"sliced": near / maxf(total, 0.0001)
 	}
 

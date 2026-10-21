@@ -7,6 +7,7 @@ extends SceneTree
 ## head height) or game (the rampage camera: CameraTuning offset and zoom, eased focus, no
 ## shake). The side and front34 cameras follow the walk's heading, eased, so a turn swings
 ## them round.
+## --no-label leaves the label off the picture (a clip for the director).
 ## Prints the worst planted-foot drift (cm; a world unit is a 3.5 m storey) at the end.
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 --write-movie <out.avi> \
@@ -28,6 +29,7 @@ var _course := "straight"
 var _cam_kind := "side"
 var _seconds := 9.0
 var _label := ""
+var _show_label := true
 var _focus := Vector3.INF  # the game camera's eased focus
 
 
@@ -39,6 +41,8 @@ func _initialize() -> void:
 			_course = arg.substr(9)
 		elif arg.begins_with("--cam="):
 			_cam_kind = arg.substr(6)
+		elif arg == "--no-label":
+			_show_label = false
 		elif arg.begins_with("--seconds="):
 			_seconds = float(arg.substr(10))
 	_label = "%s  %s  %s" % [_stage, _course, _cam_kind]
@@ -90,7 +94,10 @@ func _run() -> void:
 	text.add_theme_font_size_override("font_size", 26)
 	text.text = _label
 	ui.add_child(text)
-	world.add_child(ui)
+	if _show_label:
+		world.add_child(ui)
+	else:
+		ui.free()
 	root.add_child(world)
 	var way := Vector2(0, -1)  # the cameras' eased heading
 	var drift := 0.0
@@ -101,7 +108,7 @@ func _run() -> void:
 		sim.step(DT, move, false, 0)
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-		kaiju.animate(DT, move.length(), -sim.body.turn_left)
+		kaiju.animate(DT, move.length(), -sim.body.turn_left, sim.body.step_clock(), sim.body.step_ratio)
 		way = way.slerp(sim.body.heading, minf(1.0, CAM_EASE * DT)).normalized()
 		_place(cam, kaiju, way, bs)
 		var slid := _slide(kaiju, planted_at)

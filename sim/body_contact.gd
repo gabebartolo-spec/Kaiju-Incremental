@@ -30,6 +30,9 @@ var longest_hold := 0.0
 var snout := 0.0
 ## The charge along the facing (Dash), which this body's sweep carries through the city.
 var dash: Dash
+## Steps walked so far (0 at the first step; an integer is a footfall, even the left foot, odd the
+## right): the sim's step clock, which the legs follow (ClipGait) and which opens the yaw slices.
+var phase := 0.0
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -38,6 +41,18 @@ var _last_heading := Vector2(0, -1)
 var _dt := 0.0
 var _hold_s := 0.0
 var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
+## How much of a full step's length each step takes now, 0..1: a turn's quick steps are short ones
+## (the legs scale the clip's foot travel by it, so a planted foot is passed at the pace the body
+## walks).
+var step_ratio := 1.0
+## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
+## gap between the feet).
+var _pivot := Vector2.ZERO
+## Where the last two feet to land stand in the world (they stay there until they lift): the newest
+## first. The body turns about them.
+var _feet: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
+var _cadence := 0.0  # steps/s the turn adds to the step clock now (eases up in a turn)
+var _standing := true  # the stick was zero last step: the next step sets off on a footfall
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -58,6 +73,8 @@ func use_species(species_id: String) -> void:
 		var stage: Dictionary = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
 		_discs = stage["discs"]
 		snout = Num.f(stage["snout"])
+		var pivot: Array = stage.get("pivot", [0.0, 0.0])
+		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
 
 
 func active() -> bool:
@@ -84,20 +101,36 @@ func length() -> float:
 ## to turn_rate (turn_rate_still at a standstill; both slower for a bigger body, _rate) and slows
 ## before it lands, never overshooting,
 ## while the stride eases down in a hard turn (to turn_slow at an about-face) and back up after.
+## A body with planted feet (stepping) turns in steps instead (director 2026-10-21 #3, "rather
+## than swivelling on the spot like a plastic toy"): the body yaws only in the first slice_open of
+## each step, from its footfall, at the same pace on average, holds between (the head leads by
+## turn_left), and swings about its planted feet, not its middle.
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
 	if want == Vector2.ZERO:
 		stride = 0.0
 		turn_left = 0.0
 		_spin = 0.0
+		_cadence = 0.0
+		_standing = true
 		_face(dt)
 		return 0.0
+	if _standing:
+		phase = roundf(phase)  # sets off on a footfall: both feet down
+		step_ratio = 1.0
+		_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - Num.f(cfg["step_len"]), -1.0)]
+		_standing = false
 	turn_left = sim.facing.angle_to(want)
 	var keep := lerpf(1.0, Num.f(cfg["turn_slow"]), absf(turn_left) / PI)
 	var ease := minf(1.0, Num.f(cfg["stride_ease"]) * dt) if stride > 0.0 else 1.0  # sets off at once
 	stride = lerpf(stride, want.length() * keep, ease)
 	var top := lerpf(_rate("turn_rate_still"), _rate("turn_rate"), stride)
 	var accel := Num.f(cfg["turn_accel"])
+	if stepping():
+		accel = Num.f(cfg["slice_accel"])
+		top = top / Num.f(cfg["slice_open"]) if _slice() else 0.0
+		var cadence := Num.f(cfg["turn_cadence"]) / sqrt(sim.body_scale()) if absf(turn_left) > Num.f(cfg["turn_min"]) else 0.0
+		_cadence = move_toward(_cadence, cadence, Num.f(cfg["cadence_ease"]) * dt)
 	var aim := signf(turn_left) * minf(top, sqrt(2.0 * accel * absf(turn_left)))
 	_spin = move_toward(_spin, aim, accel * dt)
 	var turn := _spin * dt
@@ -105,8 +138,55 @@ func steer(dt: float, want: Vector2) -> float:
 		turn = turn_left  # lands on the new way exactly
 		_spin = 0.0
 	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
+	var was := heading
 	_face(dt)
+	if stepping():  # swung about the foot that is down: it stays where it is
+		var both := fposmod(phase, 1.0) < Num.f(cfg["support_both"])  # the old foot is not up yet
+		var at := (_feet[0] + _feet[1]) * 0.5 if both else _feet[0]
+		if at.distance_to(sim.kaiju_pos) > 3.0 * _pivot.x * sim.body_scale():  # a dash or leap left them
+			_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - Num.f(cfg["step_len"]), -1.0)]
+			at = _feet[0]
+		sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(was.angle_to(heading))
 	return stride
+
+
+## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),
+## `side` 1 on its own side of the middle, -1 on the other.
+func _foot_at(ahead: float, side: float) -> Vector2:
+	var lateral := (-1.0 if int(floorf(phase)) % 2 == 0 else 1.0) * side  # an even step: left
+	var across := heading.rotated(PI * 0.5) * _pivot.y * lateral
+	return sim.kaiju_pos + (heading * ahead + across) * sim.body_scale()
+
+
+## True while the body may yaw: a stretch of each step from slice_from, after its footfall.
+func _slice() -> bool:
+	var at := fposmod(phase, 1.0) - Num.f(cfg["slice_from"])
+	return at >= 0.0 and at < Num.f(cfg["slice_open"])
+
+
+## True when this body walks by steps (it has planted feet): the stepped turn and the step clock.
+func stepping() -> bool:
+	return _pivot.x > 0.0
+
+
+## The step clock for the legs to follow (steps walked), INF for a body that does not step.
+func step_clock() -> float:
+	return phase if stepping() else INF
+
+
+## The kaiju has walked `distance` world units in dt (a stride or a dash): the step clock follows,
+## at least as fast as a turn's cadence (a turn takes short quick steps).
+func walked(distance: float, dt: float) -> void:
+	if stepping():
+		var before := floorf(phase)
+		var steps := distance / (Num.f(cfg["step_len"]) * sim.body_scale())
+		var moved := maxf(steps, _cadence * dt)
+		phase += moved
+		if moved > 0.0:
+			step_ratio = maxf(steps / moved, Num.f(cfg["step_ratio_min"]))
+		if floorf(phase) != before:  # a footfall: that foot comes down short of a full step
+			var short := 0.5 * Num.f(cfg["step_len"]) * (1.0 - step_ratio)
+			_feet = [_foot_at(_pivot.x - short, 1.0), _feet[0]]
 
 
 ## Carries a dash (dash_pressed: the button this step), faces the body where sim.facing points,
@@ -152,6 +232,8 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 ## so the two stay one; only a facing set from outside is caught up with.
 func _face(dt: float) -> void:
 	var most := _rate("turn_rate_still") * dt
+	if stepping():
+		most /= Num.f(cfg["slice_open"])  # a slice turns faster than the average (steer)
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
 
 

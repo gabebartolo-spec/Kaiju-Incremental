@@ -70,6 +70,9 @@ var _blend := 1.0
 var _roar_queued := false
 var _turn_from := 0.0
 var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
+var _land := 0.0  # the walk clip's first footfall (frame), the sim's step phase 0
+var _step_frames := 1.0  # walk clip frames in one step (half a cycle)
+var _foot_mid := 0.0  # the walk clip's feet, mean fore-aft position (rig space)
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _was_planted: Array[bool] = [false, false]
@@ -106,6 +109,9 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	clips = p_clips
 	for turn: String in ["turn_left", "turn_right"]:
 		_turn_span[turn] = _yaw_span(turn)
+	_land = _first_landing()
+	_foot_mid = _mean_foot_z()
+	_step_frames = float(clips.frames_of("walk")) / clips.cycles_of("walk") * 0.5
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
@@ -148,14 +154,14 @@ func _choose(dt: float) -> void:
 		_go("roar", 0.0)
 	elif state == "roar":
 		if done:
-			_go(settle, _walk_entry() if moving else 0.0)
+			_go(settle, _walk_start() if moving else 0.0)
 	elif state.begins_with("turn"):
 		var span: Vector2 = _turn_span[state]
 		if moving or clip_time >= span.y + TURN_SETTLE:
-			_go(settle, _walk_entry() if moving else 0.0)
+			_go(settle, _walk_start() if moving else 0.0)
 	elif moving:
 		if state != "walk":
-			_go("walk", _walk_entry())
+			_go("walk", _walk_start())
 	else:
 		var err := wrapf(model_yaw - body_yaw, -PI, PI)
 		if absf(err) > TURN_TRIGGER:
@@ -168,7 +174,10 @@ func _choose(dt: float) -> void:
 	if state == "walk":
 		var cycles := speed * dt / maxf(stride(), 0.0001)
 		walk_cycles += cycles
-		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
+		if step_phase != INF:
+			clip_time = _step_frame()  # the sim's step clock: the footfalls land where it turns
+		else:
+			clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
 	else:
 		clip_time += dt * clips.fps
 	_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
@@ -182,6 +191,40 @@ func _go(next: String, at: float) -> void:
 	_blend = 0.0
 	state = next
 	clip_time = at
+
+
+## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
+## feet (_walk_entry).
+func _walk_start() -> float:
+	return _step_frame() if step_phase != INF else _walk_entry()
+
+
+## The walk frame the sim's step clock is at: its footfalls (integer phases) land on the clip's.
+func _step_frame() -> float:
+	return fposmod(_land + step_phase * _step_frames, float(clips.frames_of("walk")))
+
+
+## The walk clip's feet, mean fore-aft position over the loop (rig space).
+func _mean_foot_z() -> float:
+	var sum := 0.0
+	var n := clips.frames_of("walk")
+	for f: int in n:
+		var pose := clips.pose_at("walk", float(f))
+		sum += clips.to_rig(pose.feet[0]).z + clips.to_rig(pose.feet[1]).z
+	return sum / (2.0 * n)
+
+
+## The walk clip's first footfall: the first frame a foot comes down (a foot planted that was not
+## the frame before), wrapping round the loop.
+func _first_landing() -> float:
+	var n := clips.frames_of("walk")
+	for f: int in n:
+		var before := clips.pose_at("walk", float((f + n - 1) % n))
+		var now := clips.pose_at("walk", float(f))
+		for i: int in 2:
+			if now.planted[i] and not before.planted[i]:
+				return float(f)
+	return 0.0
 
 
 ## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
@@ -305,7 +348,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var to_world := rig.global_transform
 	for i: int in mini(legs.size(), 2):
 		var leg := legs[i]
-		var clip_toe := to_world * clips.to_rig(pose.feet[i])
+		var clip_toe := to_world * _stepped(clips.to_rig(pose.feet[i]))
 		var planted := pose.planted[i] and _catch[i] <= 0.0
 		if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
 			_catch[i] = RESTEP_SECONDS  # the body got away from this foot: step after it
@@ -332,6 +375,15 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		_was_planted[i] = planted
 		_reach(leg, target)
 	_feet_primed = true
+
+
+## A foot spot of the clip with its fore-aft travel shortened to the step the sim takes (a quick
+## step in a turn is a short one: the foot is then passed at the pace the body walks, not left behind).
+func _stepped(toe: Vector3) -> Vector3:
+	if state != "walk" or step_phase == INF:
+		return toe
+	toe.z = _foot_mid + (toe.z - _foot_mid) * step_ratio
+	return toe
 
 
 ## True when a planted foot has been left too far behind (or ahead) of its clip spot to hold.
