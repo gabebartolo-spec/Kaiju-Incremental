@@ -9,11 +9,10 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_party_facades.gd -- --out=<dir> [--tier=1] [--pairs=3]
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 6
 const AFTER := 360
 const SPECIES := "reptilian"
-## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
-const GAME_CAMERA := Vector3(0, 27, 19)
 const LEVELS := [{"claws": 3, "hide": 2}, {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}]
 const DT := 1.0 / 30.0
 const FALL_SECONDS := 10.0
@@ -28,17 +27,17 @@ var _city: CityView
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--out="):
-			_out = arg.substr(6)
-		elif arg.begins_with("--tier="):
-			_tier = int(arg.substr(7))
-		elif arg.begins_with("--at="):
-			for part: String in arg.substr(5).split(","):
-				_at.append(float(part))
-		elif arg.begins_with("--pairs="):
-			_pairs = int(arg.substr(8))
+	var a := Kit.args({"out": _out, "tier": _tier, "at": "", "pairs": _pairs})
+	_out = str(a["out"])
+	_tier = Num.i(a["tier"])
+	_pairs = Num.i(a["pairs"])
+	if str(a["at"]) != "":
+		for part: String in str(a["at"]).split(","):
+			_at.append(float(part))
 	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
@@ -46,19 +45,13 @@ func _run() -> void:
 	await process_frame
 	var species := Content.species_def(SPECIES)
 	var levels: Dictionary = LEVELS[_tier - 1]
-	var tree := UpgradeTree.new(Content.upgrades(), levels, SPECIES)
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var tuning := CityGrowth.tuning_for(Content.tuning(), _tier)
-	var layout := CityGrowth.layout(Content.tuning(), _tier, Seeds.make("city", 0))
-	_sim = RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
+	var stats := Kit.stats(SPECIES, levels, SPECIES)
+	_sim = Kit.stage_sim(stats, _tier, CityGrowth.tuning_for(Content.tuning(), _tier))
 	_sim.time_left = 1.0e6
 	var stage := Node3D.new()
 	_city = CityView.new(_sim, Seeds.make("fx", 0))
 	stage.add_child(_city)
-	var cam := Camera3D.new()
-	cam.fov = 55.0
-	cam.far = 4000.0
-	stage.add_child(cam)
+	var cam := Kit.camera(stage)
 	root.add_child(stage)
 	cam.current = true
 	var found := _find_pairs() if _at.is_empty() else _named_pair()
@@ -146,7 +139,7 @@ func _pair(cam: Camera3D, pair: Array, number: int) -> void:
 	print(tag, " A at ", a.x, ",", a.z, " M at ", m.x, ",", m.z, " side ", side)
 	# The middle of the shared wall, where the exposed part of A will show.
 	var joint := Vector3(a.x + side.x * a.w * 0.5, a.height * 0.35, a.z + side.y * a.d * 0.5)
-	var dir := GAME_CAMERA.normalized()
+	var dir := Kit.GAME_CAMERA.normalized()
 	if side.x != 0:
 		dir = Vector3(side.x * 0.8, 0.8, 0.45).normalized()
 	_sim.kaiju_pos = Vector2(joint.x, joint.z) + Vector2(side) * 20.0
@@ -214,24 +207,12 @@ func _demolish(index: int) -> void:
 
 
 func _apply(events: Array[Dictionary]) -> void:
-	for event: Dictionary in events:
-		match str(event["type"]):
-			"chunks_broken":
-				var cells: Array[Vector3i] = event["cells"]
-				_city.chunks_broken(Num.i(event["building"]), cells, Vector3.ZERO)
-			"fall_start":
-				_city.fall_start(event)
-			"fall_land":
-				_city.fall_land(event)
+	Kit.apply(_city, events, Vector3.ZERO)
 
 
 func _frames(n: int) -> void:
-	for _i: int in n:
-		await process_frame
+	await Kit.frames(self, n)
 
 
 func _shot(shot_name: String) -> void:
-	var image := root.get_texture().get_image()
-	var path := _out.path_join(shot_name + ".png")
-	image.save_png(path)
-	print("saved ", path)
+	print("saved ", Kit.still(self, _out, shot_name))

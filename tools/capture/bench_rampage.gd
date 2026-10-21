@@ -6,36 +6,28 @@ extends SceneTree
 ##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/bench_rampage.gd \
 ##     -- --species=reptilian --seconds=30
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
+
 var _species := "reptilian"
 var _seconds := 30.0
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--species="):
-			_species = arg.substr(10)
-		elif arg.begins_with("--seconds="):
-			_seconds = arg.substr(10).to_float()
+	var a := Kit.args({"species": _species, "seconds": _seconds})
+	_species = str(a["species"])
+	_seconds = Num.f(a["seconds"])
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def(_species)
-	var levels := {"claws": 4, "hide": 3, "rage": 3, "quake": 2, "evolve1": 1, "sig_power": 2}
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 2
-	)
-	rampage.set_autoplay(true)
-	root.add_child(rampage)
+	var rampage := Kit.autoplay(self, _species, Kit.stats(_species, Kit.BENCH_LEVELS), 2)
 	var vp := root.get_viewport_rid()
-	RenderingServer.viewport_set_measure_render_time(vp, true)
-	for _i: int in 30:
-		await process_frame
+	Kit.measure_on(self)
+	await Kit.frames(self, 30)
 	var frames := 0
 	var gpu_sum := 0.0
 	var gpu_max := 0.0
