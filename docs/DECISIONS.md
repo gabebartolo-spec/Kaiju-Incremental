@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-113 · Director · The game ends in a finale boss fight against a giant military mecha, after 3 cities
+Why: Asked 2026-10-21 (open list: finale shape, how many cities). Changes: ROADMAP finale (R 23) builds a mecha boss; city count 3.
+
+## 2026-10-21 · D-114 · Director · Music: Suno Pro (director's written yes to the spend; he subscribes and generates)
+Why: Asked 2026-10-21 (Suno Pro vs ElevenLabs Music). Agents never enter keys; he generates, the lead cuts loops and registers licences.
+
+## 2026-10-21 · D-115 · Director · Fire: wind fixed per run; non-breath species light fires through tree augments
+Why: Asked 2026-10-21. His words: "fire augmentation possible in the upgrade tree, i.e. insectoid 'searing venom' cephalopod 'flammable oil spray'". Fire as gameplay (R 26) is the next build after the current batch.
+
+## 2026-10-21 · D-116 · Director · Heartbeat sound: the director makes it in ElevenLabs
+Why: Asked 2026-10-21; the lead gives the prompt and length, then wires and tunes it.
+
 ## 2026-10-21 · D-112 · Director · The croc's signature is "Lightning Breath", its ultimate "Thunder Beam"
 Why: D-108 retired "Atomic Breath" for the forked white-hot lightning; asked during the UI redesign QC (species card
 and tree still said Atomic Breath / Atomic Beam). Changes: species.json, the species card, HUD and tree copy.

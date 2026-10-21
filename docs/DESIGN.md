@@ -131,8 +131,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
 
 ## Open for the director (ask at its phase, the ask-the-director way)
 Camera growth per stage (R 19) · walk: slower speed vs faster cadence (R 11.2) · when contact carves vs yields
-(R 13.3) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · fire: spark source for non-breath species,
-wind fixed or drifting (R 26) · rampage timer start and ceiling (R 1.2) · tree map layout (R 16.5) · HUD: rings for
+(R 13.3) · throw upgrade nodes (R 22.4) · lightning halo colour (R 17.6) · rampage timer start and ceiling (R 1.2) · tree map layout (R 16.5) · HUD: rings for
 dash and ultimate, health shown only when hit, the "CITY DESTROYED" bar (R 15) · background skyline rampage yes/no ·
-Suno Pro or ElevenLabs Music · finale shape and mecha concept (R 23.1) · which original species follow the croc
-(research 02) · how many cities and what ends the game · customisation beyond species.
+mecha concept (R 23.1, finale = mecha boss after 3 cities, D-113) · which original species follow the croc
+(research 02) · customisation beyond species.
