@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-124 · Director · No octopus work until the croc is 100% shippable
+Why: his words, "no octopus work until the croc is 100% shippable". D-123 is recorded design only; no cephalopod builds, captures
+or assets start before the croc ships.
+
 ## 2026-10-21 · D-123 · Director · One of the 3 cities is a water city; the octopus swims fast and can submerge
 Why: his words, "im planning the octopus to be in a city with lots of water so it can move quickly through it". Asked: the water
 city is one of the 3 every species plays; in water the octopus is fast and the others move normally; it can also dive to
