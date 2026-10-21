@@ -21,7 +21,26 @@ const KEYS := {
 	"sun_angular": "float",  # the sun's angular size, degrees (above 0 = soft PCSS shadows)
 	"ssao": "bool",
 	"ssil": "bool",
+	# Counts (R 18.3), frozen at each rampage start (start_run) so nothing pops mid-run:
+	"debris_pool": "int",  # flying debris pieces (CityView's DebrisField)
+	"max_fires": "int",  # fires burning at once (CityView)
+	"debris_live": "int",  # carve-physics live bodies (CarvePhysics live_cap)
+	"debris_static": "int",  # carve-physics settled pieces (CarvePhysics static_cap)
+	"particles": "float",  # every particle system's amount_ratio (Fx, Fire, AbilityFx)
+	"crowd_max": "int",  # stadium crowd (CrowdBuild)
+	"civilians": "int",  # civilians per building (StreetLife)
 }
+## The count keys of KEYS (cap()): read once per rampage, never live.
+const CAPS: Array[String] = [
+	"debris_pool",
+	"max_fires",
+	"debris_live",
+	"debris_static",
+	"particles",
+	"crowd_max",
+	"civilians"
+]
+
 const ENUMS := {
 	"scaler":
 	{
@@ -51,6 +70,9 @@ const ENUMS := {
 		"pssm4": DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS,
 	},
 }
+
+## The counts the running rampage was started with (start_run); empty before the first.
+static var _run_caps: Dictionary = {}
 
 
 ## What is wrong with a graphics table: a row missing a key of KEYS, an unknown key, or a value of
@@ -111,6 +133,21 @@ static func apply_to(row: Dictionary, node: Node) -> void:
 		if env != null:
 			env.ssao_enabled = row["ssao"] == true
 			env.ssil_enabled = row["ssil"] == true
+
+
+## Freezes a row's counts for the rampage starting now (Rampage.setup): every count system reads
+## cap() from here until the next start, so a graphics change in pause applies next rampage.
+static func start_run(row: Dictionary) -> void:
+	_run_caps = {}
+	for key: String in CAPS:
+		_run_caps[key] = row[key]
+
+
+## A count of the rampage in play (start_run); before any, the row in use.
+static func cap(key: String) -> float:
+	if _run_caps.has(key):
+		return Num.f(_run_caps[key])
+	return Num.f(PlayerSettings.graphics_row()[key])
 
 
 static func _enum(key: String, row: Dictionary) -> int:
