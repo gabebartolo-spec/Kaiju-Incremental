@@ -372,7 +372,9 @@ func _land_stomp(at: Vector3) -> void:
 	_stomp_wait = 0.0
 	var heavy := _power("stomp_damage")
 	sfx.stomp(heavy, ability_fx.stomp_cracks(at, _stomp_radius, heavy))
-	_city.crush(at, _stomp_radius)
+	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
+	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
+	_city.crush(at, _stomp_radius + catch)
 	stomp_ring_at.append(at)
 
 

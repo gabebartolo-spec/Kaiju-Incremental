@@ -30,7 +30,7 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 	var convoy := _sim.army_units.convoy
 	for tank: RampageSim.Tank in _sim.tanks:
 		if flatten:
-			_city.crush(Vector3(tank.pos.x, 0.0, tank.pos.y), 1.4)
+			_city.crush(Vector3(tank.pos.x, 0.0, tank.pos.y), 1.4, true)
 		if not nodes.has(tank.id):
 			continue
 		var node: TankModel = nodes[tank.id]

@@ -29,6 +29,8 @@ class Person:
 	var from_node := 0
 	var to_node := 0
 	var fleeing := false
+	## Under a falling tower until this clock time: frozen, looking up (nobody outruns one).
+	var pinned_until := -1.0
 	var cop := false
 	var state := 0  # officers: 0 to post, 1 holding, 2 fleeing
 	var post := Vector2.ZERO
@@ -47,6 +49,8 @@ var matches: Array[StadiumMatch] = []
 ## Running totals (tests and the capture tool read them).
 var fled := 0
 var killed := 0
+## Of those killed, the ones tanks rolled over (the rest the kaiju crushed: stomps, falls, claws).
+var run_over := 0
 ## Per-frame cost of street life, in microseconds: worst and running total (benchmarking).
 var worst_usec := 0
 var total_usec := 0
@@ -182,6 +186,16 @@ func civilians_killed() -> int:
 	return n
 
 
+## A number from the "street" tuning (CityView reads fall_spill, Rampage stomp_catch).
+func tune(key: String) -> float:
+	return Num.f(_cfg[key])
+
+
+## People the kaiju itself crushed on the streets (stomps, falls, claws): not the tanks' run-overs.
+func kaiju_killed() -> int:
+	return killed - run_over
+
+
 ## How many civilians are running from the kaiju now (the crowd-panic sound follows it).
 func panicking() -> int:
 	var n := 0
@@ -195,7 +209,8 @@ func panicking() -> int:
 
 
 ## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat.
-func crush(at: Vector3, radius: float) -> void:
+## by_tank: a tank rolled over them, not the kaiju (counted in run_over too).
+func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
 	var centre := Vector2(at.x, at.z)
 	traffic.crush(centre, radius)
 	for game: StadiumMatch in matches:
@@ -210,6 +225,19 @@ func crush(at: Vector3, radius: float) -> void:
 			_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
 		_remove(i)
 		killed += 1
+		run_over += 1 if by_tank else 0
+
+
+## A falling section will land along from..to (a point for a drop) within `radius` in
+## `seconds`: the civilians under it freeze there (they cannot outrun a falling tower), so its
+## landing crushes them (CityView crushes the same strip).
+func brace(from: Vector2, to: Vector2, radius: float, seconds: float) -> void:
+	for p: Person in people:
+		if p.cop:
+			continue
+		var q := Geometry2D.get_closest_point_to_segment(p.pos, from, to)
+		if p.pos.distance_to(q) <= radius:
+			p.pinned_until = _clock + seconds + 0.5
 
 
 func _remove(i: int) -> void:
@@ -241,6 +269,8 @@ func _process(delta: float) -> void:
 
 
 func _update_civilian(p: Person, delta: float, kaiju: Vector2) -> void:
+	if p.pinned_until > _clock:
+		return
 	var d := p.pos.distance_to(kaiju)
 	if not p.fleeing and d < Num.f(_cfg["panic_radius"]):
 		p.fleeing = true

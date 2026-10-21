@@ -189,7 +189,7 @@ func _check_rampage() -> void:
 				% [street.police.blockades_made, street.police.shots]
 			),
 		)
-		check(street.killed > 0, "stomps and falls crush people (%d)" % street.killed)
+		check(street.kaiju_killed() > 0, "the kaiju crushes people (%d)" % street.kaiju_killed())
 	check(rampage.sim.over, "an autoplayed rampage ends within %d frames" % RAMPAGE_FRAMES)
 	# Rooftop defenders (D-063): figures stand on the squads' roofs, at most max_drawn of them,
 	# and their volleys draw flashes and tracers and call the rifle cue.
