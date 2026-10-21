@@ -16,7 +16,7 @@ const VOXEL := preload("res://scenes/blast_voxel.gdshader")
 ## red-brown rim, smoke. Each cube's starting shade (FIREBALL_SHADES) darkens some from the start,
 ## so the outside of the ball reads darker than its core.
 const FIREBALL: Array[Color] = [
-	Color(2.6, 2.3, 1.4),
+	Color(4.0, 3.5, 2.0),
 	Color(2.0, 0.9, 0.15),
 	Color(0.55, 0.14, 0.05),
 	Color(0.2, 0.17, 0.15),

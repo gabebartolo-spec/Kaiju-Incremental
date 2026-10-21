@@ -273,7 +273,7 @@
 		"ripple": {"seconds": 0.35, "strength": 0.025, "width": 0.07, "layer": -1},
 		"break": {"slices": 4, "window_frames": 3, "per_chunk": 8, "push": 3.2, "up": 3.0},
 		"fireworks": {"height": 7.0, "sparks": 70, "seconds": 1.5, "speed": 9.0, "spark_size": 0.22, "flash_energy": 6.0, "fire_size": 0.5, "trauma": 0.12, "colors": ["ff4f8b", "4fd8ff", "ffd34f", "8dff6a", "ffffff", "c77dff"]},
-		"cloud": {"amount": 150, "boil_amount": 70, "billow_seconds": 2.5, "size_scale": 2.0, "cloud_share": 0.5, "voxel": [0.8, 1.6], "shades": ["6fe04a", "4fb83a", "a6f27a"]},
+		"cloud": {"amount": 150, "boil_amount": 70, "billow_seconds": 2.5, "size_scale": 2.0, "cloud_share": 0.5, "voxel": [0.8, 1.6], "shades": ["a8d41c", "7fb012", "c9e82a"]},
 		"fuse": {"blink_hz": 6.0, "spark_every_s": 0.2, "lamp_size": 0.6, "color": "ff3a1e"},
 		"debris": 40,
 		"debris_colors": {"fuel_silo": ["d9d7cf", "f2c21b", "222224"], "fireworks_factory": ["7a3b2e", "c8312a", "2f62c9", "f2c21b"], "chem_lab": ["e6e9e3", "6bd85f", "2d5ca3"]},
