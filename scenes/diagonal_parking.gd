@@ -64,6 +64,22 @@ static func park(traffic: Traffic, sim: RampageSim) -> void:
 			t += FILL_STEP
 
 
+## Whether a parked spot on the diagonal's kerbs fits in the cell (playable city, clear of the
+## grid streets and the water; props aside): TrafficIsland leaves such a cell to the fill.
+static func fits_in(sim: RampageSim, plan: Dictionary, cell: Vector2i) -> bool:
+	var water := CityRiver.channels(plan, sim.city)
+	var half := CityGen.half_extent(sim.city)
+	for kerb: Array in _kerbs(plan, sim.city):
+		var t := CROSSING_CLEAR
+		while t < Num.f(kerb[2]) - CROSSING_CLEAR:
+			var p := _spot(kerb, t)
+			if cell_of(sim, p) == cell and maxf(absf(p.x), absf(p.y)) <= half:
+				if _clear(plan, p, water):
+					return true
+			t += FILL_STEP
+	return false
+
+
 ## Each kerb of each diagonal block: [start (its crossing, out at the parking lane), along,
 ## length, facing (its lane's way)].
 static func _kerbs(plan: Dictionary, cfg: Dictionary) -> Array[Array]:
