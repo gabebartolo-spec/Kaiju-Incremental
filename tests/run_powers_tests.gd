@@ -135,7 +135,7 @@ func _check_shear() -> void:
 	)
 
 
-## Atomic Beam: E fires a long beam that burns a line of buildings, keeps burning after it
+## Thunder Beam: E fires a long beam that burns a line of buildings, keeps burning after it
 ## ends, and turns slowly to follow the stick. Without the node, E does nothing.
 func _check_beam() -> void:
 	var line: Array[Dictionary] = [_b(0, -6, Vector3i(3, 3, 4)), _b(0, -11, Vector3i(3, 3, 4))]
@@ -145,7 +145,7 @@ func _check_beam() -> void:
 	var on_seen := _run(on, 3.0, Vector2.ZERO, ULT)
 	check(
 		not off_seen.has("beam_start") and on_seen.has("beam_start") and on_seen.has("coated"),
-		"E fires the Atomic Beam only with the node, and it sets what it crosses burning"
+		"E fires the Thunder Beam only with the node, and it sets what it crosses burning"
 	)
 	check(
 		_alive(on, 1) < _alive(off, 1),
