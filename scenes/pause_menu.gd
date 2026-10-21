@@ -33,7 +33,10 @@ func _ready() -> void:
 	_col.add_child(UiKit.header("PAUSED"))
 	_resume = _add("RESUME", UiKit.ACCENT, resume)
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
-	_add("END RAMPAGE  (keep biomass)", UiKit.PANEL_EDGE, _end)
+	_add("END RAMPAGE", UiKit.PANEL_EDGE, _end)
+	var note := UiKit.label("You keep the biomass", UiKit.SIZE_BODY, UiKit.MUTED)
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_col.add_child(note)
 	_resume.grab_focus.call_deferred()
 
 

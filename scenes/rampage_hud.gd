@@ -20,6 +20,8 @@ const HEADLINES := {
 const BEAT_FRAMES := 150
 const BEAT_MIN_FRAMES := 40
 const BEAT_SIZE := 128
+## The headline starts this far from the top: in the top third, the kaiju stays in view (px).
+const BEAT_TOP := 64
 ## The world runs at this speed during the end beat.
 const END_SLOWMO := 0.3
 ## The biomass figure snaps to the true value once this close.
@@ -336,12 +338,15 @@ func show_end_beat(reason: String) -> void:
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiKit.full_rect(flash)
 	add_child(flash)
-	var centre := CenterContainer.new()
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UiKit.full_rect(centre)
-	add_child(centre)
+	var top := MarginContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UiKit.full_rect(top)
+	top.add_theme_constant_override("margin_top", BEAT_TOP)
+	add_child(top)
 	var col := VBoxContainer.new()
-	centre.add_child(col)
+	col.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	top.add_child(col)
 	var lines: Array = HEADLINES.get(reason, ["RAMPAGE OVER", ""])
 	headline = UiKit.label(str(lines[0]), BEAT_SIZE, UiKit.ACCENT)
 	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

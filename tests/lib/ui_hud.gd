@@ -36,6 +36,7 @@ func run() -> void:
 	_vignette(hud, sim)
 	_meter(hud, sim)
 	await _keys(hud)
+	await _beat(hud)
 	hud.queue_free()
 	var again := RampageHud.new(sim, Content.species_def("reptilian"), null)
 	t.root.add_child(again)
@@ -227,3 +228,19 @@ func _keys(hud: RampageHud) -> void:
 	var pad: Label = hud.get("dash_key")
 	check.call(pad != null and pad.text.to_upper() == "B", "the dash key turns to the pad's B after a pad press")
 	hud.call("_input", InputEventKey.new())
+
+
+## Critic r1 item 6: the end beat's headline and its line sit in the top third, so the kaiju and
+## the city it is wrecking stay in view.
+func _beat(hud: RampageHud) -> void:
+	hud.show_end_beat("time")
+	await t.create_timer(0.8, true, false, true).timeout
+	var view := t.root.get_visible_rect()
+	var box := hud.headline.get_global_rect()
+	var parent: Control = hud.headline.get_parent()
+	var low := parent.get_global_rect().end.y
+	hud.finish_beat()
+	check.call(
+		low <= view.size.y / 3.0 + 1.0 and box.position.y >= 0.0,
+		"the end beat sits in the top third (ends at %.0f of %.0f)" % [low, view.size.y]
+	)

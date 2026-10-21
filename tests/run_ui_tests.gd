@@ -28,6 +28,8 @@ func run_checks() -> void:
 	await _t("_check_species_centred")
 	await _t("_check_species_card")
 	await _t("_check_no_atomic")
+	await _t("_check_tree_text")
+	await _t("_check_pause")
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
@@ -213,3 +215,80 @@ func _check_no_atomic() -> void:
 			if line.to_lower().contains("atomic"):
 				hits.append("%s: %s" % [file, line.strip_edges().left(60)])
 	check(hits.is_empty(), "no visible string says atomic: %s" % [hits])
+
+
+## Critic r1 item 4: tree node text is 26 px or more at 1080p, every state's text, the locked
+## outline and the branch caption read at 4.5:1 on what is behind them, and no node's text
+## overflows its box, at the 100% canvas and the 125% one (1536x864).
+func _check_tree_text() -> void:
+	var window := root.size
+	var bad: Array[String] = []
+	var small := 99
+	for size: Vector2i in [CANVAS, Vector2i(1536, 864)]:
+		root.size = size
+		for id: String in ["reptilian", "insectoid", "cephalopod"]:
+			var tree := UpgradeTree.new(Content.upgrades(), {}, id)
+			var screen := UpgradeScreen.new()
+			screen.setup(tree, 400, Content.species_def(id), Content.section("kaiju"))
+			root.add_child(screen)
+			await process_frame
+			await process_frame
+			for node: String in tree.order:
+				var b := screen.node_button(node)
+				var fs := b.get_theme_font_size("font_size")
+				if size == CANVAS:
+					small = mini(small, fs)
+				if b.get_minimum_size().y > b.size.y + 1.0:
+					bad.append("%s/%s overflows at %s" % [id, node, size])
+				var fill := b.get_theme_stylebox("normal") as HazardBox
+				var ratio := UiKit.contrast(b.get_theme_color("font_color"), fill.fill)
+				if ratio < 4.5:
+					bad.append("%s %s text %.1f:1" % [node, b.state, ratio])
+				if b.state == "locked" and UiKit.contrast(fill.edge, UiKit.BG) < 4.5 and node == tree.order[0]:
+					bad.append("locked outline %.1f:1" % UiKit.contrast(fill.edge, UiKit.BG))
+			var area: TreeArea = screen.get("_area")
+			var cap: Label = area.get("_caption")
+			var band: ColorRect = area.get("_band")
+			var under := Color(UiKit.BG).lerp(Color(band.color, 1.0), band.color.a)
+			var cr := UiKit.contrast(cap.get_theme_color("font_color"), under)
+			if cr < 4.5:
+				bad.append("%s caption %.1f:1" % [id, cr])
+			screen.queue_free()
+			await process_frame
+	root.size = window
+	check(small >= 24, "tree node text is at least 24 px at 1080p (was 22) (smallest %d)" % small)
+	check(bad.is_empty(), "tree text reads and fits at 100%% and 125%%: %s" % [bad.slice(0, 12)])
+	check(
+		UiKit.contrast(UiKit.LOCKED, UiKit.BG) >= 4.5,
+		"the locked outline colour reads 4.5:1 on the screen (%.1f)" % UiKit.contrast(UiKit.LOCKED, UiKit.BG)
+	)
+
+
+## Critic r1 item 5: every pause button's label clears its edges by 40 px or more, the End
+## Rampage button says only "END RAMPAGE", with its note on a line of its own.
+func _check_pause() -> void:
+	var window := root.size
+	root.size = CANVAS
+	var menu := PauseMenu.new()
+	root.add_child(menu)
+	await process_frame
+	await process_frame
+	var tight: Array[String] = []
+	var names: Array[String] = []
+	for node: Node in menu.find_children("*", "Button", true, false):
+		var b: Button = node
+		names.append(b.text)
+		if b.size.x - b.get_minimum_size().x < 40.0:
+			tight.append("%s (%.0f of %.0f)" % [b.text, b.get_minimum_size().x, b.size.x])
+	var notes: Array[String] = []
+	for node: Node in menu.find_children("*", "Label", true, false):
+		notes.append((node as Label).text)
+	check(tight.is_empty(), "pause labels clear their button edges by 40 px: %s" % [tight])
+	check(names.has("END RAMPAGE"), "the End Rampage button says END RAMPAGE: %s" % [names])
+	check(
+		notes.any(func(t: String) -> bool: return t.to_lower().contains("biomass")),
+		"a small note line says the biomass is kept: %s" % [notes]
+	)
+	menu.free()
+	await process_frame
+	root.size = window

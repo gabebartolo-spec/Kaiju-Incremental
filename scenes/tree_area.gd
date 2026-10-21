@@ -13,7 +13,7 @@ const COLUMNS := 8
 const BRANCH_ROW := 5
 const GAP := Vector2(8, 16)
 ## Room under the band for its caption.
-const CAPTION_HEIGHT := 34.0
+const CAPTION_HEIGHT := 40.0
 ## The capstone is this much taller than a node (its extra "[E / Y]" line).
 const CAPSTONE_EXTRA := 28.0
 const BRANCH_TINT_ALPHA := 0.18
@@ -45,9 +45,9 @@ func _ready() -> void:
 	add_child(_band)
 	var who := str(_species["name"])
 	_caption = UiKit.label(
-		"%s BRANCH  -  only the %s can grow these" % [who.to_upper(), who.to_lower()],
-		UiKit.SIZE_SMALL,
-		eye.lightened(0.3)
+		"%s POWERS  -  only the %s can grow these" % [who.to_upper(), who.to_lower()],
+		UiKit.SIZE_BODY,
+		eye.lightened(0.5)
 	)
 	add_child(_caption)
 	for id: String in tree.order:

@@ -20,7 +20,7 @@ const CRAWL_RED := Color("d42a1f")
 const GOOD := Color("7dff6a")
 const WARN := Color("ffd84a")
 const BAD := Color("ff3b30")
-const LOCKED := Color("55555c")
+const LOCKED := Color("7c7c84")
 ## Text on a fill this bright or brighter is dark (BG), else light.
 const BRIGHT_FILL := 0.45
 ## The hazard band along a button's left edge and a panel's top (px at 1080p).
