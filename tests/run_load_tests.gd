@@ -184,7 +184,7 @@ func _check_fade_rise() -> void:
 	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
 	later.update(eye, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
 	later.update(eye, wet, 1.0 / 60.0)
-	var floor_opacity := Num.f(Content.section("vehicles")["fade_opacity"])
+	var floor_opacity := Num.f(Content.section("camera")["fade_opacity"])
 	check(
 		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
 		(
@@ -226,7 +226,7 @@ func _check_fall_fade() -> void:
 		"a toppling section covers the kaiju only while it is tilted across the sight line"
 	)
 	check(
-		is_equal_approx(first, Num.f(Content.section("vehicles")["fade_opacity"])),
+		is_equal_approx(first, Num.f(Content.section("camera")["fade_opacity"])),
 		"a section already in the way when it starts to fall starts faded (%.2f)" % first
 	)
 

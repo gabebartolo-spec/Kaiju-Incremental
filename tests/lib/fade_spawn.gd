@@ -63,7 +63,7 @@ func _stage(stage: int) -> void:
 		follow.step(body, CameraTuning.offset() * zoom, DT)
 		follow.step_lead(body, sim.body_scale(), false, DT)
 		var eye := follow.eye()
-		fade.update(eye, BuildingFade.sight_of(sim), DT)
+		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
 		var hiding: Array[RampageSim.Building] = []
 		for n: int in sim.buildings.size():
 			if fade.opacity(n) > HIDES:

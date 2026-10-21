@@ -16,6 +16,7 @@ uniform float inside = 0.12;
 // Below 1, a screen-door fade (a building between the camera and the kaiju, D-025's rule as
 // the vehicles have it, voxel.gdshader): a share of its pixels is dropped in a fixed pattern.
 uniform float opacity = 1.0;
+const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
 vec3 srgb_to_linear(vec3 c) {
@@ -31,7 +32,7 @@ void vertex() {
 
 void fragment() {
 	if (opacity < 1.0) {
-		ivec2 p = ivec2(mod(FRAGCOORD.xy, 4.0));
+		ivec2 p = ivec2(mod(floor(FRAGCOORD.xy / DITHER_PX), 4.0));  // cells of DITHER_PX pixels
 		if ((BAYER[p.y * 4 + p.x] + 0.5) / 16.0 >= opacity) {
 			discard;
 		}
