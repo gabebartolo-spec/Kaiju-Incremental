@@ -1,17 +1,14 @@
-extends "res://tests/lib/runner.gd"
+extends "res://tests/lib/sim_suite.gd"
 ## Sim suite: the upgrade tree, the city generator and the rampage, all headless and seeded.
 ## Includes the player-effect fixtures: an upgrade or a species changes what a scripted
-## rampage achieves.
+## rampage achieves. The claw swipe scenarios and the save migration run in
+## tests/run_sim_play_tests.gd; the shared set-up is tests/lib/sim_suite.gd.
 ##   godot --headless --path . --script tests/run_sim_tests.gd
 
-const SaveScript := preload("res://autoload/save_file.gd")
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
 const SimArmy := preload("res://tests/lib/sim_army.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
-const SimClawSwipe := preload("res://tests/lib/sim_claw_swipe.gd")
 const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
-const DT := 1.0 / 30.0
-const MAX_STEPS := 30 * 400
 
 
 func suite_name() -> String:
@@ -31,48 +28,9 @@ func run_checks() -> void:
 	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
 	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
-	await _h("SimClawSwipe", func() -> void: SimClawSwipe.new(check, _sim, _autoplay).run())
 	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
-	await _t("_check_save_migrate")
 	await _t("_check_looks")
 	await _t("_check_growth")
-
-
-func _tree(levels: Dictionary = {}) -> UpgradeTree:
-	return UpgradeTree.new(Content.upgrades(), levels)
-
-
-func _layout(city: Dictionary = Content.section("city")) -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", 0), city)
-
-
-func _sim(
-	species_id: String, levels: Dictionary, run_index: int = 0, tuning: Dictionary = {}
-) -> RampageSim:
-	var species := Content.species_def(species_id)
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, _tree(levels))
-	var ability: Dictionary = species["ability"]
-	var tune := Content.tuning() if tuning.is_empty() else tuning
-	var city: Dictionary = tune["city"]
-	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
-	sim.ability_type = str(ability["type"])
-	sim.body.use_species(species_id)
-	return sim
-
-
-## Scripted player: walk to the nearest standing building, use the signature when ready.
-func _autoplay(sim: RampageSim, max_steps: int = MAX_STEPS) -> Dictionary:
-	var steps := 0
-	var target := Vector2(INF, INF)
-	while not sim.over and steps < max_steps:
-		if steps % 15 == 0:
-			target = sim.nearest_standing(sim.kaiju_pos)
-		var move := Vector2.ZERO
-		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
-			move = (target - sim.kaiju_pos).normalized()
-		sim.step(DT, move, sim.ability_ready_in <= 0.0)
-		steps += 1
-	return sim.result()
 
 
 func _check_data() -> void:
@@ -294,14 +252,6 @@ func _check_species_differ() -> void:
 	var ring := _sim("cephalopod", {})
 	var reach_ok := ring.ability_reach() > ring.stomp_radius()
 	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
-
-
-func _check_save_migrate() -> void:
-	check(
-		Num.i(SaveScript.migrate({"version": 1, "rubble": 5}).get("rubble", 0)) == 5,
-		"a version 1 save loads"
-	)
-	check(SaveScript.migrate({"version": 99}).is_empty(), "a save from a newer version is refused")
 
 
 ## Every look (data/looks.json) carries every key presentation reads, and the default exists.
