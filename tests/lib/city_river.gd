@@ -20,7 +20,8 @@ static func check(tier: int, map_seed: int, sim: RampageSim, check_fn: Callable)
 		if str(block["use"]) == "river":
 			var rect: Rect2 = block["rect"]
 			rivers.append(rect)
-	var wet: Array[Rect2] = rivers.duplicate()  # the river's blocks and the bay it rises in (CityRiver.bay)
+	# The river's blocks and the bay it rises in (CityRiver.bay).
+	var wet: Array[Rect2] = rivers.duplicate()
 	wet.append_array(CityRiver.bay(plan, sim.city))
 	var built := 0
 	for b: RampageSim.Building in sim.buildings:
