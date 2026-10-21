@@ -12,11 +12,14 @@ render_mode cull_back, shadows_disabled, fog_disabled;
 // particle's scale curve).
 
 uniform float glow = 1.0;
+uniform float dim = 0.85;
 
 void fragment() {
 	vec3 c = COLOR.rgb;
 	float hot = clamp(max(c.r, max(c.g, c.b)) - 1.0, 0.0, 1.0);
-	ALBEDO = c / max(1.0, max(c.r, max(c.g, c.b)));  // the hue, never paled to white
+	// The hue, never paled to white; a hot cube is mostly its own light, so the city's hazy
+	// ambient cannot grey it (round 5: the fireball read caramel through the lit albedo).
+	ALBEDO = c / max(1.0, max(c.r, max(c.g, c.b))) * (1.0 - hot * dim);
 	EMISSION = c * hot * glow;
 	ROUGHNESS = 0.9;
 }
