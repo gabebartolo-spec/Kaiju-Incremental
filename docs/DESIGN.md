@@ -49,7 +49,8 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
   breaks it (D-091, D-110, comments #24). A tower that falls on him breaks believably at the contact, large pieces
-  folding off him, "not turned instantly to dust" (#25).
+  folding off him, "not turned instantly to dust" (#25). A fallen building breaks
+  against the ground into rubble, never disappears into it (#26).
 - **Models:** Tripo designs, hand-rigged in Blender with welded weights, rendered as voxel cubes on a smooth skinned
   lattice (D-041, D-045). The kaiju gets double voxels per axis, the city keeps today's size (D-107). Mantis and
   octopus meshes kept; their game-ready plan is `docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md`,
