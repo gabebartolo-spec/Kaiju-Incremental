@@ -160,6 +160,11 @@ zooms, so text keeps its size; it remembers the view, has a home key, and moves 
 d-pad focus by geometry (R 16.5; 50-65 nodes do not fit the 8 x 6 grid, so b2-28 forces it; layout picked here in E,
 skin in F) · last, a flowing shader on owned links (R 16.6).
 
+Fire (director 2026-10-21, comments #15: "im still interested in Fire as a source of lighting and gameplay (perhaps natural
+flame that can spread (unlockable in skill tree) and add to your biomass collection)"): a tree node that lets fires spread
+building to building on their own (sim-decided, seeded spread timer, burns out to rubble, never a burning shell per #111);
+burning buildings and the people in them pay biomass; fires stay the city's moving light sources (light pool, R 12). Research
+first (spread rules that read and stay cheap, how it feeds the biomass curve), then his node pick.
 **F. UI redesign, on the final camera and tree.**
 b2-10 HUD: timer stays, biomass a boxless figure bottom right, controls shown once at the start and in a controls
 menu · b2-12 breath cooldown as an icon with a circular fill · b2-13 health bar removed or repurposed · b2-11
@@ -191,6 +196,10 @@ gl_compatibility behind a restart, last (R 18.6) · the shader baker on for expo
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
 **H. Content after the slice (already decided, unchanged order).**
+Background city rampage (director 2026-10-21, comments #16: "would be cool if our distant background city had a kaiju
+rampaging in it, and the skyline was on fire"): a far silhouette kaiju stomping through the backdrop skyline, towers
+dropping, fire glow and smoke columns on the horizon, distant booms; presentation only, cheap (impostors). A labelled
+capture for his yes before it is built in full.
 Rooftop mortars · mecha kaiju boss · jets (#58, #61) · species motion (#11) and the other species · six languages ·
 music (Suno, needs his spend yes) · greenery (#55) · look-options -> main (#3) once the slice ships.
 Sound (research): a pooled SFX manager with voice caps per category from data, hero voices reserved, quietest or
@@ -217,6 +226,20 @@ bend travelling base to tip, haul back as a stiff three-segment fetch, wrap towe
 the target, idle sway from a hash not the sim RNG (R 9.2-9.7) · original species concepts for his pick: burrower
 (UNDERMINE), hermit crab that wears a building as its shell (WEAR), reef colony (ENCRUST), fungus walker (ROOT),
 pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored finale with a readability pass (R 1.5).
+Rooftop mortars (research 24): a sibling of the rooftop squad, placed at sim start on tall topple-able non-landmark
+towers (2-5 per tier), firing beyond rifle range with a dead zone, one timed shell per 4-6 s aimed where the kaiju is,
+killed by losing its roof, with a sim review and pinned-seed suite (R 24.1) · "ride the fall": kill and pay at the
+tower's landing, the +N where it hits (R 24.2) · telegraph from existing parts: beacon, a filling landing ring, thunk,
+whistle, boom (CC0 only), 4K capture through the screen critic (R 24.3) · an edge chevron for 1 s only when an
+off-screen mortar fires (R 24.4) · a tower dropped onto a mortar nest kills it, combo bounty (R 24.5) · tree hooks
+(bounty, topple radius, falling debris kills, shell-shrug) for his pick (R 24.6). Not now: mid-run spawns, lead aim.
+Mecha boss finale (research 23): one boss rampage in the player's own city after the last evolution, army stood
+down, beating it ends the game (R 23.1, his question) · sim/mecha.gd + data/boss.json, a greybox body, three
+attacks (charge, salvo, stamp) from a shuffle bag, phases with a minimum time, sim review (R 23.2) · telegraphs
+always visual, slow wind-ups, no feints, motion critic (R 23.3) · the city as the weapon: undercut a tower onto it,
+a charge that sticks in a building, thrown tanks after R 22's Flung (R 23.4) · two-target camera, a thin boss bar
+as the one HUD exception (his yes) (R 23.5) · it falls like the biggest tower, quiet, then results and credits
+(R 23.6) · voxel model, rig, 6-8 clips through the Blender pipeline, concept board first (R 23.7). Estimate 3-5 weeks.
 
 **Director questions the research raised (ask each at its phase, the ask-the-director way).**
 D: when contact carves vs yields, and whether a fast tail sweep carves (R 13.3) · D: slower walk speed vs faster leg
@@ -226,7 +249,9 @@ D: which throw upgrade nodes (R 22.4) · B: how the camera grows per stage, A/B/
 (R 17.6) · E: the tree's map layout, radial vs a left-to-right map, from labelled captures (R 16.5) · F: do dash and the
 ultimate get rings like breath; health removed or shown only when hit; what happens to the "CITY DESTROYED" bar
 (R 15.2, 15.3, 15.9) ·
-legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath
+H: the finale's shape (one boss rampage that ends the game) and which original mecha concept (BULWARK the walking
+district, CONVOY built from wrecked army hulls, FOUNDRY the builder, COUNTERMEASURE the adaptive counter), from a
+labelled concept board (R 23.1, research 23) · legal look check: the research says to avoid the combination of upright reptile, dorsal plates and a glowing breath
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
 b2-18). Shape closed (director 2026-10-21): "ours is like a crocodile in a t-rex body, not godzilla shaped".
