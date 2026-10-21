@@ -34,6 +34,7 @@ const TELL_EVERY := Vector2(5.0, 10.0)
 var g: BipedGait
 ## The maw held open (KaijuModel.jaw_open: the beam).
 var held_open := false
+var _held_left := 0.0  # seconds the maw stays held open before it lets go (hold_open)
 var _head_yaw := 0.0
 var _head_yaw_v := 0.0
 var _head_pitch := Vector2.ZERO
@@ -62,12 +63,21 @@ func roar() -> void:
 	_roar_t = 0.0
 
 
+## The maw held open for `seconds`, then let go (the run intro's roar over the water).
+func hold_open(seconds: float) -> void:
+	held_open = true
+	_held_left = seconds
+
+
 ## A stomp jolts the head down.
 func dip() -> void:
 	_head_pitch.y -= 2.5
 
 
 func update(dt: float, standing: bool) -> void:
+	if _held_left > 0.0:
+		_held_left -= dt
+		held_open = held_open and _held_left > 0.0
 	if not g.rig.has_bone("head1"):
 		return
 	# Where to look: ahead of a turn while moving, glances around while standing.

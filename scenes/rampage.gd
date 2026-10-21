@@ -249,7 +249,7 @@ func _on_event(event: Dictionary) -> void:
 			_city.deck_burst()
 			_shake = maxf(_shake, 0.3)
 		"surface_break":  # the head breaks the water: he roars with rage (#11, R 20.3)
-			_kaiju.roar()
+			_kaiju.roar(Num.f(Content.section("intro")["roar_jaw_seconds"]))
 			Sfx.roar(self)
 		"tank_spawned":
 			_tanks.spawn(Num.i(event["tank"]))

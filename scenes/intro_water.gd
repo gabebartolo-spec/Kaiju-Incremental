@@ -65,20 +65,19 @@ func _spray(amount: int, speed: float, one_shot: bool) -> GPUParticles3D:
 	mat.initial_velocity_min = speed * 0.6
 	mat.initial_velocity_max = speed
 	mat.gravity = Vector3(0, -Num.f(_cfg["gravity"]) * s, 0)
-	mat.scale_min = 0.6
-	mat.scale_max = 1.4
-	var ramp := Gradient.new()
-	var tint := Color(str(_cfg["color"]))
-	ramp.colors = PackedColorArray([tint, Color(tint, 0.0)])
-	var tex := GradientTexture1D.new()
-	tex.gradient = ramp
-	mat.color_ramp = tex
+	# Cubes from small droplets to "drop", each born one of the water's tones (white foam to
+	# blue-grey), fading out at the end of its life.
+	mat.scale_min = Num.f(_cfg["drop_min"])
+	mat.scale_max = 1.0
+	var tones: Array = _cfg["colors"]
+	mat.color_initial_ramp = _tones(tones, false)
+	mat.color_ramp = _tones(["ffffffff", "ffffff00"], true)
 	var cube := BoxMesh.new()
 	cube.size = Vector3.ONE * Num.f(_cfg["drop"]) * s
-	var look := StandardMaterial3D.new()
+	var look := StandardMaterial3D.new()  # lit: the cubes take the scene's light and shade
 	look.vertex_color_use_as_albedo = true
 	look.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	look.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	look.roughness = 0.35
 	cube.material = look
 	var p := GPUParticles3D.new()
 	p.process_material = mat
@@ -91,3 +90,21 @@ func _spray(amount: int, speed: float, one_shot: bool) -> GPUParticles3D:
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20) * s, Vector3(40, 30, 40) * s)
 	add_child(p)
 	return p
+
+
+## A texture of `colors` (hex strings): a smooth ramp over a life, or hard steps to pick one from.
+static func _tones(colors: Array, smooth: bool) -> GradientTexture1D:
+	var ramp := Gradient.new()
+	var picked := PackedColorArray()
+	for hex: Variant in colors:
+		picked.append(Color(str(hex)))
+	ramp.colors = picked
+	var offsets := PackedFloat32Array()
+	for i: int in picked.size():
+		offsets.append(float(i) / maxf(1.0, picked.size() - 1.0))
+	ramp.offsets = offsets
+	if not smooth:
+		ramp.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	var tex := GradientTexture1D.new()
+	tex.gradient = ramp
+	return tex

@@ -182,9 +182,12 @@ func stomp() -> void:
 		_squash = 1.0
 
 
-func roar() -> void:
+## A roar; open_seconds > 0 holds the jaw open that long at once (a clip's jaw peaks late).
+func roar(open_seconds := 0.0) -> void:
 	if _rig != null:
 		_rig.roar()
+		if open_seconds > 0.0 and _rig.gait is BipedGait:
+			(_rig.gait as BipedGait).head.hold_open(open_seconds)
 
 
 func _lit(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:
