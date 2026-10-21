@@ -44,7 +44,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   (D-009, D-014, D-074). Body scale grows with every upgrade owned. No building is too strong for the baby; big ones
   just take longer (D-091). The reveal is titled by the node bought (BEHEMOTH), with the roar (D-051, D-055).
 - **Motion:** terrifying monsters, not toys (D-013). Turns with weight, "lumbering and unstoppable" yet responsive:
-  the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
+  bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
   shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
   antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
