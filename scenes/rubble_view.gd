@@ -13,6 +13,8 @@ var _cfg: Dictionary
 var _nodes: Dictionary = {}  # slab id -> MultiMeshInstance3D once built
 var _waiting: Dictionary = {}  # slab id -> its slab_break event, broken before it was built
 var _hidden: Dictionary = {}  # slab id -> true while it waits for a fold to end (reveal())
+var delays_ms: Array[int] = []  # how long each slab took from add() to its chunk being built
+var _asked: Dictionary = {}  # slab id -> the tick add() asked for it
 var _held: Dictionary = {}  # slab id -> true while its move waits for reveal()
 var _tweens: Dictionary = {}  # slab id -> its paused move tween, once built
 var _parent: Dictionary = {}  # piece id -> the broken slab it replaces once it is out
@@ -33,7 +35,9 @@ func _init(city: CityView, cfg: Dictionary, rng: RandomNumberGenerator) -> void:
 func add(
 	slabs: Array, voxels: BuildingVoxels, sliding: bool, hidden := false, held := false
 ) -> void:
+	var turn := 0
 	for slab: Dictionary in slabs:
+		turn += 1
 		var id := Num.i(slab["id"])
 		var dims: Vector3 = slab["dims"]
 		var salt := id % Ruin.SALTS
@@ -41,10 +45,22 @@ func add(
 			_hidden[id] = true
 		if held:
 			_held[id] = true
+		_asked[id] = Time.get_ticks_msec()
 		var place := func(chunk: MultiMeshInstance3D) -> void: _place(chunk, slab, sliding)
-		_city.ruins().build(
-			func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place
-		)
+		_build_in(turn, func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place)
+
+
+## A slab's chunk is a few milliseconds of work, but the worker pool can be busy for seconds
+## (a slab only came 1.3 s after its band broke on CI, 3.7 s in a headless run): it is built
+## here, one a frame so a landing never hitches, `turn` frames from now.
+func _build_in(turn: int, make: Callable, ready: Callable) -> void:
+	var tree := _city.get_tree()
+	for _n: int in turn:
+		await tree.process_frame
+		if not is_instance_valid(_city) or not _city.is_inside_tree():
+			return
+	var chunk: MultiMeshInstance3D = make.call()
+	_city.ruins().put(chunk, ready)
 
 
 ## Shows slabs add() kept hidden (their fold reached the ground), each from where it lies.
@@ -108,6 +124,9 @@ static func crumbled(xf: Transform3D, dims: Vector3, cfg: Dictionary) -> Transfo
 func _place(chunk: MultiMeshInstance3D, slab: Dictionary, sliding: bool) -> void:
 	var id := Num.i(slab["id"])
 	_nodes[id] = chunk
+	if _asked.has(id):
+		delays_ms.append(Time.get_ticks_msec() - Num.i(_asked[id]))
+		_asked.erase(id)
 	chunk.visible = not _hidden.has(id)
 	var rest := _rest(slab)
 	var from: Vector2 = slab["from"]

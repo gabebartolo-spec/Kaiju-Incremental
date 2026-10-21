@@ -97,6 +97,12 @@ func _run() -> void:
 			_log(i, event)
 		if i % 60 == 0:
 			_shot("f%04d" % i)
+	print("loop end tick %d" % Time.get_ticks_msec())
+	if DisplayServer.get_name() == "headless":  # frames run faster than workers: wait real time
+		for _k: int in 300:
+			await process_frame
+			OS.delay_msec(10)
+	print("slab build delays ms: %s" % [rampage._city._topple._rubble.delays_ms])
 	quit()
 
 
@@ -158,9 +164,10 @@ func _log(frame: int, event: Dictionary) -> void:
 			var slabs: Array = event.get("slabs", [])
 			print(
 				(
-					"%d fall_land %s %s scrap %s hit %s slabs %d"
+					"%d (tick %d) fall_land %s %s scrap %s hit %s slabs %d"
 					% [
 						frame,
+						Time.get_ticks_msec(),
 						event["kind"],
 						event["building"],
 						event.get("scrap", false),

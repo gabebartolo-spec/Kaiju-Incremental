@@ -31,7 +31,8 @@ func _process(_delta: float) -> void:
 		var pos: Vector3 = item[0]
 		var color: Color = item[1]
 		var away: Vector3 = item[2]
-		_spawn_now(pos, color, away)
+		var big: float = item[3]
+		_spawn_now(pos, color, away, big)
 	if pending() > _cap:  # what is left over the cap is dropped, oldest first
 		_head = _queue.size() - _cap
 	_compact()
@@ -47,8 +48,8 @@ func _process(_delta: float) -> void:
 ## Past the cap and one frame's worth the oldest queued fragment is dropped as a new one comes
 ## (b2-3: a heavy swipe queued 4000+ in one frame); the same count is thrown each frame as when
 ## the queue was trimmed only after throwing, so the shared fx random stream is unchanged.
-func spawn(pos: Vector3, color: Color, away: Vector3) -> void:
-	_queue.append([pos, color, away])
+func spawn(pos: Vector3, color: Color, away: Vector3, big := 1.0) -> void:
+	_queue.append([pos, color, away, big])
 	if pending() > _cap + SPAWN_PER_FRAME:
 		_head += 1
 	if _head >= _cap:
@@ -66,9 +67,9 @@ func _compact() -> void:
 		_head = 0
 
 
-func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
+func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0) -> void:
 	var size := BuildingVoxels.VOXEL * (_rng.randf_range(0.35, 0.8) if _rng.randf() < 0.8 else 1.0)
-	size *= size_scale
+	size *= size_scale * big
 	var body := RigidBody3D.new()
 	body.gravity_scale = 2.2
 	var shape := CollisionShape3D.new()

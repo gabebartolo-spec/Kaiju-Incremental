@@ -49,6 +49,11 @@ func _process(_delta: float) -> void:
 		build(func() -> MultiMeshInstance3D: return Ruin.build(voxels, rng))
 
 
+## Adds a chunk built on this thread (ready(mmi) as build()).
+func put(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
+	_attach(mmi, ready)
+
+
 func _attach(mmi: MultiMeshInstance3D, ready := Callable()) -> void:
 	if is_inside_tree():
 		add_child(mmi)

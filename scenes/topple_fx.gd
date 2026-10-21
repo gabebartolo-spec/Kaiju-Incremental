@@ -103,11 +103,16 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 	else:
 		_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
-	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi, hold)
-	_city.ruins().build(
-		func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
-	)
+	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
+	var heap := func() -> void:
+		_city.ruins().build(
+			func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
+		)
 	_rubble.add(slabs, voxels, true)
+	if hold > 0.0:  # the slabs get the cores first; the heap is built once the bands are down
+		_city.get_tree().create_timer(hold).timeout.connect(heap)
+	else:
+		heap.call()
 
 
 ## The slabs a part that dropped onto the street left (the sim's fall_land "slabs").
@@ -243,17 +248,12 @@ func _process(delta: float) -> void:
 			var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
 			var pos: Vector3 = part["pos"]
 			var color: Color = part["color"]
-			_city.debris(rest * (pos - pivot), color, Vector3.UP)
+			var big := 1.0 if br["crush"] else Num.f(_cfg["shatter_chunk"])
+			_city.debris(rest * (pos - pivot), color, Vector3.UP, big)
 
 
 ## The heap slumps: built taller than it rests, it settles down over settle_s.
-func _settle(mmi: MultiMeshInstance3D, hold := 0.0) -> void:
-	if hold > 0.0:  # out of sight until the bands have broken
-		mmi.visible = false
-		await _city.get_tree().create_timer(hold).timeout
-		if not is_instance_valid(mmi):
-			return
-		mmi.visible = true
+func _settle(mmi: MultiMeshInstance3D) -> void:
 	mmi.scale = Vector3(1, Num.f(_cfg["settle_heap"]), 1)
 	var tween := mmi.create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)

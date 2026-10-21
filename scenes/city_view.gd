@@ -286,8 +286,9 @@ func ruins() -> RuinYard:
 	return _ruins
 
 
-func debris(pos: Vector3, color: Color, away: Vector3) -> void:
-	_debris.spawn(pos, color, away)
+## `big`: how many times the usual fragment size (a shattering band's chunks).
+func debris(pos: Vector3, color: Color, away: Vector3, big := 1.0) -> void:
+	_debris.spawn(pos, color, away, big)
 
 
 ## A fire that keeps burning (ruins, wrecks); the oldest goes out past the cap.
