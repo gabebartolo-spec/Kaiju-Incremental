@@ -17,6 +17,7 @@ extends SceneTree
 const KINDS: Array[String] = ["fuel_silo", "fireworks_factory", "chem_lab", "fuel_silo"]
 const STEP := 1.0 / 30.0
 const SIDE := 9.0  # the first site sits at least this far to the kaiju's side (units)
+const SMALL_HALF := 60.0  # --city=small keeps only the buildings this close to the centre
 
 var _view := "game"
 var _out := "user://explosives"
@@ -25,6 +26,7 @@ var _perf := false
 var _stills: Array[float] = []
 var _time := "day"
 var _arm := true
+var _small := false  # --city=small: a cropped city, so a CI software render finishes in time
 var _side := Vector2.ZERO  # the side of the kaiju the chain is on (unit, ground plane)
 
 
@@ -40,6 +42,8 @@ func _initialize() -> void:
 			_time = arg.substr(7)
 		elif arg == "--no-arm":  # the same run with nothing set off: the frame-time baseline
 			_arm = false
+		elif arg == "--city=small":
+			_small = true
 		elif arg == "--perf":
 			_perf = true
 		elif arg.begins_with("--stills="):
@@ -57,6 +61,13 @@ func _run() -> void:
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
 	)
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	if _small:
+		var near := layout.filter(
+			func(e: Dictionary) -> bool:
+				return absf(Num.f(e["x"])) <= SMALL_HALF and absf(Num.f(e["z"])) <= SMALL_HALF
+		)
+		layout.assign(near)
+		print("small city: %d buildings" % layout.size())
 	var chain := _pick_chain(stats, layout)
 	for k: int in chain.size():
 		layout[chain[k]]["hazard"] = KINDS[k]
