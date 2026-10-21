@@ -1,7 +1,7 @@
 extends RefCounted
 ## Playtest note 4, the charge: in a real rampage started from the title, a Shift key press
 ## (real input through Input, as a player's arrives) dashes the croc forward along its facing,
-## and the HUD shows the dash cooling down beside the other ability prompts.
+## and the HUD's dash ring empties and refills beside the breath ring.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 ## Frames to let the dash run out (it lasts about 0.4 s).
@@ -25,12 +25,9 @@ static func run(t: SceneTree, check: Callable, rampage: Rampage) -> void:
 			% [sim.body.dash.dashes, moved, sim.body.length()]
 		)
 	)
-	var prompt := ""
-	for node: Node in rampage.find_children("*", "Label", true, false):
-		var l: Label = node
-		if l.text.begins_with("DASH") and l.is_visible_in_tree():
-			prompt = l.text
+	var hud: RampageHud = rampage.find_children("*", "RampageHud", true, false)[0]
+	var ring := hud.dash_ring
 	check.call(
-		prompt.begins_with("DASH  ") and prompt.ends_with("s") and not prompt.contains("READY"),
-		"the HUD shows the dash cooling down after it: '%s'" % prompt
+		ring.is_visible_in_tree() and ring.ratio > 0.0 and not ring.is_ready(),
+		"the HUD's dash ring shows the dash recharging after it (%.2f full)" % ring.ratio
 	)

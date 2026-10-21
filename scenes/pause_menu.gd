@@ -30,9 +30,7 @@ func _ready() -> void:
 	_col = VBoxContainer.new()
 	_col.add_theme_constant_override("separation", 16)
 	panel.add_child(_col)
-	var title := UiKit.label("PAUSED", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_col.add_child(title)
+	_col.add_child(UiKit.header("PAUSED"))
 	_resume = _add("RESUME", UiKit.ACCENT, resume)
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
 	_add("END RAMPAGE  (keep biomass)", UiKit.PANEL_EDGE, _end)

@@ -23,6 +23,10 @@ const CLIP_SIZE := Vector2i(1280, 720)
 const UI_ONLY_RAMPAGE_FRAMES := 45
 ## Frames into the staged city build before the loading-screen shot (it has 7 stages).
 const LOADING_FRAMES := 2
+## Frames for the first-run controls card to fade, and for the hurt vignette to settle.
+const CARD_FADE_FRAMES := 45
+## The health share the hurt shot shows (under the heartbeat line).
+const HURT_SHARE := 0.2
 ## Clip: how long the report counts, then how long it holds, before EVOLVE.
 const CLIP_COUNT_FRAMES := 45
 const CLIP_HOLD_FRAMES := 45
@@ -80,6 +84,10 @@ func _run() -> void:
 		await _frames(SETTLE)
 		_shot("02_settings")
 		var settings: SettingsMenu = title.find_children("*", "SettingsMenu", true, false)[0]
+		if settings.has_method("open_controls"):
+			settings.call("open_controls")
+			await _frames(SETTLE)
+			_shot("02c_controls")
 		settings.close()
 		await _frames(SETTLE)
 		var select := SpeciesSelect.new()
@@ -110,6 +118,13 @@ func _run() -> void:
 	await _frames(fight)
 	_shot("04_rampage")
 	var hud: RampageHud = rampage.find_children("*", "RampageHud", true, false)[0]
+	if not _clip and hud.has_method("dismiss_controls"):
+		hud.call("dismiss_controls")
+		await _frames(CARD_FADE_FRAMES)
+		_shot("04b_hud")
+		rampage.sim.hp = rampage.sim.max_hp * HURT_SHARE  # capture only: show the hurt vignette
+		await _frames(CARD_FADE_FRAMES)
+		_shot("04c_hurt")
 	if not _clip:
 		hud.pause()
 		await _frames(SETTLE)

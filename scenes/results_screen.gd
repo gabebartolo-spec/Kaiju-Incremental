@@ -6,12 +6,12 @@ extends CanvasLayer
 
 signal continued
 
-## Stat key, label, how the value is shown ("int" or "pct").
+## Stat key, label, how the value is shown ("int", "pct" or "storeys").
 const ROWS: Array[Array] = [
 	["rubble", "Biomass devoured", "int"],
 	["destruction", "City destroyed", "pct"],
 	["toppled", "Buildings toppled", "int"],
-	["tallest_topple", "Tallest tower toppled (floors)", "int"],
+	["tallest_topple", "Tallest tower toppled", "storeys"],
 	["civilians", "Civilians crushed", "int"],
 	["tanks", "Tanks crushed", "int"],
 	["helis", "Helicopters downed", "int"],
@@ -55,9 +55,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	panel.add_child(col)
-	var title := UiKit.label("RAMPAGE REPORT", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(title)
+	col.add_child(UiKit.header("RAMPAGE REPORT"))
 	_verdict = UiKit.label(verdict(), UiKit.SIZE_HEAD, UiKit.WARN)
 	_verdict.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_verdict.modulate.a = 0.0
@@ -76,7 +74,7 @@ func _ready() -> void:
 		value.custom_minimum_size = Vector2(170, 0)
 		grid.add_child(value)
 		_values.append(value)
-		var badge := UiKit.label(_best_text(row), UiKit.SIZE_SMALL, UiKit.MUTED)
+		var badge := UiKit.label(_best_text(row), UiKit.SIZE_BODY, UiKit.MUTED)
 		badge.custom_minimum_size = Vector2(230, 0)
 		badge.modulate.a = 0.0
 		grid.add_child(badge)
@@ -179,6 +177,8 @@ func _show_frame() -> void:
 func _shown(row: Array, value: float) -> String:
 	if str(row[2]) == "pct":
 		return "%d%%" % floori(value * 100.0)
+	if str(row[2]) == "storeys":
+		return "%d STOREYS" % floori(value) if floori(value) != 1 else "1 STOREY"
 	return "%d" % floori(value)
 
 

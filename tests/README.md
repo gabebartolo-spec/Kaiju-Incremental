@@ -21,6 +21,7 @@ from `tools/ci_timings.txt`, so a new suite needs only its file and a row below.
 
 | Suite | Covers |
 |---|---|
+| `ui` | the minimal rampage HUD (b2-10..13): text 24 px or more, inside the title-safe area, no controls or health text, one boxless biomass figure bottom right, the breath ring bottom centre filling with the cooldown, the hurt vignette widening and beating, the controls card once; the shared text style's contrast; one details-panel width over every tree node (b2-23); the species preview spinning centred and in frame (b2-11) |
 | `smoke` | typing warnings are errors; exactly the sanctioned autoloads; every script compiles; the main scene opens headless and stays up |
 | `clips` | the croc titan's baked Blender clips (D-047) load and fit its rig; the walk phase follows distance; turn, roar and idle play without NaN; a walking curve swings the tail and it settles; the clips own the tail bones; the roar tail slam lands as one footfall; other kaiju keep procedural gaits |
 | `carving` | the rampage on the fine grid (Carving, D-094 WP7, D-099): player-effect fixture "carving" (the same seeded stomps with carving on and off: cells carved, chunks only partly carved, every carved cell within the stomp's reach; off has no grid); promotion on first hit only; a base cut topples the tower toward the cut wherever the kaiju stands, carrying its fine cells; wear adds tough blows up and breaks on the same blow as the chunk rule; a razed building pays the same rubble either way; seeded replay identical; no clock or RNG in the module |

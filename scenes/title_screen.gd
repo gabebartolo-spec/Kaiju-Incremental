@@ -27,8 +27,8 @@ func _ready() -> void:
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	_col.add_theme_constant_override("separation", 24)
 	add_child(_col)
-	var kicker := UiKit.label("CIVIL DEFENCE ALERT", UiKit.SIZE_BODY, UiKit.ALERT)
-	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var kicker := UiKit.header("CIVIL DEFENCE ALERT", UiKit.SIZE_HEAD)
+	kicker.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_col.add_child(kicker)
 	var title := UiKit.label("KAIJU INCREMENTAL", 104, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

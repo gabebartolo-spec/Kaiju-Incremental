@@ -1,8 +1,8 @@
 class_name SpeciesSelect
 extends Control
 ## New game: pick one of the species (in the demo, D-050, its species only; the rest are absent).
-## Each card shows the kaiju turning in a live 3D preview, its signature attack and how its body
-## compares, so the choice is about how it plays.
+## Each card shows the kaiju spinning on a turntable in a live 3D preview, centred and in frame
+## all the way round (b2-11), its signature attack and how its body compares.
 
 signal chosen(species_id: String)
 ## Back to the title (Esc / B, or the BACK button); nothing has changed yet.
@@ -11,19 +11,17 @@ signal back_pressed
 ## Short enough that the whole card (and CHOOSE) fits the TV at the largest UI scale (125%).
 const PREVIEW_SIZE := Vector2i(440, 270)
 ## The preview camera looks down this way (the old fixed camera's view) through a fairly long lens
-## (deg; a near limb swinging toward a wide lens would push the kaiju small); the turning kaiju
+## (deg; a near limb swinging toward a wide lens would push the kaiju small); the spinning kaiju
 ## fills at most this much of the card's width and keeps this margin (of the height) top and bottom.
 const PREVIEW_VIEW := Vector3(0, -2.9, -12.5)
 const PREVIEW_FOV := 30.0
 const PREVIEW_FILL := 0.92
 const PREVIEW_MARGIN := 0.06
-## The kaiju sways this far (rad) either side of a three-quarter side view (yaw, rad) at this rate
-## (rad/s), so its length reads; the fit samples the sway at this many angles and every this-many-th
-## skin corner.
+## It starts at a three-quarter side view (yaw, rad) and spins at tuning "ui" species_spin_rate
+## (rad/s) about the middle of its own footprint; the fit samples a full turn at this many
+## angles and every this-many-th skin corner.
 const PREVIEW_YAW := PI * 0.62
-const PREVIEW_SWAY := 0.7
-const PREVIEW_SWAY_RATE := 0.5
-const PREVIEW_SAMPLES := 7
+const PREVIEW_SAMPLES := 16
 const PREVIEW_STRIDE := 13
 const BACK_WIDTH := 360
 const COMPARE: Array[Array] = [
@@ -33,20 +31,27 @@ const COMPARE: Array[Array] = [
 	["Reach", "stomp_radius", 4.0]
 ]
 
+## Each preview's turntable: the kaiju sits on it with its footprint's middle on the axis.
+var turntables: Array[Node3D] = []
 var _models: Array[KaijuModel] = []
-var _time := 0.0
+var _spin := 0.0
 
 
 func _ready() -> void:
 	UiKit.full_rect(self)
 	add_child(UiKit.backdrop())
+	var top := UiKit.tape(18.0)
+	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top.offset_bottom = 18.0
+	add_child(top)
+	_spin = Num.f(UiKit.ui()["species_spin_rate"])
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 16)
 	add_child(col)
-	var title := UiKit.label("CHOOSE YOUR KAIJU", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var title := UiKit.header("CHOOSE YOUR KAIJU")
+	title.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(title)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -73,25 +78,37 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
-	_time += delta
+	for table: Node3D in turntables:
+		table.rotation.y = wrapf(table.rotation.y + _spin * delta, 0.0, TAU)
 	for model: KaijuModel in _models:
-		model.rotation.y = PREVIEW_YAW + PREVIEW_SWAY * sin(_time * PREVIEW_SWAY_RATE)
 		model.animate(delta, 0.3)
 
 
-## Frames the preview on the kaiju's skin at every angle of its sway: aimed at the middle of all of
-## it and stood back along the old camera's view until it fits the card's width and, with a margin
+## Puts the kaiju on its turntable with the middle of its footprint on the spin axis, so it
+## turns in place instead of swinging round its feet (b2-11: it spun off camera).
+func _centre(model: KaijuModel) -> void:
+	var points := _skin_points(model)
+	var box := AABB(points[0], Vector3.ZERO)
+	for p: Vector3 in points:
+		box = box.expand(p)
+	var mid := box.get_center()
+	model.position = -Vector3(mid.x, 0.0, mid.z)
+
+
+## Frames the preview on the kaiju's skin at every angle of a full turn: aimed at the spin axis
+## and stood back along the old camera's view until it fits the card's width and, with a margin
 ## top and bottom, its height (a long tail, a tall head never leave the card).
 func _frame(cam: Camera3D, model: KaijuModel) -> void:
 	var points := _skin_points(model)
+	for i: int in points.size():
+		points[i] += model.position
 	var turns: Array[Basis] = []
 	var box := AABB(points[0], Vector3.ZERO)
 	for k: int in PREVIEW_SAMPLES:
-		var yaw := PREVIEW_YAW + PREVIEW_SWAY * lerpf(-1.0, 1.0, float(k) / (PREVIEW_SAMPLES - 1))
-		turns.append(Basis(Vector3.UP, yaw))
+		turns.append(Basis(Vector3.UP, TAU * k / PREVIEW_SAMPLES))
 		for p: Vector3 in points:
 			box = box.expand(turns[k] * p)
-	var aim := box.get_center()
+	var aim := Vector3(0.0, box.get_center().y, 0.0)
 	var look := PREVIEW_VIEW.normalized()
 	var up := look.cross(Vector3.UP).cross(look).normalized()
 	var right := look.cross(up)
@@ -103,8 +120,8 @@ func _frame(cam: Camera3D, model: KaijuModel) -> void:
 			var r := turn * p - aim
 			var fit := maxf(absf(r.dot(up)) / tan_v, absf(r.dot(right)) / tan_h)
 			back = maxf(back, fit - r.dot(look))
-	cam.position = model.position + aim - look * back
-	cam.look_at(model.position + aim)
+	cam.position = aim - look * back
+	cam.look_at(aim)
 
 
 ## A sample of the skin's points (every PREVIEW_STRIDE-th corner) in the model's own space.
@@ -142,9 +159,13 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	viewport.transparent_bg = true
 	view.add_child(viewport)
 	var colors: Dictionary = def["colors"]
+	var table := Node3D.new()
+	table.rotation.y = PREVIEW_YAW
+	viewport.add_child(table)
+	turntables.append(table)
 	var model := KaijuModel.new(str(def["id"]), colors)
-	viewport.add_child(model)
-	model.rotation.y = PREVIEW_YAW
+	table.add_child(model)
+	_centre(model)
 	_models.append(model)
 	var cam := Camera3D.new()
 	cam.fov = PREVIEW_FOV
@@ -159,21 +180,18 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	fill.light_energy = 0.8
 	viewport.add_child(fill)
 
-	col.add_child(UiKit.label(str(def["name"]).to_upper(), UiKit.SIZE_HEAD, UiKit.TEXT))
-	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_SMALL, UiKit.MUTED)
+	col.add_child(UiKit.header(str(def["name"]).to_upper(), UiKit.SIZE_HEAD))
+	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_BODY, UiKit.TEXT)
 	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(blurb)
 	var ability: Dictionary = def["ability"]
 	col.add_child(UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN))
-	var hint := UiKit.label(str(ability["hint"]), UiKit.SIZE_SMALL, UiKit.MUTED)
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(hint)
 
 	var stats: Dictionary = def["stats"]
 	for entry: Array in COMPARE:
 		var line := HBoxContainer.new()
-		var name_label := UiKit.label(str(entry[0]), UiKit.SIZE_SMALL)
-		name_label.custom_minimum_size = Vector2(110, 0)
+		var name_label := UiKit.label(str(entry[0]), UiKit.SIZE_BODY)
+		name_label.custom_minimum_size = Vector2(130, 0)
 		line.add_child(name_label)
 		var meter := UiKit.bar(UiKit.ACCENT, 18)
 		meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL

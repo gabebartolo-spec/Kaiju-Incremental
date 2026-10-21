@@ -1,7 +1,8 @@
 class_name LoadingOverlay
 extends CanvasLayer
-## What the player sees while a rampage builds its city (b2-30): the backdrop, one word and a
-## meter that moves each time a stage finishes, so the wait never looks like a hung game.
+## What the player sees while a rampage builds its city (b2-30): the broadcast backdrop, one
+## alert header, a meter that moves each time a stage finishes (so the wait never looks like a
+## hung game) and the news crawl (tuning "ui" loading_news).
 ## Each stage the builder reports (advance) is drawn before the next one starts.
 
 const LAYER := 60
@@ -22,13 +23,17 @@ func _init() -> void:
 
 func _ready() -> void:
 	add_child(UiKit.backdrop())
+	var top := UiKit.tape(18.0)
+	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top.offset_bottom = 18.0
+	add_child(top)
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", GAP)
 	add_child(col)
-	var word := UiKit.label("LOADING", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var word := UiKit.header("INCOMING")
+	word.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(word)
 	_bar = UiKit.bar(UiKit.ACCENT, int(BAR_SIZE.y), true)
 	_bar.custom_minimum_size = BAR_SIZE
@@ -36,6 +41,11 @@ func _ready() -> void:
 	_bar.max_value = STAGES
 	_bar.value = _done
 	col.add_child(_bar)
+	var news: Array = UiKit.ui()["loading_news"]
+	var crawl := NewsTicker.new(PackedStringArray(news))
+	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	crawl.offset_top = -NewsTicker.HEIGHT
+	add_child(crawl)
 
 
 ## How many stages are built so far.

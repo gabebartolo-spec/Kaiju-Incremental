@@ -10,8 +10,6 @@ signal start_pressed
 signal bought(id: String)
 signal menu_pressed
 
-## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
-const SIDE_WIDTH := 330
 ## The stat rows' "now" column: one width for every row, so the arrows sit in one column.
 const NOW_WIDTH := 64
 const NBSP := " "
@@ -19,6 +17,9 @@ var tree: UpgradeTree
 var rubble: int
 var species: Dictionary
 var base_stats: Dictionary
+## The node details panel beside the tree: one fixed width for every node (b2-23, tuning "ui"
+## tooltip_width), so picking a long-named node never reshapes the screen.
+var side_panel: Control
 var _area: TreeArea
 var _rubble_label: Label
 var _info_title: Label
@@ -82,7 +83,9 @@ func _ready() -> void:
 
 func _build_side() -> Control:
 	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(SIDE_WIDTH, 0)
+	side.custom_minimum_size = Vector2(Num.f(UiKit.ui()["tooltip_width"]), 0)
+	side.size_flags_horizontal = Control.SIZE_SHRINK_END
+	side_panel = side
 	side.add_theme_constant_override("separation", 12)
 	var info := UiKit.panel()
 	info.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -93,6 +96,7 @@ func _build_side() -> Control:
 	_info_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_title)
 	_info_role = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
+	_info_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_role)
 	_info_body = UiKit.rich(UiKit.SIZE_SMALL, UiKit.MUTED.lightened(0.2))
 	info_col.add_child(_info_body)
@@ -153,9 +157,9 @@ func _select(id: String) -> void:
 	var role := role_of(id)
 	_info_role.text = {
 		"plain": "",
-		"branch": "%s BRANCH" % str(species["name"]).to_upper(),
+		"branch": "",
 		"evolve": "EVOLUTION",
-		"ultimate": "ULTIMATE  -  %s BRANCH CAPSTONE" % str(species["name"]).to_upper(),
+		"ultimate": "ULTIMATE",
 	}[role]
 	_info_body.clear()
 	_info_body.append_text(UpgradeTree.desc_for(def, str(species["id"])))

@@ -14,6 +14,16 @@ const DASH := 12.0
 ## The focus ring sits this far inside the box's edge and is this thick.
 const RING_GAP := 4.0
 const RING_WIDTH := 3.0
+## Corner brackets (a broadcast monitor's registration marks): each arm this long and thick,
+## this far inside the edge.
+const CORNER_LEN := 26.0
+const CORNER_WIDTH := 4.0
+const CORNER_GAP := 6.0
+## The focus pointer: a solid triangle this wide, this far in from the right edge, its height a
+## share of the box's.
+const CHEVRON_WIDTH := 14.0
+const CHEVRON_INSET := 14.0
+const CHEVRON_SHARE := 0.36
 
 var fill := Color.BLACK:
 	set(value):
@@ -29,6 +39,11 @@ var tape_off := Color("111114")
 var dashed := false
 var ring := false
 var ring_color := Color("ffcc00")
+## Brackets in `corner_color` at the corners clear of the tape band.
+var corners := false
+var corner_color := Color("ffcc00")
+## A pointer in `ring_color` at the right edge (the focused button: "you are here").
+var chevron := false
 
 
 func _draw(to_canvas_item: RID, rect: Rect2) -> void:
@@ -42,6 +57,16 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			to_canvas_item, Rect2(rect.position, Vector2(rect.size.x, band_size)), tape_on, tape_off
 		)
 	frame(to_canvas_item, rect, edge, border, dashed)
+	if corners:
+		_corners(to_canvas_item, rect)
+	if chevron:
+		var h := rect.size.y * CHEVRON_SHARE
+		var tip := Vector2(rect.end.x - CHEVRON_INSET, rect.get_center().y)
+		var back := tip.x - CHEVRON_WIDTH
+		var tri := PackedVector2Array(
+			[Vector2(back, tip.y - h / 2.0), tip, Vector2(back, tip.y + h / 2.0)]
+		)
+		RenderingServer.canvas_item_add_polygon(to_canvas_item, tri, PackedColorArray([ring_color]))
 	if ring:
 		var inner := rect.grow(-(border + RING_GAP))
 		# Clear of the tape too: a ring crossing the stripe reads as a glitch (screen critic).
@@ -102,3 +127,20 @@ static func frame(item: RID, rect: Rect2, color: Color, width: float, dashed_edg
 			var extent := Vector2(piece, width) if along_x else Vector2(width, piece)
 			RenderingServer.canvas_item_add_rect(item, Rect2(side.position + offset, extent), color)
 			at += DASH * 2.0
+
+
+## The corner brackets, inside the edge; never on the tape (the band's corners have none).
+func _corners(item: RID, rect: Rect2) -> void:
+	var inner := rect.grow(-(border + CORNER_GAP))
+	var at: Array[Vector2] = [inner.end, Vector2(inner.position.x, inner.end.y)]
+	if band != Band.TOP:
+		at.append_array([inner.position, Vector2(inner.end.x, inner.position.y)])
+	if band == Band.LEFT:
+		at = at.filter(func(p: Vector2) -> bool: return p.x > inner.position.x)
+	for p: Vector2 in at:
+		var sx := -1.0 if p.x > rect.get_center().x else 1.0
+		var sy := -1.0 if p.y > rect.get_center().y else 1.0
+		var arm_x := Rect2(p, Vector2(CORNER_LEN * sx, CORNER_WIDTH * sy)).abs()
+		var arm_y := Rect2(p, Vector2(CORNER_WIDTH * sx, CORNER_LEN * sy)).abs()
+		RenderingServer.canvas_item_add_rect(item, arm_x, corner_color)
+		RenderingServer.canvas_item_add_rect(item, arm_y, corner_color)

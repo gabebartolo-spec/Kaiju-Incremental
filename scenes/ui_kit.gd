@@ -69,10 +69,55 @@ static func label(text: String, size: int = SIZE_BODY, color: Color = TEXT) -> L
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	l.add_theme_constant_override("outline_size", maxi(4, Num.i(size / 6.0)))
+	text_style(l, size)
 	_apply_font(l, size)
 	return l
+
+
+## The one outlined text style (R 15.4): a near-black outline about a fifth of the size and a
+## soft drop shadow (tuning "ui" text), so any of the kit's colours reads at 4.5:1 or more over
+## the brightest fire behind it: the outline, not the scene, is what the letters sit on.
+static func text_style(control: Control, size: int) -> void:
+	var cfg: Dictionary = ui()["text"]
+	control.add_theme_color_override("font_outline_color", outline_color())
+	control.add_theme_constant_override("outline_size", outline_px(size))
+	control.add_theme_color_override(
+		"font_shadow_color", Color(0, 0, 0, Num.f(cfg["shadow_alpha"]))
+	)
+	var shadow := Num.i(cfg["shadow_px"])
+	control.add_theme_constant_override("shadow_offset_x", shadow)
+	control.add_theme_constant_override("shadow_offset_y", shadow)
+	control.add_theme_constant_override("shadow_outline_size", outline_px(size))
+
+
+## The text outline's width at `size` (px at 1080p).
+static func outline_px(size: int) -> int:
+	var cfg: Dictionary = ui()["text"]
+	return maxi(Num.i(cfg["outline_min"]), roundi(size * Num.f(cfg["outline_share"])))
+
+
+static func outline_color() -> Color:
+	return Color(BG, Num.f(ui()["text"]["outline_alpha"]))
+
+
+## tuning "ui": margins, the HUD's sizes and timings, the hurt vignette.
+static func ui() -> Dictionary:
+	return Content.section("ui")
+
+
+## The TV title-safe margin (px at 1080p, x then y): nothing the player reads sits outside it.
+static func safe_margin() -> Vector2:
+	var m: Array = ui()["safe_margin"]
+	return Vector2(Num.f(m[0]), Num.f(m[1]))
+
+
+## Insets `container` to the title-safe area.
+static func safe_area(container: MarginContainer) -> void:
+	var m := safe_margin()
+	container.add_theme_constant_override("margin_left", roundi(m.x))
+	container.add_theme_constant_override("margin_right", roundi(m.x))
+	container.add_theme_constant_override("margin_top", roundi(m.y))
+	container.add_theme_constant_override("margin_bottom", roundi(m.y))
 
 
 static func box(
@@ -125,8 +170,37 @@ static func ink(fill: Color) -> Color:
 ## A panel with hazard tape across its top and a yellow edge.
 static func panel(color: Color = PANEL) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", hazard(color, ACCENT, 3.0, HazardBox.Band.TOP))
+	p.add_theme_stylebox_override("panel", panel_box(color))
 	return p
+
+
+## A card's box: hazard tape across the top, a yellow edge, brackets in the lower corners.
+static func panel_box(color: Color = PANEL) -> HazardBox:
+	var s := hazard(color, ACCENT, 3.0, HazardBox.Band.TOP)
+	s.corners = true
+	return s
+
+
+## A card's alert header: a red broadcast strip with a warning tag on its left and the heading
+## in white Kaiju Claw (white on CRAWL_RED reads at 5:1).
+static func header(text: String, size: int = SIZE_TITLE) -> PanelContainer:
+	var strip := PanelContainer.new()
+	var s := hazard(CRAWL_RED, CRAWL_RED, 0.0)
+	s.set_content_margin_all(0)
+	s.content_margin_right = 24
+	strip.add_theme_stylebox_override("panel", s)
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 20)
+	strip.add_child(row)
+	var tag := UiMarks.AlertTag.new()
+	row.add_child(tag)
+	var l := label(text, size, Color.WHITE)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(l)
+	tag.custom_minimum_size = Vector2.ONE * (l.get_combined_minimum_size().y + 8.0)
+	return strip
 
 
 ## A button with hazard tape down its left edge. Focus (and hover) lights a dark button up in
@@ -149,6 +223,12 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	var off := hazard(PANEL, LOCKED, 2.0, left)
 	off.dashed = true
 	off.tape_on = LOCKED
+	focus.chevron = true
+	hover.chevron = true
+	hover.ring_color = ink(lit)
+	# Every state keeps room on the right for the focus pointer, so focus never shifts the text.
+	for state: HazardBox in [normal, hover, focus, pressed, off]:
+		state.content_margin_right = HazardBox.CHEVRON_INSET + HazardBox.CHEVRON_WIDTH + 10.0
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("focus", focus)
@@ -178,6 +258,10 @@ static func bar(fill: Color, height: int = 26, taped: bool = false) -> ProgressB
 		inner.tape_off = fill.darkened(0.2)
 	inner.set_content_margin_all(0)
 	p.add_theme_stylebox_override("fill", inner)
+	var ticks := UiMarks.Ticks.new()
+	full_rect(ticks)
+	ticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(ticks)
 	return p
 
 
@@ -213,7 +297,7 @@ static func _grabber(ring: Color) -> Texture2D:
 
 ## A full-width strip of hazard tape, `height` tall (screen edges, dividers).
 static func tape(height: float = PANEL_BAND) -> Control:
-	var t := Tape.new()
+	var t := UiMarks.Tape.new()
 	t.custom_minimum_size = Vector2(0, height)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
@@ -228,7 +312,7 @@ static func backdrop() -> ColorRect:
 	var r := ColorRect.new()
 	r.color = BG
 	full_rect(r)
-	var lines := Scanlines.new()
+	var lines := UiMarks.Scanlines.new()
 	full_rect(lines)
 	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	r.add_child(lines)
@@ -262,23 +346,3 @@ static func arrow() -> Texture2D:
 					img.set_pixel(x, y, Color.WHITE)
 		_arrow = ImageTexture.create_from_image(img)
 	return _arrow
-
-
-## Hazard tape filling the control.
-class Tape:
-	extends Control
-
-	func _draw() -> void:
-		HazardBox.tape(get_canvas_item(), Rect2(Vector2.ZERO, size), ACCENT, Color("111114"))
-
-
-## Faint horizontal lines, like an old broadcast monitor.
-class Scanlines:
-	extends Control
-
-	func _draw() -> void:
-		var y := 0.0
-		var line := Color(1, 1, 1, SCANLINE_ALPHA)
-		while y < size.y:
-			draw_rect(Rect2(0.0, y, size.x, SCANLINE_STEP / 2.0), line)
-			y += SCANLINE_STEP

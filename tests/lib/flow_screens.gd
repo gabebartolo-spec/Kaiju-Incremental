@@ -94,7 +94,7 @@ func _check_new_game() -> void:
 	var menu := GuiInput.find_script(rampage, PauseMenu)
 	layout.listen(rampage, "pause")
 	check.call(t.paused and menu != null, "Esc pauses the rampage and opens the pause menu")
-	check.call(_hint_hidden(rampage), "the HUD's hints hide behind the pause menu (lead review 3)")
+	check.call(_hint_hidden(rampage), "the HUD hides behind the pause menu (lead review 3)")
 	var clock := rampage.sim.time_left
 	await _frames(10)
 	check.call(rampage.sim.time_left == clock, "the rampage clock stands still while paused")
@@ -346,12 +346,20 @@ func _check_settings() -> void:
 			% [PlayerSettings.sfx_volume, sfx_db]
 		)
 	)
+	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))
 	var texts: Array[String] = []
 	for node: Node in menu.find_children("*", "Label", true, false):
-		texts.append((node as Label).text)
+		if (node as Label).is_visible_in_tree():
+			texts.append((node as Label).text)
 	check.call(
 		texts.has("Ultimate") and texts.has("E") and texts.has("Y") and texts.has("Start"),
-		"the controls list shows keyboard and pad"
+		"clicking CONTROLS shows the controls list, keyboard and pad"
+	)
+	await layout.fits_at_scales(menu, "settings controls page")
+	await GuiInput.key(t, KEY_ESCAPE)
+	check.call(
+		is_instance_valid(menu) and GuiInput.button(menu, "100%") != null,
+		"Esc on the controls page goes back to the settings"
 	)
 	await GuiInput.key(t, KEY_ESCAPE)
 	check.call(not is_instance_valid(menu), "Esc closes the settings")
@@ -381,10 +389,7 @@ func _evolve_cost() -> int:
 	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")
 
 
-## True when the HUD's control hints ("Move: WASD ...") are not showing.
+## True when the HUD (its rings and the biomass figure) is not showing.
 func _hint_hidden(rampage: Rampage) -> bool:
-	for node: Node in rampage.find_children("*", "Label", true, false):
-		var l: Label = node
-		if l.text.begins_with("Move:"):
-			return not l.is_visible_in_tree()
-	return false
+	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	return not hud.breath_ring.is_visible_in_tree() and not hud.biomass.is_visible_in_tree()
