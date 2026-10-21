@@ -1,7 +1,7 @@
 # Kaiju Incremental
 
-An active action game: play a kaiju, flatten a voxel city in short rampages, spend the rubble
-on an evolution tree, come back bigger. Godot 4.7.2. See `docs/VISION.md`.
+An active action game: play a kaiju, flatten a voxel city in short rampages, devour biomass,
+spend it on an evolution tree, come back bigger. Godot 4.7.2. See `docs/DESIGN.md`.
 
 - Play: open the folder in Godot 4.7.2 and press F5. WASD / left stick to move, Space / A for the
   signature attack, F11 fullscreen.

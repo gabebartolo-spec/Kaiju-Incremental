@@ -6,6 +6,9 @@ extends RefCounted
 ## Sized up on a young body so the rake reads at the game camera. Additive, fading in a moment,
 ## so it never hides the kaiju (D-025). Presentation only; sizes and timings: "claw_fx".
 
+## One unit box every claw mark scales (b2-3: a new mesh per segment cost a swipe 17 ms).
+static var _unit: BoxMesh
+
 
 ## event: a sim "swipe" event (side, near, far, width, top); ahead: the facing on the ground;
 ## arc: the model's claw_arc ({"centre", "radius"}, or {} to fall back on the rake band); bs: the
@@ -29,12 +32,7 @@ static func play(
 	var root := Node3D.new()
 	city.add_child(root)
 	root.global_position = centre
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.albedo_color = Color(str(cfg["streak_color"]))
+	var mat := marks_material(cfg)
 	var thick := Num.f(cfg["streak_thick"]) * bs * boost
 	var gap := Num.f(cfg["streak_gap"]) * bs * boost
 	var segments := Num.i(cfg["segments"])
@@ -51,16 +49,15 @@ static func play(
 			var u1 := float(k + 1) / segments
 			var p0 := _arc_point(ahead, across, side, r, lerpf(a0, a1, u0), drop * u0)
 			var p1 := _arc_point(ahead, across, side, r, lerpf(a0, a1, u1), drop * u1)
-			var box := BoxMesh.new()
 			# Marks taper to a point at both ends of the stroke, broadest mid-arc.
 			var taper := sin(PI * (u0 + u1) * 0.5) * 0.8 + 0.2
-			box.size = Vector3(thick * taper, thick * 0.35, p0.distance_to(p1) * 1.05)
-			box.material = mat
 			var seg := MeshInstance3D.new()
-			seg.mesh = box
+			seg.mesh = _unit_box()
+			seg.material_override = mat
 			seg.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(seg)
 			seg.look_at_from_position(centre + (p0 + p1) * 0.5, centre + p1, Vector3.UP)
+			seg.scale = Vector3(thick * taper, thick * 0.35, p0.distance_to(p1) * 1.05)
 			if u0 >= cross:  # the arm crosses the snout line now: the rest draws on
 				seg.visible = false
 				var at: Array = hidden.get_or_add(k, [])
@@ -84,6 +81,24 @@ static func _arc_point(
 	ahead: Vector3, across: Vector3, side: float, r: float, angle: float, down: float
 ) -> Vector3:
 	return (ahead * cos(angle) + across * side * sin(angle)) * r - Vector3.UP * down
+
+
+## The claw marks' additive, unshaded material (Fx keeps one compiled: ShaderKeep).
+static func marks_material(cfg: Dictionary) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = Color(str(cfg["streak_color"]))
+	return mat
+
+
+static func _unit_box() -> BoxMesh:
+	if _unit == null:
+		_unit = BoxMesh.new()
+		_unit.size = Vector3.ONE
+	return _unit
 
 
 static func _show_all(segments: Array) -> void:

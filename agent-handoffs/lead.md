@@ -12,22 +12,29 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## Director is BACK at the PC (from ~03:30; plays League at times: focus guard blocks windowed Godot -> CI captures).
-## Team (lead 10's subagents, die with this session; re-brief from NEW notes <task>\handoff.md):
-- prs (Sonnet): PR queue, squash-only (`gh pr merge N --squash --match-head-commit`), cap 3: parse-step 1605c88,
-  light-pool, audio-duck, tentacle-substep, graphics-presets 9f37429 (+D-109 lead Medium 4K +6.5%), bridge-land 2ceb079
-  (QC PASS), kaiju-double 47ac4da (QC PASS), later walkers-on-pavement, turn-weight, ci-sim-split (after turn-weight + b2-3).
-- parse-step: turn-weight: military fixture fixed (42a3a99); tank threat fell 41-50% with the arcing walk -> fixing
-  FiringPosts to lead the target (bar within 15% of base 4e401c6, two variants max). Sim split green, re-timed shards.
-- phase-b: b2-20 boards in NEW notes phase-b\ pass lead QC; clip rendering -> then ASK the director b2-20.
-- walkers: deterministic diagonal fill, then comments #17 emerge facing the city + shoreline + wider river (claude/emerge-shore),
-  then R 6.1 no-empty-space suite.
-- rubble3: b2-3 part 3 worst step 71-79 ms (bar met), pushing; then D-110 destructible slabs (claude/rubble-break).
-- view-spikes: fall_land 349 ms + debris queue (claude/view-spikes). bridge agent -> walk m2 (claude/walk-m2 off turn-weight).
-- skyline: prototype background kaiju rampage + burning skyline (comments #16), off by default, stills+clip for his yes.
-- Next: fire research (comments #15, ROADMAP E) when a slot frees; insectoid/cephalopod double voxels follow-up.
-## Merged since build 4: #120 #121 #122 #123. Decisions today: D-107 voxels, D-108 lightning, D-110 destructible slabs.
-- Worktrees: ~50 vs cap 12; safe ones (hygiene, hygiene2-5, ci-balance) need --force, refused: ask the director.
+## State 2026-10-21 evening: director at the PC (no windowed Godot; CI captures). Design = docs/DESIGN.md (one doc, lead edits).
+## Merged today: #122-#135 (parse-step, light-pool, b2-3-part3, audio-duck, tentacle, graphics, cells-native, bridge,
+## kaiju-double, view-spikes, no-rubble-fire, carve-no-fire). Open: #3 only. D-109 recorded.
+## Team (lead 10 subagents). New rules today: ASK before any new work (RULEBOOK Working); ONE ~6 s clip per change;
+## one state file per task = agent-handoffs/<task>.md (older tasks keep NOTES/<task>/handoff.md); STATUS.md via tools/status.py.
+- prs: preset-caps #136, walkers, sfx-pool, shake-trauma, crush-people 6cab1072, turn-weight 90edbe8, building-fade, empty-space,
+  ci-sim-split last; also claude/status-script 6cbdd64 (tools/status.py) needs a PR.
+- rubble-polish: claude/rubble-break de85ea1 (#24-#26 done in sim), bench + one CI clip, then motion critic.
+- explosions-fix: claude/city-explosives 6fb45b69, one CI clip, then motion critic round 2.
+- camera-fade: claude/building-fade (R 19.4 + #27 rise occlusion), then A/B/C boards (director-facing).
+- ui-redesign: claude/ui-redesign, HUD + menus now (director: start now, keep Emergency Broadcast, dash/ult rings, tape meter).
+- clumsy-army: c3623e4, strays scatter to the sides (director pick), one CI clip.
+- intro-cinematic: claude/intro-cinematic from emerge-shore 1498501e (#11, "build it sooner").
+- emerge-shore 1498501e done (burst through decks; bay fits max-growth body, director pick); lead QCs CI runs 39552644858.
+- rule-dedupe: applying director rulings (six model views, mixed art his call, full suite for shared data, SHIP/FIX/REJECT).
+- NEXT when a slot frees: walk-m2 clips on CI, about 4 (straight + 90 deg turn, adult + baby, game camera), claude/walk-m2 0f9e0d2c.
+- Director questions left: camera growth (after occlusion fix), walk cadence R 11.2, Suno vs ElevenLabs Music, fire spark
+  + wind, background skyline, blast numbers, worktree cleanup permission. Insectoid = brood mother (DESIGN; code still
+  has Leap Slam as signature: fix when species work starts).
+- Build 5 once the queue lands: dispatch build.yml on look-options, smoke from repo root, Kaiju-Builds/carve-build5-<sha>.
+- Context trim done 2026-10-21: RULEBOOK 16.5->13 KB (quotes in RULEBOOK-quotes.md), global CLAUDE.md 4.8->3.4 KB, project
+  CLAUDE.md 5.2->3.0 KB, handoff hook 10.3->2.2 KB (last 30 h only), 7 skill descriptions halved, memory 7->2 files.
+  Backups *.bak-2026-10-21 beside each file.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
 ## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
