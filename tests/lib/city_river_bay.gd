@@ -55,16 +55,68 @@ static func _check_walk_in(tier: int, map_seed: int, sim: RampageSim, check_fn: 
 	)
 
 
-## A sim of its own for the walk (it steps, and its stomps break things).
-static func _fresh(tier: int, map_seed: int) -> RampageSim:
+## The kaiju that emerges at this stage (size tier = stage, as Main starts a run) bursts up
+## through the bay's decks (director 2026-10-21, "burst through"): once risen, no deck left
+## standing (CityRiver.decks_after) lies under any of its body's discs, and the sim said so.
+static func check_burst(tier: int, map_seed: int, check_fn: Callable) -> void:
+	var sim := _fresh(tier, map_seed, tier)
+	sim.emerge.start(sim)
+	var plan := CityGen.map(sim.city)
+	var said := false
+	var t := 0.0
+	while sim.emerge.active and sim.emerge.risen() < 1.0:
+		sim.step(DT, Vector2.ZERO, false)
+		t += DT
+		for e: Dictionary in sim.events:
+			said = said or str(e["type"]) == "deck_burst"
+	var left := CityRiver.decks_after(plan, sim.city, sim.emerge.burst)
+	var s := sim.body_scale()
+	var under := 0
+	for d: Array in sim.body.discs():
+		var c := sim.kaiju_pos + sim.facing * Num.f(d[0]) * s
+		var r := Num.f(d[1]) * s
+		for deck: Rect2 in left:
+			var near := Vector2(
+				clampf(c.x, deck.position.x, deck.end.x), clampf(c.y, deck.position.y, deck.end.y)
+			)
+			if near.distance_to(c) < r:
+				under += 1
+	check_fn.call(
+		under == 0 and (said or sim.emerge.burst.is_empty()),
+		(
+			(
+				"stage %d, map_seed %d: the size-%d kaiju (%.1f m) bursts up through the bay's"
+				+ " %d decks: %d holes, %d body discs over a deck left after %.1f s, event %s"
+			)
+			% [
+				tier,
+				map_seed,
+				sim.size_tier(),
+				sim.body.length(),
+				CityRiver.bay_bridges(plan, sim.city).size(),
+				sim.emerge.burst.size(),
+				under,
+				t,
+				said
+			]
+		)
+	)
+
+
+## A sim of its own for the walk (it steps, and its stomps break things); size: the kaiju's
+## size tier (0: the run stats' own, the young kaiju).
+static func _fresh(tier: int, map_seed: int, size: int = 0) -> RampageSim:
 	var base: Dictionary = Content.tuning().duplicate(true)
 	base["city"]["map_seed"] = map_seed
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades())
+	)
+	if size > 0:
+		stats["size"] = size
 	var sim := RampageSim.new(
-		UpgradeTree.run_stats(
-			Content.section("kaiju"),
-			Content.species_def("reptilian"),
-			UpgradeTree.new(Content.upgrades())
-		),
+		stats,
 		CityGrowth.tuning_for(base, tier),
 		CityGrowth.layout(base, tier, Seeds.make("city", 0)),
 		Seeds.make("army", 0)
