@@ -6,7 +6,8 @@ extends SceneTree
 ## walks west along the strip through the slabs, then turns north. A fixed camera at the game
 ## camera's angle frames the whole strip. Prints the falls and slab breaks as they happen.
 ## --ground: a 6 s clip at the game camera: the same tower topples west onto the open street
-## (cleared its whole length) while the kaiju stands still well east of it, facing it (comments
+## (cleared its whole length) while the kaiju stands still south of its strip, side on, the game
+## camera (from the south) looking past him at the whole fall (comments
 ## #26 #30: it breaks band by band against the ground, base first, into slabs on top of it).
 ## Needs a window and the no-focus override.cfg. With --write-movie the run is the clip.
 ##
@@ -23,9 +24,10 @@ const FRAMES := 780
 ## The kaiju's centre this far west of the tower's west face; the strip it must leave clear.
 const STAND_OFF := 7.5
 const CLEAR := 18.0
-## --ground: the kaiju stands this far east of the tower's east face; the strip west is cleared
-## this far; the clip's length.
-const GROUND_OFF := 12.0
+## --ground: the kaiju stands this far south of the tower's south face and GROUND_ALONG west of
+## its west face; the strip west is cleared GROUND_CLEAR; the clip's length.
+const GROUND_OFF := 9.0
+const GROUND_ALONG := 10.0
 const GROUND_CLEAR := 32.0
 const GROUND_FRAMES := 360
 ## The camera: from the south and above, looking at the strip's middle.
@@ -66,8 +68,8 @@ func _run() -> void:
 	var west := b.x - b.w * 0.5
 	_sim.kaiju_pos = Vector2(west - STAND_OFF, b.z)
 	_sim.facing = Vector2(0, -1)
-	if _ground:  # well east of it, facing it: the game camera looks west past him
-		_sim.kaiju_pos = Vector2(b.x + b.w * 0.5 + GROUND_OFF, b.z)
+	if _ground:  # south of the strip, side on, clear of the fall
+		_sim.kaiju_pos = Vector2(west - GROUND_ALONG, b.z + b.d * 0.5 + GROUND_OFF)
 		_sim.facing = Vector2(-1, 0)
 	_sim.body.heading = _sim.facing
 	print("tower %d at (%.1f, %.1f) %dx%d, %d floors" % [_index, b.x, b.z, b.w, b.d, b.height])
@@ -119,9 +121,8 @@ func _clear(layout: Array[Dictionary]) -> Array[Dictionary]:
 	# and nothing between the kaiju and the camera (south of him), so the fall reads side on
 	var stand := west - STAND_OFF
 	var view := Rect2(stand - 14.0, Num.f(t["z"]), 28.0, 34.0)
-	if _ground:  # where he stands, east of it
-		var east := Num.f(t["x"]) + Num.i(t["w"]) * 0.5
-		view = Rect2(east + 2.0, Num.f(t["z"]) - 12.0, GROUND_OFF + 12.0, 24.0)
+	if _ground:  # where he stands and the game camera's line to the strip, south of it
+		view = Rect2(west - GROUND_ALONG - 18.0, Num.f(t["z"]), 36.0, 44.0)
 	var out: Array[Dictionary] = [t]
 	for i: int in layout.size():
 		var e := layout[i]
