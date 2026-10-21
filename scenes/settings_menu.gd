@@ -37,7 +37,7 @@ func _ready() -> void:
 	panel.custom_minimum_size = Vector2(980, 0)
 	centre.add_child(panel)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 14)
+	col.add_theme_constant_override("separation", 10)  # 10, not 14: the camera-motion row fits at 125%
 	panel.add_child(col)
 	var title := UiKit.label("SETTINGS", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
