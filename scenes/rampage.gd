@@ -44,8 +44,8 @@ var scripted: Callable
 ## Where each stomp landed (the foot's ground point), for the capture and the tests.
 var stomp_ring_at: Array[Vector3] = []
 ## The gameplay camera at rest (data/tuning.json "camera"): offset from the kaiju's focus, FOV.
-var camera_rest := Rampage.camera_offset()
-var camera_fov := Num.f(Content.section("camera")["fov"])
+var camera_rest := CameraTuning.offset()
+var camera_fov := CameraTuning.fov()
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -69,18 +69,14 @@ var _topple_cfg: Dictionary = Content.section("topple_fx")
 var _autoplay := false
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
-var _autoplay_target := Vector2(INF, INF)
+var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
-
-
-## The camera's rest offset from data (tests and captures read it here).
-static func camera_offset() -> Vector3:
-	var o: Array = Content.section("camera")["offset"]
-	return Vector3(Num.f(o[0]), Num.f(o[1]), Num.f(o[2]))
+## Presses made while the rise from the river holds the sim back, kept for its first live tick.
+var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
@@ -177,21 +173,28 @@ func _physics_process(delta: float) -> void:
 	var signature := Input.is_action_just_pressed("signature")
 	var held := Input.is_action_pressed("signature")
 	var ultimate := Input.is_action_just_pressed("ultimate")
-	var buttons := Dash.BUTTON if Input.is_action_just_pressed("dash") else 0
+	var dash := Input.is_action_just_pressed("dash")
 	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
 		var input: Dictionary = scripted.call(sim)
-		buttons = Dash.BUTTON if input.get("dash", false) else 0
+		dash = input.get("dash", false)
 		move = input.get("move", Vector2.ZERO)
 		signature = input.get("signature", false)
 		held = input.get("held", false)
 		ultimate = input.get("ultimate", false)
 	elif _autoplay:
-		move = _autoplay_move()
+		move = _walk.move(sim, _steps)
 		signature = autoplay_signature and sim.ability_ready_in <= 0.0
 		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
 		ultimate = autoplay_signature
+	# The sim ignores input while it rises from the river: a tap before the handover is kept.
+	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
+	now = _latch.through(sim.emerge.active, now, delta)
+	signature = now["signature"]
+	ultimate = now["ultimate"]
+	dash = now["dash"]
 	_steps += 1
 	var t0 := Time.get_ticks_usec()
+	var buttons := Dash.BUTTON if dash else 0
 	buttons |= (RampageSim.HELD if held else 0) | (RampageSim.ULTIMATE if ultimate else 0)
 	var events := sim.step(delta, move, signature, buttons)
 	_note_cost("sim.step", t0)
@@ -374,7 +377,7 @@ func _land_stomp(at: Vector3) -> void:
 
 
 func _place_camera(delta: float) -> void:
-	var zoom := 0.75 + 0.4 * sim.body_scale()
+	var zoom := CameraTuning.zoom(sim.body_scale())
 	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
@@ -385,12 +388,3 @@ func _place_camera(delta: float) -> void:
 	_camera.position = _focus + _cam_offset
 	var jitter := Vector3(_fx_rng.randf_range(-1, 1), _fx_rng.randf_range(-1, 1), 0) * _shake * 0.6
 	_camera.look_at(_focus + Vector3(0, 3.5 * sim.body_scale(), 0) + jitter)
-
-
-func _autoplay_move() -> Vector2:
-	if _steps % 15 == 0 or _autoplay_target.x == INF:
-		_autoplay_target = sim.nearest_standing(sim.kaiju_pos)
-	var to := _autoplay_target - sim.kaiju_pos
-	if _autoplay_target.x == INF or to.length() < sim.stomp_radius() * 0.5:
-		return Vector2.ZERO
-	return to.normalized()

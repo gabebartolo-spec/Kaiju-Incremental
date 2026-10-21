@@ -8,7 +8,8 @@ extends Control
 
 signal done
 
-## Frame-paced (captures and tests see the same thing on any machine).
+## Paced in fixed physics ticks (60 a second), not drawn frames: it lasts the same 3.8 s on a
+## 60 Hz screen and a 144 Hz one, and captures and tests see the same thing on any machine.
 const SWAP_FRAME := 54
 const GROW_FRAMES := 24
 const END_FRAME := 230
@@ -21,6 +22,7 @@ const EDGE_MARGIN := 48.0
 ## card's buttons), so the frame is one fixed size on every screen that shows it.
 const TEXT_RESERVE := 330.0
 
+## Fixed ticks played so far.
 var frame := 0
 ## The evolution's display name (headline after the swap); "" falls back to species and stage.
 var title := ""
@@ -117,7 +119,7 @@ static func frame_view(owner: Control) -> SubViewportContainer:
 	return v
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if _finished:
 		return
 	frame += 1

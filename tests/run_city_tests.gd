@@ -40,6 +40,10 @@ func run_checks() -> void:
 	await _t("_check_river_sites")
 	await _t("_check_bridges_meet_land")
 	await _h(
+		"city_light_pool",
+		func() -> void: preload("res://tests/lib/city_light_pool.gd").check(root, check)
+	)
+	await _h(
 		"city_footfall_dust",
 		func() -> void: preload("res://tests/lib/city_footfall_dust.gd").check(check, root)
 	)

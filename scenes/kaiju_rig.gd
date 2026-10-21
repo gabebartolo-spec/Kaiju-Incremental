@@ -11,11 +11,6 @@ extends Node3D
 ## stomp) and where (world). For footfall sounds, dust and camera shake; presentation only.
 signal foot_planted(side: String, strength: float, at: Vector3)
 
-## Chain feel: pull back to the target pose, motion kept per step, gravity.
-const STIFFNESS := 9.0
-const DAMPING := 0.9
-const GRAVITY := Vector3(0, -6.0, 0)
-const CONSTRAINT_PASSES := 3
 ## Joint filler cubes are this much smaller, so they stay inside the skin until a bend opens it.
 const JOINT_INSET := 0.82
 
@@ -23,7 +18,7 @@ const JOINT_INSET := 0.82
 ## A run of physics bones (tail, antenna, tentacle) simulated as Verlet points.
 class SpringChain:
 	var names: Array[String] = []
-	var stiffness := STIFFNESS
+	var stiffness := Num.f(Content.section("chain")["stiffness"])
 	var gravity_scale := 1.0
 	## Extra rotation per bone on top of its rest pose: how the gait steers the chain.
 	var drive: Array[Basis] = []
@@ -62,6 +57,8 @@ var _parent: Dictionary = {}  # name -> parent bone name ("" for the root)
 var _voxels: Dictionary = {}  # name -> VoxelBuilder of that bone's cells (rig space, voxel units)
 var _voxel := 1.0
 var _glow := 1.5
+## Time the chains have not stepped yet: they advance in fixed steps (tuning "chain" "step_hz").
+var _owed := 0.0
 
 
 ## Builds the rig from <base>.rig.json and <base>.kvox; returns null if either is missing.
@@ -330,46 +327,21 @@ func tail_world(bone_name: String) -> Vector3:
 ## Spring chains: joints follow where the (driven) rest pose would put them, with inertia and
 ## gravity, then each bone is turned to point at the simulated position of the next joint.
 func simulate_chains(delta: float) -> void:
-	var dt := minf(delta, 1.0 / 30.0)
+	var cfg := Content.section("chain")
+	var h := 1.0 / Num.f(cfg["step_hz"])
+	_owed += delta
+	var steps := mini(int(_owed / h + 1e-6), Num.i(cfg["max_substeps"]))
+	_owed = clampf(_owed - steps * h, 0.0, h)  # a long frame's excess time is dropped, not caught up
 	for chain: SpringChain in chains:
 		var target := _rest_points(chain)
 		if chain.pos.is_empty():
 			chain.pos = target.duplicate()
 			chain.prev = target.duplicate()
-		var pos := chain.pos
-		var prev := chain.prev
-		pos[0] = target[0]
-		var k := chain.stiffness
-		var g := GRAVITY * chain.gravity_scale
-		for i: int in range(1, pos.size()):
-			var p := pos[i]
-			var vel := (p - prev[i]) * DAMPING
-			prev[i] = p
-			pos[i] = p + vel + ((target[i] - p) * k + g) * dt * dt
-		for i: int in range(1, pos.size()):
-			pos[i].y = maxf(pos[i].y, chain.ground)
-		var pinned := -1
-		for i: int in chain.pins:
-			pinned = maxi(pinned, i)
-		for _pass: int in CONSTRAINT_PASSES:
-			if pinned > 0:
-				# Reach for the pin from the tip back (FABRIK), then hang from the root again.
-				var pin: Vector3 = chain.pins[pinned]
-				pos[pinned] = pin
-				for i: int in range(pinned - 1, 0, -1):
-					var back := (target[i + 1] - target[i]).length()
-					var e := pos[i] - pos[i + 1]
-					if e.length() > 0.0001:
-						pos[i] = pos[i + 1] + e.normalized() * back
-			for i: int in range(1, pos.size()):
-				var length := (target[i] - target[i - 1]).length()
-				var d := pos[i] - pos[i - 1]
-				if d.length() > 0.0001:
-					pos[i] = pos[i - 1] + d.normalized() * length
-		chain.pos = pos
-		chain.prev = prev
+		chain.pos[0] = target[0]
+		for _step: int in steps:
+			ChainStep.run(chain, target, h)
 		for i: int in chain.names.size():
-			aim(chain.names[i], pos[i], pos[i + 1])
+			aim(chain.names[i], chain.pos[i], chain.pos[i + 1])
 		if chain.contract != 1.0:
 			bone(chain.names[0]).scale = Vector3.ONE * chain.contract
 

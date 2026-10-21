@@ -4,10 +4,14 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"high": {"scale": 1.0, "fsr": false, "msaa": 2},
-			"balanced": {"scale": 0.75, "fsr": true, "msaa": 0}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true}
 		},
-		"graphics_default": {"min_height": 2160, "large": "balanced", "large_fps": 60, "small": "high"}
+		"graphics_renamed": {"balanced": "medium"},
+		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
 	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
@@ -248,7 +252,7 @@
 			"max_drawn": 36
 		}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0},
+	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
 		"map_seed": 7301,
 		"half": 42,
@@ -413,6 +417,76 @@
 			"regen_loop": -20.0
 		}
 	},
+	"chain": {
+		"step_hz": 60.0,
+		"max_substeps": 4,
+		"stiffness": 9.0,
+		"damping": 0.9,
+		"gravity_y": -6.0,
+		"passes": 3
+	},
+	"audio": {
+		"buses": [
+			{"name": "SFX", "send": "Master"},
+			{"name": "Music", "send": "Master", "duck": "music"},
+			{"name": "Hero", "send": "SFX"},
+			{"name": "Bed", "send": "SFX", "duck": "bed"},
+			{"name": "Debris", "send": "Bed"},
+			{"name": "Crowd", "send": "Bed"},
+			{"name": "Military", "send": "Bed"},
+			{"name": "Ambience", "send": "Bed"},
+			{"name": "UI", "send": "SFX"}
+		],
+		"ducks": {
+			"music": {
+				"sidechain": "Hero",
+				"threshold_db": -18.0,
+				"ratio": 2.5,
+				"attack_us": 500.0,
+				"release_ms": 400.0,
+				"mix": 1.0
+			},
+			"bed": {
+				"sidechain": "Hero",
+				"threshold_db": -24.0,
+				"ratio": 5.0,
+				"attack_us": 500.0,
+				"release_ms": 800.0,
+				"mix": 1.0
+			}
+		},
+		"sounds": {
+			"roar": "Hero",
+			"stomp_0": "Hero",
+			"stomp_1": "Hero",
+			"stomp_2": "Hero",
+			"stomp_crack": "Hero",
+			"collapse": "Hero",
+			"collapse_drop": "Debris",
+			"crowd_panic": "Crowd",
+			"tank_fire": "Military",
+			"shell_hit": "Military",
+			"rifle": "Military",
+			"rifle_far": "Military",
+			"heli_gun": "Military",
+			"heli_crash": "Military",
+			"heli_rotor": "Military",
+			"breath": "SFX",
+			"leap_whoosh": "SFX",
+			"leap_land": "SFX",
+			"lash": "SFX",
+			"ready": "SFX",
+			"deflect": "SFX",
+			"regen_loop": "SFX",
+			"footstep": "SFX",
+			"footstep_1": "SFX",
+			"footstep_2": "SFX",
+			"footstep_3": "SFX",
+			"ui_click": "UI",
+			"ui_confirm": "UI",
+			"ui_deny": "UI"
+		}
+	},
 	"claw_fx": {
 		"strike_s": 0.12,
 		"recover_s": 0.35,
@@ -434,7 +508,7 @@
 		"fade_s": 0.3,
 		"puff": 1.6
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4},
 	"topple_fx": {
 		"shudder_s": 0.4,
 		"shudder_max_share": 0.3,
@@ -679,6 +753,27 @@
 		"arc_shed_cells": 32,
 		"column_bay": 8,
 		"carve": true,
-		"chunk_alive_share": 0.5
+		"chunk_alive_share": 0.5,
+		"warm_margin": 3,
+		"warm_emerge_margin": 12
+	},
+	"lights": {
+		"_note": "Positional lights (street lamps, fires, police beacons; R 12.1, R 12.2). Only the pool_size lights nearest the camera are real lights (gl_compatibility ignores every positional light past 32 a frame, rendering/limits/opengl/max_renderable_lights); the rest are their emissive voxels and glow. Each light also fades out with camera distance: begin and length in metres.",
+		"pool_size": 24,
+		"repick_seconds": 0.25,
+		"repick_distance": 2.0,
+		"fade_seconds": 0.3,
+		"lamp": {
+			"fade_begin": 90.0,
+			"fade_length": 30.0
+		},
+		"fire": {
+			"fade_begin": 120.0,
+			"fade_length": 40.0
+		},
+		"beacon": {
+			"fade_begin": 100.0,
+			"fade_length": 30.0
+		}
 	}
 }
