@@ -58,6 +58,8 @@ static func run_over(sim: RampageSim, car: Traffic.Car) -> bool:
 ## A parked cruiser a tank closes on pulls back along its street (across its nose), away from
 ## the tank.
 static func make_way(sim: RampageSim, car: Traffic.Car) -> void:
+	if not car.police:
+		return  # a car parked at the kerb stays, and a tank drives over it
 	for tank: RampageSim.Tank in sim.tanks:
 		var rel := car.pos - tank.pos
 		if rel.length() >= KEEP:

@@ -245,6 +245,7 @@ func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProc
 
 func _burst(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
+	p.amount_ratio = GraphicsPresets.cap("particles")  # R 18.3
 	p.process_material = mat.duplicate()
 	p.draw_pass_1 = mesh
 	p.amount = amount

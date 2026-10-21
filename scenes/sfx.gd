@@ -3,7 +3,8 @@ extends Node
 ## The sounds of the powers (D-026, D-030), presentation only: Rampage calls a sound where it
 ## calls the matching AbilityFx effect. Files in assets/sfx are built by tools/sfx/build_sfx.py
 ## from Kenney CC0 layers and in-house synthesis; loudness lives in data/tuning.json "sfx".
-## A small pool of players lets sounds overlap; Regeneration is one looping player. Each sound
+## A pool of players (SfxVoices: caps per category, hero voices never stolen) lets sounds
+## overlap; Regeneration is one looping player. Each sound
 ## plays on its mix bus (AudioBuses.of): the roar, stomps and toppling towers are Hero, which
 ## ducks the Bed. Steps and stomps land on the feet: a foot plant plays a footstep, and a sim
 ## stomp waits for the next plant to play its heavy thump there (or alone if no foot lands soon).
@@ -22,23 +23,29 @@ static var _ui_player: AudioStreamPlayer
 
 ## Every sound played, in order; read by the flow suite.
 var played: Array[String] = []
+## Set by the mix log: each one-shot's [sound, volume dB, pitch] as it starts.
+var voice_log: Array = []
+var log_voices := false
+## The voice manager (caps per category, hero voices never stolen).
+var voices: SfxVoices
 var live := false  # nothing sounds until SfxGate opens it, once the rampage has loaded
 ## The camera: army sounds fade with their distance from it (set by watch).
 var listener: Node3D
 var _powers: PowersView  # its helicopters drive the rotor loop and play their gun and crash here
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
-var _next := 0
+var _last: AudioStreamPlayer
+## The voice category the next play takes instead of its own ("": its own); a dropped
+## building part plays "collapse" as debris.
+var _as := ""
 var _regen: AudioStreamPlayer
 var _healing := false
 var _regen_age := 0.0
 ## The city's panic loop, faded by the fleeing people and the destruction rate.
 var _crowd: AudioStreamPlayer
+var _crowd_mix: SfxCrowd
 var _street: StreetLife
-var _crowd_db := -80.0
 var _since_breath := INF
-var _chunks_before := 0
-var _chunk_rate := 0.0
 var _rotor: AudioStreamPlayer
 var _rng: RandomNumberGenerator
 var _tune: Dictionary
@@ -90,14 +97,15 @@ func _ready() -> void:
 	_streams["rifle_far"] = _streams["rifle"]  # a distant squad: the same shot, softer and lower
 	# Enough voices that a stomp's or a tank shot's tail is not cut off by the plays after it
 	# (tuning "sfx" "voices"; 8 cut a third of the stomps short under rooftop fire).
-	for _i: int in Num.i(_tune["voices"]):
-		var player := AudioStreamPlayer.new()
-		player.bus = "SFX"
-		add_child(player)
-		_pool.append(player)
+	var caps: Dictionary = _tune["voice_caps"]
+	voices = SfxVoices.new(self, Num.i(_tune["voices"]), caps)
+	_pool = voices.players
+	_last = _pool[0]
 	_regen = _looping("regen_loop")
 	_rotor = _looping("heli_rotor")
 	_crowd = _looping("crowd_panic")
+	var crowd: Dictionary = _tune["crowd"]
+	_crowd_mix = SfxCrowd.new(_crowd, crowd, _volume("crowd_panic"))
 	add_child(SfxGate.new(self))
 
 
@@ -111,6 +119,7 @@ func watch(camera: Node3D, powers: PowersView, street: StreetLife) -> void:
 
 
 func _process(delta: float) -> void:
+	voices.advance(delta)
 	if not live:
 		return
 	_sound_landings()
@@ -122,7 +131,8 @@ func _process(delta: float) -> void:
 	for sound: String in _since_sound:
 		_since_sound[sound] = Num.f(_since_sound[sound]) + delta
 	_fade_regen(delta)
-	_update_crowd(delta)
+	if is_instance_valid(_street) and _crowd_mix.update(_street, _since_breath, delta):
+		played.append("crowd_panic")
 	if _pending == "":
 		return
 	_pending_age += delta
@@ -213,6 +223,7 @@ func _sound_landings() -> void:
 	for db: float in _landings.slice(0, Num.i(_tune["collapse_per_frame"])):
 		var drop := db < 0.0  # a dropped part is debris; a toppled tower is a hero sound
 		var bus := AudioBuses.of("collapse_drop") if drop else &""
+		_as = "debris" if drop else ""
 		play("collapse", db, 1.0 if drop else 0.85, bus)
 	_landings.clear()
 
@@ -303,8 +314,11 @@ func _fade_regen(delta: float) -> void:
 ## (steps and stomps also take the size-tier pitch); its bus is tuning "audio" "sounds" if unset.
 ## A sound with a "min_interval" in tuning is skipped while its last play is younger than that
 ## (stretched by up to its "interval_jitter" share each time, so the gaps are ragged), so a burst
-## of events (rooftop volleys) never machine-guns, types or eats the pool's voices.
+## of events (rooftop volleys) never machine-guns, types or eats the pool's voices. The voice
+## comes from SfxVoices in its tuning category (or _as); a sound it drops is not played.
 func play(sound: String, extra_db := 0.0, pitch := 1.0, bus := &"") -> void:
+	var kind := _as if _as != "" else voices.category_of(sound)
+	_as = ""
 	if not live:
 		return
 	var gaps: Dictionary = _tune.get("min_interval", {})
@@ -315,66 +329,52 @@ func play(sound: String, extra_db := 0.0, pitch := 1.0, bus := &"") -> void:
 		var stretches: Dictionary = _tune.get("interval_jitter", {})
 		var stretch := Num.f(stretches.get(sound, 0.0))
 		_since_sound[sound] = -gap * stretch * _rng.randf()
-	played.append(sound)
 	if sound == "breath":
 		_since_breath = 0.0
 	var stream: AudioStream = _streams.get(sound)
 	if stream == null:
+		played.append(sound)
 		return
-	var player := _pool[_next]
-	_next = (_next + 1) % _pool.size()
 	var jitters: Dictionary = _tune.get("pitch_jitter_by", {})
 	var jitter := Num.f(jitters.get(sound, _tune["pitch_jitter"]))
 	var pitches: Dictionary = _tune.get("pitch_by", {})
 	pitch *= Num.f(pitches.get(sound, 1.0))
 	var swings: Dictionary = _tune.get("gain_jitter_db", {})  # e.g. rifles: no two cracks alike
 	var swing := Num.f(swings.get(sound, 0.0))
-	player.stream = stream
-	player.bus = bus if bus != &"" else AudioBuses.of(sound)
-	player.volume_db = _volume(sound) + extra_db + _rng.randf_range(-swing, swing)
+	var db := _volume(sound) + extra_db + _rng.randf_range(-swing, swing)
 	if sound.begins_with("footstep") or sound.begins_with("stomp"):
 		pitch *= _size_pitch
-	player.pitch_scale = pitch * (1.0 + _rng.randf_range(-jitter, jitter))
+	pitch *= 1.0 + _rng.randf_range(-jitter, jitter)
 	var starts: Dictionary = _tune.get("start_s", {})  # skips a sample's silent lead-in
-	player.play(Num.f(starts.get(sound, 0.0)))
+	var start := Num.f(starts.get(sound, 0.0))
+	var player := voices.take(sound, kind, db, (stream.get_length() - start) / pitch)
+	if player == null:
+		return
+	played.append(sound)
+	_last = player
+	if log_voices:
+		voice_log.append([sound, db, pitch])
+	player.stream = stream
+	player.bus = bus if bus != &"" else AudioBuses.of(sound)
+	player.volume_db = db
+	player.pitch_scale = pitch
+	player.play(start)
 
 
 ## The crowd's level in dB for a panic `intensity` (0..1), pulled down while Atomic Breath
 ## roars (ducked); tuning "sfx" "crowd".
 func crowd_target(intensity: float, ducked: bool) -> float:
-	var cfg: Dictionary = _tune["crowd"]
-	if intensity <= Num.f(cfg["min_intensity"]):
-		return Num.f(cfg["silent_db"])
-	var level := lerpf(Num.f(cfg["quiet_db"]), _volume("crowd_panic"), clampf(intensity, 0.0, 1.0))
-	return level - (Num.f(cfg["duck_db"]) if ducked else 0.0)
-
-
-func _update_crowd(delta: float) -> void:
-	if _street == null or not is_instance_valid(_street):
-		return
-	var cfg: Dictionary = _tune["crowd"]
-	var chunks := _street.sim.chunks_destroyed
-	var rate := float(chunks - _chunks_before) / maxf(delta, 0.001)
-	_chunks_before = chunks
-	_chunk_rate = lerpf(_chunk_rate, rate, minf(1.0, delta * 2.0))
-	var intensity := (
-		clampf(float(_street.panicking()) / Num.f(cfg["full_panic"]), 0.0, 1.0) * 0.7
-		+ clampf(_chunk_rate / Num.f(cfg["full_rate"]), 0.0, 1.0) * 0.3
-	)
-	var target := crowd_target(intensity, _since_breath < Num.f(cfg["duck_seconds"]))
-	_crowd_db = move_toward(_crowd_db, target, Num.f(cfg["fade_db_per_s"]) * delta)
-	_crowd.volume_db = _crowd_db
-	var audible := _crowd_db > Num.f(cfg["silent_db"]) + 1.0
-	if audible and not _crowd.playing:
-		played.append("crowd_panic")
-		_crowd.play()
-	elif not audible and _crowd.playing:
-		_crowd.stop()
+	return _crowd_mix.target(intensity, ducked)
 
 
 ## The volume (dB) of the latest play, its distance fade included (read by the flow suite).
 func last_volume() -> float:
-	return _pool[(_next + _pool.size() - 1) % _pool.size()].volume_db
+	return _last.volume_db
+
+
+## The player of the latest play (its bus and levels; flow suite and mix log).
+func last_player() -> AudioStreamPlayer:
+	return _last
 
 
 ## How many voices are sounding `sound` right now (the flow suite checks tails are kept).
@@ -389,7 +389,7 @@ func sounding(sound: String) -> int:
 
 ## The pitch of the latest play (the flow suite checks the size-tier pitch with it).
 func last_pitch() -> float:
-	return _pool[(_next + _pool.size() - 1) % _pool.size()].pitch_scale
+	return _last.pitch_scale
 
 
 func _volume(sound: String) -> float:
