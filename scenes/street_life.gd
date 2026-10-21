@@ -199,26 +199,44 @@ func panicking() -> int:
 ## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat. by_army:
 ## a stray shell did it, so they count as the army's casualties (army_killed), not the kaiju's.
 func crush(at: Vector3, radius: float, by_army: bool = false) -> void:
-	var centre := Vector2(at.x, at.z)
-	traffic.crush(centre, radius)
-	for game: StadiumMatch in matches:
-		var fans := game.crush(at, radius)
-		if by_army:
-			army_killed += fans
-			_army_fans += fans
-	var puffs := 0
+	var spot: Array[Vector3] = [Vector3(at.x, at.z, radius)]
+	crush_all(spot, by_army)
+
+
+## Everyone within any of `spots` (x, z, radius) is crushed, spot by spot as crush() would, with
+## one pass over the people (each goes to the first spot that holds it; puffs capped per spot).
+func crush_all(spots: Array[Vector3], by_army: bool = false) -> void:
+	var lo := Vector2.INF
+	var hi := -Vector2.INF
+	for s: Vector3 in spots:
+		var centre := Vector2(s.x, s.y)
+		traffic.crush(centre, s.z)
+		for game: StadiumMatch in matches:
+			var fans := game.crush(Vector3(s.x, 0.0, s.y), s.z)
+			if by_army:
+				army_killed += fans
+				_army_fans += fans
+		lo = lo.min(centre - Vector2.ONE * s.z)
+		hi = hi.max(centre + Vector2.ONE * s.z)
+	var puffs := PackedInt32Array()
+	puffs.resize(spots.size())
 	for i: int in range(people.size() - 1, -1, -1):
 		var p := people[i]
-		if p.pos.distance_to(centre) > radius:
+		if p.pos.x < lo.x or p.pos.y < lo.y or p.pos.x > hi.x or p.pos.y > hi.y:
 			continue
-		if puffs < MAX_PUFFS_PER_CRUSH:
-			puffs += 1
-			_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
-		_remove(i)
-		if by_army:
-			army_killed += 1
-		else:
-			killed += 1
+		for k: int in spots.size():
+			var s := spots[k]
+			if p.pos.distance_to(Vector2(s.x, s.y)) > s.z:
+				continue
+			if puffs[k] < MAX_PUFFS_PER_CRUSH:
+				puffs[k] += 1
+				_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
+			_remove(i)
+			if by_army:
+				army_killed += 1
+			else:
+				killed += 1
+			break
 
 
 func _remove(i: int) -> void:
