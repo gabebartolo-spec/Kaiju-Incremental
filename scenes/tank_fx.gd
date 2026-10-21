@@ -32,3 +32,15 @@ static func wreck(city: CityView, pos: Vector3, gained: float) -> void:
 	city.flash(pos + Vector3(0, 1.0, 0), Color("ff8a3a"), 7.0, 0.5)
 	city.fire(pos, 0.6)
 	city.float_text("+%d" % Num.i(gained), pos + Vector3(0, 2, 0), UiKit.WARN)
+
+
+## A stray shell's impact (StrayShell): a flash, a little debris and a small fire where it lands,
+## and the people there are the army's casualties, not the kaiju's.
+static func stray(city: CityView, at: Vector3, radius: float) -> void:
+	for n: int in 4:
+		city.debris(
+			at + Vector3(0, 0.5, 0), TankModel.TAN if n % 2 == 0 else UiKit.WARN, Vector3.UP
+		)
+	city.flash(at + Vector3(0, 1.0, 0), Color("ff8a3a"), 5.0, 0.3)
+	city.fire(at, 0.35)
+	city.crush(at, radius, true)

@@ -47,6 +47,7 @@ var matches: Array[StadiumMatch] = []
 ## Running totals (tests and the capture tool read them).
 var fled := 0
 var killed := 0
+var army_killed := 0  # civilians the army's own stray shells killed (StrayShell)
 ## Per-frame cost of street life, in microseconds: worst and running total (benchmarking).
 var worst_usec := 0
 var total_usec := 0
@@ -194,8 +195,9 @@ func panicking() -> int:
 	return n
 
 
-## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat.
-func crush(at: Vector3, radius: float) -> void:
+## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat. by_army:
+## a stray shell did it, so they count as the army's casualties (army_killed), not the kaiju's.
+func crush(at: Vector3, radius: float, by_army: bool = false) -> void:
 	var centre := Vector2(at.x, at.z)
 	traffic.crush(centre, radius)
 	for game: StadiumMatch in matches:
@@ -209,7 +211,10 @@ func crush(at: Vector3, radius: float) -> void:
 			puffs += 1
 			_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
 		_remove(i)
-		killed += 1
+		if by_army:
+			army_killed += 1
+		else:
+			killed += 1
 
 
 func _remove(i: int) -> void:

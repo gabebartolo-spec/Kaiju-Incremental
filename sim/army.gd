@@ -26,12 +26,14 @@ var rooftop: Dictionary
 var squads: Array[Squad] = []
 ## Rooftop volleys fired this run (D-076: how often the player is shot at).
 var volleys := 0
+var misses := 0  # tank shells that missed the kaiju and landed in the city
 var rooftops_destroyed := 0
 ## Road movement and firing positions (D-066).
 var convoy: Convoy
 var _rng: RandomNumberGenerator
 ## Each squad's next shot comes a seeded, ragged while later (D-076: no unison).
 var _ragged: RandomNumberGenerator
+var _aim: RandomNumberGenerator  # which shells miss, and where they land (StrayShell)
 var _spawn_timer: float
 var _next_id := 0
 var _column := -1
@@ -49,6 +51,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	convoy = Convoy.new(sim, convoy_cfg)
 	_place_squads(Seeds.derive(rng, 0x2007))
 	_ragged = Seeds.derive(rng, 0x2008)
+	_aim = Seeds.derive(rng, 0x2009)
 
 
 func step(dt: float) -> void:
@@ -78,11 +81,24 @@ func step(dt: float) -> void:
 			sim.events.append({"type": "tank_fired", "tank": tank.id, "at": young.pos})
 		elif dist <= reach + 1.0 and convoy.clear_line(tank.pos, sim.kaiju_pos):
 			tank.cooldown = Num.f(cfg["fire_interval"])
-			var hurt := Num.f(cfg["tank_damage"]) - sim.stat("armor")
-			sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt)
-			sim.events.append({"type": "tank_fired", "tank": tank.id})
+			shoot(tank, dist, reach)
 	if _step_squads(dt) or coated:
 		clear_dead()
+
+
+## One shell at the kaiju: a hit (StrayShell.chance) does the shot's damage over that chance; a
+## miss lands in the city past the kaiju and breaks what it hits there.
+func shoot(tank: RampageSim.Tank, dist: float, reach: float) -> void:
+	var odds := StrayShell.chance(cfg, dist, reach)
+	if _aim.randf() < odds:
+		var hurt := Num.f(cfg["tank_damage"]) - sim.stat("armor")
+		sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt) / odds
+		sim.events.append({"type": "tank_fired", "tank": tank.id})
+		return
+	misses += 1
+	var at := StrayShell.landing(sim, tank.pos, _aim)
+	sim.events.append({"type": "tank_fired", "tank": tank.id, "at": at, "miss": true})
+	StrayShell.land(sim, at)
 
 
 ## Each squad whose roof still stands fires a volley every fire_interval while the kaiju is in

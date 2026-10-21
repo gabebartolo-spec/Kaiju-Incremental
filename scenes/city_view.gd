@@ -89,11 +89,11 @@ func _ready() -> void:
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed.
-func crush(at: Vector3, radius: float) -> void:
+func crush(at: Vector3, radius: float, by_army: bool = false) -> void:
 	if _decor != null:
 		_decor.crush(at, radius)
 	if street != null:
-		street.crush(at, radius)
+		street.crush(at, radius, by_army)
 
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.

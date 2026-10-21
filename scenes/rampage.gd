@@ -259,6 +259,8 @@ func _on_event(event: Dictionary) -> void:
 			var at: Vector2 = event.get("at", sim.kaiju_pos)
 			if _tanks.fire(Num.i(event["tank"]), _to_world(at), _kaiju_at):
 				_shake = maxf(_shake, 0.08)
+			if event.get("miss", false):  # a stray shell lands in the city (StrayShell)
+				TankFx.stray(_city, _to_world(at), Num.f(sim.army["miss"]["radius"]))
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)

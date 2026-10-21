@@ -7,6 +7,8 @@ extends "res://tests/lib/military_view.gd"
 ## helicopters are today's (their flight is its own branch, claude/heli-flight).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 
+const MilitaryStray := preload("res://tests/lib/military_stray.gd")
+
 
 func suite_name() -> String:
 	return "Military"
@@ -15,6 +17,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_view")
 	await _t("_check_rampages")
+	await _h("MilitaryStray", func() -> void: MilitaryStray.new(check, _rampage, _autoplay).run())
 	await _t("_check_standoff_held")
 	await _t("_check_pivot_beside_parked")
 	await _t("_check_rubble")
