@@ -15,6 +15,7 @@ const PACE_SPREAD := 0.2  # walkers differ in pace, so a crowd strings out inste
 const WALK_HZ := 3.0
 const RUN_HZ := 6.0
 const CROSS_CHANCE := 0.3  # a walker at a corner crosses the street rather than turns
+const WALK_SAMPLE := 0.5  # a pavement line is checked for road this often
 const MAX_PUFFS_PER_CRUSH := 1  # each puff is a particle node: one per stomp keeps it cheap
 
 
@@ -57,6 +58,7 @@ var _rng: RandomNumberGenerator
 var _voxel: float
 var _nodes := PackedVector2Array()
 var _links: Array[Array] = []
+var _in_road := PackedByteArray()  # per node: 1 when the corner lies in a carriageway
 var _mms: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
 var _clock := 0.0
@@ -108,10 +110,19 @@ func _ready() -> void:
 
 
 ## Pavement corners round every block of the playable city (4 per block), linked round the
-## block and across the streets to the nearest corner of the block opposite.
+## block and across the streets to the nearest corner of the block opposite. The diagonal avenue
+## runs through the blocks it crosses: a corner of theirs in its carriageway has no links, and
+## neither has a pavement line that would cross it, so people never walk in the road.
 func _build_pavements() -> void:
 	var half := CityGen.half_extent(sim.city)
-	for block: Dictionary in CityGen.map(sim.city)["blocks"]:
+	var plan := CityGen.map(sim.city)
+	var avenue: Array[Dictionary] = []  # only the diagonal runs through a block
+	for road: Dictionary in plan["streets"]:
+		if str(road["kind"]) == CityGen.DIAGONAL:
+			avenue.append(road)
+	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
+	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
+	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		var use := str(block["use"])
 		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
@@ -119,19 +130,27 @@ func _build_pavements() -> void:
 		# The pavement line, the same distance in from the kerb as round every other block.
 		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
 		var size := ring.size * 0.5
+		var cut := CityGen.diagonal_distance(plan, ring.get_center()) < size.length() + reach
+		var first := _nodes.size()
 		for c: Vector2 in CORNERS:
 			_nodes.append(ring.get_center() + c * size)
 			_links.append([])
-	var blocks := _nodes.size() >> 2
-	for block: int in blocks:
+			_in_road.append(
+				1 if cut and not CityGen.road_at(diagonal, _nodes[-1]).is_empty() else 0
+			)
 		for c: int in 4:
-			_link(block * 4 + c, block * 4 + (c + 1) % 4)
+			var a := first + c
+			var b := first + (c + 1) % 4
+			if _in_road[a] == 0 and _in_road[b] == 0:
+				_link(a, b)
 	# Crossings: a corner links to the nearest corner of another block straight across a street.
 	for a: int in _nodes.size():
+		if _in_road[a] == 1:
+			continue
 		for axis: int in 2:
 			var best := -1
 			for b: int in _nodes.size():
-				if a >> 2 == b >> 2:
+				if a >> 2 == b >> 2 or _in_road[b] == 1:
 					continue
 				var d := _nodes[b] - _nodes[a]
 				var along := absf(d.x) if axis == 0 else absf(d.y)
@@ -144,6 +163,15 @@ func _build_pavements() -> void:
 				_link(a, best)
 
 
+## The pavement corners people can walk between (4 per block, minus the ones in the road).
+func ring_nodes() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for n: int in _nodes.size():
+		if not _links[n].is_empty():
+			out.append(_nodes[n])
+	return out
+
+
 func _link(a: int, b: int) -> void:
 	_links[a].append(b)
 	_links[b].append(a)
@@ -152,8 +180,16 @@ func _link(a: int, b: int) -> void:
 func _spawn_civilian(lot: int) -> void:
 	var p := Person.new()
 	var corner := _rng.randi_range(0, 3)
-	p.from_node = lot * 4 + corner
-	p.to_node = lot * 4 + (corner + 1) % 4
+	var blocks := _nodes.size() >> 2
+	# Along the pavement line where there is one: the next corner round, then the next block.
+	for _try: int in blocks * 4:
+		var from := (lot % blocks) * 4 + corner
+		if _links[from].has((from & ~3) + ((from + 1) & 3)):
+			break
+		corner = (corner + 1) % 4
+		lot += 1 if corner == 0 else 0
+	p.from_node = (lot % blocks) * 4 + corner
+	p.to_node = (p.from_node & ~3) + ((p.from_node + 1) & 3)
 	p.pos = _nodes[p.from_node].lerp(_nodes[p.to_node], _rng.randf())
 	p.heading = (_nodes[p.to_node] - _nodes[p.from_node]).normalized()
 	p.outfit = _rng.randi_range(0, VoxelPerson.COP - 1)
