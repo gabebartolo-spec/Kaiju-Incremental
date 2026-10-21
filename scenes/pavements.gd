@@ -28,6 +28,7 @@ func _init(sim: RampageSim) -> void:
 			avenue.append(road)
 	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
 	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
+	var bay := CityRiver.bay(plan, sim.city)
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		var use := str(block["use"])
@@ -35,6 +36,7 @@ func _init(sim: RampageSim) -> void:
 			continue  # past the edge, or the river (CityRiver): no one walks on the water
 		# The pavement line, the same distance in from the kerb as round every other block.
 		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
+		ring = _off_bay(ring, bay)
 		var size := ring.size * 0.5
 		var cut := CityGen.diagonal_distance(plan, ring.get_center()) < size.length() + reach
 		var first := nodes.size()
@@ -65,6 +67,16 @@ func _init(sim: RampageSim) -> void:
 					best = b
 			if best >= 0 and not links[a].has(best):
 				_link(a, best)
+
+
+## A pavement ring that would cross the river's bay (CityRiver.bay, on the far bank) starts
+## south of it instead, so no one walks on the water.
+func _off_bay(ring: Rect2, bay: Array[Rect2]) -> Rect2:
+	var top := ring.position.y
+	for basin: Rect2 in bay:
+		if basin.intersects(ring):
+			top = maxf(top, basin.end.y + PAVEMENT)
+	return Rect2(ring.position.x, top, ring.size.x, maxf(ring.end.y - top, PAVEMENT))
 
 
 ## The corners people can walk between (4 per block, minus the ones in the road).

@@ -86,7 +86,9 @@ static func _near_buildings(
 	var out: Array[RampageSim.Building] = []
 	for b: RampageSim.Building in sim.buildings:
 		var foot := Rect2(b.x - b.w * 0.5, b.z - b.d * 0.5, b.w, b.d)
-		if _gap(foot, spawn, land) < NEAR:
+		# Only what the kaiju can reach: the young city's arena ends at the river, and its bay
+		# (CityRiver.bay) brings the rise point nearer the far bank's buildings past that edge.
+		if _gap(foot, spawn, land) < NEAR and b.in_arena:
 			out.append(b)
 	return out
 

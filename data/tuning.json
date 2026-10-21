@@ -565,6 +565,7 @@
 		"river": true,
 		"river_depth": 1.6,
 		"river_inset": 2.0,
+		"river_bay": {"depth": 14, "length": 8, "taper": 2, "beach": 3, "nose_gap": 0.2},
 		"quay": {"reach": 15, "width": [3, 4], "height": [2, 3], "gap": 1},
 		"diagonal_through": [-6, 4],
 		"diagonal_deg": 27,

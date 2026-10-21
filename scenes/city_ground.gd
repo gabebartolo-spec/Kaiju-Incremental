@@ -22,6 +22,7 @@ var cfg: Dictionary
 var coast: float
 var _slabs: Array[Dictionary] = []
 var _paint: Array[Transform3D] = []
+var _basin: Array[Rect2] = []  # the river's bay the kaiju rises in (CityRiver.bay): no pavement
 
 
 func _init(p_cfg: Dictionary) -> void:
@@ -36,7 +37,8 @@ func _ready() -> void:
 	var outer := Num.f(cfg["outer_half"])
 	# Land: asphalt under everything south of the quay, darker beyond the drawn streets, open
 	# where the river runs.
-	var channels := CityRiver.channels(plan, cfg)
+	var channels := CityRiver.water(plan, cfg)
+	_basin = CityRiver.bay(plan, cfg)
 	for land: Rect2 in _cut([Rect2(-FAR, coast, FAR * 2.0, FAR)], channels):
 		_slab(land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
 	for land: Rect2 in _cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
@@ -47,22 +49,23 @@ func _ready() -> void:
 			continue
 		if str(block["use"]) == "outer" and minf(rect.size.x, rect.size.y) < MIN_BUILDABLE:
 			continue  # a sliver too thin to build on stays road, not a pale strip
-		# The block's pavement reaches out over its sidewalks (and meets across an alley).
+		# The block's pavement reaches out over its sidewalks (and meets across an alley); none
+		# over the river's bay the kaiju rises in.
 		var walk := CityGen.pavement(block, cfg)
 		match str(block["use"]):
 			"park":
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
-				_slab(rect.grow(-0.5), Vector2(PAVE_TOP + 0.02, 0.3), Look.color("outskirts"))
+				_lot(walk, Vector2(PAVE_TOP, 0.3), pavement)
+				_lot(rect.grow(-0.5), Vector2(PAVE_TOP + 0.02, 0.3), Look.color("outskirts"))
 			"plaza", "landmark":  # a landmark stands on its own plaza
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
+				_lot(walk, Vector2(PAVE_TOP, 0.3), pavement.lightened(0.12))
 			"parking":
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
-				_slab(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
+				_lot(walk, Vector2(PAVE_TOP, 0.3), pavement)
+				_lot(rect.grow(-0.6), Vector2(PAVE_TOP + 0.01, 0.3), asphalt.lightened(0.06))
 				_parking_bays(rect.grow(-0.6))
 			"river":
 				pass  # its water and quays: _river
 			_:
-				_slab(walk, Vector2(PAVE_TOP, 0.3), pavement)
+				_lot(walk, Vector2(PAVE_TOP, 0.3), pavement)
 	_river(channels, asphalt, pavement.lightened(0.12))
 	_diagonal(asphalt)
 	_markings()
@@ -70,6 +73,12 @@ func _ready() -> void:
 	add_child(_build_slabs())
 	add_child(_build_paint())
 	add_child(_water())
+
+
+## A block's flat box (_slab), with the river's bay cut out of it.
+func _lot(rect: Rect2, y: Vector2, color: Color) -> void:
+	for dry: Rect2 in _cut([rect], _basin):
+		_slab(dry, y, color)
 
 
 ## A flat box covering rect (x, z); y: (top, thickness); turned by angle about the vertical.
@@ -290,14 +299,23 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			Rect2(x0, z0, channel.size.x, RIVER_QUAY),
 			Rect2(x0, channel.end.y - RIVER_QUAY, channel.size.x, RIVER_QUAY)
 		]
-		for side: Rect2 in _cut(banks, bridges):
+		banks.append(Rect2(x0, z0, RIVER_QUAY, channel.size.y))
+		banks.append(Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y))
+		# A wall that runs inside other water (where the bay opens off the channel) is not drawn.
+		var others: Array[Rect2] = channels.filter(func(o: Rect2) -> bool: return o != channel)
+		for side: Rect2 in _cut(_cut(banks, bridges), others):
 			_slab(side, wall, stone)
-		_slab(Rect2(x0, z0, RIVER_QUAY, channel.size.y), wall, stone)
-		_slab(Rect2(channel.end.x - RIVER_QUAY, z0, RIVER_QUAY, channel.size.y), wall, stone)
-	for deck: Rect2 in bridges:
+	CityShore.draw(self, plan, cfg, depth)
+	var across := CityRiver.bay_bridges(plan, cfg)  # east-west decks: parapets along x
+	for deck: Rect2 in bridges + across:
 		_slab(deck, Vector2(0.001, 0.5), asphalt)
-		for x: float in [deck.position.x, deck.end.x - PARAPET.y]:
-			_slab(Rect2(x, deck.position.y, PARAPET.y, deck.size.y), Vector2(PARAPET.x, 1.0), stone)
+		var rail := Vector2(PARAPET.y, deck.size.y)
+		var step := Vector2(deck.size.x - PARAPET.y, 0.0)
+		if deck in across:
+			rail = Vector2(deck.size.x, PARAPET.y)
+			step = Vector2(0.0, deck.size.y - PARAPET.y)
+		for edge: float in [0.0, 1.0]:
+			_slab(Rect2(deck.position + step * edge, rail), Vector2(PARAPET.x, 1.0), stone)
 
 
 ## rects with every hole cut out of them, as the rects left over.

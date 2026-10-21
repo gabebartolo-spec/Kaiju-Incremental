@@ -19,7 +19,11 @@ extends RefCounted
 ## the nearest one, at least city "river_inset" in from its ends, and where it wades to as
 ## plan["river_bank"]: "river_inset" onto the city side, across the ring avenue from it.
 ## (Emergence caps the wade at tuning "emerge" "max_seconds", so a bank point that lands in the
-## water can never stall the run's start.)
+## water can never stall the run's start.) Where it rises the river widens into a bay (city
+## "river_bay", director 2026-10-21 #17: "the river where he emerges from can be slightly wider
+## than the other sections of the river to accomodate him"), centred in that block, with a sand
+## shore up to the street on the city side: plan["river_bay"] its centre x, and the rise point
+## moves to the bay's open water, straight south of the bank point.
 static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 	var row := river_row(zs, cfg)
 	if row < 0:
@@ -28,6 +32,7 @@ static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 	var band := Vector2(INF, -INF)
 	var spawn := Vector2(INF, INF)
 	var off := INF  # how far the chosen block lies from the axis
+	var home := Rect2()  # the river block the kaiju rises in
 	for block: Dictionary in plan["blocks"]:
 		if block.has("site") or not block.has("cell"):
 			continue
@@ -45,10 +50,19 @@ static func mark(plan: Dictionary, zs: Array[float], cfg: Dictionary) -> void:
 			off = gap
 			var x := clampf(0.0, rect.position.x + inset, rect.end.x - inset)
 			spawn = Vector2(x, rect.get_center().y)
+			home = rect
 	if spawn.x < INF:
+		var bay: Dictionary = cfg["river_bay"]
+		var reach := Num.f(bay["length"]) * 0.5 + Num.f(bay["taper"])
+		var cx := clampf(spawn.x, home.position.x + reach, home.end.x - reach)
+		if home.size.x < reach * 2.0:
+			cx = home.get_center().x
+		var north := band.x - Num.f(cfg["sidewalk"])
 		plan["river"] = band
-		plan["river_spawn"] = spawn
-		plan["river_bank"] = Vector2(spawn.x, band.x - inset)
+		plan["river_bay"] = cx
+		var water_from := north + Num.f(bay["beach"])  # the shore's foot
+		plan["river_spawn"] = Vector2(cx, lerpf(water_from, north + Num.f(bay["depth"]), 0.5))
+		plan["river_bank"] = Vector2(cx, band.x - inset)
 
 
 ## The street-grid row (z cell) the river runs along: the one just south of district 0's ring
@@ -78,6 +92,81 @@ static func channels(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	for span: Rect2 in spans:
 		whole = whole.merge(span)
 	out.append(whole)
+	return out
+
+
+## The bay where the kaiju rises (city "river_bay"): a full-depth basin "length" long reaching
+## "depth" south of the channel's north edge, and a shallower step "taper" longer at each end,
+## half as far past the channel, so the widening tapers back to the river. Empty without one.
+static func bay(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var main := channels(plan, cfg)
+	if main.is_empty() or not plan.has("river_bay"):
+		return out
+	var b: Dictionary = cfg["river_bay"]
+	var cx := Num.f(plan["river_bay"])
+	var length := Num.f(b["length"])
+	var north := main[0].position.y
+	var south := north + Num.f(b["depth"])
+	out.append(Rect2(cx - length * 0.5, north, length, south - north))
+	var past := south - main[0].end.y
+	if past > 0.0:
+		var wide := length + Num.f(b["taper"]) * 2.0
+		out.append(Rect2(cx - wide * 0.5, main[0].end.y - 1.0, wide, past * 0.5 + 1.0))
+	return out
+
+
+## All the river's open water: its channel and its bay.
+static func water(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out := channels(plan, cfg)
+	out.append_array(bay(plan, cfg))
+	return out
+
+
+## The sand shore the kaiju climbs out on: the bay's city-side edge, "beach" deep, sloping from
+## the street down to the river's floor (empty Rect2 without a bay).
+static func shore(plan: Dictionary, cfg: Dictionary) -> Rect2:
+	var basin := bay(plan, cfg)
+	if basin.is_empty():
+		return Rect2()
+	var b: Dictionary = cfg["river_bay"]
+	return Rect2(basin[0].position, Vector2(basin[0].size.x, Num.f(b["beach"])))
+
+
+## How high the ground stands at p, from 0 (the street) down to -"river_depth" (the river's
+## floor): the floor anywhere in the water, a straight slope across the shore.
+static func floor_at(plan: Dictionary, cfg: Dictionary, p: Vector2) -> float:
+	var bed := -Num.f(cfg.get("river_depth", 0.0))
+	var sand := shore(plan, cfg)
+	if sand.has_area() and sand.has_point(p):
+		return bed * (p.y - sand.position.y) / sand.size.y
+	for w: Rect2 in water(plan, cfg):
+		if w.has_point(p):
+			return bed
+	return 0.0
+
+
+## The streets carried over the bay (x, z): each east-west street's carriageway and sidewalks
+## where they cross it.
+static func bay_bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var basin := bay(plan, cfg)
+	if basin.is_empty():
+		return out
+	var span := basin[0]
+	for r: Rect2 in basin:
+		span = span.merge(r)
+	var nodes: Array[Vector2] = plan["nodes"]
+	var side := Num.f(cfg["sidewalk"])
+	for street: Dictionary in plan["streets"]:
+		var a := nodes[Num.i(street["from"])]
+		var b := nodes[Num.i(street["to"])]
+		if not is_equal_approx(a.y, b.y):
+			continue
+		var half := Num.f(street["width"]) * 0.5 + side
+		var road := Rect2(minf(a.x, b.x), a.y - half, absf(b.x - a.x), half * 2.0)
+		if road.intersects(span) and a.y > basin[0].position.y + Num.f(cfg["river_bay"]["beach"]):
+			out.append(road.intersection(span))
 	return out
 
 
