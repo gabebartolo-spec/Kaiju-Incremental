@@ -4,6 +4,7 @@ extends RefCounted
 ## and the size-tier step pitch. Sound PRs add their own checks here.
 
 const FlowSounds := preload("res://tests/lib/flow_sounds.gd")
+const FlowVoices := preload("res://tests/lib/flow_voice_sounds.gd")
 
 
 ## A sim stomp waits for the next foot plant to sound (so the thump lands on a foot), then
@@ -51,7 +52,8 @@ static func run(root: Node, check: Callable) -> void:
 		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
 	)
 	FlowSounds.regen(check, sfx)
-	preload("res://tests/lib/flow_voice_sounds.gd").check_tail(check, sfx)
+	FlowVoices.check_tail(check, sfx)
+	FlowVoices.check_burst(check, root)
 	sfx.free()
 
 

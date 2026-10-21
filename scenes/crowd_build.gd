@@ -39,7 +39,7 @@ static func seats(
 		var swap := out[i]
 		out[i] = out[j]
 		out[j] = swap
-	return out.slice(0, mini(out.size(), Num.i(cfg["max"])))
+	return out.slice(0, mini(out.size(), int(GraphicsPresets.cap("crowd_max"))))
 
 
 ## Every (shirt, skin) outfit: the kits' colours then the neutral shirts, on street trousers

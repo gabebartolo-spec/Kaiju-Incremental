@@ -82,6 +82,7 @@ func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
+	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
 	Content.set_time(Content.time_for_run(run_index))
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
