@@ -42,6 +42,16 @@ void KaijuSettle::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("islands", "labels", "cells", "fixtures", "dims", "has_fixtures"),
 			&KaijuSettle::islands);
 	ClassDB::bind_method(D_METHOD("floors", "labels", "cells", "fixtures", "dims", "count"), &KaijuSettle::floors);
+	ClassDB::bind_method(D_METHOD("gather", "labels", "cells", "from", "label"), &KaijuSettle::gather);
+	ClassDB::bind_method(D_METHOD("take", "cells", "parts", "dims", "offset"), &KaijuSettle::take);
+	ClassDB::bind_method(D_METHOD("land", "part", "cells", "dims"), &KaijuSettle::land);
+	ClassDB::bind_method(D_METHOD("chunk_counts", "cells", "cx", "cz", "fy", "geo", "chunks"),
+			&KaijuSettle::chunk_counts);
+	ClassDB::bind_method(D_METHOD("part_info", "index", "cells", "cx", "cz", "fy", "geo", "live"),
+			&KaijuSettle::part_info);
+	ClassDB::bind_method(D_METHOD("wear", "cells", "wear", "at", "amounts", "spans", "strength", "nums", "ints", "cx",
+								 "cz", "fy", "live"),
+			&KaijuSettle::wear);
 }
 
 Array KaijuSettle::label(const PackedByteArray &p_cells, const PackedByteArray &p_fixtures,
