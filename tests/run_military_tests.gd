@@ -2,10 +2,17 @@ extends "res://tests/lib/military_view.gd"
 ## The tanks move and fight like a professional military (D-066): they drive the road plan
 ## (never a building, a lot or an alley), keep their spacing as drawn (hull, turret and gun), take
 ## firing posts at standoff range and fall back when the kaiju closes. Whole autoplayed rampages
-## on generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where
-## tanks enter round the kaiju, D-039), and the clip's scene through the game camera. The
+## on generated cities (RAMPAGE_SEEDS), at the young and Behemoth stages (and the Apex city,
+## where tanks enter round the kaiju, D-039), and the clip's scene through the game camera. The
 ## helicopters are today's (their flight is its own branch, claude/heli-flight).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
+
+## Parked-in-range tank-steps the rampages must see before their standoff share means anything.
+const MIN_PARKED_IN_RANGE := 20
+## The rampages' city and army seeds, pinned so the autoplay lingers where tanks take posts:
+## since the body turns on arcs (turn-weight) seeds 0-2 saw none; a probe of seeds 0-11 found
+## tanks parked in range only at the Behemoth tier, most on seeds 4 (26) and 8 (66).
+const RAMPAGE_SEEDS: Array[int] = [0, 4, 8]
 
 
 func suite_name() -> String:
@@ -24,9 +31,9 @@ func run_checks() -> void:
 ## building and no two hulls overlap; a tank standing a second or more within range stands at
 ## standoff in its firing band, never up close, and none waits inside the danger radius (those
 ## beyond range are in reserve); tanks enter by road from outside the
-## playable edge (in a city smaller than the spawn radius). Whether tanks park in range at all
-## here is the autoplay's luck (its route changes with every turn the body makes): that tanks
-## do take posts is _check_standoff_held's, with the kaiju standing still.
+## playable edge (in a city smaller than the spawn radius). Tanks take posts in range during
+## the rampages too, and there are at least MIN_PARKED_IN_RANGE such tank-steps, so the standoff
+## and danger bars never pass on nothing.
 func _check_rampages() -> void:
 	var off_road := 0
 	var inside := 0
@@ -45,7 +52,7 @@ func _check_rampages() -> void:
 	var entered := 0
 	var where := ""
 	for tier: int in LEVELS:
-		for seed: int in SEEDS:
+		for seed: int in RAMPAGE_SEEDS:
 			var sim := _rampage(tier, seed)
 			var roads := _roads(sim)
 			var grid := _footprints(sim)
@@ -188,7 +195,14 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
-		(parked_in_band + parked_close == 0 or standoff >= 0.95) and longest_in_danger <= 1.0,
+		parked_in_band + parked_close >= MIN_PARKED_IN_RANGE,
+		(
+			"the rampages see tanks parked in range: %d tank-steps (at least %d to judge standoff)"
+			% [parked_in_band + parked_close, MIN_PARKED_IN_RANGE]
+		)
+	)
+	check(
+		parked_in_band > 0 and standoff >= 0.95 and longest_in_danger <= 1.0,
 		(
 			(
 				"tanks hold standoff: %.0f%% of %d parked-in-range tank-steps sit in the firing"
