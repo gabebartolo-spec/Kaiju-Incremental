@@ -53,7 +53,7 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
 	view = EvolutionReveal.frame_view(self)  # the reveal's frame, same size and place
-	col.add_child(view)
+	col.add_child(EvolutionReveal.frame_around(view))
 	var viewport := SubViewport.new()
 	viewport.own_world_3d = true
 	view.add_child(viewport)

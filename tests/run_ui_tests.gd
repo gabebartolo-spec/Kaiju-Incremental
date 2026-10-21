@@ -30,6 +30,7 @@ func run_checks() -> void:
 	await _t("_check_no_atomic")
 	await _t("_check_tree_text")
 	await _t("_check_pause")
+	await _t("_check_reveal_frame")
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
@@ -292,3 +293,60 @@ func _check_pause() -> void:
 	menu.free()
 	await process_frame
 	root.size = window
+
+
+## Critic r1 item 7: the reveal's 3D view sits in a hazard frame, the skip prompt is 25% bigger
+## (30 px), and the kaiju stays inside the view on the reveal after the swap and on the
+## demo-complete card (the croc was clipped at the left edge).
+func _check_reveal_frame() -> void:
+	var window := root.size
+	root.size = CANVAS
+	var species := Content.species_def("reptilian")
+	var reveal := EvolutionReveal.new()
+	reveal.setup(species, {"size": 1}, {"size": 2}, Content.section("city"))
+	reveal.title = "Behemoth"
+	root.add_child(reveal)
+	for _i: int in EvolutionReveal.SWAP_FRAME + EvolutionReveal.GROW_FRAMES + 20:
+		await physics_frame
+	await process_frame
+	var framed := reveal.view.get_parent() is PanelContainer
+	check(framed, "the reveal's 3D view sits in a hazard frame")
+	check(
+		reveal.skip_hint.get_theme_font_size("font_size") >= 30,
+		"the skip prompt is 25%% bigger than 24 px (%d)" % reveal.skip_hint.get_theme_font_size("font_size")
+	)
+	var out: Array[String] = _outside(reveal.view)
+	check(out.is_empty(), "the evolved kaiju stays inside the reveal view: %s" % [out])
+	reveal.free()
+	var card := DemoEnd.new()
+	card.setup(species, Content.section("kaiju"))
+	root.add_child(card)
+	for _i: int in 10:
+		await physics_frame
+	await process_frame
+	out = _outside(card.view)
+	check(out.is_empty(), "the demo-complete card keeps the croc inside its view: %s" % [out])
+	card.free()
+	await process_frame
+	root.size = window
+
+
+## The sampled skin points of the kaiju in `view` that project outside it (or within 3% of its edge).
+func _outside(view: SubViewportContainer) -> Array[String]:
+	var viewport: SubViewport = view.get_child(0)
+	var cam := viewport.get_camera_3d()
+	var model: KaijuModel = viewport.find_children("*", "KaijuModel", true, false)[0]
+	var rect := Rect2(Vector2.ZERO, Vector2(viewport.size)).grow_individual(
+		-viewport.size.x * 0.03, -viewport.size.y * 0.03, -viewport.size.x * 0.03, -viewport.size.y * 0.03
+	)
+	var missed := 0
+	var worst := Vector2.ZERO
+	for p: Vector3 in _skin_world(model):
+		var at := cam.unproject_position(p)
+		if not rect.has_point(at):
+			missed += 1
+			worst = at
+	var out: Array[String] = []
+	if missed > 0:
+		out.append("%d points outside, e.g. %s of %s" % [missed, worst, viewport.size])
+	return out
