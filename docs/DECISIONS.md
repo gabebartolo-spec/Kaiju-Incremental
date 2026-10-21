@@ -4,10 +4,6 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
-## 2026-10-22 · D-129 · Director · Fire: breath, beam and army shells light it; a burnt-out building collapses
-
-Asked for fire gameplay (R 26, after D-126): with City Ablaze owned, the first fire is lit by the croc's lightning breath, its ultimate beam and the clumsy army's stray shells ("Breath, beam and army shells"; croc only until other species ship, D-124). A building that burns out collapses like a smashed one, floors giving way and toppling ("Collapses"). Node placement and costs start as placeholders flagged for tuning; Firestorm is stubbed until explosive sites merge.
-
 ## 2026-10-22 · D-131 · Director · The baby croc turns smoothly; the adolescent and adult step real turns
 
 Small turns smooth (D-130) did not bring the stage-1 and stage-2 rise point under the 10 s bar (11.7-12 s): the baby makes many real turns at close range, and each stepped turn delays it. Asked who steps their turns, he chose "Baby turns smoothly": the baby turns smoothly at its pre-stepped rates (90 degrees in about 0.6 s), so it feels nimble while small; the adolescent and adult step every real turn (small corrections smooth, D-130), so the weight arrives as it grows. The 10 s bar stays.
@@ -15,6 +11,10 @@ Small turns smooth (D-130) did not bring the stage-1 and stage-2 rise point unde
 ## 2026-10-22 · D-130 · Director · Small course corrections turn smoothly; real turns step
 
 After "turn 5% faster" (comment #49) made the stage-1 rise point worse (faster yaw swings the baby about its planted foot and overshoots): corrections under about 20 degrees turn smoothly while walking, with no slice or pivot; real turns still step foot by foot, so the adult never swivels on the spot ("Small turns smooth"). The turn rates stay as they were; the 10 s rise-point bar stays.
+
+## 2026-10-22 · D-129 · Director · Fire: breath, beam and army shells light it; a burnt-out building collapses
+
+Asked for fire gameplay (R 26, after D-126): with City Ablaze owned, the first fire is lit by the croc's lightning breath, its ultimate beam and the clumsy army's stray shells ("Breath, beam and army shells"; croc only until other species ship, D-124). A building that burns out collapses like a smashed one, floors giving way and toppling ("Collapses"). Node placement and costs start as placeholders flagged for tuning; Firestorm is stubbed until explosive sites merge.
 
 ## 2026-10-22 · D-128 · Director · Tripo Text to Motion: soldiers and crowd only, one 20-credit clip
 
@@ -386,17 +386,3 @@ Why: with one cost curve the runs were cephalopod 2.94 h, reptilian 3.94 h, inse
 4.5 -> 6.5 s, damage 22 -> 18; reptilian breath range 9 -> 11, damage 30 -> 36, cone 30 -> 36 deg, speed 5 -> 5.5; Atomic
 Beam cost x0.6, Brood cost x1.8. Expected runs 3.70 / 4.43 / 3.26 h; the insectoid stays the fastest clearer.
 
-## 2026-10-17 · D-048 · Director · Croc titan v2: short reptilian arms (B) and charcoal spines (B)
-Why: director: the arms are "always doing something odd... maybe his arms are just too long" and "too human looking
-in the musculature" (measured 51% of height, 76% of the leg); "i dont like how light the colour of his spines are".
-Boards: croctitan_arms_board.png (NOW / A / B / C, picked B) and croctitan_spine_colour_board.png (olive / charcoal /
-bronze, picked charcoal). Changes: new Tripo Smart Mesh c8185166 (6623 quads, arms clear, long low tail), charcoal
-re-texture, six-view PASS (croctitan_v2_six_view.png); the Blender hand rig is re-fitted to it before D-047 ships.
-
-## 2026-10-17 · D-047 · Director · Play the Blender-made croc titan clips in the game
-Why: in game, the Blender weights (#19) fixed the hip shear and tail-root seams, but the game's procedural walk and
-roar still read as a 5 m lizard (fresh critic: rear-up, no settle, the jaw drops vertical). The Blender clips
-(blender-reptile r7, d924b29) passed three fresh motion critics: crouch, throw, a slow drift at the peak, tail
-counterbalance. Options: play the Blender clips (picked), or keep procedural and tune by hand. Changes: the croc
-titan's roar, turn and idle play from exported Blender clips; the walk is the Blender cycle layered over the
-procedural foot planting (root motion and terrain stay procedural). Other species follow once their models are decided.
