@@ -21,7 +21,6 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 		env.ambient_light_color = Look.color("ambient_color")
 	env.ambient_light_energy = Look.value("ambient")
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.ssao_enabled = true
 	env.ssao_intensity = Look.value("ssao")
 	env.ssao_power = Look.value("ssao_power")
 	env.ssao_radius = 1.5
@@ -32,13 +31,15 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = Look.value("glow_threshold")
-	# Screen-space bounce light from lamps, fires and sun (SDFGI cost ~a tenth of the frame).
-	env.ssil_enabled = true
+	# SSAO, SSIL (screen-space bounce light; SDFGI cost ~a tenth of the frame) and the sun's
+	# shadow reach, splits and softness come from the graphics preset (GraphicsPresets).
 	env.adjustment_enabled = true
 	env.adjustment_saturation = Look.value("saturation")
 	env.adjustment_contrast = Look.value("contrast")
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
+	world_env.add_to_group(GraphicsPresets.GROUP)
+	GraphicsPresets.apply_to(PlayerSettings.graphics_row(), world_env)
 	city.add_child(world_env)
 	CreasePass.attach(city)  # creases darkened in screen space; off when the look says 0
 	var sun := DirectionalLight3D.new()
@@ -46,7 +47,7 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	sun.light_energy = Look.value("sun_energy")
 	sun.light_color = Look.color("sun_color")
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 160.0
 	sun.shadow_blur = 1.5
-	sun.light_angular_distance = 1.0
+	sun.add_to_group(GraphicsPresets.GROUP)
+	GraphicsPresets.apply_to(PlayerSettings.graphics_row(), sun)
 	city.add_child(sun)
