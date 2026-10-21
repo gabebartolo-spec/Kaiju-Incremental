@@ -380,17 +380,3 @@ roar still read as a 5 m lizard (fresh critic: rear-up, no settle, the jaw drops
 counterbalance. Options: play the Blender clips (picked), or keep procedural and tune by hand. Changes: the croc
 titan's roar, turn and idle play from exported Blender clips; the walk is the Blender cycle layered over the
 procedural foot planting (root motion and terrain stay procedural). Other species follow once their models are decided.
-
-## 2026-10-17 · D-046 · Director · New reptile look: A "Croc titan"
-Why: board docs/captures/2026-10-17-reptile-design/reptile_directions.png (Tripo GPT Image 2.5, free quota):
-A croc titan, B armoured monitor titan, C lean apex predator. Picked A: croc snout and pale flat bone scutes
-carried over from the Blender model, bulk with grace. Changes: A goes to T-pose and multi-view references, then
-Tripo Smart Mesh, texture and the Blender hand rig (D-045); the baby and adolescent follow from it.
-
-## 2026-10-17 · D-045 · Director · Reptile body: a NEW original Tripo design, rigged in Blender
-Why: Blender motion test (blender-reptile 4ab6781, clips in notes blender-reptile/motion-test/): one hand-made
-skeleton with welded falloff weights moved BOTH the Blender model and the Tripo model cleanly (critic: deformation
-and feet PASS), so poor in-game motion comes from our auto rig, not the mesh. The director prefers Tripo's detail but
-A's originality ("less a blatant Godzilla copy"). Options: new Tripo design (picked), Blender A, current Tripo B.
-Changes: new Tripo reptile steered away from Godzilla (croc snout, pale back plates, long low tail), then rigged in
-Blender with the hand rig; Blender weights feed the game in place of rig_voxel's guessed bone ownership.
