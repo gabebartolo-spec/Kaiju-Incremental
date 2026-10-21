@@ -216,9 +216,37 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 func _minimal(hud: RampageHud, sim: RampageSim) -> void:
 	var rings: Array[HudRing] = [hud.breath_ring, hud.dash_ring, hud.ultimate_ring]
 	var widest := 0.0
+	var tall: Array[float] = []
+	var centres: Array[float] = []
 	for ring: HudRing in rings:
 		widest = maxf(widest, ring.size.x)
-	check.call(widest <= 44.0, "each ring is small: at most 44 px across (%.0f; it was 109)" % widest)
+		tall.append(ring.size.y)
+		centres.append(ring.get_global_rect().get_center().y)
+	var same := true
+	for ring: HudRing in rings:
+		same = same and is_equal_approx(ring.size.x, rings[0].size.x)
+	check.call(
+		same and widest >= 40.0 and widest <= 44.0,
+		"the three rings are one size, about 40 px (80 px at 4K; they were 109 and 85): %.0f" % widest
+	)
+	var level := true
+	for y: float in centres:
+		level = level and absf(y - centres[0]) < 0.6
+	check.call(level, "the rings sit centred on one line: %s" % [centres])
+	var view := t.root.get_visible_rect()
+	var margin := Num.f(UiKit.ui()["hud"]["bottom_margin"])
+	check.call(
+		absf(view.size.y - hud.rings_bottom() - margin) < 2.0
+		and absf(view.size.y - hud.figure_bottom() - margin) < 2.0,
+		"rings (%.0f) and biomass number (%.0f) share the %.0f px bottom margin" % [view.size.y - hud.rings_bottom(), view.size.y - hud.figure_bottom(), margin]
+	)
+	var figure := hud.biomass.get_theme_font_size("font_size")
+	check.call(figure >= MIN_TEXT and figure <= 32, "the biomass number is a small %d px" % figure)
+	var textures := true
+	for ring: HudRing in rings:
+		textures = textures and ring.icon_node != null and ring.icon_node.texture != null
+		textures = textures and ring.icon_node.get_parent() == ring
+	check.call(textures, "each ring's icon is its own node with a texture loaded from a path in data")
 	var keys: Array[String] = []
 	for node: Node in hud.find_children("*", "Label", true, false):
 		var l: Label = node

@@ -89,8 +89,8 @@ func _ready() -> void:
 	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_widgets.add_child(safe)
 	safe.add_child(_build_clock())
-	safe.add_child(_build_biomass())
-	safe.add_child(_build_rings())
+	safe.add_child(_lifted(_build_biomass(), true))
+	safe.add_child(_lifted(_build_rings(), false))
 	if not PlayerSettings.controls_seen:
 		_show_controls(safe)
 	_shown_biomass = sim.rubble
@@ -117,6 +117,47 @@ func _build_clock() -> Control:
 	col.add_child(city_meter)
 	_clock_column = col
 	return col
+
+
+## `part` raised so its visible bottom edge sits tuning "ui" hud bottom_margin up from the screen's
+## edge: the rings and the biomass figure share one margin. `figure`: the part ends in the biomass
+## number, whose letters sit above the bottom of their box by the font's descent less the outline.
+func _lifted(part: Control, figure: bool) -> Control:
+	var holder := MarginContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.size_flags_vertical = Control.SIZE_SHRINK_END
+	holder.size_flags_horizontal = part.size_flags_horizontal
+	part.size_flags_horizontal = Control.SIZE_FILL
+	part.size_flags_vertical = Control.SIZE_FILL
+	var lift := Num.f(_hud["bottom_margin"]) - UiKit.safe_margin().y
+	if figure:
+		lift -= figure_gap()
+	holder.add_theme_constant_override("margin_bottom", maxi(0, roundi(lift)))
+	holder.add_child(part)
+	return holder
+
+
+## How far the biomass number's visible bottom (outline included) sits above its box's bottom (px).
+func figure_gap() -> float:
+	var size := Num.i(_hud["biomass_size"])
+	var font := ThemeDB.fallback_font
+	var face := UiKit.font_for(size)
+	if face != null:
+		font = face
+	else:
+		var themed := biomass.get_theme_font("font") if biomass != null else null
+		font = themed if themed != null else ThemeDB.fallback_font
+	return font.get_descent(size) - UiKit.outline_px(size)
+
+
+## Where the biomass number's visible bottom is on screen (y), and the rings' (read by the ui suite).
+func figure_bottom() -> float:
+	return biomass.get_global_rect().end.y - figure_gap()
+
+
+func rings_bottom() -> float:
+	# The ring's own size, not its popped scale: its centre does not move.
+	return breath_ring.get_global_rect().get_center().y + breath_ring.size.y / 2.0
 
 
 ## Biomass, one boxless outlined figure in the bottom right (b2-10).
@@ -152,7 +193,7 @@ func _build_rings() -> Control:
 	dash_ring = HudRing.new(HudRing.Icon.DASH, small, w)
 	ultimate_ring = HudRing.new(HudRing.Icon.ULTIMATE, small, w)
 	for ring: HudRing in [breath_ring, dash_ring, ultimate_ring]:
-		ring.size_flags_vertical = Control.SIZE_SHRINK_END
+		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(ring)
 	return row
 

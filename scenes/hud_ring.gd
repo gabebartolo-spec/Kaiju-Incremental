@@ -6,40 +6,21 @@ extends Control
 
 enum Icon { BREATH, DASH, ULTIMATE }
 
-## The bolt, the chevrons and the burst, in units of the icon's half-size (y down).
-const BOLT: Array[Vector2] = [
-	Vector2(0.2, -1.0),
-	Vector2(-0.45, 0.15),
-	Vector2(-0.05, 0.15),
-	Vector2(-0.25, 1.0),
-	Vector2(0.45, -0.25),
-	Vector2(0.05, -0.25),
-	Vector2(0.35, -1.0),
-]
-const CHEVRON: Array[Vector2] = [
-	Vector2(-0.35, -0.75),
-	Vector2(0.15, 0.0),
-	Vector2(-0.35, 0.75),
-	Vector2(-0.05, 0.75),
-	Vector2(0.45, 0.0),
-	Vector2(-0.05, -0.75),
-]
-const CHEVRON_STEP := 0.5
-const BURST_POINTS := 8
-const BURST_INNER := 0.45
-## The icon fills this share of the ring's inner radius.
+## The icon fills this share of the ring's inner radius (a square, the PNG's whole image).
 const ICON_SHARE := 0.62
 const SEGMENTS := 64
-## The dark outline around the ring and icon (px each side), for contrast over fire.
+## The dark outline around the ring (px each side), for contrast over fire.
 const OUTLINE := 2.0
-## The icon's dark edge (px each side): thin, the icons are small.
-const ICON_OUTLINE := 1.0
+## An icon's tuning key (data "ui" hud icons: key -> texture path).
+const KEYS := {Icon.BREATH: "breath", Icon.DASH: "dash", Icon.ULTIMATE: "ultimate"}
 
 var icon: Icon
 ## 0 = just used, 1 = ready.
 var ratio := 1.0
 var radius: float
 var width: float
+## The icon: its own node and texture (path in data), apart from the ring, so new art drops in.
+var icon_node: TextureRect
 var _pulse: Tween
 
 
@@ -49,7 +30,38 @@ func _init(p_icon: Icon, p_radius: float, p_width: float) -> void:
 	width = p_width
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = Vector2.ONE * 2.0 * (radius + width / 2.0 + OUTLINE + 1.0)
-	resized.connect(func() -> void: pivot_offset = size / 2.0)
+	resized.connect(_place_icon)
+	icon_node = TextureRect.new()
+	icon_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_node.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_node.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	icon_node.texture = load_icon(icon)
+	add_child(icon_node)
+	_tint()
+
+
+## The icon texture for `which`, from the path in tuning "ui" hud icons (null, with an error, if it
+## is missing).
+static func load_icon(which: Icon) -> Texture2D:
+	var paths: Dictionary = UiKit.ui()["hud"]["icons"]
+	var path := str(paths.get(str(KEYS[which]), ""))
+	if not ResourceLoader.exists(path):
+		push_error("HudRing: no icon texture at '%s'" % path)
+		return null
+	return load(path) as Texture2D
+
+
+func _place_icon() -> void:
+	pivot_offset = size / 2.0
+	var half := (radius - width / 2.0) * ICON_SHARE
+	icon_node.size = Vector2.ONE * 2.0 * half
+	icon_node.position = size / 2.0 - icon_node.size / 2.0
+
+
+## White when ready, grey while it recharges.
+func _tint() -> void:
+	icon_node.modulate = Color.WHITE if is_ready() else UiKit.MUTED.darkened(0.25)
 
 
 func is_ready() -> bool:
@@ -62,6 +74,7 @@ func set_ratio(value: float) -> void:
 	ratio = clampf(value, 0.0, 1.0)
 	if is_ready() and not was:
 		_pop()
+	_tint()
 	queue_redraw()
 
 
@@ -83,35 +96,3 @@ func _draw() -> void:
 	if ratio > 0.0:
 		var start := -PI / 2.0
 		draw_arc(c, radius, start, start + TAU * ratio, SEGMENTS, UiKit.ACCENT, width, true)
-	var tint := Color.WHITE if is_ready() else UiKit.MUTED.darkened(0.25)
-	var half := (radius - width / 2.0) * ICON_SHARE
-	for shape: PackedVector2Array in _shapes(c, half):
-		var closed := shape.duplicate()
-		closed.append(shape[0])
-		draw_polyline(closed, dark, ICON_OUTLINE * 2.0, true)
-		draw_colored_polygon(shape, tint)
-
-
-func _shapes(c: Vector2, half: float) -> Array[PackedVector2Array]:
-	var out: Array[PackedVector2Array] = []
-	match icon:
-		Icon.BREATH:
-			out.append(_placed(BOLT, c, half, 0.0))
-		Icon.DASH:
-			out.append(_placed(CHEVRON, c, half, -CHEVRON_STEP / 2.0))
-			out.append(_placed(CHEVRON, c, half, CHEVRON_STEP / 2.0))
-		Icon.ULTIMATE:
-			var star := PackedVector2Array()
-			for i: int in BURST_POINTS * 2:
-				var r := half if i % 2 == 0 else half * BURST_INNER
-				var a := -PI / 2.0 + PI * i / BURST_POINTS
-				star.append(c + Vector2(cos(a), sin(a)) * r)
-			out.append(star)
-	return out
-
-
-func _placed(points: Array[Vector2], c: Vector2, half: float, shift: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for p: Vector2 in points:
-		out.append(c + (p + Vector2(shift, 0.0)) * half)
-	return out

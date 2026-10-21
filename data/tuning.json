@@ -7,19 +7,25 @@
 			"hurry_seconds": 10.0,
 			"hurry_pulse_scale": 1.15,
 			"hurry_pulse_s": 0.3,
-			"biomass_size": 44,
+			"biomass_size": 28,
 			"biomass_roll_rate": 8.0,
 			"biomass_pop_gain": 3.0,
 			"biomass_pop_scale": 1.3,
 			"biomass_pop_s": 0.25,
 			"ring_radius": 16.0,
-			"ring_small_radius": 12.0,
+			"ring_small_radius": 16.0,
 			"ring_width": 4.0,
 			"ring_gap": 14,
 			"ring_ready_scale": 1.3,
 			"ring_ready_s": 0.45,
 			"meter_size": [220, 6],
-			"meter_gap": 2
+			"meter_gap": 2,
+			"bottom_margin": 60,
+			"icons": {
+				"breath": "res://assets/ui/icons/breath.png",
+				"dash": "res://assets/ui/icons/dash.png",
+				"ultimate": "res://assets/ui/icons/ultimate.png"
+			}
 		},
 		"hurt": {
 			"color": "c0140c",
