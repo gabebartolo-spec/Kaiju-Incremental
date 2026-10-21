@@ -12,23 +12,25 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## Director AFK again (~13:00 2026-10-21): "work until usage is empty". Windowed Godot fine while away.
-## Team (lead 10's subagents; die with this session; re-brief from NEW notes <task>\handoff.md):
-- prs (Sonnet): squash-only queue, cap 3. Merged #124 parse-step, #125 light-pool. #126 b2-3-part3 in CI. Then cells-native
-  223f8ba (after #126), audio-duck, tentacle-substep, graphics-presets 9f37429 (+D-109 lead: Medium 4K default), bridge-land
-  2ceb079, kaiju-double 47ac4da, view-spikes 32555d9, walkers-on-pavement, turn-weight (HOLD: walk-m2b re-pins 3 seed flips),
-  ci-sim-split 39e9f44 last.
-- walk-m2b: fix turn-weight seed flips (swipe 0.160 vs 0.161, crush people 0, tanks in range 12<20) then walk-m2 clips.
-  Director question later: young stages walk 2.2x/1.9x authored speed (R 11.2: slower young speed vs Blender re-bake).
-- parse-step: clumsy army (#18) claude/clumsy-army; ~254k context, hands off at 280k.
-- explosives-view: VFX/SFX/models on claude/city-explosives (sim done 971a372; blast numbers first-pass, lead judges clip).
-- rubble-break: D-110 + #24/#25 (falling towers break believably on the kaiju) claude/rubble-break.
-- walkers: deterministic diagonal fill, then #17 emerge facing city + shoreline + wider river, then R 6.1.
-- skyline: background kaiju rampage prototype (#16), off by default. no-random-fire: R 26.1. cells-native: camera growth boards (R 19).
-- Director questions when back: camera growth pick (R 19 boards), walk cadence (R 11.2), Suno Pro $10/mo or ElevenLabs Music
-  (R 25), fire: spark source for non-breath species + wind fixed or drifting (R 26), background skyline yes/no, blast numbers.
-- Decisions today: D-107 voxels, D-108 lightning, D-110 destructible slabs, D-111 look stays voxel. Comments #12-#25 logged.
+## State 2026-10-21 evening: director at the PC (no windowed Godot; CI captures). Design = docs/DESIGN.md (one doc, lead edits).
+## Merged today: #122-#135 (parse-step, light-pool, b2-3-part3, audio-duck, tentacle, graphics, cells-native, bridge,
+## kaiju-double, view-spikes, no-rubble-fire, carve-no-fire). Open: #3 only. D-109 recorded.
+## Team (lead 10 subagents; re-brief from NEW notes <task>\handoff.md):
+- prs: preset-caps (shader_keep ratio fix), walkers-on-pavement, sfx-pool, shake-trauma 260aa17 (lead accepted 1.8 deg /
+  9.5 px), empty-space-suite, ci-sim-split last; turn-weight held for crush-people.
+- walk-m2b: crush-people option A (panic radius by body size + 1 s gawk), bar 10/12 seeds; then walk-m2 clips.
+- rubble-polish: claude/rubble-break clip polish + bench + #26 (fallen buildings break against the ground, never sink).
+- emerge-clips: claude/emerge-shore, director picked BURST THROUGH the bridge deck; check + CI clips.
+- explosions-fix: claude/city-explosives 6fb45b69, CI clips running; then motion critic round 2.
+- cells-native: R 19.4 BuildingFade fix (claude/building-fade) then re-render camera boards (claude/camera-growth 8db4122).
+- clumsy-army: claude/clumsy-army clips rendering. sfx-pool stood down (shake handoff in notes).
+- Director questions left: camera growth (after occlusion fix), walk cadence R 11.2, Suno vs ElevenLabs Music, fire spark
+  + wind, background skyline, blast numbers, worktree cleanup permission. Insectoid = brood mother (DESIGN; code still
+  has Leap Slam as signature: fix when species work starts).
 - Build 5 once the queue lands: dispatch build.yml on look-options, smoke from repo root, Kaiju-Builds/carve-build5-<sha>.
+- Context trim done 2026-10-21: RULEBOOK 16.5->13 KB (quotes in RULEBOOK-quotes.md), global CLAUDE.md 4.8->3.4 KB, project
+  CLAUDE.md 5.2->3.0 KB, handoff hook 10.3->2.2 KB (last 30 h only), 7 skill descriptions halved, memory 7->2 files.
+  Backups *.bak-2026-10-21 beside each file.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
 ## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
