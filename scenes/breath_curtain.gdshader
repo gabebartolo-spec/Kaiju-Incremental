@@ -1,0 +1,47 @@
+shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
+// Atomic Breath blast curtain: a wall of heat and flame standing up along the far arc of the
+// breath's cone, where it strikes the street. From the game camera behind the kaiju its height
+// rises above the head, so the breath reads even though the body hides the core.
+// UV.x runs -1..1 along the arc, UV.y 0 at the street to 1 at the top. Additive (D-025).
+
+uniform float progress = 0.0;
+uniform float power = 1.0;
+uniform float strength = 0.6;
+uniform vec4 tint : source_color = vec4(1.0, 0.3, 0.08, 1.0);
+
+float hash(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+		mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+
+void fragment() {
+	float side = abs(UV.x);
+	float up = UV.y;
+	// Each tongue has its own height, a slow two-octave wave along the arc, so the top breaks
+	// into separate licks that rise and fall; inside, the flame churns upward.
+	float height = 0.45 + 0.35 * noise(vec2(UV.x * 5.0, TIME * 1.5))
+		+ 0.2 * noise(vec2(UV.x * 13.0, TIME * 2.7 + 3.0));
+	float body = 1.0 - smoothstep(height - 0.3, height, up);
+	// No base line: the flames fade in from the street.
+	float base = smoothstep(0.0, 0.45, up);
+	float churn = 0.55 + 0.45 * noise(vec2(UV.x * 8.0, up * 4.0 - TIME * 7.0));
+	// Soft at both ends of the arc, and thin where the wall is seen edge-on (the side view), so
+	// it never collapses into a flat panel with a straight edge.
+	float centre = 1.0 - smoothstep(0.35, 1.0, side);
+	float facing = abs(dot(normalize(NORMAL), normalize(VIEW)));
+	centre *= smoothstep(0.08, 0.45, facing);
+	// It stands up as the beam's front reaches the arc (a tenth of the life), then thins out.
+	float arrive = smoothstep(0.04, 0.14, progress);
+	float thin = 1.0 - smoothstep(0.5, 1.0, progress);
+	vec3 hot = mix(tint.rgb, vec3(1.0, 0.7, 0.4), (1.0 - up) * 0.6 * churn);
+	ALBEDO = hot * (1.6 + 0.9 * power);
+	ALPHA = clamp(strength * centre * body * base * churn * arrive * thin, 0.0, 1.0);
+}

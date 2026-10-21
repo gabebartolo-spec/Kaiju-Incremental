@@ -51,14 +51,13 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(github.event_name == 'push' && '[{"script":"capture_rig.gd","args":"--species=reptilian --stage=adult","movie":true},{"script":"capture_looks.gd","args":"--street","movie":false}]' || '[{}]') }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
+          # The display fonts are LFS (3 files, ~26 KB): without them every label logs a
+          # FreeType error with a backtrace and the render crawls past the time limit.
+          lfs: true
 
       - name: Cache Godot
         id: godot-cache
@@ -92,10 +91,10 @@ jobs:
 
       - name: Capture
         env:
-          SCRIPT: ${{ matrix.script || inputs.script }}
-          ARGS: ${{ matrix.args || inputs.args }}
+          SCRIPT: ${{ inputs.script }}
+          ARGS: ${{ inputs.args }}
           RENDERER: ${{ inputs.renderer || 'auto' }}
-          MOVIE: ${{ matrix.movie || inputs.movie }}
+          MOVIE: ${{ inputs.movie }}
           FPS: ${{ inputs.fps || '30' }}
           RES: ${{ inputs.resolution || '1280x720' }}
         run: |
@@ -108,8 +107,10 @@ jobs:
           vulkaninfo --summary 2>&1 | grep -E "deviceName|driverName" | head -3 || true
 
           run_one() { # $1 = rendering method, $2 = rendering driver
-            local movie_args=()
-            if [ "$MOVIE" = true ]; then movie_args=(--write-movie "$out/clip.avi" --fixed-fps "$FPS"); fi
+            # Stills too run on a fixed frame clock, so a shot lands on the same frame every run
+            # (a 0.45 s effect was in some runs' stills and not others).
+            local movie_args=(--fixed-fps "$FPS")
+            if [ "$MOVIE" = true ]; then movie_args+=(--write-movie "$out/clip.avi"); fi
             echo "=== $1 on $2 ===" | tee -a "$out/RENDERER.txt"
             # $user_args is split on purpose: it is a list of --flag=value words.
             # shellcheck disable=SC2086

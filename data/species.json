@@ -1,28 +1,84 @@
 {
 	"species": [
 		{
-			"id": "reptilian", "name": "Reptilian",
+			"id": "reptilian",
+			"name": "Reptilian",
 			"blurb": "Balanced brawler. Tough hide, heavy stomps.",
-			"ability": {"type": "cone", "name": "Atomic Breath", "hint": "Burns everything in front of you."},
-			"stats": {"hp": 120, "speed": 5.0, "stomp_damage": 10, "stomp_radius": 2.5, "stomp_interval": 0.7,
-				"ability_damage": 30, "ability_cooldown": 7.0, "ability_range": 9.0},
-			"colors": {"body": "4f7d3a", "belly": "a8b86a", "accent": "2e4a24", "eye": "ff5a1f"}
+			"ability": {
+				"type": "cone",
+				"name": "Atomic Breath",
+				"hint": "Burns everything in front of you."
+			},
+			"stats": {
+				"hp": 120,
+				"speed": 5.5,
+				"stomp_damage": 10,
+				"stomp_radius": 2.5,
+				"stomp_interval": 0.7,
+				"swipe_damage": 8,
+				"swipe_width": 1.6,
+				"ability_damage": 36,
+				"ability_cooldown": 7.0,
+				"ability_range": 11.0
+			},
+			"colors": {
+				"body": "2c3127",
+				"belly": "5a5640",
+				"accent": "161a14",
+				"eye": "ff4a14"
+			}
 		},
 		{
-			"id": "insectoid", "name": "Insectoid",
+			"id": "insectoid",
+			"name": "Insectoid",
 			"blurb": "Fast and fragile. Rapid strikes, leaps across the city.",
-			"ability": {"type": "leap", "name": "Leap Slam", "hint": "Jumps forward and crushes where it lands."},
-			"stats": {"hp": 80, "speed": 7.0, "stomp_damage": 6, "stomp_radius": 2.2, "stomp_interval": 0.45,
-				"ability_damage": 22, "ability_cooldown": 4.5, "ability_range": 4.0},
-			"colors": {"body": "5b3f8c", "belly": "2fb8a6", "accent": "2a1d45", "eye": "c6ff3a"}
+			"ability": {
+				"type": "leap",
+				"name": "Leap Slam",
+				"hint": "Jumps forward and crushes where it lands."
+			},
+			"stats": {
+				"hp": 80,
+				"speed": 7.0,
+				"stomp_damage": 6,
+				"stomp_radius": 2.2,
+				"stomp_interval": 0.45,
+				"ability_damage": 18,
+				"ability_cooldown": 6.5,
+				"ability_range": 4.0
+			},
+			"colors": {
+				"body": "2a1f1c",
+				"belly": "6e3a1e",
+				"accent": "120d0c",
+				"eye": "d8ff2a"
+			}
 		},
 		{
-			"id": "cephalopod", "name": "Cephalopod",
+			"id": "cephalopod",
+			"name": "Cephalopod",
 			"blurb": "Slow on land, huge reach. Tentacles sweep whole blocks.",
-			"ability": {"type": "ring", "name": "Tentacle Lash", "hint": "Lashes everything around you."},
-			"stats": {"hp": 110, "speed": 3.8, "stomp_damage": 9, "stomp_radius": 3.6, "stomp_interval": 0.8,
-				"ability_damage": 26, "ability_cooldown": 6.0, "ability_range": 8.0},
-			"colors": {"body": "b8452f", "belly": "f0a070", "accent": "6e2418", "eye": "ffe14d"}
+			"ability": {
+				"type": "ring",
+				"name": "Tentacle Lash",
+				"hint": "Lashes everything around you."
+			},
+			"stats": {
+				"hp": 110,
+				"speed": 3.8,
+				"stomp_damage": 9,
+				"stomp_radius": 3.6,
+				"stomp_interval": 0.8,
+				"ability_damage": 26,
+				"ability_cooldown": 6.0,
+				"ability_range": 8.0
+			},
+			"colors": {
+				"body": "4a2a36",
+				"belly": "9a7a78",
+				"accent": "1e1016",
+				"eye": "ffd23a"
+			}
 		}
 	]
 }

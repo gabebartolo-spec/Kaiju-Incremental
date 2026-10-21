@@ -1,7 +1,9 @@
 # Agent handoffs
 
-One file per role (`lead.md`, `merge.md`, `art.md`, …), cap 120 lines, rewritten not appended,
-on the role's task branch so it travels with the PR. The `kaiju-handoff` skill says what goes
+One file per task (sessions and subagents alike: `lead.md`, `rubble-break.md`, ...), cap 120 lines, rewritten not
+appended, on the task's branch so it travels with the PR. It is the task's ONLY state file (director 2026-10-21):
+lead.md, STATUS.md and notes folders point to it, never copy it. When the task ends or goes stale (no update for 2 days
+and no live branch), the lead moves it to `archive/`. The `kaiju-handoff` skill says what goes
 in it. The user-level Stop hook blocks a turn that changed the project without a fresh handoff.
 
 ```

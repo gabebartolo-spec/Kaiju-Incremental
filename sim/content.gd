@@ -6,6 +6,14 @@ extends RefCounted
 static var _tuning: Dictionary = {}
 static var _upgrades: Array[Dictionary] = []
 static var _species: Array[Dictionary] = []
+static var _looks: Array[Dictionary] = []
+static var _look_id := ""
+static var _times: Dictionary = {}
+static var _time_id := ""
+static var _merged: Dictionary = {}
+static var _landmarks: Dictionary = {}
+static var _sports: Dictionary = {}
+static var _materials: Array[Dictionary] = []
 
 
 static func tuning() -> Dictionary:
@@ -36,6 +44,72 @@ static func species_def(id: String) -> Dictionary:
 	return species()[0]
 
 
+## Each landmark's baked shape (data/landmarks.json, written by tools/landmarks/bake.py): id ->
+## {w, d, h, kvox, chunks (one string per floor, "1" per structural chunk, x fastest)}.
+static func landmarks() -> Dictionary:
+	_load()
+	return _landmarks
+
+
+## The stadium's matches (D-078, data/sports.json): "pitch" (where on the stadium, pace) and
+## "sports" (markings, posts, kits, ball). Presentation only.
+static func sports() -> Dictionary:
+	_load()
+	return _sports
+
+
+## Building cell materials (data/materials.json, D-094): {id (the byte a fine grid cell
+## holds, 1..255; 0 is empty), name (its BuildingVoxels palette key), strength, debris}.
+static func materials() -> Array[Dictionary]:
+	_load()
+	return _materials
+
+
+static func looks() -> Array[Dictionary]:
+	_load()
+	return _looks
+
+
+## The art direction in use (data/looks.json); presentation reads its colours and light.
+## Its time of day (director 2026-10-20: "all of them") is merged over it.
+static func look() -> Dictionary:
+	_load()
+	if _merged.is_empty():
+		var base: Dictionary = _looks[0]
+		for def: Dictionary in _looks:
+			if def["id"] == _look_id:
+				base = def
+		_merged = base.duplicate(true)
+		var over: Dictionary = _times.get(_time_id, {})
+		_merged.merge(over, true)
+	return _merged
+
+
+static func set_look(id: String) -> void:
+	_load()
+	_look_id = id
+	_merged = {}
+
+
+## The times of day in rotation order (data/looks.json "times"); the first is the look itself.
+static func times() -> Array:
+	_load()
+	return _times["order"]
+
+
+static func set_time(id: String) -> void:
+	_load()
+	if id == _time_id:
+		return  # keeps any change a capture made to the look in use
+	_time_id = id
+	_merged = {}
+
+
+## Run n plays the next time of day, so the rampage goes on through dusk, night, morning, noon.
+static func time_for_run(run_index: int) -> String:
+	return str(times()[posmod(run_index, times().size())])
+
+
 static func load_json(path: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:
@@ -51,6 +125,17 @@ static func _load() -> void:
 	_tuning = load_json("res://data/tuning.json")
 	_upgrades = _list("res://data/upgrades.json", "upgrades")
 	_species = _list("res://data/species.json", "species")
+	_looks = _list("res://data/looks.json", "looks")
+	var looks_file := load_json("res://data/looks.json")
+	_look_id = str(looks_file.get("default", ""))
+	_times = looks_file.get("times", {"order": [""]})
+	_time_id = str(_times["order"][0])
+	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
+	_sports = load_json("res://data/sports.json")
+	_materials = _list("res://data/materials.json", "materials")
+	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
+	var city: Dictionary = _tuning.get("city", {})
+	city["landmark_shapes"] = _landmarks
 
 
 static func _list(path: String, key: String) -> Array[Dictionary]:

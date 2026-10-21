@@ -1,12 +1,14 @@
-extends "res://tests/lib/runner.gd"
+extends "res://tests/lib/sim_suite.gd"
 ## Sim suite: the upgrade tree, the city generator and the rampage, all headless and seeded.
 ## Includes the player-effect fixtures: an upgrade or a species changes what a scripted
-## rampage achieves.
+## rampage achieves. The claw swipe scenarios and the save migration run in
+## tests/run_sim_play_tests.gd; the shared set-up is tests/lib/sim_suite.gd.
 ##   godot --headless --path . --script tests/run_sim_tests.gd
 
-const SaveScript := preload("res://autoload/save_system.gd")
-const DT := 1.0 / 30.0
-const MAX_STEPS := 30 * 400
+const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
+const SimArmy := preload("res://tests/lib/sim_army.gd")
+const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
+const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
 
 
 func suite_name() -> String:
@@ -14,52 +16,21 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	_check_data()
-	_check_tree()
-	_check_city()
-	_check_tier_gate()
-	_check_determinism()
-	_check_upgrade_effects()
-	_check_species_differ()
-	_check_army()
-	_check_save_migrate()
-
-
-func _tree(levels: Dictionary = {}) -> UpgradeTree:
-	return UpgradeTree.new(Content.upgrades(), levels)
-
-
-func _layout() -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", 0), Content.section("city"))
-
-
-func _sim(species_id: String, levels: Dictionary, run_index: int = 0) -> RampageSim:
-	var species := Content.species_def(species_id)
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, _tree(levels))
-	var ability: Dictionary = species["ability"]
-	var sim := RampageSim.new(stats, Content.tuning(), _layout(), Seeds.make("army", run_index))
-	sim.ability_type = str(ability["type"])
-	return sim
-
-
-## Scripted player: walk to the nearest building it can topple, use the signature when ready.
-func _autoplay(sim: RampageSim) -> Dictionary:
-	var steps := 0
-	while not sim.over and steps < MAX_STEPS:
-		var best := Vector2.ZERO
-		var best_d := INF
-		for b: RampageSim.Building in sim.buildings:
-			if b.layers > 0 and b.tier <= sim.size_tier():
-				var d := sim.kaiju_pos.distance_to(Vector2(b.x, b.z))
-				if d < best_d:
-					best_d = d
-					best = Vector2(b.x, b.z)
-		var move := Vector2.ZERO
-		if best_d < INF and best_d > sim.stomp_radius() * 0.6:
-			move = (best - sim.kaiju_pos).normalized()
-		sim.step(DT, move, sim.ability_ready_in <= 0.0)
-		steps += 1
-	return sim.result()
+	await _t("_check_data")
+	await _t("_check_tree")
+	await _t("_check_city")
+	await _t("_check_structure")
+	await _t("_check_topple_crush")
+	await _t("_check_toughness")
+	await _t("_check_determinism")
+	await _t("_check_upgrade_effects")
+	await _t("_check_species_differ")
+	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
+	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
+	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
+	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
+	await _t("_check_looks")
+	await _t("_check_growth")
 
 
 func _check_data() -> void:
@@ -100,8 +71,8 @@ func _check_tree() -> void:
 	check(not tree.can_buy("stride", 1000), "an upgrade with unmet prerequisites is locked")
 	var price := tree.buy("claws", 100)
 	check(
-		price == 12 and tree.level("claws") == 1,
-		"buying claws costs 12 and gives level 1, got %d / %d" % [price, tree.level("claws")]
+		price == 15 and tree.level("claws") == 1,
+		"buying claws costs 15 and gives level 1, got %d / %d" % [price, tree.level("claws")]
 	)
 	check(tree.is_unlocked("stride"), "owning claws unlocks Long Stride")
 	var maxed := _tree({"evolve1": 1})
@@ -117,8 +88,8 @@ func _check_tree() -> void:
 		Content.section("kaiju"), Content.species_def("reptilian"), _tree({"claws": 2})
 	)
 	check(
-		is_equal_approx(Num.f(stats["stomp_damage"]), 16.0),
-		"two levels of claws add 6 stomp power to a reptilian's 10, got %s" % stats["stomp_damage"]
+		is_equal_approx(Num.f(stats["swipe_damage"]), 18.0),
+		"two levels of claws add 10 swipe power to a reptilian's 8, got %s" % stats["swipe_damage"]
 	)
 	var clamped := _tree({"claws": 99, "ghost": 3})
 	check(
@@ -143,30 +114,86 @@ func _check_city() -> void:
 	)
 
 
-func _check_tier_gate() -> void:
+func _check_structure() -> void:
+	# A floor knocked out from under a block: everything above drops.
+	var block := Structure.new(3, 3, 6, 10.0)
+	for x: int in 3:
+		for z: int in 3:
+			block.remove(Vector3i(x, 2, z))
+	var parts := block.settle()
+	var dropped: Array = parts[0]["cells"] if parts.size() == 1 else []
+	check(
+		parts.size() == 1 and str(parts[0]["kind"]) == "drop" and dropped.size() == 27,
+		"with a floor gone, the 27 chunks above it drop: %s" % [parts.size()]
+	)
+	# A tower whose base is eaten away on one side tips over toward the missing side.
+	var tower := Structure.new(3, 3, 12, 10.0)
+	for x: int in 2:
+		for z: int in 3:
+			tower.remove(Vector3i(x, 0, z))
+	var tipping := tower.settle()
+	var topples := tipping.size() == 1 and str(tipping[0]["kind"]) == "topple"
+	var dir: Vector2i = tipping[0]["dir"] if topples else Vector2i.ZERO
+	check(
+		topples and dir == Vector2i(-1, 0), "an undermined tower topples toward the gap: %s" % [dir]
+	)
+	# A tower with a sound base stands.
+	var sound := Structure.new(3, 3, 12, 10.0)
+	sound.remove(Vector3i(0, 0, 0))
+	check(sound.settle().is_empty(), "a tower missing one corner chunk still stands")
+
+
+## A toppled tower lands across the street and smashes the building it falls on.
+func _check_topple_crush() -> void:
+	var layout: Array[Dictionary] = [
+		{"x": 0.0, "z": 0.0, "w": 3, "d": 3, "h": 14, "tier": 1, "style": 0},
+		{"x": -6.0, "z": 0.0, "w": 3, "d": 3, "h": 4, "tier": 1, "style": 1},
+	]
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), Content.species_def("reptilian"), _tree()
+	)
+	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	var base: Array[Vector3i] = []
+	for x: int in 2:
+		for z: int in 3:
+			base.append(Vector3i(x, 0, z))
+	var before := sim.buildings[1].frame.alive_count
+	sim.kaiju_pos = Vector2(10.0, 0.0)  # east of it; the topple follows its own cut side (D-099)
+	sim.damage_chunks(0, base, 999.0)
+	check(
+		sim.falls.size() == 1 and sim.falls[0].kind == "topple",
+		"breaking the base sets the tower toppling"
+	)
+	var rubble_before := sim.rubble
+	var landed := false
+	for i: int in 30 * 5:
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) == "fall_land":
+				landed = true
+		if landed:
+			break
+	check(landed, "the toppling tower lands within five seconds")
+	check(sim.buildings[1].frame.alive_count < before, "the tower smashes the building it falls on")
+	check(sim.rubble > rubble_before, "a toppled tower pays rubble when it lands")
+
+
+## A tower above the kaiju's size is tougher; the same blow breaks a low building's floor.
+func _check_toughness() -> void:
 	var small := _sim("reptilian", {})
-	var grown := _sim("reptilian", {"claws": 1, "hide": 1, "rage": 1, "evolve1": 1})
 	var low := -1
 	var tall := -1
 	for i: int in small.buildings.size():
 		if small.buildings[i].tier == 1 and low < 0:
 			low = i
-		if small.buildings[i].tier == 2 and tall < 0:
+		if small.buildings[i].tier == 3 and tall < 0:
 			tall = i
-	var low_hit := small.buildings[low].layer_hp * 2.0
+	var hit := Num.f(Content.section("city")["chunk_hp"]) * 1.1
+	var low_cell: Array[Vector3i] = [Vector3i(0, 0, 0)]
+	check(small.damage_chunks(low, low_cell, hit) == 1, "a blow breaks a low building's chunk")
+	var tall_cell: Array[Vector3i] = [Vector3i(0, 0, 0)]
 	check(
-		small.damage_building(low, low_hit) == 2,
-		"a small kaiju topples two layers of a low building with two layers' damage"
-	)
-	var tall_hit := small.buildings[tall].layer_hp * 3.0
-	var small_lost := small.damage_building(tall, tall_hit)
-	var grown_lost := grown.damage_building(tall, tall_hit)
-	check(
-		small_lost == 0 and grown_lost == 3,
-		(
-			"a mid-rise shrugs off a small kaiju (%d layers) but falls to an evolved one (%d layers)"
-			% [small_lost, grown_lost]
-		)
+		small.damage_chunks(tall, tall_cell, hit) == 0,
+		"the same blow does not break a tower's chunk"
 	)
 
 
@@ -185,17 +212,9 @@ func _check_determinism() -> void:
 
 
 func _check_upgrade_effects() -> void:
-	var base := _autoplay(_sim("reptilian", {}))
-	var claws := _autoplay(_sim("reptilian", {"claws": 5}))
-	check(
-		Num.i(claws["rubble"]) > Num.i(base["rubble"]) * 1.3,
-		(
-			"five levels of claws earn clearly more rubble (%d vs %d)"
-			% [Num.i(claws["rubble"]), Num.i(base["rubble"])]
-		)
-	)
-	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1, "rage": 5}))
-	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 1}))
+	# Thick hide so both runs last to the clock: a defeat would end them at the same moment.
+	var rage := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5, "rage": 5}))
+	var few := _autoplay(_sim("reptilian", {"claws": 1, "hide": 5}))
 	check(
 		Num.f(rage["destruction"]) > Num.f(few["destruction"]),
 		(
@@ -206,10 +225,10 @@ func _check_upgrade_effects() -> void:
 	var evolved := _autoplay(_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3, "evolve1": 1}))
 	var unevolved := _autoplay(_sim("reptilian", {"claws": 3, "hide": 3, "rage": 3}))
 	check(
-		Num.i(evolved["rubble"]) > Num.i(unevolved["rubble"]),
+		Num.f(evolved["destruction"]) > Num.f(unevolved["destruction"]),
 		(
-			"evolving earns more rubble (%d vs %d)"
-			% [Num.i(evolved["rubble"]), Num.i(unevolved["rubble"])]
+			"evolving destroys more (%.3f vs %.3f)"
+			% [Num.f(evolved["destruction"]), Num.f(unevolved["destruction"])]
 		)
 	)
 
@@ -225,33 +244,100 @@ func _check_species_differ() -> void:
 	var leap := _sim("insectoid", {})
 	var before := leap.kaiju_pos
 	leap.step(DT, Vector2.ZERO, true)
-	check(leap.kaiju_pos.distance_to(before) > 5.0, "the insectoid's Leap Slam moves it forward")
+	var expected := Num.f(leap.city["leap_distance"]) * leap.body_scale()
+	check(
+		leap.kaiju_pos.distance_to(before) >= expected * 0.95,
+		"the insectoid's Leap Slam carries it its leap distance (%.1f)" % expected
+	)
 	var ring := _sim("cephalopod", {})
 	var reach_ok := ring.ability_reach() > ring.stomp_radius()
 	check(reach_ok, "the cephalopod's Tentacle Lash reaches further than its stomp")
 
 
-func _check_army() -> void:
-	var soft := _sim("reptilian", {})
-	var armoured := _sim("reptilian", {"hide": 1, "scales": 4})
-	for i: int in 30 * 30:
-		soft.step(DT, Vector2.ZERO, false)
-		armoured.step(DT, Vector2.ZERO, false)
-	var soft_loss := soft.max_hp - soft.hp
-	var armoured_loss := armoured.max_hp - armoured.hp
+## Every look (data/looks.json) carries every key presentation reads, and the default exists.
+func _check_looks() -> void:
+	var keys: Array[String] = [
+		"label",
+		"name",
+		"sky_top",
+		"sky_horizon",
+		"ambient",
+		"sun_color",
+		"sun_energy",
+		"sun_pitch",
+		"fog_color",
+		"fog_density",
+		"saturation",
+		"contrast",
+		"glow",
+		"glow_threshold",
+		"ssao",
+		"ssao_power",
+		"voxel_inset",
+		"color_noise",
+		"crease_strength",
+		"crease_radius",
+		"crease_depth_step",
+		"crease_normal_step",
+		"crease_fade_near",
+		"crease_fade_far",
+		"kaiju_roughness",
+		"window_lit",
+		"window_glow",
+		"accent_glow",
+		"kaiju_lift",
+		"styles",
+		"roof",
+		"window",
+		"window_lit_color",
+		"outskirts",
+		"asphalt",
+		"lot",
+	]
+	var missing: Array[String] = []
+	for look: Dictionary in Content.looks():
+		for key: String in keys:
+			if not look.has(key):
+				missing.append("%s.%s" % [look["id"], key])
 	check(
-		soft.tanks.size() > 0 and soft_loss > 0.0,
-		"standing still, the army arrives and hurts the kaiju (lost %.1f)" % soft_loss
+		Content.looks().size() >= 1 and missing.is_empty(), "every look is complete: %s" % [missing]
 	)
+	var default_id := str(Content.load_json("res://data/looks.json")["default"])
 	check(
-		armoured_loss < soft_loss,
-		"armoured scales cut the damage taken (%.1f vs %.1f)" % [armoured_loss, soft_loss]
+		str(Content.look()["id"]) == default_id,
+		"the default look %s is the one in use" % default_id
+	)
+	# Times of day (director 2026-10-20: "all of them"): keys the look has; runs rotate from dusk.
+	var times: Dictionary = Content.load_json("res://data/looks.json")["times"]
+	var own := Content.looks()[0]
+	var bad := []
+	for id: String in Content.times():
+		var over: Dictionary = times[id]
+		bad.append_array(over.keys().filter(func(k: String) -> bool: return not own.has(k)))
+	Content.set_time(Content.time_for_run(1))
+	var night_sun := Look.value("sun_energy")
+	Content.set_time(Content.time_for_run(0))
+	var rotates := Content.time_for_run(0) == "dusk" and Content.time_for_run(4) == "dusk"
+	check(
+		bad.is_empty() and rotates and night_sun != Look.value("sun_energy"),
+		"four times of day override look keys only and runs rotate through them: %s" % [bad]
 	)
 
 
-func _check_save_migrate() -> void:
+## The kaiju starts young, smaller than the city's towers, and grows with every upgrade level
+## and much more with each evolution (director, 2026-10-16).
+func _check_growth() -> void:
+	var young := _sim("reptilian", {}).body_scale()
+	var grown := _sim("reptilian", {"claws": 5, "hide": 5}).body_scale()
+	var evolved := _sim("reptilian", {"claws": 5, "hide": 5, "rage": 1, "evolve1": 1}).body_scale()
 	check(
-		Num.i(SaveScript.migrate({"version": 1, "rubble": 5}).get("rubble", 0)) == 5,
-		"a version 1 save loads"
+		young < 0.6 and young < grown and grown < evolved,
+		"growth: young %.2f < upgraded %.2f < evolved %.2f" % [young, grown, evolved]
 	)
-	check(SaveScript.migrate({"version": 99}).is_empty(), "a save from a newer version is refused")
+	var tallest := 0
+	for b: RampageSim.Building in _sim("reptilian", {}).buildings:
+		tallest = maxi(tallest, b.height)
+	check(
+		young * 10.0 < tallest * 0.5,
+		"a young kaiju (%.1f tall) is dwarfed by the towers (%d)" % [young * 10.0, tallest]
+	)

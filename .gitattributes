@@ -16,3 +16,9 @@
 
 # Engine sprite sheets and review images stay plain git: CI checks out without LFS
 # (LFS pointers get read as PNGs otherwise). Move a PNG to LFS only if it is huge.
+
+# Baked voxel data the game reads with FileAccess: binary, never text-normalised.
+*.kvox binary
+*.vskin binary
+*.skinw binary
+*.skinf binary

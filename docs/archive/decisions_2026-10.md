@@ -1,0 +1,245 @@
+# Decisions archive, 2026-10
+
+Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
+
+## 2026-10-17 · D-048 · Director · Croc titan v2: short reptilian arms (B) and charcoal spines (B)
+Why: director: the arms are "always doing something odd... maybe his arms are just too long" and "too human looking
+in the musculature" (measured 51% of height, 76% of the leg); "i dont like how light the colour of his spines are".
+Boards: croctitan_arms_board.png (NOW / A / B / C, picked B) and croctitan_spine_colour_board.png (olive / charcoal /
+bronze, picked charcoal). Changes: new Tripo Smart Mesh c8185166 (6623 quads, arms clear, long low tail), charcoal
+re-texture, six-view PASS (croctitan_v2_six_view.png); the Blender hand rig is re-fitted to it before D-047 ships.
+
+## 2026-10-17 · D-047 · Director · Play the Blender-made croc titan clips in the game
+Why: in game, the Blender weights (#19) fixed the hip shear and tail-root seams, but the game's procedural walk and
+roar still read as a 5 m lizard (fresh critic: rear-up, no settle, the jaw drops vertical). The Blender clips
+(blender-reptile r7, d924b29) passed three fresh motion critics: crouch, throw, a slow drift at the peak, tail
+counterbalance. Options: play the Blender clips (picked), or keep procedural and tune by hand. Changes: the croc
+titan's roar, turn and idle play from exported Blender clips; the walk is the Blender cycle layered over the
+procedural foot planting (root motion and terrain stay procedural). Other species follow once their models are decided.
+
+## 2026-10-17 · D-046 · Director · New reptile look: A "Croc titan"
+Why: board docs/captures/2026-10-17-reptile-design/reptile_directions.png (Tripo GPT Image 2.5, free quota):
+A croc titan, B armoured monitor titan, C lean apex predator. Picked A: croc snout and pale flat bone scutes
+carried over from the Blender model, bulk with grace. Changes: A goes to T-pose and multi-view references, then
+Tripo Smart Mesh, texture and the Blender hand rig (D-045); the baby and adolescent follow from it.
+
+## 2026-10-17 · D-045 · Director · Reptile body: a NEW original Tripo design, rigged in Blender
+Why: Blender motion test (blender-reptile 4ab6781, clips in notes blender-reptile/motion-test/): one hand-made
+skeleton with welded falloff weights moved BOTH the Blender model and the Tripo model cleanly (critic: deformation
+and feet PASS), so poor in-game motion comes from our auto rig, not the mesh. The director prefers Tripo's detail but
+A's originality ("less a blatant Godzilla copy"). Options: new Tripo design (picked), Blender A, current Tripo B.
+Changes: new Tripo reptile steered away from Godzilla (croc snout, pale back plates, long low tail), then rigged in
+Blender with the hand rig; Blender weights feed the game in place of rig_voxel's guessed bone ownership.
+
+## 2026-10-17 · D-044 · Director · Locomotion paused until the kaiju models are decided
+Why: "pause locomotion until we decide on the models because theyre doing work they might have to replace
+if we change our models"; octopus capture showed "head detached, limbs a static, awkward mesh".
+Changes: species-motion and kaiju-motion stop; PR #11 stays open, unmerged. The Blender motion test
+(one hand-weighted rig on the Blender and Tripo reptiles) decides the model pipeline first.
+
+## 2026-10-17 · D-043 · Director · Make the repo public to restore GitHub Actions
+Why: Actions stopped starting jobs (account spending limit); options were raise the limit ($), run locally,
+or go public (free minutes). Picked public. Changes: repo visibility public (the director flips it), main
+protected per github-hygiene, failed CI rerun. Commit email and all code/docs become readable.
+
+## 2026-10-17 · D-042 · Director · Military vehicles at 2x real size, desert tan; modelled in Blender
+Why: tank board docs/captures/2026-10-17-vehicles/tank_board.png (modelled through the Blender MCP);
+picked 2x (readable from the game camera beside a growing kaiju) and desert tan (olive goes near-black
+in blue-hour light). Changes: TankModel uses the voxelized Blender tank; helicopters follow the same way.
+
+## 2026-10-17 · D-041 · Director · Kaiju render as voxel cubes on a smooth skin (look test C)
+Why: "its looking very rough so far, would this work better if our kaiju werent voxel?"; side-by-side
+docs/captures/2026-10-17-look-test/look_test_abc.mp4 (A per-bone voxels / B smooth skinned / C voxel cubes
+on a skinned lattice); picked C. Changes: one skinned mesh per kaiju, cubes move rigidly with their bone
+over a watertight lattice: no joint gaps or speckle, keeps the voxel look. A kept as a debug fallback.
+
+## 2026-10-17 · D-040 · Director · Ultimates get their own button
+Why: picked "own button" over replacing the signature. Changes: E / pad Y, long cooldown (18 s);
+the signature stays (the insect keeps Leap Slam for hold-to-glide). As built in PR #12.
+
+## 2026-10-16 · D-039 · Director · The city grows with each evolution
+Why: species-powers' pacing sim (tools/pacing.gd) clears the tree in 0.9 h because the one city is
+flattened by run 11; the director picked "bigger city each stage" over a new city per stage or raised
+costs. Changes: each evolution unlocks more districts, taller towers, harder defences; costs re-tuned
+after that (a follow-up task); species-powers paces only its branches against the current curve.
+
+## 2026-10-16 · D-038 · Director · Mantis skin = dark chitin, red eyes, rusty scythe tips; octopus baby 6176590f
+Why: approved docs/captures/2026-10-16-stages/mantis_skin_v2.png ("Yes, use it"); the cephalopod baby
+"i love him" (Tripo 6176590f, big round eyes). Changes: same mantis prompt on all three insect stages.
+
+## 2026-10-16 · D-037 · Director · Species powers are upgrade-tree unlocks; hold-to-glide; helicopters
+Why: "part of the upgrade tree, you forgetting this is an incremental, not a kaiju simulator"; hover =
+hold jump to glide; helicopters yes. Changes: SPECIES.md answers; every power in it is an upgrade node
+in a per-species branch (data/upgrades.json), ultimate at the branch end.
+
+## 2026-10-16 · D-036 · Director · Cephalopod adult = the many-tentacled hydra (Tripo 8bf2f668)
+Why: picked C on docs/captures/2026-10-16-stages/cephalopod_adult_options.png (10+ barnacled tentacles)
+over the clawed 8-limb and the smooth octopus; fits SPECIES.md "limbs like the heads of a hydra".
+Changes: the radial rig takes its tentacle count from the mesh; baby/adolescent keep the many-limb plan.
+Also: a jaw bone for the reptile ("him opening his maw is a key part of his design").
+
+## 2026-10-16 · D-035 · Director · Three species, three ways to play (docs/SPECIES.md)
+Why: the director's species brief: reptilian = strongest (tail shears buildings, unstoppable momentum,
+ultimate atomic beam); insectoid = fastest (scuttle, jump/hover, climbs towers, ultimate egg brood that
+devours civilians and fights the military); cephalopod = most cunning (360 hydra limbs, grab and throw
+tanks and helicopters, push/pull/climb/squeeze, ultimate corrosive ink). Changes: SPECIES.md is the spec;
+build after locomotion (PR #10) lands; three open questions listed there.
+
+## 2026-10-16 · D-034 · Director · Kaiju get real Tripo-textured skins; reptile = dark olive crocodile
+Why: "i hope this isnt our final textured look"; "should be greener, less grey"; picked C (dark olive
+middle ground) over B (bright green) on docs/captures/2026-10-16-stages/reptile_skin_options.png.
+Also: "spend as many tripo credits as u want". Changes: rig_voxel.py samples the base-colour texture
+when present; every stage of every species gets a matching texture pass (same prompt per species).
+
+## 2026-10-16 · D-033 · Director · Kaiju growth stages picked
+Why: stage board docs/captures/2026-10-16-stages/stages_board.png. Reptile adolescent = B (Tripo
+f9cf6ba7, slimmer version of the adult); mantis baby 06ed8a12, adolescent 0161ad14, adult 9668b815
+("yes, use them"). Changes: reptilian_adolescent re-rigged at 130 voxels; mantis rigs wait on the
+hexapod skeleton (kaiju-motion).
+
+## 2026-10-16 · D-032 · Director · Looks first, performance tuning later
+Why: "lets worry later about frame rate/performance issues. focus on getting the best looking game
+we can and then we can tune it". Changes: perf budgets no longer block visual work; benches are still
+recorded in PRs (so tuning has a baseline) but a slower frame is not a reason to cut detail. A perf
+pass comes after the look is locked.
+
+## 2026-10-16 · D-031 · Director · Kaiju move like killing machines, each species its own way
+Why: "the walking animation looks very wind-up-toy". Reptile = JP T-rex graceful deadliness (posture a
+medium between Godzilla and T-rex, ~20-30° lean: "my t-rex comparison was mostly the gracefulness");
+insectoid = disturbing skitter, twitches, exoskeletal motion; cephalopod = slides, pushes, pulls,
+grabs building edges with tentacles, never tip-toes. Changes: helper kaiju-motion rebuilds rig
+locomotion (foot IK, weight shift, tail counterbalance, hexapod and radial rigs).
+
+## 2026-10-16 · D-030 · Director · SFX: free libraries, synthesized in-house where that sounds better
+Why: "download the free stuff, synthesize in-house when we can get better results". Changes: Sonniss
+GDC bundles, Kenney (CC0) and Freesound CC0 only; each source CLEARED in the licence register first;
+no paid packs. Also: fullscreen now starts only in exported builds (a project-wide fullscreen start put
+agent capture windows on the director's screen).
+
+## 2026-10-16 · D-029 · Director · Real city districts from OpenStreetMap, starting with Melbourne CBD
+Why: "could we have real cities with real layouts... imagine how fun it would be to destroy your own
+city"; "the cbd alone would be plenty". Changes: helper real-city bakes districts offline from OSM
+(ODbL, credited; never Google Maps, whose terms forbid it) at about 1/4 scale into the generic play
+area. No player-imported cities, ever: new cities ship as patches (director, 2026-10-16).
+TABLED (director, 2026-10-16): "focus on proofing the game before we expand to that feature";
+the helper pauses at a clean point on its WIP branch.
+
+## 2026-10-16 · D-028 · Director · Buildings must match the kaiju's fidelity
+Why: "our kaiju models look so good that they make the buildings look shitty, can we up their
+fidelity". Kaiju are ~16 voxels per floor-unit, buildings 4. Changes: city-layout raises building
+RES (8-12) with recessed, framed facades and rooftop clutter, distance LOD if perf needs it.
+
+## 2026-10-16 · D-027 · Director · The game targets a 4K 120 Hz TV
+Why: "i want the game to display on a 4k tv" (Beyond TV, 3840x2160, 120 Hz VRR, HDR, 400 nits).
+Changes: starts fullscreen, stretch aspect "expand", adaptive vsync (VRR); UI stays a 1920x1080
+canvas scaled 2x. The TV is plugged into the 4070 SUPER (director, 2026-10-16). Still open:
+TV-distance text sizes, HDR output, perf at native 4K.
+
+## 2026-10-16 · D-026 · Director · Ability powers get proper VFX and SFX (later milestone)
+Why: "we will eventually need some nice vfx and sfx for our powers/abilities that we will unlock".
+Changes: none yet. Any SFX source must clear the licence register first.
+
+## 2026-10-16 · D-025 · Director · Smoke must not obscure the camera view
+Why: "a little smog in the camera is good and immersive, too much and it just ruins the view".
+Changes: smoke.gdshader fades smoke near the camera (clear inside 8 units, full from 22) and keeps
+55% of it over the screen centre where the kaiju stands. This is the rule for every future smoke,
+dust or fog effect.
+
+## 2026-10-16 · D-024 · Director · The city must read as a real city with believable edges
+Why: "it seems like our city exists in a void... far too gridlike"; "not saying our map has to be
+infinite, but it has to make sense visually". Changes: helper session city-layout (branch city-layout).
+
+## 2026-10-16 · D-023 · Director · Tripo credits: quality over cost
+Why: "dont worry about credit cost, just get good results, the credits ar there to be spent".
+Changes: no per-session cap for kaiju/vehicle/landmark generation; every task is still logged in
+docs/provenance/tripo.md.
+
+## 2026-10-16 · D-022 · Director · The insectoid is a mantis: two raptorial arms plus four legs
+Why: "the insectoids are looking a bit armless, they should have legs and arms"; "keep pursuing
+the mantis look". Changes: adult = mantis_a (Tripo 9668b815); the rig needs a hexapod skeleton.
+
+## 2026-10-16 · D-016 · Director · ~1,000 Tripo credits approved for 9 rig-ready kaiju this session
+Why: "Yes, ~1,000 credits". Smart Mesh P2.0 (100 each, 4 variants per run) + auto-rig (~20 each).
+
+## 2026-10-16 · D-015 · Director · Every kaiju is animatable, with physics on tails, limbs and antennae
+Why: "all must be animatable too"; "i want nice physics for the tail/limbs/antennae".
+Changes: kaiju become skeletons carrying voxel chunks per bone; spring-bone physics on tail chains,
+antennae and tentacles. Rig-ready meshes (Smart Mesh), Tripo auto-rig for the reptile, Blender rigs
+for the insectoid and cephalopod.
+
+## 2026-10-16 · D-014 · Director · Three models per kaiju: baby, adolescent, adult
+Why: "we should probably have 3 models per kaiju though". The first reptile sculpt: "he looks
+wonderful" (adult). Stages map to the evolutions: baby (start), adolescent (EVOLVE 1), adult (EVOLVE 2+).
+
+## 2026-10-16 · D-021 · Director · Game font: "Kaiju Claw" (direction B) for headings and big buttons
+Why: picked from the A/B/C font board (docs/captures/2026-10-16-font/font_board.png) in the font
+session. Ours (built with fontTools); body text below 36 px keeps the default font. PR #4.
+
+## 2026-10-16 · D-020 · Director · Tripo sculpts for military vehicles and landmarks (~350 credits)
+Why: "do military vehicles and landmarks". Tank, attack helicopter, fighter jet, APC; stadium, radio
+mast, bridge. Vehicles voxelized as rigid models (rotors/turrets split); landmarks voxelized and cut
+into structural chunks so they still collapse.
+
+## 2026-10-16 · D-019 · Director · Civilians and moving traffic in the streets ("we also need civilians in the streets", "cars, etc")
+
+## 2026-10-16 · D-018 · Director · Smoke dialled back ~15% for visibility (opacity and particle count)
+
+## 2026-10-16 · D-017 · Director · A unique game font that fits the flavour (queued after the kaiju)
+
+## 2026-10-16 · D-013 · Director · Terrifying monsters, not toys; buildings are real structures
+Why: "the kaiju currently look like childrens toys, they should look like terrifying monsters";
+"towers falling like jenga ... they should be actual structures"; "need shaders and particle effects".
+Reference footage: WATCH THIS.mp4 (CityV voxel destruction) and the CG Cookie detailed-voxel trailer.
+Changes: Structure (chunks, support, drops, toppling), dust/shockwave/sparks, kaiju rebuilt from models.
+
+## 2026-10-16 · D-012 · Director · Kaiju models come from Tripo, voxelized in Blender
+Why: realistic anatomy and skin texture in dense voxels (the raptor in the reference trailer).
+Spend: approved at "roughly a few hundred credits per species with retries"; the lead asks before
+going past 500 credits in one session. Every model passes a six-view inspection before use; every
+task id, credit cost and verdict goes in docs/provenance/tripo.md.
+
+## 2026-10-16 · D-010 · Director · Real light sources; no sterile lighting
+Why: "lighting is very sterile too, should be real light sources in the game". Changes: evening sun
+with long shadows, streetlamps that light the street, lit windows, burning ruins and wrecks, muzzle
+flashes, explosion and breath light, screen-space bounce light. The evening setting is the lead's
+pick for making lights read; the director may move the time of day.
+
+## 2026-10-16 · D-009 · Director · The kaiju starts young, outscaled by the city, and grows as you play
+Changes: body scale = young 0.5 x evolution tier x (1 + 2% per upgrade level owned); reach grows with it.
+
+## 2026-10-16 · D-008 · Director · Look C (Concrete Realism), far more detailed; more voxels
+Why: chosen from A Toy / B Night / C Concrete on the labelled board; "theres not enough voxels".
+Changes: buildings at 4 voxels per floor with window grids, sills, balconies, awnings, roof gear;
+kaiju at 5 voxels per design unit with teeth, claws, scales, plates; streets with lane markings,
+cars, trees, streetlights that flatten underfoot. Looks A and B removed.
+
+## 2026-10-16 · D-007 · Director · The third species is the Cephalopod
+Why: chosen from Cephalopod / Primate / Crystalline / Mechanical; the clearest contrast to a brawler
+lizard and a fast bug. Changes: data/species.json, Tentacle Lash (ring attack, huge reach, slow).
+
+## 2026-10-16 · D-006 · Director · Players choose a species at the start: Reptilian, Insectoid, a third
+Why: customisation. Each species has its own body, stats and signature attack (rule: a choice must
+change play). One species per save; "New kaiju" starts over. Changes: species select screen.
+
+## 2026-10-16 · D-005 · Director · Voxel graphics
+Changes: buildings, kaiju, army and debris are voxels; destruction removes layers and spills blocks.
+
+## 2026-10-16 · D-004 · Director · Controls: move + auto attacks, one signature button
+Why: focus on positioning and builds; works on controller and the TV.
+
+## 2026-10-16 · D-003 · Director · Short rampages (1-3 min) between visits to the upgrade tree
+Why: tight loop, the evolution tree is the spine (Nodebuster / Brotato shape).
+
+## 2026-10-16 · D-002 · Director · Active action game, NOT idle: deep upgrade tree, deliberate pacing,
+3-5 hours of content, zero AFK progression
+Why: director's words at kickoff. Changes: nothing accrues while closed; no passive income.
+
+## 2026-10-16 · D-002a · Lead · Godot 4.7.2, PC first with a web export; private GitHub repo
+Why: director chose Godot (PC + web). The repo-visibility question went unanswered; private is the
+standard default and is reversible.
+
+## 2026-10-16 · D-001 · Director · Kaiju Incremental is started with the shared kickoff scaffold
+Why: the project-kickoff skill (~/.claude/skills) produced the repo skeleton: CLAUDE.md, CI with
+check floors, PR template, board and log, project skills extending github-hygiene and
+game-architecture.
+Changes: the first commit.

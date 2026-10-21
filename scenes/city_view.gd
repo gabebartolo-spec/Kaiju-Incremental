@@ -1,226 +1,314 @@
 class_name CityView
 extends Node3D
-## The voxel city and its effects: sky and light, ground, one MultiMesh per building (cells
-## bottom-up, so losing layers is a smaller visible_instance_count), tumbling debris, rings,
-## flames and floating text. Draws only; RampageSim decides what breaks.
+## The voxel city and its effects: sky and light, ground, buildings (BuildingView: voxels by
+## structural chunk), falling sections, physics debris, fires, dust and sparks (Fx), rings,
+## flames and floating text. Draws only; RampageSim decides what breaks and what falls.
 
-const VOXEL := 1.0
-const MAX_DEBRIS := 220
-const DEBRIS_PER_LAYER := 5
-const STYLE_COLORS: Array[Color] = [
-	Color("8d9298"), Color("b59a78"), Color("5f8f95"), Color("4b5260")
-]
-const WINDOW_DARK := Color("27384a")
-const WINDOW_LIT := Color("ffd27a")
+const DEBRIS_PER_CHUNK := 8
+const DEBRIS_PER_LANDING := 160
+const FLOAT_TEXT := "float_text"  # world hints' group: the end beat clears it (RampageHud)
+const DROP_REACH := 0.8  # a dropped section crushes people this far out from its walls
+
+## Staged (stages.on): _ready builds in stages, one per frame, while the owner draws its loading
+## screen between them (b2-30: building the whole city in one call froze the screen for seconds).
+var stages := BuildStages.new()
+## Whether the city is built (always true after _ready when not staged).
+var is_loaded := false
 
 var sim: RampageSim
+var fx: Fx
+## Civilians, police and moving traffic (null on an empty stage).
+var street: StreetLife
 var _rng: RandomNumberGenerator
-var _cube_mesh: BoxMesh
-var _building_mms: Array[MultiMeshInstance3D] = []
-var _debris: Array[RigidBody3D] = []
+var _stream: BuildingStream
+var _fade: BuildingFade
+var _falling: Dictionary = {}
+var _ruins: RuinYard
+var _topple: ToppleFx
+var _decor: CityDecor
+var _fires: Array[Fire] = []
+var _chunk_fires := BuildingFires.new()
+var _debris: DebrisField
+
+var _with_decor := true
 
 
-func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
+## with_decor false: an empty stage (no streets, cars or trees), e.g. a model line-up.
+func _init(p_sim: RampageSim, rng: RandomNumberGenerator, with_decor: bool = true) -> void:
 	sim = p_sim
 	_rng = rng
+	_with_decor = with_decor
 
 
 func _ready() -> void:
-	_cube_mesh = BoxMesh.new()
-	_cube_mesh.size = Vector3.ONE * VOXEL * 0.94
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.roughness = 0.9
-	_cube_mesh.material = mat
-	_build_environment()
+	if stages.on:
+		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
+	CityEnvironment.attach(self, sim)
 	_build_ground()
+	if not await stages.next(self):
+		return
+	var colors: Array[Color] = []
 	for b: RampageSim.Building in sim.buildings:
-		_build_building(b)
+		colors.append(_base_color(b))
+	_stream = BuildingStream.new(sim, colors)
+	_stream.defer_initial = stages.on  # the workers mesh the nearest buildings while the rest builds
+	add_child(_stream)
+	_fade = BuildingFade.new(sim.buildings, _stream.built)
+	fx = Fx.new()
+	add_child(fx)
+	_debris = DebrisField.new(_rng, int(GraphicsPresets.cap("debris_pool")))
+	add_child(_debris)
+	_ruins = RuinYard.new(sim, _stream.view)
+	add_child(_ruins)
+	_topple = ToppleFx.new(self, _rng)
+	add_child(_topple)
+	add_child(LightPool.new())  # before any lamp, fire or beacon: it lights the nearest few
+	Fire.prewarm(self)
+	if not await stages.next(self):
+		return
+	if _with_decor:
+		_decor = CityDecor.new(sim, Seeds.make("decor", 0))
+		add_child(_decor)
+		if not await stages.next(self):
+			return
+		street = StreetLife.new(sim, fx, Seeds.make("civilians", 0), Seeds.derive(_rng, 0x5907))
+		add_child(street)
+		if not await stages.next(self):
+			return
+	# Where the kaiju's walk ends (comments #18).
+	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
+	while stages.on and not _stream.initial_done():
+		if not await stages.next(self, false):
+			return
+	_stream.finish_initial()
+	process_mode = Node.PROCESS_MODE_INHERIT
+	is_loaded = true
 
 
-func _process(_delta: float) -> void:
-	if _debris.size() > MAX_DEBRIS:
-		var old: RigidBody3D = _debris.pop_front()
-		old.queue_free()
+## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife).
+func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
+	if _decor != null:
+		_decor.crush(at, radius)
+	if street != null:
+		street.crush(at, radius, by_tank)
 
 
-func _build_environment() -> void:
-	var env := Environment.new()
-	var sky := Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("6f9fd8")
-	sky_mat.sky_horizon_color = Color("e0c9a6")
-	sky_mat.ground_horizon_color = Color("e0c9a6")
-	sky.sky_material = sky_mat
-	env.background_mode = Environment.BG_SKY
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.7
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.ssao_enabled = true
-	env.fog_enabled = true
-	env.fog_light_color = Color("e0c9a6")
-	env.fog_density = 0.0012
-	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.25
-	env.adjustment_contrast = 1.08
-	var world_env := WorldEnvironment.new()
-	world_env.environment = env
-	add_child(world_env)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-55, -35, 0)
-	sun.light_energy = 1.25
-	sun.light_color = Color("fff1dc")
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 140.0
-	add_child(sun)
+## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
+func crush_cone(cone: Dictionary) -> void:
+	crush_all(BreathCone.cover(cone))
 
 
+## Everything on the ground within any of `spots` (x, z, radius), as crush() on each in turn,
+## with one pass over the people (b2-3: a cone or a topple strip crushes a dozen spots at once).
+func crush_all(spots: Array[Vector3]) -> void:
+	if _decor != null:
+		for s: Vector3 in spots:
+			_decor.crush(Vector3(s.x, 0.0, s.y), s.z)
+	if street != null:
+		street.crush_all(spots)
+
+
+func _process(delta: float) -> void:
+	if not is_loaded:
+		return
+	_animate_falls(delta)
+	var camera := get_viewport().get_camera_3d()
+	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
+		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
+		_fade.update(camera.global_position, BuildingFade.sight_of(sim), delta)
+		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
+		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
+		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
+
+
+## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
 func _build_ground() -> void:
-	var size := sim.arena_half * 2.0 + 60.0
 	var ground := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3(size, 1.0, size)
+	box_shape.size = Vector3(800.0, 1.0, 800.0)
 	shape.shape = box_shape
 	shape.position.y = -0.5
 	ground.add_child(shape)
 	add_child(ground)
-	slab(Vector3(size, 0.2, size), Vector3(0, -0.1, 0), Color("5d7a45"))  # outskirts
-	var city := (sim.arena_half - Num.f(sim.city["spacing"])) * 2.0
-	slab(Vector3(city, 0.2, city), Vector3(0, -0.05, 0), Color("3a3f45"))  # asphalt
-	for b: RampageSim.Building in sim.buildings:
-		slab(Vector3(b.w + 1.2, 0.2, b.d + 1.2), Vector3(b.x, 0.0, b.z), Color("8a8f94"))
-
-
-func slab(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 1.0
-	mesh.material = mat
-	mi.mesh = mesh
-	mi.position = pos
-	add_child(mi)
-	return mi
-
-
-func _build_building(b: RampageSim.Building) -> void:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = _cube_mesh
-	mm.instance_count = b.w * b.d * b.height
-	var i := 0
-	for layer: int in b.height:
-		for ix: int in b.w:
-			for iz: int in b.d:
-				var cell := Vector3i(ix, layer, iz)
-				mm.set_instance_transform(i, Transform3D(Basis(), _cell_pos(b, cell)))
-				mm.set_instance_color(i, _cell_color(b, cell))
-				i += 1
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	add_child(mmi)
-	_building_mms.append(mmi)
+	var streets := CityGround.new(sim.city)
+	add_child(streets)
+	if _with_decor:
+		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 
 
 func _base_color(b: RampageSim.Building) -> Color:
-	return STYLE_COLORS[b.style % STYLE_COLORS.size()]
+	var styles := Look.styles()
+	return styles[posmod(b.style + roundi(b.x * 3.0 + b.z), styles.size())]
 
 
-## cell: (x across, layer, z across).
-func _cell_pos(b: RampageSim.Building, cell: Vector3i) -> Vector3:
-	return (
-		Vector3(b.x - b.w * 0.5 + cell.x + 0.5, cell.y + 0.5, b.z - b.d * 0.5 + cell.z + 0.5)
-		* VOXEL
-	)
-
-
-func _cell_color(b: RampageSim.Building, cell: Vector3i) -> Color:
-	var base := _base_color(b)
-	if cell.y == b.height - 1:
-		return base.darkened(0.25)
-	var outer := cell.x == 0 or cell.z == 0 or cell.x == b.w - 1 or cell.z == b.d - 1
-	if outer and cell.y % 2 == 1:
-		var lit := (cell.x * 7 + cell.z * 13 + cell.y * 5 + b.style) % 6 == 0
-		return WINDOW_LIT if lit else WINDOW_DARK
-	return base * (1.0 - 0.04 * ((cell.x + cell.z + cell.y) % 3))
-
-
-## A building lost `count` layers: hide them, throw voxels away from the kaiju, leave a
-## rubble slab when nothing stands.
-func layers_destroyed(index: int, count: int, kaiju_at: Vector3) -> void:
+## Chunks broke: their voxels vanish, some fly off as physics debris, dust puffs out.
+func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> void:
+	var view := _stream.view(index)
+	if sim.body.over(index):  # the body's bite tears a piece off (BodyBite)
+		BodyBite.tear(self, view, cells, kaiju_at, _rng)
+		_broke(index, cells)
+		return
+	var parts := view.hide_chunks(cells)
+	parts.append_array(view.chip(cells, _rng))
 	var b := sim.buildings[index]
-	_building_mms[index].multimesh.visible_instance_count = b.layers * b.w * b.d
-	var away := (Vector3(b.x, 0, b.z) - kaiju_at).normalized()
-	for layer: int in range(b.layers, b.layers + count):
-		for _n: int in DEBRIS_PER_LAYER:
-			var cell := Vector3i(_rng.randi_range(0, b.w - 1), layer, _rng.randi_range(0, b.d - 1))
-			debris(_cell_pos(b, cell), _cell_color(b, cell), away)
-	if b.layers == 0:
-		slab(Vector3(b.w, 0.5, b.d), Vector3(b.x, 0.25, b.z), _base_color(b).darkened(0.35))
+	var centre := Vector3(b.x, 0, b.z)
+	var flip := -1.0 if b.landmark != "" else 1.0  # a landmark sheds out onto the street
+	var away := (centre - Vector3(kaiju_at.x, 0, kaiju_at.z)).normalized() * flip
+	var budget := mini(parts.size(), cells.size() * DEBRIS_PER_CHUNK)
+	for n: int in budget:
+		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
+		var pos: Vector3 = part["pos"]
+		var color: Color = part["color"]
+		debris(pos, color, away)
+	var mid := Vector3.ZERO
+	for c: Vector3i in cells:
+		mid += b.chunk_world(c)
+	if cells.size() >= 4:  # only a real collapse throws up a dust cloud
+		fx.dust(mid / maxi(1, cells.size()), 0.5 + cells.size() * 0.05)
+	_broke(index, cells)
+
+
+## A section starts to fall: lift its voxels into a piece that topples or drops.
+func fall_start(event: Dictionary) -> void:
+	var index := Num.i(event["building"])
+	var cells: Array[Vector3i] = event["cells"]
+	var pivot: Vector3 = event["pivot"]
+	var piece := _stream.view(index).lift_piece(cells, pivot)
+	if LandmarkBurst.bursts(sim, event):  # a landmark's section bursts where it stands
+		piece = LandmarkBurst.new(piece, self, event)
+	add_child(piece)
+	_falling[Num.i(event["id"])] = {
+		"node": piece,
+		"kind": str(event["kind"]),
+		"dir": event["dir"],
+		"drop": Num.f(event["drop"]),
+		"duration": maxf(0.05, Num.f(event["duration"])),
+		"t": 0.0,
+	}
+	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
+	_broke(index, cells)
+	if street != null:  # the people under it freeze; its landing crushes the same reach
+		street.brace_fall(event, DROP_REACH)
+
+
+## Gravity drives it: the angle (topple) or the drop grows with the square of time.
+func _animate_falls(delta: float) -> void:
+	for id: int in _falling:
+		var f: Dictionary = _falling[id]
+		var node: Node3D = f["node"]
+		f["t"] = Num.f(f["t"]) + delta
+		var k := clampf(Num.f(f["t"]) / Num.f(f["duration"]), 0.0, 1.0)
+		if str(f["kind"]) == "topple":
+			_topple.pose(f, delta)
+		else:
+			node.position.y = (
+				node.position.y - (Num.f(f["drop"]) * k * k - Num.f(f.get("dropped", 0.0)))
+			)
+			f["dropped"] = Num.f(f["drop"]) * k * k
+
+
+## A section hit the ground (or what was below it): it bursts into debris and dust.
+func fall_land(event: Dictionary) -> void:
+	var id := Num.i(event["id"])
+	if not _falling.has(id):
+		return
+	var f: Dictionary = _falling[id]
+	_falling.erase(id)
+	var node: Node3D = f["node"]
+	var parts: Array = node.get_meta("parts", [])
+	if str(event["kind"]) == "topple" and not (node is LandmarkBurst):
+		_topple_land(node, event)
+		return
+	var landed: Array[Vector3] = []
+	for n: int in mini(parts.size(), DEBRIS_PER_LANDING):
+		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
+		var pos: Vector3 = part["pos"]
+		var pivot: Vector3 = node.get_meta("pivot")
+		var at := node.global_transform * (pos - pivot)
+		landed.append(at)
+		var color: Color = part["color"]
+		debris(at, color, Vector3.UP)
+	if sim.buildings[Num.i(event["building"])].landmark != "":
+		LandmarkBurst.retire(node, true)
+	else:
+		_topple.crumble(node)  # crumbles into the street over a moment, never a one-frame pop
+	if not landed.is_empty():
+		fx.dust(landed[0], 1.5)
+		var b := sim.buildings[Num.i(event["building"])]
+		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
+			var spill := Num.f(street.tune("fall_spill"))
+			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH + spill)
+
+
+## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what
+## the strip covers is crushed.
+func _topple_land(node: Node3D, event: Dictionary) -> void:
+	_topple.land(node, event, _stream.view(Num.i(event["building"])).voxels)
+	var from: Vector2 = event["from"]
+	var to: Vector2 = event["to"]
+	var width := Num.f(event["width"])
+	var a := Vector3(from.x, 0, from.y)
+	var b := Vector3(to.x, 0, to.y)
+	var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
+	var spill := Num.f(street.tune("fall_spill")) if street != null else 0.0
+	var spots: Array[Vector3] = []
+	for i: int in steps + 1:
+		var at := a.lerp(b, float(i) / steps)
+		spots.append(Vector3(at.x, at.z, width * 0.6 + spill))
+	crush_all(spots)
+
+
+## The ruins of the rampage (ToppleFx builds its rubble strips through it).
+func ruins() -> RuinYard:
+	return _ruins
 
 
 func debris(pos: Vector3, color: Color, away: Vector3) -> void:
-	var body := RigidBody3D.new()
-	var shape := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3.ONE * 0.8
-	shape.shape = box_shape
-	body.add_child(shape)
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * 0.8
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material = mat
-	mi.mesh = mesh
-	body.add_child(mi)
-	body.position = pos
-	add_child(body)
-	var spread := Vector3(
-		_rng.randf_range(-1, 1), _rng.randf_range(0.5, 1.5), _rng.randf_range(-1, 1)
-	)
-	body.apply_central_impulse((away * 4.0 + spread * 4.0) * body.mass)
-	body.angular_velocity = Vector3(
-		_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6)
-	)
-	_debris.append(body)
-	var tween := body.create_tween()
-	tween.tween_interval(2.5)
-	tween.tween_property(body, "scale", Vector3.ONE * 0.01, 0.6)
-	tween.tween_callback(func() -> void: _forget_debris(body))
+	_debris.spawn(pos, color, away)
 
 
-func _forget_debris(body: RigidBody3D) -> void:
-	_debris.erase(body)
-	body.queue_free()
+## A fire that keeps burning on the ground (wrecks, a crash, a thrown landing); the oldest goes
+## out past the cap. Nothing lights one on a collapse: rubble never burns (#111).
+func fire(at: Vector3, size: float) -> Fire:
+	var f := Fire.new(size, _rng.randf() * 10.0)
+	f.position = at
+	add_child(f)
+	_fires.append(f)
+	if _fires.size() > int(GraphicsPresets.cap("max_fires")):
+		var old: Fire = _fires.pop_front()
+		old.queue_free()
+	return f
 
 
-## A burst of glowing voxels from `from` over a cone along `span` (direction times reach).
-func flame_cone(from: Vector3, ground_at: Vector3, span: Vector3, color: Color) -> void:
-	for _n: int in 40:
-		var spread := span.rotated(Vector3.UP, _rng.randf_range(-0.5, 0.5))
-		var target := ground_at + spread * _rng.randf_range(0.4, 1.0) + Vector3(0, 0.5, 0)
-		_flame_voxel(from, target, color)
+## A fire the sim lit on one chunk (the beam's coat): it goes out when that chunk breaks or falls.
+func burn_chunk(index: int, cell: Vector3i, size: float) -> void:
+	var f := fire(sim.buildings[index].chunk_world(cell), size)
+	_chunk_fires.add(index, cell, f)
 
 
-func _flame_voxel(from: Vector3, to: Vector3, color: Color) -> void:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * _rng.randf_range(0.5, 1.1)
-	mesh.material = glow(color, 3.0)
-	mi.mesh = mesh
-	mi.position = from
-	add_child(mi)
-	var tween := mi.create_tween()
-	tween.tween_property(mi, "position", to, _rng.randf_range(0.18, 0.35))
-	tween.tween_property(mi, "scale", Vector3.ONE * 0.01, 0.2)
-	tween.tween_callback(mi.queue_free)
+## Chunks broke or fell: fires on them go out, all of the building's once none stand (#111).
+func _broke(index: int, cells: Array[Vector3i]) -> void:
+	var out := _chunk_fires.cells_gone(index, cells)
+	if sim.buildings[index].frame.alive_count == 0:
+		out.append_array(_chunk_fires.building_gone(index))
+	for f: Fire in out:
+		_fires.erase(f)
+		f.go_out()
+	_ruins.mark(index)
+
+
+## A short burst of real light (muzzle flash, explosion, breath).
+func flash(at: Vector3, color: Color, energy: float, seconds: float) -> void:
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = energy
+	light.omni_range = 3.0 + energy
+	light.position = at
+	add_child(light)
+	var tween := light.create_tween()
+	tween.tween_property(light, "light_energy", 0.0, seconds)
+	tween.tween_callback(light.queue_free)
 
 
 static func glow(color: Color, energy: float) -> StandardMaterial3D:
@@ -262,6 +350,7 @@ func float_text(text: String, pos: Vector3, color: Color) -> void:
 	l.outline_size = 24
 	l.modulate = color
 	l.no_depth_test = true
+	l.add_to_group(FLOAT_TEXT)
 	l.position = pos
 	add_child(l)
 	var tween := l.create_tween()

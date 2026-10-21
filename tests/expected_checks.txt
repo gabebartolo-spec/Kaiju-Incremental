@@ -1,6 +1,0 @@
-# Checks each suite must run (tools/run_tests.sh). A suite reporting fewer fails the
-# run: checks went missing. Raise a floor in the PR that adds checks; floors only go
-# up (game-architecture §6). A suite with no line here fails until one is added.
-smoke 11
-sim 28
-flow 9

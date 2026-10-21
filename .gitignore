@@ -12,3 +12,15 @@ review/
 .claude/worktrees/
 .claude/settings.local.json
 override.cfg
+
+# Director reference footage (large; stays local)
+*.mp4
+native/bin/
+native/.sconsign*
+*.obj
+*.o
+*.lib
+*.exp
+*.pdb
+.sconsign.dblite
+native/src/*.obj

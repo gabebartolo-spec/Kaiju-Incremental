@@ -1,0 +1,412 @@
+{
+ "height": 200,
+ "type": "biped",
+ "bones": [
+  {
+   "name": "spine0",
+   "parent": null,
+   "head": [
+    0.0,
+    75.62,
+    -34.64
+   ],
+   "tail": [
+    0.0,
+    95.52,
+    -58.52
+   ],
+   "physics": false
+  },
+  {
+   "name": "spine1",
+   "parent": "spine0",
+   "head": [
+    0.0,
+    95.52,
+    -58.52
+   ],
+   "tail": [
+    0.0,
+    115.42,
+    -82.4
+   ],
+   "physics": false
+  },
+  {
+   "name": "spine2",
+   "parent": "spine1",
+   "head": [
+    0.0,
+    115.42,
+    -82.4
+   ],
+   "tail": [
+    0.0,
+    131.34,
+    -102.3
+   ],
+   "physics": false
+  },
+  {
+   "name": "head0",
+   "parent": "spine2",
+   "head": [
+    0.0,
+    131.34,
+    -102.3
+   ],
+   "tail": [
+    0.0,
+    159.2,
+    -126.18
+   ],
+   "physics": false
+  },
+  {
+   "name": "head1",
+   "parent": "head0",
+   "head": [
+    0.0,
+    159.2,
+    -126.18
+   ],
+   "tail": [
+    0.0,
+    164.17,
+    -208.76
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l0",
+   "parent": "spine2",
+   "head": [
+    -33.83,
+    123.38,
+    -98.32
+   ],
+   "tail": [
+    -75.62,
+    121.39,
+    -98.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l1",
+   "parent": "arm_l0",
+   "head": [
+    -75.62,
+    121.39,
+    -98.32
+   ],
+   "tail": [
+    -111.44,
+    119.4,
+    -98.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l2",
+   "parent": "arm_l1",
+   "head": [
+    -111.44,
+    119.4,
+    -98.32
+   ],
+   "tail": [
+    -133.33,
+    117.41,
+    -98.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l0",
+   "parent": "spine0",
+   "head": [
+    -35.82,
+    65.67,
+    -50.56
+   ],
+   "tail": [
+    -47.76,
+    39.8,
+    -74.44
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l1",
+   "parent": "leg_l0",
+   "head": [
+    -47.76,
+    39.8,
+    -74.44
+   ],
+   "tail": [
+    -55.72,
+    13.93,
+    -46.58
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l2",
+   "parent": "leg_l1",
+   "head": [
+    -55.72,
+    13.93,
+    -46.58
+   ],
+   "tail": [
+    -59.7,
+    1.99,
+    -94.34
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r0",
+   "parent": "spine2",
+   "head": [
+    33.83,
+    123.38,
+    -98.32
+   ],
+   "tail": [
+    75.62,
+    121.39,
+    -98.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r1",
+   "parent": "arm_r0",
+   "head": [
+    75.62,
+    121.39,
+    -98.32
+   ],
+   "tail": [
+    111.44,
+    119.4,
+    -98.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r2",
+   "parent": "arm_r1",
+   "head": [
+    111.44,
+    119.4,
+    -98.32
+   ],
+   "tail": [
+    133.33,
+    117.41,
+    -98.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r0",
+   "parent": "spine0",
+   "head": [
+    35.82,
+    65.67,
+    -50.56
+   ],
+   "tail": [
+    47.76,
+    39.8,
+    -74.44
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r1",
+   "parent": "leg_r0",
+   "head": [
+    47.76,
+    39.8,
+    -74.44
+   ],
+   "tail": [
+    55.72,
+    13.93,
+    -46.58
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r2",
+   "parent": "leg_r1",
+   "head": [
+    55.72,
+    13.93,
+    -46.58
+   ],
+   "tail": [
+    59.7,
+    1.99,
+    -94.34
+   ],
+   "physics": false
+  },
+  {
+   "name": "tail0",
+   "parent": "spine0",
+   "head": [
+    0.0,
+    71.64,
+    -18.72
+   ],
+   "tail": [
+    0.0,
+    57.35,
+    0.96
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail1",
+   "parent": "tail0",
+   "head": [
+    0.0,
+    57.35,
+    0.96
+   ],
+   "tail": [
+    0.0,
+    43.75,
+    21.11
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail2",
+   "parent": "tail1",
+   "head": [
+    0.0,
+    43.75,
+    21.11
+   ],
+   "tail": [
+    0.0,
+    32.26,
+    42.36
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail3",
+   "parent": "tail2",
+   "head": [
+    0.0,
+    32.26,
+    42.36
+   ],
+   "tail": [
+    0.0,
+    24.73,
+    65.42
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail4",
+   "parent": "tail3",
+   "head": [
+    0.0,
+    24.73,
+    65.42
+   ],
+   "tail": [
+    0.0,
+    20.33,
+    89.31
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail5",
+   "parent": "tail4",
+   "head": [
+    0.0,
+    20.33,
+    89.31
+   ],
+   "tail": [
+    0.0,
+    17.84,
+    113.51
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail6",
+   "parent": "tail5",
+   "head": [
+    0.0,
+    17.84,
+    113.51
+   ],
+   "tail": [
+    0.0,
+    16.36,
+    137.79
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail7",
+   "parent": "tail6",
+   "head": [
+    0.0,
+    16.36,
+    137.79
+   ],
+   "tail": [
+    0.0,
+    14.22,
+    162.01
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail8",
+   "parent": "tail7",
+   "head": [
+    0.0,
+    14.22,
+    162.01
+   ],
+   "tail": [
+    0.0,
+    6.96,
+    210.13
+   ],
+   "physics": true
+  },
+  {
+   "name": "jaw",
+   "parent": "head1",
+   "head": [
+    0.0,
+    169.15,
+    -132.15
+   ],
+   "tail": [
+    0.0,
+    158.2,
+    -205.78
+   ],
+   "physics": false,
+   "close": 0.0
+  }
+ ]
+}

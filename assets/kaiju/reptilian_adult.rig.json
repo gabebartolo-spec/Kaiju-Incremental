@@ -1,0 +1,412 @@
+{
+ "height": 320,
+ "type": "biped",
+ "bones": [
+  {
+   "name": "spine0",
+   "parent": null,
+   "head": [
+    0.0,
+    175.45,
+    -178.39
+   ],
+   "tail": [
+    0.0,
+    194.59,
+    -216.67
+   ],
+   "physics": false
+  },
+  {
+   "name": "spine1",
+   "parent": "spine0",
+   "head": [
+    0.0,
+    194.59,
+    -216.67
+   ],
+   "tail": [
+    0.0,
+    213.73,
+    -254.95
+   ],
+   "physics": false
+  },
+  {
+   "name": "spine2",
+   "parent": "spine1",
+   "head": [
+    0.0,
+    213.73,
+    -254.95
+   ],
+   "tail": [
+    0.0,
+    232.87,
+    -283.66
+   ],
+   "physics": false
+  },
+  {
+   "name": "head0",
+   "parent": "spine2",
+   "head": [
+    0.0,
+    232.87,
+    -283.66
+   ],
+   "tail": [
+    0.0,
+    274.34,
+    -328.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "head1",
+   "parent": "head0",
+   "head": [
+    0.0,
+    274.34,
+    -328.32
+   ],
+   "tail": [
+    0.0,
+    267.96,
+    -432.0
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l0",
+   "parent": "spine2",
+   "head": [
+    -51.04,
+    226.49,
+    -293.23
+   ],
+   "tail": [
+    -76.56,
+    210.54,
+    -312.37
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l1",
+   "parent": "arm_l0",
+   "head": [
+    -76.56,
+    210.54,
+    -312.37
+   ],
+   "tail": [
+    -86.13,
+    197.78,
+    -321.94
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_l2",
+   "parent": "arm_l1",
+   "head": [
+    -86.13,
+    197.78,
+    -321.94
+   ],
+   "tail": [
+    -89.32,
+    175.45,
+    -328.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l0",
+   "parent": "spine0",
+   "head": [
+    -44.66,
+    159.5,
+    -203.91
+   ],
+   "tail": [
+    -70.18,
+    111.65,
+    -235.81
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l1",
+   "parent": "leg_l0",
+   "head": [
+    -70.18,
+    111.65,
+    -235.81
+   ],
+   "tail": [
+    -82.94,
+    54.23,
+    -203.91
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_l2",
+   "parent": "leg_l1",
+   "head": [
+    -82.94,
+    54.23,
+    -203.91
+   ],
+   "tail": [
+    -95.7,
+    3.19,
+    -274.09
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r0",
+   "parent": "spine2",
+   "head": [
+    51.04,
+    226.49,
+    -293.23
+   ],
+   "tail": [
+    76.56,
+    210.54,
+    -312.37
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r1",
+   "parent": "arm_r0",
+   "head": [
+    76.56,
+    210.54,
+    -312.37
+   ],
+   "tail": [
+    86.13,
+    197.78,
+    -321.94
+   ],
+   "physics": false
+  },
+  {
+   "name": "arm_r2",
+   "parent": "arm_r1",
+   "head": [
+    86.13,
+    197.78,
+    -321.94
+   ],
+   "tail": [
+    89.32,
+    175.45,
+    -328.32
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r0",
+   "parent": "spine0",
+   "head": [
+    44.66,
+    159.5,
+    -203.91
+   ],
+   "tail": [
+    70.18,
+    111.65,
+    -235.81
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r1",
+   "parent": "leg_r0",
+   "head": [
+    70.18,
+    111.65,
+    -235.81
+   ],
+   "tail": [
+    82.94,
+    54.23,
+    -203.91
+   ],
+   "physics": false
+  },
+  {
+   "name": "leg_r2",
+   "parent": "leg_r1",
+   "head": [
+    82.94,
+    54.23,
+    -203.91
+   ],
+   "tail": [
+    95.7,
+    3.19,
+    -274.09
+   ],
+   "physics": false
+  },
+  {
+   "name": "tail0",
+   "parent": "spine0",
+   "head": [
+    0.0,
+    165.88,
+    -159.25
+   ],
+   "tail": [
+    0.0,
+    149.84,
+    -100.05
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail1",
+   "parent": "tail0",
+   "head": [
+    0.0,
+    149.84,
+    -100.05
+   ],
+   "tail": [
+    0.0,
+    123.01,
+    -44.89
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail2",
+   "parent": "tail1",
+   "head": [
+    0.0,
+    123.01,
+    -44.89
+   ],
+   "tail": [
+    0.0,
+    98.49,
+    11.33
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail3",
+   "parent": "tail2",
+   "head": [
+    0.0,
+    98.49,
+    11.33
+   ],
+   "tail": [
+    0.0,
+    84.22,
+    70.86
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail4",
+   "parent": "tail3",
+   "head": [
+    0.0,
+    84.22,
+    70.86
+   ],
+   "tail": [
+    0.0,
+    71.26,
+    130.82
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail5",
+   "parent": "tail4",
+   "head": [
+    0.0,
+    71.26,
+    130.82
+   ],
+   "tail": [
+    0.0,
+    61.18,
+    191.32
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail6",
+   "parent": "tail5",
+   "head": [
+    0.0,
+    61.18,
+    191.32
+   ],
+   "tail": [
+    0.0,
+    51.36,
+    251.87
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail7",
+   "parent": "tail6",
+   "head": [
+    0.0,
+    51.36,
+    251.87
+   ],
+   "tail": [
+    0.0,
+    38.5,
+    311.84
+   ],
+   "physics": true
+  },
+  {
+   "name": "tail8",
+   "parent": "tail7",
+   "head": [
+    0.0,
+    38.5,
+    311.84
+   ],
+   "tail": [
+    0.0,
+    9.57,
+    430.89
+   ],
+   "physics": true
+  },
+  {
+   "name": "jaw",
+   "parent": "head1",
+   "head": [
+    0.0,
+    272.74,
+    -337.89
+   ],
+   "tail": [
+    0.0,
+    261.58,
+    -427.21
+   ],
+   "physics": false,
+   "close": 0.0
+  }
+ ]
+}

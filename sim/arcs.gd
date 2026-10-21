@@ -1,0 +1,120 @@
+class_name Arcs
+extends RefCounted
+## A ring-shaped landmark's arcs (the stadium): its plan is cut into sectors round its middle,
+## in two bands, the rim (outer wall and roof) and the stands inside it. The first chunk an arc
+## loses brings down everything of it above a stub of `stub` floors as one toppling section, the
+## rim outward and the stands inward, so a breach reads as a section of wall failing and lands as
+## a rubble strip (Collapse), not as scattered holes. Part of Structure.settle(). Pure sim.
+
+var stub := 0
+var _w := 0
+## Plan column (x + z * w) -> arc, or -1 (the pitch, and the corner masts outside the ring).
+var _of := PackedInt32Array()
+var _dirs: Array[Vector2i] = []
+## Standing chunks per arc when it last shed (or at the start).
+var _whole := PackedInt32Array()
+
+
+## cfg: {"sectors", "stub" (floors that stay standing), "rim" (normalised radius where the rim
+## starts: 0 is the middle, 1 the footprint's inscribed ellipse), "outer" (the wall's outermost
+## chunks reach past 1; the corner masts beyond it belong to no arc)}. Only columns that rise
+## above the stub belong to an arc: the pitch never does.
+static func build(frame: Structure, cfg: Dictionary) -> Arcs:
+	var a := Arcs.new()
+	var sectors := Num.i(cfg["sectors"])
+	var rim := Num.f(cfg["rim"])
+	var outer := Num.f(cfg["outer"])
+	a.stub = Num.i(cfg["stub"])
+	a._w = frame.w
+	a._of.resize(frame.w * frame.d)
+	a._of.fill(-1)
+	for x: int in frame.w:
+		for z: int in frame.d:
+			var at := Vector2((x + 0.5) / (frame.w * 0.5) - 1.0, (z + 0.5) / (frame.d * 0.5) - 1.0)
+			if at.length() > outer or frame.top_below(x, z, frame.h) < a.stub:
+				continue
+			var band := 1 if at.length() >= rim else 0
+			var s := posmod(floori((at.angle() + PI) / TAU * sectors), sectors)
+			a._of[x + z * frame.w] = band * sectors + s
+	for band: int in 2:
+		for s: int in sectors:
+			var out := Vector2.from_angle((s + 0.5) / sectors * TAU - PI)
+			var dir := Vector2i(signi(roundi(out.x * 10.0)), 0)
+			if absf(out.y) > absf(out.x):
+				dir = Vector2i(0, signi(roundi(out.y * 10.0)))
+			a._dirs.append(dir if band == 1 else -dir)
+	a._whole = a._count(frame)
+	return a
+
+
+## The sections to bring down now: for each arc that lost a chunk since it last shed, every
+## chunk of it still standing above the stub, as {"cells", "kind": "topple", "pivot", "dir"}.
+## The caller removes them.
+func shed(frame: Structure) -> Array[Dictionary]:
+	var now := _count(frame)
+	var out: Array[Dictionary] = []
+	var hp := frame.standing()
+	var plan := frame.w * frame.d
+	for g: int in now.size():
+		if now[g] >= _whole[g]:
+			continue
+		var cells: Array[Vector3i] = []
+		for y: int in range(stub, frame.h):
+			for z: int in frame.d:
+				for x: int in frame.w:
+					if _of[x + z * _w] == g and hp[x + z * _w + y * plan] > 0.0:
+						cells.append(Vector3i(x, y, z))
+		_whole[g] = now[g] - cells.size()
+		if not cells.is_empty():
+			out.append(
+				{
+					"cells": cells,
+					"kind": "topple",
+					"pivot": _pivot(cells, _dirs[g]),
+					"dir": _dirs[g]
+				}
+			)
+	return out
+
+
+## The direction arc g falls toward (the rim outward, the stands inward).
+func dir_of(g: int) -> Vector2i:
+	return _dirs[g]
+
+
+## How many arcs there are.
+func arc_count() -> int:
+	return _dirs.size()
+
+
+## The arc plan column (x, z) belongs to, or -1.
+func arc_at(x: int, z: int) -> int:
+	return _of[x + z * _w]
+
+
+## Standing chunks per arc, read straight off the chunk strengths (Structure.standing()).
+func _count(frame: Structure) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(_dirs.size())
+	var hp := frame.standing()
+	var plan := _of.size()
+	for i: int in hp.size():
+		var g := _of[i % plan]
+		if g >= 0 and hp[i] > 0.0:
+			out[g] += 1
+	return out
+
+
+## The edge it tips over: the section's far side toward `dir`, at the top of the stub.
+func _pivot(cells: Array[Vector3i], dir: Vector2i) -> Vector3:
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	var sum := Vector2.ZERO
+	for c: Vector3i in cells:
+		lo = Vector2(minf(lo.x, c.x), minf(lo.y, c.z))
+		hi = Vector2(maxf(hi.x, c.x + 1), maxf(hi.y, c.z + 1))
+		sum += Vector2(c.x + 0.5, c.z + 0.5)
+	var mid := sum / cells.size()
+	var px := hi.x if dir.x > 0 else (lo.x if dir.x < 0 else mid.x)
+	var pz := hi.y if dir.y > 0 else (lo.y if dir.y < 0 else mid.y)
+	return Vector3(px, stub, pz)
