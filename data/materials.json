@@ -30,6 +30,18 @@
 		{"id": 27, "name": "landmark_wall", "strength": 1.0, "debris": "wall", "fixture": false},
 		{"id": 28, "name": "landmark_seat", "strength": 1.0, "debris": "wall", "fixture": false},
 		{"id": 29, "name": "landmark_pitch", "strength": 1.0, "debris": "wall", "fixture": false},
-		{"id": 30, "name": "landmark_other", "strength": 1.0, "debris": "wall", "fixture": false}
+		{"id": 30, "name": "landmark_other", "strength": 1.0, "debris": "wall", "fixture": false},
+		{"id": 31, "name": "hz_pad", "strength": 1.0, "debris": "slab", "fixture": false},
+		{"id": 32, "name": "hz_steel", "strength": 1.0, "debris": "gear", "fixture": false},
+		{"id": 33, "name": "hz_yellow", "strength": 1.0, "debris": "band", "fixture": false},
+		{"id": 34, "name": "hz_black", "strength": 1.0, "debris": "vent", "fixture": false},
+		{"id": 35, "name": "hz_red", "strength": 1.0, "debris": "awning", "fixture": false},
+		{"id": 36, "name": "hz_lamp", "strength": 1.0, "debris": "beacon", "fixture": false},
+		{"id": 37, "name": "hz_brick", "strength": 1.0, "debris": "wall", "fixture": false},
+		{"id": 38, "name": "hz_blue", "strength": 1.0, "debris": "band", "fixture": false},
+		{"id": 39, "name": "hz_green", "strength": 1.0, "debris": "band", "fixture": false},
+		{"id": 40, "name": "hz_white", "strength": 1.0, "debris": "wall", "fixture": false},
+		{"id": 41, "name": "hz_glow", "strength": 1.0, "debris": "glass", "fixture": false},
+		{"id": 42, "name": "hz_drum", "strength": 1.0, "debris": "pipe", "fixture": false}
 	]
 }

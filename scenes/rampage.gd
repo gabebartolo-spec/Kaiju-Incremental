@@ -48,6 +48,7 @@ var camera_fov := CameraTuning.fov()
 var shake := CameraShake.new()
 var _city: CityView
 var _powers: PowersView
+var _blasts: BlastFx
 var _fade: VehicleFade
 var _was_ready := true
 var _leap_reach := 0.0
@@ -136,6 +137,8 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
+	_blasts = BlastFx.new(sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))  # comments #19, #20
+	add_child(_blasts)
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
@@ -270,7 +273,8 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
-			_powers.on_event(event, _kaiju_at)
+			if not _blasts.on_event(event, _kaiju_at):
+				_powers.on_event(event, _kaiju_at)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

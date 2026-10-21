@@ -25,6 +25,7 @@ func run_checks() -> void:
 	await _t("_check_fireworks")
 	await _t("_check_city_places")
 	await _t("_check_replay")
+	await _t("_check_models")
 
 
 func _site(kind: String, x: float, z: float) -> Dictionary:
@@ -65,7 +66,12 @@ func _of(events: Array[Dictionary], type: String) -> Array[Dictionary]:
 
 
 func _check_pure() -> void:
-	for path: String in ["res://sim/explosives.gd", "res://sim/city_hazards.gd"]:
+	for path: String in [
+		"res://sim/explosives.gd",
+		"res://sim/city_hazards.gd",
+		"res://sim/hazard_shape.gd",
+		"res://sim/hazard_cells.gd",
+	]:
 		var src := FileAccess.get_file_as_string(path)
 		for word: String in BANNED:
 			check(not src.contains(word), "%s has no %s" % [path.get_file(), word])
@@ -184,3 +190,63 @@ func _check_replay() -> void:
 		sim.explosives.damaged(0)
 		digests.append(str(_run(sim, 4.0)).sha256_text())
 	check(digests[0] == digests[1], "replay is identical")
+
+
+## Each kind's model (HazardShape) at sizes the city gives them: every cell a known material, the
+## sim's carving grid (HazardCells) the same cells as the drawn voxels (HazardVoxels), every floor
+## of the footprint holding part of it (no structural chunk layer left as air), only the outside
+## skin drawn (never the inside of a tank or shed), and each kind in its own colour.
+func _check_models() -> void:
+	var ids := CellGrid.material_ids()
+	var res := CellGrid.cell_res()
+	check(res == BuildingVoxels.RES, "the sim grid and the view share one cell size")
+	var marks := {"fuel_silo": "hz_steel", "fireworks_factory": "hz_brick", "chem_lab": "hz_glow"}
+	var sizes: Array[Vector3i] = [
+		Vector3i(2, 2, 3), Vector3i(3, 3, 2), Vector3i(5, 2, 4), Vector3i(3, 10, 4)
+	]
+	for kind: String in marks:
+		for size: Vector3i in sizes:
+			var entry := {"x": 0.0, "z": 0.0, "w": size.x, "h": size.y, "d": size.z, "tier": 1}
+			entry.merge({"style": 0, "hazard": kind})
+			var b := Landmarks.building(entry, 10.0)
+			var shape := HazardShape.cells(b, res)
+			var label := "%s %s" % [kind, size]
+			var keys := {}
+			for cell: Vector3i in shape:
+				keys[shape[cell]] = true
+			check(
+				keys.keys().all(func(k: String) -> bool: return ids.has(k)), label + ": materials"
+			)
+			check(keys.has(marks[kind]), label + ": drawn in its own colour")
+			var grid := HazardCells.new(b)
+			check(grid.count() == shape.size(), label + ": the carving grid is the model")
+			var floors := {}
+			for cell: Vector3i in shape:
+				floors[floori(float(cell.y) / res)] = true
+			var every := range(size.y).all(func(f: int) -> bool: return floors.has(f))
+			check(every, label + ": every floor holds part of it")
+			var voxels := HazardVoxels.new(b, Color.GRAY)
+			check(
+				voxels.vox.cells.size() == shape.size(), label + ": the view draws the same cells"
+			)
+			check(_drawn(voxels) < _open(shape), label + ": only the outside skin is drawn")
+
+
+## Faces HazardVoxels draws (its face masks' bits).
+func _drawn(voxels: HazardVoxels) -> int:
+	var n := 0
+	for cell: Vector3i in voxels.vox.cells:
+		var mask := voxels.face_mask(cell)
+		for k: int in 6:
+			n += (mask >> k) & 1
+	return n
+
+
+## Faces that meet any empty cell (inside or out, never the ground).
+func _open(shape: Dictionary) -> int:
+	var n := 0
+	for cell: Vector3i in shape:
+		for d: Vector3i in BuildingMesher.NEIGHBOURS:
+			var m := cell + d
+			n += 1 if m.y >= 0 and not shape.has(m) else 0
+	return n
