@@ -5,10 +5,13 @@ extends SceneTree
 ## room to fall; its west base is cut so it topples west onto him (D-099). After it is down he
 ## walks west along the strip through the slabs, then turns north. A fixed camera at the game
 ## camera's angle frames the whole strip. Prints the falls and slab breaks as they happen.
+## --ground: the same tower topples onto the open street, the kaiju standing north of it, still
+## (comment #26: it breaks against the ground into slabs that stay on top of it).
 ## Needs a window and the no-focus override.cfg. With --write-movie the run is the clip.
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
-##     --write-movie <dir>/clip.avi --script tools/capture/capture_rubble.gd -- [--out=<dir>]
+##     --write-movie <dir>/clip.avi --script tools/capture/capture_rubble.gd -- [--out=<dir>] \
+##     [--ground]
 
 const HUGE := 1.0e9
 ## Frames: the cut, the walk west, the turn north, the end.
@@ -19,6 +22,8 @@ const FRAMES := 780
 ## The kaiju's centre this far west of the tower's west face; the strip it must leave clear.
 const STAND_OFF := 7.5
 const CLEAR := 18.0
+## --ground: the kaiju stands this far north of the tower's north face, inside the cleared strip.
+const GROUND_OFF := 5.0
 ## The camera: from the south and above, looking at the strip's middle.
 const EYE := Vector3(-2.0, 15.0, 27.0)
 
@@ -27,12 +32,15 @@ var _sim: RampageSim
 var _rampage: Rampage
 var _index := -1
 var _move := Vector2.ZERO
+var _ground := false
 
 
 func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
+		elif arg == "--ground":
+			_ground = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -53,6 +61,8 @@ func _run() -> void:
 	var b := _sim.buildings[_index]
 	var west := b.x - b.w * 0.5
 	_sim.kaiju_pos = Vector2(west - STAND_OFF, b.z)
+	if _ground:  # north of the strip it falls along (cleared), off its line
+		_sim.kaiju_pos = Vector2(west - STAND_OFF, b.z - b.d * 0.5 - GROUND_OFF)
 	_sim.facing = Vector2(0, -1)
 	_sim.body.heading = _sim.facing
 	print("tower %d at (%.1f, %.1f) %dx%d, %d floors" % [_index, b.x, b.z, b.w, b.d, b.height])
@@ -71,9 +81,9 @@ func _run() -> void:
 		await physics_frame
 		if i == CUT_AT:
 			_cut()
-		elif i == WALK_AT:
+		elif i == WALK_AT and not _ground:
 			_move = Vector2(-1, 0)
-		elif i == TURN_AT:
+		elif i == TURN_AT and not _ground:
 			_move = Vector2(0, -1)
 		for event: Dictionary in _sim.events:
 			_log(i, event)
@@ -136,7 +146,17 @@ func _log(frame: int, event: Dictionary) -> void:
 			var hit: Dictionary = event.get("hit", {})
 			var slabs: Array = event.get("slabs", [])
 			print(
-				"%d fall_land %s hit %s slabs %d" % [frame, event["kind"], hit.keys(), slabs.size()]
+				(
+					"%d fall_land %s %s scrap %s hit %s slabs %d"
+					% [
+						frame,
+						event["kind"],
+						event["building"],
+						event.get("scrap", false),
+						hit.keys(),
+						slabs.size()
+					]
+				)
 			)
 		"slab_break":
 			var pieces: Array = event["pieces"]

@@ -490,6 +490,7 @@
 		"piece_s": 0.45,
 		"piece_hold": 0.05,
 		"crumble_s": 0.3,
+		"crumble_flat": 0.2,
 		"gravel_up": 0.6,
 		"gravel_dust": 0.5,
 		"fold_lower_s": 0.35,

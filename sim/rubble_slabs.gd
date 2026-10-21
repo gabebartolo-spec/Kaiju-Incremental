@@ -100,6 +100,25 @@ static func slab_dict(s: Slab) -> Dictionary:
 	return {"id": s.id, "from": s.from, "pos": s.pos, "dims": s.dims, "yaw": s.yaw, "base": s.base}
 
 
+## The slabs a part that dropped onto the open street leaves where it landed (comment #26: it
+## breaks against the ground, it never sinks into it): `count` of them inside its footprint
+## (box [lo, hi] on the ground plane), resting on the street.
+func pile(building: int, box: Array, count: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if not on():
+		return out
+	var lo: Vector2 = box[0]
+	var hi: Vector2 = box[1]
+	var sizes: Array = cfg["slab_size"]
+	for n: int in count:
+		var size := _rng.randf_range(Num.f(sizes[0]), Num.f(sizes[1]))
+		var long := _rng.randf_range(Num.f(cfg["long"][0]), Num.f(cfg["long"][1]))
+		var dims := Vector3(size, size * Num.f(cfg["depth"]), size * long)
+		var at := Vector2(_rng.randf_range(lo.x, hi.x), _rng.randf_range(lo.y, hi.y))
+		out.append(_add(_make(building, [at, at], dims, Vector2(_rng.randf(), 0.0))))
+	return out
+
+
 ## Adds a slab of `dims` turned `yaw` resting on the street, sliding along path [from, to]
 ## (Collapse's fold pieces).
 func place(building: int, path: Array, dims: Vector3, yaw: float) -> Dictionary:

@@ -55,18 +55,41 @@ func reveal(ids: Array) -> void:
 			tween.tween_callback(func() -> void: smash(event, null))
 
 
-## The slab's rest pose: its yaw, a tilt of its own (seeded by its id), sunk into what it rests on.
 func _rest(slab: Dictionary) -> Transform3D:
+	return rest_pose(slab, _cfg)
+
+
+## The slab's rest pose (cfg: the "topple_fx" tuning): its yaw, a tilt of its own (seeded by its
+## id), sunk slab_sit into what it rests on but never below the street (comment #26).
+static func rest_pose(slab: Dictionary, cfg: Dictionary) -> Transform3D:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(["slab", Num.i(slab["id"])])
-	var tilt := Num.f(_cfg["slab_tilt"])
+	var tilt := Num.f(cfg["slab_tilt"])
 	var turn := Vector3(
 		rng.randf_range(-tilt, tilt), Num.f(slab["yaw"]), rng.randf_range(-tilt, tilt)
 	)
 	var dims: Vector3 = slab["dims"]
 	var pos: Vector2 = slab["pos"]
-	var y := Num.f(slab["base"]) + dims.y * Num.f(_cfg["slab_sit"])
-	return Transform3D(Basis.from_euler(turn), Vector3(pos.x, y, pos.y))
+	var basis := Basis.from_euler(turn)
+	var y := Num.f(slab["base"]) + dims.y * Num.f(cfg["slab_sit"])
+	var low := span_y(Transform3D(basis, Vector3(0, y, 0)), dims).x
+	return Transform3D(basis, Vector3(pos.x, y - minf(low, 0.0), pos.y))
+
+
+## The lowest and highest world heights (x, y) of a box of `dims` centred on xf's origin.
+static func span_y(xf: Transform3D, dims: Vector3) -> Vector2:
+	var b := xf.basis
+	var half := absf(b.x.y) * dims.x * 0.5 + absf(b.y.y) * dims.y * 0.5 + absf(b.z.y) * dims.z * 0.5
+	return Vector2(xf.origin.y - half, xf.origin.y + half)
+
+
+## Where a slab that breaks into gravel alone ends its crumble (cfg: "topple_fx"): squashed to
+## crumble_flat of its height where it lies, its bottom kept on what it rests on (comment #26).
+static func crumbled(xf: Transform3D, dims: Vector3, cfg: Dictionary) -> Transform3D:
+	var low := span_y(xf, dims).x
+	var squashed := xf.basis * Basis.from_scale(Vector3(1.0, Num.f(cfg["crumble_flat"]), 1.0))
+	var lift := low - span_y(Transform3D(squashed, xf.origin), dims).x
+	return Transform3D(squashed, xf.origin + Vector3(0, lift, 0))
 
 
 func _place(chunk: MultiMeshInstance3D, slab: Dictionary, sliding: bool) -> void:
@@ -140,11 +163,11 @@ func smash(event: Dictionary, voxels: BuildingVoxels) -> void:
 	add(pieces, look, false)
 
 
-## Sinks a slab into the ground and shrinks it over crumble_s, then frees it.
-func _crumble(node: Node3D) -> void:
+## Crumbles a slab down where it lies (crumbled) over crumble_s, then frees it.
+func _crumble(node: MultiMeshInstance3D) -> void:
 	var seconds := Num.f(_cfg["crumble_s"])
 	var tween := node.create_tween()
 	tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(node, "scale", Vector3(1.0, 0.2, 1.0), seconds)
-	tween.parallel().tween_property(node, "position:y", node.position.y - 0.4, seconds)
+	var end := crumbled(node.transform, node.get_aabb().size, _cfg)
+	tween.tween_property(node, "transform", end, seconds)
 	tween.tween_callback(node.queue_free)

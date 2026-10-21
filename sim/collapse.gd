@@ -223,6 +223,8 @@ func _land(f: RampageSim.Fall) -> void:
 			var below := b.frame.top_below(c.x, c.z, c.y)
 			if below >= 0 and not hit.has(Vector3i(c.x, below, c.z)):
 				hit.append(Vector3i(c.x, below, c.z))
+		if hit.is_empty() and b.landmark == "":  # on the street: it breaks into slabs there
+			event["slabs"] = _pile(f, b)
 		sim.damage_chunks(f.building, hit, impact)
 
 
@@ -268,6 +270,20 @@ func _strip_slabs(f: RampageSim.Fall, line: Array, reach: float) -> Array[Dictio
 	if not f.hit.is_empty():
 		discs = sim.body.world_discs(sim.kaiju_pos, sim.body.heading)
 	return slabs.strip(f.building, line, count, discs)
+
+
+## The slabs a part that dropped onto the street leaves in its footprint: "slabs" of them for
+## a whole tower's height, at least one.
+func _pile(f: RampageSim.Fall, b: RampageSim.Building) -> Array[Dictionary]:
+	var lo := Vector2(INF, INF)
+	var hi := -lo
+	for c: Vector3i in f.cells:
+		lo = lo.min(Vector2(c.x, c.z))
+		hi = hi.max(Vector2(c.x + 1, c.z + 1))
+	var a := b.local_to_world(Vector3(lo.x, 0, lo.y))
+	var z := b.local_to_world(Vector3(hi.x, 0, hi.y))
+	var count := maxi(1, roundi(Num.f(_rubble["slabs"]) * f.height / maxf(1.0, b.height)))
+	return slabs.pile(f.building, [Vector2(a.x, a.z), Vector2(z.x, z.z)], count)
 
 
 ## A topple broke on the kaiju: what was above the crack folds over him and slides off his side

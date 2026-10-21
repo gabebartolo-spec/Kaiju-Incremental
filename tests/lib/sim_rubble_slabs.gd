@@ -7,7 +7,10 @@ extends RefCounted
 ##  - a tower toppled onto the kaiju breaks where it meets him: it lands before its fall time,
 ##    what comes down in line stops at his body, and what folds off his side lies outside him;
 ##    with the contact off (today's game) it falls through him;
-##  - the same seeded run gives the same slabs and events twice.
+##  - the same seeded run gives the same slabs and events twice;
+##  - what lands breaks against the ground (comment #26): a part that drops onto the street
+##    leaves slabs there, and nothing the view lays, crumbles or crushes ends below what it
+##    landed on.
 ## Seeded by design: fixed layouts, Seeds.make("army", 0), the sim's own derived streams.
 
 const DT := 1.0 / 30.0
@@ -26,6 +29,62 @@ func run() -> void:
 	_stomp_breaks()
 	_falls_on_kaiju()
 	_replay()
+	_on_the_ground()
+
+
+## A low wide block whose ground floor is cut away drops onto the street (wider than tall, so it
+## drops, it does not topple): it must leave slabs there; the view lays each on top of the
+## street, a crumble keeps it there, and a piece crushed on the floors a drop hit stays on them.
+func _on_the_ground() -> void:
+	var layout: Array[Dictionary] = [
+		{"x": 0.0, "z": 0.0, "w": 5, "d": 5, "h": 3, "tier": 1, "style": 0},
+		{"x": 25.0, "z": -25.0, "w": 3, "d": 3, "h": 4, "tier": 1, "style": 1},
+	]
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"),
+		Content.species_def("reptilian"),
+		UpgradeTree.new(Content.upgrades(), {})
+	)
+	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	sim.body.use_species("reptilian")
+	sim.kaiju_pos = Vector2(30.0, 30.0)
+	var floor0: Array[Vector3i] = []
+	for x: int in 5:
+		for z: int in 5:
+			floor0.append(Vector3i(x, 0, z))
+	sim.damage_chunks(0, floor0, 999.0)
+	var land := _land(sim)
+	var slabs: Array = land.get("slabs", [])
+	_check.call(
+		str(land.get("kind", "")) == "drop" and not slabs.is_empty(),
+		(
+			"a part that drops onto the street leaves slabs there (#26): %s, %d slabs"
+			% [land.get("kind", "no landing"), slabs.size()]
+		)
+	)
+	var cfg := Content.section("topple_fx")
+	var lowest := INF
+	var crumbled_top := INF
+	for slab: Dictionary in slabs:
+		var dims: Vector3 = slab["dims"]
+		var rest := RubbleView.rest_pose(slab, cfg)
+		lowest = minf(lowest, RubbleView.span_y(rest, dims).x)
+		var gone := RubbleView.crumbled(rest, dims, cfg)
+		crumbled_top = minf(crumbled_top, RubbleView.span_y(gone, dims).y)
+	_check.call(
+		not slabs.is_empty() and lowest >= -0.01 and crumbled_top > 0.0,
+		(
+			"every slab lies on top of the street, and one crumbling keeps its top above it (#26): "
+			+ "lowest %.2f, lowest crumbled top %.2f" % [lowest, crumbled_top]
+		)
+	)
+	var on_floors := Transform3D(Basis.IDENTITY, Vector3(0, 6.0 + 1.5, 0))  # 3 high, on floor 6
+	var crushed := ToppleFx.crushed(on_floors, Num.f(cfg["breakup_flatten"]), 6.0)
+	var low := RubbleView.span_y(crushed, Vector3(4, 3, 4)).x
+	_check.call(
+		low >= 6.0 - 0.01,
+		"a piece that dropped onto floors at 6 is crushed onto them, not into them: low %.2f" % low
+	)
 
 
 ## A 14-floor tower whose west base is cut: it topples west (D-099) away from the kaiju.

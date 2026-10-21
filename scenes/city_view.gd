@@ -243,7 +243,10 @@ func fall_land(event: Dictionary) -> void:
 	if sim.buildings[Num.i(event["building"])].landmark != "":
 		LandmarkBurst.retire(node, true)
 	else:
-		_topple.crumble(node)  # crumbles into the street over a moment, never a one-frame pop
+		_topple.crumble(node)  # crumbles onto what it hit over a moment, never a one-frame pop
+		var slabs: Array = event.get("slabs", [])
+		if not slabs.is_empty():  # on the street it broke into slabs that stay there (#26)
+			_topple.lay(slabs, _stream.view(Num.i(event["building"])).voxels)
 	if not landed.is_empty():
 		fx.dust(landed[0], 1.5)
 		var b := sim.buildings[Num.i(event["building"])]

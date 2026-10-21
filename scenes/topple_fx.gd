@@ -9,6 +9,9 @@ extends Node3D
 ## slides off his side, the impact edge crumbles. Every timing and size is the "topple_fx"
 ## tuning. Presentation only. Part of CityView.
 
+## Half a chunk's height (a part's "pos" is its chunk's centre).
+const HALF_CELL := 0.5
+
 var _city: CityView
 var _cfg: Dictionary
 var _rng: RandomNumberGenerator
@@ -93,6 +96,11 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 	)
 	var slabs: Array = event.get("slabs", [])
 	_rubble.add(slabs, voxels, true)
+
+
+## The slabs a part that dropped onto the street left (the sim's fall_land "slabs").
+func lay(slabs: Array, voxels: BuildingVoxels) -> void:
+	_rubble.add(slabs, voxels, false)
 
 
 ## The sim broke a slab (RubbleSlabs): RubbleView shows it.
@@ -261,13 +269,28 @@ func _edge(node: Node3D, crack: float, hit: Dictionary) -> void:
 ## drop_crumble_s with debris in waves instead of vanishing on the landing frame (PR #89 review,
 ## capture 39277970463 frames 505-506).
 func crumble(node: Node3D) -> void:
-	_break_up(node, Num.f(_cfg["drop_crumble_s"]), Num.f(_cfg["drop_crumble_debris"]))
+	var floor_y := INF  # what it came down on: the bottom of its lowest part
+	var pivot: Vector3 = node.get_meta("pivot", Vector3.ZERO)
+	for part: Dictionary in node.get_meta("parts", []):
+		var pos: Vector3 = part["pos"]
+		floor_y = minf(floor_y, (node.global_transform * (pos - pivot)).y - HALF_CELL)
+	floor_y = 0.0 if is_inf(floor_y) else maxf(0.0, floor_y)
+	_break_up(node, Num.f(_cfg["drop_crumble_s"]), Num.f(_cfg["drop_crumble_debris"]), floor_y)
 
 
-func _break_up(node: Node3D, span: float, debris: float) -> void:
+## floor: the world height it landed on (the street, or the floors a drop came down on).
+func _break_up(node: Node3D, span: float, debris: float, floor_y := 0.0) -> void:
+	var xf := node.global_transform
 	_breaking.append(
-		{"node": node, "t": 0.0, "basis": node.global_transform, "span": span, "debris": debris}
+		{"node": node, "t": 0.0, "basis": xf, "span": span, "debris": debris, "floor": floor_y}
 	)
+
+
+## A breaking piece at rest pose `rest`, crushed to `flat` of its height down onto floor_y (the
+## world height it landed on): it breaks against what it hit (comment #26).
+static func crushed(rest: Transform3D, flat: float, floor_y: float) -> Transform3D:
+	var onto := Vector3(0, floor_y, 0)
+	return Transform3D(Basis.from_scale(Vector3(1, flat, 1)), onto - onto * flat) * rest
 
 
 func _process(delta: float) -> void:
@@ -283,12 +306,9 @@ func _process(delta: float) -> void:
 				node.queue_free()
 			_breaking.remove_at(i)
 			continue
-		# The slab crushes flat into the street (world Y squashed towards the ground).
 		var flat := lerpf(1.0, Num.f(_cfg["breakup_flatten"]), k)
 		var rest: Transform3D = br["basis"]
-		node.global_transform = (
-			Transform3D(Basis.from_scale(Vector3(1, flat, 1)), Vector3.ZERO) * rest
-		)
+		node.global_transform = crushed(rest, flat, Num.f(br["floor"]))
 		var parts: Array = node.get_meta("parts", [])
 		if parts.is_empty():
 			continue
