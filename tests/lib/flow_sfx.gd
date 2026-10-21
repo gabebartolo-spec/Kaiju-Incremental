@@ -1,6 +1,6 @@
 extends RefCounted
 ## The flow suite's sound checks that need no rampage (moved out of run_flow_tests.gd so it keeps
-## room under its 400-line cap): the Master limiter, the SFX bus, stomps landing on foot plants
+## room under its 400-line cap): the Master limiter, the mixer buses, stomps landing on foot plants
 ## and the size-tier step pitch. Sound PRs add their own checks here.
 
 const FlowSounds := preload("res://tests/lib/flow_sounds.gd")
@@ -29,9 +29,10 @@ static func run(root: Node, check: Callable) -> void:
 		if player is AudioStreamPlayer:  # not the start gate (SfxGate)
 			buses.append((player as AudioStreamPlayer).bus)
 	check.call(
-		buses.all(func(b: String) -> bool: return b == "SFX"),
-		"every power sound plays on the SFX bus: %s" % [buses]
+		buses.all(func(b: String) -> bool: return AudioServer.get_bus_index(b) >= 0),
+		"every power sound's player sits on a bus the mixer has: %s" % [buses]
 	)
+	preload("res://tests/lib/flow_buses.gd").run(root, check)
 	sfx.footstep(0.7)
 	check.call(
 		early.is_empty() and sfx.played == ["stomp_2", "stomp_crack"],
