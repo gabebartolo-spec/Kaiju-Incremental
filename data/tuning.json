@@ -4,10 +4,14 @@
 		"fps_default": 120,
 		"menu_fps": 60,
 		"graphics": {
-			"high": {"scale": 1.0, "fsr": false, "msaa": 2},
-			"balanced": {"scale": 0.75, "fsr": true, "msaa": 0}
+			"potato": {"scale": 0.5, "scaler": "bilinear", "msaa": 0, "screen_aa": "none", "shadow_size": 1024, "shadow_filter": "hard", "shadow_distance": 60.0, "sun_splits": "orthogonal", "sun_angular": 0.0, "ssao": false, "ssil": false, "debris_pool": 150, "max_fires": 10, "debris_live": 300, "debris_static": 1000, "particles": 0.35, "crowd_max": 800, "civilians": 1},
+			"low": {"scale": 0.6, "scaler": "fsr1", "msaa": 0, "screen_aa": "smaa", "shadow_size": 2048, "shadow_filter": "soft_very_low", "shadow_distance": 90.0, "sun_splits": "pssm2", "sun_angular": 0.0, "ssao": false, "ssil": false, "debris_pool": 300, "max_fires": 15, "debris_live": 600, "debris_static": 2000, "particles": 0.5, "crowd_max": 1500, "civilians": 2},
+			"medium": {"scale": 0.75, "scaler": "fsr1", "msaa": 1, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 450, "max_fires": 20, "debris_live": 1000, "debris_static": 3000, "particles": 0.75, "crowd_max": 2500, "civilians": 2},
+			"high": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 4096, "shadow_filter": "soft_low", "shadow_distance": 160.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 600, "max_fires": 30, "debris_live": 2000, "debris_static": 4000, "particles": 1.0, "crowd_max": 4000, "civilians": 3},
+			"max": {"scale": 1.0, "scaler": "bilinear", "msaa": 2, "screen_aa": "none", "shadow_size": 8192, "shadow_filter": "soft_high", "shadow_distance": 200.0, "sun_splits": "pssm4", "sun_angular": 1.0, "ssao": true, "ssil": true, "debris_pool": 900, "max_fires": 40, "debris_live": 3000, "debris_static": 6000, "particles": 1.0, "crowd_max": 4000, "civilians": 4}
 		},
-		"graphics_default": {"min_height": 2160, "large": "balanced", "large_fps": 60, "small": "high"}
+		"graphics_renamed": {"balanced": "medium"},
+		"graphics_default": {"min_height": 2160, "large": "medium", "large_fps": 60, "small": "high"}
 	},
 	"stat_text": {
 		"hp": {"line": "More health", "fmt": "%d"},
@@ -351,6 +355,39 @@
 	"sfx": {
 		"pitch_jitter": 0.06,
 		"voices": 24,
+		"_voice_caps": "SfxVoices (R 8.2): voices each category may hold at once; hero categories are never stolen and reserve_hero voices stay free for them; others steal their quietest voice; the same sound is not restarted within retrigger_ms",
+		"voice_caps": {
+			"reserve_hero": 8,
+			"retrigger_ms": 30.0,
+			"default": "body",
+			"categories": {
+				"hero": {"cap": 2, "hero": true, "retrigger_ms": 0.0},
+				"stomp": {"cap": 3, "hero": true, "retrigger_ms": 0.0},
+				"collapse": {"cap": 3, "hero": true},
+				"explosion": {"cap": 4, "hero": true},
+				"debris": {"cap": 6},
+				"weapon": {"cap": 10},
+				"crowd": {"cap": 3},
+				"body": {"cap": 6},
+				"ui": {"cap": 3}
+			},
+			"sounds": {
+				"roar": "hero",
+				"stomp_0": "stomp",
+				"stomp_1": "stomp",
+				"stomp_2": "stomp",
+				"stomp_crack": "stomp",
+				"collapse": "collapse",
+				"tank_fire": "weapon",
+				"shell_hit": "weapon",
+				"rifle": "weapon",
+				"rifle_far": "weapon",
+				"heli_gun": "weapon",
+				"heli_crash": "weapon",
+				"ready": "ui",
+				"deflect": "ui"
+			}
+		},
 		"start_gate": {"smooth_frames": 10, "max_frame": 0.05, "max_wait_s": 3.0},
 		"stomp_tiers": [1.4, 1.8],
 		"default_volume": 0.9,
@@ -413,6 +450,76 @@
 			"ready": -8.0,
 			"deflect": -10.0,
 			"regen_loop": -20.0
+		}
+	},
+	"chain": {
+		"step_hz": 60.0,
+		"max_substeps": 4,
+		"stiffness": 9.0,
+		"damping": 0.9,
+		"gravity_y": -6.0,
+		"passes": 3
+	},
+	"audio": {
+		"buses": [
+			{"name": "SFX", "send": "Master"},
+			{"name": "Music", "send": "Master", "duck": "music"},
+			{"name": "Hero", "send": "SFX"},
+			{"name": "Bed", "send": "SFX", "duck": "bed"},
+			{"name": "Debris", "send": "Bed"},
+			{"name": "Crowd", "send": "Bed"},
+			{"name": "Military", "send": "Bed"},
+			{"name": "Ambience", "send": "Bed"},
+			{"name": "UI", "send": "SFX"}
+		],
+		"ducks": {
+			"music": {
+				"sidechain": "Hero",
+				"threshold_db": -18.0,
+				"ratio": 2.5,
+				"attack_us": 500.0,
+				"release_ms": 400.0,
+				"mix": 1.0
+			},
+			"bed": {
+				"sidechain": "Hero",
+				"threshold_db": -24.0,
+				"ratio": 5.0,
+				"attack_us": 500.0,
+				"release_ms": 800.0,
+				"mix": 1.0
+			}
+		},
+		"sounds": {
+			"roar": "Hero",
+			"stomp_0": "Hero",
+			"stomp_1": "Hero",
+			"stomp_2": "Hero",
+			"stomp_crack": "Hero",
+			"collapse": "Hero",
+			"collapse_drop": "Debris",
+			"crowd_panic": "Crowd",
+			"tank_fire": "Military",
+			"shell_hit": "Military",
+			"rifle": "Military",
+			"rifle_far": "Military",
+			"heli_gun": "Military",
+			"heli_crash": "Military",
+			"heli_rotor": "Military",
+			"breath": "SFX",
+			"leap_whoosh": "SFX",
+			"leap_land": "SFX",
+			"lash": "SFX",
+			"ready": "SFX",
+			"deflect": "SFX",
+			"regen_loop": "SFX",
+			"footstep": "SFX",
+			"footstep_1": "SFX",
+			"footstep_2": "SFX",
+			"footstep_3": "SFX",
+			"ui_click": "UI",
+			"ui_confirm": "UI",
+			"ui_deny": "UI"
 		}
 	},
 	"claw_fx": {
@@ -568,8 +675,6 @@
 		"cloud_max": 2.5
 	},
 	"carve_physics": {
-		"live_cap": 2000,
-		"static_cap": 4000,
 		"debris_per_carve": 40,
 		"debris_gravity": 2.2,
 		"debris_push": 4.0,
@@ -611,13 +716,10 @@
 		"indoor_margin": 0.5,
 		"dust_interval": 0.25,
 		"dust_per_cell": 0.004,
-		"fire_chance": 0.25,
-		"fire_ground": 1.5,
 		"colors": {"1": "b9ad98", "2": "5d5a55", "3": "3d6d7a", "4": "8a8378"},
 		"color_fallback": "9a948a"
 	},
 	"crowd": {
-		"max": 4000,
 		"spacing": 2,
 		"seats": ["b23d32", "8e3029"],
 		"seat_match": 24,
@@ -643,7 +745,6 @@
 	},
 	"street": {
 		"person_voxel": 0.065,
-		"civilians_per_lot": 3,
 		"walk_speed": 0.8,
 		"run_speed": 2.4,
 		"panic_radius": 25.0,

@@ -10,10 +10,9 @@ extends Node3D
 ##  - Live bodies are capped city-wide (live_cap; Jolt's default limit is 10,240 bodies and the
 ##    spike's 2,500 per building x 6 hit it): past the cap the oldest pieces shrink away; a piece
 ##    at rest freezes into its building's static rubble MultiMesh.
-## Dust goes to `fx` when set; `ignited` asks the city for a fire (City view owns fires).
+## Dust goes to `fx` when set.
 ## Sits at the world origin: its children are placed in world space.
 
-signal ignited(at: Vector3, size: float)
 ## A chunk split off an island became an island of its own (captures follow its breaks).
 signal spawned(island: IslandBody)
 
@@ -74,7 +73,7 @@ func carved(key: int, grid: PackedByteArray, cut: Dictionary) -> void:
 	debris.grid = grid
 	debris.wake(_above(s, box))
 	var n := mini(Num.i(_cfg["debris_per_carve"]), cells.size())
-	if live_bodies() >= Num.i(_cfg["live_cap"]):
+	if live_bodies() >= int(GraphicsPresets.cap("debris_live")):
 		n = 0
 	var sizes: Array = _cfg["debris_sizes"]
 	for _k: int in n:
@@ -291,7 +290,7 @@ func islands() -> Array[IslandBody]:
 
 func _physics_process(delta: float) -> void:
 	_clock += delta
-	var over := live_bodies() - Num.i(_cfg["live_cap"])
+	var over := live_bodies() - int(GraphicsPresets.cap("debris_live"))
 	if over > 0:
 		var live := maxi(1, live_bodies())
 		for key: int in _debris:
@@ -301,7 +300,7 @@ func _physics_process(delta: float) -> void:
 	for key: int in _debris:
 		var d: CarveDebris = _debris[key]
 		statics += d.static_bodies()
-	var cap := Num.i(_cfg["static_cap"])
+	var cap := int(GraphicsPresets.cap("debris_static"))
 	if statics > cap:
 		for key: int in _debris:
 			var d: CarveDebris = _debris[key]
@@ -309,7 +308,7 @@ func _physics_process(delta: float) -> void:
 
 
 ## An island broke on impact: its bricks fly as half-brick pieces in their own colours; rubble
-## that lay round the impact wakes; dust where it hit, and sometimes a fire.
+## that lay round the impact wakes; dust where it hit.
 func _broke(key: int, pieces: Array[Dictionary], at: Vector3) -> void:
 	var s: CarveSite = _sites[key]
 	var d: CarveDebris = _debris[key]
@@ -329,10 +328,6 @@ func _broke(key: int, pieces: Array[Dictionary], at: Vector3) -> void:
 	var reach := Vector3.ONE * Num.f(_cfg["break_depth"])
 	d.wake(AABB(at - reach, reach * 2.0))
 	_dust(at + Vector3.UP * 0.3, 0.5 + pieces.size() * 0.05)
-	# A fire stands on the ground: a break in mid-air starts none (it would hover where it began).
-	var high := at.y - Num.f(_cfg["ground_y"]) > Num.f(_cfg["fire_ground"])
-	if _rng.randf() < Num.f(_cfg["fire_chance"]) and not high:
-		ignited.emit(at, 0.35)
 
 
 func _carve_dust(key: int, box: AABB, removed: int) -> void:
