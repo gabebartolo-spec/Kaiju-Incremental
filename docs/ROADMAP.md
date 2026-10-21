@@ -165,6 +165,10 @@ flame that can spread (unlockable in skill tree) and add to your biomass collect
 building to building on their own (sim-decided, seeded spread timer, burns out to rubble, never a burning shell per #111);
 burning buildings and the people in them pay biomass; fires stay the city's moving light sources (light pool, R 12). Research
 first (spread rules that read and stay cheap, how it feeds the biomass curve), then his node pick.
+Explosive sites (comments #19, #20): fuel silos, fireworks factories and chemical labs placed through the city as the
+"red barrel": any damage (kaiju, rubble, a clumsy army shell, #18) arms a fuse, blasts carve and chain. Their explosions
+get really good SFX and VFX (his words): a visible shockwave ring and air distortion, a sonic boom delayed by distance,
+layered blast sound from CC0 sources, through the motion critic at game speed.
 **F. UI redesign, on the final camera and tree.**
 b2-10 HUD: timer stays, biomass a boxless figure bottom right, controls shown once at the start and in a controls
 menu · b2-12 breath cooldown as an icon with a circular fill · b2-13 health bar removed or repurposed · b2-11
