@@ -12,6 +12,7 @@ var shadows := true  # whether the pieces cast shadows
 
 var _rng: RandomNumberGenerator
 var _queue: Array[Array] = []
+var _head := 0  # _queue[_head:] are pending; the oldest are dropped past _cap
 var _cap: int
 var _bodies: Array[RigidBody3D] = []
 var _meshes: Dictionary = {}
@@ -24,14 +25,14 @@ func _init(rng: RandomNumberGenerator, cap: int) -> void:
 
 
 func _process(_delta: float) -> void:
-	for _n: int in mini(SPAWN_PER_FRAME, _queue.size()):
-		var item: Array = _queue.pop_front()
+	for _n: int in mini(SPAWN_PER_FRAME, pending()):
+		var item: Array = _queue[_head]
+		_head += 1
 		var pos: Vector3 = item[0]
 		var color: Color = item[1]
 		var away: Vector3 = item[2]
 		_spawn_now(pos, color, away)
-	if _queue.size() > _cap:
-		_queue = _queue.slice(_queue.size() - _cap)
+	_compact()
 	while _bodies.size() > _cap:
 		var old: RigidBody3D = _bodies.pop_front()
 		old.queue_free()
@@ -41,8 +42,25 @@ func _process(_delta: float) -> void:
 ## falling heavily to settle on the street, then crumbling away.
 ## Queues a fragment; at most SPAWN_PER_FRAME are created each frame so a big collapse never
 ## stalls a frame.
+## Past the cap the oldest queued fragment is dropped as a new one comes (b2-3: a heavy swipe
+## queued 4000+ in one frame), so the queue never holds more than the cap.
 func spawn(pos: Vector3, color: Color, away: Vector3) -> void:
 	_queue.append([pos, color, away])
+	if pending() > _cap:
+		_head += 1
+	if _head >= _cap:
+		_compact()
+
+
+## Fragments queued and not yet thrown (never more than the cap).
+func pending() -> int:
+	return _queue.size() - _head
+
+
+func _compact() -> void:
+	if _head > 0:
+		_queue = _queue.slice(_head)
+		_head = 0
 
 
 func _spawn_now(pos: Vector3, color: Color, away: Vector3) -> void:
