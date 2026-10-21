@@ -67,9 +67,19 @@ func _compact() -> void:
 		_head = 0
 
 
-func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0) -> void:
+## A fragment of exactly `size` now (a band bursting into its cubes), past the queue.
+func cube(pos: Vector3, color: Color, away: Vector3, size: float) -> void:
+	_spawn_now(pos, color, away, 1.0, size)
+	while _bodies.size() > _cap:
+		var old: RigidBody3D = _bodies.pop_front()
+		old.queue_free()
+
+
+func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0, fixed := 0.0) -> void:
 	var size := BuildingVoxels.VOXEL * (_rng.randf_range(0.35, 0.8) if _rng.randf() < 0.8 else 1.0)
 	size *= size_scale * big
+	if fixed > 0.0:
+		size = fixed
 	var body := RigidBody3D.new()
 	body.gravity_scale = 2.2
 	var shape := CollisionShape3D.new()

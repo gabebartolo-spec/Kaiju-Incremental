@@ -53,11 +53,12 @@ static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBui
 
 ## Rubble is mostly pale broken concrete with a little of the building's own colour; coals and
 ## scorch only near the fire.
-static func rubble_palette(voxels: BuildingVoxels) -> Dictionary:
+## grey: how far its colours go toward concrete (a band's own slab stays near the band's).
+static func rubble_palette(voxels: BuildingVoxels, grey := 0.8) -> Dictionary:
 	var palette := {}
 	for key: String in voxels.palette:
 		var c: Color = voxels.palette[key]
-		palette[key] = Color(c.lerp(Color("6e706e"), 0.8), 1.0)
+		palette[key] = Color(c.lerp(Color("6e706e"), grey), 1.0)
 	palette["ember"] = Color(1.0, 0.45, 0.12, 0.0)
 	palette["char"] = Color("2a2624")
 	return palette
@@ -114,9 +115,11 @@ static func strip(
 ## One big wall chunk thrown from a toppled tower: a lump of the building's own facade voxels
 ## (its wall and window colours, shaded like every other voxel), `size` sim units wide, centred
 ## on the node's origin. Replaces the flat-coloured boxes that read as untextured placeholders.
-static func chunk(voxels: BuildingVoxels, size: Vector3, salt: int) -> MultiMeshInstance3D:
+static func chunk(
+	voxels: BuildingVoxels, size: Vector3, salt: int, grey := 0.8
+) -> MultiMeshInstance3D:
 	var vox := VoxelBuilder.new()
-	var palette := rubble_palette(voxels)
+	var palette := rubble_palette(voxels, grey)
 	var n := Vector3i((size * RES).round())
 	var keys: Array[String] = []
 	for key: String in ["stub_wall", "stub_wall", "stub_wall", "stub_pillar", "stub_trim"]:

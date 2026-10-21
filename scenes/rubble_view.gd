@@ -47,7 +47,10 @@ func add(
 			_held[id] = true
 		_asked[id] = Time.get_ticks_msec()
 		var place := func(chunk: MultiMeshInstance3D) -> void: _place(chunk, slab, sliding)
-		_build_in(turn, func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place)
+		var grey := Num.f(_cfg["band_slab_grey"]) if hidden else 0.8  # a band's slab: its colours
+		_build_in(
+			turn, func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt, grey), place
+		)
 
 
 ## A slab's chunk is a few milliseconds of work, but the worker pool can be busy for seconds

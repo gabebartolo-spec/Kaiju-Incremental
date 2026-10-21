@@ -8,6 +8,8 @@ extends RefCounted
 ##  - no point of any piece is ever below the street;
 ##  - the pieces (floor bands) touch the ground in order from the base to the top;
 ##  - right after the last one lands, no piece is left intact (each shattering or gone);
+##  - a band never shrinks (its scale stays above MIN_SCALE) before it breaks into its own cubes
+##    (ToppleFx.cubes counts them): it bursts, it is not scaled away;
 ##  - the slabs the sim leaves on the street appear as the band lying over them shatters
 ##    (within SLAB_LAG of its first touch), not all at once after the last one.
 ## Seeded by design: a fixed building of the flow run's city, fixed times, no randomness read.
@@ -17,6 +19,8 @@ const SLABS := 5
 const DT := 1.0 / 60.0
 const GROUND_EPS := 0.12  # a piece this close to the street touches it
 const BELOW_EPS := 0.02
+const MIN_SCALE := 0.9
+const MIN_CUBES := 20  # a band breaks into at least this many cubes between its bands
 const SLAB_LAG := 0.1  # a band's slabs show this soon after it touches the street
 const SLAB_ID := 910000
 const HALF_CELL := 0.5  # a part's "pos" is its chunk's centre
@@ -78,6 +82,8 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 	var contact: Dictionary = {}  # piece id -> first time it touched the street
 	var order: Dictionary = {}  # piece id -> its height up the tower (mean of its chunks)
 	var intact := -1
+	var cubes_before: int = city._topple.cubes
+	var smallest := INF  # the smallest scale any live band reached
 	var span: Dictionary = {}  # piece id -> its height range up the tower
 	var broke: Dictionary = {}  # piece id -> when it began to shatter
 	var shown: Dictionary = {}  # slab id -> when it left the held set (appeared)
@@ -108,6 +114,8 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 		for piece: Node3D in pieces:
 			var low := _low(piece)
 			lowest = minf(lowest, low)
+			var scale := piece.global_transform.basis.get_scale().abs()
+			smallest = minf(smallest, minf(scale.x, minf(scale.y, scale.z)))
 			var key := piece.get_instance_id()
 			if not order.has(key):
 				order[key] = _height(piece)
@@ -141,6 +149,11 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 		rising, "its bands touch the ground in order from the base to the top (%s)" % [_fmt(times)]
 	)
 	check.call(intact == 0, "after it lands no band is left intact (%d)" % intact)
+	check.call(
+		smallest >= MIN_SCALE, "no band shrinks before it bursts (smallest scale %.2f)" % smallest
+	)
+	var cubes: int = city._topple.cubes - cubes_before
+	check.call(cubes >= MIN_CUBES * keys.size(), "each band bursts into cubes (%d)" % cubes)
 	if not on_kaiju:
 		var breaks: Array[float] = []
 		for key: int in keys:
@@ -244,7 +257,8 @@ static func _landing(ctx: Dictionary, on_kaiju: bool) -> Dictionary:
 	return event
 
 
-## The pieces of this fall now (every lifted or split piece shares its pivot), drawn.
+## The pieces of this fall now (every lifted or split piece shares its pivot), also those that
+## burst this frame (hidden, or queued to be freed).
 static func _pieces(city: CityView, pivot: Vector3) -> Array[Node3D]:
 	var out: Array[Node3D] = []
 	var stack: Array[Node] = [city]
@@ -255,9 +269,8 @@ static func _pieces(city: CityView, pivot: Vector3) -> Array[Node3D]:
 			continue
 		var piece := node as Node3D
 		var at: Vector3 = piece.get_meta("pivot")
-		if at.is_equal_approx(pivot) and piece.is_visible_in_tree():
-			if not piece.is_queued_for_deletion():
-				out.append(piece)
+		if at.is_equal_approx(pivot):  # a burst band is hidden or freed on the frame it bursts
+			out.append(piece)
 	return out
 
 

@@ -17,6 +17,7 @@ var _rng: RandomNumberGenerator
 var _breaking: Array[Dictionary] = []
 var _rubble: RubbleView
 var _bands: ToppleBands
+var cubes := 0  # how many cubes the bands have burst into (the flow suite reads it)
 
 
 func _init(city: CityView, rng: RandomNumberGenerator) -> void:
@@ -103,7 +104,7 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 	else:
 		_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 	var cfg := _cfg
-	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi)
+	var settle := func(mmi: MultiMeshInstance3D) -> void: _settle(mmi, hold > 0.0)
 	var heap := func() -> void:
 		_city.ruins().build(
 			func() -> MultiMeshInstance3D: return Ruin.strip(voxels, a, b, width, cfg), settle
@@ -142,16 +143,42 @@ func _fold(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary
 	_break_up(node, Num.f(_cfg["breakup_s"]), Num.f(_cfg["impact_debris"]))
 
 
-## A band reached the street: it shatters where it lies, its share of the impact debris thrown
-## up over shatter_s while it crumbles in on itself (never into the street), a puff of dust.
+## A band reached the street: it bursts into its own cubes, one for each of up to shatter_cubes
+## of its chunks (their colours, their places, the band's size between them) thrown out and
+## tumbling to rest, a little gravel, a puff of dust. It is never scaled away: the whole band
+## is replaced by its cubes at once (comment #30).
 func shatter(band: Node3D) -> void:
 	if band.has_meta("breaking"):
 		return
+	band.set_meta("breaking", true)
 	var share := Num.f(band.get_meta("share", 1.0))
-	_break_up(band, Num.f(_cfg["shatter_s"]), Num.f(_cfg["impact_debris"]) * share)
-	_breaking[-1]["crush"] = false  # it shrinks in on its middle instead
 	var centre: Vector3 = band.get_meta("centre", Vector3.ZERO)
-	var at := band.global_transform * centre
+	var xf := band.global_transform
+	var at := xf * centre
+	var parts: Array = band.get_meta("parts", [])
+	var pivot: Vector3 = band.get_meta("pivot", Vector3.ZERO)
+	var count := mini(parts.size(), Num.i(_cfg["shatter_cubes"]))
+	var size := pow(float(parts.size()) / maxi(1, count), 1.0 / 3.0) * Num.f(_cfg["shatter_cube"])
+	for k: int in count:
+		var part: Dictionary = parts[k * parts.size() / count]
+		var pos: Vector3 = part["pos"]
+		var color: Color = part["color"]
+		var world := xf * (pos - pivot)
+		var out := Vector3(world.x - at.x, 0.0, world.z - at.z)
+		var away := out.normalized() * Num.f(_cfg["shatter_out"])
+		away += Vector3.UP * Num.f(_cfg["shatter_up"])
+		_city.debris_cube(world, color, away, size)
+		cubes += 1
+	var gravel := roundi(Num.f(_cfg["impact_debris"]) * share * Num.f(_cfg["shatter_gravel"]))
+	for n: int in gravel:
+		var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
+		var pos: Vector3 = part["pos"]
+		var color: Color = part["color"]
+		_city.debris(xf * (pos - pivot), color, Vector3.UP)
+	if band.has_meta("keep"):
+		band.visible = false  # the fall's own piece: CityView frees it when it lands
+	else:
+		band.queue_free()
 	_city.fx.dust(Vector3(at.x, Num.f(_cfg["dust_lift"]), at.z), Num.f(_cfg["band_dust"]))
 
 
@@ -200,7 +227,7 @@ func _break_up(node: Node3D, span: float, debris: float, floor_y := 0.0) -> void
 	node.set_meta("breaking", true)
 	var xf := node.global_transform
 	var br := {"node": node, "t": 0.0, "basis": xf, "span": span, "debris": debris}
-	br.merge({"floor": floor_y, "crush": true})
+	br["floor"] = floor_y
 	_breaking.append(br)
 
 
@@ -228,18 +255,8 @@ func _process(delta: float) -> void:
 			_breaking.remove_at(i)
 			continue
 		var rest: Transform3D = br["basis"]
-		if br["crush"]:
-			var flat := lerpf(1.0, Num.f(_cfg["breakup_flatten"]), k)
-			node.global_transform = crushed(rest, flat, Num.f(br["floor"]))
-		else:
-			var size := lerpf(1.0, Num.f(_cfg["shatter_shrink"]), k)
-			var centre: Vector3 = node.get_meta("centre", Vector3.ZERO)
-			var corners: PackedVector3Array = node.get_meta("corners", PackedVector3Array())
-			var mid := rest * centre  # it shrinks onto the middle of its underside
-			mid.y = ToppleBands.lowest(rest, corners)
-			node.global_transform = (
-				Transform3D(Basis.from_scale(Vector3.ONE * size), mid - mid * size) * rest
-			)
+		var flat := lerpf(1.0, Num.f(_cfg["breakup_flatten"]), k)
+		node.global_transform = crushed(rest, flat, Num.f(br["floor"]))
 		var parts: Array = node.get_meta("parts", [])
 		if parts.is_empty():
 			continue
@@ -248,12 +265,17 @@ func _process(delta: float) -> void:
 			var part: Dictionary = parts[_rng.randi_range(0, parts.size() - 1)]
 			var pos: Vector3 = part["pos"]
 			var color: Color = part["color"]
-			var big := 1.0 if br["crush"] else Num.f(_cfg["shatter_chunk"])
-			_city.debris(rest * (pos - pivot), color, Vector3.UP, big)
+			_city.debris(rest * (pos - pivot), color, Vector3.UP)
 
 
 ## The heap slumps: built taller than it rests, it settles down over settle_s.
-func _settle(mmi: MultiMeshInstance3D) -> void:
+func _settle(mmi: MultiMeshInstance3D, rise := false) -> void:
+	if rise:  # built late, under the broken bands: it rises out of the street, no pop
+		mmi.scale = Vector3(1, 0.02, 1)
+		var up := mmi.create_tween()
+		up.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		up.tween_property(mmi, "scale:y", 1.0, Num.f(_cfg["heap_rise_s"]))
+		return
 	mmi.scale = Vector3(1, Num.f(_cfg["settle_heap"]), 1)
 	var tween := mmi.create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
