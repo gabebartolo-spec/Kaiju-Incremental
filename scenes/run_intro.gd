@@ -84,14 +84,18 @@ static func shot(sim: RampageSim, follow: CameraFollow, rest_fov: float, frac: f
 	var close := (
 		Num.f(cfg["distance"]) * s * (1.0 - Num.f(cfg["push_in"]) * minf(1.0, t / pull_from))
 	)
+	# The shot turns about the head (where the water founts and it breaks the surface), then about
+	# the body as it pulls out: yaw 90 looks along the river, across the bay's open water.
+	var ahead := sim.facing * Num.f(cfg["aim_ahead"]) * s
+	var head_at := Vector2(focus.x + ahead.x, focus.z + ahead.y)
+	var pivot := head_at.lerp(Vector2(focus.x, focus.z), w)
 	var yaw := deg_to_rad(Num.f(cfg["yaw_deg"])) * (1.0 - w)
 	var side := behind.normalized().rotated(yaw) * lerpf(close, behind.length(), w)
-	var eye := Vector3(focus.x + side.x, 0.0, focus.z + side.y)
+	var eye := Vector3(pivot.x + side.x, 0.0, pivot.y + side.y)
 	eye.y = lerpf(water + Num.f(cfg["height"]) * s, rest_eye.y, w)
 	# It looks at the water over the head, then follows the head up as it rises.
-	var ahead := sim.facing * Num.f(cfg["aim_ahead"]) * s
 	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])
 	var low := water + Num.f(cfg["aim_height"]) * s
-	var head_aim := Vector3(focus.x + ahead.x, maxf(low, head), focus.z + ahead.y)
+	var head_aim := Vector3(head_at.x, maxf(low, head), head_at.y)
 	var fov := lerpf(Num.f(cfg["fov"]), rest_fov, w)
 	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}

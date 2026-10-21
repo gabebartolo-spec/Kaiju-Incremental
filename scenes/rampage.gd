@@ -152,10 +152,10 @@ func _ready() -> void:
 	add_child(_camera)
 	_camera.current = true
 	sfx.watch(_camera, _powers, _city.street)
-	_place_camera(1.0)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
+	_place_camera(1.0)  # after the HUD: the intro hides it
 	if stages.overlay != null:
 		stages.overlay.queue_free()
 	is_loaded = true

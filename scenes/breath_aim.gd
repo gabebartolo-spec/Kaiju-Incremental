@@ -41,7 +41,8 @@ func _init(sim: RampageSim, tint: Color) -> void:
 
 ## True while the reticle shows: a cone breath, ready to fire, the run going.
 func showing() -> bool:
-	return _sim.ability_type == "cone" and _sim.ability_ready_in <= 0.0 and not _sim.over
+	var ready := _sim.ability_ready_in <= 0.0 and not _sim.over
+	return _sim.ability_type == "cone" and ready and not _sim.emerge.active  # none in the intro
 
 
 ## The cone as drawn (as BreathCone.of(): origin, dir, reach, half_angle), for the flow suite.
