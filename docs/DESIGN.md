@@ -49,7 +49,8 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
   antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
   breaks it (D-091, D-110, comments #24). A tower that falls on him breaks believably at the contact, large pieces
-  folding off him, "not turned instantly to dust" (#25).
+  folding off him, "not turned instantly to dust" (#25). A fallen building breaks
+  against the ground into rubble, never disappears into it (#26).
 - **Models:** Tripo designs, hand-rigged in Blender with welded weights, rendered as voxel cubes on a smooth skinned
   lattice (D-041, D-045). The kaiju gets double voxels per axis, the city keeps today's size (D-107). Mantis and
   octopus meshes kept; their game-ready plan is `docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md`,
@@ -66,7 +67,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
 - **The city grows with each evolution:** more districts, taller towers, harder defences (D-039).
 - **Start:** the kaiju rises out of the river water facing the city, from a wider bay onto a small shoreline, and
   walks straight in (#10, #17); where a bridge deck sits over the rise he bursts up through it and breaks it
-  (director 2026-10-21). Bridges always meet the land (#12).
+  (director 2026-10-21); the bay fits the stage's biggest possible body (director 2026-10-21). Bridges always meet the land (#12). Nothing in the foreground hides the rise (#27).
 - **Landmarks:** stadium, wheel, spire, megatower, in that order (D-071). The stadium plays one random sport per run
   (AFL, NFL, soccer, cricket), full stands; players flee; the crowd is killable, thins over time and falls with a
   broken stand, never vanishes or dangles (D-078, D-078a, b2-8, #17). It sits far from the spawn (b2-21); bonus 1.5x
@@ -117,7 +118,7 @@ sees, decides or remembers is cut, not polished. Designed by the director; agent
 - **Minimal HUD:** the boxed timer at the top; biomass a boxless figure bottom right; breath cooldown an icon with a
   circular fill; health bar removed or repurposed; controls shown once and in a controls menu; fixed tooltip width;
   species select with the kaiju centred (b2-10..13, b2-23, b2-11). Text 24 px or more at 1080p.
-- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default 60 fps on the balanced preset (D-093). Looks
+- **Graphics:** presets Potato / Low / Medium / High / Max; 4K default Medium at 60 fps (D-093, D-109). Looks
   first, performance after the visuals are final (D-032, b2-25).
 
 ## Audio
