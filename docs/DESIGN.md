@@ -38,7 +38,7 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - **Cephalopod: the most cunning, a hydra of limbs.** Adult = 10+ barnacled tentacles (D-036). Kit: 360 deg limb
   attacks, each limb picking its own target; grab and throw tanks, cars and helicopters (a thrown tank explodes like
   a grenade); pulls itself along building edges, climbs, squeezes through gaps. Ultimate: corrosive ink that
-  dissolves coated buildings and units. Slides and grabs, never tip-toes (D-031).
+  dissolves coated buildings and units. Slides and grabs, never tip-toes (D-031). Swims fast in water and can dive to dodge the army, bursting out under buildings; one of the 3 cities is a water city (D-123).
 - **Growth:** baby (start, a toddler: slow, outscaled by the city) -> adolescent (EVOLVE 1, lanky, oversized feet,
   half-grown feature) -> adult (EVOLVE 2+, massive). Each stage a new body plan like Simba's, never only bigger
   (D-009, D-014, D-074). Body scale grows with every upgrade owned. No building is too strong for the baby; big ones

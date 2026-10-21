@@ -4,6 +4,11 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-21 · D-123 · Director · One of the 3 cities is a water city; the octopus swims fast and can submerge
+Why: his words, "im planning the octopus to be in a city with lots of water so it can move quickly through it". Asked: the water
+city is one of the 3 every species plays; in water the octopus is fast and the others move normally; it can also dive to
+dodge the army and burst out under buildings. Water becomes gameplay for the cephalopod (amends D-122's 'no gameplay effect').
+
 ## 2026-10-21 · D-122 · Director · Water = the R 21 plan (presentation physics), built after fire gameplay
 Why: asked whether "proper water with physics" (#12) means the planned ripples, wakes, splashes and floating rubble with no
 gameplay effect, or gameplay water or a fluid sim: the plan. Order: fire gameplay (R 26), then water (R 21).
