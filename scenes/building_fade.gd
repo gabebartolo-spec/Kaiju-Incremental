@@ -6,18 +6,25 @@ extends RefCounted
 ## and forward along its facing, where the torso and head are) are tested against every built
 ## building's box; one that cuts a line eases down to vehicles.fade_opacity, the rest ease
 ## back. The camera never moves for it. Presentation only.
+##
+## Only the buildings whose footprint meets the rectangle the sight lines stay in are tested
+## (a grid of footprints, built once: the walls never move), in building order, so the set and
+## the order are those of a scan over every building.
 
 ## Heights up the kaiju's body (shares of its height: the feet, the pelvis, the torso, the head)
 ## and steps forward along its facing (in body radii) that must stay in sight (R 19.4: the feet
 ## too, so the street round them reads).
 const HEIGHTS := [0.03, 0.3, 0.6, 0.9]
 const AHEAD := [0.0, 1.0, 2.0]
+## Side of a grid cell of the footprint index (metres).
+const CELL := 32.0
 
 var _cfg: Dictionary
 var _buildings: Array[RampageSim.Building]
 var _views: Callable
 var _faded := {}  # building index -> current opacity (only those below 1)
 var _started := false
+var _grid := {}  # Vector2i cell -> PackedInt32Array of the buildings whose footprint meets it
 
 
 ## views: building index -> its BuildingView, or null while it is not built yet.
@@ -25,6 +32,7 @@ func _init(buildings: Array[RampageSim.Building], views: Callable) -> void:
 	_cfg = Content.section("vehicles")
 	_buildings = buildings
 	_views = views
+	_index()
 
 
 ## The points over a kaiju standing at `feet`, `height` tall, facing `ahead` (one body radius
@@ -54,23 +62,11 @@ static func sight_of(sim: RampageSim) -> PackedVector3Array:
 func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 	var step := delta / Num.f(_cfg["fade_seconds"])
 	var low := Num.f(_cfg["fade_opacity"])
-	var lo := Vector2(eye.x, eye.z)
-	var hi := lo
-	for p: Vector3 in sight:
-		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
-		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
 	var hit := {}
 	var first := not _started  # the run's first frame: what blocks starts faded, no pop-in
 	_started = true
-	for n: int in _buildings.size():
-		var b := _buildings[n]
-		# Cheap reject: the sight lines stay inside the eye-to-kaiju rectangle on the ground.
-		if b.x + b.w * 0.5 < lo.x or b.x - b.w * 0.5 > hi.x:
-			continue
-		if b.z + b.d * 0.5 < lo.y or b.z - b.d * 0.5 > hi.y:
-			continue
-		if blocks(eye, sight, b):
-			hit[n] = true
+	for n: int in blocking(eye, sight):
+		hit[n] = true
 	for n: int in hit:
 		if not _faded.has(n):
 			_faded[n] = low if first else 1.0
@@ -84,6 +80,60 @@ func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 			_faded.erase(n)
 		else:
 			_faded[n] = next
+
+
+## The buildings that stand in a sight line from the eye (see blocks), in building order.
+func blocking(eye: Vector3, sight: PackedVector3Array) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for n: int in _near(eye, sight):
+		if blocks(eye, sight, _buildings[n]):
+			out.append(n)
+	return out
+
+
+## The buildings whose footprint meets the ground rectangle the sight lines stay inside (eye to
+## kaiju's points), each once, in building order.
+func _near(eye: Vector3, sight: PackedVector3Array) -> PackedInt32Array:
+	var lo := Vector2(eye.x, eye.z)
+	var hi := lo
+	for p: Vector3 in sight:
+		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
+		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
+	var found := PackedInt32Array()
+	var first := Vector2i((lo / CELL).floor())
+	var last := Vector2i((hi / CELL).floor())
+	for cx: int in range(first.x, last.x + 1):
+		for cz: int in range(first.y, last.y + 1):
+			found.append_array(_grid.get(Vector2i(cx, cz), PackedInt32Array()))
+	found.sort()
+	var out := PackedInt32Array()
+	var prev := -1
+	for n: int in found:
+		if n == prev:
+			continue  # a footprint spanning several cells is listed in each
+		prev = n
+		var b := _buildings[n]
+		# Cheap reject: the sight lines stay inside the eye-to-kaiju rectangle on the ground.
+		if b.x + b.w * 0.5 < lo.x or b.x - b.w * 0.5 > hi.x:
+			continue
+		if b.z + b.d * 0.5 < lo.y or b.z - b.d * 0.5 > hi.y:
+			continue
+		out.append(n)
+	return out
+
+
+## Lists each building under every grid cell its footprint touches.
+func _index() -> void:
+	for n: int in _buildings.size():
+		var b := _buildings[n]
+		var first := Vector2i((Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5) / CELL).floor())
+		var last := Vector2i((Vector2(b.x + b.w * 0.5, b.z + b.d * 0.5) / CELL).floor())
+		for cx: int in range(first.x, last.x + 1):
+			for cz: int in range(first.y, last.y + 1):
+				var key := Vector2i(cx, cz)
+				var cell: PackedInt32Array = _grid.get(key, PackedInt32Array())
+				cell.append(n)
+				_grid[key] = cell
 
 
 ## Building n's opacity now (1 = solid; tests read it).
