@@ -4,7 +4,7 @@ extends CanvasLayer
 ## (director 2026-10-21): a plain outlined clock at the top (red in the last seconds) with a thin
 ## city-destroyed strip under it, biomass a small number bottom right that swells when it grows,
 ## the breath, dash and ultimate as three small rings in the bottom left corner, health as a red
-## edge vignette, and the controls on a card at the start of the first rampage only. Everything sits inside the TV
+## edge vignette, the controls on a card at the first rampage's start only. All inside the TV
 ## title-safe area; no text under 24 px. Then the end beat (why it ended, big). Reads the sim;
 ## reports the beat's end through `beat_done`. Sizes and timings: tuning "ui".
 
@@ -46,10 +46,10 @@ var ultimate_ring: HudRing
 var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
+var city_meter: ProgressBar
 var _time: Label
 ## The clock and its city meter: hidden while the end beat's headline is up.
 var _clock_column: Control
-var city_meter: ProgressBar
 ## Everything on the HUD: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
 var _hud: Dictionary
@@ -150,7 +150,7 @@ func figure_gap() -> float:
 	return font.get_descent(size) - UiKit.outline_px(size)
 
 
-## Where the biomass number's visible bottom is on screen (y), and the rings' (read by the ui suite).
+## Where the biomass number's visible bottom is on screen (y), and the rings' (the ui suite).
 func figure_bottom() -> float:
 	return biomass.get_global_rect().end.y - figure_gap()
 
@@ -217,7 +217,9 @@ func _show_controls(safe: Control) -> void:
 	place.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	place.size_flags_vertical = Control.SIZE_SHRINK_END
 	# Above the rings in the corner.
-	place.add_theme_constant_override("margin_bottom", Num.i(UiKit.ui()["controls_card"]["first_run_lift"]))
+	place.add_theme_constant_override(
+		"margin_bottom", Num.i(UiKit.ui()["controls_card"]["first_run_lift"])
+	)
 	place.add_child(controls_card)
 	safe.add_child(place)
 	_card_left = Num.f(UiKit.ui()["controls_card"]["seconds"])

@@ -150,7 +150,14 @@ func _run() -> void:
 			rampage.sim.hp = rampage.sim.max_hp * HURT_SHARE
 			await process_frame
 			peak = maxf(peak, hud.vignette.strength)
-			if hud.vignette.strength >= HURT_PEAK_SHARE * Num.f(UiKit.ui()["hurt"]["alpha_max"]) * sqrt(hud.vignette.hurt()):
+			if (
+				hud.vignette.strength
+				>= (
+					HURT_PEAK_SHARE
+					* Num.f(UiKit.ui()["hurt"]["alpha_max"])
+					* sqrt(hud.vignette.hurt())
+				)
+			):
 				break
 		print("hurt vignette strength ", hud.vignette.strength, " peak seen ", peak)
 		_shot("04c_hurt")

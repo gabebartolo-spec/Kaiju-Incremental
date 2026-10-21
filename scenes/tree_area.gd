@@ -45,9 +45,7 @@ func _ready() -> void:
 	add_child(_band)
 	var who := str(_species["name"])
 	_caption = UiKit.label(
-		"%s powers: only the %s can grow these" % [who, who],
-		UiKit.SIZE_BODY,
-		eye.lightened(0.5)
+		"%s powers: only the %s can grow these" % [who, who], UiKit.SIZE_BODY, eye.lightened(0.5)
 	)
 	add_child(_caption)
 	for id: String in tree.order:

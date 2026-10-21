@@ -71,7 +71,9 @@ class Cells:
 	var filled := 0
 
 	## min_cell: the narrowest a cell may be (px); the stat card of a lone species keeps MIN_CELL.
-	func _init(p_cells: int = 8, p_filled: int = 0, min_cell: float = MIN_CELL, height: float = 26.0) -> void:
+	func _init(
+		p_cells: int = 8, p_filled: int = 0, min_cell: float = MIN_CELL, height: float = 26.0
+	) -> void:
 		cells = p_cells
 		filled = p_filled
 		custom_minimum_size = Vector2(cells * min_cell + (cells - 1) * GAP, height)

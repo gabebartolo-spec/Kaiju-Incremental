@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: the sim is built from the city seed 0 and stepped by hand, never by time.
 
 const HudChecks := preload("res://tests/lib/ui_hud.gd")
+const TreeChecks := preload("res://tests/lib/ui_tree.gd")
 
 ## The UI canvas (project.godot, D-027): every check measures in its logical pixels.
 const CANVAS := Vector2i(1920, 1080)
@@ -30,11 +31,10 @@ func run_checks() -> void:
 	await _t("_check_species_centred")
 	await _t("_check_species_card")
 	await _t("_check_no_atomic")
-	await _t("_check_tree_text")
 	await _t("_check_pause")
 	await _t("_check_reveal_frame")
 	await _t("_check_results_verdict")
-	await _t("_check_tree_layout")
+	await _h("TreeChecks", func() -> void: await TreeChecks.new(self, check).run())
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
@@ -195,11 +195,17 @@ func _check_species_card() -> void:
 	for c: Control in cells:
 		if c.call("cell_width") < 12.0:
 			thin += 1
-	check(cells.size() >= 4 and thin == 0, "%d stat meters, %d with cells under 12 px" % [cells.size(), thin])
+	check(
+		cells.size() >= 4 and thin == 0,
+		"%d stat meters, %d with cells under 12 px" % [cells.size(), thin]
+	)
 	var rows := {}
 	for c: Control in cells:
 		rows[roundi(c.global_position.y)] = true
-	check(cells.size() >= 4 and rows.size() == cells.size(), "one stat per row (%d rows for %d meters)" % [rows.size(), cells.size()])
+	check(
+		cells.size() >= 4 and rows.size() == cells.size(),
+		"one stat per row (%d rows for %d meters)" % [rows.size(), cells.size()]
+	)
 	check(
 		texts.any(func(t: String) -> bool: return t.to_lower().contains("lightning breath")),
 		"the signature reads Lightning Breath: %s" % [texts]
@@ -215,58 +221,10 @@ func _check_no_atomic() -> void:
 	var hits: Array[String] = []
 	for file: String in ["species", "upgrades", "tuning"]:
 		var text := FileAccess.get_file_as_string("res://data/%s.json" % file)
-		for line: String in text.split("
-"):
+		for line: String in text.split("\n"):
 			if line.to_lower().contains("atomic"):
 				hits.append("%s: %s" % [file, line.strip_edges().left(60)])
 	check(hits.is_empty(), "no visible string says atomic: %s" % [hits])
-
-
-## Critic r1 item 4: tree node text is 26 px or more at 1080p, every state's text, the locked
-## outline and the branch caption read at 4.5:1 on what is behind them, and no node's text
-## overflows its box, at the 100% canvas and the 125% one (1536x864).
-func _check_tree_text() -> void:
-	var window := root.size
-	var bad: Array[String] = []
-	var small := 99
-	for size: Vector2i in [CANVAS, Vector2i(1536, 864)]:
-		root.size = size
-		for id: String in ["reptilian", "insectoid", "cephalopod"]:
-			var tree := UpgradeTree.new(Content.upgrades(), {}, id)
-			var screen := UpgradeScreen.new()
-			screen.setup(tree, 400, Content.species_def(id), Content.section("kaiju"))
-			root.add_child(screen)
-			await process_frame
-			await process_frame
-			for node: String in tree.order:
-				var b := screen.node_button(node)
-				var fs := b.get_theme_font_size("font_size")
-				if size == CANVAS:
-					small = mini(small, fs)
-				if b.get_minimum_size().y > b.size.y + 1.0:
-					bad.append("%s/%s overflows at %s" % [id, node, size])
-				var fill := b.get_theme_stylebox("normal") as HazardBox
-				var ratio := UiKit.contrast(b.get_theme_color("font_color"), fill.fill)
-				if ratio < 4.5:
-					bad.append("%s %s text %.1f:1" % [node, b.state, ratio])
-				if b.state == "locked" and UiKit.contrast(fill.edge, UiKit.BG) < 4.5 and node == tree.order[0]:
-					bad.append("locked outline %.1f:1" % UiKit.contrast(fill.edge, UiKit.BG))
-			var area: TreeArea = screen.get("_area")
-			var cap: Label = area.get("_caption")
-			var band: ColorRect = area.get("_band")
-			var under := Color(UiKit.BG).lerp(Color(band.color, 1.0), band.color.a)
-			var cr := UiKit.contrast(cap.get_theme_color("font_color"), under)
-			if cr < 4.5:
-				bad.append("%s caption %.1f:1" % [id, cr])
-			screen.queue_free()
-			await process_frame
-	root.size = window
-	check(small >= 24, "tree node text is at least 24 px at 1080p (was 22) (smallest %d)" % small)
-	check(bad.is_empty(), "tree text reads and fits at 100%% and 125%%: %s" % [bad.slice(0, 12)])
-	check(
-		UiKit.contrast(UiKit.LOCKED, UiKit.BG) >= 4.5,
-		"the locked outline colour reads 4.5:1 on the screen (%.1f)" % UiKit.contrast(UiKit.LOCKED, UiKit.BG)
-	)
 
 
 ## Critic r1 item 5: every pause button's label clears its edges by 40 px or more, the End
@@ -317,7 +275,10 @@ func _check_reveal_frame() -> void:
 	check(framed, "the reveal's 3D view sits in a hazard frame")
 	check(
 		reveal.skip_hint.get_theme_font_size("font_size") >= 30,
-		"the skip prompt is 25%% bigger than 24 px (%d)" % reveal.skip_hint.get_theme_font_size("font_size")
+		(
+			"the skip prompt is 25%% bigger than 24 px (%d)"
+			% reveal.skip_hint.get_theme_font_size("font_size")
+		)
 	)
 	var out: Array[String] = await _outside(reveal.view)
 	check(out.is_empty(), "the evolved kaiju stays inside the reveal view: %s" % [out])
@@ -357,13 +318,18 @@ func _outside(view: SubViewportContainer) -> Array[String]:
 	if missed > 0:
 		out.append("%d points outside, e.g. %s of %s" % [missed, worst, viewport.size])
 	return out
+
+
 ## Critic r1 item 8: the line under the title never says "short of your best" while a row beside
 ## it carries a NEW BEST tag; with no records it still says how far short.
 func _check_results_verdict() -> void:
 	var mixed := ResultsScreen.new({"rubble": 10, "toppled": 5}, {"rubble": 69.0, "toppled": 2.0})
 	var plain := ResultsScreen.new({"rubble": 10, "toppled": 1}, {"rubble": 69.0, "toppled": 2.0})
 	check(
-		mixed.is_new_best("toppled") and mixed.verdict() == "59 SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS",
+		(
+			mixed.is_new_best("toppled")
+			and mixed.verdict() == "59 SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS"
+		),
 		"with a record on the table the verdict says so: %s" % mixed.verdict()
 	)
 	check(
@@ -372,60 +338,3 @@ func _check_results_verdict() -> void:
 	)
 	mixed.free()
 	plain.free()
-
-
-## Critic r2 item 4: the species band starts below the row above it (no node straddles it), its
-## caption touches no node and no line, reads "<Species> powers: only the <Species> can grow
-## these", and the side panel's text is the nodes' size or more. At 100% and 125%.
-func _check_tree_layout() -> void:
-	var window := root.size
-	var bad: Array[String] = []
-	var copy := ""
-	var body := 99
-	for size: Vector2i in [CANVAS, Vector2i(1536, 864)]:
-		root.size = size
-		var tree := UpgradeTree.new(Content.upgrades(), {}, "reptilian")
-		var screen := UpgradeScreen.new()
-		screen.setup(tree, 400, Content.species_def("reptilian"), Content.section("kaiju"))
-		root.add_child(screen)
-		await process_frame
-		await process_frame
-		var area: TreeArea = screen.get("_area")
-		var band: ColorRect = area.get("_band")
-		var cap: Label = area.get("_caption")
-		copy = cap.text
-		var caprect := Rect2(cap.position, cap.get_combined_minimum_size())
-		for node: String in tree.order:
-			var b := screen.node_button(node)
-			var r := Rect2(b.position, b.size)
-			var starts_above := r.position.y < band.position.y and r.end.y > band.position.y
-			if starts_above:
-				bad.append("%s straddles the band at %s" % [node, size])
-			if r.intersects(caprect):
-				bad.append("%s covers the caption at %s" % [node, size])
-			var def: Dictionary = tree.defs[node]
-			var requires: Array = def.get("requires", [])
-			for req: String in requires:
-				var from := screen.node_button(req)
-				var a := from.position + from.size / 2.0
-				var z := b.position + b.size / 2.0
-				if _segment_hits(a, z, caprect):
-					bad.append("line %s-%s crosses the caption at %s" % [req, node, size])
-		if caprect.end.y > area.size.y:
-			bad.append("the caption leaves the tree area at %s" % size)
-		var info: RichTextLabel = screen.get("_info_body")
-		body = mini(body, info.get_theme_font_size("normal_font_size"))
-		screen.queue_free()
-		await process_frame
-	root.size = window
-	check(bad.is_empty(), "the species band and caption are clear of nodes and lines: %s" % [bad.slice(0, 8)])
-	check(copy == "Reptilian powers: only the Reptilian can grow these", "the band reads: %s" % copy)
-	check(body >= 24, "the side panel text is 24 px or more (%d)" % body)
-
-
-## True when the segment a-b passes through `r` (sampled along its length).
-func _segment_hits(a: Vector2, b: Vector2, r: Rect2) -> bool:
-	for i: int in 41:
-		if r.has_point(a.lerp(b, i / 40.0)):
-			return true
-	return false

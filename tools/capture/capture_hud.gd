@@ -1,8 +1,8 @@
 extends SceneTree
 ## Captures the rampage HUD alone and measures how much of the screen it covers: a mid-run still
 ## (the city meter part-filled, the controls card gone unless --first-run), the same frame with
-## the HUD hidden (their pixel difference over the noise of two identical frames is the HUD's
-## share of the screen), and the last-10-seconds still with the red timer. Local GPU only:
+## the HUD hidden (saved as 04_rampage_nohud; its pixel difference over the noise of two identical
+## frames is the HUD's share), and the last-10-seconds still with the red timer. Local GPU only:
 ##   godot --path . --windowed --resolution 3840x2160 --fixed-fps 60 --script \
 ##     tools/capture/capture_hud.gd -- --out=<dir> [--first-run] [--ui-scale=1.25]
 ## Prints "HUD share <percent>" (pixels that differ by more than DIFF_MIN in any channel,
@@ -77,6 +77,8 @@ func _run() -> void:
 	var widgets: Control = hud.get("_widgets")
 	widgets.visible = false
 	await _frames(2)
+	# The HUD-less frame too, so the HUD's own pixels (margins, glyph heights) can be measured.
+	root.get_texture().get_image().save_png(_out.path_join("04_rampage_nohud.png"))
 	var without := _grab()
 	await _frames(2)
 	var again := _grab()
@@ -84,7 +86,19 @@ func _run() -> void:
 	paused = false
 	var noise := _differing(without, again)
 	var share := _differing(with_hud, without)
-	print("HUD share ", snappedf(100.0 * maxf(0.0, share - noise) / (without.get_width() * without.get_height()), 0.001), " percent (diff ", share, " noise ", noise, " of ", without.get_width() * without.get_height(), ")")
+	print(
+		"HUD share ",
+		snappedf(
+			100.0 * maxf(0.0, share - noise) / (without.get_width() * without.get_height()), 0.001
+		),
+		" percent (diff ",
+		share,
+		" noise ",
+		noise,
+		" of ",
+		without.get_width() * without.get_height(),
+		")"
+	)
 	rampage.sim.time_left = LAST_SECONDS
 	await _frames(LAST_FRAMES)
 	root.get_texture().get_image().save_png(_out.path_join("04d_last_seconds.png"))

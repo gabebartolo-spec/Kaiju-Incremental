@@ -45,7 +45,13 @@ static func build(
 	camera.fov = 40.0
 	var aim := Vector3(tower_x * 0.5, tallest * 0.5, 0.0)
 	var dist := (tallest * 1.55 + 8.0) * back
-	var wide := 2.0 * dist * tan(deg_to_rad(camera.fov) * 0.5) * EvolutionReveal.VIEW_MAX.x / EvolutionReveal.VIEW_MAX.y
+	var wide := (
+		2.0
+		* dist
+		* tan(deg_to_rad(camera.fov) * 0.5)
+		* EvolutionReveal.VIEW_MAX.x
+		/ EvolutionReveal.VIEW_MAX.y
+	)
 	aim.x -= shift * wide
 	camera.position = aim + Vector3(0.0, tallest * 0.15 * back, dist)
 	viewport.add_child(camera)

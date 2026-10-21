@@ -1,5 +1,5 @@
 # ui-redesign handoff, 2026-10-21
-## State: ui-fix round 2 coded and pushed; suites green (ui 48, flow 203, smoke 30); CI captures NOT yet run
+## State (2026-10-22): critic fix pass done, captured, reviewed at 2x, lint clean, pushed; pr-body.md final. Done.
 ## Task
 Lead-10 builder. In-run HUD (b2-10..13, R 15.1-15.7) and menus (title, pause, settings, results, species
 select, loading) in UI look A "Emergency Broadcast" with bespoke drawn assets; fonts Claw/Block; one shared
@@ -64,12 +64,14 @@ in last 10 s), 220x6 strip, biomass 44 px + 24 px word swelling on gains >= 3. F
 1.37% at 100% 4K; 1.31% at 125%). Captures: side-session-notes/.../ui-redesign/hud-after, hud-after-125 (before design:
 after3-100/04_rampage.png); 2x crops in crops3/hudA_*. Suites green: ui 53, flow 203, smoke 30.
 
-## Critic fix pass (2026-10-22), committed and pushed; state: capture still to do
-Done: rings both 80 px (radius 16) centred on one line; icons are separate TextureRect nodes in HudRing loaded from
-data/tuning.json ui.hud.icons (assets/ui/icons/*.png built by tools/ui/build_icons.py, registered in
-docs/LICENSING_REGISTER.md); biomass number 28 px; one 60 logical (120 px 4K) bottom margin for rings and biomass
-(RampageHud._lifted, figure_gap); timer outline unchanged. Suites: ui 57, flow 203 green (smoke not re-run).
-Left: recapture 04_rampage only at 100% 4K (override.cfg off-screen, tools/capture/capture_hud.gd -- --out=<dir>, local
-GPU), view 2x crops of both bottom corners (check the biomass glyph bottom really sits 120 px up; figure_gap is a
-font-metric estimate), report to the lead in 4 lines. Then update pr-body.md (HUD share numbers stay; mention icons +
-register row). No Godot running.
+## Critic fix pass (2026-10-22), done and pushed
+Rings both 80 px (radius 16) on one line; icons separate TextureRect nodes from data/tuning.json ui.hud.icons
+(assets/ui/icons/*.png by tools/ui/build_icons.py, LICENSING_REGISTER row); biomass number 28 px (lead 2026-10-22:
+keep 28, the brief's "44" was superseded); one 60 logical (120 px 4K) bottom margin for rings and biomass.
+Captures (this code, RTX 4070 SUPER): NOTES/ui-redesign/hud-final-100, -125, -first (+ 04_rampage_nohud.png);
+2x crops NOTES/ui-redesign/crops5. Measured: rings 80 px, bottom gap 117-118 px both corners (2097 px window),
+125%: rings 99 px, gap 147 px. HUD share 1.02% (100%), 1.27% (125%), 9.05% with the first-run card; before 3.19%.
+Lint pass: branch .gd files were NOT gdlint clean (long lines, var order, a literal newline inside split("\n")
+in run_ui_tests.gd, suite 430 lines): fixed; tree checks moved to tests/lib/ui_tree.gd. Suites after:
+ui 8/8 fn 57 checks, flow 7/7 fn 203 checks, 0 failures. pr-body.md updated (before/after, share, Not exercised).
+Left: nothing; the lead asks the director about the first-run controls card.

@@ -132,8 +132,11 @@ func _card(hud: RampageHud) -> void:
 	var spot := card.get_global_rect()
 	var rings := hud.breath_ring.get_global_rect().merge(hud.ultimate_ring.get_global_rect())
 	check.call(
-		spot.end.x < view.size.x * 0.5 and spot.position.y > view.size.y * 0.4
-		and not spot.intersects(rings),
+		(
+			spot.end.x < view.size.x * 0.5
+			and spot.position.y > view.size.y * 0.4
+			and not spot.intersects(rings)
+		),
 		"the card sits bottom left, clear of the kaiju and the rings (%s)" % [spot]
 	)
 	var full: Array[String] = []
@@ -198,7 +201,10 @@ func _meter(hud: RampageHud, sim: RampageSim) -> void:
 	var meter: ProgressBar = hud.city_meter
 	check.call(
 		absf(meter.value - 35.0) < 0.5 and meter.size.y >= 4.0 and meter.size.y <= 8.0,
-		"the city meter is a thin strip (%s) that reads 35%% when 35%% is destroyed (%.1f)" % [meter.size, meter.value]
+		(
+			"the city meter is a thin strip (%s) that reads 35%% when 35%% is destroyed (%.1f)"
+			% [meter.size, meter.value]
+		)
 	)
 	var peak := 0.0
 	sim.hp = sim.max_hp * 0.2
@@ -227,7 +233,10 @@ func _minimal(hud: RampageHud, sim: RampageSim) -> void:
 		same = same and is_equal_approx(ring.size.x, rings[0].size.x)
 	check.call(
 		same and widest >= 40.0 and widest <= 44.0,
-		"the three rings are one size, about 40 px (80 px at 4K; they were 109 and 85): %.0f" % widest
+		(
+			"the three rings are one size, about 40 px (80 px at 4K; they were 109 and 85): %.0f"
+			% widest
+		)
 	)
 	var level := true
 	for y: float in centres:
@@ -236,9 +245,14 @@ func _minimal(hud: RampageHud, sim: RampageSim) -> void:
 	var view := t.root.get_visible_rect()
 	var margin := Num.f(UiKit.ui()["hud"]["bottom_margin"])
 	check.call(
-		absf(view.size.y - hud.rings_bottom() - margin) < 2.0
-		and absf(view.size.y - hud.figure_bottom() - margin) < 2.0,
-		"rings (%.0f) and biomass number (%.0f) share the %.0f px bottom margin" % [view.size.y - hud.rings_bottom(), view.size.y - hud.figure_bottom(), margin]
+		(
+			absf(view.size.y - hud.rings_bottom() - margin) < 2.0
+			and absf(view.size.y - hud.figure_bottom() - margin) < 2.0
+		),
+		(
+			"rings (%.0f) and biomass number (%.0f) share the %.0f px bottom margin"
+			% [view.size.y - hud.rings_bottom(), view.size.y - hud.figure_bottom(), margin]
+		)
 	)
 	var figure := hud.biomass.get_theme_font_size("font_size")
 	check.call(figure >= MIN_TEXT and figure <= 32, "the biomass number is a small %d px" % figure)
@@ -246,7 +260,9 @@ func _minimal(hud: RampageHud, sim: RampageSim) -> void:
 	for ring: HudRing in rings:
 		textures = textures and ring.icon_node != null and ring.icon_node.texture != null
 		textures = textures and ring.icon_node.get_parent() == ring
-	check.call(textures, "each ring's icon is its own node with a texture loaded from a path in data")
+	check.call(
+		textures, "each ring's icon is its own node with a texture loaded from a path in data"
+	)
 	var keys: Array[String] = []
 	for node: Node in hud.find_children("*", "Label", true, false):
 		var l: Label = node
@@ -275,7 +291,9 @@ func _minimal(hud: RampageHud, sim: RampageSim) -> void:
 	hud.biomass.scale = Vector2.ONE
 	sim.rubble += 5.0
 	hud.refresh()
-	check.call(hud.biomass.scale.x > 1.1, "biomass swells on a small gain (%.2f)" % hud.biomass.scale.x)
+	check.call(
+		hud.biomass.scale.x > 1.1, "biomass swells on a small gain (%.2f)" % hud.biomass.scale.x
+	)
 
 
 ## True when `node` sits inside the first-run controls card.

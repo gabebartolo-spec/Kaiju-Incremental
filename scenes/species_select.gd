@@ -253,7 +253,12 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 		name_label.custom_minimum_size = Vector2(STAT_NAME_WIDTH if _wide else NARROW_STAT_NAME, 0)
 		line.add_child(name_label)
 		var share := Num.f(stats.get(str(entry[1]), 0.0)) / Num.f(entry[2])
-		var meter := UiMarks.Cells.new(STAT_CELLS, clampi(roundi(share * STAT_CELLS), 1, STAT_CELLS), MIN_CELL if _wide else NARROW_MIN_CELL, 22.0 if _wide else 18.0)
+		var meter := UiMarks.Cells.new(
+			STAT_CELLS,
+			clampi(roundi(share * STAT_CELLS), 1, STAT_CELLS),
+			MIN_CELL if _wide else NARROW_MIN_CELL,
+			22.0 if _wide else 18.0
+		)
 		meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		line.add_child(meter)
