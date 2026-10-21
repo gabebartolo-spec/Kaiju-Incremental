@@ -1,0 +1,24 @@
+{
+	"_comment": "Camera growth candidates (research 19, ROADMAP B): per candidate and stage, an override of data/tuning.json \"camera\" (offset, fov, zoom_base, zoom_per_scale) plus the look-ahead lead in world units that tools/capture/capture_camera_growth.gd adds (no production code reads this file).",
+	"A": {
+		"label": "A  today + look-ahead",
+		"stages": {
+			"1": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 3.0},
+			"4": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 7.5}
+		}
+	},
+	"B": {
+		"label": "B  grows on screen",
+		"stages": {
+			"1": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.626, "zoom_per_scale": 0.629, "lead": 3.0},
+			"4": {"offset": [0, 16, 30], "fov": 64.0, "zoom_base": 0.626, "zoom_per_scale": 0.629, "lead": 7.5}
+		}
+	},
+	"C": {
+		"label": "C  low hero at adult",
+		"stages": {
+			"1": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 3.0},
+			"4": {"offset": [0, 13.6, 31.17], "fov": 64.0, "zoom_base": 0.75, "zoom_per_scale": 0.4, "lead": 7.5}
+		}
+	}
+}
