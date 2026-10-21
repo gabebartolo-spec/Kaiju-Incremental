@@ -47,6 +47,10 @@ func reveal(ids: Array) -> void:
 		var node: MultiMeshInstance3D = _nodes.get(id)
 		if node != null:
 			node.visible = true
+		if node != null and _waiting.has(id):  # broken while it was still coming down
+			var event: Dictionary = _waiting[id]
+			_waiting.erase(id)
+			smash(event, null)
 
 
 ## The slab's rest pose: its yaw, a tilt of its own (seeded by its id), sunk into what it rests on.
@@ -104,7 +108,7 @@ func _place(chunk: MultiMeshInstance3D, slab: Dictionary, sliding: bool) -> void
 func smash(event: Dictionary, voxels: BuildingVoxels) -> void:
 	var id := Num.i(event["id"])
 	var node: MultiMeshInstance3D = _nodes.get(id)
-	if node == null or not is_instance_valid(node):
+	if node == null or not is_instance_valid(node) or _hidden.has(id):
 		_waiting[id] = event  # still building: it breaks once placed
 		if voxels != null and not event.has("voxels"):
 			event["voxels"] = voxels

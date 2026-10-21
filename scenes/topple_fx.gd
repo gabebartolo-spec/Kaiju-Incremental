@@ -78,8 +78,9 @@ func land(node: Node3D, event: Dictionary, view: BuildingView, fall: Dictionary)
 	var b := Vector3(to.x, 0, to.y)
 	var lift := Vector3(0, Num.f(_cfg["dust_lift"]), 0)
 	var dust := Color(str(_cfg["dust_color"]))
-	_city.fx.dust(b + lift, Num.f(_cfg["impact_dust"]), dust)
-	_city.fx.dust(a.lerp(b, 0.6) + lift, Num.f(_cfg["impact_dust"]) * 0.7, dust)
+	var impact := Num.f(_cfg["contact_dust" if event.has("hit") else "impact_dust"])
+	_city.fx.dust(b + lift, impact, dust)  # on the kaiju: only a puff where it met him
+	_city.fx.dust(a.lerp(b, 0.6) + lift, impact * 0.7, dust)
 	_city.fx.dust_line(a, b, width, dust)
 	if event.has("hit"):
 		_fold(node, event, view, fall)
@@ -178,8 +179,9 @@ func _hinge(top: Node3D, fold_at: Dictionary) -> void:
 	var drop := at.y - Num.f(_cfg["fold_ground"])
 	var fold := func(k: float) -> void:
 		var g := k * k
+		var spin := lerpf(k, g, Num.f(_cfg["fold_gravity"]))  # it keeps the speed it fell at
 		hinge.transform = Transform3D(
-			Basis(axis, total * g), at + slide * k + Vector3.DOWN * drop * g
+			Basis(axis, total * spin), at + slide * k + Vector3.DOWN * drop * g
 		)
 	var seconds := Num.f(_cfg["fold_s"])
 	var tween := hinge.create_tween()

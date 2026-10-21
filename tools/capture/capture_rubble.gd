@@ -20,7 +20,7 @@ const FRAMES := 780
 const STAND_OFF := 7.5
 const CLEAR := 18.0
 ## The camera: from the south and above, looking at the strip's middle.
-const EYE := Vector3(0.0, 32.0, 17.0)
+const EYE := Vector3(-2.0, 15.0, 27.0)
 
 var _out := "user://rubble"
 var _sim: RampageSim
@@ -99,13 +99,16 @@ func _clear(layout: Array[Dictionary]) -> Array[Dictionary]:
 	var strip := Rect2(
 		west - CLEAR, Num.f(t["z"]) - Num.i(t["d"]) * 0.5 - 6.0, CLEAR, Num.i(t["d"]) + 12.0
 	)
+	# and nothing between the kaiju and the camera (south of him), so the fall reads side on
+	var stand := west - STAND_OFF
+	var view := Rect2(stand - 14.0, Num.f(t["z"]), 28.0, 34.0)
 	var out: Array[Dictionary] = [t]
 	for i: int in layout.size():
 		var e := layout[i]
 		var w := Num.i(e["w"])
 		var d := Num.i(e["d"])
 		var foot := Rect2(Num.f(e["x"]) - w * 0.5, Num.f(e["z"]) - d * 0.5, w, d)
-		if i != best and not strip.intersects(foot):
+		if i != best and not strip.intersects(foot) and not view.intersects(foot):
 			out.append(e)
 	_index = 0
 	return out
