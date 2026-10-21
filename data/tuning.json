@@ -243,7 +243,7 @@
 			"hit_far": 0.6,
 			"ring_near": 4.0,
 			"ring_far": 14.0,
-			"radius": 1.5,
+			"radius": 2.5,
 			"damage": 8.0,
 			"floors": 3
 		},
