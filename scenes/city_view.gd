@@ -22,6 +22,8 @@ var street: StreetLife
 ## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
 ## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
 var drawn_sight := PackedVector3Array()
+## Breaks the chunks a red-barrel blast reaches over a few frames (BlastFx sets it).
+var blast_break: BlastBreak
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
@@ -162,6 +164,9 @@ func chunks_broken(index: int, cells: Array[Vector3i], kaiju_at: Vector3) -> voi
 	if sim.body.over(index):  # the body's bite tears a piece off (BodyBite)
 		BodyBite.tear(self, view, cells, kaiju_at, _rng)
 		_broke(index, cells)
+		return
+	if blast_break != null and blast_break.takes(index, cells, view):
+		_ruins.mark(index)
 		return
 	var parts := view.hide_chunks(cells)
 	parts.append_array(view.chip(cells, _rng))

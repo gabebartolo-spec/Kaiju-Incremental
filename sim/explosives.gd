@@ -83,9 +83,8 @@ func _blow(s: Site) -> void:
 	s.state = BLOWN
 	var k: Dictionary = cfg[s.kind]
 	var radius := Num.f(k["radius"])
-	_sim.events.append(
-		{"type": "explosion", "kind": s.kind, "x": s.pos.x, "z": s.pos.y, "radius": radius}
-	)
+	var at := {"kind": s.kind, "building": s.building, "x": s.pos.x, "z": s.pos.y}
+	_sim.events.append(at.merged({"type": "explosion", "radius": radius}))
 	_blast(s.pos, radius, Num.f(k["damage"]), Num.i(k["height"]))
 	if s.kind == "fireworks_factory":
 		for n: int in Num.i(k["bursts"]):
@@ -101,6 +100,7 @@ func _blow(s: Site) -> void:
 			. append(
 				{
 					"type": "toxic_cloud",
+					"building": s.building,
 					"x": s.pos.x,
 					"z": s.pos.y,
 					"radius": Num.f(k["cloud_radius"]),
