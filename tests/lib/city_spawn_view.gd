@@ -45,8 +45,14 @@ static func check(
 			landed = landed or str(event["type"]) == "kaiju_emerged"
 		guard += 1
 	var walked := 0.0
+	var target: Dictionary = {}  # {b: building, c: cell} the player walks at until it is down
 	while walked < WALK_LIMIT and _standing(sim, near) > 0:
-		var goal := _nearest(sim, near)
+		if target.is_empty() or not _alive(target):
+			target = _nearest(sim, near)
+		var b: RampageSim.Building = target["b"]
+		var cell: Vector3i = target["c"]
+		var at := b.chunk_world(cell)
+		var goal := Vector2(at.x, at.z)
 		var to := goal - sim.kaiju_pos
 		sim.step(DT, to.normalized() if to.length() > 0.2 else Vector2.ZERO, false)
 		walked += DT
@@ -99,9 +105,11 @@ static func _standing(_sim: RampageSim, near: Array[RampageSim.Building]) -> int
 	return n
 
 
-## The standing chunk of the group nearest the kaiju (what a player walks at).
-static func _nearest(sim: RampageSim, near: Array[RampageSim.Building]) -> Vector2:
-	var best := sim.kaiju_pos
+## The standing chunk of the group nearest the kaiju (what a player walks at, and keeps walking
+## at until it is down, as a player does; a body that turns in steps would otherwise zig-zag between
+## two chunks equally near): {b: building, c: cell}.
+static func _nearest(sim: RampageSim, near: Array[RampageSim.Building]) -> Dictionary:
+	var best: Dictionary = {}
 	var best_d := INF
 	for b: RampageSim.Building in near:
 		if b.frame.alive_count == 0:
@@ -113,8 +121,14 @@ static func _nearest(sim: RampageSim, near: Array[RampageSim.Building]) -> Vecto
 					var d := sim.kaiju_pos.distance_squared_to(Vector2(p.x, p.z))
 					if d < best_d:
 						best_d = d
-						best = Vector2(p.x, p.z)
+						best = {"b": b, "c": Vector3i(x, 0, z)}
 	return best
+
+
+static func _alive(target: Dictionary) -> bool:
+	var b: RampageSim.Building = target["b"]
+	var cell: Vector3i = target["c"]
+	return b.frame.alive(cell)
 
 
 static func _gap(foot: Rect2, a: Vector2, b: Vector2) -> float:

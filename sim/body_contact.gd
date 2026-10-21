@@ -126,7 +126,9 @@ func steer(dt: float, want: Vector2) -> float:
 	stride = lerpf(stride, want.length() * keep, ease)
 	var top := lerpf(_rate("turn_rate_still"), _rate("turn_rate"), stride)
 	var accel := Num.f(cfg["turn_accel"])
-	if stepping():
+	if sim.powers.beam_left > 0.0:  # the beam follows the stick at its own pace, whatever the size
+		top = maxf(top, sim.powers.beam_turn_rate())
+	if turns_in_steps():
 		accel = Num.f(cfg["slice_accel"])
 		top = top / Num.f(cfg["slice_open"]) if _slice() else 0.0
 		var cadence := Num.f(cfg["turn_cadence"]) / sqrt(sim.body_scale()) if absf(turn_left) > Num.f(cfg["turn_min"]) else 0.0
@@ -140,7 +142,7 @@ func steer(dt: float, want: Vector2) -> float:
 	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
 	var was := heading
 	_face(dt)
-	if stepping():  # swung about the foot that is down: it stays where it is
+	if turns_in_steps():  # swung about the foot that is down: it stays where it is
 		var both := fposmod(phase, 1.0) < Num.f(cfg["support_both"])  # the old foot is not up yet
 		var at := (_feet[0] + _feet[1]) * 0.5 if both else _feet[0]
 		if at.distance_to(sim.kaiju_pos) > 3.0 * _pivot.x * sim.body_scale():  # a dash or leap left them
@@ -167,6 +169,12 @@ func _slice() -> bool:
 ## True when this body walks by steps (it has planted feet): the stepped turn and the step clock.
 func stepping() -> bool:
 	return _pivot.x > 0.0
+
+
+## True when the turn is made in steps: a body with planted feet, except while the beam is on,
+## which is swept smoothly by the stick (its own turn speed, SpeciesPowers.turn_toward).
+func turns_in_steps() -> bool:
+	return stepping() and sim.powers.beam_left <= 0.0
 
 
 ## The step clock for the legs to follow (steps walked), INF for a body that does not step.
@@ -232,7 +240,7 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 ## so the two stay one; only a facing set from outside is caught up with.
 func _face(dt: float) -> void:
 	var most := _rate("turn_rate_still") * dt
-	if stepping():
+	if turns_in_steps():
 		most /= Num.f(cfg["slice_open"])  # a slice turns faster than the average (steer)
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
 
