@@ -12,18 +12,23 @@ signal back_pressed
 ## right; the card is this share of the screen and the preview sized off the screen's height.
 ## With several, each card is a narrow column and the preview stays small, so all fit the TV at
 ## the largest UI scale (125%).
-const WIDE_CARD_SHARE := 0.58
-const WIDE_PREVIEW_HEIGHT_SHARE := 0.42
-const WIDE_PREVIEW_ASPECT := 1.3
-## The gap between the preview and the info column, and that column's width (px at 1080p).
+const WIDE_CARD_WIDTH := 1056.0
+const WIDE_PREVIEW := Vector2i(640, 400)
+## The gap between the preview and the info column (px at 1080p).
 const WIDE_GAP := 24.0
 const INFO_WIDTH := 320.0
 const NARROW_PREVIEW := Vector2i(390, 220)
 ## The stat meters: a cell per step, each stat's value out of its maximum in COMPARE.
 const STAT_CELLS := 8
-const SIZE_STAT := 32
+const MIN_CELL := 14.0
+const SIZE_STAT := 28
+## Several cards share the screen: smaller stat text and thinner cells (px).
+const SIZE_STAT_NARROW := 24
+const NARROW_STAT_NAME := 96
+const NARROW_MIN_CELL := 6.0
 ## Space above BACK (px at 1080p).
-const BACK_GAP := 28
+const BACK_GAP := 20
+const BACK_GAP_NARROW := 12
 ## The preview camera looks down this way (the old fixed camera's view) through a fairly long lens
 ## (deg; a near limb swinging toward a wide lens would push the kaiju small); the spinning kaiju
 ## fills at most this much of the card's width and keeps this margin (of the height) top and bottom.
@@ -39,7 +44,7 @@ const PREVIEW_SAMPLES := 16
 const PREVIEW_STRIDE := 13
 const BACK_WIDTH := 360
 ## The stat name column in a card (px), wide enough for Health and Speed at SIZE_STAT.
-const STAT_NAME_WIDTH := 140
+const STAT_NAME_WIDTH := 124
 const COMPARE: Array[Array] = [
 	["Health", "hp", 150.0],
 	["Speed", "speed", 8.0],
@@ -86,7 +91,7 @@ func _ready() -> void:
 		if first == null:
 			first = pick
 	var gap := Control.new()
-	gap.custom_minimum_size = Vector2(0, BACK_GAP)
+	gap.custom_minimum_size = Vector2(0, BACK_GAP if _wide else BACK_GAP_NARROW)
 	col.add_child(gap)
 	var back := UiKit.button("BACK  (ESC / B)", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	back.custom_minimum_size = Vector2(BACK_WIDTH, 0)
@@ -167,22 +172,17 @@ func _skin_points(model: KaijuModel) -> PackedVector3Array:
 	return points
 
 
-## The preview's size: beside the stats it takes what the wide card has left (one species), else
-## the small narrow size.
+## The preview's size: beside the stats the wide card gives it a fixed size (never read off the
+## window, which may still change size after the screen is built), else the small narrow size.
 func _preview_size() -> Vector2i:
-	if not _wide:
-		return NARROW_PREVIEW
-	var view := get_viewport_rect().size
-	var inner := view.x * WIDE_CARD_SHARE - 2.0 * UiKit.panel_inset() - WIDE_GAP - INFO_WIDTH
-	var h := minf(view.y * WIDE_PREVIEW_HEIGHT_SHARE, inner / WIDE_PREVIEW_ASPECT)
-	return Vector2i(roundi(inner), roundi(h))
+	return WIDE_PREVIEW if _wide else NARROW_PREVIEW
 
 
 func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	var size := _preview_size()
 	var panel := UiKit.panel()
 	if _wide:
-		panel.custom_minimum_size = Vector2(get_viewport_rect().size.x * WIDE_CARD_SHARE, 0)
+		panel.custom_minimum_size = Vector2(WIDE_CARD_WIDTH, 0)
 	else:
 		panel.custom_minimum_size = Vector2(size.x + 28, 0)
 	row.add_child(panel)
@@ -227,7 +227,7 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	col.custom_minimum_size = Vector2(INFO_WIDTH if _wide else 0.0, 0)
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 10 if _wide else 6)
+	col.add_theme_constant_override("separation", 6)
 	body.add_child(col)
 	col.add_child(UiKit.header(str(def["name"]).to_upper(), UiKit.SIZE_HEAD))
 	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_BODY, UiKit.TEXT)
@@ -249,11 +249,11 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 		var line := HBoxContainer.new()
 		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		line.add_theme_constant_override("separation", 12)
-		var name_label := UiKit.label(str(entry[0]), SIZE_STAT)
-		name_label.custom_minimum_size = Vector2(STAT_NAME_WIDTH, 0)
+		var name_label := UiKit.label(str(entry[0]), SIZE_STAT if _wide else SIZE_STAT_NARROW)
+		name_label.custom_minimum_size = Vector2(STAT_NAME_WIDTH if _wide else NARROW_STAT_NAME, 0)
 		line.add_child(name_label)
 		var share := Num.f(stats.get(str(entry[1]), 0.0)) / Num.f(entry[2])
-		var meter := UiMarks.Cells.new(STAT_CELLS, clampi(roundi(share * STAT_CELLS), 1, STAT_CELLS))
+		var meter := UiMarks.Cells.new(STAT_CELLS, clampi(roundi(share * STAT_CELLS), 1, STAT_CELLS), MIN_CELL if _wide else NARROW_MIN_CELL, 22.0 if _wide else 18.0)
 		meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		line.add_child(meter)

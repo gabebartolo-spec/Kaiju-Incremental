@@ -1,5 +1,5 @@
 # ui-redesign handoff, 2026-10-21
-## State: ui-fix round 2 in progress (critic-r1 items 1-8 coded; suites + CI captures pending)
+## State: ui-fix round 2 coded and pushed; suites green (ui 48, flow 203, smoke 30); CI captures NOT yet run
 ## Task
 Lead-10 builder. In-run HUD (b2-10..13, R 15.1-15.7) and menus (title, pause, settings, results, species
 select, loading) in UI look A "Emergency Broadcast" with bespoke drawn assets; fonts Claw/Block; one shared
@@ -47,3 +47,14 @@ centred under timer; "Keyboard only" -> "-". 4 tree node font 24-30, LOCKED colo
 skip hint 30. 8 verdict "N BIOMASS SHORT, BUT NEW RECORDS" when another row is a record.
 ui suite: new checks each shown failing first. capture_flow: skips river rise, meter 40%, 12_demo_complete shot.
 Local runner: scratchpad/ui/suite.sh <suite>.
+
+## Remaining steps (ui-fix stopped: the director needs the PC)
+1. Not run locally: powers suite (only a check message changed), full suite (tuning.json changed: key_size,
+   ring_column, biomass_label_size, first_run_*, hurt alpha); CI runs the full suite on the push.
+2. 4K captures at 125% and 100% on CI: tools/capture/ci_capture.sh --renderer=forward_plus --resolution=3840x2160
+   capture_flow.gd -- --ui-scale=1.25 --ui-only --out=<dir> (and without --ui-scale for 100%); copy into
+   side-session-notes/.../ui-redesign/after2-125 and after2-100. New shot 12_demo_complete; 04 shows the
+   meter 40% filled and skips the river rise (capture only).
+3. Check each screen at 2x: species card (single species is wide, 3 species narrow), HUD key caps, first-run card,
+   tree text/caption, pause, end beat top third, reveal frame, demo card croc not clipped, results verdict.
+4. Wide species card never checked at 125% by a capture; the flow suite fits-check passes at all scales.

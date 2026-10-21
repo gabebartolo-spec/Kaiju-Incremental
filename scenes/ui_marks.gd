@@ -70,10 +70,11 @@ class Cells:
 	var cells := 8
 	var filled := 0
 
-	func _init(p_cells: int = 8, p_filled: int = 0) -> void:
+	## min_cell: the narrowest a cell may be (px); the stat card of a lone species keeps MIN_CELL.
+	func _init(p_cells: int = 8, p_filled: int = 0, min_cell: float = MIN_CELL, height: float = 26.0) -> void:
 		cells = p_cells
 		filled = p_filled
-		custom_minimum_size = Vector2(cells * MIN_CELL + (cells - 1) * GAP, 26.0)
+		custom_minimum_size = Vector2(cells * min_cell + (cells - 1) * GAP, height)
 
 	## One cell's drawn width (px) at the current size.
 	func cell_width() -> float:

@@ -170,7 +170,7 @@ func _check_species_card() -> void:
 		wide = maxf(wide, c.size.x)
 	check(
 		not cards.is_empty() and wide >= CANVAS.x * 0.5,
-		"the lone species card is about 55%% of the screen wide (%.0f px)" % wide
+		"the lone species card is about 55%% of the 1080p canvas wide (%.0f px)" % wide
 	)
 	var preview := 0
 	for table: Node3D in select.turntables:
@@ -182,9 +182,9 @@ func _check_species_card() -> void:
 		var l: Label = node
 		texts.append(l.text)
 		if l.text in ["HEALTH", "Health", "Speed", "Power", "Reach"]:
-			if l.get_theme_font_size("font_size") < 32:
+			if l.get_theme_font_size("font_size") < 28:
 				small.append(l.text)
-	check(small.is_empty() and texts.has("Health"), "stat names are 32 px or more: %s" % [small])
+	check(small.is_empty() and texts.has("Health"), "stat names are 28 px or more: %s" % [small])
 	var cells := select.find_children("*", "Control", true, false).filter(
 		func(n: Node) -> bool: return n.has_method("cell_width")
 	)
