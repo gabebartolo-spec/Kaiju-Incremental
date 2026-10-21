@@ -19,7 +19,8 @@ var _cap: float
 var _bed: float  # how far the river's water lies below the street (city "river_depth")
 var _spawn: Vector2
 var _bank: Vector2
-var _water: Array[Rect2]  # the river's channels (CityRiver.channels)
+var _plan: Dictionary  # the city's street plan (CityGen.map): its river, bay and shore
+var _city: Dictionary
 
 
 func _init(city: Dictionary, tuning: Dictionary) -> void:
@@ -29,10 +30,10 @@ func _init(city: Dictionary, tuning: Dictionary) -> void:
 	_wade = Num.f(cfg["wade_speed"])
 	_cap = Num.f(cfg["max_seconds"])
 	_bed = Num.f(city.get("river_depth", 0.0))
-	var plan := CityGen.map(city)
-	_water = CityRiver.channels(plan, city)
-	_spawn = plan.get("river_spawn", Vector2(INF, INF))
-	_bank = plan.get("river_bank", _spawn)
+	_city = city
+	_plan = CityGen.map(city)
+	_spawn = _plan.get("river_spawn", Vector2(INF, INF))
+	_bank = _plan.get("river_bank", _spawn)
 
 
 ## Puts the kaiju under the river's surface; the run waits until it has risen. A city without
@@ -42,12 +43,12 @@ func start(sim: RampageSim) -> void:
 		return
 	active = true
 	_t = 0.0
-	sim.kaiju_pos = _spawn
+	sim.kaiju_pos = _rise_point(sim)
 	sim.stand_y = -_depth * sim.body_scale()
-	# It lies along the channel, the way the water runs, so its whole body rises out of the
-	# water; facing the bank, its head would come up over the quay, out of the street
-	# (director 2026-10-20: "emerging from the water, not from the asphalt").
-	sim.facing = _along()
+	# It rises already facing the city, the way it will walk out (director 2026-10-21 #17: "have
+	# him emerging facing the city so he can walk straight in"), in the river's bay, wide enough
+	# for its whole body (director 2026-10-20: "emerging from the water, not from the asphalt").
+	sim.facing = _ahead()
 	sim.body.heading = sim.facing
 
 
@@ -78,14 +79,10 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 		return true
 	var bank := sim.clamp_to_arena(_bank)
 	var stride := sim.stat("speed") * _wade * dt
-	var floor_y := 0.0
-	for water: Rect2 in _water:
-		if water.has_point(sim.kaiju_pos):
-			floor_y = -_bed
-	sim.stand_y = move_toward(sim.stand_y, floor_y, stride)  # climbs out over the quay
+	var floor_y := CityRiver.floor_at(_plan, _city, sim.kaiju_pos)
+	sim.stand_y = move_toward(sim.stand_y, floor_y, stride)  # climbs the shore
 	if sim.kaiju_pos.distance_to(bank) > stride or sim.stand_y < 0.0:
-		sim.facing = sim.kaiju_pos.direction_to(bank) if sim.kaiju_pos != bank else sim.facing
-		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)
+		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)  # straight ahead: it never turns
 		return true
 	_land(sim, bank)
 	return true
@@ -97,9 +94,21 @@ func _land(sim: RampageSim, bank: Vector2) -> void:
 	sim.events.append({"type": "kaiju_emerged"})
 
 
-## Along the river, toward its longer reach of water from the rise point.
-func _along() -> Vector2:
-	if _water.is_empty():
-		return Vector2(0, -1)
-	var w := _water[0]
-	return Vector2.RIGHT if w.end.x - _spawn.x >= _spawn.x - w.position.x else Vector2.LEFT
+## Where it rises: in the bay, its nose just short of the foot of the shore (so the whole body is
+## in open water), on the line to the bank point; the plan's rise point without a shore.
+func _rise_point(sim: RampageSim) -> Vector2:
+	var sand := CityRiver.shore(_plan, _city)
+	if not sand.has_area():
+		return _spawn
+	var nose := 0.0
+	for d: Array in sim.body.discs():
+		nose = maxf(nose, Num.f(d[0]) + Num.f(d[1]))
+	if nose <= 0.0:
+		return _spawn  # no body yet (a bare sim): the bay's middle
+	var gap := Num.f(_city["river_bay"]["nose_gap"])
+	return Vector2(_spawn.x, sand.end.y + nose * sim.body_scale() + gap)
+
+
+## From the rise point to the bank point it wades to: into the city.
+func _ahead() -> Vector2:
+	return _spawn.direction_to(_bank) if _spawn != _bank else Vector2(0, -1)

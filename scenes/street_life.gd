@@ -111,6 +111,7 @@ func _ready() -> void:
 ## block and across the streets to the nearest corner of the block opposite.
 func _build_pavements() -> void:
 	var half := CityGen.half_extent(sim.city)
+	var bay := CityRiver.bay(CityGen.map(sim.city), sim.city)
 	for block: Dictionary in CityGen.map(sim.city)["blocks"]:
 		var rect: Rect2 = block["rect"]
 		var use := str(block["use"])
@@ -118,6 +119,7 @@ func _build_pavements() -> void:
 			continue  # past the edge, or the river (CityRiver): no one walks on the water
 		# The pavement line, the same distance in from the kerb as round every other block.
 		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
+		ring = _off_bay(ring, bay)
 		var size := ring.size * 0.5
 		for c: Vector2 in CORNERS:
 			_nodes.append(ring.get_center() + c * size)
@@ -142,6 +144,16 @@ func _build_pavements() -> void:
 					best = b
 			if best >= 0 and not _links[a].has(best):
 				_link(a, best)
+
+
+## A pavement ring that would cross the river's bay (CityRiver.bay, on the far bank) starts
+## south of it instead, so no one walks on the water.
+func _off_bay(ring: Rect2, bay: Array[Rect2]) -> Rect2:
+	var top := ring.position.y
+	for basin: Rect2 in bay:
+		if basin.intersects(ring):
+			top = maxf(top, basin.end.y + PAVEMENT)
+	return Rect2(ring.position.x, top, ring.size.x, maxf(ring.end.y - top, PAVEMENT))
 
 
 func _link(a: int, b: int) -> void:

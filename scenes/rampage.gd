@@ -89,8 +89,8 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.body.use_species(str(species["id"]))  # first: the rise is placed by the body's length
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
-	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
 
