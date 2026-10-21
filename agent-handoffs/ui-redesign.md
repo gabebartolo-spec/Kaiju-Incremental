@@ -8,8 +8,12 @@ Director (via lead): dash + ultimate as small rings either side of breath; CITY 
 tape meter under the timer. Both built.
 ## Branch and commit
 claude/ui-redesign (worktree ../Kaiju-Incremental-wt/ui-redesign) from claude/look-options f4fedeec.
-fc1391b6 capture_flow loading shot; 6df247f0 the redesign. Scratch branches claude/ui-redesign-before
-(fc1391b6) and claude/ui-redesign-after (6df247f0): DELETE both when the captures are in.
+fc1391b6 capture_flow loading shot; 6df247f0 the redesign; b1fc5ba6 capture waits for the end beat (the
+river rise held the clock, so --ui-only never reached the report); 010a2dd5 fixes from my own capture
+review (cards clear corner marks, breath ring centred via invisible placeholders, species 2x2 meters and
+390x220 preview so 3 cards fit 125% title-safe, "EVOLVE" without ">", bigger alert triangle).
+Scratch refs to DELETE at the end: claude/ui-redesign-b125, -b100 (440e99a0 = fc1391b6 + fixed capture),
+-a125, -a100, -a125b, -a100b. Temp worktree ../Kaiju-Incremental-wt/ui-before: remove.
 ## What changed (6df247f0)
 data/tuning.json "ui" (safe margin 96/54, text style, hud, hurt, controls_card, tooltip_width, spin rate,
 loading news). UiKit text_style/safe_area/header/panel_box; UiMarks (tape, ticks, alert tag, scanlines);
@@ -19,7 +23,7 @@ Dash row added to CONTROLS. Species select turntable spin about the footprint mi
 title alert headers; results "Tallest tower toppled" N STOREYS (no "floors"); tree details panel fixed width,
 role label wraps, "BRANCH"/"CAPSTONE" copy gone. Loading word LOADING -> INCOMING.
 ## Evidence so far
-Suites (local, --quick): ui 3/3 fn 18 checks, flow 7/7 fn 203 checks, smoke 13/13 fn 30 checks, all pass.
+Suites (local, --quick, 010a2dd5): ui 3/3 fn 18 checks, flow 7/7 fn 203 checks, smoke 13/13 fn 30 checks.
 Known-bad: model shifted 3 m -> centring check FAILS; old role copy without wrap -> panel 330/399/400/415 px
 FAILS (b2-23 reproduced: r_beam 399). Faint-outline contrast case fails inside the suite itself.
 Captures: NOTES/ui-redesign/before-125, before-100, after-125, after-100 (logs before.log, after.log).
@@ -28,7 +32,8 @@ R 15.8 stage-up notice (no in-run stage event exists); heartbeat SOUND (no asset
 hit flash is on the screen edge, not on the kaiju model; species ability name "Atomic Breath" still in
 species.json (D-108 says never "atomic"; not my string). Tree screen look untouched (waits for bigger tree).
 ## Running jobs
-background: wait for before captures, then dispatch after captures (task b8d1l2x54).
+caps2.sh: after captures of 010a2dd5 (Forward+, 4K, 125% and 100%) -> NOTES/ui-redesign/after-125, -100.
+Before shots done: before-125, before-100 (runs 39562381681, 39562385358).
 ## Findings for the lead
 gdformat/gdlint are in ~/AppData/Roaming/Python/Python314/Scripts (not on PATH).
 ## Rules learnt the hard way (under 10 lines)
