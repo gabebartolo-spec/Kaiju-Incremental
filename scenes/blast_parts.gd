@@ -15,18 +15,23 @@ const VOXEL := preload("res://scenes/blast_voxel.gdshader")
 ## The fireball's colour over its life (HDR above 1 glows): yellow-white core, orange, dark
 ## red-brown rim, smoke. Each cube's starting shade (FIREBALL_SHADES) darkens some from the start,
 ## so the outside of the ball reads darker than its core.
+## Round 5 (motion critic): a short yellow-white start, then saturated orange (emission
+## about 2x, low green: AgX greys out brighter highlights) held for most of the life
+## (~0.7 s), then the rim and smoke.
 const FIREBALL: Array[Color] = [
-	Color(4.0, 3.5, 2.0),
-	Color(2.0, 0.9, 0.15),
+	Color(2.2, 1.5, 0.4),
+	Color(2.0, 0.34, 0.0),
+	Color(1.9, 0.32, 0.0),
 	Color(0.55, 0.14, 0.05),
 	Color(0.2, 0.17, 0.15),
 ]
-const FIREBALL_AT: Array[float] = [0.0, 0.22, 0.55, 1.0]
+const FIREBALL_AT: Array[float] = [0.0, 0.08, 0.55, 0.78, 1.0]
 const FIREBALL_SHADES: Array[Color] = [
 	Color(1, 1, 1), Color(0.75, 0.7, 0.65), Color(0.45, 0.4, 0.38)
 ]
 ## The flash's voxels: hotter than the fireball, gone in a few frames.
-const FLASH: Array[Color] = [Color(5.0, 4.4, 3.2, 1.0), Color(3.4, 2.0, 0.6, 1.0)]
+## Yellow-white, capped so the flash blooms without whiting out the screen (round 5).
+const FLASH: Array[Color] = [Color(2.2, 2.0, 1.25, 1.0), Color(2.0, 1.2, 0.35, 1.0)]
 ## Smoke cubes: soot to ash.
 const SMOKE: Array[Color] = [Color(0.12, 0.11, 0.1), Color(0.3, 0.29, 0.28)]
 
@@ -74,7 +79,8 @@ static func core(host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: D
 	mat.initial_velocity_max = radius * Num.f(cfg["throw"]) / seconds
 	mat.gravity = Vector3.ZERO
 	curve(mat, Vector2(0.8, 1.2) * radius * Num.f(cfg["size"]), [1.0, 1.1, 0.3])
-	mat.color_ramp = ramp(FLASH, [0.0, 1.0])
+	var strength := clampf(radius / Num.f(cfg["full_radius"]), 0.5, 1.0)  # a small blast flashes less
+	mat.color_ramp = ramp(FLASH.map(func(c: Color) -> Color: return c * strength), [0.0, 1.0])
 	var amount := roundi(Num.f(cfg["amount"]) * clampf(radius / 5.0, 0.5, 1.6))
 	emit(host, mat, ember_cube(), amount, seconds, at)
 
@@ -94,7 +100,7 @@ static func smoke(host: Node3D, at: Vector3, radius: float, cfg: Dictionary) -> 
 	mat.angular_velocity_min = -40.0
 	mat.angular_velocity_max = 40.0
 	var sizes: Array = cfg["size"]
-	curve(mat, Vector2(Num.f(sizes[0]), Num.f(sizes[1])), [0.6, 1.2, 0.0])
+	curve(mat, Vector2(Num.f(sizes[0]), Num.f(sizes[1])), [1.0, 0.7, 0.0])  # shrinks as it rises
 	mat.color_ramp = ramp(SMOKE, [0.0, 1.0])
 	var p := emit(host, mat, voxel_cube(), Num.i(cfg["amount"]), Num.f(cfg["seconds"]), at)
 	p.explosiveness = 0.4
@@ -143,20 +149,38 @@ static func toxic_cloud(
 	mat.angular_velocity_min = -25.0
 	mat.angular_velocity_max = 25.0
 	var sizes: Array = cfg["voxel"]
-	curve(mat, Vector2(Num.f(sizes[0]), Num.f(sizes[1])), [0.5, 1.2, 0.0])
+	mat.scale_min = Num.f(sizes[0])
+	mat.scale_max = Num.f(sizes[1])
+	var boil_at: Array = cfg["boil"]
+	mat.scale_curve = _boil(boil_at)
 	var shades: Array = cfg["shades"]
-	mat.color_initial_ramp = _shades(shades.map(func(c: String) -> Color: return Color(c)))
+	var glow := Num.f(cfg["glow"])  # just over 1: a faint green glow (blast_voxel)
+	mat.color_initial_ramp = _shades(shades.map(func(c: String) -> Color: return Color(c) * glow))
 	var life := Num.f(cfg["billow_seconds"])
 	var burst := emit(host, mat, voxel_cube(), Num.i(cfg["amount"]), life, at)
 	burst.explosiveness = 0.8
 	var boil := emit(host, mat, voxel_cube(), Num.i(cfg["boil_amount"]), life, at, seconds + life)
 	boil.one_shot = false
 	boil.explosiveness = 0.0
-	host.get_tree().create_timer(seconds).timeout.connect(
+	# The boil stops a cube's life before the sim's cloud ends, so the last cubes shrink out
+	# by then: the cloud fades over its last billow_seconds rather than hanging on.
+	host.get_tree().create_timer(maxf(0.1, seconds - life)).timeout.connect(
 		func() -> void:
 			if is_instance_valid(boil):
 				boil.emitting = false
 	)
+
+
+## The gas cube's size over its life: growing in, then swelling and sagging on cloud.boil
+## points ([life share, scale] pairs), then shrinking away: a boil, never a frozen block.
+static func _boil(points: Array) -> CurveTexture:
+	var c := Curve.new()
+	c.max_value = 4.0
+	for pt: Array in points:
+		c.add_point(Vector2(Num.f(pt[0]), Num.f(pt[1])))
+	var tex := CurveTexture.new()
+	tex.curve = c
+	return tex
 
 
 ## A unit voxel drawn opaque and lit (blast_voxel.gdshader): fireball, smoke, gas, dust.
