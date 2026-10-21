@@ -12,22 +12,23 @@
   BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
 - OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
 
-## USAGE LIMIT hit ~04:30 2026-10-21: lead 10 stopped all subagents mid-task. Lead 9 archived. Re-brief from these
-## (worktree work is on disk; notes in NEW folder <task>\handoff.md unless marked OLD):
-- prs: #122 handover-fixes open (resynced for doc-caps). Then in order, PR cap 3: claude/b2-3-slow-frames 437f151 (check no
-  PROF timers, base look-options), claude/parse-step 1605c88, claude/light-pool af66971 (resync), claude/audio-duck 03516ca,
-  claude/tentacle-substep bfcdd74, claude/graphics-presets 9f37429 (record D-109 lead: Medium 4K default, +6.5% gpu),
-  claude/bridge-land 2ceb079 (QC CI captures first, comments #12), claude/turn-weight (after military fix), ci-sim-split last.
-- parse-step: sim split claude/ci-sim-split (CI timing pending); then military fixture on claude/turn-weight: restore the
-  "tanks take posts" check, re-pin seed/route (probe seeds 0-11 was running), min-samples guard >= 20, fail-first.
-- presets agent -> kaiju-double (D-107, reptilian only): claude/kaiju-double in Kaiju-Incremental-wt/kaiju-double; suites,
-  then 4K fps A/B, before/after stills; insectoid/cephalopod follow-up.
-- phase-b: b2-20 round 2 coded on claude/phase-b-boards; standing shots passed 2x self-check; rampage + clip renders left;
-  lead QC, then ask the director b2-20.
-- walkers: fill empty diagonal sliver cell, resync (OLD notes\walkers). rubble3: claude/b2-3-part3 (sim worst < 100 ms).
-- view-spikes: claude/view-spikes (fall_land 349 ms, debris queue). bridge: done pending capture QC.
-- Next to brief: walk m2 (R 11.1-11.4, 14.1-14.3) after turn-weight lands; R 6.1 no-empty-space suite after walkers.
-- Worktrees: ~50 vs cap 12; safe ones (hygiene, hygiene2-5, ci-balance) need --force, refused: ask the director.
+## Director AFK again (~13:00 2026-10-21): "work until usage is empty". Windowed Godot fine while away.
+## Team (lead 10's subagents; die with this session; re-brief from NEW notes <task>\handoff.md):
+- prs (Sonnet): squash-only queue, cap 3. Merged #124 parse-step, #125 light-pool. #126 b2-3-part3 in CI. Then cells-native
+  223f8ba (after #126), audio-duck, tentacle-substep, graphics-presets 9f37429 (+D-109 lead: Medium 4K default), bridge-land
+  2ceb079, kaiju-double 47ac4da, view-spikes 32555d9, walkers-on-pavement, turn-weight (HOLD: walk-m2b re-pins 3 seed flips),
+  ci-sim-split 39e9f44 last.
+- walk-m2b: fix turn-weight seed flips (swipe 0.160 vs 0.161, crush people 0, tanks in range 12<20) then walk-m2 clips.
+  Director question later: young stages walk 2.2x/1.9x authored speed (R 11.2: slower young speed vs Blender re-bake).
+- parse-step: clumsy army (#18) claude/clumsy-army; ~254k context, hands off at 280k.
+- explosives-view: VFX/SFX/models on claude/city-explosives (sim done 971a372; blast numbers first-pass, lead judges clip).
+- rubble-break: D-110 + #24/#25 (falling towers break believably on the kaiju) claude/rubble-break.
+- walkers: deterministic diagonal fill, then #17 emerge facing city + shoreline + wider river, then R 6.1.
+- skyline: background kaiju rampage prototype (#16), off by default. no-random-fire: R 26.1. cells-native: camera growth boards (R 19).
+- Director questions when back: camera growth pick (R 19 boards), walk cadence (R 11.2), Suno Pro $10/mo or ElevenLabs Music
+  (R 25), fire: spark source for non-breath species + wind fixed or drifting (R 26), background skyline yes/no, blast numbers.
+- Decisions today: D-107 voxels, D-108 lightning, D-110 destructible slabs, D-111 look stays voxel. Comments #12-#25 logged.
+- Build 5 once the queue lands: dispatch build.yml on look-options, smoke from repo root, Kaiju-Builds/carve-build5-<sha>.
 
 ## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
 ## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
