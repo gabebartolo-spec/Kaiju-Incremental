@@ -266,7 +266,9 @@ func _check_rubble_parity() -> void:
 	)
 
 
-## Replay: the same seeded walk past two buildings twice gives the same grids, falls and pay.
+## Replay: the same seeded walk past two buildings twice gives the same grids, falls and pay,
+## the second time with the native cell loops off (VoxelSupport.use_native): the GDScript
+## reference (CarvingCells, VoxelFrame, VoxelSupport) and KaijuSettle carve, fall and pay alike.
 func _check_replay() -> void:
 	var layout: Array[Dictionary] = [TOWER.duplicate(), TOWER.duplicate()]
 	layout[1]["x"] = 5.0
@@ -274,6 +276,7 @@ func _check_replay() -> void:
 	layout[1]["style"] = 1
 	var traces: Array[String] = []
 	for run: int in 2:
+		VoxelSupport.use_native = run == 0
 		var sim := _sim(layout, true)
 		sim.kaiju_pos = Vector2(-6.0, 3.0)
 		var trace := PackedStringArray()
@@ -286,10 +289,11 @@ func _check_replay() -> void:
 			trace.append("grid %d %d" % [n, sim.carving.frame(n).digest()])
 		trace.append("rubble %.4f falls %d" % [sim.rubble, sim.next_fall_id])
 		traces.append("\n".join(trace))
+	VoxelSupport.use_native = true
 	check(
 		traces[0] == traces[1] and traces[0].count("cells_carved") > 0,
 		(
-			"two runs of the same walk carve, fall and pay identically (%d trace lines)"
-			% traces[0].count("\n")
+			"the same walk, native %s and reference, carves, falls and pays alike (%d lines)"
+			% [VoxelSupport.native() != null, traces[0].count("\n")]
 		)
 	)

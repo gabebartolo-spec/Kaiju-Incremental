@@ -86,7 +86,7 @@ jobs:
           echo "slow=$(bash tools/plan_ci_shards.sh --slow)" >> "$GITHUB_OUTPUT"
 
   # The native core (native/, GDExtension on godot-cpp): built for Linux once, cached on its
-  # sources and the pinned godot-cpp commit, handed to every Godot job as an artifact so
+  # sources and the pinned godot-cpp commit (.github/actions/native-build), handed to every Godot job as an artifact so
   # tests/run_native_tests.gd runs (KAIJU_NATIVE_REQUIRED=1: a missing library is a failure).
   native:
     needs: plan
@@ -97,25 +97,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Cache the built library
-        id: native-cache
-        uses: actions/cache@v4
-        with:
-          path: native/bin
-          key: native-linux-${{ hashFiles('native/src/**', 'native/SConstruct', 'native/kaiju_carve.gdextension', '.gitmodules') }}-${{ hashFiles('.git/modules/native/godot-cpp/HEAD') }}
-      - name: Build the extension (Linux x86_64, debug)
-        if: steps.native-cache.outputs.cache-hit != 'true'
-        run: |
-          python3 -m pip install --user scons
-          cd native && python3 -m SCons platform=linux target=template_debug arch=x86_64 -j"$(nproc)"
+      # Restores from this PR's or its base branch's cache (native-cache.yml saves it there).
+      - uses: ./.github/actions/native-build
       - uses: actions/upload-artifact@v4
         with:
           name: native-linux
           path: native/bin/*.so
           retention-days: 3
 
-  # Compile-only: imports the project and fails on any script error in about a minute,
-  # before the shards spend their time.
+  # Compile-only: imports the project, then parses and compiles every GDScript file; fails on
+  # any script error in about a minute, before the shards spend their time.
   preflight:
     needs: plan
     if: needs.plan.outputs.code == 'true'
@@ -124,7 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-godot
-      - name: Import the project and compile every script
+      - name: Import the project (compiles the scripts it loads)
         run: |
           code=0
           timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
@@ -134,6 +125,11 @@ jobs:
             echo "::error::the project failed to import or compile (exit $code)"
             exit 1
           fi
+      # The import compiles only what it loads; this loads every .gd file with Godot's parser, so
+      # a Godot 3 name (yield, onready, instance(), Spatial, rand_range, ...) or a parse error in
+      # any script fails here (R 5.6, tools/check_scripts.sh). About 30 s.
+      - name: Parse and compile every GDScript file
+        run: GODOT="$HOME/godot/godot" tools/check_scripts.sh
 
   shard:
     name: shard ${{ matrix.shard }}

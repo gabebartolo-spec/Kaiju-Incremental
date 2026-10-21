@@ -82,16 +82,21 @@ static func channels(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 
 
 ## The roads across the river (x, z): one deck over the water in every gap between neighbouring
-## river blocks, a street's or a site's.
+## river blocks, a street's or a site's, from bank to bank of the whole channel (its blocks are
+## not all as deep, so a deck as deep as the block beside it stopped short of the bank: director,
+## build 4 comments 2026-10-21 #12, "bridge is not connected to land").
 static func bridges(plan: Dictionary, cfg: Dictionary) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var spans := _spans(plan, cfg)
+	var water := channels(plan, cfg)
+	if water.is_empty():
+		return out
+	var z0 := water[0].position.y
+	var deep := water[0].size.y
 	for n: int in range(1, spans.size()):
 		var from := spans[n - 1].end.x
 		if spans[n].position.x - from > 0.01:
-			out.append(
-				Rect2(from, spans[n].position.y, spans[n].position.x - from, spans[n].size.y)
-			)
+			out.append(Rect2(from, z0, spans[n].position.x - from, deep))
 	return out
 
 

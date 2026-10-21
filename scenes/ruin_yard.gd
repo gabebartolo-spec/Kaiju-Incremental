@@ -4,19 +4,17 @@ extends Node3D
 ## toppled tower's rubble strip (Ruin.strip), each built on a worker thread (thousands of voxels)
 ## and added when ready. A gone building's ruin rises only once the kaiju's body is off its
 ## footprint: raised round the body, its heap would read as walls it stands inside
-## (playtest note 2).
+## (playtest note 2). A ruin never burns: rubble, not a burning shell (#111, R 26.1).
 
 var sim: RampageSim
 var _view: Callable  # building index -> BuildingView
-var _fire: Callable  # (at: Vector3, size: float), CityView.fire
 var _tasks: Array[int] = []
 var _due: Array[int] = []
 
 
-func _init(p_sim: RampageSim, view: Callable, fire: Callable) -> void:
+func _init(p_sim: RampageSim, view: Callable) -> void:
 	sim = p_sim
 	_view = view
-	_fire = fire
 
 
 ## Call after a building's chunks break: once none stand, its ruin is due.
@@ -38,11 +36,6 @@ func build(make: Callable, ready := Callable()) -> void:
 func _process(_delta: float) -> void:
 	for index: int in _due.filter(func(i: int) -> bool: return not sim.body.over(i)):
 		_due.erase(index)
-		var b := sim.buildings[index]
-		var size := clampf(b.w * b.d / 9.0, 0.6, 2.5)
-		var heap_top := 2.4 + 0.9 * b.tier  # flames sit on top of the rubble heap
-		_fire.call(Vector3(b.x, heap_top, b.z), size)
-		_fire.call(Vector3(b.x + b.w * 0.3, heap_top * 0.6, b.z - b.d * 0.25), size * 0.6)
 		var view: BuildingView = _view.call(index)
 		var voxels := view.voxels
 		var rng := Seeds.make("ruin", index)

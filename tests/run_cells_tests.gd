@@ -8,6 +8,7 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_cells_tests.gd
 
 const CellsSupport := preload("res://tests/lib/cells_support.gd")
+const CellsNative := preload("res://tests/lib/cells_native.gd")
 
 ## Each fixture: [name, x, z, w, d, floors, tier, style, party].
 const RuinRubble := preload("res://tests/lib/cells_ruin.gd")
@@ -26,7 +27,7 @@ const PINNED := {
 	"brick": [6674, "ac8dcb1ff799745a"],
 	"glass": [27213, "2ea7122061040817"],
 	"stone": [13385, "04da84b429e548bc"],
-	"party": [6277, "6217a45fdf6352a2"],
+	"party": [6674, "6c9f344bc615d940"],  # b2-22: party walls carry the facade
 	"tiny": [776, "8c0f4755ac5a6536"],
 	"sign": [10911, "1c39938e3ebe6249"],
 }
@@ -55,6 +56,7 @@ const MODULES: Array[String] = [
 	"res://sim/cell_grid.gd",
 	"res://sim/cell_promoter.gd",
 	"res://sim/glass_frame.gd",
+	"res://sim/building_cells_native.gd",
 ]
 
 
@@ -73,6 +75,9 @@ func run_checks() -> void:
 	await _t("_check_no_clock_or_rng")
 	await _t("_check_promotion_lazy")
 	await _h("CellsSupport", func() -> void: CellsSupport.new(check, FIXTURES, _building).run())
+	await _h(
+		"CellsNative", func() -> void: CellsNative.new(check, FIXTURES, _building, _party).run()
+	)
 	await _t("_check_lit_is_a_look")
 	await _h("RuinRubble", func() -> void: RuinRubble.run(check, FIXTURES, _building))
 

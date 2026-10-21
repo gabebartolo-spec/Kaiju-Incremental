@@ -152,24 +152,33 @@ func _chunks(voxels: BuildingVoxels, a: Vector3, b: Vector3, width: float) -> vo
 	var sizes: Array = _cfg["chunk_size"]
 	for n: int in Num.i(_cfg["chunks"]):
 		var size := _rng.randf_range(Num.f(sizes[0]), Num.f(sizes[1]))
-		var chunk := Ruin.chunk(
-			voxels, Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3)), _rng
-		)
-		add_child(chunk)
+		var dims := Vector3(size, size * 0.55, size * _rng.randf_range(0.7, 1.3))
+		var salt := _rng.randi() % Ruin.SALTS
 		var t := _rng.randf_range(0.35, 1.0)
 		var at := a.lerp(b, t) + side * _rng.randf_range(-0.4, 0.4) * width
 		var slide := along * Num.f(_cfg["chunk_slide"]) * _rng.randf_range(0.4, 1.0)
-		chunk.position = at + Vector3(0, size, 0)
-		chunk.rotation = Vector3(
-			_rng.randf_range(-0.6, 0.6), _rng.randf(), _rng.randf_range(-0.6, 0.6)
-		)
+		var turn := Vector3(_rng.randf_range(-0.6, 0.6), _rng.randf(), _rng.randf_range(-0.6, 0.6))
 		var rest := at + slide + Vector3(0, Num.f(_cfg["heap_top"]) + size * 0.1, 0)
-		var tween := chunk.create_tween()
-		tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-		tween.tween_property(chunk, "position", rest, Num.f(_cfg["settle_s"]))
-		tween.parallel().tween_property(
-			chunk, "rotation:x", chunk.rotation.x * 0.3, Num.f(_cfg["settle_s"])
+		var start := at + Vector3(0, size, 0)
+		var place := func(chunk: MultiMeshInstance3D) -> void: _slide(chunk, start, turn, rest)
+		# Thousands of voxels each: built on a worker like the strip (b2-3: 7 chunks on the
+		# landing frame took up to 250 ms), every random draw made here, in the same order.
+		_city.ruins().build(
+			func() -> MultiMeshInstance3D: return Ruin.chunk(voxels, dims, salt), place
 		)
-		tween.parallel().tween_property(
-			chunk, "rotation:z", chunk.rotation.z * 0.3, Num.f(_cfg["settle_s"])
-		)
+
+
+## A thrown chunk, once built: it starts at `start`, turned by `turn`, and slides to rest,
+## tilting flatter.
+func _slide(chunk: MultiMeshInstance3D, start: Vector3, turn: Vector3, rest: Vector3) -> void:
+	chunk.position = start
+	chunk.rotation = turn
+	var tween := chunk.create_tween()
+	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(chunk, "position", rest, Num.f(_cfg["settle_s"]))
+	tween.parallel().tween_property(
+		chunk, "rotation:x", chunk.rotation.x * 0.3, Num.f(_cfg["settle_s"])
+	)
+	tween.parallel().tween_property(
+		chunk, "rotation:z", chunk.rotation.z * 0.3, Num.f(_cfg["settle_s"])
+	)

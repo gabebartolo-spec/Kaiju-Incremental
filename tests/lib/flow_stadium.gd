@@ -138,7 +138,7 @@ static func _check_crowd_kill(
 		. call(
 			(
 				target != null
-				and target.state == StadiumCrowd.State.GONE
+				and target.is_dead()
 				and crowd.killed > dead
 				and street.civilians_killed() > before
 			),
