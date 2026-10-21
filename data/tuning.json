@@ -680,7 +680,8 @@
 		"column_bay": 8,
 		"carve": true,
 		"chunk_alive_share": 0.5,
-		"warm_margin": 3
+		"warm_margin": 3,
+		"warm_emerge_margin": 12
 	},
 	"lights": {
 		"_note": "Positional lights (street lamps, fires, police beacons; R 12.1, R 12.2). Only the pool_size lights nearest the camera are real lights (gl_compatibility ignores every positional light past 32 a frame, rendering/limits/opengl/max_renderable_lights); the rest are their emissive voxels and glow. Each light also fades out with camera distance: begin and length in metres.",

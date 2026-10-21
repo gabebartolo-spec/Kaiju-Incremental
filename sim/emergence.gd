@@ -56,10 +56,17 @@ func risen() -> float:
 	return clampf(_t / _rise, 0.0, 1.0) if active else 1.0
 
 
-## Advances the rise; true while it holds the rest of the sim back.
+## Advances the rise; true while it holds the rest of the sim back. While it does, the
+## buildings around the kaiju get their fine grids ready (Carving.warm), so its first blows
+## land on warm ones.
 func step(sim: RampageSim, dt: float) -> bool:
 	if not active:
 		return false
+	sim.carving.warm(true)
+	return _advance(sim, dt)
+
+
+func _advance(sim: RampageSim, dt: float) -> bool:
 	_t += dt
 	if _t >= _cap:  # never stalls: out on the bank, on its feet
 		sim.stand_y = 0.0
