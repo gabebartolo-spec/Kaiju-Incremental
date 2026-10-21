@@ -17,15 +17,17 @@ static func chance(cfg: Dictionary, dist: float, reach: float) -> float:
 	return lerpf(Num.f(miss["hit_near"]), Num.f(miss["hit_far"]), t)
 
 
-## Where a missed shell fired from `from` lands: on past the kaiju's body along the line of fire,
-## up to scatter further, and up to scatter / 2 to either side.
+## Where a missed shell fired from `from` lands: beside the kaiju, not behind it (director,
+## 2026-10-21: "land beside him", so the player sees it break the buildings next to him): up to
+## scatter on past it along the line of fire, and off to one side by the body's radius plus up to
+## side more.
 static func landing(sim: RampageSim, from: Vector2, rng: RandomNumberGenerator) -> Vector2:
 	var miss: Dictionary = sim.army["miss"]
-	var scatter := Num.f(miss["scatter"])
 	var line := (sim.kaiju_pos - from).normalized()
 	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	var on := body + rng.randf_range(0.2, 1.0) * scatter
-	var side := rng.randf_range(-0.5, 0.5) * scatter
+	var on := rng.randf_range(0.0, 1.0) * Num.f(miss["scatter"])
+	var lean := rng.randf_range(-1.0, 1.0)
+	var side := signf(lean) * (body + absf(lean) * Num.f(miss["side"]))
 	return sim.kaiju_pos + line * on + line.orthogonal() * side
 
 
