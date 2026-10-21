@@ -133,7 +133,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
-	add_child(IntroWater.new(sim, _city.fx, _city.ground_opacity))
+	add_child(IntroWater.new(sim, _city.fx))
 	_intro = RunIntro.new(sim, full_intro)
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()

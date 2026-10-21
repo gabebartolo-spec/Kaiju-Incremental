@@ -26,7 +26,7 @@ const SIGHT_STEP := 0.5
 const BODY_FOLLOW := 12.0
 const DT := 1.0 / 60.0
 ## The roar shot (the intro's water shot, to the pull-out): in the SHOT_WHOLE seconds up to
-## SHOT_END (the roar, where it reads) the head, neck, shoulders and body above the water are in sight
+## SHOT_END (the roar, where it reads) the head, neck and shoulders above the water are in sight
 ## past the river's stonework (RiverSight) on every frame. (Before it, the neck is still under the
 ## deck it bursts through, hidden from any side.)
 const SHOT_END := 1.6
@@ -63,7 +63,6 @@ func _stage(stage: int) -> void:
 	var feet_seen := 0
 	var standing := 0
 	var stone := RiverSight.new(sim)
-	var ground := IntroFade.new(true)
 	var parts_seen := 0
 	var parts_all := 0
 	var left := int(SECONDS / DT)
@@ -83,12 +82,11 @@ func _stage(stage: int) -> void:
 			if fade.opacity(n) > HIDES:
 				hiding.append(sim.buildings[n])
 		var inside := _blocked(eye, eye, hiding)
-		var faded := ground.step(DT, sim.emerge.active) < HIDES
 		var seconds := sim.emerge.progress() * sim.emerge.total()
 		if sim.emerge.surfaced and seconds <= SHOT_END and seconds >= SHOT_END - SHOT_WHOLE:
 			for part: Vector3 in RiverSight.parts(sim):
 				parts_all += 1
-				parts_seen += 0 if stone.hides(eye, part, true, faded) else 1
+				parts_seen += 0 if stone.hides(eye, part, true) else 1
 		var top := sim.stand_y + sim.reach_height() * TOP
 		if top > water:
 			above += 1
@@ -102,7 +100,7 @@ func _stage(stage: int) -> void:
 	_check.call(
 		parts_all > 0 and parts_seen == parts_all,
 		(
-			"stage %d: past the quay walls, decks and shore the head, neck, shoulders and body are in sight"
+			"stage %d: past the quay walls, decks and shore the head, neck and shoulders are in sight"
 			+ " on %d of %d samples in the roar (%.1f to %.1f s)"
 		) % [stage, parts_seen, parts_all, SHOT_END - SHOT_WHOLE, SHOT_END]
 	)

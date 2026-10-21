@@ -24,4 +24,4 @@ static func draw(ground: CityGround, plan: Dictionary, cfg: Dictionary, depth: f
 		up = -up
 	var basis := Basis(Vector3.RIGHT * sand.size.x, up * THICK, down * top.distance_to(foot))
 	var centre := (top + foot) * 0.5 - up * THICK * 0.5
-	ground._into.append({"t": Transform3D(basis, centre), "c": Look.color("sand")})
+	ground._slabs.append({"t": Transform3D(basis, centre), "c": Look.color("sand")})
