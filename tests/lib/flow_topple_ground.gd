@@ -8,8 +8,9 @@ extends RefCounted
 ##  - no point of any piece is ever below the street;
 ##  - the pieces (floor bands) touch the ground in order from the base to the top;
 ##  - right after the last one lands, no piece is left intact (each shattering or gone);
-##  - a band never shrinks (its scale stays above MIN_SCALE) before it breaks into its own cubes
-##    (ToppleFx.cubes counts them): it bursts, it is not scaled away;
+##  - a band never shrinks (its scale stays above MIN_SCALE) before it starts to burst into its own
+##    cubes (ToppleFx.cubes counts them), which then leave it over shatter_release_s: it bursts,
+##    it is not scaled away;
 ##  - the slabs the sim leaves on the street appear as the band lying over them shatters
 ##    (within SLAB_LAG of its first touch), not all at once after the last one.
 ## Seeded by design: a fixed building of the flow run's city, fixed times, no randomness read.
@@ -115,7 +116,8 @@ static func _run(check: Callable, rampage: Rampage, index: int, id: int, on_kaij
 			var low := _low(piece)
 			lowest = minf(lowest, low)
 			var scale := piece.global_transform.basis.get_scale().abs()
-			smallest = minf(smallest, minf(scale.x, minf(scale.y, scale.z)))
+			if not piece.has_meta("breaking"):  # once it bursts it shortens as its cubes leave
+				smallest = minf(smallest, minf(scale.x, minf(scale.y, scale.z)))
 			var key := piece.get_instance_id()
 			if not order.has(key):
 				order[key] = _height(piece)

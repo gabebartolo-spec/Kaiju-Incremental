@@ -5,8 +5,10 @@ extends Node3D
 ## Meshes and materials are shared by size and colour. Oldest pieces go first past the cap.
 
 const SPAWN_PER_FRAME := 30
+const SINK_S := 0.5
 const SINK := 1.5  # a burst band's cube sinks this many of its sizes below where it lay
 
+var peak := 0  # the most bodies alive at once (a capture prints it)
 var size_scale := 1.0  # pieces are this many times the building's size (trees: bigger, to read)
 var lift := -1.0  # toward white before shading; below 0, the look's debris_lift
 var shadows := true  # whether the pieces cast shadows
@@ -108,11 +110,12 @@ func _spawn_now(pos: Vector3, color: Color, away: Vector3, big := 1.0, fixed := 
 		_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6)
 	)
 	_bodies.append(body)
+	peak = maxi(peak, _bodies.size())
 	if fixed > 0.0:
 		var sink := body.create_tween()
 		sink.tween_interval(stay * _rng.randf_range(0.8, 1.2))
 		sink.tween_callback(func() -> void: body.freeze = true)
-		sink.tween_property(body, "position:y", -size * SINK, 0.7).as_relative()
+		sink.tween_property(body, "position:y", -size * SINK, SINK_S).as_relative()
 		sink.tween_callback(func() -> void: _forget(body))
 		return
 	var tween := mi.create_tween()

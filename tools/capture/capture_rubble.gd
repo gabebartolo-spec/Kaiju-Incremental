@@ -102,6 +102,7 @@ func _run() -> void:
 		for _k: int in 300:
 			await process_frame
 			OS.delay_msec(10)
+	print("peak debris bodies: %d" % rampage._city._debris.peak)
 	print("slab build delays ms: %s" % [rampage._city._topple._rubble.delays_ms])
 	quit()
 

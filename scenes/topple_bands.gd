@@ -85,7 +85,7 @@ func begin(f: Dictionary) -> void:
 
 ## Seconds from the sim's landing until the last band has shattered.
 func tail_s(n: int) -> float:
-	return Num.f(_cfg["band_gap_s"]) * maxi(0, n - 1) + Num.f(_cfg["shatter_s"])
+	return Num.f(_cfg["band_gap_s"]) * maxi(0, n - 1) + Num.f(_cfg["shatter_release_s"])
 
 
 ## The index of the band lying over `pos` (its height range up the tower holds pos's distance

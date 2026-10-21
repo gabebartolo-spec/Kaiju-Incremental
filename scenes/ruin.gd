@@ -96,6 +96,12 @@ static func strip(
 			var h := roundi(
 				RES * 1.6 * (1.0 - across * across) + step + float(absi(hash(Vector2i(t, s))) % 2)
 			)
+			var ragged := Num.f(cfg.get("heap_ragged", 0.0))
+			if ragged > 0.0:  # a torn edge, not a rectangle: the rim and the ends drop cells out
+				var chance := float(absi(hash(Vector3i(t, s, 7))) % 1000) / 1000.0
+				var end := minf(t, cells - t) / (RES * 1.5)
+				if across + (chance - 0.5) * ragged > 0.9 or (end < 1.0 and chance > end):
+					continue
 			var p := from + dir * (t / float(RES)) + side * (s / float(RES))
 			var base := Vector3i((p / BuildingVoxels.VOXEL).round())
 			for y: int in maxi(1, h):
