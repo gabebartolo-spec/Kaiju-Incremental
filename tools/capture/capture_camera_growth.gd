@@ -239,7 +239,8 @@ func _check_frame(height: int) -> void:
 
 ## The buildings drawn solid this frame (BuildingFade's opacity 1): a faded one hides nothing.
 func _opaque() -> Array[RampageSim.Building]:
-	var fade: BuildingFade = _rampage.get("_city").get("_fade")
+	var city: CityView = _rampage.get("_city")
+	var fade: BuildingFade = city.get("_fade")
 	var out: Array[RampageSim.Building] = []
 	for n: int in _rampage.sim.buildings.size():
 		if fade == null or fade.opacity(n) >= 1.0:
