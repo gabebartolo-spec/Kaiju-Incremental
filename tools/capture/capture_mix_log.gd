@@ -11,7 +11,6 @@ extends SceneTree
 
 const SECONDS := 120.0
 const LEVELS := {"claws": 3, "evolve1": 1, "hide": 1, "regen": 1}
-const LOOPS: Array[String] = ["regen_loop", "heli_rotor", "crowd_panic"]
 
 
 func _initialize() -> void:
@@ -35,22 +34,14 @@ func _run() -> void:
 	rampage.sim.time_left = SECONDS + 10.0
 	root.add_child(rampage)
 	var sfx := rampage.sfx
+	sfx.log_voices = true
 	var seen := 0
 	for frame: int in roundi(SECONDS * 60):
 		await process_frame
-		var fresh: Array[String] = []
-		while seen < sfx.played.size():
-			var sound: String = sfx.played[seen]
+		while seen < sfx.voice_log.size():
+			var voice: Array = sfx.voice_log[seen]
 			seen += 1
-			if not sound in LOOPS:
-				fresh.append(sound)
-		for k: int in fresh.size():  # the k-th new sound went to the k-th player used this frame
-			var voices := sfx._pool.size()
-			var at := (sfx._next - fresh.size() + k + voices * 4) % voices
-			var player: AudioStreamPlayer = sfx._pool[at]
-			log.store_line(
-				"SND %d %s %.2f %.4f" % [frame, fresh[k], player.volume_db, player.pitch_scale]
-			)
+			log.store_line("SND %d %s %.2f %.4f" % [frame, voice[0], voice[1], voice[2]])
 		if frame % 3 == 0:
 			var loops: Array[String] = []
 			for loop: AudioStreamPlayer in [sfx._regen, sfx._rotor, sfx._crowd]:

@@ -353,6 +353,39 @@
 	"sfx": {
 		"pitch_jitter": 0.06,
 		"voices": 24,
+		"_voice_caps": "SfxVoices (R 8.2): voices each category may hold at once; hero categories are never stolen and reserve_hero voices stay free for them; others steal their quietest voice; the same sound is not restarted within retrigger_ms",
+		"voice_caps": {
+			"reserve_hero": 8,
+			"retrigger_ms": 30.0,
+			"default": "body",
+			"categories": {
+				"hero": {"cap": 2, "hero": true, "retrigger_ms": 0.0},
+				"stomp": {"cap": 3, "hero": true, "retrigger_ms": 0.0},
+				"collapse": {"cap": 3, "hero": true},
+				"explosion": {"cap": 4, "hero": true},
+				"debris": {"cap": 6},
+				"weapon": {"cap": 10},
+				"crowd": {"cap": 3},
+				"body": {"cap": 6},
+				"ui": {"cap": 3}
+			},
+			"sounds": {
+				"roar": "hero",
+				"stomp_0": "stomp",
+				"stomp_1": "stomp",
+				"stomp_2": "stomp",
+				"stomp_crack": "stomp",
+				"collapse": "collapse",
+				"tank_fire": "weapon",
+				"shell_hit": "weapon",
+				"rifle": "weapon",
+				"rifle_far": "weapon",
+				"heli_gun": "weapon",
+				"heli_crash": "weapon",
+				"ready": "ui",
+				"deflect": "ui"
+			}
+		},
 		"start_gate": {"smooth_frames": 10, "max_frame": 0.05, "max_wait_s": 3.0},
 		"stomp_tiers": [1.4, 1.8],
 		"default_volume": 0.9,

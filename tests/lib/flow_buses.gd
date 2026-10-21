@@ -108,13 +108,13 @@ static func _players(root: Node, check: Callable) -> void:
 	var heard: Dictionary = {}
 	for sound: String in ["roar", "stomp_1", "tank_fire", "rifle_far", "footstep", "ready"]:
 		sfx.play(sound)
-		heard[sound] = sfx._pool[(sfx._next + sfx._pool.size() - 1) % sfx._pool.size()].bus
+		heard[sound] = sfx.last_player().bus
 	sfx.collapse(true)
 	sfx._process(0.0)
-	heard["topple"] = sfx._pool[(sfx._next + sfx._pool.size() - 1) % sfx._pool.size()].bus
+	heard["topple"] = sfx.last_player().bus
 	sfx.collapse(false)
 	sfx._process(0.0)
-	heard["drop"] = sfx._pool[(sfx._next + sfx._pool.size() - 1) % sfx._pool.size()].bus
+	heard["drop"] = sfx.last_player().bus
 	check.call(
 		(
 			heard["roar"] == &"Hero"
