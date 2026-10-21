@@ -248,7 +248,7 @@
 			"max_drawn": 36
 		}
 	},
-	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0},
+	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
 		"map_seed": 7301,
 		"half": 42,
@@ -285,6 +285,9 @@
 		"street_tree_crown": [3.0, 3.6],
 		"street_tree_car_clear": 1.0,
 		"park_tree_spacing": 3.0,
+		"tree_min_apart": 2.5,
+		"tree_slide_reach": 3.0,
+		"tree_slide_step": 0.25,
 		"garden_bush_gap": 1.4,
 		"park_flower_beds": 2,
 		"flower_bloom": 0.55,
@@ -493,7 +496,7 @@
 		"fade_s": 0.3,
 		"puff": 1.6
 	},
-	"camera": {"offset": [0, 16, 30], "fov": 60.0},
+	"camera": {"offset": [0, 16, 30], "fov": 60.0, "zoom_base": 0.75, "zoom_per_scale": 0.4},
 	"topple_fx": {
 		"shudder_s": 0.4,
 		"shudder_max_share": 0.3,
@@ -688,11 +691,14 @@
 		"bob": 0.05,
 		"bob_hz": [1.2, 2.4],
 		"flee_speed": 1.3,
-		"flee_delay": 2.5,
+		"flee_delay": 14.0,
 		"flee_slope": 0.8,
 		"exit_r": 0.86,
 		"sink": 2.0,
-		"check_per_frame": 400,
+		"check_slices": 2,
+		"linger": [3.0, 16.0],
+		"shrink": 0.6,
+		"max_loss_per_second": 0.12,
 		"max_puffs": 4
 	},
 	"street": {
@@ -735,6 +741,7 @@
 		"arc_shed_cells": 32,
 		"column_bay": 8,
 		"carve": true,
-		"chunk_alive_share": 0.5
+		"chunk_alive_share": 0.5,
+		"warm_margin": 3
 	}
 }
