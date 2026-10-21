@@ -24,3 +24,4 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 18 | "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military which destroys parts of its own city occasionally" | military builder after the posting fix, claude/clumsy-army | queued |
 | 19 | "place explosive fuel silos occasionally in the city, fireworks factories, chemical testing labs etc / they can be our 'red barrel' and will cause chaos when the military accidentally blow them up etc" | explosives builder, claude/city-explosives (joins #18 clumsy army) | queued |
 | 20 | "add a note to get really good sfx and vfx for the explosions including shockwaves and sonicboom" | explosives builder (claude/city-explosives): visible shockwave ring + air distortion, delayed sonic boom by distance, layered blast SFX (CC0, registered); motion critic on a game-speed clip | queued |
+| 21 | b2-20 look: picked "A voxels" | D-111 | done |
