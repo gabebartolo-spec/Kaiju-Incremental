@@ -1,5 +1,5 @@
 # ui-redesign handoff, 2026-10-21
-## State: running a check (4K captures on CI)
+## State: available (captures with the lead for QC)
 ## Task
 Lead-10 builder. In-run HUD (b2-10..13, R 15.1-15.7) and menus (title, pause, settings, results, species
 select, loading) in UI look A "Emergency Broadcast" with bespoke drawn assets; fonts Claw/Block; one shared
@@ -12,8 +12,7 @@ fc1391b6 capture_flow loading shot; 6df247f0 the redesign; b1fc5ba6 capture wait
 river rise held the clock, so --ui-only never reached the report); 010a2dd5 fixes from my own capture
 review (cards clear corner marks, breath ring centred via invisible placeholders, species 2x2 meters and
 390x220 preview so 3 cards fit 125% title-safe, "EVOLVE" without ">", bigger alert triangle).
-Scratch refs to DELETE at the end: claude/ui-redesign-b125, -b100 (440e99a0 = fc1391b6 + fixed capture),
--a125, -a100, -a125b, -a100b. Temp worktree ../Kaiju-Incremental-wt/ui-before: remove.
+Scratch refs and the ui-before worktree: deleted.
 ## What changed (6df247f0)
 data/tuning.json "ui" (safe margin 96/54, text style, hud, hurt, controls_card, tooltip_width, spin rate,
 loading news). UiKit text_style/safe_area/header/panel_box; UiMarks (tape, ticks, alert tag, scanlines);
@@ -32,8 +31,8 @@ R 15.8 stage-up notice (no in-run stage event exists); heartbeat SOUND (no asset
 hit flash is on the screen edge, not on the kaiju model; species ability name "Atomic Breath" still in
 species.json (D-108 says never "atomic"; not my string). Tree screen look untouched (waits for bigger tree).
 ## Running jobs
-caps2.sh: after captures of 010a2dd5 (Forward+, 4K, 125% and 100%) -> NOTES/ui-redesign/after-125, -100.
-Before shots done: before-125, before-100 (runs 39562381681, 39562385358).
+none. Captures (Forward+ on lavapipe, 3840x2160): before-125/-100 runs 39562381681/39562385358 (fc1391b6
+code), after-125/-100 runs 39570807066/39570816803 (010a2dd5). 1280x720 review copies: NOTES/ui-redesign/review.
 ## Findings for the lead
 gdformat/gdlint are in ~/AppData/Roaming/Python/Python314/Scripts (not on PATH).
 ## Rules learnt the hard way (under 10 lines)
