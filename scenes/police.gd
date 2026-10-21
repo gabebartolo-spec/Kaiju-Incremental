@@ -28,7 +28,7 @@ class Blockade:
 	var t := 0.0
 	var out := false
 	var holding := 0
-	var light: OmniLight3D
+	var light: PooledLight
 
 
 var sim: RampageSim
@@ -176,8 +176,8 @@ func _start_blockade(kaiju: Vector2) -> void:
 		var from := b.at - b.toward * 9.0 + b.across * s * 0.4
 		var angle := _rng.randf_range(-0.2, 0.2)
 		_street.traffic.add_police(from, slot, (-b.across * s).rotated(angle))
-	b.light = OmniLight3D.new()
-	b.light.light_energy = SIREN_ENERGY
+	b.light = PooledLight.new("beacon")
+	b.light.set_energy(SIREN_ENERGY)
 	b.light.omni_range = 7.0
 	b.light.position = Vector3(line.x, 1.2, line.y)
 	add_child(b.light)

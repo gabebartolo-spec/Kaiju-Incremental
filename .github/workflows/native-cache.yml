@@ -1,0 +1,29 @@
+name: native-cache
+
+# Saves the built native core in the cache of the branches pull requests target.
+#
+# A cache saved by a pull request run belongs to that pull request's merge ref alone, so before
+# this every new pull request rebuilt the extension (3.5-6 min of the tests "native" job; run
+# 39453091412: build 262 s). Pull requests can read their base branch's cache, so a run here
+# after each change to native/ lets every later pull request restore it in seconds.
+on:
+  push:
+    branches: [main, claude/look-options]
+    paths:
+      - "native/**"
+      - ".gitmodules"
+      - ".github/actions/native-build/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/native-build
