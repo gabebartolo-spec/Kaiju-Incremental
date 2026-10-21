@@ -117,10 +117,7 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-		var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
-		var sight := BuildingFade.targets(feet, sim.reach_height(), ahead)
-		_fade.update(camera.global_position, sight, delta)
+		_fade.update(camera.global_position, BuildingFade.sight_of(sim), delta)
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
