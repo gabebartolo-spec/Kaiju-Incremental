@@ -87,12 +87,12 @@ func _ready() -> void:
 	is_loaded = true
 
 
-## Cars, trees and lights under a stomp go flat; people there are crushed.
-func crush(at: Vector3, radius: float) -> void:
+## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife).
+func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
 	if _decor != null:
 		_decor.crush(at, radius)
 	if street != null:
-		street.crush(at, radius)
+		street.crush(at, radius, by_tank)
 
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
@@ -190,6 +190,8 @@ func fall_start(event: Dictionary) -> void:
 	}
 	fx.dust(pivot + Vector3(0, 0.5, 0), 1.0)
 	_broke(index, cells)
+	if street != null:  # the people under it freeze; its landing crushes the same reach
+		street.brace_fall(event, DROP_REACH)
 
 
 ## Gravity drives it: the angle (topple) or the drop grows with the square of time.
@@ -237,7 +239,8 @@ func fall_land(event: Dictionary) -> void:
 		fx.dust(landed[0], 1.5)
 		var b := sim.buildings[Num.i(event["building"])]
 		if street != null and b.landmark == "":  # came down round its own (not a ring's) walls
-			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH)
+			var spill := Num.f(street.tune("fall_spill"))
+			street.crush(Vector3(b.x, 0, b.z), maxf(b.w, b.d) * 0.5 + DROP_REACH + spill)
 
 
 ## A tower came down across the street: it breaks up and leaves a rubble strip (ToppleFx); what
@@ -250,10 +253,11 @@ func _topple_land(node: Node3D, event: Dictionary) -> void:
 	var a := Vector3(from.x, 0, from.y)
 	var b := Vector3(to.x, 0, to.y)
 	var steps := maxi(1, ceili(a.distance_to(b) / 1.5))
+	var spill := Num.f(street.tune("fall_spill")) if street != null else 0.0
 	var spots: Array[Vector3] = []
 	for i: int in steps + 1:
 		var at := a.lerp(b, float(i) / steps)
-		spots.append(Vector3(at.x, at.z, width * 0.6))
+		spots.append(Vector3(at.x, at.z, width * 0.6 + spill))
 	crush_all(spots)
 
 

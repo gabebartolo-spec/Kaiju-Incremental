@@ -7,9 +7,6 @@ extends Node3D
 ## falling sections and tank tracks crush them in a puff of dust. Owns the moving traffic.
 ## Presentation only: the sim and the economy never know any of them exist.
 
-const CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
-const PAVEMENT := 0.45  # pavement line, out from the block's edge (its buildings' walls)
-const CROSSWALK := 9.5  # longest crossing to the corner of the block across the street
 const SIDE_STEP := 0.2  # people keep a little to one side of the line
 const PACE_SPREAD := 0.2  # walkers differ in pace, so a crowd strings out instead of merging
 const WALK_HZ := 3.0
@@ -30,6 +27,9 @@ class Person:
 	var from_node := 0
 	var to_node := 0
 	var fleeing := false
+	## Standing still until this clock time: gawking at the kaiju a moment before running, or
+	## frozen under a falling tower (nobody outruns one).
+	var pinned_until := -1.0
 	var cop := false
 	var state := 0  # officers: 0 to post, 1 holding, 2 fleeing
 	var post := Vector2.ZERO
@@ -48,6 +48,8 @@ var matches: Array[StadiumMatch] = []
 ## Running totals (tests and the capture tool read them).
 var fled := 0
 var killed := 0
+## Of those killed, the ones tanks rolled over (the rest the kaiju crushed: stomps, falls, claws).
+var run_over := 0
 ## Per-frame cost of street life, in microseconds: worst and running total (benchmarking).
 var worst_usec := 0
 var total_usec := 0
@@ -58,7 +60,6 @@ var _rng: RandomNumberGenerator
 var _voxel: float
 var _nodes := PackedVector2Array()
 var _links: Array[Array] = []
-var _in_road := PackedByteArray()  # per node: 1 when the corner lies in a carriageway
 var _mms: Array[MultiMesh] = []
 var _counts := PackedInt32Array()
 var _clock := 0.0
@@ -80,7 +81,9 @@ func _init(
 func _ready() -> void:
 	traffic = Traffic.new(sim, Seeds.make("traffic", 0))
 	add_child(traffic)
-	_build_pavements()
+	var pavements := Pavements.new(sim)  # the walkable graph
+	_nodes = pavements.nodes
+	_links = pavements.links
 	# A few people per building, spread over the blocks.
 	var per_lot := int(GraphicsPresets.cap("civilians"))
 	var blocks := _nodes.size() >> 2
@@ -109,60 +112,6 @@ func _ready() -> void:
 			add_child(matches[-1])
 
 
-## Pavement corners round every block of the playable city (4 per block), linked round the
-## block and across the streets to the nearest corner of the block opposite. The diagonal avenue
-## runs through the blocks it crosses: a corner of theirs in its carriageway has no links, and
-## neither has a pavement line that would cross it, so people never walk in the road.
-func _build_pavements() -> void:
-	var half := CityGen.half_extent(sim.city)
-	var plan := CityGen.map(sim.city)
-	var avenue: Array[Dictionary] = []  # only the diagonal runs through a block
-	for road: Dictionary in plan["streets"]:
-		if str(road["kind"]) == CityGen.DIAGONAL:
-			avenue.append(road)
-	var diagonal := {"nodes": plan["nodes"], "streets": avenue}
-	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
-	for block: Dictionary in plan["blocks"]:
-		var rect: Rect2 = block["rect"]
-		var use := str(block["use"])
-		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
-			continue  # past the edge, or the river (CityRiver): no one walks on the water
-		# The pavement line, the same distance in from the kerb as round every other block.
-		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
-		var size := ring.size * 0.5
-		var cut := CityGen.diagonal_distance(plan, ring.get_center()) < size.length() + reach
-		var first := _nodes.size()
-		for c: Vector2 in CORNERS:
-			_nodes.append(ring.get_center() + c * size)
-			_links.append([])
-			_in_road.append(
-				1 if cut and not CityGen.road_at(diagonal, _nodes[-1]).is_empty() else 0
-			)
-		for c: int in 4:
-			var a := first + c
-			var b := first + (c + 1) % 4
-			if _in_road[a] == 0 and _in_road[b] == 0:
-				_link(a, b)
-	# Crossings: a corner links to the nearest corner of another block straight across a street.
-	for a: int in _nodes.size():
-		if _in_road[a] == 1:
-			continue
-		for axis: int in 2:
-			var best := -1
-			for b: int in _nodes.size():
-				if a >> 2 == b >> 2 or _in_road[b] == 1:
-					continue
-				var d := _nodes[b] - _nodes[a]
-				var along := absf(d.x) if axis == 0 else absf(d.y)
-				var off := absf(d.y) if axis == 0 else absf(d.x)
-				if off > 1.0 or along > CROSSWALK:
-					continue
-				if best < 0 or along < _nodes[best].distance_to(_nodes[a]):
-					best = b
-			if best >= 0 and not _links[a].has(best):
-				_link(a, best)
-
-
 ## The pavement corners people can walk between (4 per block, minus the ones in the road).
 func ring_nodes() -> PackedVector2Array:
 	var out := PackedVector2Array()
@@ -170,11 +119,6 @@ func ring_nodes() -> PackedVector2Array:
 		if not _links[n].is_empty():
 			out.append(_nodes[n])
 	return out
-
-
-func _link(a: int, b: int) -> void:
-	_links[a].append(b)
-	_links[b].append(a)
 
 
 func _spawn_civilian(lot: int) -> void:
@@ -218,6 +162,16 @@ func civilians_killed() -> int:
 	return n
 
 
+## A number from the "street" tuning (CityView reads fall_spill, Rampage stomp_catch).
+func tune(key: String) -> float:
+	return Num.f(_cfg[key])
+
+
+## People the kaiju itself crushed on the streets (stomps, falls, claws): not the tanks' run-overs.
+func kaiju_killed() -> int:
+	return killed - run_over
+
+
 ## How many civilians are running from the kaiju now (the crowd-panic sound follows it).
 func panicking() -> int:
 	var n := 0
@@ -231,14 +185,16 @@ func panicking() -> int:
 
 
 ## Everyone within `radius` of `at` is crushed (a small dust puff); cars there go flat.
-func crush(at: Vector3, radius: float) -> void:
+## by_tank: a tank rolled over them, not the kaiju (counted in run_over too).
+func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
 	var spot: Array[Vector3] = [Vector3(at.x, at.z, radius)]
-	crush_all(spot)
+	crush_all(spot, by_tank)
 
 
 ## Everyone within any of `spots` (x, z, radius) is crushed, spot by spot as crush() would, with
 ## one pass over the people (each goes to the first spot that holds it; puffs capped per spot).
-func crush_all(spots: Array[Vector3]) -> void:
+## by_tank: tanks rolled over them (run_over), not the kaiju.
+func crush_all(spots: Array[Vector3], by_tank: bool = false) -> void:
 	var lo := Vector2.INF
 	var hi := -Vector2.INF
 	for s: Vector3 in spots:
@@ -263,7 +219,39 @@ func crush_all(spots: Array[Vector3]) -> void:
 				_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
 			_remove(i)
 			killed += 1
+			run_over += 1 if by_tank else 0
 			break
+
+
+## The people under a section that starts to fall (a fall_start event) freeze there; its landing
+## (CityView) crushes the same reach: a topple's strip, or a drop's walls plus drop_reach.
+func brace_fall(event: Dictionary, drop_reach: float) -> void:
+	var b := sim.buildings[Num.i(event["building"])]
+	var cells: Array = event["cells"]
+	if cells.is_empty():  # a carved scrap smashes nothing
+		return
+	var seconds := Num.f(event["duration"])
+	var spill := tune("fall_spill")
+	if str(event["kind"]) == "topple" and event.has("to"):
+		var pivot: Vector3 = event["pivot"]
+		var to: Vector2 = event["to"]
+		var from := Vector2(pivot.x, pivot.z)
+		brace(from, to, Num.f(event["width"]) * 0.6 + spill, seconds)
+	elif b.landmark == "":
+		var at := Vector2(b.x, b.z)
+		brace(at, at, maxf(b.w, b.d) * 0.5 + drop_reach + spill, seconds)
+
+
+## A falling section will land along from..to (a point for a drop) within `radius` in
+## `seconds`: the civilians under it freeze there (they cannot outrun a falling tower), so its
+## landing crushes them (CityView crushes the same strip).
+func brace(from: Vector2, to: Vector2, radius: float, seconds: float) -> void:
+	for p: Person in people:
+		if p.cop:
+			continue
+		var q := Geometry2D.get_closest_point_to_segment(p.pos, from, to)
+		if p.pos.distance_to(q) <= radius:
+			p.pinned_until = _clock + seconds + 0.5
 
 
 func _remove(i: int) -> void:
@@ -295,16 +283,21 @@ func _process(delta: float) -> void:
 
 
 func _update_civilian(p: Person, delta: float, kaiju: Vector2) -> void:
+	if p.pinned_until > _clock:
+		return
 	var d := p.pos.distance_to(kaiju)
-	if not p.fleeing and d < Num.f(_cfg["panic_radius"]):
+	var panic := _panic_radius()
+	if not p.fleeing and d < panic:
 		p.fleeing = true
 		fled += 1
+		p.pinned_until = _clock + Num.f(_cfg["panic_gawk"])  # a moment to take it in
+		p.heading = (kaiju - p.pos).normalized()
 		var ahead := _nodes[p.to_node] - p.pos
 		if ahead.dot(kaiju - p.pos) > 0.0:  # walking toward it: turn round
 			var swap := p.from_node
 			p.from_node = p.to_node
 			p.to_node = swap
-	elif p.fleeing and d > Num.f(_cfg["calm_radius"]):
+	elif p.fleeing and d > panic * Num.f(_cfg["calm_radius"]) / Num.f(_cfg["panic_radius"]):
 		p.fleeing = false
 	var speed := Num.f(_cfg["run_speed"]) if p.fleeing else Num.f(_cfg["walk_speed"])
 	var to := _nodes[p.to_node] - p.pos
@@ -348,7 +341,16 @@ func _next_node(p: Person, kaiju: Vector2) -> int:
 	return pick[_rng.randi_range(0, pick.size() - 1)]
 
 
+## How near the kaiju comes before people run: panic_per_scale x body scale, at most
+## panic_radius (an adult's): a young kaiju is noticed late, so it reaches the street's people.
+func _panic_radius() -> float:
+	var r := Num.f(_cfg["panic_per_scale"]) * sim.body_scale()
+	return minf(Num.f(_cfg["panic_radius"]), r)
+
+
 func _pose(p: Person) -> int:
+	if p.pinned_until > _clock and not p.cop:  # gawking, or frozen under a fall: standing
+		return VoxelPerson.Pose.WALK_A
 	var running := p.fleeing or (p.cop and p.state == 2)
 	if p.cop and p.state == 1:
 		return VoxelPerson.Pose.AIM
