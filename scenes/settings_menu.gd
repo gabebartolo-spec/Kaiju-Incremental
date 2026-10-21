@@ -1,8 +1,9 @@
 class_name SettingsMenu
 extends Control
-## Settings: volume and sound-effects volume, fullscreen (F11), UI scale for the TV, and the
-## controls for keyboard and pad. An overlay over whatever opened it (title or pause); Back or
-## cancel reports `closed`. Every change goes through PlayerSettings, which applies and saves it.
+## Settings: volume and sound-effects volume, camera motion, fullscreen (F11), UI scale for the
+## TV, and the controls for keyboard and pad. An overlay over whatever opened it (title or
+## pause); Back or cancel reports `closed`. Every change goes through PlayerSettings, which
+## applies and saves it.
 
 signal closed
 
@@ -10,9 +11,12 @@ const VOLUME_STEP := 10.0
 
 ## Sound effects (the SFX bus).
 var effects: HSlider
+## Camera motion (shake, footfall dip, breath swing).
+var motion: HSlider
 var _volume: HSlider
 var _volume_text: Label
 var _effects_text: Label
+var _motion_text: Label
 var _fullscreen: Button
 var _scale: Button
 var _fps: Button
@@ -47,6 +51,11 @@ func _ready() -> void:
 		func(value: float) -> void: PlayerSettings.set_sfx_volume(value / 100.0)
 	)
 	_effects_text = effects.get_parent().get_child(2)
+	motion = _slider(col, "Camera motion", PlayerSettings.motion())
+	motion.value_changed.connect(
+		func(value: float) -> void: PlayerSettings.set_camera_motion(value / 100.0)
+	)
+	_motion_text = motion.get_parent().get_child(2)
 
 	_fullscreen = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	_fullscreen.custom_minimum_size = Vector2(300, 56)
@@ -112,6 +121,7 @@ func _on_volume(value: float) -> void:
 func _refresh() -> void:
 	_volume_text.text = "%d%%" % roundi(_volume.value)
 	_effects_text.text = "%d%%" % roundi(effects.value)
+	_motion_text.text = "%d%%" % roundi(motion.value)
 	_fullscreen.text = "ON" if _is_full() else "OFF"
 	_scale.text = "%d%%" % roundi(PlayerSettings.ui_scale * 100.0)
 	_fps.text = "UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
