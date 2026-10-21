@@ -1,5 +1,5 @@
 # intro-cinematic handoff, 2026-10-21
-## State: reported to lead; awaiting their 2x review (head 6ca955ed + this file)
+## State: stood down at ~280k with work left (lead QC: FIX); a fresh builder continues
 ## Task
 Run intro (#11): "a quick, dramatic camera shot, zoomed in on the water which begins to ripple and fount before our
 kaiju emerges, roaring with rage before the camera zooms out into the play angle ... no longer than 3 seconds".
@@ -51,6 +51,20 @@ Scratch: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHu
   frame 168 = 2.80 s), 4K still 39564296988 (IC/r4-39564296988/*/river_s1_1.60s.png, crop IC/crop4k_head.png).
 - Known look issues for the lead: sand shore slab large in the left foreground; a channel-end block hides the
   body below the head at 1.6 s; jaw reads closed in the 1.6 s still; spray cubes are flat unshaded squares.
+
+## Next (lead QC FIX, 2026-10-21; beats and pull-out passed)
+1. Foreground (#27 "nothing in the foreground hides the rise"): the sand shore slab and the channel-end block
+   fill about half the frame from 0.3-1.6 s and hide the body at the roar. Move or raise the eye (tuning intro
+   yaw_deg/height/distance; RunIntro.shot pivots on the head), or fade them the way BuildingFade does, so the
+   head, neck and shoulders read whole at 1.6 s. Geometry, stage 1 seed 0: rise (-5.5, 54.0), head
+   (-5.5, 49.3), shore x -10..-1 z 45..48, deck x -12..1 z 50..56; eye now (-16, 0.6, 49.3). Probe the eye path
+   headless first (a copy of fade_spawn's loop, print RunIntro.shot eye/aim), then one CI stills run.
+2. Open the jaw on the roar beat: Rampage "surface_break" calls _kaiju.roar(); add KaijuModel.jaw_open(true)
+   (and close it later), or check that BipedHead.roar opens the jaw; the 1.6 s still reads closed.
+3. Spray: IntroWater._spray uses an unshaded alpha cube. Make it a lit material with 2-3 tones (white to
+   blue-grey) and some smaller cubes, so it reads as water, not confetti (tuning intro.water).
+Then: one 1080p clip (capture_river.gd --seconds=3.5, --movie) and one 4K still (--still-at=1.6) through CI,
+reviewed at 2x before they go to the lead. Watch rampage.gd's 400-line cap (it is at 399).
 
 ## Open decisions
 - none yet (yaw side, distances are data; lead judges the clip).
