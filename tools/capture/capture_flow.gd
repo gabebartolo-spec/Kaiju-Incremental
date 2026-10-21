@@ -21,6 +21,8 @@ const CLIP_BEAT_FRAMES := 90
 ## With --write-movie the project's 1920x1080 wins over --resolution; the clip sets the window.
 const CLIP_SIZE := Vector2i(1280, 720)
 const UI_ONLY_RAMPAGE_FRAMES := 45
+## Frames into the staged city build before the loading-screen shot (it has 7 stages).
+const LOADING_FRAMES := 2
 ## Clip: how long the report counts, then how long it holds, before EVOLVE.
 const CLIP_COUNT_FRAMES := 45
 const CLIP_HOLD_FRAMES := 45
@@ -95,6 +97,9 @@ func _run() -> void:
 	tree.start_pressed.emit()
 	await _frames(2)
 	var rampage := _screen() as Rampage
+	if not _clip:
+		await _frames(LOADING_FRAMES)
+		_shot("03b_loading")
 	await rampage.wait_loaded()
 	rampage.set_autoplay(true)
 	var fight := RAMPAGE_FRAMES
