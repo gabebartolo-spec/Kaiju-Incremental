@@ -61,9 +61,11 @@ func hurt(share: float) -> bool:
 
 
 ## A Taskforce railgun hit (a sim `railgun_hit` event) lands: every one earns the fringe (D-145),
-## though it costs less than the heavy-hit bar; it counts as `railgun_share` of max health.
+## whatever it cost and however lately another fringe began, so it restarts the burst.
 func railgun() -> bool:
-	return hurt(Num.f(_fringe["railgun_share"]))
+	_t = 0.0
+	_since = 0.0
+	return true
 
 
 ## A falling part lands (a sim `fall_land` event): a topple of a tall part earns the fringe.

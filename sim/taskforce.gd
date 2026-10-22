@@ -45,6 +45,10 @@ var agents: Array[Agent] = []
 ## Agents killed this run, and each squad's size as it arrived.
 var kills := 0
 var squad_sizes: Array[int] = []
+## Rampage seconds the player had spent in the adolescent city or later before this run (the save
+## carries them, D-160), and the seconds this run has added.
+var carried := 0.0
+var played := 0.0
 var _rng: RandomNumberGenerator
 var _timer: float
 var _next_id := 0
@@ -54,7 +58,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = Content.section("taskforce").duplicate(true)  # a run (or a test) may edit its own copy
 	_rng = rng
-	_timer = Num.f(_first()["seconds"])
+	_timer = Num.f(_first()["run_delay"])
 	var frost_cfg: Dictionary = cfg["frost"]
 	frost = TaskforceFrost.new(sim, frost_cfg)
 
@@ -73,8 +77,14 @@ func interval() -> float:
 	return maxf(Num.f(cfg["min_interval"]), left)
 
 
+## Rampage seconds in the adolescent city or later, the ones before this run and this run's.
+func city_seconds() -> float:
+	return carried + played
+
+
 func step(dt: float) -> void:
-	if cap() > 0 and sim.chunks_destroyed >= Num.i(_first()["chunks"]):
+	played += dt if cap() > 0 else 0.0
+	if cap() > 0 and carried >= Num.f(_first()["city_seconds"]):
 		_timer -= dt
 		if _timer <= 0.0 and cap() - agents.size() >= _squad_min():
 			_timer = interval()
@@ -143,8 +153,9 @@ func _swat_radius() -> float:
 	return Num.f(swat_cfg["radius"])
 
 
-## When the first squad may come (D-152): the chunks the run has brought down and the seconds
-## after that, both from data "first_arrival" (one place to change it).
+## When the Taskforce first joins (D-160): once `city_seconds` of rampage time are carried in from
+## earlier rampages in the adolescent city (the first ones are army-only), then every rampage, its
+## first squad `run_delay` seconds in. Data "first_arrival", the one place to change it.
 func _first() -> Dictionary:
 	var first: Dictionary = cfg["first_arrival"]
 	return first
@@ -167,8 +178,8 @@ func _new_agent(squad: int, at: Vector2, height: float) -> Agent:
 	agent.squad = squad
 	agent.pos = at
 	agent.y = height
-	agent.rail_cd = Num.f(_rail()["cooldown"]) * 0.5
-	agent.frost_cd = Num.f(frost.cfg["cooldown"]) * 0.5
+	agent.rail_cd = Num.f(_rail()["cooldown"]) * Num.f(_rail()["first_charge"])
+	agent.frost_cd = Num.f(frost.cfg["cooldown"]) * Num.f(frost.cfg["first_charge"])
 	agents.append(agent)
 	return agent
 
@@ -194,13 +205,14 @@ func _hop_to(agent: Agent, state: int, speed: float) -> void:
 	if spot.is_empty():
 		agent.building = -1
 		agent.to = agent.from
-		agent.flight_len = 1.0
+		agent.flight_len = Num.f(cfg["hover_seconds"])
 	else:
 		agent.building = Num.i(spot[0])
 		agent.cell = spot[1]
 		var roof := sim.buildings[agent.building].chunk_world(agent.cell)
 		agent.to = Vector3(roof.x, roof.y + 0.5, roof.z)
-		agent.flight_len = maxf(0.2, agent.from.distance_to(agent.to) / speed)
+		var fly := agent.from.distance_to(agent.to) / speed
+		agent.flight_len = maxf(Num.f(cfg["min_flight_s"]), fly)
 	agent.flight = agent.flight_len
 
 
@@ -318,15 +330,17 @@ func _fire(agent: Agent) -> void:
 	var reach := Num.f(_rail()["hit_radius"])
 	var shot := {"type": "railgun_hit", "agent": agent.id, "from": _muzzle(agent)}
 	if sim.kaiju_pos.distance_to(agent.aim_at) <= reach:
-		var damage := sim.max_hp * Num.f(_rail()["share"])
+		# armour softens it as it does a tank's shell (D-161), never below the army's minimum
+		var damage := maxf(
+			Num.f(sim.army["min_damage"]), sim.max_hp * Num.f(_rail()["share"]) - sim.stat("armor")
+		)
 		sim.hp -= damage
-		# `share` of max health: the view fires the colour fringe on every one (D-145), though it
-		# is under the fringe's usual heavy-hit bar.
+		# every hit fires the colour fringe (D-145); `share` is what it cost of max health
 		sim.events.append(
 			shot.merged(
 				{
 					"damage": damage,
-					"share": Num.f(_rail()["share"]),
+					"share": damage / sim.max_hp,
 					"x": sim.kaiju_pos.x,
 					"z": sim.kaiju_pos.y
 				}

@@ -101,7 +101,7 @@ func _start_rampage() -> void:
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
 	var runs := Num.i(_save.get("runs", 0))
-	rampage.setup(_species(), stats, layout, runs)
+	rampage.setup(_species(), stats, layout, runs, Num.f(_save.get("city_seconds", 0.0)))
 	# The time of day (D-145): random, never the last run's, unless the options fix one. The
 	# save remembers it, even if the rampage is quit before it ends.
 	var time_id := TimeOfDay.pick(runs, str(_save.get("last_time", "")), PlayerSettings.time_of_day)
@@ -119,6 +119,8 @@ func _on_rampage_finished(result: Dictionary) -> void:
 		previous = {}
 	_save["rubble"] = Num.i(_save.get("rubble", 0)) + Num.i(result["rubble"])
 	_save["runs"] = Num.i(_save.get("runs", 0)) + 1
+	var clock := Num.f(_save.get("city_seconds", 0.0))
+	_save["city_seconds"] = Num.f(result.get("city_seconds", clock))  # the Taskforce's clock
 	_save["best"] = SaveFile.merge_best(previous, result)
 	SaveSystem.save_game(_save)
 	var results := ResultsScreen.new(result, previous)

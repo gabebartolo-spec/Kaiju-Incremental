@@ -14,8 +14,10 @@ func _adolescent(species: String = "reptilian", levels: Dictionary = {"evolve1":
 	return sim
 
 
-## Lets the Taskforce spawn: enough of the city fallen, and a clock no run can end.
+## Lets the Taskforce spawn: the rampage time in the city already played (D-160), enough of the
+## city fallen for the escalation, and a clock no run can end.
 func _open(sim: RampageSim) -> void:
+	sim.army_units.taskforce.carried = 1.0e9
 	sim.chunks_destroyed = 5000
 	sim.chunks_total = 10000000
 	sim.time_left = 1.0e9

@@ -75,9 +75,13 @@ var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_second
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
-## picks the time of day.
+## picks the time of day; city_seconds: rampage seconds in the adolescent city or later (the save).
 func setup(
-	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
+	p_species: Dictionary,
+	stats: Dictionary,
+	layout: Array[Dictionary],
+	run_index: int,
+	city_seconds := 0.0
 ) -> void:
 	species = p_species
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
@@ -85,6 +89,7 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)

@@ -129,11 +129,15 @@ func _check_railgun() -> void:
 	var fringe: Dictionary = Content.section("post_fx")["fringe"]
 	var state := PostFxState.new()
 	check(not state.hurt(0.08), "8% of max health alone is under the heavy-hit bar")
+	check(state.railgun() and state.fringe_on(), "a railgun hit starts the fringe all the same")
+	_run_for(state, 1.0)
 	check(
-		Num.f(fringe["railgun_share"]) >= Num.f(fringe["hit_hp_fraction"]) and state.railgun(),
-		"a railgun hit starts the fringe all the same"
+		state.stomp(100.0) == false and state.railgun() and state.fringe_on(),
+		"a second hit 1 s later (inside the 4 s cooldown) still shows: squads share one clock"
 	)
-	check(state.fringe_on(), "the fringe is showing")
+	_run_for(state, 0.1)
+	var peak := _run_for(state, 0.3)
+	check(peak > 0.0, "and the burst runs (%.1f px)" % peak)
 
 
 func _check_fringe_gates() -> void:

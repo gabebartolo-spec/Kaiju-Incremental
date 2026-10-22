@@ -34,12 +34,12 @@ func _check_stage_gate() -> void:
 	)
 	var adolescent := _adolescent()
 	check(adolescent.army_units.taskforce.cap() == 12, "the adolescent city allows 12 alive")
-	var closed := _adolescent()  # the city has not fallen enough yet: nobody comes
+	var closed := _adolescent()  # no rampage time in the city yet: army-only (D-160)
 	closed.chunks_total = 10000000
 	closed.time_left = 1.0e9
-	closed.army_units.taskforce.cfg["first_arrival"] = {"chunks": 1000000000, "seconds": 6.0}
+	closed.chunks_destroyed = 5000
 	_run(closed, 60.0)
-	check(closed.army_units.taskforce.agents.is_empty(), "no squad before the city has fallen")
+	check(closed.army_units.taskforce.agents.is_empty(), "the first rampages bring no squad")
 
 
 func _check_arrival_and_cap() -> void:
@@ -96,6 +96,7 @@ func _check_perch_death() -> void:
 		"the agent dies when its perch collapses: %s" % [died]
 	)
 	check(tf.agents.is_empty() and tf.kills == 1, "the dead agent is gone from the list, one kill")
+	check(Num.i(sim.result()["agents"]) == 1, "the result counts the agent kill")
 	check(
 		sim.rubble > before + tf.kill_pay() - 0.001,
 		"the kill pays biomass (%.1f -> %.1f)" % [before, sim.rubble]
