@@ -21,25 +21,37 @@ func _open(sim: RampageSim) -> void:
 	sim.time_left = 1.0e9
 
 
-## A direction the kaiju can walk a few steps along without meeting a building (so a dodge is
-## not a bump); (0, 0) if every way is blocked.
+## A direction the kaiju can walk 10 units along with its whole body clear of standing walls and
+## the arena's edge and nothing slowing its stride (so a dodge is not a bump), the one that needs
+## the least turning; (0, 0) if there is none.
 func _free_way(sim: RampageSim) -> Vector2:
+	var best := Vector2.ZERO
+	var least := INF
 	for n: int in 16:
 		var way := Vector2.from_angle(n * TAU / 16.0)
-		var blocked := false
-		for reach: float in [3.0, 6.0, 9.0]:
+		var clear := true
+		for reach: int in range(1, 11):
 			var spot := sim.kaiju_pos + way * reach
-			for b: RampageSim.Building in sim.buildings:
-				blocked = (
-					blocked
-					or (
-						absf(spot.x - b.x) < b.w * 0.5 + 2.0
-						and absf(spot.y - b.z) < b.d * 0.5 + 2.0
-					)
-				)
-		if not blocked:
-			return way
-	return Vector2.ZERO
+			clear = (
+				clear
+				and sim.clamp_to_arena(spot) == spot
+				and not sim.powers.blocked(spot, sim.powers.block_radius())
+				and sim.body.inside(spot, way).is_empty()
+			)
+		var turn := absf(sim.body.heading.angle_to(way))
+		if clear and turn < least:
+			best = way
+			least = turn
+	return best
+
+
+## Turns the standing kaiju to a free way and lets the body settle on it, so a walk along it needs
+## no turn (a real turn takes the body longer than a railgun's last 0.4 s); the way, or (0, 0).
+func _face_free_way(sim: RampageSim) -> Vector2:
+	var way := _free_way(sim)
+	sim.facing = way
+	_run(sim, 1.0)
+	return way
 
 
 ## The index of a tall building about `FAR` from the kaiju, for an agent to perch on.
@@ -96,11 +108,25 @@ func _run(
 	return seen
 
 
-## The damage the kaiju takes over `seconds`, healed back to full each step so the run goes on.
-func _hurt_in(sim: RampageSim, seconds: float) -> float:
-	var hurt := 0.0
-	for _n: int in roundi(seconds / DT):
-		sim.step(DT, Vector2.ZERO, false)
-		hurt += sim.max_hp - sim.hp
+## A scripted player for `seconds` (walks to the nearest standing building, as _autoplay does; or
+## `walk` false: stands and smashes where it is), healed to full each step so the run goes on: what
+## the Taskforce did to it, as {"hurt": damage taken, "railgun": hits, "frost": grenades that
+## froze it}.
+func _play(sim: RampageSim, seconds: float, walk := true) -> Dictionary:
+	var out := {"hurt": 0.0, "railgun": 0, "frost": 0}
+	var target := Vector2(INF, INF)
+	for n: int in roundi(seconds / DT):
+		if n % 15 == 0:
+			target = sim.nearest_standing(sim.kaiju_pos)
+		var near := target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5
+		var move := (target - sim.kaiju_pos).normalized() if near and walk else Vector2.ZERO
+		var events := sim.step(DT, move, false)
+		out["hurt"] = Num.f(out["hurt"]) + sim.max_hp - sim.hp
 		sim.hp = sim.max_hp
-	return hurt
+		for event: Dictionary in events:
+			match str(event["type"]):
+				"railgun_hit":
+					out["railgun"] = Num.i(out["railgun"]) + 1
+				"frost_hit":
+					out["frost"] = Num.i(out["frost"]) + 1
+	return out

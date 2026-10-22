@@ -231,7 +231,7 @@
 		"clear_margin": 16.0
 	},
 	"taskforce": {
-		"_note": "The Anti Kaiju Taskforce, agents only (Taskforce, TaskforceFrost; D-137, D-139, D-141, D-143, D-145). PLACEHOLDER NUMBERS (tune) except the director's: railgun.share 0.08 of max health (D-143), railgun.aim_seconds 2.0 (D-139), squads of 3-4 and max 12 alive (D-139), none in the young city (D-137). max_by_tier = most alive at once per size tier (young, adolescent, ...). A squad arrives once chunks_destroyed reaches after_chunks, then every start_interval seconds less escalation_per_chunk x chunks destroyed (never under min_interval): faster the more of the city falls (D-145). Agents jetpack in from a ring edge_inset past the arena at jet_speed (units a second) and cruise jet_height up, then perch on a standing roof chunk of a building at least perch_min_height tall, perch_range [near, far] from the kaiju, trying perch_tries chunks; a perched agent hops on after perch_seconds [min, max] (hop speed = jet_speed x hop_speed_share, arcing hop_arc up). rubble = biomass per kill (x the kaiju's rubble_mult). railgun: the line tracks the kaiju for aim_seconds - lock_seconds, then locks and lands on the lock; it hits for share x max health only if the kaiju is within hit_radius of the lock (a late step dodges it); cooldown, range, hop_after (seconds before it hops on). frost: cooldown per agent, range, flight_s grenade flight, radius it must land within (the kaiju's feet), seconds of slow, slow_mult speed multiplier; refreshes, never stacks, the dash shatters it. swat: radius of an agent hit by a claw swipe in the air; wall_range how far it looks for the wall it spins into.",
+		"_note": "The Anti Kaiju Taskforce, agents only (Taskforce, TaskforceFrost; D-137, D-139, D-141, D-143, D-145). PLACEHOLDER NUMBERS (tune) except the director's: railgun.share 0.08 of max health (D-143), railgun.aim_seconds 2.0 (D-139), railgun.cooldown 12 s per agent, frost.slow_mult 0.5 for frost.seconds 4 s, a kill pays a tank's worth (rubble_share 1.0 of army.tank_rubble) (D-152), squads of 3-4 and max 12 alive (D-139), none in the young city (D-137, D-152). max_by_tier = most alive at once per size tier (young, adolescent, ...). A squad arrives once chunks_destroyed reaches after_chunks, then every start_interval seconds less escalation_per_chunk x chunks destroyed (never under min_interval): faster the more of the city falls (D-145). Agents jetpack in from a ring edge_inset past the arena at jet_speed (units a second) and cruise jet_height up, then perch on a standing roof chunk of a building at least perch_min_height tall, perch_range [near, far] from the kaiju, trying perch_tries chunks (with no building in the band, one of the perch_fallback nearest to it); a perched agent hops on after perch_seconds [min, max] (hop speed = jet_speed x hop_speed_share, arcing hop_arc up). rubble_share = biomass per kill as a share of this city's tank_rubble (x the kaiju's rubble_mult). railgun: the line tracks the kaiju for aim_seconds - lock_seconds, then locks and lands on the lock; it hits for share x max health only if the kaiju is within hit_radius of the lock (a late step dodges it); cooldown, range, hop_after (seconds before it hops on). frost: cooldown per agent, range, flight_s grenade flight, radius it must land within (the kaiju's feet), seconds of slow, slow_mult speed multiplier; refreshes, never stacks, the dash shatters it. swat: radius of an agent hit by a claw swipe in the air; wall_range how far it looks for the wall it spins into.",
 		"max_by_tier": [0, 12, 12, 12],
 		"after_chunks": 150,
 		"first_delay": 6.0,
@@ -249,9 +249,10 @@
 		"perch_range": [16.0, 40.0],
 		"perch_seconds": [5.0, 9.0],
 		"perch_tries": 8,
-		"rubble": 8,
-		"railgun": {"aim_seconds": 2.0, "lock_seconds": 0.4, "share": 0.08, "cooldown": 7.0, "range": 45.0, "hit_radius": 1.5, "hop_after": 0.8},
-		"frost": {"cooldown": 10.0, "range": 38.0, "flight_s": 1.2, "radius": 4.0, "seconds": 3.5, "slow_mult": 0.5},
+		"perch_fallback": 4,
+		"rubble_share": 1.0,
+		"railgun": {"aim_seconds": 2.0, "lock_seconds": 0.4, "share": 0.08, "cooldown": 12.0, "range": 45.0, "hit_radius": 1.5, "hop_after": 0.8},
+		"frost": {"cooldown": 10.0, "range": 38.0, "flight_s": 1.2, "radius": 4.0, "seconds": 4.0, "slow_mult": 0.5},
 		"swat": {"radius": 0.8, "wall_range": 30.0}
 	},
 	"army": {

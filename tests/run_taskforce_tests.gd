@@ -4,8 +4,9 @@ extends "res://tests/lib/taskforce_suite.gd"
 ## an agent dies when its perch collapses or a claw swipe swats it in the air (and pays biomass);
 ## the railgun's line tracks, locks shortly before the shot and hits for 8% of max health only
 ## if the kaiju stays in the lock (a late step dodges it); frost refreshes and never stacks and
-## the dash shatters it; the same seed replays the same events; and the player-effect fixture
-## "taskforce.agents": the same run with the Taskforce off leaves the kaiju healthier.
+## the dash shatters it; a kill pays a tank's worth (D-152); a squad never hovers when no roof is in
+## its band; the same seed replays the same events; and the player-effect fixture "taskforce.agents":
+## the same run with the Taskforce off leaves the kaiju healthier.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 
@@ -17,6 +18,7 @@ func run_checks() -> void:
 	await _t("_check_stage_gate")
 	await _t("_check_arrival_and_cap")
 	await _t("_check_perch_death")
+	await _t("_check_perch_fallback")
 	await _t("_check_railgun_hit")
 	await _t("_check_railgun_dodge")
 	await _t("_check_frost")
@@ -98,15 +100,43 @@ func _check_perch_death() -> void:
 	)
 	check(tf.agents.is_empty() and tf.kills == 1, "the dead agent is gone from the list, one kill")
 	check(
-		sim.rubble > before + Num.f(tf.cfg["rubble"]) * sim.stat("rubble_mult") - 0.001,
+		sim.rubble > before + tf.kill_pay() - 0.001,
 		"the kill pays biomass (%.1f -> %.1f)" % [before, sim.rubble]
 	)
+	check(
+		absf(tf.kill_pay() - Num.f(sim.army["tank_rubble"]) * sim.stat("rubble_mult")) < 0.001,
+		"a kill pays a tank's worth of biomass (%.1f, D-152)" % tf.kill_pay()
+	)
+	var adult := _sim("reptilian", {}, 0, CityGrowth.tuning_for(Content.tuning(), 3))
+	check(
+		adult.army_units.taskforce.kill_pay() > tf.kill_pay(),
+		"a kill pays more in the adult city, as a tank does"
+	)
+
+
+## No tall roof stands in the perch band round the kaiju (at the map edge the nearest is ~48 away,
+## past the band): a squad still flies to the nearest roofs and perches, not hovering at the edge.
+func _check_perch_fallback() -> void:
+	var sim := _adolescent()
+	_open(sim)
+	var tf := sim.army_units.taskforce
+	_run(sim, 25.0)
+	var held := tf.agents.filter(func(a: Taskforce.Agent) -> bool: return a.building >= 0)
+	check(
+		not tf.agents.is_empty() and held.size() == tf.agents.size(),
+		"every agent has a roof to go to (%d of %d)" % [held.size(), tf.agents.size()]
+	)
+	var perched := tf.agents.filter(
+		func(a: Taskforce.Agent) -> bool:
+			return a.state == Taskforce.PERCH or a.state == Taskforce.AIM
+	)
+	check(not perched.is_empty(), "squads land on the nearest roofs (%d perched)" % perched.size())
 
 
 func _check_railgun_hit() -> void:
 	var sim := _adolescent()
 	_open(sim)
-	_perched(sim, true)
+	var agent := _perched(sim, true)
 	var rail: Dictionary = sim.army_units.taskforce.cfg["railgun"]
 	var aim := 0.0
 	var hit: Dictionary = {}
@@ -138,26 +168,52 @@ func _check_railgun_hit() -> void:
 			% [aim, Num.f(rail["aim_seconds"])]
 		)
 	)
+	check(
+		is_equal_approx(Num.f(hit.get("share", 0.0)), 0.08),
+		"the hit carries its 8%% share of max health, for the colour fringe (D-145): %s" % [hit]
+	)
+	agent.wait = 1.0e9  # it holds its roof (its hop would take it past the railgun's range here)
+	var next := _run(sim, 10.0)  # it fires about every 12 s (D-152)
+	check(
+		_first(next, "railgun_aim").is_empty() and Num.f(rail["cooldown"]) == 12.0,
+		"the same agent does not aim again within 10 s of its shot"
+	)
+	next = _run(sim, 8.0)
+	check(not _first(next, "railgun_aim").is_empty(), "it aims again once its 12 s are up")
 
 
 func _check_railgun_dodge() -> void:
 	var late := _adolescent()
 	_open(late)
-	_perched(late, true)
-	var late_events := _run(late, 4.0, "railgun_locked")
-	var locked := _first(late_events, "railgun_locked")
-	check(not locked.is_empty(), "the aiming line locks shortly before the shot")
-	var way := _free_way(late)
+	var way := _face_free_way(late)  # settled on a clear way, so a step needs no turn
 	check(way != Vector2.ZERO, "the kaiju has a clear way to step")
+	_perched(late, true)
+	var locked := _first(_run(late, 4.0, "railgun_locked"), "railgun_locked")
+	check(not locked.is_empty(), "the aiming line locks shortly before the shot")
+	var from := late.kaiju_pos
 	var after := _run(late, 1.0, "", way)  # a late step, after the lock
 	check(
 		_first(after, "railgun_hit").is_empty() and not _first(after, "railgun_missed").is_empty(),
 		"a step after the lock dodges the shot: %s" % [_types(after)]
 	)
+	var rail: Dictionary = late.army_units.taskforce.cfg["railgun"]
+	check(
+		from.distance_to(late.kaiju_pos) > Num.f(rail["hit_radius"]) + 1.0,
+		"the step really left the lock behind (%.1f from it)" % from.distance_to(late.kaiju_pos)
+	)
+	var still := _adolescent()
+	_open(still)
+	_face_free_way(still)
+	_perched(still, true)
+	check(
+		not _first(_run(still, 4.0), "railgun_hit").is_empty(),
+		"a kaiju that stays put is hit (the dodge needs the step)"
+	)
 	var early := _adolescent()
 	_open(early)
+	_face_free_way(early)
 	_perched(early, true)
-	var tracked := _run(early, 0.5, "", _free_way(early))  # a step while the line is tracking
+	var tracked := _run(early, 0.5, "", way)  # a step while the line is tracking
 	tracked.append_array(_run(early, 3.0))
 	check(
 		not _first(tracked, "railgun_hit").is_empty(),
@@ -168,9 +224,13 @@ func _check_railgun_dodge() -> void:
 func _check_frost() -> void:
 	var sim := _adolescent()
 	_open(sim)
+	var way := _face_free_way(sim)
 	var frost := sim.army_units.taskforce.frost
 	var seconds := Num.f(frost.cfg["seconds"])
 	check(frost.mult() == 1.0, "no frost, no slow")
+	check(
+		seconds == 4.0 and Num.f(frost.cfg["slow_mult"]) == 0.5, "frost halves speed for 4 s (D-152)"
+	)
 	frost.launch(0, Vector3.ZERO)
 	var events := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.2)
 	check(not _first(events, "frost_hit").is_empty(), "a grenade at the feet freezes the kaiju")
@@ -178,6 +238,14 @@ func _check_frost() -> void:
 		is_equal_approx(frost.mult(), Num.f(frost.cfg["slow_mult"])) and frost.frost_left > 0.0,
 		"the ice slows it (x%.2f)" % frost.mult()
 	)
+	var iced := sim.powers.speed_mult()
+	var ice := frost.frost_left
+	frost.frost_left = 0.0
+	check(
+		is_equal_approx(iced, sim.powers.speed_mult() * 0.5),
+		"the walking speed is half what it is without the ice (%.2f)" % iced
+	)
+	frost.frost_left = ice
 	_run(sim, seconds * 0.6)
 	var left := frost.frost_left
 	frost.launch(1, Vector3.ZERO)
@@ -201,21 +269,39 @@ func _check_frost() -> void:
 		str(cracked.get("why", "")) == "thaw" and frost.mult() == 1.0,
 		"left alone the ice thaws and cracks off: %s" % [cracked]
 	)
-	frost.launch(2, Vector3.ZERO)
+	frost.launch(2, Vector3.ZERO)  # walks off before it lands: the grenade finds nobody
+	var from := sim.kaiju_pos
+	var missed := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.2, "", way)
+	check(
+		from.distance_to(sim.kaiju_pos) > Num.f(frost.cfg["radius"]),
+		"the kaiju walked clear of the spot (%.1f away)" % from.distance_to(sim.kaiju_pos)
+	)
+	check(
+		_first(missed, "frost_hit").is_empty() and frost.frost_left == 0.0,
+		"a grenade that lands where the kaiju no longer stands does nothing"
+	)
+	frost.launch(3, Vector3.ZERO)
 	_run(sim, Num.f(frost.cfg["flight_s"]) + 0.1)
 	check(frost.frost_left > 0.0, "iced again for the dash test")
-	var dashed := sim.step(DT, Vector2(0, -1), false, DASH_BUTTON)
+	var dashed := sim.step(DT, way, false, DASH_BUTTON)
 	var shattered := _first(dashed, "frost_cracked")
 	check(
 		str(shattered.get("why", "")) == "dash" and frost.frost_left == 0.0,
 		"the dash shatters the ice early: %s" % [shattered]
 	)
-	frost.launch(3, Vector3.ZERO)
-	var way := _free_way(sim)
-	var missed := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.2, "", way)  # it walks off
+	var walled := _adolescent()  # a dash into the wall ahead is over the step it starts
+	_open(walled)
+	var cold := walled.army_units.taskforce.frost
+	cold.launch(4, Vector3.ZERO)
+	_run(walled, Num.f(cold.cfg["flight_s"]) + 0.1)
+	var rammed := walled.step(DT, walled.facing, false, DASH_BUTTON)
 	check(
-		_first(missed, "frost_hit").is_empty() and frost.frost_left == 0.0,
-		"a grenade that lands where the kaiju no longer stands does nothing"
+		not _first(rammed, "dash").is_empty() and not walled.body.dash.on(),
+		"the dash into a wall stopped at once: %s" % [_types(rammed)]
+	)
+	check(
+		str(_first(rammed, "frost_cracked").get("why", "")) == "dash" and cold.frost_left == 0.0,
+		"it still shatters the ice"
 	)
 
 
@@ -284,19 +370,36 @@ func _fingerprint() -> String:
 	return ",".join(out)
 
 
-## The player-effect fixture "taskforce.agents": the same seeded run, Taskforce on and off.
+## The player-effect fixture "taskforce.agents": the same seeded run twice, the player walking into
+## the city with the Taskforce held back in both, then smashing where it stands with the Taskforce
+## let in on one (healed each step so it reads damage taken). Nothing else differs between the
+## runs, so the whole difference in damage is the railgun hits.
 func _check_effect() -> void:
 	var on := _adolescent()
 	var off := _adolescent()
-	_open(on)
-	_open(off)
-	off.army_units.taskforce.cfg["max_by_tier"] = [0, 0, 0, 0]
-	var hurt_on := _hurt_in(on, 90.0)
-	var hurt_off := _hurt_in(off, 90.0)
+	for sim: RampageSim in [on, off]:
+		_open(sim)
+		sim.army_units.taskforce.cfg["max_by_tier"] = [0, 0, 0, 0]
+		_play(sim, 20.0)
+	check(on.kaiju_pos == off.kaiju_pos, "both runs walked in alike (%s)" % on.kaiju_pos)
+	on.army_units.taskforce.cfg["max_by_tier"] = [0, 12, 12, 12]
+	var with_tf := _play(on, 90.0, false)
+	var without := _play(off, 90.0, false)
+	var shots := Num.i(with_tf["railgun"])
 	check(
-		hurt_on > hurt_off,
+		Num.f(with_tf["hurt"]) > Num.f(without["hurt"]),
 		(
 			"with the Taskforce on the kaiju takes more damage in 90 s (%.1f vs %.1f, max hp %.1f)"
-			% [hurt_on, hurt_off, on.max_hp]
+			% [Num.f(with_tf["hurt"]), Num.f(without["hurt"]), on.max_hp]
 		)
+	)
+	check(
+		shots > 0 and Num.i(without["railgun"]) == 0,
+		"the difference is railgun hits (%d on, %d off)" % [shots, without["railgun"]]
+	)
+	var rail: Dictionary = on.army_units.taskforce.cfg["railgun"]
+	var worth := shots * on.max_hp * Num.f(rail["share"])
+	check(
+		absf(Num.f(with_tf["hurt"]) - Num.f(without["hurt"]) - worth) < 0.01,
+		"and only those: %d x 8%% of %.0f = %.1f" % [shots, on.max_hp, worth]
 	)

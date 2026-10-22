@@ -215,7 +215,8 @@ func _pick_perch(agent: Agent) -> Array:
 
 
 ## The buildings an agent may perch on: standing, tall enough, in the perch band round the kaiju,
-## and not held or aimed at by another agent.
+## and not held or aimed at by another agent. With none in the band (the kaiju at the map edge, or
+## the city round it flattened) the `perch_fallback` nearest to the band, so a squad never hovers.
 func _perch_options(agent: Agent) -> Array[int]:
 	var span: Array = cfg["perch_range"]
 	var taken := {}
@@ -223,17 +224,26 @@ func _perch_options(agent: Agent) -> Array[int]:
 		if other != agent and other.building >= 0:
 			taken[other.building] = true
 	var options: Array[int] = []
+	var outside: Array[Array] = []  # [distance outside the band, building]
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
-		if taken.has(i) or not b.in_arena or b.frame.alive_count == 0:
+		if (
+			taken.has(i)
+			or not b.in_arena
+			or b.frame.alive_count == 0
+			or b.height < Num.i(cfg["perch_min_height"])
+		):
 			continue
 		var away := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
-		if (
-			b.height >= Num.i(cfg["perch_min_height"])
-			and away >= Num.f(span[0])
-			and away <= Num.f(span[1])
-		):
+		var gap := maxf(maxf(Num.f(span[0]) - away, away - Num.f(span[1])), 0.0)
+		if gap == 0.0:
 			options.append(i)
+		else:
+			outside.append([gap, i])
+	if options.is_empty():
+		outside.sort_custom(func(a: Array, b: Array) -> bool: return Num.f(a[0]) < Num.f(b[0]))
+		for pair: Array in outside.slice(0, Num.i(cfg["perch_fallback"])):
+			options.append(Num.i(pair[1]))
 	return options
 
 
@@ -303,8 +313,17 @@ func _fire(agent: Agent) -> void:
 	if sim.kaiju_pos.distance_to(agent.aim_at) <= reach:
 		var damage := sim.max_hp * Num.f(_rail()["share"])
 		sim.hp -= damage
+		# `share` of max health: the view fires the colour fringe on every one (D-145), though it
+		# is under the fringe's usual heavy-hit bar.
 		sim.events.append(
-			shot.merged({"damage": damage, "x": sim.kaiju_pos.x, "z": sim.kaiju_pos.y})
+			shot.merged(
+				{
+					"damage": damage,
+					"share": Num.f(_rail()["share"]),
+					"x": sim.kaiju_pos.x,
+					"z": sim.kaiju_pos.y
+				}
+			)
 		)
 	else:
 		sim.events.append(
@@ -319,11 +338,16 @@ func _muzzle(agent: Agent) -> Vector3:
 	return Vector3(agent.pos.x, agent.y, agent.pos.y)
 
 
+## What a kill pays: `rubble_share` of a tank's biomass in this city (D-152: about a tank's worth).
+func kill_pay() -> float:
+	return Num.f(sim.army["tank_rubble"]) * Num.f(cfg["rubble_share"]) * sim.stat("rubble_mult")
+
+
 ## Removes an agent (a collapsed perch, or swatted into a wall) and pays its biomass.
 func _kill(agent: Agent, kind: String, extra: Dictionary) -> void:
 	agents.erase(agent)
 	kills += 1
-	sim.rubble += Num.f(cfg["rubble"]) * sim.stat("rubble_mult")
+	sim.rubble += kill_pay()
 	var death := {"type": "agent_died", "agent": agent.id, "kind": kind}
 	sim.events.append(
 		death.merged({"x": agent.pos.x, "y": agent.y, "z": agent.pos.y}).merged(extra)

@@ -12,6 +12,7 @@ var cfg: Dictionary
 var frost_left := 0.0
 ## Grenades in the air: [seconds left, where it lands (x, z)].
 var grenades: Array[Array] = []
+var _dashes := 0  # dashes the kaiju had made when last looked at
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -48,9 +49,12 @@ func step(dt: float) -> void:
 			var at: Vector2 = grenade[1]
 			_land(at)
 	grenades = flying
+	var dash := sim.body.dash
+	var dashed := dash.dashes != _dashes or dash.on()  # a dash into a wall is over the same step
+	_dashes = dash.dashes
 	if frost_left <= 0.0:
 		return
-	if sim.body.dash.on():
+	if dashed:
 		_crack("dash")
 		return
 	frost_left -= dt
