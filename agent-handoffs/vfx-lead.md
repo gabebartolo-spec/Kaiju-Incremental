@@ -97,15 +97,12 @@ Touched suites on claude/heli-deaths (helideaths tentacles military powers), aut
 touched.log. When green: push claude/heli-deaths, report the sha to the lead (do NOT open the PR: over cap; body
 ready at scratchpad pr_heli.md). Stall watcher over the 3 helpers (re-arm after each wake).
 
-## Item 4 (collapse defect, BuildingView.lift_piece) — diagnosed in part, parked
-Defect (fire-spread clip v5 QC): (d) tilted falling block shows a see-through window lattice; (e) a neighbour's
-walls vanish into floor plates. capture_topple_faces.gd (one 24-floor office city, scripted chew, --solid=1 turns
-the fade off; scratchpad topple3/) shows: (d) = FallFade's screen-door on a falling piece that covers the kaiju
-(R 19.4 fade, by design; with fade off the piece is solid). Cut faces are NOT see-through: building_baked draws
-back faces at `inside` 0.12, so a cut reads as a dark hollow, not the carved slab colour (8a8780, D-101); possible
-fix = cap quads. A "+" lattice on the landed rubble was a helicopter rotor's shadow. (e) not reproduced (no
-neighbours in that city). Next: find the v5 clip frames (ask the lead) before choosing a fix. The chunks-inside-
-capture_topple_faces.gd (off the heli branch). Chunks-inside-body: sim-side, the lead took it.
+## Item 4 (collapse defect, BuildingView.lift_piece): diagnosed, brief scratchpad brief_item4.md
+Lead's v5 frames (fire_clip/v5f f_083-087; my crop scratchpad v5_lattice.png): a toppling piece is an open box.
+lift_piece reuses the whole building's shell (outside faces only) + slabs, masked per piece, so every side where it
+broke off has no face: you see floor slabs + dark back faces = the "lattice" (not FallFade; kaiju not behind it).
+Fix: bake the piece its own mesh from its cells, cut faces in carved slab colour 8a8780 (D-101). (e) not
+reproduced. Chunks-inside-body: sim-side, the lead's. Builder slot after the croc bugs.
 
 ## Rules learnt the hard way
 - A fresh worktree needs `git lfs pull`, the carve dll copied into native/bin (gitignored; newest build from a
