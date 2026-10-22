@@ -293,14 +293,15 @@ func _rake_one(stage: String, side: float) -> void:
 func _check_claw_trail() -> void:
 	var kaiju := _model("adult")
 	var rig := _rig_of(kaiju)
-	var lift := Num.f(Content.section("claw_fx")["lift_s"])
 	var strike := Num.f(Content.section("claw_fx")["strike_s"])
+	var lift := Num.f(Content.section("powers")["swipe_windup"]) - strike * 0.5  # BipedSwing's lift_s
 	var life := Num.f(Content.section("claw_fx")["trail_s"])
 	for i: int in 40:
 		_step(kaiju, rig)
 	var gait: ClipGait = rig.gait
 	var arc := gait.swing.claw_arc(1.0)
-	check(arc.get("trailed", false) == true, "trail: the arm draws its own streak")
+	var trailed: bool = arc.get("trailed", false)
+	check(trailed, "trail: the arm draws its own streak")
 	kaiju.tail_sweep(1.0, "claw_windup")
 	var first := -1
 	var last := -1
@@ -309,6 +310,7 @@ func _check_claw_trail() -> void:
 		if f == 18:
 			kaiju.tail_sweep(1.0, "claw")
 		_step(kaiju, rig)
+		await process_frame  # a freed mark leaves the tree
 		var marks := 0
 		for n: Node in root.get_children():
 			marks += 1 if n is MeshInstance3D else 0

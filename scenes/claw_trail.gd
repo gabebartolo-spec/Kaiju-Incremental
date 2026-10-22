@@ -27,7 +27,8 @@ func update(tip: Vector3, drawing: bool, dt: float) -> void:
 		var mat: StandardMaterial3D = mark["mat"]
 		mat.albedo_color.a = clampf(Num.f(mark["left"]) / Num.f(_cfg["trail_s"]), 0.0, 1.0)
 		if Num.f(mark["left"]) <= 0.0:
-			(mark["node"] as Node).queue_free()
+			var node: Node = mark["node"]
+			node.queue_free()
 			_marks.remove_at(i)
 	if drawing and _last.is_finite():
 		_lay(_last, tip)
