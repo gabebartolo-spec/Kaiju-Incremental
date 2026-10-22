@@ -1,136 +1,65 @@
-# Lead handoff, 2026-10-21 late (lead 10; CLI session 1df8b1cf, registered in ~/.claude/context-guard-leads/)
+# Lead handoff, 2026-10-23 (lead session "Status check"; auto-compacts, no hand-off, no self-archive)
 ## Successor: register (empty file named by your CLI session id in ~/.claude/context-guard-leads/), read this, then
-## GitHub (open PRs), then the notes folder below. Director's /goal: playable build with building carving first draft.
-## Plan = docs/ROADMAP.md "Post-demo plan" phases A-H; research picks "R n.m" -> docs/research/2026-10-21/ (01-24).
-## Comments: docs/roadmap/2026-10-21-director-comments.md (#1-#46 today; #45-46 minimal HUD, #33 neck approved).
+## GitHub (open PRs), then docs/ROADMAP.md (Playtest milestones D-146) and docs/DECISIONS.md D-139..D-147.
 
-## Director state: at the PC, often gaming. Clips/captures render on the LOCAL GPU always (RTX 4070 SUPER; off-screen
-## no_focus override.cfg, --windowed; two calls: write the override, then launch) until he says pause (~/.claude/focus-pause).
-## Up to 2 headless Godot per agent. Never a visible window or dialog. Subagents up to 8 (RULEBOOK Kaiju exception).
+## Director state and rules in force
+- Game renamed Kaiju Evolution (save folder kept). Three visual pillars, equal (DESIGN.md "Visual pillars"): beauty,
+  consistency (one look per effect), power fantasy ("Apex Predator, King of Monsters, Godkiller, Planetbreaker";
+  "our enemies are many, but they ultimately are our prey"). Bar: "I have to love it" (RULEBOOK critic-rounds line).
+- D-146: far fewer clips; NO per-change director gates. Lead merges green, critic-passed work. He playtests only at
+  milestones M1 feel pass, M2 Taskforce agents, M3 demo complete, M4 Itch RC: export an .exe to a fixed folder and
+  write that milestone's exhaustive survey THEN, not before ("dont make the surveys now").
+- VFX lead = second in command: Opus session "vfx-lead", local_46ccb461-4998-4550-a36d-66e715fcfb06 (worktree on
+  claude/vfx-lead, rebased to origin/claude/look-options). Owns every effect + its art QA; its SHIP is final for
+  effects; the lead only routes. NEVER let it idle. Its queue: (1) docs/VFX_STYLE.md + contact sheet, (2) verdicts on
+  the explosions rework and the title fire/Colossus (proof scratchpad/fc/fire_compare.png), (3) helicopter deaths
+  (D-140), (4) BuildingView.lift_piece collapse defect (scenes/building_view.gd ~204), (5) Taskforce effects,
+  (6) texture board (3 styles, walls+roofs first) then rollout, (7) graphics preview scene, (8) load-screen board (~20).
+- GPU always unless ~/.claude/focus-pause exists. Every Godot run under timeout. Stop only own PIDs.
+- Ask him a lot (AskUserQuestion), but never what DESIGN/DECISIONS already answer (night play = D-106 random time).
 
-## Notes folders
-- NEW (lead 10's agents): C:\Users\DANTE\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_df2c2989-951e-4b20-9998-9c23b0a37f42\
-  BRIEF-COMMON.md + RULES-NOW.md = shared rules; each agent writes <task>\handoff.md at milestones.
-- Nimbalyst mailbox: C:\Users\DANTE\Documents\Nimbalyst Tutorial\kaiju-mailbox\ (to-nimbalyst tasks, to-kaiju results).
+## Base and PRs
+- Base = origin/claude/look-options = main; squash-only; open PRs synced by merging the base.
+- GitHub helper subagent (ad7455760cd21c2b0) merges green PRs at exact head sha (--match-head-commit), cap 3 open.
+- Merged recently: #149 turn (57a1f7fc). #152 fire: CLEAN at b72f550d, held for the fire builder's next push
+  (breath cover 24 circles ~0.65 ms/breath accepted). D-144: tanks caught by the longer breath just die.
 
-## 2026-10-22 evening: STATE FOR THE SUCCESSOR (lead session "Status check"; leads auto-compact now, no hand-off, no self-archive: director 2026-10-22)
-- Base = origin/claude/look-options = main; squash-only repo: the base moves on every merge. Old branches are rebuilt
-  as own commits cherry-picked onto the newest tip; an OPEN PR is synced by MERGING the base (never rebase/force-push).
-  Builder rules file: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/WAVE1-COMMON.md (copy it before this scratchpad goes; it holds the rules + rulings).
-- Merged today: #147 crowds 6x, #148 fade/light scans 4-6x, #151 audit-shared (ae9ac939), #150 camera A (6cffe067, director approved).
-- Open PRs (cap 3): #149 turn (last-round fixes + flow-suite red: BODY_TURN_MAX change broke 'shows deflect'; builder
-  told to fix code not test; lead QCs, then director feel gate). #152 fire (claude/fire-spread; a fresh Sonnet builder
-  finishes clip item (c) from agent-handoffs/fire-spread.md, then lead QC, then director look). #153 city-memory
-  (landmark unload, no pop-in; landmark_keep_m 150 = lead call; full suite green).
-- Waiting for a PR slot: claude/audit-sim c839b111 on OLD base 95f01083: rebuild on the tip first (city code moved in
-  #151), then a sim-review reader (scanner gap: complexity_ratchet.py misreads multi-line signatures: a follow-up).
-- Subagents running at 18:30 (die with this session; resume from worktree + handoff): city-memory (full suite, then
-  push claude/city-memory-v2), clumsy-army (damage probes, then suite + clip), camera, turn, explosions
-  (claude/city-explosives-v2, suites), ui-art (REDO as bold flat 2D SVG icons per director, yellow band <= 6 px, icon
-  >= 80% of ring; 3D renders rejected: "those icons look horrible"), drift-audit reader (scratchpad/drift_audit.md:
-  content an agent added without a decision -> one director question per item).
-- PARKED by director: perf-tiles (claude/perf-tiles f570ba2e, "Park it": 37-168 px/4K frame differ, no speed gain shown).
-- D-135: 3 growth steps, one per croc body; the agent-invented Apex Titan step is cut (evolve3, 4th city/army/air row;
-  top skills + bomber move to the adult city). Not started: a growth builder, after the drift audit.
-- Monitoring (director #73): ~/.claude/tools/stall_watch.sh label=transcript=worktree per helper, re-arm after each flag
-  (args in scratchpad/watch_args.txt); every Godot run under timeout (2 hangs today on script errors).
-- Wave 2 not started: intro (claude/intro-cinematic), rubble (Opus; claude/rubble-break), dash (claude/dash-burst),
-  UI (claude/ui-redesign; first-run controls card goes per #46). Then sky and sea life (#64-66), trains (#69), bonus
-  buildings (#70), dogs escape (#68), birds scatter (#71), landmark stable (D-133).
-- Director rulings 2026-10-22: comments #55-75, D-132 (Itch 1.0 demo invite-only, when reptilian stage 100%), D-133
-  (landmark stable ~12, 3/stage by seed; 8 new; Tripo models made carvable), D-134 (Tripo 9000 today), #60 all
-  CPU/GPU/screen/Godot slots ours. RULE: helpers on Sonnet unless complex. PC piloting allowed.
-- Tripo: icons modelled (six-view PASS): ~/Downloads/kaiju_tripo/hud_croc_head_c9b2b460.glb, hud_dash_foot_ab9504ce.glb
-  (130 cr; balance 18985 = 8870 of today's budget left; privacy "Sharing Only"). Landmark concept refs: 32 free images,
-  board C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/landmarks/landmark_refs_board.png (copy also ~/Downloads/landmark_refs_board.png). Lead flags: B1/B3/B4 near-copy
-  Sydney Opera House (B2 original), H3 cropped, E4 plinth, D3 "DINER" text, coaster track thin. A fresh critic is
-  reviewed it: FIX. Clean: A3/A4 (tower only, drop cables), C1/C2/C4, D4, E1/E2/E3, F1/F3, G1, H1/H2/H4. Regenerate B (original,
-  not Sydney), A (whole tower in frame), F (no planes: they fly in later); all prompts: no plinth/water/ship/text/flags/
-  vehicles, whole structure in frame. Then ONE board to the director (pick one per row), then HD models (65 cr each).
-- Process notes: worktrees removed today: 9 merged + perf-crowds + perf-scans (leftovers in
-  Kaiju-Incremental-wt/_leftovers-2026-10-22); ca2-base (clumsy-army temp) still to remove. Downloads: Tripo/browser
-  saves may sit as complete .tmp files (GLB header length = size) when the Save dialog is behind textinputhost.
-  rule-check.py returned no answers (0/14): the Sonnet rule is recorded but not proven.
+## Builders (subagents; transcript = .../b2b0bc5b.../subagents/agent-<id>.jsonl; watcher args scratchpad/watch_args.txt)
+- ui (aae3577c954b0b7d8, claude/ui-redesign): title per his mockup (menu left column, one wide New Kaiju, logo above),
+  baked Colossus silhouette + faint red eye, game fire from windows, water shiver on footfall, boot 13 s -> ~5 s.
+  Now: flow + ui suites, stills, push, ready PR -> VFX lead review. Row ~36% width vs mockup 34%.
+- three-steps (a4e343e24c232918d): D-135 three growth steps. Baseline pacing for old 4 steps 3.30 h; demo target
+  90+ min (D-145): flag if far off. Adolescent city held at 80 (RiverQuay crate rule). Then sim-review packet, PR.
+- explosions (a681216347970b2b1): fireball rework using the game fire (r7 opaque cubes rejected) -> VFX lead -> PR;
+  then Taskforce PR 1 sim core (commit 01f80b9d; plan Kaiju-Incremental-wt/post-fx/agent-handoffs/taskforce-plan.md,
+  questions answered by D-143/D-145).
+- turn (a49f6845ba127d3bb, claude/director-cleanup): Thunder Beam rename (one data string), cut breath camera swing,
+  remove BRANCH/CAPSTONE labels, cut "AIR FORCE GROUNDS ALL HELICOPTERS", roars on ultimate + dash with cooldown.
+- post-fx (a2793c08ae17ca604): vignette + impact fringe (railgun_hit event fires fringe; red pulse <25% hp thin band;
+  clip passed, goes to M1). Then claude/time-of-day (random per run, never twice in a row, options toggle) suites,
+  4K options-row still for the screen critic, PR.
+- army (a93ebc729b932307f, claude/clumsy-army-v2): full suite, PR + sim-review packet.
+- fire (ab3379115fcf064da): #152 push.
 
-## Ruled follow-ups, not started (each brief names its ROADMAP item + decision, per the rulebook)
-- D-137 Anti Kaiju Taskforce BEFORE the demo: from the adolescent city; agents with jetpacks grapple onto buildings
-  only; frost grenades slow the kaiju; railguns charge visibly then hit hard. Ask him visuals (agent look board) first.
-- D-135 growth rework (+ #100: three cities ~15% wider: 96/160/290 m, perf-check the adult city; drop tier-4 test rows,
-  e.g. military tier 4 seed 1): drop evolve3 and every 4th row (growth.stages, city.districts, rooftop tables); ultimates
-  r_beam/i_brood/c_ink move off evolve3; jets/bomber into the adult city; re-split the tree rings over 3 steps.
-- D-136 code: cut the breath camera swing; rename "Atomic" to Lightning/Thunder (D-112: species.json, r_beam,
-  stat_text); remove BRANCH/CAPSTONE labels from the tree (copy rule). Headlines: cut "AIR FORCE GROUNDS ALL HELICOPTERS" (keep the other 8).
-- Narrative (#76) after the demo: briefing cards before each city/after each evolve + optional bonus goals per city.
-- Drift audit table: scratchpad drift_audit.md (copy before this scratchpad goes).
-- Icons SETTLED (#96): keep today's icons; ring 19.25, band 3.0, OUTLINE 1.0, icons fill the disc, mipmaps on (ui builder,
-  claude/ui-redesign). claude/ui-art (game-icons.net set) is PARKED, not merged.
-- Fire PR #152: critic FIX sent (collapse is a one-frame swap, roof fire too small: use burn_chunk emitter, clip
-  framing, measured timings); last round, lead QCs.
-- Helicopter deaths (#86): mix of mid-air blow-up and smoking spiral crash; the crash smashes what it hits, can light
-  fire, pays biomass (sim change + sim review). Not started.
-- Textures (#80/#87, before demo): 16 flat types (roads, lawn, water, bridges, expressway, sky, rooftops, leaves,
-  lamps, cars, people, gondolas); scratchpad texture_audit/REPORT.md + BOARD_worst_flat.png (copy before cleanup).
-- Title screen (#85/#88, ui builder on claude/ui-redesign): stripes both sides, no CIVIL DEFENCE ALERT, no tagline,
-  game renamed Kaiju Evolution (save folder kept), live dusk city background. Headers (no triangle) PASSED + shipped.
-- Shared collapse view defect (fire QC d/e): a toppling piece swaps to a window lattice on edge, then a slab; walls
-  vanish in one frame (BuildingView.lift_piece, scenes/building_view.gd:204). Confirm on a plain smash, then fix.
-- Graphics preview (#90, FOR THE DEMO): a live view in the options menu that updates as each graphics option changes,
-  with its frame rate. Not started.
-- Sounds (D-138): original SFX on ElevenLabs (lead generates via MCP; builders write specs) when no CLEARED sound exists;
-  the title ambience builder will list needed sounds (sirens likely).
-- Load-screen art (#92, FOR THE DEMO): ~12 staged 4K shots (inside the stadium, above the tallest tower, ...) on one
-  board for his pick; full screen behind INCOMING + meter on a dark band. Icons: ui-redesign also needs mipmaps on
-  in assets/ui/icons/*.png.import (ui-art handoff).
-- Worktrees: 18 left (all live); 18 old ones backed up to backup/<name> branches. ui-art-hud scratch remove was
-  DENIED by permissions (force remove): ask him, never retry around it.
-
-- PAUSED 2026-10-22 ~20:30 (director watching a movie: 'complete current tasks but find a comfortable place to pause').
-  Builders told: finish in-flight step, push, handoff, no new GPU renders, stop. On resume:
-  * FIRST on resume: start the GitHub helper (director yes, 2026-10-22): Sonnet, own worktree; merges green PRs
-    (--match-head-commit), queue order within cap 3, syncs PRs by merging base, mechanical conflicts only, CI triage
-    as one exact report to the author, prunes merged worktrees; never logic fixes, tests, or builder worktrees.
-  * Fire #152: longer baby breath = species.json reptilian ability_range 11.0 -> 14.5 (baby 5.9 -> 7.8 m vs rake 7.0),
-    committed LOCAL 87a6b19b, NOT pushed: city_breath_trees (stage 1 seed 98765, 1 stray tree) and military standoff
-    (57% vs 95%) go red. Lead call: diagnose both (does a test hard-code the old reach? derive it from data; does
-    autoplay change path?), fix code or the stale number, never loosen a bar. Clip v10 (claws on) in scratchpad fire_clip10.
-  * #153 pushed 39f61c90 (CI not yet seen): headless first-build on main thread (flow race), streamview drives its
-    own clock at stages 2-3, landmark_keep_m 150 -> 80 (lead accepts; recheck after cities grow 15%). Retarget
-    tools/capture/stage4_memory.gd to the adult city. GitHub helper merges when green.
-  * #149 turn pushed 01aae055: smooth yaw bell (max rate step 19% of peak, bar 25%), capture-rig ease, 8-frame walk-off
-    ramp, gdformat + flow fixed. LEAD CHECK: it loosened StepTurn's slice bar (80% of yaw within 0.24 s, was 0.15 s) to
-    fit the ease: confirm that's the critic's ease, not a hidden regression. Re-render clip3 (stale), lead QC, then the
-    director feel gate. Full suite not run on this tip. CI gdlint red at 01aae055: a .gd file is 402 lines (cap 400): split it.
-  * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
-    tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
-  * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
-    inaudible on TV (add 80-200 Hz body + 1-3 kHz crack, -22..-18 dBFS in 60-250 Hz); sirens/screams/gunfire missing
-    (-35..-30 dBFS); no flashes/explosions in 6 s (add 1-2 warm 150-300 ms flashes off the menu). Night look PASS.
-- LIVE STATE 20:00: title screen (ui builder a6c2, claude/ui-redesign f1f55e0f): night view across the river, burning
-  district, no kaiju, smoke off-centre, fix 2 clipped letters; ambience crowd_panic + rifle_far + siren_far (ElevenLabs
-  take A, lead scratchpad sfx_siren/) + in-engine stomp like a T-rex footfall (quality ref only: deep sub boom, ~3 s
-  apart, stomp_1 pitched down + sine sub); then plate-style buttons board (#97), then HUD ring (#96).
-  Army (a93e, claude/clumsy-army-v2 1cc83558): clip FIX sent; its stray commands ran in the lead's worktree (fixed, restored). Fire #152 (ab33): baby breath > rake (#94), full suite running.
-  #153 (ab85): flow staged-start stall + streamview stage-4 margin on CI; fixing.
-## PR queue after QC (max 3 open): #144 turn-weight, emerge-shore, camera-growth, intro-cinematic, rubble-break,
-## city-explosives, croc-neck, dash-burst, ui-redesign, city-memory, clumsy-army; capture-native (no speed-up: keep?).
-## Audit P4 (scene refactors, pixel-identical) after the croc batch merges. No octopus/insect work until croc ships (D-124).
-## After the batch: fire visuals (R 26.5, D-126), then water (R 21; Nym's 013 code map).
-
-## NEXT
-1. QC each clip as it lands (2x crops yourself, then a fresh critic; only SHIP reaches him, one decision each).
-2. Director questions pending: first-run controls card; stages 2-3 far-box look stills once the camera-led stream exists.
-3. Merge passing branches in queue order; Build 5 after the batch.
-
-## Findings
-- Seed-sensitive checks (swipe topple, tank standoff, tank crab, growth lots, military retreat 21/24) flip with branch
-  changes to city or walk: probe the unit, fix the behaviour or re-pin the fixture, never the threshold.
-- A dark patch inside a silhouette may be negative space between parts (jaw vs forearm), not a seam: trace its border.
-- Release smoke must run from the repo root (relative --script path).
+## Ruled, not started (each brief names ROADMAP item + decision)
+- Taskforce (D-137/139/141/143/145): agents, frost, railgun, gas soldiers, mechs, gunships, all before the demo.
+- Demo (D-145): all three cities, 90+ min, thanks screen with stats + feedback link, pause-menu feedback, fresh start.
+- Post effects SSR after the demo (D-142). Threat Dossier after the demo (D-147). Narrative cards after demo (#76).
+- Boot cut further (engine+autoloads 7.8 s) queued after the ui PR.
 
 ## Tools
-- Lead docs worktree Kaiju-Incremental-wt/lead-docs (detached; git pull --ff-only first; python edits newline='';
-  commit docs [skip ci], push HEAD:claude/look-options). DECISIONS.md cap 400 lines (roll to docs/archive/).
-- ffmpeg: python -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())".
+- Stall watcher: SKIP_PIDS="..." bash ~/.claude/tools/stall_watch.sh $(cat scratchpad/watch_args.txt), background;
+  re-arm after each flag; it also flags bash "until" loops older than 90 min (staleloop).
+- Lead docs worktree Kaiju-Incremental-wt/lead-docs (detached at origin/claude/look-options; python edits newline='';
+  commit [skip ci]; push HEAD:claude/look-options; rebase on non-fast-forward). DECISIONS.md cap 400 lines
+  (scratchpad add_d1xx.py rolls oldest to docs/archive/decisions_2026-10.md).
+- ffmpeg: C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe
 - Native dll for local runs: copy Kaiju-Incremental-wt/carve-play/native/bin/*.dll into native/bin/.
 
-Lead = "Kaiju: LEAD 10". Owns QA gates, merges, DECISIONS/STATUS, director questions, this file. playbook: nothing new.
+## Findings
+- Seed-sensitive checks flip with city/walk changes: probe the unit, fix behaviour or re-pin, never the threshold;
+  but after a design change, first ask whether the check still fits the fiction (D-144).
+- Compare a new effect side by side with the existing one of its kind before passing it (explosions r7).
+- Release smoke runs from the repo root.
+
+Lead = "Kaiju: LEAD 10". Owns routing, merges, DECISIONS/DESIGN/STATUS, director questions, milestones, this file.
