@@ -6,8 +6,10 @@ extends Node3D
 ## off the roof and gas hisses while the fuse burns. explosion: a white core, a fireball of
 ## glowing voxels, both out of the site's own box; a ring of voxel chunks and dust racing out
 ## along the street (BlastShock); the site blowing apart top first, its pieces thrown out and up
-## (BlastBreak); a flash of real light and lit smoke cubes (no city fire: its soft smoke column
-## sheeted over the facades, motion critic round 5). The screen flashes white for a few frames
+## (BlastBreak); a flash of real light, and the game's own Fire left burning for a few seconds
+## with its own smoke (director 2026-10-22: the fireball must match the fire used everywhere else,
+## "consistency is absolutely key"; the flames, ember shader, colours and smoke are Fire's). The
+## screen flashes white for a few frames
 ## (BlastFlash) and the camera takes one kick, away from the blast and decaying over a few frames
 ## (jitter), no shaking back and forth and no hit-stop (clip critic round 6); the blast is heard
 ## as one crack (at any distance) with a body and rumble under it, and the sonic boom arriving
@@ -60,7 +62,6 @@ func _ready() -> void:
 	var under := Vector3(0, -60, 0)
 	BlastParts.fireball(self, under, Vector3.ONE, 1.0, _c("fireball"))
 	BlastParts.core(self, under, Vector3.ONE, 1.0, _c("core"))
-	BlastParts.smoke(self, under, 1.0, _c("smoke"))
 	BlastShock.ground(self, under, 1.0, _c("shock"))
 	BlastParts.firework(self, under, Color.WHITE, _c("fireworks"))
 	BlastParts.toxic_cloud(self, under, Vector3.ONE, 1.0, 0.2, _c("cloud"))
@@ -186,7 +187,8 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	var reach := BlastShock.reach(maxf(half.x, half.z) * 2.0, radius, _c("shock"))
 	BlastShock.ground(self, at, reach, _c("shock"))
 	_city.blast_break.blew(at, reach)
-	BlastParts.smoke(self, high, radius, _c("smoke"))
+	var burn: Dictionary = _c("fire")  # what is left burning is the game's own Fire, with its smoke
+	_city.fire(Vector3(at.x, 0.0, at.z), Num.f(burn["size"]) * radius / 5.0, Num.f(burn["seconds"]))
 	var tint := Color(str(_c("flash")["chem_color" if kind == "chem_lab" else "color"]))
 	_flash(high, tint, Num.f(_c("flash")["energy"]) * radius / 5.0)
 	BlastFlash.screen(self, radius, _c("screen_flash"))
