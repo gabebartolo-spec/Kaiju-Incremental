@@ -89,6 +89,10 @@
   * FIRST on resume: start the GitHub helper (director yes, 2026-10-22): Sonnet, own worktree; merges green PRs
     (--match-head-commit), queue order within cap 3, syncs PRs by merging base, mechanical conflicts only, CI triage
     as one exact report to the author, prunes merged worktrees; never logic fixes, tests, or builder worktrees.
+  * Fire #152: longer baby breath = species.json reptilian ability_range 11.0 -> 14.5 (baby 5.9 -> 7.8 m vs rake 7.0),
+    committed LOCAL 87a6b19b, NOT pushed: city_breath_trees (stage 1 seed 98765, 1 stray tree) and military standoff
+    (57% vs 95%) go red. Lead call: diagnose both (does a test hard-code the old reach? derive it from data; does
+    autoplay change path?), fix code or the stale number, never loosen a bar. Clip v10 (claws on) in scratchpad fire_clip10.
   * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
     tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
   * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
