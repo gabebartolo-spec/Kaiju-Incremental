@@ -43,27 +43,7 @@ func face_mask(cell: Vector3i) -> int:
 ## Cell -> the faces (one bit per BuildingMesher.NEIGHBOURS entry) that meet outside air: air
 ## reached by a flood from the edge of the cells' box (one cell of margin), never the ground.
 static func open_faces(cells: Dictionary) -> Dictionary:
-	var lo := Vector3i(1 << 20, 1 << 20, 1 << 20)
-	var hi := -lo
-	for c: Vector3i in cells:
-		lo = lo.min(c)
-		hi = hi.max(c)
-	lo -= Vector3i.ONE
-	hi += Vector3i.ONE
-	lo.y = maxi(lo.y, 0)
-	var air := {}
-	var todo: Array[Vector3i] = [lo]
-	air[lo] = true
-	while not todo.is_empty():
-		var c: Vector3i = todo.pop_back()
-		for d: Vector3i in BuildingMesher.NEIGHBOURS:
-			var n := c + d
-			if n.x < lo.x or n.y < lo.y or n.z < lo.z or n.x > hi.x or n.y > hi.y or n.z > hi.z:
-				continue
-			if air.has(n) or cells.has(n):
-				continue
-			air[n] = true
-			todo.append(n)
+	var air := _outside_air(cells)
 	var out := {}
 	for c: Vector3i in cells:
 		var mask := 0
@@ -73,3 +53,26 @@ static func open_faces(cells: Dictionary) -> Dictionary:
 		if mask != 0:
 			out[c] = mask
 	return out
+
+
+## The air cells (a set) a flood reaches from the corner of the cells' box plus one cell of margin.
+static func _outside_air(cells: Dictionary) -> Dictionary:
+	var lo := Vector3i(1 << 20, 1 << 20, 1 << 20)
+	var hi := -lo
+	for c: Vector3i in cells:
+		lo = lo.min(c)
+		hi = hi.max(c)
+	lo -= Vector3i.ONE
+	hi += Vector3i.ONE
+	lo.y = maxi(lo.y, 0)
+	var air := {lo: true}
+	var todo: Array[Vector3i] = [lo]
+	while not todo.is_empty():
+		var c: Vector3i = todo.pop_back()
+		for d: Vector3i in BuildingMesher.NEIGHBOURS:
+			var n := c + d
+			if n.clamp(lo, hi) != n or air.has(n) or cells.has(n):
+				continue
+			air[n] = true
+			todo.append(n)
+	return air

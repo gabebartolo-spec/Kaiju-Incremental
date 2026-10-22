@@ -184,23 +184,12 @@ func _add_overlays() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var signature := Input.is_action_just_pressed("signature")
-	var held := Input.is_action_pressed("signature")
-	var ultimate := Input.is_action_just_pressed("ultimate")
-	var dash := Input.is_action_just_pressed("dash")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
-		var input: Dictionary = scripted.call(sim)
-		dash = input.get("dash", false)
-		move = input.get("move", Vector2.ZERO)
-		signature = input.get("signature", false)
-		held = input.get("held", false)
-		ultimate = input.get("ultimate", false)
-	elif _autoplay:
-		move = _walk.move(sim, _steps)
-		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		ultimate = autoplay_signature
+	var input := _read_input()
+	var move: Vector2 = input["move"]
+	var signature: bool = input["signature"]
+	var held: bool = input["held"]
+	var ultimate: bool = input["ultimate"]
+	var dash: bool = input["dash"]
 	# The sim ignores input while it rises from the river: a tap before the handover is kept.
 	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
 	var holding := _blasts.hold(delta)  # a blast's hit-stop: this step is skipped, taps kept
@@ -219,12 +208,34 @@ func _physics_process(delta: float) -> void:
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
+		_blasts.on_event(event, _kaiju_at)
 		_note_cost(str(event["type"]), t1)
 	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
 	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
 	_hud.refresh()
+
+
+## The player's input this step: the keys, or a capture's script, or the autoplay's walk.
+func _read_input() -> Dictionary:
+	var input := {
+		"move": Input.get_vector("move_left", "move_right", "move_up", "move_down"),
+		"signature": Input.is_action_just_pressed("signature"),
+		"held": Input.is_action_pressed("signature"),
+		"ultimate": Input.is_action_just_pressed("ultimate"),
+		"dash": Input.is_action_just_pressed("dash"),
+	}
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
+		var given: Dictionary = scripted.call(sim)
+		for key: String in input:
+			input[key] = given.get(key, Vector2.ZERO if key == "move" else false)
+	elif _autoplay:
+		input["move"] = _walk.move(sim, _steps)
+		input["signature"] = autoplay_signature and sim.ability_ready_in <= 0.0
+		input["held"] = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
+		input["ultimate"] = autoplay_signature
+	return input
 
 
 func _process(delta: float) -> void:
@@ -284,8 +295,7 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
-			if not _blasts.on_event(event, _kaiju_at):
-				_powers.on_event(event, _kaiju_at)
+			_powers.on_event(event, _kaiju_at)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

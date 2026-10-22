@@ -17,3 +17,9 @@ func next(node: Node, counts: bool = true) -> bool:
 		overlay.advance()
 	await node.get_tree().process_frame
 	return node.is_inside_tree()
+
+
+## The build is done: the loading screen goes.
+func finish() -> void:
+	if overlay != null:
+		overlay.queue_free()

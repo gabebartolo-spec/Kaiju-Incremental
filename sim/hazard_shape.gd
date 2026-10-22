@@ -70,17 +70,13 @@ static func _stripe(cell: Vector3i, along: int) -> String:
 
 static func _silo(out: Dictionary, size: Vector3i, res: int) -> void:
 	_box(out, Vector3i(0, 0, 0), Vector3i(size.x - 1, 0, size.z - 1), "hz_pad")
-	var long_x := size.x >= size.z
 	var short := mini(size.x, size.z)
 	var count := clampi(maxi(size.x, size.z) / short, 1, 3)
 	var r := short * 0.5 - 0.5
 	var top := size.y - 1 - int(maxf(2.0, r * DOME))
 	var upper := top - BAND >= res + BAND + 6  # room for a second band near the top
 	for k: int in count:
-		var t := (k + 0.5) / count
-		var centre := (
-			Vector2(size.x * t, size.z * 0.5) if long_x else Vector2(size.x * 0.5, size.z * t)
-		)
+		var centre := _silo_centre(size, (k + 0.5) / count)
 		var paint := func(cell: Vector3i, angle: float) -> String:
 			var along := roundi(angle * r)
 			if absf(angle - PI * 0.5) * r < 1.5:  # a ladder up the street side
@@ -96,14 +92,25 @@ static func _silo(out: Dictionary, size: Vector3i, res: int) -> void:
 		_tank(out, centre, r, 1, top, paint, "hz_steel")
 		var crown := Vector3i(floori(centre.x), size.y - 1, floori(centre.y))
 		_box(out, crown, crown + Vector3i(0, 1, 0), "hz_lamp")
-	if count > 1:  # the pipe that joins them, on low trestles
-		var y := res / 2
-		var a := Vector3i(roundi(size.x * 0.5 / count), y, size.z >> 1)
-		var c := Vector3i(size.x - 1 - roundi(size.x * 0.5 / count), y, size.z >> 1)
-		if not long_x:
-			a = Vector3i(size.x >> 1, y, roundi(size.z * 0.5 / count))
-			c = Vector3i(size.x >> 1, y, size.z - 1 - roundi(size.z * 0.5 / count))
-		_box(out, a, c, "pipe")
+	if count > 1:
+		_silo_pipe(out, size, count, res / 2)
+
+
+## Where a silo tank stands: `t` (0..1) of the way along the long side, mid-way across.
+static func _silo_centre(size: Vector3i, t: float) -> Vector2:
+	if size.x >= size.z:
+		return Vector2(size.x * t, size.z * 0.5)
+	return Vector2(size.x * 0.5, size.z * t)
+
+
+## The pipe that joins a silo's tanks, on low trestles at height y.
+static func _silo_pipe(out: Dictionary, size: Vector3i, count: int, y: int) -> void:
+	var a := Vector3i(roundi(size.x * 0.5 / count), y, size.z >> 1)
+	var c := Vector3i(size.x - 1 - roundi(size.x * 0.5 / count), y, size.z >> 1)
+	if size.x < size.z:
+		a = Vector3i(size.x >> 1, y, roundi(size.z * 0.5 / count))
+		c = Vector3i(size.x >> 1, y, size.z - 1 - roundi(size.z * 0.5 / count))
+	_box(out, a, c, "pipe")
 
 
 static func _fireworks(out: Dictionary, size: Vector3i, res: int) -> void:
@@ -120,8 +127,13 @@ static func _fireworks(out: Dictionary, size: Vector3i, res: int) -> void:
 					out[Vector3i(x, y, z)] = "hz_brick"
 	for x: int in range(2, size.x - 2, 6):  # loading doors onto the yard
 		_box(out, Vector3i(x, 1, lo.z), Vector3i(mini(x + 3, size.x - 3), 5, lo.z), "frame")
-	# The sign on the roof: a blue board in a dark frame, starbursts in the four neon colours on
-	# both faces.
+	_fireworks_sign(out, size, yard)
+	_fireworks_crates(out, size, yard)
+
+
+## The sign on the roof: a blue board in a dark frame, starbursts in the four neon colours on both
+## faces.
+static func _fireworks_sign(out: Dictionary, size: Vector3i, yard: int) -> void:
 	var sign_y := size.y
 	var z0 := yard + 2
 	_box(out, Vector3i(1, sign_y, z0), Vector3i(size.x - 2, sign_y + 8, z0), "sign_frame")
@@ -136,7 +148,10 @@ static func _fireworks(out: Dictionary, size: Vector3i, res: int) -> void:
 				Vector3i(-2, 2, 0), Vector3i(2, 2, 0), Vector3i(-2, -2, 0), Vector3i(2, -2, 0)
 			]:
 				out[c + corner] = key
-	# Crates stacked in the yard, two high, in bright fireworks colours with a dark band.
+
+
+## Crates stacked in the yard, two high, in bright fireworks colours with a dark band.
+static func _fireworks_crates(out: Dictionary, size: Vector3i, yard: int) -> void:
 	var colours: Array[String] = ["hz_red", "hz_blue", "hz_yellow", "hz_green"]
 	var n := 0
 	for x: int in range(0, size.x - 3, 5):
@@ -150,6 +165,14 @@ static func _fireworks(out: Dictionary, size: Vector3i, res: int) -> void:
 
 
 static func _chem_lab(out: Dictionary, size: Vector3i, res: int) -> void:
+	_chem_walls(out, size, res)
+	_chem_parapet(out, size)
+	_chem_roof(out, size)
+
+
+## White walls with a glowing band on each floor above the first, a white roof, a hazard-striped
+## parapet.
+static func _chem_walls(out: Dictionary, size: Vector3i, res: int) -> void:
 	var hi := size - Vector3i.ONE
 	for x: int in size.x:
 		for z: int in size.z:
@@ -160,12 +183,19 @@ static func _chem_lab(out: Dictionary, size: Vector3i, res: int) -> void:
 				elif wall:
 					var band := posmod(y, res) >= 3 and posmod(y, res) <= 5 and y >= res
 					out[Vector3i(x, y, z)] = "hz_glow" if band else "hz_white"
+
+
+static func _chem_parapet(out: Dictionary, size: Vector3i) -> void:
+	var hi := size - Vector3i.ONE
 	for x: int in size.x:  # a hazard-striped parapet
 		for z: int in size.z:
 			if x == 0 or z == 0 or x == hi.x or z == hi.z:
 				var cell := Vector3i(x, size.y, z)
 				out[cell] = _stripe(cell, x + z)
-	# Green tanks on the roof, banded white, and a blue drum stack beside them.
+
+
+## Green tanks on the roof, banded white, and a blue drum stack beside them.
+static func _chem_roof(out: Dictionary, size: Vector3i) -> void:
 	var r := clampf(mini(size.x, size.z) * 0.18, 2.5, 5.0)
 	var paint := func(cell: Vector3i, _angle: float) -> String:
 		return "hz_white" if posmod(cell.y - size.y, 5) == 0 else "hz_glow"
