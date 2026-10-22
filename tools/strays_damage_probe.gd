@@ -3,7 +3,7 @@ extends SceneTree
 ## kaiju must stay within 5% of the base behaviour (every shell hits). The kaiju walks one
 ## scripted loop of waypoints (no autoplay, so a stray that breaks a building cannot change where
 ## it goes), with the same city, tanks and seeds in both modes:
-##   base:   army.miss.hit_near = hit_far = 1.0 (every shell hits for its full damage, as before)
+##   base:   army.miss hit_near = hit_far = hit_mult = 1.0 (every shell hits for full damage)
 ##   strays: data/tuning.json as it stands (a hit chance that falls with range, misses land beside)
 ## Helicopters are off in both modes (air.max 0): strays change how much of the city falls, which
 ## would call them in at different times and swamp the tanks' and squads' damage this checks.
@@ -91,6 +91,7 @@ func _rampage(seed_id: int, mode: String) -> Dictionary:
 	if mode == "base":
 		miss["hit_near"] = 1.0
 		miss["hit_far"] = 1.0
+		miss["hit_mult"] = 1.0
 	var air_cfg: Dictionary = tuning["air"]
 	air_cfg["max"] = 0
 	var layout := CityGrowth.layout(Content.tuning(), _tier, Seeds.make("city", seed_id))

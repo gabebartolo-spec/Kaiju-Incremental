@@ -6,7 +6,7 @@ extends SceneTree
 ## miss (frame, where it landed) and the totals at the end. Pair with --write-movie for the clip.
 ##
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 --write-movie <out.avi> \
-##     --script tools/capture/capture_strays.gd -- --seconds=40 [--seed=0] [--walk=3]
+##     --script tools/capture/capture_strays.gd -- --seconds=40 [--seed=0] [--walk=3] [--closer=0.6]
 
 const LEVELS := {"evolve1": 1}  # the stage-2 body: the military suite's tier 2
 const TIER := 2
@@ -14,6 +14,7 @@ const TIER := 2
 var _seconds := 40.0
 var _seed := 0
 var _walk := 3.0  # seconds it walks in from the river before it stands
+var _closer := 0.6  # the camera's rest offset x this (the game's is 1.0): tanks and impacts read
 var _frame := 0
 var _walked := 0.0
 
@@ -26,6 +27,8 @@ func _initialize() -> void:
 			_seed = int(arg.substr(7))
 		elif arg.begins_with("--walk="):
 			_walk = float(arg.substr(7))
+		elif arg.begins_with("--closer="):
+			_closer = float(arg.substr(9))
 	_run.call_deferred()
 
 
@@ -40,6 +43,10 @@ func _run() -> void:
 	rampage.scripted = _input
 	root.add_child(rampage)
 	await physics_frame
+	rampage.camera_rest = rampage.camera_rest * _closer
+	var aim := rampage.get_node_or_null("BreathAim")  # the breath-aim wedge is not part of this shot
+	if aim != null:
+		aim.queue_free()
 	var shots := 0
 	var misses := 0
 	var frames := roundi(_seconds * Engine.physics_ticks_per_second)
@@ -56,12 +63,18 @@ func _run() -> void:
 			print("HP frame %d %.2f -> %.2f events %s" % [i, hp, rampage.sim.hp, kinds])
 		hp = rampage.sim.hp
 		var cells := 0
+		var landed := false
 		for e: Dictionary in rampage.sim.events:
 			if str(e["type"]) == "chunks_broken":
 				var broken: Array = e["cells"]
 				cells += broken.size()
-		if cells > 0:
-			print("CHUNKS frame %d broke %d chunks" % [i, cells])
+			elif str(e["type"]) == "cells_carved":
+				var removed: PackedInt32Array = e["index"]
+				cells += removed.size()
+			elif str(e["type"]) == "stray_landed":
+				landed = true
+		if cells > 0 or landed:
+			print("CHUNKS frame %d stray_landed %s broke %d chunks" % [i, landed, cells])
 		for e: Dictionary in rampage.sim.events:
 			if str(e["type"]) != "tank_fired" or (e.has("at") and not e.get("miss", false)):
 				continue

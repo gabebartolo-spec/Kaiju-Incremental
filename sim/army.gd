@@ -88,13 +88,15 @@ func step(dt: float) -> void:
 		clear_dead()
 
 
-## One shell at the kaiju: a hit (StrayShell.chance) does the shot's damage over that chance; a
+## One shell at the kaiju: a hit (StrayShell.chance) does the shot's damage over that chance (x
+## miss.hit_mult, the margin that keeps the army's damage within 5% of every shell hitting); a
 ## miss lands in the city past the kaiju and breaks what it hits there.
 func shoot(tank: RampageSim.Tank, dist: float, reach: float) -> void:
 	var odds := StrayShell.chance(cfg, dist, reach)
 	if _aim.randf() < odds:
 		var hurt := Num.f(cfg["tank_damage"]) - sim.stat("armor")
-		sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt) / odds
+		var miss: Dictionary = cfg["miss"]
+		sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt) / odds * Num.f(miss["hit_mult"])
 		sim.events.append({"type": "tank_fired", "tank": tank.id})
 		return
 	misses += 1
