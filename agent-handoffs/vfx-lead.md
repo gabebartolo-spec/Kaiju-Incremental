@@ -97,9 +97,9 @@ GitHub helper opens PRs. Thunder sound = the lead's.
 
 ## Running jobs
 WIND-DOWN (lead 08:38): nothing new until the director is back; queue in scratchpad slots.md.
-Builders croc-standing + voxel-boards hold my 2 engine slots; Thunder waits for "go". Stall watcher (scratchpad
-stall_watch_copy.sh, SKIP_PIDS for foreign runs) over the 3 builders' subagents/*.jsonl; lead-board watcher on
-to-vfx-lead.md (re-arm both after each wake).
+No builder running (all in-flight work pushed). Lead-board watcher on to-vfx-lead.md. When work resumes: stall
+watcher = scratchpad stall_watch_copy.sh over each builder's subagents/agent-<id>.jsonl (SKIP_PIDS for foreign runs);
+keep the slot ledger (slots.md) current on every go and finish (I over-assigned slots 3 times without it).
 
 ## Item 4 (collapse defect, BuildingView.lift_piece): diagnosed, brief scratchpad brief_item4.md
 Lead's v5 frames (fire_clip/v5f f_083-087; my crop scratchpad v5_lattice.png): a toppling piece is an open box.
