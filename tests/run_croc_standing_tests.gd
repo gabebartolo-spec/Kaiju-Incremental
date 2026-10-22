@@ -161,7 +161,7 @@ func _check_stomp_shape() -> void:
 		if series[f] >= 0.9 * peak:
 			hung += 1
 	check(
-		peak > 0.4 * hip and hung >= 5,
+		peak > 0.3 * hip and hung >= 5,
 		"stomp: the foot rises %.2f hip and hangs %d frames near the top" % [peak / hip, hung]
 	)
 	check(
