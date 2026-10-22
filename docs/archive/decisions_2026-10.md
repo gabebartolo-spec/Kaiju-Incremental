@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
+Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
+do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
+
 ## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
 Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
 smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
