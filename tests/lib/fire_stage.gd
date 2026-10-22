@@ -1,5 +1,5 @@
 extends RefCounted
-## The fire suite's stage-4 checks, split out to keep the runner small: on the stage-4 city with
+## The fire suite's adult-city checks, split out to keep the runner small: on the adult city with
 ## every fire node owned, a few blocks lit by the kaiju spread fire; the same seed replays the
 ## same fires and biomass (the trace hash); every burnt-out building is down (no burning shell,
 ## #111) and paid near burn_pay of a smash, never more (D-126); the fire's own bookkeeping a tick
@@ -10,7 +10,7 @@ const DT := 1.0 / 30.0
 const SECONDS := 30.0
 ## Blocks lit at the start, the ones nearest the kaiju.
 const LIT := 6
-## The fire's own bookkeeping a tick at stage 4, at most (usec, headless; FireSpread.step without
+## The fire's own bookkeeping a tick at adult city, at most (usec, headless; FireSpread.step without
 ## the burn-outs' damage and collapse): the budget.
 const BUDGET_USEC := 1000.0
 ## How far a near burn-out's share of a smash may sit above burn_pay (the conflagration).
@@ -18,7 +18,6 @@ const NEAR_PAY := 0.1
 const LEVELS := {
 	"evolve1": 1,
 	"evolve2": 1,
-	"evolve3": 1,
 	"r_ablaze": 1,
 	"r_alarm": 3,
 	"r_front": 2,
@@ -29,7 +28,7 @@ const LEVELS := {
 var _check: Callable
 
 
-## Checks and prints the line: the stage-4 numbers are the evidence (usec, hash, counts).
+## Checks and prints the line: the adult-city numbers are the evidence (usec, hash, counts).
 func _say(ok: bool, says: String) -> void:
 	print("FireStage: ", says)
 	_check.call(ok, says)
@@ -62,7 +61,7 @@ func run() -> void:
 	var b := _play(LEVELS)
 	var trace: PackedStringArray = a["trace"]
 	var same: bool = trace == b["trace"] and Num.f(a["rubble"]) == Num.f(b["rubble"])
-	var says := "stage 4: fire spreads past the %d lit blocks to %d" % [LIT, Num.i(a["lit"])]
+	var says := "adult: fire spreads past the %d lit blocks to %d" % [LIT, Num.i(a["lit"])]
 	says += (
 		", and the same seed replays the same %d fire events (hash %d vs %d) and biomass (%.1f vs %.1f)"
 		% [trace.size(), hash(trace), hash(b["trace"]), Num.f(a["rubble"]), Num.f(b["rubble"])]
@@ -94,7 +93,7 @@ func _check_after(a: Dictionary) -> void:
 		not share.is_empty() and near_ok and Num.f(a["far_max"]) < 1.0,
 		(
 			(
-				"stage 4: %d near burn-outs pay %.2f..%.2f of a smash (burn_pay %.2f), the far ones at"
+				"adult: %d near burn-outs pay %.2f..%.2f of a smash (burn_pay %.2f), the far ones at"
 				+ " most %.2f: never more than a smash"
 			)
 			% [share.size(), share.min(), share.max(), burn_pay, Num.f(a["far_max"])]
@@ -103,7 +102,7 @@ func _check_after(a: Dictionary) -> void:
 	_say(
 		Num.i(a["shells"]) == 0,
 		(
-			"stage 4: every one of %d burnt-out buildings is down, none a burning shell (%d stand)"
+			"adult: every one of %d burnt-out buildings is down, none a burning shell (%d stand)"
 			% [Num.i(a["burnt"]), Num.i(a["shells"])]
 		)
 	)
@@ -113,7 +112,7 @@ func _check_after(a: Dictionary) -> void:
 		own <= BUDGET_USEC,
 		(
 			(
-				"stage 4 (%d buildings): the fire's own bookkeeping costs %.0f usec a tick (budget %.0f);"
+				"adult (%d buildings): the fire's own bookkeeping costs %.0f usec a tick (budget %.0f);"
 				+ " its %d burn-outs' collapses %.0f usec a tick more (%.0f each)"
 			)
 			% [
@@ -128,7 +127,7 @@ func _check_after(a: Dictionary) -> void:
 	)
 
 
-## One seeded stage-4 run: {"trace": every fire event in order, "rubble", "lit": buildings
+## One seeded adult-city run: {"trace": every fire event in order, "rubble", "lit": buildings
 ## that burned, "burnt": burn-outs, "shares": near burn-outs' pay shares, "far_max", "shells":
 ## burnt-out buildings still standing, "usec", "out_usec", "buildings"}.
 func _play(levels: Dictionary) -> Dictionary:
@@ -136,8 +135,9 @@ func _play(levels: Dictionary) -> Dictionary:
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	stats["hp"] = 1000000.0  # the kaiju must not fall: this watches the fire to the clock
-	var tuning := CityGrowth.tuning_for(Content.tuning(), 4)
-	var layout := CityGrowth.layout(Content.tuning(), 4, Seeds.make("city", 0))
+	var adult := CityGrowth.stage_count(Content.tuning())
+	var tuning := CityGrowth.tuning_for(Content.tuning(), adult)
+	var layout := CityGrowth.layout(Content.tuning(), adult, Seeds.make("city", 0))
 	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	var old := sim.powers.fire
 	var fire := TimedFire.new(sim, old.cfg, Seeds.make("fire", 0))

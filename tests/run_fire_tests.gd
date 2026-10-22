@@ -3,7 +3,7 @@ extends "res://tests/lib/powers_base.gd"
 ## has a player-effect fixture: the same seeded scene with the node owned and without it plays
 ## out differently. Plus: no burning shell is ever left, burn-outs pay burn_pay of a smash, the
 ## breath, beam and stray shells light fires, the same seed replays the same fires, and the
-## per-tick cost at stage 4. Headless.
+## per-tick cost at the adult city. Headless.
 ##   godot --headless --path . --script tests/run_fire_tests.gd
 
 const FireStage := preload("res://tests/lib/fire_stage.gd")
