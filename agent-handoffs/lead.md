@@ -1,66 +1,99 @@
-# Lead handoff, 2026-10-21 (lead 10; CLI session 1df8b1cf, registered in ~/.claude/context-guard-leads/)
+# Lead handoff, 2026-10-21 late (lead 10; CLI session 1df8b1cf, registered in ~/.claude/context-guard-leads/)
 ## Successor: register (empty file named by your CLI session id in ~/.claude/context-guard-leads/), read this, then
 ## GitHub (open PRs), then the notes folder below. Director's /goal: playable build with building carving first draft.
 ## Plan = docs/ROADMAP.md "Post-demo plan" phases A-H; research picks "R n.m" -> docs/research/2026-10-21/ (01-24).
-## Comments: docs/roadmap/2026-10-20-build2-playtest.md, 2026-10-20-director-comments.md, 2026-10-21-director-comments.md.
+## Comments: docs/roadmap/2026-10-21-director-comments.md (#1-#46 today; #45-46 minimal HUD, #33 neck approved).
 
-## Director state: AFK until about 07:30 local 2026-10-21: "the gpu, cpu and ram are all yours ... please continue
-## working until usage runs out". Subagents allowed, up to 8 (RULEBOOK Kaiju exception), lead drives.
+## Director state: at the PC, often gaming. Clips/captures render on the LOCAL GPU always (RTX 4070 SUPER; off-screen
+## no_focus override.cfg, --windowed; two calls: write the override, then launch) until he says pause (~/.claude/focus-pause).
+## Up to 2 headless Godot per agent. Never a visible window or dialog. Subagents up to 8 (RULEBOOK Kaiju exception).
 
 ## Notes folders
 - NEW (lead 10's agents): C:\Users\DANTE\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_df2c2989-951e-4b20-9998-9c23b0a37f42\
-  BRIEF-COMMON.md = the shared rules every subagent reads; each agent writes <task>\handoff.md at milestones.
-- OLD (lead 9's agents): ...\local_cf0b00c9-bc39-4198-aaf9-942340291b1a\ (research, phase-b boards, rubble logs).
+  BRIEF-COMMON.md + RULES-NOW.md = shared rules; each agent writes <task>\handoff.md at milestones.
+- Nimbalyst mailbox: C:\Users\DANTE\Documents\Nimbalyst Tutorial\kaiju-mailbox\ (to-nimbalyst tasks, to-kaiju results).
 
-## State 2026-10-21 evening: director at the PC (no windowed Godot; CI captures). Design = docs/DESIGN.md (one doc, lead edits).
-## Merged today: #122-#135 (parse-step, light-pool, b2-3-part3, audio-duck, tentacle, graphics, cells-native, bridge,
-## kaiju-double, view-spikes, no-rubble-fire, carve-no-fire). Open: #3 only. D-109 recorded.
-## Team (lead 10 subagents). New rules today: ASK before any new work (RULEBOOK Working); ONE ~6 s clip per change;
-## one state file per task = agent-handoffs/<task>.md (older tasks keep NOTES/<task>/handoff.md); STATUS.md via tools/status.py.
-- prs: preset-caps #136, walkers, sfx-pool, shake-trauma, crush-people 6cab1072, turn-weight 90edbe8, building-fade, empty-space,
-  ci-sim-split last; also claude/status-script 6cbdd64 (tools/status.py) needs a PR.
-- rubble-polish: claude/rubble-break de85ea1 (#24-#26 done in sim), bench + one CI clip, then motion critic.
-- explosions-fix: claude/city-explosives 6fb45b69, one CI clip, then motion critic round 2.
-- camera-fade: claude/building-fade (R 19.4 + #27 rise occlusion), then A/B/C boards (director-facing).
-- ui-redesign: claude/ui-redesign, HUD + menus now (director: start now, keep Emergency Broadcast, dash/ult rings, tape meter).
-- clumsy-army: c3623e4, strays scatter to the sides (director pick), one CI clip.
-- intro-cinematic: claude/intro-cinematic from emerge-shore 1498501e (#11, "build it sooner").
-- emerge-shore 1498501e done (burst through decks; bay fits max-growth body, director pick); lead QCs CI runs 39552644858.
-- rule-dedupe: applying director rulings (six model views, mixed art his call, full suite for shared data, SHIP/FIX/REJECT).
-- NEXT when a slot frees: walk-m2 clips on CI, about 4 (straight + 90 deg turn, adult + baby, game camera), claude/walk-m2 0f9e0d2c.
-- Director questions left: camera growth (after occlusion fix), walk cadence R 11.2, Suno vs ElevenLabs Music, fire spark
-  + wind, background skyline, blast numbers, worktree cleanup permission. Insectoid = brood mother (DESIGN; code still
-  has Leap Slam as signature: fix when species work starts).
-- Build 5 once the queue lands: dispatch build.yml on look-options, smoke from repo root, Kaiju-Builds/carve-build5-<sha>.
-- Context trim done 2026-10-21: RULEBOOK 16.5->13 KB (quotes in RULEBOOK-quotes.md), global CLAUDE.md 4.8->3.4 KB, project
-  CLAUDE.md 5.2->3.0 KB, handoff hook 10.3->2.2 KB (last 30 h only), 7 skill descriptions halved, memory 7->2 files.
-  Backups *.bak-2026-10-21 beside each file.
+## 2026-10-22 day (lead session status-check-b96b26; supersedes the Team list below where they differ)
+- Base: origin/claude/look-options = main = 95f01083 (SQUASH of old history). Every old branch must be rebuilt as its own
+  commits cherry-picked onto it (see scratchpad WAVE1-COMMON.md, copied into this section's rules).
+- PR #147 crowds 6x (Nimbalyst 014, rebased + probe_crush compile fix f524adfd); Auto-fix on. PR #144 turn still open.
+- Director 2026-10-22 (comments #55-59): finish ALL WIP (Nimbalyst's + lead team's), parallel builders, wave 1 'Speed-ups
+  first', audit-sim separated from fire, landmarks may unload 'if no pop-in', remove merged worktrees (7 done; leftovers in
+  Kaiju-Incremental-wt/_leftovers-2026-10-22). NEW RULE: helpers on Sonnet unless complex (RULEBOOK Team shape).
+- Wave 1 subagents (builder type, inherited Opus; started before the Sonnet rule, left to finish): city-memory (+landmark
+  unload), perf-scans, perf-tiles (015), audit-shared (017), audit-sim (018, rebuilt off fire), clumsy-army (008 strays),
+  turn (#144, D-131 + gdlint), camera (critic FIX items). Each pushes, never opens PRs; lead reviews diffs, opens PRs (max 3).
+- Wave 2 (Sonnet unless complex): fire-spread (016, complex: Opus), intro, rubble (item 5 unfound: Opus), explosions, dash,
+  UI (first-run controls card goes: comment #46), ui-art.
+- rule-check.py returned no answers (0/14, claude -p gave nothing): the Sonnet rule is recorded but NOT proven by it.
+- Nimbalyst mailbox has no live tasks; 008/015-018 now belong to wave 1 builders.
+## Team (lead 10's subagents; die with this session; re-brief from NEW notes <task>\handoff.md)
+- ui (claude/ui-redesign adba1267): minimal HUD done (HUD share 3.19% -> 1.37%; rings bottom-left, plain timer red
+  last 10 s, thin meter, small biomass, no controls text). Screen critic running; then show director before/after and
+  ASK: remove the first-run controls card too? (one-line change). Drafting pr-body.md, no PR yet.
+- camera (claude/camera-growth b8ffe2a9): critic FIX on cameraA_topple_fade.mp4: head too high 1.9-3.6 s, zoom bob
+  0-2 s, dither opacity cap 0.35 over the kaiju, fade ramp 12-15 frames. Re-render 4K, one critic re-check.
+- neck (claude/croc-neck c39873cd): NECK_SHARE 0.75 APPROVED by director. Builder now on audit P1 (claude/audit-ci:
+  #5 tuning-key CI check, #25 function-size ratchet, #10 dead code, #9 single-subclass bases).
+- explosions (claude/city-explosives), dash (claude/dash-burst), turn (option B): each in a full local suite, then one
+  GPU clip -> QC 2x + motion critic. Dash burst.avi: trim first 194 frames.
+- intro (claude/intro-cinematic round 9), rubble (claude/rubble-break round 4): fixing; clips to QC.
+- perf (a0a59, output file stays 0 bytes, so not on the stall watcher): camera-led stream on claude/city-memory, then
+  claude/perf-scans.
+- Stall watcher: scratchpad stall_watch.py <id>=<name> ...; 8 min idle flag -> check Godot processes
+  (scratchpad godot_ps.ps1) before acting; builders in long full suites are left off it.
+- Nimbalyst (Opus High): 008 tier-4 probe running; queued 014 crowds, 015 tile multimeshes, 016 fire spread,
+  017 audit P2, 018 audit P3. 001-013 results read. Review diffs before pushing anything of Nym's.
 
-## Merged 2026-10-21: #113-#119. Build 4 = Kaiju-Builds/carve-build4-6cc9c77 (smoke PASS 03:06; contains #115-#118).
-## Docs pushed: da19852 roadmap H mortars + mecha (R 23, R 24); b163f75 D-108 lightning breath, STATUS refresh.
+## 2026-10-22 00:20 (usage ran out mid-step)
+- Tripo HUD icons (D-127, up to 3000 cr; balance was 19155, stop at 16155): driven in the BUILT-IN browser (rulebook: default,
+  director "as a default always use your own browser"); local file upload is blocked there, so text prompts only. 4 free GPT Image 2.5
+  croc-head refs made (studio image history 2026-10-22 00:11). I clicked "Generate HD Model" (65 cr) on ref 1 as the turn was
+  stopped: CHECK whether it ran, set it Private, log a docs/provenance/tripo.md row. Still to make: dash foot, button plate; Thunder
+  Beam reuses the head with our own beam FX. Builder a9c7 (intro) builds render_icon.gd + voxel digits on claude/ui-art, then 2 last
+  intro fixes. Show director voxel vs smooth board.
+- Text-to-motion: director picked "Soldiers and crowd" (one 20-cr clip for an action the free presets lack). Log as D-128 first.
+  Report: notes tripo-motion\report.md.
+- Critic FIX sent: rubble (final round), camera (frame + dither), intro (2 items, last round). UI: rings 80 px, biomass 44 px, margins
+  120 px in flight; then ask director about the first-run controls card. Roadmap #47 (icons), #48 (python + Komodo heads).
 
-## Phase B, for the director when he is back (ask-the-director: images first, one question each)
-- b2-19 (voxel count half/today/double): boards in OLD notes\phase-b\ PASS lead QC. Ask with b2-19_1/_2 (game camera)
-  and _6/_7 (close), plus the cost line: double unplayable (5.6 fps, 13 s stall), half no cheaper, at game camera nearly
-  alike. Recommend B today.
-- b2-20 (voxel vs smooth): ask only after the phase-b agent's fixed boards pass lead QC (2x crops face/jaw/cars).
-- Other open director questions: end of ROADMAP "Post-demo plan" (now includes H finale shape + mecha concept, R 23.1).
+- Handed off: ui a0ebed0a (recapture 04_rampage left), dash cd8614b8 (full suite unrun; tank flips; clip burst.avi, baby hidden
+  in dust), turn ba70e967 (#144; stage-1 rise-point walk 10.0-13.6 s vs 10 s bar because of stepped turns; ASK director:
+  DIRECTOR DECIDED 2026-10-22: "Just make the croc turn like 5% faster" -> raise the stepped-turn rates 5% in tuning.json
+  on claude/turn-weight, rerun the city rise-point check (bar 10 s unchanged), log it as roadmap comment #49; clip not rendered), camera 38c76538 (head-bone framing check, full
+  suite, 4K clip left), neck/audit-ci 0c5ee924 (P1 done: tuning_keys + complexity ratchet in preflight, 5 dead fns gone;
+  croc-neck final), rubble 391a6626 (WIP: critic items 1-4, 6 coded, no suite or clip yet; item 5 tint jumps unfound;
+  handoff in notes rubble-break\handoff.md), perf: city-memory 8747ddf6 (camera-led stream done, stage-4 nearest box
+  37->60 m; full suite rerun needed) + perf-scans 010285eb (code written, suite not green, ms unmeasured). ASK director:
+  landmarks hold 13192 of 24000 chunks; may out-of-view landmarks stop being always meshed? Dash depth can't be held.
+  explosions 58dafcee (round-5 WIP ce8287a6; full suite, GPU clip, series.py measures left; agent-handoffs/explosives-view.md).
+  PR #144 (turn, ba70e967) gdlint RED, 7 issues: gait_clip.gd:381 line >100 and file >400 lines; kaiju_model.gd:96
+  animate() >4 args and file >400 lines; body_contact.gd:134 line >100, :47 class-definitions-order;
+  smoke_step_turn.gd:66 line >100. The two file splits are the turn builder's job (Auto-fix is on for #144).
+  ui-art builder (a9c7) was STOPPED by the director mid-task, no handoff: check ../Kaiju-Incremental-wt/ui-art for
+  uncommitted render_icon.gd + voxel digits work (it was updating render_icon.gd for a new API), commit it as WIP by name,
+  then finish the board. Its 2 last intro fixes (frame-57 debris pop, hand-over stutter 165-170) are also still open. Neck frame-48 "gap" = negative space (director).
+
+## PR queue after QC (max 3 open): #144 turn-weight, emerge-shore, camera-growth, intro-cinematic, rubble-break,
+## city-explosives, croc-neck, dash-burst, ui-redesign, city-memory, clumsy-army; capture-native (no speed-up: keep?).
+## Audit P4 (scene refactors, pixel-identical) after the croc batch merges. No octopus/insect work until croc ships (D-124).
+## After the batch: fire visuals (R 26.5, D-126), then water (R 21; Nym's 013 code map).
 
 ## NEXT
-1. As each agent reports: QC (verify branch sha exists, read evidence, 2x crops/clips), hand ready branches to hygiene
-   for PRs (max 3 open), refill the slot: R 6.1 no-empty-space suite (after walkers lands), R 5.6 headless parse step,
-   then Phase C/D items (b2-4 effortless carving needs his D-091 answer first).
-2. Director back: build 4 lines, then b2-19, b2-20, Phase C start question (b2-4 vs D-091).
-3. Build 5 once #120 #121 light-pool + the "Any phase, now" branches merge.
+1. QC each clip as it lands (2x crops yourself, then a fresh critic; only SHIP reaches him, one decision each).
+2. Director questions pending: first-run controls card; stages 2-3 far-box look stills once the camera-led stream exists.
+3. Merge passing branches in queue order; Build 5 after the batch.
 
 ## Findings
-- Seed-sensitive checks (swipe topple, tank standoff, tank crab) flip when the city or walk changes: probe the unit,
-  fix the behaviour or re-pin the fixture, never the threshold.
-- Release smoke must run from the repo root (relative --script path); from the build folder it says File not found.
+- Seed-sensitive checks (swipe topple, tank standoff, tank crab, growth lots, military retreat 21/24) flip with branch
+  changes to city or walk: probe the unit, fix the behaviour or re-pin the fixture, never the threshold.
+- A dark patch inside a silhouette may be negative space between parts (jaw vs forearm), not a seam: trace its border.
+- Release smoke must run from the repo root (relative --script path).
 
 ## Tools
-- Lead docs worktree Kaiju-Incremental-wt/lead-docs (detached; commit docs [skip ci], push HEAD:claude/look-options).
-- Release smoke: cd repo; APPDATA=<scratch> godot_console --headless --main-pack <exe> --script tools/release/demo_smoke.gd.
+- Lead docs worktree Kaiju-Incremental-wt/lead-docs (detached; git pull --ff-only first; python edits newline='';
+  commit docs [skip ci], push HEAD:claude/look-options). DECISIONS.md cap 400 lines (roll to docs/archive/).
+- ffmpeg: python -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())".
 - Native dll for local runs: copy Kaiju-Incremental-wt/carve-play/native/bin/*.dll into native/bin/.
 
 Lead = "Kaiju: LEAD 10". Owns QA gates, merges, DECISIONS/STATUS, director questions, this file. playbook: nothing new.
