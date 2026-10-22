@@ -93,13 +93,38 @@ func yielding(tank: RampageSim.Tank, r: ConvoyRoute, dt: float, back: float) -> 
 ## Right of way: blocked by an older tank that is itself held up trying to move, the younger
 ## one gives way for `stuck` seconds.
 func give_way(tank: RampageSim.Tank, blocker: RampageSim.Tank, back: float) -> void:
+	demand_way(tank, blocker)
 	var o: ConvoyRoute = convoy.routes.get(blocker.id)
-	if blocker.id >= tank.id or o == null or o.path.is_empty() or o.stuck_t <= 0.0:
+	if not outranks(blocker, tank) or o == null or o.path.is_empty() or o.stuck_t <= 0.0:
 		return
 	var r: ConvoyRoute = convoy.routes[tank.id]
 	r.give_to = blocker.id
 	r.yield_t = Num.f(cfg["stuck"])
 	back_off(tank, blocker, back)
+
+
+## Is the tank inside the danger radius (the kaiju on top of it)?
+func in_danger(tank: RampageSim.Tank) -> bool:
+	return convoy.posts.to_body(tank.pos) < convoy.danger()
+
+
+## Right of way: a tank inside the danger radius outranks one outside it; otherwise the older.
+func outranks(first: RampageSim.Tank, second: RampageSim.Tank) -> bool:
+	var first_in := in_danger(first)
+	if first_in != in_danger(second):
+		return first_in
+	return first.id < second.id
+
+
+## Held up by a tank outside the danger radius while inside it: that tank gives way at once
+## (backs along its hull as give_way does), so a retreating tank is not left standing under the
+## kaiju waiting for the younger one to find out it is in the way.
+func demand_way(tank: RampageSim.Tank, blocker: RampageSim.Tank) -> void:
+	var o: ConvoyRoute = convoy.routes.get(blocker.id)
+	if o == null or not in_danger(tank) or in_danger(blocker):
+		return
+	o.give_to = tank.id
+	o.yield_t = Num.f(cfg["stuck"])
 
 
 ## Straight back along its hull, away from the older tank, only while the hull stays on the road.
@@ -112,6 +137,8 @@ func back_off(tank: RampageSim.Tank, older: RampageSim.Tank, step: float) -> voi
 	if not convoy.graph.square(r.front, r.edge):
 		return  # half turned: it squares up first (_settle), then backs
 	var back := own if own.dot(tank.pos - older.pos) > 0.0 else -own
+	if in_danger(older):  # the older tank is under the kaiju: out of its way at retreat pace
+		step *= Num.f(cfg["retreat_speed"]) / (Num.f(sim.army["speed"]) * Num.f(cfg["reverse"]))
 	var to := tank.pos + back * step
 	if convoy.graph.drivable(to, own) and blocker(tank, to, own) == null:
 		tank.pos = to
