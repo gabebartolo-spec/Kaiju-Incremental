@@ -1,8 +1,11 @@
 # vfx-lead handoff (VFX lead, the lead's second in command), 2026-10-23
 
 ## State
-First task done: `docs/VFX_STYLE.md` + contact sheet; two reviews sent to the lead (both FIX). Every effect any
-builder makes now passes through me before the lead. Reports go to the lead only, never the director.
+Split (director 2026-10-23, via lead): I own EVERY visual item end to end (decide, brief my own Sonnet builders in
+their own worktrees, art QA, SHIP final); the lead owns sim, gameplay, UI layout/flow, tests, merges, docs. Tell
+the lead before touching a file its builders are in (fire.gd: UI branch; sim + Taskforce: explosions PR 1). The
+lead's explosions + UI builders keep their visual work; the lead relays proof/verdicts verbatim. Every session and
+helper keeps the app checklist (update_plan) current; say so in every brief.
 
 ## Task
 Director 2026-10-23: VFX oversight (builder + art critic) for fire, smoke, explosions, city destruction, ability
@@ -44,29 +47,41 @@ ripple, crew under arched canopies). tests/run_helideaths_tests.gd 6 fn 17 check
 Proof: notes vfx-lead/heli_deaths_proof.png. A toppling tower tall enough sweeps helis over its strip down.
 Not built: killable parachutists (they only drift down).
 
-## Unfinished changes
-- PR #154 carries the docs, the capture tools and three base fixes (fx.gd sparks + tree puff on the dust family,
-  powers_view.gd tail sweep -> Fx.shockwave). Smoke/flow/powers green locally; proof
-  side-session-notes/.../vfx-lead/proof_base_fixes.png; the lead runs a fresh critic on them.
+## Unfinished changes / my builders (Agent subagents, own worktrees)
+- PR #154: fresh critic (mine) said FIX: sparks still white flecks, tail ring ~80 px vs a 400 px tail, rings
+  invisible at noon, tree puff a white blob at noon. Builder on claude/vfx-lead-c37456 fixing; proof due at notes
+  vfx-lead/proof_base_fixes_r2.png. Then a NEW fresh critic; on PASS message the lead "#154 PASS" (its GitHub
+  helper merges on green).
+- Thunder Beam builder on claude/thunder-beam (b2-18 spec, VFX_STYLE family 6): bolt.gdshader ribbon, breath
+  strokes, held beam; proof + 3 halo stills (R 17.6) in notes vfx-lead/thunder/. No PR until my SHIP; halo colour
+  goes to the director as one question with the labelled stills.
+- Title: director chose (2026-10-23) camera TILT UP so the Colossus head is 1.5-2x the tallest tower (water band
+  ~1/3 thinner, full head in frame); relayed to the lead for the UI builder; review its 4K still.
+- D-155 atmosphere (all M1): looks are mine (rampage escalation haze/orange sky/blackouts, clouds, birds, boats,
+  one whale, weather looks rain/fog/storm/overcast). Sim side (weather pick, life positions/events, options row) =
+  lead's "demo-end" session local_d3ef25ef; I asked it for value names + branch. Files: data/looks.json,
+  scenes/city_environment.gd (wait for #156 to merge), new view scenes. Shared lit-from-below smoke: mine, after
+  the UI + explosions branches merge (no fire.gd / smoke.gdshader edits till then).
 
-## Open findings for the lead (not mine to build unless assigned)
-- Lightning Breath / Thunder Beam (D-108/112) not built anywhere: breath is the orange "Atomic" plasma, the
-  ultimate a solid emissive box (powers_view.gd:120). ROADMAP b2-18.
+## Open findings
 - CityView.ring still draws the cephalopod's ink ring (octopus paused, D-124); deflect flash moves to white.
 - Charcoal smoke invisible at night; a fire-lit underside for the shared smoke (D-141 "lit from below").
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
 
 ## Running jobs
-Full local suite on claude/heli-deaths (started 01:51, log scratchpad full.log, watcher b7zcqsi7g). When green:
+Full local suite on claude/heli-deaths (rerun 02:10 with GODOT set; the 01:51 one never ran). When green:
 push claude/heli-deaths, open the PR as ready with body scratchpad pr_heli.md (sim-review packet inside), tell the
 lead (proof notes vfx-lead/heli_deaths_proof.png). If the session restarts, rerun `tools/run_tests.sh` first.
 
-## Item 4 (collapse defect, BuildingView.lift_piece, scenes/building_view.gd:229) — started
-Defect (fire-spread clip v5 QC): (d) a tilted falling block shows a see-through window lattice; (e) a neighbour's
-walls vanish into floor plates. Theory (from code, not yet seen in a capture): BuildingMesher bakes only outward
-faces (building_baked.gdshader), so a lifted piece and the stump have no cut faces; fix = cap quads on the
-piece/stump faces that border removed cells (carved slab colour 8a8780, D-101). tools/capture/capture_topple_faces.gd
-(uncommitted) stills topples; first run (run 3) caught only small topples hidden by the kaiju: frame a tall tower.
+## Item 4 (collapse defect, BuildingView.lift_piece) — diagnosed in part, parked
+Defect (fire-spread clip v5 QC): (d) tilted falling block shows a see-through window lattice; (e) a neighbour's
+walls vanish into floor plates. capture_topple_faces.gd (one 24-floor office city, scripted chew, --solid=1 turns
+the fade off; scratchpad topple3/) shows: (d) = FallFade's screen-door on a falling piece that covers the kaiju
+(R 19.4 fade, by design; with fade off the piece is solid). Cut faces are NOT see-through: building_baked draws
+back faces at `inside` 0.12, so a cut reads as a dark hollow, not the carved slab colour (8a8780, D-101); possible
+fix = cap quads. A "+" lattice on the landed rubble was a helicopter rotor's shadow. (e) not reproduced (no
+neighbours in that city). Next: find the v5 clip frames (ask the lead) before choosing a fix. The chunks-inside-
+body finding is sim-side (BodyContact chew), handed back to the lead. Capture script: move off the heli branch.
 
 ## Rules learnt the hard way
 - A fresh worktree needs `git lfs pull`, the carve dll copied into native/bin (gitignored; newest build from a
