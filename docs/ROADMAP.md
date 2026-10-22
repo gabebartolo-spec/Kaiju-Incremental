@@ -326,3 +326,13 @@ recolour skins of the croc (palette swaps) unlocked on milestones, chosen in a s
 ## Post effects (D-142, 2026-10-22)
 - Subtle vignette, pulsing red at low health, on every preset; a split-second colour fringe on the biggest hits only. One short clip to the director before shipping. Owner: post-fx builder. Status: started 2026-10-22.
 - Screen-space reflections (wet streets, glass), max preset only. After the demo.
+
+## Playtest milestones (D-146, 2026-10-22)
+The director plays only at these; each gets an exported .exe in a fixed folder and an exhaustive survey for that game
+state. No director clips or per-change approvals in between; clips only where motion is the point, for the critics.
+- **M1 Feel pass:** fire spread + longer baby breath (#152), heavier turning (#149), bigger explosions, post effects,
+  the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
+- **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
+- **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
+  deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
+- **M4 Itch release candidate:** M3 survey fixes only.

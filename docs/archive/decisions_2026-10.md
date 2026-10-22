@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-058 · Director · Body text uses Kaiju Block; headings stay Kaiju Claw
+Why (05:13): "still seeing generic fonts in game when we should be using our own": the UI kit drew every label below
+heading size in the engine default. Board A rubble / B fault / C claw / D block at 20 and 24 px; D picked (cleanest at
+20 px, ours, same tool). All faces are capitals only: accepted. Lands in PR #27 with a no-default-font check.
+
 ## 2026-10-18 · D-057 · Director · Lighting stays the current "concrete" look
 Why (05:12): board A current / B golden hour / C blue hour / D night at the game camera (1080p + 4K, luminance p50
 72/78/52/27); the director kept A. The lighting branch (claude/lighting) is parked, not merged: a system that does not
