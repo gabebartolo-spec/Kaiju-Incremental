@@ -33,13 +33,18 @@ uniform float min_px = 0.0;
 // so the bolt holds on pale noon ground where white added to white vanishes.
 uniform vec4 rim_tint : source_color = vec4(0.35, 0.1, 0.0, 1.0);
 uniform float rim = 0.0;
+// Where the rim sits across the strip: inner edge in / out, outer edge in / out (0 middle, 1 edge).
+uniform vec4 rim_band = vec4(0.2, 0.42, 0.55, 0.85);
+// The most width on screen, in pixels at 1080p (0: no cap).
+uniform float max_px = 0.0;
 
 void vertex() {
 	vec4 vp = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
 	float per_px = max(-vp.z, 0.1) * 2.0 / (PROJECTION_MATRIX[1][1] * VIEWPORT_SIZE.y);
 	// The least width is only eased by the taper (a stroke's thin end keeps most of it).
 	float least = min_px * VIEWPORT_SIZE.y / 1080.0 * per_px * (0.4 + 0.6 * COLOR.r);
-	float w = max(width * COLOR.r, least) * 0.5;
+	float most = max_px > 0.0 ? max_px * VIEWPORT_SIZE.y / 1080.0 * per_px : 1000000.0;
+	float w = min(max(width * COLOR.r, least), most) * 0.5;
 	if (COLOR.b > 0.5) {
 		vp.xy += UV * w;
 	} else {
@@ -57,7 +62,7 @@ void fragment() {
 	float shape = pow(clamp(1.0 - u, 0.0, 1.0), falloff);
 	vec3 col = mix(tint.rgb, fringe.rgb, smoothstep(0.1, 1.0, u));
 	float flick = 1.0 - wobble * 0.5 * (1.0 + sin(TIME * wobble_hz * 6.2832 + UV.y * 37.0));
-	float ring = smoothstep(0.2, 0.42, u) * (1.0 - smoothstep(0.55, 0.85, u));
+	float ring = smoothstep(rim_band.x, rim_band.y, u) * (1.0 - smoothstep(rim_band.z, rim_band.w, u));
 	float a = clamp(rim * ring * level * COLOR.g, 0.0, 1.0);
 	ALBEDO = col * boost * shape * level * flick * COLOR.g + rim_tint.rgb * a;
 	ALPHA = a;

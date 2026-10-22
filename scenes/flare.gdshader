@@ -5,6 +5,16 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabl
 
 uniform vec4 tint : source_color = vec4(1.0, 0.8, 0.5, 1.0);
 uniform float fade = 1.0;
+// Callers that set them (the lightning's muzzle and strike glows): `soft` metres over which the glow
+// fades out against geometry behind it (no hard straight edge where a building cuts the quad), and
+// `edge` > 0 fades it to nothing before the quad's border, ragged by that much.
+uniform sampler2D depth_tex : hint_depth_texture, repeat_disable, filter_nearest;
+uniform float soft = 0.0;
+uniform float edge = 0.0;
+
+float hash1(float x) {
+	return fract(sin(x * 127.1) * 43758.5453);
+}
 
 void vertex() {
 	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
@@ -21,5 +31,17 @@ void fragment() {
 	float halo = exp(-r * 4.0) * 0.5;
 	float rays = exp(-abs(p.x * p.y) * 90.0) * (1.0 - smoothstep(0.2, 1.0, r));
 	vec3 hot = mix(tint.rgb, vec3(1.0), core);
-	ALBEDO = hot * (core * 4.0 + halo + rays * 1.5) * fade;
+	float k = fade;
+	if (edge > 0.0) {
+		float a = atan(p.y, p.x) * 3.0;
+		float n = mix(hash1(floor(a)), hash1(floor(a) + 1.0), smoothstep(0.0, 1.0, fract(a)));
+		float lim = 1.0 - edge * n;
+		k *= 1.0 - smoothstep(lim - 0.4, lim, r);
+	}
+	if (soft > 0.0) {
+		float d = texture(depth_tex, SCREEN_UV).x;
+		vec4 v = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, d, 1.0);
+		k *= clamp((-v.z / v.w + VERTEX.z) / soft, 0.0, 1.0);
+	}
+	ALBEDO = hot * (core * 4.0 + halo + rays * 1.5) * k;
 }
