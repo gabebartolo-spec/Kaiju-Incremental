@@ -58,3 +58,8 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 52 | Fire ignition (asked): "Breath, beam and army shells" | D-129; fire gameplay (claude/fire-spread, Nimbalyst 016) | in progress |
 | 53 | Burn-out (asked): "Collapses" | D-129; claude/fire-spread | in progress |
 | 54 | Turn remedy after small-turns-smooth missed the rise point (asked): "Baby turns smoothly" (2026-10-22) | D-131; turn builder, claude/turn-weight (#144): baby smooth at pre-stepped rates, adolescent and adult step real turns | in progress |
+| 55 | "Review Nimbalyst's perf-crowds diff (321476e1) and open it as a PR; leave the WIP branches parked", then "finish off the WIP tasks yourself" (2026-10-22) | lead: PR #147 (crowds, rebased on the squashed base, one compile fix); WIP finished by builders | in progress |
+| 56 | Scope and order (asked): "Nimbalyst's + lead team's" (14 jobs), "Parallel builders", first wave "Speed-ups first" (city memory, faster scans, prop culling, both audits, stray shells; then turn, camera) | lead: 8 builders wave 1, visible-change jobs (intro, rubble, explosions, dash, UI, fire) wave 2 | in progress |
+| 57 | audit-sim vs fire-spread (asked): "Separate them" | audit-sim rebuilt on the base without the fire WIP | in progress |
+| 58 | Landmarks (asked): out-of-view landmarks may unload like ordinary buildings, "Yes, if no pop-in" | city-memory builder: game-camera test proves no landmark pop-in while turning | in progress |
+| 59 | Worktrees over the cap (asked): "Yes, merged ones only" | lead: remove worktrees whose branches are merged | in progress |
