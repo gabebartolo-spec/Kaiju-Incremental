@@ -70,6 +70,7 @@ class Plan:
 		var stop := sim.ability_reach() * stop_share + Vector2(b.w, b.d).length() * 0.5
 		sim.kaiju_pos = at + away * stop
 		sim.facing = -away
+		print("FIREBEAT - placed %s, %.1f m from the centre (reach %.1f, stop %.1f)" % [sim.kaiju_pos, sim.kaiju_pos.distance_to(at), sim.ability_reach(), stop])
 
 	## The nearest big, low standing ordinary building with at least two neighbours a fire can
 	## reach (low: it burns out sooner, burn_per_floor).
@@ -124,6 +125,10 @@ func _go() -> void:
 	print("FIREBEAT 0 time of day %s" % Content.time_for_run(_run))
 	rampage.autoplay_signature = false
 	var sim := rampage.sim
+	# The claws rake ahead on their own every 2 s, farther than the baby's breath reaches (swipe
+	# 7 m, breath 5.9 m): no place to stand lights the block without the rake breaking it. Off for
+	# this shot only (a clip setup, not a game rule).
+	sim.stats["swipe_damage"] = 0.0
 	var plan := Plan.new()
 	plan.min_tier = _min_tier
 	plan.stop_share = _stop
