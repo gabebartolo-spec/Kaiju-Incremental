@@ -241,7 +241,7 @@ func _check_controls_rows() -> void:
 
 
 func _control_names() -> Array[String]:
-	var menu := SettingsMenu.new()
+	var menu := ControlsCard.new()
 	t.root.add_child(menu)
 	await _frames(2)
 	var names: Array[String] = []

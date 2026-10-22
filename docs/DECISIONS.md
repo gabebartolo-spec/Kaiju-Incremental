@@ -4,6 +4,45 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-162 · Director · Tripo: 8000 credits for snake and Komodo heads and skin concepts, shown at the interview
+
+Said before sleeping (2026-10-23, about 03:25): "feel free to spend some time and tripo credits as well get some models for the alternative heads, snake and komodo dragon", "concept some different Skins too", "come up with a few skins, and a couple options for the heads, include it in the interview when i return from work we can iterate more", "tripo budget is 8k credits". Covers a couple of head options each for the snake (python, ROADMAP "Reptilian head evolutions") and the Komodo dragon, and a few recolour skin concepts of the croc (ROADMAP "Achievements and skins", D-119). Owner: the VFX lead's asset session. Every model Private, six-viewed, logged in docs/provenance/tripo.md; stop at 8000 credits. Concepts only: labelled boards go to the director at the interview, where he iterates; how the heads unlock and what they change in play stay his call (D-124).
+
+## 2026-10-23 · D-161 · Director · Railgun and frost rules
+
+Asked (the non-author sim review of PR #161 found these agent-added): the railgun has to hit the body's middle (a shot that only crosses the tail or snout misses), so a step aside as the line locks dodges it in the open; while smashing through a building or slowed by frost a step is too slow and only the dash saves you (the dash also shatters the ice): "Only the dash saves you". The shot pierces buildings, no cover. Armour softens railgun hits like every other hit. Frost grenades land only on a kaiju standing still, so moving dodges them.
+
+## 2026-10-23 · D-160 · Director · The Taskforce first joins after a few minutes in the adolescent city
+
+Asked (PR #161 gated the first arrival per rampage, after about 150 chunks plus 6 s: agent-added): "arrives a few minutes into the adolescent city" (D-152) means total time there, not each rampage: "After a few min there". The player's first rampages as the Behemoth are army-only; once they have spent about 3 minutes of rampage time in the adolescent city (a play-time counter carried between rampages, in the save), the Taskforce joins every rampage after, and squads still come faster as more of the city falls (D-152). Never the baby city. The 3 minutes is the lead's pick inside "a few minutes", one data value.
+
+## 2026-10-23 · D-159 · Director · The team fits the PC; full tests on CI; clean code as you go; measure sim speed
+
+Asked "whats the best way for us to get stuff done on this project? tell me if this workflow is suboptimal" and "is our architecture sound? can it be improved". The lead measured: 14 engine jobs on 16 CPU threads at 100%, helpers mostly waiting on local test runs, a 2-hour balance run taking about 2 hours, 6 open PRs (rule: 3). Code on look-options 70ef2ac5: the sim is clean (no Node, input or clock), seeded streams, the six fixed autoloads, versioned saves, size caps enforced by lint; weak spots: 20 files packed at 390-400 lines, 77 grandfathered long functions (ratchet baseline), slow balance runs. Asked: "Fit the PC": about 4 engine-running builders at once in total, the lead's and the VFX lead's together (readers and critics that run no engine do not count). "GitHub runs them": builders run only the suites their change touches; the full suite runs on CI before merge, never locally. At most 3 open PRs (the standing rule). "Yes, as they go": builders split a crowded file at a natural seam and shrink a grandfathered long function whenever their work touches it. "Yes, after current work": the lead measures where the sim's step time goes so a balance run takes minutes; any game change it suggests goes to the director first.
+
+## 2026-10-23 · D-158 · Director · Title camera tilts up so the Colossus towers
+
+Asked by the VFX lead with the current title still: the title camera tilts up until the Colossus head stands 1.5-2x the tallest centre tower, the full head silhouette stays in frame, and the water band gets about a third thinner (accepted) with the fire reflections still visible in it. Amended 2026-10-23: the title builder measured that no tilt reaches 1.5-2x the 163 m centre tower with any water left (the head stood 1.15x the 102 m tower under it, 0.8x the 163 m one). Asked: "Bigger + lower tower": the Colossus grows (140 to about 185 m), the camera tilts about 7 degrees so the water band is a third thinner, and the 163 m tower is lowered on the title only, so nothing on screen is taller than the Colossus; its whole head stands 1.5-2x the tallest tower left in frame.
+
+## 2026-10-23 · D-157 · Director · The army's stray shells count as the kaiju's destruction
+
+Asked (sim review of PR #159 found it agent-added): when a tank's missed shell smashes part of a building, it all counts: the kaiju earns the biomass, the city's ruin rises, and the army escalates as usual (the army wrecking its own city in a panic feeds the predator). The D-066 damage budget is measured with helicopters on, including that escalation.
+
+## 2026-10-23 · D-156 · Director · The demo ends when the whole upgrade tree is unlocked; endless mode
+
+Asked what triggers the thanks screen; then he changed it: "i think we should measure until the upgrade tree is fully unlocked (2 hours roughly)". The thanks screen appears when the player buys the final upgrade; costs are tuned so that takes about 2 hours (D-152 window). "After they unlock the final upgrade they can unlock an endless mode maybe, where the city regenerates slowly and enemies escalate; otherwise players can feel free to replay the normal mode with their maxed out kaiju as many times as they want." Asked: endless mode is in the demo. Replaces D-153's free play in the ruined city and the old trigger (buying the Behemoth evolution). Then: "the game's balance will not be determined by endless mode. the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it makes normal mode better" (DESIGN Progression).
+## 2026-10-23 · D-155 · Director · Atmosphere joins M1; weather; music and city sound; version; end confirm
+
+"keen to get stuck into the atmospheric stuff soon". Asked: all four parts, and all are part of M1 (M1 waits for them): rampage escalation (D-154: haze, orange sky, spreading blackouts), sky and sea life (clouds, birds that scatter, small boats, one untouchable whale per run; comments #63-64, #71), weather, and sound atmosphere. Weather is looks only: rain, fog banks, thunderstorm, overcast or clear; picked at random per run with the time of day, never the same twice in a row, with an options toggle to fix it. Music: the lead writes one short brief per city (style, tempo, mood, stems), the director generates in Suno (D-114) and the lead cuts and layers the stems (D-125). City sound: panic then eerie quiet (crowds and sirens swell early, then fade as people flee; the late city is fire, wind and military). Version tag: "DEMO 0.1", rising one step per milestone (M1 0.1, M2 0.2, M3 0.3), the Itch release is the 1.0 demo. End rampage in the pause menu asks "Are you sure?" first.
+
+## 2026-10-23 · D-154 · Director · Visual direction (12 answers in the VFX lead's session)
+
+Asked by the VFX lead (recorded in docs/VFX_STYLE.md "Visual direction", PR #154): fire is cinematic (deep orange-red, black smoke); as a rampage escalates the haze thickens and the sky turns orange; collapse dust walls may swallow the camera for 2-3 s (an exception to D-018); a big stomp's wave ripples through the blocks (cars hop, windows burst); debris rains for 2-4 s; rare split-second slow motion on the biggest moments; glass breaks into glittering shards; night blackouts spread as the city falls; crushed people are a bloodless puff; enemy kills are mostly small crushed pops; the croc's spines and throat crackle with white-hot lightning on charge, stronger with each evolution; Taskforce energy is clean, precise tech.
+
+## 2026-10-23 · D-153 · Director · Demo free play, version tag, tester count
+
+Asked. After the thanks screen the adult city stays ruined and the military and Taskforce keep arriving in waves to be eaten (endless free play). The demo shows a tiny "DEMO 0.x" label in a corner so screenshots and reports name the build. About 10-20 invited testers. Gamepad plus keyboard and mouse reconfirmed (already D-004/D-040): every new menu (title, pause feedback, thanks screen) must work with a pad.
+
 ## 2026-10-23 · D-152 · Director · Milestone logistics, Taskforce tuning, demo end
 
 Asked ("ask me a lot of questions"). Milestones: builds go to Desktop\Kaiju Builds, one subfolder per milestone; each survey is a private web page with fields (sliders, ticks, comment boxes) whose answers the lead reads back; M1 waits until every M1 item lands. Demo length: 90+ min, about 2 hours at most. Taskforce: agents first appear a few minutes into the adolescent city, never in the baby city; frost halves the kaiju's speed for about 4 s; each agent fires its railgun about every 12 s; an agent kill pays about a tank's worth; a walking mech dies to one stomp or swipe; a gas cloud lasts about 8 s and is about one street wide; up to 2 gunships at once in the adult city. Demo end: the thanks screen shows buildings destroyed, people eaten and fled, military destroyed (every unit type), time played and biomass earned; after it the tester can keep rampaging the adult city. The Itch demo is Windows only. Low health warns with the red pulse only (no heartbeat).
@@ -359,39 +398,3 @@ Why (10:5x): slow stage 1 so the baby reads as a toddler; pacing re-measured in 
 ## 2026-10-18 · D-073 · Director · Croc baby and adolescent approved
 Why (10:5x): the P3 bodies from the croc titan design (D-059) are approved for the demo; clips kept, slam polish
 later. PR #54.
-
-## 2026-10-18 · D-072 · Director · All four jets; strikes wreck buildings but give no biomass
-Why (10:5x): jets arrive from Colossus; the bomber is the Apex set-piece; the octopus can grab jets. PRs #58, #61
-(parked until after the demo).
-
-## 2026-10-18 · D-071 · Director · Landmarks in order: A stadium, D wheel, E spire, F megatower
-Why (10:5x): picked from the landmark board. A sites PR with A and D first, then E and F.
-
-## 2026-10-18 · D-070 · Director · All tabled sounds ship, with a new mix
-Why (10:5x): #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 #62 merged, each resynced by the sound session; #52 decided by
-D-079.
-
-## 2026-10-18 · D-069a · Director · Soften #36's young stage to about half the early defeats
-Why (11:2x): about half the early defeats; cause: Armoured Scales moved late in the tree. #36 lands last before the build.
-
-## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
-Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
-priced late. Merge #36 after #50 and P3.
-
-## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
-Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
-camera). MERGED #35.
-
-## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
-Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
-
-## 2026-10-18 · D-066 · Director · Tanks and helicopters move and fight like a professional military
-Why: road-bound tank columns with firing posts and fallbacks, helicopter pairs with attack runs; total damage per run
-held within ±5%; helicopters a real threat to dodge ("overall difficulty unchanged"). PR #50; heli mix shift OK.
-
-## 2026-10-18 · D-065 · Director · A believable amount of greenery throughout the city
-Why (06:2x): "make sure there are a believable amount of trees, bushes, floral areas, parks, gardens, playgrounds
-throughout the city". (a) street trees, gardens, playgrounds, hedges, all crushable: PR #55; (b) green lots: D-075.
-
-## 2026-10-18 · D-064 · Director · Menu sounds and the SFX volume slider shipped as heard
-Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard". MERGED #33.
