@@ -15,12 +15,15 @@ const TURN_TRIGGER := 0.6
 ## after it (the tail's whip settles about half a second after the body stops).
 const TURN_PAD := 6
 const TURN_SETTLE := 24
-## How fast a lifted foot's lag behind its clip path dies out (1/s): gone before it lands.
-const LAG_DECAY := 10.0
+## A foot that lifts after the body turned over it is left behind its clip path: it stays where it
+## stood as it lifts, then swings to the path (which the body carries round) in LAG_SECONDS, an arc
+## lifted LAG_LIFT of the way it has to go, at most LAG_LIFT_MAX hip heights, never a glide along
+## the ground (motion critic 2026-10-22: "the foot skates").
+const LAG_SECONDS := 0.25
+const LAG_LIFT := 0.3
+const LAG_LIFT_MAX := 0.15
 ## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
 const FOOT_YAW_DECAY := 12.0
-## How far a leg may stretch (fraction of its length) to hold a planted foot's yaw.
-const HELD_REACH := 0.99
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
@@ -67,6 +70,7 @@ var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
 var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _air_s: Array[float] = [0.0, 0.0]  # seconds since it lifted
 ## The body's world yaw when each foot went down, and the turn (rad) its toes are held to: a planted
 ## foot keeps its world yaw while the body turns over it, and swings back to the clip's in the air.
 var _plant_yaw: Array[float] = [0.0, 0.0]
@@ -76,6 +80,7 @@ var _catch: Array[float] = [0.0, 0.0]  # seconds left of a catch step
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
 var _tail: ClipTail
+var _hold: FootHold  # a planted foot's world yaw
 var _feet_primed := false
 ## The roar's tail slam: the tip's lowest point so far, and whether it has landed.
 var _slam_low := Vector3(0, INF, 0)
@@ -108,6 +113,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 			tail_bones += 1
 			_tail_tip = bone_name
 	_tail = ClipTail.new(tail_bones)
+	_hold = FootHold.new(rig)
 
 
 func update(delta: float) -> void:
@@ -311,7 +317,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		elif planted:
 			if not _was_planted[i]:
 				_lock[i] = target
-				_plant_yaw[i] = _rig_yaw()
+				_plant_yaw[i] = _hold.rig_yaw()
 				leg.plant_at = target
 				leg.drift = 0.0
 				var side := "left" if leg.side < 0.0 else "right"
@@ -320,15 +326,28 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 			target = _lock[i]
 			_lag[i] = _lock[i] - clip_toe
 		else:
-			_lag[i] *= exp(-LAG_DECAY * dt)
+			target = _air_target(i, dt, clip_toe)
 		leg.planted = planted
 		_was_planted[i] = planted
 		if planted:
-			_yaw_fix[i] = _held_yaw(leg, target, wrapf(_plant_yaw[i] - _rig_yaw(), -PI, PI))
+			_yaw_fix[i] = _hold.held(
+				leg, s, target, wrapf(_plant_yaw[i] - _hold.rig_yaw(), -PI, PI)
+			)
 		else:
 			_yaw_fix[i] *= exp(-FOOT_YAW_DECAY * dt)
 		_reach(leg, target, _yaw_fix[i])
 	_feet_primed = true
+
+
+## Where a foot in the air is: it stood at `_lock` as it lifted and swings to the clip's path in an
+## arc (LAG_SECONDS), so a foot the body turned over is lifted before it sweeps, never glides.
+func _air_target(i: int, dt: float, clip_toe: Vector3) -> Vector3:
+	_air_s[i] = 0.0 if _was_planted[i] else minf(_air_s[i] + dt, LAG_SECONDS)
+	var k := _air_s[i] / LAG_SECONDS
+	var gap := _lock[i] - clip_toe  # from where it stood to the path
+	_lag[i] = gap * (1.0 - smoothstep(0.0, 1.0, k))
+	var lift := minf(LAG_LIFT * gap.length(), LAG_LIFT_MAX * hip_height * s)
+	return clip_toe + _lag[i] + Vector3.UP * lift * sin(PI * k)
 
 
 ## A foot spot of the clip with its fore-aft travel shortened to the step the sim takes (a quick
@@ -346,31 +365,6 @@ func _overreached(leg: BipedGait.Leg, lock: Vector3, clip_toe: Vector3) -> bool:
 	var hip := rig.bone(leg.names[0]).global_position
 	var ankle := lock + (rig.bone(leg.names[2]).global_position - rig.tail_world(leg.names[2]))
 	return (ankle - hip).length() > RESTEP_REACH * (leg.l1 + leg.l2) * s
-
-
-## The rig's yaw in the world (rad, 0 = facing -Z).
-func _rig_yaw() -> float:
-	var fwd := -rig.global_transform.basis.z
-	return atan2(-fwd.x, -fwd.z)
-
-
-## The most of a foot's yaw hold (`fix`, rad) the leg can reach: the ankle stays within the leg's
-## length of the hip with the toe on `toe` (bisected; the foot turns only as far as the leg allows).
-func _held_yaw(leg: BipedGait.Leg, toe: Vector3, fix: float) -> float:
-	var hip := rig.bone(leg.names[0]).global_position
-	var ankle_now := rig.bone(leg.names[2]).global_position
-	var off := rig.tail_world(leg.names[2]) - ankle_now
-	var most := (leg.l1 + leg.l2) * s * HELD_REACH
-	var k := 1.0
-	var lo := 0.0
-	var hi := 1.0
-	for _n: int in 6:
-		if (toe - Basis(Vector3.UP, fix * k) * off - hip).length() <= most:
-			lo = k
-		else:
-			hi = k
-		k = (lo + hi) * 0.5
-	return fix * lo
 
 
 ## Puts the toe at `toe` (two-bone IK) with the foot turned about the world's up by `yaw_fix`.

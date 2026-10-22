@@ -19,7 +19,12 @@ const LEVELS := {
 	"adolescent": {"evolve1": 1},
 	"adult": {"evolve1": 1, "evolve2": 1},
 }
+## A foot skates when it is this near the ground (world units) and moves faster than SKATE_SPEED
+## (units/s) in the world: a foot in the air is lifted, a foot on the ground is still.
+const SKATE_LOW := 0.08
+const SKATE_SPEED := 3.0
 const WALK_FROM := 0.5
+const TURN_AT := 3.5  # when the turn90 course swings the stick
 const CM_PER_UNIT := 350.0
 ## 1/s: how fast the side cameras swing to the walk's heading; quick, so the head's distance from
 ## the lens (and the kaiju's size in frame) drifts under 3% over 20 frames through a turn (the
@@ -110,6 +115,7 @@ func _run() -> void:
 	var yaws: Array[float] = []  # the drawn body's yaw each frame
 	var heights: Array[float] = []  # the drawn kaiju's height in pixels each frame
 	var steps: Array[float] = []  # how far the kaiju walked each frame (world units)
+	var toes: Array[Vector3] = []  # each foot's ground end each frame, left then right
 	var last_at := sim.kaiju_pos
 	var planted_at: Array[Vector3] = [Vector3.INF, Vector3.INF]  # each foot where it went down
 	for f: int in int(_seconds / DT):
@@ -126,6 +132,9 @@ func _run() -> void:
 			yaws.append((kaiju._rig.gait as BipedGait).body_yaw)
 			heights.append(_height_px(cam, kaiju))
 			steps.append(sim.kaiju_pos.distance_to(last_at))
+			var gait: ClipGait = kaiju._rig.gait
+			for i: int in 2:
+				toes.append(kaiju._rig.tail_world(gait.legs[i].names[2]))
 			last_at = sim.kaiju_pos
 		var slid := _slide(kaiju, planted_at)
 		if t > 1.5:  # past the first steps off the stand
@@ -139,6 +148,7 @@ func _run() -> void:
 	)
 	if _log:
 		_print_log(yaws, heights, steps)
+		_print_skate(toes)
 	quit()
 
 
@@ -172,6 +182,32 @@ func _print_log(yaws: Array[float], heights: Array[float], steps: Array[float]) 
 				+ " 20 frames %.1f%%; walk-off ramp (%% of speed at +40 frames): %s"
 			)
 			% [rad_to_deg(peak), step / maxf(peak, 0.0001) * 100.0, frame * 100.0, ramp]
+		)
+	)
+
+
+## Prints the frames a foot skated (low, and sweeping over the ground), over the walk before the
+## turn (the stick's change at TURN_AT, turn90) and over the turn, and the worst speed.
+func _print_skate(toes: Array[Vector3]) -> void:
+	var walk := 0
+	var turn := 0
+	var worst := 0.0
+	var ground := INF  # a planted foot's height: the lowest the toes ever are
+	for toe: Vector3 in toes:
+		ground = minf(ground, toe.y)
+	for n: int in range(2, toes.size()):
+		var at := toes[n]
+		var speed := Vector2(at.x - toes[n - 2].x, at.z - toes[n - 2].z).length() / DT
+		if at.y - ground < SKATE_LOW and speed > SKATE_SPEED:
+			if n / 2 * DT < TURN_AT:
+				walk += 1
+			else:
+				turn += 1
+				worst = maxf(worst, speed)
+	print(
+		(
+			"SKATE foot-frames near the ground and sweeping: walk %d, turn %d, worst %.1f units/s"
+			% [walk, turn, worst]
 		)
 	)
 
