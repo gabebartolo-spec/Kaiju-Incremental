@@ -1,5 +1,5 @@
 # ui-redesign handoff, 2026-10-21
-## State (2026-10-22): critic fix pass done, captured, reviewed at 2x, lint clean, pushed; pr-body.md final. Done.
+## State (2026-10-22 evening): title/ambience work pushed; plates board (#97) and HUD ring (#96) NOT started. See last section.
 ## Task
 Lead-10 builder. In-run HUD (b2-10..13, R 15.1-15.7) and menus (title, pause, settings, results, species
 select, loading) in UI look A "Emergency Broadcast" with bespoke drawn assets; fonts Claw/Block; one shared
@@ -75,3 +75,48 @@ Lint pass: branch .gd files were NOT gdlint clean (long lines, var order, a lite
 in run_ui_tests.gd, suite 430 lines): fixed; tree checks moved to tests/lib/ui_tree.gd. Suites after:
 ui 8/8 fn 57 checks, flow 7/7 fn 203 checks, 0 failures. pr-body.md updated (before/after, share, Not exercised).
 Left: nothing; the lead asks the director about the first-run controls card.
+
+## Session 2026-10-22 evening (builder "ui", headers + title), what is on the branch
+Headers: tag removed everywhere, text centred (UiKit.HEADER_MARGINS table, measured at 4K: ink pads within 1 px).
+Buttons: HazardBox.Band.SIDES (tape both edges), 4K symmetry measured (yellow px L/R within 0.5%). Renamed Kaiju
+Evolution (logo, project name, export product + exe name, build.yml/export_windows.sh/pck_check follow); save folder
+kept via use_custom_user_dir "Godot/app_userdata/Kaiju Incremental" (proved: save written before, loaded after).
+Title (#88,#98,#99): night view across the bay from the quay, STILL camera, built by scenes/title_backdrop.gd
+(SubViewport + CityView staged build, headless skips it: TitleScreen.live_city), far fires scenes/far_fire.gd (billboards;
+the real Fire is invisible at 200+ m), gunshot flashes + explosions scenes/far_flash.gd, sound scenes/title_ambience.gd
+(crowd_panic loop, rifle bursts, siren_far.ogg [ElevenLabs D-138, rows added], boom = tank_fire pitched 0.55, stomp =
+stomp_1 pitch 0.5 + generated 40 Hz sub thump on bus "TitleFar" lowpass 180 + short reverb, every 2.8 s +-0.25).
+All numbers in data/tuning.json "title". Camera tremor + dim on each stomp (TitleBackdrop.stomp).
+tools/capture/capture_title.gd: 4K still, --clip=N (with --write-movie, prints "clip from frame"), --no-city.
+Measured: menu open ~150 ms without the city; city stands ~4.2 s later (async); launch-to-first-frame ~5.0 s is mostly
+Godot start + script load in the capture, NOT yet measured through the real main scene (TODO #99: measure from process
+start to first title frame via main.tscn; boot_splash show_image=false + dark bg already set in project.godot).
+Clip: scratchpad/clip2/title_night_6s.mp4 (+ raw.avi, audio.wav, tools: scratchpad/audio_report.py, ffmpeg =
+imageio_ffmpeg binary under Python314/site-packages). Thud peaks in the 10 s audio at 1.4/4.6/7.3/10.1 s (gaps 3.2/2.7/
+2.8), 99.5% of energy < 60 Hz.
+## Queue for the next builder (in order)
+0 Critic on clip2 (director paused; no GPU renders until he resumes): night look, no smoke blanket, menu contrast PASS.
+  FIX: (a) camera must be truly still: remove the tremor and the 17% dim after each thud (TitleBackdrop.stomp / tuning
+  title.ambience.tremor; the director's #99 says still); (b) thuds inaudible on TV speakers: add an 80-200 Hz body and a
+  1-3 kHz crack layer, target -22..-18 dBFS in the 60-250 Hz band; (c) sirens, screams and gunfire were missing from the
+  clip's track (levels crowd -36, gun -38, siren -34 dB are too low or not mixing in: check the buses/ducking, target
+  -35..-30 dBFS each); (d) no explosion or gunshot flash was visible in 6 s: add 1-2 warm 150-300 ms flashes in the
+  clip window, away from the menu (FarFlash spots: x range follows tuning title.fires focus/radius; boom every 7-15 s
+  seeded, so pick a seed or timing that lands one inside a 6 s cut).
+1 Critic may say the 40 Hz thud is inaudible on TV speakers: add an audible 80-200 Hz layer (raise stomp_1 db/pitch
+  or add a 90 Hz click layer; tuning title.ambience.stomp), re-record clip, re-measure per-step peaks.
+2 Far smoke is barely visible (dark on dark): raise smoke_alpha/size or tint with glow; stray white "h"/"o" letters at
+  right edge from the director's screenshot were NOT reproduced in my 4K captures (check the real main flow).
+3 Measure boot-to-first-scene-frame through main.tscn (#99).
+4 #97 PLATES: "Worn industrial plates" in shared UiKit button/label styles (bevel, drop shadow, scuffs, rivets, sheen,
+  pressed/hover; text thick dark outline + hard drop shadow + faint inner highlight; StyleBox/shader only). Make ONE
+  labelled 4K board A=today B=new (title + settings, real size + 2x crop). Do NOT push the plate style until the
+  director approves the board; report the board path to the lead.
+5 #96 HUD ring (lead's brief): tuning ui.hud ring_radius/ring_small_radius 16->19.25, ring_width 4->3; hud_ring.gd
+  OUTLINE 2->1; raise ICON_SHARE so TODAY's icons fill the dark disc with a 3-4 px gap to the band (measure at 4K);
+  mipmaps/generate=true in assets/ui/icons/{breath,dash,ultimate}.png.import; NO art from claude/ui-art. One 4K
+  capture of the bottom-left HUD with band width and gap; ui suite + check_scripts.
+Rules: godot windowed runs need an untracked override.cfg written in its OWN Bash call first (focus guard), delete after;
+godot new class_name needs `--headless --import` before use; flow suite can flake (breath scorch glow frame check)
+when another Godot runs in parallel; lint scripts tools/lint/{tuning_keys,complexity_ratchet}.py exist only on main
+(copy from origin/main to scratchpad and run with cwd = worktree; baseline file must sit in tools/lint/ while it runs).

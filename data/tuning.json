@@ -461,6 +461,77 @@
 			"regen_loop": -20.0
 		}
 	},
+	"title": {
+		"_note": "The title screen's live city at night (comments #88, #98): the far shore seen across the bay from the play area's quay on a slow camera drift, a district over there on fire; the kaiju is only implied. Ambience levels are dB on their buses; the UI click is -12, so the bed sits 20 dB or more under it.",
+		"city_tier": 1,
+		"fade_s": 1.2,
+		"camera": {"position": [-5.0, 12.0, -100.0], "look": [-53.0, 30.0, -310.0], "fov": 50.0},
+		"sky": {
+			"top": "050814",
+			"bottom": "15233f",
+			"glows": [[0.84, 0.3, 0.2], [0.93, 0.36, 0.14], [0.76, 0.4, 0.12]],
+			"glow_color": "ff6a14",
+			"glow_alpha": 0.5
+		},
+		"flashes": {
+			"shot": {"color": "ffe9b0", "size": 3.0, "life_s": 0.09, "height": 2.0},
+			"boom": {
+				"color": "ff8a30",
+				"size": 70.0,
+				"life_s": 0.45,
+				"min_height": 6.0,
+				"max_height": 50.0,
+				"smoke_color": "30251f",
+				"smoke_size": 30.0,
+				"smoke_s": 5.0,
+				"smoke_rise": 60.0
+			}
+		},
+		"fires": {
+			"focus": [70.0, -330.0],
+			"radius": 70.0,
+			"count": 7,
+			"depth": 70.0,
+			"far": {
+				"color": "ff6a14",
+				"core_color": "ffc060",
+				"smoke_color": "2a2320",
+				"glow_size": 30.0,
+				"core_size": 8.0,
+				"flicker_hz": 7.0,
+				"smoke_count": 6,
+				"smoke_size": 20.0,
+				"smoke_rise": 70.0,
+				"smoke_s": 10.0,
+				"smoke_alpha": 0.6
+			}
+		},
+		"shade": {"centre_alpha": 0.78, "edge_alpha": 0.18, "color": "05060a", "radius": 0.62},
+		"ambience": {
+			"crowd_db": -36.0,
+			"gun_db": -38.0,
+			"gun_gap_s": [1.2, 5.0],
+			"gun_burst": [1, 4],
+			"gun_burst_gap_s": 0.16,
+			"boom": {"sound": "tank_fire", "db": -24.0, "pitch": 0.55, "every_s": [7.0, 15.0]},
+			"siren": "siren_far",
+			"siren_db": -34.0,
+			"stomp": {
+				"sound": "stomp_1",
+				"db": -20.0,
+				"pitch": 0.5,
+				"sub_hz": 40.0,
+				"sub_db": -14.0,
+				"sub_attack_s": 0.006,
+				"sub_decay_s": 0.4,
+				"every_s": 2.8,
+				"jitter_s": 0.25,
+				"lowpass_hz": 180.0,
+				"reverb": {"room_size": 0.35, "damping": 0.8, "wet": 0.25}
+			},
+			"tremor": {"amplitude": 0.35, "decay_per_s": 2.2, "dim": 0.22}
+		}
+	},
 	"chain": {
 		"step_hz": 60.0,
 		"max_substeps": 4,
@@ -522,6 +593,7 @@
 			"ready": "SFX",
 			"deflect": "SFX",
 			"regen_loop": "SFX",
+			"siren_far": "Ambience",
 			"footstep": "SFX",
 			"footstep_1": "SFX",
 			"footstep_2": "SFX",

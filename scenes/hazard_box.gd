@@ -1,9 +1,10 @@
 class_name HazardBox
 extends StyleBox
 ## The emergency-broadcast box (the director's UI look A): a flat fill with square corners, an
-## edge (solid or dashed), an optional band of hazard tape on the left, the top or both sides, and an optional
-## focus ring drawn just inside the edge (never outside: a ring outside the box covered the
-## controls next to it). The city's alarm system pointing at you. UiKit builds every one.
+## edge (solid or dashed), an optional band of hazard tape on the left, the top or both sides, and
+## an optional focus ring drawn just inside the edge (never outside: a ring outside the box
+## covered the controls next to it). The city's alarm system pointing at you. UiKit builds every
+## one.
 
 enum Band { NONE, LEFT, TOP, SIDES }
 
@@ -50,17 +51,7 @@ var chevron := false
 
 func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 	RenderingServer.canvas_item_add_rect(to_canvas_item, rect, fill)
-	if band == Band.LEFT or band == Band.SIDES:
-		tape(
-			to_canvas_item, Rect2(rect.position, Vector2(band_size, rect.size.y)), tape_on, tape_off
-		)
-	if band == Band.SIDES:
-		var at := Vector2(rect.end.x - band_size, rect.position.y)
-		tape(to_canvas_item, Rect2(at, Vector2(band_size, rect.size.y)), tape_on, tape_off)
-	elif band == Band.TOP:
-		tape(
-			to_canvas_item, Rect2(rect.position, Vector2(rect.size.x, band_size)), tape_on, tape_off
-		)
+	_draw_band(to_canvas_item, rect)
 	frame(to_canvas_item, rect, edge, border, dashed)
 	if corners:
 		_corners(to_canvas_item, rect)
@@ -83,6 +74,17 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 		elif band == Band.TOP:
 			inner = inner.grow_side(SIDE_TOP, -band_size)
 		frame(to_canvas_item, inner, ring_color, RING_WIDTH, false)
+
+
+## The band of tape on the left, the top or both sides.
+func _draw_band(item: RID, rect: Rect2) -> void:
+	var side := Vector2(band_size, rect.size.y)
+	if band == Band.LEFT or band == Band.SIDES:
+		tape(item, Rect2(rect.position, side), tape_on, tape_off)
+	if band == Band.SIDES:
+		tape(item, Rect2(Vector2(rect.end.x - band_size, rect.position.y), side), tape_on, tape_off)
+	elif band == Band.TOP:
+		tape(item, Rect2(rect.position, Vector2(rect.size.x, band_size)), tape_on, tape_off)
 
 
 ## Diagonal hazard tape filling `rect`: stripes of `on` over `off`, leaning like road tape.
