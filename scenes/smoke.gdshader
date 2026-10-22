@@ -19,6 +19,15 @@ uniform float centre_radius = 0.32;
 uniform float focus_clear = 0.55;
 uniform float focus_full = 1.0;
 global uniform float smoke_focus;
+// DESIGN "smoke never hides the view: thinned over the kaiju" (dash-burst clip: the baby lost in
+// the dust of what it broke, right at its own depth, where focus_clear no longer reaches).
+// smoke_kaiju (set by CityView): xyz the body's middle, w its radius. Smoke on the sight line
+// from the camera to the body, out to body_clear radii from that line and up to one radius past
+// the body, keeps only body_keep of its opacity; full strength again from body_full radii out.
+uniform float body_keep = 0.12;
+uniform float body_clear = 1.0;
+uniform float body_full = 1.6;
+global uniform vec4 smoke_kaiju;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -52,5 +61,19 @@ void fragment() {
 	float centre = mix(centre_keep, 1.0, smoothstep(centre_radius * 0.4, centre_radius, length(off)));
 	float front = smoke_focus > 0.0
 		? smoothstep(smoke_focus * focus_clear, smoke_focus * focus_full, -VERTEX.z) : 1.0;
-	ALPHA = COLOR.a * round_mask * near * centre * front;
+	float body = 1.0;
+	if (smoke_kaiju.w > 0.0) {
+		vec3 eye = INV_VIEW_MATRIX[3].xyz;
+		vec3 at = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz - eye;
+		vec3 line = smoke_kaiju.xyz - eye;
+		float reach = length(line);
+		vec3 dir = line / max(reach, 0.001);
+		float along = dot(at, dir);
+		float off = length(at - dir * along);
+		float r = smoke_kaiju.w;
+		float inside = (1.0 - smoothstep(r * body_clear, r * body_full, off))
+			* (1.0 - smoothstep(reach + r * 0.5, reach + r, along));
+		body = mix(1.0, body_keep, inside);
+	}
+	ALPHA = COLOR.a * round_mask * near * centre * front * body;
 }
