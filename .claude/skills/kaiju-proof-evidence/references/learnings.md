@@ -16,3 +16,11 @@ missing from the stills while the sim counted the kill.
 helideaths, tentacles, military and powers green).
 **Lesson:** when a capture script injects or forces sim events, pass those events to the view's event handler
 itself, and check in the still that the thing the event should show is actually on screen.
+
+## 2026-10-23 · Plant zero and extreme values, not mild ones
+**Finding:** a "normal mode is untouched by endless tuning" check passed against a planted defect when the endless
+rows were only scaled x7: the mild change never reached the code path. Planting zero and extreme rows (escalation
+guard removed, tank cap without its endless check) made the same check fail, and the clean code passed.
+**Evidence:** demo-end, claude/demo-end 0dc68ad6 (tests/lib/sim_demo_end.gd `_check_normal_untouched`).
+**Lesson:** when proving a "nothing changes" check, plant values that must break it if the path is reached (zero,
+negative, huge), and confirm the plant actually reached the code before trusting a pass.

@@ -37,14 +37,15 @@ func _ready() -> void:
 	_col = VBoxContainer.new()
 	_col.add_theme_constant_override("separation", 16)
 	panel.add_child(_col)
-	var title := UiKit.label("PAUSED", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_col.add_child(title)
+	_col.add_child(UiKit.header("PAUSED"))
 	_resume = _add("RESUME", UiKit.ACCENT, resume)
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
 	if sim != null:
 		_report = _add(str(Content.section("feedback")["label"]), UiKit.PANEL_EDGE, _open_report)
-	_add("END RAMPAGE  (keep biomass)", UiKit.PANEL_EDGE, _ask_end)
+	_add("END RAMPAGE", UiKit.PANEL_EDGE, _ask_end)
+	var note := UiKit.label("You keep the biomass", UiKit.SIZE_BODY, UiKit.MUTED)
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_col.add_child(note)
 	_resume.grab_focus.call_deferred()
 
 

@@ -9,8 +9,8 @@ name: build
 # merges it, or by running the workflow by hand on the branch. The exported game runs
 # headless for 120 frames and must load the main scene from project.godot without
 # logging an error. The export itself is tools/export_windows.sh (with its pack check), the
-# same script agents run locally. On main the .exe is uploaded as "KaijuIncremental-windows"
-# (30 days); a dispatched run uploads "KaijuIncremental-<sha>" (7 days), the demo build. Sprite
+# same script agents run locally. On main the .exe is uploaded as "KaijuEvolution-windows"
+# (30 days); a dispatched run uploads "KaijuEvolution-<sha>" (7 days), the demo build. Sprite
 # sheets under assets/sprites are plain git (.gitattributes). The display fonts are LFS
 # (assets/fonts, ~26 KB), so the checkout pulls LFS; LFS bandwidth is metered, so keep big
 # binaries out of it or cache them.
@@ -21,7 +21,7 @@ on:
       - "docs/**"
       - "**/*.md"
   # By hand, for any branch (the demo build comes from here): exports `ref` (default: the
-  # branch the run is dispatched on) and uploads KaijuIncremental-<sha> for 7 days.
+  # branch the run is dispatched on) and uploads KaijuEvolution-<sha> for 7 days.
   #   gh workflow run build.yml --ref claude/look-options [-f ref=<branch or sha>]
   workflow_dispatch:
     inputs:
@@ -106,7 +106,7 @@ jobs:
         run: |
           main=$(tr -d '\r' < project.godot | sed -n 's/^run\/main_scene="\(.*\)"$/\1/p')
           code=0
-          timeout 300 out/windows/KaijuIncremental.exe --headless --verbose --quit-after 120 > launch.log 2>&1 || code=$?
+          timeout 300 out/windows/KaijuEvolution.exe --headless --verbose --quit-after 120 > launch.log 2>&1 || code=$?
           if [ "$code" != 0 ]; then
             cat launch.log; echo "::error::the exported build exited with $code"; exit 1
           fi
@@ -122,9 +122,9 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: KaijuIncremental-windows
+          name: KaijuEvolution-windows
           path: |
-            out/windows/KaijuIncremental.exe
+            out/windows/KaijuEvolution.exe
             out/windows/*.dll
           retention-days: 30
 
@@ -132,9 +132,9 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: KaijuIncremental-${{ env.sha }}
+          name: KaijuEvolution-${{ env.sha }}
           path: |
-            out/windows/KaijuIncremental.exe
+            out/windows/KaijuEvolution.exe
             out/windows/*.dll
           retention-days: 7
 

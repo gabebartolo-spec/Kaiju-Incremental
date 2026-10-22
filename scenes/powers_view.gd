@@ -104,7 +104,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"tail_sweep":
 			var side := Num.f(event["side"])
 			_hook("tail_sweep", [side])
-			_city.ring(kaiju_at, Num.f(event["reach"]), UiKit.WARN, 0.35)
+			_city.fx.shockwave_to(kaiju_at, Num.f(event["reach"]))  # dust out to the tail's reach
 			var behind := kaiju_at - _w(sim.facing) * Num.f(event["reach"]) * 0.7
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
 		"swipe_windup":
