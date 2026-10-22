@@ -11,16 +11,17 @@ Director pause: no Godot until 22:40 (2026-10-22). Baseline worktree ../Kaiju-In
   military, street replay, camera, README rows).
 - breath_snout_ahead [10.4,10.4,10.3,13.5] left alone on purpose: indexed by 1-based size_tier, slot 0 is spare, so it is already
   baby/adolescent/adult. No jet/bomber set-piece exists in code at this tip; nothing to move.
-- Rings decided: 50/75/150 (coast_z -(half+70)); 50/80/150 failed (stage-1 shipped seed 7301: 2 empty cells beside the river street,
-  all alignment luck; scan scratchpad scan_half.gd: only half1 75-77 with half0 50 is clean on 3 plans x stages 1-2). 75 is +7% not
-  +15%: tell the lead. Stage-1 arena depends on half0 only.
+- Rings back to 50/80/150 (lead: 75 breaks the ~15% ruling; fix the generator). New generator rule: scenes/river_quay.gd (RiverQuay,
+  data city.river_quay): crate stacks every 8 m on the street side of the river's water edge (nothing parks / no lamp beside water,
+  so those cells were bare); untested until 23:35. Then re-run empty-ground over shipped seed + 20 others (scan_half.gd / city suite).
 - Done since: save v3 migration (tuning "save"."refunds" evolve3 444500; test tests/lib/flow_save.gd); sim/army.gd rooftop squads use the
   column's real top (a squad floated over an empty column, found by luck); tests/lib/sim_suite.gd CITY_SEED 0 -> 3 (seed 0 has no tall
   tier-2 office in the half-50 arena; the topple/swipe fixtures need one; offices exist at seeds 3, 8, 22).
 - TODO after the 23:35 Godot pause: (1) re-run city empty_space sim sim_play military street streamview flow load; (2) re-pin
   city_diag_fill SEEDS {1,43,50} and junction_island SEEDS {40,55,60} (premise: bare cell without the fix, none with it) by scanning
   seeds, record old+new for the PR body; (3) street PINNED digest (run prints the new one: deliberate plan change); (4) military
-  "tanks hold standoff": 0 parked-in-range tank-steps (4410 in reserve) at 48/80/145, find out why (probe per tier/seed);
+  "tanks hold standoff": 0 parked-in-range tank-steps (4410 in reserve) at 48/80/145; hypothesis: arena 52.5+entry_depth 10 > army
+  spawn_radius 60 at half 50 flips the entry mode; probe scratchpad probe_mil.gd; diagnose, never loosen; fixture scans: scan_fix.gd;
   (5) pacing after + bench_rampage --stage=3 before/after; (6) full suite; (7) packet, push, remove three-steps-base worktree.
 - Pause rule: no Godot until 23:35 (director). Check `date`.
 - Baseline numbers: pacing before (reptilian) runs in the base worktree -> scratchpad pace_before_rept.txt; baseline tests

@@ -260,7 +260,7 @@
 	"city": {
 		"map_seed": 7301,
 		"half": 50,
-		"districts": [50, 75, 150],
+		"districts": [50, 80, 150],
 		"district_lot_grow": [0, 1, 2],
 		"arena_margin": 2.5,
 		"outer_half": 360,
@@ -288,6 +288,7 @@
 		"parked_gap": [1.9, 3.2],
 		"lane_stop_chance": 0.12,
 		"diagonal_parked_lane": 2.2,
+		"river_quay": {"_note": "RiverQuay (D-062): crate stacks along the water's street-side edge, every gap m, kerb m off the water, clear of bridge decks (deck_clear m) and crossings (node_clear m); low and top are [half width, height] in prop voxels (0.25 m).", "gap": 8.0, "kerb": 0.5, "deck_clear": 1.5, "node_clear": 3.0, "low": [1, 2], "top": [0, 1], "colors": {"quay_crate": "8a6a3a", "quay_band": "5e4a2a"}},
 		"traffic_island": {"half_cells": 1, "pole_cells": 6, "bollard_cells": 3, "bollards": [[-1, -1], [1, 1]], "lane_clear": 0.95, "node_clear": 3.0, "search_step": 0.25, "colors": {"island_kerb": "9a968c", "island_bollard": "d8d4c8", "signal_housing": "1c1e20", "signal_red": "d0301e00", "signal_amber": "8a6420", "signal_green": "2e6a38"}},
 		"car_colors": ["6b6e70", "5b6b7a", "5a2a26", "8a8a84", "6b7a52", "6a5e48"],
 		"street_tree_gap": 6,
@@ -628,7 +629,7 @@
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
-				"city": {"half": 75, "coast_z": -145, "max_height": 32, "tower_chance": 0.6,
+				"city": {"half": 80, "coast_z": -150, "max_height": 32, "tower_chance": 0.6,
 					"fog_scale": 0.6, "far_haze": 0.0024},
 				"army": {"range": 14.5, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.7, "tank_rubble": 6,
 					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
