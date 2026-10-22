@@ -21,6 +21,7 @@ var _fullscreen: Button
 var _scale: Button
 var _fps: Button
 var _graphics: Button
+var _time: Button
 
 
 func _ready() -> void:
@@ -76,6 +77,11 @@ func _ready() -> void:
 	gpu.add_child(_graphics)
 	gpu.add_child(_fps)
 
+	_time = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	_time.custom_minimum_size = Vector2(300, 56)
+	_time.pressed.connect(func() -> void: PlayerSettings.next_time_of_day())
+	_row(col, "Time of day  (every rampage)").add_child(_time)
+
 	col.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
 	var grid := GridContainer.new()
 	grid.columns = 3
@@ -126,6 +132,7 @@ func _refresh() -> void:
 	_scale.text = "%d%%" % roundi(PlayerSettings.ui_scale * 100.0)
 	_fps.text = "UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
 	_graphics.text = PlayerSettings.graphics_level().to_upper()
+	_time.text = TimeOfDay.label(PlayerSettings.time_of_day).to_upper()
 
 
 func _is_full() -> bool:
