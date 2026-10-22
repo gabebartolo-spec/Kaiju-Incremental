@@ -117,13 +117,10 @@ func _rake_cross() -> float:
 ## The raking arm's sweep for the slash streaks: {"centre": shoulder (world), "radius": its reach
 ## now}, or {} when no arm on that side.
 func claw_arc(side: float) -> Dictionary:
-	var body := rig.global_transform.basis.orthonormalized()
 	for s: String in ["l", "r"]:
-		if not rig.has_bone("arm_%s0" % s):
+		if not rig.has_bone("arm_%s0" % s) or _arm_out(["arm_%s0" % s]) != side:
 			continue
 		var shoulder := rig.bone("arm_%s0" % s).global_position
-		if signf((body.inverse() * (rig.tail_world("arm_%s0" % s) - shoulder)).x) != side:
-			continue
 		var reach := 0.0
 		for i: int in 3:
 			var n := "arm_%s%d" % [s, i]
@@ -146,13 +143,39 @@ func whip_yaw(i: int) -> float:
 	return _whip_side * WHIP * sin(wave)
 
 
+## Runs a claw rake on by dt; it ends after the recovery (a gait that poses the arms itself calls
+## this, then pose_rake()).
+func tick_rake(dt: float) -> void:
+	if _rake_t < 0.0:
+		return
+	_rake_t += dt
+	var total := _rake_cross() + Num.f(_claw["strike_s"]) * 0.5 + Num.f(_claw["recover_s"])
+	if _rake_t > total:
+		_rake_t = -1.0
+
+
+## The raking arm alone, laid over the pose a clip gait has already put on the bones: from where the
+## clip holds the arm, up and out, across the front, and back to where the clip holds it. Nothing
+## is touched while no rake runs. The claw reach follows `youth`.
+func pose_rake() -> void:
+	if _rake_t < 0.0:
+		return
+	var body := rig.global_transform.basis.orthonormalized()
+	for side: String in ["l", "r"]:
+		var names := _arm_names(side)
+		if names.is_empty() or _arm_out(names) != _rake_side:
+			continue
+		var held: Array[Vector3] = []
+		for n: String in names:
+			var d := body.inverse() * (rig.tail_world(n) - rig.bone(n).global_position)
+			held.append(d.normalized() * Vector3(_rake_side, 1, 1))
+		_aim_arm(names, _rake_dirs(_rake_t, held), _rake_side, body)
+		_reach_arm(names)
+
+
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 	tick_whip(dt)
-	if _rake_t >= 0.0:
-		_rake_t += dt
-		var total := _rake_cross() + Num.f(_claw["strike_s"]) * 0.5 + Num.f(_claw["recover_s"])
-		if _rake_t > total:
-			_rake_t = -1.0
+	tick_rake(dt)
 	var tail := rig.chain_named("tail0")
 	if tail != null:
 		var n := tail.drive.size()
@@ -202,14 +225,10 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 	var body := rig.global_transform.basis.orthonormalized()
 	var roar := clampf(roar_open, 0.0, 1.0)
 	for side: String in ["l", "r"]:
-		var names: Array[String] = []
-		for i: int in 3:
-			if rig.has_bone("arm_%s%d" % [side, i]):
-				names.append("arm_%s%d" % [side, i])
+		var names := _arm_names(side)
 		if names.is_empty():
 			continue
-		var shoulder := rig.bone(names[0]).global_position
-		var out := signf((body.inverse() * (rig.tail_world(names[0]) - shoulder)).x)
+		var out := _arm_out(names)
 		# The arm on the side of the trailing leg swings forward (left arm with the right leg).
 		var swing := Basis(Vector3.RIGHT, -out * _arm_swing.x * (1.0 - roar))
 		var dirs: Array[Vector3] = [
@@ -219,24 +238,46 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 		]
 		var raking := _rake_t >= 0.0 and out == _rake_side
 		if raking:
-			dirs = _rake_dirs(_rake_t)
-		for i: int in names.size():
-			var n := names[i]
-			var from := rig.bone(n).global_position
-			var length := (rig.tail_world(n) - from).length()
-			var d := (dirs[i] * Vector3(out, 1, 1)).normalized()
-			rig.aim(n, from, from + body * d * length)
-		if raking:  # the whole arm reaches further for the rake (uniform: the hand follows)
-			var reach := lerpf(
-				Num.f(_claw["arm_reach_adult"]), Num.f(_claw["arm_reach_young"]), youth
-			)
-			rig.bone(names[0]).scale = Vector3.ONE * lerpf(1.0, reach, _rake_reach(_rake_t))
+			dirs = _rake_dirs(_rake_t, [ARM_UPPER, ARM_FORE, ARM_HAND])
+		_aim_arm(names, dirs, out, body)
+		if raking:
+			_reach_arm(names)
 
 
-## The raking arm's upper, fore and hand directions t seconds into the rake: rest -> up and out
-## (lift_s), -> across the front (strike_s, fast), -> rest (recover_s).
-func _rake_dirs(t: float) -> Array[Vector3]:
-	var rest: Array[Vector3] = [ARM_UPPER, ARM_FORE, ARM_HAND]
+## The bones of one side's arm (arm_<side>0..2 the rig has).
+func _arm_names(side: String) -> Array[String]:
+	var names: Array[String] = []
+	for i: int in 3:
+		if rig.has_bone("arm_%s%d" % [side, i]):
+			names.append("arm_%s%d" % [side, i])
+	return names
+
+
+## Which side of the body an arm hangs on: -1 (-x) or +1, by its rest direction (a clip may pose the
+## young body's arms across its chest).
+func _arm_out(names: Array[String]) -> float:
+	return signf(rig.dir_of(names[0]).x)
+
+
+## Aims each bone of an arm along its direction (heading frame, x outward on side `out`).
+func _aim_arm(names: Array[String], dirs: Array[Vector3], out: float, body: Basis) -> void:
+	for i: int in names.size():
+		var n := names[i]
+		var from := rig.bone(n).global_position
+		var length := (rig.tail_world(n) - from).length()
+		var d := (dirs[i] * Vector3(out, 1, 1)).normalized()
+		rig.aim(n, from, from + body * d * length)
+
+
+## The whole raking arm reaches further (uniform: the hand follows), a young body's more.
+func _reach_arm(names: Array[String]) -> void:
+	var reach := lerpf(Num.f(_claw["arm_reach_adult"]), Num.f(_claw["arm_reach_young"]), youth)
+	rig.bone(names[0]).scale = Vector3.ONE * lerpf(1.0, reach, _rake_reach(_rake_t))
+
+
+## The raking arm's upper, fore and hand directions t seconds into the rake: `rest` (where the arm
+## hangs) -> up and out (lift_s), -> across the front (strike_s, fast), -> `rest` (recover_s).
+func _rake_dirs(t: float, rest: Array[Vector3]) -> Array[Vector3]:
 	var up := _pose("arm_up")
 	var across := _pose("arm_across")
 	var lift := Num.f(_claw["lift_s"])
