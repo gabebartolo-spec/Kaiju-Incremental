@@ -37,6 +37,8 @@ var _active := {}  # building -> true while HEATING, GLOWING or BURNING (inserti
 var _since := 0.0  # seconds since the last heat pass
 var _pass := 0  # heat passes so far; _warm[j] == _pass when a fire warmed j this pass
 var _warm := PackedInt32Array()
+## Buildings giving way: building -> [ground cells still standing, downwind first; cells a tick].
+var _crumbling := {}
 
 
 ## p_cfg: tuning powers.fire.
@@ -146,13 +148,16 @@ func _heat_pass(keys: Array) -> void:
 func _tick(i: int, dt: float) -> void:
 	if state[i] != State.GLOWING and state[i] != State.BURNING:
 		return
+	if _crumbling.has(i):
+		_crumble(i)
+		return
 	timer[i] -= dt
 	if timer[i] > 0.0:
 		return
 	if state[i] == State.GLOWING:
 		_burn(i)
 	else:
-		_burn_out(i)
+		_burn_out(i, dt)
 
 
 ## Burning building i heats every neighbour still intact or heating; neighbours already past
@@ -213,34 +218,68 @@ func _burn(i: int) -> void:
 	sim.events.append({"type": "fire_burning", "building": i, "seconds": timer[i]})
 
 
-## It burns out: its ground floors (burn_out_floors) give way and the rest collapses and topples
-## like a smashed building (D-129), so no burning shell is left (#111). Everything it drops pays
-## burn_pay of a smash times the conflagration, and far_pay of that when the kaiju is far away.
-func _burn_out(i: int) -> void:
+## It burns out: its ground floors (burn_out_floors) give way over burn_out_seconds, the downwind
+## side first, so the rest drops and topples toward it like a smashed building whose base was
+## eaten (D-129); no burning shell is left (#111). Everything it drops pays burn_pay of a smash
+## times the conflagration, and far_pay of that when the kaiju is far away.
+func _burn_out(i: int, dt: float) -> void:
 	var b := sim.buildings[i]
 	var share := Num.f(cfg["burn_pay"]) * conflagration
 	var far := Vector2(b.x, b.z).distance_to(sim.kaiju_pos) > Num.f(cfg["far_radius"])
 	if far:
 		share *= Num.f(cfg["far_pay"])
 	b.pay_share = share
+	var cells := ground_cells(i)
+	var ticks := maxi(1, roundi(Num.f(cfg["burn_out_seconds"]) / dt))
+	_crumbling[i] = [cells, ceili(cells.size() / float(ticks))]
+	burnt_out += 1
+	conflagration = minf(Num.f(cfg["conflag_max"]), conflagration + Num.f(cfg["conflag_step"]))
+	sim.events.append({"type": "fire_burnt", "building": i, "share": share, "far": far})
+	_crumble(i)
+
+
+## The cells of building i's burn_out_floors lowest floors in the order they give way: the
+## downwind side first (then by floor, x and z, the same every run).
+func ground_cells(i: int) -> Array[Vector3i]:
+	var b := sim.buildings[i]
 	var cells: Array[Vector3i] = []
 	for y: int in mini(Num.i(cfg["burn_out_floors"]), b.height):
 		for x: int in b.w:
 			for z: int in b.d:
 				cells.append(Vector3i(x, y, z))
+	var mid := Vector2(b.w, b.d) * 0.5
+	var key := func(c: Vector3i) -> float:
+		return (Vector2(c.x, c.z) + Vector2.ONE * 0.5 - mid).dot(wind)
+	cells.sort_custom(
+		func(p: Vector3i, q: Vector3i) -> bool:
+			var kp: float = key.call(p)
+			var kq: float = key.call(q)
+			if kp != kq:
+				return kp > kq
+			return Vector3i(p.y, p.x, p.z) < Vector3i(q.y, q.x, q.z)
+	)
+	return cells
+
+
+## The next cells of a building giving way break; once none stand it is burnt out.
+func _crumble(i: int) -> void:
+	var entry: Array = _crumbling[i]
+	var cells: Array[Vector3i] = entry[0]
+	var batch: Array[Vector3i] = []
+	while not cells.is_empty() and batch.size() < Num.i(entry[1]):
+		batch.append(cells.pop_front())
 	var amounts := PackedFloat32Array()
-	amounts.resize(cells.size())
+	amounts.resize(batch.size())
 	amounts.fill(Num.f(cfg["burn_out_damage"]))
-	sim.damage_cells(i, cells, amounts)
-	burnt_out += 1
-	conflagration = minf(Num.f(cfg["conflag_max"]), conflagration + Num.f(cfg["conflag_step"]))
-	_drop(i, State.BURNT)
-	sim.events.append({"type": "fire_burnt", "building": i, "share": share, "far": far})
+	sim.damage_cells(i, batch, amounts)
+	if cells.is_empty() or sim.buildings[i].frame.alive_count == 0:
+		_drop(i, State.BURNT)
 
 
 func _drop(i: int, to: State) -> void:
 	state[i] = to
 	_active.erase(i)
+	_crumbling.erase(i)
 
 
 func _can_burn(i: int) -> bool:

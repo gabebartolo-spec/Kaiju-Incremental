@@ -35,8 +35,8 @@ func _say(ok: bool, says: String) -> void:
 	_check.call(ok, says)
 
 
-## FireSpread with a stopwatch on its tick and, apart, on its burn-outs (the damage and the
-## collapse they set off).
+## FireSpread with a stopwatch on its tick and, apart, on its burn-outs giving way (the damage
+## and the collapse they set off).
 class TimedFire:
 	extends FireSpread
 	var usec := 0
@@ -47,7 +47,7 @@ class TimedFire:
 		super(dt)
 		usec += Time.get_ticks_usec() - t0
 
-	func _burn_out(i: int) -> void:
+	func _crumble(i: int) -> void:
 		var t0 := Time.get_ticks_usec()
 		super(i)
 		out_usec += Time.get_ticks_usec() - t0

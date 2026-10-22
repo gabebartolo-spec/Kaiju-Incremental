@@ -8,12 +8,10 @@ extends SceneTree
 ## --fixed-fps 60 and the no-focus override.cfg.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <out>.avi \
-##     --script tools/capture/capture_fire_spread.gd -- --run=1 --after=2.0
+##     --script tools/capture/capture_fire_spread.gd -- --run=1 --after=2.0 --min-tier=1 --stop=0.4
 ## --headless (no movie) prints the beats: pick a --run (time of day, army seed) that lights.
 
 const LEVELS := {"r_ablaze": 1, "r_alarm": 3}
-## Stops the walk this far (m) from the target's footprint, well inside the breath's reach.
-const STOP_SHARE := 0.4
 ## A target this big (chunks) stands through the breath, so the breath can set it alight (the
 ## breath breaks the small blocks it reaches outright, and a broken block has nothing to burn).
 const MIN_CHUNKS := 80
@@ -26,6 +24,8 @@ const LIMIT := 60 * 60
 
 var _run := 1
 var _after := 2.0
+var _min_tier := 1
+var _stop := 0.4
 
 
 ## The scripted input: set down before a low, wide block with neighbours and breathe until
@@ -33,7 +33,12 @@ var _after := 2.0
 class Plan:
 	extends RefCounted
 	var target := -1
+	var lit := -1  # the first building the breath set burning
 	var lit_at := -1
+	var min_tier := 1
+	## Stands this share of the breath's reach off the target's footprint: far enough that its
+	## claws (they rake ahead on their own) do not break the block it lights.
+	var stop_share := 0.4
 	var _settled := 0
 
 	func input(s: RampageSim) -> Dictionary:
@@ -45,8 +50,9 @@ class Plan:
 			face(s, s.buildings[target])
 		_settled += 1
 		if lit_at < 0 and fire.state.has(FireSpread.State.BURNING):
+			lit = fire.state.find(FireSpread.State.BURNING)
 			lit_at = Engine.get_physics_frames()
-			print("FIREBEAT %d lit" % lit_at)
+			print("FIREBEAT %d lit %d (target %d)" % [lit_at, lit, target])
 		if _settled < SETTLE or lit_at >= 0:
 			return {}
 		return _breathe(s)
@@ -56,7 +62,7 @@ class Plan:
 	func face(sim: RampageSim, b: RampageSim.Building) -> void:
 		var at := Vector2(b.x, b.z)
 		var away := (sim.kaiju_pos - at).normalized()
-		var stop := sim.ability_reach() * STOP_SHARE + Vector2(b.w, b.d).length() * 0.5
+		var stop := sim.ability_reach() * stop_share + Vector2(b.w, b.d).length() * 0.5
 		sim.kaiju_pos = at + away * stop
 		sim.facing = -away
 
@@ -68,7 +74,9 @@ class Plan:
 		var fire := sim.powers.fire
 		for i: int in sim.buildings.size():
 			var b := sim.buildings[i]
-			if b.frame.alive_count < MIN_CHUNKS or b.height > MAX_FLOORS or b.landmark != "":
+			if b.frame.alive_count < MIN_CHUNKS or b.height > MAX_FLOORS or b.tier < min_tier:
+				continue
+			if b.landmark != "":
 				continue
 			var d := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
 			var near: PackedInt32Array = fire._neighbours(i)[0]
@@ -89,6 +97,10 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--run="):
 			_run = arg.substr(6).to_int()
+		elif arg.begins_with("--stop="):
+			_stop = arg.substr(7).to_float()
+		elif arg.begins_with("--min-tier="):
+			_min_tier = arg.substr(11).to_int()
 		elif arg.begins_with("--after="):
 			_after = arg.substr(8).to_float()
 	_go.call_deferred()
@@ -106,22 +118,31 @@ func _go() -> void:
 	rampage.autoplay_signature = false
 	var sim := rampage.sim
 	var plan := Plan.new()
+	plan.min_tier = _min_tier
+	plan.stop_share = _stop
 	rampage.scripted = plan.input
 	root.add_child(rampage)
 	print("FIREBEAT %d start (physics frame)" % Engine.get_physics_frames())
 	var frames := 0
 	var seen := {}
-	var burnt_at := -1
+	var down_at := -1  # the lit building is down: it gave way (burnt out) or was broken
+	var giving := false
 	while frames < LIMIT and not sim.over:
 		await physics_frame
 		frames += 1
 		var fire := sim.powers.fire
 		_note(fire, frames, seen)
-		if burnt_at < 0 and fire.burnt_out > 0:
-			burnt_at = frames
-			print("FIREBEAT %d first burn-out" % Engine.get_physics_frames())
-		if burnt_at >= 0 and frames >= burnt_at + roundi(_after * 60.0):
-			break
+		if plan.lit < 0 or down_at >= 0:
+			if down_at >= 0 and frames >= down_at + roundi(_after * 60.0):
+				break
+			continue
+		if not giving and fire._crumbling.has(plan.lit):
+			giving = true
+			print("FIREBEAT %d lit building gives way" % Engine.get_physics_frames())
+		if fire.state[plan.lit] == FireSpread.State.BURNT:
+			down_at = frames
+			var how := "burnt out" if giving else "broken before it burnt out"
+			print("FIREBEAT %d lit building down, %s" % [Engine.get_physics_frames(), how])
 	var fire_now := sim.powers.fire
 	print("FIREBEAT %d end: %d burnt out" % [frames, fire_now.burnt_out])
 	rampage.queue_free()

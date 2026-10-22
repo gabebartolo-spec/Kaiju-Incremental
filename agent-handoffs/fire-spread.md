@@ -18,10 +18,12 @@ claude/fire-spread-pre-rebase and -pre-rebase2, local only).
   0.60-0.69, far max 0.17; fire's own bookkeeping 231 usec/tick (budget 1000); burn-out collapses 619 usec/tick
   more (2639 each). fire.spread fixture: without City Ablaze 0 burn-outs, biomass 1646.8.
 - New checks shown failing on a known-bad tuning (burn_out_floors 0, conflag_max 2.0): shell checks, pay checks red.
-- Clip (local GPU, NVIDIA RTX 4070 SUPER in the log): scratchpad fire_clip/fire_spread_r0.mp4, 13.3 s at game
-  speed, tools/capture/capture_fire_spread.gd --run=0 (dusk): breath lights at 0.5 s, neighbours glow at 2.3/2.6 s,
-  catch at 4.1/5.3 s, first burn-out collapse at 12.3 s. Longer than ~6 s because a burn lasts burn_seconds 6 +
-  0.25 a floor after a 1-3 s glow (placeholders). Fire look is today's chunk fire on the roof (R 26.5 later).
+- Clip v5 after critic FIX (PR #152), local GPU (RTX 4070 SUPER): scratchpad fire_clip/fire_spread_v5.mp4, 9.65 s,
+  capture_fire_spread.gd --run=0 --stop=0.7. Times read from the frames at 10 fps: breath 0.6 s, fire on the
+  stepped block's roof 0.8 s, burns to 7.5 s, ground floor gives way 7.6 s (tilts over), down in rubble and dust
+  9.4 s. Burn-out now gives way over burn_out_seconds 0.6, downwind first (no one-frame swap); a roof burns with
+  one chunk fire per roof quarter (view_size 1.2). Stage 4 after: replay hash 601823901 x2, 203 burn-outs, 0
+  standing, bookkeeping 270 usec/tick, collapses 1727 usec/tick (settle runs per crumble batch).
 ## Sim-review packet (kaiju-sim-review)
 Transitions: (1) tick: FireSpread.step runs once a tick inside SpeciesPowers.step (after the coats), the heat pass
 every spread_tick s (a whole number of ticks), timers every tick; own stream Seeds.derive(powers rng, 0xF12E)

@@ -98,9 +98,9 @@ func _check_off_without_ablaze() -> void:
 	)
 
 
-## A burn-out pays burn_pay of the same building knocked down (its ground floor broken at the
-## same moment, the same collapse), counted until every piece has landed: the first burn-out, so
-## the conflagration is 1. The rooftop squad is army, paid in full either way: none here.
+## A burn-out pays burn_pay of the same building knocked down (its ground floor broken the
+## same way, cell by cell, the same collapse), counted until every piece has landed: the first
+## burn-out, so the conflagration is 1. The rooftop squad is army, paid in full either way.
 func _check_burn_pay() -> void:
 	var burnt := _sim("reptilian", ABLAZE, [_b(0, 0, Vector3i(3, 3, 6))], KAIJU_AT)
 	var knocked := _sim("reptilian", ABLAZE, [_b(0, 0, Vector3i(3, 3, 6))], KAIJU_AT)
@@ -114,15 +114,19 @@ func _check_burn_pay() -> void:
 			knocked.step(DT, Vector2.ZERO, false, 0)
 		steps += 1
 	var start := knocked.rubble  # the same in both runs until the burn-out step
-	var floor0: Array[Vector3i] = []
-	for x: int in 3:
-		for z: int in 3:
-			floor0.append(Vector3i(x, 0, z))
-	var amounts := PackedFloat32Array()
-	amounts.resize(floor0.size())
-	amounts.fill(1000000.0)
-	knocked.damage_cells(0, floor0, amounts)
-	knocked.step(DT, Vector2.ZERO, false, 0)
+	# Knocked down the same way: the same ground cells, the same batches a tick, no fire.
+	var cells := knocked.powers.fire.ground_cells(0)
+	var fire_cfg: Dictionary = Content.tuning()["powers"]["fire"]
+	var per := ceili(cells.size() / float(roundi(Num.f(fire_cfg["burn_out_seconds"]) / DT)))
+	while not cells.is_empty() and _alive(knocked, 0) > 0:
+		var batch: Array[Vector3i] = []
+		while not cells.is_empty() and batch.size() < per:
+			batch.append(cells.pop_front())
+		var amounts := PackedFloat32Array()
+		amounts.resize(batch.size())
+		amounts.fill(1000000.0)
+		knocked.damage_cells(0, batch, amounts)
+		knocked.step(DT, Vector2.ZERO, false, 0)
 	_times(burnt, 8.0)
 	_times(knocked, 8.0)
 	var share := Num.f(Content.tuning()["powers"]["fire"]["burn_pay"])

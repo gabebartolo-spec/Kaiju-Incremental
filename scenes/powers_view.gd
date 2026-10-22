@@ -208,15 +208,23 @@ func _lit(event: Dictionary) -> void:
 		_burning(Num.i(event["building"]))
 
 
-## A building the sim set burning (FireSpread): today's chunk fire on its highest standing roof
-## chunk, out when that chunk breaks or falls and once the building is down (#111). The glow
+## A building the sim set burning (FireSpread): today's chunk fire (flames, embers, smoke) on its
+## roof, one per roof quarter (one on a narrow roof), each on the highest standing chunk there;
+## each goes out when its chunk breaks or falls, all once the building is down (#111). The glow
 ## before it and the fire's own look are R 26.5.
 func _burning(index: int) -> void:
 	var b := sim.buildings[index]
-	var cell := Vector3i(floori(b.w / 2.0), 0, floori(b.d / 2.0))
-	cell.y = b.frame.top_below(cell.x, cell.z, b.height)
-	if cell.y >= 0:
-		_city.burn_chunk(index, cell, Num.f(sim.powers_cfg["fire"]["view_size"]))
+	var size := Num.f(sim.powers_cfg["fire"]["view_size"])
+	var span := Num.f(sim.powers_cfg["fire"]["view_spacing"])
+	var nx := 2 if b.w >= span else 1
+	var nz := 2 if b.d >= span else 1
+	for a: int in nx:
+		for c: int in nz:
+			var cell := Vector3i(floori(b.w * (2 * a + 1) / (2.0 * nx)), 0, 0)
+			cell.z = floori(b.d * (2 * c + 1) / (2.0 * nz))
+			cell.y = b.frame.top_below(cell.x, cell.z, b.height)
+			if cell.y >= 0:
+				_city.burn_chunk(index, cell, size)
 
 
 func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:
