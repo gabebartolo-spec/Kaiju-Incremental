@@ -67,3 +67,7 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 61 | "I would like the 1.0 demo build to be on Itch for testers" (2026-10-22) | lead: ROADMAP release item (Itch page + upload); details being asked | recorded |
 | 62 | "I would like many more landmarks" (2026-10-22; today 4: stadium, wheel, spire, megatower, D-071) | lead: ROADMAP landmark item; how many and which being asked | recorded |
 | 63 | "I also want some atmospheric things added: clouds and weather, birds flying around, the occasional whale in the water spouting water (1 per run), emergency services like fire fighters, ambulances (already roadmapped), pet dogs in the streets, night clubs, banks, hotels, train stations + tracks with trains on them, small boats in the water, etc" (2026-10-22) | lead: ROADMAP 'Atmosphere and city life' item; details at the next interview | recorded |
+| 64 | Atmosphere order (asked, 2026-10-22): "Sky and sea life" first (clouds/weather, birds, small boats, the whale) | lead: next atmosphere builder | recorded |
+| 65 | Weather (asked): "Looks only" (mood and light, no gameplay effect) | atmosphere builder | recorded |
+| 66 | Whale (asked): "Pure spectacle" (surfaces, spouts, dives once per run; the kaiju can't touch it) | atmosphere builder | recorded |
+| 67 | Landmark models (asked): "Yes, concept refs first" (free refs for all 8 on one board; models only for the ones he approves) | lead: Tripo refs today (D-134 budget) | in progress |

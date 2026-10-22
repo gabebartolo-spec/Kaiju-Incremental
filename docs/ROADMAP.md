@@ -292,4 +292,5 @@ Itch demo (D-132, comment #61, director 2026-10-22): the 1.0 demo goes on an inv
 the reptilian stage is 100% done: bug free, polished visuals, good performance, fully featured. Earlier builds stay local.
 Atmosphere and city life (comment #63, director 2026-10-22): clouds and weather, birds flying round, one whale per run
 spouting in the bay, fire crews and ambulances (fire crews: comment #50), pet dogs on the streets, night clubs, banks, hotels,
-train stations with tracks and running trains, small boats on the water. Order, look and what each does in play: to ask.
+train stations with tracks and running trains, small boats on the water. First: sky and sea life (clouds and weather, birds, small boats, the whale); weather looks only; the whale is pure
+spectacle (can't be touched). Rest: to ask.
