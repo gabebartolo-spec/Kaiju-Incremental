@@ -25,6 +25,8 @@ var tentacles: Tentacles
 var tail_sweeps := 0
 ## The reptilian's claw rake (Claws, D-095).
 var swipe: ClawSwipe
+## Fire that spreads building to building once City Ablaze is owned (D-126).
+var fire: FireSpread
 ## Chunks broken by tail sweeps themselves (not what falls after).
 var tail_cut := 0
 var _rng: RandomNumberGenerator
@@ -40,6 +42,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	tentacles = Tentacles.new(sim, rng)
 	swipe = ClawSwipe.new(sim, cfg)
+	var fire_cfg: Dictionary = cfg["fire"]
+	fire = FireSpread.new(sim, fire_cfg, Seeds.derive(rng, 0xF12E))
 
 
 func _bs() -> float:
@@ -98,12 +102,17 @@ func blocked(pos: Vector2, radius: float) -> bool:
 	return false
 
 
+## How fast the beam follows the stick, rad/s (the body turns at least this fast while it is on).
+func beam_turn_rate() -> float:
+	return Num.f(cfg["beam_turn_speed"]) * TAU
+
+
 ## The beam turns the kaiju slowly (steering the beam); otherwise it faces where it moves.
 func turn_toward(from: Vector2, to: Vector2, dt: float) -> Vector2:
 	if beam_left <= 0.0:
 		return to
 	var angle := from.angle_to(to)
-	var most := Num.f(cfg["beam_turn_speed"]) * TAU * dt
+	var most := beam_turn_rate() * dt
 	return from.rotated(clampf(angle, -most, most))
 
 
@@ -238,6 +247,7 @@ func step(dt: float, held: bool) -> void:
 	_beam(dt)
 	tentacles.step(dt)
 	_coats(dt)
+	fire.step(dt)
 
 
 func _glide(dt: float, held: bool) -> void:
@@ -331,6 +341,8 @@ func coat(index: int, cells: Array[Vector3i]) -> void:
 		sim.events.append(
 			{"type": "coated", "building": index, "cells": fresh, "kind": sim.hit_coat["kind"]}
 		)
+	if str(sim.hit_coat["kind"]) == "burn":
+		fire.ignite(index)
 
 
 func _coats(dt: float) -> void:

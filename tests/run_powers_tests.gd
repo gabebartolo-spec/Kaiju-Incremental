@@ -6,6 +6,7 @@ extends "res://tests/lib/powers_base.gd"
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
+const TurnWeight := preload("res://tests/lib/powers_turn_weight.gd")
 
 
 func suite_name() -> String:
@@ -16,6 +17,7 @@ func run_checks() -> void:
 	await _t("_check_branches")
 	await _t("_check_tail")
 	await _h("TailCity", func() -> void: TailCity.check(check))
+	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
 	await _t("_check_momentum")
 	await _t("_check_shear")
 	await _t("_check_beam")
@@ -114,7 +116,7 @@ func _check_momentum() -> void:
 	)
 	var charged: RampageSim = out[1]["sim"]
 	var before := charged.powers.momentum
-	_run(charged, 0.1, -EAST)
+	_run(charged, 1.0, -EAST)  # the U-turn itself takes about a second (BodyContact.steer)
 	check(
 		before > 0.6 and charged.powers.momentum < 0.2,
 		"a U-turn bleeds momentum (%.2f to %.2f)" % [before, charged.powers.momentum]

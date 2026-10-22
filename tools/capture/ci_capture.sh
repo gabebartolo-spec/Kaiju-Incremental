@@ -41,17 +41,22 @@ esac
 git ls-remote --exit-code --heads origin "$ref" >/dev/null || { echo "branch $ref is not pushed to origin" >&2; exit 1; }
 
 before="$(gh run list --workflow=capture.yml --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
-gh workflow run capture.yml --ref "$ref" -f script="$script" -f args="${args[*]:-}" \
-  -f renderer="$renderer" -f movie="$movie" -f fps="$fps" -f resolution="$res"
+# gh prints the new run's URL: take its id from there, so a run another session dispatched at the
+# same moment is never mistaken for this one. Older gh prints nothing: then the first newer run.
+said="$(gh workflow run capture.yml --ref "$ref" -f script="$script" -f args="${args[*]:-}" \
+  -f renderer="$renderer" -f movie="$movie" -f fps="$fps" -f resolution="$res" 2>&1)"
+echo "$said"
+run="$(printf '%s\n' "$said" | grep -oE 'actions/runs/[0-9]+' | head -1 | cut -d/ -f3 || true)"
 
-echo "dispatched; waiting for the run to appear..."
-run=""
-for _ in $(seq 1 30); do
-  sleep 4
-  run="$(gh run list --workflow=capture.yml --limit 5 --json databaseId,event \
-    --jq "[.[] | select(.event==\"workflow_dispatch\" and .databaseId > $before)][-1].databaseId // empty")"
-  [ -n "$run" ] && break
-done
+if [ -z "$run" ]; then
+  echo "dispatched; waiting for the run to appear..."
+  for _ in $(seq 1 30); do
+    sleep 4
+    run="$(gh run list --workflow=capture.yml --limit 5 --json databaseId,event \
+      --jq "[.[] | select(.event==\"workflow_dispatch\" and .databaseId > $before)][-1].databaseId // empty")"
+    [ -n "$run" ] && break
+  done
+fi
 [ -n "$run" ] || { echo "run did not appear" >&2; exit 1; }
 echo "run $run: $(gh run view "$run" --json url --jq .url)"
 

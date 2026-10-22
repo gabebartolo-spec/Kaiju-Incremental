@@ -20,6 +20,8 @@ class Building:
 	var rubble_bonus := 1.0
 	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
 	var in_arena := true
+	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
+	var pay_share := 1.0
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -92,7 +94,7 @@ var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
-## The body as a solid that breaks what it walks into; body.heading turns the drawn model.
+## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
@@ -202,11 +204,11 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
 	var moving := move.length() > 0.05
-	if moving:
-		var dir := move.limit_length(1.0)
-		var speed := stat("speed") * powers.speed_mult()
-		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
-		facing = powers.turn_toward(facing, dir.normalized(), dt)
+	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
+	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
+		var speed := stat("speed") * powers.speed_mult() * stride
+		kaiju_pos = clamp_to_arena(kaiju_pos + body.heading * speed * dt)
+		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	_stomp_timer -= dt
@@ -273,21 +275,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			var aim := BreathCone.of(self)  # what BreathAim shows
-			var half_angle := Num.f(aim["half_angle"])
-			var origin: Vector2 = aim["origin"]
-			var dir := facing
-			_events.append({"type": "ability", "kind": "cone", "reach": reach, "from": origin})
-			hit_air = true  # fire reaches up to the helicopters
-			hit_area(
-				func(p: Vector2, r: float) -> float:
-					var to := p - origin
-					if to.length() > reach + r:
-						return 0.0
-					return 1.0 if to.length() <= r or absf(dir.angle_to(to)) <= half_angle else 0.0,
-				damage
-			)
-			hit_air = false
+			BreathCone.breathe(self, reach, damage)
 		"leap":
 			var from := kaiju_pos
 			kaiju_pos = clamp_to_arena(
@@ -396,5 +384,5 @@ func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Arra
 
 func pay(b: Building, chunks: int, bonus: float) -> void:
 	chunks_destroyed += chunks if b.in_arena else 0
-	var mult := bonus * b.rubble_bonus * stat("rubble_mult")
+	var mult := bonus * b.rubble_bonus * b.pay_share * stat("rubble_mult")
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * mult
