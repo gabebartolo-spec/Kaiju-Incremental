@@ -5,7 +5,7 @@ extends "res://tests/lib/runner.gd"
 
 const DT := 1.0 / 15.0
 const SEEDS: Array[int] = [0, 1, 2]
-const LEVELS := {1: {}, 2: {"evolve1": 1}, 4: {"evolve1": 1, "evolve2": 1, "evolve3": 1}}
+const LEVELS := {1: {}, 2: {"evolve1": 1}, 3: {"evolve1": 1, "evolve2": 1}}
 ## Half the tank hull's width and its length (assets/vehicles/tank, measured): the footprint and
 ## spacing the checks hold the tanks to.
 const HULL_HALF_WIDTH := 1.2

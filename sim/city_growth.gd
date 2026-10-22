@@ -1,7 +1,7 @@
 class_name CityGrowth
 extends RefCounted
 ## The city grows with each evolution (D-039). data/tuning.json "growth.stages" holds one stage
-## per size tier (young, Behemoth, Colossus, Apex Titan); each stage overrides keys of the
+## per size tier (young, Behemoth, Colossus; D-135); each stage overrides keys of the
 ## tuning sections it names: the city's playable half-extent, its coast and height cap, and
 ## harder defences (more and tougher tanks, helicopters from the Behemoth on). The street plan
 ## itself spans every district at every stage (CityGen.districts), so an evolution opens new

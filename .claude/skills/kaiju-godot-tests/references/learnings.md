@@ -7,3 +7,11 @@ id, capture), **Lesson**. If a finding contradicts SKILL.md, fix SKILL.md instea
 mark entries "promoted" once moved into it. A lesson that is true for every project goes to the
 general skill's log instead (github-hygiene, game-architecture, art-qa-critic, ask-the-director,
 ai-game-dev-playbook in ~/.claude/skills).
+
+## 2026-10-23 · pkill in Git Bash can't stop Windows Godot runs
+**Finding:** a builder ran `pkill -f probe_mil8` to stop its own probes. Git Bash's pkill can't see native Windows
+processes, so two runs sat hung for 30 minutes at 0 CPU until the lead stopped them by PID (wrappers and children).
+**Evidence:** lead stall watcher 2026-10-23 07:35 (PIDs 19068/34260 and 31776/29388).
+**Lesson:** record the PID your own run starts (wrapper and child), stop it with
+`powershell Stop-Process -Id <pid>`, and check it's gone. Never kill by name or pattern, which the rulebook bans
+anyway.

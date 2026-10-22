@@ -1,11 +1,11 @@
 extends SceneTree
-## A clip of the Apex Titan walking north from the city's south edge into the towers, seen
+## A clip of the Colossus walking north from the city's south edge into the towers, seen
 ## from the rampage's own camera (Rampage.CAMERA_OFFSET, zoomed by body scale): towers between
 ## the camera and the kaiju fade to a screen door (BuildingFade, D-025), and far buildings
 ## stream in (BuildingStream). Record it with --write-movie (CI: ci_capture.sh --movie; local
 ## only off-screen with the no_focus override). --stage=N picks another stage.
 ##   godot --path . --resolution 1280x720 --windowed --write-movie out.avi --fixed-fps 30 \
-##     --script tools/capture/capture_occlusion.gd -- [--stage=4] [--seconds=20]
+##     --script tools/capture/capture_occlusion.gd -- [--stage=3] [--seconds=20]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
@@ -13,7 +13,7 @@ const FPS := 30.0
 const WALK_SPEED := 9.0  # sim units a second: a steady stride up the street
 const STREET_X := 5.0  # a north-south street line of the plan (CityGen.map xs)
 
-var _stage := 4
+var _stage := 3
 var _seconds := 20.0
 
 

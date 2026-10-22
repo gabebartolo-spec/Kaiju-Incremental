@@ -7,6 +7,7 @@ extends RefCounted
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const SEEDS: Array[int] = [1, 43, 50]
 const TIER := 2
+const Rings := preload("res://tests/lib/fixture_rings.gd")
 
 var _check: Callable
 var _root: Node
@@ -18,6 +19,7 @@ func _init(check_fn: Callable, root: Node) -> void:
 
 
 func run() -> void:
+	RiverQuay.enabled = false  # the riverside crates would fill some of these cells too
 	for map_seed: int in SEEDS:
 		var without := _empty(map_seed, false)
 		var with_fill := _empty(map_seed, true)
@@ -32,6 +34,7 @@ func run() -> void:
 			)
 		)
 	DiagonalParking.fill = true
+	RiverQuay.enabled = true
 
 
 ## The bare cells (arena and band) of the city at map_seed, with the fill on or off.
@@ -39,6 +42,7 @@ func _empty(map_seed: int, fill: bool) -> Array:
 	DiagonalParking.fill = fill
 	var base: Dictionary = Content.tuning().duplicate(true)
 	base["city"]["map_seed"] = map_seed
+	Rings.apply(base)
 	var sim := RampageSim.new(
 		UpgradeTree.run_stats(
 			Content.section("kaiju"),

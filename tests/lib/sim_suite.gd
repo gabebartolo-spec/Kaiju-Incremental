@@ -7,14 +7,27 @@ extends "res://tests/lib/runner.gd"
 
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
+const Rings := preload("res://tests/lib/fixture_rings.gd")
 
 
 func _tree(levels: Dictionary = {}) -> UpgradeTree:
 	return UpgradeTree.new(Content.upgrades(), levels)
 
 
-func _layout(city: Dictionary = Content.section("city"), city_seed: int = 0) -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", city_seed), city)
+## The sim fixtures play in the pre-D-135 young city (tests/lib/fixture_rings.gd), seed 0 unless a
+## test asks for another (`city_seed`: the body chew checks run seeds 3, 8 and 22): the topple and
+## swipe fixtures need a tall tier-2 office tower inside the arena and their finder (_nearest_of)
+## falls back on the last building when none matches. The half-50 city has none at seeds 0-9, so
+## the fixtures keep the plan they were made on.
+func _fixture_tuning() -> Dictionary:
+	var tuning: Dictionary = Content.tuning().duplicate(true)
+	Rings.apply(tuning)
+	return tuning
+
+
+func _layout(city: Dictionary = {}, city_seed: int = 0) -> Array[Dictionary]:
+	var cfg: Dictionary = city if not city.is_empty() else _fixture_tuning()["city"]
+	return CityGen.generate(Seeds.make("city", city_seed), cfg)
 
 
 func _sim(
@@ -30,7 +43,7 @@ func _sim_seeded(
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, _tree(levels))
 	var ability: Dictionary = species["ability"]
-	var tune := Content.tuning() if tuning.is_empty() else tuning
+	var tune := _fixture_tuning() if tuning.is_empty() else tuning
 	var city: Dictionary = tune["city"]
 	var layout := _layout(city, seeds.x)
 	var sim := RampageSim.new(stats, tune, layout, Seeds.make("army", seeds.y))

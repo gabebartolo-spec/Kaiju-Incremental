@@ -28,7 +28,7 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	for tier: int in [1, 2, 3, 4]:
+	for tier: int in [1, 2, 3]:
 		await _t("_check_stage", [tier])
 	await _h(
 		"junction_island",

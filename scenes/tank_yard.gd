@@ -1,7 +1,8 @@
 class_name TankYard
 extends RefCounted
 ## The army's tank models in a rampage: one TankModel per sim tank, steered to the sim's pose,
-## firing and wrecked on the sim's events. Presentation only (Rampage owns it).
+## firing and wrecked on the sim's events, and the Taskforce's placeholder agents. Presentation
+## only (Rampage owns it).
 
 ## Tank id -> TankModel (Rampage's `_tank_nodes`; the captures and flow checks read it).
 var nodes: Dictionary
@@ -15,6 +16,7 @@ func _init(p_owner: Rampage, p_sim: RampageSim, p_city: CityView, p_nodes: Dicti
 	_sim = p_sim
 	_city = p_city
 	nodes = p_nodes
+	_owner.add_child(TaskforceView.new(_sim))  # the Anti Kaiju Taskforce's boxes (D-143)
 
 
 func spawn(id: int) -> void:

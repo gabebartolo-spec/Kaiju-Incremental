@@ -27,6 +27,8 @@ var sim: RampageSim
 ## LoadingOverlay, and nothing runs until it is done, so starting a run never freezes the screen
 ## (b2-30). false (tests, captures): _ready builds it all at once, as before.
 var staged := false
+## Rampage seconds in the adolescent city or later, from the save; set before setup (D-160).
+var city_seconds := 0.0
 ## Whether the scene is built (always true after _ready when not staged).
 var is_loaded := false
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
@@ -50,14 +52,11 @@ var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
 var _cues: PowerCues
-var _leap_reach := 0.0
-var _leap_power := 1.0
 var _hud: RampageHud
 var _kaiju: KaijuModel
 var _kaiju_at := Vector3.ZERO
 var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
-var _leap_time := 0.0
-var _leap_from := Vector3.ZERO
+var _ability := RampageAbility.new()
 var _camera: Camera3D
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
@@ -85,6 +84,7 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	sim.army_units.taskforce.carried = city_seconds  # rampage time in this city so far (D-160)
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
@@ -147,6 +147,7 @@ func _ready() -> void:
 		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
 	)
 	_kaiju.foot_planted.connect(_on_footfall)
+	_ability.bind(self, _city, _kaiju)
 	_camera = Camera3D.new()
 	_camera.fov = camera_fov
 	add_child(_camera)
@@ -251,7 +252,7 @@ func _on_event(event: Dictionary) -> void:
 			add_trauma(shake.source("stomp"))
 		"ability":
 			_kaiju.roar()
-			_ability_fx(event)
+			_ability.play(event, _kaiju_at, _power("ability_damage"))
 		"chunks_broken":
 			var cells: Array[Vector3i] = event["cells"]
 			_on_chunks_broken(Num.i(event["building"]), cells, Num.f(event.get("pay", 1.0)))
@@ -292,52 +293,10 @@ func _power(stat_name: String) -> float:
 	return ability_fx.power(sim.stat(stat_name), Num.f(base[stat_name]))
 
 
-func _ability_fx(event: Dictionary) -> void:
-	var reach := Num.f(event["reach"])
-	var strength := _power("ability_damage")
-	add_trauma(shake.source("ability"))
-	_city.crush(_to_world(sim.kaiju_pos), reach * (0.5 if str(event["kind"]) == "cone" else 1.0))
-	match str(event["kind"]):
-		"cone":
-			var facing := _to_world(sim.facing)
-			var chest := _kaiju_at + (Vector3(0, 6.0, 0) + facing) * sim.body_scale()
-			var mouth := BreathBeam.mouth_of(_kaiju, chest)  # the jaw, where the model has one
-			var from: Vector2 = event["from"]  # the sim's cone (BreathCone) starts at the snout
-			var snout := _to_world(from)
-			var span := snout + facing * reach + Vector3(0, 0.5, 0) - mouth  # to full reach
-			ability_fx.cone_origin = snout
-			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
-			_city.crush_cone(BreathCone.of(sim))  # trees and cars burn flat along it
-			sfx.play("breath")
-		"leap":
-			var from: Vector2 = event["from"]
-			_leap_from = _to_world(from)
-			_leap_time = 0.0001
-			_leap_reach = reach
-			_leap_power = strength
-			ability_fx.leap_takeoff(_leap_from)
-			sfx.play("leap_whoosh")
-		_:
-			ability_fx.lash(_kaiju_at, reach, strength)
-			sfx.play("lash")
-
-
 func _update_kaiju(delta: float, moving: float) -> void:
 	var target := _to_world(sim.kaiju_pos)
 	target.y = sim.stand_y + (GLIDE_LIFT * sim.body_scale() if sim.airborne else 0.0)
-	if _leap_time > 0.0:
-		_leap_time += delta
-		var t := clampf(_leap_time / 0.4, 0.0, 1.0)
-		_kaiju_at = _leap_from.lerp(target, t) + Vector3(0, sin(t * PI) * 6.0, 0)
-		ability_fx.leap_trail(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), t < 1.0)
-		if t >= 1.0:
-			_leap_time = 0.0
-			_kaiju_at = target
-			ability_fx.leap_land(target, _leap_reach, _leap_power)
-			sfx.play("leap_land")
-			add_trauma(shake.source("leap_land"))
-	else:
-		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
+	_kaiju_at = _ability.step(delta, target, _kaiju_at)
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	# sim angle to model yaw: the sign flips
@@ -390,7 +349,7 @@ func _place_camera(delta: float) -> void:
 	_follow.step(
 		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
 	)
-	var hold := sim.body.dash.on() or _leap_time > 0.0
+	var hold := sim.body.dash.on() or _ability.leaping()
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y

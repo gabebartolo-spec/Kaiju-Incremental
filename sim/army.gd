@@ -30,6 +30,8 @@ var misses := 0  # tank shells that missed the kaiju and landed in the city
 var rooftops_destroyed := 0
 ## Road movement and firing positions (D-066).
 var convoy: Convoy
+## The Anti Kaiju Taskforce's agents (D-137): they come in above the tanks and police.
+var taskforce: Taskforce
 var _rng: RandomNumberGenerator
 ## Each squad's next shot comes a seeded, ragged while later (D-076: no unison).
 var _ragged: RandomNumberGenerator
@@ -52,6 +54,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	convoy = Convoy.new(sim, convoy_cfg)
 	_place_squads(Seeds.derive(rng, 0x2007))
 	_ragged = Seeds.derive(rng, 0x2008)
+	taskforce = Taskforce.new(sim, Seeds.derive(rng, 0x7F))
 	_aim = Seeds.derive(rng, 0x2009)
 
 
@@ -66,6 +69,7 @@ func step(dt: float) -> void:
 	var reach := Num.f(cfg["range"]) + sim.stomp_radius()
 	var coated := false
 	convoy.step(dt)
+	taskforce.step(dt)
 	for tank: RampageSim.Tank in sim.tanks:
 		if tank.coat_t > 0.0:
 			tank.coat_t -= dt
@@ -246,6 +250,12 @@ func _place_squads(rng: RandomNumberGenerator) -> void:
 		var cell := Vector3i(rng.randi_range(0, b.w - 1), b.height - 1, rng.randi_range(0, b.d - 1))
 		if b.w >= 3 and b.d >= 3 and cell.x < 2 and cell.z < 2:
 			cell = Vector3i(b.w - 1, cell.y, b.d - 1)
+		# The column's real roof: a setback or a cut-out leaves some columns lower or empty, and a
+		# squad never stands in the air over one.
+		var top := b.frame.top_below(cell.x, cell.z, b.height)
+		if top < Num.i(rooftop["min_height"]) - 1:
+			continue
+		cell.y = top
 		var squad := Squad.new()
 		squad.id = squads.size()
 		squad.building = i

@@ -1,12 +1,13 @@
 extends SceneTree
-## Stage-4 city memory probe (headless): loads the 4,435-building city, rises, then autoplays a
-## rampage for 60 s of sim time, printing static memory, meshed buildings and the slowest
-## streaming step
+## Adult (stage 3) city memory probe (headless): loads the adult city (the biggest, D-135), rises,
+## then autoplays a rampage for 60 s of sim time, printing static memory, meshed buildings and
+## the slowest streaming step
 ## at load, 10 s and 60 s. Fails (exit 1) over PEAK_MB or over a 50 ms streaming step.
-##   godot --headless --path . --script res://tools/capture/stage4_memory.gd
+##   godot --headless --path . --script res://tools/capture/adult_memory.gd
 ## Run one at a time: the old stream took 10+ GB in 8 s here.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const ADULT_STAGE := 3  # the last growth stage (D-135: three steps)
 const PEAK_MB := 6144
 const HITCH_MS := 50.0
 const SECONDS := 60.0
@@ -79,10 +80,11 @@ func _run() -> void:
 	await process_frame
 	_t0 = Time.get_ticks_msec()
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[3], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[ADULT_STAGE - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	_rampage = Rampage.new()
-	_rampage.setup(species, stats, CityGrowth.layout(Content.tuning(), 4, Seeds.make("city", 0)), 0)
+	var layout := CityGrowth.layout(Content.tuning(), ADULT_STAGE, Seeds.make("city", 0))
+	_rampage.setup(species, stats, layout, 0)
 	_rampage.set_autoplay(true)
 	root.add_child(_rampage)
 	while not _rampage.is_loaded:
