@@ -83,40 +83,28 @@ func _flood(stack: PackedInt32Array, label: int) -> void:
 		var x := i % w
 		var z := (i / w) % d
 		var y := i / plan
-		if x > 0 and labels[i - 1] == 0 and _cells[i - 1] != 0 and _fix[_cells[i - 1]] == 0:
-			labels[i - 1] = label
-			stack[top] = i - 1
-			top += 1
-		if x < w - 1 and labels[i + 1] == 0 and _cells[i + 1] != 0 and _fix[_cells[i + 1]] == 0:
-			labels[i + 1] = label
-			stack[top] = i + 1
-			top += 1
-		if z > 0 and labels[i - w] == 0 and _cells[i - w] != 0 and _fix[_cells[i - w]] == 0:
-			labels[i - w] = label
-			stack[top] = i - w
-			top += 1
-		if z < d - 1 and labels[i + w] == 0 and _cells[i + w] != 0 and _fix[_cells[i + w]] == 0:
-			labels[i + w] = label
-			stack[top] = i + w
-			top += 1
-		if (
-			y > 0
-			and labels[i - plan] == 0
-			and _cells[i - plan] != 0
-			and _fix[_cells[i - plan]] == 0
-		):
-			labels[i - plan] = label
-			stack[top] = i - plan
-			top += 1
-		if (
-			y < h - 1
-			and labels[i + plan] == 0
-			and _cells[i + plan] != 0
-			and _fix[_cells[i + plan]] == 0
-		):
-			labels[i + plan] = label
-			stack[top] = i + plan
-			top += 1
+		if x > 0:
+			top = _take(stack, top, i - 1, label)
+		if x < w - 1:
+			top = _take(stack, top, i + 1, label)
+		if z > 0:
+			top = _take(stack, top, i - w, label)
+		if z < d - 1:
+			top = _take(stack, top, i + w, label)
+		if y > 0:
+			top = _take(stack, top, i - plan, label)
+		if y < h - 1:
+			top = _take(stack, top, i + plan, label)
+
+
+## Labels cell n and pushes it on the flood's stack when it is structural and unlabelled; the new
+## stack top.
+func _take(stack: PackedInt32Array, top: int, n: int, label: int) -> int:
+	if labels[n] != 0 or _cells[n] == 0 or _fix[_cells[n]] != 0:
+		return top
+	labels[n] = label
+	stack[top] = n
+	return top + 1
 
 
 ## Joins each fixture to a grounded part: scan order, a fixture touching a labelled cell takes

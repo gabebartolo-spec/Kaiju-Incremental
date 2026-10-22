@@ -18,3 +18,10 @@ var yield_all := 0.0  # how long it has been giving way this time
 var heading := Vector2.ZERO  # the way it last drove
 var front := Vector2.ZERO  # where its hull points: the pose the view draws
 var reversing := false  # backing off with its front still to the kaiju
+
+
+## At its next waypoint: on to the one after.
+func arrive() -> void:
+	path.remove_at(0)
+	edges.remove_at(0)
+	retreating = retreating and not path.is_empty()

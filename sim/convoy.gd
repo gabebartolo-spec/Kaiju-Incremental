@@ -231,78 +231,68 @@ func _start(tank: RampageSim.Tank, r: ConvoyRoute) -> Dictionary:
 ## round what held it.
 func _drive(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> void:
 	r.reversing = false
-	var back := Num.f(sim.army["speed"]) * Num.f(cfg["reverse"]) * dt
-	var rate := deg_to_rad(Num.f(cfg["hull_turn"])) * dt
+	if _idle(tank, r, dt):
+		return
+	r.path[0] = graph.square_leg(tank.pos, r.path[0], r.edges[0])  # never down a diagonal
+	r.path[0] = onto_axis(tank.pos, r.path[0], r.edge)  # nor crabbing where it could not square
+	var leg := ConvoyLeg.new(self, tank, r, dt)
+	if leg.arrives():
+		r.arrive()
+		return
+	if leg.brakes():
+		r.path.clear()  # brake short of the standoff line: never across it
+		r.edges.clear()
+		return
+	var stopper := leg.stopper(tank)
+	if stopper == tank and leg.move == 0.0 and _shuffle(tank, r, leg.want, _back(dt)):
+		return
+	if stopper != null:
+		_wait(tank, r, stopper, dt)
+		return
+	leg.advance(tank)
+
+
+## Giving way, backed off its path, or with nowhere to go: true when that was its step.
+func _idle(tank: RampageSim.Tank, r: ConvoyRoute, dt: float) -> bool:
+	var back := _back(dt)
+	var rate := hull_rate(dt)
 	if r.yield_t > 0.0:
 		spacing.yielding(tank, r, dt, back)
 		_settle(tank, r, rate)  # giving way mid-pivot: it waits squared to its road
-		return
+		return true
 	if r.yield_all > 0.0:  # backed off its path: set off again from where it stands
 		r.yield_all = 0.0
 		_plan(tank, r, r.retreating)
 	if r.path.is_empty():
 		_settle(tank, r, rate)
 		spacing.open_up(tank, r, back)  # the kaiju moved and a gun swung over a neighbour
-		return
-	r.path[0] = graph.square_leg(tank.pos, r.path[0], r.edges[0])  # never down a diagonal
-	r.path[0] = _onto_axis(tank.pos, r.path[0], r.edge)  # nor crabbing where it could not square
-	var to := r.path[0] - tank.pos
-	var dist := to.length()
-	var dir := to / dist if dist > 0.0001 else r.front
-	var speed := Num.f(sim.army["speed"])
-	var behind := r.front.dot(dir) < (0.0 if r.retreating else -0.5)  # back off, never turn tail
-	var clear_of := r.retreating and posts.to_body(tank.pos) < danger()  # out fast, then slow
-	if behind and r.front != Vector2.ZERO:  # and back up rather than turn about in the road
-		r.reversing = true
-		speed = Num.f(cfg["retreat_speed"]) if clear_of else speed * Num.f(cfg["reverse"])
-	elif clear_of:
-		speed = maxf(speed, Num.f(cfg["retreat_speed"]))
-	var want := -dir if r.reversing else dir
-	r.front = want if r.front == Vector2.ZERO else r.front
-	var turn := r.front.angle_to(want)
-	if dist <= 1.0 and absf(turn) > rate:  # the last metre is not worth a turn: it is there
-		_arrive(r)
-		return
-	var front := r.front.rotated(clampf(turn, -rate, rate))
-	var move := 0.0 if absf(turn) > rate else minf(dist, speed * dt)  # squared first, then on
-	var next := tank.pos + dir * move
-	if not r.retreating and move > 0.0 and posts.to_body(next) < danger():
-		r.path.clear()  # brake short of the standoff line: never across it
-		r.edges.clear()
-		return
-	var blocker := _blocker(tank, next, front)
-	var fits := graph.drivable(next, front) and (move > 0.0 or _sweep_fits(tank, tank.pos, want))
-	if blocker == null and not fits and graph.drivable(tank.pos, r.front):
-		if move == 0.0 and _shuffle(tank, r, want, back):
-			return
-		blocker = tank  # the hull would leave the road, or the turn has no room: held up
-	if blocker != null:
-		_settle(tank, r, rate)  # held up, or no room to turn: it waits squared to its road
-		r.stuck_t += dt
-		spacing.give_way(tank, blocker, back)
-		if r.stuck_t >= Num.f(cfg["stuck"]) * (0.5 if r.retreating else 1.0):  # falling back: sooner
-			_held_up(tank, r, blocker)
-		return
-	r.stuck_t = 0.0
-	r.heading = dir
-	r.front = front
-	tank.pos = next
-	if not r.edges.is_empty() and r.edges[0] >= 0:
-		r.edge = r.edges[0]
-	if move > 0.0 and move >= dist - 0.0001 or dist <= 0.0001:
-		_arrive(r)
+		return true
+	return false
 
 
-## At its next waypoint: on to the one after.
-func _arrive(r: ConvoyRoute) -> void:
-	r.path.remove_at(0)
-	r.edges.remove_at(0)
-	r.retreating = r.retreating and not r.path.is_empty()
+## Held up by `blocker` (or no room to turn): it waits squared to its road, and re-plans once
+## it has been stuck long enough.
+func _wait(tank: RampageSim.Tank, r: ConvoyRoute, blocker: RampageSim.Tank, dt: float) -> void:
+	_settle(tank, r, hull_rate(dt))
+	r.stuck_t += dt
+	spacing.give_way(tank, blocker, _back(dt))
+	if r.stuck_t >= Num.f(cfg["stuck"]) * (0.5 if r.retreating else 1.0):  # falling back: sooner
+		_held_up(tank, r, blocker)
+
+
+## The most the hull turns in dt.
+func hull_rate(dt: float) -> float:
+	return deg_to_rad(Num.f(cfg["hull_turn"])) * dt
+
+
+## How far a tank backs up in dt.
+func _back(dt: float) -> float:
+	return Num.f(sim.army["speed"]) * Num.f(cfg["reverse"]) * dt
 
 
 ## A leg askew to every road under the tank (a lane point past a crossing's centre, or one
 ## square_leg could not square) is driven along the nearest of those roads: never crabbing.
-func _onto_axis(at: Vector2, to: Vector2, edge: int) -> Vector2:
+func onto_axis(at: Vector2, to: Vector2, edge: int) -> Vector2:
 	var v := to - at
 	if v.length() < 0.0001:
 		return to
@@ -324,7 +314,7 @@ func _shuffle(tank: RampageSim.Tank, r: ConvoyRoute, turned: Vector2, step: floa
 		return false
 	for way: Vector2 in [r.front, -r.front]:
 		var to := tank.pos + way * step
-		if _fits(tank, to, r.front) and _sweep_fits(tank, to, turned):
+		if _fits(tank, to, r.front) and sweep_fits(tank, to, turned):
 			tank.pos = to
 			return true
 	return false
@@ -336,7 +326,7 @@ func _fits(tank: RampageSim.Tank, at: Vector2, front: Vector2) -> bool:
 
 ## Room to swing the hull round to `to` standing at `at`, every pivot_deg of the way: a pivot
 ## starts only when it can finish.
-func _sweep_fits(tank: RampageSim.Tank, at: Vector2, to: Vector2) -> bool:
+func sweep_fits(tank: RampageSim.Tank, at: Vector2, to: Vector2) -> bool:
 	var r: ConvoyRoute = routes[tank.id]
 	var turn := r.front.angle_to(to)
 	var steps := ceili(absf(turn) / deg_to_rad(Num.f(cfg["pivot_deg"])))

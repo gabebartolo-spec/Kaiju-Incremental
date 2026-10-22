@@ -90,6 +90,42 @@ static func map(cfg: Dictionary) -> Dictionary:
 	rng.seed = Num.i(cfg["map_seed"])
 	var rings := districts(cfg)
 	var full := rings[rings.size() - 1]
+	var lines := _grid_lines(rng, rings, cfg)
+	var xs: Array[float] = lines[0]
+	var zs: Array[float] = lines[1]
+	var avenues_x := _avenues(rng, xs, rings, cfg)
+	var avenues_z := _avenues(rng, zs, rings, cfg)
+	# Which grid edges are alleys: x-line i between zs[j] and zs[j+1] is ax[Vector2i(i, j)].
+	var alley_x := _alleys(rng, xs, zs, avenues_x, full, cfg)
+	var alley_z := _alleys(rng, zs, xs, avenues_z, full, cfg)
+	var plan := {
+		"nodes": [] as Array[Vector2],
+		"streets": [] as Array[Dictionary],
+		"blocks": [] as Array[Dictionary],
+		"sidewalk": Num.f(cfg["sidewalk"]),
+		"diagonal": _diagonal(cfg),
+		"xs": xs,
+		"zs": zs,
+	}
+	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
+	var grid := {
+		"xs": xs,
+		"zs": zs,
+		"avenues_x": avenues_x,
+		"avenues_z": avenues_z,
+		"alley_x": alley_x,
+		"alley_z": alley_z,
+	}
+	_streets(plan, grid, cfg)
+	CityBlocks.add(plan, grid, rng, cfg)
+	return plan
+
+
+## The x-lines and z-lines: Manhattan blocks (long one way, short the other) in the first
+## district, each later district's out to its own ring avenue, then the outskirts. [xs, zs].
+static func _grid_lines(
+	rng: RandomNumberGenerator, rings: Array[float], cfg: Dictionary
+) -> Array[Array]:
 	var outer := Num.f(cfg["outer_half"])
 	# Long blocks one way, short the other (Manhattan): x-lines far apart, z-lines close.
 	var long: Array = cfg["block_long"]
@@ -108,59 +144,94 @@ static func map(cfg: Dictionary) -> Dictionary:
 	# ...and their blocks vary far more than the city's, so the outskirts are no even grid.
 	CityLines.extend(far, xs, outer, Num.i(long[0]) - 6, Num.i(long[1]) + 14)
 	CityLines.extend(far, zs, outer, Num.i(short[0]) - 2, Num.i(short[1]) + 12)
-	var avenues_x := _avenues(rng, xs, rings, cfg)
-	var avenues_z := _avenues(rng, zs, rings, cfg)
-	# Which grid edges are alleys: x-line i between zs[j] and zs[j+1] is ax[Vector2i(i, j)].
-	var alley_x := {}
-	var alley_z := {}
-	for i: int in xs.size():
-		for j: int in zs.size() - 1:
-			if _alley_ok(xs[i], zs[j], zs[j + 1], full, avenues_x.has(i), rng, cfg):
-				alley_x[Vector2i(i, j)] = true
-	for j: int in zs.size():
-		for i: int in xs.size() - 1:
-			if _alley_ok(zs[j], xs[i], xs[i + 1], full, avenues_z.has(j), rng, cfg):
-				alley_z[Vector2i(j, i)] = true
-	var diag := _diagonal(cfg)
-	var plan := {
-		"nodes": [] as Array[Vector2],
-		"streets": [] as Array[Dictionary],
-		"blocks": [] as Array[Dictionary],
-		"sidewalk": Num.f(cfg["sidewalk"]),
-		"diagonal": diag,
-		"xs": xs,
-		"zs": zs,
-	}
-	plan["sites"] = CitySites.find(plan, rings, [avenues_x, avenues_z], cfg)
+	var out: Array[Array] = [xs, zs]
+	return out
+
+
+## Which edges of `lines` are alleys: line i between cross[j] and cross[j+1] is Vector2i(i, j).
+## One roll per edge, in order.
+static func _alleys(
+	rng: RandomNumberGenerator,
+	lines: Array[float],
+	cross: Array[float],
+	avenues: Dictionary,
+	half: float,
+	cfg: Dictionary
+) -> Dictionary:
+	var out := {}
+	for i: int in lines.size():
+		for j: int in cross.size() - 1:
+			if _alley_ok(lines[i], cross[j], cross[j + 1], half, avenues.has(i), rng, cfg):
+				out[Vector2i(i, j)] = true
+	return out
+
+
+## Every street of the plan: the x-lines (running along z), the z-lines, then the diagonal.
+static func _streets(plan: Dictionary, grid: Dictionary, cfg: Dictionary) -> void:
 	var index := {}
-	# x-lines (streets running along z), split at every crossing and where the diagonal crosses.
-	for i: int in xs.size():
+	var x_axis := {
+		"lines": grid["xs"],
+		"cross": grid["zs"],
+		"avenues": grid["avenues_x"],
+		"alleys": grid["alley_x"],
+	}
+	var z_axis := {
+		"lines": grid["zs"],
+		"cross": grid["xs"],
+		"avenues": grid["avenues_z"],
+		"alleys": grid["alley_z"],
+	}
+	_axis_streets(plan, index, x_axis, true, cfg)
+	_axis_streets(plan, index, z_axis, false, cfg)
+	_diagonal_streets(plan, index, grid, cfg)
+
+
+## One axis's lines as streets, each split at every crossing and where the diagonal crosses.
+## x_lines: they run along z (a point on line v at c is (v, c)), else along x ((c, v)).
+static func _axis_streets(
+	plan: Dictionary, index: Dictionary, axis: Dictionary, x_lines: bool, cfg: Dictionary
+) -> void:
+	var lines: Array[float] = axis["lines"]
+	var cross: Array[float] = axis["cross"]
+	var diag: Dictionary = plan["diagonal"]
+	var outer := Num.f(cfg["outer_half"])
+	for i: int in lines.size():
 		var stops: Array[float] = []
-		stops.assign(zs)
-		var cross := _diag_at_x(diag, xs[i])
-		if absf(cross) <= outer:
-			stops.append(cross)
+		stops.assign(cross)
+		var hit := _diag_at_x(diag, lines[i]) if x_lines else _diag_at_z(diag, lines[i])
+		if absf(hit) <= outer:
+			stops.append(hit)
 		stops.sort()
 		for k: int in stops.size() - 1:
-			var j := _cell(zs, (stops[k] + stops[k + 1]) * 0.5)
-			var kind := AVENUE if avenues_x.has(i) else STREET
-			if alley_x.has(Vector2i(i, j)):
-				kind = ALLEY
-			_street(plan, index, Vector2(xs[i], stops[k]), Vector2(xs[i], stops[k + 1]), kind, cfg)
-	for j: int in zs.size():
-		var stops: Array[float] = []
-		stops.assign(xs)
-		var cross := _diag_at_z(diag, zs[j])
-		if absf(cross) <= outer:
-			stops.append(cross)
-		stops.sort()
-		for k: int in stops.size() - 1:
-			var i := _cell(xs, (stops[k] + stops[k + 1]) * 0.5)
-			var kind := AVENUE if avenues_z.has(j) else STREET
-			if alley_z.has(Vector2i(j, i)):
-				kind = ALLEY
-			_street(plan, index, Vector2(stops[k], zs[j]), Vector2(stops[k + 1], zs[j]), kind, cfg)
-	# The diagonal avenue, crossing to crossing.
+			var j := _cell(cross, (stops[k] + stops[k + 1]) * 0.5)
+			var kind := _kind(axis, i, j)
+			var from := _point(x_lines, lines[i], stops[k])
+			var to := _point(x_lines, lines[i], stops[k + 1])
+			_street(plan, index, from, to, kind, cfg)
+
+
+## The kind of street line i of an axis is between cross lines j and j + 1.
+static func _kind(axis: Dictionary, i: int, j: int) -> String:
+	var alleys: Dictionary = axis["alleys"]
+	var avenues: Dictionary = axis["avenues"]
+	if alleys.has(Vector2i(i, j)):
+		return ALLEY
+	return AVENUE if avenues.has(i) else STREET
+
+
+## The point at c along line v: (v, c) for an x-line, (c, v) for a z-line.
+static func _point(x_lines: bool, v: float, c: float) -> Vector2:
+	return Vector2(v, c) if x_lines else Vector2(c, v)
+
+
+## The diagonal avenue, crossing to crossing.
+static func _diagonal_streets(
+	plan: Dictionary, index: Dictionary, grid: Dictionary, cfg: Dictionary
+) -> void:
+	var diag: Dictionary = plan["diagonal"]
+	var outer := Num.f(cfg["outer_half"])
+	var xs: Array[float] = grid["xs"]
+	var zs: Array[float] = grid["zs"]
 	var along: Array[Vector2] = []
 	for x: float in xs:
 		var z := _diag_at_x(diag, x)
@@ -173,8 +244,6 @@ static func map(cfg: Dictionary) -> Dictionary:
 	along.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 	for k: int in along.size() - 1:
 		_street(plan, index, along[k], along[k + 1], DIAGONAL, cfg)
-	_blocks(plan, xs, zs, avenues_x, avenues_z, alley_x, alley_z, rng, cfg)
-	return plan
 
 
 ## Every district's ring lines and one or two lines through the first district are avenues.
@@ -310,91 +379,3 @@ static func _street(
 			}
 		)
 	)
-
-
-## Blocks between the lines, inset by each side's street half-width and sidewalk (alleys have
-## no sidewalk), with what each is used for.
-static func _blocks(
-	plan: Dictionary,
-	xs: Array[float],
-	zs: Array[float],
-	avenues_x: Dictionary,
-	avenues_z: Dictionary,
-	alley_x: Dictionary,
-	alley_z: Dictionary,
-	rng: RandomNumberGenerator,
-	cfg: Dictionary
-) -> void:
-	var full := districts(cfg)[-1]
-	var walk := Num.f(cfg["sidewalk"])
-	var blocks: Array[Dictionary] = plan["blocks"]
-	var inner: Array[int] = []
-	for i: int in xs.size() - 1:
-		for j: int in zs.size() - 1:
-			var inset := func(avenue: bool, alley: bool) -> float:
-				if alley:
-					return Num.f(cfg["alley_width"]) * 0.5
-				return width_of(AVENUE if avenue else STREET, cfg) * 0.5 + walk
-			var x0: float = xs[i] + inset.call(avenues_x.has(i), alley_x.has(Vector2i(i, j)))
-			var x1: float = (
-				xs[i + 1] - inset.call(avenues_x.has(i + 1), alley_x.has(Vector2i(i + 1, j)))
-			)
-			var z0: float = zs[j] + inset.call(avenues_z.has(j), alley_z.has(Vector2i(j, i)))
-			var z1: float = (
-				zs[j + 1] - inset.call(avenues_z.has(j + 1), alley_z.has(Vector2i(j + 1, i)))
-			)
-			var rect := Rect2(x0, z0, x1 - x0, z1 - z0)
-			# Inside the last district a block takes the use it has once that district is in
-			# play, whatever the stage, so its lots never change (CityBand holds it back).
-			var city := maxf(maxf(absf(x0), absf(x1)), maxf(absf(z0), absf(z1))) < full
-			var use := "built" if city or CityBand.real(rect, cfg) else "outer"
-			var roll := rng.randf()
-			if CitySites.covers(plan, i, j):
-				continue  # one of a landmark's merged cells
-			if city and CityLots.town_share(rect.get_center(), cfg) < 0.2:
-				if roll < Num.f(cfg["parking_chance"]):
-					use = "parking"
-			blocks.append(
-				{
-					"rect": rect,
-					"use": use,
-					"district": district_of(rect, cfg),
-					"cell": Vector2i(i, j)
-				}
-			)
-			if city:
-				inner.append(blocks.size() - 1)
-	CitySites.add_blocks(plan, cfg)
-	CityRiver.mark(plan, zs, cfg)
-	# One park per district: its biggest block between the towers and its ring. One plaza: the
-	# block at the heart of the first tower district.
-	var rings := districts(cfg)
-	var heart := cores(cfg)[0]
-	var parks: Array[int] = []
-	var park_area: Array[float] = []
-	for k: int in rings.size():
-		parks.append(-1)
-		park_area.append(0.0)
-	var best_plaza := -1
-	var plaza_away := INF
-	for n: int in inner:
-		if str(blocks[n]["use"]) != "built":
-			continue  # the river (CityRiver)
-		var rect: Rect2 = blocks[n]["rect"]
-		var ring := Num.i(blocks[n]["district"])
-		var town := CityLots.town_share(rect.get_center(), cfg)
-		var edge := maxf(absf(rect.get_center().x), absf(rect.get_center().y)) / rings[ring]
-		var inside := edge < 0.75 or ring > 0  # a later district is one ring of blocks deep
-		if town < 0.1 and inside and rect.get_area() > park_area[ring]:
-			parks[ring] = n
-			park_area[ring] = rect.get_area()
-		var away := rect.get_center().distance_to(Vector2(heart.x, heart.y))
-		if away < plaza_away:
-			best_plaza = n
-			plaza_away = away
-	for n: int in parks:
-		if n >= 0:
-			blocks[n]["use"] = "park"
-	if best_plaza >= 0 and not best_plaza in parks and Num.f(cfg["plaza_blocks"]) > 0.0:
-		blocks[best_plaza]["use"] = "plaza"
-	CityBand.hold_back(plan, inner, cfg)
