@@ -303,29 +303,7 @@ func _signature() -> void:
 ## 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
 	var top := ceili(reach_height()) if y_hi < 0 else y_hi
-	for i: int in buildings.size():
-		var b := buildings[i]
-		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
-		if near > 0.0 and carving.takes(i):
-			carving.hit(i, force, damage, Vector2i(y_lo, top))  # coats what it reaches too
-			continue
-		if near <= 0.0 or b.frame.alive_count == 0:
-			continue
-		var cells: Array[Vector3i] = []
-		var amounts := PackedFloat32Array()
-		for y: int in range(maxi(0, y_lo), mini(top, b.height)):
-			for x: int in b.w:
-				for z: int in b.d:
-					var c := Vector3i(x, y, z)
-					if b.frame.alive(c):
-						var p := b.chunk_world(c)
-						var k: float = force.call(Vector2(p.x, p.z), 0.5)
-						if k > 0.0:
-							cells.append(c)
-							amounts.append(damage * k)
-		if not hit_coat.is_empty():
-			powers.coat(i, cells)
-		damage_cells(i, cells, amounts)
+	StrayShell.hit_buildings(self, force, damage, Vector2i(y_lo, top))
 	for tank: Tank in tanks:
 		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k

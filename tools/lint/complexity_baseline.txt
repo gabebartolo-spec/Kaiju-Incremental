@@ -31,7 +31,6 @@ scenes/pitch_props.gd::mesh 45 16
 scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 82 28
 scenes/powers_view.gd::update 52 17
-scenes/rampage.gd::_on_event 36 13
 scenes/rampage.gd::_physics_process 41 11
 scenes/rampage.gd::_ready 57 8
 scenes/results_screen.gd::_ready 48 2
@@ -59,7 +58,6 @@ sim/convoy.gd::_settle 21 13
 sim/convoy.gd::step 28 17
 sim/glass_frame.gd::cells 18 14
 sim/party_walls.gd::of 33 16
-sim/rampage_sim.gd::hit_area 33 17
 sim/rampage_sim.gd::step 42 14
 sim/road_graph.gd::waypoints 40 13
 sim/road_search.gd::search 40 15
