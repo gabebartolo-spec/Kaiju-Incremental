@@ -295,3 +295,8 @@ spouting in the bay, fire crews and ambulances (fire crews: comment #50), pet do
 train stations with tracks and running trains, small boats on the water. First: sky and sea life (clouds and weather, birds, small boats, the whale); weather looks only; the whale is pure
 spectacle (can't be touched); birds scatter on roars and falling towers; dogs always escape; trains derail and smash;
 banks, hotels and clubs give small bonuses (comments #64-71).
+Light narrative (comment #76, director 2026-10-22): "light narrative to tie the carnage together": the kaiju are
+created in laboratories by a shadowy international organisation; you are the chief architect of the Kaiju Plan; your
+mission: bring the world's cities to their knees, create chaos, eliminate military threats, destroy cultural icons
+(the landmarks, D-133); the military copy your designs and create the mecha kaiju to fight your creation (the mecha
+boss finale above, R 23). How it is told, when, and how much text: asked.
