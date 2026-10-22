@@ -1,11 +1,11 @@
 class_name HazardBox
 extends StyleBox
 ## The emergency-broadcast box (the director's UI look A): a flat fill with square corners, an
-## edge (solid or dashed), an optional band of hazard tape on the left or top, and an optional
+## edge (solid or dashed), an optional band of hazard tape on the left, the top or both sides, and an optional
 ## focus ring drawn just inside the edge (never outside: a ring outside the box covered the
 ## controls next to it). The city's alarm system pointing at you. UiKit builds every one.
 
-enum Band { NONE, LEFT, TOP }
+enum Band { NONE, LEFT, TOP, SIDES }
 
 ## One stripe of tape is this wide (px, measured along the band).
 const STRIPE := 10.0
@@ -23,6 +23,8 @@ const CORNER_GAP := 6.0
 ## share of the box's.
 const CHEVRON_WIDTH := 14.0
 const CHEVRON_INSET := 14.0
+## With tape on the right too, the pointer sits this far inside it.
+const CHEVRON_GAP := 6.0
 const CHEVRON_SHARE := 0.36
 
 var fill := Color.BLACK:
@@ -48,10 +50,13 @@ var chevron := false
 
 func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 	RenderingServer.canvas_item_add_rect(to_canvas_item, rect, fill)
-	if band == Band.LEFT:
+	if band == Band.LEFT or band == Band.SIDES:
 		tape(
 			to_canvas_item, Rect2(rect.position, Vector2(band_size, rect.size.y)), tape_on, tape_off
 		)
+	if band == Band.SIDES:
+		var at := Vector2(rect.end.x - band_size, rect.position.y)
+		tape(to_canvas_item, Rect2(at, Vector2(band_size, rect.size.y)), tape_on, tape_off)
 	elif band == Band.TOP:
 		tape(
 			to_canvas_item, Rect2(rect.position, Vector2(rect.size.x, band_size)), tape_on, tape_off
@@ -61,7 +66,8 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 		_corners(to_canvas_item, rect)
 	if chevron:
 		var h := rect.size.y * CHEVRON_SHARE
-		var tip := Vector2(rect.end.x - CHEVRON_INSET, rect.get_center().y)
+		var inset := CHEVRON_INSET if band != Band.SIDES else band_size + CHEVRON_GAP
+		var tip := Vector2(rect.end.x - inset, rect.get_center().y)
 		var back := tip.x - CHEVRON_WIDTH
 		var tri := PackedVector2Array(
 			[Vector2(back, tip.y - h / 2.0), tip, Vector2(back, tip.y + h / 2.0)]
@@ -70,8 +76,10 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 	if ring:
 		var inner := rect.grow(-(border + RING_GAP))
 		# Clear of the tape too: a ring crossing the stripe reads as a glitch (screen critic).
-		if band == Band.LEFT:
+		if band == Band.LEFT or band == Band.SIDES:
 			inner = inner.grow_side(SIDE_LEFT, -band_size)
+		if band == Band.SIDES:
+			inner = inner.grow_side(SIDE_RIGHT, -band_size)
 		elif band == Band.TOP:
 			inner = inner.grow_side(SIDE_TOP, -band_size)
 		frame(to_canvas_item, inner, ring_color, RING_WIDTH, false)

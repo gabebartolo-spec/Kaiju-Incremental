@@ -3,8 +3,11 @@ config_version=5
 
 [application]
 
-config/name="Kaiju Incremental"
+config/name="Kaiju Evolution"
 run/main_scene="res://scenes/main.tscn"
+; The save folder keeps its old name (the game was "Kaiju Incremental"), so no save is lost.
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Godot/app_userdata/Kaiju Incremental"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]

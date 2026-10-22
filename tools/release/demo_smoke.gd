@@ -21,7 +21,7 @@ func _run() -> void:
 	var title := _screen()
 	var texts := _texts(title)
 	_check(
-		"title shows text", texts.has("KAIJU INCREMENTAL") and texts.has("NEW KAIJU"), str(texts)
+		"title shows text", texts.has("KAIJU EVOLUTION") and texts.has("NEW KAIJU"), str(texts)
 	)
 	_check("title font is ours (Kaiju Claw/Block)", _font_ok(title), _font_names(title))
 	_press(title, "NEW KAIJU")
@@ -96,7 +96,7 @@ func _walk_end() -> void:
 	await _frames(12)
 	_check(
 		"MAIN MENU returns to the title",
-		_texts(_screen()).has("KAIJU INCREMENTAL"),
+		_texts(_screen()).has("KAIJU EVOLUTION"),
 		str(_texts(_screen())).left(120)
 	)
 	SaveFile.delete_save()

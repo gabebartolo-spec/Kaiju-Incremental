@@ -27,15 +27,9 @@ func _ready() -> void:
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	_col.add_theme_constant_override("separation", 24)
 	add_child(_col)
-	var kicker := UiKit.header("CIVIL DEFENCE ALERT", UiKit.SIZE_HEAD)
-	kicker.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_col.add_child(kicker)
-	var title := UiKit.label("KAIJU INCREMENTAL", 104, UiKit.ACCENT)
+	var title := UiKit.label("KAIJU EVOLUTION", 104, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(title)
-	var sub := UiKit.label("Grow. Evolve. Flatten the city.", UiKit.SIZE_HEAD, UiKit.TEXT)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_col.add_child(sub)
 	_buttons = VBoxContainer.new()
 	_buttons.custom_minimum_size = Vector2(560, 0)
 	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

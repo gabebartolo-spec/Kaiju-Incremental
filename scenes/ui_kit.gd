@@ -151,10 +151,13 @@ static func hazard(
 	s.edge = edge
 	s.border = border
 	s.band = band
-	s.band_size = BUTTON_BAND if band == HazardBox.Band.LEFT else PANEL_BAND
+	var sides := band == HazardBox.Band.LEFT or band == HazardBox.Band.SIDES
+	s.band_size = BUTTON_BAND if sides else PANEL_BAND
 	s.set_content_margin_all(14)
-	if band == HazardBox.Band.LEFT:
+	if sides:
 		s.content_margin_left = BUTTON_BAND + 14.0
+	if band == HazardBox.Band.SIDES:
+		s.content_margin_right = BUTTON_BAND + 14.0
 	elif band == HazardBox.Band.TOP:
 		s.content_margin_top = PANEL_BAND + 14.0
 	return s
@@ -219,7 +222,7 @@ static func header(text: String, size: int = SIZE_TITLE) -> PanelContainer:
 	return strip
 
 
-## A button with hazard tape down its left edge. Focus (and hover) lights a dark button up in
+## A button with hazard tape down both edges. Focus (and hover) lights a dark button up in
 ## hazard yellow; focus adds a dark ring inside its edge, so the pad always shows where you are.
 static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) -> Button:
 	var b := Button.new()
@@ -227,24 +230,27 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	b.add_theme_font_size_override("font_size", size)
 	_apply_font(b, size)
 	var lit := ACCENT if fill.get_luminance() < 0.3 else fill
-	var left := HazardBox.Band.LEFT
-	var normal := hazard(fill, fill.lightened(0.15), 2.0, left)
-	var hover := hazard(lit, lit, 2.0, left)
-	var focus := hazard(lit, lit, 2.0, left)
+	var taped := HazardBox.Band.SIDES
+	var normal := hazard(fill, fill.lightened(0.15), 2.0, taped)
+	var hover := hazard(lit, lit, 2.0, taped)
+	var focus := hazard(lit, lit, 2.0, taped)
 	focus.ring = true
 	focus.ring_color = ink(lit)
-	var pressed := hazard(lit.darkened(0.25), lit, 2.0, left)
+	var pressed := hazard(lit.darkened(0.25), lit, 2.0, taped)
 	pressed.ring = true
 	pressed.ring_color = ink(lit.darkened(0.25))
-	var off := hazard(PANEL, LOCKED, 2.0, left)
+	var off := hazard(PANEL, LOCKED, 2.0, taped)
 	off.dashed = true
 	off.tape_on = LOCKED
 	focus.chevron = true
 	hover.chevron = true
 	hover.ring_color = ink(lit)
-	# Every state keeps room on the right for the focus pointer, so focus never shifts the text.
+	# Every state keeps room inside the right tape for the focus pointer, so focus never shifts the
+	# text; the left matches it, so the label sits in the middle.
+	var room := BUTTON_BAND + HazardBox.CHEVRON_GAP + HazardBox.CHEVRON_WIDTH + 6.0
 	for state: HazardBox in [normal, hover, focus, pressed, off]:
-		state.content_margin_right = HazardBox.CHEVRON_INSET + HazardBox.CHEVRON_WIDTH + 10.0
+		state.content_margin_left = room
+		state.content_margin_right = room
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("focus", focus)
