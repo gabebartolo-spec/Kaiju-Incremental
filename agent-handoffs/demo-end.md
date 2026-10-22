@@ -31,7 +31,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 ## Unfinished changes
 - Suites 03:29: demoend 25 checks pass; sim_play, military, smoke, sim pass. flow had 7 fails; fixed: thanks screen text reserve
   (DemoEnd.TEXT_RESERVE, EvolutionReveal.frame_view(owner, reserve)), pad ui_* bindings added in autoload/settings.gd (engine
-  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. flow after the fixes: 2 checks left (Endless 'no clock' elapsed>0.5; normal rampage totals saved as {}); a rerun with fuller messages (tests/lib/flow_demo.gd) is running. Earlier note: the
+  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. flow after the fixes: 2 checks left; cause found: the sim is held back by the river rise (sim.emerge.active, D-083) so elapsed/time_left never moved; flow_demo.gd now waits in _settled(); rerun running. Earlier note: the
   "normal rampage adds the sim's counters" check (saved totals were {}). Fixes are uncommitted until flow is green.
 - Still to do: planted-failure runs for the Endless checks, lint (complexity_ratchet, tuning_keys, 400-line cap), 4K still.
 - native/bin DLL removed; .uid files untracked noise, stage by name.

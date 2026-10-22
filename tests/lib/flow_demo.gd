@@ -10,6 +10,7 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const LEFT_OVER := 100
+const EMERGE_CAP := 1200
 
 var t: SceneTree
 var check: Callable
@@ -51,6 +52,15 @@ func run() -> void:
 	await _check_other_species_save()
 	await _check_controls_rows()
 	SaveFile.delete_save()
+
+
+## Loaded, and past the river rise that holds the sim back (D-083), so its clock runs.
+func _settled(run: Rampage) -> void:
+	await run.wait_loaded()
+	var frames := 0
+	while run.sim.emerge.active and frames < EMERGE_CAP:
+		await t.physics_frame
+		frames += 1
 
 
 func _frames(n: int) -> void:
@@ -261,7 +271,7 @@ func _endless_run(main: Node) -> void:
 	check.call(run != null and run.sim.endless != null, "Endless mode starts an endless rampage")
 	if run == null:
 		return
-	await run.wait_loaded()
+	await _settled(run)
 	var before := SaveFile.load_game()
 	await _frames(60)
 	check.call(not run.sim.over and run.sim.elapsed > 0.5, "Endless mode has no clock to run out (over %s, elapsed %s)" % [run.sim.over, run.sim.elapsed])
@@ -328,7 +338,7 @@ func _check_continue_after() -> void:
 		return
 	await GuiInput.click(t, GuiInput.button(tree, "RAMPAGE"))
 	var run := _screen(main) as Rampage
-	await run.wait_loaded()
+	await _settled(run)
 	check.call(run.sim.endless == null, "RAMPAGE is the normal mode")
 	run.sim.time_left = 0.05
 	await _frames(RampageHud.BEAT_MIN_FRAMES + 20)
