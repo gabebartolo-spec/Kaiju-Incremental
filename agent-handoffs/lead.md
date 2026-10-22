@@ -83,6 +83,13 @@
 - Worktrees: 18 left (all live); 18 old ones backed up to backup/<name> branches. ui-art-hud scratch remove was
   DENIED by permissions (force remove): ask him, never retry around it.
 
+- LIVE STATE 20:00: title screen (ui builder a6c2, claude/ui-redesign f1f55e0f): night view across the river, burning
+  district, no kaiju, smoke off-centre, fix 2 clipped letters; ambience crowd_panic + rifle_far + siren_far (ElevenLabs
+  take A, lead scratchpad sfx_siren/) + in-engine stomp like a T-rex footfall (quality ref only: deep sub boom, ~3 s
+  apart, stomp_1 pitched down + sine sub); then plate-style buttons board (#97), then HUD ring (#96).
+  Army (a93e, claude/clumsy-army-v2 1cc83558): clip FIX sent; it switched the LEAD's worktree to its branch by mistake:
+  told to restore claude/status-check-b96b26. Fire #152 (ab33): baby breath > rake (#94), full suite running.
+  #153 (ab85): flow staged-start stall + streamview stage-4 margin on CI; fixing.
 ## PR queue after QC (max 3 open): #144 turn-weight, emerge-shore, camera-growth, intro-cinematic, rubble-break,
 ## city-explosives, croc-neck, dash-burst, ui-redesign, city-memory, clumsy-army; capture-native (no speed-up: keep?).
 ## Audit P4 (scene refactors, pixel-identical) after the croc batch merges. No octopus/insect work until croc ships (D-124).
