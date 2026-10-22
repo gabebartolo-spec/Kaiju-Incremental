@@ -237,6 +237,7 @@ func has_ultimate() -> bool:
 
 
 func ultimate() -> void:
+	sim.events.append({"type": "ultimate"})  # the view roars (D-145)
 	if sim.stat("beam_dps") > 0.0:
 		beam_left = Num.f(cfg["beam_seconds"])
 		sim.events.append({"type": "beam_start", "seconds": beam_left})
