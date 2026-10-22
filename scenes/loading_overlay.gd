@@ -32,7 +32,7 @@ func _ready() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", GAP)
 	add_child(col)
-	var word := UiKit.header("INCOMING", UiKit.SIZE_TITLE, false)
+	var word := UiKit.header("INCOMING")
 	word.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(word)
 	_bar = UiKit.bar(UiKit.ACCENT, int(BAR_SIZE.y), true)

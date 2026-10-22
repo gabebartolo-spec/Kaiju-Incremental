@@ -27,26 +27,6 @@ class Ticks:
 			draw_rect(Rect2(x, 0.0, WIDTH, size.y), line)
 
 
-## The warning tag on a header's left: a hazard-yellow triangle with a black bar and dot on a
-## near-black square.
-class AlertTag:
-	extends Control
-
-	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, size), UiKit.BG)
-		var s := minf(size.x, size.y)
-		var c := size / 2.0
-		var h := s * 0.8
-		var top := c + Vector2(0.0, -h * 0.55)
-		var tri := PackedVector2Array(
-			[top, c + Vector2(h * 0.58, h * 0.45), c + Vector2(-h * 0.58, h * 0.45)]
-		)
-		draw_colored_polygon(tri, UiKit.ACCENT)
-		var w := maxf(3.0, h * 0.11)
-		draw_rect(Rect2(c.x - w / 2.0, c.y - h * 0.22, w, h * 0.4), UiKit.BG)
-		draw_rect(Rect2(c.x - w / 2.0, c.y + h * 0.25, w, w), UiKit.BG)
-
-
 ## Faint horizontal lines, like an old broadcast monitor.
 class Scanlines:
 	extends Control
