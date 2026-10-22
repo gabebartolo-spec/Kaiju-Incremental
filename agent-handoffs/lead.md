@@ -96,6 +96,10 @@
   * #153 pushed 39f61c90 (CI not yet seen): headless first-build on main thread (flow race), streamview drives its
     own clock at stages 2-3, landmark_keep_m 150 -> 80 (lead accepts; recheck after cities grow 15%). Retarget
     tools/capture/stage4_memory.gd to the adult city. GitHub helper merges when green.
+  * #149 turn pushed 01aae055: smooth yaw bell (max rate step 19% of peak, bar 25%), capture-rig ease, 8-frame walk-off
+    ramp, gdformat + flow fixed. LEAD CHECK: it loosened StepTurn's slice bar (80% of yaw within 0.24 s, was 0.15 s) to
+    fit the ease: confirm that's the critic's ease, not a hidden regression. Re-render clip3 (stale), lead QC, then the
+    director feel gate. Full suite not run on this tip.
   * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
     tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
   * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
