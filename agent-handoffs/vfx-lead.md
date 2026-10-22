@@ -60,8 +60,9 @@ Not built: killable parachutists (they only drift down).
   not orange-red. Brief ready at scratchpad brief_r9.md (raise the fire family ramp for all fires, blast heat
   ~1.1, scale/light); goes to my next free builder slot; tell the lead before fire.gd edits (#160 has fire.gd).
 - #160 title (claude/ui-title-menu): my verdict FIX = director's tilt + warm 2-3 px head rim; lead's builder does it.
-- Title: director chose (2026-10-23) camera TILT UP so the Colossus head is 1.5-2x the tallest tower (water band
-  ~1/3 thinner, full head in frame); relayed to the lead for the UI builder; review its 4K still.
+- Title: D-158 amended (director 02:25, asked by the lead): Colossus ~185 m, ~7 deg tilt (water ~1/3 thinner,
+  reflections kept), the 163 m tower lowered on the title only; head 1.5-2x the tallest tower left, whole. Title-
+  look questions now go through me. Review its 4K reveal still + 2x head crop (with the rim fix).
 - D-155 atmosphere (all M1): looks are mine (rampage escalation haze/orange sky/blackouts, clouds, birds, boats,
   one whale, weather looks rain/fog/storm/overcast). Sim side (weather pick, life positions/events, options row) =
   lead's "demo-end" session local_d3ef25ef; I asked it for value names + branch. Files: data/looks.json,
