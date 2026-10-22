@@ -11,7 +11,7 @@ extends RefCounted
 ## a vertical neon sign off a street face (Tokyo). Hollow shell plus a floor slab per floor, so a
 ## broken building shows its floors.
 
-const RES := 8
+const RES := 16
 const VOXEL := 1.0 / RES
 const OFFICE := 0
 const BRICK := 1
