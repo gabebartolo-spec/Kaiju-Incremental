@@ -76,7 +76,12 @@ func open_up(tank: RampageSim.Tank, r: ConvoyRoute, step: float) -> void:
 		return
 
 
-## Giving way: back up while the older tank is held up (up to 3 x stuck), then wait.
+## The longest one stretch of giving way lasts (stuck x yield_cap seconds), then the tank re-plans.
+func yield_limit() -> float:
+	return Num.f(cfg["stuck"]) * Num.f(cfg["yield_cap"])
+
+
+## Giving way: back up while the older tank is held up (up to yield_limit), then wait.
 func yielding(tank: RampageSim.Tank, r: ConvoyRoute, dt: float, back: float) -> void:
 	r.yield_t -= dt
 	for older: RampageSim.Tank in sim.tanks:
@@ -85,7 +90,7 @@ func yielding(tank: RampageSim.Tank, r: ConvoyRoute, dt: float, back: float) -> 
 		back_off(tank, older, back)
 		var o: ConvoyRoute = convoy.routes.get(older.id)
 		var held := o != null and o.stuck_t > 0.0
-		if held and r.yield_t <= 0.0 and r.yield_all < Num.f(cfg["stuck"]) * 3.0:
+		if held and r.yield_t <= 0.0 and r.yield_all < yield_limit():
 			r.yield_t = dt
 		r.yield_all += dt
 
@@ -119,13 +124,13 @@ func outranks(first: RampageSim.Tank, second: RampageSim.Tank) -> bool:
 ## Held up by a tank outside the danger radius while inside it: that tank gives way at once
 ## (backs along its hull as give_way does), so a retreating tank is not left standing under the
 ## kaiju waiting for the younger one to find out it is in the way. Not once it has yielded for
-## `stuck x 3` (the cap in yielding()): a boxed-in blocker gets its free step and re-plans instead
+## yield_limit() (the cap in yielding()): a boxed-in blocker gets its free step and re-plans instead
 ## of being re-armed every step the other tank stays held up.
 func demand_way(tank: RampageSim.Tank, blocker: RampageSim.Tank) -> void:
 	var o: ConvoyRoute = convoy.routes.get(blocker.id)
 	if o == null or not in_danger(tank) or in_danger(blocker):
 		return
-	if o.yield_all >= Num.f(cfg["stuck"]) * 3.0:
+	if o.yield_all >= yield_limit():
 		return
 	o.give_to = tank.id
 	o.yield_t = Num.f(cfg["stuck"])

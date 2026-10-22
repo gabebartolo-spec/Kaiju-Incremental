@@ -1,11 +1,11 @@
 extends RefCounted
 ## A tank made to give way by one inside the danger radius (TankSpacing.demand_way) does not yield
-## for ever. TankSpacing.yielding stops re-arming a yield after `stuck x 3` seconds so the tank
-## gets a free step (a re-plan) from time to time; demand_way re-armed it every step the other
-## tank stayed held up, so a boxed-in tank yielded to the end of the run. The case: one straight
-## road, A inside the danger radius and held up behind B outside it, C right ahead of B so B has
-## no room to back out of A's way. A's held-up step is Convoy._drive's blocked branch (give_way);
-## B is driven by the real Convoy._drive. Part of the military suite.
+## for ever. TankSpacing.yielding stops re-arming a yield after yield_limit() (`stuck x yield_cap`)
+## seconds so the tank gets a free step (a re-plan) from time to time; demand_way re-armed it every
+## step the other tank stayed held up, so a boxed-in tank yielded to the end of the run. The case:
+## one straight road, A inside the danger radius and held up behind B outside it, C right ahead of
+## B so B has no room to back out of A's way. A's held-up step is Convoy._drive's blocked branch
+## (give_way); B is driven by the real Convoy._drive. Part of the military suite.
 ## Seeded by design: city seed 0, no random draw here.
 
 const DT := 1.0 / 15.0
@@ -87,16 +87,17 @@ func run() -> void:
 		convoy._drive(b, rb, DT)
 		most = maxf(most, rb.yield_all)
 	var stuck := Num.f(convoy.cfg["stuck"])
+	var cap := convoy.spacing.yield_limit()
 	var said := (
 		(
 			"B, made to give way by A for %.0f s while boxed in by C, yields at most %.1f s at a time"
 			+ " (the %.0f s cap and one more wait) and is free to drive %d steps (yield_all up to"
 			+ " %.1f s, moved %.1f m)"
 		)
-		% [SECONDS, longest, stuck * 3.0, free, most, b.pos.distance_to(start)]
+		% [SECONDS, longest, cap, free, most, b.pos.distance_to(start)]
 	)
 	print("YIELD " + said)
-	_check.call(longest <= stuck * 4.0 + 0.5 and free >= 3, said)
+	_check.call(longest <= cap + stuck + 0.5 and free >= 3, said)
 
 
 ## A straight stretch of road, over any number of blocks, with room for A, B and C a GAP apart and

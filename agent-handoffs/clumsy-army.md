@@ -12,7 +12,7 @@ Bar, never loosened: the army's damage to the kaiju per minute within 5% of the 
 2. Budget with helicopters ON, 24 seeds, 120 s, hit_mult 1.0 (= final code): see PR body table. Expected damage (shots x
    hit damage + squads + helis) has the smaller SE: tier 1 +4.7 +- 3.2%, tier 2 +0.5 +- 3.0%, tier 3 -0.2 +- 2.4%; as it fell
    -1.5 +- 5.0, -0.2 +- 3.7, -3.3 +- 3.0. Tier 1 extended to 48 seeds (see PR). Tier 4 gone (D-135).
-3. demand_way skips at yield_all >= stuck*3. tests/lib/military_yield.gd failed first (B yields 60.0 s, 0 free steps), now
+3. demand_way skips at yield_all >= yield_limit() (stuck x army.convoy.yield_cap 3.0, tuning, no magic number). tests/lib/military_yield.gd failed first (B yields 60.0 s, 0 free steps), now
    max 8.1 s and 7 free steps in 60 s.
 D-157 test: tests/lib/military_stray.gd _counts_as_destruction (real shot -> stray_landed -> biomass, ruin, threat, heli cap);
 failed on a "wrecking earns nothing" mutation (3 new checks red), green on the code.
