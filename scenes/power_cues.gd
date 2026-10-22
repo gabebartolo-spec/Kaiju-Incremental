@@ -5,21 +5,18 @@ extends RefCounted
 ## and their sound follow the healing. Presentation only; it reads the sim and decides nothing.
 
 var _sim: RampageSim
-var _fx: AbilityFx
 var _sfx: Sfx
 var _was_ready := true
 
 
-func _init(p_sim: RampageSim, p_fx: AbilityFx, p_sfx: Sfx) -> void:
+func _init(p_sim: RampageSim, p_sfx: Sfx) -> void:
 	_sim = p_sim
-	_fx = p_fx
 	_sfx = p_sfx
 
 
 ## One frame: `at` is where the kaiju stands (world), `facing` its heading in world space.
-func update(at: Vector3, facing: Vector3) -> void:
+func update(fx: AbilityFx, at: Vector3, facing: Vector3) -> void:
 	var sim := _sim
-	var fx := _fx
 	var sfx := _sfx
 	var charged := sim.ability_ready_in <= 0.0
 	if charged and not _was_ready:

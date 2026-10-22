@@ -91,6 +91,7 @@ func setup(
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
+	_cues = PowerCues.new(sim, sfx)
 
 
 ## Returns once the scene is built (at once when it is; flow suites and captures that start a run
@@ -133,7 +134,6 @@ func _ready() -> void:
 	if not await stages.next(self):
 		return
 	ability_fx.attach_body(_kaiju)
-	_cues = PowerCues.new(sim, ability_fx, sfx)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
@@ -202,7 +202,7 @@ func _physics_process(delta: float) -> void:
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
 	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
-	_cues.update(_kaiju_at, _to_world(sim.facing))
+	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
 	_hud.refresh()
