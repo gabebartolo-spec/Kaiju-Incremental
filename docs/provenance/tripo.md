@@ -71,3 +71,20 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-23 | reptilian head python A | d9ef0685 | Smart Mesh P2.0 x4 | a24840d3-b805-4853-9c1d-cf8f2d112a52 | 100 | yes (Private) | generated, 4 variants, not yet inspected |
 | 2026-10-23 | reptilian head python B | 83e61a14 | Smart Mesh P2.0 x4 | fc818f33-59d1-477d-bee5-c25f95d7830b | 100 | yes (Private) | generated; variant 1 = model 00c91098-1b6c-4ef5-9cb5-e04c3707755e |
 | 2026-10-23 | reptilian head python B v1 untextured | export 00c91098 GLB | Export | 00c91098 | 0 | yes | ~/Downloads/kaiju_tripo/heads_python_b_v1_clay.glb (260 KB, glTF); director pressed Save on the native dialog |
+| 2026-10-23 | reptilian head refs v2 (size) | croc titan ref (hist 2026-10-17 21:50 var 3), "same size as the croc head" prompt, x4 | Image edit | 699d0691, 17dbfc33, 860f8667 (+ pyB 2024 not kept) | 0 (free quota) | n/a | superseded by the kind-based refs (coordinator: A fits the croc skull, B free silhouette) |
+| 2026-10-23 | reptilian head python A, fits skull | croc ref, GPT Image 2.5: croc head silhouette kept, python scales / heat pits / slit eyes only | Image edit | b4e41a04 | 0 | n/a | ref |
+| 2026-10-23 | reptilian head python B, free shape | same, long flat python head | Image edit | 2408dfa4 | 0 | n/a | ref |
+| 2026-10-23 | reptilian head komodo A, fits skull | same, croc silhouette kept, osteoderms, serrated teeth | Image edit | a40cfda5 | 0 | n/a | ref |
+| 2026-10-23 | reptilian head komodo B, free shape | same, heavy deep Komodo jaw | Image edit | 0da919d9 | 0 | n/a | ref |
+| 2026-10-23 | python A, fits skull | b4e41a04 | Smart Mesh P2.0 x4 | e89b4c62-24c4-49a7-9bd8-0b1f02dc4f31 | 100 | yes (Private) | generated, variant pick pending |
+| 2026-10-23 | python B, free shape | 2408dfa4 | Smart Mesh P2.0 x4 | d60790df-1447-4a50-9666-6225675f2bad | 100 | yes (Private) | generated, variant pick pending |
+| 2026-10-23 | komodo A, fits skull | a40cfda5 | Smart Mesh P2.0 x4 | 6d3fc3f4-de0d-4cce-880f-0e8f42da8b82 | 100 | yes (Private) | generated, variant pick pending |
+| 2026-10-23 | komodo B, free shape | 0da919d9 | Smart Mesh P2.0 x4 | bc079d86-deed-4b95-bfb2-f41125f6781f | 100 | yes (Private) | generated, variant pick pending |
+| 2026-10-23 | croc skin base (charcoal spines) | Nano Banana edit of the croc ref (hist 21:50 var 3): back spines charcoal | Image edit | 53b2081d | 0 | n/a | base for the skin edits (tail tip cut by the square crop) |
+| 2026-10-23 | skin Obsidian | Nano Banana colour edit of 53b2081d | Image edit | 6c1353f0 | 0 | n/a | shape kept; ember seams, orange eyes |
+| 2026-10-23 | skin Bone | same | Image edit | 48794b99 | 0 | n/a | shape kept; red eyes |
+| 2026-10-23 | skin Abyssal | same | Image edit | 147939c4 | 0 | n/a | shape kept; teal, no electric blue |
+| 2026-10-23 | skin Desert Rust v1 | same | Image edit | 67f2ec55 | 0 | n/a | REJECT: too bright orange |
+| 2026-10-23 | skin Desert Rust v2 | same, "dusty, desaturated" | Image edit | 4e4921b1 | 0 | n/a | shape kept; sand with rust bands |
+| 2026-10-23 | skin Gilded v1 | same | Image edit | 7202516f | 0 | n/a | REJECT: reads as brown |
+| 2026-10-23 | skin Gilded v2 | same, gold plates on spines/scutes | Image edit | d2091616 | 0 | n/a | shape kept; gold plates on bronze |
