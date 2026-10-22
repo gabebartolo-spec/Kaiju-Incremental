@@ -6,7 +6,7 @@ Lead opens/reads the PR; I push. Godot = Desktop\Godot_v4.7.2...console.exe (no 
 - Merged origin/claude/look-options (fire spread #152, turning #149) into the branch; conflicts in upgrades.json (r_beam now evolve2,
   fire nodes kept) and run_military_tests.gd (took origin's RAMPAGE_SEEDS version, header comment only).
 - Post-merge touched-suite run: scratchpad full7.txt (fire military powers growth street city sim empty_space flow).
-- After-pacing: HELD until the lead says go (2 h engine job; scratchpad pace_after_rept.txt is a partial 17-run file). Before (old cities, reptilian, 400 runs, 3.30 h to the last unlock): young 0.12 h, Behemoth 0.90 h, Colossus 1.83 h, Apex Titan 0.46 h (evolve1 0.12 h, evolve2 1.02 h, evolve3 2.85 h, r_beam 2.95 h).
+- After-pacing DONE (reptilian, 400-run cap, 109 runs, wall 3533 s; scratchpad pace_after_rept.txt). Before (old cities, 87 levels): evolve1 0.12 h, evolve2 1.02 h, evolve3 2.85 h, last 3.30 h; young 0.12 / Behemoth 0.90 / Colossus 1.83 / Apex 0.46 h. After (new cities, 95 levels, the base also gained 8 fire levels): evolve1 0.16 h (run 9), evolve2 1.28 h (run 55), r_beam first level 2.11 h (run 88), LAST unlock 2.62 h (run 109); young 0.16 h, Behemoth 1.12 h, Colossus 1.35 h. Target about 2 h: 2.62 h is 31% over. Cost rows: r_beam 845,820 rubble over 3 levels (160,020 / 266,700 / 419,100) is the tail (after evolve2 at 1.28 h the Colossus runs earn 31-45k each, 34 of 54 end in defeat); tree total 2,390,295 rubble. No balance changed.
 - Not run on purpose: frame-time before/after (CPU at 100%, numbers are noise; one 4K pair gave gpu avg 43.8 vs 43.6 ms but
   CPU-contended, 80 vs 109 frames); full suite (GitHub does it; a pre-merge full run was green, 25 suites).
 
