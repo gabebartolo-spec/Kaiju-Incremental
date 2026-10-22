@@ -1,5 +1,5 @@
 extends "res://tests/lib/runner.gd"
-## Load suite: a grown city loads fast and its kaiju stays in sight (Apex playability): the
+## Load suite: a grown city loads fast and its kaiju stays in sight (adult-city playability): the
 ## party-wall pass grows about linearly, the city streams its far buildings in after the
 ## rampage starts (BuildingStream), and a tower between the camera and the kaiju fades to a
 ## screen door (BuildingFade, D-025). Headless; the stream check meshes a Behemoth city.
@@ -87,7 +87,7 @@ func _check_bake_pruned() -> void:
 
 ## Party walls (which sides a neighbour covers) come out the same as comparing every pair,
 ## while the pairs compared grow about linearly with the building count, not with its square:
-## an Apex city loads without 5.9M comparisons.
+## the adult city loads without millions of comparisons.
 func _check_party_walls() -> void:
 	var young := _sim_at(1).buildings
 	var fast := BuildingView.party_walls(young)
@@ -109,15 +109,15 @@ func _check_party_walls() -> void:
 				sides[side] = maxi(Num.i(sides.get(side, 0)), other.height)
 		slow.append(sides)
 	check(fast == slow, "the party-wall grid finds the same walls as comparing every pair")
-	var apex := _sim_at(4).buildings
-	BuildingView.party_walls(apex)
+	var adult := _sim_at(3).buildings
+	BuildingView.party_walls(adult)
 	var per_young := Num.f(young_pairs) / young.size()
-	var per_apex := Num.f(BuildingView.pair_checks) / apex.size()
+	var per_adult := Num.f(BuildingView.pair_checks) / adult.size()
 	check(
-		per_apex < per_young * 2.0 and BuildingView.pair_checks < apex.size() * 20,
+		per_adult < per_young * 2.0 and BuildingView.pair_checks < adult.size() * 20,
 		(
-			"party-wall pairs grow about linearly: %.1f per building young, %.1f at Apex (%d)"
-			% [per_young, per_apex, BuildingView.pair_checks]
+			"party-wall pairs grow about linearly: %.1f per building young, %.1f at adult (%d)"
+			% [per_young, per_adult, BuildingView.pair_checks]
 		)
 	)
 
@@ -290,10 +290,10 @@ func _check_stream() -> void:
 	await process_frame
 
 
-## A big city keeps only a chunk budget meshed (stage 4 swapped at 10+ GB when every building
-## streamed in): the nearest buildings to the kaiju stay meshed, a building the rampage touched
-## is never freed, and as the kaiju walks away the far untouched ones go back to boxes while the
-## ones he reaches are meshed.
+## A big city keeps only a chunk budget meshed (the biggest stage swapped at 10+ GB when every
+## building streamed in): the nearest buildings to the kaiju stay meshed, a building the rampage
+## touched is never freed, and as the kaiju walks away the far untouched ones go back to boxes
+## while the ones he reaches are meshed.
 func _check_stream_budget() -> void:
 	var sim := _sim_at(3)
 	sim.city["load_chunks"] = 3000

@@ -10,6 +10,10 @@ const DT := 1.0 / 60.0
 const SAMPLE_EVERY := 60  # frames: one sample a second
 ## Upgrades owned at each city (capture_kit.gd STAGE_LEVELS): the baby, then the adolescent.
 const BABY := {"claws": 2, "hide": 2}
+## A baby late in its city, most nodes before the first evolution bought: the
+## wider young city (D-135) holds about twice the people, and the ruin the sound design waits for
+## (destruction and people fled, both as shares) takes a kaiju this strong, not the first-run one.
+const LATE_BABY := {"claws": 5, "hide": 5, "rage": 5, "quake": 2}
 const ADOLESCENT := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}
 
 var sim: RampageSim

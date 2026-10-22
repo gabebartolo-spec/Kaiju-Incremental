@@ -195,11 +195,12 @@ func lash(centre: Vector3, reach: float, strength: float) -> void:
 	_city.flash(centre + Vector3(0, 2.0, 0), _tint, 5.0 * strength, 0.45)
 
 
-## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp.
-func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
+## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp. The
+## crack mark, or null when the stomp is too light.
+func stomp_cracks(at: Vector3, radius: float, strength: float) -> Decal:
 	var from := Num.f(_tune["crack_stomp_power"])
 	if strength < from:
-		return false
+		return null
 	played.append("cracks")
 	var look := {
 		"size": radius * 2.2,
@@ -209,8 +210,7 @@ func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
 		"tint": MOLTEN,
 		"soot": 0.5,
 	}
-	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
-	return true
+	return FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
 
 
 ## Signature ready again: the eyes flare in the species colour (not the whole body, which read

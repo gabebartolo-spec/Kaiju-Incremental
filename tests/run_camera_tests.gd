@@ -6,8 +6,8 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: the shake's noise has its own fixed seed and time is stepped by hand.
 ##   godot --headless --path . --script tests/run_camera_tests.gd
 
-const BABY := 0.5  # body scales of stage 1 and stage 4 (19-camera research table)
-const ADULT := 1.7
+const BABY := 0.5  # body scales of stage 1 and stage 3, the adult (young_scale x tier growth)
+const ADULT := 1.3
 const FRAME := 1.0 / 60.0
 
 

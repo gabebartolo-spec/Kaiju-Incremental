@@ -226,7 +226,7 @@ func _check_river_sites() -> void:
 	RiverStart.check_sites(check)
 
 
-## Every bridge meets land on both banks, stages 1-4 (tests/lib/city_bridge_land.gd; director,
+## Every bridge meets land on both banks, stages 1-3 (tests/lib/city_bridge_land.gd; director,
 ## build 4 comments 2026-10-21 #12).
 func _check_bridges_meet_land() -> void:
 	BridgeLand.check(COVERAGE_SEEDS, check)

@@ -11,18 +11,6 @@ const STAGE_LEVELS: Array[Dictionary] = [
 	{"claws": 2, "hide": 2},
 	{"claws": 5, "hide": 5, "rage": 3, "evolve1": 1},
 	{"claws": 5, "hide": 5, "rage": 5, "evolve1": 1, "tail": 3, "sig_power": 3, "evolve2": 1},
-	{
-		"claws": 5,
-		"hide": 5,
-		"rage": 5,
-		"evolve1": 1,
-		"tail": 5,
-		"sig_power": 5,
-		"evolve2": 1,
-		"apex_claws": 3,
-		"sig_reach": 2,
-		"evolve3": 1
-	},
 ]
 
 ## The mid-game build the frame benchmarks run (bench_rampage, bench_heavy).

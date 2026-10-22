@@ -10,7 +10,7 @@ extends SceneTree
 ## building.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
-##     --script tools/capture/capture_camera_growth.gd -- --candidate=B --stage=4 --mode=rampage \
+##     --script tools/capture/capture_camera_growth.gd -- --candidate=B --stage=3 --mode=rampage \
 ##     --out=<dir> [--seconds=8] [--still=4]
 ## --mode=stand: no input (the kaiju stands where it rose); rampage: autoplay. --check-only: the
 ## self-check alone, no frames saved (runs --headless: the camera and sim are the same).

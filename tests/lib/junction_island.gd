@@ -9,6 +9,7 @@ extends RefCounted
 const Coverage := preload("res://tests/lib/city_coverage.gd")
 const SEEDS: Array[int] = [40, 55, 60]
 const TIER := 2
+const Rings := preload("res://tests/lib/fixture_rings.gd")
 
 var _check: Callable
 var _root: Node
@@ -20,6 +21,7 @@ func _init(check_fn: Callable, root: Node) -> void:
 
 
 func run() -> void:
+	RiverQuay.enabled = false  # the riverside crates would fill some of these cells too
 	for map_seed: int in SEEDS:
 		TrafficIsland.enabled = false
 		var without: Dictionary = _city(map_seed)
@@ -49,6 +51,7 @@ func run() -> void:
 			)
 		)
 	TrafficIsland.enabled = true
+	RiverQuay.enabled = true
 
 
 ## The bare cells, the island centres, how far the nearest island footprint keeps from a car
@@ -56,6 +59,7 @@ func run() -> void:
 func _city(map_seed: int) -> Dictionary:
 	var base: Dictionary = Content.tuning().duplicate(true)
 	base["city"]["map_seed"] = map_seed
+	Rings.apply(base)
 	var sim := RampageSim.new(
 		UpgradeTree.run_stats(
 			Content.section("kaiju"),

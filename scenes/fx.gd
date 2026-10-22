@@ -202,9 +202,11 @@ func sparks(at: Vector3) -> void:
 ## A soft ripple of dust that runs out across the ground from a landing (no glow, no tint: a ring
 ## with no visible impact behind it is not drawn by the callers). Size, life and opacity are
 ## tuning "fx" "shockwave": small and faint so it reads as dust kicked off the street.
-## A tail slam (tail) draws no ring: a few footfall puffs thrown out around the tip instead
-## (lead review PR #54: three custom rings in a row popped; the step puff of #62 reads right).
-func shockwave(at: Vector3, radius: float, tail := false) -> void:
+## A foot's ring (foot) starts out at foot_start of its radius, clear of the foot that
+## made it, on the landing frame. A tail slam (tail) draws no ring: a few footfall puffs thrown
+## out around the tip instead (lead review PR #54: three custom rings in a row popped; the step
+## puff of #62 reads right).
+func shockwave(at: Vector3, radius: float, tail := false, foot := false) -> void:
 	if tail:
 		_slam_puff(at + Vector3(0, 0.2, 0), radius * SLAM_SIZE)
 		for k: int in SLAM_PUFFS:
@@ -220,6 +222,8 @@ func shockwave(at: Vector3, radius: float, tail := false) -> void:
 	mat.set_shader_parameter("tint", _dust_tone())
 	mat.set_shader_parameter("peak", Num.f(cfg["alpha"]))
 	mat.set_shader_parameter("soft", Num.f(cfg["soft"]))
+	var start := Num.f(cfg["foot_start"]) if foot else 0.0  # a foot's ring starts outside it
+	mat.set_shader_parameter("progress", start)
 	plane.material = mat
 	quad.mesh = plane
 	quad.position = at + Vector3(0, 0.15, 0)
@@ -227,9 +231,9 @@ func shockwave(at: Vector3, radius: float, tail := false) -> void:
 	var tween := quad.create_tween()
 	tween.tween_method(
 		func(v: float) -> void: mat.set_shader_parameter("progress", v),
-		0.0,
+		start,
 		1.0,
-		Num.f(cfg["seconds"])
+		Num.f(cfg["seconds"]) * (1.0 - start)
 	)
 	tween.tween_callback(quad.queue_free)
 
