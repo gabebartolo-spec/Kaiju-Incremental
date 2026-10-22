@@ -319,3 +319,6 @@ example of what that will look like so players can choose their tolerance". Aske
 Load-screen art (comment #92, for the demo): a rotation of staged, creative 4K screenshots of the game behind the
 loading screen (e.g. from inside the stadium, from above the tallest tower), full screen with INCOMING and the meter on
 a dark band on top; the lead proposes about 12 shots on one board, he picks.
+Achievements and skins (comment #95, after the demo): in-game achievements with progress bars in a menu (e.g. topple
+100 towers, down 50 helicopters, burn a district), mapped to Steam achievements when the Steam build comes; about 8
+recolour skins of the croc (palette swaps) unlocked on milestones, chosen in a skin picker. Turns D-119's skins on.
