@@ -7,29 +7,29 @@ extends Node3D
 ## glowing voxels, both out of the site's own box; a ring of voxel chunks and dust racing out
 ## along the street (BlastShock); the site blowing apart top first, its pieces thrown out and up
 ## (BlastBreak); a flash of real light and lit smoke cubes (no city fire: its soft smoke column
-## sheeted over the facades, motion critic round 5). The camera kicks on the
-## flash and shakes by distance (trauma squared, capped), the sim holds still a moment
-## (hit_stop: a few steps skipped, never Engine.time_scale), and the blast is heard as crack +
-## body + rumble, with the sonic boom arriving later the further the camera is (speed of sound
-## scaled to the map) and the screen rippling out from the blast as it does.
+## sheeted over the facades, motion critic round 5). The screen flashes white for a few frames
+## (BlastFlash) and the camera takes one kick, away from the blast and decaying over a few frames
+## (jitter), no shaking back and forth and no hit-stop (clip critic round 6); the blast is heard
+## as one crack (at any distance) with a body and rumble under it, and the sonic boom arriving
+## later the further the camera is (speed of sound scaled to the map).
 ## firework_burst: a coloured shell bursting over the point it hits. toxic_cloud: a billow of
 ## green voxels, then a thin haze for as long as the sim keeps the cloud. Looks and timings:
 ## data/tuning.json "blast_fx" (motion critic fix round 2026-10-21).
 
 ## Blasts drawn so far, by kind (read by the flow suite and the capture).
 var drawn: Dictionary = {}
-## The sonic booms on their way to the camera: [seconds left, where, heard (a sound as well)].
+## The sonic booms on their way to the camera: [seconds left, where].
 var booms: Array[Array] = []
-## Hit-stops so far (captures).
-var holds := 0
+## Frames the camera was kicked and the biggest kick (aim units), for captures.
+var kicked := 0
+var kick_peak := 0.0
 var _cfg: Dictionary
 var _city: CityView
 var _sfx: Sfx
 var _sim: RampageSim
 var _rng: RandomNumberGenerator
-var _trauma := 0.0
-var _kick := 0.0  # the flash's own shake, in trauma-squared units, gone over kick.seconds
-var _hold := 0.0  # seconds of sim still to skip
+var _kick := Vector3.ZERO  # the camera's aim offset at the start of the kick (world units)
+var _kick_left := 0.0  # seconds of the kick left; it fades as the square of that share
 var _flashes := 0
 ## Armed sites' blinking lamps: building index -> [node, seconds left].
 var _fuses: Dictionary = {}
@@ -66,28 +66,21 @@ func _ready() -> void:
 	BlastParts.toxic_cloud(self, under, Vector3.ONE, 1.0, 0.2, _c("cloud"))
 
 
-## Camera shake now, in units of aim jitter: trauma squared, so small blasts barely nudge and big
-## ones slam, capped at shake.max; the flash's kick on top of it for its first instant.
-func shake() -> float:
-	var s: Dictionary = _c("shake")
-	return maxf(minf(Num.f(s["max"]), _trauma * _trauma), _kick) * Num.f(s["amplitude"])
-
-
-## This frame's aim jitter for the camera (shake() units), zero while no blast shakes it.
+## The camera's aim offset this frame (world units): one kick, away from the blast, easing out
+## over kick.seconds, zero when nothing kicks it.
 func jitter() -> Vector3:
-	var amount := shake()
-	if amount <= 0.0:
+	var now := _kick_offset()
+	if now != Vector3.ZERO:
+		kicked += 1
+		kick_peak = maxf(kick_peak, now.length())
+	return now
+
+
+func _kick_offset() -> Vector3:
+	if _kick_left <= 0.0:
 		return Vector3.ZERO
-	return Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0) * amount
-
-
-## Hit-stop: true while a blast holds the sim still (Rampage skips that step); counts down by
-## the step it skipped.
-func hold(delta: float) -> bool:
-	if _hold <= 0.0:
-		return false
-	_hold -= delta
-	return true
+	var share := _kick_left / Num.f(_c("kick")["seconds"])
+	return _kick * share * share
 
 
 ## Takes the explosives' events; false for any other event.
@@ -98,7 +91,7 @@ func on_event(event: Dictionary, focus: Vector3) -> bool:
 		"explosion":
 			_explode(str(event["kind"]), event, focus)
 		"firework_burst":
-			_burst(_at(event), focus)
+			_burst(_at(event))
 		"toxic_cloud":
 			var box := _site(event)
 			var at: Vector3 = box[0]
@@ -113,9 +106,7 @@ func on_event(event: Dictionary, focus: Vector3) -> bool:
 
 
 func _process(delta: float) -> void:
-	_trauma = maxf(0.0, _trauma - delta * Num.f(_c("shake")["decay_per_s"]))
-	var kick: Dictionary = _c("kick")
-	_kick = maxf(0.0, _kick - delta * Num.f(kick["amount"]) / Num.f(kick["seconds"]))
+	_kick_left = maxf(0.0, _kick_left - delta)
 	var left: Array[Array] = []
 	for boom: Array in booms:
 		boom[0] = Num.f(boom[0]) - delta
@@ -123,9 +114,7 @@ func _process(delta: float) -> void:
 			left.append(boom)
 			continue
 		var where: Vector3 = boom[1]
-		BlastShock.ripple(self, where, _c("ripple"))
-		if boom[2]:
-			_sfx.play_at("sonic_boom", where)
+		_sfx.play_at("sonic_boom", where)
 	booms = left
 	_blink(delta)
 
@@ -200,13 +189,10 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	BlastParts.smoke(self, high, radius, _c("smoke"))
 	var tint := Color(str(_c("flash")["chem_color" if kind == "chem_lab" else "color"]))
 	_flash(high, tint, Num.f(_c("flash")["energy"]) * radius / 5.0)
+	BlastFlash.screen(self, radius, _c("screen_flash"))
 	_throw(kind, high, half)
 	var trauma: Dictionary = _c("shake")["trauma"]
-	var near := _add_trauma(Num.f(trauma[kind]), at, focus)
-	_kick = maxf(_kick, Num.f(_c("kick")["amount"]) * near)
-	if near > 0.0:
-		_hold = maxf(_hold, Num.f(_cfg["hit_stop"]))
-		holds += 1
+	_add_kick(Num.f(trauma[kind]), at, focus)
 	_sound(kind, at)
 
 
@@ -230,15 +216,14 @@ func _sound(kind: String, at: Vector3) -> void:
 	var ear := _sfx.listener.global_position if is_instance_valid(_sfx.listener) else at
 	var far := ear.distance_to(at)
 	var small := 0.0 if kind == "fuel_silo" else Num.f(s["small_db"])
-	if far <= Num.f(s["crack_within"]):
-		_sfx.play_at("blast_crack", at, small)
-	_sfx.play_at("blast_body", at, small)
-	_sfx.play_at("blast_rumble", at, small)
-	var heard := far >= Num.f(s["boom_from"])
-	booms.append([minf(Num.f(s["boom_max_delay"]), far / Num.f(s["speed"])), at, heard])
+	_sfx.play_at("blast_crack", at, small)  # the blast's one hit, however far (round 6)
+	_sfx.play_at("blast_body", at, small + Num.f(s["tail_db"]))
+	_sfx.play_at("blast_rumble", at, small + Num.f(s["tail_db"]))
+	if far >= Num.f(s["boom_from"]):
+		booms.append([minf(Num.f(s["boom_max_delay"]), far / Num.f(s["speed"])), at])
 
 
-func _burst(at: Vector3, focus: Vector3) -> void:
+func _burst(at: Vector3) -> void:
 	drawn["firework_burst"] = Num.i(drawn.get("firework_burst", 0)) + 1
 	var cfg: Dictionary = _c("fireworks")
 	var colours: Array = cfg["colors"]
@@ -247,16 +232,20 @@ func _burst(at: Vector3, focus: Vector3) -> void:
 	BlastParts.firework(self, at + up, colour, cfg)
 	_flash(at + up, colour, Num.f(cfg["flash_energy"]))
 	_city.fire(at, Num.f(cfg["fire_size"]))
-	_add_trauma(Num.f(cfg["trauma"]), at, focus)
 	_sfx.play_at("fireworks_crackle", at)
 
 
-## The one place a blast shakes the camera: `amount` of trauma, less the further `at` is from the
-## kaiju (`focus`), none past shake.reach. Returns that nearness (0..1).
-func _add_trauma(amount: float, at: Vector3, focus: Vector3) -> float:
+## The one place a blast kicks the camera: `amount` of kick (kick.units each), less the further
+## `at` is from the kaiju (`focus`), none past shake.reach; the aim is thrown up and away from the
+## blast. A second blast inside a kick adds to what is left of it.
+func _add_kick(amount: float, at: Vector3, focus: Vector3) -> void:
 	var near := 1.0 - clampf(at.distance_to(focus) / Num.f(_c("shake")["reach"]), 0.0, 1.0)
-	_trauma = minf(1.0, _trauma + amount * near)
-	return near
+	var away := Vector3(focus.x - at.x, 0.0, focus.z - at.z)
+	away = away.normalized() if away.length() > 0.01 else Vector3.BACK
+	var dir := (Vector3.UP * 0.9 + away * 0.4).normalized()
+	var kick: Dictionary = _c("kick")
+	_kick = _kick_offset() + dir * Num.f(kick["units"]) * amount * near
+	_kick_left = Num.f(kick["seconds"]) if near > 0.0 else _kick_left
 
 
 ## A burst of real light, at most flash.max_live at once: the city's lamps and fires already take

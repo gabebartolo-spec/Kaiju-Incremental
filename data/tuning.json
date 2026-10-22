@@ -259,25 +259,24 @@
 		"chem_lab": {"radius": 3.0, "damage": 45.0, "height": 10, "cloud_radius": 7.0, "cloud_seconds": 8.0, "cloud_tank_dps": 6.0, "cloud_squad_seconds": 1.5}
 	},
 	"blast_fx": {
-		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake: trauma added per blast (times 1 - distance/reach from the kaiju), shake = min(max, trauma^2) * amplitude (units of camera aim jitter), trauma falls decay_per_s. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; kick = extra shake on the flash (trauma-squared units, gone over kick.seconds); hit_stop = sim seconds skipped on a blast near the kaiju (never Engine.time_scale); fireball.top_scale = the fireball stays under that many site heights (round 2), spread_scale = its box at least that many blast radii wide, speed_scale = start speed in radii/s; shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; ripple = the screen bending out from the blast when the boom reaches the camera (strength, width: shares of screen height); break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
-		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6}, "reach": 70.0, "decay_per_s": 1.3, "max": 0.85, "amplitude": 2.2},
+		"_note": "How the red barrels look and sound going off (BlastFx, BlastParts; director comments #19, #20). Sizes scale with the sim's blast radius (explosives.*.radius). shake.trauma: how hard each kind of blast kicks the camera (times 1 - distance/reach from the kaiju); kick = ONE kick of units x that, thrown up and away from the blast and easing out (squared) over kick.seconds, never a shake back and forth (clip critic round 6); screen_flash = a white sheet over the screen at alpha (small blasts at small_share of it) gone in seconds; no hit-stop and no screen-bending ripple any more. sound.speed: the speed of sound in map units/s (343 m/s at about 3.5 m a unit, one floor); the sonic boom plays that late, from boom_from units away, never later than boom_max_delay; every blast cracks once at any distance, body and rumble sit tail_db under it. flash.max_live: real lights at once (LightPool keeps lights.pool_size for lamps and fires). Motion critic fix round 2026-10-21: core = white-hot voxels out of the site box for core.seconds (a few frames), thrown core.throw radii; fireball.top_scale = the fireball stays under that many site heights (round 2), spread_scale = its box at least that many blast radii wide, speed_scale = start speed in radii/s (round 6: 2-3x the footprint), build_seconds = it spawns over that long (a few frames, not one), size_curve = [life share, scale] of each cube: grows in, holds, shrinks out last; shock.ring = small pale dust cubes (round 3: opaque lit voxels, no smooth parts) running out on a thin ring to max(footprint_scale x the site's widest side / 2, 2 x blast radius) in ring.seconds; break = how a site the blast reaches lets go: slices steps a frame each, top first, pieces thrown push out and up; cloud = green cubes in shades, a burst of amount then boil_amount boiling for the sim's cloud seconds, in size_scale x the lab box (at least cloud_share x the sim cloud radius wide), each living billow_seconds; round 5: core.full_radius = the blast radius whose flash is full strength (smaller blasts flash down to half), cloud.glow = shade multiplier (just over 1 glows faintly), cloud.boil = [life share, scale] points of each gas cube, no city fire at a blast (its soft smoke column sheeted over the facades); site_rubble = how high a flattened site blows from.",
+		"shake": {"trauma": {"fuel_silo": 0.9, "fireworks_factory": 0.6, "chem_lab": 0.6}, "reach": 70.0},
 		"flash": {"energy": 14.0, "seconds": 0.3, "max_live": 3, "color": "ffb468", "chem_color": "b4ff8a"},
 		"core": {"amount": 50, "seconds": 0.15, "throw": 0.5, "size": 0.22, "full_radius": 5.0},
-		"kick": {"amount": 0.7, "seconds": 0.2},
-		"hit_stop": 0.1,
+		"kick": {"units": 1.6, "seconds": 0.15},
+		"screen_flash": {"alpha": 0.3, "seconds": 0.05, "full_radius": 5.0, "small_share": 0.75, "layer": -1},
 		"site_rubble": 2.0,
-		"fireball": {"seconds": 1.6, "amount": 260, "size": 0.2, "top_scale": 1.5, "spread_scale": 0.5, "speed_scale": 2.0, "lift": 0.8},
+		"fireball": {"seconds": 2.2, "amount": 520, "size": 0.34, "top_scale": 2.0, "spread_scale": 1.5, "speed_scale": 2.6, "lift": 0.8, "build_seconds": 0.08, "size_curve": [[0.0, 0.15], [0.03, 1.0], [0.45, 1.25], [0.8, 1.0], [1.0, 0.0]]},
 		"smoke": {"seconds": 2.0, "amount": 40, "size": [0.25, 0.5]},
 		"shock": {
 			"ring": {"chunks": 320, "seconds": 0.4, "footprint_scale": 3.0, "life_share": 1.5, "lift": 0.0, "height": 0.3, "size": [0.22, 0.34], "colors": ["787369", "6e695f", "847d70", "7a6a55"]}},
-		"ripple": {"seconds": 0.13, "strength": 0.14, "width": 0.08, "layer": -1},
 		"break": {"slices": 4, "window_frames": 3, "per_chunk": 8, "push": 3.2, "up": 3.0},
-		"fireworks": {"height": 7.0, "sparks": 70, "seconds": 1.5, "speed": 9.0, "spark_size": 0.22, "flash_energy": 6.0, "fire_size": 0.5, "trauma": 0.12, "colors": ["ff4f8b", "4fd8ff", "ffd34f", "8dff6a", "ffffff", "c77dff"]},
+		"fireworks": {"height": 7.0, "sparks": 70, "seconds": 1.5, "speed": 9.0, "spark_size": 0.22, "flash_energy": 6.0, "fire_size": 0.5, "colors": ["ff4f8b", "4fd8ff", "ffd34f", "8dff6a", "ffffff", "c77dff"]},
 		"cloud": {"amount": 150, "boil_amount": 120, "billow_seconds": 2.5, "size_scale": 2.0, "cloud_share": 0.5, "voxel": [0.8, 1.6], "glow": 1.15, "shades": ["86d000", "64a800", "3e7c00"], "boil": [[0.0, 0.5], [0.12, 1.15], [0.3, 0.75], [0.48, 1.2], [0.66, 0.8], [0.82, 1.0], [1.0, 0.0]]},
 		"fuse": {"blink_hz": 6.0, "spark_every_s": 0.2, "lamp_size": 0.6, "color": "ff3a1e"},
 		"debris": 40,
 		"debris_colors": {"fuel_silo": ["d9d7cf", "f2c21b", "222224"], "fireworks_factory": ["7a3b2e", "c8312a", "2f62c9", "f2c21b"], "chem_lab": ["e6e9e3", "6bd85f", "2d5ca3"]},
-		"sound": {"speed": 98.0, "boom_from": 25.0, "boom_max_delay": 1.2, "crack_within": 45.0, "small_db": -3.0}
+		"sound": {"speed": 98.0, "boom_from": 25.0, "boom_max_delay": 1.2, "small_db": -3.0, "tail_db": -4.0}
 	},
 	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
@@ -393,7 +392,7 @@
 				"hero": {"cap": 2, "hero": true, "retrigger_ms": 0.0},
 				"stomp": {"cap": 3, "hero": true, "retrigger_ms": 0.0},
 				"collapse": {"cap": 3, "hero": true},
-				"explosion": {"cap": 4, "hero": true},
+				"explosion": {"cap": 8, "hero": true},
 				"debris": {"cap": 6},
 				"weapon": {"cap": 10},
 				"crowd": {"cap": 3},
@@ -402,6 +401,10 @@
 			},
 			"sounds": {
 				"roar": "hero",
+				"blast_crack": "explosion",
+				"blast_body": "explosion",
+				"blast_rumble": "explosion",
+				"sonic_boom": "explosion",
 				"stomp_0": "stomp",
 				"stomp_1": "stomp",
 				"stomp_2": "stomp",

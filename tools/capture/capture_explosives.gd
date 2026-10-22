@@ -213,4 +213,4 @@ func _film(rampage: Rampage) -> void:
 		print("worst cost per sim step / event kind: ", costs)
 	if not fx.is_empty():
 		var blasts: BlastFx = fx[0]
-		print("drawn: ", blasts.drawn, " hit-stops: ", blasts.holds)
+		print("drawn: ", blasts.drawn, " kick frames: ", blasts.kicked, " peak: ", blasts.kick_peak)

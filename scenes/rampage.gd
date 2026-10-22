@@ -174,10 +174,7 @@ func _physics_process(delta: float) -> void:
 	var dash: bool = input["dash"]
 	# The sim ignores input while it rises from the river: a tap before the handover is kept.
 	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
-	var holding := _blasts.hold(delta)  # a blast's hit-stop: this step is skipped, taps kept
-	now = _latch.through(sim.emerge.active or holding, now, delta)
-	if holding:
-		return
+	now = _latch.through(sim.emerge.active, now, delta)
 	signature = now["signature"]
 	ultimate = now["ultimate"]
 	dash = now["dash"]
