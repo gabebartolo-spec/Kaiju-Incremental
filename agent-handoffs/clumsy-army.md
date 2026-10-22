@@ -1,5 +1,5 @@
 # Clumsy-army handoff, 2026-10-22 (builder; rebuilt on the squashed base)
-## State: convoy fix in; military 20/0; damage re-probe and full suite running; clip left
+## State: done, pushed to claude/clumsy-army-v2 (lead opens the PR); tier 4 is cut (D-135)
 ## Task
 Director comments #18: "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military
 which destroys parts of its own city occasionally". Ruling: misses land beside him (ring round the kaiju, radius 2.5 m).
@@ -38,10 +38,16 @@ change alone left the standoff check at 88% (fail), so all three parts stay. See
 base d6685f34 also fails touch (63 pairs) and standoff (93%): the test only holds on its own seeds, a base weakness;
 with the fix touch 67 pairs, standoff 87% of 39, longest 0.3 s (was 0.6 s). Not exercised: reverse-speed changes
 across other tiers beyond the suite; helicopters.
+## Final evidence (tip after the convoy fix; tier 4 cut by D-135, so tiers 2 and 3)
+- Damage per minute, final code, base vs strays, 12 seeds each, 120 s: tier 2 193.5 -> 188.8 (-2.4%, 12 seeds),
+  tier 3 177.8 -> 172.8 (-2.8%, 12 seeds). Both inside the 5% bar. (Earlier 72-seed run on the pre-fix tree: tier 2
+  +1.05%, tier 4 -1.16%.) Seed noise is large (1 SE about 5%); 12 seeds is the lead's choice.
+- Full suite tools/run_tests.sh: All checks passed (21 suites), exit 0, with the military suite on tiers 1, 2, 4 x seeds
+  0, 1, 2 at 20/0.
+- Clip: strays_ring_v2_6s.mp4 in the clumsy-army notes folder (seed 4, 36 s render, cut 29.8-35.8 s, local RTX 4070
+  SUPER, 4 of 4 shots missed at frames 1640 1773 1906 2039). Not yet QA'd by the lead.
 ## Left
-1. Damage re-probe after the fix (12 seeds t2, 6 seeds t4; the convoy change affects both modes): see report.
-2. Full suite on the final tip, then push claude/clumsy-army-v2.
-3. One ~6 s clip (capture_strays --seed=4 --seconds=36), local GPU, off-screen override.cfg, mp4 via imageio_ffmpeg.
+Lead: art QA of the clip, open the PR. Remove worktrees ca2-base (lead's) and claude/clumsy-army-pre-rebase (local ref).
 ## Findings
 - The spawn camera sits inside a tower for a kaiju at its rise point (standing captures render black).
 - Autoplay damage probes are the wrong instrument for a change that alters the city.
