@@ -1016,7 +1016,7 @@
 		"near_per_scale": 20.0,
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
-		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "bolt_stroke": 0.25}
 	},
 	"post_fx": {
 		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
@@ -1136,9 +1136,56 @@
 		"shockwave": {"radius_scale": 1.2, "seconds": 0.55, "alpha": 0.55, "soft": 0.4, "foot_start": 0.18},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
-		"breath_fade_in": 0.12,
-		"breath_curtain_alpha": 0.7,
-		"breath_curtain_height": 7.0,
+		"bolt": {
+			"_note": "BoltRig/BoltView/bolt.gdshader (VFX_STYLE family 6, research 17): the Lightning Breath and the Thunder Beam. halo_mode picks the halo colours (R 17.6 is the director's open question: amber / eye = the species' eye tint / violet = white with a violet fringe); core is always white-hot. Strokes come at least stroke_gap apart (never more than 3 full flashes a second); between strokes the main channel holds at hold_level with a shallow wobble. All shapes are dimensionless (a share of the bolt's length) and seeded per breath (Seeds breath_bolt / thunder_bolt). Widths are metres at body scale 1.",
+			"halo_mode": "amber",
+			"halo_modes": {
+				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
+				"eye": {"inner": "eye", "fringe": "eye"},
+				"violet": {"inner": "fff0e6", "fringe": "8f5cff"}
+			},
+			"boost_core": 3.0,
+			"boost_halo": 1.3,
+			"falloff_core": 1.4,
+			"falloff_halo": 2.6,
+			"wobble": 0.15,
+			"wobble_hz": 22.0,
+			"depth": 5,
+			"branch_depth": 4,
+			"first_at": 0.12,
+			"feeler_level": 0.3,
+			"feeler_step": 0.04,
+			"feeler_reach": [0.12, 0.55],
+			"stroke_gap": 0.34,
+			"gap_jitter": 0.1,
+			"end_margin": 0.04,
+			"tail": 0.2,
+			"hold_level": 0.75,
+			"stroke_decay": 0.09,
+			"branch_peak": 0.7,
+			"branch_decay": 0.07,
+			"light_decay": 0.12,
+			"light": {"hold_share": 0.3, "falloff": 1.5, "mouth": [9.0, 14.0], "impact": [14.0, 20.0]},
+			"flare_size": 5.0,
+			"branch_sparks": 2,
+			"power_share": 0.25,
+			"prewarm_seconds": 0.05,
+			"breath": {
+				"core": 0.45, "halo": 3.0, "sway": 0.06, "branches": [3, 5],
+				"branch_from": [0.25, 0.7], "branch_width": 0.5, "branch_sway": 0.12,
+				"anchor_near": false, "anchor_back": 0.0, "dust": 0.8
+			},
+			"thunder": {
+				"core": 0.9, "halo": 6.0, "sway": 0.05, "branches": [3, 5],
+				"branch_from": [0.1, 0.9], "branch_width": 0.5, "branch_sway": 0.1,
+				"anchor_near": true, "anchor_back": 0.06, "dust": 1.0,
+				"end_height": 1.0, "lash_slack": 4.0, "lash_height": [0.3, 0.9], "fork_side": 6.0
+			}
+		},
+		"orbit_degrees": 25.0,
+		"orbit_rise": 3.0,
+		"orbit_in_seconds": 0.3,
+		"orbit_out_seconds": 0.5,
 		"scorch_seconds": 5.0,
 		"scorch_soot_in": 0.4,
 		"scorch_glow_in": 0.12,
