@@ -19,6 +19,9 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
+## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
+## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
+var drawn_sight := PackedVector3Array()
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
@@ -116,7 +119,7 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		var sight := BuildingFade.sight_of(sim, camera.global_position)
+		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
 		_fade.update(camera.global_position, sight, delta)
 		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).

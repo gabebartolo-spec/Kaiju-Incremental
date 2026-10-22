@@ -396,4 +396,5 @@ func _place_camera(delta: float) -> void:
 	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y
 	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
+	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

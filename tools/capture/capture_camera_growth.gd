@@ -57,6 +57,8 @@ var _head_hidden := 0
 var _head: HeadFrame
 var _sim_max := 0.0
 var _check_only := false
+## --no-frames: render at the game's frame timing but save nothing (with --trace).
+var _no_frames := false
 ## --depth-share=<f>: overrides tuning camera.lead_depth_share (a before/after of the lead).
 var _depth_share := -1.0
 ## --trace: one TRACE line per frame (time, sim share, head top, eye distance, lead, offset).
@@ -77,6 +79,8 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg == "--check-only":
 			_check_only = true
+		elif arg == "--no-frames":
+			_no_frames = true
 		elif arg == "--trace":
 			_trace = true
 		elif arg.begins_with("--depth-share="):
@@ -144,6 +148,9 @@ func _run() -> void:
 			_check_frame(int(root.get_viewport().get_visible_rect().size.y))
 			continue
 		await process_frame
+		if _no_frames:  # the real render's frame timing, nothing saved
+			_check_frame(int(root.get_viewport().get_visible_rect().size.y))
+			continue
 		await RenderingServer.frame_post_draw
 		var image := root.get_viewport().get_texture().get_image()
 		image.save_jpg(_out.path_join("frames/f%04d.jpg" % frame), JPG_QUALITY)
@@ -241,7 +248,13 @@ func _check_frame(height: int) -> void:
 		var fmt := "TRACE %d sim %.1f top %.1f column %.1f dist %.2f lead %.2f %.2f off %.2f y %.2f"
 		var shake: CameraShake = _rampage.get("shake")
 		row += [rad_to_deg(shake.turn(_rampage.sim.body_scale(), PlayerSettings.motion()).y)]
+		var back := _camera.global_transform.basis.z
+		var cam := [rad_to_deg(atan2(back.x, back.z)), rad_to_deg(asin(back.y))]
+		cam += [_camera.global_position.x, _camera.global_position.z]
+		var turn := shake.turn(_rampage.sim.body_scale(), PlayerSettings.motion())
+		cam += [rad_to_deg(turn.x), rad_to_deg(turn.y)]
 		print((fmt + " ff %.2f %.2f feet %.1f %.1f %.1f tilt %.2f shake %.2f") % row)
+		print("CAM %d yaw %.3f pitch %.3f at %.2f %.2f shk %.3f %.3f" % ([_frames] + cam))
 	var head := feet.y
 	var rig: KaijuRig = kaiju.get("_rig")
 	if rig != null:

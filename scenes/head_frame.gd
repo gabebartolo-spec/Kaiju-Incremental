@@ -3,11 +3,15 @@ extends RefCounted
 ## Camera A's head room (D-121 review): the kaiju's highest drawn point (a reared head, a snout
 ## swung toward the camera: the reptilian's head is ~5 body units ahead of its hips) stays at
 ## least camera.safe_top of the frame below its top edge. When it would ride higher, the aim tilts
-## up just enough (at camera.head_rise/s), and settles back as the head comes down (head_settle/s).
-## The camera never moves or zooms for it, so the kaiju's size holds. Presentation only.
+## up just enough, critically damped (Damped) over camera.head_rise_s going up and
+## camera.head_settle_s coming back, so the aim never jumps (motion critic round 2). The camera
+## never moves or zooms for it, so the kaiju's size holds. sight() gives the fade the drawn body's
+## own points (every bone's centre, the corners of the head, jaw and spine) to keep in view.
+## Presentation only.
 
 ## How far up the aim is tilted now (radians).
 var tilt := 0.0
+var _damped := Damped.new()
 var _cfg: Dictionary = Content.section("camera")
 var _rig: KaijuRig
 var _boxes := {}  # bone -> its voxels' box, in the bone's own space
@@ -53,6 +57,22 @@ func points() -> PackedVector3Array:
 	return out
 
 
+## The drawn body's points the building fade keeps in sight (empty for an unrigged body): each
+## bone's box centre, and the corners of the head, jaw and spine boxes (the torso and head the
+## player must see; the sim's sight points sit a body radius or two ahead of the hips, short of
+## the snout).
+func sight() -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for bone: String in _boxes:
+		var box: AABB = _boxes[bone]
+		var at := _rig.bone(bone).global_transform
+		out.append(at * box.get_center())
+		if bone.begins_with("head") or bone.begins_with("jaw") or bone.begins_with("spine"):
+			for i: int in 8:
+				out.append(at * box.get_endpoint(i))
+	return out
+
+
 ## Where a camera at `eye` looking at `look` should look instead, so the highest drawn point sits
 ## at least safe_top below the frame's top. `view` is (vertical fov in degrees, the camera shake's
 ## pitch in radians, up positive): the shake is applied after the aim, so it counts, and a shake
@@ -68,6 +88,6 @@ func aim(eye: Vector3, look: Vector3, view: Vector2, delta: float) -> Vector3:
 		var ahead := d.dot(forward)
 		if ahead > 0.0:
 			need = maxf(need, atan2(d.dot(up), ahead) - limit - view.y)
-	var rate := Num.f(_cfg["head_rise"] if need > tilt else _cfg["head_settle"])
-	tilt = lerpf(tilt, need, minf(1.0, delta * rate))
+	var smooth := Num.f(_cfg["head_rise_s"] if need > tilt else _cfg["head_settle_s"])
+	tilt = _damped.step(Vector3(need, 0.0, 0.0), smooth, 0.0, delta).x
 	return eye + forward.rotated(right, tilt) * eye.distance_to(look)
