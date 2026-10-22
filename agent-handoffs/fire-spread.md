@@ -8,14 +8,17 @@ sim-review packet (below), full suite once, one ~6 s clip at the game camera (lo
 claude/fire-spread, rebuilt on origin/claude/look-options ef9212ca (own commits cherry-picked; backup ref
 claude/fire-spread-pre-rebase and -pre-rebase2, local only).
 ## Unfinished changes
-- Lead QC of clip v5 = FIX (frames scratchpad/qc5c/sh_*.png, qc5d/t1.png, t2.png): (a) roof fire light switches
-  off in one frame at 7.5 s: fade ~0.4 s as the collapse starts; (b) embers hang in the air while the roof tilts:
-  parent the roof fires to the falling piece or fade them at tilt start; (c) the breath smashes the struck block and
-  the burner is its neighbour: aim so the lit block stands and burns, and the neighbour catches later. Diagnose only
-  (one line each, say where in code): (d) 8.3 s tilted block shows a see-through window lattice, 8.55 s flat slab +
-  mound; (e) 8.4 s pink neighbour's walls vanish into floor plates; check whether a plain smash topple on the base
-  does the same (then it is the shared collapse view). Then re-render ONE clip, report 5 lines.
-- Done and pushed: collapse cost back to 612 usec/tick (burn_out_steps 2 batches 0.3 s apart; hash 1292598282 x2).
+- QC of clip v5 (lead; frames scratchpad/qc5c, qc5d). DONE, not yet rendered and judged: (a)+(b) Fire.go_out(fade):
+  the light dims over view_out_fade 0.4 s and the embers go at once (CityView._broke passes it).
+- (c) OPEN: a lit block that stands and burns out. capture_fire_spread.gd now takes --target=N and prints chunks
+  standing when lit and "burnt out"/"broken first". run 0 --target=307 lights 307 itself (522 chunks standing) but
+  it is broken at frame 676 before its fire ends (fire.burnt_out 0), likely the kaiju's own claw rake (it rakes
+  ahead every 2 s); --stop 0.7..1.1 gave identical placement (unexplained). Next: find why --stop does not move
+  the kaiju, or pick a target the rake cannot reach; then render ONE clip and judge 2x crops.
+- (d)/(e) diagnose only, NOT verified against a plain smash: the falling piece's look comes from
+  BuildingView.lift_piece (scenes/building_view.gd:204) via CityView.fall_start (scenes/city_view.gd ~176), shared
+  with every smash topple; a plain-smash capture is still needed to confirm.
+- Done and pushed earlier: collapse cost 612 usec/tick (2 batches; hash 1292598282 x2).
 ## Evidence so far
 - fire suite 9 of 9 functions, 16 checks, 0 failures; powers suite green; check_scripts 345 ok; gdlint, gdformat,
   tuning_keys, complexity_ratchet clean.

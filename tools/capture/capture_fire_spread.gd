@@ -26,6 +26,7 @@ var _run := 1
 var _after := 2.0
 var _min_tier := 1
 var _stop := 0.4
+var _target := -1
 
 
 ## The scripted input: set down before a low, wide block with neighbours and breathe until
@@ -36,6 +37,7 @@ class Plan:
 	var lit := -1  # the first building the breath set burning
 	var lit_at := -1
 	var min_tier := 1
+	var pinned := false  # --target: the block to light, not the nearest one
 	## Stands this share of the breath's reach off the target's footprint: far enough that its
 	## claws (they rake ahead on their own) do not break the block it lights.
 	var stop_share := 0.4
@@ -45,14 +47,17 @@ class Plan:
 		if s.emerge.active:
 			return {}
 		var fire := s.powers.fire
-		if target < 0:
-			target = pick(s)
+		if target < 0 or (pinned and _settled == 0):
+			target = target if pinned else pick(s)
 			face(s, s.buildings[target])
 		_settled += 1
 		if lit_at < 0 and fire.state.has(FireSpread.State.BURNING):
 			lit = fire.state.find(FireSpread.State.BURNING)
 			lit_at = Engine.get_physics_frames()
-			print("FIREBEAT %d lit %d (target %d)" % [lit_at, lit, target])
+			var alive := s.buildings[lit].frame.alive_count
+			print(
+				"FIREBEAT %d lit %d (target %d), %d chunks standing" % [lit_at, lit, target, alive]
+			)
 		if _settled < SETTLE or lit_at >= 0:
 			return {}
 		return _breathe(s)
@@ -97,6 +102,8 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--run="):
 			_run = arg.substr(6).to_int()
+		elif arg.begins_with("--target="):
+			_target = arg.substr(9).to_int()
 		elif arg.begins_with("--stop="):
 			_stop = arg.substr(7).to_float()
 		elif arg.begins_with("--min-tier="):
@@ -120,6 +127,8 @@ func _go() -> void:
 	var plan := Plan.new()
 	plan.min_tier = _min_tier
 	plan.stop_share = _stop
+	plan.target = _target
+	plan.pinned = _target >= 0
 	rampage.scripted = plan.input
 	root.add_child(rampage)
 	print("FIREBEAT %d start (physics frame)" % Engine.get_physics_frames())
@@ -141,7 +150,7 @@ func _go() -> void:
 			print("FIREBEAT %d lit building gives way" % Engine.get_physics_frames())
 		if fire.state[plan.lit] == FireSpread.State.BURNT:
 			down_at = frames
-			var how := "burnt out" if giving else "broken before it burnt out"
+			var how := "burnt out" if giving or fire.timer[plan.lit] <= 0.0 else "broken first"
 			print("FIREBEAT %d lit building down, %s" % [Engine.get_physics_frames(), how])
 	var fire_now := sim.powers.fire
 	print("FIREBEAT %d end: %d burnt out" % [frames, fire_now.burnt_out])
