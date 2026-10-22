@@ -1,5 +1,5 @@
 # Fire-spread handoff, 2026-10-22
-## State: PAUSED, reach change committed locally NOT pushed (2 suites red, see below)
+## State: reach + cover committed locally NOT pushed (military red, see below)
 ## Task
 R 26.2-26.4 fire spread in the sim (mailbox to-nimbalyst/016, answers 016-ANSWERS, D-126, D-129): heat meter,
 neighbour spread with wind, glow, burn-out collapse, payout, five nodes, fire suite, player-effect fixture,
@@ -35,11 +35,13 @@ claude/fire-spread-pre-rebase and -pre-rebase2, local only).
   capture_fire_spread.gd --run=0 --stop=0.5 (override.cfg no_focus in the worktree, delete after). Frames: breath
   5.2 s (314), lit 299 at 315, beige neighbour raked down about 8.5 s, 299 burns to 12.0 s (719 gives way), down
   12.3 s (737), rubble and dust to 14.8 s. Action fills the lower-left half; no occlusion dither on the lit block.
-- FULL SUITE with ability_range 14.5: 2 red, both green at 11.0 (same tree): (1) city: tests/lib/city_breath_trees.gd,
-  stage 1 map_seed 98765 "a breath 7 m long flattens the park tree ... (1 strays)" (a crushed tree outside the
-  cone allowance at the longer reach); (2) military _check_rampages: "tanks hold standoff: 57 percent of 67 parked-in-
-  range tank-steps in the firing band" (needs >= 95; tank reach does not use ability_range, so it is the autoplay
-  trajectory changing with the longer breath: diagnose before touching the test). Not pushed.
+- FULL SUITE with ability_range 14.5: 2 were red, both green at 11.0. (1) city FIXED (367a54b8): the test is not
+  hard-coded; BreathCone.cover put one axis circle per row, the last as wide as the cone, bulging 0.19 of the
+  reach past the flank (stray at along 4.5 side 4.65, allowance 4.48); now a lattice of small circles, city green.
+  (2) military OPEN, diagnosed: autoplay path changes (0 close-tank steps at 11.0, 29 at 14.5, all ONE tank, tier 4
+  seed 2, tank 2): it retreats from the kaiju but is held up by parked tank 19 7.4 m behind on the same road;
+  convoy re-plans a held-up retreat after stuck 2.0 s x 0.5 = 1.0 s by design, so it waits 1.1 s in danger (bar
+  1.0). A fix is a convoy behaviour change (decision asked of the lead). Not pushed (red).
 ## Sim-review packet (kaiju-sim-review)
 Transitions: (1) tick: FireSpread.step runs once a tick inside SpeciesPowers.step (after the coats), the heat pass
 every spread_tick s (a whole number of ticks), timers every tick; own stream Seeds.derive(powers rng, 0xF12E)
