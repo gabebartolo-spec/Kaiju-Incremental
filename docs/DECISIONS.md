@@ -4,6 +4,46 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-147 · Director · Threat Dossier (bestiary), after the demo
+
+"roadmap item (after demo): a beastiary (name must be thematically appropriate) to describe the multitude of enemies you encounter in the game". Asked: named the Threat Dossier (the Kaiju Plan organisation's classified files on every force sent against your kaiju); an entry's name and silhouette appear on first sight, its full stats, weaknesses and lore after the first kill; opened from the main menu and the pause menu. After the demo.
+
+## 2026-10-22 · D-146 · Director · Playtest milestones replace per-change clips and approvals
+
+"we are wasting our time making so many clips, its better for you to build, then i play and you give me an exhaustive survey to fill"; then "not NO more clips, but not so many, and i dont want to play every single update, you need to identify milestones in the roadmap that justify my playtest and craft a survey for that game state". Picked 4 milestones (ROADMAP "Playtest milestones"): M1 feel pass, M2 Taskforce agents, M3 demo complete, M4 Itch release candidate. Builds are exported .exe files in a fixed folder. The lead merges green, critic-passed work without a director gate.
+
+## 2026-10-22 · D-145 · Director · Demo is all three cities, ~90+ min; more Taskforce rules; roars, names, time of day
+
+Asked 2026-10-22 ("ask me 20 questions"). Demo: includes the adult city (DESIGN's "hatchling to Behemoth" demo line is superseded); a first playthrough runs 90+ minutes; the end shows a thanks screen with rampage stats and a feedback link; the pause menu has a bug/feedback button that writes a report file with version and screenshot (no network calls); demo saves do not carry over to the full game. Taskforce: gas locks special powers only, the dash and every physical attack still work, and the cloud does no damage; mech bombs hit the kaiju and the city; the railgun line tracks the kaiju then locks shortly before firing, so a late step dodges it; several frost grenades refresh the slow, never stack; the dash shatters the ice early; gunships strafe with a blue laser cannon; squads arrive faster as more of the city falls; a destroyed mech blows up and damages nearby buildings; every railgun hit fires the post-effect colour fringe. Post effects: the red low-health pulse starts below 25% health. Title: one fixed view (not the player's current city); keep the BREAKING ticker. Layout: "move our main menu buttons achored to left of screen, keep the most visually apealling scene elements to the right of screen"; the logo sits above the buttons as one left column. Then his own layout (2026-10-23 mockup): a settings gear top-left; under the logo one row, a wide "Continue Game: <species>, <n> rampages" plus a smaller "New Kaiju?" (with no save, one wide "New Kaiju"); an exit button "Run for your life!?" bottom-right above the ticker; buttons in the worn industrial plate look. Colossus: "occasional explosions should reveal the sillhouette of the reptilian colossus obscured in the inferno" (supersedes the earlier silhouette removal); about every 12-20 s, and it moves slowly in step with the footfalls between reveals. Then: "the colossus silhouette could look a bit better though, more distinctive but less of a solid outline, give him red glowing eye (faintly) through the smog". Helicopter crews sometimes bail out by parachute. Load screens: a thin hazard-stripe progress bar. The signature beam is called "Thunder Beam for now but thinking of a better name". No roar button, but the kaiju "should roar more often, perhaps when he uses his ultimate power and/or a dash". Time of day: "the time of day will be randomised each run (a toggle available in the options menu to set a fixed time if players prefer)": random per run replaces D-106's rotation, with an options toggle for a fixed time; "random but cannot do the same time of day twice in a row".
+
+## 2026-10-22 · D-144 · Director · Tanks caught by the longer breath just die
+
+The longer baby breath trapped a retreating tank behind a parked one inside the danger radius; the lead had briefed a convoy re-plan, then a reverse-yield. Director: "think smarter, not harder, the tank doesnt need to avoid the breath, just let it die, even the most professional soldier wouldnt know to anticipate the breath in that moment". No convoy change; the military check counts only tanks that choose to park or fire inside the radius.
+
+## 2026-10-22 · D-143 · Director · Taskforce: railgun strength, arrival, new adult-city enemies, obsidian and electric blue
+
+Adds to D-137/D-139. A railgun hit costs about 8% of the kaiju's health. First arrival: a ticker headline ("ANTI KAIJU TASKFORCE DEPLOYED") as the first squad's glowing jetpack trails streak in. No on-screen markers for agents. Aesthetic for all Taskforce troops and vehicles: "Obsidian with Electric Blue highlights". Every Taskforce agent can jump building to building with grappling hooks and jetpacks. Adult city adds new types: gas-grenade soldiers whose blue-black cloud locks special powers (e.g. the thunder beam) while the kaiju stands in it; knee-high walking mechs in the street, 3-4 at a time, firing laser-bomb volleys marked by electric-blue target rings about 1.5 s before impact, destroyed by stomp, claw swipe, a toppled building or the thunder beam; Taskforce gunships (obsidian, blue lights). The regular tanks and helicopters keep coming alongside the Taskforce. All of it ships before the Itch demo (asked: agents first and the rest after; he picked "All before the demo").
+
+## 2026-10-22 · D-142 · Director · Post effects: subtle vignette and impact colour fringe now, screen reflections later
+
+Asked what post-processing is and whether more would help; picked: a subtle vignette (darker edges, pulsing red at low health) and a split-second colour fringe on the biggest hits only, both shown to him in one short clip before shipping; screen-space reflections on the max preset only, after the demo. Not wanted: motion blur, film grain, lens dirt (lead advised against).
+
+## 2026-10-22 · D-141 · Director · Title fire, water shiver, no music; more Taskforce, wreck and art-process rulings
+
+Title: keep the water reflections ("i love the reflection on the water"); the fire "looks like candles", so ragged flames pour out of windows on several floors with heavy smoke lit from below; the water shivers on every kaiju footfall ("Would be awesome if the water rippled whenever the audio of the Kaiju's footfall plays"), reflections breaking into wobbling bands that settle over about 1 s; no music, city sounds only. Taskforce: an agent killed in a collapse falls flailing with the debris, jetpack sputtering, with a short scream; a swatted agent spins into a nearby wall with a small impact. Helicopter wrecks start a building fire that can spread. Load-screen art: a board of about 20 staged shots, he picks 12. Textures: a board of one building in three voxel-detail styles first, then the city-wide rollout.
+
+## 2026-10-22 · D-140 · Director · Demo build rulings: helicopter deaths, graphics preview, load screens, textures, title variants
+
+Asked 2026-10-22 ("ask me a lot of questions"). Helicopter deaths (#86): a breath or direct hit blows the helicopter apart in the air, a glancing hit or a crumbling building sends it spinning down; wrecks never hurt the kaiju, only the city, and pay out as destruction. Graphics preview (#90): a small live burning street corner (fire, smoke, a looping explosion) redrawn at the chosen setting with the frame rate shown. Load-screen art (#92): the kaiju appears in most shots; no tip text, art and header only. Textured surfaces (#80): building walls and roofs first. Title background: recompose to his reference photo's view (near shore, water, skyline on a lit far bank: "it looks like the city is half underwater"); build night and a glare-free dusk ("dusk could be fine if you doctor the image a bit, remove the glare") and he picks.
+
+## 2026-10-22 · D-139 · Director · Anti Kaiju Taskforce details; it is the next build
+
+Adds to D-137. Agents die when the building they cling to collapses, and a claw swipe can swat one out of the air while it jetpacks. Look: black tactical armour with glowing blue railgun coils and jetpack exhausts. Arrival: agents jetpack in from the map edge. Squads of 3-4, up to about 12 alive. Frost grenades are launched at street level at the feet, and ice crusts up the legs until it cracks off ("we cant have them hit his head but freeze the legs"). Railgun: a thin aiming line plus a rising charge whine, about 2 s before the hit. Each agent killed pays bonus cash. Order: the Taskforce starts first when builders free up, ahead of textures, helicopter deaths and the graphics preview.
+
+## 2026-10-22 · D-138 · Director · Original sounds may be made on ElevenLabs
+
+"builder should create original sounds on 11labs if necessary" (comment #91, about the title screen's screams, sirens and gunfire). When no CLEARED sound exists, original sound effects may be generated on his ElevenLabs plan (commercial use per the plan's terms; check and name the licence in docs/LICENSING_REGISTER.md for every file). Spend stays within the plan's existing credits; anything that needs new credits or a plan change is asked first.
+
 ## 2026-10-22 · D-137 · Director · The Anti Kaiju Taskforce, before the demo
 
 "Roadmap: your adversaries": the Anti Kaiju Taskforce with "special anti-kaiju weaponry including: lazer railguns, frost grenades", reference Attack on Titan, "Special Agents fly around the city with jetpacks and grappling hooks" (comment #78). Asked: arrives from the adolescent city as the elite threat above police and tanks; agents grapple onto buildings only; frost grenades slow the kaiju a few seconds, railguns charge visibly then hit hard; built before the Itch demo (adds to D-132's 'fully featured').
@@ -14,7 +54,7 @@ A read-only audit found content agents added without a decision (comment #77). K
 
 ## 2026-10-22 · D-135 · Director · Three growth steps, one per croc body: the Apex Titan step is cut
 
-Asked (comment #72): the game had four growth steps (young, Behemoth, Colossus, Apex Titan) but three bodies (D-014); an agent added the fourth at kickoff (8d02a024), never a director decision. Picked "3 steps, 1 per body": baby city, adolescent city (EVOLVE: Behemoth), adult city (EVOLVE: Colossus). Each evolve gives a new body. Changes: evolve3 and the fourth city/army/air row go; the top-tier skills and the jet bomber set-piece move into the adult city. Outside the demo (D-050), so no demo delay.
+Asked (comment #72): the game had four growth steps (young, Behemoth, Colossus, Apex Titan) but three bodies (D-014); an agent added the fourth at kickoff (8d02a024), never a director decision. Picked "3 steps, 1 per body": baby city, adolescent city (EVOLVE: Behemoth), adult city (EVOLVE: Colossus). Each evolve gives a new body. Changes: evolve3 and the fourth city/army/air row go; the top-tier skills and the jet bomber set-piece move into the adult city. Outside the demo (D-050), so no demo delay. Follow-up (comment #100): "with the removal of the fourth city, we need to now grow the 3 cities to compensate, a slightly bigger play area in each stage"; asked: about 15% wider each (young ~96 m, adolescent ~160 m, adult ~290 m across), performance checked in the adult city.
 
 ## 2026-10-22 · D-134 · Director · Tripo: a budget of 9000 credits for today
 
@@ -354,43 +394,3 @@ Why (04:27, species session): keep mantis 9668b815 / 0161ad14 / 06ed8a12 and oct
 give them the croc's Blender hand rig with welded weights, no redesign, octopus first (D-045: the auto rig, not the mesh,
 broke the octopus). 04:50: "I only wanted the plan, not execution": work halted after the plan
 (docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md); nothing merged. Outside the demo (D-050).
-
-## 2026-10-18 · D-059 · Director · Croc baby and adolescent from the croc titan design; 260 Tripo credits
-Why: the demo needs the hatchling and Behemoth stages in the croc look (D-050). The director approved the stage line
-(docs/captures/2026-10-17-reptile-design/croctitan_stage_line.png, after a realism-critic pass) and the spend: two Smart
-Mesh (100 each) and two textures (30 each), balance 19415 -> 19155. Six-view PASS sheets: croctitan_{baby,adolescent}_
-six_view.png; GLBs to blender-reptile for the hand rig, weights, clips and export (P3). Rows in docs/provenance/tripo.md.
-
-## 2026-10-18 · D-058 · Director · Body text uses Kaiju Block; headings stay Kaiju Claw
-Why (05:13): "still seeing generic fonts in game when we should be using our own": the UI kit drew every label below
-heading size in the engine default. Board A rubble / B fault / C claw / D block at 20 and 24 px; D picked (cleanest at
-20 px, ours, same tool). All faces are capitals only: accepted. Lands in PR #27 with a no-default-font check.
-
-## 2026-10-18 · D-057 · Director · Lighting stays the current "concrete" look
-Why (05:12): board A current / B golden hour / C blue hour / D night at the game camera (1080p + 4K, luminance p50
-72/78/52/27); the director kept A. The lighting branch (claude/lighting) is parked, not merged: a system that does not
-change what the player sees is cut.
-
-## 2026-10-18 · D-056 · Director · The kaiju earns and spends BIOMASS, not rubble
-Why (05:08): "I don't like the concept of rubble as currency." Options: biomass (you devour what you flatten; evolving
-is growing), terror, radiation, rename only. Picked biomass. Changes: player-facing words only (title Continue line,
-pause, results "Biomass devoured", tree, HUD, upgrade desc, VISION.md); internal keys and the save field stay. In #27.
-
-## 2026-10-18 · D-055 · Director · The croc roar plays on the evolution reveal and the demo end card
-Why (04:35): heard roar_reveal.mp4; "ship it". Not layered under Atomic Breath, no new power. PR #8.
-
-## 2026-10-18 · D-054 · Director · Zebra crossings only at the central avenue junction
-Why (04:35): "remove the level crossing hellscape": zebras were painted at every avenue arm and mid-block. Now only the
-avenue x avenue junction nearest the centre keeps them (city.zebra_junctions = 1; 0 = none); dashes and kerbs kept. PR #26.
-
-## 2026-10-18 · D-053 · Director · Worktrees: one live worktree per live session
-Why (04:30): the demo team runs six to eight sessions at once and the cap of four blocked work. The lead prunes dead
-worktrees; tools/lint/worktrees.sh caps the total at 8. PR #25.
-
-## 2026-10-18 · D-052 · Director · Demo SFX shipped as heard
-Why (04:30): listened to three game-camera clips (stomps + footsteps, building collapse, Atomic Breath) with cracks
-capped at one per 2.5 s and a footstep minimum interval; "ship as is". The 0.7 s auto-stomp rhythm is the sim's (D-004).
-
-## 2026-10-18 · D-051 · Director · The evolution reveal is titled by the node bought
-Why (04:20): after buying EVOLVE: Behemoth the reveal said "REPTILIAN ADOLESCENT"; now it says BEHEMOTH (the node's data
-name), for every evolve node. Life-stage names stay internal. PR #23.

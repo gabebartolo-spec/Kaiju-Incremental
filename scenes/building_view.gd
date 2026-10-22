@@ -23,10 +23,21 @@ static var _baked_lock := Mutex.new()
 static var _generation := 0
 
 var b: RampageSim.Building
-var voxels: BuildingVoxels
+## The building's fine voxels, rebuilt (the build is deterministic) the first time something needs
+## them after meshing: a streamed city of thousands keeps only the meshes (director's playtest:
+## stage 4 swapped, ~6 MB a building), and only a building the rampage reaches pays for voxels.
+var voxels: BuildingVoxels:
+	get:
+		if _voxels == null:
+			_voxels = _make_voxels()
+		return _voxels
 var mesher: BuildingMesher
 ## The fine-grid view once the building is carved (promote); null while it is on its chunks.
 var cells_view: CellView
+var _voxels: BuildingVoxels
+var _base: Color
+var _party: Dictionary
+var _key_of := ""
 var _alive: Image
 var _alive_tex: ImageTexture
 var _slabs: MeshInstance3D
@@ -40,25 +51,24 @@ var _cells_mat: ShaderMaterial
 ## built here, so a whole city can be built across worker threads before entering the tree.
 func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {}) -> void:
 	b = p_building
+	_base = base
+	_party = party
 	var key := _key(b, base, party)
+	_key_of = key
 	_baked_lock.lock()
 	var kept: Array = _baked.get(key, [])
 	if not kept.is_empty():
 		kept[2] = _generation
 	_baked_lock.unlock()
 	if kept.is_empty():
+		var made := _make_voxels()
+		mesher = BuildingMesher.new(made)
 		if b.landmark != "":
-			voxels = LandmarkVoxels.new(b, base)
-		elif b.hazard != "":
-			voxels = HazardVoxels.new(b, base)  # a red barrel (comments #19)
-		else:
-			voxels = BuildingVoxels.new(b, base, party)
-		mesher = BuildingMesher.new(voxels)
+			_voxels = made  # a landmark is few and its ground mesh is drawn below
 		_baked_lock.lock()
-		_baked[key] = [voxels, mesher, _generation]
+		_baked[key] = [null, mesher, _generation]
 		_baked_lock.unlock()
 	else:
-		voxels = kept[0]
 		mesher = kept[1]
 	_alive = Image.create(maxi(1, b.w * b.d * b.height), 1, false, Image.FORMAT_R8)
 	_alive.fill(Color(1, 1, 1))
@@ -70,11 +80,19 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 	_slabs = _instance(mesher.slabs, _slab_mat)
 	_slabs.visible = false
 	add_child(_slabs)
-	if voxels is LandmarkVoxels and not (voxels as LandmarkVoxels).ground.cells.is_empty():
+	if b.landmark != "" and not (voxels as LandmarkVoxels).ground.cells.is_empty():
 		var ground := (voxels as LandmarkVoxels).ground
 		var mi := MeshInstance3D.new()
 		mi.mesh = ground.bake({}, BuildingVoxels.VOXEL, voxels.origin(), 0.0)
 		add_child(mi)
+
+
+func _make_voxels() -> BuildingVoxels:
+	if b.landmark != "":
+		return LandmarkVoxels.new(b, _base)
+	if b.hazard != "":
+		return HazardVoxels.new(b, _base)  # a red barrel (comments #19)
+	return BuildingVoxels.new(b, _base, _party)
 
 
 ## A new city's build starts (BuildingStream): what it uses is marked as its own.
@@ -91,6 +109,14 @@ static func end_city() -> void:
 		var kept: Array = _baked[key]
 		if Num.i(kept[2]) != _generation:
 			_baked.erase(key)
+	_baked_lock.unlock()
+
+
+## A view leaves for good (BuildingStream sends a far, untouched building back to a box): its
+## kept meshes go too, so the memory is really returned.
+static func forget(view: BuildingView) -> void:
+	_baked_lock.lock()
+	_baked.erase(view._key_of)
 	_baked_lock.unlock()
 
 
@@ -166,8 +192,7 @@ func _put_state(c: Vector3i, value: float) -> void:
 func _parts(cells: Array[Vector3i]) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for c: Vector3i in cells:
-		for part: Dictionary in mesher.samples.get(_index(c), []):
-			out.append(part)
+		out.append_array(mesher.parts_of(_index(c)))
 	return out
 
 

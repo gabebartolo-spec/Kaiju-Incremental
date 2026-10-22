@@ -18,9 +18,6 @@ const FOOTFALL_DIP_FLOOR := 1.0
 const DIP_RECOVER := 4.0
 ## How high a gliding insectoid hovers (per body scale).
 const GLIDE_LIFT := 3.0
-## Autoplay holds the signature for AUTOPLAY_GLIDE_HELD of every AUTOPLAY_GLIDE_CYCLE steps.
-const AUTOPLAY_GLIDE_CYCLE := 90
-const AUTOPLAY_GLIDE_HELD := 50
 
 var sim: RampageSim
 ## true (the game's own flow): _ready builds the scene in stages, one per frame, behind a
@@ -50,6 +47,7 @@ var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx
 var _fade: VehicleFade
+var _cues: PowerCues
 var _leap_reach := 0.0
 var _leap_power := 1.0
 var _hud: RampageHud
@@ -90,6 +88,7 @@ func setup(
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
+	_cues = PowerCues.new(sim, sfx)
 
 
 ## Returns once the scene is built (at once when it is; flow suites and captures that start a run
@@ -190,7 +189,7 @@ func _physics_process(delta: float) -> void:
 		_blasts.on_event(event, _kaiju_at)
 		_note_cost(str(event["type"]), t1)
 	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
-	ability_fx.update_powers(sim, sfx, _kaiju_at)
+	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
 	_hud.refresh()
@@ -210,10 +209,7 @@ func _read_input() -> Dictionary:
 		for key: String in input:
 			input[key] = given.get(key, Vector2.ZERO if key == "move" else false)
 	elif _autoplay:
-		input["move"] = _walk.move(sim, _steps)
-		input["signature"] = autoplay_signature and sim.ability_ready_in <= 0.0
-		input["held"] = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		input["ultimate"] = autoplay_signature
+		input.merge(_walk.presses(sim, _steps, autoplay_signature), true)
 	return input
 
 
@@ -347,7 +343,9 @@ func _update_kaiju(delta: float, moving: float) -> void:
 		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	_kaiju.animate(delta, moving)
+	# sim angle to model yaw: the sign flips
+	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
+	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that

@@ -2,6 +2,46 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-059 · Director · Croc baby and adolescent from the croc titan design; 260 Tripo credits
+Why: the demo needs the hatchling and Behemoth stages in the croc look (D-050). The director approved the stage line
+(docs/captures/2026-10-17-reptile-design/croctitan_stage_line.png, after a realism-critic pass) and the spend: two Smart
+Mesh (100 each) and two textures (30 each), balance 19415 -> 19155. Six-view PASS sheets: croctitan_{baby,adolescent}_
+six_view.png; GLBs to blender-reptile for the hand rig, weights, clips and export (P3). Rows in docs/provenance/tripo.md.
+
+## 2026-10-18 · D-058 · Director · Body text uses Kaiju Block; headings stay Kaiju Claw
+Why (05:13): "still seeing generic fonts in game when we should be using our own": the UI kit drew every label below
+heading size in the engine default. Board A rubble / B fault / C claw / D block at 20 and 24 px; D picked (cleanest at
+20 px, ours, same tool). All faces are capitals only: accepted. Lands in PR #27 with a no-default-font check.
+
+## 2026-10-18 · D-057 · Director · Lighting stays the current "concrete" look
+Why (05:12): board A current / B golden hour / C blue hour / D night at the game camera (1080p + 4K, luminance p50
+72/78/52/27); the director kept A. The lighting branch (claude/lighting) is parked, not merged: a system that does not
+change what the player sees is cut.
+
+## 2026-10-18 · D-055 · Director · The croc roar plays on the evolution reveal and the demo end card
+Why (04:35): heard roar_reveal.mp4; "ship it". Not layered under Atomic Breath, no new power. PR #8.
+
+## 2026-10-18 · D-056 · Director · The kaiju earns and spends BIOMASS, not rubble
+Why (05:08): "I don't like the concept of rubble as currency." Options: biomass (you devour what you flatten; evolving
+is growing), terror, radiation, rename only. Picked biomass. Changes: player-facing words only (title Continue line,
+pause, results "Biomass devoured", tree, HUD, upgrade desc, VISION.md); internal keys and the save field stay. In #27.
+
+## 2026-10-18 · D-054 · Director · Zebra crossings only at the central avenue junction
+Why (04:35): "remove the level crossing hellscape": zebras were painted at every avenue arm and mid-block. Now only the
+avenue x avenue junction nearest the centre keeps them (city.zebra_junctions = 1; 0 = none); dashes and kerbs kept. PR #26.
+
+## 2026-10-18 · D-053 · Director · Worktrees: one live worktree per live session
+Why (04:30): the demo team runs six to eight sessions at once and the cap of four blocked work. The lead prunes dead
+worktrees; tools/lint/worktrees.sh caps the total at 8. PR #25.
+
+## 2026-10-18 · D-051 · Director · The evolution reveal is titled by the node bought
+Why (04:20): after buying EVOLVE: Behemoth the reveal said "REPTILIAN ADOLESCENT"; now it says BEHEMOTH (the node's data
+name), for every evolve node. Life-stage names stay internal. PR #23.
+
+## 2026-10-18 · D-052 · Director · Demo SFX shipped as heard
+Why (04:30): listened to three game-camera clips (stomps + footsteps, building collapse, Atomic Breath) with cracks
+capped at one per 2.5 s and a footstep minimum interval; "ship as is". The 0.7 s auto-stomp rhythm is the sim's (D-004).
+
 ## 2026-10-18 · D-050 · Director · Minimal playable demo: croc line only, ends at Behemoth
 Why: the director asked for a minimal playable demo (plan approved 03:35, five questions answered). Decisions: (1) the
 croc titan (reptilian) is the only playable species; (2) the demo ends after the first evolution (Behemoth, about
