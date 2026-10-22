@@ -1,5 +1,6 @@
 extends SceneTree
-## Pacing estimate for the upgrade tree (target 3-5 hours, zero AFK, D-035, D-039): a scripted
+## Pacing estimate for the upgrade tree (target about 2 hours to the last
+## unlock, 90 min to 2 h, D-156; zero AFK, D-035, D-039): a scripted
 ## player plays seeded rampages (walk to the nearest building, signature and ultimate when
 ## ready, glide half the time) and between runs buys the cheapest affordable upgrade until none
 ## is left. The city grows with each evolution (CityGrowth). Prints, per species, the play time
