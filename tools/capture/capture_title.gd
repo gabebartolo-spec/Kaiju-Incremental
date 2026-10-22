@@ -36,6 +36,7 @@ var _segments := false
 var _reveal := -1.0
 var _rest := false
 var _measure := false
+var _size := Vector2i.ZERO
 var _hide_3d := false
 var _probe_at := Vector2.ZERO
 ## Main-loop frames so far (a movie frame each; the frames drawn stop counting when the window is
@@ -68,7 +69,7 @@ func _initialize() -> void:
 			_measure = true
 		elif arg.begins_with("--size="):
 			var wh := arg.substr(7)
-			root.size = Vector2i(int(wh.get_slice("x", 0)), int(wh.get_slice("x", 1)))
+			_size = Vector2i(int(wh.get_slice("x", 0)), int(wh.get_slice("x", 1)))
 		elif arg == "--segments":
 			_segments = true
 		elif arg.begins_with("--clip="):
@@ -78,6 +79,10 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	if _size != Vector2i.ZERO:
+		await _tick()
+		root.size = _size  # only once the window is up does the OS take a size past its work area
+		await _tick()
 	var title := TitleScreen.new()
 	title.setup("Reptilian, 3 rampages")
 	title.live_city = _city

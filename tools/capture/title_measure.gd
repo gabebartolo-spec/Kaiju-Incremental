@@ -163,7 +163,7 @@ static func plate_clearance(backdrop: TitleBackdrop, frame_h: float) -> void:
 	var camera := backdrop.find_children("*", "Camera3D", true, false)[0] as Camera3D
 	var view := camera.get_viewport() as SubViewport
 	var size := Vector2(view.size)
-	var scale := frame_h / float(ProjectSettings.get_setting("display/window/size/viewport_height"))
+	var scale := frame_h / Num.f(ProjectSettings.get_setting("display/window/size/viewport_height"))
 	var plates: Array[Rect2] = []
 	for found: Node in backdrop.get_parent().find_children("*", "Button", true, false):
 		var b := found as Button

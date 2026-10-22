@@ -602,7 +602,7 @@
 			"reflect_length": 190.0, "window_reflect": "ffd9a0", "fire_reflect": "ff6a1a",
 			"window_strength": 0.7, "fire_strength": 0.85, "window_length": 80.0,
 			"fire_length": 140.0, "fire_radius": 6.0,
-			"ledge_from": 2.0, "ledge_depth": 26.0, "ledge_top": 0.9, "ledge_color": "4a4e5e",
+			"ledge_from": 2.0, "ledge_depth": 26.5, "ledge_top": 0.9, "ledge_color": "4a4e5e",
 			"ledge_cap": "7a7a86", "ledge_glow": 0.3,
 			"rail_color": "0c0d12", "rail_thick": 0.45, "rail_height": 1.6, "bollard_width": 0.7, "rail_gap": 2.4, "kerb_color": "a8a8b2", "kerb_gap": 2.0,
 			"post_gap": 24.0, "post_color": "3a3a46", "post_energy": 1.3, "post_halo": 0.55, "pool_radius": [12.0, 8.0], "pool_strength": 0.9, "ledge_fire": 0.5, "post_glow": 3.2, "post_height": 2.8, "bollard_gap": 9.0, "bollard_height": 1.1
