@@ -76,10 +76,11 @@ func _ready() -> void:
 	_graphics = _choice(func() -> void: PlayerSettings.next_graphics())
 	# One row for both GPU settings, so the screen still fits the TV at the largest UI scale.
 	_button_row(col, "Graphics and FPS", [_graphics, _fps])
-	# Time of day and weather share a row (D-145, D-155): the screen still fits the TV at 125%.
+	# The time-of-day and weather buttons each span the sliders' column, edge to edge (D-145, D-155).
 	_time = _choice(func() -> void: PlayerSettings.next_time_of_day())
+	_button_row(col, "Time of day", [_time])
 	_weather = _choice(func() -> void: PlayerSettings.next_weather())
-	_button_row(col, "Time of day and weather", [_time, _weather])
+	_button_row(col, "Weather", [_weather])
 	_add_controls(col)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)

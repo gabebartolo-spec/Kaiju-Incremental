@@ -5,7 +5,7 @@ extends RefCounted
 ## every cycling button shows its < > cue. Read from real layout rects at 1x, in canvas px.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
-const NAMES: Array[String] = ["_fullscreen", "_scale", "_graphics", "_fps", "_time"]
+const NAMES: Array[String] = ["_fullscreen", "_scale", "_graphics", "_fps", "_time", "_weather"]
 const ROW_GAP := 10.0
 const BLOCK_GAP := 20.0
 const EPS := 0.5
@@ -25,8 +25,9 @@ static func run(check: Callable, menu: SettingsMenu) -> void:
 	var graphics := rects[2]
 	var fps := rects[3]
 	var time := rects[4]
+	var weather := rects[5]
 	var right := menu.effects.get_global_rect().end.x
-	for r: Rect2 in [scale, fps, time]:
+	for r: Rect2 in [scale, fps, time, weather]:
 		check.call(
 			absf(r.end.x - right) < EPS, "settings: a right edge is the sliders' (%s)" % r.end.x
 		)
@@ -48,20 +49,27 @@ static func run(check: Callable, menu: SettingsMenu) -> void:
 		(
 			absf(time.position.x - fullscreen.position.x) < EPS
 			and absf(time.end.x - scale.end.x) < EPS
+			and absf(weather.position.x - fullscreen.position.x) < EPS
+			and absf(weather.end.x - scale.end.x) < EPS
 		),
-		"settings: time of day spans the same columns edge to edge"
+		"settings: time of day and weather span the same columns edge to edge"
 	)
 	check.call(
 		(
 			absf(graphics.position.y - fullscreen.end.y - ROW_GAP) < EPS
 			and absf(time.position.y - graphics.end.y - ROW_GAP) < EPS
+			and absf(weather.position.y - time.end.y - ROW_GAP) < EPS
 		),
 		(
-			"settings: 10 px between button rows (%s, %s)"
-			% [graphics.position.y - fullscreen.end.y, time.position.y - graphics.end.y]
+			"settings: 10 px between button rows (%s, %s, %s)"
+			% [
+				graphics.position.y - fullscreen.end.y,
+				time.position.y - graphics.end.y,
+				weather.position.y - time.end.y
+			]
 		)
 	)
-	_blocks(check, menu, time)
+	_blocks(check, menu, weather)
 
 
 static func _blocks(check: Callable, menu: SettingsMenu, time: Rect2) -> void:
