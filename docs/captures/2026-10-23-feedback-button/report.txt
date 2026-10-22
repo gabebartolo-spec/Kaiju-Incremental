@@ -1,4 +1,4 @@
-Version: Kaiju Evolution 0.1-demo
+Version: Kaiju Evolution 0.1.0-demo
 Reported: 2026-10-23T01:12:47
 Species: reptilian
 City: stage 2, map seed 7301
