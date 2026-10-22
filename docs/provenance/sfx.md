@@ -32,6 +32,10 @@ Sources:
 | ready.ogg | synth growl (formant-filtered buzz) + synth chime |
 | deflect.ogg | Kenney `impactMetal_heavy_001` + `impactBell_heavy_002` pitched 1.2 |
 | regen_loop.ogg | synth bubbles (seamless 2 s loop) |
+| city_siren.ogg (seamless 16 s loop; CitySound bed, D-155) | synth only: two far-off wail sirens (8 s and 16/3 s sweeps of 620-1010 and 780-1250 Hz, harmonic tones, whole cycles per loop), low-passed at 2.6 kHz, echo off the buildings, high-passed at 250 Hz. Levelled to -24 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 by `tools/sfx/build_city_beds.py`. |
+| city_gunfire.ogg (seamless 12 s loop) | 15 shots of `rifle.ogg` (ElevenLabs, CLEARED) pitched 0.55, low-passed at 1.3 kHz, scattered round the loop with random gains, plus an echo. Levelled to -33 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 (`build_city_beds.py`). |
+| city_fire.ogg (seamless 10 s loop) | synth only: low-passed noise on slow gusts, a 100-280 Hz band-passed rush, 38 a second crackle snaps at 2.1 kHz; the overrun crossfaded into the start. Levelled to -24 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 (`build_city_beds.py`). |
+| city_wind.ogg (seamless 12 s loop) | synth only: noise band-passed 380-900 Hz on slow gusts, a 1.7-2.2 kHz whistle, a sub-160 Hz moan; the overrun crossfaded into the start. Levelled to -26 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 (`build_city_beds.py`). |
 
 ## ElevenLabs replacements (2026-10-19, D-092; picked by the director from a loudness-matched shootout)
 

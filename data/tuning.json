@@ -495,6 +495,44 @@
 			"regen_loop": -20.0
 		}
 	},
+	"city_sound": {
+		"_doc": "CitySound (D-155, panic then eerie quiet): one driver sets every city bed from the rampage's phase, 0 at the first stomp to 1 when the city is ruined. phase = destruction_weight of (destruction share / destruction_full) plus the rest of (people fled / population / fled_full), each capped at 1. curve: [phase, dB] keys, linear between; crowd is a trim on the crowd loop's own panic level (0 = untouched), every other bed is its level in dB. Panic (crowd, sirens) peaks early and is gone by the end; gunfire, fire and wind carry the ruined city.",
+		"phase": {"destruction_full": 0.2, "fled_full": 0.6, "destruction_weight": 0.5},
+		"fade_db_per_s": 8.0,
+		"silent_db": -60.0,
+		"beds": {
+			"crowd": {"curve": [[0.0, 0.0], [0.3, 0.0], [0.65, -30.0], [0.9, -60.0], [1.0, -60.0]]},
+			"city_siren": {"curve": [[0.0, -60.0], [0.04, -30.0], [0.2, -10.0], [0.4, -12.0], [0.7, -40.0], [0.85, -60.0], [1.0, -60.0]]},
+			"city_gunfire": {"curve": [[0.0, -60.0], [0.1, -34.0], [0.4, -20.0], [1.0, -16.0]]},
+			"city_fire": {"curve": [[0.0, -60.0], [0.2, -42.0], [0.5, -24.0], [1.0, -12.0]]},
+			"city_wind": {"curve": [[0.0, -50.0], [0.5, -30.0], [1.0, -16.0]]}
+		}
+	},
+	"music": {
+		"_doc": "MusicLayers (D-125; briefs in docs/audio/music-briefs.md): one track per city (size tier 1..3: baby, adolescent, adult), split into 4 stems that fade in, in this order, on the same phase as the city beds (drums alone at first, then bass, lead, choir and pads in the final stretch), on one locked tempo (AudioStreamSynchronized). bpm is the take's tempo and bars its loop length in bars: change both when a Suno take lands at another tempo; every stem file must be exactly bars * beats_per_bar * 60 / bpm seconds long (lock_tolerance_s) or the loader warns. A stem whose file is missing plays as silence of that length. enter/full: the phases a stem starts and finishes fading in.",
+		"silent_db": -60.0,
+		"fade_db_per_s": 6.0,
+		"lock_tolerance_s": 0.02,
+		"placeholder_rate": 2000,
+		"bus": "Music",
+		"tracks": [
+			{"id": "city_1", "bpm": 100.0, "beats_per_bar": 4, "bars": 64, "stems": [
+				{"name": "drums", "file": "res://assets/music/city_1_drums.ogg", "enter": 0.0, "full": 0.05},
+				{"name": "bass", "file": "res://assets/music/city_1_bass.ogg", "enter": 0.2, "full": 0.4},
+				{"name": "lead", "file": "res://assets/music/city_1_lead.ogg", "enter": 0.45, "full": 0.65},
+				{"name": "choir", "file": "res://assets/music/city_1_choir.ogg", "enter": 0.75, "full": 0.9}]},
+			{"id": "city_2", "bpm": 120.0, "beats_per_bar": 4, "bars": 80, "stems": [
+				{"name": "drums", "file": "res://assets/music/city_2_drums.ogg", "enter": 0.0, "full": 0.05},
+				{"name": "bass", "file": "res://assets/music/city_2_bass.ogg", "enter": 0.2, "full": 0.4},
+				{"name": "lead", "file": "res://assets/music/city_2_lead.ogg", "enter": 0.45, "full": 0.65},
+				{"name": "choir", "file": "res://assets/music/city_2_choir.ogg", "enter": 0.75, "full": 0.9}]},
+			{"id": "city_3", "bpm": 90.0, "beats_per_bar": 4, "bars": 64, "stems": [
+				{"name": "drums", "file": "res://assets/music/city_3_drums.ogg", "enter": 0.0, "full": 0.05},
+				{"name": "bass", "file": "res://assets/music/city_3_bass.ogg", "enter": 0.2, "full": 0.4},
+				{"name": "lead", "file": "res://assets/music/city_3_lead.ogg", "enter": 0.45, "full": 0.65},
+				{"name": "choir", "file": "res://assets/music/city_3_choir.ogg", "enter": 0.75, "full": 0.9}]}
+		]
+	},
 	"chain": {
 		"step_hz": 60.0,
 		"max_substeps": 4,
@@ -542,6 +580,10 @@
 			"collapse": "Hero",
 			"collapse_drop": "Debris",
 			"crowd_panic": "Crowd",
+			"city_siren": "Ambience",
+			"city_gunfire": "Military",
+			"city_fire": "Ambience",
+			"city_wind": "Ambience",
 			"tank_fire": "Military",
 			"shell_hit": "Military",
 			"rifle": "Military",
