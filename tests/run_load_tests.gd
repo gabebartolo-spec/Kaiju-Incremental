@@ -329,7 +329,10 @@ func _check_stream_budget() -> void:
 	var arrived := _nearest_plain(sim, far)
 	var other := _nearest_plain(sim, spot, near)
 	var digest := _digest(stream.built(other))
-	while (stream.built(arrived) == null or stream.built(other) != null) and Time.get_ticks_msec() < deadline:
+	while (
+		(stream.built(arrived) == null or stream.built(other) != null)
+		and Time.get_ticks_msec() < deadline
+	):
 		await process_frame
 	check(stream.built(arrived) != null, "the building the kaiju walks up to is meshed")
 	check(stream.built(other) == null, "an untouched building far behind him goes back to a box")
@@ -340,7 +343,10 @@ func _check_stream_budget() -> void:
 	while not stream.complete() and Time.get_ticks_msec() < deadline:
 		await process_frame
 	check(
-		stream.resident_chunks() <= cap + sim.buildings[near].w * sim.buildings[near].d * sim.buildings[near].height,
+		(
+			stream.resident_chunks()
+			<= cap + sim.buildings[near].w * sim.buildings[near].d * sim.buildings[near].height
+		),
 		"walking on keeps the meshed chunks inside the budget (%d)" % stream.resident_chunks()
 	)
 	# He walks back: the freed building meshes again, identical to before.
@@ -352,7 +358,10 @@ func _check_stream_budget() -> void:
 		"a building freed and met again meshes identically"
 	)
 	var wanted := _nearest_plain(sim, far, arrived)
-	check(stream.view(wanted) != null and stream.built(wanted) != null, "a reached building is meshed on the spot")
+	check(
+		stream.view(wanted) != null and stream.built(wanted) != null,
+		"a reached building is meshed on the spot"
+	)
 	stream.queue_free()
 	await process_frame
 

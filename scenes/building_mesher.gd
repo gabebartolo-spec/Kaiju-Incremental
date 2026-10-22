@@ -15,7 +15,8 @@ const SAMPLES_PER_CHUNK := 12
 ## The shell (walls, windows, roof, gear) and the hidden floor slabs.
 var shell: ArrayMesh
 var slabs: ArrayMesh
-## Chunk index -> [PackedVector3Array positions, PackedColorArray colours] (debris sources; parts_of).
+## Chunk index -> [PackedVector3Array positions, PackedColorArray colours] (debris sources;
+## parts_of).
 var samples: Dictionary = {}
 
 var _v: BuildingVoxels  # only while baking: a kept mesher must not hold the voxels
@@ -42,7 +43,7 @@ func _init(voxels: BuildingVoxels) -> void:
 			shell_cells.append(cell)
 	shell = _bake(shell_cells, true)
 	slabs = _bake(slab_cells, false)
-	_v = null  # the voxel dictionary is the bulk of a building's memory: BuildingView rebuilds it on demand
+	_v = null  # the voxels are the bulk of a building's memory: BuildingView rebuilds them on demand
 
 
 ## Index of the structural chunk a cell belongs to (cells outside the footprint clamp in).

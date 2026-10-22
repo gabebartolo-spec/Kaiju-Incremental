@@ -1,11 +1,12 @@
 extends SceneTree
 ## Stage-4 city memory probe (headless): loads the 4,435-building city, rises, then autoplays a
-## rampage for 60 s of sim time, printing static memory, meshed buildings and the slowest streaming step
+## rampage for 60 s of sim time, printing static memory, meshed buildings and the slowest
+## streaming step
 ## at load, 10 s and 60 s. Fails (exit 1) over PEAK_MB or over a 50 ms streaming step.
 ##   godot --headless --path . --script res://tools/capture/stage4_memory.gd
 ## Run one at a time: the old stream took 10+ GB in 8 s here.
 
-const Growth := preload("res://tools/capture/capture_growth.gd")
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const PEAK_MB := 6144
 const HITCH_MS := 50.0
 const SECONDS := 60.0
@@ -33,7 +34,15 @@ func _meshed() -> int:
 ## The process's private bytes in MB (what the OS holds, GPU driver copies included), or -1.
 func _private_mb() -> int:
 	var out := []
-	var code := OS.execute("powershell", ["-NoProfile", "-Command", "[int]((Get-Process -Id %d).PrivateMemorySize64/1MB)" % OS.get_process_id()], out)
+	var code := OS.execute(
+		"powershell",
+		[
+			"-NoProfile",
+			"-Command",
+			"[int]((Get-Process -Id %d).PrivateMemorySize64/1MB)" % OS.get_process_id()
+		],
+		out
+	)
 	return int(str(out[0]).strip_edges()) if code == 0 and not out.is_empty() else -1
 
 
@@ -42,16 +51,35 @@ func _note(tag: String) -> void:
 	_peak = maxi(_peak, mb)
 	var priv := _private_mb()
 	_peak_private = maxi(_peak_private, priv)
-	print("MEM %-8s static %5d MB  peak %5d MB  meshed %d/%d  resident %d chunks  pinned %d  worst stream step %.0f ms  private %d MB  video %d MB  sim %.1f s  wall %d s" % [
-		tag, mb, _peak, _meshed(), _rampage.sim.buildings.size(), _stream().resident_chunks(), _pinned(), _worst, priv, Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576, _el(),
-		(Time.get_ticks_msec() - _t0) / 1000])
+	print(
+		(
+			(
+				"MEM %-8s static %5d MB  peak %5d MB  meshed %d/%d  resident %d chunks  pinned %d"
+				+ "  worst stream step %.0f ms  private %d MB  video %d MB  sim %.1f s  wall %d s"
+			)
+			% [
+				tag,
+				mb,
+				_peak,
+				_meshed(),
+				_rampage.sim.buildings.size(),
+				_stream().resident_chunks(),
+				_pinned(),
+				_worst,
+				priv,
+				Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576,
+				_el(),
+				(Time.get_ticks_msec() - _t0) / 1000
+			]
+		)
+	)
 
 
 func _run() -> void:
 	await process_frame
 	_t0 = Time.get_ticks_msec()
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[3], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[3], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	_rampage = Rampage.new()
 	_rampage.setup(species, stats, CityGrowth.layout(Content.tuning(), 4, Seeds.make("city", 0)), 0)
@@ -72,7 +100,17 @@ func _run() -> void:
 		var last_before := last
 		last = now
 		if (now - last_before) / 1000.0 > 3000.0:
-			print("SLOW frame %.0f ms at sim %.1f  proc %.0f phys %.0f ms" % [(now - last_before) / 1000.0, _el() - start, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0])
+			print(
+				(
+					"SLOW frame %.0f ms at sim %.1f  proc %.0f phys %.0f ms"
+					% [
+						(now - last_before) / 1000.0,
+						_el() - start,
+						Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+						Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+					]
+				)
+			)
 		_worst = _stream().worst_usec / 1000.0
 		_peak = maxi(_peak, OS.get_static_memory_usage() / 1048576)
 		for at: float in marks.keys():
@@ -81,7 +119,12 @@ func _run() -> void:
 				marks.erase(at)
 	_peak = maxi(_peak, _peak_private)
 	var ok := _peak <= PEAK_MB and _worst <= HITCH_MS
-	print("RESULT %s peak %d MB (limit %d), worst stream step %.0f ms (limit %.0f)" % ["PASS" if ok else "FAIL", _peak, PEAK_MB, _worst, HITCH_MS])
+	print(
+		(
+			"RESULT %s peak %d MB (limit %d), worst stream step %.0f ms (limit %.0f)"
+			% ["PASS" if ok else "FAIL", _peak, PEAK_MB, _worst, HITCH_MS]
+		)
+	)
 	quit(0 if ok else 1)
 
 

@@ -16,7 +16,7 @@ extends RefCounted
 ## distance: none may show through rest, swing, a walk from the junction each way with the swing
 ## running, or a dash. Presentation only. Not exercised: camera shake, a GPU frame, a slower PC.
 
-const Growth := preload("res://tools/capture/capture_growth.gd")
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const StreamFrustum := preload("res://tests/lib/stream_frustum.gd")
 
 ## The full-detail depth every phase must keep (metres from the camera).
@@ -71,7 +71,7 @@ func run() -> void:
 
 func _stage(stage: int) -> void:
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[stage - 1], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))

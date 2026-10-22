@@ -31,13 +31,13 @@ var voxels: BuildingVoxels:
 		if _voxels == null:
 			_voxels = _make_voxels()
 		return _voxels
+var mesher: BuildingMesher
+## The fine-grid view once the building is carved (promote); null while it is on its chunks.
+var cells_view: CellView
 var _voxels: BuildingVoxels
 var _base: Color
 var _party: Dictionary
 var _key_of := ""
-var mesher: BuildingMesher
-## The fine-grid view once the building is carved (promote); null while it is on its chunks.
-var cells_view: CellView
 var _alive: Image
 var _alive_tex: ImageTexture
 var _slabs: MeshInstance3D
