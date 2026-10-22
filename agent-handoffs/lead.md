@@ -77,6 +77,9 @@
   with its frame rate. Not started.
 - Sounds (D-138): original SFX on ElevenLabs (lead generates via MCP; builders write specs) when no CLEARED sound exists;
   the title ambience builder will list needed sounds (sirens likely).
+- Load-screen art (#92, FOR THE DEMO): ~12 staged 4K shots (inside the stadium, above the tallest tower, ...) on one
+  board for his pick; full screen behind INCOMING + meter on a dark band. Icons: ui-redesign also needs mipmaps on
+  in assets/ui/icons/*.png.import (ui-art handoff).
 - Worktrees: 18 left (all live); 18 old ones backed up to backup/<name> branches. ui-art-hud scratch remove was
   DENIED by permissions (force remove): ask him, never retry around it.
 
