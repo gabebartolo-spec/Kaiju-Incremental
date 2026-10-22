@@ -19,7 +19,10 @@ func _ready() -> void:
 	_button_action("dash", [KEY_SHIFT], JOY_BUTTON_B)
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
-	_pad_menus()
+	# A confirms and B backs out in every menu (the Controls list says so): the engine's own menu
+	# actions carry no pad A or B here (checked 2026-10-23: ui_accept and ui_cancel were keys only).
+	_menu_pad("ui_accept", JOY_BUTTON_A)
+	_menu_pad("ui_cancel", JOY_BUTTON_B)
 	# The shipped game starts fullscreen (D-027). Editor-binary runs (agent captures) stay windowed:
 	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
 	var presets: Dictionary = Content.section("display")["graphics"]
@@ -42,29 +45,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		PlayerSettings.set_fullscreen(not PlayerSettings.fullscreen)
 
 
-## The pad drives every menu: A accepts, B cancels, the d-pad moves focus. Added where the engine's
-## own UI actions lack the pad button (a pad-only player could not press a focused button).
-func _pad_menus() -> void:
-	var buttons := {
-		"ui_accept": JOY_BUTTON_A,
-		"ui_cancel": JOY_BUTTON_B,
-		"ui_left": JOY_BUTTON_DPAD_LEFT,
-		"ui_right": JOY_BUTTON_DPAD_RIGHT,
-		"ui_up": JOY_BUTTON_DPAD_UP,
-		"ui_down": JOY_BUTTON_DPAD_DOWN,
-	}
-	for action: String in buttons:
-		var button: JoyButton = buttons[action]
-		var have := false
-		for event: InputEvent in InputMap.action_get_events(action):
-			var pad := event as InputEventJoypadButton
-			have = have or (pad != null and pad.button_index == button)
-		if not have:
-			var press := InputEventJoypadButton.new()
-			press.button_index = button
-			InputMap.action_add_event(action, press)
-
-
 func _axis_action(action: String, keys: Array[Key], axis: JoyAxis, direction: float) -> void:
 	_add_keys(action, keys)
 	var motion := InputEventJoypadMotion.new()
@@ -78,6 +58,13 @@ func _button_action(action: String, keys: Array[Key], button: JoyButton) -> void
 	if button != JOY_BUTTON_INVALID:
 		var press := InputEventJoypadButton.new()
 		press.button_index = button
+		InputMap.action_add_event(action, press)
+
+
+func _menu_pad(action: String, button: JoyButton) -> void:
+	var press := InputEventJoypadButton.new()
+	press.button_index = button
+	if not InputMap.action_has_event(action, press):
 		InputMap.action_add_event(action, press)
 
 

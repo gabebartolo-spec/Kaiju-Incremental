@@ -41,15 +41,38 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 		node.aim(kaiju_at + Vector3(0, 2.0 * _sim.body_scale(), 0), delta)
 
 
-## Fires the tank's shell at `at`; false if it has no model (nothing drawn, no recoil shake).
-func fire(id: int, at: Vector3, kaiju_at: Vector3) -> bool:
+## A tank event (Rampage hands over all four): spawned and destroyed tanks come and go; a fired
+## shell flies to where it goes, and a stray's impact comes when it lands (the sim lands it after
+## army.shell_flight).
+func on_event(event: Dictionary, kaiju_at: Vector3) -> void:
+	match str(event["type"]):
+		"tank_spawned":
+			spawn(Num.i(event["tank"]))
+			return
+		"tank_destroyed":
+			destroy(Num.i(event["tank"]), Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"])))
+			return
+	var at: Vector2 = event.get("at", _sim.kaiju_pos)
+	var world := Vector3(at.x, 0.0, at.y)
+	if str(event["type"]) == "stray_landed":
+		TankFx.stray(_city, world, Num.f(_sim.army["miss"]["radius"]))
+		_owner.sfx.play_at("shell_hit", world)
+	elif fire(event, world, kaiju_at):
+		_owner.add_trauma(_owner.shake.source("tank_fire"))
+
+
+## A tank_fired event: its shell flies to `at`; false if the tank has no model (nothing drawn, no
+## recoil shake). A miss (StrayShell) flies to where it will land, with no hit on the kaiju.
+func fire(event: Dictionary, at: Vector3, kaiju_at: Vector3) -> bool:
+	var id := Num.i(event["tank"])
 	if not nodes.has(id):
 		return false
 	var node: TankModel = nodes[id]
+	var miss: bool = event.get("miss", false)
 	var target := at + Vector3(0, 1.0, 0)
 	if at.distance_to(Vector3(_sim.kaiju_pos.x, 0.0, _sim.kaiju_pos.y)) < 0.01:
 		target = kaiju_at + Vector3(0, 4.0 * _sim.body_scale(), 0)
-	TankFx.fire_shell(_owner, node, target)
+	TankFx.fire_shell(_owner, node, target, miss)
 	return true
 
 

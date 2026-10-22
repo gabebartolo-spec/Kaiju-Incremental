@@ -5,6 +5,9 @@ extends RefCounted
 ## (tuning "sfx" "crowd"). Presentation only.
 
 var player: AudioStreamPlayer
+## CitySound's trim in dB over the panic level (0 = none): the crowd fades as the city's people
+## flee (D-155); never above the loop's own level.
+var trim_db := 0.0
 var _cfg: Dictionary
 var _full_db: float
 var _db := -80.0
@@ -38,6 +41,7 @@ func update(street: StreetLife, since_breath: float, delta: float) -> bool:
 		+ clampf(_chunk_rate / Num.f(_cfg["full_rate"]), 0.0, 1.0) * 0.3
 	)
 	var goal := target(intensity, since_breath < Num.f(_cfg["duck_seconds"]))
+	goal = maxf(Num.f(_cfg["silent_db"]), goal + minf(trim_db, 0.0))
 	_db = move_toward(_db, goal, Num.f(_cfg["fade_db_per_s"]) * delta)
 	player.volume_db = _db
 	var audible := _db > Num.f(_cfg["silent_db"]) + 1.0

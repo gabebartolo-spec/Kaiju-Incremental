@@ -20,9 +20,7 @@ func _run() -> void:
 	await _frames(12)
 	var title := _screen()
 	var texts := _texts(title)
-	_check(
-		"title shows text", texts.has("KAIJU INCREMENTAL") and texts.has("NEW KAIJU"), str(texts)
-	)
+	_check("title shows text", texts.has("KAIJU EVOLUTION") and texts.has("NEW KAIJU"), str(texts))
 	_check("title font is ours (Kaiju Claw/Block)", _font_ok(title), _font_names(title))
 	_press(title, "NEW KAIJU")
 	await _frames(12)

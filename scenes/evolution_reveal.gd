@@ -21,6 +21,9 @@ const EDGE_MARGIN := 48.0
 ## Height kept under the 3D frame for the headline, two size lines and the hint (or the demo
 ## card's buttons), so the frame is one fixed size on every screen that shows it.
 const TEXT_RESERVE := 330.0
+## What the hazard frame around the 3D view takes (top and bottom together).
+const FRAME_EXTRA := 56.0
+const SKIP_SIZE := 30
 
 ## Fixed ticks played so far.
 var frame := 0
@@ -77,7 +80,7 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
 	view = frame_view(self)
-	col.add_child(view)
+	col.add_child(frame_around(view))
 	_viewport = SubViewport.new()
 	_viewport.own_world_3d = true
 	view.add_child(_viewport)
@@ -92,7 +95,7 @@ func _ready() -> void:
 	lines.text = "X" + String.chr(10) + "X"
 	lines.custom_minimum_size.y = lines.get_combined_minimum_size().y
 	lines.text = ""
-	skip_hint = UiKit.label("Enter / A to skip", UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.45))
+	skip_hint = UiKit.label("Enter / A to skip", SKIP_SIZE, UiKit.MUTED.lightened(0.45))
 	skip_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(skip_hint)
 	_flash = ColorRect.new()
@@ -112,11 +115,24 @@ static func frame_view(owner: Control, reserve := TEXT_RESERVE) -> SubViewportCo
 	v.stretch = true
 	v.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var fit := func() -> void:
-		var h := minf(VIEW_MAX.y, owner.size.y - 2.0 * EDGE_MARGIN - reserve)
+		var h := minf(VIEW_MAX.y, owner.size.y - 2.0 * EDGE_MARGIN - reserve - FRAME_EXTRA)
 		v.custom_minimum_size = Vector2(h * VIEW_MAX.x / VIEW_MAX.y, h)
 	owner.resized.connect(fit)
 	fit.call()
 	return v
+
+
+## A hazard-tape frame round the 3D `view` (tape on top, yellow edge), centred.
+static func frame_around(v: Control) -> PanelContainer:
+	var frame := PanelContainer.new()
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var box := UiKit.hazard(UiKit.BG, UiKit.ACCENT, 3.0, HazardBox.Band.TOP)
+	box.set_content_margin_all(8.0)
+	box.content_margin_top = UiKit.PANEL_BAND + 8.0
+	frame.add_theme_stylebox_override("panel", box)
+	v.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	frame.add_child(v)
+	return frame
 
 
 func _physics_process(delta: float) -> void:

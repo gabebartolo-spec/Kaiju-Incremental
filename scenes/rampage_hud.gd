@@ -1,7 +1,10 @@
 class_name RampageHud
 extends CanvasLayer
-## The rampage HUD: health, clock, rubble, city destroyed, signature readiness; then the end
-## beat (why it ended, big). Reads the sim; reports the beat's end through `beat_done`.
+## The rampage HUD, as little as it can be so the kaiju and the city's fall fill the screen
+## (director 2026-10-21): clock and city-destroyed strip on top, biomass bottom right, the breath,
+## dash and ultimate as three rings bottom left, health as a red edge vignette, the controls on a
+## card at the first rampage's start only; all inside the TV title-safe area, no text under 24 px.
+## Then the end beat (why it ended, big). Reads the sim; reports it by `beat_done`. Tuning "ui".
 
 signal beat_done(result: Dictionary)
 
@@ -16,10 +19,16 @@ const HEADLINES := {
 const BEAT_FRAMES := 150
 const BEAT_MIN_FRAMES := 40
 const BEAT_SIZE := 128
+## The headline starts this far from the top: in the top third, the kaiju stays in view (px).
+const BEAT_TOP := 64
 ## The world runs at this speed during the end beat.
 const END_SLOWMO := 0.3
-## How opaque the plates behind the HUD's corner groups are.
-const PLATE_ALPHA := 0.62
+## The biomass figure snaps to the true value once this close.
+const ROLL_SNAP := 0.5
+## The clock's digits keep at least this width, so the box does not jump as they change.
+const CLOCK_MIN_WIDTH := 96.0
+## The first-run card ignores keys for this long, so the key that started the run is not "any key".
+const CARD_MIN_SHOWN := 0.6
 
 var sim: RampageSim
 var species: Dictionary
@@ -27,17 +36,28 @@ var species: Dictionary
 var street: StreetLife
 ## The end beat's headline (read by the flow suite and the captures).
 var headline: Label
-var _hp: ProgressBar
-var _hp_text: Label
+## The HUD's parts (read by the flow suite and the captures).
+var biomass: Label
+var breath_ring: HudRing
+var dash_ring: HudRing
+var ultimate_ring: HudRing
+var vignette: HurtVignette
+## The first-run controls card (null once it has gone, or when it was seen before).
+var controls_card: ControlsCard
+var city_meter: ProgressBar
 var _time: Label
-var _rubble: Label
-var _destruction: ProgressBar
-var _ability: Label
-var _ultimate: Label
-var _dash: Label
-## The HUD's bars and hints: hidden while a dialog (pause, the report) is up.
+## The clock and its city meter: hidden while the end beat's headline is up.
+var _clock_column: Control
+## Everything on the HUD: hidden while a dialog (pause, the report) is up.
 var _widgets: Control
-var _clock_box: HazardBox
+var _hud: Dictionary
+var _shown_biomass := 0.0
+var _last_biomass := 0.0
+var _last_second := -1
+var _pop: Tween
+var _card_left := 0.0
+var _card_age := 0.0
+var _card_fading := false
 var _beat_frame := -1
 var _beat_done := false
 
@@ -46,143 +66,234 @@ func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> vo
 	sim = p_sim
 	species = p_species
 	street = p_street
+	_hud = UiKit.ui()["hud"]
 
 
 ## The sim's result plus what only the view counts: the civilians it crushed and those who fled.
 func result() -> Dictionary:
-	return sim.result().merged(
-		{
-			"civilians": street.civilians_killed() if street != null else 0,
-			"fled": street.fled if street != null else 0,
-		}
-	)
+	return sim.result().merged(HudCounts.of(street))
 
 
 func _ready() -> void:
-	var root := MarginContainer.new()
-	_widgets = root
-	UiKit.full_rect(root)
-	for side: String in ["left", "right", "top", "bottom"]:
-		root.add_theme_constant_override("margin_" + side, 28)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(root)
-
-	var top := HBoxContainer.new()
-	top.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(top)
-
-	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(420, 0)
-	top.add_child(_plate(left))
-	left.add_child(UiKit.label(str(species["name"]).to_upper(), UiKit.SIZE_BODY, UiKit.MUTED))
-	_hp = UiKit.bar(UiKit.ALERT, 30)
-	left.add_child(_hp)
-	_hp_text = UiKit.label("", UiKit.SIZE_SMALL)
-	left.add_child(_hp_text)
-
-	var clock_slot := CenterContainer.new()
-	clock_slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	clock_slot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	top.add_child(clock_slot)
-	_clock_box = UiKit.hazard(UiKit.ALERT, UiKit.ALERT, 0.0)
-	_clock_box.set_content_margin_all(6)
-	_clock_box.content_margin_left = 18
-	_clock_box.content_margin_right = 18
-	var clock := PanelContainer.new()
-	clock.add_theme_stylebox_override("panel", _clock_box)
-	clock_slot.add_child(clock)
-	_time = UiKit.label("", 64)
-	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_time.custom_minimum_size = Vector2(96, 0)
-	clock.add_child(_time)
-
-	var right := VBoxContainer.new()
-	right.custom_minimum_size = Vector2(420, 0)
-	top.add_child(_plate(right))
-	_rubble = _right_label(right, "", UiKit.SIZE_HEAD, UiKit.WARN)
-	_right_label(right, "CITY DESTROYED", UiKit.SIZE_SMALL, UiKit.MUTED)
-	_destruction = UiKit.bar(UiKit.ACCENT, 22, true)
-	right.add_child(_destruction)
-
-	var bottom := VBoxContainer.new()
-	var bottom_plate := _plate(bottom)
-	bottom_plate.size_flags_vertical = Control.SIZE_SHRINK_END
-	bottom_plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	root.add_child(bottom_plate)
-	_ability = UiKit.label("", UiKit.SIZE_HEAD)
-	_ability.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bottom.add_child(_ability)
-	_ultimate = UiKit.label("", UiKit.SIZE_BODY)
-	_ultimate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bottom.add_child(_ultimate)
-	_dash = UiKit.label("", UiKit.SIZE_BODY)
-	_dash.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bottom.add_child(_dash)
-	var hint := UiKit.label(
-		"Move: WASD / left stick     Pause: Esc / Start", UiKit.SIZE_BODY, UiKit.MUTED
-	)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bottom.add_child(hint)
+	_widgets = Control.new()
+	UiKit.full_rect(_widgets)
+	_widgets.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_widgets)
+	vignette = HurtVignette.new(sim)
+	_widgets.add_child(vignette)
+	var safe := MarginContainer.new()
+	UiKit.full_rect(safe)
+	UiKit.safe_area(safe)
+	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_widgets.add_child(safe)
+	safe.add_child(_build_clock())
+	safe.add_child(_lifted(_build_biomass(), true))
+	safe.add_child(_lifted(_build_rings(), false))
+	if not PlayerSettings.controls_seen:
+		_show_controls(safe)
+	_shown_biomass = sim.rubble
+	_last_biomass = sim.rubble
 	refresh()
 
 
-## A dark broadcast plate behind a HUD group, so it reads over a bright street or a fire.
-func _plate(content: Control) -> PanelContainer:
-	var plate := PanelContainer.new()
-	var box := UiKit.box(Color(UiKit.BG, PLATE_ALPHA), UiKit.BG, 0)
-	box.set_content_margin_all(12)
-	plate.add_theme_stylebox_override("panel", box)
-	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	plate.add_child(content)
-	return plate
+## The clock, a plain outlined number (red only in the last seconds), and the city strip under it.
+func _build_clock() -> Control:
+	var col := VBoxContainer.new()
+	col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	col.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_theme_constant_override("separation", Num.i(_hud["meter_gap"]))
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_time = UiKit.label("", Num.i(_hud["clock_size"]))
+	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_time.custom_minimum_size = Vector2(CLOCK_MIN_WIDTH, 0)
+	_time.resized.connect(func() -> void: _time.pivot_offset = _time.size / 2.0)
+	col.add_child(_time)
+	var meter: Array = _hud["meter_size"]
+	city_meter = UiKit.bar(UiKit.ACCENT, Num.i(meter[1]), false, false)
+	city_meter.custom_minimum_size.x = Num.f(meter[0])
+	city_meter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.add_child(city_meter)
+	_clock_column = col
+	return col
 
 
-func _right_label(parent: Control, text: String, size: int, color: Color) -> Label:
-	var l := UiKit.label(text, size, color)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	parent.add_child(l)
-	return l
+## `part` raised so its visible bottom edge sits tuning "ui" hud bottom_margin up from the screen's
+## edge: the rings and the biomass figure share one margin. `figure`: the part ends in the biomass
+## number, whose letters sit above the bottom of their box by the font's descent less the outline.
+func _lifted(part: Control, figure: bool) -> Control:
+	var holder := MarginContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.size_flags_vertical = Control.SIZE_SHRINK_END
+	holder.size_flags_horizontal = part.size_flags_horizontal
+	part.size_flags_horizontal = Control.SIZE_FILL
+	part.size_flags_vertical = Control.SIZE_FILL
+	var lift := Num.f(_hud["bottom_margin"]) - UiKit.safe_margin().y
+	if figure:
+		lift -= figure_gap()
+	holder.add_theme_constant_override("margin_bottom", maxi(0, roundi(lift)))
+	holder.add_child(part)
+	return holder
+
+
+## How far the biomass number's visible bottom (outline included) sits above its box's bottom (px).
+func figure_gap() -> float:
+	var size := Num.i(_hud["biomass_size"])
+	var font := ThemeDB.fallback_font
+	var face := UiKit.font_for(size)
+	if face != null:
+		font = face
+	else:
+		var themed := biomass.get_theme_font("font") if biomass != null else null
+		font = themed if themed != null else ThemeDB.fallback_font
+	return font.get_descent(size) - UiKit.outline_px(size)
+
+
+## Where the biomass number's visible bottom is on screen (y), and the rings' (the ui suite).
+func figure_bottom() -> float:
+	return biomass.get_global_rect().end.y - figure_gap()
+
+
+func rings_bottom() -> float:
+	# The ring's own size, not its popped scale: its centre does not move.
+	return breath_ring.get_global_rect().get_center().y + breath_ring.size.y / 2.0
+
+
+## Biomass, one boxless outlined figure in the bottom right (b2-10).
+func _build_biomass() -> Control:
+	var col := VBoxContainer.new()
+	col.size_flags_vertical = Control.SIZE_SHRINK_END
+	col.size_flags_horizontal = Control.SIZE_SHRINK_END
+	col.add_theme_constant_override("separation", 0)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var word := UiKit.label("BIOMASS", UiKit.SIZE_BODY, UiKit.TEXT)
+	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	col.add_child(word)
+	biomass = UiKit.label("0", Num.i(_hud["biomass_size"]), UiKit.ACCENT)
+	biomass.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	biomass.resized.connect(func() -> void: biomass.pivot_offset = biomass.size)
+	col.add_child(biomass)
+	return col
+
+
+## Three small rings in the bottom left corner: the breath, dash and the ultimate, each an icon
+## with a charge ring that fills clockwise. Dash and the ultimate show only when the kaiju has
+## them (a missing one keeps its place, unseen, so the others never shift).
+func _build_rings() -> Control:
+	var row := HBoxContainer.new()
+	row.size_flags_vertical = Control.SIZE_SHRINK_END
+	row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	row.add_theme_constant_override("separation", Num.i(_hud["ring_gap"]))
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var big := Num.f(_hud["ring_radius"])
+	var small := Num.f(_hud["ring_small_radius"])
+	var w := Num.f(_hud["ring_width"])
+	breath_ring = HudRing.new(HudRing.Icon.BREATH, big, w)
+	dash_ring = HudRing.new(HudRing.Icon.DASH, small, w)
+	ultimate_ring = HudRing.new(HudRing.Icon.ULTIMATE, small, w)
+	for ring: HudRing in [breath_ring, dash_ring, ultimate_ring]:
+		ring.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(ring)
+	return row
+
+
+func _input(event: InputEvent) -> void:
+	var key := event is InputEventKey and (event as InputEventKey).pressed
+	var pad := event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed
+	if (key or pad) and controls_card != null and _card_age > CARD_MIN_SHOWN:
+		dismiss_controls()
+
+
+## The controls, once (b2-10): a card on the left that fades after tuning "ui" controls_card
+## seconds; Settings > CONTROLS has them for good.
+func _show_controls(safe: Control) -> void:
+	controls_card = ControlsCard.new(true)
+	# Bottom left, clear of the kaiju (screen centre) and of the rings (bottom centre).
+	controls_card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	controls_card.size_flags_vertical = Control.SIZE_SHRINK_END
+	var place := MarginContainer.new()
+	place.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	place.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	place.size_flags_vertical = Control.SIZE_SHRINK_END
+	# Above the rings in the corner.
+	place.add_theme_constant_override(
+		"margin_bottom", Num.i(UiKit.ui()["controls_card"]["first_run_lift"])
+	)
+	place.add_child(controls_card)
+	safe.add_child(place)
+	_card_left = Num.f(UiKit.ui()["controls_card"]["seconds"])
+	PlayerSettings.mark_controls_seen()
+
+
+## Fades the controls card out now (its time is up; the capture tool calls it too).
+func dismiss_controls() -> void:
+	if controls_card == null or _card_fading:
+		return
+	_card_fading = true
+	var card := controls_card
+	var tween := create_tween()
+	tween.tween_property(card, "modulate:a", 0.0, Num.f(UiKit.ui()["controls_card"]["fade_s"]))
+	tween.tween_callback(card.get_parent().queue_free)
+	tween.tween_callback(func() -> void: controls_card = null)
 
 
 func refresh() -> void:
-	_hp.max_value = sim.max_hp
-	_hp.value = sim.hp
-	_hp_text.text = "%d / %d" % [ceili(sim.hp), ceili(sim.max_hp)]
-	# Endless mode has no countdown: the clock counts up as m:ss.
-	if sim.endless != null:
-		_time.text = "%d:%02d" % [int(sim.elapsed) / 60, int(sim.elapsed) % 60]
-	else:
-		_time.text = "%d" % ceili(maxf(0.0, sim.time_left))
-	# The last ten seconds: the clock turns from alert red to hazard yellow.
-	var hurry := sim.time_left < 10.0 and sim.endless == null
-	_clock_box.fill = UiKit.ACCENT if hurry else UiKit.ALERT
-	_time.add_theme_color_override("font_color", UiKit.BG if hurry else Color.WHITE)
-	_rubble.text = "BIOMASS  %d" % Num.i(floor(sim.rubble))
-	_destruction.value = sim.destruction() * 100.0
-	var ability: Dictionary = species["ability"]
-	var ability_name := str(ability["name"]).to_upper()
-	if sim.ability_ready_in <= 0.0:
-		_ability.text = "%s  READY  [Space / A]" % ability_name
-		_ability.add_theme_color_override("font_color", UiKit.GOOD)
-	else:
-		_ability.text = "%s  %.1fs" % [ability_name, sim.ability_ready_in]
-		_ability.add_theme_color_override("font_color", UiKit.MUTED)
-	_ultimate.visible = sim.powers.has_ultimate()
-	if sim.ultimate_ready_in <= 0.0:
-		_ultimate.text = "ULTIMATE  READY  [E / Y]"
-		_ultimate.add_theme_color_override("font_color", UiKit.ACCENT)
-	else:
-		_ultimate.text = "ULTIMATE  %.0fs" % sim.ultimate_ready_in
-		_ultimate.add_theme_color_override("font_color", UiKit.MUTED)
+	var second := ceili(maxf(0.0, sim.time_left))
+	_time.text = HudCounts.clock(sim)
+	# The last seconds: the clock turns red and pulses each second; otherwise it is plain white.
+	var hurry := sim.time_left < Num.f(_hud["hurry_seconds"]) and sim.endless == null
+	_time.add_theme_color_override("font_color", UiKit.ALERT if hurry else Color.WHITE)
+	if hurry and second != _last_second and _last_second >= 0 and not sim.over:
+		_time.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])
+		create_tween().tween_property(_time, "scale", Vector2.ONE, Num.f(_hud["hurry_pulse_s"]))
+	_last_second = second
+	city_meter.value = sim.destruction() * 100.0
+	var gain := sim.rubble - _last_biomass
+	_last_biomass = sim.rubble
+	if gain >= Num.f(_hud["biomass_pop_gain"]):
+		_pop_biomass()
+	# The sim's own floor on the cooldown (rampage_sim.gd), so the ring matches the button.
+	breath_ring.set_ratio(1.0 - sim.ability_ready_in / maxf(0.5, sim.stat("ability_cooldown")))
+	ultimate_ring.modulate.a = 1.0 if sim.powers.has_ultimate() else 0.0
+	var ult_cd := Num.f(sim.powers_cfg["ultimate_cooldown"])
+	ultimate_ring.set_ratio(1.0 - sim.ultimate_ready_in / maxf(0.001, ult_cd))
 	var dash := sim.body.dash
-	_dash.visible = dash.available()
-	if dash.ready_in <= 0.0:
-		_dash.text = "DASH  READY  [Shift / B]"
-		_dash.add_theme_color_override("font_color", UiKit.GOOD)
-	else:
-		_dash.text = "DASH  %.1fs" % dash.ready_in
-		_dash.add_theme_color_override("font_color", UiKit.MUTED)
+	dash_ring.modulate.a = 1.0 if dash.available() else 0.0
+	if dash.available():
+		dash_ring.set_ratio(1.0 - dash.ready_in / maxf(0.001, Num.f(dash.cfg["cooldown"])))
+
+
+func _process(delta: float) -> void:
+	_roll_biomass(delta)
+	if controls_card != null and not _card_fading:
+		_card_left -= delta
+		_card_age += delta
+		if _card_left <= 0.0:
+			dismiss_controls()
+	if not beat_running():
+		return
+	_beat_frame += 1
+	# World hints (float text) never show behind the headline, even one that pops late.
+	get_tree().call_group(CityView.FLOAT_TEXT, "queue_free")
+	if _beat_frame >= BEAT_FRAMES:
+		finish_beat()
+
+
+## The figure rolls toward the true biomass (R 15.5) rather than ticking digit by digit.
+func _roll_biomass(delta: float) -> void:
+	var rate := Num.f(_hud["biomass_roll_rate"])
+	_shown_biomass = lerpf(_shown_biomass, sim.rubble, 1.0 - exp(-rate * delta))
+	if absf(sim.rubble - _shown_biomass) < ROLL_SNAP:
+		_shown_biomass = sim.rubble
+	biomass.text = "%d" % Num.i(floor(_shown_biomass))
+
+
+## A big gain pops the figure once (one pop at a time: biomass ticks all the time).
+func _pop_biomass() -> void:
+	if _pop != null and _pop.is_running():
+		return
+	biomass.scale = Vector2.ONE * Num.f(_hud["biomass_pop_scale"])
+	_pop = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_pop.tween_property(biomass, "scale", Vector2.ONE, Num.f(_hud["biomass_pop_s"]))
 
 
 ## The rampage is over (the sim said so): show why, and tell the rest of the game.
@@ -205,18 +316,22 @@ func show_end_beat(reason: String) -> void:
 	if _beat_frame >= 0:
 		return
 	_beat_frame = 0
+	_clock_column.visible = false
 	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.55, 0.25, 0.45)
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiKit.full_rect(flash)
 	add_child(flash)
-	var centre := CenterContainer.new()
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UiKit.full_rect(centre)
-	add_child(centre)
+	var top := MarginContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UiKit.full_rect(top)
+	top.add_theme_constant_override("margin_top", BEAT_TOP)
+	add_child(top)
 	var col := VBoxContainer.new()
-	centre.add_child(col)
+	col.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	top.add_child(col)
 	var lines: Array = HEADLINES.get(reason, ["RAMPAGE OVER", ""])
 	headline = UiKit.label(str(lines[0]), BEAT_SIZE, UiKit.ACCENT)
 	headline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -232,18 +347,18 @@ func show_end_beat(reason: String) -> void:
 	tween.parallel().tween_property(flash, "color:a", 0.0, 0.6)
 
 
+## The clock's number (read by the ui suite).
+func clock_label() -> Label:
+	return _time
+
+
+## True while the clock and its city meter are on screen.
+func clock_visible() -> bool:
+	return _clock_column.is_visible_in_tree()
+
+
 func beat_running() -> bool:
 	return _beat_frame >= 0 and not _beat_done
-
-
-func _process(_delta: float) -> void:
-	if not beat_running():
-		return
-	_beat_frame += 1
-	# World hints (float text) never show behind the headline, even one that pops late.
-	get_tree().call_group(CityView.FLOAT_TEXT, "queue_free")
-	if _beat_frame >= BEAT_FRAMES:
-		finish_beat()
 
 
 ## Opens the pause menu and stops the world (the menu runs while paused).
@@ -251,6 +366,8 @@ func pause() -> void:
 	if sim.over or get_tree().paused:
 		return
 	var menu := PauseMenu.new()
+	menu.sim = sim
+	menu.species_id = str(species["id"])
 	menu.end_pressed.connect(_end_now)
 	_widgets.visible = false
 	menu.tree_exited.connect(func() -> void: _widgets.visible = not _beat_done)

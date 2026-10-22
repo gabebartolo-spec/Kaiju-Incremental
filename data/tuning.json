@@ -1,4 +1,48 @@
 {
+	"ui": {
+		"safe_margin": [96, 54],
+		"text": {"outline_share": 0.2, "outline_min": 6, "outline_alpha": 0.95, "shadow_px": 4, "shadow_alpha": 0.7},
+		"hud": {
+			"clock_size": 44,
+			"hurry_seconds": 10.0,
+			"hurry_pulse_scale": 1.15,
+			"hurry_pulse_s": 0.3,
+			"biomass_size": 28,
+			"biomass_roll_rate": 8.0,
+			"biomass_pop_gain": 3.0,
+			"biomass_pop_scale": 1.3,
+			"biomass_pop_s": 0.25,
+			"ring_radius": 19.25,
+			"ring_small_radius": 19.25,
+			"ring_width": 3.0,
+			"ring_gap": 14,
+			"ring_ready_scale": 1.3,
+			"ring_ready_s": 0.45,
+			"meter_size": [220, 6],
+			"meter_gap": 2,
+			"bottom_margin": 60,
+			"icons": {
+				"breath": "res://assets/ui/icons/breath.png",
+				"dash": "res://assets/ui/icons/dash.png",
+				"ultimate": "res://assets/ui/icons/ultimate.png"
+			}
+		},
+		"hurt": {
+			"color": "c0140c",
+			"width_max": 0.55,
+			"alpha_max": 0.28,
+			"ease_rate": 5.0,
+			"heartbeat_below": 0.3,
+			"heartbeat_hz": 1.3,
+			"heartbeat_depth": 0.35,
+			"flash_s": 0.3,
+			"flash_alpha": 0.2
+		},
+		"controls_card": {"seconds": 9.0, "fade_s": 0.6, "width": 760, "first_run_width": 620, "first_run_lift": 90},
+		"tooltip_width": 330,
+		"species_spin_rate": 0.6,
+		"loading_news": ["CITY BRACES FOR IMPACT", "BRIDGES CLOSED UNTIL FURTHER NOTICE", "PETS SENSE SOMETHING"]
+	},
 	"display": {
 		"fps_caps": [60, 120, 0],
 		"fps_default": 120,
@@ -33,7 +77,7 @@
 		"tail_reach": {"line": "Tail reaches further", "fmt": "%.1f"},
 		"tail_floors": {"line": "Tail cuts through more floors", "fmt": "%d"},
 		"momentum": {"line": "Charges hit harder", "fmt": "%.1f"},
-		"beam_dps": {"line": "Atomic Beam burns hotter", "fmt": "%.0f", "unit": " a second"},
+		"beam_dps": {"line": "{beam} burns hotter", "fmt": "%.0f", "unit": " a second"},
 		"glide_seconds": {"line": "Glides longer", "fmt": "%.1f", "unit": " seconds"},
 		"climb": {"line": "Climbs taller towers", "fmt": "%d"},
 		"brood_count": {"line": "More young per clutch", "fmt": "%d"},
@@ -47,6 +91,7 @@
 		"fire_embers": {"line": "Embers leap the streets", "fmt": "%d"},
 		"firestorm": {"line": "Blasts start firestorms", "fmt": "%d"}
 	},
+	"names": {"beam": "Thunder Beam"},
 	"news": {
 		"title": ["MONSTER SIGHTED OFFSHORE", "RESIDENTS URGED TO STAY INDOORS", "ARMY PLACED ON HIGH ALERT", "EXPERTS: 'IT IS STILL GROWING'"],
 		"at_large": "{species} STILL AT LARGE",
@@ -58,8 +103,7 @@
 			{"stat": "tallest_topple", "min": 10, "line": "{n}-FLOOR TOWER COMES DOWN - SKYLINE CHANGED FOREVER"},
 			{"stat": "toppled", "min": 1, "line": "INSURERS REFUSE CLAIMS: 'ACT OF MONSTER'"},
 			{"stat": "civilians", "min": 1, "line": "MASS EVACUATION ORDERED"},
-			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
-			{"stat": "helis", "min": 1, "line": "AIR FORCE GROUNDS ALL HELICOPTERS"}
+			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"}
 		],
 		"close": "THE CREATURE HAS RETREATED - FOR NOW"
 	},
@@ -81,6 +125,30 @@
 			"regrow_per_wave": 1,
 			"regrow_clear": 40.0
 		}
+	},
+	"pause": {
+		"_doc": "The pause menu's Are-you-sure before End Rampage (D-155).",
+		"end_title": "ARE YOU SURE?",
+		"end_line": "The rampage ends now and you keep your biomass.",
+		"end_keep": "KEEP PLAYING",
+		"end_yes": "YES, END IT"
+	},
+	"feedback": {
+		"_doc": "The pause menu's bug / feedback report (D-145): a folder under user://<folder>/<timestamp>/ with report.txt and screenshot.png, never a network call.",
+		"folder": "reports",
+		"game": "Kaiju Evolution",
+		"label": "Report a bug / feedback",
+		"title": "REPORT A BUG",
+		"prompt": "What happened? Anything you tell us helps.",
+		"send": "SEND",
+		"cancel": "CANCEL",
+		"saved": "Saved to {path}",
+		"failed": "Could not save the report ({error}).",
+		"open_folder": "OPEN FOLDER",
+		"done": "DONE",
+		"box_lines": 7,
+		"box_width": 900,
+		"max_chars": 4000
 	},
 	"kaiju": {
 		"hp": 100,
@@ -271,6 +339,8 @@
 			"plans_per_step": 2,
 			"search_margin": 30.0,
 			"stuck": 2.0,
+			"_yield_cap": "A tank giving way yields at most stuck x yield_cap seconds in one stretch, however long the tank it makes way for stays held up; then it re-plans (TankSpacing.yield_limit).",
+			"yield_cap": 3.0,
 			"reverse": 0.6,
 			"grid": 8.0,
 			"hull_turn": 90.0,
@@ -290,6 +360,17 @@
 		"escalation_per_chunk": 0.002,
 		"threat_per_chunk": 0.0005,
 		"young_damage_mult": 2.0,
+		"shell_flight": 0.22,
+		"miss": {
+			"hit_near": 0.9,
+			"hit_far": 0.6,
+			"ring_near": 4.0,
+			"ring_far": 14.0,
+			"ring_tries": 12,
+			"radius": 2.5,
+			"damage": 8.0,
+			"floors": 3
+		},
 		"rooftop": {
 			"min_height": 4,
 			"chance": 1.0,
@@ -316,10 +397,11 @@
 		"coast_z": -112,
 		"bay_width": 190,
 		"far_haze": 0.004,
+		"far_tower_cap": 0,
 		"fog_scale": 1.0,
 		"load_chunks": 6000,
 		"stream_chunks": 24000,
-		"stream_view": {"_note": "BuildingStream spends the stream_chunks budget on what the camera sees, not on a circle round the kaiju: a building ranks by its distance from the camera, or from the kaiju plus kaiju_extra_m, whichever is less; one that lies only in the margin band (margin_deg wide, each side of the frustum) ranks side_m farther, one outside that outside_m farther; a ring of ring_m round the camera has no penalty. margin_deg covers the widest camera swing the game allows (breath orbit_degrees 25 + camera_shake max_deg 2.5, a test checks it), so a swing meets buildings the plan has already meshed. A landmark stays meshed while the frustum or the margin band reaches it or it stands within landmark_keep_m of the camera or the kaiju (a test checks no landmark is ever a box in view); beyond all three it unloads like any building (director 2026-10-22: out-of-view landmarks may unload if no pop-in).", "margin_deg": 30.0, "ring_m": 12.0, "side_m": 40.0, "outside_m": 100.0, "kaiju_extra_m": 30.0, "landmark_keep_m": 80.0},
+		"stream_view": {"_note": "BuildingStream spends the stream_chunks budget on what the camera sees, not on a circle round the kaiju: a building ranks by its distance from the camera, or from the kaiju plus kaiju_extra_m, whichever is less; one that lies only in the margin band (margin_deg wide, each side of the frustum) ranks side_m farther, one outside that outside_m farther; a ring of ring_m round the camera has no penalty. margin_deg covers the camera's shake (camera_shake max_deg 2.5, a test checks it) and a quick turn, so a turn meets buildings the plan has already meshed (the breath's side orbit was cut, D-136). A landmark stays meshed while the frustum or the margin band reaches it or it stands within landmark_keep_m of the camera or the kaiju (a test checks no landmark is ever a box in view); beyond all three it unloads like any building (director 2026-10-22: out-of-view landmarks may unload if no pop-in).", "margin_deg": 30.0, "ring_m": 12.0, "side_m": 40.0, "outside_m": 100.0, "kaiju_extra_m": 30.0, "landmark_keep_m": 80.0},
 		"markings_beyond": 30,
 		"zebra_junctions": 1,
 		"landmarks": [
@@ -363,7 +445,7 @@
 		"tree_leaf_spread": 0.6,
 		"tree_bark_size": 2.4,
 		"tree_puff_size": 2.0,
-		"tree_puff_alpha": 0.3,
+		"tree_puff_alpha": 0.6,
 		"block_long": [18, 26],
 		"block_short": [10, 13],
 		"avenues": 1,
@@ -476,6 +558,7 @@
 		"crack_within": {"rifle": 12.0},
 		"size_pitch": [1.3, 1.12, 1.0, 0.88],
 		"footstep_quiet_db": -8.0,
+		"roar_cooldown": 5.0,
 		"drop_quiet_db": -5.0,
 		"collapse_per_frame": 4,
 		"near_distance": 80.0,
@@ -504,6 +587,205 @@
 			"ready": -8.0,
 			"deflect": -10.0,
 			"regen_loop": -20.0
+		}
+	},
+	"city_sound": {
+		"_doc": "CitySound (D-155, panic then eerie quiet): one driver sets every city bed from the rampage's phase, 0 at the first stomp to 1 when the city is ruined. phase = destruction_weight of (destruction share / destruction_full) plus the rest of (people fled / population / fled_full), each capped at 1. curve: [phase, dB] keys, linear between; crowd is a trim on the crowd loop's own panic level (0 = untouched), every other bed is its level in dB. Panic (crowd, sirens) peaks early and is gone by the end; gunfire, fire and wind carry the ruined city.",
+		"phase": {"destruction_full": 0.2, "fled_full": 0.6, "destruction_weight": 0.5},
+		"fade_db_per_s": 8.0,
+		"silent_db": -60.0,
+		"beds": {
+			"crowd": {"curve": [[0.0, 0.0], [0.3, 0.0], [0.65, -30.0], [0.9, -60.0], [1.0, -60.0]]},
+			"city_siren": {"curve": [[0.0, -60.0], [0.04, -30.0], [0.2, -10.0], [0.4, -12.0], [0.7, -40.0], [0.85, -60.0], [1.0, -60.0]]},
+			"city_gunfire": {"curve": [[0.0, -60.0], [0.1, -34.0], [0.4, -20.0], [1.0, -16.0]]},
+			"city_fire": {"curve": [[0.0, -60.0], [0.2, -42.0], [0.5, -24.0], [1.0, -12.0]]},
+			"city_wind": {"curve": [[0.0, -50.0], [0.5, -30.0], [1.0, -16.0]]}
+		}
+	},
+	"music": {
+		"_doc": "MusicLayers (D-125; briefs in docs/audio/music-briefs.md): one track per city (size tier 1..3: baby, adolescent, adult), split into 4 stems that fade in, in this order, on the same phase as the city beds (drums alone at first, then bass, lead, choir and pads in the final stretch), on one locked tempo (AudioStreamSynchronized). bpm is the take's tempo and bars its loop length in bars: change both when a Suno take lands at another tempo; every stem file must be exactly bars * beats_per_bar * 60 / bpm seconds long (lock_tolerance_s) or the loader warns. A stem whose file is missing plays as silence of that length. enter/full: the phases a stem starts and finishes fading in.",
+		"silent_db": -60.0,
+		"fade_db_per_s": 6.0,
+		"lock_tolerance_s": 0.02,
+		"placeholder_rate": 2000,
+		"bus": "Music",
+		"tracks": [
+			{"id": "city_1", "bpm": 100.0, "beats_per_bar": 4, "bars": 64, "stems": [
+				{"name": "drums", "file": "res://assets/music/city_1_drums.ogg", "enter": 0.0, "full": 0.05},
+				{"name": "bass", "file": "res://assets/music/city_1_bass.ogg", "enter": 0.2, "full": 0.4},
+				{"name": "lead", "file": "res://assets/music/city_1_lead.ogg", "enter": 0.45, "full": 0.65},
+				{"name": "choir", "file": "res://assets/music/city_1_choir.ogg", "enter": 0.75, "full": 0.9}]},
+			{"id": "city_2", "bpm": 120.0, "beats_per_bar": 4, "bars": 80, "stems": [
+				{"name": "drums", "file": "res://assets/music/city_2_drums.ogg", "enter": 0.0, "full": 0.05},
+				{"name": "bass", "file": "res://assets/music/city_2_bass.ogg", "enter": 0.2, "full": 0.4},
+				{"name": "lead", "file": "res://assets/music/city_2_lead.ogg", "enter": 0.45, "full": 0.65},
+				{"name": "choir", "file": "res://assets/music/city_2_choir.ogg", "enter": 0.75, "full": 0.9}]},
+			{"id": "city_3", "bpm": 90.0, "beats_per_bar": 4, "bars": 64, "stems": [
+				{"name": "drums", "file": "res://assets/music/city_3_drums.ogg", "enter": 0.0, "full": 0.05},
+				{"name": "bass", "file": "res://assets/music/city_3_bass.ogg", "enter": 0.2, "full": 0.4},
+				{"name": "lead", "file": "res://assets/music/city_3_lead.ogg", "enter": 0.45, "full": 0.65},
+				{"name": "choir", "file": "res://assets/music/city_3_choir.ogg", "enter": 0.75, "full": 0.9}]}
+		]
+	},
+	"title": {
+		"_note": "The title screen's live city at night (comments #88, #98): the far shore seen across the bay from the play area's quay on a slow camera drift, a district over there on fire; the kaiju is only implied. Ambience levels are dB on their buses; the UI click is -12, so the bed sits 20 dB or more under it.",
+		"city_tier": 1,
+		"fade_s": 1.2,
+		"tower_cap": 90.0,
+		"camera": {"_note": "D-158: tilted up about 7.5 degrees (look y = 11 + 206 * tan(tilt)) so the colossus head is whole in frame and the shore line drops; the near ledge is deeper (shore.ledge_depth) so the water band is a third thinner, not thicker.", "position": [-20.0, 11.0, -96.0], "look": [-20.0, 38.1, -302.0], "fov": 50.0, "near": 15.0},
+		"variant": "night",
+		"variants": {
+			"night": {
+				"env": {
+					"sky_top": "070d1f", "sky_horizon": "1f3052", "sky_curve": 0.15,
+					"ambient_color": "3a4c78", "ambient": 1.2,
+					"fog_color": "16213d", "fog_density": 0.0022,
+					"sun_color": "8ea8ff", "sun_energy": 0.3
+				},
+				"water": {"color": "2a4468", "roughness": 0.45},
+				"sky_smoke": 1.0
+			},
+			"dusk": {
+				"_note": "Director 2026-10-22: dusk could be fine without the glare: deep blue sky, a faint warm band at the horizon only, cool grey-blue towers. Critic: lift the skyline so it reads as its own time of day.",
+				"env": {
+					"sky_top": "0a1f52", "sky_horizon": "c08462", "sky_curve": 0.1,
+					"ambient_color": "7a8cba", "ambient": 1.7,
+					"fog_color": "46567a", "fog_density": 0.0022,
+					"sun_color": "a8b8e0", "sun_energy": 0.55
+				},
+				"water": {"color": "34506f", "roughness": 0.45},
+				"sky_smoke": 0.4
+			}
+		},
+		"shore": {
+			"half_span": 450.0, "wall_top": 2.4, "wall_color": "55565e", "wall_glow": "ffc878",
+			"cap_height": 0.35, "cap_color": "8a8a90", "promenade_color": "5c5a5a",
+			"promenade_glow": "ffc070", "promenade_energy": 0.45,
+			"lamp_gap": 14.0, "lamp_out": 0.14, "lamp_jitter": 0.4, "lamp_height": 5.0, "lamp_back": 6.0, "lamp_glow": 7.0, "lamp_color": "ffc874",
+			"reflect_length": 190.0, "window_reflect": "ffd9a0", "fire_reflect": "ff6a1a",
+			"window_strength": 0.7, "fire_strength": 0.85, "window_length": 80.0,
+			"fire_length": 140.0, "fire_radius": 6.0,
+			"ledge_from": 2.0, "ledge_depth": 26.5, "ledge_top": 0.9, "ledge_color": "4a4e5e",
+			"ledge_cap": "7a7a86", "ledge_glow": 0.3,
+			"rail_color": "0c0d12", "rail_thick": 0.45, "rail_height": 1.6, "bollard_width": 0.7, "rail_gap": 2.4, "kerb_color": "a8a8b2", "kerb_gap": 2.0,
+			"post_gap": 24.0, "post_color": "3a3a46", "post_energy": 1.3, "post_halo": 0.55, "pool_radius": [12.0, 8.0], "pool_strength": 0.9, "ledge_fire": 0.5, "post_glow": 3.2, "post_height": 2.8, "bollard_gap": 9.0, "bollard_height": 1.1
+		},
+		"sky": {
+			"top": "050814",
+			"bottom": "15233f",
+			"glows": [[0.84, 0.3, 0.2], [0.93, 0.36, 0.14], [0.76, 0.4, 0.12]],
+			"glow_color": "ff6a14",
+			"glow_alpha": 0.5
+		},
+		"flashes": {
+			"span_x": [[-45.0, 150.0]],
+			"shot": {"color": "fff0c0", "size": 9.0, "life_s": 0.12, "height": 2.0},
+			"boom": {
+				"color": "ff9a40",
+				"size": 120.0,
+				"core_color": "fff0c8",
+				"core_size": 46.0,
+				"glow_alpha": 0.9,
+				"glow_share": 1.3,
+				"life_s": 0.3,
+				"min_height": 6.0,
+				"max_height": 45.0,
+				"smoke_color": "4a3a32",
+				"smoke_size": 34.0,
+				"smoke_s": 6.0,
+				"smoke_rise": 60.0
+			}
+		},
+		"fires": {
+			"foci": [[5.0, -330.0], [105.0, -330.0]],
+			"roof_fires": 2,
+			"radius": 48.0,
+			"count": 6,
+			"depth": 70.0,
+			"window_fires": 4,
+			"hero_per_focus": 2,
+			"hero": {"floors": 4, "size": 1.8, "zoom": 4.6, "smoke_share": 0.3, "density": 6.0, "ember_density": 1.5, "puff": 2.4, "glow_size": 46.0, "cells": 6, "spread": 1.5},
+			"windows": {"cells": 4, "gap": 0.2, "colour": "ff6a14", "glow": 2.0},
+			"window": {"size": 0.7, "zoom": 2.2, "smoke_share": 0.25, "density": 5.0, "ember_density": 1.2, "smoke_density": 0.0, "puff": 1.6, "glow_size": 12.0},
+			"far": {
+				"_note": "The game's own Fire (scenes/fire.gd) at this zoom: the same voxel flames, embers and charcoal smoke, every size and speed multiplied by zoom for the distance, density times the particles (the picture is zoom squared bigger), smoke_share the part of the zoom the smoke takes.",
+				"size": 1.2, "zoom": 3.0, "smoke_share": 0.3, "density": 9.0, "ember_density": 1.5, "smoke_density": 1.0, "lean": [-0.5, 1.6], "puff": 2.6, "fixed_fps": 12,
+				"glow_color": "ff6a14", "glow_size": 26.0, "flicker_hz": 7.0
+			}
+		},
+		"colossus": {
+			"_note": "Director 2026-10-22: explosions now and then reveal the reptilian colossus in the inferno, dark against the fireball. The game's adult reptilian model baked to black silhouettes (tools/capture/bake_colossus.gd) and drawn as a card of the given height in metres, feet on the start point; one step along start + k * step per footfall, out and back over steps_out steps.",
+			"height": 185.0,
+			"smog": 0.85,
+			"smog_tail": 0.5,
+			"eye": {"uv": [0.097, 0.0866], "size": 4.5, "colour": "ff2a10", "idle": 0.22, "pulse": 0.35, "pulse_hz": 0.25, "peak": 0.7, "forward": 2.0},
+			"poses": 1,
+			"rim_colour": "ff7a22",
+			"rim_strength": 1.5,
+			"rim_width": 0.01,
+			"rim_light": [-0.3, 0.95],
+			"rim_min": 0.1,
+			"crown": {"_note": "VFX lead's fix: a crisp warm line along the skull and snout top edge only (uv x under extent), px thick at 2160 rows.", "colour": "ffb866", "px": 8.0, "strength": 1.0, "extent": 0.34},
+			"idle_alpha": 0.1,
+			"glow_idle": 0.2,
+			"glow_peak": 0.85,
+			"glow_size": 500.0,
+			"glow_color": "ff6a14",
+			"glow_share": 2.4,
+			"glow_alpha": 0.5,
+			"start": [285.0, -400.0],
+			"step": [-2.5, 0.0],
+			"steps_out": 10,
+			"ground_y": -12.0,
+			"burst_height": 100.0,
+			"burst_back": 25.0,
+			"reveal_s": 0.9,
+			"rise_s": 0.06,
+			"fall_s": 0.4,
+			"flash_life_s": 0.8,
+			"reveal_every_s": [12.0, 20.0]
+		},
+		"sky_smoke": [
+			{"x": [-60.0, 420.0], "y": [45.0, 130.0], "z": -540.0, "depth": 30.0, "amount": 18, "size": [120.0, 240.0], "colour": "5a2a18", "alpha": 0.6, "under_colour": "ff6a1c", "under": 0.9, "drift": 6.0, "priority": -1},
+			{"x": [-300.0, 420.0], "y": [110.0, 220.0], "z": -560.0, "depth": 30.0, "amount": 22, "size": [150.0, 280.0], "colour": "241618", "alpha": 0.75, "under_colour": "c8501a", "under": 0.5, "drift": 5.0, "priority": -1},
+			{"x": [-420.0, 420.0], "y": [190.0, 330.0], "z": -580.0, "depth": 30.0, "amount": 22, "size": [180.0, 330.0], "colour": "07060a", "alpha": 0.92, "under_colour": "7a2a10", "under": 0.25, "drift": 4.0, "priority": -1},
+			{"x": [150.0, 340.0], "y": [8.0, 90.0], "z": -385.0, "depth": 6.0, "amount": 16, "size": [50.0, 100.0], "colour": "2a1a18", "alpha": 0.55, "under_colour": "ff6a1c", "under": 0.7, "drift": 4.0, "priority": 3}
+		],
+		"windows_lit": {"blackout": 0.35, "lit_color": "c89a60", "glow": 0.75},
+		"ripple": {"amplitude": 4.5, "glow": 0.2, "decay_s": 1.1, "attack_s": 0.05},
+		"shade": {"centre_alpha": 0.78, "edge_alpha": 0.0, "color": "05060a", "radius": 0.34, "centre_x": 0.24},
+		"ambience": {
+			"crowd_db": -6.0,
+			"first_gun_s": 0.8,
+			"first_boom_s": 3.5,
+			"gun_db": -11.0,
+			"gun_gap_s": [0.6, 2.6],
+			"gun_burst": [1, 4],
+			"gun_burst_gap_s": 0.16,
+			"boom": {"sound": "tank_fire", "db": -12.0, "pitch": 0.55, "lowpass_hz": 2400.0, "every_s": [5.0, 9.0]},
+			"fade_in_s": 2.0,
+			"step_vary": {"pitch": 0.08, "db": 2.0},
+			"siren": "siren_far",
+			"siren_db": -9.0,
+			"stomp": {
+				"sound": "stomp_1",
+				"db": -20.0,
+				"pitch": 0.5,
+				"sub_hz": 40.0,
+				"sub_db": -20.0,
+				"body_hz": [120.0, 78.0],
+				"body_db": -8.0,
+				"body_decay_s": 0.16,
+				"crack_hz": [1000.0, 3000.0],
+				"crack_db": -9.0,
+				"crack_decay_s": 0.035,
+				"sub_attack_s": 0.006,
+				"sub_decay_s": 0.4,
+				"every_s": 2.8,
+				"jitter_s": 0.25,
+				"lowpass_hz": 180.0,
+				"reverb": {"room_size": 0.35, "damping": 0.8, "wet": 0.25}
+			}
 		}
 	},
 	"chain": {
@@ -553,6 +835,10 @@
 			"collapse": "Hero",
 			"collapse_drop": "Debris",
 			"crowd_panic": "Crowd",
+			"city_siren": "Ambience",
+			"city_gunfire": "Military",
+			"city_fire": "Ambience",
+			"city_wind": "Ambience",
 			"tank_fire": "Military",
 			"shell_hit": "Military",
 			"rifle": "Military",
@@ -567,6 +853,7 @@
 			"ready": "SFX",
 			"deflect": "SFX",
 			"regen_loop": "SFX",
+			"siren_far": "Ambience",
 			"footstep": "SFX",
 			"footstep_1": "SFX",
 			"footstep_2": "SFX",
@@ -611,6 +898,12 @@
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
 		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+	},
+	"post_fx": {
+		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
+		"vignette": {"color": "#05070a", "strength": 0.42, "inner": 0.5, "outer": 1.0},
+		"low_health": {"below": 0.25, "full_at": 0.1, "color": "#c0100c", "alpha": 0.28, "depth_px": 110.0, "pulse_hz": 1.3, "pulse_sharp": 2.0, "fade_per_s": 2.5},
+		"fringe": {"seconds": 0.2, "attack": 0.2, "peak_px": 6.0, "cooldown_s": 4.0, "stomp_min_radius": 4.4, "collapse_min_length": 28.0, "hit_hp_fraction": 0.12}
 	},
 	"topple_fx": {
 		"shudder_s": 0.4,
@@ -727,17 +1020,13 @@
 	},
 	"fx": {
 		"power_max": 2.5,
-		"footfall_dust": {"seconds": 1.0, "alpha": 0.38, "rise": 1.6, "max_live": 2},
-		"shockwave": {"radius_scale": 0.6, "seconds": 0.35, "alpha": 0.22, "soft": 0.4},
+		"footfall_dust": {"seconds": 0.5, "alpha": 0.5, "rise": 1.6, "max_live": 1},
+		"shockwave": {"radius_scale": 1.2, "seconds": 0.55, "alpha": 0.55, "soft": 0.4},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"breath_fade_in": 0.12,
 		"breath_curtain_alpha": 0.7,
 		"breath_curtain_height": 7.0,
-		"orbit_degrees": 25.0,
-		"orbit_rise": 3.0,
-		"orbit_in_seconds": 0.3,
-		"orbit_out_seconds": 0.5,
 		"scorch_seconds": 5.0,
 		"scorch_soot_in": 0.4,
 		"scorch_glow_in": 0.12,

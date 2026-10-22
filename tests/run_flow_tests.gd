@@ -135,7 +135,7 @@ func _check_upgrade_screen() -> void:
 		var b: Button = node
 		texts.append(b.text.get_slice("\n", 0))
 	check(
-		texts.has("Tail Sweep") and texts.has("ULTIMATE: Atomic Beam") and not texts.has("Scuttle"),
+		preload("res://tests/lib/flow_names.gd").own_branch(texts),
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:
@@ -321,7 +321,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	await process_frame
 
 
-## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Atomic Breath
+## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Lightning Breath
 ## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
 func _check_warm_start() -> void:
 	var species := Content.species_def("reptilian")
