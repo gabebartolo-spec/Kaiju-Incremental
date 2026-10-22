@@ -7,7 +7,7 @@ extends RefCounted
 ## kick (trauma) and crack_fade_s.
 
 var _shake: CameraShake
-var _under: Dictionary = {}  # "left" / "right" -> the crack decal under that foot
+var _under: Dictionary = {}  # "left" / "right" -> the instance id of the crack decal there
 var _lifted := ""  # the foot the latest stomp lifted ("" when none: walking)
 var _cfg := Content.section("clip_stomp")
 
@@ -20,9 +20,9 @@ func _init(p_shake: CameraShake) -> void:
 func lift(kaiju: KaijuModel) -> void:
 	kaiju.stomp()
 	_lifted = kaiju.stomped_side()
-	var old: Variant = _under.get(_lifted)
-	if is_instance_valid(old):
-		FxDecals.fade_out(old as Decal, Num.f(_cfg["crack_fade_s"]))
+	var old := instance_from_id(Num.i(_under.get(_lifted, 0))) as Decal  # null once it has faded
+	if old != null:
+		FxDecals.fade_out(old, Num.f(_cfg["crack_fade_s"]))
 	_under.erase(_lifted)
 
 
@@ -30,7 +30,7 @@ func lift(kaiju: KaijuModel) -> void:
 ## camera.
 func landed(side: String, crack: Decal) -> void:
 	if crack != null:
-		_under[side] = crack
+		_under[side] = crack.get_instance_id()
 	if side == _lifted:
 		_lifted = ""
-		_shake.add(Num.f(_cfg["kick"]), Vector3.INF, Vector3.ZERO, 1.0)
+		_shake.trauma = maxf(_shake.trauma, Num.f(_cfg["kick"]))  # a kick, never stacked past it

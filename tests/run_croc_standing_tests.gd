@@ -171,8 +171,8 @@ func _check_stomp_shape() -> void:
 			% [series[first] / hip, series[first - 1] / hip]
 		)
 	)
-	var spread := peaks.max() - peaks.min()
-	var differ := times.min() != times.max()
+	var spread: float = Num.f(peaks.max()) - Num.f(peaks.min())
+	var differ: bool = times.min() != times.max()
 	check(
 		spread > 0.005 * hip or differ,
 		"stomp: the six differ in height (%.3f hip) or time" % (spread / hip)
@@ -205,6 +205,7 @@ func _check_stomp_landing() -> void:
 		sides.append(kaiju.stomped_side())
 		for f: int in BEAT_FRAMES:
 			kaiju.animate(DT, 0.0)
+			shake.update(DT)  # the last kick fades between beats
 		var crack := Decal.new()
 		root.add_child(crack)
 		cracks.append(crack)
