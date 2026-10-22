@@ -12,4 +12,8 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await _h("StreamView", func() -> void: await StreamView.new(check, root).run())
+	await _t("_check_stream_view")
+
+
+func _check_stream_view() -> void:
+	await StreamView.new(check, root).run()

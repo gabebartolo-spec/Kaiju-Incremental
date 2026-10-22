@@ -6,19 +6,17 @@ extends Node3D
 ## mesh them, landmarks first (a stadium never stands as a box: lead 9, 2026-10-21), then nearest
 ## first, and each swaps in as it is ready. A building the rampage touches before its turn is
 ## built on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at
-## most city.stream_chunks chunks stay meshed (plus the landmarks and every building the
-## rampage has touched): as the kaiju walks, the nearest unbuilt buildings stream in and the
-## untouched ones far behind him go back to boxes. Small cities fit the budget and load exactly
-## as before. Presentation only.
-##
-## What counts as nearest is judged from the camera as well as the kaiju: a building ranks by its
-## distance from the camera, or from the kaiju plus city.stream_view.kaiju_extra_m, whichever is
-## less, and what the camera cannot see ranks farther: the wedge the frustum covers ranks as it
-## is, the margin band beside it (city.stream_view.margin_deg wide, wider than the camera can
-## swing, so a swing meets meshed buildings) side_m farther, anything else outside_m farther.
-## So the budget the old circle round the kaiju spent behind and beside the camera goes to the
-## foreground and the depth where it looks. Without a camera (before the rampage's own exists)
-## every building ranks by its distance from the kaiju.
+## most city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that
+## stand near, and every building the rampage has touched): as the kaiju walks, the nearest
+## unbuilt buildings stream in and the untouched ones far behind him go back to boxes. Small
+## cities fit the budget and load exactly as before. Presentation only. What counts as nearest
+## is judged from the camera as well as the kaiju (StreamRank): the
+## budget goes to the foreground and the depth where the camera looks, not to a circle round the
+## kaiju. A landmark is held meshed whenever its wedge, the margin band or city.stream_view.
+## landmark_keep_m reaches it, so one is never a box in view (director 2026-10-22: out-of-view
+## landmarks may unload "if no pop-in"); one past all three ranks like any building. Without a
+## camera (before the rampage's own exists) every building ranks by its distance from the kaiju
+## and every landmark is held.
 
 ## Workers meshing at once (each holds a building's raw voxels until it is baked).
 const IN_FLIGHT := 4
@@ -38,6 +36,11 @@ const KEY_STEP := 16.0
 ## true: _ready starts meshing the nearest buildings on workers and returns at once; the owner
 ## polls initial_done() and calls finish_initial() (a loading screen keeps drawing meanwhile).
 var defer_initial := false
+## The slowest _process this stream has had (microseconds): the cost it adds to a frame.
+var worst_usec := 0
+## Replans after the first, and the microseconds they took in all (probes: the mean cost).
+var plans := 0
+var plan_usec := 0
 
 var _sim: RampageSim
 var _colors: Array[Color]
@@ -52,7 +55,7 @@ var _ready_views: Array[BuildingView] = []
 var _ready_index: Array[int] = []
 var _mutex := Mutex.new()
 var _rest: Array[int] = []
-var _stand_ins: MultiMesh
+var _stand_ins: StreamStandIns
 var _now: Array[int] = []
 var _pre: Array[BuildingView] = []
 var _initial := -1  # the initial group task while it is out, else -1
@@ -63,37 +66,12 @@ var _queue_at := 0
 var _planned_at := Vector2(INF, INF)
 var _since_plan := 0.0
 var _evict: Array[int] = []
-## Per building: its centre (x, z) and the radius of its footprint, for the view rank.
-var _cx := PackedFloat32Array()
-var _cz := PackedFloat32Array()
-var _cr := PackedFloat32Array()
-## The ranking view, read each plan: the camera's ground position, heading and half-angle of
-## the wedge (radians); _view_on false: no camera.
-var _view_on := false
-var _view_at := Vector2.ZERO
-var _view_dir := Vector2.ZERO
-var _view_half := 0.0
-## city.stream_view, read each plan: ring and band depths (metres), margin band (radians).
-var _ring := 0.0
-var _side := 0.0
-var _outside := 0.0
-var _kaiju_extra := 0.0
-var _core_cos := 0.0  # the frustum's own wedge, and that plus the margin band
-var _core_sin := 0.0
-var _band_cos := 0.0
-var _band_sin := 0.0
+## What a building ranks by: its distance from the camera and the kaiju, and whether the camera
+## can see it (StreamRank).
+var _rank: StreamRank
 var _cutoff := INF  # the last plan's rank of the first building left out
-var _planned_view_at := Vector2(INF, INF)
-var _planned_dir := Vector2.ZERO
 ## Set on leaving the tree: workers still queued skip their building (quitting never waits on them).
 var _stop := false
-## The slowest _process this stream has had (microseconds): the cost it adds to a frame.
-var worst_usec := 0
-## The slowest replan (microseconds), inside the worst step.
-var worst_plan_usec := 0
-## Replans after the first, and the microseconds they took in all (probes: the mean cost).
-var plans := 0
-var plan_usec := 0
 
 
 func _init(p_sim: RampageSim, colors: Array[Color]) -> void:
@@ -103,20 +81,16 @@ func _init(p_sim: RampageSim, colors: Array[Color]) -> void:
 
 func _ready() -> void:
 	BuildingView.begin_city()
+	Content.look()  # merged on first use: read here, never raced by the workers
 	var count := _sim.buildings.size()
 	_views.resize(count)
 	_state.resize(count)
 	_pinned.resize(count)
 	_chunks.resize(count)
-	_cx.resize(count)
-	_cz.resize(count)
-	_cr.resize(count)
+	_rank = StreamRank.new(_sim.buildings)
 	for n: int in count:
 		var b := _sim.buildings[n]
 		_chunks[n] = b.w * b.d * b.height
-		_cx[n] = b.x
-		_cz[n] = b.z
-		_cr[n] = 0.5 * sqrt(float(b.w * b.w + b.d * b.d))
 	_budget = Num.i(_sim.city.get("stream_chunks", 1 << 30))
 	_party = BuildingView.party_walls(_sim.buildings)
 	var order: Array[int] = []
@@ -157,13 +131,14 @@ func finish_initial() -> void:
 		return
 	WorkerThreadPool.wait_for_group_task_completion(_initial)
 	_initial = -1
-	_build_stand_ins()
+	_stand_ins = StreamStandIns.new(_sim.buildings)
+	add_child(_stand_ins.build(_colors))
 	for k: int in _now.size():
 		var n := _now[k]
 		_state[n] = 2
 		_views[n] = _pre[k]
 		add_child(_pre[k])
-		_hide_stand_in(n)
+		_stand_ins.hide(n)
 	_pre.clear()
 	_plan()
 	_feed()
@@ -199,39 +174,22 @@ func _dist(n: int, from: Vector2) -> float:
 ## untouched built ones well past the last wanted building to go back to boxes.
 func _plan() -> void:
 	var from := _sim.kaiju_pos
-	var look := _look()
-	_view_on = not look.is_empty()
-	if _view_on:
-		_view_at = look[0]
-		_view_dir = look[1]
-		_view_half = look[2]
-		var cfg: Dictionary = _sim.city["stream_view"]
-		_ring = Num.f(cfg["ring_m"])
-		_side = Num.f(cfg["side_m"])
-		_outside = Num.f(cfg["outside_m"])
-		_kaiju_extra = Num.f(cfg["kaiju_extra_m"])
-		var band := minf(PI, _view_half + deg_to_rad(Num.f(cfg["margin_deg"])))
-		_core_cos = cos(_view_half)
-		_core_sin = sin(_view_half)
-		_band_cos = cos(band)
-		_band_sin = sin(band)
+	_rank.set_view(_look(), _view_cfg())
 	_planned_at = from
-	_planned_view_at = _view_at
-	_planned_dir = _view_dir
 	_since_plan = 0.0
 	var count := _sim.buildings.size()
 	var used := 0
 	var marks: Array[int] = []
 	var keys := PackedFloat64Array()
-	var limit := _cutoff + _outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
+	var limit := _cutoff + _rank.outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
 	for n: int in count:
-		if _sim.buildings[n].landmark != "":
+		if _sim.buildings[n].landmark != "" and _rank.keeps_landmark(n, from):
 			marks.append(n)
 			used += _chunks[n]
 		elif _pinned[n] == 1:
 			used += _chunks[n]
 		else:
-			keys.append(floorf(_rank(n, from, limit) * KEY_STEP) * 65536.0 + n)
+			keys.append(floorf(_rank.rank(n, from, limit) * KEY_STEP) * 65536.0 + n)
 	keys.sort()
 	_queue.clear()
 	for n: int in marks:
@@ -256,53 +214,15 @@ func _plan() -> void:
 				_evict.append(n)
 
 
-## The camera the stream ranks by, as [ground position, heading, half-angle of the wedge it sees
-## in radians: the frustum's own half-angle on the ground plane], or
-## [] without a camera, with a camera looking straight up or down, or with no
-## city.stream_view: every building then ranks by its distance from the kaiju.
+## The camera the stream ranks by (StreamRank.look), or [] when there is none.
 func _look() -> Array:
-	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	return StreamRank.look(get_viewport() if is_inside_tree() else null, _view_cfg())
+
+
+## city.stream_view, or {} when the city has none.
+func _view_cfg() -> Dictionary:
 	var cfg: Dictionary = _sim.city.get("stream_view", {})
-	if camera == null or cfg.is_empty():
-		return []
-	var look := -camera.global_transform.basis.z
-	var flat := Vector2(look.x, look.z)
-	if flat.length() < 0.2:
-		return []
-	var size := get_viewport().get_visible_rect().size
-	var aspect := maxf(size.x / maxf(size.y, 1.0), 16.0 / 9.0)
-	# A camera pitched down by p sees a ground wedge tan(half_h) / cos(p) wide.
-	var tilt := absf(asin(clampf(look.y, -1.0, 1.0)))
-	var half_h := atan(tan(deg_to_rad(camera.fov) * 0.5) * aspect / cos(tilt))
-	return [Vector2(camera.global_position.x, camera.global_position.z), flat.normalized(), half_h]
-
-
-## Building n's rank, in metres: smaller streams first. The less of its distance from the camera
-## and its distance from the kaiju plus stream_view.kaiju_extra_m, plus stream_view.side_m when
-## it lies only in the margin band beside the frustum's own wedge, plus stream_view.outside_m
-## when it lies outside the widened wedge too (behind the camera, far to its sides); a building
-## within stream_view.ring_m of the camera has no penalty whichever way the camera looks. A
-## building is in a wedge of half-angle H when any of its footprint's circle is: the angle off
-## the heading is at most H plus asin(radius / distance), compared by cosines (no trigonometry
-## per building). Past `limit` metres from the kaiju the plain distance is enough (the plan only
-## needs to know it is not wanted). Without a view, the distance from the kaiju.
-func _rank(n: int, kaiju: Vector2, limit: float = INF) -> float:
-	var base := kaiju.distance_to(Vector2(_cx[n], _cz[n]))
-	if not _view_on or base > limit:
-		return base
-	var dx := _cx[n] - _view_at.x
-	var dz := _cz[n] - _view_at.y
-	var far := sqrt(dx * dx + dz * dz)
-	var reach := _cr[n]
-	if far <= _ring + reach:
-		return minf(base + _kaiju_extra, far)
-	base = minf(base + _kaiju_extra, far)
-	var along := (dx * _view_dir.x + dz * _view_dir.y) / far
-	var s := reach / far
-	var c := sqrt(1.0 - s * s)
-	if along >= _core_cos * c - _core_sin * s:
-		return base
-	return base + (_side if along >= _band_cos * c - _band_sin * s else _outside)
+	return cfg
 
 
 ## Starts workers on the queue, up to IN_FLIGHT at once.
@@ -351,7 +271,6 @@ func _step(delta: float) -> void:
 		var t0 := Time.get_ticks_usec()
 		_plan()
 		var took := Time.get_ticks_usec() - t0
-		worst_plan_usec = maxi(worst_plan_usec, took)
 		plans += 1
 		plan_usec += took
 	var freed := 0
@@ -366,17 +285,7 @@ func _step(delta: float) -> void:
 func _replan_wanted() -> bool:
 	if _sim.kaiju_pos.distance_to(_planned_at) >= PLAN_MOVE:
 		return true
-	var look := _look()
-	if look.is_empty() != not _view_on:
-		return true
-	if look.is_empty():
-		return false
-	var at: Vector2 = look[0]
-	var dir: Vector2 = look[1]
-	return (
-		at.distance_to(_planned_view_at) >= PLAN_MOVE
-		or rad_to_deg(dir.angle_to(_planned_dir)) >= PLAN_TURN
-	)
+	return _rank.moved(_look(), PLAN_MOVE, PLAN_TURN)
 
 
 ## The views the workers finished since the last call, as [index, view] pairs.
@@ -457,12 +366,7 @@ func _place(n: int, built: BuildingView) -> void:
 	_mutex.unlock()
 	_views[n] = built
 	add_child(built)
-	_hide_stand_in(n)
-
-
-func _hide_stand_in(n: int) -> void:
-	if _stand_ins != null:
-		_stand_ins.set_instance_transform(n, Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO))
+	_stand_ins.hide(n)
 
 
 ## An untouched, far building goes back to its box and its meshes are dropped.
@@ -475,34 +379,7 @@ func _free_view(n: int) -> void:
 	remove_child(gone)
 	BuildingView.forget(gone)
 	gone.free()
-	_stand_ins.set_instance_transform(n, _stand_in_at(n))
-
-
-func _stand_in_at(n: int) -> Transform3D:
-	var b := _sim.buildings[n]
-	return Transform3D(Basis.from_scale(Vector3(b.w, b.height, b.d)), Vector3(b.x, b.height * 0.5, b.z))
-
-
-## One facade box per building (the skyline's stand-in look), shown while it is not meshed.
-func _build_stand_ins() -> void:
-	_stand_ins = MultiMesh.new()
-	_stand_ins.transform_format = MultiMesh.TRANSFORM_3D
-	_stand_ins.use_colors = true
-	_stand_ins.use_custom_data = true
-	var mesh := BoxMesh.new()
-	mesh.material = CitySkyline.facade_material(0.0)
-	_stand_ins.mesh = mesh
-	_stand_ins.instance_count = _sim.buildings.size()
-	for n: int in _sim.buildings.size():
-		var b := _sim.buildings[n]
-		_stand_ins.set_instance_transform(n, _stand_in_at(n))
-		_stand_ins.set_instance_color(n, _colors[n])
-		var tall := 1.0 if b.height > 18 else 0.0
-		var custom := Color(b.style % 4, 0.35, tall, fposmod(b.x * 0.37 + b.z * 0.11, 1.0))
-		_stand_ins.set_instance_custom_data(n, custom)
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = _stand_ins
-	add_child(mmi)
+	_stand_ins.show(n)
 
 
 func _exit_tree() -> void:
