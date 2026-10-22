@@ -57,7 +57,16 @@ Not built: killable parachutists (they only drift down).
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
 
 ## Running jobs
-none
+Full local suite on claude/heli-deaths (started 01:51, log scratchpad full.log, watcher b7zcqsi7g). When green:
+push claude/heli-deaths, open the PR as ready with body scratchpad pr_heli.md (sim-review packet inside), tell the
+lead (proof notes vfx-lead/heli_deaths_proof.png). If the session restarts, rerun `tools/run_tests.sh` first.
+
+## Item 4 (collapse defect, BuildingView.lift_piece, scenes/building_view.gd:229) — started
+Defect (fire-spread clip v5 QC): (d) a tilted falling block shows a see-through window lattice; (e) a neighbour's
+walls vanish into floor plates. Theory (from code, not yet seen in a capture): BuildingMesher bakes only outward
+faces (building_baked.gdshader), so a lifted piece and the stump have no cut faces; fix = cap quads on the
+piece/stump faces that border removed cells (carved slab colour 8a8780, D-101). tools/capture/capture_topple_faces.gd
+(uncommitted) stills topples; first run (run 3) caught only small topples hidden by the kaiju: frame a tall tower.
 
 ## Rules learnt the hard way
 - A fresh worktree needs `git lfs pull`, the carve dll copied into native/bin (gitignored; newest build from a
