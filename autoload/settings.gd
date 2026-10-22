@@ -19,6 +19,10 @@ func _ready() -> void:
 	_button_action("dash", [KEY_SHIFT], JOY_BUTTON_B)
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
+	# A confirms and B backs out in every menu (the Controls list says so): the engine's own menu
+	# actions carry no pad A or B here (checked 2026-10-23: ui_accept and ui_cancel were keys only).
+	_menu_pad("ui_accept", JOY_BUTTON_A)
+	_menu_pad("ui_cancel", JOY_BUTTON_B)
 	# The shipped game starts fullscreen (D-027). Editor-binary runs (agent captures) stay windowed:
 	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
 	var presets: Dictionary = Content.section("display")["graphics"]
@@ -54,6 +58,13 @@ func _button_action(action: String, keys: Array[Key], button: JoyButton) -> void
 	if button != JOY_BUTTON_INVALID:
 		var press := InputEventJoypadButton.new()
 		press.button_index = button
+		InputMap.action_add_event(action, press)
+
+
+func _menu_pad(action: String, button: JoyButton) -> void:
+	var press := InputEventJoypadButton.new()
+	press.button_index = button
+	if not InputMap.action_has_event(action, press):
 		InputMap.action_add_event(action, press)
 
 
