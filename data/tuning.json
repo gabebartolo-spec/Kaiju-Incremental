@@ -71,6 +71,30 @@
 		"end_title": "DEMO COMPLETE",
 		"end_line": "You become the Croc Titan"
 	},
+	"pause": {
+		"_doc": "The pause menu's Are-you-sure before End Rampage (D-155).",
+		"end_title": "ARE YOU SURE?",
+		"end_line": "The rampage ends now and you keep your biomass.",
+		"end_keep": "KEEP PLAYING",
+		"end_yes": "YES, END IT"
+	},
+	"feedback": {
+		"_doc": "The pause menu's bug / feedback report (D-145): a folder under user://<folder>/<timestamp>/ with report.txt and screenshot.png, never a network call.",
+		"folder": "reports",
+		"game": "Kaiju Evolution",
+		"label": "Report a bug / feedback",
+		"title": "REPORT A BUG",
+		"prompt": "What happened? Anything you tell us helps.",
+		"send": "SEND",
+		"cancel": "CANCEL",
+		"saved": "Saved to {path}",
+		"failed": "Could not save the report ({error}).",
+		"open_folder": "OPEN FOLDER",
+		"done": "DONE",
+		"box_lines": 7,
+		"box_width": 900,
+		"max_chars": 4000
+	},
 	"kaiju": {
 		"hp": 100,
 		"speed": 5.0,
@@ -600,6 +624,12 @@
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
 		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "bolt_stroke": 0.25}
+	},
+	"post_fx": {
+		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
+		"vignette": {"color": "#05070a", "strength": 0.42, "inner": 0.5, "outer": 1.0},
+		"low_health": {"below": 0.25, "full_at": 0.1, "color": "#c0100c", "alpha": 0.28, "depth_px": 110.0, "pulse_hz": 1.3, "pulse_sharp": 2.0, "fade_per_s": 2.5},
+		"fringe": {"seconds": 0.2, "attack": 0.2, "peak_px": 6.0, "cooldown_s": 4.0, "stomp_min_radius": 4.4, "collapse_min_length": 28.0, "hit_hp_fraction": 0.12}
 	},
 	"topple_fx": {
 		"shudder_s": 0.4,
