@@ -107,6 +107,10 @@ func _start_rampage() -> void:
 	var time_id := TimeOfDay.pick(runs, str(_save.get("last_time", "")), PlayerSettings.time_of_day)
 	Content.set_time(time_id)
 	_save["last_time"] = time_id
+	# The weather (D-155) the same way: seeded, never the last run's, unless the options fix one.
+	var weather_id := Weather.pick(runs, str(_save.get("last_weather", "")), PlayerSettings.weather)
+	Content.set_weather(weather_id)
+	_save["last_weather"] = weather_id
 	SaveSystem.save_game(_save)
 	rampage.finished.connect(_on_rampage_finished)
 	_swap(rampage)
