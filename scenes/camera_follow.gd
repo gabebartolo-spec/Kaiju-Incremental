@@ -72,11 +72,9 @@ func look_at(body_scale: float) -> Vector3:
 
 
 ## Where the camera looks this frame for `kaiju` (body of `body_scale`, camera `fov` degrees):
-## look_at, tilted up by HeadFrame when the drawn head would ride too high (`shake_pitch`: the
-## camera shake's pitch this frame, radians).
-func aim(
-	kaiju: Node3D, body_scale: float, fov: float, shake_pitch: float, delta: float
-) -> Vector3:
+## look_at, tilted up by HeadFrame when the drawn head would ride too high (`view`: the camera's
+## fov in degrees and the camera shake's pitch this frame in radians).
+func aim(kaiju: Node3D, body_scale: float, view: Vector2, delta: float) -> Vector3:
 	if head == null:
 		head = HeadFrame.new(kaiju)
-	return head.aim(eye(), look_at(body_scale), fov, shake_pitch, delta)
+	return head.aim(eye(), look_at(body_scale), view, delta)

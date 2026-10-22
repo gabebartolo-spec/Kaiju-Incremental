@@ -53,21 +53,21 @@ func points() -> PackedVector3Array:
 	return out
 
 
-## Where a camera at `eye` looking at `look` with vertical `fov` (degrees) should look instead,
-## so the highest drawn point sits at least safe_top below the frame's top. `shake_pitch` (radians,
-## up positive) is the camera shake's pitch, applied after the aim: it counts, so a shake nodding
-## the view down does not push the head into the margin.
-func aim(eye: Vector3, look: Vector3, fov: float, shake_pitch: float, delta: float) -> Vector3:
+## Where a camera at `eye` looking at `look` should look instead, so the highest drawn point sits
+## at least safe_top below the frame's top. `view` is (vertical fov in degrees, the camera shake's
+## pitch in radians, up positive): the shake is applied after the aim, so it counts, and a shake
+## nodding the view down does not push the head into the margin.
+func aim(eye: Vector3, look: Vector3, view: Vector2, delta: float) -> Vector3:
 	var forward := (look - eye).normalized()
 	var right := forward.cross(Vector3.UP).normalized()
 	var up := right.cross(forward)
-	var limit := atan((1.0 - 2.0 * Num.f(_cfg["safe_top"])) * tan(deg_to_rad(fov) * 0.5))
+	var limit := atan((1.0 - 2.0 * Num.f(_cfg["safe_top"])) * tan(deg_to_rad(view.x) * 0.5))
 	var need := 0.0
 	for p: Vector3 in points():
 		var d := p - eye
 		var ahead := d.dot(forward)
 		if ahead > 0.0:
-			need = maxf(need, atan2(d.dot(up), ahead) - limit - shake_pitch)
+			need = maxf(need, atan2(d.dot(up), ahead) - limit - view.y)
 	var rate := Num.f(_cfg["head_rise"] if need > tilt else _cfg["head_settle"])
 	tilt = lerpf(tilt, need, minf(1.0, delta * rate))
 	return eye + forward.rotated(right, tilt) * eye.distance_to(look)

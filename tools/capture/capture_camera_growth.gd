@@ -280,7 +280,10 @@ func _check_frame(height: int) -> void:
 		var heads := PackedVector3Array([skull, head_rig.bone("head1").global_position])
 		var solid_head := _blocked(eye, heads[0], opaque) or _blocked(eye, heads[1], opaque)
 		for piece: Node3D in city.falling_pieces():
-			if FallFade.covers(piece, eye, heads) and (falls == null or falls.opacity(piece) >= 1.0):
+			if (
+				FallFade.covers(piece, eye, heads)
+				and (falls == null or falls.opacity(piece) >= 1.0)
+			):
 				solid_head = true
 		_head_hidden += 1 if solid_head else 0  # the drawn head behind something drawn solid
 
