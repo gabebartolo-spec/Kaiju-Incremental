@@ -119,7 +119,12 @@ func _car_palette() -> Dictionary:
 func _bake(v: VoxelBuilder, palette: Dictionary) -> ArrayMesh:
 	# Car cells span z -3..2: shift half a cell so the car's middle sits on its position.
 	var voxel := CityDecor.PROP_VOXEL
-	return v.bake(palette, voxel, Vector3(0, 0, voxel * 0.5), LIGHT_GLOW)
+	var shift := Vector3(0, 0, voxel * 0.5)
+	if Look.one_look:  # ONE LOOK mock: the same car at the city's grain
+		v = OneLook.refine(v)
+		voxel *= 0.5
+		shift += Vector3(-voxel * 0.5, 0, -voxel * 0.5)  # the new cells straddle the old centre
+	return v.bake(palette, voxel, shift, LIGHT_GLOW)
 
 
 ## The drivable network inside the playable city: alleys carry no cars.

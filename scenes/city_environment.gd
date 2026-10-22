@@ -28,9 +28,19 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	env.fog_light_color = Look.color("fog_color")
 	# A grown city (D-039) thins the fog with its size, so its far edge still reads as skyline.
 	env.fog_density = Look.value("fog_density") * Num.f(sim.city.get("fog_scale", 1.0))
+	if Look.one_look:  # ONE LOOK mock (research cinematic #1): haze that melts the skyline into the sky
+		env.fog_aerial_perspective = 0.6
+		env.fog_sun_scatter = 0.25
+		env.fog_sky_affect = 0.55
+		env.fog_height = 3.0
+		env.fog_height_density = 0.03
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
 	env.glow_hdr_threshold = Look.value("glow_threshold")
+	if Look.one_look:  # fire reads denser when its cubes bloom (settings only; fire.gd is not touched)
+		env.glow_hdr_threshold = 0.7
+		env.glow_bloom = 0.15
+		env.glow_intensity = Look.value("glow") * 1.25
 	# SSAO, SSIL (screen-space bounce light; SDFGI cost ~a tenth of the frame) and the sun's
 	# shadow reach, splits and softness come from the graphics preset (GraphicsPresets).
 	env.adjustment_enabled = true

@@ -29,13 +29,15 @@ var stumps: Array[Vector3] = []  # trees crushed since the owner last drained th
 ## Debris to throw since the owner last drained this: [position, colour, away] each.
 var debris: Array[Array] = []
 var _rng := Seeds.make("tree_burst")  # where in its crown each leaf starts, and its spread
+var _up := 1  # cells per old cell along an axis (ONE LOOK mock: 2)
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
 var _mmi: MultiMeshInstance3D
 
 
 func _init(p_voxel: float) -> void:
-	voxel = p_voxel
+	voxel = p_voxel * (0.5 if Look.one_look else 1.0)  # ONE LOOK mock: props at the city's grain
+	_up = 2 if Look.one_look else 1
 
 
 ## Adds a prop: `shape` fills a VoxelBuilder in prop-local cells; `at` is its world base.
@@ -44,6 +46,8 @@ func _init(p_voxel: float) -> void:
 func add(at: Vector3, shape: Callable, fells := false) -> void:
 	var local := VoxelBuilder.new()
 	shape.call(local)
+	if Look.one_look:
+		local = OneLook.refine(local)  # rebuilt at twice the cells, corners rounded
 	var offset := Vector3i((at / voxel).round())
 	offset.y = 0
 	var before := vox.cells.size()
@@ -216,13 +220,13 @@ func _burst(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
 	var thrown := 0
 	var gone := Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO)
 	for k: int in ids.size():
-		if heights[k] < STUMP:  # the cut top shows fresh wood; the stump's sides keep their bark
-			if heights[k] == STUMP - 1:
+		if heights[k] < STUMP * _up:  # the cut top shows fresh wood; the stump's sides keep their bark
+			if heights[k] == STUMP * _up - 1:
 				mm.set_instance_color(ids[k], stump_color)
 			continue
 		mm.set_instance_transform(ids[k], gone)
 		var bark := keys[k] == "bark"
-		if k % (BARK_EVERY if bark else LEAF_EVERY) == 0:
+		if k % ((BARK_EVERY if bark else LEAF_EVERY) * _up * _up * _up) == 0:
 			var from := origins[k]
 			if bark:  # scattered round the trunk, so the bark bursts instead of rising as a stack
 				var turn := float(k) * 2.39996  # golden angle: evenly spread, the same every run

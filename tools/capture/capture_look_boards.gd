@@ -31,6 +31,7 @@ var _face_steps := 0
 ## and hide in dust), so the fire can be compared: "fire placed by the capture".
 var _fire := Vector4.ZERO
 var _fire_done := true
+var _dof: CameraAttributesPractical  ## the ONE LOOK mock's far-only blur, locked on the kaiju
 var _scan := false  ## "--scan": print each half second whether any building fades (FallFade too)
 
 
@@ -98,6 +99,8 @@ func _run() -> void:
 		await process_frame
 	print("LOOKB stream complete, buildings=%d, time=%s, tier=%d" % [rampage.sim.buildings.size(), _time, tier])
 	rampage.set_physics_process(true)
+	if Look.one_look:
+		_far_blur(rampage)
 	if _route_mode == "replay":
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(_route_file))
 		if not parsed is Array:
@@ -220,3 +223,24 @@ func _maybe_fire(rampage: Rampage, city: CityView, frames: int) -> void:
 	var at := Vector3(_fire.x, 0.0, _fire.y)
 	city.fire(at, _fire.w)
 	print("LOOKB fire placed at %s size %.2f" % [at, _fire.w])
+
+
+## Research cinematic #5: blur only what is far, the focus locked to the kaiju's depth every frame
+## (the camera-to-kaiju depth along the view), never a band: nothing nearer than 2.2 x his depth blurs.
+func _far_blur(rampage: Rampage) -> void:
+	var cam: Camera3D = rampage.get("_camera")
+	_dof = CameraAttributesPractical.new()
+	_dof.dof_blur_far_enabled = true
+	_dof.dof_blur_amount = 0.06
+	cam.attributes = _dof
+	RenderingServer.camera_attributes_set_dof_blur_bokeh_shape(RenderingServer.DOF_BOKEH_BOX)
+	RenderingServer.camera_attributes_set_dof_blur_quality(RenderingServer.DOF_BLUR_QUALITY_LOW, false)
+	process_frame.connect(_follow_focus.bind(cam, rampage))
+
+
+func _follow_focus(cam: Camera3D, rampage: Rampage) -> void:
+	var feet := Vector3(rampage.sim.kaiju_pos.x, rampage.sim.stand_y, rampage.sim.kaiju_pos.y)
+	var depth := (feet - cam.global_position).dot(-cam.global_transform.basis.z)
+	if depth > 1.0:
+		_dof.dof_blur_far_distance = depth * 2.2
+		_dof.dof_blur_far_transition = depth * 1.5

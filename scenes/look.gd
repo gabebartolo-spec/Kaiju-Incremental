@@ -4,6 +4,9 @@ extends RefCounted
 ## material, per-voxel colour noise. One place, so a look change never touches scene code.
 
 const VOXEL_SHADER := preload("res://scenes/voxel.gdshader")
+## Look-boards mock (capture-only branch, not for merge): "--one-look" brings props, ground and haze
+## into the city's block size (OneLook). Off in the game.
+static var one_look := "--one-look" in OS.get_cmdline_user_args()
 
 
 static func value(key: String) -> float:

@@ -238,6 +238,10 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mat.vertex_color_is_srgb = true
 	mat.roughness = 1.0
 	box.material = mat
+	if Look.one_look:  # ONE LOOK mock: block-grain speckle on every road, pavement and lawn
+		var shader_mat := ShaderMaterial.new()
+		shader_mat.shader = preload("res://scenes/one_look_ground.gdshader")
+		box.material = shader_mat
 	mm.mesh = box
 	mm.instance_count = _slabs.size()
 	for i: int in _slabs.size():
