@@ -19,14 +19,14 @@ const VOXEL := preload("res://scenes/blast_voxel.gdshader")
 ## about 2x, low green: AgX greys out brighter highlights) held for most of the life
 ## (~0.7 s), then the rim and smoke.
 const FIREBALL: Array[Color] = [
-	Color(2.2, 1.5, 0.4),
-	Color(2.0, 0.34, 0.0),
+	Color(2.2, 1.1, 0.25),
+	Color(2.0, 0.45, 0.02),
 	Color(1.9, 0.32, 0.0),
 	Color(1.0, 0.2, 0.02),
 	Color(0.55, 0.14, 0.05),
 	Color(0.2, 0.17, 0.15),
 ]
-const FIREBALL_AT: Array[float] = [0.0, 0.05, 0.45, 0.65, 0.82, 1.0]
+const FIREBALL_AT: Array[float] = [0.0, 0.04, 0.3, 0.5, 0.75, 1.0]
 const FIREBALL_SHADES: Array[Color] = [
 	Color(1, 1, 1), Color(0.75, 0.7, 0.65), Color(0.45, 0.4, 0.38)
 ]
@@ -37,21 +37,22 @@ const FLASH: Array[Color] = [Color(2.2, 2.0, 1.25, 1.0), Color(2.0, 1.2, 0.35, 1
 const SMOKE: Array[Color] = [Color(0.12, 0.11, 0.1), Color(0.3, 0.29, 0.28)]
 
 
-## Opaque, lit cubes thrown up and out of the site's box (at least fireball.spread_scale blast
-## radii wide), cooling from white-hot to smoke as they slow and shrink; damped so none climbs past
-## fireball.top_scale times the site's height (a cube at speed v stops after v^2 / 2 damping).
+## Opaque, lit cubes thrown up and out of the site's own box (so the ball grows from the site, it
+## never pops in wide), cooling from white-hot to smoke as they slow and shrink; damped to stop
+## fireball.reach_scale x (the rise to top_scale site heights) away (a cube at speed v stops after
+## v^2 / 2 damping).
 static func fireball(
 	host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: Dictionary
 ) -> void:
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	var wide := radius * Num.f(cfg["spread_scale"])
-	mat.emission_box_extents = Vector3(maxf(half.x, wide), half.y, maxf(half.z, wide))
+	mat.emission_box_extents = half  # out of the site's own box: it spreads, never pops in wide
 	mat.direction = Vector3.UP
-	mat.spread = 70.0
+	mat.spread = 80.0
 	var speed := radius * Num.f(cfg["speed_scale"])
 	var size := radius * Num.f(cfg["size"])
 	var rise := maxf(0.4, half.y * 2.0 * Num.f(cfg["top_scale"]) - half.y * 2.0)
+	rise *= Num.f(cfg["reach_scale"])
 	mat.initial_velocity_min = speed * 0.5
 	mat.initial_velocity_max = speed
 	mat.gravity = Vector3(0, Num.f(cfg["lift"]), 0)  # hot air: a little rise as it burns out
