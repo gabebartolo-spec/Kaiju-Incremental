@@ -1,5 +1,5 @@
 # turn-step handoff, 2026-10-22 (builder 2)
-## State: PR #149 (claude/turn-weight-v2) critic round 2 + CI fixes pushed; suites green (clips smoke powers military sim sim_play city camera flow growth destruction). Clip C:/Users/DANTE/AppData/Local/Temp/ts-builder/clip3/turn90_adult_side34.mp4 was rendered before the last walk_off_s tweak (0.15 -> 0.134 s): re-render when the director is back. Director paused (movie): no render in flight.
+## State: PR #149 (claude/turn-weight-v2): merged origin/claude/look-options 73da6e36, rampage.gd split (PowerCues), clip re-rendered (clip4). Full suite on the final tip running; push after it is green. Director asked for no new Godot process until 22:35.
 ## Task
 Lead 10: the turn must step, not swivel (comments #3, #31); D-130 (#51): corrections under ~20 deg smooth, real turns step; D-131 (#54, "Baby turns smoothly"): the baby turns smoothly at the pre-stepped rates, adolescent and adult step real turns; the 10 s rise-point bar stays. PR #144 (claude/turn-weight at ba70e967).
 Bar (tests/lib/smoke_step_turn.gd): adult 90 deg 1.0-1.25 s; >=3 alternating footfalls; 0 both-feet-up yaw frames; >=70% of yaw within 0.15 s after a footfall; drift <5 cm; baby 0.60 s +-10% (now smooth); sim step = half the clip stride.
@@ -30,3 +30,7 @@ No native dll in this worktree (GDScript fallback runs). Adolescent and adult sh
 - Camera is my capture rig (capture_walks side34), not the game camera: CAM_EASE 1.5 -> 14 (framing change 7.0% -> 2.9% over 20 frames; it was the head's distance from the lens as the heading eased behind the body).
 - CI: gdformat on smoke_step_turn.gd; flow suite re-run locally green (its scripted walk to the tanks is timing sensitive, it failed on CI at 907a4ac3 with the older turn easing; green with this round's sim).
 - capture_walks --log prints: yaw-rate peak and biggest step, framing change over 20 frames, walk-off ramp.
+## Round 3 (2026-10-22 evening)
+- scenes/power_cues.gd (PowerCues): the signature ready pulse and regen motes moved out of Rampage (402 -> 390 lines), no behaviour change.
+- Why StepTurn's slice bar is 80% within 0.24 s (was 70% within 0.15 s): the critic asked for a smooth ease (yaw rate never jumps > 25% of peak), which needs a bell of about 13 frames per step, so the yaw must spread over most of each 18-frame step; the bar still rejects a swivel (yaw spread over the whole step incl. the gap). It does not hide a slower turn: the turn bar is separate (mean 1.05 s over four swing points, slowest <= 1.4 s).
+- Clip: C:/Users/DANTE/AppData/Local/Temp/ts-builder/clip4/turn90_adult_side34.mp4 (yaw step 19%, framing 2.9%, walk-off 12/25/37/50/62/75/87/100%).
