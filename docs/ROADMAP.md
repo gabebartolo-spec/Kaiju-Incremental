@@ -71,8 +71,8 @@ worktree and branch cleanup. Gate: build 3.
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
 (labelled captures of the same street) · b2-19 voxel count down / today / up, same shot · b2-7 camera angle and
 distance (done: D-105 framing C, low and cinematic; open: how it grows per stage, his pick of A today plus
-look-ahead, B grows on screen to about 34%, C low hero at adult (pitch to about 15 deg), each a 2x2 clip of stages 1
-and 4 (R 19, framings)) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
+look-ahead, B grows on screen to about 34%, C low hero at adult (pitch to about 15 deg), each a 2x2 clip of the young and
+adult cities (R 19, framings; three steps, D-135)) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
 morning, noon, dusk and night, he picks one (director 2026-10-20) · heli-cam A/B (parked; folded into the camera choice). Gate: his four picks
 recorded in DECISIONS.
 Research inputs to these boards: one shader candidate is Godot's own toon shading + a next_pass outline (R 7.1); every
@@ -153,10 +153,11 @@ How (research): an upgrade affordable after every rampage and the first purchase
 (rate about 1.07-1.15) in data, a seeded sim test over the first hour (R 1.1) · rampage timer starts short and grows
 through upgrades to a ceiling; start value set by his playtest (R 1.2) · about 1 node in 4 changes what the player
 does or sees (a verb, prey, district, the next stage); reveal only the next ring (R 1.4) · the city scales with the
-kaiju so the late game never goes AFK (taller blocks, more tanks and helicopters; prestige = harder enemies, bigger
-rewards), the genre's top complaint (R 1.3) · target 3-5 h to the ending.
+kaiju so the late game never goes AFK (taller blocks, more tanks and helicopters; no prestige: "it isnt relevant to
+our game", D-136), the genre's top complaint (R 1.3) · target 3-5 h to the ending.
 How (research 16, a beautiful tree whose paths set the pace, director 2026-10-21): today the tree thins as the
-kaiju grows (11 / 6 / 5 / 1 nodes per stage, 87 levels, gone in about 0.9 h); write 50-65 nodes per species as rings
+kaiju grows (11 / 6 / 5 / 1 nodes per stage, 87 levels, gone in about 0.9 h; the fourth step is cut, D-135: rings
+re-split over three steps); write 50-65 nodes per species as rings
 that grow outward (about 14 / 16 / 18 / 10), each node a `kind` (stat, verb, stage), a cheap 3-4 node burst just past
 each evolution and a dearer climb before the next; the pacing bot asserts 1-4 buys a visit, at most 5 runs between
 verb or stage nodes, evolutions within 20% of their target times (b2-28 and p1-8 are one sum) (R 16.1) · buying is an
@@ -176,8 +177,8 @@ first (spread rules that read and stay cheap, how it feeds the biomass curve), t
 How (research 26): first delete the view's random fire on 18% of collapses (city_view.gd, presentation RNG, burns rubble:
 breaks determinism and #111) (R 26.1) · a heat meter per building filled by neighbours (distance, wind, material), seeded
 ignition, windows glow 1-3 s first so a firebreak is possible; intact -> heating -> burning -> rubble (R 26.2) · biomass
-only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (R 26.3) · nodes Kindle,
-Fan the flames, Tailwind, Ember storm, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
+only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (his yes, D-136) (R 26.3) · the five
+headline-named nodes of D-126, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
 visual tiers (R 26.5). His questions: a spark source for non-breath species; wind fixed/rotatable or drifting.
 Fire crews (director 2026-10-22, comment #50: "fire fighting crews including helicopters and firetrucks will attempt to fight
 the fires, bonus biomass awarded for killing these humans"): fire trucks and helicopters head for burning buildings and
@@ -213,7 +214,8 @@ in a settings menu that matches Phase F's UI. How (research 18): shadow splits, 
 to go below High), SSAO, SSIL and glow per preset in the live applier, city_view.gd reading them instead of its
 hard-coded values (R 18.2) · debris, fire, carve-physics, crowd and civilian caps and particle amount per preset,
 applied at the next rampage start (R 18.3) · light pool 8/12/16/24/32 by preset (R 18.4) · default chosen by renderer
-and GPU type, then a 4 s frame-time sample that only ever steps down, said once in settings (R 18.5) · Potato =
+and GPU type; quality NEVER drops on its own: "We have to optimise our game well, and graphics settings potato-max
+allow flexibility" (D-136) (R 18.5) · Potato =
 gl_compatibility behind a restart, last (R 18.6) · the shader baker on for exports, presets applied only from menus
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
@@ -240,7 +242,7 @@ in Blender, five views per run (R 4.1) · organic stages from TripoSG image-to-3
 AMASS motion model (R 7, 3.6).
 City (research): one seeded density field per block drives height, lot size and tower chance, rising each stage
 (R 6.2) · district labels by simple rules (downtown, residential, industrial, docks) (R 6.3) · docks and cranes where
-the kaiju rises (R 6.4) · one headline landmark per stage placed by a data condition (R 6.5) · podium, shaft,
+the kaiju rises (R 6.4) · landmarks per D-133 (3 per stage from a ~12 pool, by seed) (R 6.5) · podium, shaft,
 setback and crown silhouettes by district (R 6.6).
 Species (research): a silhouette gate per stage (filled black at play zoom, told apart by shape) (R 2.6) · one
 signature verb per species tied to carving, cephalopod first: GRAB and DRAG (R 2.7) · cephalopod arms reach as a
@@ -257,8 +259,8 @@ whistle, boom (CC0 only), 4K capture through the screen critic (R 24.3) · an ed
 off-screen mortar fires (R 24.4) · a tower dropped onto a mortar nest kills it, combo bounty (R 24.5) · tree hooks
 (bounty, topple radius, falling debris kills, shell-shrug) for his pick (R 24.6). Not now: mid-run spawns, lead aim.
 Mecha boss finale (research 23): one boss rampage in the player's own city after the last evolution, army stood
-down, beating it ends the game (R 23.1, his question) · sim/mecha.gd + data/boss.json, a greybox body, three
-attacks (charge, salvo, stamp) from a shuffle bag, phases with a minimum time, sim review (R 23.2) · telegraphs
+down, beating it ends the game (R 23.1, his question) · sim/mecha.gd + data/boss.json, a greybox body, attacks
+from a shuffle bag (PROPOSAL, his pick when the finale is planned: charge, salvo, stamp), phases with a minimum time, sim review (R 23.2) · telegraphs
 always visual, slow wind-ups, no feints, motion critic (R 23.3) · the city as the weapon: undercut a tower onto it,
 a charge that sticks in a building, thrown tanks after R 22's Flung (R 23.4) · two-target camera, a thin boss bar
 as the one HUD exception (his yes) (R 23.5) · it falls like the biggest tower, quiet, then results and credits
@@ -295,3 +297,16 @@ spouting in the bay, fire crews and ambulances (fire crews: comment #50), pet do
 train stations with tracks and running trains, small boats on the water. First: sky and sea life (clouds and weather, birds, small boats, the whale); weather looks only; the whale is pure
 spectacle (can't be touched); birds scatter on roars and falling towers; dogs always escape; trains derail and smash;
 banks, hotels and clubs give small bonuses (comments #64-71).
+Light narrative (comment #76, director 2026-10-22): "light narrative to tie the carnage together": the kaiju are
+created in laboratories by a shadowy international organisation; you are the chief architect of the Kaiju Plan; your
+mission: bring the world's cities to their knees, create chaos, eliminate military threats, destroy cultural icons
+(the landmarks, D-133); the military copy your designs and create the mecha kaiju to fight your creation (the mecha
+boss finale above, R 23). Asked: short mission briefings (a 2-3 line dossier card from the organisation before each city and after each evolve); optional bonus goals (each city lists 1-3 targets such as an icon or a base; hitting them pays a bonus); built after the demo, with the mecha finale.
+Your adversaries (comment #78, director 2026-10-22): the Anti Kaiju Taskforce, "equipped with special anti-kaiju
+weaponry including: lazer railguns, frost grenades"; reference: Attack on Titan; "Special Agents fly around the city
+with jetpacks and grappling hooks". Asked (D-137): arrives from the adolescent city as the elite threat above police and tanks, escalating into the adult city; agents grapple onto BUILDINGS only (swing between towers, shoot from rooftops; you swat them or topple their perch); frost grenades slow the kaiju for a few seconds (ice on the legs); railguns charge with a visible glow, then hit hard (dodge it or knock the gunner over); built BEFORE the Itch demo.
+Textured surfaces (comment #80, director 2026-10-22): "audit for flat, or untextured objects/scenery/buildings; all
+surfaces must be textured and visually beautiful". Asked: textured = surface detail in the voxel look (concrete stains
+and panel lines, brick courses, window frames, road wear and markings, grass and soil tufts, roof gravel and vents;
+nothing a single flat colour); audit now (every object type captured, flat ones listed with images), fixes before the
+Itch demo (D-132 "polished visuals").

@@ -6,7 +6,7 @@ extends RefCounted
 ## very same sets in the very same order as the old scan (copied below as the reference), frame by
 ## frame, with the fade's opacities equal too; each prints its old and new cost per frame.
 
-const Growth := preload("res://tools/capture/capture_growth.gd")
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const DT := 1.0 / 60.0
 const FRAMES := 600
 ## The kaiju walks the city's length at this speed; the breath swings the camera while it goes.
@@ -93,7 +93,7 @@ static func fade(check: Callable) -> void:
 
 ## Stage 4's city (seed 0) with its kaiju.
 static func _stage4() -> RampageSim:
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[3], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[3], "reptilian")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), Content.species_def("reptilian"), tree
 	)

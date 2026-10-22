@@ -1,7 +1,7 @@
-// KaijuSettle.cells (b2-3 part 4): BuildingCells' generation (sim/building_cells.gd, with
-// GlassFrame's columns), which costs a big building 100-170 ms in GDScript. Every face, slab, roof
-// and sign mark below is the GDScript's, in the same order, so the last write wins the same way;
-// the layout rolls hash the same Vector4i through the engine's Variant hash, and the water tank's
+// KaijuSettle.cells (b2-3 part 4): BuildingLayout's generation (sim/building_layout.gd, packed by
+// BuildingCells, with GlassFrame's columns), which costs a big building 100-170 ms in GDScript.
+// Every face, slab, roof and sign mark below is the GDScript's, in the same order, so the last
+// write wins the same way; the layout rolls hash the same Vector4i through the engine's Variant hash, and the water tank's
 // ellipsoid is tested in real_t as the GDScript's Vector3 is. The GDScript stays the reference:
 // tests/run_cells_tests.gd (_check_native_cells) holds the two to the same bytes. Marks go into a
 // flat grid with a margin round the shell; the result is cropped to the box BuildingCells._pack
@@ -20,7 +20,7 @@ using namespace godot;
 
 namespace {
 
-// Material keys, in BuildingCells.NATIVE_KEYS order (the ids argument).
+// Material keys, in BuildingCellsNative.KEYS order (the ids argument).
 enum Key {
 	K_NONE = -1,
 	WALL,
@@ -99,7 +99,7 @@ struct Gen {
 				for (int z = std::min(az, cz); z <= std::max(az, cz); z++) mark(x, y, z, key);
 	}
 
-	// BuildingCells._blob, in real_t like the GDScript's Vector3.
+	// BuildingLayout._blob, in real_t like the GDScript's Vector3.
 	void blob(const Vector3 &centre, const Vector3 &radii, int key) {
 		const Vector3 a = (centre - radii).floor();
 		const Vector3 b = (centre + radii).ceil();
@@ -118,7 +118,7 @@ struct Gen {
 		return std::llabs(hv) % mod;
 	}
 
-	// BuildingCells._at.
+	// BuildingLayout._at.
 	void at(int side, int p, int y, int layer, int &x, int &z) const {
 		if (SIDE_X[side] < 0) {
 			x = layer;
