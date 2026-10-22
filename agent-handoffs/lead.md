@@ -61,8 +61,8 @@
   stat_text); remove BRANCH/CAPSTONE labels from the tree (copy rule). Headlines: cut "AIR FORCE GROUNDS ALL HELICOPTERS" (keep the other 8).
 - Narrative (#76) after the demo: briefing cards before each city/after each evolve + optional bonus goals per city.
 - Drift audit table: scratchpad drift_audit.md (copy before this scratchpad goes).
-- Icons: flat SVG set on claude/ui-art 1cbabb64 (ring lines for ui-redesign in its handoff); critic on board2, then
-  him; then apply on claude/ui-redesign and open its PR.
+- Icons SETTLED (#96): keep today's icons; ring 19.25, band 3.0, OUTLINE 1.0, icons fill the disc, mipmaps on (ui builder,
+  claude/ui-redesign). claude/ui-art (game-icons.net set) is PARKED, not merged.
 - Fire PR #152: critic FIX sent (collapse is a one-frame swap, roof fire too small: use burn_chunk emitter, clip
   framing, measured timings); last round, lead QCs.
 - Helicopter deaths (#86): mix of mid-air blow-up and smoking spiral crash; the crash smashes what it hits, can light
