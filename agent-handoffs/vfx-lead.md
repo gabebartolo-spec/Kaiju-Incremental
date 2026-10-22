@@ -14,7 +14,8 @@ effects, Taskforce effects, post effects. Rule above all: one look per kind ("co
 
 ## Branch and commit
 Worktree .claude/worktrees/vfx-lead-c37456. claude/vfx-lead-c37456 = PR #154 (look sheet + base fixes).
-claude/heli-deaths (from look-options a85944f2) = item 3, PR when the full suite is green.
+claude/heli-deaths = item 3, synced with look-options at b0b0b1d7 (pushed); the lead's helper opens its PR
+(body scratchpad pr_heli.md, copy in notes vfx-lead/pr_heli.md).
 
 ## What exists
 - docs/VFX_STYLE.md: 10 families (owner files, material, ramp, scale), "Two looks today" table, review checklist.
@@ -52,18 +53,22 @@ Not built: killable parachutists (they only drift down).
 - #154 PASS sent (8a3049d7, r4: self-lit street dust, visible rings, orange sparks, white deflect). Follow-up item
   "dust billows" (mine): every dust effect from Fx.dust puffs (rings = expanding chains of lobed puffs), deflect
   gaussian 60 px; also a stray gold 4-point star on the kaiju in some stills, source unknown.
-- Thunder Beam (claude/thunder-beam, 8c4ab4da pushed; 59100222 local = critic round 2: jagged bolt bowed up over
-  the head, smaller jaw flare, beam lashes up facades, ramped flashes). Builder adb19422 running proof + mp4. Then a
-  fresh motion critic; on SHIP tell the lead (PR) and put the 3 halo stills in interview.md. Base is old: it shows
-  "ATOMIC BREATH" in the HUD; sync before the PR.
-- Croc standing (claude/croc-standing, builder af945700): today idle clip first (notes vfx-lead/idle/), then the
-  standing stomp foot/ring + claw-rake arm fixes.
+- Thunder Beam (claude/thunder-beam 54127e06 pushed; 686ad611 local = r4: round soft flares without rays, strike
+  2x + 12 m ring, beam = jagged channel held on one facade with lashes climbing it). 3 critic rounds FIX so far
+  (reviews file). Builder adb19422 waits for my "go" (engine slot). Rulings: face can't show from the behind camera;
+  pre-fire aim wedge is real UI. On SHIP: tell the lead (PR, sync first: old base shows ATOMIC BREATH), halo stills
+  to interview.md.
+- Croc standing (claude/croc-standing 67c0862f, builder af945700 running suites + --log capture): stomp now lands
+  on a foot (11/11) with ring/cracks; critic r1 FIX minor -> bigger lift, body dip, camera kick, ±10% variation,
+  old-crack fade, rake arc past the silhouette; item 7 = an unexplained 18 px camera jump (being traced). Idle clip
+  attached to the lead's interview question.
+- Voxel boards (claude/look-boards, builder a1faedbb): A boards done (F1 must move to an unfaded moment); B mock
+  then C, notes vfx-lead/look_boards/; critics then interview.md.
 - Heads/skins (claude/heads-skins 9781f0a0, provenance rows only; Tripo 1500/8000): boards
   vfx-lead/heads/heads_board_interview.png (Python own shape, Komodo fits skull, Komodo own shape; Python-fits-skull
   dropped) + skins/skins_board.png, both questions in interview.md. Models in ~/Downloads/kaiju_tripo/heads_*.
-- Explosions r10 (brief scratchpad brief_r9.md): fire.gd only after #160 merges (lead 03:50).
-- #160 title: my SHIP was overturned by a fresh screen critic (crest at the strip, 130 m left tower -> head 1.35x,
-  thin rim). Lead's builder fixing; I review the new stills and MEASURE the D-158 numbers myself.
+- Explosions r10 (brief scratchpad brief_r9.md): #160 merged 06:17, fire.gd free; next free slot.
+- #160 title merged (aad7e485) after my measured round-2 SHIP (crest 95 px clear, head ~1.65x, rim 7 px).
 - D-155 atmosphere looks: mine, after #156; sim side = demo-end local_d3ef25ef.
 
 ## Open findings
@@ -92,9 +97,9 @@ GitHub helper opens PRs. Thunder sound = the lead's.
   billows -> explosions r10 once #160 merges.
 
 ## Running jobs
-Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 03:30, log scratchpad
-touched.log. When green: push claude/heli-deaths, report the sha to the lead (do NOT open the PR: over cap; body
-ready at scratchpad pr_heli.md). Stall watcher over the 3 helpers (re-arm after each wake).
+Builders croc-standing + voxel-boards hold my 2 engine slots; Thunder waits for "go". Stall watcher (scratchpad
+stall_watch_copy.sh, SKIP_PIDS for foreign runs) over the 3 builders' subagents/*.jsonl; lead-board watcher on
+to-vfx-lead.md (re-arm both after each wake).
 
 ## Item 4 (collapse defect, BuildingView.lift_piece): diagnosed, brief scratchpad brief_item4.md
 Lead's v5 frames (fire_clip/v5f f_083-087; my crop scratchpad v5_lattice.png): a toppling piece is an open box.
