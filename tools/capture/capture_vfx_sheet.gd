@@ -21,6 +21,8 @@ const GAP := 200
 const SPOT := Vector3(7.0, 0.0, -7.0)
 ## A fire away from the kaiju and the screen centre, where the smoke shader keeps its column.
 const FAR_SPOT := Vector3(-14.0, 0.0, -22.0)
+## Beside the kaiju and out of the screen centre (the footfall cloud's shot).
+const SIDE_SPOT := Vector3(15.0, 0.0, -7.0)
 ## The sim's tail sweep reach (data/tuning.json tail_reach), in body-scale units.
 const TAIL_REACH := 11.0
 ## The side view for the breath and the ultimate (the game camera looks down their length).
@@ -75,10 +77,17 @@ func _run(run: int) -> void:
 		25,
 		func(p: Vector3) -> void: fx.dust(p, 2.0 * bs, Color(0.8, 0.78, 0.72, 0.5))
 	)
-	await _shot("dust_footfall", 16, func(p: Vector3) -> void: fx.footfall(p, 2.0 * bs, false))
+	# Out to the kaiju's right, clear of the screen centre where the smoke shader keeps only 0.3 of
+	# a puff (D-018): a footfall beside the body is thin by rule, this shows the cloud itself.
+	await _shot(
+		"dust_footfall",
+		6,
+		func(_p: Vector3) -> void: fx.footfall(_feet() + SIDE_SPOT * bs, 2.0 * bs, false),
+		SIDE_SPOT
+	)
 	await _shot("dust_tree_puff", 8, func(p: Vector3) -> void: fx.tree_puff(p, 2.0, 0.45))
 	await _shot("ring_stomp", 8, func(p: Vector3) -> void: fx.shockwave(p, 3.0 * bs))
-	await _shot("ring_tail_sweep", 14, func(p: Vector3) -> void: _tail_sweep(p, TAIL_REACH * bs))
+	await _shot("ring_tail_sweep", 12, func(p: Vector3) -> void: _tail_sweep(p, TAIL_REACH * bs))
 	await _shot("sparks_shell_hit", 10, func(p: Vector3) -> void: fx.sparks(p + Vector3.UP))
 	await _shot(
 		"sparks_deflect",
@@ -192,14 +201,11 @@ func _take_input() -> Dictionary:
 	return _input
 
 
-## The tail sweep's ground effects as PowersView draws them for the sim's event (the ring out to
-## the tail's reach and the dust line behind), centred on `at`; the kaiju's own tail model is left
-## out, since it would sweep across the frame and hide the ring.
+## The tail sweep's ring as PowersView draws it for the sim's event (out to the tail's reach),
+## centred on `at`. The dust line it also throws is family 3 (shot as dust_cloud) and the kaiju's
+## own tail model would sweep across the frame: both are left out so the ring itself is seen.
 func _tail_sweep(at: Vector3, reach: float) -> void:
-	var city := _city()
-	var behind := at - _ahead() * reach * 0.7 + Vector3(0, 0.5, 0)
-	city.fx.shockwave_to(at, reach)
-	city.fx.dust_line(at, behind, _rampage.sim.body_scale() * 2.0)
+	_city().fx.shockwave_to(at, reach)
 
 
 func _debris(city: CityView, p: Vector3) -> void:

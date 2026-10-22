@@ -98,7 +98,7 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
   Cloud ramp `(0.22, 0.24, 0.26, 0.47)` -> transparent; a topple passes the concrete's pale tint; footfalls are
   thinner and capped (`fx.footfall_dust`).
 - A crushed tree's puff (`Fx.tree_puff`) is the same dust in the soil's tint, as dark as the footfall dust (never
-  brighter than the road) and 1.5x the tree's size.
+  brighter than the road at noon, paler at night when the sun is low) and 1.5x the tree's size.
 - **Rule:** every dust puff, cloud or ring of dust uses these calls. Dust is never solid cubes and never a flat sprite.
 
 ### 4. Debris: `scenes/debris_field.gd`, `carve_debris.gd`, `landmark_burst.gd`
@@ -141,7 +141,7 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
 ### 7. Ability rings and ground marks: `scenes/shockwave.gdshader`, `scenes/fx_decals.gd`, `claw_slash.gd`
 - **Rings:** a soft band of street dust running out and fading (a pale tone `(0.62, 0.58, 0.52)` over a dark
   street, a dark tone `(0.16, 0.14, 0.12)` over a bright one, picked from the street's own brightness so it reads
-  at night and at noon; peak alpha 0.35, ragged front, no glow): "grounded-monster-film dust, not a UI ring"
+  at night and at noon; peak alpha 0.35, x1.6 for the dark tone, ragged front, no glow): "grounded-monster-film dust, not a UI ring"
   (Fx.shockwave, tuning `fx.shockwave`). A tail sweep's ring spreads to the tail's reach (`Fx.shockwave_to`).
 - **Marks:** projected decals (soot + cracks glowing in a tint, cooling over 60% of their life), never on the kaiju.
   Claw marks: additive unshaded streaks fanning along the rake arc (`claw_fx`).

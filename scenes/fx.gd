@@ -20,6 +20,11 @@ const SMOKE := preload("res://scenes/smoke.gdshader")
 ## Dusty earth: a tree's soil, as dark as the street dust's footfall tint (0.24, 0.25, 0.26, ~0.27
 ## luminance) so it never pops brighter than the road at noon (VFX look sheet review, 2026-10-23).
 const TREE_PUFF := Color(0.32, 0.26, 0.19)
+## The same soil at night, paler: the dark street dust is lit down to nothing then (the sun's
+## energy picks between the two, night 0.35 and noon 1.6: data/looks.json).
+const TREE_PUFF_NIGHT := Color(0.7, 0.6, 0.46)
+const SUN_NIGHT := 0.35
+const SUN_NOON := 1.6
 ## A tree's puffs are this many times the tree's size: the first look was lost beside the stump.
 const TREE_PUFF_SCALE := 1.5
 ## A crushed tree's dust (lead, #55 r14): at its peak by frame 3, held to frame 5, then fading
@@ -154,17 +159,14 @@ func tree_puff(at: Vector3, size: float, peak: float) -> void:
 	mat.scale_min = size * 0.8 * TREE_PUFF_SCALE
 	mat.scale_max = size * TREE_PUFF_SCALE
 	var total := PUFF_RISE + PUFF_HOLD + PUFF_FADE
+	var day := inverse_lerp(SUN_NIGHT, SUN_NOON, Look.value("sun_energy"))
+	var soil := TREE_PUFF_NIGHT.lerp(TREE_PUFF, clampf(day, 0.0, 1.0))
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array(
 		[0.0, PUFF_RISE / total, (PUFF_RISE + PUFF_HOLD) / total, 1.0]
 	)
 	ramp.colors = PackedColorArray(
-		[
-			Color(TREE_PUFF, 0.0),
-			Color(TREE_PUFF, peak),
-			Color(TREE_PUFF, peak),
-			Color(TREE_PUFF, 0.0)
-		]
+		[Color(soil, 0.0), Color(soil, peak), Color(soil, peak), Color(soil, 0.0)]
 	)
 	var tex := GradientTexture1D.new()
 	tex.gradient = ramp

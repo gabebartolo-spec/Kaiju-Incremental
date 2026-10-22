@@ -15,6 +15,8 @@ uniform vec4 dark_tint : source_color = vec4(0.16, 0.14, 0.12, 1.0);
 // Street brightness (linear) at which the tone is half way from the light to the dark one.
 uniform float day_lo = 0.04;
 uniform float day_hi = 0.14;
+// A dark band on a bright street needs more opacity than a pale one on a dark street.
+uniform float dark_boost = 1.6;
 uniform float peak = 0.2;
 uniform float soft = 0.35;
 
@@ -29,8 +31,11 @@ void fragment() {
 	float ragged = 0.04 * hash(vec2(floor(angle * 24.0), 1.0));
 	float front = progress + ragged;
 	float band = smoothstep(front - soft, front, r) * (1.0 - smoothstep(front, front + 0.12, r));
-	float fade = 1.0 - progress;
+	float fade = 1.0 - progress * progress;
 	float street = dot(texture(screen_tex, SCREEN_UV).rgb, vec3(0.2126, 0.7152, 0.0722));
-	ALBEDO = mix(tint.rgb, dark_tint.rgb, smoothstep(day_lo, day_hi, street));
-	ALPHA = band * fade * fade * peak * tint.a;
+	float day = smoothstep(day_lo, day_hi, street);
+	ALBEDO = mix(tint.rgb, dark_tint.rgb, day);
+	// Held strong, then gone at the end (not faded as the square of the time left): a wide ring
+	// (a tail sweep's) is faint enough as it is.
+	ALPHA = band * fade * peak * tint.a * mix(1.0, dark_boost, day);
 }
