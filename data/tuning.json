@@ -1179,22 +1179,26 @@
 			"branch_decay": 0.14,
 			"light_decay": 0.12,
 			"light": {"hold_share": 0.3, "falloff": 1.5, "mouth": [14.0, 20.0], "impact": [22.0, 28.0]},
-			"muzzle_flare": 8.0,
-			"strike_flare": 12.0,
+			"muzzle_flare": 4.8,
+			"muzzle_ahead": 1.2,
+			"strike_flare": 18.0,
+			"strike_lift": 1.5,
+			"impact_sparks": 3,
 			"branch_tip": 0.5,
 			"branch_sparks": 2,
 			"power_share": 0.25,
 			"prewarm_seconds": 0.05,
 			"breath": {
 				"core": 0.6, "halo": 4.5, "sway": 0.06, "branches": [4, 6],
-				"branch_from": [0.1, 0.6], "branch_width": 0.8, "branch_sway": 0.12,
-				"anchor_near": false, "anchor_back": 0.0, "dust": 0.8
+				"branch_from": [0.3, 0.8], "branch_width": 0.8, "branch_sway": 0.12,
+				"anchor_near": false, "anchor_back": 0.0, "dust": 1.6,
+				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
 			},
 			"thunder": {
 				"core": 0.9, "halo": 6.0, "sway": 0.05, "branches": [3, 5],
 				"branch_from": [0.1, 0.9], "branch_width": 0.5, "branch_sway": 0.1,
 				"anchor_near": true, "anchor_back": 0.06, "dust": 1.0,
-				"end_height": 1.0, "lash_slack": 4.0, "lash_height": [0.3, 0.9], "fork_side": 6.0
+				"end_height": 1.0, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_slack": 4.0, "lash_height": [0.3, 0.9], "fork_side": 6.0
 			}
 		},
 		"orbit_degrees": 25.0,

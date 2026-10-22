@@ -20,8 +20,8 @@ const CLIP_GAP := 110
 const BREATH_SHOTS: Array[int] = [9, 20, 32]
 const BEAM_SHOTS: Array[int] = [10, 40, 80, 150]
 const CLIP_FRAMES := 380
-const SIDE_DISTANCE := 26.0
-const SIDE_HEIGHT := 9.0
+const SIDE_DISTANCE := 40.0
+const SIDE_HEIGHT := 14.0
 const CROP := Vector2i(1280, 720)
 const LEVELS := {"claws": 3, "hide": 1, "evolve1": 1, "sig_power": 2, "r_beam": 1}
 
@@ -88,8 +88,6 @@ func _go() -> void:
 	_fire_breath = FIRE_AT if _mode != "beam" else -1
 	_fire_beam = FIRE_AT if _mode == "beam" else (FIRE_AT + CLIP_GAP if _mode == "clip" else -1)
 	await Kit.ticks(self, SETTLE)
-	if _side:
-		_side_camera(rampage)
 	if _mode == "clip":
 		await Kit.frames(self, CLIP_FRAMES)
 	else:
@@ -106,6 +104,8 @@ func _stills(rampage: Rampage) -> void:
 	var event := "breath" if _mode != "beam" else "beam_start"
 	while not played.has(event):  # waits for the press to land (the kaiju out of the river)
 		await physics_frame
+	if _side:  # placed where the kaiju stands at the fire, so the whole bolt is in frame
+		_side_camera(rampage)
 	var waited := 0
 	for after: int in shots:
 		await Kit.frames(self, after - waited)
@@ -149,7 +149,7 @@ func _side_camera(rampage: Rampage) -> void:
 	var right := Vector3(-facing.z, 0.0, facing.x)
 	var bs := rampage.sim.body_scale()
 	_cam.position = at + right * SIDE_DISTANCE * bs + Vector3(0, SIDE_HEIGHT * bs, 0)
-	_cam.look_at(at + facing * 7.0 * bs + Vector3.UP * 3.0 * bs)
+	_cam.look_at(at + facing * 10.0 * bs + Vector3.UP * 3.0 * bs)
 	_cam.current = true
 
 

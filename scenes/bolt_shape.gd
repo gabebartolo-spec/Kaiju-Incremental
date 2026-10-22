@@ -97,13 +97,14 @@ static func inside(p: Vector3, cone: Dictionary) -> bool:
 static func fan_ends(rng: RandomNumberGenerator, cone: Dictionary, count: int) -> Array[Vector3]:
 	var origin: Vector3 = cone["origin"]
 	var dir: Vector3 = cone["dir"]
-	var half := Num.f(cone["half"]) * EDGE_MARGIN
+	var half := Num.f(cone["half"]) * EDGE_MARGIN * Num.f(cone.get("spread", 1.0))
+	var near := Num.f(cone.get("near", FAN_NEAR))
 	var out: Array[Vector3] = []
 	for i: int in count:
 		var slot := (i + 0.5) / count * 2.0 - 1.0
 		var wander := rng.randf_range(-1.0, 1.0) * SLOT_WANDER / count
 		var ang := clampf((slot + wander) * half, -half, half)
-		var d := Num.f(cone["reach"]) * rng.randf_range(FAN_NEAR, FAN_FAR)
+		var d := Num.f(cone["reach"]) * rng.randf_range(near, FAN_FAR)
 		var flat := Vector2(
 			dir.x * cos(ang) - dir.z * sin(ang), dir.x * sin(ang) + dir.z * cos(ang)
 		)
