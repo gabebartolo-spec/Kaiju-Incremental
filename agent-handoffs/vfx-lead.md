@@ -48,26 +48,23 @@ ripple, crew under arched canopies). tests/run_helideaths_tests.gd 6 fn 17 check
 Proof: notes vfx-lead/heli_deaths_proof.png. A toppling tower tall enough sweeps helis over its strip down.
 Not built: killable parachutists (they only drift down).
 
-## Unfinished changes / my builders (Agent subagents, own worktrees)
-- PR #154: fresh critic (mine) said FIX: sparks still white flecks, tail ring ~80 px vs a 400 px tail, rings
-  invisible at noon, tree puff a white blob at noon. Builder on claude/vfx-lead-c37456 fixing; proof due at notes
-  vfx-lead/proof_base_fixes_r2.png. Then a NEW fresh critic; on PASS message the lead "#154 PASS" (its GitHub
-  helper merges on green).
-- Thunder Beam builder on claude/thunder-beam (b2-18 spec, VFX_STYLE family 6): bolt.gdshader ribbon, breath
-  strokes, held beam; proof + 3 halo stills (R 17.6) in notes vfx-lead/thunder/. No PR until my SHIP; halo colour
-  goes to the director as one question with the labelled stills.
-- Explosions claude/city-explosives-v2 (r9 at 5a9697db, 11 behind look-options) is now MINE: burst reads cream,
-  not orange-red. Brief ready at scratchpad brief_r9.md (raise the fire family ramp for all fires, blast heat
-  ~1.1, scale/light); goes to my next free builder slot; tell the lead before fire.gd edits (#160 has fire.gd).
-- #160 title (claude/ui-title-menu): my verdict FIX = director's tilt + warm 2-3 px head rim; lead's builder does it.
-- Title: D-158 amended (director 02:25, asked by the lead): Colossus ~185 m, ~7 deg tilt (water ~1/3 thinner,
-  reflections kept), the 163 m tower lowered on the title only; head 1.5-2x the tallest tower left, whole. Title-
-  look questions now go through me. Review its 4K reveal still + 2x head crop (with the rim fix).
-- D-155 atmosphere (all M1): looks are mine (rampage escalation haze/orange sky/blackouts, clouds, birds, boats,
-  one whale, weather looks rain/fog/storm/overcast). Sim side (weather pick, life positions/events, options row) =
-  lead's "demo-end" session local_d3ef25ef; I asked it for value names + branch. Files: data/looks.json,
-  scenes/city_environment.gd (wait for #156 to merge), new view scenes. Shared lit-from-below smoke: mine, after
-  the UI + explosions branches merge (no fire.gd / smoke.gdshader edits till then).
+## Unfinished changes / my builders (Agent subagents, own worktrees; cap 2 engine builders)
+- #154 PASS sent (8a3049d7, r4: self-lit street dust, visible rings, orange sparks, white deflect). Follow-up item
+  "dust billows" (mine): every dust effect from Fx.dust puffs (rings = expanding chains of lobed puffs), deflect
+  gaussian 60 px; also a stray gold 4-point star on the kaiju in some stills, source unknown.
+- Thunder Beam (claude/thunder-beam, 8c4ab4da pushed; 59100222 local = critic round 2: jagged bolt bowed up over
+  the head, smaller jaw flare, beam lashes up facades, ramped flashes). Builder adb19422 running proof + mp4. Then a
+  fresh motion critic; on SHIP tell the lead (PR) and put the 3 halo stills in interview.md. Base is old: it shows
+  "ATOMIC BREATH" in the HUD; sync before the PR.
+- Croc standing (claude/croc-standing, builder af945700): today idle clip first (notes vfx-lead/idle/), then the
+  standing stomp foot/ring + claw-rake arm fixes.
+- Heads/skins (claude/heads-skins 9781f0a0, provenance rows only; Tripo 1500/8000): boards
+  vfx-lead/heads/heads_board_interview.png (Python own shape, Komodo fits skull, Komodo own shape; Python-fits-skull
+  dropped) + skins/skins_board.png, both questions in interview.md. Models in ~/Downloads/kaiju_tripo/heads_*.
+- Explosions r10 (brief scratchpad brief_r9.md): fire.gd only after #160 merges (lead 03:50).
+- #160 title: my SHIP was overturned by a fresh screen critic (crest at the strip, 130 m left tower -> head 1.35x,
+  thin rim). Lead's builder fixing; I review the new stills and MEASURE the D-158 numbers myself.
+- D-155 atmosphere looks: mine, after #156; sim side = demo-end local_d3ef25ef.
 
 ## Open findings
 - CityView.ring still draws the cephalopod's ink ring (octopus paused, D-124); deflect flash moves to white.
@@ -80,17 +77,16 @@ lead's replies in to-vfx-lead.md, my fallback reports in from-vfx-lead.md. Every
 `bash ~/.claude/tools/engine_slot.sh && timeout ...`. Open PRs over cap: push branches, report sha, the lead's
 GitHub helper opens PRs. Thunder sound = the lead's.
 - D-162 asset worker (Agent "claude" type, Sonnet, own worktree, branch claude/heads-skins): Tripo python x2 +
-  Komodo x2 heads on the croc titan body, 4-5 croc skins (retextures), six-views, boards in notes
-  vfx-lead/heads/ and skins/, rows in docs/provenance/tripo.md; budget 8000. Then my review + fresh critic, then
-  both boards into interview.md. Head-unlock/play question already in interview.md. Tripo downloads open a
-  Windows Save dialog: press Save at once (director 03:46), worker told.
+  Komodo x2 heads, skins as Blender gradient maps; done (see above). Tripo downloads: Save dialogs belong to the
+  Claude app and nobody can press them; fetch the viewer's signed tripo-data FBX via performance entries + curl.
 - Idle audit (lead's, scratchpad idle_audit.md): director asked an AUDIT only, no idle layer before he answers.
   Brief scratchpad brief_idle.md = the 2 bugs (standing stomp has no foot/ring; claw-rake pose never plays) +
   ONE 6 s clip of today's standing croc for the lead's interview question.
 - Voxel look (director 03:34; report lead scratchpad research_voxel_look.md: keep voxels, unify grain/ground/
   fire/DoF): I render A TODAY / B ONE LOOK (mock, ~1 day) / C SMOOTH CROC, 6 boards + 6 s 3-pane clip per its
   section 5, capture-only branch, critics first, then interview.md. After #154 PASS and Thunder Beam.
-- Slot order: explosions r10 (fire flame body, ONE LOOK needs it) -> croc standing bugs -> voxel boards.
+- Slot order now: voxel boards (brief scratchpad brief_voxel_boards.md) -> item 4 fix (brief_item4.md) -> dust
+  billows -> explosions r10 once #160 merges.
 
 ## Running jobs
 Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 03:30, log scratchpad
