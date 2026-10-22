@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-065 · Director · A believable amount of greenery throughout the city
+Why (06:2x): "make sure there are a believable amount of trees, bushes, floral areas, parks, gardens, playgrounds
+throughout the city". (a) street trees, gardens, playgrounds, hedges, all crushable: PR #55; (b) green lots: D-075.
+
 ## 2026-10-18 · D-064 · Director · Menu sounds and the SFX volume slider shipped as heard
 Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard". MERGED #33.
 
