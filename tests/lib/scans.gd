@@ -18,10 +18,9 @@ const LIGHT_STEP := 7  # every this-th lamp is a camera spot on the recorded lig
 ## BuildingFade on stage 4's 4,435 buildings along a recorded walk.
 static func fade(check: Callable) -> void:
 	var sim := _stage4()
-	var cfg := Content.section("vehicles")
+	var cfg := Content.section("camera")
 	var fader := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
-	var low := Num.f(cfg["fade_opacity"])
 	var step := DT / Num.f(cfg["fade_seconds"])
 	var ref_faded := {}
 	var ref_first := true
@@ -54,18 +53,18 @@ static func fade(check: Callable) -> void:
 			hit[n] = true
 		for n: int in hit:
 			if not ref_faded.has(n):
-				ref_faded[n] = low if ref_first else 1.0
+				ref_faded[n] = 1.0 if ref_first else 0.0
 		ref_first = false
 		for n: int in ref_faded.keys():
 			var cur: float = ref_faded[n]
-			var next := move_toward(cur, low if hit.has(n) else 1.0, step)
-			if next >= 1.0:
+			var next := move_toward(cur, 1.0 if hit.has(n) else 0.0, step)
+			if next <= 0.0:
 				ref_faded.erase(n)
 			else:
 				ref_faded[n] = next
 		for n: int in ref_faded:
 			var want: float = ref_faded[n]
-			same_fade = same_fade and is_equal_approx(fader.opacity(n), want)
+			same_fade = same_fade and is_equal_approx(fader.opacity(n), BuildingFade.eased(want))
 	print(
 		(
 			(
