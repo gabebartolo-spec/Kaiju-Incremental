@@ -47,7 +47,7 @@ var _frame := 0
 
 ## species: the save's species; base_stats: tuning "kaiju" (the thanks size tier goes on top);
 ## p_totals: the save's demo totals (Demo.add).
-func setup(species: Dictionary, base_stats: Dictionary, p_totals: Dictionary) -> void:
+func setup(species: Dictionary, base_stats: Dictionary, p_totals := {}) -> void:
 	species_id = str(species["id"])
 	_colors = species["colors"]
 	totals = p_totals

@@ -275,6 +275,7 @@ func _endless_run(main: Node) -> void:
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(run, PauseMenu)
 	await GuiInput.click(t, GuiInput.button(menu, "END RAMPAGE"))
+	await GuiInput.click(t, GuiInput.button(menu, "YES"))
 	await _frames(RampageHud.BEAT_MIN_FRAMES)
 	await GuiInput.key(t, KEY_ENTER)
 	await _frames(2)

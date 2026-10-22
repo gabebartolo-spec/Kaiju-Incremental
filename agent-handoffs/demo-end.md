@@ -32,7 +32,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - Tests: suite `demoend` (tests/run_demoend_tests.gd + tests/lib/sim_demo_end.gd, incl. normal-untouched check), flow_demo.gd
   rewritten (mouse, key, pad via new GuiInput.pad), demo_smoke.gd and capture_demo.gd rewritten. README row added.
 ## Unfinished changes
-- demo-end: resync merge done; now running demoend/sim_play/flow/smoke (lead line 4 of to-demo-end.md); then push claude/demo-end and
+- demo-end: resync merge done (post-merge fixes: Endless test clicks the new End Rampage YES step; DemoEnd.setup totals optional for run_ui_tests); demoend + sim_play green, ui/smoke/flow rerunning (lead line 4 of to-demo-end.md); then push claude/demo-end and
   report the sha. The thanks screen no longer has upstream's MAIN MENU / QUIT buttons (ruling replaced them): tell the lead.
 - Seams made to stay at 400 lines: TankYard.on_event handles all four tank events; scenes/hud_counts.gd (HudCounts.of/clock).
 - Later: 4K thanks still when the focus guard allows; Taskforce kills into demo.military_keys after #161; queue 2 (sky and sea
