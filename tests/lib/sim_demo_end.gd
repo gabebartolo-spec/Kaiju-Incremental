@@ -187,7 +187,9 @@ func _check_normal_untouched() -> void:
 		for key: String in saved:
 			cfg[key] = Num.f(saved[key]) * factor
 		var again: Dictionary = _autoplay.call(_make.call("reptilian", {"claws": 3, "hide": 2}, 0, {}))
-		same = same and first == again
+		# The pinned seed fields no tank in its window, so the caps are asked of the sim directly.
+		var probe: RampageSim = _make.call("reptilian", {"claws": 3, "hide": 2}, 0, {})
+		same = same and first == again and not Endless.tanks_full(probe) and Endless.escalation(probe) == 0
 	for key: String in saved:
 		cfg[key] = saved[key]
 	_check.call(same, "changing every endless row leaves a normal seed's results identical")
