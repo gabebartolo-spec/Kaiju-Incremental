@@ -1,5 +1,5 @@
 # Taskforce handoff (PR 1, sim core, agents only), 2026-10-23
-## State: available (PR #161 merged with look-options, suites green, awaiting merge go from lead)
+## State: running a check (rampage.gd split done uncommitted; suites in flight, then commit + push once + report sha to lead)
 ## Task
 Anti Kaiju Taskforce PR 1 (sim core, agents only). Serves ROADMAP "Your adversaries", M2, D-137/139/141/143/145/152.
 Lead: session "Status check". Next after this: PR 3 kills (swat, perch-collapse fall), PR 4 frost grenades.
@@ -23,6 +23,10 @@ Run 03:30 on 225ee403 (own APPDATA, after a re-import for the class cache): task
 flow all pass; taskforce_gate had 1 failure (JSON round trip float), fixed in e125f7f5 (approximate compare).
 Planted defects shown failing: carried gate (city_seconds 100 -> "180 s" check), frost radius 4 (slow walker check).
 ## Unfinished
+- Lead: CI gdlint red, scenes/rampage.gd 402 lines after #159 merge. Done locally (uncommitted): merged latest
+  look-options, moved the ability events + leap flight into scenes/rampage_ability.gd (RampageAbility; bind(rampage,
+  city, kaiju), play, step, leaping); rampage.gd now 358. Owed: taskforce_gate, postfx, flow, taskforce, military green,
+  commit, push once, tell the lead the sha.
 - Lead 05:4x: #161 went DIRTY after #159 merged; sim/army.gd conflict resolved keeping both (Taskforce.new salt 0x7F and
   _aim 0x2009). Owed: military, taskforce, taskforce_gate, sim_play green, push, tell the lead the sha.
 - Nothing owed on #161: clock fix, FIX 4 (sim/taskforce_perch.gd), frost radius 1.5 and their checks are pushed;
