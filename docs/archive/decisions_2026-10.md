@@ -2,6 +2,15 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-050 · Director · Minimal playable demo: croc line only, ends at Behemoth
+Why: the director asked for a minimal playable demo (plan approved 03:35, five questions answered). Decisions: (1) the
+croc titan (reptilian) is the only playable species; (2) the demo ends after the first evolution (Behemoth, about
+20-30 min) on a "demo complete" card; (3) the croc baby and adolescent get new models from the croc titan design
+before the demo ships; (4) SFX are unpaused for the demo (PR #8); (5) the croc titan adult appears only on the end
+card, roaring, since the player never reaches tier 3. Phases: P1 balance D data, P2 D-047 adult clips, P3 baby and
+adolescent models, P4 SFX, P5 demo slice (data `demo` section, species allow-list, end card), P6 Windows export from
+look-options, P7 director playtest. Out: insectoid and cephalopod, evolve2+, the Apex city, #11 locomotion.
+
 ## 2026-10-18 · D-049 · Director · City-growth balance: apply proposal D
 Why: with one cost curve the runs were cephalopod 2.94 h, reptilian 3.94 h, insectoid 1.93 h (insectoid well under the
 3-5 h target, driven by the Leap Slam). Changes (measured in #16's tools/pacing.gd): all costs x1.27; Leap Slam cooldown

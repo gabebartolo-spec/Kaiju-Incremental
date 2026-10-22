@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-22 · D-136 · Director · Drift audit: agent-added content ruled
+
+A read-only audit found content agents added without a decision (comment #77). Kept: police blockades, the regeneration node, the UI scale setting, elevated expressways, the far-shore skyline as it is, aircraft lights, neon signs; far burn-outs pay a quarter of a burn-out. Cut: the camera's sideways lift during the breath. Prestige abandoned ("it isnt relevant to our game"). Graphics quality never drops on its own ("We have to optimise our game well, and graphics settings potato-max allow flexibility"). The 9 news headlines go to him for review; the results screen is reviewed when he next plays; the mecha's three attacks are a proposal only.
+
 ## 2026-10-22 · D-135 · Director · Three growth steps, one per croc body: the Apex Titan step is cut
 
 Asked (comment #72): the game had four growth steps (young, Behemoth, Colossus, Apex Titan) but three bodies (D-014); an agent added the fourth at kickoff (8d02a024), never a director decision. Picked "3 steps, 1 per body": baby city, adolescent city (EVOLVE: Behemoth), adult city (EVOLVE: Colossus). Each evolve gives a new body. Changes: evolve3 and the fourth city/army/air row go; the top-tier skills and the jet bomber set-piece move into the adult city. Outside the demo (D-050), so no demo delay.
@@ -386,12 +390,3 @@ capped at one per 2.5 s and a footstep minimum interval; "ship as is". The 0.7 s
 ## 2026-10-18 · D-051 · Director · The evolution reveal is titled by the node bought
 Why (04:20): after buying EVOLVE: Behemoth the reveal said "REPTILIAN ADOLESCENT"; now it says BEHEMOTH (the node's data
 name), for every evolve node. Life-stage names stay internal. PR #23.
-
-## 2026-10-18 · D-050 · Director · Minimal playable demo: croc line only, ends at Behemoth
-Why: the director asked for a minimal playable demo (plan approved 03:35, five questions answered). Decisions: (1) the
-croc titan (reptilian) is the only playable species; (2) the demo ends after the first evolution (Behemoth, about
-20-30 min) on a "demo complete" card; (3) the croc baby and adolescent get new models from the croc titan design
-before the demo ships; (4) SFX are unpaused for the demo (PR #8); (5) the croc titan adult appears only on the end
-card, roaring, since the player never reaches tier 3. Phases: P1 balance D data, P2 D-047 adult clips, P3 baby and
-adolescent models, P4 SFX, P5 demo slice (data `demo` section, species allow-list, end card), P6 Windows export from
-look-options, P7 director playtest. Out: insectoid and cephalopod, evolve2+, the Apex city, #11 locomotion.
