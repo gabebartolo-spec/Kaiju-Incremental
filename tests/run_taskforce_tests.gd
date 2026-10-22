@@ -37,7 +37,7 @@ func _check_stage_gate() -> void:
 	var closed := _adolescent()  # the city has not fallen enough yet: nobody comes
 	closed.chunks_total = 10000000
 	closed.time_left = 1.0e9
-	closed.army_units.taskforce.cfg["after_chunks"] = 1000000000
+	closed.army_units.taskforce.cfg["first_arrival"] = {"chunks": 1000000000, "seconds": 6.0}
 	_run(closed, 60.0)
 	check(closed.army_units.taskforce.agents.is_empty(), "no squad before the city has fallen")
 

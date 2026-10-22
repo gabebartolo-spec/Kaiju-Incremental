@@ -54,7 +54,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = Content.section("taskforce").duplicate(true)  # a run (or a test) may edit its own copy
 	_rng = rng
-	_timer = Num.f(cfg["first_delay"])
+	_timer = Num.f(_first()["seconds"])
 	var frost_cfg: Dictionary = cfg["frost"]
 	frost = TaskforceFrost.new(sim, frost_cfg)
 
@@ -74,7 +74,7 @@ func interval() -> float:
 
 
 func step(dt: float) -> void:
-	if cap() > 0 and sim.chunks_destroyed >= Num.i(cfg["after_chunks"]):
+	if cap() > 0 and sim.chunks_destroyed >= Num.i(_first()["chunks"]):
 		_timer -= dt
 		if _timer <= 0.0 and cap() - agents.size() >= _squad_min():
 			_timer = interval()
@@ -141,6 +141,13 @@ func swat(force: Callable, top: float) -> void:
 func _swat_radius() -> float:
 	var swat_cfg: Dictionary = cfg["swat"]
 	return Num.f(swat_cfg["radius"])
+
+
+## When the first squad may come (D-152): the chunks the run has brought down and the seconds
+## after that, both from data "first_arrival" (one place to change it).
+func _first() -> Dictionary:
+	var first: Dictionary = cfg["first_arrival"]
+	return first
 
 
 func _squad_min() -> int:

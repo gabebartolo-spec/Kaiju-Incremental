@@ -60,6 +60,12 @@ func hurt(share: float) -> bool:
 	return share >= Num.f(_fringe["hit_hp_fraction"]) and _begin()
 
 
+## A Taskforce railgun hit (a sim `railgun_hit` event) lands: every one earns the fringe (D-145),
+## though it costs less than the heavy-hit bar; it counts as `railgun_share` of max health.
+func railgun() -> bool:
+	return hurt(Num.f(_fringe["railgun_share"]))
+
+
 ## A falling part lands (a sim `fall_land` event): a topple of a tall part earns the fringe.
 func fall(event: Dictionary) -> bool:
 	if str(event["kind"]) != "topple" or event["scrap"] == true:
