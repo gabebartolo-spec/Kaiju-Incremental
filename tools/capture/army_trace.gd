@@ -10,12 +10,7 @@ extends SceneTree
 
 const DT := 1.0 / 15.0
 const PX := 6.0  # pixels per metre
-const LEVELS := {
-	1: {},
-	2: {"evolve1": 1},
-	3: {"evolve1": 1, "evolve2": 1},
-	4: {"evolve1": 1, "evolve2": 1, "evolve3": 1}
-}
+const LEVELS := {1: {}, 2: {"evolve1": 1}, 3: {"evolve1": 1, "evolve2": 1}}
 
 
 ## Army.step, timed (microseconds per call kept in `costs`).

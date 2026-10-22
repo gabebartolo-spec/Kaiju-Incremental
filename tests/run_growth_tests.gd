@@ -57,7 +57,16 @@ func _layout(tier: int) -> Array[Dictionary]:
 ## Every evolution opens a bigger city with taller towers: more ground, buildings and chunks.
 func _check_stages_grow() -> void:
 	var stages := CityGrowth.stage_count(Content.tuning())
-	check(stages == 4, "one growth stage per size tier, young to Apex Titan (%d)" % stages)
+	check(stages == 3, "one growth stage per body, young to Colossus (%d, D-135)" % stages)
+	var evolutions := 0
+	for def: Dictionary in Content.upgrades():
+		var effects: Dictionary = def["effects"]
+		evolutions += 1 if effects.has("size") else 0
+	var bodies: Array = Content.section("contact")["bodies"]["reptilian"]
+	check(
+		evolutions + 1 == stages and bodies.size() == stages,
+		"evolutions + 1 = growth stages = bodies (%d, %d, %d)" % [evolutions, stages, bodies.size()]
+	)
 	var last := {"half": 0.0, "buildings": 0, "chunks": 0, "tallest": 0}
 	var grows := true
 	var lines: Array[String] = []
@@ -86,19 +95,19 @@ func _check_stages_grow() -> void:
 ## every stage, and every lot of the young city stands where it stood (only taller or not).
 func _check_districts_kept() -> void:
 	var young := Content.section("city")
-	var apex: Dictionary = _tuning(4)["city"]
+	var adult: Dictionary = _tuning(3)["city"]
 	var young_plan := CityGen.map(young)
-	var apex_plan := CityGen.map(apex)
-	var same: bool = young_plan["xs"] == apex_plan["xs"] and young_plan["zs"] == apex_plan["zs"]
+	var adult_plan := CityGen.map(adult)
+	var same: bool = young_plan["xs"] == adult_plan["xs"] and young_plan["zs"] == adult_plan["zs"]
 	check(same, "the street plan is the same at every stage")
 	var footprints := {}
-	for e: Dictionary in _layout(4):
+	for e: Dictionary in _layout(3):
 		footprints[Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))] = true
 	var moved := 0
 	for e: Dictionary in _layout(1):
 		if not footprints.has(Vector4(Num.f(e["x"]), Num.f(e["z"]), Num.f(e["w"]), Num.f(e["d"]))):
 			moved += 1
-	check(moved == 0, "every lot of the young city is still there at Apex (%d moved)" % moved)
+	check(moved == 0, "every lot of the young city is still there at Colossus (%d moved)" % moved)
 
 
 ## The edges still read (D-024) at every size: the bay lies past the north ring with room for
@@ -106,7 +115,7 @@ func _check_districts_kept() -> void:
 ## the camera shows (CityBand) is built up, and the kaiju starts in the street.
 func _check_edges() -> void:
 	var bad: Array[String] = []
-	for tier: int in range(1, 5):
+	for tier: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
 		var tuning := _tuning(tier)
 		var cfg: Dictionary = tuning["city"]
 		var half := Num.f(cfg["half"])
@@ -139,7 +148,7 @@ func _check_edges() -> void:
 			bad.append("%d: no built blocks" % tier)
 	check(bad.is_empty(), "every stage's city has believable edges: %s" % [bad])
 	var fog_ok := true
-	for tier: int in range(2, 5):
+	for tier: int in range(2, CityGrowth.stage_count(Content.tuning()) + 1):
 		var now: Dictionary = _tuning(tier)["city"]
 		var before: Dictionary = _tuning(tier - 1)["city"]
 		var thinner := Num.f(now["fog_scale"]) < Num.f(before["fog_scale"])
@@ -152,7 +161,7 @@ func _check_edges() -> void:
 func _check_defences() -> void:
 	var air_ok := Num.i(_tuning(1)["air"]["max"]) == 0
 	var harder := true
-	for tier: int in range(2, 5):
+	for tier: int in range(2, CityGrowth.stage_count(Content.tuning()) + 1):
 		var now := _tuning(tier)
 		var before := _tuning(tier - 1)
 		air_ok = air_ok and Num.i(now["air"]["max"]) > Num.i(before["air"]["max"])
@@ -241,8 +250,7 @@ func _check_cost_curve() -> void:
 	var tree := UpgradeTree.new(Content.upgrades())
 	var e1 := tree.cost("evolve1")
 	var e2 := Num.i(tree.defs["evolve2"]["cost"][0])
-	var e3 := Num.i(tree.defs["evolve3"]["cost"][0])
-	check(e1 < e2 and e2 < e3, "each evolution costs more (%d, %d, %d)" % [e1, e2, e3])
+	check(e1 < e2, "each evolution costs more (%d, %d)" % [e1, e2])
 	var young_total := 0
 	for def: Dictionary in Content.upgrades():
 		var requires: Array = def["requires"]
@@ -311,7 +319,7 @@ func _check_determinism() -> void:
 	var a := _layout(3)
 	var b := _layout(3)
 	check(a == b, "the same stage builds the same city every time")
-	var twice := _tuning(4)
+	var twice := _tuning(3)
 	var grown_city: Dictionary = twice["city"]
 	grown_city["half"] = -1
 	check(

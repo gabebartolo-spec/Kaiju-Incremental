@@ -1,6 +1,6 @@
 extends SceneTree
 ## Stills of the city at each growth stage (D-039): for every size tier, the stage's city with
-## its kaiju (young, Behemoth, Colossus, Apex Titan) seen from high over the south edge (the
+## its kaiju (young, Behemoth, Colossus) seen from high over the south edge (the
 ## whole playable city, its ring avenue and the districts still to come past it), and a closer
 ## view of the kaiju among the buildings it is the size of, and the in-game camera's view.
 ## Prints build time, building counts and frame timings per stage. Needs a window: run it on CI

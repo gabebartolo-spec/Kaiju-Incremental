@@ -10,7 +10,6 @@ extends RefCounted
 ## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
-const STAGES := 4
 const SECONDS := 4.0
 const SEEN_SHARE := 0.95
 ## A building still hides what is behind it while more of its screen door than this is drawn.
@@ -32,7 +31,7 @@ func _init(p_check: Callable) -> void:
 
 
 func run() -> void:
-	for stage: int in range(1, STAGES + 1):
+	for stage: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
 		_stage(stage)
 
 
