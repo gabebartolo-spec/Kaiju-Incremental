@@ -17,6 +17,7 @@ const TIME_FRAMES := 120  # frames the GPU time is averaged over
 
 var _out := "user://graphics"
 var _play := PLAY_FRAMES
+var _stage := 0  # --stage=N: the city of growth stage N (default: the stats' own)
 var _hide := false  # --hide-kaiju: the kaiju and every particle system hidden (see _hide_moving)
 var _only: PackedStringArray = []  # --levels=a,b: only these presets
 
@@ -25,6 +26,8 @@ func _initialize() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
+		elif arg.begins_with("--stage="):
+			_stage = arg.substr(8).to_int()
 		elif arg == "--hide-kaiju":
 			_hide = true
 		elif arg.begins_with("--play="):
@@ -41,6 +44,8 @@ func _run() -> void:
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
 	)
+	if _stage > 0:
+		stats["size"] = _stage
 	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
 	var rampage := Rampage.new()
 	rampage.setup(species, stats, layout, 0)
