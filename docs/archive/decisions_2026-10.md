@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-064 · Director · Menu sounds and the SFX volume slider shipped as heard
+Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard". MERGED #33.
+
 ## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
 Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
 do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
