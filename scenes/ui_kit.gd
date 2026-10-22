@@ -36,6 +36,13 @@ const SIZE_BODY := 24
 const SIZE_SMALL := 20
 const SIZE_HEAD := 36
 const SIZE_TITLE := 72
+## An untagged header's margins as a share of its font size: the sides (the right takes the
+## shadow's width), and the top and bottom that even out the font's uneven line room (measured
+## on a 4K capture).
+const HEADER_LEFT := 0.22
+const HEADER_RIGHT := 0.28
+const HEADER_TOP := 0.14
+const HEADER_BOTTOM := 0.03
 
 ## Our own faces (tools/fonts/build_fonts.py), capitals only (D-058). Body text is Kaiju Block,
 ## the project's default font (project.godot gui/theme/custom_font), so every label, button and
@@ -193,25 +200,41 @@ static func panel_box(color: Color = PANEL) -> HazardBox:
 
 
 ## A card's alert header: a red broadcast strip with a warning tag on its left and the heading
-## in white Kaiju Claw (white on CRAWL_RED reads at 5:1).
-static func header(text: String, size: int = SIZE_TITLE) -> PanelContainer:
+## in white Kaiju Claw (white on CRAWL_RED reads at 5:1). `tagged` false drops the tag and sets the
+## heading dead centre in the strip (the loading screen's INCOMING).
+static func header(text: String, size: int = SIZE_TITLE, tagged: bool = true) -> PanelContainer:
 	var strip := PanelContainer.new()
 	var s := hazard(CRAWL_RED, CRAWL_RED, 0.0)
 	s.set_content_margin_all(0)
 	s.content_margin_right = 24
 	strip.add_theme_stylebox_override("panel", s)
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := label(text, size, Color.WHITE)
+	if not tagged:
+		_centre_header(s, l, size)
+		strip.add_child(l)
+		return strip
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 20)
 	strip.add_child(row)
 	var tag := UiMarks.AlertTag.new()
 	row.add_child(tag)
-	var l := label(text, size, Color.WHITE)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(l)
 	tag.custom_minimum_size = Vector2.ONE * (l.get_combined_minimum_size().y + 8.0)
 	return strip
+
+
+## Equal room round a heading's ink on every side: the font sits high in its line (the caps leave
+## more room below than above), so the top margin takes the difference.
+static func _centre_header(box: HazardBox, l: Label, size: int) -> void:
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	box.content_margin_left = roundi(size * HEADER_LEFT)
+	box.content_margin_right = roundi(size * HEADER_RIGHT)
+	box.content_margin_top = roundi(size * HEADER_TOP)
+	box.content_margin_bottom = roundi(size * HEADER_BOTTOM)
 
 
 ## A button with hazard tape down its left edge. Focus (and hover) lights a dark button up in
