@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-051 · Director · The evolution reveal is titled by the node bought
+Why (04:20): after buying EVOLVE: Behemoth the reveal said "REPTILIAN ADOLESCENT"; now it says BEHEMOTH (the node's data
+name), for every evolve node. Life-stage names stay internal. PR #23.
+
+## 2026-10-18 · D-052 · Director · Demo SFX shipped as heard
+Why (04:30): listened to three game-camera clips (stomps + footsteps, building collapse, Atomic Breath) with cracks
+capped at one per 2.5 s and a footstep minimum interval; "ship as is". The 0.7 s auto-stomp rhythm is the sim's (D-004).
+
 ## 2026-10-18 · D-050 · Director · Minimal playable demo: croc line only, ends at Behemoth
 Why: the director asked for a minimal playable demo (plan approved 03:35, five questions answered). Decisions: (1) the
 croc titan (reptilian) is the only playable species; (2) the demo ends after the first evolution (Behemoth, about
