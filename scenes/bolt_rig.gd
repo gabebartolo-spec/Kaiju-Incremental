@@ -11,8 +11,8 @@ extends Node3D
 
 ## A stroke fired: its number (1 on) and where the bolt lands.
 signal stroked(index: int, at: Vector3)
-## The first stroke of a play landed at `at`: the sound hook for a thunder layer under it (no thunder
-## asset exists yet: nothing is connected, the lead's side adds the cleared sound).
+## The first stroke of a play landed at `at`: the sound hook for a thunder layer under it (no
+## thunder asset exists yet: nothing is connected, the lead's side adds the cleared sound).
 signal thundered(at: Vector3)
 
 const FLARE := preload("res://scenes/flare.gdshader")
