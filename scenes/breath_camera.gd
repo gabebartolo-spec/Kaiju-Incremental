@@ -2,7 +2,9 @@ class_name BreathCamera
 extends RefCounted
 ## The camera move while Atomic Breath fires (lead-approved): the offset swings to the side and
 ## lifts so the beam crosses the screen instead of running straight away from the camera, holds
-## while the beam fires, then eases back. The kaiju stays framed. Presentation only.
+## while the beam fires, then eases back. The kaiju stays framed: the lift tilts the offset up
+## at its rest length, so the camera's distance (the kaiju's size on screen) holds. Presentation
+## only.
 
 var _t := -1.0
 var _side := 1.0
@@ -29,4 +31,5 @@ func offset(rest: Vector3, delta: float) -> Vector3:
 	if _t > hold + ease_out:
 		_t = -1.0
 	var turn := deg_to_rad(Num.f(fx["orbit_degrees"])) * w * _side
-	return rest.rotated(Vector3.UP, turn) + Vector3(0, Num.f(fx["orbit_rise"]) * w, 0)
+	var lifted := rest.rotated(Vector3.UP, turn) + Vector3(0, Num.f(fx["orbit_rise"]) * w, 0)
+	return lifted.normalized() * rest.length()

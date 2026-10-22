@@ -61,8 +61,9 @@ func _stage(stage: int) -> void:
 		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
 		follow.step(body, CameraTuning.offset() * zoom, DT)
+		follow.step_lead(body, sim.body_scale(), false, DT)
 		var eye := follow.eye()
-		fade.update(eye, BuildingFade.sight_of(sim), DT)
+		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
 		var hiding: Array[RampageSim.Building] = []
 		for n: int in sim.buildings.size():
 			if fade.opacity(n) > HIDES:

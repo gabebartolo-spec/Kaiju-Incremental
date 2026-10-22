@@ -4,8 +4,10 @@ extends RefCounted
 ## (D-025's rule, VehicleFade), so a grown kaiju among towers its own height is always seen.
 ## Each frame, the sight lines from the camera to points over the kaiju's body (up its height
 ## and forward along its facing, where the torso and head are) are tested against every built
-## building's box; one that cuts a line eases down to vehicles.fade_opacity, the rest ease
-## back. The camera never moves for it. Presentation only.
+## building's box; one that cuts a line eases down to camera.fade_opacity, the rest ease back,
+## both over camera.fade_seconds on a smoothstep (no pop at either end). The lines run to the
+## body's whole width (camera.fade_width body radii each side), so whatever overlaps it on
+## screen is capped at the fade. The camera never moves for it. Presentation only.
 ##
 ## Only the buildings whose footprint meets the rectangle the sight lines stay in are tested
 ## (a grid of footprints, built once: the walls never move), in building order, so the set and
@@ -22,14 +24,14 @@ const CELL := 32.0
 var _cfg: Dictionary
 var _buildings: Array[RampageSim.Building]
 var _views: Callable
-var _faded := {}  # building index -> current opacity (only those below 1)
+var _faded := {}  # building index -> fade progress, 0 solid .. 1 faded (only those above 0)
 var _started := false
 var _grid := {}  # Vector2i cell -> PackedInt32Array of the buildings whose footprint meets it
 
 
 ## views: building index -> its BuildingView, or null while it is not built yet.
 func _init(buildings: Array[RampageSim.Building], views: Callable) -> void:
-	_cfg = Content.section("vehicles")
+	_cfg = Content.section("camera")
 	_buildings = buildings
 	_views = views
 	_index()
@@ -51,17 +53,32 @@ static func targets(
 
 
 ## The sight points of the sim's kaiju now (CityView fades by them; the tests replay them).
-static func sight_of(sim: RampageSim) -> PackedVector3Array:
+## With the `eye`, each point also gets one each side of it, across the line of sight, at the
+## body's half width, so a tower over the flank on screen fades too.
+static func sight_of(sim: RampageSim, eye := Vector3.INF) -> PackedVector3Array:
 	var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 	var reach := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
 	var ahead := Vector3(sim.facing.x, 0, sim.facing.y) * reach
 	var surface := -Num.f(sim.city.get("river_depth", 0.0))
-	return targets(feet, sim.reach_height(), ahead, surface)
+	var out := targets(feet, sim.reach_height(), ahead, surface)
+	if eye == Vector3.INF:
+		return out
+	var half := reach * Num.f(Content.section("camera")["fade_width"])
+	var across := Vector3(feet.z - eye.z, 0.0, eye.x - feet.x).normalized() * half
+	for n: int in out.size():
+		out.append(out[n] + across)
+		out.append(out[n] - across)
+	return out
+
+
+## The screen-door opacity at fade progress `p` (0 solid .. 1 fully faded), on a smoothstep.
+static func eased(p: float) -> float:
+	var cfg := Content.section("camera")
+	return lerpf(1.0, Num.f(cfg["fade_opacity"]), smoothstep(0.0, 1.0, p))
 
 
 func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 	var step := delta / Num.f(_cfg["fade_seconds"])
-	var low := Num.f(_cfg["fade_opacity"])
 	var hit := {}
 	var first := not _started  # the run's first frame: what blocks starts faded, no pop-in
 	_started = true
@@ -69,14 +86,14 @@ func update(eye: Vector3, sight: PackedVector3Array, delta: float) -> void:
 		hit[n] = true
 	for n: int in hit:
 		if not _faded.has(n):
-			_faded[n] = low if first else 1.0
+			_faded[n] = 1.0 if first else 0.0
 	for n: int in _faded.keys():
 		var now: float = _faded[n]
-		var next := move_toward(now, low if hit.has(n) else 1.0, step)
+		var next := move_toward(now, 1.0 if hit.has(n) else 0.0, step)
 		var view: BuildingView = _views.call(n)
-		if view != null and (next != now or next < 1.0):  # a view streamed in late gets it too
-			view.set_opacity(next)
-		if next >= 1.0:
+		if view != null:  # every frame while it fades: a view streamed in late gets it too
+			view.set_opacity(eased(next))
+		if next <= 0.0:
 			_faded.erase(n)
 		else:
 			_faded[n] = next
@@ -139,7 +156,7 @@ func _index() -> void:
 
 ## Building n's opacity now (1 = solid; tests read it).
 func opacity(n: int) -> float:
-	return _faded.get(n, 1.0)
+	return eased(Num.f(_faded[n])) if _faded.has(n) else 1.0
 
 
 ## Whether building b stands in a sight line from the eye to any of the kaiju's points, or the

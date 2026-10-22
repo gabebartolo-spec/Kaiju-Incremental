@@ -310,3 +310,12 @@ surfaces must be textured and visually beautiful". Asked: textured = surface det
 and panel lines, brick courses, window frames, road wear and markings, grass and soil tufts, roof gravel and vents;
 nothing a single flat colour); audit now (every object type captured, flat ones listed with images), fixes before the
 Itch demo (D-132 "polished visuals").
+Helicopter deaths (comment #86, director 2026-10-22): "currently, destroyed helicopters simpyl disappear". Asked: a mix,
+big hits blow them apart in the air, lighter kills spiral down smoking and explode where they land; the crash smashes
+what it hits (and can light a fire with City Ablaze) and pays biomass (sim change: seeded, tested).
+Name (comment #85): the game is called Kaiju Evolution everywhere players see it; the save folder keeps its old name.
+Graphics preview (comment #90, director 2026-10-22): "when players change their graphics setting, we should have a live
+example of what that will look like so players can choose their tolerance". Asked: a live preview "in the options menu as they choose" (a framed live view of the city that updates as each graphics option changes, with its frame rate); built "for the demo".
+Load-screen art (comment #92, for the demo): a rotation of staged, creative 4K screenshots of the game behind the
+loading screen (e.g. from inside the stadium, from above the tallest tower), full screen with INCOMING and the meter on
+a dark band on top; the lead proposes about 12 shots on one board, he picks.
