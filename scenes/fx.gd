@@ -17,7 +17,11 @@ const SLAM_GROW := 0.15
 const SLAM_PEAK := 0.18
 const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
-const TREE_PUFF := Color(0.7, 0.6, 0.46)  # dusty earth: the street dust's tint for a tree's soil
+## Dusty earth: a tree's soil, as dark as the street dust's footfall tint (0.24, 0.25, 0.26, ~0.27
+## luminance) so it never pops brighter than the road at noon (VFX look sheet review, 2026-10-23).
+const TREE_PUFF := Color(0.32, 0.26, 0.19)
+## A tree's puffs are this many times the tree's size: the first look was lost beside the stump.
+const TREE_PUFF_SCALE := 1.5
 ## A crushed tree's dust (lead, #55 r14): at its peak by frame 3, held to frame 5, then fading
 ## evenly to nothing by frame 29 (30 fps). Drawn as the street dust (docs/VFX_STYLE.md family 3,
 ## director 2026-10-23: one dust look), with the smoke shader's screen-centre clearing off, since
@@ -27,6 +31,9 @@ const PUFF_HOLD := 0.07
 const PUFF_FADE := 0.8
 ## Where a shell or the beam's end sparks cool to (white-hot first: FxParticles.sparks).
 const SPARK_TINT := Color(1.0, 0.45, 0.1)
+## A shell hit's sparks: how many, and the glow cube's size in metres (family 5: 0.12-0.22 m).
+const SPARK_COUNT := 28
+const SPARK_CUBE := 0.2
 
 ## One hidden user of each effect material, so no shader is compiled again mid-rampage.
 var keep := ShaderKeep.new()
@@ -80,7 +87,7 @@ func _ready() -> void:
 	# The game's one spark (docs/VFX_STYLE.md family 5): white-hot glow cubes cooling to orange.
 	_spark_mat = FxParticles.sparks(SPARK_TINT)
 	_spark_mat.direction = Vector3.UP
-	_spark_mesh = FxParticles.glow_cube(0.12)
+	_spark_mesh = FxParticles.glow_cube(SPARK_CUBE)
 	_tree_mat = _tree_puff_mat()
 	_tree_mesh = _puff(1.0)
 	var clear_off := _tree_mesh.material as ShaderMaterial
@@ -144,8 +151,8 @@ func tree_puff(at: Vector3, size: float, peak: float) -> void:
 	p.position = at + Vector3(0, size * 0.35, 0)
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size * 0.2, 0.1, size * 0.2)
-	mat.scale_min = size * 0.8
-	mat.scale_max = size
+	mat.scale_min = size * 0.8 * TREE_PUFF_SCALE
+	mat.scale_max = size * TREE_PUFF_SCALE
 	var total := PUFF_RISE + PUFF_HOLD + PUFF_FADE
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array(
@@ -182,7 +189,7 @@ func dust_line(from: Vector3, to: Vector3, width: float, tint := Color(0, 0, 0, 
 
 
 func sparks(at: Vector3) -> void:
-	var p := _burst(_spark_mat, _spark_mesh, 18, 0.5)
+	var p := _burst(_spark_mat, _spark_mesh, SPARK_COUNT, 0.5)
 	p.position = at
 
 
@@ -218,6 +225,13 @@ func shockwave(at: Vector3, radius: float, tail := false) -> void:
 		Num.f(cfg["seconds"])
 	)
 	tween.tween_callback(quad.queue_free)
+
+
+## A ring that spreads to `reach` (world units), where shockwave's `radius` is the stomp's own
+## figure (its band ends at radius_scale x 1.2 of it): a tail sweep's ring reaches the tail's end.
+func shockwave_to(at: Vector3, reach: float) -> void:
+	var cfg: Dictionary = Content.section("fx")["shockwave"]
+	shockwave(at, reach / (Num.f(cfg["radius_scale"]) * 1.2))
 
 
 func _slam_puff(at: Vector3, size: float) -> void:

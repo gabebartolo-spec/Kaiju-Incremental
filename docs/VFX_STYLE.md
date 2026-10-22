@@ -97,6 +97,8 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
 - **Defined by:** the smoke shader's puffs in warm grey, one-shot bursts (explosiveness 0.9), growing 0.4 -> 1.6.
   Cloud ramp `(0.22, 0.24, 0.26, 0.47)` -> transparent; a topple passes the concrete's pale tint; footfalls are
   thinner and capped (`fx.footfall_dust`).
+- A crushed tree's puff (`Fx.tree_puff`) is the same dust in the soil's tint, as dark as the footfall dust (never
+  brighter than the road) and 1.5x the tree's size.
 - **Rule:** every dust puff, cloud or ring of dust uses these calls. Dust is never solid cubes and never a flat sprite.
 
 ### 4. Debris: `scenes/debris_field.gd`, `carve_debris.gd`, `landmark_burst.gd`
@@ -105,8 +107,10 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
   they are pieces of the city.
 
 ### 5. Sparks and flashes: `scenes/fx_particles.gd` (FxParticles.sparks, glow_cube), `scenes/flare.gdshader`
-- **Sparks:** ember-shader glow cubes, white-hot cooling to a tint, thrown fast (8-16), falling (gravity -18),
-  shrinking to nothing; varied lifetimes. Breath strike, armour deflect (`cfe6ff`), leap trail and regen motes use it.
+- **Sparks:** ember-shader glow cubes (0.2 m for a shell hit), white-hot for the first 15% of life, then the tint
+  (orange `SPARK_TINT` for shells and the breath's strike), dimming out; thrown fast (8-16) in a 35 degree upward
+  cone, falling (gravity -18), shrinking to nothing; 28 per shell hit; varied lifetimes. Breath strike, armour
+  deflect (`cfe6ff`), leap trail and regen motes use it.
 - **Flashes:** `flare.gdshader` (additive camera-facing core + halo + four short rays, `fade` driven) plus a real
   light (CityView.flash). Muzzle, strike, ready eye flare, deflect.
 
@@ -135,8 +139,10 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
   - Per-breath presentation seed (`Seeds.make("breath_bolt", ...)`), tunables in `data/tuning.json` fx.
 
 ### 7. Ability rings and ground marks: `scenes/shockwave.gdshader`, `scenes/fx_decals.gd`, `claw_slash.gd`
-- **Rings:** a soft band of street dust running out and fading (tint `(0.62, 0.58, 0.52)`, peak alpha 0.22, ragged
-  front, no glow): "grounded-monster-film dust, not a UI ring" (Fx.shockwave, tuning `fx.shockwave`).
+- **Rings:** a soft band of street dust running out and fading (a pale tone `(0.62, 0.58, 0.52)` over a dark
+  street, a dark tone `(0.16, 0.14, 0.12)` over a bright one, picked from the street's own brightness so it reads
+  at night and at noon; peak alpha 0.35, ragged front, no glow): "grounded-monster-film dust, not a UI ring"
+  (Fx.shockwave, tuning `fx.shockwave`). A tail sweep's ring spreads to the tail's reach (`Fx.shockwave_to`).
 - **Marks:** projected decals (soot + cracks glowing in a tint, cooling over 60% of their life), never on the kaiju.
   Claw marks: additive unshaded streaks fanning along the rake arc (`claw_fx`).
 - **Telegraphs:** BreathAim (`breath_aim.gd`): outline + middle line + faint fill (0.12) in the eye tint, gently

@@ -4,9 +4,17 @@ render_mode unshaded, blend_mix, cull_disabled, depth_draw_never, fog_disabled;
 // (no glow: grounded-monster-film dust, not a UI ring). `peak` caps its opacity, `soft` is the
 // band's feathered width as a share of the radius (data/tuning.json fx.shockwave).
 // `progress` 0..1 is driven from script; the quad is scaled to the full radius.
+// The dust is a light tone over a dark street (night) and a dark tone over a bright one (noon):
+// it mixes the two by the street's own brightness under it, so one ring reads in both
+// (VFX look sheet review 2026-10-23: the pale band vanished against the noon road).
 
 uniform float progress = 0.0;
+uniform sampler2D screen_tex : hint_screen_texture, repeat_disable, filter_linear;
 uniform vec4 tint : source_color = vec4(0.62, 0.58, 0.52, 1.0);
+uniform vec4 dark_tint : source_color = vec4(0.16, 0.14, 0.12, 1.0);
+// Street brightness (linear) at which the tone is half way from the light to the dark one.
+uniform float day_lo = 0.04;
+uniform float day_hi = 0.14;
 uniform float peak = 0.2;
 uniform float soft = 0.35;
 
@@ -22,6 +30,7 @@ void fragment() {
 	float front = progress + ragged;
 	float band = smoothstep(front - soft, front, r) * (1.0 - smoothstep(front, front + 0.12, r));
 	float fade = 1.0 - progress;
-	ALBEDO = tint.rgb;
+	float street = dot(texture(screen_tex, SCREEN_UV).rgb, vec3(0.2126, 0.7152, 0.0722));
+	ALBEDO = mix(tint.rgb, dark_tint.rgb, smoothstep(day_lo, day_hi, street));
 	ALPHA = band * fade * fade * peak * tint.a;
 }

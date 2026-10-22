@@ -655,7 +655,7 @@
 	"fx": {
 		"power_max": 2.5,
 		"footfall_dust": {"seconds": 1.0, "alpha": 0.38, "rise": 1.6, "max_live": 2},
-		"shockwave": {"radius_scale": 0.6, "seconds": 0.35, "alpha": 0.22, "soft": 0.4},
+		"shockwave": {"radius_scale": 0.6, "seconds": 0.35, "alpha": 0.35, "soft": 0.4},
 		"crack_stomp_power": 1.8,
 		"beam_seconds": 0.9,
 		"breath_fade_in": 0.12,

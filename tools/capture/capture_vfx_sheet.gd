@@ -7,6 +7,7 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_vfx_sheet.gd -- --out=<dir> --run=1
 ## --run: the run index, which picks the time of day (1 night, 3 noon).
+## --only=a,b: just those effects (no breath or ultimate); --after=N: still them N frames in.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 ## The adolescent body with the breath upgraded and the ultimate owned.
@@ -15,11 +16,13 @@ const SETTLE := 120
 ## The run's clock for the whole sheet (the default rampage ends before the ultimate).
 const RUN_SECONDS := 600.0
 ## Frames left between effects so the last one has cleared.
-const GAP := 150
+const GAP := 200
 ## Where an effect plays, from the kaiju's feet, in body-scale units (the camera looks down -z).
 const SPOT := Vector3(7.0, 0.0, -7.0)
 ## A fire away from the kaiju and the screen centre, where the smoke shader keeps its column.
 const FAR_SPOT := Vector3(-14.0, 0.0, -22.0)
+## The sim's tail sweep reach (data/tuning.json tail_reach), in body-scale units.
+const TAIL_REACH := 11.0
 ## The side view for the breath and the ultimate (the game camera looks down their length).
 const SIDE_DISTANCE := 26.0
 const SIDE_HEIGHT := 9.0
@@ -28,11 +31,15 @@ var _out := "user://vfx_sheet"
 var _rampage: Rampage
 var _points: Dictionary = {}
 var _input: Dictionary = {}
+var _only := PackedStringArray()
+var _after := 0
 
 
 func _initialize() -> void:
-	var a := Kit.args({"out": _out, "run": 1})
+	var a := Kit.args({"out": _out, "run": 1, "only": "", "after": 0})
 	_out = str(a["out"])
+	_only = str(a["only"]).split(",", false)
+	_after = Num.i(a["after"])
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
 		quit(1)
@@ -68,13 +75,11 @@ func _run(run: int) -> void:
 		25,
 		func(p: Vector3) -> void: fx.dust(p, 2.0 * bs, Color(0.8, 0.78, 0.72, 0.5))
 	)
-	await _shot("dust_footfall", 12, func(p: Vector3) -> void: fx.footfall(p, 1.5 * bs, false))
+	await _shot("dust_footfall", 16, func(p: Vector3) -> void: fx.footfall(p, 2.0 * bs, false))
 	await _shot("dust_tree_puff", 8, func(p: Vector3) -> void: fx.tree_puff(p, 2.0, 0.45))
 	await _shot("ring_stomp", 8, func(p: Vector3) -> void: fx.shockwave(p, 3.0 * bs))
-	await _shot(
-		"ring_tail_sweep", 8, func(_p: Vector3) -> void: _tail_sweep(4.0 * bs), Vector3.ZERO
-	)
-	await _shot("sparks_shell_hit", 4, func(p: Vector3) -> void: fx.sparks(p + Vector3.UP))
+	await _shot("ring_tail_sweep", 14, func(p: Vector3) -> void: _tail_sweep(p, TAIL_REACH * bs))
+	await _shot("sparks_shell_hit", 10, func(p: Vector3) -> void: fx.sparks(p + Vector3.UP))
 	await _shot(
 		"sparks_deflect",
 		4,
@@ -99,12 +104,19 @@ func _run(run: int) -> void:
 	)
 	_rampage.ability_fx.regen(Vector3.ZERO, false)
 	await _frames(GAP)
+	if not _only.is_empty():
+		_finish()
+		return
 	_aim(true)
 	await _frames(30)
 	_still("breath_aim", _feet() + _ahead() * 6.0 * bs)
 	await _press("signature", "breath", [10, 24])
 	await _frames(GAP * 2)
 	await _press("ultimate", "ultimate_beam", [20, 60])
+	_finish()
+
+
+func _finish() -> void:
 	var file := FileAccess.open(_out.path_join("points.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(_points))
 	file.close()
@@ -113,9 +125,11 @@ func _run(run: int) -> void:
 
 ## Plays `play` at the effect spot, stills `after` frames later, then waits for it to clear.
 func _shot(shot_name: String, after: int, play: Callable, spot := SPOT) -> void:
+	if not _only.is_empty() and not _only.has(shot_name):
+		return
 	var p := _spot()
 	play.call(p)
-	await _frames(after)
+	await _frames(_after if _after > 0 else after)
 	var at := _feet() + spot * _rampage.sim.body_scale()
 	_still(shot_name, at + Vector3.UP * (4.0 if spot == FAR_SPOT else 1.0))
 	await _frames(GAP)
@@ -178,10 +192,14 @@ func _take_input() -> Dictionary:
 	return _input
 
 
-## The tail sweep as the game draws it (PowersView, the sim's event), at the kaiju's feet.
-func _tail_sweep(reach: float) -> void:
-	var powers: PowersView = _rampage.get("_powers")
-	powers.on_event({"type": "tail_sweep", "side": 1.0, "reach": reach}, _feet())
+## The tail sweep's ground effects as PowersView draws them for the sim's event (the ring out to
+## the tail's reach and the dust line behind), centred on `at`; the kaiju's own tail model is left
+## out, since it would sweep across the frame and hide the ring.
+func _tail_sweep(at: Vector3, reach: float) -> void:
+	var city := _city()
+	var behind := at - _ahead() * reach * 0.7 + Vector3(0, 0.5, 0)
+	city.fx.shockwave_to(at, reach)
+	city.fx.dust_line(at, behind, _rampage.sim.body_scale() * 2.0)
 
 
 func _debris(city: CityView, p: Vector3) -> void:
