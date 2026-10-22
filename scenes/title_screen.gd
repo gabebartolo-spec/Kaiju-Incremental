@@ -18,9 +18,10 @@ const ROW_GAP := 12
 ## A plate's face is 104 px (9.6% of the screen's height, 208 px at 4K): the rect less its shadow.
 const BUTTON_HEIGHT := 110.0
 ## The row starts this far in from the logo's box: the plates' outline (1 px out from the edge)
-## lands on the logo's yellow letters (their ink starts 66 px in, 132 at 4K), so they share one
-## left edge. The gear and the exit button stand the same distance from their screen edges.
-const ROW_INSET := 7.0
+## lands on the logo's yellow letters (the ink starts at x=127 on a 4K capture, 128 for the plates),
+## so they share one left edge. The gear and the exit button stand the same distance from their
+## screen edges.
+const ROW_INSET := 6.0
 ## Continue takes three shares of the row and New Kaiju? one.
 const CONTINUE_SHARE := 3.0
 ## The settings gear's side, how far it stands below the screen's top and the exit button above
