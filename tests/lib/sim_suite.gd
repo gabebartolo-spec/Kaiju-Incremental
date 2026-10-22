@@ -13,19 +13,27 @@ func _tree(levels: Dictionary = {}) -> UpgradeTree:
 	return UpgradeTree.new(Content.upgrades(), levels)
 
 
-func _layout(city: Dictionary = Content.section("city")) -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", 0), city)
+func _layout(city: Dictionary = Content.section("city"), city_seed: int = 0) -> Array[Dictionary]:
+	return CityGen.generate(Seeds.make("city", city_seed), city)
 
 
 func _sim(
 	species_id: String, levels: Dictionary, run_index: int = 0, tuning: Dictionary = {}
+) -> RampageSim:
+	return _sim_seeded(species_id, levels, tuning, Vector2i(0, run_index))
+
+
+## _sim with both seeds: seeds.x picks the city (0: the suite's usual one), seeds.y seeds the army.
+func _sim_seeded(
+	species_id: String, levels: Dictionary, tuning: Dictionary, seeds: Vector2i
 ) -> RampageSim:
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, _tree(levels))
 	var ability: Dictionary = species["ability"]
 	var tune := Content.tuning() if tuning.is_empty() else tuning
 	var city: Dictionary = tune["city"]
-	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
+	var layout := _layout(city, seeds.x)
+	var sim := RampageSim.new(stats, tune, layout, Seeds.make("army", seeds.y))
 	sim.ability_type = str(ability["type"])
 	sim.body.use_species(species_id)
 	return sim
