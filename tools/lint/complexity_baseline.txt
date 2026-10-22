@@ -28,8 +28,8 @@ scenes/gait_hexapod.gd::_step 50 22
 scenes/gait_radial.gd::update 51 27
 scenes/hexapod_upper.gd::update 46 14
 scenes/island_body.gd::_split 48 6
-scenes/kaiju_model.gd::_insectoid 41 8
-scenes/kaiju_model.gd::_reptile_details 36 14
+scenes/kaiju_code_body.gd::_insectoid 41 8
+scenes/kaiju_code_body.gd::_reptile_details 36 14
 scenes/kaiju_rig.gd::_build 54 13
 scenes/pavements.gd::_init 46 26
 scenes/pitch_props.gd::mesh 45 16

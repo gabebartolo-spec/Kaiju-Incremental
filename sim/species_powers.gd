@@ -98,12 +98,17 @@ func blocked(pos: Vector2, radius: float) -> bool:
 	return false
 
 
+## How fast the beam follows the stick, rad/s (the body turns at least this fast while it is on).
+func beam_turn_rate() -> float:
+	return Num.f(cfg["beam_turn_speed"]) * TAU
+
+
 ## The beam turns the kaiju slowly (steering the beam); otherwise it faces where it moves.
 func turn_toward(from: Vector2, to: Vector2, dt: float) -> Vector2:
 	if beam_left <= 0.0:
 		return to
 	var angle := from.angle_to(to)
-	var most := Num.f(cfg["beam_turn_speed"]) * TAU * dt
+	var most := beam_turn_rate() * dt
 	return from.rotated(clampf(angle, -most, most))
 
 

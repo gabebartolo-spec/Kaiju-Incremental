@@ -44,6 +44,12 @@ const TAIL_SPRING := Vector2(14.0, 0.36)
 const TAIL_GAIN := Vector2(7.8, 10.0)
 const TAIL_DELAY := 0.021
 const TAIL_MAX := 0.008
+## The head looks into a turn before the body makes it (director comments #16): it eases (1/s)
+## toward the yaw still to turn (KaijuGait.turn_ahead), at most HEAD_LEAD_MAX (rad), the neck
+## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
+const HEAD_LEAD_MAX := 0.6
+const HEAD_LEAD_EASE := 10.0
+const NECK_SHARE := 0.4
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -64,6 +70,7 @@ var _blend := 1.0
 var _roar_queued := false
 var _turn_from := 0.0
 var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
+var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _was_planted: Array[bool] = [false, false]
@@ -81,6 +88,7 @@ var _feet_primed := false
 var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
+var _look := 0.0  # the head's look-ahead into the turn (rad)
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -99,6 +107,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	clips = p_clips
 	for turn: String in ["turn_left", "turn_right"]:
 		_turn_span[turn] = _yaw_span(turn)
+	_steps = ClipSteps.new(clips)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
@@ -116,6 +125,7 @@ func update(delta: float) -> void:
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
 	_apply(pose, dt)
+	_look_ahead(dt)
 	_slam_tail(roar_was)
 	_plant_feet(pose, dt)
 	_measure_slide()
@@ -140,14 +150,14 @@ func _choose(dt: float) -> void:
 		_go("roar", 0.0)
 	elif state == "roar":
 		if done:
-			_go(settle, _walk_entry() if moving else 0.0)
+			_go(settle, _walk_start() if moving else 0.0)
 	elif state.begins_with("turn"):
 		var span: Vector2 = _turn_span[state]
 		if moving or clip_time >= span.y + TURN_SETTLE:
-			_go(settle, _walk_entry() if moving else 0.0)
+			_go(settle, _walk_start() if moving else 0.0)
 	elif moving:
 		if state != "walk":
-			_go("walk", _walk_entry())
+			_go("walk", _walk_start())
 	else:
 		var err := wrapf(model_yaw - body_yaw, -PI, PI)
 		if absf(err) > TURN_TRIGGER:
@@ -158,14 +168,23 @@ func _choose(dt: float) -> void:
 		elif state != "idle":
 			_go("idle", 0.0)
 	if state == "walk":
-		var cycles := speed * dt / maxf(stride(), 0.0001)
-		walk_cycles += cycles
-		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
+		_walk_clock(dt)
 	else:
 		clip_time += dt * clips.fps
 	_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
 	if state.begins_with("turn"):
 		_steer_turn()
+
+
+## The walk clip's clock: the sim's step clock when it gives one (the footfalls land where it
+## turns), else the distance walked.
+func _walk_clock(dt: float) -> void:
+	var cycles := speed * dt / maxf(stride(), 0.0001)
+	walk_cycles += cycles
+	if step_phase != INF:
+		clip_time = _steps.frame_at(step_phase)
+	else:
+		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
 
 
 func _go(next: String, at: float) -> void:
@@ -174,6 +193,12 @@ func _go(next: String, at: float) -> void:
 	_blend = 0.0
 	state = next
 	clip_time = at
+
+
+## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
+## feet (_walk_entry).
+func _walk_start() -> float:
+	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
 
 
 ## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
@@ -234,6 +259,17 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		rig.pose_basis(bone_name, Basis(q), offset)
 
 
+## Turns the neck and skull about the world's up into the turn still to make (after the clip).
+func _look_ahead(dt: float) -> void:
+	var ahead := clampf(0.0 if turn_ahead == INF else turn_ahead, -HEAD_LEAD_MAX, HEAD_LEAD_MAX)
+	_look = lerpf(_look, ahead, minf(1.0, dt * HEAD_LEAD_EASE))
+	for bone_name: String in ["head0", "head1"]:
+		if rig.has_bone(bone_name):
+			var share := NECK_SHARE if bone_name == "head0" else 1.0 - NECK_SHARE
+			var b := rig.bone(bone_name).global_transform.basis.orthonormalized()
+			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
+
+
 ## The roar's tail slam lands as a heavy footfall where the tip meets the street.
 func _slam_tail(roar_was: float) -> void:
 	if state != "roar":
@@ -286,7 +322,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var to_world := rig.global_transform
 	for i: int in mini(legs.size(), 2):
 		var leg := legs[i]
-		var clip_toe := to_world * clips.to_rig(pose.feet[i])
+		var clip_toe := to_world * _stepped(clips.to_rig(pose.feet[i]))
 		var planted := pose.planted[i] and _catch[i] <= 0.0
 		if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
 			_catch[i] = RESTEP_SECONDS  # the body got away from this foot: step after it
@@ -313,6 +349,14 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		_was_planted[i] = planted
 		_reach(leg, target)
 	_feet_primed = true
+
+
+## A foot spot of the clip with its fore-aft travel shortened to the step the sim takes (a quick
+## step in a turn is a short one, ClipSteps.shortened).
+func _stepped(toe: Vector3) -> Vector3:
+	if state != "walk" or step_phase == INF:
+		return toe
+	return _steps.shortened(toe, step_ratio)
 
 
 ## True when a planted foot has been left too far behind (or ahead) of its clip spot to hold.
