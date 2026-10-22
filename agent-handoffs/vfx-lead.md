@@ -14,11 +14,10 @@ effects, Taskforce effects, post effects. Rule above all: one look per kind ("co
 
 ## Branch and commit
 Worktree .claude/worktrees/vfx-lead-c37456. claude/vfx-lead-c37456 = PR #154 (look sheet + base fixes).
-claude/heli-deaths = item 3 = PR #166 (dd2b8842 synced). Sim review FIX: UNCOMMITTED here: coat tick sets
-last_blow (+ test _check_coat_kill), crash uses StrayShell.hit_buildings (wrecks hurt only the city, D-140; lead
-asked the director in the interview), _crashing removed, powers_view leak fixed. helideaths suite running (bikt4j0y7);
-then show the new check red without the fix, commit, push, sha to the lead. LOOK = REJECT by a fresh critic: rework
-brief scratchpad brief_heli_look.md, next builder slot (ledger scratchpad slots.md). No 'SHIP #166' until then.
+claude/heli-deaths = item 3 = PR #166. Sim review fixes pushed 31a77e99 (coat kill spins, check red/green;
+wrecks hurt only the city via StrayShell.hit_buildings, revert if the director wants army crushed; view leak).
+LOOK = REJECT by a fresh critic: rework brief scratchpad brief_heli_look.md at the next builder slot (ledger
+scratchpad slots.md). No 'SHIP #166' to the lead until the reworked look passes.
 
 ## What exists
 - docs/VFX_STYLE.md: 10 families (owner files, material, ramp, scale), "Two looks today" table, review checklist.
