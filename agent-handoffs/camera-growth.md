@@ -1,5 +1,5 @@
 # Camera-growth handoff, 2026-10-22
-## State: full suite running, then the 4K clip
+## State: done, awaiting lead QC of the clip
 ## Task
 Camera A (D-121) + falling towers fade: critic FIX on cameraA_topple_fade.mp4 (head too high 1.9-3.6 s; zoom bob
 0-2 s; dither opacity cap 0.35 over the kaiju; fade ramp 12-15 frames), head-bone framing check, full local suite,
@@ -23,8 +23,13 @@ cherry-picked onto origin/claude/look-options d834f58b (9 commits, no merges). B
 - Still seen: feet hidden behind a solid building 20 of 330 frames, head behind solid 15, body behind a falling section
   216 (solid 0: all faded). Not touched.
 - Lints (gdlint, tuning_keys, complexity_ratchet, check_scripts 346 ok) green; suites camera 5/5 9 checks, camera_frame 2/2 7.
-## Left
-1) Full suite (SUITES_ONLY=1) log kcg/full.log. 2) One 6 s 3840x2160 clip (override.cfg off-screen, local GPU), view at 2x.
-3) Push -v2, report. Remove override.cfg afterwards.
+## Done
+- Full suite SUITES_ONLY=1: 23 suites, all checks passed (873d638b tree). Pushed origin claude/camera-growth-v2.
+- Clip: side-session-notes/local_df2c2989-.../camera-growth/cameraA_v2_topple_fade.mp4 (3840x2160, 6 s, 60 fps, A stage 4
+  rampage, local RTX 4070 SUPER, peak 12.3 GB). The window must be borderless (override.cfg window/size/borderless=true) or
+  Windows clamps the height to 2097. In a 2x-stretch window the tool's % are of the 1080 canvas over the 2160 image:
+  double them (sim 20.3 -> 40.6, top 6.0 -> 12.0). override.cfg removed.
+- Seen at 1x on 8 frames: head clear of the top edge; towers over the body dither at 0.35 with the body readable.
+  Not seen: pops frame by frame (numbers only).
 ## Rules learnt
 - Stage-4 runs peak ~14 GB: one at a time. godot_quiet.sh named in the brief does not exist; used RULES-NOW.md override.cfg.
