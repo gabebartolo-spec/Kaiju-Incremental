@@ -90,12 +90,16 @@ func _ready() -> void:
 
 
 ## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
-## by_army: a stray shell did it).
+## by_army: a stray shell did it, so the dead are the army's: ArmyToll).
 func crush(at: Vector3, radius: float, by_tank: bool = false, by_army: bool = false) -> void:
 	if _decor != null:
 		_decor.crush(at, radius)
-	if street != null:
-		street.crush(at, radius, by_tank, by_army)
+	if street == null:
+		return
+	var before := ArmyToll.read(street)
+	street.crush(at, radius, by_tank)
+	if by_army:
+		street.toll.take(street, before)
 
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.

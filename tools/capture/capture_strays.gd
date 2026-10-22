@@ -96,7 +96,7 @@ func _run() -> void:
 				)
 	var killed := 0
 	if rampage._city.street != null:
-		killed = rampage._city.street.army_killed
+		killed = rampage._city.street.toll.killed
 	print("STRAYS %d of %d shots missed; %d civilians killed by the army" % [misses, shots, killed])
 	quit()
 
