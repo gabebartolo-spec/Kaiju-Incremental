@@ -46,8 +46,8 @@ static func measure(
 		mark.call(Vector2(at.x, at.z), full)
 	for car: Traffic.Car in street.traffic.cars:
 		mark.call(car.pos, full)
-	for p: StreetLife.Person in street.people:
-		mark.call(p.pos, full)
+	for at: Vector2 in street.pos:
+		mark.call(at, full)
 	var dressed := {}  # the band only: stand-ins count there, never inside the arena
 	for box: Dictionary in skyline._near:
 		var at: Vector3 = box["at"]

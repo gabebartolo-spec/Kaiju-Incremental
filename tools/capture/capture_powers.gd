@@ -10,6 +10,7 @@ extends SceneTree
 ## --side: watch from the kaiju's right side, level with its chest, instead of the game camera.
 ## --young: the same build before its first evolution (the young stage, not the Behemoth).
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 90
 const SIDE_DISTANCE := 26.0
 const SIDE_HEIGHT := 9.0
@@ -40,18 +41,19 @@ var _young := false
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--out="):
-			_out = arg.substr(6)
-		elif arg.begins_with("--species="):
-			_species = [arg.substr(10)]
-		elif arg == "--signature-only":
-			_signature_only = true
-		elif arg == "--side":
-			_side = true
-		elif arg == "--young":
-			_young = true
+	var a := Kit.args(
+		{"out": _out, "species": "", "signature-only": false, "side": false, "young": false}
+	)
+	_out = str(a["out"])
+	if str(a["species"]) != "":
+		_species = [str(a["species"])]
+	_signature_only = a["signature-only"]
+	_side = a["side"]
+	_young = a["young"]
 	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
@@ -63,18 +65,11 @@ func _run() -> void:
 
 
 func _species_shots(species_id: String) -> void:
-	var species := Content.species_def(species_id)
 	var shown: Dictionary = SHOWN[species_id]
 	var levels := shown.duplicate()
 	if _young:
 		levels.erase("evolve1")
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
+	var rampage := Kit.rampage(species_id, Kit.stats(species_id, levels), 1)
 	rampage.set_autoplay(true)
 	rampage.autoplay_signature = false
 	root.add_child(rampage)
@@ -121,10 +116,9 @@ func _upgrade_shots(rampage: Rampage) -> void:
 			return
 
 
-func _shot(name: String) -> void:
-	root.get_viewport().get_texture().get_image().save_png(_out.path_join(name + ".png"))
+func _shot(shot_name: String) -> void:
+	Kit.still(self, _out, shot_name)
 
 
 func _frames(n: int) -> void:
-	for _i: int in n:
-		await process_frame
+	await Kit.frames(self, n)

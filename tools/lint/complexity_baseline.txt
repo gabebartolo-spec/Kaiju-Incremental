@@ -1,14 +1,9 @@
-# Functions over 40 lines or complexity 12, as of the ratchet's start (2026-10-21). May only shrink:
+# Functions over 40 lines or complexity 12, as of the ratchet's start. May only shrink:
 # tools/lint/complexity_ratchet.py --shrink drops fixed rows and lowers numbers.
 scenes/ability_fx.gd::_first_hit 21 13
 scenes/biped_body.gd::update 43 6
 scenes/biped_head.gd::update 56 9
-scenes/building_fade.gd::update 33 17
 scenes/building_mesher.gd::_bake 59 15
-scenes/building_voxels.gd::_brick 11 17
-scenes/building_voxels.gd::_roof 58 19
-scenes/building_voxels.gd::_sign 30 20
-scenes/building_voxels.gd::_stone 12 14
 scenes/carve_debris.gd::_physics_process 40 14
 scenes/cephalopod_stand_in.gd::build 55 5
 scenes/city_decor.gd::_streets 68 26
@@ -51,10 +46,10 @@ scenes/traffic_island.gd::spots 48 18
 scenes/upgrade_node.gd::show_state 45 21
 scenes/upgrade_screen.gd::_ready 41 3
 scenes/voxel_skin.gd::_setup 90 6
-sim/building_cells.gd::_brick 11 17
-sim/building_cells.gd::_roof 30 15
-sim/building_cells.gd::_sign 28 20
-sim/building_cells.gd::_stone 12 14
+sim/building_layout.gd::_brick 11 17
+sim/building_layout.gd::_roof 30 15
+sim/building_layout.gd::_sign 28 20
+sim/building_layout.gd::_stone 12 14
 sim/city_gen.gd::map 90 23
 sim/city_river.gd::sheds 49 10
 sim/city_sites.gd::_span 22 13

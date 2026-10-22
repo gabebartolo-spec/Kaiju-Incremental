@@ -20,11 +20,13 @@ func run_checks() -> void:
 	await _t("_check_party_walls")
 	await _t("_check_building_fade")
 	await _t("_check_fade_rise")
+	await _t("_check_fall_fade")
 	await _h("FadeSpawn", func() -> void: FadeSpawn.new(check).run())
 	await _t("_check_bake_kept")
 	await _t("_check_bake_pruned")
 	await _h("LoadLandmark", func() -> void: LoadLandmark.new(check).run())
 	await _t("_check_stream")
+	await _t("_check_stream_budget")
 
 
 func _tuning(tier: int) -> Dictionary:
@@ -183,7 +185,7 @@ func _check_fade_rise() -> void:
 	var later := BuildingFade.new(buildings, func(_n: int) -> BuildingView: return null)
 	later.update(eye, PackedVector3Array([eye + Vector3(1, 0, 0)]), 1.0 / 60.0)
 	later.update(eye, wet, 1.0 / 60.0)
-	var floor_opacity := Num.f(Content.section("vehicles")["fade_opacity"])
+	var floor_opacity := Num.f(Content.section("camera")["fade_opacity"])
 	check(
 		is_equal_approx(first, floor_opacity) and later.opacity(0) > floor_opacity,
 		(
@@ -196,10 +198,45 @@ func _check_fade_rise() -> void:
 	)
 
 
+## A toppling section fades like a standing building (R 19.4, D-121 review): a tower tipping over
+## between the camera and the kaiju covers the sight lines as it is tilted now, and starts faded;
+## the same tower tipped the other way, away from the line, stays solid.
+func _check_fall_fade() -> void:
+	var eye := Vector3(0, 20, 40)
+	var sight := BuildingFade.targets(Vector3.ZERO, 20.0, Vector3.ZERO)
+	var piece := Node3D.new()
+	piece.position = Vector3(10, 0, 15)  # the pivot: its base edge, beside the sight line
+	piece.set_meta("pivot", piece.position)
+	piece.set_meta("box", AABB(Vector3(9, 0, 14), Vector3(2, 25, 2)))  # 25 tall, upright
+	var mesh := MeshInstance3D.new()
+	mesh.material_override = ShaderMaterial.new()
+	piece.add_child(mesh)
+	root.add_child(piece)
+	var upright := FallFade.covers(piece, eye, sight)
+	piece.rotation = Vector3(0, 0, PI * 0.25)  # tipping toward -x, across the sight line
+	var across := FallFade.covers(piece, eye, sight)
+	var fade := FallFade.new()
+	var pieces: Array[Node3D] = [piece]
+	fade.update(pieces, eye, sight, 1.0 / 60.0)
+	var first := fade.opacity(piece)
+	piece.rotation = Vector3(0, 0, -PI * 0.25)  # tipping toward +x, away from it
+	var away := FallFade.covers(piece, eye, sight)
+	piece.free()
+	check(
+		not upright and across and not away,
+		"a toppling section covers the kaiju only while it is tilted across the sight line"
+	)
+	check(
+		is_equal_approx(first, Num.f(Content.section("camera")["fade_opacity"])),
+		"a section already in the way when it starts to fall starts faded (%.2f)" % first
+	)
+
+
 ## a building touched before its turn is built on the spot; in the end every building is real.
 func _check_stream() -> void:
 	var sim := _sim_at(2)
 	sim.city["load_chunks"] = 3000
+	sim.city["stream_chunks"] = 1 << 30  # no memory cap here: every building streams in
 	var colors: Array[Color] = []
 	for b: RampageSim.Building in sim.buildings:
 		colors.append(Color.GRAY)
@@ -251,3 +288,107 @@ func _check_stream() -> void:
 	check(stream.complete() and missing == 0, "every building streams in (%d missing)" % missing)
 	stream.queue_free()
 	await process_frame
+
+
+## A big city keeps only a chunk budget meshed (stage 4 swapped at 10+ GB when every building
+## streamed in): the nearest buildings to the kaiju stay meshed, a building the rampage touched
+## is never freed, and as the kaiju walks away the far untouched ones go back to boxes while the
+## ones he reaches are meshed.
+func _check_stream_budget() -> void:
+	var sim := _sim_at(3)
+	sim.city["load_chunks"] = 3000
+	sim.city["stream_chunks"] = 30000
+	var colors: Array[Color] = []
+	for b: RampageSim.Building in sim.buildings:
+		colors.append(Color.GRAY)
+	var stream := BuildingStream.new(sim, colors)
+	root.add_child(stream)
+	var spot := sim.kaiju_pos
+	var near := _nearest_plain(sim, spot)
+	var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
+	while not stream.complete() and Time.get_ticks_msec() < deadline:
+		await process_frame
+	var cap := 30000 + _ring_slack(sim)
+	check(
+		stream.resident_chunks() <= cap and stream.resident_chunks() > 3000,
+		"the stream stops at its chunk budget (%d meshed, budget 30000)" % stream.resident_chunks()
+	)
+	var missing := 0
+	for n: int in sim.buildings.size():
+		missing += 1 if stream.built(n) == null else 0
+	check(missing > 0, "a city over the budget keeps some buildings as boxes (%d)" % missing)
+	var touched := stream.view(near)  # the rampage touches the nearest building
+	# The kaiju walks to the far side of the city.
+	var far := Vector2.ZERO
+	var far_d := 0.0
+	for b: RampageSim.Building in sim.buildings:
+		if b.landmark == "" and spot.distance_to(Vector2(b.x, b.z)) > far_d:
+			far_d = spot.distance_to(Vector2(b.x, b.z))
+			far = Vector2(b.x, b.z)
+	sim.kaiju_pos = far
+	var arrived := _nearest_plain(sim, far)
+	var other := _nearest_plain(sim, spot, near)
+	var digest := _digest(stream.built(other))
+	while (
+		(stream.built(arrived) == null or stream.built(other) != null)
+		and Time.get_ticks_msec() < deadline
+	):
+		await process_frame
+	check(stream.built(arrived) != null, "the building the kaiju walks up to is meshed")
+	check(stream.built(other) == null, "an untouched building far behind him goes back to a box")
+	check(
+		stream.built(near) == touched and touched.is_inside_tree(),
+		"a building the rampage touched is never freed"
+	)
+	while not stream.complete() and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(
+		(
+			stream.resident_chunks()
+			<= cap + sim.buildings[near].w * sim.buildings[near].d * sim.buildings[near].height
+		),
+		"walking on keeps the meshed chunks inside the budget (%d)" % stream.resident_chunks()
+	)
+	# He walks back: the freed building meshes again, identical to before.
+	sim.kaiju_pos = spot
+	while stream.built(other) == null and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(
+		stream.built(other) != null and _digest(stream.built(other)) == digest,
+		"a building freed and met again meshes identically"
+	)
+	var wanted := _nearest_plain(sim, far, arrived)
+	check(
+		stream.view(wanted) != null and stream.built(wanted) != null,
+		"a reached building is meshed on the spot"
+	)
+	stream.queue_free()
+	await process_frame
+
+
+## The nearest ordinary building to `at`, other than `skip`.
+func _nearest_plain(sim: RampageSim, at: Vector2, skip: int = -1) -> int:
+	var best := -1
+	var best_d := INF
+	for n: int in sim.buildings.size():
+		var b := sim.buildings[n]
+		var d := at.distance_to(Vector2(b.x, b.z))
+		if n != skip and b.landmark == "" and d < best_d:
+			best = n
+			best_d = d
+	return best
+
+
+## Slack for the buildings the plan keeps inside the evict margin and the touched ones.
+func _ring_slack(sim: RampageSim) -> int:
+	var most := 0
+	for b: RampageSim.Building in sim.buildings:
+		most = maxi(most, b.w * b.d * b.height)
+	return most * 4
+
+
+## A fingerprint of a view's baked meshes and debris sources.
+func _digest(view: BuildingView) -> int:
+	if view == null:
+		return 0
+	return hash([view.mesher.shell.get_faces(), view.mesher.slabs.get_faces(), view.mesher.samples])
