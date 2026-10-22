@@ -24,6 +24,7 @@ func run_checks() -> void:
 	await _t("_check_stomp_shape")
 	await _t("_check_stomp_landing")
 	await _t("_check_claw_rake")
+	await _t("_check_claw_trail")
 
 
 func _model(stage: String) -> KaijuModel:
@@ -284,6 +285,47 @@ func _rake_one(stage: String, side: float) -> void:
 	check(finite, "%s: no bone turns NaN or infinite" % tag)
 	rake.queue_free()
 	calm.queue_free()
+	await process_frame
+
+
+## The raking claw's streak is laid by the arm (ClawTrail): marks appear only on the swing frames
+## (not in the windup, not after), none lives past a few frames, and claw_arc says the arm draws it.
+func _check_claw_trail() -> void:
+	var kaiju := _model("adult")
+	var rig := _rig_of(kaiju)
+	var lift := Num.f(Content.section("claw_fx")["lift_s"])
+	var strike := Num.f(Content.section("claw_fx")["strike_s"])
+	var life := Num.f(Content.section("claw_fx")["trail_s"])
+	for i: int in 40:
+		_step(kaiju, rig)
+	var gait: ClipGait = rig.gait
+	var arc := gait.swing.claw_arc(1.0)
+	check(arc.get("trailed", false) == true, "trail: the arm draws its own streak")
+	kaiju.tail_sweep(1.0, "claw_windup")
+	var first := -1
+	var last := -1
+	var peak := 0
+	for f: int in 60:
+		if f == 18:
+			kaiju.tail_sweep(1.0, "claw")
+		_step(kaiju, rig)
+		var marks := 0
+		for n: Node in root.get_children():
+			marks += 1 if n is MeshInstance3D else 0
+		peak = maxi(peak, marks)
+		if marks > 0:
+			first = f if first < 0 else first
+			last = f
+	var swing_start := floori(lift / DT)
+	var swing_end := ceili((lift + strike * 1.3 + life) / DT) + 2
+	check(
+		first >= swing_start and last <= swing_end and peak > 0,
+		(
+			"trail: marks run from frame %d to %d (the swing is %d to %d), up to %d at once"
+			% [first, last, swing_start, swing_end, peak]
+		)
+	)
+	kaiju.queue_free()
 	await process_frame
 
 

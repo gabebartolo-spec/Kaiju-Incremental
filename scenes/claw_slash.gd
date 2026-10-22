@@ -31,6 +31,12 @@ static func play(
 		centre = arc["centre"]
 		radius = Num.f(arc["radius"])
 	radius *= Num.f(cfg["arc_reach"])
+	var strike := (
+		centre + _arc_point(ahead, across, side, radius, 0.0, Num.f(cfg["arc_drop"]) * radius * 0.5)
+	)
+	if arc.get("trailed", false):  # the arm lays its own streak (ClawTrail): only the dust is left
+		_strike_dust(city, strike, Num.f(cfg["puff"]) * bs * boost)
+		return
 	var root := Node3D.new()
 	city.add_child(root)
 	root.global_position = centre
@@ -72,9 +78,11 @@ static func play(
 	tween.tween_property(mat, "albedo_color:a", 0.0, Num.f(cfg["fade_s"]))
 	tween.tween_callback(root.queue_free)
 	# The claws strike: a puff of debris dust where the arc crosses the snout line.
-	var hit := centre + _arc_point(ahead, across, side, radius, 0.0, drop * 0.5)
-	hit.y = maxf(0.3, hit.y * 0.5)
-	city.fx.dust(hit, Num.f(cfg["puff"]) * bs * boost)
+	_strike_dust(city, strike, Num.f(cfg["puff"]) * bs * boost)
+
+
+static func _strike_dust(city: CityView, at: Vector3, size: float) -> void:
+	city.fx.dust(Vector3(at.x, maxf(0.3, at.y * 0.5), at.z), size)
 
 
 ## A point on the rake arc, from the centre: at `angle` from straight ahead toward the raking

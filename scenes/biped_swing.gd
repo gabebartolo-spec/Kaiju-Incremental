@@ -53,6 +53,8 @@ var hip_drop := 0.0
 var youth := 0.0
 ## The body's turn rate (rad/s), set each frame: the arms brace in against it.
 var yaw_rate := 0.0
+## A gait that poses the arms itself sets this, and the raking claw lays its streak from the arm.
+var trail: ClawTrail
 var _straight: Array[float] = []
 var _sweep: Array[float] = []  # the hips' yaw as it travels down the tail, one per bone
 var _whip := 0.0  # 1 -> 0 over a tail whip
@@ -126,7 +128,7 @@ func claw_arc(side: float) -> Dictionary:
 			var n := "arm_%s%d" % [s, i]
 			if rig.has_bone(n):
 				reach += (rig.tail_world(n) - rig.bone(n).global_position).length()
-		return {"centre": shoulder, "radius": reach}
+		return {"centre": shoulder, "radius": reach, "trailed": trail != null}
 	return {}
 
 
@@ -157,8 +159,10 @@ func tick_rake(dt: float) -> void:
 ## The raking arm alone, laid over the pose a clip gait has already put on the bones: from where the
 ## clip holds the arm, up and out, across the front, and back to where the clip holds it. Nothing
 ## is touched while no rake runs. The claw reach follows `youth`.
-func pose_rake() -> void:
+func pose_rake(dt: float) -> void:
 	if _rake_t < 0.0:
+		if trail != null:
+			trail.update(Vector3.ZERO, false, dt)  # the last marks fade
 		return
 	var body := rig.global_transform.basis.orthonormalized()
 	for side: String in ["l", "r"]:
@@ -171,6 +175,10 @@ func pose_rake() -> void:
 			held.append(d.normalized() * Vector3(_rake_side, 1, 1))
 		_aim_arm(names, _rake_dirs(_rake_t, held), _rake_side, body)
 		_reach_arm(names)
+		if trail != null:  # the downswing and strike (and a beat after) leave the streak
+			var lift := Num.f(_claw["lift_s"])
+			var swinging := _rake_t >= lift and _rake_t < lift + Num.f(_claw["strike_s"]) * 1.3
+			trail.update(rig.tail_world(names[-1]), swinging, dt)
 
 
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:

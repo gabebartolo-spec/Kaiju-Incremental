@@ -48,6 +48,10 @@ func _run() -> void:
 	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
+	var aim: Node3D = rampage.find_child("BreathAim", false, false)
+	if aim != null:  # the breath's aim wedge is a game aid, not part of the shot
+		aim.set_physics_process(false)
+		aim.visible = false
 	while rampage.sim.emerge.active:
 		await process_frame
 	print("capture_croc_standing: emerged at frame %d" % Engine.get_process_frames())
