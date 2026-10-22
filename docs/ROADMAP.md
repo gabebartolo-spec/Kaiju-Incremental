@@ -293,4 +293,5 @@ the reptilian stage is 100% done: bug free, polished visuals, good performance, 
 Atmosphere and city life (comment #63, director 2026-10-22): clouds and weather, birds flying round, one whale per run
 spouting in the bay, fire crews and ambulances (fire crews: comment #50), pet dogs on the streets, night clubs, banks, hotels,
 train stations with tracks and running trains, small boats on the water. First: sky and sea life (clouds and weather, birds, small boats, the whale); weather looks only; the whale is pure
-spectacle (can't be touched). Rest: to ask.
+spectacle (can't be touched); birds scatter on roars and falling towers; dogs always escape; trains derail and smash;
+banks, hotels and clubs give small bonuses (comments #64-71).

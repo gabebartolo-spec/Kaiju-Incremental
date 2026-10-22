@@ -71,3 +71,7 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 65 | Weather (asked): "Looks only" (mood and light, no gameplay effect) | atmosphere builder | recorded |
 | 66 | Whale (asked): "Pure spectacle" (surfaces, spouts, dives once per run; the kaiju can't touch it) | atmosphere builder | recorded |
 | 67 | Landmark models (asked): "Yes, concept refs first" (free refs for all 8 on one board; models only for the ones he approves) | lead: Tripo refs today (D-134 budget) | in progress |
+| 68 | Pet dogs (asked, 2026-10-22): "No, they always escape" (bolt clear, never crushed; people still are) | street-life builder | recorded |
+| 69 | Trains (asked): "Derail and smash" (stomp the track or hit a train: it derails, carriages tumble and break like vehicles) | trains builder | recorded |
+| 70 | Banks, hotels, night clubs (asked): "Small bonuses" (e.g. a bank spills extra biomass, a club's crowd floods out, a hotel is tall and topples well) | city builder | recorded |
+| 71 | Birds (asked): "Scatter on roars and stomps" (flocks burst up and away on a roar or a falling tower) | atmosphere builder | recorded |
