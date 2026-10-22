@@ -17,12 +17,18 @@ const RIM_COLOR := Color("9fc4ff")
 ## The object's render layers: the world's lights (1) and the kaiju-only rim light (2).
 const LAYERS := 1 | 2
 const WARMUP_FRAMES := 6
+## The SSAO radius as a share of the model's size (about the share 1 m is of the kaiju in the game;
+## the default 1 m would shade a whole 1-unit model dark).
+const SSAO_SHARE := 0.03
+## The HUD text outline's alpha over UiKit.BG (tuning ui.text.outline_alpha on the HUD branch).
+const OUTLINE_ALPHA := 0.95
 
 
 ## Renders `subject` (a Node3D, origin and size in `fit`) to a transparent `size` square image.
 ## opts: yaw (deg off straight on the face), pitch (deg above), fov (deg), face (the way the model
 ## looks, a Vector3), margin (share of the frame kept clear), outline (share of the frame),
-## fx (a Node3D already placed in the subject's space), hdr_glow (bool).
+## fx (a Node3D already placed in the subject's space), frame (the AABB the camera fits, default
+## `fit`: the subject and its fx), exposure (the tone map's, 1 = the game's), hdr_glow (bool).
 static func render(
 	tree: SceneTree, subject: Node3D, fit: AABB, size: int, opts: Dictionary
 ) -> Image:
@@ -34,10 +40,19 @@ static func render(
 	pass_one.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	tree.root.add_child(pass_one)
 	var glow: bool = opts.get("hdr_glow", true)
-	pass_one.add_child(_environment(glow))
+	pass_one.add_child(_environment(glow, fit.size.length(), Num.f(opts.get("exposure", 1.0))))
 	var radius := fit.size.length() * 0.5
+	var face: Vector3 = opts.get("face", Vector3(0, 0, -1))
+	var yaw := deg_to_rad(Num.f(opts.get("yaw", 38.0)))
+	var pitch := deg_to_rad(Num.f(opts.get("pitch", 14.0)))
+	var dir := view_from(face, yaw, pitch)
+	# The species card lights a kaiju seen from +z; turn the rig so it lights this view the same.
+	var rig := Node3D.new()
+	rig.rotation.y = atan2(dir.x, dir.z)
+	rig.position = fit.get_center()
 	for light: Node in _lights(radius):
-		pass_one.add_child(light)
+		rig.add_child(light)
+	pass_one.add_child(rig)
 	_layer(subject)
 	pass_one.add_child(subject)
 	if opts.has("fx"):
@@ -46,15 +61,8 @@ static func render(
 	var cam := Camera3D.new()
 	cam.fov = Num.f(opts.get("fov", 28.0))
 	pass_one.add_child(cam)
-	var margin := 1.0 + Num.f(opts.get("margin", 0.16))
-	var dist := radius * margin / sin(deg_to_rad(cam.fov) * 0.5)
-	var face: Vector3 = opts.get("face", Vector3(0, 0, -1))
-	var yaw := deg_to_rad(Num.f(opts.get("yaw", 38.0)))
-	var pitch := deg_to_rad(Num.f(opts.get("pitch", 14.0)))
-	var dir := view_from(face, yaw, pitch)
-	var centre := fit.get_center()
-	cam.position = centre + dir.normalized() * dist
-	cam.look_at(centre)
+	var frame: AABB = opts.get("frame", fit)
+	_aim(cam, frame, dir, Num.f(opts.get("margin", 0.16)))
 	# Pass two: the dark outline round everything pass one drew.
 	var pass_two := SubViewport.new()
 	pass_two.size = Vector2i(size, size)
@@ -65,7 +73,7 @@ static func render(
 	rect.size = Vector2(size, size)
 	var mat := ShaderMaterial.new()
 	mat.shader = OUTLINE_SHADER
-	mat.set_shader_parameter("outline_color", UiKit.outline_color())
+	mat.set_shader_parameter("outline_color", Color(UiKit.BG, OUTLINE_ALPHA))
 	mat.set_shader_parameter("radius_px", Num.f(opts.get("outline", 0.025)) * size)
 	rect.material = mat
 	pass_two.add_child(rect)
@@ -77,6 +85,32 @@ static func render(
 	pass_two.queue_free()
 	pass_one.queue_free()
 	return image
+
+
+## Points `cam` along -`dir` at `box` from just far enough that every corner of the box sits inside
+## the frame with `margin` (a share of the half frame) kept clear, the box centred on screen.
+static func _aim(cam: Camera3D, box: AABB, dir: Vector3, margin: float) -> void:
+	var back := dir.normalized()
+	var right := Vector3.UP.cross(back).normalized()
+	var up := back.cross(right)
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for k: int in 8:
+		var p := box.get_endpoint(k)
+		var flat := Vector2(p.dot(right), p.dot(up))
+		lo = lo.min(flat)
+		hi = hi.max(flat)
+	var mid := (lo + hi) * 0.5
+	var target := box.get_center()
+	target += right * (mid.x - target.dot(right)) + up * (mid.y - target.dot(up))
+	var reach := tan(deg_to_rad(cam.fov) * 0.5) * (1.0 - margin)
+	var dist := 0.0
+	for k: int in 8:
+		var rel := box.get_endpoint(k) - target
+		var across := maxf(absf(rel.dot(right)), absf(rel.dot(up)))
+		dist = maxf(dist, rel.dot(back) + across / reach)
+	cam.position = target + back * dist
+	cam.look_at(target)
 
 
 ## The unit vector from the subject toward the camera: 3/4 view, `yaw` radians off straight at the
@@ -101,7 +135,7 @@ static func preview(source: Image, size: int) -> Image:
 	return img
 
 
-static func _environment(glow: bool) -> WorldEnvironment:
+static func _environment(glow: bool, across: float, exposure: float) -> WorldEnvironment:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CLEAR_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -110,11 +144,13 @@ static func _environment(glow: bool) -> WorldEnvironment:
 	)
 	env.ambient_light_energy = maxf(0.6, Look.value("ambient"))
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.tonemap_exposure = exposure
 	env.adjustment_enabled = true
 	env.adjustment_saturation = Look.value("saturation")
 	env.adjustment_contrast = Look.value("contrast")
 	env.ssao_enabled = true
 	env.ssao_intensity = Look.value("ssao")
+	env.ssao_radius = across * SSAO_SHARE
 	env.glow_enabled = glow
 	env.glow_intensity = maxf(0.6, Look.value("glow"))
 	env.glow_hdr_threshold = 1.0

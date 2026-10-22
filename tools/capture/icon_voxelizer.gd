@@ -48,8 +48,10 @@ class Sampler:
 	func at(uv: Vector2) -> Color:
 		if _image == null:
 			return _tint
-		var x := clampi(floori(posmod(uv.x, 1.0) * _image.get_width()), 0, _image.get_width() - 1)
-		var y := clampi(floori(posmod(uv.y, 1.0) * _image.get_height()), 0, _image.get_height() - 1)
+		var x := clampi(floori(fposmod(uv.x, 1.0) * _image.get_width()), 0, _image.get_width() - 1)
+		var y := clampi(
+			floori(fposmod(uv.y, 1.0) * _image.get_height()), 0, _image.get_height() - 1
+		)
 		return _image.get_pixel(x, y) * _tint
 
 

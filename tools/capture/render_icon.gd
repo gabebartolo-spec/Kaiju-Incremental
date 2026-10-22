@@ -1,5 +1,5 @@
 extends SceneTree
-## Renders a model to a UI icon: a transparent square PNG (512 px) plus a small preview (80 px),
+## Renders a model to a UI icon: a transparent square PNG (256 px) plus a small preview (80 px),
 ## 3/4 view, in the game's own light and look with the HUD's dark outline (IconStage), in two
 ## styles: "voxel" (the model voxelized through the game's voxel pipeline, IconVoxelizer) and
 ## "smooth" (the model as it is). Any lightning or beam is our own FX laid in the render (IconFx),
@@ -9,8 +9,12 @@ extends SceneTree
 ##     --model=<file.glb|file.kvox> --style=both --out=<dir> --name=croc_head \
 ##     [--crop=x0,y0,z0,x1,y1,z1]   shares of the model's box to keep (the head: 0,0.5,0,1,1,0.4)
 ##     [--cells=32]                 voxels across the kept part's longest side (reads at 80 px)
-##     [--face=0,0,-1] [--yaw=38] [--pitch=14] [--fov=28] [--size=512] [--preview=80]
-##     [--fx=none|lightning|beam]
+##     [--face=0,0,-1] [--yaw=38] [--pitch=14] [--fov=28] [--size=256] [--preview=80]
+##     [--yaw=0,90,180]             several yaws: one icon each, named _y<yaw>
+##     [--margin=0.16]              share of the frame kept clear round the model
+##     [--fx=none|lightning|beam|dash] [--aim=x,y,z]   the FX's way (default: --face)
+##     [--reach=1.0]                the FX's length, in model sizes
+##     [--exposure=1.0]             brighter than the game's (an icon sits on a dark disc)
 ##     [--mouth=0.5,0.35,0.0]       shares of the kept part: where the FX leaves
 ##     [--rotate=0]                 turns the model about up first (deg), if it faces another way
 
@@ -29,12 +33,18 @@ var _opts: Dictionary[String, String] = {
 	"yaw": "38",
 	"pitch": "14",
 	"fov": "28",
-	"size": "512",
+	"size": "256",
 	"preview": "80",
 	"fx": "none",
 	"mouth": "0.5,0.35,0",
 	"rotate": "0",
+	"margin": "0.16",
+	"aim": "",
+	"reach": "1.0",
+	"exposure": "1.0",
 }
+var _scene: Node3D
+var _parts: Array[Voxelizer.Part] = []
 
 
 func _initialize() -> void:
@@ -47,52 +57,56 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	DirAccess.make_dir_recursive_absolute(str(_opts["out"]))
-	var styles: Array[String] = (
-		["voxel", "smooth"] if _opts["style"] == "both" else [str(_opts["style"])]
-	)
+	var styles: Array[String] = []
+	if _opts["style"] == "both":
+		styles.assign(["voxel", "smooth"])
+	else:
+		styles.append(str(_opts["style"]))
+	var yaws := str(_opts["yaw"]).split(",")
 	for style: String in styles:
-		var made := await _icon(style)
-		if made.is_empty():
+		var model := _load_model(style)
+		if model.is_empty():
 			push_error("render_icon: nothing rendered for %s" % style)
 			quit(1)
 			return
+		for yaw: String in yaws:
+			var tag := "" if yaws.size() == 1 else "_y%s" % yaw
+			await _icon(model, style, float(yaw), tag)
 	quit()
 
 
-func _icon(style: String) -> Dictionary:
-	var model := _load_model(style)
-	if model.is_empty():
-		return {}
-	var subject: Node3D = model["node"]
+## Renders one view of a loaded model: the master (--size) and the preview (--preview) PNGs.
+func _icon(model: Dictionary, style: String, yaw: float, tag: String) -> void:
+	var source: Node3D = model["node"]
+	var subject: Node3D = source.duplicate()
 	var fit: AABB = model["fit"]
 	var size := int(_opts["size"])
+	var face := _vec(str(_opts["face"]))
 	var render_opts := {
-		"yaw": float(_opts["yaw"]),
+		"yaw": yaw,
 		"pitch": float(_opts["pitch"]),
 		"fov": float(_opts["fov"]),
-		"face": _vec(str(_opts["face"])),
+		"face": face,
+		"margin": float(_opts["margin"]),
+		"exposure": float(_opts["exposure"]),
 	}
 	if _opts["fx"] != "none":
-		var shares := _vec(str(_opts["mouth"]))
-		var mouth := fit.position + fit.size * shares
-		var toward := Stage.view_from(
-			_vec(str(_opts["face"])),
-			deg_to_rad(float(_opts["yaw"])),
-			deg_to_rad(float(_opts["pitch"]))
+		var mouth := fit.position + fit.size * _vec(str(_opts["mouth"]))
+		var aim := _vec(str(_opts["aim"])) if _opts["aim"] != "" else face
+		var toward := Stage.view_from(face, deg_to_rad(yaw), deg_to_rad(float(_opts["pitch"])))
+		var fx := Fx.build(
+			str(_opts["fx"]), mouth, aim, fit.size.length(), float(_opts["reach"]), -toward
 		)
-		render_opts["fx"] = Fx.build(
-			str(_opts["fx"]), mouth, _vec(str(_opts["face"])), fit.size.length(), -toward
-		)
+		render_opts["fx"] = fx
+		render_opts["frame"] = fit.merge(Fx.bounds(fx))
 	var image := await Stage.render(self, subject, fit, size, render_opts)
-	var base := str(_opts["out"]).path_join("%s_%s" % [_opts["name"], style])
+	var base := str(_opts["out"]).path_join("%s_%s%s" % [_opts["name"], style, tag])
 	image.save_png(base + "_%d.png" % size)
 	Stage.preview(image, int(_opts["preview"])).save_png(base + "_%d.png" % int(_opts["preview"]))
-	var voxels: int = model.get("voxels", 0)
-	print("render_icon: %s (%d voxels)" % [base, voxels])
-	return {"ok": true}
+	print("render_icon: %s (%d voxels)" % [base, Num.i(model.get("voxels", 0))])
 
 
-## {"node", "fit", "voxels"} for one style of the model, or {}.
+## {"node", "fit", "voxels"} for one style of the model, or {}. The GLB is read once.
 func _load_model(style: String) -> Dictionary:
 	var path := str(_opts["model"])
 	var frac := PackedFloat32Array()
@@ -100,18 +114,21 @@ func _load_model(style: String) -> Dictionary:
 		frac.append(float(s))
 	if path.get_extension() == "kvox":
 		return _kvox(path, frac) if style == "voxel" else {}
-	var scene := Voxelizer.load_glb(path)
-	if scene == null:
-		push_error("render_icon: cannot read %s" % path)
-		return {}
-	scene.rotate_y(deg_to_rad(float(_opts["rotate"])))
-	var parts: Array[Voxelizer.Part] = Voxelizer.surfaces(scene)
-	var whole := Voxelizer.bounds(parts)
+	if _scene == null:
+		_scene = Voxelizer.load_glb(path)
+		if _scene == null:
+			push_error("render_icon: cannot read %s" % path)
+			return {}
+		_scene.rotate_y(deg_to_rad(float(_opts["rotate"])))
+		_parts = Voxelizer.surfaces(_scene)
+	var whole := Voxelizer.bounds(_parts)
 	var crop := Voxelizer.crop_box(whole, frac)
 	if style == "smooth":
-		return {"node": Voxelizer.smooth(parts, crop), "fit": crop}
+		if crop.is_equal_approx(whole):
+			return {"node": _scene, "fit": whole}
+		return {"node": Voxelizer.smooth(_parts, crop), "fit": crop}
 	var voxel := maxf(crop.size.x, maxf(crop.size.y, crop.size.z)) / float(_opts["cells"])
-	var builder := Voxelizer.voxelize(parts, crop, voxel)
+	var builder := Voxelizer.voxelize(_parts, crop, voxel)
 	var holder := Node3D.new()
 	holder.add_child(builder.build({}, voxel, 0.0, crop.position))
 	return {"node": holder, "fit": crop, "voxels": builder.cells.size()}
