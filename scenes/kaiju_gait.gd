@@ -5,10 +5,11 @@ extends RefCounted
 ## going from its parent node every frame (position, speed, heading, turn rate), so every gait
 ## follows whatever the sim and the scene do to the kaiju and never decides anything itself.
 
-## Feel of the body following the heading: how fast it catches up (spring, 1/s) and its top turn
-## rate (rad/s at body scale 1; bigger bodies turn slower by sqrt(scale)) so the legs keep up.
-const BODY_YAW_SPRING := 7.0
-const BODY_TURN_MAX := 4.5
+## The body follows the heading (the sim turns it with weight, BodyContact.steer) at most this
+## fast (rad/s at body scale 1; bigger bodies turn slower by sqrt(scale)) so the legs keep up. Above
+## the quickest slice of a stepped turn (about 5.5 rad/s), or the body lags the sim's footfalls.
+## No lag of its own: a body behind the way it walks would slide sideways (comments #16).
+const BODY_TURN_MAX := 7.0
 ## How much the speed and the turn rate are smoothed (per second).
 const VELOCITY_SMOOTHING := 8.0
 const TURN_SMOOTHING := 10.0
@@ -23,8 +24,17 @@ var accel := Vector3.ZERO
 ## Heading of the kaiju's node (radians, 0 = facing -Z) and how fast it turns.
 var model_yaw := 0.0
 var yaw_rate := 0.0
-## Where the body actually faces: it follows the heading with a lag, so the head leads a turn.
+## Where the body actually faces: the heading, caught up at no more than the top turn rate.
 var body_yaw := 0.0
+## The yaw the body still has to turn (rad, set by the scene from the sim; INF: not told): the
+## head looks ahead by it, a beat before the body turns (comments #16).
+var turn_ahead := INF
+## Steps the sim has walked (INF: not told; BodyContact.phase): an integer is a footfall, even the
+## left foot, odd the right. A clip gait plants its feet on it, so the legs step where the sim
+## turns the body.
+var step_phase := INF
+## How long this step is next to a full stride, 0..1 (BodyContact.step_ratio).
+var step_ratio := 1.0
 var time := 0.0
 ## Top turn rate (rad/s at scale 1); a gait may change it (a skittering insect turns fast).
 var turn_max := BODY_TURN_MAX
@@ -82,10 +92,8 @@ func track(delta: float) -> void:
 	_last_pos = pos
 	_last_yaw = model_yaw
 	var err := wrapf(model_yaw - body_yaw, -PI, PI)
-	var w := BODY_YAW_SPRING
 	var top := turn_max / sqrt(maxf(s, 0.01))
-	_body_yaw_v += (err * w * w - 2.0 * w * _body_yaw_v) * dt
-	_body_yaw_v = clampf(_body_yaw_v, -top, top)
+	_body_yaw_v = clampf(err / dt, -top, top)
 	body_yaw = wrapf(body_yaw + _body_yaw_v * dt, -PI, PI)
 	rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 

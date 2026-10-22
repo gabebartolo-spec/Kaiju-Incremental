@@ -4,6 +4,11 @@ The one design document. Every agent reads it in full before work. It says what 
 things get built is `docs/ROADMAP.md`, why each ruling was made is `docs/DECISIONS.md` (D-n). Cap 200 lines. Edited
 only by the lead when the director rules; replace the old line, never append history. Quotes are the director's.
 
+## Visual pillars (director 2026-10-22/23)
+Every visual effect passes three equal tests: **beauty** ("visual beauty is equally important"), **consistency** (one look
+per effect family: "consistency is absolutely key to avoid slop accusations") and **the power fantasy** ("all the visual
+effects must make you feel like the Apex Predator, King of Monsters, Godkiller, Planetbreaker"; "our enemies are many, but they ultimately are our prey"). Detail: `docs/VFX_STYLE.md`.
+
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
 sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
