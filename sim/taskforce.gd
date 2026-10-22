@@ -55,7 +55,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	cfg = Content.section("taskforce").duplicate(true)  # a run (or a test) may edit its own copy
 	_rng = rng
 	_timer = Num.f(cfg["first_delay"])
-	frost = TaskforceFrost.new(sim, cfg["frost"])
+	var frost_cfg: Dictionary = cfg["frost"]
+	frost = TaskforceFrost.new(sim, frost_cfg)
 
 
 ## How many may be alive at once: none in the young city, the same from the adolescent city on.
@@ -160,7 +161,7 @@ func _new_agent(squad: int, at: Vector2, height: float) -> Agent:
 	agent.pos = at
 	agent.y = height
 	agent.rail_cd = Num.f(_rail()["cooldown"]) * 0.5
-	agent.frost_cd = Num.f(cfg["frost"]["cooldown"]) * 0.5
+	agent.frost_cd = Num.f(frost.cfg["cooldown"]) * 0.5
 	agents.append(agent)
 	return agent
 
@@ -273,7 +274,7 @@ func _perched(agent: Agent, dt: float) -> void:
 		agent.locked = false
 		sim.events.append({"type": "railgun_aim", "agent": agent.id, "from": _muzzle(agent)})
 	elif agent.frost_cd <= 0.0 and frost.reaches(dist):
-		agent.frost_cd = Num.f(cfg["frost"]["cooldown"])
+		agent.frost_cd = Num.f(frost.cfg["cooldown"])
 		frost.launch(agent.id, _muzzle(agent))
 	elif agent.wait <= 0.0:
 		_hop_to(agent, HOP, Num.f(cfg["jet_speed"]) * Num.f(cfg["hop_speed_share"]))
@@ -297,9 +298,7 @@ func _aim(agent: Agent, dt: float) -> void:
 
 
 func _fire(agent: Agent) -> void:
-	var reach := (
-		Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale() + Num.f(_rail()["hit_margin"])
-	)
+	var reach := Num.f(_rail()["hit_radius"])
 	var shot := {"type": "railgun_hit", "agent": agent.id, "from": _muzzle(agent)}
 	if sim.kaiju_pos.distance_to(agent.aim_at) <= reach:
 		var damage := sim.max_hp * Num.f(_rail()["share"])

@@ -45,7 +45,8 @@ func step(dt: float) -> void:
 		if Num.f(grenade[0]) > 0.0:
 			flying.append(grenade)
 		else:
-			_land(grenade[1])
+			var at: Vector2 = grenade[1]
+			_land(at)
 	grenades = flying
 	if frost_left <= 0.0:
 		return
@@ -57,11 +58,10 @@ func step(dt: float) -> void:
 		_crack("thaw")
 
 
-## A grenade lands: it freezes the kaiju only if it still stands within `radius` (plus its body)
-## of the spot; the ice is always the full `seconds`, never longer for a second grenade.
+## A grenade lands: it freezes the kaiju only if it still stands within `radius` of the spot; the
+## ice is always the full `seconds`, never longer for a second grenade.
 func _land(at: Vector2) -> void:
-	var reach := Num.f(cfg["radius"]) + Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	if sim.kaiju_pos.distance_to(at) > reach:
+	if sim.kaiju_pos.distance_to(at) > Num.f(cfg["radius"]):
 		return
 	sim.events.append({"type": "frost_hit", "x": at.x, "z": at.y, "refreshed": frost_left > 0.0})
 	frost_left = Num.f(cfg["seconds"])

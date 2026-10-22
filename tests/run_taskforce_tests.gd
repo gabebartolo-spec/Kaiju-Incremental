@@ -1,4 +1,4 @@
-extends "res://tests/lib/sim_suite.gd"
+extends "res://tests/lib/taskforce_suite.gd"
 ## The Anti Kaiju Taskforce, agents only (Taskforce, TaskforceFrost; D-137, D-139, D-141, D-143,
 ## D-145): none in the young city, squads of 3-4 from the map edge and never more than 12 alive;
 ## an agent dies when its perch collapses or a claw swipe swats it in the air (and pays biomass);
@@ -7,9 +7,6 @@ extends "res://tests/lib/sim_suite.gd"
 ## the dash shatters it; the same seed replays the same events; and the player-effect fixture
 ## "taskforce.agents": the same run with the Taskforce off leaves the kaiju healthier.
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
-
-const DASH_BUTTON := 4  # Dash.BUTTON
-const FAR := 25.0  # a perch this far from the kaiju is inside every range
 
 
 func suite_name() -> String:
@@ -28,72 +25,6 @@ func run_checks() -> void:
 	await _t("_check_effect")
 
 
-## A rampage at the adolescent city (size tier 2), the kaiju in the middle of the map and out of
-## harm's way for the long runs (the railgun damages through max_hp, so hp is only a cushion).
-func _adolescent(species: String = "reptilian", levels: Dictionary = {"evolve1": 1}) -> RampageSim:
-	var sim := _sim(species, levels, 0, CityGrowth.tuning_for(Content.tuning(), 2))
-	sim.kaiju_pos = Vector2.ZERO
-	return sim
-
-
-## Lets the Taskforce spawn: enough of the city fallen, and a clock no run can end.
-func _open(sim: RampageSim) -> void:
-	sim.chunks_destroyed = 5000
-	sim.chunks_total = 10000000
-	sim.time_left = 1.0e9
-
-
-## The index of a tall building about `FAR` from the kaiju, for an agent to perch on.
-func _roof(sim: RampageSim, tf: Taskforce) -> int:
-	var best := -1
-	var gap := INF
-	for i: int in sim.buildings.size():
-		var b := sim.buildings[i]
-		var away := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
-		if b.height >= Num.i(tf.cfg["perch_min_height"]) and absf(away - FAR) < gap:
-			best = i
-			gap = absf(away - FAR)
-	return best
-
-
-## A perched agent with nothing else to do but what a test wants: its railgun ready or not,
-## frost grenades off.
-func _perched(sim: RampageSim, rail_ready: bool) -> Taskforce.Agent:
-	var tf := sim.army_units.taskforce
-	var i := _roof(sim, tf)
-	var b := sim.buildings[i]
-	var agent := tf.place_agent(i, Vector3i(b.w / 2, b.height - 1, b.d / 2))
-	agent.rail_cd = 0.0 if rail_ready else 1.0e9
-	agent.frost_cd = 1.0e9
-	agent.wait = 1.0e9
-	return agent
-
-
-func _types(events: Array[Dictionary]) -> Array[String]:
-	var out: Array[String] = []
-	for event: Dictionary in events:
-		out.append(str(event["type"]))
-	return out
-
-
-func _first(events: Array[Dictionary], type: String) -> Dictionary:
-	for event: Dictionary in events:
-		if str(event["type"]) == type:
-			return event
-	return {}
-
-
-## Steps `seconds` (stopping early at the first event of `until`); every event it saw.
-func _run(sim: RampageSim, seconds: float, until: String = "") -> Array[Dictionary]:
-	var seen: Array[Dictionary] = []
-	for _n: int in roundi(seconds / DT):
-		var events := sim.step(DT, Vector2.ZERO, false)
-		seen.append_array(events)
-		if until != "" and not _first(events, until).is_empty():
-			break
-	return seen
-
-
 func _check_stage_gate() -> void:
 	var young := _sim("reptilian", {}, 0, CityGrowth.tuning_for(Content.tuning(), 1))
 	_open(young)
@@ -106,6 +37,8 @@ func _check_stage_gate() -> void:
 	check(adolescent.army_units.taskforce.cap() == 12, "the adolescent city allows 12 alive")
 	var closed := _adolescent()  # the city has not fallen enough yet: nobody comes
 	closed.chunks_total = 10000000
+	closed.time_left = 1.0e9
+	closed.army_units.taskforce.cfg["after_chunks"] = 1000000000
 	_run(closed, 60.0)
 	check(closed.army_units.taskforce.agents.is_empty(), "no squad before the city has fallen")
 
@@ -114,14 +47,14 @@ func _check_arrival_and_cap() -> void:
 	var sim := _adolescent()
 	_open(sim)
 	var tf := sim.army_units.taskforce
-	sim.hp = 1.0e9
+	sim.hp = sim.max_hp
 	var deployed := 0
 	var most := 0
 	var edge_ok := true
 	var arrivals := 0
 	for _n: int in roundi(180.0 / DT):
 		var events := sim.step(DT, Vector2.ZERO, false)
-		sim.hp = 1.0e9
+		sim.hp = sim.max_hp
 		for event: Dictionary in events:
 			deployed += 1 if str(event["type"]) == "taskforce_deployed" else 0
 		most = maxi(most, tf.agents.size())
@@ -214,8 +147,9 @@ func _check_railgun_dodge() -> void:
 	var late_events := _run(late, 4.0, "railgun_locked")
 	var locked := _first(late_events, "railgun_locked")
 	check(not locked.is_empty(), "the aiming line locks shortly before the shot")
-	late.kaiju_pos += Vector2(12.0, 0.0)  # a late step, after the lock
-	var after := _run(late, 1.0)
+	var way := _free_way(late)
+	check(way != Vector2.ZERO, "the kaiju has a clear way to step")
+	var after := _run(late, 1.0, "", way)  # a late step, after the lock
 	check(
 		_first(after, "railgun_hit").is_empty() and not _first(after, "railgun_missed").is_empty(),
 		"a step after the lock dodges the shot: %s" % [_types(after)]
@@ -223,8 +157,7 @@ func _check_railgun_dodge() -> void:
 	var early := _adolescent()
 	_open(early)
 	_perched(early, true)
-	var tracked := _run(early, 0.5)  # the line is still tracking
-	early.kaiju_pos += Vector2(12.0, 0.0)
+	var tracked := _run(early, 0.5, "", _free_way(early))  # a step while the line is tracking
 	tracked.append_array(_run(early, 3.0))
 	check(
 		not _first(tracked, "railgun_hit").is_empty(),
@@ -250,12 +183,9 @@ func _check_frost() -> void:
 	frost.launch(1, Vector3.ZERO)
 	var again := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.1)
 	var hit := _first(again, "frost_hit")
+	var refreshed: bool = hit.get("refreshed", false)
 	check(
-		(
-			bool(hit.get("refreshed", false))
-			and frost.frost_left > left
-			and frost.frost_left <= seconds
-		),
+		refreshed and frost.frost_left > left and frost.frost_left <= seconds,
 		(
 			"a second grenade refreshes the ice to %.1f s, never beyond one grenade's %.1f s"
 			% [frost.frost_left, seconds]
@@ -281,8 +211,8 @@ func _check_frost() -> void:
 		"the dash shatters the ice early: %s" % [shattered]
 	)
 	frost.launch(3, Vector3.ZERO)
-	sim.kaiju_pos += Vector2(20.0, 0.0)  # it walked out from under the grenade
-	var missed := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.2)
+	var way := _free_way(sim)
+	var missed := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.2, "", way)  # it walks off
 	check(
 		_first(missed, "frost_hit").is_empty() and frost.frost_left == 0.0,
 		"a grenade that lands where the kaiju no longer stands does nothing"
@@ -336,7 +266,7 @@ func _check_determinism() -> void:
 func _fingerprint() -> String:
 	var sim := _adolescent()
 	_open(sim)
-	sim.hp = 1.0e9
+	sim.hp = sim.max_hp
 	var out := PackedStringArray()
 	for n: int in roundi(60.0 / DT):
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
@@ -345,7 +275,7 @@ func _fingerprint() -> String:
 				or str(event["type"]).begins_with("rail")
 			):
 				out.append("%d:%s" % [n, event["type"]])
-		sim.hp = 1.0e9
+		sim.hp = sim.max_hp
 		if n % 60 == 0:
 			for agent: Taskforce.Agent in sim.army_units.taskforce.agents:
 				out.append(
@@ -361,12 +291,12 @@ func _check_effect() -> void:
 	_open(on)
 	_open(off)
 	off.army_units.taskforce.cfg["max_by_tier"] = [0, 0, 0, 0]
-	_run(on, 90.0)
-	_run(off, 90.0)
+	var hurt_on := _hurt_in(on, 90.0)
+	var hurt_off := _hurt_in(off, 90.0)
 	check(
-		on.hp < off.hp and on.army_units.taskforce.kills >= 0,
+		hurt_on > hurt_off,
 		(
-			"with the Taskforce on the kaiju ends a 90 s run weaker (%.1f vs %.1f of %.1f)"
-			% [on.hp, off.hp, on.max_hp]
+			"with the Taskforce on the kaiju takes more damage in 90 s (%.1f vs %.1f, max hp %.1f)"
+			% [hurt_on, hurt_off, on.max_hp]
 		)
 	)

@@ -37,7 +37,8 @@ func _process(_delta: float) -> void:
 func _drop(table: Dictionary, keep: Dictionary) -> void:
 	for id: int in table.keys():
 		if not keep.get(id, false):
-			(table[id] as Node3D).queue_free()
+			var node: Node3D = table[id]
+			node.queue_free()
 			table.erase(id)
 
 
