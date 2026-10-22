@@ -17,12 +17,11 @@
 - Base = origin/claude/look-options = main; squash-only repo: the base moves on every merge. Old branches are rebuilt
   as own commits cherry-picked onto the newest tip; an OPEN PR is synced by MERGING the base (never rebase/force-push).
   Builder rules file: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/WAVE1-COMMON.md (copy it before this scratchpad goes; it holds the rules + rulings).
-- Merged today: #147 crowds 6x, #148 fade/light scans 4-6x, #151 audit-shared (ae9ac939).
-- Open PRs (cap 3): #149 turn (claude/turn-weight-v2 907a4ac3; critic round 2 FIX sent as LAST round, lead QCs:
-  yaw arrives in 3 bursts f232-273 -> one ease curve, bar: no frame step > 25% of peak yaw rate; capture camera pulses
-  ~15% -> smooth follow; walk start ramp >= 8 frames; then director feel gate). #150 camera A (claude/camera-growth-v2
-  cbb885a9, base merged; on critic fixes; full suite then 4K clip; lead QCs, then director look gate). #152 fire spread
-  (claude/fire-spread b8fb2faf; sim review PASS; clip fire_spread_r0.mp4 with a fresh motion critic; then director look).
+- Merged today: #147 crowds 6x, #148 fade/light scans 4-6x, #151 audit-shared (ae9ac939), #150 camera A (6cffe067, director approved).
+- Open PRs (cap 3): #149 turn (last-round fixes + flow-suite red: BODY_TURN_MAX change broke 'shows deflect'; builder
+  told to fix code not test; lead QCs, then director feel gate). #152 fire (claude/fire-spread; a fresh Sonnet builder
+  finishes clip item (c) from agent-handoffs/fire-spread.md, then lead QC, then director look). #153 city-memory
+  (landmark unload, no pop-in; landmark_keep_m 150 = lead call; full suite green).
 - Waiting for a PR slot: claude/audit-sim c839b111 on OLD base 95f01083: rebuild on the tip first (city code moved in
   #151), then a sim-review reader (scanner gap: complexity_ratchet.py misreads multi-line signatures: a follow-up).
 - Subagents running at 18:30 (die with this session; resume from worktree + handoff): city-memory (full suite, then
@@ -66,6 +65,16 @@
   him; then apply on claude/ui-redesign and open its PR.
 - Fire PR #152: critic FIX sent (collapse is a one-frame swap, roof fire too small: use burn_chunk emitter, clip
   framing, measured timings); last round, lead QCs.
+- Helicopter deaths (#86): mix of mid-air blow-up and smoking spiral crash; the crash smashes what it hits, can light
+  fire, pays biomass (sim change + sim review). Not started.
+- Textures (#80/#87, before demo): 16 flat types (roads, lawn, water, bridges, expressway, sky, rooftops, leaves,
+  lamps, cars, people, gondolas); scratchpad texture_audit/REPORT.md + BOARD_worst_flat.png (copy before cleanup).
+- Title screen (#85/#88, ui builder on claude/ui-redesign): stripes both sides, no CIVIL DEFENCE ALERT, no tagline,
+  game renamed Kaiju Evolution (save folder kept), live dusk city background. Headers (no triangle) PASSED + shipped.
+- Shared collapse view defect (fire QC d/e): a toppling piece swaps to a window lattice on edge, then a slab; walls
+  vanish in one frame (BuildingView.lift_piece, scenes/building_view.gd:204). Confirm on a plain smash, then fix.
+- Worktrees: 18 left (all live); 18 old ones backed up to backup/<name> branches. ui-art-hud scratch remove was
+  DENIED by permissions (force remove): ask him, never retry around it.
 
 ## PR queue after QC (max 3 open): #144 turn-weight, emerge-shore, camera-growth, intro-cinematic, rubble-break,
 ## city-explosives, croc-neck, dash-burst, ui-redesign, city-memory, clumsy-army; capture-native (no speed-up: keep?).
