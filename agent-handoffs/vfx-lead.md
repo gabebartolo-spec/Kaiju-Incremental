@@ -74,11 +74,20 @@ Not built: killable parachutists (they only drift down).
 - Charcoal smoke invisible at night; a fire-lit underside for the shared smoke (D-141 "lit from below").
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
 
+## Overnight 2026-10-23 (director asleep, then at work; lead's plan 03:2x)
+No AskUserQuestion: director questions go to Kaiju-Incremental-wt/lead-board/interview.md (read its README);
+lead's replies in to-vfx-lead.md, my fallback reports in from-vfx-lead.md. Every Godot run starts with
+`bash ~/.claude/tools/engine_slot.sh && timeout ...`. Open PRs over cap: push branches, report sha, the lead's
+GitHub helper opens PRs. Thunder sound = the lead's.
+- D-162 asset worker (Agent "claude" type, Sonnet, own worktree, branch claude/heads-skins): Tripo python x2 +
+  Komodo x2 heads on the croc titan body, 4-5 croc skins (retextures), six-views, boards in notes
+  vfx-lead/heads/ and skins/, rows in docs/provenance/tripo.md; budget 8000. Then my review + fresh critic, then
+  both boards into interview.md. Head-unlock/play question already in interview.md.
+
 ## Running jobs
-Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 03:30 after the director's (extended)
-Godot pause, log scratchpad touched.log (no full suite on this PC any more). When green:
-push claude/heli-deaths, open the PR as ready with body scratchpad pr_heli.md (sim-review packet inside), tell the
-lead (proof notes vfx-lead/heli_deaths_proof.png). If the session restarts, rerun `tools/run_tests.sh` first.
+Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 03:30, log scratchpad
+touched.log. When green: push claude/heli-deaths, report the sha to the lead (do NOT open the PR: over cap; body
+ready at scratchpad pr_heli.md). Stall watcher over the 3 helpers (re-arm after each wake).
 
 ## Item 4 (collapse defect, BuildingView.lift_piece) — diagnosed in part, parked
 Defect (fire-spread clip v5 QC): (d) tilted falling block shows a see-through window lattice; (e) a neighbour's
