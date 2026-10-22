@@ -75,3 +75,5 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 69 | Trains (asked): "Derail and smash" (stomp the track or hit a train: it derails, carriages tumble and break like vehicles) | trains builder | recorded |
 | 70 | Banks, hotels, night clubs (asked): "Small bonuses" (e.g. a bank spills extra biomass, a club's crowd floods out, a hotel is tall and topples well) | city builder | recorded |
 | 71 | Birds (asked): "Scatter on roars and stomps" (flocks burst up and away on a roar or a falling tower) | atmosphere builder | recorded |
+| 72 | "so this 4 forms is completely new information to me... its your own creative choice". Asked: "3 steps, 1 per body" (D-135): cut the agent-added Apex Titan step; top skills and the bomber move to the adult city | next lead (growth builder) | recorded, not started |
+| 73 | "you need to be doing a better job at monitoring your helpers... fix any rules that are impeding your monitoring" | lead | done: rulebook stall-watcher rule, timeouts on engine runs, leads stop hung helper PIDs |
