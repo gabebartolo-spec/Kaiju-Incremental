@@ -1,8 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <!-- Breath: croc jaws open side-on (facing left), a thick lightning bolt out of the mouth. Hand-drawn, ours. -->
-  <g transform="translate(128 128) scale(0.94) translate(-128 -128)">
+  <!-- Breath: croc jaws open side-on (facing left), a thick lightning bolt inside the mouth, teeth
+       cleared round it. Hand-drawn, ours. Everything stays inside a 120 px circle. -->
+  <g transform="translate(128 128) scale(0.9) translate(-128 -128)">
     <path fill="#f2efe6" fill-rule="evenodd" d="M 246 124 L 244 70 L 232 46 L 204 36 L 196 22 L 172 22 L 160 40 L 40 56 L 24 58 L 14 70 L 20 82 L 60 84 L 150 104 L 172 122 L 150 140 L 44 186 L 30 192 L 32 208 L 70 212 L 176 184 L 220 166 Z M 184 44 m -11 0 a 11 11 0 1 0 22 0 a 11 11 0 1 0 -22 0 Z"/>
-    <path fill="#f2efe6" d="M 44 82 L 64 85 L 54 106 Z M 84 89 L 104 94 L 94 114 Z M 122 98 L 142 102 L 132 122 Z M 56 181 L 76 172 L 64 154 Z M 96 163 L 116 155 L 104 136 Z"/>
-    <path fill="#ffcc00" d="M 160 116 L 108 108 L 116 128 L 62 122 L 72 142 L 10 152 L 92 158 L 82 140 L 136 146 L 128 126 L 164 132 Z"/>
+    <path fill="#f2efe6" d="M 44 82 L 64 85 L 54 106 Z M 56 181 L 76 172 L 64 154 Z"/>
+    <path fill="#ffcc00" d="M 168 104 L 112 104 L 122 126 L 70 116 L 82 142 L 16 140 L 92 168 L 84 148
+      L 140 158 L 128 136 L 170 142 Z"/>
   </g>
 </svg>
