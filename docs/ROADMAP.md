@@ -361,3 +361,30 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
   22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
   Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: queued.
+
+## Overnight work (director 2026-10-23, about 03:25, asleep then at work)
+- His words: "work for 5 hours, if theres something you need my eye or a question you need to ask, add it to the
+  interview and continue working". Questions gather in the lead board's interview.md; the lead asks them on his return.
+  Owner: lead. Status: in progress.
+- Heads and skins (D-162): a couple of snake and Komodo head options and a few croc skins, Tripo, 8000 credits, boards
+  for the interview. Owner: VFX lead's asset session. Status: started.
+- "get the githib hygeinic": stale branches, worktrees and PRs cleaned to the github-hygiene skill (manifest first, open
+  PRs and live worktrees excluded). Owner: lead's GitHub helper. Status: started.
+- Research (readers only, no engine; findings go to the interview as questions, never into the build). His words: "if
+  you run out of things to do, do bulk research on how to make the game better", narrowed to "research should be
+  focused on 3d animation of kaiju and methods of creating good pipelines for ai generated 3d models, good practice"
+  and "specifically search for how to generate good art and good animations using the tools we have, tripo, blender,
+  godot, local tools, yourself, mcp connections, plugins, skills you can learn, github repos with workflows already
+  designed, etc" ("i also have Aseprite"). Owner: lead's readers. Status: running.
+- The voxel look, again: "research again if it would be worth abandoning the voxel look. im worried that theres a mix
+  match of art styles in the game, the voxels are maybe clashing with the cinematic direction" (D-111 kept voxels on
+  2026-10-21). A reader's report plus labelled stills from the VFX lead go to the interview. Owner: lead, then VFX lead.
+  Status: researching.
+- Croc idle audit: "do some audits on the posture and "idle" movements of our reptilian, does he breath? does he ever
+  sway at all? these things would be good for immersion". Audit done (barely breathes; only the tail sways; stops
+  dead); how much life to add is an interview question; no build before his answer. Owner: VFX lead. Status: asked.
+- Tripo downloads: "you need to press save when these pop up" (the browser's Save dialog). That dialog belongs to the
+  Claude app, which computer use may not control, so agents fetch each model by its signed URL (read from the browser
+  pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
+- Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
+  ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.

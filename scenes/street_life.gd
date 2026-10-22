@@ -43,6 +43,7 @@ var run_over := 0
 var worst_usec := 0
 var total_usec := 0
 var frames := 0
+var toll := ArmyToll.new()  # what the army's own stray shells killed (not the kaiju's)
 var _officers: Array[Police.Officer] = []  # null for a civilian
 var _cfg: Dictionary
 var _fx: Fx
@@ -162,9 +163,9 @@ func civilians() -> int:
 
 
 ## Civilians crushed so far: on the streets, on the pitch and in the stands (fans crushed or
-## gone with their stand: director playtest, 2026-10-19).
+## gone with their stand: director playtest, 2026-10-19); fans a stray shell killed are not.
 func civilians_killed() -> int:
-	var n := killed
+	var n := killed - toll.fans
 	for game: StadiumMatch in matches:
 		n += game.killed
 		if game.crowd != null:

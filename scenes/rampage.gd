@@ -268,10 +268,8 @@ func _on_event(event: Dictionary) -> void:
 			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
 		"tank_spawned":
 			_tanks.spawn(Num.i(event["tank"]))
-		"tank_fired":
-			var at: Vector2 = event.get("at", sim.kaiju_pos)
-			if _tanks.fire(Num.i(event["tank"]), _to_world(at), _kaiju_at):
-				add_trauma(shake.source("tank_fire"))
+		"tank_fired", "stray_landed":
+			_tanks.on_event(event, _kaiju_at)
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)

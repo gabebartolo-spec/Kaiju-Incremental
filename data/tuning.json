@@ -310,6 +310,8 @@
 			"plans_per_step": 2,
 			"search_margin": 30.0,
 			"stuck": 2.0,
+			"_yield_cap": "A tank giving way yields at most stuck x yield_cap seconds in one stretch, however long the tank it makes way for stays held up; then it re-plans (TankSpacing.yield_limit).",
+			"yield_cap": 3.0,
 			"reverse": 0.6,
 			"grid": 8.0,
 			"hull_turn": 90.0,
@@ -329,6 +331,17 @@
 		"escalation_per_chunk": 0.002,
 		"threat_per_chunk": 0.0005,
 		"young_damage_mult": 2.0,
+		"shell_flight": 0.22,
+		"miss": {
+			"hit_near": 0.9,
+			"hit_far": 0.6,
+			"ring_near": 4.0,
+			"ring_far": 14.0,
+			"ring_tries": 12,
+			"radius": 2.5,
+			"damage": 8.0,
+			"floors": 3
+		},
 		"rooftop": {
 			"min_height": 4,
 			"chance": 1.0,

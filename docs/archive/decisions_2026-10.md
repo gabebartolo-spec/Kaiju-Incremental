@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-072 · Director · All four jets; strikes wreck buildings but give no biomass
+Why (10:5x): jets arrive from Colossus; the bomber is the Apex set-piece; the octopus can grab jets. PRs #58, #61
+(parked until after the demo).
+
 ## 2026-10-18 · D-071 · Director · Landmarks in order: A stadium, D wheel, E spire, F megatower
 Why (10:5x): picked from the landmark board. A sites PR with A and D first, then E and F.
 
