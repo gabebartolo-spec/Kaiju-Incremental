@@ -3,7 +3,7 @@
 # branch can be checked before it reaches main (build.yml runs on pushes to main only):
 #   1. git lfs pull (the display fonts are LFS);
 #   2. import the project headless (a script error fails the run);
-#   3. export the "Windows Desktop" preset to out/windows/KaijuIncremental.exe (pck embedded;
+#   3. export the "Windows Desktop" preset to out/windows/KaijuEvolution.exe (pck embedded;
 #      out/ is git-ignored);
 #   4. tools/pck_check.py: the fonts in the pack are real TTFs, not LFS pointers, and every
 #      assets/kaiju/*.kvox is in it byte for byte.
@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 GODOT="${GODOT:-godot}"
-EXE="out/windows/KaijuIncremental.exe"
+EXE="out/windows/KaijuEvolution.exe"
 version="$("$GODOT" --version | sed -E 's/^([0-9]+\.[0-9]+(\.[0-9]+)?)\.([a-z0-9]+)\..*/\1.\3/')"
 TEMPLATES="${TEMPLATES:-$APPDATA/Godot/export_templates/$version}"
 for t in windows_release_x86_64.exe windows_release_x86_64_console.exe; do
