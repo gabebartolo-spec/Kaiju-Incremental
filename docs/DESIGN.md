@@ -7,7 +7,7 @@ only by the lead when the director rules; replace the old line, never append his
 ## Visual pillars (director 2026-10-22/23)
 Every visual effect passes three equal tests: **beauty** ("visual beauty is equally important"), **consistency** (one look
 per effect family: "consistency is absolutely key to avoid slop accusations") and **the power fantasy** ("all the visual
-effects must make you feel like the Apex Predator, King of Monsters, Godkiller, Planetbreaker"). Detail: `docs/VFX_STYLE.md`.
+effects must make you feel like the Apex Predator, King of Monsters, Godkiller, Planetbreaker"; "our enemies are many, but they ultimately are our prey"). Detail: `docs/VFX_STYLE.md`.
 
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player

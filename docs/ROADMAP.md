@@ -341,3 +341,9 @@ state. No director clips or per-change approvals in between; clips only where mo
 - A bestiary named the Threat Dossier: the Kaiju Plan's classified files on every enemy (police, tanks, helicopters,
   Taskforce agents, gas soldiers, walking mechs, gunships, and any later ones). Name and silhouette on first sight;
   full stats, weaknesses and lore after the first kill. Opened from the main menu and the pause menu. Status: not started.
+
+## Leader's escape helicopter (D-149, 2026-10-23, after the demo)
+- "the president/prime minister/king/etc" attempts to escape in a fancy helicopter, you get a big payout if you kill
+  him but its a fast helicopter". Random time in any city; Mayor / Governor / President by city; ~15 s window; payout
+  about a city block; breath, Thunder Beam, grab, thrown tank or car, toppled building; headline + rotor sound, no
+  markers; escape loses only the payout; white and gold VIP look. Owner: unassigned. Status: not started.
