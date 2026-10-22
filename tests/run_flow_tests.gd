@@ -135,7 +135,7 @@ func _check_upgrade_screen() -> void:
 		var b: Button = node
 		texts.append(b.text.get_slice("\n", 0))
 	check(
-		texts.has("Tail Sweep") and texts.has("ULTIMATE: Atomic Beam") and not texts.has("Scuttle"),
+		preload("res://tests/lib/flow_names.gd").own_branch(texts),
 		"the reptilian's tree shows its own branch and no other species': %s" % [texts]
 	)
 	if claws != null:

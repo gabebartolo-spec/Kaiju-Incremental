@@ -26,6 +26,8 @@ var sfx: Sfx
 var rooftops: RooftopView
 ## Every power event this view has drawn, by type (read by the flow suite).
 var played: Array[String] = []
+## Roars made for an ultimate or a dash (D-145), for the flow suite.
+var roars := 0
 var _city: CityView
 var _kaiju: Node3D
 var _tint: Color
@@ -35,6 +37,7 @@ var _beam: MeshInstance3D
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
+var _roared_at := INF  # the run clock (sim.time_left) at the last roar
 
 
 func _init(p_sim: RampageSim, city: CityView, kaiju: Node3D, tint: Color) -> void:
@@ -96,6 +99,7 @@ func _streak(a: Vector3, b: Vector3, color: Color, seconds: float) -> void:
 
 ## Returns true when the event was a power's.
 func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
+	_roar_for(event)
 	var bs := sim.body_scale()
 	match str(event["type"]):
 		"tail_sweep":
@@ -107,14 +111,7 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"swipe_windup":
 			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
-			var arc: Dictionary = {}
-			if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
-				arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
-			ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
-			if sfx != null:
-				sfx.play("lash")
-			var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
-			_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
+			_swiped(event, kaiju_at)
 		"beam_start":
 			_hook("jaw_open", [true])
 			_beam = _box(Vector3.ONE, _tint.lightened(0.5))
@@ -180,6 +177,36 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 
 
 ## Fire (beam) or ink glowing on a few of the newly coated chunks.
+## A claw swipe crosses now: its arm's sweep, the slash, the lash sound, cars and people crushed.
+func _swiped(event: Dictionary, kaiju_at: Vector3) -> void:
+	var arc: Dictionary = {}
+	if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
+		arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
+	ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
+	if sfx != null:
+		sfx.play("lash")
+	var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
+	_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
+
+
+## The kaiju roars on every ultimate and every dash (D-145: "should roar more often, perhaps when
+## he uses his ultimate power and/or a dash"): the croc's roar sound, and on an ultimate its roar
+## pose too (not in a dash: the roar clip would hold a charging body still). At most one roar in
+## the sfx "roar_cooldown" seconds of the run, so dash spam never stacks them.
+func _roar_for(event: Dictionary) -> void:
+	var kind := str(event["type"])
+	if kind != "dash" and kind != "ultimate":
+		return
+	if _roared_at - sim.time_left < Num.f(Content.section("sfx")["roar_cooldown"]):
+		return
+	_roared_at = sim.time_left
+	roars += 1
+	if kind == "ultimate":
+		_hook("roar", [])
+	var player := Sfx.roar(self)
+	player.finished.connect(player.queue_free)
+
+
 func _coated(event: Dictionary) -> void:
 	var b := sim.buildings[Num.i(event["building"])]
 	var cells: Array[Vector3i] = event["cells"]

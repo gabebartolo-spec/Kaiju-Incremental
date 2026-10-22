@@ -153,9 +153,9 @@ func _select(id: String) -> void:
 	var role := role_of(id)
 	_info_role.text = {
 		"plain": "",
-		"branch": "%s BRANCH" % str(species["name"]).to_upper(),
+		"branch": "",
 		"evolve": "EVOLUTION",
-		"ultimate": "ULTIMATE  -  %s BRANCH CAPSTONE" % str(species["name"]).to_upper(),
+		"ultimate": "ULTIMATE",
 	}[role]
 	_info_body.clear()
 	_info_body.append_text(UpgradeTree.desc_for(def, str(species["id"])))

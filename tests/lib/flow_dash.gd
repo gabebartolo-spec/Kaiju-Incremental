@@ -34,3 +34,17 @@ static func run(t: SceneTree, check: Callable, rampage: Rampage) -> void:
 		prompt.begins_with("DASH  ") and prompt.ends_with("s") and not prompt.contains("READY"),
 		"the HUD shows the dash cooling down after it: '%s'" % prompt
 	)
+	_check_roars(rampage, check)
+
+
+## D-145: the kaiju roars on a dash and on an ultimate, at most once in the sfx "roar_cooldown".
+static func _check_roars(rampage: Rampage, check: Callable) -> void:
+	var view: PowersView = rampage.get("_powers")
+	check.call(view.roars == 1, "the dash roars once (%d roars)" % view.roars)
+	var dash := {"type": "dash", "dir": Vector2(0, -1)}
+	view.on_event(dash, Vector3.ZERO)
+	view.on_event({"type": "ultimate"}, Vector3.ZERO)
+	check.call(view.roars == 1, "dash spam does not stack roars (%d roars)" % view.roars)
+	rampage.sim.time_left -= Num.f(Content.section("sfx")["roar_cooldown"]) + 0.1
+	view.on_event({"type": "ultimate"}, Vector3.ZERO)
+	check.call(view.roars == 2, "an ultimate roars once the cooldown has passed (%d)" % view.roars)
