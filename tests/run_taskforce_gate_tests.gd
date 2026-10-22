@@ -37,17 +37,19 @@ func _check_city_clock() -> void:
 	var young := _sim("reptilian", {}, 0, CityGrowth.tuning_for(Content.tuning(), 1))
 	young.time_left = 1.0e9
 	_run(young, 10.0)
-	check(young.result()["city_seconds"] == 0.0, "time in the baby city does not count")
+	check(Num.f(young.result()["city_seconds"]) == 0.0, "time in the baby city does not count")
 	var first := _adolescent()
 	first.time_left = 1.0e9
 	_run(first, 10.0)
 	var kept := Num.f(first.result()["city_seconds"])
 	check(absf(kept - 10.0) < 0.05, "a rampage adds its seconds there (%.2f)" % kept)
 	var save := SaveFile.new_save("reptilian")
-	check(save["city_seconds"] == 0.0, "a new save starts the clock at 0")
-	check(SaveFile.migrate({"version": 2})["city_seconds"] == 0.0, "an older save loads with 0")
+	check(Num.f(save["city_seconds"]) == 0.0, "a new save starts the clock at 0")
+	var old: Dictionary = SaveFile.migrate({"version": 2})
+	check(Num.f(old["city_seconds"]) == 0.0, "an older save loads with 0")
 	save["city_seconds"] = kept
-	var back := SaveFile.migrate(JSON.parse_string(JSON.stringify(save)) as Dictionary)
+	var parsed: Dictionary = JSON.parse_string(JSON.stringify(save))
+	var back: Dictionary = SaveFile.migrate(parsed)
 	check(Num.f(back["city_seconds"]) == kept, "save and reload keep the clock")
 	var next := _adolescent()
 	next.time_left = 1.0e9

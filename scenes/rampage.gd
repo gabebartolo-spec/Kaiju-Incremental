@@ -27,6 +27,8 @@ var sim: RampageSim
 ## LoadingOverlay, and nothing runs until it is done, so starting a run never freezes the screen
 ## (b2-30). false (tests, captures): _ready builds it all at once, as before.
 var staged := false
+## Rampage seconds in the adolescent city or later, from the save; set before setup (D-160).
+var city_seconds := 0.0
 ## Whether the scene is built (always true after _ready when not staged).
 var is_loaded := false
 ## Worst cost per sim step / event kind, in microseconds (benchmarking).
@@ -75,13 +77,9 @@ var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_second
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
-## picks the time of day; city_seconds: rampage seconds in the adolescent city or later (the save).
+## picks the time of day.
 func setup(
-	p_species: Dictionary,
-	stats: Dictionary,
-	layout: Array[Dictionary],
-	run_index: int,
-	city_seconds := 0.0
+	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
