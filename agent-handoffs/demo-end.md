@@ -39,7 +39,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
   elapsed) with no cap, regrowth = regrow_share_per_minute (5%) of flattened buildings per regrow_interval pass (rows in
   data/tuning.json demo.endless); (c) "agents" in demo.military_keys, taskforce.gd interval() reads sim.escalation(); (d) gdlint
   clean (gdformat -l 100), flow_demo split into tests/lib/flow_demo_menus.gd. New sim checks in tests/lib/sim_demo_end.gd.
-- ALL GREEN at d39d463f: demoend (32), sim_play, military, taskforce_gate, ui, smoke, flow; ratchet, gdlint, tuning keys ok. A planted-defect run (4 plants, log /tmp/plant165.out) is editing sim/endless.gd + sim/collapse.gd temporarily and restores them with `git checkout -- sim`; if `git status` shows sim/ modified, run that and never commit it. Next: push once, report the sha (lead 08:38: then HOLD, start nothing new, sky and sea life waits for the director).
+- Planted-defect run DONE (P1 fire state kept, P2 old building count, P3 capped escalation, P4 regrowth x10: each fails demoend; sim/ restored). Second merge of look-options done (#164 save v3 on base, demo keys v4); final gate running: demoend, sim_play, smoke, flow, gdformat/gdlint, ratchet. Then push claude/demo-end once, report the sha to the lead, then HOLD (lead 08:38 + latest message): sky and sea life waits for the director.
 - Then: sky and sea life (plan above; rampage_sim.gd ~397 lines, so the hook goes in a new small file), 4K thanks still, Taskforce
   mech/gunship units (queue 3, after taskforce-core: its result keys join demo.military_keys).
 ## Attempts
