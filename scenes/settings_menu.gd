@@ -35,6 +35,7 @@ var _scale: Button
 var _fps: Button
 var _graphics: Button
 var _time: Button
+var _weather: Button
 
 
 func _ready() -> void:
@@ -79,9 +80,11 @@ func _ready() -> void:
 	_graphics = _choice(func() -> void: PlayerSettings.next_graphics())
 	# One row for both GPU settings, so the screen still fits the TV at the largest UI scale.
 	_button_row(col, "Graphics and FPS", [_graphics, _fps])
-	# The time-of-day button spans the sliders' column, edge to edge (D-145).
+	# The time-of-day and weather buttons each span the sliders' column, edge to edge (D-145, D-155).
 	_time = _choice(func() -> void: PlayerSettings.next_time_of_day())
 	_button_row(col, "Time of day", [_time])
+	_weather = _choice(func() -> void: PlayerSettings.next_weather())
+	_button_row(col, "Weather", [_weather])
 	_add_controls(col)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
@@ -128,13 +131,14 @@ func _gap(node: Control, top: int) -> Control:
 
 ## The controls list, keyboard and pad, at the body size.
 func _add_controls(col: Control) -> void:
-	col.add_child(_gap(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN), BLOCK_GAP))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 40)
 	grid.add_theme_constant_override("v_separation", 0)
-	col.add_child(grid)
-	for heading: String in ["", "Keyboard", "Pad"]:
+	col.add_child(_gap(grid, BLOCK_GAP))
+	# The heading shares the column titles' row: the screen stays short enough for the TV (D-155).
+	grid.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
+	for heading: String in ["Keyboard", "Pad"]:
 		grid.add_child(UiKit.label(heading, UiKit.SIZE_BODY, UiKit.MUTED))
 	var controls: Array[Array] = PlayerSettings.CONTROLS
 	for entry: Array in controls:
@@ -176,6 +180,7 @@ func _refresh() -> void:
 	)
 	_graphics.text = _cycle(PlayerSettings.graphics_level().to_upper())
 	_time.text = _cycle(TimeOfDay.label(PlayerSettings.time_of_day).to_upper())
+	_weather.text = _cycle(Weather.label(PlayerSettings.weather).to_upper())
 
 
 func _cycle(value: String) -> String:
@@ -193,7 +198,7 @@ func _slider(parent: Control, text: String, value: float) -> HSlider:
 	slider.min_value = 0.0
 	slider.max_value = 100.0
 	slider.step = VOLUME_STEP
-	slider.custom_minimum_size = Vector2(SPAN, 40)
+	slider.custom_minimum_size = Vector2(SPAN, 28)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.value = round(value * 100.0)
 	UiKit.slider_look(slider)

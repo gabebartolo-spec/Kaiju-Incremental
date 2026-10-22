@@ -45,6 +45,8 @@ static var graphics := ""
 static var controls_seen := false
 ## The time of day every rampage plays (D-145): TimeOfDay.RANDOM (the default) or a time's id.
 static var time_of_day := TimeOfDay.RANDOM
+## The weather every rampage plays (D-155): Weather.RANDOM (the default) or a weather's id.
+static var weather := Weather.RANDOM
 
 
 static func set_volume(value: float) -> void:
@@ -128,6 +130,12 @@ static func graphics_level() -> String:
 static func next_graphics() -> void:
 	var levels := _levels()
 	graphics = levels[(levels.find(graphics_level()) + 1) % levels.size()]
+	save()
+
+
+## Steps the weather setting to the next of Weather.settings() (wrapping round).
+static func next_weather() -> void:
+	weather = Weather.next(weather)
 	save()
 
 
@@ -232,6 +240,7 @@ static func save() -> void:
 	cfg.set_value("display", "graphics", graphics)
 	cfg.set_value("ui", "controls_seen", controls_seen)
 	cfg.set_value("display", "time_of_day", TimeOfDay.clean(time_of_day))
+	cfg.set_value("display", "weather", Weather.clean(weather))
 	cfg.save(PATH)
 
 
@@ -258,3 +267,4 @@ static func load_saved(start_full: bool) -> void:
 	graphics = saved if _levels().has(saved) else ""
 	# An older file has no time of day: Random. An unknown time (since renamed) counts as Random.
 	time_of_day = TimeOfDay.clean(str(cfg.get_value("display", "time_of_day", TimeOfDay.RANDOM)))
+	weather = Weather.clean(str(cfg.get_value("display", "weather", Weather.RANDOM)))
