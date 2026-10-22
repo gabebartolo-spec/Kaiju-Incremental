@@ -133,6 +133,9 @@ static func _load() -> void:
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")
+	var names: Dictionary = _tuning.get("names", {})
+	for content: Variant in [_tuning, _upgrades, _species]:
+		_fill(content, names)
 	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
 	var city: Dictionary = _tuning.get("city", {})
 	city["landmark_shapes"] = _landmarks
@@ -144,3 +147,29 @@ static func _list(path: String, key: String) -> Array[Dictionary]:
 	for entry: Dictionary in raw:
 		out.append(entry)
 	return out
+
+
+## Player-facing names live once, in tuning "names" (a later rename is one line there); data text
+## writes {key} where one belongs ("{beam}" is the reptilian's signature beam).
+static func _fill(node: Variant, names: Dictionary) -> void:
+	if node is Dictionary:
+		var dict: Dictionary = node
+		for key: Variant in dict:
+			var value: Variant = dict[key]
+			if value is String:
+				dict[key] = _named(str(value), names)
+			else:
+				_fill(value, names)
+	elif node is Array:
+		var list: Array = node
+		for i: int in list.size():
+			if list[i] is String:
+				list[i] = _named(str(list[i]), names)
+			else:
+				_fill(list[i], names)
+
+
+static func _named(text: String, names: Dictionary) -> String:
+	for key: String in names:
+		text = text.replace("{%s}" % key, str(names[key]))
+	return text
