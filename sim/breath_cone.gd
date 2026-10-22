@@ -7,6 +7,9 @@ extends RefCounted
 ## from the reptilian rigs: baby 10.4, adolescent 10.3, adult 13.5). It runs along the facing
 ## out to the ability's reach, within cone_half_angle_deg either side.
 
+## Half the diagonal of a unit square: the radius of a circle that covers it.
+const SQUARE_HALF_DIAGONAL := 0.7071068
+
 
 ## {"origin": Vector2, "dir": Vector2, "reach": float, "half_angle": float (radians)}.
 static func of(sim: RampageSim) -> Dictionary:
@@ -40,15 +43,24 @@ static func breathe(sim: RampageSim, reach: float, damage: float) -> void:
 
 ## Circles (x, y centre, z radius) that together cover the cone `of` gives, out to its reach,
 ## so presentation can flatten everything the breath burns (build 2 note 26: trees stood).
+## `count` rows along the axis, each a line of circles across the cone's width there (a lattice
+## of squares one row deep, each circle just wide enough to cover its square), so no circle
+## bulges past the cone's flank or end by more than a fraction of a row. (One circle per row on
+## the axis had to be as wide as the cone, and flattened a tree 0.19 of the reach outside it.)
 static func cover(cone: Dictionary, count := 12) -> Array[Vector3]:
 	var origin: Vector2 = cone["origin"]
 	var dir: Vector2 = cone["dir"]
+	var across := dir.orthogonal()
 	var reach := Num.f(cone["reach"])
 	var slope := tan(Num.f(cone["half_angle"]))
 	var step := reach / count
+	var radius := step * SQUARE_HALF_DIAGONAL
 	var out: Array[Vector3] = []
 	for i: int in count:
 		var d := (i + 0.5) * step
-		var at := origin + dir * d
-		out.append(Vector3(at.x, at.y, Vector2((d + step * 0.5) * slope, step * 0.5).length()))
+		var half_width := (d + step * 0.5) * slope
+		var lines := maxi(0, ceili(half_width / step - 0.5))
+		for k: int in range(-lines, lines + 1):
+			var at := origin + dir * d + across * (k * step)
+			out.append(Vector3(at.x, at.y, radius))
 	return out
