@@ -14,31 +14,39 @@ func _tree(levels: Dictionary = {}) -> UpgradeTree:
 	return UpgradeTree.new(Content.upgrades(), levels)
 
 
-## The sim fixtures play in the pre-D-135 young city (tests/lib/fixture_rings.gd), seed 0: the
-## topple and swipe fixtures need a tall tier-2 office tower inside the arena and their finder
-## (_nearest_of) falls back on the last building when none matches. The half-50 city has none
-## at seeds 0-9 (seeds 3, 8 and 22 have one, but a real tower lands on the kaiju or sits inside
-## its body mid-chew: open question for the lead), so the fixtures keep the plan they were made on.
+## The sim fixtures play in the pre-D-135 young city (tests/lib/fixture_rings.gd), seed 0 unless a
+## test asks for another (`city_seed`: the body chew checks run seeds 3, 8 and 22): the topple and
+## swipe fixtures need a tall tier-2 office tower inside the arena and their finder (_nearest_of)
+## falls back on the last building when none matches. The half-50 city has none at seeds 0-9, so
+## the fixtures keep the plan they were made on.
 func _fixture_tuning() -> Dictionary:
 	var tuning: Dictionary = Content.tuning().duplicate(true)
 	Rings.apply(tuning)
 	return tuning
 
 
-func _layout(city: Dictionary = {}) -> Array[Dictionary]:
+func _layout(city: Dictionary = {}, city_seed: int = 0) -> Array[Dictionary]:
 	var cfg: Dictionary = city if not city.is_empty() else _fixture_tuning()["city"]
-	return CityGen.generate(Seeds.make("city", 0), cfg)
+	return CityGen.generate(Seeds.make("city", city_seed), cfg)
 
 
 func _sim(
 	species_id: String, levels: Dictionary, run_index: int = 0, tuning: Dictionary = {}
+) -> RampageSim:
+	return _sim_seeded(species_id, levels, tuning, Vector2i(0, run_index))
+
+
+## _sim with both seeds: seeds.x picks the city (0: the suite's usual one), seeds.y seeds the army.
+func _sim_seeded(
+	species_id: String, levels: Dictionary, tuning: Dictionary, seeds: Vector2i
 ) -> RampageSim:
 	var species := Content.species_def(species_id)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, _tree(levels))
 	var ability: Dictionary = species["ability"]
 	var tune := _fixture_tuning() if tuning.is_empty() else tuning
 	var city: Dictionary = tune["city"]
-	var sim := RampageSim.new(stats, tune, _layout(city), Seeds.make("army", run_index))
+	var layout := _layout(city, seeds.x)
+	var sim := RampageSim.new(stats, tune, layout, Seeds.make("army", seeds.y))
 	sim.ability_type = str(ability["type"])
 	sim.body.use_species(species_id)
 	return sim

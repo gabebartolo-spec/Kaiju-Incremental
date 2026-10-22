@@ -27,7 +27,10 @@ func run_checks() -> void:
 	await _t("_check_species_differ")
 	await _h("SimArmy", func() -> void: SimArmy.new(check, _sim).run())
 	await _h("SimRooftops", func() -> void: SimRooftops.new(check, _sim, _autoplay).run())
-	await _h("SimBodyContact", func() -> void: SimBodyContact.new(check, _sim, _autoplay).run())
+	await _h(
+		"SimBodyContact",
+		func() -> void: SimBodyContact.new(check, _sim, _autoplay, _sim_seeded).run()
+	)
 	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
 	await _t("_check_looks")
 	await _t("_check_growth")
