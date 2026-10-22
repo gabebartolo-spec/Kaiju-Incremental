@@ -1,5 +1,5 @@
 # Clumsy-army handoff, 2026-10-22 (builder; rebuilt on the squashed base)
-## State: probe passed; full suite running; clip and push left
+## State: probe passed; full suite red on 2 military checks (tier 4 seed 1); clip left
 ## Task
 Director comments #18: "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military
 which destroys parts of its own city occasionally". Ruling: misses land beside him (ring round the kaiju, radius 2.5 m).
@@ -19,10 +19,16 @@ so Rampage._on_event does not grow (complexity ratchet); crush_all split (_crush
 - Tier 2: base 190.33 -> strays 192.33 damage/min (+1.05%); shots 3949 -> 4007, misses 1427.
 - Tier 4: base 421.79 -> strays 416.89 damage/min (-1.16%); shots 5344 -> 5344, misses 1988.
 - Run on the pre-rebase tree; after the rebase seeds t2 4-5 and t4 0 reproduce digit for digit (sim path unchanged).
+## Full suite on the rebuilt tip (21 suites): all pass except military, 2 of 20 checks
+- flow fail (fan check) was my merge: CityView.crush gained by_tank before by_army; test call fixed, flow 207/0.
+- military: 'no two tanks as drawn touch' and 'tanks hold standoff' fail ONLY in tier 4 seed 1 (autoplay). Base
+  d6685f34: military 14 checks, 0 failures. Bisect on the new base: strays-beside commit 8aafcbf2 passes 20/0; the ring
+  commit 32f57e89 fails the same two. Cause: tanks 2 and 9 queue in one lane (x=-70, z 160-169) with 22-25 road edges
+  blocked; the autoplay kaiju walks up to them (3-6 m) and they do not clear the danger radius (12 m) for 1+ s.
+  A different city path exposes a cornered column; not a stray-code bug as such. NOT loosened, NOT fixed: lead call.
 ## Left
-1. Full suite (tools/run_tests.sh) on the rebuilt tip: running; log in the lead scratch ca2/full.log.
-2. Push claude/clumsy-army-v2; lead opens the PR.
-3. One ~6 s clip at the game camera (capture_strays --seed=4 --seconds=36), local GPU, off-screen no_focus override.cfg.
+1. Lead: ruling on the military seed (options in the report). 2. One ~6 s clip (capture_strays --seed=4
+   --seconds=36), local GPU, off-screen override.cfg. 3. PR by the lead.
 ## Findings
 - The spawn camera sits inside a tower for a kaiju at its rise point (standing captures render black).
 - Autoplay damage probes are the wrong instrument for a change that alters the city.

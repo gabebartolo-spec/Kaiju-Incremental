@@ -164,7 +164,7 @@ static func _check_stray_fan(
 	var before := street.civilians_killed()
 	var army := street.army_killed
 	if target != null:
-		view.crush(crowd.running_at(target), 0.3, true)
+		view.crush(crowd.running_at(target), 0.3, false, true)
 	check.call(
 		(
 			target != null
