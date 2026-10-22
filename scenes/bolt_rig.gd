@@ -103,7 +103,8 @@ func play(seconds: float, rng: RandomNumberGenerator) -> void:
 
 ## Where the bolt runs now: from the mouth to the struck point. Cheap to call every frame.
 func aim(mouth: Vector3, hit: Vector3) -> void:
-	if mouth.distance_to(_mouth) > 0.02 or hit.distance_to(_hit) > 0.02:
+	var move := Num.f(_cfg["rebuild_move"]) * _scale
+	if mouth.distance_to(_mouth) > move or hit.distance_to(_hit) > move:
 		_dirty = true
 	_mouth = mouth
 	_hit = hit
@@ -267,9 +268,9 @@ func _draw() -> void:
 	var dir := (_hit - _mouth).normalized()
 	_muzzle.position = _mouth
 	_strike.position = _hit - dir * 0.6
-	var size := Num.f(_cfg["flare_size"]) * _scale * lerpf(1.0, power, Num.f(_cfg["power_share"]))
-	(_muzzle.mesh as QuadMesh).size = Vector2.ONE * size
-	(_strike.mesh as QuadMesh).size = Vector2.ONE * size
+	var lift := _scale * lerpf(1.0, power, Num.f(_cfg["power_share"]))
+	(_muzzle.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["muzzle_flare"]) * lift
+	(_strike.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["strike_flare"]) * lift
 	_mouth_light.position = _mouth
 	_hit_light.position = _hit - dir * LIGHT_BACK * _scale + Vector3.UP * _scale * 0.5
 

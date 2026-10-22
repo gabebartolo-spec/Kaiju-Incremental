@@ -8,11 +8,17 @@ extends MeshInstance3D
 
 const SHADER := preload("res://scenes/bolt.gdshader")
 const CORE_COLOUR := Color(1.0, 0.97, 0.92)
+const BLOB_CORNERS: Array[Vector2] = [
+	Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)
+]
 ## Which halo colours to draw instead of the tuning's choice ("" = the tuning's): a capture sets
 ## this to show the director's three options (R 17.6) from the same frame.
 static var halo_mode_override := ""
 
 var _mesh := ImmediateMesh.new()
+var _blob_step: int
+var _branch_tip: float
+var _blob_share: float
 var _halo_main := ShaderMaterial.new()
 var _core_main := ShaderMaterial.new()
 var _halo_branch := ShaderMaterial.new()
@@ -23,6 +29,9 @@ var _core_branch := ShaderMaterial.new()
 ## cfg: tuning "fx" "bolt".
 func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 	mesh = _mesh
+	_blob_step = Num.i(cfg["blob_step"])
+	_branch_tip = Num.f(cfg["branch_tip"])
+	_blob_share = Num.f(cfg["blob_share"])
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var colours := halo_colours(cfg, eye)
 	for mat: ShaderMaterial in [_halo_main, _halo_branch]:
@@ -32,6 +41,7 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.set_shader_parameter("width", widths.y)
 		mat.set_shader_parameter("boost", Num.f(cfg["boost_halo"]))
 		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_halo"]))
+		mat.set_shader_parameter("min_px", Num.f(cfg["halo_min_px"]))
 	for mat: ShaderMaterial in [_core_main, _core_branch]:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", CORE_COLOUR)
@@ -39,6 +49,7 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.set_shader_parameter("width", widths.x)
 		mat.set_shader_parameter("boost", Num.f(cfg["boost_core"]))
 		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_core"]))
+		mat.set_shader_parameter("min_px", Num.f(cfg["core_min_px"]))
 	for mat: ShaderMaterial in all_materials():
 		mat.set_shader_parameter("wobble", Num.f(cfg["wobble"]))
 		mat.set_shader_parameter("wobble_hz", Num.f(cfg["wobble_hz"]))
@@ -85,8 +96,8 @@ func rebuild(
 	_mesh.clear_surfaces()
 	_surface(_halo_main, [main], 1.0, 0.7)
 	_surface(_core_main, [main], 1.0, 0.7)
-	_surface(_halo_branch, branches, branch_width, 0.25)
-	_surface(_core_branch, branches, branch_width, 0.25)
+	_surface(_halo_branch, branches, branch_width, _branch_tip)
+	_surface(_core_branch, branches, branch_width, _branch_tip)
 
 
 func hide_all() -> void:
@@ -104,6 +115,8 @@ func _surface(mat: ShaderMaterial, lines: Array, width: float, tip: float) -> vo
 	for line: PackedVector3Array in lines:
 		for i: int in line.size() - 1:
 			_quad(line, i, width, tip)
+		for i: int in range(0, line.size(), _blob_step):
+			_blob(line[i], width, lerpf(1.0, tip, float(i) / (line.size() - 1)))
 	_mesh.surface_end()
 
 
@@ -123,6 +136,15 @@ func _quad(line: PackedVector3Array, i: int, width: float, tip: float) -> void:
 		_mesh.surface_set_normal(_tangent(line, i + n / 2))
 		_mesh.surface_set_uv(Vector2(e.x, e.y))
 		_mesh.surface_add_vertex(p)
+
+
+## A round camera-facing blob on a point of the line (UV = the quad's corner, COLOR.b = 1).
+func _blob(at: Vector3, width: float, taper: float) -> void:
+	for corner: Vector2 in BLOB_CORNERS:
+		_mesh.surface_set_color(Color(width * taper, taper * _blob_share, 1.0))
+		_mesh.surface_set_normal(Vector3.UP)
+		_mesh.surface_set_uv(corner)
+		_mesh.surface_add_vertex(at)
 
 
 static func _tangent(line: PackedVector3Array, i: int) -> Vector3:
