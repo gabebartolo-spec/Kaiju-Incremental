@@ -34,3 +34,4 @@ Other graphics presets and 4K; day scenes (vignette only seen at night); stages 
 - godot_quiet.sh from the brief does not exist; used the console exe + own APPDATA + timeout. override.cfg removed after the renders.
 - Python text-mode writes make CRLF on Windows: use newline='' and check `file`; a silent no-op replace cost three reruns.
 - ffmpeg: C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe
+- Stop only PIDs you started and logged; a pause order lets runs already going finish (lead 2026-10-22, after I stopped a PID that was probably another agent's).
