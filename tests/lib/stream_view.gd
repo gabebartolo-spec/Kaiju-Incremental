@@ -325,7 +325,7 @@ func _phase(seconds: float, step: Callable, swinging: bool = false) -> Dictionar
 	}
 
 
-## A walk of `metres` from where the kaiju stands in `dir` at the kaiju's walking speed, the breath's
+## A walk of `metres` from where the kaiju stands in `dir` at its walking speed, the breath's
 ## swing running at its start and half way (the camera turning while the kaiju moves).
 func _walk(dir: Vector2, metres: float) -> Dictionary:
 	var speed := _sim.stat("speed")

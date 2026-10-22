@@ -4,7 +4,7 @@ extends Node3D
 ## memory: before the rampage starts only the buildings nearest the kaiju are meshed, up to
 ## city.load_chunks structural chunks; the rest stand as plain facade boxes while worker threads
 ## mesh them, landmarks first (a stadium never stands as a box: lead 9, 2026-10-21), then nearest
-## first, and each swaps in as it is ready. A building the rampage touches before its turn is
+## first, each swapping in as it is ready. A building the rampage touches before its turn is
 ## built on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at
 ## most city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that
 ## stand near, and every building the rampage has touched): as the kaiju walks, the nearest
@@ -20,15 +20,14 @@ extends Node3D
 
 ## Workers meshing at once (each holds a building's raw voxels until it is baked).
 const IN_FLIGHT := 4
-## The streaming plan is redone when the kaiju or the camera has moved this far, at most every
-## PLAN_EVERY s.
+## A replan when the kaiju or the camera moved this far, at most every PLAN_EVERY s.
 const PLAN_MOVE := 4.0
 const PLAN_EVERY := 0.25
 ## An untouched building goes back to a box only this far past the last one still wanted.
 const EVICT_MARGIN := 10.0
 ## Buildings freed per frame (freeing a view is a few dozen nodes).
 const EVICT_PER_FRAME := 6
-## The plan is also redone when the camera has turned this far (degrees) since the last one.
+## ...or the camera has turned this far (degrees).
 const PLAN_TURN := 4.0
 ## Key resolution: buildings within 1/KEY_STEP m of each other in rank tie (then by index).
 const KEY_STEP := 16.0
@@ -70,6 +69,7 @@ var _evict: Array[int] = []
 ## can see it (StreamRank).
 var _rank: StreamRank
 var _cutoff := INF  # the last plan's rank of the first building left out
+var _held := 0  # chunks of the buildings the last plan holds meshed
 ## Set on leaving the tree: workers still queued skip their building (quitting never waits on them).
 var _stop := false
 
@@ -97,7 +97,9 @@ func _ready() -> void:
 	for n: int in count:
 		order.append(n)
 	var from := _sim.kaiju_pos
-	order.sort_custom(func(a: int, b: int) -> bool: return _dist(a, from) < _dist(b, from))
+	order.sort_custom(
+		func(a: int, b: int) -> bool: return _rank.rank(a, from) < _rank.rank(b, from)
+	)
 	var budget := Num.i(_sim.city.get("load_chunks", 1 << 30))
 	var now: Array[int] = []
 	var chunks := 0
@@ -163,34 +165,17 @@ func _make(n: int) -> BuildingView:
 	return BuildingView.new(_sim.buildings[n], _colors[n], _party[n])
 
 
-func _dist(n: int, from: Vector2) -> float:
-	var b := _sim.buildings[n]
-	return from.distance_squared_to(Vector2(b.x, b.z))
-
-
-## Decides which buildings should be meshed now: the landmarks and the touched ones always, then
-## the best ranked (nearest in the camera's view, see _rank) until the chunk budget is spent.
-## Queues the wanted ones that are not built (landmarks first, then best ranked) and lists the
+## Decides which buildings should be meshed now: the held ones, then the best ranked until the
+## chunk budget is spent. Queues the wanted ones not built (landmarks first) and lists the
 ## untouched built ones well past the last wanted building to go back to boxes.
 func _plan() -> void:
 	var from := _sim.kaiju_pos
-	_rank.set_view(_look(), _view_cfg())
+	_rank.set_view(_look(), _sim.city)
 	_planned_at = from
 	_since_plan = 0.0
-	var count := _sim.buildings.size()
-	var used := 0
 	var marks: Array[int] = []
-	var keys := PackedFloat64Array()
-	var limit := _cutoff + _rank.outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
-	for n: int in count:
-		if _sim.buildings[n].landmark != "" and _rank.keeps_landmark(n, from):
-			marks.append(n)
-			used += _chunks[n]
-		elif _pinned[n] == 1:
-			used += _chunks[n]
-		else:
-			keys.append(floorf(_rank.rank(n, from, limit) * KEY_STEP) * 65536.0 + n)
-	keys.sort()
+	var keys := _rank_keys(from, marks)
+	var used := _held
 	_queue.clear()
 	for n: int in marks:
 		if _state[n] == 0:
@@ -214,15 +199,27 @@ func _plan() -> void:
 				_evict.append(n)
 
 
+## The buildings not held, as sorted keys (rank, then index). The held ones (landmarks that stay
+## meshed, listed in `marks`, and touched buildings) add their chunks to _held.
+func _rank_keys(from: Vector2, marks: Array[int]) -> PackedFloat64Array:
+	var keys := PackedFloat64Array()
+	var limit := _cutoff + _rank.outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
+	_held = 0
+	for n: int in _sim.buildings.size():
+		if _sim.buildings[n].landmark != "" and _rank.keeps_landmark(n, from):
+			marks.append(n)
+			_held += _chunks[n]
+		elif _pinned[n] == 1:
+			_held += _chunks[n]
+		else:
+			keys.append(floorf(_rank.rank(n, from, limit) * KEY_STEP) * 65536.0 + n)
+	keys.sort()
+	return keys
+
+
 ## The camera the stream ranks by (StreamRank.look), or [] when there is none.
 func _look() -> Array:
-	return StreamRank.look(get_viewport() if is_inside_tree() else null, _view_cfg())
-
-
-## city.stream_view, or {} when the city has none.
-func _view_cfg() -> Dictionary:
-	var cfg: Dictionary = _sim.city.get("stream_view", {})
-	return cfg
+	return StreamRank.look(get_viewport() if is_inside_tree() else null, _sim.city)
 
 
 ## Starts workers on the queue, up to IN_FLIGHT at once.

@@ -45,10 +45,10 @@ func _init(buildings: Array[RampageSim.Building]) -> void:
 
 ## The camera the stream ranks by, as [ground position, heading, half-angle of the wedge it sees
 ## in radians: the frustum's own half-angle on the ground plane], or [] without a viewport, a
-## camera, a camera looking straight up or down, or a city.stream_view (cfg).
-static func look(viewport: Viewport, cfg: Dictionary) -> Array:
+## camera, a camera looking straight up or down, or a `city` without stream_view.
+static func look(viewport: Viewport, city: Dictionary) -> Array:
 	var camera := viewport.get_camera_3d() if viewport != null else null
-	if camera == null or cfg.is_empty():
+	if camera == null or not city.has("stream_view"):
 		return []
 	var ahead := -camera.global_transform.basis.z
 	var flat := Vector2(ahead.x, ahead.z)
@@ -63,11 +63,12 @@ static func look(viewport: Viewport, cfg: Dictionary) -> Array:
 
 
 ## Takes the camera: [ground position, heading, half-angle of the wedge in radians] (see
-## BuildingStream._look), or [] for none; cfg is city.stream_view.
-func set_view(look: Array, cfg: Dictionary) -> void:
+## BuildingStream._look), or [] for none; `city` holds stream_view.
+func set_view(look: Array, city: Dictionary) -> void:
 	on = not look.is_empty()
 	if not on:
 		return
+	var cfg: Dictionary = city["stream_view"]
 	at = look[0]
 	dir = look[1]
 	_ring = Num.f(cfg["ring_m"])
