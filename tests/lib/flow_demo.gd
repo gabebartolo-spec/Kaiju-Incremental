@@ -10,7 +10,6 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const LEFT_OVER := 100
-const EMERGE_CAP := 1200
 
 var t: SceneTree
 var check: Callable
@@ -57,9 +56,7 @@ func run() -> void:
 ## Loaded, and past the river rise that holds the sim back (D-083), so its clock runs.
 func _settled(run: Rampage) -> void:
 	await run.wait_loaded()
-	for _i: int in EMERGE_CAP:
-		if not run.sim.emerge.active:
-			break
+	while run.sim.emerge.active:
 		await t.physics_frame
 
 
@@ -352,7 +349,7 @@ func _check_continue_after() -> void:
 	await _frames(3)
 	var saved := SaveFile.load_game()
 	check.call(
-		Demo.add(saved["totals"], {}) == sim_totals and Num.i(saved["runs"]) == 10,
+		Demo.add(saved["totals"] as Dictionary, {}) == sim_totals and Num.i(saved["runs"]) == 10,
 		"a normal rampage adds the sim's counters to the demo totals: %s vs %s" % [saved["totals"], sim_totals]
 	)
 	main.queue_free()
