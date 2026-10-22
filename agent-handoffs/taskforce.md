@@ -1,10 +1,10 @@
 # Taskforce handoff (PR 1, sim core, agents only), 2026-10-23
-## State: working (PR #161: D-160/D-161 + review fixes pushed f0038e2b, UNTESTED: no Godot until 03:28)
+## State: working (PR #161: D-160/D-161 + review fixes pushed 225ee403, UNTESTED: no Godot until 03:28)
 ## Task
 Anti Kaiju Taskforce PR 1 (sim core, agents only). Serves ROADMAP "Your adversaries", M2, D-137/139/141/143/145/152.
 Lead: session "Status check". Next after this: PR 3 kills (swat, perch-collapse fall), PR 4 frost grenades.
 ## Branch and commit
-PR https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/161, head f0038e2b, base claude/look-options. Local
+PR https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/161, head 225ee403 (gdlint: rampage.setup stays 4 args, city_seconds is a Rampage field set before setup; gate-suite Variant checks typed), base claude/look-options. Local
 branch claude/taskforce-core-ee770a pushed to origin claude/taskforce-core. Tree clean.
 ## What changed this session
 - The 4 failures were: tests walking sideways into walls / needing a turn (fixed with `_face_free_way`, a body-clear
