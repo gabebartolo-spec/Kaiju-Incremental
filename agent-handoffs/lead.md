@@ -28,9 +28,8 @@
   reader; scanner gap: complexity_ratchet.py misreads multi-line signatures -> CityLots.fill_block 49 lines,
   VoxelSupport.islands, landing missed: a follow-up task).
 - Subagents running (die with this session; resume a successor's own builders from these worktrees + handoffs):
-  city-memory (landmark unload only if no pop-in, comment #58), perf-tiles (pixel diff NOT 0: <0.01% px, up to 30 levels
-  on high/max, z-fight tie order; told: 2 tries to match old draw order, else stop + report crops -> a director
-  trade-off question), clumsy-army (claude/clumsy-army-v2 7d903638: strays probe passes +1.05%/-1.16%; lead ruling: fix
+  city-memory (landmark unload only if no pop-in, comment #58), perf-tiles (PARKED by director 2026-10-22 "Park it": pixel
+  diff 37-168 px/4K frame, no stage-1 gain, stage-4 timing noisy; branch claude/perf-tiles pushed, no PR), clumsy-army (claude/clumsy-army-v2 7d903638: strays probe passes +1.05%/-1.16%; lead ruling: fix
   tank AI so a cornered column clears the 12 m danger radius in tier 4 seed 1, never the test; then clip), turn, camera,
   audit-shared (#151 fix), ui-art (HUD icon board voxel vs smooth, brief C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/BRIEF-ui-art.md), fire-spread (Opus;
   burn-out pays ~0.6x a smash per D-126; fire uses existing burn_chunk Fire; bookkeeping <=1000 usec), explosions
