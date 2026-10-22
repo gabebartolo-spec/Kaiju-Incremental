@@ -283,3 +283,8 @@ labelled concept board (R 23.1, research 23) · legal look check: the research s
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
 b2-18). Shape closed (director 2026-10-21): "ours is like a crocodile in a t-rex body, not godzilla shaped".
+Landmark stable (D-133, comment #62, director 2026-10-22): about 12 landmarks in a pool, each run picks 3 per stage by
+its seed, so runs differ; kinds: famous-style icons (original, never copies), city services, fun one-offs, industrial.
+Replaces D-071's fixed four as the set; stadium, wheel, spire and megatower join the pool. List and look boards to him first.
+Itch demo (D-132, comment #61, director 2026-10-22): the 1.0 demo goes on an invite-only Itch page (download keys) when
+the reptilian stage is 100% done: bug free, polished visuals, good performance, fully featured. Earlier builds stay local.

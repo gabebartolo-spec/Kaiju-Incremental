@@ -4,6 +4,18 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-22 · D-134 · Director · Tripo: a budget of 9000 credits for today
+
+"Tripo is logged in, you have a budget of 9000 credits to use today" (2026-10-22). Covers today's Tripo work (the D-127 HUD icons, up to 3000, count inside it; landmark models once he picks them). Every model is set Private and logged in docs/provenance/tripo.md; stop at the budget.
+
+## 2026-10-22 · D-133 · Director · Landmarks: a stable of about 12 that rotate, 3 per stage
+
+"I would like many more landmarks" (comment #62). Asked: "3 per stage but I want a stable of around 12 landmarks which rotate randomly with each run"; kinds: famous-style icons (original buildings that evoke real ones, never copies), city services, fun one-offs and industrial. Changes D-071's fixed four (stadium, wheel, spire, megatower) into a pool of about 12, from which each run picks 3 per stage by its seed.
+
+## 2026-10-22 · D-132 · Director · The 1.0 demo goes on Itch, invite-only, when the reptilian stage is complete
+
+"I would like the 1.0 demo build to be on Itch for testers" (comment #61). Asked: invite-only testers (a restricted page with download keys); the 1.0 demo is the build "when the Reptilian stage is 100% implemented: bug free, polished visuals, good performance, fully featured". Earlier builds stay local.
+
 ## 2026-10-22 · D-131 · Director · The baby croc turns smoothly; the adolescent and adult step real turns
 
 Small turns smooth (D-130) did not bring the stage-1 and stage-2 rise point under the 10 s bar (11.7-12 s): the baby makes many real turns at close range, and each stepped turn delays it. Asked who steps their turns, he chose "Baby turns smoothly": the baby turns smoothly at its pre-stepped rates (90 degrees in about 0.6 s), so it feels nimble while small; the adolescent and adult step every real turn (small corrections smooth, D-130), so the weight arrives as it grows. The 10 s bar stays.
