@@ -82,7 +82,15 @@ GitHub helper opens PRs. Thunder sound = the lead's.
 - D-162 asset worker (Agent "claude" type, Sonnet, own worktree, branch claude/heads-skins): Tripo python x2 +
   Komodo x2 heads on the croc titan body, 4-5 croc skins (retextures), six-views, boards in notes
   vfx-lead/heads/ and skins/, rows in docs/provenance/tripo.md; budget 8000. Then my review + fresh critic, then
-  both boards into interview.md. Head-unlock/play question already in interview.md.
+  both boards into interview.md. Head-unlock/play question already in interview.md. Tripo downloads open a
+  Windows Save dialog: press Save at once (director 03:46), worker told.
+- Idle audit (lead's, scratchpad idle_audit.md): director asked an AUDIT only, no idle layer before he answers.
+  Brief scratchpad brief_idle.md = the 2 bugs (standing stomp has no foot/ring; claw-rake pose never plays) +
+  ONE 6 s clip of today's standing croc for the lead's interview question.
+- Voxel look (director 03:34; report lead scratchpad research_voxel_look.md: keep voxels, unify grain/ground/
+  fire/DoF): I render A TODAY / B ONE LOOK (mock, ~1 day) / C SMOOTH CROC, 6 boards + 6 s 3-pane clip per its
+  section 5, capture-only branch, critics first, then interview.md. After #154 PASS and Thunder Beam.
+- Slot order: explosions r10 (fire flame body, ONE LOOK needs it) -> croc standing bugs -> voxel boards.
 
 ## Running jobs
 Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 03:30, log scratchpad
@@ -105,3 +113,5 @@ capture_topple_faces.gd (off the heli branch). Chunks-inside-body: sim-side, the
 - The default rampage clock ends a long capture: set sim.time_left.
 - override.cfg (no_focus, off-screen) is written in its own Bash call; gitignored.
 - GDScript warnings are errors: no `int(Variant)` (use Num.i), no `as Fire` on a Variant (typed var assign).
+- Agent subagent transcripts: <session>/subagents/agent-<id>.jsonl (tasks/<id>.output stays 0 bytes); point
+  stall_watch.sh at the .jsonl.
