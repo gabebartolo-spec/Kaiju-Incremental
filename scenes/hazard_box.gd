@@ -80,7 +80,9 @@ static func drop_pointer(button: Button) -> void:
 		var box := button.get_theme_stylebox(state) as HazardBox
 		box.chevron = false
 		box.content_margin_left = box.band_size + POINTERLESS_ROOM
-		box.content_margin_right = box.band_size + POINTERLESS_ROOM
+		# The plate's face stands PLATE_SHADOW.x short of its rect: that much more on the right
+		# centres the label between the tapes.
+		box.content_margin_right = box.band_size + POINTERLESS_ROOM + PLATE_SHADOW.x
 
 
 ## Trims a button's room above and below its label to `margin` px in every state (a menu that must
@@ -324,6 +326,7 @@ static func scuff_lines(body: Rect2, inset: float) -> Array[PackedVector2Array]:
 		var at := Vector2(x0 + rng.randf() * w, lane + rng.randf() * strip)
 		var along := Vector2(rng.randf_range(10.0, 34.0), rng.randf_range(-1.5, 1.5))
 		along.y = clampf(at.y + along.y, lane, lane + strip) - at.y
+		along.x = minf(along.x, x0 + w - at.x)  # never on into the tape
 		lines.append(PackedVector2Array([at, at + along]))
 	return lines
 

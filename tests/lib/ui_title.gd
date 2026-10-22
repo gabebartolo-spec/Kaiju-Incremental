@@ -238,6 +238,11 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 			% [crossing.size(), lines.size()]
 		)
 	)
+	var on_tape := lines.filter(
+		func(l: PackedVector2Array) -> bool:
+			return l[0].x < 22.0 or l[1].x < 22.0 or l[0].x > 378.0 or l[1].x > 378.0
+	)
+	check.call(on_tape.is_empty(), "no scratch runs onto the tape (%d do)" % on_tape.size())
 	var focus := (_button(title, "CONTINUE")).get_theme_stylebox("focus") as HazardBox
 	check.call(
 		not focus.chevron, "the title's Continue plate has no focus pointer to crowd its frame"
@@ -255,7 +260,8 @@ func _label_room(buttons: Array) -> void:
 		var widest := 0.0
 		for line: String in b.text.split(NEWLINE):
 			widest = maxf(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x)
-		var room := (b.size.x - PLATE_BANDS * box.band_size - widest) / 2.0
+		var face := b.size.x - HazardBox.PLATE_SHADOW.x
+		var room := (face - PLATE_BANDS * box.band_size - widest) / 2.0
 		if room < LABEL_ROOM:
 			tight.append("%s %.1f px" % [b.text, room])
 	check.call(tight.is_empty(), "every title label has 14 px or more each side: %s" % [tight])
