@@ -97,6 +97,12 @@ static func times() -> Array:
 	return _times["order"]
 
 
+## The whole "times" table of data/looks.json (order, labels, each time's look overrides).
+static func time_table() -> Dictionary:
+	_load()
+	return _times
+
+
 static func set_time(id: String) -> void:
 	_load()
 	if id == _time_id:
@@ -105,7 +111,8 @@ static func set_time(id: String) -> void:
 	_merged = {}
 
 
-## Run n plays the next time of day, so the rampage goes on through dusk, night, morning, noon.
+## The fixed order: run n plays the nth time of day. Captures and tests use it to land on a known
+## time; the game picks with TimeOfDay (D-145).
 static func time_for_run(run_index: int) -> String:
 	return str(times()[posmod(run_index, times().size())])
 

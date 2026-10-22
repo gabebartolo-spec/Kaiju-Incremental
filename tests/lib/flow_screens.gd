@@ -10,6 +10,7 @@ const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowSave := preload("res://tests/lib/flow_save.gd")
 const FlowStats := preload("res://tests/lib/flow_stats.gd")
 const FlowFps := preload("res://tests/lib/flow_fps.gd")
+const FlowSettingsRows := preload("res://tests/lib/flow_settings_rows.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -325,11 +326,12 @@ func _check_settings() -> void:
 		main.queue_free()
 		return
 	await layout.fits_at_scales(menu, "settings")
+	FlowSettingsRows.run(check, menu)
 	var was_full: bool = PlayerSettings.fullscreen
-	await GuiInput.click(t, GuiInput.button(menu, "ON" if was_full else "OFF"))
+	await GuiInput.click(t, GuiInput.button(menu, "< ON >" if was_full else "< OFF >"))
 	check.call(PlayerSettings.fullscreen != was_full, "clicking the fullscreen switch flips it")
 	PlayerSettings.set_fullscreen(was_full)
-	await GuiInput.click(t, GuiInput.button(menu, "100%"))
+	await GuiInput.click(t, GuiInput.button(menu, "< 100% >"))
 	check.call(
 		(
 			is_equal_approx(PlayerSettings.ui_scale, 1.15)
