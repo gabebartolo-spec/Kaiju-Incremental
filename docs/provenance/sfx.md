@@ -57,6 +57,8 @@ They replace the synth/Kenney mixes listed above for these files; shell_hit.ogg 
 Not usable: the distant-rifle prompt (and one near-rifle take) came back near-silent (peak about -45 dBFS); rifle_far keeps
 playing the rifle sample pitched 0.7, as before.
 
+| siren_far.ogg | siren_far take A, 20.0 s seamless loop (mp3 converted to ogg vorbis, 44.1 kHz stereo) | ElevenLabs Sound Effects v2 (eleven_text_to_sound_v2), 2026-10-22, flow 2dN0E00nqUIe779VfJXy, D-138. Prompt: distant city emergency sirens wailing, several, far away, echoing between buildings, no voices, loopable. Used only by the title screen ambience (TitleAmbience), at -34 dB. |
+
 ## City beds (2026-10-23, D-155, D-138)
 
 Four loops for CitySound, generated in ElevenLabs Sound Effects on the director's paid plan (model eleven_text_to_sound_v2, prompt influence 0.5, loop on, fixed duration; flow oRbWcPVQmGlj1NYUxCJI; 2 takes each, 8 generations, 333.3 credits; D-092, D-138). Each pick was converted to mono 44.1 kHz Vorbis 96 kb/s, gain set so the whole-loop RMS hits the target (siren -24, gunfire -33, fire -24, wind -26 dBFS; measured within 0.1 dB) with the peak at or under -1.5 dBFS (gunfire -2.0 dBFS: sparse, crest 31 dB), no fades. Gains: siren -17.87 dB, gunfire +20.61, fire +0.48, wind +1.74. Raw takes stay outside the repo.

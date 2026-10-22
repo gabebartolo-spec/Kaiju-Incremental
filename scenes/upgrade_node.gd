@@ -7,7 +7,7 @@ extends Button
 
 ## Text size range: the largest that fits the node's width, never below FONT_MIN (at 4K and the
 ## largest UI scale FONT_MIN still clears the TV's 28 px cap-height bar).
-const FONT_MAX := 22
+const FONT_MAX := 30
 const FONT_MIN := 18
 const PAD := 2
 ## The thickest border each kind of node draws (focused): its text keeps clear of it.

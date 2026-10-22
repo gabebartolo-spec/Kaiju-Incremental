@@ -18,9 +18,10 @@ const CONTROLS: Array[Array] = [
 	["Move", "WASD / arrows", "Left stick"],
 	["Signature attack", "Space", "A"],
 	["Glide (insectoid, hold)", "Hold Space", "Hold A", "insectoid"],
+	["Dash", "Shift", "B"],
 	["Ultimate", "E", "Y"],
 	["Pause", "Esc / P", "Start"],
-	["Fullscreen", "F11", "Keyboard only"],
+	["Fullscreen", "F11", "-"],
 	["Confirm", "Enter / Space", "A"],
 	["Back", "Esc", "B"],
 ]
@@ -39,6 +40,9 @@ static var fps_cap := -1
 static var in_play := false
 ## Graphics quality, a key of tuning "display" graphics; "" = graphics_default for this screen.
 static var graphics := ""
+## True once the controls card has shown at the start of a rampage (b2-10: once, then the
+## controls live in Settings).
+static var controls_seen := false
 ## The time of day every rampage plays (D-145): TimeOfDay.RANDOM (the default) or a time's id.
 static var time_of_day := TimeOfDay.RANDOM
 
@@ -65,6 +69,11 @@ static func motion() -> float:
 	if camera_motion < 0.0:
 		return Num.f(Content.section("camera_shake")["default_motion"])
 	return camera_motion
+
+
+static func mark_controls_seen() -> void:
+	controls_seen = true
+	save()
 
 
 static func set_fullscreen(on: bool) -> void:
@@ -221,6 +230,7 @@ static func save() -> void:
 	cfg.set_value("display", "version", DISPLAY_VERSION)
 	cfg.set_value("display", "fps_cap", fps_cap)
 	cfg.set_value("display", "graphics", graphics)
+	cfg.set_value("ui", "controls_seen", controls_seen)
 	cfg.set_value("display", "time_of_day", TimeOfDay.clean(time_of_day))
 	cfg.save(PATH)
 
@@ -235,6 +245,7 @@ static func load_saved(start_full: bool) -> void:
 	sfx_volume = clampf(Num.f(cfg.get_value("audio", "sfx_volume", sfx())), 0.0, 1.0)
 	camera_motion = clampf(Num.f(cfg.get_value("display", "camera_motion", motion())), 0.0, 1.0)
 	fullscreen = cfg.get_value("display", "fullscreen", fullscreen) == true
+	controls_seen = cfg.get_value("ui", "controls_seen", false) == true
 	var scale := Num.f(cfg.get_value("display", "ui_scale", ui_scale))
 	ui_scale = scale if UI_SCALES.has(scale) else UI_SCALES[0]
 	var saved_cap := Num.i(cfg.get_value("display", "fps_cap", -1))

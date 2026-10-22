@@ -61,10 +61,11 @@ func _layout() -> void:
 		var at := Vector2(Num.f(pos[0]) * cell.x, Num.f(pos[1]) * cell.y) + GAP * 0.5
 		var b: UpgradeNode = buttons[id]
 		if b.role == "ultimate":
-			b.place(at - Vector2(0, CAPSTONE_EXTRA), box + Vector2(0, CAPSTONE_EXTRA))
+			b.place(at, box + Vector2(0, CAPSTONE_EXTRA))
 		else:
 			b.place(at, box)
-	_band.position = Vector2(0, BRANCH_ROW * cell.y - CAPSTONE_EXTRA)
+	# The band starts below the row above it (its boxes end GAP.y / 2 short of the row line).
+	_band.position = Vector2(0, BRANCH_ROW * cell.y)
 	_band.size = Vector2(size.x, cell.y + CAPSTONE_EXTRA)
 	queue_redraw()
 

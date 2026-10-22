@@ -95,7 +95,7 @@ func _check_new_game() -> void:
 	var menu := GuiInput.find_script(rampage, PauseMenu)
 	layout.listen(rampage, "pause")
 	check.call(t.paused and menu != null, "Esc pauses the rampage and opens the pause menu")
-	check.call(_hint_hidden(rampage), "the HUD's hints hide behind the pause menu (lead review 3)")
+	check.call(_hint_hidden(rampage), "the HUD hides behind the pause menu (lead review 3)")
 	var clock := rampage.sim.time_left
 	await _frames(10)
 	check.call(rampage.sim.time_left == clock, "the rampage clock stands still while paused")
@@ -318,9 +318,9 @@ func _check_settings() -> void:
 	var main := await _main()
 	var title := _screen(main)
 	Sfx.ui_played.clear()
-	await GuiInput.click(t, GuiInput.button(title, "SETTINGS"))
+	await GuiInput.click(t, title.find_child("Gear", true, false) as Button)
 	var menu := GuiInput.find_script(title, SettingsMenu) as SettingsMenu
-	check.call(menu != null, "clicking SETTINGS opens the settings")
+	check.call(menu != null, "clicking the title gear opens the settings")
 	check.call(Sfx.ui_played == ["ui_click"], "a menu button clicks: %s" % [Sfx.ui_played])
 	if menu == null:
 		main.queue_free()
@@ -386,10 +386,7 @@ func _evolve_cost() -> int:
 	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")
 
 
-## True when the HUD's control hints ("Move: WASD ...") are not showing.
+## True when the HUD (its rings and the biomass figure) is not showing.
 func _hint_hidden(rampage: Rampage) -> bool:
-	for node: Node in rampage.find_children("*", "Label", true, false):
-		var l: Label = node
-		if l.text.begins_with("Move:"):
-			return not l.is_visible_in_tree()
-	return false
+	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	return not hud.breath_ring.is_visible_in_tree() and not hud.biomass.is_visible_in_tree()
