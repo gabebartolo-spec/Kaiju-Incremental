@@ -1,9 +1,9 @@
 extends "res://tests/lib/taskforce_suite.gd"
 ## The Anti Kaiju Taskforce, agents only (D-137, D-139, D-141, D-143, D-145, D-152): none in the
-## young city, squads of 3-4 from the edge, 12 alive at most; deaths (perch collapse, swat) pay a tank's
-## worth; the railgun tracks, locks and hits for 8% only if the kaiju stays (a late step dodges);
-## frost refreshes, never stacks, the dash shatters it; a squad never hovers; same seed, same
-## events; and the player-effect fixture "taskforce.agents".
+## young city, squads of 3-4 from the edge, 12 alive at most; deaths (perch collapse, swat) pay a
+## tank's worth; the railgun tracks, locks, hits for 8% only if the kaiju stays (a late step
+## dodges); frost refreshes, never stacks, the dash shatters it; a squad never hovers; same seed,
+## same events; and the player-effect fixture "taskforce.agents".
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 
