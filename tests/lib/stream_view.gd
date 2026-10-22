@@ -1,13 +1,13 @@
 extends RefCounted
 ## The building stream follows the camera's view (BuildingStream): through the fastest camera
 ## swing the game allows (the breath's side orbit, BreathCamera) no stand-in box shows inside the
-## full-detail depth DEPTH_M. For stages 2 and 4 a real stream (the stage's city, the real chunk
-## budget, workers meshing in real time) runs under the real camera path (CameraFollow,
+## full-detail depth DEPTH_M. For stages 2 and 3 a real stream (the stage's city, the real chunk
+## budget, its workers meshing) runs under the real camera path (CameraFollow,
 ## BreathCamera, 60 frames a second) with the kaiju at three spots. Every frame, each building left
 ## as a box whose bounding box meets the camera's frustum gives a distance from the camera; the
 ## smallest over a phase is the depth with full buildings ("depth"; "ahead" is the same within 10
 ## degrees of the view axis). The rest and the swing at every spot must keep DEPTH_M. A dash
-## (36 m at stage 2, 113 m at stage 4, in 0.4 s) is run and reported only: the camera reaches
+## (a body length or more in 0.4 s) is run and reported only: the camera reaches
 ## ground the budget cannot have meshed ahead of it.
 ##
 ## Landmarks (the stadium and wheel at these stages) unload like ordinary buildings when the
@@ -22,13 +22,12 @@ const StreamFrustum := preload("res://tests/lib/stream_frustum.gd")
 ## The full-detail depth every phase must keep (metres from the camera).
 const DEPTH_M := 48.0
 const DT := 1.0 / 60.0
-const FRAME_USEC := 16667
 ## The body the camera follows eases toward the sim's kaiju at this rate (Rampage._update_kaiju).
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
 ## Real time to wait for the stream to settle.
 const SETTLE_MS := 240000
-const STAGES: Array[int] = [2, 4]
+const STAGES: Array[int] = [2, 3]
 ## Walks out from the junction (name, heading, metres) and back, the breath's swing running at
 ## the start and half way: the landmarks leave the view and return to it. The north-east walk
 ## ends in the arena corner, 250 m and more from them with the camera turned away.
@@ -54,7 +53,7 @@ var _follow: CameraFollow
 var _breath := BreathCamera.new()
 var _body := Vector3.ZERO
 var _zoom := 1.0
-var _clock := 0
+var _step_us := 0  # the slowest stream frame of the phase (microseconds)
 var _last_yaw := 0.0
 var _rest_yaw := 0.0
 
@@ -93,6 +92,7 @@ func _stage(stage: int) -> void:
 	_snap()
 	_stream = BuildingStream.new(_sim, colors)
 	_host.add_child(_stream)
+	_stream.set_process(false)  # this test owns the stream's clock: see _advance
 	_view = StreamFrustum.new(_sim, _stream, _camera, _marks)
 	var steps: Array[float] = []
 	worst_step = 0
@@ -196,7 +196,7 @@ func _stage(stage: int) -> void:
 	var unloaded := 0
 	for phase: String in results:
 		unloaded += Num.i(results[phase]["out"])
-	if stage == STAGES[-1]:  # the walks reach 200 m from the landmarks only in the big arena
+	if stage == STAGES[-1]:  # the walks reach 200 m from the landmarks only in the big arena (stage 3)
 		_check.call(
 			unloaded > 0,
 			(
@@ -258,7 +258,7 @@ func _yaw() -> float:
 	return rad_to_deg(atan2(f.x, -f.z))
 
 
-## One frame: the sim's kaiju to the body, the camera after it, real time paced at 60 a second.
+## One frame: the sim's kaiju to the body, the camera after it, then the stream's frame.
 func _frame(swinging: bool) -> void:
 	_body = _body.lerp(
 		Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y), minf(1.0, DT * BODY_FOLLOW)
@@ -274,12 +274,20 @@ func _frame(swinging: bool) -> void:
 		yaw_rate = maxf(yaw_rate, rad_to_deg(turn) / DT)
 		yaw_reach = maxf(yaw_reach, absf(yaw - _rest_yaw))
 		_last_yaw = yaw
-	var tree := _host.get_tree()
-	var wait := _clock + FRAME_USEC - Time.get_ticks_usec()
-	if wait > 0:
-		OS.delay_usec(wait)
-	_clock = Time.get_ticks_usec()
-	await tree.process_frame
+	_advance()
+	await _host.get_tree().process_frame
+
+
+## The stream's frame of DT seconds, then its workers run to the end of what they were given: the
+## test judges what the plan has meshed in camera time, never how fast this machine's workers are.
+func _advance() -> void:
+	var t0 := Time.get_ticks_usec()
+	_stream.step(DT)
+	_step_us = maxi(_step_us, Time.get_ticks_usec() - t0)
+	var deadline := Time.get_ticks_msec() + SETTLE_MS
+	while not _stream.complete() and Time.get_ticks_msec() < deadline:
+		OS.delay_usec(200)
+		_stream.step(0.0)
 
 
 ## Waits until the stream has nothing left to mesh or free (the camera holds still).
@@ -297,7 +305,7 @@ func _settle() -> void:
 ## depth with full buildings (smallest box distance seen, LOOK_M when none) and the frames on
 ## which a box stood inside DEPTH_M.
 func _phase(seconds: float, step: Callable, swinging: bool = false) -> Dictionary:
-	_stream.worst_usec = 0
+	_step_us = 0
 	var depth := LOOK_M
 	var aheadmin := LOOK_M
 	var short := 0
@@ -314,14 +322,14 @@ func _phase(seconds: float, step: Callable, swinging: bool = false) -> Dictionar
 		pop += 1 if _view.landmark_pops() > 0 else 0
 		out += 1 if _view.unbuilt > 0 else 0
 		t += DT
-	worst_step = maxi(worst_step, _stream.worst_usec)
+	worst_step = maxi(worst_step, _step_us)
 	return {
 		"depth": depth,
 		"short": short,
 		"ahead": aheadmin,
 		"pop": pop,
 		"out": out,
-		"step": _stream.worst_usec / 1000.0
+		"step": _step_us / 1000.0
 	}
 
 

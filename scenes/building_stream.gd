@@ -18,17 +18,15 @@ extends Node3D
 ## camera (before the rampage's own exists) every building ranks by its distance from the kaiju
 ## and every landmark is held.
 
-## Workers meshing at once (each holds a building's raw voxels until it is baked).
+## Workers meshing at once (each holds a building's raw voxels until baked).
 const IN_FLIGHT := 4
 ## A replan when the kaiju or the camera moved this far, at most every PLAN_EVERY s.
 const PLAN_MOVE := 4.0
 const PLAN_EVERY := 0.25
 ## An untouched building goes back to a box only this far past the last one still wanted.
 const EVICT_MARGIN := 10.0
-## Buildings freed per frame (freeing a view is a few dozen nodes).
-const EVICT_PER_FRAME := 6
-## ...or the camera has turned this far (degrees).
-const PLAN_TURN := 4.0
+const EVICT_PER_FRAME := 6  # buildings freed per frame (a view is a few dozen nodes)
+const PLAN_TURN := 4.0  # ...or the camera has turned this far (degrees)
 ## Key resolution: buildings within 1/KEY_STEP m of each other in rank tie (then by index).
 const KEY_STEP := 16.0
 
@@ -58,6 +56,7 @@ var _stand_ins: StreamStandIns
 var _now: Array[int] = []
 var _pre: Array[BuildingView] = []
 var _initial := -1  # the initial group task while it is out, else -1
+var _pending := false  # the nearest buildings are meshing or meshed, not yet in the tree
 var _budget := 0
 var _tasks := {}  # building index -> worker task id, while it is out
 var _queue: Array[int] = []  # wanted and not yet built, in the order the workers take them
@@ -109,19 +108,30 @@ func _ready() -> void:
 			chunks += _chunks[n]
 		else:
 			_rest.append(n)
-	_landmarks_first(_rest)
+	StreamRank.landmarks_first(_sim.buildings, _rest)
 	_now = now
 	_pre.resize(now.size())
 	for n: int in now:
 		_state[n] = 1  # claimed: view(n) waits for it rather than meshing it a second time
-	_initial = WorkerThreadPool.add_group_task(
-		func(k: int) -> void: _pre[k] = null if _stop else _make(_now[k]), now.size()
-	)
+	_mesh_initial()
+	_pending = true
 	if not defer_initial:
 		finish_initial()
 
 
-## Whether the nearest buildings are meshed (finish_initial will not wait).
+## Starts meshing the nearest buildings (_now) into _pre: on workers, or at once here under the
+## headless dummy renderer, whose resource ids are unsafe across threads (the real one is safe).
+func _mesh_initial() -> void:
+	if DisplayServer.get_name() == "headless":
+		for k: int in _now.size():
+			_pre[k] = _make(_now[k])
+		return
+	_initial = WorkerThreadPool.add_group_task(
+		func(k: int) -> void: _pre[k] = null if _stop else _make(_now[k]), _now.size()
+	)
+
+
+## Whether the nearest buildings are meshed (finish_initial won't wait).
 func initial_done() -> bool:
 	return _initial < 0 or WorkerThreadPool.is_group_task_completed(_initial)
 
@@ -129,10 +139,12 @@ func initial_done() -> bool:
 ## Takes the nearest buildings into the tree, then starts streaming the rest. Waits for the
 ## workers if they are not done; a no-op once it has run.
 func finish_initial() -> void:
-	if _initial < 0:
+	if not _pending:
 		return
-	WorkerThreadPool.wait_for_group_task_completion(_initial)
-	_initial = -1
+	if _initial >= 0:
+		WorkerThreadPool.wait_for_group_task_completion(_initial)
+		_initial = -1
+	_pending = false
 	_stand_ins = StreamStandIns.new(_sim.buildings)
 	add_child(_stand_ins.build(_colors))
 	for k: int in _now.size():
@@ -144,16 +156,6 @@ func finish_initial() -> void:
 	_pre.clear()
 	_plan()
 	_feed()
-
-
-## Reorders `queue` so its landmarks stream before every ordinary building, each group keeping
-## its nearest-first order.
-func _landmarks_first(queue: Array[int]) -> void:
-	var marks: Array[int] = []
-	var others: Array[int] = []
-	for n: int in queue:
-		(marks if _sim.buildings[n].landmark != "" else others).append(n)
-	queue.assign(marks + others)
 
 
 ## The buildings still to stream after load, in the order the workers take them.
@@ -248,14 +250,15 @@ func _stream_one(n: int) -> void:
 
 
 func _process(delta: float) -> void:
-	if _initial >= 0:
+	if _pending:
 		return
 	var t0 := Time.get_ticks_usec()
-	_step(delta)
+	step(delta)
 	worst_usec = maxi(worst_usec, Time.get_ticks_usec() - t0)
 
 
-func _step(delta: float) -> void:
+## One frame's work (_process calls it; a test that owns the clock turns _process off).
+func step(delta: float) -> void:
 	for n: int in _tasks.keys():
 		if WorkerThreadPool.is_task_completed(Num.i(_tasks[n])):
 			WorkerThreadPool.wait_for_task_completion(Num.i(_tasks[n]))
@@ -267,9 +270,8 @@ func _step(delta: float) -> void:
 	if _since_plan >= PLAN_EVERY and _replan_wanted():
 		var t0 := Time.get_ticks_usec()
 		_plan()
-		var took := Time.get_ticks_usec() - t0
 		plans += 1
-		plan_usec += took
+		plan_usec += Time.get_ticks_usec() - t0
 	var freed := 0
 	while freed < EVICT_PER_FRAME and not _evict.is_empty():
 		_free_view(Num.i(_evict.pop_back()))
@@ -336,7 +338,7 @@ func built(n: int) -> BuildingView:
 
 ## Whether every building the stream wants meshed is in (captures wait on it).
 func complete() -> bool:
-	if _initial >= 0 or not _tasks.is_empty() or _queue_at < _queue.size() or not _evict.is_empty():
+	if _pending or not _tasks.is_empty() or _queue_at < _queue.size() or not _evict.is_empty():
 		return false
 	_mutex.lock()
 	var idle := _ready_views.is_empty()
@@ -384,6 +386,7 @@ func _exit_tree() -> void:
 	if _initial >= 0:
 		WorkerThreadPool.wait_for_group_task_completion(_initial)
 		_initial = -1
+	if _pending:
 		for pending: BuildingView in _pre:
 			if pending != null:
 				pending.free()  # meshed, never entered the tree
