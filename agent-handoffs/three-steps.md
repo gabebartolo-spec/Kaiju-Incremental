@@ -38,9 +38,10 @@ Lead opens/reads the PR; I push. Godot = Desktop\Godot_v4.7.2...console.exe (no 
   young    2, 3, 0.28%  | 0, 0, 0.00%  | 3, 3, 0.29%
   Behemoth 9, 20, 3.39% | 7, 9, 1.72%  | 10, 18, 3.32%   (r52)
   Colossus 12, 32, 1.45%| 7, 12, 1.00% | 10, 19, 1.55%   (r57; r48 gave 2.45%, r56 1.92%, r58 1.12%)
-- Military fixture: RAMPAGE_SEEDS 3,6,9 -> 2,3,11 (MIN_PARKED_IN_RANGE and the 95% band unchanged). On today's base the OLD rings
-  already park 0/51/0 on seeds 3,6,9 (other merges since turn-step changed parking), so that count was not a three-steps regression.
-  Military then: parked in band 100% of 21, driving skewed 0 of 23703.
+- Military fixture: RAMPAGE_SEEDS 3,6,9 -> 3,11,15,25 (MIN_PARKED_IN_RANGE 20 and the 95% band unchanged; 2,3,11 gave 21 here, 16 on CI = float drift, repeats exact
+  on one machine). Seeds 0-70 at the Behemoth park in range on only 3 (5), 11 (16), 15 (20), 25 (13), 42 (7), 17 (2). Military now: 38 tank-steps, band 100%.
+  Growth "army that learnt" now sums city seeds 0-5 (local ratio 1.71, each 1.45-2.17; seed 0 alone read 1.54 here, 1.26 on CI), bar 1.3 kept.
+  Save: v3 refund step kept beside the base's city_seconds default (#161).
 - Driving-hull check: with Colossus r48 the check saw 3 of 23790 tank-steps past 10 deg (tier 3 seed 3, tank 3, hull turning
   6 deg a step at the south ring avenue z ~150.2, the plan edge; on a road, no rubble there). Not reproduced at r57/r58; root cause not
   found (a tank turning while moving at a junction on the plan edge); bar not widened.

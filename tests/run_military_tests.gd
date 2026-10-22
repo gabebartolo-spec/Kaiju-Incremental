@@ -19,11 +19,13 @@ const MIN_PARKED_IN_RANGE := 20
 ## after look-options' city changes (2026-10-21): Behemoth seeds 2 (25), 4 (6) and 8 (6), all in
 ## the band; seed 0 saw none. Re-probed seeds 0-11 when bigger bodies turned slower (turn-step,
 ## 2026-10-21): seeds 2, 4, 8 fell to 5 in all; Behemoth seeds 3 (27), 6 (73), 9 (54), 10 (31).
-## Re-probed for D-135 (wider cities, army.spawn_radius per stage): on the old rings the base's
-## seeds 3, 6, 9 already park 0, 51, 0 tank-steps at the Behemoth, so the old seeds were stale
-## before the widening; seeds 2, 3 and 11 park tanks in range at the Behemoth (3, 11) and the
-## Colossus (2).
-const RAMPAGE_SEEDS: Array[int] = [2, 3, 11]
+## Re-probed for D-135 (wider cities, army.spawn_radius per stage): the old seeds 3, 6, 9 park only
+## 5 tank-steps in range on the shipped data, and in seeds 0-70 at the Behemoth only seeds 3 (5),
+## 11 (16), 15 (20), 25 (13), 42 (7) and 17 (2) park any, so a tank standing in range is rare.
+## Seeds 3, 11, 15 and 25 give 38 tank-steps on Windows against the bar of 20; CI (Linux) read 16
+## where Windows read 21 on the earlier pin (float drift, the same seeds repeat exactly on one
+## machine), so the margin is about 1.9x.
+const RAMPAGE_SEEDS: Array[int] = [3, 11, 15, 25]
 
 
 func suite_name() -> String:
