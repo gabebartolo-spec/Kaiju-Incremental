@@ -51,6 +51,10 @@ var _fall_over := 0
 var _top_out := 0
 var _centre_out := 0
 var _sim_min := 9.0
+var _top_min := 9.0
+var _head_hidden := 0
+## The drawn body's bone boxes (HeadFrame.points), made on the first frame.
+var _head: HeadFrame
 var _sim_max := 0.0
 var _check_only := false
 ## --depth-share=<f>: overrides tuning camera.lead_depth_share (a before/after of the lead).
@@ -149,9 +153,11 @@ func _run() -> void:
 	var n := maxi(1, _frames)
 	var fmt := "CAMCHECK %s stage %d %s: model share mean %.1f%% min %.1f%% max %.1f%%,"
 	fmt += " sim height %.1f%% (min %.1f%% max %.1f%%), highest bone %.1f%%;"
-	fmt += " head in the top margin %d, centre outside the middle %d;"
+	fmt += " highest drawn point %.1f%% from the top, head in the top margin %d,"
+	fmt += " centre outside the middle %d;"
 	fmt += " feet out %d, ground ahead out %d, camera inside a solid building %d,"
 	fmt += " feet hidden behind a solid building %d, body behind a falling section %d (solid %d),"
+	fmt += " head behind a solid building or section %d,"
 	fmt += " of %d frames"
 	var row := [
 		_candidate,
@@ -164,6 +170,7 @@ func _run() -> void:
 		100.0 * _sim_min,
 		100.0 * _sim_max,
 		100.0 * _rig_sum / n,
+		100.0 * _top_min,
 		_top_out,
 		_centre_out,
 		_feet_out,
@@ -172,6 +179,7 @@ func _run() -> void:
 		_hidden,
 		_fall_over,
 		_fall_hidden,
+		_head_hidden,
 		n
 	]
 	print(fmt % row)
@@ -194,7 +202,9 @@ func _check_frame(height: int) -> void:
 		var b := vis.global_transform * vis.get_aabb()
 		box = b if first else box.merge(b)
 		first = false
-	var feet := kaiju.global_position
+	# The drawn body's ground point (KaijuModel.focus, the root bone): the reptilian's node sits
+	# mid-tail, ~5.6 body units behind its hips, so a share measured there swings as it turns.
+	var feet := kaiju.focus()
 	var top := Vector3(feet.x, box.end.y, feet.z)
 	var feet_y := _camera.unproject_position(feet).y
 	var top_y := _camera.unproject_position(top).y
@@ -212,8 +222,9 @@ func _check_frame(height: int) -> void:
 	var head_rig: KaijuRig = kaiju.get("_rig")
 	if head_rig != null and head_rig.bone_names().has("head0"):
 		skull = head_rig.bone("head0").global_position  # the drawn head, ahead of the feet
-	var skull_y := _camera.unproject_position(skull).y
-	if minf(skull_y, top_y2) < Num.f(cam_cfg["safe_top"]) * height:
+	var top_px := _drawn_top(kaiju)  # the highest drawn point (the snout), not the sim's column
+	_top_min = minf(_top_min, top_px / height)
+	if top_px < Num.f(cam_cfg["safe_top"]) * height:
 		_top_out += 1  # the head within safe_top of the frame's top (or above it)
 	var width := float(root.get_viewport().get_visible_rect().size.x)
 	var mid := (_camera.unproject_position(feet) + _camera.unproject_position(skull)) * 0.5
@@ -222,10 +233,15 @@ func _check_frame(height: int) -> void:
 		_centre_out += 1  # the body's middle outside the middle safe_centre of the frame
 	if _trace:
 		var follow: CameraFollow = _rampage.get("_follow")
-		var row := [_frames, sim_share * 100.0, 100.0 * minf(skull_y, top_y2) / height]
+		var row := [_frames, sim_share * 100.0, 100.0 * top_px / height, 100.0 * top_y2 / height]
 		row += [_camera.global_position.distance_to(feet), follow.lead.x, follow.lead.z]
-		row += [follow.offset.length(), follow.offset.y]
-		print("TRACE %d sim %.1f top %.1f dist %.2f lead %.2f %.2f off %.2f y %.2f" % row)
+		row += [follow.offset.length(), follow.offset.y, follow.focus.x - feet.x]
+		row += [follow.focus.z - feet.z, feet.x, feet.y, feet.z]
+		row += [rad_to_deg(follow.head.tilt) if follow.head != null else 0.0]
+		var fmt := "TRACE %d sim %.1f top %.1f column %.1f dist %.2f lead %.2f %.2f off %.2f y %.2f"
+		var shake: CameraShake = _rampage.get("shake")
+		row += [rad_to_deg(shake.turn(_rampage.sim.body_scale(), PlayerSettings.motion()).y)]
+		print((fmt + " ff %.2f %.2f feet %.1f %.1f %.1f tilt %.2f shake %.2f") % row)
 	var head := feet.y
 	var rig: KaijuRig = kaiju.get("_rig")
 	if rig != null:
@@ -260,6 +276,25 @@ func _check_frame(height: int) -> void:
 			solid_over = solid_over or falls == null or falls.opacity(piece) >= 1.0
 	_fall_over += 1 if over else 0
 	_fall_hidden += 1 if solid_over else 0
+	if head_rig != null and head_rig.bone_names().has("head1"):
+		var heads := PackedVector3Array([skull, head_rig.bone("head1").global_position])
+		var solid_head := _blocked(eye, heads[0], opaque) or _blocked(eye, heads[1], opaque)
+		for piece: Node3D in city.falling_pieces():
+			if FallFade.covers(piece, eye, heads) and (falls == null or falls.opacity(piece) >= 1.0):
+				solid_head = true
+		_head_hidden += 1 if solid_head else 0  # the drawn head behind something drawn solid
+
+
+## The screen y (px) of the highest drawn point of `kaiju` (HeadFrame's bone-box corners), else
+## its node.
+func _drawn_top(kaiju: KaijuModel) -> float:
+	var top := _camera.unproject_position(kaiju.global_position).y
+	if _head == null:
+		_head = HeadFrame.new(kaiju)
+	for corner: Vector3 in _head.points():
+		if not _camera.is_position_behind(corner):
+			top = minf(top, _camera.unproject_position(corner).y)
+	return top
 
 
 ## The buildings drawn solid this frame (BuildingFade's opacity 1): a faded one hides nothing.

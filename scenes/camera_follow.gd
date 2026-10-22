@@ -7,7 +7,9 @@ extends RefCounted
 ## with it, toward where it is going (CameraTuning.lead units, more toward the camera), eased at
 ## "lead_ease"/s; no new lead during a dash or leap. Only "lead_depth_share" of it runs along
 ## the view (the camera's z): a lead toward or away from the camera would change the kaiju's
-## distance, so its size would bob and its head ride up the frame. Presentation only.
+## distance, so its size would bob and its head ride up the frame; for the same reason the aim's
+## ease runs only across the view. HeadFrame then tilts the aim
+## up when the drawn head would ride into the frame's top margin. Presentation only.
 
 ## How fast the aim catches up with the kaiju's drawn body, and the offset with its rest (1/s).
 const FOCUS_FOLLOW := 12.0
@@ -18,6 +20,8 @@ const LOOK_UP := 3.5
 var focus: Vector3
 var offset: Vector3
 var lead := Vector3.ZERO
+## The head-room tilt (set on the first aim, for the kaiju it frames).
+var head: HeadFrame
 var _cfg: Dictionary = Content.section("camera")
 var _moving_for := 0.0
 var _last := Vector3.INF
@@ -28,9 +32,14 @@ func _init(p_focus: Vector3, p_offset: Vector3) -> void:
 	offset = p_offset
 
 
-## Eases toward the body at `target` and the rest offset `rest` (already zoomed).
+## Eases toward the body at `target` and the rest offset `rest` (already zoomed). Along the
+## view (the offset's ground direction) the aim keeps up with the body at once: a lag there would
+## move the camera nearer or farther as the body walks toward or away from it (its size would bob).
 func step(target: Vector3, rest: Vector3, delta: float) -> void:
-	focus = focus.lerp(target, minf(1.0, delta * FOCUS_FOLLOW))
+	var gap := target - focus
+	var view := Vector3(offset.x, 0.0, offset.z).normalized()
+	var along := view * gap.dot(view)
+	focus += along + (gap - along) * minf(1.0, delta * FOCUS_FOLLOW)
 	offset = offset.lerp(rest, minf(1.0, delta * OFFSET_FOLLOW))
 
 
@@ -60,3 +69,14 @@ func eye() -> Vector3:
 
 func look_at(body_scale: float) -> Vector3:
 	return focus + lead + Vector3(0, LOOK_UP * body_scale, 0)
+
+
+## Where the camera looks this frame for `kaiju` (body of `body_scale`, camera `fov` degrees):
+## look_at, tilted up by HeadFrame when the drawn head would ride too high (`shake_pitch`: the
+## camera shake's pitch this frame, radians).
+func aim(
+	kaiju: Node3D, body_scale: float, fov: float, shake_pitch: float, delta: float
+) -> Vector3:
+	if head == null:
+		head = HeadFrame.new(kaiju)
+	return head.aim(eye(), look_at(body_scale), fov, shake_pitch, delta)

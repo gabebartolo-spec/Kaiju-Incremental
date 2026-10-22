@@ -394,5 +394,6 @@ func _place_camera(delta: float) -> void:
 	var hold := sim.body.dash.on() or _leap_time > 0.0
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
-	_camera.look_at(_follow.look_at(sim.body_scale()))
+	var nod := shake.turn(sim.body_scale(), motion).y
+	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), camera_fov, nod, delta))
 	shake.apply(_camera, sim.body_scale(), motion)
