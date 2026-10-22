@@ -49,13 +49,19 @@ func _check_never_twice() -> void:
 	var lowest := RUNS
 	for id: Variant in all:
 		lowest = mini(lowest, Num.i(counts.get(str(id), 0)))
-	check(all.size() == 5, "the weathers are clear, overcast, rain, fog and thunderstorm: %s" % [all])
-	check(repeats == 0, "over %d seeded runs no weather follows itself (%d repeats)" % [RUNS, repeats])
+	check(
+		all.size() == 5, "the weathers are clear, overcast, rain, fog and thunderstorm: %s" % [all]
+	)
+	check(
+		repeats == 0, "over %d seeded runs no weather follows itself (%d repeats)" % [RUNS, repeats]
+	)
 	check(
 		counts.size() == all.size() and lowest >= AT_LEAST,
 		"all %d weathers turn up, the rarest %d of %d: %s" % [all.size(), lowest, RUNS, counts]
 	)
-	check(seq == _sequence(Weather.RANDOM), "the same save replays the same weather (seeded by run)")
+	check(
+		seq == _sequence(Weather.RANDOM), "the same save replays the same weather (seeded by run)"
+	)
 	check(
 		all.has(Weather.pick(0, "", Weather.RANDOM)) and all.has(Weather.pick(3, "nonsense", "")),
 		"a first run (no last weather) and an unknown last weather still pick a real one"
@@ -96,7 +102,10 @@ func _check_setting_steps() -> void:
 		"the options button steps Random, then each weather, then back to Random: %s" % [steps]
 	)
 	check(
-		Weather.label(Weather.RANDOM) == "Random each rampage" and Weather.label("fog") == "Fog banks",
+		(
+			Weather.label(Weather.RANDOM) == "Random each rampage"
+			and Weather.label("fog") == "Fog banks"
+		),
 		"the button reads Random (the default) or the weather's name from data"
 	)
 	var unlabelled := Content.weathers().filter(
@@ -208,11 +217,16 @@ func _check_through_main() -> void:
 		seen.append(str(SaveFile.load_game().get("last_weather", "")))
 		check(
 			Content.weathers().has(seen[-1]) and Content.weather_id() == seen[-1],
-			"starting a rampage (%s) keeps %s in the save and as the current weather" % [setting, seen[-1]]
+			(
+				"starting a rampage (%s) keeps %s in the save and as the current weather"
+				% [setting, seen[-1]]
+			)
 		)
 		main.queue_free()
 		await process_frame
 		await process_frame
 	PlayerSettings.weather = kept
 	check(seen[0] != seen[1], "the second rampage's weather is not the first's: %s" % [seen])
-	check(seen[2] == "rain" and seen[3] == "rain", "a fixed rain plays rain every time: %s" % [seen])
+	check(
+		seen[2] == "rain" and seen[3] == "rain", "a fixed rain plays rain every time: %s" % [seen]
+	)
