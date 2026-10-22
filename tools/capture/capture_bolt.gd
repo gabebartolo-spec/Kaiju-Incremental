@@ -31,6 +31,7 @@ var _run := 1
 var _halo := ""
 var _side := false
 var _young := false
+var _debug := false
 var _step := 0
 var _fire_breath := -1
 var _fire_beam := -1
@@ -49,6 +50,8 @@ func _initialize() -> void:
 				"halo": _halo,
 				"side": false,
 				"young": false,
+				"min_px": -1.0,
+				"debug": false,
 			}
 		)
 	)
@@ -58,6 +61,14 @@ func _initialize() -> void:
 	_halo = str(a["halo"])
 	_side = a["side"]
 	_young = a["young"]
+	_debug = a["debug"]
+	if _halo == "debug":  # a pure green halo: proves which frame pixels are the bolt
+		var modes: Dictionary = Content.section("fx")["bolt"]["halo_modes"]
+		modes["debug"] = {"inner": "00ff00", "fringe": "00ff00"}
+	if Num.f(a["min_px"]) >= 0.0:  # try a different least width without editing the tuning
+		var bolt: Dictionary = Content.section("fx")["bolt"]
+		bolt["core_min_px"] = a["min_px"]
+		bolt["halo_min_px"] = Num.f(a["min_px"]) * 5.0
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
 		quit(1)
@@ -104,6 +115,8 @@ func _stills(rampage: Rampage) -> void:
 			"%s_run%d_%s%s_f%03d" % [_mode, _run, halo, "_side" if _side else "", after]
 		)
 		var path := Kit.still(self, _out, shot_name)
+		if _debug:
+			_print_rig(rampage)
 		_crop(rampage, path)
 
 
@@ -134,6 +147,48 @@ func _side_camera(rampage: Rampage) -> void:
 	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
 	var facing := Vector3(rampage.sim.facing.x, 0.0, rampage.sim.facing.y)
 	var right := Vector3(-facing.z, 0.0, facing.x)
-	_cam.position = at + right * SIDE_DISTANCE + Vector3(0, SIDE_HEIGHT, 0)
-	_cam.look_at(at + facing * 5.0 + Vector3.UP * 3.0)
+	var bs := rampage.sim.body_scale()
+	_cam.position = at + right * SIDE_DISTANCE * bs + Vector3(0, SIDE_HEIGHT * bs, 0)
+	_cam.look_at(at + facing * 7.0 * bs + Vector3.UP * 3.0 * bs)
 	_cam.current = true
+
+
+func _print_rig(rampage: Rampage) -> void:
+	var rig: BoltRig = (
+		rampage.ability_fx._beam.rig if _mode != "beam" else rampage._powers._thunder.rig
+	)
+	var view: BoltView = rig._view
+	print(
+		(
+			"rig live=%s index=%d mouth=%s hit=%s surfaces=%d aabb=%s vis=%s"
+			% [
+				rig.live,
+				rig._index,
+				rig._mouth,
+				rig._hit,
+				view.mesh.get_surface_count(),
+				view.get_aabb(),
+				view.is_visible_in_tree()
+			]
+		)
+	)
+	for mat: ShaderMaterial in view.all_materials():
+		print(
+			(
+				"mat width=%s min_px=%s level=%s boost=%s scale=%s"
+				% [
+					mat.get_shader_parameter("width"),
+					mat.get_shader_parameter("min_px"),
+					mat.get_shader_parameter("level"),
+					mat.get_shader_parameter("boost"),
+					rig._scale,
+				]
+			)
+		)
+	var cam := root.get_viewport().get_camera_3d()
+	print(
+		(
+			"cam fov=%s size=%s view_scale=%s"
+			% [cam.fov, root.get_visible_rect().size, view.global_transform]
+		)
+	)
