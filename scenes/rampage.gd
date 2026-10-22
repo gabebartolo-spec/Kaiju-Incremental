@@ -154,6 +154,7 @@ func _ready() -> void:
 	_camera.current = true
 	sfx.watch(_camera, _powers, _city.street)
 	_place_camera(1.0)
+	add_child(PostFx.new(self))  # vignette and colour fringe (D-142), reads the sim
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
