@@ -17,6 +17,7 @@ var _t := 0.0
 var _seed: float
 var _life := 0.0  # the longest particle lifetime: what is in the air when it goes out
 var _out := false
+var _embers_node: GPUParticles3D
 
 
 func _init(size: float, seed_value: float) -> void:
@@ -29,7 +30,8 @@ func _init(size: float, seed_value: float) -> void:
 	_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 	add_child(_light)
 	add_child(_flames(size))
-	add_child(_embers(size))
+	_embers_node = _embers(size)
+	add_child(_embers_node)
 	add_child(_smoke(size))
 
 
@@ -42,18 +44,23 @@ static func prewarm(parent: Node) -> void:
 
 
 ## Stops burning: the light goes off and no new flame, ember or smoke rises; what is already in the
-## air finishes its life, then the node frees itself.
-func go_out() -> void:
+## air finishes its life, then the node frees itself. With `fade` (s) the light dims out over that
+## time and the embers go at once (a fire on a part that starts to fall: no dots left hanging).
+func go_out(fade := 0.0) -> void:
 	if _out:
 		return
 	_out = true
-	_base_energy = 0.0
-	_light.set_energy(0.0)
 	for child: Node in get_children():
 		if child is GPUParticles3D:
 			(child as GPUParticles3D).emitting = false
+	if fade > 0.0 and is_inside_tree():
+		_embers_node.visible = false
+		create_tween().tween_property(self, "_base_energy", 0.0, fade)
+	else:
+		_base_energy = 0.0
+		_light.set_energy(0.0)
 	if is_inside_tree():
-		get_tree().create_timer(_life).timeout.connect(queue_free)
+		get_tree().create_timer(maxf(_life, fade)).timeout.connect(queue_free)
 	else:
 		queue_free()
 

@@ -308,7 +308,7 @@ func _broke(index: int, cells: Array[Vector3i]) -> void:
 		out.append_array(_chunk_fires.building_gone(index))
 	for f: Fire in out:
 		_fires.erase(f)
-		f.go_out()
+		f.go_out(Num.f(sim.powers_cfg["fire"]["view_out_fade"]))
 	_ruins.mark(index)
 
 
