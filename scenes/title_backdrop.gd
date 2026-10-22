@@ -59,6 +59,8 @@ func _make_city() -> void:
 	_view.handle_input_locally = false
 	add_child(_view)
 	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(_cfg["city_tier"]))
+	var city_tuning: Dictionary = tuning["city"]
+	city_tuning["far_tower_cap"] = Num.f(_cfg["tower_cap"])  # D-158: the colossus clears every tower
 	var layout := CityGrowth.layout(
 		Content.tuning(), Num.i(_cfg["city_tier"]), Seeds.make("city", 0)
 	)

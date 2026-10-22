@@ -8,6 +8,8 @@ extends SceneTree
 ## --reveal=<seconds>: the still is taken that long after an explosion that reveals the colossus.
 ## --rest: the still waits until the bay is at rest (no footfall shivering it).
 ## --measure: prints the tower, head and shore pixel numbers (tools/capture/title_measure.gd).
+## --all: one run, one window: rest.png, reveal.png (with the --measure numbers) and, on a fresh
+## dusk city, dusk.png (one flash of the window, not three).
 ## --size=3840x2160: grows the window to exactly that (the OS opens a 4K window 63 px short).
 ## --variant=night|dusk picks the title's look (tuning "title" "variants").
 ## --segments: after the clip, plays each sound layer alone for a while (the others' buses muted) so
@@ -16,6 +18,8 @@ extends SceneTree
 
 const AFTER_SHOWN := 1.0  # seconds the city has been fading in before the still
 const MAX_WAIT_MS := 60000
+## With --all and no --reveal: seconds after the explosion that reveals the colossus (its peak).
+const REVEAL_AFTER := 0.25
 const MEASURE := preload("res://tools/capture/title_measure.gd")
 ## The window's x while capturing: left of every monitor.
 const OFF_SCREEN_X := -12000
@@ -36,6 +40,7 @@ var _segments := false
 var _reveal := -1.0
 var _rest := false
 var _measure := false
+var _all := false
 var _size := Vector2i.ZERO
 var _hide_3d := false
 var _probe_at := Vector2.ZERO
@@ -67,6 +72,8 @@ func _initialize() -> void:
 			_rest = true
 		elif arg == "--measure":
 			_measure = true
+		elif arg == "--all":
+			_all = true
 		elif arg.begins_with("--size="):
 			var wh := arg.substr(7)
 			_size = Vector2i(int(wh.get_slice("x", 0)), int(wh.get_slice("x", 1)))
@@ -117,6 +124,8 @@ func _run() -> void:
 			await _tick()
 		if _segments:
 			await _play_segments()
+	elif _all:
+		await _all_stills(title)
 	else:
 		var wait := Time.get_ticks_msec() + int(AFTER_SHOWN * 1000.0)
 		while Time.get_ticks_msec() < wait:
@@ -139,6 +148,54 @@ func _run() -> void:
 				await _tick()
 		root.get_texture().get_image().save_png(_out.path_join("title.png"))
 	quit()
+
+
+## The night city at rest and in the reveal's flash, then a dusk city at rest, each saved.
+func _all_stills(title: TitleScreen) -> void:
+	var backdrop := title.find_children("*", "TitleBackdrop", true, false)[0] as TitleBackdrop
+	await _settle(backdrop)
+	_save("rest.png")
+	if _measure:
+		MEASURE.towers_and_head(backdrop, float(root.size.y))
+		MEASURE.plate_clearance(backdrop, float(root.size.y))
+		MEASURE.water_band(backdrop, float(root.size.y))
+		print("measure frame ", root.size)
+	backdrop.boom()
+	await _wait(_reveal if _reveal >= 0.0 else REVEAL_AFTER)
+	_save("reveal.png")
+	title.queue_free()
+	await _tick()
+	await _tick()
+	Content.section("title")["variant"] = "dusk"
+	var dusk := TitleScreen.new()
+	dusk.setup("Reptilian, 3 rampages")
+	root.add_child(dusk)
+	await _tick()
+	await _tick()
+	var again := dusk.find_children("*", "TitleBackdrop", true, false)[0] as TitleBackdrop
+	var t0 := Time.get_ticks_msec()
+	while not again.is_loaded and Time.get_ticks_msec() - t0 < MAX_WAIT_MS:
+		await _tick()
+	await _settle(again)
+	_save("dusk.png")
+
+
+## Waits for the city to fade in and the bay to stop shivering from a footfall.
+func _settle(backdrop: TitleBackdrop) -> void:
+	await _wait(AFTER_SHOWN)
+	while backdrop.shiver() > 0.0:
+		await _tick()
+
+
+func _wait(seconds: float) -> void:
+	var until := Time.get_ticks_msec() + int(seconds * 1000.0)
+	while Time.get_ticks_msec() < until:
+		await _tick()
+
+
+func _save(file: String) -> void:
+	root.get_texture().get_image().save_png(_out.path_join(file))
+	print("saved ", file)
 
 
 ## Debug: what 3D things lie along the camera ray through a screen point (share of the width and
