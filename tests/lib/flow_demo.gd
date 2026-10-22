@@ -264,7 +264,7 @@ func _endless_run(main: Node) -> void:
 	await run.wait_loaded()
 	var before := SaveFile.load_game()
 	await _frames(60)
-	check.call(not run.sim.over and run.sim.elapsed > 0.5, "Endless mode has no clock to run out")
+	check.call(not run.sim.over and run.sim.elapsed > 0.5, "Endless mode has no clock to run out (over %s, elapsed %s)" % [run.sim.over, run.sim.elapsed])
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(run, PauseMenu)
 	await GuiInput.click(t, GuiInput.button(menu, "END RAMPAGE"))
@@ -343,7 +343,7 @@ func _check_continue_after() -> void:
 	var saved := SaveFile.load_game()
 	check.call(
 		saved["totals"] == sim_totals and Num.i(saved["runs"]) == 10,
-		"a normal rampage adds the sim's counters to the demo totals: %s vs %s" % [saved["totals"], sim_totals]
+		"a normal rampage adds the sim's counters to the demo totals: %s vs %s (runs %s, demo %s)" % [saved["totals"], sim_totals, saved["runs"], saved["demo"]]
 	)
 	main.queue_free()
 	await _frames(2)
