@@ -321,7 +321,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	await process_frame
 
 
-## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Atomic Breath
+## Nothing a rampage shows for the first time stalls a frame on a build: the scorch Lightning Breath
 ## leaves is drawn at load for this run's cone, and tanks share their voxels yet fade one by one.
 func _check_warm_start() -> void:
 	var species := Content.species_def("reptilian")

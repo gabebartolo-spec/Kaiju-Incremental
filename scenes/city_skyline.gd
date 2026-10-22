@@ -16,6 +16,12 @@ const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
+const LATTICE_HEIGHT := 130.0
+const SUPERTALL := 1.8  # a far tower that is a supertall stands this many times taller
+## A capped far shore (cfg far_tower_cap, the title's): towers under this share of the cap stand as
+## they were; above it they bend toward the cap and never reach it, so the tall ones stay in order
+## and differ (no row of towers cut off at one height).
+const CAP_KNEE := 0.6
 
 var cfg: Dictionary
 var ground: CityGround
@@ -167,6 +173,15 @@ func _freeway(path: PackedVector2Array) -> void:
 				_lamps.append(Vector3(a.x, DECK_Y + 2.2, a.y))
 
 
+## A far tower's height under the cap (cfg far_tower_cap in metres; 0 is no cap, the game's own).
+func _capped(tall: float) -> float:
+	var cap := Num.f(cfg["far_tower_cap"])
+	var knee := cap * CAP_KNEE
+	if cap <= 0.0 or tall <= knee:
+		return tall
+	return knee + (cap - knee) * tanh((tall - knee) / (cap - knee))
+
+
 ## The skyline across the bay: a waterfront of towers, a lattice tower, hazy and lit.
 func _far_shore() -> void:
 	var shore := ground.coast - Num.f(cfg["bay_width"])
@@ -184,8 +199,8 @@ func _far_shore() -> void:
 			var d := _rng.randf_range(8.0, 20.0)
 			var tall := lerpf(8.0, 70.0, pow(downtown, 1.5)) * _rng.randf_range(0.5, 1.4)
 			tall = maxf(tall, 6.0)
-			if _rng.randf() < downtown * 0.15:
-				tall *= 1.8  # a supertall
+			tall *= SUPERTALL if _rng.randf() < downtown * 0.15 else 1.0
+			tall = _capped(tall)
 			var at := Vector3(
 				x + _rng.randf_range(-4.0, 4.0), tall * 0.5, shore - 12.0 - r * 26.0 - d * 0.5
 			)
@@ -222,7 +237,7 @@ func _far_shore() -> void:
 func _lattice_tower(base: Vector3) -> void:
 	var red := Color("b0402c")
 	var white := Color("c8c4b8")
-	var height := 130.0
+	var height := _capped(LATTICE_HEIGHT)  # the title caps it with the towers (D-158)
 	var levels := 26
 	for i: int in levels:
 		var t := float(i) / levels

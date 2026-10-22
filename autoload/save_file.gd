@@ -41,7 +41,13 @@ static func delete_save() -> void:
 ## A fresh save for a new kaiju of `species_id`.
 static func new_save(species_id: String) -> Dictionary:
 	return {
-		"version": VERSION, "species": species_id, "rubble": 0, "levels": {}, "runs": 0, "best": {}
+		"version": VERSION,
+		"species": species_id,
+		"rubble": 0,
+		"levels": {},
+		"runs": 0,
+		"best": {},
+		"city_seconds": 0.0
 	}
 
 
@@ -60,6 +66,8 @@ static func migrate(data: Dictionary) -> Dictionary:
 		out.erase("best_destruction")
 	if version < 3:
 		_refund_cut_nodes(out)
+	if not out.has("city_seconds"):
+		out["city_seconds"] = 0.0  # rampage time in the adolescent city (D-160)
 	out["version"] = VERSION
 	return out
 

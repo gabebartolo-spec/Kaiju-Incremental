@@ -17,7 +17,7 @@ scenes/diagonal_parking.gd::park 40 14
 scenes/evolution_reveal.gd::_ready 42 2
 scenes/fx.gd::_ready 55 2
 scenes/gait_biped.gd::_step_feet 98 48
-scenes/gait_clip.gd::_choose 35 18
+scenes/gait_clip.gd::_choose 33 18
 scenes/gait_hexapod.gd::_skitter 34 19
 scenes/gait_hexapod.gd::_step 50 22
 scenes/gait_radial.gd::update 51 27
@@ -33,11 +33,9 @@ scenes/powers_view.gd::on_event 82 28
 scenes/powers_view.gd::update 52 17
 scenes/rampage.gd::_physics_process 41 11
 scenes/rampage.gd::_ready 57 8
-scenes/rampage_hud.gd::_ready 67 2
-scenes/results_screen.gd::_ready 49 2
-scenes/settings_menu.gd::_ready 74 5
+scenes/results_screen.gd::_ready 48 2
+scenes/settings_menu.gd::_ready 62 1
 scenes/sfx.gd::play 43 12
-scenes/species_select.gd::_card 64 2
 scenes/stadium_match.gd::_play 32 13
 scenes/stadium_match.gd::_ready 45 7
 scenes/traffic.gd::_drive 40 13
