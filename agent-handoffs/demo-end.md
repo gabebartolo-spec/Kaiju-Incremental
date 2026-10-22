@@ -1,5 +1,12 @@
 # Demo-end handoff, 2026-10-23 02:50
 ## State: waiting (director pause on Godot until 03:28, file ~/.claude/focus-pause; then run the suites, commit, push; no PR until the lead says)
+## Next: weather pick plan (queue 1; plan only, wait for 'go weather' in lead-board/to-demo-end.md)
+Mirror TimeOfDay (on look-options since #156): new sim/weather.gd `Weather` (RANDOM="", pick(run,last,setting) seeded by
+Seeds.make("weather", run), settings/next/label/clean), data in data/looks.json "weather" {order: clear, overcast, rain, fog,
+thunderstorm; labels; random_label "Random each rampage"}, Content.weather()/weather_table(), save key last_weather (+migrate
+default), PlayerSettings.weather + cfg display/weather, options row "Weather" in settings_menu, main._start_rampage picks and
+sets `Content.set_weather(id)` -> VFX reads `Content.current_weather` (one value, string id). Suite `weather` mirrors timeofday.
+Branch claude/weather from origin/claude/look-options after demo-end is pushed. No visuals.
 ## Task
 The demo ending: ROADMAP M3 "demo end screen and feedback button"; D-145, D-148, D-152, D-153, D-156 (amended). Lead:
 "Status check" (the Kaiju lead, local_a16cd984-128a-4b5f-8bdf-05556e046cd4). Queue after this (lead's message): weather
