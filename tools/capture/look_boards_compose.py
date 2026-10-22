@@ -30,19 +30,19 @@ ROW_LABEL = {
 ROW_COLOUR = {"a": (60, 60, 64), "b": (36, 84, 62), "c": (92, 60, 40)}
 TIME_LABEL = {"dusk": "Dusk", "noon": "Noon"}
 FRAME_LABEL = {
-    "f1": "F1   Standing, 4 seconds after the rise from the river. Game camera.",
+    "f1": "F1   5 seconds into the rampage, croc in the open street, no building fading. Game camera.",
     "f2": "F2   12 seconds in: a tower topples and a fire burns. Game camera.",
-    "f3": "F3   Same moment as F1, close camera (the intro and load-screen distance).",
+    "f3": "F3   Standing 4 seconds after the rise, close camera (the intro and load-screen distance).",
 }
-SHOT = {"f1": ("f1", 4), "f2": ("f2", 12), "f3": ("f3", 4)}
+SHOT = {"f1": ("f1", 5), "f2": ("f2", 12), "f3": ("f3", 4)}
 
 # (caption, source shot, centre x, centre y) in 4K pixels; 2x crops of 320x180.
 CROPS = {
     "f1": [
-        ("croc from behind", "f1", 1920, 800, 640),
-        ("croc skin and tail", "f1", 2016, 1060, 480),
-        ("tree and car", "f1", 2860, 1620, 640),
-        ("car", "f1", 384, 1824, 480),
+        ("croc head and neck", "f1", 1560, 830, 640),
+        ("croc skin and legs", "f1", 1830, 1040, 480),
+        ("tree and car", "f1", 830, 1700, 480),
+        ("tree and car", "f1", 3290, 1620, 480),
     ],
     "f2": [
         ("the fire", "f2", 1342, 1180, 480),
@@ -51,14 +51,14 @@ CROPS = {
         ("toppling tower", "f2", 3100, 800, 640),
     ],
     "f3": [
-        ("croc face (front view)", "f3b", 2207, 640, 560),
-        ("croc skin (front view)", "f3b", 2040, 1008, 480),
+        ("croc face (front view, not the game camera)", "f3b", 2207, 640, 560),
+        ("croc skin (front view, not the game camera)", "f3b", 2040, 1008, 480),
         ("tree and car", "f3", 2520, 1030, 640),
         ("car", "f3", 456, 1416, 480),
     ],
 }
 NOTES = {
-    "f1": "Same city seed, same moment in all rows.",
+    "f1": "Same city seed, same route, same moment in all rows. The route is replayed, so the first stomps have already broken buildings.",
     "f2": "The fire is placed by the capture at the same spot and second in every row: the natural fires are small and hide in dust.",
     "f3": "Face and skin crops come from a front-view camera at the same moment (the game camera looks at the croc's back).",
 }

@@ -31,6 +31,7 @@ var _face_steps := 0
 ## and hide in dust), so the fire can be compared: "fire placed by the capture".
 var _fire := Vector4.ZERO
 var _fire_done := true
+var _scan := false  ## "--scan": print each half second whether any building fades (FallFade too)
 
 
 func _initialize() -> void:
@@ -60,6 +61,8 @@ func _initialize() -> void:
 			var f := arg.substr(7).split(",")
 			_face = Vector2(float(f[0]), float(f[1])).normalized()
 			_face_steps = int(f[2])
+		elif arg == "--scan":
+			_scan = true
 		elif arg.begins_with("--fire="):
 			var q := arg.substr(7).split(",")
 			_fire = Vector4(float(q[0]), float(q[1]), float(q[2]), float(q[3]))
@@ -107,6 +110,16 @@ func _run() -> void:
 		await physics_frame
 	print("LOOKB risen at drawn frame %d" % Engine.get_frames_drawn())
 	var frames := 0
+	if _scan:
+		while frames < 20 * 60 and not rampage.sim.over:
+			await physics_frame
+			frames += 1
+			if frames % 30 == 0:
+				var fade: BuildingFade = city.get("_fade")
+				var faded: Dictionary = fade.get("_faded")
+				print("LOOKB scan t=%.1f faded=%d moving=%s" % [frames / 60.0, faded.size(), rampage.sim.kaiju_pos])
+		quit()
+		return
 	if _seconds > 0.0:
 		var total := int((_skip + _seconds) * 60.0)
 		while frames < total and not rampage.sim.over:
