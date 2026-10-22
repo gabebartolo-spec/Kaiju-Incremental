@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
+Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
+smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
+
 ## 2026-10-18 · D-061 · Director · UI look A "Emergency Broadcast" for every screen
 Why: picked from three mockups (A broadcast, B concrete and rubble, C monster hide) for a "thematically rich, beautiful
 and intuitive" UI (UI session, 2026-10-18). Changes: UiKit palette (hazard yellow, alert red, near-black), hazard tape,

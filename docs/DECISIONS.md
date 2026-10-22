@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-151 · Director · Effect family rulings (asked by the VFX lead with a labelled board)
+
+Asked in the VFX lead's session (look sheet, PR #154): an explosion is a sudden tall burst of the game's own fire ("Fire's tongues"), then that fire stays burning; chemical gas is soft tinted smoke (the smoke family, also the Taskforce gas look); smoke is lit from below by its fire everywhere (game and title); on the title, burning floors' windows turn fire-orange; the Lightning Breath / Thunder Beam effect rework is IN M1; the Taskforce owns one electric blue nobody else uses (the tank-deflect flash becomes white); blasts and Taskforce hits use the same street dust as everything else; the VFX lead fixes the base mismatches now (tail-sweep yellow ring, tree-puff sprite, plain shell sparks) in #154.
+
 ## 2026-10-23 · D-150 · Director · Title menu column stays high
 
 Asked (4K still shown) where the logo-and-buttons column sits vertically: keep it high, as in his mockup; the calm water below stays as deliberate space.
@@ -391,7 +395,3 @@ Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard"
 ## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
 Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
 do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
-
-## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
-Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
-smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
