@@ -1,5 +1,5 @@
 # Demo-end handoff, 2026-10-23 02:50
-## State: waiting (Godot frozen by the director until 02:57; then run the suites, commit, push; no PR until the lead says)
+## State: waiting (director pause on Godot until 03:28, file ~/.claude/focus-pause; then run the suites, commit, push; no PR until the lead says)
 ## Task
 The demo ending: ROADMAP M3 "demo end screen and feedback button"; D-145, D-148, D-152, D-153, D-156 (amended). Lead:
 "Status check" (the Kaiju lead, local_a16cd984-128a-4b5f-8bdf-05556e046cd4). Queue after this (lead's message): weather
@@ -22,7 +22,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - Tests: suite `demoend` (tests/run_demoend_tests.gd + tests/lib/sim_demo_end.gd, incl. normal-untouched check), flow_demo.gd
   rewritten (mouse, key, pad via new GuiInput.pad), demo_smoke.gd and capture_demo.gd rewritten. README row added.
 ## Unfinished changes
-- NOTHING from the final-upgrade/Endless rework has been run yet (Godot frozen). Run: `tools/run_tests.sh --quick demoend
+- The Endless refactor (no sim field) is uncommitted until committed with this file; NOTHING of the rework has been run green yet. Run: `tools/run_tests.sh --quick demoend
   sim_play military sim` (GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe;
   sim alone is ~500 s, run in the background). Show the new demoend checks failing first on planted bad input (earlier
   planted runs were for the superseded design).
@@ -35,6 +35,9 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - PR needs: Evidence, the sim-review packet (save v3 keys with defaults + v2 migration test, Endless/escalation shared sim
   paths), "Not exercised" (flow, smoke, still), the PLACEHOLDER URL note.
 ## Attempts
+Silent "exit 127" in headless runs (flow, smoke, demoend) is most likely my Godot being killed from outside during the director's
+Godot pauses (~/.claude/focus-pause says until when), not a code bug: check that file before debugging, and rerun after it.
+Endless no longer holds a `sim` field (methods take `sim` as a parameter) to avoid a RampageSim<->Endless typed cycle.
 Trigger changed three times (survived adult rampage -> adult city fully ruined -> final upgrade, D-156 amended); only the
 last is in the code. The 127 crash: tried copying the native DLL, --audio-driver Dummy, no --fixed-fps: no change.
 ## Open decisions

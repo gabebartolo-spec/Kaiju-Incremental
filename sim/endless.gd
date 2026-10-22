@@ -6,15 +6,13 @@ extends RefCounted
 ## (data/tuning.json "demo.endless"): this class is only ever created for an endless run, so
 ## normal mode never reads them (the balance is decided by normal mode, DESIGN.md).
 
-var sim: RampageSim
 ## Buildings regrown so far (the view and the tests read it).
 var regrown := 0
 var _timer: float
 var _cursor := 0
 
 
-func _init(p_sim: RampageSim) -> void:
-	sim = p_sim
+func _init() -> void:
 	_timer = Num.f(cfg()["regrow_interval"])
 
 
@@ -52,10 +50,10 @@ static func over_reason(sim: RampageSim) -> String:
 ## One step of an endless run (nothing in a normal one): the regrowth clock.
 static func step(sim: RampageSim, dt: float) -> void:
 	if sim.endless != null:
-		sim.endless.regrow_step(dt)
+		sim.endless.regrow_step(sim, dt)
 
 
-func regrow_step(dt: float) -> void:
+func regrow_step(sim: RampageSim, dt: float) -> void:
 	_timer -= dt
 	if _timer > 0.0:
 		return
@@ -64,17 +62,17 @@ func regrow_step(dt: float) -> void:
 	var n := sim.buildings.size()
 	for k: int in n:
 		var i := (_cursor + k) % n
-		if left > 0 and regrowable(i):
-			regrow(i)
+		if left > 0 and regrowable(sim, i):
+			regrow(sim, i)
 			left -= 1
 			_cursor = i + 1
 
 
 ## True when building `i` is gone, plain, in the arena, with nothing falling from it and the
 ## kaiju well clear.
-func regrowable(i: int) -> bool:
+func regrowable(sim: RampageSim, i: int) -> bool:
 	var b := sim.buildings[i]
-	if b.landmark != "" or not b.in_arena or _standing(i) > 0:
+	if b.landmark != "" or not b.in_arena or _standing(sim, i) > 0:
 		return false
 	for f: RampageSim.Fall in sim.falls:
 		if f.building == i:
@@ -84,7 +82,7 @@ func regrowable(i: int) -> bool:
 
 ## Stands building `i` whole again: a fresh chunk structure, no fine grid, the destroyed count
 ## taken back. The view rebuilds it on the "building_regrown" event.
-func regrow(i: int) -> void:
+func regrow(sim: RampageSim, i: int) -> void:
 	var b := sim.buildings[i]
 	var full := b.w * b.d * b.height
 	b.frame = Structure.new(b.w, b.d, b.height, b.frame.max_hp)
@@ -95,6 +93,6 @@ func regrow(i: int) -> void:
 	sim.events.append({"type": "building_regrown", "building": i})
 
 
-func _standing(i: int) -> int:
+func _standing(sim: RampageSim, i: int) -> int:
 	var f := sim.carving.frame(i)
 	return f.alive_count if f != null else sim.buildings[i].frame.alive_count

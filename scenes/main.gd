@@ -151,7 +151,7 @@ func _on_bought(screen: UpgradeScreen, id: String) -> void:
 	SaveSystem.save_game(_save)
 	var def: Dictionary = _tree.defs[id]
 	var effects: Dictionary = def.get("effects", {})
-	var last := Demo.complete(_tree) and _save.get("demo_done", false) != true  # the final upgrade
+	var last: bool = Demo.complete(_tree) and _save.get("demo_done", false) != true  # the final upgrade
 	if last:  # the whole tree is owned (D-156): the thanks screen, and Endless mode unlocks
 		_save["demo_done"] = true
 		SaveSystem.save_game(_save)

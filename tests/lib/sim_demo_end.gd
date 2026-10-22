@@ -99,7 +99,7 @@ func _check_totals() -> void:
 ## Endless mode: no clock, no fall, waves keep coming, never more tanks alive than the cap.
 func _check_endless() -> void:
 	var sim: RampageSim = _make.call("reptilian", {"hide": 3}, 0, {})
-	sim.endless = Endless.new(sim)
+	sim.endless = Endless.new()
 	var cap := Num.i(Endless.cfg()["max_tanks"])
 	var spawned_early := 0
 	var spawned_late := 0
@@ -141,7 +141,7 @@ func _check_endless() -> void:
 ## A destroyed building far from the kaiju stands whole again after the regrowth interval.
 func _check_regrowth() -> void:
 	var sim: RampageSim = _make.call("reptilian", {}, 0, {})
-	sim.endless = Endless.new(sim)
+	sim.endless = Endless.new()
 	var far := 0
 	var far_d := -1.0
 	for i: int in sim.buildings.size():
@@ -157,7 +157,7 @@ func _check_regrowth() -> void:
 			for x: int in b.w:
 				b.frame.damage(Vector3i(x, y, z), 1.0e9)
 	sim.chunks_destroyed += full
-	_check.call(b.frame.alive_count == 0 and sim.endless.regrowable(far), "the far building is a ruin that may regrow")
+	_check.call(b.frame.alive_count == 0 and sim.endless.regrowable(sim, far), "the far building is a ruin that may regrow")
 	var regrown_events := 0
 	for _step: int in (int(Num.f(Endless.cfg()["regrow_interval"])) + REGROW_SLACK) * 30:
 		sim.hp = sim.max_hp
@@ -168,7 +168,12 @@ func _check_regrowth() -> void:
 		regrown_events == 1 and sim.buildings[far].frame.alive_count == full,
 		"after the regrowth interval it stands whole again, announced once (%d events)" % regrown_events
 	)
-	_check.call(sim.chunks_destroyed < full, "the city's destroyed count took it back (%d)" % sim.chunks_destroyed)
+	var before := sim.chunks_destroyed
+	sim.endless.regrow(sim, far)
+	_check.call(
+		sim.chunks_destroyed == maxi(0, before - full),
+		"regrowing takes the destroyed count back (%d -> %d, building of %d)" % [before, sim.chunks_destroyed, full]
+	)
 
 
 ## Endless tuning never reaches normal mode: change every endless row, a normal seed replays the same.
