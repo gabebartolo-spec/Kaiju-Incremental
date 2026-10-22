@@ -38,7 +38,7 @@ func _bank(layer: Dictionary, rng: RandomNumberGenerator) -> MultiMeshInstance3D
 	quad.size = Vector2.ONE
 	var draw := ShaderMaterial.new()
 	draw.shader = SMOKE
-	draw.render_priority = -1
+	draw.render_priority = Num.i(layer["priority"])
 	draw.set_shader_parameter(
 		"tint", Color(Color(str(layer["colour"])), Num.f(layer["alpha"]) * _strength)
 	)

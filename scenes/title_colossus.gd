@@ -98,6 +98,9 @@ func _card_sprite() -> MeshInstance3D:
 	_body.set_shader_parameter("rim_colour", Color(str(_cfg["rim_colour"])))
 	_body.set_shader_parameter("rim_strength", Num.f(_cfg["rim_strength"]))
 	_body.set_shader_parameter("rim_width", Num.f(_cfg["rim_width"]))
+	var light: Array = _cfg["rim_light"]
+	_body.set_shader_parameter("rim_light", Vector2(Num.f(light[0]), Num.f(light[1])).normalized())
+	_body.set_shader_parameter("rim_min", Num.f(_cfg["rim_min"]))
 	_body.set_shader_parameter("smog", Num.f(_cfg["smog"]))
 	_body.set_shader_parameter("smog_tail", Num.f(_cfg["smog_tail"]))
 	_body.set_shader_parameter("noise_tex", TitleSkySmoke.noise_texture())

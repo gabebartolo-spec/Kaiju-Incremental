@@ -572,7 +572,7 @@
 			"half_span": 450.0, "wall_top": 2.4, "wall_color": "55565e", "wall_glow": "ffc878",
 			"cap_height": 0.35, "cap_color": "8a8a90", "promenade_color": "5c5a5a",
 			"promenade_glow": "ffc070", "promenade_energy": 0.45,
-			"lamp_gap": 14.0, "lamp_height": 5.0, "lamp_back": 6.0, "lamp_glow": 7.0, "lamp_color": "ffc874",
+			"lamp_gap": 14.0, "lamp_out": 0.14, "lamp_jitter": 0.4, "lamp_height": 5.0, "lamp_back": 6.0, "lamp_glow": 7.0, "lamp_color": "ffc874",
 			"reflect_length": 190.0, "window_reflect": "ffd9a0", "fire_reflect": "ff6a1a",
 			"window_strength": 0.7, "fire_strength": 0.85, "window_length": 80.0,
 			"fire_length": 140.0, "fire_radius": 6.0,
@@ -614,24 +614,28 @@
 			"count": 6,
 			"depth": 70.0,
 			"window_fires": 4,
+			"hero_per_focus": 2,
+			"hero": {"floors": 4, "size": 1.8, "zoom": 4.6, "smoke_share": 0.3, "density": 6.0, "ember_density": 1.5, "puff": 2.4, "glow_size": 46.0, "cells": 6, "spread": 1.5},
 			"windows": {"cells": 4, "gap": 0.2, "colour": "ff6a14", "glow": 2.0},
-			"window": {"size": 0.7, "zoom": 2.2, "smoke_share": 0.25, "density": 5.0, "ember_density": 1.2, "wind": 0.5, "puff": 1.6, "glow_size": 12.0},
+			"window": {"size": 0.7, "zoom": 2.2, "smoke_share": 0.25, "density": 5.0, "ember_density": 1.2, "smoke_density": 0.0, "puff": 1.6, "glow_size": 12.0},
 			"far": {
 				"_note": "The game's own Fire (scenes/fire.gd) at this zoom: the same voxel flames, embers and charcoal smoke, every size and speed multiplied by zoom for the distance, density times the particles (the picture is zoom squared bigger), smoke_share the part of the zoom the smoke takes.",
-				"size": 1.2, "zoom": 3.0, "smoke_share": 0.3, "density": 9.0, "ember_density": 1.5, "wind": 0.5, "puff": 1.6, "fixed_fps": 12,
+				"size": 1.2, "zoom": 3.0, "smoke_share": 0.3, "density": 9.0, "ember_density": 1.5, "smoke_density": 1.0, "lean": [-0.5, 1.6], "puff": 2.6, "fixed_fps": 12,
 				"glow_color": "ff6a14", "glow_size": 26.0, "flicker_hz": 7.0
 			}
 		},
 		"colossus": {
 			"_note": "Director 2026-10-22: explosions now and then reveal the reptilian colossus in the inferno, dark against the fireball. The game's adult reptilian model baked to black silhouettes (tools/capture/bake_colossus.gd) and drawn as a card of the given height in metres, feet on the start point; one step along start + k * step per footfall, out and back over steps_out steps.",
-			"height": 135.0,
+			"height": 140.0,
 			"smog": 0.85,
 			"smog_tail": 0.5,
-			"eye": {"uv": [0.097, 0.0866], "size": 7.0, "colour": "ff2810", "idle": 0.35, "pulse": 0.3, "pulse_hz": 0.3, "peak": 1.0, "forward": 2.0},
+			"eye": {"uv": [0.097, 0.0866], "size": 3.4, "colour": "ff2a10", "idle": 0.22, "pulse": 0.35, "pulse_hz": 0.25, "peak": 0.7, "forward": 2.0},
 			"poses": 1,
 			"rim_colour": "ff7a22",
 			"rim_strength": 1.5,
 			"rim_width": 0.01,
+			"rim_light": [-0.3, 0.95],
+			"rim_min": 0.1,
 			"idle_alpha": 0.1,
 			"glow_idle": 0.2,
 			"glow_peak": 0.85,
@@ -652,10 +656,12 @@
 			"reveal_every_s": [12.0, 20.0]
 		},
 		"sky_smoke": [
-			{"x": [-60.0, 420.0], "y": [45.0, 130.0], "z": -540.0, "depth": 30.0, "amount": 18, "size": [120.0, 240.0], "colour": "5a2a18", "alpha": 0.6, "under_colour": "ff6a1c", "under": 0.9, "drift": 6.0},
-			{"x": [-300.0, 420.0], "y": [110.0, 220.0], "z": -560.0, "depth": 30.0, "amount": 22, "size": [150.0, 280.0], "colour": "241618", "alpha": 0.75, "under_colour": "c8501a", "under": 0.5, "drift": 5.0},
-			{"x": [-420.0, 420.0], "y": [190.0, 330.0], "z": -580.0, "depth": 30.0, "amount": 22, "size": [180.0, 330.0], "colour": "07060a", "alpha": 0.92, "under_colour": "7a2a10", "under": 0.25, "drift": 4.0}
+			{"x": [-60.0, 420.0], "y": [45.0, 130.0], "z": -540.0, "depth": 30.0, "amount": 18, "size": [120.0, 240.0], "colour": "5a2a18", "alpha": 0.6, "under_colour": "ff6a1c", "under": 0.9, "drift": 6.0, "priority": -1},
+			{"x": [-300.0, 420.0], "y": [110.0, 220.0], "z": -560.0, "depth": 30.0, "amount": 22, "size": [150.0, 280.0], "colour": "241618", "alpha": 0.75, "under_colour": "c8501a", "under": 0.5, "drift": 5.0, "priority": -1},
+			{"x": [-420.0, 420.0], "y": [190.0, 330.0], "z": -580.0, "depth": 30.0, "amount": 22, "size": [180.0, 330.0], "colour": "07060a", "alpha": 0.92, "under_colour": "7a2a10", "under": 0.25, "drift": 4.0, "priority": -1},
+			{"x": [150.0, 340.0], "y": [8.0, 90.0], "z": -385.0, "depth": 6.0, "amount": 16, "size": [50.0, 100.0], "colour": "2a1a18", "alpha": 0.55, "under_colour": "ff6a1c", "under": 0.7, "drift": 4.0, "priority": 3}
 		],
+		"windows_lit": {"blackout": 0.35, "lit_color": "c89a60", "glow": 0.75},
 		"ripple": {"amplitude": 4.5, "glow": 0.2, "decay_s": 1.1, "attack_s": 0.05},
 		"shade": {"centre_alpha": 0.78, "edge_alpha": 0.0, "color": "05060a", "radius": 0.34, "centre_x": 0.22},
 		"ambience": {

@@ -10,6 +10,20 @@ const FLAME_COLORS: Array[Color] = [
 	Color("fff0b8"), Color("ff9a1e"), Color("e04a0c"), Color("3a1a10")
 ]
 const WIND := Vector3(2.2, 0.0, 0.9)
+const SMOKE_COLORS: Array[Color] = [
+	Color(0.05, 0.05, 0.05, 0.0),
+	Color(0.1, 0.1, 0.11, 0.46),
+	Color(0.2, 0.2, 0.22, 0.32),
+	Color(0.22, 0.23, 0.25, 0.0),
+]
+## The title's smoke columns (a fire seen from far away): orange where the flames light them from
+## below, going to black above (the title's own change; the street's smoke is the one above).
+const SMOKE_LIT_FROM_BELOW: Array[Color] = [
+	Color(0.6, 0.22, 0.07, 0.0),
+	Color(0.55, 0.2, 0.07, 0.5),
+	Color(0.14, 0.08, 0.07, 0.42),
+	Color(0.05, 0.045, 0.05, 0.0),
+]
 
 var _light: PooledLight
 var _base_energy: float
@@ -31,6 +45,8 @@ var _wind := WIND
 var _puff := 1.0
 ## Particle count multiplier of a zoomed fire's embers (a few, not an even speckle).
 var _ember_density := 1.0
+## Smoke count multiplier of a zoomed fire (0: this fire gives no smoke of its own).
+var _smoke_density := 1.0
 var _embers_node: GPUParticles3D
 
 
@@ -46,6 +62,7 @@ func _init(size: float, seed_value: float, far := {}) -> void:
 		_wind = Vector3(WIND.x * Num.f(far["wind"]), 0.0, 0.0)
 		_puff = Num.f(far["puff"])
 		_ember_density = Num.f(far["ember_density"])
+		_smoke_density = Num.f(far["smoke_density"])
 	_base_energy = 2.5 + size * 1.2
 	if zoom <= 1.0:
 		_light = PooledLight.new("fire")
@@ -57,7 +74,8 @@ func _init(size: float, seed_value: float, far := {}) -> void:
 	add_child(_flames(size))
 	_embers_node = _embers(size)
 	add_child(_embers_node)
-	add_child(_smoke(size))
+	if _smoke_density > 0.0:
+		add_child(_smoke(size))
 
 
 ## The first fire compiles its particle shaders; do it now, out of sight, not mid-rampage.
@@ -128,14 +146,7 @@ func _smoke(size: float) -> GPUParticles3D:
 	_scale(mat, Vector2(1.6, 3.0) * z * _puff, Vector2(0.7, 3.4))
 	_ramp(
 		mat,
-		PackedColorArray(
-			[
-				Color(0.05, 0.05, 0.05, 0.0),
-				Color(0.1, 0.1, 0.11, 0.46),
-				Color(0.2, 0.2, 0.22, 0.32),
-				Color(0.22, 0.23, 0.25, 0.0),
-			]
-		),
+		PackedColorArray(SMOKE_LIT_FROM_BELOW if _zoom > 1.0 else SMOKE_COLORS),
 		PackedFloat32Array([0.0, 0.08, 0.6, 1.0])
 	)
 	var quad := QuadMesh.new()
@@ -148,7 +159,9 @@ func _smoke(size: float) -> GPUParticles3D:
 		draw.set_shader_parameter("near_full", 0.01)
 		draw.set_shader_parameter("centre_keep", 1.0)
 	quad.material = draw
-	var p := _system(mat, quad, roundi(70 * maxf(1.0, size) * sqrt(_density)), 10.0)
+	var p := _system(
+		mat, quad, roundi(70 * maxf(1.0, size) * sqrt(_density) * _smoke_density), 10.0
+	)
 	p.position.y = 1.8 * _zoom  # smoke starts above the flames, so their light does not wash it out
 	p.visibility_aabb = AABB(Vector3(-20, -2, -20) * _smoke_zoom, Vector3(40, 50, 40) * _smoke_zoom)
 	return p

@@ -33,7 +33,11 @@ func _init(cfg: Dictionary, seed_value: float) -> void:
 func _ready() -> void:
 	_glow = _glow_sprite()
 	add_child(_glow)
-	var fire := Fire.new(Num.f(_cfg["size"]), _seed, _cfg)
+	# Each column leans its own way: the wind it was lit in, between the two ends of "lean".
+	var far := _cfg.duplicate()
+	var lean: Array = _cfg["lean"] if _cfg.has("lean") else [1.0, 1.0]
+	far["wind"] = lerpf(Num.f(lean[0]), Num.f(lean[1]), fposmod(_seed * 0.6180339, 1.0))
+	var fire := Fire.new(Num.f(_cfg["size"]), _seed, far)
 	for child: Node in fire.get_children():
 		var system := child as GPUParticles3D
 		if system == null:

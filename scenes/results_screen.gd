@@ -85,14 +85,19 @@ func _ready() -> void:
 	_go.custom_minimum_size = Vector2(0, 80)
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
-	var pad := Control.new()
-	pad.custom_minimum_size = Vector2(0, BOTTOM_PAD)
-	col.add_child(pad)
+	_add_pad(col)
 	_go.grab_focus.call_deferred()
 	var crawl := NewsTicker.new(news(result))
 	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	crawl.offset_top = -NewsTicker.HEIGHT
 	add_child(crawl)
+
+
+## Space under EVOLVE, inside the card.
+func _add_pad(col: Container) -> void:
+	var pad := Control.new()
+	pad.custom_minimum_size = Vector2(0, BOTTOM_PAD)
+	col.add_child(pad)
 
 
 ## The evening news about this rampage, for the crawl under the report: the city's reaction,

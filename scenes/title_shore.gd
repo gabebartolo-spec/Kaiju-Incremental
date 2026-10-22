@@ -95,49 +95,50 @@ func _lit_material(color: Color, glow: Color, energy: float) -> StandardMaterial
 	return mat
 
 
-## Lamp posts along the promenade, each with a warm glow at its head.
+## Lamp posts along the promenade, each with a warm glow at its head: spaced unevenly, a few of
+## them dead (tuning "lamp_jitter", "lamp_out"), so the row is not a string of identical discs.
 func _lamps(span: float, top: float) -> void:
-	var gap := Num.f(_cfg["lamp_gap"])
 	var height := Num.f(_cfg["lamp_height"])
-	var count := int(span * 2.0 / gap)
+	var spots := _lamp_spots(span)
 	var posts := MultiMesh.new()
 	posts.transform_format = MultiMesh.TRANSFORM_3D
 	var post := BoxMesh.new()
 	post.size = Vector3(0.3, height, 0.3)
 	post.material = _lit_material(Color("1a1a20"), Color.BLACK, 0.0)
 	posts.mesh = post
-	posts.instance_count = count
+	posts.instance_count = spots.size()
 	var heads := MultiMesh.new()
 	heads.transform_format = MultiMesh.TRANSFORM_3D
-	var glow := QuadMesh.new()
-	glow.size = Vector2.ONE
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	mat.billboard_keep_scale = true
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.disable_fog = true
-	mat.albedo_texture = FarFire.soft_disc()
-	mat.albedo_color = Color(str(_cfg["lamp_color"]))
-	glow.material = mat
-	heads.mesh = glow
-	heads.instance_count = count
-	for i: int in count:
-		var x := -span + (i + 0.5) * gap
-		var z := _shore_z - Num.f(_cfg["lamp_back"])
-		var y := top + 0.3 + height / 2.0
-		posts.set_instance_transform(i, Transform3D(Basis(), Vector3(x, y, z)))
-		var head := Transform3D(
-			Basis.from_scale(Vector3.ONE * Num.f(_cfg["lamp_glow"])),
-			Vector3(x, top + 0.3 + height, z)
+	heads.mesh = _glow_quad(Color(str(_cfg["lamp_color"])))
+	heads.instance_count = spots.size()
+	var z := _shore_z - Num.f(_cfg["lamp_back"])
+	for i: int in spots.size():
+		var x := spots[i].x
+		posts.set_instance_transform(
+			i, Transform3D(Basis(), Vector3(x, top + 0.3 + height / 2.0, z))
 		)
-		heads.set_instance_transform(i, head)
+		var head_size := Vector3.ONE * Num.f(_cfg["lamp_glow"]) * spots[i].y
+		heads.set_instance_transform(
+			i, Transform3D(Basis.from_scale(head_size), Vector3(x, top + 0.3 + height, z))
+		)
 	for mm: MultiMesh in [posts, heads]:
 		var node := MultiMeshInstance3D.new()
 		node.multimesh = mm
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(node)
+
+
+## Where the lamps stand: x along the promenade and a glow scale, some positions dropped.
+func _lamp_spots(span: float) -> Array[Vector2]:
+	var gap := Num.f(_cfg["lamp_gap"])
+	var rng := Seeds.make("title_lamps", 0)
+	var spots: Array[Vector2] = []
+	for i: int in int(span * 2.0 / gap):
+		if rng.randf() < Num.f(_cfg["lamp_out"]):
+			continue
+		var wander := rng.randf_range(-1.0, 1.0) * Num.f(_cfg["lamp_jitter"])
+		spots.append(Vector2(-span + (i + 0.5 + wander) * gap, rng.randf_range(0.75, 1.15)))
+	return spots
 
 
 ## The play area's embankment along the bottom of the picture: a stone ledge out past the quay,
@@ -229,7 +230,6 @@ func _railing(span: float, top: float, edge_z: float) -> void:
 func _posts(span: float, top: float, edge_z: float) -> void:
 	var gap := Num.f(_cfg["post_gap"])
 	var height := Num.f(_cfg["post_height"])
-	var color := Color(str(_cfg["rail_color"]))
 	var count := int(span * 2.0 / gap)
 	var mm := _blocks(Vector3(0.22, height, 0.22), Color(str(_cfg["post_color"])), count)
 	for i: int in count:
@@ -251,6 +251,12 @@ func _posts(span: float, top: float, edge_z: float) -> void:
 		halo.position = head.position
 		add_child(halo)
 	add_child(mm)
+	_bollards(span, top, edge_z)
+
+
+## Low bollards along the ledge, between the posts.
+func _bollards(span: float, top: float, edge_z: float) -> void:
+	var color := Color(str(_cfg["rail_color"]))
 	var bollard_gap := Num.f(_cfg["bollard_gap"])
 	var bollards := int(span * 2.0 / bollard_gap)
 	var bm := _blocks(

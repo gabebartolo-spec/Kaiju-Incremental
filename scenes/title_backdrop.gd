@@ -12,8 +12,6 @@ signal ready_to_show
 
 ## The bay is the one plane this wide (CityGround).
 const WATER_MIN_WIDTH := 2000.0
-## Window flames stand this far out from the wall (m), clear of its facade.
-const WINDOW_OUT := 0.6
 
 var is_loaded := false
 var _shore: TitleShore
@@ -28,8 +26,6 @@ var _city: CityView
 var _camera: Camera3D
 var _fade := 0.0
 var _flash_rng := Seeds.make("title_flash", 0)
-## Each window fire's window (its middle on the wall), for the glowing panes beside it.
-var _burning: Array[Vector3] = []
 var _view: SubViewport
 
 
@@ -46,6 +42,18 @@ func _ready() -> void:
 
 func _build() -> void:
 	Content.set_time("night")
+	_make_city()
+	while not _city.is_loaded:
+		if not is_inside_tree():
+			return
+		await get_tree().process_frame
+	_dress()
+	is_loaded = true
+	ready_to_show.emit()
+
+
+## The sim, the city view and the still camera (the city then builds over a few frames).
+func _make_city() -> void:
 	_view = SubViewport.new()
 	_view.own_world_3d = true
 	_view.handle_input_locally = false
@@ -70,13 +78,14 @@ func _build() -> void:
 	_camera.current = true
 	_camera.position = _vec(cam["position"])
 	_camera.look_at(_vec(cam["look"]))
-	while not _city.is_loaded:
-		if not is_inside_tree():
-			return
-		await get_tree().process_frame
+
+
+## What goes over the built city: the look, the fires, the shore, the sky's smoke, the colossus.
+func _dress() -> void:
 	_apply_look()
-	var fires := _light_fires()
-	_burn_windows()
+	var fire_cfg: Dictionary = _cfg["fires"]
+	var district := TitleFires.new(_city, fire_cfg, _far_z())
+	var fires := district.light()
 	var shore_cfg: Dictionary = _cfg["shore"]
 	_shore = TitleShore.new(
 		shore_cfg,
@@ -95,8 +104,6 @@ func _build() -> void:
 	var colossus_cfg: Dictionary = _cfg["colossus"]
 	_colossus = TitleColossus.new(colossus_cfg)
 	_city.add_child(_colossus)
-	is_loaded = true
-	ready_to_show.emit()
 
 
 func _process(delta: float) -> void:
@@ -162,6 +169,12 @@ func boom() -> void:
 		_colossus.reveal()
 		sky["glow_share"] = colossus["glow_share"]
 		sky["glow_alpha"] = colossus["glow_alpha"]
+	_boom_flashes(at, cfg, life)
+	_light_sky(at, Color(str(cfg["color"])), sky, life)
+
+
+## The burst, its white core and the puff of smoke it leaves, at `at`.
+func _boom_flashes(at: Vector3, cfg: Dictionary, life: float) -> void:
 	var burst := FarFlash.new(
 		{"color": Color(str(cfg["color"])), "size": cfg["size"], "life": life, "grow": 1.6}
 	)
@@ -180,7 +193,6 @@ func boom() -> void:
 	)
 	core.position = at
 	_city.add_child(core)
-	_light_sky(at, Color(str(cfg["color"])), sky, life)
 	var puff := (
 		FarFlash
 		. new(
@@ -234,82 +246,6 @@ func _far_spot(low: float, high: float) -> Vector3:
 	)
 
 
-## A district burns: the tallest far-shore towers around the focus each burn at the top.
-func _light_fires() -> PackedFloat32Array:
-	var cfg: Dictionary = _cfg["fires"]
-	var far_z := _far_z()
-	var stands: Array[Dictionary] = []
-	for node: Node in _city.find_children("*", "CitySkyline", true, false):
-		stands.append_array((node as CitySkyline).stand_ins())
-	var lit := PackedFloat32Array()
-	var rng := Seeds.make("title_fire", 0)
-	var far: Dictionary = cfg["far"]
-	var foci: Array = cfg["foci"]
-	for at: Array in foci:
-		var focus := Vector2(Num.f(at[0]), Num.f(at[1]))
-		var towers: Array[Dictionary] = []
-		for box: Dictionary in stands:
-			var centre: Vector3 = box["at"]
-			var size: Vector3 = box["size"]
-			var front := centre.z < far_z and centre.z > far_z - Num.f(cfg["depth"])
-			if front and Vector2(centre.x, centre.z).distance_to(focus) <= Num.f(cfg["radius"]):
-				towers.append({"centre": centre, "size": size})
-		towers.sort_custom(
-			func(a: Dictionary, b: Dictionary) -> bool:
-				var size_a: Vector3 = a["size"]
-				var size_b: Vector3 = b["size"]
-				return size_a.y > size_b.y
-		)
-		for n: int in mini(Num.i(cfg["count"]), towers.size()):
-			var centre: Vector3 = towers[n]["centre"]
-			var size: Vector3 = towers[n]["size"]
-			# The tallest burn at the roof; the others part way up their street face.
-			var up := 0.5 if n < Num.i(cfg["roof_fires"]) else rng.randf_range(-0.25, 0.25)
-			var fire := FarFire.new(far, rng.randf() * 10.0)
-			fire.position = centre + Vector3(0.0, size.y * up, size.z * 0.5 if up < 0.5 else 0.0)
-			_city.add_child(fire)
-			lit.append(fire.position.x)
-			_window_fires(centre, size, cfg, rng)
-	return lit
-
-
-## Flames pouring out of the windows of a burning tower, on several floors of its street face:
-## each fire stands in a real window cell of the facade's grid (the emitters are anchored in the
-## window rects) and the floor's windows beside it glow fire-orange (D-151), see _burn_windows().
-func _window_fires(
-	centre: Vector3, size: Vector3, cfg: Dictionary, rng: RandomNumberGenerator
-) -> void:
-	var far: Dictionary = cfg["far"]
-	var window: Dictionary = cfg["window"]
-	var spec := far.duplicate()
-	spec.merge(window, true)
-	var grain := CitySkyline.FAR_GRAIN
-	for _i: int in Num.i(cfg["window_fires"]):
-		var fire := FarFire.new(spec, rng.randf() * 10.0)
-		var wall := centre.z + size.z * 0.5
-		var at := Vector3(
-			centre.x + rng.randf_range(-0.4, 0.4) * size.x,
-			centre.y + size.y * rng.randf_range(-0.25, 0.4),
-			wall
-		)
-		# A window is one cell wide and two rows tall, its lower row on a multiple of four rows
-		# (+1): snap the fire to the middle of the window it comes out of.
-		var column := floorf(at.x * grain)
-		var floor_row := floorf(at.y * grain / 4.0) * 4.0 + 1.0
-		at.x = (column + 0.5) / grain
-		at.y = (floor_row + 1.0) / grain
-		_burning.append(at)
-		fire.position = at + Vector3(0.0, 0.0, WINDOW_OUT)
-		_city.add_child(fire)
-
-
-## The burning floors' windows: fire-orange panes along each window fire's floor.
-func _burn_windows() -> void:
-	var fires: Dictionary = _cfg["fires"]
-	var windows: Dictionary = fires["windows"]
-	_city.add_child(TitleBurningWindows.new(_burning, windows))
-
-
 ## The chosen variant's look (tuning "title" "variant" picks one of "variants"): the sky, the haze
 ## and the sun, set on the city's own environment, and the bay's colour.
 func _apply_look() -> void:
@@ -331,6 +267,7 @@ func _apply_look() -> void:
 	for node: Node in _city.find_children("*", "DirectionalLight3D", true, false):
 		(node as DirectionalLight3D).light_color = Color(str(env["sun_color"]))
 		(node as DirectionalLight3D).light_energy = Num.f(env["sun_energy"])
+	_dim_windows()
 	var water: Dictionary = look["water"]
 	for node: Node in _city.find_children("*", "MeshInstance3D", true, false):
 		var plane := (node as MeshInstance3D).mesh as PlaneMesh
@@ -342,6 +279,22 @@ func _apply_look() -> void:
 			var mat := plane.material as StandardMaterial3D
 			mat.albedo_color = Color(str(water["color"]))
 			mat.roughness = Num.f(water["roughness"])
+
+
+## The far shore's windows: a power cut (whole blocks dark) and the lit ones dimmer than any fire,
+## so the fire is the brightest thing on the shore (tuning "windows_lit").
+func _dim_windows() -> void:
+	var cut: Dictionary = _cfg["windows_lit"]
+	for node: Node in _city.find_children("*", "MultiMeshInstance3D", true, false):
+		var instances := (node as MultiMeshInstance3D).multimesh
+		if instances == null or not instances.mesh is BoxMesh:
+			continue
+		var mat := (instances.mesh as BoxMesh).material as ShaderMaterial
+		if mat == null or not mat.shader.resource_path.ends_with("facade_far.gdshader"):
+			continue
+		mat.set_shader_parameter("blackout", Num.f(cut["blackout"]))
+		mat.set_shader_parameter("lit_color", Color(str(cut["lit_color"])))
+		mat.set_shader_parameter("glow", Num.f(cut["glow"]))
 
 
 ## The play area's quay (world z).

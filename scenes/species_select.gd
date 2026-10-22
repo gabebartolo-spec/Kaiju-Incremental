@@ -181,16 +181,39 @@ func _preview_size() -> Vector2i:
 func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	var size := _preview_size()
 	var panel := UiKit.panel()
-	if _wide:
-		panel.custom_minimum_size = Vector2(WIDE_CARD_WIDTH, 0)
-	else:
-		panel.custom_minimum_size = Vector2(size.x + 28, 0)
+	var width: float = WIDE_CARD_WIDTH if _wide else size.x + 28.0
+	panel.custom_minimum_size = Vector2(width, 0)
 	row.add_child(panel)
 	cards.append(panel)
 	var body: BoxContainer = HBoxContainer.new() if _wide else VBoxContainer.new()
 	body.add_theme_constant_override("separation", int(WIDE_GAP) if _wide else 6)
 	panel.add_child(body)
+	_preview(body, def, size)
+	var col := VBoxContainer.new()
+	col.custom_minimum_size = Vector2(INFO_WIDTH if _wide else 0.0, 0)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 6)
+	body.add_child(col)
+	col.add_child(UiKit.header(str(def["name"]).to_upper(), UiKit.SIZE_HEAD))
+	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_BODY, UiKit.TEXT)
+	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(blurb)
+	var ability: Dictionary = def["ability"]
+	var sig := UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN)
+	sig.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(sig)
+	var stats: Dictionary = def["stats"]
+	col.add_child(_stat_grid(stats))
+	var pick := UiKit.button("CHOOSE", UiKit.SIZE_HEAD)
+	var id := str(def["id"])
+	pick.pressed.connect(func() -> void: chosen.emit(id))
+	col.add_child(pick)
+	return pick
 
+
+## The turntable preview: the species' model in its own world, lit and framed, spinning.
+func _preview(body: Container, def: Dictionary, size: Vector2i) -> void:
 	var view := SubViewportContainer.new()
 	view.stretch = true
 	view.custom_minimum_size = Vector2(size)
@@ -223,28 +246,13 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 	fill.light_energy = 0.8
 	viewport.add_child(fill)
 
-	var col := VBoxContainer.new()
-	col.custom_minimum_size = Vector2(INFO_WIDTH if _wide else 0.0, 0)
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 6)
-	body.add_child(col)
-	col.add_child(UiKit.header(str(def["name"]).to_upper(), UiKit.SIZE_HEAD))
-	var blurb := UiKit.label(str(def["blurb"]), UiKit.SIZE_BODY, UiKit.TEXT)
-	blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(blurb)
-	var ability: Dictionary = def["ability"]
-	var sig := UiKit.label("Signature: %s" % str(ability["name"]), UiKit.SIZE_BODY, UiKit.WARN)
-	sig.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(sig)
 
-	var stats: Dictionary = def["stats"]
-	# One stat a row beside the preview; two a row when several cards share the screen.
+## The stat meters: one a row beside the preview; two a row when several cards share the screen.
+func _stat_grid(stats: Dictionary) -> GridContainer:
 	var grid := GridContainer.new()
 	grid.columns = 1 if _wide else 2
 	grid.add_theme_constant_override("h_separation", 20)
 	grid.add_theme_constant_override("v_separation", 6)
-	col.add_child(grid)
 	for entry: Array in COMPARE:
 		var line := HBoxContainer.new()
 		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -263,9 +271,4 @@ func _card(row: HBoxContainer, def: Dictionary) -> Button:
 		meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		line.add_child(meter)
 		grid.add_child(line)
-
-	var pick := UiKit.button("CHOOSE", UiKit.SIZE_HEAD)
-	var id := str(def["id"])
-	pick.pressed.connect(func() -> void: chosen.emit(id))
-	col.add_child(pick)
-	return pick
+	return grid

@@ -18,6 +18,9 @@ const WARMUP := 12
 ## Seconds of walking between two baked poses, and the speed it walks at (0..1).
 const POSE_GAP_S := 0.3
 const WALK := 0.8
+## The silhouette's pinholes and seams (thin gaps between voxel rows, which the title lights as
+## streaks along the jaw) are closed by growing then shrinking the shape by this many pixels.
+const CLOSE_RADIUS := 4
 ## The eye, from the head bones (world units): this far along the skull from the back of the head,
 ## this far out to the camera's side and this far up.
 const EYE_ALONG := 1.3
@@ -25,7 +28,7 @@ const EYE_OUT := 0.95
 const EYE_UP := -0.3
 
 var _out := "res://assets/title"
-var _yaws: Array[float] = [90.0]
+var _yaws: Array[float] = [60.0]
 var _poses := 1
 var _pick := -1
 var _preview := ""
@@ -103,7 +106,7 @@ func _run() -> void:
 	for pose: int in _poses:
 		if _pick >= 0 and pose != _pick:
 			continue
-		var cut := shots[pose].get_region(box)
+		var cut := _close_alpha(shots[pose].get_region(box))
 		var name := "colossus_%d.png" % (0 if _pick >= 0 else pose)
 		var err := cut.save_png(_out.path_join(name))
 		print("saved ", name, " ", err, " ", cut.get_size())
@@ -148,3 +151,44 @@ func _sheet(colour: Array[Image], shots: Array[Image], box: Rect2i) -> void:
 				var dot := Vector2i(_eyes[pose]) - box.position + Vector2i(dx, dy)
 				sheet.set_pixelv(dot + Vector2i(width * pose, height), Color("00ff40"))
 	sheet.save_png(_preview)
+
+
+## The picture with its alpha closed: black wherever the shape is, its pinholes filled.
+func _close_alpha(img: Image) -> Image:
+	img.convert(Image.FORMAT_RGBA8)
+	var width := img.get_width()
+	var height := img.get_height()
+	var data := img.get_data()
+	var alpha := PackedByteArray()
+	alpha.resize(width * height)
+	for i: int in width * height:
+		alpha[i] = data[i * 4 + 3]
+	alpha = _slide(alpha, width, height, true)
+	alpha = _slide(alpha, width, height, false)
+	var out := PackedByteArray()
+	out.resize(width * height * 4)
+	for i: int in width * height:
+		out[i * 4 + 3] = alpha[i]
+	return Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, out)
+
+
+## One grow (`grow`) or shrink of the alpha by CLOSE_RADIUS: a max or a min filter, a row pass then
+## a column pass.
+func _slide(alpha: PackedByteArray, width: int, height: int, grow: bool) -> PackedByteArray:
+	var rows := alpha.duplicate()
+	for y: int in height:
+		for x: int in width:
+			var best := 0 if grow else 255
+			for k: int in range(-CLOSE_RADIUS, CLOSE_RADIUS + 1):
+				var v := alpha[y * width + clampi(x + k, 0, width - 1)]
+				best = maxi(best, v) if grow else mini(best, v)
+			rows[y * width + x] = best
+	var out := rows.duplicate()
+	for y: int in height:
+		for x: int in width:
+			var best := 0 if grow else 255
+			for k: int in range(-CLOSE_RADIUS, CLOSE_RADIUS + 1):
+				var v := rows[clampi(y + k, 0, height - 1) * width + x]
+				best = maxi(best, v) if grow else mini(best, v)
+			out[y * width + x] = best
+	return out

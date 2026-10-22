@@ -131,6 +131,9 @@ func role_of(id: String) -> String:
 		return "evolve"
 	if str(def.get("species", "")) == "":
 		return "plain"
+	var pos: Array = def["pos"]
+	if Num.i(pos[1]) < TreeArea.BRANCH_ROW:
+		return "branch"  # a capstone sits on the species row; a leaf above it is only a branch end
 	for other: String in tree.order:
 		var other_def: Dictionary = tree.defs[other]
 		var requires: Array = other_def.get("requires", [])
