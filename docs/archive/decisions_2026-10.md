@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-059 · Director · Croc baby and adolescent from the croc titan design; 260 Tripo credits
+Why: the demo needs the hatchling and Behemoth stages in the croc look (D-050). The director approved the stage line
+(docs/captures/2026-10-17-reptile-design/croctitan_stage_line.png, after a realism-critic pass) and the spend: two Smart
+Mesh (100 each) and two textures (30 each), balance 19415 -> 19155. Six-view PASS sheets: croctitan_{baby,adolescent}_
+six_view.png; GLBs to blender-reptile for the hand rig, weights, clips and export (P3). Rows in docs/provenance/tripo.md.
+
 ## 2026-10-18 · D-058 · Director · Body text uses Kaiju Block; headings stay Kaiju Claw
 Why (05:13): "still seeing generic fonts in game when we should be using our own": the UI kit drew every label below
 heading size in the engine default. Board A rubble / B fault / C claw / D block at 20 and 24 px; D picked (cleanest at

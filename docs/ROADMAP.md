@@ -336,3 +336,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
 - **M4 Itch release candidate:** M3 survey fixes only.
+
+## Threat Dossier (D-147, 2026-10-23, after the demo)
+- A bestiary named the Threat Dossier: the Kaiju Plan's classified files on every enemy (police, tanks, helicopters,
+  Taskforce agents, gas soldiers, walking mechs, gunships, and any later ones). Name and silhouette on first sight;
+  full stats, weaknesses and lore after the first kill. Opened from the main menu and the pause menu. Status: not started.
