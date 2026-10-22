@@ -13,20 +13,27 @@
   BRIEF-COMMON.md + RULES-NOW.md = shared rules; each agent writes <task>\handoff.md at milestones.
 - Nimbalyst mailbox: C:\Users\DANTE\Documents\Nimbalyst Tutorial\kaiju-mailbox\ (to-nimbalyst tasks, to-kaiju results).
 
-## 2026-10-22 day (lead session status-check-b96b26; supersedes the Team list below where they differ)
-- Base: origin/claude/look-options = main = 95f01083 (SQUASH of old history). Every old branch must be rebuilt as its own
-  commits cherry-picked onto it (see scratchpad WAVE1-COMMON.md, copied into this section's rules).
-- PR #147 crowds 6x (Nimbalyst 014, rebased + probe_crush compile fix f524adfd); Auto-fix on. PR #144 turn still open.
-- Director 2026-10-22 (comments #55-59): finish ALL WIP (Nimbalyst's + lead team's), parallel builders, wave 1 'Speed-ups
-  first', audit-sim separated from fire, landmarks may unload 'if no pop-in', remove merged worktrees (7 done; leftovers in
-  Kaiju-Incremental-wt/_leftovers-2026-10-22). NEW RULE: helpers on Sonnet unless complex (RULEBOOK Team shape).
-- Wave 1 subagents (builder type, inherited Opus; started before the Sonnet rule, left to finish): city-memory (+landmark
-  unload), perf-scans, perf-tiles (015), audit-shared (017), audit-sim (018, rebuilt off fire), clumsy-army (008 strays),
-  turn (#144, D-131 + gdlint), camera (critic FIX items). Each pushes, never opens PRs; lead reviews diffs, opens PRs (max 3).
-- Wave 2 (Sonnet unless complex): fire-spread (016, complex: Opus), intro, rubble (item 5 unfound: Opus), explosions, dash,
-  UI (first-run controls card goes: comment #46), ui-art.
-- rule-check.py returned no answers (0/14, claude -p gave nothing): the Sonnet rule is recorded but NOT proven by it.
-- Nimbalyst mailbox has no live tasks; 008/015-018 now belong to wave 1 builders.
+## 2026-10-22 day (lead session status-check-b96b26, registered in context-guard-leads; supersedes the Team list below)
+- Base = origin/claude/look-options = main; squash-only repo, so the base moves on every merge. Old branches are rebuilt
+  as their own commits cherry-picked onto the newest tip (scratchpad WAVE1-COMMON.md has the builder rules).
+- Merged today: PR #147 crowds 6x (c07c50ae). PR #144 turn open (turn builder updating it).
+- Director rulings 2026-10-22: comments #55-63, D-132 (1.0 demo on Itch, invite-only, when the reptilian stage is 100%),
+  D-133 (landmark stable ~12, 3 per stage rotate by seed; new 8: bridge tower, opera shells, coaster, donut sign, power
+  station, airport tower WITH planes flying in/out, port cranes, refinery; Tripo models made carvable), D-134 (Tripo 9000
+  credits today; start 19115, stop at 10115), #60 all CPU/GPU/screen/Godot slots ours, #63 atmosphere list (clouds,
+  weather, birds, 1 whale per run, fire crews, ambulances, dogs, clubs, banks, hotels, trains, boats: details to ask).
+  RULE: helpers on Sonnet unless complex (RULEBOOK). PC piloting allowed (computer-use: Claude Work, File Explorer, msedgewebview2).
+- Wave 1 subagents (resumed after a restart; Opus, left to finish): city-memory (+landmark unload if no pop-in), perf-scans
+  (suite running, -> claude/perf-scans-v2), perf-tiles, audit-shared, audit-sim (rebuilt off fire), clumsy-army (strays
+  probe, on claude/clumsy-army-v2), turn (#144), camera. They push, never open PRs; lead reviews diffs, opens PRs (max 3).
+- Wave 2 (Sonnet unless complex) as slots free: fire-spread (Opus), intro, rubble (Opus), explosions, dash, UI, ui-art
+  (WIP renderer committed da048e0a on claude/ui-art), then the landmark stable and atmosphere once he answers details.
+- Tripo (built-in browser, logged in): croc-head icon HD model c9b2b460 generating (65 cr); set Private, six-view,
+  export default name, then voxelize/render via claude/ui-art tools. Still to make: dash foot, button plate.
+- Worktrees: 9 merged ones removed (leftovers in Kaiju-Incremental-wt/_leftovers-2026-10-22).
+- rule-check.py gave no answers (0/14): the Sonnet rule is recorded but NOT proven.
+- Director: back soon for an interview; ask about atmosphere details, landmark look boards, wave 2 order.
+
 ## Team (lead 10's subagents; die with this session; re-brief from NEW notes <task>\handoff.md)
 - ui (claude/ui-redesign adba1267): minimal HUD done (HUD share 3.19% -> 1.37%; rings bottom-left, plain timer red
   last 10 s, thin meter, small biomass, no controls text). Screen critic running; then show director before/after and
