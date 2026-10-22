@@ -49,7 +49,9 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)  # 6, not 10 or 14: it all fits at 125%
 	panel.add_child(col)
-	col.add_child(UiKit.header("SETTINGS"))
+	var title := UiKit.label("SETTINGS", UiKit.SIZE_TITLE, UiKit.ACCENT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(title)
 
 	_volume = _slider(col, "Volume", PlayerSettings.volume)
 	_volume.value_changed.connect(_on_volume)
@@ -91,6 +93,7 @@ func _choice(on_press: Callable) -> Button:
 	var button := UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
 	button.custom_minimum_size = Vector2(0, 56)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	HazardBox.drop_pointer(button)  # the plates' pointer room would push a half past its share
 	button.pressed.connect(on_press)
 	return button
 
