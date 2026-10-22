@@ -32,6 +32,9 @@ Branch claude/city-memory (worktree ../Kaiju-Incremental-wt/city-memory). No PR 
 - Reported, not asserted: stage-4 walks north-east / south leave boxes inside 48 m for hundreds of frames (the stream
   does not keep up with a 5 m/s walk across the whole arena, as before); a dash cannot be held at this budget.
 
-## Left
-1. Full suite on the rebuilt branch (see the run in the report).
-2. Lead: landmark_keep_m 150 vs smaller; real GPU run of stage4_memory.gd (not done).
+## State
+- Rebuilt on origin/claude/look-options ef9212ca (squash base); local backup ref claude/city-memory-pre-rebase.
+  Pushed as claude/city-memory-v2 (the old remote claude/city-memory is on the old history, not an ancestor).
+- Full suite on the rebuilt branch: 24 suites, all checks passed. gdlint, gdformat, tuning_keys, complexity_ratchet,
+  check_scripts (350 scripts) green. Not done: a real GPU run of stage4_memory.gd.
+- Lead: landmark_keep_m 150 vs smaller (0 also passes the pop test).
