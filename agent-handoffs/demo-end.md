@@ -1,12 +1,15 @@
 # Demo-end handoff, 2026-10-23 02:50
-## State: running flow after fixes (pause over 03:28); then push claude/demo-end, report sha to lead; NO PR until lead's helper opens it
-## Next: weather pick plan (queue 1; plan only, wait for 'go weather' in lead-board/to-demo-end.md)
-Mirror TimeOfDay (on look-options since #156): new sim/weather.gd `Weather` (RANDOM="", pick(run,last,setting) seeded by
-Seeds.make("weather", run), settings/next/label/clean), data in data/looks.json "weather" {order: clear, overcast, rain, fog,
-thunderstorm; labels; random_label "Random each rampage"}, Content.weather()/weather_table(), save key last_weather (+migrate
-default), PlayerSettings.weather + cfg display/weather, options row "Weather" in settings_menu, main._start_rampage picks and
-sets `Content.set_weather(id)` -> VFX reads `Content.current_weather` (one value, string id). Suite `weather` mirrors timeofday.
-Branch claude/weather from origin/claude/look-options after demo-end is pushed. No visuals.
+## State: demo-end resynced with look-options (merge 4be897bc), suites running (demoend, sim_play, flow, smoke); then push + report sha. Weather branch waits on a settings-height fix.
+## Weather pick (queue 1, lead's go 05:37), branch claude/weather in ../../Kaiju-Incremental-wt/weather
+Done at 79c0e792: sim/weather.gd (Weather.pick/next/label/clean, Seeds "weather"), data/looks.json "weather" table, Content.weathers()/
+weather_table()/weather_id()/set_weather(), PlayerSettings.weather (+cfg), save key last_weather (default via .get, no version bump),
+Main._start_rampage picks and sets Content.weather_id(), options row, suite tests/run_weather_tests.gd (23 checks green; 5 planted
+bugs each fail it, log in /tmp/plant_weather.out). timeofday + sim + ratchet + tuning keys green.
+OPEN: flow fails one check, "BACK at 125% off screen": the Weather row needs its own full-width row (two long labels cannot share
+a row) and the settings screen then no longer fits. Question logged in lead-board/interview.md (tighten spacing vs "Random" on both).
+Next: pick the fix (tighten row/block gaps, mind the critic's 10/20 px rules), run flow, push, report sha, write the VFX interface
+line to lead-board/from-demo-end.md: Content.weather_id() (String id: clear, overcast, rain, fog, thunderstorm), set in
+Main._start_rampage before the rampage scene is built; also the save key last_weather and PlayerSettings.weather.
 ## Task
 The demo ending: ROADMAP M3 "demo end screen and feedback button"; D-145, D-148, D-152, D-153, D-156 (amended). Lead:
 "Status check" (the Kaiju lead, local_a16cd984-128a-4b5f-8bdf-05556e046cd4). Queue after this (lead's message): weather
@@ -29,13 +32,11 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - Tests: suite `demoend` (tests/run_demoend_tests.gd + tests/lib/sim_demo_end.gd, incl. normal-untouched check), flow_demo.gd
   rewritten (mouse, key, pad via new GuiInput.pad), demo_smoke.gd and capture_demo.gd rewritten. README row added.
 ## Unfinished changes
-- Suites 03:29: demoend 25 checks pass; sim_play, military, smoke, sim pass. flow had 7 fails; fixed: thanks screen text reserve
-  (DemoEnd.TEXT_RESERVE, EvolutionReveal.frame_view(owner, reserve)), pad ui_* bindings added in autoload/settings.gd (engine
-  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. ALL GREEN at ae4d3b85 (demoend, sim_play, military, smoke, flow, sim; ratchet + caps ok). Normal-untouched check strengthened (zero + high rows, commit 95b52c4b): clean passes, plant 1 (escalation guard removed) now FAILS it; plant 2 (tank cap w/o endless check) passed it (the pinned seed fields no tank), so sim_demo_end.gd now also asserts tanks_full/escalation on a normal sim (uncommitted); rerun in /tmp/plant2.out; the run restores sim/endless.gd itself (verify `git status sim/endless.gd` is clean, else `git checkout sim/endless.gd`). Next: push claude/demo-end, report sha (no PR), then weather. Earlier note: the
-  "normal rampage adds the sim's counters" check (saved totals were {}). Fixes are uncommitted until flow is green.
-- Still to do: planted-failure runs for the Endless checks, lint (complexity_ratchet, tuning_keys, 400-line cap), 4K still.
-- native/bin DLL removed; .uid files untracked noise, stage by name.
-- PR needs: Evidence, sim-review packet, "Not exercised" (still), PLACEHOLDER URL note.
+- demo-end: resync merge done; now running demoend/sim_play/flow/smoke (lead line 4 of to-demo-end.md); then push claude/demo-end and
+  report the sha. The thanks screen no longer has upstream's MAIN MENU / QUIT buttons (ruling replaced them): tell the lead.
+- Seams made to stay at 400 lines: TankYard.on_event handles all four tank events; scenes/hud_counts.gd (HudCounts.of/clock).
+- Later: 4K thanks still when the focus guard allows; Taskforce kills into demo.military_keys after #161; queue 2 (sky and sea
+  life, tell the lead the files first) and queue 3 (Taskforce adult units).
 ## Attempts
 Silent "exit 127" in headless runs (flow, smoke, demoend) is most likely my Godot being killed from outside during the director's
 Godot pauses (~/.claude/focus-pause says until when), not a code bug: check that file before debugging, and rerun after it.
