@@ -16,7 +16,6 @@ const BLOB_CORNERS: Array[Vector2] = [
 static var halo_mode_override := ""
 
 var _mesh := ImmediateMesh.new()
-var _blob_step: int
 var _halo_boost := 1.0
 var _branch_tip: float
 var _blob_share: float
@@ -32,7 +31,6 @@ var _core_branch := ShaderMaterial.new()
 ## cfg: tuning "fx" "bolt".
 func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 	mesh = _mesh
-	_blob_step = Num.i(cfg["blob_step"])
 	_branch_tip = Num.f(cfg["branch_tip"])
 	_blob_share = Num.f(cfg["blob_share"])
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -140,11 +138,19 @@ func _surface(mat: ShaderMaterial, lines: Array, width: float, tip: float) -> vo
 	if not any:
 		return
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES, mat)
+	var glow := _glows(mat)
 	for line: PackedVector3Array in lines:
-		for i: int in line.size() - 1:
-			_quad(line, i, width, tip)
-		for i: int in range(0, line.size() if _glows(mat) else 0, _blob_step):
-			_blob(line[i], width, lerpf(1.0, tip, float(i) / (line.size() - 1)))
+		if not glow:
+			for i: int in line.size() - 1:
+				_quad(line, i, width, tip)
+			continue
+		# A glow is a chain of round soft blobs, never a ribbon: a ribbon turned sharply at a kink
+		# folds into a straight-edged wedge, and a blob has no edge to show.
+		for i: int in line.size():
+			var along := float(i) / (line.size() - 1)
+			_blob(line[i], width, lerpf(1.0, tip, along))
+			if i + 1 < line.size():
+				_blob(line[i].lerp(line[i + 1], 0.5), width, lerpf(1.0, tip, along))
 	_mesh.surface_end()
 
 
