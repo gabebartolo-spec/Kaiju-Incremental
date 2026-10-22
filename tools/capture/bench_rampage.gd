@@ -5,6 +5,8 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/bench_rampage.gd \
 ##     -- --species=reptilian --seconds=30
+## --nofx turns the post effects (PostFx, D-142) off for the cost comparison; --preset=<level>
+## names the graphics preset (default: the one this screen would pick).
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 
@@ -13,7 +15,9 @@ var _seconds := 30.0
 
 
 func _initialize() -> void:
-	var a := Kit.args({"species": _species, "seconds": _seconds})
+	var a := Kit.args({"species": _species, "seconds": _seconds, "nofx": false, "preset": ""})
+	PostFx.enabled = a["nofx"] != true
+	PlayerSettings.graphics = str(a["preset"])
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])
 	if not Kit.window_ok():

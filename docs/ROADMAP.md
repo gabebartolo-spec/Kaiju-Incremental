@@ -332,6 +332,9 @@ The director plays only at these; each gets an exported .exe in a fixed folder a
 state. No director clips or per-change approvals in between; clips only where motion is the point, for the critics.
 - **M1 Feel pass:** fire spread + longer baby breath (#152), heavier turning (#149), bigger explosions, post effects,
   the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
+  Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
+  the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
+  music from the director's Suno stems. Visuals: VFX lead. Sound, music, weather pick and options: lead.
 - **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
@@ -347,3 +350,14 @@ state. No director clips or per-change approvals in between; clips only where mo
   him but its a fast helicopter". Random time in any city; Mayor / Governor / President by city; ~15 s window; payout
   about a city block; breath, Thunder Beam, grab, thrown tank or car, toppled building; headline + rotor sound, no
   markers; escape loses only the payout; white and gold VIP look. Owner: unassigned. Status: not started.
+
+## Engineering upkeep (D-159, 2026-10-23)
+- Team and tests: about 4 builders at once in total; touched suites locally, the full suite on CI; at most 3 open PRs.
+  Owner: lead. Status: in force.
+- Clean as you go: every builder splits a crowded file (390-400 lines) at a natural seam and shrinks a grandfathered
+  long function (tools/lint/complexity_baseline.txt) when its work touches it. Owner: every builder. Status: ongoing.
+- Sim speed: measure where a sim step's time goes (tools/pacing.gd's 2-hour run), so balance answers take minutes;
+  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: queued.
+- Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
+  22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
+  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: queued.

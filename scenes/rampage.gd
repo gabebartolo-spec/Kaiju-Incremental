@@ -155,14 +155,20 @@ func _ready() -> void:
 	_camera.current = true
 	sfx.watch(_camera, _powers, _city.street)
 	_place_camera(1.0)
-	_hud = RampageHud.new(sim, species, _city.street)
-	_hud.beat_done.connect(finished.emit)
-	add_child(_hud)
+	_add_overlays()
 	if stages.overlay != null:
 		stages.overlay.queue_free()
 	is_loaded = true
 	loaded.emit()
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
+
+
+## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
+func _add_overlays() -> void:
+	add_child(PostFx.new(self))
+	_hud = RampageHud.new(sim, species, _city.street)
+	_hud.beat_done.connect(finished.emit)
+	add_child(_hud)
 
 
 func _physics_process(delta: float) -> void:
