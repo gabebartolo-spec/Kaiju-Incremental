@@ -10,6 +10,12 @@ const FLAME_COLORS: Array[Color] = [
 	Color("fff0b8"), Color("ff9a1e"), Color("e04a0c"), Color("3a1a10")
 ]
 const WIND := Vector3(2.2, 0.0, 0.9)
+## The flame voxel: its cube (units) and the spread of sizes each flame takes of it, and where on a
+## flame's life each of FLAME_COLORS sits. A blast's flames (BlastParts.fireball) read these too:
+## a bigger fire is more flames, never bigger cubes (VFX lead, D-151).
+const FLAME_CUBE := 0.18
+const FLAME_SCALE := Vector2(0.5, 1.2)
+const FLAME_AT: Array[float] = [0.0, 0.1, 0.55, 1.0]
 
 var _light: PooledLight
 var _base_energy: float
@@ -77,9 +83,9 @@ func _process(delta: float) -> void:
 
 func _flames(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.6, 12.0, Vector3(0, 2.5, 0), Vector2(0.8, 2.0))
-	_scale(mat, Vector2(0.5, 1.2), Vector2(1.0, 0.1))
-	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array([0.0, 0.1, 0.55, 1.0]))
-	return _system(mat, _cube(0.18, true), roundi(130 * maxf(1.0, size)), 1.0)
+	_scale(mat, FLAME_SCALE, Vector2(1.0, 0.1))
+	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array(FLAME_AT))
+	return _system(mat, _cube(FLAME_CUBE, true), roundi(130 * maxf(1.0, size)), 1.0)
 
 
 func _embers(size: float) -> GPUParticles3D:

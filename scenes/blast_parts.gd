@@ -1,31 +1,28 @@
 class_name BlastParts
 extends RefCounted
 ## The pieces a red-barrel blast is drawn from (BlastFx; director comments #19, #20), each a
-## one-shot node that frees itself: the white-hot flash that marks the instant, the fireball, the
-## fireworks bursts and the chem lab's billowing green cubes. The FIREBALL IS THE GAME'S OWN FIRE
-## (director 2026-10-22: "doesnt match the fire we use the rest of the time, consistency is
-## absolutely key"): the glowing flame voxels of Fire (its ember shader, its flame colours and
-## their ramp), thrown out of the site and shrinking out, scaled up for a blast; its smoke is
-## Fire's own soft smoke column, left by BlastFx (CityView.fire). Debris and the dust ring stay
-## solid voxels. All start from the site's own box (`half`: its half extents, `at` its centre), so
-## a blast always comes out of a building, never out of the air. The ground shock is BlastShock.
-## Sizes come from the sim's blast radius, looks from data/tuning.json "blast_fx". Presentation
-## only.
+## one-shot node that frees itself. The blast is the GAME'S OWN FIRE (director 2026-10-22, D-151:
+## "consistency is absolutely key"): a sudden tall burst of Fire's flames, then that fire stays
+## burning (BlastFx leaves a real Fire at the site, with its light and its smoke). The burst
+## uses Fire's flame exactly: its voxel (Fire.FLAME_CUBE at Fire.FLAME_SCALE), its ember shader at
+## its own heat, its colours and their ramp, rising like Fire's flames (narrow spread, gravity up,
+## shrinking to a tenth); a bigger blast is more flames, never bigger cubes. Also here: the
+## white-hot flash that marks the instant, the fireworks bursts and the chem lab's gas, which is
+## the game's soft smoke (smoke.gdshader) tinted green. All start from the site's own box (`half`:
+## its half extents, `at` its centre), so a blast always comes out of a building, never out of
+## the air. The ground shock is BlastShock. Sizes come from the sim's blast radius, looks from
+## data/tuning.json "blast_fx". Presentation only.
 
-const EMBER := preload("res://scenes/blast_ember.gdshader")
-const VOXEL := preload("res://scenes/blast_voxel.gdshader")
-## Where on a flame's life each of Fire.FLAME_COLORS sits: Fire's own colours, in a shorter ball's
-## time (the flames of a ball that lives 1.6 s are red-orange within half a second).
-const FLAME_AT: Array[float] = [0.0, 0.03, 0.15, 0.7]
 ## The flash's voxels: hotter than the fireball, gone in a few frames.
 ## Yellow-white, capped so the flash blooms without whiting out the screen (round 5).
 const FLASH: Array[Color] = [Color(2.2, 2.0, 1.25, 1.0), Color(2.0, 1.2, 0.35, 1.0)]
 
 
-## Flame voxels (Fire's ember shader, flame colours and ramp) thrown up and out of the site's own
-## box, so the ball grows from the site and never pops in wide, cooling from yellow-white through
-## orange to dark as they slow and shrink; damped to stop fireball.reach_scale x (the rise to
-## top_scale site heights) away (a cube at speed v stops after v^2 / 2 damping).
+## The burst: Fire's flame voxels (cube, sizes, ember shader at its own heat, colours, ramp) leaving
+## the site's own box, emitted over fireball.burst_seconds at a high rate (so the column builds in a
+## few frames and every blast grows its own), going up on a narrow spread with gravity up like
+## Fire's flames, damped to stop `top_scale` site heights up, and shrinking to a tenth. `amount`
+## flames at a blast radius of 5, more for a bigger one.
 static func fireball(
 	host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: Dictionary
 ) -> void:
@@ -33,25 +30,32 @@ static func fireball(
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	mat.emission_box_extents = half
 	mat.direction = Vector3.UP
-	mat.spread = 80.0
+	mat.spread = Num.f(cfg["spread"])
 	var speed := radius * Num.f(cfg["speed_scale"])
-	var size := radius * Num.f(cfg["size"])
-	var rise := maxf(0.4, half.y * 2.0 * Num.f(cfg["top_scale"]) - half.y * 2.0)
-	rise *= Num.f(cfg["reach_scale"])
+	var rise := maxf(0.4, half.y * 2.0 * (Num.f(cfg["top_scale"]) - 1.0))
 	mat.initial_velocity_min = speed * 0.5
 	mat.initial_velocity_max = speed
-	mat.gravity = Vector3(0, Num.f(cfg["lift"]), 0)  # hot air: a little rise as it burns out
+	mat.gravity = Vector3(0, Num.f(cfg["lift"]), 0)
 	mat.damping_min = speed * speed / (2.0 * rise)
 	mat.damping_max = mat.damping_min * 1.3
-	mat.scale_min = 0.5 * size  # Fire's flame spread of sizes
-	mat.scale_max = 1.2 * size
-	var size_curve: Array = cfg["size_curve"]
-	mat.scale_curve = _boil(size_curve)
-	mat.color_ramp = ramp(Fire.FLAME_COLORS, FLAME_AT)
+	mat.scale_min = Fire.FLAME_SCALE.x
+	mat.scale_max = Fire.FLAME_SCALE.y
+	var curve := Curve.new()
+	curve.add_point(Vector2(0, 1.0))
+	curve.add_point(Vector2(1, 0.1))
+	var tex := CurveTexture.new()
+	tex.curve = curve
+	mat.scale_curve = tex
+	var flame := Gradient.new()  # as Fire's own ramp: an ordinary 8-bit texture, not an HDR one
+	flame.colors = PackedColorArray(Fire.FLAME_COLORS)
+	flame.offsets = PackedFloat32Array(Fire.FLAME_AT)
+	var flame_tex := GradientTexture1D.new()
+	flame_tex.gradient = flame
+	mat.color_ramp = flame_tex
 	var life := Num.f(cfg["seconds"])
 	var amount := roundi(Num.f(cfg["amount"]) * clampf(radius / 5.0, 0.5, 1.6))
-	var p := emit(host, mat, flame_cube(Num.f(cfg["heat"])), amount, life, at)
-	p.explosiveness = 1.0 - Num.f(cfg["build_seconds"]) / life  # it builds over a few frames
+	var p := emit(host, mat, flame_cube(), amount, life, at)
+	p.explosiveness = 1.0 - Num.f(cfg["burst_seconds"]) / life  # it spawns over burst_seconds
 
 
 ## The instant: white-hot voxels bursting out of the whole site and gone in core.seconds (a few
@@ -70,7 +74,7 @@ static func core(host: Node3D, at: Vector3, half: Vector3, radius: float, cfg: D
 	var strength := clampf(radius / Num.f(cfg["full_radius"]), 0.5, 1.0)  # a small blast flashes less
 	mat.color_ramp = ramp(FLASH.map(func(c: Color) -> Color: return c * strength), [0.0, 1.0])
 	var amount := roundi(Num.f(cfg["amount"]) * clampf(radius / 5.0, 0.5, 1.6))
-	emit(host, mat, ember_cube(), amount, seconds, at)
+	emit(host, mat, spark_cube(), amount, seconds, at)
 
 
 ## One fireworks shell bursting: a sphere of coloured sparks falling as they fade.
@@ -91,13 +95,14 @@ static func firework(host: Node3D, at: Vector3, color: Color, cfg: Dictionary) -
 	mat.color_ramp = ramp(
 		[Color(2.0, 2.0, 2.0, 1.0), hot, Color(hot, 0.8), Color(color, 0.0)], [0.0, 0.04, 0.6, 1.0]
 	)
-	emit(host, mat, ember_cube(), Num.i(cfg["sparks"]), Num.f(cfg["seconds"]), at)
+	emit(host, mat, spark_cube(), Num.i(cfg["sparks"]), Num.f(cfg["seconds"]), at)
 
 
-## The chem lab's cloud: green cubes in cloud.shades, billowing up and out of a box twice the
-## lab's size (at least cloud_share of the sim cloud's radius wide; `half` is the lab's half
-## extents): a burst at once, then a steady boil for as long as the sim keeps the cloud
-## (`seconds`), each cube growing and then shrinking away.
+## The chem lab's cloud: the game's soft smoke (smoke.gdshader, as Fire's column) tinted toxic
+## green in cloud.shades, billowing up and out of a box twice the lab's size (at least cloud_share
+## of the sim cloud's radius wide; `half` is the lab's half extents): a burst at once, then a
+## steady boil for as long as the sim keeps the cloud (`seconds`), each puff swelling and sagging
+## on cloud.boil and fading out.
 static func toxic_cloud(
 	host: Node3D, at: Vector3, half: Vector3, radius: float, seconds: float, cfg: Dictionary
 ) -> void:
@@ -113,24 +118,29 @@ static func toxic_cloud(
 	mat.gravity = Vector3(0.3, 0.35, 0.15)
 	mat.damping_min = 0.3
 	mat.damping_max = 0.6
-	mat.angular_velocity_min = -25.0
-	mat.angular_velocity_max = 25.0
-	var sizes: Array = cfg["voxel"]
+	var sizes: Array = cfg["puff"]
 	mat.scale_min = Num.f(sizes[0])
 	mat.scale_max = Num.f(sizes[1])
 	var boil_at: Array = cfg["boil"]
 	mat.scale_curve = _boil(boil_at)
 	var shades: Array = cfg["shades"]
-	var glow := Num.f(cfg["glow"])  # just over 1: a faint green glow (blast_voxel)
-	mat.color_initial_ramp = _shades(shades.map(func(c: String) -> Color: return Color(c) * glow))
+	mat.color_initial_ramp = _shades(shades.map(func(c: String) -> Color: return Color(c)))
+	var fade := Gradient.new()  # the puff's own opacity over its life, white so the shade stays
+	fade.colors = PackedColorArray(
+		[Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.5), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0.0)]
+	)
+	fade.offsets = PackedFloat32Array([0.0, 0.15, 0.6, 1.0])
+	var fade_tex := GradientTexture1D.new()
+	fade_tex.gradient = fade
+	mat.color_ramp = fade_tex
 	var life := Num.f(cfg["billow_seconds"])
-	var burst := emit(host, mat, voxel_cube(), Num.i(cfg["amount"]), life, at)
+	var burst := emit(host, mat, smoke_quad(), Num.i(cfg["amount"]), life, at)
 	burst.explosiveness = 0.8
-	var boil := emit(host, mat, voxel_cube(), Num.i(cfg["boil_amount"]), life, at, seconds + life)
+	var boil := emit(host, mat, smoke_quad(), Num.i(cfg["boil_amount"]), life, at, seconds + life)
 	boil.one_shot = false
 	boil.explosiveness = 0.0
-	# The boil stops a cube's life before the sim's cloud ends, so the last cubes shrink out
-	# by then: the cloud fades over its last billow_seconds rather than hanging on.
+	# The boil stops a puff's life before the sim's cloud ends, so the last puffs fade out by
+	# then: the cloud thins over its last billow_seconds rather than hanging on.
 	host.get_tree().create_timer(maxf(0.1, seconds - life)).timeout.connect(
 		func() -> void:
 			if is_instance_valid(boil):
@@ -138,9 +148,8 @@ static func toxic_cloud(
 	)
 
 
-## A cube's size over its life from [life share, scale] points (the fireball's size_curve; the
-## gas's cloud.boil: growing in, swelling and sagging, then shrinking away: a boil, never a
-## frozen block).
+## A puff's size over its life from [life share, scale] points (the gas's cloud.boil: growing in,
+## swelling and sagging, then shrinking away: a boil, never a frozen block).
 static func _boil(points: Array) -> CurveTexture:
 	var c := Curve.new()
 	c.max_value = 4.0
@@ -151,13 +160,14 @@ static func _boil(points: Array) -> CurveTexture:
 	return tex
 
 
-## A unit voxel drawn opaque and lit (blast_voxel.gdshader): fireball, smoke, gas, dust.
-static func voxel_cube() -> BoxMesh:
-	var cube := BoxMesh.new()
+## A camera-facing soft smoke puff, the game's own (smoke.gdshader): a unit quad to scale.
+static func smoke_quad() -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
 	var mat := ShaderMaterial.new()
-	mat.shader = VOXEL
-	cube.material = mat
-	return cube
+	mat.shader = Fire.SMOKE_SHADER
+	quad.material = mat
+	return quad
 
 
 ## Each particle's starting shade, picked from `colors` at random (no blend between them).
@@ -174,22 +184,23 @@ static func _shades(colors: Array) -> GradientTexture1D:
 	return tex
 
 
-## A unit voxel drawn with Fire's own ember shader: the game's flame cube. `heat` is the shader's
-## own uniform: a dense ball of flames blooms and whitens at Fire's 1.4, so a blast's runs cooler.
-static func flame_cube(heat: float) -> BoxMesh:
+## Fire's own flame voxel: its cube, drawn with its ember shader at its own heat.
+static func flame_cube() -> BoxMesh:
 	var cube := BoxMesh.new()
+	cube.size = Vector3.ONE * Fire.FLAME_CUBE
 	var mat := ShaderMaterial.new()
 	mat.shader = Fire.EMBER_SHADER
-	mat.set_shader_parameter("heat", heat)
 	cube.material = mat
 	return cube
 
 
-## A unit voxel drawn with the blast's own ember shader (bright, no haze).
-static func ember_cube() -> BoxMesh:
+## A unit spark voxel (the flash's core, a firework's sparks): the same ember shader, at heat 1
+## because their colours are already pushed above white.
+static func spark_cube() -> BoxMesh:
 	var cube := BoxMesh.new()
 	var mat := ShaderMaterial.new()
-	mat.shader = EMBER
+	mat.shader = Fire.EMBER_SHADER
+	mat.set_shader_parameter("heat", 1.0)
 	cube.material = mat
 	return cube
 
