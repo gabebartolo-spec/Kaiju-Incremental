@@ -52,6 +52,10 @@ func _bs() -> float:
 ## Speed multiplier this step: buildings in the way slow the body, except when it climbs
 ## over them, glides above them, squeezes between them or has the momentum to ram on.
 func speed_mult() -> float:
+	return _ground_mult() * sim.army_units.taskforce.frost.mult()  # ice on the legs slows it
+
+
+func _ground_mult() -> float:
 	if beam_left > 0.0:
 		return Num.f(cfg["beam_move_mult"])
 	if sim.airborne:

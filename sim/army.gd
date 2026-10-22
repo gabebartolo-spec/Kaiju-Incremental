@@ -29,6 +29,8 @@ var volleys := 0
 var rooftops_destroyed := 0
 ## Road movement and firing positions (D-066).
 var convoy: Convoy
+## The Anti Kaiju Taskforce's agents (D-137): they come in above the tanks and police.
+var taskforce: Taskforce
 var _rng: RandomNumberGenerator
 ## Each squad's next shot comes a seeded, ragged while later (D-076: no unison).
 var _ragged: RandomNumberGenerator
@@ -49,6 +51,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	convoy = Convoy.new(sim, convoy_cfg)
 	_place_squads(Seeds.derive(rng, 0x2007))
 	_ragged = Seeds.derive(rng, 0x2008)
+	taskforce = Taskforce.new(sim, Seeds.derive(rng, 0x7F))
 
 
 func step(dt: float) -> void:
@@ -61,6 +64,7 @@ func step(dt: float) -> void:
 	var reach := Num.f(cfg["range"]) + sim.stomp_radius()
 	var coated := false
 	convoy.step(dt)
+	taskforce.step(dt)
 	for tank: RampageSim.Tank in sim.tanks:
 		if tank.coat_t > 0.0:
 			tank.coat_t -= dt
