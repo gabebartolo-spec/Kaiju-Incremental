@@ -46,6 +46,7 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+var run_index := 0  # the run number (setup's p_run): it seeds each bolt
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -76,21 +77,20 @@ var _stomp_wait := 0.0
 var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
 
-## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
+## stats: final run stats; layout: CityGrowth.layout for stats.size; p_run seeds the army and
 ## picks the time of day.
-func setup(
-	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
-) -> void:
+func setup(p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], p_run: int) -> void:
 	species = p_species
+	run_index = p_run
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
-	Content.set_time(Content.time_for_run(run_index))
+	Content.set_time(Content.time_for_run(p_run))
 	var ability: Dictionary = species["ability"]
-	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
+	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", p_run))
 	sim.ability_type = str(ability["type"])
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
-	_fx_rng = Seeds.make("fx", run_index)
-	sfx = Sfx.new(Seeds.make("sfx", run_index))
+	_fx_rng = Seeds.make("fx", p_run)
+	sfx = Sfx.new(Seeds.make("sfx", p_run))
 	_cues = PowerCues.new(sim, sfx)
 
 

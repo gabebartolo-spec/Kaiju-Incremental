@@ -31,7 +31,7 @@ var _kaiju: Node3D
 var _tint: Color
 var _helis: Dictionary = {}
 var _young: Dictionary = {}
-var _beam: MeshInstance3D
+var _thunder: ThunderBeam
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
@@ -49,6 +49,15 @@ func _ready() -> void:
 	rooftops = RooftopView.new(sim, _city, rampage.sfx, Seeds.make("rooftop_fx"))
 	rooftops.body = _kaiju
 	add_child(rooftops)
+	_thunder = ThunderBeam.new(sim, _kaiju, _tint, rampage.run_index)
+	add_child(_thunder)
+	_thunder.prewarm(_city.fx.keep)
+	_thunder.rig.fx = _city.fx
+	var kick := func(_n: int, at: Vector3) -> void:
+		rampage.add_trauma(rampage.shake.source("bolt_stroke"), at)
+	_thunder.rig.stroked.connect(kick)
+	rampage.ability_fx.seed_index = rampage.run_index  # a bolt's stroke shakes the camera too
+	rampage.ability_fx.breath_stroke.connect(kick)
 
 
 func _hook(method: String, args: Array) -> void:
@@ -115,15 +124,12 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 				sfx.play("lash")
 			var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
 			_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
-		"beam_start":
+		"beam_start":  # the Thunder Beam: the breath's bolt, held
 			_hook("jaw_open", [true])
-			_beam = _box(Vector3.ONE, _tint.lightened(0.5))
-			add_child(_beam)
+			_thunder.start(Num.f(event["seconds"]), kaiju_at)
 		"beam_end":
 			_hook("jaw_open", [false])
-			if _beam != null:
-				_beam.queue_free()
-				_beam = null
+			_thunder.stop()
 		"coated", "fire_burning":
 			_lit(event)
 		"dash":  # the charge: a whoosh and a dust streak along the path
@@ -347,13 +353,7 @@ func update(delta: float, kaiju_at: Vector3) -> void:
 			var gone: Node3D = _young[id]
 			gone.queue_free()
 			_young.erase(id)
-	if _beam != null:
-		var length := Num.f(sim.powers_cfg["beam_range"]) * bs
-		var mouth := kaiju_at + Vector3(0, 5.0 * bs, 0) + _w(sim.facing) * bs
-		var end := kaiju_at + _w(sim.facing) * length + Vector3(0, 0.8, 0)
-		_beam.scale = Vector3(1.4 * bs, 1.4 * bs, mouth.distance_to(end))
-		_beam.look_at_from_position((mouth + end) * 0.5, end, Vector3.UP)
-		_city.fx.sparks(end)
+	_thunder.update(kaiju_at)
 	var climbing := sim.stand_y > 0.5
 	if climbing != _climbing:
 		_climbing = climbing

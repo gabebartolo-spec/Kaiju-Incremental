@@ -1,0 +1,137 @@
+extends SceneTree
+## Captures the Lightning Breath and the Thunder Beam (b2-18, VFX_STYLE family 6) in a real rampage:
+## stills at the game camera mid-stroke (and from the side), or with --clip the breath and then the
+## ultimate for one ~6 s movie. The same run and bolt seed give the same frame, so --halo=amber|eye|
+## violet shows the director's three halo options (R 17.6) from one frame. Needs a window (no
+## --headless) and the no-focus off-screen override.cfg. Pair with --write-movie for the clip.
+##
+##   godot --path . --resolution 3840x2160 --windowed --fixed-fps 60 \
+##     --script tools/capture/capture_bolt.gd -- --out=<dir> --mode=breath --run=1 --halo=amber
+## --mode=breath|beam|clip; --run=1 night, 3 noon (Content.times() order); --side: from the kaiju's
+## right, level with its chest; --young: the baby-stage build (no first evolution).
+
+const Kit := preload("res://tools/capture/capture_kit.gd")
+const SETTLE := 120
+## The physics step the bolt is fired on (the kaiju is out of the river by then).
+const FIRE_AT := 125
+## The clip's ultimate comes this many steps after its breath.
+const CLIP_GAP := 110
+## Frames after the fire at which a breath / a beam is shot (the first stroke is at about 7).
+const BREATH_SHOTS: Array[int] = [9, 20, 32]
+const BEAM_SHOTS: Array[int] = [10, 40, 80, 150]
+const CLIP_FRAMES := 380
+const SIDE_DISTANCE := 26.0
+const SIDE_HEIGHT := 9.0
+const CROP := Vector2i(1280, 720)
+const LEVELS := {"claws": 3, "hide": 1, "evolve1": 1, "sig_power": 2, "r_beam": 1}
+
+var _out := "user://bolt"
+var _mode := "breath"
+var _run := 1
+var _halo := ""
+var _side := false
+var _young := false
+var _step := 0
+var _fire_breath := -1
+var _fire_beam := -1
+var _walk := AutoWalk.new()
+var _cam: Camera3D
+
+
+func _initialize() -> void:
+	var a := (
+		Kit
+		. args(
+			{
+				"out": _out,
+				"mode": _mode,
+				"run": _run,
+				"halo": _halo,
+				"side": false,
+				"young": false,
+			}
+		)
+	)
+	_out = str(a["out"])
+	_mode = str(a["mode"])
+	_run = a["run"]
+	_halo = str(a["halo"])
+	_side = a["side"]
+	_young = a["young"]
+	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
+	_go.call_deferred()
+
+
+func _go() -> void:
+	await process_frame
+	BoltView.halo_mode_override = _halo
+	var levels := LEVELS.duplicate()
+	if _young:
+		levels.erase("evolve1")
+	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels, "reptilian"), _run)
+	rampage.scripted = _scripted_input
+	root.add_child(rampage)
+	_fire_breath = FIRE_AT if _mode != "beam" else -1
+	_fire_beam = FIRE_AT if _mode == "beam" else (FIRE_AT + CLIP_GAP if _mode == "clip" else -1)
+	await Kit.ticks(self, SETTLE)
+	if _side:
+		_side_camera(rampage)
+	if _mode == "clip":
+		await Kit.frames(self, CLIP_FRAMES)
+	else:
+		await _stills(rampage)
+	rampage.queue_free()
+	await Kit.frames(self, 2)
+	quit()
+
+
+## Stills a set number of frames after the fire.
+func _stills(rampage: Rampage) -> void:
+	var shots := BEAM_SHOTS if _mode == "beam" else BREATH_SHOTS
+	while _step < FIRE_AT:
+		await physics_frame
+	var waited := 0
+	for after: int in shots:
+		await Kit.frames(self, after - waited)
+		waited = after
+		var halo := _halo if _halo != "" else "default"
+		var shot_name := (
+			"%s_run%d_%s%s_f%03d" % [_mode, _run, halo, "_side" if _side else "", after]
+		)
+		var path := Kit.still(self, _out, shot_name)
+		_crop(rampage, path)
+
+
+## The 2x crop round the bolt, 12 m ahead of the kaiju and a few up.
+func _crop(rampage: Rampage, path: String) -> void:
+	var cam := root.get_viewport().get_camera_3d()
+	var sim := rampage.sim
+	var at := Vector3(sim.kaiju_pos.x, 3.0, sim.kaiju_pos.y)
+	at += Vector3(sim.facing.x, 0.0, sim.facing.y) * 12.0 * sim.body_scale()
+	var shot := Image.load_from_file(path)
+	var centre := Kit.image_point(self, cam, at, Vector2(shot.get_size()))
+	Kit.crop_2x(shot, centre, CROP, path.replace(".png", "_2x.png"))
+
+
+func _scripted_input(sim: RampageSim) -> Dictionary:
+	_step += 1
+	return {
+		"move": _walk.move(sim, _step),
+		"signature": _step == _fire_breath,
+		"held": false,
+		"ultimate": _step == _fire_beam,
+	}
+
+
+func _side_camera(rampage: Rampage) -> void:
+	_cam = Camera3D.new()
+	rampage.add_child(_cam)
+	var at := Vector3(rampage.sim.kaiju_pos.x, 0.0, rampage.sim.kaiju_pos.y)
+	var facing := Vector3(rampage.sim.facing.x, 0.0, rampage.sim.facing.y)
+	var right := Vector3(-facing.z, 0.0, facing.x)
+	_cam.position = at + right * SIDE_DISTANCE + Vector3(0, SIDE_HEIGHT, 0)
+	_cam.look_at(at + facing * 5.0 + Vector3.UP * 3.0)
+	_cam.current = true
