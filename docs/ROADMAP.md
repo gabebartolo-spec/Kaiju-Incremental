@@ -40,8 +40,8 @@ WP7 carving physics (D-099, claude/carve-wp7 e50b0be, resynced, tests then PR) �
 chapter) · repo CLAUDE.md + kaiju-handoff skill to the 300k/500k context rule · b2-6 every building in the play area
 destroyable, any that cannot be is removed from it · b2-21 stadium placed as far from the spawn as the map allows ·
 b2-26 atomic breath hurts trees · a destroyed building stays rubble, never a burning shell (comments #14, #111) · the kaiju rises out of the river water, never the asphalt (comments 2026-10-20 #10) · b2-2 first half: find out why the tail swipe does not fire, fix that bug only ·
-p1-9 confirm in play that the south-of-spawn buildings are gone (#88) · sim check "armoured scales cut the damage"
-(fails locally on look-options) · worktree and branch cleanup. Gate: build 3.
+p1-9 confirm in play that the south-of-spawn buildings are gone (#88) ·
+worktree and branch cleanup. Gate: build 3.
 
 **B. Look foundations: director decisions, captures only, no production code.**
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
