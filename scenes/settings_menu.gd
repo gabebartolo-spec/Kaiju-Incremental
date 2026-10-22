@@ -17,6 +17,10 @@ const BUTTON_GAP := 20.0
 ## the CONTROLS heading and the BACK button (20 px).
 const ROW_GAP := 4
 const BLOCK_GAP := 14
+## Room above and below the label of a settings button and of BACK (px): the plates' 14 px would
+## push BACK off the 4K TV at 125% with every control row showing.
+const CHOICE_MARGIN := 8.0
+const BACK_MARGIN := 10.0
 
 ## Sound effects (the SFX bus).
 var effects: HSlider
@@ -81,6 +85,7 @@ func _ready() -> void:
 	_add_controls(col)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
+	HazardBox.trim_height(back, BACK_MARGIN)
 	back.pressed.connect(close)
 	col.add_child(_gap(back, BLOCK_GAP))
 	_refresh()
@@ -91,9 +96,10 @@ func _ready() -> void:
 ## its share of the row's span.
 func _choice(on_press: Callable) -> Button:
 	var button := UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	button.custom_minimum_size = Vector2(0, 56)
+	button.custom_minimum_size = Vector2(0, 48)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	HazardBox.drop_pointer(button)  # the plates' pointer room would push a half past its share
+	HazardBox.trim_height(button, CHOICE_MARGIN)  # so the card still fits the TV at 125%
 	button.pressed.connect(on_press)
 	return button
 

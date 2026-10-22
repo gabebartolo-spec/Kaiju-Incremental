@@ -20,19 +20,20 @@ Director rulings: left menu column (logo above buttons), still camera, scene fro
 footfall audio, fire = ragged flames out of windows with heavy smoke (not candles), occasional explosions reveal the
 reptilian colossus silhouette; no music. Poster reference: kaiju towering over skyline, orange fire glow, smoke sky.
 
-## State 2026-10-23 02:40: PR #160 (claude/ui-title-menu), D-158 option C + critic round 2 in flight
-Worktree ../Kaiju-Incremental-wt/ui-pr (ui-redesign = dead lineage). Merged look-options (feedback button, Are-you-sure, 0.1-demo
-kept beside my pause menu: END RAMPAGE + "You keep the biomass" note; tests/lib/ui_report.gd holds the base's report checks).
-Code done (commits 696cf071, d2663e6e, 4ff8f15f): camera look y 38.1 (tilt ~7.5 deg), colossus card 185 m, shore.ledge_depth 26 (the tilt
-alone does not thin the water band, it moves it down: the deeper ledge lifts the rail), title.tower_cap 90 (city.far_tower_cap, one
-value; CitySkyline._capped), menu: BUTTON_HEIGHT 110 (face 104 = 208 px at 4K), ROW_INSET 4, POINTERLESS_ROOM 16, scratches only in the
-top/bottom 16% strips (HazardBox.scuff_lines), exit right margin = row left margin, colossus.crown (shader warm 2.5 px rim on the
-skull and snout top, VFX lead's fix). tools/capture/title_measure.gd prints tower/head/shore/plate clearance (--measure).
-TODO after the Godot ban (director: none until 02:57): ui suite only (no full suite on this PC), captures at --size=3840x2160 into
-final_rest/final_reveal/final_dusk + head_2x + buttons_crop + clip12 (6 s), tune tower_cap/tilt to head 1.5-2x tower, check plate
-clearance >= 100 px (raise COLUMN_TOP by <= 15 if not), push, PR body, report to lead (lead relays to the VFX lead for SHIP).
-Lessons: override.cfg initial_position is ignored here (window opened at 0,0): capture_title moves it to x=-12000 in _initialize and
---size=WxH grows it (a 4K window opens 63 px short: 3840x2097). A python heredoc turns "
+## State 2026-10-23 04:50: PR #160 (claude/ui-title-menu), D-158 option C + critic round 2; head c7b0887b + local fixes
+Worktree ../Kaiju-Incremental-wt/ui-pr (ui-redesign = dead lineage). Base merged three times (feedback button, Are-you-sure, 0.1-demo,
+time of day, director cleanup {beam}); settings screen = the base's (inline controls) with my plates: HazardBox.trim_height keeps BACK on
+the 4K TV at 125% with the demo off (the flow suite turns the demo off: one more control row than a bare probe sees).
+Option C is in data: camera.look y 38.1 (tilt 7.5 deg), colossus.height 185, title.tower_cap 90 (soft knee, city.far_tower_cap, 0 = off),
+shore.ledge_depth 26.5 (a tilt alone moves the water band down; the deeper ledge thins it 476 -> ~316 px), colossus.crown (warm 2.5 px
+rim, skull and snout top). Menu: BUTTON_HEIGHT 110 (face 104 = 208 px at 4K), ROW_INSET 7 (plate outline on the logo's ink, 132 px at
+4K), POINTERLESS_ROOM 16, scratches in the top/bottom 16% strips only, exit margin = row margin. title_measure.gd (--measure) prints
+tower/head/shore/band/plate clearance; capture_title --size=3840x2160 grows the window once it is up and moves it to x=-12000.
+OPEN: stills (rest, reveal, dusk, head 2x, buttons crop, 6 s clip) not taken yet: the focus guard blocks windowed runs while the director
+plays fullscreen (guard only sees a visible launch in the command text: run captures inline, never hide them in a script). Probe
+2026-10-23: a window opens at 0,0 for ~0.6 s even with --position; use --resolution 320x180 then --size. engine_slot.sh before every run.
+Lessons: a stale log file made me read an old pass (rm the log first); flow suite differs from a bare probe (demo off); override.cfg
+initial_position is ignored here; a python heredoc turns "
 " into a real newline: use an Edit.
 
 ## Rules and tooling

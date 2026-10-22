@@ -83,6 +83,15 @@ static func drop_pointer(button: Button) -> void:
 		box.content_margin_right = box.band_size + POINTERLESS_ROOM
 
 
+## Trims a button's room above and below its label to `margin` px in every state (a menu that must
+## fit the TV at 125%: the settings card), so its plates stand lower.
+static func trim_height(button: Button, margin: float) -> void:
+	for state: String in ["normal", "hover", "focus", "pressed", "disabled"]:
+		var box := button.get_theme_stylebox(state) as HazardBox
+		box.content_margin_top = margin
+		box.content_margin_bottom = margin
+
+
 ## The text material of the plated buttons: a faint stamped highlight on the letters' top edge.
 static func text_material() -> ShaderMaterial:
 	if _text_material == null:
