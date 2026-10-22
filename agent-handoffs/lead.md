@@ -73,6 +73,10 @@
   game renamed Kaiju Evolution (save folder kept), live dusk city background. Headers (no triangle) PASSED + shipped.
 - Shared collapse view defect (fire QC d/e): a toppling piece swaps to a window lattice on edge, then a slab; walls
   vanish in one frame (BuildingView.lift_piece, scenes/building_view.gd:204). Confirm on a plain smash, then fix.
+- Graphics preview (#90, FOR THE DEMO): a live view in the options menu that updates as each graphics option changes,
+  with its frame rate. Not started.
+- Sounds (D-138): original SFX on ElevenLabs (lead generates via MCP; builders write specs) when no CLEARED sound exists;
+  the title ambience builder will list needed sounds (sirens likely).
 - Worktrees: 18 left (all live); 18 old ones backed up to backup/<name> branches. ui-art-hud scratch remove was
   DENIED by permissions (force remove): ask him, never retry around it.
 
