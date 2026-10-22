@@ -283,7 +283,6 @@
 		"miss": {
 			"hit_near": 0.9,
 			"hit_far": 0.6,
-			"hit_mult": 1.04,
 			"ring_near": 4.0,
 			"ring_far": 14.0,
 			"ring_tries": 12,

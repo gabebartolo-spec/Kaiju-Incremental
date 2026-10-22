@@ -1,9 +1,25 @@
 # Clumsy-army handoff, 2026-10-22 (builder; rebuilt on the squashed base)
-## State: done; PR opened from claude/clumsy-army-v2 (lead merges); no clip re-cut (D-146: not needed for a motion check)
+## State: sim-review FIX round done, pushed to claude/clumsy-army-v2 (2026-10-23); lead merges after CI
 ## Task
 Director comments #18: "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military
 which destroys parts of its own city occasionally". Ruling: misses land beside him (ring round the kaiju, radius 2.5 m).
 Bar, never loosened: the army's damage to the kaiju per minute within 5% of the base at tiers 2 and 4.
+## Sim-review FIX round (lead brief 2026-10-23; D-066 budget, D-157 stray destruction counts) - DONE, pushed
+1. hit_mult: REMOVED (tuning key, army.gd, probe). Cause of the old "-6.5% at tier 3": the luck of the hit rolls, not a
+   mechanism. A hit does damage / chance, so each run's sampled damage carries ~12% of Bernoulli noise (30-50 shots at a
+   0.6-0.9 chance); 12-36 sampled seeds cannot resolve 5%. Shots (+0.5% t2, -0.3% t3, +4.9% t1), squad volleys (-0.2%) and
+   tanks in range are unchanged; what strays really do: +2-6% towers toppled, +1-9% roads shut, +1.5-4% chunks broken.
+2. Budget with helicopters ON, 24 seeds, 120 s, hit_mult 1.0 (= final code): see PR body table. Expected damage (shots x
+   hit damage + squads + helis) has the smaller SE: tier 1 +4.7 +- 3.2%, tier 2 +0.5 +- 3.0%, tier 3 -0.2 +- 2.4%; as it fell
+   -1.5 +- 5.0, -0.2 +- 3.7, -3.3 +- 3.0. Tier 1 extended to 48 seeds (see PR). Tier 4 gone (D-135).
+3. demand_way skips at yield_all >= stuck*3. tests/lib/military_yield.gd failed first (B yields 60.0 s, 0 free steps), now
+   max 8.1 s and 7 free steps in 60 s.
+D-157 test: tests/lib/military_stray.gd _counts_as_destruction (real shot -> stray_landed -> biomass, ruin, threat, heli cap);
+failed on a "wrecking earns nothing" mutation (3 new checks red), green on the code.
+Suites on the final tree (no full suite on this PC, director rule): military 26/0, sim 66/0, sim_play 5/0.
+Probe: tools/strays_damage_probe.gd (helis on, ROW lines, expected damage, cause counters; 2 at once, engine_slot.sh first).
+Gotchas: the shared scratchpad is shared with the lead's session (own subfolder clumsy/); the Bash tool does not kill
+background jobs but the lead's pause did (exit 127); probe chunks of 6 seeds, detached with nohup.
 ## Branch
 claude/clumsy-army-v2 = origin/claude/look-options 56d92a1b + the branch's own commits cherry-picked (backup ref
 claude/clumsy-army-pre-rebase = old tip cfd2fb3d). The old claude/clumsy-army on origin is not an ancestor: push to -v2.
@@ -63,7 +79,7 @@ across other tiers beyond the suite; helicopters.
 Open: military suite 19/20: tier 4 seed 1, tank 17 yields 0.9 s standing under the kaiju (steps 508-523); tier 4 is cut
 (D-135), so this goes away with the tier-4 rows if the lead drops them; otherwise the yield rule needs one more case.
 Not run on this tip: full suite, damage probe (strays land later and on buildings: re-probe tiers 2 and 3 before the PR).
-## Final evidence (tip after merging origin/claude/look-options 6f86d7a8)
+## Final evidence (tip after merging origin/claude/look-options 6f86d7a8; hit_mult 1.04 since removed, see FIX round)
 - Full suite tools/run_tests.sh: All checks passed (25 suites), exit 0 (military 20/0 on the new seeds; flow dash check
   failed once under heavy load and also on the untouched base 6f86d7a8, passes in the full run: a load flake).
 - Damage per minute, base vs strays (hit_mult 1.04), 12 seeds, 120 s: tier 2 193.5 -> 196.1 (+1.4%); tier 3 177.8 ->

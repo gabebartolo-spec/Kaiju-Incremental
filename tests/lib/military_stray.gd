@@ -1,7 +1,8 @@
 extends RefCounted
 ## The clumsy military (StrayShell; director, comments #18): tank shells miss the kaiju at the
 ## seeded rate the data sets, a miss lands in the city and breaks what it hits, never a tank, and
-## the same seed gives the same shots, misses and landings. Part of the military suite.
+## the same seed gives the same shots, misses and landings; what a stray breaks counts for the
+## kaiju in full (D-157). Part of the military suite.
 ## Seeded by design: every rampage takes Seeds.make("city"/"army", seed).
 
 const DT := 1.0 / 15.0
@@ -45,6 +46,7 @@ func run() -> void:
 		)
 	)
 	_lands_on_a_building()
+	_counts_as_destruction()
 
 
 ## SHOTS shells from at_reach x the tanks' reach: they miss at the data's rate there
@@ -105,6 +107,60 @@ func _lands_on_a_building() -> void:
 		(
 			"a stray shell on building %d breaks %d of its chunks (%d standing before) and no tank"
 			% [target, sim.chunks_destroyed - paid, before]
+		)
+	)
+
+
+## D-157 (director, 2026-10-23): a missed shell that smashes part of a building counts in full. A
+## real shell through Army.shoot and its flight, beside a standing building one chunk short of the
+## first helicopter: the kaiju earns the biomass (rubble), the city's ruin rises, and the army
+## escalates as usual (the tanks' threat grows and the stray's chunks call the first helicopter in).
+func _counts_as_destruction() -> void:
+	var sim: RampageSim = _make.call(2, 0)
+	var after := Num.i(sim.air.cfg["after_chunks"])
+	var target := -1
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.in_arena and b.frame.alive_count > 0 and b.height >= 2:
+			target = i
+			break
+	var b := sim.buildings[target]
+	sim.kaiju_pos = Vector2(b.x + b.w * 0.5 + 6.0, b.z)
+	sim.chunks_destroyed = after - 1
+	var biomass := sim.rubble
+	var ruin := sim.destruction()
+	var threat := sim.army_units.threat_scale()
+	var helis := sim.air.cap()
+	var tank := RampageSim.Tank.new()
+	tank.pos = sim.kaiju_pos + Vector2(8.0, 0.0)
+	var reach := Num.f(sim.army["range"]) + sim.stomp_radius()
+	var shots := 0
+	while sim.army_units.misses == 0 and shots < 200:
+		sim.army_units.shoot(tank, 8.0, reach)
+		shots += 1
+	var flying: Dictionary = sim.army_units._strays[0]
+	flying["at"] = Vector2(b.x, b.z)  # where it lands is random: this test is about what it earns
+	sim.events.clear()
+	sim.army_units.step(Num.f(sim.army["shell_flight"]) + DT)
+	var landed := sim.events.any(
+		func(e: Dictionary) -> bool: return str(e["type"]) == "stray_landed"
+	)
+	_check.call(
+		landed and sim.chunks_destroyed > after - 1 and sim.rubble > biomass,
+		(
+			"a stray shell (shot %d) that breaks %d chunks pays the kaiju: biomass %.1f -> %.1f"
+			% [shots, sim.chunks_destroyed - (after - 1), biomass, sim.rubble]
+		)
+	)
+	_check.call(
+		sim.destruction() > ruin,
+		"and the city's ruin rises: %.5f -> %.5f of the city" % [ruin, sim.destruction()]
+	)
+	_check.call(
+		sim.army_units.threat_scale() > threat and sim.air.cap() > helis,
+		(
+			"and the army escalates: threat x%.4f -> x%.4f, helicopters allowed %d -> %d"
+			% [threat, sim.army_units.threat_scale(), helis, sim.air.cap()]
 		)
 	)
 
