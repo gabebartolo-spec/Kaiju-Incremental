@@ -7,7 +7,8 @@ extends RefCounted
 ## (`camera_bearing`, clear of `clear_arc` either side of it) and cruise `clear_margin` beyond
 ## its body, so a helicopter never hangs between the player and the kaiju. How one dies (D-140,
 ## D-141, D-145): a killing blow of at least `blow_apart` of its hp blows it apart in the air; a
-## lighter one (a glancing hit, a burning coat) sends it spinning down for `fall_seconds`,
+## lighter one (a glancing hit, a burning coat, a toppling tower sweeping through it) sends it
+## spinning down for `fall_seconds`,
 ## drifting `fall_drift`, its crew sometimes bailing out by parachute (`bailout_chance`, up to
 ## `bailout_max`), until it crashes: the wreck smashes `crash_floors` floors within
 ## `crash_radius` (never the kaiju) and sets the building it hits burning (City Ablaze). It pays
@@ -69,6 +70,7 @@ func cap() -> int:
 
 
 func step(dt: float) -> void:
+	_swept_by_falls()
 	# The call-in clock only runs while the sky is short of helicopters: a kill is replaced
 	# after `interval`, never on the next step.
 	if helis.size() < cap():
@@ -95,6 +97,32 @@ func step(dt: float) -> void:
 	if coated:
 		clear_dead()
 	_fall(dt)
+
+
+## A tower toppling this step (Collapse's fall_start) that is tall enough to reach the sky sweeps
+## its landing strip: every helicopter over the strip is knocked spinning down (D-140).
+func _swept_by_falls() -> void:
+	var hit := false
+	for event: Dictionary in sim.events:
+		if str(event["type"]) != "fall_start" or not event.has("to"):
+			continue
+		var pivot: Vector3 = event["pivot"]
+		var start := Vector2(pivot.x, pivot.z)
+		var end: Vector2 = event["to"]
+		var span := end - start
+		if span.length() + pivot.y < altitude():
+			continue  # it never reaches the helicopters' height
+		var half := Num.f(event["width"]) * 0.5 + Num.f(cfg["heli_radius"])
+		for heli: Heli in helis:
+			var t := clampf(
+				(heli.pos - start).dot(span) / maxf(0.001, span.length_squared()), 0.0, 1.0
+			)
+			if heli.pos.distance_to(start + span * t) <= half:
+				heli.hp = 0.0
+				heli.last_blow = 0.0  # knocked aside, never blown apart
+				hit = true
+	if hit:
+		clear_dead()
 
 
 ## A new helicopter joins the circle at a seeded angle and distance.

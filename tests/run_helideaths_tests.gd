@@ -20,6 +20,7 @@ func run_checks() -> void:
 	await _t("_check_spin_crash")
 	await _t("_check_crash_fire")
 	await _t("_check_grabbed")
+	await _t("_check_topple")
 	await _t("_check_seeded")
 
 
@@ -130,6 +131,37 @@ func _check_grabbed() -> void:
 		fates == ["grabbed"] and sim.air.falling.is_empty(),
 		"a helicopter a tentacle grabs only leaves the sky: %s" % [fates]
 	)
+
+
+## A tower toppling through a helicopter knocks it spinning down; a short one does not.
+func _check_topple() -> void:
+	for height: float in [30.0, 3.0]:
+		var sim := _scene({})
+		var heli: AirWing.Heli = sim.air.helis[0]
+		var start := heli.pos - Vector2(height * 0.5, 0)
+		sim.events.clear()
+		(
+			sim
+			. events
+			. append(
+				{
+					"type": "fall_start",
+					"kind": "topple",
+					"pivot": Vector3(start.x, 0.0, start.y),
+					"to": start + Vector2(height, 0),
+					"width": 2.0,
+				}
+			)
+		)
+		sim.air.step(0.0)
+		var downed := sim.air.falling.size() == 1
+		check(
+			downed == (height > sim.air.altitude()),
+			(
+				"a %.0f m tower toppling under a helicopter at %.0f m knocks it down: %s"
+				% [height, sim.air.altitude(), downed]
+			)
+		)
 
 
 ## The same seed gives the same fall and crew; a fall never moves the spawn stream.
