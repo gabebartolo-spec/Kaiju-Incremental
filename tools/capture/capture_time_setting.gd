@@ -33,7 +33,7 @@ func _run() -> void:
 		var shot := root.get_texture().get_image()
 		shot.save_png(_out.path_join("settings_%s.png" % name))
 		var button: Button = menu.get("_time")
-		var area := button.get_parent().get_global_rect()
+		var area: Rect2 = (button.get_parent() as Control).get_global_rect()
 		var factor := Vector2(shot.get_size()) / Vector2(root.get_visible_rect().size)
 		var rect := Rect2i(
 			((area.position - ROW_PAD) * factor).floor(),
