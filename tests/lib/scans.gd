@@ -17,12 +17,7 @@ const LIGHT_STEP := 7  # every this-th lamp is a camera spot on the recorded lig
 
 ## BuildingFade on stage 4's 4,435 buildings along a recorded walk.
 static func fade(check: Callable) -> void:
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[3], "reptilian")
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), Content.species_def("reptilian"), tree
-	)
-	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
-	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
+	var sim := _stage4()
 	var cfg := Content.section("vehicles")
 	var fader := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
@@ -73,10 +68,18 @@ static func fade(check: Callable) -> void:
 			same_fade = same_fade and is_equal_approx(fader.opacity(n), want)
 	print(
 		(
-			"SCANS fade: %d buildings, %d frames, a building in a sight line on %d; old scan %.3f"
-			+ " ms/frame, indexed %.3f ms/frame"
+			(
+				"SCANS fade: %d buildings, %d frames, a building in a sight line on %d; old scan %.3f"
+				+ " ms/frame, indexed %.3f ms/frame"
+			)
+			% [
+				sim.buildings.size(),
+				FRAMES,
+				busy,
+				old_us / 1000.0 / FRAMES,
+				new_us / 1000.0 / FRAMES
+			]
 		)
-		% [sim.buildings.size(), FRAMES, busy, old_us / 1000.0 / FRAMES, new_us / 1000.0 / FRAMES]
 	)
 	check.call(
 		busy > FRAMES / 4, "the recorded walk crosses buildings on %d of %d frames" % [busy, FRAMES]
@@ -88,7 +91,18 @@ static func fade(check: Callable) -> void:
 	check.call(same_fade, "every faded building's opacity matches the old scan's on every frame")
 
 
-## The old scan, as it was in BuildingFade.update: every building, the cheap rectangle, then blocks().
+## Stage 4's city (seed 0) with its kaiju.
+static func _stage4() -> RampageSim:
+	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[3], "reptilian")
+	var stats := UpgradeTree.run_stats(
+		Content.section("kaiju"), Content.species_def("reptilian"), tree
+	)
+	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
+	return RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
+
+
+## The old scan, as it was in BuildingFade.update: every building, the cheap rectangle, then
+## blocks().
 static func _reference(
 	buildings: Array[RampageSim.Building], eye: Vector3, sight: PackedVector3Array
 ) -> PackedInt32Array:
@@ -109,21 +123,11 @@ static func _reference(
 	return out
 
 
-## LightPool.nearest over the night city's lamps along a recorded path, and over a lattice of
+## LightPool.nearest over stage 4's night city lamps along a recorded path, and over a lattice of
 ## equidistant lights with some dark ones (ties go to the earlier light in the tree).
 static func lights(root: Node, check: Callable) -> void:
 	Content.set_time(Content.time_for_run(1))  # night: the lamps are lit
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"),
-		Content.species_def("reptilian"),
-		UpgradeTree.new(Content.upgrades())
-	)
-	var sim := RampageSim.new(
-		stats,
-		Content.tuning(),
-		CityGen.generate(Seeds.make("city", 0), Content.section("city")),
-		Seeds.make("army", 0)
-	)
+	var sim := _stage4()
 	var holder := Node3D.new()
 	root.add_child(holder)
 	var pool := LightPool.new()
@@ -157,12 +161,16 @@ static func lights(root: Node, check: Callable) -> void:
 		calls > 20 and lamps.size() > 100,
 		"the recorded path visits %d spots among %d lamps" % [calls, lamps.size()]
 	)
-	check.call(
-		same,
-		"LightPool.nearest names the same lights in the same order as sorting every lamp, at every spot"
+	(
+		check
+		. call(
+			same,
+			"LightPool.nearest names the same lights in the same order as sorting every lamp, at every spot"
+		)
 	)
 	holder.free()
-	# Ties: a lattice round the origin has many lights at one distance; the order falls to the tree order.
+	# Ties: a lattice round the origin has many lights at one distance; the order falls to the
+	# tree order.
 	var grid := Node3D.new()
 	root.add_child(grid)
 	var pool2 := LightPool.new()

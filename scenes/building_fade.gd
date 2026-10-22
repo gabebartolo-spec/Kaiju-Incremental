@@ -104,7 +104,8 @@ func _near(eye: Vector3, sight: PackedVector3Array) -> PackedInt32Array:
 	var last := Vector2i((hi / CELL).floor())
 	for cx: int in range(first.x, last.x + 1):
 		for cz: int in range(first.y, last.y + 1):
-			found.append_array(_grid.get(Vector2i(cx, cz), PackedInt32Array()))
+			var cell: PackedInt32Array = _grid.get(Vector2i(cx, cz), PackedInt32Array())
+			found.append_array(cell)
 	found.sort()
 	var out := PackedInt32Array()
 	var prev := -1

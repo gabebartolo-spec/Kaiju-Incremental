@@ -12,5 +12,13 @@ func suite_name() -> String:
 
 
 func run_checks() -> void:
-	await _h("ScansFade", func() -> void: Scans.fade(check))
-	await _h("ScansLights", func() -> void: Scans.lights(root, check))
+	await _t("_check_fade")
+	await _t("_check_lights")
+
+
+func _check_fade() -> void:
+	Scans.fade(check)
+
+
+func _check_lights() -> void:
+	Scans.lights(root, check)
