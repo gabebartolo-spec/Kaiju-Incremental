@@ -1,8 +1,9 @@
 class_name BuildingCellsNative
 extends RefCounted
 ## BuildingCells' grid from native/src/kaiju_cells.cpp (KaijuSettle.cells, b2-3 part 4), which is
-## BuildingCells' GDScript cell for cell at a fraction of the cost; the GDScript stays the
-## reference (tests/lib/cells_native.gd builds both, VoxelSupport.use_native off for the GDScript).
+## BuildingLayout's GDScript (sim/building_layout.gd) cell for cell at a fraction of the cost; the
+## GDScript stays the reference (tests/lib/cells_native.gd builds both, VoxelSupport.use_native
+## off for the GDScript).
 
 ## The material keys the native generator marks, in its order; neon0.. follow.
 const KEYS: Array[String] = [

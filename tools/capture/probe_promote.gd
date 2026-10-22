@@ -5,6 +5,8 @@ extends SceneTree
 ##
 ##   godot --headless --path . --script tools/capture/probe_promote.gd -- --count=12
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
+
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -12,17 +14,8 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
-	var count := 12
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--count="):
-			count = arg.substr(8).to_int()
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"),
-		Content.species_def("reptilian"),
-		UpgradeTree.new(Content.upgrades())
-	)
-	var layout := CityGrowth.layout(Content.tuning(), 1, Seeds.make("city", 0))
-	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	var count := Num.i(Kit.args({"count": 12})["count"])
+	var sim := Kit.stage_sim(Kit.stats("reptilian"), 1, Content.tuning())
 	var party := BuildingView.party_walls(sim.buildings)
 	var sum := {}
 	var done := 0
