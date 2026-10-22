@@ -100,7 +100,14 @@ func _start_rampage() -> void:
 	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
-	rampage.setup(_species(), stats, layout, Num.i(_save.get("runs", 0)))
+	var runs := Num.i(_save.get("runs", 0))
+	rampage.setup(_species(), stats, layout, runs)
+	# The time of day (D-145): random, never the last run's, unless the options fix one. The
+	# save remembers it, even if the rampage is quit before it ends.
+	var time_id := TimeOfDay.pick(runs, str(_save.get("last_time", "")), PlayerSettings.time_of_day)
+	Content.set_time(time_id)
+	_save["last_time"] = time_id
+	SaveSystem.save_game(_save)
 	rampage.finished.connect(_on_rampage_finished)
 	_swap(rampage)
 

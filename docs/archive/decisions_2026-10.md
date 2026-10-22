@@ -2,6 +2,24 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-072 · Director · All four jets; strikes wreck buildings but give no biomass
+Why (10:5x): jets arrive from Colossus; the bomber is the Apex set-piece; the octopus can grab jets. PRs #58, #61
+(parked until after the demo).
+
+## 2026-10-18 · D-071 · Director · Landmarks in order: A stadium, D wheel, E spire, F megatower
+Why (10:5x): picked from the landmark board. A sites PR with A and D first, then E and F.
+
+## 2026-10-18 · D-070 · Director · All tabled sounds ship, with a new mix
+Why (10:5x): #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 #62 merged, each resynced by the sound session; #52 decided by
+D-079.
+
+## 2026-10-18 · D-069a · Director · Soften #36's young stage to about half the early defeats
+Why (11:2x): about half the early defeats; cause: Armoured Scales moved late in the tree. #36 lands last before the build.
+
+## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
+Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
+priced late. Merge #36 after #50 and P3.
+
 ## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
 Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
 camera). MERGED #35.
