@@ -305,3 +305,8 @@ boss finale above, R 23). Asked: short mission briefings (a 2-3 line dossier car
 Your adversaries (comment #78, director 2026-10-22): the Anti Kaiju Taskforce, "equipped with special anti-kaiju
 weaponry including: lazer railguns, frost grenades"; reference: Attack on Titan; "Special Agents fly around the city
 with jetpacks and grappling hooks". Asked (D-137): arrives from the adolescent city as the elite threat above police and tanks, escalating into the adult city; agents grapple onto BUILDINGS only (swing between towers, shoot from rooftops; you swat them or topple their perch); frost grenades slow the kaiju for a few seconds (ice on the legs); railguns charge with a visible glow, then hit hard (dodge it or knock the gunner over); built BEFORE the Itch demo.
+Textured surfaces (comment #80, director 2026-10-22): "audit for flat, or untextured objects/scenery/buildings; all
+surfaces must be textured and visually beautiful". Asked: textured = surface detail in the voxel look (concrete stains
+and panel lines, brick courses, window frames, road wear and markings, grass and soil tufts, roof gravel and vents;
+nothing a single flat colour); audit now (every object type captured, flat ones listed with images), fixes before the
+Itch demo (D-132 "polished visuals").
