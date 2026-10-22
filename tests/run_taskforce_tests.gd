@@ -1,12 +1,9 @@
 extends "res://tests/lib/taskforce_suite.gd"
-## The Anti Kaiju Taskforce, agents only (Taskforce, TaskforceFrost; D-137, D-139, D-141, D-143,
-## D-145): none in the young city, squads of 3-4 from the map edge and never more than 12 alive;
-## an agent dies when its perch collapses or a claw swipe swats it in the air (and pays biomass);
-## the railgun's line tracks, locks shortly before the shot and hits for 8% of max health only
-## if the kaiju stays in the lock (a late step dodges it); frost refreshes and never stacks and
-## the dash shatters it; a kill pays a tank's worth (D-152); a squad never hovers when no roof is in
-## its band; the same seed replays the same events; and the player-effect fixture "taskforce.agents":
-## the same run with the Taskforce off leaves the kaiju healthier.
+## The Anti Kaiju Taskforce, agents only (D-137, D-139, D-141, D-143, D-145, D-152): none in the young
+## city, squads of 3-4 from the edge, 12 alive at most; deaths (perch collapse, swat) pay a tank's
+## worth; the railgun tracks, locks and hits for 8% only if the kaiju stays (a late step dodges);
+## frost refreshes, never stacks, the dash shatters it; a squad never hovers; same seed, same
+## events; and the player-effect fixture "taskforce.agents".
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 
@@ -114,8 +111,7 @@ func _check_perch_death() -> void:
 	)
 
 
-## No tall roof stands in the perch band round the kaiju (at the map edge the nearest is ~48 away,
-## past the band): a squad still flies to the nearest roofs and perches, not hovering at the edge.
+## No tall roof is in the perch band at the map edge (nearest ~48 away): squads still perch.
 func _check_perch_fallback() -> void:
 	var sim := _adolescent()
 	_open(sim)
@@ -381,7 +377,7 @@ func _check_effect() -> void:
 		_open(sim)
 		sim.army_units.taskforce.cfg["max_by_tier"] = [0, 0, 0, 0]
 		_play(sim, 20.0)
-	check(on.kaiju_pos == off.kaiju_pos, "both runs walked in alike (%s)" % on.kaiju_pos)
+	check(on.kaiju_pos == off.kaiju_pos, "both runs walked in alike")
 	on.army_units.taskforce.cfg["max_by_tier"] = [0, 12, 12, 12]
 	var with_tf := _play(on, 90.0, false)
 	var without := _play(off, 90.0, false)
@@ -397,8 +393,7 @@ func _check_effect() -> void:
 		shots > 0 and Num.i(without["railgun"]) == 0,
 		"the difference is railgun hits (%d on, %d off)" % [shots, without["railgun"]]
 	)
-	var rail: Dictionary = on.army_units.taskforce.cfg["railgun"]
-	var worth := shots * on.max_hp * Num.f(rail["share"])
+	var worth := shots * on.max_hp * 0.08
 	check(
 		absf(Num.f(with_tf["hurt"]) - Num.f(without["hurt"]) - worth) < 0.01,
 		"and only those: %d x 8%% of %.0f = %.1f" % [shots, on.max_hp, worth]
