@@ -213,6 +213,12 @@ func _place_squads(rng: RandomNumberGenerator) -> void:
 		var cell := Vector3i(rng.randi_range(0, b.w - 1), b.height - 1, rng.randi_range(0, b.d - 1))
 		if b.w >= 3 and b.d >= 3 and cell.x < 2 and cell.z < 2:
 			cell = Vector3i(b.w - 1, cell.y, b.d - 1)
+		# The column's real roof: a setback or a cut-out leaves some columns lower or empty, and a
+		# squad never stands in the air over one.
+		var top := b.frame.top_below(cell.x, cell.z, b.height)
+		if top < Num.i(rooftop["min_height"]) - 1:
+			continue
+		cell.y = top
 		var squad := Squad.new()
 		squad.id = squads.size()
 		squad.building = i

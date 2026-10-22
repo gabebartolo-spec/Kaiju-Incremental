@@ -7,6 +7,10 @@ extends "res://tests/lib/runner.gd"
 
 const DT := 1.0 / 30.0
 const MAX_STEPS := 30 * 400
+## The seeded city every sim fixture plays in. Re-pinned 0 -> 3 for D-135 (the young city is
+## wider: half 50): seed 0 left no tall tier-2 office tower inside the arena, which the topple
+## and swipe fixtures need (pure layout luck, seeds 3, 8 and 22 have one).
+const CITY_SEED := 3
 
 
 func _tree(levels: Dictionary = {}) -> UpgradeTree:
@@ -14,7 +18,7 @@ func _tree(levels: Dictionary = {}) -> UpgradeTree:
 
 
 func _layout(city: Dictionary = Content.section("city")) -> Array[Dictionary]:
-	return CityGen.generate(Seeds.make("city", 0), city)
+	return CityGen.generate(Seeds.make("city", CITY_SEED), city)
 
 
 func _sim(

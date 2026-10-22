@@ -58,6 +58,10 @@
 		],
 		"close": "THE CREATURE HAS RETREATED - FOR NOW"
 	},
+	"save": {
+		"_note": "v3 (D-135): upgrade nodes cut from the tree; a save holding one is refunded its rubble in full and the node removed. evolve3 (EVOLVE: Apex Titan) cost 444500.",
+		"refunds": {"evolve3": 444500}
+	},
 	"demo": {
 		"enabled": true,
 		"species": ["reptilian"],
@@ -255,13 +259,13 @@
 	"emerge": {"rise_seconds": 2.5, "depth": 9.0, "wade_speed": 2.0, "max_seconds": 8.0, "input_latch_seconds": 0.2},
 	"city": {
 		"map_seed": 7301,
-		"half": 48,
-		"districts": [48, 80, 145],
+		"half": 50,
+		"districts": [50, 75, 150],
 		"district_lot_grow": [0, 1, 2],
 		"arena_margin": 2.5,
 		"outer_half": 360,
 		"outer_cores": [[30, -80, 40], [110, -60, 45], [-120, -60, 35], [130, 120, 30], [210, 30, 35], [-200, 90, 30], [40, 220, 35], [-110, 250, 25], [260, -40, 30]],
-		"coast_z": -118,
+		"coast_z": -120,
 		"bay_width": 190,
 		"far_haze": 0.004,
 		"fog_scale": 1.0,
@@ -617,14 +621,14 @@
 		},
 		"stages": [
 			{
-				"city": {"half": 48, "coast_z": -118, "max_height": 26},
+				"city": {"half": 50, "coast_z": -120, "max_height": 26},
 				"air": {"max": 0},
 				"army": {"range": 11.0, "tank_damage": 14, "fire_interval": 0.7},
 				"per_level": {},
 				"body": {"speed_mult": 0.6, "hp_mult": 1.15}
 			},
 			{
-				"city": {"half": 80, "coast_z": -150, "max_height": 32, "tower_chance": 0.6,
+				"city": {"half": 75, "coast_z": -145, "max_height": 32, "tower_chance": 0.6,
 					"fog_scale": 0.6, "far_haze": 0.0024},
 				"army": {"range": 14.5, "start_interval": 4.0, "tank_hp": 45, "tank_damage": 6.7, "tank_rubble": 6,
 					"escalation_per_chunk": 0.001, "threat_per_chunk": 0.0002},
@@ -635,7 +639,7 @@
 				}
 			},
 			{
-				"city": {"half": 145, "coast_z": -215, "max_height": 40, "tower_chance": 0.65,
+				"city": {"half": 150, "coast_z": -220, "max_height": 40, "tower_chance": 0.65,
 					"fog_scale": 0.34, "far_haze": 0.0014},
 				"army": {"range": 15.0, "start_interval": 3.2, "min_interval": 0.8, "tank_hp": 90, "tank_damage": 10.5,
 					"tank_rubble": 16, "speed": 3.0, "escalation_per_chunk": 0.0004, "threat_per_chunk": 0.00008},
