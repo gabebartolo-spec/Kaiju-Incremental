@@ -17,27 +17,28 @@
 - Base = origin/claude/look-options = main; squash-only repo: the base moves on every merge. Old branches are rebuilt
   as own commits cherry-picked onto the newest tip; an OPEN PR is synced by MERGING the base (never rebase/force-push).
   Builder rules file: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/WAVE1-COMMON.md (copy it before this scratchpad goes; it holds the rules + rulings).
-- Merged today: #147 crowds 6x, #148 fade/light scans 4-6x.
-- Open PRs (cap 3): #149 turn (claude/turn-weight-v2; replaces #144; motion critic FIX sent: planted-foot twist f246-256,
-  yaw ease in/out, rigid tail + hook; re-render 3/4 side clip; then a sim-review reader + director feel gate).
-  #150 camera A (claude/camera-growth-v2; CONFLICTS after #148: builder told to MERGE base first; critic round 2 FIX:
-  towers over head/torso unfaded f112-116/270-320, follow pops f102-116/210-213/299; 2 critic rounds spent: lead QCs the
-  next clip itself, then director look gate). #151 audit-shared (sim review PASS; preflight red: tests/lib/scans.gd does
-  not compile after #148; builder told to merge base + fix + stale comments).
-- Waiting for a PR slot: claude/audit-sim c839b111 (9 sim functions split, 24-run replay identical; needs a sim-review
-  reader; scanner gap: complexity_ratchet.py misreads multi-line signatures -> CityLots.fill_block 49 lines,
-  VoxelSupport.islands, landing missed: a follow-up task).
-- Subagents running (die with this session; resume a successor's own builders from these worktrees + handoffs):
-  city-memory (landmark unload only if no pop-in, comment #58), perf-tiles (PARKED by director 2026-10-22 "Park it": pixel
-  diff 37-168 px/4K frame, no stage-1 gain, stage-4 timing noisy; branch claude/perf-tiles pushed, no PR), clumsy-army (claude/clumsy-army-v2 7d903638: strays probe passes +1.05%/-1.16%; lead ruling: fix
-  tank AI so a cornered column clears the 12 m danger radius in tier 4 seed 1, never the test; then clip), turn, camera,
-  audit-shared (#151 fix), ui-art (HUD icon board voxel vs smooth, brief C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/BRIEF-ui-art.md), fire-spread (Opus;
-  burn-out pays ~0.6x a smash per D-126; fire uses existing burn_chunk Fire; bookkeeping <=1000 usec), explosions
-  (Sonnet; round-5 finish, claude/city-explosives-v2).
+- Merged today: #147 crowds 6x, #148 fade/light scans 4-6x, #151 audit-shared (ae9ac939).
+- Open PRs (cap 3): #149 turn (claude/turn-weight-v2 907a4ac3; critic round 2 FIX sent as LAST round, lead QCs:
+  yaw arrives in 3 bursts f232-273 -> one ease curve, bar: no frame step > 25% of peak yaw rate; capture camera pulses
+  ~15% -> smooth follow; walk start ramp >= 8 frames; then director feel gate). #150 camera A (claude/camera-growth-v2
+  cbb885a9, base merged; on critic fixes; full suite then 4K clip; lead QCs, then director look gate). #152 fire spread
+  (claude/fire-spread b8fb2faf; sim review PASS; clip fire_spread_r0.mp4 with a fresh motion critic; then director look).
+- Waiting for a PR slot: claude/audit-sim c839b111 on OLD base 95f01083: rebuild on the tip first (city code moved in
+  #151), then a sim-review reader (scanner gap: complexity_ratchet.py misreads multi-line signatures: a follow-up).
+- Subagents running at 18:30 (die with this session; resume from worktree + handoff): city-memory (full suite, then
+  push claude/city-memory-v2), clumsy-army (damage probes, then suite + clip), camera, turn, explosions
+  (claude/city-explosives-v2, suites), ui-art (REDO as bold flat 2D SVG icons per director, yellow band <= 6 px, icon
+  >= 80% of ring; 3D renders rejected: "those icons look horrible"), drift-audit reader (scratchpad/drift_audit.md:
+  content an agent added without a decision -> one director question per item).
+- PARKED by director: perf-tiles (claude/perf-tiles f570ba2e, "Park it": 37-168 px/4K frame differ, no speed gain shown).
+- D-135: 3 growth steps, one per croc body; the agent-invented Apex Titan step is cut (evolve3, 4th city/army/air row;
+  top skills + bomber move to the adult city). Not started: a growth builder, after the drift audit.
+- Monitoring (director #73): ~/.claude/tools/stall_watch.sh label=transcript=worktree per helper, re-arm after each flag
+  (args in scratchpad/watch_args.txt); every Godot run under timeout (2 hangs today on script errors).
 - Wave 2 not started: intro (claude/intro-cinematic), rubble (Opus; claude/rubble-break), dash (claude/dash-burst),
   UI (claude/ui-redesign; first-run controls card goes per #46). Then sky and sea life (#64-66), trains (#69), bonus
   buildings (#70), dogs escape (#68), birds scatter (#71), landmark stable (D-133).
-- Director rulings 2026-10-22: comments #55-71, D-132 (Itch 1.0 demo invite-only, when reptilian stage 100%), D-133
+- Director rulings 2026-10-22: comments #55-75, D-132 (Itch 1.0 demo invite-only, when reptilian stage 100%), D-133
   (landmark stable ~12, 3/stage by seed; 8 new; Tripo models made carvable), D-134 (Tripo 9000 today), #60 all
   CPU/GPU/screen/Godot slots ours. RULE: helpers on Sonnet unless complex. PC piloting allowed.
 - Tripo: icons modelled (six-view PASS): ~/Downloads/kaiju_tripo/hud_croc_head_c9b2b460.glb, hud_dash_foot_ab9504ce.glb
