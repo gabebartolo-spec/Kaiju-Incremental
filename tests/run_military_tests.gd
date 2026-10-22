@@ -128,7 +128,7 @@ func _check_rampages() -> void:
 						var lies: Vector2 = heads[tank.id]
 						if not _along_road(tank.pos, lies, roads):
 							skewed += 1
-					if for_s >= 1.0:  # where a tank stands (a second or more)
+					if for_s >= 1.0 and not _falling_back(sim, tank):  # where a tank chose to stand
 						if d >= danger - 0.5 and d <= reach + 1.0:
 							parked_in_band += 1
 						elif d > reach + 1.0:
@@ -261,6 +261,15 @@ func _check_standoff_held() -> void:
 			% [in_band, close, share * 100.0]
 		)
 	)
+
+
+## A tank falling back from the kaiju and held up (its road blocked) did not choose to stand where
+## it is: it may be caught and die, and is not counted as parked or firing. Director 2026-10-22:
+## "the tank doesnt need to avoid the breath, just let it die, even the most professional soldier
+## wouldnt know to anticipate the breath in that moment". Tanks that chose their post still count.
+func _falling_back(sim: RampageSim, tank: RampageSim.Tank) -> bool:
+	var route: ConvoyRoute = sim.army_units.convoy.routes.get(tank.id)
+	return route != null and route.retreating
 
 
 ## The named case behind a red PR #89 (tier 1, city seed 2, steps 531-535): a tank entering at the

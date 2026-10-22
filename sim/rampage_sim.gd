@@ -20,6 +20,8 @@ class Building:
 	var rubble_bonus := 1.0
 	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
 	var in_arena := true
+	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
+	var pay_share := 1.0
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -273,21 +275,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			var aim := BreathCone.of(self)  # what BreathAim shows
-			var half_angle := Num.f(aim["half_angle"])
-			var origin: Vector2 = aim["origin"]
-			var dir := facing
-			_events.append({"type": "ability", "kind": "cone", "reach": reach, "from": origin})
-			hit_air = true  # fire reaches up to the helicopters
-			hit_area(
-				func(p: Vector2, r: float) -> float:
-					var to := p - origin
-					if to.length() > reach + r:
-						return 0.0
-					return 1.0 if to.length() <= r or absf(dir.angle_to(to)) <= half_angle else 0.0,
-				damage
-			)
-			hit_air = false
+			BreathCone.breathe(self, reach, damage)
 		"leap":
 			var from := kaiju_pos
 			kaiju_pos = clamp_to_arena(
@@ -374,5 +362,5 @@ func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Arra
 
 func pay(b: Building, chunks: int, bonus: float) -> void:
 	chunks_destroyed += chunks if b.in_arena else 0
-	var mult := bonus * b.rubble_bonus * stat("rubble_mult")
+	var mult := bonus * b.rubble_bonus * b.pay_share * stat("rubble_mult")
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * mult

@@ -2,6 +2,37 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
+Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
+camera). MERGED #35.
+
+## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
+Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
+
+## 2026-10-18 · D-066 · Director · Tanks and helicopters move and fight like a professional military
+Why: road-bound tank columns with firing posts and fallbacks, helicopter pairs with attack runs; total damage per run
+held within ±5%; helicopters a real threat to dodge ("overall difficulty unchanged"). PR #50; heli mix shift OK.
+
+## 2026-10-18 · D-065 · Director · A believable amount of greenery throughout the city
+Why (06:2x): "make sure there are a believable amount of trees, bushes, floral areas, parks, gardens, playgrounds
+throughout the city". (a) street trees, gardens, playgrounds, hedges, all crushable: PR #55; (b) green lots: D-075.
+
+## 2026-10-18 · D-064 · Director · Menu sounds and the SFX volume slider shipped as heard
+Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard". MERGED #33.
+
+## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
+Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
+do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
+
+## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
+Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
+smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
+
+## 2026-10-18 · D-061 · Director · UI look A "Emergency Broadcast" for every screen
+Why: picked from three mockups (A broadcast, B concrete and rubble, C monster hide) for a "thematically rich, beautiful
+and intuitive" UI (UI session, 2026-10-18). Changes: UiKit palette (hazard yellow, alert red, near-black), hazard tape,
+square edges, news crawl; one look for every screen. Lands in PR #27.
+
 ## 2026-10-18 · D-060 · Director · Mantis and octopus: keep all six meshes, plan only for now
 Why (04:27, species session): keep mantis 9668b815 / 0161ad14 / 06ed8a12 and octopus 8bf2f668 / a328effe / 6176590f and
 give them the croc's Blender hand rig with welded weights, no redesign, octopus first (D-045: the auto rig, not the mesh,

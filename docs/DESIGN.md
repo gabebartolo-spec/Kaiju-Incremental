@@ -109,7 +109,12 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - The stats panel shows only what the selected node changes, in plain words (D-077).
 - **Copy rule for all player text:** short and playful, no mechanics explained, no internal names ("branch",
   "capstone", "floors" as a unit); the player smashes, buys, smashes more (b2-15/16/17/24/27).
-- **Demo** (D-050, D-145): the croc only, all three cities (baby, adolescent, adult) with the full Taskforce, a 90+ minute first playthrough; ends on a thanks screen with rampage stats and a feedback link.
+- **Demo** (D-050, D-145, D-156): the croc only, all three cities (baby, adolescent, adult) with the full Taskforce;
+  buying the final upgrade (about 2 hours) shows a thanks screen with rampage stats and a feedback link and unlocks
+  endless mode (the city regenerates slowly, enemies escalate); normal mode stays replayable with the maxed kaiju.
+- **Normal mode decides balance** (director 2026-10-23): "the game's balance will not be determined by endless mode.
+  the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it
+  makes normal mode better". Endless mode has its own tuning rows and never changes a normal-mode number.
 
 ## Look, camera, screen
 - **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
