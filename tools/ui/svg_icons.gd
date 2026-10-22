@@ -1,5 +1,6 @@
 extends SceneTree
-## Rasterises the HUD skill icons from their hand-drawn SVG sources (assets/ui/icons/src/*.svg)
+## Rasterises the HUD skill icons from their SVG sources (assets/ui/icons/src/*.svg, built on
+## game-icons.net silhouettes by Lorc, CC BY 3.0, see docs/CREDITS.md)
 ## to square PNGs on a transparent background with Godot's own SVG reader. Headless; no window:
 ##
 ##   godot --headless --path . --script tools/ui/svg_icons.gd -- [--src=res://assets/ui/icons/src] \
