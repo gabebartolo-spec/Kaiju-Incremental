@@ -13,28 +13,43 @@
   BRIEF-COMMON.md + RULES-NOW.md = shared rules; each agent writes <task>\handoff.md at milestones.
 - Nimbalyst mailbox: C:\Users\DANTE\Documents\Nimbalyst Tutorial\kaiju-mailbox\ (to-nimbalyst tasks, to-kaiju results).
 
-## 2026-10-22 day (lead session status-check-b96b26, registered in context-guard-leads; supersedes the Team list below)
-- Base = origin/claude/look-options = main; squash-only repo, so the base moves on every merge. Old branches are rebuilt
-  as their own commits cherry-picked onto the newest tip (scratchpad WAVE1-COMMON.md has the builder rules).
-- Merged today: #147 crowds (c07c50ae). Open: #148 perf-scans (CI settling, merge when green), #149 turn (replaces #144;
-  critic FIX sent back: planted-foot twist, yaw ease, tail; needs sim-review reader + director feel gate), #150 camera A
-  (critic round 2 running; director look gate). At the 3-PR cap.
-- Director rulings 2026-10-22: comments #55-63, D-132 (1.0 demo on Itch, invite-only, when the reptilian stage is 100%),
-  D-133 (landmark stable ~12, 3 per stage rotate by seed; new 8: bridge tower, opera shells, coaster, donut sign, power
-  station, airport tower WITH planes flying in/out, port cranes, refinery; Tripo models made carvable), D-134 (Tripo 9000
-  credits today; start 19115, stop at 10115), #60 all CPU/GPU/screen/Godot slots ours, #63 atmosphere list (clouds,
-  weather, birds, 1 whale per run, fire crews, ambulances, dogs, clubs, banks, hotels, trains, boats: details to ask).
-  RULE: helpers on Sonnet unless complex (RULEBOOK). PC piloting allowed (computer-use: Claude Work, File Explorer, msedgewebview2).
-- Running subagents: city-memory, perf-tiles, audit-shared, audit-sim, clumsy-army (lead ruling: fix tank AI so a
-  cornered column clears the danger radius, tier 4 seed 1; never the test), turn (critic fixes), ui-art (icon board,
-  Opus, brief scratchpad BRIEF-ui-art.md), fire-spread (Opus, wave 2). Done: perf-scans, camera.
-- Wave 2 still to start: intro, rubble (Opus), explosions, dash, UI; then landmark stable + atmosphere after he answers.
-- Tripo: icon models done, six-view PASS: ~/Downloads/kaiju_tripo/hud_croc_head_c9b2b460.glb, hud_dash_foot_ab9504ce.glb
-  (130 cr; balance 18985; privacy 'Sharing Only' = not public). Downloads: the Save dialog sits behind textinputhost
-  (access denied); the browser's .tmp is the complete GLB (header length = size) - copy it out.
-- Worktrees: 9 merged ones removed (leftovers in Kaiju-Incremental-wt/_leftovers-2026-10-22).
-- rule-check.py gave no answers (0/14): the Sonnet rule is recorded but NOT proven.
-- Director: back soon for an interview; ask about atmosphere details, landmark look boards, wave 2 order.
+## 2026-10-22 evening: STATE FOR THE SUCCESSOR (lead session "Status check", hand-off at 500k)
+- Base = origin/claude/look-options = main; squash-only repo: the base moves on every merge. Old branches are rebuilt
+  as own commits cherry-picked onto the newest tip; an OPEN PR is synced by MERGING the base (never rebase/force-push).
+  Builder rules file: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/WAVE1-COMMON.md (copy it before this scratchpad goes; it holds the rules + rulings).
+- Merged today: #147 crowds 6x, #148 fade/light scans 4-6x.
+- Open PRs (cap 3): #149 turn (claude/turn-weight-v2; replaces #144; motion critic FIX sent: planted-foot twist f246-256,
+  yaw ease in/out, rigid tail + hook; re-render 3/4 side clip; then a sim-review reader + director feel gate).
+  #150 camera A (claude/camera-growth-v2; CONFLICTS after #148: builder told to MERGE base first; critic round 2 FIX:
+  towers over head/torso unfaded f112-116/270-320, follow pops f102-116/210-213/299; 2 critic rounds spent: lead QCs the
+  next clip itself, then director look gate). #151 audit-shared (sim review PASS; preflight red: tests/lib/scans.gd does
+  not compile after #148; builder told to merge base + fix + stale comments).
+- Waiting for a PR slot: claude/audit-sim c839b111 (9 sim functions split, 24-run replay identical; needs a sim-review
+  reader; scanner gap: complexity_ratchet.py misreads multi-line signatures -> CityLots.fill_block 49 lines,
+  VoxelSupport.islands, landing missed: a follow-up task).
+- Subagents running (die with this session; resume a successor's own builders from these worktrees + handoffs):
+  city-memory (landmark unload only if no pop-in, comment #58), perf-tiles (pixel diff NOT 0: <0.01% px, up to 30 levels
+  on high/max, z-fight tie order; told: 2 tries to match old draw order, else stop + report crops -> a director
+  trade-off question), clumsy-army (claude/clumsy-army-v2 7d903638: strays probe passes +1.05%/-1.16%; lead ruling: fix
+  tank AI so a cornered column clears the 12 m danger radius in tier 4 seed 1, never the test; then clip), turn, camera,
+  audit-shared (#151 fix), ui-art (HUD icon board voxel vs smooth, brief C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/BRIEF-ui-art.md), fire-spread (Opus;
+  burn-out pays ~0.6x a smash per D-126; fire uses existing burn_chunk Fire; bookkeeping <=1000 usec), explosions
+  (Sonnet; round-5 finish, claude/city-explosives-v2).
+- Wave 2 not started: intro (claude/intro-cinematic), rubble (Opus; claude/rubble-break), dash (claude/dash-burst),
+  UI (claude/ui-redesign; first-run controls card goes per #46). Then sky and sea life (#64-66), trains (#69), bonus
+  buildings (#70), dogs escape (#68), birds scatter (#71), landmark stable (D-133).
+- Director rulings 2026-10-22: comments #55-71, D-132 (Itch 1.0 demo invite-only, when reptilian stage 100%), D-133
+  (landmark stable ~12, 3/stage by seed; 8 new; Tripo models made carvable), D-134 (Tripo 9000 today), #60 all
+  CPU/GPU/screen/Godot slots ours. RULE: helpers on Sonnet unless complex. PC piloting allowed.
+- Tripo: icons modelled (six-view PASS): ~/Downloads/kaiju_tripo/hud_croc_head_c9b2b460.glb, hud_dash_foot_ab9504ce.glb
+  (130 cr; balance 18985 = 8870 of today's budget left; privacy "Sharing Only"). Landmark concept refs: 32 free images,
+  board C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/landmarks/landmark_refs_board.png (copy also ~/Downloads/landmark_refs_board.png). Lead flags: B1/B3/B4 near-copy
+  Sydney Opera House (B2 original), H3 cropped, E4 plinth, D3 "DINER" text, coaster track thin. A fresh critic is
+  reviewing it; after SHIP ask the director to pick one per row (AskUserQuestion, image first), then HD models (65 cr each).
+- Process notes: worktrees removed today: 9 merged + perf-crowds + perf-scans (leftovers in
+  Kaiju-Incremental-wt/_leftovers-2026-10-22); ca2-base (clumsy-army temp) still to remove. Downloads: Tripo/browser
+  saves may sit as complete .tmp files (GLB header length = size) when the Save dialog is behind textinputhost.
+  rule-check.py returned no answers (0/14): the Sonnet rule is recorded but not proven.
 
 ## Team (lead 10's subagents; die with this session; re-brief from NEW notes <task>\handoff.md)
 - ui (claude/ui-redesign adba1267): minimal HUD done (HUD share 3.19% -> 1.37%; rings bottom-left, plain timer red
