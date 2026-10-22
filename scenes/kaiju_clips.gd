@@ -163,6 +163,19 @@ func pose_at(clip: String, t: float) -> Pose:
 	return mix(_frame(c.x + i0), _frame(c.x + i1), a)
 
 
+## The first and last frames where a turn clip's yaw moves (0.5 deg from either end).
+func yaw_span(turn: String) -> Vector2:
+	var n := frames_of(turn)
+	var full := pose_at(turn, n - 1).yaw
+	var first := 0
+	while first < n - 1 and absf(pose_at(turn, first).yaw) < 0.5:
+		first += 1
+	var last := first
+	while last < n - 1 and absf(pose_at(turn, last).yaw - full) > 0.5:
+		last += 1
+	return Vector2(first, last)
+
+
 ## Cross-fade of two poses (w = 0: a, 1: b).
 static func mix(a: Pose, b: Pose, w: float) -> Pose:
 	var p := Pose.new()
