@@ -154,6 +154,11 @@ func crush(at: Vector3, radius: float) -> int:
 	for fan: Fan in fans:
 		if fan.state == State.GONE:
 			continue
+		# A fan is never further (in plan) from its seat than its run: most are skipped here
+		# without placing them (a stomp by the stands otherwise placed all ~4000).
+		var seat := Vector2(fan.pos.x - c.x, fan.pos.z - c.y).length()
+		if seat > radius + (fan.run if fan.state == State.UP else 0.0):
+			continue
 		var p := running_at(fan)
 		if Vector2(p.x, p.z).distance_to(c) <= radius:
 			_die(fan, p)

@@ -174,9 +174,11 @@ func fall_start(event: Dictionary) -> void:
 	var index := Num.i(event["building"])
 	var cells: Array[Vector3i] = event["cells"]
 	var pivot: Vector3 = event["pivot"]
-	var piece := _stream.view(index).lift_piece(cells, pivot)
+	var piece: Node3D
 	if LandmarkBurst.bursts(sim, event):  # a landmark's section bursts where it stands
-		piece = LandmarkBurst.new(piece, self, event)
+		piece = LandmarkBurst.new(_stream.view(index).hide_chunks(cells), self, event)
+	else:
+		piece = _stream.view(index).lift_piece(cells, pivot)
 	add_child(piece)
 	_falling[Num.i(event["id"])] = {
 		"node": piece,
