@@ -5,6 +5,7 @@ extends Node3D
 ## flickers, and a column of dark smoke that rises, leans with the wind and fades. Billboards
 ## only; presentation only. Numbers: tuning "title" "fires" "far".
 
+const FLAME := preload("res://scenes/far_flame.gdshader")
 const WIND := Vector3(2.2, 0.0, 0.9)
 
 static var _disc: GradientTexture2D
@@ -13,8 +14,11 @@ var _cfg: Dictionary
 var _glow: MeshInstance3D
 var _core: MeshInstance3D
 var _smoke: Array[MeshInstance3D] = []
+var _flames: Array[MeshInstance3D] = []
 var _t := 0.0
 var _seed := 0.0
+var _lit: Color
+var _dark: Color
 
 
 func _init(cfg: Dictionary, seed_value: float) -> void:
@@ -23,8 +27,12 @@ func _init(cfg: Dictionary, seed_value: float) -> void:
 
 
 func _ready() -> void:
+	_lit = Color(str(_cfg["smoke_lit_color"]))
+	_dark = Color(str(_cfg["smoke_color"]))
 	_glow = _sprite(Color(str(_cfg["color"])), Num.f(_cfg["glow_size"]), true)
 	_core = _sprite(Color(str(_cfg["core_color"])), Num.f(_cfg["core_size"]), true)
+	for i: int in Num.i(_cfg["flame_count"]):
+		_flames.append(_flame(i))
 	for i: int in Num.i(_cfg["smoke_count"]):
 		_smoke.append(_sprite(Color(str(_cfg["smoke_color"])), Num.f(_cfg["smoke_size"]), false))
 
@@ -35,6 +43,16 @@ func _process(delta: float) -> void:
 	var flicker := 0.8 + 0.2 * beat
 	_glow.scale = Vector3.ONE * Num.f(_cfg["glow_size"]) * flicker
 	_core.scale = Vector3.ONE * Num.f(_cfg["core_size"]) * (0.9 + 0.3 * (flicker - 0.8) * 5.0)
+	for i: int in _flames.size():
+		var phase := _seed * 2.0 + float(i) * 1.9
+		var burn := (
+			0.82 + 0.18 * sin(_t * Num.f(_cfg["flicker_hz"]) * 0.7 + phase) * sin(_t * 1.7 + phase)
+		)
+		var wide := Num.f(_cfg["flame_w"]) * (0.8 + 0.4 * fposmod(phase, 1.0))
+		var tall := Num.f(_cfg["flame_h"]) * burn * (0.7 + 0.6 * fposmod(phase * 1.7, 1.0))
+		_flames[i].scale = Vector3(wide, tall, 1.0)
+		var spread := (float(i) - (_flames.size() - 1) * 0.5) * Num.f(_cfg["flame_w"]) * 0.7
+		_flames[i].position = Vector3(spread, tall * 0.5, 0.0)
 	var life := Num.f(_cfg["smoke_s"])
 	var rise := Num.f(_cfg["smoke_rise"])
 	var base := Num.f(_cfg["smoke_size"])
@@ -45,7 +63,27 @@ func _process(delta: float) -> void:
 		puff.scale = Vector3.ONE * base * (0.5 + age * 1.3)
 		var mat := puff.material_override as StandardMaterial3D
 		var fade := sin(age * PI)
-		mat.albedo_color.a = Num.f(_cfg["smoke_alpha"]) * fade
+		# Lit warm from the fire below, cooling to the night's grey as it climbs.
+		var tint := _lit.lerp(_dark, clampf(age * 1.1, 0.0, 1.0))
+		mat.albedo_color = Color(tint, Num.f(_cfg["smoke_alpha"]) * fade)
+
+
+## One ragged flame: a quad with the flame shader, its seed its own so the tongues differ.
+func _flame(index: int) -> MeshInstance3D:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	var mat := ShaderMaterial.new()
+	mat.shader = FLAME
+	mat.set_shader_parameter("outer_colour", Color(str(_cfg["flame_color"])))
+	mat.set_shader_parameter("core_colour", Color(str(_cfg["flame_core"])))
+	mat.set_shader_parameter("seed", _seed + float(index) * 3.7)
+	mat.set_shader_parameter("speed", Num.f(_cfg["flame_speed"]))
+	var node := MeshInstance3D.new()
+	node.mesh = quad
+	node.material_override = mat
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(node)
+	return node
 
 
 func _sprite(color: Color, size: float, additive: bool) -> MeshInstance3D:

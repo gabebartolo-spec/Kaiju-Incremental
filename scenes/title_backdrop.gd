@@ -10,14 +10,19 @@ extends SubViewportContainer
 ## Set once the city stands.
 signal ready_to_show
 
+## The bay is the one plane this wide (CityGround).
+const WATER_MIN_WIDTH := 2000.0
+## Window flames stand this far out from the wall (m), clear of its facade.
+const WINDOW_OUT := 0.6
+
 var is_loaded := false
+var _shore: TitleShore
+var _shiver := 0.0
 
 var _cfg: Dictionary
 var _city: CityView
 var _camera: Camera3D
 var _fade := 0.0
-var _shake := 0.0
-var _shake_rng := Seeds.make("title_shake", 0)
 var _flash_rng := Seeds.make("title_flash", 0)
 var _view: SubViewport
 
@@ -40,7 +45,9 @@ func _build() -> void:
 	_view.handle_input_locally = false
 	add_child(_view)
 	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(_cfg["city_tier"]))
-	var layout := CityGrowth.layout(Content.tuning(), Num.i(_cfg["city_tier"]), Seeds.make("city", 0))
+	var layout := CityGrowth.layout(
+		Content.tuning(), Num.i(_cfg["city_tier"]), Seeds.make("city", 0)
+	)
 	var sim := RampageSim.new({}, tuning, layout, Seeds.make("army", 0))
 	_city = CityView.new(sim, Seeds.make("fx", 0))
 	var stages := BuildStages.new()
@@ -58,7 +65,20 @@ func _build() -> void:
 		if not is_inside_tree():
 			return
 		await get_tree().process_frame
-	_light_fires()
+	_apply_look()
+	var fires := _light_fires()
+	var shore_cfg: Dictionary = _cfg["shore"]
+	_shore = TitleShore.new(
+		shore_cfg,
+		{
+			"shore_z": _far_z(),
+			"coast_z": _coast_z(),
+			"cam": _camera.position,
+			"fires": fires,
+			"ripple": _cfg["ripple"]
+		}
+	)
+	_city.add_child(_shore)
 	is_loaded = true
 	ready_to_show.emit()
 
@@ -66,22 +86,18 @@ func _build() -> void:
 func _process(delta: float) -> void:
 	if not is_loaded:
 		return
+	# The camera never moves and the picture never dims (#99): only the first fade-in changes it.
 	_fade = minf(1.0, _fade + delta / Num.f(_cfg["fade_s"]))
-	var tremor: Dictionary = _cfg["ambience"]["tremor"]
-	_shake = maxf(0.0, _shake - _shake * Num.f(tremor["decay_per_s"]) * delta)
-	var dim := 1.0 - Num.f(tremor["dim"]) * _shake
-	modulate = Color(dim, dim, dim, _fade)
-	var cam: Dictionary = _cfg["camera"]
-	_camera.position = _vec(cam["position"]) + (
-		Vector3(_shake_rng.randf_range(-1.0, 1.0), _shake_rng.randf_range(-1.0, 1.0), 0.0)
-		* Num.f(tremor["amplitude"])
-		* _shake
-	)
+	modulate = Color(1.0, 1.0, 1.0, _fade)
+	if _shiver > 0.0:
+		_shiver = maxf(0.0, _shiver - delta / Num.f(_cfg["ripple"]["decay_s"]))
+		_shore.set_shiver(_shiver)
 
 
-## A far stomp (strength 0..1): the picture shudders and flickers, then settles.
-func stomp(strength: float) -> void:
-	_shake = clampf(strength, 0.0, 1.0)
+## A far footstep landed: the bay shivers (the camera and the picture stay still), the reflections
+## breaking into wobbling bands, then it settles over tuning "ripple" "decay_s".
+func stomp() -> void:
+	_shiver = 1.0
 
 
 ## A gunshot far away: a small bright flash in a far street.
@@ -109,54 +125,170 @@ func boom() -> void:
 	)
 	burst.position = at
 	_city.add_child(burst)
-	var puff := FarFlash.new(
-		{
-			"color": Color(str(cfg["smoke_color"])),
-			"size": cfg["smoke_size"],
-			"life": cfg["smoke_s"],
-			"rise": cfg["smoke_rise"],
-			"grow": 2.0,
-			"additive": false,
-		}
+	var core := (
+		FarFlash
+		. new(
+			{
+				"color": Color(str(cfg["core_color"])),
+				"size": cfg["core_size"],
+				"life": Num.f(cfg["life_s"]) * 0.8,
+				"grow": 1.4,
+			}
+		)
+	)
+	core.position = at
+	_city.add_child(core)
+	_light_sky(at, Color(str(cfg["color"])), cfg)
+	var puff := (
+		FarFlash
+		. new(
+			{
+				"color": Color(str(cfg["smoke_color"])),
+				"size": cfg["smoke_size"],
+				"life": cfg["smoke_s"],
+				"rise": cfg["smoke_rise"],
+				"grow": 2.0,
+				"additive": false,
+			}
+		)
 	)
 	puff.position = at
 	_city.add_child(puff)
 
 
-## A random spot on the far shore's front rows, among the burning district's x range.
+## The explosion's light washing the air around it: a soft orange glow over the picture, centred
+## where the burst is on screen, gone in a quarter of a second (the 3D burst hides behind towers).
+func _light_sky(at: Vector3, colour: Color, cfg: Dictionary) -> void:
+	if _camera.is_position_behind(at):
+		return
+	var glow := TextureRect.new()
+	glow.texture = FarFire.soft_disc()
+	glow.stretch_mode = TextureRect.STRETCH_SCALE
+	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := CanvasItemMaterial.new()
+	material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = material
+	var diameter := size.y * Num.f(cfg["glow_share"])
+	glow.size = Vector2.ONE * diameter
+	glow.position = _camera.unproject_position(at) - glow.size / 2.0
+	glow.modulate = Color(colour, Num.f(cfg["glow_alpha"]))
+	add_child(glow)
+	var fade := create_tween()
+	fade.tween_property(glow, "modulate:a", 0.0, Num.f(cfg["life_s"]))
+	fade.tween_callback(glow.queue_free)
+
+
+## A random spot on the far shore's front rows, left or right of the menu (flashes span_x:
+## clear of the menu in the middle).
 func _far_spot(low: float, high: float) -> Vector3:
 	var cfg: Dictionary = _cfg["fires"]
-	var focus: Array = cfg["focus"]
+	var spans: Array = _cfg["flashes"]["span_x"]
+	var span: Array = spans[_flash_rng.randi_range(0, spans.size() - 1)]
 	var far_z := _far_z()
 	return Vector3(
-		Num.f(focus[0]) + _flash_rng.randf_range(-1.0, 1.0) * Num.f(cfg["radius"]),
+		_flash_rng.randf_range(Num.f(span[0]), Num.f(span[1])),
 		_flash_rng.randf_range(low, high),
 		far_z - _flash_rng.randf_range(4.0, Num.f(cfg["depth"]))
 	)
 
 
 ## A district burns: the tallest far-shore towers around the focus each burn at the top.
-func _light_fires() -> void:
+func _light_fires() -> PackedFloat32Array:
 	var cfg: Dictionary = _cfg["fires"]
-	var at: Array = cfg["focus"]
-	var focus := Vector2(Num.f(at[0]), Num.f(at[1]))
 	var far_z := _far_z()
-	var towers: Array[Dictionary] = []
+	var stands: Array[Dictionary] = []
 	for node: Node in _city.find_children("*", "CitySkyline", true, false):
-		for box: Dictionary in (node as CitySkyline).stand_ins():
+		stands.append_array((node as CitySkyline).stand_ins())
+	var lit := PackedFloat32Array()
+	var rng := Seeds.make("title_fire", 0)
+	var far: Dictionary = cfg["far"]
+	var foci: Array = cfg["foci"]
+	for at: Array in foci:
+		var focus := Vector2(Num.f(at[0]), Num.f(at[1]))
+		var towers: Array[Dictionary] = []
+		for box: Dictionary in stands:
 			var centre: Vector3 = box["at"]
 			var size: Vector3 = box["size"]
 			var front := centre.z < far_z and centre.z > far_z - Num.f(cfg["depth"])
 			if front and Vector2(centre.x, centre.z).distance_to(focus) <= Num.f(cfg["radius"]):
-				towers.append({"top": centre + Vector3(0.0, size.y * 0.5, 0.0), "height": size.y})
-	towers.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["height"] > b["height"])
-	var rng := Seeds.make("title_fire", 0)
+				towers.append({"centre": centre, "size": size})
+		towers.sort_custom(
+			func(a: Dictionary, b: Dictionary) -> bool:
+				var size_a: Vector3 = a["size"]
+				var size_b: Vector3 = b["size"]
+				return size_a.y > size_b.y
+		)
+		for n: int in mini(Num.i(cfg["count"]), towers.size()):
+			var centre: Vector3 = towers[n]["centre"]
+			var size: Vector3 = towers[n]["size"]
+			# The tallest burn at the roof; the others part way up their street face.
+			var up := 0.5 if n < Num.i(cfg["roof_fires"]) else rng.randf_range(-0.25, 0.25)
+			var fire := FarFire.new(far, rng.randf() * 10.0)
+			fire.position = centre + Vector3(0.0, size.y * up, size.z * 0.5 if up < 0.5 else 0.0)
+			_city.add_child(fire)
+			lit.append(fire.position.x)
+			_window_fires(centre, size, cfg, rng)
+	return lit
+
+
+## Flames pouring out of the windows of a burning tower, on several floors of its street face.
+func _window_fires(
+	centre: Vector3, size: Vector3, cfg: Dictionary, rng: RandomNumberGenerator
+) -> void:
 	var far: Dictionary = cfg["far"]
-	for n: int in mini(Num.i(cfg["count"]), towers.size()):
-		var top: Vector3 = towers[n]["top"]
-		var fire := FarFire.new(far, rng.randf() * 10.0)
-		fire.position = top
+	var window: Dictionary = cfg["window"]
+	var spec := far.duplicate()
+	spec.merge(window, true)
+	for _i: int in Num.i(cfg["window_fires"]):
+		var fire := FarFire.new(spec, rng.randf() * 10.0)
+		fire.position = (
+			centre
+			+ Vector3(
+				rng.randf_range(-0.4, 0.4) * size.x,
+				size.y * rng.randf_range(-0.25, 0.4),
+				size.z * 0.5 + WINDOW_OUT
+			)
+		)
 		_city.add_child(fire)
+
+
+## The chosen variant's look (tuning "title" "variant" picks one of "variants"): the sky, the haze
+## and the sun, set on the city's own environment, and the bay's colour.
+func _apply_look() -> void:
+	var look: Dictionary = _cfg["variants"][str(_cfg["variant"])]
+	var env: Dictionary = look["env"]
+	for node: Node in _city.find_children("*", "WorldEnvironment", true, false):
+		var environment := (node as WorldEnvironment).environment
+		var sky_material := environment.sky.sky_material as ProceduralSkyMaterial
+		sky_material.sky_top_color = Color(str(env["sky_top"]))
+		for horizon: Color in [Color(str(env["sky_horizon"]))]:
+			sky_material.sky_horizon_color = horizon
+			sky_material.ground_horizon_color = horizon
+			sky_material.ground_bottom_color = horizon
+		sky_material.sky_curve = Num.f(env["sky_curve"])
+		environment.ambient_light_color = Color(str(env["ambient_color"]))
+		environment.ambient_light_energy = Num.f(env["ambient"])
+		environment.fog_light_color = Color(str(env["fog_color"]))
+		environment.fog_density = Num.f(env["fog_density"])
+	for node: Node in _city.find_children("*", "DirectionalLight3D", true, false):
+		(node as DirectionalLight3D).light_color = Color(str(env["sun_color"]))
+		(node as DirectionalLight3D).light_energy = Num.f(env["sun_energy"])
+	var water: Dictionary = look["water"]
+	for node: Node in _city.find_children("*", "MeshInstance3D", true, false):
+		var plane := (node as MeshInstance3D).mesh as PlaneMesh
+		if (
+			plane != null
+			and plane.size.x > WATER_MIN_WIDTH
+			and plane.material is StandardMaterial3D
+		):
+			var mat := plane.material as StandardMaterial3D
+			mat.albedo_color = Color(str(water["color"]))
+			mat.roughness = Num.f(water["roughness"])
+
+
+## The play area's quay (world z).
+func _coast_z() -> float:
+	return Num.f(_city.sim.city["coast_z"])
 
 
 ## Where the far shore's front edge lies (world z): the coast less the bay's width.

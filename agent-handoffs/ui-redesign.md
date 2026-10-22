@@ -21,22 +21,9 @@ ControlsCard (first run, PlayerSettings.controls_seen in settings.cfg "ui"); Set
 Dash row added to CONTROLS. Species select turntable spin about the footprint middle. Results/pause/loading/
 title alert headers; results "Tallest tower toppled" N STOREYS (no "floors"); tree details panel fixed width,
 role label wraps, "BRANCH"/"CAPSTONE" copy gone. Loading word LOADING -> INCOMING.
-## Evidence so far
-Suites (local, --quick, 010a2dd5): ui 3/3 fn 18 checks, flow 7/7 fn 203 checks, smoke 13/13 fn 30 checks.
-Known-bad: model shifted 3 m -> centring check FAILS; old role copy without wrap -> panel 330/399/400/415 px
-FAILS (b2-23 reproduced: r_beam 399). Faint-outline contrast case fails inside the suite itself.
-Captures: NOTES/ui-redesign/before-125, before-100, after-125, after-100 (logs before.log, after.log).
-## Not done / not exercised
-R 15.8 stage-up notice (no in-run stage event exists); heartbeat SOUND (no asset; vignette beats visually);
-hit flash is on the screen edge, not on the kaiju model; species ability name "Atomic Breath" still in
-species.json (D-108 says never "atomic"; not my string). Tree screen look untouched (waits for bigger tree).
-## Running jobs
-none. Captures (Forward+ on lavapipe, 3840x2160): before-125/-100 runs 39562381681/39562385358 (fc1391b6
-code), after-125/-100 runs 39570807066/39570816803 (010a2dd5). 1280x720 review copies: NOTES/ui-redesign/review.
-## Findings for the lead
-gdformat/gdlint are in ~/AppData/Roaming/Python/Python314/Scripts (not on PATH).
-## Rules learnt the hard way (under 10 lines)
-python open(p,'w') on Windows writes CRLF: always newline=''.
+## Evidence (earlier rounds)
+Suites green at each push (ui, flow, smoke); captures under NOTES/ui-redesign and the lead's side-session-notes.
+gdformat/gdlint are in ~/AppData/Roaming/Python/Python314/Scripts (not on PATH). python open(p,'w') writes CRLF: newline=''.
 
 ## ui-fix round 2 (critic-r1 items 1-8), commits after c0f24fdb
 1 species card wide (58% share, cells meter UiMarks.Cells, 32 px stats, one per row, gap above BACK);
@@ -94,28 +81,30 @@ start to first title frame via main.tscn; boot_splash show_image=false + dark bg
 Clip: scratchpad/clip2/title_night_6s.mp4 (+ raw.avi, audio.wav, tools: scratchpad/audio_report.py, ffmpeg =
 imageio_ffmpeg binary under Python314/site-packages). Thud peaks in the 10 s audio at 1.4/4.6/7.3/10.1 s (gaps 3.2/2.7/
 2.8), 99.5% of energy < 60 Hz.
-## Queue for the next builder (in order)
-0 Critic on clip2 (director paused; no GPU renders until he resumes): night look, no smoke blanket, menu contrast PASS.
-  FIX: (a) camera must be truly still: remove the tremor and the 17% dim after each thud (TitleBackdrop.stomp / tuning
-  title.ambience.tremor; the director's #99 says still); (b) thuds inaudible on TV speakers: add an 80-200 Hz body and a
-  1-3 kHz crack layer, target -22..-18 dBFS in the 60-250 Hz band; (c) sirens, screams and gunfire were missing from the
-  clip's track (levels crowd -36, gun -38, siren -34 dB are too low or not mixing in: check the buses/ducking, target
-  -35..-30 dBFS each); (d) no explosion or gunshot flash was visible in 6 s: add 1-2 warm 150-300 ms flashes in the
-  clip window, away from the menu (FarFlash spots: x range follows tuning title.fires focus/radius; boom every 7-15 s
-  seeded, so pick a seed or timing that lands one inside a 6 s cut).
-1 Critic may say the 40 Hz thud is inaudible on TV speakers: add an audible 80-200 Hz layer (raise stomp_1 db/pitch
-  or add a 90 Hz click layer; tuning title.ambience.stomp), re-record clip, re-measure per-step peaks.
-2 Far smoke is barely visible (dark on dark): raise smoke_alpha/size or tint with glow; stray white "h"/"o" letters at
-  right edge from the director's screenshot were NOT reproduced in my 4K captures (check the real main flow).
-3 Measure boot-to-first-scene-frame through main.tscn (#99).
-4 #97 PLATES: "Worn industrial plates" in shared UiKit button/label styles (bevel, drop shadow, scuffs, rivets, sheen,
-  pressed/hover; text thick dark outline + hard drop shadow + faint inner highlight; StyleBox/shader only). Make ONE
-  labelled 4K board A=today B=new (title + settings, real size + 2x crop). Do NOT push the plate style until the
-  director approves the board; report the board path to the lead.
-5 #96 HUD ring (lead's brief): tuning ui.hud ring_radius/ring_small_radius 16->19.25, ring_width 4->3; hud_ring.gd
-  OUTLINE 2->1; raise ICON_SHARE so TODAY's icons fill the dark disc with a 3-4 px gap to the band (measure at 4K);
-  mipmaps/generate=true in assets/ui/icons/{breath,dash,ultimate}.png.import; NO art from claude/ui-art. One 4K
-  capture of the bottom-left HUD with band width and gap; ui suite + check_scripts.
+## State 2026-10-22 night (builder "ui", 2nd session): title recomposed, audio fixed, not yet pushed
+Scratch dir S = the lead's scratchpad (AppData/Local/Temp/claude/...status-check.../scratchpad): uiclip.sh (clip),
+still.sh (4K still), levels.py + flashscan.py (audio/flash measuring), plates_board.py.
+Title (comments #88-#99, director 2026-10-22 "half underwater", reflections KEPT, fire "candles", ripple, no music):
+- Camera level at the downtown (60,11,-96) looking -z; still (no tremor/dim, TitleBackdrop.stomp now only shivers the
+  water). New scenes/title_shore.gd(+.gdshader): far stone sea wall, promenade, lamps, near ledge, reflection sheet
+  (streaks vertical on screen, shiver uniform driven by TitleAmbience.stomped = the same event that plays the thud;
+  tuning title.ripple amplitude/glow/decay_s). Fires: scenes/far_fire.gd + far_flame.gdshader (ragged flames, windows
+  on several floors via TitleBackdrop._window_fires, smoke columns lit from below); in-game Fire (voxel GPUParticles)
+  is 1-2 px at 230 m so not reused. Variants in tuning title.variant (night|dusk) + variants.{env,water}; capture
+  flag --variant=dusk. Fog was the cause (0.01 night): variant env overrides it (0.0022).
+- Audio measured (clip6, 1080p movie, per layer solo via capture_title --segments): thuds 60-250 Hz -19.2/-20.5 dBFS
+  (100 ms peak RMS), 1-3 kHz crack -29, 20-60 Hz -23; crowd -34.7, siren -33.7, gun loudest 0.5 s -34.6 (mean -42.9,
+  bursts) after crowd_db -9, siren_db -9, gun_db -14 (the old -36/-34/-38 played at -60 dBFS). Boom every 5-9 s, first
+  3.5 s after the city shows; shots/booms only left/right of the menu (flashes.span_x).
+- Boot (capture_boot.gd through main.tscn): launch to first title frame 5.5-6.0 s, of which 4.7-5.2 s is engine +
+  autoloads BEFORE any script (not cut yet); title adds 0.5 s; city 4.5 s later (async). Cutting the pre-script time
+  is not done.
+- #97 plates: prototype tools/capture/plate_box.gd + plate_text.gdshader + capture_plates.gd (capture only, NOT in
+  UiKit); board S/plates/board_v2.png. Not shown to the director; style not pushed.
+- #96 HUD ring: tuning 19.25/19.25/3.0, OUTLINE 1.0, ICON_SHARE 0.9, icon mipmaps on; NOT captured/measured yet.
+- Two highlighted buttons = CONTINUE has focus (yellow) + mouse hovering SETTINGS (hover is yellow too): a decision.
+Rules: gdformat writes CRLF on Windows: after it run sed -i 's/$//' on the files (repo is LF). A new class_name needs
+`--headless --import` first. focus-guard hook wants override.cfg with -20000 position (in the worktree, delete before commit).
 Rules: godot windowed runs need an untracked override.cfg written in its OWN Bash call first (focus guard), delete after;
 godot new class_name needs `--headless --import` before use; flow suite can flake (breath scorch glow frame check)
 when another Godot runs in parallel; lint scripts tools/lint/{tuning_keys,complexity_ratchet}.py exist only on main

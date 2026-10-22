@@ -5,6 +5,9 @@ extends SceneTree
 ##     tools/capture/capture_title.gd -- --out=<dir> [--clip=<seconds>] [--no-city]
 ## --clip: records that many seconds from the first frame (add --write-movie <f>.avi --fixed-fps 60;
 ## movie mode mixes the audio itself): the clip starts at the printed frame, no still.
+## --variant=night|dusk picks the title's look (tuning "title" "variants").
+## --segments: after the clip, plays each sound layer alone for a while (the others' buses muted) so
+## its level can be measured on the track; prints "segment <layer> from frame N for M frames".
 ## Prints "menu open <ms>" (the title in the tree to its first drawn frame) and "city stands <ms>".
 
 const AFTER_SHOWN := 1.0  # seconds the city has been fading in before the still
@@ -12,10 +15,20 @@ const MAX_WAIT_MS := 60000
 ## The clip's frame rate (--fixed-fps) and the frames the city's fade-in takes before it starts.
 const FPS := 60
 const FADE_FRAMES := 100
+## The layers measured alone with --segments: name, the buses left sounding, seconds.
+const SEGMENTS := [
+	["crowd", [&"Crowd", &"Bed"], 5.0],
+	["siren", [&"Ambience", &"Bed"], 5.0],
+	["gun", [&"Military", &"Bed"], 14.0],
+]
 
 var _out := "user://title"
 var _clip := 0.0
 var _city := true
+var _segments := false
+## Main-loop frames so far (a movie frame each; the frames drawn stop counting when the window is
+## off-screen and not shown).
+var _frame := 0
 
 
 func _initialize() -> void:
@@ -24,6 +37,10 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--no-city":
 			_city = false
+		elif arg.begins_with("--variant="):
+			Content.section("title")["variant"] = arg.substr(10)
+		elif arg == "--segments":
+			_segments = true
 		elif arg.begins_with("--clip="):
 			_clip = float(arg.substr(7))
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -36,8 +53,8 @@ func _run() -> void:
 	title.live_city = _city
 	var t0 := Time.get_ticks_msec()
 	root.add_child(title)
-	await process_frame
-	await process_frame
+	await _tick()
+	await _tick()
 	var now := Time.get_ticks_msec()
 	print("menu open ", now - t0, " ms; first scene frame ", now, " ms after launch")
 	var backdrops := title.find_children("*", "TitleBackdrop", true, false)
@@ -46,18 +63,47 @@ func _run() -> void:
 	else:
 		var backdrop := backdrops[0] as TitleBackdrop
 		while not backdrop.is_loaded and Time.get_ticks_msec() - t0 < MAX_WAIT_MS:
-			await process_frame
+			await _tick()
 		print("city stands ", Time.get_ticks_msec() - t0, " ms")
 	if _clip > 0.0:
 		# Frames, not seconds: a --write-movie run steps a fixed 1/FPS per frame whatever the wall clock.
 		for _i: int in FADE_FRAMES:
-			await process_frame
-		print("clip from frame ", Engine.get_frames_drawn(), " for ", int(_clip * FPS), " frames")
+			await _tick()
+		print(
+			"clip from frame ",
+			_frame,
+			" (drawn ",
+			Engine.get_frames_drawn(),
+			") for ",
+			int(_clip * FPS),
+			" frames"
+		)
 		for _i: int in int(_clip * FPS):
-			await process_frame
+			await _tick()
+		if _segments:
+			await _play_segments()
 	else:
 		var wait := Time.get_ticks_msec() + int(AFTER_SHOWN * 1000.0)
 		while Time.get_ticks_msec() < wait:
-			await process_frame
+			await _tick()
 		root.get_texture().get_image().save_png(_out.path_join("title.png"))
 	quit()
+
+
+func _play_segments() -> void:
+	for seg: Array in SEGMENTS:
+		var keep: Array = seg[1]
+		for at: int in AudioServer.bus_count:
+			var label := AudioServer.get_bus_name(at)
+			AudioServer.set_bus_mute(
+				at, label != "Master" and label != "SFX" and not keep.has(StringName(label))
+			)
+		var frames := int(Num.f(seg[2]) * FPS)
+		print("segment ", seg[0], " from frame ", _frame, " for ", frames, " frames")
+		for _i: int in frames:
+			await _tick()
+
+
+func _tick() -> void:
+	await process_frame
+	_frame += 1

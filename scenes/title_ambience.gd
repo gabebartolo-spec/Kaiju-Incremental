@@ -2,20 +2,26 @@ class_name TitleAmbience
 extends Node
 ## The faint sounds under the title's burning city (comments #88, #98, #99): distant screams,
 ## gunfire in ragged bursts, sirens, far explosions and the slow stomps of the kaiju (the game's
-## own stomp pitched well down with a generated sub thump under it, low-passed with a short dark
-## reverb on a bus of its own), all far down in the mix (tuning "title" "ambience", dB on their
-## own buses; the menu's click is -12). The siren's file may be missing from assets/sfx: that
-## layer then stays silent. Each stomp, shot and boom is announced by a signal, so the picture
-## can shake and flash with it.
+## own stomp pitched well down, a generated 40 Hz sub thump and an 80-120 Hz body thump under it,
+## low-passed with a short dark reverb on a bus of its own, and a short 1-3 kHz crack so the
+## step carries on a TV's small speakers), all far down in the mix (tuning "title" "ambience", dB
+## on their own buses; the menu's click is -12). The siren's file may be missing from
+## assets/sfx: that layer then stays silent. Each shot and boom is announced by a signal, so the
+## picture can flash with it; a stomp shows nothing (the camera is still, #99).
 
-## A far stomp landed (strength 0..1); a gunshot sounded far away; an explosion boomed.
-signal stomped(strength: float)
+## A far stomp landed (the water shivers with it); a gunshot sounded far away; an explosion boomed.
+signal stomped
 signal shot
 signal boomed
 
 const SFX_DIR := "res://assets/sfx/%s.ogg"
 ## How far the distant rifle is pitched down (it is a long way off), as in tuning "sfx" pitch_by.
 const GUN_PITCH := 0.7
+const RATE := 44100
+## The body thump's attack (s), how many sines make the crack and their peak level (of 1).
+const BODY_ATTACK := 0.004
+const CRACK_PARTIALS := 24
+const CRACK_GAIN := 0.5
 
 var _cfg: Dictionary
 var _rng := Seeds.make("title_sound", 0)
@@ -25,6 +31,8 @@ var _burst := 0
 var _burst_gap := 0.0
 var _stomp: AudioStreamPlayer
 var _sub: AudioStreamPlayer
+var _body: AudioStreamPlayer
+var _crack: AudioStreamPlayer
 var _stomp_wait := 0.0
 var _stomp_bus := &""
 var _boom: AudioStreamPlayer
@@ -39,6 +47,7 @@ func _ready() -> void:
 		_loop(siren, Num.f(_cfg["siren_db"]))
 	_make_stomp()
 	_boom = AudioStreamPlayer.new()
+	_boom.name = "boom"
 	var boom: Dictionary = _cfg["boom"]
 	_boom.stream = load(SFX_DIR % str(boom["sound"]))
 	_boom.bus = _stomp_bus
@@ -47,12 +56,20 @@ func _ready() -> void:
 	add_child(_boom)
 	_boom_wait = _boom_gap()
 	_gun = AudioStreamPlayer.new()
+	_gun.name = "gun"
 	_gun.stream = load(SFX_DIR % "rifle")
 	_gun.bus = AudioBuses.of("rifle_far")
 	_gun.volume_db = Num.f(_cfg["gun_db"])
 	_gun.max_polyphony = 4
 	add_child(_gun)
 	_wait = _gap()
+
+
+## The city stands and the first flashes can be seen: the first shots and the first explosion
+## come soon from here (tuning "first_gun_s", "first_boom_s"), then at their usual pace.
+func flashes_begin() -> void:
+	_wait = minf(_wait, Num.f(_cfg["first_gun_s"]))
+	_boom_wait = minf(_boom_wait, Num.f(_cfg["first_boom_s"]))
 
 
 func _process(delta: float) -> void:
@@ -77,56 +94,118 @@ func _process(delta: float) -> void:
 
 
 ## The kaiju's far footsteps: the game's stomp pitched down and played on its own bus (a low-pass
-## and a long reverb), one every few seconds with a little jitter.
+## and a long reverb), one every few seconds with a little jitter; the body thump rides the same
+## bus, the crack a bus of its own that keeps its high end (a short reverb only).
 func _make_stomp() -> void:
 	var cfg: Dictionary = _cfg["stomp"]
 	_stomp_bus = &"TitleFar"
-	var at := AudioServer.get_bus_index(_stomp_bus)
-	if at < 0:
-		AudioServer.add_bus()
-		at = AudioServer.bus_count - 1
-		AudioServer.set_bus_name(at, _stomp_bus)
-		AudioServer.set_bus_send(at, &"SFX" if AudioServer.get_bus_index(&"SFX") >= 0 else &"Master")
-		var low := AudioEffectLowPassFilter.new()
-		low.cutoff_hz = Num.f(cfg["lowpass_hz"])
-		AudioServer.add_bus_effect(at, low)
-		var wash: Dictionary = cfg["reverb"]
-		var reverb := AudioEffectReverb.new()
-		reverb.room_size = Num.f(wash["room_size"])
-		reverb.damping = Num.f(wash["damping"])
-		reverb.wet = Num.f(wash["wet"])
-		AudioServer.add_bus_effect(at, reverb)
-	_stomp = AudioStreamPlayer.new()
-	_stomp.stream = load(SFX_DIR % str(cfg["sound"]))
-	_stomp.bus = _stomp_bus
-	_stomp.volume_db = Num.f(cfg["db"])
+	var wash: Dictionary = cfg["reverb"]
+	var low := AudioEffectLowPassFilter.new()
+	low.cutoff_hz = Num.f(cfg["lowpass_hz"])
+	_make_bus(_stomp_bus, [low, _reverb(wash, 1.0)])
+	_make_bus(&"TitleCrack", [_reverb(wash, 0.5)])
+	_stomp = _player(
+		"stomp", load(SFX_DIR % str(cfg["sound"])) as AudioStream, _stomp_bus, Num.f(cfg["db"])
+	)
 	_stomp.pitch_scale = Num.f(cfg["pitch"])
-	add_child(_stomp)
-	_sub = AudioStreamPlayer.new()
-	_sub.stream = _sub_thump(cfg)
-	_sub.bus = _stomp_bus
-	_sub.volume_db = Num.f(cfg["sub_db"])
-	add_child(_sub)
+	_sub = _player("sub", _sub_thump(cfg), _stomp_bus, Num.f(cfg["sub_db"]))
+	_body = _player("body", _body_thump(cfg), _stomp_bus, Num.f(cfg["body_db"]))
+	_crack = _player("crack", _crack_burst(cfg), &"TitleCrack", Num.f(cfg["crack_db"]))
 	_stomp_wait = Num.f(cfg["every_s"]) * 0.5
+
+
+func _player(label: String, stream: AudioStream, bus: StringName, db: float) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	player.name = label
+	player.stream = stream
+	player.bus = bus
+	player.volume_db = db
+	add_child(player)
+	return player
+
+
+func _reverb(wash: Dictionary, wet_scale: float) -> AudioEffectReverb:
+	var reverb := AudioEffectReverb.new()
+	reverb.room_size = Num.f(wash["room_size"])
+	reverb.damping = Num.f(wash["damping"])
+	reverb.wet = Num.f(wash["wet"]) * wet_scale
+	return reverb
+
+
+## A bus that sends to SFX (or Master), with these effects; left as it is when it exists.
+func _make_bus(label: StringName, effects: Array[AudioEffect]) -> void:
+	if AudioServer.get_bus_index(label) >= 0:
+		return
+	AudioServer.add_bus()
+	var at := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(at, label)
+	AudioServer.set_bus_send(at, &"SFX" if AudioServer.get_bus_index(&"SFX") >= 0 else &"Master")
+	for effect: AudioEffect in effects:
+		AudioServer.add_bus_effect(at, effect)
 
 
 ## The sub thump: a low sine with a fast attack and an exponential decay (16-bit mono), built
 ## once.
 static func _sub_thump(cfg: Dictionary) -> AudioStreamWAV:
-	var rate := 44100
 	var decay := Num.f(cfg["sub_decay_s"])
 	var attack := Num.f(cfg["sub_attack_s"])
 	var hz := Num.f(cfg["sub_hz"])
-	var count := int(rate * decay * 5.0)
-	var bytes := PackedByteArray()
-	bytes.resize(count * 2)
+	var count := int(RATE * decay * 5.0)
+	var samples := PackedFloat32Array()
+	samples.resize(count)
 	for i: int in count:
-		var t := float(i) / rate
-		var level := minf(1.0, t / attack) * exp(-t / decay)
-		bytes.encode_s16(i * 2, int(sin(TAU * hz * t) * level * 32000.0))
+		var t := float(i) / RATE
+		samples[i] = sin(TAU * hz * t) * minf(1.0, t / attack) * exp(-t / decay)
+	return _wav(samples)
+
+
+## The body thump: a sine that falls from the first to the second pitch of "body_hz" as it dies
+## away, the part of the step a small speaker can reproduce.
+static func _body_thump(cfg: Dictionary) -> AudioStreamWAV:
+	var pitch: Array = cfg["body_hz"]
+	var decay := Num.f(cfg["body_decay_s"])
+	var count := int(RATE * decay * 6.0)
+	var samples := PackedFloat32Array()
+	samples.resize(count)
+	var phase := 0.0
+	for i: int in count:
+		var t := float(i) / RATE
+		var hz := lerpf(Num.f(pitch[1]), Num.f(pitch[0]), exp(-t / decay))
+		phase += TAU * hz / RATE
+		samples[i] = sin(phase) * minf(1.0, t / BODY_ATTACK) * exp(-t / decay)
+	return _wav(samples)
+
+
+## The crack: many sines at random pitches between the two of "crack_hz", a click that dies in a
+## few tens of milliseconds (a seeded stand-in for band-limited noise).
+static func _crack_burst(cfg: Dictionary) -> AudioStreamWAV:
+	var band: Array = cfg["crack_hz"]
+	var decay := Num.f(cfg["crack_decay_s"])
+	var count := int(RATE * decay * 6.0)
+	var rng := Seeds.make("title_crack", 0)
+	var partials: Array[Vector2] = []
+	for _i: int in CRACK_PARTIALS:
+		partials.append(Vector2(rng.randf_range(Num.f(band[0]), Num.f(band[1])), rng.randf() * TAU))
+	var samples := PackedFloat32Array()
+	samples.resize(count)
+	for i: int in count:
+		var t := float(i) / RATE
+		var sum := 0.0
+		for part: Vector2 in partials:
+			sum += sin(TAU * part.x * t + part.y)
+		samples[i] = sum / sqrt(CRACK_PARTIALS) * exp(-t / decay) * CRACK_GAIN
+	return _wav(samples)
+
+
+## 16-bit mono at RATE from samples in -1..1.
+static func _wav(samples: PackedFloat32Array) -> AudioStreamWAV:
+	var bytes := PackedByteArray()
+	bytes.resize(samples.size() * 2)
+	for i: int in samples.size():
+		bytes.encode_s16(i * 2, int(clampf(samples[i], -1.0, 1.0) * 32000.0))
 	var wav := AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS
-	wav.mix_rate = rate
+	wav.mix_rate = RATE
 	wav.data = bytes
 	return wav
 
@@ -138,18 +217,16 @@ func _tick_stomp(delta: float) -> void:
 	var cfg: Dictionary = _cfg["stomp"]
 	_stomp.play()
 	_sub.play()
-	stomped.emit(1.0)
+	_body.play()
+	_crack.play()
+	stomped.emit()
 	_stomp_wait = Num.f(cfg["every_s"]) + _rng.randf_range(-1.0, 1.0) * Num.f(cfg["jitter_s"])
 
 
 func _loop(sound: String, db: float) -> void:
-	var player := AudioStreamPlayer.new()
 	var stream: AudioStreamOggVorbis = load(SFX_DIR % sound)
 	stream.loop = true
-	player.stream = stream
-	player.bus = AudioBuses.of(sound)
-	player.volume_db = db
-	add_child(player)
+	var player := _player(sound, stream, AudioBuses.of(sound), db)
 	player.play(_rng.randf() * 4.0)  # not always the same scream first
 
 

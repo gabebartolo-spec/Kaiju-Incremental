@@ -65,9 +65,10 @@ func _add_live_city() -> void:
 	UiKit.full_rect(rect)
 	add_child(rect)
 	var ambience := TitleAmbience.new()
-	ambience.stomped.connect(backdrop.stomp)
 	ambience.shot.connect(backdrop.shot)
 	ambience.boomed.connect(backdrop.boom)
+	ambience.stomped.connect(backdrop.stomp)
+	backdrop.ready_to_show.connect(ambience.flashes_begin)
 	add_child(ambience)
 
 
