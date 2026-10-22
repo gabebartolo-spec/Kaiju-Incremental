@@ -49,6 +49,12 @@ Lessons: rm a log before waiting on it (a stale file made me read an old pass); 
 heredoc turns "\n" into a real newline: use an Edit; check a new check by planting the old behaviour (scripts/mutate_run.sh pattern: sed,
 run, git checkout) and make it read its own number, not the code's constant.
 
+## Stood down 2026-10-23 (SHIP from the screen critic and VFX lead; #160 merge go at e373bd13). Non-blocking notes for a later pass
+- Ticker text sits 33 px from the bottom edge (the bottom safe band, 54 px at 1080p = 108 at 4K): NewsTicker.HEIGHT / label position.
+- The lattice tower runs into the Continue plate's bottom edge at dusk (it stands behind the menu: lower its x or the column).
+- The exit plate's tape butts a bollard at x~3015 (title_shore bollard_gap 9, post_gap 24: shift the bollards or the plate).
+Call-back only if #160 goes DIRTY: git fetch, merge origin/claude/look-options (never rebase), run ui + flow behind engine_slot, push.
+
 ## Rules and tooling
 Scratch S = AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/
 b2b0bc5b-.../scratchpad; still.sh <dir> [flags] (4K still), uiclip.sh <out> <appdata> <script> <args> (1080p movie).
