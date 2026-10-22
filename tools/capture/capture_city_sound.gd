@@ -84,10 +84,28 @@ func _tap(sound: CitySound) -> void:
 			AudioServer.set_bus_name(at, bus)
 			AudioServer.set_bus_send(at, "Bed")
 			var player: AudioStreamPlayer = sound._players.get(bed)
+			if player == null:  # not imported in this checkout: read the .ogg file itself
+				player = _raw_player(sound, bed)
 			if player != null:
 				player.bus = bus
 		_capture(bed, bus)
 	_capture("master", "Master")
+
+
+## A looping player for a bed whose .ogg has no import yet, decoded from the file on disk and
+## handed to the driver; null when there is no such file.
+func _raw_player(sound: CitySound, bed: String) -> AudioStreamPlayer:
+	var path := ProjectSettings.globalize_path("res://assets/sfx/%s.ogg" % bed)
+	var loop := AudioStreamOggVorbis.load_from_file(path)
+	if loop == null:
+		return null
+	loop.loop = true
+	var player := AudioStreamPlayer.new()
+	player.stream = loop
+	player.volume_db = Num.f(Content.section("city_sound")["silent_db"])
+	sound.add_child(player)
+	sound._players[bed] = player
+	return player
 
 
 func _capture(key: String, bus: String) -> void:
