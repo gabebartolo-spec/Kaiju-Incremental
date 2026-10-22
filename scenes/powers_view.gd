@@ -30,6 +30,7 @@ var _city: CityView
 var _kaiju: Node3D
 var _tint: Color
 var _helis: Dictionary = {}
+var _wrecks: HeliWreck
 var _young: Dictionary = {}
 var _beam: MeshInstance3D
 var _dust_t := 0.0
@@ -170,8 +171,8 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			_helis[Num.i(event["heli"])] = heli
 		"heli_fired":
 			_heli_fired(Num.i(event["heli"]), kaiju_at)
-		"heli_destroyed":
-			_heli_down(Num.i(event["heli"]), Vector2(Num.f(event["x"]), Num.f(event["z"])))
+		"heli_destroyed", "heli_crashed":
+			_heli_down(event)
 		_:
 			return rooftops.on_event(event, kaiju_at)
 	if not played.has(str(event["type"])):
@@ -284,20 +285,24 @@ func _heli_fired(id: int, kaiju_at: Vector3) -> void:
 		sfx.play_at("heli_gun", muzzle)
 
 
-func _heli_down(id: int, at: Vector2) -> void:
-	if _helis.has(id):
-		var heli: Node3D = _helis[id]
-		heli.queue_free()
-		_helis.erase(id)
-	var ground := _w(at)
-	for n: int in 6:
-		_city.debris(
-			ground + Vector3(0, sim.air.altitude() * 0.5, 0), HelicopterModel.TAN, Vector3.UP
-		)
-	_city.flash(ground + Vector3(0, 2.0, 0), Color("ff8a3a"), 8.0, 0.5)
-	_city.fire(ground, 0.6)
-	if sfx != null:
-		sfx.play_at("heli_crash", ground)
+## A helicopter shot down, or its wreck landing: HeliWreck draws how it goes (the sim's fate).
+func _heli_down(event: Dictionary) -> void:
+	if str(event["type"]) == "heli_crashed":
+		_wreck().crashed(event)
+		return
+	var id := Num.i(event["heli"])
+	var node: Node3D = _helis.get(id, Node3D.new())
+	_helis.erase(id)
+	_wreck().downed(node, event)
+
+
+## The wrecks' view, made on first use (so it has the rampage's sounds).
+func _wreck() -> HeliWreck:
+	if _wrecks == null:
+		_wrecks = HeliWreck.new(_city, sim)
+		add_child(_wrecks)
+	_wrecks.sfx = sfx
+	return _wrecks
 
 
 ## The helicopter nodes now in the air.
