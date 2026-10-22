@@ -4,6 +4,22 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-151 · Director · Effect family rulings (asked by the VFX lead with a labelled board)
+
+Asked in the VFX lead's session (look sheet, PR #154): an explosion is a sudden tall burst of the game's own fire ("Fire's tongues"), then that fire stays burning; chemical gas is soft tinted smoke (the smoke family, also the Taskforce gas look); smoke is lit from below by its fire everywhere (game and title); on the title, burning floors' windows turn fire-orange; the Lightning Breath / Thunder Beam effect rework is IN M1; the Taskforce owns one electric blue nobody else uses (the tank-deflect flash becomes white); blasts and Taskforce hits use the same street dust as everything else; the VFX lead fixes the base mismatches now (tail-sweep yellow ring, tree-puff sprite, plain shell sparks) in #154.
+
+## 2026-10-23 · D-150 · Director · Title menu column stays high
+
+Asked (4K still shown) where the logo-and-buttons column sits vertically: keep it high, as in his mockup; the calm water below stays as deliberate space.
+
+## 2026-10-23 · D-149 · Director · The leader's escape helicopter, after the demo
+
+"roadmap item: "the president/prime minister/king/etc" attempts to escape in a fancy helicopter, you get a big payout if you kill him but its a fast helicopter". Asked: after the demo; it happens at a random time in any city; the rank grows with the city (Mayor in the baby city, Governor in the adolescent, President in the adult); the payout is about a city block's worth (worth chasing, never more than the rampage); the kaiju can bring it down with the breath or Thunder Beam, by grabbing it as it passes low, by throwing a tank or car at it, or by toppling a building into it at lift-off; about 15 seconds from lift-off (it circles once, then speeds to the map edge); a ticker headline and a distinct rotor sound only, no markers (as D-143); if it escapes only the payout is lost, with a mocking headline; look: white and gold VIP (a labelled board when built).
+
+## 2026-10-23 · D-148 · Director · Demo feedback link goes to the Itch page comments
+
+Asked where the demo thanks screen's feedback link (D-145) should send testers: the invite-only Itch page's comments (no new service to set up). The pause-menu bug report stays a local file (D-145).
+
 ## 2026-10-23 · D-147 · Director · Threat Dossier (bestiary), after the demo
 
 "roadmap item (after demo): a beastiary (name must be thematically appropriate) to describe the multitude of enemies you encounter in the game". Asked: named the Threat Dossier (the Kaiju Plan organisation's classified files on every force sent against your kaiju); an entry's name and silhouette appear on first sight, its full stats, weaknesses and lore after the first kill; opened from the main menu and the pause menu. After the demo.
@@ -379,18 +395,3 @@ Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard"
 ## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
 Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
 do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
-
-## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
-Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
-smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
-
-## 2026-10-18 · D-061 · Director · UI look A "Emergency Broadcast" for every screen
-Why: picked from three mockups (A broadcast, B concrete and rubble, C monster hide) for a "thematically rich, beautiful
-and intuitive" UI (UI session, 2026-10-18). Changes: UiKit palette (hazard yellow, alert red, near-black), hazard tape,
-square edges, news crawl; one look for every screen. Lands in PR #27.
-
-## 2026-10-18 · D-060 · Director · Mantis and octopus: keep all six meshes, plan only for now
-Why (04:27, species session): keep mantis 9668b815 / 0161ad14 / 06ed8a12 and octopus 8bf2f668 / a328effe / 6176590f and
-give them the croc's Blender hand rig with welded weights, no redesign, octopus first (D-045: the auto rig, not the mesh,
-broke the octopus). 04:50: "I only wanted the plan, not execution": work halted after the plan
-(docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md); nothing merged. Outside the demo (D-050).
