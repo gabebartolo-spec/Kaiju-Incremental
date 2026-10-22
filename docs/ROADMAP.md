@@ -315,4 +315,4 @@ big hits blow them apart in the air, lighter kills spiral down smoking and explo
 what it hits (and can light a fire with City Ablaze) and pays biomass (sim change: seeded, tested).
 Name (comment #85): the game is called Kaiju Evolution everywhere players see it; the save folder keeps its old name.
 Graphics preview (comment #90, director 2026-10-22): "when players change their graphics setting, we should have a live
-example of what that will look like so players can choose their tolerance". Where and when: to ask.
+example of what that will look like so players can choose their tolerance". Asked: a live preview "in the options menu as they choose" (a framed live view of the city that updates as each graphics option changes, with its frame rate); built "for the demo".
