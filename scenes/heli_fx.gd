@@ -69,7 +69,7 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	cube.size = Vector3.ONE * 0.18
 	var hot := ShaderMaterial.new()
 	hot.shader = Fire.EMBER_SHADER
-	hot.set_shader_parameter("heat", Num.f(cfg["fireball_heat"]))  # a ball is seen en masse: less white
+	hot.set_shader_parameter("heat", Num.f(cfg["fireball_heat"]))  # per-owner heat
 	cube.material = hot
 	var life := Num.f(cfg["fireball_seconds"])
 	_burst(parent, mat, cube, roundi(Num.f(cfg["fireball_voxels"]) * scale), life, at)
@@ -79,7 +79,7 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 ## under it): `puffs` quads `size` across billowing up and leaning with the wind.
 static func smoke_puff(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
 	var size := Num.f(cfg["smoke_size"]) * scale
-	var mat := _smoke_mat(cfg, size)
+	var mat := _smoke_mat(cfg)
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	mat.emission_sphere_radius = size * 0.2
 	mat.direction = Vector3.UP
@@ -97,7 +97,7 @@ static func smoke_puff(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.
 ## node and calls go_out_trail when the wreck lands.
 static func smoke_trail(parent: Node3D, cfg: Dictionary) -> GPUParticles3D:
 	var size := Num.f(cfg["trail_smoke_size"])
-	var mat := _smoke_mat(cfg, size)
+	var mat := _smoke_mat(cfg)
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	mat.emission_sphere_radius = size * 0.15
 	mat.direction = Vector3.UP
@@ -124,7 +124,7 @@ static func end_trail(trail: GPUParticles3D) -> void:
 		trail.queue_free()
 
 
-static func _smoke_mat(cfg: Dictionary, size: float) -> ParticleProcessMaterial:
+static func _smoke_mat(cfg: Dictionary) -> ParticleProcessMaterial:
 	var mat := ParticleProcessMaterial.new()
 	mat.gravity = Fire.WIND * 0.7 + Vector3(0, 1.6, 0)
 	mat.angular_velocity_min = -40.0

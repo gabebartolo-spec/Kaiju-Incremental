@@ -35,15 +35,14 @@ func _init(cfg: Dictionary, rng: RandomNumberGenerator) -> void:
 
 
 ## Throws `node` (in the tree, its world transform kept) with `vel`, tumbling at `spin` rad/s; a
-## `fire_size` above 0 sets it burning. `half`: its middle's height when it lies on the street.
-func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0, half := 0.2) -> Piece:
+## `fire_size` above 0 sets it burning. Set the piece's `half`: its middle's height lying down.
+func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0) -> Piece:
 	var piece := Piece.new()
 	if not node is MeshInstance3D:  # a model part (voxels): chunks and blades land on any face
 		piece.lie = _rng.randf_range(0.7, 1.4) * (1.0 if _rng.randf() < 0.5 else -1.0)
 	piece.node = node
 	piece.vel = vel
 	piece.spin = spin
-	piece.half = half
 	if fire_size > 0.0:
 		piece.fire = Fire.new(fire_size, _rng.randf() * 10.0)
 		add_child(piece.fire)
@@ -57,11 +56,13 @@ func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0, half := 
 func shards(at: Vector3, count: int, burning: int, reach := 1.0) -> void:
 	for n: int in count:
 		var side := TAU * (n + _rng.randf()) / maxf(1.0, count)
-		var out := Vector3(cos(side), 0.0, sin(side)) * _rng.randf_range(
-			Num.f(_cfg["throw_min"]), Num.f(_cfg["throw_max"])
+		var out := (
+			Vector3(cos(side), 0.0, sin(side))
+			* _rng.randf_range(Num.f(_cfg["throw_min"]), Num.f(_cfg["throw_max"]))
 		)
-		var vel := out * reach + Vector3(
-			0, _rng.randf_range(Num.f(_cfg["up_min"]), Num.f(_cfg["up_max"])) * reach, 0
+		var vel := (
+			out * reach
+			+ Vector3(0, _rng.randf_range(Num.f(_cfg["up_min"]), Num.f(_cfg["up_max"])) * reach, 0)
 		)
 		var size := Vector3.ONE * _rng.randf_range(0.25, 0.7)
 		if n % 4 == 0:
@@ -70,7 +71,7 @@ func shards(at: Vector3, count: int, burning: int, reach := 1.0) -> void:
 		add_child(piece)
 		piece.global_position = at + out.normalized() * 0.5
 		var fire_size := Num.f(_cfg["shard_fire"]) if n < burning else 0.0
-		throw(piece, vel, _spin(_rng.randf_range(4.0, 12.0)), fire_size, size.y * 0.5)
+		throw(piece, vel, _spin(_rng.randf_range(4.0, 12.0)), fire_size).half = size.y * 0.5
 
 
 func _process(delta: float) -> void:

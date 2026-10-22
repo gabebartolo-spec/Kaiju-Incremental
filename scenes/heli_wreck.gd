@@ -77,12 +77,15 @@ func crashed(event: Dictionary) -> void:
 	if _falling.has(id):
 		var fall: Fall = _falling[id]
 		_end_fall(fall)
-		_break_up(fall.node, ground, 0.6, false)
+		_break_up(fall.node, 0.6, false)
 		_falling.erase(id)
 	var scale := Num.f(_cfg["crash_scale"])
 	HeliFx.flare(_city, ground + Vector3(0, 2.0, 0), Num.f(_cfg["crash_flare"]), 0.3)
 	_city.flash(
-		ground + Vector3(0, 2.0, 0), CRASH_BLAST, Num.f(_cfg["crash_light"]), Num.f(_cfg["crash_light_seconds"])
+		ground + Vector3(0, 2.0, 0),
+		CRASH_BLAST,
+		Num.f(_cfg["crash_light"]),
+		Num.f(_cfg["crash_light_seconds"])
 	)
 	HeliFx.fireball(_city, ground + Vector3(0, 1.0, 0), _cfg, Num.f(_cfg["crash_fireball"]))
 	HeliFx.smoke_puff(_city, ground + Vector3(0, 1.5, 0), _cfg, Num.f(_cfg["crash_smoke"]))
@@ -119,7 +122,9 @@ func _fall(fall: Fall, delta: float) -> void:
 	fall.yaw += delta * Num.f(_cfg["spin"]) * (0.5 + u)
 	var pitch := -deg_to_rad(Num.f(_cfg["pitch_deg"])) * u
 	var roll := deg_to_rad(Num.f(_cfg["roll_deg"])) * u
-	fall.node.basis = Basis(Vector3.UP, fall.yaw) * Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, roll)
+	fall.node.basis = (
+		Basis(Vector3.UP, fall.yaw) * Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, roll)
+	)
 	var along := Num.f(_cfg["trail_offset"])
 	for k: int in fall.fires.size():
 		var offset := Vector3(0, 0.5, (k - 1) * along)
@@ -144,38 +149,44 @@ func _burst(node: Node3D, at: Vector3) -> void:
 	_city.add_child(fire)
 	fire.global_position = at
 	get_tree().create_timer(Num.f(_cfg["burst_seconds"])).timeout.connect(fire.go_out)
-	_break_up(node, at, 1.0, true)
+	_break_up(node, 1.0, true)
 	_debris.shards(at, Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"]))
 	if sfx != null:
 		sfx.play_at("heli_crash", at)
 
 
-## The model's parts thrown from `at` (`reach` scales the throw; `in_air`: the body flies on,
-## burning, else it drops where it is and lies); a stand-in without a model has only the chunks.
-func _break_up(node: Node3D, at: Vector3, reach: float, in_air: bool) -> void:
+## The model's parts thrown from where they are (`reach` scales the throw; `in_air`: the body
+## flies on burning, else it drops where it is and lies); a stand-in without a model has only the
+## chunks.
+func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 	if not node is HelicopterModel:
 		node.queue_free()
 		return
 	var parts := (node as HelicopterModel).break_up(_debris)
 	for n: int in parts.size():
 		var side := TAU * (n + _rng.randf()) / parts.size()
-		var out := Vector3(cos(side), 0.0, sin(side)) * _rng.randf_range(
-			Num.f(_cfg["throw_min"]), Num.f(_cfg["throw_max"])
+		var out := (
+			Vector3(cos(side), 0.0, sin(side))
+			* _rng.randf_range(Num.f(_cfg["throw_min"]), Num.f(_cfg["throw_max"]))
 		)
 		var vel := out * reach + Vector3(0, _rng.randf_range(2.0, Num.f(_cfg["up_max"])) * reach, 0)
-		var spin := Vector3(_rng.randf_range(0.4, 1.0), _rng.randf_range(-1, 1), _rng.randf_range(0.4, 1.0))
+		var spin := Vector3(
+			_rng.randf_range(0.4, 1.0), _rng.randf_range(-1, 1), _rng.randf_range(0.4, 1.0)
+		)
 		var body := n == 0
 		if body and not in_air:
 			vel = Vector3.ZERO
 			spin = Vector3.ZERO
 		var fire_size := Num.f(_cfg["part_fire"]) if in_air else 0.0
-		_debris.throw(parts[n], vel * (0.5 if body else 1.0), spin * 7.0, fire_size, WRECK_HALF)
+		var piece := _debris.throw(parts[n], vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
+		piece.half = WRECK_HALF
 	node.queue_free()
 
 
 func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	if not node.is_inside_tree():
 		add_child(node)  # a model the view never drew still carries the fire down
+	VehicleParts.set_opacity(node, 1.0)  # no longer fading for the camera: a solid wreck
 	var fall := Fall.new()
 	fall.node = node
 	fall.from = at
