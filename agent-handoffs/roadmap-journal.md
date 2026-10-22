@@ -1,6 +1,8 @@
 # roadmap-journal handoff (2026-10-23)
 
-State: built, PR open on claude/look-options. Branch claude/kaiju-roadmap-journal-981cc7.
+State: awaiting director (merge call on PR #157). Task: development journal page. Branch claude/kaiju-roadmap-journal-981cc7,
+tip = the PR head; PR https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/157 to claude/look-options, Auto-fix on.
+Unfinished changes: none (tree clean). Attempts: none failed. Open decisions: merge PR 157 when green (asked). Running jobs: none.
 
 ## What it is
 The director asked for "a document, with visuals and interactive features that tracks the development of Kaiju
