@@ -1,5 +1,5 @@
 # Fire-spread handoff, 2026-10-22
-## State: available (pushed; report sent)
+## State: available (clip v8 rendered, pushed; report sent)
 ## Task
 R 26.2-26.4 fire spread in the sim (mailbox to-nimbalyst/016, answers 016-ANSWERS, D-126, D-129): heat meter,
 neighbour spread with wind, glow, burn-out collapse, payout, five nodes, fire suite, player-effect fixture,
@@ -8,13 +8,12 @@ sim-review packet (below), full suite once, one ~6 s clip at the game camera (lo
 claude/fire-spread, rebuilt on origin/claude/look-options ef9212ca (own commits cherry-picked; backup ref
 claude/fire-spread-pre-rebase and -pre-rebase2, local only).
 ## Unfinished changes
-- QC of clip v5 (lead; frames scratchpad/qc5c, qc5d). DONE, not yet rendered and judged: (a)+(b) Fire.go_out(fade):
-  the light dims over view_out_fade 0.4 s and the embers go at once (CityView._broke passes it).
-- (c) OPEN: a lit block that stands and burns out. capture_fire_spread.gd now takes --target=N and prints chunks
-  standing when lit and "burnt out"/"broken first". run 0 --target=307 lights 307 itself (522 chunks standing) but
-  it is broken at frame 676 before its fire ends (fire.burnt_out 0), likely the kaiju's own claw rake (it rakes
-  ahead every 2 s); --stop 0.7..1.1 gave identical placement (unexplained). Next: find why --stop does not move
-  the kaiju, or pick a target the rake cannot reach; then render ONE clip and judge 2x crops.
+- (c) DONE: the lit block was broken by the claw rake (swipe band 13 m x body scale 0.54 = 7 m, farther than the
+  baby breath's 5.9 m, so no standoff avoids it; --stop only moves the kaiju, it does move). The capture now sets
+  sim.stats["swipe_damage"] = 0 for the shot (clip setup, not a rule). Auto-pick, run 4, --stop=0.4: lights its
+  own target 297 (79 chunks), no swipe break.
+- (a)+(b) rendered: clip v8 (below). Judged in frames: no one-frame swap, no light pop (crop luminance steady
+  101-109 over 12.2-14.8 s), the neighbour stepped block keeps its own embers (it is still burning).
 - (d)/(e) diagnose only, NOT verified against a plain smash: the falling piece's look comes from
   BuildingView.lift_piece (scenes/building_view.gd:204) via CityView.fall_start (scenes/city_view.gd ~176), shared
   with every smash topple; a plain-smash capture is still needed to confirm.
@@ -33,6 +32,11 @@ claude/fire-spread-pre-rebase and -pre-rebase2, local only).
   9.4 s. Burn-out now gives way over burn_out_seconds 0.6, downwind first (no one-frame swap); a roof burns with
   one chunk fire per roof quarter (view_size 1.2). Stage 4 after: replay hash 601823901 x2, 203 burn-outs, 0
   standing, bookkeeping 270 usec/tick, collapses 1727 usec/tick (settle runs per crumble batch).
+- Clip v8 (local GPU, RTX 4070 SUPER): scratchpad fire_clip8/fire_spread_v8.mp4 (cut from 4.9 s, 9.9 s), command:
+  capture_fire_spread.gd --run=4 --stop=0.4 (needs override.cfg no_focus in the worktree, delete after). Beats
+  (physics frames): breath 314, lit 297 at 315, burns, gives way 749 (12.5 s), down 767 (12.8 s), dust to 14.8 s.
+  Frames: ignition 5.0-5.5 s; stepped neighbour roof burns from 9.0 s; collapse 12.5-13.5 s, dust cloud 13.5-14.5.
+  Shot is wide: the action is ~15 percent of the frame (game camera).
 ## Sim-review packet (kaiju-sim-review)
 Transitions: (1) tick: FireSpread.step runs once a tick inside SpeciesPowers.step (after the coats), the heat pass
 every spread_tick s (a whole number of ticks), timers every tick; own stream Seeds.derive(powers rng, 0xF12E)
