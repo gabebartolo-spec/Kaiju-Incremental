@@ -1,10 +1,12 @@
 extends SceneTree
-## Captures the demo slice (D-050, D-145, D-156) through the real main scene by real input (mouse clicks
-## pushed through the viewport, never a handler call): title -> New Kaiju -> species select (the
-## demo's species only); then a save one level short of the whole tree: title -> Continue -> buy the
-## last node -> the thanks screen, held while the adult roars -> Try Endless mode -> the endless city.
+## Captures the demo slice (D-050, D-145, D-156) through the real main scene by real input (mouse
+## clicks pushed through the viewport, never a handler call): title -> New Kaiju -> species select
+## (the demo's species only); then a save one level short of the whole tree: title -> Continue ->
+## buy the last node -> the thanks screen, held while the adult roars -> Try Endless mode -> the
+## endless city.
 ## Render a 4K still of the thanks screen locally (off-screen no_focus override.cfg):
-##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/capture_demo.gd -- --only=thanks --out=<dir>
+##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/capture_demo.gd \
+##     -- --only=thanks --out=<dir>
 ## or on CI: tools/capture/ci_capture.sh --resolution=1920x1080 capture_demo.gd
 
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -12,7 +14,14 @@ const SETTLE := 12
 ## Frames of autoplayed adult rampage before the clock is cut.
 const AUTOPLAY_FRAMES := 300
 ## The totals the still shows (a stand-in for a ~2 h demo playthrough).
-const TOTALS := {"biomass": 482310, "buildings": 1286, "eaten": 9740, "fled": 21365, "military": 413, "seconds": 7350}
+const TOTALS := {
+	"biomass": 482310,
+	"buildings": 1286,
+	"eaten": 9740,
+	"fled": 21365,
+	"military": 413,
+	"seconds": 7350
+}
 ## Frames the end card is held for the clip (3 s at the movie's 30 fps; 6 s at 60).
 const HOLD_FRAMES := 180
 ## The thanks still is taken this far in, mid-roar.

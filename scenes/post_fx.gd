@@ -54,8 +54,11 @@ func _physics_process(_delta: float) -> void:
 	if _rampage == null or _rampage.sim == null or _rampage.sim.over:
 		return  # (an ended run leaves its last step's events in place)
 	for event: Dictionary in _rampage.sim.events:
-		if str(event["type"]) == "fall_land":
-			state.fall(event)
+		match str(event["type"]):
+			"fall_land":
+				state.fall(event)
+			"railgun_hit":
+				state.railgun()
 
 
 func _process(delta: float) -> void:

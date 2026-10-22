@@ -8,6 +8,7 @@ extends RefCounted
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
+const FlowDemoMenus := preload("res://tests/lib/flow_demo_menus.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const LEFT_OVER := 100
 
@@ -48,8 +49,7 @@ func run() -> void:
 	await _check_thanks_flow()
 	await _check_thanks_endless()
 	await _check_continue_after()
-	await _check_other_species_save()
-	await _check_controls_rows()
+	await FlowDemoMenus.new(t, check).run()
 	SaveFile.delete_save()
 
 
@@ -153,7 +153,9 @@ func _buy_final(main: Node, last: String) -> DemoEnd:
 ## Behemoth's reveal plays and the tree stays. Real input all the way.
 func _check_thanks_flow() -> void:
 	var save := SaveFile.new_save("reptilian")
-	save["rubble"] = UpgradeTree.new(Content.upgrades(), {}, "reptilian").cost("evolve1") + LEFT_OVER
+	save["rubble"] = (
+		UpgradeTree.new(Content.upgrades(), {}, "reptilian").cost("evolve1") + LEFT_OVER
+	)
 	save["runs"] = 2
 	save["demo"] = true
 	save["levels"] = {"claws": 1, "hide": 1, "rage": 1}
@@ -172,7 +174,10 @@ func _check_thanks_flow() -> void:
 	SaveFile.save_game(save)
 	main = await _main()
 	var card := await _buy_final(main, last[0])
-	check.call(card != null, "buying the final upgrade (%s) shows the thanks screen: %s" % [last[0], _screen(main)])
+	check.call(
+		card != null,
+		"buying the final upgrade (%s) shows the thanks screen: %s" % [last[0], _screen(main)]
+	)
 	if card != null:
 		await _thanks_card(main, card)
 	main.queue_free()
@@ -284,12 +289,17 @@ func _endless_run(main: Node) -> void:
 	await GuiInput.click(t, GuiInput.button(results, "BACK"))
 	await _frames(3)
 	var after := SaveFile.load_game()
-	check.call(_screen(main) is UpgradeScreen, "ending Endless mode goes back to the tree: %s" % _screen(main))
 	check.call(
-		after["rubble"] == before["rubble"]
-		and after["runs"] == before["runs"]
-		and after["totals"] == before["totals"]
-		and after["best"] == before["best"],
+		_screen(main) is UpgradeScreen,
+		"ending Endless mode goes back to the tree: %s" % _screen(main)
+	)
+	check.call(
+		(
+			after["rubble"] == before["rubble"]
+			and after["runs"] == before["runs"]
+			and after["totals"] == before["totals"]
+			and after["best"] == before["best"]
+		),
 		"an Endless run banks nothing: %s vs %s" % [after, before]
 	)
 
@@ -329,7 +339,10 @@ func _check_continue_after() -> void:
 	var tree := _screen(main) as UpgradeScreen
 	check.call(
 		tree != null and GuiInput.button(tree, "ENDLESS MODE") != null,
-		"Continue on a finished demo lands on the tree with Endless mode offered: %s" % _screen(main)
+		(
+			"Continue on a finished demo lands on the tree with Endless mode offered: %s"
+			% _screen(main)
+		)
 	)
 	if tree == null:
 		main.queue_free()
@@ -352,49 +365,10 @@ func _check_continue_after() -> void:
 	var back: Dictionary = saved["totals"]
 	check.call(
 		Demo.add(back, {}) == sim_totals and Num.i(saved["runs"]) == 10,
-		"a normal rampage adds the sim's counters to the demo totals: %s vs %s" % [saved["totals"], sim_totals]
+		(
+			"a normal rampage adds the sim's counters to the demo totals: %s vs %s"
+			% [saved["totals"], sim_totals]
+		)
 	)
 	main.queue_free()
 	await _frames(2)
-
-
-## A save from a species the demo leaves out is not offered: no Continue into a hidden kaiju.
-func _check_other_species_save() -> void:
-	var save := SaveFile.new_save("insectoid")
-	save["runs"] = 3
-	SaveFile.save_game(save)
-	var main := await _main()
-	check.call(
-		GuiInput.button(_screen(main), "CONTINUE") == null,
-		"the demo does not continue a save of a species it leaves out"
-	)
-	main.queue_free()
-	await _frames(2)
-
-
-## Settings' controls list only what the playable species can do: the croc-only demo shows no
-## insectoid Glide row; the full game does (lead, 2026-10-18).
-func _check_controls_rows() -> void:
-	var with_demo := await _control_names()
-	var demo := Content.section("demo")
-	demo["enabled"] = false
-	var full_game := await _control_names()
-	demo["enabled"] = true
-	var glide := func(names: Array[String]) -> bool:
-		return names.any(func(n: String) -> bool: return n.containsn("glide"))
-	check.call(
-		not glide.call(with_demo) and glide.call(full_game),
-		"the demo's controls list has no insectoid Glide; the full game's has: %s" % [with_demo]
-	)
-
-
-func _control_names() -> Array[String]:
-	var menu := ControlsCard.new()
-	t.root.add_child(menu)
-	await _frames(2)
-	var names: Array[String] = []
-	for node: Node in menu.find_children("*", "Label", true, false):
-		names.append((node as Label).text)
-	menu.queue_free()
-	await _frames(1)
-	return names

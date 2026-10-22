@@ -12,7 +12,7 @@ const CITY_STREAM := "city"
 var _screen: Node
 var _save: Dictionary = {}
 var _tree: UpgradeTree
-## Whether the rampage on show is Endless mode (it banks nothing: normal mode is the game's balance).
+## Whether the rampage on show is Endless mode (it banks nothing: normal mode sets the balance).
 var _endless := false
 
 
@@ -110,6 +110,7 @@ func _start_rampage(endless := false) -> void:
 	var rampage := Rampage.new()
 	rampage.staged = true  # built over several frames behind a loading screen (b2-30)
 	var runs := Num.i(_save.get("runs", 0))
+	rampage.city_seconds = Num.f(_save.get("city_seconds", 0.0))
 	rampage.setup(_species(), stats, layout, runs)
 	if endless:  # the demo's Endless mode (D-156)
 		rampage.sim.endless = Endless.new()
@@ -132,6 +133,8 @@ func _on_rampage_finished(result: Dictionary) -> void:
 	if not _endless:
 		_save["rubble"] = Num.i(_save.get("rubble", 0)) + Num.i(result["rubble"])
 		_save["runs"] = Num.i(_save.get("runs", 0)) + 1
+		var clock := Num.f(_save.get("city_seconds", 0.0))
+		_save["city_seconds"] = Num.f(result.get("city_seconds", clock))  # the Taskforce's clock
 		_save["best"] = SaveFile.merge_best(previous, result)
 		if Demo.enabled():
 			_save["totals"] = Demo.add(_totals(), result)
@@ -160,7 +163,8 @@ func _on_bought(screen: UpgradeScreen, id: String) -> void:
 	SaveSystem.save_game(_save)
 	var def: Dictionary = _tree.defs[id]
 	var effects: Dictionary = def.get("effects", {})
-	var last: bool = Demo.complete(_tree) and _save.get("demo_done", false) != true  # the final upgrade
+	# The final upgrade: every node owned, and the thanks not shown before.
+	var last: bool = Demo.complete(_tree) and _save.get("demo_done", false) != true
 	if last:  # the whole tree is owned (D-156): the thanks screen, and Endless mode unlocks
 		_save["demo_done"] = true
 		SaveSystem.save_game(_save)
@@ -192,7 +196,8 @@ func _reveal(screen: UpgradeScreen, id: String, then := Callable()) -> void:
 	screen.add_child(reveal)
 
 
-## The demo's thanks screen: rampage totals, a feedback link, Endless mode or back to the tree (D-152, D-156).
+## The demo's thanks screen: rampage totals, a feedback link, Endless mode or back to the tree
+## (D-152, D-156).
 func _show_demo_end() -> void:
 	var card := DemoEnd.new()
 	card.setup(_species(), _base_stats(), _totals())

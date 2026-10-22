@@ -197,6 +197,8 @@ func result() -> Dictionary:
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
 		"rooftops": army_units.rooftops_destroyed,
+		"agents": army_units.taskforce.kills,
+		"city_seconds": army_units.taskforce.city_seconds(),
 		"toppled": collapse.toppled,
 		"tallest_topple": collapse.tallest_topple,
 		"reason": end_reason,

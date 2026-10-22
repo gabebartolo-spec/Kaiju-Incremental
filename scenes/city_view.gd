@@ -89,7 +89,8 @@ func _ready() -> void:
 	is_loaded = true
 
 
-## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one is built.
+## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one
+## is built.
 func regrow(index: int) -> void:
 	_stream.regrow(index)
 

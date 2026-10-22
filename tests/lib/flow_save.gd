@@ -32,6 +32,9 @@ static func migration(check: Callable) -> void:
 	file.close()
 	var loaded := SaveFile.load_game()
 	check.call(
-		Num.i(loaded.get("version", 0)) == SaveFile.VERSION and Num.i(loaded["levels"]["claws"]) == 2,
+		(
+			Num.i(loaded.get("version", 0)) == SaveFile.VERSION
+			and Num.i(loaded["levels"]["claws"]) == 2
+		),
 		"a v1 save file on disk loads at the current version"
 	)

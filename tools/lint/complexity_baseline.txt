@@ -32,7 +32,7 @@ scenes/police.gd::_start_blockade 46 16
 scenes/powers_view.gd::on_event 76 26
 scenes/powers_view.gd::update 52 17
 scenes/rampage.gd::_physics_process 41 11
-scenes/rampage.gd::_ready 55 8
+scenes/rampage.gd::_ready 57 8
 scenes/results_screen.gd::_ready 48 2
 scenes/settings_menu.gd::_ready 53 1
 scenes/sfx.gd::play 43 12

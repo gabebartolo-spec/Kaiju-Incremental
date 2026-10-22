@@ -1,5 +1,5 @@
 # Demo-end handoff, 2026-10-23 02:50
-## State: demo-end pushed (2e6c2ffe) and weather pushed (claude/weather a21dfdec); both wait for the lead to open PRs. Planning queue 2 (sky and sea life) until "go sky" is in lead-board/to-demo-end.md.
+## State: PR #165 FIX round in progress (lead order, before sky and sea life): merge of look-options done (save v4), sim-review fixes coded, suites to run: demoend flow smoke ui sim_play military taskforce_gate; then push once and report the sha.
 ## Weather pick (queue 1) DONE: claude/weather @ a21dfdec in ../../Kaiju-Incremental-wt/weather
 Weather.pick/next/label/clean (sim/weather.gd), data/looks.json "weather", Content.weather_id() (the one current value: clear,
 overcast, rain, fog, thunderstorm; set in Main._start_rampage), PlayerSettings.weather, save key last_weather, own options row
@@ -33,11 +33,15 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - Tests: suite `demoend` (tests/run_demoend_tests.gd + tests/lib/sim_demo_end.gd, incl. normal-untouched check), flow_demo.gd
   rewritten (mouse, key, pad via new GuiInput.pad), demo_smoke.gd and capture_demo.gd rewritten. README row added.
 ## Unfinished changes
-- demo-end: resync merge done (post-merge fixes: Endless test clicks the new End Rampage YES step; DemoEnd.setup totals optional for run_ui_tests); demoend + sim_play green, ui/smoke/flow rerunning (lead line 4 of to-demo-end.md); then push claude/demo-end and
-  report the sha. The thanks screen no longer has upstream's MAIN MENU / QUIT buttons (ruling replaced them): tell the lead.
-- Seams made to stay at 400 lines: TankYard.on_event handles all four tank events; scenes/hud_counts.gd (HudCounts.of/clock).
-- Later: 4K thanks still when the focus guard allows; Taskforce kills into demo.military_keys after #161; queue 2 (sky and sea
-  life, tell the lead the files first) and queue 3 (Taskforce adult units).
+- #165 FIX round (comment 6350997254 + to-demo-end.md): (a) merged origin/claude/look-options, SaveFile.VERSION 4 (demo keys under
+  version < 4; city_seconds bank line inside `if not _endless`); (b) FireSpread.reset_building + Collapse.forget_topple called from
+  Endless.regrow, buildings counted by b.frame.alive_count == 0, Endless escalation = chunks_total x (start_share + share_per_second x
+  elapsed) with no cap, regrowth = regrow_share_per_minute (5%) of flattened buildings per regrow_interval pass (rows in
+  data/tuning.json demo.endless); (c) "agents" in demo.military_keys, taskforce.gd interval() reads sim.escalation(); (d) gdlint
+  clean (gdformat -l 100), flow_demo split into tests/lib/flow_demo_menus.gd. New sim checks in tests/lib/sim_demo_end.gd.
+- Running/next: demoend then flow, smoke, ui, sim_play, military, taskforce_gate (each behind engine_slot); push once; report sha.
+- Then: sky and sea life (plan above; rampage_sim.gd ~397 lines, so the hook goes in a new small file), 4K thanks still, Taskforce
+  mech/gunship units (queue 3, after taskforce-core: its result keys join demo.military_keys).
 ## Attempts
 Silent "exit 127" in headless runs (flow, smoke, demoend) is most likely my Godot being killed from outside during the director's
 Godot pauses (~/.claude/focus-pause says until when), not a code bug: check that file before debugging, and rerun after it.

@@ -6,7 +6,7 @@ extends RefCounted
 ## Static so screens and tests can use it without the SaveSystem autoload (which forwards here).
 
 const PATH := "user://save.json"
-const VERSION := 3
+const VERSION := 4
 ## The results screen's records: each is the best single rampage, per stat.
 const BEST_KEYS: Array[String] = [
 	"rubble", "destruction", "toppled", "tallest_topple", "civilians", "tanks", "helis"
@@ -47,6 +47,7 @@ static func new_save(species_id: String) -> Dictionary:
 		"levels": {},
 		"runs": 0,
 		"best": {},
+		"city_seconds": 0.0,
 		"demo": false,
 		"demo_done": false,
 		"totals": {},
@@ -54,7 +55,8 @@ static func new_save(species_id: String) -> Dictionary:
 
 
 ## Brings an older save up to VERSION. v1 kept only "best_destruction"; v2 keeps a "best"
-## record per stat; v3 adds the demo keys. Unknown or newer versions are refused (empty), never guessed at.
+## record per stat; v4 adds the demo keys (v3 is #164's). Unknown or newer versions are refused
+## (empty).
 static func migrate(data: Dictionary) -> Dictionary:
 	var version: int = Num.i(data.get("version", 0))
 	if version > VERSION or version < 1:
@@ -64,7 +66,9 @@ static func migrate(data: Dictionary) -> Dictionary:
 	if version == 1:
 		out["best"] = {"destruction": Num.f(out.get("best_destruction", 0.0))}
 		out.erase("best_destruction")
-	if version < 3:  # v3: demo marker, thanks seen, demo rampage totals (Demo.add)
+	if not out.has("city_seconds"):
+		out["city_seconds"] = 0.0  # rampage time in the adolescent city (D-160)
+	if version < 4:  # v4: demo marker, thanks seen, demo rampage totals (Demo.add); #164 owns v3
 		out["demo"] = out.get("demo", false)
 		out["demo_done"] = out.get("demo_done", false)
 		out["totals"] = out.get("totals", {})

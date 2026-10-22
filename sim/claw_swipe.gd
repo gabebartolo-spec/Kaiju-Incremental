@@ -67,6 +67,7 @@ func _rake() -> void:
 		return 1.0 if inside and absf(to.dot(across)) <= half + r else 0.0
 	var floor_lo := maxi(0, floori(sim.stand_y))
 	sim.hit_area(band, sim.stat("swipe_damage") * sim.powers.hit_mult(), floor_lo, ceili(top))
+	sim.army_units.taskforce.swat(band, top)  # a jetpack agent in the air is swatted (D-139)
 	_undermine(band, Vector2i(floor_lo, ceili(top)), centre, ahead)
 	cut += sim.chunks_destroyed - before
 	carved += sim.carving.cells_carved - before_cells

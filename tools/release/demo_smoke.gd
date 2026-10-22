@@ -1,6 +1,7 @@
 extends SceneTree
 ## Demo build dry-run: drives the exported game's own screens (title -> NEW KAIJU -> species
-## select -> rampage -> the final upgrade -> the thanks screen -> Endless mode) and prints one PASS/FAIL line per check.
+## select -> rampage -> the final upgrade -> the thanks screen -> Endless mode) and prints one
+## PASS/FAIL line per check.
 ## See tools/release/README.md for how to run it against a built exe.
 
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -113,11 +114,19 @@ func _walk_end() -> void:
 	_press(_screen(), "TRY ENDLESS MODE")
 	await _frames(12)
 	var endless := _screen() as Rampage
-	_check("TRY ENDLESS MODE starts the endless rampage", endless != null and endless.sim.endless != null, str(_screen()))
+	_check(
+		"TRY ENDLESS MODE starts the endless rampage",
+		endless != null and endless.sim.endless != null,
+		str(_screen())
+	)
 	if endless != null:
 		await endless.wait_loaded()
 		await _frames(120)
-		_check("endless runs with no clock", not endless.sim.over and endless.sim.elapsed > 1.0, str(endless.sim.elapsed))
+		_check(
+			"endless runs with no clock",
+			not endless.sim.over and endless.sim.elapsed > 1.0,
+			str(endless.sim.elapsed)
+		)
 	_main.queue_free()
 	await _frames(2)
 	_main = (load(MAIN_SCENE) as PackedScene).instantiate()
@@ -125,7 +134,11 @@ func _walk_end() -> void:
 	await _frames(12)
 	_press(_screen(), "CONTINUE")
 	await _frames(30)
-	_check("Continue lands on the tree with ENDLESS MODE", _texts(_screen()).has("ENDLESS MODE"), str(_texts(_screen())).left(120))
+	_check(
+		"Continue lands on the tree with ENDLESS MODE",
+		_texts(_screen()).has("ENDLESS MODE"),
+		str(_texts(_screen())).left(120)
+	)
 	SaveFile.delete_save()
 
 
