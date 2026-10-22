@@ -365,6 +365,7 @@ func _setup_light(light: OmniLight3D, colour: Color) -> void:
 	light.light_color = colour
 	light.omni_attenuation = Num.f(lights["falloff"])
 	light.shadow_enabled = false
+	light.light_volumetric_fog_energy = 0.0  # no fog shafts: their shadow edges drew straight wedges
 	light.light_energy = 0.0
 	add_child(light)
 

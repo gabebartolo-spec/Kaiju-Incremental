@@ -1160,7 +1160,7 @@
 			"rim": {"alpha": 0.0, "core_alpha": 0.9, "tint": "5a1a00"},
 			"bolt_soft": 1.5,
 			"arc_every": 0.07,
-			"arc_level": 0.8,
+			"arc_level": 0.25,
 			"light_follow": 40.0,
 			"strike_decay": 0.07,
 			"muzzle_up": 0.5,
@@ -1187,8 +1187,8 @@
 			"branch_peak": 0.9,
 			"branch_decay": 0.14,
 			"light_decay": 0.12,
-			"light": {"hold_share": 0.2, "falloff": 1.5, "mouth": [20.0, 24.0], "impact": [34.0, 28.0]},
-			"muzzle_flare": 3.6,
+			"light": {"hold_share": 0.2, "falloff": 1.5, "mouth": [8.0, 16.0], "impact": [34.0, 28.0]},
+			"muzzle_flare": 1.2,
 			"flare_edge": 0.3,
 			"flare_soft": 3.0,
 			"grow_seconds": 0.1,
@@ -1202,7 +1202,7 @@
 			"breath": {
 				"core": 0.6, "halo": 4.5, "sway": 0.1, "branches": [4, 6],
 				"bow": 0.35, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0, "ring_puffs": 8,
-				"arcs": 4, "arc_reach": 8.0, "arc_width": 0.35,
+				"arcs": 4, "arc_reach": 8.0, "arc_width": 0.17,
 				"branch_from": [0.3, 0.8], "branch_width": 0.8, "branch_sway": 0.15,
 				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
 				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
