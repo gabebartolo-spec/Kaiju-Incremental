@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
+Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
+
 ## 2026-10-18 · D-066 · Director · Tanks and helicopters move and fight like a professional military
 Why: road-bound tank columns with firing posts and fallbacks, helicopter pairs with attack runs; total damage per run
 held within ±5%; helicopters a real threat to dodge ("overall difficulty unchanged"). PR #50; heli mix shift OK.

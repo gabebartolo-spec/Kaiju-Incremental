@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-156 · Director · The demo ends when the adult city is fully ruined
+
+Asked what triggers the thanks screen (the adult city can be rampaged many times): the first rampage that fully ruins the adult city ends the demo; its results lead to the thanks screen, then free play (D-153). Replaces the old trigger (buying the Behemoth evolution). The 90 min to 2 h pacing (D-152) aims at this point.
+
 ## 2026-10-23 · D-155 · Director · Atmosphere joins M1; weather; music and city sound; version; end confirm
 
 "keen to get stuck into the atmospheric stuff soon". Asked: all four parts, and all are part of M1 (M1 waits for them): rampage escalation (D-154: haze, orange sky, spreading blackouts), sky and sea life (clouds, birds that scatter, small boats, one untouchable whale per run; comments #63-64, #71), weather, and sound atmosphere. Weather is looks only: rain, fog banks, thunderstorm, overcast or clear; picked at random per run with the time of day, never the same twice in a row, with an options toggle to fix it. Music: the lead writes one short brief per city (style, tempo, mood, stems), the director generates in Suno (D-114) and the lead cuts and layers the stems (D-125). City sound: panic then eerie quiet (crowds and sirens swell early, then fade as people flee; the late city is fire, wind and military). Version tag: "DEMO 0.1", rising one step per milestone (M1 0.1, M2 0.2, M3 0.3), the Itch release is the 1.0 demo. End rampage in the pause menu asks "Are you sure?" first.
@@ -393,6 +397,3 @@ priced late. Merge #36 after #50 and P3.
 ## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
 Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
 camera). MERGED #35.
-
-## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
-Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
