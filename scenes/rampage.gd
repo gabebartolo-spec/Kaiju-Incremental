@@ -391,6 +391,10 @@ func _place_camera(delta: float) -> void:
 	# and its dart bursts ahead of the camera.
 	var rest := camera_rest.lerp(_breath_camera.offset(camera_rest, delta), motion)
 	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta)
+	var hold := sim.body.dash.on() or _leap_time > 0.0
+	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
-	_camera.look_at(_follow.look_at(sim.body_scale()))
+	var nod := shake.turn(sim.body_scale(), motion).y
+	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
+	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)
