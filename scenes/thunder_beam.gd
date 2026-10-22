@@ -84,13 +84,44 @@ func _facade_end(kaiju_at: Vector3, facing: Vector3) -> Vector3:
 		var t := _enter(b)
 		if t >= best:
 			continue
-		var up := b.frame.top_below(floori(b.w * 0.5), floori(b.d * 0.5), b.height)
+		var up := _standing(b)
 		if up > 0:
 			best = t
 			top = up
-	var into := best + Num.f(_row["into_wall"]) * _bs if top > 0 else best
-	var y := minf(Num.f(_row["end_height"]), top) if top > 0 else Num.f(_row["street_height"])
+	if top <= 0:
+		return _nearest_facade(kaiju_at, reach)
+	var into := best + Num.f(_row["into_wall"]) * _bs
+	var y := minf(Num.f(_row["end_height"]), top)
 	return Vector3(kaiju_at.x + facing.x * into, y, kaiju_at.z + facing.z * into)
+
+
+## How tall (cells) building `b` stands if it is a real one (not a kiosk, lamp or fence); else -1.
+func _standing(b: RampageSim.Building) -> int:
+	var least: Array = _row["facade_min"]
+	if b.w < Num.i(least[0]) or b.d < Num.i(least[0]):
+		return -1
+	var up := b.frame.top_below(floori(b.w * 0.5), floori(b.d * 0.5), b.height)
+	return up if up >= Num.i(least[1]) else -1
+
+
+## With none on its line, the standing building the beam passes closest, at its near face (the
+## street at the full range when there is none in reach).
+func _nearest_facade(kaiju_at: Vector3, reach: float) -> Vector3:
+	var axis := _sim.facing
+	var best := INF
+	var out := kaiju_at + Vector3(axis.x, 0.0, axis.y) * reach
+	out.y = Num.f(_row["street_height"])
+	for b: RampageSim.Building in _sim.buildings:
+		var rel := Vector2(b.x, b.z) - _sim.kaiju_pos
+		var up := _standing(b)
+		if up <= 0 or rel.dot(axis) <= 0.0 or rel.dot(axis) > reach:
+			continue
+		var off := absf(rel.dot(axis.orthogonal()))
+		if off < best:
+			best = off
+			var face := Vector2(b.x, b.z) - rel.normalized() * maxi(b.w, b.d) * 0.5
+			out = Vector3(face.x, minf(Num.f(_row["end_height"]), up), face.y)
+	return out
 
 
 ## How far along the beam's line (from the kaiju) it meets building `b`'s footprint; INF if it

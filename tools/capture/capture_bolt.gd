@@ -14,6 +14,8 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 120
 ## The physics step the bolt is fired on (the kaiju is out of the river by then).
 const FIRE_AT := 125
+## The clip waits this many steps first (the camera pulls in from far, with the city's fade panels).
+const CLIP_SETTLE := 240
 ## The clip's ultimate comes this many steps after its breath.
 const CLIP_GAP := 110
 ## Frames after the fire at which a breath / a beam is shot (the first stroke is at about 7).
@@ -85,9 +87,11 @@ func _go() -> void:
 	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels, "reptilian"), _run)
 	rampage.scripted = _scripted_input
 	root.add_child(rampage)
-	_fire_breath = FIRE_AT if _mode != "beam" else -1
-	_fire_beam = FIRE_AT if _mode == "beam" else (FIRE_AT + CLIP_GAP if _mode == "clip" else -1)
-	await Kit.ticks(self, SETTLE)
+	var settle := CLIP_SETTLE if _mode == "clip" else SETTLE
+	var fire := FIRE_AT + settle - SETTLE
+	_fire_breath = fire if _mode != "beam" else -1
+	_fire_beam = fire if _mode == "beam" else (fire + CLIP_GAP if _mode == "clip" else -1)
+	await Kit.ticks(self, settle)
 	if _mode == "clip":
 		await Kit.frames(self, CLIP_FRAMES)
 	else:
@@ -164,10 +168,11 @@ func _print_rig(rampage: Rampage) -> void:
 	var view: BoltView = rig._view
 	print(
 		(
-			"rig live=%s index=%d mouth=%s hit=%s surfaces=%d aabb=%s vis=%s"
+			"rig live=%s index=%d rings=%d mouth=%s hit=%s surfaces=%d aabb=%s vis=%s"
 			% [
 				rig.live,
 				rig._index,
+				rig._thrown.rings,
 				rig._mouth,
 				rig._hit,
 				view.mesh.get_surface_count(),

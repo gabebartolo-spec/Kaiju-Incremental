@@ -17,6 +17,8 @@ signal thundered(at: Vector3)
 
 const FLARE := preload("res://scenes/flare.gdshader")
 const HOT := Color(1.0, 0.85, 0.65)
+## The strike's flash is white-hot whatever the halo.
+const STRIKE_WHITE := Color(1.0, 0.96, 0.88)
 ## Bolt seeds per run: an owner's seed is run * this + the play's number.
 const SEEDS_PER_RUN := 4096
 ## The impact light sits this far back from the struck point (world units at body scale 1).
@@ -61,6 +63,8 @@ var _mouth := Vector3.ZERO
 var _hit := Vector3.ZERO
 var _main_shape := PackedVector3Array()
 var _branches: Array[Dictionary] = []
+var _arcs: BoltArcs
+var _thrown: BoltImpact
 
 
 ## kind: the owner's row in tuning "fx" "bolt" ("breath", "thunder"); eye: the species' eye colour.
@@ -68,6 +72,8 @@ func _init(kind: String, eye: Color, body_scale: float, cfg: Dictionary) -> void
 	_cfg = cfg
 	_row = cfg[kind]
 	_scale = body_scale
+	_arcs = BoltArcs.new(_row, cfg, body_scale)
+	_thrown = BoltImpact.new(_row, cfg, body_scale)
 	var widths := Vector2(Num.f(_row["core"]), Num.f(_row["halo"])) * body_scale
 	_view = BoltView.new(widths, eye, cfg)
 	add_child(_view)
@@ -75,7 +81,7 @@ func _init(kind: String, eye: Color, body_scale: float, cfg: Dictionary) -> void
 	_setup_light(_mouth_light, HOT)
 	_setup_light(_hit_light, colours[0].lightened(0.3))
 	_muzzle = _flare(HOT)
-	_strike = _flare(colours[0].lightened(0.4))
+	_strike = _flare(STRIKE_WHITE)
 	cancel()
 
 
@@ -98,6 +104,7 @@ func play(seconds: float, rng: RandomNumberGenerator) -> void:
 	_reveal = Num.f(_cfg["feeler_reach"][0])
 	_main_shape = BoltShape.channel(_rng, Num.i(_cfg["depth"]), Num.f(_row["sway"]))
 	_branches.clear()
+	_arcs.clear()
 	var lift := lerpf(1.0, power, Num.f(_cfg["power_share"]))
 	_view.set_power(Num.f(_cfg["boost_core"]) * lift, Num.f(_cfg["boost_halo"]) * lift)
 	live = true
@@ -140,7 +147,9 @@ func _process(delta: float) -> void:
 		_stroke()
 	_feel()
 	_grow()
-	_shine()
+	if _arcs.step(delta, _mouth, _hit, _rng):
+		_dirty = true
+	_shine(delta)
 	if _dirty:
 		_draw()
 
@@ -172,7 +181,7 @@ func _grow() -> void:
 
 
 ## Brightness of the bolt and its lights this frame.
-func _shine() -> void:
+func _shine(delta: float) -> void:
 	var fade := smoothstep(0.0, Num.f(_cfg["tail"]), _end - _t)
 	var main := Num.f(_cfg["feeler_level"])
 	var branch := 0.0
@@ -186,20 +195,21 @@ func _shine() -> void:
 			main = lerpf(from, 1.0, _since / attack)
 		branch = Num.f(_cfg["branch_peak"]) * _env(Num.f(_cfg["branch_decay"]))
 		flash = _env(Num.f(_cfg["light_decay"]))
-	_view.set_levels(main * fade, branch * fade)
+	_view.set_levels(main * fade, branch * fade, Num.f(_cfg["arc_level"]) * fade)
 	var lights: Dictionary = _cfg["light"]
 	var base := Num.f(lights["hold_share"])
 	var flood := (
 		(base + (1.0 - base) * flash) * fade * lerpf(1.0, power, Num.f(_cfg["power_share"]))
 	)
-	if _index == 0:
-		flood = 0.0
+	if _index == 0:  # the lights come up with the feeler, so the first stroke is no jump
+		flood = base * clampf(_t / Num.f(_cfg["first_at"]), 0.0, 1.0) * fade
 	var mouth_row: Array = lights["mouth"]
 	var impact_row: Array = lights["impact"]
-	_light(_mouth_light, mouth_row, flood)
-	_light(_hit_light, impact_row, flood)
+	_light(_mouth_light, mouth_row, flood, delta)
+	_light(_hit_light, impact_row, flood, delta)
 	_flare_fade(_muzzle, flash * fade)
-	_flare_fade(_strike, flash * fade * clampf((_reveal - 0.9) * 10.0, 0.0, 1.0))
+	var burst := _env(Num.f(_cfg["strike_decay"])) if _index > 0 else 0.0
+	_flare_fade(_strike, burst * fade * clampf((_reveal - 0.9) * 10.0, 0.0, 1.0))
 
 
 ## 0..1: a stroke ramps up over `attack` (no one-frame jump), then falls with time constant `decay`.
@@ -329,9 +339,10 @@ func _draw() -> void:
 			continue
 		lines.append(_kept(BoltShape.place(shape, BoltShape.at_t(host, Num.f(b["t"])), end)))
 	var shown := mini(main.size(), ceili(_reveal * (main.size() - 1)) + 1)
-	_view.rebuild(main.slice(0, shown), lines, Num.f(_row["branch_width"]))
+	var widths := Vector2(Num.f(_row["branch_width"]), Num.f(_row["arc_width"]))
+	_view.rebuild(main.slice(0, shown), lines, _arcs.lines, widths)
 	var dir := (_hit - _mouth).normalized()
-	_muzzle.position = _mouth + dir * Num.f(_cfg["muzzle_ahead"]) * _scale
+	_muzzle.position = _clear_of_head() + Vector3.UP * Num.f(_cfg["muzzle_up"]) * _scale
 	_strike.position = _hit - dir * 0.6 + Vector3.UP * Num.f(_cfg["strike_lift"]) * _scale
 	var lift := _scale * lerpf(1.0, power, Num.f(_cfg["power_share"]))
 	(_muzzle.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["muzzle_flare"]) * lift
@@ -341,18 +352,12 @@ func _draw() -> void:
 	_hit_light.position = _hit - dir * LIGHT_BACK * _scale + Vector3.UP * _scale * 0.5
 
 
-## Sparks where the bolt lands (and where the first branches do), dust off the street.
+## What the stroke throws where it lands (BoltImpact).
 func _impact() -> void:
-	if fx == null:
-		return
-	for i: int in Num.i(_cfg["impact_sparks"]):
-		fx.sparks(_hit + Vector3.UP * i * _scale)
-	for b: Dictionary in _branches.slice(0, Num.i(_cfg["branch_sparks"])):
-		var end: Vector3 = b["end"]
-		fx.sparks(end)
-	fx.dust(Vector3(_hit.x, 0.4, _hit.z), Num.f(_row["dust"]) * _scale)
-	if Num.f(_row["ring"]) > 0.0:  # a ring of street dust running out from where it lands
-		fx.shockwave(Vector3(_hit.x, 0.0, _hit.z), Num.f(_row["ring"]) * _scale)
+	var ends: Array[Vector3] = []
+	for b: Dictionary in _branches:
+		ends.append(b["end"])
+	_thrown.strike(fx, _hit, ends)
 
 
 func _setup_light(light: OmniLight3D, colour: Color) -> void:
@@ -364,8 +369,9 @@ func _setup_light(light: OmniLight3D, colour: Color) -> void:
 	add_child(light)
 
 
-func _light(light: OmniLight3D, row: Array, flood: float) -> void:
-	light.light_energy = Num.f(row[0]) * flood
+func _light(light: OmniLight3D, row: Array, flood: float, delta: float) -> void:
+	var follow := 1.0 - exp(-delta * Num.f(_cfg["light_follow"]))  # over 2-3 frames, never a jump
+	light.light_energy = lerpf(light.light_energy, Num.f(row[0]) * flood, follow)
 	light.omni_range = Num.f(row[1]) * _scale
 
 

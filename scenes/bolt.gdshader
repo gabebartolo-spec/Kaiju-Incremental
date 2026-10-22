@@ -37,6 +37,9 @@ uniform float rim = 0.0;
 uniform vec4 rim_band = vec4(0.2, 0.42, 0.55, 0.85);
 // The most width on screen, in pixels at 1080p (0: no cap).
 uniform float max_px = 0.0;
+// Metres over which a ribbon fades out against geometry behind it (0: no fade).
+uniform sampler2D depth_tex : hint_depth_texture, repeat_disable, filter_nearest;
+uniform float soft = 0.0;
 
 void vertex() {
 	vec4 vp = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
@@ -62,8 +65,15 @@ void fragment() {
 	float shape = pow(clamp(1.0 - u, 0.0, 1.0), falloff);
 	vec3 col = mix(tint.rgb, fringe.rgb, smoothstep(0.1, 1.0, u));
 	float flick = 1.0 - wobble * 0.5 * (1.0 + sin(TIME * wobble_hz * 6.2832 + UV.y * 37.0));
+	// A ribbon's two ends fade out (no square cut-off); a blob is round already.
+	float tip = COLOR.b > 0.5 ? 1.0 : smoothstep(0.0, 0.1, UV.y) * (1.0 - smoothstep(0.9, 1.0, UV.y));
+	if (soft > 0.0) {
+		float d = texture(depth_tex, SCREEN_UV).x;
+		vec4 v = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, d, 1.0);
+		tip *= clamp((-v.z / v.w + VERTEX.z) / soft, 0.0, 1.0);
+	}
 	float ring = smoothstep(rim_band.x, rim_band.y, u) * (1.0 - smoothstep(rim_band.z, rim_band.w, u));
-	float a = clamp(rim * ring * level * COLOR.g, 0.0, 1.0);
-	ALBEDO = col * boost * shape * level * flick * COLOR.g + rim_tint.rgb * a;
+	float a = clamp(rim * ring * level * COLOR.g * tip, 0.0, 1.0);
+	ALBEDO = col * boost * shape * level * flick * COLOR.g * tip + rim_tint.rgb * a;
 	ALPHA = a;
 }
