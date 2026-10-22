@@ -88,7 +88,7 @@ func _run() -> void:
 				(
 					"street life: %d people, %d cars, avg %.2fms worst %.2fms per frame"
 					% [
-						street.people.size(),
+						street.pos.size(),
 						street.traffic.cars.size(),
 						street.total_usec / 1000.0 / maxi(1, street.frames),
 						street.worst_usec / 1000.0

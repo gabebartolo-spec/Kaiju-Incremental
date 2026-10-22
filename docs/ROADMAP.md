@@ -283,3 +283,15 @@ labelled concept board (R 23.1, research 23) · legal look check: the research s
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
 b2-18). Shape closed (director 2026-10-21): "ours is like a crocodile in a t-rex body, not godzilla shaped".
+Landmark stable (D-133, comment #62, director 2026-10-22): about 12 landmarks in a pool, each run picks 3 per stage by
+its seed, so runs differ; kinds: famous-style icons (original, never copies), city services, fun one-offs, industrial.
+Replaces D-071's fixed four as the set; stadium, wheel, spire and megatower join the pool. New 8 (picked): suspension bridge tower, opera-house shells, theme-park coaster, giant donut sign, power station,
+airport control tower with planes flying in and out, container port cranes, oil refinery. Tripo models voxelized into
+carvable cell grids; six-view check per model; look boards to him first.
+Itch demo (D-132, comment #61, director 2026-10-22): the 1.0 demo goes on an invite-only Itch page (download keys) when
+the reptilian stage is 100% done: bug free, polished visuals, good performance, fully featured. Earlier builds stay local.
+Atmosphere and city life (comment #63, director 2026-10-22): clouds and weather, birds flying round, one whale per run
+spouting in the bay, fire crews and ambulances (fire crews: comment #50), pet dogs on the streets, night clubs, banks, hotels,
+train stations with tracks and running trains, small boats on the water. First: sky and sea life (clouds and weather, birds, small boats, the whale); weather looks only; the whale is pure
+spectacle (can't be touched); birds scatter on roars and falling towers; dogs always escape; trains derail and smash;
+banks, hotels and clubs give small bonuses (comments #64-71).

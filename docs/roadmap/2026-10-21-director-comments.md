@@ -63,3 +63,15 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 57 | audit-sim vs fire-spread (asked): "Separate them" | audit-sim rebuilt on the base without the fire WIP | in progress |
 | 58 | Landmarks (asked): out-of-view landmarks may unload like ordinary buildings, "Yes, if no pop-in" | city-memory builder: game-camera test proves no landmark pop-in while turning | in progress |
 | 59 | Worktrees over the cap (asked): "Yes, merged ones only" | lead: remove worktrees whose branches are merged | in progress |
+| 60 | "cpu and gpu and screen and all godot slots are yours to use as you see fit" (2026-10-22, director AFK ~30 min) | lead + every builder: no per-agent Godot cap, local GPU renders, visible windows allowed while this stands | rule |
+| 61 | "I would like the 1.0 demo build to be on Itch for testers" (2026-10-22) | lead: ROADMAP release item (Itch page + upload); details being asked | recorded |
+| 62 | "I would like many more landmarks" (2026-10-22; today 4: stadium, wheel, spire, megatower, D-071) | lead: ROADMAP landmark item; how many and which being asked | recorded |
+| 63 | "I also want some atmospheric things added: clouds and weather, birds flying around, the occasional whale in the water spouting water (1 per run), emergency services like fire fighters, ambulances (already roadmapped), pet dogs in the streets, night clubs, banks, hotels, train stations + tracks with trains on them, small boats in the water, etc" (2026-10-22) | lead: ROADMAP 'Atmosphere and city life' item; details at the next interview | recorded |
+| 64 | Atmosphere order (asked, 2026-10-22): "Sky and sea life" first (clouds/weather, birds, small boats, the whale) | lead: next atmosphere builder | recorded |
+| 65 | Weather (asked): "Looks only" (mood and light, no gameplay effect) | atmosphere builder | recorded |
+| 66 | Whale (asked): "Pure spectacle" (surfaces, spouts, dives once per run; the kaiju can't touch it) | atmosphere builder | recorded |
+| 67 | Landmark models (asked): "Yes, concept refs first" (free refs for all 8 on one board; models only for the ones he approves) | lead: Tripo refs today (D-134 budget) | in progress |
+| 68 | Pet dogs (asked, 2026-10-22): "No, they always escape" (bolt clear, never crushed; people still are) | street-life builder | recorded |
+| 69 | Trains (asked): "Derail and smash" (stomp the track or hit a train: it derails, carriages tumble and break like vehicles) | trains builder | recorded |
+| 70 | Banks, hotels, night clubs (asked): "Small bonuses" (e.g. a bank spills extra biomass, a club's crowd floods out, a hotel is tall and topples well) | city builder | recorded |
+| 71 | Birds (asked): "Scatter on roars and stomps" (flocks burst up and away on a roar or a falling tower) | atmosphere builder | recorded |

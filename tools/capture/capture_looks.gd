@@ -204,13 +204,14 @@ func _street_shots() -> void:
 		waited += 1
 	var calm := Vector2(INF, INF)
 	var fleeing := Vector2(INF, INF)
-	for p: StreetLife.Person in street.people:
-		if p.cop:
+	for i: int in street.pos.size():
+		if street.cop[i] == 1:
 			continue
-		if p.fleeing and fleeing.x == INF:
-			fleeing = p.pos
-		elif not p.fleeing and calm.x == INF and p.pos.distance_to(sim.kaiju_pos) > 40.0:
-			calm = p.pos
+		var at := street.pos[i]
+		if street.fleeing[i] == 1 and fleeing.x == INF:
+			fleeing = at
+		elif street.fleeing[i] == 0 and calm.x == INF and at.distance_to(sim.kaiju_pos) > 40.0:
+			calm = at
 	var cruisers := Vector2.ZERO
 	var count := 0
 	for car: Traffic.Car in street.traffic.cars:
