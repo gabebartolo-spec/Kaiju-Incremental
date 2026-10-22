@@ -31,7 +31,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 ## Unfinished changes
 - Suites 03:29: demoend 25 checks pass; sim_play, military, smoke, sim pass. flow had 7 fails; fixed: thanks screen text reserve
   (DemoEnd.TEXT_RESERVE, EvolutionReveal.frame_view(owner, reserve)), pad ui_* bindings added in autoload/settings.gd (engine
-  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. ALL GREEN at ae4d3b85 (demoend, sim_play, military, smoke, flow, sim; ratchet + caps ok). Planted bugs (escalation guard removed; tank cap without endless check) both PASSED the old _check_normal_untouched (rows x7 saturate the army), so it now also tries all-zero rows (tests/lib/sim_demo_end.gd, uncommitted); re-plant run writes /tmp/plant.out and temporarily edits sim/endless.gd (backup /tmp/endless.orig; `git checkout sim/endless.gd` restores, never commit it). Next: confirm plants fail + clean passes, commit, push claude/demo-end, report sha (no PR), then weather. Earlier note: the
+  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. ALL GREEN at ae4d3b85 (demoend, sim_play, military, smoke, flow, sim; ratchet + caps ok). Normal-untouched check strengthened (zero + high rows, commit 95b52c4b): clean passes, plant 1 (escalation guard removed) now FAILS it; plant 2 (tank cap w/o endless check) result in /tmp/plant.out; the run restores sim/endless.gd itself (verify `git status sim/endless.gd` is clean, else `git checkout sim/endless.gd`). Next: push claude/demo-end, report sha (no PR), then weather. Earlier note: the
   "normal rampage adds the sim's counters" check (saved totals were {}). Fixes are uncommitted until flow is green.
 - Still to do: planted-failure runs for the Endless checks, lint (complexity_ratchet, tuning_keys, 400-line cap), 4K still.
 - native/bin DLL removed; .uid files untracked noise, stage by name.
@@ -47,3 +47,4 @@ Entry point for Endless (tree button now vs title/city select); real wrecked-cit
 feedback URL; the base still has 4 city rows and evolve3 (three-steps trims them).
 ## Findings for the lead
 People eaten/fled are view counts (StreetLife), not sim counters. Buttons use UiKit.button (the plate look is the title PR's).
+Lesson for the lead (to file): a 'rows changed, result identical' check must include zero and an extreme row; x7 alone saturated the army and let two planted bugs pass (caught by the planted-bug run).
