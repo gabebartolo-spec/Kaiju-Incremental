@@ -41,7 +41,13 @@ claude/fire-spread-pre-rebase and -pre-rebase2, local only).
   (2) military OPEN, diagnosed: autoplay path changes (0 close-tank steps at 11.0, 29 at 14.5, all ONE tank, tier 4
   seed 2, tank 2): it retreats from the kaiju but is held up by parked tank 19 7.4 m behind on the same road;
   convoy re-plans a held-up retreat after stuck 2.0 s x 0.5 = 1.0 s by design, so it waits 1.1 s in danger (bar
-  1.0). A fix is a convoy behaviour change (decision asked of the lead). Not pushed (red).
+  1.0). TRIED, reverted: convoy danger_stuck 0.25 data value (re-plan a held-up retreat inside the danger radius
+  at once) and a parked blocker planning its own retreat (_clear_the_way): tank 2 still held 1.1 s. Trace: with the
+  re-plan every 0.3 s the route is the same (path 4-5, east through tank 19 parked at (-41.17,137), 7.4 m behind,
+  same road, kaiju 10-11 m west): a sandwich, so re-planning cannot help; it needs the blocker to move (reverse
+  off the road ahead) or the retreat to turn another way: a convoy behaviour design, asked of the lead. Test to
+  write: tier 4, city seed 2 autoplay 700 steps, tank 2 held-still seconds inside danger-0.5 <= 1.0 (fails 1.1).
+  Not pushed (military red).
 ## Sim-review packet (kaiju-sim-review)
 Transitions: (1) tick: FireSpread.step runs once a tick inside SpeciesPowers.step (after the coats), the heat pass
 every spread_tick s (a whole number of ticks), timers every tick; own stream Seeds.derive(powers rng, 0xF12E)
