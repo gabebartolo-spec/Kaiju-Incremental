@@ -39,7 +39,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
   elapsed) with no cap, regrowth = regrow_share_per_minute (5%) of flattened buildings per regrow_interval pass (rows in
   data/tuning.json demo.endless); (c) "agents" in demo.military_keys, taskforce.gd interval() reads sim.escalation(); (d) gdlint
   clean (gdformat -l 100), flow_demo split into tests/lib/flow_demo_menus.gd. New sim checks in tests/lib/sim_demo_end.gd.
-- Running/next: demoend then flow, smoke, ui, sim_play, military, taskforce_gate (each behind engine_slot); push once; report sha.
+- Green on a8ab1099+: demoend (32 checks), sim_play, military, taskforce_gate, ui. smoke + flow rerunning after a typing fix in tests/lib/flow_demo_menus.gd. Next: planted-defect runs for the new checks (regrow fire reset, building count, escalation scaling), push once, report sha.
 - Then: sky and sea life (plan above; rampage_sim.gd ~397 lines, so the hook goes in a new small file), 4K thanks still, Taskforce
   mech/gunship units (queue 3, after taskforce-core: its result keys join demo.military_keys).
 ## Attempts

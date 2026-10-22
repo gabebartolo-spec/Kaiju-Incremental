@@ -19,6 +19,10 @@ func run() -> void:
 	await _check_controls_rows()
 
 
+func _screen(main: Node) -> Node:
+	return main.call("screen")
+
+
 func _frames(n: int) -> void:
 	for _i: int in n:
 		await t.process_frame
@@ -33,7 +37,7 @@ func _check_other_species_save() -> void:
 	t.root.add_child(main)
 	await _frames(3)
 	check.call(
-		GuiInput.button(main.call("screen"), "CONTINUE") == null,
+		GuiInput.button(_screen(main), "CONTINUE") == null,
 		"the demo does not continue a save of a species it leaves out"
 	)
 	main.queue_free()
