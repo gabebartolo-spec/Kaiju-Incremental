@@ -42,7 +42,12 @@ func _ready() -> void:
 	_build()
 
 
+func _mark(label: String) -> void:
+	print("TITLE_TIMING ", label, " ", Time.get_ticks_msec())
+
+
 func _build() -> void:
+	_mark("build start")
 	Content.set_time("night")
 	_view = SubViewport.new()
 	_view.own_world_3d = true
@@ -61,10 +66,14 @@ func _build() -> void:
 	var cam: Dictionary = _cfg["camera"]
 	_camera = Camera3D.new()
 	_camera.fov = Num.f(cam["fov"])
+	# Nothing of the play-area city within this many metres draws (a lit window 10 m away was a
+	# glowing box floating over the bay).
+	_camera.near = Num.f(cam["near"])
 	_view.add_child(_camera)
 	_camera.current = true
 	_camera.position = _vec(cam["position"])
 	_camera.look_at(_vec(cam["look"]))
+	_mark("city added")
 	while not _city.is_loaded:
 		if not is_inside_tree():
 			return
@@ -89,6 +98,7 @@ func _build() -> void:
 	var colossus_cfg: Dictionary = _cfg["colossus"]
 	_colossus = TitleColossus.new(colossus_cfg)
 	_city.add_child(_colossus)
+	_mark("built")
 	is_loaded = true
 	ready_to_show.emit()
 
@@ -109,6 +119,11 @@ func _process(delta: float) -> void:
 		_shiver = maxf(0.0, _shiver - delta / Num.f(ripple["decay_s"]))
 	if _shiver > 0.0 or _rising:
 		_shore.set_shiver(_shiver)
+
+
+## How far the bay is shivering (0 at rest .. 1 a footstep has just landed), for captures.
+func shiver() -> float:
+	return _shiver if not _rising else 1.0
 
 
 ## A far footstep landed: the bay shivers (the camera and the picture stay still), the reflections

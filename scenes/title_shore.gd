@@ -7,10 +7,13 @@ extends Node3D
 ## back from its edge (CitySkyline), so the wall and the promenade have the strip in front.
 
 const REFLECT := preload("res://scenes/title_shore.gdshader")
+const LEDGE := preload("res://scenes/title_ledge.gdshader")
 ## The wall's face is at the shore line; the strip behind it is the promenade (m).
 const PROMENADE := 9.0
 const WATER_Y := -0.8
 const MAX_FIRES := 12
+## Lamp posts stand this far back from the ledge's lip (m).
+const POST_BACK := 2.4
 
 var _cfg: Dictionary
 var _shore_z: float
@@ -146,21 +149,40 @@ func _ledge(span: float) -> void:
 	var z := _coast_z - from - depth / 2.0
 	var body := Vector3(span * 2.0, top - WATER_Y, depth)
 	var mid_y := (top + WATER_Y) / 2.0
-	var stone := _lit_material(
-		Color(str(_cfg["ledge_color"])),
-		Color(str(_cfg["ledge_lit"])),
-		Num.f(_cfg["ledge_lit_energy"])
-	)
-	add_child(_box(body, Vector3(0.0, mid_y, z), stone))
+	var edge_z := _coast_z - from - depth
+	add_child(_box(body, Vector3(0.0, mid_y, z), _ledge_material(span, edge_z)))
 	var cap := _lit_material(
 		Color(str(_cfg["ledge_cap"])), Color(str(_cfg["promenade_glow"])), Num.f(_cfg["ledge_glow"])
 	)
-	var edge_z := _coast_z - from - depth
 	var cap_at := Vector3(0.0, top + 0.12, edge_z + 0.7)
 	add_child(_box(Vector3(span * 2.0, 0.25, 1.4), cap_at, cap))
 	_kerb(span, top, edge_z)
 	_railing(span, top, edge_z)
 	_posts(span, top, edge_z)
+
+
+## The ledge's paving: slabs, a pool of lamplight under every lamp, the fires' glow on the lip.
+func _ledge_material(span: float, edge_z: float) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = LEDGE
+	mat.set_shader_parameter("stone_colour", Color(str(_cfg["ledge_color"])))
+	mat.set_shader_parameter("pool_colour", Color(str(_cfg["lamp_color"])))
+	mat.set_shader_parameter("fire_colour", Color(str(_cfg["fire_reflect"])))
+	mat.set_shader_parameter("lamp_gap", Num.f(_cfg["post_gap"]))
+	mat.set_shader_parameter("lamp_span", span)
+	mat.set_shader_parameter("lamp_z", edge_z + POST_BACK)
+	mat.set_shader_parameter("lip_z", edge_z)
+	var pool: Array = _cfg["pool_radius"]
+	mat.set_shader_parameter("pool_radius", Vector2(Num.f(pool[0]), Num.f(pool[1])))
+	mat.set_shader_parameter("pool_strength", Num.f(_cfg["pool_strength"]))
+	mat.set_shader_parameter("fire_strength", Num.f(_cfg["ledge_fire"]))
+	var xs := PackedFloat32Array(_fires)
+	if not xs.is_empty():
+		var total := 0.0
+		for x: float in xs:
+			total += x
+		mat.set_shader_parameter("fire_x", total / xs.size())
+	return mat
 
 
 ## Kerb stones along the ledge's lip: pale blocks with gaps, so the edge reads as cut stone.
@@ -209,20 +231,22 @@ func _posts(span: float, top: float, edge_z: float) -> void:
 	var height := Num.f(_cfg["post_height"])
 	var color := Color(str(_cfg["rail_color"]))
 	var count := int(span * 2.0 / gap)
-	var mm := _blocks(Vector3(0.22, height, 0.22), color, count)
+	var mm := _blocks(Vector3(0.22, height, 0.22), Color(str(_cfg["post_color"])), count)
 	for i: int in count:
 		var x := -span + (i + 0.5) * gap
 		mm.multimesh.set_instance_transform(
-			i, Transform3D(Basis(), Vector3(x, top + 0.3 + height / 2.0, edge_z + 2.4))
+			i, Transform3D(Basis(), Vector3(x, top + 0.3 + height / 2.0, edge_z + POST_BACK))
 		)
 		var head := _box(
 			Vector3(0.4, 0.28, 0.4),
-			Vector3(x, top + 0.3 + height, edge_z + 2.4),
-			_lit_material(Color("f0d9a0"), Color(str(_cfg["lamp_color"])), 0.9)
+			Vector3(x, top + 0.3 + height, edge_z + POST_BACK),
+			_lit_material(
+				Color("4a3416"), Color(str(_cfg["lamp_color"])), Num.f(_cfg["post_energy"])
+			)
 		)
 		add_child(head)
 		var halo := MeshInstance3D.new()
-		halo.mesh = _glow_quad(Color(str(_cfg["lamp_color"])))
+		halo.mesh = _glow_quad(Color(Color(str(_cfg["lamp_color"])), Num.f(_cfg["post_halo"])))
 		halo.scale = Vector3.ONE * Num.f(_cfg["post_glow"])
 		halo.position = head.position
 		add_child(halo)

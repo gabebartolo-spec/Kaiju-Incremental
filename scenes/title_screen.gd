@@ -11,6 +11,8 @@ const NOTE_SIZE := 30
 ## The left column: its margin from the screen's edge (share of the width) and its width (px).
 const COLUMN_MARGIN := 0.055
 const COLUMN_WIDTH := 800.0
+## Texels along a side of the sky's glow textures (a coarse one shows as blocks when stretched).
+const GLOW_TEXELS := 512
 
 ## summary: "" for no save, else what Continue resumes (e.g. "Reptilian, 3 rampages").
 var summary := ""
@@ -110,11 +112,14 @@ func _add_sky() -> void:
 		spot.set_color(1, Color(glow_colour, 0.0))
 		var tex := GradientTexture2D.new()
 		tex.gradient = spot
+		tex.width = GLOW_TEXELS
+		tex.height = GLOW_TEXELS
 		tex.fill = GradientTexture2D.FILL_RADIAL
 		tex.fill_from = Vector2(0.5, 0.5)
 		tex.fill_to = Vector2(1.0, 0.5)
 		var blob := TextureRect.new()
 		blob.texture = tex
+		blob.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		blob.stretch_mode = TextureRect.STRETCH_SCALE
 		blob.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		blob.anchor_left = Num.f(g[0]) - Num.f(g[2])
