@@ -44,7 +44,6 @@ var falling: Array[Falling] = []
 var destroyed := 0
 var _rng: RandomNumberGenerator
 var _fall_rng: RandomNumberGenerator  # its own stream: spawns draw exactly as before deaths fell
-var _crashing := false  # a wreck's own impact never reaches the sky
 var _spawn_timer := 0.0
 var _next_id := 0
 
@@ -86,6 +85,7 @@ func step(dt: float) -> void:
 		if heli.coat_t > 0.0:
 			heli.coat_t -= dt
 			heli.hp -= heli.coat_dps * dt
+			heli.last_blow = heli.coat_dps * dt  # a coat kill is a light blow: it spins down
 			coated = true
 		heli.cooldown -= dt
 		if heli.cooldown <= 0.0:
@@ -174,7 +174,7 @@ func _keep_clear(heli: Heli) -> void:
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high).
 func hit(force: Callable, damage: float, reaches_air: bool) -> void:
-	if not reaches_air or helis.is_empty() or _crashing:
+	if not reaches_air or helis.is_empty():
 		return
 	for heli: Heli in helis:
 		var k: float = force.call(heli.pos, Num.f(cfg["heli_radius"]))
@@ -241,7 +241,8 @@ func _fall(dt: float) -> void:
 
 
 ## The wreck hits the street at `at`: it sets the building it hits burning, which spreads with
-## City Ablaze (D-141), and smashes the low floors around it (the kaiju is never hurt).
+## City Ablaze (D-141), and smashes the low floors around it. It hurts only the city (D-140):
+## never the kaiju, the army or the sky.
 func _crash(at: Vector2) -> void:
 	var radius := Num.f(cfg["crash_radius"])
 	var nearest := -1
@@ -258,12 +259,10 @@ func _crash(at: Vector2) -> void:
 			nearest = i
 	if nearest >= 0:
 		sim.powers.fire.ignite(nearest)
-	_crashing = true
-	sim.hit_area(
+	StrayShell.hit_buildings(
+		sim,
 		func(p: Vector2, r: float) -> float:
 			return RampageSim.falloff(p.distance_to(at) - r, radius),
 		Num.f(cfg["crash_damage"]),
-		0,
-		Num.i(cfg["crash_floors"])
+		Vector2i(0, Num.i(cfg["crash_floors"]))
 	)
-	_crashing = false

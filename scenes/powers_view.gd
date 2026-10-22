@@ -299,7 +299,7 @@ func _heli_down(event: Dictionary) -> void:
 		_wreck().crashed(event)
 		return
 	var id := Num.i(event["heli"])
-	var node: Node3D = _helis.get(id, Node3D.new())
+	var node: Node3D = _helis[id] if _helis.has(id) else Node3D.new()
 	_helis.erase(id)
 	_wreck().downed(node, event)
 

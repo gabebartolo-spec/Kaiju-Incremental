@@ -19,6 +19,7 @@ func run_checks() -> void:
 	await _t("_check_burst")
 	await _t("_check_spin_crash")
 	await _t("_check_crash_fire")
+	await _t("_check_coat_kill")
 	await _t("_check_grabbed")
 	await _t("_check_topple")
 	await _t("_check_seeded")
@@ -119,6 +120,26 @@ func _check_crash_fire() -> void:
 				% [owned, burning]
 			)
 		)
+
+
+## A burning coat that finishes a helicopter off after a heavy, non-lethal hit sends it spinning
+## down: the killing blow is the coat's light tick, not the old heavy hit.
+func _check_coat_kill() -> void:
+	var sim := _scene({})
+	var heli: AirWing.Heli = sim.air.helis[0]
+	heli.last_blow = Num.f(sim.air.cfg["hp"])  # an earlier heavy hit that did not kill
+	heli.hp = 0.001
+	heli.coat_t = 1.0
+	heli.coat_dps = 1.0
+	sim.events.clear()
+	sim.air.step(DT)
+	var fates: Array = (
+		sim
+		. events
+		. filter(func(e: Dictionary) -> bool: return str(e["type"]) == "heli_destroyed")
+		. map(func(e: Dictionary) -> String: return str(e.get("fate", "")))
+	)
+	check(fates == ["spin"], "a coat kill after a heavy hit spins it down: %s" % [fates])
 
 
 func _check_grabbed() -> void:
