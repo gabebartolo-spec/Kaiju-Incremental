@@ -615,6 +615,8 @@
 			},
 			"sounds": {
 				"roar": "hero",
+				"thunder_beam": "hero",
+				"thunder_beam_end": "hero",
 				"stomp_0": "stomp",
 				"stomp_1": "stomp",
 				"stomp_2": "stomp",
@@ -692,7 +694,10 @@
 			"lash": -3.0,
 			"ready": -8.0,
 			"deflect": -10.0,
-			"regen_loop": -20.0
+			"regen_loop": -20.0,
+			"thunder_beam": -1.0,
+			"thunder_beam_loop": -4.0,
+			"thunder_beam_end": -2.0
 		}
 	},
 	"city_sound": {
@@ -960,6 +965,9 @@
 			"deflect": "SFX",
 			"regen_loop": "SFX",
 			"siren_far": "Ambience",
+			"thunder_beam": "Hero",
+			"thunder_beam_loop": "Hero",
+			"thunder_beam_end": "Hero",
 			"footstep": "SFX",
 			"footstep_1": "SFX",
 			"footstep_2": "SFX",
