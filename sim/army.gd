@@ -34,6 +34,7 @@ var _rng: RandomNumberGenerator
 ## Each squad's next shot comes a seeded, ragged while later (D-076: no unison).
 var _ragged: RandomNumberGenerator
 var _aim: RandomNumberGenerator  # which shells miss, and where they land (StrayShell)
+var _strays: Array[Dictionary] = []  # missed shells in flight: {at, left (seconds to land)}
 var _spawn_timer: float
 var _next_id := 0
 var _column := -1
@@ -55,6 +56,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 
 
 func step(dt: float) -> void:
+	_land_strays(dt)
 	_spawn_timer -= dt
 	if _spawn_timer <= 0.0 and _spawn():
 		_spawn_timer = maxf(
@@ -98,7 +100,21 @@ func shoot(tank: RampageSim.Tank, dist: float, reach: float) -> void:
 	misses += 1
 	var at := StrayShell.landing(sim, _aim)
 	sim.events.append({"type": "tank_fired", "tank": tank.id, "at": at, "miss": true})
-	StrayShell.land(sim, at)
+	_strays.append({"at": at, "left": Num.f(cfg["shell_flight"])})
+
+
+## A missed shell lands when its flight is over (the view draws the tracer for the same time):
+## stray_landed, then what it breaks.
+func _land_strays(dt: float) -> void:
+	for i: int in range(_strays.size() - 1, -1, -1):
+		var stray := _strays[i]
+		stray["left"] = Num.f(stray["left"]) - dt
+		if Num.f(stray["left"]) > 0.0:
+			continue
+		var at: Vector2 = stray["at"]
+		_strays.remove_at(i)
+		sim.events.append({"type": "stray_landed", "at": at})
+		StrayShell.land(sim, at)
 
 
 ## Each squad whose roof still stands fires a volley every fire_interval while the kaiju is in

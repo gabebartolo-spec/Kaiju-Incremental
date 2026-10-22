@@ -43,11 +43,25 @@ func _run() -> void:
 	var shots := 0
 	var misses := 0
 	var frames := roundi(_seconds * Engine.physics_ticks_per_second)
+	var hp := INF
 	for i: int in frames:
 		await physics_frame
 		_frame = i
 		if rampage.sim == null:
 			continue
+		if rampage.sim.hp < hp - 0.001 and hp != INF:  # what hurt the kaiju (the HUD readout)
+			var kinds: Array[String] = []
+			for e: Dictionary in rampage.sim.events:
+				kinds.append(str(e["type"]) + (" miss" if e.get("miss", false) else ""))
+			print("HP frame %d %.2f -> %.2f events %s" % [i, hp, rampage.sim.hp, kinds])
+		hp = rampage.sim.hp
+		var cells := 0
+		for e: Dictionary in rampage.sim.events:
+			if str(e["type"]) == "chunks_broken":
+				var broken: Array = e["cells"]
+				cells += broken.size()
+		if cells > 0:
+			print("CHUNKS frame %d broke %d chunks" % [i, cells])
 		for e: Dictionary in rampage.sim.events:
 			if str(e["type"]) != "tank_fired" or (e.has("at") and not e.get("miss", false)):
 				continue

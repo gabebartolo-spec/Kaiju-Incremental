@@ -19,12 +19,30 @@ static func chance(cfg: Dictionary, dist: float, reach: float) -> float:
 ## Where a missed shell lands: beside the kaiju (director, 2026-10-21: "land beside him", so the
 ## player sees it break the buildings next to him), on a ring round it at a random angle, from
 ## ring_near to ring_far out past its body. Not along the line of fire: a tank to one side would
-## put it behind the kaiju from the camera.
+## put it behind the kaiju from the camera. A shell that lands in the street breaks nothing, so
+## it tries up to ring_tries spots and takes the first within the blast radius of a standing
+## building (the last when none is).
 static func landing(sim: RampageSim, rng: RandomNumberGenerator) -> Vector2:
 	var miss: Dictionary = sim.army["miss"]
 	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	var out := body + rng.randf_range(Num.f(miss["ring_near"]), Num.f(miss["ring_far"]))
-	return sim.kaiju_pos + Vector2.from_angle(rng.randf_range(0.0, TAU)) * out
+	var at := sim.kaiju_pos
+	for _try: int in maxi(1, Num.i(miss["ring_tries"])):
+		var out := body + rng.randf_range(Num.f(miss["ring_near"]), Num.f(miss["ring_far"]))
+		at = sim.kaiju_pos + Vector2.from_angle(rng.randf_range(0.0, TAU)) * out
+		if _near_building(sim, at, Num.f(miss["radius"])):
+			break
+	return at
+
+
+## Is a standing building's footprint within `reach` of p?
+static func _near_building(sim: RampageSim, p: Vector2, reach: float) -> bool:
+	for b: RampageSim.Building in sim.buildings:
+		if b.frame.alive_count == 0:
+			continue
+		var half := Vector2(b.w, b.d) * 0.5 + Vector2(reach, reach)
+		if absf(p.x - b.x) <= half.x and absf(p.y - b.z) <= half.y:
+			return true
+	return false
 
 
 ## The shell lands at `at`: every standing chunk within radius on the floors below `floors` takes

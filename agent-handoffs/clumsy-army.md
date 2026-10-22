@@ -1,5 +1,5 @@
 # Clumsy-army handoff, 2026-10-22 (builder; rebuilt on the squashed base)
-## State: done, pushed to claude/clumsy-army-v2 (lead opens the PR); tier 4 is cut (D-135)
+## State: PAUSED mid critic-fix round (director paused 2026-10-22); clip NOT re-rendered; military 19/20 (tier 4 seed 1)
 ## Task
 Director comments #18: "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military
 which destroys parts of its own city occasionally". Ruling: misses land beside him (ring round the kaiju, radius 2.5 m).
@@ -46,8 +46,26 @@ across other tiers beyond the suite; helicopters.
   0, 1, 2 at 20/0.
 - Clip: strays_ring_v2_6s.mp4 in the clumsy-army notes folder (seed 4, 36 s render, cut 29.8-35.8 s, local RTX 4070
   SUPER, 4 of 4 shots missed at frames 1640 1773 1906 2039). Not yet QA'd by the lead.
+## Clip critic FIX round (lead, 2026-10-22) - code in, clip not re-cut
+1. Tracer vs impact: view-only mismatch plus a sim timing fact. The sim landed a stray at fire time, the tracer took
+   0.22 s, and the impact popped at fire (14-16 frames early); a miss's tracer also sparked at its landing. Now: army
+   keeps missed shells in flight for army.shell_flight (0.22, data) and emits stray_landed then the break; the view
+   draws the tracer to the landing for the same time with no hit spark (TankFx.fire_shell miss) and the impact comes on
+   stray_landed (TankYard.on_event handles tank_fired and stray_landed; Rampage._on_event shrank, baseline row gone).
+   RNG: the landing is still drawn at fire time from the same stream; strays now land 0.22 s later (same seeds).
+2. HP 160 -> 159: rooftop squads (rooftop_fired, 0.01-0.02 each per volley, headless seed 4: HP lines all carry a
+   rooftop_fired event, none a stray); the readout rounds. Not the strays.
+3. Impacts: headless seed 4 showed 3 of 4 misses broke nothing (they landed on streets). StrayShell.landing now tries
+   up to army.miss.ring_tries (6) ring spots and takes the first within the blast radius of a standing building
+   (draw count varies, same stream); impact fx: 8 debris, flash 9.0, a dust cloud. Not yet measured: chunks per miss
+   with the new landing (capture_strays now prints CHUNKS and HP lines headless: godot --headless ... --seconds=36).
+4. Re-cut with the breath-aim indicator off and a closer camera: NOT done (paused).
+Open: military suite 19/20: tier 4 seed 1, tank 17 yields 0.9 s standing under the kaiju (steps 508-523); tier 4 is cut
+(D-135), so this goes away with the tier-4 rows if the lead drops them; otherwise the yield rule needs one more case.
+Not run on this tip: full suite, damage probe (strays land later and on buildings: re-probe tiers 2 and 3 before the PR).
 ## Left
-Lead: art QA of the clip, open the PR. Remove worktrees ca2-base (lead's) and claude/clumsy-army-pre-rebase (local ref).
+Lead: decide the tier-4 test rows. Next builder: re-probe tiers 2 and 3 (12 seeds), headless seed-4 CHUNKS check, full
+suite, then the clip (camera closer, indicator off, 6 s, timeout every Godot run).
 ## Findings
 - The spawn camera sits inside a tower for a kaiju at its rise point (standing captures render black).
 - Autoplay damage probes are the wrong instrument for a change that alters the city.
