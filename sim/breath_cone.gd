@@ -7,8 +7,11 @@ extends RefCounted
 ## from the reptilian rigs: baby 10.4, adolescent 10.3, adult 13.5). It runs along the facing
 ## out to the ability's reach, within cone_half_angle_deg either side.
 
-## Half the diagonal of a unit square: the radius of a circle that covers it.
-const SQUARE_HALF_DIAGONAL := 0.7071068
+## How far past its flank or end a cover circle may go, in rows (reach / count), and the share of
+## that margin its radius takes up; how far in from the flank (rows) the flank circles sit.
+const FLANK_ROWS := 2.0
+const FLANK_FIT := 0.99
+const FLANK_INSET_ROWS := 0.72
 
 
 ## {"origin": Vector2, "dir": Vector2, "reach": float, "half_angle": float (radians)}.
@@ -43,24 +46,34 @@ static func breathe(sim: RampageSim, reach: float, damage: float) -> void:
 
 ## Circles (x, y centre, z radius) that together cover the cone `of` gives, out to its reach,
 ## so presentation can flatten everything the breath burns (build 2 note 26: trees stood).
-## `count` rows along the axis, each a line of circles across the cone's width there (a lattice
-## of squares one row deep, each circle just wide enough to cover its square), so no circle
-## bulges past the cone's flank or end by more than a fraction of a row. (One circle per row on
-## the axis had to be as wide as the cone, and flattened a tree 0.19 of the reach outside it.)
+## `count` circles down the axis (each as wide as the cone there, but never more than
+## FLANK_ROWS rows past its flank or end), plus count / 2 a side along each flank to take in
+## what the axis circles leave at the edges. So nothing outside the cone goes by more than that
+## margin, and under 1 percent of the cone's area is left (tests/lib/city_breath_trees.gd).
 static func cover(cone: Dictionary, count := 12) -> Array[Vector3]:
 	var origin: Vector2 = cone["origin"]
 	var dir: Vector2 = cone["dir"]
 	var across := dir.orthogonal()
 	var reach := Num.f(cone["reach"])
-	var slope := tan(Num.f(cone["half_angle"]))
+	var half := Num.f(cone["half_angle"])
+	var slope := tan(half)
 	var step := reach / count
-	var radius := step * SQUARE_HALF_DIAGONAL
+	var margin := FLANK_ROWS * step
 	var out: Array[Vector3] = []
 	for i: int in count:
 		var d := (i + 0.5) * step
-		var half_width := (d + step * 0.5) * slope
-		var lines := maxi(0, ceili(half_width / step - 0.5))
-		for k: int in range(-lines, lines + 1):
-			var at := origin + dir * d + across * (k * step)
+		var wide := Vector2((d + step * 0.5) * slope, step * 0.5).length()
+		var inside := minf((d * slope + margin) * cos(half), minf(reach + step - d, d + step))
+		var at := origin + dir * d
+		out.append(Vector3(at.x, at.y, minf(wide, inside * FLANK_FIT)))
+	var per_flank := maxi(1, count / 2)
+	var radius := margin * cos(half) * FLANK_FIT
+	var inset := step * FLANK_INSET_ROWS
+	for k: int in per_flank:
+		var rho := (k + 0.5) / per_flank * reach
+		for side: float in [1.0, -1.0]:
+			var along := rho * cos(half) + inset * sin(half)
+			var off := side * (rho * sin(half) - inset * cos(half))
+			var at := origin + dir * along + across * off
 			out.append(Vector3(at.x, at.y, radius))
 	return out
