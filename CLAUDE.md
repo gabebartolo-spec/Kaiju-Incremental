@@ -28,8 +28,6 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
   over-ambitious items and say what the simpler alternative is.
 - **Challenge the director** when a request conflicts with these rules or `docs/VISION.md`. One
   paragraph, a better option, then do what the director decides.
-- **Ask, don't ponder.** A judgement call that is the director's is asked at once, the
-  `ask-the-director` way. Never park a question in a wall of text; never guess at a visual.
 
 ## Hard rules
 
@@ -50,26 +48,20 @@ taste and final judgement. Agents supply execution, evidence and honest pushback
 
 ## Machine rules (shared PC, one GPU)
 
-- One Godot process per agent; isolate every run (`tools/run_tests.sh` does; a direct run sets
-  `APPDATA=<your scratch dir>`). Never kill Godot by image name; kill by the PID you recorded.
-- GPU jobs (renders, generation, local models) one at a time; the art role owns them.
+- Isolate every Godot run (`tools/run_tests.sh` does; a direct run sets
+  `APPDATA=<your scratch dir>`).
+- The art role owns GPU jobs (renders, generation, local models).
 - Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`. Remove
   the worktree when the PR merges. More than four live worktrees is a violation.
 - Only the merge role edits `docs/STATUS.md` and `docs/DECISIONS.md`, in a docs-only board PR
   after each merge; every other PR states its board and log changes in its body.
-- Stage files by name, never `git add -A`; never `git stash`; revert `.import` churn.
-- Never slow down, defer or pause work for what the director is doing on the PC. The one limit:
-  Godot or Blender windows never pop up or steal his focus (no_focus override.cfg,
-  `blender -b`, captures on CI), except while he has said he is away.
+- Revert `.import` churn before committing.
 
 ## Sessions and context
 
-- Fresh session at every task boundary; write `agent-handoffs/<role>.md` first (120-line cap,
-  rewrite not append). Routine work at 50-100k tokens; past 150k, hand off.
-- End every turn with your state: working, running a check, awaiting director, blocked, available.
+Handoffs live in `agent-handoffs/<role>.md`.
 
 ## Skills
 
-Project skills live in `.claude/skills/kaiju-*` and extend the general ones; each has a
-`references/learnings.md` with the evidence bar from `~/.claude/CLAUDE.md`. General lessons go
-to the general skill's log so every project benefits.
+Project skills live in `.claude/skills/kaiju-*` and extend the general ones; each keeps a
+`references/learnings.md`.
