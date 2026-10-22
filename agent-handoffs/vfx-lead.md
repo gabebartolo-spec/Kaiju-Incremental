@@ -5,7 +5,8 @@ Split (director 2026-10-23, via lead): I own EVERY visual item end to end (decid
 their own worktrees, art QA, SHIP final); the lead owns sim, gameplay, UI layout/flow, tests, merges, docs. Tell
 the lead before touching a file its builders are in (fire.gd: UI branch; sim + Taskforce: explosions PR 1). The
 lead's explosions + UI builders keep their visual work; the lead relays proof/verdicts verbatim. Every session and
-helper keeps the app checklist (update_plan) current; say so in every brief.
+helper keeps the app checklist (update_plan) current; say so in every brief. Director 2026-10-23: at most 2
+engine-running builders for me (4 team-wide); NO full suite on this PC (touched suites only, GitHub runs full).
 
 ## Task
 Director 2026-10-23: VFX oversight (builder + art critic) for fire, smoke, explosions, city destruction, ability
@@ -55,6 +56,10 @@ Not built: killable parachutists (they only drift down).
 - Thunder Beam builder on claude/thunder-beam (b2-18 spec, VFX_STYLE family 6): bolt.gdshader ribbon, breath
   strokes, held beam; proof + 3 halo stills (R 17.6) in notes vfx-lead/thunder/. No PR until my SHIP; halo colour
   goes to the director as one question with the labelled stills.
+- Explosions claude/city-explosives-v2 (r9 at 5a9697db, 11 behind look-options) is now MINE: burst reads cream,
+  not orange-red. Brief ready at scratchpad brief_r9.md (raise the fire family ramp for all fires, blast heat
+  ~1.1, scale/light); goes to my next free builder slot; tell the lead before fire.gd edits (#160 has fire.gd).
+- #160 title (claude/ui-title-menu): my verdict FIX = director's tilt + warm 2-3 px head rim; lead's builder does it.
 - Title: director chose (2026-10-23) camera TILT UP so the Colossus head is 1.5-2x the tallest tower (water band
   ~1/3 thinner, full head in frame); relayed to the lead for the UI builder; review its 4K still.
 - D-155 atmosphere (all M1): looks are mine (rampage escalation haze/orange sky/blackouts, clouds, birds, boats,
@@ -69,7 +74,8 @@ Not built: killable parachutists (they only drift down).
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
 
 ## Running jobs
-Full local suite on claude/heli-deaths (rerun 02:10 with GODOT set; the 01:51 one never ran). When green:
+Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 02:58 after the director's
+Godot pause, log scratchpad touched.log (no full suite on this PC any more). When green:
 push claude/heli-deaths, open the PR as ready with body scratchpad pr_heli.md (sim-review packet inside), tell the
 lead (proof notes vfx-lead/heli_deaths_proof.png). If the session restarts, rerun `tools/run_tests.sh` first.
 
