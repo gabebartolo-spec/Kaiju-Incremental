@@ -2,6 +2,19 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-057 · Director · Lighting stays the current "concrete" look
+Why (05:12): board A current / B golden hour / C blue hour / D night at the game camera (1080p + 4K, luminance p50
+72/78/52/27); the director kept A. The lighting branch (claude/lighting) is parked, not merged: a system that does not
+change what the player sees is cut.
+
+## 2026-10-18 · D-055 · Director · The croc roar plays on the evolution reveal and the demo end card
+Why (04:35): heard roar_reveal.mp4; "ship it". Not layered under Atomic Breath, no new power. PR #8.
+
+## 2026-10-18 · D-056 · Director · The kaiju earns and spends BIOMASS, not rubble
+Why (05:08): "I don't like the concept of rubble as currency." Options: biomass (you devour what you flatten; evolving
+is growing), terror, radiation, rename only. Picked biomass. Changes: player-facing words only (title Continue line,
+pause, results "Biomass devoured", tree, HUD, upgrade desc, VISION.md); internal keys and the save field stay. In #27.
+
 ## 2026-10-18 · D-054 · Director · Zebra crossings only at the central avenue junction
 Why (04:35): "remove the level crossing hellscape": zebras were painted at every avenue arm and mid-block. Now only the
 avenue x avenue junction nearest the centre keeps them (city.zebra_junctions = 1; 0 = none); dashes and kerbs kept. PR #26.
