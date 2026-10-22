@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
+Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
+camera). MERGED #35.
+
 ## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
 Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
 

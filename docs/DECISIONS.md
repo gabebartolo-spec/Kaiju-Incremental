@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-157 · Director · The army's stray shells count as the kaiju's destruction
+
+Asked (sim review of PR #159 found it agent-added): when a tank's missed shell smashes part of a building, it all counts: the kaiju earns the biomass, the city's ruin rises, and the army escalates as usual (the army wrecking its own city in a panic feeds the predator). The D-066 damage budget is measured with helicopters on, including that escalation.
+
 ## 2026-10-23 · D-156 · Director · The demo ends when the whole upgrade tree is unlocked; endless mode
 
 Asked what triggers the thanks screen; then he changed it: "i think we should measure until the upgrade tree is fully unlocked (2 hours roughly)". The thanks screen appears when the player buys the final upgrade; costs are tuned so that takes about 2 hours (D-152 window). "After they unlock the final upgrade they can unlock an endless mode maybe, where the city regenerates slowly and enemies escalate; otherwise players can feel free to replay the normal mode with their maxed out kaiju as many times as they want." Asked: endless mode is in the demo. Replaces D-153's free play in the ruined city and the old trigger (buying the Behemoth evolution). Then: "the game's balance will not be determined by endless mode. the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it makes normal mode better" (DESIGN Progression).
@@ -392,7 +396,3 @@ Why (11:2x): about half the early defeats; cause: Armoured Scales moved late in 
 ## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
 Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
 priced late. Merge #36 after #50 and P3.
-
-## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
-Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
-camera). MERGED #35.
