@@ -230,7 +230,8 @@ func _screen() -> Node:
 func _press(node: Node, prefix: String) -> void:
 	for found: Node in node.find_children("*", "Button", true, false):
 		var b: Button = found
-		if b.is_visible_in_tree() and b.text.begins_with(prefix):
+		# The title's settings gear has no text: its tooltip says what it is.
+		if b.is_visible_in_tree() and (b.text.begins_with(prefix) or b.tooltip_text == prefix):
 			b.pressed.emit()
 			return
 	push_error("capture_flow: no button %s" % prefix)

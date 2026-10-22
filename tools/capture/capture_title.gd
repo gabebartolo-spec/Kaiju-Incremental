@@ -48,7 +48,8 @@ func _initialize() -> void:
 		elif arg.begins_with("--reveal="):
 			_reveal = float(arg.substr(9))
 		elif arg.begins_with("--probe="):
-			_probe_at = Vector2(float(arg.substr(8).get_slice(",", 0)), float(arg.substr(8).get_slice(",", 1)))
+			var pair := arg.substr(8)
+			_probe_at = Vector2(float(pair.get_slice(",", 0)), float(pair.get_slice(",", 1)))
 		elif arg == "--hide-3d":
 			_hide_3d = true
 		elif arg == "--rest":
@@ -132,7 +133,8 @@ func _probe(backdrop: TitleBackdrop, at: Vector2) -> void:
 			continue
 		var off := (box.get_center() - from - dir * along).length()
 		if off < maxf(box.size.length() * 0.5, 2.0):
-			hits.append("%06.1f %s %s centre %s size %s" % [along, vis.get_class(), vis.get_path(), box.get_center(), box.size])
+			var label := "%06.1f %s %s" % [along, vis.get_class(), vis.get_path()]
+			hits.append("%s centre %s size %s" % [label, box.get_center(), box.size])
 	for node: Node in backdrop.find_children("*", "MultiMeshInstance3D", true, false):
 		var mmi := node as MultiMeshInstance3D
 		var mm := mmi.multimesh
@@ -140,7 +142,12 @@ func _probe(backdrop: TitleBackdrop, at: Vector2) -> void:
 			var pos := mmi.global_transform * mm.get_instance_transform(i).origin
 			var along := (pos - from).dot(dir)
 			if along > 0.0 and along < 120.0 and (pos - from - dir * along).length() < 3.0:
-				hits.append("%06.1f instance %d of %s at %s mesh %s" % [along, i, mmi.get_path(), pos, mm.mesh])
+				hits.append(
+					(
+						"%06.1f instance %d of %s at %s mesh %s"
+						% [along, i, mmi.get_path(), pos, mm.mesh]
+					)
+				)
 	hits.sort()
 	for hit: String in hits:
 		print("probe ", hit)

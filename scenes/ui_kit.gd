@@ -57,9 +57,10 @@ static var _display_font: Font
 static var _arrow: ImageTexture
 static var _grabbers: Dictionary = {}
 
-
 ## The display font for headings at or above DISPLAY_MIN_SIZE, else null (Kaiju Block, the
 ## project's default font).
+
+
 static func font_for(size: int) -> Font:
 	if size < DISPLAY_MIN_SIZE:
 		return null
@@ -224,30 +225,39 @@ static func header(text: String, size: int = SIZE_TITLE) -> PanelContainer:
 
 ## A button with hazard tape down both edges. Focus (and hover) lights a dark button up in
 ## hazard yellow; focus adds a dark ring inside its edge, so the pad always shows where you are.
-static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) -> Button:
+static func button(
+	text: String, size: int = SIZE_BODY, fill: Color = ACCENT, taped := true
+) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.add_theme_font_size_override("font_size", size)
 	_apply_font(b, size)
 	var lit := ACCENT if fill.get_luminance() < 0.3 else fill
-	var taped := HazardBox.Band.SIDES
-	var normal := hazard(fill, fill.lightened(0.15), 2.0, taped)
-	var hover := hazard(lit, lit, 2.0, taped)
-	var focus := hazard(lit, lit, 2.0, taped)
+	var taped_band := HazardBox.Band.SIDES if taped else HazardBox.Band.NONE
+	var normal := hazard(fill, fill.lightened(0.15), 2.0, taped_band)
+	var hover := hazard(lit, lit, 2.0, taped_band)
+	var focus := hazard(lit, lit, 2.0, taped_band)
 	focus.ring = true
 	focus.ring_color = ink(lit)
-	var pressed := hazard(lit.darkened(0.25), lit, 2.0, taped)
+	var pressed := hazard(lit.darkened(0.25), lit, 2.0, taped_band)
 	pressed.ring = true
 	pressed.ring_color = ink(lit.darkened(0.25))
-	var off := hazard(PANEL, LOCKED, 2.0, taped)
+	var off := hazard(PANEL, LOCKED, 2.0, taped_band)
 	off.dashed = true
 	off.tape_on = LOCKED
-	focus.chevron = true
-	hover.chevron = true
+	focus.chevron = taped
+	hover.chevron = taped
 	hover.ring_color = ink(lit)
+	# Worn industrial plates (director #97): every button of every menu shares the look.
+	for plate: HazardBox in [normal, hover, focus, pressed, off]:
+		plate.plated = true
+	pressed.press = 1.0
+	b.material = HazardBox.text_material()
 	# Every state keeps room inside the right tape for the focus pointer, so focus never shifts the
 	# text; the left matches it, so the label sits in the middle.
 	var room := BUTTON_BAND + HazardBox.CHEVRON_GAP + HazardBox.CHEVRON_WIDTH + 6.0
+	if not taped:
+		room = 10.0
 	for state: HazardBox in [normal, hover, focus, pressed, off]:
 		state.content_margin_left = room
 		state.content_margin_right = room

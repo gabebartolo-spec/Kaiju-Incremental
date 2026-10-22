@@ -4,7 +4,9 @@ extends StyleBox
 ## edge (solid or dashed), an optional band of hazard tape on the left, the top or both sides, and
 ## an optional focus ring drawn just inside the edge (never outside: a ring outside the box
 ## covered the controls next to it). The city's alarm system pointing at you. UiKit builds every
-## one.
+## one. With `plated` the box is a worn industrial steel plate instead (director #97 "Worn
+## industrial plates"): chamfered corners, a bevel, a brushed sheen, scuffs, four rivets and a drop
+## shadow, the hazard tape kept down both sides; the buttons use it.
 
 enum Band { NONE, LEFT, TOP, SIDES }
 
@@ -20,6 +22,12 @@ const RING_WIDTH := 3.0
 const CORNER_LEN := 26.0
 const CORNER_WIDTH := 4.0
 const CORNER_GAP := 6.0
+## The plate: chamfer, drop shadow (kept inside the box's rect), bevel, scuffs and rivets.
+const CUT := 7.0
+const PLATE_SHADOW := Vector2(4.0, 6.0)
+const PLATE_BEVEL := 3.0
+const RIVET := 3.2
+const SCUFFS := 9
 ## The focus pointer: a solid triangle this wide, this far in from the right edge, its height a
 ## share of the box's.
 const CHEVRON_WIDTH := 14.0
@@ -27,6 +35,8 @@ const CHEVRON_INSET := 14.0
 ## With tape on the right too, the pointer sits this far inside it.
 const CHEVRON_GAP := 6.0
 const CHEVRON_SHARE := 0.36
+
+static var _text_material: ShaderMaterial
 
 var fill := Color.BLACK:
 	set(value):
@@ -47,12 +57,27 @@ var corners := false
 var corner_color := Color("ffcc00")
 ## A pointer in `ring_color` at the right edge (the focused button: "you are here").
 var chevron := false
+## A worn steel plate in `fill` (see above) instead of the flat square box.
+var plated := false
+## 0 normal, 1 pressed (the plate sinks, the bevel flips, the shadow shrinks).
+var press := 0.0
+
+
+## The text material of the plated buttons: a faint stamped highlight on the letters' top edge.
+static func text_material() -> ShaderMaterial:
+	if _text_material == null:
+		_text_material = ShaderMaterial.new()
+		_text_material.shader = preload("res://scenes/plate_text.gdshader")
+	return _text_material
 
 
 func _draw(to_canvas_item: RID, rect: Rect2) -> void:
-	RenderingServer.canvas_item_add_rect(to_canvas_item, rect, fill)
-	_draw_band(to_canvas_item, rect)
-	frame(to_canvas_item, rect, edge, border, dashed)
+	if plated:
+		rect = _draw_plate(to_canvas_item, rect)
+	else:
+		RenderingServer.canvas_item_add_rect(to_canvas_item, rect, fill)
+		_draw_band(to_canvas_item, rect)
+		frame(to_canvas_item, rect, edge, border, dashed)
 	if corners:
 		_corners(to_canvas_item, rect)
 	if chevron:
@@ -154,3 +179,124 @@ func _corners(item: RID, rect: Rect2) -> void:
 		var arm_y := Rect2(p, Vector2(CORNER_WIDTH * sx, CORNER_LEN * sy)).abs()
 		RenderingServer.canvas_item_add_rect(item, arm_x, corner_color)
 		RenderingServer.canvas_item_add_rect(item, arm_y, corner_color)
+
+
+## The worn plate; returns the rect of its face (the room the pointer and ring work in).
+func _draw_plate(item: RID, rect: Rect2) -> Rect2:
+	var gap := PLATE_SHADOW * (0.35 if press > 0.0 else 1.0)
+	var body := Rect2(rect.position, rect.size - PLATE_SHADOW)
+	_poly(item, _octagon(Rect2(body.position + gap, body.size), CUT), Color(0, 0, 0, 0.6))
+	if press > 0.0:
+		body.position.y += 2.0
+		body.size.y -= 2.0
+	var shape := _octagon(body, CUT)
+	var top := fill.lightened(0.18)
+	var bottom := fill.darkened(0.28)
+	var colours := PackedColorArray()
+	for p: Vector2 in shape:
+		colours.append(top.lerp(bottom, clampf((p.y - body.position.y) / body.size.y, 0.0, 1.0)))
+	RenderingServer.canvas_item_add_polygon(item, shape, colours)
+	_draw_band_plate(item, body)
+	_bevel(item, body)
+	_sheen(item, body)
+	_scuffs(item, body)
+	_rivets(item, body)
+	var outline := shape.duplicate()
+	outline.append(shape[0])
+	RenderingServer.canvas_item_add_polyline(item, outline, PackedColorArray([edge]), 2.5, true)
+	return body
+
+
+static func _octagon(r: Rect2, cut: float) -> PackedVector2Array:
+	return PackedVector2Array(
+		[
+			r.position + Vector2(cut, 0.0),
+			Vector2(r.end.x - cut, r.position.y),
+			Vector2(r.end.x, r.position.y + cut),
+			Vector2(r.end.x, r.end.y - cut),
+			Vector2(r.end.x - cut, r.end.y),
+			Vector2(r.position.x + cut, r.end.y),
+			Vector2(r.position.x, r.end.y - cut),
+			Vector2(r.position.x, r.position.y + cut),
+		]
+	)
+
+
+static func _poly(item: RID, pts: PackedVector2Array, colour: Color) -> void:
+	RenderingServer.canvas_item_add_polygon(item, pts, PackedColorArray([colour]))
+
+
+## Tape down both sides of the plate, inside its chamfered corners.
+func _draw_band_plate(item: RID, body: Rect2) -> void:
+	if band != Band.SIDES:
+		return
+	var side := Vector2(_inset(), body.size.y - 2.0 * CUT)
+	tape(item, Rect2(body.position + Vector2(0.0, CUT), side), tape_on, tape_off)
+	var right := Vector2(body.end.x - _inset(), body.position.y + CUT)
+	tape(item, Rect2(right, side), tape_on, tape_off)
+
+
+func _bevel(item: RID, body: Rect2) -> void:
+	var light := Color(1, 1, 1, 0.34 if press == 0.0 else 0.1)
+	var dark := Color(0, 0, 0, 0.45 if press == 0.0 else 0.6)
+	var x0 := body.position.x + _inset()
+	var x1 := body.end.x - _inset()
+	RenderingServer.canvas_item_add_rect(
+		item, Rect2(x0, body.position.y, x1 - x0, PLATE_BEVEL), light
+	)
+	RenderingServer.canvas_item_add_rect(
+		item, Rect2(x0, body.end.y - PLATE_BEVEL, x1 - x0, PLATE_BEVEL), dark
+	)
+	RenderingServer.canvas_item_add_rect(item, Rect2(x0, body.position.y, 2.0, body.size.y), light)
+	RenderingServer.canvas_item_add_rect(
+		item, Rect2(x1 - 2.0, body.position.y, 2.0, body.size.y), dark
+	)
+
+
+## A soft diagonal gleam across the upper half, as on brushed steel.
+func _sheen(item: RID, body: Rect2) -> void:
+	var x0 := body.position.x + _inset() + 8.0
+	var x1 := body.end.x - _inset() - 8.0
+	var y0 := body.position.y + PLATE_BEVEL
+	var y1 := body.position.y + body.size.y * 0.5
+	var pts := PackedVector2Array(
+		[Vector2(x0, y0), Vector2(x1, y0), Vector2(x1, y1 - 10.0), Vector2(x0, y1)]
+	)
+	var high := Color(1, 1, 1, 0.14)
+	var low := Color(1, 1, 1, 0.0)
+	RenderingServer.canvas_item_add_polygon(item, pts, PackedColorArray([high, high, low, low]))
+
+
+## Short light and dark scratches, seeded from the size so a plate never changes between frames.
+func _scuffs(item: RID, body: Rect2) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(body.size.x) * 7919 + int(body.size.y) * 104729
+	var x0 := body.position.x + _inset() + 10.0
+	var w := body.size.x - 2.0 * _inset() - 20.0
+	for i: int in SCUFFS:
+		var at := Vector2(
+			x0 + rng.randf() * w, body.position.y + 6.0 + rng.randf() * (body.size.y - 12.0)
+		)
+		var along := Vector2(rng.randf_range(10.0, 34.0), rng.randf_range(-4.0, 4.0))
+		var colour := Color(1, 1, 1, 0.16) if i % 2 == 0 else Color(0, 0, 0, 0.3)
+		RenderingServer.canvas_item_add_line(item, at, at + along, colour, 1.5)
+
+
+func _rivets(item: RID, body: Rect2) -> void:
+	var x0 := body.position.x + _inset() + 11.0
+	var x1 := body.end.x - _inset() - 11.0
+	var y0 := body.position.y + 10.0
+	var y1 := body.end.y - 10.0
+	for p: Vector2 in [Vector2(x0, y0), Vector2(x1, y0), Vector2(x0, y1), Vector2(x1, y1)]:
+		RenderingServer.canvas_item_add_circle(
+			item, p + Vector2(1.0, 1.5), RIVET + 1.0, Color(0, 0, 0, 0.55)
+		)
+		RenderingServer.canvas_item_add_circle(item, p, RIVET, Color("55555c"))
+		RenderingServer.canvas_item_add_circle(
+			item, p + Vector2(-1.0, -1.0), RIVET * 0.45, Color(1, 1, 1, 0.55)
+		)
+
+
+## How far the plate's tape reaches in from each side (0 without it).
+func _inset() -> float:
+	return band_size if band == Band.SIDES else 0.0

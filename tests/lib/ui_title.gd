@@ -1,0 +1,160 @@
+extends RefCounted
+## The UI suite's title-menu checks (tests/run_ui_tests.gd): the director's own layout of
+## 2026-10-23. Under the logo one row holds a wide Continue Game button (the save's kaiju and
+## rampages) and a smaller New Kaiju?; with no save one wide New Kaiju takes Continue's place; a
+## settings gear stands top-left and "Run for your life!?" bottom-right above the ticker; nothing
+## else (no stacked Settings or Quit, no subtitle line). Focus order Continue, New Kaiju, gear,
+## exit; hovering moves the focus; every button is a worn plate and its text 24 px or more.
+
+const GuiInput := preload("res://tests/lib/gui_input.gd")
+const CANVAS := Vector2i(1920, 1080)
+const SUMMARY := "Reptilian, 7 rampages"
+## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
+const TICKER := 56.0
+const CORNER_MAX := 120.0
+
+var t: SceneTree
+var check: Callable
+
+
+func _init(runner: SceneTree, p_check: Callable) -> void:
+	t = runner
+	check = p_check
+
+
+func run() -> void:
+	var window := t.root.size
+	t.root.size = CANVAS
+	await _with_save()
+	await _without_save()
+	t.root.size = window
+
+
+## A title built on the 1080p canvas (no live city: the 3D backdrop needs a renderer).
+func _title(summary: String) -> TitleScreen:
+	var title := TitleScreen.new()
+	title.live_city = false
+	title.setup(summary)
+	t.root.add_child(title)
+	await t.process_frame
+	await t.process_frame
+	return title
+
+
+func _button(title: Node, prefix: String) -> Button:
+	return GuiInput.button(title, prefix)
+
+
+func _texts(title: Node) -> Array[String]:
+	var texts: Array[String] = []
+	for found: Node in title.find_children("*", "Button", true, false):
+		var b := found as Button
+		if b.is_visible_in_tree():
+			texts.append(b.text)
+	return texts
+
+
+func _with_save() -> void:
+	var title := await _title(SUMMARY)
+	var cont := _button(title, "CONTINUE")
+	var fresh := _button(title, "NEW KAIJU")
+	var gear := title.find_child("Gear", true, false) as Button
+	var exit := _button(title, "RUN FOR YOUR LIFE")
+	check.call(
+		cont != null and cont.text.contains(SUMMARY.to_upper()),
+		"Continue Game carries the save's kaiju and rampages: %s" % [_texts(title)]
+	)
+	check.call(
+		fresh != null and fresh.text == "NEW KAIJU?",
+		"with a save the second button asks New Kaiju?: %s" % [_texts(title)]
+	)
+	check.call(gear != null and gear.text == "", "a textless settings gear button exists")
+	check.call(exit != null, "the exit button says Run for your life!?")
+	if cont == null or fresh == null or gear == null or exit == null:
+		title.queue_free()
+		return
+	var cr := cont.get_global_rect()
+	var fr := fresh.get_global_rect()
+	check.call(
+		is_equal_approx(cr.position.y, fr.position.y) and cr.end.x < fr.position.x,
+		"Continue and New Kaiju? share one row, Continue on the left (%s, %s)" % [cr, fr]
+	)
+	check.call(
+		cr.size.x > fr.size.x,
+		"Continue is the wide primary button (%d vs %d)" % [cr.size.x, fr.size.x]
+	)
+	var gone: Array[String] = []
+	for text: String in _texts(title):
+		if text.begins_with("SETTINGS") or text.begins_with("QUIT"):
+			gone.append(text)
+	check.call(gone.is_empty(), "no stacked Settings or Quit button remains: %s" % [gone])
+	var stray := false
+	for found: Node in title.find_children("*", "Label", true, false):
+		var label := found as Label
+		if label.is_visible_in_tree() and label.text == SUMMARY:
+			stray = true
+	check.call(not stray, "the save summary is inside Continue, not a line under it")
+	var gr := gear.get_global_rect()
+	check.call(
+		gr.position.x < CORNER_MAX and gr.position.y < CORNER_MAX and gr.size.x == gr.size.y,
+		"the gear is a small square top-left (%s)" % [gr]
+	)
+	var er := exit.get_global_rect()
+	check.call(
+		(
+			CANVAS.x - er.end.x < CORNER_MAX
+			and CANVAS.y - TICKER - er.end.y < CORNER_MAX
+			and er.end.y <= CANVAS.y - TICKER
+		),
+		"the exit button sits bottom-right just above the ticker (%s)" % [er]
+	)
+	check.call(
+		fr.end.x <= CANVAS.x * 0.4,
+		"the button row stays in the left 40%% of the screen (ends at %d)" % int(fr.end.x)
+	)
+	_focus_order(title, [cont, fresh, gear, exit], "with a save")
+	gear.grab_focus()
+	cont.mouse_entered.emit()
+	check.call(cont.has_focus() and not gear.has_focus(), "hovering Continue moves the focus to it")
+	var small: Array[String] = []
+	var flat: Array[String] = []
+	for b: Button in [cont, fresh, gear, exit]:
+		if b.get_theme_font_size("font_size") < 24:
+			small.append(b.text)
+		var box := b.get_theme_stylebox("normal") as HazardBox
+		if box == null or not box.plated:
+			flat.append(b.name)
+	check.call(small.is_empty(), "every title button's text is 24 px or more: %s" % [small])
+	check.call(flat.is_empty(), "every title button is a worn plate: %s" % [flat])
+	title.queue_free()
+	await t.process_frame
+
+
+func _without_save() -> void:
+	var title := await _title("")
+	var fresh := _button(title, "NEW KAIJU")
+	var gear := title.find_child("Gear", true, false) as Button
+	var exit := _button(title, "RUN FOR YOUR LIFE")
+	check.call(
+		_button(title, "CONTINUE") == null and fresh != null and fresh.text == "NEW KAIJU",
+		"with no save one wide New Kaiju replaces Continue: %s" % [_texts(title)]
+	)
+	if fresh != null and gear != null and exit != null:
+		check.call(
+			fresh.size.x > 500.0,
+			"that New Kaiju takes Continue's place and size (%d)" % fresh.size.x
+		)
+		_focus_order(title, [fresh, gear, exit], "with no save")
+	title.queue_free()
+	await t.process_frame
+
+
+## Tab order: each button's focus_next is the next one in `order`, wrapping round.
+func _focus_order(title: Node, order: Array, label: String) -> void:
+	var good := true
+	for i: int in order.size():
+		var here: Button = order[i]
+		var next: Button = order[(i + 1) % order.size()]
+		if here.get_node_or_null(here.focus_next) != next:
+			good = false
+	check.call(good, "focus order %s is Continue/New Kaiju, gear, exit (%s)" % [label, title.name])

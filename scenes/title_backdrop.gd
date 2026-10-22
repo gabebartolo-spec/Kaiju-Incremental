@@ -42,12 +42,7 @@ func _ready() -> void:
 	_build()
 
 
-func _mark(label: String) -> void:
-	print("TITLE_TIMING ", label, " ", Time.get_ticks_msec())
-
-
 func _build() -> void:
-	_mark("build start")
 	Content.set_time("night")
 	_view = SubViewport.new()
 	_view.own_world_3d = true
@@ -73,7 +68,6 @@ func _build() -> void:
 	_camera.current = true
 	_camera.position = _vec(cam["position"])
 	_camera.look_at(_vec(cam["look"]))
-	_mark("city added")
 	while not _city.is_loaded:
 		if not is_inside_tree():
 			return
@@ -98,7 +92,6 @@ func _build() -> void:
 	var colossus_cfg: Dictionary = _cfg["colossus"]
 	_colossus = TitleColossus.new(colossus_cfg)
 	_city.add_child(_colossus)
-	_mark("built")
 	is_loaded = true
 	ready_to_show.emit()
 

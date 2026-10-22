@@ -9,6 +9,7 @@ extends "res://tests/lib/runner.gd"
 
 const HudChecks := preload("res://tests/lib/ui_hud.gd")
 const TreeChecks := preload("res://tests/lib/ui_tree.gd")
+const TitleChecks := preload("res://tests/lib/ui_title.gd")
 
 ## The UI canvas (project.godot, D-027): every check measures in its logical pixels.
 const CANVAS := Vector2i(1920, 1080)
@@ -36,6 +37,7 @@ func run_checks() -> void:
 	await _t("_check_reveal_frame")
 	await _t("_check_results_verdict")
 	await _h("TreeChecks", func() -> void: await TreeChecks.new(self, check).run())
+	await _h("TitleChecks", func() -> void: await TitleChecks.new(self, check).run())
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline

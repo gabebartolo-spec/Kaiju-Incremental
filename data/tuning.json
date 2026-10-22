@@ -536,17 +536,17 @@
 			"count": 6,
 			"depth": 70.0,
 			"window_fires": 4,
-			"window": {"size": 0.7, "zoom": 2.2, "smoke_share": 0.35, "density": 5.0, "wind": 1.5, "puff": 1.0, "glow_size": 12.0},
+			"window": {"size": 0.7, "zoom": 2.2, "smoke_share": 0.25, "density": 5.0, "wind": 0.5, "puff": 1.6, "glow_size": 12.0},
 			"far": {
 				"_note": "The game's own Fire (scenes/fire.gd) at this zoom: the same voxel flames, embers and charcoal smoke, every size and speed multiplied by zoom for the distance, density times the particles (the picture is zoom squared bigger), smoke_share the part of the zoom the smoke takes.",
-				"size": 1.2, "zoom": 3.0, "smoke_share": 0.4, "density": 9.0, "wind": 1.5, "puff": 1.0, "fixed_fps": 12,
+				"size": 1.2, "zoom": 3.0, "smoke_share": 0.3, "density": 9.0, "wind": 0.5, "puff": 1.6, "fixed_fps": 12,
 				"glow_color": "ff6a14", "glow_size": 26.0, "flicker_hz": 7.0
 			}
 		},
 		"colossus": {
 			"_note": "Director 2026-10-22: explosions now and then reveal the reptilian colossus in the inferno, dark against the fireball. The game's adult reptilian model baked to black silhouettes (tools/capture/bake_colossus.gd) and drawn as a card of the given height in metres, feet on the start point; one step along start + k * step per footfall, out and back over steps_out steps.",
 			"height": 135.0,
-			"smog": 0.6,
+			"smog": 0.85,
 			"smog_tail": 0.5,
 			"eye": {"uv": [0.097, 0.0866], "size": 7.0, "colour": "ff2810", "idle": 0.35, "pulse": 0.3, "pulse_hz": 0.3, "peak": 1.0, "forward": 2.0},
 			"poses": 1,
@@ -560,7 +560,7 @@
 			"glow_color": "ff6a14",
 			"glow_share": 2.4,
 			"glow_alpha": 0.5,
-			"start": [253.0, -400.0],
+			"start": [285.0, -400.0],
 			"step": [-2.5, 0.0],
 			"steps_out": 10,
 			"ground_y": 0.8,

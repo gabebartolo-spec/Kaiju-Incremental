@@ -20,24 +20,23 @@ Director rulings: left menu column (logo above buttons), still camera, scene fro
 footfall audio, fire = ragged flames out of windows with heavy smoke (not candles), occasional explosions reveal the
 reptilian colossus silhouette; no music. Poster reference: kaiju towering over skyline, orange fire glow, smoke sky.
 
-## Lead's QA of night still (2026-10-22 23:00) = my task list, in order
-1 colossus never seen in frame (old 3D model path: only its tail showed; body transparency bug) -> NOW a baked black
-  silhouette card; needs `bake_colossus.gd` run, then place (feet z -400, x ~ screen 0.85, height ~150 m so shoulders clear
-  the tallest right-side towers, head well above), glow behind. 2 boot: city took ~13 s (target <= 4.5-6 s): sky smoke
-  preprocess replaced by static MultiMesh cards, colossus no longer builds the voxel model; STILL measure
-  (TITLE_TIMING prints in title_backdrop._mark: REMOVE before commit) and cut fire preprocess if needed (fixed_fps).
-3 flames white blobs -> far_flame.gdshader rewritten (blend_mix, orange-red gradient, pale core only, frayed edge). 4 water
-  zigzag comb -> title_shore.gdshader rewritten smooth at rest (banding only with shiver); caution: the lead's still caught
-  a footfall mid-shiver; capture flag --rest waits for shiver()==0. 5 stray white box = a lamp head (emissive) on a black
-  post at 15 m: head now amber, posts lighter, gap 24 m. 6 shore band: ledge shader (slabs, lamp pools, fire light), rail
-  1.6 x 0.45 m. 7 sky smoke heavier, orange under-lit low, near-black high (tuning sky_smoke). 8 re-render dusk.
-Deliverables: night 4K still during a reveal (`capture_title --reveal=0.3`), night 4K still between reveals (`--rest`), dusk
-4K (`--variant=dusk`), one 6-8 s night clip (uiclip.sh + capture_title --clip=8, cut mp4 with ffmpeg = imageio_ffmpeg
-binary), launch-to-title time (capture_boot.gd with --launch=$(date +%s.%N)).
-STATE at 23:15: code written for 1,3,4,5,6,7 and the colossus card; NOTHING of it has been run yet (director paused all Godot
-until 23:35). First run: bake colossus (`--out=res://assets/title --preview=<png>`), `--headless --import` for new assets,
-then the stills. Add a LICENSING_REGISTER row for assets/title/colossus_*.png (ours, baked from our model by tools/capture/
-bake_colossus.gd) before commit.
+## State 2026-10-23 00:50 (committed bc04eb0a + uncommitted menu work; NOT yet pushed after bc04eb0a)
+Title scene done and looked at: colossus = baked silhouette PNG (assets/title/colossus_0.png, yaw 60 side-3/4 profile with
+croc head, bake tool tools/capture/bake_colossus.gd; tuning title.colossus: height, eye uv/colour/pulse, smog, rim),
+red eye = additive glow at bake-computed uv; smog shader on the card; smoke/flame draw order via render_priority (sky smoke
+-1, fire smoke 0, colossus 1, flames+eye 2). Fires = the game's own Fire at zoom (Fire._init(size, seed, far dict:
+zoom/smoke_share/density/wind/puff); tuning title.fires.far/window); far_flame/far_smoke shaders deleted. Water smooth at rest
+(capture --rest proves it). Stray white box = a lit window of the near city 10 m from the camera: camera near=15. Block
+artefacts in sky = sin() hash noise on the GPU: use no-sin hash or a noise texture. Lamps amber, ledge shader lit.
+Boot measured (machine loaded): engine+autoloads 7.8 s, first title frame 8.7 s after launch, city stands 5.2 s later
+(build start->built 1.5 s sync + 3.6 s async); preprocess cut via fixed_fps 12.
+Director's new MENU layout (replaces column): gear top-left, logo, row [CONTINUE GAME
+SPECIES, N RAMPAGES | NEW KAIJU?],
+no save = one wide NEW KAIJU, exit "RUN FOR YOUR LIFE!?" bottom-right above ticker; HazardBox.plated = worn plate look for
+every UiKit.button (rivets, bevel, scuffs, shadow, plate_text.gdshader); new scenes/gear_icon.gd. tests/lib/ui_title.gd
+written (register in run_ui_tests.gd), flow_screens.gd uses the Gear button, capture_flow presses gear by tooltip.
+TODO: register ui_title, run ui+flow suites green, capture still (reveal), still (rest), 2x crops (head, buttons),
+fire compare still (tools/capture/capture_fire_compare.gd), clip only if needed, push, open ready PR (lead says).
 
 ## Rules and tooling
 Scratch S = AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/

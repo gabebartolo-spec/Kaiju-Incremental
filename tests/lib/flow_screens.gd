@@ -314,9 +314,9 @@ func _check_settings() -> void:
 	var main := await _main()
 	var title := _screen(main)
 	Sfx.ui_played.clear()
-	await GuiInput.click(t, GuiInput.button(title, "SETTINGS"))
+	await GuiInput.click(t, title.find_child("Gear", true, false) as Button)
 	var menu := GuiInput.find_script(title, SettingsMenu) as SettingsMenu
-	check.call(menu != null, "clicking SETTINGS opens the settings")
+	check.call(menu != null, "clicking the title gear opens the settings")
 	check.call(Sfx.ui_played == ["ui_click"], "a menu button clicks: %s" % [Sfx.ui_played])
 	if menu == null:
 		main.queue_free()
