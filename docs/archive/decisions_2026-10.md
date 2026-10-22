@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-054 · Director · Zebra crossings only at the central avenue junction
+Why (04:35): "remove the level crossing hellscape": zebras were painted at every avenue arm and mid-block. Now only the
+avenue x avenue junction nearest the centre keeps them (city.zebra_junctions = 1; 0 = none); dashes and kerbs kept. PR #26.
+
 ## 2026-10-18 · D-053 · Director · Worktrees: one live worktree per live session
 Why (04:30): the demo team runs six to eight sessions at once and the cap of four blocked work. The lead prunes dead
 worktrees; tools/lint/worktrees.sh caps the total at 8. PR #25.

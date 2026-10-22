@@ -322,3 +322,7 @@ a dark band on top; the lead proposes about 12 shots on one board, he picks.
 Achievements and skins (comment #95, after the demo): in-game achievements with progress bars in a menu (e.g. topple
 100 towers, down 50 helicopters, burn a district), mapped to Steam achievements when the Steam build comes; about 8
 recolour skins of the croc (palette swaps) unlocked on milestones, chosen in a skin picker. Turns D-119's skins on.
+
+## Post effects (D-142, 2026-10-22)
+- Subtle vignette, pulsing red at low health, on every preset; a split-second colour fringe on the biggest hits only. One short clip to the director before shipping. Owner: post-fx builder. Status: started 2026-10-22.
+- Screen-space reflections (wet streets, glass), max preset only. After the demo.
