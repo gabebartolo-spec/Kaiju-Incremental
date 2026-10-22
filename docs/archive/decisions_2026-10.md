@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-071 · Director · Landmarks in order: A stadium, D wheel, E spire, F megatower
+Why (10:5x): picked from the landmark board. A sites PR with A and D first, then E and F.
+
 ## 2026-10-18 · D-070 · Director · All tabled sounds ship, with a new mix
 Why (10:5x): #43 #45 #39 #42 #46 #53 #60 #56 #51 #57 #62 merged, each resynced by the sound session; #52 decided by
 D-079.
