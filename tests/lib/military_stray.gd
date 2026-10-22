@@ -7,8 +7,8 @@ extends RefCounted
 
 const DT := 1.0 / 15.0
 const STEPS := 600
-const TIER := 4  # the Behemoth stage: the tanks fire often enough to count
-const SEED := 4
+const TIER := 3  # the Colossus city, the strongest army left (D-135): the tanks fire often enough to count
+const SEED := 0  # re-probed for D-135: seed 4 saw no tank shot in the Colossus city; 0-3, 5, 6 all pass
 const SHOTS := 400
 ## How far the miss share may sit from the data's on SHOTS seeded shells (2.5 sigma at 40%).
 const RATE_SLACK := 0.06
