@@ -13,7 +13,7 @@
   BRIEF-COMMON.md + RULES-NOW.md = shared rules; each agent writes <task>\handoff.md at milestones.
 - Nimbalyst mailbox: C:\Users\DANTE\Documents\Nimbalyst Tutorial\kaiju-mailbox\ (to-nimbalyst tasks, to-kaiju results).
 
-## 2026-10-22 evening: STATE FOR THE SUCCESSOR (lead session "Status check", hand-off at 500k)
+## 2026-10-22 evening: STATE FOR THE SUCCESSOR (lead session "Status check"; leads auto-compact now, no hand-off, no self-archive: director 2026-10-22)
 - Base = origin/claude/look-options = main; squash-only repo: the base moves on every merge. Old branches are rebuilt
   as own commits cherry-picked onto the newest tip; an OPEN PR is synced by MERGING the base (never rebase/force-push).
   Builder rules file: C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/WAVE1-COMMON.md (copy it before this scratchpad goes; it holds the rules + rulings).
@@ -87,8 +87,7 @@
   district, no kaiju, smoke off-centre, fix 2 clipped letters; ambience crowd_panic + rifle_far + siren_far (ElevenLabs
   take A, lead scratchpad sfx_siren/) + in-engine stomp like a T-rex footfall (quality ref only: deep sub boom, ~3 s
   apart, stomp_1 pitched down + sine sub); then plate-style buttons board (#97), then HUD ring (#96).
-  Army (a93e, claude/clumsy-army-v2 1cc83558): clip FIX sent; it switched the LEAD's worktree to its branch by mistake:
-  told to restore claude/status-check-b96b26. Fire #152 (ab33): baby breath > rake (#94), full suite running.
+  Army (a93e, claude/clumsy-army-v2 1cc83558): clip FIX sent; its stray commands ran in the lead's worktree (fixed, restored). Fire #152 (ab33): baby breath > rake (#94), full suite running.
   #153 (ab85): flow staged-start stall + streamview stage-4 margin on CI; fixing.
 ## PR queue after QC (max 3 open): #144 turn-weight, emerge-shore, camera-growth, intro-cinematic, rubble-break,
 ## city-explosives, croc-neck, dash-burst, ui-redesign, city-memory, clumsy-army; capture-native (no speed-up: keep?).
