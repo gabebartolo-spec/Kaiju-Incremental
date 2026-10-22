@@ -24,8 +24,8 @@ FONT_L = "C:/Windows/Fonts/calibri.ttf"
 
 ROW_LABEL = {
     "a": "A   TODAY: the game as it is now",
-    "b": "B   ONE LOOK (mock): props, ground, haze and fire brought into the city's block size",
-    "c": "C   SMOOTH CROC: the croc as a smooth textured model, everything else as today",
+    "b": "B   ONE LOOK (mock): props at 0.125, block-speckle ground, haze, far-only blur; fire: not in mock (bloom only)",
+    "c": "C   SMOOTH CROC (Behemoth body): its own Tripo mesh and texture on the hand rig, everything else as today",
 }
 ROW_COLOUR = {"a": (60, 60, 64), "b": (36, 84, 62), "c": (92, 60, 40)}
 TIME_LABEL = {"dusk": "Dusk", "noon": "Noon"}

@@ -47,6 +47,8 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 		_rig = KaijuRig.load_from(base, MODEL_HEIGHT, _glow())
 		if _rig != null:
 			_skin = VoxelSkin.attach(_rig, base)  # D-041; null when debugging rigid voxels
+			if SmoothCroc.on and _skin != null and species_id == "reptilian":
+				SmoothCroc.attach(_rig, _skin, stages[i])  # look-boards mock C
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
 			return
