@@ -23,9 +23,6 @@ FAMILIES = [
 ]
 # Shots whose family has more than one look today (docs/VFX_STYLE.md, "Two looks today").
 FLAGS = {
-    "dust_tree_puff": "2nd dust look",
-    "ring_tail_sweep": "2nd ring look (UI torus)",
-    "sparks_shell_hit": "2nd spark look",
     "ultimate_beam_side_20": "2nd beam look (solid box)",
     "ultimate_beam_20": "beam hidden at game camera",
     "breath_10": "orange flame wall, not lightning",

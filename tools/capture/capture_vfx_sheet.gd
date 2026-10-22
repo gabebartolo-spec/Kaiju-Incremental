@@ -72,7 +72,7 @@ func _run(run: int) -> void:
 	await _shot("dust_tree_puff", 8, func(p: Vector3) -> void: fx.tree_puff(p, 2.0, 0.45))
 	await _shot("ring_stomp", 8, func(p: Vector3) -> void: fx.shockwave(p, 3.0 * bs))
 	await _shot(
-		"ring_tail_sweep", 8, func(p: Vector3) -> void: city.ring(p, 4.0 * bs, UiKit.WARN, 0.35)
+		"ring_tail_sweep", 8, func(_p: Vector3) -> void: _tail_sweep(4.0 * bs), Vector3.ZERO
 	)
 	await _shot("sparks_shell_hit", 4, func(p: Vector3) -> void: fx.sparks(p + Vector3.UP))
 	await _shot(
@@ -117,7 +117,7 @@ func _shot(shot_name: String, after: int, play: Callable, spot := SPOT) -> void:
 	play.call(p)
 	await _frames(after)
 	var at := _feet() + spot * _rampage.sim.body_scale()
-	_still(shot_name, at + Vector3.UP * (1.0 if spot == SPOT else 4.0))
+	_still(shot_name, at + Vector3.UP * (4.0 if spot == FAR_SPOT else 1.0))
 	await _frames(GAP)
 	for fire: Variant in _city().get("_fires"):  # put out what the shot lit
 		if is_instance_valid(fire):
@@ -176,6 +176,12 @@ func _still(shot_name: String, world: Vector3) -> void:
 
 func _take_input() -> Dictionary:
 	return _input
+
+
+## The tail sweep as the game draws it (PowersView, the sim's event), at the kaiju's feet.
+func _tail_sweep(reach: float) -> void:
+	var powers: PowersView = _rampage.get("_powers")
+	powers.on_event({"type": "tail_sweep", "side": 1.0, "reach": reach}, _feet())
 
 
 func _debris(city: CityView, p: Vector3) -> void:

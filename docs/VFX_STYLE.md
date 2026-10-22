@@ -1,20 +1,53 @@
 # Kaiju Evolution: VFX look sheet
 
-Cap: 200 lines. Owner: the VFX lead (D-TBD-vfx-lead, 2026-10-23); changed by PR, reviewed by the lead.
+Cap: 200 lines. Owner: the VFX lead (director 2026-10-23; rulings D-151); changed by PR, reviewed by the lead.
 The one canonical look for every effect family: what material, texture and particle setup defines it, its colour
 ramp, its scale rules and the files that own it. Evidence: `docs/captures/2026-10-23-vfx/vfx_families.png` (every
 family at the game camera, night and noon, from `tools/capture/capture_vfx_sheet.gd` + `vfx_sheet.py`).
 
-## The rule above all
-Director, 2026-10-22, on a fireball of opaque orange cubes that met every metric: "looks like minecraft fire...
-and doesnt match the fire we use the rest of the time, consistency is absolutely key to avoid slop accusations".
-- **One look per kind of thing.** Anything that burns is the game's Fire; anything that billows is the smoke
-  shader; anything that sparks is the ember glow cube. A new effect reuses its family's owner (instance it, or call
-  its recipe); it never writes a second shader, material or ramp for the same kind of thing.
-- **Side by side before review.** Every new or changed effect is captured beside the existing member of its family,
-  same camera, same zoom, night and noon (`capture_vfx_sheet.gd` plays every family at the game camera; add a shot
-  for yours). No side-by-side, no review. The VFX lead reviews every effect before the lead sees it.
-- **The read beats the metric.** Size, growth and fade numbers are necessary, never sufficient (rulebook: Art QC).
+## Three equal pillars (every effect passes all three, or it fails)
+Director 2026-10-23: "for the game, 'good enough' isnt good enough, I have to love it". A SHIP from the VFX lead
+means he will love it on all three; anything merely acceptable fails, with what would make it great.
+1. **BEAUTY.** Genuinely gorgeous at game zoom on a 4K TV: rich colour, real light, motion and spectacle that makes
+   the player want to cause more ("visual beauty is equally important"). A consistent but dull effect fails.
+   Where the canonical effect is the weak one, raise the whole family together; never copy a weak look.
+2. **CONSISTENCY.** One look per kind of thing ("consistency is absolutely key to avoid slop accusations", on a
+   fireball of opaque orange cubes that met every metric). Anything that burns is the game's Fire, anything that
+   billows the smoke shader, anything that sparks the ember glow cube. A new effect reuses its family's owner
+   (instance it, or call its recipe); it never writes a second shader, material or ramp for the same thing. A
+   beautiful effect in a clashing style fails.
+3. **SCALE AND POWER.** "All the visual effects must make you feel like the Apex Predator, King of Monsters,
+   Godkiller, Planetbreaker." Does it sell overwhelming size and force? Huge slow-rolling fireballs and dust walls,
+   shockwaves rippling through whole blocks, debris raining for seconds, light flooding the city, the camera and
+   audio answering every step, enemies tiny and doomed. Small, quick or polite fails.
+   - **Enemies are prey** ("our enemies are many, but they ultimately are our prey"): Taskforce railguns, frost,
+     gas, mechs, gunships and tanks read as a real threat that is small next to the kaiju: thin beams, tiny muzzle
+     flashes, swarms. Their deaths feel like being swatted or crushed, never a fair duel.
+
+**Method.** Every new or changed effect is captured beside the existing member of its family, same camera, same
+zoom, night and noon (`capture_vfx_sheet.gd` plays every family at the game camera; add a shot for yours), and at
+4K for the beauty read. No side-by-side, no review. Every effect passes the VFX lead before the lead sees it, and
+the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessary, never sufficient.
+
+## Visual direction (director, 12 answers, 2026-10-23; the lead logs them as D-n)
+1. Fire is cinematic: deep orange-red flames, white-hot cores, heavy black smoke and embers (the reference video).
+2. A rampage escalates: haze thickens and the sky glows orange from the fires; a late run looks like an inferno
+   (the kaiju and streets stay readable).
+3. A big collapse's dust wall may roll down the streets and swallow the camera for 2-3 s, clearing round the
+   kaiju first (a deliberate exception to D-018's "smoke never hides the view").
+4. Once large, a stomp's wave ripples through whole blocks: cars hop, windows burst, dust lifts, the camera thumps.
+5. Big-collapse debris rains for 2-4 s (caps per graphics preset).
+6. Rare split-second slow motion on the biggest moments only (landmark falls, a tower dropped on the army,
+   evolutions); hit-stop skips sim steps, never Engine.time_scale (R 22.7).
+7. Glass: windows burst into glittering shards that catch the light (a new small family, never alike to sparks).
+8. Night blackouts spread: blocks round the damage go dark floor by floor; fires and the breath light the city.
+9. Crushed people: a bloodless dust puff, never blood.
+10. Enemy kills are mostly crushed, small pops (crumple, small fire, smoke puff; agents swatted); big fireballs stay
+    special (explosive sites; D-140's helicopter break-ups keep their rule).
+11. The croc's throat and spines crackle with white-hot lightning as the breath and Thunder Beam charge, stronger each
+    evolution (never a blue "atomic" glow).
+12. Taskforce energy is clean, precise tech: thin straight lines, crisp rings, a steady cold glow; never crackling
+    like the croc's lightning.
 
 ## Rules every family shares
 - **Light:** Shader Cinematic (D-104): AgX tonemap, glow 1.0 with HDR threshold 0.9 (`data/looks.json`). Only
@@ -83,10 +116,23 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
   `ff4a14` (`beam.gdshader` cylinder + `breath_curtain.gdshader` flame wall + flares, `breath_beam.gd`), and the
   ultimate is a solid emissive box (PowersView `_box`, `powers_view.gd:120`) that reads as a white slab from the
   side and is hidden behind the head at the game camera (sheet, BREATH, BEAM row).
-- **In the M1 build** (director 2026-10-23). **Spec (ROADMAP b2-18, research 17):** one additive ribbon shader for every beam in the game: a
-  white-hot core, a coloured halo (the halo colour is the director's open question R 17.6), 3-5 branches, at most
-  3 flashes a second. The breath, the Thunder Beam and the Taskforce's railgun and gunship lasers all draw with it;
-  only the tint differs by owner.
+- **In the M1 build** (director 2026-10-23), branch claude/thunder-beam. Build from
+  `docs/research/2026-10-21/17-lightning-breath.md` (the recipe table and "For Kaiju Incremental" 1-4), plus:
+  - **One beam shader for the game:** `bolt.gdshader` on an ImmediateMesh ribbon (core strip + wide halo strip,
+    camera-facing in the vertex shader, additive, depth_draw_never). The breath, the Thunder Beam and later the
+    Taskforce railgun and gunship lasers all draw with it; only width and tint differ by owner.
+  - **Breath:** a dim feeler, then 2-3 bright strokes down one fixed main channel to `_first_hit`, 3-5 branches
+    re-rolled per stroke fanning across the sim's BreathCone (never past it), at most 3 full flashes a second, no
+    saturated red. Replaces the cylinder core AND the orange flame curtain (`breath_curtain.gdshader` goes).
+  - **Thunder Beam (ultimate):** the same bolt held for the beam's seconds, its main channel re-struck on the
+    stroke schedule as the head steers, branches lashing the buildings it crosses; replaces the solid box at
+    `powers_view.gd:120`. It lights fires per D-129 through the existing coat.
+  - **Power pillar:** the bolt is thick enough to read from the game camera behind the head (the body hides a thin
+    one), its two pooled lights flood the street on each stroke (mouth + impact), the impact throws family-5 sparks
+    and family-3 dust, a stroke kicks the camera through CameraShake, and a thunder layer sits under the first stroke.
+  - **Colour:** white-hot core; the halo colour is the director's open question R 17.6: show 3 labelled 4K stills
+    (hot amber / species-eye tint / white with a violet fringe) through the VFX lead, never agent taste.
+  - Per-breath presentation seed (`Seeds.make("breath_bolt", ...)`), tunables in `data/tuning.json` fx.
 
 ### 7. Ability rings and ground marks: `scenes/shockwave.gdshader`, `scenes/fx_decals.gd`, `claw_slash.gd`
 - **Rings:** a soft band of street dust running out and fading (tint `(0.62, 0.58, 0.52)`, peak alpha 0.22, ragged
@@ -119,9 +165,9 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
 ## Two looks today (flagged red on the sheet)
 | family | canonical | second look | where | fix (owner) |
 |---|---|---|---|---|
-| dust | smoke-shader puff | flat radial sprite, tan | Fx.tree_puff (`fx.gd:141`) | smoke-shader puff that skips the centre clearing (fixing, director yes 2026-10-23) |
-| ring | dust band shader | hazard-yellow torus | CityView.ring (tail sweep, ink), `city_view.gd:338` | Fx.shockwave (fixing, director yes 2026-10-23) |
-| sparks | ember glow cube | plain unshaded cube, no bloom | Fx.sparks (shell hits, beam end) | FxParticles.sparks (fixing, director yes 2026-10-23) |
+| dust | smoke-shader puff | flat radial sprite, tan | Fx.tree_puff (`fx.gd:141`) | smoke-shader puff that skips the centre clearing (fixed in #154, 2026-10-23) |
+| ring | dust band shader | hazard-yellow torus | CityView.ring (tail sweep, ink), `city_view.gd:338` | Fx.shockwave (fixed in #154, 2026-10-23) |
+| sparks | ember glow cube | plain unshaded cube, no bloom | Fx.sparks (shell hits, beam end) | FxParticles.sparks (fixed in #154, 2026-10-23) |
 | fire | Fire's rising voxels | additive orange flame wall | breath_curtain.gdshader | goes with the lightning rework (b2-18) |
 | beam | (none yet) | solid emissive box | Thunder Beam, `powers_view.gd:120` | ribbon shader (b2-18, in M1) |
 | fire | Fire's voxels | big flat orange cube spray | blast fireball, city-explosives-v2 r8 | review FIX below |
@@ -129,10 +175,12 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
 | gas/smoke | smoke shader | green lit cubes | chem lab cloud, city-explosives-v2 | tinted smoke (ruled 2026-10-23) |
 | ember shader | `ember.gdshader` | `blast_ember.gdshader` (copy + fog off) | city-explosives-v2 | one shader for both |
 
-## Review checklist (every effect, in writing, pass/fail/n.a.)
-1. Which family? Does it reuse that family's owner (no new shader, material or ramp)?
-2. Side by side with the existing member, same camera and zoom, night and noon: one look?
-3. Voxel size equal to its family's; nothing UI-coloured in the world; bloom only on light sources.
-4. Reads in under a second at the game camera (not only at 2x); kaiju never hidden; smoke clears per D-018.
+## Review checklist (every effect, in writing, pass/fail/n.a.; verdict SHIP only if he will love it)
+1. BEAUTY at 4K and game zoom: rich colour, real light, motion; would the player cause more to see it again?
+2. CONSISTENCY: which family; reuses its owner (no new shader, material or ramp); side by side with the existing
+   member, same camera and zoom, night and noon: one look; voxel size equal to its family's; no UI colours.
+3. SCALE AND POWER: reads huge, heavy and slow enough to feel massive (not small, quick or polite); light floods,
+   camera and audio answer; enemy effects small and their deaths swatted.
+4. Reads in under a second at the game camera; kaiju never hidden; smoke clears per D-018; bloom only on light.
 5. Numbers in data; owner file named; shared files (fire.gd, fx.gd, smoke.gdshader) unchanged in-game when a
    consumer adds options (same-seed before/after still).
