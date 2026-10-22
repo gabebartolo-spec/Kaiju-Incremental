@@ -181,12 +181,16 @@ func _check_normal_untouched() -> void:
 	var first: Dictionary = _autoplay.call(_make.call("reptilian", {"claws": 3, "hide": 2}, 0, {}))
 	var cfg := Endless.cfg()
 	var saved := cfg.duplicate()
-	for key: String in cfg:
-		cfg[key] = Num.f(cfg[key]) * 7.0 + 1.0
-	var second: Dictionary = _autoplay.call(_make.call("reptilian", {"claws": 3, "hide": 2}, 0, {}))
+	var same := true
+	# Every row zero (no escalation, no tanks) and every row high: a normal seed must not notice.
+	for factor: float in [0.0, 7.0]:
+		for key: String in saved:
+			cfg[key] = Num.f(saved[key]) * factor
+		var again: Dictionary = _autoplay.call(_make.call("reptilian", {"claws": 3, "hide": 2}, 0, {}))
+		same = same and first == again
 	for key: String in saved:
 		cfg[key] = saved[key]
-	_check.call(first == second, "changing every endless row leaves a normal seed's results identical")
+	_check.call(same, "changing every endless row leaves a normal seed's results identical")
 	_check.call(Num.i(first["tanks"]) + Num.i(first["buildings"]) > 0, "that normal run did something: %s" % [first])
 
 
