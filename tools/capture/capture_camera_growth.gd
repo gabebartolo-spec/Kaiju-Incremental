@@ -16,7 +16,7 @@ extends SceneTree
 ## self-check alone, no frames saved (runs --headless: the camera and sim are the same).
 
 const CANDIDATES := "res://tools/capture/camera_candidates.json"
-const Growth := preload("res://tools/capture/capture_growth.gd")
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SPECIES := "reptilian"
 ## Ground in front of the feet that must stay in frame (R 2.2): this many body scales toward the
 ## camera.
@@ -106,7 +106,7 @@ func _run() -> void:
 	await process_frame
 	_apply_candidate()
 	var species := Content.species_def(SPECIES)
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[_stage - 1], SPECIES)
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[_stage - 1], SPECIES)
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	_rampage = Rampage.new()
 	var layout := CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0))
