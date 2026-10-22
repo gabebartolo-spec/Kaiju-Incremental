@@ -9,6 +9,8 @@ const CENTRE_FROM := 0.3
 const CENTRE_TO := 0.8
 ## The Colossus's head top lies on the pose picture's top row (alpha above this).
 const OPAQUE := 0.5
+## The beacon on the lattice tower is a stand-in too, but 1 m wide: not a tower.
+const TOWER_MIN_WIDTH := 4.0
 
 
 ## Prints the head-vs-tower numbers for `backdrop`'s camera at a frame `frame_h` px tall.
@@ -32,9 +34,11 @@ static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 		stands.append_array((node as CitySkyline).stand_ins())
 	stands.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
+			var at_a: Vector3 = a["at"]
+			var at_b: Vector3 = b["at"]
 			var size_a: Vector3 = a["size"]
 			var size_b: Vector3 = b["size"]
-			return size_a.y > size_b.y
+			return at_a.y + size_a.y > at_b.y + size_b.y
 	)
 	var shore := _screen_y(camera, size, Vector3(camera.position.x, 0.0, far_z), frame_h)
 	print("measure shore line y px ", snappedf(shore, 0.1))
@@ -42,7 +46,7 @@ static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 	for box: Dictionary in stands:
 		var at: Vector3 = box["at"]
 		var dim: Vector3 = box["size"]
-		if at.z > far_z or at.z < far_z - 80.0:
+		if at.z > far_z or at.z < far_z - 80.0 or dim.x < TOWER_MIN_WIDTH:
 			continue
 		var top := Vector3(at.x, at.y + dim.y * 0.5, at.z + dim.z * 0.5)
 		var share := camera.unproject_position(top).x / size.x
@@ -127,6 +131,30 @@ static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 			", ",
 			snappedf(p.y / size.y, 0.001)
 		)
+
+
+## The water band: the shore line down to the top of the near railing, px at the capture's height
+## (the band before D-158 was 476 px at 2160: shore 1208, rail 1684).
+static func water_band(backdrop: TitleBackdrop, frame_h: float) -> void:
+	var camera := backdrop.find_children("*", "Camera3D", true, false)[0] as Camera3D
+	var view := camera.get_viewport() as SubViewport
+	var size := Vector2(view.size)
+	var city: Dictionary = backdrop._city.sim.city
+	var shore: Dictionary = Content.section("title")["shore"]
+	var far_z := Num.f(city["coast_z"]) - Num.f(city["bay_width"])
+	var edge_z := Num.f(city["coast_z"]) - Num.f(shore["ledge_from"]) - Num.f(shore["ledge_depth"])
+	var rail_y := Num.f(shore["ledge_top"]) + 0.45 + Num.f(shore["rail_height"])
+	var top := _screen_y(camera, size, Vector3(camera.position.x, rail_y, edge_z + 0.9), frame_h)
+	var line := _screen_y(camera, size, Vector3(camera.position.x, 0.0, far_z), frame_h)
+	print(
+		"measure water band px ",
+		snappedf(top - line, 0.1),
+		" (shore ",
+		snappedf(line, 0.1),
+		", rail top ",
+		snappedf(top, 0.1),
+		"; before D-158: 476)"
+	)
 
 
 ## The nearest far-shore building to the Continue / New Kaiju plates, in px at the capture's height

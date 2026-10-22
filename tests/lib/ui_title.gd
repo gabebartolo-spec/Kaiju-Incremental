@@ -16,6 +16,8 @@ const CORNER_MAX := 120.0
 const LABEL_ROOM := 14.0
 const NEWLINE := "\n"
 const PLATE_BANDS := 2.0
+## Towers are wider than this; the lattice tower's 1 m beacon is a stand-in too, not a tower.
+const TOWER_MIN_WIDTH := 4.0
 
 var t: SceneTree
 var check: Callable
@@ -32,6 +34,52 @@ func run() -> void:
 	await _with_save()
 	await _without_save()
 	t.root.size = window
+	await _far_tower_cap()
+
+
+## D-158 option C: the title's far shore stands no tower over tuning "title" "tower_cap" (one value,
+## so the Colossus clears every tower), while the game's own far shore (no cap) does: the same check
+## fails on it, so it can fail.
+func _far_tower_cap() -> void:
+	var cap := Num.f(Content.section("title")["tower_cap"])
+	var game := await _far_top(0.0)
+	var title := await _far_top(cap)
+	check.call(
+		game > cap + 1.0, "the uncapped far shore has a tower over %d m (%.1f m)" % [cap, game]
+	)
+	check.call(
+		title > 0.0 and title <= cap + 0.01,
+		"the title's far shore has no tower over its %d m cap (%.1f m)" % [cap, title]
+	)
+
+
+## The top of the tallest far-shore tower (m) of a title-sized city whose far towers are capped at
+## `cap` (0 = no cap).
+func _far_top(cap: float) -> float:
+	var cfg := Content.section("title")
+	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(cfg["city_tier"]))
+	var city: Dictionary = tuning["city"]
+	city["far_tower_cap"] = cap
+	var layout := CityGrowth.layout(
+		Content.tuning(), Num.i(cfg["city_tier"]), Seeds.make("city", 0)
+	)
+	var sim := RampageSim.new({}, tuning, layout, Seeds.make("army", 0))
+	var holder := Node3D.new()
+	t.root.add_child(holder)
+	var ground := CityGround.new(sim.city)
+	holder.add_child(ground)
+	var skyline := CitySkyline.new(ground, Seeds.make("skyline", 0))
+	holder.add_child(skyline)
+	await t.process_frame
+	var far_z := Num.f(sim.city["coast_z"]) - Num.f(sim.city["bay_width"])
+	var top := 0.0
+	for box: Dictionary in skyline.stand_ins():
+		var at: Vector3 = box["at"]
+		var dim: Vector3 = box["size"]
+		if at.z <= far_z and dim.x >= TOWER_MIN_WIDTH:
+			top = maxf(top, at.y + dim.y * 0.5)
+	holder.free()
+	return top
 
 
 ## A title built on the 1080p canvas (no live city: the 3D backdrop needs a renderer).

@@ -123,6 +123,7 @@ func _run() -> void:
 		if _measure and not backdrops.is_empty():
 			MEASURE.towers_and_head(backdrops[0] as TitleBackdrop, float(root.size.y))
 			MEASURE.plate_clearance(backdrops[0] as TitleBackdrop, float(root.size.y))
+			MEASURE.water_band(backdrops[0] as TitleBackdrop, float(root.size.y))
 			print("measure frame ", root.size)
 		if _probe_at != Vector2.ZERO and not backdrops.is_empty():
 			_probe(backdrops[0] as TitleBackdrop, _probe_at)
