@@ -8,8 +8,14 @@ sim-review packet (below), full suite once, one ~6 s clip at the game camera (lo
 claude/fire-spread, rebuilt on origin/claude/look-options ef9212ca (own commits cherry-picked; backup ref
 claude/fire-spread-pre-rebase and -pre-rebase2, local only).
 ## Unfinished changes
-- none. Full suite: all 23 suites passed (with import, on 802636cd); rebuilt on ef9212ca (perf scans #148,
-  no overlap), fire + powers + scans green there after the breath-order change. Pushed claude/fire-spread.
+- Lead QC of clip v5 = FIX (frames scratchpad/qc5c/sh_*.png, qc5d/t1.png, t2.png): (a) roof fire light switches
+  off in one frame at 7.5 s: fade ~0.4 s as the collapse starts; (b) embers hang in the air while the roof tilts:
+  parent the roof fires to the falling piece or fade them at tilt start; (c) the breath smashes the struck block and
+  the burner is its neighbour: aim so the lit block stands and burns, and the neighbour catches later. Diagnose only
+  (one line each, say where in code): (d) 8.3 s tilted block shows a see-through window lattice, 8.55 s flat slab +
+  mound; (e) 8.4 s pink neighbour's walls vanish into floor plates; check whether a plain smash topple on the base
+  does the same (then it is the shared collapse view). Then re-render ONE clip, report 5 lines.
+- Done and pushed: collapse cost back to 612 usec/tick (burn_out_steps 2 batches 0.3 s apart; hash 1292598282 x2).
 ## Evidence so far
 - fire suite 9 of 9 functions, 16 checks, 0 failures; powers suite green; check_scripts 345 ok; gdlint, gdformat,
   tuning_keys, complexity_ratchet clean.

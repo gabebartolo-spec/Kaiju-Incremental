@@ -114,10 +114,12 @@ func _check_burn_pay() -> void:
 			knocked.step(DT, Vector2.ZERO, false, 0)
 		steps += 1
 	var start := knocked.rubble  # the same in both runs until the burn-out step
-	# Knocked down the same way: the same ground cells, the same batches a tick, no fire.
+	# Knocked down the same way: the same ground cells in the same batches, no fire.
 	var cells := knocked.powers.fire.ground_cells(0)
 	var fire_cfg: Dictionary = Content.tuning()["powers"]["fire"]
-	var per := ceili(cells.size() / float(roundi(Num.f(fire_cfg["burn_out_seconds"]) / DT)))
+	var batches := Num.i(fire_cfg["burn_out_steps"])
+	var per := ceili(cells.size() / float(batches))
+	var every := maxi(1, roundi(Num.f(fire_cfg["burn_out_seconds"]) / batches / DT))
 	while not cells.is_empty() and _alive(knocked, 0) > 0:
 		var batch: Array[Vector3i] = []
 		while not cells.is_empty() and batch.size() < per:
@@ -126,7 +128,8 @@ func _check_burn_pay() -> void:
 		amounts.resize(batch.size())
 		amounts.fill(1000000.0)
 		knocked.damage_cells(0, batch, amounts)
-		knocked.step(DT, Vector2.ZERO, false, 0)
+		for k: int in every:
+			knocked.step(DT, Vector2.ZERO, false, 0)
 	_times(burnt, 8.0)
 	_times(knocked, 8.0)
 	var share := Num.f(Content.tuning()["powers"]["fire"]["burn_pay"])

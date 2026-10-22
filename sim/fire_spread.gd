@@ -37,7 +37,8 @@ var _active := {}  # building -> true while HEATING, GLOWING or BURNING (inserti
 var _since := 0.0  # seconds since the last heat pass
 var _pass := 0  # heat passes so far; _warm[j] == _pass when a fire warmed j this pass
 var _warm := PackedInt32Array()
-## Buildings giving way: building -> [ground cells still standing, downwind first; cells a tick].
+## Buildings giving way: building -> [ground cells still standing, downwind first; cells a batch;
+## ticks between batches; ticks to the next batch].
 var _crumbling := {}
 
 
@@ -230,8 +231,9 @@ func _burn_out(i: int, dt: float) -> void:
 		share *= Num.f(cfg["far_pay"])
 	b.pay_share = share
 	var cells := ground_cells(i)
-	var ticks := maxi(1, roundi(Num.f(cfg["burn_out_seconds"]) / dt))
-	_crumbling[i] = [cells, ceili(cells.size() / float(ticks))]
+	var steps := Num.i(cfg["burn_out_steps"])
+	var every := maxi(1, roundi(Num.f(cfg["burn_out_seconds"]) / steps / dt))
+	_crumbling[i] = [cells, ceili(cells.size() / float(steps)), every, 1]
 	burnt_out += 1
 	conflagration = minf(Num.f(cfg["conflag_max"]), conflagration + Num.f(cfg["conflag_step"]))
 	sim.events.append({"type": "fire_burnt", "building": i, "share": share, "far": far})
@@ -261,9 +263,14 @@ func ground_cells(i: int) -> Array[Vector3i]:
 	return cells
 
 
-## The next cells of a building giving way break; once none stand it is burnt out.
+## Every few ticks the next batch of a building giving way breaks (one support check a batch,
+## burn_out_steps in all); once none stand it is burnt out.
 func _crumble(i: int) -> void:
 	var entry: Array = _crumbling[i]
+	entry[3] = Num.i(entry[3]) - 1
+	if Num.i(entry[3]) > 0:
+		return
+	entry[3] = entry[2]
 	var cells: Array[Vector3i] = entry[0]
 	var batch: Array[Vector3i] = []
 	while not cells.is_empty() and batch.size() < Num.i(entry[1]):
