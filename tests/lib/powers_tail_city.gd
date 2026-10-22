@@ -5,6 +5,10 @@ extends RefCounted
 ## times and cut nothing: its reach (3.1 m) ended short of its own tail tip and the street.
 
 const SECONDS := 30.0
+## Seconds on each leg of the square walk. 2 s, not 1.5: a turn now walks an arc and slows the
+## stride (BodyContact.steer, comments #16), so 1.5 s legs kept the baby in a small square on the
+## bank, out of the tail's reach of any building.
+const LEG := 2.0
 const DIRS: Array[Vector2] = [Vector2(0, -1), Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0)]
 
 
@@ -21,7 +25,7 @@ static func check(check: Callable) -> void:
 	var t := 0.0
 	while t < SECONDS and not sim.over:
 		t += dt
-		sim.step(dt, DIRS[int(t / 1.5) % DIRS.size()], false, 0)
+		sim.step(dt, DIRS[int(t / LEG) % DIRS.size()], false, 0)
 	check.call(
 		sim.powers.tail_sweeps > 0 and sim.powers.tail_cut > 0,
 		(

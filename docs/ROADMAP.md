@@ -319,3 +319,25 @@ example of what that will look like so players can choose their tolerance". Aske
 Load-screen art (comment #92, for the demo): a rotation of staged, creative 4K screenshots of the game behind the
 loading screen (e.g. from inside the stadium, from above the tallest tower), full screen with INCOMING and the meter on
 a dark band on top; the lead proposes about 12 shots on one board, he picks.
+Achievements and skins (comment #95, after the demo): in-game achievements with progress bars in a menu (e.g. topple
+100 towers, down 50 helicopters, burn a district), mapped to Steam achievements when the Steam build comes; about 8
+recolour skins of the croc (palette swaps) unlocked on milestones, chosen in a skin picker. Turns D-119's skins on.
+
+## Post effects (D-142, 2026-10-22)
+- Subtle vignette, pulsing red at low health, on every preset; a split-second colour fringe on the biggest hits only. One short clip to the director before shipping. Owner: post-fx builder. Status: started 2026-10-22.
+- Screen-space reflections (wet streets, glass), max preset only. After the demo.
+
+## Playtest milestones (D-146, 2026-10-22)
+The director plays only at these; each gets an exported .exe in a fixed folder and an exhaustive survey for that game
+state. No director clips or per-change approvals in between; clips only where motion is the point, for the critics.
+- **M1 Feel pass:** fire spread + longer baby breath (#152), heavier turning (#149), bigger explosions, post effects,
+  the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
+- **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
+- **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
+  deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
+- **M4 Itch release candidate:** M3 survey fixes only.
+
+## Threat Dossier (D-147, 2026-10-23, after the demo)
+- A bestiary named the Threat Dossier: the Kaiju Plan's classified files on every enemy (police, tanks, helicopters,
+  Taskforce agents, gas soldiers, walking mechs, gunships, and any later ones). Name and silhouette on first sight;
+  full stats, weaknesses and lore after the first kill. Opened from the main menu and the pause menu. Status: not started.
