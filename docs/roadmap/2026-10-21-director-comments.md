@@ -84,3 +84,6 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 78 | "Roadmap: your adversaries": Anti Kaiju Taskforce, lazer railguns, frost grenades, reference AoT, Special Agents with jetpacks and grappling hooks | taskforce builder (before the demo) | asked: D-137 |
 | 79 | Loading screen: "the yellow hazard triangle looks bad" (asked: "Remove it"); "the word incoming isnt centred in the red box" | ui fix builder (claude/ui-redesign) | in progress |
 | 80 | "roadmap: audit for flat, or untextured objects/scenery/buildings; all surfaces must be textured and visually beautiful". Asked: surface detail in the voxel look; audit now, fixes before the demo | texture audit builder | audit running |
+| 81 | Icons: hand-drawn flat set failed review 3 times; asked: "game-icons.net base" (CC BY 3.0, credits line) | icons builder (claude/ui-art) | in progress |
+| 82 | Header hazard triangle: asked: "Remove everywhere" (all 8 screens), text centred | ui fix builder (claude/ui-redesign) | in progress |
+| 83 | Worktree cleanup widened: asked: "Yes, pushed and clean ones" | cleanup helper | in progress |
