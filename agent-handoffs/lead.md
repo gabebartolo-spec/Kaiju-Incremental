@@ -93,6 +93,9 @@
     committed LOCAL 87a6b19b, NOT pushed: city_breath_trees (stage 1 seed 98765, 1 stray tree) and military standoff
     (57% vs 95%) go red. Lead call: diagnose both (does a test hard-code the old reach? derive it from data; does
     autoplay change path?), fix code or the stale number, never loosen a bar. Clip v10 (claws on) in scratchpad fire_clip10.
+  * #153 pushed 39f61c90 (CI not yet seen): headless first-build on main thread (flow race), streamview drives its
+    own clock at stages 2-3, landmark_keep_m 150 -> 80 (lead accepts; recheck after cities grow 15%). Retarget
+    tools/capture/stage4_memory.gd to the adult city. GitHub helper merges when green.
   * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
     tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
   * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
