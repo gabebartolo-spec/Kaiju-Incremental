@@ -1,12 +1,10 @@
 class_name RampageHud
 extends CanvasLayer
 ## The rampage HUD, as little as it can be so the kaiju and the city's fall fill the screen
-## (director 2026-10-21): a plain outlined clock at the top (red in the last seconds) with a thin
-## city-destroyed strip under it, biomass a small number bottom right that swells when it grows,
-## the breath, dash and ultimate as three small rings in the bottom left corner, health as a red
-## edge vignette, the controls on a card at the first rampage's start only. All inside the TV
-## title-safe area; no text under 24 px. Then the end beat (why it ended, big). Reads the sim;
-## reports the beat's end through `beat_done`. Sizes and timings: tuning "ui".
+## (director 2026-10-21): clock and city-destroyed strip on top, biomass bottom right, the breath,
+## dash and ultimate as three rings bottom left, health as a red edge vignette, the controls on a
+## card at the first rampage's start only; all inside the TV title-safe area, no text under 24 px.
+## Then the end beat (why it ended, big). Reads the sim; reports it by `beat_done`. Tuning "ui".
 
 signal beat_done(result: Dictionary)
 
