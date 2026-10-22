@@ -17,9 +17,14 @@
   game rule found in review goes to him as a question in the fiction's words.
 - 02:27 "no godot for 30 mins", 02:58 "pause for 30 more mins": loop b623ho9x1 (scratchpad no_godot_until.sh)
   stops our --script Godot runs until 03:28, then deletes ~/.claude/focus-pause. Subagents and the VFX lead told.
-- UNSENT (app send cap hit; send on his next message): taskforce = D-160 gate (about 3 min of rampage time in the
-  adolescent city, counter in the save, default on load + round-trip check) + pause to 03:28; demo-end = its "exit
-  127" was the pause loop, not a bug.
+- UNSENT (app send cap hit; send on his next message, one message per session):
+  taskforce = D-160 gate (about 3 min of rampage time in the adolescent city, counter in the save, default on load +
+  round-trip check; its one-key gate at 6787982b is not enough) + sim review coming + touched suites after 03:28.
+  demo-end = "exit 127" was my pause loop and the focus guard blocks windowed runs only while focus-pause exists
+  (both end 03:28): rerun flow/smoke then; amended ending (final node -> thanks -> endless) accepted; endless entry
+  from the thanks screen + upgrade-tree button accepted; people eaten/fled as view counts OK for the thanks screen;
+  push the branch, PR only when open PRs <= 3. vfx-lead = the thunder sound for the Thunder Beam is the lead's
+  (sound), queued.
 - D-160: the Taskforce first joins after a few minutes total in the adolescent city (docs d9198a92).
 
 ## Sessions (start_session; message by local_ id)
