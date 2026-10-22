@@ -53,6 +53,13 @@ They replace the synth/Kenney mixes listed above for these files; shell_hit.ogg 
 | heli_rotor.ogg | heli_rotor t1, 5.0 s loop | High-quality, professionally recorded military attack helicopter hovering nearby, steady rotor blade thump and turbine whine, loop. Sound effects, no music. |
 | crowd_panic.ogg | crowd_panic t1, 6.0 s loop | High-quality recording of a large stadium crowd panicking, thousands of people screaming and running, chaotic, loop. Sound effects ambience, no music. |
 | footstep.ogg, footstep_1..3.ogg | footstep_small t1, 1.0 s; the variants are the same take at pitch 0.96 / 1.04 / 0.92 | High-quality, professionally recorded small reptile creature footstep on concrete, one-shot. Soft heavy pad thud with a light scrape. Sound effects foley, no music. |
+| thunder_beam.ogg (one-shot on the Thunder Beam's start) | start_b, 4.48 s, -6.9 dB, 0.3 s fade-out; picked for the loudest crack and longest bright crackle | High-quality cinematic sound effect of a colossal lightning beam fired from a giant monster's mouth, one-shot, 4.5 seconds. Starts with a sharp, deafening thunder crack, then a sustained roaring torrent of crackling electricity and searing plasma hum with buzzing arcs, ending in a deep rolling thunder rumble that fades out. Huge, powerful, godlike. Sound effects only, no music, no voices. |
+| thunder_beam_loop.ogg (looped while the beam is on) | loop_a, 3.00 s seamless, -7.3 dB; the steadiest (rms spread 0.8 dB, 0.3 dB step at the seam) | Seamless loop of a sustained colossal lightning beam: a roaring torrent of crackling high-voltage electricity, searing plasma hum, constant buzzing arcs and sizzling sparks, steady intensity, no start and no end. Huge and powerful. Sound effects only, no music, no voices. |
+| thunder_beam_end.ogg (one-shot on the beam's end) | end_b, 3.48 s, -5.0 dB, 0.2 s fade-out; the cleanest decay (-2 to -49 dB) | One-shot ending of a colossal lightning beam: the electric crackle cuts off with a final sharp thunder crack, followed by a deep rolling thunder rumble that echoes across a city and fades out slowly. Sound effects only, no music, no voices. |
+
+The three thunder_beam files (lead, 2026-10-23, ElevenLabs flow Pmr8C0DI22Q6LD0EIoh0, model eleven_text_to_sound_v2, prompt
+influence 0.5, 4 takes each, 175 credits on the director's paid plan, D-138): mono 44.1 kHz Vorbis 96 kb/s, peak-limited
+below 0 dBFS. Raw takes kept outside the repo.
 
 Not usable: the distant-rifle prompt (and one near-rifle take) came back near-silent (peak about -45 dBFS); rifle_far keeps
 playing the rifle sample pitched 0.7, as before.

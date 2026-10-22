@@ -32,6 +32,7 @@ var _tint: Color
 var _helis: Dictionary = {}
 var _young: Dictionary = {}
 var _thunder: ThunderBeam
+var _beam_sound: SfxBeam
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
@@ -51,6 +52,8 @@ func _ready() -> void:
 	add_child(rooftops)
 	_thunder = ThunderBeam.new(sim, _kaiju, _tint, rampage.run_index)
 	add_child(_thunder)
+	_beam_sound = SfxBeam.new(rampage.sfx)
+	add_child(_beam_sound)
 	_thunder.prewarm(_city.fx.keep)
 	_thunder.rig.fx = _city.fx
 	var kick := func(_n: int, at: Vector3) -> void:
@@ -127,9 +130,11 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 		"beam_start":  # the Thunder Beam: the breath's bolt, held
 			_hook("jaw_open", [true])
 			_thunder.start(Num.f(event["seconds"]), kaiju_at)
+			_beam_sound.start()
 		"beam_end":
 			_hook("jaw_open", [false])
 			_thunder.stop()
+			_beam_sound.stop()
 		"coated", "fire_burning":
 			_lit(event)
 		"dash":  # the charge: a whoosh and a dust streak along the path

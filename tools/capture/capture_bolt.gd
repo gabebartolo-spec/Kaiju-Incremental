@@ -91,7 +91,9 @@ func _go() -> void:
 ## Stills a set number of frames after the fire.
 func _stills(rampage: Rampage) -> void:
 	var shots := BEAM_SHOTS if _mode == "beam" else BREATH_SHOTS
-	while _step < FIRE_AT:
+	var played := rampage.ability_fx.played if _mode != "beam" else rampage._powers.played
+	var event := "breath" if _mode != "beam" else "beam_start"
+	while not played.has(event):  # waits for the press to land (the kaiju out of the river)
 		await physics_frame
 	var waited := 0
 	for after: int in shots:
@@ -120,9 +122,9 @@ func _scripted_input(sim: RampageSim) -> Dictionary:
 	_step += 1
 	return {
 		"move": _walk.move(sim, _step),
-		"signature": _step == _fire_breath,
+		"signature": _fire_breath >= 0 and _step >= _fire_breath and sim.ability_ready_in <= 0.0,
 		"held": false,
-		"ultimate": _step == _fire_beam,
+		"ultimate": _fire_beam >= 0 and _step >= _fire_beam,
 	}
 
 
