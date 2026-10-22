@@ -1,13 +1,11 @@
 # Taskforce handoff (PR 1, sim core, agents only), 2026-10-23
-## State: working (fixes done and green on the taskforce suite; other suites + PR pending)
+## State: available (PR #161 open, waiting for CI and a kaiju-sim-review; asked lead for next task)
 ## Task
 Anti Kaiju Taskforce PR 1 (sim core, agents only). Serves ROADMAP "Your adversaries", M2, D-137/139/141/143/145/152.
 Lead: session "Status check". Next after this: PR 3 kills (swat, perch-collapse fall), PR 4 frost grenades.
 ## Branch and commit
-Local `claude/taskforce-core-ee770a` (worktree taskforce-core-ee770a) = origin/claude/taskforce-core (73858aac) +
-merge of origin/claude/look-options. Push target: origin `claude/taskforce-core` (the old wt/taskforce-core holds
-that branch name locally). Uncommitted: sim/taskforce.gd, sim/taskforce_frost.gd, data/tuning.json,
-tests/run_taskforce_tests.gd, tests/lib/taskforce_suite.gd, this file.
+PR https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/161, head bd72e4a5, base claude/look-options. Local
+branch claude/taskforce-core-ee770a pushed to origin claude/taskforce-core. Tree clean.
 ## What changed this session
 - The 4 failures were: tests walking sideways into walls / needing a turn (fixed with `_face_free_way`, a body-clear
   way the kaiju already faces); the dash into a wall ends the same step so frost never saw it (fix: TaskforceFrost
@@ -19,10 +17,10 @@ tests/run_taskforce_tests.gd, tests/lib/taskforce_suite.gd, this file.
   wired: the post-fx side must call `PostFxState.hurt(event.share)` on railgun_hit.
 ## Test state
 Taskforce suite: 10 of 10 functions, 55 checks, 0 failures (own APPDATA, ~7 min). Planted defects shown failing:
-lock 0, perch_fallback 0, rubble_share 0.5, share 0, old dash rule. Background run: military + flow via run_tests.sh.
+lock 0, perch_fallback 0, rubble_share 0.5, share 0, old dash rule. military 15 checks and flow 206 checks also pass.
 ## Unfinished
-Check military/flow/sim, run lint, full suite once, commit, push to origin claude/taskforce-core, PR against
-claude/look-options (sim-review packet + Evidence + Not exercised), report to lead.
+Nothing for PR 1 except CI results and the sim-review verdict. Full suite runs on CI only (director rule 2026-10-23).
+Next per plan: PR 3 kills (swat, perch-collapse fall view), PR 4 frost grenades; fringe wiring after #155 merges.
 ## Open risks / questions for the lead
 - "Agents first appear a few minutes into the adolescent city": sim has no cross-run clock; kept per-run gates
   (after_chunks 150, first_delay 6 s). Needs a ruling if a rampage-count gate is wanted.
