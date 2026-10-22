@@ -57,3 +57,13 @@ They replace the synth/Kenney mixes listed above for these files; shell_hit.ogg 
 Not usable: the distant-rifle prompt (and one near-rifle take) came back near-silent (peak about -45 dBFS); rifle_far keeps
 playing the rifle sample pitched 0.7, as before.
 
+## City beds (2026-10-23, D-155, D-138)
+
+Four loops for CitySound, generated in ElevenLabs Sound Effects on the director's paid plan (model eleven_text_to_sound_v2, prompt influence 0.5, loop on, fixed duration; flow oRbWcPVQmGlj1NYUxCJI; 2 takes each, 8 generations, 333.3 credits; D-092, D-138). Each pick was converted to mono 44.1 kHz Vorbis 96 kb/s, gain set so the whole-loop RMS hits the target (siren -24, gunfire -33, fire -24, wind -26 dBFS; measured within 0.1 dB) with the peak at or under -1.5 dBFS (gunfire -2.0 dBFS: sparse, crest 31 dB), no fades. Gains: siren -17.87 dB, gunfire +20.61, fire +0.48, wind +1.74. Raw takes stay outside the repo.
+
+| File | Take | Prompt (ElevenLabs) |
+|---|---|---|
+| city_siren.ogg | siren a, 16 s loop (generation NhcfJy7PGeLP2pdYiifG) | High-quality, professionally recorded emergency sirens heard from several blocks away across a large city at night: two police and ambulance sirens wailing at different pitches, overlapping, echoing off tall buildings, distant and dark. No voices, no traffic, no music. Sound effects ambience, loop. |
+| city_gunfire.ogg | gunfire b, 12 s loop (generation xQMpCIcETnas6ZopXczI) | High-quality, professionally recorded distant gunfire across a city: sparse muffled rifle pops and a few short bursts, long gaps between them, echoing between tall buildings from far away, dull and low. No voices, no explosions, no music. Sound effects ambience, loop. |
+| city_fire.ogg | fire b, 10 s loop (generation vsoyqeoWjCpBW6Gbdo4O) | High-quality, professionally recorded large fires burning across a city seen from far off: a deep low roar of wind-fed flames with steady crackling and snapping, no single loud event. No voices, no music. Sound effects ambience, loop. |
+| city_wind.ogg | wind b, 12 s loop (generation OWsFcg8wbCa439qtLFkq) | High-quality, professionally recorded cold wind gusting through empty city streets and between skyscrapers: low moaning with faint whistling through broken windows, eerie and desolate, slow swells. No voices, no traffic, no birds, no music. Sound effects ambience, loop. |

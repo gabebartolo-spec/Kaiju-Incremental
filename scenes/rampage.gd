@@ -154,7 +154,7 @@ func _ready() -> void:
 	_camera.fov = camera_fov
 	add_child(_camera)
 	_camera.current = true
-	sfx.watch(_camera, _powers, _city.street)
+	_start_sound()
 	_place_camera(1.0)
 	_add_overlays()
 	if stages.overlay != null:
@@ -358,7 +358,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 	var size := sim.body_scale() * (0.2 + strength)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
-	var ring := _stomp_radius * 1.3 if stomped else FOOTFALL_RING * size
+	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
 	_city.fx.shockwave(at, ring, side == "tail")
 	_step_dip = maxf(
 		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
@@ -375,6 +375,13 @@ func _land_stomp(at: Vector3) -> void:
 	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
 	_city.crush(at, _stomp_radius + catch)
 	stomp_ring_at.append(at)
+
+
+## The sound hears the world: the sfx its camera, helicopters and street; CitySound (D-155) the sim
+## and the street, to set the city's beds and the music layers.
+func _start_sound() -> void:
+	sfx.watch(_camera, _powers, _city.street)
+	add_child(CitySound.new(sim, _city.street, sfx))
 
 
 func _place_camera(delta: float) -> void:
