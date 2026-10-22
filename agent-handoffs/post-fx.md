@@ -1,5 +1,5 @@
 # Post-fx handoff, 2026-10-22 22:55
-## State: awaiting director (clip sent to the lead); no PR until the lead says the director approved
+## State: awaiting director (round 2 clip sent: critic FIX on the red pulse done); no PR until the lead says the director approved
 ## Task
 ROADMAP "Post effects (D-142)": subtle vignette on every preset (red pulse at low health) + split-second colour fringe on the
 biggest hits only. Deliverables: code, ONE ~6 s 1080p GPU clip, cost on vs off (high preset).
@@ -35,3 +35,4 @@ Other graphics presets and 4K; day scenes (vignette only seen at night); stages 
 - Python text-mode writes make CRLF on Windows: use newline='' and check `file`; a silent no-op replace cost three reruns.
 - ffmpeg: C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe
 - Stop only PIDs you started and logged; a pause order lets runs already going finish (lead 2026-10-22, after I stopped a PID that was probably another agent's).
+- Round 2 (critic FIX, 23:45): red = separate edge band below 25% hp: 110 px deep, alpha 0.28 at the edge, exactly 0 between beats. Measured on the re-render (left-edge strip red excess): baseline -14, peak +40 (frame 56 of the beat window), back to -14 at the trough (frame 85), period 46 frames; band fades to ~0 by 100 px; HUD plates +2..5/255 at peak (not zero, within noise); centre +0.6. Same clip path.
