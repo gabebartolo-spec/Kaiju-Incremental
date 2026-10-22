@@ -1,0 +1,1087 @@
+[
+{
+"n": 1,
+"t": "CI: executable harness scripts, export preset, no spaces in build paths",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 2,
+"t": "Lead handoff after kickoff",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 3,
+"t": "Voxel art direction: three look options (director pick pending)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-21"
+},
+{
+"n": 4,
+"t": "Original display font: Kaiju Claw for headings (director's pick B)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 5,
+"t": "Street life: civilians, moving traffic, police blockades",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 6,
+"t": "Ability VFX: a distinct look for every power (D-026)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 7,
+"t": "A real city, not a grid: NY/Tokyo street plan, outskirts and skyline",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 8,
+"t": "Power SFX: a sound for every power (D-026, D-030) + ready/breath VFX follow-ups",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-17"
+},
+{
+"n": 9,
+"t": "Buildings at 8 voxels per floor (D-028); quiet streets and believable edges",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 10,
+"t": "Reptilian locomotion: planted feet, weight, tail counterbalance, a hunting head (D-031)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 11,
+"t": "Insectoid skitter and cephalopod crawl: mantis rigs, hexapod and radial gaits (D-031)",
+"s": "CLOSED",
+"c": "2026-10-16",
+"m": ""
+},
+{
+"n": 12,
+"t": "Species branches: reptile tail/momentum/beam, insect scuttle/glide/climb/brood, octopus hydra/squeeze/grab/ink + helicopters (D-035, D-037)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 13,
+"t": "CI capture workflow (render clips on Actions, not the director's PC)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-16"
+},
+{
+"n": 14,
+"t": "Game flow: end beat, rampage report, evolution reveal, tree polish, menus, save v2",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-17"
+},
+{
+"n": 15,
+"t": "art: kaiju drawn as voxel cubes on a smooth skin, all 9 baked (D-041)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-17"
+},
+{
+"n": 16,
+"t": "The city grows with each evolution; costs re-tuned for ~3 h (D-039)",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-17"
+},
+{
+"n": 17,
+"t": "Blender tank in game (D-042): per-part voxels, turret aims, gun recoils",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-17"
+},
+{
+"n": 18,
+"t": "Blender attack helicopter (D-042): spinning rotors, aiming chin gun",
+"s": "MERGED",
+"c": "2026-10-16",
+"m": "2026-10-17"
+},
+{
+"n": 19,
+"t": "art: croc titan adult (D-046) on the Blender hand rig: skeleton, weights, mouth line",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 20,
+"t": "Apex playability: 13 s load (streamed city) and towers screen-door in front of the kaiju",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 21,
+"t": "D-049 balance D in data; D-050 demo decisions (demo P1)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 22,
+"t": "art: croc titan v2 moves by its Blender clips, with a heavy, mobile tail",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 23,
+"t": "Demo slice (D-050): croc only, demo end card after the Behemoth reveal",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 24,
+"t": "docs: board after #21 (demo D-050 items, agents)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 25,
+"t": "tools: worktree cap one per live session (D-053); CI-capture rule in CLAUDE.md",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 26,
+"t": "art: calm streets, zebras only at the downtown avenue junction",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 27,
+"t": "ui: emergency-broadcast look on every menu, button and HUD",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 28,
+"t": "tools: export_windows.sh + pck_check.py, prove a local Windows export",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 29,
+"t": "docs: demo playtest guide (P7 prep)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 30,
+"t": "ci: build.yml dispatch for any ref, uploads KaijuIncremental-<sha>",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 31,
+"t": "docs: board after the demo merge batch (D-051..D-061, P3 sheets, Tripo rows)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 32,
+"t": "perf: no stall on the first Atomic Breath or a tank/heli spawn",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 33,
+"t": "SFX bus + Sound effects slider; menu click/confirm/deny sounds",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 34,
+"t": "Army sounds: tank fire, shell hit, helicopter rotor loop",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 35,
+"t": "art: screen-space crease pass (A/B/C look prototype)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 36,
+"t": "sim: the army learns inside a stage, so defeat stays possible after Behemoth",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 37,
+"t": "city: no empty ground (D-062), coverage check + dressing past the edge",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 38,
+"t": "Breath: drop the voxel jet; reads from the game camera (jaw core, flame curtain, eased flashes)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 39,
+"t": "Helicopter gun burst and crash sounds",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 40,
+"t": "sim: rooftop defenders fire chip damage at the kaiju (D-063)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 41,
+"t": "Master limiter + SFX compressor: the loudest stacks no longer clip",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 42,
+"t": "Footstep variants: four step sounds taken in turn",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 43,
+"t": "Crowd panic ambience under the rampage",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 44,
+"t": "tools: worktree cap 8 -> 12 (D-053: one per live session)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 45,
+"t": "Mix fixes from the report: crowd audible, regen a cue, tank off the stomps",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 46,
+"t": "Rooftop rifle volley sound, from the squad's roof",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-18"
+},
+{
+"n": 47,
+"t": "Breath scorch cracks glow in (no first-frame pop of the red jagged mark)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 48,
+"t": "chore: breath_curtain.gdshader.uid (missed in #38) + lighting handoff",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 49,
+"t": "tests: move the sound unit checks out of run_flow_tests.gd (line cap)",
+"s": "MERGED",
+"c": "2026-10-17",
+"m": "2026-10-17"
+},
+{
+"n": 50,
+"t": "Military AI (D-066): tanks move and fight like a professional military",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-20"
+},
+{
+"n": 51,
+"t": "ui: tree panel lists only the stats a node changes, in plain words",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 52,
+"t": "shell_hit high-passed at 120 Hz: the last stomps the army masked",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 53,
+"t": "Rifle volleys sound at most once per 0.3 s (for denser rooftop fire)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 54,
+"t": "art: croc titan baby and adolescent bodies, slow tough toddler (D-073/074b)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 55,
+"t": "Greenery: street trees, park gardens, playgrounds, hedges; walk tramples",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-19"
+},
+{
+"n": 56,
+"t": "24 sound voices: stomps and tank shots no longer cut off mid-boom",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 57,
+"t": "Landmark sites: A stadium (city 1) and D Sky Wheel (Behemoth), voxel-baked, break like buildings (D-071)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 58,
+"t": "Jets 1/3: the interceptor's strafing pass (D-072)",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 59,
+"t": "Stadium matches (D-078): one sport per run in the stadium, players flee when its wall goes",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 60,
+"t": "capture_mix_log takes --out=<dir> (CI-capturable mix log)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 61,
+"t": "Jets 2/3: delta and ground-attack jets bomb the kaiju (D-072)",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 62,
+"t": "Footfall dust: a puff per step, not a fog over the city",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 63,
+"t": "Rooftop squads fire more often: reach from the stomp edge, 48 squads, a tenth of the chip (D-076a)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 64,
+"t": "docs: board D-062..D-084 and STATUS live-PR rows",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 65,
+"t": "tools: demo build smoke on the exported pack (title to demo end card)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 66,
+"t": "fix: mass collapse plays at most 4 crashes a frame, no axis errors",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 67,
+"t": "AUDIT (do not merge): lowered-floor",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 68,
+"t": "AUDIT (do not merge): unregistered-suite",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 69,
+"t": "AUDIT (do not merge): unregistered-floor",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 70,
+"t": "AUDIT (do not merge): untyped",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 71,
+"t": "AUDIT (do not merge): secret",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 72,
+"t": "Board: demo chain merged, D-084a..D-088, post-demo audio",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 73,
+"t": "docs: Phase 0 broken-PR audit",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 74,
+"t": "ci: a test runner missing from ALL_SUITES fails the plan job",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 75,
+"t": "Stadium collapse stall: settle() without the per-floor rescans",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 76,
+"t": "Stall probe: --no3d for full-length CPU timings on CI",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-19"
+},
+{
+"n": 77,
+"t": "ui: frame cap (60 / 120 / unlimited), menus and pause at 60 fps",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 78,
+"t": "Stadium crowd: stays in view on its way out, killable as civilians (director playtest)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 79,
+"t": "data: landmarks pay 1.5x, so no run leaps past 2x the last (D-090)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 80,
+"t": "Rooftop rifles: distant ragged fire, not a typewriter (playtest)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 81,
+"t": "art: less smoke between the camera and the kaiju",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 82,
+"t": "ui: no rampage sound until the city has finished loading",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-19"
+},
+{
+"n": 83,
+"t": "Atomic Breath: burns from the snout, with an aim wedge while ready (playtest)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 84,
+"t": "ui: next rampage loads about 3x faster (built buildings reused)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-19"
+},
+{
+"n": 85,
+"t": "sim: the city is caught unaware, its army rousing over 20 s (D-083)",
+"s": "CLOSED",
+"c": "2026-10-18",
+"m": ""
+},
+{
+"n": 86,
+"t": "Rooftop hits land over legs and tail too (post-demo)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-19"
+},
+{
+"n": 87,
+"t": "audio: ElevenLabs SFX the director picked (D-092)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-19"
+},
+{
+"n": 88,
+"t": "sim: every run starts with the kaiju rising from a river (D-083)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-20"
+},
+{
+"n": 89,
+"t": "Croc body breaks what it walks into, chews big buildings down (notes 2, D-091)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-20"
+},
+{
+"n": 90,
+"t": "Croc dash on Shift / B: bursts through the city (playtest note 4; stacked on #89)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-20"
+},
+{
+"n": 91,
+"t": "Destruction spike: 3 options, 4K cost, recommend fine sim voxels (docs only)",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 92,
+"t": "ui: Graphics setting (High / Balanced), quieter GPU on 4K",
+"s": "MERGED",
+"c": "2026-10-18",
+"m": "2026-10-18"
+},
+{
+"n": 93,
+"t": "Board: D-089..D-094, post-demo roadmap, live PRs at the pause (docs only)",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-19"
+},
+{
+"n": 94,
+"t": "ci: count test functions, not floors; shards from timings",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-19"
+},
+{
+"n": 95,
+"t": "Board: D-095, D-096, playtest notes chapter",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-19"
+},
+{
+"n": 96,
+"t": "Board: D-097 carving top priority, D-098 young retune A",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-19"
+},
+{
+"n": 97,
+"t": "sim: carving WP1, buildings as fine voxel grids that break into islands (D-094)",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-20"
+},
+{
+"n": 98,
+"t": "sim: carving WP3, building cells in the sim, promoted on first hit (D-094)",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-20"
+},
+{
+"n": 99,
+"t": "tools: carving WP2, native C++ carve core (GDExtension KaijuCarve) (D-094)",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-20"
+},
+{
+"n": 100,
+"t": "docs: board, D-099 real-physics falls; carving PRs #97-#99",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-19"
+},
+{
+"n": 101,
+"t": "docs: CLAUDE.md, director away = do whatever is fastest",
+"s": "MERGED",
+"c": "2026-10-19",
+"m": "2026-10-19"
+},
+{
+"n": 102,
+"t": "docs: CLAUDE.md always loads the core docs; drop stale screen limit",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 103,
+"t": "view: carving WP4, buildings drawn from their cell grids (D-094)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 104,
+"t": "Stomp ring lands under the foot; ground ripples toned down to dust",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 105,
+"t": "sim: carving WP6, landmark cell grids and arcs shed on cells (D-094)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 106,
+"t": "carving WP5: carved pieces split, fall and land as real physics masses (D-094, D-099)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 107,
+"t": "data: young croc retune A, steady upgrades (D-098)",
+"s": "CLOSED",
+"c": "2026-10-20",
+"m": ""
+},
+{
+"n": 108,
+"t": "docs: build 2 playtest notes and the post-demo plan in dependency order",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 109,
+"t": "carving WP7: the rampage carves building cell grids; carved towers fall by real physics (D-094, D-099)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 110,
+"t": "sim: every building on screen past the edge is real and breakable (b2-6)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 111,
+"t": "Phase A: breath flattens trees (b2-26), tail sweep cuts (b2-2), ruins are rubble not burning shells",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 112,
+"t": "Cinematic look (D-104), camera C (D-105), every time of day one per run (D-106)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 113,
+"t": "The kaiju rises out of the water, not the street",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 114,
+"t": "Play-area edge: a quiet row of bollards (comments #18)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 115,
+"t": "The stadium stands past the baby's edge; landmarks never stand as boxes (b2-21)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 116,
+"t": "No freeze when a run starts or ends: a loading screen, and streaming stops on quit (b2-30, b2-29)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 117,
+"t": "A claw swipe no longer chews the building hidden behind its target",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 118,
+"t": "ci: re-time the suites and run four shards (shard 2 took 24 min)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 119,
+"t": "Street trees keep 2.5 m apart and slide to a free spot instead of dropping",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 120,
+"t": "Stadium fans fall with the stand under them and thin out over seconds",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 121,
+"t": "Shared walls carry the real facade, not a blank party wall (b2-22)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-20"
+},
+{
+"n": 122,
+"t": "Hand-over fixes: early taps kept, steady reveal, zoom in data (R 20.3/20.5/19.1)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-21"
+},
+{
+"n": 123,
+"t": "Heavy destruction: native settle and spread promotion, worst step 1222 -> 293 ms (b2-3 part 2)",
+"s": "MERGED",
+"c": "2026-10-20",
+"m": "2026-10-21"
+},
+{
+"n": 124,
+"t": "ci: compile every script in preflight; base-branch native cache (R 5.6)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 125,
+"t": "Night lights: only the 24 nearest are real, rest fade to glow (R 12.1, R 12.2)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 126,
+"t": "Heavy destruction part 3: native cell loops, no settle cache, emerge pre-warm (b2-3)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 127,
+"t": "Audio buses and a Hero duck: roars and stomps sit above the bed (R 8.1)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 128,
+"t": "Tentacle chains step at a fixed 1/60 s, same at any frame rate (R 9.1)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 129,
+"t": "Five graphics presets, Medium is the 4K default (R 18.1)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 130,
+"t": "Native building generation: 273 ms -> 2 ms, no sim step over 100 ms (b2-3 part 4)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 131,
+"t": "Bridges reach land at both ends (comments #12)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 132,
+"t": "Reptilian kaiju at double voxel resolution (D-107)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 133,
+"t": "Heavy destruction: no presentation spikes (worker chunks, shader keep-alive, debris cap)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 134,
+"t": "Ruins no longer burn on their own; breath fires go out with their chunk (R 26.1)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 135,
+"t": "Remove the carve-physics random ground-break fire (R 26.1 follow-up)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 136,
+"t": "Per-preset draw caps: debris, fires, particles, crowd (R 18.3)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 137,
+"t": "Walkers off the diagonal carriageway; diagonal kerb-parked cars fill the bare ground",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 138,
+"t": "Sound voice pool: heroes never cut, quietest steal, 30 ms retrigger (R 8.2)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 139,
+"t": "Camera shake with trauma, slow noise and a Camera motion setting (R 19.2)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 140,
+"t": "Empty-space test suite and a traffic island for all-junction cells (R 6.1)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 141,
+"t": "Towers fade right at the start and round the camera; stumps never (R 19.4, #27)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 142,
+"t": "tools: status.py generates docs/STATUS.md",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 143,
+"t": "The kaiju crushes the people it walks into; people freeze under falling towers",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 144,
+"t": "Turning with weight: the kaiju walks an arc and its head leads (comments #16)",
+"s": "CLOSED",
+"c": "2026-10-21",
+"m": ""
+},
+{
+"n": 145,
+"t": "ci: split the sim suite in two so shards balance",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 146,
+"t": "ci: tuning-key check, complexity ratchet, dead code out (audit P1)",
+"s": "MERGED",
+"c": "2026-10-21",
+"m": "2026-10-21"
+},
+{
+"n": 147,
+"t": "Street crowds 6x faster, same picture (perf pick, comment #37)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 148,
+"t": "Faster fade and light scans, same picture (perf pick, comment #37)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 149,
+"t": "Turning with weight: arcs, head leads, baby smooth, adults step turns (comments #16, D-130, D-131)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 150,
+"t": "Camera A holds the kaiju: no bob, head in frame, towers fade out of the way (R 19.4, #27)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 151,
+"t": "One building layout for sim and view, one shared capture kit (audit #1, #7)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 152,
+"t": "Fire spreads between buildings and burns them down (R 26, D-126)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 153,
+"t": "Unload landmarks you can't see, with no pop-in (comment #58)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 154,
+"t": "docs: VFX look sheet, one look per effect family (D-TBD-vfx-lead)",
+"s": "OPEN",
+"c": "2026-10-22",
+"m": ""
+},
+{
+"n": 155,
+"t": "ui: post effects, a subtle vignette, a red low-health edge pulse and a split-second colour fringe on the biggest hits (D-142)",
+"s": "OPEN",
+"c": "2026-10-22",
+"m": ""
+}
+]

@@ -1,0 +1,1022 @@
+{
+  "_about": "Hand-kept by the lead at each merge: phase items and the PR-to-phase map. `python tools/journal.py` builds docs/roadmap/journal/index.html from this file plus DECISIONS.md, the roadmap note tables and the PR cache; `--check` fails when a merged PR is missing from `prs`.",
+  "start": "2026-10-16",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Feel pass",
+      "status": "in progress",
+      "what": "fire spread and the longer baby breath, heavier turning, bigger explosions, post effects, the new title screen, the clumsy army, three growth steps with wider cities, random time of day"
+    },
+    {
+      "id": "M2",
+      "name": "Taskforce agents",
+      "status": "queued",
+      "what": "jetpack agents with railgun and frost, in the adolescent city"
+    },
+    {
+      "id": "M3",
+      "name": "Demo complete",
+      "status": "queued",
+      "what": "the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter deaths, the graphics preview, load-screen art, the demo end screen and feedback button"
+    },
+    {
+      "id": "M4",
+      "name": "Itch release candidate",
+      "status": "queued",
+      "what": "M3 survey fixes only; then the invite-only Itch page (D-132)"
+    }
+  ],
+  "builds": [
+    {
+      "date": "2026-10-18",
+      "name": "Demo exe 1",
+      "verdict": "\"its not shippable as is. its a very good start though, well done\" (12 notes)"
+    },
+    {
+      "date": "2026-10-20",
+      "name": "Carving build 2",
+      "verdict": "30 notes; carving improved but not effortless yet; camera, UI and copy reassessed"
+    },
+    {
+      "date": "2026-10-21",
+      "name": "Builds 3 and 4",
+      "verdict": "bridge gap, rubble slabs too big, spawn hidden by foreground towers (comments 12, 14, 27)"
+    }
+  ],
+  "days": [
+    {
+      "date": "2026-10-16",
+      "title": "Kickoff",
+      "text": "The scaffold, a greybox rampage slice and 39 rulings in one day: an active game, never idle; voxels; Look C concrete realism; three species, each its own way to play; a kaiju that starts young and outscaled by the city; a 4K TV as the target screen. Street life, a real street plan, the Kaiju Claw font and the species branches all merged before midnight.",
+      "captures": [
+        "greybox",
+        "looks",
+        "street"
+      ]
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Factory proof",
+      "text": "The asset factory proved itself: a Blender tank and attack helicopter in the game, the croc titan design chosen and rigged, kaiju drawn as voxel cubes on a smooth skin. The repo went public to get CI minutes back. The demo was defined: croc only, hatchling to Behemoth. Emergency Broadcast UI on every screen; a Windows export proved locally. Thirty merges.",
+      "captures": [
+        "growth",
+        "crocline",
+        "crocsix",
+        "tank"
+      ]
+    },
+    {
+      "date": "2026-10-18",
+      "title": "The demo chain and the first playtest",
+      "text": "Forty-four rulings and thirty-one merges built the demo: baby and adolescent croc bodies, a professional army, rooftop squads, greenery, the stadium and the Sky Wheel, one random sport per run, the full sound mix. At 11:44 the director started playing demo exe 1 and typed twelve notes as he went. Verdict: a very good start, not shippable as is.",
+      "captures": [
+        "title",
+        "rampage",
+        "tree",
+        "reveal",
+        "stadium",
+        "afl",
+        "breath"
+      ]
+    },
+    {
+      "date": "2026-10-19",
+      "title": "Playtest fixes, and the big call",
+      "text": "Playtest fixes came first (D-083). No building is too strong for the baby; sound from ElevenLabs; the river start. Then the decision that reshaped everything after it: real carving destruction, option A, top priority. The first three carving work packages opened the same day, including a native C++ carve core.",
+      "captures": [
+        "smoke"
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "title": "Carving lands; build 2 played",
+      "text": "Work packages 4 to 7 merged: buildings drawn from cell grids, carved towers falling by real physics. The director played carving build 2 and left thirty notes, then picked the Cinematic shader, camera C and every time of day. Every open item was sorted into one chronological post-demo plan, phases A to H.",
+      "captures": [
+        "carve",
+        "slab"
+      ]
+    },
+    {
+      "date": "2026-10-21",
+      "title": "Research day",
+      "text": "Twenty-six research files were folded into the roadmap as R n.m references. The croc's breath became hot lightning, not atomic; the look stays voxel with the kaiju at double resolution; the game ends with a mecha boss after three cities; Suno got its yes; fire returns as gameplay; one city is a water city. Heavy destruction went native (worst step 1222 ms to 293 ms), five graphics presets landed, and the UI redesign was bumped up the list.",
+      "captures": [
+        "edge",
+        "bridge",
+        "rubble"
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Weight, the Taskforce and the Itch demo",
+      "text": "The kaiju turns with weight: the baby smoothly, the adults stepping real turns. The 1.0 demo will go to invite-only testers on Itch once the reptilian stage is complete. The Anti Kaiju Taskforce arrived in the plan (jetpack agents, railguns, frost grenades) and became the next build. Landmarks became a rotating stable of twelve. The fourth growth step, never a decision, was cut. Playtest milestones M1 to M4 replaced per-change clips.",
+      "captures": []
+    },
+    {
+      "date": "2026-10-23",
+      "title": "After the demo",
+      "text": "Two post-demo items ruled: the Threat Dossier bestiary and the leader's escape helicopter. The demo's feedback link goes to the Itch page comments. The croc's neck fix was approved from the overhead turn clip. This journal was started.",
+      "captures": []
+    }
+  ],
+  "phases": [
+    {
+      "id": "P0",
+      "name": "Phase 0. Foundations",
+      "status": "done",
+      "gate": "scaffold green, planted-defect PRs rejected, document pack",
+      "items": [
+        {
+          "text": "Scaffold, CI harness, export preset, capture workflow, worktree cap, export and smoke tools",
+          "status": "done",
+          "prs": [
+            1,
+            2,
+            13,
+            25,
+            28,
+            30,
+            44,
+            49,
+            65,
+            74
+          ]
+        },
+        {
+          "text": "Deliberately broken PRs rejected (lowered floor, unregistered suite, untyped, secret)",
+          "status": "done",
+          "prs": [
+            67,
+            68,
+            69,
+            70,
+            71,
+            73
+          ]
+        },
+        {
+          "text": "CI counts test functions, shards from timings, compile preflight",
+          "status": "done",
+          "prs": [
+            94,
+            118,
+            124,
+            145
+          ]
+        },
+        {
+          "text": "Code audit P1: tuning-key check, complexity ratchet, dead code out",
+          "status": "done",
+          "prs": [
+            146,
+            151
+          ]
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "P1",
+      "name": "Phase 1. Visual and factory proof",
+      "status": "done",
+      "gate": "director look approval in DECISIONS",
+      "items": [
+        {
+          "text": "Look C Concrete Realism chosen from labelled captures (D-008)",
+          "status": "done",
+          "prs": [
+            3,
+            9
+          ]
+        },
+        {
+          "text": "Kaiju drawn as voxel cubes on a smooth skin (D-041)",
+          "status": "done",
+          "prs": [
+            15
+          ]
+        },
+        {
+          "text": "Croc titan design, Blender rig and clips (D-046, D-047)",
+          "status": "done",
+          "prs": [
+            19,
+            22,
+            54
+          ]
+        },
+        {
+          "text": "Blender tank and helicopter at 2x real size (D-042)",
+          "status": "done",
+          "prs": [
+            17,
+            18
+          ]
+        },
+        {
+          "text": "Kaiju Claw and Kaiju Block fonts; Emergency Broadcast UI (D-021, D-061)",
+          "status": "done",
+          "prs": [
+            4,
+            27
+          ]
+        },
+        {
+          "text": "Crease shader prototype, smoke cut back, calm streets, footfall dust",
+          "status": "done",
+          "prs": [
+            35,
+            81,
+            26,
+            62
+          ]
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "P2",
+      "name": "Phase 2. Vertical slice and the demo",
+      "status": "in progress",
+      "gate": "a director playtest of the demo exe; now the M1 to M4 milestones",
+      "items": [
+        {
+          "text": "Core loop: rampage, biomass, tree, evolve; save and reload",
+          "status": "done",
+          "prs": [
+            5,
+            6,
+            7,
+            8,
+            10,
+            12,
+            14,
+            16,
+            51
+          ]
+        },
+        {
+          "text": "Demo slice: croc only, end card after Behemoth (D-050); later all three cities (D-145)",
+          "status": "done",
+          "prs": [
+            21,
+            23,
+            24,
+            29,
+            31
+          ]
+        },
+        {
+          "text": "City growth per evolution, no empty ground, greenery, landmarks, stadium matches",
+          "status": "done",
+          "prs": [
+            37,
+            55,
+            57,
+            59,
+            78,
+            79
+          ]
+        },
+        {
+          "text": "Army: professional military, rooftop squads, army learns inside a stage",
+          "status": "done",
+          "prs": [
+            36,
+            40,
+            50,
+            53,
+            63,
+            80
+          ]
+        },
+        {
+          "text": "Sound and VFX: every power, army, crowd, footsteps, breath curtain, mix and limiter",
+          "status": "done",
+          "prs": [
+            33,
+            34,
+            39,
+            41,
+            42,
+            43,
+            45,
+            46,
+            56,
+            38,
+            47,
+            48
+          ]
+        },
+        {
+          "text": "Playability: streamed city, loading, frame cap, graphics setting",
+          "status": "done",
+          "prs": [
+            20,
+            32,
+            75,
+            77,
+            82,
+            84,
+            92,
+            66
+          ]
+        },
+        {
+          "text": "Demo exe 1 playtest fixes: breath aim, dash, crowd killable, river start, body contact",
+          "status": "done",
+          "prs": [
+            83,
+            86,
+            87,
+            88,
+            89,
+            90
+          ]
+        },
+        {
+          "text": "Board and docs PRs",
+          "status": "done",
+          "prs": [
+            64,
+            72,
+            93,
+            95,
+            96,
+            100,
+            101,
+            102
+          ]
+        },
+        {
+          "text": "Jets (D-072) and the young retune (D-098)",
+          "status": "queued",
+          "prs": [
+            58,
+            61,
+            85,
+            107
+          ]
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "A",
+      "name": "A. Close what is in flight",
+      "status": "done",
+      "gate": "build 3",
+      "items": [
+        {
+          "text": "Carving WP7: the rampage carves cell grids, towers fall by physics",
+          "status": "done",
+          "prs": [
+            109
+          ]
+        },
+        {
+          "text": "Every building in the play area destroyable (b2-6)",
+          "status": "done",
+          "prs": [
+            110
+          ]
+        },
+        {
+          "text": "Breath flattens trees, tail sweep cuts, ruins are rubble not burning shells",
+          "status": "done",
+          "prs": [
+            111,
+            117
+          ]
+        },
+        {
+          "text": "The kaiju rises out of the water; bridges reach land; a quiet row of bollards at the edge",
+          "status": "done",
+          "prs": [
+            113,
+            114,
+            131
+          ]
+        },
+        {
+          "text": "Stadium far from the spawn; no freeze on start or quit",
+          "status": "done",
+          "prs": [
+            115,
+            116
+          ]
+        },
+        {
+          "text": "Post-demo plan in dependency order; street trees spaced",
+          "status": "done",
+          "prs": [
+            108,
+            119
+          ]
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "B",
+      "name": "B. Look foundations",
+      "status": "done",
+      "gate": "his four picks recorded",
+      "items": [
+        {
+          "text": "Shader Cinematic, camera C, every time of day one per run (D-104, D-105, D-106)",
+          "status": "done",
+          "prs": [
+            112
+          ]
+        },
+        {
+          "text": "The look stays voxel; the kaiju gets double voxels (D-111, D-107)",
+          "status": "done",
+          "prs": [
+            132
+          ]
+        },
+        {
+          "text": "Camera growth: A, today's camera plus look-ahead (D-121)",
+          "status": "done",
+          "prs": [
+            150
+          ]
+        },
+        {
+          "text": "Trauma shake, rotation only, one camera-motion setting (R 19.2)",
+          "status": "done",
+          "prs": [
+            139
+          ]
+        },
+        {
+          "text": "Towers fade at the start and round the camera, stumps never (R 19.4)",
+          "status": "done",
+          "prs": [
+            141
+          ]
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "C",
+      "name": "C. Destruction core",
+      "status": "in progress",
+      "gate": "build 4",
+      "items": [
+        {
+          "text": "Destruction spike (3 options, 4K cost) then carving WP1 to WP6: fine voxel grids, native carve core, cells in the sim, drawn from cells, physics masses, landmarks",
+          "status": "done",
+          "prs": [
+            91,
+            97,
+            98,
+            99,
+            103,
+            105,
+            106
+          ]
+        },
+        {
+          "text": "Heavy destruction: native settle, spread promotion, native cell loops, native building generation, no view spikes (b2-3)",
+          "status": "done",
+          "prs": [
+            123,
+            126,
+            130,
+            133
+          ]
+        },
+        {
+          "text": "Shared walls carry real facades (b2-22); stadium fans fall with the stand (b2-8)",
+          "status": "done",
+          "prs": [
+            120,
+            121
+          ]
+        },
+        {
+          "text": "Ruins never burn on their own (R 26.1); the kaiju crushes the people it walks into",
+          "status": "done",
+          "prs": [
+            134,
+            135,
+            143
+          ]
+        },
+        {
+          "text": "Effortless carving even for a baby, no building HP (b2-4)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Varied collapse directions (b2-5); falling towers break on the kaiju; slabs shatter base to top (comments 24 to 30)",
+          "status": "in progress",
+          "prs": []
+        }
+      ],
+      "asks": [
+        "When does body contact carve and when does it yield; does a fast tail sweep carve? (R 13.3)"
+      ]
+    },
+    {
+      "id": "D",
+      "name": "D. Kaiju body and combat feel",
+      "status": "in progress",
+      "gate": "clips through the motion critic, build 5",
+      "items": [
+        {
+          "text": "Turning with weight: arcs, head leads, baby smooth, adults step turns (D-130, D-131)",
+          "status": "done",
+          "prs": [
+            144,
+            149
+          ]
+        },
+        {
+          "text": "Stomp ring under the foot; early taps kept; steady reveal; zoom in data",
+          "status": "done",
+          "prs": [
+            104,
+            122
+          ]
+        },
+        {
+          "text": "Tentacle chains at a fixed 1/60 s (R 9.1)",
+          "status": "done",
+          "prs": [
+            128
+          ]
+        },
+        {
+          "text": "Croc neck: no turtle retract after a dash, no gap at sharp turns (approved from the clip)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Dash bursts through every building in its path (comment 34)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Run intro: a 3 s shot, water ripples, the kaiju bursts out roaring (comment 11)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Breath re-themed to hot lightning (b2-18, D-108, D-112); claw swipe reads as a swipe (b2-1)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Tanks shoved and flung (b2-9, R 22); water that reacts to the kaiju (R 21, D-122)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Walk cadence and stride, footfalls land, shoulders and head move (R 11, comment 4)",
+          "status": "queued",
+          "prs": []
+        }
+      ],
+      "asks": [
+        "Slower walk speed or faster leg cadence, if the long stride cannot fit (R 11.2)",
+        "Which throw upgrade nodes: ricochet, domino, wrecking ball (R 22.4)",
+        "Lightning halo colour: hot amber, species-eye tint, or white with a violet fringe, from 3 labelled 4K stills (R 17.6)"
+      ]
+    },
+    {
+      "id": "E",
+      "name": "E. Progression: the upgrade tree",
+      "status": "in progress",
+      "gate": "build 6",
+      "items": [
+        {
+          "text": "Fire spreads between buildings and burns them down; City Ablaze nodes (R 26, D-126, D-129)",
+          "status": "in progress",
+          "prs": [
+            152
+          ]
+        },
+        {
+          "text": "Two to three times the nodes, rings per stage, buying is an event (b2-28, R 16)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Copy pass on every node: short, playful, no mechanics explained (b2-15, 16, 17, 24)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "One balance pass on the new tree; three growth steps, one per body (D-135)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Fire crews: trucks and helicopters fight the fires, bonus biomass for killing them (comment 50)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Explosive sites, the red barrel, with shockwave and sonic boom (comments 19, 20)",
+          "status": "in progress",
+          "prs": []
+        }
+      ],
+      "asks": [
+        "Rampage timer start and ceiling: stays 40 s to 100 s (D-117) unless the tree changes it (R 1.2)",
+        "Tree map layout: radial or left-to-right, from labelled captures (R 16.5)"
+      ]
+    },
+    {
+      "id": "F",
+      "name": "F. UI redesign",
+      "status": "in progress",
+      "gate": "screen critic, build 7",
+      "items": [
+        {
+          "text": "Minimal HUD: boxed timer, boxless biomass, breath ring, no controls on screen (b2-10 to 13, comments 45, 46)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Every menu with bespoke assets and the kaiju centred on species select (b2-11, b2-14)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "HUD skill icons made with Tripo, up to 3000 credits (D-127)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Title screen: fire pouring from windows, water shivers on footfalls, no music (D-141)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Post effects: subtle vignette, impact colour fringe (D-142)",
+          "status": "in progress",
+          "prs": []
+        },
+        {
+          "text": "Upgrade-tree screen skin, after E's bigger tree",
+          "status": "queued",
+          "prs": []
+        }
+      ],
+      "asks": [
+        "Do dash and the ultimate get rings like breath; is health shown only when hit; what happens to the CITY DESTROYED bar (R 15)"
+      ]
+    },
+    {
+      "id": "G",
+      "name": "G. Performance",
+      "status": "in progress",
+      "gate": "build 8",
+      "items": [
+        {
+          "text": "Five graphics presets, Medium the 4K default; per-preset draw caps (R 18.1, R 18.3, D-109)",
+          "status": "done",
+          "prs": [
+            129,
+            136
+          ]
+        },
+        {
+          "text": "Night lights: 24 real, the rest glow (R 12.1, R 12.2)",
+          "status": "done",
+          "prs": [
+            125
+          ]
+        },
+        {
+          "text": "Perf picks with no visual change: faster crowds, fade and light scans, unload unseen landmarks (comments 37, 58)",
+          "status": "done",
+          "prs": [
+            147,
+            148,
+            153
+          ]
+        },
+        {
+          "text": "Measured 4K audit, per-system costs, presets built from it; quality never drops on its own (D-136)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Graphics preview: a live burning street corner in the options menu (comment 90)",
+          "status": "queued",
+          "prs": []
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "Q",
+      "name": "Quick wins, any phase",
+      "status": "in progress",
+      "gate": "none; a builder takes them between phase items",
+      "items": [
+        {
+          "text": "Audio buses and a Hero duck; sound voice pool (R 8.1, R 8.2)",
+          "status": "done",
+          "prs": [
+            127,
+            138
+          ]
+        },
+        {
+          "text": "Empty-space test suite (R 6.1); traffic islands; kerb-parked cars",
+          "status": "done",
+          "prs": [
+            140,
+            137
+          ]
+        },
+        {
+          "text": "status.py generates the board; shared capture kit",
+          "status": "done",
+          "prs": [
+            142
+          ]
+        },
+        {
+          "text": "Stall probe and CI capture timings",
+          "status": "done",
+          "prs": [
+            76,
+            60
+          ]
+        }
+      ],
+      "asks": []
+    },
+    {
+      "id": "T",
+      "name": "The Anti Kaiju Taskforce and demo polish",
+      "status": "queued",
+      "gate": "milestones M2 and M3, then the Itch release candidate",
+      "items": [
+        {
+          "text": "Taskforce agents: jetpacks and grappling hooks on buildings, railguns that charge with a glow, frost grenades at the feet; obsidian with electric blue (D-137, D-139, D-143)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Adult-city Taskforce: gas soldiers, walking mechs, gunships (D-143, D-145)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Landmark stable of about 12, 3 per stage by seed; eight new ones picked (D-133)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Textured surfaces audit: nothing a single flat colour (comment 80)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Helicopter deaths: blown apart or spiralling down smoking (D-140)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Load-screen art rotation; demo thanks screen with stats and feedback link; pause-menu bug report (D-140, D-145, D-148)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "The game is called Kaiju Evolution everywhere players see it (comment 85)",
+          "status": "queued",
+          "prs": []
+        }
+      ],
+      "asks": [
+        "About 12 load-screen shots on one board: he picks (comment 92)"
+      ]
+    },
+    {
+      "id": "H",
+      "name": "H. Content after the demo",
+      "status": "queued",
+      "gate": "after the Itch demo",
+      "items": [
+        {
+          "text": "Light narrative: the Kaiju Plan, mission briefings, bonus goals (comment 76)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Mecha boss finale after three cities (D-113, R 23)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Rooftop mortars (R 24); the leader's escape helicopter (D-149); the Threat Dossier bestiary (D-147)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Atmosphere and city life: clouds and weather, birds, a whale in the bay, dogs, trains, boats (comments 63 to 71)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Music in layers from Suno (D-114, D-125); adaptive stems",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Mantis and cephalopod species; the water city (D-123, D-124); python and Komodo heads (comment 48)",
+          "status": "queued",
+          "prs": [
+            11
+          ]
+        },
+        {
+          "text": "Six languages; achievements and about 8 croc skins (comment 95); background skyline rampage (D-120)",
+          "status": "queued",
+          "prs": []
+        },
+        {
+          "text": "Screen-space reflections on Max (D-142); look-options merged to main once the slice ships",
+          "status": "queued",
+          "prs": []
+        }
+      ],
+      "asks": [
+        "Which original species follow the croc, and their verbs (research 02)",
+        "The finale mecha concept: BULWARK, CONVOY, FOUNDRY or COUNTERMEASURE, from a labelled board (R 23.1)",
+        "Spend on music stems and Tripo octopod rigs (R 3.5, R 8.7)"
+      ]
+    }
+  ],
+  "highlights": [
+    {
+      "date": "2026-10-18",
+      "quote": "ive seen enough to pause the playtest, its not shippable as is. its a very good start though, well done",
+      "effect": "Playtest fixes first (D-083); twelve notes became the fix queue."
+    },
+    {
+      "date": "2026-10-18",
+      "quote": "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters",
+      "effect": "Real carving became option A and top priority (D-094, D-097); seven work packages followed."
+    },
+    {
+      "date": "2026-10-20",
+      "quote": "a building shouldnt have a health bar, it should be a phyiscal structure which obeys the laws of physics and simply must be dismantled",
+      "effect": "Phase C's bar: effortless carving even for a baby (b2-4)."
+    },
+    {
+      "date": "2026-10-20",
+      "quote": "our kaiju should have real weight behind them, feel lumbering and unstoppable",
+      "effect": "Turning with weight: arcs, the head leads, adults step their turns (D-130, D-131)."
+    },
+    {
+      "date": "2026-10-20",
+      "quote": "dont waste time chasing marginal gains, get things implemented and we can polish later",
+      "effect": "A standing rule for every builder."
+    },
+    {
+      "date": "2026-10-21",
+      "quote": "ours is like a crocodile in a t-rex body, not godzilla shaped",
+      "effect": "The breath became hot lightning; the legal look check closed (D-108, D-112)."
+    },
+    {
+      "date": "2026-10-21",
+      "quote": "im still interested in Fire as a source of lighting and gameplay (perhaps natural flame that can spread (unlockable in skill tree) and add to your biomass collection)",
+      "effect": "Fire gameplay: City Ablaze and four more headline nodes (D-126); fire spread PR in flight."
+    },
+    {
+      "date": "2026-10-21",
+      "quote": "the UI should be as minimal as possible because we want to emphasise the full glory of our kaiju and the city's destruction. we dont want the UI distracting from our trump card",
+      "effect": "The HUD stripped to a plain timer, small corner icons and a boxless biomass figure."
+    },
+    {
+      "date": "2026-10-22",
+      "quote": "think smarter, not harder, the tank doesnt need to avoid the breath, just let it die",
+      "effect": "No convoy re-plan; tanks caught by the longer breath just die (D-144)."
+    },
+    {
+      "date": "2026-10-22",
+      "quote": "Special Agents fly around the city with jetpacks and grappling hooks",
+      "effect": "The Anti Kaiju Taskforce, built before the Itch demo (D-137)."
+    },
+    {
+      "date": "2026-10-22",
+      "quote": "i dont want to play every single update, you need to identify milestones in the roadmap that justify my playtest and craft a survey for that game state",
+      "effect": "Four playtest milestones M1 to M4 replace per-change clips (D-146)."
+    },
+    {
+      "date": "2026-10-22",
+      "quote": "when the Reptilian stage is 100% implemented: bug free, polished visuals, good performance, fully featured",
+      "effect": "The bar for the 1.0 demo on invite-only Itch (D-132)."
+    }
+  ],
+  "captures": {
+    "greybox": {
+      "src": "2026-10-16-greybox/3_rampage_mid_reptilian.png",
+      "caption": "Day 1 greybox: the first rampage, a green block kaiju in a box city"
+    },
+    "looks": {
+      "src": "2026-10-16-looks/board.png",
+      "caption": "The three look options; he picked C, Concrete Realism (D-008)"
+    },
+    "street": {
+      "src": "2026-10-16-street-life/street_fleeing.png",
+      "caption": "Civilians fleeing: street life on day 1 (D-019)"
+    },
+    "growth": {
+      "src": "2026-10-17-apex-playability/growth_4_game.png",
+      "caption": "The adult city at the game camera, towers screen-door in front of the kaiju"
+    },
+    "crocline": {
+      "src": "2026-10-17-reptile-design/croctitan_stage_line.png",
+      "caption": "The croc titan growth line: baby, adolescent, adult (D-046)"
+    },
+    "crocsix": {
+      "src": "2026-10-17-reptile-design/croctitan_v2_six_view.png",
+      "caption": "Croc titan v2 six-view check: short arms, charcoal spines (D-048)"
+    },
+    "tank": {
+      "src": "2026-10-17-vehicles/tank_board.png",
+      "caption": "The Blender tank beside its reference, at 2x real size (D-042)"
+    },
+    "title": {
+      "src": "2026-10-18-ui-broadcast/4k125-r2/capture-39076966887-0/01_title.png",
+      "caption": "Emergency Broadcast title screen at 4K (D-061)"
+    },
+    "rampage": {
+      "src": "2026-10-18-ui-broadcast/4k125-r2/capture-39076966887-0/04_rampage.png",
+      "caption": "The demo HUD he later asked to strip back (b2-10 to 13)"
+    },
+    "tree": {
+      "src": "2026-10-18-ui-broadcast/4k125-r2/capture-39076966887-0/11_tree_after.png",
+      "caption": "Demo complete card after the Behemoth reveal (D-050)"
+    },
+    "reveal": {
+      "src": "2026-10-18-ui-broadcast/4k125-r2/capture-39076966887-0/10_reveal_after.png",
+      "caption": "The evolution reveal, titled by the node bought (D-051)"
+    },
+    "stadium": {
+      "src": "2026-10-18-landmarks/stadium_broken.png",
+      "caption": "The stadium broken open (D-071)"
+    },
+    "afl": {
+      "src": "2026-10-18-matches/afl.png",
+      "caption": "One random sport per run; here AFL (D-078)"
+    },
+    "breath": {
+      "src": "2026-10-18-breath/breath_before_after_board.png",
+      "caption": "Breath before and after: from the jaw, with a flame curtain; later re-themed to lightning"
+    },
+    "smoke": {
+      "src": "2026-10-19-less-smoke/board_f1500.jpg",
+      "caption": "Less smoke between the camera and the kaiju (playtest note)"
+    },
+    "carve": {
+      "src": "2026-10-20-carve-view/c_carve3.png",
+      "caption": "Carving WP4: a building drawn from its cell grid, chewed open"
+    },
+    "slab": {
+      "src": "2026-10-20-carve/slab_A_vs_B.png",
+      "caption": "Carved slab colour A vs B; he picked B (D-101)"
+    },
+    "edge": {
+      "src": "2026-10-21-arena-edge.png",
+      "caption": "The play-area edge marked by a quiet row of bollards (comment 18)"
+    },
+    "bridge": {
+      "src": "../roadmap/2026-10-21-bridge-gap.webp",
+      "caption": "His screenshot: the bridge not connected to land (comment 12)"
+    },
+    "rubble": {
+      "src": "../roadmap/2026-10-21-rubble-slabs.webp",
+      "caption": "His screenshot: rubble slabs too big; he picked destructible (D-110)"
+    }
+  },
+  "prs": {
+    "closed": [
+      11,
+      52,
+      58,
+      61,
+      67,
+      68,
+      69,
+      70,
+      71,
+      85,
+      107,
+      144
+    ]
+  }
+}
