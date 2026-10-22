@@ -26,8 +26,8 @@ var sfx: Sfx
 var rooftops: RooftopView
 ## Every power event this view has drawn, by type (read by the flow suite).
 var played: Array[String] = []
-## Roars made for an ultimate or a dash (D-145), for the flow suite.
-var roars := 0
+## The roar on every ultimate and dash (D-145).
+var roar := RoarCue.new()
 var _city: CityView
 var _kaiju: Node3D
 var _tint: Color
@@ -37,7 +37,6 @@ var _beam: MeshInstance3D
 var _dust_t := 0.0
 var _climbing := false
 var _glow_mats: Dictionary = {}
-var _roared_at := INF  # the run clock (sim.time_left) at the last roar
 
 
 func _init(p_sim: RampageSim, city: CityView, kaiju: Node3D, tint: Color) -> void:
@@ -99,7 +98,7 @@ func _streak(a: Vector3, b: Vector3, color: Color, seconds: float) -> void:
 
 ## Returns true when the event was a power's.
 func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
-	_roar_for(event)
+	roar.on_event(event, sim.time_left, self, _kaiju)
 	var bs := sim.body_scale()
 	match str(event["type"]):
 		"tail_sweep":
@@ -187,24 +186,6 @@ func _swiped(event: Dictionary, kaiju_at: Vector3) -> void:
 		sfx.play("lash")
 	var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
 	_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
-
-
-## The kaiju roars on every ultimate and every dash (D-145: "should roar more often, perhaps when
-## he uses his ultimate power and/or a dash"): the croc's roar sound, and on an ultimate its roar
-## pose too (not in a dash: the roar clip would hold a charging body still). At most one roar in
-## the sfx "roar_cooldown" seconds of the run, so dash spam never stacks them.
-func _roar_for(event: Dictionary) -> void:
-	var kind := str(event["type"])
-	if kind != "dash" and kind != "ultimate":
-		return
-	if _roared_at - sim.time_left < Num.f(Content.section("sfx")["roar_cooldown"]):
-		return
-	_roared_at = sim.time_left
-	roars += 1
-	if kind == "ultimate":
-		_hook("roar", [])
-	var player := Sfx.roar(self)
-	player.finished.connect(player.queue_free)
 
 
 func _coated(event: Dictionary) -> void:
