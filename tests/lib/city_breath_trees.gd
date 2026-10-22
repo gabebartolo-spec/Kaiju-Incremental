@@ -51,3 +51,22 @@ static func check(
 			)
 		)
 	)
+	var spots := BreathCone.cover(cone)
+	var covered := 0
+	var samples := 0
+	for step: int in range(1, 61):
+		for k: int in range(-20, 21):
+			var at := origin + dir.rotated(half * k / 20.0) * (reach * step / 60.0)
+			samples += 1
+			for c: Vector3 in spots:
+				if Vector2(at.x - c.x, at.y - c.y).length() <= c.z:
+					covered += 1
+					break
+	var share := float(covered) / samples
+	check.call(
+		share >= 0.99,
+		(
+			"stage %d, map_seed %d: the breath's ground cover takes in the cone (%.1f%%)"
+			% [tier, map_seed, share * 100.0]
+		)
+	)

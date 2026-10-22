@@ -29,9 +29,13 @@ var _density := 1.0
 var _wind := WIND
 ## How much bigger a zoomed fire's smoke puffs are than its zoom alone makes them.
 var _puff := 1.0
+## Particle count multiplier of a zoomed fire's embers (they thin out far away: a few, not a speckle).
+var _ember_density := 1.0
+var _embers_node: GPUParticles3D
 
 
-## far: {} for a fire in the street, else {"zoom", "smoke_share", "density"} (see above).
+## far: {} for a fire in the street, else {"zoom", "smoke_share", "density", "wind", "puff",
+## "ember_density"} (see above).
 func _init(size: float, seed_value: float, far := {}) -> void:
 	_seed = seed_value
 	var zoom := Num.f(far["zoom"]) if not far.is_empty() else 1.0
@@ -41,6 +45,7 @@ func _init(size: float, seed_value: float, far := {}) -> void:
 	if not far.is_empty():
 		_wind = Vector3(WIND.x * Num.f(far["wind"]), 0.0, 0.0)
 		_puff = Num.f(far["puff"])
+		_ember_density = Num.f(far["ember_density"])
 	_base_energy = 2.5 + size * 1.2
 	if zoom <= 1.0:
 		_light = PooledLight.new("fire")
@@ -50,7 +55,8 @@ func _init(size: float, seed_value: float, far := {}) -> void:
 		_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 		add_child(_light)
 	add_child(_flames(size))
-	add_child(_embers(size))
+	_embers_node = _embers(size)
+	add_child(_embers_node)
 	add_child(_smoke(size))
 
 
@@ -63,19 +69,24 @@ static func prewarm(parent: Node) -> void:
 
 
 ## Stops burning: the light goes off and no new flame, ember or smoke rises; what is already in the
-## air finishes its life, then the node frees itself.
-func go_out() -> void:
+## air finishes its life, then the node frees itself. With `fade` (s) the light dims out over that
+## time and the embers go at once (a fire on a part that starts to fall: no dots left hanging).
+func go_out(fade := 0.0) -> void:
 	if _out:
 		return
 	_out = true
-	_base_energy = 0.0
-	if _light != null:
-		_light.set_energy(0.0)
 	for child: Node in get_children():
 		if child is GPUParticles3D:
 			(child as GPUParticles3D).emitting = false
+	if fade > 0.0 and is_inside_tree():
+		_embers_node.visible = false
+		create_tween().tween_property(self, "_base_energy", 0.0, fade)
+	else:
+		_base_energy = 0.0
+		if _light != null:
+			_light.set_energy(0.0)
 	if is_inside_tree():
-		get_tree().create_timer(_life).timeout.connect(queue_free)
+		get_tree().create_timer(maxf(_life, fade)).timeout.connect(queue_free)
 	else:
 		queue_free()
 
@@ -106,7 +117,7 @@ func _embers(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.8 * z, 35.0, gravity, Vector2(1.5, 4.0) * z)
 	_scale(mat, Vector2(0.4, 1.0) * z, Vector2(1.0, 0.3))
 	_ramp(mat, PackedColorArray([Color("ffe9a0"), Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
-	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size) * _density), 3.2)
+	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
 
 
 ## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
