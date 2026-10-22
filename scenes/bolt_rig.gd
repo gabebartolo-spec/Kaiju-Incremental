@@ -11,6 +11,9 @@ extends Node3D
 
 ## A stroke fired: its number (1 on) and where the bolt lands.
 signal stroked(index: int, at: Vector3)
+## The first stroke of a play landed at `at`: the sound hook for a thunder layer under it (no thunder
+## asset exists yet: nothing is connected, the lead's side adds the cleared sound).
+signal thundered(at: Vector3)
 
 const FLARE := preload("res://scenes/flare.gdshader")
 const HOT := Color(1.0, 0.85, 0.65)
@@ -189,6 +192,8 @@ func _stroke() -> void:
 		_next = INF
 	_impact()
 	stroked.emit(_index, _hit)
+	if _index == 1:
+		thundered.emit(_hit)
 
 
 ## 3-5 (the owner's row) fresh branches off the main channel, each to its own target.
