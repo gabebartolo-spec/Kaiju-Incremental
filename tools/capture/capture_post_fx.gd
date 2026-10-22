@@ -11,9 +11,15 @@ extends SceneTree
 ## The run is the whole movie; cut the window with ffmpeg (-ss <start/60> -t 6). From --low_at the
 ## capture holds the kaiju's health at --low_share of its max, because the clip is about how it
 ## looks, not about the army: the one thing it sets by hand.
+## --cost: after --frames ticks the run is paused on one frame and the GPU and render-CPU time is
+## averaged over COST_FRAMES frames with the effects off, with the vignette only, and in the
+## middle of a fringe burst, in COST_ROUNDS alternating rounds ("COST <mode> gpu .. cpu .. ms").
 ## --nofx: PostFx.enabled off, for the frame-cost comparison and the "off" frames.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const COST_FRAMES := 120
+const COST_ROUNDS := 3
+const COST_MODES: Array[String] = ["off", "vignette", "fringe"]
 
 var _a: Dictionary
 
@@ -31,6 +37,7 @@ func _initialize() -> void:
 				"low_share": 0.08,
 				"probe": false,
 				"nofx": false,
+				"cost": false,
 				"preset": "high",
 			}
 		)
@@ -61,6 +68,8 @@ func _run() -> void:
 		if on and not was_on and (_a["probe"] == true):
 			print("FRINGE frame %d (%.2f s)" % [frame, frame / 60.0])
 		was_on = on
+	if _a["cost"] == true:
+		await _cost(fx)
 	print(
 		(
 			"done: %d s, hp %.0f of %.0f"
@@ -68,3 +77,27 @@ func _run() -> void:
 		)
 	)
 	quit()
+
+
+## Render cost on one paused frame: each mode in turn, alternating, so drift averages out.
+func _cost(fx: PostFx) -> void:
+	paused = true
+	Kit.measure_on(self)
+	await Kit.frames(self, 30)
+	var sums := {}
+	for _round: int in COST_ROUNDS:
+		for mode: String in COST_MODES:
+			PostFx.enabled = mode != "off"
+			fx.state.update(5.0, 1.0, 1.0)  # past any cooldown, no burst running
+			if mode == "fringe":
+				fx.state.stomp(100.0)
+			fx.update(0.05, 1.0, 1.0)  # a burst 0.05 s in is near its peak
+			await Kit.frames(self, 10)
+			var ms := await Kit.render_ms(self, COST_FRAMES)
+			var sum: PackedFloat64Array = sums.get(mode, PackedFloat64Array([0.0, 0.0]))
+			sum[0] += ms[0]
+			sum[1] += ms[1]
+			sums[mode] = sum
+	for mode: String in COST_MODES:
+		var sum: PackedFloat64Array = sums[mode]
+		print("COST %s gpu %.3f cpu %.3f ms" % [mode, sum[0] / COST_ROUNDS, sum[1] / COST_ROUNDS])
