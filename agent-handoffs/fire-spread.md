@@ -1,5 +1,5 @@
 # Fire-spread handoff, 2026-10-22
-## State: working (full suite and clip next)
+## State: working (rebuild on the newest base, push, report)
 ## Task
 R 26.2-26.4 fire spread in the sim (mailbox to-nimbalyst/016, answers 016-ANSWERS, D-126, D-129): heat meter,
 neighbour spread with wind, glow, burn-out collapse, payout, five nodes, fire suite, player-effect fixture,
@@ -8,7 +8,8 @@ sim-review packet (below), full suite once, one ~6 s clip at the game camera (lo
 claude/fire-spread, rebuilt on origin/claude/look-options 802636cd (own commits cherry-picked; backup ref
 claude/fire-spread-pre-rebase = old history, local only). Not pushed yet.
 ## Unfinished changes
-- Full suite once (tuning.json is shared data). Clip. Push (claude/fire-spread; -v2 if the remote is not an ancestor).
+- Full suite done: all 23 suites passed (tools/run_tests.sh with import, on 802636cd). Then rebuild on newest origin/claude/look-options (ef9212ca moved: perf scans #148, no
+  overlap), fire + scans suites, push claude/fire-spread (no remote branch yet), report.
 ## Evidence so far
 - fire suite 9 of 9 functions, 16 checks, 0 failures; powers suite green; check_scripts 345 ok; gdlint, gdformat,
   tuning_keys, complexity_ratchet clean.
@@ -17,6 +18,10 @@ claude/fire-spread-pre-rebase = old history, local only). Not pushed yet.
   0.60-0.69, far max 0.17; fire's own bookkeeping 224 usec/tick (budget 1000); burn-out collapses 569 usec/tick
   more (2548 each). fire.spread fixture: without City Ablaze 0 burn-outs, biomass 1646.8.
 - New checks shown failing on a known-bad tuning (burn_out_floors 0, conflag_max 2.0): shell checks, pay checks red.
+- Clip (local GPU, NVIDIA RTX 4070 SUPER in the log): scratchpad fire_clip/fire_spread_r0.mp4, 13.3 s at game
+  speed, tools/capture/capture_fire_spread.gd --run=0 (dusk): breath lights at 0.5 s, neighbours glow at 2.3/2.6 s,
+  catch at 4.1/5.3 s, first burn-out collapse at 12.3 s. Longer than ~6 s because a burn lasts burn_seconds 6 +
+  0.25 a floor after a 1-3 s glow (placeholders). Fire look is today's chunk fire on the roof (R 26.5 later).
 ## Sim-review packet (kaiju-sim-review)
 Transitions: (1) tick: FireSpread.step runs once a tick inside SpeciesPowers.step (after the coats), the heat pass
 every spread_tick s (a whole number of ticks), timers every tick; own stream Seeds.derive(powers rng, 0xF12E)
@@ -38,6 +43,10 @@ blasts from real callers (branches unmerged), species other than the croc, a sav
 ## Running jobs
 none
 ## Findings for the lead
+- Breath ignition barely lands at baby stage: the breath breaks the small blocks it reaches before scorch
+  rolls (nothing left to burn), and a lit block it damaged often collapses within ~2 s; 2 of 4 seeded
+  clip-script runs (--run 8, 9) lit nothing in 6 breaths. Tuning call: roll before the damage, a higher
+  breath_ignite, or leave it (lead/director).
 - The WIP burn-pay test counted the rooftop squad (army pay, full) as building pay: compare buildings only.
 - Timing-based budget that includes collapses swung 1000 -> 1470 usec on a loaded PC; budgeting the fire's own
   bookkeeping (224 usec) and reporting collapses apart is stable.
