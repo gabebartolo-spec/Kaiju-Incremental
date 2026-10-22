@@ -83,6 +83,13 @@
 - Worktrees: 18 left (all live); 18 old ones backed up to backup/<name> branches. ui-art-hud scratch remove was
   DENIED by permissions (force remove): ask him, never retry around it.
 
+- PAUSED 2026-10-22 ~20:30 (director watching a movie: 'complete current tasks but find a comfortable place to pause').
+  Builders told: finish in-flight step, push, handoff, no new GPU renders, stop. On resume:
+  * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
+    tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
+  * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
+    inaudible on TV (add 80-200 Hz body + 1-3 kHz crack, -22..-18 dBFS in 60-250 Hz); sirens/screams/gunfire missing
+    (-35..-30 dBFS); no flashes/explosions in 6 s (add 1-2 warm 150-300 ms flashes off the menu). Night look PASS.
 - LIVE STATE 20:00: title screen (ui builder a6c2, claude/ui-redesign f1f55e0f): night view across the river, burning
   district, no kaiju, smoke off-centre, fix 2 clipped letters; ambience crowd_panic + rifle_far + siren_far (ElevenLabs
   take A, lead scratchpad sfx_siren/) + in-engine stomp like a T-rex footfall (quality ref only: deep sub boom, ~3 s
