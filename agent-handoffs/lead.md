@@ -45,7 +45,9 @@
   (130 cr; balance 18985 = 8870 of today's budget left; privacy "Sharing Only"). Landmark concept refs: 32 free images,
   board C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/landmarks/landmark_refs_board.png (copy also ~/Downloads/landmark_refs_board.png). Lead flags: B1/B3/B4 near-copy
   Sydney Opera House (B2 original), H3 cropped, E4 plinth, D3 "DINER" text, coaster track thin. A fresh critic is
-  reviewing it; after SHIP ask the director to pick one per row (AskUserQuestion, image first), then HD models (65 cr each).
+  reviewed it: FIX. Clean: A3/A4 (tower only, drop cables), C1/C2/C4, D4, E1/E2/E3, F1/F3, G1, H1/H2/H4. Regenerate B (original,
+  not Sydney), A (whole tower in frame), F (no planes: they fly in later); all prompts: no plinth/water/ship/text/flags/
+  vehicles, whole structure in frame. Then ONE board to the director (pick one per row), then HD models (65 cr each).
 - Process notes: worktrees removed today: 9 merged + perf-crowds + perf-scans (leftovers in
   Kaiju-Incremental-wt/_leftovers-2026-10-22); ca2-base (clumsy-army temp) still to remove. Downloads: Tripo/browser
   saves may sit as complete .tmp files (GLB header length = size) when the Save dialog is behind textinputhost.
