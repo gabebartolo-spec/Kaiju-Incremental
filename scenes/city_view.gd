@@ -89,6 +89,11 @@ func _ready() -> void:
 	is_loaded = true
 
 
+## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one is built.
+func regrow(index: int) -> void:
+	_stream.regrow(index)
+
+
 ## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife).
 func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
 	if _decor != null:

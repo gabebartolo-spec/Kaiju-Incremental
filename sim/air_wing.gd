@@ -44,9 +44,9 @@ func altitude() -> float:
 ## How many may be up at once: more the more of the city has fallen.
 func cap() -> int:
 	var after := Num.i(cfg["after_chunks"])
-	if sim.chunks_destroyed < after:
+	if sim.escalation() < after:
 		return 0
-	var extra := (sim.chunks_destroyed - after) / maxi(1, Num.i(cfg["max_per_chunks"]))
+	var extra := (sim.escalation() - after) / maxi(1, Num.i(cfg["max_per_chunks"]))
 	return mini(Num.i(cfg["max"]), 1 + extra)
 
 

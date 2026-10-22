@@ -79,7 +79,11 @@ var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_second
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
 ## picks the time of day.
 func setup(
-	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
+	p_species: Dictionary,
+	stats: Dictionary,
+	layout: Array[Dictionary],
+	run_index: int,
+	endless := false
 ) -> void:
 	species = p_species
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
@@ -87,6 +91,8 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
+	if endless:  # the demo's Endless mode (D-156)
+		sim.endless = Endless.new(sim)
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
@@ -268,6 +274,8 @@ func _on_event(event: Dictionary) -> void:
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)
+		"building_regrown":
+			_city.regrow(Num.i(event["building"]))
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:

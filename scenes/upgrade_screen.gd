@@ -9,6 +9,7 @@ extends Control
 signal start_pressed
 signal bought(id: String)
 signal menu_pressed
+signal endless_pressed
 
 ## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
 const SIDE_WIDTH := 330
@@ -16,6 +17,8 @@ const SIDE_WIDTH := 330
 const NOW_WIDTH := 64
 const NBSP := " "
 var tree: UpgradeTree
+## Set before the screen is added: the final upgrade is owned, so Endless mode is offered (D-156).
+var endless_unlocked := false
 var rubble: int
 var species: Dictionary
 var base_stats: Dictionary
@@ -114,6 +117,11 @@ func _build_side() -> Control:
 	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
+	if endless_unlocked:
+		var endless := UiKit.button("ENDLESS MODE", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+		endless.custom_minimum_size = Vector2(0, 64)
+		endless.pressed.connect(func() -> void: endless_pressed.emit())
+		side.add_child(endless)
 	go.grab_focus.call_deferred()
 	return side
 

@@ -56,6 +56,17 @@ static func key(tree: SceneTree, keycode: Key) -> void:
 		await tree.process_frame
 
 
+## Presses and releases gamepad button `index` (JOY_BUTTON_*) on device 0, as a pad would.
+static func pad(tree: SceneTree, index: JoyButton) -> void:
+	for pressed: bool in [true, false]:
+		var event := InputEventJoypadButton.new()
+		event.device = 0
+		event.button_index = index
+		event.pressed = pressed
+		Input.parse_input_event(event)
+		await tree.process_frame
+
+
 ## The first visible Button under `node` whose text starts with `prefix`, or null.
 static func button(node: Node, prefix: String) -> Button:
 	for found: Node in node.find_children("*", "Button", true, false):

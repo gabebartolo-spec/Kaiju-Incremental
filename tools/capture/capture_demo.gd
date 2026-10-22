@@ -1,20 +1,26 @@
 extends SceneTree
-## Captures the demo slice (D-050) through the real main scene by real input (mouse clicks pushed
-## through the viewport, never a handler call): title -> New Kaiju -> species select (the demo's
-## species only); then a played save one evolution away: title -> Continue -> click Behemoth ->
-## the reveal plays out -> the demo end card, held while the adult roars. Render it on CI:
-##   tools/capture/ci_capture.sh --resolution=1920x1080 capture_demo.gd
-##   tools/capture/ci_capture.sh --movie --fps=30 --resolution=1920x1080 capture_demo.gd -- --clip
+## Captures the demo slice (D-050, D-145, D-156) through the real main scene by real input (mouse clicks
+## pushed through the viewport, never a handler call): title -> New Kaiju -> species select (the
+## demo's species only); then a save one level short of the whole tree: title -> Continue -> buy the
+## last node -> the thanks screen, held while the adult roars -> Try Endless mode -> the endless city.
+## Render a 4K still of the thanks screen locally (off-screen no_focus override.cfg):
+##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/capture_demo.gd -- --only=thanks --out=<dir>
+## or on CI: tools/capture/ci_capture.sh --resolution=1920x1080 capture_demo.gd
 
 const MAIN_SCENE := "res://scenes/main.tscn"
 const SETTLE := 12
+## Frames of autoplayed adult rampage before the clock is cut.
+const AUTOPLAY_FRAMES := 300
+## The totals the still shows (a stand-in for a ~2 h demo playthrough).
+const TOTALS := {"biomass": 482310, "buildings": 1286, "eaten": 9740, "fled": 21365, "military": 413, "seconds": 7350}
 ## Frames the end card is held for the clip (3 s at the movie's 30 fps; 6 s at 60).
 const HOLD_FRAMES := 180
-## The end-card still is taken this far in, mid-roar.
+## The thanks still is taken this far in, mid-roar.
 const ROAR_SHOT_FRAME := 50
 
 var _out := "user://demo"
 var _clip := false
+var _only := ""
 var _main: Node
 
 
@@ -24,6 +30,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--clip":
 			_clip = true
+		elif arg.begins_with("--only="):
+			_only = arg.substr(7)
 	DirAccess.make_dir_recursive_absolute(_out)
 	_run.call_deferred()
 
@@ -32,7 +40,7 @@ func _run() -> void:
 	await process_frame
 	Engine.max_physics_steps_per_frame = 1
 	SaveFile.delete_save()
-	if not _clip:
+	if not _clip and _only == "":
 		await _main_scene()
 		_shot("01_title_new")
 		await _click(_button(_screen(), "NEW KAIJU"))
@@ -40,31 +48,48 @@ func _run() -> void:
 		_shot("02_species_select")
 		_main.queue_free()
 		await _frames(2)
+	var defs: Array = Content.upgrades()
+	var needed: Dictionary = {}
+	for def: Dictionary in defs:
+		var requires: Array = def.get("requires", [])
+		for req: String in requires:
+			needed[req] = true
+	var levels: Dictionary = {}
+	var last := ""
+	for def: Dictionary in defs:
+		if def.has("species") and def["species"] != "reptilian":
+			continue
+		levels[str(def["id"])] = Num.i(def["max_level"])
+		var effects: Dictionary = def.get("effects", {})
+		if not needed.has(str(def["id"])) and not effects.has("size"):
+			last = str(def["id"])
+	levels[last] = Num.i(levels[last]) - 1
 	var save := SaveFile.new_save("reptilian")
+	save["demo"] = true
 	save["runs"] = 3
-	save["rubble"] = UpgradeTree.new(Content.upgrades(), {}, "reptilian").cost("evolve1") + 20
-	save["levels"] = {"claws": 2, "hide": 1, "rage": 1}
+	save["levels"] = levels
+	save["rubble"] = UpgradeTree.new(defs, levels, "reptilian").cost(last) + 20
+	save["totals"] = TOTALS
 	SaveFile.save_game(save)
 	await _main_scene()
 	await _click(_button(_screen(), "CONTINUE"))
 	await _frames(SETTLE)
-	var tree := _screen() as UpgradeScreen
-	await _click(tree.node_button("evolve1"))
-	await _frames(EvolutionReveal.SWAP_FRAME + EvolutionReveal.GROW_FRAMES + 10)
-	_shot("03_reveal")
-	while _screen() == tree:
-		await process_frame
-	print("demo: end card is ", _screen_name())
+	await _click((_screen() as UpgradeScreen).node_button(last))
+	await _frames(SETTLE)
+	print("demo: thanks screen is ", _screen_name())
 	await _frames(ROAR_SHOT_FRAME)
-	_shot("04_demo_end")
+	_shot("04_thanks")
+	if _only == "thanks":
+		SaveFile.delete_save()
+		quit()
+		return
 	await _frames(HOLD_FRAMES - ROAR_SHOT_FRAME)
-	await _click(_button(_screen(), "MAIN MENU"))
-	await _frames(SETTLE)
-	_shot("05_title_after")
-	await _click(_button(_screen(), "CONTINUE"))
-	await _frames(SETTLE)
-	print("demo: Continue lands on ", _screen_name())
-	_shot("06_continue_again")
+	await _click(_button(_screen(), "TRY ENDLESS MODE"))
+	var endless := _screen() as Rampage
+	await endless.wait_loaded()
+	endless.set_autoplay(true)
+	await _frames(AUTOPLAY_FRAMES)
+	_shot("05_endless")
 	SaveFile.delete_save()
 	quit()
 

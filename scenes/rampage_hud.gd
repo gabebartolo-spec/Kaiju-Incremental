@@ -48,9 +48,14 @@ func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> vo
 	street = p_street
 
 
-## The sim's result plus what only the view counts: the civilians it crushed.
+## The sim's result plus what only the view counts: the civilians it crushed and those who fled.
 func result() -> Dictionary:
-	return sim.result().merged({"civilians": street.civilians_killed() if street != null else 0})
+	return sim.result().merged(
+		{
+			"civilians": street.civilians_killed() if street != null else 0,
+			"fled": street.fled if street != null else 0,
+		}
+	)
 
 
 func _ready() -> void:
@@ -144,9 +149,13 @@ func refresh() -> void:
 	_hp.max_value = sim.max_hp
 	_hp.value = sim.hp
 	_hp_text.text = "%d / %d" % [ceili(sim.hp), ceili(sim.max_hp)]
-	_time.text = "%d" % ceili(maxf(0.0, sim.time_left))
+	# Endless mode has no countdown: the clock counts up as m:ss.
+	if sim.endless != null:
+		_time.text = "%d:%02d" % [int(sim.elapsed) / 60, int(sim.elapsed) % 60]
+	else:
+		_time.text = "%d" % ceili(maxf(0.0, sim.time_left))
 	# The last ten seconds: the clock turns from alert red to hazard yellow.
-	var hurry := sim.time_left < 10.0
+	var hurry := sim.time_left < 10.0 and sim.endless == null
 	_clock_box.fill = UiKit.ACCENT if hurry else UiKit.ALERT
 	_time.add_theme_color_override("font_color", UiKit.BG if hurry else Color.WHITE)
 	_rubble.text = "BIOMASS  %d" % Num.i(floor(sim.rubble))

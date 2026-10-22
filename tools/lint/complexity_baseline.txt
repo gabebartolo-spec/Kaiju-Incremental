@@ -17,7 +17,7 @@ scenes/diagonal_parking.gd::park 40 14
 scenes/evolution_reveal.gd::_ready 42 2
 scenes/fx.gd::_ready 55 2
 scenes/gait_biped.gd::_step_feet 98 48
-scenes/gait_clip.gd::_choose 35 18
+scenes/gait_clip.gd::_choose 33 18
 scenes/gait_hexapod.gd::_skitter 34 19
 scenes/gait_hexapod.gd::_step 50 22
 scenes/gait_radial.gd::update 51 27
@@ -62,7 +62,6 @@ sim/convoy.gd::step 28 17
 sim/glass_frame.gd::cells 18 14
 sim/party_walls.gd::of 33 16
 sim/rampage_sim.gd::hit_area 33 17
-sim/rampage_sim.gd::step 42 14
 sim/road_graph.gd::waypoints 40 13
 sim/road_search.gd::search 40 15
 sim/structure.gd::_grounded 28 14

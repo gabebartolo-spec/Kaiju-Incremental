@@ -64,12 +64,23 @@
 		"close": "THE CREATURE HAS RETREATED - FOR NOW"
 	},
 	"demo": {
+		"_note": "D-050/D-145/D-152/D-156. The thanks screen appears when the final upgrade is bought (every node of the species' tree owned, Demo.complete). feedback_url is the invite-only Itch page's comments (D-148): PLACEHOLDER until the page exists. military_keys are the result counters that count as military destroyed. endless: the Endless mode the final upgrade unlocks (Endless): its own rows, never read by normal mode (balance is decided by normal mode).",
 		"enabled": true,
 		"species": ["reptilian"],
-		"end_node": "evolve1",
-		"tease_size": 3,
-		"end_title": "DEMO COMPLETE",
-		"end_line": "You become the Croc Titan"
+		"thanks_size": 3,
+		"end_title": "THANKS FOR PLAYING",
+		"end_line": "Nothing is left to evolve",
+		"feedback_url": "https://PLACEHOLDER.itch.io/kaiju-evolution",
+		"military_keys": ["tanks", "helis", "rooftops"],
+		"endless": {
+			"start_chunks": 600,
+			"chunks_per_second": 6.0,
+			"max_chunks": 4000,
+			"max_tanks": 10,
+			"regrow_interval": 20.0,
+			"regrow_per_wave": 1,
+			"regrow_clear": 40.0
+		}
 	},
 	"kaiju": {
 		"hp": 100,

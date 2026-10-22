@@ -16,6 +16,17 @@ func _init(p_sim: RampageSim) -> void:
 	sim = p_sim
 
 
+## Buildings in the arena with nothing left standing (the thanks screen's "buildings destroyed").
+func destroyed_buildings() -> int:
+	var n := 0
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		var f := sim.carving.frame(i)
+		if b.in_arena and (f.alive_count if f != null else b.frame.alive_count) == 0:
+			n += 1
+	return n
+
+
 ## Turns every part of building `index` that lost support into a Fall. A carved building's
 ## parts (Carving.settle) also carry their fine cells, which the fall_start event passes on.
 func settle(index: int) -> void:
