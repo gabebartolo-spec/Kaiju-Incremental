@@ -36,20 +36,21 @@
 - demo-end local_d3ef25ef-1809-40da-9618-2b29226929f4: suites, push claude/demo-end (PR queued); weather pick only
   after "go weather" in its to-file.
 
-## Base and PRs (07:40)
+## Base and PRs (10:00)
 - Base = origin/claude/look-options; squash-only. GitHub helper ad7455760cd21c2b0 merges only on my "#N go <full sha>"
-  (go.txt in its scratchpad), CLEAN + all 14 checks + shards actually run; watcher wakes only on change.
-- Merged overnight: #159 army (bf0344cb), #154 look sheet (3c5c9b56), #163 city sound (59441ab9), #160 title
-  (aad7e485), #161 Taskforce core (c19c7f4c).
-- Open: #164 three-steps (sim review FIX: military seeds CI 16 vs local 21 vs bar 20 = check determinism; growth
-  check over seeds 0-5; PR body pacing; resync: save v3 is #164's), #165 demo end (gdlint lines, resync, save step
-  becomes v4 and merges after #164, Taskforce kills into military_keys), #166 heli deaths (sim reviewer
-  a91efff177a679849 running; needs VFX lead SHIP).
-- Branches waiting: claude/weather (demo-end session, 79c0e792+, settings overflow fix), claude/thunder-beam (VFX
-  round 5), claude/croc-standing (VFX, critic), claude/body-chunks (builder af12c285d844a54fa: fixture bug, not sim).
+  (go.txt in its scratchpad), CLEAN + all 14 checks + shards actually run; it trial-merges before opening any PR.
+- Merged overnight: #159 army, #154 look sheet, #163 city sound, #160 title, #161 Taskforce core, #164 three
+  growth steps (513c0f12), #167 weather (0204571d).
+- Open: #165 demo end (author pushing: sim-review FIX 1-3, Endless scaled to the city, resync, save step v4,
+  Taskforce kills, lint), #166 heli deaths (PARKED: look FIX, VFX lead holds until the director is back; DIRTY on
+  tests/README), #168 body-chunks (go armed at 949c7cd4).
+- Queued: claude/croc-standing ca148fd7 (VFX SHIP). claude/sim-speed daad0710 = measurement only (probes; checksum
+  2c712cc6589535dd; top speed-ups: body polygon cached per Convoy step ~25%, building scans bucketed ~10%, spacing
+  prefilter ~2-6%; sim/convoy.gd is at 400 lines, split first). Speed-ups are result-identical engineering (D-159),
+  start after the director is back.
 
 ## Queued (each brief names its ROADMAP item + decision)
-- Chunks inside the body after a chewed topple (seeds 3, 8, 22), sim fix. Sim speed measurement (D-159).
+- Chunks inside the body: was the test fixture (PR #168), not the sim. Sim speed: measured (above).
 - Music: he generates Suno tracks (docs/audio/music-briefs.md); lead cuts stems, registers docs/provenance/music.md.
 - Hygiene ("get the githib hygeinic"): GitHub helper manifest in scratchpad hygiene_manifest.md; round 2 removes dead
   worktrees (28 vs cap 12) with backups, deletes only remote branches already inside the base.
