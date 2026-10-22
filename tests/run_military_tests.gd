@@ -2,10 +2,20 @@ extends "res://tests/lib/military_view.gd"
 ## The tanks move and fight like a professional military (D-066): they drive the road plan
 ## (never a building, a lot or an alley), keep their spacing as drawn (hull, turret and gun), take
 ## firing posts at standoff range and fall back when the kaiju closes. Whole autoplayed rampages
-## on generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where
-## tanks enter round the kaiju, D-039), and the clip's scene through the game camera. The
+## on generated cities (RAMPAGE_SEEDS), at the young and Behemoth stages (and the Apex city,
+## where tanks enter round the kaiju, D-039), and the clip's scene through the game camera. The
 ## helicopters are today's (their flight is its own branch, claude/heli-flight).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
+
+## Parked-in-range tank-steps the rampages must see before their standoff share means anything.
+const MIN_PARKED_IN_RANGE := 20
+## The rampages' city and army seeds, pinned so the autoplay lingers where tanks take posts:
+## since the body turns on arcs (turn-weight) seeds 0-2 saw none; a probe of seeds 0-11 found
+## tanks parked in range only at the Behemoth tier, most on seeds 4 (26) and 8 (66). Re-probed
+## after look-options' city changes (2026-10-21): Behemoth seeds 2 (25), 4 (6) and 8 (6), all in
+## the band; seed 0 saw none. Re-probed seeds 0-11 when bigger bodies turned slower (turn-step,
+## 2026-10-21): seeds 2, 4, 8 fell to 5 in all; Behemoth seeds 3 (27), 6 (73), 9 (54), 10 (31).
+const RAMPAGE_SEEDS: Array[int] = [3, 6, 9]
 
 
 func suite_name() -> String:
@@ -24,7 +34,9 @@ func run_checks() -> void:
 ## building and no two hulls overlap; a tank standing a second or more within range stands at
 ## standoff in its firing band, never up close, and none waits inside the danger radius (those
 ## beyond range are in reserve); tanks enter by road from outside the
-## playable edge (in a city smaller than the spawn radius).
+## playable edge (in a city smaller than the spawn radius). Tanks take posts in range during
+## the rampages too, and there are at least MIN_PARKED_IN_RANGE such tank-steps, so the standoff
+## and danger bars never pass on nothing.
 func _check_rampages() -> void:
 	var off_road := 0
 	var inside := 0
@@ -43,7 +55,7 @@ func _check_rampages() -> void:
 	var entered := 0
 	var where := ""
 	for tier: int in LEVELS:
-		for seed: int in SEEDS:
+		for seed: int in RAMPAGE_SEEDS:
 			var sim := _rampage(tier, seed)
 			var roads := _roads(sim)
 			var grid := _footprints(sim)
@@ -113,7 +125,7 @@ func _check_rampages() -> void:
 						var lies: Vector2 = heads[tank.id]
 						if not _along_road(tank.pos, lies, roads):
 							skewed += 1
-					if for_s >= 1.0:  # where a tank stands (a second or more)
+					if for_s >= 1.0 and not _falling_back(sim, tank):  # where a tank chose to stand
 						if d >= danger - 0.5 and d <= reach + 1.0:
 							parked_in_band += 1
 						elif d > reach + 1.0:
@@ -186,6 +198,13 @@ func _check_rampages() -> void:
 	)
 	var standoff := float(parked_in_band) / maxf(1.0, float(parked_in_band + parked_close))
 	check(
+		parked_in_band + parked_close >= MIN_PARKED_IN_RANGE,
+		(
+			"the rampages see tanks parked in range: %d tank-steps (at least %d to judge standoff)"
+			% [parked_in_band + parked_close, MIN_PARKED_IN_RANGE]
+		)
+	)
+	check(
 		parked_in_band > 0 and standoff >= 0.95 and longest_in_danger <= 1.0,
 		(
 			(
@@ -239,6 +258,15 @@ func _check_standoff_held() -> void:
 			% [in_band, close, share * 100.0]
 		)
 	)
+
+
+## A tank falling back from the kaiju and held up (its road blocked) did not choose to stand where
+## it is: it may be caught and die, and is not counted as parked or firing. Director 2026-10-22:
+## "the tank doesnt need to avoid the breath, just let it die, even the most professional soldier
+## wouldnt know to anticipate the breath in that moment". Tanks that chose their post still count.
+func _falling_back(sim: RampageSim, tank: RampageSim.Tank) -> bool:
+	var route: ConvoyRoute = sim.army_units.convoy.routes.get(tank.id)
+	return route != null and route.retreating
 
 
 ## The named case behind a red PR #89 (tier 1, city seed 2, steps 531-535): a tank entering at the
