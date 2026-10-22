@@ -78,7 +78,7 @@ CROPS = {
 }
 NOTES = {
     "f1": "Same city, same route, same moment in all rows. The first stomps have already broken some buildings.",
-    "f2": "The fire is lit by the capture at the same spot and second in every row: the game's own fires are small and hide in dust.",
+    "f2": "The fire is lit by the capture at the same spot and second in every row: the game's own fires are small and hide in dust. The smooth model's head and jaw move a little differently from the cube croc at the same moment.",
     "f3": "The face and skin crops come from a front-view camera at the same moment; the game camera sees the croc's back.",
 }
 NOT_SHOWN = (

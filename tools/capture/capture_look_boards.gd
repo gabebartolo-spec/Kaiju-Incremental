@@ -32,6 +32,7 @@ var _face_steps := 0
 var _fire := Vector4.ZERO
 var _fire_done := true
 var _dof: CameraAttributesPractical  ## the ONE LOOK mock's far-only blur, locked on the kaiju
+var _dof_amount := 0.06  ## "--dof=<amount>": the ONE LOOK far blur's strength (0 = off)
 var _scan := false  ## "--scan": print each half second whether any building fades (FallFade too)
 
 
@@ -62,6 +63,8 @@ func _initialize() -> void:
 			var f := arg.substr(7).split(",")
 			_face = Vector2(float(f[0]), float(f[1])).normalized()
 			_face_steps = int(f[2])
+		elif arg.begins_with("--dof="):
+			_dof_amount = float(arg.substr(6))
 		elif arg == "--scan":
 			_scan = true
 		elif arg.begins_with("--fire="):
@@ -99,7 +102,13 @@ func _run() -> void:
 		await process_frame
 	print("LOOKB stream complete, buildings=%d, time=%s, tier=%d" % [rampage.sim.buildings.size(), _time, tier])
 	rampage.set_physics_process(true)
-	if Look.one_look:
+	# The breath-aim wedge is a play aid, not part of the look: stop it and hide it in every capture.
+	for child: Node in rampage.get_children():
+		if child is BreathAim:
+			child.set_physics_process(false)
+			child.set_process(false)
+			(child as BreathAim).visible = false
+	if Look.one_look and _dof_amount > 0.0:
 		_far_blur(rampage)
 	if _route_mode == "replay":
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(_route_file))
@@ -231,7 +240,7 @@ func _far_blur(rampage: Rampage) -> void:
 	var cam: Camera3D = rampage.get("_camera")
 	_dof = CameraAttributesPractical.new()
 	_dof.dof_blur_far_enabled = true
-	_dof.dof_blur_amount = 0.06
+	_dof.dof_blur_amount = _dof_amount
 	cam.attributes = _dof
 	RenderingServer.camera_attributes_set_dof_blur_bokeh_shape(RenderingServer.DOF_BOKEH_BOX)
 	RenderingServer.camera_attributes_set_dof_blur_quality(RenderingServer.DOF_BLUR_QUALITY_LOW, false)
