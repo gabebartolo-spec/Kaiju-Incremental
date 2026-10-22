@@ -3,13 +3,19 @@ extends "res://tests/lib/runner.gd"
 ## text style. The HUD keeps the boxed clock at the top, biomass one boxless figure bottom right,
 ## the breath ring bottom centre, health as the red edge vignette, the controls card once, all
 ## inside the TV title-safe area with no text under 24 px; the tree's details panel keeps one
-## width (b2-23); the species preview spins centred and in frame (b2-11). Headless.
+## width (b2-23); the species preview spins centred and in frame (b2-11); the title menu (D-150);
+## the pause menu's feedback button (D-145) and its Are-you-sure before End Rampage (D-155).
+## Headless.
 ##   godot --headless --path . --script tests/run_ui_tests.gd
 ## Seeded by design: the sim is built from the city seed 0 and stepped by hand, never by time.
 
 const HudChecks := preload("res://tests/lib/ui_hud.gd")
 const TreeChecks := preload("res://tests/lib/ui_tree.gd")
 const TitleChecks := preload("res://tests/lib/ui_title.gd")
+const UiFeedback := preload("res://tests/lib/ui_feedback.gd")
+const UiFeedbackPad := preload("res://tests/lib/ui_feedback_pad.gd")
+const UiEndConfirm := preload("res://tests/lib/ui_end_confirm.gd")
+const UiReport := preload("res://tests/lib/ui_report.gd")
 
 ## The UI canvas (project.godot, D-027): every check measures in its logical pixels.
 const CANVAS := Vector2i(1920, 1080)
@@ -38,6 +44,10 @@ func run_checks() -> void:
 	await _t("_check_results_verdict")
 	await _h("TreeChecks", func() -> void: await TreeChecks.new(self, check).run())
 	await _h("TitleChecks", func() -> void: await TitleChecks.new(self, check).run())
+	await _h("UiReport", func() -> void: UiReport.new(check).run())
+	await _h("UiFeedback", func() -> void: await UiFeedback.run(self, check))
+	await _h("UiFeedbackPad", func() -> void: await UiFeedbackPad.run(self, check))
+	await _h("UiEndConfirm", func() -> void: await UiEndConfirm.run(self, check))
 
 
 ## R 15.4: every colour the kit draws text in reads at 4.5:1 or more against its own outline
