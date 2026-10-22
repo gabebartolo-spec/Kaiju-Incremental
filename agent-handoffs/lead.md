@@ -17,7 +17,10 @@
   game rule found in review goes to him as a question in the fiction's words.
 - 02:27 "no godot for 30 mins", 02:58 "pause for 30 more mins": loop b623ho9x1 (scratchpad no_godot_until.sh)
   stops our --script Godot runs until 03:28, then deletes ~/.claude/focus-pause. Subagents and the VFX lead told.
-- UNSENT (app send cap hit; send on his next message, one message per session):
+- D-161 (docs a57866d5): railgun hits the body's middle; mid-smash or iced only the dash dodges; pierces buildings;
+  armour softens it; frost only lands on a still kaiju. Sent to taskforce with D-160 and the #161 review fixes; the
+  reviewer (aa9275ca32eecec08) probes fixes 4-5 after 03:28. Sent to demo-end. Still to send: vfx-lead thunder note.
+- (Was unsent, now sent except vfx-lead):
   taskforce = D-160 gate (about 3 min of rampage time in the adolescent city, counter in the save, default on load +
   round-trip check; its one-key gate at 6787982b is not enough) + sim review coming + touched suites after 03:28.
   demo-end = "exit 127" was my pause loop and the focus guard blocks windowed runs only while focus-pause exists
