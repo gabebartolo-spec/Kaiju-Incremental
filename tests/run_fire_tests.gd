@@ -121,10 +121,11 @@ func _check_burn_pay() -> void:
 	amounts.fill(1000000.0)
 	knocked.damage_cells(0, floor0, amounts)
 	knocked.step(DT, Vector2.ZERO, false, 0)
-	_times(burnt, 6.0)
-	_times(knocked, 6.0)
-	var share := Num.f(Content.tuning()["powers"]["fire"]["burn_pay"])
+	# The burn-out step alone: what lands later also crushes people and the street, paid in full.
 	var ratio := (burnt.rubble - start) / maxf(0.001, knocked.rubble - start)
+	print("PAYDIAG burnt %.4f knocked %.4f share %.3f" % [burnt.rubble - start, knocked.rubble - start, burnt.buildings[0].pay_share])
+	_times(burnt, 6.0)
+	var share := Num.f(Content.tuning()["powers"]["fire"]["burn_pay"])
 	check(
 		absf(ratio - share) < 0.02 and _alive(burnt, 0) == 0,
 		"a burn-out pays %.2f of the same collapse knocked down (burn_pay %.2f)" % [ratio, share]
@@ -243,8 +244,10 @@ func _check_lights() -> void:
 		shelled.powers.fire.cfg = _sure(shelled)
 		shelled.powers.fire.shelled(Vector2(1.6, 0))
 		by["shell %s" % owned] = shelled.powers.fire.state[0] == FireSpread.State.BURNING
+	var lit_on: bool = by["breath true"] == true and by["beam true"] == true
+	lit_on = lit_on and by["shell true"] == true
 	check(
-		by.values().count(true) == 3 and by["breath true"] and by["beam true"] and by["shell true"],
+		by.values().count(true) == 3 and lit_on,
 		"the breath, the beam and a stray shell light a block only with City Ablaze: %s" % [by]
 	)
 
@@ -255,7 +258,11 @@ func _breath_lights(levels: Dictionary) -> bool:
 	sim.facing = NORTH
 	var snout: Vector2 = BreathCone.of(sim)["origin"]
 	sim.kaiju_pos = Vector2(0, 4) - snout  # the breath starts 4 m south of the block's centre
-	var seen := _run(sim, 0.5, Vector2.ZERO, PRESS)
+	var seen := {}
+	for i: int in roundi(3.0 / DT):  # held down: the press counts once it has risen and is ready
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, true, 0):
+			seen[str(event["type"])] = true
+	print("BREATHDIAG %s state %d at %v facing %v" % [seen.keys(), sim.powers.fire.state[0], sim.kaiju_pos, sim.facing])
 	return seen.has("ability") and seen.has("fire_burning")
 
 

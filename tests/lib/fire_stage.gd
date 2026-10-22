@@ -43,7 +43,7 @@ func run() -> void:
 	var a := _play()
 	var b := _play()
 	var trace: PackedStringArray = a["trace"]
-	var same := trace == b["trace"] and Num.f(a["rubble"]) == Num.f(b["rubble"])
+	var same: bool = trace == b["trace"] and Num.f(a["rubble"]) == Num.f(b["rubble"])
 	var says := "stage 4: fire spreads past the %d lit blocks to %d" % [LIT, Num.i(a["lit"])]
 	says += (
 		", and the same seed replays the same %d fire events and biomass (%.1f vs %.1f)"

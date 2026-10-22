@@ -42,7 +42,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_rng = rng
 	tentacles = Tentacles.new(sim, rng)
 	swipe = ClawSwipe.new(sim, cfg)
-	fire = FireSpread.new(sim, cfg["fire"], Seeds.derive(rng, 0xF12E))
+	var fire_cfg: Dictionary = cfg["fire"]
+	fire = FireSpread.new(sim, fire_cfg, Seeds.derive(rng, 0xF12E))
 
 
 func _bs() -> float:
