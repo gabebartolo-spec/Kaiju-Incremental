@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-158 · Director · Title camera tilts up so the Colossus towers
+
+Asked by the VFX lead with the current title still: the title camera tilts up until the Colossus head stands 1.5-2x the tallest centre tower, the full head silhouette stays in frame, and the water band gets about a third thinner (accepted) with the fire reflections still visible in it.
+
 ## 2026-10-23 · D-157 · Director · The army's stray shells count as the kaiju's destruction
 
 Asked (sim review of PR #159 found it agent-added): when a tank's missed shell smashes part of a building, it all counts: the kaiju earns the biomass, the city's ruin rises, and the army escalates as usual (the army wrecking its own city in a panic feeds the predator). The D-066 damage budget is measured with helicopters on, including that escalation.
@@ -392,7 +396,3 @@ D-079.
 
 ## 2026-10-18 · D-069a · Director · Soften #36's young stage to about half the early defeats
 Why (11:2x): about half the early defeats; cause: Armoured Scales moved late in the tree. #36 lands last before the build.
-
-## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
-Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
-priced late. Merge #36 after #50 and P3.
