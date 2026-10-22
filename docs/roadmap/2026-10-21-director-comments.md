@@ -96,3 +96,5 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 90 | "when players change their graphics setting, we should have a live example of what that will look like so players can choose their tolerance" | settings builder (for the demo) | asked: "in the options menu as they choose"; "for the demo" |
 | 91 | "builder should create original sounds on 11labs if necessary" (D-138) | lead generates (MCP), builders spec | recorded |
 | 92 | "load screens can have still image art. I'm picturing a rotation of staged screenshots, creative shots of the game" (e.g. "an angle from within the sports stadium", "the view from above the tallest tower"). Asked: full-screen art with INCOMING + meter on a dark band on top; lead proposes ~12 staged 4K shots, he picks; for the demo | capture builder | recorded |
+| 93 | Icons: "make the icons slightly bigger if the size is the main issue": whole skill ring ~10% bigger | icons builder | in progress |
+| 94 | Baby fire: the claw rake (~7 m) out-reaches the baby breath (5.9 m), so lit buildings get clawed apart. Asked: "Longer baby breath" (past the rake) | fire builder (#152) | in progress |
