@@ -64,8 +64,6 @@ var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
 var _autoplay := false
-## Seconds since the breath camera move began; negative when the camera is at rest.
-var _breath_camera := BreathCamera.new()
 var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
@@ -313,7 +311,6 @@ func _ability_fx(event: Dictionary) -> void:
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			_city.crush_cone(BreathCone.of(sim))  # trees and cars burn flat along it
 			sfx.play("breath")
-			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
 			var from: Vector2 = event["from"]
 			_leap_from = _to_world(from)
@@ -382,11 +379,12 @@ func _land_stomp(at: Vector3) -> void:
 func _place_camera(delta: float) -> void:
 	var zoom := CameraTuning.zoom(sim.body_scale())
 	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
-	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip, breath swing
+	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
-	var rest := camera_rest.lerp(_breath_camera.offset(camera_rest, delta), motion)
-	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta)
+	_follow.step(
+		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
+	)
 	var hold := sim.body.dash.on() or _leap_time > 0.0
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()

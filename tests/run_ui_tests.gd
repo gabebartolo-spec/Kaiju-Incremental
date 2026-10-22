@@ -172,7 +172,7 @@ func _skin_box(model: KaijuModel, table: Node3D) -> AABB:
 
 ## Critic r1 item 1: with one species the card is wide (about 55% of the screen), the kaiju
 ## preview twice the old 390 px, one stat per row at 32 px or more, every meter cell 12 px or wider,
-## and a gap above BACK; D-112: the signature reads "Lightning Breath".
+## and a gap above BACK; D-112: the signature reads the beam's name (tuning "names").
 func _check_species_card() -> void:
 	var window := root.size
 	root.size = CANVAS
@@ -219,9 +219,10 @@ func _check_species_card() -> void:
 		cells.size() >= 4 and rows.size() == cells.size(),
 		"one stat per row (%d rows for %d meters)" % [rows.size(), cells.size()]
 	)
+	var beam := str(Content.section("names")["beam"]).to_lower()
 	check(
-		texts.any(func(t: String) -> bool: return t.to_lower().contains("lightning breath")),
-		"the signature reads Lightning Breath: %s" % [texts]
+		texts.any(func(t: String) -> bool: return t.to_lower().contains(beam)),
+		"the signature reads %s (tuning names.beam): %s" % [beam, texts]
 	)
 	select.queue_free()
 	await process_frame
