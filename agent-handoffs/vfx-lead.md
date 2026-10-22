@@ -67,6 +67,9 @@ Not built: killable parachutists (they only drift down).
 - D-155 atmosphere looks: mine, after #156; sim side = demo-end local_d3ef25ef.
 
 ## Open findings
+- The stray gold 4-ray star = AbilityFx.deflect() (tank_fx.gd:18 calls it when stat "armor" > 0; a 4.5x-body
+  flare.gdshader quad at the shell's hit) + ready_pulse at the head (ability_fx.gd:237). Deflect thus has TWO looks
+  (this star vs the sheet's round white core): unify in the dust-billows follow-up.
 - CityView.ring still draws the cephalopod's ink ring (octopus paused, D-124); deflect flash moves to white.
 - Charcoal smoke invisible at night; a fire-lit underside for the shared smoke (D-141 "lit from below").
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
