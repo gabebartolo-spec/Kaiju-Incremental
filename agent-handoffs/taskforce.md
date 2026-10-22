@@ -1,5 +1,5 @@
 # Taskforce handoff (PR 1, sim core, agents only), 2026-10-23
-## State: working (PR #161: D-160/D-161 + review fixes pushed 225ee403, UNTESTED: no Godot until 03:28)
+## State: working (PR #161 pushed e125f7f5; fix 4 + frost radius 1.5 coded, uncommitted, final confirm run in flight)
 ## Task
 Anti Kaiju Taskforce PR 1 (sim core, agents only). Serves ROADMAP "Your adversaries", M2, D-137/139/141/143/145/152.
 Lead: session "Status check". Next after this: PR 3 kills (swat, perch-collapse fall), PR 4 frost grenades.
@@ -19,18 +19,16 @@ branch claude/taskforce-core-ee770a pushed to origin claude/taskforce-core. Tree
   scenes/post_fx.gd on `railgun_hit`; check `_check_railgun` in tests/run_postfx_tests.gd. First-arrival gate is one
   key `first_arrival` {chunks 150, seconds 6} (lead is asking the director). gdlint line lengths fixed.
 ## Test state
-Taskforce suite: 10 of 10 functions, 55 checks, 0 failures (own APPDATA, ~7 min). Planted defects shown failing:
-lock 0, perch_fallback 0, rubble_share 0.5, share 0, old dash rule. military 15 checks and flow 206 checks also pass.
-## Unfinished
-- After 03:28 run ONLY: taskforce, taskforce_gate (new), military, flow, postfx, sim_play (save) via
-  tools/run_tests.sh --quick; fix failures (all new code is unrun); push; reply head to lead.
-- D-160 done in code: `first_arrival` {city_seconds 180, run_delay 6}; save key `city_seconds` (default 0, in
-  SaveFile.migrate/new_save, no version bump); Rampage.setup(..., city_seconds) sets taskforce.carried; result()
-  has "city_seconds" and "agents"; main.gd saves it. D-161: armour subtracts like tank shells (min_damage floor).
-- Review items 1,3,6,7 done (fringe restarts on every hit, magic numbers in data, tests in run_taskforce_gate_tests.gd,
-  postfx 2-hit check). NOT done: review 4 (perch on the highest standing chunk) and 5 (swat reach): wait for the
-  reviewer's probe numbers from the lead; post_fx.gd event-routing test; Content.section vs tuning (small).
-- Planted-defect demos still owed for the new gate checks (e.g. carried = need - 1 must fail the "joins" check).
+Run 03:30 on 225ee403 (own APPDATA, after a re-import for the class cache): taskforce, postfx, sim_play, military,
+flow all pass; taskforce_gate had 1 failure (JSON round trip float), fixed in e125f7f5 (approximate compare).
+Planted defects shown failing: carried gate (city_seconds 100 -> "180 s" check), frost radius 4 (slow walker check).
+## Unfinished (uncommitted in this tree)
+- Lead's 03:54 note (lead-board/to-taskforce.md): FIX 4 done: new sim/taskforce_perch.gd (pick, _top = highest
+  standing chunk >= perch_min_height-1, _has_top, _perchable); taskforce.gd delegates (347 lines). Frost radius
+  4 -> 1.5 in data (walking dodges, standing is caught). New gate checks _check_chewed_top, _check_frost_radius.
+  Gate + taskforce suites passed; still owed: planted roof-only perch run showing _check_chewed_top fail, then
+  commit + push once and report the head to the lead. FIX 5 (swat) NOT confirmed: leave. Volley stays: director.
+- Small leftovers: post_fx.gd event-routing test; Content.section vs the sim's tuning.
 ## Open risks / questions for the lead
 - "Agents first appear a few minutes into the adolescent city": sim has no cross-run clock; kept per-run gates
   (after_chunks 150, first_delay 6 s). Needs a ruling if a rampage-count gate is wanted.
