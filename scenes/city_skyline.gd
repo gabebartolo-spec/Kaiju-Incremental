@@ -16,6 +16,10 @@ const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
+## A capped far shore (cfg far_tower_cap, the title's) keeps its towers this share of the cap or
+## more, the share rippling along x so the capped ones are not all one height.
+const CAP_LOW := 0.88
+const CAP_RIPPLE := 0.173
 
 var cfg: Dictionary
 var ground: CityGround
@@ -167,6 +171,14 @@ func _freeway(path: PackedVector2Array) -> void:
 				_lamps.append(Vector3(a.x, DECK_Y + 2.2, a.y))
 
 
+## A far tower's height under the cap (cfg far_tower_cap in metres; 0 is no cap, the game's own).
+func _capped(tall: float, x: float) -> float:
+	var cap := Num.f(cfg["far_tower_cap"])
+	if cap <= 0.0:
+		return tall
+	return minf(tall, cap * lerpf(CAP_LOW, 1.0, fposmod(x * CAP_RIPPLE, 1.0)))
+
+
 ## The skyline across the bay: a waterfront of towers, a lattice tower, hazy and lit.
 func _far_shore() -> void:
 	var shore := ground.coast - Num.f(cfg["bay_width"])
@@ -186,6 +198,7 @@ func _far_shore() -> void:
 			tall = maxf(tall, 6.0)
 			if _rng.randf() < downtown * 0.15:
 				tall *= 1.8  # a supertall
+			tall = _capped(tall, x)
 			var at := Vector3(
 				x + _rng.randf_range(-4.0, 4.0), tall * 0.5, shore - 12.0 - r * 26.0 - d * 0.5
 			)

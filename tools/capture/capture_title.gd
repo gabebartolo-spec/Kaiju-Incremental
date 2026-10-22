@@ -7,6 +7,7 @@ extends SceneTree
 ## movie mode mixes the audio itself): the clip starts at the printed frame, no still.
 ## --reveal=<seconds>: the still is taken that long after an explosion that reveals the colossus.
 ## --rest: the still waits until the bay is at rest (no footfall shivering it).
+## --measure: prints the tower, head and shore pixel numbers (tools/capture/title_measure.gd).
 ## --variant=night|dusk picks the title's look (tuning "title" "variants").
 ## --segments: after the clip, plays each sound layer alone for a while (the others' buses muted) so
 ## its level can be measured on the track; prints "segment <layer> from frame N for M frames".
@@ -14,6 +15,7 @@ extends SceneTree
 
 const AFTER_SHOWN := 1.0  # seconds the city has been fading in before the still
 const MAX_WAIT_MS := 60000
+const MEASURE := preload("res://tools/capture/title_measure.gd")
 ## The clip's frame rate (--fixed-fps) and the frames the city's fade-in takes before it starts.
 const FPS := 60
 const FADE_FRAMES := 100
@@ -30,6 +32,7 @@ var _city := true
 var _segments := false
 var _reveal := -1.0
 var _rest := false
+var _measure := false
 var _hide_3d := false
 var _probe_at := Vector2.ZERO
 ## Main-loop frames so far (a movie frame each; the frames drawn stop counting when the window is
@@ -54,6 +57,8 @@ func _initialize() -> void:
 			_hide_3d = true
 		elif arg == "--rest":
 			_rest = true
+		elif arg == "--measure":
+			_measure = true
 		elif arg == "--segments":
 			_segments = true
 		elif arg.begins_with("--clip="):
@@ -105,6 +110,9 @@ func _run() -> void:
 			await _tick()
 		if _hide_3d and not backdrops.is_empty():
 			(backdrops[0] as TitleBackdrop).visible = false
+		if _measure and not backdrops.is_empty():
+			MEASURE.towers_and_head(backdrops[0] as TitleBackdrop, float(root.size.y))
+			print("measure frame ", root.size)
 		if _probe_at != Vector2.ZERO and not backdrops.is_empty():
 			_probe(backdrops[0] as TitleBackdrop, _probe_at)
 		if _reveal >= 0.0 and not backdrops.is_empty():
