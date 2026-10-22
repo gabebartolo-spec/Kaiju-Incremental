@@ -35,20 +35,17 @@
 - demo-end local_d3ef25ef-1809-40da-9618-2b29226929f4: suites, push claude/demo-end (PR queued); weather pick only
   after "go weather" in its to-file.
 
-## Base and PRs
-- Base = origin/claude/look-options; squash-only. GitHub helper ad7455760cd21c2b0 merges only on my "#N go" at the
-  exact head; its watcher now requires all 14 checks present before "green" (an early green was reported once).
-- Open: #154 (VFX look sheet, waits "#154 PASS"), #159 army (waits fix159 push + my check), #160 title (head c7b0887b,
-  CI running; needs VFX lead SHIP + screen critic), #161 (red, above), #157 roadmap journal (not ours).
-- PR queue when open PRs < 3: three-steps (M1), city sound (M1), heli-deaths (VFX), demo-end.
-
-## Builders (subagents; transcripts .../b2b0bc5b.../subagents/agent-<id>.jsonl; scratchpad/watch_args.txt)
-- three-steps a4e343e24c232918d: touched suites, push, no PR yet; after-pacing 2 h run waits for my go.
-- city-sound a883e071aee1e9e5f; fix159 aef759596a568ac00; title160 a200bd8ccf893338a (stills to the lead, then to the
-  VFX lead); sim reviewer aa9275ca32eecec08 (fixes 4-5 probes on #161).
-- Readers (no engine): kaiju animation research a5cc46e61edbb65cf, AI-3D pipeline research a238d53ea23dd2bd6 (incl.
-  Aseprite, Meshy and SpriteCook plugins), voxel-look research ac037c79822051ffd (Opus). Reports land in the scratchpad
-  (research_*.md) -> interview questions. Idle audit done: scratchpad idle_audit.md.
+## Base and PRs (07:40)
+- Base = origin/claude/look-options; squash-only. GitHub helper ad7455760cd21c2b0 merges only on my "#N go <full sha>"
+  (go.txt in its scratchpad), CLEAN + all 14 checks + shards actually run; watcher wakes only on change.
+- Merged overnight: #159 army (bf0344cb), #154 look sheet (3c5c9b56), #163 city sound (59441ab9), #160 title
+  (aad7e485), #161 Taskforce core (c19c7f4c).
+- Open: #164 three-steps (sim review FIX: military seeds CI 16 vs local 21 vs bar 20 = check determinism; growth
+  check over seeds 0-5; PR body pacing; resync: save v3 is #164's), #165 demo end (gdlint lines, resync, save step
+  becomes v4 and merges after #164, Taskforce kills into military_keys), #166 heli deaths (sim reviewer
+  a91efff177a679849 running; needs VFX lead SHIP).
+- Branches waiting: claude/weather (demo-end session, 79c0e792+, settings overflow fix), claude/thunder-beam (VFX
+  round 5), claude/croc-standing (VFX, critic), claude/body-chunks (builder af12c285d844a54fa: fixture bug, not sim).
 
 ## Queued (each brief names its ROADMAP item + decision)
 - Chunks inside the body after a chewed topple (seeds 3, 8, 22), sim fix. Sim speed measurement (D-159).
