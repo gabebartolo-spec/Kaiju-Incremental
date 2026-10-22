@@ -357,10 +357,13 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Clean as you go: every builder splits a crowded file (390-400 lines) at a natural seam and shrinks a grandfathered
   long function (tools/lint/complexity_baseline.txt) when its work touches it. Owner: every builder. Status: ongoing.
 - Sim speed: measure where a sim step's time goes (tools/pacing.gd's 2-hour run), so balance answers take minutes;
-  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: queued.
+  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: measured
+  2026-10-23 (claude/sim-speed: tank road driving is about half of every step; three result-identical speed-ups
+  found, about 35% together); the speed-ups start after the director's return.
 - Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
   22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
-  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: queued.
+  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: done 2026-10-23: it was the
+  test's start pose inside the neighbouring towers, not the sim (PR #168, tests only).
 
 ## Overnight work (director 2026-10-23, about 03:25, asleep then at work)
 - His words: "work for 5 hours, if theres something you need my eye or a question you need to ask, add it to the
