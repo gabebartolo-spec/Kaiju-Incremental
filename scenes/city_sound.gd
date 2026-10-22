@@ -35,8 +35,11 @@ func _init(sim: RampageSim, street: StreetLife, sfx: Sfx) -> void:
 func _ready() -> void:
 	for bed: String in _cfg["beds"]:
 		var file := "res://assets/sfx/%s.ogg" % bed
+		var loop: AudioStreamOggVorbis = null
 		if bed != "crowd" and ResourceLoader.exists(file):
-			_players[bed] = _loop(bed, file)
+			loop = load(file) as AudioStreamOggVorbis  # null if it fails to load: that bed stays silent
+		if loop != null:
+			_players[bed] = _player(bed, loop)
 	var tracks: Array = Content.section("music")["tracks"]
 	var row: Dictionary = tracks[clampi(_sim.size_tier() - 1, 0, tracks.size() - 1)]
 	music = MusicLayers.new(row, Content.section("music"))
@@ -78,10 +81,9 @@ func _apply(bed: String) -> void:
 		player.stop()
 
 
-func _loop(bed: String, file: String) -> AudioStreamPlayer:
+func _player(bed: String, loop: AudioStreamOggVorbis) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
 	player.bus = AudioBuses.of(bed)
-	var loop: AudioStreamOggVorbis = load(file)
 	loop.loop = true
 	player.stream = loop
 	player.volume_db = Num.f(_cfg["silent_db"])

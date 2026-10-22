@@ -1,5 +1,5 @@
 # City-sound handoff, 2026-10-23
-## State: working (building; suites and the audio render still to run)
+## State: paused (no Godot until 03:28 per the director); suites, planted-curve run and audio render still to run
 ## Task
 City sound atmosphere for M1 (ROADMAP "Playtest milestones"), serving D-155 (panic then eerie quiet), D-125 (music in
 layers), D-138 (new SFX from ElevenLabs, the lead generates). One driver reads the sim's destruction share and the
