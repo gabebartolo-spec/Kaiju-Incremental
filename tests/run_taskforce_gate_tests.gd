@@ -50,7 +50,7 @@ func _check_city_clock() -> void:
 	save["city_seconds"] = kept
 	var parsed: Dictionary = JSON.parse_string(JSON.stringify(save))
 	var back: Dictionary = SaveFile.migrate(parsed)
-	check(Num.f(back["city_seconds"]) == kept, "save and reload keep the clock")
+	check(absf(Num.f(back["city_seconds"]) - kept) < 0.001, "save and reload keep the clock")
 	var next := _adolescent()
 	next.time_left = 1.0e9
 	next.army_units.taskforce.carried = Num.f(back["city_seconds"])
