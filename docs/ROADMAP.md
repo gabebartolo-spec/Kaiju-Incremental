@@ -285,6 +285,8 @@ beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice).
 b2-18). Shape closed (director 2026-10-21): "ours is like a crocodile in a t-rex body, not godzilla shaped".
 Landmark stable (D-133, comment #62, director 2026-10-22): about 12 landmarks in a pool, each run picks 3 per stage by
 its seed, so runs differ; kinds: famous-style icons (original, never copies), city services, fun one-offs, industrial.
-Replaces D-071's fixed four as the set; stadium, wheel, spire and megatower join the pool. List and look boards to him first.
+Replaces D-071's fixed four as the set; stadium, wheel, spire and megatower join the pool. New 8 (picked): suspension bridge tower, opera-house shells, theme-park coaster, giant donut sign, power station,
+airport control tower with planes flying in and out, container port cranes, oil refinery. Tripo models voxelized into
+carvable cell grids; six-view check per model; look boards to him first.
 Itch demo (D-132, comment #61, director 2026-10-22): the 1.0 demo goes on an invite-only Itch page (download keys) when
 the reptilian stage is 100% done: bug free, polished visuals, good performance, fully featured. Earlier builds stay local.
