@@ -1,5 +1,5 @@
 # Demo-end handoff, 2026-10-23 02:50
-## State: PR #165 FIX round in progress (lead order, before sky and sea life): merge of look-options done (save v4), sim-review fixes coded, suites to run: demoend flow smoke ui sim_play military taskforce_gate; then push once and report the sha.
+## State: HOLD (lead 08:38). #165 FIX round pushed: claude/demo-end @ 4a2f44bf (clean merge with the base, save v4 on #164 v3), reported to the lead. claude/weather @ a21dfdec pushed, waits for a PR. Sky and sea life waits for the director; nothing new to start.
 ## Weather pick (queue 1) DONE: claude/weather @ a21dfdec in ../../Kaiju-Incremental-wt/weather
 Weather.pick/next/label/clean (sim/weather.gd), data/looks.json "weather", Content.weather_id() (the one current value: clear,
 overcast, rain, fog, thunderstorm; set in Main._start_rampage), PlayerSettings.weather, save key last_weather, own options row
@@ -33,15 +33,13 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - Tests: suite `demoend` (tests/run_demoend_tests.gd + tests/lib/sim_demo_end.gd, incl. normal-untouched check), flow_demo.gd
   rewritten (mouse, key, pad via new GuiInput.pad), demo_smoke.gd and capture_demo.gd rewritten. README row added.
 ## Unfinished changes
-- #165 FIX round (comment 6350997254 + to-demo-end.md): (a) merged origin/claude/look-options, SaveFile.VERSION 4 (demo keys under
-  version < 4; city_seconds bank line inside `if not _endless`); (b) FireSpread.reset_building + Collapse.forget_topple called from
-  Endless.regrow, buildings counted by b.frame.alive_count == 0, Endless escalation = chunks_total x (start_share + share_per_second x
-  elapsed) with no cap, regrowth = regrow_share_per_minute (5%) of flattened buildings per regrow_interval pass (rows in
-  data/tuning.json demo.endless); (c) "agents" in demo.military_keys, taskforce.gd interval() reads sim.escalation(); (d) gdlint
-  clean (gdformat -l 100), flow_demo split into tests/lib/flow_demo_menus.gd. New sim checks in tests/lib/sim_demo_end.gd.
-- Planted-defect run DONE (P1 fire state kept, P2 old building count, P3 capped escalation, P4 regrowth x10: each fails demoend; sim/ restored). Second merge of look-options done (#164 save v3 on base, demo keys v4); final gate running: demoend, sim_play, smoke, flow, gdformat/gdlint, ratchet. Then push claude/demo-end once, report the sha to the lead, then HOLD (lead 08:38 + latest message): sky and sea life waits for the director.
-- Then: sky and sea life (plan above; rampage_sim.gd ~397 lines, so the hook goes in a new small file), 4K thanks still, Taskforce
-  mech/gunship units (queue 3, after taskforce-core: its result keys join demo.military_keys).
+- None in flight. Pushed and green: demo-end 4a2f44bf (demoend 32, sim_play, smoke, flow after the last merge; military,
+  taskforce_gate, ui before it; gdformat/gdlint/ratchet/tuning keys clean; 4 planted defects each fail demoend, log
+  /tmp/plant165.out) and weather a21dfdec (its settings-row checks and 5 planted bugs are in the weather suite).
+- Later, on the lead's word: sky and sea life (plan above; the director's whale question is in lead-board/interview.md),
+  4K thanks still (focus guard), Taskforce mech/gunship units (queue 3; add their result keys to demo.military_keys).
+- Method note for the lead: gdlint/gdformat are not installed here; `pip install gdtoolkit` then call
+  gdtoolkit.linter.__main__.main / gdtoolkit.formatter.__main__.main with sys.argv (line length 100) from a python -c.
 ## Attempts
 Silent "exit 127" in headless runs (flow, smoke, demoend) is most likely my Godot being killed from outside during the director's
 Godot pauses (~/.claude/focus-pause says until when), not a code bug: check that file before debugging, and rerun after it.
