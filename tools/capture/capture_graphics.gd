@@ -14,30 +14,26 @@ const EDGE_AT := Vector2(0.3, 0.3)  # the building crop's centre, as a fraction 
 const SETTLE_FRAMES := 20  # frames after a level change before the shot
 const TIME_FRAMES := 120  # frames the GPU time is averaged over
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
+
 var _out := "user://graphics"
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--out="):
-			_out = arg.substr(6)
+	_out = str(Kit.args({"out": _out})["out"])
 	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def("reptilian")
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {})
-	)
+	var stats := Kit.stats("reptilian")
 	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
-	var rampage := Rampage.new()
-	rampage.setup(species, stats, layout, 0)
-	root.add_child(rampage)
-	rampage.set_autoplay(true)
-	for _i: int in PLAY_FRAMES:
-		await physics_frame
+	var rampage := Kit.autoplay(self, "reptilian", stats, 0, layout)
+	await Kit.ticks(self, PLAY_FRAMES)
 	paused = true
 	var cam := root.get_camera_3d()
 	var kaiju := rampage.find_children("*", "Kaiju*", true, false)
@@ -50,40 +46,21 @@ func _run() -> void:
 		levels.append(str(level))
 		if level == "medium":
 			levels.append("balanced_old")
-	var rid := root.get_viewport_rid()
-	RenderingServer.viewport_set_measure_render_time(rid, true)
+	Kit.measure_on(self)
 	for level: String in levels:
 		PlayerSettings.graphics = "medium" if level == "balanced_old" else level
-		for _i: int in SETTLE_FRAMES:
-			await process_frame
+		await Kit.frames(self, SETTLE_FRAMES)
 		if level == "balanced_old":
 			root.msaa_3d = Viewport.MSAA_DISABLED
-			for _i: int in SETTLE_FRAMES:
-				await process_frame
-		var total := 0.0
-		for _i: int in TIME_FRAMES:
-			await process_frame
-			total += RenderingServer.viewport_get_measured_render_time_gpu(rid)
-		print(
-			"GRAPHICS %s gpu %.2f ms avg over %d frames" % [level, total / TIME_FRAMES, TIME_FRAMES]
-		)
+			await Kit.frames(self, SETTLE_FRAMES)
+		var ms := await Kit.render_ms(self, TIME_FRAMES)
+		print("GRAPHICS %s gpu %.2f ms avg over %d frames" % [level, ms[0], TIME_FRAMES])
 		var shot := root.get_texture().get_image()
 		shot.save_png(_out.path_join(level + ".png"))
 		var size := Vector2(shot.get_size())
-		var px := (
-			cam.unproject_position(at + Vector3(0, 2, 0)) * size / root.get_visible_rect().size
-		)
-		_crop(shot, px, "kaiju_" + level)
-		_crop(shot, size * EDGE_AT, "edge_" + level)
+		var px := Kit.image_point(self, cam, at + Vector3(0, 2, 0), size)
+		Kit.crop_2x(shot, px, CROP, _out.path_join("kaiju_" + level + ".png"))
+		Kit.crop_2x(shot, size * EDGE_AT, CROP, _out.path_join("edge_" + level + ".png"))
 	print("GRAPHICS shots in %s" % _out)
 	PlayerSettings.graphics = ""
 	quit()
-
-
-func _crop(shot: Image, centre: Vector2, name: String) -> void:
-	var size := shot.get_size()
-	var corner := Vector2i(centre) - CROP / 2
-	corner = corner.clamp(Vector2i.ZERO, size - CROP)
-	var part := shot.get_region(Rect2i(corner, CROP))
-	part.resize(CROP.x * 2, CROP.y * 2, Image.INTERPOLATE_NEAREST)
-	part.save_png(_out.path_join(name + ".png"))

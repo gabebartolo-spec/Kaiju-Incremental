@@ -6,34 +6,27 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_ruin_fire.gd -- --species=reptilian --seconds=30 --out=dir
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
+
 var _species := "reptilian"
 var _seconds := 30.0
 var _out := "user://ruin_fire"
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--species="):
-			_species = arg.substr(10)
-		elif arg.begins_with("--seconds="):
-			_seconds = float(arg.substr(10))
-		elif arg.begins_with("--out="):
-			_out = arg.substr(6)
+	var a := Kit.args({"species": _species, "seconds": _seconds, "out": _out})
+	_species = str(a["species"])
+	_seconds = Num.f(a["seconds"])
+	_out = str(a["out"])
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var rampage := Rampage.new()
-	var species := Content.species_def(_species)
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades())
-	)
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 0
-	)
-	rampage.set_autoplay(true)
-	root.add_child(rampage)
+	var rampage := Kit.autoplay(self, _species, Kit.stats(_species), 0)
 	var frames := 0
 	while frames < int(_seconds * 60.0) and not rampage.sim.over:
 		await physics_frame
@@ -47,7 +40,6 @@ func _run() -> void:
 	for b: RampageSim.Building in rampage.sim.buildings:
 		ruined += int(b.frame.alive_count == 0)
 	DirAccess.make_dir_recursive_absolute(_out)
-	var path := _out.path_join("ruin_fire_%s_t%d.png" % [_species, frames])
-	root.get_viewport().get_texture().get_image().save_png(path)
+	var path := Kit.still(self, _out, "ruin_fire_%s_t%d" % [_species, frames])
 	print("RUIN_FIRE frames=%d burning=%d ruined=%d still=%s" % [frames, burning, ruined, path])
 	quit()
