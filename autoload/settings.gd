@@ -19,6 +19,7 @@ func _ready() -> void:
 	_button_action("dash", [KEY_SHIFT], JOY_BUTTON_B)
 	_button_action("pause", [KEY_ESCAPE, KEY_P], JOY_BUTTON_START)
 	_button_action("toggle_fullscreen", [KEY_F11], JOY_BUTTON_INVALID)
+	_pad_menus()
 	# The shipped game starts fullscreen (D-027). Editor-binary runs (agent captures) stay windowed:
 	# a project-wide fullscreen start defeats the off-screen no_focus override and grabs the screen.
 	var presets: Dictionary = Content.section("display")["graphics"]
@@ -39,6 +40,29 @@ func _process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_fullscreen"):
 		PlayerSettings.set_fullscreen(not PlayerSettings.fullscreen)
+
+
+## The pad drives every menu: A accepts, B cancels, the d-pad moves focus. Added where the engine's
+## own UI actions lack the pad button (a pad-only player could not press a focused button).
+func _pad_menus() -> void:
+	var buttons := {
+		"ui_accept": JOY_BUTTON_A,
+		"ui_cancel": JOY_BUTTON_B,
+		"ui_left": JOY_BUTTON_DPAD_LEFT,
+		"ui_right": JOY_BUTTON_DPAD_RIGHT,
+		"ui_up": JOY_BUTTON_DPAD_UP,
+		"ui_down": JOY_BUTTON_DPAD_DOWN,
+	}
+	for action: String in buttons:
+		var button: JoyButton = buttons[action]
+		var have := false
+		for event: InputEvent in InputMap.action_get_events(action):
+			var pad := event as InputEventJoypadButton
+			have = have or (pad != null and pad.button_index == button)
+		if not have:
+			var press := InputEventJoypadButton.new()
+			press.button_index = button
+			InputMap.action_add_event(action, press)
 
 
 func _axis_action(action: String, keys: Array[Key], axis: JoyAxis, direction: float) -> void:

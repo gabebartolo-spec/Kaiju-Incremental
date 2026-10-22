@@ -1,5 +1,5 @@
 # Demo-end handoff, 2026-10-23 02:50
-## State: waiting (director pause on Godot until 03:28, file ~/.claude/focus-pause; then run the suites, commit, push; no PR until the lead says)
+## State: running flow after fixes (pause over 03:28); then push claude/demo-end, report sha to lead; NO PR until lead's helper opens it
 ## Next: weather pick plan (queue 1; plan only, wait for 'go weather' in lead-board/to-demo-end.md)
 Mirror TimeOfDay (on look-options since #156): new sim/weather.gd `Weather` (RANDOM="", pick(run,last,setting) seeded by
 Seeds.make("weather", run), settings/next/label/clean), data in data/looks.json "weather" {order: clear, overcast, rain, fog,
@@ -29,18 +29,13 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 - Tests: suite `demoend` (tests/run_demoend_tests.gd + tests/lib/sim_demo_end.gd, incl. normal-untouched check), flow_demo.gd
   rewritten (mouse, key, pad via new GuiInput.pad), demo_smoke.gd and capture_demo.gd rewritten. README row added.
 ## Unfinished changes
-- The Endless refactor (no sim field) is uncommitted until committed with this file; NOTHING of the rework has been run green yet. Run: `tools/run_tests.sh --quick demoend
-  sim_play military sim` (GODOT=C:/Users/DANTE/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe;
-  sim alone is ~500 s, run in the background). Show the new demoend checks failing first on planted bad input (earlier
-  planted runs were for the superseded design).
-- flow and smoke suites exit 127 silently on this PC as soon as a 3D view builds (title/species select), also in the
-  three-steps worktree; asked the lead, no answer. CI is the gate for flow/smoke unless a fix is found.
-- 4K still of the thanks screen: `capture_demo.gd -- --only=thanks`, windowed with the untracked override.cfg (already in
-  the worktree, git-ignored); the focus guard blocks windowed runs while the director has a fullscreen game.
-- native/bin DLL copied from another worktree (untracked, never stage it); complexity baseline shrunk by one row
-  (RampageSim.step); .uid files are untracked noise, stage by name.
-- PR needs: Evidence, the sim-review packet (save v3 keys with defaults + v2 migration test, Endless/escalation shared sim
-  paths), "Not exercised" (flow, smoke, still), the PLACEHOLDER URL note.
+- Suites 03:29: demoend 25 checks pass; sim_play, military, smoke, sim pass. flow had 7 fails; fixed: thanks screen text reserve
+  (DemoEnd.TEXT_RESERVE, EvolutionReveal.frame_view(owner, reserve)), pad ui_* bindings added in autoload/settings.gd (engine
+  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. flow rerun in progress; still to check: the
+  "normal rampage adds the sim's counters" check (saved totals were {}). Fixes are uncommitted until flow is green.
+- Still to do: planted-failure runs for the Endless checks, lint (complexity_ratchet, tuning_keys, 400-line cap), 4K still.
+- native/bin DLL removed; .uid files untracked noise, stage by name.
+- PR needs: Evidence, sim-review packet, "Not exercised" (still), PLACEHOLDER URL note.
 ## Attempts
 Silent "exit 127" in headless runs (flow, smoke, demoend) is most likely my Godot being killed from outside during the director's
 Godot pauses (~/.claude/focus-pause says until when), not a code bug: check that file before debugging, and rerun after it.

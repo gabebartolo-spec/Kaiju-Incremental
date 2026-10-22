@@ -107,12 +107,12 @@ func _ready() -> void:
 ## The 3D frame for a screen `owner`: one fixed size from the screen's height (capped at
 ## VIEW_MAX, TEXT_RESERVE kept for the text under it), top-aligned, so it never changes size
 ## or moves while the text under it changes (screen critic, 2026-10-18).
-static func frame_view(owner: Control) -> SubViewportContainer:
+static func frame_view(owner: Control, reserve := TEXT_RESERVE) -> SubViewportContainer:
 	var v := SubViewportContainer.new()
 	v.stretch = true
 	v.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var fit := func() -> void:
-		var h := minf(VIEW_MAX.y, owner.size.y - 2.0 * EDGE_MARGIN - TEXT_RESERVE)
+		var h := minf(VIEW_MAX.y, owner.size.y - 2.0 * EDGE_MARGIN - reserve)
 		v.custom_minimum_size = Vector2(h * VIEW_MAX.x / VIEW_MAX.y, h)
 	owner.resized.connect(fit)
 	fit.call()

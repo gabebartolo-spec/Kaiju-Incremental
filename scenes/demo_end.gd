@@ -16,6 +16,8 @@ signal feedback_pressed
 const ROAR_EVERY := 360
 const BUTTON_WIDTH := 400
 const STAT_WIDTH := 220
+## The text under the frame: title, line, three stat rows and the buttons (the reveal keeps less).
+const TEXT_RESERVE := 480.0
 
 ## What the card stages (read by the flow suite).
 var species_id: String
@@ -62,7 +64,7 @@ func _ready() -> void:
 	col.offset_bottom = -EvolutionReveal.EDGE_MARGIN
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
-	view = EvolutionReveal.frame_view(self)  # the reveal's frame, same size and place
+	view = EvolutionReveal.frame_view(self, TEXT_RESERVE)  # the reveal's frame, same size and place
 	col.add_child(view)
 	var viewport := SubViewport.new()
 	viewport.own_world_3d = true
