@@ -314,3 +314,5 @@ Helicopter deaths (comment #86, director 2026-10-22): "currently, destroyed heli
 big hits blow them apart in the air, lighter kills spiral down smoking and explode where they land; the crash smashes
 what it hits (and can light a fire with City Ablaze) and pays biomass (sim change: seeded, tested).
 Name (comment #85): the game is called Kaiju Evolution everywhere players see it; the save folder keeps its old name.
+Graphics preview (comment #90, director 2026-10-22): "when players change their graphics setting, we should have a live
+example of what that will look like so players can choose their tolerance". Where and when: to ask.
