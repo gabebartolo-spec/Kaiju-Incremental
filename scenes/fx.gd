@@ -17,23 +17,30 @@ const SLAM_GROW := 0.15
 const SLAM_PEAK := 0.18
 const SLAM_HOLD := 0.4
 const SMOKE := preload("res://scenes/smoke.gdshader")
-## Dusty earth: a tree's soil, as dark as the street dust's footfall tint (0.24, 0.25, 0.26, ~0.27
-## luminance) so it never pops brighter than the road at noon (VFX look sheet review, 2026-10-23).
-const TREE_PUFF := Color(0.32, 0.26, 0.19)
-## The same soil at night, paler: the dark street dust is lit down to nothing then (the sun's
-## energy picks between the two, night 0.35 and noon 1.6: data/looks.json).
-const TREE_PUFF_NIGHT := Color(0.7, 0.6, 0.46)
+## The street's dust: one tone for every dust call (the cloud, a person's puff, the footfall and
+## slam puffs, a tree's soil puff and the ring; docs/VFX_STYLE.md families 3 and 7; the VFX look
+## sheet review of 2026-10-23: the dust was a charcoal that vanished into the road, then a blue
+## haze at night under the blue ambient light).
+const STREET_DUST := Color("8a6f4e")
+## The one switch: 1 draws every dust puff in its own colour (the smoke shader's `self_lit`, an
+## emission) so night and noon show the same warm dust; 0 lights it by the scene like smoke.
+const DUST_SELF_LIT := 1.0
+## A stomp's ring is this many times its reach (rampage.gd): it must read as huge.
+const STOMP_RING := 3.0
+## The same dust at night, a little darker; the sun (night 0.35 to noon 1.6, data/looks.json)
+## picks between the two.
+const NIGHT_DUST := Color("6a5238")
 const SUN_NIGHT := 0.35
 const SUN_NOON := 1.6
 ## A tree's puffs are this many times the tree's size: the first look was lost beside the stump.
-const TREE_PUFF_SCALE := 1.5
+const TREE_PUFF_SCALE := 2.4
 ## A crushed tree's dust (lead, #55 r14): at its peak by frame 3, held to frame 5, then fading
 ## evenly to nothing by frame 29 (30 fps). Drawn as the street dust (docs/VFX_STYLE.md family 3,
 ## director 2026-10-23: one dust look), with the smoke shader's screen-centre clearing off, since
 ## a tree falls right where the kaiju walks (lead, #55 r13).
 const PUFF_RISE := 0.1
 const PUFF_HOLD := 0.07
-const PUFF_FADE := 0.8
+const PUFF_FADE := 0.35
 ## Where a shell or the beam's end sparks cool to (white-hot first: FxParticles.sparks).
 const SPARK_TINT := Color(1.0, 0.45, 0.1)
 ## A shell hit's sparks: how many, and the glow cube's size in metres (family 5: 0.12-0.22 m).
@@ -49,7 +56,7 @@ var _dust_mat: ParticleProcessMaterial
 var _dust_mesh: Mesh
 var _puff_mesh: Mesh
 var _step_mat: ParticleProcessMaterial
-var _step_mesh: Mesh
+var _step_mesh: QuadMesh
 var _step_cfg: Dictionary
 var _slam_mat: ParticleProcessMaterial
 var _spark_mat: ParticleProcessMaterial
@@ -68,7 +75,7 @@ func _ready() -> void:
 			"smin": 1.0,
 			"smax": 2.6,
 			"grow": true,
-			"colors": [Color(0.22, 0.24, 0.26, 0.47), Color(0.2, 0.22, 0.24, 0.0)],
+			"colors": [Color(_dust_light(), 0.47), Color(_dust_light(), 0.0)],
 		}
 	)
 	_dust_mesh = _puff(2.2)
@@ -84,10 +91,11 @@ func _ready() -> void:
 			"smin": 0.8,
 			"smax": 1.6,
 			"grow": true,
-			"colors": [Color(0.24, 0.25, 0.26, alpha), Color(0.22, 0.23, 0.24, 0.0)],
+			"colors": [Color(_dust_light(), alpha), Color(_dust_light(), 0.0)],
 		}
 	)
-	_step_mesh = _puff(1.4)
+	_step_mesh = _puff(3.0)
+	_clear_centre_off(_step_mesh)  # a footfall is at the kaiju's foot: the dust must show there
 	_slam_mat = _slam_puff_mat(_step_mat, alpha)
 	# The game's one spark (docs/VFX_STYLE.md family 5): white-hot glow cubes cooling to orange.
 	_spark_mat = FxParticles.sparks(SPARK_TINT)
@@ -95,14 +103,11 @@ func _ready() -> void:
 	_spark_mesh = FxParticles.glow_cube(SPARK_CUBE)
 	_tree_mat = _tree_puff_mat()
 	_tree_mesh = _puff(1.0)
-	var clear_off := _tree_mesh.material as ShaderMaterial
-	clear_off.set_shader_parameter("centre_keep", 1.0)
-	clear_off.set_shader_parameter("focus_clear", 0.0)
-	clear_off.set_shader_parameter("focus_full", 0.001)
+	_clear_centre_off(_tree_mesh)
 	add_child(keep)
 	var claws := ClawSlash.marks_material(Content.section("claw_fx"))
 	var kept: Array[Material] = [_dust_mat, _step_mat, _slam_mat, _spark_mat, _tree_mat]
-	kept.append_array([_tree_mesh.material, _spark_mesh.material])
+	kept.append_array([_tree_mesh.material, _spark_mesh.material, _step_mesh.material])
 	kept.append_array([claws, LandmarkBurst.chunk_material()])
 	for mat: Material in kept:
 		keep.hold(str(mat.get_instance_id()), mat)
@@ -144,8 +149,8 @@ func footfall(at: Vector3, size: float, capped := true) -> void:
 	p.position = at
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size * 0.6, 0.2, size * 0.6)
-	mat.scale_min = 0.4 * size  # as wide as the foot that threw it
-	mat.scale_max = 0.8 * size
+	mat.scale_min = 0.8 * size  # as wide as the foot that threw it
+	mat.scale_max = 1.3 * size
 	steps_live.append(p)
 
 
@@ -159,8 +164,7 @@ func tree_puff(at: Vector3, size: float, peak: float) -> void:
 	mat.scale_min = size * 0.8 * TREE_PUFF_SCALE
 	mat.scale_max = size * TREE_PUFF_SCALE
 	var total := PUFF_RISE + PUFF_HOLD + PUFF_FADE
-	var day := inverse_lerp(SUN_NIGHT, SUN_NOON, Look.value("sun_energy"))
-	var soil := TREE_PUFF_NIGHT.lerp(TREE_PUFF, clampf(day, 0.0, 1.0))
+	var soil := _dust_light()
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array(
 		[0.0, PUFF_RISE / total, (PUFF_RISE + PUFF_HOLD) / total, 1.0]
@@ -213,6 +217,7 @@ func shockwave(at: Vector3, radius: float, tail := false) -> void:
 	plane.size = Vector2.ONE * radius * Num.f(cfg["radius_scale"]) * 2.4
 	var mat := ShaderMaterial.new()
 	mat.shader = SHOCKWAVE
+	mat.set_shader_parameter("tint", _dust_tone())
 	mat.set_shader_parameter("peak", Num.f(cfg["alpha"]))
 	mat.set_shader_parameter("soft", Num.f(cfg["soft"]))
 	plane.material = mat
@@ -258,7 +263,7 @@ func _slam_puff_mat(step: ParticleProcessMaterial, alpha: float) -> ParticleProc
 	mat.scale_curve = curve_tex
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array([0.0, SLAM_PEAK, 1.0])
-	var c := Color(0.24, 0.25, 0.26)
+	var c := _dust_light()
 	ramp.colors = PackedColorArray([Color(c, 0.0), Color(c, alpha), Color(c, 0.0)])
 	var ramp_tex := GradientTexture1D.new()
 	ramp_tex.gradient = ramp
@@ -324,12 +329,32 @@ static func _tree_puff_mat() -> ParticleProcessMaterial:
 	mat.angular_velocity_min = -60.0
 	mat.angular_velocity_max = 60.0
 	var curve := Curve.new()
-	curve.add_point(Vector2(0, 1.0))
-	curve.add_point(Vector2(1, 1.35))
+	curve.add_point(Vector2(0, 0.6))
+	curve.add_point(Vector2(1, 1.4))
 	var curve_tex := CurveTexture.new()
 	curve_tex.curve = curve
 	mat.scale_curve = curve_tex
 	return mat
+
+
+## The street dust's tone for this time of day (NIGHT_DUST in the dark, STREET_DUST at noon).
+static func _dust_tone() -> Color:
+	var day := inverse_lerp(SUN_NIGHT, SUN_NOON, Look.value("sun_energy"))
+	return NIGHT_DUST.lerp(STREET_DUST, clampf(day, 0.0, 1.0))
+
+
+## The tone as a particle colour (the smoke shader reads COLOR as linear light).
+static func _dust_light() -> Color:
+	return _dust_tone().srgb_to_linear()
+
+
+## The smoke shader's clearing of puffs near the screen centre and in front of the kaiju (D-018)
+## off for this mesh: a footfall or a crushed tree is right where the kaiju stands.
+func _clear_centre_off(mesh: QuadMesh) -> void:
+	var mat := mesh.material as ShaderMaterial
+	mat.set_shader_parameter("centre_keep", 1.0)
+	mat.set_shader_parameter("focus_clear", 0.0)
+	mat.set_shader_parameter("focus_full", 0.001)
 
 
 ## A soft camera-facing puff (the smoke shader), for dust clouds.
@@ -338,5 +363,6 @@ func _puff(size: float) -> QuadMesh:
 	quad.size = Vector2.ONE * size
 	var mat := ShaderMaterial.new()
 	mat.shader = SMOKE
+	mat.set_shader_parameter("self_lit", DUST_SELF_LIT)
 	quad.material = mat
 	return quad

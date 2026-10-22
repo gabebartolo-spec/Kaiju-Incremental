@@ -364,7 +364,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 	var size := sim.body_scale() * (0.2 + strength)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
-	var ring := _stomp_radius * 1.3 if stomped else FOOTFALL_RING * size
+	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
 	_city.fx.shockwave(at, ring, side == "tail")
 	_step_dip = maxf(
 		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength

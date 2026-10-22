@@ -21,8 +21,13 @@ const GAP := 200
 const SPOT := Vector3(7.0, 0.0, -7.0)
 ## A fire away from the kaiju and the screen centre, where the smoke shader keeps its column.
 const FAR_SPOT := Vector3(-14.0, 0.0, -22.0)
-## Beside the kaiju and out of the screen centre (the footfall cloud's shot).
-const SIDE_SPOT := Vector3(15.0, 0.0, -7.0)
+## The kaiju's right foot, from its feet (the footfall cloud's shot: the foot is in frame).
+const FOOT_SPOT := Vector3(1.6, 0.0, 0.3)
+## The stomp ring's radius argument (body scale units; in the game 1.3 x the stomp's reach) and
+## the tree puff's size and peak opacity (the city's tree_puff_size and tree_puff_alpha).
+const STOMP_RADIUS := 9.75
+const TREE_SIZE := 2.0
+const TREE_ALPHA := 0.6
 ## The sim's tail sweep reach (data/tuning.json tail_reach), in body-scale units.
 const TAIL_REACH := 11.0
 ## The side view for the breath and the ultimate (the game camera looks down their length).
@@ -32,6 +37,7 @@ const SIDE_HEIGHT := 9.0
 var _out := "user://vfx_sheet"
 var _rampage: Rampage
 var _points: Dictionary = {}
+var _px: Dictionary = {}
 var _input: Dictionary = {}
 var _only := PackedStringArray()
 var _after := 0
@@ -60,6 +66,10 @@ func _run(run: int) -> void:
 	await _frames(SETTLE)
 	_rampage.sim.time_left = RUN_SECONDS  # every effect plays before the clock ends the run
 	_aim(false)  # the ready breath's wedge is drawn over everything; back on for the breath
+	# The ready flare (AbilityFx.ready_pulse, a gold four-point star on the kaiju's eyes) fires the
+	# moment the power charges: charge it now and let it play out, so it is not in the cells.
+	_rampage.sim.ability_ready_in = 0.0
+	await _frames(90)
 	var city := _city()
 	var fx := city.fx
 	var bs := _rampage.sim.body_scale()
@@ -77,17 +87,17 @@ func _run(run: int) -> void:
 		25,
 		func(p: Vector3) -> void: fx.dust(p, 2.0 * bs, Color(0.8, 0.78, 0.72, 0.5))
 	)
-	# Out to the kaiju's right, clear of the screen centre where the smoke shader keeps only 0.3 of
-	# a puff (D-018): a footfall beside the body is thin by rule, this shows the cloud itself.
 	await _shot(
 		"dust_footfall",
-		6,
-		func(_p: Vector3) -> void: fx.footfall(_feet() + SIDE_SPOT * bs, 2.0 * bs, false),
-		SIDE_SPOT
+		12,
+		func(_p: Vector3) -> void: fx.footfall(_feet() + FOOT_SPOT * bs, 1.5 * bs, false),
+		FOOT_SPOT
 	)
-	await _shot("dust_tree_puff", 8, func(p: Vector3) -> void: fx.tree_puff(p, 2.0, 0.45))
-	await _shot("ring_stomp", 8, func(p: Vector3) -> void: fx.shockwave(p, 3.0 * bs))
-	await _shot("ring_tail_sweep", 12, func(p: Vector3) -> void: _tail_sweep(p, TAIL_REACH * bs))
+	await _shot(
+		"dust_tree_puff", 8, func(p: Vector3) -> void: fx.tree_puff(p, TREE_SIZE, TREE_ALPHA)
+	)
+	await _shot("ring_stomp", 17, func(p: Vector3) -> void: fx.shockwave(p, STOMP_RADIUS * bs))
+	await _shot("ring_tail_sweep", 17, func(p: Vector3) -> void: _tail_sweep(p, TAIL_REACH * bs))
 	await _shot("sparks_shell_hit", 10, func(p: Vector3) -> void: fx.sparks(p + Vector3.UP))
 	await _shot(
 		"sparks_deflect",
@@ -125,7 +135,37 @@ func _run(run: int) -> void:
 	_finish()
 
 
+## An estimate of how wide `shot_name`'s effect is on screen at 1080p (px), from its world size at
+## `frames` frames in: the ring's front radius at its tween's progress, a puff's mesh and scale.
+func _width_px(shot_name: String, at: Vector3, frames: int) -> int:
+	var bs := _rampage.sim.body_scale()
+	var ring: Dictionary = Content.section("fx")["shockwave"]
+	var grown := clampf((frames - 1) / (60.0 * Num.f(ring["seconds"])), 0.0, 1.0)
+	var reach := Num.f(ring["radius_scale"]) * 1.2
+	var metres := 0.0
+	match shot_name:
+		"ring_stomp":
+			metres = 2.0 * grown * STOMP_RADIUS * bs * reach
+		"ring_tail_sweep":
+			metres = 2.0 * grown * TAIL_REACH * bs
+		"dust_tree_puff":
+			metres = TREE_SIZE * Fx.TREE_PUFF_SCALE * 1.2
+		"dust_footfall":
+			metres = 3.0 * 1.05 * 1.5 * bs * 0.88 + 1.2 * 1.5 * bs  # a puff at this age, and its box
+		"sparks_deflect":
+			metres = 5.5 * bs * 0.465  # the flare's soft core, FWHM of exp(-4 r^2) in its quad
+		_:
+			return 0
+	var cam := root.get_viewport().get_camera_3d()
+	var size := Vector2(root.get_texture().get_image().get_size())
+	var right := cam.global_transform.basis.x * metres * 0.5
+	var a := Kit.image_point(self, cam, at - right, size)
+	var b := Kit.image_point(self, cam, at + right, size)
+	return roundi(absf(b.x - a.x))
+
+
 func _finish() -> void:
+	_points["_px"] = _px
 	var file := FileAccess.open(_out.path_join("points.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(_points))
 	file.close()
@@ -141,6 +181,7 @@ func _shot(shot_name: String, after: int, play: Callable, spot := SPOT) -> void:
 	await _frames(_after if _after > 0 else after)
 	var at := _feet() + spot * _rampage.sim.body_scale()
 	_still(shot_name, at + Vector3.UP * (4.0 if spot == FAR_SPOT else 1.0))
+	_px[shot_name] = _width_px(shot_name, at, _after if _after > 0 else after)
 	await _frames(GAP)
 	for fire: Variant in _city().get("_fires"):  # put out what the shot lit
 		if is_instance_valid(fire):

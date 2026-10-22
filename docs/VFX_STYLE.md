@@ -95,10 +95,12 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
 
 ### 3. Dust: `scenes/fx.gd` (Fx.dust, footfall, puff, dust_line) on `smoke.gdshader`
 - **Defined by:** the smoke shader's puffs in warm grey, one-shot bursts (explosiveness 0.9), growing 0.4 -> 1.6.
-  Cloud ramp `(0.22, 0.24, 0.26, 0.47)` -> transparent; a topple passes the concrete's pale tint; footfalls are
-  thinner and capped (`fx.footfall_dust`).
-- A crushed tree's puff (`Fx.tree_puff`) is the same dust in the soil's tint, as dark as the footfall dust (never
-  brighter than the road at noon, paler at night when the sun is low) and 1.5x the tree's size.
+  Every dust call (cloud, a person's puff, footfall and slam puffs, a tree's soil puff, the ring) is the street's
+  own dust, `Fx.STREET_DUST` `8a6f4e` (`6a5238` at night), drawn in its own colour: `smoke.gdshader`'s `self_lit`
+  moves the colour to emission and rounds the puff to a radial falloff (nothing at the quad's border), so night
+  and noon match and the blue night ambient never tints it. One switch, `Fx.DUST_SELF_LIT`. Footfall puffs: 0.5 s
+  at 0.5 opacity, about 150 px, at the toe, centre clearing off (D-018 does not thin a foot's own dust).
+- A crushed tree's puff (`Fx.tree_puff`) is that dust, 2.4x the tree's size (about 120 px), 0.6 opacity, 0.5 s.
 - **Rule:** every dust puff, cloud or ring of dust uses these calls. Dust is never solid cubes and never a flat sprite.
 
 ### 4. Debris: `scenes/debris_field.gd`, `carve_debris.gd`, `landmark_burst.gd`
@@ -112,7 +114,9 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
   cone, falling (gravity -18), shrinking to nothing; 28 per shell hit; varied lifetimes. Breath strike, armour
   deflect (`cfe6ff`), leap trail and regen motes use it.
 - **Flashes:** `flare.gdshader` (additive camera-facing core + halo + four short rays, `fade` driven) plus a real
-  light (CityView.flash). Muzzle, strike, ready eye flare, deflect.
+  light (CityView.flash). Muzzle, strike, ready eye flare (a gold four-point star on the eyes when the power
+  charges). A deflect is a glance: one round soft white sprite (~60 px core, nothing at the quad's edge, no rays,
+  lifted off the road, 0.12 s, a 1.0 light).
 
 ### 6. Electric / thunder: NOT BUILT
 - D-108/D-112: the croc's signature is Lightning Breath (forked white-hot lightning, never "atomic"), its
@@ -139,9 +143,11 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
   - Per-breath presentation seed (`Seeds.make("breath_bolt", ...)`), tunables in `data/tuning.json` fx.
 
 ### 7. Ability rings and ground marks: `scenes/shockwave.gdshader`, `scenes/fx_decals.gd`, `claw_slash.gd`
-- **Rings:** a soft band of street dust running out and fading (a pale tone `(0.62, 0.58, 0.52)` over a dark
-  street, a dark tone `(0.16, 0.14, 0.12)` over a bright one, picked from the street's own brightness so it reads
-  at night and at noon; peak alpha 0.35, x1.6 for the dark tone, ragged front, no glow): "grounded-monster-film dust, not a UI ring"
+- **Rings:** a ring of street dust (`Fx.STREET_DUST`, unshaded, the same dust as a footfall) with a soil rim,
+  about 35 px, brightest at the leading edge, a fill fading behind it and a small mound at the impact, out over
+  0.55 s; blended by alpha only (peak 0.55), never darkened, multiplied or black: "grounded-monster-film dust,
+  not a UI ring" (Fx.shockwave, tuning `fx.shockwave`). A stomp's ring is 3x its reach (`Fx.STOMP_RING`, about
+  320 px for an adolescent); a tail sweep's ring spreads to the tail's reach (`Fx.shockwave_to`).
   (Fx.shockwave, tuning `fx.shockwave`). A tail sweep's ring spreads to the tail's reach (`Fx.shockwave_to`).
 - **Marks:** projected decals (soot + cracks glowing in a tint, cooling over 60% of their life), never on the kaiju.
   Claw marks: additive unshaded streaks fanning along the rake arc (`claw_fx`).
