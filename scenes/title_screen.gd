@@ -15,14 +15,19 @@ const NOTE_SIZE := 30
 ## The button row: Continue's width and New Kaiju?'s (px at 1080p), the gap between them and the
 ## height of a button.
 const ROW_GAP := 12
-const BUTTON_HEIGHT := 100.0
+## A plate's face is 104 px (9.6% of the screen's height, 208 px at 4K): the rect less its shadow.
+const BUTTON_HEIGHT := 110.0
+## The row starts this far in from the logo's box: where the logo's yellow letters begin (the
+## letter's side bearing), so plates and logo share one left edge (x=128 at 4K).
+const ROW_INSET := 4.0
 ## Continue takes three shares of the row and New Kaiju? one.
 const CONTINUE_SHARE := 3.0
-## The settings gear's side, how far it and the exit button stand from the screen's corner, and
-## the hazard tape along the top edge (the gear stands below it).
+## The settings gear's side, how far it stands below the screen's top and the exit button above
+## the ticker, and the hazard tape along the top edge (the gear stands below it). Both stand the
+## row's margin in from the screen's side.
 const GEAR_SIZE := 76.0
 const CORNER_MARGIN := 60.0
-const EXIT_MARGIN := 40.0
+const EXIT_LIFT := 20.0
 ## The logo's size: its width is the button row's and ends clear of the skyline.
 const LOGO_SIZE := 86
 ## The gap between the logo and the row.
@@ -79,11 +84,14 @@ func _ready() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_col.add_child(title)
 	_buttons = VBoxContainer.new()
-	# The row is exactly as wide as the logo.
-	_buttons.custom_minimum_size = Vector2(title.get_combined_minimum_size().x, 0)
-	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	# The row ends where the logo does and starts at the logo's yellow, ROW_INSET in.
+	var inset := MarginContainer.new()
+	inset.add_theme_constant_override("margin_left", int(ROW_INSET))
+	inset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_col.add_child(inset)
+	_buttons.custom_minimum_size = Vector2(title.get_combined_minimum_size().x - ROW_INSET, 0)
 	_buttons.add_theme_constant_override("separation", 16)
-	_col.add_child(_buttons)
+	inset.add_child(_buttons)
 	_show_main()
 
 
@@ -233,9 +241,10 @@ func _add_corner_buttons() -> void:
 	_gear.custom_minimum_size = Vector2(GEAR_SIZE, GEAR_SIZE)
 	_gear.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	var top := CORNER_MARGIN + TAPE
-	_gear.offset_left = CORNER_MARGIN
+	var side := _col.offset_left + ROW_INSET
+	_gear.offset_left = side
 	_gear.offset_top = top
-	_gear.offset_right = CORNER_MARGIN + GEAR_SIZE
+	_gear.offset_right = side + GEAR_SIZE
 	_gear.offset_bottom = top + GEAR_SIZE
 	var icon := GearIcon.new()
 	icon.color = UiKit.TEXT
@@ -252,8 +261,8 @@ func _add_corner_buttons() -> void:
 	_exit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_exit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_exit.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_exit.offset_right = -EXIT_MARGIN
-	_exit.offset_bottom = -(NewsTicker.HEIGHT + EXIT_MARGIN * 0.5)
+	_exit.offset_right = -(side - HazardBox.PLATE_SHADOW.x)  # the plate's face, not its shadow
+	_exit.offset_bottom = -(NewsTicker.HEIGHT + EXIT_LIFT)
 	_exit.pressed.connect(func() -> void: QuitGame.now(get_tree()))
 	_exit.visible = not OS.has_feature("web")
 	_corners.add_child(_exit)

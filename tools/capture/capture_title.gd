@@ -8,6 +8,7 @@ extends SceneTree
 ## --reveal=<seconds>: the still is taken that long after an explosion that reveals the colossus.
 ## --rest: the still waits until the bay is at rest (no footfall shivering it).
 ## --measure: prints the tower, head and shore pixel numbers (tools/capture/title_measure.gd).
+## --size=3840x2160: grows the window to exactly that (the OS opens a 4K window 63 px short).
 ## --variant=night|dusk picks the title's look (tuning "title" "variants").
 ## --segments: after the clip, plays each sound layer alone for a while (the others' buses muted) so
 ## its level can be measured on the track; prints "segment <layer> from frame N for M frames".
@@ -16,6 +17,8 @@ extends SceneTree
 const AFTER_SHOWN := 1.0  # seconds the city has been fading in before the still
 const MAX_WAIT_MS := 60000
 const MEASURE := preload("res://tools/capture/title_measure.gd")
+## The window's x while capturing: left of every monitor.
+const OFF_SCREEN_X := -12000
 ## The clip's frame rate (--fixed-fps) and the frames the city's fade-in takes before it starts.
 const FPS := 60
 const FADE_FRAMES := 100
@@ -41,6 +44,10 @@ var _frame := 0
 
 
 func _initialize() -> void:
+	# override.cfg's initial_position is ignored on this machine (the window opened at 0,0): move
+	# the window off every monitor at once, then grow it to the asked size (the OS clamps a window's
+	# first size to the work area: 3840x2097, not 3840x2160).
+	DisplayServer.window_set_position(Vector2i(OFF_SCREEN_X, 0))
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
@@ -59,6 +66,9 @@ func _initialize() -> void:
 			_rest = true
 		elif arg == "--measure":
 			_measure = true
+		elif arg.begins_with("--size="):
+			var wh := arg.substr(7)
+			root.size = Vector2i(int(wh.get_slice("x", 0)), int(wh.get_slice("x", 1)))
 		elif arg == "--segments":
 			_segments = true
 		elif arg.begins_with("--clip="):
@@ -112,6 +122,7 @@ func _run() -> void:
 			(backdrops[0] as TitleBackdrop).visible = false
 		if _measure and not backdrops.is_empty():
 			MEASURE.towers_and_head(backdrops[0] as TitleBackdrop, float(root.size.y))
+			MEASURE.plate_clearance(backdrops[0] as TitleBackdrop, float(root.size.y))
 			print("measure frame ", root.size)
 		if _probe_at != Vector2.ZERO and not backdrops.is_empty():
 			_probe(backdrops[0] as TitleBackdrop, _probe_at)

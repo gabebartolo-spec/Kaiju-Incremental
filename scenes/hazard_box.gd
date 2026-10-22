@@ -30,8 +30,11 @@ const RIVET := 3.2
 ## The outline of a plate in focus.
 const FOCUS_OUTLINE := 4.5
 ## A button without the focus pointer needs only this much room between its tape and its text.
-const POINTERLESS_ROOM := 10.0
+const POINTERLESS_ROOM := 16.0
 const SCUFFS := 9
+## Scratches stay in a strip this share of the plate's height along the top and the bottom edge:
+## the label's band (the middle) is clear, so none cross the letters (screen critic round 2).
+const SCUFF_STRIP := 0.16
 ## The focus pointer: a solid triangle this wide, this far in from the right edge, its height a
 ## share of the box's.
 const CHEVRON_WIDTH := 14.0
@@ -290,17 +293,30 @@ func _sheen(item: RID, body: Rect2) -> void:
 
 ## Short light and dark scratches, seeded from the size so a plate never changes between frames.
 func _scuffs(item: RID, body: Rect2) -> void:
+	var lines := scuff_lines(body, _inset())
+	for i: int in lines.size():
+		var colour := Color(1, 1, 1, 0.16) if i % 2 == 0 else Color(0, 0, 0, 0.3)
+		RenderingServer.canvas_item_add_line(item, lines[i][0], lines[i][1], colour, 1.5)
+
+
+## Each scratch's two ends on a plate `body` with `inset` of tape each side: every one inside the
+## strip along the top or the bottom edge (never the label's band), alternating between them.
+static func scuff_lines(body: Rect2, inset: float) -> Array[PackedVector2Array]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(body.size.x) * 7919 + int(body.size.y) * 104729
-	var x0 := body.position.x + _inset() + 10.0
-	var w := body.size.x - 2.0 * _inset() - 20.0
+	var x0 := body.position.x + inset + 10.0
+	var w := body.size.x - 2.0 * inset - 20.0
+	var strip := body.size.y * SCUFF_STRIP
+	var lane_top := body.position.y + PLATE_BEVEL + 1.0
+	var lane_bottom := body.end.y - PLATE_BEVEL - 1.0 - strip
+	var lines: Array[PackedVector2Array] = []
 	for i: int in SCUFFS:
-		var at := Vector2(
-			x0 + rng.randf() * w, body.position.y + 6.0 + rng.randf() * (body.size.y - 12.0)
-		)
-		var along := Vector2(rng.randf_range(10.0, 34.0), rng.randf_range(-4.0, 4.0))
-		var colour := Color(1, 1, 1, 0.16) if i % 2 == 0 else Color(0, 0, 0, 0.3)
-		RenderingServer.canvas_item_add_line(item, at, at + along, colour, 1.5)
+		var lane := lane_top if (i >> 1) % 2 == 0 else lane_bottom
+		var at := Vector2(x0 + rng.randf() * w, lane + rng.randf() * strip)
+		var along := Vector2(rng.randf_range(10.0, 34.0), rng.randf_range(-1.5, 1.5))
+		along.y = clampf(at.y + along.y, lane, lane + strip) - at.y
+		lines.append(PackedVector2Array([at, at + along]))
+	return lines
 
 
 func _rivets(item: RID, body: Rect2) -> void:

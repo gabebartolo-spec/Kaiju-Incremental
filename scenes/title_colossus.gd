@@ -101,6 +101,11 @@ func _card_sprite() -> MeshInstance3D:
 	var light: Array = _cfg["rim_light"]
 	_body.set_shader_parameter("rim_light", Vector2(Num.f(light[0]), Num.f(light[1])).normalized())
 	_body.set_shader_parameter("rim_min", Num.f(_cfg["rim_min"]))
+	var crown: Dictionary = _cfg["crown"]
+	_body.set_shader_parameter("crown_colour", Color(str(crown["colour"])))
+	_body.set_shader_parameter("crown_px", Num.f(crown["px"]))
+	_body.set_shader_parameter("crown_strength", Num.f(crown["strength"]))
+	_body.set_shader_parameter("crown_extent", Num.f(crown["extent"]))
 	_body.set_shader_parameter("smog", Num.f(_cfg["smog"]))
 	_body.set_shader_parameter("smog_tail", Num.f(_cfg["smog_tail"]))
 	_body.set_shader_parameter("noise_tex", TitleSkySmoke.noise_texture())

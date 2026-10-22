@@ -16,6 +16,7 @@ const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
+const SUPERTALL := 1.8  # a far tower that is a supertall stands this many times taller
 ## A capped far shore (cfg far_tower_cap, the title's) keeps its towers this share of the cap or
 ## more, the share rippling along x so the capped ones are not all one height.
 const CAP_LOW := 0.88
@@ -196,8 +197,7 @@ func _far_shore() -> void:
 			var d := _rng.randf_range(8.0, 20.0)
 			var tall := lerpf(8.0, 70.0, pow(downtown, 1.5)) * _rng.randf_range(0.5, 1.4)
 			tall = maxf(tall, 6.0)
-			if _rng.randf() < downtown * 0.15:
-				tall *= 1.8  # a supertall
+			tall *= SUPERTALL if _rng.randf() < downtown * 0.15 else 1.0
 			tall = _capped(tall, x)
 			var at := Vector3(
 				x + _rng.randf_range(-4.0, 4.0), tall * 0.5, shore - 12.0 - r * 26.0 - d * 0.5

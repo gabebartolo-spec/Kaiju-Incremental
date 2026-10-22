@@ -14,6 +14,13 @@ uniform float rim_strength = 1.4;
 // rest only a little (rim_min), so the body is not outlined all round.
 uniform vec2 rim_light = vec2(-0.3, 0.95);
 uniform float rim_min = 0.1;
+// The crown (D-158 fix): a crisp warm line, crown_px screen px thick at 2160 rows, along the skull
+// and snout's top edge only (uv x under crown_extent, edges with air above), so the head clears
+// the smoke behind it instead of melting into it.
+uniform vec3 crown_colour : source_color = vec3(1.0, 0.72, 0.4);
+uniform float crown_px = 2.5;
+uniform float crown_strength = 1.0;
+uniform float crown_extent = 0.34;
 uniform vec3 body_colour : source_color = vec3(0.02, 0.012, 0.014);
 // Smoke drifting in front of it: how much of the body the smog eats, more toward the feet and the
 // tail than at the spines, shoulders and head (0 solid .. 1).
@@ -56,6 +63,15 @@ void fragment() {
 	float low = smoothstep(0.55, 0.1, top);
 	float along = smoothstep(0.3, 0.95, UV.x);
 	float eaten = clamp(smog * (0.35 * patch + 0.85 * low) + smog_tail * along, 0.0, 0.92);
+	vec2 reach = fwidth(UV) * crown_px * VIEWPORT_SIZE.y / 2160.0;
+	float open = 0.0;
+	for (int i = 0; i < 5; i++) {
+		float ang = radians(30.0 + float(i) * 30.0);
+		open += 1.0 - texture(body, UV + vec2(cos(ang), -sin(ang)) * reach).a;
+	}
+	float head = smoothstep(crown_extent, crown_extent - 0.05, UV.x);
+	float crown = clamp(smoothstep(0.5, 0.9, a) * smoothstep(0.2, 0.6, open * 0.2) * head * crown_strength, 0.0, 1.0);
 	ALBEDO = mix(body_colour, rim_colour, clamp(rim * (1.0 - 0.85 * patch), 0.0, 1.0));
+	ALBEDO = mix(ALBEDO, crown_colour, crown * (1.0 - 0.5 * patch));
 	ALPHA = a * amount * (1.0 - eaten * 0.9);
 }

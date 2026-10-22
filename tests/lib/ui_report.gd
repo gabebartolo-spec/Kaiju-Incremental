@@ -39,16 +39,24 @@ func _reader_flags_bad_reports() -> void:
 	for key: String in cases:
 		var row: Array = cases[key]
 		var text := "\n".join(UiFeedback.problems(_path(key), typed))
-		check.call(text.contains(str(row[1])), "planted '%s' is flagged (%s): %s" % [key, row[1], text])
+		check.call(
+			text.contains(str(row[1])), "planted '%s' is flagged (%s): %s" % [key, row[1], text]
+		)
 	_wipe(PLANT_ROOT)
 
 
 func _report_text_and_folders() -> void:
 	var details := {"City": "stage 1 of 3, map seed 0"}
 	var text := FeedbackReport.compose("it crashed", details, "2026-10-23T10:00:00")
-	check.call(text.split("\n")[0] == "Version: " + FeedbackReport.version(), "the version is line one")
-	check.call(text.contains("City: stage 1 of 3") and text.contains("it crashed"), "facts and text")
-	check.call(FeedbackReport.compose("  ", details, "t").contains("(nothing)"), "an empty box says so")
+	check.call(
+		text.split("\n")[0] == "Version: " + FeedbackReport.version(), "the version is line one"
+	)
+	check.call(
+		text.contains("City: stage 1 of 3") and text.contains("it crashed"), "facts and text"
+	)
+	check.call(
+		FeedbackReport.compose("  ", details, "t").contains("(nothing)"), "an empty box says so"
+	)
 	var first := FeedbackReport.write("a", details, null, "2026-10-23T10:00:01")
 	var second := FeedbackReport.write("b", details, null, "2026-10-23T10:00:01")
 	var both_ok: bool = first["ok"] and second["ok"]

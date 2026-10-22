@@ -12,6 +12,10 @@ const SUMMARY := "Reptilian, 7 rampages"
 ## The ticker along the bottom edge, and how far the corner buttons may stand from the screen's.
 const TICKER := 56.0
 const CORNER_MAX := 120.0
+## Room each side of a label (px at 1080p; 28 at 4K) and the tape bands on a plate (two).
+const LABEL_ROOM := 14.0
+const NEWLINE := "\n"
+const PLATE_BANDS := 2.0
 
 var t: SceneTree
 var check: Callable
@@ -131,9 +135,11 @@ func _with_save() -> void:
 	await t.process_frame
 
 
-## The screen critic's fixes (2026-10-23): the row is exactly the logo's width (Continue about three
-## quarters of it), the Continue plate 9% of the screen's height or more, the gear's left edge on
-## the column's, no focus pointer and no fine inner frame on the plates.
+## The screen critic's fixes (2026-10-23, rounds 1 and 2): the row ends where the logo does and
+## starts at its yellow (ROW_INSET in), Continue about 70% of it, the Continue plate's face 100 px
+## (200 px at 4K, 9% of the height) or more, the gear's left edge on the column's and the exit's
+## right margin the same, 14 px (28 at 4K) or more round each label, no scratches in the label's
+## band, no focus pointer and no fine inner frame on the plates.
 func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	var logo: Label
 	for found: Node in title.find_children("*", "Label", true, false):
@@ -141,26 +147,70 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 			logo = found as Label
 	var row := fr.end.x - cr.position.x
 	check.call(
-		logo != null and absf(row - logo.get_combined_minimum_size().x) <= 2.0,
 		(
-			"the button row is exactly the logo's width (%d vs %d)"
-			% [row, logo.get_combined_minimum_size().x if logo else 0]
+			logo != null
+			and absf(row + TitleScreen.ROW_INSET - logo.get_combined_minimum_size().x) <= 2.0
+		),
+		(
+			"the button row ends where the logo does, inset to its yellow (%d + %d vs %d)"
+			% [row, TitleScreen.ROW_INSET, logo.get_combined_minimum_size().x if logo else 0]
 		)
 	)
 	var share := cr.size.x / row
 	check.call(share >= 0.65 and share <= 0.8, "Continue takes about 3/4 of the row (%.2f)" % share)
+	var face := cr.size.y - HazardBox.PLATE_SHADOW.y
 	check.call(
-		cr.size.y >= CANVAS.y * 0.09,
-		"the Continue plate is 9%% of the height or more (%d)" % cr.size.y
+		face >= CANVAS.y * 0.0925 and face <= CANVAS.y * 0.1,
+		"the Continue plate's face is 9-10%% of the height, 200 px or more at 4K (%d)" % face
 	)
 	check.call(
 		absf(gr.position.x - cr.position.x) <= 1.5,
 		"the gear's left edge is on the column's (%d vs %d)" % [gr.position.x, cr.position.x]
 	)
+	var exit := _button(title, "RUN FOR YOUR LIFE")
+	var margin := CANVAS.x - (exit.get_global_rect().end.x - HazardBox.PLATE_SHADOW.x)
+	check.call(
+		absf(margin - cr.position.x) <= 1.5,
+		"the exit's right margin is the row's left one (%d vs %d)" % [margin, cr.position.x]
+	)
+	_label_room([_button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
+	var lines := HazardBox.scuff_lines(Rect2(0, 0, 400, cr.size.y), 22.0)
+	var strip := cr.size.y * HazardBox.SCUFF_STRIP + HazardBox.PLATE_BEVEL + 1.0
+	var crossing := lines.filter(
+		func(l: PackedVector2Array) -> bool:
+			return (
+				(l[0].y > strip and l[0].y < cr.size.y - strip)
+				or (l[1].y > strip and l[1].y < cr.size.y - strip)
+			)
+	)
+	check.call(
+		lines.size() == HazardBox.SCUFFS and crossing.is_empty(),
+		(
+			"no scratch reaches the label's band of a plate (%d of %d cross)"
+			% [crossing.size(), lines.size()]
+		)
+	)
 	var focus := (_button(title, "CONTINUE")).get_theme_stylebox("focus") as HazardBox
 	check.call(
 		not focus.chevron, "the title's Continue plate has no focus pointer to crowd its frame"
 	)
+
+
+## Each plate leaves 14 px (28 at 4K) or more between its tape and its widest label line.
+func _label_room(buttons: Array) -> void:
+	var tight: Array[String] = []
+	for found: Variant in buttons:
+		var b: Button = found
+		var box := b.get_theme_stylebox("normal") as HazardBox
+		var font := b.get_theme_font("font")
+		var size := b.get_theme_font_size("font_size")
+		var widest := 0.0
+		for line: String in b.text.split(NEWLINE):
+			widest = maxf(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x)
+		var room := (b.size.x - PLATE_BANDS * box.band_size - widest) / 2.0
+		if room < LABEL_ROOM:
+			tight.append("%s %.1f px" % [b.text, room])
+	check.call(tight.is_empty(), "every title label has 14 px or more each side: %s" % [tight])
 
 
 func _without_save() -> void:
