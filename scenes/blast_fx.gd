@@ -216,7 +216,7 @@ func _sound(kind: String, at: Vector3) -> void:
 	var ear := _sfx.listener.global_position if is_instance_valid(_sfx.listener) else at
 	var far := ear.distance_to(at)
 	var small := 0.0 if kind == "fuel_silo" else Num.f(s["small_db"])
-	_sfx.play_at("blast_crack", at, small)  # the blast's one hit, however far (round 6)
+	_sfx.play("blast_crack", Num.f(s["crack_db"]))  # each blast's one hit, loud at any distance
 	_sfx.play_at("blast_body", at, small + Num.f(s["tail_db"]))
 	_sfx.play_at("blast_rumble", at, small + Num.f(s["tail_db"]))
 	if far >= Num.f(s["boom_from"]):
