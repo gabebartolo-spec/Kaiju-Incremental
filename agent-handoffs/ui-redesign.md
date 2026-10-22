@@ -20,17 +20,20 @@ Director rulings: left menu column (logo above buttons), still camera, scene fro
 footfall audio, fire = ragged flames out of windows with heavy smoke (not candles), occasional explosions reveal the
 reptilian colossus silhouette; no music. Poster reference: kaiju towering over skyline, orange fire glow, smoke sky.
 
-## State 2026-10-23 03:00: PR #160 open (claude/ui-title-menu -> claude/ui-redesign history ported), suites green
-Worktree ../Kaiju-Incremental-wt/ui-pr is the live one now (ui-redesign = dead lineage, 121 conflicts with look-options).
-Title: scenes/title_{backdrop,fires,shore,colossus,sky_smoke,burning_windows,ledge}, far_fire.gd = game Fire at zoom (fire.gd
-far dict), facade.gdshaderinc `blackout`, tuning title.*; bake: tools/capture/bake_colossus.gd (yaw 60, closes alpha pinholes,
-prints the eye uv); captures: capture_title (--reveal=s, --rest, --variant=dusk, --clip=s, --probe, --hide-3d), capture_boot,
-capture_fire_compare. Menu: title_screen.gd (gear, row, exit), HazardBox.plated + UiKit.button = plates, tests/lib/ui_title.gd.
-OPEN: PR merge waits on the VFX lead's SHIP (fire, Colossus, water) and a fresh screen-critic PASS on the menu; Colossus
-height/camera-tilt is the VFX lead's call (head ~1.8x the right towers now). Queue after (lead's word first): HUD ring capture,
-boot cut (engine+autoloads 7.8 s before any script on a loaded machine).
-Lessons: GPU sin() hash noise gives block artefacts (use a noise texture / sin-free hash); a ported branch needs
-`git diff --binary base..tip | git apply --3way` when look-options was squashed; complexity ratchet + tuning_keys run on CI.
+## State 2026-10-23 02:40: PR #160 (claude/ui-title-menu), D-158 option C + critic round 2 in flight
+Worktree ../Kaiju-Incremental-wt/ui-pr (ui-redesign = dead lineage). Merged look-options (feedback button, Are-you-sure, 0.1-demo
+kept beside my pause menu: END RAMPAGE + "You keep the biomass" note; tests/lib/ui_report.gd holds the base's report checks).
+Code done (commits 696cf071, d2663e6e, 4ff8f15f): camera look y 38.1 (tilt ~7.5 deg), colossus card 185 m, shore.ledge_depth 26 (the tilt
+alone does not thin the water band, it moves it down: the deeper ledge lifts the rail), title.tower_cap 90 (city.far_tower_cap, one
+value; CitySkyline._capped), menu: BUTTON_HEIGHT 110 (face 104 = 208 px at 4K), ROW_INSET 4, POINTERLESS_ROOM 16, scratches only in the
+top/bottom 16% strips (HazardBox.scuff_lines), exit right margin = row left margin, colossus.crown (shader warm 2.5 px rim on the
+skull and snout top, VFX lead's fix). tools/capture/title_measure.gd prints tower/head/shore/plate clearance (--measure).
+TODO after the Godot ban (director: none until 02:57): ui suite only (no full suite on this PC), captures at --size=3840x2160 into
+final_rest/final_reveal/final_dusk + head_2x + buttons_crop + clip12 (6 s), tune tower_cap/tilt to head 1.5-2x tower, check plate
+clearance >= 100 px (raise COLUMN_TOP by <= 15 if not), push, PR body, report to lead (lead relays to the VFX lead for SHIP).
+Lessons: override.cfg initial_position is ignored here (window opened at 0,0): capture_title moves it to x=-12000 in _initialize and
+--size=WxH grows it (a 4K window opens 63 px short: 3840x2097). A python heredoc turns "
+" into a real newline: use an Edit.
 
 ## Rules and tooling
 Scratch S = AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/
