@@ -23,6 +23,8 @@ var _blob_share: float
 var _halo_main := ShaderMaterial.new()
 var _core_main := ShaderMaterial.new()
 var _halo_branch := ShaderMaterial.new()
+var _halo_arc := ShaderMaterial.new()
+var _core_arc := ShaderMaterial.new()
 var _core_branch := ShaderMaterial.new()
 
 
@@ -36,7 +38,7 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var colours := halo_colours(cfg, eye)
 	_halo_boost = halo_boost(cfg)
-	for mat: ShaderMaterial in [_halo_main, _halo_branch]:
+	for mat: ShaderMaterial in [_halo_main, _halo_branch, _halo_arc]:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", colours[0])
 		mat.set_shader_parameter("fringe", colours[1])
@@ -47,7 +49,7 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["alpha"]))
 		mat.set_shader_parameter("max_px", Num.f(cfg["halo_max_px"]))
 		mat.render_priority = 1
-	for mat: ShaderMaterial in [_core_main, _core_branch]:
+	for mat: ShaderMaterial in [_core_main, _core_branch, _core_arc]:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", CORE_COLOUR)
 		mat.set_shader_parameter("fringe", colours[0])
@@ -60,6 +62,7 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.render_priority = 2  # drawn after the glows, so its dark rim keeps it readable in them
 	for mat: ShaderMaterial in all_materials():
 		mat.set_shader_parameter("rim_tint", Color(str(cfg["rim"]["tint"])))
+		mat.set_shader_parameter("soft", Num.f(cfg["bolt_soft"]))
 		mat.set_shader_parameter("wobble", Num.f(cfg["wobble"]))
 		mat.set_shader_parameter("wobble_hz", Num.f(cfg["wobble_hz"]))
 		mat.set_shader_parameter("level", 0.0)
@@ -87,11 +90,13 @@ static func halo_boost(cfg: Dictionary) -> float:
 
 ## Every material this bolt draws with (a ShaderKeep holds them so none compiles mid-rampage).
 func all_materials() -> Array[ShaderMaterial]:
-	return [_halo_main, _core_main, _halo_branch, _core_branch]
+	return [_halo_main, _core_main, _halo_branch, _core_branch, _halo_arc, _core_arc]
 
 
-## The brightness (0..1) of the main channel and of the branches.
-func set_levels(main: float, branch: float) -> void:
+## The brightness (0..1) of the main channel, of the branches and of the charge-up arcs.
+func set_levels(main: float, branch: float, arc: float) -> void:
+	for mat: ShaderMaterial in [_halo_arc, _core_arc]:
+		mat.set_shader_parameter("level", arc)
 	for mat: ShaderMaterial in [_halo_main, _core_main]:
 		mat.set_shader_parameter("level", main)
 	for mat: ShaderMaterial in [_halo_branch, _core_branch]:
@@ -100,22 +105,27 @@ func set_levels(main: float, branch: float) -> void:
 
 ## The colour multiplier for the next frames (the signature's power brightens the bolt).
 func set_power(boost_core: float, boost_halo: float) -> void:
-	for mat: ShaderMaterial in [_core_main, _core_branch]:
+	for mat: ShaderMaterial in [_core_main, _core_branch, _core_arc]:
 		mat.set_shader_parameter("boost", boost_core)
-	for mat: ShaderMaterial in [_halo_main, _halo_branch]:
+	for mat: ShaderMaterial in [_halo_main, _halo_branch, _halo_arc]:
 		mat.set_shader_parameter("boost", boost_halo * _halo_boost)
 
 
-## Redraws the bolt: `main` (world points) and `branches` (each a world polyline), the branches at
-## `branch_width` of the main channel's width and fading toward their tips.
+## Redraws the bolt: `main` (world points), `branches` and `arcs` (each a world polyline), the
+## branches at widths.x and the arcs at widths.y of the main channel's width, fading to their tips.
 func rebuild(
-	main: PackedVector3Array, branches: Array[PackedVector3Array], branch_width: float
+	main: PackedVector3Array,
+	branches: Array[PackedVector3Array],
+	arcs: Array[PackedVector3Array],
+	widths: Vector2
 ) -> void:
 	_mesh.clear_surfaces()
 	_surface(_halo_main, [main], 1.0, 0.7)
 	_surface(_core_main, [main], 1.0, 0.7)
-	_surface(_halo_branch, branches, branch_width, _branch_tip)
-	_surface(_core_branch, branches, branch_width, _branch_tip)
+	_surface(_halo_branch, branches, widths.x, _branch_tip)
+	_surface(_core_branch, branches, widths.x, _branch_tip)
+	_surface(_halo_arc, arcs, widths.y, _branch_tip)
+	_surface(_core_arc, arcs, widths.y, _branch_tip)
 
 
 func hide_all() -> void:
@@ -158,7 +168,7 @@ func _quad(line: PackedVector3Array, i: int, width: float, tip: float) -> void:
 
 ## Whether `mat` is one of the glows (the halo strips): only they get blobs, the core stays a line.
 func _glows(mat: ShaderMaterial) -> bool:
-	return mat == _halo_main or mat == _halo_branch
+	return mat == _halo_main or mat == _halo_branch or mat == _halo_arc
 
 
 ## A round camera-facing blob on a point of the line (UV = the quad's corner, COLOR.b = 1).
