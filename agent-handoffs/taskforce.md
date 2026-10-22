@@ -1,10 +1,10 @@
 # Taskforce handoff (PR 1, sim core, agents only), 2026-10-23
-## State: working (PR #161: fringe wired + gate switch pushed, UNTESTED: no Godot until 02:57; then run suites)
+## State: working (PR #161: D-160/D-161 + review fixes pushed f0038e2b, UNTESTED: no Godot until 03:28)
 ## Task
 Anti Kaiju Taskforce PR 1 (sim core, agents only). Serves ROADMAP "Your adversaries", M2, D-137/139/141/143/145/152.
 Lead: session "Status check". Next after this: PR 3 kills (swat, perch-collapse fall), PR 4 frost grenades.
 ## Branch and commit
-PR https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/161, head 6787982b (after bd72e4a5), base claude/look-options. Local
+PR https://github.com/gabebartolo-spec/Kaiju-Incremental/pull/161, head f0038e2b, base claude/look-options. Local
 branch claude/taskforce-core-ee770a pushed to origin claude/taskforce-core. Tree clean.
 ## What changed this session
 - The 4 failures were: tests walking sideways into walls / needing a turn (fixed with `_face_free_way`, a body-clear
@@ -22,9 +22,15 @@ branch claude/taskforce-core-ee770a pushed to origin claude/taskforce-core. Tree
 Taskforce suite: 10 of 10 functions, 55 checks, 0 failures (own APPDATA, ~7 min). Planted defects shown failing:
 lock 0, perch_fallback 0, rubble_share 0.5, share 0, old dash rule. military 15 checks and flow 206 checks also pass.
 ## Unfinished
-After 02:57 (director: no Godot until then; no full suite locally, CI runs it): run taskforce, military, flow, postfx
-suites via tools/run_tests.sh --quick, fix kaiju-sim-review items when they land on PR 161, push, reply new head to lead.
-Check PR CI (gdlint was red on the old head for line length; fixed in 6787982b).
+- After 03:28 run ONLY: taskforce, taskforce_gate (new), military, flow, postfx, sim_play (save) via
+  tools/run_tests.sh --quick; fix failures (all new code is unrun); push; reply head to lead.
+- D-160 done in code: `first_arrival` {city_seconds 180, run_delay 6}; save key `city_seconds` (default 0, in
+  SaveFile.migrate/new_save, no version bump); Rampage.setup(..., city_seconds) sets taskforce.carried; result()
+  has "city_seconds" and "agents"; main.gd saves it. D-161: armour subtracts like tank shells (min_damage floor).
+- Review items 1,3,6,7 done (fringe restarts on every hit, magic numbers in data, tests in run_taskforce_gate_tests.gd,
+  postfx 2-hit check). NOT done: review 4 (perch on the highest standing chunk) and 5 (swat reach): wait for the
+  reviewer's probe numbers from the lead; post_fx.gd event-routing test; Content.section vs tuning (small).
+- Planted-defect demos still owed for the new gate checks (e.g. carried = need - 1 must fail the "joins" check).
 ## Open risks / questions for the lead
 - "Agents first appear a few minutes into the adolescent city": sim has no cross-run clock; kept per-run gates
   (after_chunks 150, first_delay 6 s). Needs a ruling if a rampage-count gate is wanted.
