@@ -20,21 +20,29 @@ Director rulings: left menu column (logo above buttons), still camera, scene fro
 footfall audio, fire = ragged flames out of windows with heavy smoke (not candles), occasional explosions reveal the
 reptilian colossus silhouette; no music. Poster reference: kaiju towering over skyline, orange fire glow, smoke sky.
 
-## State 2026-10-23 04:50: PR #160 (claude/ui-title-menu), D-158 option C + critic round 2; head c7b0887b + local fixes
-Worktree ../Kaiju-Incremental-wt/ui-pr (ui-redesign = dead lineage). Base merged three times (feedback button, Are-you-sure, 0.1-demo,
-time of day, director cleanup {beam}); settings screen = the base's (inline controls) with my plates: HazardBox.trim_height keeps BACK on
-the 4K TV at 125% with the demo off (the flow suite turns the demo off: one more control row than a bare probe sees).
-Option C is in data: camera.look y 38.1 (tilt 7.5 deg), colossus.height 185, title.tower_cap 90 (soft knee, city.far_tower_cap, 0 = off),
-shore.ledge_depth 26.5 (a tilt alone moves the water band down; the deeper ledge thins it 476 -> ~316 px), colossus.crown (warm 2.5 px
-rim, skull and snout top). Menu: BUTTON_HEIGHT 110 (face 104 = 208 px at 4K), ROW_INSET 7 (plate outline on the logo's ink, 132 px at
-4K), POINTERLESS_ROOM 16, scratches in the top/bottom 16% strips only, exit margin = row margin. title_measure.gd (--measure) prints
-tower/head/shore/band/plate clearance; capture_title --size=3840x2160 grows the window once it is up and moves it to x=-12000.
-OPEN: stills (rest, reveal, dusk, head 2x, buttons crop, 6 s clip) not taken yet: the focus guard blocks windowed runs while the director
-plays fullscreen (guard only sees a visible launch in the command text: run captures inline, never hide them in a script). Probe
-2026-10-23: a window opens at 0,0 for ~0.6 s even with --position; use --resolution 320x180 then --size. engine_slot.sh before every run.
-Lessons: a stale log file made me read an old pass (rm the log first); flow suite differs from a bare probe (demo off); override.cfg
-initial_position is ignored here; a python heredoc turns "
-" into a real newline: use an Edit.
+## State 2026-10-23 05:10: PR #160 (claude/ui-title-menu), D-158 option C + critic round 2 DONE, waiting on SHIP / PASS
+Worktree ../Kaiju-Incremental-wt/ui-pr (ui-redesign = dead lineage). Base merged four times (#155 post-fx, #158 feedback + Are-you-sure +
+0.1-demo, #156 time of day, #162 cleanup); settings = the base's inline controls with my plates, trimmed (HazardBox.trim_height) so BACK fits
+the 4K TV at 125% (the flow suite turns the demo off: one more control row than a bare probe sees).
+Option C is data: camera.look y 38.1 (7.5 deg), colossus.height 185, title.tower_cap 90 (soft knee; TitleBackdrop copies it to
+city.far_tower_cap, 0 = off), shore.ledge_depth 26.5 (a tilt alone moves the water band down: 476 -> 502 px; the deeper ledge gives 319),
+colossus.crown (warm 2.5 px rim on skull/snout top). Menu: BUTTON_HEIGHT 110 (face 208 px at 4K), ROW_INSET 6 (plate edge x=128, logo ink 127),
+POINTERLESS_ROOM 16 + shadow on the right (label 35/35 px), scratches in the top/bottom 16% strips, exit margin = row margin.
+Measured (4K): head 1386 px above the shore vs tallest central tower 832 px = 1.67x; band 319; plate clearance 143.6 px.
+Suites at 05:08: ui 150 checks 0 failures (planted-defect run: 4 new checks FAIL by name), flow 225 checks 0 failures at 1b7299ec.
+Stills: scratchpad final_rest|final_reveal|final_dusk/title.png, final_reveal/head_2x.png, buttons_crop.png (one run: capture_title --all
+--measure --size=3840x2160). No new clip (lead: minimum captures).
+NEXT (lead's word first): HUD ring capture, boot cut (engine+autoloads 7.8 s before any script).
+WINDOW FLAGS TRIED (a windowed run still flashes ~0.6 s at 0,0; a later fix starts here). Probe: winwatch.ps1 (EnumWindows class Engine,
+SetProcessDPIAware, 8 ms) + a 320x180 run. Ignored: override.cfg initial_position(_type) -20000; `--position -12000,0` (window first seen at
+0,0, vis True 414 ms, moved at 1051 ms); `--borderless` (no effect on the 63 px clamp). Works: DisplayServer.window_set_position(-12000,0) in
+_initialize (after the flash); root.size = 3840x2160 two ticks after the window is up. Not tried: window mode minimised (Godot skips drawing),
+a launch with STARTUPINFO SW_HIDE, a transparent window, rendering into a SubViewport with --no-window (not in the 4.7 binary), movie clips
+(need the final size at launch: 1080p flash). Focus guard (hooks/focus-guard.py) only sees a launch written in the command text and blocks
+when ~/.claude/focus-pause exists and the foreground window is fullscreen: run captures inline, never hide them in a script.
+Lessons: rm a log before waiting on it (a stale file made me read an old pass); a bare probe can differ from the suite (demo off); a python
+heredoc turns "\n" into a real newline: use an Edit; check a new check by planting the old behaviour (scripts/mutate_run.sh pattern: sed,
+run, git checkout) and make it read its own number, not the code's constant.
 
 ## Rules and tooling
 Scratch S = AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/
