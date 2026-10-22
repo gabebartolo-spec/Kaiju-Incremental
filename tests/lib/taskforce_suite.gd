@@ -89,6 +89,15 @@ func _types(events: Array[Dictionary]) -> Array[String]:
 	return out
 
 
+## The railgun_aim events in `events` that this agent fired (the squad's other agents aim on their
+## own cooldowns; in the wider adolescent city their roofs are in range too).
+func _aims_by(events: Array[Dictionary], agent_id: int) -> Array[Dictionary]:
+	return events.filter(
+		func(e: Dictionary) -> bool:
+			return str(e["type"]) == "railgun_aim" and Num.i(e["agent"]) == agent_id
+	)
+
+
 func _first(events: Array[Dictionary], type: String) -> Dictionary:
 	for event: Dictionary in events:
 		if str(event["type"]) == type:
