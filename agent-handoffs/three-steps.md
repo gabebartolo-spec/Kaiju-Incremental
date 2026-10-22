@@ -6,7 +6,7 @@ Lead opens/reads the PR; I push. Godot = Desktop\Godot_v4.7.2...console.exe (no 
 - Merged origin/claude/look-options (fire spread #152, turning #149) into the branch; conflicts in upgrades.json (r_beam now evolve2,
   fire nodes kept) and run_military_tests.gd (took origin's RAMPAGE_SEEDS version, header comment only).
 - Post-merge touched-suite run: scratchpad full7.txt (fire military powers growth street city sim empty_space flow).
-- After-pacing (reptilian, --verbose, timeout 13000 s) running -> scratchpad pace_after_rept.txt. Before: pace_before_rept.txt.
+- After-pacing: HELD until the lead says go (2 h engine job; scratchpad pace_after_rept.txt is a partial 17-run file). Before (old cities, reptilian, 400 runs, 3.30 h to the last unlock): young 0.12 h, Behemoth 0.90 h, Colossus 1.83 h, Apex Titan 0.46 h (evolve1 0.12 h, evolve2 1.02 h, evolve3 2.85 h, r_beam 2.95 h).
 - Not run on purpose: frame-time before/after (CPU at 100%, numbers are noise; one 4K pair gave gpu avg 43.8 vs 43.6 ms but
   CPU-contended, 80 vs 109 frames); full suite (GitHub does it; a pre-merge full run was green, 25 suites).
 
@@ -29,3 +29,18 @@ Lead opens/reads the PR; I push. Godot = Desktop\Godot_v4.7.2...console.exe (no 
 - Not exercised: topple/swipe fixtures pick a shed when no tier-2 tower is in the arena; a real tall tower fails 'nothing inside the
   body' at seeds 3, 8, 22 (8-102 chunks); pre-existing, handed to the VFX lead's collapse item. Seed 108 (stage 1) leaves one bare
   cell at a bridge crossing. Frame time before/after skipped (noise). 
+
+## Army contact after wider cities (PR note; probe = 12 seeds, 40 s autoplay, old rings vs new, same code)
+- Cause: army tank entry. Young: arena 52.5 + entry_depth 10 = 62.5 > army.spawn_radius 60, so entries flipped from the city edge
+  (old 54.5 <= 60) to "round the kaiju"; Behemoth/Colossus: fewer tanks reach range. Data fix only: growth.stages[].army.spawn_radius
+  64 / 52 / 57 (young / Behemoth / Colossus); no speed or damage change.
+- Old rings | new, row off | new, row on  (contact seeds of 12, tanks that reach range, mean share of tank-steps in range)
+  young    2, 3, 0.28%  | 0, 0, 0.00%  | 3, 3, 0.29%
+  Behemoth 9, 20, 3.39% | 7, 9, 1.72%  | 10, 18, 3.32%   (r52)
+  Colossus 12, 32, 1.45%| 7, 12, 1.00% | 10, 19, 1.55%   (r57; r48 gave 2.45%, r56 1.92%, r58 1.12%)
+- Military fixture: RAMPAGE_SEEDS 3,6,9 -> 2,3,11 (MIN_PARKED_IN_RANGE and the 95% band unchanged). On today's base the OLD rings
+  already park 0/51/0 on seeds 3,6,9 (other merges since turn-step changed parking), so that count was not a three-steps regression.
+  Military then: parked in band 100% of 21, driving skewed 0 of 23703.
+- Driving-hull check: with Colossus r48 the check saw 3 of 23790 tank-steps past 10 deg (tier 3 seed 3, tank 3, hull turning
+  6 deg a step at the south ring avenue z ~150.2, the plan edge; on a road, no rubble there). Not reproduced at r57/r58; root cause not
+  found (a tank turning while moving at a junction on the plan edge); bar not widened.
