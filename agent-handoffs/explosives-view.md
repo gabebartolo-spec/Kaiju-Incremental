@@ -17,6 +17,22 @@ side-session-notes/local_df2c2989-951e-4b20-9998-9c23b0a37f42/explosives-view/ha
 - 2x crops judged: solid orange lit cubes with correct depth (trees cover them), yellow-green gas cubes, kaiju
   clear of the blast. Fireball saturation ~0.80 under AgX (lead accepted).
 
+## Round 6 (clip critic FIX, 2026-10-22): code committed 2b099979, suite + final clip pending
+- Fireball 2-3x footprint (spread 1.5, speed 2.6, top 2.0, 520 cubes of 0.34), spawns over 0.08 s and grows in
+  (size_curve), holds orange to 0.45 of 2.2 s then settles over ~0.6 s; measured orange bbox ~300x165 (first
+  blast) to ~430x270 px at 1080p (was ~115x80), fade 62k -> 2k orange px over 36 frames (was 8).
+- BlastFlash (scenes/blast_flash.gd): white sheet under the HUD, alpha 0.3 (x0.75 for small blasts), 0.05 s;
+  measured mean luminance +16 / +21 / +15 on the three blasts' first frame, back to normal in 3 frames.
+- Camera: ONE kick (BlastFx.jitter), up and away from the blast, squared ease-out over 0.15 s, x camera-motion
+  setting; measured shift peaks ~17 px and decays monotonically over ~9 frames per blast (30 frames, 3 blasts).
+  Firework bursts no longer kick.
+- Removed: screen ripple (blast_ripple.gdshader, BlastShock.ripple) and the hit-stop (BlastFx.hold, Rampage).
+- Audio: every blast cracks once at any distance (crack_within gone), body/rumble tail_db -4; blast sounds in the
+  hero "explosion" voice category (cap 8) so a chained blast's crack is never dropped.
+- Tools: scratchpad xfix/render.sh <tag> (render + cut + measure), xfix/measure2.py (luminance, orange bbox, camera
+  shift). Do not export APPDATA for python (user site-packages live there).
+- Not changed: the still stretch between chained blasts (fuse 0.35 s is a sim value); fireball cubes settle by 1 s.
+
 ## Rebase notes (what differs from the old branch)
 - Base added CameraShake (rotation trauma). The blasts keep their own aim jitter on top: BlastFx.jitter() scaled
   by the camera-motion setting, applied in Rampage._place_camera. Routing blasts through CameraShake.add_trauma
