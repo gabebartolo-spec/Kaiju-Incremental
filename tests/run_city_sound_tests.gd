@@ -204,7 +204,8 @@ func _check_music_stems_locked() -> void:
 				% [row["id"], MusicLayers.lock_error(streams, row)]
 			)
 		)
-		var first: float = (streams[0] as AudioStream).get_length()
+		var lead: AudioStream = streams[0]
+		var first := lead.get_length()
 		var same := true
 		for s: AudioStream in streams:
 			same = (
@@ -231,7 +232,8 @@ func _check_music_stems_locked() -> void:
 func _check_planted_stem_off_the_grid() -> void:
 	var music_cfg := Content.section("music")
 	var tracks: Array = music_cfg["tracks"]
-	var row: Dictionary = (tracks[0] as Dictionary).duplicate(true)
+	var first_row: Dictionary = tracks[0]
+	var row := first_row.duplicate(true)
 	var good := MusicLayers.silence(row, music_cfg)
 	var short_row: Dictionary = row.duplicate(true)
 	short_row["bars"] = Num.i(row["bars"]) - 1
