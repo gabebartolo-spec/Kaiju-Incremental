@@ -55,7 +55,8 @@
 ## Ruled follow-ups, not started (each brief names its ROADMAP item + decision, per the rulebook)
 - D-137 Anti Kaiju Taskforce BEFORE the demo: from the adolescent city; agents with jetpacks grapple onto buildings
   only; frost grenades slow the kaiju; railguns charge visibly then hit hard. Ask him visuals (agent look board) first.
-- D-135 growth rework: drop evolve3 and every 4th row (growth.stages, city.districts, rooftop tables); ultimates
+- D-135 growth rework (+ #100: three cities ~15% wider: 96/160/290 m, perf-check the adult city; drop tier-4 test rows,
+  e.g. military tier 4 seed 1): drop evolve3 and every 4th row (growth.stages, city.districts, rooftop tables); ultimates
   r_beam/i_brood/c_ink move off evolve3; jets/bomber into the adult city; re-split the tree rings over 3 steps.
 - D-136 code: cut the breath camera swing; rename "Atomic" to Lightning/Thunder (D-112: species.json, r_beam,
   stat_text); remove BRANCH/CAPSTONE labels from the tree (copy rule). Headlines: cut "AIR FORCE GROUNDS ALL HELICOPTERS" (keep the other 8).
