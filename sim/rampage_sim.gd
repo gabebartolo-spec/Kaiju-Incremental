@@ -197,7 +197,6 @@ func result() -> Dictionary:
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
-	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
 	if over or emerge.step(self, dt):
 		return _events
@@ -222,7 +221,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
 		_signature()
 	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
-	if ultimate_pressed and ultimate_ready_in <= 0.0 and powers.has_ultimate():
+	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
 		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
 		powers.ultimate()
 	powers.step(dt, signature_held)
@@ -323,7 +322,6 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 		var b := buildings[i]
 		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
 		if near > 0.0 and carving.takes(i):
-			explosives.damaged(i)
 			carving.hit(i, force, damage, Vector2i(y_lo, top))  # coats what it reaches too
 			continue
 		if near <= 0.0 or b.frame.alive_count == 0:

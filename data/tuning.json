@@ -546,6 +546,12 @@
 			"footstep_1": "SFX",
 			"footstep_2": "SFX",
 			"footstep_3": "SFX",
+			"blast_crack": "Hero",
+			"blast_body": "Hero",
+			"blast_rumble": "Hero",
+			"sonic_boom": "Hero",
+			"fireworks_crackle": "SFX",
+			"chem_hiss": "SFX",
 			"ui_click": "UI",
 			"ui_confirm": "UI",
 			"ui_deny": "UI"

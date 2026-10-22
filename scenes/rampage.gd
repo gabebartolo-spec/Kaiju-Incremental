@@ -50,7 +50,6 @@ var _city: CityView
 var _powers: PowersView
 var _blasts: BlastFx
 var _fade: VehicleFade
-var _was_ready := true
 var _leap_reach := 0.0
 var _leap_power := 1.0
 var _hud: RampageHud
@@ -158,8 +157,7 @@ func _ready() -> void:
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
-	if stages.overlay != null:
-		stages.overlay.queue_free()
+	stages.finish()
 	is_loaded = true
 	loaded.emit()
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
@@ -168,23 +166,12 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_loaded or sim.over:
 		return
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var signature := Input.is_action_just_pressed("signature")
-	var held := Input.is_action_pressed("signature")
-	var ultimate := Input.is_action_just_pressed("ultimate")
-	var dash := Input.is_action_just_pressed("dash")
-	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
-		var input: Dictionary = scripted.call(sim)
-		dash = input.get("dash", false)
-		move = input.get("move", Vector2.ZERO)
-		signature = input.get("signature", false)
-		held = input.get("held", false)
-		ultimate = input.get("ultimate", false)
-	elif _autoplay:
-		move = _walk.move(sim, _steps)
-		signature = autoplay_signature and sim.ability_ready_in <= 0.0
-		held = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
-		ultimate = autoplay_signature
+	var input := _read_input()
+	var move: Vector2 = input["move"]
+	var signature: bool = input["signature"]
+	var held: bool = input["held"]
+	var ultimate: bool = input["ultimate"]
+	var dash: bool = input["dash"]
 	# The sim ignores input while it rises from the river: a tap before the handover is kept.
 	var now := {"signature": signature, "ultimate": ultimate, "dash": dash}
 	var holding := _blasts.hold(delta)  # a blast's hit-stop: this step is skipped, taps kept
@@ -203,12 +190,34 @@ func _physics_process(delta: float) -> void:
 	for event: Dictionary in events:
 		var t1 := Time.get_ticks_usec()
 		_on_event(event)
+		_blasts.on_event(event, _kaiju_at)
 		_note_cost(str(event["type"]), t1)
 	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
-	_update_powers()
+	ability_fx.update_powers(sim, sfx, _kaiju_at)
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
 	_hud.refresh()
+
+
+## The player's input this step: the keys, or a capture's script, or the autoplay's walk.
+func _read_input() -> Dictionary:
+	var input := {
+		"move": Input.get_vector("move_left", "move_right", "move_up", "move_down"),
+		"signature": Input.is_action_just_pressed("signature"),
+		"held": Input.is_action_pressed("signature"),
+		"ultimate": Input.is_action_just_pressed("ultimate"),
+		"dash": Input.is_action_just_pressed("dash"),
+	}
+	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
+		var given: Dictionary = scripted.call(sim)
+		for key: String in input:
+			input[key] = given.get(key, Vector2.ZERO if key == "move" else false)
+	elif _autoplay:
+		input["move"] = _walk.move(sim, _steps)
+		input["signature"] = autoplay_signature and sim.ability_ready_in <= 0.0
+		input["held"] = autoplay_signature and _steps % AUTOPLAY_GLIDE_CYCLE < AUTOPLAY_GLIDE_HELD
+		input["ultimate"] = autoplay_signature
+	return input
 
 
 func _process(delta: float) -> void:
@@ -273,8 +282,7 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
-			if not _blasts.on_event(event, _kaiju_at):
-				_powers.on_event(event, _kaiju_at)
+			_powers.on_event(event, _kaiju_at)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -343,19 +351,6 @@ func _update_kaiju(delta: float, moving: float) -> void:
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	_kaiju.animate(delta, moving)
-
-
-## Signature Recharge's ready pulse and Regeneration's motes.
-func _update_powers() -> void:
-	var charged := sim.ability_ready_in <= 0.0
-	if charged and not _was_ready:
-		var head := _kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale()
-		ability_fx.ready_pulse(_kaiju_at, head + _to_world(sim.facing) * sim.body_scale())
-		sfx.play("ready")
-	_was_ready = charged
-	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
-	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
-	sfx.regen(healing)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
