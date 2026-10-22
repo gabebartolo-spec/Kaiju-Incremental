@@ -1,5 +1,6 @@
 extends "res://tests/lib/runner.gd"
-## UI suite: the pause menu's bug / feedback button (D-145). A real click opens the panel, real
+## UI suite: the pause menu's bug / feedback button (D-145) and its Are-you-sure before End
+## Rampage (D-155). A real click opens the panel, real
 ## keys fill it, SEND writes user://reports/<timestamp>/report.txt (version line first) and
 ## screenshot.png, and the game stays paused with nothing leaking into the rampage. The reader
 ## that judges a report is shown failing first on planted bad folders.
@@ -9,6 +10,7 @@ extends "res://tests/lib/runner.gd"
 
 const UiFeedback := preload("res://tests/lib/ui_feedback.gd")
 const UiFeedbackPad := preload("res://tests/lib/ui_feedback_pad.gd")
+const UiEndConfirm := preload("res://tests/lib/ui_end_confirm.gd")
 const PLANT_ROOT := "user://ui_planted_reports"
 
 
@@ -21,6 +23,7 @@ func run_checks() -> void:
 	await _t("_check_report_text_and_folders")
 	await _h("UiFeedback", func() -> void: await UiFeedback.run(self, check))
 	await _h("UiFeedbackPad", func() -> void: await UiFeedbackPad.run(self, check))
+	await _h("UiEndConfirm", func() -> void: await UiEndConfirm.run(self, check))
 
 
 ## The reader of a report folder passes a good report and fails planted bad ones, by name.

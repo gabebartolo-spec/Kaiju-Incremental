@@ -103,6 +103,8 @@ func _check_new_game() -> void:
 	await GuiInput.key(t, KEY_ESCAPE)
 	menu = GuiInput.find_script(rampage, PauseMenu)
 	await GuiInput.click(t, GuiInput.button(menu, "END RAMPAGE"))
+	check.call(not rampage.sim.over, "End Rampage asks first (Are you sure?) and the run goes on")
+	await GuiInput.click(t, GuiInput.button(menu, "YES"))
 	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
 	check.call(
 		rampage.sim.over and rampage.sim.end_reason == "ended" and not t.paused,

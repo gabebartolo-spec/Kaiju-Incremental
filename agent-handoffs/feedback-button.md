@@ -10,7 +10,9 @@ claude/feedback-button, cut from origin/claude/look-options (95f01083). Worktree
 .claude/worktrees/agent-ae24d88f8a5a9e54d. PR #158 against claude/look-options, pushed 9a5b949d.
 ## What changed
 - data/tuning.json "feedback": label, title, prompt, send/cancel/done/open_folder, saved/failed lines, box size.
-- project.godot: `config/version="0.1.0-demo"` (the first version string the project had; report line 1 reads it).
+- project.godot: `config/version="0.1-demo"` (D-155; report line 1 reads it).
+- D-155: END RAMPAGE asks "Are you sure?" first (scenes/end_confirm.gd, copy in tuning "pause"); tests/lib/ui_end_confirm.gd
+  (click, keys, pad); flow ends its run through YES. ui 62 checks, smoke 42, flow 207 pass.
 - scenes/feedback_report.gd (FeedbackReport: version, facts, compose, write, grab), scenes/feedback_panel.gd
   (FeedbackPanel), scenes/pause_menu.gd (button + screenshot before the panel; `sim`, `species_id` set by
   RampageHud.pause in scenes/rampage_hud.gd, 2 lines).
@@ -31,13 +33,13 @@ claude/feedback-button, cut from origin/claude/look-options (95f01083). Worktree
 - Headless: `await RenderingServer.frame_post_draw` never fires in headless, so the menu skips it there.
 - Headless has no picture: write() saves a 64x36 black placeholder and says so in report.txt.
 ## Open decisions
-- Version string "0.1.0-demo" is a placeholder number (lead/director to set). D-TBD-version in the PR body.
+- None. Version is "0.1-demo" (D-155: DEMO 0.1, M1 0.1, M2 0.2, M3 0.3, Itch release 1.0).
 ## Running jobs
 none. override.cfg deleted. Still image: docs/captures/2026-10-23-feedback-button/feedback_panel_4k.png.
 ## Findings for the lead
 - BUG FOUND: engine ui_accept / ui_cancel had no pad A / B in this project, so a pad's A pressed no menu button
   (settings.gd fix in this PR). A pad cannot type; the box takes any pad input to SEND, text is keyboard only.
-- Not broken but worth knowing: END RAMPAGE has no confirm; Settings opened from pause leaves the empty
+- Not broken but worth knowing: Settings opened from pause leaves the empty
   pause box behind its 0.92 dim (invisible in practice).
 - playbook: nothing new beyond: a capture of "the picture a feature saves" found a defect no test saw.
 ## Rules learnt the hard way

@@ -1,8 +1,8 @@
 class_name PauseMenu
 extends CanvasLayer
 ## The rampage's pause menu. Runs while the tree is paused: Resume (or Pause / cancel again),
-## Settings, the bug / feedback report (D-145) or End Rampage (the rampage ends now and keeps
-## what it earned).
+## Settings, the bug / feedback report (D-145) or End Rampage after an Are-you-sure (D-155; the
+## rampage ends now and keeps what it earned).
 
 signal end_pressed
 
@@ -44,7 +44,7 @@ func _ready() -> void:
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
 	if sim != null:
 		_report = _add(str(Content.section("feedback")["label"]), UiKit.PANEL_EDGE, _open_report)
-	_add("END RAMPAGE  (keep biomass)", UiKit.PANEL_EDGE, _end)
+	_add("END RAMPAGE  (keep biomass)", UiKit.PANEL_EDGE, _ask_end)
 	_resume.grab_focus.call_deferred()
 
 
@@ -65,6 +65,21 @@ func _end() -> void:
 	get_tree().paused = false
 	end_pressed.emit()
 	queue_free()
+
+
+## "Are you sure?" over the dimmed pause; Esc, B or KEEP PLAYING come back to the menu.
+func _ask_end() -> void:
+	var ask := EndConfirm.new()
+	_col.visible = false
+	_centre.visible = false
+	ask.confirmed.connect(_end)
+	ask.closed.connect(
+		func() -> void:
+			_col.visible = true
+			_centre.visible = true
+			_resume.grab_focus.call_deferred()
+	)
+	add_child(ask)
 
 
 func _open_settings() -> void:

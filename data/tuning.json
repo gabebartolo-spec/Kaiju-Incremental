@@ -66,6 +66,13 @@
 		"end_title": "DEMO COMPLETE",
 		"end_line": "You become the Croc Titan"
 	},
+	"pause": {
+		"_doc": "The pause menu's Are-you-sure before End Rampage (D-155).",
+		"end_title": "ARE YOU SURE?",
+		"end_line": "The rampage ends now and you keep your biomass.",
+		"end_keep": "KEEP PLAYING",
+		"end_yes": "YES, END IT"
+	},
 	"feedback": {
 		"_doc": "The pause menu's bug / feedback report (D-145): a folder under user://<folder>/<timestamp>/ with report.txt and screenshot.png, never a network call.",
 		"folder": "reports",
