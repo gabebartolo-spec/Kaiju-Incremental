@@ -1,45 +1,41 @@
 # UI art (HUD skill icons, D-127) handoff, 2026-10-22
-## State: awaiting lead (critic, then the director's A/B pick)
+## State: awaiting lead (critic, then the director)
 ## Task
-Wave 2 brief (lead scratchpad BRIEF-ui-art.md): tools/capture/render_icon.gd renders breath, dash and ultimate icons
-in BOTH styles (A voxel, B smooth), 256 px masters, transparent, readable in the 80 px HUD ring. One labelled board
-(A vs B, each icon at real size in the HUD ring and at 2x) captured from the game's HUD on the local GPU. Push, no PR.
-Director (D-127, #45-47): icons show the move itself (breath = croc jaws with lightning, dash = clawed foot
-mid-charge, ultimate likewise); "try both and show me".
-Models (lead six-view PASS, Tripo): C:/Users/DANTE/Downloads/kaiju_tripo/hud_croc_head_c9b2b460.glb,
-hud_dash_foot_ab9504ce.glb. Both face +z, up +y; read in ~10 s, no decimation needed. Never in assets/.
+HUD skill icons for the bottom-left rings (breath, dash, ultimate). Director (D-127, #45-47): icons show the move
+(breath = croc jaws with lightning, dash = clawed foot mid-charge, ultimate likewise). Round 1 (3D renders, voxel vs
+smooth) was rejected ("those icons look horrible"); he picked "Bold flat 2D icons" and "yellow circle is way too big".
+Round 2 (this): hand-authored flat SVG icons, a thinner ring, icons filling the ring, board new flat (A) vs current (B).
 ## Branch and commit
-claude/ui-art rebuilt on origin/claude/look-options 802636cd (old WIP da048e0a cherry-picked, then finished).
-Backup of the old history: local ref claude/ui-art-pre-rebase (not pushed). Tools only: nothing in assets/ or data/.
-## What the tool does now
-render_icon.gd: GLB read once; --style=voxel|smooth|both; several yaws per run; --crop; --fx=lightning|beam|dash
-with --mouth/--aim/--reach; --margin; --exposure; 256 px master + 80 px preview. Camera fits the model AND its FX
-exactly (IconStage._aim); the light rig turns with the view; SSAO radius scales with the model.
-Fixes in the stopped builder's WIP: posmod -> fposmod in the texture sampler (every voxel took texel 0,0: black
-voxel croc); typed-array ternary parse error; outline colour from UiKit.BG (outline_color is ui-redesign only);
-FX alpha-blended (additive vanished on a transparent background); beam is our own ribbon (beam.gdshader used TIME).
-## Final render commands (each wrapped in timeout 400; ~40 s each, RTX 4070 SUPER)
-common: --face=0,0,1 --cells=20 --margin=0.02 --exposure=1.5 --style=both
-breath:   croc --yaw=80 --pitch=8 --fx=lightning --mouth=0.5,0.42,0.95 --reach=0.45
-dash:     foot --yaw=60 --pitch=10 --fx=dash --mouth=0.5,0.4,0.3 --reach=0.6 --crop=0,0,0,1,0.55,1
-ultimate: croc --yaw=80 --pitch=8 --fx=beam --mouth=0.5,0.42,0.95 --reach=0.5
-Wrapper: scratchpad/uiart/render_all.sh (env BREATH/DASH/ULT carry the per-icon args).
+claude/ui-art on origin/claude/look-options 802636cd: 7a18ceb8 = the 3D renderer (tools/capture/render_icon.gd,
+icon_*.gd, kept as a tool), then the flat icons commit. Old history backup: local ref claude/ui-art-pre-rebase.
+## What is on the branch
+assets/ui/icons/src/{breath,dash,ultimate}.svg (+ .gdignore): hand-written paths, fill f2efe6 (UiKit.TEXT), accent
+ffcc00 (UiKit.ACCENT), shapes >= 16 px at 256 (>= 4 px at 64). tools/ui/svg_icons.gd rasterises them to 256 px
+PNGs (default out res://assets/ui/icons; ui-redesign loads breath/dash/ultimate.png from there).
+LICENSING_REGISTER row: ours, CLEARED.
+## Ring change for claude/ui-redesign (NOT pushed there; the lead hands it on)
+data/tuning.json ui.hud: "ring_radius": 16.0 -> 17.5, "ring_small_radius": 16.0 -> 17.5, "ring_width": 4.0 -> 3.0
+scenes/hud_ring.gd: const OUTLINE := 2.0 -> 1.0; const ICON_SHARE := 0.62 -> 1.25
+Then run tools/ui/svg_icons.gd on that branch to replace assets/ui/icons/*.png.
 ## Evidence
-Board: lead scratchpad uiart/board/ui-art-icons-board.png; masters uiart/board/masters/*_256.png.
-Board frames: real game HUD (claude/ui-redesign 0a44c8d6) in a scratch worktree, 3840x2097 window, local GPU,
-icons dropped into assets/ui/icons, rings forced ready (scratchpad/uiart/capture_icon_board.gd, not committed).
-Measured: ring 81.6 px, icon 54.4 px with HudRing.ICON_SHARE = 1.0 (lead's yes for the board; 0.62 today = 33.7 px).
-Determinism: a rerun from the committed code gave pixel-identical masters (max diff 0, all 6).
-Lint: gdformat/gdlint clean, tuning_keys ok, complexity_ratchet ok, check_scripts 346/0.
+Board: lead scratchpad uiart/board2/skill-icons-board.png (title, A/B rows with names, real size + 3x, in-game
+bottom-left crop at real size). Masters: uiart/board2/masters/*.png.
+Captures: real game (ui-redesign 0a44c8d6 in a scratch worktree, since removed), 3840x2097, RTX 4070 SUPER,
+300 fight frames, rings forced ready (scratchpad/uiart/capture_icon_board.gd).
+Measured (dash ring, 7 angles): yellow band 7.9 px -> 5.7 px; dark rim 3.9 -> 1.9 px (1 unit); ring outer ~78 px
+(unchanged); icon square 77.7 px; art span breath 67.4 x 54.3, dash 68.6 x 66.2, ultimate 64.3 x 59.5 px.
+Rasterising from the committed SVGs matches the board masters pixel for pixel.
+Lint: gdformat/gdlint clean, tuning_keys ok, complexity_ratchet ok, check_scripts 347/0.
 ## Not exercised
-Suites: no suite loads tools/capture (check_scripts compiles them). Ring not ready (grey tint) and the 125% UI scale
-not captured. Icons not wired into assets/ (waits for the director's pick + licensing row).
+Rings on cooldown (grey tint over the new art) and the 125% UI scale; the icon art overlaps the band slightly at
+its widest points (by design, icon >= 80% of the ring), so the charge arc is partly covered there.
 ## Open decisions
-Director: A (voxel) or B (smooth). ui-redesign owner: ICON_SHARE 0.62 -> 1.0 (one line in scenes/hud_ring.gd).
+Director: the flat set (A). Accent colour is the UI hazard yellow; one hex in each SVG if he wants another.
 ## Running jobs
 none
 ## Findings for the lead
-posmod() on floats silently truncates to int: the voxel sampler read one texel. A colour bug in a tool hides
-behind "dark lighting"; measure the sampled colour before tuning lights.
+posmod() on floats truncates to int (the 3D voxel sampler read one texel). Godot's SVG reader (ThorVG) handles
+clipPath and evenodd holes: a flat icon set needs no extra tool.
 ## Rules learnt the hard way (under 10 lines)
 A SCRIPT ERROR in a --script SceneTree never quits: always run Godot under `timeout` and check the exit code.
+The focus guard hook resolves `--path .` from the session cwd: pass the absolute --path for windowed runs.

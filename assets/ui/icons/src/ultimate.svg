@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Ultimate (Thunder Beam): croc jaws head-on, eyes up, teeth down, a wide crackling beam pouring
+       out of the mouth over the lower half, kept inside the round ring. Hand-drawn, ours. -->
+  <defs><clipPath id="disc"><circle cx="128" cy="128" r="94"/></clipPath></defs>
+  <g clip-path="url(#disc)">
+    <path fill="#ffcc00" d="M 70 108 L 186 108 L 204 150 L 190 158 L 220 208 L 204 214 L 236 256
+      L 20 256 L 52 214 L 36 208 L 66 158 L 52 150 Z"/>
+    <path fill="#f2efe6" d="M 112 138 L 144 138 L 166 256 L 90 256 Z"/>
+  </g>
+  <path fill="#f2efe6" fill-rule="evenodd" d="
+    M 22 108 L 30 76 L 56 62 L 64 36 L 86 26 L 104 36 L 108 54 L 148 54 L 152 36 L 170 26 L 192 36
+    L 200 62 L 226 76 L 234 108 Z
+    M 86 46 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0 Z
+    M 170 46 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0 Z"/>
+  <path fill="#f2efe6" d="M 28 106 L 54 106 L 41 134 Z M 60 106 L 86 106 L 73 134 Z M 92 106 L 116 106 L 104 132 Z
+    M 140 106 L 164 106 L 152 132 Z M 170 106 L 196 106 L 183 134 Z M 202 106 L 228 106 L 215 134 Z"/>
+</svg>
