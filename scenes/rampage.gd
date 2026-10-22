@@ -145,8 +145,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
-	_blasts = BlastFx.new(sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))  # comments #19, #20
-	add_child(_blasts)
+	_blasts = BlastFx.attach(self, sim, _city, sfx, Seeds.derive(_fx_rng, 0xB1A5))
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
@@ -248,8 +247,7 @@ func add_trauma(amount: float, at := Vector3.INF) -> void:
 
 ## Worst time (usec) spent per sim step and per event kind; read by the benchmark tool.
 func _note_cost(what: String, since: int) -> void:
-	var spent := Time.get_ticks_usec() - since
-	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
+	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), Time.get_ticks_usec() - since)
 
 
 func _to_world(p: Vector2) -> Vector3:
@@ -366,6 +364,7 @@ func _place_camera(delta: float) -> void:
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
 	var nod := shake.turn(sim.body_scale(), motion).y
-	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
+	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
+	_camera.look_at(aim + _blasts.jitter() * motion)  # + a blast's own shake (BlastFx)
 	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)

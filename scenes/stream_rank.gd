@@ -43,8 +43,9 @@ func _init(buildings: Array[RampageSim.Building]) -> void:
 		_cr[n] = 0.5 * sqrt(float(b.w * b.w + b.d * b.d))
 
 
-## Reorders `queue` (building indices) so its landmarks, then its red barrels (their models are not the stand-in box either), stream before every ordinary building,
-## each group keeping its nearest-first order.
+## Reorders `queue` (building indices) so its landmarks, then its red barrels (their models are
+## not the stand-in box either), stream before every ordinary building, each group keeping its
+## nearest-first order.
 static func landmarks_first(buildings: Array[RampageSim.Building], queue: Array[int]) -> void:
 	var marks: Array[int] = []
 	var hazards: Array[int] = []

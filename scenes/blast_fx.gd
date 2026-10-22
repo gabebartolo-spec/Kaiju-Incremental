@@ -36,6 +36,15 @@ var _fuses: Dictionary = {}
 var _spark_clock := 0.0
 
 
+## A BlastFx built and added under `parent` (Rampage).
+static func attach(
+	parent: Node, sim: RampageSim, city: CityView, sfx: Sfx, rng: RandomNumberGenerator
+) -> BlastFx:
+	var fx := BlastFx.new(sim, city, sfx, rng)
+	parent.add_child(fx)
+	return fx
+
+
 func _init(sim: RampageSim, city: CityView, sfx: Sfx, rng: RandomNumberGenerator) -> void:
 	_sim = sim
 	_city = city
@@ -62,6 +71,14 @@ func _ready() -> void:
 func shake() -> float:
 	var s: Dictionary = _c("shake")
 	return maxf(minf(Num.f(s["max"]), _trauma * _trauma), _kick) * Num.f(s["amplitude"])
+
+
+## This frame's aim jitter for the camera (shake() units), zero while no blast shakes it.
+func jitter() -> Vector3:
+	var amount := shake()
+	if amount <= 0.0:
+		return Vector3.ZERO
+	return Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0) * amount
 
 
 ## Hit-stop: true while a blast holds the sim still (Rampage skips that step); counts down by
