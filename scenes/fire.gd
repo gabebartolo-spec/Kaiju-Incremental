@@ -34,6 +34,12 @@ const SMOKE_LIT_FROM_BELOW: Array[Color] = [
 	Color(0.14, 0.08, 0.07, 0.42),
 	Color(0.05, 0.045, 0.05, 0.0),
 ]
+## The flame voxel: its cube (units) and the spread of sizes each flame takes of it, and where on a
+## flame's life each of FLAME_COLORS sits. A blast's flames (BlastParts.fireball) read these too:
+## a bigger fire is more flames, never bigger cubes (VFX lead, D-151).
+const FLAME_CUBE := 0.18
+const FLAME_SCALE := Vector2(0.5, 1.2)
+const FLAME_AT: Array[float] = [0.0, 0.1, 0.55, 1.0]
 
 var _light: PooledLight
 var _base_energy: float

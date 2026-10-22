@@ -33,18 +33,24 @@ side-session-notes/local_df2c2989-951e-4b20-9998-9c23b0a37f42/explosives-view/ha
   shift). Do not export APPDATA for python (user site-packages live there).
 - Not changed: the still stretch between chained blasts (fuse 0.35 s is a sim value); fireball cubes settle by 1 s.
 
-## Round 8 (director on r7, 2026-10-23): the fireball is the game's own Fire
-- "looks like minecraft fire... doesnt match the fire we use the rest of the time, consistency is absolutely key".
-  Flames are now Fire's own voxels: Fire.EMBER_SHADER, Fire.FLAME_COLORS and its ramp (compressed to a 1.6 s
-  ball: BlastParts.FLAME_AT), 2600 small cubes (size 0.07 x radius) out of the site; no opaque lit orange cubes.
-  The smoke is Fire's own: BlastFx leaves a real Fire at the site (CityView.fire(at, size, seconds), 6 s, then
-  go_out) with its light and soft smoke column. Own smoke cubes and tuning "smoke" removed.
-- Kept: screen flash, one-way kick, per-blast crack, each chained blast grows its own ball (size_curve), the
-  dust ring and debris stay solid voxels, the chem gas stays green cubes (not fire).
-- Proof: scratchpad clip_b6 (sheet_r8.png same frames as sheet_final; side_by_side_r8.png a building fire next to
-  the fireball at the same zoom). Capture flag --fire-beside puts two ordinary building fires beside the chain.
-- The pink triangle in front of the kaiju in every frame is BreathAim: the real game's breath aim wedge (shows
-  where a ready breath will burn, drawn over the city, hidden while the breath cools down); not a debug overlay.
+## Round 9 (VFX lead FIX on r8: change of method, D-151 "Fire's tongues", 2026-10-23)
+- Flames are Fire's exactly: Fire.FLAME_CUBE (0.18) at Fire.FLAME_SCALE, Fire.EMBER_SHADER at its own heat 1.4,
+  Fire.FLAME_COLORS on Fire.FLAME_AT (an 8-bit ramp like Fire's), rising on spread 15, gravity +2.5, shrinking to
+  0.1; a bigger blast is more flames (amount x radius/5). Spawned over 0.3 s (burst rate), life 2.0 s, damped to
+  stop top_scale (3.5) site heights up. Tuning blast_fx.fireball. The real Fire left at the site stays burning
+  (blast_fx.fire.seconds 0 = no timeout, like any wreck) with its light and smoke.
+- Constants added to fire.gd (FLAME_CUBE, FLAME_SCALE, FLAME_AT); fire.gd is edited on other branches: merge
+  one at a time and check the in-game fire is unchanged (they are the same numbers as before).
+- Dust: BlastShock.ground = Fx.shockwave band at the blast's reach + Fx.dust puffs round the rim (tuning shock.ring
+  puffs, puff_size). Gas: smoke.gdshader quads tinted green (cloud.shades, puff), not cubes. blast_ember.gdshader
+  and blast_voxel.gdshader deleted; core and fireworks sparks use Fire.EMBER_SHADER at heat 1.0.
+- Open for the VFX lead (their family call): a dense burst of Fire's flames blooms pale (cream/tan) under AgX and the
+  city haze where the building fire's few flames read saturated orange. Thinning to 1100 flames helps a little;
+  more flames (scale, pillar 3) whites out more. Raising Fire's own look (heat/ramp/bloom) would fix both together.
+- Proof: scratchpad clip_c6 (day), clip_c7 (night), side_by_side_r9.png. capture_vfx_sheet does not exist on this
+  branch (vfx-lead branch only): no fire_ground panel beside it.
+- The pink triangle in front of the kaiju in every frame is BreathAim: the real game's breath aim wedge (shows where
+  a ready breath will burn, drawn over the city, hidden while the breath cools down); not a debug overlay.
 
 ## Rebase notes (what differs from the old branch)
 - Base added CameraShake (rotation trauma). The blasts keep their own aim jitter on top: BlastFx.jitter() scaled

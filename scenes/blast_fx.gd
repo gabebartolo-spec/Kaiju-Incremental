@@ -3,20 +3,20 @@ extends Node3D
 ## How the city's red barrels go off (director comments #19, #20: "really good sfx and vfx for
 ## the explosions including shockwaves and sonicboom"). Rampage hands it the sim's explosives
 ## events; it never decides an outcome. hazard_armed: the site's warning lamp blinks, sparks spit
-## off the roof and gas hisses while the fuse burns. explosion: a white core, a fireball of
-## glowing voxels, both out of the site's own box; a ring of voxel chunks and dust racing out
-## along the street (BlastShock); the site blowing apart top first, its pieces thrown out and up
-## (BlastBreak); a flash of real light, and the game's own Fire left burning for a few seconds
-## with its own smoke (director 2026-10-22: the fireball must match the fire used everywhere else,
-## "consistency is absolutely key"; the flames, ember shader, colours and smoke are Fire's). The
-## screen flashes white for a few frames
-## (BlastFlash) and the camera takes one kick, away from the blast and decaying over a few frames
-## (jitter), no shaking back and forth and no hit-stop (clip critic round 6); the blast is heard
-## as one crack (at any distance) with a body and rumble under it, and the sonic boom arriving
-## later the further the camera is (speed of sound scaled to the map).
+## off the roof and gas hisses while the fuse burns. explosion: a white core and a sudden tall
+## burst of the game's own flames out of the site's own box (director 2026-10-22, D-151:
+## "consistency is absolutely key"; BlastParts.fireball is Fire's flame exactly), the game's dust
+## shockwave and
+## puffs along the street (BlastShock), the site blowing apart top first, its pieces thrown out and
+## up (BlastBreak), a flash of real light, and then the game's own Fire left burning at the site
+## with its light and smoke. The screen flashes white for a few frames (BlastFlash) and the camera
+## takes one kick, away from the blast and decaying over a few frames (jitter), no shaking back and
+## forth and no hit-stop (clip critic round 6); the blast is heard as one crack (at any distance)
+## with a body and rumble under it, and the sonic boom arriving later the further the camera is
+## (speed of sound scaled to the map).
 ## firework_burst: a coloured shell bursting over the point it hits. toxic_cloud: a billow of
-## green voxels, then a thin haze for as long as the sim keeps the cloud. Looks and timings:
-## data/tuning.json "blast_fx" (motion critic fix round 2026-10-21).
+## the game's soft smoke tinted green, then a thin haze for as long as the sim keeps the
+## cloud. Looks and timings: data/tuning.json "blast_fx" (motion critic fix round 2026-10-21).
 
 ## Blasts drawn so far, by kind (read by the flow suite and the capture).
 var drawn: Dictionary = {}
@@ -62,7 +62,6 @@ func _ready() -> void:
 	var under := Vector3(0, -60, 0)
 	BlastParts.fireball(self, under, Vector3.ONE, 1.0, _c("fireball"))
 	BlastParts.core(self, under, Vector3.ONE, 1.0, _c("core"))
-	BlastShock.ground(self, under, 1.0, _c("shock"))
 	BlastParts.firework(self, under, Color.WHITE, _c("fireworks"))
 	BlastParts.toxic_cloud(self, under, Vector3.ONE, 1.0, 0.2, _c("cloud"))
 
@@ -185,7 +184,7 @@ func _explode(kind: String, event: Dictionary, focus: Vector3) -> void:
 	BlastParts.core(self, high, half, radius, _c("core"))
 	BlastParts.fireball(self, high, half, radius, _c("fireball"))
 	var reach := BlastShock.reach(maxf(half.x, half.z) * 2.0, radius, _c("shock"))
-	BlastShock.ground(self, at, reach, _c("shock"))
+	BlastShock.ground(_city.fx, at, reach, _c("shock"))
 	_city.blast_break.blew(at, reach)
 	var burn: Dictionary = _c("fire")  # what is left burning is the game's own Fire, with its smoke
 	_city.fire(Vector3(at.x, 0.0, at.z), Num.f(burn["size"]) * radius / 5.0, Num.f(burn["seconds"]))
