@@ -57,10 +57,10 @@ func run() -> void:
 ## Loaded, and past the river rise that holds the sim back (D-083), so its clock runs.
 func _settled(run: Rampage) -> void:
 	await run.wait_loaded()
-	var frames := 0
-	while run.sim.emerge.active and frames < EMERGE_CAP:
+	for _i: int in EMERGE_CAP:
+		if not run.sim.emerge.active:
+			break
 		await t.physics_frame
-		frames += 1
 
 
 func _frames(n: int) -> void:
@@ -274,7 +274,7 @@ func _endless_run(main: Node) -> void:
 	await _settled(run)
 	var before := SaveFile.load_game()
 	await _frames(60)
-	check.call(not run.sim.over and run.sim.elapsed > 0.5, "Endless mode has no clock to run out (over %s, elapsed %s)" % [run.sim.over, run.sim.elapsed])
+	check.call(not run.sim.over and run.sim.elapsed > 0.5, "Endless mode has no clock to run out")
 	await GuiInput.key(t, KEY_ESCAPE)
 	var menu := GuiInput.find_script(run, PauseMenu)
 	await GuiInput.click(t, GuiInput.button(menu, "END RAMPAGE"))
@@ -352,8 +352,8 @@ func _check_continue_after() -> void:
 	await _frames(3)
 	var saved := SaveFile.load_game()
 	check.call(
-		saved["totals"] == sim_totals and Num.i(saved["runs"]) == 10,
-		"a normal rampage adds the sim's counters to the demo totals: %s vs %s (runs %s, demo %s)" % [saved["totals"], sim_totals, saved["runs"], saved["demo"]]
+		Demo.add(saved["totals"], {}) == sim_totals and Num.i(saved["runs"]) == 10,
+		"a normal rampage adds the sim's counters to the demo totals: %s vs %s" % [saved["totals"], sim_totals]
 	)
 	main.queue_free()
 	await _frames(2)
