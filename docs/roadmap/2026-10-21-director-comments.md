@@ -77,3 +77,5 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 71 | Birds (asked): "Scatter on roars and stomps" (flocks burst up and away on a roar or a falling tower) | atmosphere builder | recorded |
 | 72 | "so this 4 forms is completely new information to me... its your own creative choice". Asked: "3 steps, 1 per body" (D-135): cut the agent-added Apex Titan step; top skills and the bomber move to the adult city | next lead (growth builder) | recorded, not started |
 | 73 | "you need to be doing a better job at monitoring your helpers... fix any rules that are impeding your monitoring" | lead | done: rulebook stall-watcher rule, timeouts on engine runs, leads stop hung helper PIDs |
+| 74 | Icon board: "yellow circle is way too big, cant even see the icon"; "those icons look horrible btw". Asked: "Bold flat 2D icons" (3D renders dropped for icons); yellow band thin, icon fills the ring | ui-art builder | in progress |
+| 75 | "what the fuck is the point of a roadmap if you arent following it" | lead | rulebook: every brief names its roadmap item and decision; drift audit running |
