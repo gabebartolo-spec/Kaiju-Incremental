@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-069a · Director · Soften #36's young stage to about half the early defeats
+Why (11:2x): about half the early defeats; cause: Armoured Scales moved late in the tree. #36 lands last before the build.
+
 ## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
 Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
 priced late. Merge #36 after #50 and P3.
