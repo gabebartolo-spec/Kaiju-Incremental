@@ -275,31 +275,34 @@ func _reach_arm(names: Array[String]) -> void:
 	rig.bone(names[0]).scale = Vector3.ONE * lerpf(1.0, reach, _rake_reach(_rake_t))
 
 
-## The raking arm's upper, fore and hand directions t seconds into the rake: `rest` (where the arm
-## hangs) -> up and out (lift_s), -> across the front (strike_s, fast), -> out wide and low (the
-## first settle_at of recover_s, where the camera sees it) -> `rest`.
+## The raking arm's upper, fore and hand directions t seconds into the rake, along five legs:
+## `rest` (where the arm hangs) -> up and out (lift_s) -> an arc outside the body's silhouette (the
+## first arc_at of strike_s, so the camera sees the swing) -> across the front (the rest of
+## strike_s, fast and even) -> out wide again (the first settle_at of recover_s) -> back to `rest`
+## (the rest of recover_s, slowly, in view). Lift and the last leg ease; the strike does not.
 func _rake_dirs(t: float, rest: Array[Vector3]) -> Array[Vector3]:
-	var up := _pose("arm_up")
-	var across := _pose("arm_across")
 	var lift := Num.f(_claw["lift_s"])
 	var strike := Num.f(_claw["strike_s"])
-	var from := rest
-	var to := up
-	var k := t / lift
-	if t >= lift + strike:
-		from = across  # the recovery swings out wide to the settle pose, where it shows, then hangs
-		to = _pose("arm_settle")
-		k = (t - lift - strike) / Num.f(_claw["recover_s"])
-		var half := Num.f(_claw["settle_at"])
-		if k >= half:
-			from = to
-			to = rest
-		k = k / half if k < half else (k - half) / (1.0 - half)
-	elif t >= lift:
-		from = up
-		to = across
-		k = (t - lift) / strike
-	k = smoothstep(0.0, 1.0, clampf(k, 0.0, 1.0))
+	var back := Num.f(_claw["recover_s"])
+	var arc := strike * Num.f(_claw["arc_at"])
+	var settle := back * Num.f(_claw["settle_at"])
+	var up := _pose("arm_up")
+	var legs: Array = [
+		[rest, up, 0.0, lift, true],
+		[up, _pose("arm_arc"), lift, arc, false],
+		[_pose("arm_arc"), _pose("arm_across"), lift + arc, strike - arc, false],
+		[_pose("arm_across"), _pose("arm_settle"), lift + strike, settle, false],
+		[_pose("arm_settle"), rest, lift + strike + settle, back - settle, true],
+	]
+	var leg: Array = legs[-1]
+	for candidate: Array in legs:
+		if t < Num.f(candidate[2]) + Num.f(candidate[3]):
+			leg = candidate
+			break
+	var k := clampf((t - Num.f(leg[2])) / maxf(Num.f(leg[3]), 0.0001), 0.0, 1.0)
+	k = smoothstep(0.0, 1.0, k) if leg[4] else k
+	var from: Array[Vector3] = leg[0]
+	var to: Array[Vector3] = leg[1]
 	var out: Array[Vector3] = []
 	for i: int in rest.size():
 		out.append(from[i].lerp(to[i], k))

@@ -68,6 +68,8 @@ func _run() -> void:
 			_snap(rampage, "stomp_%d" % stomps, rampage.stomp_ring_at[-1])
 		if rampage.stomp_ring_at.size() > stomps:
 			stomps = rampage.stomp_ring_at.size()
+			if _log:
+				print("stomp %d landed: %d street rings alive" % [stomps, _rings(rampage)])
 			wait = STOMP_SHOT_DELAY if stomps <= STOMP_SHOTS else -1
 		var rake_t := gait.swing._rake_t
 		var arms := gait.rig.bone("arm_l0").global_position
@@ -99,3 +101,12 @@ func _log_camera(rampage: Rampage, gait: ClipGait, at: float) -> void:
 		var line := "t=%.2f cam_moved=%.3f " % [at, moved]
 		line += "dip=%.3f trauma=%.3f" % [rampage._step_dip, rampage.shake.trauma]
 		print(line, " rake_t=%.2f stomps=%d" % [gait.swing._rake_t, rampage.stomp_ring_at.size()])
+
+
+## Street rings (Fx.shockwave planes) alive now.
+func _rings(rampage: Rampage) -> int:
+	var count := 0
+	for node: Node in rampage._city.fx.get_children():
+		if node is MeshInstance3D and (node as MeshInstance3D).mesh is PlaneMesh:
+			count += 1
+	return count

@@ -209,15 +209,15 @@ func _check_stomp_landing() -> void:
 		var crack := Decal.new()
 		root.add_child(crack)
 		cracks.append(crack)
-		var before := shake.trauma
 		landing.landed(sides[-1], crack)
-		kicks.append(shake.trauma > before)
+		var nod := shake.turn(1.0, 1.0)
+		kicks.append(nod.y < 0.0 and nod.x == 0.0)  # straight down: no sideways, no up
 	for f: int in 30:  # the third stomp's foot lifted over the first crack: it fades and is freed
 		await process_frame
 	check(
 		sides == ["left", "right", "left"] and not kicks.has(false),
 		(
-			"landing: stomps lift left, right, left and each landing kicks the camera (%s)"
+			"landing: stomps lift left, right, left and each landing kicks the camera straight down (%s)"
 			% ",".join(sides)
 		)
 	)
@@ -225,9 +225,9 @@ func _check_stomp_landing() -> void:
 		not is_instance_valid(cracks[0]) and is_instance_valid(cracks[1]),
 		"landing: the crack under a foot fades out as that foot lifts again, the other stays"
 	)
-	var calm_trauma := shake.trauma
+	shake.update(1.0)  # the last kick is over
 	landing.landed("left", null)  # a footfall of the clip's own, not a stomp's
-	check(shake.trauma == calm_trauma, "landing: a footfall that is not the stomp's kicks nothing")
+	check(shake.kick_now() == 0.0, "landing: a footfall that is not the stomp's kicks nothing")
 	kaiju.queue_free()
 	await process_frame
 

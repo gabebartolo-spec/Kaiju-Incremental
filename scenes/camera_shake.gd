@@ -18,6 +18,9 @@ var _time := 0.0
 ## The shake's strength on screen: trauma squared, but rising at most "rise_per_s" a second, so a
 ## big hit swells over a few frames instead of jumping the frame (motion critic 2026-10-21).
 var _shown := 0.0
+## A downward kick (kick()): its size (rad) and the seconds it has left; it always pitches down.
+var _kick := 0.0
+var _kick_left := 0.0
 
 
 func _init() -> void:
@@ -45,8 +48,22 @@ func add(amount: float, at: Vector3, focus: Vector3, scale: float) -> void:
 	trauma = clampf(trauma + maxf(amount, 0.0) * fade, 0.0, 1.0)
 
 
+## A downward kick: the camera pitches down by `rad` (a heavy footfall) and eases back in "kick_s".
+## Not trauma: no noise, so it never wanders sideways or up. The player's camera-motion setting
+## scales it like the rest.
+func kick(rad: float) -> void:
+	_kick = rad
+	_kick_left = Num.f(_cfg["kick_s"])
+
+
+## The kick's pitch now (rad, 0 or more), easing out as its time runs down.
+func kick_now() -> float:
+	return _kick * pow(clampf(_kick_left / Num.f(_cfg["kick_s"]), 0.0, 1.0), 2.0)
+
+
 ## One frame: trauma fades and the noise moves on.
 func update(delta: float) -> void:
+	_kick_left = maxf(0.0, _kick_left - delta)
 	_time += delta
 	trauma = maxf(0.0, trauma - Num.f(_cfg["decay_per_s"]) * delta)
 	var goal := trauma * trauma
@@ -62,12 +79,13 @@ func max_turn(scale: float) -> float:
 ## This frame's turn in radians (x yaw, y pitch; together never past the cap); motion is the
 ## player's 0..1 setting.
 func turn(scale: float, motion: float) -> Vector2:
+	var nod := Vector2(0.0, -kick_now() * clampf(motion, 0.0, 1.0))  # down is negative pitch
 	var amp := max_turn(scale) * _shown * clampf(motion, 0.0, 1.0)
 	if amp <= 0.0:
-		return Vector2.ZERO
+		return nod
 	var t := _time * Num.f(_cfg["noise_hz"])
 	var wave := Vector2(_noise.get_noise_2d(t, 0.0), _noise.get_noise_2d(t, 100.0))
-	return (wave * Num.f(_cfg["noise_gain"])).limit_length(1.0) * amp
+	return (wave * Num.f(_cfg["noise_gain"])).limit_length(1.0) * amp + nod
 
 
 ## Turns `camera` (already aimed) by this frame's shake.

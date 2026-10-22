@@ -368,9 +368,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 func _land_stomp(side: String, at: Vector3) -> void:
 	_stomp_wait = 0.0
 	var heavy := _power("stomp_damage")
-	var cracked := ability_fx.stomp_cracks(at, _stomp_radius, heavy)
-	_land.landed(side, ability_fx.last_crack if cracked else null)
-	sfx.stomp(heavy, cracked)
+	sfx.stomp(heavy, _land.landed(side, ability_fx.stomp_cracks(at, _stomp_radius, heavy)))
 	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
 	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
 	_city.crush(at, _stomp_radius + catch)

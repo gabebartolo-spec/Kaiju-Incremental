@@ -2,9 +2,9 @@ class_name StompLanding
 extends RefCounted
 ## The scene's side of a standing stomp (ClipStomp is the body's): the crack a foot left last time
 ## is faded out as that foot lifts again (it was hidden under the foot, and lifting it would show
-## the crack pop in), and the landing kicks the camera (CameraShake). Walking, the clip's own
-## footfall delivers the stomp and neither applies. Presentation only. "clip_stomp" tuning:
-## kick (trauma) and crack_fade_s.
+## the crack pop in), and the landing kicks the camera down (CameraShake.kick). Walking, the clip's
+## own footfall delivers the stomp and neither applies. Presentation only. "clip_stomp" tuning:
+## kick_deg and crack_fade_s.
 
 var _shake: CameraShake
 var _under: Dictionary = {}  # "left" / "right" -> the instance id of the crack decal there
@@ -26,11 +26,12 @@ func lift(kaiju: KaijuModel) -> void:
 	_under.erase(_lifted)
 
 
-## A stomp lands under `side`'s foot, leaving `crack` (null: none). The stomp's own foot kicks the
-## camera.
-func landed(side: String, crack: Decal) -> void:
+## A stomp lands under `side`'s foot, leaving `crack` (null: none); whether it left one. The
+## stomp's own foot kicks the camera.
+func landed(side: String, crack: Decal) -> bool:
 	if crack != null:
 		_under[side] = crack.get_instance_id()
 	if side == _lifted:
 		_lifted = ""
-		_shake.trauma = maxf(_shake.trauma, Num.f(_cfg["kick"]))  # a kick, never stacked past it
+		_shake.kick(deg_to_rad(Num.f(_cfg["kick_deg"])))  # straight down, every time
+	return crack != null
