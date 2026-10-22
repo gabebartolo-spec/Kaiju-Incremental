@@ -14,10 +14,10 @@ effects, Taskforce effects, post effects. Rule above all: one look per kind ("co
 
 ## Branch and commit
 Worktree .claude/worktrees/vfx-lead-c37456 on claude/vfx-lead-2 (my handoff branch; heli-deaths is free for its builder).
-claude/heli-deaths = item 3 = PR #166. Sim review fixes pushed 31a77e99 (coat kill spins, check red/green;
-wrecks hurt only the city via StrayShell.hit_buildings, revert if the director wants army crushed; view leak).
-LOOK = REJECT by a fresh critic: rework brief scratchpad brief_heli_look.md at the next builder slot (ledger
-scratchpad slots.md). No 'SHIP #166' to the lead until the reworked look passes.
+claude/heli-deaths = item 3 = PR #166 @ 96e104d5 (sim review fixes in 31a77e99; look rework by builder ad8254e8).
+Look: critic r1 REJECT, r2 FIX (spin reads hovering, burst flat orange confetti, crash lacks dust ring/lasting
+fire, crew specks; list in reviews file). No 'SHIP #166' yet; held for the wind-down; offered the lead a
+merge-now-with-flag option.
 
 ## What exists
 - docs/VFX_STYLE.md: 10 families (owner files, material, ramp, scale), "Two looks today" table, review checklist.
@@ -55,17 +55,14 @@ Not built: killable parachutists (they only drift down).
 - #154 PASS sent (8a3049d7, r4: self-lit street dust, visible rings, orange sparks, white deflect). Follow-up item
   "dust billows" (mine): every dust effect from Fx.dust puffs (rings = expanding chains of lobed puffs), deflect
   gaussian 60 px; also a stray gold 4-point star on the kaiju in some stills, source unknown.
-- Thunder Beam (claude/thunder-beam 54127e06 pushed; 686ad611 local = r4: round soft flares without rays, strike
-  2x + 12 m ring, beam = jagged channel held on one facade with lashes climbing it). 3 critic rounds FIX so far
-  (reviews file). Builder adb19422 waits for my "go" (engine slot). Rulings: face can't show from the behind camera;
-  pre-fire aim wedge is real UI. On SHIP: tell the lead (PR, sync first: old base shows ATOMIC BREATH), halo stills
-  to interview.md.
-- Croc standing (claude/croc-standing 67c0862f, builder af945700 running suites + --log capture): stomp now lands
-  on a foot (11/11) with ring/cracks; critic r1 FIX minor -> bigger lift, body dip, camera kick, ±10% variation,
-  old-crack fade, rake arc past the silhouette; item 7 = an unexplained 18 px camera jump (being traced). Idle clip
-  attached to the lead's interview question.
-- Voxel boards (claude/look-boards, builder a1faedbb): A boards done (F1 must move to an unfaded moment); B mock
-  then C, notes vfx-lead/look_boards/; critics then interview.md.
+- Thunder Beam (claude/thunder-beam 6dbe10e5 pushed, round 6 of builder adb19422): breath close (head silhouette
+  + small arcs, blob-chain glows killed the kink wedge, white-hot strike); breath critic still FIX (a slab edge in
+  f032, strike not the climax from the game camera, head smear, onset pop, weak noon); BEAM regressed (thin line, no
+  lashes; try thunder halo width/blob share). Rulings: face can't show from the behind camera; pre-fire aim wedge is
+  real UI. Halo question NOT in interview until SHIP. Old base shows ATOMIC BREATH: sync before its PR.
+- Croc standing: SHIP ca148fd7 (mine after 3 critic rounds), queued for a PR by the lead.
+- Voxel boards (claude/look-boards 76f6b59a, capture-only): in the lead's interview question with my read (mock
+  barely changes the game camera; smooth croc wins up close) and a middle option (smooth croc in close shots only).
 - Heads/skins (claude/heads-skins 9781f0a0, provenance rows only; Tripo 1500/8000): boards
   vfx-lead/heads/heads_board_interview.png (Python own shape, Komodo fits skull, Komodo own shape; Python-fits-skull
   dropped) + skins/skins_board.png, both questions in interview.md. Models in ~/Downloads/kaiju_tripo/heads_*.
@@ -99,6 +96,7 @@ GitHub helper opens PRs. Thunder sound = the lead's.
   billows -> explosions r10 once #160 merges.
 
 ## Running jobs
+WIND-DOWN (lead 08:38): nothing new until the director is back; queue in scratchpad slots.md.
 Builders croc-standing + voxel-boards hold my 2 engine slots; Thunder waits for "go". Stall watcher (scratchpad
 stall_watch_copy.sh, SKIP_PIDS for foreign runs) over the 3 builders' subagents/*.jsonl; lead-board watcher on
 to-vfx-lead.md (re-arm both after each wake).
