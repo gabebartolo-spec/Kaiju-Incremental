@@ -1,22 +1,22 @@
 # Fire-spread handoff, 2026-10-22
-## State: working (rebuild on the newest base, push, report)
+## State: available (pushed; report sent)
 ## Task
 R 26.2-26.4 fire spread in the sim (mailbox to-nimbalyst/016, answers 016-ANSWERS, D-126, D-129): heat meter,
 neighbour spread with wind, glow, burn-out collapse, payout, five nodes, fire suite, player-effect fixture,
 sim-review packet (below), full suite once, one ~6 s clip at the game camera (local GPU), push, report.
 ## Branch and commit
-claude/fire-spread, rebuilt on origin/claude/look-options 802636cd (own commits cherry-picked; backup ref
-claude/fire-spread-pre-rebase = old history, local only). Not pushed yet.
+claude/fire-spread, rebuilt on origin/claude/look-options ef9212ca (own commits cherry-picked; backup ref
+claude/fire-spread-pre-rebase and -pre-rebase2, local only).
 ## Unfinished changes
-- Full suite done: all 23 suites passed (tools/run_tests.sh with import, on 802636cd). Then rebuild on newest origin/claude/look-options (ef9212ca moved: perf scans #148, no
-  overlap), fire + scans suites, push claude/fire-spread (no remote branch yet), report.
+- none. Full suite: all 23 suites passed (with import, on 802636cd); rebuilt on ef9212ca (perf scans #148,
+  no overlap), fire + powers + scans green there after the breath-order change. Pushed claude/fire-spread.
 ## Evidence so far
 - fire suite 9 of 9 functions, 16 checks, 0 failures; powers suite green; check_scripts 345 ok; gdlint, gdformat,
   tuning_keys, complexity_ratchet clean.
 - Stage 4 (4,435 buildings, seed city 0 / army 0 / fire 0, every fire node, 6 blocks lit, 30 s): spreads to 359,
-  971 fire events, replay hash 2138472427 both runs, biomass 2947.6 both; 201 burn-outs, 0 standing; near shares
-  0.60-0.69, far max 0.17; fire's own bookkeeping 224 usec/tick (budget 1000); burn-out collapses 569 usec/tick
-  more (2548 each). fire.spread fixture: without City Ablaze 0 burn-outs, biomass 1646.8.
+  1022 fire events, replay hash 145565713 both runs, biomass 2948.2 both; 211 burn-outs, 0 standing; near shares
+  0.60-0.69, far max 0.17; fire's own bookkeeping 231 usec/tick (budget 1000); burn-out collapses 619 usec/tick
+  more (2639 each). fire.spread fixture: without City Ablaze 0 burn-outs, biomass 1646.8.
 - New checks shown failing on a known-bad tuning (burn_out_floors 0, conflag_max 2.0): shell checks, pay checks red.
 - Clip (local GPU, NVIDIA RTX 4070 SUPER in the log): scratchpad fire_clip/fire_spread_r0.mp4, 13.3 s at game
   speed, tools/capture/capture_fire_spread.gd --run=0 (dusk): breath lights at 0.5 s, neighbours glow at 2.3/2.6 s,
@@ -43,10 +43,10 @@ blasts from real callers (branches unmerged), species other than the croc, a sav
 ## Running jobs
 none
 ## Findings for the lead
-- Breath ignition barely lands at baby stage: the breath breaks the small blocks it reaches before scorch
-  rolls (nothing left to burn), and a lit block it damaged often collapses within ~2 s; 2 of 4 seeded
-  clip-script runs (--run 8, 9) lit nothing in 6 breaths. Tuning call: roll before the damage, a higher
-  breath_ignite, or leave it (lead/director).
+- Breath ignition at baby stage: the lead asked for the ignite roll before the breath's damage (done,
+  BreathCone.breathe). Same 4 seeds before/after: identical (runs 0, 4 lit on the first breath; 8, 9 never in 6
+  breaths): the rolls decide, not the order. A block lit and then wholly broken by the same breath is dropped
+  BURNT next tick without heating anyone (making it spread is more than an ordering change: not done).
 - The WIP burn-pay test counted the rooftop squad (army pay, full) as building pay: compare buildings only.
 - Timing-based budget that includes collapses swung 1000 -> 1470 usec on a loaded PC; budgeting the fire's own
   bookkeeping (224 usec) and reporting collapses apart is stable.

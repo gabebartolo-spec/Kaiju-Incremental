@@ -30,10 +30,12 @@ static func breathe(sim: RampageSim, reach: float, damage: float) -> void:
 		if to.length() > reach + r:
 			return 0.0
 		return 1.0 if to.length() <= r or absf(dir.angle_to(to)) <= half_angle else 0.0
+	# The ignite rolls come first, on the buildings as they stood: a block the breath then breaks
+	# was still in its path (lead 2026-10-22, baby-stage finding).
+	sim.powers.fire.scorch(Rect2(origin - Vector2.ONE * reach, Vector2.ONE * reach * 2.0), cone)
 	sim.hit_air = true  # fire reaches up to the helicopters
 	sim.hit_area(cone, damage)
 	sim.hit_air = false
-	sim.powers.fire.scorch(Rect2(origin - Vector2.ONE * reach, Vector2.ONE * reach * 2.0), cone)
 
 
 ## Circles (x, y centre, z radius) that together cover the cone `of` gives, out to its reach,
