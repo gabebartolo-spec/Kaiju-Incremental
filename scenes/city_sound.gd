@@ -6,8 +6,8 @@ extends Node
 ## the crowd's panic loop, sirens, distant gunfire, the fire's roar and the wind. Crowds and sirens
 ## swell early, then fade as people flee; the ruined city is fire, wind and the military only. The
 ## music stems (MusicLayers) fade in on the same phase. Presentation only: it reads the sim and
-## decides nothing. A bed whose sound file is not in assets/sfx yet is still driven (its level is
-## in `levels`) and plays once the file is dropped in (see the ElevenLabs list in the PR).
+## decides nothing. A bed whose sound file is missing or fails to load is still driven (its level is
+## in `levels`) and simply stays silent.
 
 ## Where the rampage is, 0..1 (CityCurve.phase), and every bed's current level in dB.
 var phase := 0.0

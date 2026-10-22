@@ -32,10 +32,6 @@ Sources:
 | ready.ogg | synth growl (formant-filtered buzz) + synth chime |
 | deflect.ogg | Kenney `impactMetal_heavy_001` + `impactBell_heavy_002` pitched 1.2 |
 | regen_loop.ogg | synth bubbles (seamless 2 s loop) |
-| city_siren.ogg (seamless 16 s loop; CitySound bed, D-155) | synth only: two far-off wail sirens (8 s and 16/3 s sweeps of 620-1010 and 780-1250 Hz, harmonic tones, whole cycles per loop), low-passed at 2.6 kHz, echo off the buildings, high-passed at 250 Hz. Levelled to -24 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 by `tools/sfx/build_city_beds.py`. |
-| city_gunfire.ogg (seamless 12 s loop) | 15 shots of `rifle.ogg` (ElevenLabs, CLEARED) pitched 0.55, low-passed at 1.3 kHz, scattered round the loop with random gains, plus an echo. Levelled to -33 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 (`build_city_beds.py`). |
-| city_fire.ogg (seamless 10 s loop) | synth only: low-passed noise on slow gusts, a 100-280 Hz band-passed rush, 38 a second crackle snaps at 2.1 kHz; the overrun crossfaded into the start. Levelled to -24 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 (`build_city_beds.py`). |
-| city_wind.ogg (seamless 12 s loop) | synth only: noise band-passed 380-900 Hz on slow gusts, a 1.7-2.2 kHz whistle, a sub-160 Hz moan; the overrun crossfaded into the start. Levelled to -26 dBFS RMS. Placeholder for an ElevenLabs take. Added 2026-10-23 (`build_city_beds.py`). |
 
 ## ElevenLabs replacements (2026-10-19, D-092; picked by the director from a loudness-matched shootout)
 
@@ -61,3 +57,13 @@ They replace the synth/Kenney mixes listed above for these files; shell_hit.ogg 
 Not usable: the distant-rifle prompt (and one near-rifle take) came back near-silent (peak about -45 dBFS); rifle_far keeps
 playing the rifle sample pitched 0.7, as before.
 
+## City beds (2026-10-23, D-155, D-138)
+
+Four loops for CitySound, generated in ElevenLabs Sound Effects on the director's paid plan (model eleven_text_to_sound_v2, prompt influence 0.5, loop on, fixed duration; flow oRbWcPVQmGlj1NYUxCJI; 2 takes each, 8 generations, 333.3 credits; D-092, D-138). Each pick was converted to mono 44.1 kHz Vorbis 96 kb/s, gain set so the whole-loop RMS hits the target (siren -24, gunfire -33, fire -24, wind -26 dBFS; measured within 0.1 dB) with the peak at or under -1.5 dBFS (gunfire -2.0 dBFS: sparse, crest 31 dB), no fades. Gains: siren -17.87 dB, gunfire +20.61, fire +0.48, wind +1.74. Raw takes stay outside the repo.
+
+| File | Take | Prompt (ElevenLabs) |
+|---|---|---|
+| city_siren.ogg | siren a, 16 s loop (generation NhcfJy7PGeLP2pdYiifG) | High-quality, professionally recorded emergency sirens heard from several blocks away across a large city at night: two police and ambulance sirens wailing at different pitches, overlapping, echoing off tall buildings, distant and dark. No voices, no traffic, no music. Sound effects ambience, loop. |
+| city_gunfire.ogg | gunfire b, 12 s loop (generation xQMpCIcETnas6ZopXczI) | High-quality, professionally recorded distant gunfire across a city: sparse muffled rifle pops and a few short bursts, long gaps between them, echoing between tall buildings from far away, dull and low. No voices, no explosions, no music. Sound effects ambience, loop. |
+| city_fire.ogg | fire b, 10 s loop (generation vsoyqeoWjCpBW6Gbdo4O) | High-quality, professionally recorded large fires burning across a city seen from far off: a deep low roar of wind-fed flames with steady crackling and snapping, no single loud event. No voices, no music. Sound effects ambience, loop. |
+| city_wind.ogg | wind b, 12 s loop (generation OWsFcg8wbCa439qtLFkq) | High-quality, professionally recorded cold wind gusting through empty city streets and between skyscrapers: low moaning with faint whistling through broken windows, eerie and desolate, slow swells. No voices, no traffic, no birds, no music. Sound effects ambience, loop. |
