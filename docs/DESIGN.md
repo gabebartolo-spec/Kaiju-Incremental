@@ -109,7 +109,7 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 ## Look, camera, screen
 - **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
   D-057/D-068). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010).
-  Time of day rotates per run: dusk, night, morning, noon; morning less hazy, night lighter (D-106).
+  Time of day is random per run (dusk, night, morning, noon), with an options toggle to fix one; morning less hazy, night lighter (D-106, D-145).
 - **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). Run
   intro: a 3 s shot of the water rippling, the kaiju bursting out roaring, the camera pulling out (#11). Water reacts
   to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.
