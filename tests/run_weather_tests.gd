@@ -72,7 +72,10 @@ func _check_fixed_setting() -> void:
 				or Weather.pick(run, "", str(id)) != str(id)
 			):
 				wrong += 1
-	check(wrong == 0, "a fixed weather is every run's weather, even right after itself (%d wrong)" % wrong)
+	check(
+		wrong == 0,
+		"a fixed weather is every run's weather, even right after itself (%d wrong)" % wrong
+	)
 	check(
 		not Content.weathers().has("hail") and Weather.pick(5, "rain", "hail") != "rain",
 		"an unknown setting counts as Random: it still never repeats the last weather"
@@ -127,10 +130,16 @@ func _check_settings_file() -> void:
 	PlayerSettings.load_saved(false)
 	var unknown := PlayerSettings.weather
 	PlayerSettings.weather = kept
-	check(round_trip == "fog", "the chosen weather is saved in settings.cfg and loads back: %s" % round_trip)
+	check(
+		round_trip == "fog",
+		"the chosen weather is saved in settings.cfg and loads back: %s" % round_trip
+	)
 	check(
 		old_file == Weather.RANDOM and unknown == Weather.RANDOM,
-		"an older settings.cfg, or an unknown weather in it, loads as Random (%s, %s)" % [old_file, unknown]
+		(
+			"an older settings.cfg, or an unknown weather in it, loads as Random (%s, %s)"
+			% [old_file, unknown]
+		)
 	)
 
 
@@ -162,7 +171,10 @@ func _check_options_row() -> void:
 	var buttons := menu.find_children("*", "Button", true, false).filter(
 		func(b: Node) -> bool: return (b as Button).text == "< RANDOM EACH RAMPAGE >"
 	)
-	check(buttons.size() == 2, "the options show a time-of-day and a weather button: %d" % buttons.size())
+	check(
+		buttons.size() == 2,
+		"the options show a time-of-day and a weather button: %d" % buttons.size()
+	)
 	if buttons.size() == 2:
 		var weather: Button = buttons[1]
 		await GuiInput.click(self, weather)
