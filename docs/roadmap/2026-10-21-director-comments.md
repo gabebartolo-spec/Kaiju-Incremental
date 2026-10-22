@@ -64,3 +64,5 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 58 | Landmarks (asked): out-of-view landmarks may unload like ordinary buildings, "Yes, if no pop-in" | city-memory builder: game-camera test proves no landmark pop-in while turning | in progress |
 | 59 | Worktrees over the cap (asked): "Yes, merged ones only" | lead: remove worktrees whose branches are merged | in progress |
 | 60 | "cpu and gpu and screen and all godot slots are yours to use as you see fit" (2026-10-22, director AFK ~30 min) | lead + every builder: no per-agent Godot cap, local GPU renders, visible windows allowed while this stands | rule |
+| 61 | "I would like the 1.0 demo build to be on Itch for testers" (2026-10-22) | lead: ROADMAP release item (Itch page + upload); details being asked | recorded |
+| 62 | "I would like many more landmarks" (2026-10-22; today 4: stadium, wheel, spire, megatower, D-071) | lead: ROADMAP landmark item; how many and which being asked | recorded |
