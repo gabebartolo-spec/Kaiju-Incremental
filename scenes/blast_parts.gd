@@ -22,10 +22,11 @@ const FIREBALL: Array[Color] = [
 	Color(2.2, 1.5, 0.4),
 	Color(2.0, 0.34, 0.0),
 	Color(1.9, 0.32, 0.0),
+	Color(1.0, 0.2, 0.02),
 	Color(0.55, 0.14, 0.05),
 	Color(0.2, 0.17, 0.15),
 ]
-const FIREBALL_AT: Array[float] = [0.0, 0.08, 0.55, 0.78, 1.0]
+const FIREBALL_AT: Array[float] = [0.0, 0.05, 0.45, 0.65, 0.82, 1.0]
 const FIREBALL_SHADES: Array[Color] = [
 	Color(1, 1, 1), Color(0.75, 0.7, 0.65), Color(0.45, 0.4, 0.38)
 ]
@@ -58,12 +59,16 @@ static func fireball(
 	mat.damping_max = mat.damping_min * 1.3
 	mat.angular_velocity_min = -90.0
 	mat.angular_velocity_max = 90.0
-	curve(mat, Vector2(0.6, 1.3) * size, [0.8, 1.2, 0.0])
+	mat.scale_min = 0.6 * size  # cubes grow in over the first frames, hold, then shrink out last
+	mat.scale_max = 1.3 * size
+	var size_curve: Array = cfg["size_curve"]
+	mat.scale_curve = _boil(size_curve)
 	mat.color_ramp = ramp(FIREBALL, FIREBALL_AT)
 	mat.color_initial_ramp = _shades(FIREBALL_SHADES)
 	var life := Num.f(cfg["seconds"])
 	var amount := roundi(Num.f(cfg["amount"]) * clampf(radius / 5.0, 0.5, 1.6))
-	emit(host, mat, voxel_cube(), amount, life, at)
+	var p := emit(host, mat, voxel_cube(), amount, life, at)
+	p.explosiveness = 1.0 - Num.f(cfg["build_seconds"]) / life  # it builds over a few frames
 
 
 ## The instant: white-hot voxels bursting out of the whole site and gone in core.seconds (a few
@@ -171,8 +176,9 @@ static func toxic_cloud(
 	)
 
 
-## The gas cube's size over its life: growing in, then swelling and sagging on cloud.boil
-## points ([life share, scale] pairs), then shrinking away: a boil, never a frozen block.
+## A cube's size over its life from [life share, scale] points (the fireball's size_curve; the
+## gas's cloud.boil: growing in, swelling and sagging, then shrinking away: a boil, never a
+## frozen block).
 static func _boil(points: Array) -> CurveTexture:
 	var c := Curve.new()
 	c.max_value = 4.0
