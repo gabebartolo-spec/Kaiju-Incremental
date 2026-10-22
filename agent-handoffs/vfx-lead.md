@@ -81,7 +81,7 @@ the fade off; scratchpad topple3/) shows: (d) = FallFade's screen-door on a fall
 back faces at `inside` 0.12, so a cut reads as a dark hollow, not the carved slab colour (8a8780, D-101); possible
 fix = cap quads. A "+" lattice on the landed rubble was a helicopter rotor's shadow. (e) not reproduced (no
 neighbours in that city). Next: find the v5 clip frames (ask the lead) before choosing a fix. The chunks-inside-
-body finding is sim-side (BodyContact chew), handed back to the lead. Capture script: move off the heli branch.
+capture_topple_faces.gd (off the heli branch). Chunks-inside-body: sim-side, the lead took it.
 
 ## Rules learnt the hard way
 - A fresh worktree needs `git lfs pull`, the carve dll copied into native/bin (gitignored; newest build from a
