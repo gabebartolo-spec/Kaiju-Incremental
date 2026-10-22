@@ -9,7 +9,7 @@ extends RefCounted
 ## is clear of them; it must be seen on SEEN_SHARE of the frames it is above the water, and its
 ## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
 
-const Growth := preload("res://tools/capture/capture_growth.gd")
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const STAGES := 4
 const SECONDS := 4.0
 const SEEN_SHARE := 0.95
@@ -38,7 +38,7 @@ func run() -> void:
 
 func _stage(stage: int) -> void:
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[stage - 1], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))

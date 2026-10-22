@@ -8,6 +8,8 @@ extends SceneTree
 ##   godot --path . --windowed --resolution 1920x1080 --script tools/capture/bench_heavy.gd \
 ##     -- --species=reptilian --seconds=60 --slow=50
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
+
 const HANDLER_MS := 16.0  # a view handler over this in one frame is a spike
 
 var _species := "reptilian"
@@ -20,37 +22,25 @@ var _queue_max := 0
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--species="):
-			_species = arg.substr(10)
-		elif arg.begins_with("--seconds="):
-			_seconds = arg.substr(10).to_float()
-		elif arg.begins_with("--slow="):
-			_slow = arg.substr(7).to_float()
+	var a := Kit.args({"species": _species, "seconds": _seconds, "slow": _slow})
+	_species = str(a["species"])
+	_seconds = Num.f(a["seconds"])
+	_slow = Num.f(a["slow"])
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def(_species)
-	var levels := {"claws": 4, "hide": 3, "rage": 3, "quake": 2, "evolve1": 1, "sig_power": 2}
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 2
-	)
-	rampage.set_autoplay(true)
-	root.add_child(rampage)
-	for _i: int in 30:
-		await process_frame
+	var rampage := Kit.autoplay(self, _species, Kit.stats(_species, Kit.BENCH_LEVELS), 2)
+	await Kit.frames(self, 30)
 	var city: CityView = null
 	for node: Node in rampage.get_children():
 		if node is CityView:
 			city = node
-	var vp := root.get_viewport_rid()
-	RenderingServer.viewport_set_measure_render_time(vp, true)
+	Kit.measure_on(self)
 	var frames := 0
 	var gap_sum := 0.0
 	var gap_max := 0.0
