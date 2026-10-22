@@ -64,3 +64,10 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-18 | reptilian baby | texture from ref | Texture | edf7bb50 (texture) | 30 | yes | six-view PASS: ~/Downloads/kaiju_tripo/rep_croctitan_baby.glb (2.2 MB, 2k), croctitan_baby_six_view.png |
 | 2026-10-18 | reptilian adolescent | texture from ref | Texture | 109910f0 (texture) | 30 | yes | six-view PASS: ~/Downloads/kaiju_tripo/rep_croctitan_adolescent.glb (2.2 MB, 2k; faces +X, not -Y), croctitan_adolescent_six_view.png; balance 19155 |
 | 2026-10-18 | cephalopod adult texture | (download only) 8bf2f668 textured GLB, 2k | Export | 8bf2f668 | 0 | yes | ~/Downloads/kaiju_tripo/octo_adult_tex.glb 4.6 MB (row 2026-10-17 "generating" -> downloaded) |
+| 2026-10-23 | reptilian head python A ref | GPT Image 2.5 edit of croc titan ref (image history 2026-10-17 21:50, variant 3, 7d179062/image_2): reticulated python head, charcoal spines | Image edit | d9ef0685 | 0 (free quota) | n/a | ref for Smart Mesh; heads_board pending critic |
+| 2026-10-23 | reptilian head python B ref | same ref, heavier armoured python head | Image edit | 83e61a14 | 0 (free quota) | n/a | ref for Smart Mesh |
+| 2026-10-23 | reptilian head komodo A ref | same ref, classic Komodo head | Image edit | af0de59b | 0 (free quota) | n/a | ref, not yet meshed |
+| 2026-10-23 | reptilian head komodo B ref | same ref, battle-scarred Komodo head | Image edit | 1d4d1ece | 0 (free quota) | n/a | ref, not yet meshed |
+| 2026-10-23 | reptilian head python A | d9ef0685 | Smart Mesh P2.0 x4 | a24840d3-b805-4853-9c1d-cf8f2d112a52 | 100 | yes (Private) | generated, 4 variants, not yet inspected |
+| 2026-10-23 | reptilian head python B | 83e61a14 | Smart Mesh P2.0 x4 | fc818f33-59d1-477d-bee5-c25f95d7830b | 100 | yes (Private) | generated; variant 1 = model 00c91098-1b6c-4ef5-9cb5-e04c3707755e |
+| 2026-10-23 | reptilian head python B v1 untextured | export 00c91098 GLB | Export | 00c91098 | 0 | yes | ~/Downloads/kaiju_tripo/heads_python_b_v1_clay.glb (260 KB, glTF); director pressed Save on the native dialog |
