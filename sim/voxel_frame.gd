@@ -42,10 +42,11 @@ var _strength := PackedFloat64Array()
 var _ids: Dictionary = {}
 ## The cells emptied since the last settle and what each held, kept while the settle cache
 ## (VoxelSettleCache) is valid; any other change to the grid drops the cache.
-static var PROF := {}
 var gone := PackedInt32Array()
 var gone_mats := PackedByteArray()
 var _cache: VoxelSettleCache = null
+## Full settles run (CarvePace charges each one by the grid's size).
+var full_settles := 0
 
 
 func _init(units: Vector3i, p_res: int, materials: Array[Dictionary]) -> void:
@@ -252,24 +253,28 @@ func detach() -> Array[Dictionary]:
 ## what hung from a toppled load below its level: a fresh flood, its islands land as the first
 ## ones do (review FIX on #97: nothing is left floating).
 func settle() -> Array[Dictionary]:
-	var t0 := Time.get_ticks_usec()
 	if _cache != null and _cache.try_fast(self):
 		gone.clear()
 		gone_mats.clear()
-		PROF["fast_ok"] = PROF.get("fast_ok", 0) + Time.get_ticks_usec() - t0
-		PROF["fast_ok_n"] = PROF.get("fast_ok_n", 0) + 1
 		return []
-	var t1 := Time.get_ticks_usec()
-	PROF["fast_fail"] = PROF.get("fast_fail", 0) + t1 - t0
-	var r := settle_full()
-	PROF["full"] = PROF.get("full", 0) + Time.get_ticks_usec() - t1
-	PROF["full_n"] = PROF.get("full_n", 0) + 1
-	return r
+	return settle_full()
+
+
+## True once a settle has run since the grid was adopted (its settle cache exists).
+func settled() -> bool:
+	return _cache != null
+
+
+## Builds the settle cache's loads now rather than on the next settle (CarvePace's warm-up).
+func prime() -> void:
+	if _cache != null and gone.is_empty():
+		_cache.prime(self)
 
 
 ## settle() by the flood alone (the oracle the cache is held to; also what runs when the cache
 ## cannot prove the cells lost leave the rest as it was).
 func settle_full() -> Array[Dictionary]:
+	full_settles += 1
 	var support := VoxelSupport.new(self)
 	var out: Array[Dictionary] = []
 	_drop_islands(support, out)

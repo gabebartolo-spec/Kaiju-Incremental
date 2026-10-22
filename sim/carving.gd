@@ -53,6 +53,8 @@ var sim: RampageSim
 var on := false
 var alive_share := 0.5
 var promoter := CellPromoter.new()
+## When settles and the warm-up run (CarvePace).
+var pace: CarvePace
 ## Building index -> Grid, for the buildings hit so far.
 var grids: Dictionary = {}
 ## Cells carved by blows and cells that fell, over the rampage.
@@ -69,6 +71,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	var cfg: Dictionary = tuning.get("destruction", {})
 	on = cfg.get("carve", false) == true
 	alive_share = Num.f(cfg.get("chunk_alive_share", 0.5))
+	pace = CarvePace.new(self, cfg)
 	_materials = Content.materials()
 	_strength.resize(256)
 	for m: Dictionary in _materials:
@@ -111,7 +114,7 @@ func hit(n: int, force: Callable, damage: float, floors: Vector2i) -> void:
 		return
 	if not sim.hit_coat.is_empty():
 		sim.powers.coat(n, chunks)
-	g = _promote(n)
+	g = promote(n)
 	var f := g.frame
 	var res := f.res
 	var mult := _mult(b)
@@ -146,7 +149,7 @@ func apply(n: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 			hits.append(k)
 	if hits.is_empty():
 		return 0
-	g = _promote(n)
+	g = promote(n)
 	var f := g.frame
 	var mult := _mult(b)
 	for k: int in hits:
@@ -170,7 +173,11 @@ func settle(n: int) -> Array[Dictionary]:
 	var f := g.frame
 	var plan := f.w * f.d
 	var out: Array[Dictionary] = []
-	for part: Dictionary in f.settle():
+	var runs := f.full_settles
+	var parts := f.settle()
+	if f.full_settles > runs:
+		pace.spent(f.cells.size())
+	for part: Dictionary in parts:
 		var index: PackedInt32Array = part["index"]
 		var lo := Vector3i(f.w, f.h, f.d)
 		var hi := -Vector3i.ONE
@@ -214,8 +221,9 @@ func settle(n: int) -> Array[Dictionary]:
 	return out
 
 
-## Building n's grid, made on its first hit (a cells_promoted event for the view).
-func _promote(n: int) -> Grid:
+## Building n's grid, made on its first hit or ahead of it (CarvePace's warm-up; a
+## cells_promoted event for the view).
+func promote(n: int) -> Grid:
 	if grids.has(n):
 		return grids[n]
 	var b := sim.buildings[n]
@@ -298,7 +306,7 @@ func _finish(n: int, g: Grid) -> int:
 	if not broken.is_empty():
 		sim.pay(b, broken.size(), 1.0)
 		sim.events.append({"type": "chunks_broken", "building": n, "cells": broken})
-	sim.collapse.settle(n)
+	pace.settle(n)
 	return broken.size()
 
 

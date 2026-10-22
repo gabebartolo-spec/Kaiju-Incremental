@@ -43,9 +43,11 @@ var _w := 0
 var _d := 0
 var _h := 0
 var _plan := 0
-var _seen := PackedInt32Array()  # per cell: the stamp of the search that last visited it
-var _goal := PackedInt32Array()  # per cell: the stamp of the search that wants it reached
-var _stamp := 0
+# Per cell: the stamp of the search that last visited it and of the one that wants it reached.
+# Shared by every cache (one search runs at a time), so each grid does not keep its own.
+static var _seen := PackedInt32Array()
+static var _goal := PackedInt32Array()
+static var _stamp := 0
 var _mass := PackedInt64Array()  # per level: cells, sums of 2x + 1 and 2z + 1 (not cumulative)
 var _sx := PackedInt64Array()
 var _sz := PackedInt64Array()
@@ -71,30 +73,24 @@ func adopt(cells: PackedByteArray, parts: int, events: int) -> void:
 func try_fast(f: VoxelFrame) -> bool:
 	if not valid:
 		return _fail("invalid")
-	_cells = f.cells
-	_fix = f.fixtures
-	_w = f.w
-	_d = f.d
-	_h = f.h
-	_plan = _w * _d
+	_take(f)
 	var gone := f.gone
 	var n := gone.size()
 	for k: int in n:
 		_cells[gone[k]] = f.gone_mats[k]
 	if hash(_cells) != _hash:
 		return _stop(f, 0, "hash")
-	if not _built:
-		var tb := Time.get_ticks_usec()
-		_build()
-		VoxelFrame.PROF["build"] = VoxelFrame.PROF.get("build", 0) + Time.get_ticks_usec() - tb
 	for k: int in n:
 		var i := gone[k]
-		_take_out(i, Vector3i(i % _w, i / _plan, (i / _w) % _d), _fix[_cells[i]] != 0)
+		if _built:  # the loads lose it (else they are built below, from the grid without it)
+			_take_out(i, Vector3i(i % _w, i / _plan, (i / _w) % _d), _fix[_cells[i]] != 0)
 		_cells[i] = 0
 	if not _structure_holds(gone, f.gone_mats):
 		return _stop(f, n, "cut")
 	if not _panes_hold(gone):
 		return _stop(f, n, "pane")
+	if not _built:
+		_build()
 	_refresh_boxes()
 	var mass := PackedInt64Array()
 	var sx := PackedInt64Array()
@@ -114,6 +110,26 @@ func try_fast(f: VoxelFrame) -> bool:
 	removed += n
 	fast += 1
 	return true
+
+
+## Builds the loads of `f` (settled, nothing lost since) now, so its next settle need not.
+func prime(f: VoxelFrame) -> void:
+	if valid and not _built and hash(f.cells) == _hash:
+		_take(f)
+		_build()
+		_cells = PackedByteArray()
+
+
+func _take(f: VoxelFrame) -> void:
+	_cells = f.cells
+	_fix = f.fixtures
+	_w = f.w
+	_d = f.d
+	_h = f.h
+	_plan = _w * _d
+	if _seen.size() < _cells.size():
+		_seen.resize(_cells.size())
+		_goal.resize(_cells.size())
 
 
 func _fail(reason: String) -> bool:
@@ -146,11 +162,6 @@ func _build() -> void:
 	_count_z.fill(0)
 	_box.resize(_h * 4)
 	_dirty.resize(_h)
-	_seen.resize(_cells.size())
-	_goal.resize(_cells.size())
-	_seen.fill(0)
-	_goal.fill(0)
-	_stamp = 0
 	var i := 0
 	for y: int in _h:
 		var count := 0

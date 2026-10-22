@@ -80,9 +80,8 @@ func _run() -> void:
 			]
 		)
 	)
-	print("worst single sim tick: ", rampage.worst_tick)
+	print("worst single sim step: %.1f ms" % (Num.f(rampage.cost_usec.get("sim.step", 0)) / 1000.0))
 	print(_cache_tally(rampage))
-	print("settle time (ms) over the run: ", VoxelFrame.PROF)
 	_worst.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["gap"] > b["gap"])
 	print("WORST 12:")
 	for k: int in mini(12, _worst.size()):

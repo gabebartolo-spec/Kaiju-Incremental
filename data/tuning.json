@@ -673,6 +673,8 @@
 		"arc_shed_cells": 32,
 		"column_bay": 8,
 		"carve": true,
-		"chunk_alive_share": 0.5
+		"chunk_alive_share": 0.5,
+		"settle_cells": 120000,
+		"warm_range": 4.0
 	}
 }

@@ -196,6 +196,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var signature_held := buttons & HELD != 0
 	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
+	carving.pace.tick()  # settles held back last step, else a building warmed ahead of a hit
 	if over or emerge.step(self, dt):
 		return _events
 	time_left -= dt
@@ -374,9 +375,8 @@ func damage_chunks(index: int, cells: Array[Vector3i], amount: float) -> int:
 	return damage_cells(index, cells, amounts)
 
 
-## Damages chunks of one building, each by its own amount. A building that dwarfs the kaiju
-## takes less of each blow (Growth.dwarf_mult, D-091). Broken chunks pay rubble; then whatever
-## lost support starts to fall. Returns chunks broken. A carved building goes to Carving.
+## Damages chunks of one building, each by its own amount (less if it dwarfs the kaiju, D-091).
+## Broken chunks pay rubble; then what lost support falls. Returns chunks broken (Carving's).
 func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Array) -> int:
 	if carving.takes(index):
 		return carving.apply(index, cells, amounts)
