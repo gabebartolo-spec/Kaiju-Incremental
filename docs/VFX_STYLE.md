@@ -42,7 +42,8 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
   Embers `ffe9a0` -> `ff6a1a`.
 - **Scale:** `size` adds flames and light, not voxel size. Tongues rise; a fire never spreads flat.
 - **Consumers:** CityView.fire (wrecks, crashes, thrown landings), CityView.burn_chunk (the beam's coat, fire
-  spread R 26), the title's FarFire (whole fire zoomed for distance, claude/ui-redesign), the blast's fire
+  spread R 26), the title's FarFire (whole fire zoomed for distance, claude/ui-redesign; burning floors' windows
+  turn fire-orange and the flames pour out of the openings, director 2026-10-23), the blast's fire
   (claude/city-explosives-v2). Stomp cracks glow `ff7a2a` (MOLTEN) inside the same hue range.
 - **Rule:** a new burning thing instances Fire or builds from `Fire.EMBER_SHADER` + `Fire.FLAME_COLORS` at the
   flame voxel size. fire.gd is edited on three branches (fire-spread, ui-redesign, city-explosives-v2): merge one
@@ -53,11 +54,11 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
   particle (COLOR), soft edges; clears near the camera (8-22 m), over the screen centre (keeps 0.3) and in front
   of the kaiju (`smoke_focus`). Fire's column: 70 x size quads 1.0 x 1.7 tall, life 10 s, leaning with the wind.
 - **Colour ramp:** charcoal, alpha 0 -> 0.46 at 0.08 -> 0.32 at 0.6 -> 0; rgb 0.05 -> 0.10 -> 0.20 -> 0.22.
-- **Gas** (the chem lab's cloud, the Taskforce's blue-black gas, D-143) is smoke: this shader, tinted. Proposal,
-  not yet ruled (the chem lab ships green cubes today: see "Two looks").
-- **Finding:** at night the charcoal column is invisible against the sky, and faint at noon (sheet, `fire_far_smoke`); the
-  director's title ask is "heavy smoke lit from below" (D-141). A fire-lit underside for the shared smoke is a
-  follow-up for the lead to brief, not a title-only shader.
+- **Gas** (the chem lab's cloud, the Taskforce's blue-black gas, D-143) is smoke: this shader, tinted (director
+  2026-10-23: "Soft tinted smoke"; the chem lab's green cubes are redone).
+- **Lit from below, everywhere** (director 2026-10-23, after the sheet showed the charcoal column invisible at
+  night and faint at noon, `fire_far_smoke`): every fire's smoke glows orange underneath, in game and on the title
+  (D-141 "heavy smoke lit from below"), one shared change to this shader, never a title-only one.
 
 ### 3. Dust: `scenes/fx.gd` (Fx.dust, footfall, puff, dust_line) on `smoke.gdshader`
 - **Defined by:** the smoke shader's puffs in warm grey, one-shot bursts (explosiveness 0.9), growing 0.4 -> 1.6.
@@ -82,7 +83,7 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
   `ff4a14` (`beam.gdshader` cylinder + `breath_curtain.gdshader` flame wall + flares, `breath_beam.gd`), and the
   ultimate is a solid emissive box (PowersView `_box`, `powers_view.gd:120`) that reads as a white slab from the
   side and is hidden behind the head at the game camera (sheet, BREATH, BEAM row).
-- **Spec when built (ROADMAP b2-18, research 17):** one additive ribbon shader for every beam in the game: a
+- **In the M1 build** (director 2026-10-23). **Spec (ROADMAP b2-18, research 17):** one additive ribbon shader for every beam in the game: a
   white-hot core, a coloured halo (the halo colour is the director's open question R 17.6), 3-5 branches, at most
   3 flashes a second. The breath, the Thunder Beam and the Taskforce's railgun and gunship lasers all draw with it;
   only the tint differs by owner.
@@ -96,18 +97,20 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
   pulsing, drawn over the city. The Taskforce's laser-bomb target rings (D-143) share this drawing in electric blue.
 
 ### 8. Taskforce blue energy: NOT BUILT (D-137/139/143/145)
-- "Obsidian with Electric Blue highlights". One colour token for every Taskforce glow, defined once in
-  `data/tuning.json` when PR 1 lands; nothing else in the game uses it (the kaiju's glows are warm or white).
+- "Obsidian with Electric Blue highlights". ONE electric blue for every Taskforce glow, defined once in
+  `data/tuning.json` when PR 1 lands; nothing else in the game uses blue (director 2026-10-23: "One blue, theirs
+  only"; the armour-deflect flash `cfe6ff` moves to white). The kaiju's glows are warm or white.
 - Railgun aiming line + hit, gunship laser: the beam ribbon of family 6, blue. Coils, jetpack exhausts and trails:
   family 5 glow cubes, blue. Gas: family 2 tinted blue-black. Frost: an ice crust of lit pale-blue voxels on the
   legs (a body material, cracking off as debris), with family-3 puffs tinted white. Laser-bomb rings: family 7
   telegraph. Bomb and mech blasts: family 9.
 
 ### 9. Explosions: base = CityView.flash + debris + Fire (TankFx.wreck); blasts on claude/city-explosives-v2
-- **Canonical (being finished, review below):** the instant = family 5 (flare, real light, optional screen flash);
-  the fireball = family 1's flame voxels at their own size, shader and heat, thrown up fast from the site and
-  rising as tongues; then a real Fire left burning (its smoke); debris = family 4; the ground shock = family 3/7
-  (shockwave band + dust puffs); fireworks = family 5 sparks in colours; gas = family 2.
+- **Canonical (director 2026-10-23: "Fire's tongues", "Same dust"):** the instant = family 5 (flare, real light,
+  optional screen flash); the fire = a sudden tall burst of family 1's own rising flames (same voxel size, shader,
+  heat and ramp), then a real Fire left burning with its smoke; debris = family 4; the ground shock = the same
+  street dust as a stomp (family 3/7), never a special colour; fireworks = family 5 sparks in colours; gas =
+  family 2. The same holds for Taskforce weapon hits.
 
 ### 10. Post effects (D-142, claude/post-fx, unmerged)
 - A CanvasLayer under the HUD: a subtle vignette (red pulse below 25% health) and a 0.2 s colour fringe on the
@@ -116,14 +119,14 @@ and doesnt match the fire we use the rest of the time, consistency is absolutely
 ## Two looks today (flagged red on the sheet)
 | family | canonical | second look | where | fix (owner) |
 |---|---|---|---|---|
-| dust | smoke-shader puff | flat radial sprite, tan | Fx.tree_puff (`fx.gd:141`) | smoke-shader puff that skips the centre clearing (follow-up) |
-| ring | dust band shader | hazard-yellow torus | CityView.ring (tail sweep, ink), `city_view.gd:338` | Fx.shockwave (follow-up) |
-| sparks | ember glow cube | plain unshaded cube, no bloom | Fx.sparks (shell hits, beam end) | FxParticles.sparks (follow-up) |
+| dust | smoke-shader puff | flat radial sprite, tan | Fx.tree_puff (`fx.gd:141`) | smoke-shader puff that skips the centre clearing (fixing, director yes 2026-10-23) |
+| ring | dust band shader | hazard-yellow torus | CityView.ring (tail sweep, ink), `city_view.gd:338` | Fx.shockwave (fixing, director yes 2026-10-23) |
+| sparks | ember glow cube | plain unshaded cube, no bloom | Fx.sparks (shell hits, beam end) | FxParticles.sparks (fixing, director yes 2026-10-23) |
 | fire | Fire's rising voxels | additive orange flame wall | breath_curtain.gdshader | goes with the lightning rework (b2-18) |
-| beam | (none yet) | solid emissive box | Thunder Beam, `powers_view.gd:120` | ribbon shader (b2-18) |
+| beam | (none yet) | solid emissive box | Thunder Beam, `powers_view.gd:120` | ribbon shader (b2-18, in M1) |
 | fire | Fire's voxels | big flat orange cube spray | blast fireball, city-explosives-v2 r8 | review FIX below |
 | dust | smoke-shader puff | pale lit cubes | blast shock ring, city-explosives-v2 | review FIX below |
-| gas/smoke | smoke shader | green lit cubes | chem lab cloud, city-explosives-v2 | proposal, lead's call |
+| gas/smoke | smoke shader | green lit cubes | chem lab cloud, city-explosives-v2 | tinted smoke (ruled 2026-10-23) |
 | ember shader | `ember.gdshader` | `blast_ember.gdshader` (copy + fog off) | city-explosives-v2 | one shader for both |
 
 ## Review checklist (every effect, in writing, pass/fail/n.a.)
