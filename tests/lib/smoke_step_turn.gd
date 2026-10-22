@@ -9,6 +9,13 @@ extends RefCounted
 const DT := 1.0 / 60.0
 const ADULT := {"evolve1": 1, "evolve2": 1}
 const WALK_S := 3.0
+## A turn's length depends on where in a step the stick swings, so the adult turns from four
+## places in the step (the step clock's fraction at the swing, within SWING_NEAR of each): the
+## turn's average length is the bar, every one must pass the rest and none may drag past
+## SLOWEST_TURN_S.
+const SWINGS := [0.0, 0.25, 0.5, 0.75]
+const SWING_NEAR := 0.1
+const SLOWEST_TURN_S := 1.4
 const TURN_S := 3.0
 ## The adult's 90 deg turn takes this long (s): lumbering, not a swivel, "but not TOO slow".
 const MIN_TURN_S := 1.0
@@ -19,10 +26,14 @@ const MIN_STEPS := 3
 ## d24fe80e), and the share it may move.
 const BABY_TURN_S := 0.60
 const BABY_SHARE := 0.1
-## Each footfall turns the body a slice; between steps only the head leads: at least this share
-## of the turn's yaw comes in the SLICE_S seconds after a footfall (a smooth swivel spreads it).
-const SLICE_SHARE := 0.7
-const SLICE_S := 0.15
+## Each footfall turns the body a slice, a smooth bell (the motion critic's bar: no frame-to-frame
+## change in yaw rate over 25% of its peak) that rises and falls inside the step: at least this
+## share of the turn's yaw comes in the SLICE_S seconds after a footfall (a swivel spreads it over
+## all of it; a step is 0.3 s at the turn's cadence), and the yaw rate never jumps by more than
+## MAX_JUMP.
+const SLICE_SHARE := 0.8
+const SLICE_S := 0.24
+const MAX_JUMP := 0.25
 ## The turn is made when the yaw still to turn is under this (rad, about 1 deg).
 const LANDED := 0.02
 ## A yaw this small in one frame is no turn (rad).
@@ -38,15 +49,24 @@ const STEP_LEN_TOL := 0.02
 
 
 static func check(check: Callable, root: Node) -> void:
-	var adult := _turn(ADULT, root)
+	var adult := _adult(root)
 	var took: float = adult["took"]
-	check.call(
-		took >= MIN_TURN_S and took <= MAX_TURN_S,
-		"the adult's 90 deg turn takes %.2f s (%.1f-%.2f s)" % [took, MIN_TURN_S, MAX_TURN_S]
+	(
+		check
+		. call(
+			took >= MIN_TURN_S and took <= MAX_TURN_S and adult["slowest"] <= SLOWEST_TURN_S,
+			(
+				"the adult's 90 deg turn takes %.2f s on average, %.2f at its slowest (%.1f-%.2f s, <= %.1f)"
+				% [took, adult["slowest"], MIN_TURN_S, MAX_TURN_S, SLOWEST_TURN_S]
+			)
+		)
 	)
 	check.call(
 		adult["steps"] >= MIN_STEPS,
-		"alternating feet step the turn (%d distinct footfalls >= %d)" % [adult["steps"], MIN_STEPS]
+		(
+			"alternating feet step the turn (%.1f distinct footfalls on average >= %d)"
+			% [adult["steps"], MIN_STEPS]
+		)
 	)
 	check.call(
 		adult["aloft"] == 0,
@@ -70,6 +90,13 @@ static func check(check: Callable, root: Node) -> void:
 			% [adult["foot_yaw"], MAX_FOOT_YAW_DEG]
 		)
 	)
+	check.call(
+		adult["jump"] <= MAX_JUMP,
+		(
+			"the yaw rate never jumps (%.0f%% of its peak in one frame <= %.0f%%)"
+			% [adult["jump"] * 100, MAX_JUMP * 100]
+		)
+	)
 	var one_step: float = adult["stride"]
 	var sim_step: float = adult["step_len"]
 	check.call(
@@ -90,9 +117,29 @@ static func check(check: Callable, root: Node) -> void:
 	)
 
 
-## One walk north then a 90 deg turn west at `levels`: {took, steps, aloft, sliced, drift, stride,
-## step_len} (the last two: one step by the clip and by the sim, world units).
-static func _turn(levels: Dictionary, root: Node) -> Dictionary:
+## The adult's turn from each of the SWINGS: the average length, footfalls and sliced share, the
+## slowest turn, and the worst of everything else.
+static func _adult(root: Node) -> Dictionary:
+	var out: Dictionary = {}
+	var total := 0.0
+	for swing: float in SWINGS:
+		var one := _turn(ADULT, root, swing)
+		total += Num.f(one["took"])
+		out["slowest"] = maxf(Num.f(out.get("slowest", 0.0)), Num.f(one["took"]))
+		for key: String in ["drift", "foot_yaw", "jump", "aloft"]:
+			out[key] = maxf(Num.f(out.get(key, 0.0)), Num.f(one[key]))
+		for key: String in ["steps", "sliced"]:
+			out[key] = Num.f(out.get(key, 0.0)) + Num.f(one[key]) / SWINGS.size()
+		out["stride"] = one["stride"]
+		out["step_len"] = one["step_len"]
+	out["took"] = total / SWINGS.size()
+	return out
+
+
+## One walk north then a 90 deg turn west at `levels`, the stick swinging at `at_step` of a step:
+## {took, steps, aloft, sliced, drift, stride, step_len} (the last two: one step by the clip and by
+## the sim, world units).
+static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dictionary:
 	var def := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), def, tree)
@@ -122,10 +169,14 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 	var foot_yaw := 0.0
 	var last_yaw := gait.body_yaw
 	var yaws: Array[Vector2] = []  # (t, |yaw| this frame) through the turn
+	var turn_t := INF  # when the stick swung west
 	for f: int in roundi((WALK_S + TURN_S) / DT):
 		var t := f * DT
 		clock[0] = t
-		var move := Vector2(0, -1) if t < WALK_S else Vector2(-1, 0)
+		var into := fposmod(sim.body.phase, 1.0) - at_step
+		if turn_t == INF and t >= WALK_S and into >= 0.0 and into < SWING_NEAR:
+			turn_t = t
+		var move := Vector2(0, -1) if t < turn_t else Vector2(-1, 0)
 		sim.step(DT, move, false, 0)
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
@@ -140,9 +191,10 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 			down = down or leg.planted
 			drift = maxf(drift, _drift(kaiju, leg, lock, i) if t > 1.5 else 0.0)
 			foot_yaw = maxf(foot_yaw, _foot_yaw(kaiju, leg, toe_yaw, i) if t > 1.5 else 0.0)
-		if t >= WALK_S and landed == INF:
-			aloft += 1 if yawed and not down else 0
+		if t >= turn_t:
 			yaws.append(Vector2(t, dyaw))
+		if t >= turn_t and landed == INF:
+			aloft += 1 if yawed and not down else 0
 			if absf(sim.body.turn_left) < LANDED:
 				landed = t
 	var stride: float = (gait as ClipGait).stride() * 0.5  # one step: half a cycle
@@ -152,12 +204,19 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 	var side := ""
 	for fall: Dictionary in falls:
 		var at: float = fall["t"]
-		if at >= WALK_S and at <= landed and str(fall["side"]) != side:
+		if at >= turn_t and at <= landed and str(fall["side"]) != side:
 			steps += 1
 			side = str(fall["side"])
 	var total := 0.0
 	var near := 0.0
+	var peak := 0.0
+	var jump := 0.0
+	for n: int in yaws.size():
+		peak = maxf(peak, yaws[n].y)
+		jump = maxf(jump, absf(yaws[n].y - yaws[n - 1].y) if n > 0 else 0.0)
 	for y: Vector2 in yaws:
+		if y.x > landed:
+			break
 		total += y.y
 		for fall: Dictionary in falls:
 			var fell: float = fall["t"]
@@ -166,11 +225,12 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 				near += y.y
 				break
 	return {
-		"took": landed - WALK_S,
+		"took": landed - turn_t,
 		"steps": steps,
 		"aloft": aloft,
 		"drift": drift,
 		"foot_yaw": foot_yaw,
+		"jump": jump / maxf(peak, 0.0001),
 		"stride": stride,
 		"step_len": step_len,
 		"sliced": near / maxf(total, 0.0001)
@@ -189,9 +249,7 @@ static func _drift(kaiju: KaijuModel, leg: BipedGait.Leg, lock: Array[Vector3], 
 
 
 ## How far (deg) leg `i`'s toes have yawed in the world since its foot went down (0 while it is up).
-static func _foot_yaw(
-	kaiju: KaijuModel, leg: BipedGait.Leg, since: Array[float], i: int
-) -> float:
+static func _foot_yaw(kaiju: KaijuModel, leg: BipedGait.Leg, since: Array[float], i: int) -> float:
 	if not leg.planted:
 		since[i] = INF
 		return 0.0

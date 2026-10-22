@@ -54,6 +54,7 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 ## A real turn is under way (one that began at smooth_below or more): it steps to its end; a smaller
 ## course correction turns smoothly while walking (D-130).
 var _real_turn := false
+var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
 
 
@@ -124,8 +125,12 @@ func steer(dt: float, want: Vector2) -> float:
 	turn_left = sim.facing.angle_to(want)
 	var stepped := _steps_this_turn()
 	var keep := lerpf(1.0, Num.f(cfg["turn_slow"]), absf(turn_left) / PI)
-	var ease := minf(1.0, Num.f(cfg["stride_ease"]) * dt) if stride > 0.0 else 1.0  # sets off at once
-	stride = lerpf(stride, want.length() * keep, ease)
+	# Sets off at full pace at once, but ramped over walk_off_s, not one frame (the motion critic,
+	# 2026-10-22: "the walk start jumps to full speed"); after it the stride eases to the push.
+	_walked_s += dt
+	var launching := _walked_s < Num.f(cfg["walk_off_s"])
+	var ease := 1.0 if launching else minf(1.0, Num.f(cfg["stride_ease"]) * dt)
+	stride = minf(lerpf(stride, want.length() * keep, ease), stride + dt / Num.f(cfg["walk_off_s"]))
 	var pace := _pace(dt, stepped)  # (top turn speed, its acceleration)
 	var aim := signf(turn_left) * minf(pace.x, sqrt(2.0 * pace.y * absf(turn_left)))
 	_spin = move_toward(_spin, aim, pace.y * dt)
@@ -148,6 +153,7 @@ func _stand(dt: float) -> void:
 	_spin = 0.0
 	_cadence = 0.0
 	_standing = true
+	_walked_s = 0.0
 	_real_turn = false
 	_face(dt)
 
@@ -180,7 +186,7 @@ func _pace(dt: float, stepped: bool) -> Vector2:
 	var cadence := 0.0
 	if stepped:
 		accel = Num.f(cfg["slice_accel"])
-		top = top * _turn_ease() / Num.f(cfg["slice_open"]) if _slice() else 0.0
+		top = top * _turn_ease() * _slice_bell()
 		if absf(turn_left) > Num.f(cfg["turn_min"]):
 			cadence = Num.f(cfg["turn_cadence"]) / sqrt(sim.body_scale())
 	_cadence = move_toward(_cadence, cadence, Num.f(cfg["cadence_ease"]) * dt)
@@ -213,10 +219,12 @@ func _foot_at(ahead: float, side: float) -> Vector2:
 	return sim.kaiju_pos + (heading * ahead + across) * sim.body_scale()
 
 
-## True while the body may yaw: a stretch of each step from slice_from, after its footfall.
-func _slice() -> bool:
-	var at := fposmod(phase, 1.0) - Num.f(cfg["slice_from"])
-	return at >= 0.0 and at < Num.f(cfg["slice_open"])
+## How much of the average pace the yaw may run at now: a bell (smooth rise and fall, no jump in
+## the rate) through the stretch of each step from slice_from, after its footfall; zero outside it.
+## The bell's mean is 2/pi of its peak, so its peak is pi/2 of the pace the slice is spread over.
+func _slice_bell() -> float:
+	var at := (fposmod(phase, 1.0) - Num.f(cfg["slice_from"])) / Num.f(cfg["slice_open"])
+	return 0.5 * PI * sin(PI * at) / Num.f(cfg["slice_open"]) if at >= 0.0 and at < 1.0 else 0.0
 
 
 ## True when this body walks by steps (it has planted feet): the stepped turn and the step clock.
@@ -295,7 +303,7 @@ func _face(dt: float) -> void:
 	var most := _rate("turn_rate_still") * dt
 	if turns_in_steps():
 		# a slice turns quicker than the average (steer), most so at the middle of a turn
-		most *= maxf(1.0, Num.f(cfg["turn_ease_peak"])) / Num.f(cfg["slice_open"])
+		most *= 0.5 * PI * maxf(1.0, Num.f(cfg["turn_ease_peak"])) / Num.f(cfg["slice_open"])
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
 
 

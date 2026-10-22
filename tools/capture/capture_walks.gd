@@ -21,7 +21,10 @@ const LEVELS := {
 }
 const WALK_FROM := 0.5
 const CM_PER_UNIT := 350.0
-const CAM_EASE := 1.5  # 1/s: how fast the cameras swing to the walk's heading
+## 1/s: how fast the side cameras swing to the walk's heading; quick, so the head's distance from
+## the lens (and the kaiju's size in frame) drifts under 3% over 20 frames through a turn (the
+## camera is close to locked to the body).
+const CAM_EASE := 14.0
 const FOCUS_FOLLOW := 12.0  # 1/s: the game camera's focus ease (as Rampage._place_camera)
 
 var _stage := "adult"
@@ -30,6 +33,7 @@ var _cam_kind := "side"
 var _seconds := 9.0
 var _label := ""
 var _show_label := true
+var _log := false  # --log: print the yaw-rate steps, the framing drift and the walk-off ramp
 var _focus := Vector3.INF  # the game camera's eased focus
 
 
@@ -43,6 +47,8 @@ func _initialize() -> void:
 			_cam_kind = arg.substr(6)
 		elif arg == "--no-label":
 			_show_label = false
+		elif arg == "--log":
+			_log = true
 		elif arg.begins_with("--seconds="):
 			_seconds = float(arg.substr(10))
 	_label = "%s  %s  %s" % [_stage, _course, _cam_kind]
@@ -101,6 +107,10 @@ func _run() -> void:
 	root.add_child(world)
 	var way := Vector2(0, -1)  # the cameras' eased heading
 	var drift := 0.0
+	var yaws: Array[float] = []  # the drawn body's yaw each frame
+	var heights: Array[float] = []  # the drawn kaiju's height in pixels each frame
+	var steps: Array[float] = []  # how far the kaiju walked each frame (world units)
+	var last_at := sim.kaiju_pos
 	var planted_at: Array[Vector3] = [Vector3.INF, Vector3.INF]  # each foot where it went down
 	for f: int in int(_seconds / DT):
 		var t := f * DT
@@ -112,6 +122,11 @@ func _run() -> void:
 		kaiju.animate(DT, move.length(), -sim.body.turn_left)
 		way = way.slerp(sim.body.heading, minf(1.0, CAM_EASE * DT)).normalized()
 		_place(cam, kaiju, way, bs)
+		if _log:
+			yaws.append((kaiju._rig.gait as BipedGait).body_yaw)
+			heights.append(_height_px(cam, kaiju))
+			steps.append(sim.kaiju_pos.distance_to(last_at))
+			last_at = sim.kaiju_pos
 		var slid := _slide(kaiju, planted_at)
 		if t > 1.5:  # past the first steps off the stand
 			drift = maxf(drift, slid)
@@ -122,7 +137,43 @@ func _run() -> void:
 			% [_label, drift, sim.kaiju_pos.snapped(Vector2(0.1, 0.1)), sim.over]
 		)
 	)
+	if _log:
+		_print_log(yaws, heights, steps)
 	quit()
+
+
+## The drawn kaiju's height on screen (px): its ground point to its head.
+func _height_px(cam: Camera3D, kaiju: KaijuModel) -> float:
+	var head := kaiju._rig.bone("head1").global_position
+	return absf(cam.unproject_position(head).y - cam.unproject_position(kaiju.position).y)
+
+
+## The log (director's motion bars): the yaw rate's biggest frame-to-frame step as a share of its
+## peak, the framing's biggest change over any 20 frames, and the first frames of the walk-off.
+func _print_log(yaws: Array[float], heights: Array[float], steps: Array[float]) -> void:
+	var rates: Array[float] = []
+	for i: int in range(1, yaws.size()):
+		rates.append(wrapf(yaws[i] - yaws[i - 1], -PI, PI) / DT)
+	var peak := 0.0
+	var step := 0.0
+	for i: int in rates.size():
+		peak = maxf(peak, absf(rates[i]))
+		step = maxf(step, absf(rates[i] - rates[i - 1]) if i > 0 else 0.0)
+	var frame := 0.0
+	for i: int in range(20, heights.size()):
+		frame = maxf(frame, absf(heights[i] / maxf(heights[i - 20], 1.0) - 1.0))
+	var ramp := ""
+	for i: int in range(int(WALK_FROM / DT), int(WALK_FROM / DT) + 14):
+		ramp += "%.0f " % (steps[i] / maxf(steps[int(WALK_FROM / DT) + 40], 0.0001) * 100.0)
+	print(
+		(
+			(
+				"LOG yaw rate peak %.0f deg/s, biggest frame step %.0f%% of peak; framing change over"
+				+ " 20 frames %.1f%%; walk-off ramp (%% of speed at +40 frames): %s"
+			)
+			% [rad_to_deg(peak), step / maxf(peak, 0.0001) * 100.0, frame * 100.0, ramp]
+		)
+	)
 
 
 ## How far (cm, ground plane) a planted foot's drawn bone has moved since it went down.
