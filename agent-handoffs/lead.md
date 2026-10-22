@@ -99,7 +99,7 @@
   * #149 turn pushed 01aae055: smooth yaw bell (max rate step 19% of peak, bar 25%), capture-rig ease, 8-frame walk-off
     ramp, gdformat + flow fixed. LEAD CHECK: it loosened StepTurn's slice bar (80% of yaw within 0.24 s, was 0.15 s) to
     fit the ease: confirm that's the critic's ease, not a hidden regression. Re-render clip3 (stale), lead QC, then the
-    director feel gate. Full suite not run on this tip.
+    director feel gate. Full suite not run on this tip. CI gdlint red at 01aae055: a .gd file is 402 lines (cap 400): split it.
   * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
     tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
   * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
