@@ -16,8 +16,9 @@
   you need to ask, add it to the interview and continue working". NO AskUserQuestion until he is back; then run the
   interview from the lead board's interview.md (AskUserQuestion, one decision each, images first).
 - D-162: Tripo 8000 credits for snake/Komodo head options and croc skin concepts (VFX lead runs it in the built-in
-  browser); boards go to the interview. Every Tripo download opens a Windows Save dialog: press Save ("you need to
-  press save when these pop up"); scratchpad save_dialog_watch.ps1 wakes the lead if one sits open.
+  browser); boards go to the interview. Every Tripo download opens a Save dialog owned by the Claude app, which
+  computer use may not control (guarded): agents fetch models by signed URL (browser network requests + curl) instead.
+  One Komodo dialog was left open at 04:30 for him. Never edit a running bash script in place (it broke a watcher).
 
 ## Lead board (cross-session sends are capped at 10 between his messages)
 - C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/lead-board/: README.md (protocol), to-<session>.md (lead's
