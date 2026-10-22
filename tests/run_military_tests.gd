@@ -2,8 +2,8 @@ extends "res://tests/lib/military_view.gd"
 ## The tanks move and fight like a professional military (D-066): they drive the road plan
 ## (never a building, a lot or an alley), keep their spacing as drawn (hull, turret and gun), take
 ## firing posts at standoff range and fall back when the kaiju closes. Whole autoplayed rampages
-## on generated cities, seeds 0-2, at the young and Behemoth stages (and the Apex city, where
-## tanks enter round the kaiju, D-039), and the clip's scene through the game camera. The
+## on generated cities, seeds 0-2, at the young and Behemoth stages (and the Colossus city, where
+## tanks enter round the kaiju, D-039, D-135), and the clip's scene through the game camera. The
 ## helicopters are today's (their flight is its own branch, claude/heli-flight).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 

@@ -42,14 +42,14 @@ func _check_branches() -> void:
 			if owner == species_id:
 				own.append(id)
 				var requires: Array = def["requires"]
-				if str(def["name"]).begins_with("ULTIMATE") and requires.has("evolve3"):
+				if str(def["name"]).begins_with("ULTIMATE") and requires.has("evolve2"):
 					ultimate = id
 		if own.size() < 3 or ultimate == "":
 			missing.append("%s branch %s, ultimate '%s'" % [species_id, own, ultimate])
 	check(
 		missing.is_empty(),
 		(
-			"each species has its own branch of 3+ nodes ending in an ultimate after Apex Titan: %s"
+			"each species has its own branch of 3+ nodes ending in an ultimate after the Colossus: %s"
 			% [missing]
 		)
 	)

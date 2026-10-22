@@ -12,7 +12,7 @@ const BRACE_FROM := 6.0  # the braced strip runs this far ahead of the kaiju ...
 const BRACE_TO := 16.0  # ... to this far, BRACE_RADIUS wide, landing in BRACE_SECONDS
 const BRACE_RADIUS := 3.0
 const BRACE_SECONDS := 1.0
-const ADULT := {"evolve1": 1, "evolve2": 1, "evolve3": 1}
+const ADULT := {"evolve1": 1, "evolve2": 1}
 
 var street: StreetLife
 var sim: RampageSim

@@ -10,7 +10,7 @@ const Replay := preload("res://tests/lib/street_replay.gd")
 const FRAMES := 600
 ## Replay.digest() after FRAMES frames at stage 1, High (first 16 hex digits). The packed-array
 ## StreetLife drew every MultiMesh buffer bit for bit as the Person objects it replaced, over
-## 600 frames at stage 4 on Medium, High and Max (to-kaiju/014). A deliberate change to street
+## 600 frames at the then-biggest stage on Medium, High and Max (to-kaiju/014). A deliberate change to street
 ## life, its tuning or the city plan re-pins it.
 const PINNED := "3ce3931c7b6a5cdc"
 

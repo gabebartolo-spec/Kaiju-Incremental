@@ -14,8 +14,8 @@ extends SceneTree
 
 const DT := 1.0 / 15.0
 const TREE_SECONDS := 20.0
-const MILESTONES: Array[String] = ["evolve1", "evolve2", "evolve3"]
-const STAGE_NAMES: Array[String] = ["young", "Behemoth", "Colossus", "Apex Titan"]
+const MILESTONES: Array[String] = ["evolve1", "evolve2"]
+const STAGE_NAMES: Array[String] = ["young", "Behemoth", "Colossus"]
 
 var _runs := 400
 var _only := ""
@@ -114,7 +114,7 @@ func _pace(species_id: String) -> void:
 					"  run %d (%s): +%d rubble in %.0f s, %.0f%% city, %s, bought %d"
 					% [
 						run,
-						STAGE_NAMES[mini(tier, 4) - 1],
+						STAGE_NAMES[mini(tier, STAGE_NAMES.size()) - 1],
 						Num.i(res["rubble"]),
 						steps * DT,
 						Num.f(res["destruction"]) * 100.0,
@@ -136,7 +136,7 @@ func _pace(species_id: String) -> void:
 			(
 				"  | %s | %d | %.2f | %d -> %d | %.0f%% -> %.0f%% | %d/%d/%d |"
 				% [
-					STAGE_NAMES[mini(tier, 4) - 1],
+					STAGE_NAMES[mini(tier, STAGE_NAMES.size()) - 1],
 					n,
 					Num.f(s["seconds"]) / 3600.0,
 					Num.i(s["first_rubble"]),

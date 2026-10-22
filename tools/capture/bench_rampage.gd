@@ -10,12 +10,14 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 
 var _species := "reptilian"
 var _seconds := 30.0
+var _stage := 0
 
 
 func _initialize() -> void:
-	var a := Kit.args({"species": _species, "seconds": _seconds})
+	var a := Kit.args({"species": _species, "seconds": _seconds, "stage": _stage})
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])
+	_stage = Num.i(a["stage"])
 	if not Kit.window_ok():
 		quit(1)
 		return
@@ -24,7 +26,13 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
-	var rampage := Kit.autoplay(self, _species, Kit.stats(_species, Kit.BENCH_LEVELS), 2)
+	var rampage: Rampage
+	if _stage > 0:
+		var levels: Dictionary = Kit.STAGE_LEVELS[_stage - 1]
+		var layout := CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0))
+		rampage = Kit.autoplay(self, _species, Kit.stats(_species, levels, _species), 2, layout)
+	else:
+		rampage = Kit.autoplay(self, _species, Kit.stats(_species, Kit.BENCH_LEVELS), 2)
 	var vp := root.get_viewport_rid()
 	Kit.measure_on(self)
 	await Kit.frames(self, 30)
@@ -74,6 +82,7 @@ func _run() -> void:
 			]
 		)
 	)
+	print("city: stage %d, %d buildings" % [_stage, rampage.sim.buildings.size()])
 	print(
 		"worst costs (ms): ",
 		rampage.cost_usec.keys().map(
