@@ -65,37 +65,60 @@ func _check_vignette_calm() -> void:
 
 func _check_vignette_low_health() -> void:
 	var low_cfg: Dictionary = _cfg()["low_health"]
+	var cap := Num.f(low_cfg["alpha"])
 	var just_above := PostFxState.new()
-	_run_for(just_above, 2.0, Num.f(low_cfg["below"]) + 0.01)
+	var above_peak := 0.0
+	for _i: int in 120:
+		just_above.update(FRAME, Num.f(low_cfg["below"]) + 0.01, 1.0)
+		above_peak = maxf(above_peak, just_above.red_alpha)
 	var state := PostFxState.new()
 	_run_for(state, 2.0, Num.f(low_cfg["full_at"]) * 0.5)
 	var lo := 1.0
 	var hi := 0.0
-	for _i: int in 120:  # a full pulse period is 0.77 s at 1.3 Hz: two seconds covers it
+	var beats := 0
+	var rising := false
+	for _i: int in 240:  # a pulse period is 0.77 s at 1.3 Hz: four seconds is five beats
 		state.update(FRAME, 0.05, 1.0)
-		lo = minf(lo, state.vignette_alpha)
-		hi = maxf(hi, state.vignette_alpha)
+		lo = minf(lo, state.red_alpha)
+		hi = maxf(hi, state.red_alpha)
+		var up := state.red_alpha > cap * 0.5
+		if up and not rising:
+			beats += 1
+		rising = up
 	check(
-		just_above.low == 0.0 and just_above.vignette_color.r < 0.1,
-		"just above the low-health line nothing turns red (low %.2f)" % just_above.low
+		above_peak == 0.0 and just_above.low == 0.0,
+		"above the low-health line (%.2f of max) there is no red at all" % Num.f(low_cfg["below"])
 	)
 	check(
-		state.vignette_color.r > 0.6 and state.vignette_color.g < 0.2,
-		"at very low health the edge is red: %s" % state.vignette_color
+		state.red_color.r > 0.6 and state.red_color.g < 0.2 and state.vignette_color.r < 0.1,
+		(
+			"at very low health the edge band is red (%s) over the unchanged dark vignette"
+			% state.red_color
+		)
 	)
 	check(
-		hi - lo > 0.2 and hi <= Num.f(low_cfg["alpha_max"]) + 0.001,
-		"the red edge pulses (%.2f to %.2f, cap %.2f)" % [lo, hi, Num.f(low_cfg["alpha_max"])]
+		lo < cap * 0.02 and hi > cap * 0.95 and hi <= cap + 0.001,
+		(
+			"each beat swells to the edge alpha (%.2f, cap %.2f) and drops back to nothing (%.3f)"
+			% [hi, cap, lo]
+		)
+	)
+	check(
+		beats >= 4 and beats <= 6 and Num.f(low_cfg["depth_px"]) <= 150.0 and cap <= 0.3,
+		(
+			"%d distinct beats in 4 s; the band is %d px deep at 1080 lines, edge alpha %.2f"
+			% [beats, Num.i(low_cfg["depth_px"]), cap]
+		)
 	)
 	# Healing back: the red fades out over frames, never a pop.
 	var biggest_step := 0.0
-	var before := state.vignette_color.r
+	var before := state.red_alpha
 	for _i: int in 90:
 		state.update(FRAME, 1.0, 1.0)
-		biggest_step = maxf(biggest_step, absf(state.vignette_color.r - before))
-		before = state.vignette_color.r
+		biggest_step = maxf(biggest_step, absf(state.red_alpha - before))
+		before = state.red_alpha
 	check(
-		state.low == 0.0 and biggest_step < 0.05,
+		state.low == 0.0 and state.red_alpha == 0.0 and biggest_step < 0.1,
 		"healing fades the red out (largest frame step %.3f)" % biggest_step
 	)
 
@@ -284,7 +307,7 @@ func _check_rampage() -> void:
 			% [fx.layer, hud.layer]
 		)
 	)
-	var calm: Color = (rects[0].material as ShaderMaterial).get_shader_parameter("tint")
+	var calm := Num.f((rects[0].material as ShaderMaterial).get_shader_parameter("red_alpha"))
 	rampage.sim.stats["stomp_radius"] = 100.0  # a stomp as wide as the widest earns the fringe
 	rampage._stomp_radius = 100.0
 	rampage._stomp_wait = 0.5
@@ -299,10 +322,18 @@ func _check_rampage() -> void:
 	rampage.sim.hp = rampage.sim.max_hp * 0.05
 	for _i: int in 90:
 		await process_frame
-	var red: Color = (rects[0].material as ShaderMaterial).get_shader_parameter("tint")
+	var peak := 0.0
+	for _i: int in 60:  # a beat every 0.77 s: a second of frames holds one
+		await process_frame
+		peak = maxf(
+			peak, Num.f((rects[0].material as ShaderMaterial).get_shader_parameter("red_alpha"))
+		)
 	check(
-		red.r > calm.r + 0.5 and not rects[1].visible,
-		"low health reddens the live vignette (%s to %s) and the fringe is long gone" % [calm, red]
+		calm == 0.0 and peak > 0.1 and not rects[1].visible,
+		(
+			"low health beats the live red edge (%.2f to %.2f) and the fringe is long gone"
+			% [calm, peak]
+		)
 	)
 	PostFx.enabled = false
 	await process_frame

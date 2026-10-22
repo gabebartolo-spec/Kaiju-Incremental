@@ -30,6 +30,8 @@ func _init(p_rampage: Rampage = null) -> void:
 	_vignette_mat.shader = VIGNETTE
 	_vignette_mat.set_shader_parameter("inner", Num.f(cfg["inner"]))
 	_vignette_mat.set_shader_parameter("outer", Num.f(cfg["outer"]))
+	var low: Dictionary = Content.section("post_fx")["low_health"]
+	_vignette_mat.set_shader_parameter("red_depth", Num.f(low["depth_px"]))
 	_fringe_mat.shader = FRINGE
 	_vignette = _rect(_vignette_mat)
 	_fringe = _rect(_fringe_mat)
@@ -78,6 +80,8 @@ func update(delta: float, hp_share: float, motion: float) -> void:
 	_vignette.visible = true
 	_vignette_mat.set_shader_parameter("tint", state.vignette_color)
 	_vignette_mat.set_shader_parameter("strength", state.vignette_alpha)
+	_vignette_mat.set_shader_parameter("red_tint", state.red_color)
+	_vignette_mat.set_shader_parameter("red_alpha", state.red_alpha)
 	_fringe.visible = state.fringe_px > 0.0
 	if _fringe.visible:
 		_fringe_mat.set_shader_parameter("amount_px", state.fringe_px)

@@ -9,9 +9,13 @@ extends RefCounted
 ## fringe is a split-second burst on a top-tier impact only, with a cooldown, so it can never be
 ## always on. The player's camera-motion setting scales the fringe (0 shows none).
 
-## The vignette's colour and the opacity at the screen corner, this frame.
+## The vignette's colour and the opacity at the screen corner (always the calm dark edge).
 var vignette_color := Color.BLACK
 var vignette_alpha := 0.0
+## The low-health red band: its colour, and its opacity at the very screen edge this frame (0 above
+## the line and between beats).
+var red_color := Color.RED
+var red_alpha := 0.0
 ## The fringe's red-blue split at the screen edge, in pixels at 1080 lines (0 = none).
 var fringe_px := 0.0
 ## How far into the low-health state the edge is, 0..1 (eased, so crossing the line never pops).
@@ -20,8 +24,6 @@ var low := 0.0
 var _vig: Dictionary
 var _low_cfg: Dictionary
 var _fringe: Dictionary
-var _calm_color: Color
-var _red_color: Color
 var _phase := 0.0
 var _t := -1.0  # seconds into the running fringe; negative when none
 var _since := INF  # seconds since the last fringe began
@@ -33,9 +35,8 @@ func _init() -> void:
 	_vig = cfg["vignette"]
 	_low_cfg = cfg["low_health"]
 	_fringe = cfg["fringe"]
-	_calm_color = Color(str(_vig["color"]))
-	_red_color = Color(str(_low_cfg["color"]))
-	vignette_color = _calm_color
+	vignette_color = Color(str(_vig["color"]))
+	red_color = Color(str(_low_cfg["color"]))
 	vignette_alpha = Num.f(_vig["strength"])
 
 
@@ -87,11 +88,8 @@ func update(delta: float, hp_share: float, motion: float) -> void:
 	var goal := clampf((below - hp_share) / maxf(below - full, 0.001), 0.0, 1.0)
 	low = move_toward(low, goal, Num.f(_low_cfg["fade_per_s"]) * delta)
 	_phase = fposmod(_phase + Num.f(_low_cfg["pulse_hz"]) * delta, 1.0)
-	var calm := Num.f(_vig["strength"])
-	var pulse := 0.5 - 0.5 * cos(_phase * TAU)  # 0 .. 1 .. 0 once a period
-	var red := lerpf(Num.f(_low_cfg["alpha_min"]), Num.f(_low_cfg["alpha_max"]), pulse)
-	vignette_alpha = lerpf(calm, red, low)
-	vignette_color = _calm_color.lerp(_red_color, low)
+	var beat := 0.5 - 0.5 * cos(_phase * TAU)  # 0 .. 1 .. 0 once a period
+	red_alpha = Num.f(_low_cfg["alpha"]) * low * pow(beat, Num.f(_low_cfg["pulse_sharp"]))
 	fringe_px = 0.0
 	if _t < 0.0:
 		return
