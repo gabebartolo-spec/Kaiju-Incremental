@@ -198,7 +198,8 @@ static func plate_clearance(backdrop: TitleBackdrop, frame_h: float) -> void:
 		for box: Dictionary in (node as CitySkyline).stand_ins():
 			var at: Vector3 = box["at"]
 			var dim: Vector3 = box["size"]
-			if at.z > far_z + 1.0:
+			# Blocks only: the lattice tower (its 1 m beacon) is open ironwork behind the menu.
+			if at.z > far_z + 1.0 or dim.x < TOWER_MIN_WIDTH:
 				continue
 			var lo := Vector2(INF, INF)
 			var hi := Vector2(-INF, -INF)

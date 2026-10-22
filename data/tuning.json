@@ -663,7 +663,7 @@
 			"rim_width": 0.01,
 			"rim_light": [-0.3, 0.95],
 			"rim_min": 0.1,
-			"crown": {"_note": "VFX lead's fix: a crisp warm line along the skull and snout top edge only (uv x under extent), px thick at 2160 rows.", "colour": "ffb866", "px": 6.0, "strength": 1.0, "extent": 0.34},
+			"crown": {"_note": "VFX lead's fix: a crisp warm line along the skull and snout top edge only (uv x under extent), px thick at 2160 rows.", "colour": "ffb866", "px": 8.0, "strength": 1.0, "extent": 0.34},
 			"idle_alpha": 0.1,
 			"glow_idle": 0.2,
 			"glow_peak": 0.85,
