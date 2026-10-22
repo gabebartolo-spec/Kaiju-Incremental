@@ -16,20 +16,22 @@
 ## 2026-10-22 day (lead session status-check-b96b26, registered in context-guard-leads; supersedes the Team list below)
 - Base = origin/claude/look-options = main; squash-only repo, so the base moves on every merge. Old branches are rebuilt
   as their own commits cherry-picked onto the newest tip (scratchpad WAVE1-COMMON.md has the builder rules).
-- Merged today: PR #147 crowds 6x (c07c50ae). PR #144 turn open (turn builder updating it).
+- Merged today: #147 crowds (c07c50ae). Open: #148 perf-scans (CI settling, merge when green), #149 turn (replaces #144;
+  critic FIX sent back: planted-foot twist, yaw ease, tail; needs sim-review reader + director feel gate), #150 camera A
+  (critic round 2 running; director look gate). At the 3-PR cap.
 - Director rulings 2026-10-22: comments #55-63, D-132 (1.0 demo on Itch, invite-only, when the reptilian stage is 100%),
   D-133 (landmark stable ~12, 3 per stage rotate by seed; new 8: bridge tower, opera shells, coaster, donut sign, power
   station, airport tower WITH planes flying in/out, port cranes, refinery; Tripo models made carvable), D-134 (Tripo 9000
   credits today; start 19115, stop at 10115), #60 all CPU/GPU/screen/Godot slots ours, #63 atmosphere list (clouds,
   weather, birds, 1 whale per run, fire crews, ambulances, dogs, clubs, banks, hotels, trains, boats: details to ask).
   RULE: helpers on Sonnet unless complex (RULEBOOK). PC piloting allowed (computer-use: Claude Work, File Explorer, msedgewebview2).
-- Wave 1 subagents (resumed after a restart; Opus, left to finish): city-memory (+landmark unload if no pop-in), perf-scans
-  (suite running, -> claude/perf-scans-v2), perf-tiles, audit-shared, audit-sim (rebuilt off fire), clumsy-army (strays
-  probe, on claude/clumsy-army-v2), turn (#144), camera. They push, never open PRs; lead reviews diffs, opens PRs (max 3).
-- Wave 2 (Sonnet unless complex) as slots free: fire-spread (Opus), intro, rubble (Opus), explosions, dash, UI, ui-art
-  (WIP renderer committed da048e0a on claude/ui-art), then the landmark stable and atmosphere once he answers details.
-- Tripo (built-in browser, logged in): croc-head icon HD model c9b2b460 generating (65 cr); set Private, six-view,
-  export default name, then voxelize/render via claude/ui-art tools. Still to make: dash foot, button plate.
+- Running subagents: city-memory, perf-tiles, audit-shared, audit-sim, clumsy-army (lead ruling: fix tank AI so a
+  cornered column clears the danger radius, tier 4 seed 1; never the test), turn (critic fixes), ui-art (icon board,
+  Opus, brief scratchpad BRIEF-ui-art.md), fire-spread (Opus, wave 2). Done: perf-scans, camera.
+- Wave 2 still to start: intro, rubble (Opus), explosions, dash, UI; then landmark stable + atmosphere after he answers.
+- Tripo: icon models done, six-view PASS: ~/Downloads/kaiju_tripo/hud_croc_head_c9b2b460.glb, hud_dash_foot_ab9504ce.glb
+  (130 cr; balance 18985; privacy 'Sharing Only' = not public). Downloads: the Save dialog sits behind textinputhost
+  (access denied); the browser's .tmp is the complete GLB (header length = size) - copy it out.
 - Worktrees: 9 merged ones removed (leftovers in Kaiju-Incremental-wt/_leftovers-2026-10-22).
 - rule-check.py gave no answers (0/14): the Sonnet rule is recorded but NOT proven.
 - Director: back soon for an interview; ask about atmosphere details, landmark look boards, wave 2 order.
