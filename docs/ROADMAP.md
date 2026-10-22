@@ -332,7 +332,21 @@ The director plays only at these; each gets an exported .exe in a fixed folder a
 state. No director clips or per-change approvals in between; clips only where motion is the point, for the critics.
 - **M1 Feel pass:** fire spread + longer baby breath (#152), heavier turning (#149), bigger explosions, post effects,
   the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
+  Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
+  the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
+  music from the director's Suno stems. Visuals: VFX lead. Sound, music, weather pick and options: lead.
 - **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
 - **M4 Itch release candidate:** M3 survey fixes only.
+
+## Threat Dossier (D-147, 2026-10-23, after the demo)
+- A bestiary named the Threat Dossier: the Kaiju Plan's classified files on every enemy (police, tanks, helicopters,
+  Taskforce agents, gas soldiers, walking mechs, gunships, and any later ones). Name and silhouette on first sight;
+  full stats, weaknesses and lore after the first kill. Opened from the main menu and the pause menu. Status: not started.
+
+## Leader's escape helicopter (D-149, 2026-10-23, after the demo)
+- "the president/prime minister/king/etc" attempts to escape in a fancy helicopter, you get a big payout if you kill
+  him but its a fast helicopter". Random time in any city; Mayor / Governor / President by city; ~15 s window; payout
+  about a city block; breath, Thunder Beam, grab, thrown tank or car, toppled building; headline + rotor sound, no
+  markers; escape loses only the payout; white and gold VIP look. Owner: unassigned. Status: not started.

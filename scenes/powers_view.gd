@@ -121,8 +121,8 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			if _beam != null:
 				_beam.queue_free()
 				_beam = null
-		"coated":
-			_coated(event)
+		"coated", "fire_burning":
+			_lit(event)
 		"dash":  # the charge: a whoosh and a dust streak along the path
 			var ahead := _w(event["dir"]) * sim.body.length()
 			_city.fx.dust_line(kaiju_at, kaiju_at + ahead + Vector3(0, 0.5, 0), bs * 2.0)
@@ -225,6 +225,33 @@ func _coated(event: Dictionary) -> void:
 			tween.tween_callback(blob.queue_free)
 		else:
 			_city.burn_chunk(Num.i(event["building"]), cell, 0.45)
+
+
+## A coat (beam, ink) on chunks, or a whole building the sim set burning.
+func _lit(event: Dictionary) -> void:
+	if str(event["type"]) == "coated":
+		_coated(event)
+	else:
+		_burning(Num.i(event["building"]))
+
+
+## A building the sim set burning (FireSpread): today's chunk fire (flames, embers, smoke) on its
+## roof, one per roof quarter (one on a narrow roof), each on the highest standing chunk there;
+## each goes out when its chunk breaks or falls, all once the building is down (#111). The glow
+## before it and the fire's own look are R 26.5.
+func _burning(index: int) -> void:
+	var b := sim.buildings[index]
+	var size := Num.f(sim.powers_cfg["fire"]["view_size"])
+	var span := Num.f(sim.powers_cfg["fire"]["view_spacing"])
+	var nx := 2 if b.w >= span else 1
+	var nz := 2 if b.d >= span else 1
+	for a: int in nx:
+		for c: int in nz:
+			var cell := Vector3i(floori(b.w * (2 * a + 1) / (2.0 * nx)), 0, 0)
+			cell.z = floori(b.d * (2 * c + 1) / (2.0 * nz))
+			cell.y = b.frame.top_below(cell.x, cell.z, b.height)
+			if cell.y >= 0:
+				_city.burn_chunk(index, cell, size)
 
 
 func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:

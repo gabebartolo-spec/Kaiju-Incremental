@@ -2,6 +2,49 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
+Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
+camera). MERGED #35.
+
+## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
+Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
+
+## 2026-10-18 · D-066 · Director · Tanks and helicopters move and fight like a professional military
+Why: road-bound tank columns with firing posts and fallbacks, helicopter pairs with attack runs; total damage per run
+held within ±5%; helicopters a real threat to dodge ("overall difficulty unchanged"). PR #50; heli mix shift OK.
+
+## 2026-10-18 · D-065 · Director · A believable amount of greenery throughout the city
+Why (06:2x): "make sure there are a believable amount of trees, bushes, floral areas, parks, gardens, playgrounds
+throughout the city". (a) street trees, gardens, playgrounds, hedges, all crushable: PR #55; (b) green lots: D-075.
+
+## 2026-10-18 · D-064 · Director · Menu sounds and the SFX volume slider shipped as heard
+Why: "Menu click/confirm/deny sounds and the SFX volume slider shipped as heard". MERGED #33.
+
+## 2026-10-18 · D-063 · Director · Rooftop defenders shoot at the kaiju
+Why (05:50): "put soldiers/gun bearing citizens defending their homes on rooftops shooting at the kaiju". Their shots
+do chip damage, no new escalation curve (army unit "rooftop"). MERGED #40.
+
+## 2026-10-18 · D-062 · Director · No vast empty spaces: every cell the camera shows holds something
+Why (05:27): "there should never be vast empty spaces with nothing to smash or kill". Inside the arena something to
+smash; past the edge, dressing, never bare asphalt; checked in the city suite. MERGED #37.
+
+## 2026-10-18 · D-061 · Director · UI look A "Emergency Broadcast" for every screen
+Why: picked from three mockups (A broadcast, B concrete and rubble, C monster hide) for a "thematically rich, beautiful
+and intuitive" UI (UI session, 2026-10-18). Changes: UiKit palette (hazard yellow, alert red, near-black), hazard tape,
+square edges, news crawl; one look for every screen. Lands in PR #27.
+
+## 2026-10-18 · D-060 · Director · Mantis and octopus: keep all six meshes, plan only for now
+Why (04:27, species session): keep mantis 9668b815 / 0161ad14 / 06ed8a12 and octopus 8bf2f668 / a328effe / 6176590f and
+give them the croc's Blender hand rig with welded weights, no redesign, octopus first (D-045: the auto rig, not the mesh,
+broke the octopus). 04:50: "I only wanted the plan, not execution": work halted after the plan
+(docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md); nothing merged. Outside the demo (D-050).
+
+## 2026-10-18 · D-059 · Director · Croc baby and adolescent from the croc titan design; 260 Tripo credits
+Why: the demo needs the hatchling and Behemoth stages in the croc look (D-050). The director approved the stage line
+(docs/captures/2026-10-17-reptile-design/croctitan_stage_line.png, after a realism-critic pass) and the spend: two Smart
+Mesh (100 each) and two textures (30 each), balance 19415 -> 19155. Six-view PASS sheets: croctitan_{baby,adolescent}_
+six_view.png; GLBs to blender-reptile for the hand rig, weights, clips and export (P3). Rows in docs/provenance/tripo.md.
+
 ## 2026-10-18 · D-058 · Director · Body text uses Kaiju Block; headings stay Kaiju Claw
 Why (05:13): "still seeing generic fonts in game when we should be using our own": the UI kit drew every label below
 heading size in the engine default. Board A rubble / B fault / C claw / D block at 20 and 24 px; D picked (cleanest at
