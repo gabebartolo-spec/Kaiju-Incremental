@@ -40,7 +40,7 @@ func _ready() -> void:
 	panel.custom_minimum_size = Vector2(980, 0)
 	centre.add_child(panel)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 10)  # 10, not 14: the camera-motion row fits at 125%
+	col.add_theme_constant_override("separation", 6)  # 6, not 10 or 14: it all fits at 125%
 	panel.add_child(col)
 	var title := UiKit.label("SETTINGS", UiKit.SIZE_TITLE, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -98,6 +98,7 @@ func _add_controls(col: Control) -> void:
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 40)
+	grid.add_theme_constant_override("v_separation", 0)
 	col.add_child(grid)
 	for heading: String in ["", "Keyboard", "Pad"]:
 		grid.add_child(UiKit.label(heading, UiKit.SIZE_BODY, UiKit.MUTED))
