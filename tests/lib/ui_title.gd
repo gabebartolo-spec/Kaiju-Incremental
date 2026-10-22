@@ -23,8 +23,13 @@ const SCUFF_BAND := 0.2
 ## the plate's outline lands on the logo's ink (measured on a 4K capture: 127 vs 128 px).
 const INSET_FROM := 5.0
 const INSET_TO := 7.0
-## Towers are wider than this; the lattice tower's 1 m beacon is a stand-in too, not a tower.
+## The ROADMAP's TV title-safe margin at the sides: 192 px at 4K, 96 at 1080p.
+const SAFE_SIDE := 96.0
+## Towers are wider than this; the lattice tower's 1 m beacon is a stand-in too, not a tower: it
+## stands BEACON_RISE over the lattice tower's roof, high up.
 const TOWER_MIN_WIDTH := 4.0
+const LATTICE_MIN_Y := 20.0
+const BEACON_RISE := 1.0
 
 var t: SceneTree
 var check: Callable
@@ -44,9 +49,9 @@ func run() -> void:
 	await _far_tower_cap()
 
 
-## D-158 option C: the title's far shore stands no tower over tuning "title" "tower_cap" (one value,
-## so the Colossus clears every tower), while the game's own far shore (no cap) does: the same check
-## fails on it, so it can fail.
+## D-158 option C: the title's far shore stands no tower, the lattice tower included, over tuning
+## "title" "tower_cap" (one value, so the Colossus clears everything), while the game's own far
+## shore (no cap) does: the same check fails on it, so it can fail.
 func _far_tower_cap() -> void:
 	var cap := Num.f(Content.section("title")["tower_cap"])
 	var game := await _far_top(0.0)
@@ -60,8 +65,8 @@ func _far_tower_cap() -> void:
 	)
 
 
-## The top of the tallest far-shore tower (m) of a title-sized city whose far towers are capped at
-## `cap` (0 = no cap).
+## The top of the tallest far-shore tower or lattice tower (m) of a title-sized city whose far
+## towers are capped at `cap` (0 = no cap).
 func _far_top(cap: float) -> float:
 	var cfg := Content.section("title")
 	var tuning := CityGrowth.tuning_for(Content.tuning(), Num.i(cfg["city_tier"]))
@@ -83,8 +88,12 @@ func _far_top(cap: float) -> float:
 	for box: Dictionary in skyline.stand_ins():
 		var at: Vector3 = box["at"]
 		var dim: Vector3 = box["size"]
-		if at.z <= far_z and dim.x >= TOWER_MIN_WIDTH:
+		if at.z > far_z:
+			continue
+		if dim.x >= TOWER_MIN_WIDTH:
 			top = maxf(top, at.y + dim.y * 0.5)
+		elif at.y > LATTICE_MIN_Y:
+			top = maxf(top, at.y - BEACON_RISE)
 	holder.free()
 	return top
 
@@ -235,6 +244,36 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	check.call(
 		absf(margin - cr.position.x) <= 1.5,
 		"the exit's right margin is the row's left one (%d vs %d)" % [margin, cr.position.x]
+	)
+	var tag := ""
+	var tag_x := 0.0
+	for found: Node in title.find_children("*", "Label", true, false):
+		if (found as Label).text == "BREAKING":
+			tag_x = (found as Label).get_global_rect().position.x
+			tag = "BREAKING"
+	check.call(
+		(
+			logo.get_global_rect().position.x >= SAFE_SIDE
+			and cr.position.x >= SAFE_SIDE
+			and gr.position.x >= SAFE_SIDE
+			and margin >= SAFE_SIDE
+			and tag == "BREAKING"
+			and tag_x >= SAFE_SIDE
+		),
+		(
+			"logo, plates, gear, exit and the ticker's tag stand inside the TV title-safe margin"
+			+ (
+				" (%d px, 192 at 4K): %d %d %d %d %d"
+				% [
+					SAFE_SIDE,
+					logo.get_global_rect().position.x,
+					cr.position.x,
+					gr.position.x,
+					margin,
+					tag_x
+				]
+			)
+		)
 	)
 	_label_room([_button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
 	var lines := HazardBox.scuff_lines(Rect2(0, 0, 400, cr.size.y), 22.0)

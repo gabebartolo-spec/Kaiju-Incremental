@@ -16,6 +16,7 @@ const EXPRESSWAY_CLEAR := 17.0  # no stand-ins this close to the quay, under the
 const FREEWAY_CLEAR := 6.0  # ...or this close to a freeway's centre line
 const FAR_GRAIN := 1.2  # far facades paint bigger windows, or they shimmer at distance
 const TANK := Color("6a5040")  # rooftop water tanks, as on the playable brick buildings
+const LATTICE_HEIGHT := 130.0
 const SUPERTALL := 1.8  # a far tower that is a supertall stands this many times taller
 ## A capped far shore (cfg far_tower_cap, the title's): towers under this share of the cap stand as
 ## they were; above it they bend toward the cap and never reach it, so the tall ones stay in order
@@ -236,7 +237,7 @@ func _far_shore() -> void:
 func _lattice_tower(base: Vector3) -> void:
 	var red := Color("b0402c")
 	var white := Color("c8c4b8")
-	var height := 130.0
+	var height := _capped(LATTICE_HEIGHT)  # the title caps it with the towers (D-158)
 	var levels := 26
 	for i: int in levels:
 		var t := float(i) / levels

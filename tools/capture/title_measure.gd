@@ -9,11 +9,14 @@ const CENTRE_FROM := 0.3
 const CENTRE_TO := 0.8
 ## The Colossus's head top lies on the pose picture's top row (alpha above this).
 const OPAQUE := 0.5
-## The beacon on the lattice tower is a stand-in too, but 1 m wide: not a tower.
+## The beacon on the lattice tower is a stand-in too, but 1 m wide: not a tower, and high up.
 const TOWER_MIN_WIDTH := 4.0
+const LATTICE_MIN_Y := 20.0
 
 
-## Prints the head-vs-tower numbers for `backdrop`'s camera at a frame `frame_h` px tall.
+## Prints the head-vs-tower numbers for `backdrop`'s camera at a frame `frame_h` px tall: the
+## tallest towers in frame (the far shore's and the lattice tower's), the Colossus's crest (its
+## card faces the camera, tilt included), and the head over the tallest tower.
 static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 	var camera := backdrop.find_children("*", "Camera3D", true, false)[0] as Camera3D
 	var view := camera.get_viewport() as SubViewport
@@ -29,48 +32,57 @@ static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 	var far_z := (
 		Num.f(backdrop._city.sim.city["coast_z"]) - Num.f(backdrop._city.sim.city["bay_width"])
 	)
-	var stands: Array[Dictionary] = []
-	for node: Node in backdrop.find_children("*", "CitySkyline", true, false):
-		stands.append_array((node as CitySkyline).stand_ins())
-	stands.sort_custom(
-		func(a: Dictionary, b: Dictionary) -> bool:
-			var at_a: Vector3 = a["at"]
-			var at_b: Vector3 = b["at"]
-			var size_a: Vector3 = a["size"]
-			var size_b: Vector3 = b["size"]
-			return at_a.y + size_a.y > at_b.y + size_b.y
-	)
 	var shore := _screen_y(camera, size, Vector3(camera.position.x, 0.0, far_z), frame_h)
 	print("measure shore line y px ", snappedf(shore, 0.1))
-	var listed := 0
-	for box: Dictionary in stands:
-		var at: Vector3 = box["at"]
-		var dim: Vector3 = box["size"]
-		if at.z > far_z or at.z < far_z - 80.0 or dim.x < TOWER_MIN_WIDTH:
-			continue
-		var top := Vector3(at.x, at.y + dim.y * 0.5, at.z + dim.z * 0.5)
-		var share := camera.unproject_position(top).x / size.x
-		if share < CENTRE_FROM or share > CENTRE_TO:
-			continue
-		var y := _screen_y(camera, size, top, frame_h)
-		var base := _screen_y(camera, size, Vector3(at.x, 0.0, at.z + dim.z * 0.5), frame_h)
+	var found: Array[Dictionary] = []
+	for node: Node in backdrop.find_children("*", "CitySkyline", true, false):
+		for box: Dictionary in (node as CitySkyline).stand_ins():
+			var at: Vector3 = box["at"]
+			var dim: Vector3 = box["size"]
+			if at.z > far_z or at.z < far_z - 80.0:
+				continue
+			# The lattice tower's beacon (1 m wide) tops the lattice tower; the rest are towers.
+			var lattice := dim.x < TOWER_MIN_WIDTH
+			if lattice and at.y < LATTICE_MIN_Y:
+				continue
+			var top := Vector3(at.x, at.y + dim.y * 0.5, at.z + (0.0 if lattice else dim.z * 0.5))
+			var share := camera.unproject_position(top).x / size.x
+			if not lattice and (share < CENTRE_FROM or share > CENTRE_TO):
+				continue
+			var y := _screen_y(camera, size, top, frame_h)
+			var base := _screen_y(camera, size, Vector3(top.x, 0.0, top.z), frame_h)
+			found.append(
+				{
+					"what": "lattice" if lattice else "tower",
+					"x": at.x,
+					"z": at.z,
+					"m": top.y,
+					"y": y,
+					"px": base - y,
+					"share": share
+				}
+			)
+	found.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool: return Num.f(a["px"]) > Num.f(b["px"])
+	)
+	for n: int in mini(found.size(), 5):
+		var f := found[n]
 		print(
-			"measure tower x ",
-			snappedf(at.x, 0.1),
+			"measure ",
+			f["what"],
+			" x ",
+			snappedf(Num.f(f["x"]), 0.1),
 			" z ",
-			snappedf(at.z, 0.1),
+			snappedf(Num.f(f["z"]), 0.1),
 			" top m ",
-			snappedf(top.y, 0.1),
+			snappedf(Num.f(f["m"]), 0.1),
 			" top y px ",
-			snappedf(y, 0.1),
+			snappedf(Num.f(f["y"]), 0.1),
 			" height px ",
-			snappedf(base - y, 0.1),
+			snappedf(Num.f(f["px"]), 0.1),
 			" share_x ",
-			snappedf(share, 0.001)
+			snappedf(Num.f(f["share"]), 0.001)
 		)
-		listed += 1
-		if listed >= 4:
-			break
 	var colossus := backdrop.find_children("*", "TitleColossus", true, false)[0] as TitleColossus
 	var cfg: Dictionary = Content.section("title")["colossus"]
 	var tex := load("res://assets/title/colossus_0.png") as Texture2D
@@ -89,40 +101,46 @@ static func towers_and_head(backdrop: TitleBackdrop, frame_h: float) -> void:
 			break
 	var height := Num.f(cfg["height"])
 	var width := height * tex.get_width() / tex.get_height()
-	var head_top := Vector3(
-		colossus.position.x + (head_u - 0.5) * width,
-		colossus.position.y + height * (1.0 - float(top_row) / img.get_height()),
-		colossus.position.z
+	# The card is a full billboard (title_colossus.gdshader): its own x and y run along the camera's.
+	var basis := camera.global_transform.basis
+	var crest := (
+		colossus.position
+		+ (
+			basis
+			* Vector3(
+				(head_u - 0.5) * width, height * (1.0 - float(top_row) / img.get_height()), 0.0
+			)
+		)
 	)
-	var head_y := _screen_y(camera, size, head_top, frame_h)
-	var head_x := camera.unproject_position(head_top).x / size.x
-	var base_y := _screen_y(camera, size, Vector3(head_top.x, 0.0, colossus.position.z), frame_h)
+	var head_y := _screen_y(camera, size, crest, frame_h)
+	var head_x := camera.unproject_position(crest).x / size.x
 	print(
-		"measure head top world ",
-		head_top,
-		" top y px ",
+		"measure head crest world ",
+		crest,
+		" y px ",
 		snappedf(head_y, 0.1),
 		" above shore px ",
 		snappedf(shore - head_y, 0.1),
-		" share_x ",
-		snappedf(head_x, 0.001),
-		" (card foot y px ",
-		snappedf(base_y, 0.1),
-		")"
+		" x px ",
+		snappedf(head_x * frame_h * 16.0 / 9.0, 0.1)
 	)
-	# The silhouette's left/right/top edges on screen (no crop: all within 0..1 of the frame).
-	var corners: Dictionary[String, Vector3] = {
-		"card_left":
-		Vector3(
-			colossus.position.x - width * 0.5, colossus.position.y + height, colossus.position.z
-		),
-		"card_right":
-		Vector3(
-			colossus.position.x + width * 0.5, colossus.position.y + height, colossus.position.z
-		),
-	}
-	for key: String in corners:
-		var p := camera.unproject_position(corners[key])
+	if not found.is_empty():
+		var tallest := Num.f(found[0]["px"])
+		print(
+			"measure head over the tallest in frame (",
+			found[0]["what"],
+			" ",
+			snappedf(tallest, 0.1),
+			" px): ",
+			snappedf((shore - head_y) / tallest, 0.01),
+			"x"
+		)
+	# The silhouette's left and right ends on screen (the head is whole: inside 0..1 of the frame).
+	for key: String in ["card_left", "card_right"]:
+		var side := -0.5 if key == "card_left" else 0.5
+		var p := camera.unproject_position(
+			colossus.position + basis * Vector3(side * width, height, 0.0)
+		)
 		print(
 			"measure ",
 			key,

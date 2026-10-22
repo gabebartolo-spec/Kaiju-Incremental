@@ -37,8 +37,7 @@ const LOGO_GAP := 10
 const TAPE := 18.0
 ## The exit button's wording.
 const EXIT_TEXT := "RUN FOR YOUR LIFE!?"
-## The left column: its margin from the screen's edge (share of the width) and its width (px).
-const COLUMN_MARGIN := 0.03125
+## The left column's width (px); it stands the TV title-safe margin in from the screen's edge.
 const COLUMN_WIDTH := 800.0
 ## The logo stands this share of the screen's height down (the buttons follow it).
 const COLUMN_TOP := 0.21
@@ -74,8 +73,8 @@ func _ready() -> void:
 	# them, a safe margin in from the edge and centred in the space above the news ticker; the
 	# whole right side is the burning skyline.
 	var width := get_viewport_rect().size.x
-	_col.offset_left = width * COLUMN_MARGIN
-	_col.offset_right = -(width * (1.0 - COLUMN_MARGIN) - COLUMN_WIDTH)
+	_col.offset_left = UiKit.safe_margin().x  # inside the TV title-safe area (192 px at 4K)
+	_col.offset_right = -(width - UiKit.safe_margin().x - COLUMN_WIDTH)
 	_col.offset_bottom = -NewsTicker.HEIGHT
 	_col.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_col.offset_top = get_viewport_rect().size.y * COLUMN_TOP

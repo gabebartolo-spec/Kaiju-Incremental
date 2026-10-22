@@ -9,7 +9,7 @@ extends SceneTree
 ## --rest: the still waits until the bay is at rest (no footfall shivering it).
 ## --measure: prints the tower, head and shore pixel numbers (tools/capture/title_measure.gd).
 ## --all: one run, one window: rest.png, reveal.png (with the --measure numbers) and, on a fresh
-## dusk city, dusk.png (one flash of the window, not three).
+## dusk city, dusk.png and dusk_reveal.png (one flash of the window, not four).
 ## --size=3840x2160: grows the window to exactly that (the OS opens a 4K window 63 px short).
 ## --variant=night|dusk picks the title's look (tuning "title" "variants").
 ## --segments: after the clip, plays each sound layer alone for a while (the others' buses muted) so
@@ -150,7 +150,7 @@ func _run() -> void:
 	quit()
 
 
-## The night city at rest and in the reveal's flash, then a dusk city at rest, each saved.
+## The night city at rest and in the reveal's flash, then a dusk city the same two ways, each saved.
 func _all_stills(title: TitleScreen) -> void:
 	var backdrop := title.find_children("*", "TitleBackdrop", true, false)[0] as TitleBackdrop
 	await _settle(backdrop)
@@ -178,6 +178,9 @@ func _all_stills(title: TitleScreen) -> void:
 		await _tick()
 	await _settle(again)
 	_save("dusk.png")
+	again.boom()
+	await _wait(_reveal if _reveal >= 0.0 else REVEAL_AFTER)
+	_save("dusk_reveal.png")
 
 
 ## Waits for the city to fade in and the bay to stop shivering from a footfall.
