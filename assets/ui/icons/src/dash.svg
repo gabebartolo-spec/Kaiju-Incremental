@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-<!-- Dash: clawed foot with yellow speed streaks. Foot = https://game-icons.net/1x1/lorc/bird-claw.html; streaks are ours. Silhouettes: Lorc, game-icons.net, CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), recoloured (fill f2efe6, accent ffcc00) and clipped to a 111 px disc; credit in docs/CREDITS.md. -->
+<!-- Dash: clawed foot with yellow speed streaks. Foot = Lorc, https://game-icons.net/1x1/lorc/bird-claw.html; streaks are ours. Silhouettes from game-icons.net, CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), recoloured (fill f2efe6, accent ffcc00) and clipped to a 111 px disc; credit in docs/CREDITS.md. -->
 <defs><clipPath id="disc"><circle cx="128" cy="128" r="111"/></clipPath></defs>
 <g clip-path="url(#disc)">
 <g fill="#ffcc00"><path d="M 6 84 L 64.0 76.0 A 8.0 8.0 0 0 1 64.0 92.0 Z"/><path d="M 0 124 L 84.0 116.0 A 8.0 8.0 0 0 1 84.0 132.0 Z"/><path d="M 14 164 L 72.0 156.0 A 8.0 8.0 0 0 1 72.0 172.0 Z"/></g>
