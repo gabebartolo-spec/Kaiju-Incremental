@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-053 · Director · Worktrees: one live worktree per live session
+Why (04:30): the demo team runs six to eight sessions at once and the cap of four blocked work. The lead prunes dead
+worktrees; tools/lint/worktrees.sh caps the total at 8. PR #25.
+
 ## 2026-10-18 · D-051 · Director · The evolution reveal is titled by the node bought
 Why (04:20): after buying EVOLVE: Behemoth the reveal said "REPTILIAN ADOLESCENT"; now it says BEHEMOTH (the node's data
 name), for every evolve node. Life-stage names stay internal. PR #23.
