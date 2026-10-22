@@ -233,10 +233,7 @@ func _minimal(hud: RampageHud, sim: RampageSim) -> void:
 		same = same and is_equal_approx(ring.size.x, rings[0].size.x)
 	check.call(
 		same and widest >= 44.0 and widest <= 48.0,
-		(
-			"the three rings are one size, about 46 px (92 px at 4K; radius 19.25, #96): %.0f"
-			% widest
-		)
+		"the three rings are one size, about 46 px (92 px at 4K; radius 19.25, #96): %.0f" % widest
 	)
 	var level := true
 	for y: float in centres:
