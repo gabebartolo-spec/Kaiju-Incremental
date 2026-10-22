@@ -4,6 +4,11 @@ The one design document. Every agent reads it in full before work. It says what 
 things get built is `docs/ROADMAP.md`, why each ruling was made is `docs/DECISIONS.md` (D-n). Cap 200 lines. Edited
 only by the lead when the director rules; replace the old line, never append history. Quotes are the director's.
 
+## Visual pillars (director 2026-10-22/23)
+Every visual effect passes three equal tests: **beauty** ("visual beauty is equally important"), **consistency** (one look
+per effect family: "consistency is absolutely key to avoid slop accusations") and **the power fantasy** ("all the visual
+effects must make you feel like the Apex Predator, King of Monsters, Godkiller, Planetbreaker"). Detail: `docs/VFX_STYLE.md`.
+
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
 sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
@@ -104,12 +109,12 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - The stats panel shows only what the selected node changes, in plain words (D-077).
 - **Copy rule for all player text:** short and playful, no mechanics explained, no internal names ("branch",
   "capstone", "floors" as a unit); the player smashes, buys, smashes more (b2-15/16/17/24/27).
-- **Demo** (D-050): the croc only, hatchling to Behemoth, ends on a "demo complete" card.
+- **Demo** (D-050, D-145): the croc only, all three cities (baby, adolescent, adult) with the full Taskforce, a 90+ minute first playthrough; ends on a thanks screen with rampage stats and a feedback link.
 
 ## Look, camera, screen
 - **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
   D-057/D-068). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010).
-  Time of day rotates per run: dusk, night, morning, noon; morning less hazy, night lighter (D-106).
+  Time of day is random per run (dusk, night, morning, noon), never the same twice in a row, with an options toggle to fix one; morning less hazy, night lighter (D-106, D-145).
 - **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). Run
   intro: a 3 s shot of the water rippling, the kaiju bursting out roaring, the camera pulling out (#11). Water reacts
   to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.

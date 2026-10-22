@@ -92,7 +92,7 @@ var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
-## The body as a solid that breaks what it walks into; body.heading turns the drawn model.
+## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
@@ -202,11 +202,11 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
 	var moving := move.length() > 0.05
-	if moving:
-		var dir := move.limit_length(1.0)
-		var speed := stat("speed") * powers.speed_mult()
-		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
-		facing = powers.turn_toward(facing, dir.normalized(), dt)
+	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
+	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
+		var speed := stat("speed") * powers.speed_mult() * stride
+		kaiju_pos = clamp_to_arena(kaiju_pos + body.heading * speed * dt)
+		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	_stomp_timer -= dt

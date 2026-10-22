@@ -49,7 +49,7 @@ var shake := CameraShake.new()
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
-var _was_ready := true
+var _cues: PowerCues
 var _leap_reach := 0.0
 var _leap_power := 1.0
 var _hud: RampageHud
@@ -91,6 +91,7 @@ func setup(
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
 	sfx = Sfx.new(Seeds.make("sfx", run_index))
+	_cues = PowerCues.new(sim, sfx)
 
 
 ## Returns once the scene is built (at once when it is; flow suites and captures that start a run
@@ -201,7 +202,7 @@ func _physics_process(delta: float) -> void:
 		_on_event(event)
 		_note_cost(str(event["type"]), t1)
 	_update_kaiju(delta, 1.0 if sim.body.dash.on() else move.length())  # legs keep going
-	_update_powers()
+	_cues.update(ability_fx, _kaiju_at, _to_world(sim.facing))
 	_powers.update(delta, _kaiju_at)
 	_tanks.update(delta, _kaiju_at, _steps)
 	_hud.refresh()
@@ -336,20 +337,9 @@ func _update_kaiju(delta: float, moving: float) -> void:
 		_kaiju_at = _kaiju_at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
 	_kaiju.position = _kaiju_at
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-	_kaiju.animate(delta, moving)
-
-
-## Signature Recharge's ready pulse and Regeneration's motes.
-func _update_powers() -> void:
-	var charged := sim.ability_ready_in <= 0.0
-	if charged and not _was_ready:
-		var head := _kaiju_at + Vector3(0, 6.0, 0) * sim.body_scale()
-		ability_fx.ready_pulse(_kaiju_at, head + _to_world(sim.facing) * sim.body_scale())
-		sfx.play("ready")
-	_was_ready = charged
-	var healing := sim.stat("regen") > 0.0 and sim.hp < sim.max_hp
-	ability_fx.regen(_kaiju_at + Vector3(0, 3.0 * sim.body_scale(), 0), healing)
-	sfx.regen(healing)
+	# sim angle to model yaw: the sign flips
+	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
+	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
@@ -389,6 +379,10 @@ func _place_camera(delta: float) -> void:
 	# and its dart bursts ahead of the camera.
 	var rest := camera_rest.lerp(_breath_camera.offset(camera_rest, delta), motion)
 	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta)
+	var hold := sim.body.dash.on() or _leap_time > 0.0
+	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
-	_camera.look_at(_follow.look_at(sim.body_scale()))
+	var nod := shake.turn(sim.body_scale(), motion).y
+	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
+	_city.drawn_sight = _follow.sight()
 	shake.apply(_camera, sim.body_scale(), motion)
