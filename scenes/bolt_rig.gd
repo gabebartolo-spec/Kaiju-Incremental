@@ -21,6 +21,11 @@ const HOT := Color(1.0, 0.85, 0.65)
 const SEEDS_PER_RUN := 4096
 ## The impact light sits this far back from the struck point (world units at body scale 1).
 const LIGHT_BACK := 1.5
+## A sub-fork leaves its branch this far along it (0..1), turned this many radians, at this share
+## of the rest of the branch's length.
+const SUB_FORK_AT := 0.55
+const SUB_FORK_TURN := 0.7
+const SUB_FORK_LENGTH := 0.9
 
 ## The signature Power's brightness for this play (1..fx.power_max).
 var power := 1.0
@@ -161,9 +166,13 @@ func _shine() -> void:
 	var flash := 0.0
 	if _index > 0:
 		var hold := Num.f(_cfg["hold_level"])
-		main = hold + (1.0 - hold) * exp(-_since / Num.f(_cfg["stroke_decay"]))
-		branch = Num.f(_cfg["branch_peak"]) * exp(-_since / Num.f(_cfg["branch_decay"]))
-		flash = exp(-_since / Num.f(_cfg["light_decay"]))
+		var attack := Num.f(_cfg["attack"])
+		var from := Num.f(_cfg["feeler_level"]) if _index == 1 else hold
+		main = hold + (1.0 - hold) * _env(Num.f(_cfg["stroke_decay"]))
+		if _since < attack:
+			main = lerpf(from, 1.0, _since / attack)
+		branch = Num.f(_cfg["branch_peak"]) * _env(Num.f(_cfg["branch_decay"]))
+		flash = _env(Num.f(_cfg["light_decay"]))
 	_view.set_levels(main * fade, branch * fade)
 	var lights: Dictionary = _cfg["light"]
 	var base := Num.f(lights["hold_share"])
@@ -178,6 +187,14 @@ func _shine() -> void:
 	_light(_hit_light, impact_row, flood)
 	_flare_fade(_muzzle, flash * fade)
 	_flare_fade(_strike, flash * fade)
+
+
+## 0..1: a stroke ramps up over `attack` (no one-frame jump), then falls with time constant `decay`.
+func _env(decay: float) -> float:
+	var attack := Num.f(_cfg["attack"])
+	if _since < attack:
+		return _since / attack
+	return exp(-(_since - attack) / decay)
 
 
 ## One stroke: a new shape on the same channel's branches, a flash, sparks, dust, the shake.
@@ -217,7 +234,23 @@ func _roll_branches() -> void:
 		var shape := BoltShape.channel(
 			_rng, Num.i(_cfg["branch_depth"]), Num.f(_row["branch_sway"])
 		)
-		_branches.append({"t": t, "end": _stopped(from, target), "shape": shape})
+		_branches.append({"t": t, "end": _stopped(from, target), "shape": shape, "of": -1})
+	for k: int in mini(Num.i(_row["sub_forks"]), _branches.size()):
+		_branches.append(_sub_fork(k, main))
+
+
+## A short fork off branch `k`, a bit past its middle, turned to one side (same cone, same blocker).
+func _sub_fork(k: int, main: PackedVector3Array) -> Dictionary:
+	var parent := _branches[k]
+	var pend: Vector3 = parent["end"]
+	var from := BoltShape.at_t(main, Num.f(parent["t"]))
+	var mid := from.lerp(pend, SUB_FORK_AT)
+	var turn := SUB_FORK_TURN if _rng.randf() < 0.5 else -SUB_FORK_TURN
+	var end := mid + (pend - mid).rotated(Vector3.UP, turn) * SUB_FORK_LENGTH
+	if not cone.is_empty():
+		end = BoltShape.clamp_to_cone(end, cone)
+	var shape := BoltShape.channel(_rng, Num.i(_cfg["branch_depth"]), Num.f(_row["branch_sway"]))
+	return {"t": SUB_FORK_AT, "end": _stopped(mid, end), "shape": shape, "of": k}
 
 
 ## Where along the main channel (0..1) a branch to `target` forks off: the owner's range at random,
@@ -245,7 +278,11 @@ func _stopped(from: Vector3, target: Vector3) -> Vector3:
 
 ## The main channel in the world, from the mouth to the struck point, kept inside the cone.
 func _main_world() -> PackedVector3Array:
-	return _kept(BoltShape.place(_main_shape, _clear_of_head(), _hit))
+	var line := BoltShape.place(_main_shape, _clear_of_head(), _hit)
+	var bow := Num.f(_row["bow"]) * line[0].distance_to(line[line.size() - 1])
+	for i: int in range(1, line.size() - 1):  # bowed up: it rises over the head, then strikes down
+		line[i] += Vector3.UP * bow * sin(PI * i / (line.size() - 1))
+	return _kept(line)
 
 
 ## Where the main channel starts: a little way out in front of the jaw, so it visibly leaves the
@@ -271,7 +308,9 @@ func _draw() -> void:
 	for b: Dictionary in _branches:
 		var shape: PackedVector3Array = b["shape"]
 		var end: Vector3 = b["end"]
-		lines.append(_kept(BoltShape.place(shape, BoltShape.at_t(main, Num.f(b["t"])), end)))
+		var of := Num.i(b["of"])
+		var host := main if of < 0 else lines[of]
+		lines.append(_kept(BoltShape.place(shape, BoltShape.at_t(host, Num.f(b["t"])), end)))
 	var shown := mini(main.size(), ceili(_reveal * (main.size() - 1)) + 1)
 	_view.rebuild(main.slice(0, shown), lines, Num.f(_row["branch_width"]))
 	var dir := (_hit - _mouth).normalized()
@@ -279,7 +318,8 @@ func _draw() -> void:
 	_strike.position = _hit - dir * 0.6 + Vector3.UP * Num.f(_cfg["strike_lift"]) * _scale
 	var lift := _scale * lerpf(1.0, power, Num.f(_cfg["power_share"]))
 	(_muzzle.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["muzzle_flare"]) * lift
-	(_strike.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["strike_flare"]) * lift
+	var strike := Num.f(_cfg["strike_flare"]) * Num.f(_row["strike_scale"])
+	(_strike.mesh as QuadMesh).size = Vector2.ONE * strike * lift
 	_mouth_light.position = _mouth
 	_hit_light.position = _hit - dir * LIGHT_BACK * _scale + Vector3.UP * _scale * 0.5
 
@@ -294,6 +334,8 @@ func _impact() -> void:
 		var end: Vector3 = b["end"]
 		fx.sparks(end)
 	fx.dust(Vector3(_hit.x, 0.4, _hit.z), Num.f(_row["dust"]) * _scale)
+	if Num.f(_row["ring"]) > 0.0:  # a ring of street dust running out from where it lands
+		fx.shockwave(Vector3(_hit.x, 0.0, _hit.z), Num.f(_row["ring"]) * _scale)
 
 
 func _setup_light(light: OmniLight3D, colour: Color) -> void:

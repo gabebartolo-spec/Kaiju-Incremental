@@ -42,6 +42,8 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.set_shader_parameter("boost", Num.f(cfg["boost_halo"]))
 		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_halo"]))
 		mat.set_shader_parameter("min_px", Num.f(cfg["halo_min_px"]))
+		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["alpha"]))
+		mat.set_shader_parameter("rim_tint", Color(str(cfg["rim"]["tint"])))
 	for mat: ShaderMaterial in [_core_main, _core_branch]:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", CORE_COLOUR)

@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
+render_mode unshaded, blend_premul_alpha, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
 // The game's one beam shader (VFX_STYLE family 6): a camera-facing ribbon for a bolt drawn from an
 // ImmediateMesh (BoltView). Per vertex the mesh gives NORMAL = the line's tangent there, UV.x = the
 // side (-1 / +1), UV.y = how far along the line, COLOR.r = width share, COLOR.g = brightness
@@ -29,6 +29,10 @@ uniform float wobble = 0.15;
 uniform float wobble_hz = 22.0;
 // The least width on screen, in pixels at 1080p.
 uniform float min_px = 0.0;
+// A dark saturated rim round the glow (premultiplied alpha: 0 adds light, more darkens what is behind),
+// so the bolt holds on pale noon ground where white added to white vanishes.
+uniform vec4 rim_tint : source_color = vec4(0.35, 0.1, 0.0, 1.0);
+uniform float rim = 0.0;
 
 void vertex() {
 	vec4 vp = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
@@ -53,6 +57,8 @@ void fragment() {
 	float shape = pow(clamp(1.0 - u, 0.0, 1.0), falloff);
 	vec3 col = mix(tint.rgb, fringe.rgb, smoothstep(0.1, 1.0, u));
 	float flick = 1.0 - wobble * 0.5 * (1.0 + sin(TIME * wobble_hz * 6.2832 + UV.y * 37.0));
-	ALBEDO = col * boost * shape * level * flick * COLOR.g;
-	ALPHA = 1.0;
+	float ring = smoothstep(0.2, 0.42, u) * (1.0 - smoothstep(0.55, 0.85, u));
+	float a = clamp(rim * ring * level * COLOR.g, 0.0, 1.0);
+	ALBEDO = col * boost * shape * level * flick * COLOR.g + rim_tint.rgb * a;
+	ALPHA = a;
 }
