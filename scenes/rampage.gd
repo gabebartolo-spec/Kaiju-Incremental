@@ -64,6 +64,7 @@ var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
 var _autoplay := false
+var endless := false  # set before setup: the demo's Endless mode (D-156)
 ## Seconds since the breath camera move began; negative when the camera is at rest.
 var _breath_camera := BreathCamera.new()
 var _walk := AutoWalk.new()
@@ -79,11 +80,7 @@ var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_second
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
 ## picks the time of day.
 func setup(
-	p_species: Dictionary,
-	stats: Dictionary,
-	layout: Array[Dictionary],
-	run_index: int,
-	endless := false
+	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
@@ -91,8 +88,7 @@ func setup(
 	var ability: Dictionary = species["ability"]
 	sim = RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", run_index))
 	sim.ability_type = str(ability["type"])
-	if endless:  # the demo's Endless mode (D-156)
-		sim.endless = Endless.new()
+	sim.endless = Endless.new() if endless else null
 	sim.emerge.start(sim)  # the kaiju rises from the river before the run begins (D-083)
 	sim.body.use_species(str(species["id"]))
 	_fx_rng = Seeds.make("fx", run_index)
@@ -265,21 +261,27 @@ func _on_event(event: Dictionary) -> void:
 			var b := sim.buildings[Num.i(event["building"])]
 			var topple := str(event["kind"]) == "topple"
 			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
-		"tank_spawned":
-			_tanks.spawn(Num.i(event["tank"]))
-		"tank_fired":
-			var at: Vector2 = event.get("at", sim.kaiju_pos)
-			if _tanks.fire(Num.i(event["tank"]), _to_world(at), _kaiju_at):
-				add_trauma(shake.source("tank_fire"))
-		"tank_destroyed":
-			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
-			_tanks.destroy(Num.i(event["tank"]), at)
+		"tank_spawned", "tank_fired", "tank_destroyed":
+			_on_tank_event(event)
 		"building_regrown":
 			_city.regrow(Num.i(event["building"]))
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
+
+
+func _on_tank_event(event: Dictionary) -> void:
+	var tank := Num.i(event["tank"])
+	match str(event["type"]):
+		"tank_spawned":
+			_tanks.spawn(tank)
+		"tank_fired":
+			var at: Vector2 = event.get("at", sim.kaiju_pos)
+			if _tanks.fire(tank, _to_world(at), _kaiju_at):
+				add_trauma(shake.source("tank_fire"))
+		"tank_destroyed":
+			_tanks.destroy(tank, Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"])))
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

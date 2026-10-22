@@ -31,7 +31,7 @@ says (3 open max); no full suite on this PC, only suites the change touches.
 ## Unfinished changes
 - Suites 03:29: demoend 25 checks pass; sim_play, military, smoke, sim pass. flow had 7 fails; fixed: thanks screen text reserve
   (DemoEnd.TEXT_RESERVE, EvolutionReveal.frame_view(owner, reserve)), pad ui_* bindings added in autoload/settings.gd (engine
-  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. flow after the fixes: 1 check left (saved totals are floats from the file; now compared via Demo.add(saved, {})); final flow rerun running. Earlier note: the
+  default had no pad on ui_accept), flow_save v1 assertion now SaveFile.VERSION. flow after the fixes: last failing check was floats-vs-ints in saved totals (fixed); lint refactors done (RampageSim.step, Rampage._on_tank_event, UpgradeScreen._add_endless, Rampage.endless property); final flow rerun running, then re-check ratchet + 400-line caps and push. Earlier note: the
   "normal rampage adds the sim's counters" check (saved totals were {}). Fixes are uncommitted until flow is green.
 - Still to do: planted-failure runs for the Endless checks, lint (complexity_ratchet, tuning_keys, 400-line cap), 4K still.
 - native/bin DLL removed; .uid files untracked noise, stage by name.

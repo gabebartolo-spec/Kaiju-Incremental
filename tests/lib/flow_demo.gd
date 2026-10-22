@@ -348,8 +348,9 @@ func _check_continue_after() -> void:
 	await GuiInput.click(t, GuiInput.button(results, "EVOLVE"))
 	await _frames(3)
 	var saved := SaveFile.load_game()
+	var back: Dictionary = saved["totals"]
 	check.call(
-		Demo.add(saved["totals"] as Dictionary, {}) == sim_totals and Num.i(saved["runs"]) == 10,
+		Demo.add(back, {}) == sim_totals and Num.i(saved["runs"]) == 10,
 		"a normal rampage adds the sim's counters to the demo totals: %s vs %s" % [saved["totals"], sim_totals]
 	)
 	main.queue_free()

@@ -117,13 +117,19 @@ func _build_side() -> Control:
 	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
-	if endless_unlocked:
-		var endless := UiKit.button("ENDLESS MODE", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-		endless.custom_minimum_size = Vector2(0, 64)
-		endless.pressed.connect(func() -> void: endless_pressed.emit())
-		side.add_child(endless)
+	_add_endless(side)
 	go.grab_focus.call_deferred()
 	return side
+
+
+## The final upgrade unlocks Endless mode (D-156): its button sits under RAMPAGE.
+func _add_endless(side: Control) -> void:
+	if not endless_unlocked:
+		return
+	var endless := UiKit.button("ENDLESS MODE", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	endless.custom_minimum_size = Vector2(0, 64)
+	endless.pressed.connect(func() -> void: endless_pressed.emit())
+	side.add_child(endless)
 
 
 ## "ultimate": a species node nothing else needs (its branch's capstone); "evolve": grows the
