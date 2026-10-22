@@ -20,7 +20,7 @@ Director rulings: left menu column (logo above buttons), still camera, scene fro
 footfall audio, fire = ragged flames out of windows with heavy smoke (not candles), occasional explosions reveal the
 reptilian colossus silhouette; no music. Poster reference: kaiju towering over skyline, orange fire glow, smoke sky.
 
-## State 2026-10-23 05:10: PR #160 (claude/ui-title-menu), D-158 option C + critic round 2 DONE, waiting on SHIP / PASS
+## State 2026-10-23 05:40: PR #160 (claude/ui-title-menu), D-158 option C + critic rounds 2 and 3 DONE, waiting on the fresh critic
 Worktree ../Kaiju-Incremental-wt/ui-pr (ui-redesign = dead lineage). Base merged four times (#155 post-fx, #158 feedback + Are-you-sure +
 0.1-demo, #156 time of day, #162 cleanup); settings = the base's inline controls with my plates, trimmed (HazardBox.trim_height) so BACK fits
 the 4K TV at 125% (the flow suite turns the demo off: one more control row than a bare probe sees).
@@ -28,7 +28,12 @@ Option C is data: camera.look y 38.1 (7.5 deg), colossus.height 185, title.tower
 city.far_tower_cap, 0 = off), shore.ledge_depth 26.5 (a tilt alone moves the water band down: 476 -> 502 px; the deeper ledge gives 319),
 colossus.crown (warm 2.5 px rim on skull/snout top). Menu: BUTTON_HEIGHT 110 (face 208 px at 4K), ROW_INSET 6 (plate edge x=128, logo ink 127),
 POINTERLESS_ROOM 16 + shadow on the right (label 35/35 px), scratches in the top/bottom 16% strips, exit margin = row margin.
-Measured (4K): head 1386 px above the shore vs tallest central tower 832 px = 1.67x; band 319; plate clearance 143.6 px.
+Round 3 (critic FIX at d5b349a2): the Colossus card is a full BILLBOARD (tilt lifts its crest: it was at y=36, not 125) so colossus.ground_y
+-12 (crest y 130-139, tape ends 35) and title_measure.gd projects the billboard; lattice tower takes tower_cap too (CitySkyline._capped, 89 m);
+crown px 8 (rim 6-7 px, 3.6:1 vs sky); capture_title --all also saves dusk_reveal.png; title-safe: column at UiKit.safe_margin (96 px = 192 at
+4K), gear/exit share it, NewsTicker.TAG_WIDTH 290 (BREAKING at 195); shade centre_x 0.24. Measured (4K): head 1382 px above shore vs tallest
+tower 832 px = 1.66x (lattice 752 px = 1.84x); band 319; nearest block 133.7 px; logo 199, plates 200, gear 200, exit 202, BREAKING 195.
+Planted-defect pattern: scratchpad mutate_run.sh (sed, run ui, git checkout).
 Suites at 05:08: ui 150 checks 0 failures (planted-defect run: 4 new checks FAIL by name), flow 225 checks 0 failures at 1b7299ec.
 Stills: scratchpad final_rest|final_reveal|final_dusk/title.png, final_reveal/head_2x.png, buttons_crop.png (one run: capture_title --all
 --measure --size=3840x2160). No new clip (lead: minimum captures).
