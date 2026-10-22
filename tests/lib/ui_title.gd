@@ -16,6 +16,13 @@ const CORNER_MAX := 120.0
 const LABEL_ROOM := 14.0
 const NEWLINE := "\n"
 const PLATE_BANDS := 2.0
+## The most of a plate's height (top and bottom each) a scratch may reach into: the label's band
+## is the middle 60%.
+const SCUFF_BAND := 0.2
+## The row's left edge stands this far (px at 1080p, the least and the most) in from the logo's box:
+## the plate's outline lands on the logo's ink (measured on a 4K capture: 127 vs 128 px).
+const INSET_FROM := 5.0
+const INSET_TO := 7.0
 ## Towers are wider than this; the lattice tower's 1 m beacon is a stand-in too, not a tower.
 const TOWER_MIN_WIDTH := 4.0
 
@@ -204,6 +211,14 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 			% [row, TitleScreen.ROW_INSET, logo.get_combined_minimum_size().x if logo else 0]
 		)
 	)
+	var in_from_logo := cr.position.x - logo.get_global_rect().position.x
+	check.call(
+		in_from_logo >= INSET_FROM and in_from_logo <= INSET_TO,
+		(
+			"the row starts %d px in from the logo's box, on its ink (%d..%d)"
+			% [in_from_logo, INSET_FROM, INSET_TO]
+		)
+	)
 	var share := cr.size.x / row
 	check.call(share >= 0.65 and share <= 0.8, "Continue takes about 3/4 of the row (%.2f)" % share)
 	var face := cr.size.y - HazardBox.PLATE_SHADOW.y
@@ -223,7 +238,7 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	)
 	_label_room([_button(title, "CONTINUE"), _button(title, "NEW KAIJU")])
 	var lines := HazardBox.scuff_lines(Rect2(0, 0, 400, cr.size.y), 22.0)
-	var strip := cr.size.y * HazardBox.SCUFF_STRIP + HazardBox.PLATE_BEVEL + 1.0
+	var strip := cr.size.y * SCUFF_BAND + HazardBox.PLATE_BEVEL + 1.0
 	var crossing := lines.filter(
 		func(l: PackedVector2Array) -> bool:
 			return (
