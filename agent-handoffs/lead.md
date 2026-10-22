@@ -15,8 +15,12 @@
   flow, tests, merges, docs, milestones; each tells the other before touching a file the other's builders are in.
 - Every session keeps its app task list current. Ask him a lot, never what DESIGN/DECISIONS answer; an agent-added
   game rule found in review goes to him as a question in the fiction's words.
-- 02:27 "no godot for 30 mins": background loop bwpghnuqf stops our --script Godot runs until 02:57, then deletes
-  ~/.claude/focus-pause. Helpers told to resume after 02:57.
+- 02:27 "no godot for 30 mins", 02:58 "pause for 30 more mins": loop b623ho9x1 (scratchpad no_godot_until.sh)
+  stops our --script Godot runs until 03:28, then deletes ~/.claude/focus-pause. Subagents and the VFX lead told.
+- UNSENT (app send cap hit; send on his next message): taskforce = D-160 gate (about 3 min of rampage time in the
+  adolescent city, counter in the save, default on load + round-trip check) + pause to 03:28; demo-end = its "exit
+  127" was the pause loop, not a bug.
+- D-160: the Taskforce first joins after a few minutes total in the adolescent city (docs d9198a92).
 
 ## Sessions (start_session; message by local_ id)
 - vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06 (Opus): #154 look sheet (critic FIX round, then "#154 PASS"),
@@ -32,8 +36,7 @@
 ## Base and PRs
 - Base = origin/claude/look-options = main; squash-only. GitHub helper subagent ad7455760cd21c2b0 merges at exact
   head (--match-head-commit). Merged today: #155 post-fx (d8f812f2), #158 feedback button (66af2589).
-- #156 time of day: "go" given at a29b8891 (lead passed the settings still); merges when green.
-- #162 director cleanup (Thunder Beam string, D-136 cuts, roar on ultimate + dash, 5 s cooldown): auto-merge on green.
+- Merged today: #155 post-fx, #158 feedback, #162 director cleanup (57a2c6a5), #156 time of day (1a0b7a73).
 - #154 VFX look sheet: on "#154 PASS" from the VFX lead. #159 army: after its fixer's push + green + lead check.
 - #160 title: D-158 amended to option C (Colossus ~185 m, ~7 deg tilt, 163 m tower lowered on the title only); needs
   VFX lead SHIP + screen critic. #161 held (above). #157 roadmap journal is not ours.
