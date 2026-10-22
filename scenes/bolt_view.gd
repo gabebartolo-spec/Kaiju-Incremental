@@ -17,6 +17,7 @@ static var halo_mode_override := ""
 
 var _mesh := ImmediateMesh.new()
 var _blob_step: int
+var _halo_boost := 1.0
 var _branch_tip: float
 var _blob_share: float
 var _halo_main := ShaderMaterial.new()
@@ -34,12 +35,13 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 	_blob_share = Num.f(cfg["blob_share"])
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var colours := halo_colours(cfg, eye)
+	_halo_boost = halo_boost(cfg)
 	for mat: ShaderMaterial in [_halo_main, _halo_branch]:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", colours[0])
 		mat.set_shader_parameter("fringe", colours[1])
 		mat.set_shader_parameter("width", widths.y)
-		mat.set_shader_parameter("boost", Num.f(cfg["boost_halo"]))
+		mat.set_shader_parameter("boost", Num.f(cfg["boost_halo"]) * _halo_boost)
 		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_halo"]))
 		mat.set_shader_parameter("min_px", Num.f(cfg["halo_min_px"]))
 		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["alpha"]))
@@ -75,6 +77,14 @@ static func halo_colours(cfg: Dictionary, eye: Color) -> Array[Color]:
 	return out
 
 
+## How bright the tuning's halo mode is (1: as is); a near-white halo is dimmed so it does not veil
+## pale ground.
+static func halo_boost(cfg: Dictionary) -> float:
+	var mode := halo_mode_override if halo_mode_override != "" else str(cfg["halo_mode"])
+	var row: Dictionary = cfg["halo_modes"][mode]
+	return Num.f(row.get("halo_boost", 1.0))
+
+
 ## Every material this bolt draws with (a ShaderKeep holds them so none compiles mid-rampage).
 func all_materials() -> Array[ShaderMaterial]:
 	return [_halo_main, _core_main, _halo_branch, _core_branch]
@@ -93,7 +103,7 @@ func set_power(boost_core: float, boost_halo: float) -> void:
 	for mat: ShaderMaterial in [_core_main, _core_branch]:
 		mat.set_shader_parameter("boost", boost_core)
 	for mat: ShaderMaterial in [_halo_main, _halo_branch]:
-		mat.set_shader_parameter("boost", boost_halo)
+		mat.set_shader_parameter("boost", boost_halo * _halo_boost)
 
 
 ## Redraws the bolt: `main` (world points) and `branches` (each a world polyline), the branches at
@@ -123,7 +133,7 @@ func _surface(mat: ShaderMaterial, lines: Array, width: float, tip: float) -> vo
 	for line: PackedVector3Array in lines:
 		for i: int in line.size() - 1:
 			_quad(line, i, width, tip)
-		for i: int in range(0, line.size(), _blob_step):
+		for i: int in range(0, line.size() if _glows(mat) else 0, _blob_step):
 			_blob(line[i], width, lerpf(1.0, tip, float(i) / (line.size() - 1)))
 	_mesh.surface_end()
 
@@ -144,6 +154,11 @@ func _quad(line: PackedVector3Array, i: int, width: float, tip: float) -> void:
 		_mesh.surface_set_normal(_tangent(line, i + n / 2))
 		_mesh.surface_set_uv(Vector2(e.x, e.y))
 		_mesh.surface_add_vertex(p)
+
+
+## Whether `mat` is one of the glows (the halo strips): only they get blobs, the core stays a line.
+func _glows(mat: ShaderMaterial) -> bool:
+	return mat == _halo_main or mat == _halo_branch
 
 
 ## A round camera-facing blob on a point of the line (UV = the quad's corner, COLOR.b = 1).

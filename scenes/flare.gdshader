@@ -43,5 +43,6 @@ void fragment() {
 		vec4 v = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, d, 1.0);
 		k *= clamp((-v.z / v.w + VERTEX.z) / soft, 0.0, 1.0);
 	}
-	ALBEDO = hot * (core * 4.0 + halo + rays * 1.5) * k;
+	float ray_share = edge > 0.0 ? 0.0 : 1.5;  // a glow with an `edge` is round: no 4-point rays
+	ALBEDO = hot * (core * 4.0 + halo + rays * ray_share) * k;
 }

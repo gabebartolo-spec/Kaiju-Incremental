@@ -764,7 +764,7 @@
 			"halo_modes": {
 				"amber": {"inner": "ffb55a", "fringe": "ff7a1e"},
 				"eye": {"inner": "eye", "fringe": "eye", "inner_white": 0.6},
-				"violet": {"inner": "fff0e6", "fringe": "8f5cff"}
+				"violet": {"inner": "fff0e6", "fringe": "8f5cff", "halo_boost": 0.5}
 			},
 			"boost_core": 3.0,
 			"boost_halo": 1.0,
@@ -801,7 +801,7 @@
 			"flare_soft": 3.0,
 			"grow_seconds": 0.1,
 			"muzzle_ahead": 1.2,
-			"strike_flare": 7.5,
+			"strike_flare": 15.0,
 			"strike_lift": 1.5,
 			"impact_sparks": 3,
 			"branch_tip": 0.5,
@@ -810,17 +810,17 @@
 			"prewarm_seconds": 0.05,
 			"breath": {
 				"core": 0.6, "halo": 4.5, "sway": 0.1, "branches": [4, 6],
-				"bow": 0.35, "sub_forks": 2, "strike_scale": 1.0, "ring": 4.0,
+				"bow": 0.35, "sub_forks": 2, "strike_scale": 1.0, "ring": 8.0,
 				"branch_from": [0.3, 0.8], "branch_width": 0.8, "branch_sway": 0.15,
-				"anchor_near": false, "anchor_back": 0.0, "dust": 2.4,
+				"anchor_near": false, "anchor_back": 0.0, "dust": 3.5,
 				"fan_spread": 0.8, "fan_near": 0.55, "clear": 1.5
 			},
 			"thunder": {
-				"core": 0.9, "halo": 6.0, "sway": 0.05, "branches": [4, 6],
-				"bow": 0.0, "sub_forks": 0, "strike_scale": 0.5, "ring": 5.0,
-				"branch_from": [0.1, 0.97], "branch_width": 0.5, "branch_sway": 0.1,
+				"core": 0.6, "halo": 3.0, "sway": 0.1, "branches": [4, 6],
+				"bow": 0.0, "sub_forks": 0, "strike_scale": 0.5, "ring": 6.0,
+				"branch_from": [0.1, 0.99], "branch_width": 0.5, "branch_sway": 0.1,
 				"anchor_near": true, "anchor_back": 0.06, "dust": 2.0,
-				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_climb": [2.0, 12.0], "lash_side": 3.0
+				"end_height": 6.0, "street_height": 1.0, "into_wall": 0.5, "fan_spread": 1.0, "fan_near": 0.5, "clear": 1.5, "lash_climb": [2.0, 12.0], "lash_side": 1.0, "turn_hold": 0.12
 			}
 		},
 		"orbit_degrees": 25.0,
@@ -830,6 +830,7 @@
 		"scorch_seconds": 5.0,
 		"scorch_soot_in": 0.4,
 		"scorch_glow_in": 0.12,
+		"scorch_glow_mult": 0.35,
 		"crater_seconds": 6.0,
 		"crack_seconds": 2.5,
 		"sweep_seconds": 0.5,

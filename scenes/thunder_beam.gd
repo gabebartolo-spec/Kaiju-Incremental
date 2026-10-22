@@ -15,6 +15,7 @@ var _run: int
 var _bolts := 0
 var _bs: float
 var _end := Vector3.ZERO
+var _latched := Vector2.ZERO  # the facing the target was picked at
 var _cfg: Dictionary
 var _row: Dictionary
 
@@ -46,6 +47,7 @@ func prewarm(keep: ShaderKeep) -> void:
 func start(seconds: float, kaiju_at: Vector3) -> void:
 	_jaw = BreathBeam.jaw_of(_kaiju)
 	_bolts += 1
+	_latched = Vector2.ZERO
 	_aim(kaiju_at)
 	rig.play(seconds, Seeds.make("thunder_bolt", _run * BoltRig.SEEDS_PER_RUN + _bolts))
 
@@ -66,7 +68,9 @@ func _aim(kaiju_at: Vector3) -> void:
 	var mouth := kaiju_at + Vector3(0, 5.0 * _bs, 0) + facing * _bs
 	if is_instance_valid(_jaw):
 		mouth = BreathBeam.along_jaw(_jaw)
-	_end = _facade_end(kaiju_at, facing)
+	if _latched == Vector2.ZERO or _sim.facing.angle_to(_latched) > Num.f(_row["turn_hold"]):
+		_latched = _sim.facing  # the beam stays on one point of the facade until the player turns
+		_end = _facade_end(kaiju_at, facing)
 	rig.aim(mouth, _end)
 
 
