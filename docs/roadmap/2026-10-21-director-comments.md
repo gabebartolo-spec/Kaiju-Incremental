@@ -63,3 +63,4 @@ His words, owner, branch/PR, status. Earlier rows: 2026-10-20-director-comments.
 | 57 | audit-sim vs fire-spread (asked): "Separate them" | audit-sim rebuilt on the base without the fire WIP | in progress |
 | 58 | Landmarks (asked): out-of-view landmarks may unload like ordinary buildings, "Yes, if no pop-in" | city-memory builder: game-camera test proves no landmark pop-in while turning | in progress |
 | 59 | Worktrees over the cap (asked): "Yes, merged ones only" | lead: remove worktrees whose branches are merged | in progress |
+| 60 | "cpu and gpu and screen and all godot slots are yours to use as you see fit" (2026-10-22, director AFK ~30 min) | lead + every builder: no per-agent Godot cap, local GPU renders, visible windows allowed while this stands | rule |
