@@ -7,7 +7,6 @@ extends RefCounted
 ## every bridge deck so a crossing's own cell is never bare; none on a deck or a crossing.
 ## Crushable props like a lamp. Presentation only; no RNG.
 
-
 ## Off only so a test can show another rule's need without the riverside's crates
 ## (tests/lib/city_diag_fill.gd, tests/lib/junction_island.gd).
 static var enabled := true

@@ -290,10 +290,10 @@ func _check_stream() -> void:
 	await process_frame
 
 
-## A big city keeps only a chunk budget meshed (the biggest stage swapped at 10+ GB when every building
-## streamed in): the nearest buildings to the kaiju stay meshed, a building the rampage touched
-## is never freed, and as the kaiju walks away the far untouched ones go back to boxes while the
-## ones he reaches are meshed.
+## A big city keeps only a chunk budget meshed (the biggest stage swapped at 10+ GB when every
+## building streamed in): the nearest buildings to the kaiju stay meshed, a building the rampage
+## touched is never freed, and as the kaiju walks away the far untouched ones go back to boxes
+## while the ones he reaches are meshed.
 func _check_stream_budget() -> void:
 	var sim := _sim_at(3)
 	sim.city["load_chunks"] = 3000

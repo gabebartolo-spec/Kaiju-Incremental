@@ -3,8 +3,8 @@ extends "res://tests/lib/military_view.gd"
 ## (never a building, a lot or an alley), keep their spacing as drawn (hull, turret and gun), take
 ## firing posts at standoff range and fall back when the kaiju closes. Whole autoplayed rampages
 ## on generated cities (RAMPAGE_SEEDS), at the young and Behemoth stages (and the Colossus city,
-## where tanks enter round the kaiju, D-039, D-135), and the clip's scene through the game camera. The
-## helicopters are today's (their flight is its own branch, claude/heli-flight). Helpers: the
+## where tanks enter round the kaiju, D-039, D-135), and the clip's scene through the game camera.
+## The helicopters are today's (their flight is its own branch, claude/heli-flight). Helpers: the
 ## clumsy army's strays (MilitaryStray) and a boxed-in tank's bounded yield (MilitaryYield).
 ## Seeded by design: every run takes Seeds.make("city"/"army", seed).
 

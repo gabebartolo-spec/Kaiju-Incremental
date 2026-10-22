@@ -26,7 +26,7 @@ func run_checks() -> void:
 	await _t("_check_curve_data")
 	await _t("_check_phase_and_level_maths")
 	await _t("_check_music_data")
-	_run = Run.new(self, 1, Run.BABY)
+	_run = Run.new(self, 1, Run.LATE_BABY)
 	await process_frame
 	_run.run(SECONDS)
 	await _t("_check_panic_then_quiet")

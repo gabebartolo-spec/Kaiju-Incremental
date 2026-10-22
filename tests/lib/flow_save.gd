@@ -3,7 +3,8 @@ extends RefCounted
 ## newer one is refused, and a v1 file on disk loads as the current version.
 
 
-## A version 1 save comes up as the current version with its best destruction kept; newer is refused.
+## A version 1 save comes up as the current version with its best destruction kept; newer is
+## refused.
 static func migration(check: Callable) -> void:
 	var v1 := {
 		"version": 1,
@@ -32,8 +33,10 @@ static func migration(check: Callable) -> void:
 	file.close()
 	var loaded := SaveFile.load_game()
 	check.call(
-		Num.i(loaded.get("version", 0)) == SaveFile.VERSION
-		and Num.i(loaded["levels"]["claws"]) == 2,
+		(
+			Num.i(loaded.get("version", 0)) == SaveFile.VERSION
+			and Num.i(loaded["levels"]["claws"]) == 2
+		),
 		"a v1 save file on disk loads as v%d" % SaveFile.VERSION
 	)
 	_refund(check)
