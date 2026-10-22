@@ -75,7 +75,7 @@ Not built: killable parachutists (they only drift down).
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
 
 ## Running jobs
-Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 02:58 after the director's
+Touched suites on claude/heli-deaths (helideaths tentacles military powers), auto-start 03:30 after the director's (extended)
 Godot pause, log scratchpad touched.log (no full suite on this PC any more). When green:
 push claude/heli-deaths, open the PR as ready with body scratchpad pr_heli.md (sim-review packet inside), tell the
 lead (proof notes vfx-lead/heli_deaths_proof.png). If the session restarts, rerun `tools/run_tests.sh` first.
