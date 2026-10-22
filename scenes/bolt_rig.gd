@@ -139,6 +139,7 @@ func _process(delta: float) -> void:
 	if _t >= _next:
 		_stroke()
 	_feel()
+	_grow()
 	_shine()
 	if _dirty:
 		_draw()
@@ -153,6 +154,18 @@ func _feel() -> void:
 	var first := Num.f(_cfg["first_at"])
 	var done := floorf(_t / step) * step / first
 	var now := lerpf(Num.f(reach[0]), Num.f(reach[1]), clampf(done, 0.0, 1.0))
+	if not is_equal_approx(now, _reveal):
+		_reveal = now
+		_dirty = true
+
+
+## The first stroke runs the channel the rest of the way out to the target over `grow_seconds`.
+func _grow() -> void:
+	if _index != 1:
+		return
+	var reach: Array = _cfg["feeler_reach"]
+	var share := clampf(_since / Num.f(_cfg["grow_seconds"]), 0.0, 1.0)
+	var now := lerpf(Num.f(reach[1]), 1.0, share)
 	if not is_equal_approx(now, _reveal):
 		_reveal = now
 		_dirty = true
@@ -186,7 +199,7 @@ func _shine() -> void:
 	_light(_mouth_light, mouth_row, flood)
 	_light(_hit_light, impact_row, flood)
 	_flare_fade(_muzzle, flash * fade)
-	_flare_fade(_strike, flash * fade)
+	_flare_fade(_strike, flash * fade * clampf((_reveal - 0.9) * 10.0, 0.0, 1.0))
 
 
 ## 0..1: a stroke ramps up over `attack` (no one-frame jump), then falls with time constant `decay`.
@@ -201,7 +214,8 @@ func _env(decay: float) -> float:
 func _stroke() -> void:
 	_index += 1
 	_since = 0.0
-	_reveal = 1.0
+	var reach: Array = _cfg["feeler_reach"]
+	_reveal = Num.f(reach[1]) if _index == 1 else 1.0
 	_roll_branches()
 	_dirty = true
 	var gap := Num.f(_cfg["stroke_gap"]) + _rng.randf() * Num.f(_cfg["gap_jitter"])
@@ -310,6 +324,9 @@ func _draw() -> void:
 		var end: Vector3 = b["end"]
 		var of := Num.i(b["of"])
 		var host := main if of < 0 else lines[of]
+		if host.size() < 2 or (of < 0 and Num.f(b["t"]) > _reveal):  # not reached yet
+			lines.append(PackedVector3Array())
+			continue
 		lines.append(_kept(BoltShape.place(shape, BoltShape.at_t(host, Num.f(b["t"])), end)))
 	var shown := mini(main.size(), ceili(_reveal * (main.size() - 1)) + 1)
 	_view.rebuild(main.slice(0, shown), lines, Num.f(_row["branch_width"]))
@@ -357,6 +374,8 @@ func _flare(tint: Color) -> MeshInstance3D:
 	var mat := ShaderMaterial.new()
 	mat.shader = FLARE
 	mat.set_shader_parameter("tint", tint)
+	mat.set_shader_parameter("edge", Num.f(_cfg["flare_edge"]))
+	mat.set_shader_parameter("soft", Num.f(_cfg["flare_soft"]) * _scale)
 	quad.material = mat
 	var node := MeshInstance3D.new()
 	node.mesh = quad

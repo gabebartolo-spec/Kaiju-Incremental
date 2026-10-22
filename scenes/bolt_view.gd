@@ -43,7 +43,8 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_halo"]))
 		mat.set_shader_parameter("min_px", Num.f(cfg["halo_min_px"]))
 		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["alpha"]))
-		mat.set_shader_parameter("rim_tint", Color(str(cfg["rim"]["tint"])))
+		mat.set_shader_parameter("max_px", Num.f(cfg["halo_max_px"]))
+		mat.render_priority = 1
 	for mat: ShaderMaterial in [_core_main, _core_branch]:
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", CORE_COLOUR)
@@ -52,7 +53,11 @@ func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
 		mat.set_shader_parameter("boost", Num.f(cfg["boost_core"]))
 		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_core"]))
 		mat.set_shader_parameter("min_px", Num.f(cfg["core_min_px"]))
+		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["core_alpha"]))
+		mat.set_shader_parameter("rim_band", Vector4(0.55, 0.75, 0.9, 1.0))
+		mat.render_priority = 2  # drawn after the glows, so its dark rim keeps it readable in them
 	for mat: ShaderMaterial in all_materials():
+		mat.set_shader_parameter("rim_tint", Color(str(cfg["rim"]["tint"])))
 		mat.set_shader_parameter("wobble", Num.f(cfg["wobble"]))
 		mat.set_shader_parameter("wobble_hz", Num.f(cfg["wobble_hz"]))
 		mat.set_shader_parameter("level", 0.0)
@@ -66,6 +71,7 @@ static func halo_colours(cfg: Dictionary, eye: Color) -> Array[Color]:
 	for key: String in ["inner", "fringe"]:
 		var text := str(row[key])
 		out.append(eye if text == "eye" else Color(text))
+	out[0] = out[0].lerp(CORE_COLOUR, Num.f(row.get("inner_white", 0.0)))  # a white-hot inner
 	return out
 
 

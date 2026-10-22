@@ -1,10 +1,11 @@
 class_name ThunderBeam
 extends Node3D
 ## The Thunder Beam (D-112, VFX_STYLE family 6): the Lightning Breath's bolt held for the beam's
-## seconds. Its main channel runs from the jaw along the kaiju's facing to the sim's full beam
-## range and is re-struck on the stroke schedule while the head steers; at each stroke its branches
-## lash the buildings the beam crosses (the ones the sim is coating, D-129). It replaces the solid
-## emissive box. Reads the sim's state and decides nothing; the burning is the sim's existing coat.
+## seconds. Its main channel runs from the jaw along the kaiju's facing into the first standing
+## facade the beam meets (about 6 m up it; the sim's full range in the open) and is re-struck on
+## the stroke schedule while the head steers; at each stroke its branches crawl up the wall from
+## the impact, never down to the street. It replaces the solid emissive box. Reads the sim's state
+## and decides nothing; the burning is the sim's existing coat (D-129).
 
 var rig: BoltRig
 var _sim: RampageSim
@@ -13,6 +14,7 @@ var _jaw: Node3D
 var _run: int
 var _bolts := 0
 var _bs: float
+var _end := Vector3.ZERO
 var _cfg: Dictionary
 var _row: Dictionary
 
@@ -64,51 +66,58 @@ func _aim(kaiju_at: Vector3) -> void:
 	var mouth := kaiju_at + Vector3(0, 5.0 * _bs, 0) + facing * _bs
 	if is_instance_valid(_jaw):
 		mouth = BreathBeam.along_jaw(_jaw)
-	var length := Num.f(_sim.powers_cfg["beam_range"]) * _bs
-	var end := kaiju_at + facing * length + Vector3(0, Num.f(_row["end_height"]), 0)
-	rig.aim(mouth, end)
+	_end = _facade_end(kaiju_at, facing)
+	rig.aim(mouth, _end)
 
 
-## `count` points on the buildings the beam crosses (the sim's corridor, a little wider), each at
-## a height on the wall facing the beam; short of buildings, forks into the street beside it.
+## Where the beam ends: into the first standing facade on its line (`end_height` up it), else the
+## sim's full range at street height.
+func _facade_end(kaiju_at: Vector3, facing: Vector3) -> Vector3:
+	var reach := Num.f(_sim.powers_cfg["beam_range"]) * _bs
+	var best := reach
+	var top := -1
+	for b: RampageSim.Building in _sim.buildings:
+		var t := _enter(b)
+		if t >= best:
+			continue
+		var up := b.frame.top_below(floori(b.w * 0.5), floori(b.d * 0.5), b.height)
+		if up > 0:
+			best = t
+			top = up
+	var into := best + Num.f(_row["into_wall"]) * _bs if top > 0 else best
+	var y := minf(Num.f(_row["end_height"]), top) if top > 0 else Num.f(_row["street_height"])
+	return Vector3(kaiju_at.x + facing.x * into, y, kaiju_at.z + facing.z * into)
+
+
+## How far along the beam's line (from the kaiju) it meets building `b`'s footprint; INF if it
+## does not.
+func _enter(b: RampageSim.Building) -> float:
+	var dir := _sim.facing
+	var lo := Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5) - _sim.kaiju_pos
+	var hi := lo + Vector2(b.w, b.d)
+	var t0 := -INF
+	var t1 := INF
+	for a: int in 2:
+		if absf(dir[a]) < 0.000001:
+			if lo[a] > 0.0 or hi[a] < 0.0:
+				return INF
+			continue
+		var ta := lo[a] / dir[a]
+		var tb := hi[a] / dir[a]
+		t0 = maxf(t0, minf(ta, tb))
+		t1 = minf(t1, maxf(ta, tb))
+	return t0 if t1 >= t0 and t0 > 0.0 else INF
+
+
+## `count` points up the wall from where the beam lands, each a way to one side: the lashes that
+## crawl up the facade.
 func _lash_targets(rng: RandomNumberGenerator, count: int) -> Array[Vector3]:
 	var axis := _sim.facing
-	var reach := Num.f(_sim.powers_cfg["beam_range"]) * _bs
-	var slack := Num.f(_row["lash_slack"]) * _bs
-	var half := Num.f(_sim.powers_cfg["beam_half_width"]) * _bs + slack
-	var near: Array[RampageSim.Building] = []
-	for b: RampageSim.Building in _sim.buildings:
-		var rel := Vector2(b.x, b.z) - _sim.kaiju_pos
-		var along := rel.dot(axis)
-		var wide := maxi(b.w, b.d) * 0.5
-		var side := absf(rel.dot(axis.orthogonal()))
-		if along > -wide and along < reach + wide and side < half + wide:
-			near.append(b)
+	var side := Vector3(-axis.y, 0.0, axis.x)
+	var climb: Array = _row["lash_climb"]
 	var out: Array[Vector3] = []
-	while out.size() < count and not near.is_empty():
-		var b: RampageSim.Building = near.pop_at(rng.randi_range(0, near.size() - 1))
-		var top := b.frame.top_below(floori(b.w * 0.5), floori(b.d * 0.5), b.height)
-		if top > 0:
-			out.append(_wall_point(b, rng, top))
-	while out.size() < count:
-		out.append(_street_fork(rng, reach))
+	for i: int in count:
+		var up := rng.randf_range(Num.f(climb[0]), Num.f(climb[1])) * _bs
+		var across := rng.randf_range(-1.0, 1.0) * Num.f(_row["lash_side"]) * _bs
+		out.append(_end + side * across + Vector3.UP * up)
 	return out
-
-
-## A point on building `b`'s wall facing the beam, at a random height up its standing part.
-func _wall_point(b: RampageSim.Building, rng: RandomNumberGenerator, top: int) -> Vector3:
-	var centre := Vector2(b.x, b.z)
-	var axis := _sim.facing
-	var on_axis := _sim.kaiju_pos + axis * (centre - _sim.kaiju_pos).dot(axis)
-	var wall := centre + (on_axis - centre).normalized() * minf(b.w, b.d) * 0.5
-	var share := rng.randf_range(Num.f(_row["lash_height"][0]), Num.f(_row["lash_height"][1]))
-	return Vector3(wall.x, maxf(1.0, (top + 1) * share), wall.y)
-
-
-## A point in the street a way along the beam and to one side of it.
-func _street_fork(rng: RandomNumberGenerator, reach: float) -> Vector3:
-	var axis := _sim.facing
-	var along := reach * rng.randf_range(0.2, 0.95)
-	var side := Num.f(_row["fork_side"]) * _bs * rng.randf_range(-1.0, 1.0)
-	var at := _sim.kaiju_pos + axis * along + axis.orthogonal() * side
-	return Vector3(at.x, 0.5, at.y)

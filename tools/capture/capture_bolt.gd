@@ -106,7 +106,7 @@ func _stills(rampage: Rampage) -> void:
 		await physics_frame
 	if _mode == "beam":  # the breath's wedge is hidden while it recharges in a real fire frame
 		var aim := rampage.find_child("BreathAim", false, false) as BreathAim
-		aim.set_process(false)
+		aim.set_physics_process(false)
 		aim.visible = false
 	if _side:  # placed where the kaiju stands at the fire, so the whole bolt is in frame
 		_side_camera(rampage)
