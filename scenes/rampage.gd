@@ -46,6 +46,7 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -243,7 +244,7 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
-			_kaiju.stomp()
+			_land.lift(_kaiju)
 			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
@@ -352,7 +353,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 	var stomped := _stomp_wait > 0.0 and side != "tail"
 	if stomped:
-		_land_stomp(at)
+		_land_stomp(side, at)
 	sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
@@ -366,10 +367,12 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 
 ## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street
 ## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
-func _land_stomp(at: Vector3) -> void:
+func _land_stomp(side: String, at: Vector3) -> void:
 	_stomp_wait = 0.0
 	var heavy := _power("stomp_damage")
-	sfx.stomp(heavy, ability_fx.stomp_cracks(at, _stomp_radius, heavy))
+	var cracked := ability_fx.stomp_cracks(at, _stomp_radius, heavy)
+	_land.landed(side, ability_fx.last_crack if cracked else null)
+	sfx.stomp(heavy, cracked)
 	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
 	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
 	_city.crush(at, _stomp_radius + catch)

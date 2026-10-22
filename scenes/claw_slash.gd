@@ -3,7 +3,8 @@ extends RefCounted
 ## The claw swipe's cue (Claws, D-095; PR #89 motion review): broad hot claw marks that fan out
 ## from the claw tip along the arm's rake arc (centred on the raking shoulder, at the arm's
 ## reach), drawn across the front as the arm crosses, plus a debris puff where the claws strike.
-## Sized up on a young body so the rake reads at the game camera. Additive, fading in a moment,
+## They show a few frames after the arm crosses, as follow-through. Sized up on a young body so the
+## rake reads at the game camera. Additive, fading in a moment,
 ## so it never hides the kaiju (D-025). Presentation only; sizes and timings: "claw_fx".
 
 ## One unit box every claw mark scales (b2-3: a new mesh per segment cost a swipe 17 ms).
@@ -63,6 +64,8 @@ static func play(
 				var at: Array = hidden.get_or_add(k, [])
 				at.append(seg)
 	var tween := root.create_tween()
+	root.visible = false  # the marks follow the arm by a beat (slash_delay_s): follow-through
+	tween.tween_callback(root.show).set_delay(Num.f(cfg["slash_delay_s"]))
 	var draw := Num.f(cfg["strike_s"]) * 0.5
 	for k: int in hidden:
 		var at: Array = hidden[k]

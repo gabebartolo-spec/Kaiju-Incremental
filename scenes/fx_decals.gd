@@ -42,6 +42,7 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 	decal.cull_mask = CITY_LAYER
 	parent.add_child(decal)
 	var tween := decal.create_tween()
+	decal.set_meta("fade", tween)  # fade_out() ends it early
 	if glow_in > 0.0:
 		tween.tween_property(decal, "emission_energy", energy, glow_in)
 	tween.tween_property(decal, "emission_energy", 0.0, seconds * 0.6)
@@ -50,6 +51,17 @@ static func spawn(parent: Node3D, at: Vector3, shape: Shape, look: Dictionary) -
 	if soot_in > 0.0:
 		decal.create_tween().tween_property(decal, "albedo_mix", soot, soot_in)
 	return decal
+
+
+## Fades a mark out in `seconds` instead of its slow fade (a foot is lifting off it), then frees it.
+static func fade_out(decal: Decal, seconds: float) -> void:
+	var slow: Variant = decal.get_meta("fade", null)
+	if slow is Tween:
+		(slow as Tween).kill()
+	var tween := decal.create_tween().set_parallel()
+	tween.tween_property(decal, "emission_energy", 0.0, seconds)
+	tween.tween_property(decal, "albedo_mix", 0.0, seconds)
+	tween.chain().tween_callback(decal.queue_free)
 
 
 ## Whether the textures spawn() needs for `shape` and `look` are already drawn (first use of an

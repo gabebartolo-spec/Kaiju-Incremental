@@ -17,18 +17,23 @@ const RAKE_MID := 0.33
 const RAKE_LIFT := 0.2
 ## Frames after a stomp lands that its still is taken: the ring and cracks have opened.
 const STOMP_SHOT_DELAY := 5
+const LOG_MOVE := 0.05  ## world units a frame, --log
+const LOG_DIP := 0.05
 const STOMP_SHOTS := 3  ## stills of this many stomps
 
 var _out := "user://croc_standing"
 var _seconds := 8.0
 var _shots := false
+var _log := false
+var _last_cam := Vector3.ZERO
 
 
 func _initialize() -> void:
-	var a := Kit.args({"out": _out, "seconds": _seconds, "shots": false})
+	var a := Kit.args({"out": _out, "seconds": _seconds, "shots": false, "log": false})
 	_out = str(a["out"])
 	_seconds = Num.f(a["seconds"])
 	_shots = a["shots"]
+	_log = a["log"]
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
 		quit(1)
@@ -54,6 +59,8 @@ func _run() -> void:
 	var wait := -1  # frames before the latest stomp's still: the ring has opened by then
 	while Engine.get_process_frames() - start < int(_seconds * 60.0):
 		await process_frame
+		if _log:
+			_log_camera(rampage, gait, float(Engine.get_process_frames() - start) / 60.0)
 		if not _shots:
 			continue
 		wait -= 1
@@ -80,3 +87,15 @@ func _snap(rampage: Rampage, shot_name: String, at: Vector3) -> void:
 	img.save_png(_out.path_join(shot_name + ".png"))
 	var centre := Kit.image_point(self, rampage._camera, at, Vector2(img.get_size()))
 	Kit.crop_2x(img, centre, CROP, _out.path_join(shot_name + "_2x.png"))
+
+
+## --log: a line per frame the camera moves a pixel or more, or a dip or shake is on, with the
+## rake's clock, to tie a jump on screen to its source (footfall dip, shake, rake).
+func _log_camera(rampage: Rampage, gait: ClipGait, at: float) -> void:
+	var cam := rampage._camera
+	var moved := cam.global_position.distance_to(_last_cam)
+	_last_cam = cam.global_position
+	if moved > LOG_MOVE or rampage._step_dip > LOG_DIP or rampage.shake.trauma > LOG_DIP:
+		var line := "t=%.2f cam_moved=%.3f " % [at, moved]
+		line += "dip=%.3f trauma=%.3f" % [rampage._step_dip, rampage.shake.trauma]
+		print(line, " rake_t=%.2f stomps=%d" % [gait.swing._rake_t, rampage.stomp_ring_at.size()])

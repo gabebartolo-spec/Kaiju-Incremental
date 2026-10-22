@@ -276,7 +276,8 @@ func _reach_arm(names: Array[String]) -> void:
 
 
 ## The raking arm's upper, fore and hand directions t seconds into the rake: `rest` (where the arm
-## hangs) -> up and out (lift_s), -> across the front (strike_s, fast), -> `rest` (recover_s).
+## hangs) -> up and out (lift_s), -> across the front (strike_s, fast), -> out wide and low (the
+## first settle_at of recover_s, where the camera sees it) -> `rest`.
 func _rake_dirs(t: float, rest: Array[Vector3]) -> Array[Vector3]:
 	var up := _pose("arm_up")
 	var across := _pose("arm_across")
@@ -286,9 +287,14 @@ func _rake_dirs(t: float, rest: Array[Vector3]) -> Array[Vector3]:
 	var to := up
 	var k := t / lift
 	if t >= lift + strike:
-		from = across
-		to = rest
+		from = across  # the recovery swings out wide to the settle pose, where it shows, then hangs
+		to = _pose("arm_settle")
 		k = (t - lift - strike) / Num.f(_claw["recover_s"])
+		var half := Num.f(_claw["settle_at"])
+		if k >= half:
+			from = to
+			to = rest
+		k = k / half if k < half else (k - half) / (1.0 - half)
 	elif t >= lift:
 		from = up
 		to = across

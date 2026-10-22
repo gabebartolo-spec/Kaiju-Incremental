@@ -26,6 +26,8 @@ var played: Array[String] = []
 var cone_half_angle := 0.0
 ## Where the next breath's hit cone starts (the kaiju's feet); set before breath().
 var cone_origin := Vector3.ZERO
+## The crack the latest heavy stomp left (a StompLanding fades it as its foot lifts again).
+var last_crack: Decal
 var _city: CityView
 var _tint: Color
 var _scale: float
@@ -209,7 +211,7 @@ func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
 		"tint": MOLTEN,
 		"soot": 0.5,
 	}
-	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
+	last_crack = FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
 	return true
 
 
