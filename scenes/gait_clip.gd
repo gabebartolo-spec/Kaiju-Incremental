@@ -17,6 +17,10 @@ const TURN_PAD := 6
 const TURN_SETTLE := 24
 ## How fast a lifted foot's lag behind its clip path dies out (1/s): gone before it lands.
 const LAG_DECAY := 10.0
+## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
+const FOOT_YAW_DECAY := 12.0
+## How far a leg may stretch (fraction of its length) to hold a planted foot's yaw.
+const HELD_REACH := 0.99
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
 const ROAR_PEAK_FRAME := 47.0
 const JAW_HOLD_SECONDS := 0.15
@@ -35,15 +39,6 @@ const RESTEP_GAP := 0.3
 const RESTEP_REACH := 1.0
 const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
-## The tail's mass on turns the clips don't carry (curves while walking, idle heading drift): a
-## damped spring driven by the body's turning acceleration, natural frequency (rad/s) and damping
-## ratio as the turn clips' whip (motion_test TAIL_SPRING); per-bone gain base -> tip (TAIL_WHIP),
-## how long the swing takes to reach each next bone (s), and the swing it eases towards and never
-## passes (rad; the sim turns faster than the clips, so a sharp turn would curl the tail too far).
-const TAIL_SPRING := Vector2(14.0, 0.36)
-const TAIL_GAIN := Vector2(7.8, 10.0)
-const TAIL_DELAY := 0.021
-const TAIL_MAX := 0.008
 ## The head looks into a turn before the body makes it (director comments #16): it eases (1/s)
 ## toward the yaw still to turn (KaijuGait.turn_ahead), at most HEAD_LEAD_MAX (rad), the neck
 ## taking NECK_SHARE of it and the skull the rest, on top of the clip's pose.
@@ -60,9 +55,8 @@ var state := "idle"
 var clip_time := 0.0
 ## Walk cycles travelled so far (distance / stride), for tests and captures.
 var walk_cycles := 0.0
-## The tail spring's swing from the body's turning (rad; not counting the clips' own tail motion).
+## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
-## The spring's swing, eased to TAIL_MAX: what the tail shows.
 var tail_shown := 0.0
 var _from := ""
 var _from_time := 0.0
@@ -73,16 +67,15 @@ var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
 var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+## The body's world yaw when each foot went down, and the turn (rad) its toes are held to: a planted
+## foot keeps its world yaw while the body turns over it, and swings back to the clip's in the air.
+var _plant_yaw: Array[float] = [0.0, 0.0]
+var _yaw_fix: Array[float] = [0.0, 0.0]
 var _was_planted: Array[bool] = [false, false]
 var _catch: Array[float] = [0.0, 0.0]  # seconds left of a catch step
 var _jaw_hold := 0.0
 var _jaw_peak := Quaternion.IDENTITY
-## The tail spring's speed (rad/s), its swing as it reaches each bone, the body's last yaw rate.
-var _tail_v := 0.0
-var _tail_at: Array[float] = []
-var _last_body_yaw := 0.0
-var _last_yaw_rate := 0.0
-var _tail_primed := false
+var _tail: ClipTail
 var _feet_primed := false
 ## The roar's tail slam: the tip's lowest point so far, and whether it has landed.
 var _slam_low := Vector3(0, INF, 0)
@@ -109,10 +102,12 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 		_turn_span[turn] = _yaw_span(turn)
 	_steps = ClipSteps.new(clips)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
+	var tail_bones := 0
 	for bone_name: String in clips.bones:
 		if bone_name.begins_with("tail"):
-			_tail_at.append(0.0)
+			tail_bones += 1
 			_tail_tip = bone_name
+	_tail = ClipTail.new(tail_bones)
 
 
 func update(delta: float) -> void:
@@ -253,7 +248,7 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 			q = q.slerp(_jaw_peak, smoothstep(0.0, 1.0, _jaw_hold))  # the maw held open (the beam)
 		elif bone_name.begins_with("tail"):
 			var i_tail := bone_name.to_int()
-			var bend := swing.whip_yaw(i_tail) + _tail_at[i_tail] * _tail_gain(i_tail)
+			var bend := swing.whip_yaw(i_tail) + _tail.bend(i_tail)
 			q = Quaternion(Vector3.UP, bend) * q
 		var offset := pose.offset * clips.rig_scale if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
@@ -289,31 +284,11 @@ func _slam_tail(roar_was: float) -> void:
 	rig.foot_planted.emit("tail", TAIL_SLAM_STRENGTH, at)
 
 
-## The tail lags the body's turns: the spring is pushed by the body's turning acceleration while
-## walking (a standing turn plays a turn clip, which carries its own whip), and its swing reaches
-## each bone a moment after the one before: a curve drags the tail wide, it whips back and settles.
+## The tail lags the body's turns (ClipTail): a curve drags it wide, it whips back and settles.
 func _swing_tail(dt: float) -> void:
-	if not _tail_primed:  # the first frame: no turning yet
-		_tail_primed = true
-		_last_body_yaw = body_yaw
-	var rate := wrapf(body_yaw - _last_body_yaw, -PI, PI) / dt
-	var accel := (rate - _last_yaw_rate) / dt if state == "walk" else 0.0
-	_last_body_yaw = body_yaw
-	_last_yaw_rate = rate
-	var wn := TAIL_SPRING.x
-	_tail_v += (-wn * wn * tail_swing - 2.0 * TAIL_SPRING.y * wn * _tail_v - accel) * dt
-	tail_swing += _tail_v * dt
-	tail_shown = TAIL_MAX * tanh(tail_swing / TAIL_MAX)
-	var reach := 1.0 - exp(-dt / TAIL_DELAY)
-	var ahead := tail_shown
-	for i: int in _tail_at.size():
-		_tail_at[i] += (ahead - _tail_at[i]) * reach
-		ahead = _tail_at[i]
-
-
-func _tail_gain(i: int) -> float:
-	var k := float(i) / maxf(1.0, _tail_at.size() - 1.0)
-	return TAIL_GAIN.x + TAIL_GAIN.y * k
+	_tail.step(body_yaw, state == "walk", dt)
+	tail_swing = _tail.swing
+	tail_shown = _tail.shown
 
 
 ## Planted feet hold their spot in the world; a lifted foot follows its clip path, starting from
@@ -336,6 +311,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 		elif planted:
 			if not _was_planted[i]:
 				_lock[i] = target
+				_plant_yaw[i] = _rig_yaw()
 				leg.plant_at = target
 				leg.drift = 0.0
 				var side := "left" if leg.side < 0.0 else "right"
@@ -347,7 +323,11 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 			_lag[i] *= exp(-LAG_DECAY * dt)
 		leg.planted = planted
 		_was_planted[i] = planted
-		_reach(leg, target)
+		if planted:
+			_yaw_fix[i] = _held_yaw(leg, target, wrapf(_plant_yaw[i] - _rig_yaw(), -PI, PI))
+		else:
+			_yaw_fix[i] *= exp(-FOOT_YAW_DECAY * dt)
+		_reach(leg, target, _yaw_fix[i])
 	_feet_primed = true
 
 
@@ -368,16 +348,43 @@ func _overreached(leg: BipedGait.Leg, lock: Vector3, clip_toe: Vector3) -> bool:
 	return (ankle - hip).length() > RESTEP_REACH * (leg.l1 + leg.l2) * s
 
 
-func _reach(leg: BipedGait.Leg, toe: Vector3) -> void:
+## The rig's yaw in the world (rad, 0 = facing -Z).
+func _rig_yaw() -> float:
+	var fwd := -rig.global_transform.basis.z
+	return atan2(-fwd.x, -fwd.z)
+
+
+## The most of a foot's yaw hold (`fix`, rad) the leg can reach: the ankle stays within the leg's
+## length of the hip with the toe on `toe` (bisected; the foot turns only as far as the leg allows).
+func _held_yaw(leg: BipedGait.Leg, toe: Vector3, fix: float) -> float:
+	var hip := rig.bone(leg.names[0]).global_position
+	var ankle_now := rig.bone(leg.names[2]).global_position
+	var off := rig.tail_world(leg.names[2]) - ankle_now
+	var most := (leg.l1 + leg.l2) * s * HELD_REACH
+	var k := 1.0
+	var lo := 0.0
+	var hi := 1.0
+	for _n: int in 6:
+		if (toe - Basis(Vector3.UP, fix * k) * off - hip).length() <= most:
+			lo = k
+		else:
+			hi = k
+		k = (lo + hi) * 0.5
+	return fix * lo
+
+
+## Puts the toe at `toe` (two-bone IK) with the foot turned about the world's up by `yaw_fix`.
+func _reach(leg: BipedGait.Leg, toe: Vector3, yaw_fix: float) -> void:
 	var foot := rig.bone(leg.names[2])
 	var ankle_now := foot.global_position
-	var shift := toe - rig.tail_world(leg.names[2])
-	if shift.length() < 0.0001 * s:
+	var foot_basis := Basis(Vector3.UP, yaw_fix) * foot.global_transform.basis.orthonormalized()
+	var turned := Basis(Vector3.UP, yaw_fix) * (rig.tail_world(leg.names[2]) - ankle_now)
+	var ankle := toe - turned  # the toe stays on `toe` as the foot turns about the ankle
+	if (ankle - ankle_now).length() < 0.0001 * s:
+		rig.set_world_basis(leg.names[2], foot_basis)
 		return
-	var foot_basis := foot.global_transform.basis.orthonormalized()
 	var hip := rig.bone(leg.names[0]).global_position
 	var knee_now := rig.bone(leg.names[1]).global_position
-	var ankle := ankle_now + shift
 	var pole := knee_now - (hip + ankle_now) * 0.5
 	var knee := KaijuGait.solve_knee(hip, ankle, leg.l1 * s, leg.l2 * s, pole)
 	rig.aim(leg.names[0], hip, knee)

@@ -30,6 +30,9 @@ const STILL_YAW := 0.0005
 ## A planted foot may drift at most this far (cm; a world unit is a 3.5 m storey).
 const MAX_DRIFT_CM := 5.0
 const CM_PER_UNIT := 350.0
+## A planted foot's toes may yaw at most this far in the world while it stays down (deg): the body
+## turns over a planted foot, which holds its yaw (motion critic 2026-10-22: toes pivoted 40-50).
+const MAX_FOOT_YAW_DEG := 12.0
 ## The sim's step length may differ this much from half the walk clip's stride.
 const STEP_LEN_TOL := 0.02
 
@@ -59,6 +62,13 @@ static func check(check: Callable, root: Node) -> void:
 	check.call(
 		adult["drift"] < MAX_DRIFT_CM,
 		"a planted foot holds its spot (%.1f cm < %.1f)" % [adult["drift"], MAX_DRIFT_CM]
+	)
+	check.call(
+		adult["foot_yaw"] <= MAX_FOOT_YAW_DEG,
+		(
+			"a planted foot holds its world yaw, no pivot (%.1f deg <= %.0f)"
+			% [adult["foot_yaw"], MAX_FOOT_YAW_DEG]
+		)
 	)
 	var one_step: float = adult["stride"]
 	var sim_step: float = adult["step_len"]
@@ -108,6 +118,8 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 	var aloft := 0
 	var drift := 0.0
 	var lock: Array[Vector3] = [Vector3.INF, Vector3.INF]
+	var toe_yaw: Array[float] = [INF, INF]
+	var foot_yaw := 0.0
 	var last_yaw := gait.body_yaw
 	var yaws: Array[Vector2] = []  # (t, |yaw| this frame) through the turn
 	for f: int in roundi((WALK_S + TURN_S) / DT):
@@ -127,6 +139,7 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 			var leg: BipedGait.Leg = gait.legs[i]
 			down = down or leg.planted
 			drift = maxf(drift, _drift(kaiju, leg, lock, i) if t > 1.5 else 0.0)
+			foot_yaw = maxf(foot_yaw, _foot_yaw(kaiju, leg, toe_yaw, i) if t > 1.5 else 0.0)
 		if t >= WALK_S and landed == INF:
 			aloft += 1 if yawed and not down else 0
 			yaws.append(Vector2(t, dyaw))
@@ -157,6 +170,7 @@ static func _turn(levels: Dictionary, root: Node) -> Dictionary:
 		"steps": steps,
 		"aloft": aloft,
 		"drift": drift,
+		"foot_yaw": foot_yaw,
 		"stride": stride,
 		"step_len": step_len,
 		"sliced": near / maxf(total, 0.0001)
@@ -172,3 +186,17 @@ static func _drift(kaiju: KaijuModel, leg: BipedGait.Leg, lock: Array[Vector3], 
 	if lock[i] == Vector3.INF:
 		lock[i] = at
 	return Vector2(at.x - lock[i].x, at.z - lock[i].z).length() * CM_PER_UNIT
+
+
+## How far (deg) leg `i`'s toes have yawed in the world since its foot went down (0 while it is up).
+static func _foot_yaw(
+	kaiju: KaijuModel, leg: BipedGait.Leg, since: Array[float], i: int
+) -> float:
+	if not leg.planted:
+		since[i] = INF
+		return 0.0
+	var toes := kaiju._rig.tail_world(leg.names[2]) - kaiju._rig.bone(leg.names[2]).global_position
+	var yaw := atan2(toes.x, toes.z)
+	if since[i] == INF:
+		since[i] = yaw
+	return absf(rad_to_deg(wrapf(yaw - since[i], -PI, PI)))

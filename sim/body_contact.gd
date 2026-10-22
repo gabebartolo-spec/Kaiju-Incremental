@@ -54,6 +54,7 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 ## A real turn is under way (one that began at smooth_below or more): it steps to its end; a smaller
 ## course correction turns smoothly while walking (D-130).
 var _real_turn := false
+var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -160,7 +161,10 @@ func _plant_both() -> void:
 ## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130).
 func _steps_this_turn() -> bool:
 	if absf(turn_left) >= Num.f(cfg["smooth_below"]):
+		if not _real_turn:
+			_turn_total = 0.0
 		_real_turn = true
+		_turn_total = maxf(_turn_total, absf(turn_left))
 	elif absf(turn_left) <= Num.f(cfg["turn_min"]):
 		_real_turn = false  # the turn is made: the next small one is a correction
 	return turns_in_steps() and _real_turn
@@ -176,11 +180,19 @@ func _pace(dt: float, stepped: bool) -> Vector2:
 	var cadence := 0.0
 	if stepped:
 		accel = Num.f(cfg["slice_accel"])
-		top = top / Num.f(cfg["slice_open"]) if _slice() else 0.0
+		top = top * _turn_ease() / Num.f(cfg["slice_open"]) if _slice() else 0.0
 		if absf(turn_left) > Num.f(cfg["turn_min"]):
 			cadence = Num.f(cfg["turn_cadence"]) / sqrt(sim.body_scale())
 	_cadence = move_toward(_cadence, cadence, Num.f(cfg["cadence_ease"]) * dt)
 	return Vector2(top, accel)
+
+
+## A stepped turn's pace through the turn: slow off the mark (turn_ease_min), quickest in the middle
+## (turn_ease_peak), settling at the end, so the body does not yaw at one rate from start to stop.
+func _turn_ease() -> float:
+	var done := 1.0 - absf(turn_left) / maxf(_turn_total, 0.001)
+	var lo := Num.f(cfg["turn_ease_min"])
+	return lo + (Num.f(cfg["turn_ease_peak"]) - lo) * sin(PI * clampf(done, 0.0, 1.0))
 
 
 ## A stepped turn swings the body about the foot that is down (since `was`): that foot stays put.
@@ -282,7 +294,8 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 func _face(dt: float) -> void:
 	var most := _rate("turn_rate_still") * dt
 	if turns_in_steps():
-		most /= Num.f(cfg["slice_open"])  # a slice turns faster than the average (steer)
+		# a slice turns quicker than the average (steer), most so at the middle of a turn
+		most *= maxf(1.0, Num.f(cfg["turn_ease_peak"])) / Num.f(cfg["slice_open"])
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
 
 

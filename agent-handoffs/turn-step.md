@@ -1,5 +1,5 @@
 # turn-step handoff, 2026-10-22 (builder 2)
-## State: D-131 built and rebuilt on origin/claude/look-options 56d92a1b (branch claude/turn-weight-v2). Full suite: 20 of 21 suites green; "native" fails only because this worktree has no native dll (KaijuCarve not registered), unrelated. StepTurn bar green, rise point under 10 s, lints green. Clip rendered.
+## State: PR #149 (claude/turn-weight-v2) motion-critic FIX round done: planted foot holds world yaw, yaw eased in/out, tail curves; 8 touched suites green, lints green, side34 clip rendered. Awaiting critic re-review.
 ## Task
 Lead 10: the turn must step, not swivel (comments #3, #31); D-130 (#51): corrections under ~20 deg smooth, real turns step; D-131 (#54, "Baby turns smoothly"): the baby turns smoothly at the pre-stepped rates, adolescent and adult step real turns; the 10 s rise-point bar stays. PR #144 (claude/turn-weight at ba70e967).
 Bar (tests/lib/smoke_step_turn.gd): adult 90 deg 1.0-1.25 s; >=3 alternating footfalls; 0 both-feet-up yaw frames; >=70% of yaw within 0.15 s after a footfall; drift <5 cm; baby 0.60 s +-10% (now smooth); sim step = half the clip stride.
@@ -18,3 +18,8 @@ claude/turn-step-pre-rebase = f4dff814 (old history). claude/turn-weight-v2 = fb
 C:/Users/DANTE/AppData/Local/Temp/ts-builder/clip/turn90_adult.avi (adult, game camera, straight walk + 90 deg left turn, 6 s, 1280x720, local RTX 4070 SUPER, no label, drift 0.0 cm). No ffmpeg on the box, so avi (Godot MJPEG).
 ## Known
 No native dll in this worktree (GDScript fallback runs). Adolescent and adult show a few both-feet-up frames in turns on some offsets; not in the bar. Not looked at the clip frames myself (lead QC).
+## Motion-critic FIX round (2026-10-22)
+- Foot yaw: ClipGait keeps each planted foot's world yaw (_yaw_fix, toes held; _held_yaw bisects to what the leg can reach, HELD_REACH 0.99) and swings it back in the air (FOOT_YAW_DECAY). StepTurn: toes yaw 44 deg before (hold off), 10 deg now; bar <= 12 deg, drift 0.0 cm.
+- Yaw ease: BodyContact._turn_ease (turn_ease_min 0.5, turn_ease_peak 1.4 in data/tuning.json): slices 8/33/36/14 deg instead of ~equal. KaijuGait.BODY_TURN_MAX 4.5 -> 7.0: the old cap lagged the body behind the quick slices (both-feet-up yaw frames, and it hid the ease).
+- Tail: scenes/clip_tail.gd (ClipTail, out of ClipGait for the 400-line cap): spring damping 0.36 -> 0.7, drag term trails the tail behind the turn (smoothed 0.3 s), tip gain 10 -> 4 (softer hook).
+- Clip: C:/Users/DANTE/AppData/Local/Temp/ts-builder/clip2/turn90_adult_side34.mp4 (new --cam=side34 in capture_walks).

@@ -610,6 +610,8 @@
 		"turn_min": 0.05,
 		"smooth_below": 0.35,
 		"slice_accel": 200.0,
+		"turn_ease_min": 0.5,
+		"turn_ease_peak": 1.4,
 		"turn_slow": 0.5,
 		"stride_ease": 5.0,
 		"pay_mult": 0.2,

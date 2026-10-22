@@ -6,9 +6,10 @@ extends RefCounted
 ## follows whatever the sim and the scene do to the kaiju and never decides anything itself.
 
 ## The body follows the heading (the sim turns it with weight, BodyContact.steer) at most this
-## fast (rad/s at body scale 1; bigger bodies turn slower by sqrt(scale)) so the legs keep up.
+## fast (rad/s at body scale 1; bigger bodies turn slower by sqrt(scale)) so the legs keep up. Above
+## the quickest slice of a stepped turn (about 5.5 rad/s), or the body lags the sim's footfalls.
 ## No lag of its own: a body behind the way it walks would slide sideways (comments #16).
-const BODY_TURN_MAX := 4.5
+const BODY_TURN_MAX := 7.0
 ## How much the speed and the turn rate are smoothed (per second).
 const VELOCITY_SMOOTHING := 8.0
 const TURN_SMOOTHING := 10.0

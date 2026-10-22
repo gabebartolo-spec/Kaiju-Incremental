@@ -6,7 +6,7 @@ extends SceneTree
 ## 90 deg turn left). --cam=side (low, square to the walk) or front34 (ahead and to one side,
 ## head height) or game (the rampage camera: CameraTuning offset and zoom, eased focus, no
 ## shake). The side and front34 cameras follow the walk's heading, eased, so a turn swings
-## them round.
+## them round; side34 sits to one side and a little ahead, so both feet show.
 ## --no-label leaves the label off the picture (a clip for the director).
 ## Prints the worst planted-foot drift (cm; a world unit is a 3.5 m storey) at the end.
 ##
@@ -156,6 +156,10 @@ func _place(cam: Camera3D, kaiju: KaijuModel, way: Vector2, bs: float) -> void:
 	if _cam_kind == "front34":
 		cam.position = at + (fwd * 13.0 + right * 8.0 + Vector3(0, 5.0, 0)) * bs
 		cam.look_at(at + Vector3(0, hip * 1.1, 0))
+		return
+	if _cam_kind == "side34":  # to one side and a little ahead, hip height: both feet in frame
+		cam.position = at + (fwd * 10.0 + right * 30.0) * bs + Vector3(0, hip * 1.0, 0)
+		cam.look_at(at + Vector3(0, hip * 0.9, 0))
 		return
 	cam.position = at + right * 20.0 * bs + Vector3(0, hip * 0.6, 0)
 	cam.look_at(at + Vector3(0, hip * 0.9, 0))
