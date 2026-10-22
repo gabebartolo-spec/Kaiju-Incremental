@@ -299,4 +299,4 @@ Light narrative (comment #76, director 2026-10-22): "light narrative to tie the 
 created in laboratories by a shadowy international organisation; you are the chief architect of the Kaiju Plan; your
 mission: bring the world's cities to their knees, create chaos, eliminate military threats, destroy cultural icons
 (the landmarks, D-133); the military copy your designs and create the mecha kaiju to fight your creation (the mecha
-boss finale above, R 23). How it is told, when, and how much text: asked.
+boss finale above, R 23). Asked: short mission briefings (a 2-3 line dossier card from the organisation before each city and after each evolve); optional bonus goals (each city lists 1-3 targets such as an icon or a base; hitting them pays a bonus); built after the demo, with the mecha finale.
