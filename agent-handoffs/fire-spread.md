@@ -1,5 +1,5 @@
 # Fire-spread handoff, 2026-10-22
-## State: available (clip v8 rendered, pushed; report sent)
+## State: PAUSED, reach change committed locally NOT pushed (2 suites red, see below)
 ## Task
 R 26.2-26.4 fire spread in the sim (mailbox to-nimbalyst/016, answers 016-ANSWERS, D-126, D-129): heat meter,
 neighbour spread with wind, glow, burn-out collapse, payout, five nodes, fire suite, player-effect fixture,
@@ -8,12 +8,11 @@ sim-review packet (below), full suite once, one ~6 s clip at the game camera (lo
 claude/fire-spread, rebuilt on origin/claude/look-options ef9212ca (own commits cherry-picked; backup ref
 claude/fire-spread-pre-rebase and -pre-rebase2, local only).
 ## Unfinished changes
-- (c) DONE: the lit block was broken by the claw rake (swipe band 13 m x body scale 0.54 = 7 m, farther than the
-  baby breath's 5.9 m, so no standoff avoids it; --stop only moves the kaiju, it does move). The capture now sets
-  sim.stats["swipe_damage"] = 0 for the shot (clip setup, not a rule). Auto-pick, run 4, --stop=0.4: lights its
-  own target 297 (79 chunks), no swipe break.
-- (a)+(b) rendered: clip v8 (below). Judged in frames: no one-frame swap, no light pop (crop luminance steady
-  101-109 over 12.2-14.8 s), the neighbour stepped block keeps its own embers (it is still burning).
+- (c) DONE, director ruling "longer baby breath" (2026-10-22): reptilian ability_range 11.0 -> 14.5 in
+  data/species.json (baby reach 5.9 -> 7.8 m, body scale 0.537; the claw rake is 7.0 m). The capture's
+  swipe_damage=0 override is REMOVED: in the real setup run 0 --stop=0.5 lights 299, which stays standing, burns
+  and gives way at frame 719 (burnt out), while the rake chews its neighbours.
+- (a)+(b) rendered: clip v10 (below). Judged in frames: progressive give-way, no light pop, embers thin out.
 - (d)/(e) diagnose only, NOT verified against a plain smash: the falling piece's look comes from
   BuildingView.lift_piece (scenes/building_view.gd:204) via CityView.fall_start (scenes/city_view.gd ~176), shared
   with every smash topple; a plain-smash capture is still needed to confirm.
@@ -32,11 +31,15 @@ claude/fire-spread-pre-rebase and -pre-rebase2, local only).
   9.4 s. Burn-out now gives way over burn_out_seconds 0.6, downwind first (no one-frame swap); a roof burns with
   one chunk fire per roof quarter (view_size 1.2). Stage 4 after: replay hash 601823901 x2, 203 burn-outs, 0
   standing, bookkeeping 270 usec/tick, collapses 1727 usec/tick (settle runs per crumble batch).
-- Clip v8 (local GPU, RTX 4070 SUPER): scratchpad fire_clip8/fire_spread_v8.mp4 (cut from 4.9 s, 9.9 s), command:
-  capture_fire_spread.gd --run=4 --stop=0.4 (needs override.cfg no_focus in the worktree, delete after). Beats
-  (physics frames): breath 314, lit 297 at 315, burns, gives way 749 (12.5 s), down 767 (12.8 s), dust to 14.8 s.
-  Frames: ignition 5.0-5.5 s; stepped neighbour roof burns from 9.0 s; collapse 12.5-13.5 s, dust cloud 13.5-14.5.
-  Shot is wide: the action is ~15 percent of the frame (game camera).
+- Clip v10 (local GPU, RTX 4070 SUPER): scratchpad fire_clip10/fire_spread_v10.mp4 (cut from 4.9 s, 9.9 s),
+  capture_fire_spread.gd --run=0 --stop=0.5 (override.cfg no_focus in the worktree, delete after). Frames: breath
+  5.2 s (314), lit 299 at 315, beige neighbour raked down about 8.5 s, 299 burns to 12.0 s (719 gives way), down
+  12.3 s (737), rubble and dust to 14.8 s. Action fills the lower-left half; no occlusion dither on the lit block.
+- FULL SUITE with ability_range 14.5: 2 red, both green at 11.0 (same tree): (1) city: tests/lib/city_breath_trees.gd,
+  stage 1 map_seed 98765 "a breath 7 m long flattens the park tree ... (1 strays)" (a crushed tree outside the
+  cone allowance at the longer reach); (2) military _check_rampages: "tanks hold standoff: 57 percent of 67 parked-in-
+  range tank-steps in the firing band" (needs >= 95; tank reach does not use ability_range, so it is the autoplay
+  trajectory changing with the longer breath: diagnose before touching the test). Not pushed.
 ## Sim-review packet (kaiju-sim-review)
 Transitions: (1) tick: FireSpread.step runs once a tick inside SpeciesPowers.step (after the coats), the heat pass
 every spread_tick s (a whole number of ticks), timers every tick; own stream Seeds.derive(powers rng, 0xF12E)
