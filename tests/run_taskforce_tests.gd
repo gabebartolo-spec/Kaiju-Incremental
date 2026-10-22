@@ -1,6 +1,6 @@
 extends "res://tests/lib/taskforce_suite.gd"
-## The Anti Kaiju Taskforce, agents only (D-137, D-139, D-141, D-143, D-145, D-152): none in the young
-## city, squads of 3-4 from the edge, 12 alive at most; deaths (perch collapse, swat) pay a tank's
+## The Anti Kaiju Taskforce, agents only (D-137, D-139, D-141, D-143, D-145, D-152): none in the
+## young city, squads of 3-4 from the edge, 12 alive at most; deaths (perch collapse, swat) pay a tank's
 ## worth; the railgun tracks, locks and hits for 8% only if the kaiju stays (a late step dodges);
 ## frost refreshes, never stacks, the dash shatters it; a squad never hovers; same seed, same
 ## events; and the player-effect fixture "taskforce.agents".
@@ -224,9 +224,8 @@ func _check_frost() -> void:
 	var frost := sim.army_units.taskforce.frost
 	var seconds := Num.f(frost.cfg["seconds"])
 	check(frost.mult() == 1.0, "no frost, no slow")
-	check(
-		seconds == 4.0 and Num.f(frost.cfg["slow_mult"]) == 0.5, "frost halves speed for 4 s (D-152)"
-	)
+	var halves := Num.f(frost.cfg["slow_mult"]) == 0.5
+	check(seconds == 4.0 and halves, "frost halves speed for 4 s (D-152)")
 	frost.launch(0, Vector3.ZERO)
 	var events := _run(sim, Num.f(frost.cfg["flight_s"]) + 0.2)
 	check(not _first(events, "frost_hit").is_empty(), "a grenade at the feet freezes the kaiju")
