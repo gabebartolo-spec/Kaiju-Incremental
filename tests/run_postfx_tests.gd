@@ -21,6 +21,7 @@ func run_checks() -> void:
 	await _t("_check_hp_drop_and_fall")
 	await _t("_check_fringe_shape")
 	await _t("_check_cooldown_and_share")
+	await _t("_check_railgun")
 	await _t("_check_motion_setting")
 	await _t("_check_rampage")
 
@@ -121,6 +122,22 @@ func _check_vignette_low_health() -> void:
 		state.low == 0.0 and state.red_alpha == 0.0 and biggest_step < 0.1,
 		"healing fades the red out (largest frame step %.3f)" % biggest_step
 	)
+
+
+## Every Taskforce railgun hit fires the fringe (D-145), though 8% is under the 12% bar.
+func _check_railgun() -> void:
+	var fringe: Dictionary = Content.section("post_fx")["fringe"]
+	var state := PostFxState.new()
+	check(not state.hurt(0.08), "8% of max health alone is under the heavy-hit bar")
+	check(state.railgun() and state.fringe_on(), "a railgun hit starts the fringe all the same")
+	_run_for(state, 1.0)
+	check(
+		state.stomp(100.0) == false and state.railgun() and state.fringe_on(),
+		"a second hit 1 s later (inside the 4 s cooldown) still shows: squads share one clock"
+	)
+	_run_for(state, 0.1)
+	var peak := _run_for(state, 0.3)
+	check(peak > 0.0, "and the burst runs (%.1f px)" % peak)
 
 
 func _check_fringe_gates() -> void:
