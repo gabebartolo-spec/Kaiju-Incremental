@@ -1,5 +1,5 @@
 # turn-step handoff, 2026-10-22 (builder 2)
-## State: PR #149 (claude/turn-weight-v2): merged origin/claude/look-options 73da6e36, rampage.gd split (PowerCues), clip re-rendered (clip4). Full suite on the final tip running; push after it is green. Director asked for no new Godot process until 22:35.
+## State: PR #149 (claude/turn-weight-v2): critic round 3 (foot skate) fixed + ratchet fix pushed; full suite green except native (no dll). Clip C:/Users/DANTE/AppData/Local/Temp/ts-builder/clip5/turn90_adult_side34.mp4 for the critic check.
 ## Task
 Lead 10: the turn must step, not swivel (comments #3, #31); D-130 (#51): corrections under ~20 deg smooth, real turns step; D-131 (#54, "Baby turns smoothly"): the baby turns smoothly at the pre-stepped rates, adolescent and adult step real turns; the 10 s rise-point bar stays. PR #144 (claude/turn-weight at ba70e967).
 Bar (tests/lib/smoke_step_turn.gd): adult 90 deg 1.0-1.25 s; >=3 alternating footfalls; 0 both-feet-up yaw frames; >=70% of yaw within 0.15 s after a footfall; drift <5 cm; baby 0.60 s +-10% (now smooth); sim step = half the clip stride.
@@ -34,3 +34,8 @@ No native dll in this worktree (GDScript fallback runs). Adolescent and adult sh
 - scenes/power_cues.gd (PowerCues): the signature ready pulse and regen motes moved out of Rampage (402 -> 390 lines), no behaviour change.
 - Why StepTurn's slice bar is 80% within 0.24 s (was 70% within 0.15 s): the critic asked for a smooth ease (yaw rate never jumps > 25% of peak), which needs a bell of about 13 frames per step, so the yaw must spread over most of each 18-frame step; the bar still rejects a swivel (yaw spread over the whole step incl. the gap). It does not hide a slower turn: the turn bar is separate (mean 1.05 s over four swing points, slowest <= 1.4 s).
 - Clip: C:/Users/DANTE/AppData/Local/Temp/ts-builder/clip4/turn90_adult_side34.mp4 (yaw step 19%, framing 2.9%, walk-off 12/25/37/50/62/75/87/100%).
+## Round 4 (foot skate, 2026-10-22 night)
+- Cause: a foot that lifted after the body turned over it carried its clip-path offset in the world (lag), so it swept at body-rotation speed 3-10 cm above the ground (48 units/s worst). ClipGait._air_target: the foot stays where it stood as it lifts, then swings to the clip path in LAG_SECONDS 0.25 s as an arc (LAG_LIFT 0.3 of the way, at most 0.15 hip heights).
+- Measured in world space (StepTurn "no foot skates over the ground": foot-frames within 0.08 u of the ground sweeping > 3 u/s, per second): turn 7.6 vs the walk's 14.0 (was 30.4 vs 23.5 = FAIL). capture_walks --log prints SKATE: worst 48 -> 19 units/s, turn foot-frames 65 -> 18.
+- The clip's turn runs frames 210-262 (0.87 s): it swings the stick mid-step, the fastest alignment; StepTurn averages four alignments (1.05 s).
+- FootHold (scenes/foot_hold.gd) out of ClipGait; Rampage._ready back under its ratchet baseline (PowerCues built in setup).
