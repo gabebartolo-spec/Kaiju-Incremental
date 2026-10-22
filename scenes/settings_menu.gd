@@ -124,13 +124,14 @@ func _gap(node: Control, top: int) -> Control:
 
 ## The controls list, keyboard and pad, at the body size.
 func _add_controls(col: Control) -> void:
-	col.add_child(_gap(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN), BLOCK_GAP))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 40)
 	grid.add_theme_constant_override("v_separation", 0)
-	col.add_child(grid)
-	for heading: String in ["", "Keyboard", "Pad"]:
+	col.add_child(_gap(grid, BLOCK_GAP))
+	# The heading shares the column titles' row: the screen stays short enough for the TV (D-155).
+	grid.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
+	for heading: String in ["Keyboard", "Pad"]:
 		grid.add_child(UiKit.label(heading, UiKit.SIZE_BODY, UiKit.MUTED))
 	var controls: Array[Array] = PlayerSettings.CONTROLS
 	for entry: Array in controls:
@@ -190,7 +191,7 @@ func _slider(parent: Control, text: String, value: float) -> HSlider:
 	slider.min_value = 0.0
 	slider.max_value = 100.0
 	slider.step = VOLUME_STEP
-	slider.custom_minimum_size = Vector2(SPAN, 40)
+	slider.custom_minimum_size = Vector2(SPAN, 28)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.value = round(value * 100.0)
 	UiKit.slider_look(slider)
