@@ -14,12 +14,12 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-W = 2560
+W = 3200
 MAIN = (1280, 720)
 CROP_OUT = (640, 360)
 BAR = 58
 TITLE = 110
-FOOT = 190
+FOOT = 150
 FONT = "C:/Windows/Fonts/calibrib.ttf"
 FONT_L = "C:/Windows/Fonts/calibri.ttf"
 WHITE = (255, 255, 255)
@@ -30,10 +30,6 @@ ROW_LABEL = {
     "c": "C   SMOOTH CROC: the croc as a smooth model, everything else as today",
 }
 ROW_COLOUR = {"a": (60, 60, 64), "b": (36, 84, 62), "c": (92, 60, 40)}
-UNCHANGED = {
-    "b": "Buildings and the croc unchanged",
-    "c": "Cars, trees, ground and haze unchanged",
-}
 TIME_LABEL = {"dusk": "Dusk", "noon": "Noon"}
 FRAME_LABEL = {
     "f1": "F1   5 seconds into the rampage, croc in the open street. Game camera.",
@@ -42,43 +38,40 @@ FRAME_LABEL = {
 }
 SHOT = {"f1": ("f1", 5), "f2": ("f2", 12), "f3": ("f3", 4)}
 
-# (caption, source shot, centre x, centre y, window width) in 4K pixels; the window is 16:9.
-# "props": where A and B differ. "croc": where A and C differ.
+# Six crop slots per board, column by column (slot i: column i // 2, row i % 2), each 640x360 and a window of the
+# 4K frame (nearest, so the cubes stay cubes): (caption in row A, in row B, in row C, shot, centre x, centre y,
+# window width). Columns 0 and 1 are where A and B differ (props, ground, haze, fire); column 2 is the croc,
+# where A and C differ. A row shows the slots it does not change too, captioned "same as A".
+SAME = "same as A"
 CROPS = {
-    "f1": {
-        "props": [
-            ("tree and car", "f1", 830, 1700, 480),
-            ("road speckle and a car", "f1", 620, 1590, 480),
-        ],
-        "croc": [
-            ("croc head and neck", "f1", 1560, 830, 640),
-            ("croc skin and legs", "f1", 1830, 1040, 480),
-        ],
-    },
-    "f2": {
-        "props": [
-            ("the fire", "f2", 1342, 1180, 480),
-            ("cars and trees", "f2", 2800, 1680, 480),
-        ],
-        "croc": [
-            ("croc and claw swipe", "f2", 1900, 900, 640),
-            ("croc head", "f2", 2064, 924, 480),
-        ],
-    },
-    "f3": {
-        "props": [
-            ("tree and car", "f3", 2520, 1030, 640),
-            ("car", "f3", 456, 1416, 480),
-        ],
-        "croc": [
-            ("croc face, front view: closer than play shows it", "f3b", 2207, 640, 560),
-            ("croc skin, front view: closer than play shows it", "f3b", 2040, 1008, 480),
-        ],
-    },
+    "f1": [
+        ("car", "cars rebuilt from smaller blocks", SAME, "f1", 830, 1700, 240),
+        ("road and car", "finer speckle on the road, cars rebuilt", SAME, "f1", 3290, 1620, 240),
+        ("distant buildings", "distant buildings softened by haze", SAME, "f1", 1900, 470, 640),
+        ("road speckle", "finer speckle on the road", SAME, "f1", 620, 1590, 240),
+        ("croc head and neck", "croc: " + SAME, "croc head and neck", "f1", 1560, 830, 640),
+        ("croc skin and legs", "croc: " + SAME, "croc skin and legs", "f1", 1830, 1040, 480),
+    ],
+    "f2": [
+        ("staged fire (lit by the capture)", "staged fire (lit by the capture)", "staged fire (lit by the capture)", "f2", 1342, 1180, 320),
+        ("car", "cars rebuilt from smaller blocks", SAME, "f2", 2800, 1680, 240),
+        ("distant buildings", "distant buildings softened by haze", SAME, "f2", 500, 560, 640),
+        ("tree and car", "trees and cars rebuilt from smaller blocks", SAME, "f2", 2400, 1560, 240),
+        ("croc and claw swipe", "croc: " + SAME, "C's head is turned differently at this moment", "f2", 1900, 900, 640),
+        ("croc head", "croc: " + SAME, "C's head is turned differently at this moment", "f2", 2064, 924, 480),
+    ],
+    "f3": [
+        ("tree and car", "trees and cars rebuilt from smaller blocks", SAME, "f3", 2520, 1030, 300),
+        ("car", "cars rebuilt from smaller blocks", SAME, "f3", 456, 1416, 240),
+        ("distant buildings", "distant buildings softened by haze", SAME, "f3", 2900, 500, 640),
+        ("tree and car", "trees and cars rebuilt from smaller blocks", SAME, "f3", 2400, 1000, 300),
+        ("croc face, front view: closer than play shows it", "croc: " + SAME, "croc face, front view: closer than play shows it", "f3b", 2207, 640, 560),
+        ("croc skin, front view: closer than play shows it", "croc: " + SAME, "croc skin, front view: closer than play shows it", "f3b", 2040, 1008, 480),
+    ],
 }
 NOTES = {
     "f1": "Same city, same route, same moment in all rows. The first stomps have already broken some buildings.",
-    "f2": "The fire is lit by the capture at the same spot and second in every row: the game's own fires are small and hide in dust. The smooth model's head and jaw move a little differently from the cube croc at the same moment.",
+    "f2": "The fire is staged: the capture lights it at the same spot and second in every row, because the game's own fires are small and hide in dust.",
     "f3": "The face and skin crops come from a front-view camera at the same moment; the game camera sees the croc's back.",
 }
 NOT_SHOWN = (
@@ -113,27 +106,15 @@ def caption(draw, xy, text):
     draw.text((x + 8, y + 2), text, font=f, fill=WHITE)
 
 
-def note_panel(img, d, ox, oy, text):
-    d.rectangle((ox, oy, ox + CROP_OUT[0] - 1, oy + CROP_OUT[1] * 2 - 1), fill=(30, 30, 34))
-    f = font(40)
-    words, line, y = text.split(), "", oy + 250
-    for word in words:
-        trial = (line + " " + word).strip()
-        if d.textlength(trial, font=f) > CROP_OUT[0] - 60:
-            d.text((ox + 30, y), line, font=f, fill=WHITE)
-            y, line = y + 52, word
-        else:
-            line = trial
-    d.text((ox + 30, y), line, font=f, fill=WHITE)
-
-
 def board(raw, frame, time, rows):
-    h = TITLE + len(rows) * (BAR + MAIN[1]) + FOOT
+    top = TITLE + 52
+    h = top + len(rows) * (BAR + MAIN[1]) + FOOT
     img = Image.new("RGB", (W, h), (18, 18, 20))
     d = ImageDraw.Draw(img)
     d.text((24, 10), f"{FRAME_LABEL[frame]}   {TIME_LABEL[time]}", font=font(44), fill=WHITE)
-    d.text((24, 66), "A reptilian croc in its city at the Behemoth stage, 4K, HUD on.", font=font(28, False), fill=WHITE)
-    y = TITLE
+    d.text((24, 66), "A reptilian croc in its city at the Behemoth stage.", font=font(28, False), fill=WHITE)
+    d.text((24, TITLE + 8), NOTES[frame], font=font(28, False), fill=WHITE)
+    y = top
     for look in rows:
         d.rectangle((0, y, W, y + BAR), fill=ROW_COLOUR[look])
         d.text((24, y + 8), ROW_LABEL[look], font=font(34 if look == "b" else 38), fill=WHITE)
@@ -144,23 +125,18 @@ def board(raw, frame, time, rows):
             d.text((40, y + 40), "not rendered", font=font(40), fill=(255, 150, 150))
         else:
             img.paste(main.resize(MAIN, Image.LANCZOS), (0, y))
-            for col, kind in enumerate(("props", "croc")):
-                ox = MAIN[0] + col * CROP_OUT[0]
-                shown = look == "a" or (look == "b" and kind == "props") or (look == "c" and kind == "croc")
-                if not shown:
-                    note_panel(img, d, ox, y, UNCHANGED[look])
+            if look == "b":
+                caption(d, (12, y + 130), "haze lightens the whole frame")
+            for i, (cap_a, cap_b, cap_c, shot, cx, cy, cw) in enumerate(CROPS[frame]):
+                src = load(raw, look, time, shot)
+                if src is None:
                     continue
-                for row, (cap, shot, cx, cy, cw) in enumerate(CROPS[frame][kind]):
-                    src = load(raw, look, time, shot)
-                    if src is None:
-                        continue
-                    oy = y + row * CROP_OUT[1]
-                    img.paste(crop(src, cx, cy, cw), (ox, oy))
-                    caption(d, (ox + 8, oy + 8), cap)
+                ox, oy = MAIN[0] + (i // 2) * CROP_OUT[0], y + (i % 2) * CROP_OUT[1]
+                img.paste(crop(src, cx, cy, cw), (ox, oy))
+                caption(d, (ox + 8, oy + 8), {"a": cap_a, "b": cap_b, "c": cap_c}[look])
         y += MAIN[1]
     d.text((24, y + 6), "Buildings break into blocks in all three", font=font(64), fill=(255, 224, 120))
-    d.text((24, y + 86), NOT_SHOWN, font=font(30, False), fill=WHITE)
-    d.text((24, y + 134), NOTES[frame], font=font(26, False), fill=WHITE)
+    d.text((24, y + 90), NOT_SHOWN, font=font(30, False), fill=WHITE)
     return img
 
 
