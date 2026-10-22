@@ -207,7 +207,10 @@ func _roll_branches() -> void:
 	if ends.is_valid():
 		targets = ends.call(_rng, n)
 	elif not cone.is_empty():
-		targets = BoltShape.fan_ends(_rng, cone, n)
+		var fan := cone.duplicate()  # a tighter fan, forking toward where the bolt lands
+		fan["spread"] = _row["fan_spread"]
+		fan["near"] = _row["fan_near"]
+		targets = BoltShape.fan_ends(_rng, fan, n)
 	for target: Vector3 in targets:
 		var t := _anchor(target)
 		var from := BoltShape.at_t(main, t)
@@ -242,7 +245,13 @@ func _stopped(from: Vector3, target: Vector3) -> Vector3:
 
 ## The main channel in the world, from the mouth to the struck point, kept inside the cone.
 func _main_world() -> PackedVector3Array:
-	return _kept(BoltShape.place(_main_shape, _mouth, _hit))
+	return _kept(BoltShape.place(_main_shape, _clear_of_head(), _hit))
+
+
+## Where the main channel starts: a little way out in front of the jaw, so it visibly leaves the
+## mouth instead of running along the head and back.
+func _clear_of_head() -> Vector3:
+	return _mouth + (_hit - _mouth).normalized() * Num.f(_row["clear"]) * _scale
 
 
 ## `line` with its inner points pulled inside the cone (ends stay where they are).
@@ -266,8 +275,8 @@ func _draw() -> void:
 	var shown := mini(main.size(), ceili(_reveal * (main.size() - 1)) + 1)
 	_view.rebuild(main.slice(0, shown), lines, Num.f(_row["branch_width"]))
 	var dir := (_hit - _mouth).normalized()
-	_muzzle.position = _mouth
-	_strike.position = _hit - dir * 0.6
+	_muzzle.position = _mouth + dir * Num.f(_cfg["muzzle_ahead"]) * _scale
+	_strike.position = _hit - dir * 0.6 + Vector3.UP * Num.f(_cfg["strike_lift"]) * _scale
 	var lift := _scale * lerpf(1.0, power, Num.f(_cfg["power_share"]))
 	(_muzzle.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["muzzle_flare"]) * lift
 	(_strike.mesh as QuadMesh).size = Vector2.ONE * Num.f(_cfg["strike_flare"]) * lift
@@ -279,7 +288,8 @@ func _draw() -> void:
 func _impact() -> void:
 	if fx == null:
 		return
-	fx.sparks(_hit)
+	for i: int in Num.i(_cfg["impact_sparks"]):
+		fx.sparks(_hit + Vector3.UP * i * _scale)
 	for b: Dictionary in _branches.slice(0, Num.i(_cfg["branch_sparks"])):
 		var end: Vector3 = b["end"]
 		fx.sparks(end)
