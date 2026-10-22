@@ -16,6 +16,8 @@ func run_checks() -> void:
 	await _t("_check_armour")
 	await _t("_check_mid_aim")
 	await _t("_check_ice_walk")
+	await _t("_check_chewed_top")
+	await _t("_check_frost_radius")
 
 
 func _check_first_arrival() -> void:
@@ -107,3 +109,46 @@ func _check_ice_walk() -> void:
 		reach[0] > 3.0 and share > 0.4 and share < 0.6,
 		"iced, the kaiju walks half as far (%.1f vs %.1f)" % [reach[1], reach[0]]
 	)
+
+
+## A city whose tops were chewed away still gives a squad somewhere to land: the highest chunk that
+## stands, not only the roof (a roof lost left every agent hovering).
+func _check_chewed_top() -> void:
+	var sim := _adolescent()
+	_open(sim)
+	var floors := Num.i(sim.army_units.taskforce.cfg["perch_min_height"])
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		if b.height < floors:
+			continue
+		var cells: Array[Vector3i] = []
+		for x: int in b.w:
+			for z: int in b.d:
+				cells.append(Vector3i(x, b.height - 1, z))
+		sim.damage_chunks(i, cells, 1.0e6)
+	var agent := Taskforce.Agent.new()
+	var spot := sim.army_units.taskforce.perch.pick(agent, [])
+	check(not spot.is_empty(), "with every roof chewed off an agent still finds a perch")
+	if spot.is_empty():
+		return
+	var b := sim.buildings[Num.i(spot[0])]
+	var cell: Vector3i = spot[1]
+	check(
+		b.frame.alive(cell) and cell.y < b.height - 1,
+		"it is a lower chunk that stands: %s" % [cell]
+	)
+
+
+## The grenade ices a kaiju that stands where it was thrown and misses one that kept walking, even
+## slowly (D-161: moving dodges them).
+func _check_frost_radius() -> void:
+	var sim := _adolescent()
+	_open(sim)
+	var frost := sim.army_units.taskforce.frost
+	var slow_walk := Num.f(Content.section("kaiju")["speed"]) * 0.5 * Num.f(frost.cfg["flight_s"])
+	frost.grenades.append([0.0, sim.kaiju_pos + Vector2(slow_walk, 0.0)])
+	_run(sim, 0.1)
+	check(frost.frost_left == 0.0, "a slow walker (%.1f u off the spot) is not iced" % slow_walk)
+	frost.grenades.append([0.0, sim.kaiju_pos])
+	_run(sim, 0.1)
+	check(frost.frost_left > 0.0, "a kaiju standing still is")

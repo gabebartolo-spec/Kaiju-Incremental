@@ -41,6 +41,7 @@ class Agent:
 var sim: RampageSim
 var cfg: Dictionary
 var frost: TaskforceFrost
+var perch: TaskforcePerch
 var agents: Array[Agent] = []
 ## Agents killed this run, and each squad's size as it arrived.
 var kills := 0
@@ -61,6 +62,7 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	_timer = Num.f(_first()["run_delay"])
 	var frost_cfg: Dictionary = cfg["frost"]
 	frost = TaskforceFrost.new(sim, frost_cfg)
+	perch = TaskforcePerch.new(sim, cfg, rng)
 
 
 ## How many may be alive at once: none in the young city, the same from the adolescent city on.
@@ -201,7 +203,7 @@ func _edge_point() -> Vector2:
 func _hop_to(agent: Agent, state: int, speed: float) -> void:
 	agent.state = state
 	agent.from = Vector3(agent.pos.x, agent.y, agent.pos.y)
-	var spot := _pick_perch(agent)
+	var spot := perch.pick(agent, agents)
 	if spot.is_empty():
 		agent.building = -1
 		agent.to = agent.from
@@ -214,56 +216,6 @@ func _hop_to(agent: Agent, state: int, speed: float) -> void:
 		var fly := agent.from.distance_to(agent.to) / speed
 		agent.flight_len = maxf(Num.f(cfg["min_flight_s"]), fly)
 	agent.flight = agent.flight_len
-
-
-## A standing roof chunk in the perch band around the kaiju, on a building no other agent holds
-## or is bound for: [building index, cell], or [] when there is none.
-func _pick_perch(agent: Agent) -> Array:
-	var options := _perch_options(agent)
-	for _try: int in Num.i(cfg["perch_tries"]):
-		if options.is_empty():
-			break
-		var i := options[_rng.randi_range(0, options.size() - 1)]
-		var b := sim.buildings[i]
-		var cell := Vector3i(
-			_rng.randi_range(0, b.w - 1), b.height - 1, _rng.randi_range(0, b.d - 1)
-		)
-		if b.frame.alive(cell):
-			return [i, cell]
-	return []
-
-
-## The buildings an agent may perch on: standing, tall enough, in the perch band round the kaiju,
-## and not held or aimed at by another agent. With none in the band (the kaiju at the map edge, or
-## the city round it flattened) the `perch_fallback` nearest to the band, so a squad never hovers.
-func _perch_options(agent: Agent) -> Array[int]:
-	var span: Array = cfg["perch_range"]
-	var taken := {}
-	for other: Agent in agents:
-		if other != agent and other.building >= 0:
-			taken[other.building] = true
-	var options: Array[int] = []
-	var outside: Array[Array] = []  # [distance outside the band, building]
-	for i: int in sim.buildings.size():
-		var b := sim.buildings[i]
-		if (
-			taken.has(i)
-			or not b.in_arena
-			or b.frame.alive_count == 0
-			or b.height < Num.i(cfg["perch_min_height"])
-		):
-			continue
-		var away := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
-		var gap := maxf(maxf(Num.f(span[0]) - away, away - Num.f(span[1])), 0.0)
-		if gap == 0.0:
-			options.append(i)
-		else:
-			outside.append([gap, i])
-	if options.is_empty():
-		outside.sort_custom(func(a: Array, b: Array) -> bool: return Num.f(a[0]) < Num.f(b[0]))
-		for pair: Array in outside.slice(0, Num.i(cfg["perch_fallback"])):
-			options.append(Num.i(pair[1]))
-	return options
 
 
 ## One step of a flight: along a straight line with an arc over it; on landing the agent perches
