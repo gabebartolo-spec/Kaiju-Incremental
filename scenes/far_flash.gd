@@ -45,6 +45,7 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 	var mat := material_override as StandardMaterial3D
-	mat.albedo_color = Color(_color, _color.a * (1.0 - t) * (1.0 - t))
+	# A flash holds its light, then dies: a fireball must be seen for its whole life.
+	mat.albedo_color = Color(_color, _color.a * (1.0 - t * t))
 	scale = Vector3.ONE * _size * lerpf(1.0, _grow, t)
 	position.y += _rise / _life * delta

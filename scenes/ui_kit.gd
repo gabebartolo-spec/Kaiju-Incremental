@@ -263,6 +263,13 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	b.add_theme_color_override("font_pressed_color", ink(lit.darkened(0.25)))
 	b.add_theme_color_override("font_disabled_color", LOCKED.lightened(0.3))
 	b.pressed.connect(func() -> void: Sfx.ui("ui_click"))
+	# The mouse and the keyboard share one highlight: hovering moves the focus, so two buttons are
+	# never lit at once (director 2026-10-22: CONTINUE focused and SETTINGS hovered, both yellow).
+	b.mouse_entered.connect(
+		func() -> void:
+			if not b.disabled:
+				b.grab_focus()
+	)
 	return b
 
 

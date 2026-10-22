@@ -18,6 +18,10 @@ const WINDOW_OUT := 0.6
 var is_loaded := false
 var _shore: TitleShore
 var _shiver := 0.0
+var _rising := false
+var _colossus: TitleColossus
+var _reveal_wait := 0.0
+var _reveal_rng := Seeds.make("title_colossus", 0)
 
 var _cfg: Dictionary
 var _city: CityView
@@ -79,6 +83,12 @@ func _build() -> void:
 		}
 	)
 	_city.add_child(_shore)
+	var variant: Dictionary = _cfg["variants"][str(_cfg["variant"])]
+	var layers: Array = _cfg["sky_smoke"]
+	_city.add_child(TitleSkySmoke.new(layers, Num.f(variant["sky_smoke"])))
+	var colossus_cfg: Dictionary = _cfg["colossus"]
+	_colossus = TitleColossus.new(colossus_cfg)
+	_city.add_child(_colossus)
 	is_loaded = true
 	ready_to_show.emit()
 
@@ -89,15 +99,24 @@ func _process(delta: float) -> void:
 	# The camera never moves and the picture never dims (#99): only the first fade-in changes it.
 	_fade = minf(1.0, _fade + delta / Num.f(_cfg["fade_s"]))
 	modulate = Color(1.0, 1.0, 1.0, _fade)
-	if _shiver > 0.0:
-		_shiver = maxf(0.0, _shiver - delta / Num.f(_cfg["ripple"]["decay_s"]))
+	_reveal_wait -= delta
+	var ripple: Dictionary = _cfg["ripple"]
+	if _rising:
+		# A footstep lands over a few frames, not in one: the surface is pushed, then lets go.
+		_shiver = minf(1.0, _shiver + delta / Num.f(ripple["attack_s"]))
+		_rising = _shiver < 1.0
+	elif _shiver > 0.0:
+		_shiver = maxf(0.0, _shiver - delta / Num.f(ripple["decay_s"]))
+	if _shiver > 0.0 or _rising:
 		_shore.set_shiver(_shiver)
 
 
 ## A far footstep landed: the bay shivers (the camera and the picture stay still), the reflections
 ## breaking into wobbling bands, then it settles over tuning "ripple" "decay_s".
 func stomp() -> void:
-	_shiver = 1.0
+	_rising = true
+	if _colossus != null:
+		_colossus.step()
 
 
 ## A gunshot far away: a small bright flash in a far street.
@@ -120,8 +139,20 @@ func boom() -> void:
 		return
 	var cfg: Dictionary = _cfg["flashes"]["boom"]
 	var at := _far_spot(Num.f(cfg["min_height"]), Num.f(cfg["max_height"]))
+	var life := Num.f(cfg["life_s"])
+	var sky := cfg.duplicate()
+	if _colossus != null and _reveal_wait <= 0.0:
+		# The big one: it goes off behind the colossus and lights it, a longer flash.
+		var colossus: Dictionary = _cfg["colossus"]
+		var every: Array = colossus["reveal_every_s"]
+		_reveal_wait = _reveal_rng.randf_range(Num.f(every[0]), Num.f(every[1]))
+		at = _colossus.burst_point()
+		life = Num.f(colossus["flash_life_s"])
+		_colossus.reveal()
+		sky["glow_share"] = colossus["glow_share"]
+		sky["glow_alpha"] = colossus["glow_alpha"]
 	var burst := FarFlash.new(
-		{"color": Color(str(cfg["color"])), "size": cfg["size"], "life": cfg["life_s"], "grow": 1.6}
+		{"color": Color(str(cfg["color"])), "size": cfg["size"], "life": life, "grow": 1.6}
 	)
 	burst.position = at
 	_city.add_child(burst)
@@ -131,14 +162,14 @@ func boom() -> void:
 			{
 				"color": Color(str(cfg["core_color"])),
 				"size": cfg["core_size"],
-				"life": Num.f(cfg["life_s"]) * 0.8,
+				"life": life * 0.8,
 				"grow": 1.4,
 			}
 		)
 	)
 	core.position = at
 	_city.add_child(core)
-	_light_sky(at, Color(str(cfg["color"])), cfg)
+	_light_sky(at, Color(str(cfg["color"])), sky, life)
 	var puff := (
 		FarFlash
 		. new(
@@ -158,7 +189,7 @@ func boom() -> void:
 
 ## The explosion's light washing the air around it: a soft orange glow over the picture, centred
 ## where the burst is on screen, gone in a quarter of a second (the 3D burst hides behind towers).
-func _light_sky(at: Vector3, colour: Color, cfg: Dictionary) -> void:
+func _light_sky(at: Vector3, colour: Color, cfg: Dictionary, life: float) -> void:
 	if _camera.is_position_behind(at):
 		return
 	var glow := TextureRect.new()
@@ -174,7 +205,7 @@ func _light_sky(at: Vector3, colour: Color, cfg: Dictionary) -> void:
 	glow.modulate = Color(colour, Num.f(cfg["glow_alpha"]))
 	add_child(glow)
 	var fade := create_tween()
-	fade.tween_property(glow, "modulate:a", 0.0, Num.f(cfg["life_s"]))
+	fade.tween_property(glow, "modulate:a", 0.0, life)
 	fade.tween_callback(glow.queue_free)
 
 

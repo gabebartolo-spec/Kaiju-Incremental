@@ -6,6 +6,12 @@ extends Control
 signal continue_pressed
 signal new_game_pressed
 
+## The line under CONTINUE (the save's summary), one size up from body text so it reads on a TV.
+const NOTE_SIZE := 30
+## The left column: its margin from the screen's edge (share of the width) and its width (px).
+const COLUMN_MARGIN := 0.055
+const COLUMN_WIDTH := 800.0
+
 ## summary: "" for no save, else what Continue resumes (e.g. "Reptilian, 3 rampages").
 var summary := ""
 ## The live dusk city behind the menu (tests that build a title without a renderer turn it off).
@@ -28,15 +34,22 @@ func _ready() -> void:
 	_add_broadcast_frame()
 	_col = VBoxContainer.new()
 	UiKit.full_rect(_col)
+	# One column down the left (director 2026-10-22): the logo above the buttons, left-aligned with
+	# them, a safe margin in from the edge and centred in the space above the news ticker; the
+	# whole right side is the burning skyline.
+	var width := get_viewport_rect().size.x
+	_col.offset_left = width * COLUMN_MARGIN
+	_col.offset_right = -(width * (1.0 - COLUMN_MARGIN) - COLUMN_WIDTH)
+	_col.offset_bottom = -NewsTicker.HEIGHT
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	_col.add_theme_constant_override("separation", 24)
 	add_child(_col)
 	var title := UiKit.label("KAIJU EVOLUTION", 104, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_col.add_child(title)
 	_buttons = VBoxContainer.new()
 	_buttons.custom_minimum_size = Vector2(560, 0)
-	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_buttons.add_theme_constant_override("separation", 16)
 	_col.add_child(_buttons)
 	_show_main()
@@ -56,8 +69,9 @@ func _add_live_city() -> void:
 	var tex := GradientTexture2D.new()
 	tex.gradient = shade
 	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5 + Num.f(cfg["radius"]), 0.5)
+	var centre_x := Num.f(cfg["centre_x"])
+	tex.fill_from = Vector2(centre_x, 0.5)
+	tex.fill_to = Vector2(centre_x + Num.f(cfg["radius"]), 0.5)
 	var rect := TextureRect.new()
 	rect.texture = tex
 	rect.stretch_mode = TextureRect.STRETCH_SCALE
@@ -182,7 +196,7 @@ func _add(text: String, fill: Color, action: Callable) -> Button:
 
 
 func _note(text: String) -> void:
-	var l := UiKit.label(text, UiKit.SIZE_BODY, UiKit.MUTED)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var l := UiKit.label(text, NOTE_SIZE, UiKit.MUTED)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_buttons.add_child(l)

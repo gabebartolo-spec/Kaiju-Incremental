@@ -18,6 +18,8 @@ const SFX_DIR := "res://assets/sfx/%s.ogg"
 ## How far the distant rifle is pitched down (it is a long way off), as in tuning "sfx" pitch_by.
 const GUN_PITCH := 0.7
 const RATE := 44100
+## Where the bed's fade-in starts (dB).
+const FADE_FROM_DB := -60.0
 ## The body thump's attack (s), how many sines make the crack and their peak level (of 1).
 const BODY_ATTACK := 0.004
 const CRACK_PARTIALS := 24
@@ -50,7 +52,11 @@ func _ready() -> void:
 	_boom.name = "boom"
 	var boom: Dictionary = _cfg["boom"]
 	_boom.stream = load(SFX_DIR % str(boom["sound"]))
-	_boom.bus = _stomp_bus
+	var boom_low := AudioEffectLowPassFilter.new()
+	boom_low.cutoff_hz = Num.f(boom["lowpass_hz"])
+	var boom_wash: Dictionary = _cfg["stomp"]["reverb"]
+	_make_bus(&"TitleBoom", [boom_low, _reverb(boom_wash, 0.8)])
+	_boom.bus = &"TitleBoom"
 	_boom.volume_db = Num.f(boom["db"])
 	_boom.pitch_scale = Num.f(boom["pitch"])
 	add_child(_boom)
@@ -215,6 +221,17 @@ func _tick_stomp(delta: float) -> void:
 	if _stomp_wait > 0.0:
 		return
 	var cfg: Dictionary = _cfg["stomp"]
+	# No two steps alike: each is a little higher or lower, heavier or lighter.
+	var vary: Dictionary = _cfg["step_vary"]
+	var weight := _rng.randf_range(-1.0, 1.0) * Num.f(vary["db"])
+	var pitch := 1.0 + _rng.randf_range(-1.0, 1.0) * Num.f(vary["pitch"])
+	_stomp.pitch_scale = Num.f(cfg["pitch"]) * pitch
+	_stomp.volume_db = Num.f(cfg["db"]) + weight
+	_sub.volume_db = Num.f(cfg["sub_db"]) + weight
+	_body.pitch_scale = pitch
+	_body.volume_db = Num.f(cfg["body_db"]) + weight
+	_crack.pitch_scale = 1.0 + (pitch - 1.0) * 0.5
+	_crack.volume_db = Num.f(cfg["crack_db"]) + weight
 	_stomp.play()
 	_sub.play()
 	_body.play()
@@ -228,6 +245,9 @@ func _loop(sound: String, db: float) -> void:
 	stream.loop = true
 	var player := _player(sound, stream, AudioBuses.of(sound), db)
 	player.play(_rng.randf() * 4.0)  # not always the same scream first
+	# The bed swells in from nothing, so the title never opens on a full wall of sound.
+	player.volume_db = FADE_FROM_DB
+	create_tween().tween_property(player, "volume_db", db, Num.f(_cfg["fade_in_s"]))
 
 
 func _shoot() -> void:

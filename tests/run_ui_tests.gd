@@ -32,6 +32,7 @@ func run_checks() -> void:
 	await _t("_check_species_card")
 	await _t("_check_no_atomic")
 	await _t("_check_pause")
+	await _t("_check_hover_focus")
 	await _t("_check_reveal_frame")
 	await _t("_check_results_verdict")
 	await _h("TreeChecks", func() -> void: await TreeChecks.new(self, check).run())
@@ -255,6 +256,29 @@ func _check_pause() -> void:
 	menu.free()
 	await process_frame
 	root.size = window
+
+
+## Director 2026-10-22: the mouse and the keyboard share one highlight, so two buttons are never
+## lit at once (the title showed CONTINUE focused and SETTINGS hovered, both yellow).
+func _check_hover_focus() -> void:
+	var box := VBoxContainer.new()
+	var first := UiKit.button("FIRST")
+	var second := UiKit.button("SECOND")
+	box.add_child(first)
+	box.add_child(second)
+	root.add_child(box)
+	await process_frame
+	first.grab_focus()
+	second.mouse_entered.emit()
+	check(second.has_focus() and not first.has_focus(), "hovering a button moves the focus onto it")
+	var off := UiKit.button("OFF")
+	off.disabled = true
+	box.add_child(off)
+	await process_frame
+	off.mouse_entered.emit()
+	check(second.has_focus(), "hovering a disabled button leaves the focus where it was")
+	box.free()
+	await process_frame
 
 
 ## Critic r1 item 7: the reveal's 3D view sits in a hazard frame, the skip prompt is 25% bigger

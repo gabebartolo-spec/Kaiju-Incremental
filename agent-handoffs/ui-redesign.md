@@ -103,6 +103,12 @@ Title (comments #88-#99, director 2026-10-22 "half underwater", reflections KEPT
   UiKit); board S/plates/board_v2.png. Not shown to the director; style not pushed.
 - #96 HUD ring: tuning 19.25/19.25/3.0, OUTLINE 1.0, ICON_SHARE 0.9, icon mipmaps on; NOT captured/measured yet.
 - Two highlighted buttons = CONTINUE has focus (yellow) + mouse hovering SETTINGS (hover is yellow too): a decision.
+State 23:05 (pushed): left menu column (director), particle window flames + billowing smoke, shore railing/kerb/lamps,
+reflections faded + shiver stronger with ramp, per-step thud variation, boom bus, hover moves focus (+ui check), dusk
+lifted, subtitle 30, sky smoke banks (title_sky_smoke.gd), TitleColossus (title_colossus.gd, tuning title.colossus).
+OPEN: colossus reveal NOT yet seen in a frame (check one: is it visible, scale 13, x 100..136 z -420); flames still blobby
+white at windows; city build now ~13 s (was 4.5): sky smoke preprocess + colossus voxel build, cut it; ui+flow suites
+green before the colossus; HUD ring capture, boot cut, plates board unshown. Footfalls clip8 at ~2.6 s and 5.4 s.
 Rules: gdformat writes CRLF on Windows: after it run sed -i 's/$//' on the files (repo is LF). A new class_name needs
 `--headless --import` first. focus-guard hook wants override.cfg with -20000 position (in the worktree, delete before commit).
 Rules: godot windowed runs need an untracked override.cfg written in its OWN Bash call first (focus guard), delete after;

@@ -465,7 +465,7 @@
 		"_note": "The title screen's live city at night (comments #88, #98): the far shore seen across the bay from the play area's quay on a slow camera drift, a district over there on fire; the kaiju is only implied. Ambience levels are dB on their buses; the UI click is -12, so the bed sits 20 dB or more under it.",
 		"city_tier": 1,
 		"fade_s": 1.2,
-		"camera": {"position": [60.0, 11.0, -96.0], "look": [60.0, 11.4, -302.0], "fov": 50.0},
+		"camera": {"position": [-20.0, 11.0, -96.0], "look": [-20.0, 11.4, -302.0], "fov": 50.0},
 		"variant": "night",
 		"variants": {
 			"night": {
@@ -475,17 +475,19 @@
 					"fog_color": "16213d", "fog_density": 0.0022,
 					"sun_color": "8ea8ff", "sun_energy": 0.3
 				},
-				"water": {"color": "2a4468", "roughness": 0.45}
+				"water": {"color": "2a4468", "roughness": 0.45},
+				"sky_smoke": 1.0
 			},
 			"dusk": {
-				"_note": "Director 2026-10-22: dusk could be fine without the glare: deep blue sky, a faint warm band at the horizon only, cool grey-blue towers.",
+				"_note": "Director 2026-10-22: dusk could be fine without the glare: deep blue sky, a faint warm band at the horizon only, cool grey-blue towers. Critic: lift the skyline so it reads as its own time of day.",
 				"env": {
-					"sky_top": "0a1f52", "sky_horizon": "8a5f5c", "sky_curve": 0.22,
-					"ambient_color": "5a6c96", "ambient": 1.25,
-					"fog_color": "3a4868", "fog_density": 0.0028,
-					"sun_color": "9fb0d8", "sun_energy": 0.25
+					"sky_top": "0a1f52", "sky_horizon": "c08462", "sky_curve": 0.1,
+					"ambient_color": "7a8cba", "ambient": 1.7,
+					"fog_color": "46567a", "fog_density": 0.0022,
+					"sun_color": "a8b8e0", "sun_energy": 0.55
 				},
-				"water": {"color": "2e445f", "roughness": 0.45}
+				"water": {"color": "34506f", "roughness": 0.45},
+				"sky_smoke": 0.4
 			}
 		},
 		"shore": {
@@ -494,10 +496,12 @@
 			"promenade_glow": "ffc070", "promenade_energy": 0.45,
 			"lamp_gap": 14.0, "lamp_height": 5.0, "lamp_back": 6.0, "lamp_glow": 7.0, "lamp_color": "ffc874",
 			"reflect_length": 190.0, "window_reflect": "ffd9a0", "fire_reflect": "ff6a1a",
-			"window_strength": 0.35, "fire_strength": 0.85, "window_length": 55.0,
+			"window_strength": 0.7, "fire_strength": 0.85, "window_length": 80.0,
 			"fire_length": 140.0, "fire_radius": 6.0,
-			"ledge_from": 2.0, "ledge_depth": 14.0, "ledge_top": 0.9, "ledge_color": "3a3c48",
-			"ledge_cap": "55555e", "ledge_glow": 0.12
+			"ledge_from": 2.0, "ledge_depth": 14.0, "ledge_top": 0.9, "ledge_color": "4a4e5e", "ledge_lit": "46506a", "ledge_lit_energy": 0.9,
+			"ledge_cap": "7a7a86", "ledge_glow": 0.3,
+			"rail_color": "0c0d12", "rail_thick": 0.35, "rail_height": 1.3, "bollard_width": 0.7, "rail_gap": 2.4, "kerb_color": "a8a8b2", "kerb_gap": 2.0,
+			"post_gap": 34.0, "post_glow": 2.6, "post_height": 2.8, "bollard_gap": 9.0, "bollard_height": 1.1
 		},
 		"sky": {
 			"top": "050814",
@@ -507,16 +511,16 @@
 			"glow_alpha": 0.5
 		},
 		"flashes": {
-			"span_x": [[-120.0, -5.0], [125.0, 235.0]],
+			"span_x": [[-45.0, 150.0]],
 			"shot": {"color": "fff0c0", "size": 9.0, "life_s": 0.12, "height": 2.0},
 			"boom": {
 				"color": "ff9a40",
-				"size": 85.0,
+				"size": 120.0,
 				"core_color": "fff0c8",
-				"core_size": 30.0,
-				"glow_alpha": 0.5,
-				"glow_share": 0.9,
-				"life_s": 0.25,
+				"core_size": 46.0,
+				"glow_alpha": 0.9,
+				"glow_share": 1.3,
+				"life_s": 0.3,
 				"min_height": 6.0,
 				"max_height": 45.0,
 				"smoke_color": "4a3a32",
@@ -526,45 +530,84 @@
 			}
 		},
 		"fires": {
-			"foci": [[-45.0, -330.0], [165.0, -330.0]],
+			"foci": [[5.0, -330.0], [105.0, -330.0]],
 			"roof_fires": 2,
-			"radius": 60.0,
+			"radius": 48.0,
 			"count": 6,
 			"depth": 70.0,
 			"window_fires": 4,
-			"window": {"flame_count": 2, "flame_w": 6.0, "flame_h": 13.0, "glow_size": 13.0, "core_size": 4.0, "smoke_count": 2, "smoke_size": 22.0, "smoke_rise": 90.0},
+			"window": {
+				"flame_amount": 8, "flame_w": 4.5, "flame_h": 9.0, "flame_box": [3.0, 1.6],
+				"tongue_amount": 5, "smoke_amount": 10, "glow_size": 12.0
+			},
 			"far": {
-				"color": "ff6a14",
-				"core_color": "ffc060",
-				"smoke_color": "3c3238",
-				"smoke_lit_color": "a85a28",
-				"flame_count": 3,
-				"flame_color": "ff4308",
-				"flame_core": "ffc050",
-				"flame_speed": 1.4,
-				"flame_w": 14.0,
-				"flame_h": 30.0,
-				"glow_size": 30.0,
-				"core_size": 8.0,
+				"glow_color": "ff6a14",
+				"glow_size": 26.0,
 				"flicker_hz": 7.0,
-				"smoke_count": 16,
-				"smoke_size": 36.0,
-				"smoke_rise": 120.0,
-				"smoke_s": 10.0,
-				"smoke_alpha": 0.85
+				"flame_amount": 14,
+				"flame_life_s": 0.9,
+				"flame_w": 6.0,
+				"flame_h": 11.0,
+				"flame_box": [6.0, 2.5],
+				"flame_speed": [6.0, 13.0],
+				"flame_up": 6.0,
+				"flame_spread": 24.0,
+				"flame_scale": [0.7, 1.6],
+				"flame_ramp": [["ffb040", 0.9], ["ff7418", 0.85], ["c83008", 0.65], ["401808", 0.0]],
+				"flame_ramp_at": [0.0, 0.15, 0.55, 1.0],
+				"tongue_amount": 6,
+				"tongue_speed": [8.0, 15.0],
+				"smoke_amount": 46,
+				"smoke_life_s": 7.0,
+				"smoke_size": [10.0, 22.0],
+				"smoke_grow": 3.2,
+				"smoke_speed": [6.0, 12.0],
+				"smoke_wind": [3.0, 0.6, 1.2],
+				"smoke_ramp": [["a8582a", 0.0], ["b0602c", 0.5], ["4a3a38", 0.5], ["262428", 0.42], ["14141a", 0.0]],
+				"smoke_ramp_at": [0.0, 0.06, 0.28, 0.65, 1.0]
 			}
 		},
-		"ripple": {"amplitude": 2.2, "glow": 0.09, "decay_s": 1.0},
-		"shade": {"centre_alpha": 0.78, "edge_alpha": 0.18, "color": "05060a", "radius": 0.62},
+		"colossus": {
+			"_note": "Director 2026-10-22: explosions now and then reveal the reptilian colossus in the inferno, dark against the fireball. The game's adult reptilian model; one step along start + k * step per footfall, out and back over steps_out steps.",
+			"species": "reptilian",
+			"scale": 13.0,
+			"idle_alpha": 0.1,
+			"glow_idle": 0.2,
+			"glow_peak": 0.85,
+			"glow_size": 380.0,
+			"glow_color": "ff6a14",
+			"glow_share": 2.4,
+			"glow_alpha": 0.95,
+			"start": [100.0, -420.0],
+			"step": [3.0, 0.0],
+			"steps_out": 12,
+			"ground_y": 0.8,
+			"burst_height": 70.0,
+			"burst_back": 25.0,
+			"reveal_s": 0.9,
+			"rise_s": 0.06,
+			"fall_s": 0.4,
+			"flash_life_s": 0.8,
+			"reveal_every_s": [12.0, 20.0]
+		},
+		"sky_smoke": [
+			{"x": [-60.0, 380.0], "y": [70.0, 150.0], "z": -560.0, "depth": 40.0, "amount": 22, "size": [140.0, 260.0], "colour": "4a2a1c", "alpha": 0.4, "drift": 1.5, "life_s": 8.0},
+			{"x": [-300.0, 380.0], "y": [130.0, 230.0], "z": -580.0, "depth": 40.0, "amount": 26, "size": [150.0, 280.0], "colour": "15131a", "alpha": 0.75, "drift": 1.0, "life_s": 8.0},
+			{"x": [-400.0, 400.0], "y": [200.0, 300.0], "z": -600.0, "depth": 40.0, "amount": 24, "size": [180.0, 320.0], "colour": "050508", "alpha": 0.92, "drift": 0.8, "life_s": 8.0}
+		],
+		"ripple": {"amplitude": 4.5, "glow": 0.2, "decay_s": 1.1, "attack_s": 0.05},
+		"shade": {"centre_alpha": 0.78, "edge_alpha": 0.0, "color": "05060a", "radius": 0.34, "centre_x": 0.22},
 		"ambience": {
-			"crowd_db": -9.0,
+			"crowd_db": -6.0,
 			"first_gun_s": 0.8,
 			"first_boom_s": 3.5,
-			"gun_db": -14.0,
-			"gun_gap_s": [1.2, 5.0],
+			"gun_db": -11.0,
+			"gun_gap_s": [0.6, 2.6],
 			"gun_burst": [1, 4],
 			"gun_burst_gap_s": 0.16,
-			"boom": {"sound": "tank_fire", "db": -24.0, "pitch": 0.55, "every_s": [5.0, 9.0]},
+			"boom": {"sound": "tank_fire", "db": -12.0, "pitch": 0.55, "lowpass_hz": 2400.0, "every_s": [5.0, 9.0]},
+			"fade_in_s": 2.0,
+			"step_vary": {"pitch": 0.08, "db": 2.0},
 			"siren": "siren_far",
 			"siren_db": -9.0,
 			"stomp": {

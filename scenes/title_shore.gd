@@ -146,13 +146,138 @@ func _ledge(span: float) -> void:
 	var z := _coast_z - from - depth / 2.0
 	var body := Vector3(span * 2.0, top - WATER_Y, depth)
 	var mid_y := (top + WATER_Y) / 2.0
-	var stone := _lit_material(Color(str(_cfg["ledge_color"])), Color.BLACK, 0.0)
+	var stone := _lit_material(
+		Color(str(_cfg["ledge_color"])),
+		Color(str(_cfg["ledge_lit"])),
+		Num.f(_cfg["ledge_lit_energy"])
+	)
 	add_child(_box(body, Vector3(0.0, mid_y, z), stone))
 	var cap := _lit_material(
 		Color(str(_cfg["ledge_cap"])), Color(str(_cfg["promenade_glow"])), Num.f(_cfg["ledge_glow"])
 	)
-	var cap_at := Vector3(0.0, top + 0.12, _coast_z - from - depth + 0.7)
+	var edge_z := _coast_z - from - depth
+	var cap_at := Vector3(0.0, top + 0.12, edge_z + 0.7)
 	add_child(_box(Vector3(span * 2.0, 0.25, 1.4), cap_at, cap))
+	_kerb(span, top, edge_z)
+	_railing(span, top, edge_z)
+	_posts(span, top, edge_z)
+
+
+## Kerb stones along the ledge's lip: pale blocks with gaps, so the edge reads as cut stone.
+func _kerb(span: float, top: float, edge_z: float) -> void:
+	var gap := Num.f(_cfg["kerb_gap"])
+	var count := int(span * 2.0 / gap)
+	var mm := _blocks(Vector3(gap * 0.88, 0.3, 0.7), Color(str(_cfg["kerb_color"])), count)
+	for i: int in count:
+		var at := Vector3(-span + (i + 0.5) * gap, top + 0.3, edge_z + 1.5)
+		mm.multimesh.set_instance_transform(i, Transform3D(Basis(), at))
+	add_child(mm)
+
+
+## A railing along the lip: thin dark uprights and a top rail, a black silhouette over the water.
+func _railing(span: float, top: float, edge_z: float) -> void:
+	var gap := Num.f(_cfg["rail_gap"])
+	var height := Num.f(_cfg["rail_height"])
+	var color := Color(str(_cfg["rail_color"]))
+	var thick := Num.f(_cfg["rail_thick"])
+	var count := int(span * 2.0 / gap)
+	var mm := _blocks(Vector3(thick, height, thick), color, count)
+	for i: int in count:
+		var at := Vector3(-span + (i + 0.5) * gap, top + 0.45 + height / 2.0, edge_z + 0.9)
+		mm.multimesh.set_instance_transform(i, Transform3D(Basis(), at))
+	add_child(mm)
+	var rail := _lit_material(color, Color.BLACK, 0.0)
+	add_child(
+		_box(
+			Vector3(span * 2.0, thick * 0.7, thick),
+			Vector3(0.0, top + 0.45 + height, edge_z + 0.9),
+			rail
+		)
+	)
+	add_child(
+		_box(
+			Vector3(span * 2.0, thick * 0.5, thick * 0.8),
+			Vector3(0.0, top + 0.45 + height * 0.5, edge_z + 0.9),
+			rail
+		)
+	)
+
+
+## A few tall lamp posts with warm heads and, between them, low bollards, along the ledge.
+func _posts(span: float, top: float, edge_z: float) -> void:
+	var gap := Num.f(_cfg["post_gap"])
+	var height := Num.f(_cfg["post_height"])
+	var color := Color(str(_cfg["rail_color"]))
+	var count := int(span * 2.0 / gap)
+	var mm := _blocks(Vector3(0.22, height, 0.22), color, count)
+	for i: int in count:
+		var x := -span + (i + 0.5) * gap
+		mm.multimesh.set_instance_transform(
+			i, Transform3D(Basis(), Vector3(x, top + 0.3 + height / 2.0, edge_z + 2.4))
+		)
+		var head := _box(
+			Vector3(0.4, 0.28, 0.4),
+			Vector3(x, top + 0.3 + height, edge_z + 2.4),
+			_lit_material(Color("f0d9a0"), Color(str(_cfg["lamp_color"])), 0.9)
+		)
+		add_child(head)
+		var halo := MeshInstance3D.new()
+		halo.mesh = _glow_quad(Color(str(_cfg["lamp_color"])))
+		halo.scale = Vector3.ONE * Num.f(_cfg["post_glow"])
+		halo.position = head.position
+		add_child(halo)
+	add_child(mm)
+	var bollard_gap := Num.f(_cfg["bollard_gap"])
+	var bollards := int(span * 2.0 / bollard_gap)
+	var bm := _blocks(
+		Vector3(
+			Num.f(_cfg["bollard_width"]),
+			Num.f(_cfg["bollard_height"]),
+			Num.f(_cfg["bollard_width"])
+		),
+		color.lightened(0.1),
+		bollards
+	)
+	for i: int in bollards:
+		var x := -span + (i + 0.5) * bollard_gap + 3.0
+		bm.multimesh.set_instance_transform(
+			i,
+			Transform3D(
+				Basis(), Vector3(x, top + 0.3 + Num.f(_cfg["bollard_height"]) / 2.0, edge_z + 3.2)
+			)
+		)
+	add_child(bm)
+
+
+func _blocks(size: Vector3, color: Color, count: int) -> MultiMeshInstance3D:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh.material = _lit_material(color, Color.BLACK, 0.0)
+	mm.mesh = mesh
+	mm.instance_count = count
+	var node := MultiMeshInstance3D.new()
+	node.multimesh = mm
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return node
+
+
+## A soft additive billboard glow in `color`.
+func _glow_quad(color: Color) -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.billboard_keep_scale = true
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.disable_fog = true
+	mat.albedo_texture = FarFire.soft_disc()
+	mat.albedo_color = color
+	quad.material = mat
+	return quad
 
 
 ## How far the water is shivering (0 still .. 1 a footstep has just landed).
@@ -177,6 +302,7 @@ func _reflections(span: float) -> void:
 	mat.set_shader_parameter("window_length", Num.f(_cfg["window_length"]))
 	mat.set_shader_parameter("fire_length", Num.f(_cfg["fire_length"]))
 	mat.set_shader_parameter("fire_radius", Num.f(_cfg["fire_radius"]))
+	mat.set_shader_parameter("sheet_length", length)
 	mat.set_shader_parameter("ripple_amp", Num.f(_ripple["amplitude"]))
 	mat.set_shader_parameter("ripple_glow", Num.f(_ripple["glow"]))
 	_water = mat
