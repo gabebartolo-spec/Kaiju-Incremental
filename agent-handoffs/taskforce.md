@@ -1,5 +1,5 @@
 # Taskforce handoff (PR 1, sim core, agents only), 2026-10-23
-## State: running a check (merged look-options with #160 locally, suites in flight, then push once + report sha to lead)
+## State: available (PR #161 merged with #160, suites green; awaiting merge go)
 ## Task
 Anti Kaiju Taskforce PR 1 (sim core, agents only). Serves ROADMAP "Your adversaries", M2, D-137/139/141/143/145/152.
 Lead: session "Status check". Next after this: PR 3 kills (swat, perch-collapse fall), PR 4 frost grenades.
