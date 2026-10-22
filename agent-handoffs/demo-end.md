@@ -1,15 +1,16 @@
 # Demo-end handoff, 2026-10-23 02:50
-## State: demo-end resynced with look-options (merge 4be897bc), suites running (demoend, sim_play, flow, smoke); then push + report sha. Weather branch waits on a settings-height fix.
-## Weather pick (queue 1, lead's go 05:37), branch claude/weather in ../../Kaiju-Incremental-wt/weather
-Done at 79c0e792: sim/weather.gd (Weather.pick/next/label/clean, Seeds "weather"), data/looks.json "weather" table, Content.weathers()/
-weather_table()/weather_id()/set_weather(), PlayerSettings.weather (+cfg), save key last_weather (default via .get, no version bump),
-Main._start_rampage picks and sets Content.weather_id(), options row, suite tests/run_weather_tests.gd (23 checks green; 5 planted
-bugs each fail it, log in /tmp/plant_weather.out). timeofday + sim + ratchet + tuning keys green.
-OPEN: flow fails one check, "BACK at 125% off screen": the Weather row needs its own full-width row (two long labels cannot share
-a row) and the settings screen then no longer fits. Question logged in lead-board/interview.md (tighten spacing vs "Random" on both).
-Next: pick the fix (tighten row/block gaps, mind the critic's 10/20 px rules), run flow, push, report sha, write the VFX interface
-line to lead-board/from-demo-end.md: Content.weather_id() (String id: clear, overcast, rain, fog, thunderstorm), set in
-Main._start_rampage before the rampage scene is built; also the save key last_weather and PlayerSettings.weather.
+## State: demo-end pushed (2e6c2ffe) and weather pushed (claude/weather a21dfdec); both wait for the lead to open PRs. Planning queue 2 (sky and sea life) until "go sky" is in lead-board/to-demo-end.md.
+## Weather pick (queue 1) DONE: claude/weather @ a21dfdec in ../../Kaiju-Incremental-wt/weather
+Weather.pick/next/label/clean (sim/weather.gd), data/looks.json "weather", Content.weather_id() (the one current value: clear,
+overcast, rain, fog, thunderstorm; set in Main._start_rampage), PlayerSettings.weather, save key last_weather, own options row
+(CONTROLS shares the column-title row and sliders are 28 high so the screen fits at 125%), suite tests/run_weather_tests.gd (23 checks;
+5 planted bugs each fail it, log /tmp/plant_weather.out), flow settings-row checks extended. VFX line sent via from-demo-end.md.
+## Sky and sea life (queue 2) PLAN, waiting for "go sky" (team cap): ROADMAP comment #63-64, #71, D-155.
+Sim, events, data only; placeholder boxes in the view. Files: new sim/sky_life.gd (Birds flock: positions, scatter on roar /
+tower fall events; Boats: drift along the river band; Whale: one untouchable per run, surfaces/spouts), data/tuning.json "sky_life"
+rows, hook in sim/rampage_sim.gd step (+ a field; watch the 400-line cap, rampage_sim is near it: split at a seam), events
+bird_scatter / whale_spout, tests/lib/sim_sky_life.gd + tests/run_skylife_tests.gd, scenes placeholder node SkyLifeView.
+Question for the director (in interview.md): the map has only a river band (CityRiver), no bay: where does the whale live?
 ## Task
 The demo ending: ROADMAP M3 "demo end screen and feedback button"; D-145, D-148, D-152, D-153, D-156 (amended). Lead:
 "Status check" (the Kaiju lead, local_a16cd984-128a-4b5f-8bdf-05556e046cd4). Queue after this (lead's message): weather
