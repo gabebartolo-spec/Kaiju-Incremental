@@ -108,8 +108,8 @@ func _near(what: String, street: StreetLife, at: Vector3, frames: int) -> void:
 	var c := Vector2(at.x, at.z)
 	var near := INF
 	var within := [0, 0, 0, 0]  # people within 3, 4, 6 and 8 m
-	for at: Vector2 in street.pos:
-		var d := at.distance_to(c)
+	for spot: Vector2 in street.pos:
+		var d := spot.distance_to(c)
 		near = minf(near, d)
 		for k: int in 4:
 			within[k] += 1 if d <= [3.0, 4.0, 6.0, 8.0][k] else 0
