@@ -1,49 +1,29 @@
-# Clumsy-army handoff, 2026-10-21 (lead-10 builder, stood down at ~280k context)
-## State: available (stood down with work left: restart fresh from this file)
+# Clumsy-army handoff, 2026-10-22 (builder; rebuilt on the squashed base)
+## State: probe passed; full suite running; clip and push left
 ## Task
 Director comments #18: "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military
-which destroys parts of its own city occasionally". Director ruling: misses "land beside him" (visible). Helis and a
-HUD line are out of scope.
-## Branch and commit
-claude/clumsy-army @ 37590bb (pushed), look-options 8d6d7db merged in. Worktree ../Kaiju-Incremental-wt/clumsy-army
-(native built in-tree; godot-cpp copied, gitignored). Base worktree ../Kaiju-Incremental-wt/ca-base: detached at
-8d6d7db, native built (leave it; worktree removal is denied).
+which destroys parts of its own city occasionally". Ruling: misses land beside him (ring round the kaiju, radius 2.5 m).
+Bar, never loosened: the army's damage to the kaiju per minute within 5% of the base at tiers 2 and 4.
+## Branch
+claude/clumsy-army-v2 = origin/claude/look-options 56d92a1b + the branch's own commits cherry-picked (backup ref
+claude/clumsy-army-pre-rebase = old tip cfd2fb3d). The old claude/clumsy-army on origin is not an ancestor: push to -v2.
+Conflicts met: street_life/city_view crush(by_tank, by_army) both kept; stray fx moved into TankYard.fire(event, ...)
+so Rampage._on_event does not grow (complexity ratchet); crush_all split (_crush_stadiums, _count_crushed).
 ## What the branch does
-- sim/stray_shell.gd: hit chance hit_near .9 -> hit_far .6 over reach; a hit does damage / chance (same expected
-  damage). A miss lands on a ring round the kaiju: body radius + U(ring_near 4, ring_far 14) m at a random angle
-  (lead option a); land() breaks floors 0..3 within radius 2.5 m (damage 8). Tuning: data/tuning.json army.miss.
-- sim/army.gd shoot(); scenes: TankFx.stray fx; fans and people a stray kills are army_killed, not the kaiju's
-  (StreetLife.crush/crush_all by_army; flow check _check_stray_fan, shown failing first).
-- tools/capture/capture_strays.gd: walks 3 s in from the river (spawn camera sits inside a tower, R 19.4), then stands;
-  prints each MISS with its on-screen pixel.
-## Left (lead's steps, in order)
-1. Fixed-path probe (lead): the kaiju stands or walks a scripted line (no autoplay, so strays cannot change its path),
-   the same tanks fire with and without strays (for "without": tuning army.miss.hit_near = hit_far = 1.0 in a probe-only
-   override, or the base worktree). 72 seeds per tier, tiers 2 and 4: kaiju damage per minute within 5%. If it misses,
-   tune the hit damage in data until it is back (never loosen the bar). Probe kaiju HP is 1e6 (military_base set-up).
-   Scratch probes to adapt: <lead scratchpad>/fire_probe3.gd, ca/fire_probe4.gd (PROBE_TIER), fireprobe*.sh.
-2. Full local suite (SUITES_ONLY=1 tools/run_tests.sh --quick) with no tests/zzprobe dir present (a temp probe there
-   made the smoke compile check red last time).
-3. One ~6 s clip at the game camera: local GPU, off-screen no_focus override.cfg in this worktree (lead yes; CI
-   llvmpipe timed out, run 39553440618). Seed 4: capture_strays --seconds=36 --seed=4; misses at frames 1640 1773 1906
-   2039 before the radius change (re-check). Bar: >=2 misses visibly breaking buildings; check at game speed and 2x crops.
-4. Push, report to the lead (8 lines, table + clip path). The hygiene agent opens the PR.
-## Evidence so far
-- Sim suite time: the 1147 s was a stale dll; rebuilt native: base 392 s vs branch 386 s (same load).
-- Suites on the merged tree (before the ring): military 5/5 20, powers 12/12 25, flow 7/7 202, sim 12/12 71.
-- Probe, autoplay, base 8d6d7db -> ring eb6e20b (radius 1.5), 36 seeds: t2 24.0 -> 20.6 (-14%), t4 239.9 -> 218.1
-  (-9%). Roads blocked and tanks spawned are unchanged; autoplay paths diverge (t2 seed 10: 24 -> 4.5 shots/min).
-  Few shots per seed (seed 26: about 11), so a ~30% miss rate swings per-seed damage.
-- Clip (radius 1.5): of 4 misses, 2 on screen beside the kaiju (1 breaks a low wall, 1 is a flash and fire beside a
-  building), 2 hidden behind it. Notes folder clumsy-army/strays_ring_6s.mp4, ring_miss_*_2x.png.
-## Open decisions
-none (lead ruled: ring, radius 2.5, 5% bar kept, fixed-path probe)
-## Running jobs
-none
-## Findings for the lead
-- The spawn camera is inside a tower for a kaiju standing at its rise point: every standing capture renders black.
-- CI capture (llvmpipe, 1080p) cannot render a city rampage: 4.8 s in 100 min.
-- An autoplay damage probe is the wrong instrument for a change that alters the city: the path diverges per seed.
-## Rules learnt the hard way
-- Never leave a temp probe in tests/ while a suite runs (smoke compiles every script).
-- A seeded-chance change needs many shots per comparison; per-seed values swing.
+- sim/stray_shell.gd: hit chance .9 near -> .6 far over reach; a hit does damage / chance; a miss lands on a ring round
+  the kaiju (body + U(4, 14) m, random angle) and breaks floors 0..3 within 2.5 m. Tuning: data/tuning.json army.miss.
+- Fans and people a stray kills are army_killed, not the kaiju's. Tests: tests/lib/military_stray.gd, flow_stadium.
+- tools/strays_damage_probe.gd: fixed-path probe (scripted square loop, no autoplay, air off, kaiju hp 1e6), base mode
+  (hit_near = hit_far = 1.0) vs strays, per seed; prints ROW lines and TIER summaries. Usage in its header.
+## Result (72 seeds per tier, 120 s each, tuning unchanged)
+- Tier 2: base 190.33 -> strays 192.33 damage/min (+1.05%); shots 3949 -> 4007, misses 1427.
+- Tier 4: base 421.79 -> strays 416.89 damage/min (-1.16%); shots 5344 -> 5344, misses 1988.
+- Run on the pre-rebase tree; after the rebase seeds t2 4-5 and t4 0 reproduce digit for digit (sim path unchanged).
+## Left
+1. Full suite (tools/run_tests.sh) on the rebuilt tip: running; log in the lead scratch ca2/full.log.
+2. Push claude/clumsy-army-v2; lead opens the PR.
+3. One ~6 s clip at the game camera (capture_strays --seed=4 --seconds=36), local GPU, off-screen no_focus override.cfg.
+## Findings
+- The spawn camera sits inside a tower for a kaiju at its rise point (standing captures render black).
+- Autoplay damage probes are the wrong instrument for a change that alters the city.
+- Never leave a temp probe in tests/ during a suite (smoke compiles every script).

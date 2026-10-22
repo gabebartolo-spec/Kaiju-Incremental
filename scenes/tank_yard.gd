@@ -41,8 +41,12 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 		node.aim(kaiju_at + Vector3(0, 2.0 * _sim.body_scale(), 0), delta)
 
 
-## Fires the tank's shell at `at`; false if it has no model (nothing drawn, no recoil shake).
-func fire(id: int, at: Vector3, kaiju_at: Vector3) -> bool:
+## A tank_fired event: its shell flies to `at`; false if the tank has no model (nothing drawn, no
+## recoil shake). A miss is a stray shell (StrayShell): it lands in the city beside the kaiju.
+func fire(event: Dictionary, at: Vector3, kaiju_at: Vector3) -> bool:
+	if event.get("miss", false):
+		TankFx.stray(_city, at, Num.f(_sim.army["miss"]["radius"]))
+	var id := Num.i(event["tank"])
 	if not nodes.has(id):
 		return false
 	var node: TankModel = nodes[id]

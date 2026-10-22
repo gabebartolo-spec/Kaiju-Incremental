@@ -203,11 +203,7 @@ func crush_all(spots: Array[Vector3], by_tank: bool = false, by_army: bool = fal
 	for s: Vector3 in spots:
 		var centre := Vector2(s.x, s.y)
 		traffic.crush(centre, s.z)
-		for game: StadiumMatch in matches:
-			var fans := game.crush(Vector3(s.x, 0.0, s.y), s.z)
-			if by_army:
-				army_killed += fans
-				_army_fans += fans
+		_crush_stadiums(s, by_army)
 		lo = lo.min(centre - Vector2.ONE * s.z)
 		hi = hi.max(centre + Vector2.ONE * s.z)
 	var puffs := PackedInt32Array()
@@ -224,12 +220,26 @@ func crush_all(spots: Array[Vector3], by_tank: bool = false, by_army: bool = fal
 				puffs[k] += 1
 				_fx.puff(Vector3(p.pos.x, 0.15, p.pos.y))
 			_remove(i)
-			if by_army:
-				army_killed += 1
-			else:
-				killed += 1
-				run_over += 1 if by_tank else 0
+			_count_crushed(by_tank, by_army)
 			break
+
+
+## The pitch and stands within spot s (x, z, radius) are crushed; a stray's fans are the army's.
+func _crush_stadiums(s: Vector3, by_army: bool) -> void:
+	for game: StadiumMatch in matches:
+		var fans := game.crush(Vector3(s.x, 0.0, s.y), s.z)
+		if by_army:
+			army_killed += fans
+			_army_fans += fans
+
+
+## One person crushed: the kaiju's (killed; run_over too if a tank did it) or the army's own.
+func _count_crushed(by_tank: bool, by_army: bool) -> void:
+	if by_army:
+		army_killed += 1
+	else:
+		killed += 1
+		run_over += 1 if by_tank else 0
 
 
 ## The people under a section that starts to fall (a fall_start event) freeze there; its landing

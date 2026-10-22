@@ -66,7 +66,6 @@ sim/convoy.gd::_settle 21 13
 sim/convoy.gd::step 28 17
 sim/glass_frame.gd::cells 18 14
 sim/party_walls.gd::of 33 16
-sim/rampage_sim.gd::hit_area 33 17
 sim/rampage_sim.gd::step 42 14
 sim/road_graph.gd::waypoints 40 13
 sim/road_search.gd::search 40 15
