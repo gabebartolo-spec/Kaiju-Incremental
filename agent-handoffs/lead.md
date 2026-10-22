@@ -13,8 +13,9 @@
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
   milestones, sound. Each tells the other before touching the other's files.
 - 2026-10-23 ~03:25 he went to sleep, then work: "work for 5 hours, if theres something you need my eye or a question
-  you need to ask, add it to the interview and continue working". NO AskUserQuestion until he is back; then run the
-  interview from the lead board's interview.md (AskUserQuestion, one decision each, images first).
+  you need to ask, add it to the interview and continue working". The window ended 08:30: WIND-DOWN, in-flight work
+  finishes and pushes, nothing new starts. On his return run the interview from the lead board's interview.md
+  (ASK ORDER at its top; AskUserQuestion, 4 per call, images first), then record every answer in DECISIONS.
 - D-162: Tripo 8000 credits for snake/Komodo head options and croc skin concepts (VFX lead runs it in the built-in
   browser); boards go to the interview. Every Tripo download opens a Save dialog owned by the Claude app, which
   computer use may not control (guarded): agents fetch models by signed URL (browser network requests + curl) instead.
