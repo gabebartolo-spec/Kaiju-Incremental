@@ -28,6 +28,8 @@ var _city: CityView
 var _camera: Camera3D
 var _fade := 0.0
 var _flash_rng := Seeds.make("title_flash", 0)
+## Each window fire's window (its middle on the wall), for the glowing panes beside it.
+var _burning: Array[Vector3] = []
 var _view: SubViewport
 
 
@@ -74,6 +76,7 @@ func _build() -> void:
 		await get_tree().process_frame
 	_apply_look()
 	var fires := _light_fires()
+	_burn_windows()
 	var shore_cfg: Dictionary = _cfg["shore"]
 	_shore = TitleShore.new(
 		shore_cfg,
@@ -270,7 +273,9 @@ func _light_fires() -> PackedFloat32Array:
 	return lit
 
 
-## Flames pouring out of the windows of a burning tower, on several floors of its street face.
+## Flames pouring out of the windows of a burning tower, on several floors of its street face:
+## each fire stands in a real window cell of the facade's grid (the emitters are anchored in the
+## window rects) and the floor's windows beside it glow fire-orange (D-151), see _burn_windows().
 func _window_fires(
 	centre: Vector3, size: Vector3, cfg: Dictionary, rng: RandomNumberGenerator
 ) -> void:
@@ -278,17 +283,31 @@ func _window_fires(
 	var window: Dictionary = cfg["window"]
 	var spec := far.duplicate()
 	spec.merge(window, true)
+	var grain := CitySkyline.FAR_GRAIN
 	for _i: int in Num.i(cfg["window_fires"]):
 		var fire := FarFire.new(spec, rng.randf() * 10.0)
-		fire.position = (
-			centre
-			+ Vector3(
-				rng.randf_range(-0.4, 0.4) * size.x,
-				size.y * rng.randf_range(-0.25, 0.4),
-				size.z * 0.5 + WINDOW_OUT
-			)
+		var wall := centre.z + size.z * 0.5
+		var at := Vector3(
+			centre.x + rng.randf_range(-0.4, 0.4) * size.x,
+			centre.y + size.y * rng.randf_range(-0.25, 0.4),
+			wall
 		)
+		# A window is one cell wide and two rows tall, its lower row on a multiple of four rows
+		# (+1): snap the fire to the middle of the window it comes out of.
+		var column := floorf(at.x * grain)
+		var floor_row := floorf(at.y * grain / 4.0) * 4.0 + 1.0
+		at.x = (column + 0.5) / grain
+		at.y = (floor_row + 1.0) / grain
+		_burning.append(at)
+		fire.position = at + Vector3(0.0, 0.0, WINDOW_OUT)
 		_city.add_child(fire)
+
+
+## The burning floors' windows: fire-orange panes along each window fire's floor.
+func _burn_windows() -> void:
+	var fires: Dictionary = _cfg["fires"]
+	var windows: Dictionary = fires["windows"]
+	_city.add_child(TitleBurningWindows.new(_burning, windows))
 
 
 ## The chosen variant's look (tuning "title" "variant" picks one of "variants"): the sky, the haze

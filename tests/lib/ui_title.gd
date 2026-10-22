@@ -108,6 +108,7 @@ func _with_save() -> void:
 		),
 		"the exit button sits bottom-right just above the ticker (%s)" % [er]
 	)
+	_row_fits(title, cr, fr, gr)
 	check.call(
 		fr.end.x <= CANVAS.x * 0.4,
 		"the button row stays in the left 40%% of the screen (ends at %d)" % int(fr.end.x)
@@ -128,6 +129,38 @@ func _with_save() -> void:
 	check.call(flat.is_empty(), "every title button is a worn plate: %s" % [flat])
 	title.queue_free()
 	await t.process_frame
+
+
+## The screen critic's fixes (2026-10-23): the row is exactly the logo's width (Continue about three
+## quarters of it), the Continue plate 9% of the screen's height or more, the gear's left edge on
+## the column's, no focus pointer and no fine inner frame on the plates.
+func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
+	var logo: Label
+	for found: Node in title.find_children("*", "Label", true, false):
+		if (found as Label).text == "KAIJU EVOLUTION":
+			logo = found as Label
+	var row := fr.end.x - cr.position.x
+	check.call(
+		logo != null and absf(row - logo.get_combined_minimum_size().x) <= 2.0,
+		(
+			"the button row is exactly the logo's width (%d vs %d)"
+			% [row, logo.get_combined_minimum_size().x if logo else 0]
+		)
+	)
+	var share := cr.size.x / row
+	check.call(share >= 0.65 and share <= 0.8, "Continue takes about 3/4 of the row (%.2f)" % share)
+	check.call(
+		cr.size.y >= CANVAS.y * 0.09,
+		"the Continue plate is 9%% of the height or more (%d)" % cr.size.y
+	)
+	check.call(
+		absf(gr.position.x - cr.position.x) <= 1.5,
+		"the gear's left edge is on the column's (%d vs %d)" % [gr.position.x, cr.position.x]
+	)
+	var focus := (_button(title, "CONTINUE")).get_theme_stylebox("focus") as HazardBox
+	check.call(
+		not focus.chevron, "the title's Continue plate has no focus pointer to crowd its frame"
+	)
 
 
 func _without_save() -> void:

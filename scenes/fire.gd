@@ -29,7 +29,7 @@ var _density := 1.0
 var _wind := WIND
 ## How much bigger a zoomed fire's smoke puffs are than its zoom alone makes them.
 var _puff := 1.0
-## Particle count multiplier of a zoomed fire's embers (they thin out far away: a few, not a speckle).
+## Particle count multiplier of a zoomed fire's embers (a few, not an even speckle).
 var _ember_density := 1.0
 var _embers_node: GPUParticles3D
 

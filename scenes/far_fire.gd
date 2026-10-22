@@ -11,7 +11,11 @@ extends Node3D
 ## fires' smoke and glows (0), the colossus (1: it stands in front of the smoke), the flames (2).
 const FLAME_PRIORITY := 2
 ## How strong the fire's own light is on the wall around it (the soft glow's alpha).
-const GLOW_ALPHA := 0.3
+const GLOW_ALPHA := 0.15
+## The glow is a tall faint ellipse hugging the facade above the fire: this wide and this tall, as
+## shares of tuning "glow_size", and this far up it (no round lens blob).
+const GLOW_SHAPE := Vector2(0.55, 1.5)
+const GLOW_LIFT := 0.45
 
 static var _disc: GradientTexture2D
 
@@ -47,7 +51,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	var beat := sin(_t * Num.f(_cfg["flicker_hz"]) + _seed) * sin(_t * 2.3 + _seed * 3.0)
-	_glow.scale = Vector3.ONE * Num.f(_cfg["glow_size"]) * (0.8 + 0.2 * beat)
+	_glow.scale = _glow_scale() * (0.8 + 0.2 * beat)
 
 
 ## The fire's own light on the wall around it.
@@ -66,9 +70,15 @@ func _glow_sprite() -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	node.mesh = quad
 	node.material_override = mat
-	node.scale = Vector3.ONE * Num.f(_cfg["glow_size"])
+	node.scale = _glow_scale()
+	node.position.y = Num.f(_cfg["glow_size"]) * GLOW_LIFT
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return node
+
+
+func _glow_scale() -> Vector3:
+	var size := Num.f(_cfg["glow_size"])
+	return Vector3(size * GLOW_SHAPE.x, size * GLOW_SHAPE.y, 1.0)
 
 
 ## A white disc that fades out smoothly toward its edge, shared by every sprite.

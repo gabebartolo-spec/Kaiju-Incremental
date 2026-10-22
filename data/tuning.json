@@ -614,6 +614,7 @@
 			"count": 6,
 			"depth": 70.0,
 			"window_fires": 4,
+			"windows": {"cells": 4, "gap": 0.2, "colour": "ff6a14", "glow": 2.0},
 			"window": {"size": 0.7, "zoom": 2.2, "smoke_share": 0.25, "density": 5.0, "ember_density": 1.2, "wind": 0.5, "puff": 1.6, "glow_size": 12.0},
 			"far": {
 				"_note": "The game's own Fire (scenes/fire.gd) at this zoom: the same voxel flames, embers and charcoal smoke, every size and speed multiplied by zoom for the distance, density times the particles (the picture is zoom squared bigger), smoke_share the part of the zoom the smoke takes.",
