@@ -8,6 +8,8 @@ extends Control
 signal closed
 
 const VOLUME_STEP := 10.0
+## The time-of-day button spans the sliders' column (two 200 px buttons and the gap between).
+const TIME_WIDTH := 425.0
 
 ## Sound effects (the SFX bus).
 var effects: HSlider
@@ -58,53 +60,54 @@ func _ready() -> void:
 	)
 	_motion_text = motion.get_parent().get_child(2)
 
-	_fullscreen = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	_fullscreen.custom_minimum_size = Vector2(200, 56)
-	_fullscreen.pressed.connect(func() -> void: PlayerSettings.set_fullscreen(not _is_full()))
-	_scale = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	_scale.custom_minimum_size = Vector2(200, 56)
-	_scale.pressed.connect(func() -> void: PlayerSettings.next_ui_scale())
+	_fullscreen = _choice(200.0, func() -> void: PlayerSettings.set_fullscreen(not _is_full()))
+	_scale = _choice(200.0, func() -> void: PlayerSettings.next_ui_scale())
 	# One row for both screen settings, so the time-of-day row fits the TV at the largest UI scale.
-	var screen := _row(col, "Fullscreen (F11), UI scale")
+	var screen := _row(col, "Display")
 	screen.add_child(_fullscreen)
 	screen.add_child(_scale)
-	_fps = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	_fps.custom_minimum_size = Vector2(200, 56)
-	_fps.pressed.connect(func() -> void: PlayerSettings.next_fps_cap())
-	_graphics = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	_graphics.custom_minimum_size = Vector2(200, 56)
-	_graphics.pressed.connect(func() -> void: PlayerSettings.next_graphics())
+	_fps = _choice(200.0, func() -> void: PlayerSettings.next_fps_cap())
+	_graphics = _choice(200.0, func() -> void: PlayerSettings.next_graphics())
 	# One row for both GPU settings, so the screen still fits the TV at the largest UI scale.
-	var gpu := _row(col, "Graphics, frame cap  (quieter GPU)")
+	var gpu := _row(col, "Graphics and frame cap")
 	gpu.add_child(_graphics)
 	gpu.add_child(_fps)
-
-	_time = UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	_time.custom_minimum_size = Vector2(300, 56)
-	_time.pressed.connect(func() -> void: PlayerSettings.next_time_of_day())
-	_row(col, "Time of day  (every rampage)").add_child(_time)
-
-	col.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 40)
-	col.add_child(grid)
-	for heading: String in ["", "Keyboard", "Pad"]:
-		grid.add_child(UiKit.label(heading, UiKit.SIZE_SMALL, UiKit.MUTED))
-	var controls: Array[Array] = PlayerSettings.CONTROLS
-	for entry: Array in controls:
-		# A row tied to a species (its 4th entry) shows only when that species is playable.
-		if entry.size() > 3 and not Demo.allows(str(entry[3])):
-			continue
-		grid.add_child(UiKit.label(str(entry[0]), UiKit.SIZE_SMALL, UiKit.TEXT))
-		grid.add_child(UiKit.label(str(entry[1]), UiKit.SIZE_SMALL, UiKit.TEXT))
-		grid.add_child(UiKit.label(str(entry[2]), UiKit.SIZE_SMALL, UiKit.TEXT))
+	# The time-of-day button spans the sliders' column, edge to edge (D-145).
+	_time = _choice(TIME_WIDTH, func() -> void: PlayerSettings.next_time_of_day())
+	_row(col, "Time of day").add_child(_time)
+	_add_controls(col)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
 	back.pressed.connect(close)
 	col.add_child(back)
 	_refresh()
 	_volume.grab_focus.call_deferred()
+
+
+## A settings button (its text is set by _refresh) that does `on_press`.
+func _choice(width: float, on_press: Callable) -> Button:
+	var button := UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	button.custom_minimum_size = Vector2(width, 56)
+	button.pressed.connect(on_press)
+	return button
+
+
+## The controls list, keyboard and pad, at the body size.
+func _add_controls(col: Control) -> void:
+	col.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 40)
+	col.add_child(grid)
+	for heading: String in ["", "Keyboard", "Pad"]:
+		grid.add_child(UiKit.label(heading, UiKit.SIZE_BODY, UiKit.MUTED))
+	var controls: Array[Array] = PlayerSettings.CONTROLS
+	for entry: Array in controls:
+		# A row tied to a species (its 4th entry) shows only when that species is playable.
+		if entry.size() > 3 and not Demo.allows(str(entry[3])):
+			continue
+		for at: int in 3:
+			grid.add_child(UiKit.label(str(entry[at]), UiKit.SIZE_BODY, UiKit.TEXT))
 
 
 func _process(_delta: float) -> void:
@@ -130,11 +133,11 @@ func _refresh() -> void:
 	_volume_text.text = "%d%%" % roundi(_volume.value)
 	_effects_text.text = "%d%%" % roundi(effects.value)
 	_motion_text.text = "%d%%" % roundi(motion.value)
-	_fullscreen.text = "ON" if _is_full() else "OFF"
-	_scale.text = "%d%%" % roundi(PlayerSettings.ui_scale * 100.0)
+	_fullscreen.text = "FULLSCREEN: %s" % ("ON" if _is_full() else "OFF")
+	_scale.text = "UI SCALE: %d%%" % roundi(PlayerSettings.ui_scale * 100.0)
 	_fps.text = "UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
 	_graphics.text = PlayerSettings.graphics_level().to_upper()
-	_time.text = TimeOfDay.label(PlayerSettings.time_of_day).to_upper()
+	_time.text = "< %s >" % TimeOfDay.label(PlayerSettings.time_of_day).to_upper()  # steps on press
 
 
 func _is_full() -> bool:

@@ -324,10 +324,12 @@ func _check_settings() -> void:
 		return
 	await layout.fits_at_scales(menu, "settings")
 	var was_full: bool = PlayerSettings.fullscreen
-	await GuiInput.click(t, GuiInput.button(menu, "ON" if was_full else "OFF"))
+	await GuiInput.click(
+		t, GuiInput.button(menu, "FULLSCREEN: ON" if was_full else "FULLSCREEN: OFF")
+	)
 	check.call(PlayerSettings.fullscreen != was_full, "clicking the fullscreen switch flips it")
 	PlayerSettings.set_fullscreen(was_full)
-	await GuiInput.click(t, GuiInput.button(menu, "100%"))
+	await GuiInput.click(t, GuiInput.button(menu, "UI SCALE: 100%"))
 	check.call(
 		(
 			is_equal_approx(PlayerSettings.ui_scale, 1.15)

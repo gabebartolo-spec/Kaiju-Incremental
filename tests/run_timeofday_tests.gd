@@ -98,7 +98,10 @@ func _check_setting_steps() -> void:
 		"the options button steps Random, then each time, then back to Random: %s" % [steps]
 	)
 	check(
-		TimeOfDay.label(TimeOfDay.RANDOM) == "Random" and TimeOfDay.label("night") == "Night",
+		(
+			TimeOfDay.label(TimeOfDay.RANDOM) == "Random each rampage"
+			and TimeOfDay.label("night") == "Night"
+		),
 		"the button reads Random (the default) or the time's name from data"
 	)
 	var unlabelled := Content.times().filter(

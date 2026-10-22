@@ -3,7 +3,7 @@
 	"times": {
 		"_note": "Director 2026-10-20: all four times of day, in this order (Content.time_for_run is the fixed order captures and tests use). D-145 (2026-10-22): the game picks one at random each run, never the one just played (TimeOfDay.pick), unless the options menu fixes one; labels are what that menu shows. Each entry overrides the look's keys; dusk is the look as written.",
 		"labels": {"dusk": "Dusk", "night": "Night", "morning": "Morning", "noon": "Noon"},
-		"random_label": "Random",
+		"random_label": "Random each rampage",
 		"order": [
 			"dusk",
 			"night",
