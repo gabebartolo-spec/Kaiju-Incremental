@@ -8,8 +8,15 @@ extends Control
 signal closed
 
 const VOLUME_STEP := 10.0
-## The time-of-day button spans the sliders' column (two 200 px buttons and the gap between).
-const TIME_WIDTH := 425.0
+## The sliders' column and the buttons' column are one span: the sliders are this wide, a
+## two-button row splits it in two equal halves with BUTTON_GAP between, and the time-of-day
+## button fills it, so every right edge lands on the sliders' right edge (screen critic round 2).
+const SPAN := 420.0
+const BUTTON_GAP := 20.0
+## Extra space above a button row (it adds to the column's own 6 px: 10 px between rows) and above
+## the CONTROLS heading and the BACK button (20 px).
+const ROW_GAP := 4
+const BLOCK_GAP := 14
 
 ## Sound effects (the SFX bus).
 var effects: HSlider
@@ -60,41 +67,61 @@ func _ready() -> void:
 	)
 	_motion_text = motion.get_parent().get_child(2)
 
-	_fullscreen = _choice(200.0, func() -> void: PlayerSettings.set_fullscreen(not _is_full()))
-	_scale = _choice(200.0, func() -> void: PlayerSettings.next_ui_scale())
+	_fullscreen = _choice(func() -> void: PlayerSettings.set_fullscreen(not _is_full()))
+	_scale = _choice(func() -> void: PlayerSettings.next_ui_scale())
 	# One row for both screen settings, so the time-of-day row fits the TV at the largest UI scale.
-	var screen := _row(col, "Display")
-	screen.add_child(_fullscreen)
-	screen.add_child(_scale)
-	_fps = _choice(200.0, func() -> void: PlayerSettings.next_fps_cap())
-	_graphics = _choice(200.0, func() -> void: PlayerSettings.next_graphics())
+	_button_row(col, "Fullscreen and UI scale", [_fullscreen, _scale])
+	_fps = _choice(func() -> void: PlayerSettings.next_fps_cap())
+	_graphics = _choice(func() -> void: PlayerSettings.next_graphics())
 	# One row for both GPU settings, so the screen still fits the TV at the largest UI scale.
-	var gpu := _row(col, "Graphics and frame cap")
-	gpu.add_child(_graphics)
-	gpu.add_child(_fps)
+	_button_row(col, "Graphics and FPS", [_graphics, _fps])
 	# The time-of-day button spans the sliders' column, edge to edge (D-145).
-	_time = _choice(TIME_WIDTH, func() -> void: PlayerSettings.next_time_of_day())
-	_row(col, "Time of day").add_child(_time)
+	_time = _choice(func() -> void: PlayerSettings.next_time_of_day())
+	_button_row(col, "Time of day", [_time])
 	_add_controls(col)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
 	back.pressed.connect(close)
-	col.add_child(back)
+	col.add_child(_gap(back, BLOCK_GAP))
 	_refresh()
 	_volume.grab_focus.call_deferred()
 
 
-## A settings button (its text is set by _refresh) that does `on_press`.
-func _choice(width: float, on_press: Callable) -> Button:
+## A settings button (its text, "< value >", is set by _refresh) that does `on_press`; it takes
+## its share of the row's span.
+func _choice(on_press: Callable) -> Button:
 	var button := UiKit.button("", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
-	button.custom_minimum_size = Vector2(width, 56)
+	button.custom_minimum_size = Vector2(0, 56)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.pressed.connect(on_press)
 	return button
 
 
+## A row of `buttons` under a name: they split the sliders' span in equal parts.
+func _button_row(col: Control, text: String, buttons: Array[Button]) -> void:
+	var row := _row(null, text)
+	var span := HBoxContainer.new()
+	span.custom_minimum_size = Vector2(SPAN, 0)
+	span.add_theme_constant_override("separation", int(BUTTON_GAP))
+	for button: Button in buttons:
+		span.add_child(button)
+	row.add_child(span)
+	col.add_child(_gap(row, ROW_GAP))
+
+
+## `node` with `top` px of space above it.
+func _gap(node: Control, top: int) -> Control:
+	if top == 0:
+		return node
+	var box := MarginContainer.new()
+	box.add_theme_constant_override("margin_top", top)
+	box.add_child(node)
+	return box
+
+
 ## The controls list, keyboard and pad, at the body size.
 func _add_controls(col: Control) -> void:
-	col.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
+	col.add_child(_gap(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN), BLOCK_GAP))
 	var grid := GridContainer.new()
 	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 40)
@@ -134,11 +161,18 @@ func _refresh() -> void:
 	_volume_text.text = "%d%%" % roundi(_volume.value)
 	_effects_text.text = "%d%%" % roundi(effects.value)
 	_motion_text.text = "%d%%" % roundi(motion.value)
-	_fullscreen.text = "FULLSCREEN: %s" % ("ON" if _is_full() else "OFF")
-	_scale.text = "UI SCALE: %d%%" % roundi(PlayerSettings.ui_scale * 100.0)
-	_fps.text = "UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
-	_graphics.text = PlayerSettings.graphics_level().to_upper()
-	_time.text = "< %s >" % TimeOfDay.label(PlayerSettings.time_of_day).to_upper()  # steps on press
+	# Every button steps its setting on press: "< value >" says so.
+	_fullscreen.text = _cycle("ON" if _is_full() else "OFF")
+	_scale.text = _cycle("%d%%" % roundi(PlayerSettings.ui_scale * 100.0))
+	_fps.text = _cycle(
+		"UNLIMITED" if PlayerSettings.cap() == 0 else "%d FPS" % PlayerSettings.cap()
+	)
+	_graphics.text = _cycle(PlayerSettings.graphics_level().to_upper())
+	_time.text = _cycle(TimeOfDay.label(PlayerSettings.time_of_day).to_upper())
+
+
+func _cycle(value: String) -> String:
+	return "< %s >" % value
 
 
 func _is_full() -> bool:
@@ -152,7 +186,7 @@ func _slider(parent: Control, text: String, value: float) -> HSlider:
 	slider.min_value = 0.0
 	slider.max_value = 100.0
 	slider.step = VOLUME_STEP
-	slider.custom_minimum_size = Vector2(420, 40)
+	slider.custom_minimum_size = Vector2(SPAN, 40)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.value = round(value * 100.0)
 	UiKit.slider_look(slider)
@@ -166,7 +200,8 @@ func _slider(parent: Control, text: String, value: float) -> HSlider:
 func _row(parent: Control, text: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 20)
-	parent.add_child(row)
+	if parent != null:
+		parent.add_child(row)
 	var name_label := UiKit.label(text, UiKit.SIZE_BODY)
 	name_label.custom_minimum_size = Vector2(380, 0)
 	row.add_child(name_label)
