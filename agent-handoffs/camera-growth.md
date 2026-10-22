@@ -1,5 +1,5 @@
 # Camera-growth handoff, 2026-10-22
-## State: done, awaiting lead QC of the clip
+## State: done, awaiting lead QC of the v3 clip
 ## Task
 Camera A (D-121) + falling towers fade: critic FIX on cameraA_topple_fade.mp4 (head too high 1.9-3.6 s; zoom bob
 0-2 s; dither opacity cap 0.35 over the kaiju; fade ramp 12-15 frames), head-bone framing check, full local suite,
@@ -9,27 +9,19 @@ Earlier history: side-session-notes/local_df2c2989-.../camera-growth/handoff.md.
 claude/camera-growth-v2 (worktree C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/camera-growth): own commits
 cherry-picked onto origin/claude/look-options d834f58b (9 commits, no merges). Backup refs claude/camera-growth-pre-rebase
 (fefd8679 old history). Remote claude/camera-growth (38c76538) is not an ancestor of the rebuilt branch -> push -v2.
-## What is in
-- Fade: tuning camera fade_opacity 0.35, fade_seconds 0.25 (15 frames, smoothstep), fade_width 1.0, 2 px dither (38c76538).
-- Zoom bob: CameraFollow.step follows the body at once along the view's ground direction (lag only across); BreathCamera
-  lift keeps the rest length; lead_depth_share 0. Cause: FOCUS_FOLLOW lag toward the camera, not the lead.
-- Head room: scenes/head_frame.gd (HeadFrame) tilts the aim up (head_rise 60/s, head_settle 1.5/s) when the highest drawn
-  point (bone-box corners) would enter safe_top 0.12; counts the camera shake's pitch (Rampage passes Vector2(fov, nod)).
-- Suite tests/run_camera_frame_tests.gd (2 fns, 7 checks); README row added.
-## Evidence (A stage 4 rampage 5.5 s headless, tools/capture/capture_camera_growth.gd --trace, scratch kcg/)
-- Before (zoom bob): sim share 31-45% (camera distance 60-80). Now sim share 39.8-41.8% steady, dist 62-64.6.
-- Highest drawn point: min 12.0% from the top (safe 12) vs 6.3% before the shake-aware tilt; head in top margin 14 frames
-  are float-equal 12.0; centre outside middle 60%: 0. Tilt peaks 7.7 deg.
-- Still seen: feet hidden behind a solid building 20 of 330 frames, head behind solid 15, body behind a falling section
-  216 (solid 0: all faded). Not touched.
-- Lints (gdlint, tuning_keys, complexity_ratchet, check_scripts 346 ok) green; suites camera 5/5 9 checks, camera_frame 2/2 7.
+## What is in (PR #150, branch claude/camera-growth-v2, merged with origin/claude/look-options after #148)
+- Fade: camera fade_opacity 0.35, 15-frame smoothstep, fade_width, 2 px dither. Sight = sim points + HeadFrame.sight()
+  (every bone centre + head/jaw/spine box corners, CityView.drawn_sight): feet/head hidden behind a solid tower 20/15 -> 0/1.
+- Zoom bob: follow rigid along the view; camera-to-body distance over the clip run 62.31-65.10 (mean 63.82), 360 frames.
+- Pan pops (critic round 2): scenes/damped.gd (critically damped). Aim follow_s 0.3, follow_accel 400/scale, lead 1/lead_ease,
+  tilt head_rise_s 0.06 / head_settle_s 0.6. Shake-removed aim: max accel yaw 4.2, pitch 8.0 px/frame^2 at 4K (7-10 frames above 4).
+- Head room: highest drawn point min 6.7% from the top (safe 12) at one roar-rise, 32 frames under 12%; damping trades this.
+- Suites: camera_frame 4 fns 13 checks, camera 5/9, scans green (reference easing updated), full SUITES_ONLY 24 suites pass.
 ## Done
-- Full suite SUITES_ONLY=1: 23 suites, all checks passed (873d638b tree). Pushed origin claude/camera-growth-v2.
-- Clip: side-session-notes/local_df2c2989-.../camera-growth/cameraA_v2_topple_fade.mp4 (3840x2160, 6 s, 60 fps, A stage 4
-  rampage, local RTX 4070 SUPER, peak 12.3 GB). The window must be borderless (override.cfg window/size/borderless=true) or
-  Windows clamps the height to 2097. In a 2x-stretch window the tool's % are of the 1080 canvas over the 2160 image:
-  double them (sim 20.3 -> 40.6, top 6.0 -> 12.0). override.cfg removed.
-- Seen at 1x on 8 frames: head clear of the top edge; towers over the body dither at 0.35 with the body readable.
-  Not seen: pops frame by frame (numbers only).
+- Pushed 7b42cab3 (+ this handoff). Clip: side-session-notes/local_df2c2989-.../camera-growth/cameraA_v3_topple_fade.mp4
+  (3840x2160, 6 s 60 fps, A stage 4 rampage, local RTX 4070 SUPER, borderless window, peak 14.9 GB). override.cfg removed.
+- Tool: --trace prints CAM yaw/pitch/shake per frame; --no-frames renders at game timing without saving. To read pans, subtract the
+  shake of the PREVIOUS frame (shake updates after placement) and use pitch + shake.y (metric asin(back.y) is minus the elevation).
+- In a 2x-stretch window CAMCHECK top/sim shares are of the 1080 canvas over the 2160 image: double them.
 ## Rules learnt
 - Stage-4 runs peak ~14 GB: one at a time. godot_quiet.sh named in the brief does not exist; used RULES-NOW.md override.cfg.
