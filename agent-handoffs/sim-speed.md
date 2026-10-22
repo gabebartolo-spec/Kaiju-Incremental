@@ -25,7 +25,8 @@ native/src changed after it only in comments):
   young c7f06a1e7c488d9d (5650 steps) | Behemoth af65a5967c68b293 (8700) | Colossus ccf6ffdbb80712d3 (8254)
   | Apex Titan ee2fc77427d9af29 (8597) | CHECKSUM 2c712cc6589535dd | wall 849 s.
 GDScript path (VoxelSupport.use_native off): young, Behemoth and Colossus checksums are IDENTICAL to native. Apex Titan
-did not finish in the 55 min limit (about 4.5x slower); see "Running jobs".
+did not finish in the 55 min limit (the GDScript path takes about 385 ms/step there); not run to the end, CI and the
+export run the native path.
 
 ## Where a step's time goes (native, 3 seeded runs per growth step, ms per sim step at 15 Hz)
 Plain 3.5 / 10.1 / 25.1 / 69.1 (young / Behemoth / Colossus / Apex); timed run 3.9 / 10.2 / 26.1 / 71.3.
@@ -36,8 +37,10 @@ Top spans by exclusive time (share of a step):
 - the scripted player's own nearest_standing lookup: 6% / 4% / 7% / 7% (a harness cost; the game's auto-walk calls it too).
 - powers.speed_mult (blocked scan) 3% / 2% / 3% / 3%; powers.step 6% at Apex (fire.step 0.2, tentacles, glide).
 - Taskforce, air wing, brood, claw swipe, fire spread, army squads: each under 2%.
-GDScript path (2 runs): 15.5 / 44.6 / 105.5 ms/step; carving.settle alone is 60% / 56% / 47%, then carving.hit/apply/warm;
-Convoy is only 9-12%. The native extension moves the carving cost out, so Convoy and the body lead on the shipped path.
+GDScript path (2 runs): 15.5 / 44.6 / 105.5 / 384.8 ms/step (4.4x, 4.4x, 4.2x, 5.6x the native steps); carving is 80-85% of
+it (carving.settle alone 60% / 56% / 47% / 41%, then apply and hit), Convoy only 6-12%. The native extension moves the
+carving cost out, so Convoy and the body lead on the shipped path. Candidates 1-3 below are native-path wins; on the
+GDScript path they are 1-3% and carving.settle is the target (CI and the export run native, so it is not proposed).
 
 ## Convoy breakdown (--drill, 2 runs, Behemoth / Colossus / Apex; stopwatch adds about 5 us per span so use --micro)
 posts.body 249 / 541 / 856 calls per step; plain cost 8.4 / 9.3 / 9.4 us per call (--micro). to_body and near_body
@@ -65,15 +68,16 @@ Together roughly a third off the Behemoth..Apex steps (not additive to the cent:
 roads). Not worth it yet: carving native (15-24%), body.collect, search.search; each under 8% on the shipped path.
 Files near the line cap that these touch: sim/convoy.gd is exactly 400 lines (split before adding), sim/firing_posts.gd 314.
 
-## Pacing sample (wall time, before)
-`godot --headless --path . --script tools/pacing.gd -- --species=reptilian --runs=60` : see "Pacing" below once filled.
+## Pacing sample (wall time, before any speed-up, native path)
+`godot --headless --path . --script tools/pacing.gd -- --species=reptilian --runs=60`: 13 min 40 s wall (60 runs: young 7,
+Behemoth 48, Colossus 5; tree 79/96 levels, 1.40 h of play). The full 400-run, 3-species run is the 2-hour one. Rerun the
+same line after a speed-up and compare; the printed table must be identical (pacing is seeded).
 
 ## Open decisions
 None for the director yet. The speed-ups change no result; if one cannot, it stops and is described, not merged.
 
 ## Running jobs
-GDScript-path Apex Titan checksum and the pacing sample were still running when this was written; results in the final
-report (or rerun: `... sim_checksum.gd -- --runs=10 --tiers=4 --gd`, about 45 min).
+None (the pacing sample, below, ran in the background; its result is in the final report).
 
 ## Findings for the lead
 - A span-level profile (nested exclusive times) found the real cost in minutes; the guess ("carving") was wrong on the
