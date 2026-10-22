@@ -140,7 +140,7 @@ func breath(mouth: Vector3, span: Vector3, half_angle: float, strength: float) -
 		"soot_in": Num.f(_tune["scorch_soot_in"]),
 		"glow_in": Num.f(_tune["scorch_glow_in"]),
 		"half_angle": half_angle,
-		"energy": 3.0 + strength,
+		"energy": (3.0 + strength) * Num.f(_tune["scorch_glow_mult"]),
 		"tint": _tint,
 	}
 	var feet := Vector3(cone_origin.x, target.y - 0.5, cone_origin.z)
