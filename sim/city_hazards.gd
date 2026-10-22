@@ -8,9 +8,13 @@ extends RefCounted
 ## building is drawn exactly as before.
 
 
-## Tags hazards in `out` (CityGen.generate's buildings) for the stage in `cfg`; entries from
-## `quay_from` on are the river's quay sheds (the docks), welcome however central.
-static func tag(out: Array[Dictionary], plan: Dictionary, cfg: Dictionary, quay_from: int) -> void:
+## Adds the river's quay `sheds` (the docks, welcome however central) to `out` (CityGen.generate's
+## buildings) and tags hazards in it for the stage in `cfg`.
+static func tag(
+	out: Array[Dictionary], plan: Dictionary, cfg: Dictionary, sheds: Array[Dictionary]
+) -> void:
+	var quay_from := out.size()
+	out.append_array(sheds)
 	var h: Dictionary = cfg.get("hazards", {})
 	if h.is_empty():
 		return
