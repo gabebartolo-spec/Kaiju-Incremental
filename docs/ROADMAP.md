@@ -350,3 +350,41 @@ state. No director clips or per-change approvals in between; clips only where mo
   him but its a fast helicopter". Random time in any city; Mayor / Governor / President by city; ~15 s window; payout
   about a city block; breath, Thunder Beam, grab, thrown tank or car, toppled building; headline + rotor sound, no
   markers; escape loses only the payout; white and gold VIP look. Owner: unassigned. Status: not started.
+
+## Engineering upkeep (D-159, 2026-10-23)
+- Team and tests: about 4 builders at once in total; touched suites locally, the full suite on CI; at most 3 open PRs.
+  Owner: lead. Status: in force.
+- Clean as you go: every builder splits a crowded file (390-400 lines) at a natural seam and shrinks a grandfathered
+  long function (tools/lint/complexity_baseline.txt) when its work touches it. Owner: every builder. Status: ongoing.
+- Sim speed: measure where a sim step's time goes (tools/pacing.gd's 2-hour run), so balance answers take minutes;
+  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: queued.
+- Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
+  22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
+  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: queued.
+
+## Overnight work (director 2026-10-23, about 03:25, asleep then at work)
+- His words: "work for 5 hours, if theres something you need my eye or a question you need to ask, add it to the
+  interview and continue working". Questions gather in the lead board's interview.md; the lead asks them on his return.
+  Owner: lead. Status: in progress.
+- Heads and skins (D-162): a couple of snake and Komodo head options and a few croc skins, Tripo, 8000 credits, boards
+  for the interview. Owner: VFX lead's asset session. Status: started.
+- "get the githib hygeinic": stale branches, worktrees and PRs cleaned to the github-hygiene skill (manifest first, open
+  PRs and live worktrees excluded). Owner: lead's GitHub helper. Status: started.
+- Research (readers only, no engine; findings go to the interview as questions, never into the build). His words: "if
+  you run out of things to do, do bulk research on how to make the game better", narrowed to "research should be
+  focused on 3d animation of kaiju and methods of creating good pipelines for ai generated 3d models, good practice"
+  and "specifically search for how to generate good art and good animations using the tools we have, tripo, blender,
+  godot, local tools, yourself, mcp connections, plugins, skills you can learn, github repos with workflows already
+  designed, etc" ("i also have Aseprite"). Owner: lead's readers. Status: running.
+- The voxel look, again: "research again if it would be worth abandoning the voxel look. im worried that theres a mix
+  match of art styles in the game, the voxels are maybe clashing with the cinematic direction" (D-111 kept voxels on
+  2026-10-21). A reader's report plus labelled stills from the VFX lead go to the interview. Owner: lead, then VFX lead.
+  Status: researching.
+- Croc idle audit: "do some audits on the posture and "idle" movements of our reptilian, does he breath? does he ever
+  sway at all? these things would be good for immersion". Audit done (barely breathes; only the tail sways; stops
+  dead); how much life to add is an interview question; no build before his answer. Owner: VFX lead. Status: asked.
+- Tripo downloads: "you need to press save when these pop up" (the browser's Save dialog). That dialog belongs to the
+  Claude app, which computer use may not control, so agents fetch each model by its signed URL (read from the browser
+  pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
+- Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
+  ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.

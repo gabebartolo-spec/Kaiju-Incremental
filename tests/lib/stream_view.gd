@@ -1,20 +1,20 @@
 extends RefCounted
 ## The building stream follows the camera's view (BuildingStream): through the fastest camera
-## swing the game allows (the breath's side orbit, BreathCamera) no stand-in box shows inside the
-## full-detail depth DEPTH_M. For stages 2 and 3 a real stream (the stage's city, the real chunk
-## budget, its workers meshing) runs under the real camera path (CameraFollow,
-## BreathCamera, 60 frames a second) with the kaiju at three spots. Every frame, each building left
+## move the game allows (a walk or a dash; the breath's side orbit was cut, D-136) no stand-in box
+## shows inside the full-detail depth DEPTH_M. For stages 2 and 3 a real stream (the stage's city,
+## the real chunk budget, its workers meshing) runs under the real camera path (CameraFollow, 60
+## frames a second) with the kaiju at three spots. Every frame, each building left
 ## as a box whose bounding box meets the camera's frustum gives a distance from the camera; the
 ## smallest over a phase is the depth with full buildings ("depth"; "ahead" is the same within 10
-## degrees of the view axis). The rest and the swing at every spot must keep DEPTH_M. A dash
+## degrees of the view axis). The rest at every spot must keep DEPTH_M. A dash
 ## (a body length or more in 0.4 s) is run and reported only: the camera reaches
 ## ground the budget cannot have meshed ahead of it.
 ##
 ## Landmarks (the stadium and wheel at these stages) unload like ordinary buildings when the
 ## camera cannot see them (director 2026-10-22: "Yes, if no pop-in"), so every frame also counts
 ## the landmarks standing as a box whose bounding box meets the camera's frustum, at any
-## distance: none may show through rest, swing, a walk from the junction each way with the swing
-## running, or a dash. Presentation only. Not exercised: camera shake, a GPU frame, a slower PC.
+## distance: none may show through rest, a walk from the junction each way, or a dash.
+## Presentation only. Not exercised: camera shake, a GPU frame, a slower PC.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const StreamFrustum := preload("res://tests/lib/stream_frustum.gd")
@@ -28,8 +28,8 @@ const LOOK_M := StreamFrustum.LOOK_M
 ## Real time to wait for the stream to settle.
 const SETTLE_MS := 240000
 const STAGES: Array[int] = [2, 3]
-## Walks out from the junction (name, heading, metres) and back, the breath's swing running at
-## the start and half way: the landmarks leave the view and return to it. The north-east walk
+## Walks out from the junction (name, heading, metres) and back: the landmarks leave the view and
+## return to it. The north-east walk
 ## ends in the arena corner, 250 m and more from them with the camera turned away.
 const WALKS: Array[Array] = [
 	["walk east", Vector2(1, 0), 150.0], ["walk north-east", Vector2(0.7071, -0.7071), 290.0]
@@ -37,9 +37,6 @@ const WALKS: Array[Array] = [
 ## Where the kaiju stands (the first also dashes): the central junction and two spots among blocks.
 const SPOTS: Array[Vector2] = [Vector2(0, 0), Vector2(26, -14), Vector2(-30, 18)]
 
-## The camera's fastest turn seen (degrees a second) and the widest it swung from rest (degrees).
-var yaw_rate := 0.0
-var yaw_reach := 0.0
 var worst_step := 0
 
 var _check: Callable
@@ -50,12 +47,9 @@ var _sim: RampageSim
 var _stream: BuildingStream
 var _camera: Camera3D
 var _follow: CameraFollow
-var _breath := BreathCamera.new()
 var _body := Vector3.ZERO
 var _zoom := 1.0
 var _step_us := 0  # the slowest stream frame of the phase (microseconds)
-var _last_yaw := 0.0
-var _rest_yaw := 0.0
 
 
 func _init(p_check: Callable, p_host: Node) -> void:
@@ -97,10 +91,6 @@ func _stage(stage: int) -> void:
 	var steps: Array[float] = []
 	worst_step = 0
 	var results := {}
-	var fx: Dictionary = Content.section("fx")
-	var swing := (
-		Num.f(fx["orbit_in_seconds"]) + Num.f(fx["beam_seconds"]) + Num.f(fx["orbit_out_seconds"])
-	)
 	var long := _sim.body.length()
 	var dash: Dictionary = _sim.body.dash.cfg
 	var seconds := Num.f(dash["seconds"])
@@ -112,10 +102,6 @@ func _stage(stage: int) -> void:
 		await _settle()
 		var tag := "" if at == 0 else " at %d" % at
 		results["rest" + tag] = await _phase(1.0, func(_t: float) -> void: pass)
-		_breath.start(1.0)
-		_rest_yaw = _yaw()
-		_last_yaw = _rest_yaw
-		results["swing" + tag] = await _phase(swing + 0.3, func(_t: float) -> void: pass, true)
 		if at > 0:
 			continue
 		await _settle()
@@ -137,18 +123,8 @@ func _stage(stage: int) -> void:
 	var plans: int = Num.i(_stream.get("plans") if "plans" in _stream else 0)
 	var plan_usec: int = Num.i(_stream.get("plan_usec") if "plan_usec" in _stream else 0)
 	var line := (
-		(
-			"VIEWDEPTH stage %d (%d buildings; camera turns up to %.0f deg/s, swings %.1f deg;"
-			+ " worst step %.0f ms, mean replan %.1f ms):"
-		)
-		% [
-			stage,
-			_sim.buildings.size(),
-			yaw_rate,
-			yaw_reach,
-			worst_step / 1000.0,
-			plan_usec / 1000.0 / maxi(1, plans)
-		]
+		("VIEWDEPTH stage %d (%d buildings; worst step %.0f ms, mean replan %.1f ms):")
+		% [stage, _sim.buildings.size(), worst_step / 1000.0, plan_usec / 1000.0 / maxi(1, plans)]
 	)
 	line += (
 		"\n  landmarks %d, %d chunks (stream budget %d), resident at the end %d"
@@ -221,17 +197,11 @@ func _stage(stage: int) -> void:
 	var margin := (
 		Num.f(_sim.city["stream_view"]["margin_deg"]) if _sim.city.has("stream_view") else 0.0
 	)
-	(
-		_check
-		. call(
-			margin >= yaw_reach + shake,
-			(
-				(
-					"stage %d: the margin band (%.1f deg) is wider than the widest camera swing (%.1f deg)"
-					+ " plus its shake (%.1f deg)"
-				)
-				% [stage, margin, yaw_reach, shake]
-			)
+	_check.call(
+		margin >= shake,
+		(
+			"stage %d: the margin band (%.1f deg) is wider than the camera's shake (%.1f deg)"
+			% [stage, margin, shake]
 		)
 	)
 	_host.remove_child(_stream)
@@ -253,27 +223,13 @@ func _place() -> void:
 	_camera.look_at(_follow.look_at(_sim.body_scale()))
 
 
-func _yaw() -> float:
-	var f := -_camera.global_transform.basis.z
-	return rad_to_deg(atan2(f.x, -f.z))
-
-
 ## One frame: the sim's kaiju to the body, the camera after it, then the stream's frame.
-func _frame(swinging: bool) -> void:
+func _frame() -> void:
 	_body = _body.lerp(
 		Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y), minf(1.0, DT * BODY_FOLLOW)
 	)
-	var rest := CameraTuning.offset()
-	if swinging:
-		rest = _breath.offset(rest, DT)
-	_follow.step(_body, rest * _zoom, DT)
+	_follow.step(_body, CameraTuning.offset() * _zoom, DT)
 	_place()
-	if swinging:
-		var yaw := _yaw()
-		var turn := absf(angle_difference(deg_to_rad(_last_yaw), deg_to_rad(yaw)))
-		yaw_rate = maxf(yaw_rate, rad_to_deg(turn) / DT)
-		yaw_reach = maxf(yaw_reach, absf(yaw - _rest_yaw))
-		_last_yaw = yaw
 	_advance()
 	await _host.get_tree().process_frame
 
@@ -294,17 +250,17 @@ func _advance() -> void:
 func _settle() -> void:
 	var deadline := Time.get_ticks_msec() + SETTLE_MS
 	for i: int in 45:  # the stream replans a quarter second after the camera moves
-		await _frame(false)
+		await _frame()
 	while not _stream.complete() and Time.get_ticks_msec() < deadline:
-		await _frame(false)
+		await _frame()
 	for i: int in 30:
-		await _frame(false)
+		await _frame()
 
 
 ## Runs `seconds` of frames; `step` moves the kaiju (given the seconds so far). Returns the
 ## depth with full buildings (smallest box distance seen, LOOK_M when none) and the frames on
 ## which a box stood inside DEPTH_M.
-func _phase(seconds: float, step: Callable, swinging: bool = false) -> Dictionary:
+func _phase(seconds: float, step: Callable) -> Dictionary:
 	_step_us = 0
 	var depth := LOOK_M
 	var aheadmin := LOOK_M
@@ -314,7 +270,7 @@ func _phase(seconds: float, step: Callable, swinging: bool = false) -> Dictionar
 	var t := 0.0
 	while t < seconds:
 		step.call(t)
-		await _frame(swinging)
+		await _frame()
 		var d := _view.nearest_box()
 		depth = minf(depth, d)
 		aheadmin = minf(aheadmin, _view.ahead)
@@ -333,16 +289,9 @@ func _phase(seconds: float, step: Callable, swinging: bool = false) -> Dictionar
 	}
 
 
-## A walk of `metres` from where the kaiju stands in `dir` at its walking speed, the breath's
-## swing running at its start and half way (the camera turning while the kaiju moves).
+## A walk of `metres` from where the kaiju stands in `dir` at its walking speed.
 func _walk(dir: Vector2, metres: float) -> Dictionary:
 	var speed := _sim.stat("speed")
-	var seconds := metres / speed
-	var started := [false, false]
-	var run := func(t: float) -> void:
+	var run := func(_t: float) -> void:
 		_sim.kaiju_pos = _sim.clamp_to_arena(_sim.kaiju_pos + dir * speed * DT)
-		for k: int in 2:
-			if not started[k] and t >= seconds * 0.5 * k:
-				started[k] = true
-				_breath.start(1.0)
-	return await _phase(seconds, run, true)
+	return await _phase(metres / speed, run)

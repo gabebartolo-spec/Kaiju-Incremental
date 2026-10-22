@@ -4,7 +4,11 @@ extends SceneTree
 ## from the engine's own timers (window focus and vsync do not matter). Needs a window.
 ##
 ##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/bench_rampage.gd \
-##     -- --species=reptilian --seconds=30
+##     -- --species=reptilian --seconds=30 [--stage=3]
+## --stage=N plays growth stage N's city with that stage's body (capture_kit STAGE_LEVELS), e.g. the
+## adult city (stage 3, D-135); without it, the mid-game build in the flow test's city.
+## --nofx turns the post effects (PostFx, D-142) off for the cost comparison; --preset=<level>
+## names the graphics preset (default: the one this screen would pick).
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 
@@ -14,7 +18,11 @@ var _stage := 0
 
 
 func _initialize() -> void:
-	var a := Kit.args({"species": _species, "seconds": _seconds, "stage": _stage})
+	var a := Kit.args(
+		{"species": _species, "seconds": _seconds, "stage": _stage, "nofx": false, "preset": ""}
+	)
+	PostFx.enabled = a["nofx"] != true
+	PlayerSettings.graphics = str(a["preset"])
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])
 	_stage = Num.i(a["stage"])

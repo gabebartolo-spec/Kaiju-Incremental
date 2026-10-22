@@ -64,8 +64,6 @@ var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
 var _autoplay := false
-## Seconds since the breath camera move began; negative when the camera is at rest.
-var _breath_camera := BreathCamera.new()
 var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
@@ -153,16 +151,22 @@ func _ready() -> void:
 	_camera.fov = camera_fov
 	add_child(_camera)
 	_camera.current = true
-	sfx.watch(_camera, _powers, _city.street)
+	_start_sound()
 	_place_camera(1.0)
-	_hud = RampageHud.new(sim, species, _city.street)
-	_hud.beat_done.connect(finished.emit)
-	add_child(_hud)
+	_add_overlays()
 	if stages.overlay != null:
 		stages.overlay.queue_free()
 	is_loaded = true
 	loaded.emit()
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
+
+
+## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
+func _add_overlays() -> void:
+	add_child(PostFx.new(self))
+	_hud = RampageHud.new(sim, species, _city.street)
+	_hud.beat_done.connect(finished.emit)
+	add_child(_hud)
 
 
 func _physics_process(delta: float) -> void:
@@ -261,10 +265,8 @@ func _on_event(event: Dictionary) -> void:
 			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
 		"tank_spawned":
 			_tanks.spawn(Num.i(event["tank"]))
-		"tank_fired":
-			var at: Vector2 = event.get("at", sim.kaiju_pos)
-			if _tanks.fire(Num.i(event["tank"]), _to_world(at), _kaiju_at):
-				add_trauma(shake.source("tank_fire"))
+		"tank_fired", "stray_landed":
+			_tanks.on_event(event, _kaiju_at)
 		"tank_destroyed":
 			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
 			_tanks.destroy(Num.i(event["tank"]), at)
@@ -307,7 +309,6 @@ func _ability_fx(event: Dictionary) -> void:
 			ability_fx.breath(mouth, span, ability_fx.cone_half_angle, strength)
 			_city.crush_cone(BreathCone.of(sim))  # trees and cars burn flat along it
 			sfx.play("breath")
-			_breath_camera.start(1.0 if sim.facing.x >= 0.0 else -1.0)
 		"leap":
 			var from: Vector2 = event["from"]
 			_leap_from = _to_world(from)
@@ -354,7 +355,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 	var size := sim.body_scale() * (0.2 + strength)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
-	var ring := _stomp_radius * 1.3 if stomped else FOOTFALL_RING * size
+	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
 	_city.fx.shockwave(at, ring, side == "tail")
 	_step_dip = maxf(
 		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
@@ -373,14 +374,22 @@ func _land_stomp(at: Vector3) -> void:
 	stomp_ring_at.append(at)
 
 
+## The sound hears the world: the sfx its camera, helicopters and street; CitySound (D-155) the sim
+## and the street, to set the city's beds and the music layers.
+func _start_sound() -> void:
+	sfx.watch(_camera, _powers, _city.street)
+	add_child(CitySound.new(sim, _city.street, sfx))
+
+
 func _place_camera(delta: float) -> void:
 	var zoom := CameraTuning.zoom(sim.body_scale())
 	_step_dip = move_toward(_step_dip, 0.0, delta * DIP_RECOVER * _step_dip + delta * 0.05)
-	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip, breath swing
+	var motion := PlayerSettings.motion()  # the player's camera motion: shake, dip
 	# Follow the body as drawn (KaijuModel.focus), eased: an insect's hold settles still on screen
 	# and its dart bursts ahead of the camera.
-	var rest := camera_rest.lerp(_breath_camera.offset(camera_rest, delta), motion)
-	_follow.step(_kaiju.focus(), rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta)
+	_follow.step(
+		_kaiju.focus(), camera_rest * zoom - Vector3(0, _step_dip * zoom * motion, 0), delta
+	)
 	var hold := sim.body.dash.on() or _leap_time > 0.0
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()

@@ -18,6 +18,10 @@ uniform float centre_radius = 0.32;
 // Share of the camera-to-kaiju depth that is clear, and where smoke is back at full strength.
 uniform float focus_clear = 0.55;
 uniform float focus_full = 1.0;
+// Street dust (Fx) is drawn in its own colour, not lit by the scene (whose night ambient is
+// blue): `self_lit` 1 moves the colour from albedo to emission and rounds the puff to a radial
+// falloff that is gone at the quad's border. 0 (every other smoke) is unchanged.
+uniform float self_lit = 0.0;
 global uniform float smoke_focus;
 
 float hash(vec2 p) {
@@ -45,8 +49,12 @@ void fragment() {
 	vec2 p = UV * 2.0 - 1.0;
 	float n = noise(UV * 5.0 + COLOR.rg * 13.0) * 0.6 + noise(UV * 11.0) * 0.4;
 	float round_mask = 1.0 - smoothstep(softness, 1.0, length(p) + (n - 0.5) * 0.5);
-	ALBEDO = COLOR.rgb * (0.75 + 0.35 * n);
+	vec3 body = COLOR.rgb * (0.75 + 0.35 * n);
+	ALBEDO = body * (1.0 - self_lit);
+	EMISSION = body * self_lit;
 	ROUGHNESS = 1.0;
+	SPECULAR = mix(0.5, 0.0, self_lit);
+	round_mask *= mix(1.0, 1.0 - smoothstep(0.55, 1.0, length(p)), self_lit);
 	float near = smoothstep(near_clear, near_full, -VERTEX.z);
 	vec2 off = (SCREEN_UV - 0.5) * vec2(VIEWPORT_SIZE.x / VIEWPORT_SIZE.y, 1.0);
 	float centre = mix(centre_keep, 1.0, smoothstep(centre_radius * 0.4, centre_radius, length(off)));

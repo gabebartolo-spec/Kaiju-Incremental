@@ -242,6 +242,8 @@ func pause() -> void:
 	if sim.over or get_tree().paused:
 		return
 	var menu := PauseMenu.new()
+	menu.sim = sim
+	menu.species_id = str(species["id"])
 	menu.end_pressed.connect(_end_now)
 	_widgets.visible = false
 	menu.tree_exited.connect(func() -> void: _widgets.visible = not _beat_done)
