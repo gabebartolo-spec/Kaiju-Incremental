@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-069 · Director · The army scales inside each stage, so defeat stays possible after Behemoth
+Why (10:5x): the pacing run showed 1 defeat in 92 runs after Behemoth. growth.per_level in tuning; regen and armour
+priced late. Merge #36 after #50 and P3.
+
+## 2026-10-18 · D-068 · Director · Crease shader B (0.3) on
+Why: picked B from the A off / B 0.3 / C 0.6 board; the per-voxel edge bevel is dropped (invisible at the game
+camera). MERGED #35.
+
 ## 2026-10-18 · D-067 · Director · Army sounds shipped as heard
 Why: "Tank fire, shell hit and helicopter rotor shipped as heard". MERGED #34.
 
