@@ -1,0 +1,14 @@
+Version: Kaiju Evolution 0.1.0-demo
+Reported: 2026-10-23T01:12:47
+Species: reptilian
+City: stage 2, map seed 7301
+Growth step: adolescent (size tier 2)
+Run time: 0:11 (46 s left)
+OS: Windows 10.0.26300
+GPU: NVIDIA GeForce RTX 4070 SUPER
+Graphics preset: medium (render scale 0.75)
+Resolution: window 3840x2097, canvas 1977x1080
+Screenshot: screenshot.png
+
+--- What the player wrote ---
+The tank at the bridge shot straight through a tower and my kaiju froze.
