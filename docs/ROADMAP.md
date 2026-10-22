@@ -332,6 +332,9 @@ The director plays only at these; each gets an exported .exe in a fixed folder a
 state. No director clips or per-change approvals in between; clips only where motion is the point, for the critics.
 - **M1 Feel pass:** fire spread + longer baby breath (#152), heavier turning (#149), bigger explosions, post effects,
   the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
+  Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
+  the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
+  music from the director's Suno stems. Visuals: VFX lead. Sound, music, weather pick and options: lead.
 - **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.

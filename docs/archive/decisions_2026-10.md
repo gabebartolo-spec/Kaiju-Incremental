@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-066 · Director · Tanks and helicopters move and fight like a professional military
+Why: road-bound tank columns with firing posts and fallbacks, helicopter pairs with attack runs; total damage per run
+held within ±5%; helicopters a real threat to dodge ("overall difficulty unchanged"). PR #50; heli mix shift OK.
+
 ## 2026-10-18 · D-065 · Director · A believable amount of greenery throughout the city
 Why (06:2x): "make sure there are a believable amount of trees, bushes, floral areas, parks, gardens, playgrounds
 throughout the city". (a) street trees, gardens, playgrounds, hedges, all crushable: PR #55; (b) green lots: D-075.
