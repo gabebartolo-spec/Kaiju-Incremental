@@ -7,10 +7,10 @@ extends Control
 enum Icon { BREATH, DASH, ULTIMATE }
 
 ## The icon fills this share of the ring's inner radius (a square, the PNG's whole image).
-const ICON_SHARE := 0.62
+const ICON_SHARE := 0.95
 const SEGMENTS := 64
 ## The dark outline around the ring (px each side), for contrast over fire.
-const OUTLINE := 2.0
+const OUTLINE := 1.0
 ## An icon's tuning key (data "ui" hud icons: key -> texture path).
 const KEYS := {Icon.BREATH: "breath", Icon.DASH: "dash", Icon.ULTIMATE: "ultimate"}
 
