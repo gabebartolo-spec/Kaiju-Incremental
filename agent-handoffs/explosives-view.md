@@ -33,6 +33,19 @@ side-session-notes/local_df2c2989-951e-4b20-9998-9c23b0a37f42/explosives-view/ha
   shift). Do not export APPDATA for python (user site-packages live there).
 - Not changed: the still stretch between chained blasts (fuse 0.35 s is a sim value); fireball cubes settle by 1 s.
 
+## Round 8 (director on r7, 2026-10-23): the fireball is the game's own Fire
+- "looks like minecraft fire... doesnt match the fire we use the rest of the time, consistency is absolutely key".
+  Flames are now Fire's own voxels: Fire.EMBER_SHADER, Fire.FLAME_COLORS and its ramp (compressed to a 1.6 s
+  ball: BlastParts.FLAME_AT), 2600 small cubes (size 0.07 x radius) out of the site; no opaque lit orange cubes.
+  The smoke is Fire's own: BlastFx leaves a real Fire at the site (CityView.fire(at, size, seconds), 6 s, then
+  go_out) with its light and soft smoke column. Own smoke cubes and tuning "smoke" removed.
+- Kept: screen flash, one-way kick, per-blast crack, each chained blast grows its own ball (size_curve), the
+  dust ring and debris stay solid voxels, the chem gas stays green cubes (not fire).
+- Proof: scratchpad clip_b6 (sheet_r8.png same frames as sheet_final; side_by_side_r8.png a building fire next to
+  the fireball at the same zoom). Capture flag --fire-beside puts two ordinary building fires beside the chain.
+- The pink triangle in front of the kaiju in every frame is BreathAim: the real game's breath aim wedge (shows
+  where a ready breath will burn, drawn over the city, hidden while the breath cools down); not a debug overlay.
+
 ## Rebase notes (what differs from the old branch)
 - Base added CameraShake (rotation trauma). The blasts keep their own aim jitter on top: BlastFx.jitter() scaled
   by the camera-motion setting, applied in Rampage._place_camera. Routing blasts through CameraShake.add_trauma

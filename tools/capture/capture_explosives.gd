@@ -26,6 +26,7 @@ var _perf := false
 var _stills: Array[float] = []
 var _time := "day"
 var _arm := true
+var _beside := false  # --fire-beside: ordinary building fires next to the blast, for comparison
 var _small := false  # --city=small: a cropped city, so a CI software render finishes in time
 var _side := Vector2.ZERO  # the side of the kaiju the chain is on (unit, ground plane)
 
@@ -42,6 +43,8 @@ func _initialize() -> void:
 			_time = arg.substr(7)
 		elif arg == "--no-arm":  # the same run with nothing set off: the frame-time baseline
 			_arm = false
+		elif arg == "--fire-beside":
+			_beside = true
 		elif arg == "--city=small":
 			_small = true
 		elif arg == "--perf":
@@ -92,6 +95,8 @@ func _run() -> void:
 			await _model_still(rampage, i)
 		quit()
 		return
+	if _beside:
+		_fires_beside(rampage, chain)
 	if _arm:
 		rampage.sim.explosives.damaged(chain[0])
 	rampage.cost_usec.clear()
@@ -136,6 +141,23 @@ func _pick_chain(stats: Dictionary, layout: Array[Dictionary]) -> Array[int]:
 		last = Vector2(sim.buildings[best].x, sim.buildings[best].z)
 	_side = side
 	return chain
+
+
+## Two ordinary building fires (the sizes the beam's coat and wrecks use) on the roofs of buildings
+## beside the chain, for the side-by-side still of the game's fire next to a blast's fireball.
+func _fires_beside(rampage: Rampage, chain: Array[int]) -> void:
+	var sim := rampage.sim
+	var first := sim.buildings[chain[0]]
+	var made := 0
+	for i: int in sim.buildings.size():
+		var b := sim.buildings[i]
+		var gap := Vector2(b.x - first.x, b.z - first.z).length()
+		if gap > 9.0 and gap < 24.0 and b.height >= 3 and b.height <= 9 and not chain.has(i):
+			rampage._city.fire(Vector3(b.x, b.height, b.z), 0.45 if made == 0 else 0.6)
+			made += 1
+			if made == 2:
+				break
+	print("fires beside the blast: ", made)
 
 
 func _describe(sim: RampageSim, i: int) -> String:
