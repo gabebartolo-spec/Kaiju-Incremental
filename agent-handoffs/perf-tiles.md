@@ -1,5 +1,5 @@
 # perf-tiles handoff, 2026-10-22
-## State: blocked (pixel diff is not 0; lead to put the trade-off to the director). NOT pushed.
+## State: PARKED (director 2026-10-22: "Park it"). Not merged, no PR. Revive only if he reopens it.
 ## Task
 Task 015: cull off-screen props and skyline by tiling their MultiMeshes; pixel-identical (diff 0 at 4K on
 all presets), headless instance-set test, GPU frame time before/after. Do not touch building_stream.gd.
@@ -28,7 +28,7 @@ and the right-edge column of high/max. Tile size changes them (skyline tile 24: 
    (instance index, y-sorted) cannot be reproduced across tiles. Lead said stop after two.
 ## GPU frame time (RTX 4070 SUPER, shared GPU, noisy)
 Stage 1 medium before 8.7/9.8, after 9.7/9.4 ms; high 11.6/13.4 vs 14.7/15.7: no gain.
-Stage 4 (781k props): low before 774/656, after 174/131; medium before 1477/184, after 250/183; high
+Stage 4 CAVEAT: the same scene swung 184 to 1477 ms between identical runs (shared GPU), so only the low-preset drop is even suggestive. (781k props): low before 774/656, after 174/131; medium before 1477/184, after 250/183; high
 564 vs 539/609: too noisy to claim a gain (other agents on the GPU).
 ## Open decisions
 Director: accept a sub-0.001% edge difference (and a tile-size dependent one), or drop the change.
