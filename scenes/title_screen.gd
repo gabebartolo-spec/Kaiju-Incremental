@@ -14,19 +14,24 @@ signal new_game_pressed
 const NOTE_SIZE := 30
 ## The button row: Continue's width and New Kaiju?'s (px at 1080p), the gap between them and the
 ## height of a button.
-const CONTINUE_WIDTH := 360.0
-const NEW_WIDTH := 215.0
 const ROW_GAP := 12
-const BUTTON_HEIGHT := 88.0
+const BUTTON_HEIGHT := 100.0
+## Continue takes three shares of the row and New Kaiju? one.
+const CONTINUE_SHARE := 3.0
 ## The settings gear's side, how far it and the exit button stand from the screen's corner, and
 ## the hazard tape along the top edge (the gear stands below it).
 const GEAR_SIZE := 76.0
-const CORNER_MARGIN := 40.0
+const CORNER_MARGIN := 60.0
+const EXIT_MARGIN := 40.0
+## The logo's size: its width is the button row's and ends clear of the skyline.
+const LOGO_SIZE := 86
+## The gap between the logo and the row.
+const LOGO_GAP := 10
 const TAPE := 18.0
 ## The exit button's wording.
 const EXIT_TEXT := "RUN FOR YOUR LIFE!?"
 ## The left column: its margin from the screen's edge (share of the width) and its width (px).
-const COLUMN_MARGIN := 0.055
+const COLUMN_MARGIN := 0.03125
 const COLUMN_WIDTH := 800.0
 ## The logo stands this share of the screen's height down (the buttons follow it).
 const COLUMN_TOP := 0.21
@@ -67,14 +72,15 @@ func _ready() -> void:
 	_col.offset_bottom = -NewsTicker.HEIGHT
 	_col.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_col.offset_top = get_viewport_rect().size.y * COLUMN_TOP
-	_col.add_theme_constant_override("separation", 24)
+	_col.add_theme_constant_override("separation", LOGO_GAP)
 	add_child(_col)
 	_add_corner_buttons()
-	var title := UiKit.label("KAIJU EVOLUTION", 104, UiKit.ACCENT)
+	var title := UiKit.label("KAIJU EVOLUTION", LOGO_SIZE, UiKit.ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_col.add_child(title)
 	_buttons = VBoxContainer.new()
-	_buttons.custom_minimum_size = Vector2(560, 0)
+	# The row is exactly as wide as the logo.
+	_buttons.custom_minimum_size = Vector2(title.get_combined_minimum_size().x, 0)
 	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_buttons.add_theme_constant_override("separation", 16)
 	_col.add_child(_buttons)
@@ -180,14 +186,14 @@ func _show_main() -> void:
 	if summary != "":
 		var label := "CONTINUE GAME\n%s" % summary.to_upper()
 		var cont := _add(label, UiKit.ACCENT, func() -> void: continue_pressed.emit(), row)
-		cont.custom_minimum_size.x = CONTINUE_WIDTH
+		cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cont.size_flags_stretch_ratio = CONTINUE_SHARE
 		new_button = _add("NEW KAIJU?", UiKit.PANEL_EDGE, _on_new, row)
-		new_button.custom_minimum_size.x = NEW_WIDTH
+		new_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_wire_focus(cont, new_button)
 	else:
-		var wide := CONTINUE_WIDTH + NEW_WIDTH + ROW_GAP
 		new_button = _add("NEW KAIJU", UiKit.ACCENT, _on_new, row)
-		new_button.custom_minimum_size.x = wide
+		new_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_wire_focus(null, new_button)
 
 
@@ -246,8 +252,8 @@ func _add_corner_buttons() -> void:
 	_exit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_exit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_exit.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_exit.offset_right = -CORNER_MARGIN
-	_exit.offset_bottom = -(NewsTicker.HEIGHT + CORNER_MARGIN * 0.5)
+	_exit.offset_right = -EXIT_MARGIN
+	_exit.offset_bottom = -(NewsTicker.HEIGHT + EXIT_MARGIN * 0.5)
 	_exit.pressed.connect(func() -> void: QuitGame.now(get_tree()))
 	_exit.visible = not OS.has_feature("web")
 	_corners.add_child(_exit)
@@ -259,13 +265,10 @@ func _on_new() -> void:
 		return
 	_clear()
 	_note("Start over? Your %s and every evolution are lost." % summary)
-	var wide := CONTINUE_WIDTH + NEW_WIDTH + ROW_GAP
 	var keep := _add("KEEP MY KAIJU", UiKit.ACCENT, _show_main, _buttons)
-	keep.custom_minimum_size.x = wide
 	var over := _add(
 		"YES, START OVER", UiKit.BAD, func() -> void: new_game_pressed.emit(), _buttons
 	)
-	over.custom_minimum_size.x = wide
 
 
 func _open_settings() -> void:
@@ -293,6 +296,7 @@ func _clear() -> void:
 ## One button in `into` (the row or the column).
 func _add(text: String, fill: Color, action: Callable, into: Container) -> Button:
 	var b := UiKit.button(text, UiKit.SIZE_BODY, fill)
+	HazardBox.drop_pointer(b)
 	b.custom_minimum_size = Vector2(0.0, BUTTON_HEIGHT)
 	b.pressed.connect(action)
 	into.add_child(b)
@@ -306,5 +310,4 @@ func _note(text: String) -> void:
 	var l := UiKit.label(text, NOTE_SIZE, UiKit.MUTED)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(CONTINUE_WIDTH + NEW_WIDTH + ROW_GAP, 0)
 	_buttons.add_child(l)

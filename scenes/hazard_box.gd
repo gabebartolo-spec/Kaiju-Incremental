@@ -27,6 +27,10 @@ const CUT := 7.0
 const PLATE_SHADOW := Vector2(4.0, 6.0)
 const PLATE_BEVEL := 3.0
 const RIVET := 3.2
+## The outline of a plate in focus.
+const FOCUS_OUTLINE := 4.5
+## A button without the focus pointer needs only this much room between its tape and its text.
+const POINTERLESS_ROOM := 10.0
 const SCUFFS := 9
 ## The focus pointer: a solid triangle this wide, this far in from the right edge, its height a
 ## share of the box's.
@@ -52,6 +56,9 @@ var tape_off := Color("111114")
 var dashed := false
 var ring := false
 var ring_color := Color("ffcc00")
+## A plate in focus (or pressed) is outlined in this, thicker: no fine inner frame (it turns to
+## noise at TV distance).
+var focus_edge := Color.WHITE
 ## Brackets in `corner_color` at the corners clear of the tape band.
 var corners := false
 var corner_color := Color("ffcc00")
@@ -61,6 +68,16 @@ var chevron := false
 var plated := false
 ## 0 normal, 1 pressed (the plate sinks, the bevel flips, the shadow shrinks).
 var press := 0.0
+
+
+## Takes the focus pointer off a plated button (the focus shows in the outline) and closes the room
+## the pointer needed, so a narrow button keeps its text.
+static func drop_pointer(button: Button) -> void:
+	for state: String in ["normal", "hover", "focus", "pressed", "disabled"]:
+		var box := button.get_theme_stylebox(state) as HazardBox
+		box.chevron = false
+		box.content_margin_left = box.band_size + POINTERLESS_ROOM
+		box.content_margin_right = box.band_size + POINTERLESS_ROOM
 
 
 ## The text material of the plated buttons: a faint stamped highlight on the letters' top edge.
@@ -89,7 +106,7 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			[Vector2(back, tip.y - h / 2.0), tip, Vector2(back, tip.y + h / 2.0)]
 		)
 		RenderingServer.canvas_item_add_polygon(to_canvas_item, tri, PackedColorArray([ring_color]))
-	if ring:
+	if ring and not plated:
 		var inner := rect.grow(-(border + RING_GAP))
 		# Clear of the tape too: a ring crossing the stripe reads as a glitch (screen critic).
 		if band == Band.LEFT or band == Band.SIDES:
@@ -203,7 +220,11 @@ func _draw_plate(item: RID, rect: Rect2) -> Rect2:
 	_rivets(item, body)
 	var outline := shape.duplicate()
 	outline.append(shape[0])
-	RenderingServer.canvas_item_add_polyline(item, outline, PackedColorArray([edge]), 2.5, true)
+	var outline_colour := focus_edge if ring else edge
+	var outline_width := FOCUS_OUTLINE if ring else 2.5
+	RenderingServer.canvas_item_add_polyline(
+		item, outline, PackedColorArray([outline_colour]), outline_width, true
+	)
 	return body
 
 
