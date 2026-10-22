@@ -59,7 +59,7 @@
 - D-135 growth rework: drop evolve3 and every 4th row (growth.stages, city.districts, rooftop tables); ultimates
   r_beam/i_brood/c_ink move off evolve3; jets/bomber into the adult city; re-split the tree rings over 3 steps.
 - D-136 code: cut the breath camera swing; rename "Atomic" to Lightning/Thunder (D-112: species.json, r_beam,
-  stat_text); remove BRANCH/CAPSTONE labels from the tree (copy rule). Headlines: 9 lines sent to him, await his edits.
+  stat_text); remove BRANCH/CAPSTONE labels from the tree (copy rule). Headlines: cut "AIR FORCE GROUNDS ALL HELICOPTERS" (keep the other 8).
 - Narrative (#76) after the demo: briefing cards before each city/after each evolve + optional bonus goals per city.
 - Drift audit table: scratchpad drift_audit.md (copy before this scratchpad goes).
 - Icons: flat SVG set on claude/ui-art 1cbabb64 (ring lines for ui-redesign in its handoff); critic on board2, then
