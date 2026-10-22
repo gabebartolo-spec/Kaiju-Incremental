@@ -20,23 +20,17 @@ Director rulings: left menu column (logo above buttons), still camera, scene fro
 footfall audio, fire = ragged flames out of windows with heavy smoke (not candles), occasional explosions reveal the
 reptilian colossus silhouette; no music. Poster reference: kaiju towering over skyline, orange fire glow, smoke sky.
 
-## State 2026-10-23 00:50 (committed bc04eb0a + uncommitted menu work; NOT yet pushed after bc04eb0a)
-Title scene done and looked at: colossus = baked silhouette PNG (assets/title/colossus_0.png, yaw 60 side-3/4 profile with
-croc head, bake tool tools/capture/bake_colossus.gd; tuning title.colossus: height, eye uv/colour/pulse, smog, rim),
-red eye = additive glow at bake-computed uv; smog shader on the card; smoke/flame draw order via render_priority (sky smoke
--1, fire smoke 0, colossus 1, flames+eye 2). Fires = the game's own Fire at zoom (Fire._init(size, seed, far dict:
-zoom/smoke_share/density/wind/puff); tuning title.fires.far/window); far_flame/far_smoke shaders deleted. Water smooth at rest
-(capture --rest proves it). Stray white box = a lit window of the near city 10 m from the camera: camera near=15. Block
-artefacts in sky = sin() hash noise on the GPU: use no-sin hash or a noise texture. Lamps amber, ledge shader lit.
-Boot measured (machine loaded): engine+autoloads 7.8 s, first title frame 8.7 s after launch, city stands 5.2 s later
-(build start->built 1.5 s sync + 3.6 s async); preprocess cut via fixed_fps 12.
-Director's new MENU layout (replaces column): gear top-left, logo, row [CONTINUE GAME
-SPECIES, N RAMPAGES | NEW KAIJU?],
-no save = one wide NEW KAIJU, exit "RUN FOR YOUR LIFE!?" bottom-right above ticker; HazardBox.plated = worn plate look for
-every UiKit.button (rivets, bevel, scuffs, shadow, plate_text.gdshader); new scenes/gear_icon.gd. tests/lib/ui_title.gd
-written (register in run_ui_tests.gd), flow_screens.gd uses the Gear button, capture_flow presses gear by tooltip.
-TODO: register ui_title, run ui+flow suites green, capture still (reveal), still (rest), 2x crops (head, buttons),
-fire compare still (tools/capture/capture_fire_compare.gd), clip only if needed, push, open ready PR (lead says).
+## State 2026-10-23 03:00: PR #160 open (claude/ui-title-menu -> claude/ui-redesign history ported), suites green
+Worktree ../Kaiju-Incremental-wt/ui-pr is the live one now (ui-redesign = dead lineage, 121 conflicts with look-options).
+Title: scenes/title_{backdrop,fires,shore,colossus,sky_smoke,burning_windows,ledge}, far_fire.gd = game Fire at zoom (fire.gd
+far dict), facade.gdshaderinc `blackout`, tuning title.*; bake: tools/capture/bake_colossus.gd (yaw 60, closes alpha pinholes,
+prints the eye uv); captures: capture_title (--reveal=s, --rest, --variant=dusk, --clip=s, --probe, --hide-3d), capture_boot,
+capture_fire_compare. Menu: title_screen.gd (gear, row, exit), HazardBox.plated + UiKit.button = plates, tests/lib/ui_title.gd.
+OPEN: PR merge waits on the VFX lead's SHIP (fire, Colossus, water) and a fresh screen-critic PASS on the menu; Colossus
+height/camera-tilt is the VFX lead's call (head ~1.8x the right towers now). Queue after (lead's word first): HUD ring capture,
+boot cut (engine+autoloads 7.8 s before any script on a loaded machine).
+Lessons: GPU sin() hash noise gives block artefacts (use a noise texture / sin-free hash); a ported branch needs
+`git diff --binary base..tip | git apply --3way` when look-options was squashed; complexity ratchet + tuning_keys run on CI.
 
 ## Rules and tooling
 Scratch S = AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/
