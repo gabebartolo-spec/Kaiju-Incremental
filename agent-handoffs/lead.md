@@ -85,6 +85,9 @@
 
 - PAUSED 2026-10-22 ~20:30 (director watching a movie: 'complete current tasks but find a comfortable place to pause').
   Builders told: finish in-flight step, push, handoff, no new GPU renders, stop. On resume:
+  * FIRST on resume: start the GitHub helper (director yes, 2026-10-22): Sonnet, own worktree; merges green PRs
+    (--match-head-commit), queue order within cap 3, syncs PRs by merging base, mechanical conflicts only, CI triage
+    as one exact report to the author, prunes merged worktrees; never logic fixes, tests, or builder worktrees.
   * Explosions DONE: claude/city-explosives-v2 47c0c3e2, full suite 25/25; clip proof/explosives_game_r5_final.mp4 (old
     tip) -> motion critic, then PR. Lead call: blasts keep their own aim jitter (no feel change).
   * Title clip2 critic FIX (for a fresh ui builder): camera shifts ±1 px + dims 17% after each thud (remove); thuds
