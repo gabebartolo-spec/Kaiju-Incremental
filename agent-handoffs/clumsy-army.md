@@ -1,5 +1,5 @@
 # Clumsy-army handoff, 2026-10-22 (builder; rebuilt on the squashed base)
-## State: PAUSED mid critic-fix round (director paused 2026-10-22); clip NOT re-rendered; military 19/20 (tier 4 seed 1)
+## State: critic-fix round: code pushed (30b703ad) + ring_tries 12 and CHUNKS output uncommitted/pushed below; tier 3 re-probe running; suite and clip left
 ## Task
 Director comments #18: "tanks shouldnt be perfectly accurate every time, i really like the idea of a clumsy military
 which destroys parts of its own city occasionally". Ruling: misses land beside him (ring round the kaiju, radius 2.5 m).
@@ -63,9 +63,18 @@ across other tiers beyond the suite; helicopters.
 Open: military suite 19/20: tier 4 seed 1, tank 17 yields 0.9 s standing under the kaiju (steps 508-523); tier 4 is cut
 (D-135), so this goes away with the tier-4 rows if the lead drops them; otherwise the yield rule needs one more case.
 Not run on this tip: full suite, damage probe (strays land later and on buildings: re-probe tiers 2 and 3 before the PR).
+## Resume evidence (2026-10-22, after the pause)
+- Headless seed 4 (capture_strays, CHUNKS lines): with ring_tries 6 one of two strays broke 0 chunks (street) and the
+  other 1047 carved voxels; with ring_tries 12 (now in data) both break chunks: 781 and 695 at stray_landed (14 frames
+  after the shot). capture_strays prints MISS, HP, and CHUNKS (chunks_broken + cells_carved) with stray_landed.
+- Re-probe on this tip, 12 seeds, base vs strays: tier 2 193.5 -> 188.8 (-2.4%, SE 2.8%); tier 3 177.8 -> 166.5
+  (-6.4%, SE 7.5%): over 5% on a noisy 12; seeds 12-35 running (x3a, x3b) to settle it. Before the landing change the
+  12-seed tier 3 was -2.8%: strays now hit buildings, which changes how much the army keeps (more rubble, fewer tanks
+  in reach). If 36 seeds stay past 5%, tune army hit damage (tank_damage) in data - never the bar.
+- Director pause on Godot until 22:35: nothing new started meanwhile.
 ## Left
-Lead: decide the tier-4 test rows. Next builder: re-probe tiers 2 and 3 (12 seeds), headless seed-4 CHUNKS check, full
-suite, then the clip (camera closer, indicator off, 6 s, timeout every Godot run).
+Tier 3 36-seed verdict; full suite (military: tier 4 seed 1 red, tier 4 cut D-135 - leave); ONE 6 s clip: closer camera,
+breath-aim indicator off, tracer to the landing, impact on arrival; push; report. Timeout every Godot run.
 ## Findings
 - The spawn camera sits inside a tower for a kaiju at its rise point (standing captures render black).
 - Autoplay damage probes are the wrong instrument for a change that alters the city.
