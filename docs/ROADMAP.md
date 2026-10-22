@@ -361,3 +361,14 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
   22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
   Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: queued.
+
+## Overnight work (director 2026-10-23, about 03:25, asleep then at work)
+- His words: "work for 5 hours, if theres something you need my eye or a question you need to ask, add it to the
+  interview and continue working". Questions gather in the lead board's interview.md; the lead asks them on his return.
+  Owner: lead. Status: in progress.
+- Heads and skins (D-162): a couple of snake and Komodo head options and a few croc skins, Tripo, 8000 credits, boards
+  for the interview. Owner: VFX lead's asset session. Status: started.
+- "get the githib hygeinic": stale branches, worktrees and PRs cleaned to the github-hygiene skill (manifest first, open
+  PRs and live worktrees excluded). Owner: lead's GitHub helper. Status: started.
+- "if you run out of things to do, do bulk research on how to make the game better": readers only (no engine), findings
+  go to the interview as questions, never into the build. Owner: lead. Status: when the queue is empty.
