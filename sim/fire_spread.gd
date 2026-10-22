@@ -10,8 +10,10 @@ extends RefCounted
 ## What it drops pays burn_pay of a smash, times a conflagration multiplier that climbs with each
 ## burn-out and decays, and far_pay far from the kaiju. Fires start from the beam's burning coat,
 ## the breath (scorch) and stray army shells (shelled) once City Ablaze is owned (D-129).
-## Neighbours come from a grid of footprints built once; each tick touches only the buildings
-## that are heating, glowing or burning. Part of SpeciesPowers; pure and seeded (its own stream).
+## Neighbours come from a grid of footprints built once; the heat pass runs every spread_tick s
+## and touches only the buildings that are heating, glowing or burning. Heat is a plain meter:
+## anything that later takes heat away (a fire crew, comment #50) lowers heat[i], and a heating
+## building back at 0 is intact again. Part of SpeciesPowers; pure and seeded (its own stream).
 
 enum State { INTACT, HEATING, GLOWING, BURNING, BURNT }
 
@@ -32,6 +34,9 @@ var _grid := {}  # Vector2i cell -> PackedInt32Array of building indices whose f
 var _cell := 1.0
 var _near := {}  # building -> [PackedInt32Array neighbours, PackedFloat32Array heat a second]
 var _active := {}  # building -> true while HEATING, GLOWING or BURNING (insertion order)
+var _since := 0.0  # seconds since the last heat pass
+var _pass := 0  # heat passes so far; _warm[j] == _pass when a fire warmed j this pass
+var _warm := PackedInt32Array()
 
 
 ## p_cfg: tuning powers.fire.
@@ -43,6 +48,8 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> 
 	state.resize(n)
 	heat.resize(n)
 	timer.resize(n)
+	_warm.resize(n)
+	_warm.fill(-1)
 	wind = Vector2.RIGHT.rotated(_rng.randf() * TAU)
 	_reach = Num.f(cfg["reach"]) + Num.f(cfg["ember_reach"]) * sim.stat("fire_embers")
 	_cell = Num.f(cfg["grid"])
@@ -109,48 +116,81 @@ func step(dt: float) -> void:
 	conflagration = maxf(1.0, conflagration - Num.f(cfg["conflag_decay"]) * dt)
 	if _active.is_empty() or not on():
 		return
-	var warmed := {}
+	_since += dt
+	var spread := _since >= Num.f(cfg["spread_tick"]) - dt * 0.5  # a whole number of ticks
 	var keys := _active.keys()
-	for i: int in keys:
-		if state[i] == State.BURNING:
-			_heat_neighbours(i, dt, warmed)
 	for i: int in keys:
 		if sim.buildings[i].frame.alive_count == 0:  # smashed first: nothing left to burn
 			_drop(i, State.BURNT)
-			continue
-		match state[i]:
-			State.HEATING:
-				_heating(i, dt, warmed.has(i))
-			State.GLOWING:
-				timer[i] -= dt
-				if timer[i] <= 0.0:
-					_burn(i)
-			State.BURNING:
-				timer[i] -= dt
-				if timer[i] <= 0.0:
-					_burn_out(i)
+	if spread:
+		_heat_pass(keys)
+	for i: int in keys:
+		_tick(i, dt)
+	if spread:
+		_since = 0.0
 
 
-func _heat_neighbours(i: int, dt: float, warmed: Dictionary) -> void:
+## Every burning building heats its neighbours for the seconds since the last pass; then each
+## heating one glows or cools.
+func _heat_pass(keys: Array) -> void:
+	_pass += 1
+	for i: int in keys:
+		if state[i] == State.BURNING:
+			_heat_neighbours(i, _since)
+	for i: int in keys:
+		if state[i] == State.HEATING:
+			_heating(i, _since)
+
+
+## A glowing building's glow and a burning one's fire count down by dt.
+func _tick(i: int, dt: float) -> void:
+	if state[i] != State.GLOWING and state[i] != State.BURNING:
+		return
+	timer[i] -= dt
+	if timer[i] > 0.0:
+		return
+	if state[i] == State.GLOWING:
+		_burn(i)
+	else:
+		_burn_out(i)
+
+
+## Burning building i heats every neighbour still intact or heating; neighbours already past
+## heating (they never come back) leave its list for good, so a long fire gets cheaper.
+func _heat_neighbours(i: int, dt: float) -> void:
 	var near: Array = _near.get(i, [])
 	if near.is_empty():
 		near = _neighbours(i)
 		_near[i] = near
 	var who: PackedInt32Array = near[0]
 	var rate: PackedFloat32Array = near[1]
+	var gone := 0
 	for k: int in who.size():
 		var j := who[k]
 		if state[j] > State.HEATING:
+			gone += 1
 			continue
 		if state[j] == State.INTACT:
 			state[j] = State.HEATING
 			_active[j] = true
 		heat[j] += rate[k] * dt
-		warmed[j] = true
+		_warm[j] = _pass
+	if gone > 0:
+		_near[i] = _still_heatable(who, rate)
 
 
-func _heating(i: int, dt: float, warmed: bool) -> void:
-	if not warmed:
+func _still_heatable(who: PackedInt32Array, rate: PackedFloat32Array) -> Array:
+	var keep := PackedInt32Array()
+	var keep_rate := PackedFloat32Array()
+	for k: int in who.size():
+		if state[who[k]] <= State.HEATING:
+			keep.append(who[k])
+			keep_rate.append(rate[k])
+	return [keep, keep_rate]
+
+
+func _heating(i: int, dt: float) -> void:
+	if _warm[i] != _pass:
 		heat[i] -= Num.f(cfg["cool_rate"]) * dt
 		if heat[i] <= 0.0:
 			heat[i] = 0.0
@@ -179,7 +219,8 @@ func _burn(i: int) -> void:
 func _burn_out(i: int) -> void:
 	var b := sim.buildings[i]
 	var share := Num.f(cfg["burn_pay"]) * conflagration
-	if Vector2(b.x, b.z).distance_to(sim.kaiju_pos) > Num.f(cfg["far_radius"]):
+	var far := Vector2(b.x, b.z).distance_to(sim.kaiju_pos) > Num.f(cfg["far_radius"])
+	if far:
 		share *= Num.f(cfg["far_pay"])
 	b.pay_share = share
 	var cells: Array[Vector3i] = []
@@ -194,7 +235,7 @@ func _burn_out(i: int) -> void:
 	burnt_out += 1
 	conflagration = minf(Num.f(cfg["conflag_max"]), conflagration + Num.f(cfg["conflag_step"]))
 	_drop(i, State.BURNT)
-	sim.events.append({"type": "fire_burnt", "building": i, "share": share})
+	sim.events.append({"type": "fire_burnt", "building": i, "share": share, "far": far})
 
 
 func _drop(i: int, to: State) -> void:

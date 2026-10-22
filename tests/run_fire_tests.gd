@@ -99,19 +99,21 @@ func _check_off_without_ablaze() -> void:
 
 
 ## A burn-out pays burn_pay of the same building knocked down (its ground floor broken at the
-## same moment, the same collapse): the first burn-out, so the conflagration is 1.
+## same moment, the same collapse), counted until every piece has landed: the first burn-out, so
+## the conflagration is 1. The rooftop squad is army, paid in full either way: none here.
 func _check_burn_pay() -> void:
 	var burnt := _sim("reptilian", ABLAZE, [_b(0, 0, Vector3i(3, 3, 6))], KAIJU_AT)
 	var knocked := _sim("reptilian", ABLAZE, [_b(0, 0, Vector3i(3, 3, 6))], KAIJU_AT)
+	for sim: RampageSim in [burnt, knocked]:
+		sim.army_units.squads.clear()
 	burnt.powers.fire.ignite(0)
-	var start := 0.0  # biomass just before the burn-out step (the same in both runs)
 	var steps := 0
 	while burnt.powers.fire.burnt_out == 0 and steps < 900:
-		start = burnt.rubble
 		burnt.step(DT, Vector2.ZERO, false, 0)
 		if burnt.powers.fire.burnt_out == 0:
 			knocked.step(DT, Vector2.ZERO, false, 0)
 		steps += 1
+	var start := knocked.rubble  # the same in both runs until the burn-out step
 	var floor0: Array[Vector3i] = []
 	for x: int in 3:
 		for z: int in 3:
@@ -121,14 +123,16 @@ func _check_burn_pay() -> void:
 	amounts.fill(1000000.0)
 	knocked.damage_cells(0, floor0, amounts)
 	knocked.step(DT, Vector2.ZERO, false, 0)
-	# The burn-out step alone: what lands later also crushes people and the street, paid in full.
-	var ratio := (burnt.rubble - start) / maxf(0.001, knocked.rubble - start)
-	print("PAYDIAG burnt %.4f knocked %.4f share %.3f" % [burnt.rubble - start, knocked.rubble - start, burnt.buildings[0].pay_share])
-	_times(burnt, 6.0)
+	_times(burnt, 8.0)
+	_times(knocked, 8.0)
 	var share := Num.f(Content.tuning()["powers"]["fire"]["burn_pay"])
+	var ratio := (burnt.rubble - start) / maxf(0.001, knocked.rubble - start)
 	check(
-		absf(ratio - share) < 0.02 and _alive(burnt, 0) == 0,
-		"a burn-out pays %.2f of the same collapse knocked down (burn_pay %.2f)" % [ratio, share]
+		absf(ratio - share) < 0.02 and _alive(burnt, 0) == 0 and burnt.falls.is_empty(),
+		(
+			"a burn-out pays %.2f of the same collapse knocked down (burn_pay %.2f; %.2f vs %.2f)"
+			% [ratio, share, burnt.rubble - start, knocked.rubble - start]
+		)
 	)
 
 
@@ -258,11 +262,11 @@ func _breath_lights(levels: Dictionary) -> bool:
 	sim.facing = NORTH
 	var snout: Vector2 = BreathCone.of(sim)["origin"]
 	sim.kaiju_pos = Vector2(0, 4) - snout  # the breath starts 4 m south of the block's centre
+	sim.stats["ability_damage"] = 0.0  # the block must stand to catch: this watches the fire
 	var seen := {}
 	for i: int in roundi(3.0 / DT):  # held down: the press counts once it has risen and is ready
 		for event: Dictionary in sim.step(DT, Vector2.ZERO, true, 0):
 			seen[str(event["type"])] = true
-	print("BREATHDIAG %s state %d at %v facing %v" % [seen.keys(), sim.powers.fire.state[0], sim.kaiju_pos, sim.facing])
 	return seen.has("ability") and seen.has("fire_burning")
 
 
