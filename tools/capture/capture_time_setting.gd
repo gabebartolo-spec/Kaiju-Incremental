@@ -3,7 +3,8 @@ extends SceneTree
 ## <out>/settings_<setting>.png (the whole menu) and settings_<setting>_row.png (the row, cropped at
 ## its own pixels), for the default Random and for a fixed Night. Needs the off-screen no_focus
 ## override.cfg (a window).
-##   godot --path . --resolution 3840x2160 --windowed \n##     --script tools/capture/capture_time_setting.gd -- --out=<dir>
+##   godot --path . --resolution 3840x2160 --windowed
+##     --script tools/capture/capture_time_setting.gd -- --out=<dir>
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 6
