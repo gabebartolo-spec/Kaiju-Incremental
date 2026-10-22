@@ -1,9 +1,10 @@
 class_name SettingsMenu
 extends Control
 ## Settings: volume and sound-effects volume, camera motion, fullscreen (F11), UI scale for the
-## TV, and the controls for keyboard and pad. An overlay over whatever opened it (title or
-## pause); Back or cancel reports `closed`. Every change goes through PlayerSettings, which
-## applies and saves it.
+## TV, graphics, and CONTROLS, a page with the controls card (b2-10: the controls live here, not
+## on the HUD). An overlay over whatever opened it (title or pause); Back or cancel reports
+## `closed` (on the controls page they go back to the settings). Every change goes through
+## PlayerSettings, which applies and saves it.
 
 signal closed
 
@@ -21,6 +22,9 @@ var _fullscreen: Button
 var _scale: Button
 var _fps: Button
 var _graphics: Button
+## The settings card, and the controls page while it is open (else null).
+var _panel: Control
+var _controls: Control
 
 
 func _ready() -> void:
@@ -36,12 +40,11 @@ func _ready() -> void:
 	var panel := UiKit.panel()
 	panel.custom_minimum_size = Vector2(980, 0)
 	centre.add_child(panel)
+	_panel = panel
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)  # 10, not 14: the camera-motion row fits at 125%
 	panel.add_child(col)
-	var title := UiKit.label("SETTINGS", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(title)
+	col.add_child(UiKit.header("SETTINGS"))
 
 	_volume = _slider(col, "Volume", PlayerSettings.volume)
 	_volume.value_changed.connect(_on_volume)
@@ -72,25 +75,14 @@ func _ready() -> void:
 	_graphics.custom_minimum_size = Vector2(200, 56)
 	_graphics.pressed.connect(func() -> void: PlayerSettings.next_graphics())
 	# One row for both GPU settings, so the screen still fits the TV at the largest UI scale.
-	var gpu := _row(col, "Graphics, frame cap  (quieter GPU)")
+	var gpu := _row(col, "Graphics, frame cap")
 	gpu.add_child(_graphics)
 	gpu.add_child(_fps)
 
-	col.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 40)
-	col.add_child(grid)
-	for heading: String in ["", "Keyboard", "Pad"]:
-		grid.add_child(UiKit.label(heading, UiKit.SIZE_SMALL, UiKit.MUTED))
-	var controls: Array[Array] = PlayerSettings.CONTROLS
-	for entry: Array in controls:
-		# A row tied to a species (its 4th entry) shows only when that species is playable.
-		if entry.size() > 3 and not Demo.allows(str(entry[3])):
-			continue
-		grid.add_child(UiKit.label(str(entry[0]), UiKit.SIZE_SMALL, UiKit.TEXT))
-		grid.add_child(UiKit.label(str(entry[1]), UiKit.SIZE_SMALL, UiKit.TEXT))
-		grid.add_child(UiKit.label(str(entry[2]), UiKit.SIZE_SMALL, UiKit.TEXT))
+	var controls := UiKit.button("CONTROLS", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	controls.custom_minimum_size = Vector2(300, 56)
+	controls.pressed.connect(open_controls)
+	_row(col, "Keyboard and pad").add_child(controls)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
 	back.pressed.connect(close)
@@ -106,12 +98,40 @@ func _process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
-		close()
+		if _controls != null:
+			close_controls()
+		else:
+			close()
 
 
 func close() -> void:
 	closed.emit()
 	queue_free()
+
+
+## The controls page: the controls card and BACK, in place of the settings card.
+func open_controls() -> void:
+	if _controls != null:
+		return
+	_panel.visible = false  # nothing behind the page can take focus
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 16)
+	col.add_child(ControlsCard.new())
+	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
+	back.pressed.connect(close_controls)
+	col.add_child(back)
+	_panel.get_parent().add_child(col)
+	_controls = col
+	back.grab_focus.call_deferred()
+
+
+func close_controls() -> void:
+	if _controls == null:
+		return
+	_controls.queue_free()
+	_controls = null
+	_panel.visible = true
+	_volume.grab_focus.call_deferred()
 
 
 func _on_volume(value: float) -> void:

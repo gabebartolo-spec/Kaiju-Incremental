@@ -20,12 +20,14 @@ const CRAWL_RED := Color("d42a1f")
 const GOOD := Color("7dff6a")
 const WARN := Color("ffd84a")
 const BAD := Color("ff3b30")
-const LOCKED := Color("55555c")
+const LOCKED := Color("7c7c84")
 ## Text on a fill this bright or brighter is dark (BG), else light.
 const BRIGHT_FILL := 0.45
 ## The hazard band along a button's left edge and a panel's top (px at 1080p).
 const BUTTON_BAND := 22.0
 const PANEL_BAND := 14.0
+## A card's content sits this far inside its corner brackets.
+const CARD_PAD := 12.0
 ## Scanlines over a backdrop: one line every SCANLINE_STEP px, this faint.
 const SCANLINE_STEP := 4.0
 const SCANLINE_ALPHA := 0.035
@@ -34,6 +36,14 @@ const SIZE_BODY := 24
 const SIZE_SMALL := 20
 const SIZE_HEAD := 36
 const SIZE_TITLE := 72
+## A header's margins (left, top, right, bottom; px at 1080p), measured on 4K captures so the ink
+## (outline and shadow included) sits dead centre: the font sits high in its line, so the top
+## margin is the larger, and the shadow adds to the right, so the right is. Any other size takes
+## the title's.
+const HEADER_MARGINS := {
+	SIZE_TITLE: Vector4i(16, 10, 20, 2),
+	SIZE_HEAD: Vector4i(7, 3, 10, 1),
+}
 
 ## Our own faces (tools/fonts/build_fonts.py), capitals only (D-058). Body text is Kaiju Block,
 ## the project's default font (project.godot gui/theme/custom_font), so every label, button and
@@ -47,9 +57,10 @@ static var _display_font: Font
 static var _arrow: ImageTexture
 static var _grabbers: Dictionary = {}
 
-
 ## The display font for headings at or above DISPLAY_MIN_SIZE, else null (Kaiju Block, the
 ## project's default font).
+
+
 static func font_for(size: int) -> Font:
 	if size < DISPLAY_MIN_SIZE:
 		return null
@@ -69,10 +80,55 @@ static func label(text: String, size: int = SIZE_BODY, color: Color = TEXT) -> L
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	l.add_theme_constant_override("outline_size", maxi(4, Num.i(size / 6.0)))
+	text_style(l, size)
 	_apply_font(l, size)
 	return l
+
+
+## The one outlined text style (R 15.4): a near-black outline about a fifth of the size and a
+## soft drop shadow (tuning "ui" text), so any of the kit's colours reads at 4.5:1 or more over
+## the brightest fire behind it: the outline, not the scene, is what the letters sit on.
+static func text_style(control: Control, size: int) -> void:
+	var cfg: Dictionary = ui()["text"]
+	control.add_theme_color_override("font_outline_color", outline_color())
+	control.add_theme_constant_override("outline_size", outline_px(size))
+	control.add_theme_color_override(
+		"font_shadow_color", Color(0, 0, 0, Num.f(cfg["shadow_alpha"]))
+	)
+	var shadow := Num.i(cfg["shadow_px"])
+	control.add_theme_constant_override("shadow_offset_x", shadow)
+	control.add_theme_constant_override("shadow_offset_y", shadow)
+	control.add_theme_constant_override("shadow_outline_size", outline_px(size))
+
+
+## The text outline's width at `size` (px at 1080p).
+static func outline_px(size: int) -> int:
+	var cfg: Dictionary = ui()["text"]
+	return maxi(Num.i(cfg["outline_min"]), roundi(size * Num.f(cfg["outline_share"])))
+
+
+static func outline_color() -> Color:
+	return Color(BG, Num.f(ui()["text"]["outline_alpha"]))
+
+
+## tuning "ui": margins, the HUD's sizes and timings, the hurt vignette.
+static func ui() -> Dictionary:
+	return Content.section("ui")
+
+
+## The TV title-safe margin (px at 1080p, x then y): nothing the player reads sits outside it.
+static func safe_margin() -> Vector2:
+	var m: Array = ui()["safe_margin"]
+	return Vector2(Num.f(m[0]), Num.f(m[1]))
+
+
+## Insets `container` to the title-safe area.
+static func safe_area(container: MarginContainer) -> void:
+	var m := safe_margin()
+	container.add_theme_constant_override("margin_left", roundi(m.x))
+	container.add_theme_constant_override("margin_right", roundi(m.x))
+	container.add_theme_constant_override("margin_top", roundi(m.y))
+	container.add_theme_constant_override("margin_bottom", roundi(m.y))
 
 
 static func box(
@@ -96,10 +152,13 @@ static func hazard(
 	s.edge = edge
 	s.border = border
 	s.band = band
-	s.band_size = BUTTON_BAND if band == HazardBox.Band.LEFT else PANEL_BAND
+	var sides := band == HazardBox.Band.LEFT or band == HazardBox.Band.SIDES
+	s.band_size = BUTTON_BAND if sides else PANEL_BAND
 	s.set_content_margin_all(14)
-	if band == HazardBox.Band.LEFT:
+	if sides:
 		s.content_margin_left = BUTTON_BAND + 14.0
+	if band == HazardBox.Band.SIDES:
+		s.content_margin_right = BUTTON_BAND + 14.0
 	elif band == HazardBox.Band.TOP:
 		s.content_margin_top = PANEL_BAND + 14.0
 	return s
@@ -125,30 +184,83 @@ static func ink(fill: Color) -> Color:
 ## A panel with hazard tape across its top and a yellow edge.
 static func panel(color: Color = PANEL) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", hazard(color, ACCENT, 3.0, HazardBox.Band.TOP))
+	p.add_theme_stylebox_override("panel", panel_box(color))
 	return p
 
 
-## A button with hazard tape down its left edge. Focus (and hover) lights a dark button up in
+## How far a card's content sits inside its edge on the sides and bottom (px).
+static func panel_inset() -> float:
+	return HazardBox.CORNER_GAP + HazardBox.CORNER_WIDTH + 3.0 + CARD_PAD
+
+
+## A card's box: hazard tape across the top, a yellow edge, brackets in the lower corners.
+static func panel_box(color: Color = PANEL) -> HazardBox:
+	var s := hazard(color, ACCENT, 3.0, HazardBox.Band.TOP)
+	s.corners = true
+	var clear := panel_inset()
+	s.content_margin_left = clear
+	s.content_margin_right = clear
+	s.content_margin_bottom = clear
+	return s
+
+
+## A card's alert header: a red broadcast strip with the heading in white Kaiju Claw (white on
+## CRAWL_RED reads at 5:1), set dead centre in the strip, shadow included.
+static func header(text: String, size: int = SIZE_TITLE) -> PanelContainer:
+	var strip := PanelContainer.new()
+	var s := hazard(CRAWL_RED, CRAWL_RED, 0.0)
+	var m: Vector4i = HEADER_MARGINS.get(size, HEADER_MARGINS[SIZE_TITLE])
+	s.content_margin_left = m.x
+	s.content_margin_top = m.y
+	s.content_margin_right = m.z
+	s.content_margin_bottom = m.w
+	strip.add_theme_stylebox_override("panel", s)
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := label(text, size, Color.WHITE)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	strip.add_child(l)
+	return strip
+
+
+## A button with hazard tape down both edges. Focus (and hover) lights a dark button up in
 ## hazard yellow; focus adds a dark ring inside its edge, so the pad always shows where you are.
-static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) -> Button:
+static func button(
+	text: String, size: int = SIZE_BODY, fill: Color = ACCENT, taped := true
+) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.add_theme_font_size_override("font_size", size)
 	_apply_font(b, size)
 	var lit := ACCENT if fill.get_luminance() < 0.3 else fill
-	var left := HazardBox.Band.LEFT
-	var normal := hazard(fill, fill.lightened(0.15), 2.0, left)
-	var hover := hazard(lit, lit, 2.0, left)
-	var focus := hazard(lit, lit, 2.0, left)
+	var taped_band := HazardBox.Band.SIDES if taped else HazardBox.Band.NONE
+	var normal := hazard(fill, fill.lightened(0.15), 2.0, taped_band)
+	var hover := hazard(lit, lit, 2.0, taped_band)
+	var focus := hazard(lit, lit, 2.0, taped_band)
 	focus.ring = true
 	focus.ring_color = ink(lit)
-	var pressed := hazard(lit.darkened(0.25), lit, 2.0, left)
+	var pressed := hazard(lit.darkened(0.25), lit, 2.0, taped_band)
 	pressed.ring = true
 	pressed.ring_color = ink(lit.darkened(0.25))
-	var off := hazard(PANEL, LOCKED, 2.0, left)
+	var off := hazard(PANEL, LOCKED, 2.0, taped_band)
 	off.dashed = true
 	off.tape_on = LOCKED
+	focus.chevron = taped
+	hover.chevron = taped
+	hover.ring_color = ink(lit)
+	# Worn industrial plates (director #97): every button of every menu shares the look.
+	for plate: HazardBox in [normal, hover, focus, pressed, off]:
+		plate.plated = true
+	pressed.press = 1.0
+	b.material = HazardBox.text_material()
+	# Every state keeps room inside the right tape for the focus pointer, so focus never shifts the
+	# text; the left matches it, so the label sits in the middle.
+	var room := BUTTON_BAND + HazardBox.CHEVRON_GAP + HazardBox.CHEVRON_WIDTH + 6.0
+	if not taped:
+		room = 10.0
+	for state: HazardBox in [normal, hover, focus, pressed, off]:
+		state.content_margin_left = room
+		state.content_margin_right = room
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("focus", focus)
@@ -161,15 +273,26 @@ static func button(text: String, size: int = SIZE_BODY, fill: Color = ACCENT) ->
 	b.add_theme_color_override("font_pressed_color", ink(lit.darkened(0.25)))
 	b.add_theme_color_override("font_disabled_color", LOCKED.lightened(0.3))
 	b.pressed.connect(func() -> void: Sfx.ui("ui_click"))
+	# The mouse and the keyboard share one highlight: hovering moves the focus, so two buttons are
+	# never lit at once (director 2026-10-22: CONTINUE focused and SETTINGS hovered, both yellow).
+	b.mouse_entered.connect(
+		func() -> void:
+			if not b.disabled:
+				b.grab_focus()
+	)
 	return b
 
 
 ## A meter: square, white-edged on black. `taped` fills it with hazard tape in `fill`.
-static func bar(fill: Color, height: int = 26, taped: bool = false) -> ProgressBar:
+static func bar(
+	fill: Color, height: int = 26, taped: bool = false, ticks: bool = true
+) -> ProgressBar:
 	var p := ProgressBar.new()
 	p.show_percentage = false
 	p.custom_minimum_size = Vector2(0, height)
-	p.add_theme_stylebox_override("background", box(Color(0, 0, 0, 0.75), TEXT, 2))
+	var back := box(Color(0, 0, 0, 0.75), TEXT, 1 if height < 12 else 2)
+	back.set_content_margin_all(0)
+	p.add_theme_stylebox_override("background", back)
 	var inner := hazard(fill, fill, 0.0)
 	if taped:
 		inner.band = HazardBox.Band.TOP
@@ -178,6 +301,11 @@ static func bar(fill: Color, height: int = 26, taped: bool = false) -> ProgressB
 		inner.tape_off = fill.darkened(0.2)
 	inner.set_content_margin_all(0)
 	p.add_theme_stylebox_override("fill", inner)
+	if ticks:
+		var marks := UiMarks.Ticks.new()
+		full_rect(marks)
+		marks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(marks)
 	return p
 
 
@@ -213,7 +341,7 @@ static func _grabber(ring: Color) -> Texture2D:
 
 ## A full-width strip of hazard tape, `height` tall (screen edges, dividers).
 static func tape(height: float = PANEL_BAND) -> Control:
-	var t := Tape.new()
+	var t := UiMarks.Tape.new()
 	t.custom_minimum_size = Vector2(0, height)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
@@ -228,7 +356,7 @@ static func backdrop() -> ColorRect:
 	var r := ColorRect.new()
 	r.color = BG
 	full_rect(r)
-	var lines := Scanlines.new()
+	var lines := UiMarks.Scanlines.new()
 	full_rect(lines)
 	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	r.add_child(lines)
@@ -262,23 +390,3 @@ static func arrow() -> Texture2D:
 					img.set_pixel(x, y, Color.WHITE)
 		_arrow = ImageTexture.create_from_image(img)
 	return _arrow
-
-
-## Hazard tape filling the control.
-class Tape:
-	extends Control
-
-	func _draw() -> void:
-		HazardBox.tape(get_canvas_item(), Rect2(Vector2.ZERO, size), ACCENT, Color("111114"))
-
-
-## Faint horizontal lines, like an old broadcast monitor.
-class Scanlines:
-	extends Control
-
-	func _draw() -> void:
-		var y := 0.0
-		var line := Color(1, 1, 1, SCANLINE_ALPHA)
-		while y < size.y:
-			draw_rect(Rect2(0.0, y, size.x, SCANLINE_STEP / 2.0), line)
-			y += SCANLINE_STEP

@@ -21,6 +21,22 @@ const CLIP_BEAT_FRAMES := 90
 ## With --write-movie the project's 1920x1080 wins over --resolution; the clip sets the window.
 const CLIP_SIZE := Vector2i(1280, 720)
 const UI_ONLY_RAMPAGE_FRAMES := 45
+## Capture only: at most this many 1/60 s steps to finish the rise, and the share of the city
+## the meter shows destroyed.
+const BEAT_SHOT_FRAMES := 40
+## The hurt shot waits up to this many frames for a heartbeat peak (share of the full strength).
+const HURT_WAIT_FRAMES := 180
+const HURT_PEAK_SHARE := 0.9
+const RISE_STEPS := 1200
+const METER_SHARE := 0.4
+## Frames into the staged city build before the loading-screen shot (it has 7 stages).
+const LOADING_FRAMES := 2
+## Frames for the first-run controls card to fade, and for the hurt vignette to settle.
+const CARD_FADE_FRAMES := 45
+## The health share the hurt shot shows (under the heartbeat line).
+const HURT_SHARE := 0.2
+## At most this many frames for the rise to land and the end beat to start.
+const BEAT_WAIT_FRAMES := 900
 ## Clip: how long the report counts, then how long it holds, before EVOLVE.
 const CLIP_COUNT_FRAMES := 45
 const CLIP_HOLD_FRAMES := 45
@@ -78,6 +94,10 @@ func _run() -> void:
 		await _frames(SETTLE)
 		_shot("02_settings")
 		var settings: SettingsMenu = title.find_children("*", "SettingsMenu", true, false)[0]
+		if settings.has_method("open_controls"):
+			settings.call("open_controls")
+			await _frames(SETTLE)
+			_shot("02c_controls")
 		settings.close()
 		await _frames(SETTLE)
 		var select := SpeciesSelect.new()
@@ -95,16 +115,52 @@ func _run() -> void:
 	tree.start_pressed.emit()
 	await _frames(2)
 	var rampage := _screen() as Rampage
+	if not _clip:
+		await _frames(LOADING_FRAMES)
+		_shot("03b_loading")
 	await rampage.wait_loaded()
 	rampage.set_autoplay(true)
+	# Capture only: skip the river rise (its camera looks at water and a dark wall) and show the
+	# city meter part-filled, as it would be mid-run.
+	var steps := 0
+	while rampage.sim.emerge.active and steps < RISE_STEPS:
+		rampage.sim.emerge.step(rampage.sim, 1.0 / 60.0)
+		steps += 1
+	rampage.sim.chunks_destroyed = roundi(rampage.sim.chunks_total * METER_SHARE)
 	var fight := RAMPAGE_FRAMES
 	if _clip:
 		fight = CLIP_RAMPAGE_FRAMES
 	elif _ui_only:
 		fight = UI_ONLY_RAMPAGE_FRAMES
 	await _frames(fight)
+	# Capture only: a clean frame, no hit flash left from a shell (the vignette fades by itself).
+	rampage.sim.hp = rampage.sim.max_hp
+	await _frames(CARD_FADE_FRAMES)
 	_shot("04_rampage")
 	var hud: RampageHud = rampage.find_children("*", "RampageHud", true, false)[0]
+	if not _clip and hud.has_method("dismiss_controls"):
+		hud.call("dismiss_controls")
+		await _frames(CARD_FADE_FRAMES)
+		_shot("04b_hud")
+		# Capture only: show the hurt vignette at its heartbeat's peak (a clean frame: held health,
+		# no shell flash), not in a trough between two beats.
+		await _frames(CARD_FADE_FRAMES)
+		var peak := 0.0
+		for _i: int in HURT_WAIT_FRAMES:
+			rampage.sim.hp = rampage.sim.max_hp * HURT_SHARE
+			await process_frame
+			peak = maxf(peak, hud.vignette.strength)
+			if (
+				hud.vignette.strength
+				>= (
+					HURT_PEAK_SHARE
+					* Num.f(UiKit.ui()["hurt"]["alpha_max"])
+					* sqrt(hud.vignette.hurt())
+				)
+			):
+				break
+		print("hurt vignette strength ", hud.vignette.strength, " peak seen ", peak)
+		_shot("04c_hurt")
 	if not _clip:
 		hud.pause()
 		await _frames(SETTLE)
@@ -113,8 +169,15 @@ func _run() -> void:
 		for menu: Node in rampage.find_children("*", "PauseMenu", true, false):
 			menu.queue_free()
 		await _frames(2)
-	rampage.sim.time_left = 0.05  # capture only: run the clock out now
-	await _frames(18)
+	# Capture only: run the clock out now. The river rise holds the clock (D-083), so keep it
+	# run out until the end beat starts (a --ui-only shot comes before the kaiju has landed).
+	for _i: int in BEAT_WAIT_FRAMES:
+		if hud.beat_running():
+			break
+		rampage.sim.time_left = minf(rampage.sim.time_left, 0.05)
+		await process_frame
+	# After the orange flash has faded (it is a 0.6 s tween), so the shot shows the beat itself.
+	await _frames(BEAT_SHOT_FRAMES)
 	_shot("06_end_beat")
 	if _clip:
 		await _frames(CLIP_BEAT_FRAMES)
@@ -146,6 +209,14 @@ func _run() -> void:
 	await _frames(EvolutionReveal.GROW_FRAMES + 30)
 	_shot("10_reveal_after")
 	await _frames(EvolutionReveal.END_FRAME - EvolutionReveal.SWAP_FRAME)
+	await _frames(SETTLE * 4)
+	_shot("12_demo_complete")
+	# On from the demo card: the demo off (the full game), the title, then Continue, to the tree
+	# as the player finds it after the evolution (the demo itself ends on the card).
+	Content.section("demo")["enabled"] = false
+	_press(_screen(), "MAIN MENU")
+	await _frames(SETTLE)
+	_press(_screen(), "CONTINUE")
 	await _frames(SETTLE)
 	_shot("11_tree_after")
 	SaveFile.delete_save()
@@ -159,7 +230,8 @@ func _screen() -> Node:
 func _press(node: Node, prefix: String) -> void:
 	for found: Node in node.find_children("*", "Button", true, false):
 		var b: Button = found
-		if b.is_visible_in_tree() and b.text.begins_with(prefix):
+		# The title's settings gear has no text: its tooltip says what it is.
+		if b.is_visible_in_tree() and (b.text.begins_with(prefix) or b.tooltip_text == prefix):
 			b.pressed.emit()
 			return
 	push_error("capture_flow: no button %s" % prefix)
