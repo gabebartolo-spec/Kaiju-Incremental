@@ -61,10 +61,10 @@ static func spray(radius: float, tint: Color) -> ParticleProcessMaterial:
 ## life, then `tint` (orange for a shell or the breath), dimming as it dies; thrown up in a cone,
 ## so set its direction after. Drawn as a glow cube (glow_cube) the bloom catches.
 static func sparks(tint: Color) -> ParticleProcessMaterial:
-	var mat := _base(Color.WHITE, tint)
+	var mat := _base(Fire.EMBER_START, tint)
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array([0.0, SPARK_WHITE, 1.0])
-	ramp.colors = PackedColorArray([Color.WHITE, tint, tint.darkened(0.45)])
+	ramp.colors = PackedColorArray([Fire.EMBER_START, tint, tint.darkened(0.45)])
 	var ramp_tex := GradientTexture1D.new()
 	ramp_tex.gradient = ramp
 	mat.color_ramp = ramp_tex

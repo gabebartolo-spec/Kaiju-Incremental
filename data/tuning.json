@@ -1017,7 +1017,7 @@
 		"streaks": 3,
 		"streak_thick": 0.4,
 		"streak_gap": 0.45,
-		"streak_color": "ffd9a0",
+		"streak_color": "ffb347",
 		"segments": 10,
 		"sweep_s": 0.05,
 		"trail_s": 0.07,

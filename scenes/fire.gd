@@ -12,10 +12,30 @@ const FLAME_COLORS: Array[Color] = [
 	Color("ffe9a8"),
 	Color("ff8c18"),
 	Color("ff5a0c"),
-	Color("c8280a"),
-	Color("6a1006"),
-	Color("2a0a06")
+	Color("d4300a"),
+	Color("b8321a"),
+	Color("4a1610")
 ]
+## A street fire's flame tongue is two systems: a tall tapering BODY (orange, then red, then a dark
+## red-brown at its tips and rim, thinning to smoke: alpha falls so the plates overlap into one
+## mass) around a narrow, short, white-yellow CORE column. Colours and alpha over the life of a
+## flame, which is its height as it rises.
+const BODY_COLORS: Array[Color] = [
+	Color(0.72, 0.2, 0.1, 0.8),
+	Color(1.0, 0.42, 0.06, 1.0),
+	Color(1.0, 0.33, 0.05, 1.0),
+	Color(0.83, 0.19, 0.04, 0.85),
+	Color(0.54, 0.13, 0.06, 0.55),
+	Color(0.29, 0.09, 0.06, 0.35)
+]
+const BODY_AT: Array[float] = [0.0, 0.14, 0.4, 0.62, 0.85, 1.0]
+const CORE_COLORS: Array[Color] = [
+	Color(1.0, 0.86, 0.5, 0.9), Color(1.0, 0.7, 0.18, 0.85), Color(1.0, 0.5, 0.08, 0.7)
+]
+const CORE_AT: Array[float] = [0.0, 0.35, 1.0]
+## A tongue's plate: the flame voxel stretched about 1:2 tall (so tongues rise, never confetti).
+const FLAME_PLATE := Vector3(0.18, 0.32, 0.18)
+const EMBER_START := Color("ffb040")
 ## The embers' heat (ember.gdshader): they are tiny, so they glow past what a flame's body takes
 ## (the shader's own heat, 1, keeps a flame saturated orange and red under the bloom, never cream).
 const EMBER_HEAT := 1.4
@@ -25,7 +45,7 @@ const WIND := Vector3(2.2, 0.0, 0.9)
 ## a bigger fire is more flames, never bigger cubes (VFX lead, D-151).
 const FLAME_CUBE := 0.18
 const FLAME_SCALE := Vector2(0.5, 1.2)
-const FLAME_AT: Array[float] = [0.0, 0.025, 0.14, 0.42, 0.75, 1.0]
+const FLAME_AT: Array[float] = [0.0, 0.025, 0.14, 0.42, 0.72, 1.0]
 const SMOKE_COLORS: Array[Color] = [
 	Color(0.05, 0.05, 0.05, 0.0),
 	Color(0.1, 0.1, 0.11, 0.46),
@@ -88,6 +108,7 @@ func _init(size: float, seed_value: float, far := {}) -> void:
 		_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 		add_child(_light)
 	add_child(_flames(size))
+	add_child(_core(size))
 	_embers_node = _embers(size)
 	add_child(_embers_node)
 	if _smoke_density > 0.0:
@@ -139,10 +160,20 @@ func _process(delta: float) -> void:
 
 func _flames(size: float) -> GPUParticles3D:
 	var z := _zoom
-	var mat := _base(size * 0.6 * z, 12.0, Vector3(0, 2.5, 0) * z, Vector2(0.8, 2.0) * z)
-	_scale(mat, FLAME_SCALE * z, Vector2(1.0, 0.1), 0.5)
-	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array(FLAME_AT))
-	return _system(mat, _cube(FLAME_CUBE), roundi(130 * maxf(1.0, size) * _density), 1.0)
+	var mat := _base(size * 0.45 * z, 6.0, Vector3(0, 2.2, 0) * z, Vector2(1.1, 2.2) * z)
+	_scale(mat, FLAME_SCALE * z, Vector2(1.0, 0.3), 0.7)
+	_ramp(mat, PackedColorArray(BODY_COLORS), PackedFloat32Array(BODY_AT))
+	var count := roundi(130 * maxf(1.0, size) * _density)
+	return _system(mat, _cube(FLAME_PLATE), count, 1.0)
+
+
+## The hot core: a narrow, short column of white-yellow plates down the middle of the body.
+func _core(size: float) -> GPUParticles3D:
+	var z := _zoom
+	var mat := _base(size * 0.14 * z, 4.0, Vector3(0, 2.0, 0) * z, Vector2(0.9, 1.7) * z)
+	_scale(mat, FLAME_SCALE * 0.9 * z, Vector2(1.0, 0.35), 0.6)
+	_ramp(mat, PackedColorArray(CORE_COLORS), PackedFloat32Array(CORE_AT))
+	return _system(mat, _cube(FLAME_PLATE), roundi(30 * maxf(1.0, size) * _density), 0.6)
 
 
 func _embers(size: float) -> GPUParticles3D:
@@ -150,8 +181,13 @@ func _embers(size: float) -> GPUParticles3D:
 	var gravity := (_wind * 0.6 + Vector3(0, 1.2, 0)) * z
 	var mat := _base(size * 0.8 * z, 35.0, gravity, Vector2(1.5, 4.0) * z)
 	_scale(mat, Vector2(0.4, 1.0) * z, Vector2(1.0, 0.3))
-	_ramp(mat, PackedColorArray([Color("ffe9a0"), Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
-	return _system(mat, _cube(0.1, EMBER_HEAT), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
+	_ramp(mat, PackedColorArray([EMBER_START, Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
+	return _system(
+		mat,
+		_cube(Vector3.ONE * 0.1, EMBER_HEAT),
+		roundi(45 * maxf(1.0, size) * _ember_density),
+		3.2
+	)
 
 
 ## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
@@ -233,9 +269,9 @@ func _system(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float)
 	return p
 
 
-func _cube(size: float, heat := 1.0) -> BoxMesh:
+func _cube(size: Vector3, heat := 1.0) -> BoxMesh:
 	var cube := BoxMesh.new()
-	cube.size = Vector3.ONE * size
+	cube.size = size
 	var hot := ShaderMaterial.new()
 	hot.shader = EMBER_SHADER
 	hot.set_shader_parameter("heat", heat)
