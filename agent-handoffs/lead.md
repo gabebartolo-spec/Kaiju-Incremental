@@ -19,7 +19,9 @@
   turn-weight (agent ac71d48ab1a1ff638, claude/turn-weight) sends a design first; clip + fresh motion critic before merge.
 - D-188 "Keep going until critics pass" (no round cap) + "if something has failed 7 times in a row then our method is
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
-  VFX lead asked to reassess the fire/helicopter look (round 7) before round 8; relay its reassessment to him.
+  Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
+  picks via the lead), fall = view arc between the sim's death and crash points (lead: yes, D-183 leaves deaths as
+  they are), kill staging after the claw rake, claims measured in the clip. #175 SHIP 0ef8c0ab: go armed.
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
   milestones, sound. Each tells the other before touching the other's files.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
