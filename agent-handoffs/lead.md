@@ -52,7 +52,8 @@
   pacing-ci f68caea1 (and overnight #159-#169).
 - Open: #171 beam-cost GREEN b2e8e759: go only when pacing run 39910488328 reports a last unlock of 2.15-2.35 h.
   #175 gait-fix head 681ce75c (capture route only changed), CI running: go after the VFX lead's SHIP + evidence
-  (clips + motion critic) and the lead's own check; local gate was green (motion 30/0, shin jerk 2.7/4.3).
+  (clips + motion critic) and the lead's own check; gate green at 681ce75c (motion 30/0, smoke 47/0, clips 14/0,
+  gait 10/0); 4 clips rendered, fresh motion critic reviewing. Colossus held curve: no camera change needed.
 - Not opened: claude/strike-delay (red, diagnosing), heli-look-r4 (VFX), claude/sim-speed daad0710 (measurement only:
   Convoy body polygon ~25%, bucketed building scans ~10%; sim/convoy.gd at 400 lines, split first).
 - Pacing on GitHub (#174): push pacing-run/<name> with .github/pacing-run.json {"species","runs","verbose"}.
@@ -61,8 +62,8 @@
 - When a lead slot frees: music integration (D-184), then sky and sea life with the whale in the river (D-168;
   demo-end handoff plan), damage on impact (D-166, after strike-delay), sim speed-ups (D-159), Taskforce adult units.
 - Heli-standoff: push -> git-helper opens the PR -> non-author sim review -> go; send the sha to the VFX lead (D-183).
-- Hygiene: scratchpad hygiene_manifest.md (dead worktrees vs cap 12, backups first); local scratch/gait-merge branch
-  in the volley worktree.
+- Hygiene: scratchpad hygiene_manifest.md (dead worktrees vs cap 12, backups first). His to remove (a peer's delete
+  was denied, so not ours): local scratch/gait-merge (volley worktree) and gw-scratch (agent-a0c3ef106ae9686d7).
 
 ## Tools
 - Lead docs worktree Kaiju-Incremental-wt/lead-docs (detach at origin/claude/look-options; python edits newline='';
