@@ -35,14 +35,14 @@ docs/audio/music-briefs.md, Weirdness 35%, Style Influence 70%, Duration 3:00. B
 | 2026-10-23 | theme | G3 (Godzilla appears: slow, footsteps, silences) | https://suno.com/song/74f02c1b-980f-49b7-8ea6-20b73e3eb19d | 10 (pair) | |
 | 2026-10-23 | theme | G4 (Godzilla appears) | https://suno.com/song/39bbaef9-20b9-42e7-a6f6-ef0e089a3431 | (pair) | |
 | 2026-10-23 | theme | R (his remaster of G2; D-184 the theme: menu + Cover source) | https://suno.com/song/798f3c13-290f-4c84-8fb9-c5bf32badb94 | his | menu |
-| 2026-10-23 | 1 | C1a (Cover of R, young croc: sparse, creeping) | https://suno.com/song/51ffbd31-23bb-4248-9b94-4818bd25bfe5 | 10 (pair) | |
+| 2026-10-23 | 1 | C1a (Cover of R, young croc: sparse, creeping) | https://suno.com/song/51ffbd31-23bb-4248-9b94-4818bd25bfe5 | 10 (pair) | city 1 |
 | 2026-10-23 | 1 | C1b (Cover of R, young croc) | https://suno.com/song/d0baeae2-002d-48b4-ade9-16c6af2d3668 | (pair) | |
-| 2026-10-23 | 2 | C2a (Cover of R, Behemoth: driving march) | https://suno.com/song/d658bf8f-daa4-4b8b-9122-165725d790c9 | 10 (pair) | |
+| 2026-10-23 | 2 | C2a (Cover of R, Behemoth: driving march) | https://suno.com/song/d658bf8f-daa4-4b8b-9122-165725d790c9 | 10 (pair) | city 2 |
 | 2026-10-23 | 2 | C2b (Cover of R, Behemoth) | https://suno.com/song/31cefc94-23de-425a-928c-301d23074039 | (pair) | |
-| 2026-10-23 | 3 | C3a (Cover of R, Colossus: full crushing weight) | https://suno.com/song/88095979-ca1d-4490-bfde-793e0838caf1 | 10 (pair) | |
+| 2026-10-23 | 3 | C3a (Cover of R, Colossus: full crushing weight) | https://suno.com/song/88095979-ca1d-4490-bfde-793e0838caf1 | 10 (pair) | city 3 |
 | 2026-10-23 | 3 | C3b (Cover of R, Colossus) | https://suno.com/song/069d13d3-6832-4313-b24d-168157d397b4 | (pair) | |
 
-Credits used so far: 170 of 800 (D-174).
+Credits used so far: 320 of 800 (D-174): 170 takes and Covers, 150 for three Auto splits.
 
 G set settings: Styles "1954 Japanese kaiju film score, Godzilla main title style" (G1-G2: ponderous march; G3-G4:
 Godzilla appears, footsteps with long silences), tuba, contrabassoon, bass trombones, low strings, low piano, timpani;
@@ -54,3 +54,11 @@ saved to C:/Users/DANTE/Downloads/kaiju_music/; G4 unlocked, not saved (he: "don
 we can download them any time"). 5 of 20 monthly downloads used. Suno files carry "_paid_wm" (Suno's paid-tier
 watermark). Covers (D-184): Cover of R, Weirdness 36%, Style Influence 74%, Audio Influence 59%, same Exclude as the
 G set. Next: he picks one take per city; Auto Split (50 credits each) and WAV for the three picks only.
+
+Picks (director, 2026-10-23): city 1 C1a, city 2 C2a, city 3 C3a. Each was split with Auto split (50 credits; Suno asked
+for a human check once, which he completed) and downloaded as WAV with its stems (WAV zip, 10-12 stems each: drums,
+bass, strings, brass, keyboard, percussion, synth, other, woodwinds, guitar, plus vocal stems that should be near
+silent). Files: C:/Users/DANTE/Downloads/kaiju_music/ (city*_C*a_*.wav, stems_city*_C*a/ and .zip). 8 of 20 monthly
+downloads used (R, G1-G4 unlocked, C1a, C2a, C3a). G4 was saved by the browser before his stop. His own Auto split
+of R (24 stems) is in the Suno workspace, not downloaded. Next: the lead's builder cuts the loops, sets the layers
+(D-125) and registers the files (docs/LICENSING_REGISTER.md: Suno Pro, commercial use).
