@@ -14,11 +14,11 @@ All pictures are free (GPT Image 2.5 quota ~295/1000).
    lower (rig); adol hue to olive with a cream belly, darker back row (texture), hind feet ~40 deg inward (rig). Crops in
    young/critic/tex/. Next: boards to the lead; the lead decides who does the Blender/texture pass.
 2. New croc "B with A's power" (director's pick): rounds M1 (f6465b38), M2 (6c4f0fce), M3 (40ade93f) all FIX. Each
-   heavy-build reference brings back A's shoulder hump; words alone overcorrect the head down. M4 (2af90577): B's
-   picture as the only reference, power in words. Critic next, then the picture to the lead before any credits.
+   heavy-build reference brings back A's shoulder hump; words alone overcorrect the head down. M4 (5e94ef8d, files
+   croc_new/crocM4_*): B's picture as the only reference, power in words. Critic running; then the picture to the lead.
 3. Serpent: D-206 replaces the python-vs-cobra pick (baby spitting cobra, adolescent gains the rattle, adult python
    constrictor). Director to this session: "final stage is python body, venom spitting cobra head, viper rattle
-   vibrating grabby tail". Adult hybrid concept: serpB2_3 (cobra head) + serpA5_0 (python body), generating. Python-only
+   vibrating grabby tail". Adult hybrid concept 2af90577 (serpent/serpH1_*): serpB2_3 cobra head + serpA5_0 python body; critic running. Python-only
    rounds A3-A6 stopped (free). Look-only critic next, then to the lead.
 
 ## Rulings and method
@@ -41,6 +41,10 @@ All pictures are free (GPT Image 2.5 quota ~295/1000).
   before it expires (~6 min).
 - Six-views: scratchpad six_all.sh (clay, `_six_`) and six_tex.sh (textured, `sixtex_`), Blender 5.2 headless.
 - Multiview Image is free but its views disagree: not usable as Smart Mesh multi-view input.
+
+## Running jobs
+Two realism-critic subagents (serpH1, crocM4); results land in serpent/critic/h1 and croc_new/critic/m4.
+Komodo board for the lead: ~/cascadeur_bridge/komodo/young/komodo_young_3d_board.png (not yet sent).
 
 ## Next
 Croc M4 critic and serpent hybrid critic, then one report to the lead (6 lines) with the Komodo boards, croc and serpent.
