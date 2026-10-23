@@ -196,7 +196,7 @@ func stomp(power: float, crack: bool) -> void:
 
 ## A foot touched down (KaijuModel.foot_planted strength 0..1): the waiting stomp if there is
 ## one, else a footstep as loud as the step is hard.
-func footstep(strength: float) -> void:
+func footstep(strength: float, extra_db := 0.0, pitch := 1.0) -> void:
 	if _pending != "":
 		_release_stomp()
 		return
@@ -204,7 +204,7 @@ func footstep(strength: float) -> void:
 		return
 	_since_step = 0.0
 	var quiet := Num.f(_tune["footstep_quiet_db"]) * (1.0 - clampf(strength, 0.0, 1.0))
-	play(STEPS[_step % STEPS.size()], quiet)
+	play(STEPS[_step % STEPS.size()], quiet + extra_db, pitch)
 	_step += 1
 
 

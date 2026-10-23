@@ -81,6 +81,9 @@ var _slam_low := Vector3(0, INF, 0)
 var _slammed := false
 var _tail_tip := ""  # the last tail bone (its tail is the tip)
 var _look := 0.0  # the head's look-ahead into the turn (rad)
+## A heavy body's aim (tuning "body_class" aim, D-200; {} for none): the head shows the heading,
+## the body follows slower.
+var _aim: Dictionary = {}
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -107,7 +110,9 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 		if bone_name.begins_with("tail"):
 			tail_bones += 1
 			_tail_tip = bone_name
-	_tail = ClipTail.new(tail_bones)
+	_aim = p_rig.body_class().get("aim", {})
+	var tail_tune: Dictionary = p_rig.body_class().get("tail", {})
+	_tail = ClipTail.new(tail_bones, tail_tune)
 	_hold = FootHold.new(rig)
 	_ik = LegReach.new(self)
 	swing.trail = ClawTrail.new(rig)
@@ -118,6 +123,7 @@ func update(delta: float) -> void:
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
+	_hold_neck()
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
@@ -263,13 +269,39 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 	swing.pose_rake(dt)  # the claw rake, over the clip's arms
 
 
-## Turns the neck and skull about the world's up into the turn still to make (after the clip).
+## A heavy body eases toward the heading at its own pace (D-200): ease_per_s, at most follow_deg_s,
+## faster past catch_from_deg (the head shows the rest, _look_ahead).
+func _top_turn(err: float) -> float:
+	if _aim.is_empty():
+		return super(err)
+	var past := maxf(0.0, rad_to_deg(absf(err)) - Num.f(_aim["catch_from_deg"]))
+	var top := deg_to_rad(Num.f(_aim["follow_deg_s"]) + Num.f(_aim["catch_per_deg"]) * past)
+	return minf(top, absf(err) * Num.f(_aim["ease_per_s"]))  # eases in, no bang-bang
+
+
+## A heavy body is dragged round so its neck never turns past neck_max_deg from it (D-200).
+func _hold_neck() -> void:
+	if _aim.is_empty():
+		return
+	var most := deg_to_rad(Num.f(_aim["neck_max_deg"]))
+	var err := wrapf(model_yaw - body_yaw, -PI, PI)
+	if absf(err) > most:
+		body_yaw = wrapf(model_yaw - signf(err) * most, -PI, PI)
+		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
+
+
+## Turns the neck and skull about the world's up into the turn still to make (after the clip); a
+## heavy body's head shows the heading its body has not turned to yet, at once (the beam's aim).
 func _look_ahead(dt: float) -> void:
 	var ahead := clampf(0.0 if turn_ahead == INF else turn_ahead, -HEAD_LEAD_MAX, HEAD_LEAD_MAX)
 	_look = lerpf(_look, ahead, minf(1.0, dt * HEAD_LEAD_EASE))
+	var neck_share := NECK_SHARE
+	if not _aim.is_empty():
+		_look = wrapf(model_yaw - body_yaw, -PI, PI)
+		neck_share = Num.f(_aim["neck_share"])
 	for bone_name: String in ["head0", "head1"]:
 		if rig.has_bone(bone_name):
-			var share := NECK_SHARE if bone_name == "head0" else 1.0 - NECK_SHARE
+			var share := neck_share if bone_name == "head0" else 1.0 - neck_share
 			var b := rig.bone(bone_name).global_transform.basis.orthonormalized()
 			rig.set_world_basis(bone_name, Basis(Vector3.UP, _look * share) * b)
 

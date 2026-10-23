@@ -1,34 +1,35 @@
 # Handoff: komodo-test (lead's builder, 2026-10-24)
 
-Task: the Komodo (D-196, D-197 heavy) with its Cascadeur clips as the reptilian ADULT, a TEST build so the
-director can judge the Cascadeur walk at the game camera (D-193). Test only: Cascadeur Pro trial, D-194, nothing
-ships. Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, no merge (lead's brief).
+Task: the Komodo (D-196, D-197 heavy) with its Cascadeur clips as the reptilian ADULT; pipeline adopted (D-199);
+game-layer polish (footfall weight, tail, D-200 "Head aims, body follows"). Test only: Cascadeur Pro trial, D-194.
+Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, no merge (lead's brief).
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State: stood down (available); the director judges the clips first
+## State: polish + v6 walk / v2 roar pushed; awaiting the lead's review
 
 ## What is on the branch
-- `tools/blender/komodo_import.py`: `model` task voxelizes `komodo/mesh/komodo_10m.glb` with rig_voxel.py's
-  functions (texture colours, height 320 = the croc adult's block size) on the skeleton of `komodo/rig/komodo.blend`
-  (= build_komodo.py J, FBX rest identical); writes `assets/kaiju/reptilian_adult.kvox/.rig.json` and the Blender
-  skin `assets/kaiju/test/komodo.skin.json/.skinw/.skinf` (skin_weights.json points the adult at it). Voxel bone =
-  strongest skin weight; toes count for leg_x2 (the foot ends at the ball). No clean_blemishes (croc fix; it
-  recoloured 22k Komodo voxels).
-- `clips` task: `reptilian_adult.kclip` from `komodo_walk_v5c_joints.fbx` + `komodo_walk_v5d_arms.json`,
-  `komodo_idle_v1_joints.fbx`, `komodo_roar_v1_joints.fbx` (30 -> 24 fps: walk 51 frames, idle 72, roar 108).
-  Root motion removed (walk 4.000 m / cycle, 1 cycle). Planted = ball still (< 2.5 cm/frame) and low. Arm turns
-  divided by the game's lowered-arm rest (from dump_rest.gd's rest.json) so arms show the Cascadeur pose.
-  Jaw: shut in idle/walk; roar opens 34 deg, peak game f47, shut by f95. Tail: rest + a small curl (0.5-2 deg a
-  joint) keeping the tip 0.35 m off the street (render_walk1 lift_tail). turn_left = Cascadeur
-  `komodo_turn_left_v1_joints.fbx` (180 -> 144 frames), stored against its turning root (motion_test path("turn")
-  shape: yaw 0 -> 90 deg left over src f37-134, pivot under the pelvis; matches the FBX pelvis yaw exactly, root
-  within 0.2 m); turn_right = its mirror.
-- `data/tuning.json`: Colossus (contact.bodies.reptilian[2]) step_len 2.33 -> 1.99 = half the Komodo clip's stride
-  (lead, D-193 test). TEST BRANCH ONLY.
-- `tools/capture/capture_rampage_kaiju.gd`: `--stage=N` (Kit.STAGE_LEVELS), `--no-card` (hides the controls
-  card), `--cam=x,y,z` (camera rest offset; side shot used -24,8,20 vs the game's 0,16,30).
-- vskin baked with tools/kaiju_skin/bake.py on the adult only (= bake_all.sh's step; other skins untouched).
+- `tools/blender/komodo_import.py`: `model` voxelizes `komodo/mesh/komodo_10m.glb` with rig_voxel.py's functions
+  (texture colours, height 320) on the skeleton of `komodo/rig/komodo.blend`; writes `reptilian_adult.kvox/.rig.json`
+  and the skin `assets/kaiju/test/komodo.skin.json/.skinw/.skinf` (skin_weights.json points the adult at it). No
+  clean_blemishes (croc fix).
+- `clips`: `reptilian_adult.kclip` from walk `komodo_walk_v6_ap_joints.fbx` + `komodo_walk_v6_arms.json`, idle
+  `komodo_idle_v1`, roar `komodo_roar_v2` (rebuilt-head error 0.04 m, was 0.27 with v1), turn_left
+  `komodo_turn_left_v1` against its turning root (yaw 0 -> 90 deg over src f37-134), turn_right mirrored. 30 -> 24
+  fps; root motion removed; planted = ball still and low; arm turns divided by the game's lowered-arm rest
+  (dump_rest.gd rest.json); jaw shut except the roar (34 deg, peak f47, shut by f95); tail rest + small curl.
+- `data/tuning.json`: Colossus step_len 2.33 -> 1.99 (= half the Komodo stride). New `body_class` (with _doc):
+  kaiju reptilian_adult = heavy; heavy footfall, tail and aim numbers. camera_shake source `heavy_step`.
+- Game layer (heavy class only; the croc stages unchanged):
+  - `scenes/rampage.gd` `_on_footfall`: each plant at weight >= 0.85, a heavy_step shake, the stomp's shake held for
+    the foot that delivers it, a camera drop put straight on the camera (`_heavy_dip`, back at dip_recover), dust x2
+    uncapped, footstep +3 dB at pitch 0.8 (`Sfx.footstep(strength, extra_db, pitch)`).
+  - `scenes/clip_tail.gd`: ClipTail numbers per class; heavy drives the tail in every clip (`always`).
+  - `scenes/gait_clip.gd` + `kaiju_gait.gd` (`_top_turn`): D-200, the body eases to the sim heading (ease 5/s, at most
+    50 deg/s, faster past 40 deg), dragged so the neck never passes 60 deg; head0/head1 show the rest at once.
+  - `scenes/kaiju_rig.gd`: `kind` (asset base) and `body_class()`; `kaiju_model.gd` passes it on.
+- `tools/capture/capture_rampage_kaiju.gd`: `--stage`, `--no-card`, `--cam=x,y,z`. `tools/capture/probe_body_weight.gd`:
+  headless CSV per frame (state, heading, body yaw, plants, dip, trauma, camera y, tail tip, neck).
 
 ## Rebuild order
 1. `blender -b --python tools/blender/komodo_import.py -- model <bridge>/komodo assets/kaiju/reptilian_adult 320`
@@ -36,23 +37,19 @@ gitignored).
 3. `blender ... komodo_import.py -- clips <bridge>/komodo assets/kaiju/reptilian_adult rest.json`
 4. `python tools/kaiju_skin/bake.py rest.json assets/kaiju` (or bake_all.sh)
 
-## Evidence
-- fit(): accepted; no "ClipGait: the clips do not fit" warning in the capture log; clips suite
-  `_check_who_uses_clips` passes (adult is ClipGait).
-- clips suite (real turn): 14 checks, 1 failure `_check_tail_owner` (standing turn bends 0.017 <= 0.12: the
-  tail has no drag; lead ruled leave red).
-- smoke suite (step_len 1.99, real turn): 47 checks, 3 failures, all smoke_step_turn (the WALKING 90 deg turn on
-  the walk clip + sim step clock, not the turn clip): both feet up 9 frames while yawing, planted foot yaw
-  22.0 deg > 12, 4.9 skates/s vs the walk's 1.3. Stride checks now pass; stale-skin passes.
-- Converter: rebuilt-head error walk 0.0003 m, idle 0.004 m, roar 0.27 m (head0 f79: Cascadeur stretches the
-  neck base; the game cannot translate a bone, so the roar's head sits up to 0.27 m off).
-- Clips (local GPU, NVIDIA RTX 4070 SUPER, off-screen no_focus, 1080p60, autoplayed rampage, adult, card
-  hidden): scratchpad `komodo/cap/komodo_game_cam.mp4` (game camera, 3-9 s) and `komodo_side_cam.mp4` (low 3/4
-  side, 2.5-8.5 s). Earlier: `komodo_game_walk.mp4` (placeholder turns).
+## Evidence (probe, seed 0 autoplay, run 3-9 s = the game clip)
+- Snap: the breath beam's sim turn (powers.beam_turn_rate, "whatever the size") swings the heading 134 deg in
+  0.45 s; the lead/director kept it (D-200). Body yaw rate p50 68 -> 50 deg/s, p95 291 -> 136; largest yaw in 0.3 s
+  87 -> 67 deg (the neck cap drags the body past 60 deg, max 638 deg/s for ~0.15 s); neck max 60.0 deg.
+- Footfall: the heavy drop lands on the plant frame (0 ms); camera y drop per plant median ~0.12 -> ~0.5 units;
+  every plant adds trauma that frame (other rises are topples/tanks).
+- Tail tip off the body axis: p50 0.0 -> 2.1 m, p95 -> 4.3 m.
+- clips: 14 checks, 1 failure `_check_tail_owner` (standing turn bend 0.047 < 0.12; was 0.017). Tail lag passes.
+- smoke: 47 checks, 3 failures, all smoke_step_turn: both feet up 36 frames, yaw in slices 78% < 80%, 12.9
+  skates/s. Planted-foot-yaw and Colossus curve now pass. D-200's eased body yaw no longer comes in the sim's slices.
+- Clips (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden): scratchpad `komodo/cap/komodo_game_cam_v2.mp4`
+  (game camera, 3-9 s) and `komodo_side_cam_v2.mp4` (low 3/4 side, 2.5-8.5 s).
 
 ## Open / for the lead
-- smoke_step_turn's 3 reds (both feet up 9 frames while yawing; planted foot yaw 22.0 deg > 12; 4.9 skates/s vs
-  the walk's 1.3) are NOT diagnosed, by the lead's call: it is the game's own turn and foot-planting layer, parked
-  tuning under D-193 until the director has judged the clips. First suspect when it resumes: ClipGait catch steps
-  (ClipStomp restep on overreach, RESTEP_GAP / RESTEP_REACH) lifting a planted foot mid-turn.
-- Roar neck stretch (0.27 m), as above. Arm pose not yet compared with komodo_walk_v5d.mp4.
+- smoke_step_turn reds parked (D-193); first suspect: ClipGait catch steps. D-200 changes what they measure.
+- Footfall dust reads orange-brown (the existing street dust); heavy numbers are PLACEHOLDER for the motion critic.

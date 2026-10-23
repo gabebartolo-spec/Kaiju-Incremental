@@ -124,6 +124,11 @@ func focus() -> Vector3:
 	return Vector3(p.x, global_position.y, p.z)
 
 
+## This kaiju's weight class (KaijuRig.body_class), or {} (none, or no rig).
+func body_class() -> Dictionary:
+	return _rig.body_class() if _rig != null else {}
+
+
 ## Hip height in world units (0 for unrigged bodies).
 func hip_height() -> float:
 	return _rig.gait.hip_height * _rig.gait.s if _rig != null else 0.0

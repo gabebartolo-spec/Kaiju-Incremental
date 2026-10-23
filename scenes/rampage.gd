@@ -60,6 +60,9 @@ var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _ability := RampageAbility.new()
 var _camera: Camera3D
 var _step_dip := 0.0
+## A heavy body's footfall (tuning "body_class" footfall; {} for none) and its camera drop now.
+var _heavy: Dictionary = {}
+var _heavy_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
@@ -148,6 +151,7 @@ func _ready() -> void:
 		func(at: Vector3, r: float) -> Vector3: return KaijuGrip.point(sim, at, r)
 	)
 	_kaiju.foot_planted.connect(_on_footfall)
+	_heavy = _kaiju.body_class().get("footfall", {})
 	_ability.bind(self, _city, _kaiju)
 	_camera = Camera3D.new()
 	_camera.fov = camera_fov
@@ -250,7 +254,8 @@ func _on_event(event: Dictionary) -> void:
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
 			_stomp_wait = STOMP_WAIT
-			add_trauma(shake.source("stomp"))
+			if not _heavy.get("stomp_on_plant", false):  # a heavy body shakes when the foot lands
+				add_trauma(shake.source("stomp"))
 		"ability":
 			_kaiju.roar()
 			_ability.play(event, _kaiju_at, _power("ability_damage"))
@@ -308,10 +313,19 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 	var stomped := _stomp_wait > 0.0 and side != "tail"
 	if stomped:
 		_land_stomp(side, at)
-	sfx.footstep(strength)
+	var heavy := not _heavy.is_empty() and side != "tail"
+	if heavy:
+		strength = maxf(strength, Num.f(_heavy["strength_min"]))
+		var hit := shake.source(str(_heavy["shake_source"]))
+		add_trauma(hit + (shake.source("stomp") if stomped else 0.0), at)
+		_heavy_dip = maxf(_heavy_dip, Num.f(_heavy["dip"]) * sim.body_scale() * strength)
+		sfx.footstep(strength, Num.f(_heavy["thud_db"]), Num.f(_heavy["thud_pitch"]))
+	else:
+		sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
+	var dust := FOOTFALL_DUST * (Num.f(_heavy["dust_gain"]) if heavy else 1.0)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
-		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
+		_city.fx.footfall(at + Vector3(0, 0.2, 0), dust * size, not heavy)
 	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
 	_city.fx.shockwave(at, ring, side == "tail", stomped)
 	_step_dip = maxf(
@@ -350,6 +364,10 @@ func _place_camera(delta: float) -> void:
 	var hold := sim.body.dash.on() or _ability.leaping()
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
+	if not _heavy.is_empty():  # a heavy footfall drops the camera at once, then it rises back
+		var back := Num.f(_heavy["dip_recover"]) * _heavy_dip + 0.05
+		_heavy_dip = move_toward(_heavy_dip, 0.0, delta * back)
+		_camera.position.y -= _heavy_dip * motion
 	var nod := shake.turn(sim.body_scale(), motion).y
 	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))
 	_city.drawn_sight = _follow.sight()

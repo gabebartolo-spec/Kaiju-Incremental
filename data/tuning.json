@@ -997,6 +997,17 @@
 		"fade_s": 0.07,
 		"puff": 1.6
 	},
+	"body_class": {
+		"_doc": "Komodo test (D-193, D-197 heavy, claude/komodo-test): a kaiju's weight class by its asset base (kaiju: reptilian_adult = the Komodo). A class's footfall (Rampage._on_footfall, on every foot plant): strength_min is the least weight a plant lands with (a heavy body never tiptoes); dust_gain x the footfall puff (FOOTFALL_DUST), every plant its own puff (no max_live cap); dip = a camera drop (world units x body scale x weight) put straight on the camera at the plant and gone at dip_recover a second (the follow's own dip eases in too late to read); shake_source = the camera_shake source each plant adds; the stomp's trauma waits for the foot that delivers it (stomp_on_plant); thud_db and thud_pitch on the footstep sound. tail (ClipTail, the clips carry no tail whip): spring_hz and spring_zeta, gain base and tip, max (rad), drag (rad per rad/s of body turn), drag_max, drag_smooth (s), delay (s), and always: the spring and drag run in every clip (standing turns, the roar), not only the walk. aim (D-200, Head aims, body follows; ClipGait): the sim's heading (what the beam and the mouth aim at) is shown by the head and neck, up to neck_max_deg either side of the body, the neck taking neck_share and the skull the rest; the body yaw eases toward the heading (ease_per_s of what is left each second, no faster than follow_deg_s, about the Cascadeur turn clip's pace), plus catch_per_deg deg/s for every degree past catch_from_deg, and is dragged along so the neck never passes neck_max_deg. Numbers PLACEHOLDER for the motion critic.",
+		"kaiju": {"reptilian_adult": "heavy"},
+		"classes": {
+			"heavy": {
+				"footfall": {"strength_min": 0.85, "dust_gain": 2.0, "dip": 0.35, "dip_recover": 6.0, "shake_source": "heavy_step", "stomp_on_plant": true, "thud_db": 3.0, "thud_pitch": 0.8},
+				"tail": {"spring_hz": 9.0, "spring_zeta": 0.7, "gain": [2.0, 2.0], "max": 0.012, "drag": 0.008, "drag_max": 0.015, "drag_smooth": 0.25, "delay": 0.05, "always": true},
+				"aim": {"follow_deg_s": 50.0, "ease_per_s": 5.0, "catch_from_deg": 40.0, "catch_per_deg": 8.0, "neck_max_deg": 60.0, "neck_share": 0.4}
+			}
+		}
+	},
 	"clip_stomp": {
 		"seconds": 0.45, "lift": 0.46, "rise": 0.38, "hang": 0.22, "vary": 0.1,
 		"dip": 0.05, "dip_attack": 0.04, "dip_s": 0.2,
@@ -1016,7 +1027,7 @@
 		"near_per_scale": 20.0,
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
-		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7, "heavy_step": 0.18}
 	},
 	"post_fx": {
 		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",

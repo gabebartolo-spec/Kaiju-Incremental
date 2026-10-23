@@ -39,6 +39,9 @@ class SpringChain:
 
 
 var height_units: float
+## The asset base this rig was built from ("reptilian_adult"; "" for a rig built in code): picks its
+## weight class (body_class()).
+var kind := ""
 ## "biped", "hexapod" or "radial" (rig.json "type"); picks the gait.
 var body_plan := "biped"
 var gait: KaijuGait
@@ -75,6 +78,7 @@ static func load_from(base: String, model_height: float, glow: float) -> KaijuRi
 	var spec: Dictionary = parsed
 	spec["clips"] = KaijuClips.read(base + ".kclip")  # D-047: null for a kaiju without clips
 	var rig := KaijuRig.new()
+	rig.kind = base.get_file()
 	rig._build(spec, model.frames[0], model_height / model.height, glow)
 	return rig
 
@@ -209,6 +213,21 @@ func _is_physics(defs: Array, bone_name: String) -> bool:
 static func _vec(v: Variant) -> Vector3:
 	var a: Array = v
 	return Vector3(Num.f(a[0]), Num.f(a[1]), Num.f(a[2]))
+
+
+## This kaiju's weight class (tuning "body_class": its footfall and tail), or {} for none.
+static func class_of(rig_kind: String) -> Dictionary:
+	var cfg := Content.section("body_class")
+	var by_kind: Dictionary = cfg["kaiju"]
+	if not by_kind.has(rig_kind):
+		return {}
+	var classes: Dictionary = cfg["classes"]
+	var found: Dictionary = classes[str(by_kind[rig_kind])]
+	return found
+
+
+func body_class() -> Dictionary:
+	return KaijuRig.class_of(kind)
 
 
 func roar() -> void:

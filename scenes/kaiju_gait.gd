@@ -92,10 +92,16 @@ func track(delta: float) -> void:
 	_last_pos = pos
 	_last_yaw = model_yaw
 	var err := wrapf(model_yaw - body_yaw, -PI, PI)
-	var top := turn_max / sqrt(maxf(s, 0.01))
+	var top := _top_turn(err)
 	_body_yaw_v = clampf(err / dt, -top, top)
 	body_yaw = wrapf(body_yaw + _body_yaw_v * dt, -PI, PI)
 	rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
+
+
+## The fastest the body may yaw toward the heading now (rad/s), `err` (rad) still to turn; a gait
+## may slow it (a heavy body whose head aims first, ClipGait).
+func _top_turn(_err: float) -> float:
+	return turn_max / sqrt(maxf(s, 0.01))
 
 
 ## A damped spring step: returns the new [value, velocity]. zeta < 1 overshoots.

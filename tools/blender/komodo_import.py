@@ -49,9 +49,9 @@ GM = Matrix(G.tolist())
 BODY_HEIGHT_M = 10.0
 # Clips: game name -> (FBX, loop-smoothed arm turns or None, loops). Frames are 30 fps; the walk's last frame
 # is its first moved one stride forward, the idle's last is its first.
-CLIPS = {"walk": ("rig/komodo_walk_v5c_joints.fbx", "rig/komodo_walk_v5d_arms.json", True),
+CLIPS = {"walk": ("rig/komodo_walk_v6_ap_joints.fbx", "rig/komodo_walk_v6_arms.json", True),
          "idle": ("rig/komodo_idle_v1_joints.fbx", None, True),
-         "roar": ("rig/komodo_roar_v1_joints.fbx", None, False),
+         "roar": ("rig/komodo_roar_v2_joints.fbx", None, False),
          "turn_left": ("rig/komodo_turn_left_v1_joints.fbx", None, False)}
 SRC_FPS, FPS = 30.0, 24
 # The roar's jaw (no jaw control in Cascadeur): opens from ROAR_JAW[0] to its peak at ROAR_JAW[1] (the frame
