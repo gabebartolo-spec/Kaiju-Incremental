@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-173 · Director · A helicopter wreck also kills Taskforce agents perched on the roofs it smashes
+
+Asked (PR #166: the crash reached only floors 0-2, and nothing reached perched agents): "Yes, them too". A wreck kills tanks, army squads and Taskforce jetpack agents on any building it smashes, whatever the floor, like toppling their roof (D-161, D-166 swat); still never the kaiju (D-140, D-167). Crash only: stomps and bites keep their current reach.
+
 ## 2026-10-23 · D-172 · Director · Music: brooding and building, one mood that grows heavier each city
 
 His first Suno takes from the old briefs: "the songs are way too intense based on the prompts youve provided", and the guide "doesnt really seem to marry up to their interface". Asked: "Brooding, building": low and slow (deep drums, low strings, sub bass, sparse low brass), the city's sound in front, swelling only as the city falls. "One mood, growing": every city shares one sound, each a step heavier (same tempo and key), replacing the briefs' sly / industrial / epic moods. docs/audio/music-briefs.md rewritten to Suno's current Create form (Custom, v6, Instrumental, Styles, Advanced Options: Exclude, Weirdness, Style Influence; Auto Split stems; WAV download).
@@ -392,9 +396,3 @@ Why (16:0x): director's call for after the demo build (P7 playtest); no new feat
 ## 2026-10-18 · D-082 · Director · #50 military AI gets one more round, else the demo ships without it
 Why (16:0x): the fresh motion critic failed #50 (tanks skewed mid-street, helis firing nose-away). One last round,
 and #50 ships only if it passes a fresh critic before #36 is tuned.
-
-## 2026-10-18 · D-081 · Director · Landmark rubble_bonus stays 4x
-Why (16:0x): asked whether to change it; kept as built in the landmark sites work.
-
-## 2026-10-18 · D-080 · Director · The jet strike warning scales with the kaiju's size
-Why (15:4x): director's call on the jets PRs; applied on the jet branches (#58, #61).

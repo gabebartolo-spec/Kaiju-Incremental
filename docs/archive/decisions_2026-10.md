@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-080 · Director · The jet strike warning scales with the kaiju's size
+Why (15:4x): director's call on the jets PRs; applied on the jet branches (#58, #61).
+
+## 2026-10-18 · D-081 · Director · Landmark rubble_bonus stays 4x
+Why (16:0x): asked whether to change it; kept as built in the landmark sites work.
+
 ## 2026-10-18 · D-079 · Director · shell_hit keeps its full boom (A); #52 closed
 Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is closed unmerged.
 
