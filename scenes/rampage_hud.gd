@@ -69,9 +69,9 @@ func _init(p_sim: RampageSim, p_species: Dictionary, p_street: StreetLife) -> vo
 	_hud = UiKit.ui()["hud"]
 
 
-## The sim's result plus what only the view counts: the civilians it crushed.
+## The sim's result plus what only the view counts: the civilians it crushed and those who fled.
 func result() -> Dictionary:
-	return sim.result().merged({"civilians": street.civilians_killed() if street != null else 0})
+	return sim.result().merged(HudCounts.of(street))
 
 
 func _ready() -> void:
@@ -238,9 +238,9 @@ func dismiss_controls() -> void:
 
 func refresh() -> void:
 	var second := ceili(maxf(0.0, sim.time_left))
-	_time.text = "%d" % second
+	_time.text = HudCounts.clock(sim)
 	# The last seconds: the clock turns red and pulses each second; otherwise it is plain white.
-	var hurry := sim.time_left < Num.f(_hud["hurry_seconds"])
+	var hurry := sim.time_left < Num.f(_hud["hurry_seconds"]) and sim.endless == null
 	_time.add_theme_color_override("font_color", UiKit.ALERT if hurry else Color.WHITE)
 	if hurry and second != _last_second and _last_second >= 0 and not sim.over:
 		_time.scale = Vector2.ONE * Num.f(_hud["hurry_pulse_scale"])

@@ -9,11 +9,14 @@ extends Control
 signal start_pressed
 signal bought(id: String)
 signal menu_pressed
+signal endless_pressed
 
 ## The stat rows' "now" column: one width for every row, so the arrows sit in one column.
 const NOW_WIDTH := 64
 const NBSP := " "
 var tree: UpgradeTree
+## Set before the screen is added: the final upgrade is owned, so Endless mode is offered (D-156).
+var endless_unlocked := false
 var rubble: int
 var species: Dictionary
 var base_stats: Dictionary
@@ -118,8 +121,19 @@ func _build_side() -> Control:
 	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
+	_add_endless(side)
 	go.grab_focus.call_deferred()
 	return side
+
+
+## The final upgrade unlocks Endless mode (D-156): its button sits under RAMPAGE.
+func _add_endless(side: Control) -> void:
+	if not endless_unlocked:
+		return
+	var endless := UiKit.button("ENDLESS MODE", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	endless.custom_minimum_size = Vector2(0, 64)
+	endless.pressed.connect(func() -> void: endless_pressed.emit())
+	side.add_child(endless)
 
 
 ## "ultimate": a species node nothing else needs (its branch's capstone); "evolve": grows the

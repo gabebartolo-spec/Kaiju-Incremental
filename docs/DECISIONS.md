@@ -4,6 +4,38 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-170 · Director · Tools and spend: a 100-credit rig test, Tripo in the browser only, no local AI yet, a second concept round
+
+Asked at the interview (from the AI-3D pipeline research). Rig test: "Yes, up to 100": up to 100 Tripo credits, taken from what is left of D-162's 8000, to try Tripo's quadruped and "others" rig on the croc's tail; it does not change the croc's look. Tripo API from a script ($10 cap): "Browser only": Tripo stays in the built-in browser (rulebook unchanged). Local ComfyUI: "Not now"; revisit after the rig test. Next concepts: "Yes, iterate": a more serpentine python head and an albino skin from the D-162 budget left (6500 of 8000), boards to the director. Owner: the VFX lead's asset session.
+
+## 2026-10-23 · D-169 · Director · He makes the Suno music this week; M1 ships with it
+
+Asked (M1 waits for every item, D-155): "I'll make them this week". Prompts in docs/audio/music-briefs.md (one per city, instrumental, "Get Stems", about 2 takes each). The lead cuts the loops, sets the layers (D-125) and registers each track in docs/provenance/music.md.
+
+## 2026-10-23 · D-168 · Director · The whale swims in the water between the play city and the distant city
+
+Asked by the demo-end session (river vs a new bay). He: "we already have a river/bay between the play city and the distant city"; confirmed: "Yes, that water": the whale (one per run, untouchable, D-155) surfaces and spouts there, well away from where the kaiju rises. No map change, no new water.
+
+## 2026-10-23 · D-167 · Director · Pacing and city: a cheaper Thunder Beam, Endless regrowth, wrecks crush the army, five weathers
+
+Asked at the interview. Pacing (the last unlock measured at 2.62 h after the three growth steps, D-156 asks about 2 h): "Cheaper Thunder Beam": its three levels cost less so the last unlock lands at about 2 h; nothing earlier changes. Endless (D-156): "About 5% a minute" of the flattened city comes back, with the army worsening forever. Helicopter wrecks: "Also the army": a crashing wreck razes and burns buildings and also crushes tanks and rooftop squads below it; it still never hurts the kaiju (amends D-140's "only the city"; PR #166 goes back to the first build). Tall towers: "Keep it": the Colossus takes about 1.5x as long on the tallest towers of the wider city. First baby city: "Leave it": a new baby may not reach the eerie quiet. Weather: "Five, as built": clear, overcast, rain, fog banks, thunderstorm.
+
+## 2026-10-23 · D-166 · Director · Play: damage lands on impact, rare claw swats, staggered railgun volleys, heads are looks first
+
+Asked at the interview. Wind-up: "Damage lands on impact": a big attack wrecks when the jaws or foot land, a visible beat of about 0.5-1.5 s after the press (a sim change: the damage waits for the strike). Claw swat on jetpack agents: "Rare lucky swat": as now (about 1 in 85 swipes); toppling their roof stays the real answer. Railgun volley: "Stagger the shots": one squad never lands more than about 2 hits' worth in a second, which leaves the dash time to save you (D-161). New heads: "Look only first": a head is picked as a cosmetic on the evolve screen until he decides its play (D-124); how heads unlock stays his call.
+
+## 2026-10-23 · D-165 · Director · The croc is a living predator standing still
+
+Asked with the idle audit (it barely breathes, only the tail sways, it stops dead): "Living predator": slow heavy breaths seen in the back, shoulders, flanks and tail (the camera sits behind him), weight shifting from foot to foot, the head drifting and glancing, an occasional jaw crack and blink, slower and heavier as he grows. Not: panting after big attacks ("No"), or eyes tracking prey ("No"). Stride: "Heavier as he grows": each step about 3x longer at full size while ground speed still rises. Footfall: "Tail, throat, jowls swing" slowly; belly and flanks barely move. Dash: "Yes, a short crouch" before it. All presentation, never the sim. Owner: the VFX lead.
+
+## 2026-10-23 · D-164 · Director · Heads and skins: the Komodo with its own shape, a more serpentine python, Obsidian, Abyssal and Albino
+
+Asked with the D-162 boards. Heads: "C Komodo, own shape" ("the komodo looks incredible though"): a short, deep, heavy jaw; bites, roars and hit size are re-fitted to it. The python: "isnt quite serptentine enough, it still has croc teeth?": another round with a snake's head, jaw and fangs, no croc teeth (D-170). Skins: "B Obsidian", "D Abyssal" and "albino too" (a new concept). Method: a colour table per body region (back, belly, spines, claws, eyes, teeth), tunable in Aseprite, 0 credits; not a Tripo re-texture. Owner: the VFX lead.
+
+## 2026-10-23 · D-163 · Director · One look, built from blocks: far blur, cool shadows with warm fire, fine-block ground
+
+Asked after the voxel-look research and boards ("im worried that theres a mix match of art styles"). "Keep blocks, one look": buildings keep breaking where you bite; cars, trees, props, ground, fire and blasts are brought into the city's look. Close shots: "Blocks everywhere": no separate smooth croc for the title, intro, load screens or end card; they get the same skin and light upgrades as play. Depth blur: "Far blur only", locked on the kaiju, with haze carrying the depth (no tilt-shift). Colour: "Cool shadows, warm fire". Ground: "Fine blocks like the city" for roads, lawns and pavements. Confirms D-111. Owner: the VFX lead.
+
 ## 2026-10-23 · D-162 · Director · Tripo: 8000 credits for snake and Komodo heads and skin concepts, shown at the interview
 
 Said before sleeping (2026-10-23, about 03:25): "feel free to spend some time and tripo credits as well get some models for the alternative heads, snake and komodo dragon", "concept some different Skins too", "come up with a few skins, and a couple options for the heads, include it in the interview when i return from work we can iterate more", "tripo budget is 8k credits". Covers a couple of head options each for the snake (python, ROADMAP "Reptilian head evolutions") and the Komodo dragon, and a few recolour skin concepts of the croc (ROADMAP "Achievements and skins", D-119). Owner: the VFX lead's asset session. Every model Private, six-viewed, logged in docs/provenance/tripo.md; stop at 8000 credits. Concepts only: labelled boards go to the director at the interview, where he iterates; how the heads unlock and what they change in play stay his call (D-124).
@@ -365,36 +397,3 @@ Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is 
 ## 2026-10-18 · D-078a · Director · The stadium stands are full of spectators watching the match
 Why (18:0x): "the stadium needs to be full of people in the stands watching the sport, currently its empty".
 Added to #59's brief; the AFL clip is re-rendered with the crowd.
-
-## 2026-10-18 · D-078 · Director · Stadium matches: one random sport per run, players flee when the wall caves in
-Why (14:1x): AFL, NFL, soccer or cricket, random per run; presentation only, low-effort visual flavour, in the demo.
-Real cities make the sport deliberate later. Lands in #59 (landmarks session).
-
-## 2026-10-18 · D-077 · Director · The tree's stats panel shows only what the selected node changes, in plain words
-Why (10:5x): the 12-number summary (STOMPS/S, RECHARGE, ARMOUR 0.0, SIZE 1 -> 2) read as software. Now the cost and
-the node's own stats ("Stomps hit harder: 13 -> 16"), lines from data/tuning.json "stat_text". MERGED #51 (997f516).
-
-## 2026-10-18 · D-076a · Lead · Rooftop density: reach from the stomp edge, more squads, a tenth of the chip
-Why: for D-076 at the same threat. Option A: chip per volley scaled down per tier so each stage's damage per run
-holds within ±5%; tanks unchanged; no HUD change (the hide spark is the hit read). PR #63.
-
-## 2026-10-18 · D-076 · Director · Rooftops: more squads, firing more often
-Why (10:5x): "more squads, more often". Cause found: rifle reach was measured from the kaiju's centre. Plan in D-076a.
-
-## 2026-10-18 · D-075 · Director · Green lots at 8% of the city
-Why (10:5x): answers D-065(b), the green-lot share tabled with its chunk and pacing table. City session, after
-greenery (a).
-
-## 2026-10-18 · D-074b · Director · Stage 1 at speed 0.6 and hp 1.15 (~43 min demo)
-Why (13:2x): ~0.6 h to evolve1 is unreachable at 0.6 speed (the sweep floors at ~0.66 h). Accepted ~0.71 h: about
-45% of early runs end in defeat and 87% of the city is destroyed by evolve1. PR #54.
-
-## 2026-10-18 · D-074a · Director · Baby speed ~0.6 with more hp; demo ~35 min
-Why (11:4x): revises D-074 with a target; superseded by the measured numbers in D-074b.
-
-## 2026-10-18 · D-074 · Director · Slow stage 1: the baby reads as a toddler
-Why (10:5x): slow stage 1 so the baby reads as a toddler; pacing re-measured in the P3 PR (#54).
-
-## 2026-10-18 · D-073 · Director · Croc baby and adolescent approved
-Why (10:5x): the P3 bodies from the croc titan design (D-059) are approved for the demo; clips kept, slam polish
-later. PR #54.

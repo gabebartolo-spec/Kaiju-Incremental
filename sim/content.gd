@@ -10,6 +10,8 @@ static var _looks: Array[Dictionary] = []
 static var _look_id := ""
 static var _times: Dictionary = {}
 static var _time_id := ""
+static var _weather: Dictionary = {}
+static var _weather_id := ""
 static var _merged: Dictionary = {}
 static var _landmarks: Dictionary = {}
 static var _sports: Dictionary = {}
@@ -111,6 +113,30 @@ static func set_time(id: String) -> void:
 	_merged = {}
 
 
+## The weathers in rotation order (data/looks.json "weather").
+static func weathers() -> Array:
+	_load()
+	return _weather["order"]
+
+
+## The whole "weather" table of data/looks.json (order, labels).
+static func weather_table() -> Dictionary:
+	_load()
+	return _weather
+
+
+## The one current weather of the run in play (D-155): an id of weathers(). Main sets it when a
+## rampage starts (Weather.pick); presentation reads it. Before any run it is the first weather.
+static func weather_id() -> String:
+	_load()
+	return _weather_id
+
+
+static func set_weather(id: String) -> void:
+	_load()
+	_weather_id = id
+
+
 ## The fixed order: run n plays the nth time of day. Captures and tests use it to land on a known
 ## time; the game picks with TimeOfDay (D-145).
 static func time_for_run(run_index: int) -> String:
@@ -137,6 +163,8 @@ static func _load() -> void:
 	_look_id = str(looks_file.get("default", ""))
 	_times = looks_file.get("times", {"order": [""]})
 	_time_id = str(_times["order"][0])
+	_weather = looks_file.get("weather", {"order": [""], "labels": {}, "random_label": ""})
+	_weather_id = str(_weather["order"][0])
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")

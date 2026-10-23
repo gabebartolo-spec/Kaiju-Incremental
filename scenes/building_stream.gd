@@ -8,17 +8,11 @@ extends Node3D
 ## built on the spot, so a blow never lands on a stand-in. Meshes cost memory by the chunk, so at
 ## most city.stream_chunks chunks stay meshed (plus the landmarks the camera can see or that
 ## stand near, and every building the rampage has touched): as the kaiju walks, the nearest
-## unbuilt buildings stream in and the untouched ones far behind him go back to boxes. Small
-## cities fit the budget and load exactly as before. Presentation only. What counts as nearest
-## is judged from the camera as well as the kaiju (StreamRank): the
-## budget goes to the foreground and the depth where the camera looks, not to a circle round the
-## kaiju. A landmark is held meshed whenever its wedge, the margin band or city.stream_view.
-## landmark_keep_m reaches it, so one is never a box in view (director 2026-10-22: out-of-view
-## landmarks may unload "if no pop-in"); one past all three ranks like any building. Without a
-## camera (before the rampage's own exists) every building ranks by its distance from the kaiju
-## and every landmark is held.
+## unbuilt buildings stream in and the untouched ones far behind him go back to boxes. Presentation
+## only. Nearest is judged from the camera as well as the kaiju (StreamRank). A landmark is held
+## meshed whenever its wedge, the margin band or city.stream_view.landmark_keep_m reaches it.
 
-## Workers meshing at once (each holds a building's raw voxels until baked).
+## Workers meshing at once (each holds a raw voxel set until baked).
 const IN_FLIGHT := 4
 ## A replan when the kaiju or the camera moved this far, at most every PLAN_EVERY s.
 const PLAN_MOVE := 4.0
@@ -368,11 +362,17 @@ func _place(n: int, built: BuildingView) -> void:
 	_stand_ins.hide(n)
 
 
-## An untouched, far building goes back to its box and its meshes are dropped.
-func _free_view(n: int) -> void:
+## Building n regrew (Endless mode): its view goes, pinned or not, and is rebuilt.
+func regrow(n: int) -> void:
+	_free_view(n, true)
+
+
+## An untouched, far building goes back to its box (or a regrown one); its meshes are dropped.
+func _free_view(n: int, force := false) -> void:
 	var gone := _views[n]
-	if gone == null or _pinned[n] == 1:
+	if gone == null or (_pinned[n] == 1 and not force):
 		return
+	_pinned[n] = 0
 	_views[n] = null
 	_state[n] = 0
 	remove_child(gone)

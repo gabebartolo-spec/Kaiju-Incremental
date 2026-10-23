@@ -113,22 +113,26 @@ func fits_at_scales(screen: Control, what: String) -> void:
 	)
 
 
-## The reveal measures against the new stage's city (D-039): the Apex Titan topples size x tier
-## height floors, more than the first city's tallest tower allows.
+## The reveal measures against the new stage's city (D-039): the Colossus topples size x tier
+## height floors, taller than the Behemoth's reveal tower (D-135: three steps, two reveals).
 func reveal_stage_city() -> void:
 	var tuning := Content.tuning()
-	var stage4: Dictionary = CityGrowth.tuning_for(tuning, 4)["city"]
-	var first: Dictionary = tuning["city"]
+	var behemoth: Dictionary = CityGrowth.tuning_for(tuning, 2)["city"]
+	var colossus: Dictionary = CityGrowth.tuning_for(tuning, 3)["city"]
+	var species := Content.species_def("reptilian")
+	var first := EvolutionReveal.new()
+	first.setup(species, {"size": 1}, {"size": 2}, behemoth)
 	var reveal := EvolutionReveal.new()
-	reveal.setup(Content.species_def("reptilian"), {"size": 3}, {"size": 4}, stage4)
-	var want := mini(4 * Num.i(stage4["tier_height"]), Num.i(stage4["max_height"]))
+	reveal.setup(species, {"size": 2}, {"size": 3}, colossus)
+	var want := mini(3 * Num.i(colossus["tier_height"]), Num.i(colossus["max_height"]))
 	check.call(
-		reveal.tower_floors == want and want > Num.i(first["max_height"]),
+		reveal.tower_floors == want and want > first.tower_floors,
 		(
-			"the Apex Titan's reveal tower is %d floors from its stage's city (first city caps %d)"
-			% [reveal.tower_floors, Num.i(first["max_height"])]
+			"the Colossus's reveal tower is %d floors from its stage's city (Behemoth's %d)"
+			% [reveal.tower_floors, first.tower_floors]
 		)
 	)
+	first.free()
 	reveal.free()
 
 

@@ -357,17 +357,20 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Clean as you go: every builder splits a crowded file (390-400 lines) at a natural seam and shrinks a grandfathered
   long function (tools/lint/complexity_baseline.txt) when its work touches it. Owner: every builder. Status: ongoing.
 - Sim speed: measure where a sim step's time goes (tools/pacing.gd's 2-hour run), so balance answers take minutes;
-  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: queued.
+  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: measured
+  2026-10-23 (claude/sim-speed: tank road driving is about half of every step; three result-identical speed-ups
+  found, about 35% together); the speed-ups start after the director's return.
 - Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
   22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
-  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: queued.
+  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: done 2026-10-23: it was the
+  test's start pose inside the neighbouring towers, not the sim (PR #168, tests only).
 
 ## Overnight work (director 2026-10-23, about 03:25, asleep then at work)
 - His words: "work for 5 hours, if theres something you need my eye or a question you need to ask, add it to the
   interview and continue working". Questions gather in the lead board's interview.md; the lead asks them on his return.
-  Owner: lead. Status: in progress.
+  Owner: lead. Status: done 2026-10-23 afternoon (D-163 to D-170).
 - Heads and skins (D-162): a couple of snake and Komodo head options and a few croc skins, Tripo, 8000 credits, boards
-  for the interview. Owner: VFX lead's asset session. Status: started.
+  for the interview. Owner: VFX lead's asset session. Status: round 1 shown; round 2 per D-164.
 - "get the githib hygeinic": stale branches, worktrees and PRs cleaned to the github-hygiene skill (manifest first, open
   PRs and live worktrees excluded). Owner: lead's GitHub helper. Status: started.
 - Research (readers only, no engine; findings go to the interview as questions, never into the build). His words: "if
@@ -375,16 +378,36 @@ state. No director clips or per-change approvals in between; clips only where mo
   focused on 3d animation of kaiju and methods of creating good pipelines for ai generated 3d models, good practice"
   and "specifically search for how to generate good art and good animations using the tools we have, tripo, blender,
   godot, local tools, yourself, mcp connections, plugins, skills you can learn, github repos with workflows already
-  designed, etc" ("i also have Aseprite"). Owner: lead's readers. Status: running.
+  designed, etc" ("i also have Aseprite"). Owner: lead's readers. Status: done; answers in D-164 and D-170.
 - The voxel look, again: "research again if it would be worth abandoning the voxel look. im worried that theres a mix
   match of art styles in the game, the voxels are maybe clashing with the cinematic direction" (D-111 kept voxels on
   2026-10-21). A reader's report plus labelled stills from the VFX lead go to the interview. Owner: lead, then VFX lead.
-  Status: researching.
+  Status: decided, keep blocks, one look (D-163).
 - Croc idle audit: "do some audits on the posture and "idle" movements of our reptilian, does he breath? does he ever
   sway at all? these things would be good for immersion". Audit done (barely breathes; only the tail sways; stops
-  dead); how much life to add is an interview question; no build before his answer. Owner: VFX lead. Status: asked.
+  dead); how much life to add is an interview question; no build before his answer. Owner: VFX lead. Status: decided
+  (D-165).
 - Tripo downloads: "you need to press save when these pop up" (the browser's Save dialog). That dialog belongs to the
   Claude app, which computer use may not control, so agents fetch each model by its signed URL (read from the browser
   pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
 - Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
   ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.
+
+## Interview answers (director 2026-10-23, afternoon; D-163 to D-170)
+- One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool
+  shadows, warm fire; fine-block ground; blocks in close shots too. Owner: VFX lead. Status: not started.
+- Heads and skins (D-164, D-170): the Komodo head with its own shape goes forward; a serpentine python round 2 (snake
+  jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first.
+  Owner: VFX lead's asset session. Status: round 2 not started.
+- Living predator (D-165): breathing, weight shifts, head glances, blinks; heavier stride with size; tail, throat and
+  jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.
+- Damage on impact (D-166): a big attack's damage waits for the strike. Owner: lead's builder. Status: not started.
+- Railgun volleys staggered to about 2 hits per squad per second (D-166). Owner: lead's builder. Status: not started.
+- Cheaper Thunder Beam levels so the last unlock lands at about 2 h (D-167). Owner: lead's builder. Status: not started.
+- Heli wrecks crush tanks and rooftop squads too (D-167, PR #166 back to its first build). Owner: VFX lead. Status:
+  not started.
+- The whale in the water between the play city and the distant city (D-168), with sky and sea life. Owner: demo-end
+  session. Status: not started.
+- Suno music this week (D-169); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
+  the downloads.
+- Rig test, up to 100 Tripo credits on the croc's tail (D-170). Owner: VFX lead's asset session. Status: not started.

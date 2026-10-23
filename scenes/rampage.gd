@@ -48,6 +48,7 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -244,7 +245,7 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
-			_kaiju.stomp()
+			_land.lift(_kaiju)
 			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
@@ -264,13 +265,10 @@ func _on_event(event: Dictionary) -> void:
 			var b := sim.buildings[Num.i(event["building"])]
 			var topple := str(event["kind"]) == "topple"
 			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
-		"tank_spawned":
-			_tanks.spawn(Num.i(event["tank"]))
-		"tank_fired", "stray_landed":
+		"tank_spawned", "tank_fired", "tank_destroyed", "stray_landed":
 			_tanks.on_event(event, _kaiju_at)
-		"tank_destroyed":
-			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
-			_tanks.destroy(Num.i(event["tank"]), at)
+		"building_regrown":
+			_city.regrow(Num.i(event["building"]))
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
@@ -309,13 +307,13 @@ func _update_kaiju(delta: float, moving: float) -> void:
 func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 	var stomped := _stomp_wait > 0.0 and side != "tail"
 	if stomped:
-		_land_stomp(at)
+		_land_stomp(side, at)
 	sfx.footstep(strength)
 	var size := sim.body_scale() * (0.2 + strength)
 	if side != "tail":  # a tail slam throws its own puffs (Fx.shockwave)
 		_city.fx.footfall(at + Vector3(0, 0.2, 0), FOOTFALL_DUST * size)
 	var ring := _stomp_radius * 1.3 * Fx.STOMP_RING if stomped else FOOTFALL_RING * size
-	_city.fx.shockwave(at, ring, side == "tail")
+	_city.fx.shockwave(at, ring, side == "tail", stomped)
 	_step_dip = maxf(
 		_step_dip, FOOTFALL_DIP * maxf(FOOTFALL_DIP_FLOOR, sim.body_scale()) * strength
 	)
@@ -323,10 +321,10 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 
 ## The waiting stomp lands under the foot that delivers it: cracks (if heavy enough), the street
 ## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
-func _land_stomp(at: Vector3) -> void:
+func _land_stomp(side: String, at: Vector3) -> void:
 	_stomp_wait = 0.0
 	var heavy := _power("stomp_damage")
-	sfx.stomp(heavy, ability_fx.stomp_cracks(at, _stomp_radius, heavy))
+	sfx.stomp(heavy, _land.landed(side, ability_fx.stomp_cracks(at, _stomp_radius, heavy)))
 	var street := _city.street  # the foot lands wider than its ring (stomp_catch)
 	var catch := street.tune("stomp_catch") * sim.body_scale() if street != null else 0.0
 	_city.crush(at, _stomp_radius + catch)

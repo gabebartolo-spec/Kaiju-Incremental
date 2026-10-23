@@ -172,7 +172,7 @@ func _check_railgun_hit() -> void:
 	agent.wait = 1.0e9  # it holds its roof (its hop would take it past the railgun's range here)
 	var next := _run(sim, 10.0)  # it fires about every 12 s (D-152)
 	check(
-		_first(next, "railgun_aim").is_empty() and Num.f(rail["cooldown"]) == 12.0,
+		_aims_by(next, agent.id).is_empty() and Num.f(rail["cooldown"]) == 12.0,
 		"the same agent does not aim again within 10 s of its shot"
 	)
 	next = _run(sim, 8.0)

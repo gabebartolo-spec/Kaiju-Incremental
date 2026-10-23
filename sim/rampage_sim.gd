@@ -82,6 +82,9 @@ var tanks_destroyed := 0
 var ability_ready_in := 0.0
 var over := false
 var end_reason := ""
+## Seconds the rampage has run, and the demo's Endless mode (Endless), null in a normal run.
+var elapsed := 0.0
+var endless: Endless
 var arena_half: float
 var next_fall_id := 0
 var collapse: Collapse
@@ -176,6 +179,11 @@ func reach_top() -> float:
 	return stand_y + reach_height()
 
 
+## Chunks' worth of how far the city has fallen, as the army and air wing escalate on it.
+func escalation() -> int:
+	return chunks_destroyed + Endless.escalation(self)
+
+
 func destruction() -> float:
 	return Num.f(chunks_destroyed) / maxf(1.0, Num.f(chunks_total))
 
@@ -184,6 +192,8 @@ func result() -> Dictionary:
 	return {
 		"rubble": Num.i(floor(rubble)),
 		"destruction": destruction(),
+		"buildings": collapse.destroyed_buildings(),
+		"seconds": elapsed,
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
 		"rooftops": army_units.rooftops_destroyed,
@@ -198,11 +208,11 @@ func result() -> Dictionary:
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
-	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
 	if over or emerge.step(self, dt):
 		return _events
 	time_left -= dt
+	elapsed += dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
 	var moving := move.length() > 0.05
@@ -223,7 +233,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
 		_signature()
 	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
-	if ultimate_pressed and ultimate_ready_in <= 0.0 and powers.has_ultimate():
+	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
 		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
 		powers.ultimate()
 	powers.step(dt, signature_held)
@@ -231,12 +241,10 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	army_units.step(dt)
 	air.step(dt)
-	if chunks_destroyed >= chunks_total:
-		end("city_fallen")
-	elif hp <= 0.0:
-		end("defeated")
-	elif time_left <= 0.0:
-		end("time")
+	Endless.step(self, dt)
+	var why := Endless.over_reason(self)
+	if why != "":
+		end(why)
 	return _events
 
 

@@ -1,18 +1,23 @@
 class_name DemoEnd
 extends Control
-## The demo's last screen (D-050). After the demo's end evolution and its reveal (and on every
-## Continue after it), the stage the full game holds next (data "demo.tease_size": the adult)
-## stands beside the tower it would topple, on the reveal's own set and camera (RevealStage),
-## under the demo lines from data/tuning.json "demo". It roars only from a baked clip (ClipGait,
-## D-047): the procedural roar drops the jaw straight down, so a rig without clips stands idle.
-## Title or Quit; the save is untouched.
+## The demo's thanks screen (D-050, D-145, D-152, D-156). It follows the final upgrade: the adult
+## stands beside the tower it would topple, on the reveal's own set and camera (RevealStage), under
+## the demo lines and the rampage totals (Demo.rows, counted by the sim). Leave feedback opens the
+## invite-only Itch page's comments (D-148), Try Endless mode starts Endless mode (unlocked by the
+## final upgrade), Keep playing returns to the tree (normal mode). It roars only from a baked clip
+## (ClipGait, D-047): the procedural roar drops the jaw straight down. The save is untouched.
 
-signal title_pressed
+signal keep_pressed
+signal endless_pressed
+signal feedback_pressed
 
 ## Frame-paced like the reveal: a clip roar on arrival, then again every ROAR_EVERY frames (the
 ## clip gait idles in between).
 const ROAR_EVERY := 360
-const BUTTON_WIDTH := 320
+const BUTTON_WIDTH := 400
+const STAT_WIDTH := 220
+## The text under the frame: title, line, three stat rows and the buttons (the reveal keeps less).
+const TEXT_RESERVE := 480.0
 ## The card draws the scene at 80% and shifted right by this share of the picture, so the croc
 ## keeps a clear margin on every side (critic r2: head cut at the left, feet at the bottom).
 const VIEW_BACK := 1.25
@@ -28,6 +33,11 @@ var roars := 0
 ## The 3D frame (read by the flow suite).
 var view: SubViewportContainer
 var roar_sounds := 0
+## Opens a URL (tests swap it so no browser opens).
+var opener := Callable(OS, "shell_open")
+## The totals shown, and the rows drawn from them (read by the flow suite).
+var totals: Dictionary
+var stat_values: Array[String] = []
 var _colors: Dictionary
 var _scale: float
 var _floors: int
@@ -35,12 +45,14 @@ var _kaiju: KaijuModel
 var _frame := 0
 
 
-## species: the save's species; base_stats: tuning "kaiju" (the tease's size tier goes on top).
-func setup(species: Dictionary, base_stats: Dictionary) -> void:
+## species: the save's species; base_stats: tuning "kaiju" (the thanks size tier goes on top);
+## p_totals: the save's demo totals (Demo.add).
+func setup(species: Dictionary, base_stats: Dictionary, p_totals := {}) -> void:
 	species_id = str(species["id"])
 	_colors = species["colors"]
+	totals = p_totals
 	var stats := base_stats.duplicate()
-	stats["size"] = Num.i(Content.section("demo")["tease_size"])
+	stats["size"] = Num.i(Content.section("demo")["thanks_size"])
 	var city: Dictionary = CityGrowth.for_stats(stats)["city"]
 	stage = KaijuModel.stage_for(Num.i(stats["size"]))
 	_scale = Growth.body_scale(stats, city)
@@ -56,7 +68,7 @@ func _ready() -> void:
 	col.offset_bottom = -EvolutionReveal.EDGE_MARGIN
 	col.add_theme_constant_override("separation", 12)
 	add_child(col)
-	view = EvolutionReveal.frame_view(self)  # the reveal's frame, same size and place
+	view = EvolutionReveal.frame_view(self, TEXT_RESERVE)  # the reveal's frame, same size and place
 	col.add_child(EvolutionReveal.frame_around(view))
 	var viewport := SubViewport.new()
 	viewport.own_world_3d = true
@@ -74,17 +86,41 @@ func _ready() -> void:
 	var line := UiKit.label(str(demo["end_line"]), UiKit.SIZE_HEAD, UiKit.TEXT)
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(line)
+	col.add_child(_stats_grid())
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 24)
 	col.add_child(row)
-	var title := _button(row, "MAIN MENU", UiKit.ACCENT)
-	title.pressed.connect(func() -> void: title_pressed.emit())
-	if not OS.has_feature("web"):
-		_button(row, "QUIT", UiKit.PANEL_EDGE).pressed.connect(
-			func() -> void: QuitGame.now(get_tree())
-		)
-	title.grab_focus.call_deferred()
+	_button(row, "LEAVE FEEDBACK", UiKit.PANEL_EDGE).pressed.connect(_on_feedback)
+	var endless := _button(row, "TRY ENDLESS MODE", UiKit.ACCENT)
+	endless.pressed.connect(func() -> void: endless_pressed.emit())
+	_button(row, "KEEP PLAYING", UiKit.PANEL_EDGE).pressed.connect(
+		func() -> void: keep_pressed.emit()
+	)
+	endless.grab_focus.call_deferred()
+
+
+## The rampage totals, label left and figure right, two columns wide.
+func _stats_grid() -> GridContainer:
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	grid.add_theme_constant_override("h_separation", 40)
+	grid.add_theme_constant_override("v_separation", 6)
+	for row: PackedStringArray in Demo.rows(totals):
+		var name_label := UiKit.label(row[0], UiKit.SIZE_BODY, UiKit.MUTED)
+		grid.add_child(name_label)
+		var value := UiKit.label(row[1], UiKit.SIZE_HEAD, UiKit.TEXT)
+		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		value.custom_minimum_size = Vector2(STAT_WIDTH, 0)
+		grid.add_child(value)
+		stat_values.append(row[1])
+	return grid
+
+
+func _on_feedback() -> void:
+	feedback_pressed.emit()
+	opener.call(Demo.feedback_url())
 
 
 func _process(delta: float) -> void:

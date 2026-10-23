@@ -184,6 +184,14 @@ func stomp() -> void:
 		_squash = 1.0
 
 
+## The foot the latest stomp lifted ("left" / "right"), or "" when it lifted none: walking, the
+## clip's own footfall delivers the stomp (ClipGait.stomped_side).
+func stomped_side() -> String:
+	if _rig != null and _rig.gait is ClipGait:
+		return (_rig.gait as ClipGait).stomped_side()
+	return ""
+
+
 func roar() -> void:
 	if _rig != null:
 		_rig.roar()

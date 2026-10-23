@@ -3,7 +3,9 @@ extends RefCounted
 ## The claw swipe's cue (Claws, D-095; PR #89 motion review): broad hot claw marks that fan out
 ## from the claw tip along the arm's rake arc (centred on the raking shoulder, at the arm's
 ## reach), drawn across the front as the arm crosses, plus a debris puff where the claws strike.
-## Sized up on a young body so the rake reads at the game camera. Additive, fading in a moment,
+## They show a beat after the arm crosses and sweep on along its arc in about three frames, gone a
+## few frames later: follow-through, not a bar. Sized up on a young body so the
+## rake reads at the game camera. Additive, fading in a moment,
 ## so it never hides the kaiju (D-025). Presentation only; sizes and timings: "claw_fx".
 
 ## One unit box every claw mark scales (b2-3: a new mesh per segment cost a swipe 17 ms).
@@ -29,6 +31,12 @@ static func play(
 		centre = arc["centre"]
 		radius = Num.f(arc["radius"])
 	radius *= Num.f(cfg["arc_reach"])
+	var strike := (
+		centre + _arc_point(ahead, across, side, radius, 0.0, Num.f(cfg["arc_drop"]) * radius * 0.5)
+	)
+	if arc.get("trailed", false):  # the arm lays its own streak (ClawTrail): only the dust is left
+		_strike_dust(city, strike, Num.f(cfg["puff"]) * bs * boost)
+		return
 	var root := Node3D.new()
 	city.add_child(root)
 	root.global_position = centre
@@ -40,7 +48,6 @@ static func play(
 	var a1 := deg_to_rad(Num.f(cfg["arc_to_deg"]))
 	var drop := Num.f(cfg["arc_drop"]) * radius
 	var streaks := Num.i(cfg["streaks"])
-	var cross := a0 / maxf(0.001, a0 - a1)  # how far along the arc the snout line is
 	var hidden: Dictionary = {}  # segment index along the arc -> the streaks' segments there
 	for n: int in streaks:
 		var r := radius + (n - (streaks - 1) * 0.5) * gap
@@ -58,21 +65,24 @@ static func play(
 			root.add_child(seg)
 			seg.look_at_from_position(centre + (p0 + p1) * 0.5, centre + p1, Vector3.UP)
 			seg.scale = Vector3(thick * taper, thick * 0.35, p0.distance_to(p1) * 1.05)
-			if u0 >= cross:  # the arm crosses the snout line now: the rest draws on
-				seg.visible = false
-				var at: Array = hidden.get_or_add(k, [])
-				at.append(seg)
+			seg.visible = false  # the whole stroke draws on, from the arm's outer end to its far end
+			var at: Array = hidden.get_or_add(k, [])
+			at.append(seg)
 	var tween := root.create_tween()
-	var draw := Num.f(cfg["strike_s"]) * 0.5
+	root.visible = false  # the marks follow the arm by a beat (slash_delay_s): follow-through
+	tween.tween_callback(root.show).set_delay(Num.f(cfg["slash_delay_s"]))
+	var draw := Num.f(cfg["sweep_s"])
 	for k: int in hidden:
 		var at: Array = hidden[k]
 		tween.tween_callback(_show_all.bind(at)).set_delay(draw / maxf(1.0, hidden.size()))
 	tween.tween_property(mat, "albedo_color:a", 0.0, Num.f(cfg["fade_s"]))
 	tween.tween_callback(root.queue_free)
 	# The claws strike: a puff of debris dust where the arc crosses the snout line.
-	var hit := centre + _arc_point(ahead, across, side, radius, 0.0, drop * 0.5)
-	hit.y = maxf(0.3, hit.y * 0.5)
-	city.fx.dust(hit, Num.f(cfg["puff"]) * bs * boost)
+	_strike_dust(city, strike, Num.f(cfg["puff"]) * bs * boost)
+
+
+static func _strike_dust(city: CityView, at: Vector3, size: float) -> void:
+	city.fx.dust(Vector3(at.x, maxf(0.3, at.y * 0.5), at.z), size)
 
 
 ## A point on the rake arc, from the centre: at `angle` from straight ahead toward the raking

@@ -15,7 +15,7 @@ static var pair_checks := 0
 ## For each building, side (BuildingCells.SIDES) -> how many floors of it a touching
 ## neighbour covers (the tallest one, where several share the side). Buildings are bucketed in
 ## a coarse grid first, so each is compared only with those in its own cells: about linear in
-## the building count (an Apex city is 2,400 buildings; all pairs would be 5.9M).
+## the building count (the adult city is thousands of buildings; all pairs would be millions).
 static func of(buildings: Array[RampageSim.Building]) -> Array[Dictionary]:
 	var grid := {}
 	for n: int in buildings.size():

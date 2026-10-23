@@ -15,9 +15,9 @@ const SWING_DEG := 25.0
 const LIGHT_STEP := 7  # every this-th lamp is a camera spot on the recorded light path
 
 
-## BuildingFade on stage 4's 4,435 buildings along a recorded walk.
+## BuildingFade on the adult (stage 3) city's buildings along a recorded walk.
 static func fade(check: Callable) -> void:
-	var sim := _stage4()
+	var sim := _adult()
 	var cfg := Content.section("camera")
 	var fader := BuildingFade.new(sim.buildings, func(_n: int) -> BuildingView: return null)
 	var rest := CameraTuning.offset() * CameraTuning.zoom(sim.body_scale())
@@ -90,9 +90,9 @@ static func fade(check: Callable) -> void:
 	check.call(same_fade, "every faded building's opacity matches the old scan's on every frame")
 
 
-## Stage 4's city (seed 0) with its kaiju.
-static func _stage4() -> RampageSim:
-	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[3], "reptilian")
+## The adult stage's city (seed 0) with its kaiju.
+static func _adult() -> RampageSim:
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[2], "reptilian")
 	var stats := UpgradeTree.run_stats(
 		Content.section("kaiju"), Content.species_def("reptilian"), tree
 	)
@@ -122,11 +122,11 @@ static func _reference(
 	return out
 
 
-## LightPool.nearest over stage 4's night city lamps along a recorded path, and over a lattice of
+## LightPool.nearest over the adult city's night lamps along a recorded path, and over a lattice of
 ## equidistant lights with some dark ones (ties go to the earlier light in the tree).
 static func lights(root: Node, check: Callable) -> void:
 	Content.set_time(Content.time_for_run(1))  # night: the lamps are lit
-	var sim := _stage4()
+	var sim := _adult()
 	var holder := Node3D.new()
 	root.add_child(holder)
 	var pool := LightPool.new()

@@ -17,12 +17,7 @@ extends SceneTree
 ## helicopter and squad shares are counted from their events, the tanks' is the rest.
 
 const DT := 1.0 / 15.0
-const LEVELS := {
-	1: {},
-	2: {"evolve1": 1},
-	3: {"evolve1": 1, "evolve2": 1},
-	4: {"evolve1": 1, "evolve2": 1, "evolve3": 1}
-}
+const LEVELS := {1: {}, 2: {"evolve1": 1}, 3: {"evolve1": 1, "evolve2": 1}}
 ## The loop's corners, as a fraction of the arena's half width; a corner counts as reached
 ## within REACHED metres.
 const LOOP := [Vector2(0.5, 0.5), Vector2(-0.5, 0.5), Vector2(-0.5, -0.5), Vector2(0.5, -0.5)]

@@ -51,7 +51,10 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - **Motion:** terrifying monsters, not toys (D-013). Turns with weight, "lumbering and unstoppable" yet responsive:
   bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
   shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
-  antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047).
+  antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047). Standing still he
+  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking. Strides
+  grow heavier with size; tail, throat and jowls swing on each footfall; a short crouch before the dash (D-165).
+  A big attack's damage lands when the jaws or foot land (D-166).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
   breaks it (D-091, D-110, comments #24). A tower that falls on him breaks believably at the contact, large pieces
   folding off him, "not turned instantly to dust" (#25). A fallen building breaks
@@ -60,7 +63,8 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - **Models:** Tripo designs, hand-rigged in Blender with welded weights, rendered as voxel cubes on a smooth skinned
   lattice (D-041, D-045). The kaiju gets double voxels per axis, the city keeps today's size (D-107). Mantis and
   octopus meshes kept; their game-ready plan is `docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md`,
-  plan only (D-060).
+  plan only (D-060). One look built from blocks, close shots included: far blur on the kaiju, cool shadows with warm
+  fire, roads and lawns in the city's fine blocks (D-163). New heads are looks only at first (D-166).
 
 ## The city
 - Voxel, Look C "Concrete Realism", real structures with recessed framed facades and rooftop clutter, matching the
