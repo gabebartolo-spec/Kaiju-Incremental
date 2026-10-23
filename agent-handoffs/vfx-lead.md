@@ -84,7 +84,8 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   0.8/0.6/0.5% body height (>=0.25%), <=0.6%/s, damp the idle clip's baked breath at runtime (no re-bake); B/C wait for the gait
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
   SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
-  camera; weak kaiju silhouette at night; D-154 rampage haze unbuilt. one-look phase 1 parked 849d9e06 (cut haze).
+  camera; weak kaiju silhouette at night (mine). D-154 haze/orange sky/blackouts + weather looks moved to the
+  ATMOSPHERE LEAD (D-189, local_3dbe2472). Cap: 2 engine builders per lead (6 total); helis 'Never block your view'. one-look phase 1 parked 849d9e06 (cut haze).
 - Claw rake: no-engine PREP builder (PLAN.md in notes claw_rake/, base gait-fix), builds in the next free slot (director: swipe 'laughable, not dangerous', chose 'Heavy raking arc'; brief_claw_rake.md: telescoping arm scale, arm-only, 0.62 s toy timing, high flap, linear legs; bars at 3 stages; sim windup 0.3 s fixed; per-stage windup = his question only if the critic needs it). Order: gait -> claw rake -> motion pass -> D-165 B/C -> D-183 view -> Thunder Beam r7.
 - D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
 - slot 3 LENT until the motion gate merges: gait-2 (Opus). claude/gait-fix c661d731 = merge of the lead's gait-step-len
