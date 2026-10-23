@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-195 · Director · Cascadeur stays; he clicks to apply AutoPhysics
+
+Crux test (D-194): agents can switch Cascadeur's AutoPhysics on and run it by script (the croc's body moved up to 1.6 m from the keys, solve under 0.5 s), but applying the result always opens a "Which frames?" box (all frames, every frame keyed first, one frame at a time: each asked). Cascadeur's Python has no answer for it and Windows cannot reach its buttons. Offered: research other tools first, keep Cascadeur with his click, or ask Nekki. He chose "Keep Cascadeur, you click": "i can click ofc". Agents do everything else and tell him when a box is up; he clicks All Frames.
+
 ## 2026-10-23 · D-194 · Director · Cascadeur Pro 14-day trial to test the animation prototype; nothing from it ships
 
 For the D-193 pipeline he asked about Cascadeur's 14-day trial; its licence forbids commercial use ("This licence type prohibits any Commercial Use", cascadeur.com/agreement, Pro Trial), so nothing made in it could ship. Offered Indie ($12 a month billed yearly, $144; commercial use while revenue is under $100k a year; FBX export; no retargeting): "ok lets try indie", then "no i will get the pro 14 day trial". He signs up and owns the account; Claude installs and drives it to test whether it can animate the croc. The trial forbids commercial use, so nothing made in it ships: any clip we keep is remade under a paid licence (Indie under $100k revenue a year, else Pro), which needs his yes then. No spend now. New croc models for Cascadeur, if ours do not suit it: "Im happy to let you make new models if these ones are not ideal for Cascadeur"; on Tripo credits: "you have my consent".
@@ -392,9 +396,3 @@ Why: the WP3 review found islands before any carve (panes, signs, tanks, glass c
 fixture by 26-neighbour touch, and a fixture never carries a structural cell; grid layer 0 is the ground (a shopfront on
 the street stands). Glass towers get a hidden structural frame (columns every `destruction.column_bay` cells, a beam
 behind the transom row), in sim and view alike. Built in #97 (WP1) and #98 (WP3).
-
-## 2026-10-20 · D-099 · Director · Carved towers fall by real physics, even onto the kaiju
-Why (asked through the question tool): true physics is the headline (D-097); a cut tower goes over toward the side that
-was cut away, wherever the kaiju stands, and can land on it. Supersedes D-096's lead call "an undermined tower falls away
-from the kaiju". Changes: carving WP1/WP5 keep the support rule's own direction; #89 drops its "every topple falls away"
-override (croc-contact builder, 2026-10-20) before it merges.
