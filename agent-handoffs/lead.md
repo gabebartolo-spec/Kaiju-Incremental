@@ -31,7 +31,8 @@
   fresh motion critic, lead's check, then to him. Offer a switchable test build if the clip can't show the feel.
   Pushed 9b425a71 (gait 24/0, motion 30/0, smoke 47/0, city 175/0; StepTurn 90 deg re-pinned 1.55-1.9 s). Rise point
   with the real Behemoth (seeds 7301/1234/98765): base 2/8/8 s, A 4/8/12 (one fails 10 s), B 3.5/9.7/10: tell him
-  in the A/B question. Music builder waits for a lead slot (turn-weight frees after the clip).
+  in the A/B question. CLIP DONE scratchpad tw/turn_ab.mp4 (faab304d; A and B look alike). B fails the motion gate's
+  turn-centre-on-a-planted-foot bar (0.63 vs 0.6, older build; rerun 45 s after pause) and sometimes 3 real steps not 4. Music builder waits for a lead slot (turn-weight frees after the clip).
   kaiju_pos sits behind the feet (toe 2.4/4.8/11.6 u ahead young/Behemoth/Colossus). DEFECT: the sim stomp damage
   centres on kaiju_pos (rampage_sim.gd _stomp) while the view draws the ring at the delivering foot (rampage.gd
   _land_stomp), 5-12 u apart. Fix (bug fix under D-166, no ask): stomp centre = the delivering foot's point; check
