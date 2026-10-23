@@ -95,16 +95,8 @@ func crashed(event: Dictionary) -> void:
 	HeliFx.fireball(_city, ground + Vector3(0, 1.0, 0), _cfg, Num.f(_cfg["crash_fireball"]))
 	HeliFx.smoke_puff(_city, ground + Vector3(0, 1.5, 0), _cfg, Num.f(_cfg["crash_smoke"]))
 	# A lasting fire at the wreck: real flame tongues, less of Fire's own smoke column.
-	var thin := {
-		"zoom": 1.0,
-		"smoke_share": 1.0,
-		"density": 1.0,
-		"wind": 1.0,
-		"puff": 1.0,
-		"ember_density": 1.0,
-		"smoke_density": Num.f(_cfg["crash_smoke_density"]),
-	}
-	_city.fire(ground, Num.f(_cfg["crash_fire"]), thin)
+	var tongues := _tongues(Num.f(_cfg["crash_density"]), Num.f(_cfg["crash_smoke_density"]))
+	_city.fire(ground, Num.f(_cfg["crash_fire"]), tongues)
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
 	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
@@ -130,6 +122,20 @@ func _process(delta: float) -> void:
 
 ## One frame of a wreck falling: its height drops slowly then fast (it falls, it is not lowered),
 ## it pitches nose down, rolls and spins up as it goes; its flames and smoke follow it.
+## Fire's own options for a fire of denser flames and less smoke than a street fire: more flame
+## voxels (never bigger ones) and a thinner smoke column, so the tongues read at the game camera.
+func _tongues(flames: float, smoke: float) -> Dictionary:
+	return {
+		"zoom": 1.0,
+		"smoke_share": 1.0,
+		"density": flames,
+		"wind": 1.0,
+		"puff": 1.0,
+		"ember_density": 0.5,
+		"smoke_density": smoke,
+	}
+
+
 func _fall(fall: Fall, delta: float) -> void:
 	fall.t += delta
 	var u := clampf(fall.t / fall.seconds, 0.0, 1.0)
@@ -230,7 +236,8 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	if fall.side.length() < 0.5:
 		fall.side = Vector3.RIGHT
 	for k: int in 3:  # flames along the body: nose, middle, tail
-		var fire := Fire.new(Num.f(_cfg["trail_fire"]), at.x - at.z + k)
+		var tongues := _tongues(Num.f(_cfg["hull_density"]), Num.f(_cfg["hull_smoke"]))
+		var fire := Fire.new(Num.f(_cfg["trail_fire"]), at.x - at.z + k, tongues)
 		_city.add_child(fire)
 		fire.global_position = at
 		for child: Node in fire.get_children():
