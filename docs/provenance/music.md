@@ -26,3 +26,9 @@ docs/audio/music-briefs.md, Weirdness 35%, Style Influence 70%, Duration 3:00. B
 | 2026-10-23 | theme | F2 (D-182 war-machine march) | https://suno.com/song/8f3cf329-484d-4dd3-bee8-b86575c8f635 | (pair) | |
 | 2026-10-23 | theme | P1 (D-182 stalking villain march) | https://suno.com/song/46e48397-0e8f-4774-a0b7-3a4dda81dc9b | 10 (pair) | |
 | 2026-10-23 | theme | P2 (D-182 stalking villain march) | https://suno.com/song/22600579-6cca-4ddd-a929-8e8a5285d1c8 | (pair) | |
+| 2026-10-23 | theme | Y1 (legato theme with payoff) | https://suno.com/song/dd30e939-6bc6-418f-a39d-4be6461f0040 | 10 (pair) | |
+| 2026-10-23 | theme | Y2 (legato theme with payoff) | https://suno.com/song/d4a04ba2-b04f-4f8d-a995-ca064503b74b | (pair) | |
+| 2026-10-23 | theme | Y3 (legato theme with payoff) | https://suno.com/song/f3f7508f-6d66-458d-bbc2-ab8c082c778d | 10 (pair) | |
+| 2026-10-23 | theme | Y4 (legato theme with payoff) | https://suno.com/song/d4068a8b-012c-4a92-92e1-407fa6adde79 | (pair) | |
+
+Credits used so far: 120 of 800 (D-174).
