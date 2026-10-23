@@ -33,9 +33,9 @@ void fragment() {
 	float h = clamp((world_at.y - base_y) / flame_h, 0.0, 1.0);
 	float radial = length(world_at.xz - axis) / half_w;
 	// the hot core: low on the axis only
-	float core = (1.0 - smoothstep(0.08, 0.28, h)) * (1.0 - smoothstep(0.35, 0.95, radial));
-	vec3 hot = mix(vec3(1.0, 0.80, 0.38), vec3(1.0, 0.94, 0.72), smoothstep(0.3, 1.0, core));
+	float core = (1.0 - smoothstep(0.12, 0.4, h)) * (1.0 - smoothstep(0.4, 1.0, radial));
+	vec3 hot = mix(vec3(1.0, 0.78, 0.30), vec3(1.0, 0.96, 0.80), smoothstep(0.7, 0.95, core));
 	vec3 c = mix(ramp(h), hot, core);
-	ALBEDO = c * heat;
+	ALBEDO = c * heat * (1.0 + 0.9 * smoothstep(0.7, 0.95, core));  // the core is hotter than the body
 	ALPHA = COLOR.a * (1.0 - 0.5 * smoothstep(0.7, 1.0, h));
 }

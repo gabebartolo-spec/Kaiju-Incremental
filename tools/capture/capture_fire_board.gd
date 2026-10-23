@@ -15,7 +15,8 @@ const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1, "sig_power": 2,
 const SETTLE := 120
 const SPOT := Vector3(7.0, 0.0, -7.0)
 const ROOF := 5.0
-const SPACING := 3.4
+const SPACING := 4.2
+const COUNT := 2  # a building's two roof fires, every one in the frame treated alike
 const SIZE := 1.2  # a building's fire (fire_spread.view_size)
 const FRAMES := 240
 
@@ -54,25 +55,28 @@ func _run(run: int) -> void:
 	var city: CityView = _rampage.get("_city")
 	var feet := Vector3(_rampage.sim.kaiju_pos.x, 0.0, _rampage.sim.kaiju_pos.y)
 	var spot := feet + SPOT * _rampage.sim.body_scale() + Vector3(0, ROOF, 0)
-	var fires: Array[Fire] = []
-	for k: int in 3:
-		var fire := Fire.new(SIZE, 3.0 + k)
-		var at := spot + Vector3((k - 1) * SPACING, 0, 0)
-		city.add_child(fire)
-		fire.global_position = at
-		_dress(fire, k, at)
-		fires.append(fire)
-	await Kit.frames(self, FRAMES)
 	var cam := root.get_viewport().get_camera_3d()
 	var size := Vector2(root.get_texture().get_image().get_size())
-	for k: int in 3:
-		var px := Kit.image_point(self, cam, fires[k].global_position + Vector3(0, 1.4, 0), size)
-		_points["abc"[k]] = [px.x, px.y]
-	Kit.still(self, _out, "board")
-	for fire: Fire in fires:
-		fire.queue_free()
-	await Kit.frames(self, FRAMES)
-	Kit.still(self, _out, "none")
+	for look: String in ["none", "a", "b", "c"]:
+		var fires: Array[Fire] = []
+		for k: int in COUNT:
+			var fire := Fire.new(SIZE, 3.0 + k)
+			var at := spot + Vector3((k - (COUNT - 1) * 0.5) * SPACING, 0, 0)
+			city.add_child(fire)
+			fire.global_position = at
+			if look != "none":
+				_dress(fire, "abc".find(look), at)
+			fires.append(fire)
+		await Kit.frames(self, FRAMES)
+		for k: int in COUNT:
+			var px := Kit.image_point(
+				self, cam, fires[k].global_position + Vector3(0, 1.4, 0), size
+			)
+			_points[str(k)] = [px.x, px.y]
+		Kit.still(self, _out, look)
+		for fire: Fire in fires:
+			fire.queue_free()
+		await Kit.frames(self, 20)
 	var file := FileAccess.open(_out.path_join("points.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(_points))
 	file.close()
@@ -90,9 +94,9 @@ func _dress(fire: Fire, k: int, at: Vector3) -> void:
 	systems[1].queue_free()  # the core column
 	match k:
 		0:
-			fire.add_child(_plates(at, 1.9, 0.55, false))
+			fire.add_child(_plates(at, 2.6, 0.6, false))
 		1:
-			fire.add_child(_plates(at, 2.4, 0.5, true))
+			fire.add_child(_plates(at, 2.5, 0.55, true))
 		_:
 			fire.add_child(_tongues())
 
@@ -108,10 +112,10 @@ func _plates(at: Vector3, flame_h: float, half_w: float, tall: bool) -> GPUParti
 	mat.direction = Vector3.UP
 	mat.spread = 6.0 if tall else 12.0
 	mat.gravity = Vector3(0, 2.2 if tall else 2.5, 0)
-	mat.initial_velocity_min = 1.1 if tall else 0.8
-	mat.initial_velocity_max = 2.2 if tall else 2.0
-	mat.scale_min = Fire.FLAME_SCALE.x
-	mat.scale_max = Fire.FLAME_SCALE.y
+	mat.initial_velocity_min = 1.1 if tall else 1.7
+	mat.initial_velocity_max = 2.2 if tall else 3.3
+	mat.scale_min = Fire.FLAME_SCALE.x * (1.2 if tall else 1.3)
+	mat.scale_max = Fire.FLAME_SCALE.y * (1.2 if tall else 1.3)
 	var sizes := Curve.new()
 	sizes.add_point(Vector2(0, 0.7 if tall else 1.0))
 	sizes.add_point(Vector2(0.15, 1.0))
@@ -129,7 +133,7 @@ func _plates(at: Vector3, flame_h: float, half_w: float, tall: bool) -> GPUParti
 	draw.set_shader_parameter("axis", Vector2(at.x, at.z))
 	draw.set_shader_parameter("half_w", half_w)
 	cube.material = draw
-	return _system(mat, cube, roundi((170 if tall else 130) * maxf(1.0, SIZE)), 1.0)
+	return _system(mat, cube, roundi((300 if tall else 220) * maxf(1.0, SIZE)), 1.0)
 
 
 ## Soft tongues (tongue.gdshader): a few big camera-facing teardrops rising and flickering.
@@ -161,12 +165,12 @@ func _tongues() -> GPUParticles3D:
 	seeds_tex.gradient = seeds
 	mat.color_initial_ramp = seeds_tex
 	var quad := QuadMesh.new()
-	quad.size = Vector2(1.5, 3.4)
-	quad.center_offset = Vector3(0, 1.5, 0)  # the foot at the particle, the tip 3.4 m up
+	quad.size = Vector2(1.15, 2.7)
+	quad.center_offset = Vector3(0, 1.2, 0)  # the foot at the particle, the tip 2.7 m up
 	var draw := ShaderMaterial.new()
 	draw.shader = TONGUE
 	quad.material = draw
-	return _system(mat, quad, 26, 1.0)
+	return _system(mat, quad, 22, 1.0)
 
 
 func _alpha_ramp(alphas: Array, offsets: Array = [0.0, 0.3, 1.0]) -> GradientTexture1D:

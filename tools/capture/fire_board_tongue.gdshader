@@ -41,8 +41,8 @@ void fragment() {
 	vec3 c = mix(base, orange, smoothstep(0.0, 0.16, h));
 	c = mix(c, red, smoothstep(0.25, 0.5, h));
 	c = mix(c, deep, smoothstep(0.5, 0.85, h));
-	float core = (1.0 - smoothstep(0.05, 0.34, h)) * (1.0 - smoothstep(0.0, 0.55, abs(x)));
-	c = mix(c, mix(vec3(1.0, 0.8, 0.38), vec3(1.0, 0.94, 0.72), core), core);
-	ALBEDO = c * heat;
-	ALPHA = mask * COLOR.a;
+	float core = (1.0 - smoothstep(0.06, 0.34, h)) * (1.0 - smoothstep(0.0, 0.55, abs(x)));
+	c = mix(c, mix(vec3(1.0, 0.78, 0.30), vec3(1.0, 0.96, 0.80), smoothstep(0.7, 0.95, core)), core);
+	ALBEDO = c * heat * (1.0 + 0.9 * smoothstep(0.7, 0.95, core));
+	ALPHA = clamp(mask * 1.5, 0.0, 1.0) * COLOR.a;
 }
