@@ -83,11 +83,11 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
   SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
   camera; weak kaiju silhouette at night; D-154 rampage haze unbuilt. one-look phase 1 parked 849d9e06 (cut haze).
-- NEXT FREE SLOT: claw rake (director: swipe 'laughable, not dangerous', chose 'Heavy raking arc'; brief_claw_rake.md: telescoping arm scale, arm-only, 0.62 s toy timing, high flap, linear legs; bars at 3 stages; sim windup 0.3 s fixed; per-stage windup = his question only if the critic needs it). Order: gait -> claw rake -> motion pass -> D-165 B/C -> D-183 view -> Thunder Beam r7.
+- Claw rake: no-engine PREP builder (PLAN.md in notes claw_rake/, base gait-fix), builds in the next free slot (director: swipe 'laughable, not dangerous', chose 'Heavy raking arc'; brief_claw_rake.md: telescoping arm scale, arm-only, 0.62 s toy timing, high flap, linear legs; bars at 3 stages; sim windup 0.3 s fixed; per-stage windup = his question only if the critic needs it). Order: gait -> claw rake -> motion pass -> D-165 B/C -> D-183 view -> Thunder Beam r7.
 - D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
 - slot 3 LENT until the motion gate merges: gait-2 (Opus). claude/gait-fix c661d731 = merge of the lead's gait-step-len
   841f93e2: MOTION GATE ALL GREEN (motion 30/0, smoke 47/0, clips 14/0, gait 10/0; jerk young 2.7 / Behemoth 4.3).
-  Next: 3 stage clips + Colossus held-curve camera clip -> motion critic -> SHIP; merge after #173.
+  681ce75c PR #175: 4 clips in notes gait/clips (camera: no swing, no change) -> motion critic running -> SHIP/FIX.
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
   cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
