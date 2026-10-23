@@ -4,6 +4,8 @@
 ## DECISIONS D-155..D-162, and the lead board (below).
 
 ## Director state and rules in force
+- D-177 MOTION FIRST: motion and destruction are the core; every body/movement change passes a motion CI suite at
+  all 3 growth steps (VFX gait builder writes it from its probe; lead merges). Order: gait fix, gate, motion pass, D-165.
 - Game renamed Kaiju Evolution. Three equal visual pillars (beauty, consistency, power fantasy). Bar: "I have to love it".
 - D-146: NO per-change director gates; he plays only at milestones M1-M4 (export to Desktop\Kaiju Builds\M<n>, survey
   as a web page). M1 waits for all its items, music from his Suno stems included (D-155).
