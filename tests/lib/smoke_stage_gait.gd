@@ -28,16 +28,13 @@ static func check(check: Callable, root: Node) -> void:
 		_curve(check, root, stage)
 
 
-## The step in the data and the step the sim walks, against half the clip's stride.
+## The step in the data and the step the sim walks, against half the clip's stride, at each growth
+## step that steps (the young croc walks by distance, D-131: it has no step length).
 static func _stride(check: Callable, root: Node, stage: String) -> void:
 	var levels: Dictionary = STAGES[stage]
 	var rig := _rig(levels, root)
 	var sim: RampageSim = rig["sim"]
 	var kaiju: KaijuModel = rig["kaiju"]
-	var bodies: Array = Content.tuning()["contact"]["bodies"]["reptilian"]
-	var body: Dictionary = bodies[sim.size_tier() - 1]
-	var default: Variant = Content.tuning()["contact"]["step_len"]
-	var data := Num.f(body.get("step_len", default)) * sim.body_scale()
 	var from := sim.kaiju_pos
 	var phase := sim.body.phase
 	for f: int in roundi(WALK_S / DT):
@@ -46,11 +43,17 @@ static func _stride(check: Callable, root: Node, stage: String) -> void:
 			from = sim.kaiju_pos
 			phase = sim.body.phase
 	var clip: float = (kaiju._rig.gait as ClipGait).stride() * 0.5  # world units once it has moved
-	check.call(
-		absf(clip / data - 1.0) < STEP_LEN_TOL,
-		"%s: the step in the data is half the clip's stride (%.3f vs %.3f)" % [stage, data, clip]
-	)
 	if sim.body.stepping():
+		var bodies: Array = Content.tuning()["contact"]["bodies"]["reptilian"]
+		var body: Dictionary = bodies[sim.size_tier() - 1]
+		var data := Num.f(body["step_len"]) * sim.body_scale()
+		check.call(
+			absf(clip / data - 1.0) < STEP_LEN_TOL,
+			(
+				"%s: the step in the data is half the clip's stride (%.3f vs %.3f)"
+				% [stage, data, clip]
+			)
+		)
 		var walked := sim.kaiju_pos.distance_to(from) / maxf(sim.body.phase - phase, 0.001)
 		check.call(
 			absf(clip / walked - 1.0) < STEP_LEN_TOL,

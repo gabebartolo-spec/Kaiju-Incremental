@@ -1,5 +1,5 @@
 # Gait step-len handoff (builder "volley"), 2026-10-23 16:3x
-## State: running a check (sim, taskforce_gate, military, sim_play on the final code); smoke and the gait-fix motion gate done
+## State: running a check (sim, taskforce_gate on the review-fix code); pushed once as 14f47473, review FIX (#173) in progress
 ## Task
 D-177 "Motion first", the director's top complaint (the adolescent's twitchy walk and swivelling turn). From the
 VFX lead's probe: (1) per-stage step length in data, read by the sim; (2) a held analog curve must not swivel.
@@ -8,12 +8,25 @@ Bars: sim step within 2% of each stage's clip half-stride; 0 degrees of held-cur
 Behemoth (38.5 on the base) and the Colossus (46.0); tapped and stepped turns as today.
 ## Branch and commit
 Branch claude/gait-step-len off origin/claude/look-options cf40e09b, worktree .claude/worktrees/agent-ac92f78143e5f1af5.
-Final code 8bdbc732. Not pushed yet: push only as `git push origin claude/gait-step-len:claude/gait-step-len` (the
-upstream is look-options by accident). No PR (the lead opens it). A local-only scratch branch scratch/gait-merge
-(the throwaway merge with gait-fix) is left: `git branch -D` was denied; delete it, it was never pushed.
+First push 14f47473 (code 8bdbc732, merged with the base); the sim review of PR #173 said FIX, fixed below. Push only
+as `git push origin claude/gait-step-len:claude/gait-step-len` (the upstream is look-options by accident). A
+local-only scratch branch scratch/gait-merge (the throwaway merge with gait-fix) is left; never pushed, the lead
+lists it for the director's hygiene pass.
+## Review FIX (#173): one root, the swing ran for ANY heading change, not only the stick's turn
+- Hand-over lurch: emergence leaves body.heading along the river about 90 deg off sim.facing; a stick held from the
+  first live tick swung the catch-up about the planted feet (5.2 u Behemoth, 10.3 u Colossus in 12 frames). Fix:
+  _swing(was, most) clamps the swing to the turn the stick applied (absf(turn)); a larger catch-up stays about
+  the middle, as before the gait fix.
+- Dash: Dash.step resets facing every frame so the swing was never undone; a stick 0.2 rad off the axis slid the
+  dash 3.8 u (Behemoth) and 7.2 u (Colossus). Fix: no swing while dash.on().
+- tests/run_gait_tests.gd (new suite "gait", 10 checks): hand-over (12 frames, < 3 u), dash 0.2 rad off axis (< 1 u
+  sideways), straight top speed = the stage's speed (within 1%). RED before the fix: 4 failures (the four numbers
+  above); green after. Smoke 47 checks green after (held curve still 0.0, stepped-turn bars unchanged).
+- The young croc's step_len is dropped from the data: the baby does not step (pivot 0, D-131), the sim never read
+  it, the motion gate skips it, and only my smoke young data check read it (now stepping stages only).
 ## What changed
-- data/tuning.json contact.bodies.reptilian[i].step_len = 2.19 / 2.79 / 2.33 (young / Behemoth / Colossus, rig
-  units at body scale 1). contact.step_len 2.33 stays as the fallback and for gait_clip.gd (the VFX lead's).
+- data/tuning.json contact.bodies.reptilian[i].step_len = 2.79 / 2.33 (Behemoth / Colossus, rig units at body
+  scale 1; the young entry has none). contact.step_len 2.33 stays as the fallback and for gait_clip.gd (VFX lead's).
 - sim/body_contact.gd: `_step_len` (the stage's own, read in use_species) replaces cfg["step_len"] in _plant_both and
   walked (two places). Every turn of a stepping body (turns_in_steps) is now swung about the planted foot (_swing),
   smooth corrections too, not only stepped turns; the baby (no planted feet, D-131) and the beam sweep are unchanged.
