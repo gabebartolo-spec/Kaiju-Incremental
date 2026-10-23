@@ -64,7 +64,11 @@
   (nothing SHIP to merge). VFX handoff claude/vfx-lead-2 862f1302 (fire-smooth 4e6e90d9, heli-fall 5aee3cb6, claw-rake
   2d176ff4, living-predator ec4bb919 parked D-193). Atmosphere handoff claude/atmosphere-lead 42a8deaa (atm-escalation
   85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
-- No builders running (1-on-1 with the director). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
+- Builders (subagents, 2 slots): komodo-drift (claude/komodo-test; heavy rises facing the bank, then smoke_step_turn,
+  suites, recapture -> critic); serpent round 4 (claude/serpent-slither from 5fc6647d; NEW method after r3 critic FIX
+  "rope on a rail": reference-led targets, longer thinner tube stand-in, screen-space bars). Stall watcher on both.
+  Tripo session local_2d9f45c9 (tripo-komodo): young Komodo critic+texture, croc "B with A's power", hybrid serpent
+  3-stage board (D-206), Komodo palettes (D-205); budget 5000 total (D-204). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
   director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
   + go line; git-helper was stopped by him, so merge yourself via `gh pr merge --squash --match-head-commit`).
 
@@ -80,7 +84,8 @@
   anatomically correct"), Smart Mesh f46b0c87 variant e73da3cf, texture 6a8a224e; rig komodo/build_komodo.py (joints
   from leg_profile.py cross-sections), Cascadeur komodo/rig/komodo_rig_v3.casc; walk croc/work/walk_keys_k.py (64 f,
   2 m steps, crouch 25 cm, own leg IK, 0 cm slide) -> AutoPhysics applied -> komodo_walk_v4_ap.casc + _joints.fbx;
-  clip komodo/komodo_walk_physics.mp4 (motion critic pending). Next: critic -> director -> game import + rig.json.
+  walk/idle/roar/turn done and imported on claude/komodo-test (fit() OK). D-197..D-207 logged (family, skins,
+  hybrid serpent cobra->rattle->constrictor, Kaiju Creation new-game opening IN THE DEMO).
 
 ## Base and PRs
 - Base = origin/claude/look-options; squash-only.
@@ -96,6 +101,8 @@
 - Pacing on GitHub (#174): push pacing-run/<name> with .github/pacing-run.json {"species","runs","verbose"}.
 
 ## Next queue (each brief names its ROADMAP item + decision)
+- Next free slot: Kaiju Creation opening (D-207, demo): lab dish, croc genome (others locked), KAIJU juice VFX,
+  zoom to black + egg crack, then the river rise. Ask him the lab's look with labelled images first.
 - When a lead slot frees: music integration (D-184), then sky and sea life with the whale in the river (D-168;
   demo-end handoff plan), damage on impact (D-166, after strike-delay), sim speed-ups (D-159), Taskforce adult units.
 - Heli-standoff: push -> git-helper opens the PR -> non-author sim review -> go; send the sha to the VFX lead (D-183).
