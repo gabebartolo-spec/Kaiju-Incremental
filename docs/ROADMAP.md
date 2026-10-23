@@ -478,4 +478,7 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "the kaiju breathing animation is way too much, too much movement and too fast, should be deep and slow like a
   behemoth" (D-165 living predator). Fix: slower, deeper breaths with less visible movement, still slower and
   heavier as he grows; bars per growth step (breath period, back and flank movement), motion critic, one idle clip
-  after SHIP. Owner: VFX lead. Status: sent 2026-10-23.
+  after SHIP. Owner: VFX lead. Status: in progress (D-165 phase A builder, claude/living-predator). Seen on base,
+  where the breath is baked into the idle clip; it is damped at runtime. Bars: one breath every 4 / 6 / 8 s (young
+  croc / Behemoth / Colossus), inhale 40%, exhale 60% with a pause; back and flanks move 0.25-0.8 / 0.6 / 0.5% of
+  body height at most, no faster than 0.6% of body height a second; the belly barely moves.
