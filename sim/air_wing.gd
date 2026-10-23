@@ -1,14 +1,16 @@
 class_name AirWing
 extends RefCounted
-## Military helicopters (D-037): once the kaiju has done enough damage they arrive, circle it
-## and strafe it. A kaiju reaches them only when it stands tall enough (a grown body or a
-## climbed roof) or with an attack that reaches the air (fire, ink, tentacles); a cephalopod
-## can pluck one out of the sky. They keep to the far side of the kaiju from the game camera
-## (`camera_bearing`, clear of `clear_arc` either side of it) and cruise `clear_margin` beyond
-## its body, so a helicopter never hangs between the player and the kaiju. How one dies (D-140,
-## D-141, D-145): a killing blow of at least `blow_apart` of its hp blows it apart in the air; a
-## lighter one (a glancing hit, a burning coat, a toppling tower sweeping through it) sends it
-## spinning down for `fall_seconds`,
+## Military helicopters (D-037): once the kaiju has done enough damage they arrive and fire on
+## it as stand-off gunships (D-183, AirFlight): they hold firing positions well beyond its
+## reach, glide between them under their own speed and turn limits and pull back when it
+## advances; now and then one makes a strafing pass within claw reach. A kaiju reaches them
+## only when it stands tall enough (a grown body or a climbed roof) or with an attack that
+## reaches the air (fire, ink, tentacles); a cephalopod can pluck one out of the sky. They keep
+## to the far side of the kaiju from the game camera (`camera_bearing`, clear of `clear_arc`
+## either side of it), so a helicopter never hangs between the player and the kaiju. How one dies
+## (D-140, D-141, D-145): a killing blow of at least `blow_apart` of its hp blows it apart in
+## the air; a lighter one (a glancing hit, a burning coat, a toppling tower sweeping through it)
+## sends it spinning down for `fall_seconds`,
 ## drifting `fall_drift`, its crew sometimes bailing out by parachute (`bailout_chance`, up to
 ## `bailout_max`), until it crashes: the wreck smashes `crash_floors` floors within
 ## `crash_radius`, crushing the tanks and squads below (D-167; never the kaiju), and sets the
@@ -18,11 +20,16 @@ extends RefCounted
 
 class Heli:
 	var id: int
-	var angle: float
-	var turn := 1.0  # which way it sweeps along its arc
-	var radius: float  # its circle: sets its speed and how deep it dives
-	var cruise: float  # how far out it flies between dives (clear of the kaiju's body)
 	var pos: Vector2
+	var heading := 0.0  # the way it flies and faces, radians
+	var speed := 0.0  # units a second along the heading
+	var ring := 0.0  # its own stand-off distance from the kaiju (world units)
+	var spot := Vector2.ZERO  # the firing position it glides to and holds
+	var goal := Vector2.ZERO  # the point it steers for now: its spot, or a pass's point
+	var hold := 0.0  # seconds it keeps its spot once there
+	var passing := false  # on a strafing pass (in, then back out to the ring)
+	var pass_out := false
+	var pass_left := 0.0
 	var hp: float
 	var cooldown: float
 	var coat_t := 0.0
@@ -40,10 +47,10 @@ class Falling:
 
 var sim: RampageSim
 var cfg: Dictionary
+var flight: AirFlight
 var helis: Array[Heli] = []
 var falling: Array[Falling] = []
 var destroyed := 0
-var _rng: RandomNumberGenerator
 var _fall_rng: RandomNumberGenerator  # its own stream: spawns draw exactly as before deaths fell
 var _crashing := false  # a wreck's own impact never reaches the sky
 var _spawn_timer := 0.0
@@ -53,7 +60,7 @@ var _next_id := 0
 func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> void:
 	sim = p_sim
 	cfg = p_cfg
-	_rng = rng
+	flight = AirFlight.new(sim, cfg, Seeds.derive(rng, 0xF17))
 	_fall_rng = Seeds.derive(rng, 0xFA11)
 
 
@@ -79,11 +86,9 @@ func step(dt: float) -> void:
 		if _spawn_timer <= 0.0:
 			_spawn_timer = Num.f(cfg["interval"])
 			spawn()
+	flight.step(helis, dt)
 	var coated := false
 	for heli: Heli in helis:
-		heli.angle += heli.turn * Num.f(cfg["orbit_speed"]) / maxf(1.0, heli.radius) * dt
-		_keep_clear(heli)
-		heli.pos = orbit_pos(heli)
 		if heli.coat_t > 0.0:
 			heli.coat_t -= dt
 			heli.hp -= heli.coat_dps * dt
@@ -127,51 +132,17 @@ func _swept_by_falls() -> void:
 		clear_dead()
 
 
-## A new helicopter joins the circle at a seeded angle and distance.
+## A new helicopter flies in from beyond its ring (AirFlight.place) on the far side from the camera.
 func spawn() -> Heli:
 	var heli := Heli.new()
 	heli.id = _next_id
 	_next_id += 1
-	var arc := deg_to_rad(Num.f(cfg["clear_arc"]))
-	heli.angle = _bearing() + arc + _rng.randf() * (TAU - 2.0 * arc)
-	var jitter := Num.f(cfg["orbit_jitter"])
-	var circle := Num.f(cfg["orbit_radius"]) * _rng.randf_range(1.0 - jitter, 1.0 + jitter)
-	var body := Num.f(sim.powers_cfg["body_radius"]) * sim.body_scale()
-	heli.radius = circle * sim.body_scale()
-	heli.cruise = maxf(heli.radius, body + Num.f(cfg["clear_margin"]))
-	heli.pos = orbit_pos(heli)
+	flight.place(heli)
 	heli.hp = Num.f(cfg["hp"])
 	heli.cooldown = Num.f(cfg["fire_interval"]) * Num.f(cfg["first_burst_delay"])
 	helis.append(heli)
 	sim.events.append({"type": "heli_spawned", "heli": heli.id})
 	return heli
-
-
-## Sweeping its arc, it dives in on a strafing run at each side of the kaiju (down to dive x
-## its circle) and swings back out behind it: the moment a tall enough kaiju can swat it.
-func orbit_pos(heli: Heli) -> Vector2:
-	var dive := Num.f(cfg["dive"])
-	var side := heli.angle - _bearing()
-	var low := heli.radius * dive
-	var r := low + (heli.cruise - low) * (0.5 + 0.5 * cos(2.0 * side))
-	return sim.kaiju_pos + Vector2.from_angle(heli.angle) * r
-
-
-## The direction from the kaiju toward the game camera, on the ground plane.
-func _bearing() -> float:
-	return deg_to_rad(Num.f(cfg["camera_bearing"]))
-
-
-## Turns a helicopter back at either end of its arc, so it never crosses the camera's side.
-func _keep_clear(heli: Heli) -> void:
-	var arc := deg_to_rad(Num.f(cfg["clear_arc"]))
-	var side := wrapf(heli.angle - _bearing(), 0.0, TAU)
-	if side < arc:
-		heli.angle = _bearing() + arc
-		heli.turn = 1.0
-	elif side > TAU - arc:
-		heli.angle = _bearing() + TAU - arc
-		heli.turn = -1.0
 
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high).
