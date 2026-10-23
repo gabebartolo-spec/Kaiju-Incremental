@@ -426,7 +426,11 @@ state. No director clips or per-change approvals in between; clips only where mo
   dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status: fixing.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
   briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
-  credits), he picks by ear. Owner: lead. Status: waiting on his Suno sign-in in the built-in browser.
+  credits), he picks by ear. Then, in order: "too 'heroic'" (D-176 darker, Godzilla), "all sound more or less the
+  same city to city" (D-181 one theme, Cover per city), "i need more menace", Isengard "peak reference", "too
+  'epic', too Nolan Batman" (D-182 Jaws, Godzilla, Imperial March), "too staccato, too endlessly building", "too
+  whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference" (G1-G4, 1954 Godzilla takes).
+  Owner: lead. Status: 140 of 800 credits; G takes waiting on his pick (docs/provenance/music.md).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
