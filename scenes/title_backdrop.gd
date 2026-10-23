@@ -40,6 +40,13 @@ func _ready() -> void:
 	_build()
 
 
+## The sim's parts point back at it, so a dropped sim is never freed: let go of them
+## (RampageSim.dispose, D-179) or every visit to the title keeps a city in memory.
+func _exit_tree() -> void:
+	if _city != null and _city.sim != null:
+		_city.sim.dispose()
+
+
 func _build() -> void:
 	Content.set_time("night")
 	_make_city()

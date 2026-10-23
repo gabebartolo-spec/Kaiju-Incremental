@@ -248,6 +248,14 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	return _events
 
 
+## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
+## freed: Godot never frees objects that count each other, and every rampage kept its city in
+## memory (about 240 MB a rampage in tools/pacing.gd). Call it when the rampage is over for good,
+## after result() is read: the parts no longer reach the sim, so it cannot be stepped again.
+func dispose() -> void:
+	SimTeardown.cut(self)
+
+
 ## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.
 func end(reason: String) -> void:
 	over = true

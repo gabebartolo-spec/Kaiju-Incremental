@@ -13,7 +13,7 @@ extends SceneTree
 ##     bought, how it ended; --landmark=id: the player heads for that landmark first, then the
 ##     nearest building, as a player who has learnt where the bonus is)
 
-const DT := 1.0 / 15.0
+const DT := PacingPlayer.DT
 const TREE_SECONDS := 20.0
 const MILESTONES: Array[String] = ["evolve1", "evolve2"]
 const STAGE_NAMES: Array[String] = ["young", "Behemoth", "Colossus"]
@@ -70,23 +70,9 @@ func _pace(species_id: String) -> void:
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
 		sim.body.use_species(species_id)
-		var target := Vector2(INF, INF)
-		var steps := 0
-		var goal := _goal(sim)
-		while not sim.over:
-			if steps % 8 == 0:
-				target = sim.nearest_standing(goal if goal.x < INF else sim.kaiju_pos)
-				if target.x < INF and goal.x < INF and target.distance_to(goal) > 20.0:
-					goal = Vector2(INF, INF)  # the landmark is down: on to the nearest
-			var move := Vector2.ZERO
-			if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
-				move = (target - sim.kaiju_pos).normalized()
-			var held := RampageSim.HELD if steps % 30 < 15 else 0
-			sim.step(
-				DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE | Dash.BUTTON
-			)
-			steps += 1
+		var steps := PacingPlayer.play(sim, _goal(sim))
 		var res := sim.result()
+		sim.dispose()  # its parts point back at it: else every run's sim stays in memory
 		clock += steps * DT + TREE_SECONDS
 		rubble += Num.i(res["rubble"])
 		run += 1
@@ -119,7 +105,7 @@ func _pace(species_id: String) -> void:
 						Num.i(res["rubble"]),
 						steps * DT,
 						Num.f(res["destruction"]) * 100.0,
-						sim.end_reason,
+						res["reason"],
 						bought,
 					]
 				)

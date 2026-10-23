@@ -105,6 +105,14 @@ func set_autoplay(on: bool) -> void:
 	_autoplay = on
 
 
+## Leaving the tree (Main._swap frees the rampage next): the sim's parts point back at it, so a
+## dropped sim is never freed; let go of them (RampageSim.dispose, D-179) or every rampage played
+## keeps its city in memory for good. The children have left already, nothing reads the sim.
+func _exit_tree() -> void:
+	if sim != null:
+		sim.dispose()
+
+
 func _ready() -> void:
 	var stages := BuildStages.new()
 	stages.on = staged
