@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-091 · Director · No building is too strong for the baby; big ones just take longer
+Why: "the buildings shouldnt be too strong for our little kaiju, it should just take him longer ... hes more than
+capable of tearing the roots out and toppling the large buildings". Replaces the tier gate and "TOO STRONG"; evolve1
+text "Grow huge. Tear through towers faster." In #89 (croc contact).
+
 ## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
 Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
 
