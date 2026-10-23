@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-189 · Director · Interview: atmosphere starts now in a third session; music opens low; helicopters never block the view; 6 builders
+
+He said "interview me". M1 (D-146, D-155) waits for all its items and several had not started; asked when he plays it: "start them now, create a third session". Asked what it owns: "Atmosphere": a third lead session owns M1's atmosphere end to end (sky and sea life with clouds, birds, small boats and the whale, D-168; weather looks; the rampage escalation of D-154: haze, orange sky, spreading blackouts), with its own builders and critics; the VFX lead keeps fire, explosions and the kaiju's motion; the lead keeps the game rules, music and city sound and builds the layered music now. Builder cap: "6 in total": two engine builders per session (amends the "Fit the PC" cap of about 4); drop back if the CPU pins at 100%. Music (D-125): "Low and creeping": a rampage opens on low strings and bass only, drums join at the first big collapses, brass and the full theme at the peak of the ruin. Helicopters (D-183's "They still keep off the camera's side"): "Never block your view": they may pass briefly on the camera side while repositioning, but never fly between the camera and the kaiju.
+
 ## 2026-10-23 · D-188 · Director · Visual reviews keep going until the critics pass; repeated failure changes the method
 
 He asked "are we in clip making purgatory again?" (the fire and helicopter look at round 7, the new breathing failed its first review as invisible at the game camera, the walk fix failed twice on the swivel). Asked how visual reviews run until M1, he chose "Keep going until critics pass": no round cap; critics keep failing merely acceptable work, so the M1 build shows finished visuals. Then: "but if something has failed 7 times in a row then our method is wrong, and needs to be reassessed": two failed rounds in a row (CLAUDE.md rule 8) mean the owner stops, finds why each round failed and changes the approach before the next round. The fire and helicopter look is reassessed before any round 8. Not chosen: two rounds then M1; fewer clips with the same rounds.
@@ -392,8 +396,3 @@ presentation, claude/carve-wp5) are running in parallel with the demo fixes; car
 Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
 Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89
 (sim/claw_swipe.gd chews the building face; tuning is a seeded 5-seed mean, not a single seed).
-
-## 2026-10-20 · D-095 · Director · Claws = a claw swipe, for the croc only in the demo
-Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
-Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
-two species keep Claws as +3 stomp. Built in #89.

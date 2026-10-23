@@ -334,7 +334,8 @@ state. No director clips or per-change approvals in between; clips only where mo
   the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
   Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
   the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
-  music from the director's Suno stems. Visuals: VFX lead. Sound, music, weather pick and options: lead.
+  music from the director's Suno stems. Atmosphere (sky and sea life, weather looks, rampage escalation): the
+  atmosphere lead (D-189). Other visuals: VFX lead. Sound, music, weather pick and options: lead.
 - **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
@@ -456,6 +457,10 @@ state. No director clips or per-change approvals in between; clips only where mo
   board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
   an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
   fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187.
+- "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
+  "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
+  atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
+  becomes the camera-to-kaiju corridor). Status: in progress.
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).

@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-095 · Director · Claws = a claw swipe, for the croc only in the demo
+Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
+Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
+two species keep Claws as +3 stomp. Built in #89.
+
 ## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
 Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
 from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style

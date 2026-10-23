@@ -140,6 +140,9 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - SFX from ElevenLabs Starter (owned) and CC0 / free libraries, synthesized in-house where better; every source CLEARED
   in `docs/LICENSING_REGISTER.md` (D-030, D-092). Suno Pro music only after his written spend yes. The director
   generates in his own browser; agents write prompts, ingest, QA and register.
+- Music: one theme (his remaster), a Cover per city, in layers that build with the ruin (D-125, D-184): a rampage
+  opens low and creeping, strings and bass only; drums at the first big collapses; brass and the full theme at
+  the peak (D-189). The menu plays the theme over the city sound.
 - Explosions: layered crack and body, sub thump, delayed debris, a distance-delayed sonic boom (#20). Rooftop rifles
   must not sound like a typewriter (playtest 1).
 
