@@ -73,7 +73,7 @@ lead replies in to-vfx-lead.md. Every Godot run: `bash ~/.claude/tools/engine_sl
 ## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
 D-177 "Motion first" (director 13:5x): gait fix -> motion gate suite -> motion pass per stage -> D-165 -> one-look.
 Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot until 14:14 (lead's watcher).
-- slot 1 fire-heli-r6 (fresh; scratchpad brief_fire_heli_r6.md): Part 1 Fire family hot ramp for ALL fires (ember
+- slot 1 now CLAW RAKE (building, claude/claw-rake on gait-fix, notes claw_rake/PLAN.md). r6 DONE 9f311538 on heli-look-r4 (fire 1b cream 25/21%, core 2/3%), art + motion critics running. Was fire-heli-r6 (brief_fire_heli_r6.md): Part 1 Fire family hot ramp for ALL fires (ember
   heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
   blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
   no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
@@ -87,7 +87,7 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
 - D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
 - slot 3 LENT until the motion gate merges: gait-2 (Opus). claude/gait-fix c661d731 = merge of the lead's gait-step-len
   841f93e2: MOTION GATE ALL GREEN (motion 30/0, smoke 47/0, clips 14/0, gait 10/0; jerk young 2.7 / Behemoth 4.3).
-  681ce75c PR #175: 4 clips in notes gait/clips (camera: no swing, no change) -> motion critic running -> SHIP/FIX.
+  681ce75c PR #175: critic FIX. Turn 260/311/278 deg/s peak is SIM (step rate x turn_ease x slice bell): lead takes to director, no sim edits. gait-2 doing view items (stop settle, tail, river-wall foot, bare-road recapture).
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
   cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
