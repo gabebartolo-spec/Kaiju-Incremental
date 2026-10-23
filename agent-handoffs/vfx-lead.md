@@ -22,7 +22,9 @@ Worktree .claude/worktrees/vfx-lead-c37456 on claude/vfx-lead-2 (handoff branch 
 - docs/captures/2026-10-23-vfx/vfx_families.png (the sheet).
 - Reviews in side-session-notes/local_a16cd984-.../vfx-lead/reviews-2026-10-23.md.
 
-## Director rulings 2026-10-23 (asked in my session with a labelled board; sent to the lead to log as D-n)
+## Director rulings 2026-10-23 (asked in my session; sent to the lead to log as D-n)
+Evening, asked in words: fire = "Smooth flames" (style mix accepted; rolling out to every fire); breathing = "Slow
+chest-and-neck heave"; claw swipe from behind = "Keep it straight ahead" (trail + sparks carry it; no side hit).
 Blast = a sudden burst of Fire's own rising flames + the Fire left burning; gas = smoke shader tinted; smoke lit
 from below everywhere; title burning windows orange with flames out of the openings; Lightning Breath/Thunder
 Beam rework in M1; Taskforce = one electric blue nobody else uses (deflect flash -> white); blast/Taskforce hits
