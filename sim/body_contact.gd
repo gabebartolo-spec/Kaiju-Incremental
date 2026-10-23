@@ -53,6 +53,9 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 ## A real turn is under way (one that began at smooth_below or more): it steps to its end; a smaller
 ## course correction turns smoothly while walking (D-130).
 var _real_turn := false
+## A real turn has come within turn_min of its end and is landing: it keeps its slowing-down to the
+## last, not the quick pace of a correction (that would end a slow turn in a lurch).
+var _landing := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
 var _uturn_s := 0.0  # seconds a stepped U-turn takes: the stage's own (D-187), 0 if smooth
@@ -166,6 +169,7 @@ func _stand(dt: float) -> void:
 	_standing = true
 	_walked_s = 0.0
 	_real_turn = false
+	_landing = false
 	_face(dt)
 
 
@@ -179,9 +183,13 @@ func _plant_both() -> void:
 func _steps_this_turn() -> bool:
 	if absf(turn_left) >= Num.f(cfg["smooth_below"]):
 		_real_turn = true
-	elif absf(turn_left) <= Num.f(cfg["turn_min"]):
+		_landing = false
+	elif _real_turn and absf(turn_left) <= Num.f(cfg["turn_min"]):
 		_real_turn = false  # the turn is made: the next small one is a correction
-	return turns_in_steps() and _real_turn
+		_landing = _spin != 0.0
+	if _landing and (_spin == 0.0 or absf(turn_left) > 2.0 * Num.f(cfg["turn_min"])):
+		_landing = false
+	return turns_in_steps() and (_real_turn or _landing)
 
 
 ## How fast the body may turn now, Vector2(top rad/s, rad/s^2); a stepped turn also eases in the
