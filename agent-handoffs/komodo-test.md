@@ -6,7 +6,21 @@ Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, n
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State: D-201 (critic round 2, "Animations lead") done and pushed; awaiting the lead
+## State: STOPPED for context (~290k) mid drift fix; a fresh session resumes at "Next steps"
+
+## Drift diagnosis (lead: diagnose first, no re-plant hack; bar < 0.1 units in stance)
+Probe `drift` column (KaijuModel.foot_drift, max since start), run 0-12 s:
+1. Rise from the river (0.6-2.1 s, idle): the planted lock kept its underwater height, the body rose, the leg ran
+   out of reach -> 1.0. FIXED: a clip-feet lock's height rides the clip toe (`_put_down`, `_lock[i].y`).
+2. Turns pivoted about the rig's middle (bbox centre, 5 units behind the pelvis) in sim and presentation, so the
+   hips swung off planted feet (~6 u/s at 50 deg/s). FIXED: heavy sim turns about the hips (BodyContact
+   `_turn_about_hips`, body_class sim pivot_ahead 5.0) and ClipGait `_turn_about_hips` swings the rig's lag about
+   the pelvis. Drift 6.4 -> 2.9.
+3. Playback now by real ground distance (`KaijuGait.moved`, unsmoothed) for clip feet; any motion walks (CLIP_STILL).
+4. REMAINING: drift opens at 2.95 s (walk at speed 10.4, +0.23) and through the walk->roar change 3.03-3.4 s
+   (speed 10 -> 0.7 -> 4; +2.6). Next: log per frame sim travel vs clip implied travel (d clip frames x stride /
+   frames per cycle) and the planted foot's lock vs ball, to see if it is the blend (KaijuClips.mix from walk to
+   roar mixes feet/planted before `_walking_legs` overrides) or the stance spot itself.
 
 ## D-201 (heavy only)
 - SIM `sim/body_contact.gd`: body_class sim block by species_stage: turn <= 30 deg/s, accel 20 deg/s^2, smooth (no
@@ -71,6 +85,13 @@ gitignored).
   skates/s. Planted-foot-yaw and Colossus curve now pass. D-200's eased body yaw no longer comes in the sim's slices.
 - Clips (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden): scratchpad `komodo/cap/komodo_game_cam_v3.mp4`
   (game camera, 3-9 s) and `komodo_side_cam_v3.mp4` (low 3/4 side, 2.5-8.5 s); v2 = before D-201.
+
+## Next steps (lead's order)
+1. Finish the drift (item 4 above) to < 0.1 units in stance; re-probe (`tools/capture/probe_body_weight.gd`, scratchpad
+   `komodo/an2.py <csv> 3 9` for the D-201 bars).
+2. Rewrite tests/lib/smoke_step_turn.gd for heavy (D-201): a 90 deg turn ~4-5 s with <= 45 deg in any 0.3 s; plants
+   only on clip bits, L/R alternating, never same-frame; planted drift < 0.1; neck <= cap, head on the sim aim.
+3. Run clips + smoke, recapture both clips (game cam 3-9 s, side --cam=-24,8,20 2.5-8.5 s), push, report 6 lines.
 
 ## Open / for the lead
 - smoke_step_turn reds parked (D-193); first suspect: ClipGait catch steps. D-200 changes what they measure.

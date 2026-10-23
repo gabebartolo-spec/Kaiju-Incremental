@@ -167,6 +167,8 @@ func steer(dt: float, want: Vector2) -> float:
 	_face(dt)
 	if turns_in_steps() and not dash.on():  # a turn too is made over the planted foot (D-177)
 		_swing(was, absf(turn))
+	else:
+		_turn_about_hips(was)
 	return stride
 
 
@@ -181,7 +183,9 @@ func _stand(dt: float) -> void:
 	_standing = true
 	_walked_s = 0.0
 	_real_turn = false
+	var was := heading
 	_face(dt)
+	_turn_about_hips(was)
 
 
 ## Both feet down where they stand when the body sets off (or after a dash or leap).
@@ -241,6 +245,15 @@ func _swing(was: Vector2, most: float) -> void:
 		_plant_both()
 		at = _feet[0]
 	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(clampf(was.angle_to(heading), -most, most))
+
+
+## A heavy body turns about its hips, as its turn clip does (D-201): the turn from `was` swings
+## kaiju_pos about the point pivot_ahead ahead of it.
+func _turn_about_hips(was: Vector2) -> void:
+	if _heavy.is_empty() or dash.on():
+		return
+	var hips := sim.kaiju_pos + was * Num.f(_heavy["pivot_ahead"]) * sim.body_scale()
+	sim.kaiju_pos = hips + (sim.kaiju_pos - hips).rotated(was.angle_to(heading))
 
 
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),

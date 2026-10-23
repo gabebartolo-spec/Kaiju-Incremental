@@ -39,6 +39,8 @@ const RESTEP_REACH := 1.0
 const HEAD_LEAD_MAX := 0.6
 const HEAD_LEAD_EASE := 10.0
 const NECK_SHARE := 0.4
+## Ground speed (hip heights a second) under which a body whose clip leads counts as standing.
+const CLIP_STILL := 0.005
 
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
@@ -132,6 +134,7 @@ func update(delta: float) -> void:
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
 	_hold_neck()
+	_turn_about_hips()
 	_swing_tail(dt)
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
@@ -168,7 +171,7 @@ func stride() -> float:
 
 
 func _choose(dt: float) -> void:
-	var moving := speed >= STAND_SPEED * hip_height * s
+	var moving := _moving(dt)
 	var done := not clips.loops(state) and clip_time >= clips.frames_of(state) - 1
 	var settle := "walk" if moving else "idle"
 	if _roar_queued:
@@ -205,7 +208,7 @@ func _choose(dt: float) -> void:
 ## The walk clip's clock: the sim's step clock when it gives one (the footfalls land where it
 ## turns), else the distance walked.
 func _walk_clock(dt: float) -> void:
-	var cycles := speed * dt / maxf(stride(), 0.0001)
+	var cycles := (moved if _clip_feet else speed * dt) / maxf(stride(), 0.0001)
 	walk_cycles += cycles
 	var was := clip_time
 	if step_phase != INF and not _clip_feet:
@@ -280,15 +283,23 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 	swing.pose_rake(dt)  # the claw rake, over the clip's arms
 
 
+## Whether the body walks: the smoothed speed over a stand; a body whose clip leads (D-201) walks
+## whenever its node moves over the ground at all (a slow drift too: its feet must step it).
+func _moving(dt: float) -> bool:
+	if _clip_feet:
+		return moved > CLIP_STILL * hip_height * s * dt
+	return speed >= STAND_SPEED * hip_height * s
+
+
 ## A heavy body roaring while it walks keeps the walk on its legs, pelvis and tail (D-201): no
 ## clip-less re-plants under a roar that stands still.
 func _walking_legs(pose: KaijuClips.Pose, dt: float) -> void:
 	if state == "walk":
 		_legs_t = clip_time
 		return
-	if state != "roar" or speed < STAND_SPEED * hip_height * s:
+	if state != "roar" or not _moving(dt):
 		return
-	_legs_t += speed * dt / maxf(stride(), 0.0001) * clips.frames_of("walk") / clips.cycles_of("walk")
+	_legs_t += moved / maxf(stride(), 0.0001) * clips.frames_of("walk") / clips.cycles_of("walk")
 	var legs := clips.pose_at("walk", _legs_t)
 	for i: int in clips.bones.size():
 		var n := clips.bones[i]
@@ -307,6 +318,16 @@ func _top_turn(err: float) -> float:
 	var past := maxf(0.0, rad_to_deg(absf(err)) - Num.f(_aim["catch_from_deg"]))
 	var top := deg_to_rad(Num.f(_aim["follow_deg_s"]) + Num.f(_aim["catch_per_deg"]) * past)
 	return minf(top, absf(err) * Num.f(_aim["ease_per_s"]))  # eases in, no bang-bang
+
+
+## A body whose clip leads turns about its hips, as its turn clip does (D-201): the rig's lag
+## behind the heading is swung about the pelvis, not the rig's middle.
+func _turn_about_hips() -> void:
+	if not _clip_feet:
+		return
+	var hips := rig.head_of(clips.bones[0])
+	hips.y = 0.0
+	rig.position = hips - Basis(Vector3.UP, rig.rotation.y) * hips
 
 
 ## A heavy body is dragged round so its neck never turns past neck_max_deg from it (D-200).
@@ -421,6 +442,8 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 		var strength := _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)
 		if _feet_primed:  # the first frame's feet were already down: no step, no ring
 			rig.foot_planted.emit("left" if leg.side < 0.0 else "right", strength, target)
+	if _clip_feet:  # the spot holds over the ground; its height rides the street (a rise, rubble)
+		_lock[i].y = clip_toe.y
 	_lag[i] = _lock[i] - clip_toe
 	return _lock[i]
 

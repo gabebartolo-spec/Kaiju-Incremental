@@ -20,6 +20,9 @@ var s := 1.0
 ## Smoothed horizontal velocity (world units/s), its length and its change.
 var velocity := Vector3.ZERO
 var speed := 0.0
+## How far the node moved this frame over the ground (world units, not smoothed): a clip that leads
+## (D-201) plays exactly as far as the body went.
+var moved := 0.0
 var accel := Vector3.ZERO
 ## Heading of the kaiju's node (radians, 0 = facing -Z) and how fast it turns.
 var model_yaw := 0.0
@@ -83,6 +86,7 @@ func track(delta: float) -> void:
 		body_yaw = model_yaw
 	var raw := (pos - _last_pos) / dt
 	raw.y = 0.0
+	moved = raw.length() * dt
 	var before := velocity
 	velocity = velocity.lerp(raw, minf(1.0, dt * VELOCITY_SMOOTHING))
 	accel = accel.lerp((velocity - before) / dt, minf(1.0, dt * VELOCITY_SMOOTHING))
