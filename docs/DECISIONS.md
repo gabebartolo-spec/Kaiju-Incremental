@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-216 · Director · Cascadeur stays the animation tool
+
+Offered animating the Komodo teen and baby in Blender (no per-model Quick Rig setup, Blender output ships free, unlike the Pro trial's under D-194). His words: "what about the bridge?", then "but the animations look so much better in Casc". Cascadeur stays the animation tool for every titan; Blender layering only for what Cascadeur cannot do (blend-shape breathing, the tongue). A new character's Quick Rig is first copied from the adult's through the script bridge; if that fails, the session maps it by driving Cascadeur's window with computer use ("You drive it on my screen"). The trial-licence limit (D-194) is unchanged: keepers need the paid licence before release ("Later").
+
 ## 2026-10-24 · D-215 · Director · Tripo sessions may use Claude in Chrome
 
 Asked whether the serpent's Tripo session may use his Chrome (Claude in Chrome) to upload reference images, since the built-in browser cannot upload local files and the cobra hood and rattle had failed six rounds of word-only prompts. His answer: "Yes, for all Tripo work". Every Tripo session may use Claude in Chrome whenever it needs to (uploads included), in a new tab, never touching his other tabs; sign-ins stay his; Private on every generation. Amends the rulebook's built-in-browser default for Tripo work only.
@@ -394,6 +398,3 @@ gameplay effect, or gameplay water or a fluid sim: the plan. Order: fire gamepla
 ## 2026-10-21 · D-121 · Director · Camera growth: A (today's camera plus look-ahead); walk contact built now
 Why: picked from the A/B/C stage-4 boards (kaiju 51% / 33% / 47% of screen height). Falling towers fade like standing ones.
 The D-118 walk contact is built now, ahead of fire gameplay (his yes 2026-10-21).
-
-## 2026-10-21 · D-117 · Director · Run timer stays 40 s at the start, 100 s at most
-Why: Asked 2026-10-21 (R 1.2). No change to data.

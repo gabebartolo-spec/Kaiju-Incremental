@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-117 · Director · Run timer stays 40 s at the start, 100 s at most
+Why: Asked 2026-10-21 (R 1.2). No change to data.
+
 ## 2026-10-21 · D-118 · Director · Walking into buildings: small ones crumble; big ones take visible damage and tear easily with a little more effort
 Why: His words 2026-10-21: "even big building should take visible damage, it should be easy for him to tear through them, it just requires slightly more effort / the game isnt meant to be extremely challenging or frustrating, its meant to be a thrill". Closes R 13.3.
 
