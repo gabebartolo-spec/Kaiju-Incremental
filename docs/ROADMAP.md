@@ -413,3 +413,10 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Suno music this week (D-169), brooding and building, one mood growing heavier (D-172, briefs rewritten); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
   the downloads.
 - Rig test, up to 100 Tripo credits on the croc's tail (D-170). Owner: VFX lead's asset session. Status: not started.
+
+## Director comments (2026-10-23, afternoon)
+- "adolescent walking animations are fucked, his legs so twitchy, and he swivels rather than turns". Returning
+  complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
+  exact fix and pass bar first; any sim part to the lead). Status: diagnosing, top of the VFX lead's next slot.
+- "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
+  briefs rewritten. Owner: lead. Status: done, waiting on his new takes.
