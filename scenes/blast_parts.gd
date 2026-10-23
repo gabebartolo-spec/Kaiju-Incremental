@@ -3,7 +3,8 @@ extends RefCounted
 ## The shared explosion look, ported from claude/city-explosives-v2 (commit 5a9697db,
 ## scenes/blast_parts.gd: `fireball`, `flame_cube` and `emit`, verbatim, so that branch merges onto
 ## this file instead of duplicating it). The blast is the GAME'S OWN FIRE (director 2026-10-22,
-## D-151: "consistency is absolutely key"): a sudden tall burst of Fire's flames, then that fire stays burning. The burst
+## D-151: "consistency is absolutely key"): a sudden tall burst of Fire's flames,
+## then that fire stays burning. The burst
 ## uses Fire's flame exactly: its voxel (Fire.FLAME_CUBE at Fire.FLAME_SCALE), its ember shader at
 ## its own heat, its colours and their ramp, rising like Fire's flames (narrow spread, gravity up,
 ## shrinking to a tenth); a bigger blast is more flames, never bigger cubes. It starts from a box
