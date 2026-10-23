@@ -6,7 +6,14 @@ Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, n
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State: polish + v6 walk / v2 roar pushed; awaiting the lead's review
+## State: holding (no new work) until the motion critic's fixes on the v2 clips come back via the lead
+
+## body_class heavy numbers (data/tuning.json, PLACEHOLDER for the critic)
+- footfall: strength_min 0.85, dust_gain 2.0, dip 0.35 (x body scale x weight), dip_recover 6.0, shake_source
+  heavy_step (camera_shake 0.18), stomp_on_plant true, thud_db 3.0, thud_pitch 0.8.
+- tail: spring_hz 9.0, spring_zeta 0.7, gain [2.0, 2.0], max 0.012, drag 0.008, drag_max 0.015, drag_smooth 0.25,
+  delay 0.05, always true.
+- aim (D-200): follow_deg_s 50, ease_per_s 5.0, catch_from_deg 40, catch_per_deg 8.0, neck_max_deg 60, neck_share 0.4.
 
 ## What is on the branch
 - `tools/blender/komodo_import.py`: `model` voxelizes `komodo/mesh/komodo_10m.glb` with rig_voxel.py's functions
