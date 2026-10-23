@@ -53,7 +53,8 @@
 - Open: #171 beam-cost GREEN b2e8e759: go only when pacing run 39910488328 reports a last unlock of 2.15-2.35 h.
   #175 gait-fix head 681ce75c (capture route only changed), CI running: go after the VFX lead's SHIP + evidence
   (clips + motion critic) and the lead's own check; gate green at 681ce75c (motion 30/0, smoke 47/0, clips 14/0,
-  gait 10/0); 4 clips rendered, fresh motion critic reviewing. Colossus held curve: no camera change needed.
+  gait 10/0). Motion critic FIX: Behemoth/Colossus turn ~270 deg/s on planted feet (the swivel); VFX builder measures
+  sim vs view. If the sim turn rate is the cause: lead's file, steering feel = director question with the numbers.
 - Not opened: claude/strike-delay (red, diagnosing), heli-look-r4 (VFX), claude/sim-speed daad0710 (measurement only:
   Convoy body polygon ~25%, bucketed building scans ~10%; sim/convoy.gd at 400 lines, split first).
 - Pacing on GitHub (#174): push pacing-run/<name> with .github/pacing-run.json {"species","runs","verbose"}.
