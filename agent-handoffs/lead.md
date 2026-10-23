@@ -4,7 +4,7 @@
 ## upkeep D-159), DECISIONS D-155..D-186, and the lead board (below).
 
 ## Director state and rules in force
-- He is present (not AFK). The interview is DONE (answers in scratchpad interview_answers.md, D-163..D-170).
+- He is present. Interviews: D-163..D-170 (scratchpad interview_answers.md) and D-189 (2026-10-23 evening).
 - D-177 MOTION FIRST: motion and destruction are the core; every body/movement change passes the motion CI suite at
   all 3 growth steps. Order: gait fix (#175), motion pass, D-165 living predator.
 - Game renamed Kaiju Evolution. Three equal visual pillars (beauty, consistency, power fantasy). Bar: "I have to love it".
@@ -47,8 +47,7 @@
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
   milestones, sound. Each tells the other before touching the other's files.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
-  kill perched Taskforce agents. D-166 strike times: breath/ultimate 0.8/1.1/1.4 s, stomp 0.45 s (data).
-- D-175: per-squad volleys kept (0.6 s). D-178: cooldown from a volley's first shot.
+  kill perched Taskforce agents. D-166 strike times: breath/ultimate 0.8/1.1/1.4 s, stomp 0.45 s (data). D-175/D-178.
 - D-162/D-170: Tripo 6500 credits left for round 2 (serpentine python, albino) + up to 100 for the tail rig test;
   browser only. Downloads by signed URL + curl. Never edit a running bash script in place.
 - Music D-184 SHIPPED: his remaster of G2 (798f3c13) = the theme, on the menu over the city sound (amends D-141) and
@@ -56,16 +55,13 @@
   320 of 800 credits, 8 of 20 downloads; G1-G4 not to be downloaded again ("later if we need"). Revisit music later
   (ROADMAP). NEXT: a fresh builder cuts loops + layers (D-125), menu music, LICENSING_REGISTER entry (Suno Pro,
   commercial), checks vocal stems are near silent; when an engine slot frees. Recipe in docs/provenance/music.md.
-- VFX lead items he raised today: D-185 claw swipe = heavy raking arc; breathing too big and fast (bars 4/6/8 s
-  period, 0.8/0.6/0.5% amplitude); night fog SHIP merged (#172), queued cross-hatch, weak night silhouette, D-154 haze.
 
 ## Lead board (cross-session sends are capped at 10 between his messages)
 - C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/lead-board/: README.md (protocol), to-<session>.md, from-<session>.md,
   interview.md. Scratchpad board_watch.sh wakes the lead on any from-file or interview change.
 
 ## Sessions and builders
-- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06: owns #175 gait-fix (motion gate), gait clips, fire round 6
-  (white share <=20%) then the helicopter look, breathing fix, claw swipe after gait, living predator phase A.
+- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06: fire board (his pick next), claw rake, heli fall, breathing trade.
 - Lead's builders (subagents, Sonnet, common brief scratchpad COMMON-2026-10-23.md):
   - beam-cost (agent a1448c3e2dfa8c9e5, ~586k tokens) on claude/heli-standoff (D-183), worktree volley-d178: fly-by
     strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
