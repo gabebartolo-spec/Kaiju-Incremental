@@ -62,11 +62,13 @@
   (nothing SHIP to merge). VFX handoff claude/vfx-lead-2 862f1302 (fire-smooth 4e6e90d9, heli-fall 5aee3cb6, claw-rake
   2d176ff4, living-predator ec4bb919 parked D-193). Atmosphere handoff claude/atmosphere-lead 42a8deaa (atm-escalation
   85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
-- Builders (subagents, 2 slots): komodo-drift (claude/komodo-test; heavy rises facing the bank, then smoke_step_turn,
-  suites, recapture -> critic); serpent round 4 (claude/serpent-slither from 5fc6647d; NEW method after r3 critic FIX
-  "rope on a rail": reference-led targets, longer thinner tube stand-in, screen-space bars). Stall watcher on both.
-  Tripo session local_2d9f45c9 (tripo-komodo): young Komodo critic+texture, croc "B with A's power", hybrid serpent
-  3-stage board (D-206), Komodo palettes (D-205); budget 10,000 total (D-204, D-213). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
+- Builders (subagents, 2 engine slots): komodo-carve (claude/komodo-test from 428fc2d5; D-208 carve, NEW method:
+  contact volumes ride baked clip bone tracks; _check_feet_of driven by real sim inputs; lint split; recapture);
+  serpent-r5 (claude/serpent-slither; r4 critic FIX: turn S, stop, coil spiral, idle, tongue; renders size stills
+  A/B/C for the director). skins-r3 (Blender, B/E/F de-lit ramp + procedural bands; A/C/D SHIP). Stall watcher on all.
+  Sessions: tripo-komodo local_2d9f45c9 (croc adult re-run multi-view, baby/teen 3D, mecha concepts only),
+  tripo-serpent local_cebec3c3 (teenI_2 + adultH_2 meshing, cap 850), casc-anim local_2c36c792 (D-214: Komodo idle
+  + turns, baby/teen, death roll/saliva/charge/torrent, croc). Budget 10,000 (D-204, D-213). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
   director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
   + go line; git-helper was stopped by him, so merge yourself via `gh pr merge --squash --match-head-commit`).
 
