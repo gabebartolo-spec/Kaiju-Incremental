@@ -12,6 +12,7 @@ const TAN := Color("b89c6a")
 ## Below this sine of the angle to straight down, look_at() has no stable up: keep the last aim.
 const MIN_TILT := 0.05
 
+var _body: Node3D
 var _main_rotor: Node3D
 var _tail_rotor: Node3D
 var _gun: Node3D
@@ -23,7 +24,8 @@ func _init() -> void:
 	_cfg = Content.section("vehicles")
 	var parts := VehicleParts.new(BASE, Num.f(_cfg["heli_height"]))
 	var centre := parts.pivot("body") * Vector3(1, 0, 1)
-	add_child(parts.build("body", -centre, 5))
+	_body = parts.build("body", -centre, 5)
+	add_child(_body)
 	_main_rotor = parts.hinge("main_rotor", self, centre, 5)
 	_tail_rotor = parts.hinge("tail_rotor", self, centre, 5)
 	_gun = parts.hinge("gun", self, centre, 5)
@@ -47,3 +49,18 @@ func aim(target: Vector3) -> void:
 ## Where the chin gun's muzzle is now (world space): where a burst leaves.
 func fire() -> Vector3:
 	return _gun.to_global(_muzzle)
+
+
+## Takes the body, both rotors and the gun off the helicopter into `into` (world transforms kept)
+## and returns them: a wreck's pieces to throw. The helicopter is left empty.
+func break_up(into: Node3D) -> Array[Node3D]:
+	VehicleParts.set_opacity(self, 1.0)  # it was fading as a screen door: pieces are solid
+	var out: Array[Node3D] = []
+	for part: Node3D in [_body, _main_rotor, _tail_rotor, _gun]:
+		var at := part.global_transform
+		part.get_parent().remove_child(part)
+		into.add_child(part)
+		part.global_transform = at
+		out.append(part)
+	set_process(false)
+	return out

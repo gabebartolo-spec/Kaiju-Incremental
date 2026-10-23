@@ -2,6 +2,29 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
+Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
+
+## 2026-10-19 · D-089 · Director · Demo exe 1 waited for the stall fix
+Why: the windowed stall (Structure.settle rescanning every floor) had to be fixed first; #75 MERGED, exe 44f56fd.
+
+## 2026-10-19 · D-088 · Director · The demo exe ships without #50; the military AI follows in a second exe
+Why (AskUserQuestion, "Ship now, patch after"): tanks and helicopters are already in the demo; #50 is their smarter
+movement and failed its r3 critic. #50 r4 (tank overlap and skew, helis in frame, rotor clearance, young retune
+on evolve1 400) runs now; a fresh critic, then a second exe.
+
+## 2026-10-18 · D-086 · Lead · #36 option A (Behemoth army 0.03), void
+Why: proposed for Behemoth defeats; superseded the same evening by D-087's pick and never applied.
+
+## 2026-10-18 · D-087 · Director · The first evolution comes at about 15 minutes
+Why (19:xx): "try to get the first evo earlier, no ones going to play 41 minutes of a demo if theyre still a baby";
+picked "About 15 min" from 10 / 15 / 20-25. Lever: evolve1 cost 1778 -> 400 (#36, MERGED cceabba): 130 runs on the
+real head give evolve1 0.26 h, young defeats 8/14, tree 82/87 at 3.37 h. The growth test ratio moved /10 -> /20.
+
+## 2026-10-19 · D-084a · Lead · #55 trample: topple out, crush in place instead (rule 8)
+Why: ten topple rounds failed; method change to crushing trees in place (debris, stump, footfall puff). Still after
+the demo build per D-084.
+
 ## 2026-10-18 · D-085 · Director · Rooftop squads fire raggedly, never in unison
 Why (via the rooftops session): "shooters arent firing in unison ... improvised, unrehearsed resistance". Seeded
 ragged gaps per squad (51a2d5d); in #63.

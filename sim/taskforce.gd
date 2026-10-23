@@ -148,6 +148,17 @@ func swat(force: Callable, top: float) -> void:
 		_kill(agent, "swatted", _wall(agent))
 
 
+## A wreck crashes on the buildings `struck` says yes to (building index -> bool): every agent
+## perched or aiming on one dies with the roof (D-173). Agents in the air are untouched.
+func crush_perched(struck: Callable) -> void:
+	var down: Array[Agent] = []
+	for agent: Agent in agents:
+		if (agent.state == PERCH or agent.state == AIM) and struck.call(agent.building):
+			down.append(agent)
+	for agent: Agent in down:
+		_kill(agent, "crushed", {})
+
+
 func _swat_radius() -> float:
 	var swat_cfg: Dictionary = cfg["swat"]
 	return Num.f(swat_cfg["radius"])

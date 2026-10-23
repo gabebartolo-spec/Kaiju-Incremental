@@ -139,7 +139,7 @@ func _grab(dt: float) -> void:
 		kind = "heli"
 		from = best_heli.pos
 		best_heli.hp = 0.0
-		sim.air.clear_dead()
+		sim.air.clear_dead(true)
 	elif best_tank != null:
 		kind = "tank"
 		from = best_tank.pos

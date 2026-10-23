@@ -15,3 +15,11 @@ processes, so two runs sat hung for 30 minutes at 0 CPU until the lead stopped t
 **Lesson:** record the PID your own run starts (wrapper and child), stop it with
 `powershell Stop-Process -Id <pid>`, and check it's gone. Never kill by name or pattern, which the rulebook bans
 anyway.
+
+## 2026-10-23 · A wait loop must match the suite's summary line, not "passed|FAILED"
+**Finding:** a VFX builder waited on a helideaths run with `until grep -qE "passed|FAILED|Some checks" <log>`. The
+run ended with "1 failures" (lower case, no "FAILED"), so the loop never ended and sat 90 minutes until the lead's
+stall watcher flagged it as a stale loop.
+**Evidence:** lead stall watcher 2026-10-23 14:55 (staleloop PIDs 6516/27388); helideaths run 13:27.
+**Lesson:** wait on the runner's own summary line (`grep -qE "tests: [0-9]+ checks, [0-9]+ failures"`) or on the
+process exiting (its PID), never on words that only one outcome prints; and give every wait loop a time limit.

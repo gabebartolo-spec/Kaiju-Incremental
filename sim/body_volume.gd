@@ -11,6 +11,8 @@ const CHUNK_HALF := 0.5
 var discs: Array = []
 var sim: RampageSim
 var cfg: Dictionary
+## Seconds the sweep in hand covers (a building that dwarfs the kaiju is chewed at bite_dps x it).
+var step_s := 0.0
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -80,3 +82,49 @@ func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) 
 								into[i] = {}
 							var cells: Dictionary = into[i]
 							cells[c] = true
+
+
+## Breaks every standing chunk the body touches moving and turning from one pose to the other in
+## `step_s` seconds (a building that dwarfs the kaiju is chewed at bite_dps x step_s instead of
+## broken outright, D-091); returns the chunks broken.
+func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> int:
+	var span := reach()
+	var close := near(from, to, span)
+	if close.is_empty():
+		return 0
+	var turn := from_heading.angle_to(to_heading)
+	var travel := from.distance_to(to) + absf(turn) * span
+	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
+	var hits: Dictionary = {}
+	var broken := 0
+	for n: int in range(1, samples + 1):
+		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
+		var at: Vector2 = pose[0]
+		var facing: Vector2 = pose[1]
+		collect(at, facing, hits, close)
+	for index: int in hits:
+		var cells: Array[Vector3i] = []
+		for c: Vector3i in hits[index]:
+			cells.append(c)
+		var before := sim.rubble
+		var first := sim.events.size()
+		var b := sim.buildings[index]
+		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
+		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * step_s if dwarfs else INF)
+		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
+		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
+			sim.rubble = before + (sim.rubble - before) * pay
+			sim.events[first]["pay"] = pay
+		broken += n
+	return broken
+
+
+## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is
+## exactly the end pose, the one the hold test reads, so a rounding error in the turn can never
+## leave a chunk the sweep missed but the hold sees.
+static func sweep_pose(
+	from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2, t: float
+) -> Array:
+	if t >= 1.0:
+		return [to, to_heading]
+	return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]
