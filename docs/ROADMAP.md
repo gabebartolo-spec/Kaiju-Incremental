@@ -542,3 +542,5 @@ state. No director clips or per-change approvals in between; clips only where mo
   as the final boss ... snake head, croc body and athleticism, dragon massive size and power and it shoots a tribeam of
   corrosive acid, lightning and poison out of its mouth". A full machine built from your DNA; last city after 100% of
   every reptilian's upgrades. Owner: tripo-komodo (free concepts now), lead. Status: concepts started.
+  Stretch goal: "after you unlock 100% of the achievements you unlock a secret: you can play as the mecha kaiju"
+  (no achievement list exists yet; designed with him later).
