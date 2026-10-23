@@ -15,9 +15,6 @@ const TONGUE := Vector2(1.15, 2.7)
 const TONGUES := 18
 ## The ramp's height in metres at that quad: tips are dark red-brown at it.
 const FLAME_HEIGHT := 2.5
-const FLAME_COLORS: Array[Color] = [
-	Color("fff0b8"), Color("ff9a1e"), Color("e04a0c"), Color("3a1a10")
-]
 ## The voxel flame's old constants: only the blast (blast_parts.gd, on city-explosives-v2) and the
 ## capture tools still read them, until the blast adopts flame_mesh (explosions r10). Not a look.
 const FLAME_CUBE := 0.18
