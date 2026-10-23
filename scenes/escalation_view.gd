@@ -134,9 +134,20 @@ func _apply(v: Dictionary) -> void:
 		_sun.light_color = v["sun_color"]
 
 
-## The share of a building's chunks gone (0..1).
-func damage_of(b: RampageSim.Building) -> float:
-	return 1.0 - Num.f(b.frame.alive_count) / Num.f(maxi(1, b.w * b.d * b.height))
+## The share of building `i` gone (0..1): its chunks, or once the rampage has carved it (a first
+## hit promotes it to the fine grid, whose chunk mirror lags) its cells left, whichever is more.
+func damage_of(i: int) -> float:
+	var b := sim.buildings[i]
+	var out := 1.0 - Num.f(b.frame.alive_count) / Num.f(maxi(1, b.w * b.d * b.height))
+	var grid: Carving.Grid = sim.carving.grids.get(i)
+	if grid != null:
+		var left := 0
+		var full := 0
+		for c: int in grid.live.size():
+			left += grid.live[c]
+			full += grid.full[c]
+		out = maxf(out, 1.0 - Num.f(left) / Num.f(maxi(1, full)))
+	return out
 
 
 ## Recomputes how many floors of each building should be dark: the strongest power cut near it.
@@ -146,14 +157,17 @@ func _scan() -> void:
 	var floor_damage := Num.f(cfg["min_damage"])
 	var gain := maxf(0.0001, Num.f(cfg["gain"]))
 	var hits := PackedVector3Array()  # x, z, damage of every building that cuts power
-	for b: RampageSim.Building in sim.buildings:
-		var dmg := damage_of(b)
+	var damage := PackedFloat32Array()
+	damage.resize(sim.buildings.size())
+	for i: int in sim.buildings.size():
+		var dmg := damage_of(i)
+		damage[i] = dmg
 		if dmg >= floor_damage:
-			hits.append(Vector3(b.x, b.z, dmg))
+			hits.append(Vector3(sim.buildings[i].x, sim.buildings[i].z, dmg))
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		var dark := 0.0
-		if b.frame.alive_count > 0 and not hits.is_empty():
+		if damage[i] < 0.999 and not hits.is_empty():  # a ruin has no windows left to light
 			var strength := 0.0
 			for h: Vector3 in hits:
 				var d := Vector2(b.x - h.x, b.z - h.y).length()

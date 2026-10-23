@@ -6,6 +6,7 @@ extends "res://tests/lib/runner.gd"
 ## Seeded by design: the city layout and army are seeded; no clock, no randomness in the view.
 ##   godot --headless --path . --script tests/run_escalation_tests.gd
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const TIMES: Array[String] = ["dusk", "night", "morning", "noon"]
 const STEPS := 20
 const FRAME := 1.0 / 60.0
@@ -131,7 +132,7 @@ func _check_blackout_times() -> void:
 func _stage(time: String) -> Stage:
 	Content.set_time(time)
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
-	var sim := RampageSim.new({}, Content.tuning(), layout, Seeds.make("army", 0))
+	var sim := RampageSim.new(Kit.stats("reptilian", Kit.STAGE_LEVELS[0]), Content.tuning(), layout, Seeds.make("army", 0))
 	var parent := Node3D.new()
 	var world := WorldEnvironment.new()
 	var env := Environment.new()
@@ -189,7 +190,7 @@ func _check_eased_not_stepped() -> void:
 func _check_falling_piece_stays_dark() -> void:
 	Content.set_time("night")
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
-	var sim := RampageSim.new({}, Content.tuning(), layout, Seeds.make("army", 0))
+	var sim := RampageSim.new(Kit.stats("reptilian", Kit.STAGE_LEVELS[0]), Content.tuning(), layout, Seeds.make("army", 0))
 	var b := sim.buildings[0]
 	var view := BuildingView.new(b, Color("9a9890"))
 	root.add_child(view)
@@ -233,11 +234,12 @@ func _check_blackout_spreads() -> void:
 				for z: int in hb.d:
 					cells.append(Vector3i(x, y, z))
 		sim.damage_chunks(hit, cells, 9999.0)
+		check(view.damage_of(hit) > 0.5, "%s: the view sees a flattened (carved) building as damaged" % time)
 		var nearby := -1
 		var far := order[order.size() - 1]
 		var best := INF
 		for i: int in order:  # the standing building closest to the flattened one
-			if i == hit or sim.buildings[i].frame.alive_count == 0:
+			if i == hit or view.damage_of(i) > 0.999:
 				continue
 			var gap := Vector2(sim.buildings[i].x - hb.x, sim.buildings[i].z - hb.z).length()
 			if gap < best:
