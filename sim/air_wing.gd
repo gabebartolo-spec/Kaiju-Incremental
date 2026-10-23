@@ -11,8 +11,9 @@ extends RefCounted
 ## spinning down for `fall_seconds`,
 ## drifting `fall_drift`, its crew sometimes bailing out by parachute (`bailout_chance`, up to
 ## `bailout_max`), until it crashes: the wreck smashes `crash_floors` floors within
-## `crash_radius` (never the kaiju) and sets the building it hits burning (City Ablaze). It pays
-## its rubble when it is downed. Part of RampageSim. Pure and seeded.
+## `crash_radius`, crushing the tanks and squads below (D-167; never the kaiju), and sets the
+## building it hits burning (City Ablaze). It pays its rubble when it is downed.
+## Part of RampageSim. Pure and seeded.
 
 
 class Heli:
@@ -44,6 +45,7 @@ var falling: Array[Falling] = []
 var destroyed := 0
 var _rng: RandomNumberGenerator
 var _fall_rng: RandomNumberGenerator  # its own stream: spawns draw exactly as before deaths fell
+var _crashing := false  # a wreck's own impact never reaches the sky
 var _spawn_timer := 0.0
 var _next_id := 0
 
@@ -174,7 +176,7 @@ func _keep_clear(heli: Heli) -> void:
 
 ## An attack's force reaches helicopters only when reaches_air (else they fly too high).
 func hit(force: Callable, damage: float, reaches_air: bool) -> void:
-	if not reaches_air or helis.is_empty():
+	if not reaches_air or helis.is_empty() or _crashing:
 		return
 	for heli: Heli in helis:
 		var k: float = force.call(heli.pos, Num.f(cfg["heli_radius"]))
@@ -241,8 +243,8 @@ func _fall(dt: float) -> void:
 
 
 ## The wreck hits the street at `at`: it sets the building it hits burning, which spreads with
-## City Ablaze (D-141), and smashes the low floors around it. It hurts only the city (D-140):
-## never the kaiju, the army or the sky.
+## City Ablaze (D-141), and smashes the low floors around it. It hurts the city and the army
+## below (D-167), never the kaiju or the sky.
 func _crash(at: Vector2) -> void:
 	var radius := Num.f(cfg["crash_radius"])
 	var nearest := -1
@@ -259,10 +261,12 @@ func _crash(at: Vector2) -> void:
 			nearest = i
 	if nearest >= 0:
 		sim.powers.fire.ignite(nearest)
-	StrayShell.hit_buildings(
-		sim,
+	_crashing = true
+	sim.hit_area(
 		func(p: Vector2, r: float) -> float:
 			return RampageSim.falloff(p.distance_to(at) - r, radius),
 		Num.f(cfg["crash_damage"]),
-		Vector2i(0, Num.i(cfg["crash_floors"]))
+		0,
+		Num.i(cfg["crash_floors"])
 	)
+	_crashing = false

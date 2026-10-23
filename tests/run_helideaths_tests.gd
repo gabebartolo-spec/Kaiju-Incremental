@@ -1,7 +1,8 @@
 extends "res://tests/lib/powers_base.gd"
 ## Helicopter deaths suite (AirWing, D-140, D-141, D-145): a hard killing blow blows a helicopter
 ## apart in the air; a light one sends it spinning down, its crew sometimes bailing out, and the
-## wreck smashes the building it lands on (never the kaiju) and sets it burning with City Ablaze;
+## wreck smashes the building it lands on and the army below (never the kaiju) and sets it
+## burning with City Ablaze;
 ## a grabbed one only leaves the sky; the falls draw their own seeded stream, so spawns replay as
 ## before. Player-effect fixture "heli.deaths": the same downed helicopter breaks a building when
 ## it spins down onto it and breaks nothing when it is blown apart. Headless.
@@ -19,6 +20,8 @@ func run_checks() -> void:
 	await _t("_check_burst")
 	await _t("_check_spin_crash")
 	await _t("_check_crash_fire")
+	await _t("_check_crash_crushes_army")
+	await _t("_check_crash_spares_kaiju")
 	await _t("_check_coat_kill")
 	await _t("_check_grabbed")
 	await _t("_check_topple")
@@ -103,6 +106,57 @@ func _check_spin_crash() -> void:
 		"a crashing wreck never hurts the kaiju (%.2f)" % Num.f(crash.get("hurt", 1.0))
 	)
 	check(sim.air.falling.is_empty(), "a crashed wreck is gone from the falling list")
+
+
+## Downs the only helicopter, then lets its wreck land at `at` on the very next step.
+func _crash_at(sim: RampageSim, at: Vector2) -> void:
+	_down(sim, Num.f(sim.air.cfg["hp"]) * 0.2)
+	var down: AirWing.Falling = sim.air.falling[0]
+	down.pos = at
+	down.drift = Vector2.ZERO
+	down.left = DT * 0.5
+	sim.step(DT, Vector2.ZERO, false, 0)
+
+
+func _tank_at(sim: RampageSim, id: int, at: Vector2) -> RampageSim.Tank:
+	var tank := RampageSim.Tank.new()
+	tank.id = id
+	tank.hp = 5.0  # a crash's damage kills it where it lands
+	tank.cooldown = 99.0
+	tank.pos = at
+	sim.tanks.append(tank)
+	return tank
+
+
+## The wreck's impact reaches the army below it (D-167): a tank in the crash radius dies, one far
+## away lives, and a squad on a low roof under it dies (the fall is a hit_area, never the sky).
+func _check_crash_crushes_army() -> void:
+	var sim := _scene({})
+	sim.army_units.squads.clear()
+	var near := _tank_at(sim, 901, Vector2.ZERO)
+	var far := _tank_at(sim, 902, Vector2(30, 30))
+	var squad := Army.Squad.new()
+	squad.building = 0
+	squad.cell = Vector3i(0, 1, 0)
+	squad.pos = Vector2.ZERO
+	sim.army_units.squads.append(squad)
+	_crash_at(sim, Vector2.ZERO)
+	check(not sim.tanks.has(near), "a tank under the crash is crushed (hp %.1f)" % near.hp)
+	check(sim.tanks.has(far) and far.hp == 5.0, "a tank far from the crash is not hurt")
+	check(sim.army_units.squads.is_empty(), "a squad on a low roof under the crash is killed")
+
+
+## The wreck never hurts the kaiju (D-140, kept by D-167), even one standing in the crash.
+func _check_crash_spares_kaiju() -> void:
+	var sim := _scene({})
+	sim.kaiju_pos = Vector2.ZERO
+	var before := sim.hp
+	_crash_at(sim, Vector2.ZERO)
+	check(
+		sim.hp == before,
+		"a crash on the kaiju's own spot costs it nothing (%.2f)" % (before - sim.hp)
+	)
+	check(sim.air.falling.is_empty(), "the wreck did land (the check ran on a real crash)")
 
 
 func _check_crash_fire() -> void:
