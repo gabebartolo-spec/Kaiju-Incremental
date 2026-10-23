@@ -97,6 +97,8 @@ var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
 var stomp: RampageStomp
+## The reptilian's big attacks that land a beat after the press (Strikes, D-166).
+var strikes: Strikes
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
@@ -147,6 +149,8 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
+	var strike_cfg: Dictionary = tuning["strike"]
+	strikes = Strikes.new(self, strike_cfg)
 
 
 func stat(stat_name: String) -> float:
@@ -224,6 +228,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
+	strikes.step(dt)
 	stomp.step(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
@@ -278,7 +283,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			BreathCone.breathe(self, reach, damage)
+			strikes.breath()  # the cone burns at the strike, where he faces then (D-166)
 		"leap":
 			var from := kaiju_pos
 			kaiju_pos = clamp_to_arena(
