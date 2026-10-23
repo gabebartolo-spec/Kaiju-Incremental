@@ -19,7 +19,12 @@
   turn-weight (agent ac71d48ab1a1ff638, claude/turn-weight-d187) design approved: uturn_s 2/3 + 6 steps of 30 deg,
   trapezoid yaw (peak 1.25x mean); no-lunge bar at the feet-centre (kaiju_pos is the tail base, 7/14 u behind the
   feet); FL per step from the VFX lead; smoke StepTurn 90 deg re-pinned per D-187. Then clip + fresh motion critic.
-  Hygiene: stale claude/turn-weight ba70e967 on origin.
+  Hygiene: stale claude/turn-weight ba70e967 on origin. Bars met: U-turn 1.97/2.97 s, peak 1.11x, 34 deg max a step;
+  bar 3 = regression guards (feet-centre <= 1.9x, origin <= 3.5x). Real inner steps need turn_slow 0.1 (near stop
+  in an about-face): asked him; he said "show me them both. im cautious of the fullstop feeling terrible to play" ->
+  one labelled A/B clip (A step round 0.1, B walking arc 0.5; B fails the motion gate's Colossus centre bar 0.63>0.6),
+  fresh motion critic, lead's check, then to him. Offer a switchable test build if the clip can't show the feel.
+  Asked VFX lead where kaiju_pos sits on the body: stomp/claw/breath centres read it (feet 7/14 u ahead of it).
 - D-188 "Keep going until critics pass" (no round cap) + "if something has failed 7 times in a row then our method is
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
   Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
