@@ -105,6 +105,12 @@ static func time_table() -> Dictionary:
 	return _times
 
 
+## The time of day in use (an id of times()); presentation reads it, the sim never does.
+static func time_id() -> String:
+	_load()
+	return _time_id
+
+
 static func set_time(id: String) -> void:
 	_load()
 	if id == _time_id:

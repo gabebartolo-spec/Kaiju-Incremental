@@ -45,6 +45,8 @@ var _shell_mat: ShaderMaterial
 var _slab_mat: ShaderMaterial
 var _shell: MeshInstance3D
 var _cells_mat: ShaderMaterial
+## Floors from the street up whose lit windows are dark (a blackout, EscalationView); -1 none.
+var dark_to := -1.0
 
 
 ## party: side (BuildingVoxels.SIDES) -> floors a neighbour covers there. The voxels and meshes are
@@ -149,6 +151,7 @@ func promote(grid: BuildingCells) -> CellView:
 	whole.fill(Color(1, 1, 1))
 	_cells_mat = _material(ImageTexture.create_from_image(whole))  # every face in chunk 0, standing
 	_cells_mat.set_shader_parameter("opacity", _shell_mat.get_shader_parameter("opacity"))
+	_cells_mat.set_shader_parameter("dark_to", dark_to)
 	cells_view = CellView.new(CellMesher.new(voxels, grid), grid.cells, _cells_mat)
 	add_child(cells_view)
 	_shell.visible = false
@@ -156,11 +159,20 @@ func promote(grid: BuildingCells) -> CellView:
 	return cells_view
 
 
+## Blackout: the lit windows below this height (floors from the street) go dark.
+func set_dark_to(floors: float) -> void:
+	dark_to = floors
+	for mat: ShaderMaterial in [_shell_mat, _slab_mat, _cells_mat]:
+		if mat != null:
+			mat.set_shader_parameter("dark_to", floors)
+
+
 func _material(tex: Texture2D) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = SHADER
 	mat.set_shader_parameter("alive", tex)
 	mat.set_shader_parameter("glow", Look.value("window_glow"))
+	mat.set_shader_parameter("dark_color", Look.color("window"))
 	var shape: Dictionary = Content.landmarks().get(b.landmark, {})
 	mat.set_shader_parameter("inside", Num.f(shape.get("inside", 0.12)))  # cut faces' shade
 	return mat

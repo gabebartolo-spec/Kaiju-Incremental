@@ -16,6 +16,11 @@ uniform float inside = 0.12;
 // Below 1, a screen-door fade (a building between the camera and the kaiju, D-025's rule as
 // the vehicles have it, voxel.gdshader): a share of its pixels is dropped in a fixed pattern.
 uniform float opacity = 1.0;
+// A blackout (EscalationView): lit cells (alpha 0) below `dark_to` (local height, floors) turn to
+// the dark window colour and stop glowing. -1 = none.
+uniform float dark_to = -1.0;
+uniform vec4 dark_color : source_color = vec4(0.17, 0.23, 0.27, 1.0);
+varying float local_y;
 const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
@@ -24,6 +29,7 @@ vec3 srgb_to_linear(vec3 c) {
 }
 
 void vertex() {
+	local_y = VERTEX.y;
 	float state = texelFetch(alive, ivec2(int(UV2.x + 0.5), 0), 0).r;
 	if (state < 0.02 || UV2.y < 1.0 - state) {
 		VERTEX = vec3(0.0);
@@ -42,6 +48,10 @@ void fragment() {
 	if (FRONT_FACING) {
 		ALBEDO = albedo;
 		EMISSION = albedo * glow * (1.0 - COLOR.a);
+		if (COLOR.a < 0.5 && local_y < dark_to) {
+			ALBEDO = dark_color.rgb;
+			EMISSION = vec3(0.0);
+		}
 	} else {
 		ALBEDO = albedo * inside;
 		NORMAL = -NORMAL;
