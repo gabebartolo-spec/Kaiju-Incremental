@@ -102,8 +102,7 @@
 - When a lead slot frees: music integration (D-184), then sky and sea life with the whale in the river (D-168;
   demo-end handoff plan), damage on impact (D-166, after strike-delay), sim speed-ups (D-159), Taskforce adult units.
 - Heli-standoff: push -> git-helper opens the PR -> non-author sim review -> go; send the sha to the VFX lead (D-183).
-- Hygiene: scratchpad hygiene_manifest.md (dead worktrees vs cap 12, backups first). His to remove (a peer's delete
-  was denied, so not ours): local scratch/gait-merge (volley worktree) and gw-scratch (agent-a0c3ef106ae9686d7).
+- Hygiene: scratchpad hygiene_manifest.md (dead worktrees vs cap 12); deletions are his to make.
 
 ## Tools
 - Lead docs worktree Kaiju-Incremental-wt/lead-docs (detach at origin/claude/look-options; python edits newline='';
