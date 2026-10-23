@@ -95,11 +95,14 @@ GitHub helper opens PRs. Thunder sound = the lead's.
 - Slot order now: voxel boards (brief scratchpad brief_voxel_boards.md) -> item 4 fix (brief_item4.md) -> dust
   billows -> explosions r10 once #160 merges.
 
-## Running jobs
-WIND-DOWN (lead 08:38): nothing new until the director is back; queue in scratchpad slots.md.
-No builder running (all in-flight work pushed). Lead-board watcher on to-vfx-lead.md. When work resumes: stall
-watcher = scratchpad stall_watch_copy.sh over each builder's subagents/agent-<id>.jsonl (SKIP_PIDS for foreign runs);
-keep the slot ledger (slots.md) current on every go and finish (I over-assigned slots 3 times without it).
+## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
+Lead's order: #166 (D-167 wrecks crush the army again) -> one look (D-163) -> heads/skins (D-164/170) -> living
+predator (D-165, + strike times per growth step for the lead's D-166 builder) -> Thunder Beam r7.
+- slot 1 heli-r3 (Sonnet builder, own worktree): #166 sim revert of 31a77e99's crash half + look r3 (brief
+  scratchpad brief_166_r3.md); then my critic, then 'SHIP #166 <sha>' to the lead.
+- slot 2 one-look: D-163 phase 1 grade / far blur + haze / fine-block ground on claude/one-look (brief_one_look_p1.md).
+- no engine: heads-r2 asset worker on claude/heads-skins (brief_heads_r2.md; 6500 credits left, rig test <= 100).
+Stall watcher = scratchpad stall_watch_copy.sh over subagents/agent-<id>.jsonl; ledger scratchpad slots.md.
 
 ## Item 4 (collapse defect, BuildingView.lift_piece): diagnosed, brief scratchpad brief_item4.md
 Lead's v5 frames (fire_clip/v5f f_083-087; my crop scratchpad v5_lattice.png): a toppling piece is an open box.
