@@ -55,8 +55,6 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
-var _smooth_yaw := 0.0  # rad turned smoothly over steps in a row: a held curve is a real turn
-var _step_yaw := 0.0  # rad turned, smoothly or in steps, since the last footfall
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
 
 
@@ -115,7 +113,8 @@ func length() -> float:
 ## than swivelling on the spot like a plastic toy"): the body yaws only in the first slice_open of
 ## each step, from its footfall, at the same pace on average, holds between (the head leads by
 ## turn_left), and swings about its planted feet, not its middle. A course correction under
-## smooth_below turns smoothly while walking, with no slice or pivot (D-130, "Small turns smooth").
+## smooth_below turns smoothly while walking, with no slice (D-130, "Small turns smooth"), but over
+## the planted foot like any turn: a held curve never drags the feet (D-177).
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
 	if want == Vector2.ZERO:
@@ -142,12 +141,10 @@ func steer(dt: float, want: Vector2) -> float:
 	if signf(turn) == signf(turn_left) and absf(turn) >= absf(turn_left):
 		turn = turn_left  # lands on the new way exactly
 		_spin = 0.0
-	_step_yaw += absf(turn)
-	_smooth_yaw += 0.0 if stepped else absf(turn)
 	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
 	var was := heading
 	_face(dt)
-	if stepped:
+	if turns_in_steps():  # a smooth turn too is made over the planted foot, never dragging the feet
 		_swing(was)
 	return stride
 
@@ -161,7 +158,6 @@ func _stand(dt: float) -> void:
 	_standing = true
 	_walked_s = 0.0
 	_real_turn = false
-	_smooth_yaw = 0.0
 	_face(dt)
 
 
@@ -171,10 +167,9 @@ func _plant_both() -> void:
 
 
 ## True when this turn is made in steps: a real turn (begun at smooth_below or more, kept until it
-## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130), until
-## a held curve has turned smooth_below or more over steps in a row: that is a real turn (D-177).
+## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130).
 func _steps_this_turn() -> bool:
-	if absf(turn_left) >= Num.f(cfg["smooth_below"]) or _smooth_yaw >= Num.f(cfg["smooth_below"]):
+	if absf(turn_left) >= Num.f(cfg["smooth_below"]):
 		if not _real_turn:
 			_turn_total = 0.0
 		_real_turn = true
@@ -263,9 +258,6 @@ func walked(distance: float, dt: float) -> void:
 			step_ratio = maxf(steps / moved, Num.f(cfg["step_ratio_min"]))
 		if floorf(phase) != before:  # a footfall: that foot comes down short of a full step
 			var short := 0.5 * _step_len * (1.0 - step_ratio)
-			if _step_yaw < Num.f(cfg["turn_min"]):
-				_smooth_yaw = 0.0  # a step with no turn in it ends the curve
-			_step_yaw = 0.0
 			_feet = [_foot_at(_pivot.x - short, 1.0), _feet[0]]
 
 
