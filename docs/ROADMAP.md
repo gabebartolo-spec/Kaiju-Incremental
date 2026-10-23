@@ -462,4 +462,9 @@ state. No director clips or per-change approvals in between; clips only where mo
   strategically, gracefully": stand-off gunships (D-183). Owner: lead's builder (sim/air_wing.gd), VFX lead for banking
   and rotor look. Status: queued after the volley rework.
 - "these songs are too staccato, too endlessly building with very little relief or payoff": theme takes now ask for a
-  legato melody with tension and release (D-182). Owner: lead. Status: takes made, his pick pending.
+  legato melody with tension and release (D-182). Owner: lead. Status: done; D-184 ships the Godzilla set: his
+  remaster of G2 (song 798f3c13) on the menu over the city sound and as the source of the three city Covers.
+- "the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind
+  up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very
+  suddenly, defying his anatomy, it looks terrible". D-185: a heavy raking arc. Owner: VFX lead (diagnose, exact
+  fix, motion bars at all three growth steps, motion critic, one clip after SHIP). Status: queued, order from the VFX lead.

@@ -4,9 +4,13 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-185 · Director · The claw swipe becomes a heavy raking arc
+
+"the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very suddenly, defying his anatomy, it looks terrible". Asked: "Heavy raking arc": his shoulders and body twist into it, the arm loads back, then sweeps low and wide with the claws raking through and a heavy follow-through; a slower wind-up, a fast strike, like a bear's or Godzilla's swat, within a croc's forelimb range. The hit lands at the same moment the sim deals it (presentation only). Owner: the VFX lead, under the D-177 motion checks at all three growth steps.
+
 ## 2026-10-23 · D-184 · Director · The music ships: the 1954-Godzilla theme G1 on the menu and, re-arranged, in every city
 
-After "now the songs are too whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference", the lead made four takes in the style of the 1954 Godzilla score (G1, G2 a heavy march; G3, G4 "he appears", slow with silences). He: "ok the music is much better, ship it, but make a note in the roadmap to revisit music later". Asked: "download them all, but use G1 for the main menu"; the three cities get Suno Covers of G1 ("Cover it per city now", source "G1"), each a step heavier with the city (D-181, D-172). Menu: G1 plays over the city sound ("Over the city sound"), which amends D-141's "no music, city sounds only" on the title. All four takes are downloaded as WAV; stems (Auto Split) only for the city tracks, which play in layers (D-125). A later music pass is on the ROADMAP. Takes, settings and credits: docs/provenance/music.md.
+After "now the songs are too whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference", the lead made four takes in the style of the 1954 Godzilla score (G1, G2 a heavy march; G3, G4 "he appears", slow with silences). He: "ok the music is much better, ship it, but make a note in the roadmap to revisit music later". Asked: "download them all, but use G1 for the main menu"; the three cities get Suno Covers of G1 ("Cover it per city now", source "G1"), each a step heavier with the city (D-181, D-172). Then he made a Suno remaster of G2 (song 798f3c13): "use this one", asked: "Menu and cities": the remaster replaces G1 on the menu and as the Covers' source. Menu: the theme plays over the city sound ("Over the city sound"), which amends D-141's "no music, city sounds only" on the title. All four takes are downloaded as WAV; stems (Auto Split) only for the city tracks, which play in layers (D-125). A later music pass is on the ROADMAP. Takes, settings and credits: docs/provenance/music.md.
 
 ## 2026-10-23 · D-183 · Director · Helicopters fight as stand-off gunships, moving gracefully
 
@@ -392,8 +396,3 @@ support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 a
 Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
 (199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
 cap saved by demo exe 1 no longer overrides it.
-
-## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
-Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
-subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
-has no commercial rights; Pro $12/mo; not bought.

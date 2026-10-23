@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
+Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
+subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
+has no commercial rights; Pro $12/mo; not bought.
+
 ## 2026-10-19 · D-091 · Director · No building is too strong for the baby; big ones just take longer
 Why: "the buildings shouldnt be too strong for our little kaiju, it should just take him longer ... hes more than
 capable of tearing the roots out and toppling the large buildings". Replaces the tier gate and "TOO STRONG"; evolve1
