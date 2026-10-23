@@ -40,7 +40,6 @@ var _discs: Array = []
 var _volume: BodyVolume
 var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
-var _dt := 0.0
 var _hold_s := 0.0
 var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
 ## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
@@ -56,6 +55,9 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
+var _smooth_yaw := 0.0  # rad turned smoothly over steps in a row: a held curve is a real turn
+var _step_yaw := 0.0  # rad turned, smoothly or in steps, since the last footfall
+var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -64,6 +66,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	cfg = tuning["contact"]
 	heading = sim.facing
 	_last_heading = heading
+	_step_len = Num.f(cfg["step_len"])
 	dash = Dash.new(self, cfg)
 	_volume = BodyVolume.new(sim, cfg)
 
@@ -79,6 +82,7 @@ func use_species(species_id: String) -> void:
 		_discs = stage["discs"]
 		_volume.discs = _discs
 		snout = Num.f(stage["snout"])
+		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
 
@@ -138,6 +142,8 @@ func steer(dt: float, want: Vector2) -> float:
 	if signf(turn) == signf(turn_left) and absf(turn) >= absf(turn_left):
 		turn = turn_left  # lands on the new way exactly
 		_spin = 0.0
+	_step_yaw += absf(turn)
+	_smooth_yaw += 0.0 if stepped else absf(turn)
 	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
 	var was := heading
 	_face(dt)
@@ -155,18 +161,20 @@ func _stand(dt: float) -> void:
 	_standing = true
 	_walked_s = 0.0
 	_real_turn = false
+	_smooth_yaw = 0.0
 	_face(dt)
 
 
 ## Both feet down where they stand when the body sets off (or after a dash or leap).
 func _plant_both() -> void:
-	_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - Num.f(cfg["step_len"]), -1.0)]
+	_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - _step_len, -1.0)]
 
 
 ## True when this turn is made in steps: a real turn (begun at smooth_below or more, kept until it
-## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130).
+## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130), until
+## a held curve has turned smooth_below or more over steps in a row: that is a real turn (D-177).
 func _steps_this_turn() -> bool:
-	if absf(turn_left) >= Num.f(cfg["smooth_below"]):
+	if absf(turn_left) >= Num.f(cfg["smooth_below"]) or _smooth_yaw >= Num.f(cfg["smooth_below"]):
 		if not _real_turn:
 			_turn_total = 0.0
 		_real_turn = true
@@ -248,13 +256,16 @@ func step_clock() -> float:
 func walked(distance: float, dt: float) -> void:
 	if stepping():
 		var before := floorf(phase)
-		var steps := distance / (Num.f(cfg["step_len"]) * sim.body_scale())
+		var steps := distance / (_step_len * sim.body_scale())
 		var moved := maxf(steps, _cadence * dt)
 		phase += moved
 		if moved > 0.0:
 			step_ratio = maxf(steps / moved, Num.f(cfg["step_ratio_min"]))
 		if floorf(phase) != before:  # a footfall: that foot comes down short of a full step
-			var short := 0.5 * Num.f(cfg["step_len"]) * (1.0 - step_ratio)
+			var short := 0.5 * _step_len * (1.0 - step_ratio)
+			if _step_yaw < Num.f(cfg["turn_min"]):
+				_smooth_yaw = 0.0  # a step with no turn in it ends the curve
+			_step_yaw = 0.0
 			_feet = [_foot_at(_pivot.x - short, 1.0), _feet[0]]
 
 
@@ -268,8 +279,8 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_heading := heading if _last_pos.x == INF else _last_heading
-	_dt = dt
-	_sweep(from, from_heading, sim.kaiju_pos, heading)
+	_volume.step_s = dt
+	broken += _volume.sweep(from, from_heading, sim.kaiju_pos, heading)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)
@@ -336,44 +347,3 @@ func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 	var out: Dictionary = {}
 	_volume.collect(pos, facing, out, _volume.near(pos, pos, _volume.reach()))
 	return out
-
-
-func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> void:
-	var reach := _volume.reach()
-	var near := _volume.near(from, to, reach)
-	if near.is_empty():
-		return
-	var turn := from_heading.angle_to(to_heading)
-	var travel := from.distance_to(to) + absf(turn) * reach
-	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
-	var hits: Dictionary = {}
-	for n: int in range(1, samples + 1):
-		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
-		var at: Vector2 = pose[0]
-		var facing: Vector2 = pose[1]
-		_volume.collect(at, facing, hits, near)
-	for index: int in hits:
-		var cells: Array[Vector3i] = []
-		for c: Vector3i in hits[index]:
-			cells.append(c)
-		var before := sim.rubble
-		var first := sim.events.size()
-		var b := sim.buildings[index]
-		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
-		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * _dt if dwarfs else INF)
-		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
-		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
-			sim.rubble = before + (sim.rubble - before) * pay
-			sim.events[first]["pay"] = pay
-		broken += n
-
-
-## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is
-## exactly the end pose, the one the hold test reads, so a rounding error in the turn can never
-## leave a chunk the sweep missed but the hold sees.
-static func sweep_pose(
-	from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2, t: float
-) -> Array:
-	if t >= 1.0:
-		return [to, to_heading]
-	return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]

@@ -30,26 +30,27 @@ static func check(check: Callable, root: Node) -> void:
 
 ## The step in the data and the step the sim walks, against half the clip's stride.
 static func _stride(check: Callable, root: Node, stage: String) -> void:
-	var rig := _rig(STAGES[stage], root)
+	var levels: Dictionary = STAGES[stage]
+	var rig := _rig(levels, root)
 	var sim: RampageSim = rig["sim"]
 	var kaiju: KaijuModel = rig["kaiju"]
 	var bodies: Array = Content.tuning()["contact"]["bodies"]["reptilian"]
 	var body: Dictionary = bodies[sim.size_tier() - 1]
 	var default: Variant = Content.tuning()["contact"]["step_len"]
 	var data := Num.f(body.get("step_len", default)) * sim.body_scale()
-	var clip: float = (kaiju._rig.gait as ClipGait).stride() * 0.5
+	var from := sim.kaiju_pos
+	var phase := sim.body.phase
+	for f: int in roundi(WALK_S / DT):
+		_drive(sim, kaiju, Vector2(0, -1))
+		if f == roundi(WARM_S / DT):
+			from = sim.kaiju_pos
+			phase = sim.body.phase
+	var clip: float = (kaiju._rig.gait as ClipGait).stride() * 0.5  # world units once it has moved
 	check.call(
 		absf(clip / data - 1.0) < STEP_LEN_TOL,
 		"%s: the step in the data is half the clip's stride (%.3f vs %.3f)" % [stage, data, clip]
 	)
 	if sim.body.stepping():
-		var from := sim.kaiju_pos
-		var phase := sim.body.phase
-		for f: int in roundi(WALK_S / DT):
-			sim.step(DT, Vector2(0, -1), false, 0)
-			if f == roundi(WARM_S / DT):
-				from = sim.kaiju_pos
-				phase = sim.body.phase
 		var walked := sim.kaiju_pos.distance_to(from) / maxf(sim.body.phase - phase, 0.001)
 		check.call(
 			absf(clip / walked - 1.0) < STEP_LEN_TOL,
@@ -60,7 +61,8 @@ static func _stride(check: Callable, root: Node, stage: String) -> void:
 
 ## A held curve yaws only with a foot down, at each growth step that steps its turns.
 static func _curve(check: Callable, root: Node, stage: String) -> void:
-	var rig := _rig(STAGES[stage], root)
+	var levels: Dictionary = STAGES[stage]
+	var rig := _rig(levels, root)
 	var sim: RampageSim = rig["sim"]
 	var kaiju: KaijuModel = rig["kaiju"]
 	var gait: BipedGait = kaiju._rig.gait
@@ -69,11 +71,7 @@ static func _curve(check: Callable, root: Node, stage: String) -> void:
 	for f: int in roundi(ROUTE_S / DT):
 		var t := f * DT
 		var way := Vector2(0, -1).rotated(-deg_to_rad(CURVE_DEG_S) * maxf(0.0, t - CURVE_FROM_S))
-		sim.step(DT, way, false, 0)
-		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
-		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
-		kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
-		kaiju.animate(DT, way.length(), -sim.body.turn_left)
+		_drive(sim, kaiju, way)
 		var dyaw := wrapf(gait.body_yaw - last_yaw, -PI, PI)
 		last_yaw = gait.body_yaw
 		var left: BipedGait.Leg = gait.legs[0]
@@ -90,6 +88,15 @@ static func _curve(check: Callable, root: Node, stage: String) -> void:
 				% [stage, CURVE_DEG_S, aloft, MAX_ALOFT_DEG]
 			)
 		)
+
+
+## One frame: the stick `way` steps the sim, and the model follows it as the rampage scene does.
+static func _drive(sim: RampageSim, kaiju: KaijuModel, way: Vector2) -> void:
+	sim.step(DT, way, false, 0)
+	kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
+	kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
+	kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
+	kaiju.animate(DT, way.length(), -sim.body.turn_left)
 
 
 ## The reptilian at `levels` at (0, 30), with its model.
