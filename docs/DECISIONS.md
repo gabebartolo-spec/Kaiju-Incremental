@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-198 · Director · Serpent slither: a wide S-curve, quick turns, sidewinding as its dash; prototype now
+
+He: "the challenge will be making the snake slither in a satisfying way, research should be done". Research (scratchpad research_serpent_slither.md): a kinematic trail body (each segment follows the head's path, so it never slides or cuts corners) with the S-wave laid in by distance travelled, weight from the response (acceleration, turn limit, the head leading), helix climbing and constricting, no physics chain, no Cascadeur for a limbless body. Asked: sweep "Wide, ~6 m each side" (on a ~40 m body; the bends scrape street edges); a 90 deg turn "About 1.5 s"; sidewinding "Yes, as its dash"; the prototype "Yes, now": a stand-in segmented body slithering, turning and stopping at the game camera, one ~6 s clip, then climbing, constricting and the tail grab step by step.
+
 ## 2026-10-24 · D-197 · Director · The reptilian family: Komodo (heavy), croc (medium), serpent (light), picked from the baby stage
 
 After the Komodo model ("i love this komodo model"): "i think we should make it a choice from the baby stage". Asked what it is: "its still considered a Reptilian. Reptilian: Croc (we will remake his body to be more horizontal, a trex/croc hybrid), Komodo dragon, Serpent. We keep octopus and insectoid as stretch goals; another stretch goal is to build your own kaiju from preset configurations." Each plays differently: "all differ and have different mobility; in simplified terms: dragon - heavy, croc - medium, serpent - light. Dragon is our lumbering collosus now. Our new croc will be athletic and aerodynamic, while still posessing incredible power. The serpent will be more of a specialist." Serpent: "i wanna be ambitious with this one, I want it to be an actual serpent, meaning it needs to slither, i can picture it spiraling up towers and spitting acid, grabbing helicopters from the sky with its tail (the serpent will be our octopus stand in), constricting buildings and crushing them". Demo: "it should just be 1 option in the demo, we pick whichever looks best later". Replaces D-171's heads unlocked with the Colossus (python and Komodo heads). Next: "Komodo baby and adolescent" (Tripo, about 130 credits each, inside D-196's 1000).
@@ -393,7 +397,3 @@ sting scaled by the same factor so the size order holds.
 Why: the round-2 motion critic's three findings are defects, not taste (lead 2x on the clean CI clips): the fallen tower
 slab lands whole and then vanishes, block towers shear in a regular staircase, debris floats visibly inside glass.
 Carving is top priority (D-097), so they are fixed now on claude/carve-wp5 rather than carried into WP7.
-
-## 2026-10-20 · D-101 · Director · Carved slab colour B (8a8780)
-Why: picked from the WP4 slab stills. Changes: carved floor slabs and cut faces in the WP4 view mesher use 8a8780
-(claude/carve-wp4 609ea71).
