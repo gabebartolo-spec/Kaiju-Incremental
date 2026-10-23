@@ -407,8 +407,8 @@ state. No director clips or per-change approvals in between; clips only where mo
   (VFX lead's clip timings, data values); dash after the D-165 crouch. Owner: lead's builder. Status: not started.
 - Railgun volleys staggered to about 2 hits per squad per second (D-166). Owner: lead's builder. Status: not started.
 - Thunder Beam at a third of its price, last unlock about 2.25 h (D-167 amended). Owner: lead's builder. Status: pacing run.
-- Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173, PR #166). Owner: VFX lead. Status:
-  not started.
+- Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173): MERGED #166 (3e4a7665),
+  look round 3 FIX flagged for the M3 survey; round 4 on claude/heli-look-r4. Owner: VFX lead.
 - The whale in the water between the play city and the distant city (D-168), with sky and sea life. Owner: demo-end
   session. Status: not started.
 - Suno music this week (D-169), brooding and building, one mood growing heavier (D-172, briefs rewritten); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
