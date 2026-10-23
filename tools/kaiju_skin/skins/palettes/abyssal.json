@@ -1,0 +1,7 @@
+{
+ "glow": "spots",
+ "glow_share": 0.035,
+ "glow_regions": [
+  "back"
+ ]
+}

@@ -1,0 +1,13 @@
+{
+ "glow": "crevice",
+ "glow_share": {
+  "back": 0.06,
+  "belly": 0.05,
+  "spines": 0.015
+ },
+ "glow_regions": [
+  "back",
+  "belly",
+  "spines"
+ ]
+}
