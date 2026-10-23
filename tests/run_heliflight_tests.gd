@@ -49,14 +49,16 @@ func _walk(sim: RampageSim, n: int, target: Vector2) -> Vector2:
 ## outside a pass, the closest in one, the fastest step, the sharpest turn, the nearest to the
 ## camera's side (radians off it), the passes begun and the most flying one at a time.
 func _fly(sim: RampageSim, seconds: float) -> Dictionary:
-	var bearing := deg_to_rad(Num.f(Content.section("air")["camera_bearing"]))
+	var air: Dictionary = Content.section("air")
+	var bearing := deg_to_rad(Num.f(air["camera_bearing"]))
+	var slow := Num.f(air["nose_share"]) * Num.f(air["heli_speed"])  # slower than this it hovers
 	for _n: int in HELIS:
 		sim.air.spawn()
 	var out := {
 		"hold": INF, "pass": INF, "speed": 0.0, "turn": 0.0, "side": PI, "passes": 0, "most": 0
 	}
 	var last: Dictionary = {}  # id -> position last step
-	var way: Dictionary = {}  # id -> direction of its last real move
+	var way: Dictionary = {}  # id -> direction of its move last step (absent: it was slow)
 	var flying: Dictionary = {}  # id -> was on a pass last step
 	var target := Vector2(INF, INF)
 	for n: int in roundi(seconds / DT):
@@ -75,11 +77,13 @@ func _fly(sim: RampageSim, seconds: float) -> Dictionary:
 			if last.has(heli.id):
 				var moved: Vector2 = heli.pos - last[heli.id]
 				out["speed"] = maxf(Num.f(out["speed"]), moved.length() / DT)
-				if moved.length() > 0.02:
+				if moved.length() / DT >= slow:  # a turn is judged between two steps of real flying
 					if way.has(heli.id):
 						var swing := absf(wrapf(moved.angle() - Num.f(way[heli.id]), -PI, PI))
 						out["turn"] = maxf(Num.f(out["turn"]), swing)
 					way[heli.id] = moved.angle()
+				else:
+					way.erase(heli.id)
 			last[heli.id] = heli.pos
 		out["most"] = maxi(Num.i(out["most"]), passing)
 	return out

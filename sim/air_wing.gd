@@ -21,14 +21,15 @@ extends RefCounted
 class Heli:
 	var id: int
 	var pos: Vector2
-	var heading := 0.0  # the way it flies and faces, radians
-	var speed := 0.0  # units a second along the heading
+	var heading := 0.0  # which way its nose points, radians (turn-limited)
+	var vel := Vector2.ZERO  # its velocity, units a second (acceleration-limited)
 	var ring := 0.0  # its own stand-off distance from the kaiju (world units)
-	var spot := Vector2.ZERO  # the firing position it glides to and holds
-	var goal := Vector2.ZERO  # the point it steers for now: its spot, or a pass's point
-	var hold := 0.0  # seconds it keeps its spot once there
-	var passing := false  # on a strafing pass (in, then back out to the ring)
-	var pass_out := false
+	var slot := 0.0  # the bearing from the kaiju of its firing position, on its ring (radians)
+	var goal := Vector2.ZERO  # the point it steers for now: its firing position, or a pass's point
+	var hold := 0.0  # seconds until it glides along the ring to another slot
+	var passing := false  # on a strafing pass: a fly-by along a line across his front
+	var pass_at := Vector2.ZERO  # unit vector from the kaiju to the pass line's nearest point
+	var pass_dir := Vector2.ZERO  # the way along the line it flies
 	var pass_left := 0.0
 	var hp: float
 	var cooldown: float
