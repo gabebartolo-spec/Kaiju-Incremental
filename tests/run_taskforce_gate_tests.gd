@@ -2,7 +2,7 @@ extends "res://tests/lib/taskforce_suite.gd"
 ## The Taskforce's gates and numbers (D-160, D-161), beside tests/run_taskforce_tests.gd: it joins
 ## once about 3 minutes of rampage time in the adolescent city are carried in (the save keeps the
 ## clock and a reload carries on); armour softens a railgun hit like a tank shell's; a perch lost
-## mid-aim cancels the shot; ice halves the walk.
+## mid-aim cancels the shot; ice halves the walk; one squad's railgun shots are staggered (D-166).
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 
@@ -18,6 +18,7 @@ func run_checks() -> void:
 	await _t("_check_ice_walk")
 	await _t("_check_chewed_top")
 	await _t("_check_frost_radius")
+	await _t("_check_volley")
 
 
 func _check_first_arrival() -> void:
@@ -152,3 +153,73 @@ func _check_frost_radius() -> void:
 	frost.grenades.append([0.0, sim.kaiju_pos])
 	_run(sim, 0.1)
 	check(frost.frost_left > 0.0, "a kaiju standing still is")
+
+
+## D-166 "Stagger the shots": one squad never lands more than 2 hits in a second, which leaves the
+## dash time to save the kaiju (D-161). A squad of five is planted lined up (railguns ready, one
+## roof, the kaiju standing in range) beside a second squad of three; every shot is timed and each
+## squad's worst 1 s window counted. With `squad_gap` at 0 (the old rule) the same fixture lands all
+## five of the first squad inside one second.
+func _check_volley() -> void:
+	var rail: Dictionary = Content.section("taskforce")["railgun"]
+	var gap := Num.f(rail["squad_gap"])
+	check(gap > 0.5, "a gap over half a second keeps a squad to 2 shots a second (%.2f s)" % gap)
+	var old := _volley(0.0)
+	var lined_up: Array = old[0]
+	check(
+		_worst_second(lined_up) == 5,
+		"without the gap the lined-up squad lands all five at once (%d)" % _worst_second(lined_up)
+	)
+	var shots := _volley(gap)
+	var first: Array = shots[0]
+	var second: Array = shots[1]
+	check(first.size() == 5 and second.size() == 3, "every gunner still fires: %s" % [shots])
+	check(
+		_worst_second(first) <= 2 and _worst_second(second) <= 2,
+		(
+			"a squad lands at most 2 hits in any second (%d and %d)"
+			% [_worst_second(first), _worst_second(second)]
+		)
+	)
+	var spaced := true
+	for n: int in range(1, first.size()):
+		spaced = spaced and Num.f(first[n]) - Num.f(first[n - 1]) >= gap - 0.001
+	check(spaced, "the squad's shots are at least %.1f s apart: %s" % [gap, first])
+	check(
+		absf(Num.f(first[0]) - Num.f(second[0])) < gap,
+		"the gap is kept per squad: the second squad's first shot is not held up by the first"
+	)
+
+
+## The times, in seconds, of every shot a planted squad of five (index 0) and a squad of three
+## (index 1) fires over 10 s with the kaiju standing, the squads' `squad_gap` set to `gap`; each
+## squad's times in order.
+func _volley(gap: float) -> Array:
+	var sim := _adolescent()
+	sim.time_left = 1.0e9
+	var tf := sim.army_units.taskforce
+	tf.cfg["railgun"]["squad_gap"] = gap
+	var squad_of := {}
+	for squad: int in 2:
+		tf.squad_sizes.append(5 - squad * 2)
+		for _n: int in 5 - squad * 2:
+			squad_of[_perched(sim, true).id] = squad
+	var times: Array = [[], []]
+	for n: int in roundi(10.0 / DT):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			if str(event["type"]) in ["railgun_hit", "railgun_missed"]:
+				var list: Array = times[squad_of[Num.i(event["agent"])]]
+				list.append((n + 1) * DT)
+		sim.hp = sim.max_hp
+	return times
+
+
+## The most shots inside any 1 s window (both ends counted) of these times.
+func _worst_second(times: Array) -> int:
+	var worst := 0
+	for start: float in times:
+		worst = maxi(
+			worst,
+			times.filter(func(t: float) -> bool: return t >= start and t <= start + 1.0).size()
+		)
+	return worst

@@ -5,12 +5,14 @@ extends RefCounted
 ## none in the young city), grapple and jet from roof to roof near the kaiju and perch. A perched
 ## agent aims a railgun: the aiming line tracks the kaiju, locks shortly before the shot, and the
 ## shot costs `railgun.share` of its max health if the kaiju still stands in the lock (a late
-## step dodges it). It also launches frost grenades at the kaiju's feet (TaskforceFrost). An
-## agent dies when the roof chunk it clings to goes (broken, dropped or toppled) or when a claw
-## swipe swats it out of the air mid-hop; each kill pays biomass. Part of Army; pure and
-## seeded from its own stream; numbers in data/tuning.json "taskforce". Presentation reads the
-## agents and the events (taskforce_deployed, railgun_aim, railgun_locked, railgun_hit,
-## railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died).
+## step dodges it). A squad's shots are staggered: no two of one squad's aims start within
+## `railgun.squad_gap` seconds, so one squad lands at most 2 hits in a second and the dash has
+## time to save the kaiju (D-166). It also launches frost grenades at the kaiju's feet
+## (TaskforceFrost). An agent dies when the roof chunk it clings to goes (broken, dropped or
+## toppled) or when a claw swipe swats it out of the air mid-hop; each kill pays biomass. Part of
+## Army; pure and seeded from its own stream; numbers in data/tuning.json "taskforce".
+## Presentation reads the agents and the events (taskforce_deployed, railgun_aim, railgun_locked,
+## railgun_hit, railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died).
 
 const ARRIVE := 0  # jetpacking in from the map edge
 const HOP := 1  # grappling and jetting to another roof
@@ -53,6 +55,9 @@ var played := 0.0
 var _rng: RandomNumberGenerator
 var _timer: float
 var _next_id := 0
+## Per squad, the seconds until one of its gunners may start aiming again (D-166). A shot follows
+## its aim by the same time for every gunner, so aims `squad_gap` apart are shots `squad_gap` apart.
+var _volley := {}
 
 
 func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
@@ -90,6 +95,7 @@ func step(dt: float) -> void:
 			_timer = interval()
 			spawn_squad()
 	frost.step(dt)
+	_tick_volleys(dt)
 	var fallen: Array[Agent] = []
 	for agent: Agent in agents:
 		agent.rail_cd = maxf(0.0, agent.rail_cd - dt)
@@ -247,16 +253,34 @@ func _perched(agent: Agent, dt: float) -> void:
 	agent.wait -= dt
 	var dist := agent.pos.distance_to(sim.kaiju_pos)
 	if agent.rail_cd <= 0.0 and dist <= Num.f(_rail()["range"]):
-		agent.state = AIM
-		agent.aim_left = Num.f(_rail()["aim_seconds"])
-		agent.aim_at = sim.kaiju_pos
-		agent.locked = false
-		sim.events.append({"type": "railgun_aim", "agent": agent.id, "from": _muzzle(agent)})
+		if not _volley.has(agent.squad):  # else it holds for its squad's next slot (D-166)
+			_start_aim(agent)
 	elif agent.frost_cd <= 0.0 and frost.reaches(dist):
 		agent.frost_cd = Num.f(frost.cfg["cooldown"])
 		frost.launch(agent.id, _muzzle(agent))
 	elif agent.wait <= 0.0:
 		_hop_to(agent, HOP, Num.f(cfg["jet_speed"]) * Num.f(cfg["hop_speed_share"]))
+
+
+## The gunner puts its railgun line up and takes its squad's slot: the squad's next gunner waits
+## `squad_gap` seconds.
+func _start_aim(agent: Agent) -> void:
+	agent.state = AIM
+	agent.aim_left = Num.f(_rail()["aim_seconds"])
+	agent.aim_at = sim.kaiju_pos
+	agent.locked = false
+	_volley[agent.squad] = Num.f(_rail()["squad_gap"])
+	sim.events.append({"type": "railgun_aim", "agent": agent.id, "from": _muzzle(agent)})
+
+
+## Counts every squad's wait down; a squad whose wait is over is free to start another aim.
+func _tick_volleys(dt: float) -> void:
+	for squad: int in _volley.keys():
+		var left := Num.f(_volley[squad]) - dt
+		if left > 0.0:
+			_volley[squad] = left
+		else:
+			_volley.erase(squad)
 
 
 ## The railgun's line follows the kaiju until `lock_seconds` before the shot, then holds where it
