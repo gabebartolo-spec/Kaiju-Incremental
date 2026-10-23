@@ -28,6 +28,8 @@ class Piece:
 	var flat := false  # a part that lies level (rotors, gun) at roll `lie`, never on edge
 	var rest := -1.0  # seconds since it came to rest (-1: still flying)
 	var fire_left := 0.0
+	var vanish := -1.0  # a part that burns away this many seconds after it is thrown (-1: stays)
+	var age := 0.0
 
 
 func _init(cfg: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -88,6 +90,14 @@ func _step(piece: Piece, delta: float, gravity: float) -> bool:
 	if not is_instance_valid(node):
 		_put_out(piece)
 		return false
+	piece.age += delta
+	if piece.vanish >= 0.0 and piece.age > piece.vanish:
+		var left := 1.0 - (piece.age - piece.vanish) / Num.f(_cfg["rotor_fade"])
+		node.scale = Vector3.ONE * maxf(0.0, left)  # burns away: shrinks to nothing
+		if left <= 0.0:
+			node.queue_free()
+			_put_out(piece)
+			return false
 	if piece.rest < 0.0:
 		piece.vel.y -= gravity * delta
 		node.global_position += piece.vel * delta

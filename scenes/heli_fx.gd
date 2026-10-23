@@ -10,7 +10,7 @@ const FLARE := preload("res://scenes/flare.gdshader")
 const FLASH_TINT := Color("ffb468")
 ## Fire's flame ramp spending less of its life cream: the same four colours (Fire.FLAME_COLORS),
 ## at stops that suit a fireball seen at the game camera, not a street fire.
-const FIREBALL_STOPS: Array[float] = [0.0, 0.22, 0.5, 0.85]
+const FIREBALL_STOPS: Array[float] = [0.0, 0.1, 0.55, 1.0]
 
 
 ## A flash of light: a hot core, a halo and short rays (flare.gdshader), `size` metres across,
@@ -35,21 +35,25 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	tween.tween_callback(flash.queue_free)
 
 
-## A sudden ball of Fire's own flame voxels (same 0.18 m cube, shader and ramp), thrown out
-## in every direction, slowing as it blooms and rising as it cools. `scale` multiplies how many
-## and how far (a crash's is smaller than a kill's).
+## The explosion look (the city's blast recipe: Fire's own flame voxel, shader, colours and ramp,
+## a sudden tall burst of rising tongues out of a box, narrow spread, lift like Fire's flames,
+## damped to stop `fireball_rise` m up, shrinking to a tenth; a bigger blast is more flames, never
+## bigger cubes). `scale` multiplies how many and how high (a crash's is smaller than a kill's).
 static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
 	var mat := ParticleProcessMaterial.new()
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	mat.emission_sphere_radius = Num.f(cfg["fireball_radius"]) * scale
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	var wide := Num.f(cfg["fireball_radius"]) * scale
+	mat.emission_box_extents = Vector3(wide, Num.f(cfg["fireball_height"]), wide)
 	mat.direction = Vector3.UP
-	mat.spread = 180.0
-	mat.initial_velocity_min = Num.f(cfg["fireball_speed_min"]) * scale
-	mat.initial_velocity_max = Num.f(cfg["fireball_speed_max"]) * scale
-	mat.damping_min = 0.4
-	mat.damping_max = 0.9
-	mat.gravity = Vector3(0, Num.f(cfg["fireball_rise"]), 0)  # hot gas climbs: a rolling fireball
-	mat.scale_min = 0.8
+	mat.spread = Num.f(cfg["fireball_cone"])
+	var speed := Num.f(cfg["fireball_speed"]) * scale
+	var rise := Num.f(cfg["fireball_rise"]) * scale
+	mat.initial_velocity_min = speed * 0.5
+	mat.initial_velocity_max = speed
+	mat.gravity = Vector3(0, Num.f(cfg["fireball_lift"]), 0)
+	mat.damping_min = speed * speed / (2.0 * rise)
+	mat.damping_max = mat.damping_min * 1.3
+	mat.scale_min = 0.5
 	mat.scale_max = 1.2
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 1.0))
@@ -58,10 +62,7 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	tex.curve = curve
 	mat.scale_curve = tex
 	var ramp := Gradient.new()
-	var stops: Array[Color] = []  # the ramp's hexes as they read on screen (the shader is linear)
-	for hex: Color in Fire.FLAME_COLORS:
-		stops.append(hex.srgb_to_linear())
-	ramp.colors = PackedColorArray(stops)
+	ramp.colors = PackedColorArray(Fire.FLAME_COLORS)  # Fire's own ramp, as Fire draws it
 	ramp.offsets = PackedFloat32Array(FIREBALL_STOPS)
 	var ramp_tex := GradientTexture1D.new()
 	ramp_tex.gradient = ramp
@@ -74,7 +75,8 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	cube.material = hot
 	var life := Num.f(cfg["fireball_seconds"])
 	var voxels := roundi(Num.f(cfg["fireball_voxels"]) * scale)
-	_burst(parent, mat, cube, voxels, life, at, Num.f(cfg["fireball_spread"]))
+	var spread := clampf(1.0 - Num.f(cfg["fireball_burst"]) / life, 0.0, 0.99)  # spawned over a moment
+	_burst(parent, mat, cube, voxels, life, at, spread)
 
 
 ## A puff of the smoke shader (Fire's own charcoal ramp, its first stop warmed by the flames

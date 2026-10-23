@@ -295,8 +295,8 @@ func debris(pos: Vector3, color: Color, away: Vector3) -> void:
 
 ## A fire that keeps burning on the ground (wrecks, a crash, a thrown landing); the oldest goes
 ## out past the cap. Nothing lights one on a collapse: rubble never burns (#111).
-func fire(at: Vector3, size: float) -> Fire:
-	var f := Fire.new(size, _rng.randf() * 10.0)
+func fire(at: Vector3, size: float, options := {}) -> Fire:
+	var f := Fire.new(size, _rng.randf() * 10.0, options)
 	f.position = at
 	add_child(f)
 	_fires.append(f)

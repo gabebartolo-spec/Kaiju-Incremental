@@ -35,6 +35,8 @@ static func _blocks(p: Vector3, eye: Vector3, at: Vector3, clear: float) -> bool
 
 
 func _ease(node: Node3D, blocks: bool, step: float) -> void:
+	if node.get_meta("no_fade", false):
+		return  # a dying helicopter is solid (HeliWreck)
 	var now: float = node.get_meta("opacity", 1.0)
 	var low := Num.f(_cfg["fade_opacity"])
 	var next := move_toward(now, low if blocks else 1.0, step)

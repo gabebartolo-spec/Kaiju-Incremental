@@ -62,6 +62,25 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	return node
 
 
+## A white-hot flash on every voxel part under `root`: `gain` at once, easing to 0 over `seconds`
+## (the tween lives on `owner`, so it outlasts the model being taken apart).
+static func flash(root: Node, owner: Node, gain: float, seconds: float) -> void:
+	var mats: Array[ShaderMaterial] = []
+	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
+		var mat := (node as MultiMeshInstance3D).material_override as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("flash", gain)
+			mats.append(mat)
+	owner.create_tween().tween_method(
+		func(v: float) -> void:
+			for mat: ShaderMaterial in mats:
+				mat.set_shader_parameter("flash", gain * (1.0 - v)),
+		0.0,
+		1.0,
+		seconds
+	)
+
+
 ## Fades every voxel part under `root` (1 = solid, lower drops a share of its pixels).
 static func set_opacity(root: Node, opacity: float) -> void:
 	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):

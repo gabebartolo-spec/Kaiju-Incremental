@@ -7,6 +7,8 @@ uniform float roughness_value = 0.9;
 // Below 1, a screen-door fade (vehicles between the camera and the kaiju, D-025's rule): the
 // cells stay opaque and depth-sorted, a share of their pixels is dropped in a fixed pattern.
 uniform float opacity = 1.0;
+// A white-hot flash over the whole part (a helicopter breaking apart): added light, 0 = none.
+uniform float flash = 0.0;
 const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
@@ -24,5 +26,5 @@ void fragment() {
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	ALBEDO = albedo;
 	ROUGHNESS = roughness_value;
-	EMISSION = albedo * glow * (1.0 - COLOR.a);
+	EMISSION = albedo * glow * (1.0 - COLOR.a) + vec3(flash);
 }

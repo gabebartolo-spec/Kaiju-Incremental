@@ -62,6 +62,7 @@ func _init(city: CityView, sim: RampageSim) -> void:
 ## The sim downed helicopter `node` (its model, already off the circle) with `event`.
 func downed(node: Node3D, event: Dictionary) -> void:
 	node.set_meta("opacity", 1.0)  # a screen-door fade never carries on to the wreck
+	node.set_meta("no_fade", true)  # and the dying helicopter is never faded again (VehicleFade)
 	VehicleParts.set_opacity(node, 1.0)
 	var at := Vector3(Num.f(event["x"]), _sim.air.altitude(), Num.f(event["z"]))
 	match str(event.get("fate", "burst")):
@@ -92,7 +93,17 @@ func crashed(event: Dictionary) -> void:
 	)
 	HeliFx.fireball(_city, ground + Vector3(0, 1.0, 0), _cfg, Num.f(_cfg["crash_fireball"]))
 	HeliFx.smoke_puff(_city, ground + Vector3(0, 1.5, 0), _cfg, Num.f(_cfg["crash_smoke"]))
-	_city.fire(ground, Num.f(_cfg["crash_fire"]))
+	# A lasting fire at the wreck: real flame tongues, less of Fire's own smoke column.
+	var thin := {
+		"zoom": 1.0,
+		"smoke_share": 1.0,
+		"density": 1.0,
+		"wind": 1.0,
+		"puff": 1.0,
+		"ember_density": 1.0,
+		"smoke_density": Num.f(_cfg["crash_smoke_density"]),
+	}
+	_city.fire(ground, Num.f(_cfg["crash_fire"]), thin)
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
 	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
@@ -156,6 +167,7 @@ func _burst(node: Node3D, at: Vector3) -> void:
 	_city.add_child(fire)
 	fire.global_position = at
 	get_tree().create_timer(Num.f(_cfg["burst_seconds"])).timeout.connect(fire.go_out)
+	VehicleParts.flash(node, self, Num.f(_cfg["hull_flash"]), Num.f(_cfg["hull_flash_seconds"]))
 	_break_up(node, 1.0, true)
 	_debris.shards(at, Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"]))
 	if sfx != null:
@@ -190,7 +202,9 @@ func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 		var fire_size := Num.f(_cfg["part_fire"]) if in_air and n % 2 == 0 else 0.0  # body, tail
 		var piece := _debris.throw(parts[n], vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
 		piece.half = WRECK_HALF
-		if n > 0:  # the rotors and the gun lie level on the street, never on edge
+		if n == 1 or n == 2:  # the rotors burn away at once: nothing plus-shaped is left lying
+			piece.vanish = Num.f(_cfg["rotor_vanish"])
+		if n > 0:  # the gun lies level on the street, never on edge
 			piece.flat = true
 			piece.lie = PI * 0.5 if n == 2 else 0.0  # (the tail rotor's disc stands, so roll it)
 			piece.half = 0.3
@@ -213,7 +227,17 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 		var fire := Fire.new(Num.f(_cfg["trail_fire"]), at.x - at.z + k)
 		_city.add_child(fire)
 		fire.global_position = at
+		for child: Node in fire.get_children():
+			if child is GPUParticles3D:  # the first is the flames: they ride the hull, not trail it
+				(child as GPUParticles3D).local_coords = true
+				break
 		fall.fires.append(fire)
+	var glow := PooledLight.new("fire")  # the burning hull lights itself and the street
+	glow.light_color = Color("ff8a3a")
+	glow.omni_range = 14.0
+	glow.set_energy(Num.f(_cfg["hull_light"]))
+	glow.position = Vector3(0, 1.0, 0)
+	node.add_child(glow)
 	fall.trail = HeliFx.smoke_trail(_city, _cfg)
 	_falling[Num.i(event["heli"])] = fall
 	HeliFx.flare(_city, at, Num.f(_cfg["hit_flare"]), Num.f(_cfg["flare_seconds"]))
@@ -230,8 +254,11 @@ func _jump(from: Vector3, drift: Vector3) -> void:
 	person.mesh = VoxelPerson.dressed(
 		VoxelPerson.ROOFTOP_OUTFITS[CREW_OUTFIT], VoxelPerson.Pose.RUN_A, voxel
 	)
+	person.scale = Vector3.ONE * Num.f(_cfg["crew_scale"])  # big enough to read under the canopy
 	add_child(person)
-	person.add_child(_canopy())
+	var canopy := _canopy()
+	canopy.scale = Vector3.ONE / Num.f(_cfg["crew_scale"])  # the dome keeps its own size
+	person.add_child(canopy)
 	var seconds := from.y / Num.f(_cfg["chute_speed"])
 	var chute := Chute.new()
 	chute.node = person
