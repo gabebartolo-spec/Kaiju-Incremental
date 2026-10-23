@@ -13,11 +13,7 @@ Director 2026-10-23: VFX oversight (builder + art critic) for fire, smoke, explo
 effects, Taskforce effects, post effects. Rule above all: one look per kind ("consistency is absolutely key").
 
 ## Branch and commit
-Worktree .claude/worktrees/vfx-lead-c37456 on claude/vfx-lead-2 (my handoff branch; heli-deaths is free for its builder).
-claude/heli-deaths = item 3 = PR #166 @ 96e104d5 (sim review fixes in 31a77e99; look rework by builder ad8254e8).
-Look: critic r1 REJECT, r2 FIX (spin reads hovering, burst flat orange confetti, crash lacks dust ring/lasting
-fire, crew specks; list in reviews file). No 'SHIP #166' yet; held for the wind-down; offered the lead a
-merge-now-with-flag option.
+Worktree .claude/worktrees/vfx-lead-c37456 on claude/vfx-lead-2 (handoff branch only). #166 = claude/heli-deaths.
 
 ## What exists
 - docs/VFX_STYLE.md: 10 families (owner files, material, ramp, scale), "Two looks today" table, review checklist.
@@ -42,14 +38,6 @@ Taskforce tech): recorded in VFX_STYLE.md "Visual direction"; sent to the lead t
 collapse defect (scenes/building_view.gd:204) · 5 Taskforce effects as its sim lands · 6 textured-surfaces board
 (one building, three detail styles) · 7 graphics preview scene · 8 load-screen board (~20 shots).
 Bar: three pillars (beauty, consistency, scale/power); SHIP only if the director will love it.
-
-## Item 3 helicopter deaths (claude/heli-deaths, 78222347)
-sim/air_wing.gd: blow_apart share decides burst vs spin; Falling list, own stream Seeds.derive(rng,0xFA11);
-crash ignites the nearest building (City Ablaze) then smashes crash_floors (never the kaiju, air excluded via
-_crashing); tentacle grabs clear_dead(true). scenes/heli_wreck.gd draws it (Fire burst / trail, debris, dust,
-ripple, crew under arched canopies). tests/run_helideaths_tests.gd 6 fn 17 checks green; blow_apart 0 -> 6 red.
-Proof: notes vfx-lead/heli_deaths_proof.png. A toppling tower tall enough sweeps helis over its strip down.
-Not built: killable parachutists (they only drift down).
 
 ## Unfinished changes / my builders (Agent subagents, own worktrees; cap 2 engine builders)
 - #154 PASS sent (8a3049d7, r4: self-lit street dust, visible rings, orange sparks, white deflect). Follow-up item
@@ -78,22 +66,9 @@ Not built: killable parachutists (they only drift down).
 - Charcoal smoke invisible at night; a fire-lit underside for the shared smoke (D-141 "lit from below").
 - fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
 
-## Overnight 2026-10-23 (director asleep, then at work; lead's plan 03:2x)
-No AskUserQuestion: director questions go to Kaiju-Incremental-wt/lead-board/interview.md (read its README);
-lead's replies in to-vfx-lead.md, my fallback reports in from-vfx-lead.md. Every Godot run starts with
-`bash ~/.claude/tools/engine_slot.sh && timeout ...`. Open PRs over cap: push branches, report sha, the lead's
-GitHub helper opens PRs. Thunder sound = the lead's.
-- D-162 asset worker (Agent "claude" type, Sonnet, own worktree, branch claude/heads-skins): Tripo python x2 +
-  Komodo x2 heads, skins as Blender gradient maps; done (see above). Tripo downloads: Save dialogs belong to the
-  Claude app and nobody can press them; fetch the viewer's signed tripo-data FBX via performance entries + curl.
-- Idle audit (lead's, scratchpad idle_audit.md): director asked an AUDIT only, no idle layer before he answers.
-  Brief scratchpad brief_idle.md = the 2 bugs (standing stomp has no foot/ring; claw-rake pose never plays) +
-  ONE 6 s clip of today's standing croc for the lead's interview question.
-- Voxel look (director 03:34; report lead scratchpad research_voxel_look.md: keep voxels, unify grain/ground/
-  fire/DoF): I render A TODAY / B ONE LOOK (mock, ~1 day) / C SMOOTH CROC, 6 boards + 6 s 3-pane clip per its
-  section 5, capture-only branch, critics first, then interview.md. After #154 PASS and Thunder Beam.
-- Slot order now: voxel boards (brief scratchpad brief_voxel_boards.md) -> item 4 fix (brief_item4.md) -> dust
-  billows -> explosions r10 once #160 merges.
+## Lead board
+Director questions while he's away go to Kaiju-Incremental-wt/lead-board/interview.md (README there);
+lead replies in to-vfx-lead.md. Every Godot run: `bash ~/.claude/tools/engine_slot.sh && timeout ...`.
 
 ## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
 D-177 "Motion first" (director 13:5x): gait fix -> motion gate suite -> motion pass per stage -> D-165 -> one-look.
