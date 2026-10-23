@@ -534,3 +534,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   clunking together / dragon: cavernous nostril snorts, wet tongue flicks, short and brutal barking roars / serpent:
   hissing noise obviously, faint slithering sounds as it climbs, deep menacing rattle". Owner: lead. Status: not
   started; timing asked the same day.
+- Reptilian idle states (D-210, director 2026-10-24): "snake curls up into a defensive position, tongue flicking
+  dangerously / croc hunches guardedly, prepared to leap at anything nearby / the dragon breathes heavily and steadily,
+  tongue darting, drool dripping, snorting steamy gusts from its nostrils". Owners: serpent slither builder (coil on
+  stop), lead (Komodo idle in Cascadeur, steam and drool effects), croc with its new model. Status: not started.
