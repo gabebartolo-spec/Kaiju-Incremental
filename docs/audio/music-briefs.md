@@ -1,4 +1,4 @@
-# Music briefs for Suno (D-114, D-125, D-155, D-172)
+# Music briefs for Suno (D-114, D-125, D-155, D-172, D-181, D-184)
 
 **The feel (D-172):** brooding and building, one mood for the whole game. Low and slow: deep drums, low strings, sub
 bass, sparse low brass. The city's screams and sirens stay in front; the music only swells as the city falls. Each
@@ -30,24 +30,34 @@ the built-in browser (D-174): you only pick the take by ear.
 10. Send me the song and its stems. I cut the loops, set the layers and register the licence
     (docs/provenance/music.md, rules in docs/LICENSING_REGISTER.md).
 
-## Exclude (same for every city)
-> vocals, lyrics, electric guitar, distortion, metal, rock drums, EDM, dubstep, drops, fast tempo, trailer hits
+## Shipped (D-184)
+The theme is his remaster of the second Godzilla march take (https://suno.com/song/798f3c13-290f-4c84-8fb9-c5bf32badb94).
+It plays on the main menu over the city sound, and each city plays a Suno **Cover** of it (song menu > Remix > Cover),
+so the tune carries across the game, a step heavier with each city (D-181, D-172). A later music pass is on the ROADMAP.
+Cover settings: Weirdness 36%, Style Influence 74%, Audio Influence 59%, v6.
 
-## City 1: the baby city (the quietest)
-**Styles:**
-> brooding cinematic underscore, monster movie, 75 bpm, D minor, soft low taiko pulse, low pizzicato strings, deep
-> sub bass drone, distant muted horns, sparse and restrained, ominous, slow build, steady tempo, instrumental
+## Exclude (every Cover)
+> whimsical, magical, fantasy, fairytale, playful, mischievous, celesta, glockenspiel, harp, flute, piccolo, clarinet,
+> woodwind flourishes, waltz, sparkle, choir, vocals, synth, hybrid trailer, braams, modern epic, heroic, triumphant,
+> uplifting, major key, electric guitar, rock drums, EDM
 
-## City 2: the adolescent city (heavier)
-**Styles:**
-> brooding cinematic underscore, monster movie, 75 bpm, D minor, steady taiko and low toms, bowed low strings
-> ostinato, deep sub bass, slow low brass swells, darker and heavier, restrained, slow build, steady tempo, instrumental
+## City 1: the young croc's city (the quietest)
+> 1954 Japanese kaiju film score, the same theme played sparse and creeping: a lone tuba and low strings carry the
+> melody quietly, low piano, soft distant timpani like far-off footsteps, long dark pauses, vintage 1950s film
+> orchestra, minor key, slow, ominous and restrained, dread building under the surface, instrumental
 
-## City 3: the adult city (the heaviest)
-**Styles:**
-> brooding cinematic underscore, monster movie, 75 bpm, D minor, deep war drums, low strings, massive slow low brass,
-> distant wordless choir swells, huge but unhurried, restrained, slow build, steady tempo, instrumental
+## City 2: the Behemoth's city
+> 1954 Japanese kaiju film score, the same theme as a driving, heavy march: low brass and low strings in unison carry
+> the melody, tuba and bass trombones, pounding low piano octaves, steady timpani and snare like marching footsteps,
+> fuller orchestra, minor key, relentless and menacing, vintage 1950s film orchestra, the theme stated then a brief
+> dark breath then stated heavier, instrumental
+
+## City 3: the Colossus's city (the heaviest)
+> 1954 Japanese kaiju film score, the same theme at full crushing weight: the whole orchestra, massive low brass and
+> tuba, dissonant brass chords, huge timpani and bass drum like giant footsteps, low strings sawing, low piano clusters,
+> minor key, slow and unstoppable, vintage 1950s film orchestra, the theme crashes in at full force, falls to a dark
+> hush, then returns heavier than before, instrumental
 
 ## Already decided
-- The title screen has no music, only the city's sound (D-141).
+- The menu plays the theme over the city's sound (D-184, amends D-141).
 - City sound runs under the music: panic early, then eerie quiet (D-155).
