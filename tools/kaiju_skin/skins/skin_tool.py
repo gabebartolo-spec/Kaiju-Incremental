@@ -31,24 +31,27 @@ H = lambda s: tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 PALETTES = {
     "obsidian": {
         "glow": "seams", "fold": 0.30, "fold_color": "000000", "patch": 0.12, "tint": None, "jaw_tint": None,
-        "tail_belly_blend": 0.0, "min_run": 30,
-        "back": ("0b0c11", "272a34", "5a5e70", "ff5a1a"), "belly": ("11131b", "2d303c", "5a5e70", "ff5a1a"),
+        "tail_belly_blend": 0.0, "min_run": 60, "t_max": 1.0, "smooth_t": 0.0, "gamma_t": 1.0, "belly_rows": 0.0,
+        "eye_core": None, "eye_ring": None, "eye_emissive": True, "extremity_tint": None,
+        "back": ("0b0c11", "272a34", "5a5e70", "ff5a1a"), "belly": ("171923", "3a3d4c", "62667a", "ff5a1a"),
         "spines": ("06060a", "16161c", "34343f", "ff7a28"), "claws": ("0a0a0c", "26262c", "62626e", "ff5a1a"),
-        "eyes": ("8c2a00", "ff6a1a", "ffc060", "ffd080"), "teeth": ("302f2b", "5e5b50", "8e8a78", "8e8a78"),
+        "eyes": ("c84a10", "ff7a20", "ffc060", "ffd080"), "teeth": ("302f2b", "5e5b50", "8e8a78", "8e8a78"),
     },
     "abyssal": {
         "glow": "abyssal", "fold": 0.30, "fold_color": "000d0c", "patch": 0.12, "tint": None, "jaw_tint": "2fb8aa",
-        "tail_belly_blend": 0.7, "min_run": 10,
-        "back": ("010605", "052a25", "0f5a50", "2fb8aa"), "belly": ("17605c", "3fa59c", "8ee0d2", "2fb8aa"),
+        "tail_belly_blend": 0.7, "min_run": 10, "t_max": 1.0, "smooth_t": 0.0, "gamma_t": 1.0, "belly_rows": 0.14,
+        "eye_core": None, "eye_ring": None, "eye_emissive": True, "extremity_tint": None,
+        "back": ("010605", "052a25", "0f5a50", "2fb8aa"), "belly": ("0f4643", "2c847c", "62b8aa", "2fb8aa"),
         "spines": ("031314", "0c3638", "1f6464", "2fb8aa"), "claws": ("040d0f", "10292b", "2a5654", "2fb8aa"),
-        "eyes": ("1fa88a", "7ff5d0", "d8fff2", "d8fff2"), "teeth": ("2c7a72", "62b6ab", "a6e2d6", "a6e2d6"),
+        "eyes": ("5fe0c8", "bffff0", "e8fffa", "e8fffa"), "teeth": ("2c7a72", "62b6ab", "a6e2d6", "a6e2d6"),
     },
     "albino": {
-        "glow": None, "fold": 0.34, "fold_color": "a08a5c", "patch": 0.10, "tint": "f0a89c", "jaw_tint": None,
-        "tail_belly_blend": 0.0, "min_run": 10,
-        "back": ("d4c07e", "f8e6b0", "fff8d8", "fff8d8"), "belly": ("e6bca8", "f8dcc8", "fff0e4", "fff0e4"),
-        "spines": ("c4ac78", "e6d09c", "f8ecc0", "f8ecc0"), "claws": ("d8a496", "ecc2b2", "fadccf", "fadccf"),
-        "eyes": ("c8788a", "f2a8ba", "ffe2ea", "ffe2ea"), "teeth": ("dccfa8", "f4ecd0", "fffcf0", "fffcf0"),
+        "glow": None, "fold": 0.32, "fold_color": "b09a74", "patch": 0.10, "tint": "e8b4a8", "jaw_tint": None,
+        "tail_belly_blend": 0.0, "min_run": 10, "t_max": 0.80, "smooth_t": 0.7, "gamma_t": 0.55, "belly_rows": 0.0,
+        "eye_core": "ffe8ee", "eye_ring": "6e5448", "eye_emissive": False, "extremity_tint": "e8b4a8",
+        "back": ("cdb99a", "efe3c8", "f8f0de", "f8f0de"), "belly": ("e6c9b8", "f6ddd0", "fdeee4", "fdeee4"),
+        "spines": ("c2ad8a", "dccdaa", "efe4c8", "efe4c8"), "claws": ("d8a698", "e8b4a8", "f4cfc4", "f4cfc4"),
+        "eyes": ("d896a8", "f5b8c6", "ffd8e0", "ffd8e0"), "teeth": ("dccfa8", "f4ecd0", "fffcf0", "fffcf0"),
     },
 }
 
@@ -62,7 +65,7 @@ def write_palettes():
                 img.putpixel((x, y), H(hexc))
         img.save(PAL_DIR / f"{name}.png")
         (PAL_DIR / f"{name}.json").write_text(json.dumps(
-            {k: p[k] for k in ("glow", "fold", "fold_color", "patch", "tint", "jaw_tint", "tail_belly_blend", "min_run")}, indent=1), encoding="utf-8", newline="\n")
+            {k: p[k] for k in ("glow", "fold", "fold_color", "patch", "tint", "jaw_tint", "tail_belly_blend", "min_run", "t_max", "smooth_t", "gamma_t", "belly_rows", "eye_core", "eye_ring", "eye_emissive", "extremity_tint")}, indent=1), encoding="utf-8", newline="\n")
 
 
 def load_skin(name):
@@ -134,6 +137,26 @@ class Analysis:
             clo, chi = np.percentile(self.conc[m], (30, 97))
             self.fold[m] = np.clip((self.conc[m] - clo) / max(chi - clo, 1e-6), 0, 1)
 
+    def neighbours(self):
+        """(n, 6) index of the face neighbours (-1 where empty), built once."""
+        if getattr(self, "_nbr", None) is None:
+            where = {tuple(p): i for i, p in enumerate(self.pos)}
+            dirs = ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
+            self._nbr = np.array([[where.get((x + d[0], y + d[1], z + d[2]), -1) for d in dirs] for x, y, z in self.pos])
+        return self._nbr
+
+    def smoothed(self, values, strength):
+        """values blended with the mean of their same-region face neighbours (strength 0..1): kills single-cell specks."""
+        nbr = self.neighbours()
+        acc = values.copy()
+        cnt = np.ones(len(values), np.float32)
+        for k in range(6):
+            ok = nbr[:, k] >= 0
+            ok[ok] = self.reg[nbr[ok, k]] == self.reg[ok]
+            acc[ok] += values[nbr[ok, k]]
+            cnt[ok] += 1
+        return values * (1 - strength) + (acc / cnt) * strength
+
     def bone_ids(self, *ns):
         return [self.names.index(n) for n in ns if n in self.names]
 
@@ -165,9 +188,9 @@ def lip_line(an):
     return out
 
 
-def spine_base_runs(an, fold_min, min_size, budget):
-    """Short connected runs in the creases between spine bases."""
-    cand = (an.reg == R.SPINES) & (an.fold > fold_min)
+def spine_base_runs(an, fold_min, min_size, budget, exclude=()):
+    """Short connected runs in the creases between spine bases (not on the neck/head: those read as specks)."""
+    cand = (an.reg == R.SPINES) & (an.fold > fold_min) & ~np.isin(an.bone, an.bone_ids(*exclude))
     mask = np.zeros(len(an.pos), bool)
     for c in components(cand, an.pos, min_size):
         if mask.sum() + len(c) <= budget:
@@ -176,18 +199,17 @@ def spine_base_runs(an, fold_min, min_size, budget):
 
 
 def glow_seams(an, min_run):
-    """Obsidian: ember in connected runs. Dark creased hide (scute and joint seams), the gaps between spine bases,
-    and the lip line; everything else stays dark."""
+    """Obsidian: ember in connected runs. Dark creased hide (scute and joint seams, runs of at least min_run), a
+    continuous glow in the gaps between the dorsal spines along the whole back and tail, and the lip line."""
     reg, t, fold, pos = an.reg, an.t, an.fold, an.pos
-    cand = np.isin(reg, (R.BACK, R.BELLY)) & (fold > 0.55) & (t < 0.15)
-    budget = int(0.03 * len(pos))
-    mask = np.zeros(len(pos), bool)
-    for c in components(cand, pos, 40):  # biggest runs first, until the budget is spent
-        if mask.sum() + len(c) <= budget:
-            mask[c] = True
-    mask |= spine_base_runs(an, 0.45, 18, int(0.012 * len(pos)))
-    mask |= lip_line(an)
-    return keep_runs(mask, pos, min_run)
+    cand = np.isin(reg, (R.BACK, R.BELLY)) & (fold > 0.55) & (t < 0.15) & ~np.isin(an.bone, an.bone_ids("head0", "head1"))
+    budget = int(0.02 * len(pos))
+    seams = np.zeros(len(pos), bool)
+    for c in components(cand, pos, min_run):  # biggest runs first, until the budget is spent
+        if seams.sum() + len(c) <= budget:
+            seams[c] = True
+    spines = spine_base_runs(an, 0.28, 14, int(0.03 * len(pos)), exclude=("head0", "head1"))
+    return seams | spines | lip_line(an)
 
 
 def glow_abyssal(an, min_run):
@@ -217,7 +239,7 @@ def glow_abyssal(an, min_run):
                 continue
             yc = np.percentile(pos[sl, 1], 50)
             mask |= flank & ((((pos[:, 2] - zc) / 2.4) ** 2 + ((pos[:, 1] - yc) / 6.5) ** 2) <= 1.0)
-    mask |= spine_base_runs(an, 0.5, 14, int(0.008 * len(pos)))
+    mask |= spine_base_runs(an, 0.5, 14, int(0.008 * len(pos)), exclude=("head0", "head1"))
     return keep_runs(mask, pos, min_run)
 
 
@@ -269,11 +291,38 @@ def joint_and_throat_weight(an):
     return np.maximum(w, 0.8 * throat)
 
 
+def eye_centres(an):
+    """One centre per side: the middle of that side's eye cells."""
+    out = []
+    for side in (-1, 1):
+        e = np.nonzero((an.reg == R.EYES) & (np.sign(an.pos[:, 0]) == side))[0]
+        if len(e):
+            out.append(an.pos[e].astype(np.float32).mean(0))
+    return out
+
+
+def extremity_weight(an):
+    """Smooth 0..1 weight on hands, feet, claws and the snout tip (where blood shows through thin hide)."""
+    w = np.zeros(len(an.pos), np.float32)
+    for n in ("arm_l2", "arm_r2", "leg_l2", "leg_r2"):
+        w[an.bone == an.bone_ids(n)[0]] = 0.85
+    w[an.reg == R.CLAWS] = 1.0
+    head1 = an.bone == an.bone_ids("head1")[0]
+    nose = an.pos[head1, 2].min()
+    w = np.maximum(w, np.where(head1, np.clip(1 - (an.pos[:, 2] - nose) / 22.0, 0, 1), 0).astype(np.float32))
+    return w
+
+
 def recolour(an, table, meta, eye_glow_red=None):
     """New per-cell colours and the emissive mask for one skin (table: 6 x 4 x 3 swatches)."""
     new = an.col.astype(np.float32).copy()
     noise = patch_noise(an.pos)
-    t_all = np.clip(an.t + meta["patch"] * noise, 0, 1)
+    t_src = an.smoothed(an.t, meta["smooth_t"]) if meta["smooth_t"] > 0 else an.t
+    t_all = np.clip(t_src + meta["patch"] * noise, 0, 1) ** meta["gamma_t"]
+    t_all = np.minimum(t_all, meta["t_max"])
+    if meta["belly_rows"] > 0:  # varied scute rows: a random value per row (z slice) on the belly
+        rows = np.array([((int(z) * 2654435761) >> 7) & 0xFF for z in an.pos[:, 2]], np.float32) / 255.0 - 0.5
+        t_all = np.where(an.reg == R.BELLY, np.clip(t_all + meta["belly_rows"] * rows * 2, 0, 1), t_all)
     for r in range(len(R.REGIONS)):
         m = an.reg == r
         if m.sum() < 5:
@@ -297,10 +346,13 @@ def recolour(an, table, meta, eye_glow_red=None):
     # folds: darker (and tinted) in creases
     k = (meta["fold"] * an.fold)[:, None]
     new = new * (1 - k) + np.array(H(meta["fold_color"]), np.float32) * k
-    # a smooth blood tint (low saturation) round joints and under the throat
+    # a smooth blood tint (low saturation) round joints and under the throat, stronger at the extremities
     if meta["tint"]:
         k = (0.30 * joint_and_throat_weight(an))[:, None]
         new = new * (1 - k) + np.array(H(meta["tint"]), np.float32) * k
+    if meta["extremity_tint"]:
+        k = (0.34 * extremity_weight(an))[:, None]
+        new = new * (1 - k) + np.array(H(meta["extremity_tint"]), np.float32) * k
     emissive = np.zeros(len(an.pos), bool)
     if meta["glow"] == "seams":
         emissive = glow_seams(an, meta["min_run"])
@@ -311,10 +363,25 @@ def recolour(an, table, meta, eye_glow_red=None):
         new[sel] = table[r, 3].astype(np.float32)
     if meta["glow"]:
         new[emissive & ~np.isin(an.reg, (R.BACK, R.BELLY, R.SPINES))] = table[R.BACK, 3].astype(np.float32)
+    # eyes: the eye cells in the table colour, a pale core on the middle ones and a dark ring round them
+    eye = an.reg == R.EYES
+    head = np.isin(an.bone, an.bone_ids("head0", "head1", "jaw"))
+    for c in eye_centres(an):
+        d = np.linalg.norm(an.pos.astype(np.float32) - c, axis=1)
+        if meta["eye_ring"]:
+            ring = head & ~eye & (d <= 3.0)
+            new[ring] = np.array(H(meta["eye_ring"]), np.float32)
+        if meta["eye_core"]:
+            core = eye & (d <= 0.9)
+            new[core] = np.array(H(meta["eye_core"]), np.float32)
     if eye_glow_red is not None:
-        blob = eye_blob(an)
-        new[blob] = np.array(H(eye_glow_red), np.float32)
-        emissive |= blob
+        new[eye] = np.array(H(eye_glow_red), np.float32)
+        for c in eye_centres(an):
+            d = np.linalg.norm(an.pos.astype(np.float32) - c, axis=1)
+            new[eye & (d <= 0.9)] = np.array((255, 208, 208), np.float32)
+        emissive |= eye
+    elif meta["eye_emissive"]:
+        emissive |= eye
     return np.clip(new, 0, 255).astype(np.uint8), emissive
 
 
@@ -340,7 +407,7 @@ def board(out_path):
     d = ImageDraw.Draw(sheet)
     d.text((20, 18), "Croc titan skins as colour tables per region (game voxels, same camera and light)", font=font, fill=(235, 235, 235))
     y = 80
-    heads = ["Behind, 3/4 from above", "Front 3/4", "Head, 2x crop"]
+    heads = ["Behind, 3/4 from above", "Front 3/4 (from the left)", "Head, 2x crop"]
     stats = {}
     for label, table, meta, eyered, _ in skins:
         if table is None:
@@ -361,12 +428,12 @@ def board(out_path):
         else:
             py = y + 60
         row = []
-        for yaw, pitch in ((205, 28), (35, 14)):
-            img, sc, ctr = V.render(pos, newcol, nrm, yaw, pitch, size=(pw, ph), glow=emi, gain=1.35)
+        for yaw, pitch in ((205, 28), (-35, 14)):
+            img, sc, ctr = V.render(pos, newcol, nrm, yaw, pitch, size=(pw, ph), glow=emi, gain=1.3, ambient=0.58)
             row.append(img)
         m = V.camera(-35, 14)  # the croc's clearer eye is on its left (-x), so the 2x crop looks from that side
         hc = (pos[head].astype(np.float32) @ m.T).mean(0)
-        img, _, _ = V.render(pos, newcol, nrm, -35, 14, size=(pw, ph), scale=sc * 2.6, center=hc, glow=emi, gain=1.35)
+        img, _, _ = V.render(pos, newcol, nrm, -35, 14, size=(pw, ph), scale=sc * 2.6, center=hc, glow=emi, gain=1.3, ambient=0.58)
         row.append(img)
         for i, im in enumerate(row):
             sheet.paste(im, (20 + i * (pw + 20), py))

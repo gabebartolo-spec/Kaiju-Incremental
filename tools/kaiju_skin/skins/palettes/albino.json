@@ -1,10 +1,18 @@
 {
  "glow": null,
- "fold": 0.34,
- "fold_color": "a08a5c",
+ "fold": 0.32,
+ "fold_color": "b09a74",
  "patch": 0.1,
- "tint": "f0a89c",
+ "tint": "e8b4a8",
  "jaw_tint": null,
  "tail_belly_blend": 0.0,
- "min_run": 10
+ "min_run": 10,
+ "t_max": 0.8,
+ "smooth_t": 0.7,
+ "gamma_t": 0.55,
+ "belly_rows": 0.0,
+ "eye_core": "ffe8ee",
+ "eye_ring": "6e5448",
+ "eye_emissive": false,
+ "extremity_tint": "e8b4a8"
 }

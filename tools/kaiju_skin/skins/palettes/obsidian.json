@@ -6,5 +6,13 @@
  "tint": null,
  "jaw_tint": null,
  "tail_belly_blend": 0.0,
- "min_run": 30
+ "min_run": 60,
+ "t_max": 1.0,
+ "smooth_t": 0.0,
+ "gamma_t": 1.0,
+ "belly_rows": 0.0,
+ "eye_core": null,
+ "eye_ring": null,
+ "eye_emissive": true,
+ "extremity_tint": null
 }
