@@ -15,7 +15,9 @@
 - D-189 ("interview me"): ATMOSPHERE LEAD session local_3dbe2472-68cf-42b3-84fa-657415483355 owns sky and sea life
   (whale), weather looks, rampage escalation (D-154 haze); cap "6 in total" = 2 engine builders per lead session;
   music "Low and creeping", Endless = Colossus track, rampage end fades under the results; helicopters "Never block
-  your view" (heliflight camera bar -> camera-to-kaiju corridor). At most 3 open PRs; clean crowded files as you go.
+  your view" (heliflight camera bar -> camera-to-kaiju corridor). D-191 = its A1-A16 (b049ff06). Slots: its B1 takes
+  my turn-weight slot when the clip is done (TELL IT), B2 the VFX lead's returned lent slot (VFX tells it). Journal
+  (tools/journal.py, artifact WWrpuzmKwH6GEPr5bMFwa1) current to #175/D-191. At most 3 open PRs.
   Every brief says `bash ~/.claude/tools/engine_slot.sh && timeout ...` (staggers Godot starts below 6 processes).
 - D-187 "Heavier, slower", re-asked after a wrong quote: U-turn Behemoth 2 s, Colossus 3 s (today 1.63/1.80 s,
   young 0.95 unchanged), spread evenly; bar 7 = critic's >= 4 alternating real steps (> 0.3 FL, <= 40 deg); builder
@@ -38,9 +40,7 @@
   branch (agent placeholder; wrecks land ~0.8 s sooner; seeded tips come to the lead). Chutes = view (VFX).
 - D-188 "Keep going until critics pass" (no round cap) + "if something has failed 7 times in a row then our method is
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
-  Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
-  picks via the lead), fall = view arc between the sim's death and crash points (lead: yes, D-183 leaves deaths as
-  they are), kill staging after the claw rake, claims measured in the clip. #175 MERGED 3a3ee03d (go.txt cleared).
+  Heli fall = view arc between the sim's death and crash points; #175 MERGED 3a3ee03d (go.txt cleared).
   FL (world units): young 1.235, Behemoth 2.072, Colossus 3.706. D-190 (his picks in the VFX lead's session, quotes
   checked in its transcript; a6bde2e6): "Smooth flames", "Slow chest-and-neck heave", claw "Keep it straight ahead".
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
