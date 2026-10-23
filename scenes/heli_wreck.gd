@@ -95,8 +95,15 @@ func crashed(event: Dictionary) -> void:
 	HeliFx.fireball(_city, ground + Vector3(0, 1.0, 0), _cfg, Num.f(_cfg["crash_fireball"]))
 	HeliFx.smoke_puff(_city, ground + Vector3(0, 1.5, 0), _cfg, Num.f(_cfg["crash_smoke"]))
 	# A lasting fire at the wreck: real flame tongues, less of Fire's own smoke column.
-	var tongues := _tongues(Num.f(_cfg["crash_density"]), Num.f(_cfg["crash_smoke_density"]))
-	_city.fire(ground, Num.f(_cfg["crash_fire"]), tongues)
+	var burning := _city.fire(
+		ground, Num.f(_cfg["crash_fire"]), _tongues(Num.f(_cfg["crash_smoke_density"]))
+	)
+	var glow := PooledLight.new("fire")  # a zoomed fire has no light of its own: this one
+	glow.light_color = Color("ff8a3a")
+	glow.omni_range = 16.0
+	glow.set_energy(Num.f(_cfg["hull_light"]))
+	glow.position = Vector3(0, 2.0, 0)
+	burning.add_child(glow)
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
 	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
@@ -122,16 +129,18 @@ func _process(delta: float) -> void:
 
 ## One frame of a wreck falling: its height drops slowly then fast (it falls, it is not lowered),
 ## it pitches nose down, rolls and spins up as it goes; its flames and smoke follow it.
-## Fire's own options for a fire of denser flames and less smoke than a street fire: more flame
-## voxels (never bigger ones) and a thinner smoke column, so the tongues read at the game camera.
-func _tongues(flames: float, smoke: float) -> Dictionary:
+## Fire's own options for a flame body: Fire's zoom (the same fire with every size and speed
+## multiplied: flames `flame_zoom` times larger, taller than wide and overlapping, so they read as
+## one body at the game camera), the smoke kept at street size and thinned to `smoke`.
+func _tongues(smoke: float) -> Dictionary:
+	var zoom := Num.f(_cfg["flame_zoom"])
 	return {
-		"zoom": 1.0,
-		"smoke_share": 1.0,
-		"density": flames,
+		"zoom": zoom,
+		"smoke_share": 1.0 / zoom,
+		"density": Num.f(_cfg["flame_density"]),
 		"wind": 1.0,
 		"puff": 1.0,
-		"ember_density": 0.5,
+		"ember_density": 0.2,
 		"smoke_density": smoke,
 	}
 
@@ -174,7 +183,13 @@ func _burst(node: Node3D, at: Vector3) -> void:
 	_city.add_child(fire)
 	fire.global_position = at
 	get_tree().create_timer(Num.f(_cfg["burst_seconds"])).timeout.connect(fire.go_out)
-	VehicleParts.flash(node, self, Num.f(_cfg["hull_flash"]), Num.f(_cfg["hull_flash_seconds"]))
+	VehicleParts.flash(
+		node,
+		self,
+		Num.f(_cfg["hull_flash"]),
+		Num.f(_cfg["hull_flash_seconds"]),
+		Num.f(_cfg["hull_char_seconds"])
+	)
 	_break_up(node, 1.0, true)
 	_debris.shards(at, Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"]))
 	if sfx != null:
@@ -236,8 +251,9 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	if fall.side.length() < 0.5:
 		fall.side = Vector3.RIGHT
 	for k: int in 3:  # flames along the body: nose, middle, tail
-		var tongues := _tongues(Num.f(_cfg["hull_density"]), Num.f(_cfg["hull_smoke"]))
-		var fire := Fire.new(Num.f(_cfg["trail_fire"]), at.x - at.z + k, tongues)
+		var fire := Fire.new(
+			Num.f(_cfg["trail_fire"]), at.x - at.z + k, _tongues(Num.f(_cfg["hull_smoke"]))
+		)
 		_city.add_child(fire)
 		fire.global_position = at
 		for child: Node in fire.get_children():

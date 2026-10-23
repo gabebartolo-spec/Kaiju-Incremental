@@ -38,8 +38,9 @@ static func fireball(
 	mat.gravity = Vector3(0, Num.f(cfg["lift"]), 0)
 	mat.damping_min = speed * speed / (2.0 * rise)
 	mat.damping_max = mat.damping_min * 1.3
-	mat.scale_min = Fire.FLAME_SCALE.x
-	mat.scale_max = Fire.FLAME_SCALE.y
+	var grow := clampf(radius / 5.0, 1.0, 3.0)  # a blast past radius 5 has bigger flames, so it
+	mat.scale_min = Fire.FLAME_SCALE.x * grow  # reads as one body at the game camera
+	mat.scale_max = Fire.FLAME_SCALE.y * grow
 	var curve := Curve.new()
 	curve.add_point(Vector2(0, 1.0))
 	curve.add_point(Vector2(1, 0.1))

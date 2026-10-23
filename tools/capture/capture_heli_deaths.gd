@@ -26,6 +26,8 @@ const CLIP_FRAMES := 360
 ## are parked before the shot.
 const CLIP_SPREAD := 0.4
 const PARK := 45
+## Where the reference building fire stands from the wreck's spot.
+const REF_OFFSET := Vector2(16.0, 6.0)
 ## Frames the first burst's wreck is given to lie there and fade (rest and fade seconds, tuning).
 const SETTLE_WRECK := 420
 
@@ -62,8 +64,10 @@ func _run(run: int) -> void:
 	var air := _rampage.sim.air
 	air.cfg["bailout_chance"] = 1.0  # the shot shows a crew bailing out (seeded otherwise)
 	air.cfg["fire_interval"] = 999.0  # it never strafes the kaiju in the shot
+	air.cfg["max"] = 0  # no other helicopter drifts into the shot
 	_spot = _rampage.sim.kaiju_pos + Vector2(SPOT.x, SPOT.z) * _rampage.sim.body_scale()
 	print("body scale %.2f" % _rampage.sim.body_scale())
+	_reference_fire()
 	if _clip:
 		await _clip_run()
 	else:
@@ -180,6 +184,14 @@ func _aim(on: bool) -> void:
 		if node is BreathAim:
 			node.set_physics_process(on)
 			(node as Node3D).visible = false
+
+
+## A street fire (Fire as a building fire is drawn) beside the shot: the flame body is judged
+## against it, same camera, same frame.
+func _reference_fire() -> void:
+	var fire := Fire.new(2.0, 1.0)
+	_rampage.add_child(fire)
+	fire.global_position = Vector3(_spot.x + REF_OFFSET.x, 0.0, _spot.y + REF_OFFSET.y)
 
 
 ## Events made outside a step (this script's spawn and kill) go to the view as a step's would.

@@ -42,24 +42,24 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	var recipe: Dictionary = Content.section("blast_fx")["fireball"]  # the city's own blast numbers
 	BlastParts.fireball(parent, at, half, blast, recipe)
 	var core: Dictionary = Content.section("blast_fx")["core"]  # the white-hot instant
-	BlastParts.core(parent, at, half, blast, core)
+	BlastParts.core(parent, at, half, Num.f(cfg["core_radius"]) * scale, core)  # its own size
 
 
-## A puff of the smoke shader (Fire's own charcoal ramp, its first stop warmed by the flames
-## under it): `puffs` quads `size` across billowing up and leaning with the wind.
-static func smoke_puff(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
-	var size := Num.f(cfg["smoke_size"]) * scale
-	var mat := _smoke_mat(cfg)
-	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	mat.emission_sphere_radius = size * 0.2
-	mat.direction = Vector3.UP
-	mat.spread = 100.0
-	mat.initial_velocity_min = Num.f(cfg["smoke_speed"]) * 0.4 * scale
-	mat.initial_velocity_max = Num.f(cfg["smoke_speed"]) * scale
-	mat.damping_min = 0.8
-	mat.damping_max = 1.6
-	var puffs := roundi(Num.f(cfg["smoke_puffs"]) * scale)
-	_burst(parent, mat, _smoke_quad(size, cfg), puffs, Num.f(cfg["smoke_seconds"]), at)
+## A smoke cloud of lobed puffs: the street's own puffs (Fx.dust, the smoke shader's noisy round
+## masks) tinted charred dark, stacked up and sideways so the cloud has lobes, not one round disc.
+static func smoke_puff(city: CityView, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
+	var tint := Color(str(cfg["lobe_tint"]), Num.f(cfg["lobe_alpha"]))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(at)  # the same blast puffs the same way
+	var lobes := maxi(1, roundi(Num.f(cfg["lobes"]) * scale))
+	for n: int in lobes:
+		var side := Vector3(rng.randf_range(-1.0, 1.0), 0.0, rng.randf_range(-1.0, 1.0))
+		var up := Vector3(0.0, Num.f(cfg["lobe_rise"]) * scale * n / lobes, 0.0)
+		city.fx.dust(
+			at + side * Num.f(cfg["lobe_spread"]) * scale + up,
+			Num.f(cfg["lobe_size"]) * scale,
+			tint
+		)
 
 
 ## A thick smoke trail for a wreck on the move: puffs left in the air along its way (the

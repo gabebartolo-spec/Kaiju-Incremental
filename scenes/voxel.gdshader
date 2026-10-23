@@ -9,6 +9,8 @@ uniform float roughness_value = 0.9;
 uniform float opacity = 1.0;
 // A white-hot flash over the whole part (a helicopter breaking apart): added light, 0 = none.
 uniform float flash = 0.0;
+// 0..1: the part chars dark (a helicopter hull burning after it breaks), 0 = unchanged.
+uniform float scorch = 0.0;
 const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
@@ -24,6 +26,7 @@ void fragment() {
 		}
 	}
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
+	albedo *= mix(1.0, 0.16, scorch);
 	ALBEDO = albedo;
 	ROUGHNESS = roughness_value;
 	EMISSION = albedo * glow * (1.0 - COLOR.a) + vec3(flash);

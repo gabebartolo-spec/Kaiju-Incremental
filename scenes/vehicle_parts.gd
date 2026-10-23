@@ -62,9 +62,10 @@ func hinge(part: String, parent: Node3D, centre: Vector3, salt: int) -> Node3D:
 	return node
 
 
-## A white-hot flash on every voxel part under `root`: `gain` at once, easing to 0 over `seconds`
-## (the tween lives on `host`, so it outlasts the model being taken apart).
-static func flash(root: Node, host: Node, gain: float, seconds: float) -> void:
+## A breaking part's heat on every voxel part under `root`: a white-hot flash of `gain` fading out
+## over `flash_s`, while the part chars dark over `char_s` (the tween lives on `host`, so it
+## outlasts the model being taken apart).
+static func flash(root: Node, host: Node, gain: float, flash_s: float, char_s: float) -> void:
 	var mats: Array[ShaderMaterial] = []
 	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
 		var mat := (node as MultiMeshInstance3D).material_override as ShaderMaterial
@@ -73,11 +74,13 @@ static func flash(root: Node, host: Node, gain: float, seconds: float) -> void:
 			mats.append(mat)
 	host.create_tween().tween_method(
 		func(v: float) -> void:
+			var t := v * char_s
 			for mat: ShaderMaterial in mats:
-				mat.set_shader_parameter("flash", gain * (1.0 - v)),
+				mat.set_shader_parameter("flash", gain * maxf(0.0, 1.0 - t / flash_s))
+				mat.set_shader_parameter("scorch", smoothstep(0.0, char_s, t)),
 		0.0,
 		1.0,
-		seconds
+		char_s
 	)
 
 
