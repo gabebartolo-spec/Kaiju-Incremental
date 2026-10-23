@@ -451,7 +451,11 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "are we in clip making purgatory again?", then "but if something has failed 7 times in a row then our method is
   wrong, and needs to be reassessed": D-188, no round cap (reviews keep going until the critics pass), but two
   failures in a row change the method. The fire and helicopter look (round 7) is reassessed before any round 8.
-  Owner: VFX lead. Status: reassessing.
+  Owner: VFX lead. Status: reassessed (helicopter deaths r1-r6): the fire failed every round because the shared
+  Fire has never passed and was being fixed inside the helicopter work, so the Fire family becomes its own item (a
+  board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
+  an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
+  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187.
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
