@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-120 · Director · The background skyline rampage stays after the slice (section H)
+Why: Asked 2026-10-21.
+
+## 2026-10-21 · D-119 · Director · Skins and body-part mutations are stretch goals
+Why: Asked 2026-10-21 (customisation beyond species).
+
 ## 2026-10-21 · D-113 · Director · The game ends in a finale boss fight against a giant military mecha, after 3 cities
 Why: Asked 2026-10-21 (open list: finale shape, how many cities). Changes: ROADMAP finale (R 23) builds a mecha boss; city count 3.
 
