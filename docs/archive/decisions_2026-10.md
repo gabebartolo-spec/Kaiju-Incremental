@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
+Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
+
 ## 2026-10-19 · D-089 · Director · Demo exe 1 waited for the stall fix
 Why: the windowed stall (Structure.settle rescanning every floor) had to be fixed first; #75 MERGED, exe 44f56fd.
 

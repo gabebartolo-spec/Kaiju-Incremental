@@ -441,3 +441,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Motion pass on every growth step (walk, turn, stop, dash, stomp, standing still), measured bars + a fresh motion
   critic at game speed, then the living predator (D-165), ahead of the one-look work. Owner: VFX lead. Status: queued.
 - Balance run on GitHub (D-179): a manual workflow runs tools/pacing.gd. Owner: lead's builder. Status: not started.
+- "helicopters are hovering way too close to our kaiju ... twitchy ... like an orbiting fly, they should move logically,
+  strategically, gracefully": stand-off gunships (D-183). Owner: lead's builder (sim/air_wing.gd), VFX lead for banking
+  and rotor look. Status: queued after the volley rework.
+- "these songs are too staccato, too endlessly building with very little relief or payoff": theme takes now ask for a
+  legato melody with tension and release (D-182). Owner: lead. Status: takes made, his pick pending.
