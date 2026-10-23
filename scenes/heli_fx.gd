@@ -19,6 +19,7 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	mat.shader = FLARE
 	mat.set_shader_parameter("tint", FLASH_TINT)
 	mat.set_shader_parameter("ray_gain", 0.0)  # a soft burst of light, no straight streaks
+	mat.set_shader_parameter("fade", 1.0)  # full on the very first frame it is drawn
 	quad.material = mat
 	var flash := MeshInstance3D.new()
 	flash.mesh = quad

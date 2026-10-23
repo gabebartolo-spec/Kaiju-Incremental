@@ -74,6 +74,7 @@ func crashed(event: Dictionary) -> void:
 	var ground := Vector3(Num.f(event["x"]), 0.0, Num.f(event["z"]))
 	if _falling.has(id):
 		var fall: Fall = _falling[id]
+		fall.node.global_position = Vector3(ground.x, 0.0, ground.z)  # exactly the sim's crash point
 		_end_fall(fall)
 		_break_up(fall.node, 0.6, false)
 		_falling.erase(id)
@@ -111,18 +112,9 @@ func _process(delta: float) -> void:
 ## lights its hull from under.
 func _fall(fall: Fall, delta: float) -> void:
 	fall.t += delta
-	var u := clampf(fall.t / fall.seconds, 0.0, 1.0)
-	var bow := fall.side * sin(PI * u) * Num.f(_cfg["swing"])  # a falling arc, not a slide
-	var lead := Num.f(_cfg["fall_lead"])  # it drops from the first frame, then falls ever faster
-	var drop := fall.from.y * (lead * u + (1.0 - lead) * u * u)
-	fall.node.position = fall.from + fall.drift * fall.t + bow - Vector3(0, drop, 0)
-	fall.yaw += delta * Num.f(_cfg["spin"]) * (0.5 + u)
-	var tumble := pow(u, 1.4)  # the pitch and roll build slowly, then it cartwheels
-	var pitch := -deg_to_rad(Num.f(_cfg["pitch_deg"])) * tumble
-	var roll := deg_to_rad(Num.f(_cfg["roll_deg"])) * tumble
-	fall.node.basis = (
-		Basis(Vector3.UP, fall.yaw) * Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, roll)
-	)
+	fall.node.position = HeliArc.point(fall.from, fall.drift, fall.side, fall.seconds, fall.t, _cfg)
+	fall.node.basis = HeliArc.basis(fall.seconds, fall.t, _cfg)
+	fall.yaw = HeliArc.yaw(fall.seconds, fall.t, _cfg)
 	var along := Num.f(_cfg["trail_offset"])
 	for k: int in fall.fires.size():
 		var offset := Vector3(0, 0.5, (k - 1) * along)

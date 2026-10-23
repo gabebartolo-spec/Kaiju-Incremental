@@ -19,6 +19,7 @@ func suite_name() -> String:
 func run_checks() -> void:
 	await _t("_check_burst")
 	await _t("_check_spin_crash")
+	await _t("_check_fall_arc")
 	await _t("_check_crash_fire")
 	await _t("_check_crash_crushes_army")
 	await _t("_check_crash_spares_kaiju")
@@ -82,6 +83,44 @@ func _check_burst() -> void:
 	var before := _alive(sim, 0)
 	_until_crash(sim, 4.0)
 	check(_alive(sim, 0) == before, "a helicopter blown apart in the air breaks no building")
+
+
+## The view's fall arc (HeliArc) meets the sim: a wreck that spins down is drawn from its death
+## point to exactly the sim's crash point (within 0.05 units) at the sim's crash time, rises only in
+## the first 6 frames (60 Hz) and only descends after, and turns 1-2 times about its mast.
+func _check_fall_arc() -> void:
+	var sim := _scene({})
+	var cfg := Content.section("heli_wreck")
+	var event := _down(sim, Num.f(sim.air.cfg["hp"]) * 0.2)
+	var seconds := Num.f(event["seconds"])
+	var from := Vector3(Num.f(event["x"]), sim.air.altitude(), Num.f(event["z"]))
+	var drift := Vector3(Num.f(event["dx"]), 0.0, Num.f(event["dz"]))
+	var side := Vector3(-drift.z, 0.0, drift.x).normalized()
+	var crash := {}
+	var steps := 0
+	while crash.is_empty() and steps < 600:
+		for e: Dictionary in sim.step(1.0 / 60.0, Vector2.ZERO, false, 0):
+			if str(e["type"]) == "heli_crashed":
+				crash = e
+		steps += 1
+	check(not crash.is_empty(), "the sim lands the wreck")
+	var end := HeliArc.point(from, drift, side, seconds, seconds, cfg)
+	var error := Vector2(end.x - Num.f(crash["x"]), end.z - Num.f(crash["z"])).length()
+	check(error < 0.05, "the drawn crash point is the sim's (error %.3f units)" % error)
+	check(is_zero_approx(end.y), "the arc ends on the street (%.3f)" % end.y)
+	var drawn_at := HeliArc.point(from, drift, side, seconds, steps / 60.0, cfg)
+	check(absf(drawn_at.y) < 0.001, "the hull is down at the sim's crash step (%d steps)" % steps)
+	var last := INF
+	var monotonic := true
+	for frame: int in range(7, roundi(seconds * 60.0) + 1):
+		var y := HeliArc.point(from, drift, side, seconds, frame / 60.0, cfg).y
+		monotonic = monotonic and y < last
+		last = y
+	check(monotonic, "after the pop (frame 6) the hull only ever descends")
+	var pop := HeliArc.point(from, drift, side, seconds, 0.1, cfg).y
+	check(pop > from.y, "it pops up first (%.2f over %.2f)" % [pop, from.y])
+	var turns := HeliArc.yaw(seconds, seconds, cfg) / TAU
+	check(turns >= 1.0 and turns <= 2.0, "it turns 1-2 times about its mast (%.2f)" % turns)
 
 
 func _check_spin_crash() -> void:

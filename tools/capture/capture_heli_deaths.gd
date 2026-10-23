@@ -250,7 +250,7 @@ func _trace() -> void:
 	var cam := root.get_viewport().get_camera_3d()
 	var model: KaijuModel = _rampage._kaiju
 	print(
-		"T,n,rake_t,cam_x,cam_y,armL_x,armL_y,armR_x,armR_y,hull_y,hull_x,hull_py,roll,fall_y,yaw"
+		"T,n,rake_t,cam_x,cam_y,armL_x,armL_y,armR_x,armR_y,hull_y,hull_x,hull_py,roll,fall_y,yaw,fall_x,fall_z,sim_x,sim_z,fall_px_x,fall_px_y"
 	)
 	for n: int in CLIP_FRAMES - CLIP_LEAD + 10:
 		var sim := _rampage.sim
@@ -271,12 +271,19 @@ func _trace() -> void:
 				break
 		var fall_y := 0.0
 		var fall_yaw := 0.0
+		var fall_at := Vector3.ZERO
+		var fall_px := Vector2.ZERO
+		var sim_at := Vector2.ZERO
+		for down: AirWing.Falling in sim.air.falling:
+			sim_at = down.pos
 		for fall: HeliWreck.Fall in [] if wrecks == null else wrecks._falling.values():
 			fall_y = fall.node.position.y
 			fall_yaw = rad_to_deg(fall.yaw)
+			fall_at = fall.node.position
+			fall_px = cam.unproject_position(fall.node.global_position)
 		print(
 			(
-				"T,%d,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.1f,%.1f,%.1f,%.2f,%.1f"
+				"T,%d,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.1f,%.1f,%.1f,%.2f,%.1f,%.3f,%.3f,%.3f,%.3f,%.1f,%.1f"
 				% [
 					n,
 					swing._rake_t,
@@ -291,7 +298,13 @@ func _trace() -> void:
 					hull_px.y,
 					roll,
 					fall_y,
-					fall_yaw
+					fall_yaw,
+					fall_at.x,
+					fall_at.z,
+					sim_at.x,
+					sim_at.y,
+					fall_px.x,
+					fall_px.y
 				]
 			)
 		)
