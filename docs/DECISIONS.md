@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-200 · Director · Beam sweep on the heavy Komodo: the head aims, the body follows
+
+The Komodo test build's turn snap (motion critic: ~70-90 deg in 0.25 s) is the breath beam's sim turn rate (0.6 turns a second whatever the size; the gait follows at up to ~290 deg a second), not the turn clip. Asked how the heavy Komodo should sweep his beam: "Head aims, body follows": the beam keeps today's fast sweep (gameplay unchanged); the head and neck do the fast aiming, up to about 60 deg either side, while the body swings round after it at a heavy pace. Owner: lead (test branch claude/komodo-test, the presentation layer).
+
 ## 2026-10-24 · D-199 · Director · Adopt the Cascadeur pipeline: every kaiju gets its clips from it
 
 Shown the Komodo in the game (test build claude/komodo-test dd5918ec: his Cascadeur walk, idle, roar and a keyed walking turn, played by the game's clip layer; game and side camera clips; motion critic SHIP as the prototype). Asked whether it beats today's croc walking enough to be how all kaiju move (the D-193 test): "Yes, adopt it". Every kaiju (Komodo, the new croc, the serpent's special moves) gets its clips from this pipeline. Next, the polish list: weight on each footfall (camera dip, dust, thud), a slower in-place turn, tail lag and arm swing in the clips, the roar's head and snout. Before anything from Cascadeur ships, a paid licence replaces the Pro trial (D-194; Indie, $144 a year, under $100k revenue): a spend for his written yes then.
@@ -388,11 +392,3 @@ Why: build2-7 "the camera doesnt let us see much of the city"; C sees to the sky
 ## 2026-10-20 · D-104 · Director · Shader: Cinematic
 He picked Cinematic from four candidates (today, toon, diorama, cinematic) at morning, noon, dusk and night: heavy ambient occlusion (ssao 3.0, power 2.0), contrast 1.3, saturation 0.9, bloom on fire (glow 1.0, threshold 0.9), no crease edges.
 Why: his shader comparison (comments 2026-10-20 #7). Changes: data/looks.json concrete; city_view reads ssao, ssao_power, glow_threshold from the look. Time of day stays dusk (not asked).
-
-## 2026-10-20 · D-103 · Lead · Carving build calls (WP4-WP7)
-Why: small calls made while building, none changes the vision. (1) WP4 slab colour B 8a8780 is the director's pick (D-101).
-(2) A fixture cell on grid layer 0 counts as grounded. (3) Glass towers get structural columns, spacing in
-`tuning.json`. (4) WP6 `arc_shed_cells` stays 32. (5) WP5 ships after critic round 3; its remaining motion items (block
-shear sawtooth, chunks behind panes on a swipe, tower slab propped on its teeth) are carried into WP7 integration
-(no-marginal-gains), which narrows D-102's "fix now". (6) D-098's young rooftop sting 0.05 is executed with the Behemoth
-sting scaled by the same factor so the size order holds.

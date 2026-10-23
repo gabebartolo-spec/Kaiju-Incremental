@@ -2,6 +2,14 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-103 · Lead · Carving build calls (WP4-WP7)
+Why: small calls made while building, none changes the vision. (1) WP4 slab colour B 8a8780 is the director's pick (D-101).
+(2) A fixture cell on grid layer 0 counts as grounded. (3) Glass towers get structural columns, spacing in
+`tuning.json`. (4) WP6 `arc_shed_cells` stays 32. (5) WP5 ships after critic round 3; its remaining motion items (block
+shear sawtooth, chunks behind panes on a swipe, tower slab propped on its teeth) are carried into WP7 integration
+(no-marginal-gains), which narrows D-102's "fix now". (6) D-098's young rooftop sting 0.05 is executed with the Behemoth
+sting scaled by the same factor so the size order holds.
+
 ## 2026-10-20 · D-102 · Lead · WP5 gets one more fix round before its PR
 Why: the round-2 motion critic's three findings are defects, not taste (lead 2x on the clean CI clips): the fallen tower
 slab lands whole and then vanishes, block towers shear in a regular staircase, debris floats visibly inside glass.
