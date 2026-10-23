@@ -103,7 +103,7 @@ func _check_rises_with_ruin() -> void:
 		check(ok_sky, "%s: the sky horizon only warms as the ruin grows" % time)
 		check(ok_haze, "%s: the haze only warms as the ruin grows" % time)
 		var full := EscalationView.eased(base, time, 1.0)
-		check(Num.f(full["fog_density"]) > Num.f(base["fog_density"]) * 1.5, "%s: fog clearly thicker at full" % time)
+		check(Num.f(full["fog_density"]) > Num.f(base["fog_density"]) * 1.1, "%s: fog clearly thicker at full" % time)
 		check(Num.f(full["sun_energy"]) <= Num.f(base["sun_energy"]) * 1.001, "%s: the sun never brightens" % time)
 
 
@@ -180,7 +180,7 @@ func _check_eased_not_stepped() -> void:
 		last = env.fog_density
 	var span := base_fog * (Num.f(Content.section("escalation")["times"]["night"]["fog_mult"]) - 1.0)
 	check(biggest < span * 0.05, "a sudden jump in ruin eases the fog (largest frame step %.5f of %.5f)" % [biggest, span])
-	check(absf(env.fog_density - base_fog * 2.2) < base_fog * 0.02, "the fog settles at the night target")
+	check(absf(env.fog_density - base_fog * Num.f(Content.section("escalation")["times"]["night"]["fog_mult"])) < base_fog * 0.02, "the fog settles at the night target")
 	check(sun.light_energy >= base_sun * 0.99, "night keeps its moonlight")
 	s.parent.queue_free()
 	await process_frame

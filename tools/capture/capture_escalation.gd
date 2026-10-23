@@ -46,7 +46,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
-	if bool(_a["clip"]):
+	if (_a["clip"] == true):
 		await _clip()
 		quit()
 		return
@@ -141,7 +141,7 @@ func _still(time: String, level: float) -> void:
 	var rig := _rig(time)
 	await Kit.frames(self, SETTLE)
 	var view := _escalation(rig)
-	if bool(_a["baseline"]) and view != null:
+	if (_a["baseline"] == true) and view != null:
 		view.queue_free()
 		view = null
 	_ruin_to(rig, level)
@@ -171,8 +171,8 @@ func _clip() -> void:
 	await Kit.frames(self, SETTLE)
 	var dir := _out.path_join("clip")
 	DirAccess.make_dir_recursive_absolute(dir)
-	var frames := int(float(_a["seconds"]) * 60.0)
-	var to := float(_a["to"])
+	var frames := int(Num.f(_a["seconds"]) * 60.0)
+	var to := Num.f(_a["to"])
 	for f: int in frames:
 		_ruin_to(rig, to * float(f + 1) / frames)
 		await process_frame

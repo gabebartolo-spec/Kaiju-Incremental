@@ -1307,20 +1307,20 @@
 		"ease_seconds": 1.5,
 		"times": {
 			"dusk": {
-				"fog_mult": 2.4, "sky_top": "7a2c12", "sky_horizon": "e8742a", "fog_color": "b8581e",
-				"sun_color": "ff9a50", "sun_scale": 0.9, "ambient_color": "a8683c"
+				"fog_mult": 1.2, "sky_top": "7a2c12", "sky_horizon": "e8742a", "fog_color": "b8581e",
+				"sun_color": "ff9a50", "sun_scale": 0.95, "ambient_color": "a8683c"
 			},
 			"night": {
-				"fog_mult": 2.2, "sky_top": "3a160a", "sky_horizon": "c25a1e", "fog_color": "7a3418",
+				"fog_mult": 1.4, "sky_top": "3a160a", "sky_horizon": "c25a1e", "fog_color": "7a3418",
 				"sun_color": "b86a40", "sun_scale": 1.0, "ambient_color": "7a4a30"
 			},
 			"morning": {
-				"fog_mult": 2.6, "sky_top": "7a5a40", "sky_horizon": "c08a58", "fog_color": "a88458",
-				"sun_color": "e8b070", "sun_scale": 0.7, "ambient_color": "a88a68"
+				"fog_mult": 1.4, "sky_top": "7a5a40", "sky_horizon": "c08a58", "fog_color": "a88458",
+				"sun_color": "e8b070", "sun_scale": 0.85, "ambient_color": "a88a68"
 			},
 			"noon": {
-				"fog_mult": 2.6, "sky_top": "6a5440", "sky_horizon": "b8946a", "fog_color": "a08460",
-				"sun_color": "e8c090", "sun_scale": 0.6, "ambient_color": "a88e6e"
+				"fog_mult": 1.15, "sky_top": "6a5440", "sky_horizon": "b8946a", "fog_color": "a08460",
+				"sun_color": "e8c090", "sun_scale": 0.95, "ambient_color": "a88e6e"
 			}
 		},
 		"blackout": {
