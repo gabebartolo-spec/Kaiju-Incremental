@@ -1,0 +1,128 @@
+name: pacing
+
+# The balance run on GitHub's machines (D-179, director 2026-10-23: "Yes, run it on GitHub"): runs
+# tools/pacing.gd headless and keeps its output as an artifact, so a balance answer needs no
+# builder's PC (the hour-long run was killed twice by Godot pauses, D-159 "GitHub runs them").
+#
+# Manual only. Dispatch it from the Actions tab, or
+#   gh workflow run pacing.yml -f species=reptilian -f runs=400 [-f ref=<branch or sha>] [-f verbose=false]
+# A workflow_dispatch workflow only appears in the Actions tab and `gh workflow run` once this file
+# is on the default branch; `ref` then picks the code and data to measure (empty: the branch the
+# workflow was dispatched on).
+#
+# One job per species ("all" runs the three side by side). Each uploads the artifact
+# `pacing-<species>`: pacing.txt (the whole output: every run line when verbose, then the marks, the
+# stage table and the last line "exit <code> wall <s> s") and summary.txt (the same without the run
+# lines, also shown on the run page). The Windows numbers in docs may differ a little from these
+# (float drift between platforms); compare runs of the same workflow with each other.
+on:
+  workflow_dispatch:
+    inputs:
+      species:
+        description: Species to pace ("all" runs the three in parallel jobs)
+        type: choice
+        options: [reptilian, insectoid, cephalopod, all]
+        default: reptilian
+      runs:
+        description: Run cap per species (tools/pacing.gd --runs)
+        type: string
+        default: "400"
+      ref:
+        description: Branch, tag or commit to measure (empty = the branch this workflow was dispatched on)
+        type: string
+        default: ""
+      verbose:
+        description: Print every run (rubble, seconds, how it ended, what it bought)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      species: ${{ steps.pick.outputs.species }}
+    steps:
+      - name: Pick the species and check the run cap
+        id: pick
+        env:
+          SPECIES: ${{ inputs.species }}
+          RUNS: ${{ inputs.runs }}
+        run: |
+          case "$RUNS" in
+            ''|*[!0-9]*) echo "::error::runs must be a whole number, got '$RUNS'"; exit 1 ;;
+          esac
+          if [ "$SPECIES" = all ]; then
+            echo 'species=["reptilian","insectoid","cephalopod"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "species=[\"$SPECIES\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  pace:
+    name: pacing ${{ matrix.species }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 340 # a hosted job may run 6 hours; the Godot run below stops itself at 320 minutes
+    strategy:
+      fail-fast: false # one species failing should not stop the others
+      matrix:
+        species: ${{ fromJSON(needs.plan.outputs.species) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: true # the native core's godot-cpp, as in tests.yml
+      # The same native library the tests use, from the cache when native/ is unchanged.
+      - uses: ./.github/actions/native-build
+      - uses: ./.github/actions/setup-godot
+
+      # The class cache the script run needs (as the tests.yml preflight does it).
+      - name: Import the project
+        run: |
+          code=0
+          timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+          if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log"; then
+            grep -E -A3 "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log" | head -40
+            tail -5 "$RUNNER_TEMP/import.log"
+            echo "::error::the project failed to import or compile (exit $code)"
+            exit 1
+          fi
+
+      - name: Run tools/pacing.gd
+        env:
+          SPECIES: ${{ matrix.species }}
+          RUNS: ${{ inputs.runs }}
+          VERBOSE: ${{ inputs.verbose }}
+        run: |
+          out="$RUNNER_TEMP/pacing"
+          mkdir -p "$out"
+          args="--species=$SPECIES --runs=$RUNS"
+          if [ "$VERBOSE" = true ]; then args="$args --verbose"; fi
+          start=$(date +%s)
+          code=0
+          timeout 19200 "$HOME/godot/godot" --headless --path . --script tools/pacing.gd -- $args > "$out/pacing.txt" 2>&1 || code=$?
+          echo "exit $code wall $(( $(date +%s) - start )) s" >> "$out/pacing.txt"
+          # the marks and the stage table, without the per-run lines and the engine's exit noise
+          grep -E '^(== |  [^ ])' "$out/pacing.txt" | grep -v '^  run ' > "$out/summary.txt" || true
+          {
+            echo "### Pacing: $SPECIES, up to $RUNS runs, commit $(git rev-parse --short HEAD)"
+            echo '```'
+            cat "$out/summary.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != 0 ] || ! grep -q '^  tree ' "$out/pacing.txt" || grep -qE "SCRIPT ERROR|Parse Error" "$out/pacing.txt"; then
+            tail -20 "$out/pacing.txt"
+            echo "::error::the pacing run did not finish (exit $code); pacing.txt has the output"
+            exit 1
+          fi
+
+      - name: Upload the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacing-${{ matrix.species }}
+          path: ${{ runner.temp }}/pacing
+          retention-days: 30
