@@ -1,7 +1,7 @@
 extends SceneTree
 ## The croc titan at one growth step on one route in the real rampage, at the gameplay camera, for
 ## the motion critic (D-177 "Motion first"): walk east along the river road, turn back west, stop
-## (the road keeps his legs clear of buildings and dust), or a held curve (the stick swept round
+## (--clear keeps buildings, rubble and dust off his legs), or a held curve (the stick swept round
 ## at --sweep deg/s, the motion gate's). The route starts once he stands on the bank
 ## ("ROUTE starts at frame N": trim the movie there). Measures the camera on the way: where the
 ## drawn body sits across the frame (x, -1..1 edge to edge) and how far the camera's look-ahead
@@ -9,8 +9,8 @@ extends SceneTree
 ## range.
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_gait_route.gd -- --stage=Behemoth --route=walk_turn
-## --stage=young|Behemoth|Colossus, --route=walk_turn|curve|straight, --sweep=30, --seconds=6.5,
-## --run=3 (the run index: its time of day).
+## --stage=young|Behemoth|Colossus, --route=walk_turn|curve|straight, --sweep=30, --seconds=30,
+## --run=3 (the run index: its time of day), --clear=x0,z0,x1,z1 (sim space: no buildings there).
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const STAGES := {
@@ -18,19 +18,31 @@ const STAGES := {
 	"Behemoth": {"evolve1": 1},
 	"Colossus": {"evolve1": 1, "evolve2": 1},
 }
-const TURN_AT := 2.2
-const STOP_AT := 4.4
+## walk_turn: INLAND_U units inland off the river wall (the young croc's foot hung over it), then
+## EAST_S s east along the road, WEST_S s back west, then he stands; the clip starts CLIP_AFTER s
+## into the walk east, once it has settled (the opening turn and camera swoop left out: motion
+## critic 2026-10-23), and runs CLIP_S.
+const INLAND_U := 8.0
+const EAST_S := 2.8
+const WEST_S := 2.2
+const CLIP_AFTER := 0.8
+const CLIP_S := 6.4
 const CURVE_FROM := 1.0
 
 var _stage := "Behemoth"
 var _route := "walk_turn"
 var _sweep := 30.0
-var _seconds := 6.5
+var _seconds := 30.0  # walk_turn ends with its clip
+var _clear := Rect2()  # buildings left out of the city here (sim space): a bare road, no crush
 var _run_index := 3  # Content.time_for_run(3) is noon: the legs read in daylight
 var _t := -1.0
+var _from := Vector2.INF  # where the route starts (sim space)
+var _east_t := INF  # when the walk east starts (s)
 var _rampage: Rampage
 var _xs: Array[float] = []
 var _leads: Array[float] = []
+var _feet := {"both_yaw": 0.0, "run": 0.0, "worst": 0.0, "lifts": 0, "last_yaw": INF}
+var _was_down: Array[bool] = [true, true]
 
 
 func _initialize() -> void:
@@ -45,6 +57,9 @@ func _initialize() -> void:
 			_seconds = float(arg.substr(10))
 		elif arg.begins_with("--run="):
 			_run_index = int(arg.substr(6))
+		elif arg.begins_with("--clear="):
+			var v := arg.substr(8).split_floats(",")
+			_clear = Rect2(v[0], v[1], v[2] - v[0], v[3] - v[1])
 	if not Kit.window_ok():
 		quit(1)
 		return
@@ -59,15 +74,28 @@ func _run() -> void:
 	var levels: Dictionary = STAGES[_stage]
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	_rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), _run_index
-	)
+	var city := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	var kept: Array[Dictionary] = []
+	for b: Dictionary in city:
+		var w := Num.f(b["w"])
+		var d := Num.f(b["d"])
+		var at := Rect2(Num.f(b["x"]) - w, Num.f(b["z"]) - d, 2.0 * w, 2.0 * d)  # generous either way
+		if not _clear.has_area() or not _clear.intersects(at):
+			kept.append(b)
+	print("city: %d buildings, %d cleared" % [city.size(), city.size() - kept.size()])
+	_rampage.setup(species, stats, kept, _run_index)
 	_rampage.scripted = _input
 	root.add_child(_rampage)
 	while (_t < 0.0 or _t < _seconds) and not _rampage.sim.over:
 		await physics_frame
 		if _t >= 0.0:
 			_measure()
+	print(
+		(
+			"FEET %s %s: %d lifts; body yaw with both feet down %.0f deg in all, %.0f deg in a row at most"
+			% [_stage, _route, _feet["lifts"], _feet["both_yaw"], _feet["worst"]]
+		)
+	)
 	print(
 		(
 			"CAMERA %s %s: body across the frame x %.3f..%.3f, look-ahead off the heading's %.2f..%.2f u"
@@ -83,18 +111,27 @@ func _input(sim: RampageSim) -> Dictionary:
 		return {"move": Vector2.ZERO}
 	if _t < 0.0:
 		_t = 0.0
-		print("ROUTE starts at frame %d" % Engine.get_frames_drawn())
+		_from = sim.kaiju_pos
+		print("ROUTE starts at frame %d at %s" % [Engine.get_frames_drawn(), sim.kaiju_pos])
 	else:
 		_t += 1.0 / 60.0
+	if _route == "walk_turn" and _east_t == INF and sim.kaiju_pos.y <= _from.y - INLAND_U:
+		_east_t = _t
+		_seconds = _t + CLIP_AFTER + CLIP_S + 0.2
+	if _east_t != INF and is_equal_approx(_t, _east_t + CLIP_AFTER):
+		print("CLIP starts at frame %d" % Engine.get_frames_drawn())
 	return {"move": _stick(_t)}
 
 
 func _stick(t: float) -> Vector2:
 	match _route:
 		"walk_turn":
-			if t >= STOP_AT:
-				return Vector2.ZERO
-			return Vector2(1, 0) if t < TURN_AT else Vector2(-1, 0)
+			var u := t - _east_t
+			if _east_t == INF:
+				return Vector2(0, -1)
+			if u < EAST_S:
+				return Vector2(1, 0)
+			return Vector2(-1, 0) if u < EAST_S + WEST_S else Vector2.ZERO
 		"curve":
 			return Vector2(0, -1).rotated(-deg_to_rad(_sweep) * maxf(0.0, t - CURVE_FROM))
 	return Vector2(0, -1)
@@ -102,6 +139,7 @@ func _stick(t: float) -> Vector2:
 
 ## The drawn body's place across the frame and the look-ahead's angle off the heading.
 func _measure() -> void:
+	_measure_feet()
 	var cam: Camera3D = _rampage._camera
 	var local := cam.global_transform.affine_inverse() * _rampage._kaiju.focus()
 	var aspect := 16.0 / 9.0
@@ -115,3 +153,24 @@ func _measure() -> void:
 	_leads.append(off)
 	if roundi(_t * 60.0) % 30 == 0:
 		print("t %.1f  x %+.3f  look-ahead off the heading's %+.2f u" % [_t, x, off])
+
+
+## Foot lifts, and how far the drawn body yaws while both feet are down (a swivel on the spot).
+func _measure_feet() -> void:
+	var gait := _rampage._kaiju._rig.gait as ClipGait
+	var down := 0
+	for i: int in 2:
+		var planted: bool = gait.legs[i].planted
+		if _was_down[i] and not planted:
+			_feet["lifts"] = Num.i(_feet["lifts"]) + 1
+		_was_down[i] = planted
+		down += 1 if planted else 0
+	var last := Num.f(_feet["last_yaw"])
+	var turn := 0.0 if last == INF else absf(rad_to_deg(wrapf(gait.body_yaw - last, -PI, PI)))
+	_feet["last_yaw"] = gait.body_yaw
+	if down == 2:
+		_feet["both_yaw"] = Num.f(_feet["both_yaw"]) + turn
+		_feet["run"] = Num.f(_feet["run"]) + turn
+		_feet["worst"] = maxf(Num.f(_feet["worst"]), Num.f(_feet["run"]))
+	else:
+		_feet["run"] = 0.0

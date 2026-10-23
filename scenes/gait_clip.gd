@@ -199,6 +199,8 @@ func _walk_clock(dt: float) -> void:
 
 
 func _go(next: String, at: float) -> void:
+	if state == "walk" and next == "idle":
+		_stomp.settle()  # the weight settles as he stops
 	_from = state
 	_from_time = clip_time
 	_blend = 0.0
