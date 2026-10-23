@@ -140,10 +140,27 @@ func _check_crash_crushes_army() -> void:
 	squad.cell = Vector3i(0, 1, 0)
 	squad.pos = Vector2.ZERO
 	sim.army_units.squads.append(squad)
+	var roof := Army.Squad.new()  # a real rooftop squad: on the block's top floor (>= 3)
+	roof.building = 0
+	roof.cell = Vector3i(1, 3, 1)
+	var roof_at := sim.buildings[0].chunk_world(roof.cell)
+	roof.pos = Vector2(roof_at.x, roof_at.z)
+	sim.army_units.squads.append(roof)
+	var far_roof := Army.Squad.new()  # a squad on a roof out of the wreck's reach
+	far_roof.building = 1
+	far_roof.cell = Vector3i(0, 1, 0)  # the 2 x 2 x 2 block far off
+	var far_at := sim.buildings[1].chunk_world(far_roof.cell)
+	far_roof.pos = Vector2(far_at.x, far_at.z)
+	sim.army_units.squads.append(far_roof)
 	_crash_at(sim, Vector2.ZERO)
 	check(not sim.tanks.has(near), "a tank under the crash is crushed (hp %.1f)" % near.hp)
 	check(sim.tanks.has(far) and far.hp == 5.0, "a tank far from the crash is not hurt")
-	check(sim.army_units.squads.is_empty(), "a squad on a low roof under the crash is killed")
+	check(not sim.army_units.squads.has(squad), "a squad on a low roof under the crash is killed")
+	check(
+		not sim.army_units.squads.has(roof),
+		"a squad on the top-floor roof under the crash is killed"
+	)
+	check(sim.army_units.squads.has(far_roof), "a squad on a far roof is left alone")
 
 
 ## The wreck never hurts the kaiju (D-140, kept by D-167), even one standing in the crash.

@@ -270,3 +270,20 @@ func _crash(at: Vector2) -> void:
 		Num.i(cfg["crash_floors"])
 	)
 	_crashing = false
+	_crush_roofs(at, radius)
+
+
+## The wreck lands on the roofs under it (D-167): every rooftop squad on a building the impact
+## reaches dies, at any floor (the building's footprint decides, as for hit_buildings, not the
+## floor range). Squads have no hp, so a reach above 0 is enough, as for any splash (Army.splash).
+## Only the crash does this; stomps and bites keep their floor ranges. The kaiju and the sky are
+## not touched.
+func _crush_roofs(at: Vector2, radius: float) -> void:
+	for squad: Army.Squad in sim.army_units.squads:
+		var b := sim.buildings[squad.building]
+		var near := RampageSim.falloff(
+			Vector2(b.x, b.z).distance_to(at) - Vector2(b.w, b.d).length() * 0.5, radius
+		)
+		if near > 0.0:
+			squad.dead = true
+	sim.army_units.clear_dead()
