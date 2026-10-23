@@ -31,8 +31,10 @@
 - Suno: he makes the tracks this week (D-169). His first takes were "way too intense" and the old guide didn't match
   Suno's UI: D-172 = brooding, building, one mood growing; music-briefs.md rewritten from help.suno.com (Sept 2026;
   then D-174: the lead runs Suno in the built-in browser (he's signed in; 800 credits; he picks by ear), D-176 darker
-  not heavier, Godzilla-like menace. Takes + credits in docs/provenance/music.md (2nd set 1C-3D awaiting his pick).
-  Lead cuts and layers stems.
+  not heavier, Godzilla-like menace; D-181 one theme, Cover per city; D-182 Jaws/Godzilla/Imperial March, not epic.
+  Rejected in turn: heroic, same city to city, epic/Nolan, staccato endless build, Y set "too whimsicial, almsot
+  Harry Potteresque, go harder on the Godzillla reference". G1-G4 (1954 Godzilla march / appears) await his pick;
+  140 of 800 credits; takes + settings in docs/provenance/music.md. Then Covers per city, Auto Split, WAV, lead cuts.
 
 ## Lead board (cross-session sends are capped at 10 between his messages)
 - C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/lead-board/: README.md (protocol), to-<session>.md (lead's
@@ -56,8 +58,9 @@
 - Merged overnight (10): #159 army, #154 look sheet, #163 city sound, #160 title, #161 Taskforce core, #164 three
   growth steps, #167 weather, #168 body-chunks (tests), #169 croc standing, #165 demo end + Endless (a7ac8788,
   save v4).
-- 15:00: #166 MERGED (3e4a7665; look r3 FIX flagged for M3, r4 on claude/heli-look-r4). Open: #170 volley (green,
-  sim review SHIP; D-178 lock together: beam-cost builder reworks it), #171 beam (pacing hours pending, run 16:01).
+- 15:00: #166 MERGED (3e4a7665; look r3 FIX flagged for M3, r4 on claude/heli-look-r4). Open: #170 volley (D-178
+  rework pushed e5d24848, sim/taskforce_volley.gd; CI running; non-author sim re-look subagent running, go only on its
+  SHIP + green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
   Next slot: claude/gait-step-len (volley builder), then claude/gait-fix (VFX, motion gate), then strike-delay.
 - D-179 pacing workflow (beam-cost builder, claude/pacing-ci); D-180 skins need a cohesive range (post-demo).
 - Godot hold until 16:01 ("no godot for 75min" at 14:46), scratchpad no_godot_until2.sh.
