@@ -32,7 +32,8 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **Reptilian, the croc titan: strongest, a living battering ram.** "A crocodile in a t-rex body, not godzilla
   shaped" (D-108): croc snout, pale flat bone scutes, charcoal spines, short reptilian arms, long low tail, ~20-30
   deg lean, graceful like a JP T-rex (D-031, D-046, D-048). Kit: claw swipe raking ahead every 2 s that undermines
-  towers (D-095, D-096); tail as an autonomous extra limb that shears buildings (a tree node, b2-2); momentum
+  towers (D-095, D-096), kept in front of him, its trail and sparks reading from the camera behind (D-190);
+  tail as an autonomous extra limb that shears buildings (a tree node, b2-2); momentum
   (straight lines hit harder, turning bleeds it); dash (bursts through every building in its path, landmarks too, a kick per wall, #34). Signature: a breath of **hot forked white-hot lightning**,
   never "atomic" (D-108); its ultimate is a long sustained beam swept by steering.
 - **Insectoid, the mantis: fast, and the brood mother.** Its identity: it **lays eggs that hatch elephant-sized
@@ -52,7 +53,8 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
   bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
   shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
   antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047). Standing still he
-  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking. Strides
+  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking; each
+  breath a slow, deep heave of neck, shoulders and flanks every 6-8 s (D-190). Strides
   grow heavier with size; tail, throat and jowls swing on each footfall; a short crouch before the dash (D-165).
   A big attack's damage lands when the jaws or foot land (D-166).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
@@ -87,6 +89,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
   distortion, a sonic boom delayed by distance (#19, #20).
 - **Fire:** a destroyed building stays rubble, never a burning shell (#14). Fire returns as gameplay: a tree node lets
   fire spread building to building on its own, burn-outs pay biomass, fires light the city (#15; rules in research 26).
+  Flames are smooth, tall and tapering, realistic in shape: the one effect that is not blocky (D-190).
 - Real OSM cities (D-029) are tabled. A background kaiju rampaging in the far skyline is a prototype for his yes (#16).
 
 ## Destruction

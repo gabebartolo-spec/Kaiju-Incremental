@@ -456,7 +456,9 @@ state. No director clips or per-change approvals in between; clips only where mo
   Fire has never passed and was being fixed inside the helicopter work, so the Fire family becomes its own item (a
   board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
   an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
-  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187.
+  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187. Fire board: "Smooth
+  flames" (D-190), rolling out to every fire on claude/fire-smooth, the helicopter fall round on top; claw swipe
+  "Keep it straight ahead" (D-190): hit back on the snout line, stronger trail and sparks.
 - "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
   "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
   atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
@@ -499,4 +501,6 @@ state. No director clips or per-change approvals in between; clips only where mo
   after SHIP. Owner: VFX lead. Status: in progress (D-165 phase A builder, claude/living-predator). Seen on base,
   where the breath is baked into the idle clip; it is damped at runtime. Bars: one breath every 4 / 6 / 8 s (young
   croc / Behemoth / Colossus), inhale 40%, exhale 60% with a pause; back and flanks move 0.25-0.8 / 0.6 / 0.5% of
-  body height at most, no faster than 0.6% of body height a second; the belly barely moves.
+  body height at most, no faster than 0.6% of body height a second; the belly barely moves. D-190 "Slow
+  chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, the default idle
+  (replaces the movement caps above).

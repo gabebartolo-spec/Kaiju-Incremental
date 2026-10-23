@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-096 · Director · Swipes undermine towers
+Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
+Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89
+(sim/claw_swipe.gd chews the building face; tuning is a seeded 5-seed mean, not a single seed).
+
 ## 2026-10-20 · D-095 · Director · Claws = a claw swipe, for the croc only in the demo
 Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
 Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
