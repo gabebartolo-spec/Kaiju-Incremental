@@ -21,7 +21,7 @@ planted bits (a foot is planted while its ball stays still in the world), the wa
 motion removed (played in place: the sim moves the body). rest.json is tools/kaiju_skin/dump_rest.gd's dump
 of the rig the game builds: its lowered arm rest (BipedSwing.rest_arm_bases) is divided out of the arm turns,
 so the arms show the clip's pose. The jaw has no Cascadeur control: the converter opens it for the roar.
-turn_left / turn_right are PLACEHOLDERS (the idle with the yaw the game steers by) until Cascadeur turns exist.
+turn_left is Cascadeur's stepping turn (stored against its turning root, TURN_*); turn_right is its mirror.
 """
 import json
 import math
@@ -51,16 +51,19 @@ BODY_HEIGHT_M = 10.0
 # is its first moved one stride forward, the idle's last is its first.
 CLIPS = {"walk": ("rig/komodo_walk_v5c_joints.fbx", "rig/komodo_walk_v5d_arms.json", True),
          "idle": ("rig/komodo_idle_v1_joints.fbx", None, True),
-         "roar": ("rig/komodo_roar_v1_joints.fbx", None, False)}
+         "roar": ("rig/komodo_roar_v1_joints.fbx", None, False),
+         "turn_left": ("rig/komodo_turn_left_v1_joints.fbx", None, False)}
 SRC_FPS, FPS = 30.0, 24
 # The roar's jaw (no jaw control in Cascadeur): opens from ROAR_JAW[0] to its peak at ROAR_JAW[1] (the frame
 # ClipGait holds for the beam, ROAR_PEAK_FRAME), holds, and is shut again from ROAR_JAW[2] to ROAR_JAW[3]
 # (game frames, 24 fps), JAW_OPEN_DEG at the peak.
 ROAR_JAW = (26.0, 47.0, 70.0, 95.0)
 JAW_OPEN_DEG = 34.0
-# PLACEHOLDER turns: the idle with a 90 degree yaw eased over TURN_YAW frames of TURN_FRAMES (the game turns
-# the body by this yaw, ClipGait._steer_turn).
-TURN_FRAMES, TURN_YAW = 144, (30, 108)
+# The turn's root path (Cascadeur source frames, 30 fps), the shape of motion_test.py path("turn"): walking at
+# the walk's pace (TURN_STRIDE m per TURN_CYCLE frames), the yaw eased 0 -> 90 deg to the left over TURN_YAW,
+# the speed dipping TURN_DIP mid-turn. The pose is stored against this moving, turning root (pivot under the
+# pelvis), its yaw in the clip (the game steers the body by it, ClipGait._steer_turn).
+TURN_YAW, TURN_STRIDE, TURN_CYCLE, TURN_DIP = (37.0, 134.0), 4.0, 64.0, 0.25
 # Planted: the ball moves less than this in the world per 24 fps frame (metres) ...
 PLANT_SPEED = 0.025
 # ... and sits within this of its lowest height in the clip (metres).
@@ -299,6 +302,26 @@ def fk_error(J, qs, heads):
     return worst
 
 
+def turn_path(span):
+    """The turn's root: (travel from the start, yaw in degrees) at a source frame (fractional), integrated."""
+    eased = lambda f: (lambda u: u * u * (3 - 2 * u))(min(1.0, max(0.0, (f - TURN_YAW[0]) / (TURN_YAW[1] - TURN_YAW[0]))))
+    pos, track = Vector((0, 0, 0)), []
+    for f in range(span + 2):
+        k = eased(f)
+        track.append(pos.copy())
+        speed = TURN_STRIDE / TURN_CYCLE * (1 - TURN_DIP * math.sin(math.pi * k))
+        pos += Quaternion((0, 0, 1), math.radians(90.0 * k)) @ Vector((0, -speed, 0))
+    def at(f):
+        f0 = int(math.floor(f))
+        return track[f0].lerp(track[f0 + 1], f - f0), 90.0 * eased(f)
+    return at
+
+
+def to_root(p, root, yaw, pivot):
+    """A Blender point in the root's frame: the root at `root` turned by `yaw` about the pelvis's rest spot."""
+    return Quaternion((0, 0, 1), -math.radians(yaw)) @ (p - root) + pivot
+
+
 def record(name, J, relax):
     fbx, arms, loop = CLIPS[name]
     arm, f0, f1 = load_clip(fbx, arms)
@@ -308,13 +331,22 @@ def record(name, J, relax):
     parents = {g: J[g][2] for g in GAME_BONES}
     _, h0, _ = sample(arm, f0)
     _, h1, _ = sample(arm, f1)
+    start = h0["spine0"].copy()
+    start.z = 0.0
+    pivot = Vector(J["spine0"][0])
+    pivot.z = 0.0
     trip = (h1["spine0"] - h0["spine0"]) if loop else Vector((0, 0, 0))
     trip.z = 0.0
+    path = turn_path(span) if name.startswith("turn") else (lambda f: (trip * (f / span), 0.0))
     frames, worst, balls_w, curls = [], (0.0, ""), [], []
     for i in range(n):
         t = f0 + i * step
         turns, heads, balls = sample(arm, t)
-        travel = trip * (i / n)
+        travel, yaw = path(i * step)
+        root = start + travel
+        spin = Quaternion((0, 0, 1), -math.radians(yaw))
+        turns = {b: spin @ q for b, q in turns.items()}
+        heads = {b: to_root(h, root, yaw, pivot) for b, h in heads.items()}
         qs = game_locals(turns, parents)
         worst = max(worst, fk_error(J, qs, heads) + (f"f{i}",))
         k = GAME_BONES.index("jaw")
@@ -328,10 +360,10 @@ def record(name, J, relax):
         for t_i, g in enumerate(GAME_BONES):
             if g in relax:
                 qs[t_i] = relax[g].inverted() @ qs[t_i]
-        off = GM @ (heads["spine0"] - Vector(J["spine0"][0]) - travel)
-        feet = [GM @ (b - travel) for b in balls]
+        off = GM @ (heads["spine0"] - Vector(J["spine0"][0]))
+        feet = [GM @ to_root(b, root, yaw, pivot) for b in balls]
         balls_w.append([np.array(b) for b in balls])
-        frames.append([qs, off, feet, [True, True], 0.0, GM @ travel])
+        frames.append([qs, off, feet, [True, True], yaw, GM @ travel])
     # Planted: the ball still in the world (wrapping a loop) and down near its lowest.
     bw = np.array(balls_w)  # frames x 2 x 3, world
     if loop:
@@ -374,16 +406,7 @@ def clips(rest_path):
         recorded[name] = frames
         if name == "walk":
             stride, cycles = trip / c, c
-    idle = recorded["idle"]
-    # PLACEHOLDER turns (no Cascadeur turn yet): the idle, looped, with the yaw the game steers the body by.
-    turn = []
-    for i in range(TURN_FRAMES):
-        u = min(1.0, max(0.0, (i - TURN_YAW[0]) / (TURN_YAW[1] - TURN_YAW[0])))
-        rec = list(idle[i % len(idle)])
-        rec[4] = 90.0 * u * u * (3 - 2 * u)
-        turn.append(rec)
-    recorded["turn_left"] = turn
-    recorded["turn_right"] = [mirror(r) for r in turn]
+    recorded["turn_right"] = [mirror(r) for r in recorded["turn_left"]]
     body, table, start = bytearray(), [], 0
     cm = lambda v: [int(round(c * 100.0)) for c in v]
     for name in ("idle", "walk", "turn_left", "turn_right", "roar"):
@@ -404,7 +427,7 @@ def clips(rest_path):
     header = json.dumps({"version": 1, "fps": FPS, "frame_bytes": len(GAME_BONES) * 8 + 26, "bones": GAME_BONES,
                          "gathers": gathers, "rest_heads_m": heads, "stride_m": round(stride, 4),
                          "body_height_m": BODY_HEIGHT_M, "clips": table,
-                         "source": "Cascadeur komodo (TEST ONLY, D-194); turns PLACEHOLDER"},
+                         "source": "Cascadeur komodo (TEST ONLY, D-194)"},
                         separators=(",", ":")).encode()
     out = OUT.with_suffix(".kclip")
     out.write_bytes(b"KCLP" + struct.pack("<II", 1, len(header)) + header + bytes(body))

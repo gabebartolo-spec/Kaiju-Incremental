@@ -20,9 +20,14 @@ gitignored).
   Root motion removed (walk 4.000 m / cycle, 1 cycle). Planted = ball still (< 2.5 cm/frame) and low. Arm turns
   divided by the game's lowered-arm rest (from dump_rest.gd's rest.json) so arms show the Cascadeur pose.
   Jaw: shut in idle/walk; roar opens 34 deg, peak game f47, shut by f95. Tail: rest + a small curl (0.5-2 deg a
-  joint) keeping the tip 0.35 m off the street (render_walk1 lift_tail). turn_left/right = PLACEHOLDER (idle looped
-  to 144 frames + a 90 deg eased yaw, f30-108; right mirrored).
-- `tools/capture/capture_rampage_kaiju.gd`: `--stage=N` (Kit.STAGE_LEVELS) for the adult body.
+  joint) keeping the tip 0.35 m off the street (render_walk1 lift_tail). turn_left = Cascadeur
+  `komodo_turn_left_v1_joints.fbx` (180 -> 144 frames), stored against its turning root (motion_test path("turn")
+  shape: yaw 0 -> 90 deg left over src f37-134, pivot under the pelvis; matches the FBX pelvis yaw exactly, root
+  within 0.2 m); turn_right = its mirror.
+- `data/tuning.json`: Colossus (contact.bodies.reptilian[2]) step_len 2.33 -> 1.99 = half the Komodo clip's stride
+  (lead, D-193 test). TEST BRANCH ONLY.
+- `tools/capture/capture_rampage_kaiju.gd`: `--stage=N` (Kit.STAGE_LEVELS), `--no-card` (hides the controls
+  card), `--cam=x,y,z` (camera rest offset; side shot used -24,8,20 vs the game's 0,16,30).
 - vskin baked with tools/kaiju_skin/bake.py on the adult only (= bake_all.sh's step; other skins untouched).
 
 ## Rebuild order
@@ -34,17 +39,18 @@ gitignored).
 ## Evidence
 - fit(): accepted; no "ClipGait: the clips do not fit" warning in the capture log; clips suite
   `_check_who_uses_clips` passes (adult is ClipGait).
-- clips suite: 7 of 7 functions, 14 checks, 1 failure: `_check_tail_owner` (turn bends 0.009 <= 0.12): the
-  placeholder turn has no tail drag. Lead ruled: leave it red on this branch.
-- smoke suite: 13 of 13 functions, 47 checks, 5 failures: 3 turn checks (feet do not step in the placeholder
-  turn: both feet up 9 frames, planted foot yaw 23.4 deg > 12, 5.0 skates/s) and 2 "Colossus step in the data is
-  half the clip's stride" (data 3.150 vs clip 2.696 world: the Komodo stride 4 m on 10 m is shorter than the
-  croc's). Stale-skin check passes.
+- clips suite (real turn): 14 checks, 1 failure `_check_tail_owner` (standing turn bends 0.017 <= 0.12: the
+  tail has no drag; lead ruled leave red).
+- smoke suite (step_len 1.99, real turn): 47 checks, 3 failures, all smoke_step_turn (the WALKING 90 deg turn on
+  the walk clip + sim step clock, not the turn clip): both feet up 9 frames while yawing, planted foot yaw
+  22.0 deg > 12, 4.9 skates/s vs the walk's 1.3. Stride checks now pass; stale-skin passes.
 - Converter: rebuilt-head error walk 0.0003 m, idle 0.004 m, roar 0.27 m (head0 f79: Cascadeur stretches the
   neck base; the game cannot translate a bone, so the roar's head sits up to 0.27 m off).
-- Clip (local GPU, NVIDIA RTX 4070 SUPER, off-screen no_focus, 1080p60, autoplayed rampage, adult stage):
-  scratchpad `komodo/cap/komodo_game_walk.mp4` (6 s, 11-17 s of the run; the controls panel covers 0-10 s).
+- Clips (local GPU, NVIDIA RTX 4070 SUPER, off-screen no_focus, 1080p60, autoplayed rampage, adult, card
+  hidden): scratchpad `komodo/cap/komodo_game_cam.mp4` (game camera, 3-9 s) and `komodo_side_cam.mp4` (low 3/4
+  side, 2.5-8.5 s). Earlier: `komodo_game_walk.mp4` (placeholder turns).
 
 ## Open / for the lead
-- Step length: data step 3.15 vs the clip's 2.70 per step: feet absorb ~17% by lock/restep. A tuning call.
-- Roar neck stretch (0.27 m) and placeholder turns, as above. Arm pose not yet compared with komodo_walk_v5d.mp4.
+- smoke_step_turn reds: why the walk clip lifts both feet / twists a planted foot in a stepped walking turn is
+  not diagnosed (catch steps from ClipStomp overreach are the first suspect).
+- Roar neck stretch (0.27 m), as above. Arm pose not yet compared with komodo_walk_v5d.mp4.
