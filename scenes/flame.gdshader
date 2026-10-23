@@ -59,12 +59,12 @@ void fragment() {
 	c = mix(c, red, smoothstep(0.3, 0.55, hw));
 	c = mix(c, deep, smoothstep(0.62, 0.95, hw));
 	// the heart: a soft yellow-white band a little way up the body, broken up, in most tongues
-	float band = smoothstep(0.03, 0.1, hw) * (1.0 - smoothstep(0.24, 0.42, hw));
-	float heart = band * (1.0 - smoothstep(0.0, 0.62, abs(x))) * (0.6 + 0.4 * n) * (0.5 + 0.5 * step(0.3, fract(seed * 3.7)));
-	c = mix(c, mix(vec3(1.0, 0.78, 0.30), vec3(1.0, 0.95, 0.74), smoothstep(0.5, 0.9, heart)), smoothstep(0.1, 0.4, heart));
+	float band = smoothstep(0.03, 0.09, hw) * (1.0 - smoothstep(0.3, 0.46, hw));
+	float heart = band * (1.0 - smoothstep(0.1, 0.7, abs(x))) * (0.7 + 0.3 * n) * (0.5 + 0.5 * step(0.3, fract(seed * 3.7)));
+	c = mix(c, mix(vec3(1.0, 0.72, 0.22), vec3(1.0, 0.96, 0.78), smoothstep(0.45, 0.65, heart)), smoothstep(0.25, 0.5, heart));  // a sharp heart: pale pixels are core, not haze
 	float rim = smoothstep(0.35, 0.95, d);  // each tongue edged deeper red
 	c *= (0.9 + 0.2 * fract(seed * 13.7)) * mix(1.0, 0.62, rim);
 	c = mix(c, red * 0.6, rim * 0.4);
-	ALBEDO = c * heat * (1.0 + 0.4 * smoothstep(0.55, 0.9, heart));
+	ALBEDO = c * heat * (1.0 + 0.5 * smoothstep(0.45, 0.65, heart));
 	ALPHA = smoothstep(0.3, 0.62, mask) * COLOR.a;  // hard edges: no ghost haze
 }
