@@ -21,8 +21,8 @@ var cfg: Dictionary
 var passes := 0
 var _rng: RandomNumberGenerator
 var _gap_left: float
-var _seen_at := Vector2.ZERO  # where the kaiju was last step
-var _walk := Vector2.ZERO  # its smoothed velocity, units a second: where the pilots expect it to go
+var _anchor := Vector2.ZERO  # where the pilots take the kaiju to be (smoothed, `anchor_seconds`)
+var _walk := Vector2.ZERO  # the anchor's velocity, units a second: where the pilots expect it to go
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -30,7 +30,7 @@ func _init(p_sim: RampageSim, p_cfg: Dictionary, rng: RandomNumberGenerator) -> 
 	cfg = p_cfg
 	_rng = rng
 	_gap_left = _span("strafe_gap")
-	_seen_at = sim.kaiju_pos
+	_anchor = sim.kaiju_pos
 
 
 ## A new helicopter: on the far side of the kaiju from the camera, `spawn_far` rings out, flying
@@ -58,12 +58,13 @@ func step(helis: Array[AirWing.Heli], dt: float) -> void:
 		_steer(heli, dt)
 
 
-## The pilots' estimate of where the kaiju is heading: its velocity, smoothed over `watch_seconds`
-## (it lurches a step at a time as it smashes through the city).
+## The pilots' estimate of where the kaiju is and where it is heading: his position smoothed over
+## `anchor_seconds` (a stepped turn swings it ten units about the planted foot every few steps,
+## which the pilots do not chase) and that anchor's velocity.
 func _watch_kaiju(dt: float) -> void:
-	var now := (sim.kaiju_pos - _seen_at) / dt
-	_seen_at = sim.kaiju_pos
-	_walk = _walk.lerp(now, minf(1.0, dt / Num.f(cfg["watch_seconds"])))
+	var before := _anchor
+	_anchor = _anchor.lerp(sim.kaiju_pos, minf(1.0, dt / Num.f(cfg["anchor_seconds"])))
+	_walk = (_anchor - before) / dt
 
 
 ## Sends `heli` on a strafing pass (the clock does it now and then; a test may too).
@@ -149,7 +150,7 @@ func _plan(heli: AirWing.Heli, helis: Array[AirWing.Heli], dt: float) -> void:
 func _plan_pass(heli: AirWing.Heli, dt: float) -> void:
 	heli.pass_left -= dt
 	var close := Num.f(cfg["strafe_close"]) * sim.body_scale()
-	var origin := sim.kaiju_pos + _walk * Num.f(cfg["strafe_lead"]) + heli.pass_at * close
+	var origin := _anchor + _walk * Num.f(cfg["strafe_lead"]) + heli.pass_at * close
 	var reach := sqrt(maxf(0.0, heli.ring * heli.ring - close * close))
 	var along := (heli.pos - origin).dot(heli.pass_dir)
 	if along >= reach or heli.pass_left <= 0.0:
@@ -217,7 +218,7 @@ func _steer(heli: AirWing.Heli, dt: float) -> void:
 func _slot_point(heli: AirWing.Heli) -> Vector2:
 	var out := Vector2.from_angle(heli.slot)
 	var toward := maxf(0.0, _walk.dot(out))
-	return sim.kaiju_pos + out * (heli.ring + toward * Num.f(cfg["lead_seconds"]))
+	return _anchor + out * (heli.ring + toward * Num.f(cfg["lead_seconds"]))
 
 
 ## `angle` moved out of the camera's side (to the nearer edge of the clear arc) if it is in it.
