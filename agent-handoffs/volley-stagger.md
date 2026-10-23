@@ -42,6 +42,24 @@ branch's upstream is look-options by accident: push only as
   lock together; no capture); play feel; a squad of five lined up at the exact same roof cell (the fixture does that);
   the military/army suites (the sim change is inside Taskforce); two or three squads at once can still land 2 hits a
   second EACH (D-175 per squad); a gunner who becomes ready mid-volley waits for the squad's next volley.
+## Sim review FIX of #170 (2026-10-23 17:3x): defect, drift, nit, all fixed and proved
+- DEFECT: _can_join read a later-listed gunner's rail_cd before Taskforce.step decremented it (4 gunners on equal rail_cd:
+  the first opened alone, the rest locked 2 s later). Fix: Taskforce.step runs every agent's rail_cd/frost_cd down in a
+  pre-pass before the agents loop; "ready" (TaskforceVolley.ready) allows READY_SLACK = half a step, for the opener and the
+  joiners alike (float noise and a squad_gap that is not a whole number of steps could split a squad by one step).
+- DRIFT: the cooldown counted from each gunner's own shot (round 2 split: A at 14.07 s, B-D at 16.07 s). Now a gunner's
+  rail_cd after its shot = cooldown - (the volley's age at its shot - the age at the volley's first shot), measured in the
+  volley's own steps (not the nominal k x squad_gap, which was one step off for some gunners: first try 2 of 6 checks red).
+  A volley now ends when no gunner of the squad is still aiming (record erased by the next tick), not at a planned time.
+- NIT: _can_join skips a gunner whose roof chunk is gone (no slot, no railgun_aim).
+- New suite tests/run_taskforce_volley_tests.gd (3 functions, 6 checks): four gunners ready together at rail_cd 0.5 and 6.0
+  lock in one step; three rounds each lock the squad of four in one step and every gunner fires once a round; a lost-roof
+  gunner puts no line up and takes no slot (the next shot follows by one gap). RED on e5d24848: 6 of 6 checks failed
+  (locks on steps [63, 123], [228, 288], [48, 469, 529, 890, 950]; 10 shots; aimed [0, 1, 2]; 1.23 s vs gap 0.60 s).
+- GREEN: taskforce_volley 3 of 3 functions, 6 checks, 0 failures; taskforce_gate 9 of 9, 31 checks, 0 failures; taskforce 10
+  of 10, 56 checks, 0 failures. gdlint, gdformat --check (LF), tuning_keys, complexity_ratchet clean.
+- Not exercised: check_scripts.sh (the suites compile every file they load), military/army suites, the look, play feel.
+  A lone gunner can now fire up to half a step earlier than before (READY_SLACK).
 ## Review packet (kaiju-sim-review; reviewer is not the author)
 Transitions affected (derive your own from the diff too):
 - Tick: Taskforce.step order is frost.step, volley.tick, then agents in list order. No clock, no new RNG draw; state is a

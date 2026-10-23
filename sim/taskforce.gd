@@ -100,11 +100,10 @@ func step(dt: float) -> void:
 			_timer = interval()
 			spawn_squad()
 	frost.step(dt)
+	_cool_down(dt)
 	volley.tick(dt, agents)
 	var fallen: Array[Agent] = []
 	for agent: Agent in agents:
-		agent.rail_cd = maxf(0.0, agent.rail_cd - dt)
-		agent.frost_cd = maxf(0.0, agent.frost_cd - dt)
 		if agent.state == ARRIVE or agent.state == HOP:
 			_fly(agent, dt)
 		elif not _holds(agent):
@@ -115,6 +114,14 @@ func step(dt: float) -> void:
 			_perched(agent, dt)
 	for agent: Agent in fallen:
 		_kill(agent, "perch_collapse", {})
+
+
+## Every agent's cooldowns run down before any agent acts, so a squad's gunners whose railguns
+## come ready on the same step all see it (a later-listed one would else read last step's value).
+func _cool_down(dt: float) -> void:
+	for agent: Agent in agents:
+		agent.rail_cd = maxf(0.0, agent.rail_cd - dt)
+		agent.frost_cd = maxf(0.0, agent.frost_cd - dt)
 
 
 ## A squad of 3-4 jetpacks in from a seeded point of the map edge, each bound for a roof near
@@ -257,7 +264,7 @@ func _holds(agent: Agent) -> bool:
 func _perched(agent: Agent, dt: float) -> void:
 	agent.wait -= dt
 	var dist := agent.pos.distance_to(sim.kaiju_pos)
-	if agent.rail_cd <= 0.0 and dist <= Num.f(_rail()["range"]):
+	if volley.ready(agent, dt) and dist <= Num.f(_rail()["range"]):
 		if not volley.busy(agent.squad):  # else it holds until its squad's volley is over (D-178)
 			volley.open(agent, agents, dt)
 	elif agent.frost_cd <= 0.0 and frost.reaches(dist):
