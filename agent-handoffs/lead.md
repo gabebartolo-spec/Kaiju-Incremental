@@ -62,8 +62,9 @@
   rework e5d24848; sim re-look FIX: _can_join reads rail_cd before later gunners decrement (split lock), cooldown drift
   after round 1 (lead ruled: cooldown from the volley's first shot, D-178 every volley), roof check; beam-cost fixes
   after its heliflight suite, repro scratchpad volley_port.py; go only on the fixed head green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
-  16:37: night-fog SHIP 4524e90c (VFX lead) = #172; go on green AND once its evidence folder is found (path asked). gait-step-len d6c3fe5b
-  local, sim_play running, takes the next free slot; send its sha (and heli-standoff's) to the VFX lead.
+  16:37: night-fog SHIP 4524e90c (VFX lead) = #172; go on green AND once its evidence folder is found (path asked). gait-step-len pushed
+  14f47473 (all touched suites green): #171 closed to free its slot (reopen when pacing hours land), gait PR opens now;
+  sha sent to the VFX lead (gait-fix 9d436583 rebases on it). Volley builder back on strike-delay reruns.
   Next slot: claude/gait-step-len (volley builder), then claude/gait-fix (VFX, motion gate), then strike-delay.
 - D-179 pacing workflow (beam-cost builder, claude/pacing-ci); D-180 skins need a cohesive range (post-demo).
 - Godot hold until 16:01 ("no godot for 75min" at 14:46), scratchpad no_godot_until2.sh.
