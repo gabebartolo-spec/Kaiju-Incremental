@@ -10,6 +10,7 @@ const HeadLead := preload("res://tests/lib/smoke_head_lead.gd")
 const StepTurn := preload("res://tests/lib/smoke_step_turn.gd")
 const FRAMES_UP := 3
 ## Planted feet may drift at most this share of the hip height over a walk with hard turns.
+const FeetWalk := preload("res://tests/lib/smoke_feet_walk.gd")
 const MAX_FOOT_DRIFT := 0.02
 const WARNING_AS_ERROR := 2
 const STRICT_WARNINGS: Array[String] = [
@@ -212,7 +213,10 @@ func _check_skin_mouth() -> void:
 
 
 ## Each legged kaiju walks, curves, reverses hard and stands stomping the way the rampage drives it
-## (sim speed, heading lerp, stomp beat); no planted foot may slide. Fixed 60 Hz steps, no clock.
+## (sim speed, heading lerp, stomp beat); no planted foot may slide. A heavy body (the Komodo,
+## D-201) moves only as the sim moves it, forward and turning, never crabwise or backing up (lead's
+## ruling, 2026-10-24): it is driven by the real sim, as Rampage._update_kaiju feeds it. Fixed
+## 60 Hz steps, no clock.
 func _check_planted_feet() -> void:
 	for species: String in ["reptilian", "insectoid"]:
 		await _t("_check_feet_of", [species])
@@ -220,42 +224,24 @@ func _check_planted_feet() -> void:
 
 func _check_feet_of(species_id: String) -> void:
 	var def: Dictionary = Content.species_def(species_id)
-	var stats: Dictionary = def["stats"]
 	var colors: Dictionary = def["colors"]
-	var kaiju := KaijuModel.new(species_id, colors, "adult")
-	kaiju.scale = Vector3.ONE * 1.3
-	root.add_child(kaiju)
-	var dt := 1.0 / 60.0
-	var pos := Vector2.ZERO
-	var facing := Vector2(0, -1)
-	var stomp_in := 0.0
-	for frame: int in 600:
-		var t := frame * dt
-		var move := Vector2.ZERO
-		if t > 0.5 and t < 3.0:
-			move = Vector2(0, -1)
-		elif t >= 3.0 and t < 5.0:
-			move = Vector2(0.4, 1).normalized()  # a hard reversal
-		elif t >= 5.0 and t < 7.0:
-			move = Vector2(-1, 0)
-		if move != Vector2.ZERO:
-			pos += move * Num.f(stats["speed"]) * dt
-			facing = move
-		kaiju.position = kaiju.position.lerp(Vector3(pos.x, 0, pos.y), minf(1.0, dt * 12.0))
-		var heading := atan2(-facing.x, -facing.y)
-		kaiju.rotation.y = lerp_angle(kaiju.rotation.y, heading, minf(1.0, dt * 10.0))
-		stomp_in -= dt
-		if stomp_in <= 0.0:
-			stomp_in += Num.f(stats["stomp_interval"])
-			kaiju.stomp()
-		kaiju.animate(dt, move.length())
+	var kaiju: KaijuModel
+	var heavy: Dictionary = KaijuRig.class_of("%s_adult" % species_id).get("sim", {})
+	if not heavy.is_empty():
+		kaiju = FeetWalk.heavy(root, species_id)
+	else:
+		kaiju = KaijuModel.new(species_id, colors, "adult")
+		kaiju.scale = Vector3.ONE * 1.3
+		root.add_child(kaiju)
+		var stats: Dictionary = def["stats"]
+		FeetWalk.light(kaiju, stats)
 	var drift := kaiju.foot_drift()
 	var hip := kaiju.hip_height()
 	check(
 		hip > 0.0 and drift <= MAX_FOOT_DRIFT * hip,
 		(
-			"the reptilian's planted feet hold (drift %.3f <= %.3f units)"
-			% [drift, MAX_FOOT_DRIFT * hip]
+			"the %s's planted feet hold (drift %.3f <= %.3f units)"
+			% [species_id, drift, MAX_FOOT_DRIFT * hip]
 		)
 	)
 	kaiju.queue_free()

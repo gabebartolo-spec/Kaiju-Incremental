@@ -4,7 +4,7 @@ extends RefCounted
 ## faces, and how much of that hold the leg can reach. Presentation only.
 
 ## How far a leg may stretch (fraction of its length) to hold a planted foot's yaw.
-const HELD_REACH := LegReach.REACH_MAX + 0.01  # the body sinks to REACH_MAX first (LegReach)
+const HELD_REACH := LegSink.REACH_MAX + 0.01  # the body sinks to REACH_MAX first (LegSink)
 
 var _rig: KaijuRig
 

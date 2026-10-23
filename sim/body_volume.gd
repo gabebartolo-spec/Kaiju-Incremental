@@ -11,11 +11,37 @@ const CHUNK_HALF := 0.5
 var discs: Array = []
 var sim: RampageSim
 var cfg: Dictionary
+
+
+## A move of the body between two poses: where it was and faced, where it is and faces.
+class Move:
+	var from: Vector2
+	var from_heading: Vector2
+	var to: Vector2
+	var to_heading: Vector2
+
+	func _init(p_from: Vector2, p_from_way: Vector2, p_to: Vector2, p_to_way: Vector2) -> void:
+		from = p_from
+		from_heading = p_from_way
+		to = p_to
+		to_heading = p_to_way
+
+	## The pose a fraction `t` along the move: [position, heading]. The last sample (t = 1) is
+	## exactly the end pose, the one the hold test reads, so a rounding error in the turn can never
+	## leave a chunk the sweep missed but the hold sees.
+	func at(t: float) -> Array:
+		if t >= 1.0:
+			return [to, to_heading]
+		return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]
+
+
 ## Seconds the sweep in hand covers (a building that dwarfs the kaiju is chewed at bite_dps x it).
 var step_s := 0.0
 ## The standing chunks the last sweep touched, {building index: {Vector3i: true}} (for tests and
 ## probes: where the body broke or chewed).
 var last_hits: Dictionary = {}
+var _into: Dictionary = {}  # where collect() puts what it finds, and the buildings it searches
+var _near: Array[int] = []
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -29,6 +55,22 @@ func reach() -> float:
 	for d: Array in discs:
 		reach = maxf(reach, absf(Num.f(d[0])) + Num.f(d[1]))
 	return reach * sim.body_scale()
+
+
+## Whether `body` discs ([forward offset, radius, ...], body scale 1) at a pose ([position,
+## facing]) overlap building b's footprint.
+func over(b: RampageSim.Building, body: Array, pose: Array) -> bool:
+	var s := sim.body_scale()
+	var pos: Vector2 = pose[0]
+	var facing: Vector2 = pose[1]
+	for d: Array in body:
+		var c := pos + facing * Num.f(d[0]) * s
+		var gap := Vector2(
+			maxf(absf(c.x - b.x) - b.w * 0.5, 0.0), maxf(absf(c.y - b.z) - b.d * 0.5, 0.0)
+		)
+		if gap.length() < Num.f(d[1]) * s:
+			return true
+	return false
 
 
 ## Standing buildings the body can touch moving from `from` to `to`: one pass over the city.
@@ -48,32 +90,35 @@ func near(from: Vector2, to: Vector2, reach: float) -> Array[int]:
 	return out
 
 
-## Every standing chunk the body's discs overlap at a pose, into {building index: {Vector3i: true}};
-## `free` adds discs placed in the world, [centre, radius, bottom, top] (a heavy body's tail,
-## TailSim.discs: the sizes at body scale 1).
-func collect(
-	pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int], free: Array = []
-) -> void:
+## Every standing chunk the body's discs overlap at a pose ([position, facing]), into {building
+## index: {Vector3i: true}}; `free` adds discs placed in the world, [centre, radius, bottom, top]
+## (a heavy body's own, HeavyContact.discs: the sizes at body scale 1).
+func collect(pose: Array, into: Dictionary, near: Array[int], free: Array = []) -> void:
+	var pos: Vector2 = pose[0]
+	var facing: Vector2 = pose[1]
 	var skin := Num.f(cfg["skin"])
+	_into = into
+	_near = near
 	for d: Array in discs:
-		_collect_disc(pos + facing * Num.f(d[0]) * sim.body_scale(), d, skin, into, near)
-	for d: Array in free:  # fitted to the drawn mesh: no skin taken off
+		_collect_disc(pos + facing * Num.f(d[0]) * sim.body_scale(), d, skin)
+	for d: Array in free:  # the drawn body's own: no skin taken off
 		var centre: Vector2 = d[0]
-		_collect_disc(centre, d, 0.0, into, near)
+		_collect_disc(centre, d, 0.0)
+	_into = {}
+	_near = []
 
 
 ## One disc at `centre` (world), its radius, bottom and top at d[1], d[2], d[3] (body scale 1),
-## each shrunk by `skin` (world units).
-func _collect_disc(
-	centre: Vector2, d: Array, skin: float, into: Dictionary, near: Array[int]
-) -> void:
+## each shrunk by `skin` (world units), into _into.
+func _collect_disc(centre: Vector2, d: Array, skin: float) -> void:
+	var into := _into
 	var s := sim.body_scale()
 	var r := Num.f(d[1]) * s - skin
 	if r <= 0.0:
 		return
 	var y_lo := sim.stand_y + Num.f(d[2]) * s + skin
 	var y_hi := sim.stand_y + Num.f(d[3]) * s - skin
-	for i: int in near:
+	for i: int in _near:
 		var b := sim.buildings[i]
 		if absf(b.x - centre.x) > b.w * 0.5 + r or absf(b.z - centre.y) > b.d * 0.5 + r:
 			continue
@@ -102,57 +147,44 @@ func _collect_disc(
 						cells[c] = true
 
 
-## Breaks every standing chunk the body touches moving and turning from one pose to the other in
-## `step_s` seconds (a building that dwarfs the kaiju is chewed at bite_dps x step_s instead of
-## broken outright, D-091); returns the chunks broken.
-## `tail_from` and `tail_to`: a heavy body's own discs (its fitted body and its tail, TailSim.discs)
-## at either pose, the same count, swept between them disc by disc; `still`: discs that do not sweep
-## (a heavy body's planted feet), taken at the end pose only.
-func sweep(
-	from: Vector2,
-	from_heading: Vector2,
-	to: Vector2,
-	to_heading: Vector2,
-	tail_from: Array = [],
-	tail_to: Array = [],
-	still: Array = []
-) -> int:
+## Breaks every standing chunk the body touches on `move` in `step_s` seconds (a building that
+## dwarfs the kaiju is chewed at bite_dps x step_s instead of broken outright, D-091); returns the
+## chunks broken. `own_from` and `own_to`: a heavy body's own discs (HeavyContact.discs) at either
+## pose, the same count, swept between them disc by disc.
+func sweep(move: Move, own_from: Array = [], own_to: Array = []) -> int:
 	var span := reach()
-	for d: Array in still:
-		var at: Vector2 = d[0]
-		span = maxf(span, at.distance_to(to) + Num.f(d[1]) * sim.body_scale())
-	var tail_moved := 0.0
-	for k: int in tail_to.size():
-		var a: Vector2 = tail_from[k][0]
-		var b: Vector2 = tail_to[k][0]
-		span = maxf(span, b.distance_to(to) + Num.f(tail_to[k][1]) * sim.body_scale())
-		tail_moved = maxf(tail_moved, a.distance_to(b))
+	var own_moved := 0.0
+	for k: int in own_to.size():
+		var a: Vector2 = own_from[k][0]
+		var b: Vector2 = own_to[k][0]
+		span = maxf(span, b.distance_to(move.to) + Num.f(own_to[k][1]) * sim.body_scale())
+		own_moved = maxf(own_moved, a.distance_to(b))
 	last_hits = {}
-	var close := near(from, to, span)
+	var close := near(move.from, move.to, span)
 	if close.is_empty():
 		return 0
-	var turn := from_heading.angle_to(to_heading)
-	var travel := maxf(from.distance_to(to) + absf(turn) * span, tail_moved)
+	var turn := move.from_heading.angle_to(move.to_heading)
+	var travel := maxf(move.from.distance_to(move.to) + absf(turn) * span, own_moved)
 	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
 	var hits: Dictionary = {}
-	var broken := 0
 	for n: int in range(1, samples + 1):
 		var t := float(n) / samples
-		var pose := sweep_pose(from, from_heading, to, to_heading, t)
-		var at: Vector2 = pose[0]
-		var facing: Vector2 = pose[1]
-		var tail: Array = []
-		for k: int in tail_to.size():
-			var a: Vector2 = tail_from[k][0]
-			var b: Vector2 = tail_to[k][0]
-			var src: Array = tail_to[k]
+		var own: Array = []
+		for k: int in own_to.size():
+			var a: Vector2 = own_from[k][0]
+			var src: Array = own_to[k]
 			var d := src.duplicate()
+			var b: Vector2 = src[0]
 			d[0] = a.lerp(b, t)
-			tail.append(d)
-		collect(at, facing, hits, close, tail)
-	if not still.is_empty():
-		collect(to, to_heading, hits, close, still)  # where the feet stand: no sweep
+			own.append(d)
+		collect(move.at(t), hits, close, own)
 	last_hits = hits
+	return _break(hits)
+
+
+## Breaks (or chews) the chunks swept; returns how many broke.
+func _break(hits: Dictionary) -> int:
+	var broken := 0
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
@@ -168,14 +200,3 @@ func sweep(
 			sim.events[first]["pay"] = pay
 		broken += n
 	return broken
-
-
-## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is
-## exactly the end pose, the one the hold test reads, so a rounding error in the turn can never
-## leave a chunk the sweep missed but the hold sees.
-static func sweep_pose(
-	from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2, t: float
-) -> Array:
-	if t >= 1.0:
-		return [to, to_heading]
-	return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]

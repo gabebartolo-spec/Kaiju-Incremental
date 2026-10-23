@@ -140,7 +140,7 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 			out["aloft_yaw"] = Num.f(out["aloft_yaw"]) + absf(rad_to_deg(dyaw))
 		if warm and absf(dyaw) > CENTRE_YAW and not toes.is_empty():
 			centres.append(_nearest(_centre(last_xf, xf), toes) / hh)
-			var feet: Array[Vector2] = sim.body._feet
+			var feet: Array[Vector2] = sim.body._steps.feet
 			pivots.append(_nearest(feet[0], toes) / hh)
 		last_xf = xf
 	out["falls"] = falls.size() / (ROUTE_S - WARM_S)

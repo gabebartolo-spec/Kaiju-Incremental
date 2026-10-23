@@ -99,6 +99,7 @@ func follow_body(body: BodyContact) -> void:
 		return
 	_rig.gait.fed_yaw = atan2(-body.body_dir.x, -body.body_dir.y)
 	_rig.gait.fed_tail = body.tail.bends
+	_rig.gait.fed_heavy = body.heavy_contact
 
 
 ## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it.

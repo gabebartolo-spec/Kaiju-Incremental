@@ -6,32 +6,38 @@ Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, n
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State (2026-10-24, builder b9, worktree agent-a9f99002139a20120, local branch komodo-test-b9 -> origin claude/komodo-test)
-- DONE bd842360: drift 2.94 -> 0.000 over 0-12 s (probe seed 0). Causes: BodyContact.step turned a heavy heading a 2nd
-  time without the hip swing; ClipGait walked by the node's travel (includes the hip swing) -> now `_hip_travel`;
-  the wade crabbed 90 deg (lead's call D: heavy rises facing the wade target, emergence.start; use_species first).
-- DONE: smoke_step_turn rewritten for heavy (4-5 s, <=45 deg/0.3 s, clip_planted, L/R, drift < 0.1, neck, aim). Smoke:
-  only "_check_feet_of reptilian planted feet hold 3.697 > 0.101" fails (drives the adult model with a crab/reversal
-  path the D-201 sim never makes: lead's call pending).
-- Turn numbers (D-208): 90 deg in 4.13 s, heading mean 21.5 max 30 deg/s, body max 30; 7 footfalls L/R alternating;
-  body yaws 232 frames, 41-42 with both hind feet planted; planted toes pivot up to 19 deg (swing 0.5); drift 0.
-- Croc wade (no change, lead): 90 deg off facing, baby 51 / Behemoth 30 frames.
-- D-208 IN PROGRESS. Lead's bar (revised): 0 pass-through frames for every part over the 25 s carve probe; >= 90%
-  of broken chunks within 0.5 of the drawn voxels at that moment, none beyond 2.0. Lead's design: body+head discs
-  refit to the mesh (per-height radii), legs no sweep (footprint at each plant + thin leg column while planted),
-  tail closed. Done so far: emergence sweep; TailSim + sim body yaw (presentation reads them); fitted discs
-  (tools/capture/fit_body_contact.gd -> heavy sim discs/neck/skull/feet/walk); heavy walk clip on the sim step
-  clock (gait frame_at) so sim footprints land with the drawn feet; the wade advances the step clock; the heavy
-  node snaps to the sim (no 12/s lerp). Drift still 0.000 (d7). Latest carve (walk/idle-pose fit, arm discs
-  dropped: the right arm's rake put 130+ chunks > 0.5 off): body/head 0 pass-through frames, tail 1 (11.93 s tip),
-  feet 35 / legs 35 = right ARM in the rise 1.0-1.45 s (no arm discs) + hind leg_r2/r1 4.65-5.0 s; 176 broken,
-  102 > 0.5 (42% within, bar 90%), 3 > 2.0 (bar 0). Bins: rise f+8 y1 feet 13 (footprints/shins while rising in
-  idle: idle stance != walk landing spots), run f-10 y1 tail 11 (tail heights from the roar union), rise f+6-11 y9
-  head discs ~45. NEXT: arm discs that ride the arm and pause while the sim claw swipe runs; feet only from the
-  first real landing (not at idle); tail heights per walk pose; head discs vs the idle head; re-run. Then lint
-  (body_contact 561 lines > 400: split the heavy parts into sim/heavy_contact.gd; BodyVolume args > 4), smoke
-  (passes but _check_feet_of), clips (tail-owner fail, pre-existing), recapture game cam + side.
-- Probe: tools/capture/_b9_carve.gd (uncommitted scratch, 25 s, ~8 min). Turn: _b9_turn.gd; drift: _b9_probe.gd.
+## State (2026-10-24, builder b10, worktree agent-a9b72dd9dd8061ff9, local branch komodo-test-b10 -> origin claude/komodo-test)
+- D-208 METHOD CHANGE (lead, D-188): the hand-fitted discs are gone. The heavy volume rides the drawn clips:
+  `tools/capture/bake_heavy_tracks.gd` (headless, ~30 s) poses the rig from the .kclip every frame (idle, walk,
+  roar, turn_left/right) plus the claw rake (BipedSwing, fed rake time) and writes `assets/kaiju/<kind>.ktrack`
+  (binary: per frame each slot's upright disc in body space, bone heads, hind toes, root quaternion, planted bits).
+  Slots = each bone's voxels cut SEG along the bone, and across a lying bone SEG wide x BAND high (now 0.6: 720
+  slots, 4.6 MB; 1.0 gave 321 slots and 56% within). RE-RUN THE BAKE after any clip/model change (Cascadeur).
+- Sim: `ClipClock` (sim/clip_clock.gd) is THE chooser (idle/walk/roar/turn + 0.25 s fade + roar walking legs); the
+  heavy sim's own clock picks the clip, ClipGait reads it when fed (fed_heavy), else runs its own ClipClock (croc,
+  reveal screens): no second chooser. `HeavyContact` (sim/heavy_contact.gd): class lookup, aim follow, hips pivot,
+  turn pace, clock step (moving = hips travel), roar triggers from sim events (ability; ultimate with RoarCue's
+  cooldown), rake + jaw clocks, discs(). `HeavyPose`: samples/mixes the track, roar-on-the-move legs (upper body
+  hung on the walk pelvis by the root quaternion), rake (blends the clip arm by the rake's rest weight), jaw open,
+  head look, TailSim bends. `HeavyFeet`: planted toe + foot slots locked where they came down (ClipGait._put_down
+  plants the drawn foot on `toe_lock`), and the IK sink (`LegSink`, shared with LegReach; drawn sink = sim's).
+- Presentation reads the sim: clip state/time/fade, rake time (BipedSwing.feed_rake), jaw hold, sink, toe locks.
+- Lint: body_contact 561 -> 385 (heavy -> heavy_contact.gd; stepped turn -> sim/body_steps.gd; over() -> volume);
+  BodyVolume.sweep(Move, from, to), collect(pose, into, near, free), _collect_disc 3 args. rampage_sim.step and
+  rampage._ready trimmed under the ratchet. STILL RED (pre-existing on this branch, not in brief): gait_clip.gd
+  485 lines > 400, kaiju_rig.gd > 20 public methods.
+- smoke `_check_feet_of`: the heavy adult is driven by the real sim (forward, 90 deg left on the move, back, stop),
+  fed as Rampage does; the insectoid keeps its old route. Bar 0.02 x hip unchanged.
+- New sim check `tests/lib/sim_heavy_clock.gd` (in run_sim_tests): same seed replays clock + volume step for step.
+- Removed: tools/capture/fit_body_contact.gd, fit_tail_chain.gd; tuning heavy sim discs/neck/skull/feet/walk and
+  tail root/chain (TailSim keeps only the swing).
+- CARVE (seed 0, 25 s, --fixed-fps 60, _b9_carve.gd): 0 pass-through frames every part; 256 broken, 50 > 0.5
+  (80.5% within; bar 90), 0 > 2.0 (bar met). Left: flat disc tops over domed surfaces in the rise (body top
+  breaking through the street), leg IK (thigh/shin follow the lock, slots follow the clip), roar+legs shoulders,
+  rake shoulder ~0.9. Next ideas: sloped disc tops (lens) or IK'd thigh/shin slots.
+- Probes (scratch, uncommitted, copy from this worktree): tools/capture/_b9_carve.gd (bar), _b10_pose.gd (sim heads
+  vs drawn), _b10_slots.gd (every sim slot vs the same slot cut live from the rig), _b10_carve.gd (off chunks with
+  detail). Use `--fixed-fps 60`: without it headless runs ~8 physics steps per drawn frame (stale rig).
 
 ## D-201 (heavy only)
 - SIM `sim/body_contact.gd`: body_class sim block by species_stage: turn <= 30 deg/s, accel 20 deg/s^2, smooth (no
@@ -39,23 +45,27 @@ gitignored).
   (`rampage_sim.gd` rolls on while stride > 0). FEET `gait_clip.gd`: walk clock by distance, no restep, no standing
   stomp lift, no step shortening; a roar on the move keeps the walk on legs/pelvis/tail (`_walking_legs`). TAIL:
   sway 1.6 deg per bone, 2.13 s, lag 0.45 rad/bone, always. DIP: down over 0.03 s, back over 0.3 s, per plant.
-- Probe (run 3-9 s): max body yaw in 0.3 s 15 deg (bar 45; was 67); plants L 4.42 5.97 7.50, R 3.58 5.17 6.77 8.13
-  (alternating, 0.63-0.8 s apart, no same-frame pair); camera bottom 1-2 frames after a plant; tail tip half-range
-  3.9 m (~11 deg).
 
-## Sim-review packet (D-208, shared sim change; heavy class only, the croc and other species unchanged)
-- What changed: `sim/tail_sim.gd` (new): ClipTail's spring/drag/sway moved into the sim, stepped from the drawn
-  body's yaw; lays the tail chain (tuning heavy tail root + chain, fitted by tools/capture/fit_tail_chain.gd) and
-  returns discs along it. `BodyContact`: `body_dir` (D-200 aim follow, neck cap) and `tail` for heavy; the volume's
-  pose is the hips-pivoted body (`_centre`); `_sweep` carries tail discs from/to; `emerging(dt)` sweeps while a
-  heavy body rises and wades (RampageSim.step calls it); `face_now`; heavy `sim.discs` replace the stage's discs.
-  `BodyVolume.collect(..., free)` and `sweep(..., tail_from, tail_to)` (lerped per sample); `last_hits` for probes.
-  Presentation: `KaijuModel.follow_body(sim.body)` -> gait `fed_yaw`/`fed_tail`; ClipGait shows them (no own neck
-  drag, no turn-clip body steer, no own tail swing) when fed.
-- Invariants: non-heavy bodies take identical paths (`_follow` sets body_dir = heading, `_centre` = kaiju_pos, no tail
-  discs, `emerging` returns at once). The tail never holds the body (inside() ignores it); it only sweeps. Pure: no
-  randomness, the sway clock is the tail's own accumulated dt. Tail discs are recomputed each step from state.
-- Seeds: carve probe autoplay seed 0 (Kit.autoplay, stage 2), 25 s; smoke_step_turn seed army 0.
+## Sim-review packet (D-208 b10: the heavy volume rides the drawn clips; heavy class only)
+- New sim state: ClipClock (state, time, from, from_time, blend, legs_on, legs_t, roar queued), rake_t/side,
+  jaw_hold, _roar_at (ultimate cooldown), HeavyFeet locks/toes/yaw_at/sink, _hips_at. All rebuilt by
+  use_species at run start; none saved (the rampage has no mid-run save: a run replays from its seed).
+- Transitions: rise (Emergence: emerging() steps the clock; idle while rising, walk while wading) -> run start ->
+  idle/walk (hips travel > CLIP_STILL x hip height) -> roar (sim "ability" event, or "ultimate" past RoarCue's
+  roar_cooldown counting dashes) -> roar end (to walk or idle) -> standing turn (heading - body_dir > 0.6 rad) ->
+  settle; any -> blend 0.25 s; swipe_windup/swipe -> rake; beam on/off -> jaw; plant/lift -> lock/unlock; airborne
+  (leap): clock still steps, no sweep; dash: no hips pivot. Events are read after the step (after_events) and act
+  on the next step, as the presentation's roar()/strike() did; the presentation now shows the sim's state.
+- Invariants: (1) the croc and every non-heavy body: same paths as before (heavy_contact null; BodySteps is a
+  move, not a change: tests sim + motion + smoke cover it). (2) The tail never holds the body (inside() drops tail
+  slots). (3) Pure: no randomness, no clock, no Node in sim/ (HeavyTrack reads bytes with FileAccess, cached).
+  (4) Same seed -> same clip, frame and volume every step (sim_heavy_clock, run_sim_tests). (5) Drawn = sim:
+  ClipGait/LegReach/BipedSwing read clock, sink, rake, jaw and toe locks from fed_heavy; one chooser (ClipClock),
+  ClipGait's own instance only when no sim feeds it.
+- Evidence: carve probe above; _b10_slots per-slot sim-vs-drawn; sim_heavy_clock; smoke/clips/sim suite lines.
+- Not exercised: the IK knee (thigh/shin slots follow the clip, not the solve); slot tops are flat; heavy at
+  baby/adolescent (no track: falls back to the stage's discs); evolution reveal / demo-end (own clock, no sim).
+- Seeds: carve probe autoplay seed 0 (Kit.autoplay, stage 2), 25 s, --fixed-fps 60; sim checks army seed 0.
 
 ## body_class heavy numbers (data/tuning.json, PLACEHOLDER for the critic)
 - footfall: strength_min 0.85, dust_gain 2.0, dip 0.35 (x body scale x weight), dip_recover 6.0, shake_source
@@ -100,18 +110,8 @@ gitignored).
 - Footfall: the heavy drop lands on the plant frame (0 ms); camera y drop per plant median ~0.12 -> ~0.5 units;
   every plant adds trauma that frame (other rises are topples/tanks).
 - Tail tip off the body axis: p50 0.0 -> 2.1 m, p95 -> 4.3 m.
-- clips: 14 checks, 1 failure `_check_tail_owner` (standing turn bend 0.047 < 0.12; was 0.017). Tail lag passes.
-- smoke: 47 checks, 3 failures, all smoke_step_turn: both feet up 36 frames, yaw in slices 78% < 80%, 12.9
-  skates/s. Planted-foot-yaw and Colossus curve now pass. D-200's eased body yaw no longer comes in the sim's slices.
 - Clips (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden): scratchpad `komodo/cap/komodo_game_cam_v3.mp4`
   (game camera, 3-9 s) and `komodo_side_cam_v3.mp4` (low 3/4 side, 2.5-8.5 s); v2 = before D-201.
-
-## Next steps (lead's order)
-1. Finish the drift (item 4 above) to < 0.1 units in stance; re-probe (`tools/capture/probe_body_weight.gd`, scratchpad
-   `komodo/an2.py <csv> 3 9` for the D-201 bars).
-2. Rewrite tests/lib/smoke_step_turn.gd for heavy (D-201): a 90 deg turn ~4-5 s with <= 45 deg in any 0.3 s; plants
-   only on clip bits, L/R alternating, never same-frame; planted drift < 0.1; neck <= cap, head on the sim aim.
-3. Run clips + smoke, recapture both clips (game cam 3-9 s, side --cam=-24,8,20 2.5-8.5 s), push, report 6 lines.
 
 ## Open / for the lead
 - smoke_step_turn reds parked (D-193); first suspect: ClipGait catch steps. D-200 changes what they measure.

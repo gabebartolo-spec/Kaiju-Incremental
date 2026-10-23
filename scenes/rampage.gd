@@ -109,6 +109,13 @@ func set_autoplay(on: bool) -> void:
 	_autoplay = on
 
 
+func _add_camera() -> void:
+	_camera = Camera3D.new()
+	_camera.fov = camera_fov
+	add_child(_camera)
+	_camera.current = true
+
+
 func _ready() -> void:
 	var stages := BuildStages.new()
 	stages.on = staged
@@ -154,10 +161,7 @@ func _ready() -> void:
 	_kaiju.foot_planted.connect(_on_footfall)
 	_heavy = _kaiju.body_class().get("footfall", {})
 	_ability.bind(self, _city, _kaiju)
-	_camera = Camera3D.new()
-	_camera.fov = camera_fov
-	add_child(_camera)
-	_camera.current = true
+	_add_camera()
 	_start_sound()
 	_place_camera(1.0)
 	_add_overlays()
@@ -369,7 +373,9 @@ func _place_camera(delta: float) -> void:
 	if not _heavy.is_empty():  # a heavy footfall drops the camera in a frame or two, then rises
 		var top := Num.f(_heavy["dip"]) * sim.body_scale()
 		if _heavy_peak > 0.0:
-			_heavy_dip = move_toward(_heavy_dip, _heavy_peak, top * delta / Num.f(_heavy["dip_down_s"]))
+			_heavy_dip = move_toward(
+				_heavy_dip, _heavy_peak, top * delta / Num.f(_heavy["dip_down_s"])
+			)
 			_heavy_peak = 0.0 if _heavy_dip >= _heavy_peak else _heavy_peak
 		else:
 			_heavy_dip = move_toward(_heavy_dip, 0.0, top * delta / Num.f(_heavy["dip_recover_s"]))

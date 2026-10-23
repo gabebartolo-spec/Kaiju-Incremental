@@ -156,6 +156,12 @@ func tick_rake(dt: float) -> void:
 		_rake_t = -1.0
 
 
+## A rake as the sim runs it (HeavyContact, D-208): seconds into it (< 0: none) and its side.
+func feed_rake(t: float, side: float) -> void:
+	_rake_t = t
+	_rake_side = side
+
+
 ## The raking arm alone, laid over the pose a clip gait has already put on the bones: from where the
 ## clip holds the arm, up and out, across the front, and back to where the clip holds it. Nothing
 ## is touched while no rake runs. The claw reach follows `youth`.

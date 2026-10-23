@@ -2,19 +2,13 @@ class_name ClipGait
 extends BipedGait
 ## A biped that moves by its baked Blender clips (KaijuClips, D-047: the croc titan) instead of
 ## BipedGait's procedural motion: it idles, walks, turns on the spot and roars from the clips and
-## cross-fades between them. The walk's phase follows the distance the kaiju travels (one stride
+## cross-fades between them, as a clip clock (ClipClock) picks: the sim's own for a heavy body in a
+## rampage (D-208: the sim's contact volume rides the same pose), else one this gait runs on what
+## it sees the node do. The walk's phase follows the distance the kaiju travels (one stride
 ## per cycle), so planted feet do not slide; on top, planted feet are locked in the world and the
 ## legs re-solved (curves, reversals, a turn on the spot). Presentation only: like every gait it
 ## reads the sim's motion and never moves the kaiju. Kaiju without clips keep BipedGait.
 
-## Cross-fade between states (s).
-const BLEND_SECONDS := 0.25
-## Heading error (rad) that makes a standing kaiju turn on the spot with a turn clip.
-const TURN_TRIGGER := 0.6
-## Frames of lead-in kept before the part of a turn clip that carries its yaw, and of settle
-## after it (the tail's whip settles about half a second after the body stops).
-const TURN_PAD := 6
-const TURN_SETTLE := 24
 ## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
 const FOOT_YAW_DECAY := 12.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
@@ -62,9 +56,9 @@ var clip_planted: Array[bool] = [false, false]
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
-var _roar_queued := false
+var _clock: ClipClock  # the clip clock: the sim's (fed_heavy), else this gait's own
+var _own_clock: ClipClock
 var _turn_from := 0.0
-var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
 var _steps: ClipSteps  # the walk clip against the sim's step clock
 var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
@@ -92,9 +86,6 @@ var _aim: Dictionary = {}
 ## A heavy body's feet follow the clip alone (D-201): its walk clock is the sim's step clock, its
 ## feet plant on the clip's planted bits, never a catch step, re-plant or standing stomp lift.
 var _clip_feet := false
-## A heavy body roaring on the move: its legs keep the walk clip (frames walked by distance) under
-## the roar's upper body, so its feet still plant where the clip does.
-var _legs_t := 0.0
 var _hips_at := Vector3(INF, 0, 0)  # where the hips stood over the ground last frame (world)
 
 
@@ -112,8 +103,8 @@ static func or_biped(p_rig: KaijuRig, p_clips: Variant) -> KaijuGait:
 func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	super(p_rig)
 	clips = p_clips
-	for turn: String in ["turn_left", "turn_right"]:
-		_turn_span[turn] = clips.yaw_span(turn)
+	_own_clock = ClipClock.new(_meta(clips))
+	_clock = _own_clock
 	_steps = ClipSteps.new(clips)
 	_path = SwingPath.new(_steps.swing_frames)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
@@ -150,7 +141,7 @@ func update(delta: float) -> void:
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
 	if _clip_feet:
-		_walking_legs(pose, dt)
+		_walking_legs(pose)
 	_apply(pose, dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
@@ -158,9 +149,24 @@ func update(delta: float) -> void:
 	_measure_slide()
 
 
-## A roar starts at once, from whatever the kaiju is doing, and plays to its end.
+## A roar starts at once, from whatever the kaiju is doing, and plays to its end (a body the sim
+## feeds roars on the sim's clock, which takes the same events).
 func roar() -> void:
-	_roar_queued = true
+	_own_clock.roar()
+
+
+## The clips as a ClipClock reads them.
+static func _meta(p_clips: KaijuClips) -> Dictionary:
+	var rows := {}
+	for clip: String in ["idle", "walk", "roar", "turn_left", "turn_right"]:
+		if p_clips.has_clip(clip):
+			rows[clip] = [p_clips.frames_of(clip), p_clips.loops(clip)]
+	var spans := {}
+	for turn: String in ["turn_left", "turn_right"]:
+		if p_clips.has_clip(turn):
+			var span := p_clips.yaw_span(turn)
+			spans[turn] = [span.x, span.y]
+	return {"fps": p_clips.fps, "clips": rows, "spans": spans}
 
 
 ## Standing, a sim stomp lifts a foot and drives it down for the ring and cracks (ClipStomp);
@@ -181,67 +187,42 @@ func stride() -> float:
 
 
 func _choose(dt: float) -> void:
-	var moving := _moving(dt)
-	var done := not clips.loops(state) and clip_time >= clips.frames_of(state) - 1
-	var settle := "walk" if moving else "idle"
-	if _roar_queued:
-		_roar_queued = false
-		_go("roar", 0.0)
-	elif state == "roar":
-		if done:
-			_go(settle, _walk_start() if moving else 0.0)
-	elif state.begins_with("turn"):
-		var span: Vector2 = _turn_span[state]
-		if moving or clip_time >= span.y + TURN_SETTLE:
-			_go(settle, _walk_start() if moving else 0.0)
-	elif moving:
-		if state != "walk":
-			_go("walk", _walk_start())
-	else:
+	var was := state
+	var was_time := clip_time
+	_clock = fed_heavy.clock if _fed() and fed_heavy != null else _own_clock
+	if _clock == _own_clock:
 		var err := wrapf(model_yaw - body_yaw, -PI, PI)
-		if absf(err) > TURN_TRIGGER:
-			var turn := "turn_left" if err > 0.0 else "turn_right"
-			var span: Vector2 = _turn_span[turn]
+		_own_clock.step(dt, _moving(dt), err, _walk_at.bind(dt))
+	state = _clock.state
+	clip_time = _clock.time
+	_from = _clock.from
+	_from_time = _clock.from_time
+	_blend = _clock.blend
+	if state != was:
+		if was == "walk" and state == "idle":
+			_stomp.settle()  # the weight settles as he stops
+		if state.begins_with("turn"):
 			_turn_from = body_yaw
-			_go(turn, maxf(0.0, span.x - TURN_PAD))
-		elif state != "idle":
-			_go("idle", 0.0)
 	if state == "walk":
-		_walk_clock(dt)
-	else:
-		clip_time += dt * clips.fps
-	_blend = minf(1.0, _blend + dt / BLEND_SECONDS)
+		var cycles := (moved if _clip_feet else speed * dt) / maxf(stride(), 0.0001)
+		walk_cycles += cycles
+		if was == "walk":
+			walk_frames += fposmod(clip_time - was_time, float(clips.frames_of("walk")))
 	if state.begins_with("turn"):
 		_steer_turn()
 
 
-## The walk clip's clock: the sim's step clock when it gives one (the footfalls land where it
-## turns), else the distance walked.
-func _walk_clock(dt: float) -> void:
+## The walk frame for this gait's own clip clock: the sim's step clock when it gives one (the
+## footfalls land where it turns), else the distance walked on from the clip's frame; a walk that
+## starts off the step clock starts at the frame nearest the feet (_walk_entry).
+func _walk_at(entering: bool, dt: float) -> float:
+	if step_phase != INF:
+		return _steps.frame_at(step_phase)
+	if entering:
+		return _walk_entry()
 	var cycles := (moved if _clip_feet else speed * dt) / maxf(stride(), 0.0001)
-	walk_cycles += cycles
-	var was := clip_time
-	if step_phase != INF:  # a heavy body too: its feet plant where the sim breaks footprints (D-208)
-		clip_time = _steps.frame_at(step_phase)
-	else:
-		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
-	walk_frames += fposmod(clip_time - was, float(clips.frames_of("walk")))
-
-
-func _go(next: String, at: float) -> void:
-	if state == "walk" and next == "idle":
-		_stomp.settle()  # the weight settles as he stops
-	_from = state
-	_from_time = clip_time
-	_blend = 0.0
-	state = next
-	clip_time = at
-
-
-## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
-## feet (_walk_entry).
-func _walk_start() -> float:
-	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
+	var at := _own_clock.legs_t if _own_clock.state == "roar" else _own_clock.time
+	return at + cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
 
 
 ## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
@@ -278,7 +259,11 @@ func _steer_turn() -> void:
 func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 	_jaw_hold = clampf(_jaw_hold + (dt if head.held_open else -dt) / JAW_HOLD_SECONDS, 0.0, 1.0)
 	swing.tick_whip(dt)
-	swing.tick_rake(dt)
+	if _clock != _own_clock:  # the sim's maw and claw rake (D-208): its volume rides them
+		_jaw_hold = fed_heavy.jaw_hold
+		swing.feed_rake(fed_heavy.rake_t, fed_heavy.rake_side)
+	else:
+		swing.tick_rake(dt)
 	var drop := Vector3.DOWN * _stomp.dip(dt) * hip_height  # a stomp landing sinks the body
 	for i: int in clips.bones.size():
 		var bone_name := clips.bones[i]
@@ -324,19 +309,10 @@ func _hip_travel() -> void:
 
 ## A heavy body roaring while it walks keeps the walk on its legs, pelvis and tail (D-201): no
 ## clip-less re-plants under a roar that stands still.
-func _walking_legs(pose: KaijuClips.Pose, dt: float) -> void:
-	if state == "walk":
-		_legs_t = clip_time
+func _walking_legs(pose: KaijuClips.Pose) -> void:
+	if not _clock.legs_on:
 		return
-	if state != "roar" or not _moving(dt):
-		return
-	if step_phase != INF:
-		_legs_t = _steps.frame_at(step_phase)
-	else:
-		_legs_t += (
-			moved / maxf(stride(), 0.0001) * clips.frames_of("walk") / clips.cycles_of("walk")
-		)
-	var legs := clips.pose_at("walk", _legs_t)
+	var legs := clips.pose_at("walk", _clock.legs_t)
 	for i: int in clips.bones.size():
 		var n := clips.bones[i]
 		if n == "spine0" or n.begins_with("leg") or n.begins_with("tail"):
@@ -479,6 +455,9 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 		var strength := _stomp.landing(i, clampf(0.2 + speed_k(), 0.0, 1.0), s)
 		if _feet_primed:  # the first frame's feet were already down: no step, no ring
 			rig.foot_planted.emit("left" if leg.side < 0.0 else "right", strength, target)
+	if _clock != _own_clock:  # where the sim put the foot down (D-208): its footprint is there
+		var spot := fed_heavy.toe_lock(i)
+		_lock[i] = Vector3(spot.x, clip_toe.y, spot.y) if spot.x != INF else _lock[i]
 	if _clip_feet:  # the spot holds over the ground; its height rides the street (a rise, rubble)
 		_lock[i].y = clip_toe.y
 	_lag[i] = _lock[i] - clip_toe

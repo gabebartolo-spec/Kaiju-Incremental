@@ -8,6 +8,7 @@ extends "res://tests/lib/sim_suite.gd"
 const SimRooftops := preload("res://tests/lib/sim_rooftops.gd")
 const SimArmy := preload("res://tests/lib/sim_army.gd")
 const SimBodyContact := preload("res://tests/lib/sim_body_contact.gd")
+const SimHeavyClock := preload("res://tests/lib/sim_heavy_clock.gd")
 const SimToppleRead := preload("res://tests/lib/sim_topple_read.gd")
 
 
@@ -32,6 +33,7 @@ func run_checks() -> void:
 		func() -> void: SimBodyContact.new(check, _sim, _autoplay, _sim_seeded).run()
 	)
 	await _h("SimToppleRead", func() -> void: SimToppleRead.new(check, _sim).run())
+	await _h("SimHeavyClock", func() -> void: SimHeavyClock.new(check).run())
 	await _t("_check_looks")
 	await _t("_check_growth")
 

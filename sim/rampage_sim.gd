@@ -241,6 +241,13 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
 		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
 		powers.ultimate()
+	_step_world(dt, signature_held)
+	return _events
+
+
+## The rest of the world after the kaiju's own step: its powers, brood, collapses, army, air wing,
+## endless mode; then the body reads the step's events (a heavy body's roars and rakes, D-208).
+func _step_world(dt: float, signature_held: bool) -> void:
 	powers.step(dt, signature_held)
 	brood.step(dt)
 	collapse.step(dt)
@@ -250,7 +257,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var why := Endless.over_reason(self)
 	if why != "":
 		end(why)
-	return _events
+	body.after_events(_events)
 
 
 ## Ends the rampage (also the pause menu's End Rampage, reason "ended"); earnings are kept.

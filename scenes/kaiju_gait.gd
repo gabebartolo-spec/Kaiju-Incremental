@@ -42,6 +42,9 @@ var step_ratio := 1.0
 ## for a heavy body (BodyContact.body_dir, TailSim.bends, D-208): a gait that is told shows them.
 var fed_yaw := INF
 var fed_tail: Array[float] = []
+## A heavy body's contact as the sim has it (D-208): its clip clock picks the clip, its rake and maw
+## are shown; null when no sim feeds this body.
+var fed_heavy: HeavyContact
 var time := 0.0
 ## Top turn rate (rad/s at scale 1); a gait may change it (a skittering insect turns fast).
 var turn_max := BODY_TURN_MAX
@@ -133,13 +136,7 @@ static func spring3(
 ## Two-bone IK: where the middle joint goes so bones a (length l1) and b (l2) reach from root to
 ## end, bending towards pole. An end out of reach leaves the chain straight towards it.
 static func solve_knee(root: Vector3, end: Vector3, l1: float, l2: float, pole: Vector3) -> Vector3:
-	var d := end - root
-	var dist := clampf(d.length(), absf(l1 - l2) + 0.0001, l1 + l2 - 0.0001)
-	var dir := d.normalized() if d.length() > 0.0001 else Vector3.DOWN
-	var cos_a := clampf((l1 * l1 + dist * dist - l2 * l2) / (2.0 * l1 * dist), -1.0, 1.0)
-	var p := pole - dir * pole.dot(dir)
-	p = p.normalized() if p.length() > 0.0001 else dir.cross(Vector3.RIGHT).normalized()
-	return root + dir * (cos_a * l1) + p * (sqrt(maxf(0.0, 1.0 - cos_a * cos_a)) * l1)
+	return LegSink.knee(root, end, Vector2(l1, l2), pole)  # one solve for the drawn legs and the sim's
 
 
 ## A vector flattened onto the ground plane.
