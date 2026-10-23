@@ -544,3 +544,6 @@ state. No director clips or per-change approvals in between; clips only where mo
   every reptilian's upgrades. Owner: tripo-komodo (free concepts now), lead. Status: concepts started.
   Stretch goal: "after you unlock 100% of the achievements you unlock a secret: you can play as the mecha kaiju"
   (no achievement list exists yet; designed with him later).
+- Scope (D-212, director 2026-10-24): "demo: full croc gameplay minus the mecha boss fight / full game: all 3
+  reptilians and mecha boss / ... an expansion with a mammal, an avian, an aquatic" (plus build-your-own kaiju);
+  mantis and octopus stay stretch goals. Owner: lead (milestones follow this). Status: recorded.

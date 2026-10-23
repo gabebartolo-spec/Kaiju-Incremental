@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-114 · Director · Music: Suno Pro (director's written yes to the spend; he subscribes and generates)
+Why: Asked 2026-10-21 (Suno Pro vs ElevenLabs Music). Agents never enter keys; he generates, the lead cuts loops and registers licences.
+
 ## 2026-10-21 · D-116 · Director · Heartbeat sound: the director makes it in ElevenLabs
 Why: Asked 2026-10-21; the lead gives the prompt and length, then wires and tunes it.
 
