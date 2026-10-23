@@ -426,6 +426,10 @@ state. No director clips or per-change approvals in between; clips only where mo
   per planted step. D-187 "Heavier, slower": a U-turn about 2 s Behemoth, 3 s Colossus (re-asked after a wrong quote), spread evenly over the
   steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges. D-192: A (short steps)
   ships; A and B looked the same and neither stops; the 10 s shore bar stays, met without changing the turn.
+- "Im sick of wasting time and usage on animation problems. It is sisyphus shit. We need a new pipeline. That UniMate
+  one looked promising" (D-193): a commercial animation tool makes the croc's moves; a Behemoth prototype (walk,
+  turns, stomp as finished moves) replaces foot placement only if it beats it. Owner: lead (tool pick, sim side),
+  VFX lead (clips on the rig). Status: tool research. Animation tuning (turns, breathing, claw arm) parked.
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
