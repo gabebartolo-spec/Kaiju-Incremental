@@ -1,11 +1,11 @@
 extends SceneTree
-## One look, phase 1 proof (D-163): the same seeded rampage (city seed 0, the reptilian, the Behemoth
-## body and its city, Medium preset, HUD on) with the phase-1 look or today's, as stills or as a clip with
-## --write-movie. Same seed, route and tick in both, so the pairs differ only by the look.
+## One look, phase 1 proof (D-163): the same seeded rampage (city seed 0, the reptilian, the
+## Behemoth body and its city, Medium preset, HUD on) with the phase-1 look or today's, as stills
+## or a clip (--write-movie). Same seed, route and tick in both, so pairs differ only by the look.
 ##   --today  zero the phase-1 keys (grade, haze, far blur, block ground): the picture before D-163
-##   --time=dusk|night|morning|noon   --stage=2 (STAGE_LEVELS index + 1)   --out=<dir>   --label=<name>
-##   --stills=4,12 (seconds after the rise)   --seconds=6 --skip=9 (a clip: the whole run is
-##   recorded; trim from the "risen at drawn frame" line + skip*60)
+##   --time=dusk|night|morning|noon   --stage=2 (STAGE_LEVELS index + 1)   --out=<dir>
+##   --label=<name>   --stills=4,12 (seconds after the rise)   --seconds=6 --skip=9 (a clip:
+##   the whole run is recorded; trim from the "risen at drawn frame" line + skip*60)
 ##   --route=idle|record|replay  --route-file=<json>  --face=x,z,steps  --cam=x,y,z
 ##   --fire=x,z,at,size  (a ground fire the capture lights, the same in both)
 ##   --set=key=value,...  (look overrides, for tuning passes)
@@ -127,7 +127,12 @@ func _run() -> void:
 		await process_frame
 	for _i: int in 10:
 		await process_frame
-	print("ONEL stream complete, buildings=%d, time=%s, today=%s" % [rampage.sim.buildings.size(), _time, _today])
+	print(
+		(
+			"ONEL stream complete, buildings=%d, time=%s, today=%s"
+			% [rampage.sim.buildings.size(), _time, _today]
+		)
+	)
 	rampage.set_physics_process(true)
 	# The breath-aim wedge is a play aid, not part of the look: hide it in every capture.
 	for child: Node in rampage.get_children():
@@ -174,11 +179,17 @@ func _run() -> void:
 		image.save_png("%s/%s_t%02d.png" % [_out, _label, int(at)])
 		_print_fires(city, image.get_size())
 		print("ONEL kaiju at %s" % rampage.sim.kaiju_pos)
-		print("ONEL shot t=%d size=%s fires=%d" % [int(at), image.get_size(), _fire_nodes(city).size()])
+		print(
+			(
+				"ONEL shot t=%d size=%s fires=%d"
+				% [int(at), image.get_size(), _fire_nodes(city).size()]
+			)
+		)
 	_finish()
 
 
-## Mean and worst frame time over --frames drawn frames of the walk (the adult city): one number each.
+## Mean and worst frame time over --frames frames of the walk (the adult city).
+## Mean and worst frame time over --frames frames of the walk (the adult city).
 func _bench_frames(rampage: Rampage, city: CityView) -> void:
 	var frames := 0
 	while frames < 120 and not rampage.sim.over:  # settle

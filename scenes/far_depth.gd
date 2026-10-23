@@ -2,10 +2,10 @@ class_name FarDepth
 extends RefCounted
 ## Far blur (director D-163: "Far blur only", locked on the kaiju): a depth-of-field on the game
 ## camera that blurs only what is beyond the kaiju, its focus distance following him every frame, so
-## he is never blurred and there is never a near band (no tilt-shift). The haze (CityHaze) carries the
-## rest of the depth. The look's numbers: far_blur_amount (0 = off), far_blur_start (blur begins at
-## this many times the camera-to-kaiju distance), far_blur_ramp (and is full this many times that
-## distance later). A graphics preset may turn it off (GraphicsPresets "far_blur"); the grade stays.
+## he is never blurred and there is never a near band (no tilt-shift). The haze (CityHaze)
+## carries the rest of the depth. The look's numbers: far_blur_amount (0 = off), far_blur_start
+## (blur begins at this many times the camera-to-kaiju distance), far_blur_ramp (and is full this
+## many times that distance later). A preset may turn it off ("far_blur"); never the grade.
 
 var _camera: Camera3D
 var _attrs: CameraAttributesPractical

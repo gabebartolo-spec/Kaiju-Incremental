@@ -21,7 +21,7 @@ const KEYS := {
 	"sun_angular": "float",  # the sun's angular size, degrees (above 0 = soft PCSS shadows)
 	"ssao": "bool",
 	"ssil": "bool",
-	"far_blur": "far_blur",  # the far-only depth blur's quality (FarDepth); "off" drops it, never the grade
+	"far_blur": "far_blur",  # the far-only blur's quality (FarDepth); "off" drops it, not the grade
 	# Counts (R 18.3), frozen at each rampage start (start_run) so nothing pops mid-run:
 	"debris_pool": "int",  # flying debris pieces (CityView's DebrisField)
 	"max_fires": "int",  # fires burning at once (CityView)
@@ -159,7 +159,7 @@ static func cap(key: String) -> float:
 	return Num.f(PlayerSettings.graphics_row()[key])
 
 
-## The far blur's DOF quality for a row (RenderingServer.DOFBlurQuality), or -1 when the row has it off.
+## The far blur's DOF quality for a row (RenderingServer.DOFBlurQuality), -1 when it is off.
 static func far_blur(row: Dictionary) -> int:
 	return _enum("far_blur", row)
 

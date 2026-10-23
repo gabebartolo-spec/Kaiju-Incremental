@@ -1,11 +1,11 @@
 class_name LookGrade
 extends RefCounted
 ## The colour grade (director D-163: "Cool shadows, warm fire"): one 3D lookup table on the
-## Environment's colour correction, built from the look's numbers (data/looks.json "grade_*", each time of
-## day may override them). Shadows lean cool (blue-teal), highlights a touch warm, and anything already
-## warm (flames, embers, fire-lit walls) is guarded from the cool shift and nudged more orange, so fire
-## and the cool city pull apart. Every graphics preset gets it; a preset may drop the blur, never this.
-## Strength 0 builds no table at all (today's picture).
+## Environment's colour correction, built from the look's numbers (data/looks.json "grade_*",
+## each time of day may override them). Shadows lean cool (blue-teal), highlights a touch warm,
+## and anything already warm (flames, embers, fire-lit walls) is guarded from the cool shift and
+## nudged more orange, so fire and the cool city pull apart. Every graphics preset gets it; a
+## preset may drop the blur, never this. Strength 0 builds no table at all (today's picture).
 
 ## Keys of the look this reads: each is a number except the two tints, which are hex colours.
 const AMOUNT := "grade_amount"
