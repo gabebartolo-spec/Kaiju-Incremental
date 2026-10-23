@@ -406,7 +406,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Damage on impact (D-166): breath and ultimate strike at 0.8 / 1.1 / 1.4 s by growth step, standing stomp 0.45 s
   (VFX lead's clip timings, data values); dash after the D-165 crouch. Owner: lead's builder. Status: not started.
 - Railgun volleys: a squad locks on together and fires in turn, ~2 hits a second per squad (D-166, D-175, D-178).
-  Owner: lead's builder. Status: PR #170, reworking to lock together.
+  Owner: lead's builder. Status: MERGED #170 (e4100548) after two non-author sim reviews; GitHub pacing workflow MERGED
+  #174 (f68caea1, D-179: push a pacing-run/<name> branch).
 - Thunder Beam at a third of its price, last unlock about 2.25 h (D-167 amended). Owner: lead's builder. Status: pacing run.
 - Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173): MERGED #166 (3e4a7665),
   look round 3 FIX flagged for the M3 survey; round 4 on claude/heli-look-r4. Owner: VFX lead.
