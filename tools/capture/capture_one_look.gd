@@ -8,7 +8,7 @@ extends SceneTree
 ##   the whole run is recorded; trim from the "risen at drawn frame" line + skip*60)
 ##   --route=idle|record|replay  --route-file=<json>  --face=x,z,steps  --cam=x,y,z
 ##   --fire=x,z,at,size  (a ground fire the capture lights, the same in both)
-##   --set=key=value,...  (look overrides, for tuning passes)
+##   --set=key=value,...  (look overrides)   --tune=section.key=value  (a tuning.json number)
 ##   --graphics=potato|low|medium|high|max   --frames=N  (print the mean frame time after N frames)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
@@ -77,6 +77,10 @@ func _initialize() -> void:
 			for pair: String in arg.substr(6).split(","):
 				var kv := pair.split("=")
 				_sets[kv[0]] = float(kv[1]) if kv[1].is_valid_float() else kv[1]
+		elif arg.begins_with("--tune="):  # --tune=camera.fade_opacity=1 (a tuning.json number)
+			var tv := arg.substr(7).split("=")
+			var path := tv[0].split(".")
+			Content.section(path[0])[path[1]] = float(tv[1])
 		elif arg == "--today":
 			_today = true
 		elif arg == "--calm":
