@@ -12,7 +12,10 @@
   as a web page). M1 waits for all its items, the music integration included.
 - D-186 (amends D-159): builders run locally only the 1-2 suites they iterate on, then push; GitHub runs the rest.
   Lead: fresh builder per task, design + pass bars before code (heli took 6 runs without).
-- D-159: about 4 engine builders IN TOTAL (lead 2, VFX lead 2); at most 3 open PRs; clean crowded files as you go.
+- D-189 ("interview me"): ATMOSPHERE LEAD session local_3dbe2472-68cf-42b3-84fa-657415483355 owns sky and sea life
+  (whale), weather looks, rampage escalation (D-154 haze); cap "6 in total" = 2 engine builders per lead session;
+  music "Low and creeping", Endless = Colossus track, rampage end fades under the results; helicopters "Never block
+  your view" (heliflight camera bar -> camera-to-kaiju corridor). At most 3 open PRs; clean crowded files as you go.
   Every brief says `bash ~/.claude/tools/engine_slot.sh && timeout ...` (staggers Godot starts below 6 processes).
 - D-187 "Heavier, slower", re-asked after a wrong quote: U-turn Behemoth 2 s, Colossus 3 s (today 1.63/1.80 s,
   young 0.95 unchanged), spread evenly; bar 7 = critic's >= 4 alternating real steps (> 0.3 FL, <= 40 deg); builder
@@ -24,6 +27,9 @@
   in an about-face): asked him; he said "show me them both. im cautious of the fullstop feeling terrible to play" ->
   one labelled A/B clip (A step round 0.1, B walking arc 0.5; B fails the motion gate's Colossus centre bar 0.63>0.6),
   fresh motion critic, lead's check, then to him. Offer a switchable test build if the clip can't show the feel.
+  Pushed 9b425a71 (gait 24/0, motion 30/0, smoke 47/0, city 175/0; StepTurn 90 deg re-pinned 1.55-1.9 s). Rise point
+  with the real Behemoth (seeds 7301/1234/98765): base 2/8/8 s, A 4/8/12 (one fails 10 s), B 3.5/9.7/10: tell him
+  in the A/B question. Music builder waits for a lead slot (turn-weight frees after the clip).
   kaiju_pos sits behind the feet (toe 2.4/4.8/11.6 u ahead young/Behemoth/Colossus). DEFECT: the sim stomp damage
   centres on kaiju_pos (rampage_sim.gd _stomp) while the view draws the ring at the delivering foot (rampage.gd
   _land_stomp), 5-12 u apart. Fix (bug fix under D-166, no ask): stomp centre = the delivering foot's point; check
@@ -69,8 +75,10 @@
     (camera Behemoth/Colossus, claw Colossus), all from the swing. STOOD DOWN: pushed backup 2c0c2688 (no PR),
     handoff heli-standoff.md; a fresh builder rebases on turn-weight and reruns heliflight; camera still red then =
     director question with episodes. Worktree volley-d178 prunable (all pushed). Learnings filed (2cb3d956).
-- Pacing run 39910488328 died twice (exit 143, runner shutdown at 51 and 26 min); attempt 3 running; git-helper
-  pushes scratch pacing-run/beam-cost-tee streaming pacing.txt + memory/disk to the log (lead's yes).
+- Pacing runs die from a LEAK: RSS +240 MB a run (15.2 GB at run 80, tee run 39920885597). Cause (sim-leak builder,
+  agent a99d69e0317e5c842, claude/sim-leak): RefCounted cycles (23 classes hold `sim`), so every dropped RampageSim
+  lives on, in the game too (rampage.gd, title_backdrop.gd). Fix: RampageSim.dispose(); bars flat memory + same
+  checksum. #171 waits for it. git-helper's local pacing-run branches: delete denied, his hygiene list.
   - volley (agent ac92f78143e5f1af5, ~551k tokens) on claude/strike-delay (D-166): military red on 3 checks; paired
     seeds 0-47 per city, delays on vs off, before any re-pin (D-144); different distributions = a behaviour change to
     report (maybe a director question). Then refresh.
