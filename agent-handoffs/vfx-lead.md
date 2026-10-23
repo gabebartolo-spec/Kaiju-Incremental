@@ -73,11 +73,11 @@ lead replies in to-vfx-lead.md. Every Godot run: `bash ~/.claude/tools/engine_sl
 ## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
 D-177 "Motion first" (director 13:5x): gait fix -> motion gate suite -> motion pass per stage -> D-165 -> one-look.
 Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot until 14:14 (lead's watcher).
-- slot 1 now CLAW RAKE (building, claude/claw-rake on gait-fix, notes claw_rake/PLAN.md). r6 DONE 9f311538 on heli-look-r4 (fire 1b cream 25/21%, core 2/3%), art + motion critics running. Was fire-heli-r6 (brief_fire_heli_r6.md): Part 1 Fire family hot ramp for ALL fires (ember
+- slot 1 now CLAW RAKE (building, claude/claw-rake on gait-fix, notes claw_rake/PLAN.md). r6 9f311538 critics FIX (no hot core/red edges, burst smoke core; claimed swipe/spin/kicks absent from clip) -> r7 in slot 2 (scratchpad brief_heli_r7.md). Was fire-heli-r6 (brief_fire_heli_r6.md): Part 1 Fire family hot ramp for ALL fires (ember
   heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
   blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
   no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
-- slot 2 living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
+- slot 2 now r7. Phase A DONE claude/living-predator a1504242 (period 4.07/6.17/8.23 s, push 0.50/0.54/0.45 %H; Colossus breath ~2 px), motion critic running. Was living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
   "way too much ... too fast, should be deep and slow like a behemoth": bars period 4/6/8 s, back/flank peak <=
   0.8/0.6/0.5% body height (>=0.25%), <=0.6%/s, damp the idle clip's baked breath at runtime (no re-bake); B/C wait for the gait
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
