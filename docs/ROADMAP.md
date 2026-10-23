@@ -451,8 +451,10 @@ state. No director clips or per-change approvals in between; clips only where mo
   Cause measured: the Behemoth's knee pops twice a step (leg snaps straight in early swing, knee flips at heel strike;
   shin jerk p99 32 vs the Colossus's 4) from IK at full stretch, fed by one step length for every stage; a held pad
   curve turns 38 deg with no foot down (the swivel). Sim (lead): per-stage step length, held-curve turns stepped.
-  View (VFX lead): soft IK, Behemoth foot lift 0.15 -> 0.07. Owner: both. Status: fixing (claude/gait-step-len, then
-  claude/gait-fix with the motion gate).
+  View (VFX lead): soft IK, Behemoth foot lift 0.15 -> 0.07. Owner: both. Status: sim PR #173 (841f93e2, two sim
+  reviews SHIP: hand-over lurch and dash slide fixed) merging on green; view claude/gait-fix c661d731 passes the whole
+  motion gate locally (motion 30/0: walking shin jerk young 6.0 -> 2.7, Behemoth 6.8 -> 4.3; catch steps 2.2 -> 0.2/s;
+  reach 0.93); clips and a fresh motion critic next, then its PR after #173.
 - Motion gate: the gait probe becomes a CI suite (planted-foot speed, steps/s vs clip speed, turn pivot vs planted
   foot, foot lift) at all three growth steps; every body or movement change passes it. Owner: VFX lead's gait builder
   writes it, the lead reviews and merges. Status: not started.
