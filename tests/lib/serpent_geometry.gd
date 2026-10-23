@@ -58,3 +58,18 @@ static func off_path(p: Vector2, path: PackedVector2Array) -> float:
 			best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, path[i - 1], path[i]))
 		)
 	return best
+
+
+## Distance from `p` to a polyline searched from vertex `from` onward (a body walked head to tail
+## along a path laid the same way): Vector2(distance, the nearest segment's first vertex).
+static func off_path_near(p: Vector2, path: PackedVector2Array, from: int) -> Vector2:
+	var best := INF
+	var at := from
+	for i: int in range(maxi(1, from), path.size()):
+		var d := p.distance_to(Geometry2D.get_closest_point_to_segment(p, path[i - 1], path[i]))
+		if d < best:
+			best = d
+			at = i - 1
+		elif d > best + 2.0:  # walked well past the nearest stretch
+			break
+	return Vector2(best, at)

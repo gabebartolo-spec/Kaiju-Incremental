@@ -61,8 +61,8 @@ func _ready() -> void:
 	add_child(camera)
 	camera.current = true
 	var moving := Vector3(body.heading.x, 0.0, body.heading.y) * body.speed
-	_follow = SerpentCamera.new(_cfg, SerpentCamera.middle(body), moving)
-	camera.transform = _follow.step(SerpentCamera.middle(body), 0.0)
+	_follow = SerpentCamera.new(_cfg, SerpentCamera.target(_cfg, body), moving)
+	camera.transform = _follow.step(SerpentCamera.target(_cfg, body), 0.0)
 
 
 ## Steps the body `steps` physics ticks along `heading`, stick full on, before the first frame:
@@ -93,7 +93,7 @@ func _process(delta: float) -> void:
 
 
 func _place_camera(delta: float) -> void:
-	camera.transform = _follow.step(SerpentCamera.middle(body), delta)
+	camera.transform = _follow.step(SerpentCamera.target(_cfg, body), delta)
 
 
 func _middle_ground() -> Vector2:

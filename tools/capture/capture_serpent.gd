@@ -1,9 +1,11 @@
 extends SceneTree
 ## The serpent slither prototype's clip (D-198: "a stand-in segmented body slithering, turning and
-## stopping at the game camera, one ~6 s clip"): already slithering east (pre-rolled, its S laid),
-## then a 90 deg turn north, a U-turn to the south, and a stop, in the real city's streets with the
-## buildings along the route left out (no crushing in this step). Prints the swath it sweeps, the
-## closest two strands of the body come (a U-turn could fold it over itself) and the stop time.
+## stopping", one short clip): already slithering east (pre-rolled, its S laid along all of it),
+## then a 90 deg turn north, a full U-turn to the south, a stop, the settle and the idle, in the
+## real city's streets with the buildings along the route left out (no crushing in this step).
+## Prints the S's swing each side, the closest two strands come, the U-turn's reversal, the
+## stop, the S depth per quarter and the tail's bend, the head's place in the frame, the opening
+## second's speeds and the camera's jolt.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_serpent.gd -- --seconds=7
@@ -11,26 +13,34 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const DT := 1.0 / 60.0
 const START := Vector2(-12.0, 16.0)
-const PREROLL_S := 8.0
+const PREROLL_S := 14.0
 ## Clip time (s) each stick change happens at: north (the 90 deg turn), south (the U-turn), let go.
 const TURN_AT := 0.8
-const U_TURN_AT := 2.4
-const LET_GO_AT := 4.6
+const U_TURN_AT := 2.5
+const LET_GO_AT := 5.4
 ## Frames skipped before the camera's jolt is measured (the window's first frames).
 const SETTLE_FRAMES := 6
 ## How far toward the camera (south, m) the cleared strip reaches from the route.
 const CAMERA_SIDE: Array[float] = [8.0, 16.0, 24.0, 32.0]
-## The U-turn's stick leans a little east, so it turns right, through east.
+## The U-turn's stick leans a little east for its first U_TURN_LEAN_S, so it turns right, through
+## east, then points straight south.
+const U_TURN_LEAN_S := 1.5
 const U_TURN := Vector2(0.08, 1.0)
 
-var _args := Kit.args({"seconds": 7.0})
+var _args := Kit.args({"seconds": 8.0})
 var _proto: SerpentProto
 var _closest := INF
-var _swath := 0.0
+var _swath_line := ""
 var _stopped_at := -1.0
 ## The camera's positions, one a frame (for the hitch and the settled end).
 var _eyes := PackedVector3Array()
 var _jolt_at := 0.0
+var _heading_at_u := Vector2.ZERO
+## (lowest, highest) share down the frame the head rode on the north leg.
+var _north_leg := Vector2(1.0, 0.0)
+## The opening second: (slowest, fastest) drawn head and camera, m/s.
+var _head_speeds := Vector2(INF, 0.0)
+var _last_head := Vector2.INF
 
 
 func _initialize() -> void:
@@ -49,7 +59,7 @@ func _run() -> void:
 	_proto.clear_along = _route(cfg, start, steps)
 	_proto.preroll(start, Vector2(1, 0), steps)
 	_proto.scripted = _stick
-	_swath = _width(_proto.body)  # the S as the pre-roll laid it
+	_swath_line = _swing(START.y)  # the S as the pre-roll laid it
 	root.add_child(_proto)
 	var frames := 0
 	while frames < int(Num.f(_args["seconds"]) / DT):
@@ -57,12 +67,20 @@ func _run() -> void:
 		frames += 1
 		_watch()
 		_eyes.append(_proto.camera.global_position)
+		_track(frames * DT)
 	print("serpent capture: renderer %s" % RenderingServer.get_video_adapter_name())
-	print("serpent capture: swath %.1f m across while slithering straight" % _swath)
+	print("serpent capture: on the straight the S swings %s" % _swath_line)
 	print("serpent capture: closest strands %.2f m apart (surface to surface)" % _closest)
 	print("serpent capture: head stopped at %.2f s (let go at %.2f s)" % [_stopped_at, LET_GO_AT])
 	print("serpent capture: S depth by quarter, head to tail: %s m" % _quarters())
 	print("serpent capture: camera %s" % _camera_report())
+	var turned := rad_to_deg(absf(_heading_at_u.angle_to(_proto.body.heading)))
+	print("serpent capture: the U-turn reversed the heading by %.0f deg" % turned)
+	print("serpent capture: tail tip bends %.0f deg over its last 4 segments" % _tail_bend())
+	var leg := "serpent capture: head %.0f-%.0f%% down the frame on the north leg"
+	print(leg % [_north_leg.x * 100.0, _north_leg.y * 100.0])
+	var opening := "serpent capture: opening second, drawn head %.2f-%.2f m/s, camera %s"
+	print(opening % [_head_speeds.x, _head_speeds.y, _opening_camera()])
 	quit()
 
 
@@ -108,8 +126,10 @@ func _stick(seconds: float) -> Vector2:
 		return Vector2(1, 0)
 	if seconds < U_TURN_AT:
 		return Vector2(0, -1)
-	if seconds < LET_GO_AT:
+	if seconds < U_TURN_AT + U_TURN_LEAN_S:
 		return U_TURN.normalized()
+	if seconds < LET_GO_AT:
+		return Vector2(0, 1)  # straight south: the heading reverses fully
 	return Vector2.ZERO
 
 
@@ -132,15 +152,56 @@ func _half_width(cfg: Dictionary, i: int, count: int) -> float:
 	return 0.5 * lerpf(Num.f(cfg["head_width"]), Num.f(cfg["tail_width"]), t)
 
 
-## The ground the body sweeps across its way on a straight: its widest side-to-side reach.
-func _width(body: SerpentBody) -> float:
-	var joints := _proto.stand_in.joints
+## How far the S swings each side of the straight centreline (z = `line`) as pre-rolled.
+func _swing(line: float) -> String:
 	var lo := INF
 	var hi := -INF
-	for p: Vector2 in joints:
-		lo = minf(lo, p.y)
-		hi = maxf(hi, p.y)
-	return hi - lo + Num.f(body.cfg["head_width"])
+	for p: Vector2 in _proto.stand_in.joints:
+		lo = minf(lo, p.y - line)
+		hi = maxf(hi, p.y - line)
+	return (
+		"+%.1f / %.1f m each side (ruled ~6), %.1f m across with the girth"
+		% [hi, lo, hi - lo + Num.f(_proto.body.cfg["head_width"])]
+	)
+
+
+## Per frame: the heading as the U-turn starts, the head's place on the north leg, the opening
+## second's drawn head speed.
+func _track(t: float) -> void:
+	var body := _proto.body
+	if absf(t - U_TURN_AT) < DT * 0.5:
+		_heading_at_u = body.heading
+	if t > TURN_AT + 1.4 and t < U_TURN_AT:
+		var head := Vector3(body.pos.x, 0.0, body.pos.y)
+		var xform := _proto.camera.global_transform
+		var down := SerpentCamera.screen_down(xform, _proto.camera.fov, head)
+		_north_leg = Vector2(minf(_north_leg.x, down), maxf(_north_leg.y, down))
+	var tip := _proto.stand_in.joints[0]
+	if t > DT * 2.0 and t <= 1.0 and _last_head.x != INF:
+		var speed := tip.distance_to(_last_head) / DT
+		_head_speeds = Vector2(minf(_head_speeds.x, speed), maxf(_head_speeds.y, speed))
+	_last_head = tip
+
+
+## The camera's slowest and fastest speed over the opening second.
+func _opening_camera() -> String:
+	var lo := INF
+	var hi := 0.0
+	for i: int in range(SETTLE_FRAMES, mini(_eyes.size(), int(1.0 / DT))):
+		var speed := _eyes[i].distance_to(_eyes[i - 1]) / DT
+		lo = minf(lo, speed)
+		hi = maxf(hi, speed)
+	return "%.2f-%.2f m/s" % [lo, hi]
+
+
+## How far the last 4 segments turn, tip to tail joint, degrees.
+func _tail_bend() -> float:
+	var j := _proto.stand_in.joints
+	var n := j.size() - 1
+	var total := 0.0
+	for i: int in range(n - 4, n):
+		total += (j[i - 1] - j[i]).angle_to(j[i] - j[i + 1])
+	return rad_to_deg(absf(total))
 
 
 ## How far a body set off from rest goes in `steps` (so the clip starts at START).

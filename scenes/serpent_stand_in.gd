@@ -62,12 +62,13 @@ func update(body: SerpentBody, delta: float) -> void:
 	_spring_lead(body, delta)
 	joints = _bend_neck(_settled)
 	var bends: Array = _cfg["neck_bend"]
+	var swell := _settle.swell()
 	for i: int in count:
 		var front := joints[i]
 		var back := joints[i + 1]
 		var along := front - back
 		var t := float(i) / maxf(1.0, count - 1.0)
-		var width := lerpf(Num.f(_cfg["head_width"]), Num.f(_cfg["tail_width"]), t)
+		var width := lerpf(Num.f(_cfg["head_width"]), Num.f(_cfg["tail_width"]), t) * swell
 		var height := width * Num.f(_cfg["height_share"])
 		var share := Num.f(bends[i]) if i < bends.size() else 0.0
 		var lift := Num.f(_cfg["head_lift"]) * absf(lead) * share

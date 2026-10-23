@@ -903,7 +903,7 @@
 		"passes": 3
 	},
 	"serpent": {
-		"_doc": "The serpent's slither, first prototype (D-197, D-198; research_serpent_slither): a kinematic trail body. The sim (SerpentBody, SerpentTrail) records the head's centreline every sample m of travel; the body lies along it, so a stopped serpent is frozen and no point ever slides sideways or cuts a corner. Steering with weight: up to speed m/s at accel (m/s^2), slowing at decel, easing off over the last stop_ease_speed m/s (to stop_ease_floor of decel) so the head eases to a halt; the heading turns at most turn_rate rad/s, gathering at most turn_accel rad/s^2, that acceleration itself changing at most turn_jerk (slow-in, slow-out), chasing the rate turn_gain times its gap a second and braking at turn_brake of turn_accel (a 90 deg turn takes about 1.5 s, D-198 'About 1.5 s'), and never tighter than min_radius m, so a slow serpent cannot pivot on the spot. The S-wave is presentation only (SerpentWeave): wave_amp m each side (D-198 'Wide, ~6 m each side'), one wave every wave_length m of travel, laid into the trail by distance so the wave runs down the body at the forward speed; its size ramps up with speed (full at wave_full_at of top speed, none from rest), eased over wave_ease m of travel, and is kept while slowing so the S reaches the tail. The drawn head chases that swinging point wave_lookahead m ahead of the sim head, never bending tighter than min_bend_widths x head_width (research 5.9: no kink tighter than 1.5 body widths), and lays its own trail, which the drawn body follows; a tight turn flattens the S by itself. Stand-in body (SerpentStandIn): segments boxes over length m, head_width to tail_width wide, height_share of the width tall. The head leads a turn by head_lead of the turn still to make (at most head_lead_max rad, sprung at head_lead_hz), bent over the neck by neck_bend (share of the lead per front segment) and lifted head_lift m per rad of lead. A stop settles over settle_s: the drawn curves relax (settle_relax) and the tail draws up, the head still; the S keeps that shape when it sets off again. Camera (director 2026-10-24, 'Higher, more top-down', steady, no swing with each turn): camera_height m up and camera_back m south of the body's middle, fixed yaw and pitch, following it critically damped over camera_follow_s. PROTOTYPE numbers, no species or tree node uses them yet.",
+		"_doc": "The serpent's slither, first prototype (D-197, D-198; research_serpent_slither): a kinematic trail body. The sim (SerpentBody, SerpentTrail) records the head's centreline every sample m of travel; the body lies along it, so a stopped serpent is frozen and no point ever slides sideways or cuts a corner. Steering with weight: up to speed m/s at accel (m/s^2), slowing at decel, easing off over the last stop_ease_speed m/s (to stop_ease_floor of decel) so the head eases to a halt; the heading turns at most turn_rate rad/s, gathering at most turn_accel rad/s^2, that acceleration itself changing at most turn_jerk (slow-in, slow-out), chasing the rate turn_gain times its gap a second and braking at turn_brake of turn_accel (a 90 deg turn takes about 1.5 s, D-198 'About 1.5 s'), and never tighter than min_radius m, so a slow serpent cannot pivot on the spot. The S-wave is presentation only (SerpentWeave): wave_amp m each side (D-198 'Wide, ~6 m each side'), one wave every wave_length m along the drawn body: a serpenoid, the drawn head's heading swinging about the sim head's course by the angle that reaches wave_amp each side, turning to face its swung course within wave_settle m, held to that swing by wave_pull rad per m off and kept level with the sim head by catching up over wave_catch m; it never bends tighter than min_bend_widths x head_width (research 5.9: no kink tighter than 1.5 body widths), so a turn's own bend leaves the S only what remains. Its size ramps up with speed (full at wave_full_at of top speed, none from rest), eased over wave_ease m of travel, and is kept while slowing so the S reaches the tail. The drawn head lays its own trail, which the drawn body follows. Stand-in body (SerpentStandIn): segments boxes over length m, head_width to tail_width wide, height_share of the width tall. The head leads a turn by head_lead of the turn still to make (at most head_lead_max rad, sprung at head_lead_hz), bent over the neck by neck_bend (share of the lead per front segment) and lifted head_lift m per rad of lead. A stop settles visibly over settle_s (SerpentSettle): the curves ease by settle_ease and the tail curls in, its tip tail_pull girths nearer the head; then a living idle, no travel: a sway of idle_sway m at the tail travels down the body every idle_sway_s (idle_sway_waves waves along it) and the girth breathes by idle_breath every idle_breath_s, fading in over idle_fade_s; it sets off again from the shape it holds. Camera (director 2026-10-24, 'Higher, more top-down', steady, no swing with each turn): camera_height m up and camera_back m south of its aim, fixed yaw and pitch (SerpentCamera); it aims camera_lead_s of the head's velocity ahead of the head less camera_behind m back along its heading (the head rides about a third of the way down the frame on a long leg), followed critically damped over camera_follow_s. PROTOTYPE numbers, no species or tree node uses them yet.",
 		"length": 40.0,
 		"segments": 48,
 		"sample": 0.05,
@@ -919,10 +919,12 @@
 		"turn_brake": 0.8,
 		"min_radius": 5.0,
 		"wave_amp": 6.0,
-		"wave_length": 40.0,
+		"wave_length": 44.0,
 		"wave_full_at": 0.8,
 		"wave_ease": 4.0,
-		"wave_lookahead": 8.0,
+		"wave_catch": 8.0,
+		"wave_pull": 0.25,
+		"wave_settle": 1.0,
 		"min_bend_widths": 1.5,
 		"head_width": 3.6,
 		"tail_width": 0.6,
@@ -933,10 +935,19 @@
 		"camera_height": 46.0,
 		"camera_back": 24.0,
 		"camera_follow_s": 0.6,
+		"camera_lead_s": 0.4,
+		"camera_behind": 7.2,
 		"neck_bend": [1.0, 0.75, 0.45, 0.2],
 		"head_lift": 0.8,
-		"settle_s": 0.45,
-		"settle_relax": 0.6
+		"settle_s": 0.6,
+		"settle_ease": 0.2,
+		"tail_pull": 1.0,
+		"idle_sway": 0.35,
+		"idle_sway_s": 3.0,
+		"idle_sway_waves": 1.0,
+		"idle_breath": 0.06,
+		"idle_breath_s": 4.0,
+		"idle_fade_s": 0.6
 	},
 	"audio": {
 		"buses": [

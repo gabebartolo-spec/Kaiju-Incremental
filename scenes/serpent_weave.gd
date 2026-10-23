@@ -1,32 +1,37 @@
 class_name SerpentWeave
 extends RefCounted
 ## The serpent's S-wave, drawn over the sim's centreline (D-198 "Wide, ~6 m each side";
-## data/tuning.json "serpent"). A drawn head chases a point that swings amplitude x
-## sin(2 pi s / wave_length) to each side of the sim's head path (s: the distance the sim head has
-## travelled), wave_lookahead m ahead of it, turning at most to a bend of min_bend_widths body
-## widths; the drawn head records its own path by distance (a SerpentTrail) and the drawn body lies
-## along that. So the S belongs to the ground, not to the body: every body point passes through the
-## same S (Jayne 2020, terrestrial lateral undulation: points follow one path and the wave runs at
-## the forward speed), no bend is ever tighter than the limit, a tight turn flattens the S on its
-## own, and a stopped serpent keeps its S. The swing ramps in with speed (eased over wave_ease m
-## of travel) and is kept while slowing. Presentation only: one per drawn serpent, stepped with
-## the sim.
+## data/tuning.json "serpent"). A serpenoid (Hirose's curve, the snake robots' standard): a drawn
+## head whose heading swings about the sim head's course by alpha x cos(2 pi s / wave_length),
+## s its own distance travelled, alpha set so the path swings wave_amp m to each side; a
+## gentle pull (wave_pull per m off) holds it to that swing about the sim's centreline, and it never
+## bends tighter than min_bend_widths body widths. It records its path by distance (a
+## SerpentTrail) and the drawn body lies along that: every body point passes through the same S
+## (Jayne 2020, terrestrial lateral undulation: points follow one path and the wave runs at the
+## forward speed). The swing ramps in with speed (eased over wave_ease m of travel), is kept while
+## slowing, and gives way in a turn to what the bend limit leaves. Presentation only: one per drawn
+## serpent, stepped with the sim.
 
-## How hard the drawn head closes a gap along the sim head's way (per lookahead length).
-const CATCH_UP := 1.0
 ## The drawn head's speed stays within this many times the sim head's.
 const MOST_SPEED := 2.5
+## The bend limit is held this much under min_bend_widths: the body's joints, a polyline laid along
+## the drawn path, read about 1% tighter than the path's own bend.
+const BEND_MARGIN := 0.96
+## Bisection steps that find the heading swing for the ruled sideways swing.
+const SOLVE_STEPS := 30
 
 ## The drawn head's own path; its head is the drawn head.
 var drawn: SerpentTrail
 var _cfg: Dictionary
-var _amp := 0.0
+var _ramp := 0.0  # 0..1: how much of the full swing is being laid now
+var _alpha := 0.0  # the heading swing (rad) that lays the full sideways swing
 
 
 func _init(body: SerpentBody) -> void:
 	_cfg = body.cfg
 	var reach := body.length() * 1.25
 	drawn = SerpentTrail.new(body.trail.spacing, reach, body.pos, body.heading)
+	_alpha = heading_swing(Num.f(_cfg["wave_amp"]), TAU / Num.f(_cfg["wave_length"]))
 
 
 ## How far the S swings at a crest where the head goes at `speed`: it ramps in with speed (full
@@ -41,27 +46,83 @@ static func lateral(cfg: Dictionary, s: float, amp: float) -> float:
 	return amp * sin(TAU * s / Num.f(cfg["wave_length"]))
 
 
-## One step of `dt` after the sim body stepped: the drawn head follows its swinging target.
+## The heading swing alpha whose serpenoid (wave number k) swings `amp` to each side: the side
+## reach of a quarter wave is (1/k) x the integral over 0..pi/2 of sin(alpha cos u) du.
+static func heading_swing(amp: float, k: float) -> float:
+	var lo := 0.0
+	var hi := PI * 0.5
+	for _i: int in SOLVE_STEPS:
+		var mid := (lo + hi) * 0.5
+		if side_reach(mid, k) < amp:
+			lo = mid
+		else:
+			hi = mid
+	return (lo + hi) * 0.5
+
+
+## How far a serpenoid with heading swing `alpha` (wave number k) reaches to each side.
+static func side_reach(alpha: float, k: float) -> float:
+	var steps := 32  # Simpson's rule over a quarter wave
+	var h := PI * 0.5 / steps
+	var sum := 0.0
+	for i: int in steps + 1:
+		var w := 1.0 if i == 0 or i == steps else (4.0 if i % 2 == 1 else 2.0)
+		sum += w * sin(alpha * cos(i * h))
+	return sum * h / 3.0 / k
+
+
+## How far forward a serpenoid with heading swing `alpha` goes per metre of its path: the mean of
+## cos(alpha cos u) over a wave.
+static func progress(alpha: float) -> float:
+	var steps := 32  # Simpson's rule over a quarter wave
+	var h := PI * 0.5 / steps
+	var sum := 0.0
+	for i: int in steps + 1:
+		var w := 1.0 if i == 0 or i == steps else (4.0 if i % 2 == 1 else 2.0)
+		sum += w * cos(alpha * cos(i * h))
+	return maxf(sum * h / 3.0 / (PI * 0.5), 0.3)
+
+
+## One step of `dt` after the sim body stepped: the drawn head swings about the sim's course.
 func step(body: SerpentBody, dt: float) -> void:
 	var v := body.speed
 	if v <= 0.0 or dt <= 0.0:
 		return
-	var ahead := Num.f(_cfg["wave_lookahead"])
-	var want := maxf(amplitude(_cfg, v), _amp)  # kept while slowing: the S reaches the tail
-	_amp = lerpf(_amp, want, 1.0 - exp(-v * dt / Num.f(_cfg["wave_ease"])))
-	var swing := lateral(_cfg, body.trail.head_s + ahead, _amp)
-	var target := body.pos + body.heading * ahead + body.heading.orthogonal() * swing
+	var full := smoothstep(0.0, Num.f(_cfg["speed"]) * Num.f(_cfg["wave_full_at"]), v)
+	_ramp = lerpf(_ramp, maxf(full, _ramp), 1.0 - exp(-v * dt / Num.f(_cfg["wave_ease"])))
+	var most := BEND_MARGIN / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["head_width"]))
+	var k := TAU / Num.f(_cfg["wave_length"])
+	# A turn's own bend uses up the bend limit: the swing keeps what is left of it.
+	var left := clampf(1.0 - absf(body.spin / v) / most, 0.0, 1.0)
+	var share := _ramp * minf(1.0, left * most / maxf(_alpha * k, 0.0001))
+	# Short moves, at most a sample's spacing each, so the drawn path has no corners.
+	var moves := ceili(MOST_SPEED * v * dt / drawn.spacing)
+	for _i: int in moves:
+		_advance(body, dt / moves, Vector3(most, k, share))
+
+
+## One short move of the drawn head over `h` s; `lim`: (bend limit, wave number, swing share).
+func _advance(body: SerpentBody, h: float, lim: Vector3) -> void:
+	var v := body.speed
+	var phase := lim.y * drawn.head_s
 	var at := drawn.head
+	var course := body.heading
+	var side := (at - body.pos).dot(course.orthogonal())
+	var off := Num.f(_cfg["wave_amp"]) * lim.z * sin(phase) - side
+	var pull := 0.5 * tanh(Num.f(_cfg["wave_pull"]) * off / 0.5)  # eased, never a corner
+	var swing := -_alpha * lim.z * cos(phase) - pull
 	var facing := drawn.head_heading
-	var to := target - at
-	var bend := 2.0 * sin(facing.angle_to(to)) / maxf(to.length(), 0.001)  # pure pursuit
-	var most := 1.0 / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["head_width"]))
-	bend = clampf(bend, -most, most)
-	var behind := (body.pos - at).dot(body.heading)  # > 0: the drawn head is behind the sim's
-	var lean := maxf(facing.dot(body.heading), 0.3)  # a drawn head across the way goes faster
-	var u := clampf(v * (1.0 + CATCH_UP * behind / ahead) / lean, 0.0, MOST_SPEED * v)
-	var heading := facing.rotated(bend * u * dt)
-	drawn.advance(at + heading * u * dt, heading, u, bend * u)
+	var behind := (body.pos - at).dot(course)  # > 0: the drawn head is behind the sim's
+	# Every point slides along the S at one steady speed (a snake's body does not surge): the
+	# forward speed over the S's mean progress per metre of path, eased level with the sim head.
+	var catch_up := 1.0 + behind / Num.f(_cfg["wave_catch"])
+	var u := clampf(v * catch_up / progress(_alpha * lim.z), 0.0, MOST_SPEED * v)
+	# The bend wanted to face the new way within wave_settle m, held softly (tanh) under the
+	# limit, so the bend never jumps where the limit takes over.
+	var bend := facing.angle_to(course.rotated(swing)) / Num.f(_cfg["wave_settle"])
+	var turn := lim.x * tanh(bend / lim.x) * u * h
+	var heading := facing.rotated(turn)
+	drawn.advance(at + heading * u * h, heading, u, turn / h)
 
 
 ## The drawn body settled into `points` (joints, head first) while it stood: its path is laid
