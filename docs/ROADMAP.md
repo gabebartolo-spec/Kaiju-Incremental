@@ -519,3 +519,14 @@ state. No director clips or per-change approvals in between; clips only where mo
   dragon, then the serpent). Owner: lead (flow, UI), visuals per D-189 split. Rack: croc genome, Komodo and serpent greyed and locked;
   replays to create each new titan on unlock. After the black screen the baby rises from the river as now.
   Status: not started.
+
+## Reptilian models and skins (D-209, director 2026-10-24)
+- "i want to see all models soon: croc baby, croc teen, croc adult, dragon baby, dragon teen, dragon adult, serpent
+  baby, serpent teen, serpent adult / and i want to see skin mockups for all of them". Concepts that pass their critic
+  go straight to 3D; two Tripo sessions in parallel. Owners: tripo-komodo (Komodo baby, three croc stages),
+  tripo-serpent (three serpent stages, D-206), lead (skins: Blender recolours, about six palettes per titan, same
+  palette baby to adult, D-205; he picks three). Status: Komodo adult done, adolescent textured, baby texturing;
+  croc adult concept in its third round; serpent baby concept SHIP. Tracked on the "Reptilian models" page.
+- Also today (D-208): turning and steering must feel exceptional; carving keeps working with the new models; any
+  contact damages a building except the serpent's held climb. Owner: lead (komodo-test builder adds carve and turn
+  checks; serpent round 4). Status: in progress.
