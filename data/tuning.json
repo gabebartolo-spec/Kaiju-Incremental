@@ -389,7 +389,7 @@
 		"lobe_spread": 2.2,
 		"lobe_base": 4.0,
 		"smoke_delay": 0.25,
-		"ball": {"ramp_at": [0.0, 0.04, 0.25, 0.5, 0.8, 1.0], "voxel": 1.8, "amount": 2400, "seconds": 1.7, "build": 0.8, "speed": [3.0, 11.0], "damping": 2.2, "lift": 3.0, "turbulence": 4.0, "turbulence_scale": 2.5, "shrink": [0.5, 0.35, 0.05]},
+		"ball": {"tongue": 0.8, "flame_h": 7.0, "amount": 520, "seconds": 1.7, "build": 0.8, "speed": [3.0, 11.0], "damping": 2.2, "lift": 3.0, "turbulence": 4.0, "turbulence_scale": 2.5, "shrink": [0.5, 0.35, 0.05]},
 		"hull_fire": 0.9,
 		"piece_smoke": 0.12,
 		"piece_trail": 0.35,

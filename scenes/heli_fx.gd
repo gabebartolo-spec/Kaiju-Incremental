@@ -2,7 +2,7 @@ class_name HeliFx
 extends RefCounted
 ## The recipes a downed helicopter is drawn with (HeliWreck), each one an existing family's owner
 ## (docs/VFX_STYLE.md): the flash is family 5's flare shader, the fireball is family 1's flame
-## voxel (Fire's shader, ramp and voxel size) thrown in a ball, the smoke is family 2's shader.
+## flame (Fire's smooth tongues) thrown in a ball, the smoke is family 2's shader.
 ## Numbers: tuning "heli_wreck". Presentation only.
 
 const FLARE := preload("res://scenes/flare.gdshader")
@@ -33,28 +33,25 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	tween.tween_callback(flash.queue_free)
 
 
-## The explosion's ball of fire: Fire's own flame (its voxel at its own size, ember shader, colour
-## ramp, scale spread), thrown out of a box about the helicopter's size and over `ball.build`
-## seconds, so the youngest flames, still white-yellow and small, sit in the middle and push the
-## older out: orange, then red, shrinking to a speck at the rim, which turbulence pulls into lobes.
-## It rises as it burns. A bigger ball is more flames, never bigger cubes. `scale` multiplies the
-## box and the throw (a crash's is smaller than a kill's).
+## The explosion's ball of fire: Fire's own smooth flame (its tongue mesh and shader, coloured by
+## height), thrown out of a box about the helicopter's size and over `ball.build` seconds, so the
+## youngest flames, small, sit in the middle and push the older out, shrinking at the rim, which
+## turbulence pulls into lobes. It rises as it burns. `scale` multiplies the box and the throw (a
+## crash's is smaller than a kill's).
 static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
 	var ball: Dictionary = cfg["ball"]
 	var wide := Num.f(cfg["fireball_radius"]) * scale
 	var half := Vector3(wide, Num.f(cfg["fireball_height"]) * scale, wide)
-	var cube := BoxMesh.new()
-	cube.size = Vector3.ONE * Fire.FLAME_CUBE
-	var hot := ShaderMaterial.new()
-	hot.shader = Fire.EMBER_SHADER
-	hot.set_shader_parameter("heat", Fire.BODY_HEAT)  # under 1: the plates stay orange
-	cube.material = hot
+	var tongue := Fire.flame_mesh(Num.f(ball["tongue"]), at.x + at.z)  # Fire's smooth tongue
+	var flame := tongue.material as ShaderMaterial  # graded by height from the ball's foot up
+	flame.set_shader_parameter("base_y", at.y - wide)
+	flame.set_shader_parameter("flame_h", Num.f(ball["flame_h"]) * scale)
 	var life := Num.f(ball["seconds"])
 	var amount := roundi(Num.f(ball["amount"]) * scale)
 	_burst(
 		parent,
 		_ball_material(ball, half, scale),
-		cube,
+		tongue,
 		amount,
 		life,
 		at,
@@ -65,7 +62,7 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 
 
 ## The ball's particle physics: out of `half` in every direction, damped so the oldest flames stop
-## at the rim, lifted, pulled into lobes by turbulence, drawn on Fire's ramp and flame sizes.
+## at the rim, lifted, pulled into lobes by turbulence, shrinking from a small start.
 static func _ball_material(
 	ball: Dictionary, half: Vector3, scale: float
 ) -> ParticleProcessMaterial:
@@ -85,8 +82,8 @@ static func _ball_material(
 	mat.turbulence_noise_scale = Num.f(ball["turbulence_scale"])
 	mat.turbulence_influence_min = 0.4
 	mat.turbulence_influence_max = 1.0
-	mat.scale_min = Fire.FLAME_SCALE.x * Num.f(ball["voxel"])
-	mat.scale_max = Fire.FLAME_SCALE.y * Num.f(ball["voxel"])
+	mat.scale_min = 0.8
+	mat.scale_max = 1.2
 	var shrink: Array = ball["shrink"]  # size: young and small, full in the body, a speck at the rim
 	var sizes := Curve.new()
 	for pt: Vector2 in [
@@ -99,15 +96,12 @@ static func _ball_material(
 	var sizes_tex := CurveTexture.new()
 	sizes_tex.curve = sizes
 	mat.scale_curve = sizes_tex
-	var ramp_at: Array = ball["ramp_at"]  # a white-yellow core stop, then a tongue's body colours
-	var colors: Array[Color] = [Fire.CORE_COLORS[0]]
-	colors.append_array(Fire.BODY_COLORS.slice(2))
-	var flame := Gradient.new()
-	flame.colors = PackedColorArray(colors)
-	flame.offsets = PackedFloat32Array(ramp_at)
-	var ramp := GradientTexture1D.new()
-	ramp.gradient = flame
-	mat.color_ramp = ramp
+	var ramp := Gradient.new()  # only the life fade: the colour is the flame shader's, by height
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)])
+	ramp.offsets = PackedFloat32Array([0.0, 0.06, 0.8, 1.0])
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	mat.color_ramp = ramp_tex
 	return mat
 
 
@@ -155,7 +149,7 @@ static func riding_fire(
 	var fire := Fire.new(size, seed_value, tongues(cfg, smoke, zoom))
 	var moving := 0
 	for child: Node in fire.get_children():
-		if child is GPUParticles3D and moving < 2:  # the first two are the flames and their core
+		if child is GPUParticles3D and moving < 1:  # the first is the flames
 			(child as GPUParticles3D).local_coords = true
 			moving += 1
 	return fire

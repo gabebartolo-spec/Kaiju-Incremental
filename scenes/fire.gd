@@ -6,8 +6,23 @@ extends Node3D
 
 const SMOKE_SHADER := preload("res://scenes/smoke.gdshader")
 const EMBER_SHADER := preload("res://scenes/ember.gdshader")
-## The hot ramp (director 2026-10-23: "cinematic fire"): a small white-yellow core at birth, a
-## saturated orange body, red, then dark red tips; at heat 1 it blooms without turning cream.
+## The flame itself (director 2026-10-23: "Smooth flames"): camera-facing tongues, colour graded by
+## height, drawn by flame.gdshader. One look for every fire: the street's, the title's, the
+## helicopter's, the blast's (see flame_mesh).
+const FLAME_SHADER := preload("res://scenes/flame.gdshader")
+## A tongue's quad (metres) at a fire of size 1.2 and zoom 1, and how many a fire of size 1 has.
+const TONGUE := Vector2(1.15, 2.7)
+const TONGUES := 18
+## The ramp's height in metres at that quad: tips are dark red-brown at it.
+const FLAME_HEIGHT := 2.5
+const FLAME_COLORS: Array[Color] = [
+	Color("fff0b8"), Color("ff9a1e"), Color("e04a0c"), Color("3a1a10")
+]
+## The voxel flame's old constants: only the blast (blast_parts.gd, on city-explosives-v2) and the
+## capture tools still read them, until the blast adopts flame_mesh (explosions r10). Not a look.
+const FLAME_CUBE := 0.18
+const FLAME_SCALE := Vector2(0.5, 1.2)
+const FLAME_PLATE := Vector3(0.18, 0.32, 0.18)
 const FLAME_COLORS: Array[Color] = [
 	Color("ffe9a8"),
 	Color("ff8c18"),
@@ -16,41 +31,11 @@ const FLAME_COLORS: Array[Color] = [
 	Color("b8321a"),
 	Color("4a1610")
 ]
-## A street fire's flame tongue is two systems: a tall tapering BODY (orange, then red, then a dark
-## red-brown at its tips and rim, thinning to smoke: alpha falls so the plates overlap into one
-## mass) around a narrow, short, white-yellow CORE column. Colours and alpha over the life of a
-## flame, which is its height as it rises.
-const BODY_COLORS: Array[Color] = [
-	Color(0.6, 0.13, 0.05, 0.95),
-	Color(0.6, 0.13, 0.05, 0.95),
-	Color(1.0, 0.36, 0.05, 1.0),
-	Color(0.96, 0.27, 0.04, 1.0),
-	Color(0.8, 0.17, 0.04, 0.95),
-	Color(0.5, 0.12, 0.05, 0.9),
-	Color(0.33, 0.08, 0.04, 0.85)
-]
-const BODY_AT: Array[float] = [0.0, 0.1, 0.24, 0.45, 0.65, 0.85, 1.0]
-const CORE_COLORS: Array[Color] = [
-	Color(1.0, 0.93, 0.7, 0.95), Color(1.0, 0.8, 0.38, 0.9), Color(1.0, 0.55, 0.12, 0.75)
-]
-const CORE_AT: Array[float] = [0.0, 0.35, 1.0]
-## The bodies' heat (ember.gdshader): under 1 the core and body sit at the bloom's threshold, so a
-## flame stays saturated instead of whitening (the core's is lower still).
-const BODY_HEAT := 0.95
-const CORE_HEAT := 1.0
-## A tongue's plate: the flame voxel stretched about 1:2 tall (so tongues rise, never confetti).
-const FLAME_PLATE := Vector3(0.18, 0.32, 0.18)
-const EMBER_START := Color("ffb040")
-## The embers' heat (ember.gdshader): they are tiny, so they glow past what a flame's body takes
-## (the shader's own heat, 1, keeps a flame saturated orange and red under the bloom, never cream).
-const EMBER_HEAT := 1.4
-const WIND := Vector3(2.2, 0.0, 0.9)
-## The flame voxel: its cube (units) and the spread of sizes each flame takes of it, and where on a
-## flame's life each of FLAME_COLORS sits. A blast's flames (BlastParts.fireball) read these too:
-## a bigger fire is more flames, never bigger cubes (VFX lead, D-151).
-const FLAME_CUBE := 0.18
-const FLAME_SCALE := Vector2(0.5, 1.2)
 const FLAME_AT: Array[float] = [0.0, 0.025, 0.14, 0.42, 0.72, 1.0]
+const EMBER_START := Color("ffb040")
+## The embers' heat (ember.gdshader): they are tiny, so they glow past a flame body's (heat 0.88).
+const EMBER_HEAT := 1.4  # embers and sparks start yellow-orange, never cream
+const WIND := Vector3(2.2, 0.0, 0.9)
 const SMOKE_COLORS: Array[Color] = [
 	Color(0.05, 0.05, 0.05, 0.0),
 	Color(0.1, 0.1, 0.11, 0.46),
@@ -89,6 +74,8 @@ var _ember_density := 1.0
 ## Smoke count multiplier of a zoomed fire (0: this fire gives no smoke of its own).
 var _smoke_density := 1.0
 var _embers_node: GPUParticles3D
+var _flame_mat: ShaderMaterial
+var _flame_base := 0.2
 
 
 ## far: {} for a fire in the street, else {"zoom", "smoke_share", "density", "wind", "puff",
@@ -104,16 +91,15 @@ func _init(size: float, seed_value: float, far := {}) -> void:
 		_puff = Num.f(far["puff"])
 		_ember_density = Num.f(far["ember_density"])
 		_smoke_density = Num.f(far["smoke_density"])
-	_base_energy = 4.0 + size * 2.0
+	_base_energy = 2.5 + size * 1.2
 	if zoom <= 1.0:
 		_light = PooledLight.new("fire")
 		_light.light_color = Color("ff9a4a")
-		_light.omni_range = 6.0 + size * 3.0
+		_light.omni_range = 4.0 + size * 2.0
 		_light.set_energy(_base_energy)
 		_light.position = Vector3(0, 1.0 + size * 0.5, 0)
 		add_child(_light)
 	add_child(_flames(size))
-	add_child(_core(size))
 	_embers_node = _embers(size)
 	add_child(_embers_node)
 	if _smoke_density > 0.0:
@@ -155,7 +141,12 @@ func is_out() -> bool:
 	return _out
 
 
+func _ready() -> void:
+	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
+
+
 func _process(delta: float) -> void:
+	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
 	if _light == null:
 		return
 	_t += delta
@@ -165,20 +156,50 @@ func _process(delta: float) -> void:
 
 func _flames(size: float) -> GPUParticles3D:
 	var z := _zoom
-	var mat := _base(size * 0.45 * z, 6.0, Vector3(0, 2.2, 0) * z, Vector2(1.1, 2.2) * z)
-	_scale(mat, FLAME_SCALE * z, Vector2(1.0, 0.3), 0.7)
-	_ramp(mat, PackedColorArray(BODY_COLORS), PackedFloat32Array(BODY_AT))
-	var count := roundi(170 * maxf(1.0, size) * _density)
-	return _system(mat, _cube(FLAME_PLATE, BODY_HEAT), count, 1.0)
+	var grow := clampf(0.7 + 0.25 * size, 0.75, 1.5)  # bigger: a bit taller, many more
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	mat.emission_box_extents = Vector3(size * 0.4, 0.32, size * 0.4) * z  # feet at uneven heights
+	mat.direction = Vector3.UP
+	mat.spread = 5.0
+	mat.gravity = Vector3(0, 0.6, 0) * z
+	mat.initial_velocity_min = 0.4 * z
+	mat.initial_velocity_max = 1.0 * z
+	mat.scale_min = 0.8 * grow * z
+	mat.scale_max = 1.25 * grow * z
+	var curve := Curve.new()  # young tongues grow in, then hold
+	curve.add_point(Vector2(0.0, 0.55))
+	curve.add_point(Vector2(0.2, 1.0))
+	curve.add_point(Vector2(1.0, 0.8))
+	var tex := CurveTexture.new()
+	tex.curve = curve
+	mat.scale_curve = tex
+	_ramp(
+		mat,
+		PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)]),
+		PackedFloat32Array([0.0, 0.08, 0.82, 1.0])
+	)
+	var mesh := flame_mesh(grow * z, _seed)
+	_flame_mat = mesh.material
+	_flame_mat.set_shader_parameter("flame_h", FLAME_HEIGHT * grow * z)
+	var count := roundi(TONGUES * maxf(1.0, size) * _density)
+	var p := _system(mat, mesh, count, 1.0)
+	p.visibility_aabb = AABB(Vector3(-4, -2, -4) * z * grow, Vector3(8, 9, 8) * z * grow)
+	return p
 
 
-## The hot core: a narrow, short column of white-yellow plates down the middle of the body.
-func _core(size: float) -> GPUParticles3D:
-	var z := _zoom
-	var mat := _base(size * 0.11 * z, 4.0, Vector3(0, 2.0, 0) * z, Vector2(0.9, 1.7) * z)
-	_scale(mat, FLAME_SCALE * 0.8 * z, Vector2(1.0, 0.35), 0.6)
-	_ramp(mat, PackedColorArray(CORE_COLORS), PackedFloat32Array(CORE_AT))
-	return _system(mat, _cube(FLAME_PLATE, CORE_HEAT), roundi(34 * maxf(1.0, size) * _density), 0.6)
+## A tongue's quad `scale` times its size, drawn by flame.gdshader with its own seed: the one
+## flame mesh every fire uses (a blast's, the helicopter's ball). The owner sets the material's
+## `base_y` (the floor the height grading starts at) and `flame_h` (how high the ramp runs).
+static func flame_mesh(scale: float, seed_value: float) -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = TONGUE * scale
+	quad.center_offset = Vector3(0, TONGUE.y * scale * 0.44, 0)  # the foot at the particle
+	var mat := ShaderMaterial.new()
+	mat.shader = FLAME_SHADER
+	mat.set_shader_parameter("fire_seed", fmod(seed_value, 97.0))
+	quad.material = mat
+	return quad
 
 
 func _embers(size: float) -> GPUParticles3D:
@@ -187,12 +208,7 @@ func _embers(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.8 * z, 35.0, gravity, Vector2(1.5, 4.0) * z)
 	_scale(mat, Vector2(0.4, 1.0) * z, Vector2(1.0, 0.3))
 	_ramp(mat, PackedColorArray([EMBER_START, Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
-	return _system(
-		mat,
-		_cube(Vector3.ONE * 0.1, EMBER_HEAT),
-		roundi(45 * maxf(1.0, size) * _ember_density),
-		3.2
-	)
+	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
 
 
 ## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
@@ -238,13 +254,11 @@ func _base(
 	return mat
 
 
-func _scale(mat: ParticleProcessMaterial, span: Vector2, over_life: Vector2, young := 1.0) -> void:
+func _scale(mat: ParticleProcessMaterial, span: Vector2, over_life: Vector2) -> void:
 	mat.scale_min = span.x
 	mat.scale_max = span.y
 	var curve := Curve.new()
-	curve.add_point(Vector2(0, over_life.x * young))
-	if young != 1.0:  # a young flame is small: the hot core is the base of the flame, not a plate
-		curve.add_point(Vector2(0.15, over_life.x))
+	curve.add_point(Vector2(0, over_life.x))
 	curve.add_point(Vector2(1, over_life.y))
 	var tex := CurveTexture.new()
 	tex.curve = curve
@@ -274,11 +288,16 @@ func _system(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float)
 	return p
 
 
-func _cube(size: Vector3, heat := 1.0) -> BoxMesh:
+func _cube(size: float, glowing: bool) -> BoxMesh:
 	var cube := BoxMesh.new()
-	cube.size = size
-	var hot := ShaderMaterial.new()
-	hot.shader = EMBER_SHADER
-	hot.set_shader_parameter("heat", heat)
-	cube.material = hot
+	cube.size = Vector3.ONE * size
+	if glowing:
+		var hot := ShaderMaterial.new()
+		hot.shader = EMBER_SHADER
+		hot.set_shader_parameter("heat", EMBER_HEAT)
+		cube.material = hot
+		return cube
+	var draw := StandardMaterial3D.new()
+	draw.vertex_color_use_as_albedo = true
+	cube.material = draw
 	return cube

@@ -45,10 +45,10 @@ func _ready() -> void:
 		system.preprocess = system.lifetime  # already burning when the title appears
 		# Fewer simulation steps a second: the preprocess is most of the title's build time.
 		system.fixed_fps = Num.i(_cfg["fixed_fps"])
-		var cube := system.draw_pass_1 as BoxMesh
-		if cube != null:
-			# The flames and embers draw over the colossus; the smoke behind it.
-			(cube.material as ShaderMaterial).render_priority = FLAME_PRIORITY
+		var mesh := system.draw_pass_1 as PrimitiveMesh
+		var mat := mesh.material as ShaderMaterial
+		if mat != null and (mat.shader == Fire.FLAME_SHADER or mat.shader == Fire.EMBER_SHADER):
+			mat.render_priority = FLAME_PRIORITY  # the flames and embers draw over the colossus
 	add_child(fire)
 
 
