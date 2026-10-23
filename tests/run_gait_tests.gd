@@ -23,10 +23,10 @@ const MAX_SLIDE := 1.0
 ## far it may differ (units, degrees): none to speak of, the sim is seeded.
 const YOUNG_TOL := 0.001
 const YOUNG_LEGS: Array[Vector3] = [
-	Vector3(0, 0, 0),
-	Vector3(0, 0, 0),
-	Vector3(0, 0, 0),
-	Vector3(0, 0, 0),
+	Vector3(0.0, 20.2967, 0.0),
+	Vector3(1.1186, 27.0072, 180.0),
+	Vector3(-4.4536, 28.1186, -90.0),
+	Vector3(-3.1870, 23.2611, 30.001),
 ]
 
 
