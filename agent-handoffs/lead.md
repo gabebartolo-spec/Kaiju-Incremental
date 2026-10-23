@@ -63,7 +63,7 @@
 - 2026-10-23 director: "merge what they can and archive. i wanna go 1 on 1 with you". VFX + atmosphere leads ARCHIVED
   (nothing SHIP to merge). VFX handoff claude/vfx-lead-2 862f1302 (fire-smooth 4e6e90d9, heli-fall 5aee3cb6, claw-rake
   2d176ff4, living-predator ec4bb919 parked D-193). Atmosphere handoff claude/atmosphere-lead 42a8deaa (atm-escalation
-  85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new animation pipeline; D-194 Cascadeur Indie (he buys).
+  85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
 - Lead's builders (subagents, Sonnet, common brief scratchpad COMMON-2026-10-23.md):
   - beam-cost (agent a1448c3e2dfa8c9e5, ~586k tokens) on claude/heli-standoff (D-183), worktree volley-d178: fly-by
     strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
