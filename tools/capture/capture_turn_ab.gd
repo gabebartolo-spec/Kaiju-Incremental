@@ -8,7 +8,11 @@ extends SceneTree
 ##   godot --path . --resolution 1280x720 --windowed --write-movie <out.avi> --fixed-fps 60 \
 ##     --script tools/capture/capture_turn_ab.gd -- --stage=Behemoth --turn-slow=0.1
 ## --stage=Behemoth|Colossus, --run=3 (the run index: its time of day), --clear=x0,z0,x1,z1 (sim
-## space: no buildings there, a bare road).
+## space: no buildings there, a bare road), --log=<csv> (per frame from the route's start: the
+## sim's origin and heading, the drawn node and root bone, the drawn body yaw, both feet's planted
+## flag and toe; the footfalls print as "FALL t side x z"; --headless, no movie, for numbers).
+## The shot keeps him at full health (no low-health edge) and the breath's aim wedge hidden (the
+## breath is held cooling down), so nothing but the turn is in frame.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const STAGES := {"Behemoth": {"evolve1": 1}, "Colossus": {"evolve1": 1, "evolve2": 1}}
@@ -26,6 +30,7 @@ var _t := -1.0
 var _from := Vector2.INF
 var _east_t := INF
 var _rampage: Rampage
+var _log: FileAccess
 
 
 func _initialize() -> void:
@@ -36,6 +41,14 @@ func _initialize() -> void:
 			_turn_slow = float(arg.substr(12))
 		elif arg.begins_with("--run="):
 			_run_index = int(arg.substr(6))
+		elif arg.begins_with("--log="):
+			_log = FileAccess.open(arg.substr(6), FileAccess.WRITE)
+			(
+				_log
+				. store_line(
+					"t,kx,kz,heading,facing,stride,phase,nx,nz,rx,rz,body_yaw,state,speed,lp,lx,lz,rp,rx2,rz2"
+				)
+			)
 		elif arg.begins_with("--clear="):
 			var v := arg.substr(8).split_floats(",")
 			_clear = Rect2(v[0], v[1], v[2] - v[0], v[3] - v[1])
@@ -65,19 +78,59 @@ func _run() -> void:
 	_rampage.setup(species, stats, kept, _run_index)
 	_rampage.scripted = _input
 	root.add_child(_rampage)
+	_rampage._kaiju.foot_planted.connect(
+		func(side: String, _strength: float, at: Vector3) -> void:
+			if _log != null and side != "tail" and _t >= 0.0:
+				print("FALL %.3f %s %.3f %.3f" % [_t, side, at.x, at.z])
+	)
 	var end := INF
 	while _t < 0.0 or _t < end:
 		await physics_frame
+		if _log != null and _t >= 0.0:
+			_log_frame()
 		if _east_t != INF and end == INF:
 			end = _east_t + CLIP_AFTER + CLIP_S + 0.2
 	print("done: %s turn_slow %.2f" % [_stage, _rampage.sim.body._turn_slow])
 	quit()
 
 
+## One --log row: the sim's body, the drawn node and root bone, the drawn yaw, both feet.
+func _log_frame() -> void:
+	var sim := _rampage.sim
+	var kaiju: KaijuModel = _rampage._kaiju
+	var gait := kaiju._rig.gait as ClipGait
+	var root := kaiju.focus()
+	var row := (
+		"%.4f,%.4f,%.4f,%.3f,%.3f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.3f,%s,%.3f"
+		% [
+			_t,
+			sim.kaiju_pos.x,
+			sim.kaiju_pos.y,
+			rad_to_deg(atan2(sim.body.heading.x, -sim.body.heading.y)),
+			rad_to_deg(atan2(sim.facing.x, -sim.facing.y)),
+			sim.body.stride,
+			sim.body.phase,
+			kaiju.position.x,
+			kaiju.position.z,
+			root.x,
+			root.z,
+			rad_to_deg(gait.body_yaw),
+			gait.state,
+			gait.speed
+		]
+	)
+	for i: int in 2:
+		var toe := gait.rig.tail_world(gait.legs[i].names[2])
+		row += ",%d,%.4f,%.4f" % [int(gait.legs[i].planted), toe.x, toe.z]
+	_log.store_line(row)
+
+
 ## Stands until he is on the bank, then inland, east along the road, and the stick reversed.
 func _input(sim: RampageSim) -> Dictionary:
 	if sim.emerge.active:
 		return {"move": Vector2.ZERO}
+	sim.hp = sim.max_hp  # no low-health edge in the shot
+	sim.ability_ready_in = 1.0e9  # the breath's aim wedge (BreathAim) hides while it cools down
 	if _t < 0.0:
 		_t = 0.0
 		_from = sim.kaiju_pos
