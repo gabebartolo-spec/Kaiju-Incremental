@@ -6,6 +6,7 @@ extends RefCounted
 ## never yaws with both feet up, and a planted foot holds its spot; the baby turns smoothly at
 ## its pre-stepped rates (D-131, "Baby turns smoothly").
 
+const StageGait := preload("res://tests/lib/smoke_stage_gait.gd")
 const DT := 1.0 / 60.0
 const ADULT := {"evolve1": 1, "evolve2": 1}
 const WALK_S := 3.0
@@ -51,8 +52,6 @@ const MAX_FOOT_YAW_DEG := 12.0
 const SKATE_LOW := 0.08
 const SKATE_SPEED := 3.0
 const SKATE_SHARE := 1.0
-## The sim's step length may differ this much from half the walk clip's stride.
-const STEP_LEN_TOL := 0.02
 
 
 static func check(check: Callable, root: Node) -> void:
@@ -114,15 +113,7 @@ static func check(check: Callable, root: Node) -> void:
 			)
 		)
 	)
-	var one_step: float = adult["stride"]
-	var sim_step: float = adult["step_len"]
-	check.call(
-		absf(one_step / sim_step - 1.0) < STEP_LEN_TOL,
-		(
-			"the sim's step is half the clip's stride, so planted feet are passed at the"
-			+ " pace the body walks (%.3f vs %.3f)" % [sim_step, one_step]
-		)
-	)
+	StageGait.check(check, root)  # every growth step's stride, and the held curve (D-177)
 	var baby := _turn({}, root)
 	var baby_took: float = baby["took"]
 	check.call(
