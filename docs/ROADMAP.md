@@ -421,3 +421,12 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
   briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
   credits), he picks by ear. Owner: lead. Status: waiting on his Suno sign-in in the built-in browser.
+
+## Motion first (D-177, 2026-10-23)
+- Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
+  Owner: both. Status: probe 14:15, then the fix.
+- Motion gate: the gait probe becomes a CI suite (planted-foot speed, steps/s vs clip speed, turn pivot vs planted
+  foot, foot lift) at all three growth steps; every body or movement change passes it. Owner: VFX lead's gait builder
+  writes it, the lead reviews and merges. Status: not started.
+- Motion pass on every growth step (walk, turn, stop, dash, stomp, standing still), measured bars + a fresh motion
+  critic at game speed, then the living predator (D-165), ahead of the one-look work. Owner: VFX lead. Status: queued.

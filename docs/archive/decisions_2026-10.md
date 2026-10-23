@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-085 · Director · Rooftop squads fire raggedly, never in unison
+Why (via the rooftops session): "shooters arent firing in unison ... improvised, unrehearsed resistance". Seeded
+ragged gaps per squad (51a2d5d); in #63.
+
 ## 2026-10-18 · D-083 · Director · After the demo, playtest fixes come first
 Why (16:0x): director's call for after the demo build (P7 playtest); no new feature work jumps ahead of its fixes.
 

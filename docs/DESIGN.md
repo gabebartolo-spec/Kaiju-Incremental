@@ -11,7 +11,7 @@ effects must make you feel like the Apex Predator, King of Monsters, Godkiller, 
 
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
-sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
+sees, decides or remembers is cut, not polished. **Motion and destruction come first** (D-177): "motion, alongside the destruction mechanics, is the most important element of our design. If we cant sell the fantasy of piloting a Kaiju then the game wont be fun"; every change to his body or movement passes the motion checks at all three growth steps. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
 
 ## The game
 - An **active action game** with incremental progression, the Nodebuster / Brotato shape. No idle, no AFK, no offline

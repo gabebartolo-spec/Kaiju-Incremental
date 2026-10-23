@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-177 · Director · Motion and destruction come first; a motion gate on every body or movement change
+
+"motion, alongside the destruction mechanics, is the most important element of our design. If we cant sell the fantasy of piloting a Kaiju then the game wont be fun" (after the adolescent's twitchy walk). Asked: "Motion first": the gait fix lands now, then a motion pass on every growth step (walk, turn, stop, dash, stomp, standing still) with measured pass bars and a fresh motion critic at game speed; the living predator (D-165) moves ahead of the one-look work (the night-glow fix carries on). "Yes, always": any change to his body, speed, steps or animation passes foot, step and turn checks at all three growth steps before merging (a CI suite built from the gait probe). DESIGN Pillar updated.
+
 ## 2026-10-23 · D-176 · Director · Music: darker, not heavier, menacing like the classic Godzilla score
 
 On the first brooding takes: "theyre all a bit too 'heroic', I want them to be darker (not heavier), more menacing, reminiscent of the Godzilla theme". The briefs now ask for a sinister slow march in the 1950s Japanese monster-film style (a repeating low ostinato, low piano and contrabass, timpani, dissonant low strings and brass), and exclude heroic, triumphant, uplifting, fanfare, major key and choir. The theme is described by its qualities, never named or copied. Cities grow in fullness, not heroics.
@@ -393,7 +397,3 @@ real head give evolve1 0.26 h, young defeats 8/14, tree 82/87 at 3.37 h. The gro
 
 ## 2026-10-18 · D-086 · Lead · #36 option A (Behemoth army 0.03), void
 Why: proposed for Behemoth defeats; superseded the same evening by D-087's pick and never applied.
-
-## 2026-10-18 · D-085 · Director · Rooftop squads fire raggedly, never in unison
-Why (via the rooftops session): "shooters arent firing in unison ... improvised, unrehearsed resistance". Seeded
-ragged gaps per squad (51a2d5d); in #63.
