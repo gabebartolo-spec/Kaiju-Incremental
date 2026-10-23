@@ -46,7 +46,7 @@
 - Lead/VFX split (D-189) suspended while the VFX lead is archived: the lead owns visuals too.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
   kill perched Taskforce agents. D-166 strike times: breath/ultimate 0.8/1.1/1.4 s, stomp 0.45 s (data). D-175/D-178.
-- Tripo: browser only, signed URL + curl downloads; budget D-204 (5000 total). Never edit a running bash script.
+- Tripo: browser only, signed URL + curl downloads; budget D-204+D-213 (10,000 total; caps serpent 850, croc 600). Never edit a running bash script.
 - Music D-184 SHIPPED: his remaster of G2 (798f3c13) = the theme, on the menu over the city sound (amends D-141) and
   the Cover source; cities C1a/C2a/C3a, each Auto split; all in C:/Users/DANTE/Downloads/kaiju_music (WAVs + stems).
   320 of 800 credits, 8 of 20 downloads; G1-G4 not to be downloaded again ("later if we need"). Revisit music later
@@ -66,7 +66,7 @@
   suites, recapture -> critic); serpent round 4 (claude/serpent-slither from 5fc6647d; NEW method after r3 critic FIX
   "rope on a rail": reference-led targets, longer thinner tube stand-in, screen-space bars). Stall watcher on both.
   Tripo session local_2d9f45c9 (tripo-komodo): young Komodo critic+texture, croc "B with A's power", hybrid serpent
-  3-stage board (D-206), Komodo palettes (D-205); budget 5000 total (D-204). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
+  3-stage board (D-206), Komodo palettes (D-205); budget 10,000 total (D-204, D-213). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
   director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
   + go line; git-helper was stopped by him, so merge yourself via `gh pr merge --squash --match-head-commit`).
 
