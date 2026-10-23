@@ -467,4 +467,10 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind
   up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very
   suddenly, defying his anatomy, it looks terrible". D-185: a heavy raking arc. Owner: VFX lead (diagnose, exact
-  fix, motion bars at all three growth steps, motion critic, one clip after SHIP). Status: queued, order from the VFX lead.
+  fix, motion bars at all three growth steps, motion critic, one clip after SHIP). Cause (code): the upper arm is
+  scaled 1.25x (adult) to 1.6x (young) so the arm telescopes out; only the arm moves; 0.62 s at every size; the hand
+  lifts high; linear poses. Fix: no bone scaling, torso twist to load and whip, low wide arc, a strike of 0.1 s or
+  less on the sim's hit, follow-through longer with size. Bars: arm scale 1.0, chest yaw >= 15/25 deg, hand at or
+  below the shoulder, arc >= 120 deg, strike peak >= 3x the load's speed, hit within 1 frame, feet slide 0. Status:
+  next free VFX engine slot after the gait work. Risk: if the 0.3 s sim wind-up reads rushed at Colossus size, a
+  per-stage wind-up is a design question for him.
