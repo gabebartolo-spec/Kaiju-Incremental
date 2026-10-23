@@ -95,6 +95,15 @@ static func set_opacity(root: Node, opacity: float) -> void:
 			mat.set_shader_parameter("opacity", opacity)
 
 
+## Firelight on every voxel part under `root` (voxel.gdshader's ember_light): the fire's HDR colour,
+## black for none. A burning hull is lit by its own flames, so it reads as a helicopter at night.
+static func set_ember(root: Node, light: Color) -> void:
+	for node: Node in root.find_children("*", "MultiMeshInstance3D", true, false):
+		var mat := (node as MultiMeshInstance3D).material_override as ShaderMaterial
+		if mat != null:
+			mat.set_shader_parameter("ember_light", Vector3(light.r, light.g, light.b))
+
+
 func _read(part: String) -> Kvox:
 	var entry: Dictionary = _parts[part]
 	var path := _dir.path_join(str(entry["kvox"]))

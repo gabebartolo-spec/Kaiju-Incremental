@@ -13,12 +13,19 @@ const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1, "r_ablaze": 1}
 const SETTLE := 120
 ## Where each helicopter is put, from the kaiju's feet, in body-scale units (camera looks down -z).
 const SPOT := Vector3(6.0, 0.0, -9.0)
+## Where the kaiju's claw reaches, in the swipe's own band (body-scale units from its feet): the
+## first helicopter hangs this far ahead and to the side (a kill nothing covers), the second where
+## the nearest low block's face is.
+const FIRST_AT := Vector2(8.5, 3.2)
+const SECOND_AT := Vector2(10.5, -3.5)
+## Where the second clip helicopter waits, beside the claw's band.
+const WAIT_AT := Vector2(10.5, -10.0)
 ## The 2x crop's size in pixels (1x), and how high above the street it is centred.
 const CROP := Vector2i(520, 330)
 const CROP_HEIGHT := 6.0
 ## The clip: frames before the burst, from the burst to the spin's kill, and the whole shot.
 ## The tallest building (metres) a wreck is dropped beside.
-const LOW_BLOCK := 9
+const LOW_BLOCK := 30
 const CLIP_LEAD := 20
 const CLIP_GAP := 100
 const CLIP_FRAMES := 360
@@ -68,6 +75,7 @@ func _run(run: int) -> void:
 	_spot = _rampage.sim.kaiju_pos + Vector2(SPOT.x, SPOT.z) * _rampage.sim.body_scale()
 	print("body scale %.2f" % _rampage.sim.body_scale())
 	_reference_fire()
+	_rampage.sim.powers.swipe._timer = 999.0  # the kaiju's claw swings only when the shot calls it
 	if _clip:
 		await _clip_run()
 	else:
@@ -76,13 +84,15 @@ func _run(run: int) -> void:
 
 
 func _stills() -> void:
+	_spot = _spot_from(FIRST_AT)
 	var burst := await _spawn([_spot] as Array[Vector2])
-	await _blow(burst[0], 1.0, _spot)
+	await _swat(burst[0], true)
 	await _shots("burst", [2, 12, 30, 60, 100])
 	await Kit.frames(self, SETTLE_WRECK)
-	_spot = _block_beside(_spot)
-	var spin := await _spawn([_spot] as Array[Vector2])
-	await _blow(spin[0], 0.2, _spot)
+	_spot = _block_beside(_spot_from(SECOND_AT))
+	var hung := _spot_from(SECOND_AT)
+	var spin := await _spawn([hung] as Array[Vector2])
+	await _swat(spin[0], false, _spot)
 	await _shots("spin", [8, 35, 70, 105])
 	var sim := _rampage.sim
 	var limit := 0
@@ -94,19 +104,20 @@ func _stills() -> void:
 	print("buildings alive at the end %d" % _alive())
 
 
-## The 6 s clip: two helicopters parked over the street; the first is blown apart, then the
-## second spins down to its crash. It starts at CLIP_LEAD (the movie also holds the setup: the
-## frame is printed, to cut from).
+## The 6 s clip: two helicopters hung over the street, each killed by the kaiju's own claw swipe
+## (its arm lifts first, the rake lands on them): the first blows apart, then the second spins down
+## to its crash. It starts at CLIP_LEAD (the movie also holds the setup: the frame is printed).
 func _clip_run() -> void:
-	var sim := _rampage.sim
-	var first := sim.kaiju_pos + (_spot - sim.kaiju_pos).rotated(CLIP_SPREAD)
-	var both := await _spawn([_spot, first] as Array[Vector2])
-	var block := _block_beside(_spot)
+	var first := _spot_from(FIRST_AT)
+	var block := _block_beside(_spot_from(SECOND_AT))
+	var wait := _spot_from(WAIT_AT)  # out of the first swipe's reach until it is the second's turn
+	var both := await _spawn([first, wait] as Array[Vector2])
 	print("clip starts at frame %d" % Engine.get_frames_drawn())
 	await Kit.frames(self, CLIP_LEAD)
-	await _blow(both[0], 1.0, block)
-	await Kit.frames(self, CLIP_GAP)
-	await _blow(both[1], 0.2, block)
+	await _swat(both[0], true)
+	await _slide(both[1], wait, _spot_from(SECOND_AT), CLIP_GAP - 15)
+	await Kit.frames(self, 15)
+	await _swat(both[1], false, block)
 	await Kit.frames(self, CLIP_FRAMES - CLIP_LEAD - CLIP_GAP)
 
 
@@ -119,51 +130,72 @@ func _shots(shot: String, at: Array) -> void:
 		_still("%s_%03d" % [shot, n])
 
 
-## Spawns a helicopter for each of `toward` and parks it on its circle toward that point for
-## PARK frames (the view draws it first, then they hold over the street); returns them.
+## Spawns a helicopter for each of `toward` and hangs it there (the sim's own orbit, flattened to a
+## fixed point: no dive, no sweep) for PARK frames, so the view draws it before the shot.
 func _spawn(toward: Array[Vector2]) -> Array[AirWing.Heli]:
 	var sim := _rampage.sim
+	sim.air.cfg["orbit_speed"] = 0.0
+	sim.air.cfg["dive"] = 1.0
 	sim.events.clear()
 	var helis: Array[AirWing.Heli] = []
 	for n: int in toward.size():
-		helis.append(sim.air.spawn())
+		var heli := sim.air.spawn()
+		var out: Vector2 = toward[n] - sim.kaiju_pos
+		heli.angle = out.angle()
+		heli.radius = out.length()
+		heli.cruise = out.length()
+		heli.pos = toward[n]
+		helis.append(heli)
 		_hand_over(sim)
 	for i: int in PARK:
-		for n: int in helis.size():
-			var heli: AirWing.Heli = helis[n]
-			var at: Vector2 = toward[n]
-			heli.pos = at
-			heli.angle = (at - sim.kaiju_pos).angle()
 		await physics_frame
 	for node: Node3D in _rampage._powers.helis():
 		print("parked helicopter opacity %.2f" % Num.f(node.get_meta("opacity", 1.0)))
 	return helis
 
 
-## Downs `heli` alone with a last blow of `share` of its hp. A spin falls straight onto `land`
-## (the sim's crash point and the view's wreck both), wherever it was hit.
-func _blow(heli: AirWing.Heli, share: float, land: Vector2) -> void:
+## The kaiju's own claw swipe downs `heli`: the arm lifts (the swipe's windup, 0.3 s) and the rake
+## lands on it, through the sim's own hit path. `apart` sets the blow's weight: a killing blow
+## that blows it apart in the air, or a glancing one that spins it down. Returns on the frame the
+## sim downs it.
+func _swat(heli: AirWing.Heli, apart: bool, land := Vector2.ZERO) -> void:
 	var sim := _rampage.sim
-	var hp := Num.f(sim.air.cfg["hp"])
-	heli.hp = hp * share * 0.5
-	var at := heli.pos
-	sim.events.clear()
-	sim.air.hit(
-		func(p: Vector2, _r: float) -> float: return 1.0 if p.distance_to(at) < 1.0 else 0.0,
-		hp * share,
-		true
+	sim.air.cfg["blow_apart"] = 0.0 if apart else 99.0
+	if not apart:
+		_aim_fall(heli, land)
+	heli.hp = 0.5
+	var swipe: ClawSwipe = sim.powers.swipe
+	swipe._timer = Num.f(sim.powers_cfg["swipe_windup"]) + 0.01
+	var before := sim.air.destroyed
+	var guard := 0
+	print(
+		(
+			"swat: kaiju %s facing %s band %.1f..%.1f x %.1f, heli at %s hp %.1f swipes %d"
+			% [
+				sim.kaiju_pos,
+				sim.facing,
+				Num.f(sim.powers_cfg["swipe_near"]) * sim.body_scale(),
+				Num.f(sim.powers_cfg["swipe_far"]) * sim.body_scale(),
+				sim.stat("swipe_width") * sim.body_scale(),
+				heli.pos,
+				heli.hp,
+				swipe.swipes
+			]
+		)
 	)
-	for down: AirWing.Falling in sim.air.falling:
-		if down.id == heli.id:
-			down.drift = Vector2.ZERO
-			down.pos = land
-	for event: Dictionary in sim.events:
-		if event.has("dx"):
-			event["dx"] = 0.0
-			event["dz"] = 0.0
-			event["x"] = land.x
-			event["z"] = land.y
-	_hand_over(sim)
+	while sim.air.destroyed == before and guard < 120:
+		await physics_frame
+		guard += 1
+		if guard % 20 == 0:
+			print(
+				(
+					"  f%d destroyed %d hp %.1f timer %.2f pos %s"
+					% [guard, sim.air.destroyed, heli.hp, swipe._timer, heli.pos]
+				)
+			)
+	_report_dither()
+	swipe._timer = 999.0  # the next one is called by the shot, never by the clock
+	print("swat: downed after %d frames, blow %.1f" % [guard, heli.last_blow])
 
 
 ## The game's frame as a still, and a 2x crop of it round the spot (the helicopter's height).
@@ -194,6 +226,55 @@ func _reference_fire() -> void:
 	fire.global_position = Vector3(_spot.x + REF_OFFSET.x, 0.0, _spot.y + REF_OFFSET.y)
 
 
+## Prints the lowest screen-door opacity on any dying helicopter part now in the view (1 = solid).
+func _report_dither() -> void:
+	var low := 1.0
+	var parts := 0
+	for node: Node in _rampage._powers._wrecks._debris.find_children(
+		"*", "MultiMeshInstance3D", true, false
+	):
+		var mat := (node as MultiMeshInstance3D).material_override as ShaderMaterial
+		if mat != null and mat.shader != null and mat.shader.code.contains("ember_light"):
+			parts += 1
+			low = minf(low, Num.f(mat.get_shader_parameter("opacity")))
+	print("dither check: %d voxel parts in the view, lowest opacity %.2f" % [parts, low])
+
+
+## Moves a hung helicopter from `from` to `to` over `frames` frames (its orbit's angle and radius).
+func _slide(heli: AirWing.Heli, from: Vector2, to: Vector2, frames: int) -> void:
+	var sim := _rampage.sim
+	for n: int in frames:
+		var at := from.lerp(to, float(n + 1) / frames)
+		var out := at - sim.kaiju_pos
+		heli.angle = out.angle()
+		heli.radius = out.length()
+		heli.cruise = out.length()
+		await physics_frame
+
+
+## Aims the sim's fall: the seeded draw that picks a falling wreck's drift direction is set to one
+## that drifts `heli` onto `land` (fall_drift set to the distance), so it crashes on that block.
+func _aim_fall(heli: AirWing.Heli, land: Vector2) -> void:
+	var air := _rampage.sim.air
+	var way := land - heli.pos
+	air.cfg["fall_drift"] = way.length()
+	var want := fposmod(way.angle(), TAU) / TAU
+	var rng := RandomNumberGenerator.new()
+	for seed_value: int in 400000:
+		rng.seed = seed_value
+		if absf(rng.randf() - want) < 0.0004:
+			air._fall_rng.seed = seed_value
+			break
+	print("fall aimed: %.1f m, angle share %.4f" % [way.length(), want])
+
+
+## The point `at` (body-scale units: ahead, to the side) from the kaiju's feet, on the ground plane.
+func _spot_from(at: Vector2) -> Vector2:
+	var sim := _rampage.sim
+	var ahead := sim.facing
+	return sim.kaiju_pos + (ahead * at.x + ahead.orthogonal() * at.y) * sim.body_scale()
+
+
 ## Events made outside a step (this script's spawn and kill) go to the view as a step's would.
 func _hand_over(sim: RampageSim) -> void:
 	for event: Dictionary in sim.events:
@@ -202,9 +283,12 @@ func _hand_over(sim: RampageSim) -> void:
 
 ## Standing voxels of the building the wreck lands beside: what its smashed floors lower.
 func _alive() -> int:
+	if _block < 0:
+		return 0
 	var grid := _rampage.sim.carving.frame(_block)  # the fine grid, once the building is carved
-	var own: VoxelFrame = _rampage.sim.buildings[_block].frame if grid == null else grid
-	return own.alive_count
+	if grid != null:
+		return grid.alive_count
+	return _rampage.sim.buildings[_block].frame.alive_count
 
 
 ## The spot moved to the camera-side face of the nearest low building, so the wreck's crash smashes
@@ -212,15 +296,14 @@ func _alive() -> int:
 func _block_beside(from: Vector2) -> Vector2:
 	var best := from
 	var gap := INF
+	_block = -1
 	for b: RampageSim.Building in _rampage.sim.buildings:
 		if b.height > LOW_BLOCK or b.w < 5 or b.frame.alive_count == 0:
 			continue
-		var d := Vector2(b.x, b.z).distance_to(from)
-		if d < gap:
-			gap = d
+		var face := Vector2(b.x, b.z + b.d * 0.5 + 1.2)  # the camera-side face
+		if face.distance_to(from) < gap:
+			gap = face.distance_to(from)
 			_block = _rampage.sim.buildings.find(b)
-			best = Vector2(b.x, b.z + b.d * 0.5 + 1.0)
-	print(
-		"spot %s -> %s (%.1f off, tier %d)" % [from, best, gap, _rampage.sim.buildings[_block].tier]
-	)
+			best = face
+	print("spot %s -> %s (%.1f off)" % [from, best, gap])
 	return best

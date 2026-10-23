@@ -5,6 +5,9 @@ extends Node3D
 ## arc, a few trailing Fire, then bouncing once, lying on the street and fading away. Cosmetic:
 ## nothing here is a physics body or decides an outcome (D-094). Numbers: tuning "heli_wreck".
 
+## A heavy piece (the burning hull) met the street at `at`: the impact beat (HeliWreck).
+signal landed(at: Vector3)
+
 const CHARCOAL := Color("3a3d40")
 const SCORCH := Color("5a4a36")
 const COLORS: Array[Color] = [HelicopterModel.TAN, CHARCOAL, SCORCH, HelicopterModel.TAN]
@@ -30,6 +33,9 @@ class Piece:
 	var fire_left := 0.0
 	var vanish := -1.0  # a part that burns away this many seconds after it is thrown (-1: stays)
 	var age := 0.0
+	var heavy := false  # the burning hull: smoke trail, firelight on it, an impact when it lands
+	var trail: GPUParticles3D
+	var struck := false  # a heavy piece has met the street
 
 
 func _init(cfg: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -38,7 +44,8 @@ func _init(cfg: Dictionary, rng: RandomNumberGenerator) -> void:
 
 
 ## Throws `node` (in the tree, its world transform kept) with `vel`, tumbling at `spin` rad/s; a
-## `fire_size` above 0 sets it burning. Set the piece's `half`: its middle's height lying down.
+## `fire_size` above 0 sets it burning (flames that ride it). Set the piece's `half`: its middle's
+## height lying down.
 func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0) -> Piece:
 	var piece := Piece.new()
 	if not node is MeshInstance3D:  # a model part (voxels): chunks and blades land on any face
@@ -47,11 +54,20 @@ func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0) -> Piece
 	piece.vel = vel
 	piece.spin = spin
 	if fire_size > 0.0:
-		piece.fire = Fire.new(fire_size, _rng.randf() * 10.0)
+		var smoke := Num.f(_cfg["piece_smoke"])
+		piece.fire = HeliFx.riding_fire(fire_size, _rng.randf() * 10.0, _cfg, smoke)
 		add_child(piece.fire)
 		piece.fire.global_position = node.global_position
 	_pieces.append(piece)
 	return piece
+
+
+## Makes a thrown piece heavy (the burning hull): it trails smoke, is lit from under by its own fire
+## and its landing is an impact (`landed`).
+func make_heavy(piece: Piece) -> void:
+	piece.heavy = true
+	piece.trail = HeliFx.smoke_trail(self, _cfg, Num.f(_cfg["piece_trail"]))
+	piece.trail.global_position = piece.node.global_position
 
 
 ## `count` chunks from `at`, thrown out and up at the tuning's speeds; `burning` of them carry a
@@ -103,7 +119,20 @@ func _step(piece: Piece, delta: float, gravity: float) -> bool:
 		return false
 	if piece.fire != null and not piece.fire.is_out():
 		piece.fire.global_position = node.global_position
+	if piece.heavy:
+		_burn(piece)
 	return true
+
+
+## A heavy piece burning: its smoke trail follows it, and the fire under it lights its underside
+## (flickering) so it reads as a helicopter, not a black shape, while it falls and lies.
+func _burn(piece: Piece) -> void:
+	if piece.trail != null:
+		piece.trail.global_position = piece.node.global_position
+	var lit := piece.fire != null and not piece.fire.is_out()
+	var flicker := 1.0 + 0.25 * sin(piece.age * 23.0) + 0.15 * sin(piece.age * 37.0)
+	var glow := Color(str(_cfg["ember_light"])) * Num.f(_cfg["hull_ember"]) * flicker
+	VehicleParts.set_ember(piece.node, glow if lit else Color.BLACK)
 
 
 ## A part that burns away (a rotor) shrinks to nothing; true once it is gone and freed.
@@ -136,6 +165,12 @@ func _lie(piece: Piece, delta: float) -> bool:
 func _land(piece: Piece) -> void:
 	var node := piece.node
 	node.global_position.y = piece.half
+	if piece.heavy and not piece.struck:
+		piece.struck = true
+		landed.emit(node.global_position)
+		if piece.trail != null:
+			HeliFx.end_trail(piece.trail)
+			piece.trail = null
 	if piece.vel.y < BOUNCE_BELOW:
 		piece.vel = Vector3(piece.vel.x * 0.5, -piece.vel.y * BOUNCE_KEEP, piece.vel.z * 0.5)
 		piece.spin *= 0.5
@@ -155,6 +190,9 @@ func _put_out(piece: Piece) -> void:
 	if piece.fire != null:
 		piece.fire.go_out()
 		piece.fire = null
+	if piece.trail != null:
+		HeliFx.end_trail(piece.trail)
+		piece.trail = null
 
 
 func _spin(rate: float) -> Vector3:

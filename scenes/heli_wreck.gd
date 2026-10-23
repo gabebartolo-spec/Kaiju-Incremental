@@ -1,18 +1,17 @@
 class_name HeliWreck
 extends Node3D
 ## How a downed helicopter looks (D-140, D-141, D-145; the sim's AirWing decides which):
-## "burst" blows it apart in the air (a flash and a light, a ball of Fire's flame voxels, a smoke
-## puff, the model's own rotors, gun and body thrown out on visible arcs with flames and chunks);
-## "spin" sets it burning and falling along the sim's drift, flames along its body and a thick
+## "burst" blows it apart in the air (a flash and a light, a ball of Fire's flame voxels hot at the
+## core and shrinking to specks at the rim, lobed smoke rising off it, the camera kicked on that
+## frame; the model's own rotors, gun and body thrown out on visible arcs, the hull burning, lit by
+## its fire and trailing smoke until it lands with an impact); "spin" sets it burning and falling
+## along the sim's drift, its rotors sheared off, flames along its body lit from under and a thick
 ## smoke trail behind it, pitching, rolling and spinning faster, crew bailing out under pale
-## canopies, until "heli_crashed" lands it: a flash and light, a fireball, dust and a ring, its
-## rotors thrown off and its body left burning; "grabbed" just takes the model away (the
-## tentacle's throw draws the rest). Every look is an existing family (docs/VFX_STYLE.md): Fire,
-## smoke, dust, flashes, debris (HeliFx, HeliDebris). Numbers: tuning "heli_wreck". Part of
-## PowersView. Presentation only.
+## canopies (HeliCrew), until "heli_crashed" lands it: a flash and light, a fireball, dust and a
+## ring, its body left burning; "grabbed" just takes the model away (the tentacle's throw draws the
+## rest). Every look is an existing family (docs/VFX_STYLE.md): Fire, smoke, dust, flashes, debris
+## (HeliFx, HeliDebris). Numbers: tuning "heli_wreck". Part of PowersView. Presentation only.
 
-const CREW_OUTFIT := 2  # VoxelPerson.ROOFTOP_OUTFITS: a soldier in drab
-const CANOPY := Color("e2dac4")
 const PARTS := 4  # the model's parts: hull, main rotor, tail rotor, gun
 const WRECK_HALF := 0.7  # how high the body's middle rides when it lies on the street
 const BLAST := Color("ffb468")
@@ -24,10 +23,10 @@ var _city: CityView
 var _sim: RampageSim
 var _cfg: Dictionary
 var _debris: HeliDebris
+var _crew: HeliCrew
 var _rng := Seeds.make("heli_wreck")
 ## id -> Fall: wrecks falling.
 var _falling: Dictionary = {}
-var _crew: Array[Chute] = []
 
 
 ## A wreck falling along the sim's drift, trailing its fire and smoke.
@@ -43,21 +42,15 @@ class Fall:
 	var yaw := 0.0
 
 
-## A crew member under a canopy, drifting from `from` to `to`.
-class Chute:
-	var node: Node3D
-	var from: Vector3
-	var to: Vector3
-	var seconds: float
-	var t := 0.0
-
-
 func _init(city: CityView, sim: RampageSim) -> void:
 	_city = city
 	_sim = sim
 	_cfg = Content.section("heli_wreck")
 	_debris = HeliDebris.new(_cfg, _rng)
+	_debris.landed.connect(_hull_landed)
 	add_child(_debris)
+	_crew = HeliCrew.new(_cfg)
+	add_child(_crew)
 
 
 ## The sim downed helicopter `node` (its model, already off the circle) with `event`.
@@ -96,17 +89,13 @@ func crashed(event: Dictionary) -> void:
 	HeliFx.smoke_puff(_city, ground + Vector3(0, 1.5, 0), _cfg, Num.f(_cfg["crash_smoke"]))
 	# A lasting fire at the wreck: real flame tongues, less of Fire's own smoke column.
 	var burning := _city.fire(
-		ground, Num.f(_cfg["crash_fire"]), _tongues(Num.f(_cfg["crash_smoke_density"]))
+		ground, Num.f(_cfg["crash_fire"]), HeliFx.tongues(_cfg, Num.f(_cfg["crash_smoke_density"]))
 	)
-	var glow := PooledLight.new("fire")  # a zoomed fire has no light of its own: this one
-	glow.light_color = Color("ff8a3a")
-	glow.omni_range = 16.0
-	glow.set_energy(Num.f(_cfg["hull_light"]))
-	glow.position = Vector3(0, 2.0, 0)
-	burning.add_child(glow)
+	burning.add_child(_firelight(Vector3(0, 2.0, 0)))  # a zoomed fire has no light of its own
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
 	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
+	_trauma("heli_crash", ground)
 	if sfx != null:
 		sfx.play_at("heli_crash", ground)
 
@@ -114,37 +103,11 @@ func crashed(event: Dictionary) -> void:
 func _process(delta: float) -> void:
 	for fall: Fall in _falling.values():
 		_fall(fall, delta)
-	var still: Array[Chute] = []
-	for chute: Chute in _crew:
-		chute.t += delta
-		var u := chute.t / chute.seconds
-		if u >= 1.0:
-			chute.node.queue_free()
-			continue
-		chute.node.position = chute.from.lerp(chute.to, u)
-		chute.node.rotation.z = sin(chute.t * 2.0) * 0.15  # swinging under the canopy
-		still.append(chute)
-	_crew = still
 
 
 ## One frame of a wreck falling: its height drops slowly then fast (it falls, it is not lowered),
-## it pitches nose down, rolls and spins up as it goes; its flames and smoke follow it.
-## Fire's own options for a flame body: Fire's zoom (the same fire with every size and speed
-## multiplied: flames `flame_zoom` times larger, taller than wide and overlapping, so they read as
-## one body at the game camera), the smoke kept at street size and thinned to `smoke`.
-func _tongues(smoke: float) -> Dictionary:
-	var zoom := Num.f(_cfg["flame_zoom"])
-	return {
-		"zoom": zoom,
-		"smoke_share": 1.0 / zoom,
-		"density": Num.f(_cfg["flame_density"]),
-		"wind": 1.0,
-		"puff": 1.0,
-		"ember_density": 0.2,
-		"smoke_density": smoke,
-	}
-
-
+## it pitches nose down, rolls and spins up as it goes; its flames and smoke follow it, and the fire
+## lights its hull from under.
 func _fall(fall: Fall, delta: float) -> void:
 	fall.t += delta
 	var u := clampf(fall.t / fall.seconds, 0.0, 1.0)
@@ -164,6 +127,9 @@ func _fall(fall: Fall, delta: float) -> void:
 		var offset := Vector3(0, 0.5, (k - 1) * along)
 		fall.fires[k].global_position = fall.node.to_global(offset)
 	fall.trail.global_position = fall.node.global_position
+	var flicker := 1.0 + 0.25 * sin(fall.t * 23.0) + 0.15 * sin(fall.t * 37.0)
+	var glow := Color(str(_cfg["ember_light"])) * Num.f(_cfg["hull_ember"]) * flicker
+	VehicleParts.set_ember(fall.node, glow)
 
 
 func _end_fall(fall: Fall) -> void:
@@ -178,11 +144,9 @@ func _burst(node: Node3D, at: Vector3) -> void:
 	HeliFx.flare(_city, at, Num.f(_cfg["flare_size"]), Num.f(_cfg["flare_seconds"]))
 	_city.flash(at, BLAST, Num.f(_cfg["burst_light"]), Num.f(_cfg["burst_light_seconds"]))
 	HeliFx.fireball(_city, at, _cfg)
-	HeliFx.smoke_puff(_city, at + Vector3(0, 1.0, 0), _cfg)
-	var fire := Fire.new(Num.f(_cfg["burst_fire"]), at.x + at.z)
-	_city.add_child(fire)
-	fire.global_position = at
-	get_tree().create_timer(Num.f(_cfg["burst_seconds"])).timeout.connect(fire.go_out)
+	get_tree().create_timer(Num.f(_cfg["smoke_delay"])).timeout.connect(
+		func() -> void: HeliFx.smoke_puff(_city, at, _cfg)  # the flames first
+	)
 	VehicleParts.flash(
 		node,
 		self,
@@ -192,8 +156,33 @@ func _burst(node: Node3D, at: Vector3) -> void:
 	)
 	_break_up(node, 1.0, true)
 	_debris.shards(at, Num.i(_cfg["burst_shards"]), Num.i(_cfg["burst_burning"]))
+	_trauma("heli_burst", at)
 	if sfx != null:
 		sfx.play_at("heli_crash", at)
+
+
+## The burning hull met the street: a short flash and light, the street's own dust and its ring, the
+## camera kicked. Its flames are already burning (they rode it down).
+func _hull_landed(at: Vector3) -> void:
+	var ground := Vector3(at.x, 0.0, at.z)
+	HeliFx.flare(_city, ground + Vector3(0, 1.2, 0), Num.f(_cfg["land_flare"]), 0.1)
+	_city.flash(
+		ground + Vector3(0, 1.5, 0),
+		CRASH_BLAST,
+		Num.f(_cfg["land_light"]),
+		Num.f(_cfg["land_light_seconds"])
+	)
+	_city.fx.dust(ground + Vector3(0, 0.4, 0), Num.f(_cfg["land_dust"]))
+	_city.fx.shockwave(ground, Num.f(_cfg["land_ring"]))
+	_trauma("heli_land", ground)
+
+
+## The camera's kick for `kind` (tuning camera_shake.sources) from a hit at `at`; the rampage owns
+## the shake (PowersView's parent), a view without one just skips it.
+func _trauma(kind: String, at: Vector3) -> void:
+	var rampage := get_parent().get_parent() as Rampage if get_parent() != null else null
+	if rampage != null:
+		rampage.add_trauma(rampage.shake.source(kind), at)
 
 
 ## The model's parts thrown from where they are (`reach` scales the throw; `in_air`: the body
@@ -205,7 +194,8 @@ func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 		return
 	var parts := (node as HelicopterModel).break_up(_debris)
 	for n: int in parts.size():
-		_throw_part(parts[n], n, reach, in_air)
+		if parts[n] != null:
+			_throw_part(parts[n], n, reach, in_air)
 	node.queue_free()
 
 
@@ -227,8 +217,11 @@ func _throw_part(part: Node3D, n: int, reach: float, in_air: bool) -> void:
 	if body and not in_air:
 		vel = Vector3.ZERO
 		spin = Vector3.ZERO
-	var fire_size := Num.f(_cfg["part_fire"]) if in_air and n % 2 == 0 else 0.0  # body, tail
+	var burning := body and in_air  # the hull flies on burning: flames, smoke, firelight, an impact
+	var fire_size := Num.f(_cfg["hull_fire"]) if burning else 0.0
 	var piece := _debris.throw(part, vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
+	if burning:
+		_debris.make_heavy(piece)
 	piece.half = WRECK_HALF
 	if n == 1 or n == 2:  # the rotors burn away at once: nothing plus-shaped is left lying
 		piece.vanish = Num.f(_cfg["rotor_vanish"])
@@ -242,6 +235,11 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	if not node.is_inside_tree():
 		add_child(node)  # a model the view never drew still carries the fire down
 	VehicleParts.set_opacity(node, 1.0)  # no longer fading for the camera: a solid wreck
+	VehicleParts.flash(node, self, 0.0, 0.1, Num.f(_cfg["hull_char_seconds"]))  # it chars, no flash
+	if node is HelicopterModel:  # the rotors shear off at the first blow: no plus sign in the air
+		var rotors := (node as HelicopterModel).shed_rotors(_debris)
+		for n: int in rotors.size():
+			_throw_part(rotors[n], n + 1, 1.0, true)
 	var fall := Fall.new()
 	fall.node = node
 	fall.from = at
@@ -251,102 +249,28 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	if fall.side.length() < 0.5:
 		fall.side = Vector3.RIGHT
 	for k: int in 3:  # flames along the body: nose, middle, tail
-		var fire := Fire.new(
-			Num.f(_cfg["trail_fire"]), at.x - at.z + k, _tongues(Num.f(_cfg["hull_smoke"]))
+		var fire := HeliFx.riding_fire(
+			Num.f(_cfg["trail_fire"]), at.x - at.z + k, _cfg, Num.f(_cfg["hull_smoke"])
 		)
 		_city.add_child(fire)
 		fire.global_position = at
-		for child: Node in fire.get_children():
-			if child is GPUParticles3D:  # the first is the flames: they ride the hull, not trail it
-				(child as GPUParticles3D).local_coords = true
-				break
 		fall.fires.append(fire)
-	var glow := PooledLight.new("fire")  # the burning hull lights itself and the street
-	glow.light_color = Color("ff8a3a")
-	glow.omni_range = 14.0
-	glow.set_energy(Num.f(_cfg["hull_light"]))
-	glow.position = Vector3(0, 1.0, 0)
-	node.add_child(glow)
+	node.add_child(_firelight(Vector3(0, 1.0, 0), 14.0))  # the burning hull lights itself
 	fall.trail = HeliFx.smoke_trail(_city, _cfg)
 	_falling[Num.i(event["heli"])] = fall
 	HeliFx.flare(_city, at, Num.f(_cfg["hit_flare"]), Num.f(_cfg["flare_seconds"]))
 	_city.flash(at, CRASH_BLAST, Num.f(_cfg["hit_light"]), 0.3)
 	HeliFx.smoke_puff(_city, at, _cfg, Num.f(_cfg["hit_smoke"]))
+	_trauma("heli_burst", at)
 	for n: int in Num.i(event.get("crew", 0)):
-		_jump(at + Vector3((n - 0.5) * 7.0, -0.5, 1.5), fall.drift)
+		_crew.jump(at + Vector3(1.0 + n * 4.0, -0.5, 1.5), fall.drift)
 
 
-## One crew member bailing out: a soldier hanging under a pale canopy, drifting down with the wind.
-func _jump(from: Vector3, drift: Vector3) -> void:
-	var voxel := Num.f(Content.section("street")["person_voxel"])
-	var person := MeshInstance3D.new()
-	person.mesh = VoxelPerson.dressed(
-		VoxelPerson.ROOFTOP_OUTFITS[CREW_OUTFIT], VoxelPerson.Pose.RUN_A, voxel
-	)
-	person.scale = Vector3.ONE * Num.f(_cfg["crew_scale"])  # big enough to read under the canopy
-	add_child(person)
-	var canopy := _canopy()
-	canopy.scale = Vector3.ONE / Num.f(_cfg["crew_scale"])  # the dome keeps its own size
-	person.add_child(canopy)
-	var seconds := from.y / Num.f(_cfg["chute_speed"])
-	var chute := Chute.new()
-	chute.node = person
-	chute.from = from
-	chute.to = Vector3(from.x, 0.0, from.z) + drift * seconds * 0.5
-	chute.seconds = seconds
-	_crew.append(chute)
-
-
-## A voxel dome of pale fabric in alternating panels (one MultiMesh of cubes, widest at the rim),
-## shroud lines down to the soldier's shoulders. It catches a little light of its own so it reads at
-## night, under the bloom.
-func _canopy() -> Node3D:
-	var out := Node3D.new()
-	var voxel := Num.f(_cfg["canopy_voxel"])
-	var width := Num.f(_cfg["canopy_width"])
-	var hang := Num.f(_cfg["canopy_hang"])
-	var rim := roundi(width * 0.5 / voxel)
-	var rise := maxi(1, roundi(rim * 0.55))
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.emission_enabled = true
-	mat.emission = CANOPY
-	mat.emission_energy_multiplier = Num.f(_cfg["canopy_glow"])
-	var cube := BoxMesh.new()
-	cube.size = Vector3.ONE * voxel
-	cube.material = mat
-	var cells: Array[Vector3] = []
-	for x: int in range(-rim, rim + 1):
-		for z: int in range(-rim, rim + 1):
-			for y: int in rise + 1:
-				var flat := Vector2(x, z).length_squared() / float(rim * rim)
-				if flat + float(y * y) / float(rise * rise) <= 1.0:
-					cells.append(Vector3(x, y, z))
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	mm.mesh = cube
-	mm.instance_count = cells.size()
-	for n: int in cells.size():
-		var cell := cells[n]
-		mm.set_instance_transform(n, Transform3D(Basis(), cell * voxel))
-		var panel := int(floorf((atan2(cell.z, cell.x) + PI) / (TAU / 8.0))) % 2
-		mm.set_instance_color(n, CANOPY if panel == 0 else CANOPY.darkened(0.28))
-	var dome := MultiMeshInstance3D.new()
-	dome.multimesh = mm
-	dome.position = Vector3(0, hang, 0)
-	out.add_child(dome)
-	for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
-		var from := Vector3(corner.x * width * 0.4, hang, corner.y * width * 0.4)
-		out.add_child(_line(from, Vector3(0, hang * 0.45, 0), mat))
-	return out
-
-
-func _line(from: Vector3, to: Vector3, mat: Material) -> MeshInstance3D:
-	var box := BoxMesh.new()
-	box.size = Vector3(0.04, 0.04, from.distance_to(to))
-	box.material = mat
-	var line := MeshInstance3D.new()
-	line.mesh = box
-	line.transform = Transform3D(Basis.looking_at(to - from), (from + to) * 0.5)
-	return line
+## A pooled orange light that rides a burning wreck (`reach` m).
+func _firelight(at: Vector3, reach := 16.0) -> PooledLight:
+	var glow := PooledLight.new("fire")
+	glow.light_color = CRASH_BLAST
+	glow.omni_range = reach
+	glow.set_energy(Num.f(_cfg["hull_light"]))
+	glow.position = at
+	return glow

@@ -11,6 +11,9 @@ uniform float opacity = 1.0;
 uniform float flash = 0.0;
 // 0..1: the part chars dark (a helicopter hull burning after it breaks), 0 = unchanged.
 uniform float scorch = 0.0;
+// Firelight on a burning part (a helicopter hull going down): the colour of the fire under it
+// (HDR), thrown most on faces turned down and a little everywhere, added as light. Black = none.
+uniform vec3 ember_light = vec3(0.0);
 const float DITHER_PX = 2.0;  // a 4K-readable pattern: each dither cell 2 physical pixels
 const float BAYER[16] = float[](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
 
@@ -29,5 +32,7 @@ void fragment() {
 	albedo *= mix(1.0, 0.16, scorch);
 	ALBEDO = albedo;
 	ROUGHNESS = roughness_value;
-	EMISSION = albedo * glow * (1.0 - COLOR.a) + vec3(flash);
+	float down = 0.5 - 0.5 * (INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).y;
+	float tone = 0.55 + 1.3 * dot(srgb_to_linear(COLOR.rgb), vec3(0.333));
+	EMISSION = albedo * glow * (1.0 - COLOR.a) + vec3(flash) + ember_light * (0.3 + 0.7 * down) * tone;
 }

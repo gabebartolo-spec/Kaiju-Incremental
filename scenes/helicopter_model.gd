@@ -18,6 +18,7 @@ var _tail_rotor: Node3D
 var _gun: Node3D
 var _cfg: Dictionary
 var _muzzle := Vector3.ZERO  # in the gun's space
+var _shed := false  # the rotors have been sheared off (shed_rotors)
 
 
 func _init() -> void:
@@ -33,6 +34,8 @@ func _init() -> void:
 
 
 func _process(delta: float) -> void:
+	if _shed:
+		return
 	_main_rotor.rotation.y += delta * Num.f(_cfg["main_rotor_spin"])
 	_tail_rotor.rotation.x += delta * Num.f(_cfg["tail_rotor_spin"])
 
@@ -51,12 +54,30 @@ func fire() -> Vector3:
 	return _gun.to_global(_muzzle)
 
 
+## Shears both rotors off the hull (a wreck's first blow) into `into`, world transforms kept, and
+## returns [main, tail] to throw: a dying helicopter never turns a plus sign in the air.
+func shed_rotors(into: Node3D) -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	for part: Node3D in [_main_rotor, _tail_rotor]:
+		var at := part.global_transform
+		part.get_parent().remove_child(part)
+		into.add_child(part)
+		part.global_transform = at
+		out.append(part)
+	_shed = true
+	return out
+
+
 ## Takes the body, both rotors and the gun off the helicopter into `into` (world transforms kept)
-## and returns them: a wreck's pieces to throw. The helicopter is left empty.
+## and returns them (hull, main rotor, tail rotor, gun; null for a rotor already shed): a wreck's
+## pieces to throw. The helicopter is left empty.
 func break_up(into: Node3D) -> Array[Node3D]:
 	VehicleParts.set_opacity(self, 1.0)  # it was fading as a screen door: pieces are solid
 	var out: Array[Node3D] = []
 	for part: Node3D in [_body, _main_rotor, _tail_rotor, _gun]:
+		if _shed and (part == _main_rotor or part == _tail_rotor):
+			out.append(null)  # already thrown (shed_rotors): the slot stays so the indices hold
+			continue
 		var at := part.global_transform
 		part.get_parent().remove_child(part)
 		into.add_child(part)

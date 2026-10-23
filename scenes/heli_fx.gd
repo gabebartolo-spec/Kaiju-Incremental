@@ -32,41 +32,137 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	tween.tween_callback(flash.queue_free)
 
 
-## The explosion look: the shared blast recipe (BlastParts.fireball, Fire's own flames in a sudden
-## tall burst) out of a box about the helicopter's size. `scale` multiplies the box and the blast
-## radius (a crash's is smaller than a kill's).
+## The explosion's ball of fire: Fire's own flame (its voxel at its own size, ember shader, colour
+## ramp, scale spread), thrown out of a box about the helicopter's size and over `ball.build`
+## seconds, so the youngest flames, still white-yellow and small, sit in the middle and push the
+## older out: orange, then red, shrinking to a speck at the rim, which turbulence pulls into lobes.
+## It rises as it burns. A bigger ball is more flames, never bigger cubes. `scale` multiplies the
+## box and the throw (a crash's is smaller than a kill's).
 static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
+	var ball: Dictionary = cfg["ball"]
 	var wide := Num.f(cfg["fireball_radius"]) * scale
 	var half := Vector3(wide, Num.f(cfg["fireball_height"]) * scale, wide)
-	var blast := Num.f(cfg["fireball_blast_radius"]) * scale
-	var recipe: Dictionary = Content.section("blast_fx")["fireball"]  # the city's own blast numbers
-	BlastParts.fireball(parent, at, half, blast, recipe)
+	var cube := BoxMesh.new()
+	cube.size = Vector3.ONE * Fire.FLAME_CUBE
+	var hot := ShaderMaterial.new()
+	hot.shader = Fire.EMBER_SHADER
+	hot.set_shader_parameter("heat", Fire.BODY_HEAT)  # under 1: the plates stay orange
+	cube.material = hot
+	var life := Num.f(ball["seconds"])
+	var amount := roundi(Num.f(ball["amount"]) * scale)
+	_burst(
+		parent,
+		_ball_material(ball, half, scale),
+		cube,
+		amount,
+		life,
+		at,
+		1.0 - Num.f(ball["build"]) / life
+	)
 	var core: Dictionary = Content.section("blast_fx")["core"]  # the white-hot instant
 	BlastParts.core(parent, at, half, Num.f(cfg["core_radius"]) * scale, core)  # its own size
 
 
-## A smoke cloud of lobed puffs: the street's own puffs (Fx.dust, the smoke shader's noisy round
-## masks) tinted charred dark, stacked up and sideways so the cloud has lobes, not one round disc.
-static func smoke_puff(city: CityView, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
-	var tint := Color(str(cfg["lobe_tint"]), Num.f(cfg["lobe_alpha"]))
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(at)  # the same blast puffs the same way
-	var lobes := maxi(1, roundi(Num.f(cfg["lobes"]) * scale))
-	for n: int in lobes:
-		var side := Vector3(rng.randf_range(-1.0, 1.0), 0.0, rng.randf_range(-1.0, 1.0))
-		var up := Vector3(0.0, Num.f(cfg["lobe_rise"]) * scale * n / lobes, 0.0)
-		city.fx.dust(
-			at + side * Num.f(cfg["lobe_spread"]) * scale + up,
-			Num.f(cfg["lobe_size"]) * scale,
-			tint
-		)
+## The ball's particle physics: out of `half` in every direction, damped so the oldest flames stop
+## at the rim, lifted, pulled into lobes by turbulence, drawn on Fire's ramp and flame sizes.
+static func _ball_material(
+	ball: Dictionary, half: Vector3, scale: float
+) -> ParticleProcessMaterial:
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	mat.emission_box_extents = half
+	mat.direction = Vector3.UP
+	mat.spread = 180.0
+	var throw: Array = ball["speed"]
+	mat.initial_velocity_min = Num.f(throw[0]) * scale
+	mat.initial_velocity_max = Num.f(throw[1]) * scale
+	mat.damping_min = Num.f(ball["damping"])
+	mat.damping_max = Num.f(ball["damping"]) * 1.4
+	mat.gravity = Vector3(0, Num.f(ball["lift"]), 0)
+	mat.turbulence_enabled = true
+	mat.turbulence_noise_strength = Num.f(ball["turbulence"])
+	mat.turbulence_noise_scale = Num.f(ball["turbulence_scale"])
+	mat.turbulence_influence_min = 0.4
+	mat.turbulence_influence_max = 1.0
+	mat.scale_min = Fire.FLAME_SCALE.x * Num.f(ball["voxel"])
+	mat.scale_max = Fire.FLAME_SCALE.y * Num.f(ball["voxel"])
+	var shrink: Array = ball["shrink"]  # size: young and small, full in the body, a speck at the rim
+	var sizes := Curve.new()
+	for pt: Vector2 in [
+		Vector2(0.0, Num.f(shrink[0])),
+		Vector2(0.15, 1.0),
+		Vector2(0.6, Num.f(shrink[1])),
+		Vector2(1.0, Num.f(shrink[2]))
+	]:
+		sizes.add_point(pt)
+	var sizes_tex := CurveTexture.new()
+	sizes_tex.curve = sizes
+	mat.scale_curve = sizes_tex
+	var ramp_at: Array = ball["ramp_at"]  # a white-yellow core stop, then a tongue's body colours
+	var colors: Array[Color] = [Fire.CORE_COLORS[0]]
+	colors.append_array(Fire.BODY_COLORS.slice(2))
+	var flame := Gradient.new()
+	flame.colors = PackedColorArray(colors)
+	flame.offsets = PackedFloat32Array(ramp_at)
+	var ramp := GradientTexture1D.new()
+	ramp.gradient = flame
+	mat.color_ramp = ramp
+	return mat
+
+
+## The smoke of a kill: a plume of the smoke shader's puffs (family 2) thrown up from `lobe_base`
+## above the fire, rising and leaning with the wind over `plume_seconds`, so it stands above and
+## behind the flames and never in the middle of them.
+static func smoke_puff(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0) -> void:
+	var tinted := cfg.duplicate()  # young smoke glows with the flames under it, then goes charcoal
+	tinted["smoke_warm"] = cfg["plume_warm"]
+	tinted["smoke_mid"] = cfg["plume_mid"]
+	var mat := _smoke_mat(tinted)
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	mat.emission_sphere_radius = Num.f(cfg["lobe_spread"]) * scale
+	mat.direction = Vector3(0, 1, -0.4)  # up and away from the camera
+	mat.spread = 35.0
+	mat.initial_velocity_min = 1.0
+	mat.initial_velocity_max = 3.5
+	var rise := Vector3(0, Num.f(cfg["lobe_base"]) * scale, 0)
+	var puffs := maxi(1, roundi(Num.f(cfg["plume_puffs"]) * scale))
+	var quad := _smoke_quad(Num.f(cfg["lobe_size"]) * scale, cfg)
+	_burst(parent, mat, quad, puffs, Num.f(cfg["plume_seconds"]), at + rise, 0.5)
+
+
+## Fire's options for a flame body: Fire's zoom (the same fire with every size and speed
+## multiplied: flames `flame_zoom` times larger, taller than wide and overlapping, so they read as
+## one body at the game camera), the smoke kept at street size and thinned to `smoke`.
+static func tongues(cfg: Dictionary, smoke: float) -> Dictionary:
+	var zoom := Num.f(cfg["flame_zoom"])
+	return {
+		"zoom": zoom,
+		"smoke_share": 1.0 / zoom,
+		"density": Num.f(cfg["flame_density"]),
+		"wind": 1.0,
+		"puff": 1.0,
+		"ember_density": 0.2,
+		"smoke_density": smoke,
+	}
+
+
+## A Fire of tongues that rides a moving part: its flames are born in the part's own space (they
+## move with it, never left behind as a rope of cubes), its smoke trails.
+static func riding_fire(size: float, seed_value: float, cfg: Dictionary, smoke: float) -> Fire:
+	var fire := Fire.new(size, seed_value, tongues(cfg, smoke))
+	var moving := 0
+	for child: Node in fire.get_children():
+		if child is GPUParticles3D and moving < 2:  # the first two are the flames and their core
+			(child as GPUParticles3D).local_coords = true
+			moving += 1
+	return fire
 
 
 ## A thick smoke trail for a wreck on the move: puffs left in the air along its way (the
 ## particles stay where they are born), rising and leaning with the wind. The caller moves the
 ## node and calls go_out_trail when the wreck lands.
-static func smoke_trail(parent: Node3D, cfg: Dictionary) -> GPUParticles3D:
-	var size := Num.f(cfg["trail_smoke_size"])
+static func smoke_trail(parent: Node3D, cfg: Dictionary, share := 1.0) -> GPUParticles3D:
+	var size := Num.f(cfg["trail_smoke_size"]) * share
 	var dark := cfg.duplicate()  # a trail is darker and less self-lit than a fresh burst's smoke
 	dark["smoke_warm"] = cfg["trail_warm"]
 	dark["smoke_mid"] = cfg["trail_mid"]
@@ -83,7 +179,7 @@ static func smoke_trail(parent: Node3D, cfg: Dictionary) -> GPUParticles3D:
 	p.amount_ratio = GraphicsPresets.cap("particles")
 	p.process_material = mat
 	p.draw_pass_1 = _smoke_quad(size, dark)
-	p.amount = Num.i(cfg["trail_puffs"])
+	p.amount = maxi(1, roundi(Num.f(cfg["trail_puffs"]) * share))
 	p.lifetime = Num.f(cfg["trail_smoke_seconds"])
 	p.visibility_aabb = AABB(Vector3(-40, -10, -40), Vector3(80, 60, 80))
 	parent.add_child(p)
@@ -158,6 +254,7 @@ static func _burst(
 	p.one_shot = true
 	p.explosiveness = explosive
 	p.emitting = true
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	p.visibility_aabb = AABB(Vector3(-40, -10, -40), Vector3(80, 60, 80))
 	p.position = at
 	parent.add_child(p)
