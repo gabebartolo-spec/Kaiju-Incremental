@@ -2,6 +2,39 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-073 · Director · Croc baby and adolescent approved
+Why (10:5x): the P3 bodies from the croc titan design (D-059) are approved for the demo; clips kept, slam polish
+later. PR #54.
+
+## 2026-10-18 · D-074 · Director · Slow stage 1: the baby reads as a toddler
+Why (10:5x): slow stage 1 so the baby reads as a toddler; pacing re-measured in the P3 PR (#54).
+
+## 2026-10-18 · D-074a · Director · Baby speed ~0.6 with more hp; demo ~35 min
+Why (11:4x): revises D-074 with a target; superseded by the measured numbers in D-074b.
+
+## 2026-10-18 · D-074b · Director · Stage 1 at speed 0.6 and hp 1.15 (~43 min demo)
+Why (13:2x): ~0.6 h to evolve1 is unreachable at 0.6 speed (the sweep floors at ~0.66 h). Accepted ~0.71 h: about
+45% of early runs end in defeat and 87% of the city is destroyed by evolve1. PR #54.
+
+## 2026-10-18 · D-075 · Director · Green lots at 8% of the city
+Why (10:5x): answers D-065(b), the green-lot share tabled with its chunk and pacing table. City session, after
+greenery (a).
+
+## 2026-10-18 · D-076 · Director · Rooftops: more squads, firing more often
+Why (10:5x): "more squads, more often". Cause found: rifle reach was measured from the kaiju's centre. Plan in D-076a.
+
+## 2026-10-18 · D-076a · Lead · Rooftop density: reach from the stomp edge, more squads, a tenth of the chip
+Why: for D-076 at the same threat. Option A: chip per volley scaled down per tier so each stage's damage per run
+holds within ±5%; tanks unchanged; no HUD change (the hide spark is the hit read). PR #63.
+
+## 2026-10-18 · D-077 · Director · The tree's stats panel shows only what the selected node changes, in plain words
+Why (10:5x): the 12-number summary (STOMPS/S, RECHARGE, ARMOUR 0.0, SIZE 1 -> 2) read as software. Now the cost and
+the node's own stats ("Stomps hit harder: 13 -> 16"), lines from data/tuning.json "stat_text". MERGED #51 (997f516).
+
+## 2026-10-18 · D-078 · Director · Stadium matches: one random sport per run, players flee when the wall caves in
+Why (14:1x): AFL, NFL, soccer or cricket, random per run; presentation only, low-effort visual flavour, in the demo.
+Real cities make the sport deliberate later. Lands in #59 (landmarks session).
+
 ## 2026-10-18 · D-072 · Director · All four jets; strikes wreck buildings but give no biomass
 Why (10:5x): jets arrive from Colossus; the bomber is the Apex set-piece; the octopus can grab jets. PRs #58, #61
 (parked until after the demo).
