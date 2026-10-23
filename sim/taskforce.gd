@@ -5,12 +5,15 @@ extends RefCounted
 ## none in the young city), grapple and jet from roof to roof near the kaiju and perch. A perched
 ## agent aims a railgun: the aiming line tracks the kaiju, locks shortly before the shot, and the
 ## shot costs `railgun.share` of its max health if the kaiju still stands in the lock (a late
-## step dodges it). It also launches frost grenades at the kaiju's feet (TaskforceFrost). An
-## agent dies when the roof chunk it clings to goes (broken, dropped or toppled) or when a claw
-## swipe swats it out of the air mid-hop; each kill pays biomass. Part of Army; pure and
-## seeded from its own stream; numbers in data/tuning.json "taskforce". Presentation reads the
-## agents and the events (taskforce_deployed, railgun_aim, railgun_locked, railgun_hit,
-## railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died).
+## step dodges it). A squad shoots in volleys (TaskforceVolley, D-178): its lines lock together
+## and its shots land `railgun.squad_gap` seconds apart, so one dash saves the kaiju from the whole
+## squad and a squad lands at most 2 hits in a second (D-166). It also launches frost grenades at
+## the kaiju's feet (TaskforceFrost). An agent dies when the roof chunk it clings to goes (broken,
+## dropped or toppled) or when a claw swipe swats it out of the air mid-hop; each kill pays
+## biomass. Part of Army; pure and seeded from its own stream; numbers in data/tuning.json
+## "taskforce".
+## Presentation reads the agents and the events (taskforce_deployed, railgun_aim, railgun_locked,
+## railgun_hit, railgun_missed, frost_launched, frost_hit, frost_cracked, agent_died).
 
 const ARRIVE := 0  # jetpacking in from the map edge
 const HOP := 1  # grappling and jetting to another roof
@@ -37,11 +40,16 @@ class Agent:
 	var aim_at := Vector2.ZERO  # where the line points; locked once `locked`
 	var locked := false
 
+	## Where its railgun and grenades leave it.
+	func muzzle() -> Vector3:
+		return Vector3(pos.x, y, pos.y)
+
 
 var sim: RampageSim
 var cfg: Dictionary
 var frost: TaskforceFrost
 var perch: TaskforcePerch
+var volley: TaskforceVolley
 var agents: Array[Agent] = []
 ## Agents killed this run, and each squad's size as it arrived.
 var kills := 0
@@ -63,6 +71,8 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	var frost_cfg: Dictionary = cfg["frost"]
 	frost = TaskforceFrost.new(sim, frost_cfg)
 	perch = TaskforcePerch.new(sim, cfg, rng)
+	var rail: Dictionary = cfg["railgun"]
+	volley = TaskforceVolley.new(sim, rail)
 
 
 ## How many may be alive at once: none in the young city, the same from the adolescent city on.
@@ -90,20 +100,28 @@ func step(dt: float) -> void:
 			_timer = interval()
 			spawn_squad()
 	frost.step(dt)
+	_cool_down(dt)
+	volley.tick(dt, agents)
 	var fallen: Array[Agent] = []
 	for agent: Agent in agents:
-		agent.rail_cd = maxf(0.0, agent.rail_cd - dt)
-		agent.frost_cd = maxf(0.0, agent.frost_cd - dt)
 		if agent.state == ARRIVE or agent.state == HOP:
 			_fly(agent, dt)
 		elif not _holds(agent):
 			fallen.append(agent)
 		elif agent.state == AIM:
-			_aim(agent, dt)
+			volley.aim(agent, dt)
 		else:
 			_perched(agent, dt)
 	for agent: Agent in fallen:
 		_kill(agent, "perch_collapse", {})
+
+
+## Every agent's cooldowns run down before any agent acts, so a squad's gunners whose railguns
+## come ready on the same step all see it (a later-listed one would else read last step's value).
+func _cool_down(dt: float) -> void:
+	for agent: Agent in agents:
+		agent.rail_cd = maxf(0.0, agent.rail_cd - dt)
+		agent.frost_cd = maxf(0.0, agent.frost_cd - dt)
 
 
 ## A squad of 3-4 jetpacks in from a seeded point of the map edge, each bound for a roof near
@@ -257,67 +275,14 @@ func _holds(agent: Agent) -> bool:
 func _perched(agent: Agent, dt: float) -> void:
 	agent.wait -= dt
 	var dist := agent.pos.distance_to(sim.kaiju_pos)
-	if agent.rail_cd <= 0.0 and dist <= Num.f(_rail()["range"]):
-		agent.state = AIM
-		agent.aim_left = Num.f(_rail()["aim_seconds"])
-		agent.aim_at = sim.kaiju_pos
-		agent.locked = false
-		sim.events.append({"type": "railgun_aim", "agent": agent.id, "from": _muzzle(agent)})
+	if volley.ready(agent, dt) and dist <= Num.f(_rail()["range"]):
+		if not volley.busy(agent.squad):  # else it holds until its squad's volley is over (D-178)
+			volley.open(agent, agents, dt)
 	elif agent.frost_cd <= 0.0 and frost.reaches(dist):
 		agent.frost_cd = Num.f(frost.cfg["cooldown"])
-		frost.launch(agent.id, _muzzle(agent))
+		frost.launch(agent.id, agent.muzzle())
 	elif agent.wait <= 0.0:
 		_hop_to(agent, HOP, Num.f(cfg["jet_speed"]) * Num.f(cfg["hop_speed_share"]))
-
-
-## The railgun's line follows the kaiju until `lock_seconds` before the shot, then holds where it
-## was: the shot lands there, on the kaiju only if it still stands in the lock.
-func _aim(agent: Agent, dt: float) -> void:
-	agent.aim_left -= dt
-	if agent.aim_left > Num.f(_rail()["lock_seconds"]):
-		agent.aim_at = sim.kaiju_pos
-		return
-	if not agent.locked:
-		agent.locked = true
-		sim.events.append(
-			{"type": "railgun_locked", "agent": agent.id, "x": agent.aim_at.x, "z": agent.aim_at.y}
-		)
-	if agent.aim_left > 0.0:
-		return
-	_fire(agent)
-
-
-func _fire(agent: Agent) -> void:
-	var reach := Num.f(_rail()["hit_radius"])
-	var shot := {"type": "railgun_hit", "agent": agent.id, "from": _muzzle(agent)}
-	if sim.kaiju_pos.distance_to(agent.aim_at) <= reach:
-		# armour softens it as it does a tank's shell (D-161), never below the army's minimum
-		var damage := maxf(
-			Num.f(sim.army["min_damage"]), sim.max_hp * Num.f(_rail()["share"]) - sim.stat("armor")
-		)
-		sim.hp -= damage
-		# every hit fires the colour fringe (D-145); `share` is what it cost of max health
-		sim.events.append(
-			shot.merged(
-				{
-					"damage": damage,
-					"share": damage / sim.max_hp,
-					"x": sim.kaiju_pos.x,
-					"z": sim.kaiju_pos.y
-				}
-			)
-		)
-	else:
-		sim.events.append(
-			{"type": "railgun_missed", "agent": agent.id, "x": agent.aim_at.x, "z": agent.aim_at.y}
-		)
-	agent.state = PERCH
-	agent.rail_cd = Num.f(_rail()["cooldown"])
-	agent.wait = Num.f(_rail()["hop_after"])
-
-
-func _muzzle(agent: Agent) -> Vector3:
-	return Vector3(agent.pos.x, agent.y, agent.pos.y)
 
 
 ## What a kill pays: `rubble_share` of a tank's biomass in this city (D-152: about a tank's worth).
