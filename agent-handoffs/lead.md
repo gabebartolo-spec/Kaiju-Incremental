@@ -24,7 +24,9 @@
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
   Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
   picks via the lead), fall = view arc between the sim's death and crash points (lead: yes, D-183 leaves deaths as
-  they are), kill staging after the claw rake, claims measured in the clip. #175 SHIP 0ef8c0ab: go armed.
+  they are), kill staging after the claw rake, claims measured in the clip. #175 MERGED 3a3ee03d (go.txt cleared).
+  FL (world units): young 1.235, Behemoth 2.072, Colossus 3.706. Breathing r2 under the 3 px bar: if it fails, the
+  trade (amplitude or which part breathes) comes as one question with a clip, no round 3. Claw rake 515ac558 in critic.
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
   milestones, sound. Each tells the other before touching the other's files.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
