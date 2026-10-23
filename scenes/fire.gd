@@ -21,18 +21,23 @@ const FLAME_COLORS: Array[Color] = [
 ## mass) around a narrow, short, white-yellow CORE column. Colours and alpha over the life of a
 ## flame, which is its height as it rises.
 const BODY_COLORS: Array[Color] = [
-	Color(0.72, 0.2, 0.1, 0.8),
-	Color(1.0, 0.42, 0.06, 1.0),
-	Color(1.0, 0.33, 0.05, 1.0),
+	Color(0.6, 0.13, 0.05, 0.95),
+	Color(0.6, 0.13, 0.05, 0.95),
+	Color(1.0, 0.36, 0.05, 1.0),
+	Color(0.96, 0.27, 0.04, 1.0),
 	Color(0.83, 0.19, 0.04, 0.85),
 	Color(0.54, 0.13, 0.06, 0.55),
 	Color(0.29, 0.09, 0.06, 0.35)
 ]
-const BODY_AT: Array[float] = [0.0, 0.14, 0.4, 0.62, 0.85, 1.0]
+const BODY_AT: Array[float] = [0.0, 0.1, 0.24, 0.45, 0.65, 0.85, 1.0]
 const CORE_COLORS: Array[Color] = [
-	Color(1.0, 0.86, 0.5, 0.9), Color(1.0, 0.7, 0.18, 0.85), Color(1.0, 0.5, 0.08, 0.7)
+	Color(1.0, 0.84, 0.45, 0.9), Color(1.0, 0.66, 0.14, 0.85), Color(1.0, 0.46, 0.06, 0.7)
 ]
 const CORE_AT: Array[float] = [0.0, 0.35, 1.0]
+## The bodies' heat (ember.gdshader): under 1 the core and body sit at the bloom's threshold, so a
+## flame stays saturated instead of whitening (the core's is lower still).
+const BODY_HEAT := 0.95
+const CORE_HEAT := 0.85
 ## A tongue's plate: the flame voxel stretched about 1:2 tall (so tongues rise, never confetti).
 const FLAME_PLATE := Vector3(0.18, 0.32, 0.18)
 const EMBER_START := Color("ffb040")
@@ -164,16 +169,16 @@ func _flames(size: float) -> GPUParticles3D:
 	_scale(mat, FLAME_SCALE * z, Vector2(1.0, 0.3), 0.7)
 	_ramp(mat, PackedColorArray(BODY_COLORS), PackedFloat32Array(BODY_AT))
 	var count := roundi(130 * maxf(1.0, size) * _density)
-	return _system(mat, _cube(FLAME_PLATE), count, 1.0)
+	return _system(mat, _cube(FLAME_PLATE, BODY_HEAT), count, 1.0)
 
 
 ## The hot core: a narrow, short column of white-yellow plates down the middle of the body.
 func _core(size: float) -> GPUParticles3D:
 	var z := _zoom
-	var mat := _base(size * 0.14 * z, 4.0, Vector3(0, 2.0, 0) * z, Vector2(0.9, 1.7) * z)
-	_scale(mat, FLAME_SCALE * 0.9 * z, Vector2(1.0, 0.35), 0.6)
+	var mat := _base(size * 0.11 * z, 4.0, Vector3(0, 2.0, 0) * z, Vector2(0.9, 1.7) * z)
+	_scale(mat, FLAME_SCALE * 0.8 * z, Vector2(1.0, 0.35), 0.6)
 	_ramp(mat, PackedColorArray(CORE_COLORS), PackedFloat32Array(CORE_AT))
-	return _system(mat, _cube(FLAME_PLATE), roundi(30 * maxf(1.0, size) * _density), 0.6)
+	return _system(mat, _cube(FLAME_PLATE, CORE_HEAT), roundi(24 * maxf(1.0, size) * _density), 0.6)
 
 
 func _embers(size: float) -> GPUParticles3D:
