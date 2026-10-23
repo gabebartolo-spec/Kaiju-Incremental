@@ -405,10 +405,11 @@ state. No director clips or per-change approvals in between; clips only where mo
   jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.
 - Damage on impact (D-166): breath and ultimate strike at 0.8 / 1.1 / 1.4 s by growth step, standing stomp 0.45 s
   (VFX lead's clip timings, data values); dash after the D-165 crouch. Owner: lead's builder. Status: not started.
-- Railgun volleys staggered to about 2 hits per squad per second (D-166). Owner: lead's builder. Status: not started.
+- Railgun volleys: a squad locks on together and fires in turn, ~2 hits a second per squad (D-166, D-175, D-178).
+  Owner: lead's builder. Status: PR #170, reworking to lock together.
 - Thunder Beam at a third of its price, last unlock about 2.25 h (D-167 amended). Owner: lead's builder. Status: pacing run.
-- Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173, PR #166). Owner: VFX lead. Status:
-  not started.
+- Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173): MERGED #166 (3e4a7665),
+  look round 3 FIX flagged for the M3 survey; round 4 on claude/heli-look-r4. Owner: VFX lead.
 - The whale in the water between the play city and the distant city (D-168), with sky and sea life. Owner: demo-end
   session. Status: not started.
 - Suno music this week (D-169), brooding and building, one mood growing heavier (D-172, briefs rewritten); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
@@ -422,10 +423,18 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
-  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status: fixing.
+  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status:
+  SHIP claude/night-fog 4524e90c (dusk fog 0.0035, night 0.005, toppled-tower dust dims at night; fresh critic: the
+  left haze is gone, dusk still reads as dusk); PR opening, lead merges on green. Found alongside, queued (VFX lead):
+  the tower see-through fade draws a cross-hatch that follows the camera beside the kaiju; the kaiju's silhouette is
+  weak at night; the D-154 late-rampage haze is unbuilt.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
   briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
-  credits), he picks by ear. Owner: lead. Status: waiting on his Suno sign-in in the built-in browser.
+  credits), he picks by ear. Then, in order: "too 'heroic'" (D-176 darker, Godzilla), "all sound more or less the
+  same city to city" (D-181 one theme, Cover per city), "i need more menace", Isengard "peak reference", "too
+  'epic', too Nolan Batman" (D-182 Jaws, Godzilla, Imperial March), "too staccato, too endlessly building", "too
+  whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference" (G1-G4, 1954 Godzilla takes).
+  Owner: lead. Status: 140 of 800 credits; G takes waiting on his pick (docs/provenance/music.md).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
@@ -439,3 +448,9 @@ state. No director clips or per-change approvals in between; clips only where mo
   writes it, the lead reviews and merges. Status: not started.
 - Motion pass on every growth step (walk, turn, stop, dash, stomp, standing still), measured bars + a fresh motion
   critic at game speed, then the living predator (D-165), ahead of the one-look work. Owner: VFX lead. Status: queued.
+- Balance run on GitHub (D-179): a manual workflow runs tools/pacing.gd. Owner: lead's builder. Status: not started.
+- "helicopters are hovering way too close to our kaiju ... twitchy ... like an orbiting fly, they should move logically,
+  strategically, gracefully": stand-off gunships (D-183). Owner: lead's builder (sim/air_wing.gd), VFX lead for banking
+  and rotor look. Status: queued after the volley rework.
+- "these songs are too staccato, too endlessly building with very little relief or payoff": theme takes now ask for a
+  legato melody with tension and release (D-182). Owner: lead. Status: takes made, his pick pending.
