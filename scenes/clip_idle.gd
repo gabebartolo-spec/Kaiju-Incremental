@@ -97,6 +97,21 @@ func skin_push() -> float:
 	return _per_stage("skin_amp") * weight * breath
 
 
+## The biggest push this breath makes, as skin_push() but with the curve left to the shader.
+func skin_peak() -> float:
+	return _per_stage("skin_amp") * weight * _depth
+
+
+## The breath's place in its cycle, 0..1.
+func phase_now() -> float:
+	return _last_phase
+
+
+## The share of a breath the push reaches the hips after the neck (cycles).
+func lag() -> float:
+	return Num.f(_cfg["skin_lag"])
+
+
 func _advance(dt: float, phase: float) -> void:
 	if phase < _last_phase - 0.5:  # the breath came round: the next one is its own
 		_cycles += 1
@@ -195,7 +210,8 @@ func _head(chest: float) -> void:
 	_add("head1", Vector3.UP, skull.x * 0.55 * weight)
 	_add("head0", Vector3.UP, neck.x * 0.45 * weight)
 	_add("head1", Vector3.RIGHT, skull.y * 0.55 * weight)
-	_add("head0", Vector3.RIGHT, neck.y * 0.45 * weight - chest * 0.5)
+	var settle := deg_to_rad(_per_stage("head_deg")) * breath * weight  # the head rises with it
+	_add("head0", Vector3.RIGHT, neck.y * 0.45 * weight - chest * 0.5 + settle)
 
 
 ## The tail rides the breath, each joint a little behind the last and a little less.
@@ -238,7 +254,7 @@ func _lids() -> float:
 func _lid(x: float, span: float) -> float:
 	if x < 0.0 or x > span:
 		return 0.0
-	var shut := span * 0.4
+	var shut := span * Num.f(_cfg["blink_close"])
 	return smoothstep(0.0, shut, x) if x < shut else 1.0 - smoothstep(shut, span, x)
 
 

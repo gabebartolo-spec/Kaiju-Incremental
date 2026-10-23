@@ -18,6 +18,8 @@ var _stage := 2
 var _seconds := 24.0
 var _shots := false
 var _stomps := true
+var _quiet := false
+var _px := false
 var _run_index := 1  ## the run: its time of day is Content.time_for_run(run)
 
 
@@ -29,6 +31,8 @@ func _initialize() -> void:
 			"seconds": _seconds,
 			"shots": false,
 			"stomps": true,
+			"quiet": false,
+			"px": false,
 			"run": 1
 		}
 	)
@@ -37,6 +41,8 @@ func _initialize() -> void:
 	_seconds = Num.f(a["seconds"])
 	_shots = a["shots"]
 	_stomps = a["stomps"]
+	_quiet = a["quiet"]
+	_px = a["px"]
 	_run_index = Num.i(a["run"])
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
@@ -59,6 +65,10 @@ func _run() -> void:
 	if not _stomps:
 		rampage.sim.stats["stomp_interval"] = 100000.0
 		rampage.sim._stomp_timer = 100000.0
+	if _quiet:  # no tanks, no helicopters: nothing to rake, no hits, no camera shake
+		rampage.sim.army_units._spawn_timer = 1.0e9
+		rampage.sim.air._spawn_timer = 1.0e9
+		rampage.sim.tanks.clear()
 	while rampage.sim.emerge.active:
 		await process_frame
 	var begin := Engine.get_process_frames()
@@ -67,6 +77,10 @@ func _run() -> void:
 	)
 	print("capture_idle_game: emerged at frame %d (%.2f s)" % [begin, float(begin) / 60.0])
 	var gait: ClipAlive = rampage._kaiju._rig.gait
+	if _px:
+		await _px_pair(rampage, gait)
+		quit()
+		return
 	var spine: Node3D = gait.rig.bone("spine2")
 	var seen: Array[float] = []
 	var shot_top := false
@@ -93,6 +107,32 @@ func _run() -> void:
 				shot_bottom = true
 				_snap(rampage, "breath_bottom", spine.global_position)
 	quit()
+
+
+## --px: with the world frozen at the game camera, three stills: the kaiju hidden (px_empty), the
+## breath at its top (px_top: the biggest push, at the top of the curve, the lag down the back
+## as played) and at rest (px_rest), so the only difference between the last two is the breath.
+func _px_pair(rampage: Rampage, gait: ClipAlive) -> void:
+	while gait.life.weight < 1.0:
+		await process_frame
+	var skin: VoxelSkin = rampage._kaiju._skin
+	var cfg := Content.section("croc_idle")
+	var amp: Array = cfg["skin_amp"]
+	var peak := Num.f(amp[_stage]) * KaijuModel.MODEL_HEIGHT
+	var lag := Num.f(cfg["skin_lag"])
+	paused = true
+	for pass_name: String in ["empty", "top", "rest"]:
+		rampage._kaiju.visible = pass_name != "empty"
+		for mat: ShaderMaterial in [skin._cubes, skin._fill]:
+			mat.set_shader_parameter("breath", peak if pass_name == "top" else 0.0)
+			mat.set_shader_parameter("breath_phase", 0.4)
+			mat.set_shader_parameter("breath_lag", lag)
+		for i: int in 4:
+			await process_frame
+		root.get_texture().get_image().save_png(
+			_out.path_join("px_%s_%d.png" % [pass_name, _stage])
+		)
+	print("capture_idle_game: px stills saved (push %.3f rig units, lag %.2f)" % [peak, lag])
 
 
 func _snap(rampage: Rampage, shot_name: String, at: Vector3) -> void:

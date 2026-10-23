@@ -27,6 +27,11 @@ var pose: Array[Projection] = []
 var mouth_open := false
 ## The breath (rig units, signed) and the lids (0 open .. 1 shut) the shaders show (ClipAlive).
 var breath := 0.0
+## The biggest push now (rig units), the breath's place in its cycle and its lag down the back
+## (ClipAlive; the shaders draw the push from these, `breath` is the sum for tests).
+var breath_peak := 0.0
+var breath_phase := 0.0
+var breath_lag := 0.0
 var blink := 0.0
 var _rig: KaijuRig
 var _axis: Array[int] = [-1, -1]  # the bones the breath's spine axis runs between
@@ -258,6 +263,9 @@ func _setup_breath() -> void:
 			mat.set_shader_parameter("breath_k", k)
 			mat.set_shader_parameter("breath_lift", Num.f(cfg["skin_lift"]))
 			mat.set_shader_parameter("breath_belly", Num.f(cfg["skin_belly"]))
+			mat.set_shader_parameter(
+				"breath_shape", Vector2(Num.f(cfg["inhale"]), Num.f(cfg["pause"]))
+			)
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps
@@ -299,7 +307,9 @@ func _sync_breath(to_rig: Transform3D) -> void:
 	var b := to_rig * _nodes[_axis[1]].global_position
 	for mat: ShaderMaterial in [_cubes, _fill]:
 		if mat != null:
-			mat.set_shader_parameter("breath", breath)
+			mat.set_shader_parameter("breath", breath_peak)
+			mat.set_shader_parameter("breath_phase", breath_phase)
+			mat.set_shader_parameter("breath_lag", breath_lag)
 			mat.set_shader_parameter("breath_a", a)
 			mat.set_shader_parameter("breath_b", b)
 

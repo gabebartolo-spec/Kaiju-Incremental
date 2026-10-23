@@ -3,13 +3,31 @@
 // The cubes and the filler under them take the same push at the same place, so no gap opens and
 // every cube keeps its size and square axes. `breath` is rig units (signed); breath_k holds each
 // bone's share (the main bones weigh in by their skin weights); the underside barely moves.
+// `breath` is the biggest push now (rig units, depth and weight in); breath_phase where the breath is in
+// its cycle (0..1) and breath_shape its (inhale, rest) shares; breath_lag the share of a breath it
+// reaches the hips after the neck, so the plates ripple down the back.
 uniform float breath = 0.0;
+uniform float breath_phase = 0.0;
+uniform float breath_lag = 0.0;
+uniform vec2 breath_shape = vec2(0.4, 0.1);
 uniform float breath_lift = 0.5;
 uniform float breath_belly = 0.2;
 // The spine's axis, pelvis to the neck's base, in skin space (this frame's pose).
 uniform vec3 breath_a = vec3(0.0);
 uniform vec3 breath_b = vec3(0.0, 1.0, 0.0);
 uniform float breath_k[128];
+
+float breath_curve(float p) {
+	p = fract(p);
+	float out_end = 1.0 - breath_shape.y;
+	if (p < breath_shape.x) {
+		return 0.5 - 0.5 * cos(PI * p / breath_shape.x);
+	}
+	if (p < out_end) {
+		return 0.5 + 0.5 * cos(PI * (p - breath_shape.x) / (out_end - breath_shape.x));
+	}
+	return 0.0;
+}
 
 vec3 breath_push(vec3 p, float share) {
 	vec3 ab = breath_b - breath_a;
@@ -18,5 +36,5 @@ vec3 breath_push(vec3 p, float share) {
 	float r = length(radial);
 	vec3 dir = r > 0.0001 ? radial / r : vec3(0.0, 1.0, 0.0);
 	float belly = mix(breath_belly, 1.0, smoothstep(-0.4, 0.2, dir.y));
-	return (dir + vec3(0.0, breath_lift, 0.0)) * (belly * breath * share / (1.0 + breath_lift));
+	return (dir + vec3(0.0, breath_lift, 0.0)) * (belly * breath * breath_curve(breath_phase - breath_lag * (1.0 - t)) * share / (1.0 + breath_lift));
 }

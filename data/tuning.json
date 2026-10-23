@@ -1003,13 +1003,13 @@
 		"kick_deg": 0.8, "crack_fade_s": 0.12
 	},
 	"croc_idle": {
-		"_note": "ClipIdle (D-165, the living predator): what the croc titan does standing, presentation only, faded out whenever it walks, turns, roars or breathes its beam. Lists are [young croc, Behemoth, Colossus]; [a, b] pairs are ranges a hash of (run, stage, event number) picks from. Director 2026-10-23: the breath is deep and slow, like a behemoth. breath_s: one breath in seconds (the baked 3 s idle is retimed to it), breath_vary: each breath's length +- share; a breath is `inhale` of its length rising, the rest less `pause` falling, then still; depth (+- depth_vary) is the share of the biggest push the breath makes, the sigh (every sigh_every_s, sigh_slow times longer) is the biggest, sigh_gain 1. skin_amp: that biggest push of the skin shader as a share of the body height (the back, shoulders and flanks out and up; skin_lift raises it, skin_belly is the share the underside moves, skin_bones weights it per bone); the bars: young at most 0.8, Behemoth 0.6, Colossus 0.5 percent, at least 0.25, and no breath-driven point faster than 0.6 percent of the height a second (tests/run_croc_idle_tests.gd). calm_body / calm_tail: the share of the baked idle's own sway kept (0 the first frame), body bones (the 3 s sine nods the snout and heaves the chest) and the tail's; the tail keeps a slow sway at most 3 percent of the height a second, the snout at most 1.5. chest_deg, tail_deg, tail_lag: the bones the breath turns (tail_lag: breath cycles each joint behind the last). still_s: seconds standing before the layer fades in over fade_in_s, out over fade_out_s. shift_*: weight moves foot to foot (the pelvis slides shift_hip hip heights, the spine rolls shift_roll_deg, feet stay locked). drift_*: the head's slow wander (deg, Hz). glance_*: now and then the head turns away and back (deg, s), the neck lagging neck_lag_s. jaw_*: a small crack of the jaw (deg < 6.9, the angle that shows the pink inside, and s). blink_*: eye blink every blink_every_s, taking blink_s, sometimes two (double_blink share). eyes: by skin, the centre and radius (rig units) of the left eye, mirrored: the cubes inside turn to the lid colour on a blink.",
+		"_note": "ClipIdle (D-165, the living predator): what the croc titan does standing, presentation only, faded out whenever it walks, turns, roars or breathes its beam. Lists are [young croc, Behemoth, Colossus]; [a, b] pairs are ranges a hash of (run, stage, event number) picks from. Director 2026-10-23: the breath is deep and slow, like a behemoth. breath_s: one breath in seconds (the baked 3 s idle is retimed to it), breath_vary: each breath's length +- share; a breath is `inhale` of its length rising, the rest less `pause` falling, then still; depth (+- depth_vary) is the share of the biggest push the breath makes, the sigh (every sigh_every_s, sigh_slow times longer) is the biggest, sigh_gain 1. skin_amp: that biggest push of the skin shader as a share of the body height (the back, shoulders and flanks out and up; skin_lift raises it, skin_belly is the share the underside moves, skin_bones weights it per bone; skin_lag: the share of a breath it reaches the hips after the neck, so the plates ripple down the back, at most `pause`); the bars (round 2, 0.8 at every stage but the young croc, whose speed bar caps it lower): at most 0.8 percent, at least 0.25, and no breath-driven point faster than 0.6 percent of the height a second (tests/run_croc_idle_tests.gd). calm_body / calm_tail: the share of the baked idle's own sway kept (0 the first frame), body bones (the 3 s sine nods the snout and heaves the chest) and the tail's; the tail keeps a slow sway at most 3 percent of the height a second, the snout at most 1.5. chest_deg, head_deg (the head rises with the breath, by stage), tail_deg, tail_lag: the bones the breath turns (tail_lag: breath cycles each joint behind the last). still_s: seconds standing before the layer fades in over fade_in_s, out over fade_out_s. shift_*: weight moves foot to foot (the pelvis slides shift_hip hip heights, the spine rolls shift_roll_deg, feet stay locked). drift_*: the head's slow wander (deg, Hz). glance_*: now and then the head turns away and back (deg, s), the neck lagging neck_lag_s. jaw_*: a small crack of the jaw (deg < 6.9, the angle that shows the pink inside, and s). blink_*: eye blink every blink_every_s, taking blink_s (blink_close of it closing, the rest opening, no hold), sometimes two (double_blink share). eyes: by skin, the centre and radius (rig units) of the left eye, mirrored: the cubes inside turn to the lid colour on a blink.",
 		"breath_s": [4.0, 6.0, 8.0],
 		"breath_vary": 0.06,
 		"inhale": 0.4,
 		"pause": 0.1,
-		"depth": 0.7,
-		"depth_vary": 0.12,
+		"depth": 0.88,
+		"depth_vary": 0.08,
 		"sigh_every_s": [26, 48],
 		"sigh_gain": 1.0,
 		"sigh_slow": 1.2,
@@ -1038,13 +1038,16 @@
 		"jaw_hold_s": 0.4,
 		"jaw_close_s": 1.2,
 		"blink_every_s": [3.0, 7.0],
-		"blink_s": 0.16,
+		"blink_s": 0.2,
 		"double_blink": 0.2,
-		"chest_deg": 0.3,
+		"chest_deg": 0.1,
 		"tail_deg": 0.035,
 		"tail_lag": 0.04,
-		"skin_amp": [0.005, 0.0054, 0.0045],
-		"skin_lift": 0.5,
+		"skin_amp": [0.0055, 0.008, 0.008],
+		"skin_lag": 0.1,
+		"head_deg": [0.12, 0.3, 0.3],
+		"blink_close": 0.33,
+		"skin_lift": 0.3,
 		"skin_belly": 0.2,
 		"eyes": {
 			"reptilian_baby": {"at": [0.85, 9.38, -7.55], "r": 0.7, "dark": 1.0},
@@ -1053,7 +1056,7 @@
 		},
 		"skin_bones": {
 			"spine0": 0.5, "spine1": 1.0, "spine2": 1.0, "head0": 0.25,
-			"arm_l0": 0.7, "arm_r0": 0.7, "arm_l1": 0.3, "arm_r1": 0.3,
+			"arm_l0": 1.0, "arm_r0": 1.0, "arm_l1": 0.6, "arm_r1": 0.6,
 			"tail0": 0.5, "tail1": 0.2
 		}
 	},

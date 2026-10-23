@@ -78,6 +78,7 @@ func _run() -> void:
 	var frames := 0
 	var next := 0
 	var seen: Array[float] = []  # --peaks: the breath, to catch its top and its bottom
+	var lid_last := 0.0
 	var shot_max := false
 	var shot_min := false
 	while float(frames) * DT <= (30.0 if _peaks or _blinks else last + DT):
@@ -96,6 +97,10 @@ func _run() -> void:
 		_aim(cam, kaiju)
 		await process_frame
 		var t := float(frames) * DT
+		var lid: float = kaiju._skin.blink
+		if lid > 0.0 and lid_last == 0.0:  # a clip is cut round these
+			print("capture_idle_life: blink starts at %.3f s (frame %d)" % [t, frames])
+		lid_last = lid
 		if next < _times.size() and t >= _times[next]:
 			var img := root.get_texture().get_image()
 			img.save_png(_out.path_join("%s_%s_%.2f.png" % [_stage, _cam, _times[next]]))

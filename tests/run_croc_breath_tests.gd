@@ -13,7 +13,15 @@ extends "res://tests/lib/runner.gd"
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## The bars: the biggest push (share of the body's height, percent) by stage, and the least.
-const PUSH_MAX: Array[float] = [0.8, 0.6, 0.5]
+const PUSH_MAX: Array[float] = [0.8, 0.8, 0.8]
+## Round 2 (motion critic: the breath was invisible at the game camera, 0.85 px): at the game
+## camera (the body about 440 px tall at 1080p) a push of 0.8% is about 3.5 px; the Behemoth and
+## the Colossus must make at least this much, the young croc (its speed bar caps it) 0.5.
+const PUSH_SEEN: Array[float] = [0.5, 0.7, 0.7]
+## The head settles with the breath: its snout travels at least this much (percent of the height)
+## and no faster than SNOUT_BREATH_SPEED (%/s).
+const SNOUT_TRAVEL := 0.15
+const SNOUT_BREATH_SPEED := 0.3
 const PUSH_MIN := 0.25
 const BREATH_SECONDS: Array[float] = [4.0, 6.0, 8.0]
 const BREATH_TOLERANCE := 0.1
@@ -175,15 +183,23 @@ func _check_push_bars() -> void:
 		var peak := biggest / HEIGHT * 100.0
 		var flank := peak * sqrt(1.0 + lift * lift) / (1.0 + lift)
 		check(
-			peak <= PUSH_MAX[i] and peak >= PUSH_MIN and flank >= PUSH_MIN,
+			peak <= PUSH_MAX[i] and peak >= PUSH_SEEN[i] and flank >= PUSH_MIN,
 			(
 				"%s: back %.2f%% (bar %.1f), flank %.2f%% (least %.2f), %% of height"
 				% [STAGES[i], peak, PUSH_MAX[i], flank, PUSH_MIN]
 			)
 		)
 		check(
-			peak * belly < 0.1,
+			peak * belly < 0.2,
 			"%s: the belly barely moves (%.3f%% of the height)" % [STAGES[i], peak * belly]
+		)
+		var lag := Num.f(cfg["skin_lag"])
+		check(
+			lag >= 0.05 and lag <= Num.f(cfg["pause"]),
+			(
+				"%s: the push ripples down the back (%.2f of a breath, no more than the rest %.2f)"
+				% [STAGES[i], lag, Num.f(cfg["pause"])]
+			)
 		)
 		kaiju.queue_free()
 	await process_frame
@@ -201,6 +217,7 @@ func _check_breath_speed() -> void:
 		var points := {"spine1": [], "spine2": [], "arm_l0": [], "leg_l0": []}
 		var tip: Array[float] = []
 		var tail: Array[Vector3] = []
+		var snout: Array[Vector3] = []
 		for f: int in int((SETTLE + RUN) / DT):
 			kaiju.animate(DT, 0.0)
 			if float(f) * DT < SETTLE:
@@ -211,6 +228,18 @@ func _check_breath_speed() -> void:
 				track.append(rig.bone(bone_name).global_position)
 			tip.append(rig.tail_world("tail8").y)
 			tail.append(rig.tail_world("tail8"))
+			snout.append(rig.tail_world("head1"))
+		var snout_speed := _top_speed_3d(snout)
+		var snout_travel := 0.0
+		for a: Vector3 in snout:
+			snout_travel = maxf(snout_travel, a.distance_to(snout[0]))
+		check(
+			snout_speed <= SNOUT_BREATH_SPEED and snout_travel / HEIGHT * 100.0 >= SNOUT_TRAVEL,
+			(
+				"%s: the head settles with the breath (snout %.2f%%/s, travel %.2f%%)"
+				% [STAGES[i], snout_speed, snout_travel / HEIGHT * 100.0]
+			)
+		)
 		var top := _top_speed_1d(push)
 		var jerk := _top_jerk_1d(push)
 		var worst := 0.0
