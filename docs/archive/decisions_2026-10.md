@@ -2,6 +2,27 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
+Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
+from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
+support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
+(D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).
+
+## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
+Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
+(199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
+cap saved by demo exe 1 no longer overrides it.
+
+## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
+Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
+subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
+has no commercial rights; Pro $12/mo; not bought.
+
+## 2026-10-19 · D-091 · Director · No building is too strong for the baby; big ones just take longer
+Why: "the buildings shouldnt be too strong for our little kaiju, it should just take him longer ... hes more than
+capable of tearing the roots out and toppling the large buildings". Replaces the tier gate and "TOO STRONG"; evolve1
+text "Grow huge. Tear through towers faster." In #89 (croc contact).
+
 ## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
 Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
 

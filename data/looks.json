@@ -32,7 +32,7 @@
 			"ambient": 1.4,
 			"ambient_color": "40547e",
 			"fog_color": "1e2a46",
-			"fog_density": 0.01,
+			"fog_density": 0.005,
 			"window_lit": 0.55,
 			"lamp_energy": 4.0
 		},
@@ -75,7 +75,7 @@
 			"sun_energy": 0.7,
 			"sun_pitch": -38,
 			"fog_color": "4d7380",
-			"fog_density": 0.012,
+			"fog_density": 0.0035,
 			"saturation": 0.9,
 			"contrast": 1.3,
 			"glow": 1.0,
@@ -107,7 +107,6 @@
 			"lot": "6e7478",
 			"water": "1c2c34",
 			"river": "2a5a6c",
-			"lamp_energy": 2.6,
 			"ambient_color": "5d8a98",
 			"lamp_energy": 0.0
 		}

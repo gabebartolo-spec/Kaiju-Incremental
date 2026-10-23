@@ -23,3 +23,11 @@ stall watcher flagged it as a stale loop.
 **Evidence:** lead stall watcher 2026-10-23 14:55 (staleloop PIDs 6516/27388); helideaths run 13:27.
 **Lesson:** wait on the runner's own summary line (`grep -qE "tests: [0-9]+ checks, [0-9]+ failures"`) or on the
 process exiting (its PID), never on words that only one outcome prints; and give every wait loop a time limit.
+
+## 2026-10-23 · Split a red seeded metric by its source with a subclass probe, not a sim edit
+**Finding:** heliflight (D-183) stayed red for 7 runs of flight tuning. A probe that swapped a BodyContact subclass in
+as `sim.body` (no sim edit) split the kaiju's per-step displacement into walk, turn swing and other: the swing about
+the planted foot was 18-61 u/s against a walk of 2-4 u/s, so both failing bars came from the kaiju, not the flight.
+**Evidence:** lead scratchpad beamcost/kaiju_split.gd and kaiju_split_1/2.txt; claude/heli-standoff 2c0c2688; led to D-187.
+**Lesson:** when a seeded bar stays red after two variants, write a probe that splits the metric by where it comes
+from (a subclass or wrapper swapped into the sim, never a sim edit) before tuning again.

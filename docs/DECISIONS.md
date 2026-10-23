@@ -4,6 +4,26 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-188 · Director · Visual reviews keep going until the critics pass; repeated failure changes the method
+
+He asked "are we in clip making purgatory again?" (the fire and helicopter look at round 7, the new breathing failed its first review as invisible at the game camera, the walk fix failed twice on the swivel). Asked how visual reviews run until M1, he chose "Keep going until critics pass": no round cap; critics keep failing merely acceptable work, so the M1 build shows finished visuals. Then: "but if something has failed 7 times in a row then our method is wrong, and needs to be reassessed": two failed rounds in a row (CLAUDE.md rule 8) mean the owner stops, finds why each round failed and changes the approach before the next round. The fire and helicopter look is reassessed before any round 8. Not chosen: two rounds then M1; fewer clips with the same rounds.
+
+## 2026-10-23 · D-187 · Director · The big forms turn heavier and slower
+
+The walk fix failed its motion review on the swivel he named ("he swivels rather than turns"). Measured: the sim turns the Behemoth and Colossus at peaks of 260-311 degrees a second, each step's yaw squeezed into its planted window, so the body snaps round on planted feet; the snap also swings his position 8-13 units about the planted foot (the lunge that lets him catch helicopters). Asked: "Heavier, slower": turns grow slower with size, spread evenly over the steps. The lead first quoted today's U-turn as about 1.2 s and offered 1.5 s / 2.5 s; measured, today's is 0.95 / 1.63 / 1.80 s (young croc / Behemoth / Colossus), so it re-asked: "Behemoth 2 s, Colossus 3 s" (the motion critic's bar: at least 4 alternating real steps in a 180, each over 0.3 foot length and at most 40 degrees). The young croc keeps its smooth turn (D-131) and small corrections stay smooth (D-130); amends D-130's "the turn rates stay as they were" for the two big forms. The lead re-checks the 10 s rise-point bar (D-131); a clip comes before it merges. Not chosen: same speed without the snap; keep as is.
+
+## 2026-10-23 · D-186 · Director · GitHub runs the long test suites
+
+He asked: "is there a way we can get things done faster without compromising quality". The lead measured: builders ran hour-long local chains of up to 11 suites before pushing, while GitHub runs the whole suite in 4 parallel shards in about 15 minutes, free (the repo is public); the PC sat at 57% CPU with 6 engine jobs. Asked: "GitHub runs long suites": a builder runs on this PC only the one or two suites it is iterating on, then pushes and lets GitHub run every other touched suite and the full suite. Same tests and bars; amends D-159's "touched suites locally". Not chosen: a fifth builder (the cap stays about 4). The lead also starts every task on a fresh builder and writes the design and pass bars before code.
+
+## 2026-10-23 · D-185 · Director · The claw swipe becomes a heavy raking arc
+
+"the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very suddenly, defying his anatomy, it looks terrible". Asked: "Heavy raking arc": his shoulders and body twist into it, the arm loads back, then sweeps low and wide with the claws raking through and a heavy follow-through; a slower wind-up, a fast strike, like a bear's or Godzilla's swat, within a croc's forelimb range. The hit lands at the same moment the sim deals it (presentation only). Owner: the VFX lead, under the D-177 motion checks at all three growth steps.
+
+## 2026-10-23 · D-184 · Director · The music ships: the 1954-Godzilla theme G1 on the menu and, re-arranged, in every city
+
+After "now the songs are too whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference", the lead made four takes in the style of the 1954 Godzilla score (G1, G2 a heavy march; G3, G4 "he appears", slow with silences). He: "ok the music is much better, ship it, but make a note in the roadmap to revisit music later". Asked: "download them all, but use G1 for the main menu"; the three cities get Suno Covers of G1 ("Cover it per city now", source "G1"), each a step heavier with the city (D-181, D-172). Then he made a Suno remaster of G2 (song 798f3c13): "use this one", asked: "Menu and cities": the remaster replaces G1 on the menu and as the Covers' source. Menu: the theme plays over the city sound ("Over the city sound"), which amends D-141's "no music, city sounds only" on the title. All four takes are downloaded as WAV; stems (Auto Split) only for the city tracks, which play in layers (D-125). A later music pass is on the ROADMAP. Takes, settings and credits: docs/provenance/music.md.
+
 ## 2026-10-23 · D-183 · Director · Helicopters fight as stand-off gunships, moving gracefully
 
 "helicopters are hovering way too close to our kaiju, its completely unrealistic and looks odd how twitchy they are like an orbiting fly, they should move logically, strategically, gracefully". Cause (code): each helicopter's position was an offset pinned to the kaiju every step (snapping with his every move), a 14-unit circle diving to a fifth of that twice a lap, reversing at the ends of its arc. Asked: "Stand-off gunships": they hold firing positions well beyond his reach, glide between them with smooth banking turns (their own speed and turn limits, never pinned to him) and pull back when he advances; the breath, beam or a thrown tank reaches them, and an occasional strafing pass brings one within claw reach. They still keep off the camera's side. Motion first (D-177) applies.
@@ -377,24 +397,3 @@ Claws. Lead call: an undermined tower falls away from the kaiju, so the player s
 Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
 Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
 two species keep Claws as +3 stomp. Built in #89.
-
-## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
-Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
-from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
-support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
-(D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).
-
-## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
-Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
-(199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
-cap saved by demo exe 1 no longer overrides it.
-
-## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
-Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
-subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
-has no commercial rights; Pro $12/mo; not bought.
-
-## 2026-10-19 · D-091 · Director · No building is too strong for the baby; big ones just take longer
-Why: "the buildings shouldnt be too strong for our little kaiju, it should just take him longer ... hes more than
-capable of tearing the roots out and toppling the large buildings". Replaces the tier gate and "TOO STRONG"; evolve1
-text "Grow huge. Tear through towers faster." In #89 (croc contact).
