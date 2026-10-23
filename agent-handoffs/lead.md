@@ -4,6 +4,8 @@
 ## DECISIONS D-155..D-162, and the lead board (below).
 
 ## Director state and rules in force
+- 14:15 "im afk", "work for 3 hours" (to ~17:15): questions go to the lead board's interview.md AFK section; ask
+  them on his return. Keep-awake on. New GitHub helper subagent git-helper (go.txt protocol, scratchpad git_helper_notes.md).
 - D-177 MOTION FIRST: motion and destruction are the core; every body/movement change passes a motion CI suite at
   all 3 growth steps (VFX gait builder writes it from its probe; lead merges). Order: gait fix, gate, motion pass, D-165.
 - Game renamed Kaiju Evolution. Three equal visual pillars (beauty, consistency, power fantasy). Bar: "I have to love it".
