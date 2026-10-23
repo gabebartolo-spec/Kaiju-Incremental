@@ -419,4 +419,5 @@ state. No director clips or per-change approvals in between; clips only where mo
   complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
   exact fix and pass bar first; any sim part to the lead). Status: diagnosing, top of the VFX lead's next slot.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
-  briefs rewritten. Owner: lead. Status: done, waiting on his new takes.
+  briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
+  credits), he picks by ear. Owner: lead. Status: waiting on his Suno sign-in in the built-in browser.
