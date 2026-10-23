@@ -83,8 +83,8 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   one value for all stages (Colossus fit; Behemoth half-stride 2.79) -> clip at ~2.6x speed; Behemoth foot lift
   10.1% hip (motion_test.py lift 0.15 vs 0.085). Probe + re-bake at 14:15 -> per-stage step_len + bars to the lead
   (his sim) -> tests/run_motion_tests.gd red on base first.
-- heads-r2 stood down: skins r6 SHIP (claude/heads-skins 315c1998) queued by the lead for the director (~17:15)
-  with the eye-glow question; heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
+- heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
+  cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes; heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
 - Motion gate: claude/gait-fix b73b2ad4 red on base (18/29 fail); lead's sim part on claude/gait-step-len merges
   first (by merge commit); ours: re-bake (Behemoth lift 0.07, young <= 5%), soft IK + stable pole, young catch steps.
