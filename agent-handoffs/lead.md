@@ -94,7 +94,6 @@
   sim vs view. If the sim turn rate is the cause: lead's file, steering feel = director question with the numbers.
 - Not opened: claude/strike-delay (red, diagnosing), heli-look-r4 (VFX), claude/sim-speed daad0710 (measurement only:
   Convoy body polygon ~25%, bucketed building scans ~10%; sim/convoy.gd at 400 lines, split first).
-- Pacing on GitHub (#174): push pacing-run/<name> with .github/pacing-run.json {"species","runs","verbose"}.
 
 ## Next queue (each brief names its ROADMAP item + decision)
 - Next free slot: Kaiju Creation opening (D-207, demo): lab dish, croc genome (others locked), KAIJU juice VFX,
