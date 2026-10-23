@@ -29,9 +29,12 @@ by landmark id, one KaijuSettle); pacing.gd keeps only _cities (<= 4), the tally
   MB (+18.9 MB a run), objects 3918 -> 48253 (+2333 a run), runs 4-20 static +302 MB: LEAK. Base per-run result hashes
   and checksum 77692016 saved in scratchpad simleak/base_s2_200.txt. (Full-length rampages leak far more: carving grows.)
 - Base pacing `--species=reptilian --runs=14 --verbose` saved in scratchpad simleak/pacing_base.txt, to diff after.
-- First run of the fixed probe failed to compile SimTeardown (Variant casts, warnings are errors): fixed in the file
-  (typed locals, `is RefCounted` test), NOT yet re-run. So the first fixed run only shows the base again.
-## Paused 2026-10-23 (director: pause 100 min, until about 11:03 UTC): no Godot of mine running; code edits only.
+- Fixed probe, same args, cut short by the second pause after 7 of 20 runs (exit 127 = killed): static 76.2 MB and
+  objects 1586 on every run 1-7 (flat; base grew +18.9 MB / +2333 objects a run), and runs 1-7 result hashes equal the
+  base's run for run (3359963979, 2453474791, 1602554700, 2863955096, 2827875165, 3774334881, 67706960). The full
+  20-run FLAT verdict and the checksum 77692016 compare are still to do. (The first fixed run, with the compile error,
+  was killed by the first pause the same way.)
+## Paused again 2026-10-23 (director: 30 more min, until about 11:34 UTC): no Godot of mine running; resume on the lead's word.
 ## Not exercised
 GitHub's native settle path (no native binary locally); a full-length Colossus 109-run tree.
 ## Next (after "resume")
