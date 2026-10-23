@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-171 · Director · New heads come after the demo, unlocked with the Colossus
+
+Asked (the VFX lead is fitting the Komodo head, D-164): "After the demo": the Komodo head (and later the python) stays out of the Itch demo; model and fitting work may go on, nothing head-related enters a demo build. "Unlocked with the Colossus": when he becomes the Colossus, the evolve screen offers the croc, Komodo or python head (a look only, D-166). Owners: VFX lead (head swap and re-fit), lead (evolve-screen picker), after the demo.
+
 ## 2026-10-23 · D-170 · Director · Tools and spend: a 100-credit rig test, Tripo in the browser only, no local AI yet, a second concept round
 
 Asked at the interview (from the AI-3D pipeline research). Rig test: "Yes, up to 100": up to 100 Tripo credits, taken from what is left of D-162's 8000, to try Tripo's quadruped and "others" rig on the croc's tail; it does not change the croc's look. Tripo API from a script ($10 cap): "Browser only": Tripo stays in the built-in browser (rulebook unchanged). Local ComfyUI: "Not now"; revisit after the rig test. Next concepts: "Yes, iterate": a more serpentine python head and an albino skin from the D-162 budget left (6500 of 8000), boards to the director. Owner: the VFX lead's asset session.
@@ -393,7 +397,3 @@ Why (15:4x): director's call on the jets PRs; applied on the jet branches (#58, 
 
 ## 2026-10-18 · D-079 · Director · shell_hit keeps its full boom (A); #52 closed
 Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is closed unmerged.
-
-## 2026-10-18 · D-078a · Director · The stadium stands are full of spectators watching the match
-Why (18:0x): "the stadium needs to be full of people in the stands watching the sport, currently its empty".
-Added to #59's brief; the AFL clip is re-rendered with the crowd.

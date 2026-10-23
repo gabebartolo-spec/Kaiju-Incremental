@@ -250,7 +250,7 @@ bend travelling base to tip, haul back as a stiff three-segment fetch, wrap towe
 the target, idle sway from a hash not the sim RNG (R 9.2-9.7) · original species concepts for his pick: burrower
 (UNDERMINE), hermit crab that wears a building as its shell (WEAR), reef colony (ENCRUST), fungus walker (ROOT),
 pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored finale with a readability pass (R 1.5).
-Reptilian head evolutions (director 2026-10-22: "roadmap: python head reptilian evolution, and komodo dragon head reptilian evolution"): a python head and a Komodo dragon head as reptilian evolutions; how they unlock, and what each changes in play, are asked at their phase (after the croc ships, D-124).
+Reptilian head evolutions (director 2026-10-22: "roadmap: python head reptilian evolution, and komodo dragon head reptilian evolution"): a python head and a Komodo dragon head as reptilian evolutions; after the demo, unlocked with the Colossus (the evolve screen offers croc, Komodo or python), looks only first (D-171, D-166); what each changes in play is asked later (D-124).
 Rooftop mortars (research 24): a sibling of the rooftop squad, placed at sim start on tall topple-able non-landmark
 towers (2-5 per tier), firing beyond rifle range with a dead zone, one timed shell per 4-6 s aimed where the kaiju is,
 killed by losing its roof, with a sim review and pinned-seed suite (R 24.1) · "ride the fall": kill and pay at the
@@ -397,7 +397,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool
   shadows, warm fire; fine-block ground; blocks in close shots too. Owner: VFX lead. Status: not started.
 - Heads and skins (D-164, D-170): the Komodo head with its own shape goes forward; a serpentine python round 2 (snake
-  jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first.
+  jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first,
+  in game after the demo (D-171).
   Owner: VFX lead's asset session. Status: round 2 not started.
 - Living predator (D-165): breathing, weight shifts, head glances, blinks; heavier stride with size; tail, throat and
   jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.

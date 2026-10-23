@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-078a · Director · The stadium stands are full of spectators watching the match
+Why (18:0x): "the stadium needs to be full of people in the stands watching the sport, currently its empty".
+Added to #59's brief; the AFL clip is re-rendered with the crowd.
+
 ## 2026-10-18 · D-073 · Director · Croc baby and adolescent approved
 Why (10:5x): the P3 bodies from the croc titan design (D-059) are approved for the demo; clips kept, slam polish
 later. PR #54.
