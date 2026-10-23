@@ -61,7 +61,7 @@ const GROPE := 0.32
 
 
 class Arm:
-	var chain: KaijuRig.SpringChain
+	var chain: SpringChain
 	var angle := 0.0  ## around the body, rig space
 	var length := 0.0  ## rig units, root to tip
 	var gripping := false
@@ -96,7 +96,7 @@ var _turning := false
 func _init(p_rig: KaijuRig) -> void:
 	super(p_rig)
 	turn_max = 2.5
-	for chain: KaijuRig.SpringChain in rig.chains:
+	for chain: SpringChain in rig.springs.chains:
 		if not chain.names[0].begins_with("tentacle"):
 			continue
 		var arm := Arm.new()
@@ -166,7 +166,7 @@ func update(delta: float) -> void:
 	if pick != null and may_reach:
 		_reach(pick, root, pick.chain.pos[0] if pick.chain.pos.size() > 0 else root.origin)
 	_pose_mantle(dt, root, moving)
-	rig.simulate_chains(delta)
+	rig.springs.simulate(delta)
 
 
 ## Drag and surge: between grips the body lags behind the sim, sliding slower; after a grip

@@ -183,7 +183,7 @@ class Walk:
 	func sample(kaiju: KaijuModel, gait: ClipGait, turning: bool) -> void:
 		var rig := kaiju._rig
 		yaws.append(gait.body_yaw)
-		var aim_cfg: Dictionary = rig.body_class().get("aim", {})
+		var aim_cfg: Dictionary = BodyClass.of_kind(rig.kind).get("aim", {})
 		neck_max = Num.f(aim_cfg.get("neck_max_deg", 180.0))
 		neck = maxf(neck, absf(rad_to_deg(wrapf(gait.model_yaw - gait.body_yaw, -PI, PI))))
 		for i: int in 2:

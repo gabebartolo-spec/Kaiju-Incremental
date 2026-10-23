@@ -39,11 +39,9 @@ var _feet: HeavyFeet
 static func make(p_sim: RampageSim, classes: Dictionary, species_id: String) -> HeavyContact:
 	var stage_names: Array[String] = ["baby", "adolescent", "adult"]
 	var kind := "%s_%s" % [species_id, stage_names[clampi(p_sim.size_tier() - 1, 0, 2)]]
-	var by_kaiju: Dictionary = classes.get("kaiju", {})
-	if not by_kaiju.has(kind):
+	var found := BodyClass.of(classes, kind)
+	if found.is_empty():
 		return null
-	var all: Dictionary = classes["classes"]
-	var found: Dictionary = all[str(by_kaiju[kind])]
 	var p_track := HeavyTrack.of(kind)
 	if not found.has("sim") or p_track == null:
 		return null
@@ -132,6 +130,7 @@ func step(dt: float) -> void:
 	var err := wrapf(_yaw(body.heading) - _yaw(body.body_dir), -PI, PI)
 	var phase := body.phase
 	clock.step(dt, moving, err, func(_entering: bool) -> float: return track.walk_frame(phase))
+	_feet.walk(clock)
 	if rake_t >= 0.0:
 		rake_t += dt
 		rake_t = -1.0 if rake_t > _rake_total else rake_t
@@ -156,6 +155,11 @@ func toe_lock(i: int) -> Vector2:
 	return _feet.toe(i)
 
 
+## Where lifted hind foot i's toe is in the world, INF while it is down (the drawn foot's way).
+func toe_air(i: int) -> Vector2:
+	return _feet.toe_air(i)
+
+
 ## The sim's events of the step just run: a roar (every ability; an ultimate at most once in the
 ## sfx roar_cooldown, a dash counting too, as RoarCue sounds it) and the claw rake's cues.
 func after_events(events: Array[Dictionary]) -> void:
@@ -173,10 +177,11 @@ func after_events(events: Array[Dictionary]) -> void:
 			rake_side = Num.f(event["side"])
 
 
-## The body's discs at a pose (its middle `at_centre`, its drawn body facing `dir`) in the world,
-## [centre, radius, lowest, highest] (the sizes at body scale 1): every slot of the pose (the tail's
-## only when `tail`: a tail brushing a tower does not hold the body back); a planted hind foot's
-## slots where it came down.
+## The body's slots at a pose (its middle `at_centre`, its drawn body facing `dir`) in the world,
+## [bottom centre, bottom radius, lowest, highest, top centre, top radius] (the sizes at body scale
+## 1; BodyVolume takes the hull of the two discs): every slot of the pose (the tail's only when
+## `tail`: a tail brushing a tower does not hold the body back); a planted hind foot's slots where
+## it came down.
 func discs(at_centre: Vector2, dir: Vector2, with_tail: bool = true) -> Array:
 	var out: Array = []
 	var s := sim.body_scale()
@@ -184,11 +189,14 @@ func discs(at_centre: Vector2, dir: Vector2, with_tail: bool = true) -> Array:
 	for j: int in track.slot_bone.size():
 		if not with_tail and _pose.in_tail(j):
 			continue
-		var k := j * 5
-		var at := _feet.spot(j)
-		if at.x == INF:
-			at = at_centre + (dir * _now[k] + right * _now[k + 1]) * s
-		out.append([at, _now[k + 2], _now[k + 3], _now[k + 4]])
+		var k := j * HeavyTrack.SLOT
+		var held := _feet.spot(j)
+		var lo := at_centre + (dir * _now[k] + right * _now[k + 1]) * s
+		var hi := at_centre + (dir * _now[k + 5] + right * _now[k + 6]) * s
+		if held.x != INF:
+			lo = Vector2(held.x, held.y)
+			hi = Vector2(held.z, held.w)
+		out.append([lo, _now[k + 2], _now[k + 3], _now[k + 4], hi, _now[k + 7]])
 	return out
 
 
@@ -196,8 +204,9 @@ func discs(at_centre: Vector2, dir: Vector2, with_tail: bool = true) -> Array:
 func reach() -> float:
 	var most := 0.0
 	for j: int in track.slot_bone.size():
-		var k := j * 5
+		var k := j * HeavyTrack.SLOT
 		most = maxf(most, Vector2(_now[k], _now[k + 1]).length() + _now[k + 2])
+		most = maxf(most, Vector2(_now[k + 5], _now[k + 6]).length() + _now[k + 7])
 	return most
 
 

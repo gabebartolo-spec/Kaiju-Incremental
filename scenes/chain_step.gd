@@ -8,7 +8,7 @@ extends RefCounted
 ## Pulls the joints toward `target` (where the driven rest pose would put them) with inertia and
 ## gravity, keeps them above the ground, then holds every bone to its length, reaching for the
 ## pinned joint from the tip back (FABRIK) when a tentacle grips.
-static func run(chain: KaijuRig.SpringChain, target: PackedVector3Array, h: float) -> void:
+static func run(chain: SpringChain, target: PackedVector3Array, h: float) -> void:
 	var cfg := Content.section("chain")
 	var damping := Num.f(cfg["damping"])
 	var pos := chain.pos

@@ -3,12 +3,12 @@ extends SceneTree
 ## with a building will damage it"): for every frame of every clip it plays (the .kclip the game
 ## draws), and for the claw rake laid over the arms (BipedSwing, code not a clip), each bone's
 ## voxels are posed exactly as the rig poses them and cut into slots (SEG long along the bone, and
-## across a lying bone SEG wide and BAND high: a slot about as wide as it is long, so the upright
-## disc that holds it reaches little past it); each slot is written as that disc in body space (rig
-## units = body scale 1: forward, across to the right, radius, lowest, highest), with every bone's
-## head, the hind toes, the root's turn and the clip's planted feet. The sim (HeavyTrack,
-## HeavyContact) plays the same clips on its own clip clock (ClipClock), so its contact volume
-## rides the drawn body by construction.
+## across a lying bone SEG wide and BAND high: a slot about as wide as it is long); each slot is
+## written in body space (rig units = body scale 1) as the hull of a disc at its lowest point and
+## one at its highest (HeavyTrack.SLOT: a leaning, tapering column round its posed voxels), with
+## every bone's head, the hind toes, the root's turn and the clip's planted feet. The sim
+## (HeavyTrack, HeavyContact) plays the same clips on its own clip clock (ClipClock), so its
+## contact volume rides the drawn body by construction.
 ## Run it again after any clip or model change (a Cascadeur re-animation): it reads the clip files.
 ##
 ##   godot --headless --path . --script tools/capture/bake_heavy_tracks.gd -- --kind=reptilian_adult
@@ -21,6 +21,9 @@ const CLIPS: Array[String] = ["idle", "walk", "roar", "turn_left", "turn_right"]
 const RAKE_FPS := 60.0
 const SUPPORT := 3  # directions per axis for a slot's support points (3x3x3 - 1 = 26)
 const FEET: Array[String] = ["leg_l", "leg_r"]  # the hind legs, as the clips' planted bits
+## How far each end of a slot's axis may lean toward its third's middle (_disc_into keeps the
+## tightest column).
+const LEANS: Array[float] = [0.0, 0.25, 0.5, 0.75, 1.0]
 
 var _rig: KaijuRig
 var _clips: KaijuClips
@@ -162,6 +165,8 @@ func _header() -> Dictionary:
 		"walk": [steps.land, steps.step_frames],
 		"spans": spans,
 		"hip_height": _gait.hip_height,
+		"stride": _clips.stride_m * _clips.rig_scale,
+		"swing_frames": steps.swing_frames,
 		"hips": -_rig.head_of(_clips.bones[0]).z,
 	}
 
@@ -206,22 +211,94 @@ func _frame_into(data: PackedByteArray, clip: String, t: float) -> void:
 	_put(data, [bits * 0.01])
 
 
-## Slot k's upright disc in body space: [forward, across, radius, lowest, highest].
+## Slot k in body space (HeavyTrack.SLOT): [forward, across, radius at its bottom, lowest, highest,
+## forward, across, radius at its top]. Its axis leans from the slot's middle toward the middles of
+## its lowest and highest thirds by the share in LEANS that holds it in the least volume (none: an
+## upright column round the middle; all: a slanted shin's own lean); the two radii are the least
+## that keep every support point inside the column.
 func _disc_into(data: PackedByteArray, k: int) -> void:
 	var xf := _to_rig * _rig.bone(_names[_slot_bone[k]]).global_transform
-	var lo := Vector3.INF
-	var hi := -Vector3.INF
 	var posed := PackedVector3Array()
+	var y_lo := INF
+	var y_hi := -INF
+	var box := Rect2()
 	for p: Vector3 in _slot_pts[k]:
 		var w := xf * p
+		box = Rect2(Vector2(w.x, w.z), Vector2.ZERO) if posed.is_empty() else box
+		box = box.expand(Vector2(w.x, w.z))
 		posed.append(w)
-		lo = lo.min(w)
-		hi = hi.max(w)
-	var mid := Vector2(lo.x + hi.x, lo.z + hi.z) * 0.5
-	var r := 0.0
+		y_lo = minf(y_lo, w.y)
+		y_hi = maxf(y_hi, w.y)
+	var heights := Vector2(y_lo, maxf(y_hi - y_lo, 0.0001))
+	var thirds := _thirds(posed, heights)
+	var mid := box.get_center()
+	var best: Array = []
+	var least := INF
+	for low: float in LEANS:
+		for high: float in LEANS:
+			var ends: Array[Vector2] = [mid.lerp(thirds[0], low), mid.lerp(thirds[1], high)]
+			var radii := _radii(posed, ends, heights)
+			var size := radii.x * radii.x + radii.x * radii.y + radii.y * radii.y
+			if size < least:
+				least = size
+				best = [ends[0], ends[1], radii]
+	var a: Vector2 = best[0]
+	var b: Vector2 = best[1]
+	var r: Vector2 = best[2]
+	_put(data, [-a.y, a.x, r.x, y_lo, y_hi, -b.y, b.x, r.y])
+
+
+## The middles (x, z) of the posed points' lowest and highest thirds (heights: lowest, height).
+static func _thirds(posed: PackedVector3Array, heights: Vector2) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for third: Vector2 in [Vector2(0.0, 1.0 / 3.0), Vector2(2.0 / 3.0, 1.0)]:
+		var lo := Vector2.INF
+		var hi := -Vector2.INF
+		for w: Vector3 in posed:
+			var t := (w.y - heights.x) / heights.y
+			if t >= third.x - 0.0001 and t <= third.y + 0.0001:
+				lo = lo.min(Vector2(w.x, w.z))
+				hi = hi.max(Vector2(w.x, w.z))
+		out.append((lo + hi) * 0.5)
+	return out
+
+
+## The least bottom and top radii (in that order) of the column from ends[0] (at heights.x) to
+## ends[1] (heights.x + heights.y) that hold every point: each point's distance from the column's
+## axis at its height must be within the radius there (lerped). Fitted from either end, the
+## smaller kept.
+static func _radii(posed: PackedVector3Array, ends: Array[Vector2], heights: Vector2) -> Vector2:
+	var t_of := PackedFloat32Array()
+	var off := PackedFloat32Array()
 	for w: Vector3 in posed:
-		r = maxf(r, Vector2(w.x, w.z).distance_to(mid))
-	_put(data, [-mid.y, mid.x, r, lo.y, hi.y])
+		var t := clampf((w.y - heights.x) / heights.y, 0.0, 1.0)
+		t_of.append(t)
+		off.append(Vector2(w.x, w.z).distance_to(ends[0].lerp(ends[1], t)))
+	var up := _fit(t_of, off)
+	var flipped := PackedFloat32Array()
+	for t: float in t_of:
+		flipped.append(1.0 - t)
+	var down := _fit(flipped, off)
+	down = Vector2(down.y, down.x)
+	var up_size := up.x * up.x + up.x * up.y + up.y * up.y
+	return up if up_size <= down.x * down.x + down.x * down.y + down.y * down.y else down
+
+
+## Radii (bottom, top) that hold every offset off[n] at height share t_of[n]: the bottom from the
+## lower half, the top the least over it, then the bottom the least under that top.
+static func _fit(t_of: PackedFloat32Array, off: PackedFloat32Array) -> Vector2:
+	var bottom := 0.0
+	for n: int in t_of.size():
+		bottom = maxf(bottom, off[n]) if t_of[n] <= 0.5 else bottom
+	var top := 0.0
+	for n: int in t_of.size():
+		if t_of[n] > 0.0:
+			top = maxf(top, (off[n] - bottom * (1.0 - t_of[n])) / t_of[n])
+	bottom = 0.0
+	for n: int in t_of.size():
+		if t_of[n] < 1.0:
+			bottom = maxf(bottom, (off[n] - top * t_of[n]) / (1.0 - t_of[n]))
+	return Vector2(bottom, top)
 
 
 ## The claw rake on side `side` over the idle pose, frame n at n / RAKE_FPS seconds in (as the sim
@@ -262,7 +339,7 @@ func _write(path: String, header: Dictionary, data: PackedByteArray) -> void:
 	var out := PackedByteArray()
 	out.append_array("KTRK".to_ascii_buffer())
 	out.resize(12)
-	out.encode_u32(4, 1)
+	out.encode_u32(4, HeavyTrack.VERSION)
 	out.encode_u32(8, text.size())
 	out.append_array(text)
 	out.append_array(data)

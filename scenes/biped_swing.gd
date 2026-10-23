@@ -68,7 +68,7 @@ var _claw: Dictionary = _claw_timing()
 
 func _init(p_rig: KaijuRig) -> void:
 	rig = p_rig
-	var tail := rig.chain_named("tail0")
+	var tail := rig.springs.named("tail0")
 	if tail == null:
 		return
 	tail.stiffness = TAIL_STIFFNESS
@@ -190,7 +190,7 @@ func pose_rake(dt: float) -> void:
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
 	tick_whip(dt)
 	tick_rake(dt)
-	var tail := rig.chain_named("tail0")
+	var tail := rig.springs.named("tail0")
 	if tail != null:
 		var n := tail.drive.size()
 		var before := hip_yaw

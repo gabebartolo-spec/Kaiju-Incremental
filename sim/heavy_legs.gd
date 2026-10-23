@@ -49,22 +49,18 @@ func _turn(pose: PackedFloat32Array, b: int, at: Array) -> void:
 		return
 	var turn := Quaternion(was.normalized(), now.normalized())
 	for j: int in _pose.slots_of(_track.bones[b]):
-		var k := j * 5
-		var half := (pose[k + 4] - pose[k + 3]) * 0.5
-		var c := to + turn * (Vector3(pose[k + 1], pose[k + 3] + half, -pose[k]) - from)
-		pose[k] = -c.z
-		pose[k + 1] = c.x
-		pose[k + 3] = c.y - half
-		pose[k + 4] = c.y + half
+		var k := j * HeavyTrack.SLOT
+		var e := HeavyPose.ends(pose, k)
+		HeavyPose.put_ends(pose, k, to + turn * (e[0] - from), to + turn * (e[1] - from))
 
 
 func _head(pose: PackedFloat32Array, b: int) -> Vector3:
-	var k := _slots * 5 + b * 3
+	var k := _slots * HeavyTrack.SLOT + b * 3
 	return Vector3(pose[k + 1], pose[k + 2], -pose[k])
 
 
 func _set_head(pose: PackedFloat32Array, b: int, at: Vector3) -> void:
-	var k := _slots * 5 + b * 3
+	var k := _slots * HeavyTrack.SLOT + b * 3
 	pose[k] = -at.z
 	pose[k + 1] = at.x
 	pose[k + 2] = at.y

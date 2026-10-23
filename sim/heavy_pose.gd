@@ -1,7 +1,7 @@
 class_name HeavyPose
 extends RefCounted
 ## A heavy body's pose in body space as its clip clock has it, from the baked track (HeavyTrack):
-## the slots (upright discs [forward, across, radius, lowest, highest], body scale 1), every
+## the slots (HeavyTrack.SLOT values each: a disc at its bottom and one at its top), every
 ## bone's head [forward, across, height], the hind toes, the root's turn. Laid as ClipGait lays
 ## the clips on the bones: the two clips cross-faded, a roar on the move on the walk's legs,
 ## pelvis and tail, the raking arm, the maw held open; then the head's look into the heading and
@@ -11,6 +11,10 @@ extends RefCounted
 ## The root bone (the pelvis): a roar on the move takes it, the legs and the tail from the walk
 ## (ClipGait._walking_legs) and hangs the roar's upper body on it.
 const ROOT := "spine0"
+const S := HeavyTrack.SLOT
+## A raked slot value's axis in a bone head ([forward, across, height]): forward, across, -, the
+## two heights, forward, across.
+const RAKE_AXIS: Array[int] = [0, 1, 0, 2, 2, 0, 1]
 
 ## The hind feet the laid pose has down (bit 0 the left, bit 1 the right).
 var bits := 0
@@ -36,7 +40,7 @@ func _init(p_track: HeavyTrack) -> void:
 	var windup := Num.f(Content.section("powers")["swipe_windup"])
 	_claw["lift_s"] = maxf(0.05, windup - Num.f(_claw["strike_s"]) * 0.5)
 	_slots = _track.slot_bone.size()
-	_size = _slots * 5 + _track.bones.size() * 3 + _track.legs.size() * 3 + 4
+	_size = _slots * S + _track.bones.size() * 3 + _track.legs.size() * 3 + 4
 	_root = _track.bones.find(ROOT)
 	for j: int in _slots:
 		var name := _track.bones[_track.slot_bone[j]]
@@ -63,7 +67,7 @@ func _init(p_track: HeavyTrack) -> void:
 
 ## Where hind toe i starts in a pose.
 func toe(i: int) -> int:
-	return _slots * 5 + _track.bones.size() * 3 + i * 3
+	return _slots * S + _track.bones.size() * 3 + i * 3
 
 
 ## True when slot j is on the tail.
@@ -120,7 +124,7 @@ func _sample(clip: String, t: float, open: float) -> PackedFloat32Array:
 	var w := at.z
 	var out := PackedFloat32Array()
 	out.resize(_size)
-	var heads := _slots * 5
+	var heads := _slots * S
 	var head_from := _track.head_at(0)
 	for k: int in heads:
 		out[k] = lerpf(_track.value(a, k), _track.value(b, k), w)
@@ -137,9 +141,9 @@ func _open_jaw(out: PackedFloat32Array, a: int, b: int, w: Vector2) -> void:
 	var jaw := slots_of("jaw")
 	for n: int in jaw.size():
 		var from := _track.open_at(n)
-		for v: int in 5:
+		for v: int in S:
 			var open := lerpf(_track.value(a, from + v), _track.value(b, from + v), w.x)
-			out[jaw[n] * 5 + v] = lerpf(out[jaw[n] * 5 + v], open, w.y)
+			out[jaw[n] * S + v] = lerpf(out[jaw[n] * S + v], open, w.y)
 
 
 ## A roar on the move: the walk's legs, pelvis and tail at walk frame `t`, the roar's upper body
@@ -147,25 +151,20 @@ func _open_jaw(out: PackedFloat32Array, a: int, b: int, w: Vector2) -> void:
 ## the roar). Returns the walk's planted bits.
 func _walk_legs(pose: PackedFloat32Array, t: float, open: float) -> int:
 	var walk := _sample("walk", t, open)
-	var at := _slots * 5 + _root * 3
+	var at := _slots * S + _root * 3
 	var from := _rig_point(pose, at)
 	var to := _rig_point(walk, at)
 	var turn := Basis(_root_turn(walk)) * Basis(_root_turn(pose)).inverse()
 	for j: int in _slots:
-		var k := j * 5
+		var k := j * S
 		if _walked[_track.slot_bone[j]]:
-			for v: int in 5:
+			for v: int in S:
 				pose[k + v] = walk[k + v]
 			continue
-		var half := (pose[k + 4] - pose[k + 3]) * 0.5
-		var c := Vector3(pose[k + 1], pose[k + 3] + half, -pose[k])
-		c = to + turn * (c - from)
-		pose[k] = -c.z
-		pose[k + 1] = c.x
-		pose[k + 3] = c.y - half
-		pose[k + 4] = c.y + half
+		var e := ends(pose, k)
+		put_ends(pose, k, to + turn * (e[0] - from), to + turn * (e[1] - from))
 	for b: int in _track.bones.size():
-		var h := _slots * 5 + b * 3
+		var h := _slots * S + b * 3
 		var c := _rig_point(walk, h) if _walked[b] else to + turn * (_rig_point(pose, h) - from)
 		pose[h] = -c.z
 		pose[h + 1] = c.x
@@ -173,6 +172,30 @@ func _walk_legs(pose: PackedFloat32Array, t: float, open: float) -> int:
 	for k: int in range(toe(0), _size):  # the hind toes and the root's turn: the walk's
 		pose[k] = walk[k]
 	return bits
+
+
+## Slot k's two ends in the rig's own axes (x across, y up, z back): its bottom disc's centre, then
+## its top disc's.
+static func ends(pose: PackedFloat32Array, k: int) -> Array[Vector3]:
+	var bottom := Vector3(pose[k + 1], pose[k + 3], -pose[k])
+	return [bottom, Vector3(pose[k + 6], pose[k + 4], -pose[k + 5])]
+
+
+## Puts slot k's ends (rig axes) back; turned over, the lower end becomes its bottom.
+static func put_ends(pose: PackedFloat32Array, k: int, a: Vector3, b: Vector3) -> void:
+	if a.y > b.y:
+		var swap := a
+		a = b
+		b = swap
+		var r := pose[k + 2]
+		pose[k + 2] = pose[k + 7]
+		pose[k + 7] = r
+	pose[k] = -a.z
+	pose[k + 1] = a.x
+	pose[k + 3] = a.y
+	pose[k + 4] = b.y
+	pose[k + 5] = -b.z
+	pose[k + 6] = b.x
 
 
 ## A pose's point at k ([forward, across, height]) in the rig's own axes (x across, y up, z back).
@@ -199,15 +222,16 @@ func _rake(pose: PackedFloat32Array, t: float, side: float, open: float) -> void
 	var idle := _sample("idle", 0.0, open)
 	bits = keep
 	var rest := _rest_weight(t) * _reach(t)
-	var h := _slots * 5 + arm[0] * 3
+	var h := _slots * S + arm[0] * 3
 	for b: int in arm:
 		for j: int in slots_of(_track.bones[b]):
-			var k := j * 5
-			pose[k + 2] = rake[k + 2]  # the radius
-			for v: int in [0, 1, 3, 4]:
-				_rake_value(pose, [rake, idle], Vector3i(k + v, h + mini(v, 2), 0), rest)
+			var k := j * S
+			pose[k + 2] = rake[k + 2]  # the radii
+			pose[k + 7] = rake[k + 7]
+			for v: int in [0, 1, 3, 4, 5, 6]:
+				_rake_value(pose, [rake, idle], Vector3i(k + v, h + RAKE_AXIS[v], 0), rest)
 	for b: int in arm.slice(1):  # the arm's joints after the shoulder
-		var k := _slots * 5 + b * 3
+		var k := _slots * S + b * 3
 		for v: int in 3:
 			_rake_value(pose, [rake, idle], Vector3i(k + v, h + v, 0), rest)
 
@@ -252,13 +276,14 @@ func _reach(t: float) -> float:
 ## Turns `bones` (their slots and heads, not the pivot's own head) about bone `pivot`'s head by
 ## `yaw` (rad, + to the left as the rig's yaw about the world's up).
 func _turn(pose: PackedFloat32Array, bones: Array[int], pivot: int, yaw: float) -> void:
-	var p := _slots * 5 + pivot * 3
+	var p := _slots * S + pivot * 3
 	var at := Vector2(pose[p + 1], -pose[p])  # (across, back): the rig's x and z
 	for b: int in bones:
 		for j: int in slots_of(_track.bones[b]):
-			_turn_at(pose, j * 5, at, yaw)
+			_turn_at(pose, j * S, at, yaw)
+			_turn_at(pose, j * S + 5, at, yaw)
 		if b != pivot:
-			_turn_at(pose, _slots * 5 + b * 3, at, yaw)
+			_turn_at(pose, _slots * S + b * 3, at, yaw)
 
 
 static func _turn_at(pose: PackedFloat32Array, k: int, at: Vector2, yaw: float) -> void:

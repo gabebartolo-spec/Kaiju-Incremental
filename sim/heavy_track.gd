@@ -2,14 +2,18 @@ class_name HeavyTrack
 extends RefCounted
 ## A heavy kaiju's drawn poses as the sim reads them (D-208): the .ktrack file baked from the clips
 ## the game draws (tools/capture/bake_heavy_tracks.gd). Per clip frame: every slot of the body (a
-## piece of one bone's voxels) as an upright disc in body space at body scale 1, [forward, across
-## to the right, radius, lowest, highest]; the jaw's slots again with the maw held open; every
-## bone's head [forward, across, height]; the hind toes; the root bone's turn (a quaternion, x100);
-## and which hind feet the clip has down.
+## piece of one bone's voxels) in body space at body scale 1, as the hull of an upright disc at its
+## lowest point and one at its highest (a leaning, tapering column: a slanted shin or a domed back
+## does not fill its square corners), SLOT values; the jaw's slots again with the maw held open;
+## every bone's head [forward, across, height]; the hind toes; the root bone's turn (a quaternion,
+## x100); and which hind feet the clip has down.
 ## Read once per file and shared; pure, no randomness.
 
 const MAGIC := "KTRK"
-const VERSION := 1
+const VERSION := 2
+## Values per slot: [forward, across to the right, radius at its bottom, lowest, highest, forward,
+## across, radius at its top] (the bottom disc's centre first, the top disc's after).
+const SLOT := 8
 static var _cache := {}
 
 ## The clip meta ClipClock takes: {"fps", "clips": {name: [frames, loops]}, "spans": {...}}.
@@ -24,6 +28,10 @@ var walk_land := 0.0
 var step_frames := 1.0
 var hips := 0.0
 var hip_height := 1.0
+## One walk cycle's length (rig units) and walk clip frames a foot is in the air each cycle
+## (ClipSteps.swing_frames): a lifted foot's way back to its clip path (FootSwing).
+var stride := 1.0
+var swing_frames := 1.0
 ## The claw rake's reach as the bake drew it (BipedSwing.youth).
 var youth := 0.0
 ## Each hind leg's length, thigh plus shin, the two apart, and its rest knee side (rig units/axes).
@@ -74,13 +82,15 @@ func _load(raw: PackedByteArray) -> bool:
 	step_frames = Num.f(walk[1])
 	hips = Num.f(header["hips"])
 	hip_height = Num.f(header["hip_height"])
+	stride = Num.f(header["stride"])
+	swing_frames = Num.f(header["swing_frames"])
 	rake_arms = header["rake_arms"]
 	youth = Num.f(header["youth"])
 	for leg: Array in header["legs"]:
 		legs.append(Num.f(leg[0]) + Num.f(leg[1]))
 		leg_parts.append(Vector2(Num.f(leg[0]), Num.f(leg[1])))
 		leg_poles.append(Vector3(Num.f(leg[2]), Num.f(leg[3]), Num.f(leg[4])))
-	_per_frame = (slot_bone.size() + jaw_slots) * 5 + bones.size() * 3 + legs.size() * 3 + 4 + 1
+	_per_frame = (slot_bone.size() + jaw_slots) * SLOT + bones.size() * 3 + legs.size() * 3 + 4 + 1
 	var clips := {}
 	var total := 0
 	for c: Dictionary in header["clips"]:
@@ -128,18 +138,18 @@ func value(frame: int, k: int) -> float:
 	return _raw.decode_s16(_data_at + (frame * _per_frame + k) * 2) * 0.01
 
 
-## Where slot j's five values start in a frame; the jaw's open slots follow the slots.
+## Where slot j's SLOT values start in a frame; the jaw's open slots follow the slots.
 func slot_at(j: int) -> int:
-	return j * 5
+	return j * SLOT
 
 
 func open_at(n: int) -> int:
-	return (slot_bone.size() + n) * 5
+	return (slot_bone.size() + n) * SLOT
 
 
 ## Where bone b's head starts in a frame; then hind toe i's; then the planted bits.
 func head_at(b: int) -> int:
-	return (slot_bone.size() + jaw_slots) * 5 + b * 3
+	return (slot_bone.size() + jaw_slots) * SLOT + b * 3
 
 
 func toe_at(i: int) -> int:

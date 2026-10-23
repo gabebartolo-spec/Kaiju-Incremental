@@ -14,38 +14,15 @@ signal foot_planted(side: String, strength: float, at: Vector3)
 ## Joint filler cubes are this much smaller, so they stay inside the skin until a bend opens it.
 const JOINT_INSET := 0.82
 
-
-## A run of physics bones (tail, antenna, tentacle) simulated as Verlet points.
-class SpringChain:
-	var names: Array[String] = []
-	var stiffness := Num.f(Content.section("chain")["stiffness"])
-	var gravity_scale := 1.0
-	## Extra rotation per bone on top of its rest pose: how the gait steers the chain.
-	var drive: Array[Basis] = []
-	## Joint world positions this frame and last frame (index 0 is the root).
-	var pos := PackedVector3Array()
-	var prev := PackedVector3Array()
-	## When set, the joint at that index is pinned to this world point (a tentacle tip gripping).
-	var pins: Dictionary = {}
-	## Joints never sink below this world height (a tentacle lying on the street).
-	var ground := -INF
-	## Whole-chain contraction (1 = rest length): a gripping tentacle shortens as it hauls.
-	var contract := 1.0
-
-	## Throws every joint (more towards the tip): a stomp whips the tail.
-	func kick(velocity: Vector3, dt: float) -> void:
-		for i: int in range(1, pos.size()):
-			prev[i] -= velocity * dt * float(i) / (pos.size() - 1)
-
-
 var height_units: float
 ## The asset base this rig was built from ("reptilian_adult"; "" for a rig built in code): picks its
-## weight class (body_class()).
+## weight class (BodyClass.of_kind).
 var kind := ""
 ## "biped", "hexapod" or "radial" (rig.json "type"); picks the gait.
 var body_plan := "biped"
 var gait: KaijuGait
-var chains: Array[SpringChain] = []
+## Its spring chains (RigChains: tails, antennae, tentacles).
+var springs: RigChains
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
 var bone_close: Dictionary = {}
 ## Bones that rest in a sculpted snarl (rig.json "snarl"): their mouth shows true colours.
@@ -60,8 +37,6 @@ var _parent: Dictionary = {}  # name -> parent bone name ("" for the root)
 var _voxels: Dictionary = {}  # name -> VoxelBuilder of that bone's cells (rig space, voxel units)
 var _voxel := 1.0
 var _glow := 1.5
-## Time the chains have not stepped yet: they advance in fixed steps (tuning "chain" "step_hz").
-var _owed := 0.0
 
 
 ## Builds the rig from <base>.rig.json and <base>.kvox; returns null if either is missing.
@@ -136,7 +111,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		attach_voxels(bone_name, band, null, JOINT_INSET)
 	height_units = vox.height_hint * voxel if vox.height_hint > 0 else 10.0
 	_relax_arms()
-	_collect_chains(defs)
+	springs = RigChains.new(self, defs)
 	match body_plan:
 		"hexapod":
 			gait = HexapodGait.new(self)
@@ -177,57 +152,9 @@ func _relax_arms() -> void:
 		bone(n).transform = rest_of(n)
 
 
-func _collect_chains(defs: Array) -> void:
-	var by_parent: Dictionary = {}
-	for d: Dictionary in defs:
-		var parent := str(d["parent"]) if d["parent"] != null else ""
-		by_parent[parent] = by_parent.get(parent, []) + [str(d["name"])]
-	for d: Dictionary in defs:
-		var bone_name := str(d["name"])
-		var parent := str(d["parent"]) if d["parent"] != null else ""
-		var is_physics: bool = d["physics"]
-		var starts_chain := is_physics and not _is_physics(defs, parent)
-		if starts_chain:
-			var chain := SpringChain.new()
-			chain.names.append(bone_name)
-			var walk := bone_name
-			while by_parent.has(walk):
-				var children: Array = by_parent[walk]
-				if children.size() != 1:
-					break
-				walk = str(children[0])
-				chain.names.append(walk)
-			for _n: String in chain.names:
-				chain.drive.append(Basis.IDENTITY)
-			chains.append(chain)
-
-
-func _is_physics(defs: Array, bone_name: String) -> bool:
-	for d: Dictionary in defs:
-		if str(d["name"]) == bone_name:
-			var p: bool = d["physics"]
-			return p
-	return false
-
-
 static func _vec(v: Variant) -> Vector3:
 	var a: Array = v
 	return Vector3(Num.f(a[0]), Num.f(a[1]), Num.f(a[2]))
-
-
-## This kaiju's weight class (tuning "body_class": its footfall and tail), or {} for none.
-static func class_of(rig_kind: String) -> Dictionary:
-	var cfg := Content.section("body_class")
-	var by_kind: Dictionary = cfg["kaiju"]
-	if not by_kind.has(rig_kind):
-		return {}
-	var classes: Dictionary = cfg["classes"]
-	var found: Dictionary = classes[str(by_kind[rig_kind])]
-	return found
-
-
-func body_class() -> Dictionary:
-	return KaijuRig.class_of(kind)
 
 
 func roar() -> void:
@@ -338,54 +265,3 @@ func set_world_basis(bone_name: String, world_basis: Basis) -> void:
 ## World position of a bone's tail as posed now.
 func tail_world(bone_name: String) -> Vector3:
 	return bone(bone_name).global_transform * dir_of(bone_name)
-
-
-# --- spring chains -------------------------------------------------------------------------------
-
-
-## Spring chains: joints follow where the (driven) rest pose would put them, with inertia and
-## gravity, then each bone is turned to point at the simulated position of the next joint.
-func simulate_chains(delta: float) -> void:
-	var cfg := Content.section("chain")
-	var h := 1.0 / Num.f(cfg["step_hz"])
-	_owed += delta
-	var steps := mini(int(_owed / h + 1e-6), Num.i(cfg["max_substeps"]))
-	_owed = clampf(_owed - steps * h, 0.0, h)  # a long frame's excess time is dropped, not caught up
-	for chain: SpringChain in chains:
-		var target := _rest_points(chain)
-		if chain.pos.is_empty():
-			chain.pos = target.duplicate()
-			chain.prev = target.duplicate()
-		chain.pos[0] = target[0]
-		for _step: int in steps:
-			ChainStep.run(chain, target, h)
-		for i: int in chain.names.size():
-			aim(chain.names[i], chain.pos[i], chain.pos[i + 1])
-		if chain.contract != 1.0:
-			bone(chain.names[0]).scale = Vector3.ONE * chain.contract
-
-
-## World positions of a chain's joints if every bone of it sat at its driven rest pose.
-func _rest_points(chain: SpringChain) -> PackedVector3Array:
-	var names := chain.names
-	var parent := bone(names[0]).get_parent() as Node3D
-	var first := rest_of(names[0])
-	var shrink := Vector3.ONE * chain.contract
-	var xform := (
-		parent.global_transform
-		* Transform3D((first.basis * chain.drive[0]).scaled(shrink), first.origin)
-	)
-	var points := PackedVector3Array([xform.origin])
-	for i: int in names.size():
-		points.append(xform * dir_of(names[i]))
-		if i + 1 < names.size():
-			var r := rest_of(names[i + 1])
-			xform = xform * Transform3D(r.basis * chain.drive[i + 1], r.origin)
-	return points
-
-
-func chain_named(first_bone: String) -> SpringChain:
-	for chain: SpringChain in chains:
-		if chain.names[0] == first_bone:
-			return chain
-	return null

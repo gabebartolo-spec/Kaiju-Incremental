@@ -226,7 +226,7 @@ func _check_feet_of(species_id: String) -> void:
 	var def: Dictionary = Content.species_def(species_id)
 	var colors: Dictionary = def["colors"]
 	var kaiju: KaijuModel
-	var heavy: Dictionary = KaijuRig.class_of("%s_adult" % species_id).get("sim", {})
+	var heavy: Dictionary = BodyClass.of_kind("%s_adult" % species_id).get("sim", {})
 	if not heavy.is_empty():
 		kaiju = FeetWalk.heavy(root, species_id)
 	else:

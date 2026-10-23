@@ -115,7 +115,7 @@ func _init(p_rig: KaijuRig) -> void:
 		hips += rig.head_of(leg.names[0]).y
 		legs.append(leg)
 	hip_height = hips / maxf(1.0, legs.size())
-	for chain: KaijuRig.SpringChain in rig.chains:
+	for chain: SpringChain in rig.springs.chains:
 		chain.stiffness = 60.0  # stiff, springy feelers
 		chain.gravity_scale = 0.3
 	upper = HexapodUpper.new(self)
@@ -138,7 +138,7 @@ func update(delta: float) -> void:
 	_solve(root, dt)
 	upper.perch = _perch
 	upper.update(dt, 0.0 if moving or _lag.length() > 0.05 * hip_w else 1.0)
-	rig.simulate_chains(delta)
+	rig.springs.simulate(delta)
 	for leg: Leg in legs:
 		if leg.planted:
 			var at := rig.tail_world(leg.names[2])

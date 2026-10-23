@@ -296,13 +296,13 @@ func _check_chain_rate() -> void:
 		var colors: Dictionary = Content.species_def("cephalopod")["colors"]
 		var rig := CephalopodStandIn.build(colors, 10.0, 1.5)
 		root.add_child(rig)
-		rig.simulate_chains(0.0)  # lays the chains out at rest
-		var chain: KaijuRig.SpringChain = rig.chains[0]
+		rig.springs.simulate(0.0)  # lays the chains out at rest
+		var chain: SpringChain = rig.springs.chains[0]
 		var start := chain.pos.duplicate()
 		chain.kick(Vector3(8.0, 4.0, 0.0), 1.0 / 60.0)
 		chain.drive[2] = Basis(Vector3.BACK, 0.6)
 		for _frame: int in roundi(2.0 * fps):
-			rig.simulate_chains(1.0 / fps)
+			rig.springs.simulate(1.0 / fps)
 		ends.append(chain.pos.duplicate())
 		moved = maxf(moved, start[start.size() - 1].distance_to(chain.pos[start.size() - 1]))
 		rig.free()

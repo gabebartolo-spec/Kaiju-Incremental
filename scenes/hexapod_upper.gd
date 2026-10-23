@@ -178,7 +178,7 @@ func _twitch(part: int, calm: float) -> void:
 		_:
 			_head_hold = 0.0  # snap the head now
 	# The feelers flick with every twitch.
-	for chain: KaijuRig.SpringChain in _rig.chains:
+	for chain: SpringChain in _rig.springs.chains:
 		if rng.randf() < 0.7:
 			var kick := Vector3(
 				rng.randf_range(-1, 1), rng.randf_range(-0.5, 1), rng.randf_range(-1, 1)

@@ -146,7 +146,7 @@ func update(delta: float) -> void:
 	swing.youth = youth
 	swing.yaw_rate = yaw_rate
 	swing.update(time, body.hip_yaw, head.roar_open(), dt)
-	rig.simulate_chains(delta)
+	rig.springs.simulate(delta)
 	_measure_slide()
 
 
@@ -162,7 +162,7 @@ func stomp() -> void:
 	if not stomping:
 		_heavy_next = true  # walking: the next footfall is the stomp
 	head.dip()
-	var tail := rig.chain_named("tail0")
+	var tail := rig.springs.named("tail0")
 	if tail != null:
 		tail.kick(Vector3(0, 9.0, 0) * s, 1.0 / 60.0)
 
