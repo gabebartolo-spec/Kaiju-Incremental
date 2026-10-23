@@ -17,6 +17,11 @@ const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building o
 const WET_GROUP := "wet_ground"  # the slabs WeatherView wets (ground_slab.gdshader `wet`)
 const SLAB_SHADER := preload("res://scenes/ground_slab.gdshader")
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
+const BLOCKS := preload("res://scenes/ground_blocks.gdshader")
+## The shader's uniforms, each read from the look as "ground_<name>" (data/looks.json).
+const BLOCK_KEYS: Array[String] = [
+	"block", "block_noise", "patch_noise", "speck_chance", "speck_dark", "seam", "fade_near", "fade_far"
+]
 
 var plan: Dictionary
 var cfg: Dictionary
@@ -250,6 +255,15 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mmi.add_to_group(WET_GROUP)
 	return mmi
+
+
+## The slabs' material: the instance colour in the city's block grain (D-163), numbers from the look.
+static func block_material() -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = BLOCKS
+	for key: String in BLOCK_KEYS:
+		mat.set_shader_parameter(key, Look.value("ground_" + key))
+	return mat
 
 
 func _build_paint() -> MultiMeshInstance3D:

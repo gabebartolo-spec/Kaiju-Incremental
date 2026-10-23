@@ -59,6 +59,7 @@ var _kaiju_at := Vector3.ZERO
 var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _ability := RampageAbility.new()
 var _camera: Camera3D
+var _far_depth: FarDepth  ## the far blur, locked on the kaiju (D-163)
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
@@ -161,6 +162,7 @@ func _ready() -> void:
 	_camera.fov = camera_fov
 	add_child(_camera)
 	_camera.current = true
+	_far_depth = FarDepth.new(_camera)
 	_start_sound()
 	_place_camera(1.0)
 	_add_overlays()
@@ -226,6 +228,7 @@ func _process(delta: float) -> void:
 	if not is_loaded:
 		return
 	_place_camera(delta)
+	_far_depth.follow(_kaiju_at)
 	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	shake.update(delta)
 	if _stomp_wait > 0.0:
