@@ -53,7 +53,7 @@ func start(sim: RampageSim) -> void:
 	# angles to its body slid its planted feet). Call body.use_species first.
 	if sim.body.heavy() and sim.kaiju_pos != sim.clamp_to_arena(_bank):
 		sim.facing = sim.kaiju_pos.direction_to(sim.clamp_to_arena(_bank))
-	sim.body.heading = sim.facing
+	sim.body.face_now(sim.facing)
 
 
 ## How far through its rise the kaiju is, 0 (under) to 1 (wading in the river).

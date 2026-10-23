@@ -56,8 +56,17 @@ var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
+## Where a heavy body's drawn body faces (D-200, "Head aims, body follows"): it follows the heading
+## at the aim's pace and never lets the neck turn past its cap; the body volume faces it about the
+## hips. The heading for any other body.
+var body_dir := Vector2(0, -1)
+## A heavy body's tail (D-208): its swing and its discs; null for any other body.
+var tail: TailSim
 ## A heavy body's turn and pace (tuning "body_class" sim, D-201; {} for none): its animations lead.
 var _heavy: Dictionary = {}
+var _aim: Dictionary = {}  # its class's aim (D-200)
+var _last_dir := Vector2(0, -1)
+var _last_tail: Array = []  # the tail's discs at the last step
 var _classes: Dictionary = {}  # tuning "body_class"
 
 
@@ -87,11 +96,21 @@ func use_species(species_id: String) -> void:
 		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
-	_heavy = _class_sim(species_id)
+	var found := _class_of(species_id)
+	_heavy = found.get("sim", {})
+	_aim = found.get("aim", {})
+	body_dir = heading
+	_last_dir = heading
+	_last_tail = []
+	var tail_tune: Dictionary = found.get("tail", {})
+	tail = TailSim.new(tail_tune) if tail_tune.has("chain") else null
+	if _heavy.has("discs"):  # its own body ahead of the tail (the tail's discs ride the tail)
+		_discs = _heavy["discs"]
+		_volume.discs = _discs
 
 
-## The sim block of this species' weight class at the sim's growth stage (body_class), or {}.
-func _class_sim(species_id: String) -> Dictionary:
+## This species' weight class at the sim's growth stage (body_class "classes"), or {}.
+func _class_of(species_id: String) -> Dictionary:
 	if _classes.is_empty():
 		return {}
 	var by_kaiju: Dictionary = _classes["kaiju"]
@@ -101,8 +120,15 @@ func _class_sim(species_id: String) -> Dictionary:
 		return {}
 	var all: Dictionary = _classes["classes"]
 	var found: Dictionary = all[str(by_kaiju[kind])]
-	var block: Dictionary = found.get("sim", {})
-	return block
+	return found
+
+
+## Faces the body (and its drawn body) `dir` at once: a facing set from outside, not a turn.
+func face_now(dir: Vector2) -> void:
+	heading = dir
+	body_dir = dir
+	_last_dir = dir
+	_last_heading = dir
 
 
 ## True for a body of a heavy weight class (body_class sim, D-201): its animations lead.
@@ -314,13 +340,13 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
 	if _heavy.is_empty():  # a heavy body turned once this step, about its hips (steer, D-201)
 		_face(dt)
+	_follow(dt)
 	if not active() or sim.airborne:
 		_last_pos = Vector2(INF, INF)
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_heading := heading if _last_pos.x == INF else _last_heading
-	_volume.step_s = dt
-	broken += _volume.sweep(from, from_heading, sim.kaiju_pos, heading)
+	_sweep(from, from_heading, dt)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)
@@ -329,6 +355,71 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 		dash.left = 0.0  # a dash into a wall that has not given yet stops at it
 	_last_pos = sim.kaiju_pos
 	_last_heading = heading
+	_last_dir = body_dir
+
+
+## While the kaiju rises out of the river and wades to the bank (Emergence), a heavy body breaks
+## what it rises and wades into (D-208: "any contact a kaiju has with a building will damage it");
+## nothing holds it there.
+func emerging(dt: float) -> void:
+	if _heavy.is_empty() or not active():
+		return
+	_follow(dt)
+	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
+	var from_heading := heading if _last_pos.x == INF else _last_heading
+	_sweep(from, from_heading, dt)
+	_last_pos = sim.kaiju_pos
+	_last_heading = heading
+	_last_dir = body_dir
+
+
+## Breaks every standing chunk the body (and a heavy body's tail) touched since `from`.
+func _sweep(from: Vector2, from_heading: Vector2, dt: float) -> void:
+	_volume.step_s = dt
+	var s := sim.body_scale()
+	var tail_to: Array = tail.discs(_centre(sim.kaiju_pos, heading), body_dir, s) if tail else []
+	var tail_from: Array = _last_tail if _last_tail.size() == tail_to.size() else tail_to
+	var was_dir := from_heading
+	if not _heavy.is_empty():
+		was_dir = _last_dir if _last_pos.x != INF else body_dir
+	broken += _volume.sweep(
+		_centre(from, from_heading, was_dir),
+		was_dir,
+		_centre(sim.kaiju_pos, heading),
+		body_dir,
+		tail_from,
+		tail_to
+	)
+	_last_tail = tail_to
+
+
+## A heavy body's drawn body follows the heading (D-200, its class's aim): it eases toward it, no
+## faster than follow_deg_s plus catch_per_deg for every degree past catch_from_deg, and is dragged
+## along so the neck never turns past neck_max_deg; its tail swings on the body's turning. Any
+## other body faces the heading.
+func _follow(dt: float) -> void:
+	if _aim.is_empty():
+		body_dir = heading
+		return
+	var err := body_dir.angle_to(heading)
+	var past := maxf(0.0, rad_to_deg(absf(err)) - Num.f(_aim["catch_from_deg"]))
+	var top := deg_to_rad(Num.f(_aim["follow_deg_s"]) + Num.f(_aim["catch_per_deg"]) * past)
+	top = minf(top, absf(err) * Num.f(_aim["ease_per_s"]))
+	body_dir = body_dir.rotated(clampf(err, -top * dt, top * dt))
+	var most := deg_to_rad(Num.f(_aim["neck_max_deg"]))
+	var left := body_dir.angle_to(heading)
+	if absf(left) > most:
+		body_dir = heading.rotated(-signf(left) * most)
+	if tail != null:
+		tail.step(atan2(-body_dir.x, -body_dir.y), dt)
+
+
+## The middle of the body volume for the kaiju at `at` heading `h`: a heavy body's drawn body
+## turns about its hips (pivot_ahead ahead of the middle) to `dir`; any other's is `at`.
+func _centre(at: Vector2, h: Vector2, dir: Vector2 = body_dir) -> Vector2:
+	if _heavy.is_empty():
+		return at
+	return at + (h - dir) * Num.f(_heavy["pivot_ahead"]) * sim.body_scale()
 
 
 ## A wall that has not given yet: the body slides along it if it can, else stays where it was.
@@ -385,7 +476,11 @@ func over(index: int) -> bool:
 
 
 ## Every standing chunk inside the body at a pose: {building index: {Vector3i: true}}.
+## A heavy body's drawn body faces body_dir about its hips; its tail, which only sweeps, is not
+## counted here (a tail brushing a tower does not hold the body back).
 func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 	var out: Dictionary = {}
-	_volume.collect(pos, facing, out, _volume.near(pos, pos, _volume.reach()))
+	var centre := _centre(pos, facing)
+	var dir := facing if _heavy.is_empty() else body_dir
+	_volume.collect(centre, dir, out, _volume.near(centre, centre, _volume.reach()))
 	return out

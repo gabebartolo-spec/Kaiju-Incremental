@@ -125,6 +125,7 @@ func _run() -> void:
 		kaiju.position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 		kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
+		kaiju.follow_body(sim.body)
 		kaiju.animate(DT, move.length(), -sim.body.turn_left)
 		way = way.slerp(sim.body.heading, minf(1.0, CAM_EASE * DT)).normalized()
 		_place(cam, kaiju, way, bs)

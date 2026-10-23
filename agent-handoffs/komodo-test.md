@@ -6,21 +6,22 @@ Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, n
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State: STOPPED for context (~290k) mid drift fix; a fresh session resumes at "Next steps"
-
-## Drift diagnosis (lead: diagnose first, no re-plant hack; bar < 0.1 units in stance)
-Probe `drift` column (KaijuModel.foot_drift, max since start), run 0-12 s:
-1. Rise from the river (0.6-2.1 s, idle): the planted lock kept its underwater height, the body rose, the leg ran
-   out of reach -> 1.0. FIXED: a clip-feet lock's height rides the clip toe (`_put_down`, `_lock[i].y`).
-2. Turns pivoted about the rig's middle (bbox centre, 5 units behind the pelvis) in sim and presentation, so the
-   hips swung off planted feet (~6 u/s at 50 deg/s). FIXED: heavy sim turns about the hips (BodyContact
-   `_turn_about_hips`, body_class sim pivot_ahead 5.0) and ClipGait `_turn_about_hips` swings the rig's lag about
-   the pelvis. Drift 6.4 -> 2.9.
-3. Playback now by real ground distance (`KaijuGait.moved`, unsmoothed) for clip feet; any motion walks (CLIP_STILL).
-4. REMAINING: drift opens at 2.95 s (walk at speed 10.4, +0.23) and through the walk->roar change 3.03-3.4 s
-   (speed 10 -> 0.7 -> 4; +2.6). Next: log per frame sim travel vs clip implied travel (d clip frames x stride /
-   frames per cycle) and the planted foot's lock vs ball, to see if it is the blend (KaijuClips.mix from walk to
-   roar mixes feet/planted before `_walking_legs` overrides) or the stance spot itself.
+## State (2026-10-24, builder b9, worktree agent-a9f99002139a20120, local branch komodo-test-b9 -> origin claude/komodo-test)
+- DONE bd842360: drift 2.94 -> 0.000 over 0-12 s (probe seed 0). Causes: BodyContact.step turned a heavy heading a 2nd
+  time without the hip swing; ClipGait walked by the node's travel (includes the hip swing) -> now `_hip_travel`;
+  the wade crabbed 90 deg (lead's call D: heavy rises facing the wade target, emergence.start; use_species first).
+- DONE: smoke_step_turn rewritten for heavy (4-5 s, <=45 deg/0.3 s, clip_planted, L/R, drift < 0.1, neck, aim). Smoke:
+  only "_check_feet_of reptilian planted feet hold 3.697 > 0.101" fails (drives the adult model with a crab/reversal
+  path the D-201 sim never makes: lead's call pending).
+- Turn numbers (D-208): 90 deg in 4.13 s, heading mean 21.5 max 30 deg/s, body max 30; 7 footfalls L/R alternating;
+  body yaws 232 frames, 41-42 with both hind feet planted; planted toes pivot up to 19 deg (swing 0.5); drift 0.
+- Croc wade (no change, lead): 90 deg off facing, baby 51 / Behemoth 30 frames.
+- IN PROGRESS (lead D-208): (a) the body volume sweeps during emergence (heavy); (b) sim-led tail: TailSim (port of
+  ClipTail: sway, drag, spring) + the sim's body yaw (D-200 aim follow) + tail discs refit to the Komodo riding the
+  chain; presentation reads the sim's body yaw and tail bends. Bar: 0 pass-through frames for every part over the
+  25 s carve probe, no chunk broken > 0.5 units outside the drawn mesh. Write a sim-review packet here when done.
+- Carve audit before (b): tail tip in standing chunks 59 frames (55 in turns), side 0.7-3.3 units off axis; rise
+  (D) head/body/arm/leg inside a bankside building 0.3-3.0 s. Scratch probes (uncommitted): tools/capture/_b9_*.gd.
 
 ## D-201 (heavy only)
 - SIM `sim/body_contact.gd`: body_class sim block by species_stage: turn <= 30 deg/s, accel 20 deg/s^2, smooth (no
@@ -31,11 +32,20 @@ Probe `drift` column (KaijuModel.foot_drift, max since start), run 0-12 s:
 - Probe (run 3-9 s): max body yaw in 0.3 s 15 deg (bar 45; was 67); plants L 4.42 5.97 7.50, R 3.58 5.17 6.77 8.13
   (alternating, 0.63-0.8 s apart, no same-frame pair); camera bottom 1-2 frames after a plant; tail tip half-range
   3.9 m (~11 deg).
-- NEW DEFECT: planted-foot drift grows to 7.6 units by 4.5 s (probe `drift` column; idle during the rise, then
-  walk set-off and the roar on the move). With no catch steps the lock target ends out of the leg's reach. smoke:
-  "reptilian's planted feet hold" 13.2 > 0.1 units, "a planted foot holds its spot" 414 cm. Needs a call.
-- Suites: clips 1 fail (tail-owner: off the clip 0.0275 rad from the sway; turn bend 0.064). smoke 5 fails: foot
-  drift x2 (above), 90 deg turn takes inf s (1.0-1.25 s bar is the croc's), yaw slices 40%, foot yaw 20.2 deg.
+
+## Sim-review packet (D-208, shared sim change; heavy class only, the croc and other species unchanged)
+- What changed: `sim/tail_sim.gd` (new): ClipTail's spring/drag/sway moved into the sim, stepped from the drawn
+  body's yaw; lays the tail chain (tuning heavy tail root + chain, fitted by tools/capture/fit_tail_chain.gd) and
+  returns discs along it. `BodyContact`: `body_dir` (D-200 aim follow, neck cap) and `tail` for heavy; the volume's
+  pose is the hips-pivoted body (`_centre`); `_sweep` carries tail discs from/to; `emerging(dt)` sweeps while a
+  heavy body rises and wades (RampageSim.step calls it); `face_now`; heavy `sim.discs` replace the stage's discs.
+  `BodyVolume.collect(..., free)` and `sweep(..., tail_from, tail_to)` (lerped per sample); `last_hits` for probes.
+  Presentation: `KaijuModel.follow_body(sim.body)` -> gait `fed_yaw`/`fed_tail`; ClipGait shows them (no own neck
+  drag, no turn-clip body steer, no own tail swing) when fed.
+- Invariants: non-heavy bodies take identical paths (`_follow` sets body_dir = heading, `_centre` = kaiju_pos, no tail
+  discs, `emerging` returns at once). The tail never holds the body (inside() ignores it); it only sweeps. Pure: no
+  randomness, the sway clock is the tail's own accumulated dt. Tail discs are recomputed each step from state.
+- Seeds: carve probe autoplay seed 0 (Kit.autoplay, stage 2), 25 s; smoke_step_turn seed army 0.
 
 ## body_class heavy numbers (data/tuning.json, PLACEHOLDER for the critic)
 - footfall: strength_min 0.85, dust_gain 2.0, dip 0.35 (x body scale x weight), dip_recover 6.0, shake_source

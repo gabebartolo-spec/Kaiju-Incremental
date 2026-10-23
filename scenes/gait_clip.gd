@@ -136,6 +136,10 @@ func update(delta: float) -> void:
 	track(delta)
 	if _clip_feet:
 		_hip_travel()
+	if _fed():  # the sim's own body yaw (D-208): the body volume and the tail ride it
+		body_yaw = fed_yaw
+		_body_yaw_v = 0.0
+		rig.rotation.y = wrapf(body_yaw - model_yaw, -PI, PI)
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
@@ -261,6 +265,8 @@ func _walk_entry() -> float:
 
 ## The body follows the turn clip's yaw from where it faced to the new heading.
 func _steer_turn() -> void:
+	if _fed():  # the sim turns the body (D-208); the clip only steps the feet
+		return
 	var yaw := absf(clips.pose_at(state, clip_time).yaw)
 	var full := absf(clips.pose_at(state, clips.frames_of(state) - 1).yaw)
 	var k := clampf(yaw / maxf(full, 0.001), 0.0, 1.0)
@@ -282,6 +288,8 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		elif bone_name.begins_with("tail"):
 			var i_tail := bone_name.to_int()
 			var bend := swing.whip_yaw(i_tail) + _tail.bend(i_tail)
+			if _fed() and i_tail < fed_tail.size():
+				bend = fed_tail[i_tail]  # the sim's tail (D-208): no swing of its own
 			q = Quaternion(Vector3.UP, bend) * q
 		var offset := pose.offset * clips.rig_scale + drop if i == 0 else Vector3.ZERO
 		rig.pose_basis(bone_name, Basis(q), offset)
@@ -295,6 +303,11 @@ func _moving(dt: float) -> bool:
 	if _clip_feet:
 		return moved > CLIP_STILL * hip_height * s * dt
 	return speed >= STAND_SPEED * hip_height * s
+
+
+## True when the sim gives this heavy body its yaw and tail (KaijuModel.follow_body, D-208).
+func _fed() -> bool:
+	return _clip_feet and fed_yaw != INF
 
 
 ## A body whose clip leads walks as far as its hips go over the ground (D-201): in a turn its node
@@ -350,7 +363,7 @@ func _turn_about_hips() -> void:
 
 ## A heavy body is dragged round so its neck never turns past neck_max_deg from it (D-200).
 func _hold_neck() -> void:
-	if _aim.is_empty():
+	if _aim.is_empty() or _fed():
 		return
 	var most := deg_to_rad(Num.f(_aim["neck_max_deg"]))
 	var err := wrapf(model_yaw - body_yaw, -PI, PI)

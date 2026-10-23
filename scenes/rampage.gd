@@ -305,6 +305,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 	_kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 	# sim angle to model yaw: the sign flips
 	_kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
+	_kaiju.follow_body(sim.body)  # a heavy body: the sim's body yaw and tail (D-208)
 	_kaiju.animate(delta, moving, -sim.body.turn_left)
 
 

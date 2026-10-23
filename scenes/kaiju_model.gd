@@ -92,6 +92,15 @@ func follow_steps(step_phase: float, step_ratio: float) -> void:
 		_rig.gait.step_ratio = step_ratio
 
 
+## A heavy body's drawn body and tail as the sim has them (BodyContact.body_dir, TailSim.bends,
+## D-208): the gait shows them instead of working out its own.
+func follow_body(body: BodyContact) -> void:
+	if _rig == null or body.tail == null:
+		return
+	_rig.gait.fed_yaw = atan2(-body.body_dir.x, -body.body_dir.y)
+	_rig.gait.fed_tail = body.tail.bends
+
+
 ## moving: 0..1 how hard it walks; turn_ahead: yaw (rad) still to turn, the head leads by it.
 func animate(delta: float, moving: float, turn_ahead: float = INF) -> void:
 	_walk_phase += delta * (2.0 + 8.0 * moving)

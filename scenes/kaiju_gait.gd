@@ -38,6 +38,10 @@ var turn_ahead := INF
 var step_phase := INF
 ## How long this step is next to a full stride, 0..1 (BodyContact.step_ratio).
 var step_ratio := 1.0
+## The sim's own body yaw (rad; INF: not told) and tail bends (rad per tail bone; empty: not told)
+## for a heavy body (BodyContact.body_dir, TailSim.bends, D-208): a gait that is told shows them.
+var fed_yaw := INF
+var fed_tail: Array[float] = []
 var time := 0.0
 ## Top turn rate (rad/s at scale 1); a gait may change it (a skittering insect turns fast).
 var turn_max := BODY_TURN_MAX

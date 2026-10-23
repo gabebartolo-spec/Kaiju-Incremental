@@ -209,7 +209,10 @@ func result() -> Dictionary:
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
 	_events = []
-	if over or emerge.step(self, dt):
+	if over:
+		return _events
+	if emerge.step(self, dt):
+		body.emerging(dt)  # a heavy body breaks what it rises and wades into (D-208)
 		return _events
 	time_left -= dt
 	elapsed += dt

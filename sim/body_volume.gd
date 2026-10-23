@@ -13,6 +13,9 @@ var sim: RampageSim
 var cfg: Dictionary
 ## Seconds the sweep in hand covers (a building that dwarfs the kaiju is chewed at bite_dps x it).
 var step_s := 0.0
+## The standing chunks the last sweep touched, {building index: {Vector3i: true}} (for tests and
+## probes: where the body broke or chewed).
+var last_hits: Dictionary = {}
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -45,63 +48,101 @@ func near(from: Vector2, to: Vector2, reach: float) -> Array[int]:
 	return out
 
 
-func collect(pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int]) -> void:
+## Every standing chunk the body's discs overlap at a pose, into {building index: {Vector3i: true}};
+## `free` adds discs placed in the world, [centre, radius, bottom, top] (a heavy body's tail,
+## TailSim.discs: the sizes at body scale 1).
+func collect(
+	pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int], free: Array = []
+) -> void:
+	for d: Array in discs:
+		_collect_disc(pos + facing * Num.f(d[0]) * sim.body_scale(), d, 1, into, near)
+	for d: Array in free:
+		var centre: Vector2 = d[0]
+		_collect_disc(centre, d, 1, into, near)
+
+
+## One disc at `centre` (world), its radius, bottom and top at d[k], d[k + 1], d[k + 2].
+func _collect_disc(centre: Vector2, d: Array, k: int, into: Dictionary, near: Array[int]) -> void:
 	var s := sim.body_scale()
 	var skin := Num.f(cfg["skin"])
-	for d: Array in discs:
-		var centre := pos + facing * Num.f(d[0]) * s
-		var r := Num.f(d[1]) * s - skin
-		if r <= 0.0:
+	var r := Num.f(d[k]) * s - skin
+	if r <= 0.0:
+		return
+	var y_lo := sim.stand_y + Num.f(d[k + 1]) * s + skin
+	var y_hi := sim.stand_y + Num.f(d[k + 2]) * s - skin
+	for i: int in near:
+		var b := sim.buildings[i]
+		if absf(b.x - centre.x) > b.w * 0.5 + r or absf(b.z - centre.y) > b.d * 0.5 + r:
 			continue
-		var y_lo := sim.stand_y + Num.f(d[2]) * s + skin
-		var y_hi := sim.stand_y + Num.f(d[3]) * s - skin
-		for i: int in near:
-			var b := sim.buildings[i]
-			if absf(b.x - centre.x) > b.w * 0.5 + r or absf(b.z - centre.y) > b.d * 0.5 + r:
-				continue
-			# Local cell ranges the disc's square can touch.
-			var x0 := maxi(0, floori(centre.x - r - (b.x - b.w * 0.5)))
-			var x1 := mini(b.w - 1, floori(centre.x + r - (b.x - b.w * 0.5)))
-			var z0 := maxi(0, floori(centre.y - r - (b.z - b.d * 0.5)))
-			var z1 := mini(b.d - 1, floori(centre.y + r - (b.z - b.d * 0.5)))
-			var y0 := maxi(0, floori(y_lo))
-			var y1 := mini(b.height - 1, ceili(y_hi) - 1)
-			for x: int in range(x0, x1 + 1):
-				for z: int in range(z0, z1 + 1):
-					var p := b.chunk_world(Vector3i(x, 0, z))
-					var gap := Vector2(
-						maxf(absf(p.x - centre.x) - CHUNK_HALF, 0.0),
-						maxf(absf(p.z - centre.y) - CHUNK_HALF, 0.0)
-					)
-					if gap.length() >= r:
-						continue
-					for y: int in range(y0, y1 + 1):
-						var c := Vector3i(x, y, z)
-						if b.frame.alive(c):
-							if not into.has(i):
-								into[i] = {}
-							var cells: Dictionary = into[i]
-							cells[c] = true
+		# Local cell ranges the disc's square can touch.
+		var x0 := maxi(0, floori(centre.x - r - (b.x - b.w * 0.5)))
+		var x1 := mini(b.w - 1, floori(centre.x + r - (b.x - b.w * 0.5)))
+		var z0 := maxi(0, floori(centre.y - r - (b.z - b.d * 0.5)))
+		var z1 := mini(b.d - 1, floori(centre.y + r - (b.z - b.d * 0.5)))
+		var y0 := maxi(0, floori(y_lo))
+		var y1 := mini(b.height - 1, ceili(y_hi) - 1)
+		for x: int in range(x0, x1 + 1):
+			for z: int in range(z0, z1 + 1):
+				var p := b.chunk_world(Vector3i(x, 0, z))
+				var gap := Vector2(
+					maxf(absf(p.x - centre.x) - CHUNK_HALF, 0.0),
+					maxf(absf(p.z - centre.y) - CHUNK_HALF, 0.0)
+				)
+				if gap.length() >= r:
+					continue
+				for y: int in range(y0, y1 + 1):
+					var c := Vector3i(x, y, z)
+					if b.frame.alive(c):
+						if not into.has(i):
+							into[i] = {}
+						var cells: Dictionary = into[i]
+						cells[c] = true
 
 
 ## Breaks every standing chunk the body touches moving and turning from one pose to the other in
 ## `step_s` seconds (a building that dwarfs the kaiju is chewed at bite_dps x step_s instead of
 ## broken outright, D-091); returns the chunks broken.
-func sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> int:
+## `tail_from` and `tail_to`: a heavy body's tail discs at either pose (TailSim.discs, the same
+## count), swept between them disc by disc.
+func sweep(
+	from: Vector2,
+	from_heading: Vector2,
+	to: Vector2,
+	to_heading: Vector2,
+	tail_from: Array = [],
+	tail_to: Array = []
+) -> int:
 	var span := reach()
+	var tail_moved := 0.0
+	for k: int in tail_to.size():
+		var a: Vector2 = tail_from[k][0]
+		var b: Vector2 = tail_to[k][0]
+		span = maxf(span, b.distance_to(to) + Num.f(tail_to[k][1]) * sim.body_scale())
+		tail_moved = maxf(tail_moved, a.distance_to(b))
+	last_hits = {}
 	var close := near(from, to, span)
 	if close.is_empty():
 		return 0
 	var turn := from_heading.angle_to(to_heading)
-	var travel := from.distance_to(to) + absf(turn) * span
+	var travel := maxf(from.distance_to(to) + absf(turn) * span, tail_moved)
 	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
 	var hits: Dictionary = {}
 	var broken := 0
 	for n: int in range(1, samples + 1):
-		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
+		var t := float(n) / samples
+		var pose := sweep_pose(from, from_heading, to, to_heading, t)
 		var at: Vector2 = pose[0]
 		var facing: Vector2 = pose[1]
-		collect(at, facing, hits, close)
+		var tail: Array = []
+		for k: int in tail_to.size():
+			var a: Vector2 = tail_from[k][0]
+			var b: Vector2 = tail_to[k][0]
+			var src: Array = tail_to[k]
+			var d := src.duplicate()
+			d[0] = a.lerp(b, t)
+			tail.append(d)
+		collect(at, facing, hits, close, tail)
+	last_hits = hits
 	for index: int in hits:
 		var cells: Array[Vector3i] = []
 		for c: Vector3i in hits[index]:
