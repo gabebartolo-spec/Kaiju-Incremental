@@ -24,6 +24,11 @@ var _view: MeshInstance3D
 var _mesh := ImmediateMesh.new()
 var _cfg := Content.section("claw_fx")
 var _drawn := false
+# This frame's camera and body scale, set by _look().
+var _eye := Vector3.ZERO
+var _right := Vector3.RIGHT
+var _up := Vector3.UP
+var _size := 1.0
 
 
 func _init(rig: Node3D) -> void:
@@ -61,14 +66,6 @@ func sweep(rake: ClawRake) -> void:
 	_mesh.surface_end()
 	_view.visible = true
 	_drawn = true
-
-
-func _glinting(at: float, rel: float) -> bool:
-	return at >= Num.f(_cfg["slash_glint_from_s"]) and rel < -Num.f(_cfg["slash_pre_s"])
-
-
-func _slashing(rel: float) -> bool:
-	return rel >= -Num.f(_cfg["slash_pre_s"]) and rel <= _slash_end()
 
 
 func _glinting(at: float, rel: float) -> bool:
