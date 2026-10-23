@@ -67,7 +67,7 @@
   after round 1 (lead ruled: cooldown from the volley's first shot, D-178 every volley), roof check; beam-cost fixes
   after its heliflight suite, repro scratchpad volley_port.py; go only on the fixed head green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
   16:37: night-fog SHIP 4524e90c (VFX lead) = #172; go on green AND once its evidence folder is found (path asked). gait-step-len pushed
-  #173 fix 841f93e2 re-review SHIP, go armed; #170 2d6710fa re-review SHIP, go armed; #174 7d54a279 go armed;
+  #173 fix 841f93e2 re-review SHIP, go armed; #170 MERGED e4100548; #174 pacing-ci MERGED f68caea1; #171 reopening;
   pacing run 39910488328 (GitHub) for #171; strike-delay red on military (volley builder diagnosing);
   #171 CLOSED to free its slot (git-helper reopens after pacing hours); #172 night-fog MERGED 4f8b8d10; #174
   pacing-ci held (needs pacing-run/** push trigger: beam-cost after #170 fix; workflow_dispatch needs main);
