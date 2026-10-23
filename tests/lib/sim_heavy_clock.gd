@@ -31,6 +31,7 @@ func run() -> void:
 	var why := "the same seed replays the heavy clip clock and volume (%s; off at step %d)"
 	_check.call(ok, why % [clips, first_off])
 	_restart_check()
+	_missing_track_check()
 
 
 ## A press again while the heavy body is still rolling to a stop (D-201's stop_s) carries its walk
@@ -81,14 +82,41 @@ func _replay() -> Array:
 	return rows
 
 
-func _heavy_sim() -> RampageSim:
+## A heavy kind with no track (the sim review of D-208): the sim and the drawn body read one answer
+## (BodyClass.of), so both treat it as a plain body; with the track lost the sim had walked a
+## plain croc while the drawn body played the heavy gait. Planted: the adolescent croc made heavy
+## in a copy of the tuning (it has no .ktrack). And every heavy kind the game names has its track.
+func _missing_track_check() -> void:
+	var tuning: Dictionary = Content.tuning().duplicate(true)
+	var table: Dictionary = tuning["body_class"]
+	var game_kinds: Dictionary = Content.section("body_class")["kaiju"]
+	var tracked := not game_kinds.is_empty()
+	for kind: String in game_kinds:
+		var cls: Dictionary = table["classes"][str(game_kinds[kind])]
+		tracked = tracked and (not cls.has("sim") or HeavyTrack.of(kind) != null)
+	_check.call(tracked, "every heavy kind in body_class has its baked track (%s)" % [game_kinds])
+	table["kaiju"]["reptilian_adolescent"] = "heavy"
+	var sim := _heavy_sim({"evolve1": 1}, tuning)
+	var drawn := BodyClass.of(table, "reptilian_adolescent")
+	var real := BodyClass.of(table, "reptilian_adult")
+	var ok := not sim.body.heavy() and drawn.is_empty() and real.has("sim")
+	var why := "a heavy kind with no track is a plain body in the sim (heavy %s) and drawn (%s)"
+	_check.call(ok, why % [sim.body.heavy(), drawn.keys()])
+
+
+## The Komodo (the adult) by default; `levels` another stage, `tuning` the sim's tuning.
+func _heavy_sim(levels: Dictionary = {}, tuning: Dictionary = {}) -> RampageSim:
 	var def := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), {"evolve1": 1, "evolve2": 1}, "reptilian")
+	var stage := {"evolve1": 1, "evolve2": 1} if levels.is_empty() else levels
+	var tree := UpgradeTree.new(Content.upgrades(), stage, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), def, tree)
 	var layout: Array[Dictionary] = [
 		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
 	]
-	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 0))
+	var tune := CityGrowth.for_stats(stats)
+	if not tuning.is_empty():
+		tune = CityGrowth.tuning_for_stats(tuning, stats)
+	var sim := RampageSim.new(stats, tune, layout, Seeds.make("army", 0))
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2(0, 30)
 	return sim

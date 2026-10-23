@@ -6,12 +6,18 @@ extends RefCounted
 
 
 ## The class block of rig kind `kind` ("reptilian_adult") in a body_class table, or {} for none.
+## The one answer for the sim (HeavyContact) and the drawn body (ClipGait, the footfall): a class
+## whose sim rides baked clips (a "sim" block, D-208) counts only when the kind's track loads
+## (HeavyTrack.of says when it does not), so a missing track never leaves a plain body in the
+## sim walking the heavy gait on screen.
 static func of(table: Dictionary, kind: String) -> Dictionary:
 	var by_kind: Dictionary = table.get("kaiju", {})
 	if not by_kind.has(kind):
 		return {}
 	var classes: Dictionary = table["classes"]
 	var found: Dictionary = classes[str(by_kind[kind])]
+	if found.has("sim") and HeavyTrack.of(kind) == null:
+		return {}
 	return found
 
 

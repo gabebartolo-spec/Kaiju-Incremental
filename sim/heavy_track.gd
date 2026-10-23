@@ -46,17 +46,21 @@ var per_frame := 0
 var _clips := {}  # name -> [first frame, frames, fps, loops]
 
 
-## The track for a rig kind ("reptilian_adult"), or null when it has none.
+## The track for a rig kind ("reptilian_adult"), or null when it has none: asked only for a kind
+## of a heavy class (BodyClass.of), so a missing or unreadable track is a broken build and says so
+## (BodyClass.of then makes the kind a plain body for the sim and the drawn body alike).
 static func of(kind: String) -> HeavyTrack:
 	if _cache.has(kind):
 		var known: HeavyTrack = _cache[kind]
 		return known
 	var path := "res://assets/kaiju/%s.ktrack" % kind
 	var track: HeavyTrack = null
-	if FileAccess.file_exists(path):
+	if not FileAccess.file_exists(path):
+		push_error("HeavyTrack: no %s for heavy %s: a plain body (bake it)" % [path, kind])
+	else:
 		track = HeavyTrack.new()
 		if not track._load(FileAccess.get_file_as_bytes(path)):
-			push_warning("HeavyTrack: %s is not a track file" % path)
+			push_error("HeavyTrack: %s is not a version %d track: it is a plain body" % [path, VERSION])
 			track = null
 	_cache[kind] = track
 	return track
