@@ -53,7 +53,7 @@
   the Cover source; cities C1a/C2a/C3a, each Auto split; all in C:/Users/DANTE/Downloads/kaiju_music (WAVs + stems).
   320 of 800 credits, 8 of 20 downloads; G1-G4 not to be downloaded again ("later if we need"). Revisit music later
   (ROADMAP). NEXT: a fresh builder cuts loops + layers (D-125), menu music, LICENSING_REGISTER entry (Suno Pro,
-  commercial), checks vocal stems are near silent; when an engine slot frees. Recipe in docs/provenance/music.md.
+  commercial), checks vocal stems are near silent; when an engine slot frees. Brief ready: scratchpad music_brief.md (3 layers LOW/DRUMS/PEAK).
 
 ## Lead board (cross-session sends are capped at 10 between his messages)
 - C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/lead-board/: README.md (protocol), to-<session>.md, from-<session>.md,
