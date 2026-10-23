@@ -304,7 +304,8 @@ func _check_claw_trail() -> void:
 		_step(kaiju, rig)
 	var gait: ClipGait = rig.gait
 	var arc := gait.swing.claw_arc(1.0)
-	check(arc.get("trailed", false), "trail: the rake draws its own slash")
+	var trailed: bool = arc.get("trailed", false)
+	check(trailed, "trail: the rake draws its own slash")
 	kaiju.tail_sweep(1.0, "claw_windup")
 	var slash := 0
 	var flashed := false

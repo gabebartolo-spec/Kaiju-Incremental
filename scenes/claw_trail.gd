@@ -17,6 +17,8 @@ const SPARKS := 8
 ## Half a mark's width, as a share of streak_thick; the marks are this many half-widths apart.
 const MARK_HALF := 0.35
 const MARK_GAP := 2.4
+## The flash is sized by the body, never below this scale (a young croc's still reads).
+const FLASH_MIN_SIZE := 1.25
 const FLASH_ALPHA: Array[float] = [1.0, 0.7, 0.4, 0.15]
 
 var _rig: Node3D
@@ -113,7 +115,8 @@ func _flash(rake: ClawRake, rel: float) -> void:
 	var frame := clampi(int(rel / Num.f(_cfg["slash_flash_s"]) * count), 0, count - 1)
 	var at := rake.sweep.hit_world()
 	var alpha := FLASH_ALPHA[frame]
-	_fan(at, Num.f(_cfg["slash_flash_size"]) * _size * (1.0 + 0.2 * frame), alpha)
+	var flash := maxf(_size, FLASH_MIN_SIZE)  # a young body's flash still reads
+	_fan(at, Num.f(_cfg["slash_flash_size"]) * flash * (1.0 + 0.2 * frame), alpha)
 	_sparks(at, rake.sweep.path_world(), frame, alpha)
 
 
@@ -195,9 +198,18 @@ func _fan(at: Vector3, radius: float, alpha: float) -> void:
 	for i: int in FAN:
 		var a0 := TAU * i / FAN
 		var a1 := TAU * (i + 1) / FAN
+		var d0 := _right * cos(a0) + _up * sin(a0)
+		var d1 := _right * cos(a1) + _up * sin(a1)
+		var mid := radius * 0.45  # a solid white-hot core, then the soft edge out to the rim
 		_vertex(at, _core(alpha))
-		_vertex(at + (_right * cos(a0) + _up * sin(a0)) * radius, _color(0.0))
-		_vertex(at + (_right * cos(a1) + _up * sin(a1)) * radius, _color(0.0))
+		_vertex(at + d0 * mid, _core(alpha * 0.8))
+		_vertex(at + d1 * mid, _core(alpha * 0.8))
+		_vertex(at + d0 * mid, _core(alpha * 0.8))
+		_vertex(at + d0 * radius, _color(0.0))
+		_vertex(at + d1 * radius, _color(0.0))
+		_vertex(at + d0 * mid, _core(alpha * 0.8))
+		_vertex(at + d1 * radius, _color(0.0))
+		_vertex(at + d1 * mid, _core(alpha * 0.8))
 
 
 ## Line sparks fanning from the hit along the sweep's direction on screen: bright at the root, gone
@@ -211,8 +223,8 @@ func _sparks(at: Vector3, path: Array[Vector3], frame: int, alpha: float) -> voi
 		var d3 := _right * d2.x + _up * d2.y
 		var side := _right * -d2.y + _up * d2.x
 		var near := at + d3 * 0.25 * _size
-		var far := near + d3 * (0.9 + 0.4 * frame + 0.15 * (i % 3)) * _size
-		var hw := 0.035 * _size
+		var far := near + d3 * (1.4 + 0.6 * frame + 0.25 * (i % 3)) * _size
+		var hw := 0.06 * _size
 		_vertex(near - side * hw, _core(alpha))
 		_vertex(near + side * hw, _core(alpha))
 		_vertex(far, _color(0.0))
