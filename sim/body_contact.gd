@@ -54,8 +54,9 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 ## course correction turns smoothly while walking (D-130).
 var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
-var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
+var _uturn_s := 0.0  # seconds a stepped U-turn takes: the stage's own (D-187), 0 for a smooth turner
+var _turn_steps := 0.0  # steps a stepped U-turn is made in: the stage's own
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -81,6 +82,8 @@ func use_species(species_id: String) -> void:
 		_volume.discs = _discs
 		snout = Num.f(stage["snout"])
 		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
+		_uturn_s = Num.f(stage.get("uturn_s", 0.0))
+		_turn_steps = Num.f(stage.get("turn_steps", 0.0))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
 
@@ -109,12 +112,14 @@ func length() -> float:
 ## to turn_rate (turn_rate_still at a standstill; both slower for a bigger body, _rate) and slows
 ## before it lands, never overshooting,
 ## while the stride eases down in a hard turn (to turn_slow at an about-face) and back up after.
-## A body with planted feet (stepping) turns in steps instead (director 2026-10-21 #3, "rather
-## than swivelling on the spot like a plastic toy"): the body yaws only in the first slice_open of
-## each step, from its footfall, at the same pace on average, holds between (the head leads by
-## turn_left), and swings about its planted feet, not its middle. A course correction under
-## smooth_below turns smoothly while walking, with no slice (D-130, "Small turns smooth"), but over
-## the planted foot like any turn: a held curve never drags the feet (D-177).
+## A body with planted feet (stepping) makes a real turn in steps instead (director 2026-10-21 #3,
+## "rather than swivelling on the spot like a plastic toy"), heavy and slow (D-187): a U-turn takes
+## the stage's uturn_s whatever the pace it set off at, the yaw rate rising and falling over
+## turn_ramp of it and even between (_turn_peak), never squeezed into a step's window, so each of
+## the turn's turn_steps takes the same slice (the head leads by turn_left); the body swings about
+## its planted feet, not its middle. A course correction under smooth_below turns smoothly while
+## walking, with no steps (D-130, "Small turns smooth"), but over the planted foot like any turn: a
+## held curve never drags the feet (D-177).
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
 	if want == Vector2.ZERO:
@@ -170,38 +175,43 @@ func _plant_both() -> void:
 ## is made) by a body that turns in steps; a smaller course correction turns smoothly (D-130).
 func _steps_this_turn() -> bool:
 	if absf(turn_left) >= Num.f(cfg["smooth_below"]):
-		if not _real_turn:
-			_turn_total = 0.0
 		_real_turn = true
-		_turn_total = maxf(_turn_total, absf(turn_left))
 	elif absf(turn_left) <= Num.f(cfg["turn_min"]):
 		_real_turn = false  # the turn is made: the next small one is a correction
 	return turns_in_steps() and _real_turn
 
 
 ## How fast the body may turn now, Vector2(top rad/s, rad/s^2); a stepped turn also eases in the
-## cadence it adds to the step clock (quick short steps).
+## cadence it adds to the step clock (turn_steps over the U-turn's seconds).
 func _pace(dt: float, stepped: bool) -> Vector2:
 	var top := lerpf(_rate("turn_rate_still"), _rate("turn_rate"), stride)
 	var accel := Num.f(cfg["turn_accel"])
 	if sim.powers.beam_left > 0.0:  # the beam follows the stick at its own pace, whatever the size
 		top = maxf(top, sim.powers.beam_turn_rate())
 	var cadence := 0.0
-	if stepped:
-		accel = Num.f(cfg["slice_accel"])
-		top = top * _turn_ease() * _slice_bell()
+	if stepped and _uturn_s > 0.0:
+		top = _turn_peak()
+		accel = top / (Num.f(cfg["turn_ramp"]) * _turn_time())  # up to speed in the ramp's share
 		if absf(turn_left) > Num.f(cfg["turn_min"]):
-			cadence = Num.f(cfg["turn_cadence"]) / sqrt(sim.body_scale())
+			cadence = _turn_steps / _uturn_s
 	_cadence = move_toward(_cadence, cadence, Num.f(cfg["cadence_ease"]) * dt)
 	return Vector2(top, accel)
 
 
-## A stepped turn's pace through the turn: slow off the mark (turn_ease_min), quickest in the middle
-## (turn_ease_peak), settling at the end, so the body does not yaw at one rate from start to stop.
-func _turn_ease() -> float:
-	var done := 1.0 - absf(turn_left) / maxf(_turn_total, 0.001)
-	var lo := Num.f(cfg["turn_ease_min"])
-	return lo + (Num.f(cfg["turn_ease_peak"]) - lo) * sin(PI * clampf(done, 0.0, 1.0))
+## A stepped turn's top yaw rate (rad/s): the U-turn's half circle in _turn_time(), a trapezoid that
+## speeds up and slows down over turn_ramp of it each, so the peak is 1 / (1 - turn_ramp) of the
+## mean rate, at any stride.
+func _turn_peak() -> float:
+	return PI / (_turn_time() * (1.0 - Num.f(cfg["turn_ramp"])))
+
+
+## Seconds a U-turn takes from the stick reversing to the body exactly on the new way: uturn_s is
+## the time to come within turn_land_deg of it (what a player sees as turned), and the slowing-down
+## ramp, a constant deceleration, takes sqrt(2 * land / deceleration) more.
+func _turn_time() -> float:
+	var ramp := Num.f(cfg["turn_ramp"])
+	var land := deg_to_rad(Num.f(cfg["turn_land_deg"]))
+	return _uturn_s / (1.0 - sqrt(2.0 * land * ramp * (1.0 - ramp) / PI))
 
 
 ## A turn swings the body about the foot that is down (since `was`): that foot stays put. Only the
@@ -222,14 +232,6 @@ func _foot_at(ahead: float, side: float) -> Vector2:
 	var lateral := (-1.0 if int(floorf(phase)) % 2 == 0 else 1.0) * side  # an even step: left
 	var across := heading.rotated(PI * 0.5) * _pivot.y * lateral
 	return sim.kaiju_pos + (heading * ahead + across) * sim.body_scale()
-
-
-## How much of the average pace the yaw may run at now: a bell (smooth rise and fall, no jump in
-## the rate) through the stretch of each step from slice_from, after its footfall; zero outside it.
-## The bell's mean is 2/pi of its peak, so its peak is pi/2 of the pace the slice is spread over.
-func _slice_bell() -> float:
-	var at := (fposmod(phase, 1.0) - Num.f(cfg["slice_from"])) / Num.f(cfg["slice_open"])
-	return 0.5 * PI * sin(PI * at) / Num.f(cfg["slice_open"]) if at >= 0.0 and at < 1.0 else 0.0
 
 
 ## True when this body walks by steps (it has planted feet): the stepped turn and the step clock.
@@ -305,11 +307,10 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 ## The heading turns to sim.facing, at most turn_rate_still: steer() turns the facing no faster,
 ## so the two stay one; only a facing set from outside is caught up with.
 func _face(dt: float) -> void:
-	var most := _rate("turn_rate_still") * dt
-	if turns_in_steps():
-		# a slice turns quicker than the average (steer), most so at the middle of a turn
-		most *= 0.5 * PI * maxf(1.0, Num.f(cfg["turn_ease_peak"])) / Num.f(cfg["slice_open"])
-	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))
+	var most := _rate("turn_rate_still")
+	if turns_in_steps() and _uturn_s > 0.0:
+		most = maxf(most, _turn_peak())  # as quick as the stepped turn the facing is making
+	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most * dt, most * dt))
 
 
 ## A turn rate (rad/s) for this body: bigger is slower, by body scale to the turn_size_exp
