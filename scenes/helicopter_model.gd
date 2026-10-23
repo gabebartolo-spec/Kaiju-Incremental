@@ -34,9 +34,8 @@ func _init() -> void:
 
 
 func _process(delta: float) -> void:
-	if _shed:
-		return
-	_main_rotor.rotation.y += delta * Num.f(_cfg["main_rotor_spin"])
+	if not _shed:
+		_main_rotor.rotation.y += delta * Num.f(_cfg["main_rotor_spin"])
 	_tail_rotor.rotation.x += delta * Num.f(_cfg["tail_rotor_spin"])
 
 
@@ -54,16 +53,16 @@ func fire() -> Vector3:
 	return _gun.to_global(_muzzle)
 
 
-## Shears both rotors off the hull (a wreck's first blow) into `into`, world transforms kept, and
-## returns [main, tail] to throw: a dying helicopter never turns a plus sign in the air.
+## Shears the main rotor off the hull (a wreck's first blow) into `into`, world transform kept, and
+## returns [main] to throw: a dying helicopter never turns a plus sign in the air. The tail rotor
+## stays on, still turning, so the hull reads as a helicopter to the ground.
 func shed_rotors(into: Node3D) -> Array[Node3D]:
 	var out: Array[Node3D] = []
-	for part: Node3D in [_main_rotor, _tail_rotor]:
-		var at := part.global_transform
-		part.get_parent().remove_child(part)
-		into.add_child(part)
-		part.global_transform = at
-		out.append(part)
+	var at := _main_rotor.global_transform
+	_main_rotor.get_parent().remove_child(_main_rotor)
+	into.add_child(_main_rotor)
+	_main_rotor.global_transform = at
+	out.append(_main_rotor)
 	_shed = true
 	return out
 
@@ -75,7 +74,7 @@ func break_up(into: Node3D) -> Array[Node3D]:
 	VehicleParts.set_opacity(self, 1.0)  # it was fading as a screen door: pieces are solid
 	var out: Array[Node3D] = []
 	for part: Node3D in [_body, _main_rotor, _tail_rotor, _gun]:
-		if _shed and (part == _main_rotor or part == _tail_rotor):
+		if _shed and part == _main_rotor:
 			out.append(null)  # already thrown (shed_rotors): the slot stays so the indices hold
 			continue
 		var at := part.global_transform

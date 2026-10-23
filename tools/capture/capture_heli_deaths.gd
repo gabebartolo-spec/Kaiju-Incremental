@@ -9,6 +9,7 @@ extends SceneTree
 ##     --script tools/capture/capture_heli_deaths.gd -- --out=<dir> --run=1   (1 night, 3 noon)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+const HeliTrace := preload("res://tools/capture/heli_trace.gd")
 const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1, "r_ablaze": 1}
 const SETTLE := 120
 ## Where each helicopter is put, from the kaiju's feet, in body-scale units (camera looks down -z).
@@ -76,6 +77,8 @@ func _run(run: int) -> void:
 	print("body scale %.2f" % _rampage.sim.body_scale())
 	_reference_fire()
 	_rampage.sim.powers.swipe._timer = 999.0  # the kaiju's claw swings only when the shot calls it
+	_rampage.sim.stats["swipe_damage"] = 1.0  # the claw kills the gunship, never fells a tower: a
+	_rampage.sim.powers_cfg["swipe_chew_s"] = 0.0  # collapse is a camera lurch of its own
 	_rampage.sim._stomp_timer = 99999.0  # and it does not stomp: a footfall is not the cause
 	if _clip:
 		await _clip_run()
@@ -114,7 +117,7 @@ func _clip_run() -> void:
 	var wait := _spot_from(WAIT_AT)  # out of the first swipe's reach until it is the second's turn
 	var both := await _spawn([first, wait] as Array[Vector2])
 	print("clip starts at frame %d" % Engine.get_frames_drawn())
-	_trace()
+	HeliTrace.run(self, _rampage, CLIP_FRAMES - CLIP_LEAD + 10)
 	await Kit.frames(self, CLIP_LEAD)
 	await _swat(both[0], true)
 	await _slide(both[1], wait, _spot_from(SECOND_AT), CLIP_GAP - 15)
@@ -241,74 +244,6 @@ func _report_dither() -> void:
 			parts += 1
 			low = minf(low, Num.f(mat.get_shader_parameter("opacity")))
 	print("dither check: %d voxel parts in the view, lowest opacity %.2f" % [parts, low])
-
-
-## Logs one line a frame for the clip (stdout "T,..."): a fixed ground point's screen position (the
-## camera's kick, px at 1080p), both arm tips, the burning hull's height, screen point and roll, the
-## falling wreck's height and yaw. The measured table of the report comes from it.
-func _trace() -> void:
-	var cam := root.get_viewport().get_camera_3d()
-	var model: KaijuModel = _rampage._kaiju
-	print(
-		"T,n,rake_t,cam_x,cam_y,armL_x,armL_y,armR_x,armR_y,hull_y,hull_x,hull_py,roll,fall_y,yaw,fall_x,fall_z,sim_x,sim_z,fall_px_x,fall_px_y"
-	)
-	for n: int in CLIP_FRAMES - CLIP_LEAD + 10:
-		var sim := _rampage.sim
-		var feet := Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
-		var ref := cam.unproject_position(feet + Vector3(sim.facing.x, 0.0, sim.facing.y) * 6.0)
-		var arm_l := cam.unproject_position(model._rig.tail_world("arm_l2"))
-		var arm_r := cam.unproject_position(model._rig.tail_world("arm_r2"))
-		var wrecks: HeliWreck = _rampage._powers._wrecks  # made on the first death
-		var swing := (model._rig.gait as BipedGait).swing
-		var hull := Vector3.ZERO
-		var hull_px := Vector2.ZERO
-		var roll := 0.0
-		for piece: HeliDebris.Piece in [] if wrecks == null else wrecks._debris._pieces:
-			if piece.heavy and is_instance_valid(piece.node):
-				hull = piece.node.global_position
-				hull_px = cam.unproject_position(hull)
-				roll = rad_to_deg(piece.node.rotation.z)
-				break
-		var fall_y := 0.0
-		var fall_yaw := 0.0
-		var fall_at := Vector3.ZERO
-		var fall_px := Vector2.ZERO
-		var sim_at := Vector2.ZERO
-		for down: AirWing.Falling in sim.air.falling:
-			sim_at = down.pos
-		for fall: HeliWreck.Fall in [] if wrecks == null else wrecks._falling.values():
-			fall_y = fall.node.position.y
-			fall_yaw = rad_to_deg(fall.yaw)
-			fall_at = fall.node.position
-			fall_px = cam.unproject_position(fall.node.global_position)
-		print(
-			(
-				"T,%d,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.1f,%.1f,%.1f,%.2f,%.1f,%.3f,%.3f,%.3f,%.3f,%.1f,%.1f"
-				% [
-					n,
-					swing._rake_t,
-					ref.x,
-					ref.y,
-					arm_l.x,
-					arm_l.y,
-					arm_r.x,
-					arm_r.y,
-					hull.y,
-					hull_px.x,
-					hull_px.y,
-					roll,
-					fall_y,
-					fall_yaw,
-					fall_at.x,
-					fall_at.z,
-					sim_at.x,
-					sim_at.y,
-					fall_px.x,
-					fall_px.y
-				]
-			)
-		)
-		await process_frame
 
 
 ## Moves a hung helicopter from `from` to `to` over `frames` frames (its orbit's angle and radius).

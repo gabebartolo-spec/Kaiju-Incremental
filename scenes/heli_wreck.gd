@@ -40,6 +40,7 @@ class Fall:
 	var seconds: float
 	var t := 0.0
 	var yaw := 0.0
+	var kicked := false  # its crash kick has been made
 
 
 func _init(city: CityView, sim: RampageSim) -> void:
@@ -75,9 +76,19 @@ func crashed(event: Dictionary) -> void:
 	if _falling.has(id):
 		var fall: Fall = _falling[id]
 		fall.node.global_position = Vector3(ground.x, 0.0, ground.z)  # exactly the sim's crash point
+		if not fall.kicked:
+			_trauma("heli_crash", ground)
 		_end_fall(fall)
 		_break_up(fall.node, 0.6, false)
 		_falling.erase(id)
+	_impact(ground)
+	if sfx != null:
+		sfx.play_at("heli_crash", ground)
+
+
+## The wreck's impact (its kick came a frame ahead, see _fall): flash and light, a fireball, the
+## fire left burning, dust, the rings and the chunks.
+func _impact(ground: Vector3) -> void:
 	var scale := Num.f(_cfg["crash_scale"])
 	HeliFx.flare(_city, ground + Vector3(0, 2.0, 0), Num.f(_cfg["crash_flare"]), 0.3)
 	_city.flash(
@@ -94,12 +105,8 @@ func crashed(event: Dictionary) -> void:
 	)
 	burning.add_child(_firelight(Vector3(0, 2.0, 0)))  # a zoomed fire has no light of its own
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
-	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
-	_hull_landed(ground)  # the same impact beat as a thrown hull's (flash, dust, ring, kick)
-	_trauma("heli_crash", ground)
-	if sfx != null:
-		sfx.play_at("heli_crash", ground)
+	_land_effects(ground)
 
 
 func _process(delta: float) -> void:
@@ -115,11 +122,17 @@ func _fall(fall: Fall, delta: float) -> void:
 	fall.node.position = HeliArc.point(fall.from, fall.drift, fall.side, fall.seconds, fall.t, _cfg)
 	fall.node.basis = HeliArc.basis(fall.seconds, fall.t, _cfg)
 	fall.yaw = HeliArc.yaw(fall.seconds, fall.t, _cfg)
+	if not fall.kicked and fall.t >= fall.seconds - 1.5 * delta:
+		fall.kicked = true  # the camera shows a kick a frame after it is made: make it a frame early
+		_trauma("heli_crash", fall.node.global_position)
 	var along := Num.f(_cfg["trail_offset"])
 	for k: int in fall.fires.size():
 		var offset := Vector3(0, 0.5, (k - 1) * along)
 		fall.fires[k].global_position = fall.node.to_global(offset)
-	fall.trail.global_position = fall.node.global_position
+	var lift: Array = _cfg["trail_lift"]  # smoke leaves above and behind the hull, never over it
+	fall.trail.global_position = (
+		fall.node.global_position + Vector3(Num.f(lift[0]), Num.f(lift[1]), Num.f(lift[2]))
+	)
 	var flicker := 1.0 + 0.25 * sin(fall.t * 23.0) + 0.15 * sin(fall.t * 37.0)
 	var glow := Color(str(_cfg["ember_light"])) * Num.f(_cfg["hull_ember"]) * flicker
 	VehicleParts.set_ember(fall.node, glow)
@@ -154,10 +167,15 @@ func _burst(node: Node3D, at: Vector3) -> void:
 		sfx.play_at("heli_crash", at)
 
 
-## The burning hull met the street: a short flash and light, the street's own dust and its ring, the
-## camera kicked. Its flames are already burning (they rode it down).
+## The burning hull met the street: a short flash and light, the street's own dust and its rings,
+## the camera kicked. Its flames are already burning.
 func _hull_landed(at: Vector3) -> void:
 	var ground := Vector3(at.x, 0.0, at.z)
+	_trauma("heli_land", ground)
+	_land_effects(ground)
+
+
+func _land_effects(ground: Vector3) -> void:
 	HeliFx.flare(_city, ground + Vector3(0, 1.2, 0), Num.f(_cfg["land_flare"]), 0.1)
 	_city.flash(
 		ground + Vector3(0, 1.5, 0),
@@ -166,8 +184,8 @@ func _hull_landed(at: Vector3) -> void:
 		Num.f(_cfg["land_light_seconds"])
 	)
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), Num.f(_cfg["land_dust"]))
-	_city.fx.shockwave(ground, Num.f(_cfg["land_ring"]))
-	_trauma("heli_land", ground)
+	for k: int in 3:  # rings out from the impact, each wider: thick, bright, there at once
+		_city.fx.shockwave(ground, Num.f(_cfg["land_ring"]) * (1.0 + 0.5 * k), false, true)
 
 
 ## The camera's kick for `kind` (tuning camera_shake.sources) from a hit at `at`; the rampage owns
@@ -208,12 +226,10 @@ func _throw_part(part: Node3D, n: int, reach: float, in_air: bool) -> void:
 	if body:  # the hull is long: it lies and rolls across the view, never end-on like a pole
 		part.rotation.y = PI * 0.5
 		spin = Vector3(0.0, spin.y * 0.3, 0.8)
-	if body and not in_air:
-		vel = Vector3.ZERO
-		spin = Vector3.ZERO
-	if body and in_air:
-		vel.y = -1.0  # the hull drops from the first frame: no hover at the top of a throw
 	var burning := body and in_air  # the hull flies on burning: flames, smoke, firelight, an impact
+	if body:
+		vel = Vector3(vel.x, -1.0, vel.z) if burning else Vector3.ZERO  # it drops at once
+		spin *= float(burning)
 	var fire_size := Num.f(_cfg["hull_fire"]) if burning else 0.0
 	var piece := _debris.throw(part, vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
 	if burning:
@@ -223,7 +239,7 @@ func _throw_part(part: Node3D, n: int, reach: float, in_air: bool) -> void:
 		piece.vanish = Num.f(_cfg["rotor_vanish"])
 	if n > 0:  # the gun lies level on the street, never on edge
 		piece.flat = true
-		piece.lie = PI * 0.5 if n == 2 else 0.0  # (the tail rotor's disc stands, so roll it)
+		piece.lie = float(n == 2) * PI * 0.5  # (the tail rotor disc stands, so roll it)
 		piece.half = 0.3
 
 
@@ -246,13 +262,17 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 		fall.side = Vector3.RIGHT
 	for k: int in 3:  # flames along the body: nose, middle, tail
 		var fire := HeliFx.riding_fire(
-			Num.f(_cfg["trail_fire"]), at.x - at.z + k, _cfg, Num.f(_cfg["hull_smoke"])
+			Num.f(_cfg["trail_fire"]),
+			at.x - at.z + k,
+			_cfg,
+			Num.f(_cfg["hull_smoke"]),
+			Num.f(_cfg["hull_zoom"])
 		)
 		_city.add_child(fire)
 		fire.global_position = at
 		fall.fires.append(fire)
 	node.add_child(_firelight(Vector3(0, 1.0, 0), 14.0))  # the burning hull lights itself
-	fall.trail = HeliFx.smoke_trail(_city, _cfg)
+	fall.trail = HeliFx.smoke_trail(_city, _cfg, Num.f(_cfg["fall_trail"]))
 	_falling[Num.i(event["heli"])] = fall
 	HeliFx.flare(_city, at, Num.f(_cfg["hit_flare"]), Num.f(_cfg["flare_seconds"]))
 	_city.flash(at, CRASH_BLAST, Num.f(_cfg["hit_light"]), 0.3)

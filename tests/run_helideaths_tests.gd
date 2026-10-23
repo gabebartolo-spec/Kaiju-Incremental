@@ -87,7 +87,7 @@ func _check_burst() -> void:
 
 ## The view's fall arc (HeliArc) meets the sim: a wreck that spins down is drawn from its death
 ## point to exactly the sim's crash point (within 0.05 units) at the sim's crash time, rises only in
-## the first 6 frames (60 Hz) and only descends after, and turns 1-2 times about its mast.
+## the first 9 frames (60 Hz) and only descends after, and turns 1-2 times about its mast.
 func _check_fall_arc() -> void:
 	var sim := _scene({})
 	var cfg := Content.section("heli_wreck")
@@ -112,12 +112,21 @@ func _check_fall_arc() -> void:
 	check(absf(drawn_at.y) < 0.001, "the hull is down at the sim's crash step (%d steps)" % steps)
 	var last := INF
 	var monotonic := true
-	for frame: int in range(7, roundi(seconds * 60.0) + 1):
+	for frame: int in range(9, roundi(seconds * 60.0) + 1):
 		var y := HeliArc.point(from, drift, side, seconds, frame / 60.0, cfg).y
 		monotonic = monotonic and y < last
 		last = y
-	check(monotonic, "after the pop (frame 6) the hull only ever descends")
-	var pop := HeliArc.point(from, drift, side, seconds, 0.1, cfg).y
+	check(monotonic, "after the pop (frame 9) the hull only ever descends")
+	var late := HeliArc.point(from, drift, side, seconds, seconds - 20.0 / 60.0, cfg)
+	check(
+		Vector2(late.x - end.x, late.z - end.z).length() < 0.001,
+		"no sideways slide in the last 20 frames"
+	)
+	var before := HeliArc.point(from, drift, side, seconds, seconds - 1.0 / 60.0, cfg).y
+	check(
+		before * 60.0 > 12.0, "it hits the street at speed (%.1f units a second)" % (before * 60.0)
+	)
+	var pop := HeliArc.point(from, drift, side, seconds, 0.13, cfg).y
 	check(pop > from.y, "it pops up first (%.2f over %.2f)" % [pop, from.y])
 	var turns := HeliArc.yaw(seconds, seconds, cfg) / TAU
 	check(turns >= 1.0 and turns <= 2.0, "it turns 1-2 times about its mast (%.2f)" % turns)

@@ -134,8 +134,8 @@ static func smoke_puff(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.
 ## Fire's options for a flame body: Fire's zoom (the same fire with every size and speed
 ## multiplied: flames `flame_zoom` times larger, taller than wide and overlapping, so they read as
 ## one body at the game camera), the smoke kept at street size and thinned to `smoke`.
-static func tongues(cfg: Dictionary, smoke: float) -> Dictionary:
-	var zoom := Num.f(cfg["flame_zoom"])
+static func tongues(cfg: Dictionary, smoke: float, zoom_to := 0.0) -> Dictionary:
+	var zoom := zoom_to if zoom_to > 0.0 else Num.f(cfg["flame_zoom"])
 	return {
 		"zoom": zoom,
 		"smoke_share": 1.0 / zoom,
@@ -149,8 +149,10 @@ static func tongues(cfg: Dictionary, smoke: float) -> Dictionary:
 
 ## A Fire of tongues that rides a moving part: its flames are born in the part's own space (they
 ## move with it, never left behind as a rope of cubes), its smoke trails.
-static func riding_fire(size: float, seed_value: float, cfg: Dictionary, smoke: float) -> Fire:
-	var fire := Fire.new(size, seed_value, tongues(cfg, smoke))
+static func riding_fire(
+	size: float, seed_value: float, cfg: Dictionary, smoke: float, zoom := 0.0
+) -> Fire:
+	var fire := Fire.new(size, seed_value, tongues(cfg, smoke, zoom))
 	var moving := 0
 	for child: Node in fire.get_children():
 		if child is GPUParticles3D and moving < 2:  # the first two are the flames and their core
