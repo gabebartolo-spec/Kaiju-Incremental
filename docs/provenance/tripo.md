@@ -117,5 +117,12 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-24 | Croc adult E1 (method change: Edit of B itself) | croc_B_final (681fef0f #3) | Image edit (GPT Image 2.5) | 7e795e1f | 0 (free quota) | n/a | critic FIX: B line kept, power added; near elbow on belly, open jaw, calf bulge |
 | 2026-10-24 | Croc adult E2 | crocE1 | Image edit (GPT Image 2.5) | 2257c461 | 0 (free quota) | n/a | critic FIX: jaw/wrists/snout fixed; knee lump, weight even, elbow on belly line |
 | 2026-10-24 | Croc adult E3 | crocE2 | Image edit (GPT Image 2.5) | 5377566d | 0 (free quota) | n/a | critic FIX: knee fixed; hips not over front foot, elbow overlap (pose items; asked the lead to move them to the rig gate) |
-| 2026-10-24 | Croc baby E1 / E2 / E3 | crocE1 -> babyE1 -> babyE2 | Image edit (GPT Image 2.5) x3 | def6e129 / 9a911844 / e2e51cc9 | 0 (free quota) | n/a | E2 critic FIX (adult-size head and snout, gangly shins, adult spikes); E3 critic pending |
-| 2026-10-24 | Croc teen E1 | crocE2 | Image edit (GPT Image 2.5) | 3d3dadc7 | 0 (free quota) | n/a | critic pending |
+| 2026-10-24 | Croc baby E1 / E2 / E3 | crocE1 -> babyE1 -> babyE2 | Image edit (GPT Image 2.5) x3 | def6e129 / 9a911844 / e2e51cc9 | 0 (free quota) | n/a | E2 FIX (adult-size head); E3 FIX with photos (baby T-rex snout) |
+| 2026-10-24 | Croc teen E1 | crocE2 | Image edit (GPT Image 2.5) | 3d3dadc7 | 0 (free quota) | n/a | critic REJECT (a copy of the adult) |
+| 2026-10-24 | Croc baby E4 | babyE3 + hatchling snout (photos: croc_new/photo_refs, director's yes, critic use only) | Image edit (GPT Image 2.5) | 36354e84 | 0 (free quota) | n/a | critic SHIP |
+| 2026-10-24 | Croc teen E2 | crocE3 + teen proportions | Image edit (GPT Image 2.5) | 13c73e75 | 0 (free quota) | n/a | critic SHIP |
+| 2026-10-24 | Croc adult 3D (lead: pose items to the rig gate) | crocE3 | Smart Mesh P2.0 x4 | 9e826a6e (variants 14292be5, 71c2911f, 88325e5c, 1882d959) | 100 | Sharing Only (not public) | clay critic: 1882d959 best, FIX (upper arm fused to flank, leaner than E3); 71c2911f has a loose extra shin |
+| 2026-10-24 | Croc adult texture | 1882d959 + crocE3 reference, Remove Lighting, 2K | Texture | 64e7bd33 | 10 | Sharing Only (not public) | GLB croc_new/models/adult/adult_1882d959_tex.glb (FBX converted in Blender) |
+| 2026-10-24 | Croc baby 3D | crocBabyE4 | Smart Mesh P2.0 x4 | 5c94995a (variants 64610db9, 39e43926, 6a65e3a8, c907dee9) | 100 | Sharing Only (not public) | clay critic: 6a65e3a8 SHIP; 39e43926/64610db9 FIX; c907dee9 REJECT |
+| 2026-10-24 | Croc baby texture | 6a65e3a8 (20a914e1) + crocBabyE4, Remove Lighting, 2K | Texture | pending | 10 | Sharing Only (not public) | pending |
+| 2026-10-24 | Croc teen 3D | crocTeenE2 | Smart Mesh P2.0 x4 | b7c914b1 | 100 | Sharing Only (not public) | pending |
