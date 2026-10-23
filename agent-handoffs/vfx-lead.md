@@ -1,117 +1,77 @@
-# vfx-lead handoff (VFX lead, the lead's second in command), 2026-10-23
+# vfx-lead handoff (VFX lead, the lead's second in command), 2026-10-23, WRAP-UP
 
 ## State
-Split (director 2026-10-23, via lead): I own EVERY visual item end to end (decide, brief my own Sonnet builders in
-their own worktrees, art QA, SHIP final); the lead owns sim, gameplay, UI layout/flow, tests, merges, docs. Tell
-the lead before touching a file its builders are in (fire.gd: UI branch; sim + Taskforce: explosions PR 1). The
-lead's explosions + UI builders keep their visual work; the lead relays proof/verdicts verbatim. Every session and
-helper keeps the app checklist (update_plan) current; say so in every brief. Director 2026-10-23: at most 2
-engine-running builders for me (4 team-wide); NO full suite on this PC (touched suites only, GitHub runs full).
+Director (via lead, evening): "get the other two chats to merge what they can and archive. i wanna go 1 on 1 with
+you". Wrap-up done: no PR of mine was SHIP-ready (night fog SHIP is already #172, the lead's to merge); every WIP
+branch is committed and pushed; all builders and critics stopped. A respawned VFX lead restarts from this file.
+Role: I own every visual item end to end (decide, brief Sonnet builders in own worktrees, art QA, SHIP final); the
+lead owns sim, gameplay, UI, tests, merges, docs. D-189: 2 engine builders per lead (6 total); the atmosphere lead
+(local_3dbe2472) owns sky/sea life, weather looks and rampage escalation (D-154 haze, orange sky, blackouts).
+Every run: `bash ~/.claude/tools/engine_slot.sh || exit 3` per launch, inside loops too (it fails while
+~/.claude/focus-pause exists; a builder's run script relaunched Godot under a pause on 2026-10-23).
 
-## Task
-Director 2026-10-23: VFX oversight (builder + art critic) for fire, smoke, explosions, city destruction, ability
-effects, Taskforce effects, post effects. Rule above all: one look per kind ("consistency is absolutely key").
+## Director rulings that bind my work
+- D-190: fire = "Smooth flames" on EVERY fire (style mix approved); breath = "Slow chest-and-neck heave" (replaces
+  the old movement caps); claw swipe = "Keep it straight ahead" (trail + sparks carry it; no side hit).
+- D-193 (d8d1533d): kaiju ANIMATION moves to a commercial animation tool pipeline (lead researching; I own putting
+  its clips on the rig). PARKED: breath heave, claw ARM motion, D-187 turn recapture. Effects carry on.
+- D-188: no round cap, bar "I have to love it"; two failed rounds in a row = stop, find why, change the method.
+- D-189: helicopters "Never block your view" (camera side ok, never between camera and kaiju).
+- Earlier: one look per effect; blast = Fire's own rising flames; smoke lit from below; Taskforce one electric blue;
+  visual direction list in docs/VFX_STYLE.md.
 
-## Branch and commit
-Worktree .claude/worktrees/vfx-lead-c37456 on claude/vfx-lead-2 (handoff branch only). #166 = claude/heli-deaths.
+## Branches (all pushed; notes = side-session-notes/local_a16cd984-.../vfx-lead/)
+| branch | tip | holds | left |
+|---|---|---|---|
+| claude/fire-smooth | 4e6e90d9 | flame.gdshader on Fire, FarFire, heli fires, HeliFx.fireball; Fire.flame_mesh(); suite 9/9; cream 9.4/5.4 %, heart 4.7/2.8 % | art critic r1 FIX (notes fire_smooth/critic_art.md): r2 per scratchpad brief_fire_smooth_r2.md (copied below) |
+| claude/heli-fall | 5aee3cb6 | fall r3 merged with look-options + fire-smooth: fall_seconds 1.4, ballistic arc, Fx.dust_ring, chutes clear; helideaths 10/10; descent 5.07 px/f, pop 62 px | fire area 1391 vs 6000 px (hull behind roofs?), dust ring 114 vs 150 px at +7 f; fall motion critic unrun; resync from fire-smooth after r2 |
+| claude/claw-rake | 2d176ff4 | r3: snout-line hit, ClawSweep ribbon, flash, line sparks, glint; young elbow-out (now PARKED, D-193) | re-run claw_rake + croc_standing (last 129/129, 37/37 before FLASH_MIN_SIZE); stage-2 stills; motion critic r3; split effects from arm code |
+| claude/living-predator | ec4bb919 | heave default (PARKED, D-193); croc_breath 32/0, croc_idle 29/0 | critic r3 PARTIAL: back/neck below claims (Colossus back < 2 px) |
+| claude/heli-r7-wip | 82801eb6 | fire board v4 WIP (parked: C picked) | none |
+| claude/heli-look-r4 | 9f311538 | heli deaths r6 (art+motion FIX) | superseded by heli-fall + fire-smooth |
+| claude/city-explosives-v2 | 9158d219 | explosions r10 base (mine, unmerged) | adopt Fire.flame_mesh() after fire-smooth merges |
+| claude/one-look | 849d9e06 | D-163 one look phase 1 (parked) | fold ground_blocks into atmosphere's ground_slab.gdshader; resync on top of atm branches |
+| claude/thunder-beam | 6dbe10e5 | round 6, critic FIX | r7 after reassessment (D-188); atmosphere copies bolt.gdshader/bolt_shape.gd byte-identical |
+| claude/vfx-lead-2 | (this) | this handoff | |
 
-## What exists
-- docs/VFX_STYLE.md: 10 families (owner files, material, ramp, scale), "Two looks today" table, review checklist.
-- tools/capture/capture_vfx_sheet.gd (every family at the game camera, --run=1 night / 3 noon, side camera for
-  breath and ultimate, run clock set to 600 s) + tools/capture/vfx_sheet.py (one labelled sheet, night|noon pairs).
-- docs/captures/2026-10-23-vfx/vfx_families.png (the sheet).
-- Reviews in side-session-notes/local_a16cd984-.../vfx-lead/reviews-2026-10-23.md.
+## Fire r2 brief (critic r1 items, measured from frames)
+1 base widest (last 15 % >= 80 % of max width, 3-5 stubs, seated within 2 px of its surface); 2 heart = soft
+horizontal band >= 60 % base width, 3-step fade, lower third; 3 tongues: no hair texture, width 2-6 px, >= 2 lean
+10-20 deg, curved tips, one dominant 1.4-1.6x, red+dark <= 33 % night; 4 night glow pool 1-1.5x flame width, R+25;
+5 heli burst recomposed: radial, white core >= 20 % first 4 f, no downward tips, in frame (top margin >= 5 %), no hard
+brown disc; 6 no cool rim at noon (flame on/off pair). Proof: sheets, crops, bands, one 6 s clip, title FarFire,
+chunk fire, 4K still.
 
-## Director rulings 2026-10-23 (asked in my session; sent to the lead to log as D-n)
-Evening, asked in words: fire = "Smooth flames" (style mix accepted; rolling out to every fire); breathing = "Slow
-chest-and-neck heave"; claw swipe from behind = "Keep it straight ahead" (trail + sparks carry it; no side hit).
-Blast = a sudden burst of Fire's own rising flames + the Fire left burning; gas = smoke shader tinted; smoke lit
-from below everywhere; title burning windows orange with flames out of the openings; Lightning Breath/Thunder
-Beam rework in M1; Taskforce = one electric blue nobody else uses (deflect flash -> white); blast/Taskforce hits
-use the street dust; I fix the base mismatches (tail ring, tree puff, shell sparks) now, in PR #154.
+## Shared-file agreements with the atmosphere lead
+smoke clearing -> view_clear.gdshaderinc (atm-rain); ground -> ground_slab.gdshader with `wet` (one-look folds into
+it); building_baked dark_to/dark_color + BuildingView.set_dark_to (atm-escalation; lift_piece pieces must inherit
+dark_to; item 4 resyncs on top). They go first on city_environment.gd / city_ground.gd.
 
-Second batch, 12 visual-direction answers (cinematic fire, escalating haze, dust walls, block-wide stomp waves,
-debris rain, rare slow-mo, glass, blackouts, bloodless, crushed kills, lightning charge-up on the body, clean
-Taskforce tech): recorded in VFX_STYLE.md "Visual direction"; sent to the lead to log.
-
-## Standing queue (lead 2026-10-23; my SHIP is final for effects; report <= 6 lines per item, name the next)
-1 VFX_STYLE + sheet (done, #154) · 2 verdicts: explosions r8 FIX, title FIX x2 (notes reviews-2026-10-23.md) ·
-3 helicopter deaths (ROADMAP #86, D-140/141/145), build sim+view, own branch, PR · 4 BuildingView.lift_piece
-collapse defect (scenes/building_view.gd:204) · 5 Taskforce effects as its sim lands · 6 textured-surfaces board
-(one building, three detail styles) · 7 graphics preview scene · 8 load-screen board (~20 shots).
-Bar: three pillars (beauty, consistency, scale/power); SHIP only if the director will love it.
-
-## Unfinished changes / my builders (Agent subagents, own worktrees; cap 2 engine builders)
-- #154 PASS sent (8a3049d7, r4: self-lit street dust, visible rings, orange sparks, white deflect). Follow-up item
-  "dust billows" (mine): every dust effect from Fx.dust puffs (rings = expanding chains of lobed puffs), deflect
-  gaussian 60 px; also a stray gold 4-point star on the kaiju in some stills, source unknown.
-- Thunder Beam (claude/thunder-beam 6dbe10e5 pushed, round 6 of builder adb19422): breath close (head silhouette
-  + small arcs, blob-chain glows killed the kink wedge, white-hot strike); breath critic still FIX (a slab edge in
-  f032, strike not the climax from the game camera, head smear, onset pop, weak noon); BEAM regressed (thin line, no
-  lashes; try thunder halo width/blob share). Rulings: face can't show from the behind camera; pre-fire aim wedge is
-  real UI. Halo question NOT in interview until SHIP. Old base shows ATOMIC BREATH: sync before its PR.
-- Croc standing: SHIP ca148fd7 (mine after 3 critic rounds), queued for a PR by the lead.
-- Voxel boards (claude/look-boards 76f6b59a, capture-only): in the lead's interview question with my read (mock
-  barely changes the game camera; smooth croc wins up close) and a middle option (smooth croc in close shots only).
-- Heads/skins (claude/heads-skins 9781f0a0, provenance rows only; Tripo 1500/8000): boards
-  vfx-lead/heads/heads_board_interview.png (Python own shape, Komodo fits skull, Komodo own shape; Python-fits-skull
-  dropped) + skins/skins_board.png, both questions in interview.md. Models in ~/Downloads/kaiju_tripo/heads_*.
-- Explosions r10 (brief scratchpad brief_r9.md): #160 merged 06:17, fire.gd free; next free slot.
-- #160 title merged (aad7e485) after my measured round-2 SHIP (crest 95 px clear, head ~1.65x, rim 7 px).
-- D-155 atmosphere looks: mine, after #156; sim side = demo-end local_d3ef25ef.
+## Queue after the restart (ask the director before anything he did not name)
+1 fire r2 -> art critic r2 · 2 heli fall r3 fixes + motion critic · 3 claw effects split from the arm + critic r3 ·
+4 new animation tool clips on the rig (D-193, when the lead names the tool) · 5 explosions r10 on Fire.flame_mesh ·
+6 item 4 open-box pieces (scratchpad brief_item4.md) · 7 dust billows + deflect unify · 8 D-183 heli bank/pitch view ·
+9 Thunder Beam r7 (reassess first) · 10 tower see-through cross-hatch, weak night silhouette · after demo: heads
+(D-171), skins redo (D-180).
 
 ## Open findings
-- The stray gold 4-ray star = AbilityFx.deflect() (tank_fx.gd:18 calls it when stat "armor" > 0; a 4.5x-body
-  flare.gdshader quad at the shell's hit) + ready_pulse at the head (ability_fx.gd:237). Deflect thus has TWO looks
-  (this star vs the sheet's round white core): unify in the dust-billows follow-up.
-- CityView.ring still draws the cephalopod's ink ring (octopus paused, D-124); deflect flash moves to white.
-- Charcoal smoke invisible at night; a fire-lit underside for the shared smoke (D-141 "lit from below").
-- fire.gd edited on fire-spread, ui-redesign and city-explosives-v2: merge #152 first.
-
-## Lead board
-Director questions while he's away go to Kaiju-Incremental-wt/lead-board/interview.md (README there);
-lead replies in to-vfx-lead.md. Every Godot run: `bash ~/.claude/tools/engine_slot.sh && timeout ...`.
-
-## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
-D-177 "Motion first" (director 13:5x): gait fix -> motion gate suite -> motion pass per stage -> D-165 -> one-look.
-Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot until 14:14 (lead's watcher).
-- slot 1 now CLAW RAKE (building, claude/claw-rake on gait-fix, notes claw_rake/PLAN.md). D-188 (two failed rounds in a row = change method): heli r1-r6 all FIX; reassessment sent to lead. r7 RESCOPED: r6 claims-vs-clip table + Fire family treatment board A/B/C vs refs (notes fire_family/); fire board v2 -> critic -> lead -> director pick; then brief_heli_fall.md (lead yes: view draws fall arc to sim crash point+time); cause after claw rake. #175 armed. Was fire-heli-r6 (brief_fire_heli_r6.md): Part 1 Fire family hot ramp for ALL fires (ember
-  heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
-  blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
-  no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
-- slot 2 now r7. Breath r2 09fb2e75 FIX again (1-2 px unreadable) = D-188 stop: trade clip (Today / Bigger breath / Breathing chest and neck) -> critic -> lead -> director. Claw r1 FIX (hidden from behind camera) -> r2 fixes. Fire board v3: B fail twice -> v4 (B = C quantized to voxels, non-fatal photos). Heli fall r2 09569edf claude/heli-fall -> critic r2. Was living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
-  "way too much ... too fast, should be deep and slow like a behemoth": bars period 4/6/8 s, back/flank peak <=
-  0.8/0.6/0.5% body height (>=0.25%), <=0.6%/s, damp the idle clip's baked breath at runtime (no re-bake); B/C wait for the gait
-  merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
-  SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
-  camera; weak kaiju silhouette at night (mine). D-154 haze/orange sky/blackouts + weather looks moved to the
-  ATMOSPHERE LEAD (D-189, local_3dbe2472). Cap: 2 engine builders per lead (6 total); helis 'Never block your view'. one-look phase 1 parked 849d9e06 (cut haze).
-- Claw rake: no-engine PREP builder (PLAN.md in notes claw_rake/, base gait-fix), builds in the next free slot (director: swipe 'laughable, not dangerous', chose 'Heavy raking arc'; brief_claw_rake.md: telescoping arm scale, arm-only, 0.62 s toy timing, high flap, linear legs; bars at 3 stages; sim windup 0.3 s fixed; per-stage windup = his question only if the critic needs it). Order: gait -> claw rake -> motion pass -> D-165 B/C -> D-183 view -> Thunder Beam r7.
-- D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
-- slot 3 LENT until the motion gate merges: gait-2 (Opus). claude/gait-fix c661d731 = merge of the lead's gait-step-len
-  841f93e2: MOTION GATE ALL GREEN (motion 30/0, smoke 47/0, clips 14/0, gait 10/0; jerk young 2.7 / Behemoth 4.3).
-  #175 MERGED 3a3ee03d (view items). D-187 'Heavier, slower' turn (Behemoth U-turn 2 s, Colossus 3 s, >=4 real steps) = lead's sim builder claude/turn-weight; its clip -> MY motion critic. Lent slot returns to the lead when breath r2 closes. Claw rake + fire board v3 + heli fall queued in my 2 slots.
-- heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
-  cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
-  vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
-- Motion gate: claude/gait-fix b73b2ad4 red on base (18/29 fail); lead's sim part on claude/gait-step-len merges
-  first (by merge commit); ours: re-bake (Behemoth lift 0.07, young <= 5%), soft IK + stable pole, young catch steps.
-- D-166/D-175 accepted: sim holds breath/ultimate to young 0.8 / Behemoth 1.1 / Colossus 1.4 s, stomp 0.45 s; strike
-  time comes in events (lead sends keys + sha); dash crouch view-only. Table: notes vfx-lead/strike_times.md.
-Stall watcher = scratchpad stall_watch_copy.sh over subagents/agent-<id>.jsonl.
+- The camera step 25 f after a rake hit = a building-collapse shake kick (trauma 0.3), not the rake.
+- A ~5 px yellow-green glyph on the kaiju's lower back in claw stills: source not found.
+- Deflect has two looks (AbilityFx.deflect 4-ray star vs round white core): unify in dust billows.
+- CityView.ring still draws the cephalopod ink ring; charcoal smoke invisible at night.
+- Croc standing SHIP ca148fd7 merged (#169); gait #175 merged 3a3ee03d.
 
 ## Item 4 (collapse defect, BuildingView.lift_piece): diagnosed, brief scratchpad brief_item4.md
-Lead's v5 frames (fire_clip/v5f f_083-087; my crop scratchpad v5_lattice.png): a toppling piece is an open box.
-lift_piece reuses the whole building's shell (outside faces only) + slabs, masked per piece, so every side where it
-broke off has no face: you see floor slabs + dark back faces = the "lattice" (not FallFade; kaiju not behind it).
-Fix: bake the piece its own mesh from its cells, cut faces in carved slab colour 8a8780 (D-101). (e) not
-reproduced. Chunks-inside-body: sim-side, the lead's. Builder slot after the croc bugs.
+A toppling piece is an open box: lift_piece reuses the building's outer shell + slabs masked per piece, so broken
+sides have no face. Fix: bake the piece its own mesh from its cells, cut faces in carved slab colour 8a8780 (D-101).
 
 ## Rules learnt the hard way
-- A fresh worktree needs `git lfs pull`, the carve dll copied into native/bin (gitignored; newest build from a
-  worktree whose native/src matches) and a headless --import before captures.
-- The default rampage clock ends a long capture: set sim.time_left.
-- override.cfg (no_focus, off-screen) is written in its own Bash call; gitignored.
-- GDScript warnings are errors: no `int(Variant)` (use Num.i), no `as Fire` on a Variant (typed var assign).
-- Agent subagent transcripts: <session>/subagents/agent-<id>.jsonl (tasks/<id>.output stays 0 bytes); point
-  stall_watch.sh at the .jsonl.
+- Builders measure every claim from the rendered mp4 (ffmpeg frames), never probes; critics caught claimed sparks,
+  swipes and kicks absent from the clip three times.
+- Effects tied to a body part hidden from the camera must be authored for the camera (claw r2 trail parked on the
+  hip because it followed the hidden hand).
+- A fresh worktree needs `git lfs pull`, the carve dll in native/bin and a headless --import before captures.
+- The default rampage clock ends a long capture: set sim.time_left. override.cfg (no_focus, off-screen) in its own
+  Bash call. GDScript warnings are errors (Num.i, typed assigns).
+- Subagent transcripts: <session>/subagents/agent-<id>.jsonl; point stall_watch.sh at the .jsonl. The focus-guard
+  hook blocks any Bash command containing the engine name in a heredoc: write scripts with Write.
