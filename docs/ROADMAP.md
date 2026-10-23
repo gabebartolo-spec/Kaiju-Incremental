@@ -428,7 +428,9 @@ state. No director clips or per-change approvals in between; clips only where mo
   left haze is gone, dusk still reads as dusk) = PR #172, merging on green. Against the bar: far contrast vs fog-off
   0.85-0.97 (dusk walk 0.85 misses 0.90), camera-left 0.70-0.91 (misses), frame brightness -4% night, -11 to -14%
   dusk (misses 8%, but it now equals fog-off's, so the drop is the veil leaving, not murk). Better than today on
-  every number; the VFX lead judges whether the camera-left residue needs a second pass. Found alongside, queued (VFX lead):
+  every number. VFX lead's ruling: no second pass; the camera-left gap is the dimmed dust (fog-off's undimmed white
+  dust inflates its contrast), the 2x crops match, far softness is depth. If he still sees a camera-following glow at
+  M1, the next suspect is the tower see-through cross-hatch. Found alongside, queued (VFX lead):
   the tower see-through fade draws a cross-hatch that follows the camera beside the kaiju; the kaiju's silhouette is
   weak at night; the D-154 late-rampage haze is unbuilt.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
