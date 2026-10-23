@@ -403,7 +403,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.
 - Damage on impact (D-166): a big attack's damage waits for the strike. Owner: lead's builder. Status: not started.
 - Railgun volleys staggered to about 2 hits per squad per second (D-166). Owner: lead's builder. Status: not started.
-- Cheaper Thunder Beam levels so the last unlock lands at about 2 h (D-167). Owner: lead's builder. Status: not started.
+- Thunder Beam at a third of its price, last unlock about 2.25 h (D-167 amended). Owner: lead's builder. Status: pacing run.
 - Heli wrecks crush tanks and rooftop squads too (D-167, PR #166 back to its first build). Owner: VFX lead. Status:
   not started.
 - The whale in the water between the play city and the distant city (D-168), with sky and sea life. Owner: demo-end
