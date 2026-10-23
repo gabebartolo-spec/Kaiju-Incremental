@@ -41,11 +41,28 @@ func _initialize() -> void:
 		drawn.update(body, DT)
 	var frames: Array = []
 	var every := Num.i(_args["every"])
+	var round4 := cfg.duplicate()
+	round4["camera_sway_s"] = 0.0001
+	var moving := Vector3(body.heading.x, 0.0, body.heading.y) * body.speed
+	var now_cam := SerpentCamera.new(cfg, SerpentCamera.target(cfg, body), moving)
+	var old_cam := SerpentCamera.new(round4, SerpentCamera.target(cfg, body), moving)
+	var now_eyes := PackedVector3Array()
+	var old_eyes := PackedVector3Array()
+	var swing := Vector2.ZERO  # the sideways camera swing: now, and with round 4's follow
 	for f: int in int(Num.f(_args["seconds"]) / DT) + 1:
 		if f % every == 0:
 			frames.append(_frame(f * DT, body, drawn))
 		body.step(DT, _stick(f * DT))
 		drawn.update(body, DT)
+		now_eyes.append(now_cam.follow(body, DT).origin)
+		old_eyes.append(old_cam.follow(body, DT).origin)
+		var side := Vector3(-body.heading.y, 0.0, body.heading.x)
+		swing.x = maxf(swing.x, _sideways(now_eyes, side))
+		swing.y = maxf(swing.y, _sideways(old_eyes, side))
+	print(
+		"serpent probe: camera sideways accel peak %.2f m/s^2 (round 4's follow %.2f)"
+		% [swing.x, swing.y]
+	)
 	var file := FileAccess.open(str(_args["out"]), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"frames": frames}))
 	file.close()
@@ -83,3 +100,11 @@ func _frame(t: float, body: SerpentBody, drawn: SerpentStandIn) -> Dictionary:
 		"off": drawn._weave._off,
 		"ramp": drawn._weave._ramp,
 	}
+
+
+## The camera's acceleration across `side` at the last of `eyes` (m/s^2, its size).
+func _sideways(eyes: PackedVector3Array, side: Vector3) -> float:
+	var n := eyes.size()
+	if n < 3:
+		return 0.0
+	return absf(((eyes[n - 1] - 2.0 * eyes[n - 2] + eyes[n - 3]) / (DT * DT)).dot(side))

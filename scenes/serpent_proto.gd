@@ -93,7 +93,7 @@ func _process(delta: float) -> void:
 
 
 func _place_camera(delta: float) -> void:
-	camera.transform = _follow.step(SerpentCamera.target(_cfg, body), delta)
+	camera.transform = _follow.follow(body, delta)
 
 
 func _middle_ground() -> Vector2:

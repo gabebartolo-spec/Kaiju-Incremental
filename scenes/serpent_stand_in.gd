@@ -105,9 +105,10 @@ func _lifts(seg: float, moving: bool) -> PackedFloat32Array:
 ## As it brakes to a stop (the stick let go), the front end rears up stop_rear m and the head
 ## draws back stop_recoil m, more the nearer it is to stopping: the anticipation of the coil.
 func _brace(body: SerpentBody, moving: bool, delta: float) -> void:
-	if not moving:
+	if not moving:  # the coil's path carries the rear; the hood folds while the body coils
 		reared = 0.0
 		recoil = 0.0
+		_brace_k = move_toward(_brace_k, 0.0, Num.f(_cfg["stop_rear_rate"]) * delta)
 		return
 	var braking := body.turn_left == 0.0 and body.push < 0.0
 	var near := 1.0 - body.speed / Num.f(_cfg["speed"])

@@ -119,7 +119,7 @@ func _on_track(s: float) -> Vector3:
 func hood() -> float:
 	if still <= 0.0:
 		return 0.0
-	return smoothstep(0.45, 1.0, still / Num.f(_cfg["coil_s"]))
+	return smoothstep(0.75, 1.0, still / Num.f(_cfg["coil_s"]))
 
 
 ## Seconds into the idle (none until the coil is made).

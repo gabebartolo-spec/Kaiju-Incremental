@@ -298,7 +298,7 @@ func _camera_steady(bad: bool) -> void:
 	for frame: int in 700:
 		var stick := NORTH if frame < 180 else (EAST if frame < 360 else SOUTH_EAST)
 		_step(body, Vector2.ZERO if frame >= 450 else stick)
-		var t := cam.step(SerpentCamera.target(cfg, body), DT)
+		var t := cam.follow(body, DT)
 		turned = maxf(turned, (t.basis.z - first.z).length())
 		eyes.append(t.origin)
 		var head := Vector3(body.pos.x, 0.0, body.pos.y)

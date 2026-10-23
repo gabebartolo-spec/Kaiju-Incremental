@@ -11,6 +11,10 @@ extends RefCounted
 
 var _cfg: Dictionary
 var _chase: Damped
+## The serpent's way as the shot's lead follows it: eased over camera_sway_s, so a turn swings the
+## lead round gently and the head sways less on screen (round 4 critic: "damp the camera sway
+## about 30%").
+var _way := Vector2.ZERO
 
 
 ## velocity: how fast the body's middle already moves. A shot that opens mid-slither starts as
@@ -29,10 +33,22 @@ func step(focus: Vector3, delta: float) -> Transform3D:
 	return Transform3D(Basis.looking_at(-offset), aim + offset)
 
 
-## Where the camera aims for `body` now: led by the head (see the class note).
-static func target(cfg: Dictionary, body: SerpentBody) -> Vector3:
+## The camera's transform this frame following `body`: its lead eased round with the turns.
+func follow(body: SerpentBody, delta: float) -> Transform3D:
+	if _way == Vector2.ZERO:
+		_way = body.heading
+	# eased by distance travelled, so once the serpent stops its lead holds still too
+	var moving := body.speed / Num.f(_cfg["speed"])
+	var ease := 1.0 - exp(-delta * moving / Num.f(_cfg["camera_sway_s"]))
+	_way = _way.slerp(body.heading, ease).normalized()
+	return step(target(_cfg, body, _way), delta)
+
+
+## Where the camera aims for `body` now: led by the head (see the class note), along `way` (its
+## eased heading; zero: the heading itself).
+static func target(cfg: Dictionary, body: SerpentBody, way := Vector2.ZERO) -> Vector3:
 	var ahead := body.speed * Num.f(cfg["camera_lead_s"]) - Num.f(cfg["camera_behind"])
-	var at := body.pos + body.heading * ahead
+	var at := body.pos + (body.heading if way == Vector2.ZERO else way) * ahead
 	return Vector3(at.x, 0.0, at.y)
 
 

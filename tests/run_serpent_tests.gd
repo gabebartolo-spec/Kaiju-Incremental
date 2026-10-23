@@ -42,6 +42,7 @@ func run_checks() -> void:
 	await _t("_check_wave_speed")
 	await _t("_check_corner_cut")
 	await _h("SerpentStop", func() -> void: SerpentStopChecks.new(check).run())
+	await _h("SerpentRead", func() -> void: SerpentReadChecks.new(check).run())
 
 
 ## The sampler on a seeded wander: samples sit exactly `spacing` apart along the head's path, a
