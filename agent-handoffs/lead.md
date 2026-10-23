@@ -58,8 +58,7 @@
   interview.md. Scratchpad board_watch.sh wakes the lead on any from-file or interview change.
 
 ## Sessions and builders
-- 1-on-1 since 2026-10-23 (VFX + atmosphere leads archived; handoffs claude/vfx-lead-2 862f1302, claude/atmosphere-lead
-  42a8deaa). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
+- 1-on-1 since 2026-10-23 (VFX/atmosphere leads archived: claude/vfx-lead-2 862f1302, claude/atmosphere-lead 42a8deaa).
 - 2026-10-24 (director AFK): komodo-carve2 claude/komodo-test MET D-208 bar (90.9%/0/0; baked clip tracks), perf probe
   + recapture pending. Serpent motion r8 SHIP (claude/serpent-slither b022be85); show him clip + size stills A/B/C,
   ask haze + shadow preset (90 m/8192; blur 1.5->0.5 in city_environment.gd). Skins: A/C/D SHIP, skins-r7 on B/E/F
