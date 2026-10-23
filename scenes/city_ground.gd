@@ -14,6 +14,8 @@ const RIVER_QUAY := 0.6  # the stone quay wall along each bank, its top a narrow
 const PARAPET := Vector2(0.9, 0.3)  # a bridge parapet's height over the deck, and its width
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
+const WET_GROUP := "wet_ground"  # the slabs WeatherView wets (ground_slab.gdshader `wet`)
+const SLAB_SHADER := preload("res://scenes/ground_slab.gdshader")
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
 
 var plan: Dictionary
@@ -233,10 +235,8 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
 	var box := BoxMesh.new()
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.roughness = 1.0
+	var mat := ShaderMaterial.new()
+	mat.shader = SLAB_SHADER
 	box.material = mat
 	mm.mesh = box
 	mm.instance_count = _slabs.size()
@@ -248,6 +248,7 @@ func _build_slabs() -> MultiMeshInstance3D:
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mmi.add_to_group(WET_GROUP)
 	return mmi
 
 

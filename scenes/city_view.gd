@@ -49,6 +49,7 @@ func _ready() -> void:
 		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
 	CityEnvironment.attach(self, sim)
 	_build_ground()
+	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if not await stages.next(self):
 		return
 	var colors: Array[Color] = []

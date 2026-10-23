@@ -22,7 +22,7 @@ uniform float focus_full = 1.0;
 // blue): `self_lit` 1 moves the colour from albedo to emission and rounds the puff to a radial
 // falloff that is gone at the quad's border. 0 (every other smoke) is unchanged.
 uniform float self_lit = 0.0;
-global uniform float smoke_focus;
+#include "res://scenes/view_clear.gdshaderinc"
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -55,10 +55,7 @@ void fragment() {
 	ROUGHNESS = 1.0;
 	SPECULAR = mix(0.5, 0.0, self_lit);
 	round_mask *= mix(1.0, 1.0 - smoothstep(0.55, 1.0, length(p)), self_lit);
-	float near = smoothstep(near_clear, near_full, -VERTEX.z);
-	vec2 off = (SCREEN_UV - 0.5) * vec2(VIEWPORT_SIZE.x / VIEWPORT_SIZE.y, 1.0);
-	float centre = mix(centre_keep, 1.0, smoothstep(centre_radius * 0.4, centre_radius, length(off)));
-	float front = smoke_focus > 0.0
-		? smoothstep(smoke_focus * focus_clear, smoke_focus * focus_full, -VERTEX.z) : 1.0;
-	ALPHA = COLOR.a * round_mask * near * centre * front;
+	float clear = view_clear(-VERTEX.z, SCREEN_UV, VIEWPORT_SIZE, near_clear, near_full,
+		centre_keep, centre_radius, focus_clear, focus_full);
+	ALPHA = COLOR.a * round_mask * clear;
 }
