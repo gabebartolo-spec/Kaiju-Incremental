@@ -48,6 +48,11 @@ func start(sim: RampageSim) -> void:
 	# water; facing the bank, its head would come up over the quay, out of the street
 	# (director 2026-10-20: "emerging from the water, not from the asphalt").
 	sim.facing = _along()
+	# A heavy body moves only as its clips show (D-201): it has no sideways step and its turn takes
+	# seconds, so it rises already facing the bank and wades straight out, forward (a wade at right
+	# angles to its body slid its planted feet). Call body.use_species first.
+	if sim.body.heavy() and sim.kaiju_pos != sim.clamp_to_arena(_bank):
+		sim.facing = sim.kaiju_pos.direction_to(sim.clamp_to_arena(_bank))
 	sim.body.heading = sim.facing
 
 

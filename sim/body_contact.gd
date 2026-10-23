@@ -105,6 +105,11 @@ func _class_sim(species_id: String) -> Dictionary:
 	return block
 
 
+## True for a body of a heavy weight class (body_class sim, D-201): its animations lead.
+func heavy() -> bool:
+	return not _heavy.is_empty()
+
+
 func active() -> bool:
 	return not _discs.is_empty()
 
@@ -307,7 +312,8 @@ func walked(distance: float, dt: float) -> void:
 ## then breaks what the body moved or turned into.
 func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
-	_face(dt)
+	if _heavy.is_empty():  # a heavy body turned once this step, about its hips (steer, D-201)
+		_face(dt)
 	if not active() or sim.airborne:
 		_last_pos = Vector2(INF, INF)
 		return

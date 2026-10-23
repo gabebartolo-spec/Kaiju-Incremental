@@ -35,8 +35,8 @@ func _run() -> void:
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 2))
 	var ability: Dictionary = species["ability"]
 	sim.ability_type = str(ability["type"])
-	sim.emerge.start(sim)
 	sim.body.use_species(str(species["id"]))
+	sim.emerge.start(sim)
 	var dt := 1.0 / 60.0
 	var target := Vector2(INF, INF)
 	var costs: Array[int] = []

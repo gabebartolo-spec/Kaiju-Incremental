@@ -56,6 +56,9 @@ var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
+## The clip's planted bits this frame, left then right, as the feet were given them (for tests: a
+## body whose clip leads plants exactly on them, D-201).
+var clip_planted: Array[bool] = [false, false]
 var _from := ""
 var _from_time := 0.0
 var _blend := 1.0
@@ -92,6 +95,7 @@ var _clip_feet := false
 ## A heavy body roaring on the move: its legs keep the walk clip (frames walked by distance) under
 ## the roar's upper body, so its feet still plant where the clip does.
 var _legs_t := 0.0
+var _hips_at := Vector3(INF, 0, 0)  # where the hips stood over the ground last frame (world)
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -130,6 +134,8 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 
 func update(delta: float) -> void:
 	track(delta)
+	if _clip_feet:
+		_hip_travel()
 	var dt := minf(delta, 1.0 / 20.0)
 	var roar_was := clip_time if state == "roar" else -1.0
 	_choose(dt)
@@ -291,6 +297,18 @@ func _moving(dt: float) -> bool:
 	return speed >= STAND_SPEED * hip_height * s
 
 
+## A body whose clip leads walks as far as its hips go over the ground (D-201): in a turn its node
+## also swings about them (BodyContact._turn_about_hips), and that swing is no ground walked (the
+## node's own travel played the walk about twice as fast as the hips went: planted feet slid).
+func _hip_travel() -> void:
+	var hips := rig.head_of(clips.bones[0])
+	hips.y = 0.0
+	var at := rig.get_parent_node_3d().global_transform * hips
+	at.y = 0.0
+	moved = 0.0 if _hips_at.x == INF else at.distance_to(_hips_at)
+	_hips_at = at
+
+
 ## A heavy body roaring while it walks keeps the walk on its legs, pelvis and tail (D-201): no
 ## clip-less re-plants under a roar that stands still.
 func _walking_legs(pose: KaijuClips.Pose, dt: float) -> void:
@@ -390,6 +408,7 @@ func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var targets: Array[Vector3] = []
 	var fixes: Array[float] = []  # each foot's yaw: a planted one held, a lifted one easing back
 	for i: int in mini(legs.size(), 2):
+		clip_planted[i] = pose.planted[i]
 		targets.append(_foot_target(i, pose, dt))
 		var held := wrapf(_plant_yaw[i] - _hold.rig_yaw(), -PI, PI)
 		fixes.append(held if legs[i].planted else _yaw_fix[i] * exp(-FOOT_YAW_DECAY * dt))
