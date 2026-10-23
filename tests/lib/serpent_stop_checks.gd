@@ -77,8 +77,10 @@ func _stop_settles() -> void:
 		for j: int in coiled.size():
 			tallest = maxf(tallest, heights[j])
 			outside = maxf(outside, Geo.off_path(coiled[j], line))
-			if j > 0:
-				broken = maxf(broken, absf(coiled[j].distance_to(coiled[j - 1]) - seg) / seg)
+			if j > 0:  # in 3D: the neck rises steeply out of the coil
+				var a := Vector3(coiled[j].x, heights[j], coiled[j].y)
+				var b := Vector3(coiled[j - 1].x, heights[j - 1], coiled[j - 1].y)
+				broken = maxf(broken, absf(a.distance_to(b) - seg) / seg)
 		var reach := SerpentCoil.reach(coiled, coiled[0])
 		drawn.free()
 		if bad:
@@ -97,9 +99,11 @@ func _stop_settles() -> void:
 		check.call(
 			outside <= swing + girth, "the coil stays inside the S's footprint (%.1f m)" % outside
 		)
+		var head_top := 0.0  # the head tips nose-down toward the camera: its highest joint
+		for j: int in int(Num.f(_cfg["head_len"])) + 1:
+			head_top = maxf(head_top, heights[j])
 		check.call(
-			tallest >= 3.0 and heights[0] > tallest - 0.01,
-			"stacked loops, the head raised above them"
+			tallest >= 3.0 and head_top > tallest - 0.01, "stacked loops, the head raised above them"
 		)
 		check.call(
 			broken < 0.02, "the coil keeps the chain whole (%.3f off a joint spacing)" % broken

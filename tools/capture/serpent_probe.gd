@@ -9,27 +9,42 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 const Capture := preload("res://tools/capture/capture_serpent.gd")
 const DT := 1.0 / 60.0
 
-var _args := Kit.args({"seconds": 9.4, "every": 6, "out": "user://serpent_probe.json"})
+var _args := Kit.args(
+	{"seconds": 9.4, "every": 6, "out": "user://serpent_probe.json", "route": "clip"}
+)
+
+
+## The stick: the clip's, or (--route=stop) the suite's stop mid-turn (pre-rolled north, east
+## asked for 40 frames, then let go).
+func _stick(t: float) -> Vector2:
+	if str(_args["route"]) == "stop":
+		return Vector2(1, 0) if t < 40.0 * DT else Vector2.ZERO
+	return Capture.stick_at(t)
 
 
 func _initialize() -> void:
 	var cfg := Content.section("serpent")
 	var steps := int(Capture.PREROLL_S / DT)
-	var body := SerpentBody.new(cfg, Vector2.ZERO, Vector2(1, 0))
-	for _i: int in steps:
-		body.step(DT, Vector2(1, 0))
-	var start := Capture.START - Vector2(body.pos.x, 0.0)
-	body = SerpentBody.new(cfg, start, Vector2(1, 0))
+	var way := Vector2(1, 0)
+	var start := Vector2.ZERO
+	if str(_args["route"]) == "stop":
+		way = Vector2(0, -1)
+	else:
+		var trial := SerpentBody.new(cfg, Vector2.ZERO, way)
+		for _i: int in steps:
+			trial.step(DT, way)
+		start = Capture.START - Vector2(trial.pos.x, 0.0)
+	var body := SerpentBody.new(cfg, start, way)
 	var drawn := SerpentStandIn.new(cfg)
 	for _i: int in steps:
-		body.step(DT, Vector2(1, 0))
+		body.step(DT, way)
 		drawn.update(body, DT)
 	var frames: Array = []
 	var every := Num.i(_args["every"])
 	for f: int in int(Num.f(_args["seconds"]) / DT) + 1:
 		if f % every == 0:
 			frames.append(_frame(f * DT, body, drawn))
-		body.step(DT, Capture.stick_at(f * DT))
+		body.step(DT, _stick(f * DT))
 		drawn.update(body, DT)
 	var file := FileAccess.open(str(_args["out"]), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"frames": frames}))

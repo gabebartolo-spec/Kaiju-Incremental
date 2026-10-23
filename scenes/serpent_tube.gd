@@ -28,6 +28,7 @@ var _rings := 0
 var _indices := PackedInt32Array()
 var _eyes: Array[MeshInstance3D] = []
 var _tongue: Array[MeshInstance3D] = []
+var _hood := 0.0  # how far the hood is spread (0..1), as last built
 
 
 func _init(cfg: Dictionary) -> void:
@@ -85,29 +86,70 @@ func share_at(d: float) -> float:
 	return Num.f(_shape[last][1])
 
 
-## The widest the body is `d` m behind the snout, as drawn (m), with `swell` (its breath).
+## The widest the body is `d` m behind the snout, as drawn (m), with `swell` (its breath): the
+## girth (x girth_scale), the head x head_scale, the hood spread behind it.
 func width_at(d: float, swell: float) -> float:
-	return Num.f(_cfg["girth"]) * share_at(d) * swell
+	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
+	return width * _head_k(d) * (1.0 + (Num.f(_cfg["hood_flare"]) - 1.0) * _hood * _hood_at(d))
 
 
-## The body's height `d` m behind the snout: a share of its width, the head flatter.
+## The body's height `d` m behind the snout: a share of its width, the head flatter, the hood thin.
 func height_at(d: float, swell: float) -> float:
 	var flat := lerpf(
 		Num.f(_cfg["head_flat"]),
 		1.0,
 		smoothstep(Num.f(_cfg["head_len"]) * 0.7, Num.f(_cfg["head_len"]) * 1.4, d)
 	)
-	return width_at(d, swell) * Num.f(_cfg["height_share"]) * flat
+	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
+	var thin := 1.0 - Num.f(_cfg["hood_thin"]) * _hood * _hood_at(d)
+	return width * _head_k(d) * Num.f(_cfg["height_share"]) * flat * thin
+
+
+## How much the head is scaled `d` m behind the snout (head_scale over the head, 1 past the neck).
+func _head_k(d: float) -> float:
+	var head := Num.f(_cfg["head_len"])
+	return lerpf(Num.f(_cfg["head_scale"]), 1.0, smoothstep(head, head * 1.8, d))
+
+
+## The hood's shape along the neck `d` m behind the snout (0..1): it spreads from the back of the
+## head, widest hood_peak m behind it, and narrows back into the neck over hood_len m.
+func _hood_at(d: float) -> float:
+	var head := Num.f(_cfg["head_len"])
+	var peak := head + Num.f(_cfg["hood_peak"])
+	var end := head + Num.f(_cfg["hood_len"])
+	return smoothstep(head * 0.9, peak, d) * (1.0 - smoothstep(peak, end, d))
 
 
 ## Rebuilds the tube along `joints` (ground plane x, z; head first, a segment apart), joint j raised
-## `lifts[j]` m above the ground, `swell`: the girth's breath, `tongue`: how far the tongue is out.
+## `lifts[j]` m above the ground, `swell`: the girth's breath, `tongue`: how far the tongue is out,
+## `hood`: how far the cobra's hood is spread (0..1). Each ring is set square to the tube's own
+## way in 3D, so a neck that rises steeply stays round.
 func build(
-	joints: PackedVector2Array, lifts: PackedFloat32Array, swell: float, tongue: float
+	joints: PackedVector2Array,
+	lifts: PackedFloat32Array,
+	swell: float,
+	tongue: float,
+	hood := 0.0
 ) -> void:
+	_hood = hood
 	var seg := Num.f(_cfg["length"]) / Num.f(_cfg["segments"])
 	var per := maxi(1, ceili(seg / Num.f(_cfg["tube_step"])))
 	var count := (joints.size() - 1) * per + 1
+	var mids := PackedVector3Array()
+	var flats := PackedVector3Array()  # each ring's ground-plane side
+	mids.resize(count)
+	flats.resize(count)
+	for r: int in count:
+		var at := float(r) / per
+		var i := mini(int(at), joints.size() - 2)
+		var f := at - i
+		var centre := _curve(joints, i, f)
+		var tan2 := _tangent(joints, i, f)
+		var raised := lerpf(lifts[i], lifts[i + 1], f)
+		# the snout's tip sits at the head's own height, not on the ground
+		var y := height_at(maxf(at * seg, 1.2), swell) * 0.5 + raised
+		mids[r] = Vector3(centre.x, y, centre.y)
+		flats[r] = Vector3(tan2.y, 0.0, -tan2.x)
 	var verts := PackedVector3Array()
 	var norms := PackedVector3Array()
 	var cols := PackedColorArray()
@@ -115,31 +157,26 @@ func build(
 	norms.resize(count * _sides)
 	cols.resize(count * _sides)
 	for r: int in count:
-		var at := float(r) / per
-		var i := mini(int(at), joints.size() - 2)
-		var f := at - i
-		var centre := _curve(joints, i, f)
-		var tan2 := _tangent(joints, i, f)
-		var d := at * seg
+		var d := float(r) / per * seg
 		var w := width_at(d, swell)
 		var h := height_at(d, swell)
-		var side := Vector3(tan2.y, 0.0, -tan2.x)
-		var raised := lerpf(lifts[i], lifts[i + 1], f)
-		# the snout's tip sits at the head's own height, not on the ground
-		var mid := Vector3(centre.x, height_at(maxf(d, 1.2), swell) * 0.5 + raised, centre.y)
+		var mid := mids[r]
+		var way := (mids[mini(r + 1, count - 1)] - mids[maxi(r - 1, 0)]).normalized()
+		var side := (flats[r] - way * flats[r].dot(way)).normalized()
+		var up := way.cross(side).normalized()
 		var band := _band(d)
 		for s: int in _sides:
 			var a := TAU * s / _sides
 			var c := cos(a)
 			var u := sin(a)
 			var k := r * _sides + s
-			verts[k] = mid + side * (w * 0.5 * c) + Vector3.UP * (h * 0.5 * u)
-			var n := side * (c / maxf(w * 0.5, 0.01)) + Vector3.UP * (u / maxf(h * 0.5, 0.01))
+			verts[k] = mid + side * (w * 0.5 * c) + up * (h * 0.5 * u)
+			var n := side * (c / maxf(w * 0.5, 0.01)) + up * (u / maxf(h * 0.5, 0.01))
 			norms[k] = n.normalized()
 			cols[k] = _skin(d, c, u, band)
-		_place_eyes(d, mid, side, Vector2(w, h))
+		_place_eyes(d, mid, side, up, Vector2(w, h))
 		if r == 0:
-			_place_tongue(mid, Vector3(-tan2.x, 0.0, -tan2.y), tongue)
+			_place_tongue(mid, -way, up, tongue)
 	if _rings != count:
 		_rings = count
 		_index(count)
@@ -154,23 +191,23 @@ func build(
 
 
 ## Both eyes sit on the head ring nearest eye_at m behind the snout (`size`: its width, height).
-func _place_eyes(d: float, mid: Vector3, side: Vector3, size: Vector2) -> void:
+func _place_eyes(d: float, mid: Vector3, side: Vector3, up: Vector3, size: Vector2) -> void:
 	var step := Num.f(_cfg["tube_step"])
 	if absf(d - Num.f(_cfg["eye_at"])) > step * 0.5:
 		return
-	var ball := Num.f(_cfg["eye_size"]) * 2.0
+	var ball := Num.f(_cfg["eye_size"]) * 2.0 * Num.f(_cfg["head_scale"])
 	for e: int in 2:
 		var sign := 1.0 if e == 0 else -1.0
-		var at := mid + side * (size.x * 0.5 * 0.82 * sign) + Vector3.UP * (size.y * 0.5 * 0.55)
+		var at := mid + side * (size.x * 0.5 * 0.82 * sign) + up * (size.y * 0.5 * 0.55)
 		_eyes[e].transform = Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * ball), at)
 
 
 ## The forked tongue at the snout: a stem and two prongs, out `out` (0..1) of its full length.
-func _place_tongue(snout: Vector3, forward: Vector3, out: float) -> void:
-	var length := Num.f(_cfg["tongue_len"])
-	var thick := Num.f(_cfg["tongue_width"])
+func _place_tongue(snout: Vector3, forward: Vector3, up: Vector3, out: float) -> void:
+	var length := Num.f(_cfg["tongue_len"]) * Num.f(_cfg["head_scale"])
+	var thick := Num.f(_cfg["tongue_width"]) * Num.f(_cfg["head_scale"])
 	var fan := Num.f(_cfg["tongue_fork"])
-	var basis := Basis.looking_at(forward, Vector3.UP)
+	var basis := Basis.looking_at(forward, up)
 	var stem := length * 0.55 * out
 	var prong := length * 0.45 * out
 	var shown := out > 0.01
@@ -185,7 +222,7 @@ func _place_tongue(snout: Vector3, forward: Vector3, out: float) -> void:
 	var tip := origin + forward * stem
 	for e: int in 2:
 		var sign := 1.0 if e == 0 else -1.0
-		var turn := basis.rotated(Vector3.UP, sign * fan)
+		var turn := basis.rotated(up, sign * fan)
 		var along := -turn.z  # looking_at points -z toward `forward`
 		_tongue[e + 1].transform = Transform3D(
 			turn.scaled_local(Vector3(thick, thick, prong)), tip + along * (prong * 0.5)

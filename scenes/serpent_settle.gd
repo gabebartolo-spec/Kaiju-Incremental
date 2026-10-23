@@ -3,32 +3,48 @@ extends RefCounted
 ## What the drawn serpent does once its head has stopped (motion critic round 3: "an explicit,
 ## visible settle ... followed by a living idle ... so it never reads as switched off"; director
 ## D-210: "snake curls up into a defensive position, tongue flicking dangerously"). Over coil_s
-## the body draws itself into a defensive coil (SerpentCoil), the head end first and the tail
-## last, its head raised and drawn back in an S ready to strike. Then it idles on the coil: a slow
-## breath (the girth swells by idle_breath every idle_breath_s), the head tracking slowly side to
-## side (idle_track rad over idle_track_s), and now and then a burst of 2-3 quick tongue flicks
-## (a flick every flick_s) with a short jab of the head on the first (idle_jab m). Bursts come every
-## idle_gap_min to idle_gap_max s, spaced by a fixed hash so a replay lays the same ones. The
-## head never travels. Presentation only (data/tuning.json "serpent").
+## the body slides head first along one precomputed path (SerpentCoil: the outer ring first, then
+## spiralling in and up, the neck rising out of the centre), every joint following the one ahead,
+## so nothing passes through the forming coil. Then it idles on the coil: a breath (the girth and
+## the rings swell by idle_breath every idle_breath_s), the raised head swaying slowly side to side
+## (idle_track rad over idle_track_s), and every idle_gap_min to idle_gap_max s a burst of 2-3
+## quick tongue flicks (a flick every flick_s) with a short jab of the head on the first (idle_jab
+## m), spaced by a fixed hash so a replay lays the same ones. The sim head never travels.
+## Presentation only (data/tuning.json "serpent").
+
+## How far into the coil path (m) the head lowers from a rear it stopped in onto the outer ring.
+const REAR_DROP := 6.0
 
 ## Seconds the head has stood still (0 while it moves).
 var still := 0.0
 ## Height of each joint above the ground (m) as drawn now: the coil's stack, none while it moves.
 var heights := PackedFloat32Array()
 var _cfg: Dictionary
-var _from := PackedVector2Array()
-var _to := PackedVector2Array()
-var _to_height := PackedFloat32Array()
+## The path the body slides along into the coil: the shape it stopped in (tail to head), then the
+## coil path; (x, height, z) points and their distance along it (m).
+var _track := PackedVector3Array()
+var _arc := PackedFloat32Array()
+## Where on the track the head stood when it stopped, and how much further the coil takes it (m).
+var _start := 0.0
+var _coil := 0.0
+## The ring's centre (ground plane), for the breath.
+var _centre := Vector2.ZERO
 
 
 func _init(cfg: Dictionary) -> void:
 	_cfg = cfg
 
 
-## The joints to draw (head first): `laid` while the head moves; once it stops, drawing itself
-## into the coil from the shape it stopped in, then idling on it. `heading`: the way it faced.
+## The joints to draw (head first): `laid` while the head moves; once it stops, sliding into the
+## coil along its path, then idling on it. `heading`: the way it faced; `line`: the sim's
+## centreline, head first; `lifted`: each joint's height as it stopped (a rear, a raised head).
 func apply(
-	laid: PackedVector2Array, moving: bool, delta: float, heading: Vector2
+	laid: PackedVector2Array,
+	moving: bool,
+	delta: float,
+	heading: Vector2,
+	line: PackedVector2Array,
+	lifted: PackedFloat32Array
 ) -> PackedVector2Array:
 	var seg := laid[0].distance_to(laid[1])
 	if heights.size() != laid.size():
@@ -41,21 +57,69 @@ func apply(
 			heights[j] *= ease
 		return laid
 	if still == 0.0:
-		_from = laid.duplicate()
-		var made := SerpentCoil.target(laid, heading, seg, _cfg)
-		_to = made[0]
-		_to_height = made[1]
+		_lay_track(laid, lifted, heading, line)
 	still += delta
+	var head := _start + _coil * smoothstep(0.0, 1.0, still / Num.f(_cfg["coil_s"]))
+	var grow := (swell() - 1.0) / maxf(Num.f(_cfg["idle_breath"]), 0.0001)
+	var spread := 1.0 + Num.f(_cfg["idle_ring_breath"]) * grow
 	var out := PackedVector2Array()
-	out.resize(_from.size())
-	var span := maxf(Num.f(_cfg["coil_s"]) * (1.0 - Num.f(_cfg["coil_stagger"])), 0.0001)
-	var last := maxf(1.0, _from.size() - 1.0)
-	for j: int in _from.size():
-		var late := Num.f(_cfg["coil_s"]) * Num.f(_cfg["coil_stagger"]) * j / last
-		var k := smoothstep(0.0, 1.0, (still - late) / span)
-		out[j] = _from[j].lerp(_to[j], k)
-		heights[j] = k * _to_height[j]
-	return SerpentSettle.keep_lengths(out, seg)
+	out.resize(laid.size())
+	for j: int in laid.size():
+		var p := _on_track(head - j * seg)
+		out[j] = _centre + (Vector2(p.x, p.z) - _centre) * spread
+		heights[j] = p.y
+	return out
+
+
+## The track for a stop: the body as it lies (tail to head, at the heights it stopped at), then the
+## coil path from its head, the head lowering from any rear onto the outer ring over REAR_DROP m.
+func _lay_track(
+	laid: PackedVector2Array, lifted: PackedFloat32Array, heading: Vector2, line: PackedVector2Array
+) -> void:
+	_track = PackedVector3Array()
+	for j: int in range(laid.size() - 1, -1, -1):
+		var lift := lifted[j] if j < lifted.size() else 0.0
+		_track.append(Vector3(laid[j].x, lift, laid[j].y))
+	var way := (laid[0] - laid[1]).normalized()
+	var coil := SerpentCoil.path(laid, way, line, heading, _cfg)
+	var rear := lifted[0] if lifted.size() > 0 else 0.0
+	var along := 0.0
+	for i: int in range(1, coil.size()):
+		along += coil[i].distance_to(coil[i - 1])
+		var p := coil[i]
+		p.y += rear * (1.0 - smoothstep(0.0, REAR_DROP, along))
+		_track.append(p)
+	_centre = SerpentCoil.centre(laid, way, line, heading, _cfg)[0]
+	_arc = PackedFloat32Array([0.0])
+	for i: int in range(1, _track.size()):
+		_arc.append(_arc[i - 1] + _track[i].distance_to(_track[i - 1]))
+	_start = _arc[laid.size() - 1]
+	_coil = _arc[_arc.size() - 1] - _start
+
+
+## The point `s` m along the track (before its start: carried on straight back from it).
+func _on_track(s: float) -> Vector3:
+	if s <= 0.0:
+		return _track[0] + (_track[0] - _track[1]).normalized() * -s
+	var lo := 0
+	var hi := _arc.size() - 1
+	if s >= _arc[hi]:
+		return _track[hi]
+	while hi - lo > 1:
+		var mid := (lo + hi) / 2
+		if _arc[mid] <= s:
+			lo = mid
+		else:
+			hi = mid
+	var f := (s - _arc[lo]) / maxf(_arc[hi] - _arc[lo], 0.000001)
+	return _track[lo].lerp(_track[hi], f)
+
+
+## How far the cobra's hood is spread (0..1): it spreads as the neck rises out of the coil.
+func hood() -> float:
+	if still <= 0.0:
+		return 0.0
+	return smoothstep(0.45, 1.0, still / Num.f(_cfg["coil_s"]))
 
 
 ## Seconds into the idle (none until the coil is made).

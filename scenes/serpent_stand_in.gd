@@ -20,6 +20,11 @@ var lifts := PackedFloat32Array()
 ## The idle's head look about (rad), jab forward (m) and tongue out (0..1) now.
 var look := 0.0
 var jab := 0.0
+## How far the front end rears (m) and the head draws back (m) as it brakes to a stop.
+var reared := 0.0
+var recoil := 0.0
+## How far the cobra's hood is spread now (0..1): with the rear and the coil (D-206).
+var hood := 0.0
 var tongue := 0.0
 var _cfg: Dictionary
 var _weave: SerpentWeave
@@ -33,6 +38,7 @@ var _wind := 0.0
 var _wind_side := 0.0
 ## False after a wind-up until the turn has mostly been made, so one turn winds up once.
 var _armed := true
+var _brace_k := 0.0  # 0..1: how far into the brace before a stop
 
 
 func _init(cfg: Dictionary) -> void:
@@ -56,14 +62,20 @@ func update(body: SerpentBody, delta: float) -> void:
 	var laid := SerpentWeave.joints(_weave.path(body.length() + seg), seg, count)
 	if moving:
 		laid = _whip(laid, body, seg)
-	_settled = _settle.apply(laid, moving, delta, body.heading)
+	var line := PackedVector2Array()
+	if not moving and _settle.still == 0.0:  # the stop: where the coil may go
+		for k: int in ceili(body.length()) + 1:
+			line.append(body.centre_at(k))
+	_settled = _settle.apply(laid, moving, delta, body.heading, line, lifts)
 	_spring_lead(body, delta)
+	_brace(body, moving, delta)
 	look = _settle.tracking()
-	jab = _settle.jab()
+	jab = _settle.jab() - recoil
 	tongue = _settle.tongue()
 	joints = _bend_neck(_settled, lead + look, jab)
-	lifts = _lifts(seg)
-	_tube.build(joints, lifts, _settle.swell(), tongue)
+	lifts = _lifts(seg, moving)
+	hood = maxf(_settle.hood(), _brace_k * Num.f(_cfg["stop_hood"]))
+	_tube.build(joints, lifts, _settle.swell(), tongue, hood)
 
 
 ## How wide the body is drawn `d` m behind the snout (m).
@@ -76,13 +88,33 @@ func height_at(d: float) -> float:
 	return _tube.height_at(d, 1.0)
 
 
-## Each joint's height (m): the coil's stack, and the head raised by the turn it leads or winds up.
-func _lifts(seg: float) -> PackedFloat32Array:
+## Each joint's height (m): the coil's stack; while it moves, the head raised by the turn it leads
+## or winds up and the front reared as it brakes (once it stops, the coil's path carries those).
+func _lifts(seg: float, moving: bool) -> PackedFloat32Array:
 	var out := _settle.heights.duplicate()
+	if not moving:
+		return out
 	var reach := Num.f(_cfg["head_len"]) * 1.5
+	var rear_reach := Num.f(_cfg["stop_rear_reach"])
 	for j: int in out.size():
 		out[j] += raised * (1.0 - smoothstep(0.0, reach, j * seg))
+		out[j] += reared * (1.0 - smoothstep(0.0, rear_reach, j * seg))
 	return out
+
+
+## As it brakes to a stop (the stick let go), the front end rears up stop_rear m and the head
+## draws back stop_recoil m, more the nearer it is to stopping: the anticipation of the coil.
+func _brace(body: SerpentBody, moving: bool, delta: float) -> void:
+	if not moving:
+		reared = 0.0
+		recoil = 0.0
+		return
+	var braking := body.turn_left == 0.0 and body.push < 0.0
+	var near := 1.0 - body.speed / Num.f(_cfg["speed"])
+	var want := smoothstep(0.0, 1.0, near) if braking else 0.0
+	_brace_k = move_toward(_brace_k, want, Num.f(_cfg["stop_rear_rate"]) * delta)
+	reared = Num.f(_cfg["stop_rear"]) * _brace_k
+	recoil = Num.f(_cfg["stop_recoil"]) * _brace_k
 
 
 ## The thin tail swung a little wider than the S about the sim's centreline, more toward its tip

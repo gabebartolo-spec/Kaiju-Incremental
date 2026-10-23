@@ -28,6 +28,9 @@ const LAG := 3.0
 const LAG_LEAST := 1.0
 ## How far ahead along the centreline the drawn head steers for the S (m).
 const LOOK := 1.5
+## The bend limit is held this much under min_bend_widths: the body's joints, a polyline laid along
+## the drawn path, read a little tighter than the path's own bend.
+const BEND_MARGIN := 0.96
 ## Step (m along the centreline) over which the S's stretch and the centreline's bend are measured.
 const PROBE := 0.5
 
@@ -178,7 +181,7 @@ func _advance(body: SerpentBody, h: float) -> void:
 	var turn := 0.0
 	if reach > 0.0:
 		var bend := 2.0 * sin(drawn.head_heading.angle_to(aim - from)) / reach
-		var most := 1.0 / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["girth"]))
+		var most := BEND_MARGIN / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["girth"]))
 		bend /= pow(1.0 + pow(absf(bend) / most, 6.0), 1.0 / 6.0)  # eased under the limit
 		turn = bend * u * h
 	var heading := drawn.head_heading.rotated(turn)
