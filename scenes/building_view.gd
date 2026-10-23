@@ -248,7 +248,9 @@ func lift_piece(cells: Array[Vector3i], pivot: Vector3) -> Node3D:
 	piece.position = pivot
 	var tex := ImageTexture.create_from_image(piece_alive)
 	for mesh: ArrayMesh in [mesher.shell, mesher.slabs]:
-		var mi := _instance(mesh, _material(tex))
+		var piece_mat := _material(tex)
+		piece_mat.set_shader_parameter("dark_to", dark_to)  # a blacked-out building's piece stays dark
+		var mi := _instance(mesh, piece_mat)
 		mi.position = -pivot  # the meshes are baked in world space
 		piece.add_child(mi)
 	piece.set_meta("parts", parts)

@@ -32,6 +32,7 @@ func run_checks() -> void:
 	await _t("_check_blackout_times")
 	await _t("_check_eased_not_stepped")
 	await _t("_check_blackout_spreads")
+	await _t("_check_falling_piece_stays_dark")
 
 
 ## The base values a time's look gives (what CityEnvironment sets), without building a scene.
@@ -182,6 +183,30 @@ func _check_eased_not_stepped() -> void:
 	check(sun.light_energy >= base_sun * 0.99, "night keeps its moonlight")
 	s.parent.queue_free()
 	await process_frame
+
+
+## A piece lifted off a blacked-out building keeps its windows dark (and a lit one keeps its lights).
+func _check_falling_piece_stays_dark() -> void:
+	Content.set_time("night")
+	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	var sim := RampageSim.new({}, Content.tuning(), layout, Seeds.make("army", 0))
+	var b := sim.buildings[0]
+	var view := BuildingView.new(b, Color("9a9890"))
+	root.add_child(view)
+	var cells: Array[Vector3i] = [Vector3i(0, 0, 0)]
+	var untouched := view.lift_piece(cells, Vector3.ZERO)
+	var mi0: MeshInstance3D = untouched.get_child(0)
+	var mat0: ShaderMaterial = mi0.material_override
+	check(Num.f(mat0.get_shader_parameter("dark_to")) < 0.0, "a piece off a lit building has no blackout")
+	view.set_dark_to(7.0)
+	var piece := view.lift_piece(cells, Vector3.ZERO)
+	for child: Node in piece.get_children():
+		var mat: ShaderMaterial = (child as MeshInstance3D).material_override
+		check(Num.f(mat.get_shader_parameter("dark_to")) == 7.0, "a piece off a blacked-out building carries its dark height")
+		check(mat.get_shader_parameter("dark_color") == Look.color("window"), "...and the dark window colour")
+	view.queue_free()
+	await process_frame
+	Content.set_time("dusk")
 
 
 func _check_blackout_spreads() -> void:
