@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-186 · Director · GitHub runs the long test suites
+
+He asked: "is there a way we can get things done faster without compromising quality". The lead measured: builders ran hour-long local chains of up to 11 suites before pushing, while GitHub runs the whole suite in 4 parallel shards in about 15 minutes, free (the repo is public); the PC sat at 57% CPU with 6 engine jobs. Asked: "GitHub runs long suites": a builder runs on this PC only the one or two suites it is iterating on, then pushes and lets GitHub run every other touched suite and the full suite. Same tests and bars; amends D-159's "touched suites locally". Not chosen: a fifth builder (the cap stays about 4). The lead also starts every task on a fresh builder and writes the design and pass bars before code.
+
 ## 2026-10-23 · D-185 · Director · The claw swipe becomes a heavy raking arc
 
 "the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very suddenly, defying his anatomy, it looks terrible". Asked: "Heavy raking arc": his shoulders and body twist into it, the arm loads back, then sweeps low and wide with the claws raking through and a heavy follow-through; a slower wind-up, a fast strike, like a bear's or Godzilla's swat, within a croc's forelimb range. The hit lands at the same moment the sim deals it (presentation only). Owner: the VFX lead, under the D-177 motion checks at all three growth steps.
@@ -391,8 +395,3 @@ Why: "i want real dynamic destruction, actual physics and buildings than can be 
 from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
 support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
 (D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).
-
-## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
-Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
-(199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
-cap saved by demo exe 1 no longer overrides it.

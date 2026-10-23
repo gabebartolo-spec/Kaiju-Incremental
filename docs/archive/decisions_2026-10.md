@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
+Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
+(199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
+cap saved by demo exe 1 no longer overrides it.
+
 ## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
 Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
 subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
