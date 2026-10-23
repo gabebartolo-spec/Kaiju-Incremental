@@ -30,5 +30,14 @@ docs/audio/music-briefs.md, Weirdness 35%, Style Influence 70%, Duration 3:00. B
 | 2026-10-23 | theme | Y2 (legato theme with payoff) | https://suno.com/song/d4a04ba2-b04f-4f8d-a995-ca064503b74b | (pair) | |
 | 2026-10-23 | theme | Y3 (legato theme with payoff) | https://suno.com/song/f3f7508f-6d66-458d-bbc2-ab8c082c778d | 10 (pair) | |
 | 2026-10-23 | theme | Y4 (legato theme with payoff) | https://suno.com/song/d4068a8b-012c-4a92-92e1-407fa6adde79 | (pair) | |
+| 2026-10-23 | theme | G1 (1954 Godzilla march; Y set was "too whimsical, almost Harry Potteresque") | https://suno.com/song/5646d34d-7644-4f4c-b3a0-be6ba93816a1 | 10 (pair) | |
+| 2026-10-23 | theme | G2 (1954 Godzilla march) | https://suno.com/song/49bb93af-474b-4c63-a113-870bfc215ecf | (pair) | |
+| 2026-10-23 | theme | G3 (Godzilla appears: slow, footsteps, silences) | https://suno.com/song/74f02c1b-980f-49b7-8ea6-20b73e3eb19d | 10 (pair) | |
+| 2026-10-23 | theme | G4 (Godzilla appears) | https://suno.com/song/39bbaef9-20b9-42e7-a6f6-ef0e089a3431 | (pair) | |
 
-Credits used so far: 120 of 800 (D-174).
+Credits used so far: 140 of 800 (D-174).
+
+G set settings: Styles "1954 Japanese kaiju film score, Godzilla main title style" (G1-G2: ponderous march; G3-G4:
+Godzilla appears, footsteps with long silences), tuba, contrabassoon, bass trombones, low strings, low piano, timpani;
+Exclude adds whimsical, magical, fantasy, fairytale, celesta, glockenspiel, harp, flute, piccolo, clarinet, waltz.
+Weirdness 36%, Style Influence 83%, 3:00, v6.
