@@ -27,15 +27,23 @@ func run_checks() -> void:
 	await _t("_check_replay")
 
 
+## A reptilian of these levels in a hand-made layout, standing at `at`, without the claw rake: its
+## band reaches further as he grows, and these checks watch the strikes alone.
+func _croc(levels: Dictionary, layout: Array[Dictionary], at: Vector2) -> RampageSim:
+	var sim := _sim("reptilian", levels, layout, at)
+	sim.stats["swipe_damage"] = 0.0
+	return sim
+
+
 ## A reptilian of these levels at the origin facing `way`, a block of 3x3x4 chunks in its breath's
 ## cone: half the reach out from the snout, well past the stomp.
 func _breath_sim(levels: Dictionary, way: Vector2 = NORTH) -> RampageSim:
-	var probe := _sim("reptilian", levels, [], Vector2.ZERO)
+	var probe := _croc(levels, [], Vector2.ZERO)
 	probe.facing = way
 	var cone := BreathCone.of(probe)
 	var origin: Vector2 = cone["origin"]
 	var at := origin + way * Num.f(cone["reach"]) * 0.5
-	var sim := _sim("reptilian", levels, [_b(at.x, at.y, Vector3i(3, 3, 4))], Vector2.ZERO)
+	var sim := _croc(levels, [_b(at.x, at.y, Vector3i(3, 3, 4))], Vector2.ZERO)
 	sim.facing = way
 	return sim
 
@@ -145,13 +153,13 @@ func _check_breath_delay() -> void:
 ## The cone is read at the strike, from where he faces then: turned east after the press, the
 ## breath burns the block to the east and leaves the one he faced at the press.
 func _check_breath_aim() -> void:
-	var probe := _sim("reptilian", {}, [], Vector2.ZERO)
+	var probe := _croc({}, [], Vector2.ZERO)
 	var snout: Vector2 = BreathCone.of(probe)["origin"]
 	var out := snout.length() + probe.ability_reach() * 0.5
 	var layout: Array[Dictionary] = [
 		_b(0.0, -out, Vector3i(3, 3, 4)), _b(out, 0.0, Vector3i(3, 3, 4))
 	]
-	var sim := _sim("reptilian", {}, layout, Vector2.ZERO)
+	var sim := _croc({}, layout, Vector2.ZERO)
 	sim.facing = NORTH
 	var north := _alive(sim, 0)
 	var east := _alive(sim, 1)
@@ -169,7 +177,7 @@ func _check_breath_aim() -> void:
 
 func _check_beam_delay() -> void:
 	var line: Array[Dictionary] = [_b(0, -6, Vector3i(3, 3, 4)), _b(0, -11, Vector3i(3, 3, 4))]
-	var sim := _sim("reptilian", {"r_beam": 1}, line, Vector2.ZERO)
+	var sim := _croc({"r_beam": 1}, line, Vector2.ZERO)
 	var free := sim.powers.speed_mult()
 	var seen := _watch(sim, 6.5, Vector2.ZERO, ULT)
 	var delay := Num.f(Content.section("strike")["beam"])
@@ -245,7 +253,7 @@ func _check_cancelled() -> void:
 		"a breath pressed before he evolves lands nothing (%d chunks)" % grown.chunks_destroyed
 	)
 	var line: Array[Dictionary] = [_b(0, -6, Vector3i(3, 3, 4))]
-	var beamed := _sim("reptilian", {"r_beam": 1}, line, Vector2.ZERO)
+	var beamed := _croc({"r_beam": 1}, line, Vector2.ZERO)
 	var free := beamed.powers.speed_mult()
 	_watch(beamed, 0.1, Vector2.ZERO, ULT)
 	beamed.stats["size"] = float(beamed.size_tier() + 1)
@@ -266,7 +274,7 @@ func _check_standing_stomp() -> void:
 	var delay := Num.f(Content.section("strike")["stomp_standing"])
 	check(delay == 0.45, "a standing stomp lands 0.45 s after its tick (D-175)")
 	var near: Array[Dictionary] = [_b(0.0, -2.2, Vector3i(3, 3, 4))]
-	var stood := _sim("reptilian", {}, near, Vector2.ZERO)
+	var stood := _croc({}, near, Vector2.ZERO)
 	var seen := _watch(stood, 1.0, Vector2.ZERO)
 	var tick := _event(seen, "stomp")
 	var landed := roundi(delay / DT) * DT
@@ -281,7 +289,7 @@ func _check_standing_stomp() -> void:
 			% [_log(seen, "chunks", landed - DT), _log(seen, "chunks", landed + DT)]
 		)
 	)
-	var walked := _sim("reptilian", {}, near, Vector2.ZERO)
+	var walked := _croc({}, near, Vector2.ZERO)
 	var steps := _watch(walked, 0.2, Vector2(-1, 0))
 	var walking := _event(steps, "stomp")
 	check(
@@ -298,7 +306,7 @@ func _check_standing_stomp() -> void:
 
 ## The dash is instant: he is already on his way on the press step.
 func _check_dash() -> void:
-	var sim := _sim("reptilian", {}, [], Vector2.ZERO)
+	var sim := _croc({}, [], Vector2.ZERO)
 	sim.body.use_species("reptilian")
 	var from := sim.kaiju_pos
 	var seen := _watch(sim, DT, NORTH, DASH_FLAG)
@@ -324,7 +332,7 @@ func _trace() -> String:
 	var out := PackedStringArray()
 	var breath := _watch(_breath_sim({"evolve1": 1}), 2.0, Vector2.ZERO, PRESS)
 	var line: Array[Dictionary] = [_b(0, -6, Vector3i(3, 3, 4))]
-	var beam := _watch(_sim("reptilian", {"r_beam": 1}, line, Vector2.ZERO), 3.0, Vector2.ZERO, ULT)
+	var beam := _watch(_croc({"r_beam": 1}, line, Vector2.ZERO), 3.0, Vector2.ZERO, ULT)
 	for seen: Dictionary in [breath, beam]:
 		var events: Array = seen["events"]
 		for entry: Dictionary in events:
