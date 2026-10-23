@@ -18,12 +18,17 @@
 - D-173: wrecks also kill perched Taskforce agents (#166 part 1c). D-166 strike times: breath/ultimate 0.8/1.1/1.4 s,
   stomp 0.45 s (data), dash after the crouch: lead's builder after the volley audit.
 - His walk complaint (adolescent legs twitchy, swivels): VFX lead diagnosing, top of its next slot (ROADMAP comments).
+- Night white glow (his screenshot: haze over the left towers): VFX lead suspects BuildingFade + FSR; stills after 14:14.
+- D-175: per-squad volleys kept (0.6 s); volley builder does the strike delays next (claude/strike-delay).
+- 13:29 "no godot for next 45 minutes": scratchpad no_godot_until2.sh holds all team Godot until 14:14.
 - D-162/D-170: Tripo 6500 credits left for round 2 (serpentine python, albino) + up to 100 for the tail rig test;
   browser only, no API, no local ComfyUI. Tripo downloads: agents fetch by signed URL + curl (the Save dialog belongs
   to the Claude app). Never edit a running bash script in place (it broke a watcher).
 - Suno: he makes the tracks this week (D-169). His first takes were "way too intense" and the old guide didn't match
   Suno's UI: D-172 = brooding, building, one mood growing; music-briefs.md rewritten from help.suno.com (Sept 2026;
-  his Suno login isn't in the built-in browser, so the signed-in page is unchecked). Lead cuts and layers stems.
+  then D-174: the lead runs Suno in the built-in browser (he's signed in; 800 credits; he picks by ear), D-176 darker
+  not heavier, Godzilla-like menace. Takes + credits in docs/provenance/music.md (2nd set 1C-3D awaiting his pick).
+  Lead cuts and layers stems.
 
 ## Lead board (cross-session sends are capped at 10 between his messages)
 - C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/lead-board/: README.md (protocol), to-<session>.md (lead's
