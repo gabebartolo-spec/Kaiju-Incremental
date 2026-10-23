@@ -106,8 +106,7 @@ gitignored).
 4. `python tools/kaiju_skin/bake.py rest.json assets/kaiju` (or bake_all.sh)
 
 ## Evidence (probe, seed 0 autoplay, run 3-9 s = the game clip)
-- Footfall: the heavy drop lands on the plant frame (0 ms); camera y drop per plant median ~0.12 -> ~0.5 units;
-  every plant adds trauma that frame (other rises are topples/tanks).
+- Footfall: the heavy drop lands on the plant frame (0 ms); camera drop per plant median ~0.5 units.
 - Clips b10 (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden, seed 0 stage 2): b10 scratchpad
   `cap/komodo_game_cam_b10.mp4` (game camera 3-9 s), `cap/komodo_side_cam_b10.mp4` (--cam=-24,8,20, 2.5-8.5 s);
   recorder script `cap.sh` there. Older v3 clips: the b9 scratchpad `komodo/cap/`.
