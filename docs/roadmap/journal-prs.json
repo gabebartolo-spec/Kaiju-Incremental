@@ -1072,16 +1072,156 @@
 },
 {
 "n": 154,
-"t": "docs: VFX look sheet, one look per effect family (D-TBD-vfx-lead)",
-"s": "OPEN",
+"t": "VFX look sheet + one dust, spark and ring look on the base (D-151)",
+"s": "MERGED",
 "c": "2026-10-22",
-"m": ""
+"m": "2026-10-22"
 },
 {
 "n": 155,
 "t": "ui: post effects, a subtle vignette, a red low-health edge pulse and a split-second colour fringe on the biggest hits (D-142)",
-"s": "OPEN",
+"s": "MERGED",
 "c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 156,
+"t": "sim: a random time of day each run, never twice in a row, with an options setting (D-145)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 157,
+"t": "docs: development journal page (roadmap phases, days, rulings, captures)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 158,
+"t": "ui: pause-menu bug / feedback button (D-145, D-153)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 159,
+"t": "sim: a clumsy army: stray shells land after their flight and break the city",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 160,
+"t": "UI redesign, live night title and the director's menu (ported onto look-options)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 161,
+"t": "sim: Anti Kaiju Taskforce core, agents only: railgun, frost, perch deaths (D-137, D-152)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 162,
+"t": "Director cleanup: Thunder Beam name, breath swing, BRANCH/CAPSTONE labels, headline cut, roar on ultimate and dash (D-136, D-145)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 163,
+"t": "sound: the city's panic-then-quiet sound arc and four-layer music player (D-155, D-125)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 164,
+"t": "growth: three growth steps, one per croc body, and cities about 15% wider (D-135)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 165,
+"t": "demo: the demo ends on the final upgrade, with a thanks screen and Endless mode (D-156)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-23"
+},
+{
+"n": 166,
+"t": "air: shot-down helicopters burst or spin down, crash and set fires (comment #86)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-23"
+},
+{
+"n": 167,
+"t": "weather: a seeded random weather per rampage and an options row (D-155)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 168,
+"t": "tests: the body-chew fixture sets the body down clear (chunks inside the body, D-159)",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 169,
+"t": "croc: the standing stomp lifts and plants a foot, the claw rake plays on the arm",
+"s": "MERGED",
+"c": "2026-10-22",
+"m": "2026-10-22"
+},
+{
+"n": 170,
+"t": "Taskforce: a squad locks on together and fires in turn, 0.6 s apart (D-166, D-175, D-178)",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-23"
+},
+{
+"n": 171,
+"t": "balance: Thunder Beam costs x0.3 so the last unlock lands near 2.25 h (D-167)",
+"s": "OPEN",
+"c": "2026-10-23",
 "m": ""
+},
+{
+"n": 172,
+"t": "look: thinner dusk and night fog, tower dust dims at night (night glow)",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-23"
+},
+{
+"n": 173,
+"t": "gait: per-stage step length, every turn made over the planted foot (D-177)",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-23"
+},
+{
+"n": 174,
+"t": "ci: a manual pacing workflow runs the balance run on GitHub (D-179)",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-23"
+},
+{
+"n": 175,
+"t": "gait: soft IK, lower foot lift, a lifted foot follows its swing; motion gate (D-177)",
+"s": "MERGED",
+"c": "2026-10-23",
+"m": "2026-10-23"
 }
 ]

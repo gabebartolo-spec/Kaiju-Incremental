@@ -6,6 +6,7 @@ extends RefCounted
 ## never yaws with both feet up, and a planted foot holds its spot; the baby turns smoothly at
 ## its pre-stepped rates (D-131, "Baby turns smoothly").
 
+const StageGait := preload("res://tests/lib/smoke_stage_gait.gd")
 const DT := 1.0 / 60.0
 const ADULT := {"evolve1": 1, "evolve2": 1}
 const WALK_S := 3.0
@@ -51,8 +52,6 @@ const MAX_FOOT_YAW_DEG := 12.0
 const SKATE_LOW := 0.08
 const SKATE_SPEED := 3.0
 const SKATE_SHARE := 1.0
-## The sim's step length may differ this much from half the walk clip's stride.
-const STEP_LEN_TOL := 0.02
 
 
 static func check(check: Callable, root: Node) -> void:
@@ -114,15 +113,7 @@ static func check(check: Callable, root: Node) -> void:
 			)
 		)
 	)
-	var one_step: float = adult["stride"]
-	var sim_step: float = adult["step_len"]
-	check.call(
-		absf(one_step / sim_step - 1.0) < STEP_LEN_TOL,
-		(
-			"the sim's step is half the clip's stride, so planted feet are passed at the"
-			+ " pace the body walks (%.3f vs %.3f)" % [sim_step, one_step]
-		)
-	)
+	StageGait.check(check, root)  # every growth step's stride, and the held curve (D-177)
 	var baby := _turn({}, root)
 	var baby_took: float = baby["took"]
 	check.call(
@@ -150,15 +141,12 @@ static func _adult(root: Node) -> Dictionary:
 			out[key] = maxf(Num.f(out.get(key, 0.0)), Num.f(one[key]))
 		for key: String in ["steps", "sliced"]:
 			out[key] = Num.f(out.get(key, 0.0)) + Num.f(one[key]) / SWINGS.size()
-		out["stride"] = one["stride"]
-		out["step_len"] = one["step_len"]
 	out["took"] = total / SWINGS.size()
 	return out
 
 
 ## One walk north then a 90 deg turn west at `levels`, the stick swinging at `at_step` of a step:
-## {took, steps, aloft, sliced, drift, stride, step_len} (the last two: one step by the clip and by
-## the sim, world units).
+## {took, steps, aloft, sliced, drift, ...}.
 static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dictionary:
 	var def := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
@@ -166,7 +154,8 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 	var layout: Array[Dictionary] = [
 		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
 	]
-	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	var tuning := CityGrowth.for_stats(stats)  # the stage's own tuning and speed, as played
+	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2(0, 30)
 	var colors: Dictionary = def["colors"]
@@ -219,8 +208,6 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 			aloft += 1 if yawed and not down else 0
 			if absf(sim.body.turn_left) < LANDED:
 				landed = t
-	var stride: float = (gait as ClipGait).stride() * 0.5  # one step: half a cycle
-	var step_len := Num.f(Content.tuning()["contact"]["step_len"]) * sim.body_scale()
 	kaiju.free()
 	var steps := 0
 	var side := ""
@@ -254,8 +241,6 @@ static func _turn(levels: Dictionary, root: Node, at_step: float = 0.0) -> Dicti
 		"foot_yaw": foot_yaw,
 		"skate": _skate(toes, turn_t, landed),
 		"jump": jump / maxf(peak, 0.0001),
-		"stride": stride,
-		"step_len": step_len,
 		"sliced": near / maxf(total, 0.0001)
 	}
 

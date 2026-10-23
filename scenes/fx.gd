@@ -126,8 +126,10 @@ func dust(at: Vector3, size: float, tint := Color(0, 0, 0, 0)) -> void:
 	var mat: ParticleProcessMaterial = p.process_material
 	mat.emission_box_extents = Vector3(size, 0.4, size)
 	if tint.a > 0.0:
+		var k := _tint_scale()
+		var lit := Color(tint.r * k, tint.g * k, tint.b * k, tint.a)
 		var ramp := Gradient.new()
-		ramp.colors = PackedColorArray([tint, Color(tint, 0.0)])
+		ramp.colors = PackedColorArray([lit, Color(lit, 0.0)])
 		var tex := GradientTexture1D.new()
 		tex.gradient = ramp
 		mat.color_ramp = tex
@@ -345,6 +347,15 @@ static func _tree_puff_mat() -> ParticleProcessMaterial:
 static func _dust_tone() -> Color:
 	var day := inverse_lerp(SUN_NIGHT, SUN_NOON, Look.value("sun_energy"))
 	return NIGHT_DUST.lerp(STREET_DUST, clampf(day, 0.0, 1.0))
+
+
+## How much of a tinted dust's own colour shows at this time of day: all of it by full day (the
+## sun share squared, so dusk is dim too), only fx.tint_dust_night in the dark. The tint is drawn
+## self-lit, so unscaled a toppled tower's pale concrete (c9c1b0) glowed white round the kaiju all
+## night (the night glow, director 2026-10-23).
+static func _tint_scale() -> float:
+	var day := clampf(inverse_lerp(SUN_NIGHT, SUN_NOON, Look.value("sun_energy")), 0.0, 1.0)
+	return lerpf(Num.f(Content.section("fx")["tint_dust_night"]), 1.0, day * day)
 
 
 ## The tone as a particle colour (the smoke shader reads COLOR as linear light).

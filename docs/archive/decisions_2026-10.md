@@ -2,6 +2,66 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-097 · Director · True physics and carving are top priority, started now
+Why: "true phyiscs should be top priority. carving included. its a game about destroying cities, the city destruction has
+to be good"; earlier the same day he chose "start now, 2 builders". Supersedes D-094's "after demo exe 2". Changes: WP1
+(sim grid, claude/carve-wp1), WP2 (native C++, claude/carve-wp2), WP3 (building cells, claude/carve-wp3) and WP5 (physics
+presentation, claude/carve-wp5) are running in parallel with the demo fixes; carving PRs, CI and reviews go first.
+
+## 2026-10-20 · D-096 · Director · Swipes undermine towers
+Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
+Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89
+(sim/claw_swipe.gd chews the building face; tuning is a seeded 5-seed mean, not a single seed).
+
+## 2026-10-20 · D-095 · Director · Claws = a claw swipe, for the croc only in the demo
+Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
+Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
+two species keep Claws as +3 stomp. Built in #89.
+
+## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
+Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
+from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
+support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
+(D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).
+
+## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
+Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
+(199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
+cap saved by demo exe 1 no longer overrides it.
+
+## 2026-10-19 · D-092 · Director · SFX from ElevenLabs Starter; Suno music deferred
+Why: Starter is $1 the first month, then $6/mo, with a commercial licence (the free plan has none). The director
+subscribed himself and picked 12 sounds on a loudness-matched shootout (shell_hit kept). #87 MERGED. Suno: free
+has no commercial rights; Pro $12/mo; not bought.
+
+## 2026-10-19 · D-091 · Director · No building is too strong for the baby; big ones just take longer
+Why: "the buildings shouldnt be too strong for our little kaiju, it should just take him longer ... hes more than
+capable of tearing the roots out and toppling the large buildings". Replaces the tier gate and "TOO STRONG"; evolve1
+text "Grow huge. Tear through towers faster." In #89 (croc contact).
+
+## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
+Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
+
+## 2026-10-19 · D-089 · Director · Demo exe 1 waited for the stall fix
+Why: the windowed stall (Structure.settle rescanning every floor) had to be fixed first; #75 MERGED, exe 44f56fd.
+
+## 2026-10-19 · D-088 · Director · The demo exe ships without #50; the military AI follows in a second exe
+Why (AskUserQuestion, "Ship now, patch after"): tanks and helicopters are already in the demo; #50 is their smarter
+movement and failed its r3 critic. #50 r4 (tank overlap and skew, helis in frame, rotor clearance, young retune
+on evolve1 400) runs now; a fresh critic, then a second exe.
+
+## 2026-10-18 · D-086 · Lead · #36 option A (Behemoth army 0.03), void
+Why: proposed for Behemoth defeats; superseded the same evening by D-087's pick and never applied.
+
+## 2026-10-18 · D-087 · Director · The first evolution comes at about 15 minutes
+Why (19:xx): "try to get the first evo earlier, no ones going to play 41 minutes of a demo if theyre still a baby";
+picked "About 15 min" from 10 / 15 / 20-25. Lever: evolve1 cost 1778 -> 400 (#36, MERGED cceabba): 130 runs on the
+real head give evolve1 0.26 h, young defeats 8/14, tree 82/87 at 3.37 h. The growth test ratio moved /10 -> /20.
+
+## 2026-10-19 · D-084a · Lead · #55 trample: topple out, crush in place instead (rule 8)
+Why: ten topple rounds failed; method change to crushing trees in place (debris, stump, footfall puff). Still after
+the demo build per D-084.
+
 ## 2026-10-18 · D-085 · Director · Rooftop squads fire raggedly, never in unison
 Why (via the rooftops session): "shooters arent firing in unison ... improvised, unrehearsed resistance". Seeded
 ragged gaps per squad (51a2d5d); in #63.

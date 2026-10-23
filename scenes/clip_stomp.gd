@@ -16,6 +16,12 @@ const RESTEP_SECONDS := 0.25
 const RESTEP_LIFT := 0.06
 ## A stomp's weight as a footfall at the smallest body (an adult's is 1).
 const WEIGHT_MIN := 0.4
+## The weight settling as he stops walking: the body sinks SETTLE_DIP hip heights over SETTLE_IN
+## seconds and comes back up over SETTLE_OUT, into the idle's breath (motion critic 2026-10-23: the
+## stop "looks like a freeze").
+const SETTLE_DIP := 0.05
+const SETTLE_IN := 0.2
+const SETTLE_OUT := 0.5
 
 ## Seconds left of each foot's step; 0 when it is on the clip.
 var left: Array[float] = [0.0, 0.0]
@@ -27,11 +33,17 @@ var _stomping: Array[bool] = [false, false]
 var _next := 0  # the foot that stomps next
 var _count := 0  # stomps begun, the hash's input
 var _since := INF  # seconds since a stomp landed (the body's dip)
+var _settle := INF  # seconds since he stopped walking
 var _cfg := Content.section("clip_stomp")
 
 
 func catching(i: int) -> bool:
 	return left[i] > 0.0
+
+
+## He stops walking: the body's weight settles (dip()).
+func settle() -> void:
+	_settle = 0.0
 
 
 ## Foot i takes a catch step back to the clip.
@@ -97,13 +109,17 @@ func forget(i: int) -> void:
 
 
 ## How far the body sits below the clip's pose now, dt on (hip heights): down fast as a stomp
-## lands, back up over dip_s.
+## lands, back up over dip_s; or settling as he stops (settle()).
 func dip(dt: float) -> float:
 	_since += dt
 	var attack := Num.f(_cfg["dip_attack"])
 	var back := Num.f(_cfg["dip_s"])
 	var k := _since / attack if _since < attack else 1.0 - (_since - attack) / back
-	return Num.f(_cfg["dip"]) * smoothstep(0.0, 1.0, clampf(k, 0.0, 1.0))
+	var stomp_dip := Num.f(_cfg["dip"]) * smoothstep(0.0, 1.0, clampf(k, 0.0, 1.0))
+	_settle += dt
+	var down := smoothstep(0.0, SETTLE_IN, _settle)
+	var up := smoothstep(SETTLE_IN, SETTLE_IN + SETTLE_OUT, _settle)
+	return maxf(stomp_dip, SETTLE_DIP * (down - up))
 
 
 func _start(i: int, seconds: float, lift: float, stomping: bool) -> void:

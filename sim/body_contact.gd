@@ -40,7 +40,6 @@ var _discs: Array = []
 var _volume: BodyVolume
 var _last_pos := Vector2(INF, INF)
 var _last_heading := Vector2(0, -1)
-var _dt := 0.0
 var _hold_s := 0.0
 var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
 ## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
@@ -56,6 +55,7 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
+var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -64,6 +64,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	cfg = tuning["contact"]
 	heading = sim.facing
 	_last_heading = heading
+	_step_len = Num.f(cfg["step_len"])
 	dash = Dash.new(self, cfg)
 	_volume = BodyVolume.new(sim, cfg)
 
@@ -79,6 +80,7 @@ func use_species(species_id: String) -> void:
 		_discs = stage["discs"]
 		_volume.discs = _discs
 		snout = Num.f(stage["snout"])
+		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
 
@@ -111,7 +113,8 @@ func length() -> float:
 ## than swivelling on the spot like a plastic toy"): the body yaws only in the first slice_open of
 ## each step, from its footfall, at the same pace on average, holds between (the head leads by
 ## turn_left), and swings about its planted feet, not its middle. A course correction under
-## smooth_below turns smoothly while walking, with no slice or pivot (D-130, "Small turns smooth").
+## smooth_below turns smoothly while walking, with no slice (D-130, "Small turns smooth"), but over
+## the planted foot like any turn: a held curve never drags the feet (D-177).
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
 	if want == Vector2.ZERO:
@@ -141,8 +144,8 @@ func steer(dt: float, want: Vector2) -> float:
 	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
 	var was := heading
 	_face(dt)
-	if stepped:
-		_swing(was)
+	if turns_in_steps() and not dash.on():  # a turn too is made over the planted foot (D-177)
+		_swing(was, absf(turn))
 	return stride
 
 
@@ -160,7 +163,7 @@ func _stand(dt: float) -> void:
 
 ## Both feet down where they stand when the body sets off (or after a dash or leap).
 func _plant_both() -> void:
-	_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - Num.f(cfg["step_len"]), -1.0)]
+	_feet = [_foot_at(_pivot.x, 1.0), _foot_at(_pivot.x - _step_len, -1.0)]
 
 
 ## True when this turn is made in steps: a real turn (begun at smooth_below or more, kept until it
@@ -201,14 +204,16 @@ func _turn_ease() -> float:
 	return lo + (Num.f(cfg["turn_ease_peak"]) - lo) * sin(PI * clampf(done, 0.0, 1.0))
 
 
-## A stepped turn swings the body about the foot that is down (since `was`): that foot stays put.
-func _swing(was: Vector2) -> void:
+## A turn swings the body about the foot that is down (since `was`): that foot stays put. Only the
+## `most` the stick turned this step swings it: a larger catch-up of the heading (the hand-over from
+## the river, where the body lies along the water) stays about the middle.
+func _swing(was: Vector2, most: float) -> void:
 	var both := fposmod(phase, 1.0) < Num.f(cfg["support_both"])  # the old foot is not up yet
 	var at := (_feet[0] + _feet[1]) * 0.5 if both else _feet[0]
 	if at.distance_to(sim.kaiju_pos) > 3.0 * _pivot.x * sim.body_scale():  # a dash or leap left them
 		_plant_both()
 		at = _feet[0]
-	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(was.angle_to(heading))
+	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(clampf(was.angle_to(heading), -most, most))
 
 
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),
@@ -248,13 +253,13 @@ func step_clock() -> float:
 func walked(distance: float, dt: float) -> void:
 	if stepping():
 		var before := floorf(phase)
-		var steps := distance / (Num.f(cfg["step_len"]) * sim.body_scale())
+		var steps := distance / (_step_len * sim.body_scale())
 		var moved := maxf(steps, _cadence * dt)
 		phase += moved
 		if moved > 0.0:
 			step_ratio = maxf(steps / moved, Num.f(cfg["step_ratio_min"]))
 		if floorf(phase) != before:  # a footfall: that foot comes down short of a full step
-			var short := 0.5 * Num.f(cfg["step_len"]) * (1.0 - step_ratio)
+			var short := 0.5 * _step_len * (1.0 - step_ratio)
 			_feet = [_foot_at(_pivot.x - short, 1.0), _feet[0]]
 
 
@@ -268,8 +273,8 @@ func step(dt: float, dash_pressed: bool = false) -> void:
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
 	var from_heading := heading if _last_pos.x == INF else _last_heading
-	_dt = dt
-	_sweep(from, from_heading, sim.kaiju_pos, heading)
+	_volume.step_s = dt
+	broken += _volume.sweep(from, from_heading, sim.kaiju_pos, heading)
 	held = not inside(sim.kaiju_pos, heading).is_empty()
 	_hold_s = _hold_s + dt if held else 0.0
 	longest_hold = maxf(longest_hold, _hold_s)
@@ -336,44 +341,3 @@ func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 	var out: Dictionary = {}
 	_volume.collect(pos, facing, out, _volume.near(pos, pos, _volume.reach()))
 	return out
-
-
-func _sweep(from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2) -> void:
-	var reach := _volume.reach()
-	var near := _volume.near(from, to, reach)
-	if near.is_empty():
-		return
-	var turn := from_heading.angle_to(to_heading)
-	var travel := from.distance_to(to) + absf(turn) * reach
-	var samples := maxi(1, ceili(travel / maxf(0.05, Num.f(cfg["sample"]))))
-	var hits: Dictionary = {}
-	for n: int in range(1, samples + 1):
-		var pose := sweep_pose(from, from_heading, to, to_heading, float(n) / samples)
-		var at: Vector2 = pose[0]
-		var facing: Vector2 = pose[1]
-		_volume.collect(at, facing, hits, near)
-	for index: int in hits:
-		var cells: Array[Vector3i] = []
-		for c: Vector3i in hits[index]:
-			cells.append(c)
-		var before := sim.rubble
-		var first := sim.events.size()
-		var b := sim.buildings[index]
-		var dwarfs := Growth.dwarf_mult(sim.size_tier(), b.tier, sim.city) < 1.0
-		var n := sim.damage_chunks(index, cells, Num.f(cfg["bite_dps"]) * _dt if dwarfs else INF)
-		var pay := 1.0 if dwarfs else Num.f(cfg["pay_mult"])
-		if n > 0:  # what the body breaks outright pays a share (pacing); chewed and falls in full
-			sim.rubble = before + (sim.rubble - before) * pay
-			sim.events[first]["pay"] = pay
-		broken += n
-
-
-## The body's pose a fraction `t` along a sweep: [position, heading]. The last sample (t = 1) is
-## exactly the end pose, the one the hold test reads, so a rounding error in the turn can never
-## leave a chunk the sweep missed but the hold sees.
-static func sweep_pose(
-	from: Vector2, from_heading: Vector2, to: Vector2, to_heading: Vector2, t: float
-) -> Array:
-	if t >= 1.0:
-		return [to, to_heading]
-	return [from.lerp(to, t), from_heading.rotated(from_heading.angle_to(to_heading) * t)]

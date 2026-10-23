@@ -334,7 +334,8 @@ state. No director clips or per-change approvals in between; clips only where mo
   the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
   Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
   the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
-  music from the director's Suno stems. Visuals: VFX lead. Sound, music, weather pick and options: lead.
+  music from the director's Suno stems. Atmosphere (sky and sea life, weather looks, rampage escalation): the
+  atmosphere lead (D-189). Other visuals: VFX lead. Sound, music, weather pick and options: lead.
 - **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
@@ -405,7 +406,9 @@ state. No director clips or per-change approvals in between; clips only where mo
   jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.
 - Damage on impact (D-166): breath and ultimate strike at 0.8 / 1.1 / 1.4 s by growth step, standing stomp 0.45 s
   (VFX lead's clip timings, data values); dash after the D-165 crouch. Owner: lead's builder. Status: not started.
-- Railgun volleys staggered to about 2 hits per squad per second (D-166). Owner: lead's builder. Status: not started.
+- Railgun volleys: a squad locks on together and fires in turn, ~2 hits a second per squad (D-166, D-175, D-178).
+  Owner: lead's builder. Status: MERGED #170 (e4100548) after two non-author sim reviews; GitHub pacing workflow MERGED
+  #174 (f68caea1, D-179: push a pacing-run/<name> branch).
 - Thunder Beam at a third of its price, last unlock about 2.25 h (D-167 amended). Owner: lead's builder. Status: pacing run.
 - Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173): MERGED #166 (3e4a7665),
   look round 3 FIX flagged for the M3 survey; round 4 on claude/heli-look-r4. Owner: VFX lead.
@@ -418,24 +421,87 @@ state. No director clips or per-change approvals in between; clips only where mo
 ## Director comments (2026-10-23, afternoon)
 - "adolescent walking animations are fucked, his legs so twitchy, and he swivels rather than turns". Returning
   complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
-  exact fix and pass bar first; any sim part to the lead). Status: diagnosing, top of the VFX lead's next slot.
+  exact fix and pass bar first; any sim part to the lead). Status: view fixes are PR #175 (the walk passes); two
+  critic rounds FIX on the turn, measured in the sim: the Behemoth and Colossus turn at 260-311 deg/s peaks, a snap
+  per planted step. D-187 "Heavier, slower": a U-turn about 2 s Behemoth, 3 s Colossus (re-asked after a wrong quote), spread evenly over the
+  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges.
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
-  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status: fixing.
+  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status:
+  SHIP claude/night-fog 4524e90c (dusk fog 0.0035, night 0.005, toppled-tower dust dims at night; fresh critic: the
+  left haze is gone, dusk still reads as dusk) = PR #172, merging on green. Against the bar: far contrast vs fog-off
+  0.85-0.97 (dusk walk 0.85 misses 0.90), camera-left 0.70-0.91 (misses), frame brightness -4% night, -11 to -14%
+  dusk (misses 8%, but it now equals fog-off's, so the drop is the veil leaving, not murk). Better than today on
+  every number. VFX lead's ruling: no second pass; the camera-left gap is the dimmed dust (fog-off's undimmed white
+  dust inflates its contrast), the 2x crops match, far softness is depth. If he still sees a camera-following glow at
+  M1, the next suspect is the tower see-through cross-hatch. Found alongside, queued (VFX lead):
+  the tower see-through fade draws a cross-hatch that follows the camera beside the kaiju; the kaiju's silhouette is
+  weak at night; the D-154 late-rampage haze is unbuilt.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
   briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
-  credits), he picks by ear. Owner: lead. Status: waiting on his Suno sign-in in the built-in browser.
+  credits), he picks by ear. Then, in order: "too 'heroic'" (D-176 darker, Godzilla), "all sound more or less the
+  same city to city" (D-181 one theme, Cover per city), "i need more menace", Isengard "peak reference", "too
+  'epic', too Nolan Batman" (D-182 Jaws, Godzilla, Imperial March), "too staccato, too endlessly building", "too
+  whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference" (G1-G4, 1954 Godzilla takes).
+  Owner: lead. Status: 140 of 800 credits. Then "ok the music is much better, ship it": the G set ships (take and
+  per-city plan asked).
+- "make a note in the roadmap to revisit music later": the music gets another pass after this one ships (the
+  Godzilla-style theme is the starting point; takes and settings in docs/provenance/music.md). Owner: lead, with
+  him by ear. Status: parked until he calls it.
+- "are we in clip making purgatory again?", then "but if something has failed 7 times in a row then our method is
+  wrong, and needs to be reassessed": D-188, no round cap (reviews keep going until the critics pass), but two
+  failures in a row change the method. The fire and helicopter look (round 7) is reassessed before any round 8.
+  Owner: VFX lead. Status: reassessed (helicopter deaths r1-r6): the fire failed every round because the shared
+  Fire has never passed and was being fixed inside the helicopter work, so the Fire family becomes its own item (a
+  board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
+  an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
+  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187. Fire board: "Smooth
+  flames" (D-190), rolling out to every fire on claude/fire-smooth, the helicopter fall round on top; claw swipe
+  "Keep it straight ahead" (D-190): hit back on the snout line, stronger trail and sparks.
+- "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
+  "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
+  atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
+  becomes the camera-to-kaiju corridor). Status: in progress. Atmosphere rulings A1-A16: D-191 (order: escalation,
+  weather, sky and sea life; #167 drew no weather yet).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
   Cause measured: the Behemoth's knee pops twice a step (leg snaps straight in early swing, knee flips at heel strike;
   shin jerk p99 32 vs the Colossus's 4) from IK at full stretch, fed by one step length for every stage; a held pad
   curve turns 38 deg with no foot down (the swivel). Sim (lead): per-stage step length, held-curve turns stepped.
-  View (VFX lead): soft IK, Behemoth foot lift 0.15 -> 0.07. Owner: both. Status: fixing (claude/gait-step-len, then
-  claude/gait-fix with the motion gate).
+  View (VFX lead): soft IK, Behemoth foot lift 0.15 -> 0.07. Owner: both. Status: sim PR #173 (841f93e2, two sim
+  reviews SHIP: hand-over lurch and dash slide fixed) merging on green; view claude/gait-fix c661d731 passes the whole
+  motion gate locally (motion 30/0: walking shin jerk young 6.0 -> 2.7, Behemoth 6.8 -> 4.3; catch steps 2.2 -> 0.2/s;
+  reach 0.93); clips and a fresh motion critic next, then its PR after #173.
 - Motion gate: the gait probe becomes a CI suite (planted-foot speed, steps/s vs clip speed, turn pivot vs planted
   foot, foot lift) at all three growth steps; every body or movement change passes it. Owner: VFX lead's gait builder
   writes it, the lead reviews and merges. Status: not started.
 - Motion pass on every growth step (walk, turn, stop, dash, stomp, standing still), measured bars + a fresh motion
   critic at game speed, then the living predator (D-165), ahead of the one-look work. Owner: VFX lead. Status: queued.
+- Balance run on GitHub (D-179): a manual workflow runs tools/pacing.gd. Owner: lead's builder. Status: not started.
+- "helicopters are hovering way too close to our kaiju ... twitchy ... like an orbiting fly, they should move logically,
+  strategically, gracefully": stand-off gunships (D-183). Owner: lead's builder (sim/air_wing.gd), VFX lead for banking
+  and rotor look. Status: queued after the volley rework.
+- "these songs are too staccato, too endlessly building with very little relief or payoff": theme takes now ask for a
+  legato melody with tension and release (D-182). Owner: lead. Status: done; D-184 ships the Godzilla set: his
+  remaster of G2 (song 798f3c13) on the menu over the city sound and as the source of the three city Covers.
+- "the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind
+  up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very
+  suddenly, defying his anatomy, it looks terrible". D-185: a heavy raking arc. Owner: VFX lead (diagnose, exact
+  fix, motion bars at all three growth steps, motion critic, one clip after SHIP). Cause (code): the upper arm is
+  scaled 1.25x (adult) to 1.6x (young) so the arm telescopes out; only the arm moves; 0.62 s at every size; the hand
+  lifts high; linear poses. Fix: no bone scaling, torso twist to load and whip, low wide arc, a strike of 0.1 s or
+  less on the sim's hit, follow-through longer with size. Bars: arm scale 1.0, chest yaw >= 15/25 deg, hand at or
+  below the shoulder, arc >= 120 deg, strike peak >= 3x the load's speed, hit within 1 frame, feet slide 0. Status:
+  next free VFX engine slot after the gait work. Risk: if the 0.3 s sim wind-up reads rushed at Colossus size, a
+  per-stage wind-up is a design question for him.
+- "the kaiju breathing animation is way too much, too much movement and too fast, should be deep and slow like a
+  behemoth" (D-165 living predator). Fix: slower, deeper breaths with less visible movement, still slower and
+  heavier as he grows; bars per growth step (breath period, back and flank movement), motion critic, one idle clip
+  after SHIP. Owner: VFX lead. Status: in progress (D-165 phase A builder, claude/living-predator). Seen on base,
+  where the breath is baked into the idle clip; it is damped at runtime. Bars: one breath every 4 / 6 / 8 s (young
+  croc / Behemoth / Colossus), inhale 40%, exhale 60% with a pause; back and flanks move 0.25-0.8 / 0.6 / 0.5% of
+  body height at most, no faster than 0.6% of body height a second; the belly barely moves. D-190 "Slow
+  chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, the default idle
+  (replaces the movement caps above).

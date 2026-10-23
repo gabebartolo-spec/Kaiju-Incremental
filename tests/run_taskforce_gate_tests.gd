@@ -2,7 +2,8 @@ extends "res://tests/lib/taskforce_suite.gd"
 ## The Taskforce's gates and numbers (D-160, D-161), beside tests/run_taskforce_tests.gd: it joins
 ## once about 3 minutes of rampage time in the adolescent city are carried in (the save keeps the
 ## clock and a reload carries on); armour softens a railgun hit like a tank shell's; a perch lost
-## mid-aim cancels the shot; ice halves the walk.
+## mid-aim cancels the shot; ice halves the walk; one squad's railgun lines lock together and its
+## shots land in turn, so one dash at the lock saves the kaiju from the whole squad (D-166, D-178).
 ## Seeded by design: every sim is Seeds.make("army", 0) on the seeded city 0.
 
 
@@ -18,6 +19,8 @@ func run_checks() -> void:
 	await _t("_check_ice_walk")
 	await _t("_check_chewed_top")
 	await _t("_check_frost_radius")
+	await _t("_check_volley")
+	await _t("_check_squad_dash")
 
 
 func _check_first_arrival() -> void:
@@ -152,3 +155,141 @@ func _check_frost_radius() -> void:
 	frost.grenades.append([0.0, sim.kaiju_pos])
 	_run(sim, 0.1)
 	check(frost.frost_left > 0.0, "a kaiju standing still is")
+
+
+## D-166 "Stagger the shots" with D-178 "Lock together, fire in turn": one squad never lands more
+## than 2 hits in a second, which leaves the dash time to save the kaiju (D-161), and its lines lock
+## at the same moment. A squad of five is planted lined up (railguns ready, one roof, the kaiju
+## standing in range) beside a second squad of three; every lock and shot is timed and each
+## squad's worst 1 s window counted. With `squad_gap` at 0 the same fixture lands all five of the
+## first squad inside one second.
+func _check_volley() -> void:
+	var rail: Dictionary = Content.section("taskforce")["railgun"]
+	var gap := Num.f(rail["squad_gap"])
+	check(gap > 0.5, "a gap over half a second keeps a squad to 2 shots a second (%.2f s)" % gap)
+	var old_shots: Array = _volley(0.0)["shots"]
+	var lined_up: Array = old_shots[0]
+	check(
+		_worst_second(lined_up) == 5,
+		"without the gap the lined-up squad lands all five at once (%d)" % _worst_second(lined_up)
+	)
+	var fired := _volley(gap)
+	var shots: Array = fired["shots"]
+	var locks: Array = fired["locks"]
+	var first: Array = shots[0]
+	var second: Array = shots[1]
+	check(first.size() == 5 and second.size() == 3, "every gunner still fires: %s" % [shots])
+	check(
+		_worst_second(first) <= 2 and _worst_second(second) <= 2,
+		(
+			"a squad lands at most 2 hits in any second (%d and %d)"
+			% [_worst_second(first), _worst_second(second)]
+		)
+	)
+	var spaced := true
+	for n: int in range(1, first.size()):
+		spaced = spaced and Num.f(first[n]) - Num.f(first[n - 1]) >= gap - 0.001
+	check(spaced, "the squad's shots are at least %.1f s apart: %s" % [gap, first])
+	check(
+		absf(Num.f(first[0]) - Num.f(second[0])) < gap,
+		"the gap is kept per squad: the second squad's first shot is not held up by the first"
+	)
+	var together := true
+	for squad_locks: Array in locks:
+		together = together and squad_locks.size() > 0
+		together = together and Num.f(squad_locks.max()) - Num.f(squad_locks.min()) < 0.001
+	var squad_a: Array = locks[0]
+	var squad_b: Array = locks[1]
+	var lock_counts: Array[int] = [squad_a.size(), squad_b.size()]
+	check(
+		together and lock_counts == [5, 3],
+		"each squad's lines lock at the same moment (lines %s): %s" % [lock_counts, locks]
+	)
+
+
+## D-178: a squad of four locks on one point and fires in turn, so ONE dash at the lock leaves every
+## one of its shots on empty ground (all four miss), while a kaiju that stays put takes all four.
+## The squad is planted on one roof with its railguns ready and the kaiju in range; the Taskforce is
+## not opened, so no other squad joins; the dash goes along a clear way.
+func _check_squad_dash() -> void:
+	var rail: Dictionary = Content.section("taskforce")["railgun"]
+	var outcome := {}
+	for dashes: bool in [true, false]:
+		var sim := _adolescent()
+		sim.time_left = 1.0e9
+		var way := _face_free_way(sim)
+		sim.army_units.taskforce.squad_sizes.append(4)
+		for _n: int in 4:
+			_perched(sim, true)
+		var seen := _run(sim, 4.0, "railgun_locked")
+		var points := {}
+		var locked := 0
+		for event: Dictionary in seen:
+			if str(event["type"]) == "railgun_locked":
+				locked += 1
+				points[Vector2(Num.f(event["x"]), Num.f(event["z"]))] = true
+		check(
+			locked == 4 and points.size() == 1,
+			(
+				"the four lines lock in one step on one point (%d locks, %d points)"
+				% [locked, points.size()]
+			)
+		)
+		var from := sim.kaiju_pos
+		if dashes:
+			seen.append_array(sim.step(DT, way, false, DASH_BUTTON))
+		seen.append_array(_run(sim, 4.0))
+		var types := _types(seen)
+		outcome[dashes] = [types.count("railgun_hit"), types.count("railgun_missed")]
+		if dashes:
+			var left_behind := from.distance_to(sim.kaiju_pos)
+			check(
+				left_behind > Num.f(rail["hit_radius"]) + 1.0,
+				"the dash left the lock behind (%.1f from it)" % left_behind
+			)
+	var dodged: Array = outcome[true]
+	var stood: Array = outcome[false]
+	check(
+		dodged == [0, 4],
+		"one dash at the lock: every shot of the squad misses (hits, misses %s)" % [dodged]
+	)
+	check(
+		stood == [4, 0],
+		"standing still, the whole squad's volley lands (hits, misses %s)" % [stood]
+	)
+
+
+## The times, in seconds, of every lock and shot a planted squad of five (index 0) and a squad of
+## three (index 1) make over 10 s with the kaiju standing, the squads' `squad_gap` set to `gap`:
+## {"locks": [squad 0's times, squad 1's], "shots": [...]}, each squad's times in order.
+func _volley(gap: float) -> Dictionary:
+	var sim := _adolescent()
+	sim.time_left = 1.0e9
+	var tf := sim.army_units.taskforce
+	tf.cfg["railgun"]["squad_gap"] = gap
+	var squad_of := {}
+	for squad: int in 2:
+		tf.squad_sizes.append(5 - squad * 2)
+		for _n: int in 5 - squad * 2:
+			squad_of[_perched(sim, true).id] = squad
+	var times := {"locks": [[], []], "shots": [[], []]}
+	for n: int in roundi(10.0 / DT):
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false):
+			var kind := str(event["type"])
+			if kind in ["railgun_hit", "railgun_missed", "railgun_locked"]:
+				var lists: Array = times["locks" if kind == "railgun_locked" else "shots"]
+				var list: Array = lists[squad_of[Num.i(event["agent"])]]
+				list.append((n + 1) * DT)
+		sim.hp = sim.max_hp
+	return times
+
+
+## The most shots inside any 1 s window (both ends counted) of these times.
+func _worst_second(times: Array) -> int:
+	var worst := 0
+	for start: float in times:
+		worst = maxi(
+			worst,
+			times.filter(func(t: float) -> bool: return t >= start and t <= start + 1.0).size()
+		)
+	return worst
