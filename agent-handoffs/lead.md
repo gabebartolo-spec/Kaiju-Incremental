@@ -14,6 +14,7 @@
   milestones, sound. Each tells the other before touching the other's files.
 - 2026-10-23 afternoon: he is back; the interview is DONE (9 rounds, answers in scratchpad interview_answers.md),
   recorded as D-163 to D-170 + DESIGN + ROADMAP "Interview answers" (df5309de). Work resumed, wind-down over.
+- D-171: new heads come after the demo, unlocked with the Colossus (evolve-screen picker = lead's UI, post-demo).
 - D-162/D-170: Tripo 6500 credits left for round 2 (serpentine python, albino) + up to 100 for the tail rig test;
   browser only, no API, no local ComfyUI. Tripo downloads: agents fetch by signed URL + curl (the Save dialog belongs
   to the Claude app). Never edit a running bash script in place (it broke a watcher).
