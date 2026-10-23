@@ -43,12 +43,10 @@
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
   FL (world units): young 1.235, Behemoth 2.072, Colossus 3.706. D-190 (his picks in the VFX lead's session, quotes
   checked in its transcript; a6bde2e6): "Smooth flames", "Slow chest-and-neck heave", claw "Keep it straight ahead".
-- Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
-  milestones, sound. Each tells the other before touching the other's files.
+- Lead/VFX split (D-189) suspended while the VFX lead is archived: the lead owns visuals too.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
   kill perched Taskforce agents. D-166 strike times: breath/ultimate 0.8/1.1/1.4 s, stomp 0.45 s (data). D-175/D-178.
-- D-162/D-170: Tripo 6500 credits left for round 2 (serpentine python, albino) + up to 100 for the tail rig test;
-  browser only. Downloads by signed URL + curl. Never edit a running bash script in place.
+- Tripo: browser only, signed URL + curl downloads; budget D-204 (5000 total). Never edit a running bash script.
 - Music D-184 SHIPPED: his remaster of G2 (798f3c13) = the theme, on the menu over the city sound (amends D-141) and
   the Cover source; cities C1a/C2a/C3a, each Auto split; all in C:/Users/DANTE/Downloads/kaiju_music (WAVs + stems).
   320 of 800 credits, 8 of 20 downloads; G1-G4 not to be downloaded again ("later if we need"). Revisit music later
@@ -89,8 +87,6 @@
 
 ## Base and PRs
 - Base = origin/claude/look-options; squash-only.
-- Merged 2026-10-23: #166 3e4a7665, #170 volley e4100548, #172 night fog 4f8b8d10, #173 gait sim ede35b92, #174
-  pacing-ci f68caea1 (and overnight #159-#169).
 - Open: #171 beam-cost GREEN b2e8e759: go only when pacing run 39910488328 reports a last unlock of 2.15-2.35 h.
   #175 gait-fix head 681ce75c (capture route only changed), CI running: go after the VFX lead's SHIP + evidence
   (clips + motion critic) and the lead's own check; gate green at 681ce75c (motion 30/0, smoke 47/0, clips 14/0,
