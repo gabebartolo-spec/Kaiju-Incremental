@@ -18,7 +18,9 @@
 - D-162/D-170: Tripo 6500 credits left for round 2 (serpentine python, albino) + up to 100 for the tail rig test;
   browser only, no API, no local ComfyUI. Tripo downloads: agents fetch by signed URL + curl (the Save dialog belongs
   to the Claude app). Never edit a running bash script in place (it broke a watcher).
-- Suno: he makes the tracks this week (D-169); prompts in docs/audio/music-briefs.md; lead cuts and layers stems.
+- Suno: he makes the tracks this week (D-169). His first takes were "way too intense" and the old guide didn't match
+  Suno's UI: D-172 = brooding, building, one mood growing; music-briefs.md rewritten from help.suno.com (Sept 2026;
+  his Suno login isn't in the built-in browser, so the signed-in page is unchecked). Lead cuts and layers stems.
 
 ## Lead board (cross-session sends are capped at 10 between his messages)
 - C:/Users/DANTE/Documents/GitHub/Kaiju-Incremental-wt/lead-board/: README.md (protocol), to-<session>.md (lead's
