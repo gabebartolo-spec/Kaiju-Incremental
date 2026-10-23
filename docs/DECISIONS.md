@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-202 · Director · The three reptilians: their own trees, unlock order croc -> dragon -> snake, and their kits
+
+His notes: "different upgrade trees for each reptilian. Croc will still be our first titan, then dragon, then snake. dragon is our bulky brawler archetype, he has a death roll and poisonous saliva torrents. croc is our athletic fighter, can leap and crush, shoot lightning from his mouth. snake shoots caustic acid (new vfx needed for melting buildings), climbs and constricts, its tail acts as an autonomous limb in self defence". Asked: the order is the "Unlock order" (a new save starts with the croc; the Komodo dragon unlocks next, then the serpent); the demo ships "the croc" (replaces D-197's "whichever looks best"); the croc's autonomous-tail node "moves to the snake. but the crocs tail whip still in the game". Details of each kit: the interview that followed (D-203).
+
 ## 2026-10-24 · D-201 · Director · The heavy Komodo moves only as fast as his animations show
 
 Two motion-critic rounds on the Komodo test build failed on the game's procedural layer, not on the Cascadeur clips: the sim turns faster than any clip can show (a ~120 deg body swing in under 0.5 s when the beam fires) and the game's foot-locking re-plants both feet within a frame (a double thud). Asked: "Yes, animations lead". His turns, starts and stops are capped to what his clips show (a 90 deg turn takes about his turn clip's time); the game stops re-planting his feet on its own and lets the clips' steps land. He steers more heavily, as the lumbering colossus (D-197); the beam still sweeps fast with his head (D-200). Applies to the heavy class first; the croc and serpent get their own answer when their clips exist.
@@ -392,7 +396,3 @@ Changes: data/looks.json "times" (overrides of look keys; morning fog 0.008 -> 0
 ## 2026-10-20 · D-105 · Director · Camera framing C: low and cinematic
 He picked C from four labelled framings of one seeded run (stills + 2x2 clip): rest offset (0, 16, 30), FOV 60 (was (0, 27, 19), FOV 55).
 Why: build2-7 "the camera doesnt let us see much of the city"; C sees to the skyline and keeps the kaiju big. Changes: data/tuning.json "camera"; the run intro (Phase D) ends on this angle.
-
-## 2026-10-20 · D-104 · Director · Shader: Cinematic
-He picked Cinematic from four candidates (today, toon, diorama, cinematic) at morning, noon, dusk and night: heavy ambient occlusion (ssao 3.0, power 2.0), contrast 1.3, saturation 0.9, bloom on fire (glow 1.0, threshold 0.9), no crease edges.
-Why: his shader comparison (comments 2026-10-20 #7). Changes: data/looks.json concrete; city_view reads ssao, ssao_power, glow_threshold from the look. Time of day stays dusk (not asked).
