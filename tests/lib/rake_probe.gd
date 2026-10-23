@@ -257,7 +257,7 @@ static func analyse(frames: Array[Fr], cue: int, hit: int, side: float, last: in
 		if absi(i - hit) <= 1:
 			var ahead := -(tip.z - frames[i].arm[a][0].z)
 			var off := _deg(atan2(side * tip.x, ahead))
-			if absf(off - 65.0) < absf(hit_off - 65.0):
+			if absf(off - 80.0) < absf(hit_off - 80.0):
 				hit_off = off
 	m["vis_hit"] = vis_hit
 	m["vis_load"] = vis_load

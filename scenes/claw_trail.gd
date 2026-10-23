@@ -35,6 +35,15 @@ func update(tip: Vector3, drawing: bool, dt: float) -> void:
 	_last = tip if drawing else Vector3.INF
 
 
+## Where the streak's marks are now (world), for the captures' on-screen length.
+func world_points() -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for mark: Dictionary in _marks:
+		var node: Node3D = mark["node"]
+		out.append(node.global_position)
+	return out
+
+
 func _lay(from: Vector3, to: Vector3) -> void:
 	var size := _rig.global_transform.basis.get_scale().x
 	var streaks := Num.i(_cfg["streaks"])

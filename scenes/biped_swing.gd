@@ -145,6 +145,11 @@ func rake_tip() -> Vector3:
 	return rig.tail_world(arm[2]) if arm.size() == 3 else rig.global_position
 
 
+## The streak's mark positions now (world).
+func rake_trail() -> PackedVector3Array:
+	return trail.world_points() if trail != null else PackedVector3Array()
+
+
 func rake_miss() -> float:
 	return _rake.miss
 

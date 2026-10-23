@@ -36,8 +36,9 @@ static func play(
 	)
 	if arc.get("trailed", false):  # the arm lays its own streak (ClawTrail): only the dust is left
 		var claw: Vector3 = arc.get("tip", strike)  # the hit shows at the claw, not the shoulder
-		_strike_dust(city, claw, Num.f(cfg["puff"]) * bs * boost)
+		_strike_dust(city, claw, Num.f(cfg["puff"]) * bs * boost * Num.f(cfg["tip_puff"]))
 		city.fx.sparks(claw)
+		city.fx.sparks(claw + Vector3.UP * 0.25 * bs)  # a second burst, so the hit reads from behind
 		return
 	var root := Node3D.new()
 	city.add_child(root)
@@ -102,6 +103,7 @@ static func marks_material(cfg: Dictionary) -> StandardMaterial3D:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.no_depth_test = true  # the streak shows over the body: from behind the camera sees it
 	mat.albedo_color = Color(str(cfg["streak_color"]))
 	return mat
 

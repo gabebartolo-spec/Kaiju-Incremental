@@ -22,12 +22,8 @@ const SPEED_STEP := 0.35
 const HAND_CAP := 15.0
 const LOAD_CAP := 25.0
 const SLIDE := 0.001
-## The hit lands this far off the snout line toward the arm (deg, +- tolerance), and the claw is
-## outside the chest's silhouette seen from the game camera in this many of the 9 frames round it
-## and of the wind-up's frames.
-const HIT_OFF := 65.0
-const HIT_OFF_TOL := 10.0
-const SHOWN_HIT := 6
+## The claw is outside the chest's silhouette seen from the game camera (rig frame) in this many of
+## the wind-up's frames.
 const SHOWN_LOAD := 10
 ## The share of its recover time the hand takes to settle to within 5% of its swing, at least.
 const SETTLE_LO := 0.7
@@ -114,24 +110,18 @@ func _check_body_and_feet() -> void:
 			)
 
 
-## The strike lands on the sim's hit, on the arm's side of the band, in 0.1 s, low (the hand never
-## above the shoulder), and the game camera behind the kaiju sees the claw there and in the wind-up.
+## The strike lands on the snout line as the sim hits (the director: "keep it straight ahead"), in
+## 0.1 s, low (the hand never above the shoulder), after a wind-up the game camera behind the
+## kaiju sees: the claw is outside the chest's silhouette for most of it.
 func _check_strike() -> void:
 	for stage: String in STAGES:
 		for m: Dictionary in _each(stage):
 			var tag := _tag(m)
 			check(
-				absf(Num.f(m["hit_off"]) - HIT_OFF) <= HIT_OFF_TOL,
+				absi(Num.i(m["cross_off"])) <= 1,
 				(
-					"%s: within a frame of the sim's hit the claw is %.0f deg off the snout line (%.0f)"
-					% [tag, HIT_OFF, m["hit_off"]]
-				)
-			)
-			check(
-				Num.i(m["vis_hit"]) >= SHOWN_HIT,
-				(
-					"%s: the claw shows from behind in >= %d of the 9 frames round the hit (%d)"
-					% [tag, SHOWN_HIT, m["vis_hit"]]
+					"%s: the hand crosses the snout line within 1 frame of the sim's hit (%d)"
+					% [tag, m["cross_off"]]
 				)
 			)
 			check(
