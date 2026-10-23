@@ -510,3 +510,11 @@ state. No director clips or per-change approvals in between; clips only where mo
   body height at most, no faster than 0.6% of body height a second; the belly barely moves. D-190 "Slow
   chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, the default idle
   (replaces the movement caps above).
+
+## Kaiju Creation, the new-game opening (director 2026-10-24)
+- "Kaiju Creation (aka NEW GAME) / laboratory setting, zoomed in petrie dish / you select which reptile genome to
+  place in the dish / then you inject the KAIJU juice into the dish and a brief animation vfx moment shows the kaiju
+  genome taking over the reptilian genome / camera rapidly zooms in into a black screen (the sound of an egg cracking
+  is heard) / the first baby run begins". Ties to the reptilian family (D-197, D-202: croc first, then the Komodo
+  dragon, then the serpent). Owner: lead (flow, UI), visuals per D-189 split. Status: not started; open questions
+  asked the same day.
