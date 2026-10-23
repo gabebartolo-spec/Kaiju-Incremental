@@ -1,42 +1,35 @@
-# Handoff: tripo-komodo (Tripo asset session, Komodo baby + adolescent)
+# Handoff: tripo-komodo (Tripo asset session: Komodo young stages, new croc, serpent)
 
-Updated 2026-10-24. Serves D-197 (reptilian family; next step "Komodo baby and adolescent") and D-196 (Komodo, Tripo
-budget 1000; 130 spent before this session). Reports to the lead session (local_a16cd984-...). Branch
-`claude/komodo-young-tripo` (from origin/claude/look-options); only docs/provenance/tripo.md and this file change.
+Updated 2026-10-24. Serves D-197 (reptilian family) and D-196 (Tripo budget 1000; 130 spent before this session, 0 since).
+Reports to the lead session (local_a16cd984-...). Branch `claude/komodo-young-tripo` (from origin/claude/look-options);
+only docs/provenance/tripo.md and this file change. Balance 16,775 (floor 15,905). All pictures so far are free
+(GPT Image 2.5 quota ~265/1000).
 
-## Task
-1. Free concept pictures (Tripo Image, GPT Image 2.5, 0 credits): BABY A upright (like the adult), BABY B a real
-   four-legged hatchling, ADOLESCENT upright ("lanky, oversized feet, half-grown feature"). Rigging pose, plain grey.
-2. Fresh realism critic per round until SHIP. 3. Labelled board to the LEAD (not the director), stop.
-4. After the lead relays his baby pick: Smart Mesh P2.0 x4 (100) + Texture (30) per model, six-view, export GLB.
-Balance floor 15,905 (was 16,775 at start; still 16,775: everything so far is free).
+## Queue (lead's order) and state
+1. Komodo baby A/B + adolescent: DONE, board sent to the lead (`~/cascadeur_bridge/komodo/young/komodo_young_board.png`,
+   files babyA_final.png, babyB_final3.png, adol_final.png; look-only critic SHIP). Waiting on the director's A/B pick
+   via the lead; then Smart Mesh P2.0 x4 (100) + Texture (30) per model, six-view clay + textured, critic, GLB.
+2. New croc A/B: DONE, board sent (`~/cascadeur_bridge/croc_new/croc_new_board.png`; croc_A_final = powerhouse level
+   spine, croc_B_final = lean mid-stride sprinter). If B is picked, regenerate it both feet down before Smart Mesh.
+3. Serpent A/B (python vs spitting cobra): round 2 (serpA2_*, serpB2_*) with a look-only critic now that real snake
+   photos are in `~/cascadeur_bridge/serpent/photo_refs/` (director's yes). Board next.
 
-## State
-- Files: `C:/Users/DANTE/cascadeur_bridge/komodo/young/` (babyA_r*, babyB_r*, adol_r* pngs + *_sheet.png; critic
-  crops in critic/; real photos in photo_refs/ with SOURCES.txt, director's yes to download, critic use only).
-- Rounds: r1 edits of the adult (all FIX/REJECT: edits keep the adult). r2 fresh gens with the adult as ref (cute faces,
-  human torsos). r3+ use the real CC0 juvenile photo as the anatomy ref: big jump in realism. B r5 (photo only) is the
-  best yet; A r3 #0 and adolescent r4 #1 are FIX with detail lists (see provenance rows). A r4 (from babyA_r3_0) was
-  stuck in Tripo with no images at last look.
-- Director (this session): 3D Enhance "i cant tell the difference" (not used); Smart UV / Upscale: try once on the picked
-  baby model, ask him first.
+## Rulings and method (this session)
+- Lead 2026-10-24 (D-188 method change after 7 rounds): concept pictures are judged on LOOK AND READ only; mesh-level
+  items (toe count, ear slit, claw length, small seams) move to the six-view gate after Smart Mesh; in critic briefs
+  the approved adult wins over real photos.
+- Director: 3D Enhance "i cant tell the difference" (unused); Smart UV / Upscale: try once on a picked model, ask first.
+- Real reference photos: the critic refuses without one; the director said yes to Wikimedia downloads (Komodo juveniles,
+  snakes), stored with SOURCES.txt, critic use only.
 
-## Know-how (new, proven this session)
-- Local upload works in the built-in browser: fetch the image as a blob in the page (Tripo history URL or
-  upload.wikimedia.org, CORS ok), put it in `input[type=file]` with DataTransfer, dispatch change. Two files = two refs.
-- Real-photo reference fixes the generator's cute/humanoid drift far better than words ("baby", "big eyes" make it cute).
-- Edit dialog: model list opens at x~254; Edit button is clipped, JS `.click()` on it works. Generate panel: model list
-  opens upward (scroll the button low first); aspect buttons need a real click, check `data-state`.
-- JS calls time out at 45 s: poll in <=35 s chunks. Signed URLs expire in ~1 h.
-
-- Rounds 6-7: B best = babyB_r7_2 (camera high above, X sprawl); adolescent best = adol_r6_1 (blend of r4 body + r5
-  head); A best = babyA_r3_0. All FIX on mesh-level details; realism read passes. Board of current bests:
-  `young/board_current_best.png`. Multiview Image (free) gave inconsistent views: not used.
-- 2026-10-24 ~02:45: asked the lead (SendMessage) to split the gate: concept = look/read for the A/B pick, mesh-level
-  items to the six-view gate after Smart Mesh; adult wins over photos in critic briefs. Status note:
-  side-session-notes/.../tripo-komodo-young-status.md.
+## Know-how (proven this session)
+- Upload works in the built-in browser: fetch the image as a blob in the page (Tripo history URL or upload.wikimedia.org),
+  set it on `input[type=file]` with DataTransfer, dispatch change; two files = two references.
+- A real photo as the anatomy reference beat words: "baby/big eyes" wording made the generator cute.
+- Edits output a square crop (cuts wide 4:3 subjects): for long creatures use the generate panel with the picture as reference.
+- Generate panel: model list opens upward; aspect buttons need a real click (check `data-state`); JS calls time out at
+  45 s, poll in <=35 s chunks. Download: read signed URLs from the page, curl them (scratchpad dl.sh builds a sheet).
+- Multiview Image is free but its views disagree (tail/pose change): not usable as Smart Mesh multi-view input.
 
 ## Next
-On the lead's yes: one look-only critic round on the board, then board to the lead, stop. On no: keep iterating
-(A: open jaw, no neck seam, bead belly, elbows clear; B: far hind thigh visible, flush ear, short claws; adolescent:
-Komodo feet like the adult's, no hip ring, tail clear of near thigh).
+Serpent critic verdict -> board to the lead. Then wait for picks; the 3D step needs the director's pick per creature.
