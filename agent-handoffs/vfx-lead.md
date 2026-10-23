@@ -77,7 +77,9 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
   blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
   no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
-- slot 2 living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator; B/C wait for the gait
+- slot 2 living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
+  "way too much ... too fast, should be deep and slow like a behemoth": bars period 4/6/8 s, back/flank peak <=
+  0.8/0.6/0.5% body height (>=0.25%), <=0.6%/s, damp the idle clip's baked breath at runtime (no re-bake); B/C wait for the gait
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
   SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
   camera; weak kaiju silhouette at night; D-154 rampage haze unbuilt. one-look phase 1 parked 849d9e06 (cut haze).
