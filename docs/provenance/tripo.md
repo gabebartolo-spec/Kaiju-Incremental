@@ -124,5 +124,7 @@ Cap: 300 lines. One row per task: date | species | input | mode | task id | cred
 | 2026-10-24 | Croc adult 3D (lead: pose items to the rig gate) | crocE3 | Smart Mesh P2.0 x4 | 9e826a6e (variants 14292be5, 71c2911f, 88325e5c, 1882d959) | 100 | Sharing Only (not public) | clay critic: 1882d959 best, FIX (upper arm fused to flank, leaner than E3); 71c2911f has a loose extra shin |
 | 2026-10-24 | Croc adult texture | 1882d959 + crocE3 reference, Remove Lighting, 2K | Texture | 64e7bd33 | 10 | Sharing Only (not public) | GLB croc_new/models/adult/adult_1882d959_tex.glb (FBX converted in Blender) |
 | 2026-10-24 | Croc baby 3D | crocBabyE4 | Smart Mesh P2.0 x4 | 5c94995a (variants 64610db9, 39e43926, 6a65e3a8, c907dee9) | 100 | Sharing Only (not public) | clay critic: 6a65e3a8 SHIP; 39e43926/64610db9 FIX; c907dee9 REJECT |
-| 2026-10-24 | Croc baby texture | 6a65e3a8 (20a914e1) + crocBabyE4, Remove Lighting, 2K | Texture | pending | 10 | Sharing Only (not public) | pending |
-| 2026-10-24 | Croc teen 3D | crocTeenE2 | Smart Mesh P2.0 x4 | b7c914b1 | 100 | Sharing Only (not public) | pending |
+| 2026-10-24 | Croc baby texture | 6a65e3a8 (20a914e1) + crocBabyE4, Remove Lighting, 2K | Texture | ffb3333f | 10 | Sharing Only (not public) | GLB croc_new/models/baby/baby_6a65e3a8_tex.glb |
+| 2026-10-24 | Croc teen 3D | crocTeenE2 | Smart Mesh P2.0 x4 | b7c914b1 (variants 435b6079, 51ea6b94, 7d9764cd, 9aea933c) | 100 | Sharing Only (not public) | clay critic: 435b6079 SHIP; 7d9764cd loose extra foot |
+| 2026-10-24 | Croc teen texture | 435b6079 (f699e377) + crocTeenE2, Remove Lighting, 2K | Texture | 97be2713 | 10 | Sharing Only (not public) | GLB croc_new/models/teen/teen_435b6079_tex.glb; board models/croc_stages_3d_board.png |
+| 2026-10-24 | Mecha final boss A-D (D-211) | serpB2_3 + crocE3 + Komodo adult ref (337e1773) | Image gen (GPT Image 2.5) x4 each | A bae67e37, B 8a89654c, C 1eab733a, D 1704b141 | 0 (free quota) | n/a | critic pending |
