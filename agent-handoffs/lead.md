@@ -64,24 +64,23 @@
   (nothing SHIP to merge). VFX handoff claude/vfx-lead-2 862f1302 (fire-smooth 4e6e90d9, heli-fall 5aee3cb6, claw-rake
   2d176ff4, living-predator ec4bb919 parked D-193). Atmosphere handoff claude/atmosphere-lead 42a8deaa (atm-escalation
   85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
-- Lead's builders (subagents, Sonnet, common brief scratchpad COMMON-2026-10-23.md):
-  - beam-cost (agent a1448c3e2dfa8c9e5, ~586k tokens) on claude/heli-standoff (D-183), worktree volley-d178: fly-by
-    strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
-    Run 6 red; WIP 4e0d6637 (local). Trace: every claw-band miss is in pull-back. Cause A (sim): the kaiju jumps
-    17-27 u/s at Behemoth/Colossus in turns (suspect BodyContact._swing about the planted foot, same as the gait
-    critic's 270 deg/s): measured 100% _swing. Cause B fixed (0.6 s smoothed anchor), run 7 WIP 8f729ebb: 3 left
-    (camera Behemoth/Colossus, claw Colossus), all from the swing. STOOD DOWN: pushed backup 2c0c2688 (no PR),
-    handoff heli-standoff.md; a fresh builder rebases on turn-weight and reruns heliflight; camera still red then =
-    director question with episodes. Worktree volley-d178 prunable (all pushed). Learnings filed (2cb3d956).
-- Pacing runs die from a LEAK: RSS +240 MB a run (15.2 GB at run 80, tee run 39920885597). Cause (sim-leak builder,
-  agent a99d69e0317e5c842, claude/sim-leak): RefCounted cycles (23 classes hold `sim`), so every dropped RampageSim
-  lives on, in the game too (rampage.gd, title_backdrop.gd). Fix: RampageSim.dispose(); bars flat memory + same
-  checksum. #171 waits for it. git-helper's local pacing-run branches: delete denied, his hygiene list.
-  - volley STOPPED 07:28 UTC (~551k tokens, claude/strike-delay, D-166): tier 2 paired 30 seeds, delays on vs off:
-    chunks +14%, tanks seen +0.7, tank shots -0.7 (t -1.4); per-delay isolation (stomp alone, breath alone) never ran.
-    Its slot went to the atmosphere B1 (pause lifted 11:02). FRESH builder from its handoff when a lead slot frees,
-- git-helper (agent a145028402855b958, finished; resume by message): merges ONLY on a `<pr> <full sha>` go.txt line.
-- Stall watcher bosw631nr: IDLE_MIN=25 PROC_MIN=80 MAX_MIN=120 LOOP_MIN=120 over scratchpad watch_args.txt.
+- No builders running (1-on-1 with the director). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
+  director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
+  + go line; git-helper was stopped by him, so merge yourself via `gh pr merge --squash --match-head-commit`).
+
+## Animation pipeline (D-193..D-196): Cascadeur, director 1-on-1
+- Cascadeur Pro trial (D-194, test only; keepers remade under a paid licence). Drive it with Nekki's script server:
+  he runs Commands > MCP.Start script server; `python -I C:/Users/DANTE/cascadeur_bridge/cs.py job.py` POSTs to
+  127.0.0.1:8765/run (D-195 "Yes, use theirs"). Apply AutoPhysics = his click on "All Frames" (D-195); tell him first.
+  Reuse ONE scene (8 scene tabs crashed it); save to NEW file names (overwriting kept the old file twice).
+- Croc: legs re-rigged to the mesh (forward knee 4.25 m, hock 2.2 m; croc/v2/build_v2.py LEG_JOINTS). The GAME rig
+  reptilian_adolescent.rig.json bends only at the hock: fix it when the walk comes in ("Yes, fix the game's croc leg
+  rig as part of bringing the Cascadeur walk into the game").
+- Komodo (D-196, full Komodo, upright, 1000 credits; 130 spent, 16,775 left): ref 96294df9 (drool kept: "its
+  anatomically correct"), Smart Mesh f46b0c87 variant e73da3cf, texture 6a8a224e; rig komodo/build_komodo.py (joints
+  from leg_profile.py cross-sections), Cascadeur komodo/rig/komodo_rig_v3.casc; walk croc/work/walk_keys_k.py (64 f,
+  2 m steps, crouch 25 cm, own leg IK, 0 cm slide) -> AutoPhysics applied -> komodo_walk_v4_ap.casc + _joints.fbx;
+  clip komodo/komodo_walk_physics.mp4 (motion critic pending). Next: critic -> director -> game import + rig.json.
 
 ## Base and PRs
 - Base = origin/claude/look-options; squash-only.
