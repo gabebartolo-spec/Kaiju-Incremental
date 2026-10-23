@@ -16,7 +16,10 @@
   Every brief says `bash ~/.claude/tools/engine_slot.sh && timeout ...` (staggers Godot starts below 6 processes).
 - D-187 "Heavier, slower", re-asked after a wrong quote: U-turn Behemoth 2 s, Colossus 3 s (today 1.63/1.80 s,
   young 0.95 unchanged), spread evenly; bar 7 = critic's >= 4 alternating real steps (> 0.3 FL, <= 40 deg); builder
-  turn-weight (agent ac71d48ab1a1ff638, claude/turn-weight) sends a design first; clip + fresh motion critic before merge.
+  turn-weight (agent ac71d48ab1a1ff638, claude/turn-weight-d187) design approved: uturn_s 2/3 + 6 steps of 30 deg,
+  trapezoid yaw (peak 1.25x mean); no-lunge bar at the feet-centre (kaiju_pos is the tail base, 7/14 u behind the
+  feet); FL per step from the VFX lead; smoke StepTurn 90 deg re-pinned per D-187. Then clip + fresh motion critic.
+  Hygiene: stale claude/turn-weight ba70e967 on origin.
 - D-188 "Keep going until critics pass" (no round cap) + "if something has failed 7 times in a row then our method is
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
   Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
