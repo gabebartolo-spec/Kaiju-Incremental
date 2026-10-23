@@ -75,11 +75,11 @@
   agent a99d69e0317e5c842, claude/sim-leak): RefCounted cycles (23 classes hold `sim`), so every dropped RampageSim
   lives on, in the game too (rampage.gd, title_backdrop.gd). Fix: RampageSim.dispose(); bars flat memory + same
   checksum. #171 waits for it. git-helper's local pacing-run branches: delete denied, his hygiene list.
-  - volley (agent ac92f78143e5f1af5, ~551k tokens) on claude/strike-delay (D-166): military red on 3 checks; paired
-    seeds 0-47 per city, delays on vs off, before any re-pin (D-144); different distributions = a behaviour change to
-    report (maybe a director question). Then refresh.
-- git-helper (agent a145028402855b958): opens PRs, merges ONLY on a `<pr> <full sha>` line in scratchpad go.txt
-  (lead writes it; CLEAN, 14+ checks, all 4 shards SUCCESS). Watcher bjfndxbrl; pacing waiter b9pyyaosi.
+  - volley STOPPED 07:28 UTC (~551k tokens, claude/strike-delay, D-166): tier 2 paired 30 seeds, delays on vs off:
+    chunks +14%, tanks seen +0.7, tank shots -0.7 (t -1.4); per-delay isolation (stomp alone, breath alone) never ran.
+    Its slot went to the atmosphere B1 (pause lifted 11:02). FRESH builder from its handoff when a lead slot frees,
+    then music (brief ready); queue order: sim-leak/turn-weight finish -> strike-delay -> music.
+- git-helper (agent a145028402855b958, finished; resume by message): merges ONLY on a `<pr> <full sha>` go.txt line.
 - Stall watcher bosw631nr: IDLE_MIN=25 PROC_MIN=80 MAX_MIN=120 LOOP_MIN=120 over scratchpad watch_args.txt.
 
 ## Base and PRs
