@@ -27,8 +27,14 @@ claude/atmosphere-lead from origin/claude/look-options (6e88723a). Base is look-
    whale dives with tail slap, boats flee (A11). Motion critic at game speed for every mover (D-177).
 
 ## Running builders (Agent subagents, own worktrees; stall_watch armed)
-DIRECTOR PAUSE 09:23-~11:03 UTC: no engine until the lead sends "resume". Code written, unrun: escalation
-c380bcf4 (incl. lifted pieces keep the blackout), rain 9549a7e6 (weather_view, rain + splash shaders, smoke
+DIRECTOR "pause work" (no end time, after 11:3x UTC): ALL work stopped, code too; resume only on the lead's word.
+Escalation 7c5c0e7a (local): suite 52/0, planted bug fails 3 (re-run after a test edit pending); 12 stills
+(scratchpad esc_d/sheet.png in its worktree), kaiju contrast >= 0.91 of d0. Left: shader identity diff
+(baselines in scratchpad esc_base), night clip, copy to docs/captures, push. CONCERNS for review: the game camera
+does not show the sky (orange only via fog/light), fog only 1.15-1.4x: may read as polite, not an inferno
+(power pillar) -> likely critic FIX; consider tinting the far haze/skyline band instead of the sky.
+Rain 87fbcff7 (local): imports clean; weather suite not yet run.
+Earlier, code: escalation c380bcf4 (incl. lifted pieces keep the blackout), rain 9549a7e6 (weather_view, rain + splash shaders, smoke
 clearing moved to view_clear.gdshaderinc, ground_slab.gdshader `wet`). VFX lead OK'd all three shared-file
 changes with pixel-identical bars. Next briefs, critic brief and M1 survey draft: side-session-notes atmosphere-lead-next-briefs.md.
 atm-escalation -> claude/atm-escalation; atm-rain -> claude/atm-rain. Both on ENGINE HOLD:
