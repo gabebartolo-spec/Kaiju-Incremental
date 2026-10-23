@@ -99,7 +99,7 @@ func strike(limb: String, side: float) -> void:
 
 
 ## The raking arm's sweep for the slash streaks: {"centre": shoulder (world), "radius": its reach
-## now}, or {} when no arm on that side.
+## now, "tip": the claw (world)}, or {} when no arm on that side.
 func claw_arc(side: float) -> Dictionary:
 	for s: String in ["l", "r"]:
 		if not rig.has_bone("arm_%s0" % s) or _arm_out(["arm_%s0" % s]) != side:
@@ -110,7 +110,8 @@ func claw_arc(side: float) -> Dictionary:
 			var n := "arm_%s%d" % [s, i]
 			if rig.has_bone(n):
 				reach += (rig.tail_world(n) - rig.bone(n).global_position).length()
-		return {"centre": shoulder, "radius": reach, "trailed": trail != null}
+		var claw := rig.tail_world("arm_%s2" % s) if rig.has_bone("arm_%s2" % s) else shoulder
+		return {"centre": shoulder, "radius": reach, "trailed": trail != null, "tip": claw}
 	return {}
 
 
@@ -136,6 +137,12 @@ func tick_rake(dt: float) -> void:
 ## the load's end and the sim's hit; for the captures.
 func rake_time() -> float:
 	return _rake.t
+
+
+## Where the raking claw is (world); the body's when no rake runs.
+func rake_tip() -> Vector3:
+	var arm := _rake.names()
+	return rig.tail_world(arm[2]) if arm.size() == 3 else rig.global_position
 
 
 func rake_miss() -> float:

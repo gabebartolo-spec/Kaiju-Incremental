@@ -36,7 +36,9 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var levels: Dictionary = Kit.STAGE_LEVELS[_stage]
-	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels), 1)
+	var stats := Kit.stats("reptilian", levels)
+	stats["stomp_interval"] = 9999.0  # standing, no footstep: nothing but the rake moves the camera
+	var rampage := Kit.rampage("reptilian", stats, 1)
 	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
@@ -73,6 +75,6 @@ func _snap(rampage: Rampage, shot_name: String, swing: BipedSwing) -> void:
 	var img := root.get_texture().get_image()
 	img.save_png(_out.path_join(shot_name + ".png"))
 	var rig := swing.rig
-	var at := (rig.bone("arm_l0").global_position + rig.bone("arm_r0").global_position) * 0.5
+	var at: Vector3 = swing.call("rake_tip")  # the 2x crop is on the claw
 	var centre := Kit.image_point(self, rampage._camera, at, Vector2(img.get_size()))
 	Kit.crop_2x(img, centre, CROP, _out.path_join(shot_name + "_2x.png"))

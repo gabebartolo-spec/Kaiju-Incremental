@@ -138,7 +138,10 @@ func mix(rest: Vector3, loaded: Vector3, over: Vector3, at: float) -> Vector3:
 	if at <= 0.0:
 		return rest
 	if at < lo:
-		return rest.lerp(loaded, ease_in_out(pow(at / lo, Num.f(_cfg["load_ease"]))))
+		var slow := ease_in_out(pow(at / lo, _by_stage("load_ease")))
+		var flare := ease_in_out(at / _by_stage("load_flare_s"))  # the hand swings out at once
+		var share := _by_stage("load_flare")
+		return rest.lerp(loaded, share * flare + (1.0 - share) * slow)
 	if at < lo + st:
 		return loaded.lerp(over, gather((at - lo) / st))
 	return over.lerp(rest, ease_in_out((at - lo - st) / recover_s()))
@@ -228,13 +231,15 @@ func _path_key(g: Grip, s_hit: Vector3) -> Vector3:
 		minf(rest.y + deg_to_rad(Num.f(_cfg["load_lift_deg"])), -0.05),
 		rest.z + Num.f(_cfg["load_reach"])
 	)
-	# The hit is where the claw crosses the snout line (rig x = 0): solve the azimuth there from
-	# where the shoulder will be, and carry the overshoot on from it.
+	# The hit lands on the arm's side of the sim's band, hit_off_deg off the snout line (seen from
+	# the body's axis at the shoulders): solve the azimuth there from where the shoulder will be,
+	# and carry the overshoot on from it.
 	var u_hit := gather(hit_at())
 	var over := Vector3(0.0, deg_to_rad(Num.f(_cfg["elev_over_deg"])), Num.f(_cfg["reach_over"]))
 	var at_hit := loaded.lerp(over, u_hit)
-	var across := side * s_hit.x / (at_hit.z * g.reach * cos(at_hit.y))
-	var phi_hit := asin(clampf(across, -0.98, 0.98))
+	var off := deg_to_rad(Num.f(_cfg["hit_off_deg"]))
+	var across := absf(s_hit.x) * cos(off) / (at_hit.z * g.reach * cos(at_hit.y))
+	var phi_hit := asin(clampf(across, -0.98, 0.98)) - off
 	# The load is a fixed way behind the hit; the overshoot carries on from it by the share of the
 	# strike left after the hit.
 	loaded.x = phi_hit - deg_to_rad(_by_stage("load_back_deg"))

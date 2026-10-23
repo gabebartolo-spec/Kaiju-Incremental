@@ -25,6 +25,7 @@ class Fr:
 	var toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # world, in hip heights
 	var planted: Array[bool] = [false, false]
 	var scale_dev := 0.0
+	var half := 0.0  # the torso's half-width seen from behind (hip heights)
 
 
 ## The swipes of one growth step: [{"side", "cue", "hit", ...metrics}], from the real sim.
@@ -96,6 +97,11 @@ static func _snap(rig: KaijuRig, gait: ClipGait) -> Fr:
 		fr.arm[s].append(to_rig * rig.tail_world("arm_%s2" % arm) / hip)
 		var b := rig.bone("arm_%s0" % arm).global_transform.basis.orthonormalized()
 		fr.arm_q[s] = Quaternion(to_rig.basis.orthonormalized() * b)
+	for n: String in ["spine1", "spine2"]:
+		var part := rig.voxels_of(n)
+		if part != null:
+			for cell: Vector3i in part.cells:
+				fr.half = maxf(fr.half, absf(cell.x) * rig.voxel_size() / hip)
 	fr.spine = to_rig * rig.tail_world("spine2") - to_rig * rig.bone("spine2").global_position
 	for j: int in 2:
 		fr.toe[j] = rig.tail_world(gait.legs[j].names[2]) / hh
@@ -236,6 +242,27 @@ static func analyse(frames: Array[Fr], cue: int, hit: int, side: float, last: in
 			el_follow = maxf(el_follow, elev_c[k])
 		rise = maxf(rise, elev_c[k])
 	# (the claw seen from its shoulder, so the clip's idle sway does not blur the settle)
+	# Seen from the game camera (behind the kaiju): the claw shows while it is outboard of the chest.
+	var half := frames[cue].half
+	var vis_hit := 0
+	var vis_load := 0
+	var hit_off := -999.0
+	for i: int in range(cue, hit + 5):
+		var tip := frames[i].arm[a][3]
+		var shown := side * tip.x > half
+		if i >= hit - 4:
+			vis_hit += 1 if shown else 0
+		elif i >= cue + 2:
+			vis_load += 1 if shown else 0
+		if absi(i - hit) <= 1:
+			var ahead := -(tip.z - frames[i].arm[a][0].z)
+			var off := _deg(atan2(side * tip.x, ahead))
+			if absf(off - 65.0) < absf(hit_off - 65.0):
+				hit_off = off
+	m["vis_hit"] = vis_hit
+	m["vis_load"] = vis_load
+	m["load_n"] = hit - 4 - (cue + 2)
+	m["hit_off"] = hit_off
 	var rest_hand := frames[last].arm[a][3] - frames[last].arm[a][0]
 	var far := 0.0  # the furthest the hand strays from where it ends
 	for i: int in range(hit, n):
@@ -282,6 +309,9 @@ static func row(m: Dictionary) -> String:
 	var keys := [
 		"peak",
 		"miss",
+		"hit_off",
+		"vis_hit",
+		"vis_load",
 		"scale_dev",
 		"chest_load",
 		"chest_swing",

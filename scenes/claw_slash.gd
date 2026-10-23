@@ -35,7 +35,9 @@ static func play(
 		centre + _arc_point(ahead, across, side, radius, 0.0, Num.f(cfg["arc_drop"]) * radius * 0.5)
 	)
 	if arc.get("trailed", false):  # the arm lays its own streak (ClawTrail): only the dust is left
-		_strike_dust(city, strike, Num.f(cfg["puff"]) * bs * boost)
+		var claw: Vector3 = arc.get("tip", strike)  # the hit shows at the claw, not the shoulder
+		_strike_dust(city, claw, Num.f(cfg["puff"]) * bs * boost)
+		city.fx.sparks(claw)
 		return
 	var root := Node3D.new()
 	city.add_child(root)
