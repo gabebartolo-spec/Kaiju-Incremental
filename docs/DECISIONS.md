@@ -4,6 +4,20 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-203 · Director · Interview: the three reptilians' kits, unlocks and trees
+
+He asked: "interview me". Answers, each to a question with the game impact stated:
+- Dragon death roll: "option 1 AND poison saliva spirals out of his mouth as he rolls": he clamps a building in his jaws and spins his whole body, wrenching it apart in one twist (tanks and helicopters in reach caught too), a button with a cooldown, his signature; venom sprays out in spirals as he rolls.
+- Dragon saliva: "A torrent that leaves poison": a heavy gushing stream swept by steering; where it lands, poison pools slowly rot buildings and hurt the army over time.
+- Dragon fast move: "A charge": head down, slow to start, unstoppable once going, bulldozes in a straight line, hard to turn.
+- Croc: "Leap onto a building": a long leap that lands on a building and crushes it with a shockwave toppling neighbours; "Leap replaces the dash". Lightning breath as today; tail whip stays (D-202).
+- Snake acid: "Spat in arcing globs", like a spitting cobra: aimed globs splash and melt buildings from the top down, with dripping, smoking holes (new melting VFX).
+- Snake climb and constrict: "Spiral up, then squeeze": it coils up a tower; wrapped, it squeezes and the building cracks and collapses inward; from the top it can spit acid on the streets.
+- Snake tail: "Swats attackers on its own": when a tank, helicopter or Taskforce agent hits it, the tail lashes at the attacker by itself and can snatch helicopters from the sky.
+- Unlocks: "Finishing a city": destroying the first city with the croc unlocks the dragon; the next city unlocks the snake.
+- Trees: "Fully separate": each reptilian has its own tree, powers and progress.
+- Ultimates: "Croc beam, dragon torrent, snake acid rain": the croc's long sustained lightning beam; the dragon's unending poison torrent leaving a spreading toxic swamp; the snake rears up and sprays acid in a wide arc that rains down and melts whole blocks.
+
 ## 2026-10-24 · D-202 · Director · The three reptilians: their own trees, unlock order croc -> dragon -> snake, and their kits
 
 His notes: "different upgrade trees for each reptilian. Croc will still be our first titan, then dragon, then snake. dragon is our bulky brawler archetype, he has a death roll and poisonous saliva torrents. croc is our athletic fighter, can leap and crush, shoot lightning from his mouth. snake shoots caustic acid (new vfx needed for melting buildings), climbs and constricts, its tail acts as an autonomous limb in self defence". Asked: the order is the "Unlock order" (a new save starts with the croc; the Komodo dragon unlocks next, then the serpent); the demo ships "the croc" (replaces D-197's "whichever looks best"); the croc's autonomous-tail node "moves to the snake. but the crocs tail whip still in the game". Details of each kit: the interview that followed (D-203).
@@ -382,17 +396,3 @@ Why: asked from labelled stills of half / today / double (same seed and tick, ga
 kaiju with double voxels". Double everywhere ran at 5.6 fps with a 13 s stall; at the game camera the city sizes looked nearly
 alike. Changes: city, cars, people keep today's cell size; the kaiju model is voxelised at twice the resolution per axis
 (finer silhouette and skin), every stage, measured for fps before it ships (claude/kaiju-double).
-
-## 2026-10-21 · D-108 · Director · The croc's breath is hot lightning, not atomic; its shape is a croc in a t-rex body
-Why: research 02 flagged the upright reptile + dorsal plates + glowing breath beam combination as the Godzilla look; he
-answered "we could have our croc shoot hot lightning instead of atomic theme" and "ours is like a crocodile in a t-rex
-body, not godzilla shaped" (comments 2026-10-21 #7). Changes: Phase D b2-18 breath VFX and copy pass re-themed to forked
-white-hot lightning (research 17); the halo colour is still his question (R 17.6).
-
-## 2026-10-20 · D-106 · Director · Every time of day, one per run
-Asked which time of day the Cinematic look uses, he answered "all of them, except make morning less hazy and the night a bit lighter". Runs rotate dusk, night, morning, noon (run index from the save; the first run is dusk, the look as written).
-Changes: data/looks.json "times" (overrides of look keys; morning fog 0.008 -> 0.003, night ambient 0.8 -> 1.4, sun 0.18 -> 0.35, lighter sky and fog), Content.set_time/time_for_run, Rampage.setup picks it.
-
-## 2026-10-20 · D-105 · Director · Camera framing C: low and cinematic
-He picked C from four labelled framings of one seeded run (stills + 2x2 clip): rest offset (0, 16, 30), FOV 60 (was (0, 27, 19), FOV 55).
-Why: build2-7 "the camera doesnt let us see much of the city"; C sees to the skyline and keeps the kaiju big. Changes: data/tuning.json "camera"; the run intro (Phase D) ends on this angle.

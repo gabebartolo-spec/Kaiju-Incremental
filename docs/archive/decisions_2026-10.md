@@ -2,6 +2,20 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-105 · Director · Camera framing C: low and cinematic
+He picked C from four labelled framings of one seeded run (stills + 2x2 clip): rest offset (0, 16, 30), FOV 60 (was (0, 27, 19), FOV 55).
+Why: build2-7 "the camera doesnt let us see much of the city"; C sees to the skyline and keeps the kaiju big. Changes: data/tuning.json "camera"; the run intro (Phase D) ends on this angle.
+
+## 2026-10-20 · D-106 · Director · Every time of day, one per run
+Asked which time of day the Cinematic look uses, he answered "all of them, except make morning less hazy and the night a bit lighter". Runs rotate dusk, night, morning, noon (run index from the save; the first run is dusk, the look as written).
+Changes: data/looks.json "times" (overrides of look keys; morning fog 0.008 -> 0.003, night ambient 0.8 -> 1.4, sun 0.18 -> 0.35, lighter sky and fog), Content.set_time/time_for_run, Rampage.setup picks it.
+
+## 2026-10-21 · D-108 · Director · The croc's breath is hot lightning, not atomic; its shape is a croc in a t-rex body
+Why: research 02 flagged the upright reptile + dorsal plates + glowing breath beam combination as the Godzilla look; he
+answered "we could have our croc shoot hot lightning instead of atomic theme" and "ours is like a crocodile in a t-rex
+body, not godzilla shaped" (comments 2026-10-21 #7). Changes: Phase D b2-18 breath VFX and copy pass re-themed to forked
+white-hot lightning (research 17); the halo colour is still his question (R 17.6).
+
 ## 2026-10-20 · D-104 · Director · Shader: Cinematic
 He picked Cinematic from four candidates (today, toon, diorama, cinematic) at morning, noon, dusk and night: heavy ambient occlusion (ssao 3.0, power 2.0), contrast 1.3, saturation 0.9, bloom on fire (glow 1.0, threshold 0.9), no crease edges.
 Why: his shader comparison (comments 2026-10-20 #7). Changes: data/looks.json concrete; city_view reads ssao, ssao_power, glow_threshold from the look. Time of day stays dusk (not asked).
