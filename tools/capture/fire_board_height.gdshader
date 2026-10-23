@@ -16,12 +16,12 @@ varying vec3 world_at;
 
 vec3 ramp(float h) {
 	vec3 orange = vec3(1.0, 0.40, 0.06);
-	vec3 red = vec3(0.86, 0.20, 0.04);
-	vec3 deep = vec3(0.34, 0.08, 0.05);
+	vec3 red = vec3(0.94, 0.23, 0.05);
+	vec3 deep = vec3(0.42, 0.09, 0.05);
 	vec3 base = vec3(0.60, 0.13, 0.05);
 	vec3 c = mix(base, orange, smoothstep(0.0, 0.14, h));  // a dark red-brown foot
-	c = mix(c, red, smoothstep(0.25, 0.5, h));
-	c = mix(c, deep, smoothstep(0.5, 0.85, h));
+	c = mix(c, red, smoothstep(0.16, 0.36, h));  // the red comes in low, through the body
+	c = mix(c, deep, smoothstep(0.42, 0.8, h));
 	return c;
 }
 
@@ -37,5 +37,5 @@ void fragment() {
 	vec3 hot = mix(vec3(1.0, 0.78, 0.30), vec3(1.0, 0.96, 0.80), smoothstep(0.7, 0.95, core));
 	vec3 c = mix(ramp(h), hot, core);
 	ALBEDO = c * heat * (1.0 + 0.9 * smoothstep(0.7, 0.95, core));  // the core is hotter than the body
-	ALPHA = COLOR.a * (1.0 - 0.5 * smoothstep(0.7, 1.0, h));
+	ALPHA = COLOR.a * (1.0 - 0.15 * smoothstep(0.8, 1.0, h));
 }

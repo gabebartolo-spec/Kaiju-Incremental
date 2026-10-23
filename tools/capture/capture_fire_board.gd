@@ -13,7 +13,7 @@ const HEIGHT := preload("res://tools/capture/fire_board_height.gdshader")
 const TONGUE := preload("res://tools/capture/fire_board_tongue.gdshader")
 const LEVELS := {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1, "sig_power": 2, "r_beam": 1}
 const SETTLE := 120
-const SPOT := Vector3(7.0, 0.0, -7.0)
+const SPOT := Vector3(10.5, 0.0, -7.0)  # clear of the kaiju's swaying tail
 const ROOF := 5.0
 const SPACING := 4.2
 const COUNT := 2  # a building's two roof fires, every one in the frame treated alike
@@ -57,7 +57,7 @@ func _run(run: int) -> void:
 	var spot := feet + SPOT * _rampage.sim.body_scale() + Vector3(0, ROOF, 0)
 	var cam := root.get_viewport().get_camera_3d()
 	var size := Vector2(root.get_texture().get_image().get_size())
-	for look: String in ["none", "a", "b", "c"]:
+	for look: String in ["none", "b", "c"]:
 		var fires: Array[Fire] = []
 		for k: int in COUNT:
 			var fire := Fire.new(SIZE, 3.0 + k)
@@ -65,7 +65,7 @@ func _run(run: int) -> void:
 			city.add_child(fire)
 			fire.global_position = at
 			if look != "none":
-				_dress(fire, "abc".find(look), at)
+				_dress(fire, "abc".find(look), at, 977 * (k + 1))
 			fires.append(fire)
 		await Kit.frames(self, FRAMES)
 		for k: int in COUNT:
@@ -85,7 +85,7 @@ func _run(run: int) -> void:
 
 ## Swaps the fire's own flame and core systems for treatment `k` (0 A, 1 B, 2 C); its light, embers
 ## and smoke stay Fire's.
-func _dress(fire: Fire, k: int, at: Vector3) -> void:
+func _dress(fire: Fire, k: int, at: Vector3, seed_value: int) -> void:
 	var systems: Array[GPUParticles3D] = []
 	for child: Node in fire.get_children():
 		if child is GPUParticles3D:
@@ -98,7 +98,7 @@ func _dress(fire: Fire, k: int, at: Vector3) -> void:
 		1:
 			fire.add_child(_plates(at, 2.5, 0.55, true))
 		_:
-			fire.add_child(_tongues())
+			fire.add_child(_tongues(seed_value))
 
 
 ## Voxel plates graded by height (height.gdshader): A is Fire's old blobby flame (cubes, 12 degrees),
@@ -114,16 +114,16 @@ func _plates(at: Vector3, flame_h: float, half_w: float, tall: bool) -> GPUParti
 	mat.gravity = Vector3(0, 2.2 if tall else 2.5, 0)
 	mat.initial_velocity_min = 1.1 if tall else 1.7
 	mat.initial_velocity_max = 2.2 if tall else 3.3
-	mat.scale_min = Fire.FLAME_SCALE.x * (1.2 if tall else 1.3)
-	mat.scale_max = Fire.FLAME_SCALE.y * (1.2 if tall else 1.3)
+	mat.scale_min = Fire.FLAME_SCALE.x * (1.5 if tall else 1.3)  # even plates: clean edges
+	mat.scale_max = Fire.FLAME_SCALE.y * (1.05 if tall else 1.3)
 	var sizes := Curve.new()
 	sizes.add_point(Vector2(0, 0.7 if tall else 1.0))
 	sizes.add_point(Vector2(0.15, 1.0))
-	sizes.add_point(Vector2(1, 0.4 if tall else 0.1))
+	sizes.add_point(Vector2(1, 0.6 if tall else 0.1))
 	var sizes_tex := CurveTexture.new()
 	sizes_tex.curve = sizes
 	mat.scale_curve = sizes_tex
-	mat.color_ramp = _alpha_ramp([0.95, 0.95, 0.85] if tall else [1.0, 1.0, 1.0])
+	mat.color_ramp = _alpha_ramp([0.98, 0.98, 0.95] if tall else [1.0, 1.0, 1.0])
 	var cube := BoxMesh.new()
 	cube.size = Fire.FLAME_PLATE if tall else Vector3.ONE * Fire.FLAME_CUBE
 	var draw := ShaderMaterial.new()
@@ -133,11 +133,11 @@ func _plates(at: Vector3, flame_h: float, half_w: float, tall: bool) -> GPUParti
 	draw.set_shader_parameter("axis", Vector2(at.x, at.z))
 	draw.set_shader_parameter("half_w", half_w)
 	cube.material = draw
-	return _system(mat, cube, roundi((300 if tall else 220) * maxf(1.0, SIZE)), 1.0)
+	return _system(mat, cube, roundi((400 if tall else 220) * maxf(1.0, SIZE)), 1.0)
 
 
 ## Soft tongues (tongue.gdshader): a few big camera-facing teardrops rising and flickering.
-func _tongues() -> GPUParticles3D:
+func _tongues(seed_value: int) -> GPUParticles3D:
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	mat.emission_box_extents = Vector3(SIZE * 0.4, 0.1, SIZE * 0.4)
@@ -158,7 +158,16 @@ func _tongues() -> GPUParticles3D:
 	mat.color_ramp = _alpha_ramp([0.0, 0.95, 0.0], [0.0, 0.18, 1.0])
 	var seeds := Gradient.new()
 	seeds.colors = PackedColorArray(
-		[Color(0.1, 0, 0), Color(0.4, 0, 0), Color(0.7, 0, 0), Color(0.95, 0, 0)]
+		[
+			Color(0.05, 0, 0),
+			Color(0.35, 0, 0),
+			Color(0.6, 0, 0),
+			Color(0.9, 0, 0),
+			Color(0.2, 0, 0),
+			Color(0.75, 0, 0),
+			Color(0.5, 0, 0),
+			Color(0.98, 0, 0)
+		]
 	)
 	seeds.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
 	var seeds_tex := GradientTexture1D.new()
@@ -170,7 +179,10 @@ func _tongues() -> GPUParticles3D:
 	var draw := ShaderMaterial.new()
 	draw.shader = TONGUE
 	quad.material = draw
-	return _system(mat, quad, 22, 1.0)
+	var system := _system(mat, quad, 22, 1.0)
+	system.use_fixed_seed = true  # each fire its own tongues, the same every run
+	system.seed = seed_value
+	return system
 
 
 func _alpha_ramp(alphas: Array, offsets: Array = [0.0, 0.3, 1.0]) -> GradientTexture1D:

@@ -27,22 +27,24 @@ void vertex() {
 }
 
 void fragment() {
-	float h = 1.0 - UV.y;  // 0 foot, 1 tip
-	float x = (UV.x - 0.5) * 2.0;
+	float tall = 0.78 + 0.44 * COLOR.r;  // each tongue its own height
+	float h = (1.0 - UV.y) / tall;  // 0 foot, 1 tip
+	float x = (UV.x - 0.5) * 2.0 - (COLOR.r - 0.5) * 0.5 * h;  // and its own lean
 	float width = (1.0 - pow(h, 0.8)) * (0.35 + 0.65 * sin(clamp(h * 3.0, 0.0, 1.5708)));  // teardrop, a point at the tip
 	float n = noise(vec2(UV.x * 6.0 + COLOR.r * 20.0, UV.y * 5.0 - TIME * 3.0));
 	float d = abs(x) / max(width, 0.001) + (n - 0.5) * 0.55 * (0.4 + h);
 	float mask = 1.0 - smoothstep(0.55, 1.0, d);
-	mask *= 1.0 - smoothstep(0.82, 1.0, h);
+	mask *= 1.0 - smoothstep(0.92, 1.0, h);
+	mask *= smoothstep(0.0, 0.14, h + (noise(vec2(UV.x * 9.0, COLOR.r * 31.0)) - 0.5) * 0.3);  // a ragged foot, no flat cut
 	vec3 base = vec3(0.60, 0.13, 0.05);
 	vec3 orange = vec3(1.0, 0.40, 0.06);
-	vec3 red = vec3(0.86, 0.20, 0.04);
+	vec3 red = vec3(0.94, 0.23, 0.05);
 	vec3 deep = vec3(0.34, 0.08, 0.05);
 	vec3 c = mix(base, orange, smoothstep(0.0, 0.16, h));
-	c = mix(c, red, smoothstep(0.25, 0.5, h));
-	c = mix(c, deep, smoothstep(0.5, 0.85, h));
-	float core = (1.0 - smoothstep(0.06, 0.34, h)) * (1.0 - smoothstep(0.0, 0.55, abs(x)));
+	c = mix(c, red, smoothstep(0.16, 0.36, h));
+	c = mix(c, deep, smoothstep(0.42, 0.8, h));
+	float core = (1.0 - smoothstep(0.03, 0.16, h)) * (1.0 - smoothstep(0.0, 0.32, abs(x)));
 	c = mix(c, mix(vec3(1.0, 0.78, 0.30), vec3(1.0, 0.96, 0.80), smoothstep(0.7, 0.95, core)), core);
-	ALBEDO = c * heat * (1.0 + 0.9 * smoothstep(0.7, 0.95, core));
-	ALPHA = clamp(mask * 1.5, 0.0, 1.0) * COLOR.a;
+	ALBEDO = c * heat * (1.0 + 0.6 * smoothstep(0.75, 0.95, core));
+	ALPHA = clamp(mask * 2.4, 0.0, 1.0) * COLOR.a;  // opaque to the tip: nothing shows through
 }
