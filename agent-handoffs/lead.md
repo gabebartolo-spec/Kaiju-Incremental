@@ -11,6 +11,8 @@
 - Game renamed Kaiju Evolution. Three equal visual pillars (beauty, consistency, power fantasy). Bar: "I have to love it".
 - D-146: NO per-change director gates; he plays only at milestones M1-M4 (export to Desktop\Kaiju Builds\M<n>, survey
   as a web page). M1 waits for all its items, music from his Suno stems included (D-155).
+- D-186 (supersedes D-159's local-suite rule): builders run locally only the 1-2 suites they iterate on, then push;
+  GitHub runs the rest. Lead: fresh builder per task, design + pass bars before code (heli took 6 runs without).
 - D-159: about 4 engine builders IN TOTAL (lead 2, VFX lead 2); touched suites only, full suite on CI; at most 3 open
   PRs; clean crowded files as you go; sim-speed measurement queued. `~/.claude/tools/engine_slot.sh` (new) staggers
   Godot starts below 6 processes: every brief says `bash ~/.claude/tools/engine_slot.sh && timeout ...`.
