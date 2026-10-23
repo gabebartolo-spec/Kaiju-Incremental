@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-097 · Director · True physics and carving are top priority, started now
+Why: "true phyiscs should be top priority. carving included. its a game about destroying cities, the city destruction has
+to be good"; earlier the same day he chose "start now, 2 builders". Supersedes D-094's "after demo exe 2". Changes: WP1
+(sim grid, claude/carve-wp1), WP2 (native C++, claude/carve-wp2), WP3 (building cells, claude/carve-wp3) and WP5 (physics
+presentation, claude/carve-wp5) are running in parallel with the demo fixes; carving PRs, CI and reviews go first.
+
 ## 2026-10-20 · D-096 · Director · Swipes undermine towers
 Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
 Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89

@@ -127,6 +127,12 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
   D-057/D-068). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010).
   Time of day is random per run (dusk, night, morning, noon), never the same twice in a row, with an options toggle to fix one; morning less hazy, night lighter (D-106, D-145).
+  Weather, one per run (D-155, D-191): clear, overcast, low fog banks he towers above, heavy rain thinned round him,
+  a dark storm with distant croc-style lightning; wet streets in rain and storms. As the city falls, haze and sky
+  follow the share destroyed: smoky amber by day, orange at dusk and night, blackouts at dusk and night; late in a
+  rampage the ruin shows through any weather. Gulls over the water and pigeons off the roofs scatter at roars and
+  tower falls; boats flee and rock in his wake; the whale surfaces two or three times a run and dives at a roar.
+  Spectacle only: no game rule.
 - **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). Run
   intro: a 3 s shot of the water rippling, the kaiju bursting out roaring, the camera pulling out (#11). Water reacts
   to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.

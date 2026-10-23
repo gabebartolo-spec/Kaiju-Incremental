@@ -462,7 +462,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
   "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
   atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
-  becomes the camera-to-kaiju corridor). Status: in progress.
+  becomes the camera-to-kaiju corridor). Status: in progress. Atmosphere rulings A1-A16: D-191 (order: escalation,
+  weather, sky and sea life; #167 drew no weather yet).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).

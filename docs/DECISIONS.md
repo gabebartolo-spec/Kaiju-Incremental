@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-191 · Director · Atmosphere: all five weathers, haze and sky that follow the ruin, gulls and pigeons, fleeing boats, the whale
+
+Asked in the atmosphere lead's session (A1-A16), after it found that #167 built only the weather pick and nothing draws any weather. Weather (D-155): "All five" in M1 (clear, overcast, fog banks, rain, thunderstorm) at all four times of day. Rain: "Heavy, kaiju clear" (downpour streaks and splashes, thinned round the kaiju and the screen centre). Fog banks: "Low, he towers above" (fog rolls through the streets; buildings and his head and back rise out of it). A storm by day: "Yes, near dusk-dark" (lit windows, fires and breath glow). Storm lightning: "Same lightning, far off" (the croc's bolt look, thin and distant in the clouds). Wet streets: "Yes, a wet sheen" in rain and storms (roads darken and catch fire and lamp light; no screen-space reflections). Clouds: "Soft, like the smoke", shown to him as labelled stills before going further. Escalation (D-154): "How much is destroyed" drives it (haze and orange sky follow the share of the city ruined); by day "Yes, softer by day" (smoky amber-brown, the sun dims; full orange at dusk and night); blackouts "Dusk and night only"; against the weather "Ruin wins late" (the orange haze shows through any weather at the peak of the ruin). Sky and sea life: "Gulls and pigeons" (gulls over the water, pigeons off the roofs, both scatter at roars and tower falls); boats "Flee and rock" (they speed away when he is near; his wake rocks them and can tip one; spectacle only, no biomass, no game rule); the whale (D-168) surfaces and spouts "Two or three times" a run, far out; at a roar "Whale dives, boats flee" (a surfaced whale goes under with a tail slap, nearby boats scatter). Order: "Escalation first", then weather, then sky and sea life. Owner: atmosphere lead.
+
 ## 2026-10-23 · D-190 · Director · Fire is smooth realistic flames; a slow chest-and-neck breath; the claw swipe stays straight ahead
 
 Asked in the VFX lead's session. Fire (the fire board of D-188's reassessment, blocky voxel flames against smooth ones): "Smooth flames": tall, tapering, realistic flame shapes on every fire, the one effect that is not blocky; the question flagged the style mix and he chose it (the one-style-per-frame rule allows a mix he approves). Breathing while he stands still (D-165): "Slow chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, as the default idle (replaces the movement caps set after "way too much ... too fast"). Claw swipe seen from the camera behind him, where his body hides it: "Keep it straight ahead": the swipe stays on the snout line in front of him, its trail and sparks strengthened so it reads from behind; the side-hit idea is dropped. Owner: VFX lead.
@@ -389,9 +393,3 @@ level-1 costs about half of level 2 (claws 45, hide 45, stride 80, quake 100, ra
 r_momentum 400), evolve1 400 -> 600, young rooftop rifle sting 0.01 -> 0.05. Bot: e1 0.24-0.27 h, young defeats ~8.5/15,
 2-4 buys per death. Built on claude/young-retune (with #89, #90 and the army ramp from closed #85). Settled only when his
 playtest passes.
-
-## 2026-10-20 · D-097 · Director · True physics and carving are top priority, started now
-Why: "true phyiscs should be top priority. carving included. its a game about destroying cities, the city destruction has
-to be good"; earlier the same day he chose "start now, 2 builders". Supersedes D-094's "after demo exe 2". Changes: WP1
-(sim grid, claude/carve-wp1), WP2 (native C++, claude/carve-wp2), WP3 (building cells, claude/carve-wp3) and WP5 (physics
-presentation, claude/carve-wp5) are running in parallel with the demo fixes; carving PRs, CI and reviews go first.
