@@ -1,16 +1,15 @@
 class_name SerpentCoil
 extends RefCounted
-## The path the serpent slides along when it stops (director D-210: "snake curls up into a
-## defensive position"; D-206: a spitting cobra). Round 4 moved every joint straight to its place in
-## the coil, so the head and neck passed through the forming loop and the body crossed itself; now
-## the coil is one precomputed path the body follows head first (follow-the-leader): from where the
-## head stopped it curls straight into the outer ring (radius coil_radius, tangent to the head's
-## way), spirals inward coil_pitch m a turn while each turn sits coil_rise m higher than the one
-## outside it (a staggered pile), down to coil_inner m from the centre; then the neck rises out of
-## the centre to coil_head_rise m and the head levels off over the coil, facing the way it went,
-## tipped coil_head_tilt rad nose-down so its top reads from the high camera. A spiral never meets
-## itself, so the body never crosses itself. Pure geometry (data/tuning.json "serpent");
-## presentation only.
+## The path the serpent slides along when it stops (director D-210: "snake curls up into a defensive
+## position"; D-206: a spitting cobra). Round 4 moved every joint straight to its place in the coil,
+## so the head and neck passed through the forming loop and the body crossed itself; now the coil is
+## one precomputed path the body follows head first (follow-the-leader): from where the head stopped
+## it curls straight into the outer ring (radius coil_radius, tangent to the head's way), spirals
+## inward coil_pitch m a turn while each turn sits coil_rise m higher than the one outside it (a
+## staggered pile), down to coil_inner m from the centre; then the neck rises out of the centre to
+## coil_head_rise m and the head levels off over the coil, facing the way it went, tipped
+## coil_head_tilt rad nose-down so its top reads from the high camera. A spiral never meets itself,
+## so the body never crosses itself. Pure geometry (data/tuning.json "serpent"); presentation only.
 
 ## Spacing of the path's points (m).
 const STEP := 0.25
@@ -30,8 +29,8 @@ const SKIP := 4
 
 
 ## The coil path for a body stopped as `body` (joints, head first) going `way`, beside the sim's
-## centreline `line` (head first): points (x, height, z) from the stopped head to the snout tip, STEP
-## apart or closer. `face`: the way the raised head looks.
+## centreline `line` (head first): points (x, height, z) from the stopped head to the snout tip,
+## STEP apart or closer. `face`: the way the raised head looks.
 static func path(
 	body: PackedVector2Array, way: Vector2, line: PackedVector2Array, face: Vector2, cfg: Dictionary
 ) -> PackedVector3Array:
@@ -62,14 +61,14 @@ static func path(
 	return out
 
 
-## Where the ring goes for a body stopped as `body` going `way`: [its centre, the straight run
-## (m) before the ring begins, the way the raised head looks]. The ring is tangent to the head's
-## way, coil_radius to one side, after a straight run of 0 to (ENTRIES - 1) x ENTRY m. Of those it
-## takes the one whose disc the rest of the body (still lying where it stopped) stays clear of, so
-## the head never meets the body, and that stays over the S's footprint (within the swing and the
-## girth of the sim's centreline `line`, head first); the first that does both, else the one that
-## comes nearest. The head looks along `face`, or turned up to LOOK_TURNS steps toward the coil if
-## it would reach past the footprint.
+## Where the ring goes for a body stopped as `body` going `way`: [its centre, the straight run (m)
+## before the ring begins, the way the raised head looks]. The ring is tangent to the head's way,
+## coil_radius to one side, after a straight run of 0 to (ENTRIES - 1) x ENTRY m. Of those it takes
+## the one whose disc the rest of the body (still lying where it stopped) stays clear of, so the
+## head never meets the body, and that stays over the S's footprint (within the swing and the girth
+## of the sim's centreline `line`, head first); the first that does both, else the one that comes
+## nearest. The head looks along `face`, or turned up to LOOK_TURNS steps toward the coil if it
+## would reach past the footprint.
 static func centre(
 	body: PackedVector2Array, way: Vector2, line: PackedVector2Array, face: Vector2, cfg: Dictionary
 ) -> Array:
@@ -98,8 +97,8 @@ static func centre(
 
 
 ## The way the raised head looks over a ring at `mid` (on `side` of the head's way): `face`, or
-## turned toward the centreline a LOOK_STEP at a time until its snout is over the footprint.
-## (x, y): that way; z: how far the snout still reaches past the footprint (m).
+## turned toward the centreline a LOOK_STEP at a time until its snout is over the footprint. (x, y):
+## that way; z: how far the snout still reaches past the footprint (m).
 static func _look(
 	mid: Vector2, side: float, face: Vector2, line: PackedVector2Array, room: float, cfg: Dictionary
 ) -> Vector3:
@@ -108,7 +107,9 @@ static func _look(
 	for k: int in LOOK_TURNS * 2 + 1:
 		var turn := LOOK_STEP * ceili(k / 2.0) * (1.0 if k % 2 == 1 else -1.0)
 		var way := face.normalized().rotated(turn)
-		var neck := mid + Vector2.from_angle(way.angle() + side * PI * 0.5) * Num.f(cfg["coil_inner"])
+		var neck := (
+			mid + Vector2.from_angle(way.angle() + side * PI * 0.5) * Num.f(cfg["coil_inner"])
+		)
 		var over := maxf(_off(neck + way * reach, line) - room, 0.0)
 		if over < best.z - 0.001:
 			best = Vector3(way.x, way.y, over)
@@ -127,9 +128,9 @@ static func _off(p: Vector2, line: PackedVector2Array) -> float:
 
 
 ## The neck and head appended to the spiral in `out`: the neck carries on round the centre inside
-## the last ring, rising ever more steeply (a helix), until it runs the way the head will look;
-## then it arches over (a bend coil_neck_arch m across) into the head, held out tipped
-## coil_head_tilt rad nose-down, about coil_head_rise m up. No corner anywhere, every bend wider than a body width.
+## the last ring, rising ever more steeply (a helix), until it runs the way the head will look; then
+## it arches over (a bend coil_neck_arch m across) into the head, held out tipped coil_head_tilt rad
+## nose-down, about coil_head_rise m up. No corner anywhere, every bend wider than a body width.
 static func _neck(out: PackedVector3Array, ring: Vector2, face: Vector2, cfg: Dictionary) -> void:
 	var n := out.size()
 	var end := out[n - 1]
@@ -167,7 +168,9 @@ static func _neck(out: PackedVector3Array, ring: Vector2, face: Vector2, cfg: Di
 
 ## Appends a Hermite curve from `a` (leaving along `ta`) to `b` (arriving along `tb`), STEP apart,
 ## its tangents as long as the chord.
-static func _hermite(out: PackedVector3Array, a: Vector3, ta: Vector3, b: Vector3, tb: Vector3) -> void:
+static func _hermite(
+	out: PackedVector3Array, a: Vector3, ta: Vector3, b: Vector3, tb: Vector3
+) -> void:
 	var span := a.distance_to(b)
 	var steps := maxi(4, ceili(span * 1.3 / STEP))
 	for i: int in range(1, steps + 1):
@@ -175,10 +178,12 @@ static func _hermite(out: PackedVector3Array, a: Vector3, ta: Vector3, b: Vector
 		var t2 := t * t
 		var t3 := t2 * t
 		out.append(
-			(2.0 * t3 - 3.0 * t2 + 1.0) * a
-			+ (t3 - 2.0 * t2 + t) * span * ta
-			+ (-2.0 * t3 + 3.0 * t2) * b
-			+ (t3 - t2) * span * tb
+			(
+				(2.0 * t3 - 3.0 * t2 + 1.0) * a
+				+ (t3 - 2.0 * t2 + t) * span * ta
+				+ (-2.0 * t3 + 3.0 * t2) * b
+				+ (t3 - t2) * span * tb
+			)
 		)
 
 

@@ -29,23 +29,27 @@ var _start := 0.0
 var _coil := 0.0
 ## The ring's centre (ground plane), for the breath.
 var _centre := Vector2.ZERO
+var _heading := Vector2.ZERO
+var _line := PackedVector2Array()
+var _lifted := PackedFloat32Array()
 
 
 func _init(cfg: Dictionary) -> void:
 	_cfg = cfg
 
 
+## What a stop starts from, given each frame before `apply`: `heading` the way it faced, `line`
+## the sim's centreline (head first; read only on the frame it stops), `lifted` each joint's
+## height (a rear, a raised head).
+func stop_at(heading: Vector2, line: PackedVector2Array, lifted: PackedFloat32Array) -> void:
+	_heading = heading
+	_line = line
+	_lifted = lifted
+
+
 ## The joints to draw (head first): `laid` while the head moves; once it stops, sliding into the
-## coil along its path, then idling on it. `heading`: the way it faced; `line`: the sim's
-## centreline, head first; `lifted`: each joint's height as it stopped (a rear, a raised head).
-func apply(
-	laid: PackedVector2Array,
-	moving: bool,
-	delta: float,
-	heading: Vector2,
-	line: PackedVector2Array,
-	lifted: PackedFloat32Array
-) -> PackedVector2Array:
+## coil along its path (from what `stop_at` gave), then idling on it.
+func apply(laid: PackedVector2Array, moving: bool, delta: float) -> PackedVector2Array:
 	var seg := laid[0].distance_to(laid[1])
 	if heights.size() != laid.size():
 		heights.resize(laid.size())
@@ -57,7 +61,7 @@ func apply(
 			heights[j] *= ease
 		return laid
 	if still == 0.0:
-		_lay_track(laid, lifted, heading, line)
+		_lay_track(laid, _lifted, _heading, _line)
 	still += delta
 	var head := _start + _coil * smoothstep(0.0, 1.0, still / Num.f(_cfg["coil_s"]))
 	var grow := (swell() - 1.0) / maxf(Num.f(_cfg["idle_breath"]), 0.0001)

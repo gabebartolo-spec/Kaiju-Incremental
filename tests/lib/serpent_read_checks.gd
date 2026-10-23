@@ -56,7 +56,20 @@ func run() -> void:
 	var line := "serpent: through the turns the longest straight run %.1f m (bar %.0f), weakest lobe "
 	line += "%.0f%% of the ruled swing (bar %.0f%%); coil: %d frames self-intersecting, closest "
 	line += "pass %.2f of touching (a coil under a girth apart: %.2f)"
-	print(line % [straight, STRAIGHT_BAR, weakest / amp * 100.0, SWING_SHARE * 100.0, crossings, closest, bad])
+	print(
+		(
+			line
+			% [
+				straight,
+				STRAIGHT_BAR,
+				weakest / amp * 100.0,
+				SWING_SHARE * 100.0,
+				crossings,
+				closest,
+				bad
+			]
+		)
+	)
 	check.call(straight <= STRAIGHT_BAR, "no straight run over 8 m through the turns")
 	check.call(weakest >= SWING_SHARE * amp, "every lobe keeps 60% of the swing through the turns")
 	check.call(bad < 1.0, "the crossing measure catches rings laid under a girth apart")
@@ -149,7 +162,9 @@ static func _closest(
 		for b: int in range(a + NEIGHBOURS, j.size()):
 			var across := j[a].distance_to(j[b]) / ((widths[a] + widths[b]) * 0.5)
 			var up := lifts[a] - lifts[b] + (heights[a] - heights[b]) * 0.5
-			closest = minf(closest, Vector2(across, up / ((heights[a] + heights[b]) * 0.5)).length())
+			closest = minf(
+				closest, Vector2(across, up / ((heights[a] + heights[b]) * 0.5)).length()
+			)
 	return closest
 
 

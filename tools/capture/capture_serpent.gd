@@ -27,7 +27,22 @@ const CAMERA_SIDE: Array[float] = [8.0, 16.0, 24.0, 32.0]
 const U_TURN_LEAN_S := 1.5
 const U_TURN := Vector2(0.08, 1.0)
 
-var _args := Kit.args({"seconds": 9.4})
+var _args := (
+	Kit
+	. args(
+		{
+			"seconds": 9.4,
+			"still": -1.0,
+			"label": "",
+			"out": "user://serpent_still.png",
+			"girth_scale": -1.0,
+			"head_scale": -1.0,
+			"run_hood": -1.0,
+			"cam_zoom": 1.0,
+			"cam_pitch": 0.0,
+		}
+	)
+)
 var _proto: SerpentProto
 var _closest := INF
 var _swath_line := ""
@@ -56,6 +71,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	var cfg := Content.section("serpent")
+	_look_options(cfg)
 	var steps := int(PREROLL_S / DT)
 	var start := START - Vector2(1, 0) * _preroll_distance(cfg, steps)
 	_proto = SerpentProto.new()
@@ -71,6 +87,9 @@ func _run() -> void:
 		_watch()
 		_eyes.append(_proto.camera.global_position)
 		_track(frames * DT)
+		if Num.f(_args["still"]) >= 0.0 and frames == int(Num.f(_args["still"]) / DT):
+			await _still()
+			return
 	print("serpent capture: renderer %s" % RenderingServer.get_video_adapter_name())
 	print("serpent capture: on the straight the S swings %s" % _swath_line)
 	print("serpent capture: closest strands %.2f m apart (surface to surface)" % _closest)
@@ -86,6 +105,45 @@ func _run() -> void:
 	print(leg % [_north_leg.x * 100.0, _north_leg.y * 100.0])
 	var opening := "serpent capture: opening second, drawn head %.2f-%.2f m/s, camera %s"
 	print(opening % [_head_speeds.x, _head_speeds.y, _opening_camera()])
+	quit()
+
+
+## The size options for a labelled still (the director's call, D-188 round 5): girth and head
+## scale, the hood spread while it runs, the camera brought closer (cam_zoom of its distance) or
+## pitched cam_pitch deg lower. Applied to the shared "serpent" table before anything reads it.
+func _look_options(cfg: Dictionary) -> void:
+	for key: String in ["girth_scale", "head_scale", "run_hood"]:
+		if Num.f(_args[key]) >= 0.0:
+			cfg[key] = Num.f(_args[key])
+	var height := Num.f(cfg["camera_height"]) * Num.f(_args["cam_zoom"])
+	var back := Num.f(cfg["camera_back"]) * Num.f(_args["cam_zoom"])
+	var reach := Vector2(back, height).length()
+	var pitch := atan2(height, back) - deg_to_rad(Num.f(_args["cam_pitch"]))
+	cfg["camera_height"] = reach * sin(pitch)
+	cfg["camera_back"] = reach * cos(pitch)
+
+
+## The labelled still: the label large at the top left, then the frame saved to --out.
+func _still() -> void:
+	var layer := CanvasLayer.new()
+	var label := Label.new()
+	label.text = str(_args["label"])
+	label.position = Vector2(40, 30)
+	label.add_theme_font_size_override("font_size", 72)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 14)
+	layer.add_child(label)
+	root.add_child(layer)
+	await process_frame
+	await process_frame
+	root.get_texture().get_image().save_png(str(_args["out"]))
+	print(
+		(
+			"serpent capture: still %s at %.1f s to %s"
+			% [label.text, Num.f(_args["still"]), _args["out"]]
+		)
+	)
 	quit()
 
 

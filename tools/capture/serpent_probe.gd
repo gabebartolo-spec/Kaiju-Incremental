@@ -60,8 +60,10 @@ func _initialize() -> void:
 		swing.x = maxf(swing.x, _sideways(now_eyes, side))
 		swing.y = maxf(swing.y, _sideways(old_eyes, side))
 	print(
-		"serpent probe: camera sideways accel peak %.2f m/s^2 (round 4's follow %.2f)"
-		% [swing.x, swing.y]
+		(
+			"serpent probe: camera sideways accel peak %.2f m/s^2 (round 4's follow %.2f)"
+			% [swing.x, swing.y]
+		)
 	)
 	var file := FileAccess.open(str(_args["out"]), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"frames": frames}))

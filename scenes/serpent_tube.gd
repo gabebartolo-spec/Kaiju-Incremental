@@ -20,6 +20,8 @@ const BAND_EVERY := 2.6
 const BAND_SHARE := 0.28
 const BAND_SOFT := 0.08
 
+## How far the cobra's hood is spread (0..1; D-206), set before `build`.
+var hood := 0.0
 var _cfg: Dictionary
 var _mesh := ArrayMesh.new()
 var _shape: Array = []
@@ -28,7 +30,6 @@ var _rings := 0
 var _indices := PackedInt32Array()
 var _eyes: Array[MeshInstance3D] = []
 var _tongue: Array[MeshInstance3D] = []
-var _hood := 0.0  # how far the hood is spread (0..1), as last built
 
 
 func _init(cfg: Dictionary) -> void:
@@ -55,6 +56,7 @@ func _init(cfg: Dictionary) -> void:
 	for _i: int in 2:
 		var eye := MeshInstance3D.new()
 		eye.mesh = ball
+		eye.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # raised: a speckled shadow
 		add_child(eye)
 		_eyes.append(eye)
 	var prong := BoxMesh.new()
@@ -66,6 +68,7 @@ func _init(cfg: Dictionary) -> void:
 		var piece := MeshInstance3D.new()
 		piece.mesh = prong
 		piece.visible = false
+		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(piece)
 		_tongue.append(piece)
 
@@ -90,7 +93,7 @@ func share_at(d: float) -> float:
 ## girth (x girth_scale), the head x head_scale, the hood spread behind it.
 func width_at(d: float, swell: float) -> float:
 	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
-	return width * _head_k(d) * (1.0 + (Num.f(_cfg["hood_flare"]) - 1.0) * _hood * _hood_at(d))
+	return width * _head_k(d) * (1.0 + (Num.f(_cfg["hood_flare"]) - 1.0) * hood * _hood_at(d))
 
 
 ## The body's height `d` m behind the snout: a share of its width, the head flatter, the hood thin.
@@ -101,7 +104,7 @@ func height_at(d: float, swell: float) -> float:
 		smoothstep(Num.f(_cfg["head_len"]) * 0.7, Num.f(_cfg["head_len"]) * 1.4, d)
 	)
 	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
-	var thin := 1.0 - Num.f(_cfg["hood_thin"]) * _hood * _hood_at(d)
+	var thin := 1.0 - Num.f(_cfg["hood_thin"]) * hood * _hood_at(d)
 	return width * _head_k(d) * Num.f(_cfg["height_share"]) * flat * thin
 
 
@@ -122,16 +125,11 @@ func _hood_at(d: float) -> float:
 
 ## Rebuilds the tube along `joints` (ground plane x, z; head first, a segment apart), joint j raised
 ## `lifts[j]` m above the ground, `swell`: the girth's breath, `tongue`: how far the tongue is out,
-## `hood`: how far the cobra's hood is spread (0..1). Each ring is set square to the tube's own
+## the hood spread by `hood` (0..1). Each ring is set square to the tube's own
 ## way in 3D, so a neck that rises steeply stays round.
 func build(
-	joints: PackedVector2Array,
-	lifts: PackedFloat32Array,
-	swell: float,
-	tongue: float,
-	hood := 0.0
+	joints: PackedVector2Array, lifts: PackedFloat32Array, swell: float, tongue: float
 ) -> void:
-	_hood = hood
 	var seg := Num.f(_cfg["length"]) / Num.f(_cfg["segments"])
 	var per := maxi(1, ceili(seg / Num.f(_cfg["tube_step"])))
 	var count := (joints.size() - 1) * per + 1
@@ -174,7 +172,7 @@ func build(
 			var n := side * (c / maxf(w * 0.5, 0.01)) + up * (u / maxf(h * 0.5, 0.01))
 			norms[k] = n.normalized()
 			cols[k] = _skin(d, c, u, band)
-		_place_eyes(d, mid, side, up, Vector2(w, h))
+		_place_eyes(d, mid, Basis(side, up, way), Vector2(w, h))
 		if r == 0:
 			_place_tongue(mid, -way, up, tongue)
 	if _rings != count:
@@ -191,14 +189,15 @@ func build(
 
 
 ## Both eyes sit on the head ring nearest eye_at m behind the snout (`size`: its width, height).
-func _place_eyes(d: float, mid: Vector3, side: Vector3, up: Vector3, size: Vector2) -> void:
+## `frame`: the ring's side (x) and up (y).
+func _place_eyes(d: float, mid: Vector3, frame: Basis, size: Vector2) -> void:
 	var step := Num.f(_cfg["tube_step"])
 	if absf(d - Num.f(_cfg["eye_at"])) > step * 0.5:
 		return
 	var ball := Num.f(_cfg["eye_size"]) * 2.0 * Num.f(_cfg["head_scale"])
 	for e: int in 2:
 		var sign := 1.0 if e == 0 else -1.0
-		var at := mid + side * (size.x * 0.5 * 0.82 * sign) + up * (size.y * 0.5 * 0.55)
+		var at := mid + frame.x * (size.x * 0.5 * 0.82 * sign) + frame.y * (size.y * 0.5 * 0.55)
 		_eyes[e].transform = Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * ball), at)
 
 

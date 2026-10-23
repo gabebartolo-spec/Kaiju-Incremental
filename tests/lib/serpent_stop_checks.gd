@@ -103,7 +103,8 @@ func _stop_settles() -> void:
 		for j: int in int(Num.f(_cfg["head_len"])) + 1:
 			head_top = maxf(head_top, heights[j])
 		check.call(
-			tallest >= 3.0 and head_top > tallest - 0.01, "stacked loops, the head raised above them"
+			tallest >= 3.0 and head_top > tallest - 0.01,
+			"stacked loops, the head raised above them"
 		)
 		check.call(
 			broken < 0.02, "the coil keeps the chain whole (%.3f off a joint spacing)" % broken

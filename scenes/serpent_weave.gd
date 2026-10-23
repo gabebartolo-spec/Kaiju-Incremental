@@ -7,8 +7,8 @@ extends RefCounted
 ## point of the sim's centreline, pushed sideways along that point's own normal by the serpenoid's
 ## offset there. Through a turn the S therefore swings about the curve itself and keeps rippling
 ## behind the bend (round 4 swung it about the head's new heading and a turn pulled it into a
-## straight leg). On a turn's inner side the offset gives way by wave_inner_give x the turn's
-## bend x the offset, so the inner crest never folds; the outer crest keeps its full swing. The drawn head
+## straight leg). On a turn's inner side the offset gives way by wave_inner_give x the turn's bend x
+## the offset, so the inner crest never folds; the outer crest keeps its full swing. The drawn head
 ## records its path by distance (a SerpentTrail) and the drawn body lies along that: every body
 ## point passes through the same S (Jayne 2020, terrestrial lateral undulation: points follow one
 ## path and the wave runs at the forward speed), at one steady speed along it. The swing ramps in
@@ -62,8 +62,8 @@ func _init(body: SerpentBody) -> void:
 	_tabulate()
 
 
-## How far the S swings at a crest where the head goes at `speed`: it ramps in with speed (full
-## at wave_full_at of top speed, none at rest).
+## How far the S swings at a crest where the head goes at `speed`: it ramps in with speed (full at
+## wave_full_at of top speed, none at rest).
 static func amplitude(cfg: Dictionary, speed: float) -> float:
 	var full := Num.f(cfg["speed"]) * Num.f(cfg["wave_full_at"])
 	return Num.f(cfg["wave_amp"]) * smoothstep(0.0, full, speed)
@@ -74,8 +74,8 @@ static func lateral(cfg: Dictionary, s: float, amp: float) -> float:
 	return amp * sin(TAU * s / Num.f(cfg["wave_length"]))
 
 
-## The heading swing alpha whose serpenoid (wave number k) swings `amp` to each side: the side
-## reach of a quarter wave is (1/k) x the integral over 0..pi/2 of sin(alpha cos u) du.
+## The heading swing alpha whose serpenoid (wave number k) swings `amp` to each side: the side reach
+## of a quarter wave is (1/k) x the integral over 0..pi/2 of sin(alpha cos u) du.
 static func heading_swing(amp: float, k: float) -> float:
 	var lo := 0.0
 	var hi := PI * 0.5
@@ -141,8 +141,9 @@ func size_at(s: float) -> float:
 	return 1.0 + Num.f(_cfg["wave_wobble_amp"]) * sin(TAU * s / each + 0.7)
 
 
-## Where the S lies at arc position `sigma` of the sim's centreline: that point, pushed along its normal by the serpenoid's offset (wave_amp x size x the
-## ramp), eased in on a turn's inner side (by wave_inner_give x the bend x the offset).
+## Where the S lies at arc position `sigma` of the sim's centreline: that point, pushed along its
+## normal by the serpenoid's offset (wave_amp x size x the ramp), eased in on a turn's inner side
+## (by wave_inner_give x the bend x the offset).
 func point_at(trail: SerpentTrail, sigma: float) -> Vector2:
 	var behind := trail.head_s - sigma
 	var normal := trail.course_at(behind).orthogonal()
@@ -160,11 +161,11 @@ static func _bend_at(trail: SerpentTrail, behind: float) -> Vector2:
 	return (trail.course_at(behind - PROBE) - trail.course_at(behind + PROBE)) / (2.0 * PROBE)
 
 
-## One short move of the drawn head over `h` s: along the S at one steady speed (a snake's body
-## does not surge), the forward speed over the S's mean progress per metre of path, eased level
-## with the sim head over wave_catch m. It steers for the S LOOK m ahead by pure pursuit (the arc
-## that meets it), its bend eased under min_bend_widths body widths, so a tight inner crest is
-## rounded off rather than folded.
+## One short move of the drawn head over `h` s: along the S at one steady speed (a snake's body does
+## not surge), the forward speed over the S's mean progress per metre of path, eased level with the
+## sim head over wave_catch m. It steers for the S LOOK m ahead by pure pursuit (the arc that meets
+## it), its bend eased under min_bend_widths body widths, so a tight inner crest is rounded off
+## rather than folded.
 func _advance(body: SerpentBody, h: float) -> void:
 	var v := body.speed
 	var trail := body.trail
@@ -225,8 +226,8 @@ func _tabulate() -> void:
 		_side[i] /= most
 
 
-## The drawn body settled into `points` (joints, head first) while it stood: its path is laid
-## again along them, so it sets off from the shape it settled in and eases onto the S.
+## The drawn body settled into `points` (joints, head first) while it stood: its path is laid again
+## along them, so it sets off from the shape it settled in and eases onto the S.
 func settle_into(points: PackedVector2Array, body: SerpentBody) -> void:
 	drawn.relay(points)
 	_ramp = 0.0
@@ -248,8 +249,8 @@ func path(reach: float) -> PackedVector2Array:
 	return out
 
 
-## `count` + 1 joints `spacing` apart along `points` (head first): joint 0 is the head's tip.
-## Past the path's end the body carries on straight.
+## `count` + 1 joints `spacing` apart along `points` (head first): joint 0 is the head's tip. Past
+## the path's end the body carries on straight.
 static func joints(points: PackedVector2Array, spacing: float, count: int) -> PackedVector2Array:
 	var out := PackedVector2Array([points[0]])
 	var i := 0

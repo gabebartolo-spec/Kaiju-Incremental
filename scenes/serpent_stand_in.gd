@@ -66,7 +66,8 @@ func update(body: SerpentBody, delta: float) -> void:
 	if not moving and _settle.still == 0.0:  # the stop: where the coil may go
 		for k: int in ceili(body.length()) + 1:
 			line.append(body.centre_at(k))
-	_settled = _settle.apply(laid, moving, delta, body.heading, line, lifts)
+	_settle.stop_at(body.heading, line, lifts)
+	_settled = _settle.apply(laid, moving, delta)
 	_spring_lead(body, delta)
 	_brace(body, moving, delta)
 	look = _settle.tracking()
@@ -75,7 +76,9 @@ func update(body: SerpentBody, delta: float) -> void:
 	joints = _bend_neck(_settled, lead + look, jab)
 	lifts = _lifts(seg, moving)
 	hood = maxf(_settle.hood(), _brace_k * Num.f(_cfg["stop_hood"]))
-	_tube.build(joints, lifts, _settle.swell(), tongue, hood)
+	hood = maxf(hood, Num.f(_cfg["run_hood"]))
+	_tube.hood = hood
+	_tube.build(joints, lifts, _settle.swell(), tongue)
 
 
 ## How wide the body is drawn `d` m behind the snout (m).
