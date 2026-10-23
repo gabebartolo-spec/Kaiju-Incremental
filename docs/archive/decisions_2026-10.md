@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-079 · Director · shell_hit keeps its full boom (A); #52 closed
+Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is closed unmerged.
+
 ## 2026-10-18 · D-078a · Director · The stadium stands are full of spectators watching the match
 Why (18:0x): "the stadium needs to be full of people in the stands watching the sport, currently its empty".
 Added to #59's brief; the AFL clip is re-rendered with the crowd.

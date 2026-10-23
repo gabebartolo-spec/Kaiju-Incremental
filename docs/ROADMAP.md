@@ -409,6 +409,6 @@ state. No director clips or per-change approvals in between; clips only where mo
   not started.
 - The whale in the water between the play city and the distant city (D-168), with sky and sea life. Owner: demo-end
   session. Status: not started.
-- Suno music this week (D-169); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
+- Suno music this week (D-169), brooding and building, one mood growing heavier (D-172, briefs rewritten); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
   the downloads.
 - Rig test, up to 100 Tripo credits on the croc's tail (D-170). Owner: VFX lead's asset session. Status: not started.

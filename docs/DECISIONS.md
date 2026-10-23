@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-172 · Director · Music: brooding and building, one mood that grows heavier each city
+
+His first Suno takes from the old briefs: "the songs are way too intense based on the prompts youve provided", and the guide "doesnt really seem to marry up to their interface". Asked: "Brooding, building": low and slow (deep drums, low strings, sub bass, sparse low brass), the city's sound in front, swelling only as the city falls. "One mood, growing": every city shares one sound, each a step heavier (same tempo and key), replacing the briefs' sly / industrial / epic moods. docs/audio/music-briefs.md rewritten to Suno's current Create form (Custom, v6, Instrumental, Styles, Advanced Options: Exclude, Weirdness, Style Influence; Auto Split stems; WAV download).
+
 ## 2026-10-23 · D-171 · Director · New heads come after the demo, unlocked with the Colossus
 
 Asked (the VFX lead is fitting the Komodo head, D-164): "After the demo": the Komodo head (and later the python) stays out of the Itch demo; model and fitting work may go on, nothing head-related enters a demo build. "Unlocked with the Colossus": when he becomes the Colossus, the evolve screen offers the croc, Komodo or python head (a look only, D-166). Owners: VFX lead (head swap and re-fit), lead (evolve-screen picker), after the demo.
@@ -394,6 +398,3 @@ Why (16:0x): asked whether to change it; kept as built in the landmark sites wor
 
 ## 2026-10-18 · D-080 · Director · The jet strike warning scales with the kaiju's size
 Why (15:4x): director's call on the jets PRs; applied on the jet branches (#58, #61).
-
-## 2026-10-18 · D-079 · Director · shell_hit keeps its full boom (A); #52 closed
-Why: heard the A/B; kept A, the existing full boom. The alternative's PR #52 is closed unmerged.

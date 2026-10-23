@@ -1,52 +1,52 @@
-# Music briefs for Suno (D-114, D-125, D-155)
+# Music briefs for Suno (D-114, D-125, D-155, D-172)
 
-One track per city. It plays as layers: the drums start alone, then bass, lead and choir fade in as the city falls
-(D-125). So each track must hold one steady tempo the whole way through, loop cleanly, and work with any stem muted.
+**The feel (D-172):** brooding and building, one mood for the whole game. Low and slow: deep drums, low strings, sub
+bass, sparse low brass. The city's screams and sirens stay in front; the music only swells as the city falls. Each
+city uses the same sound, a step heavier than the last (same tempo and key, so the three feel like one score).
 
-**For every take:**
-- Instrumental, no lyrics. Wordless choir is fine.
-- About 2:30 to 3:00, with a seamless loop: no intro fade, and no ending.
-- Steady tempo, no tempo changes, no long breakdowns.
-- After generating, use Suno's "Get Stems" and download the full track plus its stems. Pro allows 20 downloads a
-  month, so about 2 takes per city, then keep the best.
-- Send me the downloads. I cut the loops, set the layers and register each track in
-  `docs/provenance/music.md` (the licence rules are in `docs/LICENSING_REGISTER.md`).
+The game plays each track in layers: drums first, then bass, then the rest fade in as the city falls (D-125). You don't
+need to make it loop or end cleanly: I cut the loop from the middle of the take.
 
-**Stems I need from each track**, in the order they fade in as the city falls:
-1. Drums and percussion (the opening layer, playing on its own at first).
-2. Bass.
-3. Lead (brass, guitar or synth).
-4. Choir and pads (only in the final part of the city's ruin).
+Field names below are Suno's own (help.suno.com, September 2026). I couldn't see your signed-in page, so if a name
+differs on your screen, tell me what you see and I'll fix this file.
 
----
+## Steps (about 5 minutes per city)
+1. Go to suno.com/create and choose **Custom** at the top of the form.
+2. Model picker (top-right of the form): **v6**.
+3. Turn on **Instrumental**.
+4. Paste the city's text below into **Styles**.
+5. Open **Advanced Options**:
+   - **Exclude**: paste the exclude line below.
+   - **Weirdness**: about 35% (50% is "normal"; lower stays closer to the prompt).
+   - **Style Influence**: towards **Strong** (about 70%).
+6. Title it (for example "Kaiju city 1") and press **Create**. Each press gives you takes to compare.
+7. Keep the take that sounds most like slow, heavy menace, with no big drops or sudden changes. If both feel wrong,
+   press Create again rather than editing the prompt.
+8. Split it: on the kept song, open stem separation and choose **Auto Split** (up to 12 stems: drums, bass,
+   strings, keys and so on; 50 credits per split, included in Pro).
+9. Download: the song's **More Actions (...) > Download**, as **WAV**. Its stems come with the same download, and it
+   counts as one of your downloads.
+10. Send me the song and its stems. I cut the loops, set the layers and register the licence
+    (docs/provenance/music.md, rules in docs/LICENSING_REGISTER.md).
 
-## 1. Baby city
-The young croc's first hunt. Menacing, with a sly, playful edge: a predator testing its teeth.
+## Exclude (same for every city)
+> vocals, lyrics, electric guitar, distortion, metal, rock drums, EDM, dubstep, drops, fast tempo, trailer hits
 
-**Paste into Suno:**
-> Instrumental monster movie hunt theme, 100 BPM, D minor, taiko drums and tight snare, plucked low strings, muted brass
-> stabs, deep sub bass, sly menacing groove, building tension, cinematic, loopable, no vocals, steady tempo
+## City 1: the baby city (the quietest)
+**Styles:**
+> brooding cinematic underscore, monster movie, 75 bpm, D minor, soft low taiko pulse, low pizzicato strings, deep
+> sub bass drone, distant muted horns, sparse and restrained, ominous, slow build, steady tempo, instrumental
 
-## 2. Adolescent city
-The Behemoth meets the Anti Kaiju Taskforce: heavier, industrial, the city is fighting back.
+## City 2: the adolescent city (heavier)
+**Styles:**
+> brooding cinematic underscore, monster movie, 75 bpm, D minor, steady taiko and low toms, bowed low strings
+> ostinato, deep sub bass, slow low brass swells, darker and heavier, restrained, slow build, steady tempo, instrumental
 
-**Paste into Suno:**
-> Instrumental industrial orchestral action, 120 BPM, C minor, heavy taiko and metal percussion, distorted low synth
-> bass, aggressive brass ostinato, sirens woven into the rhythm, relentless driving pulse, cinematic kaiju battle,
-> loopable, no vocals, steady tempo
+## City 3: the adult city (the heaviest)
+**Styles:**
+> brooding cinematic underscore, monster movie, 75 bpm, D minor, deep war drums, low strings, massive slow low brass,
+> distant wordless choir swells, huge but unhurried, restrained, slow build, steady tempo, instrumental
 
-## 3. Adult city
-The Colossus: the apex predator crushing everything. Epic, huge, triumphant and terrifying.
-
-**Paste into Suno:**
-> Instrumental epic orchestral metal, 90 BPM half-time, E minor, massive war drums, downtuned guitars, roaring low brass,
-> huge wordless choir, apocalyptic and triumphant, godlike monster theme, cinematic, loopable, no vocals, steady tempo
-
----
-
-**Already decided:**
+## Already decided
 - The title screen has no music, only the city's sound (D-141).
 - City sound runs under the music: panic early, then eerie quiet (D-155).
-
-The tempos are my starting suggestions. If a take feels wrong at its tempo, try another; I only need each
-track to hold one tempo the whole way.
