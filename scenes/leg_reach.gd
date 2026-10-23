@@ -3,15 +3,18 @@ extends RefCounted
 ## ClipGait's leg solve (two-bone IK) without knee pops (motion gate, D-177; director 2026-10-23:
 ## "his legs so twitchy"). A leg near full stretch pops: the knee's bend snaps and its side flips,
 ## because the clip's near-straight knee gives the solve no side to bend to. So the body sinks
-## (its root bone) just enough that no leg reaches past REACH_MAX of its length, easing back up
-## over RISE_SECONDS, and the knee always bends toward its rest side (a pole that never vanishes).
+## (its root bone) just enough that no leg reaches past REACH_MAX of its length (eased in over
+## SINK_SECONDS, back up over RISE_SECONDS), and the knee always bends toward its rest side (a
+## pole that never vanishes).
 ## Presentation only.
 
 ## The furthest any leg reaches (share of its length), and the most the body may sink for it
 ## (hip heights).
-const REACH_MAX := 0.95
+const REACH_MAX := 0.92
 const SINK_MAX := 0.12
-## How fast a sunk body rises back to the clip's pose (s, an exponential ease).
+## How fast the body sinks, and rises back to the clip's pose (s, exponential eases): a heel strike
+## that sank it at once jolted the legs (shin jerk 7.5 deg/frame^2 at the other foot's plant).
+const SINK_SECONDS := 0.04
 const RISE_SECONDS := 0.12
 ## The rest knee's side, in leg lengths, added to the clip knee's side: it decides the bend only
 ## when the clip's knee is near straight.
@@ -35,15 +38,17 @@ func _init(gait: BipedGait) -> void:
 		_rest_pole.append(side.normalized() if side.length() > 0.0001 else Vector3.FORWARD)
 
 
-## Sinks gait's body so no leg reaches past REACH_MAX toward its toe target (world), or rises back.
+## Sinks gait's body so no leg reaches past REACH_MAX toward its toe target (world) with its foot
+## turned by its yaw (rad, ClipGait's hold), or rises back.
 ## (The gait is passed in, not kept: it owns this, and a kept one would be a reference cycle.)
-func lower_body(gait: BipedGait, toes: Array[Vector3], dt: float) -> void:
+func lower_body(gait: BipedGait, toes: Array[Vector3], yaws: Array[float], dt: float) -> void:
 	var s := gait.s
 	var need := 0.0
 	for i: int in toes.size():
 		var leg: BipedGait.Leg = gait.legs[i]
 		var foot := _rig.bone(leg.names[2])
-		var ankle := toes[i] - (_rig.tail_world(leg.names[2]) - foot.global_position)
+		var toe_off := _rig.tail_world(leg.names[2]) - foot.global_position
+		var ankle := toes[i] - Basis(Vector3.UP, yaws[i]) * toe_off  # the foot turned as it will be
 		var hip := _rig.bone(leg.names[0]).global_position
 		var most := REACH_MAX * (leg.l1 + leg.l2) * s
 		var flat := Vector2(ankle.x - hip.x, ankle.z - hip.z).length()
@@ -51,7 +56,8 @@ func lower_body(gait: BipedGait, toes: Array[Vector3], dt: float) -> void:
 		if Vector2(flat, drop).length() > most:
 			need = maxf(need, drop - sqrt(maxf(0.0, most * most - flat * flat)))
 	need = clampf(need, 0.0, SINK_MAX * gait.hip_height * s)
-	sink = maxf(need, sink * exp(-dt / RISE_SECONDS))
+	var ease := SINK_SECONDS if need > sink else RISE_SECONDS
+	sink = lerpf(sink, need, 1.0 - exp(-dt / ease))
 	var root := _rig.bone(_root)
 	root.global_position -= Vector3.UP * sink
 

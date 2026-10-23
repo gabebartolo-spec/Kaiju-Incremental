@@ -312,17 +312,15 @@ func _swing_tail(dt: float) -> void:
 ## re-solved to reach (two-bone IK, LegReach).
 func _plant_feet(pose: KaijuClips.Pose, dt: float) -> void:
 	var targets: Array[Vector3] = []
+	var fixes: Array[float] = []  # each foot's yaw: a planted one held, a lifted one easing back
 	for i: int in mini(legs.size(), 2):
 		targets.append(_foot_target(i, pose, dt))
-	_ik.lower_body(self, targets, dt)
+		var held := wrapf(_plant_yaw[i] - _hold.rig_yaw(), -PI, PI)
+		fixes.append(held if legs[i].planted else _yaw_fix[i] * exp(-FOOT_YAW_DECAY * dt))
+	_ik.lower_body(self, targets, fixes, dt)
 	for i: int in targets.size():
-		var leg := legs[i]
-		if leg.planted:
-			_yaw_fix[i] = _hold.held(
-				leg, s, targets[i], wrapf(_plant_yaw[i] - _hold.rig_yaw(), -PI, PI)
-			)
-		else:
-			_yaw_fix[i] *= exp(-FOOT_YAW_DECAY * dt)
+		var planted := legs[i].planted
+		_yaw_fix[i] = _hold.held(legs[i], s, targets[i], fixes[i]) if planted else fixes[i]
 		_ik.reach(self, i, targets[i], _yaw_fix[i])
 	_feet_primed = true
 
