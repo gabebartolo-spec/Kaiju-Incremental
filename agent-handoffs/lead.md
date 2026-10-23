@@ -36,7 +36,6 @@
   claw/breath origins. Next lead sim task after strike-delay (same code).
 - Heli fall (VFX, claude/heli-fall) stopped after 2 FIX ("drifts"): lead OK'd air.fall_seconds 2.2 -> 1.4 in that
   branch (agent placeholder; wrecks land ~0.8 s sooner; seeded tips come to the lead). Chutes = view (VFX).
-  Claw rake bd2582ea: visible 4-5 of 9 frames vs 6 asked.
 - D-188 "Keep going until critics pass" (no round cap) + "if something has failed 7 times in a row then our method is
   wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
   Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
