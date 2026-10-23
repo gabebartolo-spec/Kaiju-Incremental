@@ -77,7 +77,7 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
   blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
   no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
-- slot 2 now r7. Phase A DONE claude/living-predator a1504242 (period 4.07/6.17/8.23 s, push 0.50/0.54/0.45 %H; Colossus breath ~2 px), motion critic running. Was living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
+- slot 2 now r7. Phase A a1504242 critic FIX (breath invisible at game cam) -> breath r2 running in slot 3 (push 0.8 %H all stages, flank swell, 9 s clip). Was living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
   "way too much ... too fast, should be deep and slow like a behemoth": bars period 4/6/8 s, back/flank peak <=
   0.8/0.6/0.5% body height (>=0.25%), <=0.6%/s, damp the idle clip's baked breath at runtime (no re-bake); B/C wait for the gait
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
@@ -87,7 +87,7 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
 - D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
 - slot 3 LENT until the motion gate merges: gait-2 (Opus). claude/gait-fix c661d731 = merge of the lead's gait-step-len
   841f93e2: MOTION GATE ALL GREEN (motion 30/0, smoke 47/0, clips 14/0, gait 10/0; jerk young 2.7 / Behemoth 4.3).
-  681ce75c PR #175: critic FIX. Turn 260/311/278 deg/s peak is SIM (step rate x turn_ease x slice bell): lead takes to director, no sim edits. gait-2 doing view items (stop settle, tail, river-wall foot, bare-road recapture).
+  0ef8c0ab PR #175: critic r2 FIX = swivel from the SIM (inner foot is _swing pivot, 0.3-1 FL steps; turn 260/311/278 deg/s): lead asks director (heavier turn). gait-2 stands by; its lent slot runs breath r2 meanwhile.
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
   cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
