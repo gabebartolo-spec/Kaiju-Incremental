@@ -6,7 +6,7 @@
 #   3. export the "Windows Desktop" preset to out/windows/KaijuEvolution.exe (pck embedded;
 #      out/ is git-ignored);
 #   4. tools/pck_check.py: the fonts in the pack are real TTFs, not LFS pointers, and every
-#      assets/kaiju/*.kvox is in it byte for byte.
+#      assets/kaiju/*.kvox and *.kclip (the animation clips) is in it byte for byte.
 #
 # The run gets its own user data and editor settings (CLAUDE.md "Machine rules"); only the
 # Windows release templates are copied in from the real install
