@@ -43,6 +43,7 @@ var _xs: Array[float] = []
 var _leads: Array[float] = []
 var _feet := {"both_yaw": 0.0, "run": 0.0, "worst": 0.0, "lifts": 0, "last_yaw": INF}
 var _was_down: Array[bool] = [true, true]
+var _csv: FileAccess  # --csv: per frame and foot, the toe (world), the yaws (steps.py)
 
 
 func _initialize() -> void:
@@ -57,6 +58,9 @@ func _initialize() -> void:
 			_seconds = float(arg.substr(10))
 		elif arg.begins_with("--run="):
 			_run_index = int(arg.substr(6))
+		elif arg.begins_with("--csv="):
+			_csv = FileAccess.open(arg.substr(6), FileAccess.WRITE)
+			_csv.store_line("t,leg,planted,wtx,wtz,flen,yaw,cyaw,syaw,state")
 		elif arg.begins_with("--clear="):
 			var v := arg.substr(8).split_floats(",")
 			_clear = Rect2(v[0], v[1], v[2] - v[0], v[3] - v[1])
@@ -161,6 +165,8 @@ func _measure_feet() -> void:
 	var down := 0
 	for i: int in 2:
 		var planted: bool = gait.legs[i].planted
+		if _csv != null:
+			_log_foot(gait, i)
 		if _was_down[i] and not planted:
 			_feet["lifts"] = Num.i(_feet["lifts"]) + 1
 		_was_down[i] = planted
@@ -174,3 +180,29 @@ func _measure_feet() -> void:
 		_feet["worst"] = maxf(Num.f(_feet["worst"]), Num.f(_feet["run"]))
 	else:
 		_feet["run"] = 0.0
+
+
+## One --csv row: foot i's toe (world, flat), the foot's length, the body's, chest's and sim's yaw.
+func _log_foot(gait: ClipGait, i: int) -> void:
+	var rig := gait.rig
+	var names: PackedStringArray = gait.legs[i].names
+	var toe := rig.tail_world(names[2])
+	var chest := rig.bone("spine2").global_transform.basis.x
+	var heading := _rampage.sim.body.heading
+	_csv.store_line(
+		(
+			"%.4f,%d,%d,%.4f,%.4f,%.4f,%.2f,%.2f,%.2f,%s"
+			% [
+				_t,
+				i,
+				int(gait.legs[i].planted),
+				toe.x,
+				toe.z,
+				(toe - rig.bone(names[2]).global_position).length(),
+				rad_to_deg(gait.body_yaw),
+				rad_to_deg(atan2(-chest.x, -chest.z)),
+				rad_to_deg(atan2(-heading.x, -heading.y)),
+				gait.state
+			]
+		)
+	)
