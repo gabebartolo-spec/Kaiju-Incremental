@@ -144,8 +144,8 @@ func steer(dt: float, want: Vector2) -> float:
 	sim.facing = sim.powers.turn_toward(sim.facing, sim.facing.rotated(turn), dt)
 	var was := heading
 	_face(dt)
-	if turns_in_steps():  # a smooth turn too is made over the planted foot, never dragging the feet
-		_swing(was)
+	if turns_in_steps() and not dash.on():  # a turn too is made over the planted foot (D-177)
+		_swing(was, absf(turn))
 	return stride
 
 
@@ -204,14 +204,16 @@ func _turn_ease() -> float:
 	return lo + (Num.f(cfg["turn_ease_peak"]) - lo) * sin(PI * clampf(done, 0.0, 1.0))
 
 
-## A stepped turn swings the body about the foot that is down (since `was`): that foot stays put.
-func _swing(was: Vector2) -> void:
+## A turn swings the body about the foot that is down (since `was`): that foot stays put. Only the
+## `most` the stick turned this step swings it: a larger catch-up of the heading (the hand-over from
+## the river, where the body lies along the water) stays about the middle.
+func _swing(was: Vector2, most: float) -> void:
 	var both := fposmod(phase, 1.0) < Num.f(cfg["support_both"])  # the old foot is not up yet
 	var at := (_feet[0] + _feet[1]) * 0.5 if both else _feet[0]
 	if at.distance_to(sim.kaiju_pos) > 3.0 * _pivot.x * sim.body_scale():  # a dash or leap left them
 		_plant_both()
 		at = _feet[0]
-	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(was.angle_to(heading))
+	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(clampf(was.angle_to(heading), -most, most))
 
 
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),
