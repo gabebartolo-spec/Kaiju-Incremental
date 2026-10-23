@@ -12,6 +12,9 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const CROP := Vector2i(640, 480)
 const FRAME := 1.0 / 60.0
+## The camera log: a focus move (world units) or a trauma jump worth a line.
+const LOG_FOCUS := 0.05
+const LOG_TRAUMA := 0.05
 ## The stills: name -> seconds from the sim's hit (the load's end is its own).
 const SHOTS := {"hit_m1": -FRAME, "hit_0": 0.0, "hit_p2": 2.0 * FRAME, "hit_p5": 5.0 * FRAME}
 
@@ -53,8 +56,24 @@ func _run() -> void:
 	var start := Engine.get_process_frames()
 	var swing: BipedSwing = (rampage._kaiju._rig.gait as BipedGait).swing
 	var taken: Array[String] = []
+	var last_focus: Vector3 = rampage._follow.focus
+	var last_trauma := 0.0
+	var dumped := false
 	while Engine.get_process_frames() - start < int(_seconds * 60.0):
 		await process_frame
+		var moved := (rampage._follow.focus - last_focus).length()
+		var trauma: float = rampage.shake.trauma
+		if moved > LOG_FOCUS or trauma > last_trauma + LOG_TRAUMA:  # what moves the camera, by rake time
+			var line := (
+				"CAM frame %d rake_t=%.3f focus_moved=%.3f "
+				% [Engine.get_process_frames() - start, swing.rake_time(), moved]
+			)
+			print(line, "trauma=%.3f dip=%.3f" % [trauma, rampage._step_dip])
+		last_focus = rampage._follow.focus
+		last_trauma = trauma
+		if not dumped and swing.rake_time() >= 0.5:  # once, mid-settle: what small things sit near him
+			dumped = true
+			_dump_near(rampage)
 		if not _shots:
 			continue
 		var t := swing.rake_time()
@@ -68,6 +87,34 @@ func _run() -> void:
 				_snap(rampage, "stage%d_%s" % [_stage, shot_name], swing)
 	print("capture_claw_rake: stills %s" % [taken])
 	quit()
+
+
+## Prints the visible 3D nodes within a few body lengths of the kaiju that are small or glowing, by
+## class, name and colour, to find a stray marker on his back.
+func _dump_near(rampage: Rampage) -> void:
+	var at: Vector3 = rampage._kaiju_at
+	var reach := 12.0 * rampage.sim.body_scale()
+	var shown := 0
+	for node: Node in rampage.find_children("*", "VisualInstance3D", true, false):
+		var item := node as Node3D
+		if not item.is_visible_in_tree() or item.global_position.distance_to(at) > reach:
+			continue
+		var color := Color.BLACK
+		if (
+			item is MeshInstance3D
+			and (item as MeshInstance3D).material_override is StandardMaterial3D
+		):
+			color = ((item as MeshInstance3D).material_override as StandardMaterial3D).albedo_color
+		if item is Label3D or item is Sprite3D or item is GPUParticles3D or color.g > 0.6:
+			print(
+				(
+					"NEAR %s %s at %s color %s"
+					% [item.get_class(), item.name, item.global_position - at, color]
+				)
+			)
+			shown += 1
+			if shown >= 40:
+				return
 
 
 func _snap(rampage: Rampage, shot_name: String, swing: BipedSwing) -> void:
