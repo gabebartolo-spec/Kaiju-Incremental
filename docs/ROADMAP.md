@@ -418,6 +418,10 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "adolescent walking animations are fucked, his legs so twitchy, and he swivels rather than turns". Returning
   complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
   exact fix and pass bar first; any sim part to the lead). Status: diagnosing, top of the VFX lead's next slot.
+- "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
+  the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
+  half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
+  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status: fixing.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
   briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
   credits), he picks by ear. Owner: lead. Status: waiting on his Suno sign-in in the built-in browser.
