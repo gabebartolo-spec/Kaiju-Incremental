@@ -538,3 +538,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   dangerously / croc hunches guardedly, prepared to leap at anything nearby / the dragon breathes heavily and steadily,
   tongue darting, drool dripping, snorting steamy gusts from its nostrils". Owners: serpent slither builder (coil on
   stop), lead (Komodo idle in Cascadeur, steam and drool effects), croc with its new model. Status: not started.
+- Final boss, the mecha chimera (D-211, director 2026-10-24): "a strange chimera hybrid of all three, in a mecha form
+  as the final boss ... snake head, croc body and athleticism, dragon massive size and power and it shoots a tribeam of
+  corrosive acid, lightning and poison out of its mouth". A full machine built from your DNA; last city after 100% of
+  every reptilian's upgrades. Owner: tripo-komodo (free concepts now), lead. Status: concepts started.

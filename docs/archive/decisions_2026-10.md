@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-116 · Director · Heartbeat sound: the director makes it in ElevenLabs
+Why: Asked 2026-10-21; the lead gives the prompt and length, then wires and tunes it.
+
+## 2026-10-21 · D-115 · Director · Fire: wind fixed per run; non-breath species light fires through tree augments
+Why: Asked 2026-10-21. His words: "fire augmentation possible in the upgrade tree, i.e. insectoid 'searing venom' cephalopod 'flammable oil spray'". Fire as gameplay (R 26) is the next build after the current batch.
+
 ## 2026-10-21 · D-112 · Director · The croc's signature is "Lightning Breath", its ultimate "Thunder Beam"
 Why: D-108 retired "Atomic Breath" for the forked white-hot lightning; asked during the UI redesign QC (species card
 and tree still said Atomic Breath / Atomic Beam). Changes: species.json, the species card, HUD and tree copy.
