@@ -4,6 +4,9 @@ extends RefCounted
 ## where its first footfall falls, how many frames one step takes and where its feet sit fore-aft,
 ## so ClipGait plants its feet where the sim turns the body. Presentation only.
 
+## The most a foot spot is bent round (rad): a hard turn is caught up by catch steps instead.
+const BEND_MAX := 0.1
+
 var clips: KaijuClips
 var land := 0.0  # the walk clip's first footfall (frame), the sim's step phase 0
 var step_frames := 1.0  # walk clip frames in one step (half a cycle)
@@ -32,6 +35,12 @@ func frame_at(step_phase: float) -> float:
 func shortened(toe: Vector3, step_ratio: float) -> Vector3:
 	toe.z = foot_mid + (toe.z - foot_mid) * step_ratio
 	return toe
+
+
+## A foot spot of the clip (rig space) bent onto the arc of a body turning `bend` rad per rig unit
+## it walks, about its root: a planted foot stays where it stands in the world as the body turns.
+func curved(toe: Vector3, bend: float) -> Vector3:
+	return toe.rotated(Vector3.UP, clampf(bend * (toe.z - foot_mid), -BEND_MAX, BEND_MAX))
 
 
 ## The walk clip's feet, mean fore-aft position over the loop (rig space).

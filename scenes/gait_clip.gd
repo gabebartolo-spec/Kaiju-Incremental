@@ -15,16 +15,6 @@ const TURN_TRIGGER := 0.6
 ## after it (the tail's whip settles about half a second after the body stops).
 const TURN_PAD := 6
 const TURN_SETTLE := 24
-## A foot that lifts after the body turned over it is left behind its clip path: it stays where it
-## stood as it lifts, then swings to the path (which the body carries round) in LAG_SECONDS, an arc
-## lifted LAG_LIFT of the way it has to go, at most LAG_LIFT_MAX hip heights, never a glide along
-## the ground (motion critic 2026-10-22: "the foot skates"). Walking, it is on the path by
-## LAG_SWING of the clip's swing however quick the steps (a quicker swing than LAG_SECONDS landed
-## the young croc's foot short and caught it up with a catch step every other plant).
-const LAG_SECONDS := 0.25
-const LAG_SWING := 0.85
-const LAG_LIFT := 0.3
-const LAG_LIFT_MAX := 0.15
 ## How fast a lifted foot's toes swing back to the clip's yaw after the body turned over them (1/s).
 const FOOT_YAW_DECAY := 12.0
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
@@ -57,8 +47,10 @@ var clips: KaijuClips
 ## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
 var state := "idle"
 var clip_time := 0.0
-## Walk cycles travelled so far (distance / stride), for tests and captures.
+## Walk cycles travelled so far (distance / stride), for tests and captures, and walk clip frames
+## played so far.
 var walk_cycles := 0.0
+var walk_frames := 0.0
 ## The tail spring's swing from the body's turning, and as shown (ClipTail; for tests and captures).
 var tail_swing := 0.0
 var tail_shown := 0.0
@@ -69,11 +61,9 @@ var _roar_queued := false
 var _turn_from := 0.0
 var _turn_span := {}  # turn clip -> Vector2(first, last frame of the yaw)
 var _steps: ClipSteps  # the walk clip against the sim's step clock
+var _path: SwingPath  # a lifted foot's way to its clip path
 var _lock: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lag: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
-var _air_s: Array[float] = [0.0, 0.0]  # seconds since it lifted
-var _lift_frame: Array[float] = [0.0, 0.0]  # _walk_frames when it lifted
-var _walk_frames := 0.0  # walk clip frames played so far
 ## The body's world yaw when each foot went down, and the turn (rad) its toes are held to: a planted
 ## foot keeps its world yaw while the body turns over it, and swings back to the clip's in the air.
 var _plant_yaw: Array[float] = [0.0, 0.0]
@@ -110,6 +100,7 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	for turn: String in ["turn_left", "turn_right"]:
 		_turn_span[turn] = clips.yaw_span(turn)
 	_steps = ClipSteps.new(clips)
+	_path = SwingPath.new(_steps.swing_frames)
 	_jaw_peak = clips.pose_at("roar", ROAR_PEAK_FRAME).turns[clips.bones.find("jaw")]
 	var tail_bones := 0
 	for bone_name: String in clips.bones:
@@ -204,7 +195,7 @@ func _walk_clock(dt: float) -> void:
 		clip_time = _steps.frame_at(step_phase)
 	else:
 		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
-	_walk_frames += fposmod(clip_time - was, float(clips.frames_of("walk")))
+	walk_frames += fposmod(clip_time - was, float(clips.frames_of("walk")))
 
 
 func _go(next: String, at: float) -> void:
@@ -346,7 +337,10 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 		target = _put_down(i, target, clip_toe)
 	else:
 		_stomp.forget(i)
-		target = _air_target(i, dt, clip_toe)
+		if _was_planted[i]:
+			_path.lift(i, walk_frames, clip_toe, _lock[i])
+		target = _path.target(self, i, dt, clip_toe)
+		_lag[i] = _path.lag[i]
 	leg.planted = planted
 	_was_planted[i] = planted
 	return target
@@ -367,25 +361,15 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 	return _lock[i]
 
 
-## Where a foot in the air is: it stood at `_lock` as it lifted and swings to the clip's path in an
-## arc (LAG_SECONDS, or LAG_SWING of a quicker swing), so a foot the body turned over is lifted
-## before it sweeps, never glides.
-func _air_target(i: int, dt: float, clip_toe: Vector3) -> Vector3:
-	_air_s[i] = 0.0 if _was_planted[i] else minf(_air_s[i] + dt, LAG_SECONDS)
-	_lift_frame[i] = _walk_frames if _was_planted[i] else _lift_frame[i]
-	var swung := (_walk_frames - _lift_frame[i]) / (LAG_SWING * _steps.swing_frames)
-	var k := clampf(maxf(_air_s[i] / LAG_SECONDS, swung if state == "walk" else 0.0), 0.0, 1.0)
-	var gap := _lock[i] - clip_toe  # from where it stood to the path
-	_lag[i] = gap * (1.0 - smoothstep(0.0, 1.0, k))
-	var lift := minf(LAG_LIFT * gap.length(), LAG_LIFT_MAX * hip_height * s)
-	return clip_toe + _lag[i] + Vector3.UP * lift * sin(PI * k)
-
-
 ## A foot spot of the clip with its fore-aft travel shortened to the step the sim takes (a quick
-## step in a turn is a short one, ClipSteps.shortened).
+## step in a turn is a short one, ClipSteps.shortened); a body that turns smoothly (the young
+## croc, D-131) bends it onto the curve it walks (ClipSteps.curved: its wide-set planted feet
+## stayed straight and were re-stepped every plant on a held curve, motion gate 2.2 a second).
 func _stepped(toe: Vector3) -> Vector3:
-	if state != "walk" or step_phase == INF:
+	if state != "walk":
 		return toe
+	if step_phase == INF:  # a smooth turner (D-131) walks the curve its body turns
+		return _steps.curved(toe, -yaw_rate / maxf(speed, 0.01) * s)
 	return _steps.shortened(toe, step_ratio)
 
 
