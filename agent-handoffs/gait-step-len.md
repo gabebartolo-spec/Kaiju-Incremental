@@ -27,6 +27,13 @@ claude/gait-step-len:claude/gait-step-len`). No PR (the lead opens it).
 - tests/lib/smoke_stage_gait.gd (new, called from smoke_step_turn.gd, which replaces its adult-only stride check):
   at all three stages the data step and the sim's measured step (distance / phase) vs the clip's half-stride, and the
   held-curve route (stick swept at 30 deg/s from t=2 s, 6 s, the motion gate's) aloft yaw for the stepping stages.
+- Lead 15:1x: the smoke gait tests now drive each stage with its own tuning (CityGrowth.for_stats(stats), as
+  Rampage and the motion gate do; the young croc walks at its stage's 3.3, not the adult's 5.5), in
+  smoke_stage_gait.gd and in smoke_step_turn.gd `_turn`; the adult-only stride/step_len outputs of `_turn` are gone.
+  Young and baby bars are rechecked after 16:01 (the baby's 0.60 s turn bar may move: re-pin only if measured).
+- Lead 15:1x: if the held-curve aloft yaw stays above 0, also apply a smooth turn only while a foot is planted
+  (`_planted()`: the first slice_open of each step); patch ready in the scratchpad (gait_planted_patch.py), measure
+  both variants and report the numbers with the push.
 ## Review packet (shared sim rules, reviewer is not the author)
 Transitions: stepped turn start/stop (`_real_turn`), footfall bookkeeping in walked(), the step clock (phase) per
 stage, set-off from a stand (`_stand`), the sweep split. Invariants: tapped turns unchanged (`_smooth_yaw` only grows

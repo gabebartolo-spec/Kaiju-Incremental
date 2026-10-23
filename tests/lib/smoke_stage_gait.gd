@@ -107,7 +107,8 @@ static func _rig(levels: Dictionary, root: Node) -> Dictionary:
 	var layout: Array[Dictionary] = [
 		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
 	]
-	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	var tuning := CityGrowth.for_stats(stats)  # the stage's own tuning and speed, as played
+	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2(0, 30)
 	var colors: Dictionary = def["colors"]
