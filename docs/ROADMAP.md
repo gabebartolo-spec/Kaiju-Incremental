@@ -423,7 +423,11 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
-  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status: fixing.
+  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status:
+  SHIP claude/night-fog 4524e90c (dusk fog 0.0035, night 0.005, toppled-tower dust dims at night; fresh critic: the
+  left haze is gone, dusk still reads as dusk); PR opening, lead merges on green. Found alongside, queued (VFX lead):
+  the tower see-through fade draws a cross-hatch that follows the camera beside the kaiju; the kaiju's silhouette is
+  weak at night; the D-154 late-rampage haze is unbuilt.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
   briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
   credits), he picks by ear. Then, in order: "too 'heroic'" (D-176 darker, Godzilla), "all sound more or less the
