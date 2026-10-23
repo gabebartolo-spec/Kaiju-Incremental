@@ -1,6 +1,10 @@
 {
- "glow": "flank_row",
+ "glow": "abyssal",
  "fold": 0.3,
  "fold_color": "000d0c",
- "eye_glow": false
+ "patch": 0.12,
+ "tint": null,
+ "jaw_tint": "2fb8aa",
+ "tail_belly_blend": 0.7,
+ "min_run": 10
 }

@@ -1,6 +1,10 @@
 {
  "glow": null,
- "fold": 0.42,
- "fold_color": "8a5a50",
- "eye_glow": false
+ "fold": 0.34,
+ "fold_color": "a08a5c",
+ "patch": 0.1,
+ "tint": "f0a89c",
+ "jaw_tint": null,
+ "tail_belly_blend": 0.0,
+ "min_run": 10
 }

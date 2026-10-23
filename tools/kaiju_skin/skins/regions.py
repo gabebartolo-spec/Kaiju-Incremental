@@ -39,7 +39,13 @@ def classify(pos, col, bone, nrm, names):
     # teeth: the bright cells inside the mouth (the sculpt has no separate tooth cells; see README)
     reg[isb("head1") & (lum > 0.68) & (sat < 0.45) & (ny < -0.2)] = TEETH
     reg[isb("jaw") & (lum > 0.68) & (sat < 0.45) & (ny > 0.3)] = TEETH
-    # eyes: the small saturated amber patch on the head, high on the skull
-    eye = head & (sat > 0.75) & (c[:, 0] > c[:, 1]) & (c[:, 1] > c[:, 2]) & (c[:, 2] < 0.2) & (pos[:, 1] > 270)
-    reg[eye] = EYES
+    # eyes: the amber patch on the head, high on the skull; keep only the two real eye cells (a ball of about 2
+    # voxels round the most amber cell on each side), not the brow or cheek cells that share the colour
+    cand = head & (sat > 0.75) & (c[:, 0] > c[:, 1]) & (c[:, 1] > c[:, 2]) & (c[:, 2] < 0.2) & (pos[:, 1] > 270)
+    score = np.where(cand, c[:, 0] - 0.5 * (c[:, 1] + c[:, 2]), -9)
+    for side in (-1, 1):
+        sel = np.nonzero(cand & (np.sign(pos[:, 0]) == side))[0]
+        if len(sel):
+            ctr = pos[sel[np.argmax(score[sel])]].astype(float)
+            reg[sel[np.linalg.norm(pos[sel] - ctr, axis=1) <= 2.0]] = EYES
     return reg
