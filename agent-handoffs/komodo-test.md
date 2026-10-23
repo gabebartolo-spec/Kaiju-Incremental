@@ -6,7 +6,22 @@ Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). NO PR, n
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State: holding (no new work) until the motion critic's fixes on the v2 clips come back via the lead
+## State: D-201 (critic round 2, "Animations lead") done and pushed; awaiting the lead
+
+## D-201 (heavy only)
+- SIM `sim/body_contact.gd`: body_class sim block by species_stage: turn <= 30 deg/s, accel 20 deg/s^2, smooth (no
+  step slices), the beam's turn speed no longer overrides it; walk start over start_s 0.8, stop over stop_s 0.8
+  (`rampage_sim.gd` rolls on while stride > 0). FEET `gait_clip.gd`: walk clock by distance, no restep, no standing
+  stomp lift, no step shortening; a roar on the move keeps the walk on legs/pelvis/tail (`_walking_legs`). TAIL:
+  sway 1.6 deg per bone, 2.13 s, lag 0.45 rad/bone, always. DIP: down over 0.03 s, back over 0.3 s, per plant.
+- Probe (run 3-9 s): max body yaw in 0.3 s 15 deg (bar 45; was 67); plants L 4.42 5.97 7.50, R 3.58 5.17 6.77 8.13
+  (alternating, 0.63-0.8 s apart, no same-frame pair); camera bottom 1-2 frames after a plant; tail tip half-range
+  3.9 m (~11 deg).
+- NEW DEFECT: planted-foot drift grows to 7.6 units by 4.5 s (probe `drift` column; idle during the rise, then
+  walk set-off and the roar on the move). With no catch steps the lock target ends out of the leg's reach. smoke:
+  "reptilian's planted feet hold" 13.2 > 0.1 units, "a planted foot holds its spot" 414 cm. Needs a call.
+- Suites: clips 1 fail (tail-owner: off the clip 0.0275 rad from the sway; turn bend 0.064). smoke 5 fails: foot
+  drift x2 (above), 90 deg turn takes inf s (1.0-1.25 s bar is the croc's), yaw slices 40%, foot yaw 20.2 deg.
 
 ## body_class heavy numbers (data/tuning.json, PLACEHOLDER for the critic)
 - footfall: strength_min 0.85, dust_gain 2.0, dip 0.35 (x body scale x weight), dip_recover 6.0, shake_source
@@ -54,8 +69,8 @@ gitignored).
 - clips: 14 checks, 1 failure `_check_tail_owner` (standing turn bend 0.047 < 0.12; was 0.017). Tail lag passes.
 - smoke: 47 checks, 3 failures, all smoke_step_turn: both feet up 36 frames, yaw in slices 78% < 80%, 12.9
   skates/s. Planted-foot-yaw and Colossus curve now pass. D-200's eased body yaw no longer comes in the sim's slices.
-- Clips (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden): scratchpad `komodo/cap/komodo_game_cam_v2.mp4`
-  (game camera, 3-9 s) and `komodo_side_cam_v2.mp4` (low 3/4 side, 2.5-8.5 s).
+- Clips (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden): scratchpad `komodo/cap/komodo_game_cam_v3.mp4`
+  (game camera, 3-9 s) and `komodo_side_cam_v3.mp4` (low 3/4 side, 2.5-8.5 s); v2 = before D-201.
 
 ## Open / for the lead
 - smoke_step_turn reds parked (D-193); first suspect: ClipGait catch steps. D-200 changes what they measure.

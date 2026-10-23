@@ -36,7 +36,7 @@ func _run() -> void:
 	var rig: KaijuRig = kaiju._rig
 	var f := FileAccess.open(_out, FileAccess.WRITE)
 	f.store_line(
-		"t,state,clip_t,speed,heading_deg,body_yaw_deg,plants,dip,trauma,cam_y,tail_tip_x,scale,neck_deg"
+		"t,state,clip_t,speed,heading_deg,body_yaw_deg,plants,dip,trauma,cam_y,tail_tip_x,scale,neck_deg,drift"
 	)
 	var frames := 0
 	while frames < int(_seconds * 60.0) and not rampage.sim.over:
@@ -66,6 +66,7 @@ func _run() -> void:
 			"%.3f" % (tip.x * rig.global_transform.basis.get_scale().x),
 			"%.3f" % rampage.sim.body_scale(),
 			"%.2f" % rad_to_deg(neck),
+			"%.3f" % kaiju.foot_drift(),
 		]
 		f.store_line(",".join(row))
 	f.close()

@@ -56,6 +56,9 @@ var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
+## A heavy body's turn and pace (tuning "body_class" sim, D-201; {} for none): its animations lead.
+var _heavy: Dictionary = {}
+var _classes: Dictionary = {}  # tuning "body_class"
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -65,6 +68,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	heading = sim.facing
 	_last_heading = heading
 	_step_len = Num.f(cfg["step_len"])
+	_classes = tuning.get("body_class", {})
 	dash = Dash.new(self, cfg)
 	_volume = BodyVolume.new(sim, cfg)
 
@@ -83,6 +87,22 @@ func use_species(species_id: String) -> void:
 		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
+	_heavy = _class_sim(species_id)
+
+
+## The sim block of this species' weight class at the sim's growth stage (body_class), or {}.
+func _class_sim(species_id: String) -> Dictionary:
+	if _classes.is_empty():
+		return {}
+	var by_kaiju: Dictionary = _classes["kaiju"]
+	var stage_names: Array[String] = ["baby", "adolescent", "adult"]
+	var kind := "%s_%s" % [species_id, stage_names[clampi(sim.size_tier() - 1, 0, 2)]]
+	if not by_kaiju.has(kind):
+		return {}
+	var all: Dictionary = _classes["classes"]
+	var found: Dictionary = all[str(by_kaiju[kind])]
+	var block: Dictionary = found.get("sim", {})
+	return block
 
 
 func active() -> bool:
@@ -119,7 +139,7 @@ func length() -> float:
 func steer(dt: float, want: Vector2) -> float:
 	if want == Vector2.ZERO:
 		_stand(dt)
-		return 0.0
+		return stride
 	if _standing:
 		phase = roundf(phase)  # sets off on a footfall: both feet down
 		step_ratio = 1.0
@@ -131,9 +151,10 @@ func steer(dt: float, want: Vector2) -> float:
 	# Sets off at full pace at once, but ramped over walk_off_s, not one frame (the motion critic,
 	# 2026-10-22: "the walk start jumps to full speed"); after it the stride eases to the push.
 	_walked_s += dt
-	var launching := _walked_s < Num.f(cfg["walk_off_s"])
+	var off_s := Num.f(_heavy["start_s"]) if not _heavy.is_empty() else Num.f(cfg["walk_off_s"])
+	var launching := _walked_s < off_s
 	var ease := 1.0 if launching else minf(1.0, Num.f(cfg["stride_ease"]) * dt)
-	stride = minf(lerpf(stride, want.length() * keep, ease), stride + dt / Num.f(cfg["walk_off_s"]))
+	stride = minf(lerpf(stride, want.length() * keep, ease), stride + dt / off_s)
 	var pace := _pace(dt, stepped)  # (top turn speed, its acceleration)
 	var aim := signf(turn_left) * minf(pace.x, sqrt(2.0 * pace.y * absf(turn_left)))
 	_spin = move_toward(_spin, aim, pace.y * dt)
@@ -151,7 +172,9 @@ func steer(dt: float, want: Vector2) -> float:
 
 ## The stick is at rest: the body stands, and the next push sets off on a footfall.
 func _stand(dt: float) -> void:
-	stride = 0.0
+	# a heavy body comes to a stop over stop_s (D-201); the rest stop at once
+	var stop := Num.f(_heavy["stop_s"]) if not _heavy.is_empty() else 0.0
+	stride = move_toward(stride, 0.0, dt / stop) if stop > 0.0 else 0.0
 	turn_left = 0.0
 	_spin = 0.0
 	_cadence = 0.0
@@ -182,6 +205,10 @@ func _steps_this_turn() -> bool:
 ## How fast the body may turn now, Vector2(top rad/s, rad/s^2); a stepped turn also eases in the
 ## cadence it adds to the step clock (quick short steps).
 func _pace(dt: float, stepped: bool) -> Vector2:
+	if not _heavy.is_empty():  # its turn clip's pace, whatever the beam (D-201)
+		_cadence = 0.0
+		var heavy_top := deg_to_rad(Num.f(_heavy["turn_deg_s"]))
+		return Vector2(heavy_top, deg_to_rad(Num.f(_heavy["turn_accel_deg_s2"])))
 	var top := lerpf(_rate("turn_rate_still"), _rate("turn_rate"), stride)
 	var accel := Num.f(cfg["turn_accel"])
 	if sim.powers.beam_left > 0.0:  # the beam follows the stick at its own pace, whatever the size
@@ -240,7 +267,7 @@ func stepping() -> bool:
 ## True when the turn is made in steps: a body with planted feet, except while the beam is on,
 ## which is swept smoothly by the stick (its own turn speed, SpeciesPowers.turn_toward).
 func turns_in_steps() -> bool:
-	return stepping() and sim.powers.beam_left <= 0.0
+	return stepping() and sim.powers.beam_left <= 0.0 and _heavy.is_empty()
 
 
 ## The step clock for the legs to follow (steps walked), INF for a body that does not step.
@@ -306,7 +333,9 @@ func _hold(from: Vector2, from_heading: Vector2) -> void:
 ## so the two stay one; only a facing set from outside is caught up with.
 func _face(dt: float) -> void:
 	var most := _rate("turn_rate_still") * dt
-	if turns_in_steps():
+	if not _heavy.is_empty():
+		most = deg_to_rad(Num.f(_heavy["turn_deg_s"])) * dt
+	elif turns_in_steps():
 		# a slice turns quicker than the average (steer), most so at the middle of a turn
 		most *= 0.5 * PI * maxf(1.0, Num.f(cfg["turn_ease_peak"])) / Num.f(cfg["slice_open"])
 	heading = heading.rotated(clampf(heading.angle_to(sim.facing), -most, most))

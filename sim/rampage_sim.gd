@@ -217,7 +217,9 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	var old_facing := facing
 	var moving := move.length() > 0.05
 	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
-	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
+	# along the body's heading as it turns (BodyContact.steer): a turn walks an arc; a heavy body
+	# still rolls on while it comes to a stop (stride > 0 with the stick at rest)
+	if moving or stride > 0.0:
 		var speed := stat("speed") * powers.speed_mult() * stride
 		kaiju_pos = clamp_to_arena(kaiju_pos + body.heading * speed * dt)
 		body.walked(speed * dt, dt)

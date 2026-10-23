@@ -63,6 +63,7 @@ var _step_dip := 0.0
 ## A heavy body's footfall (tuning "body_class" footfall; {} for none) and its camera drop now.
 var _heavy: Dictionary = {}
 var _heavy_dip := 0.0
+var _heavy_peak := 0.0  # the drop this footfall goes down to (0: on its way back up)
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
 var _fx_rng: RandomNumberGenerator
@@ -318,7 +319,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 		strength = maxf(strength, Num.f(_heavy["strength_min"]))
 		var hit := shake.source(str(_heavy["shake_source"]))
 		add_trauma(hit + (shake.source("stomp") if stomped else 0.0), at)
-		_heavy_dip = maxf(_heavy_dip, Num.f(_heavy["dip"]) * sim.body_scale() * strength)
+		_heavy_peak = maxf(_heavy_dip, Num.f(_heavy["dip"]) * sim.body_scale() * strength)
 		sfx.footstep(strength, Num.f(_heavy["thud_db"]), Num.f(_heavy["thud_pitch"]))
 	else:
 		sfx.footstep(strength)
@@ -364,9 +365,13 @@ func _place_camera(delta: float) -> void:
 	var hold := sim.body.dash.on() or _ability.leaping()
 	_follow.step_lead(_kaiju.position, sim.body_scale(), hold, delta)
 	_camera.position = _follow.eye()
-	if not _heavy.is_empty():  # a heavy footfall drops the camera at once, then it rises back
-		var back := Num.f(_heavy["dip_recover"]) * _heavy_dip + 0.05
-		_heavy_dip = move_toward(_heavy_dip, 0.0, delta * back)
+	if not _heavy.is_empty():  # a heavy footfall drops the camera in a frame or two, then rises
+		var top := Num.f(_heavy["dip"]) * sim.body_scale()
+		if _heavy_peak > 0.0:
+			_heavy_dip = move_toward(_heavy_dip, _heavy_peak, top * delta / Num.f(_heavy["dip_down_s"]))
+			_heavy_peak = 0.0 if _heavy_dip >= _heavy_peak else _heavy_peak
+		else:
+			_heavy_dip = move_toward(_heavy_dip, 0.0, top * delta / Num.f(_heavy["dip_recover_s"]))
 		_camera.position.y -= _heavy_dip * motion
 	var nod := shake.turn(sim.body_scale(), motion).y
 	_camera.look_at(_follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta))

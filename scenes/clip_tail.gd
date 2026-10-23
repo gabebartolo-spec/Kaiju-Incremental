@@ -38,6 +38,11 @@ var _drag_max := DRAG_MAX
 var _drag_smooth := DRAG_SMOOTH
 var _delay := DELAY
 var _always := false
+## A sway that never stops (rad per bone, s a sway, rad each bone trails the one before; 0: none).
+var _sway := 0.0
+var _sway_period := 1.0
+var _sway_lag := 0.0
+var _time := 0.0
 
 
 ## tune: a weight class's tail (tuning "body_class"), or {} for the constants above.
@@ -55,12 +60,16 @@ func _init(bones: int, tune: Dictionary = {}) -> void:
 	_drag_smooth = Num.f(tune["drag_smooth"])
 	_delay = Num.f(tune["delay"])
 	_always = tune["always"] == true
+	_sway = deg_to_rad(Num.f(tune.get("sway_deg", 0.0)))
+	_sway_period = Num.f(tune.get("sway_period_s", 1.0))
+	_sway_lag = Num.f(tune.get("sway_lag", 0.0))
 
 
 ## One frame: the body's yaw now; `walking` (a standing turn's clip carries its own whip, unless
 ## the class drives the tail always).
 func step(body_yaw: float, walking: bool, dt: float) -> void:
 	walking = walking or _always
+	_time += dt
 	if not _primed:  # the first frame: no turning yet
 		_primed = true
 		_last_yaw = body_yaw
@@ -82,4 +91,5 @@ func step(body_yaw: float, walking: bool, dt: float) -> void:
 ## The bend (rad about the world's up) bone `i` takes on top of the clip's pose.
 func bend(i: int) -> float:
 	var k := float(i) / maxf(1.0, _at.size() - 1.0)
-	return _at[i] * (_gain.x + _gain.y * k)
+	var sway := _sway * sin(TAU * _time / _sway_period - _sway_lag * i)
+	return _at[i] * (_gain.x + _gain.y * k) + sway

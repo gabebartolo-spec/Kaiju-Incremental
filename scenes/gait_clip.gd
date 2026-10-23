@@ -84,6 +84,12 @@ var _look := 0.0  # the head's look-ahead into the turn (rad)
 ## A heavy body's aim (tuning "body_class" aim, D-200; {} for none): the head shows the heading,
 ## the body follows slower.
 var _aim: Dictionary = {}
+## A heavy body's feet follow the clip alone (D-201): its walk clock is the distance walked, its
+## feet plant on the clip's planted bits, never a catch step, re-plant or standing stomp lift.
+var _clip_feet := false
+## A heavy body roaring on the move: its legs keep the walk clip (frames walked by distance) under
+## the roar's upper body, so its feet still plant where the clip does.
+var _legs_t := 0.0
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -111,6 +117,8 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 			tail_bones += 1
 			_tail_tip = bone_name
 	_aim = p_rig.body_class().get("aim", {})
+	var feet: Dictionary = p_rig.body_class().get("feet", {})
+	_clip_feet = feet.get("clip_plants_only", false) == true
 	var tail_tune: Dictionary = p_rig.body_class().get("tail", {})
 	_tail = ClipTail.new(tail_bones, tail_tune)
 	_hold = FootHold.new(rig)
@@ -128,6 +136,8 @@ func update(delta: float) -> void:
 	var pose := clips.pose_at(state, clip_time)
 	if _blend < 1.0 and not _from.is_empty():
 		pose = KaijuClips.mix(clips.pose_at(_from, _from_time), pose, smoothstep(0.0, 1.0, _blend))
+	if _clip_feet:
+		_walking_legs(pose, dt)
 	_apply(pose, dt)
 	_look_ahead(dt)
 	_slam_tail(roar_was)
@@ -143,7 +153,8 @@ func roar() -> void:
 ## Standing, a sim stomp lifts a foot and drives it down for the ring and cracks (ClipStomp);
 ## walking or turning, the clip footfalls deliver it; roaring, the feet stay planted.
 func stomp() -> void:
-	_stomp.stomp(state == "idle")
+	if not _clip_feet:
+		_stomp.stomp(state == "idle")
 
 
 ## The foot the latest stomp lifted ("left" or "right"); "" when it lifted none (walking, a roar).
@@ -197,7 +208,7 @@ func _walk_clock(dt: float) -> void:
 	var cycles := speed * dt / maxf(stride(), 0.0001)
 	walk_cycles += cycles
 	var was := clip_time
-	if step_phase != INF:
+	if step_phase != INF and not _clip_feet:
 		clip_time = _steps.frame_at(step_phase)
 	else:
 		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
@@ -217,7 +228,7 @@ func _go(next: String, at: float) -> void:
 ## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
 ## feet (_walk_entry).
 func _walk_start() -> float:
-	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
+	return _steps.frame_at(step_phase) if step_phase != INF and not _clip_feet else _walk_entry()
 
 
 ## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
@@ -267,6 +278,25 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 		rig.pose_basis(bone_name, Basis(q), offset)
 	swing.youth = clampf((ADULT_SCALE - s) / (ADULT_SCALE - BABY_SCALE), 0.0, 1.0)
 	swing.pose_rake(dt)  # the claw rake, over the clip's arms
+
+
+## A heavy body roaring while it walks keeps the walk on its legs, pelvis and tail (D-201): no
+## clip-less re-plants under a roar that stands still.
+func _walking_legs(pose: KaijuClips.Pose, dt: float) -> void:
+	if state == "walk":
+		_legs_t = clip_time
+		return
+	if state != "roar" or speed < STAND_SPEED * hip_height * s:
+		return
+	_legs_t += speed * dt / maxf(stride(), 0.0001) * clips.frames_of("walk") / clips.cycles_of("walk")
+	var legs := clips.pose_at("walk", _legs_t)
+	for i: int in clips.bones.size():
+		var n := clips.bones[i]
+		if n == "spine0" or n.begins_with("leg") or n.begins_with("tail"):
+			pose.turns[i] = legs.turns[i]
+	pose.offset = legs.offset
+	pose.feet = legs.feet
+	pose.planted = legs.planted
 
 
 ## A heavy body eases toward the heading at its own pace (D-200): ease_per_s, at most follow_deg_s,
@@ -356,7 +386,7 @@ func _foot_target(i: int, pose: KaijuClips.Pose, dt: float) -> Vector3:
 	var leg := legs[i]
 	var clip_toe := rig.global_transform * _stepped(clips.to_rig(pose.feet[i]))
 	var planted := pose.planted[i] and not _stomp.catching(i)
-	if planted and _was_planted[i] and _overreached(leg, _lock[i], clip_toe):
+	if planted and _was_planted[i] and not _clip_feet and _overreached(leg, _lock[i], clip_toe):
 		_stomp.restep(i)  # the body got away from this foot: step after it
 		planted = false
 	var target := clip_toe + _lag[i]
@@ -400,7 +430,7 @@ func _put_down(i: int, target: Vector3, clip_toe: Vector3) -> Vector3:
 ## croc, D-131) bends it onto the curve it walks (ClipSteps.curved: its wide-set planted feet
 ## stayed straight and were re-stepped every plant on a held curve, motion gate 2.2 a second).
 func _stepped(toe: Vector3) -> Vector3:
-	if state != "walk":
+	if state != "walk" or _clip_feet:
 		return toe
 	if step_phase == INF:  # a smooth turner (D-131) walks the curve its body turns
 		return _steps.curved(toe, -yaw_rate / maxf(speed, 0.01) * s)
