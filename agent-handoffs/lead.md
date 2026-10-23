@@ -39,6 +39,9 @@
 - Lead's builders (subagents, Sonnet, common brief scratchpad COMMON-2026-10-23.md):
   - beam-cost (agent a1448c3e2dfa8c9e5, ~586k tokens) on claude/heli-standoff (D-183), worktree volley-d178: fly-by
     strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
+    Run 6 red; WIP 4e0d6637 (local). Trace: every claw-band miss is in pull-back. Cause A (sim): the kaiju jumps
+    17-27 u/s at Behemoth/Colossus in turns (suspect BodyContact._swing about the planted foot, same as the gait
+    critic's 270 deg/s): split asked, no sim edits, director question. Cause B: a pull-back bug at 4 u/s (fixing).
   - volley (agent ac92f78143e5f1af5, ~551k tokens) on claude/strike-delay (D-166): military red on 3 checks; paired
     seeds 0-47 per city, delays on vs off, before any re-pin (D-144); different distributions = a behaviour change to
     report (maybe a director question). Then refresh.
