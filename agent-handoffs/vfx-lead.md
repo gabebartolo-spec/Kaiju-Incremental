@@ -77,7 +77,7 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
   blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
   no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
-- slot 2 now r7. Breath r2 09fb2e75 FIX again (1-2 px unreadable) = D-188 stop: trade clip (Today / Bigger breath / Breathing chest and neck) -> critic -> lead -> director. Claw r1 FIX (hidden from behind camera) -> r2 fixes. Fire board v2: A fail, B/C pass w/ fixes -> v3 after the fall arc. Was living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
+- slot 2 now r7. Breath r2 09fb2e75 FIX again (1-2 px unreadable) = D-188 stop: trade clip (Today / Bigger breath / Breathing chest and neck) -> critic -> lead -> director. Claw r1 FIX (hidden from behind camera) -> r2 fixes. Fire board v3: B fail twice -> v4 (B = C quantized to voxels, non-fatal photos). Heli fall r2 09569edf claude/heli-fall -> critic r2. Was living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator. Director (base): breath
   "way too much ... too fast, should be deep and slow like a behemoth": bars period 4/6/8 s, back/flank peak <=
   0.8/0.6/0.5% body height (>=0.25%), <=0.6%/s, damp the idle clip's baked breath at runtime (no re-bake); B/C wait for the gait
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
