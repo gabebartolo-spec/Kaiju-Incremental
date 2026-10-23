@@ -3,7 +3,7 @@
 Branch claude/turn-weight-d187 (claude/turn-weight on origin is old unmerged WIP ba70e967, left for the hygiene list),
 from origin/claude/look-options, merged with #175 (a674fb20). Sim + data + tests built and pushed. Local: gait 24/0,
 motion 30/0 (#175's gate), smoke 47/0, city 175/0, tuning_keys, complexity ratchet, check_scripts, gdlint, gdformat ok.
-No PR (the lead opens it). Next: the A/B comparison clip (turn_slow 0.1 vs 0.5), then wait for the lead.
+No PR (the lead opens it). The A/B clip is done (below); director pause 2026-10-23 until 'resume': no Godot runs.
 ## Task
 ROADMAP "Director comments (2026-10-23, afternoon)" the swivel; D-187: the Behemoth and Colossus turn heavier and
 slower, a U-turn while walking 2 s / 3 s (to within 5 deg of the new way), the yaw spread evenly over the steps;
@@ -38,6 +38,15 @@ The city suite passes (175/0) but its bot walks the YOUNG body in both stages (t
 With the real Behemoth (probe, same bot, three map seeds 7301 / 1234 / 98765): base 2.0 / 8.0 / 8.0 s; now with
 turn_slow 0.1 (A) 4.0 / 8.0 / 12.0 s (seed 98765 over 10); with turn_slow 0.5 (B) 3.5 / 9.7 / 10.0 s. Colossus under
 1 s. Young unchanged (4.0 / 6.0 / 4.0). A director question; the bar is untouched.
+## A/B clip (the director asked to see turn_slow both ways)
+C:/Users/DANTE/AppData/Local/Temp/claude/C--Users-DANTE-Documents-GitHub-Kaiju-Incremental--claude-worktrees-status-check-b96b26/b2b0bc5b-915b-4abe-b67a-dbc9a0712bcb/scratchpad/tw/turn_ab.mp4
+3840x2160, 8 s, 60 fps, 68 MB: 2x2, A (0.1, "step round on the spot") left, B (0.5, "keep the walking arc") right, Behemoth
+top, Colossus below; walk east, stick reversed at 2.0 s; real rampage, game camera, local RTX 4070 SUPER (log says NVIDIA).
+Made with tools/capture/capture_turn_ab.gd (new; --turn-slow sets the stride at an about-face), four renders, composed
+with scratchpad tw/compose.py. Checked at 1x (whole frame) and native-pixel crops: labels clear of the HUD, the turn reads.
+A and B are close: stride at the turn's lowest 0.25 / 0.20 (A) against 0.59 / 0.56 (B), A under 0.3 of full for 0.38 /
+0.75 s; sideways reach of the feet-centre 4.1 / 5.0 u (A) against 5.3 / 7.5 u (B); run-on past the reversal 11.0 / 22.2
+against 11.8 / 23.6 u. B's wider swing brings the Colossus's tail into buildings sooner (dust at the clip's left in B).
 ## Decisions
 turn_slow 0.1 vs 0.5: the director asked to see both (clip A vs B). turn_steps 5.5 and turn_ramp 0.15 are tuning picks
 (bar 7's 40 deg a step and 0.3 FL real steps; peak <= 1.3x mean).
