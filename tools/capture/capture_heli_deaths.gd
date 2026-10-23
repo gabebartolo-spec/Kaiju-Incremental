@@ -16,7 +16,7 @@ const SPOT := Vector3(6.0, 0.0, -9.0)
 ## Where the kaiju's claw reaches, in the swipe's own band (body-scale units from its feet): the
 ## first helicopter hangs this far ahead and to the side (a kill nothing covers), the second where
 ## the nearest low block's face is.
-const FIRST_AT := Vector2(8.5, 3.2)
+const FIRST_AT := Vector2(8.5, 4.4)
 const SECOND_AT := Vector2(10.5, -3.5)
 ## Where the second clip helicopter waits, beside the claw's band.
 const WAIT_AT := Vector2(10.5, -10.0)
@@ -76,6 +76,7 @@ func _run(run: int) -> void:
 	print("body scale %.2f" % _rampage.sim.body_scale())
 	_reference_fire()
 	_rampage.sim.powers.swipe._timer = 999.0  # the kaiju's claw swings only when the shot calls it
+	_rampage.sim._stomp_timer = 99999.0  # and it does not stomp: a footfall is not the cause
 	if _clip:
 		await _clip_run()
 	else:
@@ -113,6 +114,7 @@ func _clip_run() -> void:
 	var wait := _spot_from(WAIT_AT)  # out of the first swipe's reach until it is the second's turn
 	var both := await _spawn([first, wait] as Array[Vector2])
 	print("clip starts at frame %d" % Engine.get_frames_drawn())
+	_trace()
 	await Kit.frames(self, CLIP_LEAD)
 	await _swat(both[0], true)
 	await _slide(both[1], wait, _spot_from(SECOND_AT), CLIP_GAP - 15)
@@ -165,6 +167,7 @@ func _swat(heli: AirWing.Heli, apart: bool, land := Vector2.ZERO) -> void:
 		_aim_fall(heli, land)
 	heli.hp = 0.5
 	var swipe: ClawSwipe = sim.powers.swipe
+	swipe._wound = false  # the arm lifts (the windup cue) only if the swipe is not already wound
 	swipe._timer = Num.f(sim.powers_cfg["swipe_windup"]) + 0.01
 	var before := sim.air.destroyed
 	var guard := 0
@@ -238,6 +241,61 @@ func _report_dither() -> void:
 			parts += 1
 			low = minf(low, Num.f(mat.get_shader_parameter("opacity")))
 	print("dither check: %d voxel parts in the view, lowest opacity %.2f" % [parts, low])
+
+
+## Logs one line a frame for the clip (stdout "T,..."): a fixed ground point's screen position (the
+## camera's kick, px at 1080p), both arm tips, the burning hull's height, screen point and roll, the
+## falling wreck's height and yaw. The measured table of the report comes from it.
+func _trace() -> void:
+	var cam := root.get_viewport().get_camera_3d()
+	var model: KaijuModel = _rampage._kaiju
+	print(
+		"T,n,rake_t,cam_x,cam_y,armL_x,armL_y,armR_x,armR_y,hull_y,hull_x,hull_py,roll,fall_y,yaw"
+	)
+	for n: int in CLIP_FRAMES - CLIP_LEAD + 10:
+		var sim := _rampage.sim
+		var feet := Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
+		var ref := cam.unproject_position(feet + Vector3(sim.facing.x, 0.0, sim.facing.y) * 6.0)
+		var arm_l := cam.unproject_position(model._rig.tail_world("arm_l2"))
+		var arm_r := cam.unproject_position(model._rig.tail_world("arm_r2"))
+		var wrecks: HeliWreck = _rampage._powers._wrecks  # made on the first death
+		var swing := (model._rig.gait as BipedGait).swing
+		var hull := Vector3.ZERO
+		var hull_px := Vector2.ZERO
+		var roll := 0.0
+		for piece: HeliDebris.Piece in [] if wrecks == null else wrecks._debris._pieces:
+			if piece.heavy and is_instance_valid(piece.node):
+				hull = piece.node.global_position
+				hull_px = cam.unproject_position(hull)
+				roll = rad_to_deg(piece.node.rotation.z)
+				break
+		var fall_y := 0.0
+		var fall_yaw := 0.0
+		for fall: HeliWreck.Fall in [] if wrecks == null else wrecks._falling.values():
+			fall_y = fall.node.position.y
+			fall_yaw = rad_to_deg(fall.yaw)
+		print(
+			(
+				"T,%d,%.2f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.1f,%.1f,%.1f,%.2f,%.1f"
+				% [
+					n,
+					swing._rake_t,
+					ref.x,
+					ref.y,
+					arm_l.x,
+					arm_l.y,
+					arm_r.x,
+					arm_r.y,
+					hull.y,
+					hull_px.x,
+					hull_px.y,
+					roll,
+					fall_y,
+					fall_yaw
+				]
+			)
+		)
+		await process_frame
 
 
 ## Moves a hung helicopter from `from` to `to` over `frames` frames (its orbit's angle and radius).

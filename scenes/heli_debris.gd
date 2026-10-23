@@ -68,6 +68,13 @@ func make_heavy(piece: Piece) -> void:
 	piece.heavy = true
 	piece.trail = HeliFx.smoke_trail(self, _cfg, Num.f(_cfg["piece_trail"]))
 	piece.trail.global_position = piece.node.global_position
+	piece.trail.emitting = false  # no smoke in the middle of the flames: it starts once they have risen
+	var trail := piece.trail
+	get_tree().create_timer(Num.f(_cfg["trail_delay"])).timeout.connect(
+		func() -> void:
+			if is_instance_valid(trail):
+				trail.emitting = true
+	)
 
 
 ## `count` chunks from `at`, thrown out and up at the tuning's speeds; `burning` of them carry a

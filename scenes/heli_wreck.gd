@@ -95,6 +95,7 @@ func crashed(event: Dictionary) -> void:
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
 	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
+	_hull_landed(ground)  # the same impact beat as a thrown hull's (flash, dust, ring, kick)
 	_trauma("heli_crash", ground)
 	if sfx != null:
 		sfx.play_at("heli_crash", ground)
@@ -112,9 +113,9 @@ func _fall(fall: Fall, delta: float) -> void:
 	fall.t += delta
 	var u := clampf(fall.t / fall.seconds, 0.0, 1.0)
 	var bow := fall.side * sin(PI * u) * Num.f(_cfg["swing"])  # a falling arc, not a slide
-	fall.node.position = (
-		fall.from + fall.drift * fall.t + bow - Vector3(0, fall.from.y * u * u, 0)
-	)
+	var lead := Num.f(_cfg["fall_lead"])  # it drops from the first frame, then falls ever faster
+	var drop := fall.from.y * (lead * u + (1.0 - lead) * u * u)
+	fall.node.position = fall.from + fall.drift * fall.t + bow - Vector3(0, drop, 0)
 	fall.yaw += delta * Num.f(_cfg["spin"]) * (0.5 + u)
 	var tumble := pow(u, 1.4)  # the pitch and roll build slowly, then it cartwheels
 	var pitch := -deg_to_rad(Num.f(_cfg["pitch_deg"])) * tumble
@@ -182,6 +183,7 @@ func _hull_landed(at: Vector3) -> void:
 func _trauma(kind: String, at: Vector3) -> void:
 	var rampage := get_parent().get_parent() as Rampage if get_parent() != null else null
 	if rampage != null:
+		rampage.shake.kick(deg_to_rad(Num.f(_cfg["kick_deg"][kind])))  # one kick, on this frame
 		rampage.add_trauma(rampage.shake.source(kind), at)
 
 
@@ -217,6 +219,8 @@ func _throw_part(part: Node3D, n: int, reach: float, in_air: bool) -> void:
 	if body and not in_air:
 		vel = Vector3.ZERO
 		spin = Vector3.ZERO
+	if body and in_air:
+		vel.y = -1.0  # the hull drops from the first frame: no hover at the top of a throw
 	var burning := body and in_air  # the hull flies on burning: flames, smoke, firelight, an impact
 	var fire_size := Num.f(_cfg["hull_fire"]) if burning else 0.0
 	var piece := _debris.throw(part, vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
@@ -263,7 +267,7 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	HeliFx.smoke_puff(_city, at, _cfg, Num.f(_cfg["hit_smoke"]))
 	_trauma("heli_burst", at)
 	for n: int in Num.i(event.get("crew", 0)):
-		_crew.jump(at + Vector3(1.0 + n * 4.0, -0.5, 1.5), fall.drift)
+		_crew.jump(at + fall.side * (5.0 + n * 3.5) + Vector3(0, 2.0, 0), fall.drift)
 
 
 ## A pooled orange light that rides a burning wreck (`reach` m).
