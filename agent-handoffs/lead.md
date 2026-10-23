@@ -59,9 +59,10 @@
   growth steps, #167 weather, #168 body-chunks (tests), #169 croc standing, #165 demo end + Endless (a7ac8788,
   save v4).
 - 15:00: #166 MERGED (3e4a7665; look r3 FIX flagged for M3, r4 on claude/heli-look-r4). Open: #170 volley (D-178
-  rework pushed e5d24848, sim/taskforce_volley.gd; CI running; non-author sim re-look subagent running, go only on its
-  SHIP + green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
-  16:37: night-fog SHIP 4524e90c (VFX lead) -> git-helper opens it in slot 3; go on green. gait-step-len d6c3fe5b
+  rework e5d24848; sim re-look FIX: _can_join reads rail_cd before later gunners decrement (split lock), cooldown drift
+  after round 1 (lead ruled: cooldown from the volley's first shot, D-178 every volley), roof check; beam-cost fixes
+  after its heliflight suite, repro scratchpad volley_port.py; go only on the fixed head green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
+  16:37: night-fog SHIP 4524e90c (VFX lead) = #172; go on green AND once its evidence folder is found (path asked). gait-step-len d6c3fe5b
   local, sim_play running, takes the next free slot; send its sha (and heli-standoff's) to the VFX lead.
   Next slot: claude/gait-step-len (volley builder), then claude/gait-fix (VFX, motion gate), then strike-delay.
 - D-179 pacing workflow (beam-cost builder, claude/pacing-ci); D-180 skins need a cohesive range (post-demo).
