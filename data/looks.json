@@ -75,7 +75,7 @@
 			"sun_energy": 0.7,
 			"sun_pitch": -38,
 			"fog_color": "4d7380",
-			"fog_density": 0.005,
+			"fog_density": 0.0035,
 			"saturation": 0.9,
 			"contrast": 1.3,
 			"glow": 1.0,
