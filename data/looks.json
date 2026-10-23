@@ -10,7 +10,20 @@
 			"thunderstorm": "Thunderstorm"
 		},
 		"random_label": "Random each rampage",
-		"order": ["clear", "overcast", "rain", "fog", "thunderstorm"]
+		"order": ["clear", "overcast", "rain", "fog", "thunderstorm"],
+		"layers": {
+			"_note": "What each weather lays over the time of day's look (WeatherView, VFX): multipliers on the look's ambient, sun and fog, the sky and fog colours pulled toward their own grey and dimmed, how wet the streets are (0..1, the ground shader's `wet`) and whether rain falls. Clear has no layer: nothing is built and the look is untouched. 'like' copies another weather's layer. Fog, overcast and the storm's own darkness are other builders' layers.",
+			"rain": {
+				"rain": true,
+				"wet": 0.9,
+				"ambient_mul": 0.85,
+				"sun_mul": 0.55,
+				"fog_mul": 1.5,
+				"sky_grey": 0.5,
+				"sky_dim": 0.78
+			},
+			"thunderstorm": {"like": "rain"}
+		}
 	},
 	"times": {
 		"_note": "Director 2026-10-20: all four times of day, in this order (Content.time_for_run is the fixed order captures and tests use). D-145 (2026-10-22): the game picks one at random each run, never the one just played (TimeOfDay.pick), unless the options menu fixes one; labels are what that menu shows. Each entry overrides the look's keys; dusk is the look as written.",

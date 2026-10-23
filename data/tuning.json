@@ -1298,5 +1298,32 @@
 			"fade_begin": 100.0,
 			"fade_length": 30.0
 		}
+	},
+	"rain": {
+		"_note": "Rain (WeatherView, VFX family 11, D-155 / director 2026-10-23 'Heavy, kaiju clear'). Streaks fall as camera-facing quads in a world-space volume that follows the camera; counts are x the graphics preset's particles ratio. Lengths and widths in metres, speeds m/s, alphas 0..1, shares of life. Colours are the fog grey lifted toward white, never above max_channel (under the 0.9 bloom threshold).",
+		"streaks": 16000,
+		"volume": [150.0, 70.0, 150.0],
+		"ahead": 28.0,
+		"fall_speed": 30.0,
+		"speed_jitter": 0.08,
+		"wind_gain": 2.2,
+		"length": 1.5,
+		"width": 0.03,
+		"min_px": 1.1,
+		"alpha": 0.42,
+		"fade_in": 0.07,
+		"fade_out": 0.1,
+		"far_begin": 70.0,
+		"far_end": 125.0,
+		"tint_white": 0.55,
+		"max_channel": 0.82,
+		"clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.25, "centre_radius": 0.32, "focus_clear": 0.6, "focus_full": 1.0},
+		"splashes": 2600,
+		"splash_volume": [90.0, 90.0],
+		"splash_seconds": 0.35,
+		"splash_size": 0.5,
+		"splash_alpha": 0.5,
+		"splash_y": 0.11,
+		"splash_clear": {"near_clear": 9.0, "near_full": 24.0, "centre_keep": 0.6, "centre_radius": 0.32, "focus_clear": 0.3, "focus_full": 0.7}
 	}
 }
