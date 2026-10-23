@@ -27,6 +27,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 
 ## The kaiju
 - Three species, picked at the start, one per save; each plays differently, not just looks different (D-006, D-035).
+- **The reptilian family (D-197), picked at the baby stage, each with its own powers and mobility:** the **Komodo dragon, heavy**, the lumbering colossus; the **croc, medium**, remade more horizontal, a T-rex/croc hybrid, athletic and aerodynamic with incredible power; the **serpent, light**, a specialist that slithers, spirals up towers, spits acid, grabs helicopters with its tail and constricts and crushes buildings (the cephalopod's stand-in). The insectoid and cephalopod become stretch goals, and so does building your own kaiju from preset configurations. The demo ships one reptilian, whichever looks best (decided later).
   Every power below is a **node in that species' branch of the tree**, the ultimate at its end: "this is an
   incremental, not a kaiju simulator" (D-037).
 - **Reptilian, the croc titan: strongest, a living battering ram.** "A crocodile in a t-rex body, not godzilla
