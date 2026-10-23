@@ -42,8 +42,8 @@
   Reassessment in (ROADMAP ec9084ee): Fire family its own item (2-3 treatments beside photos, critic screens, HE
   picks via the lead), fall = view arc between the sim's death and crash points (lead: yes, D-183 leaves deaths as
   they are), kill staging after the claw rake, claims measured in the clip. #175 MERGED 3a3ee03d (go.txt cleared).
-  FL (world units): young 1.235, Behemoth 2.072, Colossus 3.706. Breathing r2 under the 3 px bar: if it fails, the
-  trade (amplitude or which part breathes) comes as one question with a clip, no round 3. Claw rake 515ac558 in critic.
+  FL (world units): young 1.235, Behemoth 2.072, Colossus 3.706. D-190 (his picks in the VFX lead's session, quotes
+  checked in its transcript; a6bde2e6): "Smooth flames", "Slow chest-and-neck heave", claw "Keep it straight ahead".
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
   milestones, sound. Each tells the other before touching the other's files.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
@@ -61,7 +61,8 @@
   interview.md. Scratchpad board_watch.sh wakes the lead on any from-file or interview change.
 
 ## Sessions and builders
-- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06: fire board (his pick next), claw rake, heli fall, breathing trade.
+- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06: smooth fire rollout (claude/fire-smooth) then heli fall, breath
+  default, claw on the snout line. Holds my lent slot until the breath job closes (asked to return it).
 - Lead's builders (subagents, Sonnet, common brief scratchpad COMMON-2026-10-23.md):
   - beam-cost (agent a1448c3e2dfa8c9e5, ~586k tokens) on claude/heli-standoff (D-183), worktree volley-d178: fly-by
     strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
