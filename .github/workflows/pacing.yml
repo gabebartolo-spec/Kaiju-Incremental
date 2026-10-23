@@ -1,0 +1,174 @@
+name: pacing
+
+# The balance run on GitHub's machines (D-179, director 2026-10-23: "Yes, run it on GitHub"): runs
+# tools/pacing.gd headless and keeps its output as an artifact, so a balance answer needs no
+# builder's PC (the hour-long run was killed twice by Godot pauses, D-159 "GitHub runs them").
+#
+# Two ways to start it:
+#  1. Push a branch named pacing-run/<name>. The run measures the code of the commit you pushed, so
+#     the branch must carry this workflow file as well as the code to measure. To measure a pull
+#     request's branch exactly as it is:
+#       git checkout -b pacing-run/beam-cost claude/beam-cost
+#       git checkout claude/pacing-ci -- .github/workflows/pacing.yml
+#       git commit -m "pacing run" && git push origin pacing-run/beam-cost
+#     (`git merge claude/pacing-ci` also works but brings its whole base along.) Each push starts
+#     a run and cancels the branch's earlier one. Defaults: all three species, 400 runs each,
+#     every run printed. A file `.github/pacing-run.json` on the branch overrides them, any key
+#     optional:  {"species": "reptilian", "runs": 120, "verbose": false}
+#  2. workflow_dispatch (the Actions tab, or `gh workflow run pacing.yml -f species=reptilian
+#     -f runs=400 [-f ref=<branch or sha>] [-f verbose=false]`). GitHub offers a manual run only
+#     once this file is on the default branch; `ref` then picks the code and data to measure
+#     (empty: the branch the workflow was dispatched on).
+#
+# One job per species ("all" runs the three side by side). Each uploads the artifact
+# `pacing-<species>`: pacing.txt (the whole output: every run line when verbose, then the marks, the
+# stage table and the last line "exit <code> wall <s> s") and summary.txt (the same without the run
+# lines, also shown on the run page). The Windows numbers in docs may differ a little from these
+# (float drift between platforms); compare runs of the same workflow with each other.
+on:
+  push:
+    branches: ["pacing-run/**"]
+  workflow_dispatch:
+    inputs:
+      species:
+        description: Species to pace ("all" runs the three in parallel jobs)
+        type: choice
+        options: [reptilian, insectoid, cephalopod, all]
+        default: reptilian
+      runs:
+        description: Run cap per species (tools/pacing.gd --runs)
+        type: string
+        default: "400"
+      ref:
+        description: Branch, tag or commit to measure (empty = the branch this workflow was dispatched on)
+        type: string
+        default: ""
+      verbose:
+        description: Print every run (rubble, seconds, how it ended, what it bought)
+        type: boolean
+        default: true
+
+# A newer push to the same pacing-run branch replaces its older run; manual runs never replace each other.
+concurrency:
+  group: pacing-${{ github.event_name == 'push' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      species: ${{ steps.pick.outputs.species }}
+      runs: ${{ steps.pick.outputs.runs }}
+      verbose: ${{ steps.pick.outputs.verbose }}
+    steps:
+      - uses: actions/checkout@v4 # a push's .github/pacing-run.json
+      - name: Pick the species, run cap and verbosity
+        id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          IN_SPECIES: ${{ inputs.species }}
+          IN_RUNS: ${{ inputs.runs }}
+          IN_VERBOSE: ${{ inputs.verbose }}
+        run: |
+          # defaults for a pushed pacing-run/<name> branch
+          species=all
+          runs=400
+          verbose=true
+          if [ "$EVENT" = workflow_dispatch ]; then
+            species="$IN_SPECIES"
+            runs="$IN_RUNS"
+            verbose="$IN_VERBOSE"
+          elif [ -f .github/pacing-run.json ]; then
+            species=$(jq -r '.species // "all"' .github/pacing-run.json)
+            runs=$(jq -r '.runs // 400' .github/pacing-run.json)
+            verbose=$(jq -r 'if has("verbose") then .verbose else true end' .github/pacing-run.json)
+          fi
+          case "$species" in
+            reptilian|insectoid|cephalopod|all) ;;
+            *) echo "::error::species must be reptilian, insectoid, cephalopod or all, got '$species'"; exit 1 ;;
+          esac
+          case "$runs" in
+            ''|*[!0-9]*) echo "::error::runs must be a whole number, got '$runs'"; exit 1 ;;
+          esac
+          case "$verbose" in
+            true|false) ;;
+            *) echo "::error::verbose must be true or false, got '$verbose'"; exit 1 ;;
+          esac
+          if [ "$species" = all ]; then
+            echo 'species=["reptilian","insectoid","cephalopod"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "species=[\"$species\"]" >> "$GITHUB_OUTPUT"
+          fi
+          echo "runs=$runs" >> "$GITHUB_OUTPUT"
+          echo "verbose=$verbose" >> "$GITHUB_OUTPUT"
+          echo "Pacing $species, up to $runs runs, verbose $verbose ($EVENT)"
+
+  pace:
+    name: pacing ${{ matrix.species }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 340 # a hosted job may run 6 hours; the Godot run below stops itself at 320 minutes
+    strategy:
+      fail-fast: false # one species failing should not stop the others
+      matrix:
+        species: ${{ fromJSON(needs.plan.outputs.species) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }} # empty on a push: the pushed commit
+          submodules: true # the native core's godot-cpp, as in tests.yml
+      # The same native library the tests use, from the cache when native/ is unchanged.
+      - uses: ./.github/actions/native-build
+      - uses: ./.github/actions/setup-godot
+
+      # The class cache the script run needs (as the tests.yml preflight does it).
+      - name: Import the project
+        run: |
+          code=0
+          timeout 600 "$HOME/godot/godot" --headless --path . --editor --import > "$RUNNER_TEMP/import.log" 2>&1 || code=$?
+          if [ "$code" != 0 ] || grep -qE "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log"; then
+            grep -E -A3 "SCRIPT ERROR|Parse Error|Compile Error" "$RUNNER_TEMP/import.log" | head -40
+            tail -5 "$RUNNER_TEMP/import.log"
+            echo "::error::the project failed to import or compile (exit $code)"
+            exit 1
+          fi
+
+      - name: Run tools/pacing.gd
+        env:
+          SPECIES: ${{ matrix.species }}
+          RUNS: ${{ needs.plan.outputs.runs }}
+          VERBOSE: ${{ needs.plan.outputs.verbose }}
+        run: |
+          out="$RUNNER_TEMP/pacing"
+          mkdir -p "$out"
+          args="--species=$SPECIES --runs=$RUNS"
+          if [ "$VERBOSE" = true ]; then args="$args --verbose"; fi
+          start=$(date +%s)
+          code=0
+          timeout 19200 "$HOME/godot/godot" --headless --path . --script tools/pacing.gd -- $args > "$out/pacing.txt" 2>&1 || code=$?
+          echo "exit $code wall $(( $(date +%s) - start )) s" >> "$out/pacing.txt"
+          # the marks and the stage table, without the per-run lines and the engine's exit noise
+          grep -E '^(== |  [^ ])' "$out/pacing.txt" | grep -v '^  run ' > "$out/summary.txt" || true
+          {
+            echo "### Pacing: $SPECIES, up to $RUNS runs, commit $(git rev-parse --short HEAD)"
+            echo '```'
+            cat "$out/summary.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" != 0 ] || ! grep -q '^  tree ' "$out/pacing.txt" || grep -qE "SCRIPT ERROR|Parse Error" "$out/pacing.txt"; then
+            tail -20 "$out/pacing.txt"
+            echo "::error::the pacing run did not finish (exit $code); pacing.txt has the output"
+            exit 1
+          fi
+
+      - name: Upload the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacing-${{ matrix.species }}
+          path: ${{ runner.temp }}/pacing
+          retention-days: 30
