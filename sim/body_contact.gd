@@ -143,7 +143,10 @@ func steer(dt: float, want: Vector2) -> float:
 		_stand(dt)
 		return stride
 	if _standing:
-		phase = roundf(phase)  # sets off on a footfall: both feet down
+		# sets off on a footfall, both feet down; a heavy body still rolling to its stop (D-201's
+		# stop_s) walks on from where its clock is: rounding it jumped the walk clip it rides
+		if not heavy() and stride <= 0.0:
+			phase = roundf(phase)
 		step_ratio = 1.0
 		_steps.plant_both(self)
 		_standing = false
@@ -203,9 +206,9 @@ func _pace(dt: float, stepped: bool) -> Vector2:
 	var cadence := 0.0
 	if stepped:
 		accel = Num.f(cfg["slice_accel"])
-		var paced := _steps.stepped_pace(self, top)
-		top = paced.x
-		cadence = paced.y
+		var paced := _steps.stepped_pace(self, top)  # floats: a Vector2 rounds them to 32 bits
+		top = paced[0]
+		cadence = paced[1]
 	_steps.cadence = move_toward(_steps.cadence, cadence, Num.f(cfg["cadence_ease"]) * dt)
 	return Vector2(top, accel)
 

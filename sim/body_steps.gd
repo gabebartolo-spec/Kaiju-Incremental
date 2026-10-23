@@ -49,12 +49,13 @@ func steps_this_turn(body: BodyContact) -> bool:
 
 
 ## A stepped turn's top speed from the plain `top` (rad/s), and the cadence it eases in (quick
-## short steps): Vector2(top, cadence wanted).
-func stepped_pace(body: BodyContact, top: float) -> Vector2:
+## short steps): [top, cadence wanted], 64-bit floats (a Vector2 would round them to 32 bits and
+## move the croc off the path it walked before, the sim review of D-208).
+func stepped_pace(body: BodyContact, top: float) -> Array[float]:
 	var want := 0.0
 	if absf(body.turn_left) > Num.f(_cfg["turn_min"]):
 		want = Num.f(_cfg["turn_cadence"]) / sqrt(body.sim.body_scale())
-	return Vector2(top * _turn_ease(body) * _slice_bell(body), want)
+	return [top * _turn_ease(body) * _slice_bell(body), want]
 
 
 ## A turn swings the body about the foot that is down (since `was`): that foot stays put. Only the

@@ -30,6 +30,34 @@ func run() -> void:
 	var clips := states.keys()
 	var why := "the same seed replays the heavy clip clock and volume (%s; off at step %d)"
 	_check.call(ok, why % [clips, first_off])
+	_restart_check()
+
+
+## A press again while the heavy body is still rolling to a stop (D-201's stop_s) carries its walk
+## on: the step clock, and the walk clip the volume rides, never jump (the sim review: the clock
+## was rounded to a footfall on the re-press, 5.68 -> 6.03, the walk clip 43.77 -> 1.67 frames).
+## Stick up 3 s, released 12 steps, pressed again; no step moves the clock further than twice the
+## most a step moved it while walking before the release.
+func _restart_check() -> void:
+	var sim := _heavy_sim()
+	var hc := sim.body.heavy_contact
+	var walking := 0.0
+	var worst := 0.0
+	var at := -1
+	var last := sim.body.phase
+	for n: int in 300:
+		var released := n >= 180 and n < 192
+		sim.step(DT, Vector2.ZERO if released else Vector2(0, -1), false, 0)
+		var moved := absf(sim.body.phase - last)
+		last = sim.body.phase
+		if n < 180:
+			walking = maxf(walking, moved)
+		elif moved > worst:
+			worst = moved
+			at = n
+	var ok := hc != null and walking > 0.0 and worst <= 2.0 * walking
+	var why := "a heavy re-press while rolling keeps the step clock (%.3f at step %d, walking %.3f)"
+	_check.call(ok, why % [worst, at, walking])
 
 
 ## One seeded heavy run: stand, walk, the breath (a roar), a turn on the move, then stop. Returns
