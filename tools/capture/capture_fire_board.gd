@@ -19,6 +19,8 @@ const SPACING := 4.2
 const COUNT := 2  # a building's two roof fires, every one in the frame treated alike
 const SIZE := 1.2  # a building's fire (fire_spread.view_size)
 const FRAMES := 240
+## B's cell: the flame voxel family's size (Fire.FLAME_CUBE 0.18 at up to 1.2x), world units.
+const CELL := 0.24
 
 var _out := "user://fire_board"
 var _rampage: Rampage
@@ -96,9 +98,9 @@ func _dress(fire: Fire, k: int, at: Vector3, seed_value: int) -> void:
 		0:
 			fire.add_child(_plates(at, 2.6, 0.6, false))
 		1:
-			fire.add_child(_plates(at, 2.5, 0.55, true))
+			fire.add_child(_tongues(seed_value, CELL, at))
 		_:
-			fire.add_child(_tongues(seed_value))
+			fire.add_child(_tongues(seed_value, 0.0, at))
 
 
 ## Voxel plates graded by height (height.gdshader): A is Fire's old blobby flame (cubes, 12 degrees),
@@ -137,10 +139,10 @@ func _plates(at: Vector3, flame_h: float, half_w: float, tall: bool) -> GPUParti
 
 
 ## Soft tongues (tongue.gdshader): a few big camera-facing teardrops rising and flickering.
-func _tongues(seed_value: int) -> GPUParticles3D:
+func _tongues(seed_value: int, cell: float, at: Vector3) -> GPUParticles3D:
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	mat.emission_box_extents = Vector3(SIZE * 0.4, 0.1, SIZE * 0.4)
+	mat.emission_box_extents = Vector3(SIZE * 0.4, 0.32, SIZE * 0.4)  # feet at uneven heights
 	mat.direction = Vector3.UP
 	mat.spread = 5.0
 	mat.gravity = Vector3(0, 0.6, 0)
@@ -155,7 +157,7 @@ func _tongues(seed_value: int) -> GPUParticles3D:
 	var sizes_tex := CurveTexture.new()
 	sizes_tex.curve = sizes
 	mat.scale_curve = sizes_tex
-	mat.color_ramp = _alpha_ramp([0.0, 0.95, 0.0], [0.0, 0.18, 1.0])
+	mat.color_ramp = _alpha_ramp([0.0, 1.0, 1.0, 0.0], [0.0, 0.08, 0.82, 1.0])  # solid, never a haze
 	var seeds := Gradient.new()
 	seeds.colors = PackedColorArray(
 		[
@@ -178,6 +180,9 @@ func _tongues(seed_value: int) -> GPUParticles3D:
 	quad.center_offset = Vector3(0, 1.2, 0)  # the foot at the particle, the tip 2.7 m up
 	var draw := ShaderMaterial.new()
 	draw.shader = TONGUE
+	draw.set_shader_parameter("cell", cell)
+	draw.set_shader_parameter("base_y", at.y)
+	draw.set_shader_parameter("axis", Vector2(at.x, at.z))
 	quad.material = draw
 	var system := _system(mat, quad, 22, 1.0)
 	system.use_fixed_seed = true  # each fire its own tongues, the same every run
