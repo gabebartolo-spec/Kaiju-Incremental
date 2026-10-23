@@ -43,6 +43,8 @@ var tail: TailSim
 ## A heavy body's contact (D-208): its clip clock and the volume that rides the drawn body; null for
 ## any other body.
 var heavy_contact: HeavyContact
+## Which dashes and ultimates the kaiju roars on (D-145): the sim marks them, the view sounds them.
+var roars := RoarGate.new()
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -309,8 +311,10 @@ func _sweep(from: Vector2, from_heading: Vector2, dt: float) -> void:
 	_last_tail = moving_to
 
 
-## The sim's events of the step just run (a heavy body's clip clock takes its roars and rakes).
+## The sim's events of the step just run: the roars are marked (RoarGate), then a heavy body's clip
+## clock takes its roars and rakes.
 func after_events(events: Array[Dictionary]) -> void:
+	roars.mark(events, sim.time_left)
 	if heavy_contact != null:
 		heavy_contact.after_events(events)
 

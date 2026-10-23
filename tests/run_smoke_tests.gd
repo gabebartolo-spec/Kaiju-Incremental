@@ -35,6 +35,7 @@ func run_checks() -> void:
 	await _h("HeadLead", func() -> void: HeadLead.check(check, root))
 	await _h("StepTurn", func() -> void: StepTurn.check(check, root))
 	await _t("_check_skins_fresh")
+	await _t("_check_tracks_fresh")
 	await _t("_check_voxel_skin")
 	await _t("_check_tank")
 	await _t("_check_heli")
@@ -121,6 +122,21 @@ func _check_skins_fresh() -> void:
 			"every kaiju's voxel skin matches its rig (stale: %s; run tools/kaiju_skin/bake_all.sh)"
 			% [stale]
 		)
+	)
+
+
+## D-208: every heavy kaiju's track was baked from its current clips, model and claw tuning (the
+## sim's contact volume rides the clips the game draws only while they are the same).
+func _check_tracks_fresh() -> void:
+	var stale: Array[String] = []
+	var kinds: Dictionary = Content.section("body_class")["kaiju"]
+	for kind: String in kinds:
+		var track := HeavyTrack.of(kind)
+		if track != null and track.source != HeavyTrack.source_stamp(kind):
+			stale.append("%s (%s, now %s)" % [kind, track.source, HeavyTrack.source_stamp(kind)])
+	check(
+		stale.is_empty(),
+		"every heavy track matches its clips (stale: %s; run bake_heavy_tracks.gd)" % [stale]
 	)
 
 

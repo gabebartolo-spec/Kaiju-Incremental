@@ -1010,6 +1010,25 @@
 			}
 		}
 	},
+	"clip_motion": {
+		"_note": "A clip-animated kaiju's motion rules, read by the sim (ClipClock, HeavyContact, HeavyFeet, D-208) and the drawn body (ClipGait, LegReach, SwingPath) from this one place.",
+		"still_hips_per_s": 0.005,
+		"_still_hips_per_s": "a body whose clip leads counts as standing under this ground speed (hip heights a second)",
+		"jaw_hold_s": 0.15,
+		"_jaw_hold_s": "the maw opens to the roar's widest frame, and shuts, over this (s) while the beam is on",
+		"clock": {
+			"blend_s": 0.25, "turn_trigger": 0.6, "turn_pad": 6, "turn_settle": 24,
+			"_note": "ClipClock: blend_s = the cross-fade between clips (s); turn_trigger = heading lead over the body (rad) that turns a standing kaiju with a turn clip; turn_pad / turn_settle = turn clip frames kept before its yaw and after it (the tail's whip settles about half a second after the body stops)"
+		},
+		"sink": {
+			"reach_max": 0.92, "sink_max": 0.12, "sink_s": 0.04, "rise_s": 0.12,
+			"_note": "LegSink (D-177: a leg near full stretch pops its knee): no leg reaches past reach_max of its length; the body sinks for it at most sink_max hip heights, easing down over sink_s and back up over rise_s (a heel strike that sank it at once jolted the legs, shin jerk 7.5 deg/frame^2)"
+		},
+		"swing": {
+			"lag_s": 0.25, "lag_swing": 0.85, "lag_lift": 0.3, "lag_lift_max": 0.15, "gap_straight": 0.03, "gap_turn": 0.08,
+			"_note": "FootSwing (motion critic 2026-10-22, the foot skates; D-177 knee pop): a foot left behind its clip path swings back in lag_s (s), on the path by lag_swing of the clip's swing however quick the steps, in an arc lifted lag_lift of the way it has to go and at most lag_lift_max hip heights; a foot that lifts within gap_straight strides of its path follows the clip's own swing, past gap_turn strides it is held back, a blend between"
+		}
+	},
 	"clip_stomp": {
 		"seconds": 0.45, "lift": 0.46, "rise": 0.38, "hang": 0.22, "vary": 0.1,
 		"dip": 0.05, "dip_attack": 0.04, "dip_s": 0.2,

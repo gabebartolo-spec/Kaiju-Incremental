@@ -9,10 +9,6 @@ extends RefCounted
 ## lays them on the bones; a planted hind foot holds where it came down (its IK lock). The body's
 ## aim (D-200) lives here too. Part of BodyContact; pure, no randomness.
 
-## A body whose clip leads counts as standing under this ground speed (hip heights a second).
-const CLIP_STILL := 0.005
-const JAW_HOLD_SECONDS := 0.15
-
 var sim: RampageSim
 ## The class's sim block (body_class <class> "sim", D-201) and aim (D-200).
 var tune: Dictionary
@@ -26,8 +22,8 @@ var rake_side := 1.0
 var jaw_hold := 0.0
 var _rake_cross := 0.0
 var _rake_total := 0.0
-var _roar_at := INF  # the run clock at the last roar (RoarCue's rule)
-var _roar_gap := 0.0
+var _still := 0.0  # tuning clip_motion: standing under this ground speed (hip heights/s)
+var _jaw_s := 1.0  # and the maw's open/shut time (s)
 var _now := PackedFloat32Array()  # the pose this step: slots, heads, toes (body space)
 var _hips_at := Vector2.INF
 var _pose: HeavyPose
@@ -67,7 +63,9 @@ func _setup(p_sim: RampageSim, found: Dictionary, p_track: HeavyTrack) -> void:
 	var lift := maxf(0.05, Num.f(sim.powers_cfg["swipe_windup"]) - Num.f(claw["strike_s"]) * 0.5)
 	_rake_cross = lift + Num.f(claw["strike_s"]) * 0.5
 	_rake_total = _rake_cross + Num.f(claw["strike_s"]) * 0.5 + Num.f(claw["recover_s"])
-	_roar_gap = Num.f(Content.section("sfx")["roar_cooldown"])
+	var motion := Content.section("clip_motion")
+	_still = Num.f(motion["still_hips_per_s"])
+	_jaw_s = Num.f(motion["jaw_hold_s"])
 
 
 ## The walk sets off over start_s and comes to a stop over stop_s (D-201).
@@ -126,7 +124,7 @@ func step(dt: float) -> void:
 	var hips := centre(sim.kaiju_pos, body.heading, body.body_dir) + body.body_dir * track.hips * s
 	var moved := 0.0 if _hips_at.x == INF else hips.distance_to(_hips_at)
 	_hips_at = hips
-	var moving := moved > CLIP_STILL * track.hip_height * s * dt
+	var moving := moved > _still * track.hip_height * s * dt
 	var err := wrapf(_yaw(body.heading) - _yaw(body.body_dir), -PI, PI)
 	var phase := body.phase
 	clock.step(dt, moving, err, func(_entering: bool) -> float: return track.walk_frame(phase))
@@ -135,7 +133,7 @@ func step(dt: float) -> void:
 		rake_t += dt
 		rake_t = -1.0 if rake_t > _rake_total else rake_t
 	var open := sim.powers.beam_left > 0.0
-	jaw_hold = clampf(jaw_hold + (dt if open else -dt) / JAW_HOLD_SECONDS, 0.0, 1.0)
+	jaw_hold = clampf(jaw_hold + (dt if open else -dt) / _jaw_s, 0.0, 1.0)
 	_now = _pose.lay(clock, [rake_t, rake_side, jaw_hold])
 	_pose.look(_now, err, Num.f(aim.get("neck_share", 0.0)))
 	if tail != null:
@@ -160,18 +158,13 @@ func toe_air(i: int) -> Vector2:
 	return _feet.toe_air(i)
 
 
-## The sim's events of the step just run: a roar (every ability; an ultimate at most once in the
-## sfx roar_cooldown, a dash counting too, as RoarCue sounds it) and the claw rake's cues.
+## The sim's events of the step just run: a roar (every ability, and an ultimate the sim roars
+## on, RoarGate, as RoarCue sounds it) and the claw rake's cues.
 func after_events(events: Array[Dictionary]) -> void:
 	for event: Dictionary in events:
 		var kind := str(event["type"])
-		if kind == "ability":
+		if kind == "ability" or (kind == "ultimate" and event.get("roar", false) == true):
 			clock.roar()
-		elif kind == "dash" or kind == "ultimate":
-			if not _roar_at - sim.time_left < _roar_gap:
-				_roar_at = sim.time_left
-				if kind == "ultimate":
-					clock.roar()
 		elif kind == "swipe_windup" or kind == "swipe":
 			rake_t = 0.0 if kind == "swipe_windup" else _rake_cross
 			rake_side = Num.f(event["side"])

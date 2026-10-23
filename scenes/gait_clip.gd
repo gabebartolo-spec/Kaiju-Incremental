@@ -11,7 +11,6 @@ extends BipedGait
 
 ## The roar clip's frame with the jaw at its widest (motion_test r7), held for the beam.
 const ROAR_PEAK_FRAME := 47.0
-const JAW_HOLD_SECONDS := 0.15
 ## The roar's tail slam lands when the tip stops falling: watched from ROAR_SLAM_FRAME (motion_test:
 ## hit 37 + TAIL_SLAM_DELAY x the tip joint 9 = 44.2, the earliest it can land), fired on the tip's
 ## lowest frame, at the latest SLAM_WINDOW frames on (lead review PR #54: a fixed frame fired early
@@ -26,9 +25,6 @@ const TAIL_SLAM_STRENGTH := 1.6
 const HEAD_LEAD_MAX := 0.6
 const HEAD_LEAD_EASE := 10.0
 const NECK_SHARE := 0.4
-## Ground speed (hip heights a second) under which a body whose clip leads counts as standing.
-const CLIP_STILL := 0.005
-
 ## Debug: true records the procedural gait instead (before/after captures, tools/capture).
 static var off := false
 
@@ -70,6 +66,10 @@ var _aim: Dictionary = {}
 ## feet plant on the clip's planted bits, never a catch step, re-plant or standing stomp lift.
 var _clip_feet := false
 var _hips_at := Vector3(INF, 0, 0)  # where the hips stood over the ground last frame (world)
+## The sim's motion rules (tuning clip_motion, as HeavyContact reads them): a body whose clip leads
+## stands under still_hips_per_s; the maw opens and shuts over jaw_hold_s.
+var _still := 0.0
+var _jaw_s := 1.0
 
 
 ## The gait for a biped rig: ClipGait when it has clips baked for this skeleton, else BipedGait.
@@ -86,6 +86,9 @@ static func or_biped(p_rig: KaijuRig, p_clips: Variant) -> KaijuGait:
 func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	super(p_rig)
 	clips = p_clips
+	var motion := Content.section("clip_motion")
+	_still = Num.f(motion["still_hips_per_s"])
+	_jaw_s = Num.f(motion["jaw_hold_s"])
 	_own_clock = ClipClock.new(_meta(clips))
 	_clock = _own_clock
 	_steps = ClipSteps.new(clips)
@@ -245,7 +248,7 @@ func _steer_turn() -> void:
 
 
 func _apply(pose: KaijuClips.Pose, dt: float) -> void:
-	_jaw_hold = clampf(_jaw_hold + (dt if head.held_open else -dt) / JAW_HOLD_SECONDS, 0.0, 1.0)
+	_jaw_hold = clampf(_jaw_hold + (dt if head.held_open else -dt) / _jaw_s, 0.0, 1.0)
 	swing.tick_whip(dt)
 	if _clock != _own_clock:  # the sim's maw and claw rake (D-208): its volume rides them
 		_jaw_hold = fed_heavy.jaw_hold
@@ -274,7 +277,7 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 ## whenever its node moves over the ground at all (a slow drift too: its feet must step it).
 func _moving(dt: float) -> bool:
 	if _clip_feet:
-		return moved > CLIP_STILL * hip_height * s * dt
+		return moved > _still * hip_height * s * dt
 	return speed >= STAND_SPEED * hip_height * s
 
 

@@ -168,6 +168,7 @@ func _header() -> Dictionary:
 		"stride": _clips.stride_m * _clips.rig_scale,
 		"swing_frames": steps.swing_frames,
 		"hips": -_rig.head_of(_clips.bones[0]).z,
+		"source": HeavyTrack.source_stamp(_rig.kind),
 	}
 
 

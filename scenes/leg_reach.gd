@@ -29,8 +29,8 @@ func _init(gait: BipedGait) -> void:
 		_rest_pole.append(side.normalized() if side.length() > 0.0001 else Vector3.FORWARD)
 
 
-## Sinks gait's body so no leg reaches past REACH_MAX toward its toe target (world) with its foot
-## turned by its yaw (rad, ClipGait's hold), or rises back.
+## Sinks gait's body so no leg reaches past reach_max (LegSink) toward its toe target (world) with
+## its foot turned by its yaw (rad, ClipGait's hold), or rises back.
 ## (The gait is passed in, not kept: it owns this, and a kept one would be a reference cycle.)
 func lower_body(gait: BipedGait, toes: Array[Vector3], yaws: Array[float], dt: float) -> void:
 	var s := gait.s

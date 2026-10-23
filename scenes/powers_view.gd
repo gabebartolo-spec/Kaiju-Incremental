@@ -99,7 +99,7 @@ func _streak(a: Vector3, b: Vector3, color: Color, seconds: float) -> void:
 
 ## Returns true when the event was a power's.
 func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
-	roar.on_event(event, sim.time_left, self, _kaiju)
+	roar.on_event(event, self, _kaiju)
 	var bs := sim.body_scale()
 	match str(event["type"]):
 		"tail_sweep":

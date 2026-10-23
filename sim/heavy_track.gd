@@ -6,7 +6,8 @@ extends RefCounted
 ## lowest point and one at its highest (a leaning, tapering column: a slanted shin or a domed back
 ## does not fill its square corners), SLOT values; the jaw's slots again with the maw held open;
 ## every bone's head [forward, across, height]; the hind toes; the root bone's turn (a quaternion,
-## x100); and which hind feet the clip has down.
+## x100); and which hind feet the clip has down. The header's "source" is the stamp of what it was
+## baked from (source_stamp): a track older than its clips, model or claw tuning says so.
 ## Read once per file and shared; pure, no randomness.
 
 const MAGIC := "KTRK"
@@ -43,6 +44,8 @@ var rake_arms := {}
 ## Every stored frame's values, one after another (per_frame each; body scale 1 units).
 var values := PackedFloat32Array()
 var per_frame := 0
+## The source_stamp the bake wrote ("" in a track baked before it had one).
+var source := ""
 var _clips := {}  # name -> [first frame, frames, fps, loops]
 
 
@@ -60,10 +63,30 @@ static func of(kind: String) -> HeavyTrack:
 	else:
 		track = HeavyTrack.new()
 		if not track._load(FileAccess.get_file_as_bytes(path)):
-			push_error("HeavyTrack: %s is not a version %d track: it is a plain body" % [path, VERSION])
+			push_error(
+				"HeavyTrack: %s is not a version %d track: it is a plain body" % [path, VERSION]
+			)
 			track = null
+		elif track.source != source_stamp(kind):
+			push_warning(
+				"HeavyTrack: %s is stale (re-run tools/capture/bake_heavy_tracks.gd)" % path
+			)
 	_cache[kind] = track
 	return track
+
+
+## The first 8 bytes (hex) of SHA-256 over what a kind's track is baked from: its clips (.kclip),
+## its model (.kvox, .rig.json) and the claw rake's tuning (claw_fx, powers swipe_windup).
+static func source_stamp(kind: String) -> String:
+	var base := "res://assets/kaiju/%s" % kind
+	var ctx := HashingContext.new()
+	ctx.start(HashingContext.HASH_SHA256)
+	for ext: String in [".kclip", ".kvox", ".rig.json"]:
+		ctx.update(FileAccess.get_file_as_bytes(base + ext))
+	var claw := JSON.stringify(Content.section("claw_fx"), "", true, true)
+	var windup := Num.f(Content.section("powers")["swipe_windup"])
+	ctx.update(("%s|%s" % [claw, windup]).to_utf8_buffer())
+	return ctx.finish().slice(0, 8).hex_encode()
 
 
 func _load(raw: PackedByteArray) -> bool:
@@ -90,6 +113,7 @@ func _load(raw: PackedByteArray) -> bool:
 	swing_frames = Num.f(header["swing_frames"])
 	rake_arms = header["rake_arms"]
 	youth = Num.f(header["youth"])
+	source = str(header.get("source", ""))
 	for leg: Array in header["legs"]:
 		legs.append(Num.f(leg[0]) + Num.f(leg[1]))
 		leg_parts.append(Vector2(Num.f(leg[0]), Num.f(leg[1])))

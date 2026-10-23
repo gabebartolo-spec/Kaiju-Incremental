@@ -3,17 +3,10 @@ extends RefCounted
 ## Which baked clip a clip-animated kaiju plays and where in it (D-208: the one chooser, the sim's
 ## for a heavy body, so its contact volume rides the pose that is drawn; ClipGait runs one of its
 ## own for a body no sim feeds): it idles, walks, turns on the spot and roars, cross-fading between
-## them over BLEND_SECONDS. The walk's frame comes from the caller (the sim's step clock, or the
-## distance walked); a roar plays to its end; a standing body whose heading has run TURN_TRIGGER
-## ahead of its body turns on the spot with a turn clip. Pure, no randomness.
-
-const BLEND_SECONDS := 0.25
-## Heading error (rad) that makes a standing kaiju turn on the spot with a turn clip.
-const TURN_TRIGGER := 0.6
-## Frames of lead-in kept before the part of a turn clip that carries its yaw, and of settle
-## after it (the tail's whip settles about half a second after the body stops).
-const TURN_PAD := 6
-const TURN_SETTLE := 24
+## them over blend_s (tuning clip_motion "clock"). The walk's frame comes from the caller (the
+## sim's step clock, or the distance walked); a roar plays to its end; a standing body whose
+## heading has run turn_trigger ahead of its body turns on the spot with a turn clip, keeping
+## turn_pad frames before the clip's yaw and turn_settle after it. Pure, no randomness.
 
 ## The clip playing ("idle", "walk", "turn_left", "turn_right" or "roar") and its time (frames).
 var state := "idle"
@@ -31,10 +24,19 @@ var _loops := {}  # clip -> true when it loops
 var _spans := {}  # turn clip -> Vector2(first, last frame of its yaw)
 var _fps := 24.0
 var _roar_queued := false
+var _blend_s := 1.0  # tuning clip_motion "clock"
+var _turn_trigger := 0.0
+var _turn_pad := 0.0
+var _turn_settle := 0.0
 
 
 ## meta: {"fps", "clips": {name: [frames, loops]}, "spans": {turn: [first, last]}}.
 func _init(meta: Dictionary) -> void:
+	var tune: Dictionary = Content.section("clip_motion")["clock"]
+	_blend_s = Num.f(tune["blend_s"])
+	_turn_trigger = Num.f(tune["turn_trigger"])
+	_turn_pad = Num.f(tune["turn_pad"])
+	_turn_settle = Num.f(tune["turn_settle"])
 	_fps = Num.f(meta["fps"])
 	var clips: Dictionary = meta["clips"]
 	for clip: String in clips:
@@ -68,7 +70,7 @@ func step(dt: float, moving: bool, turn_err: float, walk_at: Callable) -> void:
 		time = Num.f(walk_at.call(false))
 	else:
 		time += dt * _fps
-	blend = minf(1.0, blend + dt / BLEND_SECONDS)
+	blend = minf(1.0, blend + dt / _blend_s)
 	legs_on = state == "roar" and moving
 	if state == "walk":
 		legs_t = time
@@ -82,10 +84,10 @@ func _choose(moving: bool, turn_err: float, walk_at: Callable) -> void:
 	if moving:
 		if state != "walk":
 			_go("walk", Num.f(walk_at.call(true)))
-	elif absf(turn_err) > TURN_TRIGGER and _spans.has("turn_left"):
+	elif absf(turn_err) > _turn_trigger and _spans.has("turn_left"):
 		var turn := "turn_left" if turn_err > 0.0 else "turn_right"
 		var span: Vector2 = _spans[turn]
-		_go(turn, maxf(0.0, span.x - TURN_PAD))
+		_go(turn, maxf(0.0, span.x - _turn_pad))
 	elif state != "idle":
 		_go("idle", 0.0)
 
@@ -95,7 +97,7 @@ func _ends(moving: bool) -> bool:
 	if state == "roar":
 		return time >= Num.f(_frames.get(state, 1)) - 1.0
 	var span: Vector2 = _spans[state]
-	return moving or time >= span.y + TURN_SETTLE
+	return moving or time >= span.y + _turn_settle
 
 
 ## Out of a roar or a turn: into the walk if the body walks, else the idle.
