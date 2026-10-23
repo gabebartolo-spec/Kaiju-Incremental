@@ -530,3 +530,7 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Also today (D-208): turning and steering must feel exceptional; carving keeps working with the new models; any
   contact damages a building except the serpent's held climb. Owner: lead (komodo-test builder adds carve and turn
   checks; serpent round 4). Status: in progress.
+- Reptilian sounds (director 2026-10-24): "croc: low clicking crocodile growl, clapping hollow sound of jaws
+  clunking together / dragon: cavernous nostril snorts, wet tongue flicks, short and brutal barking roars / serpent:
+  hissing noise obviously, faint slithering sounds as it climbs, deep menacing rattle". Owner: lead. Status: not
+  started; timing asked the same day.
