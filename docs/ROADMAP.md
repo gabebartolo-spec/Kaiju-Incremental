@@ -428,7 +428,11 @@ state. No director clips or per-change approvals in between; clips only where mo
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
-  Owner: both. Status: probe 14:15, then the fix.
+  Cause measured: the Behemoth's knee pops twice a step (leg snaps straight in early swing, knee flips at heel strike;
+  shin jerk p99 32 vs the Colossus's 4) from IK at full stretch, fed by one step length for every stage; a held pad
+  curve turns 38 deg with no foot down (the swivel). Sim (lead): per-stage step length, held-curve turns stepped.
+  View (VFX lead): soft IK, Behemoth foot lift 0.15 -> 0.07. Owner: both. Status: fixing (claude/gait-step-len, then
+  claude/gait-fix with the motion gate).
 - Motion gate: the gait probe becomes a CI suite (planted-foot speed, steps/s vs clip speed, turn pivot vs planted
   foot, foot lift) at all three growth steps; every body or movement change passes it. Owner: VFX lead's gait builder
   writes it, the lead reviews and merges. Status: not started.
