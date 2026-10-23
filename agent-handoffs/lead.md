@@ -14,6 +14,11 @@
   Lead: fresh builder per task, design + pass bars before code (heli took 6 runs without).
 - D-159: about 4 engine builders IN TOTAL (lead 2, VFX lead 2); at most 3 open PRs; clean crowded files as you go.
   Every brief says `bash ~/.claude/tools/engine_slot.sh && timeout ...` (staggers Godot starts below 6 processes).
+- D-187 "Heavier, slower": Behemoth U-turn ~1.5 s, Colossus ~2.5 s, spread evenly (young unchanged); builder
+  turn-weight (agent ac71d48ab1a1ff638, claude/turn-weight) sends a design first; clip + fresh motion critic before merge.
+- D-188 "Keep going until critics pass" (no round cap) + "if something has failed 7 times in a row then our method is
+  wrong": two failed rounds in a row = stop, find why, change the approach. Rulebook updated, rule-check item 20.
+  VFX lead asked to reassess the fire/helicopter look (round 7) before round 8; relay its reassessment to him.
 - Lead/VFX split: VFX lead owns every visual item end to end; lead owns sim, gameplay, UI flow, tests, merges, docs,
   milestones, sound. Each tells the other before touching the other's files.
 - D-171: new heads after the demo (Colossus unlock, evolve-screen picker = lead's UI, post-demo). D-173: wrecks also
@@ -41,7 +46,9 @@
     strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
     Run 6 red; WIP 4e0d6637 (local). Trace: every claw-band miss is in pull-back. Cause A (sim): the kaiju jumps
     17-27 u/s at Behemoth/Colossus in turns (suspect BodyContact._swing about the planted foot, same as the gait
-    critic's 270 deg/s): split asked, no sim edits, director question. Cause B: a pull-back bug at 4 u/s (fixing).
+    critic's 270 deg/s): measured 100% _swing. Cause B fixed (0.6 s smoothed anchor), run 7 WIP 8f729ebb: 3 left
+    (camera Behemoth/Colossus, claw Colossus), all from the swing. Told: push as is, handoff, stand down; a fresh
+    builder rebases on turn-weight and reruns heliflight; camera still red then = director question with episodes.
   - volley (agent ac92f78143e5f1af5, ~551k tokens) on claude/strike-delay (D-166): military red on 3 checks; paired
     seeds 0-47 per city, delays on vs off, before any re-pin (D-144); different distributions = a behaviour change to
     report (maybe a director question). Then refresh.
