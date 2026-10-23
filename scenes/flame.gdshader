@@ -43,13 +43,14 @@ void fragment() {
 	float tall = 0.78 + 0.44 * seed;  // each tongue its own height
 	float h = (1.0 - UV.y) / tall;  // 0 foot, 1 tip
 	float x = (UV.x - 0.5) * 2.0 - (seed - 0.5) * 0.5 * h;  // and its own lean
+	float foot = 0.03 + 0.08 * fract(seed * 7.3) + 0.04 * noise(vec2(UV.x * 11.0, seed * 31.0));
 	float width = (1.0 - pow(clamp(h, 0.0, 1.0), 0.8)) * (0.35 + 0.65 * sin(clamp(h * 3.0, 0.0, 1.5708)));
+	width *= mix(0.4, 1.0, smoothstep(foot, foot + 0.25, h));  // a rounded, uneven foot: no flat cut, no toes
 	float n = noise(vec2(UV.x * 6.0 + seed * 20.0, UV.y * 5.0 - TIME * 3.0));
 	float d = abs(x) / max(width, 0.001) + (n - 0.5) * 0.7 * (0.4 + h);
 	float mask = 1.0 - smoothstep(0.55, 1.0, d);
 	mask *= 1.0 - smoothstep(0.92, 1.0, h);
-	float foot = 0.05 + 0.1 * fract(seed * 7.3) + 0.06 * noise(vec2(UV.x * 11.0, seed * 31.0));
-	mask *= smoothstep(foot, foot + 0.12, h);  // an uneven, ragged foot: no flat cut, no equal toes
+	mask *= smoothstep(foot - 0.02, foot + 0.05, h);
 	vec3 base = vec3(0.70, 0.20, 0.05);
 	vec3 orange = vec3(1.0, 0.40, 0.06);
 	vec3 red = vec3(0.94, 0.23, 0.05);
