@@ -61,6 +61,8 @@
 - 15:00: #166 MERGED (3e4a7665; look r3 FIX flagged for M3, r4 on claude/heli-look-r4). Open: #170 volley (D-178
   rework pushed e5d24848, sim/taskforce_volley.gd; CI running; non-author sim re-look subagent running, go only on its
   SHIP + green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
+  16:37: night-fog SHIP 4524e90c (VFX lead) -> git-helper opens it in slot 3; go on green. gait-step-len d6c3fe5b
+  local, sim_play running, takes the next free slot; send its sha (and heli-standoff's) to the VFX lead.
   Next slot: claude/gait-step-len (volley builder), then claude/gait-fix (VFX, motion gate), then strike-delay.
 - D-179 pacing workflow (beam-cost builder, claude/pacing-ci); D-180 skins need a cohesive range (post-demo).
 - Godot hold until 16:01 ("no godot for 75min" at 14:46), scratchpad no_godot_until2.sh.
