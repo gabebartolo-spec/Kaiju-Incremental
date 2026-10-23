@@ -1,83 +1,65 @@
-# Volley-stagger handoff (builder "volley"), 2026-10-23 13:3x
-## State: available; task 1 pushed and fully proved (reruns done 14:15-14:20), task 2 audit done and reported
+# Volley-stagger handoff (builder "volley", then builder "beam-cost" for D-178), 2026-10-23 16:3x
+## State: D-178 done and proved (red on the old sim, green on the new); pushed to claude/volley-stagger (updates PR #170)
 ## Task
-Kaiju lead's builder. Task 1: ROADMAP "Interview answers", D-166 "Stagger the shots": one Taskforce squad never
-lands more than about 2 railgun hits in a second, so the dash has time to save the kaiju (D-161). Sim only,
-data in data/tuning.json, seeded, no save change. Task 2 (read-only, after task 1 is pushed): audit of every
-PRESSED reptilian attack against D-166 "Damage lands on impact" (report to the lead as a table, no code).
-## Branch and commit
-Branch claude/volley-stagger (from origin/claude/look-options df5309de), worktree
-.claude/worktrees/agent-ac92f78143e5f1af5. Code commit 9e1f7666. No PR (the lead opens it). The branch's upstream
-is look-options by accident: push only as `git push origin claude/volley-stagger:claude/volley-stagger`.
-## What changed (task 1)
-- data/tuning.json taskforce.railgun.squad_gap 0.6 (+ the _note sentence). 0.6 is the builder's pick inside "about
-  2 hits' worth in a second": any gap over 0.5 s keeps a squad to 2 shots in a second.
-- sim/taskforce.gd: `_volley` {squad -> seconds until its next aim may start}; `_start_aim()` (the old aim-start
-  lines, plus taking the squad's slot); `_tick_volleys(dt)` counts the waits down once a step, after frost.step and
-  before the agents loop. In `_perched`, a gunner whose railgun is ready and in range aims only if its squad has no
-  wait; else it holds (no frost, no hop) until the slot frees. A shot lands `aim_seconds` after its aim, the same for
-  every gunner, so aims `squad_gap` apart are shots `squad_gap` apart. The lock/dodge rules are untouched.
-- tests/run_taskforce_gate_tests.gd: `_check_volley` + `_volley(gap)` + `_worst_second(times)` (6 checks).
-  Planted a squad of five lined up and a squad of three (railguns ready, one roof, kaiju standing in range, 10 s).
+D-166 "Stagger the shots" (one squad never lands more than ~2 railgun hits a second, so the dash has time to save the
+kaiju, D-161) and, since the non-author sim review of #170, D-178 "Lock together, fire in turn" (director): a squad's aim
+lines lock at the same moment (one lock-on point for the squad) and its shots land 0.6 s apart (taskforce.railgun.
+squad_gap), so one dash at the lock dodges the whole squad's volley; standing still, at most ~2 hits a second per squad
+(D-175: per squad). Sim only, data in data/tuning.json, seeded, no save change.
+## Branch
+claude/volley-stagger (from origin/claude/look-options df5309de), no PR from me (the lead opens/updates #170). The
+branch's upstream is look-options by accident: push only as
+`git push origin claude/volley-stagger:claude/volley-stagger`. D-178 worktree: Kaiju-Incremental-wt/volley-d178.
+## What changed
+- D-166 (commit 9e1f7666, earlier): data/tuning.json taskforce.railgun.squad_gap 0.6; each gunner's aim started squad_gap
+  after the squad's last (so the lines locked one after another: one dash dodged only one shot; D-178 replaces this).
+- D-178 (this commit): the railgun code moved out of sim/taskforce.gd (it would have passed the 400-line cap) into the
+  new sim/taskforce_volley.gd (class TaskforceVolley, like TaskforceFrost/TaskforcePerch). Taskforce keeps `volley`,
+  `Agent.muzzle()`; _perched asks `volley.busy(squad)` then `volley.open(agent, agents, dt)`; step calls `volley.tick`
+  before the agents loop and `volley.aim(agent, dt)` for an aiming agent.
+  - open(): the first ready gunner (perched, rail_cd 0, kaiju in range) and every LATER-listed ready gunner of its squad
+    put their lines up in the same step; gunner n (list order) is due aim_seconds + n x squad_gap after. A later-listed
+    gunner also runs aim() this same step, so it starts one dt behind to stay level with the opener.
+  - tick(): per squad {"lock": s until the lines lock, "left": s until the last shot}; at lock every aiming gunner of
+    the squad locks on the first line's aim_at (one point, one step, railgun_locked each); at left <= 0 the squad may
+    open another volley. A gunner killed mid-aim leaves its shot out, the volley still runs to its planned end.
+  - aim(): follows the kaiju until locked; fires when its aim_left <= 0 (damage, armour, events unchanged: _fire moved
+    as it was). A lone gunner is exactly as before (same lock and shot steps), so railgun_hit/dodge/mid-aim/armour checks
+    pass unchanged.
+- tests/run_taskforce_gate_tests.gd: `_volley(gap)` now returns {"locks", "shots"} per squad; `_check_volley` gained
+  "each squad's lines lock at the same moment" (squads of five and three); new `_check_squad_dash`: a planted squad of
+  four, ONE dash (Shift) the step after the lock: 0 hits and 4 misses; standing still: 4 hits and 0 misses; plus "the four
+  lines lock in one step on one point" and "the dash left the lock behind".
+- data/tuning.json _note and tests/README.md row describe the new rule.
+## Evidence (2026-10-23 16:1x-16:2x, isolated APPDATA by run_tests.sh, native DLL absent here: the GDScript path)
+- RED on the base sim (new tests, old sim/taskforce.gd, volley class moved aside): taskforce_gate 9 of 9 functions, 31
+  checks, 4 failures: "each squad's lines lock at the same moment (lines [5, 3]): [[1.633, 2.267, 2.9, 3.533, 4.167],
+  [1.633, 2.267, 2.9]]", "the four lines lock in one step on one point (1 locks, 1 points)" (twice), and "one dash at
+  the lock: every shot of the squad misses (hits, misses [3, 1])".
+- GREEN on the new sim: taskforce_gate 9 of 9, 31 checks, 0 failures; taskforce 10 of 10, 56 checks, 0 failures.
+- gdlint, gdformat --check (LF), tuning_keys.py (1167 reads), complexity_ratchet.py (70 offenders, none grown) clean.
+- Not exercised: check_scripts.sh (the suites compiled every file they load); the look (aim lines now go up together and
+  lock together; no capture); play feel; a squad of five lined up at the exact same roof cell (the fixture does that);
+  the military/army suites (the sim change is inside Taskforce); two or three squads at once can still land 2 hits a
+  second EACH (D-175 per squad); a gunner who becomes ready mid-volley waits for the squad's next volley.
 ## Review packet (kaiju-sim-review; reviewer is not the author)
 Transitions affected (derive your own from the diff too):
-- Tick: Taskforce.step order is now frost.step, `_tick_volleys`, then agents in list order. No clock, no new RNG
-  draw; the only state is a Dictionary keyed by the agent's squad id (insertion order is deterministic).
-- Injury: damage per hit is unchanged (share x max hp, armour, min damage). Only WHEN a squad's hits land changes.
-- Removal: a gunner killed mid-aim (perch collapse, swat) leaves its squad's slot taken for at most `squad_gap`; the
-  entry expires by itself (erased at <= 0), so an empty squad leaks nothing.
-- Save/reload: none. Taskforce is rebuilt per rampage; the only persisted value is `carried` (city_seconds, D-160).
-  No save version change, no new save key. `_volley` is not saved (no mid-rampage save exists).
-- Generation: no new entities, caps unchanged. Identity: `agent.squad` is the index into squad_sizes at spawn;
-  test-placed agents share `squad_sizes.size()` (so planted squads must append to squad_sizes, as the test does).
-Invariants and evidence:
-1. One squad's railgun shots are at least squad_gap apart, so at most 2 in any 1 s window (closed window).
-   Evidence: _check_volley, worst window 5 and 3 before, at most 2 after (the check passes).
-2. Every gunner still fires (no starvation): the slot frees every squad_gap, so the nth waits (n-1) x 0.6 s at most,
-   1.8 s for a real squad of 4. Evidence: "every gunner still fires" (5 and 3 shots in 10 s).
-3. The gap is per squad, never global: a second squad is not held up. Evidence: first shots of both squads within
-   squad_gap of each other. Planted global gap shown failing exactly this check (see Unfinished changes).
-4. A lone gunner is unchanged (empty `_volley` means it aims at once): existing railgun_hit, dodge, mid-aim and
-   armour checks pass unchanged.
-5. Determinism: same seed, same events (the taskforce suite's _check_determinism passes).
-Not exercised: the look (aim lines now go up 0.6 s apart; no capture); play feel; two or three squads at once can
-still land 2 hits a second EACH (up to 6 with 3 squads, about 48% of health), because D-166 says "one squad"; a
-squad's cooldown cycles after the first volley (only the first volley is planted, 10 s of a 12 s cooldown).
-## Evidence so far
-- Failing first (old rule: key present, ignored): taskforce_gate 25 checks, 2 failures: "a squad lands at most 2
-  hits in any second (5 and 3)" and "shots at least 0.6 s apart: [2.03 x5]" (all five shots on the same step).
-- With the change: taskforce_gate 8 of 8 functions, 25 checks, 0 failures; taskforce 10 of 10, 56 checks, 0 failures.
-- gdlint, gdformat --check (LF), tuning_keys.py, complexity_ratchet.py (70 offenders, none grown), check_scripts.sh
-  (452 scripts) all clean on the code commit.
-## Unfinished changes
-- None. Director D-175: volleys stay "Per squad" and the 0.6 s gap stands.
-- Reruns done after the engine ban, 2026-10-23 14:15-14:20: taskforce_gate with a PLANTED global gap (`_volley[0]`
-  and `has(0)` instead of `agent.squad`) = 8 of 8 functions, 25 checks, 1 failure, exactly "the gap is kept per
-  squad: the second squad's first shot is not held up by the first"; the plant was reverted; the clean
-  taskforce_gate = 8 of 8 functions, 25 checks, 0 failures. Earlier on 9e1f7666: taskforce 10 of 10 functions,
-  56 checks, 0 failures.
-## Task 2 audit result (read-only, sent to the lead; the sim steps at 60 Hz in the game, 30 in tests)
-Pressed reptilian actions are three: dash, signature breath, Thunder Beam (HELD only feeds the mantis glide).
-- Dash (Shift/B): moves from the press tick (0 s); buildings break on contact over ticks 0-24 (0.4 s), tanks once each
-  at 60; same at all three growth steps (about 15 / 27 / 50 units far). A sim wind-up would cost the 0.4 s railgun
-  dodge (D-161), so the D-165 crouch must be view-only.
-- Breath: ALL damage on the press tick (0 s), cone read at that instant; 7 s cooldown from the press; view flame
-  lingers 0.9 s (fx.beam_seconds). A wind-up needs a call: lock the cone at the press or follow the kaiju to the
-  strike; what a breath pressed in the last second does; run_fire and run_sim tests assume tick-0 damage.
-- Thunder Beam (E/Y, Colossus only): stream of beam_dps x dt for 4.0 s from the press tick, cooldown 18 s from the
-  press, walk x0.3 while on. A wind-up needs a call: does the 4 s start at the press or the strike, is he rooted.
-- Not pressed: stomp lands on its tick (the view already waits for the foot); the claw swipe ALREADY has a 0.3 s sim
-  wind-up (swipe_windup event, then the rake); tail sweep and ram are instant.
+- Tick: Taskforce.step order is frost.step, volley.tick, then agents in list order. No clock, no new RNG draw; state is a
+  Dictionary keyed by squad id (insertion order deterministic).
+- Injury: damage per hit unchanged (share x max hp, armour, min damage). WHEN hits land changes: lock together, shots
+  squad_gap apart; the lock is now a per-squad moment, not per-gunner.
+- Removal: a gunner killed or swatted mid-aim keeps its place in the schedule (its slot stays empty); the volley ends at
+  its planned time, so the squad's next volley waits at most 4 x 0.6 s more.
+- Save/reload: none (Taskforce rebuilt per rampage; `_volleys` not saved). Generation/identity: no new entities;
+  agent.squad is the index into squad_sizes at spawn; test-placed agents share squad_sizes.size().
+Invariants: (1) one squad's shots are >= squad_gap apart (at most 2 in a 1 s window); (2) a squad's lines lock in one
+step on one point; (3) every ready gunner of the opener's squad fires once per volley (no starvation); (4) squads are
+independent (a second squad's first shot is not held up); (5) determinism: same seed, same events.
 ## Open decisions
-- Does the director want the stagger across squads too (a global gap)? D-166 says "one squad"; built as ruled.
-- 0.6 s is the builder's number inside "about 2 hits' worth in a second" (one data value).
-## Running jobs
-none (engine ban until 14:14).
-## Findings for the lead
-- The worktree guard refuses `bash <script>` and `~`/`$HOME` paths and any redirect to a path containing "GitHub";
-  engine_slot.sh could not run, so suites ran as `GODOT=... tools/run_tests.sh --quick <suite>` (plain command).
-- gdformat on Windows rewrites files with CRLF in the working copy; convert back to LF before committing.
+- 0.6 s is the builder's number inside "about 2 hits' worth in a second" (D-178 now names 0.6 s: one data value).
 ## Rules learnt the hard way
 - Edit tuning.json _note text without double quotes: they break the JSON (the whole sim fails to load).
 - A fresh worktree import segfaults (exit 139) after the class cache is written; the cache is enough for tests
-  (`run_tests.sh --quick` works), so do not rerun the import.
+  (`run_tests.sh --quick` works). In a gdscript test, index into an Array/Dictionary gives Variant: assign to a typed local
+  before `.size()` or `check(...)` (Warning treated as error).
+- The worktree guard refuses variable assignments next to GitHub paths in a plain command: run a script file instead.
