@@ -4,6 +4,30 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-194 · Director · Cascadeur Pro 14-day trial to test the animation prototype; nothing from it ships
+
+For the D-193 pipeline he asked about Cascadeur's 14-day trial; its licence forbids commercial use ("This licence type prohibits any Commercial Use", cascadeur.com/agreement, Pro Trial), so nothing made in it could ship. Offered Indie ($12 a month billed yearly, $144; commercial use while revenue is under $100k a year; FBX export; no retargeting): "ok lets try indie", then "no i will get the pro 14 day trial". He signs up and owns the account; Claude installs and drives it to test whether it can animate the croc. The trial forbids commercial use, so nothing made in it ships: any clip we keep is remade under a paid licence (Indie under $100k revenue a year, else Pro), which needs his yes then. No spend now.
+
+## 2026-10-23 · D-193 · Director · A new animation pipeline from a commercial animation tool; animation tuning stops
+
+He: "Im sick of wasting time and usage on animation problems. It is sisyphus shit. We need a new pipeline. That UniMate one looked promising." UniMate's code is MIT, but its trained models are CC BY-NC 4.0 (non-commercial, which the licence rule bans) and its animal data has disputed origins. Asked how to get such animation legally: "Commercial tool only". Asked whether the kaiju should play finished moves from the tool (the clip moves him) or the game keep placing each foot: "seems like a huge decision that I am not equipped to make", so it is the lead's call: a prototype first, the Behemoth walking, turning and stomping with the tool's finished moves; it replaces today's foot placement only if it beats it, and he judges the feel at the playtest. Kaiju animation tuning (turns, breathing, the claw arm) parks until the pipeline is in; the D-192 turn branch parks unmerged.
+
+## 2026-10-23 · D-192 · Director · The big forms keep the short-step turn (A); the 10 s shore bar stays
+
+Asked with the A/B clip he wanted (D-187: "show me them both"). Both turn the same on screen and neither stops: the body keeps about walking pace while stepping round a planted foot, and A and B end about 1.4 u apart. He chose "A: short steps" (turn_slow 0.1), which passes every walk and turn check; B fails the motion gate (the Colossus turns about his middle). Asked whether the Behemoth may take 12 s instead of 10 s to flatten the first shore buildings after rising (one of three test maps): "what the hell, no? what are we doing here". The 10 s bar of D-131 stays, and the builder meets it without changing the turn. Never ask him to loosen a bar he set (rulebook).
+
+## 2026-10-23 · D-191 · Director · Atmosphere: all five weathers, haze and sky that follow the ruin, gulls and pigeons, fleeing boats, the whale
+
+Asked in the atmosphere lead's session (A1-A16), after it found that #167 built only the weather pick and nothing draws any weather. Weather (D-155): "All five" in M1 (clear, overcast, fog banks, rain, thunderstorm) at all four times of day. Rain: "Heavy, kaiju clear" (downpour streaks and splashes, thinned round the kaiju and the screen centre). Fog banks: "Low, he towers above" (fog rolls through the streets; buildings and his head and back rise out of it). A storm by day: "Yes, near dusk-dark" (lit windows, fires and breath glow). Storm lightning: "Same lightning, far off" (the croc's bolt look, thin and distant in the clouds). Wet streets: "Yes, a wet sheen" in rain and storms (roads darken and catch fire and lamp light; no screen-space reflections). Clouds: "Soft, like the smoke", shown to him as labelled stills before going further. Escalation (D-154): "How much is destroyed" drives it (haze and orange sky follow the share of the city ruined); by day "Yes, softer by day" (smoky amber-brown, the sun dims; full orange at dusk and night); blackouts "Dusk and night only"; against the weather "Ruin wins late" (the orange haze shows through any weather at the peak of the ruin). Sky and sea life: "Gulls and pigeons" (gulls over the water, pigeons off the roofs, both scatter at roars and tower falls); boats "Flee and rock" (they speed away when he is near; his wake rocks them and can tip one; spectacle only, no biomass, no game rule); the whale (D-168) surfaces and spouts "Two or three times" a run, far out; at a roar "Whale dives, boats flee" (a surfaced whale goes under with a tail slap, nearby boats scatter). Order: "Escalation first", then weather, then sky and sea life. Owner: atmosphere lead.
+
+## 2026-10-23 · D-190 · Director · Fire is smooth realistic flames; a slow chest-and-neck breath; the claw swipe stays straight ahead
+
+Asked in the VFX lead's session. Fire (the fire board of D-188's reassessment, blocky voxel flames against smooth ones): "Smooth flames": tall, tapering, realistic flame shapes on every fire, the one effect that is not blocky; the question flagged the style mix and he chose it (the one-style-per-frame rule allows a mix he approves). Breathing while he stands still (D-165): "Slow chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, as the default idle (replaces the movement caps set after "way too much ... too fast"). Claw swipe seen from the camera behind him, where his body hides it: "Keep it straight ahead": the swipe stays on the snout line in front of him, its trail and sparks strengthened so it reads from behind; the side-hit idea is dropped. Owner: VFX lead.
+
+## 2026-10-23 · D-189 · Director · Interview: atmosphere starts now in a third session; music opens low; helicopters never block the view; 6 builders
+
+He said "interview me". M1 (D-146, D-155) waits for all its items and several had not started; asked when he plays it: "start them now, create a third session". Asked what it owns: "Atmosphere": a third lead session owns M1's atmosphere end to end (sky and sea life with clouds, birds, small boats and the whale, D-168; weather looks; the rampage escalation of D-154: haze, orange sky, spreading blackouts), with its own builders and critics; the VFX lead keeps fire, explosions and the kaiju's motion; the lead keeps the game rules, music and city sound and builds the layered music now. Builder cap: "6 in total": two engine builders per session (amends the "Fit the PC" cap of about 4); drop back if the CPU pins at 100%. Music (D-125): "Low and creeping": a rampage opens on low strings and bass only, drums join at the first big collapses, brass and the full theme at the peak of the ruin. Endless mode: "Colossus track, fully built" (the Colossus city's track, layering as usual). A rampage's end: "Fade under the results" (the layers drop away over about 2 s into the results screen, leaving the low strings; no new music). Helicopters (D-183's "They still keep off the camera's side"): "Never block your view": they may pass briefly on the camera side while repositioning, but never fly between the camera and the kaiju.
+
 ## 2026-10-23 · D-188 · Director · Visual reviews keep going until the critics pass; repeated failure changes the method
 
 He asked "are we in clip making purgatory again?" (the fire and helicopter look at round 7, the new breathing failed its first review as invisible at the game camera, the walk fix failed twice on the swivel). Asked how visual reviews run until M1, he chose "Keep going until critics pass": no round cap; critics keep failing merely acceptable work, so the M1 build shows finished visuals. Then: "but if something has failed 7 times in a row then our method is wrong, and needs to be reassessed": two failed rounds in a row (CLAUDE.md rule 8) mean the owner stops, finds why each round failed and changes the approach before the next round. The fire and helicopter look is reassessed before any round 8. Not chosen: two rounds then M1; fewer clips with the same rounds.
@@ -374,26 +398,3 @@ Why (asked through the question tool): true physics is the headline (D-097); a c
 was cut away, wherever the kaiju stands, and can land on it. Supersedes D-096's lead call "an undermined tower falls away
 from the kaiju". Changes: carving WP1/WP5 keep the support rule's own direction; #89 drops its "every topple falls away"
 override (croc-contact builder, 2026-10-20) before it merges.
-
-## 2026-10-20 · D-098 · Director · Young croc retune = option A "steady upgrades"
-Why: playtest note 8 (cadence 1 -> 8 -> 1 upgrades per death); he picked A of three via the question tool. Values:
-level-1 costs about half of level 2 (claws 45, hide 45, stride 80, quake 100, rage 75, greed 125, frenzy 220, r_tail 200,
-r_momentum 400), evolve1 400 -> 600, young rooftop rifle sting 0.01 -> 0.05. Bot: e1 0.24-0.27 h, young defeats ~8.5/15,
-2-4 buys per death. Built on claude/young-retune (with #89, #90 and the army ramp from closed #85). Settled only when his
-playtest passes.
-
-## 2026-10-20 · D-097 · Director · True physics and carving are top priority, started now
-Why: "true phyiscs should be top priority. carving included. its a game about destroying cities, the city destruction has
-to be good"; earlier the same day he chose "start now, 2 builders". Supersedes D-094's "after demo exe 2". Changes: WP1
-(sim grid, claude/carve-wp1), WP2 (native C++, claude/carve-wp2), WP3 (building cells, claude/carve-wp3) and WP5 (physics
-presentation, claude/carve-wp5) are running in parallel with the demo fixes; carving PRs, CI and reviews go first.
-
-## 2026-10-20 · D-096 · Director · Swipes undermine towers
-Why (asked through the question tool): claw hits on a tower's base count as chewing it, so towers topple sooner with
-Claws. Lead call: an undermined tower falls away from the kaiju, so the player sees the fall. Built in #89
-(sim/claw_swipe.gd chews the building face; tuning is a seeded 5-seed mean, not a single seed).
-
-## 2026-10-20 · D-095 · Director · Claws = a claw swipe, for the croc only in the demo
-Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
-Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
-two species keep Claws as +3 stomp. Built in #89.

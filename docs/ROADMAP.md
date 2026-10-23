@@ -334,7 +334,8 @@ state. No director clips or per-change approvals in between; clips only where mo
   the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
   Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
   the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
-  music from the director's Suno stems. Visuals: VFX lead. Sound, music, weather pick and options: lead.
+  music from the director's Suno stems. Atmosphere (sky and sea life, weather looks, rampage escalation): the
+  atmosphere lead (D-189). Other visuals: VFX lead. Sound, music, weather pick and options: lead.
 - **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
 - **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
   deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
@@ -423,7 +424,12 @@ state. No director clips or per-change approvals in between; clips only where mo
   exact fix and pass bar first; any sim part to the lead). Status: view fixes are PR #175 (the walk passes); two
   critic rounds FIX on the turn, measured in the sim: the Behemoth and Colossus turn at 260-311 deg/s peaks, a snap
   per planted step. D-187 "Heavier, slower": a U-turn about 2 s Behemoth, 3 s Colossus (re-asked after a wrong quote), spread evenly over the
-  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges.
+  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges. D-192: A (short steps)
+  ships; A and B looked the same and neither stops; the 10 s shore bar stays, met without changing the turn.
+- "Im sick of wasting time and usage on animation problems. It is sisyphus shit. We need a new pipeline. That UniMate
+  one looked promising" (D-193): a commercial animation tool makes the croc's moves; a Behemoth prototype (walk,
+  turns, stomp as finished moves) replaces foot placement only if it beats it. Owner: lead (tool pick, sim side),
+  VFX lead (clips on the rig). Status: tool research. Animation tuning (turns, breathing, claw arm) parked.
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
@@ -455,7 +461,14 @@ state. No director clips or per-change approvals in between; clips only where mo
   Fire has never passed and was being fixed inside the helicopter work, so the Fire family becomes its own item (a
   board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
   an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
-  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187.
+  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187. Fire board: "Smooth
+  flames" (D-190), rolling out to every fire on claude/fire-smooth, the helicopter fall round on top; claw swipe
+  "Keep it straight ahead" (D-190): hit back on the snout line, stronger trail and sparks.
+- "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
+  "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
+  atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
+  becomes the camera-to-kaiju corridor). Status: in progress. Atmosphere rulings A1-A16: D-191 (order: escalation,
+  weather, sky and sea life; #167 drew no weather yet).
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
@@ -494,4 +507,6 @@ state. No director clips or per-change approvals in between; clips only where mo
   after SHIP. Owner: VFX lead. Status: in progress (D-165 phase A builder, claude/living-predator). Seen on base,
   where the breath is baked into the idle clip; it is damped at runtime. Bars: one breath every 4 / 6 / 8 s (young
   croc / Behemoth / Colossus), inhale 40%, exhale 60% with a pause; back and flanks move 0.25-0.8 / 0.6 / 0.5% of
-  body height at most, no faster than 0.6% of body height a second; the belly barely moves.
+  body height at most, no faster than 0.6% of body height a second; the belly barely moves. D-190 "Slow
+  chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, the default idle
+  (replaces the movement caps above).

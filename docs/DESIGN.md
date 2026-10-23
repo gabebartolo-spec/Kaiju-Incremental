@@ -32,7 +32,8 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **Reptilian, the croc titan: strongest, a living battering ram.** "A crocodile in a t-rex body, not godzilla
   shaped" (D-108): croc snout, pale flat bone scutes, charcoal spines, short reptilian arms, long low tail, ~20-30
   deg lean, graceful like a JP T-rex (D-031, D-046, D-048). Kit: claw swipe raking ahead every 2 s that undermines
-  towers (D-095, D-096); tail as an autonomous extra limb that shears buildings (a tree node, b2-2); momentum
+  towers (D-095, D-096), kept in front of him, its trail and sparks reading from the camera behind (D-190);
+  tail as an autonomous extra limb that shears buildings (a tree node, b2-2); momentum
   (straight lines hit harder, turning bleeds it); dash (bursts through every building in its path, landmarks too, a kick per wall, #34). Signature: a breath of **hot forked white-hot lightning**,
   never "atomic" (D-108); its ultimate is a long sustained beam swept by steering.
 - **Insectoid, the mantis: fast, and the brood mother.** Its identity: it **lays eggs that hatch elephant-sized
@@ -52,7 +53,8 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
   bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
   shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
   antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047). Standing still he
-  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking. Strides
+  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking; each
+  breath a slow, deep heave of neck, shoulders and flanks every 6-8 s (D-190). Strides
   grow heavier with size; tail, throat and jowls swing on each footfall; a short crouch before the dash (D-165).
   A big attack's damage lands when the jaws or foot land (D-166).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
@@ -87,6 +89,7 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
   distortion, a sonic boom delayed by distance (#19, #20).
 - **Fire:** a destroyed building stays rubble, never a burning shell (#14). Fire returns as gameplay: a tree node lets
   fire spread building to building on its own, burn-outs pay biomass, fires light the city (#15; rules in research 26).
+  Flames are smooth, tall and tapering, realistic in shape: the one effect that is not blocky (D-190).
 - Real OSM cities (D-029) are tabled. A background kaiju rampaging in the far skyline is a prototype for his yes (#16).
 
 ## Destruction
@@ -124,6 +127,12 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
   D-057/D-068). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010).
   Time of day is random per run (dusk, night, morning, noon), never the same twice in a row, with an options toggle to fix one; morning less hazy, night lighter (D-106, D-145).
+  Weather, one per run (D-155, D-191): clear, overcast, low fog banks he towers above, heavy rain thinned round him,
+  a dark storm with distant croc-style lightning; wet streets in rain and storms. As the city falls, haze and sky
+  follow the share destroyed: smoky amber by day, orange at dusk and night, blackouts at dusk and night; late in a
+  rampage the ruin shows through any weather. Gulls over the water and pigeons off the roofs scatter at roars and
+  tower falls; boats flee and rock in his wake; the whale surfaces two or three times a run and dives at a roar.
+  Spectacle only: no game rule.
 - **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). Run
   intro: a 3 s shot of the water rippling, the kaiju bursting out roaring, the camera pulling out (#11). Water reacts
   to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.
@@ -140,6 +149,10 @@ sees, decides or remembers is cut, not polished. **Motion and destruction come f
 - SFX from ElevenLabs Starter (owned) and CC0 / free libraries, synthesized in-house where better; every source CLEARED
   in `docs/LICENSING_REGISTER.md` (D-030, D-092). Suno Pro music only after his written spend yes. The director
   generates in his own browser; agents write prompts, ingest, QA and register.
+- Music: one theme (his remaster), a Cover per city, in layers that build with the ruin (D-125, D-184): a rampage
+  opens low and creeping, strings and bass only; drums at the first big collapses; brass and the full theme at
+  the peak; Endless plays the Colossus track; at a rampage's end the layers fade under the results (D-189). The
+  menu plays the theme over the city sound.
 - Explosions: layered crack and body, sub thump, delayed debris, a distance-delayed sonic boom (#20). Rooftop rifles
   must not sound like a typewriter (playtest 1).
 
