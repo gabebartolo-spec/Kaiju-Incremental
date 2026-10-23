@@ -6,9 +6,15 @@ docs/audio/music-briefs.md, Weirdness 35%, Style Influence 70%, Duration 3:00. B
 
 | Date | City | Take | Suno song | Credits | Picked |
 |---|---|---|---|---|---|
-| 2026-10-23 | 1 | 1A | https://suno.com/song/6a441444-8718-4feb-bd32-52832307d5df | 10 (pair) | |
-| 2026-10-23 | 1 | 1B | https://suno.com/song/a1ea71ad-1475-4e86-9e16-4a52e41a0538 | (pair) | |
-| 2026-10-23 | 2 | 2A | https://suno.com/song/483d3034-becb-4b37-85c9-ea6886c81e12 | 10 (pair) | |
-| 2026-10-23 | 2 | 2B | https://suno.com/song/ac8b59b6-c92f-4828-b6de-b5f911bc333c | (pair) | |
-| 2026-10-23 | 3 | 3A | https://suno.com/song/b5f06391-e36e-4cc7-80fa-90f2cf35bfb6 | 10 (pair) | |
-| 2026-10-23 | 3 | 3B | https://suno.com/song/0c650abb-a9f6-4732-9e3e-49c954c3ac15 | (pair) | |
+| 2026-10-23 | 1 | 1A (brooding, rejected: too heroic) | https://suno.com/song/6a441444-8718-4feb-bd32-52832307d5df | 10 (pair) | |
+| 2026-10-23 | 1 | 1B (brooding, rejected) | https://suno.com/song/a1ea71ad-1475-4e86-9e16-4a52e41a0538 | (pair) | |
+| 2026-10-23 | 2 | 2A (brooding, rejected) | https://suno.com/song/483d3034-becb-4b37-85c9-ea6886c81e12 | 10 (pair) | |
+| 2026-10-23 | 2 | 2B (brooding, rejected) | https://suno.com/song/ac8b59b6-c92f-4828-b6de-b5f911bc333c | (pair) | |
+| 2026-10-23 | 3 | 3A (brooding, rejected) | https://suno.com/song/b5f06391-e36e-4cc7-80fa-90f2cf35bfb6 | 10 (pair) | |
+| 2026-10-23 | 3 | 3B (brooding, rejected) | https://suno.com/song/0c650abb-a9f6-4732-9e3e-49c954c3ac15 | (pair) | |
+| 2026-10-23 | 1 | 1C (D-176 darker) | https://suno.com/song/93a4f044-79d8-475f-b9ee-14e09c258b75 | 10 (pair) | |
+| 2026-10-23 | 1 | 1D (D-176 darker) | https://suno.com/song/c1430a1b-e748-4857-82cd-1785bd31ff41 | (pair) | |
+| 2026-10-23 | 2 | 2C (D-176 darker) | https://suno.com/song/8bef4cab-0824-43df-8607-e58be21ce058 | 10 (pair) | |
+| 2026-10-23 | 2 | 2D (D-176 darker) | https://suno.com/song/841b7c3b-c171-4492-8e06-a50033ba9595 | (pair) | |
+| 2026-10-23 | 3 | 3C (D-176 darker) | https://suno.com/song/2f9508bb-524c-4e77-a58f-e597514047ef | 10 (pair) | |
+| 2026-10-23 | 3 | 3D (D-176 darker) | https://suno.com/song/fd7dd77e-7d04-4ccc-ac60-7ee4f9a3f690 | (pair) | |

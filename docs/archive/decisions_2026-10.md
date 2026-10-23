@@ -2,6 +2,13 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-083 · Director · After the demo, playtest fixes come first
+Why (16:0x): director's call for after the demo build (P7 playtest); no new feature work jumps ahead of its fixes.
+
+## 2026-10-18 · D-084 · Lead · #55 trample gets one last round, else the demo ships without it
+Why (18:0x, same rule as D-082): r9 failed the critic (topple hidden by the body, sprite dust, see-through crowns, dark
+stumps, falls along the tail). One more round; if it fails, greenery's trample is not in the demo.
+
 ## 2026-10-18 · D-082 · Director · #50 military AI gets one more round, else the demo ships without it
 Why (16:0x): the fresh motion critic failed #50 (tanks skewed mid-street, helis firing nose-away). One last round,
 and #50 ships only if it passes a fresh critic before #36 is tuned.
