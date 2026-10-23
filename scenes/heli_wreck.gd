@@ -36,6 +36,7 @@ class Fall:
 	var trail: GPUParticles3D
 	var from: Vector3
 	var drift: Vector3
+	var side: Vector3  # which way its path bows out of the straight line
 	var seconds: float
 	var t := 0.0
 	var yaw := 0.0
@@ -60,6 +61,8 @@ func _init(city: CityView, sim: RampageSim) -> void:
 
 ## The sim downed helicopter `node` (its model, already off the circle) with `event`.
 func downed(node: Node3D, event: Dictionary) -> void:
+	node.set_meta("opacity", 1.0)  # a screen-door fade never carries on to the wreck
+	VehicleParts.set_opacity(node, 1.0)
 	var at := Vector3(Num.f(event["x"]), _sim.air.altitude(), Num.f(event["z"]))
 	match str(event.get("fate", "burst")):
 		"grabbed":
@@ -91,7 +94,7 @@ func crashed(event: Dictionary) -> void:
 	HeliFx.smoke_puff(_city, ground + Vector3(0, 1.5, 0), _cfg, Num.f(_cfg["crash_smoke"]))
 	_city.fire(ground, Num.f(_cfg["crash_fire"]))
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), scale)
-	_city.fx.shockwave(ground, scale * 1.5)
+	_city.fx.shockwave(ground, scale * Num.f(_cfg["crash_ring"]))
 	_debris.shards(ground + Vector3(0, 0.8, 0), Num.i(_cfg["crash_shards"]), 2, 0.7)
 	if sfx != null:
 		sfx.play_at("heli_crash", ground)
@@ -118,10 +121,14 @@ func _process(delta: float) -> void:
 func _fall(fall: Fall, delta: float) -> void:
 	fall.t += delta
 	var u := clampf(fall.t / fall.seconds, 0.0, 1.0)
-	fall.node.position = fall.from + fall.drift * fall.t - Vector3(0, fall.from.y * u * u, 0)
+	var bow := fall.side * sin(PI * u) * Num.f(_cfg["swing"])  # a falling arc, not a slide
+	fall.node.position = (
+		fall.from + fall.drift * fall.t + bow - Vector3(0, fall.from.y * u * u, 0)
+	)
 	fall.yaw += delta * Num.f(_cfg["spin"]) * (0.5 + u)
-	var pitch := -deg_to_rad(Num.f(_cfg["pitch_deg"])) * u
-	var roll := deg_to_rad(Num.f(_cfg["roll_deg"])) * u
+	var tumble := pow(u, 1.4)  # the pitch and roll build slowly, then it cartwheels
+	var pitch := -deg_to_rad(Num.f(_cfg["pitch_deg"])) * tumble
+	var roll := deg_to_rad(Num.f(_cfg["roll_deg"])) * tumble
 	fall.node.basis = (
 		Basis(Vector3.UP, fall.yaw) * Basis(Vector3.RIGHT, pitch) * Basis(Vector3.BACK, roll)
 	)
@@ -174,12 +181,19 @@ func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 			_rng.randf_range(0.4, 1.0), _rng.randf_range(-1, 1), _rng.randf_range(0.4, 1.0)
 		)
 		var body := n == 0
+		if body:  # the hull is long: it lies and rolls across the view, never end-on like a pole
+			(parts[n] as Node3D).rotation.y = PI * 0.5
+			spin = Vector3(0.0, spin.y * 0.3, 0.8)
 		if body and not in_air:
 			vel = Vector3.ZERO
 			spin = Vector3.ZERO
-		var fire_size := Num.f(_cfg["part_fire"]) if in_air else 0.0
+		var fire_size := Num.f(_cfg["part_fire"]) if in_air and n % 2 == 0 else 0.0  # body, tail
 		var piece := _debris.throw(parts[n], vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
 		piece.half = WRECK_HALF
+		if n > 0:  # the rotors and the gun lie level on the street, never on edge
+			piece.flat = true
+			piece.lie = PI * 0.5 if n == 2 else 0.0  # (the tail rotor's disc stands, so roll it)
+			piece.half = 0.3
 	node.queue_free()
 
 
@@ -192,6 +206,9 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	fall.from = at
 	fall.drift = Vector3(Num.f(event["dx"]), 0.0, Num.f(event["dz"]))
 	fall.seconds = Num.f(event["seconds"])
+	fall.side = Vector3(-fall.drift.z, 0.0, fall.drift.x).normalized()
+	if fall.side.length() < 0.5:
+		fall.side = Vector3.RIGHT
 	for k: int in 3:  # flames along the body: nose, middle, tail
 		var fire := Fire.new(Num.f(_cfg["trail_fire"]), at.x - at.z + k)
 		_city.add_child(fire)
@@ -211,7 +228,7 @@ func _jump(from: Vector3, drift: Vector3) -> void:
 	var voxel := Num.f(Content.section("street")["person_voxel"])
 	var person := MeshInstance3D.new()
 	person.mesh = VoxelPerson.dressed(
-		VoxelPerson.ROOFTOP_OUTFITS[CREW_OUTFIT], VoxelPerson.Pose.WALK_A, voxel
+		VoxelPerson.ROOFTOP_OUTFITS[CREW_OUTFIT], VoxelPerson.Pose.RUN_A, voxel
 	)
 	add_child(person)
 	person.add_child(_canopy())

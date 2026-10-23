@@ -25,6 +25,7 @@ class Piece:
 	var fire: Fire
 	var half := 0.2  # how high its middle rides above the street when it lies there
 	var lie := 0.0  # a long part (the body, a rotor) lies on its side at this roll; 0: any face
+	var flat := false  # a part that lies level (rotors, gun) at roll `lie`, never on edge
 	var rest := -1.0  # seconds since it came to rest (-1: still flying)
 	var fire_left := 0.0
 
@@ -52,7 +53,7 @@ func throw(node: Node3D, vel: Vector3, spin: Vector3, fire_size := 0.0) -> Piece
 
 
 ## `count` chunks from `at`, thrown out and up at the tuning's speeds; `burning` of them carry a
-## small Fire. Sizes run from a splinter to a slab, some long and thin like a rotor blade.
+## small Fire. Sizes run from a splinter to a block; the rotor blades are the model's own.
 func shards(at: Vector3, count: int, burning: int, reach := 1.0) -> void:
 	for n: int in count:
 		var side := TAU * (n + _rng.randf()) / maxf(1.0, count)
@@ -65,8 +66,6 @@ func shards(at: Vector3, count: int, burning: int, reach := 1.0) -> void:
 			+ Vector3(0, _rng.randf_range(Num.f(_cfg["up_min"]), Num.f(_cfg["up_max"])) * reach, 0)
 		)
 		var size := Vector3.ONE * _rng.randf_range(0.25, 0.7)
-		if n % 4 == 0:
-			size = Vector3(_rng.randf_range(1.2, 2.4), 0.1, 0.25)  # a rotor blade
 		var piece := _box(size, COLORS[n % COLORS.size()])
 		add_child(piece)
 		piece.global_position = at + out.normalized() * 0.5
@@ -122,7 +121,7 @@ func _land(piece: Piece) -> void:
 	piece.vel = Vector3.ZERO
 	piece.spin = Vector3.ZERO
 	piece.rest = 0.0
-	if piece.lie != 0.0:
+	if piece.lie != 0.0 or piece.flat:
 		node.rotation.x = 0.0  # a long part never stands on end: level, rolled onto its side
 		node.rotation.z = piece.lie
 		return

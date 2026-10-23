@@ -10,7 +10,7 @@ const FLARE := preload("res://scenes/flare.gdshader")
 const FLASH_TINT := Color("ffb468")
 ## Fire's flame ramp spending less of its life cream: the same four colours (Fire.FLAME_COLORS),
 ## at stops that suit a fireball seen at the game camera, not a street fire.
-const FIREBALL_STOPS: Array[float] = [0.0, 0.05, 0.4, 1.0]
+const FIREBALL_STOPS: Array[float] = [0.0, 0.22, 0.5, 0.85]
 
 
 ## A flash of light: a hot core, a halo and short rays (flare.gdshader), `size` metres across,
@@ -21,6 +21,7 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	var mat := ShaderMaterial.new()
 	mat.shader = FLARE
 	mat.set_shader_parameter("tint", FLASH_TINT)
+	mat.set_shader_parameter("ray_gain", 0.0)  # a soft burst of light, no straight streaks
 	quad.material = mat
 	var flash := MeshInstance3D.new()
 	flash.mesh = quad
@@ -45,9 +46,9 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	mat.spread = 180.0
 	mat.initial_velocity_min = Num.f(cfg["fireball_speed_min"]) * scale
 	mat.initial_velocity_max = Num.f(cfg["fireball_speed_max"]) * scale
-	mat.damping_min = 1.2
-	mat.damping_max = 2.4
-	mat.gravity = Vector3(0, 2.5, 0)
+	mat.damping_min = 0.4
+	mat.damping_max = 0.9
+	mat.gravity = Vector3(0, Num.f(cfg["fireball_rise"]), 0)  # hot gas climbs: a rolling fireball
 	mat.scale_min = 0.8
 	mat.scale_max = 1.2
 	var curve := Curve.new()
@@ -72,7 +73,8 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	hot.set_shader_parameter("heat", Num.f(cfg["fireball_heat"]))  # per-owner heat
 	cube.material = hot
 	var life := Num.f(cfg["fireball_seconds"])
-	_burst(parent, mat, cube, roundi(Num.f(cfg["fireball_voxels"]) * scale), life, at)
+	var voxels := roundi(Num.f(cfg["fireball_voxels"]) * scale)
+	_burst(parent, mat, cube, voxels, life, at, Num.f(cfg["fireball_spread"]))
 
 
 ## A puff of the smoke shader (Fire's own charcoal ramp, its first stop warmed by the flames
@@ -97,7 +99,12 @@ static func smoke_puff(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.
 ## node and calls go_out_trail when the wreck lands.
 static func smoke_trail(parent: Node3D, cfg: Dictionary) -> GPUParticles3D:
 	var size := Num.f(cfg["trail_smoke_size"])
-	var mat := _smoke_mat(cfg)
+	var dark := cfg.duplicate()  # a trail is darker and less self-lit than a fresh burst's smoke
+	dark["smoke_warm"] = cfg["trail_warm"]
+	dark["smoke_mid"] = cfg["trail_mid"]
+	dark["smoke_self_lit"] = cfg["trail_self_lit"]
+	dark["smoke_alpha"] = cfg["trail_alpha"]
+	var mat := _smoke_mat(dark)
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	mat.emission_sphere_radius = size * 0.15
 	mat.direction = Vector3.UP
@@ -107,7 +114,7 @@ static func smoke_trail(parent: Node3D, cfg: Dictionary) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.amount_ratio = GraphicsPresets.cap("particles")
 	p.process_material = mat
-	p.draw_pass_1 = _smoke_quad(size, cfg)
+	p.draw_pass_1 = _smoke_quad(size, dark)
 	p.amount = Num.i(cfg["trail_puffs"])
 	p.lifetime = Num.f(cfg["trail_smoke_seconds"])
 	p.visibility_aabb = AABB(Vector3(-40, -10, -40), Vector3(80, 60, 80))
@@ -141,8 +148,9 @@ static func _smoke_mat(cfg: Dictionary) -> ParticleProcessMaterial:
 	var mid := Color(str(cfg["smoke_mid"]))
 	var stops: Array[Color] = []  # Fire's charcoal ramp, young smoke glowing with the flames under it
 	stops.append_array(Fire.SMOKE_COLORS)
-	stops[1] = Color(warm.r, warm.g, warm.b, stops[1].a)
-	stops[2] = Color(mid.r, mid.g, mid.b, stops[2].a)
+	var thick := Num.f(cfg["smoke_alpha"])  # denser than a street fire's smoke
+	stops[1] = Color(warm.r, warm.g, warm.b, minf(1.0, stops[1].a * thick))
+	stops[2] = Color(mid.r, mid.g, mid.b, minf(1.0, stops[2].a * thick))
 	var ramp := Gradient.new()
 	ramp.colors = PackedColorArray(stops)
 	ramp.offsets = PackedFloat32Array([0.0, 0.08, 0.45, 1.0])
@@ -165,7 +173,13 @@ static func _smoke_quad(size: float, cfg: Dictionary) -> QuadMesh:
 
 
 static func _burst(
-	parent: Node3D, mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float, at: Vector3
+	parent: Node3D,
+	mat: ParticleProcessMaterial,
+	mesh: Mesh,
+	amount: int,
+	life: float,
+	at: Vector3,
+	explosive := 0.95
 ) -> void:
 	var p := GPUParticles3D.new()
 	p.amount_ratio = GraphicsPresets.cap("particles")
@@ -174,7 +188,7 @@ static func _burst(
 	p.amount = amount
 	p.lifetime = life
 	p.one_shot = true
-	p.explosiveness = 0.95
+	p.explosiveness = explosive
 	p.emitting = true
 	p.visibility_aabb = AABB(Vector3(-40, -10, -40), Vector3(80, 60, 80))
 	p.position = at

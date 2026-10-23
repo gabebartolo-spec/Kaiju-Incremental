@@ -49,6 +49,7 @@ func _initialize() -> void:
 
 func _run(run: int) -> void:
 	await process_frame
+	PlayerSettings.controls_seen = true  # no first-run controls card over the shot
 	_rampage = Kit.rampage("reptilian", Kit.stats("reptilian", LEVELS), run)
 	_rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {}
 	root.add_child(_rampage)
@@ -73,19 +74,19 @@ func _run(run: int) -> void:
 func _stills() -> void:
 	var burst := await _spawn([_spot] as Array[Vector2])
 	await _blow(burst[0], 1.0, _spot)
-	await _shots("burst", [2, 20, 60])
+	await _shots("burst", [2, 12, 30, 60, 100])
 	await Kit.frames(self, SETTLE_WRECK)
 	_spot = _block_beside(_spot)
 	var spin := await _spawn([_spot] as Array[Vector2])
 	await _blow(spin[0], 0.2, _spot)
-	await _shots("spin", [10, 60])
+	await _shots("spin", [8, 35, 70, 105])
 	var sim := _rampage.sim
 	var limit := 0
 	while not sim.air.falling.is_empty() and limit < 400:
 		await physics_frame  # until the wreck lands
 		limit += 1
 	await process_frame
-	await _shots("crash", [0, 12, 40, 80])
+	await _shots("crash", [0, 12, 40, 80, 200, 330])
 	print("buildings alive at the end %d" % _alive())
 
 
@@ -130,6 +131,8 @@ func _spawn(toward: Array[Vector2]) -> Array[AirWing.Heli]:
 			heli.pos = at
 			heli.angle = (at - sim.kaiju_pos).angle()
 		await physics_frame
+	for node: Node3D in _rampage._powers.helis():
+		print("parked helicopter opacity %.2f" % Num.f(node.get_meta("opacity", 1.0)))
 	return helis
 
 
