@@ -1,5 +1,5 @@
 # Volley-stagger handoff (builder "volley"), 2026-10-23 13:3x
-## State: running a check (no Godot until 14:14, director "no godot for next 45 minutes"); task 2 audit next
+## State: waiting for 14:14 (director: no Godot until then); task 1 pushed, task 2 audit done and reported
 ## Task
 Kaiju lead's builder. Task 1: ROADMAP "Interview answers", D-166 "Stagger the shots": one Taskforce squad never
 lands more than about 2 railgun hits in a second, so the dash has time to save the kaiju (D-161). Sim only,
@@ -54,6 +54,18 @@ squad's cooldown cycles after the first volley (only the first volley is planted
   `agent.squad`): "the gap is kept per squad" must fail; revert with `git checkout sim/taskforce.gd`; then one clean
   green run of taskforce_gate. The first planted run was stopped by the engine ban (exit 127) and reverted.
 - Push (explicit refspec above), report the sha to the lead.
+## Task 2 audit result (read-only, sent to the lead; the sim steps at 60 Hz in the game, 30 in tests)
+Pressed reptilian actions are three: dash, signature breath, Thunder Beam (HELD only feeds the mantis glide).
+- Dash (Shift/B): moves from the press tick (0 s); buildings break on contact over ticks 0-24 (0.4 s), tanks once each
+  at 60; same at all three growth steps (about 15 / 27 / 50 units far). A sim wind-up would cost the 0.4 s railgun
+  dodge (D-161), so the D-165 crouch must be view-only.
+- Breath: ALL damage on the press tick (0 s), cone read at that instant; 7 s cooldown from the press; view flame
+  lingers 0.9 s (fx.beam_seconds). A wind-up needs a call: lock the cone at the press or follow the kaiju to the
+  strike; what a breath pressed in the last second does; run_fire and run_sim tests assume tick-0 damage.
+- Thunder Beam (E/Y, Colossus only): stream of beam_dps x dt for 4.0 s from the press tick, cooldown 18 s from the
+  press, walk x0.3 while on. A wind-up needs a call: does the 4 s start at the press or the strike, is he rooted.
+- Not pressed: stomp lands on its tick (the view already waits for the foot); the claw swipe ALREADY has a 0.3 s sim
+  wind-up (swipe_windup event, then the rake); tail sweep and ram are instant.
 ## Open decisions
 - Does the director want the stagger across squads too (a global gap)? D-166 says "one squad"; built as ruled.
 - 0.6 s is the builder's number inside "about 2 hits' worth in a second" (one data value).
