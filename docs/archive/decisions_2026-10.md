@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-102 · Lead · WP5 gets one more fix round before its PR
+Why: the round-2 motion critic's three findings are defects, not taste (lead 2x on the clean CI clips): the fallen tower
+slab lands whole and then vanishes, block towers shear in a regular staircase, debris floats visibly inside glass.
+Carving is top priority (D-097), so they are fixed now on claude/carve-wp5 rather than carried into WP7.
+
 ## 2026-10-20 · D-101 · Director · Carved slab colour B (8a8780)
 Why: picked from the WP4 slab stills. Changes: carved floor slabs and cut faces in the WP4 view mesher use 8a8780
 (claude/carve-wp4 609ea71).

@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-199 · Director · Adopt the Cascadeur pipeline: every kaiju gets its clips from it
+
+Shown the Komodo in the game (test build claude/komodo-test dd5918ec: his Cascadeur walk, idle, roar and a keyed walking turn, played by the game's clip layer; game and side camera clips; motion critic SHIP as the prototype). Asked whether it beats today's croc walking enough to be how all kaiju move (the D-193 test): "Yes, adopt it". Every kaiju (Komodo, the new croc, the serpent's special moves) gets its clips from this pipeline. Next, the polish list: weight on each footfall (camera dip, dust, thud), a slower in-place turn, tail lag and arm swing in the clips, the roar's head and snout. Before anything from Cascadeur ships, a paid licence replaces the Pro trial (D-194; Indie, $144 a year, under $100k revenue): a spend for his written yes then.
+
 ## 2026-10-24 · D-198 · Director · Serpent slither: a wide S-curve, quick turns, sidewinding as its dash; prototype now
 
 He: "the challenge will be making the snake slither in a satisfying way, research should be done". Research (scratchpad research_serpent_slither.md): a kinematic trail body (each segment follows the head's path, so it never slides or cuts corners) with the S-wave laid in by distance travelled, weight from the response (acceleration, turn limit, the head leading), helix climbing and constricting, no physics chain, no Cascadeur for a limbless body. Asked: sweep "Wide, ~6 m each side" (on a ~40 m body; the bends scrape street edges); a 90 deg turn "About 1.5 s"; sidewinding "Yes, as its dash"; the prototype "Yes, now": a stand-in segmented body slithering, turning and stopping at the game camera, one ~6 s clip, then climbing, constricting and the tail grab step by step.
@@ -392,8 +396,3 @@ Why: small calls made while building, none changes the vision. (1) WP4 slab colo
 shear sawtooth, chunks behind panes on a swipe, tower slab propped on its teeth) are carried into WP7 integration
 (no-marginal-gains), which narrows D-102's "fix now". (6) D-098's young rooftop sting 0.05 is executed with the Behemoth
 sting scaled by the same factor so the size order holds.
-
-## 2026-10-20 · D-102 · Lead · WP5 gets one more fix round before its PR
-Why: the round-2 motion critic's three findings are defects, not taste (lead 2x on the clean CI clips): the fallen tower
-slab lands whole and then vanishes, block towers shear in a regular staircase, debris floats visibly inside glass.
-Carving is top priority (D-097), so they are fixed now on claude/carve-wp5 rather than carried into WP7.
