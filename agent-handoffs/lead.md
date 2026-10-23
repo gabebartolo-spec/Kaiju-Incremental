@@ -36,18 +36,18 @@
 - demo-end local_d3ef25ef-1809-40da-9618-2b29226929f4: suites, push claude/demo-end (PR queued); weather pick only
   after "go weather" in its to-file.
 
-## Base and PRs (10:00)
-- Base = origin/claude/look-options; squash-only. GitHub helper ad7455760cd21c2b0 merges only on my "#N go <full sha>"
-  (go.txt in its scratchpad), CLEAN + all 14 checks + shards actually run; it trial-merges before opening any PR.
-- Merged overnight: #159 army, #154 look sheet, #163 city sound, #160 title, #161 Taskforce core, #164 three
-  growth steps (513c0f12), #167 weather (0204571d).
-- Open: #165 demo end (author pushing: sim-review FIX 1-3, Endless scaled to the city, resync, save step v4,
-  Taskforce kills, lint), #166 heli deaths (PARKED: look FIX, VFX lead holds until the director is back; DIRTY on
-  tests/README), #168 body-chunks (go armed at 949c7cd4).
-- Queued: claude/croc-standing ca148fd7 (VFX SHIP). claude/sim-speed daad0710 = measurement only (probes; checksum
-  2c712cc6589535dd; top speed-ups: body polygon cached per Convoy step ~25%, building scans bucketed ~10%, spacing
-  prefilter ~2-6%; sim/convoy.gd is at 400 lines, split first). Speed-ups are result-identical engineering (D-159),
-  start after the director is back.
+## Base and PRs (11:50, wind-down complete)
+- Base = origin/claude/look-options; squash-only. Merges need "#N go <full sha>" to the GitHub helper
+  ad7455760cd21c2b0 (go.txt), CLEAN + all 14 checks + shards actually run; it trial-merges before opening a PR.
+- Merged overnight (10): #159 army, #154 look sheet, #163 city sound, #160 title, #161 Taskforce core, #164 three
+  growth steps, #167 weather, #168 body-chunks (tests), #169 croc standing, #165 demo end + Endless (a7ac8788,
+  save v4).
+- Open: #166 heli deaths, PARKED (look FIX; the VFX lead resyncs and re-critics after the director is back).
+- Not opened: claude/sim-speed daad0710 = measurement only (checksum 2c712cc6589535dd; speed-ups: body polygon per
+  Convoy step ~25%, bucketed building scans ~10%, spacing prefilter ~2-6%; sim/convoy.gd is at 400 lines, split
+  first). Result-identical engineering (D-159), to start after his return.
+- Next queue (after the interview): sky and sea life sim (demo-end session, plan in its handoff), Taskforce adult
+  units, the VFX lead's weather and atmosphere looks, Thunder Beam round 5, the voxel decision, music stems.
 
 ## Queued (each brief names its ROADMAP item + decision)
 - Chunks inside the body: was the test fixture (PR #168), not the sim. Sim speed: measured (above).
