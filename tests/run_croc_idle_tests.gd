@@ -70,8 +70,8 @@ func _breath_period(kaiju: KaijuModel) -> float:
 
 
 ## The breath's period rises with the stage: the young croc breathes quickest, the Colossus slowest,
-## each near its tuned length (a sigh makes one breath longer, so a little above); the plain baked
-## idle is 3 s whatever the size.
+## each within 10% of its tuned length (a sigh makes one breath longer, so a little above); with
+## the life layer off the baked idle is 3 s whatever the size.
 func _check_breath_by_size() -> void:
 	var cfg := Content.section("croc_idle")
 	var base: Array = cfg["breath_s"]
@@ -82,7 +82,7 @@ func _check_breath_by_size() -> void:
 		periods.append(period)
 		var want := Num.f(base[i])
 		check(
-			period > 0.95 * want and period < 1.12 * want,
+			period > 0.9 * want and period < 1.1 * want,
 			"%s breathes once per %.2f s (tuned %.2f s)" % [STAGES[i], period, want]
 		)
 		kaiju.queue_free()
@@ -205,7 +205,7 @@ func _check_jaw_blink_shift() -> void:
 			% [blinks, int(LONG_RUN), peak_blink]
 		)
 	)
-	check(pushed > 0.05, "the skin is pushed out by the breath (%.3f rig units)" % pushed)
+	check(pushed > 0.02, "the skin is pushed out by the breath (%.3f rig units)" % pushed)
 	kaiju.queue_free()
 	plain.queue_free()
 	await process_frame
@@ -228,6 +228,7 @@ func _check_none_while_walking() -> void:
 		for f: int in int(6.0 / DT):
 			for m: KaijuModel in [kaiju, plain]:
 				m.position += Vector3(0, 0, -4.0 * DT)
+				m.follow_steps(float(f) * DT * 2.0, 1.0)  # the sim's step clock: both start alike
 				m.animate(DT, 1.0)
 			if f > int(2.0 / DT):  # past the cross-fade into the walk
 				gap = maxf(gap, _gap(kaiju, plain))

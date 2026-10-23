@@ -32,6 +32,12 @@ var stride_m := 1.0
 var body_height_m := 100.0
 ## Rig units per metre and the rig-space point of the skin origin, set by fit().
 var rig_scale := 1.0
+## How much of the baked idle's own sway each bone keeps (by bone index; empty: all of it): the
+## idle is its first frame plus this share of what the loop moves. ClipAlive turns the body down
+## (the 3 s sine nods the snout and heaves the chest; the breath is the life layer's) and the tail
+## partly, and a pelvis offset's share is `idle_calm_offset`.
+var idle_calm := PackedFloat32Array()
+var idle_calm_offset := 0.0
 var rig_origin := Vector3.ZERO
 var _clips: Dictionary = {}  # name -> Vector3i(first frame, frames, loops 0/1)
 var _cycles: Dictionary = {}  # name -> walk cycles the clip holds (1 unless the file says)
@@ -160,7 +166,20 @@ func pose_at(clip: String, t: float) -> Pose:
 	var i0 := floori(at)
 	var i1 := (i0 + 1) % n if c.z == 1 else mini(i0 + 1, n - 1)
 	var a := at - i0
-	return mix(_frame(c.x + i0), _frame(c.x + i1), a)
+	var pose := mix(_frame(c.x + i0), _frame(c.x + i1), a)
+	return _calmed(_frame(c.x), pose) if clip == "idle" and not idle_calm.is_empty() else pose
+
+
+## The idle `pose` with each bone's own sway cut to its idle_calm share of the way from `first`.
+func _calmed(first: Pose, pose: Pose) -> Pose:
+	var out := Pose.new()
+	for i: int in pose.turns.size():
+		out.turns.append(first.turns[i].slerp(pose.turns[i], idle_calm[i]))
+	out.offset = first.offset.lerp(pose.offset, idle_calm_offset)
+	out.feet = pose.feet
+	out.planted = pose.planted
+	out.yaw = pose.yaw
+	return out
 
 
 ## The first and last frames where a turn clip's yaw moves (0.5 deg from either end).

@@ -13,7 +13,7 @@ enum Kind { SHIFT, GLANCE, SIGH, JAW, BLINK }
 
 ## How much of the life layer shows, 0..1.
 var weight := 0.0
-## The breath now, -1..1 times this breath's depth (not scaled by weight).
+## The breath now, 0 (breathed out) to this breath's depth, at most 1 (not scaled by weight).
 var breath := 0.0
 ## The eyes' lids, 0 open .. 1 shut (zero unless standing).
 var blink := 0.0
@@ -22,6 +22,8 @@ var pelvis_x := 0.0
 ## The run's number and the stage (0 young croc, 1 Behemoth, 2 Colossus): the hash's inputs.
 var seed := 0
 var stage := 0
+## Debug and tests: only the breath, none of the shifts, glances, cracks or blinks.
+var breath_only := false
 
 var _cfg := Content.section("croc_idle")
 var _tail_bones := 9
@@ -100,8 +102,10 @@ func _advance(dt: float, phase: float) -> void:
 		_cycles += 1
 		_new_cycle()
 	_last_phase = phase
-	breath = _depth * sin(TAU * phase)
+	breath = _depth * curve(phase)
 	for kind: int in _next.size():
+		if breath_only:
+			break
 		if _t >= _next[kind]:
 			_fire(kind)
 			_next[kind] = _t + _every(kind)
@@ -115,11 +119,24 @@ func _new_cycle() -> void:
 	_cycle_s = (
 		_per_stage("breath_s") * (1.0 + Num.f(_cfg["breath_vary"]) * _signed(Kind.SIGH, _cycles, 1))
 	)
-	_depth = 1.0 + Num.f(_cfg["depth_vary"]) * _signed(Kind.SIGH, _cycles, 2)
+	_depth = Num.f(_cfg["depth"]) + Num.f(_cfg["depth_vary"]) * _signed(Kind.SIGH, _cycles, 2)
 	if _sigh_due:
 		_sigh_due = false
 		_depth = Num.f(_cfg["sigh_gain"])
 		_cycle_s *= Num.f(_cfg["sigh_slow"])
+
+
+## One breath, phase 0..1 from the bottom: in over the inhale share (a smooth rise to 1), out over
+## the rest less the short pause at the bottom (a smooth fall to 0), then still. 0..1.
+func curve(phase: float) -> float:
+	var p := fposmod(phase, 1.0)
+	var inhale: float = Num.f(_cfg["inhale"])
+	var out_end := 1.0 - Num.f(_cfg["pause"])
+	if p < inhale:
+		return 0.5 - 0.5 * cos(PI * p / inhale)
+	if p < out_end:
+		return 0.5 + 0.5 * cos(PI * (p - inhale) / (out_end - inhale))
+	return 0.0
 
 
 func _fire(kind: int) -> void:
@@ -172,7 +189,7 @@ func _head(chest: float) -> void:
 		sin(TAU * _hz(0) * _t + _phase(0)) * Num.f(_cfg["drift_yaw_deg"]),
 		sin(TAU * _hz(1) * _t + _phase(1)) * Num.f(_cfg["drift_pitch_deg"])
 	)
-	drift = Vector2(deg_to_rad(drift.x), deg_to_rad(drift.y))
+	drift = Vector2(deg_to_rad(drift.x), deg_to_rad(drift.y)) * (0.0 if breath_only else 1.0)
 	var skull := _glance * _envelope(_t - _glance_at) + drift
 	var neck := _glance * _envelope(_t - _glance_at - Num.f(_cfg["neck_lag_s"])) + drift
 	_add("head1", Vector3.UP, skull.x * 0.55 * weight)
@@ -186,7 +203,7 @@ func _tail() -> void:
 	var amp := deg_to_rad(Num.f(_cfg["tail_deg"])) * weight
 	var lag: float = Num.f(_cfg["tail_lag"])
 	for i: int in _tail_bones:
-		var wave := _depth * sin(TAU * (_last_phase - lag * float(i)))
+		var wave := _depth * curve(_last_phase - lag * float(i))
 		_add("tail%d" % i, Vector3.RIGHT, amp * wave * pow(0.88, float(i)))
 
 

@@ -14,6 +14,7 @@ static var run_seed := 0
 var life_on := true
 var life: ClipIdle
 var _skin: VoxelSkin
+var _calm := PackedFloat32Array()  # the baked idle's share kept, per bone (KaijuClips.idle_calm)
 var _idle_s := 3.0
 
 
@@ -33,12 +34,14 @@ func _init(p_rig: KaijuRig, p_clips: KaijuClips) -> void:
 	_idle_s = float(clips.frames_of("idle")) / clips.fps
 	life = ClipIdle.new(_tail_count())
 	life.seed = run_seed
+	_set_calm()
 	life.begin()
 
 
 ## The stage ("baby", "adolescent", "adult") and the skin that gets the breath and the blink.
 func set_life(stage_name: String, skin: VoxelSkin) -> void:
 	life.stage = maxi(0, ["baby", "adolescent", "adult"].find(stage_name))
+	_set_calm()
 	life.begin()
 	_skin = skin
 
@@ -50,6 +53,7 @@ func set_seed(run: int) -> void:
 
 
 func update(delta: float) -> void:
+	clips.idle_calm = _calm if life_on else PackedFloat32Array()
 	super(delta)
 	if _skin != null:
 		_skin.breath = life.skin_push() * KaijuModel.MODEL_HEIGHT
@@ -79,6 +83,18 @@ func _apply(pose: KaijuClips.Pose, dt: float) -> void:
 			pose.turns[i] = life.turn(clips.bones[i]) * pose.turns[i]
 		pose.offset.x += life.pelvis_x * hip_height / clips.rig_scale
 	super(pose, dt)
+
+
+## The baked idle's own sway, cut: the body's (it nods the snout, heaves the chest at the old 3 s)
+## to calm_body, the tail's (a slow sway that stays) to the stage's calm_tail.
+func _set_calm() -> void:
+	var cfg := Content.section("croc_idle")
+	var tail: Array = cfg["calm_tail"]
+	var calm_tail := Num.f(tail[life.stage])
+	clips.idle_calm_offset = Num.f(cfg["calm_body"])
+	_calm.resize(clips.bones.size())
+	for i: int in clips.bones.size():
+		_calm[i] = calm_tail if clips.bones[i].begins_with("tail") else Num.f(cfg["calm_body"])
 
 
 func _tail_count() -> int:

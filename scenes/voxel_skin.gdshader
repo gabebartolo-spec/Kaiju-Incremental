@@ -55,9 +55,12 @@ void vertex() {
 	VERTEX = (moved - centre) + turn * (VERTEX * grow);
 	NORMAL = normalize(turn * NORMAL);
 	tint = COLOR.rgb;
-	if (flag > 0.5 && flag < 1.5) {
+	// Flags: 1 a cube of the mouth's inside (a dark lip seam while the jaw is shut), 2 a cube of an
+	// eye, 3 an eye cube the mouth test also caught (a dark pupil reads as mouth-inside): it keeps the seam.
+	if (mod(flag, 2.0) > 0.5) {
 		tint = mix(tint * seam_dark, tint, mouth_open);
-	} else if (flag > 1.5) {
+	}
+	if (flag > 1.5) {
 		// The lid is skin: the mean colour, mottled cube by cube like the skin round it.
 		float mottle = 0.8 + 0.4 * fract(sin(dot(centre, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
 		tint = mix(tint, lid_colour * mottle, blink);

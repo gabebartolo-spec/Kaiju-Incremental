@@ -8,6 +8,7 @@ extends SceneTree
 ##     --times=1,3.5,6 --out=<dir> [--life=0]
 ##
 ## --cam: head (front three-quarter, the eyes), back (the game camera's side), side.
+## --peaks=1 saves the breath at its top and bottom; --blinks=1 an open eye and a shut one.
 ## --lids=1 holds the lids shut (2: magenta), to check which cubes are the eyes.
 ## --life=0 turns the life layer off (the plain baked idle) to compare.
 
@@ -22,6 +23,7 @@ var _life := true
 var _lids := 0.0
 var _rest := false
 var _peaks := false
+var _blinks := false
 
 
 func _initialize() -> void:
@@ -34,7 +36,8 @@ func _initialize() -> void:
 			"life": 1,
 			"lids": 0.0,
 			"rest": 0,
-			"peaks": 0
+			"peaks": 0,
+			"blinks": 0
 		}
 	)
 	_stage = str(a["stage"])
@@ -44,6 +47,7 @@ func _initialize() -> void:
 	_lids = Num.f(a["lids"])
 	_rest = Num.i(a["rest"]) != 0
 	_peaks = Num.i(a["peaks"]) != 0
+	_blinks = Num.i(a["blinks"]) != 0
 	_times.clear()
 	for part: String in str(a["times"]).split(","):
 		_times.append(part.to_float())
@@ -76,7 +80,7 @@ func _run() -> void:
 	var seen: Array[float] = []  # --peaks: the breath, to catch its top and its bottom
 	var shot_max := false
 	var shot_min := false
-	while float(frames) * DT <= (30.0 if _peaks else last + DT):
+	while float(frames) * DT <= (30.0 if _peaks or _blinks else last + DT):
 		if _rest:  # the bind pose, to measure positions in the baked skin
 			for bone_name: String in rig.bone_names():
 				rig.bone(bone_name).transform = rig.rest_of(bone_name)
@@ -101,22 +105,24 @@ func _run() -> void:
 			if (
 				seen.size() > 2
 				and not shot_max
-				and seen[-2] > 0.8
+				and seen[-2] > 0.5
 				and seen[-2] > seen[-1]
 				and seen[-2] >= seen[-3]
 			):
 				shot_max = true
 				_still(kaiju, "peak", t)
-			if (
-				seen.size() > 2
-				and not shot_min
-				and seen[-2] < -0.8
-				and seen[-2] < seen[-1]
-				and seen[-2] <= seen[-3]
-			):
+			if seen.size() > 2 and not shot_min and seen[-1] <= 0.0001 and seen[-2] > 0.0001:
 				shot_min = true
 				_still(kaiju, "trough", t)
-		if _peaks and shot_max and shot_min:
+		if _blinks and gait.life.weight >= 1.0:
+			var lids: float = kaiju._skin.blink
+			if not shot_min and lids == 0.0 and t > 3.0:
+				shot_min = true  # an open eye, to set beside the shut one
+				_still(kaiju, "eye_open", t)
+			if not shot_max and lids > 0.95:
+				shot_max = true
+				_still(kaiju, "eye_shut", t)
+		if (_peaks or _blinks) and shot_max and shot_min:
 			break
 		frames += 1
 	print(

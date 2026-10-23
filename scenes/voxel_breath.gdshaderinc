@@ -18,5 +18,5 @@ vec3 breath_push(vec3 p, float share) {
 	float r = length(radial);
 	vec3 dir = r > 0.0001 ? radial / r : vec3(0.0, 1.0, 0.0);
 	float belly = mix(breath_belly, 1.0, smoothstep(-0.4, 0.2, dir.y));
-	return (dir + vec3(0.0, breath_lift, 0.0)) * belly * (breath * share);
+	return (dir + vec3(0.0, breath_lift, 0.0)) * (belly * breath * share / (1.0 + breath_lift));
 }

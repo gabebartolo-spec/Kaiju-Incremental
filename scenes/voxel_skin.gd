@@ -15,7 +15,7 @@ const VERSION := 2
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
 ## A cell's centre sits half a voxel up from its corner (VoxelBuilder's lift).
 const HALF_UP := Vector3(0, 0.5, 0)
-## A cube of an eye (the mouth-inside flag is 1; EyeZones, the blink).
+## A cube of an eye, added to the mouth-inside flag (1) when both apply (EyeZones, the blink).
 const EYE_FLAG := 2
 const BOUNDS := AABB(Vector3(-12, -4, -12), Vector3(24, 24, 24))
 
@@ -161,8 +161,8 @@ func _setup(rig: KaijuRig, raw: PackedByteArray, base_name: String) -> void:
 		mm.set_instance_transform(i, Transform3D(Basis(), (Vector3(cell) + HALF_UP) * voxel))
 		mm.set_instance_color(i, tint)
 		var flag := raw[at + 9]
-		if eyes.claim((Vector3(cell) + HALF_UP) * voxel, base):  # (a dark pupil reads as mouth)
-			flag = EYE_FLAG
+		if eyes.claim((Vector3(cell) + HALF_UP) * voxel, base):
+			flag += EYE_FLAG  # 3: a dark pupil the mouth test caught keeps its dark seam
 		mm.set_instance_custom_data(i, pack(flag, raw.slice(at + 10, at + 14)))
 		at += 15
 	_cubes = ShaderMaterial.new()
