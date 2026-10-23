@@ -10,7 +10,7 @@ extends RefCounted
 ## Read once per file and shared; pure, no randomness.
 
 const MAGIC := "KTRK"
-const VERSION := 2
+const VERSION := 3
 ## Values per slot: [forward, across to the right, radius at its bottom, lowest, highest, forward,
 ## across, radius at its top] (the bottom disc's centre first, the top disc's after).
 const SLOT := 8
@@ -40,10 +40,10 @@ var leg_parts: Array[Vector2] = []
 var leg_poles: Array[Vector3] = []
 ## The claw rake's arms: "p" / "n" (the side it rakes, + / -) -> that arm's bone names.
 var rake_arms := {}
+## Every stored frame's values, one after another (per_frame each; body scale 1 units).
+var values := PackedFloat32Array()
+var per_frame := 0
 var _clips := {}  # name -> [first frame, frames, fps, loops]
-var _raw := PackedByteArray()
-var _data_at := 0
-var _per_frame := 0  # values per frame
 
 
 ## The track for a rig kind ("reptilian_adult"), or null when it has none.
@@ -90,7 +90,7 @@ func _load(raw: PackedByteArray) -> bool:
 		legs.append(Num.f(leg[0]) + Num.f(leg[1]))
 		leg_parts.append(Vector2(Num.f(leg[0]), Num.f(leg[1])))
 		leg_poles.append(Vector3(Num.f(leg[2]), Num.f(leg[3]), Num.f(leg[4])))
-	_per_frame = (slot_bone.size() + jaw_slots) * SLOT + bones.size() * 3 + legs.size() * 3 + 4 + 1
+	per_frame = (slot_bone.size() + jaw_slots) * SLOT + bones.size() * 3 + legs.size() * 3 + 4 + 1
 	var clips := {}
 	var total := 0
 	for c: Dictionary in header["clips"]:
@@ -99,9 +99,8 @@ func _load(raw: PackedByteArray) -> bool:
 		clips[str(c["name"])] = [row[1], row[3]]
 		total = maxi(total, Num.i(row[0]) + Num.i(row[1]))
 	meta = {"fps": Num.f(_clips["idle"][2]), "clips": clips, "spans": header["spans"]}
-	_raw = raw
-	_data_at = 12 + length
-	return raw.size() == _data_at + total * _per_frame * 2
+	values = raw.slice(12 + length).to_float32_array()
+	return values.size() == total * per_frame
 
 
 func has_clip(clip: String) -> bool:
@@ -135,7 +134,7 @@ func frames_at(clip: String, t: float) -> Vector3:
 
 ## Value k of stored frame `frame` (body scale 1 units).
 func value(frame: int, k: int) -> float:
-	return _raw.decode_s16(_data_at + (frame * _per_frame + k) * 2) * 0.01
+	return values[frame * per_frame + k]
 
 
 ## Where slot j's SLOT values start in a frame; the jaw's open slots follow the slots.
@@ -158,4 +157,4 @@ func toe_at(i: int) -> int:
 
 ## The hind feet the clip has down at stored frame `frame` (bit 0 left, bit 1 right).
 func planted(frame: int) -> int:
-	return roundi(value(frame, _per_frame - 1) * 100.0)
+	return roundi(value(frame, per_frame - 1) * 100.0)

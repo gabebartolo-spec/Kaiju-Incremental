@@ -326,12 +326,12 @@ func _pose(clip: String, t: float) -> void:
 		_rig.pose_basis(_clips.bones[i], Basis(pose.turns[i]), off)
 
 
-## Values as signed 16-bit centi-units.
+## Values as 32-bit floats, rounded to centi-units (the sim reads the whole block at once).
 func _put(data: PackedByteArray, values: Array) -> void:
 	for v: Variant in values:
 		var at := data.size()
-		data.resize(at + 2)
-		data.encode_s16(at, clampi(roundi(Num.f(v) * 100.0), -32768, 32767))
+		data.resize(at + 4)
+		data.encode_float(at, roundi(Num.f(v) * 100.0) * 0.01)
 
 
 func _write(path: String, header: Dictionary, data: PackedByteArray) -> void:

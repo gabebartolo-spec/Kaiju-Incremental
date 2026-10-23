@@ -9,9 +9,9 @@ before a --script run (else "Could not find type" and the run hangs to its timeo
 
 ## State (2026-10-24, builder b11)
 - D-208 METHOD (lead, D-188): the heavy volume rides the drawn clips. `tools/capture/bake_heavy_tracks.gd`
-  (headless, ~1 min) poses the rig from the .kclip every frame (idle, walk, roar, turn_left/right) plus the claw rake
-  and writes `assets/kaiju/<kind>.ktrack` (LFS; VERSION 2, 7.3 MB). Slots = each bone's voxels cut SEG 0.6 along the
-  bone, and across a lying bone SEG wide x BAND 0.6 high (720 slots). RE-RUN THE BAKE after any clip/model change.
+  (headless, ~2 min) poses the rig from the .kclip every frame (idle, walk, roar, turn_left/right) plus the claw rake
+  and writes `assets/kaiju/<kind>.ktrack` (LFS; VERSION 3 float32, 14.7 MB). Slots = each bone's voxels cut SEG 0.6
+  along the bone, and across a lying bone SEG wide x BAND 0.6 high (720 slots). RE-RUN THE BAKE after any clip change.
 - b11 slot shape: each slot is HeavyTrack.SLOT = 8 values, the hull of a disc at its lowest and one at its highest
   (a leaning, tapering column); the bake keeps the tightest column over LEANS x LEANS (each end of the axis leaning
   0..1 from the slot's middle toward the middle of its lowest/highest third; radii fitted from either end, the
@@ -38,17 +38,22 @@ before a --script run (else "Could not find type" and the run hangs to its timeo
   tests clean; gdformat clean; complexity ratchet clean.
 - sim_heavy_clock proven: a planted ClipClock static counter (start time += 0.5 per clock made) -> "off at step 0"
   FAIL; removed -> sim 11 of 11 functions, 70 checks, 0 failures (229 s, --quick). Plant script: scratchpad plant.py.
-- Pushed 1478d516 to claude/komodo-test. Suites (--quick, local): sim 70/0; tentacles 20/0; smoke 46 checks, 1 failure
-  = the uncommitted scratch probes not compiling (fixed after); clips 14 checks, 1 failure `_check_tail_owner` (off
-  the clip 0.0276 rad; turn bends 0.061 < 0.12).
+- Suites on the final build (--quick, local): sim 11/11 functions, 70 checks, 0 failures; tentacles 20/0; smoke 46
+  checks, 1 failure = the uncommitted scratch probe _b9_probe.gd not compiling (not on the branch); clips 14 checks,
+  1 failure `_check_tail_owner` (off the clip 0.0276, turn bends 0.061 < 0.12): IDENTICAL on 1029ca02 = pre-existing.
 - Perf (lead: whole frame/tick vs the old build, > 20% worse = optimise now): bench_rampage --stage=3 (off-screen
   window) and _b11_tick.gd (headless, carve route) in this worktree and a temp base worktree `../b11-base` at
   1029ca02 (remove it when done: `git worktree remove ../b11-base`). Scripts: scratchpad perf_round.sh, tick.sh,
   bench.sh. Pushed build: tick mean base 28.9/32.2 vs new 39.1/35.2 ms; bench_rampage frames in 30 s base 103/102
   vs new 68/85/73 = REGRESSION. opt1 (Slot scratch, per-building reject, column helper, squared tests): contact on
   parity (_b11_split: slots 9.49 vs as discs 9.68 ms/step) but tick still base 29.8/30.5 vs new 35.6/40.0, bench 82.
-  opt2 (prepared, scratchpad opt2.py): track stored as float32 (VERSION 3) so HeavyPose._sample indexes, no decode.
-- NEXT: perf result; recapture both clips on NVIDIA (scratchpad cap_b11.sh); sim-review packet final.
+  opt2: track stored as float32 (VERSION 3, 14.7 MB LFS) so HeavyPose._sample indexes, no decode: pose cost per
+  step (_b11_lay.gd) base 2.94 ms, b11 s16 4.59, b11 f32 1.13. RESULT (alternated, same machine): tick mean base
+  28.65/28.37 vs new 30.34/29.04 ms (+4%); bench_rampage frames base 100 vs new 92 (-8%; this bench is noisy:
+  base 103/102/85 across rounds) = within the 20% floor. Carve after opt1+opt2 unchanged: 229/252 = 90.9%.
+- Clips b11 (NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden, seed 0 stage 2): scratchpad
+  `cap/komodo_game_cam_b11.mp4` (3-9 s), `cap/komodo_side_cam_b11.mp4` (--cam=-24,8,20, 2.5-8.5 s); cap_b11.sh.
+- NEXT (lead decides): art/motion critic on the b11 clips; the remaining off chunks are rise tops (domed back) 14.
 - Probes (scratch, uncommitted; copy from this worktree): tools/capture/_b9_carve.gd, _b10_carve.gd (bar + off
   chunks with detail; reads the 6-value discs), _b10_pose.gd, _b10_slots.gd (still the 5-value cylinder cut: stale),
   _b11_feet.gd (sim toe vs drawn toe), _b11_cost.gd (contact test per pose), _b11_tick.gd (whole tick).
@@ -108,7 +113,6 @@ before a --script run (else "Could not find type" and the run hangs to its timeo
 
 ## Evidence (older)
 - Footfall: the heavy drop lands on the plant frame (0 ms); camera drop per plant median ~0.5 units.
-- Clips b10 (NVIDIA, off-screen, 1080p60, card hidden, seed 0 stage 2): scratchpad `cap/komodo_*_cam_b10.mp4`.
 
 ## Open / for the lead
 - Footfall dust reads orange-brown (the existing street dust); heavy numbers are PLACEHOLDER for the motion critic.

@@ -125,11 +125,14 @@ func _sample(clip: String, t: float, open: float) -> PackedFloat32Array:
 	var out := PackedFloat32Array()
 	out.resize(_size)
 	var heads := _slots * S
-	var head_from := _track.head_at(0)
+	var vals := _track.values
+	var fa := a * _track.per_frame
+	var fb := b * _track.per_frame
 	for k: int in heads:
-		out[k] = lerpf(_track.value(a, k), _track.value(b, k), w)
-	for k: int in _size - heads:
-		out[heads + k] = lerpf(_track.value(a, head_from + k), _track.value(b, head_from + k), w)
+		out[k] = lerpf(vals[fa + k], vals[fb + k], w)
+	var skip := _track.head_at(0) - heads  # the jaw's open slots, between the slots and the heads
+	for k: int in range(heads, _size):
+		out[k] = lerpf(vals[fa + skip + k], vals[fb + skip + k], w)
 	bits = _track.planted(b if w >= 0.5 else a)
 	if open > 0.0:
 		_open_jaw(out, a, b, Vector2(w, smoothstep(0.0, 1.0, open)))
