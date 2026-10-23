@@ -31,20 +31,23 @@ gitignored).
 - New sim check `tests/lib/sim_heavy_clock.gd` (in run_sim_tests): same seed replays clock + volume step for step.
 - Removed: tools/capture/fit_body_contact.gd, fit_tail_chain.gd; tuning heavy sim discs/neck/skull/feet/walk and
   tail root/chain (TailSim keeps only the swing).
-- CARVE (seed 0, 25 s, --fixed-fps 60, _b9_carve.gd): 0 pass-through frames every part; 256 broken, 50 > 0.5
-  (80.5% within; bar 90), 0 > 2.0 (bar met). Left: flat disc tops over domed surfaces in the rise (body top
-  breaking through the street), leg IK (thigh/shin follow the lock, slots follow the clip), roar+legs shoulders,
-  rake shoulder ~0.9. Next ideas: sloped disc tops (lens) or IK'd thigh/shin slots.
+- CARVE (seed 0, 25 s, --fixed-fps 60, _b9_carve.gd): 0 pass-through frames every part; 0 > 2.0 (bar met);
+  within 0.5: 80.5% (256 broken, 50 off) at 0.6 slots; 80.1% (51 off) with the leg solve (HeavyLegs) added, so
+  the leg solve did not move it. Top bins: rise leg_r2/walk 9, rise spine2/head0/arm_r0 idle ~17 (flat disc tops
+  over the domed back breaking up through the street), run leg_r2/roar 6, legs roar ~6.
+- NEXT (successor, lead 2026-10-24): (1) foot bins: run _b10_slots.gd --fixed-fps 60 on leg_r2 (locked foot slots
+  vs the drawn IK foot; suspects: the presentation's lifted-foot path lag at touchdown, the held foot yaw, the
+  foot slot's wide circle); (2) rise tops: sloped disc tops (top at the centre and at the rim, BodyVolume per
+  column) or finer top bands; (3) gait_clip.gd (485 lines) and kaiju_rig.gd (> 20 public methods) splits,
+  owed per D-159; (4) show sim_heavy_clock failing on a planted difference; (5) the .ktrack is in Git LFS
+  (4.6 MB); finer slots grow it.
 - Probes (scratch, uncommitted, copy from this worktree): tools/capture/_b9_carve.gd (bar), _b10_pose.gd (sim heads
   vs drawn), _b10_slots.gd (every sim slot vs the same slot cut live from the rig), _b10_carve.gd (off chunks with
   detail). Use `--fixed-fps 60`: without it headless runs ~8 physics steps per drawn frame (stale rig).
 
 ## D-201 (heavy only)
-- SIM `sim/body_contact.gd`: body_class sim block by species_stage: turn <= 30 deg/s, accel 20 deg/s^2, smooth (no
-  step slices), the beam's turn speed no longer overrides it; walk start over start_s 0.8, stop over stop_s 0.8
-  (`rampage_sim.gd` rolls on while stride > 0). FEET `gait_clip.gd`: walk clock by distance, no restep, no standing
-  stomp lift, no step shortening; a roar on the move keeps the walk on legs/pelvis/tail (`_walking_legs`). TAIL:
-  sway 1.6 deg per bone, 2.13 s, lag 0.45 rad/bone, always. DIP: down over 0.03 s, back over 0.3 s, per plant.
+- Sim: turn <= 30 deg/s, accel 20, no slices, beam does not override; walk start/stop over 0.8 s; turns about the
+  hips. Feet: plant only on clip bits (no restep/stomp lift). Tail sway 1.6 deg/bone, 2.13 s, lag 0.45 rad/bone.
 
 ## Sim-review packet (D-208 b10: the heavy volume rides the drawn clips; heavy class only)
 - New sim state: ClipClock (state, time, from, from_time, blend, legs_on, legs_t, roar queued), rake_t/side,
@@ -66,7 +69,6 @@ gitignored).
 - Not exercised: the IK knee (thigh/shin slots follow the clip, not the solve); slot tops are flat; heavy at
   baby/adolescent (no track: falls back to the stage's discs); evolution reveal / demo-end (own clock, no sim).
 - Seeds: carve probe autoplay seed 0 (Kit.autoplay, stage 2), 25 s, --fixed-fps 60; sim checks army seed 0.
-
 ## body_class heavy numbers (data/tuning.json, PLACEHOLDER for the critic)
 - footfall: strength_min 0.85, dust_gain 2.0, dip 0.35 (x body scale x weight), dip_recover 6.0, shake_source
   heavy_step (camera_shake 0.18), stomp_on_plant true, thud_db 3.0, thud_pitch 0.8.
@@ -104,15 +106,14 @@ gitignored).
 4. `python tools/kaiju_skin/bake.py rest.json assets/kaiju` (or bake_all.sh)
 
 ## Evidence (probe, seed 0 autoplay, run 3-9 s = the game clip)
-- Snap: the breath beam's sim turn (powers.beam_turn_rate, "whatever the size") swings the heading 134 deg in
-  0.45 s; the lead/director kept it (D-200). Body yaw rate p50 68 -> 50 deg/s, p95 291 -> 136; largest yaw in 0.3 s
-  87 -> 67 deg (the neck cap drags the body past 60 deg, max 638 deg/s for ~0.15 s); neck max 60.0 deg.
 - Footfall: the heavy drop lands on the plant frame (0 ms); camera y drop per plant median ~0.12 -> ~0.5 units;
   every plant adds trauma that frame (other rises are topples/tanks).
-- Tail tip off the body axis: p50 0.0 -> 2.1 m, p95 -> 4.3 m.
-- Clips (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden): scratchpad `komodo/cap/komodo_game_cam_v3.mp4`
-  (game camera, 3-9 s) and `komodo_side_cam_v3.mp4` (low 3/4 side, 2.5-8.5 s); v2 = before D-201.
+- Clips b10 (GPU NVIDIA RTX 4070 SUPER, off-screen, 1080p60, card hidden, seed 0 stage 2): b10 scratchpad
+  `cap/komodo_game_cam_b10.mp4` (game camera 3-9 s), `cap/komodo_side_cam_b10.mp4` (--cam=-24,8,20, 2.5-8.5 s);
+  recorder script `cap.sh` there. Older v3 clips: the b9 scratchpad `komodo/cap/`.
+- Suites b10 (local, --quick): sim 70 checks 0 failures; smoke 46 checks, 1 failure = the uncommitted scratch probe
+  _b9_probe.gd not compiling (fixed since), planted feet and smoke_step_turn pass; clips 14 checks, 1 failure
+  `_check_tail_owner` (pre-existing: turn bend 0.061 vs 0.12).
 
 ## Open / for the lead
-- smoke_step_turn reds parked (D-193); first suspect: ClipGait catch steps. D-200 changes what they measure.
 - Footfall dust reads orange-brown (the existing street dust); heavy numbers are PLACEHOLDER for the motion critic.
