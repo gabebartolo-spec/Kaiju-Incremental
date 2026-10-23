@@ -42,7 +42,6 @@ var _args := (
 			"cam_pitch": 0.0,
 			"shadow_bias": -1.0,
 			"normal_bias": -1.0,
-			"sun_angular": -1.0,
 			"sun_blur": -1.0,
 		}
 	)
@@ -96,8 +95,10 @@ func _run() -> void:
 			await _still()
 			return
 	print("serpent capture: renderer %s" % RenderingServer.get_video_adapter_name())
-	var bias := _proto.sun_bias()
-	print("serpent capture: sun shadow bias %.2f, normal bias %.2f" % [bias.x, bias.y])
+	var sun := _proto.sun_shadow()
+	print(
+		"serpent capture: sun shadow blur %.2f, bias %.2f, normal bias %.2f" % [sun.x, sun.y, sun.z]
+	)
 	print("serpent capture: on the straight the S swings %s" % _swath_line)
 	print("serpent capture: closest strands %.2f m apart (surface to surface)" % _closest)
 	print("serpent capture: head stopped at %.2f s (let go at %.2f s)" % [_stopped_at, LET_GO_AT])
@@ -122,10 +123,8 @@ func _look_options(cfg: Dictionary) -> void:
 	for key: String in ["girth_scale", "head_scale", "run_hood"]:
 		if Num.f(_args[key]) >= 0.0:
 			cfg[key] = Num.f(_args[key])
-	if Num.f(_args["shadow_bias"]) >= 0.0:
-		cfg["sun_shadow_bias"] = Num.f(_args["shadow_bias"])
-	if Num.f(_args["normal_bias"]) >= 0.0:
-		cfg["sun_normal_bias"] = Num.f(_args["normal_bias"])
+	if Num.f(_args["sun_blur"]) >= 0.0:
+		cfg["sun_shadow_blur"] = Num.f(_args["sun_blur"])
 	var height := Num.f(cfg["camera_height"]) * Num.f(_args["cam_zoom"])
 	var back := Num.f(cfg["camera_back"]) * Num.f(_args["cam_zoom"])
 	var reach := Vector2(back, height).length()
@@ -134,15 +133,15 @@ func _look_options(cfg: Dictionary) -> void:
 	cfg["camera_back"] = reach * cos(pitch)
 
 
-## Shadow trials for the lead (round 6): --sun_angular (deg) and --sun_blur set on the scene's
-## shadowed sun, to find what clears the speckled shadow beside the raised head.
+## Shadow trials for the lead (round 6): --shadow_bias and --normal_bias set on the scene's shadowed
+## sun (--sun_blur sets the scene's own sun_shadow_blur), to compare what clears the speckle.
 func _sun_trial() -> void:
 	for node: Node in _proto.find_children("*", "DirectionalLight3D", true, false):
 		var sun := node as DirectionalLight3D
-		if sun.shadow_enabled and Num.f(_args["sun_angular"]) >= 0.0:
-			sun.light_angular_distance = Num.f(_args["sun_angular"])
-		if sun.shadow_enabled and Num.f(_args["sun_blur"]) >= 0.0:
-			sun.shadow_blur = Num.f(_args["sun_blur"])
+		if sun.shadow_enabled and Num.f(_args["shadow_bias"]) >= 0.0:
+			sun.shadow_bias = Num.f(_args["shadow_bias"])
+		if sun.shadow_enabled and Num.f(_args["normal_bias"]) >= 0.0:
+			sun.shadow_normal_bias = Num.f(_args["normal_bias"])
 
 
 ## The labelled still: the label large at the top left, then the frame saved to --out.
@@ -162,8 +161,8 @@ func _still() -> void:
 	root.get_texture().get_image().save_png(str(_args["out"]))
 	print(
 		(
-			"serpent capture: still %s at %.1f s to %s (sun bias %s)"
-			% [label.text, Num.f(_args["still"]), _args["out"], _proto.sun_bias()]
+			"serpent capture: still %s at %.1f s to %s (sun blur, bias, normal %s)"
+			% [label.text, Num.f(_args["still"]), _args["out"], _proto.sun_shadow()]
 		)
 	)
 	quit()

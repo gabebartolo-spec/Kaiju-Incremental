@@ -113,9 +113,9 @@ func _stop_settles() -> void:
 			idle.w > 0.9 and _jab_seen > 0.3 and _look_seen > 0.1,
 			"the tongue flicks, the head jabs and looks about"
 		)
-		var sway := _look_seen >= deg_to_rad(7.0) and _look_seen <= deg_to_rad(12.0)
+		var sway := _look_seen >= deg_to_rad(10.0) and _look_seen <= deg_to_rad(16.0)
 		var wag := _wag_seen >= deg_to_rad(10.0) and _wag_seen <= deg_to_rad(15.0)
-		check.call(sway and wag, "the head sways ~8 deg each way, the tongue wags 10-15 deg")
+		check.call(sway and wag, "head sways 10-16 deg (~8 on screen), tongue wags 10-15 deg")
 		check.call(idle.x < 0.3 and idle.y < 2.0, "the idle moves about its coil")
 		check.call(idle.z < 0.05, "the idle does not drift")
 

@@ -51,7 +51,7 @@ func _ready() -> void:
 		body = SerpentBody.new(_cfg, _start, _heading)
 	sim.kaiju_pos = _middle_ground()
 	add_child(CityView.new(sim, Seeds.make("fx", 0)))
-	_bias_sun()
+	_shade_sun()
 	if stand_in == null:
 		stand_in = SerpentStandIn.new(_cfg)
 	add_child(stand_in)
@@ -98,23 +98,24 @@ func _place_camera(delta: float) -> void:
 
 
 ## The prototype's sun shadows (round 5 critic: a dotted dark band beside the raised head, dots in
-## the coil's hole): its shadow bias and normal bias from sun_shadow_bias and sun_normal_bias, this
-## scene only (the main game's sun is the lead's call).
-func _bias_sun() -> void:
+## the coil's hole): the speckle is the soft shadow filter's scattered samples, spread by the sun's
+## shadow_blur (1.5 in CityEnvironment); this scene sets it to sun_shadow_blur. Shadow bias and
+## normal bias were tried and do not clear it (round 6). This scene only: the main game's sun is
+## the lead's call.
+func _shade_sun() -> void:
 	for node: Node in find_children("*", "DirectionalLight3D", true, false):
 		var sun := node as DirectionalLight3D
 		if sun.shadow_enabled:
-			sun.shadow_bias = Num.f(_cfg["sun_shadow_bias"])
-			sun.shadow_normal_bias = Num.f(_cfg["sun_normal_bias"])
+			sun.shadow_blur = Num.f(_cfg["sun_shadow_blur"])
 
 
-## The sun's (shadow bias, normal bias) as set, for captures.
-func sun_bias() -> Vector2:
+## The sun's (shadow blur, shadow bias, normal bias) as set, for captures.
+func sun_shadow() -> Vector3:
 	for node: Node in find_children("*", "DirectionalLight3D", true, false):
 		var sun := node as DirectionalLight3D
 		if sun.shadow_enabled:
-			return Vector2(sun.shadow_bias, sun.shadow_normal_bias)
-	return Vector2(-1.0, -1.0)
+			return Vector3(sun.shadow_blur, sun.shadow_bias, sun.shadow_normal_bias)
+	return -Vector3.ONE
 
 
 func _middle_ground() -> Vector2:
