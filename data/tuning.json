@@ -1131,6 +1131,7 @@
 	},
 	"fx": {
 		"power_max": 2.5,
+		"tint_dust_night": 0.3,
 		"footfall_dust": {"seconds": 0.5, "alpha": 0.5, "rise": 1.6, "max_live": 1},
 		"shockwave": {"radius_scale": 1.2, "seconds": 0.55, "alpha": 0.55, "soft": 0.4, "foot_start": 0.18},
 		"crack_stomp_power": 1.8,
