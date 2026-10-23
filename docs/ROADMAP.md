@@ -475,3 +475,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   below the shoulder, arc >= 120 deg, strike peak >= 3x the load's speed, hit within 1 frame, feet slide 0. Status:
   next free VFX engine slot after the gait work. Risk: if the 0.3 s sim wind-up reads rushed at Colossus size, a
   per-stage wind-up is a design question for him.
+- "the kaiju breathing animation is way too much, too much movement and too fast, should be deep and slow like a
+  behemoth" (D-165 living predator). Fix: slower, deeper breaths with less visible movement, still slower and
+  heavier as he grows; bars per growth step (breath period, back and flank movement), motion critic, one idle clip
+  after SHIP. Owner: VFX lead. Status: sent 2026-10-23.
