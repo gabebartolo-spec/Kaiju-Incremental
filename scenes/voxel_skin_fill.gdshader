@@ -5,6 +5,8 @@ shader_type spatial;
 // weights 1-2. Shaded like voxel faces: its normal snaps to the nearest axis of its main bone, so
 // a stretched patch reads as cube faces instead of a streaked sheet (lead review, PR #15).
 
+#include "res://scenes/voxel_breath.gdshaderinc"
+
 uniform mat4 bones[128];
 uniform float roughness_value = 0.9;
 
@@ -22,6 +24,12 @@ void vertex() {
 		+ bones[int(CUSTOM0.y + 0.5)] * CUSTOM1.x
 		+ bones[int(CUSTOM0.z + 0.5)] * CUSTOM1.y;
 	VERTEX = (blend * vec4(VERTEX, 1.0)).xyz;
+	VERTEX += breath_push(
+		VERTEX,
+		CUSTOM0.w * breath_k[int(CUSTOM0.x + 0.5)]
+			+ CUSTOM1.x * breath_k[int(CUSTOM0.y + 0.5)]
+			+ CUSTOM1.y * breath_k[int(CUSTOM0.z + 0.5)]
+	);
 	mat3 to_view = mat3(MODELVIEW_MATRIX) * mat3(main_bone);
 	axis_x = normalize(to_view[0]);
 	axis_y = normalize(to_view[1]);

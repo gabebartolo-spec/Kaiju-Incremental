@@ -139,7 +139,7 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 		"radial":
 			gait = RadialGait.new(self)
 		_:
-			gait = ClipGait.or_biped(self, spec.get("clips"))
+			gait = ClipAlive.or_biped(self, spec.get("clips"))
 
 
 ## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.

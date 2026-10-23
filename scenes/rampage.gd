@@ -80,6 +80,7 @@ func setup(
 	p_species: Dictionary, stats: Dictionary, layout: Array[Dictionary], run_index: int
 ) -> void:
 	species = p_species
+	ClipAlive.run_seed = run_index  # the croc's standing life draws on it (D-165)
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())  # counts: this run, not mid-run
 	Content.set_time(Content.time_for_run(run_index))
 	var ability: Dictionary = species["ability"]

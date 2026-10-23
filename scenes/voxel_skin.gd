@@ -15,6 +15,8 @@ const VERSION := 2
 ## Generous bounds: the shaders move every vertex away from where the engine thinks it is.
 ## A cell's centre sits half a voxel up from its corner (VoxelBuilder's lift).
 const HALF_UP := Vector3(0, 0.5, 0)
+## A cube of an eye (the mouth-inside flag is 1; EyeZones, the blink).
+const EYE_FLAG := 2
 const BOUNDS := AABB(Vector3(-12, -4, -12), Vector3(24, 24, 24))
 
 ## Debug: draw rigged kaiju the old way, rigid voxels per bone (pass "--kaiju-rigid" after "--").
@@ -23,7 +25,11 @@ static var show_rigid_voxels := "--kaiju-rigid" in OS.get_cmdline_user_args()
 ## The bone matrices sent to the shaders last frame, and whether the mouth's inside showed.
 var pose: Array[Projection] = []
 var mouth_open := false
+## The breath (rig units, signed) and the lids (0 open .. 1 shut) the shaders show (ClipAlive).
+var breath := 0.0
+var blink := 0.0
 var _rig: KaijuRig
+var _axis: Array[int] = [-1, -1]  # the bones the breath's spine axis runs between
 var _nodes: Array[Node3D] = []
 var _binds: Array[Transform3D] = []
 var _cubes: ShaderMaterial
@@ -72,7 +78,7 @@ static func load_for(rig: KaijuRig, base: String) -> VoxelSkin:
 		)
 		return null
 	var skin := VoxelSkin.new()
-	skin._setup(rig, raw)
+	skin._setup(rig, raw, base.get_file())
 	return skin
 
 
@@ -127,8 +133,9 @@ static func baked_stamp(base: String) -> PackedByteArray:
 	return raw.slice(8, 16) if raw.size() >= 26 else PackedByteArray()
 
 
-func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
+func _setup(rig: KaijuRig, raw: PackedByteArray, base_name: String) -> void:
 	_rig = rig
+	var eyes := EyeZones.new(base_name)
 	name = "VoxelSkin"
 	for bone_name: String in rig.bone_names():
 		var node := rig.bone(bone_name)
@@ -153,12 +160,16 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		tint.a = raw[at + 14] / 255.0  # the second bone's weight rides in the colour's alpha
 		mm.set_instance_transform(i, Transform3D(Basis(), (Vector3(cell) + HALF_UP) * voxel))
 		mm.set_instance_color(i, tint)
-		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
+		var flag := raw[at + 9]
+		if eyes.claim((Vector3(cell) + HALF_UP) * voxel, base):  # (a dark pupil reads as mouth)
+			flag = EYE_FLAG
+		mm.set_instance_custom_data(i, pack(flag, raw.slice(at + 10, at + 14)))
 		at += 15
 	_cubes = ShaderMaterial.new()
 	_cubes.shader = CUBE_SHADER
 	_cubes.set_shader_parameter("voxel", voxel)
 	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
+	_cubes.set_shader_parameter("lid_colour", eyes.lid_colour())
 	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
 	_cubes.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
 	var cubes := MultiMeshInstance3D.new()
@@ -168,8 +179,40 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	cubes.custom_aabb = BOUNDS
 	cubes.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 	add_child(cubes)
-	var verts := raw.decode_u32(at)
-	at += 4
+	_setup_fill(raw, at)
+	_setup_breath()
+	_hide_rig_voxels()
+
+
+## The filler under the cubes (watertight skin between them), from the file's mesh at byte `at`.
+func _setup_fill(raw: PackedByteArray, start: int) -> void:
+	var verts := raw.decode_u32(start)
+	var arrays := _fill_vertices(raw, start + 4, verts)
+	var at := start + 4 + verts * 20
+	var indices := raw.decode_u32(at)
+	if verts == 0 or indices == 0:
+		return
+	arrays[Mesh.ARRAY_INDEX] = raw.slice(at + 4, at + 4 + indices * 4).to_int32_array()
+	var flags := (
+		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
+		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
+	)
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
+	_fill = ShaderMaterial.new()
+	_fill.shader = FILL_SHADER
+	_fill.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
+	var fill := MeshInstance3D.new()
+	fill.mesh = mesh
+	fill.material_override = _fill
+	fill.custom_aabb = BOUNDS
+	fill.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
+	add_child(fill)
+
+
+## The filler's vertex arrays from `verts` vertices (20 bytes each) at byte `at`.
+func _fill_vertices(raw: PackedByteArray, start: int, verts: int) -> Array:
+	var at := start
 	var pos := PackedVector3Array()
 	var col := PackedColorArray()
 	var custom0 := PackedFloat32Array()
@@ -190,33 +233,31 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		custom1[i * 4] = w1
 		custom1[i * 4 + 1] = maxf(0.0, 1.0 - w0 - w1)
 		at += 20
-	var indices := raw.decode_u32(at)
-	at += 4
-	if verts > 0 and indices > 0:
-		var idx := raw.slice(at, at + indices * 4).to_int32_array()
-		var arrays := []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = pos
-		arrays[Mesh.ARRAY_COLOR] = col
-		arrays[Mesh.ARRAY_CUSTOM0] = custom0
-		arrays[Mesh.ARRAY_CUSTOM1] = custom1
-		arrays[Mesh.ARRAY_INDEX] = idx
-		var flags := (
-			(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
-			| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
-		)
-		var mesh := ArrayMesh.new()
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
-		_fill = ShaderMaterial.new()
-		_fill.shader = FILL_SHADER
-		_fill.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
-		var fill := MeshInstance3D.new()
-		fill.mesh = mesh
-		fill.material_override = _fill
-		fill.custom_aabb = BOUNDS
-		fill.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
-		add_child(fill)
-	_hide_rig_voxels()
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = pos
+	arrays[Mesh.ARRAY_COLOR] = col
+	arrays[Mesh.ARRAY_CUSTOM0] = custom0
+	arrays[Mesh.ARRAY_CUSTOM1] = custom1
+	return arrays
+
+
+## The breath's per-bone shares and look, from "croc_idle" tuning (a body without those bones
+## never gets a push).
+func _setup_breath() -> void:
+	var cfg := Content.section("croc_idle")
+	var shares: Dictionary = cfg["skin_bones"]
+	var names := _rig.bone_names()
+	var k := PackedFloat32Array()
+	k.resize(MAX_BONES)
+	for i: int in names.size():
+		k[i] = Num.f(shares.get(names[i], 0.0))
+	_axis = [names.find("spine0"), names.find("head0")]
+	for mat: ShaderMaterial in [_cubes, _fill]:
+		if mat != null:
+			mat.set_shader_parameter("breath_k", k)
+			mat.set_shader_parameter("breath_lift", Num.f(cfg["skin_lift"]))
+			mat.set_shader_parameter("breath_belly", Num.f(cfg["skin_belly"]))
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps
@@ -246,6 +287,21 @@ func sync() -> void:
 		_fill.set_shader_parameter("bones", pose)
 	mouth_open = _mouth_showing()
 	_cubes.set_shader_parameter("mouth_open", 1.0 if mouth_open else 0.0)
+	_cubes.set_shader_parameter("blink", blink)
+	_sync_breath(to_rig)
+
+
+## The breath and the spine axis it pushes out from, this frame.
+func _sync_breath(to_rig: Transform3D) -> void:
+	if _axis[0] < 0 or _axis[1] < 0:
+		return
+	var a := to_rig * _nodes[_axis[0]].global_position
+	var b := to_rig * _nodes[_axis[1]].global_position
+	for mat: ShaderMaterial in [_cubes, _fill]:
+		if mat != null:
+			mat.set_shader_parameter("breath", breath)
+			mat.set_shader_parameter("breath_a", a)
+			mat.set_shader_parameter("breath_b", b)
 
 
 ## A bone's pose as its own voxels would show it: the bone, or the voxels' node when a gait scales

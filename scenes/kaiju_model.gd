@@ -49,6 +49,8 @@ func _init(p_species_id: String, colors: Dictionary, stage: String = "adult") ->
 			_skin = VoxelSkin.attach(_rig, base)  # D-041; null when debugging rigid voxels
 			_body.add_child(_rig)
 			_rig.foot_planted.connect(foot_planted.emit)
+			if _rig.gait is ClipAlive:  # standing, the croc lives (D-165)
+				(_rig.gait as ClipAlive).set_life(stages[i], _skin)
 			return
 	if species_id == "cephalopod":  # no sculpt yet: a code-built octopus on the radial rig
 		_rig = CephalopodStandIn.build(colors, MODEL_HEIGHT, _glow())
@@ -175,6 +177,12 @@ func limb_tip(limb_hint: int) -> Vector3:
 	if _rig != null and _rig.gait is RadialGait:
 		return (_rig.gait as RadialGait).limb_tip(limb_hint)
 	return global_position
+
+
+## The run's number: the hash the croc's standing life (blinks, glances, weight shifts) draws on.
+func set_life_seed(run: int) -> void:
+	if _rig != null and _rig.gait is ClipAlive:
+		(_rig.gait as ClipAlive).set_seed(run)
 
 
 func stomp() -> void:
