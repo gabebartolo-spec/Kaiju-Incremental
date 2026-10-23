@@ -142,16 +142,23 @@ func is_out() -> bool:
 
 
 func _ready() -> void:
-	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
+	_set_flame_place()
 
 
 func _process(delta: float) -> void:
-	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
+	_set_flame_place()
 	if _light == null:
 		return
 	_t += delta
 	var flicker := 0.75 + 0.15 * sin(_t * 17.0 + _seed) + 0.1 * sin(_t * 31.0 + _seed * 2.0)
 	_light.set_energy(_base_energy * flicker)
+
+
+## Tells the flame shader where the fire stands now (its floor for the height grading, its centre
+## for the heart): it rides what carries it.
+func _set_flame_place() -> void:
+	_flame_mat.set_shader_parameter("base_y", global_position.y + _flame_base)
+	_flame_mat.set_shader_parameter("fire_xz", Vector2(global_position.x, global_position.z))
 
 
 func _flames(size: float) -> GPUParticles3D:
@@ -182,6 +189,7 @@ func _flames(size: float) -> GPUParticles3D:
 	var mesh := flame_mesh(grow * z, _seed)
 	_flame_mat = mesh.material
 	_flame_mat.set_shader_parameter("flame_h", FLAME_HEIGHT * grow * z)
+	_flame_mat.set_shader_parameter("half_w", (size * 0.4 + 0.3 * grow) * z)
 	var count := roundi(TONGUES * maxf(1.0, size) * _density)
 	var p := _system(mat, mesh, count, 1.0)
 	p.visibility_aabb = AABB(Vector3(-4, -2, -4) * z * grow, Vector3(8, 9, 8) * z * grow)
