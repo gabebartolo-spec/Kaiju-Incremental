@@ -2,6 +2,11 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-088 · Director · The demo exe ships without #50; the military AI follows in a second exe
+Why (AskUserQuestion, "Ship now, patch after"): tanks and helicopters are already in the demo; #50 is their smarter
+movement and failed its r3 critic. #50 r4 (tank overlap and skew, helis in frame, rotor clearance, young retune
+on evolve1 400) runs now; a fresh critic, then a second exe.
+
 ## 2026-10-18 · D-086 · Lead · #36 option A (Behemoth army 0.03), void
 Why: proposed for Behemoth defeats; superseded the same evening by D-087's pick and never applied.
 

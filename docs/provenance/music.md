@@ -18,3 +18,5 @@ docs/audio/music-briefs.md, Weirdness 35%, Style Influence 70%, Duration 3:00. B
 | 2026-10-23 | 2 | 2D (D-176 darker) | https://suno.com/song/841b7c3b-c171-4492-8e06-a50033ba9595 | (pair) | |
 | 2026-10-23 | 3 | 3C (D-176 darker) | https://suno.com/song/2f9508bb-524c-4e77-a58f-e597514047ef | 10 (pair) | |
 | 2026-10-23 | 3 | 3D (D-176 darker) | https://suno.com/song/fd7dd77e-7d04-4ccc-ac60-7ee4f9a3f690 | (pair) | |
+| 2026-10-23 | theme | S1 (D-181 stalking horror) | https://suno.com/song/464cc966-76cf-44d7-9647-148be4a08e0d | 10 (pair) | |
+| 2026-10-23 | theme | S2 (D-181 stalking horror) | https://suno.com/song/462e9f98-500b-441f-97b7-8947a81304db | (pair) | |
