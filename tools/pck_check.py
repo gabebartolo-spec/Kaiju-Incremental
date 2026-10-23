@@ -1,6 +1,6 @@
 """Lists the Godot pack inside an exported game and proves it holds the real assets.
 
-    python tools/pck_check.py out/windows/KaijuIncremental.exe [--list]
+    python tools/pck_check.py out/windows/KaijuEvolution.exe [--list]
 
 The pack is the one embedded at the end of the exe (export_presets.cfg embed_pck) or a
 .pck file. Checks, failing loudly with exit 1:

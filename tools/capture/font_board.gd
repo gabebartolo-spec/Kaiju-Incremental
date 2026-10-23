@@ -44,7 +44,7 @@ func _run() -> void:
 			UiKit.ACCENT if picked else UiKit.MUTED
 		)
 		col.add_child(tag)
-		var title := UiKit.label("KAIJU INCREMENTAL", 96, UiKit.ACCENT)
+		var title := UiKit.label("KAIJU EVOLUTION", 96, UiKit.ACCENT)
 		title.add_theme_font_override("font", font)
 		col.add_child(title)
 		var row := HBoxContainer.new()

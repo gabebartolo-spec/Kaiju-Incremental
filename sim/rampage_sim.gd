@@ -20,6 +20,8 @@ class Building:
 	var rubble_bonus := 1.0
 	## False past the arena's edge (CityBand): it breaks and pays, but never counts to the fall.
 	var in_arena := true
+	## What its chunks pay, as a share of a smash: a burnt-out building's (FireSpread) is less.
+	var pay_share := 1.0
 
 	## World centre of chunk c.
 	func chunk_world(c: Vector3i) -> Vector3:
@@ -80,6 +82,9 @@ var tanks_destroyed := 0
 var ability_ready_in := 0.0
 var over := false
 var end_reason := ""
+## Seconds the rampage has run, and the demo's Endless mode (Endless), null in a normal run.
+var elapsed := 0.0
+var endless: Endless
 var arena_half: float
 var next_fall_id := 0
 var collapse: Collapse
@@ -92,7 +97,7 @@ var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
-## The body as a solid that breaks what it walks into; body.heading turns the drawn model.
+## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
@@ -174,6 +179,11 @@ func reach_top() -> float:
 	return stand_y + reach_height()
 
 
+## Chunks' worth of how far the city has fallen, as the army and air wing escalate on it.
+func escalation() -> int:
+	return chunks_destroyed + Endless.escalation(self)
+
+
 func destruction() -> float:
 	return Num.f(chunks_destroyed) / maxf(1.0, Num.f(chunks_total))
 
@@ -182,9 +192,13 @@ func result() -> Dictionary:
 	return {
 		"rubble": Num.i(floor(rubble)),
 		"destruction": destruction(),
+		"buildings": collapse.destroyed_buildings(),
+		"seconds": elapsed,
 		"tanks": tanks_destroyed,
 		"helis": air.destroyed,
 		"rooftops": army_units.rooftops_destroyed,
+		"agents": army_units.taskforce.kills,
+		"city_seconds": army_units.taskforce.city_seconds(),
 		"toppled": collapse.toppled,
 		"tallest_topple": collapse.tallest_topple,
 		"reason": end_reason,
@@ -194,19 +208,19 @@ func result() -> Dictionary:
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
 func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -> Array[Dictionary]:
 	var signature_held := buttons & HELD != 0
-	var ultimate_pressed := buttons & ULTIMATE != 0
 	_events = []
 	if over or emerge.step(self, dt):
 		return _events
 	time_left -= dt
+	elapsed += dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
 	var moving := move.length() > 0.05
-	if moving:
-		var dir := move.limit_length(1.0)
-		var speed := stat("speed") * powers.speed_mult()
-		kaiju_pos = clamp_to_arena(kaiju_pos + dir * speed * dt)
-		facing = powers.turn_toward(facing, dir.normalized(), dt)
+	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
+	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
+		var speed := stat("speed") * powers.speed_mult() * stride
+		kaiju_pos = clamp_to_arena(kaiju_pos + body.heading * speed * dt)
+		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
 	_stomp_timer -= dt
@@ -219,7 +233,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
 		_signature()
 	ultimate_ready_in = maxf(0.0, ultimate_ready_in - dt)
-	if ultimate_pressed and ultimate_ready_in <= 0.0 and powers.has_ultimate():
+	if buttons & ULTIMATE != 0 and ultimate_ready_in <= 0.0 and powers.has_ultimate():
 		ultimate_ready_in = Num.f(powers_cfg["ultimate_cooldown"])
 		powers.ultimate()
 	powers.step(dt, signature_held)
@@ -227,12 +241,10 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	collapse.step(dt)
 	army_units.step(dt)
 	air.step(dt)
-	if chunks_destroyed >= chunks_total:
-		end("city_fallen")
-	elif hp <= 0.0:
-		end("defeated")
-	elif time_left <= 0.0:
-		end("time")
+	Endless.step(self, dt)
+	var why := Endless.over_reason(self)
+	if why != "":
+		end(why)
 	return _events
 
 
@@ -273,21 +285,7 @@ func _signature() -> void:
 	var damage := stat("ability_damage")
 	match ability_type:
 		"cone":
-			var aim := BreathCone.of(self)  # what BreathAim shows
-			var half_angle := Num.f(aim["half_angle"])
-			var origin: Vector2 = aim["origin"]
-			var dir := facing
-			_events.append({"type": "ability", "kind": "cone", "reach": reach, "from": origin})
-			hit_air = true  # fire reaches up to the helicopters
-			hit_area(
-				func(p: Vector2, r: float) -> float:
-					var to := p - origin
-					if to.length() > reach + r:
-						return 0.0
-					return 1.0 if to.length() <= r or absf(dir.angle_to(to)) <= half_angle else 0.0,
-				damage
-			)
-			hit_air = false
+			BreathCone.breathe(self, reach, damage)
 		"leap":
 			var from := kaiju_pos
 			kaiju_pos = clamp_to_arena(
@@ -315,29 +313,7 @@ func _signature() -> void:
 ## 0..1; then lets the hit buildings settle. hit_coat and hit_air widen what it does.
 func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> void:
 	var top := ceili(reach_height()) if y_hi < 0 else y_hi
-	for i: int in buildings.size():
-		var b := buildings[i]
-		var near: float = force.call(Vector2(b.x, b.z), Vector2(b.w, b.d).length() * 0.5)
-		if near > 0.0 and carving.takes(i):
-			carving.hit(i, force, damage, Vector2i(y_lo, top))  # coats what it reaches too
-			continue
-		if near <= 0.0 or b.frame.alive_count == 0:
-			continue
-		var cells: Array[Vector3i] = []
-		var amounts := PackedFloat32Array()
-		for y: int in range(maxi(0, y_lo), mini(top, b.height)):
-			for x: int in b.w:
-				for z: int in b.d:
-					var c := Vector3i(x, y, z)
-					if b.frame.alive(c):
-						var p := b.chunk_world(c)
-						var k: float = force.call(Vector2(p.x, p.z), 0.5)
-						if k > 0.0:
-							cells.append(c)
-							amounts.append(damage * k)
-		if not hit_coat.is_empty():
-			powers.coat(i, cells)
-		damage_cells(i, cells, amounts)
+	StrayShell.hit_buildings(self, force, damage, Vector2i(y_lo, top))
 	for tank: Tank in tanks:
 		var k: float = force.call(tank.pos, TANK_RADIUS)
 		tank.hp -= damage * k
@@ -396,5 +372,5 @@ func damage_cells(index: int, cells: Array[Vector3i], amounts: PackedFloat32Arra
 
 func pay(b: Building, chunks: int, bonus: float) -> void:
 	chunks_destroyed += chunks if b.in_arena else 0
-	var mult := bonus * b.rubble_bonus * stat("rubble_mult")
+	var mult := bonus * b.rubble_bonus * b.pay_share * stat("rubble_mult")
 	rubble += chunks * b.tier * Num.f(city["chunk_rubble"]) * mult

@@ -3,6 +3,11 @@ extends RefCounted
 ## the kaiju owns, evolving resets that growth, and a full Behemoth loses more health to the army
 ## that learnt. `play` is the suite's seeded rampage: play(tuning, layout, levels) -> result.
 
+## The cities the learning army is measured in, summed: one seeded rampage swings by a quarter
+## from platform to platform (city seed 0 alone read 280 vs 182 hp here and 230 vs 182 on CI,
+## ratios 1.54 and 1.26), the six together hold 1.7 (1.45 to 2.17 each).
+const LEARN_SEEDS := 6
+
 ## Every Behemoth-tier node bought, the evolution to Colossus not yet.
 const BEHEMOTH_FULL := {
 	"claws": 5,
@@ -70,13 +75,21 @@ static func check(check: Callable, play: Callable) -> void:
 			]
 		)
 	)
-	var layout := CityGrowth.layout(Content.tuning(), 2, Seeds.make("city", 0))
-	var soft: Dictionary = play.call(off, layout, BEHEMOTH_FULL)
-	var hard: Dictionary = play.call(on, layout, BEHEMOTH_FULL)
-	check.call(
-		Num.f(hard["hp_lost"]) > Num.f(soft["hp_lost"]) * 1.3,
-		(
-			"a full Behemoth loses more health to the army that learnt (%.0f vs %.0f of %.0f hp)"
-			% [hard["hp_lost"], soft["hp_lost"], grown_stats["hp"]]
+	var soft_lost := 0.0
+	var hard_lost := 0.0
+	for city_seed: int in LEARN_SEEDS:
+		var layout := CityGrowth.layout(Content.tuning(), 2, Seeds.make("city", city_seed))
+		var soft: Dictionary = play.call(off, layout, BEHEMOTH_FULL)
+		var hard: Dictionary = play.call(on, layout, BEHEMOTH_FULL)
+		soft_lost += Num.f(soft["hp_lost"])
+		hard_lost += Num.f(hard["hp_lost"])
+	(
+		check
+		. call(
+			hard_lost > soft_lost * 1.3,
+			(
+				"a full Behemoth loses more health to the army that learnt (%.0f vs %.0f hp over %d cities)"
+				% [hard_lost, soft_lost, LEARN_SEEDS]
+			)
 		)
 	)

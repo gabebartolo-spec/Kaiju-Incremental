@@ -86,11 +86,8 @@ func run_checks() -> void:
 class UnlitVoxels:
 	extends BuildingVoxels
 
-	func _lit_or(key: String, _side: Vector2i, _p: int, _y: int) -> String:
-		return key
-
-	func _lit_cell(_p: int, _y: int) -> bool:
-		return false
+	func _lit_share() -> float:
+		return 0.0
 
 
 func _building(f: Array) -> RampageSim.Building:

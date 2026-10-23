@@ -8,6 +8,7 @@ extends SceneTree
 ##     --write-movie <dir>/<species>.avi --script tools/capture/capture_branch.gd \
 ##     -- --species=<id> --out=<dir>
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const FRAMES := 60 * 9
 const SHOTS: Array[int] = [120, 220, 320, 420, 520]
 const LEVELS := {
@@ -23,33 +24,27 @@ var _target := Vector2(INF, INF)
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--out="):
-			_out = arg.substr(6)
-		if arg.begins_with("--species="):
-			_species = arg.substr(10)
+	var a := Kit.args({"out": _out, "species": _species})
+	_out = str(a["out"])
+	_species = str(a["species"])
 	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def(_species)
 	var levels: Dictionary = LEVELS[_species]
-	var tree := UpgradeTree.new(Content.upgrades(), levels, _species)
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
+	var rampage := Kit.rampage(_species, Kit.stats(_species, levels, _species), 1)
 	rampage.scripted = _input
 	root.add_child(rampage)
 	for i: int in FRAMES:
 		await physics_frame
 		_frame = i
 		if SHOTS.has(i):
-			var path := _out.path_join("%s_%03d.png" % [_species, i])
-			root.get_viewport().get_texture().get_image().save_png(path)
+			Kit.still(self, _out, "%s_%03d" % [_species, i])
 	quit()
 
 

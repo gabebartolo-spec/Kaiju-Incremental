@@ -4,38 +4,46 @@ extends SceneTree
 ## from the engine's own timers (window focus and vsync do not matter). Needs a window.
 ##
 ##   godot --path . --resolution 3840x2160 --windowed --script tools/capture/bench_rampage.gd \
-##     -- --species=reptilian --seconds=30
+##     -- --species=reptilian --seconds=30 [--stage=3]
+## --stage=N plays growth stage N's city with that stage's body (capture_kit STAGE_LEVELS), e.g. the
+## adult city (stage 3, D-135); without it, the mid-game build in the flow test's city.
+## --nofx turns the post effects (PostFx, D-142) off for the cost comparison; --preset=<level>
+## names the graphics preset (default: the one this screen would pick).
+
+const Kit := preload("res://tools/capture/capture_kit.gd")
 
 var _species := "reptilian"
 var _seconds := 30.0
+var _stage := 0
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--species="):
-			_species = arg.substr(10)
-		elif arg.begins_with("--seconds="):
-			_seconds = arg.substr(10).to_float()
+	var a := Kit.args(
+		{"species": _species, "seconds": _seconds, "stage": _stage, "nofx": false, "preset": ""}
+	)
+	PostFx.enabled = a["nofx"] != true
+	PlayerSettings.graphics = str(a["preset"])
+	_species = str(a["species"])
+	_seconds = Num.f(a["seconds"])
+	_stage = Num.i(a["stage"])
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def(_species)
-	var levels := {"claws": 4, "hide": 3, "rage": 3, "quake": 2, "evolve1": 1, "sig_power": 2}
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 2
-	)
-	rampage.set_autoplay(true)
-	root.add_child(rampage)
+	var rampage: Rampage
+	if _stage > 0:
+		var levels: Dictionary = Kit.STAGE_LEVELS[_stage - 1]
+		var layout := CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0))
+		rampage = Kit.autoplay(self, _species, Kit.stats(_species, levels, _species), 2, layout)
+	else:
+		rampage = Kit.autoplay(self, _species, Kit.stats(_species, Kit.BENCH_LEVELS), 2)
 	var vp := root.get_viewport_rid()
-	RenderingServer.viewport_set_measure_render_time(vp, true)
-	for _i: int in 30:
-		await process_frame
+	Kit.measure_on(self)
+	await Kit.frames(self, 30)
 	var frames := 0
 	var gpu_sum := 0.0
 	var gpu_max := 0.0
@@ -82,6 +90,7 @@ func _run() -> void:
 			]
 		)
 	)
+	print("city: stage %d, %d buildings" % [_stage, rampage.sim.buildings.size()])
 	print(
 		"worst costs (ms): ",
 		rampage.cost_usec.keys().map(
@@ -96,7 +105,7 @@ func _run() -> void:
 				(
 					"street life: %d people, %d cars, avg %.2fms worst %.2fms per frame"
 					% [
-						street.people.size(),
+						street.pos.size(),
 						street.traffic.cars.size(),
 						street.total_usec / 1000.0 / maxi(1, street.frames),
 						street.worst_usec / 1000.0

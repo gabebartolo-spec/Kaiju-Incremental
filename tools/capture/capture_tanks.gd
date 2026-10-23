@@ -9,6 +9,7 @@ extends SceneTree
 ##   godot --path . --resolution 1280x720 --windowed --fixed-fps 60 \
 ##     --script tools/capture/capture_tanks.gd -- --species=<id> [--air] --out=<dir>
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const FRAMES := 60 * 40
 const SHOTS: Array[int] = [600, 900, 1200, 1500, 1800, 2100, 2340]
 const AIR_FRAMES := 60 * 20
@@ -29,27 +30,21 @@ var _air := false
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--out="):
-			_out = arg.substr(6)
-		if arg.begins_with("--species="):
-			_species = arg.substr(10)
-		if arg == "--air":
-			_air = true
+	var a := Kit.args({"out": _out, "species": _species, "air": _air})
+	_out = str(a["out"])
+	_species = str(a["species"])
+	_air = a["air"]
 	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
 func _run() -> void:
 	await process_frame
-	var species := Content.species_def(_species)
 	var levels: Dictionary = LEVELS[_species]
-	var tree := UpgradeTree.new(Content.upgrades(), levels, _species)
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
+	var rampage := Kit.rampage(_species, Kit.stats(_species, levels, _species), 1)
 	rampage.scripted = _input
 	root.add_child(rampage)
 	await physics_frame
@@ -62,8 +57,7 @@ func _run() -> void:
 		await physics_frame
 		_frame = i
 		if (_air and i % AIR_EVERY == 0) or (not _air and SHOTS.has(i)):
-			var path := _out.path_join("tanks_%s_%04d.png" % [_species, i])
-			root.get_viewport().get_texture().get_image().save_png(path)
+			Kit.still(self, _out, "tanks_%s_%04d" % [_species, i])
 	quit()
 
 

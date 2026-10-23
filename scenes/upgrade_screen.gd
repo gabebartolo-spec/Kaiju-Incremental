@@ -9,16 +9,20 @@ extends Control
 signal start_pressed
 signal bought(id: String)
 signal menu_pressed
+signal endless_pressed
 
-## The side panel's width: the details, the stats and RAMPAGE, all without scrolling.
-const SIDE_WIDTH := 330
 ## The stat rows' "now" column: one width for every row, so the arrows sit in one column.
 const NOW_WIDTH := 64
 const NBSP := " "
 var tree: UpgradeTree
+## Set before the screen is added: the final upgrade is owned, so Endless mode is offered (D-156).
+var endless_unlocked := false
 var rubble: int
 var species: Dictionary
 var base_stats: Dictionary
+## The node details panel beside the tree: one fixed width for every node (b2-23, tuning "ui"
+## tooltip_width), so picking a long-named node never reshapes the screen.
+var side_panel: Control
 var _area: TreeArea
 var _rubble_label: Label
 var _info_title: Label
@@ -82,7 +86,9 @@ func _ready() -> void:
 
 func _build_side() -> Control:
 	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(SIDE_WIDTH, 0)
+	side.custom_minimum_size = Vector2(Num.f(UiKit.ui()["tooltip_width"]), 0)
+	side.size_flags_horizontal = Control.SIZE_SHRINK_END
+	side_panel = side
 	side.add_theme_constant_override("separation", 12)
 	var info := UiKit.panel()
 	info.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -92,13 +98,14 @@ func _build_side() -> Control:
 	_info_title = UiKit.label("", UiKit.SIZE_HEAD, UiKit.TEXT)
 	_info_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_title)
-	_info_role = UiKit.label("", UiKit.SIZE_SMALL, UiKit.WARN)
+	_info_role = UiKit.label("", UiKit.SIZE_BODY, UiKit.WARN)
+	_info_role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_role)
-	_info_body = UiKit.rich(UiKit.SIZE_SMALL, UiKit.MUTED.lightened(0.2))
+	_info_body = UiKit.rich(UiKit.SIZE_BODY, UiKit.MUTED.lightened(0.2))
 	info_col.add_child(_info_body)
 	# The node's stats sit half a line below its words, in columns: the arrows line up (D-077).
 	var gap := Control.new()
-	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_SMALL / 2.0)
+	gap.custom_minimum_size = Vector2(0, UiKit.SIZE_BODY / 2.0)
 	info_col.add_child(gap)
 	_info_stats = VBoxContainer.new()
 	_info_stats.add_theme_constant_override("separation", 2)
@@ -107,15 +114,26 @@ func _build_side() -> Control:
 	var push := Control.new()
 	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	info_col.add_child(push)
-	_info_status = UiKit.label("", UiKit.SIZE_SMALL, UiKit.TEXT)
+	_info_status = UiKit.label("", UiKit.SIZE_BODY, UiKit.TEXT)
 	_info_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_col.add_child(_info_status)
 	var go := UiKit.button("RAMPAGE  >", UiKit.SIZE_HEAD)
 	go.custom_minimum_size = Vector2(0, 80)
 	go.pressed.connect(func() -> void: start_pressed.emit())
 	side.add_child(go)
+	_add_endless(side)
 	go.grab_focus.call_deferred()
 	return side
+
+
+## The final upgrade unlocks Endless mode (D-156): its button sits under RAMPAGE.
+func _add_endless(side: Control) -> void:
+	if not endless_unlocked:
+		return
+	var endless := UiKit.button("ENDLESS MODE", UiKit.SIZE_BODY, UiKit.PANEL_EDGE)
+	endless.custom_minimum_size = Vector2(0, 64)
+	endless.pressed.connect(func() -> void: endless_pressed.emit())
+	side.add_child(endless)
 
 
 ## "ultimate": a species node nothing else needs (its branch's capstone); "evolve": grows the
@@ -127,6 +145,9 @@ func role_of(id: String) -> String:
 		return "evolve"
 	if str(def.get("species", "")) == "":
 		return "plain"
+	var pos: Array = def["pos"]
+	if Num.i(pos[1]) < TreeArea.BRANCH_ROW:
+		return "branch"  # a capstone sits on the species row; a leaf above it is only a branch end
 	for other: String in tree.order:
 		var other_def: Dictionary = tree.defs[other]
 		var requires: Array = other_def.get("requires", [])
@@ -153,9 +174,9 @@ func _select(id: String) -> void:
 	var role := role_of(id)
 	_info_role.text = {
 		"plain": "",
-		"branch": "%s BRANCH" % str(species["name"]).to_upper(),
+		"branch": "",
 		"evolve": "EVOLUTION",
-		"ultimate": "ULTIMATE  -  %s BRANCH CAPSTONE" % str(species["name"]).to_upper(),
+		"ultimate": "ULTIMATE",
 	}[role]
 	_info_body.clear()
 	_info_body.append_text(UpgradeTree.desc_for(def, str(species["id"])))
@@ -196,7 +217,7 @@ func _status_line(id: String) -> String:
 	var nl := String.chr(10)
 	var have := ("Cost %d" + nl + "You have %d biomass" + nl) % [tree.cost(id), rubble]
 	if tree.can_buy(id, rubble):
-		return head + have + "Press Enter / pad A to buy"
+		return head + have + "Enter / pad A to buy"
 	return head + have + "%d more needed" % (tree.cost(id) - rubble)
 
 
@@ -212,14 +233,14 @@ func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
 		if entry.get("hidden", false):
 			continue
 		var now := Num.f(stats.get(stat, 0.0))
-		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_SMALL, UiKit.MUTED)
+		var line := UiKit.label(str(entry.get("line", stat)) + ":", UiKit.SIZE_BODY, UiKit.MUTED)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_info_stats.add_child(line)
 		# The values under the words; the "now" column is one fixed width, so arrows line up.
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		_info_stats.add_child(row)
-		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_SMALL, UiKit.MUTED)
+		var was := UiKit.label(_fmt(entry, now, steps == 0), UiKit.SIZE_BODY, UiKit.MUTED)
 		was.custom_minimum_size = Vector2(NOW_WIDTH, 0)
 		row.add_child(was)
 		if steps > 0:
@@ -229,7 +250,7 @@ func _show_stats(effects: Dictionary, stats: Dictionary, steps: int) -> void:
 			arrow.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 			row.add_child(arrow)
 			var after := _fmt(entry, now + Num.f(effects[stat]), true)
-			row.add_child(UiKit.label(after, UiKit.SIZE_SMALL, UiKit.TEXT))
+			row.add_child(UiKit.label(after, UiKit.SIZE_BODY, UiKit.TEXT))
 	_info_stats.visible = _info_stats.get_child_count() > 0
 
 

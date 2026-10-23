@@ -19,9 +19,13 @@ var sim: RampageSim
 var fx: Fx
 ## Civilians, police and moving traffic (null on an empty stage).
 var street: StreetLife
+## The kaiju's drawn body points (HeadFrame.sight), set by Rampage each frame: the fade keeps
+## them in sight beside the sim's own points (R 19.4: a tower over the drawn head or chest fades).
+var drawn_sight := PackedVector3Array()
 var _rng: RandomNumberGenerator
 var _stream: BuildingStream
 var _fade: BuildingFade
+var _fall_fade := FallFade.new()
 var _falling: Dictionary = {}
 var _ruins: RuinYard
 var _topple: ToppleFx
@@ -85,12 +89,23 @@ func _ready() -> void:
 	is_loaded = true
 
 
-## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife).
-func crush(at: Vector3, radius: float, by_tank: bool = false) -> void:
+## Building `index` regrew in Endless mode (Endless): its ruin view goes, the sim's standing one
+## is built.
+func regrow(index: int) -> void:
+	_stream.regrow(index)
+
+
+## Cars, trees and lights under a stomp go flat; people there are crushed (by_tank: StreetLife;
+## by_army: a stray shell did it, so the dead are the army's: ArmyToll).
+func crush(at: Vector3, radius: float, by_tank: bool = false, by_army: bool = false) -> void:
 	if _decor != null:
 		_decor.crush(at, radius)
-	if street != null:
-		street.crush(at, radius, by_tank)
+	if street == null:
+		return
+	var before := ArmyToll.read(street)
+	street.crush(at, radius, by_tank)
+	if by_army:
+		street.toll.take(street, before)
 
 
 ## Everything on the ground in a breath's cone (BreathCone.of) goes the same way.
@@ -115,10 +130,20 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:  # buildings in front of the kaiju fade to a screen door (D-025)
 		var feet := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
-		_fade.update(camera.global_position, BuildingFade.sight_of(sim), delta)
+		var sight := BuildingFade.sight_of(sim, camera.global_position) + drawn_sight
+		_fade.update(camera.global_position, sight, delta)
+		_fall_fade.update(falling_pieces(), camera.global_position, sight, delta)  # toppling too
 		# Smoke between the camera and the kaiju thins out (smoke.gdshader, director's playtest).
 		var depth := (feet - camera.global_position).dot(-camera.global_transform.basis.z)
 		RenderingServer.global_shader_parameter_set("smoke_focus", depth)
+
+
+## The sections falling now (FallFade; the capture tools read them).
+func falling_pieces() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	for f: Dictionary in _falling.values():
+		out.append(f["node"])
+	return out
 
 
 ## The street plan's ground and, round a real city, the outskirts, the bay and the skyline.
@@ -294,7 +319,7 @@ func _broke(index: int, cells: Array[Vector3i]) -> void:
 		out.append_array(_chunk_fires.building_gone(index))
 	for f: Fire in out:
 		_fires.erase(f)
-		f.go_out()
+		f.go_out(Num.f(sim.powers_cfg["fire"]["view_out_fade"]))
 	_ruins.mark(index)
 
 

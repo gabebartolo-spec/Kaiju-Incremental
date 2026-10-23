@@ -26,6 +26,8 @@ var sfx: Sfx
 var rooftops: RooftopView
 ## Every power event this view has drawn, by type (read by the flow suite).
 var played: Array[String] = []
+## The roar on every ultimate and dash (D-145).
+var roar := RoarCue.new()
 var _city: CityView
 var _kaiju: Node3D
 var _tint: Color
@@ -96,25 +98,19 @@ func _streak(a: Vector3, b: Vector3, color: Color, seconds: float) -> void:
 
 ## Returns true when the event was a power's.
 func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
+	roar.on_event(event, sim.time_left, self, _kaiju)
 	var bs := sim.body_scale()
 	match str(event["type"]):
 		"tail_sweep":
 			var side := Num.f(event["side"])
 			_hook("tail_sweep", [side])
-			_city.ring(kaiju_at, Num.f(event["reach"]), UiKit.WARN, 0.35)
+			_city.fx.shockwave_to(kaiju_at, Num.f(event["reach"]))  # dust out to the tail's reach
 			var behind := kaiju_at - _w(sim.facing) * Num.f(event["reach"]) * 0.7
 			_city.fx.dust_line(kaiju_at, behind + Vector3(0, 0.5, 0), bs * 2.0)
 		"swipe_windup":
 			_hook("tail_sweep", [Num.f(event["side"]), "claw_windup"])
 		"swipe":
-			var arc: Dictionary = {}
-			if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
-				arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
-			ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
-			if sfx != null:
-				sfx.play("lash")
-			var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
-			_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
+			_swiped(event, kaiju_at)
 		"beam_start":
 			_hook("jaw_open", [true])
 			_beam = _box(Vector3.ONE, _tint.lightened(0.5))
@@ -124,8 +120,8 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 			if _beam != null:
 				_beam.queue_free()
 				_beam = null
-		"coated":
-			_coated(event)
+		"coated", "fire_burning":
+			_lit(event)
 		"dash":  # the charge: a whoosh and a dust streak along the path
 			var ahead := _w(event["dir"]) * sim.body.length()
 			_city.fx.dust_line(kaiju_at, kaiju_at + ahead + Vector3(0, 0.5, 0), bs * 2.0)
@@ -180,6 +176,18 @@ func on_event(event: Dictionary, kaiju_at: Vector3) -> bool:
 
 
 ## Fire (beam) or ink glowing on a few of the newly coated chunks.
+## A claw swipe crosses now: its arm's sweep, the slash, the lash sound, cars and people crushed.
+func _swiped(event: Dictionary, kaiju_at: Vector3) -> void:
+	var arc: Dictionary = {}
+	if _kaiju.has_method("tail_sweep"):  # the rake crosses now; its arm's sweep
+		arc = _kaiju.call("tail_sweep", Num.f(event["side"]), "claw")
+	ClawSlash.play(_city, kaiju_at, _w(sim.facing), event, arc)
+	if sfx != null:
+		sfx.play("lash")
+	var mid := lerpf(Num.f(event["near"]), Num.f(event["far"]), 0.5)
+	_city.crush(kaiju_at + _w(sim.facing) * mid, Num.f(event["width"]))  # cars, people
+
+
 func _coated(event: Dictionary) -> void:
 	var b := sim.buildings[Num.i(event["building"])]
 	var cells: Array[Vector3i] = event["cells"]
@@ -198,6 +206,33 @@ func _coated(event: Dictionary) -> void:
 			tween.tween_callback(blob.queue_free)
 		else:
 			_city.burn_chunk(Num.i(event["building"]), cell, 0.45)
+
+
+## A coat (beam, ink) on chunks, or a whole building the sim set burning.
+func _lit(event: Dictionary) -> void:
+	if str(event["type"]) == "coated":
+		_coated(event)
+	else:
+		_burning(Num.i(event["building"]))
+
+
+## A building the sim set burning (FireSpread): today's chunk fire (flames, embers, smoke) on its
+## roof, one per roof quarter (one on a narrow roof), each on the highest standing chunk there;
+## each goes out when its chunk breaks or falls, all once the building is down (#111). The glow
+## before it and the fire's own look are R 26.5.
+func _burning(index: int) -> void:
+	var b := sim.buildings[index]
+	var size := Num.f(sim.powers_cfg["fire"]["view_size"])
+	var span := Num.f(sim.powers_cfg["fire"]["view_spacing"])
+	var nx := 2 if b.w >= span else 1
+	var nz := 2 if b.d >= span else 1
+	for a: int in nx:
+		for c: int in nz:
+			var cell := Vector3i(floori(b.w * (2 * a + 1) / (2.0 * nx)), 0, 0)
+			cell.z = floori(b.d * (2 * c + 1) / (2.0 * nz))
+			cell.y = b.frame.top_below(cell.x, cell.z, b.height)
+			if cell.y >= 0:
+				_city.burn_chunk(index, cell, size)
 
 
 func _thrown(event: Dictionary, kaiju_at: Vector3) -> void:

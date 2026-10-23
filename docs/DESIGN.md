@@ -4,6 +4,11 @@ The one design document. Every agent reads it in full before work. It says what 
 things get built is `docs/ROADMAP.md`, why each ruling was made is `docs/DECISIONS.md` (D-n). Cap 200 lines. Edited
 only by the lead when the director rules; replace the old line, never append history. Quotes are the director's.
 
+## Visual pillars (director 2026-10-22/23)
+Every visual effect passes three equal tests: **beauty** ("visual beauty is equally important"), **consistency** (one look
+per effect family: "consistency is absolutely key to avoid slop accusations") and **the power fantasy** ("all the visual
+effects must make you feel like the Apex Predator, King of Monsters, Godkiller, Planetbreaker"; "our enemies are many, but they ultimately are our prey"). Detail: `docs/VFX_STYLE.md`.
+
 ## Pillar
 **You are the disaster: every rampage must feel bigger than the last.** A system that does not change what the player
 sees, decides or remembers is cut, not polished. A thrill, never a chore: "the game isnt meant to be extremely challenging or frustrating" (D-118). Designed by the director; agents execute and push back.
@@ -46,7 +51,10 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - **Motion:** terrifying monsters, not toys (D-013). Turns with weight, "lumbering and unstoppable" yet responsive:
   bigger turns slower "but not TOO slow" (#31), the head leads, the legs step the turn, never a sliding pivot or "swivelling on the spot like a plastic toy";
   shoulders and head move as it walks (comments 2026-10-20 #16, 2026-10-21 #3/#4). Physics on tails, limbs and
-  antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047).
+  antennae (D-015). Croc clips come from Blender, layered over procedural foot planting (D-047). Standing still he
+  is a living predator: heavy breaths, weight shifts, head glances, blinks; no panting, no eye tracking. Strides
+  grow heavier with size; tail, throat and jowls swing on each footfall; a short crouch before the dash (D-165).
+  A big attack's damage lands when the jaws or foot land (D-166).
 - **Body vs world:** the kaiju never clips through anything: walking into buildings, rubble or a falling tower
   breaks it (D-091, D-110, comments #24). A tower that falls on him breaks believably at the contact, large pieces
   folding off him, "not turned instantly to dust" (#25). A fallen building breaks
@@ -55,7 +63,8 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - **Models:** Tripo designs, hand-rigged in Blender with welded weights, rendered as voxel cubes on a smooth skinned
   lattice (D-041, D-045). The kaiju gets double voxels per axis, the city keeps today's size (D-107). Mantis and
   octopus meshes kept; their game-ready plan is `docs/superpowers/plans/2026-10-18-mantis-octopus-game-ready.md`,
-  plan only (D-060).
+  plan only (D-060). One look built from blocks, close shots included: far blur on the kaiju, cool shadows with warm
+  fire, roads and lawns in the city's fine blocks (D-163). New heads are looks only at first (D-166).
 
 ## The city
 - Voxel, Look C "Concrete Realism", real structures with recessed framed facades and rooftop clutter, matching the
@@ -104,12 +113,17 @@ sees, decides or remembers is cut, not polished. A thrill, never a chore: "the g
 - The stats panel shows only what the selected node changes, in plain words (D-077).
 - **Copy rule for all player text:** short and playful, no mechanics explained, no internal names ("branch",
   "capstone", "floors" as a unit); the player smashes, buys, smashes more (b2-15/16/17/24/27).
-- **Demo** (D-050): the croc only, hatchling to Behemoth, ends on a "demo complete" card.
+- **Demo** (D-050, D-145, D-156): the croc only, all three cities (baby, adolescent, adult) with the full Taskforce;
+  buying the final upgrade (about 2 hours) shows a thanks screen with rampage stats and a feedback link and unlocks
+  endless mode (the city regenerates slowly, enemies escalate); normal mode stays replayable with the maxed kaiju.
+- **Normal mode decides balance** (director 2026-10-23): "the game's balance will not be determined by endless mode.
+  the normal mode is still the main way to play and all balance questions ultimately will be decided on whether it
+  makes normal mode better". Endless mode has its own tuning rows and never changes a normal-mode number.
 
 ## Look, camera, screen
 - **Shader Cinematic** (heavy AO, contrast 1.3, saturation 0.9, bloom on fire, no crease edges, D-104; replaces
   D-057/D-068). Real light sources: lamps, lit windows, fires, muzzle flashes, explosion and breath light (D-010).
-  Time of day rotates per run: dusk, night, morning, noon; morning less hazy, night lighter (D-106).
+  Time of day is random per run (dusk, night, morning, noon), never the same twice in a row, with an options toggle to fix one; morning less hazy, night lighter (D-106, D-145).
 - **Camera C**, low and cinematic, sees to the skyline (D-105); how it grows per stage is still his pick (R 19). Run
   intro: a 3 s shot of the water rippling, the kaiju bursting out roaring, the camera pulling out (#11). Water reacts
   to the kaiju (#12). Shake: smooth trauma, rotation only, one camera-motion setting.
