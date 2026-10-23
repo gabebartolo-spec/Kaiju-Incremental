@@ -47,6 +47,15 @@ with scratchpad tw/compose.py. Checked at 1x (whole frame) and native-pixel crop
 A and B are close: stride at the turn's lowest 0.25 / 0.20 (A) against 0.59 / 0.56 (B), A under 0.3 of full for 0.38 /
 0.75 s; sideways reach of the feet-centre 4.1 / 5.0 u (A) against 5.3 / 7.5 u (B); run-on past the reversal 11.0 / 22.2
 against 11.8 / 23.6 u. B's wider swing brings the Colossus's tail into buildings sooner (dust at the clip's left in B).
+## Log batch (headless, capture_turn_ab.gd --log; scratchpad tw/logs, analyze.py), 2026-10-23 night
+No clip drop: the gait state is "walk" through every turn, A and B, both forms (smoothed speed never under 4.1 u/s;
+stand threshold about 0.6), so the ClipGait diff (tw/candidate_clip_choice.diff) stays unapplied. Drawn body yaw = sim
+heading to 0.001 deg (even: 16 deg a quarter second at the Colossus). Drawn root net progress over the turn: Behemoth
+A 6.1 / B 7.5 u, Colossus A 8.5 / B 11.0 u (path 11-18 u); the feet-centre's net speed per 0.5 s is 5-28% of the
+walk in the first and last windows (the critic's 15-20%): net progress under the pivot. Toe drift 0.00 u every contact.
+Colossus contacts 6 alternating, 0.5-0.7 s each (A all real; B first right foot 0.6 u shuffle). A and B differ little.
+Final build at B (turn_slow 0.5 in the data, restored): motion 30 checks 1 FAIL (Colossus centre 0.65 / 0.54 / 0.65 hip
+heights > 0.6), gait 24 checks 1 FAIL (Colossus real steps 1 in a row at the worst start place); A (0.1) passes both.
 ## Decisions
 turn_slow 0.1 vs 0.5: the director asked to see both (clip A vs B). turn_steps 5.5 and turn_ramp 0.15 are tuning picks
 (bar 7's 40 deg a step and 0.3 FL real steps; peak <= 1.3x mean).
