@@ -273,7 +273,7 @@ func _wet_of(stage: Node3D) -> float:
 
 func _check_rain_view() -> void:
 	var kept := Content.weather_id()
-	var seen := {}
+	var seen: Dictionary[String, bool] = {}
 	for id: Variant in Content.weathers():
 		Content.set_weather(str(id))
 		var stage := _stage()
@@ -305,12 +305,13 @@ func _check_rain_scales_with_preset() -> void:
 	var table: Dictionary = Content.section("display")["graphics"]
 	var counts := {}
 	for preset: String in ["potato", "high"]:
-		GraphicsPresets.start_run(table[preset])
+		var row: Dictionary = table[preset]
+		GraphicsPresets.start_run(row)
 		var stage := _stage()
 		var view := WeatherView.attach(stage)
 		counts[preset] = view.streaks.amount
 		stage.queue_free()
-	check(counts["potato"] > 0 and counts["potato"] < counts["high"],
+	check(Num.i(counts["potato"]) > 0 and Num.i(counts["potato"]) < Num.i(counts["high"]),
 		"potato draws fewer rain streaks than high: %s" % [counts])
 	GraphicsPresets.start_run(PlayerSettings.graphics_row())
 	Content.set_weather(kept)

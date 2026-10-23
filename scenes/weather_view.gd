@@ -43,7 +43,8 @@ static func layer_of(id: String) -> Dictionary:
 	var found: Variant = layers.get(id, {})
 	if not found is Dictionary:
 		return {}
-	var out: Dictionary = (found as Dictionary).duplicate()
+	var src: Dictionary = found
+	var out: Dictionary = src.duplicate()
 	if out.has("like"):
 		var base := layer_of(str(out["like"]))
 		base.merge(out, true)
@@ -169,7 +170,8 @@ func _build_rain() -> void:
 	mat.set_shader_parameter("min_px", Num.f(_cfg["min_px"]))
 	for key: String in ["fade_in", "fade_out", "far_begin", "far_end"]:
 		mat.set_shader_parameter(key, Num.f(_cfg[key]))
-	_clearing(mat, _cfg["clear"])
+	var table: Dictionary = _cfg["clear"]
+	_clearing(mat, table)
 	quad.material = mat
 	streaks.draw_pass_1 = quad
 	add_child(streaks)
@@ -200,7 +202,8 @@ func _build_splashes(ratio: float, tint: Color) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = SPLASH_SHADER
 	mat.set_shader_parameter("tint", Color(tint.r, tint.g, tint.b, Num.f(_cfg["splash_alpha"])))
-	_clearing(mat, _cfg["splash_clear"])
+	var table: Dictionary = _cfg["splash_clear"]
+	_clearing(mat, table)
 	quad.material = mat
 	splashes.draw_pass_1 = quad
 	add_child(splashes)
