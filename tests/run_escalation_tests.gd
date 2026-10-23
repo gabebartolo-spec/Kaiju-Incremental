@@ -203,7 +203,8 @@ func _check_falling_piece_stays_dark() -> void:
 	for child: Node in piece.get_children():
 		var mat: ShaderMaterial = (child as MeshInstance3D).material_override
 		check(Num.f(mat.get_shader_parameter("dark_to")) == 7.0, "a piece off a blacked-out building carries its dark height")
-		check(mat.get_shader_parameter("dark_color") == Look.color("window"), "...and the dark window colour")
+		var dark_color: Color = mat.get_shader_parameter("dark_color")
+		check(dark_color == Look.color("window"), "...and the dark window colour")
 	view.queue_free()
 	await process_frame
 	Content.set_time("dusk")
@@ -234,10 +235,15 @@ func _check_blackout_spreads() -> void:
 		sim.damage_chunks(hit, cells, 9999.0)
 		var nearby := -1
 		var far := order[order.size() - 1]
-		for i: int in order:
-			if i != hit and sim.buildings[i].frame.alive_count > 0:
+		var best := INF
+		for i: int in order:  # the standing building closest to the flattened one
+			if i == hit or sim.buildings[i].frame.alive_count == 0:
+				continue
+			var gap := Vector2(sim.buildings[i].x - hb.x, sim.buildings[i].z - hb.z).length()
+			if gap < best:
+				best = gap
 				nearby = i
-				break
+		print("ESC test: nearest neighbour %.1f m from the flattened block" % best)
 		for _f: int in 240:
 			view._process(0.5)
 		var dark_near := view._dark[nearby]
