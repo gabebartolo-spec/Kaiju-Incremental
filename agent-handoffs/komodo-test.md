@@ -6,7 +6,7 @@ ships. Branch `claude/komodo-test` (from origin/claude/look-options cc77576c). N
 Worktree: `.claude/worktrees/agent-a59788940defe4976` (copied native/bin dll and an off-screen override.cfg, both
 gitignored).
 
-## State: done, pushed; awaiting the lead's review of the clip
+## State: stood down (available); the director judges the clips first
 
 ## What is on the branch
 - `tools/blender/komodo_import.py`: `model` task voxelizes `komodo/mesh/komodo_10m.glb` with rig_voxel.py's
@@ -51,6 +51,8 @@ gitignored).
   side, 2.5-8.5 s). Earlier: `komodo_game_walk.mp4` (placeholder turns).
 
 ## Open / for the lead
-- smoke_step_turn reds: why the walk clip lifts both feet / twists a planted foot in a stepped walking turn is
-  not diagnosed (catch steps from ClipStomp overreach are the first suspect).
+- smoke_step_turn's 3 reds (both feet up 9 frames while yawing; planted foot yaw 22.0 deg > 12; 4.9 skates/s vs
+  the walk's 1.3) are NOT diagnosed, by the lead's call: it is the game's own turn and foot-planting layer, parked
+  tuning under D-193 until the director has judged the clips. First suspect when it resumes: ClipGait catch steps
+  (ClipStomp restep on overreach, RESTEP_GAP / RESTEP_REACH) lifting a planted foot mid-turn.
 - Roar neck stretch (0.27 m), as above. Arm pose not yet compared with komodo_walk_v5d.mp4.
