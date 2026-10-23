@@ -60,8 +60,10 @@
   interview.md. Scratchpad board_watch.sh wakes the lead on any from-file or interview change.
 
 ## Sessions and builders
-- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06: smooth fire rollout (claude/fire-smooth) then heli fall, breath
-  default, claw on the snout line. Holds my lent slot until the breath job closes (asked to return it).
+- 2026-10-23 director: "merge what they can and archive. i wanna go 1 on 1 with you". VFX + atmosphere leads ARCHIVED
+  (nothing SHIP to merge). VFX handoff claude/vfx-lead-2 862f1302 (fire-smooth 4e6e90d9, heli-fall 5aee3cb6, claw-rake
+  2d176ff4, living-predator ec4bb919 parked D-193). Atmosphere handoff claude/atmosphere-lead 42a8deaa (atm-escalation
+  85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new animation pipeline; D-194 Cascadeur Indie (he buys).
 - Lead's builders (subagents, Sonnet, common brief scratchpad COMMON-2026-10-23.md):
   - beam-cost (agent a1448c3e2dfa8c9e5, ~586k tokens) on claude/heli-standoff (D-183), worktree volley-d178: fly-by
     strafing pass outside the camera arc; runs heliflight only, pushes, reports sha; then refresh (fresh builder).
@@ -78,7 +80,6 @@
   - volley STOPPED 07:28 UTC (~551k tokens, claude/strike-delay, D-166): tier 2 paired 30 seeds, delays on vs off:
     chunks +14%, tanks seen +0.7, tank shots -0.7 (t -1.4); per-delay isolation (stomp alone, breath alone) never ran.
     Its slot went to the atmosphere B1 (pause lifted 11:02). FRESH builder from its handoff when a lead slot frees,
-    then music (brief ready); queue order: sim-leak/turn-weight finish -> strike-delay -> music.
 - git-helper (agent a145028402855b958, finished; resume by message): merges ONLY on a `<pr> <full sha>` go.txt line.
 - Stall watcher bosw631nr: IDLE_MIN=25 PROC_MIN=80 MAX_MIN=120 LOOP_MIN=120 over scratchpad watch_args.txt.
 
