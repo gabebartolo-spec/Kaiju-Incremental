@@ -24,7 +24,10 @@
   in an about-face): asked him; he said "show me them both. im cautious of the fullstop feeling terrible to play" ->
   one labelled A/B clip (A step round 0.1, B walking arc 0.5; B fails the motion gate's Colossus centre bar 0.63>0.6),
   fresh motion critic, lead's check, then to him. Offer a switchable test build if the clip can't show the feel.
-  Asked VFX lead where kaiju_pos sits on the body: stomp/claw/breath centres read it (feet 7/14 u ahead of it).
+  kaiju_pos sits behind the feet (toe 2.4/4.8/11.6 u ahead young/Behemoth/Colossus). DEFECT: the sim stomp damage
+  centres on kaiju_pos (rampage_sim.gd _stomp) while the view draws the ring at the delivering foot (rampage.gd
+  _land_stomp), 5-12 u apart. Fix (bug fix under D-166, no ask): stomp centre = the delivering foot's point; check
+  claw/breath origins. Next lead sim task after strike-delay (same code).
 - Heli fall (VFX, claude/heli-fall) stopped after 2 FIX ("drifts"): lead OK'd air.fall_seconds 2.2 -> 1.4 in that
   branch (agent placeholder; wrecks land ~0.8 s sooner; seeded tips come to the lead). Chutes = view (VFX).
   Claw rake bd2582ea: visible 4-5 of 9 frames vs 6 asked.
