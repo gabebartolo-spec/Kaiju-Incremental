@@ -25,7 +25,8 @@
   interview.md (questions for him). Scratchpad board_watch.sh wakes the lead on any from-file or interview change.
 
 ## Sessions (start_session; message by local_ id)
-- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06, briefed 13:05 with its queue (ack pending): #166 revert to
+- vfx-lead local_46ccb461-4998-4550-a36d-66e715fcfb06, acked its order: slot 1 #166, slot 2 one look phase 1 (grade, far blur, ground), asset
+  worker python r2 + colour tables + rig test (Komodo head slot asked), then D-165, then Thunder Beam r7. Queue: #166 revert to
   "wrecks crush the army too" + look SHIP; one look (D-163); heads/skins round 2 + rig test (D-164, D-170); living
   predator (D-165); strike times per growth step for D-166; Thunder Beam round 7 (claude/thunder-beam 6dbe10e5, FIX).
 - taskforce and demo-end sessions are no longer listed (their PRs #161, #165 merged). Their handoffs: worktrees
