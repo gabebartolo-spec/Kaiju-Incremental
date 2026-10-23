@@ -422,7 +422,7 @@ state. No director clips or per-change approvals in between; clips only where mo
   complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
   exact fix and pass bar first; any sim part to the lead). Status: view fixes are PR #175 (the walk passes); two
   critic rounds FIX on the turn, measured in the sim: the Behemoth and Colossus turn at 260-311 deg/s peaks, a snap
-  per planted step. D-187 "Heavier, slower": a U-turn about 1.5 s Behemoth, 2.5 s Colossus, spread evenly over the
+  per planted step. D-187 "Heavier, slower": a U-turn about 2 s Behemoth, 3 s Colossus (re-asked after a wrong quote), spread evenly over the
   steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges.
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
