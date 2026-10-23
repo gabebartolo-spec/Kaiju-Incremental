@@ -29,6 +29,14 @@ Balance floor 15,905 (was 16,775 at start; still 16,775: everything so far is fr
   opens upward (scroll the button low first); aspect buttons need a real click, check `data-state`.
 - JS calls time out at 45 s: poll in <=35 s chunks. Signed URLs expire in ~1 h.
 
+- Rounds 6-7: B best = babyB_r7_2 (camera high above, X sprawl); adolescent best = adol_r6_1 (blend of r4 body + r5
+  head); A best = babyA_r3_0. All FIX on mesh-level details; realism read passes. Board of current bests:
+  `young/board_current_best.png`. Multiview Image (free) gave inconsistent views: not used.
+- 2026-10-24 ~02:45: asked the lead (SendMessage) to split the gate: concept = look/read for the A/B pick, mesh-level
+  items to the six-view gate after Smart Mesh; adult wins over photos in critic briefs. Status note:
+  side-session-notes/.../tripo-komodo-young-status.md.
+
 ## Next
-Critic on B r5; fix A (consider: stand the B r5 winner upright) and adolescent (tail clear of far thigh, adult-like
-hooded eye and straight mouth, no hip ring); board to the lead when all three SHIP.
+On the lead's yes: one look-only critic round on the board, then board to the lead, stop. On no: keep iterating
+(A: open jaw, no neck seam, bead belly, elbows clear; B: far hind thigh visible, flush ear, short claws; adolescent:
+Komodo feet like the adult's, no hip ring, tail clear of near thigh).
