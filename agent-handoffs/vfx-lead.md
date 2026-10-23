@@ -80,6 +80,7 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
   SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
   camera; weak kaiju silhouette at night; D-154 rampage haze unbuilt. one-look phase 1 parked 849d9e06 (cut haze).
+- D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
 - slot 3 LENT until the motion gate merges: behemoth-gait (Opus) on claude/gait-fix e73d6c78 (see Motion gate).
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
   cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
