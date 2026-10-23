@@ -95,7 +95,9 @@ func discs(centre: Vector2, dir: Vector2, s: float) -> Array:
 		var half := Num.f(bone[1])
 		var steps := maxi(1, ceili(Num.f(bone[0]) / maxf(half, 0.05)))
 		for n: int in range(0 if i == 0 else 1, steps + 1):
-			out.append([at + back * length * float(n) / steps, half, Num.f(bone[2]), Num.f(bone[3])])
+			out.append(
+				[at + back * length * float(n) / steps, half, Num.f(bone[2]), Num.f(bone[3])]
+			)
 		at += back * length
 	return out
 

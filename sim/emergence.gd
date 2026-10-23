@@ -90,7 +90,10 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 	sim.stand_y = move_toward(sim.stand_y, floor_y, stride)  # climbs out over the quay
 	if sim.kaiju_pos.distance_to(bank) > stride or sim.stand_y < 0.0:
 		sim.facing = sim.kaiju_pos.direction_to(bank) if sim.kaiju_pos != bank else sim.facing
+		var was := sim.kaiju_pos
 		sim.kaiju_pos = sim.kaiju_pos.move_toward(bank, stride)
+		if sim.body.heavy():  # his legs walk the wade on the step clock (D-201, D-208)
+			sim.body.walked(was.distance_to(sim.kaiju_pos), dt)
 		return true
 	_land(sim, bank)
 	return true

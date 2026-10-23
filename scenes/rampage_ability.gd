@@ -64,7 +64,9 @@ func step(delta: float, target: Vector3, at: Vector3) -> Vector3:
 	var r := _rampage
 	var sim := r.sim
 	if _time <= 0.0:
-		return at.lerp(target, 1.0 if sim.body.dash.on() else minf(1.0, delta * 12.0))
+		# a heavy body stands exactly where the sim has it: its contact rides its drawn body (D-208)
+		var snap := sim.body.dash.on() or sim.body.heavy()
+		return at.lerp(target, 1.0 if snap else minf(1.0, delta * 12.0))
 	_time += delta
 	var t := clampf(_time / LEAP_SECONDS, 0.0, 1.0)
 	var now := _from.lerp(target, t) + Vector3(0, sin(t * PI) * LEAP_ARC, 0)

@@ -73,7 +73,14 @@ func _run() -> void:
 		for p: Vector3 in points[tails[k]]:
 			across = maxf(across, absf(p.x))
 		var flat := Vector2(t.x - h.x, t.z - h.z).length()
-		chain.append([snappedf(flat, 0.01), snappedf(across, 0.01), snappedf(lo[k], 0.01), snappedf(hi[k], 0.01)])
+		chain.append(
+			[
+				snappedf(flat, 0.01),
+				snappedf(across, 0.01),
+				snappedf(lo[k], 0.01),
+				snappedf(hi[k], 0.01)
+			]
+		)
 	var root_at := rig.head_of(tails[0])
 	print("TAIL_ROOT %s" % JSON.stringify([snappedf(-root_at.z, 0.01)]))
 	print("TAIL_CHAIN %s" % JSON.stringify(chain))

@@ -57,7 +57,10 @@ static func check(check: Callable, root: Node) -> void:
 	)
 	check.call(
 		adult["off_clip"] == 0,
-		"his feet are down exactly when the clip's are (%d foot-frames off == 0)" % adult["off_clip"]
+		(
+			"his feet are down exactly when the clip's are (%d foot-frames off == 0)"
+			% adult["off_clip"]
+		)
 	)
 	check.call(
 		adult["same_side"] == 0 and adult["same_frame"] == 0 and adult["falls"] >= 4,
@@ -74,11 +77,14 @@ static func check(check: Callable, root: Node) -> void:
 		adult["neck"] <= adult["neck_max"] + NECK_SLACK_DEG,
 		"the neck stays inside its cap (%.1f <= %.0f deg)" % [adult["neck"], adult["neck_max"]]
 	)
-	check.call(
-		adult["aim"] <= adult["sway"] + AIM_SLACK_DEG,
-		(
-			"the head shows the sim's aim through the turn (off by %.1f deg <= the walk's %.1f + %.0f)"
-			% [adult["aim"], adult["sway"], AIM_SLACK_DEG]
+	(
+		check
+		. call(
+			adult["aim"] <= adult["sway"] + AIM_SLACK_DEG,
+			(
+				"the head shows the sim's aim through the turn (off by %.1f deg <= the walk's %.1f + %.0f)"
+				% [adult["aim"], adult["sway"], AIM_SLACK_DEG]
+			)
 		)
 	)
 	StageGait.check(check, root)  # every growth step's stride, and the held curve (D-177)

@@ -16,12 +16,22 @@ gitignored).
 - Turn numbers (D-208): 90 deg in 4.13 s, heading mean 21.5 max 30 deg/s, body max 30; 7 footfalls L/R alternating;
   body yaws 232 frames, 41-42 with both hind feet planted; planted toes pivot up to 19 deg (swing 0.5); drift 0.
 - Croc wade (no change, lead): 90 deg off facing, baby 51 / Behemoth 30 frames.
-- IN PROGRESS (lead D-208): (a) the body volume sweeps during emergence (heavy); (b) sim-led tail: TailSim (port of
-  ClipTail: sway, drag, spring) + the sim's body yaw (D-200 aim follow) + tail discs refit to the Komodo riding the
-  chain; presentation reads the sim's body yaw and tail bends. Bar: 0 pass-through frames for every part over the
-  25 s carve probe, no chunk broken > 0.5 units outside the drawn mesh. Write a sim-review packet here when done.
-- Carve audit before (b): tail tip in standing chunks 59 frames (55 in turns), side 0.7-3.3 units off axis; rise
-  (D) head/body/arm/leg inside a bankside building 0.3-3.0 s. Scratch probes (uncommitted): tools/capture/_b9_*.gd.
+- D-208 IN PROGRESS. Lead's bar (revised): 0 pass-through frames for every part over the 25 s carve probe; >= 90%
+  of broken chunks within 0.5 of the drawn voxels at that moment, none beyond 2.0. Lead's design: body+head discs
+  refit to the mesh (per-height radii), legs no sweep (footprint at each plant + thin leg column while planted),
+  tail closed. Done so far: emergence sweep; TailSim + sim body yaw (presentation reads them); fitted discs
+  (tools/capture/fit_body_contact.gd -> heavy sim discs/neck/skull/feet/walk); heavy walk clip on the sim step
+  clock (gait frame_at) so sim footprints land with the drawn feet; the wade advances the step clock; the heavy
+  node snaps to the sim (no 12/s lerp). Drift still 0.000 (d7). Latest carve (walk/idle-pose fit, arm discs
+  dropped: the right arm's rake put 130+ chunks > 0.5 off): body/head 0 pass-through frames, tail 1 (11.93 s tip),
+  feet 35 / legs 35 = right ARM in the rise 1.0-1.45 s (no arm discs) + hind leg_r2/r1 4.65-5.0 s; 176 broken,
+  102 > 0.5 (42% within, bar 90%), 3 > 2.0 (bar 0). Bins: rise f+8 y1 feet 13 (footprints/shins while rising in
+  idle: idle stance != walk landing spots), run f-10 y1 tail 11 (tail heights from the roar union), rise f+6-11 y9
+  head discs ~45. NEXT: arm discs that ride the arm and pause while the sim claw swipe runs; feet only from the
+  first real landing (not at idle); tail heights per walk pose; head discs vs the idle head; re-run. Then lint
+  (body_contact 561 lines > 400: split the heavy parts into sim/heavy_contact.gd; BodyVolume args > 4), smoke
+  (passes but _check_feet_of), clips (tail-owner fail, pre-existing), recapture game cam + side.
+- Probe: tools/capture/_b9_carve.gd (uncommitted scratch, 25 s, ~8 min). Turn: _b9_turn.gd; drift: _b9_probe.gd.
 
 ## D-201 (heavy only)
 - SIM `sim/body_contact.gd`: body_class sim block by species_stage: turn <= 30 deg/s, accel 20 deg/s^2, smooth (no

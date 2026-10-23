@@ -54,22 +54,25 @@ func near(from: Vector2, to: Vector2, reach: float) -> Array[int]:
 func collect(
 	pos: Vector2, facing: Vector2, into: Dictionary, near: Array[int], free: Array = []
 ) -> void:
-	for d: Array in discs:
-		_collect_disc(pos + facing * Num.f(d[0]) * sim.body_scale(), d, 1, into, near)
-	for d: Array in free:
-		var centre: Vector2 = d[0]
-		_collect_disc(centre, d, 1, into, near)
-
-
-## One disc at `centre` (world), its radius, bottom and top at d[k], d[k + 1], d[k + 2].
-func _collect_disc(centre: Vector2, d: Array, k: int, into: Dictionary, near: Array[int]) -> void:
-	var s := sim.body_scale()
 	var skin := Num.f(cfg["skin"])
-	var r := Num.f(d[k]) * s - skin
+	for d: Array in discs:
+		_collect_disc(pos + facing * Num.f(d[0]) * sim.body_scale(), d, skin, into, near)
+	for d: Array in free:  # fitted to the drawn mesh: no skin taken off
+		var centre: Vector2 = d[0]
+		_collect_disc(centre, d, 0.0, into, near)
+
+
+## One disc at `centre` (world), its radius, bottom and top at d[1], d[2], d[3] (body scale 1),
+## each shrunk by `skin` (world units).
+func _collect_disc(
+	centre: Vector2, d: Array, skin: float, into: Dictionary, near: Array[int]
+) -> void:
+	var s := sim.body_scale()
+	var r := Num.f(d[1]) * s - skin
 	if r <= 0.0:
 		return
-	var y_lo := sim.stand_y + Num.f(d[k + 1]) * s + skin
-	var y_hi := sim.stand_y + Num.f(d[k + 2]) * s - skin
+	var y_lo := sim.stand_y + Num.f(d[2]) * s + skin
+	var y_hi := sim.stand_y + Num.f(d[3]) * s - skin
 	for i: int in near:
 		var b := sim.buildings[i]
 		if absf(b.x - centre.x) > b.w * 0.5 + r or absf(b.z - centre.y) > b.d * 0.5 + r:
@@ -102,17 +105,22 @@ func _collect_disc(centre: Vector2, d: Array, k: int, into: Dictionary, near: Ar
 ## Breaks every standing chunk the body touches moving and turning from one pose to the other in
 ## `step_s` seconds (a building that dwarfs the kaiju is chewed at bite_dps x step_s instead of
 ## broken outright, D-091); returns the chunks broken.
-## `tail_from` and `tail_to`: a heavy body's tail discs at either pose (TailSim.discs, the same
-## count), swept between them disc by disc.
+## `tail_from` and `tail_to`: a heavy body's own discs (its fitted body and its tail, TailSim.discs)
+## at either pose, the same count, swept between them disc by disc; `still`: discs that do not sweep
+## (a heavy body's planted feet), taken at the end pose only.
 func sweep(
 	from: Vector2,
 	from_heading: Vector2,
 	to: Vector2,
 	to_heading: Vector2,
 	tail_from: Array = [],
-	tail_to: Array = []
+	tail_to: Array = [],
+	still: Array = []
 ) -> int:
 	var span := reach()
+	for d: Array in still:
+		var at: Vector2 = d[0]
+		span = maxf(span, at.distance_to(to) + Num.f(d[1]) * sim.body_scale())
 	var tail_moved := 0.0
 	for k: int in tail_to.size():
 		var a: Vector2 = tail_from[k][0]
@@ -142,6 +150,8 @@ func sweep(
 			d[0] = a.lerp(b, t)
 			tail.append(d)
 		collect(at, facing, hits, close, tail)
+	if not still.is_empty():
+		collect(to, to_heading, hits, close, still)  # where the feet stand: no sweep
 	last_hits = hits
 	for index: int in hits:
 		var cells: Array[Vector3i] = []

@@ -34,6 +34,12 @@ var phase := 0.0
 ## (the legs scale the clip's foot travel by it, so a planted foot is passed at the pace the body
 ## walks).
 var step_ratio := 1.0
+## Where a heavy body's drawn body faces (D-200, "Head aims, body follows"): it follows the heading
+## at the aim's pace and never lets the neck turn past its cap; the body volume faces it about the
+## hips. The heading for any other body.
+var body_dir := Vector2(0, -1)
+## A heavy body's tail (D-208): its swing and its discs; null for any other body.
+var tail: TailSim
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -56,17 +62,15 @@ var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _turn_total := 0.0  # the size of the real turn under way (rad): how far through it the body is
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
-## Where a heavy body's drawn body faces (D-200, "Head aims, body follows"): it follows the heading
-## at the aim's pace and never lets the neck turn past its cap; the body volume faces it about the
-## hips. The heading for any other body.
-var body_dir := Vector2(0, -1)
-## A heavy body's tail (D-208): its swing and its discs; null for any other body.
-var tail: TailSim
 ## A heavy body's turn and pace (tuning "body_class" sim, D-201; {} for none): its animations lead.
 var _heavy: Dictionary = {}
 var _aim: Dictionary = {}  # its class's aim (D-200)
 var _last_dir := Vector2(0, -1)
-var _last_tail: Array = []  # the tail's discs at the last step
+var _last_tail: Array = []  # the body's and tail's discs at the last step (world)
+## A heavy body's hind feet (sim "feet"): whether each is down at the walk clip's frame the step
+## clock is at, and where it came down (world).
+var _foot_down: Array[bool] = [false, false]
+var _foot_spot: Array[Vector2] = [Vector2.INF, Vector2.INF]
 var _classes: Dictionary = {}  # tuning "body_class"
 
 
@@ -104,9 +108,11 @@ func use_species(species_id: String) -> void:
 	_last_tail = []
 	var tail_tune: Dictionary = found.get("tail", {})
 	tail = TailSim.new(tail_tune) if tail_tune.has("chain") else null
-	if _heavy.has("discs"):  # its own body ahead of the tail (the tail's discs ride the tail)
+	_foot_down = [false, false]
+	_foot_spot = [Vector2.INF, Vector2.INF]
+	if _heavy.has("discs"):  # its own body, fitted to its mesh (D-208): placed by _heavy_discs
 		_discs = _heavy["discs"]
-		_volume.discs = _discs
+		_volume.discs = []
 
 
 ## This species' weight class at the sim's growth stage (body_class "classes"), or {}.
@@ -376,21 +382,85 @@ func emerging(dt: float) -> void:
 ## Breaks every standing chunk the body (and a heavy body's tail) touched since `from`.
 func _sweep(from: Vector2, from_heading: Vector2, dt: float) -> void:
 	_volume.step_s = dt
-	var s := sim.body_scale()
-	var tail_to: Array = tail.discs(_centre(sim.kaiju_pos, heading), body_dir, s) if tail else []
-	var tail_from: Array = _last_tail if _last_tail.size() == tail_to.size() else tail_to
+	var centre := _centre(sim.kaiju_pos, heading)
+	var moving_to := _heavy_discs(centre, body_dir)
+	if tail != null:
+		moving_to.append_array(tail.discs(centre, body_dir, sim.body_scale()))
+	var moving_from: Array = _last_tail if _last_tail.size() == moving_to.size() else moving_to
 	var was_dir := from_heading
 	if not _heavy.is_empty():
 		was_dir = _last_dir if _last_pos.x != INF else body_dir
 	broken += _volume.sweep(
 		_centre(from, from_heading, was_dir),
 		was_dir,
-		_centre(sim.kaiju_pos, heading),
+		centre,
 		body_dir,
-		tail_from,
-		tail_to
+		moving_from,
+		moving_to,
+		_feet_discs(centre, body_dir)
 	)
-	_last_tail = tail_to
+	_last_tail = moving_to
+
+
+## A heavy body's fitted discs at a pose (sim "discs" [forward, across, radius, bottom, top, group],
+## body scale 1) in the world, as [centre, radius, bottom, top]: the neck (group 1) and skull
+## (group 2) turned with the head toward the heading (D-200: the neck takes neck_share of it, about
+## "neck"; the skull the rest, about "skull"). [] for any other body.
+func _heavy_discs(centre: Vector2, dir: Vector2) -> Array:
+	var out: Array = []
+	if not _heavy.has("discs"):
+		return out
+	var s := sim.body_scale()
+	var right := Vector2(-dir.y, dir.x)
+	var look := wrapf(atan2(-heading.x, -heading.y) - atan2(-dir.x, -dir.y), -PI, PI)
+	var neck := Vector2(Num.f(_heavy["neck"]), 0.0)
+	var skull := Vector2(Num.f(_heavy["skull"]), 0.0)
+	var on_neck := -look * Num.f(_aim.get("neck_share", 0.0))  # a turn left is toward -across
+	for d: Array in _discs:
+		var p := Vector2(Num.f(d[0]), Num.f(d[1]))  # (forward, across to the right)
+		match Num.i(d[5]):
+			1:
+				p = neck + (p - neck).rotated(on_neck)
+			2:
+				p = neck + (skull - neck).rotated(on_neck) + (p - skull).rotated(-look)
+		out.append([centre + (dir * p.x + right * p.y) * s, d[2], d[3], d[4]])
+	return out
+
+
+## A heavy body's hind feet (sim "feet": per foot [landing frame, lifting frame, forward, across,
+## footprint half-width, foot top, shin radius, knee height, half-length], "walk": [frames, first
+## landing frame]): at the walk clip's frame the step clock is at (as ClipGait plays it), a foot
+## that comes down breaks a footprint the size of the drawn foot that step, and a planted shin
+## breaks a thin column up to its knee while it stays down. The legs sweep nothing in the air
+## (D-208).
+func _feet_discs(centre: Vector2, dir: Vector2) -> Array:
+	var out: Array = []
+	if not _heavy.has("feet"):
+		return out
+	var walk: Array = _heavy["walk"]
+	var frames := Num.f(walk[0])
+	var frame := fposmod(Num.f(walk[1]) + phase * frames * 0.5, frames)
+	var s := sim.body_scale()
+	var right := Vector2(-dir.y, dir.x)
+	var feet: Array = _heavy["feet"]
+	for k: int in mini(feet.size(), 2):
+		var f: Array = feet[k]
+		var land := Num.f(f[0])
+		var down := fposmod(frame - land, frames) < fposmod(Num.f(f[1]) - land, frames)
+		var fresh := down and (not _foot_down[k] or _foot_spot[k].x == INF)
+		_foot_down[k] = down
+		if not down:
+			continue
+		if fresh:  # the footprint: discs half the foot's width across, along its length
+			_foot_spot[k] = centre + (dir * Num.f(f[2]) + right * Num.f(f[3])) * s
+			var half := Num.f(f[4])
+			var length := maxf(0.0, Num.f(f[8]) - half)
+			var n := ceili(length / maxf(half, 0.05))
+			for j: int in n + 1:
+				var along := -length + 2.0 * length * float(j) / maxf(1.0, n)
+				out.append([_foot_spot[k] + dir * along * s, half, 0.0, f[5]])
+		out.append([_foot_spot[k], f[6], 0.0, f[7]])
+	return out
 
 
 ## A heavy body's drawn body follows the heading (D-200, its class's aim): it eases toward it, no
@@ -482,5 +552,10 @@ func inside(pos: Vector2, facing: Vector2) -> Dictionary:
 	var out: Dictionary = {}
 	var centre := _centre(pos, facing)
 	var dir := facing if _heavy.is_empty() else body_dir
-	_volume.collect(centre, dir, out, _volume.near(centre, centre, _volume.reach()))
+	var fitted := _heavy_discs(centre, dir)
+	var reach := _volume.reach()
+	for d: Array in fitted:
+		var at: Vector2 = d[0]
+		reach = maxf(reach, at.distance_to(centre) + Num.f(d[1]) * sim.body_scale())
+	_volume.collect(centre, dir, out, _volume.near(centre, centre, reach), fitted)
 	return out

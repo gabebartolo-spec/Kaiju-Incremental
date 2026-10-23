@@ -89,7 +89,7 @@ var _look := 0.0  # the head's look-ahead into the turn (rad)
 ## A heavy body's aim (tuning "body_class" aim, D-200; {} for none): the head shows the heading,
 ## the body follows slower.
 var _aim: Dictionary = {}
-## A heavy body's feet follow the clip alone (D-201): its walk clock is the distance walked, its
+## A heavy body's feet follow the clip alone (D-201): its walk clock is the sim's step clock, its
 ## feet plant on the clip's planted bits, never a catch step, re-plant or standing stomp lift.
 var _clip_feet := false
 ## A heavy body roaring on the move: its legs keep the walk clip (frames walked by distance) under
@@ -221,7 +221,7 @@ func _walk_clock(dt: float) -> void:
 	var cycles := (moved if _clip_feet else speed * dt) / maxf(stride(), 0.0001)
 	walk_cycles += cycles
 	var was := clip_time
-	if step_phase != INF and not _clip_feet:
+	if step_phase != INF:  # a heavy body too: its feet plant where the sim breaks footprints (D-208)
 		clip_time = _steps.frame_at(step_phase)
 	else:
 		clip_time += cycles * float(clips.frames_of("walk")) / clips.cycles_of("walk")
@@ -241,7 +241,7 @@ func _go(next: String, at: float) -> void:
 ## The walk frame to start from: the sim's step clock when it gives one, else the nearest to the
 ## feet (_walk_entry).
 func _walk_start() -> float:
-	return _steps.frame_at(step_phase) if step_phase != INF and not _clip_feet else _walk_entry()
+	return _steps.frame_at(step_phase) if step_phase != INF else _walk_entry()
 
 
 ## The walk frame to start from: the one whose planted feet stand nearest where the feet are now
@@ -330,7 +330,12 @@ func _walking_legs(pose: KaijuClips.Pose, dt: float) -> void:
 		return
 	if state != "roar" or not _moving(dt):
 		return
-	_legs_t += moved / maxf(stride(), 0.0001) * clips.frames_of("walk") / clips.cycles_of("walk")
+	if step_phase != INF:
+		_legs_t = _steps.frame_at(step_phase)
+	else:
+		_legs_t += (
+			moved / maxf(stride(), 0.0001) * clips.frames_of("walk") / clips.cycles_of("walk")
+		)
 	var legs := clips.pose_at("walk", _legs_t)
 	for i: int in clips.bones.size():
 		var n := clips.bones[i]
