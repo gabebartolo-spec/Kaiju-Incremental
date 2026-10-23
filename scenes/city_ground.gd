@@ -15,6 +15,11 @@ const PARAPET := Vector2(0.9, 0.3)  # a bridge parapet's height over the deck, a
 const FAR := 1400.0
 const MIN_BUILDABLE := 2.0  # the narrowest block CityLots will put a building on
 const PAINT_COLOR := Color("8c8a82")  # worn, low-contrast road paint
+const BLOCKS := preload("res://scenes/ground_blocks.gdshader")
+## The shader's uniforms, each read from the look as "ground_<name>" (data/looks.json).
+const BLOCK_KEYS: Array[String] = [
+	"block", "block_noise", "patch_noise", "speck_chance", "speck_dark", "seam", "fade_near", "fade_far"
+]
 
 var plan: Dictionary
 var cfg: Dictionary
@@ -233,11 +238,7 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
 	var box := BoxMesh.new()
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.vertex_color_is_srgb = true
-	mat.roughness = 1.0
-	box.material = mat
+	box.material = block_material()
 	mm.mesh = box
 	mm.instance_count = _slabs.size()
 	for i: int in _slabs.size():
@@ -249,6 +250,15 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mmi.multimesh = mm
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mmi
+
+
+## The slabs' material: the instance colour in the city's block grain (D-163), numbers from the look.
+static func block_material() -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = BLOCKS
+	for key: String in BLOCK_KEYS:
+		mat.set_shader_parameter(key, Look.value("ground_" + key))
+	return mat
 
 
 func _build_paint() -> MultiMeshInstance3D:
