@@ -37,7 +37,7 @@ func run() -> void:
 func _sim_is_freed(species_id: String) -> void:
 	var sim: RampageSim = _make.call(species_id, {}, 0)
 	_autoplay.call(sim, STEPS)
-	var ref := weakref(sim)
+	var ref: WeakRef = weakref(sim)
 	sim = null
 	var kept: RampageSim = ref.get_ref()
 	_check.call(
@@ -63,7 +63,7 @@ func _game_frees_its_rampage() -> void:
 	_runner.root.add_child(rampage)
 	for i: int in FRAMES:
 		await _runner.physics_frame
-	var ref := weakref(rampage.sim)
+	var ref: WeakRef = weakref(rampage.sim)
 	_check.call(ref.get_ref() != null, "the game's rampage has a sim to free")
 	rampage.queue_free()
 	for i: int in 2:
