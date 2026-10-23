@@ -154,7 +154,6 @@ func _ready() -> void:
 	_camera.fov = camera_fov
 	add_child(_camera)
 	_camera.current = true
-	_far_depth = FarDepth.new(_camera)
 	_start_sound()
 	_place_camera(1.0)
 	_add_overlays()
@@ -168,6 +167,7 @@ func _ready() -> void:
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
+	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)

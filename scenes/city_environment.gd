@@ -24,7 +24,7 @@ static func attach(city: Node3D, sim: RampageSim) -> void:
 	env.ssao_intensity = Look.value("ssao")
 	env.ssao_power = Look.value("ssao_power")
 	env.ssao_radius = 1.5
-	# The haze carries the depth (D-163); CityHaze.apply's strength is the one number escalation scales.
+	# The haze carries the depth (D-163); CityHaze.apply's strength is what escalation scales.
 	CityHaze.apply(env, Num.f(sim.city.get("fog_scale", 1.0)))
 	env.glow_enabled = Look.value("glow") > 0.0
 	env.glow_intensity = Look.value("glow")
