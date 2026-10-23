@@ -81,7 +81,11 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
   camera; weak kaiju silhouette at night; D-154 rampage haze unbuilt. one-look phase 1 parked 849d9e06 (cut haze).
 - D-183 "Stand-off gunships" (f8d108a0): lead's sim builder claude/heli-standoff (pos/vel/heading, stand-off ring, strafing passes); MY view part AFTER the gait work: bank into turns, pitch with acceleration, no rotor/body snaps, motion critic at game speed; heli.pos stays the interface (lead sends sim sha).
-- slot 3 LENT until the motion gate merges: behemoth-gait (Opus) on claude/gait-fix e73d6c78 (see Motion gate).
+- slot 3 LENT until the motion gate merges: gait-2 (Opus, fresh from notes vfx-lead/gait/HANDOFF.md) on claude/gait-fix
+  9d436583: 9 red (5 wait on the lead's gait-step-len, 4 ours: Behemoth/young walking jerk, young curve catch). Ruling
+  (mine): young catch steps 0.5/s straight, 1.0/s in turns (D-131). Then 3 clips (one per stage) -> motion critic.
+- Fire family: ember.gdshader heat 1.4 blooms flames to cream dots at game-camera distance (building Fire too):
+  own round under explosions r10, whole family together; heli r5 uses Fire zoom 3 meanwhile.
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
   cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
