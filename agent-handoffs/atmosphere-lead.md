@@ -26,6 +26,15 @@ claude/atmosphere-lead from origin/claude/look-options (6e88723a). Base is look-
    boats flee and rock (A3), whale surfaces 2-3x per run between play city and distant city (A4, D-168), roar:
    whale dives with tail slap, boats flee (A11). Motion critic at game speed for every mover (D-177).
 
+## Running builders (Agent subagents, own worktrees; stall_watch armed)
+atm-escalation -> claude/atm-escalation; atm-rain -> claude/atm-rain. Not yet reported.
+
+## From the VFX lead (2026-10-23)
+No overlap with its builders except data/tuning.json (new keys only). Parked claude/one-look 849d9e06 touches
+city_environment.gd + adds ground_blocks.gdshader; we go first, it resyncs. Wet sheen = ONE `wet` uniform on the
+ground material, driven by weather_view. Storm bolts: copy bolt.gdshader + bolt_shape.gd byte-identical from
+6dbe10e5 (Thunder Beam r6, not shipped, never merge that branch), wrap storm changes in our own file; own critic.
+
 ## Rules in force
 2 engine builders max (D-189); engine_slot.sh + timeout + own APPDATA; stall_watch.sh armed over builders;
 D-186 local suites only; D-188 critics until pass, two fails in a row = change method; SHIP + sha to the lead.
