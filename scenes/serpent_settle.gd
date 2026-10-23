@@ -5,15 +5,27 @@ extends RefCounted
 ## D-210: "snake curls up into a defensive position, tongue flicking dangerously"). Over coil_s
 ## the body slides head first along one precomputed path (SerpentCoil: the outer ring first, then
 ## spiralling in and up, the neck rising out of the centre), every joint following the one ahead,
-## so nothing passes through the forming coil. Then it idles on the coil: a breath (the girth and
+## so nothing passes through the forming coil; the stretch still lying where it stopped is drawn
+## taut as it is pulled in (fully by stop_taut of the way into the coil; none at its head end), so
+## the thin tail is not whipped round the old S's bends at the slide's speed (round 5 critic: "no
+## needle whip"). Then it idles on the coil: a breath (the girth and
 ## the rings swell by idle_breath every idle_breath_s), the raised head swaying slowly side to side
 ## (idle_track rad over idle_track_s), and every idle_gap_min to idle_gap_max s a burst of 2-3
-## quick tongue flicks (a flick every flick_s) with a short jab of the head on the first (idle_jab
-## m), spaced by a fixed hash so a replay lays the same ones. The sim head never travels.
+## quick tongue flicks (a flick every flick_s, the tongue wagging tongue_wag rad side to side as
+## it flicks) with a short jab of the head on the first (idle_jab m), spaced by a fixed hash so a
+## replay lays the same ones. The sim head never travels.
 ## Presentation only (data/tuning.json "serpent").
 
 ## How far into the coil path (m) the head lowers from a rear it stopped in onto the outer ring.
 const REAR_DROP := 6.0
+## How far into the coil (its share) the stopped front, reared and raised, has come down onto the
+## ground (it would otherwise pass beside the forming rings at their height).
+const SETTLE_DOWN := 0.35
+## The taut shape: the stopped body averaged over this many joints each way, this many times; it
+## eases back to the body as it lies over TAUT_TAPER m before the head.
+const TAUT_REACH := 6
+const TAUT_PASSES := 6
+const TAUT_TAPER := 8.0
 
 ## Seconds the head has stood still (0 while it moves).
 var still := 0.0
@@ -32,6 +44,13 @@ var _centre := Vector2.ZERO
 var _heading := Vector2.ZERO
 var _line := PackedVector2Array()
 var _lifted := PackedFloat32Array()
+## The stopped body (tail to head, as the track starts), its taut shape, and the two blended now.
+var _lay := PackedVector3Array()
+var _taut := PackedVector3Array()
+var _now := PackedVector3Array()
+## The rear the head stopped in (m) and how much of the stop's raise is left now (1 to 0).
+var _rear := 0.0
+var _lower := 1.0
 
 
 func _init(cfg: Dictionary) -> void:
@@ -63,7 +82,14 @@ func apply(laid: PackedVector2Array, moving: bool, delta: float) -> PackedVector
 	if still == 0.0:
 		_lay_track(laid, _lifted, _heading, _line)
 	still += delta
-	var head := _start + _coil * smoothstep(0.0, 1.0, still / Num.f(_cfg["coil_s"]))
+	var drawn_in := smoothstep(0.0, 1.0, still / Num.f(_cfg["coil_s"]))
+	var head := _start + _coil * drawn_in
+	var taut := Num.f(_cfg["stop_taut"])
+	var pull := smoothstep(0.0, taut, drawn_in) if taut > 0.0 else 0.0
+	_lower = 1.0 - smoothstep(0.0, SETTLE_DOWN, drawn_in)
+	for i: int in _lay.size():
+		_now[i] = _lay[i].lerp(_taut[i], pull)
+		_now[i].y = _lay[i].y * _lower
 	var grow := (swell() - 1.0) / maxf(Num.f(_cfg["idle_breath"]), 0.0001)
 	var spread := 1.0 + Num.f(_cfg["idle_ring_breath"]) * grow
 	var out := PackedVector2Array()
@@ -76,33 +102,52 @@ func apply(laid: PackedVector2Array, moving: bool, delta: float) -> PackedVector
 
 
 ## The track for a stop: the body as it lies (tail to head, at the heights it stopped at), then the
-## coil path from its head, the head lowering from any rear onto the outer ring over REAR_DROP m.
+## coil path from its head (the head lowering from any rear onto the outer ring over REAR_DROP m,
+## that rear itself settling as the coil begins: `_on_track`).
 func _lay_track(
 	laid: PackedVector2Array, lifted: PackedFloat32Array, heading: Vector2, line: PackedVector2Array
 ) -> void:
 	_track = PackedVector3Array()
+	_lay = PackedVector3Array()
 	for j: int in range(laid.size() - 1, -1, -1):
 		var lift := lifted[j] if j < lifted.size() else 0.0
-		_track.append(Vector3(laid[j].x, lift, laid[j].y))
+		_lay.append(Vector3(laid[j].x, lift, laid[j].y))
+		_track.append(Vector3(laid[j].x, 0.0, laid[j].y))  # its heights are kept in _lay
 	var way := (laid[0] - laid[1]).normalized()
 	var coil := SerpentCoil.path(laid, way, line, heading, _cfg)
-	var rear := lifted[0] if lifted.size() > 0 else 0.0
-	var along := 0.0
+	_rear = lifted[0] if lifted.size() > 0 else 0.0
+	_lower = 1.0
 	for i: int in range(1, coil.size()):
-		along += coil[i].distance_to(coil[i - 1])
-		var p := coil[i]
-		p.y += rear * (1.0 - smoothstep(0.0, REAR_DROP, along))
-		_track.append(p)
+		_track.append(coil[i])
 	_centre = SerpentCoil.centre(laid, way, line, heading, _cfg)[0]
 	_arc = PackedFloat32Array([0.0])
 	for i: int in range(1, _track.size()):
 		_arc.append(_arc[i - 1] + _track[i].distance_to(_track[i - 1]))
 	_start = _arc[laid.size() - 1]
 	_coil = _arc[_arc.size() - 1] - _start
+	_now = _lay.duplicate()
+	_taut = _lay.duplicate()
+	for _pass: int in TAUT_PASSES:
+		var was := _taut.duplicate()
+		for i: int in was.size():
+			var sum := Vector3.ZERO
+			var n := 0
+			for k: int in range(maxi(i - TAUT_REACH, 0), mini(i + TAUT_REACH, was.size() - 1) + 1):
+				sum += was[k]
+				n += 1
+			_taut[i] = sum / n
+	var last := _lay.size() - 1
+	for i: int in _lay.size():
+		var keep := 1.0 - smoothstep(0.0, TAUT_TAPER, _arc[last] - _arc[i])
+		_taut[i] = _taut[i].lerp(_lay[i], keep)
+		_taut[i].y = _lay[i].y
 
 
-## The point `s` m along the track (before its start: carried on straight back from it).
+## The point `s` m along the track (before its start: carried on straight back from it). The
+## stretch where the body stopped is read off its shape now (`_now`), back from the head's stop.
 func _on_track(s: float) -> Vector3:
+	if s < _start:
+		return _on_now(_start - s)
 	if s <= 0.0:
 		return _track[0] + (_track[0] - _track[1]).normalized() * -s
 	var lo := 0
@@ -116,7 +161,25 @@ func _on_track(s: float) -> Vector3:
 		else:
 			hi = mid
 	var f := (s - _arc[lo]) / maxf(_arc[hi] - _arc[lo], 0.000001)
-	return _track[lo].lerp(_track[hi], f)
+	var p := _track[lo].lerp(_track[hi], f)
+	p.y += _rear * _lower * (1.0 - smoothstep(0.0, REAR_DROP, s - _start))
+	return p
+
+
+## The point `back` m behind the head's stop along the stopped stretch as drawn now (past its
+## tail: carried on straight).
+func _on_now(back: float) -> Vector3:
+	var i := _now.size() - 1
+	var left := back
+	while i > 0:
+		var step := _now[i].distance_to(_now[i - 1])
+		if step >= left:
+			return _now[i].lerp(_now[i - 1], left / maxf(step, 0.000001))
+		left -= step
+		i -= 1
+	if _now.size() < 2:
+		return _now[0]
+	return _now[0] + (_now[0] - _now[1]).normalized() * left
 
 
 ## How far the cobra's hood is spread (0..1): it spreads as the neck rises out of the coil.
@@ -144,7 +207,7 @@ func swell() -> float:
 func tracking() -> float:
 	var t := idle_time()
 	var each := Num.f(_cfg["idle_track_s"])
-	var look := 0.7 * sin(TAU * t / each) + 0.3 * sin(TAU * t / (each * 0.37) + 1.3)
+	var look := 0.85 * sin(TAU * t / each) + 0.15 * sin(TAU * t / (each * 2.3) + 1.3)
 	return Num.f(_cfg["idle_track"]) * _fade(t) * look
 
 
@@ -169,6 +232,20 @@ func tongue() -> float:
 	if u < 0.0 or u >= burst.y:
 		return 0.0
 	return pow(sin(PI * fposmod(u, 1.0)), 0.7)
+
+
+## How far the tongue is turned off the head's way now (rad, about the head's up): side to side
+## once each flick, the next flick the other way round.
+func tongue_wag() -> float:
+	var t := idle_time()
+	var burst := _burst(t)
+	if burst.x < 0.0:
+		return 0.0
+	var u := (t - burst.x) / Num.f(_cfg["flick_s"])
+	if u < 0.0 or u >= burst.y:
+		return 0.0
+	var turn := 1.0 if int(u) % 2 == 0 else -1.0
+	return Num.f(_cfg["tongue_wag"]) * turn * sin(TAU * fposmod(u, 1.0))
 
 
 ## The burst under way at idle time `t`, or the one before it just ended: (its start, its flicks),

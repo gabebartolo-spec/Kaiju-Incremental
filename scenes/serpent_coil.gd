@@ -159,7 +159,8 @@ static func _neck(out: PackedVector3Array, ring: Vector2, face: Vector2, cfg: Di
 	var way := (helix_end - out[m - 2]).normalized()
 	# The arch: a near-circular bend from the neck's way into the head's, its chord halfway between.
 	var base := helix_end + (way + look).normalized() * arch
-	_hermite(out, helix_end, way, base, look)
+	# it arrives level, so no crest of the neck stands above the head (which then tips nose-down)
+	_hermite(out, helix_end, way, base, Vector3(face.x, 0.0, face.y))
 	var head_len := Num.f(cfg["head_len"])
 	var head_steps := ceili(head_len / STEP)
 	for i: int in range(1, head_steps + 1):

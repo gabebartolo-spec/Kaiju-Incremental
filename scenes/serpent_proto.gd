@@ -51,6 +51,7 @@ func _ready() -> void:
 		body = SerpentBody.new(_cfg, _start, _heading)
 	sim.kaiju_pos = _middle_ground()
 	add_child(CityView.new(sim, Seeds.make("fx", 0)))
+	_bias_sun()
 	if stand_in == null:
 		stand_in = SerpentStandIn.new(_cfg)
 	add_child(stand_in)
@@ -93,7 +94,27 @@ func _process(delta: float) -> void:
 
 
 func _place_camera(delta: float) -> void:
-	camera.transform = _follow.follow(body, delta)
+	camera.transform = _follow.follow(body, delta, stand_in.joints)
+
+
+## The prototype's sun shadows (round 5 critic: a dotted dark band beside the raised head, dots in
+## the coil's hole): its shadow bias and normal bias from sun_shadow_bias and sun_normal_bias, this
+## scene only (the main game's sun is the lead's call).
+func _bias_sun() -> void:
+	for node: Node in find_children("*", "DirectionalLight3D", true, false):
+		var sun := node as DirectionalLight3D
+		if sun.shadow_enabled:
+			sun.shadow_bias = Num.f(_cfg["sun_shadow_bias"])
+			sun.shadow_normal_bias = Num.f(_cfg["sun_normal_bias"])
+
+
+## The sun's (shadow bias, normal bias) as set, for captures.
+func sun_bias() -> Vector2:
+	for node: Node in find_children("*", "DirectionalLight3D", true, false):
+		var sun := node as DirectionalLight3D
+		if sun.shadow_enabled:
+			return Vector2(sun.shadow_bias, sun.shadow_normal_bias)
+	return Vector2(-1.0, -1.0)
 
 
 func _middle_ground() -> Vector2:

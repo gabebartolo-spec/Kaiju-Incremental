@@ -56,8 +56,9 @@ func _init(body: SerpentBody) -> void:
 	_cfg = body.cfg
 	var reach := body.length() * 1.25
 	drawn = SerpentTrail.new(body.trail.spacing, reach, body.pos, body.heading)
-	_alpha = heading_swing(Num.f(_cfg["wave_amp"]), TAU / Num.f(_cfg["wave_length"]))
-	_progress = progress(_alpha)
+	var arc := Num.f(_cfg["wave_arc"])
+	_alpha = heading_swing(Num.f(_cfg["wave_amp"]), TAU / Num.f(_cfg["wave_length"]), arc)
+	_progress = progress(_alpha, arc)
 	_sigma = body.trail.head_s - LAG
 	_tabulate()
 
@@ -74,14 +75,23 @@ static func lateral(cfg: Dictionary, s: float, amp: float) -> float:
 	return amp * sin(TAU * s / Num.f(cfg["wave_length"]))
 
 
-## The heading swing alpha whose serpenoid (wave number k) swings `amp` to each side: the side reach
-## of a quarter wave is (1/k) x the integral over 0..pi/2 of sin(alpha cos u) du.
-static func heading_swing(amp: float, k: float) -> float:
+## The serpenoid's heading (times alpha) at phase `u`: cos u, plus `arc` of the odd harmonics
+## that turn it toward a triangle wave (round 6 critic: "the longest straight leg is 9-10 m"). A
+## pure serpenoid runs nearly straight across each crossing of its axis; a triangle heading bends at
+## one steady rate, a chain of arcs; in between, the legs keep curving.
+static func shape(u: float, arc: float) -> float:
+	return cos(u) + arc * (cos(3.0 * u) / 9.0 + cos(5.0 * u) / 25.0 + cos(7.0 * u) / 49.0)
+
+
+## The heading swing alpha whose serpenoid (wave number k, `arc` of the harmonics) swings `amp` to
+## each side: the side reach of a quarter wave is (1/k) x the integral over 0..pi/2 of
+## sin(alpha shape(u)) du.
+static func heading_swing(amp: float, k: float, arc := 0.0) -> float:
 	var lo := 0.0
 	var hi := PI * 0.5
 	for _i: int in SOLVE_STEPS:
 		var mid := (lo + hi) * 0.5
-		if side_reach(mid, k) < amp:
+		if side_reach(mid, k, arc) < amp:
 			lo = mid
 		else:
 			hi = mid
@@ -89,25 +99,25 @@ static func heading_swing(amp: float, k: float) -> float:
 
 
 ## How far a serpenoid with heading swing `alpha` (wave number k) reaches to each side.
-static func side_reach(alpha: float, k: float) -> float:
+static func side_reach(alpha: float, k: float, arc := 0.0) -> float:
 	var steps := 32  # Simpson's rule over a quarter wave
 	var h := PI * 0.5 / steps
 	var sum := 0.0
 	for i: int in steps + 1:
 		var w := 1.0 if i == 0 or i == steps else (4.0 if i % 2 == 1 else 2.0)
-		sum += w * sin(alpha * cos(i * h))
+		sum += w * sin(alpha * shape(i * h, arc))
 	return sum * h / 3.0 / k
 
 
 ## How far forward a serpenoid with heading swing `alpha` goes per metre of its path: the mean of
 ## cos(alpha cos u) over a wave.
-static func progress(alpha: float) -> float:
+static func progress(alpha: float, arc := 0.0) -> float:
 	var steps := 32  # Simpson's rule over a quarter wave
 	var h := PI * 0.5 / steps
 	var sum := 0.0
 	for i: int in steps + 1:
 		var w := 1.0 if i == 0 or i == steps else (4.0 if i % 2 == 1 else 2.0)
-		sum += w * cos(alpha * cos(i * h))
+		sum += w * cos(alpha * shape(i * h, arc))
 	return maxf(sum * h / 3.0 / (PI * 0.5), 0.3)
 
 
@@ -215,13 +225,14 @@ func _tabulate() -> void:
 	var y := 0.0
 	var most := 0.0
 	var h := TAU / TABLE
+	var arc := Num.f(_cfg["wave_arc"])
 	for i: int in TABLE + 1:
 		_axis[i] = x
 		_side[i] = y
 		most = maxf(most, absf(y))
 		var u := (i + 0.5) * h
-		x += cos(_alpha * cos(u)) * h
-		y += sin(_alpha * cos(u)) * h
+		x += cos(_alpha * shape(u, arc)) * h
+		y += sin(_alpha * shape(u, arc)) * h
 	for i: int in TABLE + 1:
 		_side[i] /= most
 

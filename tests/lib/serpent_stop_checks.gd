@@ -1,10 +1,9 @@
 class_name SerpentStopChecks
 extends RefCounted
 ## The serpent suite's proportion, turn, stop and camera checks (tests/run_serpent_tests.gd runs
-## them as one helper; split out to keep each file under the project's length limit): the body's
-## proportions and gait against the reference, the S kept through a U-turn and the head's
-## wind-up, the defensive coil after a stop (D-210) and the camera's framing, steadiness and
-## settle, in screen terms.
+## them as one helper; split out to keep each file under the length limit): the body's proportions
+## and gait against the reference, the S kept through a U-turn and the head's wind-up, the coil
+## after a stop (D-210), its idle, and the camera's framing, steadiness and settle, in screen terms.
 
 const DT := 1.0 / 60.0
 const NORTH := Vector2(0, -1)
@@ -23,6 +22,7 @@ var _weaves: Dictionary = {}
 ## Tongue, jab and look seen over the last idle run.
 var _jab_seen := 0.0
 var _look_seen := 0.0
+var _wag_seen := 0.0
 
 
 func _init(p_check: Callable) -> void:
@@ -93,8 +93,8 @@ func _stop_settles() -> void:
 		shape += "(bar %.1f), %.1f m high, head %.1f m up"
 		print(shape % [reach, outside, swing + girth, tallest, heights[0]])
 		var live := "serpent: idle moves up to %.4f m a frame, %.2f m off its coil, drifts %.4f m; "
-		live += "tongue out %.2f, jab %.2f m, look %.2f rad"
-		print(live % [idle.x, idle.y, idle.z, idle.w, _jab_seen, _look_seen])
+		live += "tongue out %.2f, jab %.2f m, look %.2f rad, tongue wags %.1f deg"
+		print(live % [idle.x, idle.y, idle.z, idle.w, _jab_seen, _look_seen, rad_to_deg(_wag_seen)])
 		check.call(travel == 0.0, "nothing travels once the head has stopped")
 		check.call(
 			outside <= swing + girth, "the coil stays inside the S's footprint (%.1f m)" % outside
@@ -113,6 +113,9 @@ func _stop_settles() -> void:
 			idle.w > 0.9 and _jab_seen > 0.3 and _look_seen > 0.1,
 			"the tongue flicks, the head jabs and looks about"
 		)
+		var sway := _look_seen >= deg_to_rad(7.0) and _look_seen <= deg_to_rad(12.0)
+		var wag := _wag_seen >= deg_to_rad(10.0) and _wag_seen <= deg_to_rad(15.0)
+		check.call(sway and wag, "the head sways ~8 deg each way, the tongue wags 10-15 deg")
 		check.call(idle.x < 0.3 and idle.y < 2.0, "the idle moves about its coil")
 		check.call(idle.z < 0.05, "the idle does not drift")
 
@@ -130,6 +133,7 @@ func _idle(
 	var coiled_mean := Vector2.ZERO
 	_jab_seen = 0.0
 	_look_seen = 0.0
+	_wag_seen = 0.0
 	for p: Vector2 in coiled:
 		coiled_mean += p / coiled.size()
 	var last := coiled
@@ -144,6 +148,7 @@ func _idle(
 		tongue = maxf(tongue, drawn.tongue)
 		_jab_seen = maxf(_jab_seen, drawn.jab)
 		_look_seen = maxf(_look_seen, absf(drawn.look))
+		_wag_seen = maxf(_wag_seen, absf(drawn.tongue_wag))
 		last = now
 	return Vector4(moved, off, mean.distance_to(coiled_mean), tongue)
 
@@ -318,9 +323,6 @@ func _camera_steady(bad: bool) -> void:
 		if eyes[i].distance_to(eyes[i - 1]) / DT > STILL_SPEED:
 			last_fast = i
 	var settle_s := (last_fast - stopped) * DT
-	if bad:
-		check.call(settle_s > CAMERA_SETTLE_S, "the settle measure catches a slow camera")
-		return
 	if bad:
 		check.call(settle_s > CAMERA_SETTLE_S, "the settle measure catches a slow camera")
 		return

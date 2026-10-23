@@ -22,6 +22,8 @@ const BAND_SOFT := 0.08
 
 ## How far the cobra's hood is spread (0..1; D-206), set before `build`.
 var hood := 0.0
+## How far the tongue is turned side to side (rad, about the head's up), set before `build`.
+var tongue_wag := 0.0
 var _cfg: Dictionary
 var _mesh := ArrayMesh.new()
 var _shape: Array = []
@@ -206,7 +208,7 @@ func _place_tongue(snout: Vector3, forward: Vector3, up: Vector3, out: float) ->
 	var length := Num.f(_cfg["tongue_len"]) * Num.f(_cfg["head_scale"])
 	var thick := Num.f(_cfg["tongue_width"]) * Num.f(_cfg["head_scale"])
 	var fan := Num.f(_cfg["tongue_fork"])
-	var basis := Basis.looking_at(forward, up)
+	var basis := Basis.looking_at(forward, up).rotated(up, tongue_wag)
 	var stem := length * 0.55 * out
 	var prong := length * 0.45 * out
 	var shown := out > 0.01
@@ -215,10 +217,11 @@ func _place_tongue(snout: Vector3, forward: Vector3, up: Vector3, out: float) ->
 	if not shown:
 		return
 	var origin := snout + forward * 0.1
+	var out_way := -basis.z  # looking_at points -z along the (wagged) tongue
 	_tongue[0].transform = Transform3D(
-		basis.scaled_local(Vector3(thick, thick, stem)), origin + forward * (stem * 0.5)
+		basis.scaled_local(Vector3(thick, thick, stem)), origin + out_way * (stem * 0.5)
 	)
-	var tip := origin + forward * stem
+	var tip := origin + out_way * stem
 	for e: int in 2:
 		var sign := 1.0 if e == 0 else -1.0
 		var turn := basis.rotated(up, sign * fan)

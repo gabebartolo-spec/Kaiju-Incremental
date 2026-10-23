@@ -4,13 +4,14 @@ extends SceneTree
 ## every `--every` frames, written as JSON for the screen-term read checks (straight runs through
 ## the turns, the S's swing about the centreline, tube self-intersections in the coil).
 ##   godot --headless --path . --script tools/capture/serpent_probe.gd -- --out=<file.json>
+## (--set=key:value,... tries other "serpent" numbers without touching the data)
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const Capture := preload("res://tools/capture/capture_serpent.gd")
 const DT := 1.0 / 60.0
 
 var _args := Kit.args(
-	{"seconds": 9.4, "every": 6, "out": "user://serpent_probe.json", "route": "clip"}
+	{"seconds": 9.4, "every": 6, "out": "user://serpent_probe.json", "route": "clip", "set": ""}
 )
 
 
@@ -24,6 +25,8 @@ func _stick(t: float) -> Vector2:
 
 func _initialize() -> void:
 	var cfg := Content.section("serpent")
+	for pair: String in str(_args["set"]).split(",", false):  # --set=key:value,key:value
+		cfg[pair.get_slice(":", 0)] = float(pair.get_slice(":", 1))
 	var steps := int(Capture.PREROLL_S / DT)
 	var way := Vector2(1, 0)
 	var start := Vector2.ZERO
@@ -49,12 +52,20 @@ func _initialize() -> void:
 	var now_eyes := PackedVector3Array()
 	var old_eyes := PackedVector3Array()
 	var swing := Vector2.ZERO  # the sideways camera swing: now, and with round 4's follow
+	var eye := now_cam.step(SerpentCamera.target(cfg, body), 0.0)
 	for f: int in int(Num.f(_args["seconds"]) / DT) + 1:
 		if f % every == 0:
-			frames.append(_frame(f * DT, body, drawn))
+			var frame := _frame(f * DT, body, drawn)
+			frame["cam"] = [eye.origin.x, eye.origin.y, eye.origin.z]
+			frame["cam_basis"] = [eye.basis.x.x, eye.basis.x.y, eye.basis.x.z, eye.basis.y.x]
+			frame["cam_basis"] += [eye.basis.y.y, eye.basis.y.z, eye.basis.z.x, eye.basis.z.y]
+			frame["cam_basis"] += [eye.basis.z.z]
+			frame["fov"] = CameraTuning.fov()
+			frames.append(frame)
 		body.step(DT, _stick(f * DT))
 		drawn.update(body, DT)
-		now_eyes.append(now_cam.follow(body, DT).origin)
+		eye = now_cam.follow(body, DT, drawn.joints)
+		now_eyes.append(eye.origin)
 		old_eyes.append(old_cam.follow(body, DT).origin)
 		var side := Vector3(-body.heading.y, 0.0, body.heading.x)
 		swing.x = maxf(swing.x, _sideways(now_eyes, side))
