@@ -6,10 +6,13 @@ extends RefCounted
 ## one precomputed path the body follows head first (follow-the-leader): from where the head stopped
 ## it curls straight into the outer ring (radius coil_radius, tangent to the head's way), spirals
 ## inward coil_pitch m a turn while each turn sits coil_rise m higher than the one outside it (a
-## staggered pile), down to coil_inner m from the centre; then the neck rises out of the centre to
-## coil_head_rise m and the head levels off over the coil, facing the way it went, tipped
-## coil_head_tilt rad nose-down so its top reads from the high camera. A spiral never meets itself,
-## so the body never crosses itself. Pure geometry (data/tuning.json "serpent"); presentation only.
+## staggered pile), down to coil_inner m from the centre; the outer turn, where the thinner tail
+## lies, closes in to coil_tail_pitch from the ring inside it at its start (easing out to coil_pitch
+## over the turn), so the tail lies tucked against the coil, not a ring apart; then the neck rises
+## out of the centre to coil_head_rise m and the head levels off over the coil, facing the way it
+## went, tipped coil_head_tilt rad nose-down so its top reads from the high camera. A spiral never
+## meets itself, so the body never crosses itself. Pure geometry (data/tuning.json "serpent");
+## presentation only.
 
 ## Spacing of the path's points (m).
 const STEP := 0.25
@@ -50,15 +53,26 @@ static func path(
 	var pitch := Num.f(cfg["coil_pitch"])
 	var inner := Num.f(cfg["coil_inner"])
 	var rise := Num.f(cfg["coil_rise"])
+	var tail := Num.f(cfg["coil_tail_pitch"])
 	var theta := 0.0
-	var turns := (radius - inner) / pitch
+	var turns := 1.0 + (radius - tail - inner) / pitch
 	while theta <= TAU * turns:
-		var r := radius - pitch * theta / TAU
+		var r := ring_radius(theta, radius, pitch, tail)
 		var at := mid + Vector2.from_angle(start + turning * theta) * r
 		out.append(Vector3(at.x, rise * theta / TAU, at.y))
 		theta += STEP / r
 	_neck(out, mid, look.normalized(), cfg)
 	return out
+
+
+## The spiral's radius `theta` rad round from where it starts at `radius`: coil_pitch in a turn,
+## save the outer turn, which lies `tail` (not `pitch`) from the turn inside it at its start,
+## easing to `pitch` by its end (smoothly, so the spiral has no kink).
+static func ring_radius(theta: float, radius: float, pitch: float, tail: float) -> float:
+	var turn := theta / TAU
+	if turn >= 1.0:
+		return radius - tail - pitch * (turn - 1.0)
+	return radius - tail + lerpf(tail, pitch, smoothstep(0.0, 1.0, turn)) - pitch * turn
 
 
 ## Where the ring goes for a body stopped as `body` going `way`: [its centre, the straight run (m)

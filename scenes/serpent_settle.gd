@@ -2,19 +2,21 @@ class_name SerpentSettle
 extends RefCounted
 ## What the drawn serpent does once its head has stopped (motion critic round 3: "an explicit,
 ## visible settle ... followed by a living idle ... so it never reads as switched off"; director
-## D-210: "snake curls up into a defensive position, tongue flicking dangerously"). Over coil_s
-## the body slides head first along one precomputed path (SerpentCoil: the outer ring first, then
-## spiralling in and up, the neck rising out of the centre), every joint following the one ahead,
-## so nothing passes through the forming coil; the stretch still lying where it stopped is drawn
-## taut as it is pulled in (fully by stop_taut of the way into the coil; none at its head end), so
-## the thin tail is not whipped round the old S's bends at the slide's speed (round 5 critic: "no
-## needle whip"). Then it idles on the coil: a breath (the girth and
-## the rings swell by idle_breath every idle_breath_s), the raised head swaying slowly side to side
-## (idle_track rad over idle_track_s), and every idle_gap_min to idle_gap_max s a burst of 2-3
-## quick tongue flicks (a flick every flick_s, the tongue wagging tongue_wag rad side to side as
-## it flicks) with a short jab of the head on the first (idle_jab m), spaced by a fixed hash so a
-## replay lays the same ones. The sim head never travels.
-## Presentation only (data/tuning.json "serpent").
+## D-210: "snake curls up into a defensive position, tongue flicking dangerously"). Over coil_s the
+## body slides head first along one precomputed path (SerpentCoil: the outer ring first, then
+## spiralling in and up, the neck rising out of the centre), every joint following the one ahead, so
+## nothing passes through the forming coil; the stretch still lying where it stopped is drawn taut
+## as it is pulled in (fully by stop_taut of the way into the coil; none at its head end), so the
+## thin tail is not whipped round the old S's bends at the slide's speed (round 5 critic: "no needle
+## whip"). A body that stopped bunched up (shortened, `squash`) lengthens again as the head leads it
+## in: its tail holds still until the head has gone the shortfall, so the coil forms from the whole
+## body and the tail never slides back out. Then it idles on the coil: a breath (the girth and the
+## rings swell by idle_breath every idle_breath_s), the raised head swaying slowly side to side
+## (idle_track rad over idle_track_s), and every idle_gap_min to idle_gap_max s a burst of 2-3 quick
+## tongue flicks (a flick every flick_s, the tongue wagging tongue_wag rad side to side as it
+## flicks) with a short jab of the head on the first (idle_jab m), spaced by a fixed hash so a
+## replay lays the same ones. The sim head never travels. Presentation only (data/tuning.json
+## "serpent").
 
 ## How far into the coil path (m) the head lowers from a rear it stopped in onto the outer ring.
 const REAR_DROP := 6.0
@@ -29,6 +31,8 @@ const TAUT_TAPER := 8.0
 
 ## Seconds the head has stood still (0 while it moves).
 var still := 0.0
+## How much of its length the body is drawn at as it moves (1: all), set before `apply`.
+var squash := 1.0
 ## Height of each joint above the ground (m) as drawn now: the coil's stack, none while it moves.
 var heights := PackedFloat32Array()
 var _cfg: Dictionary
@@ -51,6 +55,9 @@ var _now := PackedVector3Array()
 ## The rear the head stopped in (m) and how much of the stop's raise is left now (1 to 0).
 var _rear := 0.0
 var _lower := 1.0
+## The body's shortening as it stopped (`squash` then) and its joint spacing at full length (m).
+var _squash_at := 1.0
+var _seg := 0.0
 
 
 func _init(cfg: Dictionary) -> void:
@@ -81,9 +88,12 @@ func apply(laid: PackedVector2Array, moving: bool, delta: float) -> PackedVector
 		return laid
 	if still == 0.0:
 		_lay_track(laid, _lifted, _heading, _line)
+		_squash_at = squash
+		_seg = seg / squash
 	still += delta
 	var drawn_in := smoothstep(0.0, 1.0, still / Num.f(_cfg["coil_s"]))
 	var head := _start + _coil * drawn_in
+	seg = _lengthened(_coil * drawn_in, laid.size() - 1)
 	var taut := Num.f(_cfg["stop_taut"])
 	var pull := smoothstep(0.0, taut, drawn_in) if taut > 0.0 else 0.0
 	_lower = 1.0 - smoothstep(0.0, SETTLE_DOWN, drawn_in)
@@ -99,6 +109,16 @@ func apply(laid: PackedVector2Array, moving: bool, delta: float) -> PackedVector
 		out[j] = _centre + (Vector2(p.x, p.z) - _centre) * spread
 		heights[j] = p.y
 	return out
+
+
+## The joint spacing (m) once the head has gone `gone` m into the coil: from the stop's shortened
+## spacing back to the full one as the head goes the shortfall (`count` segments), so the tail
+## holds still until then.
+func _lengthened(gone: float, count: int) -> float:
+	var short := count * _seg * (1.0 - _squash_at)
+	if short <= 0.0:
+		return _seg
+	return _seg * lerpf(_squash_at, 1.0, minf(gone / short, 1.0))
 
 
 ## The track for a stop: the body as it lies (tail to head, at the heights it stopped at), then the

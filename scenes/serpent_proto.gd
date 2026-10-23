@@ -25,6 +25,8 @@ var _cfg: Dictionary = Content.section("serpent")
 var _follow: SerpentCamera
 var _start := Vector2.INF
 var _heading := Vector2(0, -1)
+## The city's shadowed sun (the prototype's shadow settings go on it).
+var _sun: DirectionalLight3D
 
 
 ## Where the head starts and which way it faces (before _ready; default: the debug start).
@@ -90,6 +92,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	_sharpen_sun()
 	_place_camera(delta)
 
 
@@ -107,6 +110,20 @@ func _shade_sun() -> void:
 		var sun := node as DirectionalLight3D
 		if sun.shadow_enabled:
 			sun.shadow_blur = Num.f(_cfg["sun_shadow_blur"])
+			_sun = sun
+
+
+## The sun's shadow sharpened for this close, high shot (round 6 critic: "a jagged, stair-stepped
+## edge" on the raised head's shadow): its reach cut to sun_shadow_distance m (the frame's far
+## edge is under 80 m deep), so its splits crowd onto what the camera sees, and the shadow atlas
+## sun_shadow_atlas px. The graphics preset (Settings, on its first frame and on any change) sets
+## both too, so this puts them back whenever the preset has.
+func _sharpen_sun() -> void:
+	var reach := Num.f(_cfg["sun_shadow_distance"])
+	if _sun == null or _sun.directional_shadow_max_distance == reach:
+		return
+	_sun.directional_shadow_max_distance = reach
+	RenderingServer.directional_shadow_atlas_set_size(Num.i(_cfg["sun_shadow_atlas"]), true)
 
 
 ## The sun's (shadow blur, shadow bias, normal bias) as set, for captures.
@@ -116,6 +133,11 @@ func sun_shadow() -> Vector3:
 		if sun.shadow_enabled:
 			return Vector3(sun.shadow_blur, sun.shadow_bias, sun.shadow_normal_bias)
 	return -Vector3.ONE
+
+
+## The sun's shadow reach (m) as set, for captures.
+func sun_reach() -> float:
+	return _sun.directional_shadow_max_distance if _sun != null else -1.0
 
 
 func _middle_ground() -> Vector2:

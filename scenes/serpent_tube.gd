@@ -106,7 +106,7 @@ func height_at(d: float, swell: float) -> float:
 		smoothstep(Num.f(_cfg["head_len"]) * 0.7, Num.f(_cfg["head_len"]) * 1.4, d)
 	)
 	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
-	var thin := 1.0 - Num.f(_cfg["hood_thin"]) * hood * _hood_at(d)
+	var thin := 1.0 - Num.f(_cfg["hood_thin"]) * minf(hood, 1.0) * _hood_at(d)
 	return width * _head_k(d) * Num.f(_cfg["height_share"]) * flat * thin
 
 

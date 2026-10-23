@@ -73,3 +73,11 @@ static func off_path_near(p: Vector2, path: PackedVector2Array, from: int) -> Ve
 		elif d > best + 2.0:  # walked well past the nearest stretch
 			break
 	return Vector2(best, at)
+
+
+## How long the body is drawn along its joints (m, in the ground plane).
+static func drawn_length(joints: PackedVector2Array) -> float:
+	var total := 0.0
+	for j: int in range(1, joints.size()):
+		total += joints[j].distance_to(joints[j - 1])
+	return total

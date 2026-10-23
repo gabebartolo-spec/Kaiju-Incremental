@@ -43,6 +43,10 @@ var _args := (
 			"shadow_bias": -1.0,
 			"normal_bias": -1.0,
 			"sun_blur": -1.0,
+			"sun_distance": -1.0,
+			"sun_filter": -1.0,
+			"sun_atlas": -1.0,
+			"sun_off": false,
 		}
 	)
 )
@@ -83,11 +87,12 @@ func _run() -> void:
 	_proto.scripted = stick_at
 	_swath_line = _swing(START.y)  # the S as the pre-roll laid it
 	root.add_child(_proto)
-	_sun_trial()
 	var frames := 0
 	while frames < int(Num.f(_args["seconds"]) / DT):
 		await physics_frame
 		frames += 1
+		if frames == 3:
+			_sun_trial()
 		_watch()
 		_eyes.append(_proto.camera.global_position)
 		_track(frames * DT)
@@ -96,8 +101,12 @@ func _run() -> void:
 			return
 	print("serpent capture: renderer %s" % RenderingServer.get_video_adapter_name())
 	var sun := _proto.sun_shadow()
+	var reach := _proto.sun_reach()
 	print(
-		"serpent capture: sun shadow blur %.2f, bias %.2f, normal bias %.2f" % [sun.x, sun.y, sun.z]
+		(
+			"serpent capture: sun shadow blur %.2f, bias %.2f, normal bias %.2f, reach %.0f m"
+			% [sun.x, sun.y, sun.z, reach]
+		)
 	)
 	print("serpent capture: on the straight the S swings %s" % _swath_line)
 	print("serpent capture: closest strands %.2f m apart (surface to surface)" % _closest)
@@ -125,6 +134,10 @@ func _look_options(cfg: Dictionary) -> void:
 			cfg[key] = Num.f(_args[key])
 	if Num.f(_args["sun_blur"]) >= 0.0:
 		cfg["sun_shadow_blur"] = Num.f(_args["sun_blur"])
+	if Num.f(_args["sun_distance"]) >= 0.0:
+		cfg["sun_shadow_distance"] = Num.f(_args["sun_distance"])
+	if Num.f(_args["sun_atlas"]) >= 0.0:
+		cfg["sun_shadow_atlas"] = Num.f(_args["sun_atlas"])
 	var height := Num.f(cfg["camera_height"]) * Num.f(_args["cam_zoom"])
 	var back := Num.f(cfg["camera_back"]) * Num.f(_args["cam_zoom"])
 	var reach := Vector2(back, height).length()
@@ -134,7 +147,9 @@ func _look_options(cfg: Dictionary) -> void:
 
 
 ## Shadow trials for the lead (round 6): --shadow_bias and --normal_bias set on the scene's shadowed
-## sun (--sun_blur sets the scene's own sun_shadow_blur), to compare what clears the speckle.
+## sun (--sun_blur, --sun_distance and --sun_atlas set the scene's own sun_shadow_* numbers), to
+## compare what clears the speckle; round 7: --sun_filter (the soft shadow quality, 0 hard to 5
+## ultra) and --sun_off. Applied on the third frame, after Settings has put the graphics preset on.
 func _sun_trial() -> void:
 	for node: Node in _proto.find_children("*", "DirectionalLight3D", true, false):
 		var sun := node as DirectionalLight3D
@@ -142,6 +157,12 @@ func _sun_trial() -> void:
 			sun.shadow_bias = Num.f(_args["shadow_bias"])
 		if sun.shadow_enabled and Num.f(_args["normal_bias"]) >= 0.0:
 			sun.shadow_normal_bias = Num.f(_args["normal_bias"])
+		if _args["sun_off"] == true:
+			sun.shadow_enabled = false
+	if Num.f(_args["sun_filter"]) >= 0.0:
+		RenderingServer.directional_soft_shadow_filter_set_quality(
+			Num.i(_args["sun_filter"]) as RenderingServer.ShadowQuality
+		)
 
 
 ## The labelled still: the label large at the top left, then the frame saved to --out.

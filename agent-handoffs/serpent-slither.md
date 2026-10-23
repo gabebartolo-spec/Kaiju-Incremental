@@ -6,15 +6,33 @@ follows"), D-201 ("animations lead"), D-206 (starts a spitting cobra, later a ra
 D-208 (turning/steering exceptional; body contact damages; held button climbs, NOT built), D-210 (defensive coil
 idle, tongue flicking). First step only: slither, turn, stop. No PR, no merge: prototype for the director via the lead.
 
-## State (2026-10-24, round 6)
-- Pushed to `claude/serpent-slither` (local branch `serpent-r6`, worktree `agent-a2e3137d7a069a721`). No PR. Croc game
+## State (2026-10-24, round 7)
+- Pushed to `claude/serpent-slither` (local branch `serpent-r7`, worktree `agent-aca27d68ea73cc1d6`). No PR. Croc game
   untouched. Play: `godot --path . res://scenes/serpent_proto.tscn` (WASD/stick).
-- Clip: lead scratchpad `serpent_clip/serpent_slither.mp4` (round 6, 10.6 s; RTX 4070 SUPER in the log); round 5's kept
-  as `serpent_slither_r5.mp4`, round 4's as `_r4.mp4`. Round 6 work files (probe, metrics, stills): `serpent_clip/r6/`.
-- Round 5 critic (FIX): reads as a snake, run good, not yet an exceptional predator. Lead ruling for round 6: motion and
-  camera only; do NOT polish the stand-in tube's head, hood or colour (the real model comes from Tripo). Haze: lead's.
+- Clip: lead scratchpad `serpent_clip/serpent_slither.mp4` (round 7, 10.6 s; RTX 4070 SUPER in the log); earlier rounds
+  kept as `serpent_slither_r6.mp4`, `_r5`, `_r4`. Round 7 scripts, stills, probes and frames: `serpent_clip/r7/`.
+- Round 6 critic (FIX): run, turn, framing, camera, coil, idle sway, breathing, tongue PASS (untouched); fix the tail,
+  the stop cue and the shadow's stair-stepped edge. Round 7 did only those three (below). Lead ruling still stands:
+  no look polish on the stand-in's head, hood or colour (the real model comes from Tripo).
 
-## Round 6 changes (motion and camera)
+## Round 7 changes (the critic's three fixes)
+- Tail (shape table only, no motion change): `shape` 46 m 0.7, 54 m 0.46, 58 m 0.36, 60 m 0.06, so it keeps over a
+  third of the girth to the last 3% (was 0.24 at 54 m, a needle). Coil: the outer turn (the tail's) starts
+  coil_tail_pitch 1.2 m (not coil_pitch 1.6) from the turn inside it, easing to 1.6 over the turn
+  (`SerpentCoil.ring_radius`), so the tail lies tucked against the coil, not a thin ring a gap apart.
+- Stop cue: the bunch-up also lays the joints closer along the bunched S (`_bunched`, stop_shorten 0.1: the body
+  60 -> 52.8 m drawn, its bands closing up toward the head, 5.4-5.7 s) and the hood flares stop_flare 1.5 of full
+  (2.55 -> 3.28 m wide at 5.7 s, +29%; hood thinning capped at full). Footprint solved by timing: the coil is laid
+  from the shortened body, and `SerpentSettle._lengthened` lets the body grow back as the head leads it in (tail
+  held still until the head has gone the 6 m shortfall, ~0.5 s): whole again by 6.2 s, the coil itself unchanged.
+- Shadow: `SerpentProto._sharpen_sun` sets the sun's shadow reach sun_shadow_distance 90 m (preset 160) and the
+  shadow atlas sun_shadow_atlas 8192 px (preset 4096); blur stays 0.5. Re-applied whenever the graphics preset
+  (Settings, on its first frame) has overwritten them. Found: capture shadow trials applied before Settings' first
+  frame were silently undone (round 6's bias trials survived only because bias is not a preset key).
+- Tests: the read checks add "braking, the body bunches up at least 8% shorter", "whole again half way into the
+  coil" and "the tail keeps a third of the girth to 96% of its length".
+
+## Round 6 changes (motion and camera; still in place)
 - Turn legs: the S's heading is a serpenoid plus `wave_arc` 1.0 of its odd harmonics (toward a triangle heading: a
   chain of arcs), `SerpentWeave.shape`; a pure serpenoid runs nearly straight across each axis crossing. Arcs sit near
   the bend limit, so crests went alike: wave_wobble_len 0.12 -> 0.16 keeps them varied. Straight-run test now counts the
@@ -33,28 +51,26 @@ idle, tongue flicking). First step only: slither, turn, stop. No PR, no merge: p
   8 m of the head's stop) so the thin tail is not swung round the old S's bends; the stop's rear and raised front come
   down over the first 35% of the coil (SETTLE_DOWN) so they never pass beside the forming rings at their height; the
   neck's arch arrives level and the head then tips nose-down, so no neck crest stands above the head.
-- Shadows: `SerpentProto._shade_sun` sets the prototype sun's shadow_blur to sun_shadow_blur 0.5 (see below).
-- Capture: `--shadow_bias --normal_bias --sun_blur` trials; probe: camera per frame, `--set=key:v`.
+- Capture: `--shadow_bias --normal_bias --sun_blur --sun_distance --sun_atlas --sun_filter --sun_off` trials (applied
+  on frame 3, after the preset); probe: camera per frame, `--set=key:v`.
 
-## Measured (round 6; scripts in `serpent_clip/r6/`: an.py, an2.py, frame.py, tail.py, crit.py, speckle.py)
-- Turn 3.2-4.6 s, whole body: longest run inside a 10 deg band 7 m (round 5 code 8), 20 deg band 8-9 m (r5 11), chord
-  sagging under 0.3 m 9 m (r5 10); weakest lobe 80% of the swing. Suite (every 0.1 s, whole route) 8.0 m, bar 8.
-- Framing 3.0-5.0 s: the tube's lowest edge 92.6% down the frame (r5 98-99%: off the bottom). Sideways camera accel
-  peak 14.1 m/s^2 (r5 15.3). Camera still 0.45 s after the stop (bar 0.5); worst jolt 131 m/s^3 at the let-go.
-- Stop: bunch-up 5.4-5.7 s, hood full at 5.7 s; head stops 5.73 s. Coil 2.4 s; idle from ~8.7 s.
-- Tail: stub 0 m (r5-like settings 6 m); tail tip during the coil peaks 28 m/s and 234 m/s^2 sideways (r5-like 42 m/s,
-  505 m/s^2; every 2 frames). Coil: 0 self-intersecting frames, closest pass 1.02 of touching.
-- Idle (8.6-10.6 s, critic hd.py on frames shifted onto round 5's coil): head axis std 5.5 deg (r5 2.6; +-8 deg is
-  5.7); tongue wags 12.6 deg (seen at 8.45-8.6 s); breath 5% girth, 4% rings every 2 s (the critic's 2% method unknown).
-- Suites: serpent 6/6 functions, 48 checks, 0 failures; smoke 13/13, 47 checks. gdlint/gdformat clean, tuning_keys and
+## Measured (round 7 clip; scripts in `serpent_clip/r7/`: probe.sh, tailgap.py, stair.py, hoodw.py, side.py)
+- Suites: serpent 6/6 functions, 51 checks, 0 failures (coil footprint 7.8 m, bar 8.1; closest pass 1.08, r6 1.02;
+  tail joints 1.9 m from a ring, bar 2.6); smoke 13/13, 47 checks. gdlint/gdformat clean, tuning_keys and
   complexity_ratchet ok.
+- Tail: coiled, its outer ring lies against the next one (3D gap at the tip 0.76 m incl. the 1.2 m ring rise, r6
+  1.29-2.03 m; planar ~0). Still trailing out of the coil while it is reeled in (6.8-7.5 s), now thick.
+- Shadow edge right of the raised head (stair.py, 8.8 s still, same window): edge RMS off a smooth curve 0.74 px ->
+  0.32 px (still) / 0.26 px (clip), biggest row jump 2.47 -> 1.28 px. Speckle (r6 speckle.py) 0.6% -> 0.7% (still).
+  Single trials: 90 m alone 0.40, 8192 alone 0.35, soft_high filter alone 0.73 (no help), 80 m 0.67, split 0.05 worse.
+- Unchanged items checked: critic cam.py camera shift within 0.33 px/frame of r6; edge.py frame-edge counts match;
+  hd6 idle head-axis std 4.6 deg (r6 5.4 on the same window); capture: head stops 5.73 s, camera still 0.45 s.
 
-## Shadow speckle (for the lead)
-- Not acne: it is the soft shadow filter's scattered samples, spread by the sun's shadow_blur (1.5, set in
-  `scenes/city_environment.gd`). speckle.py (light dots inside the raised head's shadow, 5.5 s still): blur 1.5 11.7%,
-  blur 0.5 0.3%, blur 0 0.3%. Shadow bias 0.02-0.8 and normal bias 0.2-5 do not clear it (7-20%; bias 0 with normal
-  0.5 adds acne on the body). light_angular_distance overridden after load did not change the frame (untested further).
-- Fix in the prototype: sun_shadow_blur 0.5. For the main game: shadow_blur 1.5 -> 0.5 in city_environment.gd.
+## Shadows (for the lead: main-game settings)
+- Speckle (round 6): the soft filter's scattered samples spread by shadow_blur 1.5 (`scenes/city_environment.gd`);
+  blur 0.5 clears it (bias and normal bias do not). Stair steps (round 7): shadow-map resolution at this distance;
+  reach 90 m plus an 8192 atlas clears them. For the main game: shadow_blur 1.5 -> 0.5, and the preset rows'
+  shadow_distance / shadow_size (medium and high: 160 m, 4096) toward 90 m / 8192, if the croc's camera allows.
 
 ## Tripo baby on this body (feasibility only, no build)
 - Yes. `cascadeur_bridge/serpent/models/baby/serpent_baby_tex.glb` (8b868b25 textured, 10,390 faces): one continuous

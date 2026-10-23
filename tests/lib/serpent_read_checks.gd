@@ -28,6 +28,7 @@ const TURN_TO := 5.0
 const TAIL := 10
 const RING_GAP := 2.6
 const Capture := preload("res://tools/capture/capture_serpent.gd")
+const Geo := preload("res://tests/lib/serpent_geometry.gd")
 
 var check: Callable
 var _cfg: Dictionary = Content.section("serpent")
@@ -38,6 +39,7 @@ func _init(p_check: Callable) -> void:
 
 
 func run() -> void:
+	_stop_shortens()
 	var drawn := SerpentStandIn.new(_cfg)
 	var body := SerpentBody.new(_cfg, Vector2.ZERO, Vector2(1, 0))
 	for _i: int in int(Capture.PREROLL_S / DT):
@@ -106,6 +108,41 @@ func run() -> void:
 	check.call(edge.x <= FRAME_BAR, "through the turn the whole body stays in frame")
 	check.call(stub_bad > RING_GAP, "the stub measure catches a tail left out of the coil")
 	check.call(stub <= RING_GAP, "coiled, no tail stub trails out of the coil")
+
+
+## The stop's bunch-up (round 6 critic: "no visible bunch-up"): as it brakes the drawn body
+## shortens by stop_shorten of its length (at least 8%), and it is whole again before the coil is
+## half made, so the coil is laid from the whole body. And the tail keeps a third of the girth
+## until its last few percent.
+func _stop_shortens() -> void:
+	var body := SerpentBody.new(_cfg, Vector2.ZERO, Vector2(0, -1))
+	var drawn := SerpentStandIn.new(_cfg)
+	for _i: int in int(14.0 / DT):
+		body.step(DT, Vector2(0, -1))
+		drawn.update(body, DT)
+	var full := Geo.drawn_length(drawn.joints)
+	var shortest := full
+	while body.speed > 0.0:
+		body.step(DT, Vector2.ZERO)
+		drawn.update(body, DT)
+		shortest = minf(shortest, Geo.drawn_length(drawn.joints))
+	for _i: int in int(Num.f(_cfg["coil_s"]) * 0.5 / DT):
+		body.step(DT, Vector2.ZERO)
+		drawn.update(body, DT)
+	var coiling := Geo.drawn_length(drawn.joints)
+	drawn.free()
+	var line := "serpent: drawn %.1f m long running, %.1f m at its most bunched (%.0f%% shorter), "
+	line += "%.1f m half way into the coil"
+	print(line % [full, shortest, (1.0 - shortest / full) * 100.0, coiling])
+	check.call(shortest <= full * 0.92, "braking, the body bunches up at least 8% shorter")
+	check.call(coiling >= full * 0.98, "the body is whole again half way into the coil")
+	var tube := SerpentTube.new(_cfg)  # round 6 critic: the tail "a hairline whip or needle"
+	var tail := tube.width_at(Num.f(_cfg["length"]) * 0.96, 1.0)
+	tube.free()
+	check.call(
+		tail >= Num.f(_cfg["girth"]) / 3.0,
+		"the tail keeps a third of the girth to 96% of its length"
+	)
 
 
 ## How far toward the frame's edges the drawn body reaches from the camera at `xform` (0.5: the

@@ -7,9 +7,11 @@ extends Node3D
 ## "serpent" head_lead*, neck_bend, head_lift); before a turn it cocks away from it and rears
 ## (windup_*), then lunges into it; the thin tail swings a little wider than the rest of the S
 ## (tail_whip); in the last stop_bunch_s before a stop the S bunches up, tail first and the head
-## last (its sideways swing deepens by stop_bunch, the chain drawn up behind the head) as the hood
-## flares full, the cue the high camera sees (round 5 critic: the rear-up alone is "invisible at
-## 62 deg pitch"); a stop then settles (SerpentSettle). Plain colour, no voxels yet. Presentation
+## last (its sideways swing deepens by stop_bunch, the chain drawn up behind the head and the body
+## shortened by stop_shorten, its bands closing up toward the head) as the hood flares stop_flare
+## wide, the cue the high camera sees (round 5 critic: the rear-up alone is "invisible at 62 deg
+## pitch"; round 6: "no visible bunch-up"); a stop then settles (SerpentSettle), the body
+## lengthening again as the head leads it into the coil. Plain colour, no voxels yet. Presentation
 ## only: it reads the body and never moves it. World space (x, z).
 
 ## Joint points drawn this frame (ground plane, head first), for captures and tests.
@@ -47,6 +49,8 @@ var _brace_k := 0.0  # 0..1: how far into the brace before a stop
 ## Seconds into the bunch-up before a stop (below 0: none under way), and the hood's flare (0..1).
 var _bunch_t := -1.0
 var _flare := 0.0
+## How much of its length the body is drawn at now (1: all; the bunch-up shortens it).
+var _squash := 1.0
 
 
 func _init(cfg: Dictionary) -> void:
@@ -73,6 +77,7 @@ func update(body: SerpentBody, delta: float) -> void:
 	_bunch_up(body, moving, delta)
 	if _bunch_t > 0.0:
 		laid = _bunched(laid, body, seg)
+	_settle.squash = _squash
 	var line := PackedVector2Array()
 	if not moving and _settle.still == 0.0:  # the stop: where the coil may go
 		for k: int in ceili(body.length()) + 1:
@@ -136,7 +141,7 @@ func _brace(body: SerpentBody, moving: bool, delta: float) -> void:
 
 ## The bunch-up's clock: it starts as the braking body slows under stop_bunch_speed and runs
 ## stop_bunch_s (held once the head stops: the coil starts from the bunched shape); setting off
-## again clears it. The hood flares with it, folding at stop_rear_rate once the body coils.
+## again clears it.
 func _bunch_up(body: SerpentBody, moving: bool, delta: float) -> void:
 	var braking := body.turn_left == 0.0 and body.push < 0.0
 	var span := Num.f(_cfg["stop_bunch_s"])
@@ -146,8 +151,17 @@ func _bunch_up(body: SerpentBody, moving: bool, delta: float) -> void:
 		_bunch_t = 0.0
 	if _bunch_t >= 0.0 and (moving or _settle.still == 0.0):
 		_bunch_t = minf(_bunch_t + delta, span)
+	_bunch_cue(moving, delta)
+
+
+## What the bunch-up shows now: the body shortened by stop_shorten and the hood flared stop_flare
+## wide as it runs (the flare folding at stop_rear_rate once the body coils).
+func _bunch_cue(moving: bool, delta: float) -> void:
+	var span := Num.f(_cfg["stop_bunch_s"])
+	var k := smoothstep(0.0, 1.0, _bunch_t / span) if _bunch_t >= 0.0 else 0.0
+	_squash = 1.0 - Num.f(_cfg["stop_shorten"]) * k
 	if _bunch_t >= 0.0 and moving:
-		_flare = smoothstep(0.0, 1.0, _bunch_t / span)
+		_flare = Num.f(_cfg["stop_flare"]) * k
 	else:
 		_flare = move_toward(_flare, 0.0, Num.f(_cfg["stop_rear_rate"]) * delta)
 
@@ -155,7 +169,8 @@ func _bunch_up(body: SerpentBody, moving: bool, delta: float) -> void:
 ## The S bunched up: each joint's sideways swing about the sim's centreline deepened by up to
 ## stop_bunch, the tail's joints first and the head's last (each eases in over half of
 ## stop_bunch_s, the tail's starting at once, the head's half way), the chain then drawn up behind
-## the head so every segment keeps its length.
+## the head so every segment keeps its length; then the joints are laid closer along that shape
+## (the body shortened to _squash of its length, the tail drawn up toward the head).
 func _bunched(points: PackedVector2Array, body: SerpentBody, seg: float) -> PackedVector2Array:
 	var span := Num.f(_cfg["stop_bunch_s"]) * 0.5
 	var deepen := Num.f(_cfg["stop_bunch"])
@@ -169,7 +184,10 @@ func _bunched(points: PackedVector2Array, body: SerpentBody, seg: float) -> Pack
 		var k := smoothstep(0.0, 1.0, (_bunch_t - start) / span)
 		var near := _nearest(points[j], centre)
 		out[j] = near + (points[j] - near) * (1.0 + deepen * k)
-	return SerpentSettle.keep_lengths(out, seg)
+	out = SerpentSettle.keep_lengths(out, seg)
+	if _squash >= 1.0:
+		return out
+	return SerpentWeave.joints(out, seg * _squash, last)
 
 
 ## The thin tail swung a little wider than the S about the sim's centreline, more toward its tip
