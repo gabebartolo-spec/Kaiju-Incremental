@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-196 · Director · A full Komodo dragon kaiju from Tripo, upright, for the Cascadeur pipeline; up to 1000 credits
+
+During the Cascadeur walk test (the croc's legs re-rigged to its mesh: forward knee, backward hock; "ok holy shit this is promising") he asked whether to make new models first. Recommended finishing the walk test on the current croc; he chose: "Make the Komodo dragon model now in tripo". Asked: "A full Komodo dragon kaiju" (head and body, not the croc body with the D-164 Komodo head), "Upright on two legs" like today's Behemoth, credits "Up to 1000" (stop and ask when spent). Made animation-ready for Cascadeur (rest pose with limbs clear of the body, a mouth that can open), Private, six-viewed, logged in docs/provenance/tripo.md. Also: "Yes, fix the game's croc leg rig as part of bringing the Cascadeur walk into the game".
+
 ## 2026-10-23 · D-195 · Director · Cascadeur stays; he clicks to apply AutoPhysics
 
 Crux test (D-194): agents can switch Cascadeur's AutoPhysics on and run it by script (the croc's body moved up to 1.6 m from the keys, solve under 0.5 s), but applying the result always opens a "Which frames?" box (all frames, every frame keyed first, one frame at a time: each asked). Cascadeur's Python has no answer for it and Windows cannot reach its buttons. Offered: research other tools first, keep Cascadeur with his click, or ask Nekki. He chose "Keep Cascadeur, you click": "i can click ofc". Agents do everything else and tell him when a box is up; he clicks All Frames.
@@ -389,10 +393,3 @@ Carving is top priority (D-097), so they are fixed now on claude/carve-wp5 rathe
 ## 2026-10-20 · D-101 · Director · Carved slab colour B (8a8780)
 Why: picked from the WP4 slab stills. Changes: carved floor slabs and cut faces in the WP4 view mesher use 8a8780
 (claude/carve-wp4 609ea71).
-
-## 2026-10-20 · D-100 · Lead · Carving support rules for attached parts and glass towers
-Why: the WP3 review found islands before any carve (panes, signs, tanks, glass curtain walls). Changes: materials carry a
-`fixture` flag (window, mullion, glass, shop, sign_frame, neon0-3); a structural cell is grounded by 6-face contact, a
-fixture by 26-neighbour touch, and a fixture never carries a structural cell; grid layer 0 is the ground (a shopfront on
-the street stands). Glass towers get a hidden structural frame (columns every `destruction.column_bay` cells, a beam
-behind the transom row), in sim and view alike. Built in #97 (WP1) and #98 (WP3).

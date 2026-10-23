@@ -2,6 +2,13 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-20 · D-100 · Lead · Carving support rules for attached parts and glass towers
+Why: the WP3 review found islands before any carve (panes, signs, tanks, glass curtain walls). Changes: materials carry a
+`fixture` flag (window, mullion, glass, shop, sign_frame, neon0-3); a structural cell is grounded by 6-face contact, a
+fixture by 26-neighbour touch, and a fixture never carries a structural cell; grid layer 0 is the ground (a shopfront on
+the street stands). Glass towers get a hidden structural frame (columns every `destruction.column_bay` cells, a beam
+behind the transom row), in sim and view alike. Built in #97 (WP1) and #98 (WP3).
+
 ## 2026-10-20 · D-099 · Director · Carved towers fall by real physics, even onto the kaiju
 Why (asked through the question tool): true physics is the headline (D-097); a cut tower goes over toward the side that
 was cut away, wherever the kaiju stands, and can land on it. Supersedes D-096's lead call "an undermined tower falls away
