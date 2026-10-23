@@ -20,14 +20,17 @@ var _cam := ""
 
 
 func _initialize() -> void:
-	var a := Kit.args(
-		{
-			"species": _species,
-			"seconds": _seconds,
-			"stage": _stage,
-			"no-card": _no_card,
-			"cam": _cam,
-		}
+	var a := (
+		Kit
+		. args(
+			{
+				"species": _species,
+				"seconds": _seconds,
+				"stage": _stage,
+				"no-card": _no_card,
+				"cam": _cam,
+			}
+		)
 	)
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])

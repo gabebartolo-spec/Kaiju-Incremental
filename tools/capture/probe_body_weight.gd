@@ -36,7 +36,10 @@ func _run() -> void:
 	var rig: KaijuRig = kaiju._rig
 	var f := FileAccess.open(_out, FileAccess.WRITE)
 	f.store_line(
-		"t,state,clip_t,speed,heading_deg,body_yaw_deg,plants,dip,trauma,cam_y,tail_tip_x,scale,neck_deg,drift"
+		(
+			"t,state,clip_t,speed,heading_deg,body_yaw_deg,plants,dip,trauma,cam_y,tail_tip_x,"
+			+ "scale,neck_deg,drift"
+		)
 	)
 	var frames := 0
 	while frames < int(_seconds * 60.0) and not rampage.sim.over:

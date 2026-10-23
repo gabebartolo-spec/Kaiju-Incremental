@@ -13,6 +13,35 @@ var sim: RampageSim
 var cfg: Dictionary
 
 
+## A heavy body's slot as _collect_slot lays it out (world): its bottom and top centres and radii,
+## its widest radius, its lowest and highest points, its reach in plan, and the discs of each chunk
+## row it spans (from floor(heights.x)), at the row's middle, bottom and top: [x, z, radius] x 3.
+class Slot:
+	var a := Vector2.ZERO
+	var b := Vector2.ZERO
+	var radii := Vector2.ZERO
+	var reach := 0.0
+	var heights := Vector2.ZERO
+	var box := Rect2()
+	var rows := PackedFloat32Array()
+	var laid := false
+
+	func lay_rows() -> void:
+		var tall := maxf(heights.y - heights.x, 0.0001)
+		var first := floori(heights.x)
+		rows.resize((ceili(heights.y) - first) * 9)
+		var k := 0
+		for y: int in range(first, ceili(heights.y)):
+			for at: float in [0.5, 0.0, 1.0]:
+				var t := clampf((y + at - heights.x) / tall, 0.0, 1.0)
+				var c := a.lerp(b, t)
+				rows[k] = c.x
+				rows[k + 1] = c.y
+				rows[k + 2] = lerpf(radii.x, radii.y, t)
+				k += 3
+		laid = true
+
+
 ## A move of the body between two poses: where it was and faced, where it is and faces.
 class Move:
 	var from: Vector2
@@ -42,6 +71,7 @@ var step_s := 0.0
 var last_hits: Dictionary = {}
 var _into: Dictionary = {}  # where collect() puts what it finds, and the buildings it searches
 var _near: Array[int] = []
+var _slot := Slot.new()  # the heavy body's slot collect() is on
 
 
 func _init(p_sim: RampageSim, p_cfg: Dictionary) -> void:
@@ -152,75 +182,63 @@ func _collect_disc(centre: Vector2, d: Array, skin: float) -> void:
 ## the row's bottom, middle and top.
 func _collect_slot(d: Array) -> void:
 	var s := sim.body_scale()
-	var a: Vector2 = d[0]
-	var b_end: Vector2 = d[4]
-	var radii := Vector2(Num.f(d[1]), Num.f(d[5])) * s
-	var y_lo := sim.stand_y + Num.f(d[2]) * s
-	var y_hi := sim.stand_y + Num.f(d[3]) * s
-	var r := maxf(radii.x, radii.y)
-	if r <= 0.0:
+	var slot := _slot
+	slot.radii = Vector2(Num.f(d[1]), Num.f(d[5])) * s
+	slot.reach = maxf(slot.radii.x, slot.radii.y)
+	if slot.reach <= 0.0:
 		return
-	var first := floori(y_lo)
-	var rows := PackedFloat32Array()  # laid out once a building is in reach
-	var box_lo := a.min(b_end) - Vector2.ONE * r
-	var box_hi := a.max(b_end) + Vector2.ONE * r
+	slot.a = d[0]
+	slot.b = d[4]
+	slot.heights = Vector2(sim.stand_y + Num.f(d[2]) * s, sim.stand_y + Num.f(d[3]) * s)
+	slot.laid = false  # its rows are laid out once a building is in reach
+	var lo := slot.a.min(slot.b) - Vector2.ONE * slot.reach
+	var hi := slot.a.max(slot.b) + Vector2.ONE * slot.reach
+	slot.box = Rect2(lo, hi - lo)
+	var mid := (lo + hi) * 0.5
+	var half := (hi - lo) * 0.5
 	for i: int in _near:
 		var b := sim.buildings[i]
-		var left := b.x - b.w * 0.5
-		var back := b.z - b.d * 0.5
-		var x0 := maxi(0, floori(box_lo.x - left))
-		var x1 := mini(b.w - 1, floori(box_hi.x - left))
-		var z0 := maxi(0, floori(box_lo.y - back))
-		var z1 := mini(b.d - 1, floori(box_hi.y - back))
-		var y0 := maxi(0, first)
-		var y1 := mini(b.height - 1, ceili(y_hi) - 1)
-		if x0 > x1 or z0 > z1 or y0 > y1:
-			continue
-		if rows.is_empty():
-			rows = _slot_rows(PackedVector2Array([a, b_end]), radii, Vector2(y_lo, y_hi))
-		for x: int in range(x0, x1 + 1):
-			for z: int in range(z0, z1 + 1):
-				var p := Vector2(left + x + CHUNK_HALF, back + z + CHUNK_HALF)
-				if Geometry2D.get_closest_point_to_segment(p, a, b_end).distance_to(p) >= r + 0.71:
-					continue  # past the column's widest reach from its axis
-				for y: int in range(y0, y1 + 1):
-					if _in_row(p, rows, (y - first) * 9):
-						_hit(i, Vector3i(x, y, z))
+		if absf(b.x - mid.x) <= b.w * 0.5 + half.x and absf(b.z - mid.y) <= b.d * 0.5 + half.y:
+			_slot_in(i)
 
 
-## The slot's discs for each chunk row it spans (from floor(heights.x)), at the row's bottom,
-## middle and top: [centre x, z, radius] x 3 per row.
-## ends: the bottom and top centres; heights: lowest, highest (world).
-static func _slot_rows(
-	ends: PackedVector2Array, radii: Vector2, heights: Vector2
-) -> PackedFloat32Array:
-	var tall := maxf(heights.y - heights.x, 0.0001)
-	var first := floori(heights.x)
-	var out := PackedFloat32Array()
-	out.resize((ceili(heights.y) - first) * 9)
-	var k := 0
-	for y: int in range(first, ceili(heights.y)):
-		for half: int in 3:  # the row's bottom, middle and top
-			var t := clampf((y + half * 0.5 - heights.x) / tall, 0.0, 1.0)
-			var c := ends[0].lerp(ends[1], t)
-			out[k] = c.x
-			out[k + 1] = c.y
-			out[k + 2] = lerpf(radii.x, radii.y, t)
-			k += 3
-	return out
+## The slot in hand (_slot) against building i's standing chunks.
+func _slot_in(i: int) -> void:
+	var b := sim.buildings[i]
+	var left := b.x - b.w * 0.5
+	var back := b.z - b.d * 0.5
+	var slot := _slot
+	var x0 := maxi(0, floori(slot.box.position.x - left))
+	var x1 := mini(b.w - 1, floori(slot.box.end.x - left))
+	var z0 := maxi(0, floori(slot.box.position.y - back))
+	var z1 := mini(b.d - 1, floori(slot.box.end.y - back))
+	var y0 := maxi(0, floori(slot.heights.x))
+	var y1 := mini(b.height - 1, ceili(slot.heights.y) - 1)
+	if x0 > x1 or z0 > z1 or y0 > y1:
+		return
+	if not slot.laid:
+		slot.lay_rows()
+	var far := slot.reach + 0.71  # a chunk column this far from the axis misses every disc
+	for x: int in range(x0, x1 + 1):
+		for z: int in range(z0, z1 + 1):
+			var p := Vector2(left + x + CHUNK_HALF, back + z + CHUNK_HALF)
+			if Geometry2D.get_closest_point_to_segment(p, slot.a, slot.b).distance_to(p) < far:
+				_column(i, Vector2i(x, z), p, Vector2i(y0, y1))
 
 
-## Whether a chunk column at `p` (its centre, world) overlaps one of the three discs from rows[k].
-static func _in_row(p: Vector2, rows: PackedFloat32Array, k: int) -> bool:
-	for n: int in 3:
-		var at := k + n * 3
-		var gap := Vector2(
-			maxf(absf(p.x - rows[at]) - CHUNK_HALF, 0.0),
-			maxf(absf(p.y - rows[at + 1]) - CHUNK_HALF, 0.0)
-		)
-		if gap.length() < rows[at + 2]:
-			return true
-	return false
+## Chunk column xz of building i (its centre p, world), rows ys.x..ys.y, against the slot's discs.
+func _column(i: int, xz: Vector2i, p: Vector2, ys: Vector2i) -> void:
+	var rows := _slot.rows
+	var k := (ys.x - floori(_slot.heights.x)) * 9
+	for y: int in range(ys.x, ys.y + 1):
+		for n: int in 3:  # the row's middle, bottom, top discs
+			var at := k + n * 3
+			var gx := maxf(absf(p.x - rows[at]) - CHUNK_HALF, 0.0)
+			var gz := maxf(absf(p.y - rows[at + 1]) - CHUNK_HALF, 0.0)
+			if gx * gx + gz * gz < rows[at + 2] * rows[at + 2]:
+				_hit(i, Vector3i(xz.x, y, xz.y))
+				break
+		k += 9
 
 
 ## A standing chunk the body touches: into _into.
