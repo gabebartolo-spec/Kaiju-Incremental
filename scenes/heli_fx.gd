@@ -57,8 +57,6 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 		at,
 		1.0 - Num.f(ball["build"]) / life
 	)
-	var core: Dictionary = Content.section("blast_fx")["core"]  # the white-hot instant
-	BlastParts.core(parent, at, half, Num.f(cfg["core_radius"]) * scale, core)  # its own size
 
 
 ## The ball's particle physics: out of `half` in every direction, damped so the oldest flames stop

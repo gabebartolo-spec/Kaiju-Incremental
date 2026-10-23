@@ -184,8 +184,7 @@ func _land_effects(ground: Vector3) -> void:
 		Num.f(_cfg["land_light_seconds"])
 	)
 	_city.fx.dust(ground + Vector3(0, 0.4, 0), Num.f(_cfg["land_dust"]))
-	for k: int in 3:  # rings out from the impact, each wider: thick, bright, there at once
-		_city.fx.shockwave(ground, Num.f(_cfg["land_ring"]) * (1.0 + 0.5 * k), false, true)
+	_city.fx.dust_ring(ground, Num.f(_cfg["ring_speed"]), 0.7)  # its own dust ring, from this frame
 
 
 ## The camera's kick for `kind` (tuning camera_shake.sources) from a hit at `at`; the rampage owns
@@ -279,7 +278,23 @@ func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:
 	HeliFx.smoke_puff(_city, at, _cfg, Num.f(_cfg["hit_smoke"]))
 	_trauma("heli_burst", at)
 	for n: int in Num.i(event.get("crew", 0)):
-		_crew.jump(at + fall.side * (5.0 + n * 3.5) + Vector3(0, 2.0, 0), fall.drift)
+		_crew.jump(_chute_start(at, fall, n), _chute_drift(fall))
+
+
+## Where crew member `n` leaves the hull: clear of it (upwind, behind the wreck's drift, and out to
+## its side), never over the hull's path, and away from the camera (the camera looks down -z, so
+## a canopy never crosses between it and the kaiju).
+func _chute_start(at: Vector3, fall: Fall, n: int) -> Vector3:
+	var clear: Array = _cfg["chute_clear"]
+	var upwind := -Vector3(fall.drift.x, 0.0, fall.drift.z).normalized()
+	var out := upwind * Num.f(clear[0]) + fall.side * (Num.f(clear[1]) * (n + 1))
+	out.z = -absf(out.z)  # behind the hull, away from the camera
+	return at + out + Vector3(0, 2.0, 0)
+
+
+## A canopy's drift: away from the hull's path and from the camera (a slow sideways float).
+func _chute_drift(fall: Fall) -> Vector3:
+	return Vector3(fall.side.x, 0.0, -absf(fall.side.z) - 0.4).normalized() * 1.2
 
 
 ## A pooled orange light that rides a burning wreck (`reach` m).

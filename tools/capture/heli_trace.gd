@@ -51,6 +51,37 @@ static func run(tree: SceneTree, rampage: Rampage, frames: int) -> void:
 			fall_yaw = rad_to_deg(fall.yaw)
 			fall_at = fall.node.position
 			fall_px = cam.unproject_position(fall.node.global_position)
+		var kb := Rect2(
+			cam.unproject_position(model._rig.bone(model._rig.bone_names()[0]).global_position),
+			Vector2.ZERO
+		)
+		for bone_name: String in model._rig.bone_names():
+			kb = kb.expand(cam.unproject_position(model._rig.tail_world(bone_name)))
+			kb = kb.expand(cam.unproject_position(model._rig.bone(bone_name).global_position))
+		var chute := Vector2(-1, -1)
+		var smoke := Vector2(-1, -1)
+		if wrecks != null:
+			for c: HeliCrew.Chute in wrecks._crew._chutes:
+				if is_instance_valid(c.node):
+					chute = cam.unproject_position(c.node.global_position + Vector3(0, 4.0, 0))
+			for fall: HeliWreck.Fall in wrecks._falling.values():
+				smoke = cam.unproject_position(fall.trail.global_position)
+		print(
+			(
+				"G,%d,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f"
+				% [
+					n,
+					kb.position.x,
+					kb.position.y,
+					kb.end.x,
+					kb.end.y,
+					chute.x,
+					chute.y,
+					smoke.x,
+					smoke.y
+				]
+			)
+		)
 		var emit := -1
 		var vis := -1
 		var live := 0

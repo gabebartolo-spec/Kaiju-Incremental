@@ -201,6 +201,23 @@ func sparks(at: Vector3) -> void:
 	p.position = at
 
 
+## A ring of the street's dust puffs thrown flat out from `at` at `speed` (units a second), slowing,
+## for `seconds`: a landing's own shock ring.
+func dust_ring(at: Vector3, speed: float, seconds: float) -> void:
+	var mat: ParticleProcessMaterial = _dust_mat.duplicate()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
+	mat.emission_ring_axis = Vector3.UP
+	mat.emission_ring_radius = 1.2
+	mat.gravity = Vector3.ZERO
+	mat.radial_velocity_min = speed * 0.9
+	mat.radial_velocity_max = speed * 1.1
+	mat.damping_min = 4.0
+	mat.damping_max = 4.0
+	mat.scale_min = 1.1
+	mat.scale_max = 1.5
+	_burst(mat, _dust_mesh, 56, seconds).position = at + Vector3(0, 0.3, 0)
+
+
 ## A soft ripple of dust that runs out across the ground from a landing (no glow, no tint: a ring
 ## with no visible impact behind it is not drawn by the callers). Size, life and opacity are
 ## tuning "fx" "shockwave": small and faint so it reads as dust kicked off the street.
