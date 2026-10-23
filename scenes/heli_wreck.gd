@@ -13,6 +13,7 @@ extends Node3D
 
 const CREW_OUTFIT := 2  # VoxelPerson.ROOFTOP_OUTFITS: a soldier in drab
 const CANOPY := Color("e2dac4")
+const PARTS := 4  # the model's parts: hull, main rotor, tail rotor, gun
 const WRECK_HALF := 0.7  # how high the body's middle rides when it lies on the street
 const BLAST := Color("ffb468")
 const CRASH_BLAST := Color("ff8a3a")
@@ -183,32 +184,37 @@ func _break_up(node: Node3D, reach: float, in_air: bool) -> void:
 		return
 	var parts := (node as HelicopterModel).break_up(_debris)
 	for n: int in parts.size():
-		var side := TAU * (n + _rng.randf()) / parts.size()
-		var out := (
-			Vector3(cos(side), 0.0, sin(side))
-			* _rng.randf_range(Num.f(_cfg["throw_min"]), Num.f(_cfg["throw_max"]))
-		)
-		var vel := out * reach + Vector3(0, _rng.randf_range(2.0, Num.f(_cfg["up_max"])) * reach, 0)
-		var spin := Vector3(
-			_rng.randf_range(0.4, 1.0), _rng.randf_range(-1, 1), _rng.randf_range(0.4, 1.0)
-		)
-		var body := n == 0
-		if body:  # the hull is long: it lies and rolls across the view, never end-on like a pole
-			(parts[n] as Node3D).rotation.y = PI * 0.5
-			spin = Vector3(0.0, spin.y * 0.3, 0.8)
-		if body and not in_air:
-			vel = Vector3.ZERO
-			spin = Vector3.ZERO
-		var fire_size := Num.f(_cfg["part_fire"]) if in_air and n % 2 == 0 else 0.0  # body, tail
-		var piece := _debris.throw(parts[n], vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
-		piece.half = WRECK_HALF
-		if n == 1 or n == 2:  # the rotors burn away at once: nothing plus-shaped is left lying
-			piece.vanish = Num.f(_cfg["rotor_vanish"])
-		if n > 0:  # the gun lies level on the street, never on edge
-			piece.flat = true
-			piece.lie = PI * 0.5 if n == 2 else 0.0  # (the tail rotor's disc stands, so roll it)
-			piece.half = 0.3
+		_throw_part(parts[n], n, reach, in_air)
 	node.queue_free()
+
+
+## One of the model's parts (0 hull, 1 main rotor, 2 tail rotor, 3 gun) thrown from where it is.
+func _throw_part(part: Node3D, n: int, reach: float, in_air: bool) -> void:
+	var side := TAU * (n + _rng.randf()) / PARTS
+	var out := (
+		Vector3(cos(side), 0.0, sin(side))
+		* _rng.randf_range(Num.f(_cfg["throw_min"]), Num.f(_cfg["throw_max"]))
+	)
+	var vel := out * reach + Vector3(0, _rng.randf_range(2.0, Num.f(_cfg["up_max"])) * reach, 0)
+	var spin := Vector3(
+		_rng.randf_range(0.4, 1.0), _rng.randf_range(-1, 1), _rng.randf_range(0.4, 1.0)
+	)
+	var body := n == 0
+	if body:  # the hull is long: it lies and rolls across the view, never end-on like a pole
+		part.rotation.y = PI * 0.5
+		spin = Vector3(0.0, spin.y * 0.3, 0.8)
+	if body and not in_air:
+		vel = Vector3.ZERO
+		spin = Vector3.ZERO
+	var fire_size := Num.f(_cfg["part_fire"]) if in_air and n % 2 == 0 else 0.0  # body, tail
+	var piece := _debris.throw(part, vel * (0.5 if body else 1.0), spin * 7.0, fire_size)
+	piece.half = WRECK_HALF
+	if n == 1 or n == 2:  # the rotors burn away at once: nothing plus-shaped is left lying
+		piece.vanish = Num.f(_cfg["rotor_vanish"])
+	if n > 0:  # the gun lies level on the street, never on edge
+		piece.flat = true
+		piece.lie = PI * 0.5 if n == 2 else 0.0  # (the tail rotor's disc stands, so roll it)
+		piece.half = 0.3
 
 
 func _spin(node: Node3D, at: Vector3, event: Dictionary) -> void:

@@ -91,33 +91,45 @@ func _step(piece: Piece, delta: float, gravity: float) -> bool:
 		_put_out(piece)
 		return false
 	piece.age += delta
-	if piece.vanish >= 0.0 and piece.age > piece.vanish:
-		var left := 1.0 - (piece.age - piece.vanish) / Num.f(_cfg["rotor_fade"])
-		node.scale = Vector3.ONE * maxf(0.0, left)  # burns away: shrinks to nothing
-		if left <= 0.0:
-			node.queue_free()
-			_put_out(piece)
-			return false
+	if piece.vanish >= 0.0 and piece.age > piece.vanish and _burn_away(piece):
+		return false
 	if piece.rest < 0.0:
 		piece.vel.y -= gravity * delta
 		node.global_position += piece.vel * delta
 		node.rotation += piece.spin * delta
 		if node.global_position.y <= piece.half and piece.vel.y < 0.0:
 			_land(piece)
-	else:
-		piece.rest += delta
-		var seconds := Num.f(_cfg["rest_seconds"])
-		var fade := Num.f(_cfg["fade_seconds"])
-		if piece.fire != null and piece.rest > seconds * 0.6:
-			_put_out(piece)
-		if piece.rest > seconds:
-			node.scale = Vector3.ONE * maxf(0.0, 1.0 - (piece.rest - seconds) / fade)
-		if piece.rest > seconds + fade:
-			node.queue_free()
-			_put_out(piece)
-			return false
+	elif _lie(piece, delta):
+		return false
 	if piece.fire != null and not piece.fire.is_out():
 		piece.fire.global_position = node.global_position
+	return true
+
+
+## A part that burns away (a rotor) shrinks to nothing; true once it is gone and freed.
+func _burn_away(piece: Piece) -> bool:
+	var left := 1.0 - (piece.age - piece.vanish) / Num.f(_cfg["rotor_fade"])
+	piece.node.scale = Vector3.ONE * maxf(0.0, left)
+	if left > 0.0:
+		return false
+	piece.node.queue_free()
+	_put_out(piece)
+	return true
+
+
+## A piece at rest: its fire goes out, then it shrinks away; true once it is gone and freed.
+func _lie(piece: Piece, delta: float) -> bool:
+	piece.rest += delta
+	var seconds := Num.f(_cfg["rest_seconds"])
+	var fade := Num.f(_cfg["fade_seconds"])
+	if piece.fire != null and piece.rest > seconds * 0.6:
+		_put_out(piece)
+	if piece.rest > seconds:
+		piece.node.scale = Vector3.ONE * maxf(0.0, 1.0 - (piece.rest - seconds) / fade)
+	if piece.rest <= seconds + fade:
+		return false
+	piece.node.queue_free()
+	_put_out(piece)
 	return true
 
 

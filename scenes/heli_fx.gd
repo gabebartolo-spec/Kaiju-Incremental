@@ -39,7 +39,8 @@ static func fireball(parent: Node3D, at: Vector3, cfg: Dictionary, scale := 1.0)
 	var wide := Num.f(cfg["fireball_radius"]) * scale
 	var half := Vector3(wide, Num.f(cfg["fireball_height"]) * scale, wide)
 	var blast := Num.f(cfg["fireball_blast_radius"]) * scale
-	BlastParts.fireball(parent, at, half, blast, cfg["fireball"])
+	var recipe: Dictionary = Content.section("blast_fx")["fireball"]  # the city's own blast numbers
+	BlastParts.fireball(parent, at, half, blast, recipe)
 
 
 ## A puff of the smoke shader (Fire's own charcoal ramp, its first stop warmed by the flames
