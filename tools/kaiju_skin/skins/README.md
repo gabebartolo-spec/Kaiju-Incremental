@@ -21,10 +21,15 @@ recolour of the cells, never a texture swap.
 | 5 | teeth | the bright cells inside the mouth |
 
 Columns: 0 shadow, 1 mid, 2 light, 3 glow. A cell keeps its own light and dark (its original luminance, ranked
-inside its region, 5th to 95th percentile) and takes its colour along shadow, mid, light, so the scales and bands
-survive. Column 3 is for **emissive cells** (the game already has them: a palette colour with alpha 0): which
-cells glow is the skin's `<skin>.json` (`glow`: `crevice` = the darkest share of each region, `spots` =
-scale-sized clusters on the flanks, `null`; `glow_share`; `glow_regions`).
+inside its region, 5th to 95th percentile) and takes its colour along shadow, mid, light, so the scales and the
+leg and tail bands survive. A fold term then darkens cells in creases (cells with many neighbours around them,
+a cheap ambient occlusion), tinted by the skin's `fold_color` (Albino: warm brown fold shadows). Column 3 is for
+**emissive cells** (the game already has them: a palette colour with alpha 0). Which cells glow is a rule in
+`<skin>.json` (`glow`): `seams` (Obsidian) = connected runs of dark, creased hide (joint and scute seams, the
+gaps between spine bases) plus the lip line where the head1 cells meet the jaw cells, never single cells;
+`flank_row` (Abyssal) = one faint cyan dot per dark stripe band along each flank; `null` (Albino). `eye_glow` is
+a labelled variant (the species eye glow tinted red, grown to a small blob so it reads at the 2x crop): it needs
+the director's yes and is not part of the skin.
 
 ## How the croc maps onto the table (`regions.py`, run on the .kvox cells)
 Cues: bone, original colour, outward normal (up = dorsal, down = ventral).

@@ -1,5 +1,6 @@
 {
  "glow": null,
- "glow_share": 0.0,
- "glow_regions": []
+ "fold": 0.42,
+ "fold_color": "8a5a50",
+ "eye_glow": false
 }

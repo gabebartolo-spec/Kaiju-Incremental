@@ -1,7 +1,6 @@
 {
- "glow": "spots",
- "glow_share": 0.035,
- "glow_regions": [
-  "back"
- ]
+ "glow": "flank_row",
+ "fold": 0.3,
+ "fold_color": "000d0c",
+ "eye_glow": false
 }
