@@ -149,7 +149,27 @@ jobs:
           if [ "$VERBOSE" = true ]; then args="$args --verbose"; fi
           start=$(date +%s)
           code=0
-          timeout 19200 "$HOME/godot/godot" --headless --path . --script tools/pacing.gd -- $args > "$out/pacing.txt" 2>&1 || code=$?
+          # TEE BRANCH ONLY (pacing-run/beam-cost-tee, scratch): find why the hosted runner is shut down.
+          # Once a minute: uptime, memory, disk, the engine's RSS/VSZ, load and any kernel OOM line.
+          # pacing.txt is also streamed into this job log as it grows.
+          : > "$out/pacing.txt"
+          ( while true; do
+              echo "=== MON $(date -u +%T) up $(( $(date +%s) - start )) s"
+              free -m | sed -n 2p
+              df -h / | tail -1
+              ps -C godot -o rss=,vsz=,etime= 2>/dev/null | sed 's/^/godot rss_kb vsz_kb etime: /'
+              cut -d' ' -f1-3 /proc/loadavg | sed 's/^/load: /'
+              sudo dmesg 2>/dev/null | grep -i -E 'out of memory|oom|killed process' | tail -2
+              sleep 60
+            done ) &
+          mon=$!
+          tail -n +1 -F "$out/pacing.txt" &
+          tl=$!
+          timeout 19200 stdbuf -oL -eL "$HOME/godot/godot" --headless --path . --script tools/pacing.gd -- $args > "$out/pacing.txt" 2>&1 || code=$?
+          sleep 2
+          kill "$mon" "$tl" 2>/dev/null || true
+          echo "=== MON end $(date -u +%T) exit $code"
+          free -m | sed -n 2p
           echo "exit $code wall $(( $(date +%s) - start )) s" >> "$out/pacing.txt"
           # the marks and the stage table, without the per-run lines and the engine's exit noise
           grep -E '^(== |  [^ ])' "$out/pacing.txt" | grep -v '^  run ' > "$out/summary.txt" || true
