@@ -83,9 +83,13 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
   one value for all stages (Colossus fit; Behemoth half-stride 2.79) -> clip at ~2.6x speed; Behemoth foot lift
   10.1% hip (motion_test.py lift 0.15 vs 0.085). Probe + re-bake at 14:15 -> per-stage step_len + bars to the lead
   (his sim) -> tests/run_motion_tests.gd red on base first.
-- no engine heads-r2 (claude/heads-skins 81fc0b14, 6180/6500 credits left): skins FIX (confetti/salt/clay), heads r3
-  (B cobra first, A viper reshape) per notes reviews file; rig test: keep hand rig; Komodo graft prepped.
-  D-171: heads AFTER the demo (unlocked with the Colossus); nothing head-related in a demo PR.
+- heads-r2 stood down: skins r6 SHIP (claude/heads-skins 315c1998) queued by the lead for the director (~17:15)
+  with the eye-glow question; heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
+  vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
+- Motion gate: claude/gait-fix b73b2ad4 red on base (18/29 fail); lead's sim part on claude/gait-step-len merges
+  first (by merge commit); ours: re-bake (Behemoth lift 0.07, young <= 5%), soft IK + stable pole, young catch steps.
+- Night fog: cause = base fog (dusk 4d7380 0.012); fix dusk 0.005 / 2f5566, night 0.005, own branch claude/night-fog
+  + duplicate lamp_energy key; needs a late-rampage still (D-154 haze) and a critic vs the director's screenshot.
 - D-166/D-175 accepted: sim holds breath/ultimate to young 0.8 / Behemoth 1.1 / Colossus 1.4 s, stomp 0.45 s; strike
   time comes in events (lead sends keys + sha); dash crouch view-only. Table: notes vfx-lead/strike_times.md.
 Stall watcher = scratchpad stall_watch_copy.sh over subagents/agent-<id>.jsonl.
