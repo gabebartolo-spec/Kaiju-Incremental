@@ -7,25 +7,26 @@ city uses the same sound, a step heavier than the last (same tempo and key, so t
 The game plays each track in layers: drums first, then bass, then the rest fade in as the city falls (D-125). You don't
 need to make it loop or end cleanly: I cut the loop from the middle of the take.
 
-Field names below are Suno's own (help.suno.com, September 2026). I couldn't see your signed-in page, so if a name
-differs on your screen, tell me what you see and I'll fix this file.
+Field names below are as on suno.com/create (checked signed in, 2026-10-23). The lead can also run all of this in
+the built-in browser (D-174): you only pick the take by ear.
 
 ## Steps (about 5 minutes per city)
-1. Go to suno.com/create and choose **Custom** at the top of the form.
+1. Go to suno.com/create, tab **Songs**, and choose **Advanced** (next to Simple).
 2. Model picker (top-right of the form): **v6**.
-3. Turn on **Instrumental**.
+3. Leave **Lyrics** empty: an empty lyrics box makes it instrumental (there is no Instrumental switch).
 4. Paste the city's text below into **Styles**.
-5. Open **Advanced Options**:
-   - **Exclude**: paste the exclude line below.
-   - **Weirdness**: about 35% (50% is "normal"; lower stays closer to the prompt).
-   - **Style Influence**: towards **Strong** (about 70%).
-6. Title it (for example "Kaiju city 1") and press **Create**. Each press gives you takes to compare.
+5. Open **More Options**:
+   - **Exclude styles**: paste the exclude line below.
+   - **Duration**: **Custom**, 3:00.
+   - **Max Mode**: Off.
+   - **Weirdness**: 35%. **Style Influence**: 70% (it reads "Strong"). **Variety**: leave at Normal.
+6. **Song Title**: for example "Kaiju city 1 brooding", then **Create**. Each Create makes two takes (10 credits).
 7. Keep the take that sounds most like slow, heavy menace, with no big drops or sudden changes. If both feel wrong,
    press Create again rather than editing the prompt.
-8. Split it: on the kept song, open stem separation and choose **Auto Split** (up to 12 stems: drums, bass,
-   strings, keys and so on; 50 credits per split, included in Pro).
-9. Download: the song's **More Actions (...) > Download**, as **WAV**. Its stems come with the same download, and it
-   counts as one of your downloads.
+8. Split the kept take into stems with **Auto Split** (up to 12 stems: drums, bass, strings, keys and so on; 50
+   credits per split, included in Pro).
+9. Download: the song's **More options (...) > Download**, as **WAV**. Its stems come with the same download, and it
+   counts as one of your 20 monthly downloads.
 10. Send me the song and its stems. I cut the loops, set the layers and register the licence
     (docs/provenance/music.md, rules in docs/LICENSING_REGISTER.md).
 
