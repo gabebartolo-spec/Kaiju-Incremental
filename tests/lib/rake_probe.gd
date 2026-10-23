@@ -70,10 +70,15 @@ static func run(root: Node, stage: String) -> Array[Dictionary]:
 		var last := mini(frames.size() - 1, int(hits[i].x) + AFTER)
 		var m := analyse(frames, int(cues[i].x), int(hits[i].x), hits[i].y, last)
 		m["stage"] = stage
-		var by_stage: Dictionary = Content.section("claw_fx")["recover_s"]
-		m["recover_cfg"] = Num.f(by_stage[KaijuModel.stage_for(sim.size_tier())])
+		var recover: Variant = Content.section("claw_fx")["recover_s"]
+		if recover is Dictionary:
+			var by_stage: Dictionary = recover
+			recover = by_stage[KaijuModel.stage_for(sim.size_tier())]
+		m["recover_cfg"] = Num.f(recover)
 		m["scale"] = sim.body_scale()
-		m["miss"] = gait.swing.rake_miss()
+		m["miss"] = (
+			Num.f(gait.swing.call("rake_miss")) if gait.swing.has_method("rake_miss") else 0.0
+		)
 		out.append(m)
 	kaiju.free()
 	return out
