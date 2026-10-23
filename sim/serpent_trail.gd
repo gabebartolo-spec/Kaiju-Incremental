@@ -68,6 +68,25 @@ func advance(to: Vector2, heading: Vector2, speed: float, turn: float) -> void:
 		_first = maxi(_first, _last - _points.size() + 1)
 
 
+## Lays every held sample again along `points` (a path from the head back, head first), at its
+## own distance behind the head; past the path's end it carries on straight. The head stays.
+func relay(points: PackedVector2Array) -> void:
+	if points.size() < 2:
+		return
+	var i := 0
+	var walked := 0.0  # path length up to points[i]
+	for n: int in range(_last, _first - 1, -1):
+		var behind := head_s - n * spacing
+		while i + 2 < points.size() and walked + points[i].distance_to(points[i + 1]) < behind:
+			walked += points[i].distance_to(points[i + 1])
+			i += 1
+		var back := (points[i + 1] - points[i]).normalized()
+		var p := points[i] + back * (behind - walked)
+		_put(n, p, -back, Vector2(speed_of(n), turn_of(n)))
+	head = points[0]
+	head_heading = (points[0] - points[1]).normalized()
+
+
 ## The centreline point `behind` the head along its path (clamped to the oldest sample held).
 func at(behind: float) -> Vector2:
 	var s := head_s - behind

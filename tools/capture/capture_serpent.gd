@@ -13,9 +13,11 @@ const DT := 1.0 / 60.0
 const START := Vector2(-12.0, 16.0)
 const PREROLL_S := 8.0
 ## Clip time (s) each stick change happens at: north (the 90 deg turn), south (the U-turn), let go.
-const TURN_AT := 1.0
-const U_TURN_AT := 2.9
-const LET_GO_AT := 5.6
+const TURN_AT := 0.8
+const U_TURN_AT := 2.4
+const LET_GO_AT := 4.6
+## Frames skipped before the camera's jolt is measured (the window's first frames).
+const SETTLE_FRAMES := 6
 ## How far toward the camera (south, m) the cleared strip reaches from the route.
 const CAMERA_SIDE: Array[float] = [8.0, 16.0, 24.0, 32.0]
 ## The U-turn's stick leans a little east, so it turns right, through east.
@@ -26,6 +28,9 @@ var _proto: SerpentProto
 var _closest := INF
 var _swath := 0.0
 var _stopped_at := -1.0
+## The camera's positions, one a frame (for the hitch and the settled end).
+var _eyes := PackedVector3Array()
+var _jolt_at := 0.0
 
 
 func _initialize() -> void:
@@ -51,11 +56,51 @@ func _run() -> void:
 		await physics_frame
 		frames += 1
 		_watch()
+		_eyes.append(_proto.camera.global_position)
 	print("serpent capture: renderer %s" % RenderingServer.get_video_adapter_name())
 	print("serpent capture: swath %.1f m across while slithering straight" % _swath)
 	print("serpent capture: closest strands %.2f m apart (surface to surface)" % _closest)
 	print("serpent capture: head stopped at %.2f s (let go at %.2f s)" % [_stopped_at, LET_GO_AT])
+	print("serpent capture: S depth by quarter, head to tail: %s m" % _quarters())
+	print("serpent capture: camera %s" % _camera_report())
 	quit()
+
+
+## How deep the S bends in each quarter of the body (the most a joint stands off the quarter's
+## chord): a straight rod reads near 0.
+func _quarters() -> String:
+	var joints := _proto.stand_in.joints
+	var quarter := (joints.size() - 1) / 4
+	var out: Array[String] = []
+	for q: int in 4:
+		var a := joints[q * quarter]
+		var b := joints[(q + 1) * quarter]
+		var most := 0.0
+		for j: int in range(q * quarter, (q + 1) * quarter + 1):
+			most = maxf(
+				most,
+				joints[j].distance_to(Geometry2D.get_closest_point_to_segment(joints[j], a, b))
+			)
+		out.append("%.1f" % most)
+	return ", ".join(out)
+
+
+## The camera's worst jolt (change of acceleration, m/s^3) and how fast it still moves at the end.
+func _camera_report() -> String:
+	var jolt := 0.0
+	for i: int in range(SETTLE_FRAMES, _eyes.size()):  # the window opens a few frames in
+		var a1 := _eyes[i] - 2.0 * _eyes[i - 1] + _eyes[i - 2]
+		var a0 := _eyes[i - 1] - 2.0 * _eyes[i - 2] + _eyes[i - 3]
+		var j := (a1 - a0).length() / (DT * DT * DT)
+		if j > jolt:
+			jolt = j
+			_jolt_at = i * DT
+	var n := _eyes.size()
+	var end_speed := _eyes[n - 1].distance_to(_eyes[n - 2]) / DT
+	var basis := _proto.camera.global_transform.basis
+	var pitch := rad_to_deg(asin(basis.z.y))
+	var line := "worst jolt %.1f m/s^3 at %.2f s, last-frame speed %.3f m/s, pitch %.0f deg down"
+	return line % [jolt, _jolt_at, end_speed, pitch]
 
 
 func _stick(seconds: float) -> Vector2:

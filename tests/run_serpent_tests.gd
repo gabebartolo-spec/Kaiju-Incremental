@@ -3,7 +3,8 @@ extends "res://tests/lib/runner.gd"
 ## SerpentWeave) against the research's bars (research_serpent_slither 5.9), each printed:
 ## sideways slip under 2% of speed, the wave running down the body within 1% of the forward
 ## speed, under one voxel of corner-cut through a 90 deg turn, no motion 0.3 s after a stop, and
-## a 90 deg turn in about 1.5 s ("About 1.5 s"). Each measure is first shown failing on a
+## a 90 deg turn in about 1.5 s ("About 1.5 s"); round 2: a stop settles (no travel, then still)
+## and the serpent's camera never swings. Each measure is first shown failing on a
 ## known-bad body (a wave in the body's own frame, a straight spine, an S that follows the
 ## current speed). Seeded by design: the trail sampler's walk uses a pinned seed; the rest is
 ## scripted input on a fixed 60 Hz step.
@@ -13,11 +14,14 @@ const DT := 1.0 / 60.0
 const NORTH := Vector2(0, -1)
 const EAST := Vector2(1, 0)
 const WEST := Vector2(-1, 0)
+const SOUTH_EAST := Vector2(0.08, 1.0)
 const SLIP_BAR := 0.02
 const WAVE_BAR := 0.01
 const STILL_AFTER := 0.3
 const TURN_S := 1.5
 const TURN_TOLERANCE := 0.1
+
+const Geo := preload("res://tests/lib/serpent_geometry.gd")
 
 var _cfg: Dictionary = Content.section("serpent")
 ## Each test body's drawn S (SerpentWeave), by the body's instance id.
@@ -37,7 +41,8 @@ func run_checks() -> void:
 	await _t("_check_no_slip")
 	await _t("_check_wave_speed")
 	await _t("_check_corner_cut")
-	await _t("_check_stop_freezes")
+	await _t("_check_stop_settles")
+	await _t("_check_camera_steady")
 
 
 ## The sampler on a seeded wander: samples sit exactly `spacing` apart along the head's path, a
@@ -58,12 +63,12 @@ func _check_trail_sampler() -> void:
 			path.append(to)
 	var worst_gap := 0.0
 	for n: int in range(maxi(trail.first(), 1), trail.last()):
-		var want := _on_path(path, arcs, n * trail.spacing)
+		var want := Geo.on_path(path, arcs, n * trail.spacing)
 		worst_gap = maxf(worst_gap, trail.point(n).distance_to(want))
 	var worst_at := 0.0
 	for _k: int in 200:
 		var behind := rng.randf_range(0.0, 29.0)
-		var want := _on_path(path, arcs, trail.head_s - behind)
+		var want := Geo.on_path(path, arcs, trail.head_s - behind)
 		worst_at = maxf(worst_at, trail.at(behind).distance_to(want))
 	print(
 		"serpent: sampler error %.6f m (samples), %.6f m (any point behind)" % [worst_gap, worst_at]
@@ -125,7 +130,7 @@ func _check_wave_speed() -> void:
 	for bad: bool in [true, false]:
 		var body := _cruising(NORTH, 12.0)
 		var seg := body.length() / Num.i(_cfg["segments"])
-		var before := _inflections(_joints(body, DT if bad else 0.0), seg)
+		var before := Geo.inflections(_joints(body, DT if bad else 0.0), seg)
 		var travelled := 0.0
 		var head := _joints(body, 0.0)[0]
 		for i: int in 60:
@@ -133,8 +138,8 @@ func _check_wave_speed() -> void:
 			var now := _joints(body, (i + 2.0) * DT if bad else 0.0)[0]
 			travelled += now.distance_to(head)
 			head = now
-		var after := _inflections(_joints(body, 61.0 * DT if bad else 0.0), seg)
-		var err := _wave_error(before, after, travelled)
+		var after := Geo.inflections(_joints(body, 61.0 * DT if bad else 0.0), seg)
+		var err := Geo.wave_error(before, after, travelled, Num.f(_cfg["length"]))
 		var label := "body-frame wave" if bad else "trail wave"
 		print("serpent: %s speed off the forward speed by %.3f%%" % [label, err * 100.0])
 		if bad:
@@ -162,10 +167,10 @@ func _check_corner_cut() -> void:
 		for k: int in range(1, 48):
 			var behind := k * body.length() / 48.0
 			if behind < body.speed * (frame + 1) * DT:  # only the part laid since the turn began
-				worst_centre = maxf(worst_centre, _off_path(body.centre_at(behind), centre))
-				worst_drawn = maxf(worst_drawn, _off_path(joints[k], drawn))
+				worst_centre = maxf(worst_centre, Geo.off_path(body.centre_at(behind), centre))
+				worst_drawn = maxf(worst_drawn, Geo.off_path(joints[k], drawn))
 				var spine := body.pos - body.heading * behind
-				worst_spine = maxf(worst_spine, _off_path(spine, centre))
+				worst_spine = maxf(worst_spine, Geo.off_path(spine, centre))
 	var voxel := KaijuModel.VOXEL
 	print(
 		(
@@ -177,44 +182,86 @@ func _check_corner_cut() -> void:
 	check(worst_centre < voxel and worst_drawn < voxel, "the body cuts no corner (under one voxel)")
 
 
-## Let go of the stick: the head slows to a stop and 0.3 s later nothing moves, the head's look
-## included; an S that follows the current speed would still be straightening.
-func _check_stop_freezes() -> void:
+## Let go of the stick: the head eases to a halt and from then on nothing travels (the sim head
+## and its centreline stay put); the drawn body settles (curves relax, the tail draws up, the neck
+## straightens) within settle_s, not freezing at once, and after that nothing moves. A body still
+## straightening after the settle fails the same measure.
+func _check_stop_settles() -> void:
+	var settle_s := Num.f(_cfg["settle_s"])
 	for bad: bool in [true, false]:
-		var body := _cruising(NORTH, 8.0)
+		var body := SerpentBody.new(_cfg, Vector2.ZERO, NORTH)
+		_weaves[body.get_instance_id()] = SerpentWeave.new(body)
+		var drawn := SerpentStandIn.new(_cfg)
+		for _c: int in int(8.0 / DT):
+			_step(body, NORTH)
+			drawn.update(body, DT)
 		for _i: int in 40:
 			_step(body, EAST)  # stop mid-turn: the head is leading
-		var drawn := SerpentStandIn.new(_cfg)
-		drawn.update(body, DT)
+			drawn.update(body, DT)
 		var frames := 0
 		while body.speed > 0.0 and frames < 600:
 			_step(body, Vector2.ZERO)
 			drawn.update(body, DT)
 			frames += 1
-		var stop_s := frames * DT
-		for _j: int in int(STILL_AFTER / DT):
+		var head := body.pos
+		var centre := body.centre_at(20.0)
+		var settling := 0.0
+		var stopped_tail := drawn.joints[drawn.joints.size() - 1]
+		var last := drawn.joints.duplicate()
+		for _j: int in int(maxf(settle_s, STILL_AFTER) / DT) + 3:
 			_step(body, Vector2.ZERO)
 			drawn.update(body, DT)
+			for j: int in last.size():
+				settling = maxf(settling, drawn.joints[j].distance_to(last[j]))
+			last = drawn.joints.duplicate()
 		var moved := 0.0
-		var lead := drawn.lead
-		var last := _joints_with(drawn, body, bad, 0)
+		last = _joints_with(drawn, body, bad, 0)
 		for k: int in 30:
 			_step(body, Vector2.ZERO)
 			drawn.update(body, DT)
 			var now := _joints_with(drawn, body, bad, k + 1)
 			for j: int in now.size():
 				moved = maxf(moved, now[j].distance_to(last[j]))
-			moved = maxf(moved, absf(drawn.lead - lead))
 			last = now
-			lead = drawn.lead
+		var travel := body.pos.distance_to(head) + body.centre_at(20.0).distance_to(centre)
+		var tail_drawn := drawn.joints[drawn.joints.size() - 1].distance_to(stopped_tail)
 		drawn.free()
 		if bad:
-			check(
-				moved > 0.0001, "the stillness measure catches a body that straightens after a stop"
-			)
+			check(moved > 0.0001, "the stillness measure catches a body still straightening")
 			continue
-		print("serpent: stops in %.2f s; most motion 0.3 s later %.6f m a frame" % [stop_s, moved])
-		check(moved < 0.0001, "0.3 s after the stop nothing moves (%.6f m a frame)" % moved)
+		var line := "serpent: stops %.2f s after let-go; settle moves up to %.3f m a frame;"
+		print(
+			line % [frames * DT, settling] + " then %.6f m a frame; travel %.6f m" % [moved, travel]
+		)
+		check(travel == 0.0, "nothing travels once the head has stopped")
+		check(settling > 0.005, "the body settles after the stop rather than freezing")
+		check(moved < 0.0001, "after the settle nothing moves (%.6f m a frame)" % moved)
+
+
+## The serpent's camera through a turn, a U-turn and a stop: its yaw and pitch never change, and
+## it comes to rest after the stop without a jolt.
+func _check_camera_steady() -> void:
+	var body := _cruising(NORTH, 6.0)
+	var cam := SerpentCamera.new(_cfg, SerpentCamera.middle(body))
+	var first := cam.step(SerpentCamera.middle(body), DT).basis
+	var turned := 0.0
+	var eyes := PackedVector3Array()
+	for frame: int in 480:
+		var stick := EAST if frame < 90 else (SOUTH_EAST if frame < 230 else Vector2.ZERO)
+		_step(body, stick)
+		var t := cam.step(SerpentCamera.middle(body), DT)
+		turned = maxf(turned, (t.basis.z - first.z).length())
+		eyes.append(t.origin)
+	var n := eyes.size()
+	var end_speed := eyes[n - 1].distance_to(eyes[n - 2]) / DT
+	print(
+		(
+			"serpent: camera turned %.6f, still moving %.4f m/s 3.5 s after let-go"
+			% [turned, end_speed]
+		)
+	)
+	check(turned == 0.0, "the serpent's camera never swings with a turn")
+	check(end_speed < 0.05, "the camera has settled at the end of the shot")
 
 
 # --- helpers ------------------------------------------------------------------------------------
@@ -291,7 +338,7 @@ func _worst_slip(bad: bool) -> float:
 				worst = maxf(worst, absf(across) / maxf(moved.length(), body.speed * DT))
 		if not bad:
 			for j: int in range(1, now.size() - 1):
-				_tightest = minf(_tightest, _bend_radius(now[j - 1], now[j], now[j + 1]))
+				_tightest = minf(_tightest, Geo.bend_radius(now[j - 1], now[j], now[j + 1]))
 		last = now
 	return worst
 
@@ -303,58 +350,3 @@ func _route_joints() -> PackedVector2Array:
 		var stick := EAST if frame < 120 else (WEST if frame < 300 else Vector2.ZERO)
 		_step(body, stick)
 	return _joints(body, 0.0)
-
-
-## Where the bends change side along the body (arc from the head), from the joints' turning.
-func _inflections(joints: PackedVector2Array, seg: float) -> PackedFloat32Array:
-	var bends := PackedFloat32Array()
-	for j: int in range(1, joints.size() - 1):
-		bends.append((joints[j - 1] - joints[j]).angle_to(joints[j] - joints[j + 1]))
-	var out := PackedFloat32Array()
-	for k: int in bends.size() - 1:
-		if signf(bends[k]) != signf(bends[k + 1]) and bends[k] != 0.0:
-			out.append((k + 1 + bends[k] / (bends[k] - bends[k + 1])) * seg)
-	return out
-
-
-## How far the wave's travel down the body is off the head's travel along its path (share).
-func _wave_error(before: PackedFloat32Array, after: PackedFloat32Array, travelled: float) -> float:
-	var worst := 0.0
-	var found := false
-	for z: float in before:
-		if z < 2.0 or z + travelled > Num.f(_cfg["length"]) - 2.0:
-			continue
-		var nearest := INF
-		for w: float in after:
-			if absf(w - z - travelled) < absf(nearest - z - travelled):
-				nearest = w
-		worst = maxf(worst, absf(nearest - z - travelled) / travelled)
-		found = true
-	return worst if found else INF
-
-
-## The point `s` along a polyline whose vertices sit at `arcs`.
-func _on_path(path: PackedVector2Array, arcs: Array[float], s: float) -> Vector2:
-	for i: int in range(1, path.size()):
-		if arcs[i] >= s:
-			var t := (s - arcs[i - 1]) / maxf(arcs[i] - arcs[i - 1], 1e-9)
-			return path[i - 1].lerp(path[i], t)
-	return path[path.size() - 1]
-
-
-## The radius of the circle through three joints (INF when they lie in a line).
-func _bend_radius(a: Vector2, b: Vector2, c: Vector2) -> float:
-	var cross := absf((b - a).cross(c - b))
-	if cross < 1e-9:
-		return INF
-	return a.distance_to(b) * b.distance_to(c) * c.distance_to(a) / (2.0 * cross)
-
-
-## Distance from `p` to the nearest point of a polyline.
-func _off_path(p: Vector2, path: PackedVector2Array) -> float:
-	var best := INF
-	for i: int in range(1, path.size()):
-		best = minf(
-			best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, path[i - 1], path[i]))
-		)
-	return best

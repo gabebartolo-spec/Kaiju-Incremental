@@ -8,8 +8,9 @@ extends RefCounted
 ## along that. So the S belongs to the ground, not to the body: every body point passes through the
 ## same S (Jayne 2020, terrestrial lateral undulation: points follow one path and the wave runs at
 ## the forward speed), no bend is ever tighter than the limit, a tight turn flattens the S on its
-## own, and a stopped serpent keeps its S, frozen. The swing ramps in with speed (eased over
-## wave_ease m of travel). Presentation only: one per drawn serpent, stepped with the sim.
+## own, and a stopped serpent keeps its S. The swing ramps in with speed (eased over wave_ease m
+## of travel) and is kept while slowing. Presentation only: one per drawn serpent, stepped with
+## the sim.
 
 ## How hard the drawn head closes a gap along the sim head's way (per lookahead length).
 const CATCH_UP := 1.0
@@ -46,7 +47,8 @@ func step(body: SerpentBody, dt: float) -> void:
 	if v <= 0.0 or dt <= 0.0:
 		return
 	var ahead := Num.f(_cfg["wave_lookahead"])
-	_amp = lerpf(_amp, amplitude(_cfg, v), 1.0 - exp(-v * dt / Num.f(_cfg["wave_ease"])))
+	var want := maxf(amplitude(_cfg, v), _amp)  # kept while slowing: the S reaches the tail
+	_amp = lerpf(_amp, want, 1.0 - exp(-v * dt / Num.f(_cfg["wave_ease"])))
 	var swing := lateral(_cfg, body.trail.head_s + ahead, _amp)
 	var target := body.pos + body.heading * ahead + body.heading.orthogonal() * swing
 	var at := drawn.head
@@ -60,6 +62,12 @@ func step(body: SerpentBody, dt: float) -> void:
 	var u := clampf(v * (1.0 + CATCH_UP * behind / ahead) / lean, 0.0, MOST_SPEED * v)
 	var heading := facing.rotated(bend * u * dt)
 	drawn.advance(at + heading * u * dt, heading, u, bend * u)
+
+
+## The drawn body settled into `points` (joints, head first) while it stood: its path is laid
+## again along them, so it sets off from the shape it settled in.
+func settle_into(points: PackedVector2Array) -> void:
+	drawn.relay(points)
 
 
 ## The drawn path, head first: the drawn head, then its samples back until `reach` of path is

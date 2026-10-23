@@ -1,8 +1,8 @@
 class_name SerpentProto
 extends Node3D
 ## The serpent slither prototype (D-198 "Yes, now"): a stand-in serpent (SerpentStandIn) steered
-## by the player's move controls in the real city's streets, light and sky, at the game camera
-## (CameraTuning, framed at the serpent's camera_scale). Off the croc's game entirely: run
+## by the player's move controls in the real city's streets, light and sky, under its own high,
+## steady camera (SerpentCamera). Off the croc's game entirely: run
 ## `godot --path . res://scenes/serpent_proto.tscn`. Buildings are left out (no crushing in this
 ## step): all of them by default, or only those near a route a capture gives (`clear_along`).
 ## The sim's SerpentBody decides where the body is; this only draws and frames it.
@@ -22,7 +22,7 @@ var scripted: Callable
 var clear_along := PackedVector2Array()
 var seconds := 0.0
 var _cfg: Dictionary = Content.section("serpent")
-var _follow: CameraFollow
+var _follow: SerpentCamera
 var _start := Vector2.INF
 var _heading := Vector2(0, -1)
 
@@ -49,7 +49,7 @@ func _ready() -> void:
 		_start = Vector2(0.0, CityGen.half_extent(sim.city) - START_IN)
 	if body == null:
 		body = SerpentBody.new(_cfg, _start, _heading)
-	sim.kaiju_pos = _focus_ground()
+	sim.kaiju_pos = _middle_ground()
 	add_child(CityView.new(sim, Seeds.make("fx", 0)))
 	if stand_in == null:
 		stand_in = SerpentStandIn.new(_cfg)
@@ -60,8 +60,9 @@ func _ready() -> void:
 	camera.far = 4000.0
 	add_child(camera)
 	camera.current = true
-	_follow = CameraFollow.new(_focus(), _rest())
-	_place_camera(1.0)
+	var moving := Vector3(body.heading.x, 0.0, body.heading.y) * body.speed
+	_follow = SerpentCamera.new(_cfg, SerpentCamera.middle(body), moving)
+	camera.transform = _follow.step(SerpentCamera.middle(body), 0.0)
 
 
 ## Steps the body `steps` physics ticks along `heading`, stick full on, before the first frame:
@@ -83,7 +84,7 @@ func _physics_process(delta: float) -> void:
 		move = scripted.call(seconds)
 	seconds += delta
 	body.step(delta, move)
-	sim.kaiju_pos = _focus_ground()  # the city streams and the people flee around the body
+	sim.kaiju_pos = _middle_ground()  # the city streams and the people flee around the body
 	stand_in.update(body, delta)
 
 
@@ -92,24 +93,12 @@ func _process(delta: float) -> void:
 
 
 func _place_camera(delta: float) -> void:
-	var framing := Num.f(_cfg["camera_scale"])
-	_follow.step(_focus(), _rest(), delta)
-	_follow.step_lead(_focus(), framing, false, delta)
-	camera.position = _follow.eye()
-	camera.look_at(_follow.look_at(framing))
+	camera.transform = _follow.step(SerpentCamera.middle(body), delta)
 
 
-func _rest() -> Vector3:
-	return CameraTuning.offset() * CameraTuning.zoom(Num.f(_cfg["camera_scale"]))
-
-
-func _focus_ground() -> Vector2:
-	return body.centre_at(body.length() * Num.f(_cfg["camera_focus"]))
-
-
-func _focus() -> Vector3:
-	var at := _focus_ground()
-	return Vector3(at.x, 0.0, at.y)
+func _middle_ground() -> Vector2:
+	var mid := SerpentCamera.middle(body)
+	return Vector2(mid.x, mid.z)
 
 
 ## The city without the buildings the route's body would pass through.
