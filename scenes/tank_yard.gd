@@ -43,9 +43,17 @@ func update(delta: float, kaiju_at: Vector3, steps: int) -> void:
 		node.aim(kaiju_at + Vector3(0, 2.0 * _sim.body_scale(), 0), delta)
 
 
-## A tank_fired or stray_landed event (Rampage hands over both): the shell flies to where it
-## goes, and a stray's impact comes when it lands (the sim lands it after army.shell_flight).
+## A tank event (Rampage hands over all four): spawned and destroyed tanks come and go; a fired
+## shell flies to where it goes, and a stray's impact comes when it lands (the sim lands it after
+## army.shell_flight).
 func on_event(event: Dictionary, kaiju_at: Vector3) -> void:
+	match str(event["type"]):
+		"tank_spawned":
+			spawn(Num.i(event["tank"]))
+			return
+		"tank_destroyed":
+			destroy(Num.i(event["tank"]), Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"])))
+			return
 	var at: Vector2 = event.get("at", _sim.kaiju_pos)
 	var world := Vector3(at.x, 0.0, at.y)
 	if str(event["type"]) == "stray_landed":

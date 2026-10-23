@@ -30,6 +30,8 @@ var result: Dictionary
 var previous_best: Dictionary
 ## Frames since the count began; counting is done once every row has landed.
 var frame := 0
+## The confirm button's text once the count is done ("CONTINUE  >" before the demo's thanks).
+var go_label := "EVOLVE  >"
 var _values: Array[Label] = []
 var _badges: Array[Label] = []
 var _verdict: Label
@@ -185,7 +187,7 @@ func _show_frame() -> void:
 			_badges[n].text = "NEW BEST"
 			_badges[n].add_theme_color_override("font_color", UiKit.GOOD)
 	_verdict.modulate.a = 0.0 if counting() else 1.0
-	_go.text = "SKIP" if counting() else "EVOLVE"
+	_go.text = "SKIP" if counting() else go_label
 
 
 func _shown(row: Array, value: float) -> String:

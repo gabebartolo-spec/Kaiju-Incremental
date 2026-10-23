@@ -64,7 +64,7 @@ func step(dt: float) -> void:
 	if _spawn_timer <= 0.0 and _spawn():
 		_spawn_timer = maxf(
 			Num.f(cfg["min_interval"]),
-			Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.chunks_destroyed
+			Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.escalation()
 		)
 	var reach := Num.f(cfg["range"]) + sim.stomp_radius()
 	var coated := false
@@ -148,6 +148,8 @@ func _step_squads(dt: float) -> bool:
 ## bearing (D-039: in a city grown past spawn_radius, round the kaiju). False when that way in
 ## is jammed too: it tries again next step.
 func _spawn() -> bool:
+	if Endless.tanks_full(sim):
+		return false
 	var at := Vector2(INF, INF)
 	if _column_left > 0:
 		at = convoy.enter(_next_id, _column, _column_entry)
@@ -163,7 +165,7 @@ func _spawn() -> bool:
 	tank.id = _next_id
 	_next_id += 1
 	tank.pos = at
-	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
+	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.escalation()
 	tank.hp = Num.f(cfg["tank_hp"]) * threat
 	tank.cooldown = Num.f(cfg["fire_interval"])
 	sim.tanks.append(tank)
@@ -213,7 +215,7 @@ func _next_shot() -> float:
 
 ## How hard the army fights back: more the more of the city has fallen.
 func threat_scale() -> float:
-	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
+	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.escalation()
 
 
 ## One squad's volley at the kaiju: the size tier's sting, grown by the threat.

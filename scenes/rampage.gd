@@ -265,13 +265,10 @@ func _on_event(event: Dictionary) -> void:
 			var b := sim.buildings[Num.i(event["building"])]
 			var topple := str(event["kind"]) == "topple"
 			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
-		"tank_spawned":
-			_tanks.spawn(Num.i(event["tank"]))
-		"tank_fired", "stray_landed":
+		"tank_spawned", "tank_fired", "tank_destroyed", "stray_landed":
 			_tanks.on_event(event, _kaiju_at)
-		"tank_destroyed":
-			var at := Vector3(Num.f(event["x"]), 0.5, Num.f(event["z"]))
-			_tanks.destroy(Num.i(event["tank"]), at)
+		"building_regrown":
+			_city.regrow(Num.i(event["building"]))
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:

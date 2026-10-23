@@ -283,6 +283,18 @@ func _crumble(i: int) -> void:
 		_drop(i, State.BURNT)
 
 
+## Building `i` stands whole again (Endless regrowth): no fire state is left on it, so it can burn,
+## heat its neighbours and pay a full smash once more. The neighbour lists are rebuilt on demand.
+func reset_building(i: int) -> void:
+	state[i] = State.INTACT
+	heat[i] = 0.0
+	timer[i] = 0.0
+	_active.erase(i)
+	_crumbling.erase(i)
+	_near.clear()
+	sim.buildings[i].pay_share = 1.0
+
+
 func _drop(i: int, to: State) -> void:
 	state[i] = to
 	_active.erase(i)

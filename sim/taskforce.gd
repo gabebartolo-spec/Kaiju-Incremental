@@ -73,9 +73,7 @@ func cap() -> int:
 
 ## Seconds between squads: shorter the more of the city has fallen, never under min_interval.
 func interval() -> float:
-	var left := (
-		Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.chunks_destroyed
-	)
+	var left := Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.escalation()
 	return maxf(Num.f(cfg["min_interval"]), left)
 
 
