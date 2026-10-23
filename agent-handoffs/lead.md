@@ -34,9 +34,9 @@
   not heavier, Godzilla-like menace; D-181 one theme, Cover per city; D-182 Jaws/Godzilla/Imperial March, not epic.
   Rejected in turn: heroic, same city to city, epic/Nolan, staccato endless build, Y set "too whimsicial, almsot
   Harry Potteresque, go harder on the Godzillla reference". D-184 SHIP: his remaster of G2 (798f3c13) = the theme,
-  menu over city sound (amends D-141) + Cover source; city Covers C1a-C3b made (170 of 800 credits), await his pick
-  per city, then Auto Split + WAV for the 3 picks only. WAVs in Downloads/kaiju_music (R, G1-G3; he said stop G
-  downloads; 5 of 20 used). Download recipe: song More options > Download > WAV > Unlock & Download, then page JS
+  menu over city sound (amends D-141) + Cover source; he picked C1a/C2a/C3a; all split (Auto split, he did one
+  CAPTCHA) and downloaded with stems to Downloads/kaiju_music (320 of 800 credits, 8 of 20 downloads). NEXT: a builder
+  cuts loops + layers (D-125), menu music, LICENSING_REGISTER entry, when an engine slot frees. Download recipe: song More options > Download > WAV > Unlock & Download, then page JS
   fetch /a/api/download/clip/<id>?format=wav with Bearer __session cookie -> signed URL -> curl. Revisit music later.
 - D-185 claw swipe: heavy raking arc (VFX lead owns; it set bars). Hidden browser pane: clicks can time out; retry.
 
@@ -67,7 +67,8 @@
   after round 1 (lead ruled: cooldown from the volley's first shot, D-178 every volley), roof check; beam-cost fixes
   after its heliflight suite, repro scratchpad volley_port.py; go only on the fixed head green), #171 beam (pacing hours pending, run from 16:02). pacing-ci a601bbac on origin, not opened yet.
   16:37: night-fog SHIP 4524e90c (VFX lead) = #172; go on green AND once its evidence folder is found (path asked). gait-step-len pushed
-  14f47473 = #173 green, sim review FIX (hand-over lurch, dash slide: volley builder after strike-delay chain);
+  #173 fix 841f93e2 re-review SHIP, go armed; #170 2d6710fa re-review SHIP, go armed; #174 7d54a279 go armed;
+  pacing run 39910488328 (GitHub) for #171; strike-delay red on military (volley builder diagnosing);
   #171 CLOSED to free its slot (git-helper reopens after pacing hours); #172 night-fog MERGED 4f8b8d10; #174
   pacing-ci held (needs pacing-run/** push trigger: beam-cost after #170 fix; workflow_dispatch needs main);
   sha sent to the VFX lead (gait-fix 9d436583 rebases on it). Volley builder back on strike-delay reruns.
