@@ -57,8 +57,9 @@
   growth steps, #167 weather, #168 body-chunks (tests), #169 croc standing, #165 demo end + Endless (a7ac8788,
   save v4).
 - 15:00: #166 MERGED (3e4a7665; look r3 FIX flagged for M3, r4 on claude/heli-look-r4). Open: #170 volley (green,
-  sim review SHIP, HELD for his lock-together question in interview.md), #171 beam (pacing hours pending, run 16:01).
+  sim review SHIP; D-178 lock together: beam-cost builder reworks it), #171 beam (pacing hours pending, run 16:01).
   Next slot: claude/gait-step-len (volley builder), then claude/gait-fix (VFX, motion gate), then strike-delay.
+- D-179 pacing workflow (beam-cost builder, claude/pacing-ci); D-180 skins need a cohesive range (post-demo).
 - Godot hold until 16:01 ("no godot for 75min" at 14:46), scratchpad no_godot_until2.sh.
 - Not opened: claude/sim-speed daad0710 = measurement only (checksum 2c712cc6589535dd; speed-ups: body polygon per
   Convoy step ~25%, bucketed building scans ~10%, spacing prefilter ~2-6%; sim/convoy.gd is at 400 lines, split
