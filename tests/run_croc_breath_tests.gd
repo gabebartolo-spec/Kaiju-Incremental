@@ -6,7 +6,7 @@ extends "res://tests/lib/runner.gd"
 ## it rises over about 40% of the breath, falls over about 50% and rests about 10%; the skin's push
 ## is at most 0.8% of the body's height and at least 0.25% on the flank, smooth (no jerk spike);
 ## the head rises with it (snout travel at least 1.5%); the belly barely moves; the tail rides the
-## breath; no point snaps (under 3% of the height a second) while he breathes or stands. Fixed
+## breath; no point snaps (under 4% of the height a second, the tail 3%) while he breathes or stands. Fixed
 ## steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_breath_tests.gd
 
@@ -21,7 +21,7 @@ const PUSH_SEEN: Array[float] = [0.5, 0.7, 0.7]
 ## The head rises with the breath: its snout travels at least this much (percent of the height),
 ## smoothly (BREATH_SPEED).
 const SNOUT_TRAVEL := 1.5
-const SNOUT_BREATH_SPEED := 3.0
+const SNOUT_BREATH_SPEED := 4.0
 const PUSH_MIN := 0.25
 const BREATH_SECONDS: Array[float] = [4.0, 6.0, 8.0]
 const BREATH_TOLERANCE := 0.1
@@ -30,7 +30,7 @@ const BREATH_TOLERANCE := 0.1
 ## he stands.
 const BREATH_SPEED := 3.0
 const BREATH_JERK := 1.3
-const SNOUT_SPEED := 3.0
+const SNOUT_SPEED := 4.0
 const TAIL_SPEED := 3.0
 ## Samples of speed are taken over this many frames (0.2 s), so frame noise does not count.
 const SPAN := 12

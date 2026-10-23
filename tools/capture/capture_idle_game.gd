@@ -31,9 +31,7 @@ var _hold: Callable
 var _locked := Transform3D.IDENTITY
 var _fov := 60.0
 var _probe := BreathProbe.new()
-var _options := {
-	"push_gain": 1.0, "head_gain": 1.0, "chest_gain": 1.0, "swell": 0.0, "plate_lift": 0.0
-}
+var _options := {}  ## tuning "trade" values the arguments override (none: the tuning's own)
 var _run_index := 1  ## the run: its time of day is Content.time_for_run(run)
 
 
@@ -50,11 +48,11 @@ func _initialize() -> void:
 			"no_claws": false,
 			"breath_only": false,
 			"lock": "",
-			"gain": 1.0,
-			"head": 1.0,
-			"chest": 1.0,
-			"swell": 0.0,
-			"plate": 0.0,
+			"gain": -1.0,
+			"head": -1.0,
+			"chest": -1.0,
+			"swell": -1.0,
+			"plate": -1.0,
 			"run": 1
 		}
 	)
@@ -68,13 +66,15 @@ func _initialize() -> void:
 	_no_claws = a["no_claws"]
 	_breath_only = a["breath_only"]
 	_lock = str(a["lock"])
-	_options = {
-		"push_gain": Num.f(a["gain"]),
-		"head_gain": Num.f(a["head"]),
-		"chest_gain": Num.f(a["chest"]),
-		"swell": Num.f(a["swell"]),
-		"plate_lift": Num.f(a["plate"])
-	}
+	for pair: Array in [
+		["gain", "push_gain"],
+		["head", "head_gain"],
+		["chest", "chest_gain"],
+		["swell", "swell"],
+		["plate", "plate_lift"]
+	]:
+		if Num.f(a[pair[0]]) >= 0.0:  # an argument overrides the tuning's own value
+			_options[pair[1]] = Num.f(a[pair[0]])
 	_run_index = Num.i(a["run"])
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():

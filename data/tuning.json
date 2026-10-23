@@ -1052,10 +1052,10 @@
 		"trade": {
 			"_note": "The slow chest-and-neck heave (D-190, the default; a number or a list [young croc, Behemoth, Colossus], chosen so the neck, shoulders and flanks move 3-4 px at the game camera and still ease slowly): push_gain times the whole-body push and its speed; head_gain times the head's lift; swell widens the body sideways by that share of a point's distance from the spine; plate_lift raises the dorsal plate crests (share of the body height; the rows by skin in plate_rows: z0 the first crest, period the spacing, rig units).",
 			"push_gain": 1.0,
-			"head_gain": [15.0, 10.0, 8.0],
-			"chest_gain": [39.0, 26.0, 21.0],
-			"swell": [0.10, 0.08, 0.06],
-			"plate_lift": [0.02, 0.015, 0.012]
+			"head_gain": [7.0, 10.0, 8.0],
+			"chest_gain": [18.0, 26.0, 21.0],
+			"swell": [0.05, 0.08, 0.06],
+			"plate_lift": [0.01, 0.015, 0.012]
 		},
 		"plate_rows": {
 			"reptilian_adolescent": {"z0": -4.15, "period": 0.395}
