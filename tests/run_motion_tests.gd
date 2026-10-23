@@ -8,7 +8,8 @@ extends "res://tests/lib/runner.gd"
 ## five routes: a straight walk, 90 and 180 deg turns while walking, a turn from standing and a
 ## held curve. Bars:
 ##   - a planted foot holds its spot (under SLIDE_MAX units/s);
-##   - no catch-step shuffle (at most CATCH_MAX a second);
+##   - no catch-step shuffle (at most CATCH_MAX a second; CATCH_SMOOTH_TURN in the young croc's
+##     smooth turns, D-131);
 ##   - the legs step no faster than CADENCE_MAX times the walk clip's authored pace, and a stepping
 ##     body's sim step is half its clip's stride (within STEP_TOL), so feet are passed at the pace
 ##     the body walks;
@@ -23,6 +24,7 @@ extends "res://tests/lib/runner.gd"
 const Drive := preload("res://tests/lib/motion_drive.gd")
 const SLIDE_MAX := 0.05
 const CATCH_MAX := 0.5
+const CATCH_SMOOTH_TURN := 1.0
 const CADENCE_MAX := 2.3
 const STEP_TOL := 0.02
 const JERK_WALK := 5.0
@@ -81,13 +83,29 @@ func _check_feet_hold() -> void:
 		)
 
 
+## A body that turns smoothly (the young croc, D-131 "Baby turns smoothly") turns over its planted
+## feet, and catch steps are how they keep up: in its turns it may take up to CATCH_SMOOTH_TURN a
+## second (lead 2026-10-23); walking straight, and for every body that steps its turns, CATCH_MAX.
+## Each catch step still answers to the slide, lift and jerk bars, and the motion critic judges
+## the young croc's turn clip.
 func _check_no_shuffle() -> void:
 	for stage: String in Drive.STAGES:
-		var w := _worst(stage, Drive.ROUTES, "catch")
+		var smooth: bool = not _run(stage, "straight")["stepping"]
+		var routes: Array = Drive.ROUTES if not smooth else ["straight"]
+		var w := _worst(stage, routes, "catch")
 		check(
 			Num.f(w[0]) <= CATCH_MAX,
 			"%s: no catch-step shuffle (%s a second <= %.1f)" % [stage, w[1], CATCH_MAX]
 		)
+		if smooth:
+			var turns := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "catch")
+			check(
+				Num.f(turns[0]) <= CATCH_SMOOTH_TURN,
+				(
+					"%s: its smooth turns keep up with few catch steps (%s a second <= %.1f, D-131)"
+					% [stage, turns[1], CATCH_SMOOTH_TURN]
+				)
+			)
 
 
 func _check_cadence() -> void:
