@@ -41,6 +41,9 @@ class SpringChain:
 var height_units: float
 ## "biped", "hexapod" or "radial" (rig.json "type"); picks the gait.
 var body_plan := "biped"
+## The sculpt's life stage ("baby", "adolescent" or "adult"), set by KaijuModel: the claw rake
+## settles slower the bigger the stage.
+var stage := "adult"
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).

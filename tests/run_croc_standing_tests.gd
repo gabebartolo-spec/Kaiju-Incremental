@@ -241,8 +241,9 @@ func _toe_height(rig: KaijuRig) -> float:
 	return top
 
 
-## The claw rake (a windup, then the swipe 0.3 s on) moves the raking arm and only that arm, and
-## it comes back to rest; with no rake called, nothing about the arms differs from a calm kaiju's.
+## The claw rake (a windup, then the swipe 0.3 s on) swings the raking arm and carries the other arm
+## with the chest's twist and nothing more, and it all comes back to rest; with no rake called,
+## nothing about the arms differs from a calm kaiju's. (tests/run_claw_rake_tests.gd: the motion.)
 func _check_claw_rake() -> void:
 	for stage: String in STAGES:
 		await _rake_one(stage, -1.0)
@@ -257,18 +258,21 @@ func _rake_one(stage: String, side: float) -> void:
 	var finite := true
 	for i: int in 40:
 		finite = finite and _step(rake, rig) and _step(calm, rig_calm)
-	var before := _arm_gap(rig, rig_calm)
+	var before := _arm_gap(rig, rig_calm, false)
 	rake.tail_sweep(side, "claw_windup")
 	var gap: Array[float] = [0.0, 0.0]  # the widest the hands parted, by side of the body (-x, +x)
+	var held: Array[float] = [0.0, 0.0]  # ... and in the chest's frame, which the twist leaves alone
 	var end: Array[float] = [0.0, 0.0]
 	for f: int in 120:  # 2 s: the windup 0.3 s, then the rake; 0.7 s in all
 		if f == 18:
 			rake.tail_sweep(side, "claw")
 		finite = finite and _step(rake, rig) and _step(calm, rig_calm)
-		end = _arm_gap(rig, rig_calm)
+		end = _arm_gap(rig, rig_calm, false)
+		var chest := _arm_gap(rig, rig_calm, true)
 		for i: int in 2:
 			gap[i] = maxf(gap[i], end[i])
-	var hip := rake.hip_height()
+			held[i] = maxf(held[i], chest[i])
+	var hip := rig.head_of("leg_l0").y
 	var mine := 1 if side > 0.0 else 0
 	var tag := "%s claw rake, side %+d" % [stage, side]
 	check(
@@ -276,10 +280,10 @@ func _rake_one(stage: String, side: float) -> void:
 		"%s: before it, the arms match a calm kaiju's (%.5f)" % [tag, before[0]]
 	)
 	check(
-		gap[mine] > 0.3 * hip and gap[1 - mine] < 0.001 * hip and end[0] + end[1] < 0.001 * hip,
+		gap[mine] > 0.3 * hip and held[1 - mine] < 0.001 * hip and end[0] + end[1] < 0.001 * hip,
 		(
-			"%s: the raking arm swings (%.2f hip), the other holds (%.4f), and it is back at rest (%.4f)"
-			% [tag, gap[mine] / hip, gap[1 - mine] / hip, (end[0] + end[1]) / hip]
+			"%s: the raking arm swings (%.2f hip), the other holds in the chest (%.4f), rest (%.4f)"
+			% [tag, gap[mine] / hip, held[1 - mine] / hip, (end[0] + end[1]) / hip]
 		)
 	)
 	check(finite, "%s: no bone turns NaN or infinite" % tag)
@@ -293,9 +297,9 @@ func _rake_one(stage: String, side: float) -> void:
 func _check_claw_trail() -> void:
 	var kaiju := _model("adult")
 	var rig := _rig_of(kaiju)
-	var strike := Num.f(Content.section("claw_fx")["strike_s"])
-	var lift := Num.f(Content.section("powers")["swipe_windup"]) - strike * 0.5  # BipedSwing's lift_s
-	var life := Num.f(Content.section("claw_fx")["trail_s"])
+	var cfg := Content.section("claw_fx")
+	var hit := ClawRake.new(_rig_of(kaiju)).hit_time()
+	var life := Num.f(cfg["trail_s"])
 	for i: int in 40:
 		_step(kaiju, rig)
 	var gait: ClipGait = rig.gait
@@ -318,8 +322,8 @@ func _check_claw_trail() -> void:
 		if marks > 0:
 			first = f if first < 0 else first
 			last = f
-	var swing_start := floori(lift / DT)
-	var swing_end := ceili((lift + strike * 1.3 + life) / DT) + 2
+	var swing_start := floori((hit + Num.f(cfg["trail_from_s"])) / DT)
+	var swing_end := ceili((hit + Num.f(cfg["trail_to_s"]) + life) / DT) + 2
 	check(
 		first >= swing_start and last <= swing_end and peak > 0,
 		(
@@ -331,14 +335,24 @@ func _check_claw_trail() -> void:
 	await process_frame
 
 
-## How far apart the two rigs' hands are, by side of the body: [-x hand, +x hand] (world units).
-func _arm_gap(a: KaijuRig, b: KaijuRig) -> Array[float]:
+## How far apart the two rigs' hands are, by side of the body: [-x hand, +x hand] (rig units), as
+## they stand or, with `in_chest`, seen from the shoulder in the chest's frame.
+func _arm_gap(a: KaijuRig, b: KaijuRig, in_chest: bool) -> Array[float]:
 	var out: Array[float] = [0.0, 0.0]
 	for arm: String in ["l", "r"]:
 		if a.has_bone("arm_%s2" % arm):
 			var index := 1 if a.dir_of("arm_%s0" % arm).x > 0.0 else 0
-			out[index] = a.tail_world("arm_%s2" % arm).distance_to(b.tail_world("arm_%s2" % arm))
+			out[index] = _hand(a, arm, in_chest).distance_to(_hand(b, arm, in_chest))
 	return out
+
+
+func _hand(rig: KaijuRig, arm: String, in_chest: bool) -> Vector3:
+	var to_local := rig.global_transform.affine_inverse()
+	var tip := to_local * rig.tail_world("arm_%s2" % arm)
+	if not in_chest:
+		return tip
+	var shoulder := to_local * rig.bone("arm_%s0" % arm).global_position
+	return ClawRake.new(rig).chest(to_local).inverse() * (tip - shoulder)
 
 
 func _step(kaiju: KaijuModel, rig: KaijuRig) -> bool:
