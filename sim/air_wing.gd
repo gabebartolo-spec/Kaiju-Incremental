@@ -273,17 +273,21 @@ func _crash(at: Vector2) -> void:
 	_crush_roofs(at, radius)
 
 
-## The wreck lands on the roofs under it (D-167): every rooftop squad on a building the impact
-## reaches dies, at any floor (the building's footprint decides, as for hit_buildings, not the
-## floor range). Squads have no hp, so a reach above 0 is enough, as for any splash (Army.splash).
-## Only the crash does this; stomps and bites keep their floor ranges. The kaiju and the sky are
-## not touched.
+## The wreck lands on the roofs under it (D-167, D-173): every rooftop squad and every perched
+## Taskforce agent on a building the impact reaches dies, at any floor (the building's footprint
+## decides, as for hit_buildings, not the floor range). Squads have no hp, so a reach above 0 is
+## enough, as for any splash (Army.splash). Only the crash does this; stomps and bites keep their
+## floor ranges. Agents jetpacking in the air, the kaiju and the sky are not touched.
 func _crush_roofs(at: Vector2, radius: float) -> void:
+	var struck := func(index: int) -> bool: return _struck(sim.buildings[index], at, radius)
 	for squad: Army.Squad in sim.army_units.squads:
-		var b := sim.buildings[squad.building]
-		var near := RampageSim.falloff(
-			Vector2(b.x, b.z).distance_to(at) - Vector2(b.w, b.d).length() * 0.5, radius
-		)
-		if near > 0.0:
+		if struck.call(squad.building):
 			squad.dead = true
 	sim.army_units.clear_dead()
+	sim.army_units.taskforce.crush_perched(struck)
+
+
+## Does the crash at `at` reach building `b`'s footprint (hit_buildings' own test)?
+func _struck(b: RampageSim.Building, at: Vector2, radius: float) -> bool:
+	var reach := Vector2(b.w, b.d).length() * 0.5
+	return RampageSim.falloff(Vector2(b.x, b.z).distance_to(at) - reach, radius) > 0.0

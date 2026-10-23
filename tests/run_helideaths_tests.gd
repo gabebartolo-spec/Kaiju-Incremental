@@ -152,7 +152,19 @@ func _check_crash_crushes_army() -> void:
 	var far_at := sim.buildings[1].chunk_world(far_roof.cell)
 	far_roof.pos = Vector2(far_at.x, far_at.z)
 	sim.army_units.squads.append(far_roof)
+	var tf := sim.army_units.taskforce
+	var perched := tf.place_agent(0, Vector3i(1, 3, 1))  # a Taskforce agent on the struck roof
+	var far_agent := tf.place_agent(1, Vector3i(0, 1, 0))  # one on the far block
+	var flying := tf.place_agent(0, Vector3i(1, 3, 1))  # one jetpacking over the struck roof
+	flying.state = Taskforce.HOP
+	flying.flight = 9.0  # still in the air through the crash's step
+	flying.flight_len = 9.0
+	flying.from = Vector3(flying.pos.x, flying.y, flying.pos.y)
+	flying.to = flying.from
 	_crash_at(sim, Vector2.ZERO)
+	check(not tf.agents.has(perched), "a Taskforce agent perched on the struck roof dies (D-173)")
+	check(tf.agents.has(far_agent), "an agent perched on a far block lives")
+	check(tf.agents.has(flying), "an agent in the air over the struck roof is not touched")
 	check(not sim.tanks.has(near), "a tank under the crash is crushed (hp %.1f)" % near.hp)
 	check(sim.tanks.has(far) and far.hp == 5.0, "a tank far from the crash is not hurt")
 	check(not sim.army_units.squads.has(squad), "a squad on a low roof under the crash is killed")
