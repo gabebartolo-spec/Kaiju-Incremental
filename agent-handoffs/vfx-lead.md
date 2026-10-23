@@ -73,23 +73,19 @@ lead replies in to-vfx-lead.md. Every Godot run: `bash ~/.claude/tools/engine_sl
 ## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
 D-177 "Motion first" (director 13:5x): gait fix -> motion gate suite -> motion pass per stage -> D-165 -> one-look.
 Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot until 14:14 (lead's watcher).
-- slot 1 heli-r3: #166 sim pushed 82d9d453 (crash crushes army), bec67b55 (roof squads, crash-only footprint),
-  8464d204 (D-173 perched Taskforce agents); look r3 local, stills + taskforce suite rerun at 14:15 -> critic ->
-  SHIP #166 (must include 1c). Then motion pass, D-165 (brief_living_predator.md + D-175), Thunder Beam r7.
-- slot 2 one-look: night-glow defect first (director: white haze on the LEFT follows the camera; suspect BuildingFade
-  screen-door + FSR; A/B stills at 14:15; bar: left towers within 5% of culprit-off, no cross-hatch); fix the
-  duplicate lamp_energy key in looks.json; then phase 1 parks.
-- slot 3 LENT by the lead until the motion gate merges: behemoth-gait (Opus). Cause (code): sim contact.step_len 2.33
-  one value for all stages (Colossus fit; Behemoth half-stride 2.79) -> clip at ~2.6x speed; Behemoth foot lift
-  10.1% hip (motion_test.py lift 0.15 vs 0.085). Probe + re-bake at 14:15 -> per-stage step_len + bars to the lead
-  (his sim) -> tests/run_motion_tests.gd red on base first.
+- slot 1 heli-r3: #166 merged 3e4a7665; look r4 claude/heli-look-r4 b1c41b3d FIX by me (flames read as cream
+  confetti, flat disc burst + dotted rim, rotor cross left at noon, cardboard noon flash) -> r5 running; a BlastParts
+  change goes byte-identical to city-explosives-v2 too. Then motion critic -> SHIP.
+- slot 2 living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator; B/C wait for the gait
+  merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
+  SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
+  camera; weak kaiju silhouette at night; D-154 rampage haze unbuilt. one-look phase 1 parked 849d9e06 (cut haze).
+- slot 3 LENT until the motion gate merges: behemoth-gait (Opus) on claude/gait-fix e73d6c78 (see Motion gate).
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
-  cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes; heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
+  cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
 - Motion gate: claude/gait-fix b73b2ad4 red on base (18/29 fail); lead's sim part on claude/gait-step-len merges
   first (by merge commit); ours: re-bake (Behemoth lift 0.07, young <= 5%), soft IK + stable pole, young catch steps.
-- Night fog: cause = base fog (dusk 4d7380 0.012); fix dusk 0.005 / 2f5566, night 0.005, own branch claude/night-fog
-  + duplicate lamp_energy key; needs a late-rampage still (D-154 haze) and a critic vs the director's screenshot.
 - D-166/D-175 accepted: sim holds breath/ultimate to young 0.8 / Behemoth 1.1 / Colossus 1.4 s, stomp 0.45 s; strike
   time comes in events (lead sends keys + sha); dash crouch view-only. Table: notes vfx-lead/strike_times.md.
 Stall watcher = scratchpad stall_watch_copy.sh over subagents/agent-<id>.jsonl.
