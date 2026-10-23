@@ -42,7 +42,7 @@ void vertex() {
 	vec3 centre = (to_skin * MODEL_MATRIX)[3].xyz;
 	mat4 blend = bones[b0] * w0 + bones[b1] * w1 + bones[b2] * w2;
 	vec3 moved = (blend * vec4(centre, 1.0)).xyz;
-	moved += breath_push(moved, w0 * breath_k[b0] + w1 * breath_k[b1] + w2 * breath_k[b2]);
+	moved += breath_push(centre, moved, w0 * breath_k[b0] + w1 * breath_k[b1] + w2 * breath_k[b2]);
 	float shrink = 1.0 - min(length(blend[0].xyz), min(length(blend[1].xyz), length(blend[2].xyz)));
 	float grow = 1.0 + min(max_grow, gap_fill * max(0.0, shrink));
 	// The main bone's turn only: its scale (a gait's swell or stretch) never reaches a cube, so

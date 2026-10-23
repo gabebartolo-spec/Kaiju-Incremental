@@ -22,6 +22,8 @@ const POINTS := {
 	"snout (head1 tip)": ["head1", true],
 	"tail base (tail1)": ["tail1", false],
 	"tail tip": ["tail8", true],
+	"hand L (arm_l2 tip)": ["arm_l2", true],
+	"hand R (arm_r2 tip)": ["arm_r2", true],
 }
 
 

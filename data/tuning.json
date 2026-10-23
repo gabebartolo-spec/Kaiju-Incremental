@@ -1039,7 +1039,7 @@
 		"jaw_close_s": 1.2,
 		"blink_every_s": [3.0, 7.0],
 		"blink_s": 0.2,
-		"double_blink": 0.2,
+		"double_blink": 0.1,
 		"chest_deg": 0.1,
 		"tail_deg": 0.035,
 		"tail_lag": 0.04,
@@ -1049,6 +1049,17 @@
 		"blink_close": 0.33,
 		"skin_lift": 0.3,
 		"skin_belly": 0.2,
+		"trade": {
+			"_note": "The slow chest-and-neck heave (D-190, the default; a number or a list [young croc, Behemoth, Colossus], chosen so the neck, shoulders and flanks move 3-4 px at the game camera and still ease slowly): push_gain times the whole-body push and its speed; head_gain times the head's lift; swell widens the body sideways by that share of a point's distance from the spine; plate_lift raises the dorsal plate crests (share of the body height; the rows by skin in plate_rows: z0 the first crest, period the spacing, rig units).",
+			"push_gain": 1.0,
+			"head_gain": [15.0, 10.0, 8.0],
+			"chest_gain": [39.0, 26.0, 21.0],
+			"swell": [0.10, 0.08, 0.06],
+			"plate_lift": [0.02, 0.015, 0.012]
+		},
+		"plate_rows": {
+			"reptilian_adolescent": {"z0": -4.15, "period": 0.395}
+		},
 		"eyes": {
 			"reptilian_baby": {"at": [0.85, 9.38, -7.55], "r": 0.7, "dark": 1.0},
 			"reptilian_adolescent": {"at": [0.8, 9.1, -8.6], "r": 0.6, "dark": 0.16},

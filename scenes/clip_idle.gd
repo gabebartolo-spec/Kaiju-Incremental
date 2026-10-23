@@ -94,12 +94,27 @@ func turn(bone_name: String) -> Quaternion:
 
 ## The skin shader's push at the stage's size (share of the body height), weight and depth in.
 func skin_push() -> float:
-	return _per_stage("skin_amp") * weight * breath
+	return _per_stage("skin_amp") * trade("push_gain") * weight * breath
 
 
 ## The biggest push this breath makes, as skin_push() but with the curve left to the shader.
 func skin_peak() -> float:
-	return _per_stage("skin_amp") * weight * _depth
+	return _per_stage("skin_amp") * trade("push_gain") * weight * _depth
+
+
+## The breath's depth and the weight of the layer: what the swell and the plate lift scale by.
+func depth_weight() -> float:
+	return weight * _depth
+
+
+## An option of the director's breath trade (all off in the tuning).
+func trade(key: String) -> float:
+	var options: Dictionary = _cfg["trade"]
+	var value: Variant = options[key]
+	if value is Array:
+		var by_stage: Array = value
+		return Num.f(by_stage[stage])
+	return Num.f(value)
 
 
 ## The breath's place in its cycle, 0..1.
@@ -190,7 +205,7 @@ func _pose() -> void:
 	_add("spine0", Vector3.BACK, -roll)
 	_add("spine2", Vector3.BACK, roll * 0.8)
 	_add("head0", Vector3.BACK, roll * 0.2)
-	var chest := deg_to_rad(Num.f(_cfg["chest_deg"])) * breath * weight
+	var chest := deg_to_rad(Num.f(_cfg["chest_deg"]) * trade("chest_gain")) * breath * weight
 	_add("spine1", Vector3.RIGHT, chest)
 	_add("spine2", Vector3.RIGHT, chest * 0.6)
 	_head(chest)
@@ -210,7 +225,8 @@ func _head(chest: float) -> void:
 	_add("head1", Vector3.UP, skull.x * 0.55 * weight)
 	_add("head0", Vector3.UP, neck.x * 0.45 * weight)
 	_add("head1", Vector3.RIGHT, skull.y * 0.55 * weight)
-	var settle := deg_to_rad(_per_stage("head_deg")) * breath * weight  # the head rises with it
+	# the head rises with the breath
+	var settle := deg_to_rad(_per_stage("head_deg") * trade("head_gain")) * breath * weight
 	_add("head0", Vector3.RIGHT, neck.y * 0.45 * weight - chest * 0.5 + settle)
 
 

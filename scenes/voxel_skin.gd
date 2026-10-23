@@ -32,6 +32,7 @@ var breath := 0.0
 var breath_peak := 0.0
 var breath_phase := 0.0
 var breath_lag := 0.0
+var breath_depth := 0.0
 var blink := 0.0
 var _rig: KaijuRig
 var _axis: Array[int] = [-1, -1]  # the bones the breath's spine axis runs between
@@ -185,7 +186,7 @@ func _setup(rig: KaijuRig, raw: PackedByteArray, base_name: String) -> void:
 	cubes.layers = KaijuModel.BODY_LAYER | KaijuModel.RIM_LAYER
 	add_child(cubes)
 	_setup_fill(raw, at)
-	_setup_breath()
+	_setup_breath(base_name)
 	_hide_rig_voxels()
 
 
@@ -249,7 +250,7 @@ func _fill_vertices(raw: PackedByteArray, start: int, verts: int) -> Array:
 
 ## The breath's per-bone shares and look, from "croc_idle" tuning (a body without those bones
 ## never gets a push).
-func _setup_breath() -> void:
+func _setup_breath(base_name: String) -> void:
 	var cfg := Content.section("croc_idle")
 	var shares: Dictionary = cfg["skin_bones"]
 	var names := _rig.bone_names()
@@ -258,14 +259,35 @@ func _setup_breath() -> void:
 	for i: int in names.size():
 		k[i] = Num.f(shares.get(names[i], 0.0))
 	_axis = [names.find("spine0"), names.find("head0")]
+	var options: Dictionary = cfg["trade"]  # the director's trade options, off by default
+	var rows: Dictionary = cfg["plate_rows"]
+	var plate := Vector3(0.0, 0.0, 1.0)
+	var swell := _option(options, "swell", base_name)
+	if rows.has(base_name):
+		var row: Dictionary = rows[base_name]
+		var lift := _option(options, "plate_lift", base_name) * KaijuModel.MODEL_HEIGHT
+		plate = Vector3(lift, Num.f(row["z0"]), Num.f(row["period"]))
 	for mat: ShaderMaterial in [_cubes, _fill]:
 		if mat != null:
 			mat.set_shader_parameter("breath_k", k)
 			mat.set_shader_parameter("breath_lift", Num.f(cfg["skin_lift"]))
 			mat.set_shader_parameter("breath_belly", Num.f(cfg["skin_belly"]))
+			mat.set_shader_parameter("breath_swell", swell)
+			mat.set_shader_parameter("breath_plate", plate)
 			mat.set_shader_parameter(
 				"breath_shape", Vector2(Num.f(cfg["inhale"]), Num.f(cfg["pause"]))
 			)
+
+
+## A trade option (a number, or one per growth step) for the skin named `base_name`.
+func _option(options: Dictionary, key: String, base_name: String) -> float:
+	var value: Variant = options[key]
+	if value is Array:
+		var by_stage: Array = value
+		return Num.f(
+			by_stage[maxi(0, ["baby", "adolescent", "adult"].find(base_name.get_slice("_", 1)))]
+		)
+	return Num.f(value)
 
 
 ## A voxel's bones for INSTANCE_CUSTOM, as small whole numbers: the compatibility renderer keeps
@@ -310,6 +332,7 @@ func _sync_breath(to_rig: Transform3D) -> void:
 			mat.set_shader_parameter("breath", breath_peak)
 			mat.set_shader_parameter("breath_phase", breath_phase)
 			mat.set_shader_parameter("breath_lag", breath_lag)
+			mat.set_shader_parameter("breath_depth", breath_depth)
 			mat.set_shader_parameter("breath_a", a)
 			mat.set_shader_parameter("breath_b", b)
 

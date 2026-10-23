@@ -23,8 +23,10 @@ void vertex() {
 	mat4 blend = main_bone * CUSTOM0.w
 		+ bones[int(CUSTOM0.y + 0.5)] * CUSTOM1.x
 		+ bones[int(CUSTOM0.z + 0.5)] * CUSTOM1.y;
+	vec3 rest = VERTEX;
 	VERTEX = (blend * vec4(VERTEX, 1.0)).xyz;
 	VERTEX += breath_push(
+		rest,
 		VERTEX,
 		CUSTOM0.w * breath_k[int(CUSTOM0.x + 0.5)]
 			+ CUSTOM1.x * breath_k[int(CUSTOM0.y + 0.5)]

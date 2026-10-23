@@ -1,35 +1,36 @@
 extends "res://tests/lib/runner.gd"
-## Croc breath suite (D-165, director 2026-10-23: "the breathing is way too much, too much movement
-## and too fast, should be deep and slow like a behemoth"): the standing croc titan's breath at each
-## stage against the director's bars, measured on the real model at 60 Hz. The breath is 4 s (young
-## croc), 6 s (Behemoth), 8 s (Colossus) +-10%; it rises over about 40% of the breath, falls over
-## about 50% and rests about 10%; its push on the back, shoulders and flanks is at most 0.8 / 0.6 /
-## 0.5% of the body's height and at least 0.25%; no breath-driven point moves faster than 0.6% of
-## the height a second, smoothly (no jerk spike); the belly barely moves; the tail rides the breath.
-## While he stands (all of the life layer) the snout moves at most 1.5% of the height a second and
-## the tail tip at most 3%. Fixed steps, no clock, no randomness.
+## Croc breath suite (D-165; director 2026-10-23: "way too much ... too fast, deep and slow like a
+## behemoth", then D-190: "neck, shoulders and flanks rise clearly every 6-8 s, deep and slow",
+## which replaces the movement caps): the standing croc titan's breath at each stage, measured on
+## the real model at 60 Hz. The breath is 4 s (young croc), 6 s (Behemoth), 8 s (Colossus) +-10%;
+## it rises over about 40% of the breath, falls over about 50% and rests about 10%; the skin's push
+## is at most 0.8% of the body's height and at least 0.25% on the flank, smooth (no jerk spike);
+## the head rises with it (snout travel at least 1.5%); the belly barely moves; the tail rides the
+## breath; no point snaps (under 3% of the height a second) while he breathes or stands. Fixed
+## steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_breath_tests.gd
 
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
-## The bars: the biggest push (share of the body's height, percent) by stage, and the least.
+## The bars: the biggest push of the skin shader (share of the body's height, percent) by stage.
+## D-190 (the director's "neck, shoulders and flanks rise clearly every 6-8 s, deep and slow"
+## replaces the 0.6%/s movement caps): the heave's own cues (head and chest lift, flank swell,
+## plate crests, tuning "trade") do the visible work, the push stays the r2 size.
 const PUSH_MAX: Array[float] = [0.8, 0.8, 0.8]
-## Round 2 (motion critic: the breath was invisible at the game camera, 0.85 px): at the game
-## camera (the body about 440 px tall at 1080p) a push of 0.8% is about 3.5 px; the Behemoth and
-## the Colossus must make at least this much, the young croc (its speed bar caps it) 0.5.
 const PUSH_SEEN: Array[float] = [0.5, 0.7, 0.7]
-## The head settles with the breath: its snout travels at least this much (percent of the height)
-## and no faster than SNOUT_BREATH_SPEED (%/s).
-const SNOUT_TRAVEL := 0.15
-const SNOUT_BREATH_SPEED := 0.3
+## The head rises with the breath: its snout travels at least this much (percent of the height),
+## smoothly (BREATH_SPEED).
+const SNOUT_TRAVEL := 1.5
+const SNOUT_BREATH_SPEED := 3.0
 const PUSH_MIN := 0.25
 const BREATH_SECONDS: Array[float] = [4.0, 6.0, 8.0]
 const BREATH_TOLERANCE := 0.1
-## Fastest a breath-driven point goes (%/s), how sharply its speed may change (%/s per s), the
-## snout's and the tail tip's top speeds while he stands.
-const BREATH_SPEED := 0.6
+## No snap (D-190: slow is judged by eye, not a number): the fastest any point goes (%/s), how
+## sharply the push's speed may change (%/s per s), the same for the snout and the tail tip while
+## he stands.
+const BREATH_SPEED := 3.0
 const BREATH_JERK := 1.3
-const SNOUT_SPEED := 1.5
+const SNOUT_SPEED := 3.0
 const TAIL_SPEED := 3.0
 ## Samples of speed are taken over this many frames (0.2 s), so frame noise does not count.
 const SPAN := 12

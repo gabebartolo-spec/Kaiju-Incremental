@@ -29,12 +29,25 @@ float breath_curve(float p) {
 	return 0.0;
 }
 
-vec3 breath_push(vec3 p, float share) {
+// Options for the director's trade (all 0 = off, the default): breath_swell widens the body
+// sideways by that share of a point's distance from the spine, breath_plate raises the dorsal plate
+// rows' crests (x rig units; y, z the first crest's rest z and the rows' spacing), both scaled by
+// breath_depth, the breath's depth and weight.
+uniform float breath_depth = 0.0;
+uniform float breath_swell = 0.0;
+uniform vec3 breath_plate = vec3(0.0, 0.0, 1.0);
+
+vec3 breath_push(vec3 rest, vec3 p, float share) {
 	vec3 ab = breath_b - breath_a;
 	float t = clamp(dot(p - breath_a, ab) / max(dot(ab, ab), 0.0001), 0.0, 1.0);
 	vec3 radial = p - (breath_a + ab * t);
 	float r = length(radial);
 	vec3 dir = r > 0.0001 ? radial / r : vec3(0.0, 1.0, 0.0);
 	float belly = mix(breath_belly, 1.0, smoothstep(-0.4, 0.2, dir.y));
-	return (dir + vec3(0.0, breath_lift, 0.0)) * (belly * breath * breath_curve(breath_phase - breath_lag * (1.0 - t)) * share / (1.0 + breath_lift));
+	float c = breath_curve(breath_phase - breath_lag * (1.0 - t));
+	vec3 push = (dir + vec3(0.0, breath_lift, 0.0)) * (belly * breath * c * share / (1.0 + breath_lift));
+	push.x += radial.x * breath_swell * breath_depth * c * share * belly;
+	float crest = 0.5 + 0.5 * cos(TAU * (rest.z - breath_plate.y) / breath_plate.z);
+	push.y += breath_plate.x * breath_depth * c * share * crest * smoothstep(0.3, 0.7, dir.y);
+	return push;
 }

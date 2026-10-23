@@ -59,6 +59,7 @@ func update(delta: float) -> void:
 		_skin.breath = life.skin_push() * KaijuModel.MODEL_HEIGHT
 		_skin.breath_peak = life.skin_peak() * KaijuModel.MODEL_HEIGHT
 		_skin.breath_phase = life.phase_now()
+		_skin.breath_depth = life.depth_weight()
 		_skin.breath_lag = life.lag()
 		_skin.blink = life.blink
 
