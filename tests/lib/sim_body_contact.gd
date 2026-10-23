@@ -158,7 +158,7 @@ func _check_sweep_end() -> void:
 	for deg: int in 360:
 		var from_heading := Vector2.from_angle(deg * 0.37)
 		var to_heading := Vector2.from_angle(deg_to_rad(deg))
-		var pose := BodyContact.sweep_pose(Vector2(1.1, 2.9), from_heading, to, to_heading, 1.0)
+		var pose := BodyVolume.sweep_pose(Vector2(1.1, 2.9), from_heading, to, to_heading, 1.0)
 		off += 0 if pose[0] == to and pose[1] == to_heading else 1
 	_check.call(
 		off == 0, "the sweep ends on the hold's pose for every turn, off for %d of 360" % off
