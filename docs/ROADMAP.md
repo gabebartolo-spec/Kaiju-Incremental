@@ -425,7 +425,10 @@ state. No director clips or per-change approvals in between; clips only where mo
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
   dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status:
   SHIP claude/night-fog 4524e90c (dusk fog 0.0035, night 0.005, toppled-tower dust dims at night; fresh critic: the
-  left haze is gone, dusk still reads as dusk); PR opening, lead merges on green. Found alongside, queued (VFX lead):
+  left haze is gone, dusk still reads as dusk) = PR #172, merging on green. Against the bar: far contrast vs fog-off
+  0.85-0.97 (dusk walk 0.85 misses 0.90), camera-left 0.70-0.91 (misses), frame brightness -4% night, -11 to -14%
+  dusk (misses 8%, but it now equals fog-off's, so the drop is the veil leaving, not murk). Better than today on
+  every number; the VFX lead judges whether the camera-left residue needs a second pass. Found alongside, queued (VFX lead):
   the tower see-through fade draws a cross-hatch that follows the camera beside the kaiju; the kaiju's silhouette is
   weak at night; the D-154 late-rampage haze is unbuilt.
 - "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
