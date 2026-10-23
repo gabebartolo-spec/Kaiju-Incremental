@@ -73,9 +73,10 @@ lead replies in to-vfx-lead.md. Every Godot run: `bash ~/.claude/tools/engine_sl
 ## Running jobs (resumed after the interview: D-163..D-170 on look-options df5309de, ROADMAP "Interview answers")
 D-177 "Motion first" (director 13:5x): gait fix -> motion gate suite -> motion pass per stage -> D-165 -> one-look.
 Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot until 14:14 (lead's watcher).
-- slot 1 heli-r3: #166 merged 3e4a7665; look r4 claude/heli-look-r4 b1c41b3d FIX by me (flames read as cream
-  confetti, flat disc burst + dotted rim, rotor cross left at noon, cardboard noon flash) -> r5 running; a BlastParts
-  change goes byte-identical to city-explosives-v2 too. Then motion critic -> SHIP.
+- slot 1 fire-heli-r6 (fresh; scratchpad brief_fire_heli_r6.md): Part 1 Fire family hot ramp for ALL fires (ember
+  heat 1.4 blooms cores to cream) -> Part 2 heli r6. r5 (heli-look-r4 89b569eb, city-explosives-v2 9158d219,
+  blast_parts byte-identical) critics FIX: rotor X mid-air, fried-egg burst, dark night hull, hull screen-door,
+  no swat/impact beat, spawn pops (notes heli_look_r5/critic_*.md).
 - slot 2 living-predator: D-165 PHASE A only (breath/idle life/blink), claude/living-predator; B/C wait for the gait
   merge + the lead's strike events. Night fog SHIP claude/night-fog 4524e90c sent to the lead 16:30 (fresh critic
   SHIP, notes night_glow/critic_verdict.md). Queued from that critic: tower see-through fade cross-hatch follows the
@@ -84,8 +85,6 @@ Slot ledger = scratchpad slots.md (source of truth). Director 13:29: no Godot un
 - slot 3 LENT until the motion gate merges: gait-2 (Opus, fresh from notes vfx-lead/gait/HANDOFF.md) on claude/gait-fix
   9d436583: 9 red (5 wait on the lead's gait-step-len, 4 ours: Behemoth/young walking jerk, young curve catch). Ruling
   (mine): young catch steps 0.5/s straight, 1.0/s in turns (D-131). Then 3 clips (one per stage) -> motion critic.
-- Fire family: ember.gdshader heat 1.4 blooms flames to cream dots at game-camera distance (building Fire too):
-  own round under explosions r10, whole family together; heli r5 uses Fire zoom 3 meanwhile.
 - heads-r2 stood down. Skins r6 (315c1998) REJECTED by the director (D-180: too much colour, reads black/white/green, not a
   cohesive range): redo post-demo + after motion as variations within the croc family, eye glow per skin yes, START with a cheap 2-3 treatment direction sketch, polish only after he picks (lesson filed in art-qa-critic); heads PARKED post-demo (D-171) after r4 grafts failed (seams, mask, disc hood); notes
   vfx-lead/heads/HEADS_PARKED.md (branch 3406ada0); head hidden from the game camera; 580/6500 credits used.
