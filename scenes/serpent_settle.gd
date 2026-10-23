@@ -28,6 +28,22 @@ const SETTLE_DOWN := 0.35
 const TAUT_REACH := 6
 const TAUT_PASSES := 6
 const TAUT_TAPER := 8.0
+## The tuck (round 7 critic: the tail's end "stands up as a thin leaf-shaped blade" off the coil as
+## it is reeled in): as the stopped stretch goes taut, its last HUG_LEN m before the head's stop are
+## drawn onto a curve that hooks in from the stop and runs round the outer ring HUG_IN m inside its
+## outer radius, on the ground under the raised turn above it, so the tail's end slides in under
+## the last ring rather than sticking out of the coil. Past that the curve steers for the taut
+## stretch HUG_LOOK m further on until it is within HUG_SNAP m of it, then follows it. The curve
+## steers HUG_STEER of its radial gap a metre (at most HUG_TURN of a right angle in), bending no
+## tighter than HUG_BEND m round the hook, min_bend_widths body widths after, in HUG_STEP m steps.
+const HUG_LEN := 6.0
+const HUG_IN := 0.5
+const HUG_STEER := 1.5
+const HUG_TURN := 2.0
+const HUG_BEND := 1.2
+const HUG_LOOK := 4.0
+const HUG_SNAP := 0.4
+const HUG_STEP := 0.25
 
 ## Seconds the head has stood still (0 while it moves).
 var still := 0.0
@@ -135,11 +151,12 @@ func _lay_track(
 		_track.append(Vector3(laid[j].x, 0.0, laid[j].y))  # its heights are kept in _lay
 	var way := (laid[0] - laid[1]).normalized()
 	var coil := SerpentCoil.path(laid, way, line, heading, _cfg)
+	var ring: Vector2 = SerpentCoil.centre(laid, way, line, heading, _cfg)[0]
 	_rear = lifted[0] if lifted.size() > 0 else 0.0
 	_lower = 1.0
 	for i: int in range(1, coil.size()):
 		_track.append(coil[i])
-	_centre = SerpentCoil.centre(laid, way, line, heading, _cfg)[0]
+	_centre = ring
 	_arc = PackedFloat32Array([0.0])
 	for i: int in range(1, _track.size()):
 		_arc.append(_arc[i - 1] + _track[i].distance_to(_track[i - 1]))
@@ -161,6 +178,84 @@ func _lay_track(
 		var keep := 1.0 - smoothstep(0.0, TAUT_TAPER, _arc[last] - _arc[i])
 		_taut[i] = _taut[i].lerp(_lay[i], keep)
 		_taut[i].y = _lay[i].y
+	_tuck(laid[0], way)
+
+
+## The stopped stretch's taut shape near the head's stop (at `stop`, facing `way`) drawn onto the
+## tuck: a curve from the stop round under the outer ring, then back onto the taut stretch.
+func _tuck(stop: Vector2, way: Vector2) -> void:
+	var last := _lay.size() - 1
+	var length := _arc[last]
+	var taut := _taut.duplicate()
+	var curve := _hug_curve(stop, way, taut)
+	var joined := float(curve.size() - 1) * HUG_STEP  # where the curve meets the taut stretch
+	var meets := _nearest_back(taut, curve[curve.size() - 1])
+	for i: int in _lay.size():
+		var back := length - _arc[i]
+		if back < joined:
+			var on := curve[int(back / HUG_STEP)]
+			_taut[i] = Vector3(on.x, taut[i].y, on.y)
+		else:
+			var p := _back_on(taut, minf(meets + back - joined, length))
+			_taut[i] = Vector3(p.x, taut[i].y, p.z)
+
+
+## The tuck's curve from the stop (facing back along -`way`): round the ring, then steering for
+## the taut stretch `taut` until within HUG_SNAP m of it (or the stretch's length is used up).
+func _hug_curve(stop: Vector2, way: Vector2, taut: PackedVector3Array) -> PackedVector2Array:
+	var radius := Num.f(_cfg["coil_radius"]) - HUG_IN
+	var wide := HUG_STEP / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["girth"]))
+	var round_way := 1.0 if (stop - _centre).orthogonal().dot(-way) > 0.0 else -1.0
+	var curve := PackedVector2Array([stop])
+	var at := stop
+	var facing := -way
+	for k: int in range(1, ceili(_arc[_arc.size() - 1] / HUG_STEP)):
+		var want: Vector2
+		var most := HUG_STEP / HUG_BEND
+		if k * HUG_STEP < HUG_LEN:
+			var out := at - _centre
+			var gap := clampf((out.length() - radius) * HUG_STEER, -HUG_TURN, HUG_TURN)
+			want = out.orthogonal().normalized() * round_way - out.normalized() * gap
+		else:
+			most = wide
+			var near := _nearest_back(taut, at)
+			var p := _back_on(taut, near)
+			if Vector2(p.x, p.z).distance_to(at) < HUG_SNAP and k * HUG_STEP > HUG_LEN + HUG_LOOK:
+				break
+			var aim := _back_on(taut, near + HUG_LOOK)
+			want = Vector2(aim.x, aim.z) - at
+		facing = facing.rotated(clampf(facing.angle_to(want), -most, most))
+		at += facing * HUG_STEP
+		curve.append(at)
+	return curve
+
+
+## How far behind the head's stop (by the stopped body's arc) the point of `shape` nearest `p` is.
+func _nearest_back(shape: PackedVector3Array, p: Vector2) -> float:
+	var last := shape.size() - 1
+	var best := INF
+	var back := 0.0
+	for i: int in range(last, 0, -1):
+		var a := Vector2(shape[i].x, shape[i].z)
+		var b := Vector2(shape[i - 1].x, shape[i - 1].z)
+		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
+		if q.distance_to(p) < best:
+			best = q.distance_to(p)
+			var f := a.distance_to(q) / maxf(a.distance_to(b), 0.000001)
+			back = _arc[last] - lerpf(_arc[i], _arc[i - 1], f)
+	return back
+
+
+## The point of `shape` (the stopped stretch, tail to head as `_lay`) `back` m behind the head's
+## stop, by the stopped body's own arc.
+func _back_on(shape: PackedVector3Array, back: float) -> Vector3:
+	var last := shape.size() - 1
+	for i: int in range(last, 0, -1):
+		var near := _arc[last] - _arc[i]
+		var far := _arc[last] - _arc[i - 1]
+		if back <= far:
+			return shape[i].lerp(shape[i - 1], (back - near) / maxf(far - near, 0.000001))
+	return shape[0]
 
 
 ## The point `s` m along the track (before its start: carried on straight back from it). The

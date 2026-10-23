@@ -6,11 +6,17 @@ follows"), D-201 ("animations lead"), D-206 (starts a spitting cobra, later a ra
 D-208 (turning/steering exceptional; body contact damages; held button climbs, NOT built), D-210 (defensive coil
 idle, tongue flicking). First step only: slither, turn, stop. No PR, no merge: prototype for the director via the lead.
 
-## State (2026-10-24, round 7)
+## State (2026-10-24, round 8)
 - Pushed to `claude/serpent-slither` (local branch `serpent-r7`, worktree `agent-aca27d68ea73cc1d6`). No PR. Croc game
   untouched. Play: `godot --path . res://scenes/serpent_proto.tscn` (WASD/stick).
-- Clip: lead scratchpad `serpent_clip/serpent_slither.mp4` (round 7, 10.6 s; RTX 4070 SUPER in the log); earlier rounds
-  kept as `serpent_slither_r6.mp4`, `_r5`, `_r4`. Round 7 scripts, stills, probes and frames: `serpent_clip/r7/`.
+- Clip: lead scratchpad `serpent_clip/serpent_slither.mp4` (round 8, 10.6 s; RTX 4070 SUPER in the log); earlier rounds
+  kept as `serpent_slither_r7.mp4`, `_r6`, `_r5`, `_r4`. Round 7/8 scripts, stills, probes, frames: `serpent_clip/r7/`.
+- Round 7 critic: FIX on one item only (all else passes): 7.40-7.65 s the tail's end stood up off the coil as "a thin
+  leaf-shaped blade". Round 8: the tuck (`SerpentSettle._tuck`): as the stopped stretch goes taut, its last 6 m
+  before the head's stop hook round onto the top of the outer ring (0.5 m inside its outer radius, on the ground
+  under the raised turn), then steer back onto the taut stretch (no blend, so no fold); the tail's end is drawn in
+  along the ring, not sticking out. Tail cap blunter: `shape` 59.7 m 0.34 (a third of the girth to 99.5%).
+  Side effect: the 6.8-7.3 s reel-in now curves round the ring's east side (r8 vs r7 at 6.8/7.0/7.2 compared).
 - Round 6 critic (FIX): run, turn, framing, camera, coil, idle sway, breathing, tongue PASS (untouched); fix the tail,
   the stop cue and the shadow's stair-stepped edge. Round 7 did only those three (below). Lead ruling still stands:
   no look polish on the stand-in's head, hood or colour (the real model comes from Tripo).
