@@ -399,7 +399,8 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Heads and skins (D-164, D-170): the Komodo head with its own shape goes forward; a serpentine python round 2 (snake
   jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first,
   in game after the demo (D-171).
-  Owner: VFX lead's asset session. Status: round 2 not started.
+  Owner: VFX lead's asset session. Status: skins r6 board waits for him; heads parked after 4 snake rounds
+  (Tripo regenerates the body; grafts seam), notes in the VFX notes folder heads/HEADS_PARKED.md; 580 credits used.
 - Living predator (D-165): breathing, weight shifts, head glances, blinks; heavier stride with size; tail, throat and
   jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.
 - Damage on impact (D-166): breath and ultimate strike at 0.8 / 1.1 / 1.4 s by growth step, standing stomp 0.45 s
