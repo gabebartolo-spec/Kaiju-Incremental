@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-107 · Director · Voxel size: the city stays at today's size, the kaiju gets double voxels (b2-19)
+Why: asked from labelled stills of half / today / double (same seed and tick, game and close camera), he answered "b but
+kaiju with double voxels". Double everywhere ran at 5.6 fps with a 13 s stall; at the game camera the city sizes looked nearly
+alike. Changes: city, cars, people keep today's cell size; the kaiju model is voxelised at twice the resolution per axis
+(finer silhouette and skin), every stage, measured for fps before it ships (claude/kaiju-double).
+
 ## 2026-10-20 · D-105 · Director · Camera framing C: low and cinematic
 He picked C from four labelled framings of one seeded run (stills + 2x2 clip): rest offset (0, 16, 30), FOV 60 (was (0, 27, 19), FOV 55).
 Why: build2-7 "the camera doesnt let us see much of the city"; C sees to the skyline and keeps the kaiju big. Changes: data/tuning.json "camera"; the run intro (Phase D) ends on this angle.
