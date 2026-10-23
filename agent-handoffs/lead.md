@@ -32,7 +32,7 @@
 - taskforce and demo-end sessions are no longer listed (their PRs #161, #165 merged). Their handoffs: worktrees
   agent-a91efff177a679849 (taskforce.md) and agent-acf7f07f188a4cd34 (demo-end.md, sky and sea life plan).
 - Lead's builders (subagents, Sonnet, brief scratchpad COMMON-2026-10-23.md): beam-cost (claude/beam-cost: r_beam
-  cheaper so the last unlock lands ~2 h, one 1-h pacing run) and volley (claude/volley-stagger: <=2 railgun hits per
+  at x0.3 only, D-167 amended: the beam alone can't reach 2 h, he chose ~2.25 h; one 1-h pacing run) and volley (claude/volley-stagger: <=2 railgun hits per
   squad per second, then a read-only audit of when pressed attacks deal damage, for D-166). Stall watcher armed.
 
 ## Base and PRs (11:50, wind-down complete)
