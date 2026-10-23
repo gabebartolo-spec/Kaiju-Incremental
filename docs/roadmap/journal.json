@@ -116,7 +116,7 @@
     {
       "date": "2026-10-23",
       "title": "After the demo",
-      "text": "Two post-demo items ruled: the Threat Dossier bestiary and the leader's escape helicopter. The demo's feedback link goes to the Itch page comments. The croc's neck fix was approved from the overhead turn clip. This journal was started.",
+      "text": "A day of rulings, D-147 to D-190. The demo now ends when the whole upgrade tree is unlocked, about two hours in, then Endless mode. Motion and destruction come first, behind a motion gate. The music ships: an original theme in the style of the 1954 Godzilla score, re-arranged per city and opening low and creeping. Taskforce squads fire in turn; helicopters fight as stand-off gunships. The big forms turn heavier and slower, and fire becomes smooth, realistic flames. A third lead session took on the atmosphere. This journal was started.",
       "captures": []
     }
   ],
@@ -346,7 +346,8 @@
             96,
             100,
             101,
-            102
+            102,
+            157
           ]
         },
         {
@@ -428,7 +429,9 @@
           "text": "Shader Cinematic, camera C, every time of day one per run (D-104, D-105, D-106)",
           "status": "done",
           "prs": [
-            112
+            112,
+            156,
+            172
           ]
         },
         {
@@ -457,6 +460,13 @@
           "status": "done",
           "prs": [
             141
+          ]
+        },
+        {
+          "text": "One look per effect: the VFX look sheet; one dust, spark and ring look (D-151)",
+          "status": "done",
+          "prs": [
+            154
           ]
         }
       ],
@@ -517,6 +527,13 @@
           "text": "Varied collapse directions (b2-5); falling towers break on the kaiju; slabs shatter base to top (comments 24 to 30)",
           "status": "in progress",
           "prs": []
+        },
+        {
+          "text": "The clumsy army: stray shells land after their flight and break the city (D-157)",
+          "status": "done",
+          "prs": [
+            159
+          ]
         }
       ],
       "asks": [
@@ -569,8 +586,10 @@
         },
         {
           "text": "Breath re-themed to hot lightning (b2-18, D-108, D-112); claw swipe reads as a swipe (b2-1)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            169
+          ]
         },
         {
           "text": "Tanks shoved and flung (b2-9, R 22); water that reacts to the kaiju (R 21, D-122)",
@@ -579,8 +598,11 @@
         },
         {
           "text": "Walk cadence and stride, footfalls land, shoulders and head move (R 11, comment 4)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            173,
+            175
+          ]
         }
       ],
       "asks": [
@@ -614,8 +636,10 @@
         },
         {
           "text": "One balance pass on the new tree; three growth steps, one per body (D-135)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            164
+          ]
         },
         {
           "text": "Fire crews: trucks and helicopters fight the fires, bonus biomass for killing them (comment 50)",
@@ -647,7 +671,9 @@
         {
           "text": "Every menu with bespoke assets and the kaiju centred on species select (b2-11, b2-14)",
           "status": "in progress",
-          "prs": []
+          "prs": [
+            160
+          ]
         },
         {
           "text": "HUD skill icons made with Tripo, up to 3000 credits (D-127)",
@@ -661,8 +687,10 @@
         },
         {
           "text": "Post effects: subtle vignette, impact colour fringe (D-142)",
-          "status": "in progress",
-          "prs": []
+          "status": "done",
+          "prs": [
+            155
+          ]
         },
         {
           "text": "Upgrade-tree screen skin, after E's bigger tree",
@@ -753,6 +781,21 @@
             76,
             60
           ]
+        },
+        {
+          "text": "Director cleanup: Thunder Beam name, breath swing, branch labels, roar on ultimate and dash (D-136, D-145)",
+          "status": "done",
+          "prs": [
+            162
+          ]
+        },
+        {
+          "text": "Test and CI upkeep: the body-chew fixture, the balance run on GitHub (D-159, D-179)",
+          "status": "done",
+          "prs": [
+            168,
+            174
+          ]
         }
       ],
       "asks": []
@@ -765,8 +808,11 @@
       "items": [
         {
           "text": "Taskforce agents: jetpacks and grappling hooks on buildings, railguns that charge with a glow, frost grenades at the feet; obsidian with electric blue (D-137, D-139, D-143)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            161,
+            170
+          ]
         },
         {
           "text": "Adult-city Taskforce: gas soldiers, walking mechs, gunships (D-143, D-145)",
@@ -785,13 +831,18 @@
         },
         {
           "text": "Helicopter deaths: blown apart or spiralling down smoking (D-140)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            166
+          ]
         },
         {
           "text": "Load-screen art rotation; demo thanks screen with stats and feedback link; pause-menu bug report (D-140, D-145, D-148)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            158,
+            165
+          ]
         },
         {
           "text": "The game is called Kaiju Evolution everywhere players see it (comment 85)",
@@ -826,13 +877,17 @@
         },
         {
           "text": "Atmosphere and city life: clouds and weather, birds, a whale in the bay, dogs, trains, boats (comments 63 to 71)",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            167
+          ]
         },
         {
           "text": "Music in layers from Suno (D-114, D-125); adaptive stems",
-          "status": "queued",
-          "prs": []
+          "status": "in progress",
+          "prs": [
+            163
+          ]
         },
         {
           "text": "Mantis and cephalopod species; the water city (D-123, D-124); python and Komodo heads (comment 48)",
@@ -919,6 +974,21 @@
       "date": "2026-10-22",
       "quote": "when the Reptilian stage is 100% implemented: bug free, polished visuals, good performance, fully featured",
       "effect": "The bar for the 1.0 demo on invite-only Itch (D-132)."
+    },
+    {
+      "date": "2026-10-23",
+      "quote": "i think we should measure until the upgrade tree is fully unlocked (2 hours roughly)",
+      "effect": "The demo ends on the final upgrade, about two hours in, then Endless mode (D-156)."
+    },
+    {
+      "date": "2026-10-23",
+      "quote": "motion, alongside the destruction mechanics, is the most important element of our design. If we cant sell the fantasy of piloting a Kaiju then the game wont be fun",
+      "effect": "Motion first: a motion gate on every body or movement change (D-177)."
+    },
+    {
+      "date": "2026-10-23",
+      "quote": "start them now, create a third session",
+      "effect": "M1's atmosphere starts at once in a third lead session (D-189)."
     }
   ],
   "captures": {
