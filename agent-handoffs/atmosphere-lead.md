@@ -27,7 +27,11 @@ claude/atmosphere-lead from origin/claude/look-options (6e88723a). Base is look-
    whale dives with tail slap, boats flee (A11). Motion critic at game speed for every mover (D-177).
 
 ## Running builders (Agent subagents, own worktrees; stall_watch armed)
-atm-escalation -> claude/atm-escalation; atm-rain -> claude/atm-rain. Not yet reported. Both on ENGINE HOLD:
+DIRECTOR PAUSE 09:23-~11:03 UTC: no engine until the lead sends "resume". Code written, unrun: escalation
+c380bcf4 (incl. lifted pieces keep the blackout), rain 9549a7e6 (weather_view, rain + splash shaders, smoke
+clearing moved to view_clear.gdshaderinc, ground_slab.gdshader `wet`). VFX lead OK'd all three shared-file
+changes with pixel-identical bars. Next briefs, critic brief and M1 survey draft: side-session-notes atmosphere-lead-next-briefs.md.
+atm-escalation -> claude/atm-escalation; atm-rain -> claude/atm-rain. Both on ENGINE HOLD:
 send "engine go" to escalation on the lead's word, to rain on the VFX lead's (slot loan after its breath render).
 Lead logged A1-A16 as D-191 (b049ff06). Hooks: no sim roar event; roars sound in scenes/roar_cue.gd (sim
 "dash"/"ultimate") and scenes/rampage.gd ("ability"), plus "kaiju_emerged": add a presentation-only signal on
