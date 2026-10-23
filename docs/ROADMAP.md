@@ -511,10 +511,11 @@ state. No director clips or per-change approvals in between; clips only where mo
   chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, the default idle
   (replaces the movement caps above).
 
-## Kaiju Creation, the new-game opening (director 2026-10-24)
+## Kaiju Creation, the new-game opening (D-207, director 2026-10-24, in the demo)
 - "Kaiju Creation (aka NEW GAME) / laboratory setting, zoomed in petrie dish / you select which reptile genome to
   place in the dish / then you inject the KAIJU juice into the dish and a brief animation vfx moment shows the kaiju
   genome taking over the reptilian genome / camera rapidly zooms in into a black screen (the sound of an egg cracking
   is heard) / the first baby run begins". Ties to the reptilian family (D-197, D-202: croc first, then the Komodo
-  dragon, then the serpent). Owner: lead (flow, UI), visuals per D-189 split. Status: not started; open questions
-  asked the same day.
+  dragon, then the serpent). Owner: lead (flow, UI), visuals per D-189 split. Rack: croc genome, Komodo and serpent greyed and locked;
+  replays to create each new titan on unlock. After the black screen the baby rises from the river as now.
+  Status: not started.
