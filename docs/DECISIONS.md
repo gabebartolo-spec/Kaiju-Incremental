@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-182 · Director · Music references: Jaws, Godzilla, the Imperial March, Isengard; not modern "epic"
+
+"the songs are sounding too 'epic', too Nolan Batman, should be more like Jaws or Godzilla or even Star Wars Imperial March sounding", and "peak reference": The Lord of the Rings, Isengard Theme (youtube.com/watch?v=KXVtpOHQqvY). The theme is a classic acoustic orchestra with a simple, menacing low motif and a march pulse (a stalking two-note figure, a villain's minor-key march, an anvil-struck five-beat war-machine rhythm), never modern hybrid trailer music (synths, braams, drones). References name qualities only; prompts never name or copy the works.
+
 ## 2026-10-23 · D-181 · Director · One menacing theme, re-arranged per city with Suno's Cover
 
 "are you aware the suno tracks youre making all sound more or less the same city to city" (the lead's three prompts differed by a few words; Suno ignores that). Asked: "Same theme, new arrangement": one menacing theme heard in every city, re-arranged (baby city sparse and creeping, adolescent driving, adult full orchestra, dissonant and huge). "Cover from one take": he picks the take whose theme he likes; each city is a Suno Cover of it in its own arrangement, so the tune carries across. Then: "i need more menace": theme takes now ask for predatory, stalking horror (tritones, clusters, roaring low brass, heartbeat drums) and exclude warm, hopeful and pretty. Amends D-172's "one mood, growing" (now one theme, three arrangements).
@@ -393,6 +397,3 @@ text "Grow huge. Tear through towers faster." In #89 (croc contact).
 
 ## 2026-10-19 · D-090 · Director · Stadium rubble bonus 4x -> 1.5x
 Why: the playtest's biomass cadence (1 upgrade, then ~8, then 1) came from the stadium's 4x. Replaces D-081. #79 MERGED.
-
-## 2026-10-19 · D-089 · Director · Demo exe 1 waited for the stall fix
-Why: the windowed stall (Structure.settle rescanning every floor) had to be fixed first; #75 MERGED, exe 44f56fd.

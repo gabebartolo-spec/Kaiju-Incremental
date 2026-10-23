@@ -2,6 +2,9 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-089 · Director · Demo exe 1 waited for the stall fix
+Why: the windowed stall (Structure.settle rescanning every floor) had to be fixed first; #75 MERGED, exe 44f56fd.
+
 ## 2026-10-19 · D-088 · Director · The demo exe ships without #50; the military AI follows in a second exe
 Why (AskUserQuestion, "Ship now, patch after"): tanks and helicopters are already in the demo; #50 is their smarter
 movement and failed its r3 critic. #50 r4 (tank overlap and skew, helis in frame, rotor clearance, young retune

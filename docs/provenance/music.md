@@ -20,3 +20,9 @@ docs/audio/music-briefs.md, Weirdness 35%, Style Influence 70%, Duration 3:00. B
 | 2026-10-23 | 3 | 3D (D-176 darker) | https://suno.com/song/fd7dd77e-7d04-4ccc-ac60-7ee4f9a3f690 | (pair) | |
 | 2026-10-23 | theme | S1 (D-181 stalking horror) | https://suno.com/song/464cc966-76cf-44d7-9647-148be4a08e0d | 10 (pair) | |
 | 2026-10-23 | theme | S2 (D-181 stalking horror) | https://suno.com/song/462e9f98-500b-441f-97b7-8947a81304db | (pair) | |
+| 2026-10-23 | theme | M1 (D-181 sinister march) | https://suno.com/song/d49196be-69b5-45a9-ba79-02eb962c57a7 | 10 (pair) | |
+| 2026-10-23 | theme | M2 (D-181 sinister march) | https://suno.com/song/1b6ead21-b651-4262-99e6-2da71df6d0ab | (pair) | |
+| 2026-10-23 | theme | F1 (D-182 war-machine march) | https://suno.com/song/5e029eed-0fd2-47f4-b14e-4a66c42d2707 | 10 (pair) | |
+| 2026-10-23 | theme | F2 (D-182 war-machine march) | https://suno.com/song/8f3cf329-484d-4dd3-bee8-b86575c8f635 | (pair) | |
+| 2026-10-23 | theme | P1 (D-182 stalking villain march) | https://suno.com/song/46e48397-0e8f-4774-a0b7-3a4dda81dc9b | 10 (pair) | |
+| 2026-10-23 | theme | P2 (D-182 stalking villain march) | https://suno.com/song/22600579-6cca-4ddd-a929-8e8a5285d1c8 | (pair) | |
