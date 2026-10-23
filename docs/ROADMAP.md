@@ -424,7 +424,8 @@ state. No director clips or per-change approvals in between; clips only where mo
   exact fix and pass bar first; any sim part to the lead). Status: view fixes are PR #175 (the walk passes); two
   critic rounds FIX on the turn, measured in the sim: the Behemoth and Colossus turn at 260-311 deg/s peaks, a snap
   per planted step. D-187 "Heavier, slower": a U-turn about 2 s Behemoth, 3 s Colossus (re-asked after a wrong quote), spread evenly over the
-  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges.
+  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges. D-192: A (short steps)
+  ships; A and B looked the same and neither stops; the 10 s shore bar stays, met without changing the turn.
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
