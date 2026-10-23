@@ -58,10 +58,8 @@
   interview.md. Scratchpad board_watch.sh wakes the lead on any from-file or interview change.
 
 ## Sessions and builders
-- 2026-10-23 director: "merge what they can and archive. i wanna go 1 on 1 with you". VFX + atmosphere leads ARCHIVED
-  (nothing SHIP to merge). VFX handoff claude/vfx-lead-2 862f1302 (fire-smooth 4e6e90d9, heli-fall 5aee3cb6, claw-rake
-  2d176ff4, living-predator ec4bb919 parked D-193). Atmosphere handoff claude/atmosphere-lead 42a8deaa (atm-escalation
-  85e010c6: recapture stills; atm-rain 87fbcff7 WIP). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
+- 1-on-1 since 2026-10-23 (VFX + atmosphere leads archived; handoffs claude/vfx-lead-2 862f1302, claude/atmosphere-lead
+  42a8deaa). D-193 new pipeline; D-194 Cascadeur Pro trial, test only.
 - Builders (subagents, 2 engine slots): komodo-carve (claude/komodo-test from 428fc2d5; D-208 carve, NEW method:
   contact volumes ride baked clip bone tracks; _check_feet_of driven by real sim inputs; lint split; recapture);
   serpent-r5 (claude/serpent-slither; r4 critic FIX: turn S, stop, coil spiral, idle, tongue; renders size stills
