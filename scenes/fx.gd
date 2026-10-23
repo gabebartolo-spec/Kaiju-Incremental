@@ -349,12 +349,13 @@ static func _dust_tone() -> Color:
 	return NIGHT_DUST.lerp(STREET_DUST, clampf(day, 0.0, 1.0))
 
 
-## How much of a tinted dust's own colour shows at this time of day: all of it by day, only
-## fx.tint_dust_night in the dark. The tint is drawn self-lit, so unscaled a toppled tower's pale
-## concrete (c9c1b0) glowed white round the kaiju all night (the night glow, director 2026-10-23).
+## How much of a tinted dust's own colour shows at this time of day: all of it by full day (the
+## sun share squared, so dusk is dim too), only fx.tint_dust_night in the dark. The tint is drawn
+## self-lit, so unscaled a toppled tower's pale concrete (c9c1b0) glowed white round the kaiju all
+## night (the night glow, director 2026-10-23).
 static func _tint_scale() -> float:
 	var day := clampf(inverse_lerp(SUN_NIGHT, SUN_NOON, Look.value("sun_energy")), 0.0, 1.0)
-	return lerpf(Num.f(Content.section("fx")["tint_dust_night"]), 1.0, day)
+	return lerpf(Num.f(Content.section("fx")["tint_dust_night"]), 1.0, day * day)
 
 
 ## The tone as a particle colour (the smoke shader reads COLOR as linear light).
