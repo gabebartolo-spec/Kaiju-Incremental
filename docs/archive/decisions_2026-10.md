@@ -2,6 +2,18 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-18 · D-086 · Lead · #36 option A (Behemoth army 0.03), void
+Why: proposed for Behemoth defeats; superseded the same evening by D-087's pick and never applied.
+
+## 2026-10-18 · D-087 · Director · The first evolution comes at about 15 minutes
+Why (19:xx): "try to get the first evo earlier, no ones going to play 41 minutes of a demo if theyre still a baby";
+picked "About 15 min" from 10 / 15 / 20-25. Lever: evolve1 cost 1778 -> 400 (#36, MERGED cceabba): 130 runs on the
+real head give evolve1 0.26 h, young defeats 8/14, tree 82/87 at 3.37 h. The growth test ratio moved /10 -> /20.
+
+## 2026-10-19 · D-084a · Lead · #55 trample: topple out, crush in place instead (rule 8)
+Why: ten topple rounds failed; method change to crushing trees in place (debris, stump, footfall puff). Still after
+the demo build per D-084.
+
 ## 2026-10-18 · D-085 · Director · Rooftop squads fire raggedly, never in unison
 Why (via the rooftops session): "shooters arent firing in unison ... improvised, unrehearsed resistance". Seeded
 ragged gaps per squad (51a2d5d); in #63.
