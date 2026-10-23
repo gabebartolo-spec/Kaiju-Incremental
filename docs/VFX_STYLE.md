@@ -67,12 +67,14 @@ the VFX lead's SHIP is final for effects (lead, 2026-10-23). Metrics are necessa
 
 ### 1. Fire: `scenes/fire.gd` (class Fire)
 - **Defined by:** three GPUParticles3D systems and one flickering light. Flames: `BoxMesh` 0.18 m with
-  `ember.gdshader` (unshaded, colour x heat 1.4 so the bloom catches it), rising (gravity +2.5, speed 0.8-2.0,
+  `ember.gdshader` (unshaded, colour x heat 1.0; embers and sparks 1.4), rising (gravity +2.5, speed 0.8-2.0,
   spread 12 deg) from a box `size x 0.6` wide, life 1.0 s, 130 x size of them, scale 0.5-1.2 shrinking to 0.1.
   Embers: 0.1 m cubes, same shader, drifting on the run's wind, life 3.2 s. Smoke: family 2. Light: PooledLight
   `ff9a4a`, energy 2.5 + 1.2 x size with a two-sine flicker.
-- **Colour ramp (Fire.FLAME_COLORS):** `fff0b8` at 0 -> `ff9a1e` at 0.1 -> `e04a0c` at 0.55 -> `3a1a10` at 1.0.
-  Embers `ffe9a0` -> `ff6a1a`.
+- **Colour ramp (Fire.FLAME_COLORS at FLAME_AT; the hot ramp, "cinematic fire", 2026-10-23):** `ffe9a8` at 0
+  (a small white-yellow core: a young flame is drawn at half size) -> `ff8c18` 0.025 -> `ff5a0c` 0.14 (the
+  saturated body) -> `c8280a` 0.42 -> `6a1006` 0.75 -> `2a0a06` 1.0. Cream is under 10% of a fire's flame
+  pixels at the game camera (sheet `fire_building` vs `fire_none`); heat 1.4 bloomed it. Embers `ffe9a0` -> `ff6a1a`.
 - **Scale:** `size` adds flames and light, not voxel size. Tongues rise; a fire never spreads flat.
 - **Consumers:** CityView.fire (wrecks, crashes, thrown landings), CityView.burn_chunk (the beam's coat, fire
   spread R 26), the title's FarFire (whole fire zoomed for distance, claude/ui-redesign; burning floors' windows

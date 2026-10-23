@@ -1,6 +1,6 @@
 """Lays the VFX look sheet's stills (capture_vfx_sheet.gd) out as one labelled contact sheet.
 
-    python tools/capture/vfx_sheet.py <out.png> <night_dir> <noon_dir> [--crop=WxH]
+    python tools/capture/vfx_sheet.py <out.png> <night_dir> <noon_dir> [--crop=WxH] [--family=FIRE]
 
 Each dir holds one capture run (stills + points.json). Every effect gets a night and a noon panel
 side by side, cropped round its screen point at 1x (the game's own zoom at 1080p), one row per
@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 FAMILIES = [
-    ("FIRE", ["fire_ground", "fire_far_smoke", "explosion_wreck"]),
+    ("FIRE", ["fire_ground", "fire_building", "fire_far_smoke", "explosion_wreck"]),
     ("SMOKE, DUST, DEBRIS", ["dust_cloud", "dust_topple", "dust_footfall", "dust_tree_puff", "debris"]),
     ("RINGS", ["ring_stomp", "ring_tail_sweep"]),
     ("SPARKS, FLASH", ["sparks_shell_hit", "sparks_deflect"]),
@@ -30,7 +30,12 @@ FLAGS = {
     "breath_side_10": "orange plasma, not lightning",
 }
 # Crop centre offsets (px) where the effect's point is not the middle of what it draws.
-OFFSET = {"fire_far_smoke": (60, -170), "ultimate_beam_side_20": (0, 0), "breath_side_10": (60, -40)}
+OFFSET = {
+    "fire_building": (0, -60),
+    "fire_far_smoke": (60, -170),
+    "ultimate_beam_side_20": (0, 0),
+    "breath_side_10": (60, -40),
+}
 LABEL_H = 26
 GAP = 4
 
@@ -54,14 +59,15 @@ def main(argv: list[str]) -> None:
     opts = {a.split("=")[0]: a.split("=")[1] for a in argv if a.startswith("--")}
     out, night, noon = (Path(a) for a in argv if not a.startswith("--"))
     cw, ch = (int(v) for v in opts.get("--crop", "400x250").split("x"))
+    families = [f for f in FAMILIES if "--family" not in opts or f[0] == opts["--family"]]
     font = ImageFont.truetype("arial.ttf", 16)
     head = ImageFont.truetype("arialbd.ttf", 22)
-    per_row = max(len(shots) for _, shots in FAMILIES)
+    per_row = max(len(shots) for _, shots in families)
     pair_w = cw * 2 + GAP
     row_h = ch + LABEL_H + 34
-    sheet = Image.new("RGB", (per_row * (pair_w + 14), len(FAMILIES) * row_h), (0, 0, 0))
+    sheet = Image.new("RGB", (per_row * (pair_w + 14), len(families) * row_h), (0, 0, 0))
     draw = ImageDraw.Draw(sheet)
-    for r, (family, shots) in enumerate(FAMILIES):
+    for r, (family, shots) in enumerate(families):
         y = r * row_h
         draw.text((6, y + 4), family, fill=(255, 210, 60), font=head)
         for c, name in enumerate(shots):

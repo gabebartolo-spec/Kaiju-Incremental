@@ -6,16 +6,26 @@ extends Node3D
 
 const SMOKE_SHADER := preload("res://scenes/smoke.gdshader")
 const EMBER_SHADER := preload("res://scenes/ember.gdshader")
+## The hot ramp (director 2026-10-23: "cinematic fire"): a small white-yellow core at birth, a
+## saturated orange body, red, then dark red tips; at heat 1 it blooms without turning cream.
 const FLAME_COLORS: Array[Color] = [
-	Color("fff0b8"), Color("ff9a1e"), Color("e04a0c"), Color("3a1a10")
+	Color("ffe9a8"),
+	Color("ff8c18"),
+	Color("ff5a0c"),
+	Color("c8280a"),
+	Color("6a1006"),
+	Color("2a0a06")
 ]
+## The embers' heat (ember.gdshader): they are tiny, so they glow past what a flame's body takes
+## (the shader's own heat, 1, keeps a flame saturated orange and red under the bloom, never cream).
+const EMBER_HEAT := 1.4
 const WIND := Vector3(2.2, 0.0, 0.9)
 ## The flame voxel: its cube (units) and the spread of sizes each flame takes of it, and where on a
 ## flame's life each of FLAME_COLORS sits. A blast's flames (BlastParts.fireball) read these too:
 ## a bigger fire is more flames, never bigger cubes (VFX lead, D-151).
 const FLAME_CUBE := 0.18
 const FLAME_SCALE := Vector2(0.5, 1.2)
-const FLAME_AT: Array[float] = [0.0, 0.1, 0.55, 1.0]
+const FLAME_AT: Array[float] = [0.0, 0.025, 0.14, 0.42, 0.75, 1.0]
 const SMOKE_COLORS: Array[Color] = [
 	Color(0.05, 0.05, 0.05, 0.0),
 	Color(0.1, 0.1, 0.11, 0.46),
@@ -130,9 +140,9 @@ func _process(delta: float) -> void:
 func _flames(size: float) -> GPUParticles3D:
 	var z := _zoom
 	var mat := _base(size * 0.6 * z, 12.0, Vector3(0, 2.5, 0) * z, Vector2(0.8, 2.0) * z)
-	_scale(mat, Vector2(0.5, 1.2) * z, Vector2(1.0, 0.1))
-	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array([0.0, 0.1, 0.55, 1.0]))
-	return _system(mat, _cube(0.18, true), roundi(130 * maxf(1.0, size) * _density), 1.0)
+	_scale(mat, FLAME_SCALE * z, Vector2(1.0, 0.1), 0.5)
+	_ramp(mat, PackedColorArray(FLAME_COLORS), PackedFloat32Array(FLAME_AT))
+	return _system(mat, _cube(FLAME_CUBE), roundi(130 * maxf(1.0, size) * _density), 1.0)
 
 
 func _embers(size: float) -> GPUParticles3D:
@@ -141,7 +151,7 @@ func _embers(size: float) -> GPUParticles3D:
 	var mat := _base(size * 0.8 * z, 35.0, gravity, Vector2(1.5, 4.0) * z)
 	_scale(mat, Vector2(0.4, 1.0) * z, Vector2(1.0, 0.3))
 	_ramp(mat, PackedColorArray([Color("ffe9a0"), Color("ff6a1a")]), PackedFloat32Array([0.0, 1.0]))
-	return _system(mat, _cube(0.1, true), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
+	return _system(mat, _cube(0.1, EMBER_HEAT), roundi(45 * maxf(1.0, size) * _ember_density), 3.2)
 
 
 ## Thick charcoal smoke rising in a column and leaning with the wind; dense at the base.
@@ -187,11 +197,13 @@ func _base(
 	return mat
 
 
-func _scale(mat: ParticleProcessMaterial, span: Vector2, over_life: Vector2) -> void:
+func _scale(mat: ParticleProcessMaterial, span: Vector2, over_life: Vector2, young := 1.0) -> void:
 	mat.scale_min = span.x
 	mat.scale_max = span.y
 	var curve := Curve.new()
-	curve.add_point(Vector2(0, over_life.x))
+	curve.add_point(Vector2(0, over_life.x * young))
+	if young != 1.0:  # a young flame is small: the hot core is the base of the flame, not a plate
+		curve.add_point(Vector2(0.15, over_life.x))
 	curve.add_point(Vector2(1, over_life.y))
 	var tex := CurveTexture.new()
 	tex.curve = curve
@@ -221,15 +233,11 @@ func _system(mat: ParticleProcessMaterial, mesh: Mesh, amount: int, life: float)
 	return p
 
 
-func _cube(size: float, glowing: bool) -> BoxMesh:
+func _cube(size: float, heat := 1.0) -> BoxMesh:
 	var cube := BoxMesh.new()
 	cube.size = Vector3.ONE * size
-	if glowing:
-		var hot := ShaderMaterial.new()
-		hot.shader = EMBER_SHADER
-		cube.material = hot
-		return cube
-	var draw := StandardMaterial3D.new()
-	draw.vertex_color_use_as_albedo = true
-	cube.material = draw
+	var hot := ShaderMaterial.new()
+	hot.shader = EMBER_SHADER
+	hot.set_shader_parameter("heat", heat)
+	cube.material = hot
 	return cube

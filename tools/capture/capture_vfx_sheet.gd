@@ -74,6 +74,8 @@ func _run(run: int) -> void:
 	var fx := city.fx
 	var bs := _rampage.sim.body_scale()
 	await _shot("fire_ground", 240, func(p: Vector3) -> void: city.fire(p, 1.0))
+	await _shot("fire_building", 240, func(p: Vector3) -> void: _building_fire(city, p))
+	await _shot("fire_none", 240, func(_p: Vector3) -> void: pass)  # the same frame, no fire
 	await _shot(
 		"fire_far_smoke",
 		300,
@@ -247,6 +249,13 @@ func _take_input() -> Dictionary:
 ## own tail model would sweep across the frame: both are left out so the ring itself is seen.
 func _tail_sweep(at: Vector3, reach: float) -> void:
 	_city().fx.shockwave_to(at, reach)
+
+
+## A burning building as the game lights it: a fire on each roof quarter (fire_spread.view_size).
+func _building_fire(city: CityView, p: Vector3) -> void:
+	var size := Num.f(_rampage.sim.powers_cfg["fire"]["view_size"])
+	for off: Vector3 in [Vector3(-1.6, 0, -1.2), Vector3(1.6, 0, -1.2), Vector3(-1.6, 0, 1.2)]:
+		city.fire(p + off + Vector3(0, 5.0, 0), size)
 
 
 func _debris(city: CityView, p: Vector3) -> void:

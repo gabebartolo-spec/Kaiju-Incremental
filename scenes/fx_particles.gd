@@ -82,6 +82,7 @@ static func glow_cube(size: float) -> BoxMesh:
 	cube.size = Vector3.ONE * size
 	var mat := ShaderMaterial.new()
 	mat.shader = EMBER
+	mat.set_shader_parameter("heat", Fire.EMBER_HEAT)  # sparks glow as they always did
 	cube.material = mat
 	return cube
 
