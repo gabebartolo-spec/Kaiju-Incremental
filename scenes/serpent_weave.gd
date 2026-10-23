@@ -90,33 +90,61 @@ func step(body: SerpentBody, dt: float) -> void:
 		return
 	var full := smoothstep(0.0, Num.f(_cfg["speed"]) * Num.f(_cfg["wave_full_at"]), v)
 	_ramp = lerpf(_ramp, maxf(full, _ramp), 1.0 - exp(-v * dt / Num.f(_cfg["wave_ease"])))
-	var most := BEND_MARGIN / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["head_width"]))
+	var most := BEND_MARGIN / (Num.f(_cfg["min_bend_widths"]) * Num.f(_cfg["girth"]))
 	var k := TAU / Num.f(_cfg["wave_length"])
 	# A turn's own bend uses up the bend limit: the swing keeps what is left of it.
 	var left := clampf(1.0 - absf(body.spin / v) / most, 0.0, 1.0)
-	var share := _ramp * minf(1.0, left * most / maxf(_alpha * k, 0.0001))
+	var peak := (1.0 + Num.f(_cfg["wave_wobble_amp"])) * (1.0 + Num.f(_cfg["wave_wobble_len"])) ** 2
+	var share := _ramp * minf(1.0, left * most / maxf(_alpha * k * peak, 0.0001))
 	# Short moves, at most a sample's spacing each, so the drawn path has no corners.
 	var moves := ceili(MOST_SPEED * v * dt / drawn.spacing)
 	for _i: int in moves:
 		_advance(body, dt / moves, Vector3(most, k, share))
 
 
+## The wave's phase after the drawn head has travelled `s`: the wave number swells and eases by
+## wave_wobble_len over wave_wobble_len_s of travel, so no two waves are the same length (a real
+## snake's S is never a clean sine). By distance travelled, so every body point shares it.
+func phase_at(s: float) -> float:
+	var k := TAU / Num.f(_cfg["wave_length"])
+	var each := Num.f(_cfg["wave_wobble_len_s"])
+	var swell := Num.f(_cfg["wave_wobble_len"]) * each / TAU
+	return k * (s + swell * sin(TAU * s / each))
+
+
+## How much the wave's size is scaled at `s` of travel (1 on average): each crest a little
+## different, from the wave_wobble_amp swell over wave_wobble_amp_s.
+func size_at(s: float) -> float:
+	var each := Num.f(_cfg["wave_wobble_amp_s"])
+	return 1.0 + Num.f(_cfg["wave_wobble_amp"]) * sin(TAU * s / each + 0.7)
+
+
+## The heading swing where the wave number has swelled: a shorter wave turns faster for the same
+## reach, a longer one slower.
+func _quicken(s: float) -> float:
+	var each := Num.f(_cfg["wave_wobble_len_s"])
+	return 1.0 + Num.f(_cfg["wave_wobble_len"]) * cos(TAU * s / each)
+
+
 ## One short move of the drawn head over `h` s; `lim`: (bend limit, wave number, swing share).
 func _advance(body: SerpentBody, h: float, lim: Vector3) -> void:
 	var v := body.speed
-	var phase := lim.y * drawn.head_s
+	var s := drawn.head_s
+	var phase := phase_at(s)
+	var size := size_at(s)
 	var at := drawn.head
 	var course := body.heading
 	var side := (at - body.pos).dot(course.orthogonal())
-	var off := Num.f(_cfg["wave_amp"]) * lim.z * sin(phase) - side
+	var off := Num.f(_cfg["wave_amp"]) * lim.z * size * sin(phase) - side
 	var pull := 0.5 * tanh(Num.f(_cfg["wave_pull"]) * off / 0.5)  # eased, never a corner
-	var swing := -_alpha * lim.z * cos(phase) - pull
+	var reach := _alpha * lim.z * size * _quicken(s)
+	var swing := -reach * cos(phase) - pull
 	var facing := drawn.head_heading
 	var behind := (body.pos - at).dot(course)  # > 0: the drawn head is behind the sim's
 	# Every point slides along the S at one steady speed (a snake's body does not surge): the
 	# forward speed over the S's mean progress per metre of path, eased level with the sim head.
 	var catch_up := 1.0 + behind / Num.f(_cfg["wave_catch"])
-	var u := clampf(v * catch_up / progress(_alpha * lim.z), 0.0, MOST_SPEED * v)
+	var u := clampf(v * catch_up / progress(reach), 0.0, MOST_SPEED * v)
 	# The bend wanted to face the new way within wave_settle m, held softly (tanh) under the
 	# limit, so the bend never jumps where the limit takes over.
 	var bend := facing.angle_to(course.rotated(swing)) / Num.f(_cfg["wave_settle"])

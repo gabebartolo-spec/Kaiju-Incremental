@@ -15,9 +15,9 @@ const DT := 1.0 / 60.0
 const START := Vector2(-12.0, 16.0)
 const PREROLL_S := 14.0
 ## Clip time (s) each stick change happens at: north (the 90 deg turn), south (the U-turn), let go.
-const TURN_AT := 0.8
-const U_TURN_AT := 2.5
-const LET_GO_AT := 5.4
+const TURN_AT := 0.5
+const U_TURN_AT := 2.2
+const LET_GO_AT := 4.7
 ## Frames skipped before the camera's jolt is measured (the window's first frames).
 const SETTLE_FRAMES := 6
 ## How far toward the camera (south, m) the cleared strip reaches from the route.
@@ -27,7 +27,7 @@ const CAMERA_SIDE: Array[float] = [8.0, 16.0, 24.0, 32.0]
 const U_TURN_LEAN_S := 1.5
 const U_TURN := Vector2(0.08, 1.0)
 
-var _args := Kit.args({"seconds": 8.0})
+var _args := Kit.args({"seconds": 9.4})
 var _proto: SerpentProto
 var _closest := INF
 var _swath_line := ""
@@ -41,6 +41,9 @@ var _north_leg := Vector2(1.0, 0.0)
 ## The opening second: (slowest, fastest) drawn head and camera, m/s.
 var _head_speeds := Vector2(INF, 0.0)
 var _last_head := Vector2.INF
+## The head tip's place on screen (px at 1080p) each frame of the idle, and the body's width there.
+var _idle_px := PackedVector2Array()
+var _width_px := 0.0
 
 
 func _initialize() -> void:
@@ -74,6 +77,8 @@ func _run() -> void:
 	print("serpent capture: head stopped at %.2f s (let go at %.2f s)" % [_stopped_at, LET_GO_AT])
 	print("serpent capture: S depth by quarter, head to tail: %s m" % _quarters())
 	print("serpent capture: camera %s" % _camera_report())
+	print("serpent capture: idle: %s" % _idle_report())
+	print("serpent capture: camera still %s after the head stopped" % _camera_settle())
 	var turned := rad_to_deg(absf(_heading_at_u.angle_to(_proto.body.heading)))
 	print("serpent capture: the U-turn reversed the heading by %.0f deg" % turned)
 	print("serpent capture: tail tip bends %.0f deg over its last 4 segments" % _tail_bend())
@@ -147,9 +152,8 @@ func _watch() -> void:
 		_stopped_at = _proto.seconds
 
 
-func _half_width(cfg: Dictionary, i: int, count: int) -> float:
-	var t := float(i) / maxf(1.0, count - 1.0)
-	return 0.5 * lerpf(Num.f(cfg["head_width"]), Num.f(cfg["tail_width"]), t)
+func _half_width(_cfg: Dictionary, i: int, count: int) -> float:
+	return 0.5 * _proto.stand_in.width_at(i * _proto.body.length() / count)
 
 
 ## How far the S swings each side of the straight centreline (z = `line`) as pre-rolled.
@@ -161,7 +165,7 @@ func _swing(line: float) -> String:
 		hi = maxf(hi, p.y - line)
 	return (
 		"+%.1f / %.1f m each side (ruled ~6), %.1f m across with the girth"
-		% [hi, lo, hi - lo + Num.f(_proto.body.cfg["head_width"])]
+		% [hi, lo, hi - lo + Num.f(_proto.body.cfg["girth"])]
 	)
 
 
@@ -176,11 +180,55 @@ func _track(t: float) -> void:
 		var xform := _proto.camera.global_transform
 		var down := SerpentCamera.screen_down(xform, _proto.camera.fov, head)
 		_north_leg = Vector2(minf(_north_leg.x, down), maxf(_north_leg.y, down))
+	_idle_view(t)
 	var tip := _proto.stand_in.joints[0]
 	if t > DT * 2.0 and t <= 1.0 and _last_head.x != INF:
 		var speed := tip.distance_to(_last_head) / DT
 		_head_speeds = Vector2(minf(_head_speeds.x, speed), maxf(_head_speeds.y, speed))
 	_last_head = tip
+
+
+## While the idle runs: where the head tip is on screen, and how wide the body is mid-way (px).
+func _idle_view(t: float) -> void:
+	var stand := _proto.stand_in
+	if _stopped_at < 0.0 or t < _stopped_at + Num.f(_proto.body.cfg["coil_s"]) + 0.2:
+		return
+	var cam := _proto.camera
+	var tip := stand.joints[0]
+	var at := Vector3(tip.x, stand.lifts[0], tip.y)
+	_idle_px.append(cam.unproject_position(at))
+	var mid := stand.joints[stand.joints.size() / 2]
+	var half := stand.width_at(stand.joints.size() * 0.5 * _proto.body.length() / 60.0) * 0.5
+	var a := cam.unproject_position(Vector3(mid.x - half, 0.0, mid.y))
+	var b := cam.unproject_position(Vector3(mid.x + half, 0.0, mid.y))
+	_width_px = a.distance_to(b)
+
+
+## How far the head tip wanders on screen during the idle (px from its mean), and the body width.
+func _idle_report() -> String:
+	if _idle_px.is_empty():
+		return "no idle seen"
+	var mean := Vector2.ZERO
+	for p: Vector2 in _idle_px:
+		mean += p / _idle_px.size()
+	var most := 0.0
+	for p: Vector2 in _idle_px:
+		most = maxf(most, p.distance_to(mean))
+	return (
+		"head tip wanders up to %.0f px (body %.0f px wide at 1080p) over %.1f s"
+		% [most, _width_px, _idle_px.size() * DT]
+	)
+
+
+## Seconds after the head stopped until the camera is still (under 0.15 m/s from then on).
+func _camera_settle() -> String:
+	if _stopped_at < 0.0:
+		return "head never stopped"
+	var last_fast := 0
+	for i: int in range(1, _eyes.size()):
+		if _eyes[i].distance_to(_eyes[i - 1]) / DT > 0.15:
+			last_fast = i
+	return "%.2f s" % maxf(last_fast * DT - _stopped_at, 0.0)
 
 
 ## The camera's slowest and fastest speed over the opening second.

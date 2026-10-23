@@ -1,124 +1,129 @@
 class_name SerpentSettle
 extends RefCounted
 ## What the drawn serpent does once its head has stopped (motion critic round 3: "an explicit,
-## visible settle ... followed by a living idle ... so it never reads as switched off"). Over
-## settle_s its curves ease by settle_ease (each joint drawn toward the body's mean line, none at
-## the head) and its tail curls in, drawing the tip tail_pull girths nearer the head. Then it
-## idles: a gentle sway travels down the body (idle_sway m at the tail, none at the head, one
-## sweep every idle_sway_s, idle_sway_waves waves along it) and it breathes (its girth swells by
-## idle_breath every idle_breath_s), both fading in over idle_fade_s. The head never travels.
-## Presentation only (data/tuning.json "serpent").
-
-## How many joints each side make the body's mean line.
-const REACH := 10
-## The tail's last share of the body that curls in, and bisection steps for its curl.
-const CURL_SHARE := 0.25
-const CURL_STEPS := 24
-const CURL_MOST := 3.0
+## visible settle ... followed by a living idle ... so it never reads as switched off"; director
+## D-210: "snake curls up into a defensive position, tongue flicking dangerously"). Over coil_s
+## the body draws itself into a defensive coil (SerpentCoil), the head end first and the tail
+## last, its head raised and drawn back in an S ready to strike. Then it idles on the coil: a slow
+## breath (the girth swells by idle_breath every idle_breath_s), the head tracking slowly side to
+## side (idle_track rad over idle_track_s), and now and then a burst of 2-3 quick tongue flicks
+## (a flick every flick_s) with a short jab of the head on the first (idle_jab m). Bursts come every
+## idle_gap_min to idle_gap_max s, spaced by a fixed hash so a replay lays the same ones. The
+## head never travels. Presentation only (data/tuning.json "serpent").
 
 ## Seconds the head has stood still (0 while it moves).
 var still := 0.0
+## Height of each joint above the ground (m) as drawn now: the coil's stack, none while it moves.
+var heights := PackedFloat32Array()
 var _cfg: Dictionary
 var _from := PackedVector2Array()
 var _to := PackedVector2Array()
+var _to_height := PackedFloat32Array()
 
 
 func _init(cfg: Dictionary) -> void:
 	_cfg = cfg
 
 
-## The joints to draw (head first): `laid` while the head moves; once it stops, settling from
-## the shape it stopped in, then idling about the settled shape.
-func apply(laid: PackedVector2Array, moving: bool, delta: float, seg: float) -> PackedVector2Array:
+## The joints to draw (head first): `laid` while the head moves; once it stops, drawing itself
+## into the coil from the shape it stopped in, then idling on it. `heading`: the way it faced.
+func apply(
+	laid: PackedVector2Array, moving: bool, delta: float, heading: Vector2
+) -> PackedVector2Array:
+	var seg := laid[0].distance_to(laid[1])
+	if heights.size() != laid.size():
+		heights.resize(laid.size())
+		heights.fill(0.0)
 	if moving:
 		still = 0.0
+		var ease := exp(-delta / Num.f(_cfg["coil_uncoil_s"]))
+		for j: int in heights.size():  # the stack settles back to the ground as it sets off
+			heights[j] *= ease
 		return laid
 	if still == 0.0:
 		_from = laid.duplicate()
-		_to = settled(laid, seg)
+		var made := SerpentCoil.target(laid, heading, seg, _cfg)
+		_to = made[0]
+		_to_height = made[1]
 	still += delta
-	var k := smoothstep(0.0, Num.f(_cfg["settle_s"]), still)
 	var out := PackedVector2Array()
 	out.resize(_from.size())
+	var span := maxf(Num.f(_cfg["coil_s"]) * (1.0 - Num.f(_cfg["coil_stagger"])), 0.0001)
+	var last := maxf(1.0, _from.size() - 1.0)
 	for j: int in _from.size():
+		var late := Num.f(_cfg["coil_s"]) * Num.f(_cfg["coil_stagger"]) * j / last
+		var k := smoothstep(0.0, 1.0, (still - late) / span)
 		out[j] = _from[j].lerp(_to[j], k)
-	return _sway(SerpentSettle.keep_lengths(out, seg))
+		heights[j] = k * _to_height[j]
+	return SerpentSettle.keep_lengths(out, seg)
+
+
+## Seconds into the idle (none until the coil is made).
+func idle_time() -> float:
+	return maxf(still - Num.f(_cfg["coil_s"]), 0.0)
 
 
 ## How much thicker the body is drawn now (its breath; 1 while it moves).
 func swell() -> float:
-	var t := still - Num.f(_cfg["settle_s"])
+	var t := idle_time()
 	if t <= 0.0:
 		return 1.0
 	var breath := 0.5 - 0.5 * cos(TAU * t / Num.f(_cfg["idle_breath_s"]))
 	return 1.0 + Num.f(_cfg["idle_breath"]) * _fade(t) * breath
 
 
-## The shape a body stopped in `points` settles into: curves eased, tail curled in.
-func settled(points: PackedVector2Array, seg: float) -> PackedVector2Array:
-	var eased := points.duplicate()
-	var last := eased.size() - 1
-	var ease := Num.f(_cfg["settle_ease"])
-	for j: int in range(1, last + 1):
-		var reach := mini(REACH, mini(j, last - j))
-		var mean := Vector2.ZERO
-		for i: int in range(j - reach, j + reach + 1):
-			mean += points[i]
-		mean /= float(2 * reach + 1)
-		eased[j] = points[j].lerp(mean, ease * minf(1.0, j / 4.0))
-	eased = SerpentSettle.keep_lengths(eased, seg)
-	return _curl(eased, Num.f(_cfg["tail_pull"]) * Num.f(_cfg["head_width"]))
+## How far the idle head is turned off the way it faces (rad, signed): a slow look about.
+func tracking() -> float:
+	var t := idle_time()
+	var each := Num.f(_cfg["idle_track_s"])
+	var look := 0.7 * sin(TAU * t / each) + 0.3 * sin(TAU * t / (each * 0.37) + 1.3)
+	return Num.f(_cfg["idle_track"]) * _fade(t) * look
 
 
-## The tail's last CURL_SHARE curled in (the way that draws it nearer the head), just enough that
-## its tip comes `pull` m nearer the head.
-func _curl(points: PackedVector2Array, pull: float) -> PackedVector2Array:
-	var last := points.size() - 1
-	var from := int(last * (1.0 - CURL_SHARE))
-	var reach := points[0].distance_to(points[last])
-	var half := CURL_MOST * 0.5  # curl the way that draws the tip in
-	var near_plus := points[0].distance_to(_curled(points, from, half)[last])
-	var side := (
-		1.0 if near_plus < points[0].distance_to(_curled(points, from, -half)[last]) else -1.0
-	)
-	var lo := 0.0
-	var hi := CURL_MOST
-	for _i: int in CURL_STEPS:
-		var mid := (lo + hi) * 0.5
-		var tip := _curled(points, from, side * mid)[last]
-		if reach - points[0].distance_to(tip) < pull:
-			lo = mid
-		else:
-			hi = mid
-	return _curled(points, from, side * (lo + hi) * 0.5)
+## How far the head jabs forward now (m): the first flick of each burst.
+func jab() -> float:
+	var t := idle_time()
+	var burst := _burst(t)
+	if burst.x < 0.0:
+		return 0.0
+	var u := clampf((t - burst.x) / Num.f(_cfg["flick_s"]), 0.0, 1.0)
+	return Num.f(_cfg["idle_jab"]) * _fade(t) * pow(sin(PI * u), 2.0)
 
 
-## `points` with the segments past `from` turned progressively, `angle` in all at the tip.
-static func _curled(points: PackedVector2Array, from: int, angle: float) -> PackedVector2Array:
-	var out := points.duplicate()
-	var last := points.size() - 1
-	for j: int in range(from + 1, last + 1):
-		var t := float(j - from) / (last - from)
-		var along := points[j] - points[j - 1]
-		out[j] = out[j - 1] + along.rotated(-angle * t * t)
-	return out
+## How far the tongue is out now (0 in, 1 fully out): quick flicks, two or three to a burst.
+func tongue() -> float:
+	var t := idle_time()
+	var burst := _burst(t)
+	if burst.x < 0.0:
+		return 0.0
+	var each := Num.f(_cfg["flick_s"])
+	var u := (t - burst.x) / each
+	if u < 0.0 or u >= burst.y:
+		return 0.0
+	return pow(sin(PI * fposmod(u, 1.0)), 0.7)
 
 
-## The idle's travelling sway on top of the settled body (none until the settle is done).
-func _sway(points: PackedVector2Array) -> PackedVector2Array:
-	var t := still - Num.f(_cfg["settle_s"])
-	if t <= 0.0:
-		return points
-	var out := points.duplicate()
-	var last := out.size() - 1
-	var size := Num.f(_cfg["idle_sway"]) * _fade(t)
-	var waves := Num.f(_cfg["idle_sway_waves"])
-	for j: int in range(1, last + 1):
-		var along := (points[j - 1] - points[mini(j + 1, last)]).normalized()
-		var at := float(j) / last
-		var phase := TAU * (t / Num.f(_cfg["idle_sway_s"]) - waves * at)
-		out[j] = points[j] + along.orthogonal() * size * at * at * sin(phase)
-	return out
+## The burst under way at idle time `t`, or the one before it just ended: (its start, its flicks),
+## start < 0 before the first. Bursts start idle_first s in, then every idle_gap_min..max s.
+func _burst(t: float) -> Vector2:
+	var start := Num.f(_cfg["idle_first"])
+	var k := 0
+	while t >= start + _gap(k):
+		start += _gap(k)
+		k += 1
+	if t < start:
+		return Vector2(-1.0, 0.0)
+	return Vector2(start, 2.0 + floorf(_hash(k * 7 + 3) * 2.0))  # 2 or 3 flicks
+
+
+## Seconds from the start of burst `k` to the start of the next.
+func _gap(k: int) -> float:
+	return lerpf(Num.f(_cfg["idle_gap_min"]), Num.f(_cfg["idle_gap_max"]), _hash(k))
+
+
+## A fixed pseudo-random number in 0..1 for `n` (no clock, no random state: replays agree).
+static func _hash(n: int) -> float:
+	return fposmod(sin(float(n) * 12.9898 + 78.233) * 43758.5453, 1.0)
 
 
 func _fade(t: float) -> float:

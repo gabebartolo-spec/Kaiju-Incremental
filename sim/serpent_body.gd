@@ -15,6 +15,8 @@ var cfg: Dictionary
 var pos: Vector2
 var heading: Vector2
 var speed := 0.0
+## How fast the speed changes now (m/s^2): the push, building at pace_jerk.
+var push := 0.0
 ## How fast the heading turns now (rad/s, signed as Vector2.angle_to).
 var spin := 0.0
 ## How fast the turn rate itself changes now (rad/s^2): the turn's slow-in and slow-out.
@@ -43,13 +45,22 @@ func step(dt: float, want: Vector2) -> void:
 
 
 ## Speeds up at accel, slows at decel; the last stop_ease_speed m/s of a stop ease off (down to
-## stop_ease_floor of decel), so the head eases to a halt rather than braking to it.
+## stop_ease_floor of decel), so the head eases to a halt rather than braking to it. The push
+## itself builds at most pace_jerk m/s^3, so letting go or setting off never jolts (the camera
+## follows the head: a step in the head's acceleration is a step in the camera's).
 func _pace(dt: float, target: float) -> void:
 	var rate := Num.f(cfg["accel"])
 	if target < speed:
 		var ease := smoothstep(0.0, Num.f(cfg["stop_ease_speed"]), speed)
-		rate = Num.f(cfg["decel"]) * maxf(Num.f(cfg["stop_ease_floor"]), ease)
-	speed = move_toward(speed, target, rate * dt)
+		rate = -Num.f(cfg["decel"]) * maxf(Num.f(cfg["stop_ease_floor"]), ease)
+	elif target == speed:
+		rate = 0.0
+	push = move_toward(push, rate, Num.f(cfg["pace_jerk"]) * dt)
+	var next := speed + push * dt
+	if (speed - target) * (next - target) <= 0.0:  # reaches the target this step
+		next = target
+		push = 0.0
+	speed = next
 
 
 ## Turns toward the stick with slow-in and slow-out: the turn rate gathers and eases through its

@@ -11,8 +11,6 @@ extends RefCounted
 
 var _cfg: Dictionary
 var _chase: Damped
-## The aim eased once before the follow, so the follow's acceleration never steps either.
-var _eased: Vector3
 
 
 ## velocity: how fast the body's middle already moves. A shot that opens mid-slither starts as
@@ -20,18 +18,13 @@ var _eased: Vector3
 ## camera_follow_s behind), so the first frames do not lurch.
 func _init(cfg: Dictionary, focus: Vector3, velocity := Vector3.ZERO) -> void:
 	_cfg = cfg
-	var lag := Num.f(cfg["camera_follow_s"])
-	_eased = focus - velocity * lag * 0.5
-	_chase = Damped.new(_eased - velocity * lag)
+	_chase = Damped.new(focus - velocity * Num.f(cfg["camera_follow_s"]))
 	_chase.velocity = velocity
 
 
 ## The camera's transform this frame for a body whose middle is at `focus`.
 func step(focus: Vector3, delta: float) -> Transform3D:
-	var lag := Num.f(_cfg["camera_follow_s"])
-	if delta > 0.0:
-		_eased = _eased.lerp(focus, 1.0 - exp(-delta / (lag * 0.5)))
-	var aim := _chase.step(_eased, lag, 0.0, delta)
+	var aim := _chase.step(focus, Num.f(_cfg["camera_follow_s"]), 0.0, delta)
 	var offset := Vector3(0.0, Num.f(_cfg["camera_height"]), Num.f(_cfg["camera_back"]))
 	return Transform3D(Basis.looking_at(-offset), aim + offset)
 
@@ -48,6 +41,15 @@ static func target(cfg: Dictionary, body: SerpentBody) -> Vector3:
 static func screen_down(xform: Transform3D, fov_deg: float, point: Vector3) -> float:
 	var p := xform.affine_inverse() * point
 	return 0.5 - 0.5 * (p.y / -p.z) / tan(deg_to_rad(fov_deg) * 0.5)
+
+
+## How far across the frame (0 left, 1 right) a camera at `xform` (vertical `fov_deg`, `aspect`
+## wide over tall) sees `point`.
+static func screen_across(
+	xform: Transform3D, fov_deg: float, point: Vector3, aspect := 16.0 / 9.0
+) -> float:
+	var p := xform.affine_inverse() * point
+	return 0.5 + 0.5 * (p.x / -p.z) / (tan(deg_to_rad(fov_deg) * 0.5) * aspect)
 
 
 ## The middle of the body: the mean of its centreline at `samples` points from head to tail.

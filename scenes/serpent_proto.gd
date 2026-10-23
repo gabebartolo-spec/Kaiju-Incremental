@@ -103,7 +103,7 @@ func _middle_ground() -> Vector2:
 
 ## The city without the buildings the route's body would pass through.
 func _cleared(layout: Array[Dictionary]) -> Array[Dictionary]:
-	var reach := Num.f(_cfg["wave_amp"]) + Num.f(_cfg["head_width"]) + CLEAR_MARGIN
+	var reach := Num.f(_cfg["wave_amp"]) + Num.f(_cfg["girth"]) + CLEAR_MARGIN
 	var out: Array[Dictionary] = []
 	for entry: Dictionary in layout:
 		var centre := Vector2(Num.f(entry["x"]), Num.f(entry["z"]))

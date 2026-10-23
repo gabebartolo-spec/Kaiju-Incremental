@@ -2,19 +2,19 @@ extends "res://tests/lib/runner.gd"
 ## Serpent suite: the slither prototype's trail body (D-198; SerpentTrail, SerpentBody,
 ## SerpentWeave) against the research's bars (research_serpent_slither 5.9), each printed:
 ## sideways slip under 2% of speed, the wave running down the body within 1% of the forward
-## speed, under one voxel of corner-cut through a 90 deg turn, no motion 0.3 s after a stop, and
-## a 90 deg turn in about 1.5 s ("About 1.5 s"); round 2: a stop settles (no travel, then still)
-## and the serpent's camera never swings. Each measure is first shown failing on a
-## known-bad body (a wave in the body's own frame, a straight spine, an S that follows the
-## current speed). Seeded by design: the trail sampler's walk uses a pinned seed; the rest is
-## scripted input on a fixed 60 Hz step.
+## speed, under one voxel of corner-cut through a 90 deg turn, and a 90 deg turn in about 1.5 s
+## ("About 1.5 s"); round 4 adds the reference proportions and gait (Hu et al. 2009), the S kept
+## through a U-turn and the head's wind-up, and, in tests/lib/serpent_stop_checks.gd, the
+## defensive coil after a stop (D-210) and the camera in screen terms. Each measure is first shown
+## failing on a known-bad body (a wave in the body's own frame, a straight spine, an S that
+## follows the current speed). Seeded by design: the trail sampler's walk uses a pinned seed; the
+## rest is scripted input on a fixed 60 Hz step.
 ##   godot --headless --path . --script tests/run_serpent_tests.gd
 
 const DT := 1.0 / 60.0
 const NORTH := Vector2(0, -1)
 const EAST := Vector2(1, 0)
 const WEST := Vector2(-1, 0)
-const SOUTH_EAST := Vector2(0.08, 1.0)
 const SLIP_BAR := 0.02
 const WAVE_BAR := 0.01
 const STILL_AFTER := 0.3
@@ -41,8 +41,7 @@ func run_checks() -> void:
 	await _t("_check_no_slip")
 	await _t("_check_wave_speed")
 	await _t("_check_corner_cut")
-	await _t("_check_stop_settles")
-	await _t("_check_camera_steady")
+	await _h("SerpentStop", func() -> void: SerpentStopChecks.new(check).run())
 
 
 ## The sampler on a seeded wander: samples sit exactly `spacing` apart along the head's path, a
@@ -106,7 +105,7 @@ func _check_turn_time() -> void:
 	print("serpent: 90 deg turn %.3f s (bar %.2f +/- %.2f)" % [took, TURN_S, TURN_TOLERANCE])
 	check(absf(took - TURN_S) <= TURN_TOLERANCE, "a 90 deg turn takes about 1.5 s (%.3f s)" % took)
 	var radius := Num.f(_cfg["speed"]) / Num.f(_cfg["turn_rate"])
-	var widths := radius / Num.f(_cfg["head_width"])
+	var widths := radius / Num.f(_cfg["girth"])
 	print("serpent: tightest turn radius %.2f m, %.1f body widths" % [radius, widths])
 	check(widths >= 1.5, "no turn tighter than 1.5 body widths")
 
@@ -117,7 +116,7 @@ func _check_turn_time() -> void:
 func _check_no_slip() -> void:
 	var good := _worst_slip(false)
 	var bad := _worst_slip(true)
-	var widths := _tightest / Num.f(_cfg["head_width"])
+	var widths := _tightest / Num.f(_cfg["girth"])
 	print("serpent: tightest drawn bend %.2f m, %.1f body widths" % [_tightest, widths])
 	check(widths >= 1.5, "no drawn bend tighter than 1.5 body widths (%.2f)" % widths)
 	var line := "serpent: worst sideways slip %.3f%% of speed (body-frame wave: %.1f%%)"
@@ -185,115 +184,6 @@ func _check_corner_cut() -> void:
 	check(worst_centre < voxel and worst_drawn < voxel, "the body cuts no corner (under one voxel)")
 
 
-## Let go of the stick: the head eases to a halt and never travels again (the sim head, its
-## centreline and the drawn head stay put). The body settles visibly (the tail draws about a girth
-## nearer the head), then idles: it keeps moving (sway, breath) but stays about its settled shape
-## and does not drift. A body that keeps straightening after the stop drifts and fails.
-func _check_stop_settles() -> void:
-	var settle_s := Num.f(_cfg["settle_s"])
-	var girth := Num.f(_cfg["head_width"])
-	for bad: bool in [true, false]:
-		var body := SerpentBody.new(_cfg, Vector2.ZERO, NORTH)
-		_weaves[body.get_instance_id()] = SerpentWeave.new(body)
-		var drawn := SerpentStandIn.new(_cfg)
-		for frame: int in int(14.0 / DT) + 40:
-			_step(body, NORTH if frame < int(14.0 / DT) else EAST)  # stop mid-turn: head leading
-			drawn.update(body, DT)
-		var frames := 0
-		while body.speed > 0.0 and frames < 600:
-			_step(body, Vector2.ZERO)
-			drawn.update(body, DT)
-			frames += 1
-		var head := body.pos
-		var centre := body.centre_at(20.0)
-		var stopped := drawn.joints.duplicate()
-		for _j: int in int(settle_s / DT) + 2:
-			_step(body, Vector2.ZERO)
-			drawn.update(body, DT)
-		var settled := drawn.joints.duplicate()
-		var last := settled.size() - 1
-		var pull := settled[0].distance_to(stopped[last]) - settled[0].distance_to(settled[last])
-		var idle := _idle(drawn, body, bad, settled)
-		var travel := body.pos.distance_to(head) + body.centre_at(20.0).distance_to(centre)
-		drawn.free()
-		if bad:
-			check(idle.z > 0.05, "the drift measure catches a body still straightening")
-			continue
-		print(
-			(
-				"serpent: stops %.2f s after let-go; tail drawn in %.2f m (%.2f girths) by the settle"
-				% [frames * DT, pull, pull / girth]
-			)
-		)
-		print(
-			(
-				"serpent: idle moves up to %.4f m a frame, %.2f m off its settled shape, drifts %.4f m"
-				% [idle.x, idle.y, idle.z]
-			)
-		)
-		check(travel == 0.0, "nothing travels once the head has stopped")
-		check(absf(pull / girth - 1.0) < 0.3, "the settle draws the tail in about a girth")
-		var sway := Num.f(_cfg["idle_sway"])
-		check(idle.x > 0.001 and idle.y <= sway * 1.2, "the idle lives, about its settled shape")
-		check(idle.z < 0.05, "the idle does not drift")
-
-
-## Two sway periods of idle after the settle: (most motion a frame, most distance from the
-## settled shape, how far the body's mean over a whole period is from the settled mean).
-func _idle(
-	drawn: SerpentStandIn, body: SerpentBody, bad: bool, settled: PackedVector2Array
-) -> Vector3:
-	var frames := int(2.0 * Num.f(_cfg["idle_sway_s"]) / DT)
-	var moved := 0.0
-	var off := 0.0
-	var mean := Vector2.ZERO
-	var settled_mean := Vector2.ZERO
-	for p: Vector2 in settled:
-		settled_mean += p / settled.size()
-	var last := settled
-	for k: int in frames:
-		_step(body, Vector2.ZERO)
-		drawn.update(body, DT)
-		var now := _joints_with(drawn, body, bad, k + 1)
-		for j: int in now.size():
-			moved = maxf(moved, now[j].distance_to(last[j]))
-			off = maxf(off, now[j].distance_to(settled[j]))
-			mean += now[j] / (now.size() * frames)
-		last = now
-	return Vector3(moved, off, mean.distance_to(settled_mean))
-
-
-## The serpent's camera: on a long leg north the head rides 35-40% down the frame; through a turn,
-## a U-turn and a stop its yaw and pitch never change, and it settles at the end.
-func _check_camera_steady() -> void:
-	var body := _cruising(NORTH, 6.0)
-	var fov := CameraTuning.fov()
-	var moving := Vector3(body.heading.x, 0.0, body.heading.y) * body.speed
-	var cam := SerpentCamera.new(_cfg, SerpentCamera.target(_cfg, body), moving)
-	var first := cam.step(SerpentCamera.target(_cfg, body), 0.0).basis
-	var turned := 0.0
-	var high := 0.0
-	var low := 1.0
-	var eyes := PackedVector3Array()
-	for frame: int in 660:
-		var stick := NORTH if frame < 180 else (EAST if frame < 270 else SOUTH_EAST)
-		_step(body, Vector2.ZERO if frame >= 450 else stick)
-		var t := cam.step(SerpentCamera.target(_cfg, body), DT)
-		turned = maxf(turned, (t.basis.z - first.z).length())
-		eyes.append(t.origin)
-		if frame >= 60 and frame < 180:
-			var down := SerpentCamera.screen_down(t, fov, Vector3(body.pos.x, 0.0, body.pos.y))
-			high = maxf(high, down)
-			low = minf(low, down)
-	var n := eyes.size()
-	var end_speed := eyes[n - 1].distance_to(eyes[n - 2]) / DT
-	var line := "serpent: head %.0f-%.0f%% down the frame going north; camera turned %.6f; "
-	print(line % [low * 100.0, high * 100.0, turned] + "%.4f m/s at the end" % end_speed)
-	check(low >= 0.35 and high <= 0.40, "on a long leg the head rides 35-40% down the frame")
-	check(turned == 0.0, "the serpent's camera never swings with a turn")
-	check(end_speed < 0.05, "the camera has settled at the end of the shot")
-
-
 # --- helpers ------------------------------------------------------------------------------------
 
 
@@ -332,22 +222,6 @@ func _joints(body: SerpentBody, clock: float) -> PackedVector2Array:
 		out[j] = (
 			body.centre_at(behind) + body.heading.orthogonal() * SerpentWeave.lateral(_cfg, s, amp)
 		)
-	return out
-
-
-## The stand-in's joints, or (bad) a body whose S fades out after the stop (`k` frames on), as an
-## S scaled by the current speed would.
-func _joints_with(
-	drawn: SerpentStandIn, body: SerpentBody, bad: bool, k: int
-) -> PackedVector2Array:
-	if not bad:
-		return drawn.joints.duplicate()
-	var out := drawn.joints.duplicate()
-	var count := out.size() - 1
-	var seg := body.length() / count
-	for j: int in out.size():
-		var centre := body.centre_at(j * seg)
-		out[j] = centre + (out[j] - centre) * pow(0.97, k)
 	return out
 
 
