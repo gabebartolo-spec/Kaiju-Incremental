@@ -13,6 +13,8 @@ uniform float heat = 0.88;  // under the bloom threshold: the body stays saturat
 uniform float base_y = 0.0;  // the fire's floor (world y), kept up to date by its owner
 uniform float flame_h = 2.5;  // how high the ramp runs (metres) before the tips are dark red
 uniform float fire_seed = 0.0;
+uniform vec2 fire_xz = vec2(100000.0);  // the fire's centre (world xz): its heart is one blob there
+uniform float half_w = 0.7;  // the flame body's half width (metres)
 
 varying float tongue;
 
@@ -58,13 +60,14 @@ void fragment() {
 	vec3 c = mix(base, orange, smoothstep(0.02, 0.2, hw));
 	c = mix(c, red, smoothstep(0.3, 0.55, hw));
 	c = mix(c, deep, smoothstep(0.62, 0.95, hw));
-	// the heart: a soft yellow-white band a little way up the body, broken up, in most tongues
-	float band = smoothstep(0.03, 0.09, hw) * (1.0 - smoothstep(0.3, 0.46, hw));
-	float heart = band * (1.0 - smoothstep(0.1, 0.7, abs(x))) * (0.7 + 0.3 * n) * (0.5 + 0.5 * step(0.3, fract(seed * 3.7)));
-	c = mix(c, mix(vec3(1.0, 0.72, 0.22), vec3(1.0, 0.96, 0.78), smoothstep(0.45, 0.65, heart)), smoothstep(0.25, 0.5, heart));  // a sharp heart: pale pixels are core, not haze
+	// the heart: one soft yellow-white blob low in the middle of the fire (not a streak per tongue)
+	vec2 off = vec2(dot(wp.xz - fire_xz, INV_VIEW_MATRIX[0].xz), (hw - 0.22) * flame_h);
+	float blob = 1.0 - smoothstep(0.05, 1.0, length(off / vec2(0.62 * half_w, 0.24 * flame_h)));
+	float heart = blob * (0.75 + 0.25 * n);
+	c = mix(c, mix(vec3(1.0, 0.72, 0.22), vec3(1.0, 0.96, 0.78), smoothstep(0.5, 0.85, heart)), smoothstep(0.15, 0.6, heart));
 	float rim = smoothstep(0.35, 0.95, d);  // each tongue edged deeper red
 	c *= (0.9 + 0.2 * fract(seed * 13.7)) * mix(1.0, 0.62, rim);
 	c = mix(c, red * 0.6, rim * 0.4);
-	ALBEDO = c * heat * (1.0 + 0.5 * smoothstep(0.45, 0.65, heart));
+	ALBEDO = c * heat * (1.0 + 0.9 * smoothstep(0.35, 0.7, heart));
 	ALPHA = smoothstep(0.3, 0.62, mask) * COLOR.a;  // hard edges: no ghost haze
 }
