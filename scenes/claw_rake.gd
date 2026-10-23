@@ -20,6 +20,8 @@ var t := -1.0  ## seconds since the windup cue; negative when no rake runs
 var clamp_hits := 0
 ## The furthest the claw ended from where the path put it, as a share of the arm's length (a check).
 var miss := 0.0
+## The slash the camera sees (ClawTrail draws it).
+var sweep: ClawSweep
 var _cfg: Dictionary = Content.section("claw_fx")
 var _windup := Num.f(Content.section("powers")["swipe_windup"])
 var _warp := 0.0  ## seconds still to add to t to meet the sim's hit
@@ -27,6 +29,7 @@ var _warp := 0.0  ## seconds still to add to t to meet the sim's hit
 
 func _init(p_rig: KaijuRig) -> void:
 	rig = p_rig
+	sweep = ClawSweep.new(rig)
 
 
 ## Smooth 0..1 with no speed at either end (minimum jerk).
@@ -52,6 +55,7 @@ func start(p_side: float) -> void:
 	_warp = 0.0
 	clamp_hits = 0
 	miss = 0.0
+	sweep.clear()
 
 
 ## The sim's swipe lands now: the rake must be at its hit. A rake that began on the cue and is a
@@ -101,14 +105,6 @@ func recover_s() -> float:
 
 func total() -> float:
 	return load_s() + strike_s() + recover_s()
-
-
-## True while the claw lays its streak: around the hit, the fast part of the strike.
-func drawing() -> bool:
-	return (
-		t >= hit_time() + Num.f(_cfg["trail_from_s"])
-		and t <= hit_time() + Num.f(_cfg["trail_to_s"])
-	)
 
 
 func tick(dt: float) -> void:
@@ -253,7 +249,12 @@ func _path_key(g: Grip, s_hit: Vector3) -> Vector3:
 func _place(g: Grip, v: Vector3, w: float) -> void:
 	var p: Array = _cfg["pole"]
 	var pole_rake := Vector3(side * Num.f(p[0]), Num.f(p[1]), Num.f(p[2])).normalized()
-	var pole := (g.e0 - g.s0).normalized().lerp(pole_rake, w)
+	# The elbow goes out first (the upper arm abducts sideways, the hand hardly moving), so the arm
+	# leaves the chest's silhouette before the hand travels; then the pole eases to the rake's.
+	var o: Array = _cfg["elbow_out"]
+	var pole_out := Vector3(side * Num.f(o[0]), Num.f(o[1]), Num.f(o[2])).normalized()
+	var out := ease_in_out(t / _by_stage("elbow_out_s")) * (1.0 - w)
+	var pole := (g.e0 - g.s0).normalized().lerp(pole_out, out).lerp(pole_rake, w)
 	var rest_bend := (g.tip0 - g.w0).normalized() - (g.tip0 - g.s0).normalized()
 	var bend := rest_bend.lerp(Vector3.DOWN * Num.f(_cfg["hand_droop"]), w)
 	var hand_dir := (v.normalized() + bend).normalized()
@@ -268,6 +269,9 @@ func _place(g: Grip, v: Vector3, w: float) -> void:
 	if fore.angle_to(hand_dir) > most:  # a folded elbow: the wrist never bends past its range
 		hand_dir = fore.slerp(hand_dir, most / fore.angle_to(hand_dir))
 	miss = maxf(miss, (wrist + hand_dir * g.l2 - tip).length() / g.reach)
+	sweep.tip_local = wrist + hand_dir * g.l2
+	if not sweep.is_set() and t >= load_s():
+		sweep.capture(sweep.tip_local, g.s, g.reach, side)
 	var to_world := rig.global_transform
 	rig.aim(g.arm[0], to_world * g.s, to_world * elbow)
 	rig.aim(g.arm[1], to_world * elbow, to_world * wrist)

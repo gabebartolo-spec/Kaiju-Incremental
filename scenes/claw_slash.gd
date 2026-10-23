@@ -35,10 +35,11 @@ static func play(
 		centre + _arc_point(ahead, across, side, radius, 0.0, Num.f(cfg["arc_drop"]) * radius * 0.5)
 	)
 	if arc.get("trailed", false):  # the arm lays its own streak (ClawTrail): only the dust is left
-		var claw: Vector3 = arc.get("tip", strike)  # the hit shows at the claw, not the shoulder
-		_strike_dust(city, claw, Num.f(cfg["puff"]) * bs * boost * Num.f(cfg["tip_puff"]))
-		city.fx.sparks(claw)
-		city.fx.sparks(claw + Vector3.UP * 0.25 * bs)  # a second burst, so the hit reads from behind
+		# The flash and sparks are ClawTrail's; the street dust goes up under the hit, ahead of him.
+		var at: Vector3 = arc.get("hit", strike)
+		_strike_dust(
+			city, Vector3(at.x, 0.0, at.z), Num.f(cfg["puff"]) * bs * boost * Num.f(cfg["tip_puff"])
+		)
 		return
 	var root := Node3D.new()
 	city.add_child(root)
@@ -105,6 +106,18 @@ static func marks_material(cfg: Dictionary) -> StandardMaterial3D:
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.no_depth_test = true  # the streak shows over the body: from behind the camera sees it
 	mat.albedo_color = Color(str(cfg["streak_color"]))
+	return mat
+
+
+## The slash ribbon's material (ClawTrail): vertex colours and alpha, additive, drawn over the body.
+static func ribbon_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.vertex_color_use_as_albedo = true
+	mat.no_depth_test = true
 	return mat
 
 

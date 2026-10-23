@@ -22,9 +22,9 @@ const SPEED_STEP := 0.35
 const HAND_CAP := 15.0
 const LOAD_CAP := 25.0
 const SLIDE := 0.001
-## The claw is outside the chest's silhouette seen from the game camera (rig frame) in this many of
-## the wind-up's frames.
-const SHOWN_LOAD := 10
+## The arm shows outside the chest's silhouette from the game camera (rake_probe) in this many of
+## the wind-up's frames (a young croc's clip rests its arms across the chest).
+const SHOWN_LOAD := 7
 ## The share of its recover time the hand takes to settle to within 5% of its swing, at least.
 const SETTLE_LO := 0.7
 ## Joint limits (degrees): croc range plus 10 (claw_fx rom).
@@ -127,7 +127,7 @@ func _check_strike() -> void:
 			check(
 				Num.i(m["vis_load"]) >= SHOWN_LOAD,
 				(
-					"%s: the claw shows from behind in >= %d of the %d wind-up frames (%d)"
+					"%s: the arm shows from behind in >= %d of the %d wind-up frames (%d)"
 					% [tag, SHOWN_LOAD, m["load_n"], m["vis_load"]]
 				)
 			)

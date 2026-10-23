@@ -111,7 +111,10 @@ func claw_arc(side: float) -> Dictionary:
 			if rig.has_bone(n):
 				reach += (rig.tail_world(n) - rig.bone(n).global_position).length()
 		var claw := rig.tail_world("arm_%s2" % s) if rig.has_bone("arm_%s2" % s) else shoulder
-		return {"centre": shoulder, "radius": reach, "trailed": trail != null, "tip": claw}
+		var hit := _rake.sweep.hit_world() if _rake.sweep.is_set() else claw
+		return {
+			"centre": shoulder, "radius": reach, "trailed": trail != null, "tip": claw, "hit": hit
+		}
 	return {}
 
 
@@ -145,9 +148,20 @@ func rake_tip() -> Vector3:
 	return rig.tail_world(arm[2]) if arm.size() == 3 else rig.global_position
 
 
-## The streak's mark positions now (world).
-func rake_trail() -> PackedVector3Array:
-	return trail.world_points() if trail != null else PackedVector3Array()
+## Where the slash crosses the snout line, once the strike has begun (world); the claw until then.
+func rake_hit() -> Vector3:
+	return _rake.sweep.hit_world() if _rake.sweep.is_set() else rake_tip()
+
+
+## The raking arm's elbow, wrist and claw (world), for the captures' and tests' screen checks.
+func rake_joints() -> PackedVector3Array:
+	var arm := _rake.names()
+	var out := PackedVector3Array()
+	if arm.size() == 3:
+		out.append(rig.bone(arm[1]).global_position)
+		out.append(rig.bone(arm[2]).global_position)
+		out.append(rig.tail_world(arm[2]))
+	return out
 
 
 func rake_miss() -> float:
@@ -160,16 +174,11 @@ func rake_marks() -> Dictionary:
 
 ## The claw rake laid over the pose a clip gait has already put on the bones (torso, then the arm),
 ## and its streak; the arms are not touched while no rake runs.
-func pose_rake(dt: float) -> void:
-	if not _rake.active():
-		if trail != null:
-			trail.update(Vector3.ZERO, false, dt)  # the last marks fade
-		return
-	_rake.pose()
+func pose_rake(_dt: float) -> void:
+	if _rake.active():
+		_rake.pose()
 	if trail != null:
-		var arm := _rake.names()
-		if not arm.is_empty():
-			trail.update(rig.tail_world(arm[2]), _rake.drawing(), dt)
+		trail.sweep(_rake)
 
 
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:

@@ -14,6 +14,8 @@ const DT := 1.0 / 60.0
 const SECONDS := 6.0
 ## Frames kept after a hit for the follow-through and the settle.
 const AFTER := 100
+## An arm joint counts as outside the chest on the screen when it is this many pixels clear of it.
+const SEEN_MARGIN_PX := 1.0
 
 
 ## One frame of the raking pair's geometry, rig space in hip heights. arm[side index 0 (-x) / 1
@@ -25,7 +27,7 @@ class Fr:
 	var toe: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]  # world, in hip heights
 	var planted: Array[bool] = [false, false]
 	var scale_dev := 0.0
-	var half := 0.0  # the torso's half-width seen from behind (hip heights)
+	var seen: Array[bool] = [false, false]  # the game camera sees that arm outside the chest
 
 
 ## The swipes of one growth step: [{"side", "cue", "hit", ...metrics}], from the real sim.
@@ -49,6 +51,14 @@ static func run(root: Node, stage: String) -> Array[Dictionary]:
 	var rig: KaijuRig = kaiju._rig
 	var gait := rig.gait as ClipGait
 	var frames: Array[Fr] = []
+	var cam := Camera3D.new()  # the game camera at rest (Rampage): behind and above the kaiju
+	cam.fov = CameraTuning.fov()
+	root.add_child(cam)
+	var bs := sim.body_scale()
+	cam.global_position = Vector3(sim.kaiju_pos.x, 0.0, sim.kaiju_pos.y)
+	cam.global_position += CameraTuning.offset() * CameraTuning.zoom(bs)
+	cam.look_at(Vector3(sim.kaiju_pos.x, CameraFollow.LOOK_UP * bs, sim.kaiju_pos.y))
+	var torso := _torso_cells(rig)
 	var cues: Array[Vector2] = []  # (frame, side)
 	var hits: Array[Vector2] = []
 	for f: int in roundi(SECONDS / DT):
@@ -65,7 +75,7 @@ static func run(root: Node, stage: String) -> Array[Dictionary]:
 		kaiju.rotation.y = atan2(-sim.body.heading.x, -sim.body.heading.y)
 		kaiju.follow_steps(sim.body.step_clock(), sim.body.step_ratio)
 		kaiju.animate(DT, 0.0, -sim.body.turn_left)
-		frames.append(_snap(rig, gait))
+		frames.append(_snap(rig, gait, cam, torso))
 	var out: Array[Dictionary] = []
 	for i: int in mini(cues.size(), hits.size()):
 		var last := mini(frames.size() - 1, int(hits[i].x) + AFTER)
@@ -85,7 +95,32 @@ static func run(root: Node, stage: String) -> Array[Dictionary]:
 	return out
 
 
-static func _snap(rig: KaijuRig, gait: ClipGait) -> Fr:
+## The chest's voxels as [bone, point in the bone] pairs, every 3rd (the silhouette needs its edge).
+static func _torso_cells(rig: KaijuRig) -> Array[Array]:
+	var out: Array[Array] = []
+	for n: String in ["spine1", "spine2"]:
+		var k := 0
+		for cell: Vector3i in rig.voxels_of(n).cells:
+			k += 1
+			if k % 3 == 0:
+				out.append([rig.bone(n), Vector3(cell) * rig.voxel_size() - rig.head_of(n)])
+	return out
+
+
+## The chest's box on the camera's screen now.
+static func _screen_box(cam: Camera3D, torso: Array[Array]) -> Rect2:
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for pair: Array in torso:
+		var bone: Node3D = pair[0]
+		var local: Vector3 = pair[1]
+		var p := cam.unproject_position(bone.global_transform * local)
+		lo = lo.min(p)
+		hi = hi.max(p)
+	return Rect2(lo, hi - lo).grow(SEEN_MARGIN_PX)
+
+
+static func _snap(rig: KaijuRig, gait: ClipGait, cam: Camera3D, torso: Array[Array]) -> Fr:
 	var fr := Fr.new()
 	var to_rig := rig.global_transform.affine_inverse()
 	var hip := gait.hip_height
@@ -97,11 +132,17 @@ static func _snap(rig: KaijuRig, gait: ClipGait) -> Fr:
 		fr.arm[s].append(to_rig * rig.tail_world("arm_%s2" % arm) / hip)
 		var b := rig.bone("arm_%s0" % arm).global_transform.basis.orthonormalized()
 		fr.arm_q[s] = Quaternion(to_rig.basis.orthonormalized() * b)
-	for n: String in ["spine1", "spine2"]:
-		var part := rig.voxels_of(n)
-		if part != null:
-			for cell: Vector3i in part.cells:
-				fr.half = maxf(fr.half, absf(cell.x) * rig.voxel_size() / hip)
+	var box := _screen_box(cam, torso)
+	for s: int in 2:
+		var arm := "r" if s == 1 else "l"
+		var joints: Array[Vector3] = [
+			rig.bone("arm_%s1" % arm).global_position,
+			rig.bone("arm_%s2" % arm).global_position,
+			rig.tail_world("arm_%s2" % arm)
+		]
+		for joint: Vector3 in joints:
+			if not box.has_point(cam.unproject_position(joint)):
+				fr.seen[s] = true
 	fr.spine = to_rig * rig.tail_world("spine2") - to_rig * rig.bone("spine2").global_position
 	for j: int in 2:
 		fr.toe[j] = rig.tail_world(gait.legs[j].names[2]) / hh
@@ -242,27 +283,13 @@ static func analyse(frames: Array[Fr], cue: int, hit: int, side: float, last: in
 			el_follow = maxf(el_follow, elev_c[k])
 		rise = maxf(rise, elev_c[k])
 	# (the claw seen from its shoulder, so the clip's idle sway does not blur the settle)
-	# Seen from the game camera (behind the kaiju): the claw shows while it is outboard of the chest.
-	var half := frames[cue].half
-	var vis_hit := 0
-	var vis_load := 0
-	var hit_off := -999.0
-	for i: int in range(cue, hit + 5):
-		var tip := frames[i].arm[a][3]
-		var shown := side * tip.x > half
-		if i >= hit - 4:
-			vis_hit += 1 if shown else 0
-		elif i >= cue + 2:
-			vis_load += 1 if shown else 0
-		if absi(i - hit) <= 1:
-			var ahead := -(tip.z - frames[i].arm[a][0].z)
-			var off := _deg(atan2(side * tip.x, ahead))
-			if absf(off - 80.0) < absf(hit_off - 80.0):
-				hit_off = off
-	m["vis_hit"] = vis_hit
-	m["vis_load"] = vis_load
-	m["load_n"] = hit - 4 - (cue + 2)
-	m["hit_off"] = hit_off
+	# What the game camera (behind and above the kaiju) sees of the wind-up: the frames from 2 after
+	# the cue to 5 before the hit in which the arm shows outside the chest's screen box.
+	var shown := 0
+	for i: int in range(cue + 2, hit - 4):
+		shown += 1 if frames[i].seen[a] else 0
+	m["vis_load"] = shown
+	m["load_n"] = hit - cue - 6
 	var rest_hand := frames[last].arm[a][3] - frames[last].arm[a][0]
 	var far := 0.0  # the furthest the hand strays from where it ends
 	for i: int in range(hit, n):
@@ -309,8 +336,6 @@ static func row(m: Dictionary) -> String:
 	var keys := [
 		"peak",
 		"miss",
-		"hit_off",
-		"vis_hit",
 		"vis_load",
 		"scale_dev",
 		"chest_load",

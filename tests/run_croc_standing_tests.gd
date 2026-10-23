@@ -292,44 +292,42 @@ func _rake_one(stage: String, side: float) -> void:
 	await process_frame
 
 
-## The raking claw's streak is laid by the arm (ClawTrail): marks appear only on the swing frames
-## (not in the windup, not after), none lives past a few frames, and claw_arc says the arm draws it.
+## The claw rake's slash, flash and glint (ClawTrail): drawn only from the glint before the strike
+## to a few frames after the hit, the slash itself (head to faded tail) on screen for at most 10
+## frames, a flash on the hit frame, and claw_arc says the trail draws.
 func _check_claw_trail() -> void:
 	var kaiju := _model("adult")
 	var rig := _rig_of(kaiju)
 	var cfg := Content.section("claw_fx")
-	var hit := ClawRake.new(_rig_of(kaiju)).hit_time()
-	var life := Num.f(cfg["trail_s"])
+	var hit := ClawRake.new(rig).hit_time()
 	for i: int in 40:
 		_step(kaiju, rig)
 	var gait: ClipGait = rig.gait
 	var arc := gait.swing.claw_arc(1.0)
-	var trailed: bool = arc.get("trailed", false)
-	check(trailed, "trail: the arm draws its own streak")
+	check(arc.get("trailed", false), "trail: the rake draws its own slash")
 	kaiju.tail_sweep(1.0, "claw_windup")
-	var first := -1
-	var last := -1
-	var peak := 0
+	var slash := 0
+	var flashed := false
+	var early := 0
+	var late := 0
+	var end := hit + Num.f(cfg["slash_post_s"]) + Num.f(cfg["slash_fade_s"])
 	for f: int in 60:
 		if f == 18:
 			kaiju.tail_sweep(1.0, "claw")
 		_step(kaiju, rig)
-		await process_frame  # a freed mark leaves the tree
-		var marks := 0
-		for n: Node in root.get_children():
-			marks += 1 if n is MeshInstance3D else 0
-		peak = maxi(peak, marks)
-		if marks > 0:
-			first = f if first < 0 else first
-			last = f
-	var swing_start := floori((hit + Num.f(cfg["trail_from_s"])) / DT)
-	var swing_end := ceili((hit + Num.f(cfg["trail_to_s"]) + life) / DT) + 2
+		var at := gait.swing.rake_time()
+		var drawn := gait.swing.trail.drawn()
+		if drawn and at >= hit - Num.f(cfg["slash_pre_s"]):
+			slash += 1
+		if drawn and at >= hit and at < hit + DT * 2.0:
+			flashed = true
+		early += 1 if drawn and at < Num.f(cfg["slash_glint_from_s"]) else 0
+		late += 1 if drawn and at > end + DT else 0
+	check(flashed, "trail: a flash is drawn on the hit frame")
+	check(slash > 0 and slash <= 10, "trail: the slash is on screen %d frames (1..10)" % slash)
 	check(
-		first >= swing_start and last <= swing_end and peak > 0,
-		(
-			"trail: marks run from frame %d to %d (the swing is %d to %d), up to %d at once"
-			% [first, last, swing_start, swing_end, peak]
-		)
+		early == 0 and late == 0,
+		"trail: nothing drawn before the glint (%d) or after (%d)" % [early, late]
 	)
 	kaiju.queue_free()
 	await process_frame
