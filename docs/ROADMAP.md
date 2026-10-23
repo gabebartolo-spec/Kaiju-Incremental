@@ -439,7 +439,11 @@ state. No director clips or per-change approvals in between; clips only where mo
   same city to city" (D-181 one theme, Cover per city), "i need more menace", Isengard "peak reference", "too
   'epic', too Nolan Batman" (D-182 Jaws, Godzilla, Imperial March), "too staccato, too endlessly building", "too
   whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference" (G1-G4, 1954 Godzilla takes).
-  Owner: lead. Status: 140 of 800 credits; G takes waiting on his pick (docs/provenance/music.md).
+  Owner: lead. Status: 140 of 800 credits. Then "ok the music is much better, ship it": the G set ships (take and
+  per-city plan asked).
+- "make a note in the roadmap to revisit music later": the music gets another pass after this one ships (the
+  Godzilla-style theme is the starting point; takes and settings in docs/provenance/music.md). Owner: lead, with
+  him by ear. Status: parked until he calls it.
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
