@@ -4,7 +4,7 @@ extends RefCounted
 ## how it moves (the motion suite's bars, director D-177 "Motion first"):
 ##   slide      fastest a planted foot moves over the ground (world units/s)
 ##   catch      catch steps (ClipStomp.restep) a second
-##   falls      footfalls a second (catch steps included)
+##   steps      the walk clip's steps a second (its clock: clip frames played / frames per step)
 ##   jerk       shin angular jerk, the 99th percentile (deg/frame^2): a knee that pops or flips
 ##   stretch    longest hip-ankle reach of a planted leg (share of the leg's length)
 ##   aloft_yaw  degrees the body yawed with no foot down (a swivel in the air)
@@ -53,7 +53,8 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 	var layout: Array[Dictionary] = [
 		{"x": 38.0, "z": 38.0, "w": 2, "d": 2, "h": 2, "tier": 1, "style": 0}
 	]
-	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
+	var tuning := CityGrowth.for_stats(stats)  # the stage's own tuning, as Rampage plays it
+	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
 	sim.body.use_species("reptilian")
 	sim.kaiju_pos = Vector2(0, 30)
 	var colors: Dictionary = def["colors"]
@@ -82,6 +83,9 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 	var was_planted: Array[bool] = [true, true]
 	var last_xf := Transform3D()
 	var last_yaw := 0.0
+	var walk_n := float(gait.clips.frames_of("walk"))
+	var last_clip := gait.clip_time
+	var walked := 0.0  # walk clip frames played
 	for f: int in roundi(ROUTE_S / DT):
 		var t := f * DT
 		clock[0] = t
@@ -98,6 +102,9 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 		var dyaw := wrapf(gait.body_yaw - last_yaw, -PI, PI) if f > 0 else 0.0
 		last_yaw = gait.body_yaw
 		var warm := t >= WARM_S
+		if warm and gait.state == "walk":
+			walked += fposmod(gait.clip_time - last_clip, walk_n)
+		last_clip = gait.clip_time
 		var toes: Array[Vector3] = []
 		for i: int in 2:
 			var leg: BipedGait.Leg = gait.legs[i]
@@ -136,6 +143,8 @@ static func drive(root: Node, stage: String, route: String) -> Dictionary:
 			pivots.append(_nearest(feet[0], toes) / hh)
 		last_xf = xf
 	out["falls"] = falls.size() / (ROUTE_S - WARM_S)
+	var step_frames := walk_n / gait.clips.cycles_of("walk") * 0.5
+	out["steps"] = walked / step_frames / (ROUTE_S - WARM_S)
 	out["catch"] = Num.i(out["catch"]) / (ROUTE_S - WARM_S)
 	out["jerk"] = pct(jerk, 0.99)
 	out["pivot"] = pct(pivots, 0.5)

@@ -93,7 +93,7 @@ func _check_no_shuffle() -> void:
 func _check_cadence() -> void:
 	for stage: String in Drive.STAGES:
 		var run := _run(stage, "straight")
-		var steps := Num.f(run["falls"]) - Num.f(run["catch"])  # the clip's own footfalls
+		var steps := Num.f(run["steps"])
 		var ratio := steps / maxf(Num.f(run["authored_steps"]), 0.001)
 		check(
 			ratio <= CADENCE_MAX,
