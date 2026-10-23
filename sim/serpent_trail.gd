@@ -99,6 +99,17 @@ func at(behind: float) -> Vector2:
 	return point(n).lerp(point(n + 1), clampf(s / spacing - n, 0.0, 1.0))
 
 
+## The way the head was going as it passed the point `behind` it (unit; the head's own heading
+## where no sample has been laid since).
+func course_at(behind: float) -> Vector2:
+	var s := head_s - behind
+	if s >= _last * spacing:
+		return head_heading
+	var n := clampi(floori(s / spacing), _first, _last - 1)
+	var dir := heading_of(n).slerp(heading_of(n + 1), clampf(s / spacing - n, 0.0, 1.0))
+	return dir.normalized()
+
+
 ## How far behind the head the oldest sample lies.
 func reach() -> float:
 	return head_s - _first * spacing

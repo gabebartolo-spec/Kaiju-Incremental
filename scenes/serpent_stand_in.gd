@@ -51,7 +51,7 @@ func update(body: SerpentBody, delta: float) -> void:
 		_weave = SerpentWeave.new(body)
 	var moving := body.speed > 0.0
 	if moving and _settle.still > 0.0:  # sets off from the shape it settled in
-		_weave.settle_into(_settled)
+		_weave.settle_into(_settled, body)
 	_weave.step(body, delta)
 	var laid := SerpentWeave.joints(_weave.path(body.length() + seg), seg, count)
 	if moving:
@@ -69,6 +69,11 @@ func update(body: SerpentBody, delta: float) -> void:
 ## How wide the body is drawn `d` m behind the snout (m).
 func width_at(d: float) -> float:
 	return _tube.width_at(d, 1.0)
+
+
+## How tall the body is drawn `d` m behind the snout (m).
+func height_at(d: float) -> float:
+	return _tube.height_at(d, 1.0)
 
 
 ## Each joint's height (m): the coil's stack, and the head raised by the turn it leads or winds up.

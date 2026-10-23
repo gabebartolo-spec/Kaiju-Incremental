@@ -61,7 +61,7 @@ func _run() -> void:
 	_proto = SerpentProto.new()
 	_proto.clear_along = _route(cfg, start, steps)
 	_proto.preroll(start, Vector2(1, 0), steps)
-	_proto.scripted = _stick
+	_proto.scripted = stick_at
 	_swath_line = _swing(START.y)  # the S as the pre-roll laid it
 	root.add_child(_proto)
 	var frames := 0
@@ -126,7 +126,8 @@ func _camera_report() -> String:
 	return line % [jolt, _jolt_at, end_speed, pitch]
 
 
-func _stick(seconds: float) -> Vector2:
+## The clip's stick at `seconds` (shared with tools/capture/serpent_probe.gd).
+static func stick_at(seconds: float) -> Vector2:
 	if seconds < TURN_AT:
 		return Vector2(1, 0)
 	if seconds < U_TURN_AT:
@@ -270,7 +271,7 @@ func _route(cfg: Dictionary, start: Vector2, steps: int) -> PackedVector2Array:
 		if i % 6 == 0:
 			out.append(body.pos)
 	for i: int in int(Num.f(_args["seconds"]) / DT):
-		body.step(DT, _stick(i * DT))
+		body.step(DT, stick_at(i * DT))
 		if i % 6 == 0:
 			out.append(body.pos)
 	for p: Vector2 in out.duplicate():
