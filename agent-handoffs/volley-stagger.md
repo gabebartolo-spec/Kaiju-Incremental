@@ -1,5 +1,5 @@
 # Volley-stagger handoff (builder "volley"), 2026-10-23 13:3x
-## State: waiting for 14:14 (director: no Godot until then); task 1 pushed, task 2 audit done and reported
+## State: available; task 1 pushed and fully proved (reruns done 14:15-14:20), task 2 audit done and reported
 ## Task
 Kaiju lead's builder. Task 1: ROADMAP "Interview answers", D-166 "Stagger the shots": one Taskforce squad never
 lands more than about 2 railgun hits in a second, so the dash has time to save the kaiju (D-161). Sim only,
@@ -36,7 +36,7 @@ Invariants and evidence:
 2. Every gunner still fires (no starvation): the slot frees every squad_gap, so the nth waits (n-1) x 0.6 s at most,
    1.8 s for a real squad of 4. Evidence: "every gunner still fires" (5 and 3 shots in 10 s).
 3. The gap is per squad, never global: a second squad is not held up. Evidence: first shots of both squads within
-   squad_gap of each other. PLANT NOT YET SHOWN (see below).
+   squad_gap of each other. Planted global gap shown failing exactly this check (see Unfinished changes).
 4. A lone gunner is unchanged (empty `_volley` means it aims at once): existing railgun_hit, dodge, mid-aim and
    armour checks pass unchanged.
 5. Determinism: same seed, same events (the taskforce suite's _check_determinism passes).
@@ -50,10 +50,12 @@ squad's cooldown cycles after the first volley (only the first volley is planted
 - gdlint, gdformat --check (LF), tuning_keys.py, complexity_ratchet.py (70 offenders, none grown), check_scripts.sh
   (452 scripts) all clean on the code commit.
 ## Unfinished changes
-- After 14:14 only: rerun taskforce_gate once with a PLANTED global gap (`_volley[0]` and `has(0)` instead of
-  `agent.squad`): "the gap is kept per squad" must fail; revert with `git checkout sim/taskforce.gd`; then one clean
-  green run of taskforce_gate. The first planted run was stopped by the engine ban (exit 127) and reverted.
-- Push (explicit refspec above), report the sha to the lead.
+- None. Director D-175: volleys stay "Per squad" and the 0.6 s gap stands.
+- Reruns done after the engine ban, 2026-10-23 14:15-14:20: taskforce_gate with a PLANTED global gap (`_volley[0]`
+  and `has(0)` instead of `agent.squad`) = 8 of 8 functions, 25 checks, 1 failure, exactly "the gap is kept per
+  squad: the second squad's first shot is not held up by the first"; the plant was reverted; the clean
+  taskforce_gate = 8 of 8 functions, 25 checks, 0 failures. Earlier on 9e1f7666: taskforce 10 of 10 functions,
+  56 checks, 0 failures.
 ## Task 2 audit result (read-only, sent to the lead; the sim steps at 60 Hz in the game, 30 in tests)
 Pressed reptilian actions are three: dash, signature breath, Thunder Beam (HELD only feeds the mantis glide).
 - Dash (Shift/B): moves from the press tick (0 s); buildings break on contact over ticks 0-24 (0.4 s), tanks once each
