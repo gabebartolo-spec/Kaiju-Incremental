@@ -55,8 +55,9 @@ var _standing := true  # the stick was zero last step: the next step sets off on
 var _real_turn := false
 var _walked_s := 0.0  # seconds since the body set off from a stand
 var _step_len := 0.0  # one step's length at body scale 1: the stage's own (contact.bodies)
-var _uturn_s := 0.0  # seconds a stepped U-turn takes: the stage's own (D-187), 0 for a smooth turner
+var _uturn_s := 0.0  # seconds a stepped U-turn takes: the stage's own (D-187), 0 if smooth
 var _turn_steps := 0.0  # steps a stepped U-turn is made in: the stage's own
+var _turn_slow := 0.0  # the stride at an about-face (share of full): the stage's own
 
 
 ## tuning: the rampage's whole tuning; the body reads its "contact" section.
@@ -66,6 +67,7 @@ func _init(p_sim: RampageSim, tuning: Dictionary) -> void:
 	heading = sim.facing
 	_last_heading = heading
 	_step_len = Num.f(cfg["step_len"])
+	_turn_slow = Num.f(cfg["turn_slow"])
 	dash = Dash.new(self, cfg)
 	_volume = BodyVolume.new(sim, cfg)
 
@@ -84,6 +86,7 @@ func use_species(species_id: String) -> void:
 		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		_uturn_s = Num.f(stage.get("uturn_s", 0.0))
 		_turn_steps = Num.f(stage.get("turn_steps", 0.0))
+		_turn_slow = Num.f(stage.get("turn_slow", cfg["turn_slow"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
 
@@ -132,7 +135,7 @@ func steer(dt: float, want: Vector2) -> float:
 		_standing = false
 	turn_left = sim.facing.angle_to(want)
 	var stepped := _steps_this_turn()
-	var keep := lerpf(1.0, Num.f(cfg["turn_slow"]), absf(turn_left) / PI)
+	var keep := lerpf(1.0, _turn_slow, absf(turn_left) / PI)
 	# Sets off at full pace at once, but ramped over walk_off_s, not one frame (the motion critic,
 	# 2026-10-22: "the walk start jumps to full speed"); after it the stride eases to the push.
 	_walked_s += dt
