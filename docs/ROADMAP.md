@@ -420,7 +420,10 @@ state. No director clips or per-change approvals in between; clips only where mo
 ## Director comments (2026-10-23, afternoon)
 - "adolescent walking animations are fucked, his legs so twitchy, and he swivels rather than turns". Returning
   complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
-  exact fix and pass bar first; any sim part to the lead). Status: diagnosing, top of the VFX lead's next slot.
+  exact fix and pass bar first; any sim part to the lead). Status: view fixes are PR #175 (the walk passes); two
+  critic rounds FIX on the turn, measured in the sim: the Behemoth and Colossus turn at 260-311 deg/s peaks, a snap
+  per planted step. D-187 "Heavier, slower": a U-turn about 1.5 s Behemoth, 2.5 s Colossus, spread evenly over the
+  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges.
 - "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
   the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
   half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
@@ -445,6 +448,10 @@ state. No director clips or per-change approvals in between; clips only where mo
 - "make a note in the roadmap to revisit music later": the music gets another pass after this one ships (the
   Godzilla-style theme is the starting point; takes and settings in docs/provenance/music.md). Owner: lead, with
   him by ear. Status: parked until he calls it.
+- "are we in clip making purgatory again?", then "but if something has failed 7 times in a row then our method is
+  wrong, and needs to be reassessed": D-188, no round cap (reviews keep going until the critics pass), but two
+  failures in a row change the method. The fire and helicopter look (round 7) is reassessed before any round 8.
+  Owner: VFX lead. Status: reassessing.
 
 ## Motion first (D-177, 2026-10-23)
 - Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).

@@ -4,6 +4,14 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-23 · D-188 · Director · Visual reviews keep going until the critics pass; repeated failure changes the method
+
+He asked "are we in clip making purgatory again?" (the fire and helicopter look at round 7, the new breathing failed its first review as invisible at the game camera, the walk fix failed twice on the swivel). Asked how visual reviews run until M1, he chose "Keep going until critics pass": no round cap; critics keep failing merely acceptable work, so the M1 build shows finished visuals. Then: "but if something has failed 7 times in a row then our method is wrong, and needs to be reassessed": two failed rounds in a row (CLAUDE.md rule 8) mean the owner stops, finds why each round failed and changes the approach before the next round. The fire and helicopter look is reassessed before any round 8. Not chosen: two rounds then M1; fewer clips with the same rounds.
+
+## 2026-10-23 · D-187 · Director · The big forms turn heavier and slower
+
+The walk fix failed its motion review on the swivel he named ("he swivels rather than turns"). Measured: the sim turns the Behemoth and Colossus at peaks of 260-311 degrees a second, each step's yaw squeezed into its planted window, so the body snaps round on planted feet; the snap also swings his position 8-13 units about the planted foot (the lunge that lets him catch helicopters). Asked: "Heavier, slower": turns grow slower with size, a U-turn about 1.5 s for the Behemoth and 2.5 s for the Colossus (about 1.2 s for both before, in snaps), spread evenly over the steps. The young croc keeps its smooth turn (D-131) and small corrections stay smooth (D-130); amends D-130's "the turn rates stay as they were" for the two big forms. The lead re-checks the 10 s rise-point bar (D-131); a clip comes before it merges. Not chosen: same speed without the snap; keep as is.
+
 ## 2026-10-23 · D-186 · Director · GitHub runs the long test suites
 
 He asked: "is there a way we can get things done faster without compromising quality". The lead measured: builders ran hour-long local chains of up to 11 suites before pushing, while GitHub runs the whole suite in 4 parallel shards in about 15 minutes, free (the repo is public); the PC sat at 57% CPU with 6 engine jobs. Asked: "GitHub runs long suites": a builder runs on this PC only the one or two suites it is iterating on, then pushes and lets GitHub run every other touched suite and the full suite. Same tests and bars; amends D-159's "touched suites locally". Not chosen: a fifth builder (the cap stays about 4). The lead also starts every task on a fresh builder and writes the design and pass bars before code.
@@ -389,9 +397,3 @@ Claws. Lead call: an undermined tower falls away from the kaiju, so the player s
 Why: with the contact body on (D-091) the body already breaks the low buildings and chews towers, so five levels of
 Claws no longer helped the young croc ("Claws is useless"). The croc rakes a band ahead of it every 2 s; the other
 two species keep Claws as +3 stomp. Built in #89.
-
-## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
-Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
-from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
-support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
-(D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).

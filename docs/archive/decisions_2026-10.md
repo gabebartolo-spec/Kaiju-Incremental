@@ -2,6 +2,12 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-19 · D-094 · Director · Full-game destruction is option A: real carving (after demo exe 2)
+Why: "i want real dynamic destruction, actual physics and buildings than can be carved by giant monsters"; picked A
+from the spike (#91, docs/research/DESTRUCTION_SPIKE.md): Teardown-style fine sim voxels, island flood fill, RFG-style
+support and topple, a C++ GDExtension, Jolt for cosmetic debris only. About 19 agent-days. Starts after demo exe 2
+(D-083). Build plan: branch claude/destruction-plan (agent-handoffs/destruction-spike.md).
+
 ## 2026-10-19 · D-093 · Director · At 4K the default is Graphics Balanced at 60 fps
 Why (the playtest's loud GPU fan; RTX 4070 SUPER, 4K 120 Hz): Balanced (0.75 FSR1, MSAA off) + 60 cap halves the power
 (199 -> 110 W) and holds 60 fps as the Behemoth. High stays in Settings. #92 MERGED (41d452f); settings.cfg v2 so a
