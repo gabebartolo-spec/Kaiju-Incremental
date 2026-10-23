@@ -163,6 +163,15 @@ func _still(time: String, level: float) -> void:
 	)
 	rig.stage.queue_free()
 	await process_frame
+	_forget_buildings()
+
+
+## BuildingView keeps baked meshes between runs (their lit windows are baked in, per time of
+## day): a capture that changes time in one process must drop them or the next time reuses the
+## first one's windows.
+func _forget_buildings() -> void:
+	BuildingView.begin_city()
+	BuildingView.end_city()
 
 
 ## One night clip: destruction rises 0 -> --to over --seconds, frames saved as PNGs.
