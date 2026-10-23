@@ -27,7 +27,11 @@ claude/atmosphere-lead from origin/claude/look-options (6e88723a). Base is look-
    whale dives with tail slap, boats flee (A11). Motion critic at game speed for every mover (D-177).
 
 ## Running builders (Agent subagents, own worktrees; stall_watch armed)
-atm-escalation -> claude/atm-escalation; atm-rain -> claude/atm-rain. Not yet reported.
+atm-escalation -> claude/atm-escalation; atm-rain -> claude/atm-rain. Not yet reported. Both on ENGINE HOLD:
+send "engine go" to escalation on the lead's word, to rain on the VFX lead's (slot loan after its breath render).
+Lead logged A1-A16 as D-191 (b049ff06). Hooks: no sim roar event; roars sound in scenes/roar_cue.gd (sim
+"dash"/"ultimate") and scenes/rampage.gd ("ability"), plus "kaiju_emerged": add a presentation-only signal on
+RoarCue for birds/boats/whale. Tower falls: collapse "fall_start" (kind "topple") and "fall_land".
 
 ## From the VFX lead (2026-10-23)
 No overlap with its builders except data/tuning.json (new keys only). Parked claude/one-look 849d9e06 touches
