@@ -115,9 +115,6 @@
 - ffmpeg: C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe
 
 ## Findings
-- 2026-10-23: 14 engine jobs on 16 threads held the CPU at 100%; frame-time numbers taken then are noise.
-- A CI watcher must require every expected check before calling a head green (it once read green before shards ran).
-- Seed-sensitive checks: probe the unit, fix behaviour or re-pin, never the threshold (D-144).
-- git-helper once misread go.txt and claimed a go; only the lead writes go.txt.
+- CI watcher: require every expected check before green. Seed checks: fix behaviour or re-pin, never the bar (D-144).
 
 Lead = "Kaiju: LEAD 10". Owns routing, merges, DECISIONS/DESIGN/STATUS, director questions, milestones, this file.
