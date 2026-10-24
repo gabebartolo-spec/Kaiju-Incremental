@@ -70,7 +70,9 @@
   ask: haze/shadow/heli (capture builder -> cascadeur_bridge/look_boards/), croc teen size. Skins D-220 (C+D, blue
   via Tripo text). AFK "dont chase minute improvements": casc-anim idle, script server down (his click). On return
   send casc-anim: teen idle v3 FIX (breath 56-60 f, >=14 px; snort bell 5 in/5 out, chin clears chest; glance 10-12 f;
-  hand off the foot f70-105; head +6 deg, mouth ajar), teen walk v9 body (speed <=1.4x, plant drop, forearms). #177 merged (exports now ship .kclip). casc-anim (D-214/D-216 Cascadeur stays; bridge Quick Rig
+  hand off the foot f70-105; head +6 deg, mouth ajar), teen walk v9 body (speed <=1.4x, plant drop, forearms).
+  Turn v14 FIX again (near hand on the fold 0-2 px, near foot skates 56 px vs maker's '4 cm', dead stop f198):
+  D-188 METHOD CHANGE before v15 (pin the foot with Cascadeur's fixed-point/IK, measure on render, not bones). #177 merged (exports now ship .kclip). casc-anim (D-214/D-216 Cascadeur stays; bridge Quick Rig
   works): adult idle body SHIP (tongue prop pending), turn v12 FIX (near hand), teen walk v7 FIX tail, teen idle v3.
   Sessions waiting on him: tripo-komodo (asked him directly), casc-anim (a prompt). Budget 10,000 (D-204, D-213). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
   director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
@@ -92,7 +94,6 @@
   hybrid serpent cobra->rattle->constrictor, Kaiju Creation new-game opening IN THE DEMO).
 
 ## Base and PRs
-- Base = origin/claude/look-options; squash-only.
 - Open: #171 beam-cost GREEN b2e8e759: go only when pacing run 39910488328 reports a last unlock of 2.15-2.35 h.
   #175 gait-fix head 681ce75c (capture route only changed), CI running: go after the VFX lead's SHIP + evidence
   (clips + motion critic) and the lead's own check; gate green at 681ce75c (motion 30/0, smoke 47/0, clips 14/0,
@@ -115,6 +116,5 @@
   Bearer __session cookie -> signed URL -> curl. Stems: Edit > Get Stems > Auto split (50 credits; CAPTCHA is his).
 
 ## Findings
-- CI watcher: require every expected check before green. Seed checks: fix behaviour or re-pin, never the bar (D-144).
 
 Lead = "Kaiju: LEAD 10". Owns routing, merges, DECISIONS/DESIGN/STATUS, director questions, milestones, this file.
