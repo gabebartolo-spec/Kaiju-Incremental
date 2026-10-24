@@ -60,7 +60,7 @@ func step() -> void:
 	if _frame % 15 == 0:
 		_target = sim.nearest_standing(sim.kaiju_pos)
 	var move := Vector2.ZERO
-	if _target.x < INF and not sim.stomp_reaches(_target):
+	if _target.x < INF and not sim.body.stomp_reaches(_target):
 		move = (_target - sim.kaiju_pos).normalized()
 	sim.step(DT, move, sim.ability_ready_in <= 0.0)
 	sim.events.clear()

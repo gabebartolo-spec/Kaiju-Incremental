@@ -45,8 +45,8 @@ var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
 ## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
 ## gap between the feet).
 var _pivot := Vector2.ZERO
-## Where a stomp's foot comes down at body scale 1: (ahead of kaiju_pos along the heading, out to the
-## left foot's side); zero for a body that has no entry (its stomp is centred on kaiju_pos).
+## Where a stomp's foot comes down at body scale 1: (ahead of kaiju_pos along the heading, out to
+## the left foot's side); zero for a body with no entry (its stomp is centred on kaiju_pos).
 var _stomp_foot := Vector2.ZERO
 ## Where the last two feet to land stand in the world (they stay there until they lift): the newest
 ## first. The body turns about them.
@@ -221,8 +221,8 @@ func _swing(was: Vector2, most: float) -> void:
 	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(clampf(was.angle_to(heading), -most, most))
 
 
-## The ground point a stomp lands on (world): the left foot's (or the right's) spot ahead of kaiju_pos
-## on the body's heading, so the damage is where the drawn ring is, not at the tail base.
+## The ground point a stomp lands on (world): the left foot's (or the right's) spot ahead of
+## kaiju_pos on the body's heading, so the damage is where the drawn ring is, not at the tail base.
 func stomp_foot(left: bool) -> Vector2:
 	var across := heading.orthogonal() * _stomp_foot.y * (1.0 if left else -1.0)
 	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
@@ -232,6 +232,13 @@ func stomp_foot(left: bool) -> Vector2:
 ## person stands where the stomp lands on the building, not with the tail base on it.
 func stomp_mid() -> Vector2:
 	return (stomp_foot(true) + stomp_foot(false)) * 0.5
+
+
+## True when the stomp's feet are on `target` (the middle of the two within half a stomp's reach): a
+## scripted player stops when this holds, as a person aims the foot at the building (D-166). Every
+## measuring player (tests, pacing, captures, autoplay) walks by this rule.
+func stomp_reaches(target: Vector2) -> bool:
+	return stomp_mid().distance_to(target) <= sim.stomp_radius() * 0.5
 
 
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),

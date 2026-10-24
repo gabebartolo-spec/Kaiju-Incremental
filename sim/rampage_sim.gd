@@ -166,13 +166,6 @@ func stomp_radius() -> float:
 	return stat("stomp_radius") * body_scale()
 
 
-## True when the stomp's feet are on `target` (within half a stomp's reach of the middle of the two
-## feet): a scripted player stops when this holds, as a person aims the foot at the building, not the
-## tail base (D-166). Every measuring player (tests, pacing, captures, autoplay) walks by this rule.
-func stomp_reaches(target: Vector2) -> bool:
-	return body.stomp_mid().distance_to(target) <= stomp_radius() * 0.5
-
-
 func ability_reach() -> float:
 	return stat("ability_range") * body_scale()
 

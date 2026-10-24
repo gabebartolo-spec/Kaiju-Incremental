@@ -1,10 +1,11 @@
 extends RefCounted
-## The croc standing suite's stomp-centre check (D-166): the sim's stomp is centred on the foot that
-## delivers it, so the damage lands where the ring does. At each growth step (young, Behemoth,
-## Colossus) and two headings, the sim stomps while the kaiju stands; the model, placed where the sim
-## puts it, lifts the foot the sim names (KaijuModel.prefer_foot) and plants it; the sim's stomp point
-## ("at" in its event) is within CENTRE_TOL of that planted foot. Then the damage itself: a tank on
-## the foot's spot takes the full blow, and one where the old centre (kaiju_pos) was takes less.
+## The croc standing suite's stomp-centre check (D-166): the sim's stomp is centred on the foot
+## that delivers it, so the damage lands where the ring does. At each growth step (young,
+## Behemoth, Colossus) and two headings, the sim stomps while the kaiju stands; the model, placed
+## where the sim puts it, lifts the foot the sim names (KaijuModel.prefer_foot) and plants it; the
+## sim's stomp point ("at" in its event) is within CENTRE_TOL of that planted foot. Then the damage
+## itself: a tank on the foot's spot takes the full blow, and one where the old centre (kaiju_pos)
+## was takes less.
 
 const DT := 1.0 / 60.0
 const BEAT_FRAMES := 42
@@ -84,12 +85,13 @@ func _stage(size: int, turned: bool) -> void:
 			var at: Vector2 = event["at"]
 			worst = maxf(worst, foot.distance_to(at))
 			if spots.size() >= 2:  # the tank stood on this foot's spot from the stomp before last
-				_damage(size, turned, sim, was - tank.hp, spots[-2], old_centre)
+				var shot := {"lost": was - tank.hp, "spot": spots[-2], "old": old_centre}
+				_damage("%s (%s)" % [STAGES[size], "turned" if turned else "straight"], sim, shot)
 			spots.append(foot)
 	_check.call(
 		spots.size() == STOMPS and worst <= CENTRE_TOL,
 		(
-			"%s stomp centre (%s): the sim's point is within %.1f of the planted foot (worst %.2f, %d stomps)"
+			"%s stomp centre (%s): the sim's point is within %.1f of the foot (worst %.2f, %d)"
 			% [STAGES[size], "turned" if turned else "straight", CENTRE_TOL, worst, spots.size()]
 		)
 	)
@@ -110,18 +112,19 @@ func _tank(sim: RampageSim, spots: Array[Vector2], old_centre: Vector2) -> Rampa
 
 
 ## The tank on the foot's spot lost the whole stomp_damage; one where the old centre was would have
-## lost only a part of it (or none).
-func _damage(
-	size: int, turned: bool, sim: RampageSim, lost: float, spot: Vector2, old_centre: Vector2
-) -> void:
+## lost only a part of it (or none). `shot`: {lost, spot, old}.
+func _damage(label: String, sim: RampageSim, shot: Dictionary) -> void:
+	var lost := Num.f(shot["lost"])
 	var full := sim.stat("stomp_damage") * sim.powers.hit_mult()
+	var old: Vector2 = shot["old"]
+	var spot: Vector2 = shot["spot"]
 	var old_k := RampageSim.falloff(
-		old_centre.distance_to(spot) - RampageSim.TANK_RADIUS, sim.stomp_radius()
+		old.distance_to(spot) - RampageSim.TANK_RADIUS, sim.stomp_radius()
 	)
 	_check.call(
 		absf(lost - full) < 0.01 and old_k < 1.0,
 		(
-			"%s stomp (%s): a tank on the foot's spot takes the whole blow (%.1f of %.1f; at the old centre %.0f%%)"
-			% [STAGES[size], "turned" if turned else "straight", lost, full, old_k * 100.0]
+			"%s: a tank on the foot's spot takes the whole blow (%.1f of %.1f; old centre %.0f%%)"
+			% [label, lost, full, old_k * 100.0]
 		)
 	)
