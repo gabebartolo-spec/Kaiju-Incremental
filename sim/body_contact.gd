@@ -145,9 +145,10 @@ func steer(dt: float, want: Vector2) -> float:
 		_stand(dt)
 		return stride
 	if _standing:
-		# sets off on a footfall, both feet down; a heavy body still rolling to its stop (D-201's
-		# stop_s) walks on from where its clock is: rounding it jumped the walk clip it rides
-		if not heavy() and stride <= 0.0:
+		# sets off on a footfall, both feet down, from a full stop; a heavy body still rolling to its
+		# stop (D-201's stop_s, stride above 0) walks on from where its clock is: rounding it
+		# jumped the walk clip it rides
+		if stride <= 0.0:
 			phase = roundf(phase)
 		step_ratio = 1.0
 		_steps.plant_both(self)

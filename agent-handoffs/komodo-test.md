@@ -8,7 +8,7 @@ HEAD:claude/komodo-test; native/bin dll and off-screen override.cfg copied, giti
 agent-ab04f2fd116e8be63. New class_name files need a Godot import before a --script run (else the run hangs).
 
 ## Sim review fixes (2026-10-24, b12; review said CHANGES NEEDED; commits 5d65c0f9, 95061a7d, 6d0fd1fb)
-1. Phase snap: BodyContact.steer rounds the step clock on a re-press only for a non-heavy body at stride 0.
+1. Phase snap (b13: now ANY body rounds at stride 0, heavy included; rolling re-press still no snap; sim_heavy_clock _stopped_restart_check: old line FAIL phase 6.126 -> PASS; carve 229/252 = 90.9%, 0 pass-through).
    sim_heavy_clock `_restart_check`: FAIL 0.349/step at step 192 (walking 0.034) -> PASS 0.034.
 2. Croc = base: BodySteps.stepped_pace returns Array[float] (a Vector2 rounded the cadence to 32 bits).
    tests/lib/sim_croc_base.gd (SimCrocBase, sim suite) pins the reviewer's per-step hash on cc77576c (CityGrowth

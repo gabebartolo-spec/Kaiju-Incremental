@@ -31,6 +31,7 @@ func run() -> void:
 	var why := "the same seed replays the heavy clip clock and volume (%s; off at step %d)"
 	_check.call(ok, why % [clips, first_off])
 	_restart_check()
+	_stopped_restart_check()
 	_missing_track_check()
 
 
@@ -59,6 +60,29 @@ func _restart_check() -> void:
 	var ok := hc != null and walking > 0.0 and worst <= 2.0 * walking
 	var why := "a heavy re-press while rolling keeps the step clock (%.3f at step %d, walking %.3f)"
 	_check.call(ok, why % [worst, at, walking])
+
+
+## A press again from a full stop (stride 0, the stop_s roll over) sets off on a footfall, both feet
+## down, like the first start (the sim review: a heavy body never rounded, so it re-entered at phase
+## 3.399, the walk clip at frame 36.69 with one foot up). Stick up 3 s, released 100 steps (stride
+## reaches 0), pressed again: the step clock on the re-press step is a whole value.
+func _stopped_restart_check() -> void:
+	var sim := _heavy_sim()
+	var stride := 1.0
+	var entered := -1.0
+	var at := -1
+	for n: int in 300:
+		var released := n >= 180 and n < 280
+		sim.step(DT, Vector2.ZERO if released else Vector2(0, -1), false, 0)
+		if n == 279:
+			stride = sim.body.stride
+		elif n == 280:
+			entered = sim.body.phase
+			at = n
+	var off := absf(entered - roundf(entered))
+	var ok := sim.body.heavy() and stride <= 0.0 and off < 0.05
+	var why := "a heavy re-press from a full stop (stride %.3f) enters on a footfall (phase %.3f at step %d)"
+	_check.call(ok, why % [stride, entered, at])
 
 
 ## One seeded heavy run: stand, walk, the breath (a roar), a turn on the move, then stop. Returns
