@@ -6,7 +6,7 @@
 			"blurb": "Balanced brawler. Tough hide, heavy stomps.",
 			"ability": {
 				"type": "cone",
-				"name": "Atomic Breath",
+				"name": "{beam}",
 				"hint": "Burns everything in front of you."
 			},
 			"stats": {
@@ -19,7 +19,7 @@
 				"swipe_width": 1.6,
 				"ability_damage": 36,
 				"ability_cooldown": 7.0,
-				"ability_range": 11.0
+				"ability_range": 14.5
 			},
 			"colors": {
 				"body": "2c3127",

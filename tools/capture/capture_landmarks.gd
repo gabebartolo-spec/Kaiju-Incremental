@@ -8,14 +8,13 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed \
 ##     --script tools/capture/capture_landmarks.gd -- --out=<dir> [--tier=2]
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 4
 ## Real time to wait for every building to stream in before the standing still.
 const STREAM_WAIT_MS := 120000
 ## Frames after the rampage before the broken still: the dust of the last falls clears.
 const AFTER := 150
 const SPECIES := "reptilian"
-## Rampage.CAMERA_OFFSET: the in-game camera, before its zoom by body scale.
-const GAME_CAMERA := Vector3(0, 27, 19)
 ## Upgrades of a typical run on reaching each city stage (stage 2 = after the first evolution).
 const LEVELS := [{"claws": 3, "hide": 2}, {"claws": 5, "hide": 5, "rage": 3, "evolve1": 1}]
 ## Sim time of the rampage into each landmark, and sim steps per drawn frame.
@@ -32,10 +31,11 @@ var _kaiju_at := Vector3.ZERO
 
 
 func _initialize() -> void:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--out="):
-			_out = arg.substr(6)
+	_out = str(Kit.args({"out": _out})["out"])
 	DirAccess.make_dir_recursive_absolute(_out)
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
@@ -50,11 +50,8 @@ func _run() -> void:
 func _stage(tier: int) -> void:
 	var species := Content.species_def(SPECIES)
 	var levels: Dictionary = LEVELS[tier - 1]
-	var tree := UpgradeTree.new(Content.upgrades(), levels, SPECIES)
-	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var tuning := CityGrowth.tuning_for(Content.tuning(), tier)
-	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
-	_sim = RampageSim.new(stats, tuning, layout, Seeds.make("army", 0))
+	var stats := Kit.stats(SPECIES, levels, SPECIES)
+	_sim = Kit.stage_sim(stats, tier, CityGrowth.tuning_for(Content.tuning(), tier))
 	_sim.time_left = 1.0e6
 	var stage := Node3D.new()
 	_city = CityView.new(_sim, Seeds.make("fx", 0))
@@ -63,10 +60,7 @@ func _stage(tier: int) -> void:
 	var kaiju := KaijuModel.new(SPECIES, colors, KaijuModel.stage_for(_sim.size_tier()))
 	kaiju.scale = Vector3.ONE * _sim.body_scale()
 	stage.add_child(kaiju)
-	var cam := Camera3D.new()
-	cam.fov = 55.0
-	cam.far = 4000.0
-	stage.add_child(cam)
+	var cam := Kit.camera(stage)
 	root.add_child(stage)
 	cam.current = true
 	for n: int in _sim.buildings.size():
@@ -81,7 +75,7 @@ func _stage(tier: int) -> void:
 		# the towers south of the plaza (faded in a rampage) do not hide it.
 		var centre := Vector3(b.x, b.height * 0.3, b.z)
 		var reach := maxf(maxf(b.w, b.d), b.height) * FRAME
-		cam.position = centre + GAME_CAMERA.normalized() * reach
+		cam.position = centre + Kit.GAME_CAMERA.normalized() * reach
 		cam.look_at(centre)
 		await _frames(SETTLE)
 		var deadline := Time.get_ticks_msec() + STREAM_WAIT_MS
@@ -122,24 +116,12 @@ func _break(n: int, kaiju: Node3D) -> void:
 
 
 func _apply(events: Array[Dictionary]) -> void:
-	for event: Dictionary in events:
-		match str(event["type"]):
-			"chunks_broken":
-				var cells: Array[Vector3i] = event["cells"]
-				_city.chunks_broken(Num.i(event["building"]), cells, _kaiju_at)
-			"fall_start":
-				_city.fall_start(event)
-			"fall_land":
-				_city.fall_land(event)
+	Kit.apply(_city, events, _kaiju_at)
 
 
 func _frames(n: int) -> void:
-	for _i: int in n:
-		await process_frame
+	await Kit.frames(self, n)
 
 
 func _shot(shot_name: String) -> void:
-	var image := root.get_texture().get_image()
-	var path := _out.path_join(shot_name + ".png")
-	image.save_png(path)
-	print("saved ", path)
+	print("saved ", Kit.still(self, _out, shot_name))

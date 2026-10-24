@@ -1,5 +1,5 @@
 extends RefCounted
-## Atomic Breath probes for the flow suite: the legacy voxel jet must stay gone, and the scorch's
+## Lightning Breath probes for the flow suite: the legacy voxel jet must stay gone, and the scorch's
 ## molten cracks must glow in rather than land at full on the breath's first frame.
 
 ## Wider than any stomp mark: only the breath scorch spans its cone (about 2x reach).

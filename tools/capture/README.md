@@ -41,3 +41,11 @@ Software rendering is slow: a 40 s 1080p clip hit the 3000 s step limit (PR #18)
 stage-4 city killed runners (PR #16). Keep CI clips short (about 20 s, 720p). Render heavier
 scenes locally with the off-screen no_focus override, only when the focus guard allows it.
 CI checkouts need `lfs: true` (fonts are in LFS).
+
+## Shared kit
+
+`capture_kit.gd` holds what the scripts share: flags (`Kit.args`), the off-screen window check
+(`Kit.window_ok`: a windowed run needs the no_focus override.cfg, or CI), the kaiju's stats, the flow
+test's city and rampage, a staged city, frame waits, render timings, stills and 2x crops. A new
+script preloads it (`const Kit := preload("res://tools/capture/capture_kit.gd")`) instead of
+copying that code.

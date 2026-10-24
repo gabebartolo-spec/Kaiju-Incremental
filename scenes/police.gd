@@ -31,6 +31,21 @@ class Blockade:
 	var light: PooledLight
 
 
+## An officer's own state, which Police drives; its pos and heading are copied into the street's
+## arrays after each update (what is drawn and crushed).
+class Officer:
+	extends RefCounted
+	var pos := Vector2.ZERO
+	var heading := Vector2(0, -1)
+	var phase := 0.0
+	var state := 0  # 0 to post, 1 holding, 2 fleeing
+	var post := Vector2.ZERO
+	var away := Vector2.ZERO
+	var fire_in := 0.0
+	var timer := 0.0
+	var blockade: Blockade
+
+
 var sim: RampageSim
 ## Running totals (tests and the capture tool read them).
 var shots := 0
@@ -69,7 +84,7 @@ func _ready() -> void:
 
 
 ## Returns true when the officer is gone (ran off).
-func update_cop(p: StreetLife.Person, delta: float, kaiju: Vector2) -> bool:
+func update_cop(p: Officer, delta: float, kaiju: Vector2) -> bool:
 	var run := Num.f(_cfg["run_speed"])
 	match p.state:
 		0:
@@ -100,7 +115,7 @@ func update_cop(p: StreetLife.Person, delta: float, kaiju: Vector2) -> bool:
 	return false
 
 
-func _shoot(p: StreetLife.Person) -> void:
+func _shoot(p: Officer) -> void:
 	shots += 1
 	var h := Vector3(p.heading.x, 0, p.heading.y)
 	var tip := Vector3(p.pos.x, 0, p.pos.y) + h * _voxel * 5.0 + Vector3.UP * _voxel * 8.5
@@ -190,15 +205,13 @@ func _cops_out(b: Blockade) -> void:
 	var line := b.at + b.toward * BARRIER
 	for k: int in n:
 		var s := (float(k) / maxf(1.0, n - 1.0)) * 2.0 - 1.0  # -1..1 across the road
-		var p := StreetLife.Person.new()
-		p.cop = true
-		p.outfit = VoxelPerson.COP
+		var p := Officer.new()
 		p.blockade = b
 		p.phase = _rng.randf()
 		p.pos = line + b.across * s * 0.9 - b.toward * 0.2
 		p.post = b.at + b.toward * POST + b.across * s * 1.2
 		p.fire_in = _rng.randf_range(0.2, 1.0)
-		_street.people.append(p)
+		_street.add_cop(p)
 		b.holding += 1
 
 

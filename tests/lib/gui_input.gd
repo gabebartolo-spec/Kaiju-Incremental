@@ -56,6 +56,42 @@ static func key(tree: SceneTree, keycode: Key) -> void:
 		await tree.process_frame
 
 
+## Types `text` into whatever has focus, one key at a time the way a keyboard sends it (keycode
+## and the character), so a TextEdit takes it as typing and the game sees the same keys.
+static func type(tree: SceneTree, text: String) -> void:
+	for i: int in text.length():
+		var ch := text.substr(i, 1)
+		var code: Key = KEY_SPACE if ch == " " else OS.find_keycode_from_string(ch.to_upper())
+		for pressed: bool in [true, false]:
+			var event := InputEventKey.new()
+			event.keycode = code
+			event.physical_keycode = code
+			event.unicode = text.unicode_at(i)
+			event.pressed = pressed
+			Input.parse_input_event(event)
+			await tree.process_frame
+
+
+## Presses and releases a pad button (JOY_BUTTON_*) the way a controller sends it.
+static func pad(tree: SceneTree, button_index: JoyButton) -> void:
+	for pressed: bool in [true, false]:
+		var event := InputEventJoypadButton.new()
+		event.button_index = button_index
+		event.pressed = pressed
+		Input.parse_input_event(event)
+		await tree.process_frame
+
+
+## Pushes a pad stick all the way along `axis` (JOY_AXIS_*) by `value` (-1..1) and lets go.
+static func stick(tree: SceneTree, axis: JoyAxis, value: float) -> void:
+	for amount: float in [value, 0.0]:
+		var event := InputEventJoypadMotion.new()
+		event.axis = axis
+		event.axis_value = amount
+		Input.parse_input_event(event)
+		await tree.process_frame
+
+
 ## The first visible Button under `node` whose text starts with `prefix`, or null.
 static func button(node: Node, prefix: String) -> Button:
 	for found: Node in node.find_children("*", "Button", true, false):

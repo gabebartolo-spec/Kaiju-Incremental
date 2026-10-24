@@ -105,8 +105,9 @@ KNOWN = {
         # legs reach (44 m) and a slow tail (a wave every 3.5 strides) keep it quick, not frantic.
         belly=12.0, stride=44.0, cycle=36.0, bounce=1.8, tail_strides=3.5, tail_sway=0.4,
         # Seen from the game camera its feet hid under the belly (lead review, PR #54): a toddler's
-        # sprawl, feet 10 m wider, and a high stomping lift.
-        splay=10.0, lift=0.18, turn_cycle=24.0),
+        # sprawl, feet 10 m wider, and a stomping lift: its toe rises 3.8% of hip height (lead
+        # 2026-10-23, motion gate: at most 5%, a little bounce; 0.18 rose 9.8%).
+        splay=10.0, lift=0.12, turn_cycle=24.0),
     # The adolescent (stage 2, Tripo 109910f0, imported turned 90 deg to face -Y): lanky, long legs,
     # arms hanging forward, the tail held level at hip height. A long, gangly stride.
     "CA": dict(
@@ -122,8 +123,9 @@ KNOWN = {
         hands={"low": (1.0, -1.0, 1.0), "high": (3.0, 3.0, 8.0)},
         tail_lift=0.0, tail_roar_lift=2.5, tail_breathe=0.3,
         belly=15.0, stride=56.0, cycle=48.0, bounce=1.2,
-        # Its feet track under the body: set them out past the belly and lift them clear (PR #54).
-        splay=12.0, lift=0.15, turn_cycle=26.0,
+        # Its feet track under the body: set them out past the belly (PR #54). Its toe rises 2.1% of
+        # hip height, the Colossus's 2.0% (motion gate 2026-10-23: 0.15 rose 10.1%, a twitchy prance).
+        splay=12.0, lift=0.07, turn_cycle=26.0,
         # Its tail is held level at hip height: the slam needs more bend to reach the street; the
         # roar closes by f62 (it ends the demo); a heavier drop on each plant.
         slam_gain=6.5, roar_rest_from=48, roar_rest_to=62, land=2.0),

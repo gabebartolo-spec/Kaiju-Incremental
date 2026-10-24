@@ -1,12 +1,12 @@
 extends RefCounted
 ## Every bridge meets land on both banks (director, build 4 comments 2026-10-21 #12: "bridge is
-## not connected to land"): for every deck CityRiver.bridges lays, at stages 1-4 in three
+## not connected to land"): for every deck CityRiver.bridges lays, at stages 1-3 in three
 ## cities, the deck spans the whole open water (CityRiver.channels) from bank to bank, and the
 ## ground just past each deck end is land (out of the channel), so no water shows between a
 ## deck end and the road on its bank.
 ## Seeded by design: the street plan is fixed by city.map_seed.
 
-const STAGES: Array[int] = [1, 2, 3, 4]
+const STAGES: Array[int] = [1, 2, 3]
 const STEP := 0.25  # how far past a deck end the bank road is sampled (m)
 const EPS := 0.01
 

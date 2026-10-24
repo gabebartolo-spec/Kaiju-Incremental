@@ -50,6 +50,7 @@ func step(dt: float, pressed: bool) -> void:
 		return
 	var from := sim.kaiju_pos
 	sim.kaiju_pos = sim.clamp_to_arena(from + dir * _speed * minf(dt, left))
+	body.walked(from.distance_to(sim.kaiju_pos), dt)
 	sim.facing = dir
 	left -= dt
 	_strike(from, sim.kaiju_pos)

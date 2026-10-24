@@ -6,10 +6,13 @@ extends RefCounted
 const CORNERS: Array[Vector2] = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
 const PAVEMENT := 0.45  # pavement line, out from the block's edge (its buildings' walls)
 const CROSSWALK := 9.5  # longest crossing to the corner of the block across the street
+const CROSS_CHANCE := 0.3  # a walker at a corner crosses the street rather than turns
 
 var nodes := PackedVector2Array()
 var links: Array[Array] = []
 var in_road := PackedByteArray()  # per node: 1 when the corner lies in a carriageway
+## The walkers' stream (StreetLife's), for next_corner.
+var rng: RandomNumberGenerator
 
 
 ## Pavement corners round every block of the playable city (4 per block), linked round the
@@ -62,6 +65,45 @@ func _init(sim: RampageSim) -> void:
 					best = b
 			if best >= 0 and not links[a].has(best):
 				_link(a, best)
+
+
+## The corners people can walk between (4 per block, minus the ones in the road).
+func ring_nodes() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for n: int in nodes.size():
+		if not links[n].is_empty():
+			out.append(nodes[n])
+	return out
+
+
+## The corner a walker at `here` (come from `from`) heads for next: never straight back unless
+## it must; fleeing, the one furthest from the kaiju; else round its block or, by CROSS_CHANCE,
+## across the street (StreetLife's walkers; draws from rng in that order).
+func next_corner(here: int, from: int, kaiju: Vector2, fleeing: bool) -> int:
+	var options: Array[int] = []
+	for n: int in links[here]:
+		if n != from:
+			options.append(n)
+	if options.is_empty():
+		return from
+	if fleeing:  # the corner that takes it furthest from the kaiju
+		var best := options[0]
+		for n: int in options:
+			if nodes[n].distance_to(kaiju) > nodes[best].distance_to(kaiju):
+				best = n
+		return best
+	var lot := here >> 2
+	var crossings: Array[int] = []
+	var round_lot: Array[int] = []
+	for n: int in options:
+		if n >> 2 == lot:
+			round_lot.append(n)
+		else:
+			crossings.append(n)
+	var pick := round_lot
+	if round_lot.is_empty() or (not crossings.is_empty() and rng.randf() < CROSS_CHANCE):
+		pick = crossings
+	return pick[rng.randi_range(0, pick.size() - 1)]
 
 
 func _link(a: int, b: int) -> void:

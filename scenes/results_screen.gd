@@ -6,12 +6,12 @@ extends CanvasLayer
 
 signal continued
 
-## Stat key, label, how the value is shown ("int" or "pct").
+## Stat key, label, how the value is shown ("int", "pct" or "storeys").
 const ROWS: Array[Array] = [
 	["rubble", "Biomass devoured", "int"],
 	["destruction", "City destroyed", "pct"],
 	["toppled", "Buildings toppled", "int"],
-	["tallest_topple", "Tallest tower toppled (floors)", "int"],
+	["tallest_topple", "Tallest tower toppled", "storeys"],
 	["civilians", "Civilians crushed", "int"],
 	["tanks", "Tanks crushed", "int"],
 	["helis", "Helicopters downed", "int"],
@@ -21,6 +21,8 @@ const ROWS: Array[Array] = [
 const COUNT_FRAMES := 36
 const ROW_GAP_FRAMES := 12
 const LAYER := 20
+## Space under EVOLVE inside the card (px at 1080p).
+const BOTTOM_PAD := 20
 ## The stat the headline under the title compares with the best (its row shows no best badge).
 const VERDICT_STAT := "rubble"
 
@@ -28,6 +30,8 @@ var result: Dictionary
 var previous_best: Dictionary
 ## Frames since the count began; counting is done once every row has landed.
 var frame := 0
+## The confirm button's text once the count is done ("CONTINUE  >" before the demo's thanks).
+var go_label := "EVOLVE  >"
 var _values: Array[Label] = []
 var _badges: Array[Label] = []
 var _verdict: Label
@@ -55,9 +59,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	panel.add_child(col)
-	var title := UiKit.label("RAMPAGE REPORT", UiKit.SIZE_TITLE, UiKit.ACCENT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(title)
+	col.add_child(UiKit.header("RAMPAGE REPORT"))
 	_verdict = UiKit.label(verdict(), UiKit.SIZE_HEAD, UiKit.WARN)
 	_verdict.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_verdict.modulate.a = 0.0
@@ -76,20 +78,28 @@ func _ready() -> void:
 		value.custom_minimum_size = Vector2(170, 0)
 		grid.add_child(value)
 		_values.append(value)
-		var badge := UiKit.label(_best_text(row), UiKit.SIZE_SMALL, UiKit.MUTED)
+		var badge := UiKit.label(_best_text(row), UiKit.SIZE_BODY, UiKit.MUTED)
 		badge.custom_minimum_size = Vector2(230, 0)
 		badge.modulate.a = 0.0
 		grid.add_child(badge)
 		_badges.append(badge)
-	_go = UiKit.button("EVOLVE  >", UiKit.SIZE_HEAD)
+	_go = UiKit.button("EVOLVE", UiKit.SIZE_HEAD)
 	_go.custom_minimum_size = Vector2(0, 80)
 	_go.pressed.connect(_on_go)
 	col.add_child(_go)
+	_add_pad(col)
 	_go.grab_focus.call_deferred()
 	var crawl := NewsTicker.new(news(result))
 	crawl.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	crawl.offset_top = -NewsTicker.HEIGHT
 	add_child(crawl)
+
+
+## Space under EVOLVE, inside the card.
+func _add_pad(col: Container) -> void:
+	var pad := Control.new()
+	pad.custom_minimum_size = Vector2(0, BOTTOM_PAD)
+	col.add_child(pad)
 
 
 ## The evening news about this rampage, for the crawl under the report: the city's reaction,
@@ -138,6 +148,10 @@ func verdict() -> String:
 		if best <= 0.0:
 			return "BIGGER THAN EVER"
 		return "BIGGER THAN LAST TIME  +%d%% BIOMASS" % roundi(100.0 * (rubble - best) / best)
+	# A record on another row beside "short of your best" would read as a contradiction.
+	for row: Array in ROWS:
+		if str(row[0]) != VERDICT_STAT and is_new_best(str(row[0])):
+			return "%d SHORT OF YOUR BEST BIOMASS, BUT NEW RECORDS" % ceili(best - rubble)
 	return "%d BIOMASS SHORT OF YOUR BEST" % ceili(best - rubble)
 
 
@@ -173,12 +187,14 @@ func _show_frame() -> void:
 			_badges[n].text = "NEW BEST"
 			_badges[n].add_theme_color_override("font_color", UiKit.GOOD)
 	_verdict.modulate.a = 0.0 if counting() else 1.0
-	_go.text = "SKIP" if counting() else "EVOLVE  >"
+	_go.text = "SKIP" if counting() else go_label
 
 
 func _shown(row: Array, value: float) -> String:
 	if str(row[2]) == "pct":
 		return "%d%%" % floori(value * 100.0)
+	if str(row[2]) == "storeys":
+		return "%d STOREYS" % floori(value) if floori(value) != 1 else "1 STOREY"
 	return "%d" % floori(value)
 
 

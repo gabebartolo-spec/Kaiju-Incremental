@@ -16,6 +16,20 @@ func _init(p_sim: RampageSim) -> void:
 	sim = p_sim
 
 
+## Buildings in the arena with every chunk gone (the thanks screen's "buildings destroyed").
+func destroyed_buildings() -> int:
+	var n := 0
+	for b: RampageSim.Building in sim.buildings:
+		if b.in_arena and b.frame.alive_count == 0:  # the sim's own ruin rule (the chunk mirror)
+			n += 1
+	return n
+
+
+## A regrown tower may topple (and count) again.
+func forget_topple(index: int) -> void:
+	_toppled_ids.erase(index)
+
+
 ## Turns every part of building `index` that lost support into a Fall. A carved building's
 ## parts (Carving.settle) also carry their fine cells, which the fall_start event passes on.
 func settle(index: int) -> void:

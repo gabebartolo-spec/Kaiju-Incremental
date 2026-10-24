@@ -26,12 +26,17 @@ var rooftop: Dictionary
 var squads: Array[Squad] = []
 ## Rooftop volleys fired this run (D-076: how often the player is shot at).
 var volleys := 0
+var misses := 0  # tank shells that missed the kaiju and landed in the city
 var rooftops_destroyed := 0
 ## Road movement and firing positions (D-066).
 var convoy: Convoy
+## The Anti Kaiju Taskforce's agents (D-137): they come in above the tanks and police.
+var taskforce: Taskforce
 var _rng: RandomNumberGenerator
 ## Each squad's next shot comes a seeded, ragged while later (D-076: no unison).
 var _ragged: RandomNumberGenerator
+var _aim: RandomNumberGenerator  # which shells miss, and where they land (StrayShell)
+var _strays: Array[Dictionary] = []  # missed shells in flight: {at, left (seconds to land)}
 var _spawn_timer: float
 var _next_id := 0
 var _column := -1
@@ -49,18 +54,22 @@ func _init(p_sim: RampageSim, rng: RandomNumberGenerator) -> void:
 	convoy = Convoy.new(sim, convoy_cfg)
 	_place_squads(Seeds.derive(rng, 0x2007))
 	_ragged = Seeds.derive(rng, 0x2008)
+	taskforce = Taskforce.new(sim, Seeds.derive(rng, 0x7F))
+	_aim = Seeds.derive(rng, 0x2009)
 
 
 func step(dt: float) -> void:
+	_land_strays(dt)
 	_spawn_timer -= dt
 	if _spawn_timer <= 0.0 and _spawn():
 		_spawn_timer = maxf(
 			Num.f(cfg["min_interval"]),
-			Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.chunks_destroyed
+			Num.f(cfg["start_interval"]) - Num.f(cfg["escalation_per_chunk"]) * sim.escalation()
 		)
 	var reach := Num.f(cfg["range"]) + sim.stomp_radius()
 	var coated := false
 	convoy.step(dt)
+	taskforce.step(dt)
 	for tank: RampageSim.Tank in sim.tanks:
 		if tank.coat_t > 0.0:
 			tank.coat_t -= dt
@@ -78,11 +87,39 @@ func step(dt: float) -> void:
 			sim.events.append({"type": "tank_fired", "tank": tank.id, "at": young.pos})
 		elif dist <= reach + 1.0 and convoy.clear_line(tank.pos, sim.kaiju_pos):
 			tank.cooldown = Num.f(cfg["fire_interval"])
-			var hurt := Num.f(cfg["tank_damage"]) - sim.stat("armor")
-			sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt)
-			sim.events.append({"type": "tank_fired", "tank": tank.id})
+			shoot(tank, dist, reach)
 	if _step_squads(dt) or coated:
 		clear_dead()
+
+
+## One shell at the kaiju: a hit (StrayShell.chance) does the shot's damage over that chance, so
+## the kaiju takes the shot's damage on average, as when every shell hit; a miss lands in the
+## city past the kaiju and breaks what it hits there.
+func shoot(tank: RampageSim.Tank, dist: float, reach: float) -> void:
+	var odds := StrayShell.chance(cfg, dist, reach)
+	if _aim.randf() < odds:
+		var hurt := Num.f(cfg["tank_damage"]) - sim.stat("armor")
+		sim.hp -= maxf(Num.f(cfg["min_damage"]), hurt) / odds
+		sim.events.append({"type": "tank_fired", "tank": tank.id})
+		return
+	misses += 1
+	var at := StrayShell.landing(sim, _aim)
+	sim.events.append({"type": "tank_fired", "tank": tank.id, "at": at, "miss": true})
+	_strays.append({"at": at, "left": Num.f(cfg["shell_flight"])})
+
+
+## A missed shell lands when its flight is over (the view draws the tracer for the same time):
+## stray_landed, then what it breaks.
+func _land_strays(dt: float) -> void:
+	for i: int in range(_strays.size() - 1, -1, -1):
+		var stray := _strays[i]
+		stray["left"] = Num.f(stray["left"]) - dt
+		if Num.f(stray["left"]) > 0.0:
+			continue
+		var at: Vector2 = stray["at"]
+		_strays.remove_at(i)
+		sim.events.append({"type": "stray_landed", "at": at})
+		StrayShell.land(sim, at)
 
 
 ## Each squad whose roof still stands fires a volley every fire_interval while the kaiju is in
@@ -111,6 +148,8 @@ func _step_squads(dt: float) -> bool:
 ## bearing (D-039: in a city grown past spawn_radius, round the kaiju). False when that way in
 ## is jammed too: it tries again next step.
 func _spawn() -> bool:
+	if Endless.tanks_full(sim):
+		return false
 	var at := Vector2(INF, INF)
 	if _column_left > 0:
 		at = convoy.enter(_next_id, _column, _column_entry)
@@ -126,7 +165,7 @@ func _spawn() -> bool:
 	tank.id = _next_id
 	_next_id += 1
 	tank.pos = at
-	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
+	var threat := 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.escalation()
 	tank.hp = Num.f(cfg["tank_hp"]) * threat
 	tank.cooldown = Num.f(cfg["fire_interval"])
 	sim.tanks.append(tank)
@@ -176,7 +215,7 @@ func _next_shot() -> float:
 
 ## How hard the army fights back: more the more of the city has fallen.
 func threat_scale() -> float:
-	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.chunks_destroyed
+	return 1.0 + Num.f(cfg["threat_per_chunk"]) * sim.escalation()
 
 
 ## One squad's volley at the kaiju: the size tier's sting, grown by the threat.
@@ -213,6 +252,12 @@ func _place_squads(rng: RandomNumberGenerator) -> void:
 		var cell := Vector3i(rng.randi_range(0, b.w - 1), b.height - 1, rng.randi_range(0, b.d - 1))
 		if b.w >= 3 and b.d >= 3 and cell.x < 2 and cell.z < 2:
 			cell = Vector3i(b.w - 1, cell.y, b.d - 1)
+		# The column's real roof: a setback or a cut-out leaves some columns lower or empty, and a
+		# squad never stands in the air over one.
+		var top := b.frame.top_below(cell.x, cell.z, b.height)
+		if top < Num.i(rooftop["min_height"]) - 1:
+			continue
+		cell.y = top
 		var squad := Squad.new()
 		squad.id = squads.size()
 		squad.building = i
