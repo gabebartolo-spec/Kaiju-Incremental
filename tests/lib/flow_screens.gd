@@ -1,9 +1,10 @@
 extends RefCounted
 ## The flow suite's screen checks (tests/run_flow_tests.gd runs them): the main menu, a new
-## game through species select into a rampage, pause and End Rampage, the end beat, the results
+## game through Kaiju Creation into a rampage, pause and End Rampage, the end beat, the results
 ## count-up, the evolution tree, the evolution reveal, settings, and quit-and-continue on the
 ## save. Every step is real input (mouse clicks at a control, key presses), not a handler call.
 
+const CreationWalk := preload("res://tests/lib/creation_walk.gd")
 const FlowDash := preload("res://tests/lib/flow_dash.gd")
 const GuiInput := preload("res://tests/lib/gui_input.gd")
 const FlowLayout := preload("res://tests/lib/flow_layout.gd")
@@ -57,9 +58,10 @@ func _screen(main: Node) -> Node:
 	return main.call("screen")
 
 
-## No save: the title offers New Kaiju (no Continue); a click goes to species select, a click
-## there starts a rampage; Esc pauses it, End Rampage ends it, the end beat plays in slow motion
-## and gives way to the results over the city; EVOLVE opens the tree; the run is on disk.
+## No save: the title offers New Kaiju (no Continue); a click goes to Kaiju Creation, where the
+## croc genome and the injection start a rampage; Esc pauses it, End Rampage ends it, the end
+## beat plays in slow motion and gives way to the results over the city; EVOLVE opens the tree;
+## the run is on disk.
 func _check_new_game() -> void:
 	var main := await _main()
 	var title := _screen(main)
@@ -69,21 +71,19 @@ func _check_new_game() -> void:
 	)
 	await GuiInput.click(t, GuiInput.button(title, "NEW KAIJU"))
 	await _frames(2)
-	var select := _screen(main)
-	check.call(select is SpeciesSelect, "clicking NEW KAIJU opens species select")
-	await layout.fits_at_scales(select as Control, "species select")
+	var lab := _screen(main)
+	check.call(lab is KaijuCreation, "clicking NEW KAIJU opens Kaiju Creation")
+	await layout.fits_at_scales(lab as Control, "kaiju creation")
 	await GuiInput.key(t, KEY_ESCAPE)
 	await _frames(2)
-	check.call(_screen(main) is TitleScreen, "Esc on species select goes back to the title")
+	check.call(_screen(main) is TitleScreen, "Esc in Kaiju Creation goes back to the title")
 	await GuiInput.click(t, GuiInput.button(_screen(main), "NEW KAIJU"))
 	await _frames(2)
-	select = _screen(main)
-	await GuiInput.click(t, GuiInput.button(select, "CHOOSE"))
-	await _frames(3)
+	await CreationWalk.walk(t, main)
 	var rampage := _screen(main) as Rampage
 	check.call(
 		rampage != null and str(rampage.species["id"]) == "reptilian",
-		"clicking the first CHOOSE starts a reptilian rampage"
+		"the croc genome and the injection start a reptilian rampage"
 	)
 	if rampage == null:
 		main.queue_free()

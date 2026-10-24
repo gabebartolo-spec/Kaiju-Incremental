@@ -1,10 +1,12 @@
 extends SceneTree
-## Demo build dry-run: drives the exported game's own screens (title -> NEW KAIJU -> species
-## select -> rampage -> the final upgrade -> the thanks screen -> Endless mode) and prints one
+## Demo build dry-run: drives the exported game's own screens (title -> NEW KAIJU -> Kaiju
+## Creation -> rampage -> the final upgrade -> the thanks screen -> Endless mode) and prints one
 ## PASS/FAIL line per check.
 ## See tools/release/README.md for how to run it against a built exe.
 
 const MAIN_SCENE := "res://scenes/main.tscn"
+## Frames Kaiju Creation's steps may take at most.
+const CREATION_CAP := 60 * 20
 
 var _main: Node
 var _fails := 0
@@ -28,18 +30,27 @@ func _run() -> void:
 	if _screen() == title:  # an existing save asks first
 		_press(_screen(), "NEW KAIJU")
 		await _frames(12)
-	var select := _screen()
-	var chooses: int = 0
-	for b: Node in select.find_children("*", "Button", true, false):
-		if (b as Button).is_visible_in_tree() and (b as Button).text == "CHOOSE":
-			chooses += 1
+	var lab := _screen()
+	var open: int = 0
+	for b: Node in lab.find_children("*", "Button", true, false):
+		var genome: Button = b
+		if genome.is_visible_in_tree() and genome.text.contains("GENOME") and not genome.disabled:
+			open += 1
 	_check(
-		"species select reached, croc only",
-		select is SpeciesSelect and chooses == 1,
-		"%s, %d CHOOSE" % [str(select), chooses]
+		"Kaiju Creation reached, croc genome only",
+		lab is KaijuCreation and open == 1,
+		"%s, %d open genomes" % [str(lab), open]
 	)
-	_press(select, "CHOOSE")
-	await _frames(12)
+	_press(lab, "CROC")
+	for _i: int in CREATION_CAP:  # the pour, then the injection's takeover, zoom and black
+		if _inject_ready(lab):
+			break
+		await process_frame
+	_press(lab, "INJECT")
+	for _i: int in CREATION_CAP:
+		if _screen() != lab:
+			break
+		await process_frame
 	if _screen() is UpgradeScreen:
 		(_screen() as UpgradeScreen).start_pressed.emit()
 		await _frames(4)
@@ -175,6 +186,15 @@ func _font_names(node: Node) -> String:
 func _font_ok(node: Node) -> bool:
 	var s := _font_names(node).to_lower()
 	return s.contains("kaiju") and not s.contains("open sans")
+
+
+## True once Kaiju Creation's pour is done and INJECT KAIJU JUICE can be pressed.
+func _inject_ready(lab: Node) -> bool:
+	for found: Node in lab.find_children("*", "Button", true, false):
+		var b: Button = found
+		if b.is_visible_in_tree() and b.text.begins_with("INJECT") and not b.disabled:
+			return true
+	return false
 
 
 func _press(node: Node, prefix: String) -> void:

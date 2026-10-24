@@ -894,6 +894,51 @@
 			}
 		}
 	},
+	"creation": {
+		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject the kaiju juice, the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more (the unlock rules are not decided, D-207). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6). crack_sound names assets/sfx/<name>.ogg: PLACEHOLDER until the lead makes it (ElevenLabs); with no file the cue is silent.",
+		"titans": [
+			{"id": "croc", "name": "CROC", "species": "reptilian", "unlocked": true, "genome": "6f8a3e"},
+			{"id": "komodo", "name": "KOMODO DRAGON", "species": "", "unlocked": false, "genome": "8a7550"},
+			{"id": "serpent", "name": "SERPENT", "species": "", "unlocked": false, "genome": "7d8a2a"}
+		],
+		"save_key": "titans_unlocked",
+		"timing": {"place_s": 0.8, "inject_s": 0.5, "takeover_s": 1.5, "zoom_s": 0.6, "black_s": 0.8},
+		"crack_sound": "egg_crack",
+		"lab": {
+			"voxel": 0.04,
+			"dish_radius": 0.9,
+			"dish_wall": 3,
+			"colony_radius": 0.75,
+			"colony_fill": 0.72,
+			"bench_size": [4.8, 3.2],
+			"vial_spacing": 0.5,
+			"vial_z": -1.25,
+			"vial_height": 0.56,
+			"vial_lift": 0.08,
+			"vial_hover": 0.5,
+			"syringe_top": 1.7,
+			"syringe_height": 0.9,
+			"needle": 0.24,
+			"wave_width": 0.12,
+			"rise": 1,
+			"glow": 5.0,
+			"camera": {"position": [0.0, 1.45, 2.05], "look": [0.0, 0.0, -0.15], "fov": 42.0},
+			"zoom": {"position": [0.0, 0.16, 0.02], "fov": 18.0, "black_from": 0.35},
+			"colors": {
+				"background": "0b0f15",
+				"bench": "39404a",
+				"rim": "a9c2cc",
+				"agar": "b49a5c",
+				"steel": "8b939c",
+				"locked": "55565c",
+				"juice": "f4f1ff",
+				"lamp": "dfe8ff",
+				"fill": "6f86a8"
+			},
+			"lamp_energy": 7.0,
+			"fill_energy": 0.5
+		}
+	},
 	"chain": {
 		"step_hz": 60.0,
 		"max_substeps": 4,
