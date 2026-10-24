@@ -1,6 +1,6 @@
 extends SceneTree
 ## Where each stomp's ring (the delivering foot) lands against the sim's kaiju_pos and heading, per
-## growth step: prints ahead and across, in body-scale-1 units, and the sim's own foot point. Headless.
+## growth step: prints ahead and across (left is positive), in body-scale-1 units, and how far the ring is from the sim's nearer foot point (BodyContact.stomp_foot), taken when the ring lands. Headless.
 ##
 ##   godot --path . --headless --script tools/capture/probe_stomp_foot.gd -- <size 1..3> <walk 0|1>
 
@@ -37,15 +37,17 @@ func _run() -> void:
 			var rel := Vector2(ring.x, ring.z) - sim.kaiju_pos
 			var h := sim.body.heading
 			var s := sim.body_scale()
+			var ring2 := Vector2(ring.x, ring.z)
+			var near := minf(
+				ring2.distance_to(sim.body.stomp_foot(true)),
+				ring2.distance_to(sim.body.stomp_foot(false))
+			)
 			print(
 				(
 					"size %d walk %s stomp %d: ahead %.2f across %.2f (units at scale 1), "
-					+ "dist %.2f world, scale %.2f, foot point %s, ring %s"
+					+ "scale %.2f, ring to the sim's nearer foot point %.2f"
 				)
-				% [
-					size, walk, seen, rel.dot(h) / s, rel.dot(h.orthogonal()) / s, rel.length(), s,
-					sim.kaiju_pos, Vector2(ring.x, ring.z)
-				]
+				% [size, walk, seen, rel.dot(h) / s, rel.dot(h.orthogonal()) / s, s, near]
 			)
 	kaiju.queue_free()
 	quit()

@@ -228,6 +228,12 @@ func stomp_foot(left: bool) -> Vector2:
 	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
 
 
+## The middle of the two stomp feet (world): a scripted player stops with this on its target, as a
+## person stands where the stomp lands on the building, not with the tail base on it.
+func stomp_mid() -> Vector2:
+	return (stomp_foot(true) + stomp_foot(false)) * 0.5
+
+
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),
 ## `side` 1 on its own side of the middle, -1 on the other.
 func _foot_at(ahead: float, side: float) -> Vector2:

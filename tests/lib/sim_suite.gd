@@ -60,7 +60,7 @@ func _autoplay(sim: RampageSim, max_steps: int = MAX_STEPS) -> Dictionary:
 		if steps % 15 == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
-		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+		if target.x < INF and sim.body.stomp_mid().distance_to(target) > sim.stomp_radius() * 0.5:
 			move = (target - sim.kaiju_pos).normalized()
 		sim.step(DT, move, sim.ability_ready_in <= 0.0)
 		steps += 1

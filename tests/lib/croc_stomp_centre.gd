@@ -13,6 +13,7 @@ const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const CENTRE_TOL := 0.5
 const STOMPS := 4
 const TANK_HP := 100000.0
+const HERO_HP := 1.0e9
 
 var _suite: SceneTree
 var _check: Callable
@@ -38,6 +39,8 @@ func _sim(size: int) -> RampageSim:
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
 	var sim := RampageSim.new(stats, Content.tuning(), layout, Seeds.make("army", 0))
 	sim.body.use_species("reptilian")
+	sim.hp = HERO_HP  # the tank on the foot's spot would fire back; the check is the stomp
+	sim.max_hp = HERO_HP
 	return sim
 
 
@@ -83,7 +86,6 @@ func _stage(size: int, turned: bool) -> void:
 			if spots.size() >= 2:  # the tank stood on this foot's spot from the stomp before last
 				_damage(size, turned, sim, was - tank.hp, spots[-2], old_centre)
 			spots.append(foot)
-	print("DBG steps %d over %s reason %s" % [steps, sim.over, sim.end_reason])
 	_check.call(
 		spots.size() == STOMPS and worst <= CENTRE_TOL,
 		(
