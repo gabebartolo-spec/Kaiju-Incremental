@@ -129,7 +129,7 @@ func _play(sim: RampageSim, seconds: float, walk := true) -> Dictionary:
 	for n: int in roundi(seconds / DT):
 		if n % 15 == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
-		var near := target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5
+		var near := target.x < INF and not sim.stomp_reaches(target)
 		var move := (target - sim.kaiju_pos).normalized() if near and walk else Vector2.ZERO
 		var events := sim.step(DT, move, false)
 		out["hurt"] = Num.f(out["hurt"]) + sim.max_hp - sim.hp

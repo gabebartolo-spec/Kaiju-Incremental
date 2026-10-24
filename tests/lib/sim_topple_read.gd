@@ -153,7 +153,7 @@ func _rampage(run: int, log: Array[Dictionary]) -> void:
 		if n % 15 == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
-		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+		if target.x < INF and not sim.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
 		_note(sim, sim.step(RUN_DT, move, sim.ability_ready_in <= 0.0), log)
 

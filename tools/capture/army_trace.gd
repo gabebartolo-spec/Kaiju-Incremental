@@ -72,7 +72,7 @@ func _run() -> void:
 		if steps % 8 == 0:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var move := Vector2.ZERO
-		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+		if target.x < INF and not sim.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
 		var held := RampageSim.HELD if steps % 30 < 15 else 0
 		for event: Dictionary in sim.step(

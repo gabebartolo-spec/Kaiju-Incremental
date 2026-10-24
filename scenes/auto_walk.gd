@@ -10,6 +10,6 @@ func move(sim: RampageSim, steps: int) -> Vector2:
 	if steps % 15 == 0 or _target.x == INF:
 		_target = sim.nearest_standing(sim.kaiju_pos)
 	var to := _target - sim.kaiju_pos
-	if _target.x == INF or to.length() < sim.stomp_radius() * 0.5:
+	if _target.x == INF or sim.stomp_reaches(_target):
 		return Vector2.ZERO
 	return to.normalized()
