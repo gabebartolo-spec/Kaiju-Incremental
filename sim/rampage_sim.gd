@@ -96,6 +96,7 @@ var army_units: Army
 var powers: SpeciesPowers
 var air: AirWing
 var brood: Brood
+var stomp: RampageStomp
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
@@ -114,8 +115,6 @@ var events: Array[Dictionary]:
 	get:
 		return _events
 var _rng: RandomNumberGenerator
-var _stomp_timer := 0.0
-var _stomp_due := false  # the stomp timer ran out: a walking body lets it fall on a footfall
 var _events: Array[Dictionary] = []
 
 
@@ -145,6 +144,7 @@ func _init(
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
 
@@ -224,7 +224,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
-	_stomp_clock(dt)
+	stomp.step(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
@@ -245,18 +245,6 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	return _events
 
 
-## The stomp timer: a stomp comes due every stomp_interval, and falls when a walking body's foot
-## lands (a standing body stomps at once, D-166).
-func _stomp_clock(dt: float) -> void:
-	_stomp_timer -= dt
-	if _stomp_timer <= 0.0:
-		_stomp_timer += maxf(0.1, stat("stomp_interval"))
-		_stomp_due = not airborne
-	if _stomp_due and (body.footfall_now or not body.walking()):
-		_stomp_due = false
-		_stomp()
-
-
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
 ## freed: Godot never frees objects that count each other, and every rampage kept its city in
 ## memory (about 240 MB a rampage in tools/pacing.gd). Call it when the rampage is over for good,
@@ -275,30 +263,6 @@ func end(reason: String) -> void:
 
 func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
-
-
-func _stomp() -> void:
-	var radius := stomp_radius()
-	var on_foot := body.walking() and body.footfall_now  # a walking stomp falls on the landing foot
-	var left := body.landed_left() if on_foot else body.stomps % 2 == 0
-	var centre := body.landed_foot() if on_foot else body.stomp_foot(left)
-	body.stomps += 1
-	_events.append(
-		{
-			"type": "stomp",
-			"radius": radius,
-			"lift": stand_y,
-			"at": centre,
-			"side": "left" if left else "right",
-			"on_foot": on_foot
-		}
-	)
-	hit_area(
-		func(p: Vector2, r: float) -> float: return falloff(p.distance_to(centre) - r, radius),
-		stat("stomp_damage") * powers.hit_mult(),
-		maxi(0, floori(stand_y) - Num.i(powers_cfg["climb_dig"])),
-		ceili(reach_top())
-	)
 
 
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a
