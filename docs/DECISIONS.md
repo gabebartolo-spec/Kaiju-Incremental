@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-25 · D-234 · Director · Komodo walking arms: pose C, forearms up and forward, claws reaching ahead
+
+After w25 ("no looks like a clown. use video reference of bipedal kaiju arms") and w26 matched to the official Godzilla 2014 walk ("Still off": "Too stiff / frozen", "Pose itself wrong"), he picked "Raised and ready" (forearms at chest height in front, rocking with the body like a stalking predator), then from three still poses at the game camera picked C: "forearms up and forward, claws reaching ahead". Changes: refines D-233; the walk, idle and charge use pose C as the arm base, with the hands visibly moving every step. Method: a pose that misses twice is picked from labelled stills before any clip.
+
 ## 2026-10-25 · D-233 · Director · Komodo arms reach forward, ready to swipe (replaces D-229's hanging arms)
 
 Shown walk w22 (arms hanging at his sides per D-229, critic SHIP): "arms lifeless like a zombie, i prefer his earlier pose of arms slightly outreached, prepared to swipe". Shown w21 (arms about 45 deg out to the sides, elbows bent, claws open): "no i want them facing more forward than that". Changes: the adult Komodo walk's arms reach forward ahead of the chest, slightly outreached, elbows a little bent, claws open and ready, symmetric, a small living swing; legs, torso, tail and footfall stay as w22.
@@ -392,7 +396,3 @@ Asked 2026-10-22 ("ask me a lot of questions"). Helicopter deaths (#86): a breat
 ## 2026-10-22 · D-139 · Director · Anti Kaiju Taskforce details; it is the next build
 
 Adds to D-137. Agents die when the building they cling to collapses, and a claw swipe can swat one out of the air while it jetpacks. Look: black tactical armour with glowing blue railgun coils and jetpack exhausts. Arrival: agents jetpack in from the map edge. Squads of 3-4, up to about 12 alive. Frost grenades are launched at street level at the feet, and ice crusts up the legs until it cracks off ("we cant have them hit his head but freeze the legs"). Railgun: a thin aiming line plus a rising charge whine, about 2 s before the hit. Each agent killed pays bonus cash. Order: the Taskforce starts first when builders free up, ahead of textures, helicopter deaths and the graphics preview.
-
-## 2026-10-22 · D-138 · Director · Original sounds may be made on ElevenLabs
-
-"builder should create original sounds on 11labs if necessary" (comment #91, about the title screen's screams, sirens and gunfire). When no CLEARED sound exists, original sound effects may be generated on his ElevenLabs plan (commercial use per the plan's terms; check and name the licence in docs/LICENSING_REGISTER.md for every file). Spend stays within the plan's existing credits; anything that needs new credits or a plan change is asked first.
