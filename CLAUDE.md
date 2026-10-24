@@ -30,7 +30,7 @@ Shared rules: `~/.claude/CLAUDE.md` and its rulebook; this file holds only what 
   CI captures (`tools/capture/ci_capture.sh`, xvfb, software: ~25-35 min a clip) only for gl_compatibility checks or
   while paused. Generation jobs (ComfyUI, local models) one at a time on the GPU.
 - Tests: `tools/run_tests.sh` isolates APPDATA; a direct run sets `APPDATA=<your scratch dir>`.
-- Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/claude/look-options`; remove
+- Worktrees: `git worktree add -b claude/<topic> ../Kaiju-Incremental-wt/<topic> origin/main`; remove
   when the PR merges; `tools/lint/worktrees.sh` caps the total (D-053). Revert `.import` churn.
 - Only the lead edits `docs/DECISIONS.md` and `docs/DESIGN.md`; `docs/STATUS.md` is generated (`python tools/status.py`,
   never by hand) after merges. Other PRs state their
