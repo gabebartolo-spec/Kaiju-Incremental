@@ -34,6 +34,10 @@ var phase := 0.0
 ## (the legs scale the clip's foot travel by it, so a planted foot is passed at the pace the body
 ## walks).
 var step_ratio := 1.0
+## Stomps the sim has made (it counts them): they alternate feet, the left first.
+var stomps := 0
+## True on a step a foot came down (the step clock passed a whole number): `landed_foot`'s.
+var footfall_now := false
 ## The discs at body scale 1, in design units: [forward offset, radius, bottom, top]; empty
 ## for a species without a body volume (then the body only slows in walls, as before).
 var _discs: Array = []
@@ -78,6 +82,7 @@ func use_species(species_id: String) -> void:
 	var stages: Array = bodies.get(species_id, [])
 	_discs = []
 	_volume.discs = _discs
+	_stomp_foot = Vector2.ZERO  # a body without an entry stomps at kaiju_pos, never a stale foot
 	if not stages.is_empty():
 		var stage: Dictionary = stages[clampi(sim.size_tier() - 1, 0, stages.size() - 1)]
 		_discs = stage["discs"]
@@ -122,6 +127,7 @@ func length() -> float:
 ## the planted foot like any turn: a held curve never drags the feet (D-177).
 ## Returns the stride; RampageSim moves the kaiju along the heading by it, never sideways.
 func steer(dt: float, want: Vector2) -> float:
+	footfall_now = false
 	if want == Vector2.ZERO:
 		_stand(dt)
 		return 0.0
@@ -228,17 +234,26 @@ func stomp_foot(left: bool) -> Vector2:
 	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
 
 
-## The middle of the two stomp feet (world): a scripted player stops with this on its target, as a
-## person stands where the stomp lands on the building, not with the tail base on it.
-func stomp_mid() -> Vector2:
-	return (stomp_foot(true) + stomp_foot(false)) * 0.5
+## True when the body walks by its step clock (it has planted feet and the stick is pushed).
+func walking() -> bool:
+	return stepping() and not _standing
 
 
-## True when the stomp's feet are on `target` (the middle of the two within half a stomp's reach): a
-## scripted player stops when this holds, as a person aims the foot at the building (D-166). Every
-## measuring player (tests, pacing, captures, autoplay) walks by this rule.
+## The foot that came down on the latest footfall (world), and whether it is the left: an even step
+## is the left foot's (the step clock and the legs agree). Read on a step `footfall_now` is true.
+func landed_foot() -> Vector2:
+	return _feet[0]
+
+
+func landed_left() -> bool:
+	return int(floorf(phase)) % 2 == 0
+
+
+## True when the stomp's next foot is on `target` (within half a stomp's reach): a scripted player
+## stops when this holds, so the foot that comes down next lands on the building, as a person aims
+## it (D-166). Every measuring player (tests, pacing, captures, autoplay) walks by this rule.
 func stomp_reaches(target: Vector2) -> bool:
-	return stomp_mid().distance_to(target) <= sim.stomp_radius() * 0.5
+	return stomp_foot(stomps % 2 == 0).distance_to(target) <= sim.stomp_radius() * 0.5
 
 
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),
@@ -286,6 +301,7 @@ func walked(distance: float, dt: float) -> void:
 		if floorf(phase) != before:  # a footfall: that foot comes down short of a full step
 			var short := 0.5 * _step_len * (1.0 - step_ratio)
 			_feet = [_foot_at(_pivot.x - short, 1.0), _feet[0]]
+			footfall_now = true
 
 
 ## Carries a dash (dash_pressed: the button this step), faces the body where sim.facing points,

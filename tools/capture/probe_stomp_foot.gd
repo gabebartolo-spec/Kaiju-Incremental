@@ -39,17 +39,22 @@ func _run() -> void:
 			var h := sim.body.heading
 			var s := sim.body_scale()
 			var ring2 := Vector2(ring.x, ring.z)
-			var near := minf(
-				ring2.distance_to(sim.body.stomp_foot(true)),
-				ring2.distance_to(sim.body.stomp_foot(false))
-			)
+			var named := rampage.stomp_sim_at[-1]
 			print(
 				(
 					(
 						"size %d walk %s stomp %d: ahead %.2f across %.2f (units at scale 1), "
-						+ "scale %.2f, ring to the sim's nearer foot point %.2f"
+						+ "scale %.2f, ring to the sim's stomp point %.2f"
 					)
-					% [size, walk, seen, rel.dot(h) / s, rel.dot(h.orthogonal()) / s, s, near]
+					% [
+						size,
+						walk,
+						seen,
+						rel.dot(h) / s,
+						rel.dot(h.orthogonal()) / s,
+						s,
+						ring2.distance_to(named)
+					]
 				)
 			)
 	kaiju.queue_free()

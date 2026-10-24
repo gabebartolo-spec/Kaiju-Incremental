@@ -29,6 +29,34 @@ func run() -> void:
 	for size: int in 3:
 		for turned: bool in [false, true]:
 			await _stage(size, turned)
+	for size: int in [1, 2]:
+		_walking(size)
+
+
+## Walking, a Behemoth's or Colossus's stomp falls on a footfall of the sim's step clock: it names
+## the foot that lands (an even step is the left's) and is centred on that foot's spot.
+func _walking(size: int) -> void:
+	var sim := _sim(size)
+	var on_foot := 0
+	var wrong := 0
+	for i: int in 600:
+		for event: Dictionary in sim.step(DT, Vector2(0.0, -1.0), false):
+			if str(event["type"]) != "stomp" or not event["on_foot"]:
+				continue
+			on_foot += 1
+			var at: Vector2 = event["at"]
+			var left := int(floorf(sim.body.phase)) % 2 == 0
+			if not sim.body.footfall_now or (event["side"] == "left") != left:
+				wrong += 1
+			elif at != sim.body.landed_foot():
+				wrong += 1
+	_check.call(
+		on_foot >= 3 and wrong == 0,
+		(
+			"%s walking: %d stomps fell on a footfall, each naming the foot that landed (%d wrong)"
+			% [STAGES[size], on_foot, wrong]
+		)
+	)
 
 
 func _sim(size: int) -> RampageSim:

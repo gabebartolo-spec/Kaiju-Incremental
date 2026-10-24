@@ -115,7 +115,7 @@ var events: Array[Dictionary]:
 		return _events
 var _rng: RandomNumberGenerator
 var _stomp_timer := 0.0
-var _stomps := 0  # stomps made: they alternate feet, the left first
+var _stomp_due := false  # the stomp timer ran out: a walking body lets it fall on a footfall
 var _events: Array[Dictionary] = []
 
 
@@ -227,8 +227,10 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	_stomp_timer -= dt
 	if _stomp_timer <= 0.0:
 		_stomp_timer += maxf(0.1, stat("stomp_interval"))
-		if not airborne:
-			_stomp()
+		_stomp_due = not airborne
+	if _stomp_due and (body.footfall_now or not body.walking()):
+		_stomp_due = false
+		_stomp()
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
@@ -271,16 +273,18 @@ func clamp_to_arena(pos: Vector2) -> Vector2:
 
 func _stomp() -> void:
 	var radius := stomp_radius()
-	var left := _stomps % 2 == 0
-	_stomps += 1
-	var centre := body.stomp_foot(left)  # where the foot comes down, as the view draws the ring
+	var on_foot := body.walking() and body.footfall_now  # a walking stomp falls on the landing foot
+	var left := body.landed_left() if on_foot else body.stomps % 2 == 0
+	var centre := body.landed_foot() if on_foot else body.stomp_foot(left)
+	body.stomps += 1
 	_events.append(
 		{
 			"type": "stomp",
 			"radius": radius,
 			"lift": stand_y,
 			"at": centre,
-			"side": "left" if left else "right"
+			"side": "left" if left else "right",
+			"on_foot": on_foot
 		}
 	)
 	hit_area(
