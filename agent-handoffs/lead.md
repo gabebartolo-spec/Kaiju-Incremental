@@ -67,7 +67,10 @@
   board accepted. 10-24 interview (06a3b5bc): D-217 mecha "B Lab-white" (tripo-komodo 3D, cap 400); D-218 serpent
   size "A Today" + fix the hood from above (builder claude/serpent-hood); D-219 he HATES the fat adult croc: remake
   "Teen's build, grown up" (tripo-komodo, chest/length <= 0.28, cap 800), plates re-asked on the new body. Still to
-  ask: haze/shadow/heli (capture builder -> cascadeur_bridge/look_boards/), 3 skins, croc teen size. #177 merged (exports now ship .kclip). casc-anim (D-214/D-216 Cascadeur stays; bridge Quick Rig
+  ask: haze/shadow/heli (capture builder -> cascadeur_bridge/look_boards/), croc teen size. Skins D-220 (C+D, blue
+  via Tripo text). AFK "dont chase minute improvements": casc-anim idle, script server down (his click). On return
+  send casc-anim: teen idle v3 FIX (breath 56-60 f, >=14 px; snort bell 5 in/5 out, chin clears chest; glance 10-12 f;
+  hand off the foot f70-105; head +6 deg, mouth ajar), teen walk v9 body (speed <=1.4x, plant drop, forearms). #177 merged (exports now ship .kclip). casc-anim (D-214/D-216 Cascadeur stays; bridge Quick Rig
   works): adult idle body SHIP (tongue prop pending), turn v12 FIX (near hand), teen walk v7 FIX tail, teen idle v3.
   Sessions waiting on him: tripo-komodo (asked him directly), casc-anim (a prompt). Budget 10,000 (D-204, D-213). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
   director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
@@ -104,15 +107,12 @@
 - When a lead slot frees: music integration (D-184), then sky and sea life with the whale in the river (D-168;
   demo-end handoff plan), damage on impact (D-166, after strike-delay), sim speed-ups (D-159), Taskforce adult units.
 - Heli-standoff: push -> git-helper opens the PR -> non-author sim review -> go; send the sha to the VFX lead (D-183).
-- Hygiene: scratchpad hygiene_manifest.md (dead worktrees vs cap 12); deletions are his to make.
 
 ## Tools
 - Lead docs worktree Kaiju-Incremental-wt/lead-docs (detach at origin/claude/look-options; python edits newline='';
   commit [skip ci]; push HEAD:claude/look-options; rebase on reject). DECISIONS.md cap 400 (scratchpad add_d186.py).
 - Suno: built-in browser (he is signed in); downloads via page JS fetch /a/api/download/clip/<id>?format=wav with
   Bearer __session cookie -> signed URL -> curl. Stems: Edit > Get Stems > Auto split (50 credits; CAPTCHA is his).
-- ElevenLabs: creative flow tools; set duration_seconds on the node before running. Measure takes with sfx_measure.py.
-- ffmpeg: C:/Users/DANTE/AppData/Roaming/Python/Python314/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe
 
 ## Findings
 - CI watcher: require every expected check before green. Seed checks: fix behaviour or re-pin, never the bar (D-144).
