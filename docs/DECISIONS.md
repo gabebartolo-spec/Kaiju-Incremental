@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-25 · D-232 · Director · Nimbalyst joins as a developer, Opus 5.5 Medium on the Claude API, $100 cap
+
+His words: "I also have Nimbalyst connected to Claude API, you can use him as a developer"; "I will make him Opus 5.5 Medium". Asked how it gets work: a mailbox folder (`Documents/Nimbalyst Tutorial/kaiju-mailbox`, briefs in, results out). API spend: "100" (read as $100 in total until he says otherwise; it stops and reports at $90). First task: Kaiju Creation (D-207). Changes: one more builder outside the PC's engine cap count only while it runs Godot; the lead opens its PRs and merges.
+
 ## 2026-10-25 · D-231 · Director · Rig first: every model passes a rig check before any animation
 
 After walk v18 (footfall jolt; "his torso sometimes contorts ... like he has no ribcage or internal mass at all"; "see how the width of his waist changes so dramatically ... as his leg moves forward"): "seems like we should be doing better skeletons and better rigging before we get to the animation". Asked; answer "Yes, rig first". Komodo animation pauses; its skeleton and skin are rebuilt (rigid ribcage, waist and flank on the pelvis, thigh influence only below the hip crease, shoulders hold volume) and a critic passes a standard grey-mesh pose sheet (spine bend and twist, leg and arm swings, neck, tail; waist width change at most 5%) before any clip. The same gate applies to the croc, serpent and mecha boss.
@@ -392,7 +396,3 @@ Adds to D-137. Agents die when the building they cling to collapses, and a claw 
 ## 2026-10-22 · D-137 · Director · The Anti Kaiju Taskforce, before the demo
 
 "Roadmap: your adversaries": the Anti Kaiju Taskforce with "special anti-kaiju weaponry including: lazer railguns, frost grenades", reference Attack on Titan, "Special Agents fly around the city with jetpacks and grappling hooks" (comment #78). Asked: arrives from the adolescent city as the elite threat above police and tanks; agents grapple onto buildings only; frost grenades slow the kaiju a few seconds, railguns charge visibly then hit hard; built before the Itch demo (adds to D-132's 'fully featured').
-
-## 2026-10-22 · D-136 · Director · Drift audit: agent-added content ruled
-
-A read-only audit found content agents added without a decision (comment #77). Kept: police blockades, the regeneration node, the UI scale setting, elevated expressways, the far-shore skyline as it is, aircraft lights, neon signs; far burn-outs pay a quarter of a burn-out. Cut: the camera's sideways lift during the breath. Prestige abandoned ("it isnt relevant to our game"). Graphics quality never drops on its own ("We have to optimise our game well, and graphics settings potato-max allow flexibility"). News headlines: keep 8, cut "AIR FORCE GROUNDS ALL HELICOPTERS"; the results screen is reviewed when he next plays; the mecha's three attacks are a proposal only.
