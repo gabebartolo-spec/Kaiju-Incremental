@@ -45,6 +45,9 @@ var _spin := 0.0  # how fast the body turns now (rad/s, signed as turn_left)
 ## The feet at body scale 1: (how far ahead of kaiju_pos a foot comes down in a full step; half the
 ## gap between the feet).
 var _pivot := Vector2.ZERO
+## Where a stomp's foot comes down at body scale 1: (ahead of kaiju_pos along the heading, out to the
+## left foot's side); zero for a body that has no entry (its stomp is centred on kaiju_pos).
+var _stomp_foot := Vector2.ZERO
 ## Where the last two feet to land stand in the world (they stay there until they lift): the newest
 ## first. The body turns about them.
 var _feet: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
@@ -83,6 +86,8 @@ func use_species(species_id: String) -> void:
 		_step_len = Num.f(stage.get("step_len", cfg["step_len"]))
 		var pivot: Array = stage.get("pivot", [0.0, 0.0])
 		_pivot = Vector2(Num.f(pivot[0]), Num.f(pivot[1]))
+		var foot: Array = stage.get("stomp_foot", [0.0, 0.0])
+		_stomp_foot = Vector2(Num.f(foot[0]), Num.f(foot[1]))
 
 
 func active() -> bool:
@@ -214,6 +219,13 @@ func _swing(was: Vector2, most: float) -> void:
 		_plant_both()
 		at = _feet[0]
 	sim.kaiju_pos = at + (sim.kaiju_pos - at).rotated(clampf(was.angle_to(heading), -most, most))
+
+
+## The ground point a stomp lands on (world): the left foot's (or the right's) spot ahead of kaiju_pos
+## on the body's heading, so the damage is where the drawn ring is, not at the tail base.
+func stomp_foot(left: bool) -> Vector2:
+	var across := heading.orthogonal() * _stomp_foot.y * (1.0 if left else -1.0)
+	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
 
 
 ## Where the foot that lands now comes down (world): `ahead` of kaiju_pos (body units at scale 1),

@@ -177,6 +177,12 @@ func limb_tip(limb_hint: int) -> Vector3:
 	return global_position
 
 
+## The foot the next standing stomp lifts (ClipGait.prefer_foot); other bodies have no such choice.
+func prefer_foot(side: String) -> void:
+	if _rig != null and _rig.gait is ClipGait:
+		(_rig.gait as ClipGait).prefer_foot(side)
+
+
 func stomp() -> void:
 	if _rig != null:
 		_rig.stomp()

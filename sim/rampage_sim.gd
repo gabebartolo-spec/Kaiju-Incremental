@@ -115,6 +115,7 @@ var events: Array[Dictionary]:
 		return _events
 var _rng: RandomNumberGenerator
 var _stomp_timer := 0.0
+var _stomps := 0  # stomps made: they alternate feet, the left first
 var _events: Array[Dictionary] = []
 
 
@@ -270,8 +271,18 @@ func clamp_to_arena(pos: Vector2) -> Vector2:
 
 func _stomp() -> void:
 	var radius := stomp_radius()
-	var centre := kaiju_pos
-	_events.append({"type": "stomp", "radius": radius, "lift": stand_y})
+	var left := _stomps % 2 == 0
+	_stomps += 1
+	var centre := body.stomp_foot(left)  # where the foot comes down, as the view draws the ring
+	_events.append(
+		{
+			"type": "stomp",
+			"radius": radius,
+			"lift": stand_y,
+			"at": centre,
+			"side": "left" if left else "right"
+		}
+	)
 	hit_area(
 		func(p: Vector2, r: float) -> float: return falloff(p.distance_to(centre) - r, radius),
 		stat("stomp_damage") * powers.hit_mult(),

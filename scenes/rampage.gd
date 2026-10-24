@@ -253,7 +253,7 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
-			_land.lift(_kaiju)
+			_land.lift(_kaiju, str(event.get("side", "")))
 			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
