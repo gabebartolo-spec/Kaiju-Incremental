@@ -6,19 +6,23 @@ extends MeshInstance3D
 ## by the `shape` table in data/tuning.json "serpent" (distance behind the snout in m, width as a
 ## share of the girth). Rings are laid every tube_step m along a Catmull-Rom curve through the
 ## joints, so a bend never shows corners. A plain skin: dark back, paler flanks, dark bands that
-## ride the body (a slide along it would show), a lighter head with two eyes. Rebuilt each frame
-## from the joints; presentation only.
+## ride the body (a slide along it would show), a lighter head with two eyes. The cobra's hood is
+## its own thin shield over the neck (SerpentHood), not this tube widened. Rebuilt each frame from
+## the joints; presentation only.
 
 const BACK := Color("3f6d24")
 const FLANK := Color("7c9a3c")
 const BAND := Color("203a12")
 const HEAD := Color("8aa63a")
-const EYE := Color("f0d84a")
 const TONGUE := Color("c4283c")
 ## Bands: one every BAND_EVERY m of body, BAND_SHARE of it dark, soft over BAND_SOFT of it.
 const BAND_EVERY := 2.6
 const BAND_SHARE := 0.28
 const BAND_SOFT := 0.08
+## The head's lighter colour fades out between these shares of head_len behind the snout (it ends
+## at the back of the head, so the folded hood behind it is the body's colour).
+const HEAD_FADE_FROM := 0.6
+const HEAD_FADE_TO := 0.85
 
 ## How far the cobra's hood is spread (0..1; D-206), set before `build`.
 var hood := 0.0
@@ -30,8 +34,9 @@ var _shape: Array = []
 var _sides: int
 var _rings := 0
 var _indices := PackedInt32Array()
-var _eyes: Array[MeshInstance3D] = []
+var _eyes: SerpentEyes
 var _tongue: Array[MeshInstance3D] = []
+var _hood: SerpentHood
 
 
 func _init(cfg: Dictionary) -> void:
@@ -46,27 +51,21 @@ func _init(cfg: Dictionary) -> void:
 	mat.roughness = 0.6
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material_override = mat
-	var ball := SphereMesh.new()
-	ball.radius = 0.5
-	ball.height = 1.0
-	ball.radial_segments = 8
-	ball.rings = 4
-	var eye_mat := StandardMaterial3D.new()
-	eye_mat.albedo_color = EYE
-	eye_mat.roughness = 0.3
-	ball.material = eye_mat
-	for _i: int in 2:
-		var eye := MeshInstance3D.new()
-		eye.mesh = ball
-		eye.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # raised: a speckled shadow
-		add_child(eye)
-		_eyes.append(eye)
+	_eyes = SerpentEyes.new(cfg)
+	add_child(_eyes)
+	_add_tongue()
+	_hood = SerpentHood.new(cfg, self)
+	add_child(_hood)
+
+
+## The forked tongue's three pieces (the stem, then the two prongs), hidden until it flicks.
+func _add_tongue() -> void:
 	var prong := BoxMesh.new()
 	var tongue_mat := StandardMaterial3D.new()
 	tongue_mat.albedo_color = TONGUE
 	tongue_mat.roughness = 0.4
 	prong.material = tongue_mat
-	for _i: int in 3:  # the stem, then the two prongs
+	for _i: int in 3:
 		var piece := MeshInstance3D.new()
 		piece.mesh = prong
 		piece.visible = false
@@ -92,37 +91,36 @@ func share_at(d: float) -> float:
 
 
 ## The widest the body is `d` m behind the snout, as drawn (m), with `swell` (its breath): the
-## girth (x girth_scale), the head x head_scale, the hood spread behind it.
+## tube, or the hood spread over it.
 func width_at(d: float, swell: float) -> float:
-	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
-	return width * _head_k(d) * (1.0 + (Num.f(_cfg["hood_flare"]) - 1.0) * hood * _hood_at(d))
+	return maxf(body_width(d, swell), _hood.width_at(d, hood, swell))
 
 
-## The body's height `d` m behind the snout: a share of its width, the head flatter, the hood thin.
+## The body's height `d` m behind the snout, as drawn (the thin hood adds none that matters).
 func height_at(d: float, swell: float) -> float:
+	return body_height(d, swell)
+
+
+## The tube's own width `d` m behind the snout (m): the girth x girth_scale, the head x head_scale.
+func body_width(d: float, swell: float) -> float:
+	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
+	return width * _head_k(d)
+
+
+## The tube's height `d` m behind the snout: a share of its width, the head flatter.
+func body_height(d: float, swell: float) -> float:
 	var flat := lerpf(
 		Num.f(_cfg["head_flat"]),
 		1.0,
 		smoothstep(Num.f(_cfg["head_len"]) * 0.7, Num.f(_cfg["head_len"]) * 1.4, d)
 	)
-	var width := Num.f(_cfg["girth"]) * Num.f(_cfg["girth_scale"]) * share_at(d) * swell
-	var thin := 1.0 - Num.f(_cfg["hood_thin"]) * minf(hood, 1.0) * _hood_at(d)
-	return width * _head_k(d) * Num.f(_cfg["height_share"]) * flat * thin
+	return body_width(d, swell) * Num.f(_cfg["height_share"]) * flat
 
 
 ## How much the head is scaled `d` m behind the snout (head_scale over the head, 1 past the neck).
 func _head_k(d: float) -> float:
 	var head := Num.f(_cfg["head_len"])
 	return lerpf(Num.f(_cfg["head_scale"]), 1.0, smoothstep(head, head * 1.8, d))
-
-
-## The hood's shape along the neck `d` m behind the snout (0..1): it spreads from the back of the
-## head, widest hood_peak m behind it, and narrows back into the neck over hood_len m.
-func _hood_at(d: float) -> float:
-	var head := Num.f(_cfg["head_len"])
-	var peak := head + Num.f(_cfg["hood_peak"])
-	var end := head + Num.f(_cfg["hood_len"])
-	return smoothstep(head * 0.9, peak, d) * (1.0 - smoothstep(peak, end, d))
 
 
 ## Rebuilds the tube along `joints` (ground plane x, z; head first, a segment apart), joint j raised
@@ -137,8 +135,12 @@ func build(
 	var count := (joints.size() - 1) * per + 1
 	var mids := PackedVector3Array()
 	var flats := PackedVector3Array()  # each ring's ground-plane side
+	var sides := PackedVector3Array()  # each ring's frame in 3D (for the hood)
+	var ups := PackedVector3Array()
 	mids.resize(count)
 	flats.resize(count)
+	sides.resize(count)
+	ups.resize(count)
 	for r: int in count:
 		var at := float(r) / per
 		var i := mini(int(at), joints.size() - 2)
@@ -158,12 +160,14 @@ func build(
 	cols.resize(count * _sides)
 	for r: int in count:
 		var d := float(r) / per * seg
-		var w := width_at(d, swell)
-		var h := height_at(d, swell)
+		var w := body_width(d, swell)
+		var h := body_height(d, swell)
 		var mid := mids[r]
 		var way := (mids[mini(r + 1, count - 1)] - mids[maxi(r - 1, 0)]).normalized()
 		var side := (flats[r] - way * flats[r].dot(way)).normalized()
 		var up := way.cross(side).normalized()
+		sides[r] = side
+		ups[r] = up
 		var band := _band(d)
 		for s: int in _sides:
 			var a := TAU * s / _sides
@@ -188,19 +192,14 @@ func build(
 	arrays[Mesh.ARRAY_COLOR] = cols
 	arrays[Mesh.ARRAY_INDEX] = _indices
 	_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	_hood.place([mids, sides, ups], seg / per, hood, swell)
 
 
 ## Both eyes sit on the head ring nearest eye_at m behind the snout (`size`: its width, height).
-## `frame`: the ring's side (x) and up (y).
+## `frame`: the ring's side (x), up (y) and way (z).
 func _place_eyes(d: float, mid: Vector3, frame: Basis, size: Vector2) -> void:
-	var step := Num.f(_cfg["tube_step"])
-	if absf(d - Num.f(_cfg["eye_at"])) > step * 0.5:
-		return
-	var ball := Num.f(_cfg["eye_size"]) * 2.0 * Num.f(_cfg["head_scale"])
-	for e: int in 2:
-		var sign := 1.0 if e == 0 else -1.0
-		var at := mid + frame.x * (size.x * 0.5 * 0.82 * sign) + frame.y * (size.y * 0.5 * 0.55)
-		_eyes[e].transform = Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * ball), at)
+	if absf(d - Num.f(_cfg["eye_at"])) <= Num.f(_cfg["tube_step"]) * 0.5:
+		_eyes.place(mid, frame, size)
 
 
 ## The forked tongue at the snout: a stem and two prongs, out `out` (0..1) of its full length.
@@ -267,7 +266,8 @@ func _skin(d: float, c: float, u: float, band: float) -> Color:
 	var back := BACK.lerp(
 		FLANK, smoothstep(0.35, 0.95, absf(c)) * 0.8 + smoothstep(0.0, -1.0, u) * 0.6
 	)
-	var head := 1.0 - smoothstep(Num.f(_cfg["head_len"]) * 0.8, Num.f(_cfg["head_len"]) * 1.3, d)
+	var head_len := Num.f(_cfg["head_len"])
+	var head := 1.0 - smoothstep(head_len * HEAD_FADE_FROM, head_len * HEAD_FADE_TO, d)
 	return back.lerp(BAND, band * 0.8).lerp(HEAD, head * 0.7)
 
 

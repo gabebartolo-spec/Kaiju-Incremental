@@ -21,6 +21,20 @@ idle, tongue flicking). First step only: slither, turn, stop. No PR, no merge: p
   the stop cue and the shadow's stair-stepped edge. Round 7 did only those three (below). Lead ruling still stands:
   no look polish on the stand-in's head, hood or colour (the real model comes from Tripo).
 
+## Hood and eyes (2026-10-24, claude/serpent-hood off r8; D-209, D-218: frill "terrible from above", eyes "comic white dots")
+- Hood is its own mesh, `scenes/serpent_hood.gd` (SerpentHood): a thin shield from 0.85 head_len to hood_len behind
+  the head, widest hood_peak back at hood_flare 2.2 x the head's widest; spread, its upper 65% lies hood_tilt 0.35 rad
+  below level from the back of the head (back up to the camera), then curves into the neck; folded (slithering) hidden.
+  Back: generated 256 px texture, body green in diamond scales, dark rim (0.32 m), pale spectacle; front dark. The tube
+  no longer widens or thins for the hood (`body_width`/`body_height`; `width_at` = max with the hood). stop_flare 1.5 -> 1.2.
+- Eyes: `scenes/serpent_eyes.gd` (SerpentEyes): near-black glossy balls, eye_size 0.28 m across (~0.2 head width),
+  sunk 0.4 radius into the head, a small brow scale on the inner rim. Head colour now ends at 0.85 head_len.
+- Measured (coil 9.0 s, 1x): hood 72 px / head 32 px = 2.25; rim L ~108 vs hood 146 and outside 146 (26% darker);
+  spectacle 242 px, mean L 204 vs hood median 133; eyes ~4 px across, darkest L 68 vs head L 186. Scripts, crops,
+  measures: lead scratchpad `serpent_hood/` (go.sh, meas.sh, measure.py; capture `--hood_off=1|2`). Clip:
+  `C:/Users/DANTE/cascadeur_bridge/serpent/hood/serpent_hood.mp4` (3.6-9.6 s of the clip). Serpent + smoke suites green.
+- Not done: the head itself is still pale and smooth (no scales); the body has no scale texture (the hood does).
+
 ## Round 7 changes (the critic's three fixes)
 - Tail (shape table only, no motion change): `shape` 46 m 0.7, 54 m 0.46, 58 m 0.36, 60 m 0.06, so it keeps over a
   third of the girth to the last 3% (was 0.24 at 54 m, a needle). Coil: the outer turn (the tail's) starts
@@ -101,6 +115,5 @@ centre y = lift + height/2. The drawn S swings +-6 m about the sim centreline, s
 before crushing. Swath ~15 m wide x 35 m long moving; the coil is a ~11 m disc beside the head, ~4 m high pile.
 
 ## Open (not judged passing; the lead's critic judges the read)
-- The raised head and hood are pale and large from the camera (look work parked for the Tripo model).
 - The coil slide is still quick (about 25 m/s mid-slide for a 10 m/s snake); a slower coil pushes the idle later.
 - No sidewinding dash, no climb, no rattle or constrictor body yet.

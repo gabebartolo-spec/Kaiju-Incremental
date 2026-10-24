@@ -47,6 +47,7 @@ var _args := (
 			"sun_filter": -1.0,
 			"sun_atlas": -1.0,
 			"sun_off": false,
+			"hood_off": 0,  # the hood's pixel measures: 1 casts no shadow, 2 hidden as well
 		}
 	)
 )
@@ -87,6 +88,11 @@ func _run() -> void:
 	_proto.scripted = stick_at
 	_swath_line = _swing(START.y)  # the S as the pre-roll laid it
 	root.add_child(_proto)
+	for hood: Node in _proto.find_children("SerpentHood", "", true, false):
+		var off := Num.i(_args["hood_off"])
+		if off > 0:
+			(hood as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		(hood as GeometryInstance3D).layers = 0 if off == 2 else 1
 	var frames := 0
 	while frames < int(Num.f(_args["seconds"]) / DT):
 		await physics_frame
@@ -186,7 +192,21 @@ func _still() -> void:
 			% [label.text, Num.f(_args["still"]), _args["out"], _proto.sun_shadow()]
 		)
 	)
+	print("serpent capture: on screen %s" % _head_on_screen())
 	quit()
+
+
+## Where the snout and the hood's widest row are on screen (px), for crops and measures.
+func _head_on_screen() -> String:
+	var stand := _proto.stand_in
+	var seg := _proto.body.length() / (stand.joints.size() - 1)
+	var out := ""
+	for d: float in [0.0, Num.f(_proto.body.cfg["head_len"]) + Num.f(_proto.body.cfg["hood_peak"])]:
+		var i := int(d / seg)
+		var p := stand.joints[i].lerp(stand.joints[i + 1], d / seg - i)
+		var y := lerpf(stand.lifts[i], stand.lifts[i + 1], d / seg - i)
+		out += "%s px at %.1f m " % [_proto.camera.unproject_position(Vector3(p.x, y, p.y)), d]
+	return out
 
 
 ## How deep the S bends in each quarter of the body (the most a joint stands off the quarter's
