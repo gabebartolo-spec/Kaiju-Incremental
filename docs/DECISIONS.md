@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-224 · Director · Croc and serpent skins: Pale Banded croc, Copper and Albino serpent
+
+Shown the croc and serpent skin palettes that passed two critic rounds (adult at game size; croc White and Black and serpent Black failed twice and were dropped): "All three new". The croc ships with today's olive plus Pale Banded; the serpent with today's olive plus Copper and Albino. Recoloured from CC-licensed photo regions (skins/*/SOURCES.txt); how a player gets a skin is not decided.
+
 ## 2026-10-24 · D-223 · Director · Tails are a living limb: behaviours plus physics
 
 Asked "whats the plan for the tail": "all tails shouldnt be stiff, they are like an extra limb and should have their own behaviours as well as physics". Behaviours chosen (all four): a balance swing (side to side against the hips each step; leads into a turn, then drags and whips round after it); mood signals (lazy S-curls and tip flicks at rest, lifted and stiff when alert, lashing when angry before an attack or ultimate); attack wind-up (coils or cocks before a tail whip or swat, then snaps through with weight); ground contact (the heavy base drags and scrapes, the tip lifts, a small bounce off cars and buildings it passes over). Every titan's tail is an authored behaviour layer with physics follow-through on top, in every clip. Whether the tail's bumps damage what they touch is not decided (presentation only until asked).
@@ -392,7 +396,3 @@ After "turn 5% faster" (comment #49) made the stage-1 rise point worse (faster y
 ## 2026-10-22 · D-129 · Director · Fire: breath, beam and army shells light it; a burnt-out building collapses
 
 Asked for fire gameplay (R 26, after D-126): with City Ablaze owned, the first fire is lit by the croc's lightning breath, its ultimate beam and the clumsy army's stray shells ("Breath, beam and army shells"; croc only until other species ship, D-124). A building that burns out collapses like a smashed one, floors giving way and toppling ("Collapses"). Node placement and costs start as placeholders flagged for tuning; Firestorm is stubbed until explosive sites merge.
-
-## 2026-10-22 · D-128 · Director · Tripo Text to Motion: soldiers and crowd only, one 20-credit clip
-
-Asked after the Text to Motion research (side-session-notes tripo-motion/report.md: humanoid rig only, no tail chain, so a croc would read as "a man in a croc suit"): he picked "Soldiers and crowd". One 20-credit text clip for a soldier or civilian action the ~101 free biped presets lack, inside the D-127 budget, Private, a docs/provenance/tripo.md row; the croc keeps its Blender clips (D-047).
