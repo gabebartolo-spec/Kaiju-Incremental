@@ -45,7 +45,7 @@
 		{"id": "r_shear", "species": "reptilian", "name": "Shearing Tail", "desc": "A longer tail that cuts higher: whole towers lose their upper floors.", "pos": [3, 5], "max_level": 3,
 			"cost": [4318, 11176, 27940], "requires": ["r_momentum", "evolve1"], "effects": {"tail_damage": 8, "tail_reach": 2.0, "tail_floors": 2}},
 		{"id": "r_beam", "species": "reptilian", "name": "ULTIMATE: {beam}", "desc": "Press E: a long beam from your maw, steered as you turn, that sets everything it crosses burning.", "pos": [7, 5], "max_level": 3,
-			"cost": [160020, 266700, 419100], "requires": ["r_shear", "evolve2"], "effects": {"beam_dps": 40}},
+			"cost": [48006, 80010, 125730], "requires": ["r_shear", "evolve2"], "effects": {"beam_dps": 40}},
 		{"id": "r_ablaze", "species": "reptilian", "name": "City Ablaze", "desc": "Your breath and beam set buildings alight, and fire spreads from building to building on its own. A burnt-out building collapses and pays biomass.", "pos": [2, 4], "max_level": 1,
 			"cost": [1500], "requires": ["r_tail"], "effects": {"fire_spread": 1}},
 		{"id": "r_alarm", "species": "reptilian", "name": "Five-Alarm", "desc": "Fires spread faster.", "pos": [3, 4], "max_level": 3,
