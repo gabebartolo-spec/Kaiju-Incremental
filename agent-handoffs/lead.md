@@ -67,7 +67,7 @@
   board accepted. 10-24 interview (06a3b5bc): D-217 mecha "B Lab-white" (tripo-komodo 3D, cap 400); D-218 serpent
   size "A Today" + fix the hood from above (builder claude/serpent-hood); D-219 he HATES the fat adult croc: remake
   "Teen's build, grown up" (tripo-komodo, chest/length <= 0.28, cap 800), plates re-asked on the new body. Still to
-  ask on return: haze A/B + shadow A/B (cascadeur_bridge/look_boards/, lead-checked; heli dropped: today = D-183), teen size, croc plates on adult3 (a3174b0f SHIP, sent). Skins D-220 (C+D, blue
+  ask on return: haze A/B + shadow A/B (cascadeur_bridge/look_boards/, lead-checked; heli dropped: today = D-183), teen size, croc plates on adult3 (a3174b0f SHIP, sent). Blue skin: Tripo text texture failed 2 rounds (blue/baby, baby2) -> ask him: one image-guided try (GPT concept, ~30 cr) or drop. Skins D-220 (C+D, blue
   via Tripo text). AFK "dont chase minute improvements": casc-anim idle, script server down (his click). On return
   send casc-anim: teen idle v3 FIX (breath 56-60 f, >=14 px; snort bell 5 in/5 out, chin clears chest; glance 10-12 f;
   hand off the foot f70-105; head +6 deg, mouth ajar), teen walk v9 body (speed <=1.4x, plant drop, forearms).
