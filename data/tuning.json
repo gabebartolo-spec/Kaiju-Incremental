@@ -895,7 +895,7 @@
 		}
 	},
 	"creation": {
-		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject the kaiju juice, the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more (the unlock rules are not decided, D-207). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6). crack_sound names assets/sfx/<name>.ogg: PLACEHOLDER until the lead makes it (ElevenLabs); with no file the cue is silent.",
+		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject the kaiju juice, the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more (the unlock rules are not decided, D-207). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6; behind the takeover's front the cells cool to the species' body colour, veins of them still burning). crack_sound names assets/sfx/<name>.ogg: PLACEHOLDER until the lead makes it (ElevenLabs); with no file the cue is silent.",
 		"titans": [
 			{"id": "croc", "name": "CROC", "species": "reptilian", "unlocked": true, "genome": "6f8a3e"},
 			{"id": "komodo", "name": "KOMODO DRAGON", "species": "", "unlocked": false, "genome": "8a7550"},
@@ -919,10 +919,13 @@
 			"syringe_top": 1.7,
 			"syringe_height": 0.9,
 			"needle": 0.24,
-			"wave_width": 0.12,
+			"wave_width": 0.08,
+			"veins": 0.08,
+			"juice_light": 0.9,
+			"juice_light_height": 0.9,
 			"rise": 1,
-			"glow": 5.0,
-			"camera": {"position": [0.0, 1.45, 2.05], "look": [0.0, 0.0, -0.15], "fov": 42.0},
+			"glow": 1.4,
+			"camera": {"position": [-0.62, 1.6, 2.35], "look": [-0.62, 0.02, -0.35], "fov": 42.0},
 			"zoom": {"position": [0.0, 0.16, 0.02], "fov": 18.0, "black_from": 0.35},
 			"colors": {
 				"background": "0b0f15",

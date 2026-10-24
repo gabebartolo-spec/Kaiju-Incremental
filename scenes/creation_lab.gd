@@ -5,7 +5,8 @@ extends Node3D
 ## dish of agar, a rack of genome vials behind it and a syringe of kaiju juice above. Every step is
 ## a pure function of its progress (0..1), so a frame is the same on any machine: a vial lifts
 ## when focused, pours its genome into the dish, the syringe injects, the juice takes the genome
-## over from the centre out, and the camera rushes into the dish. Sizes and colours: tuning
+## over from the centre out (a white-hot front, the kaiju's dark scales behind it, a few veins
+## still burning), and the camera rushes into the dish. Sizes and colours: tuning
 ## "creation" "lab".
 
 ## Half widths in cells (a vial and the barrel are 3 cells across, the plunger 5).
@@ -40,6 +41,8 @@ var _colony: MultiMesh
 var _spots: Array[Vector3] = []
 var _reach: Array[float] = []
 var _taken := 0
+var _cooled := 0
+var _scales := Color.BLACK
 var _syringe: Node3D
 var _plunger: Node3D
 var _glow: OmniLight3D
@@ -125,7 +128,7 @@ func _add_lights() -> void:
 	_glow.light_color = _color("juice")
 	_glow.light_energy = 0.0
 	_glow.omni_range = Num.f(_cfg["dish_radius"]) * 3.0
-	_glow.position = Vector3(0.0, 0.3, 0.0)
+	_glow.position = Vector3(0.0, Num.f(_cfg["juice_light_height"]), 0.0)
 	add_child(_glow)
 
 
@@ -300,6 +303,8 @@ func place(index: int, t: float) -> void:
 	)
 	vial.rotation.z = POUR_TILT * tip
 	var genome: Color = _titans[index]["genome"]
+	var colors: Dictionary = Content.species_def(str(_titans[index]["species"]))["colors"]
+	_scales = Color(str(colors["body"]))
 	var shown := roundi(_spots.size() * smoothstep(POUR_FROM, 1.0, t))
 	for i: int in range(_colony.visible_instance_count, shown):
 		_colony.set_instance_color(i, genome)
@@ -317,19 +322,27 @@ func inject(t: float) -> void:
 	_plunger.position.y = lerpf(tall, tall * 0.55, press)
 
 
-## The takeover (t 0..1): a front of glowing juice sweeps out from the needle; every cell it
-## passes rises and burns white-hot, and the dish lights the lab. The syringe pulls away.
+## The takeover (t 0..1): a front of white-hot juice sweeps out from the needle; every cell it
+## reaches rises and burns, then cools behind the front into the kaiju's dark scales, a few
+## veins still burning; the front's light floods the lab. The syringe pulls away.
 func takeover(t: float) -> void:
 	var leave := smoothstep(0.0, LEAVE_SHARE, t)
 	_syringe.position.y = lerpf(3.0 * _voxel, Num.f(_cfg["syringe_top"]), leave)
-	var front := t * (Num.f(_cfg["colony_radius"]) + Num.f(_cfg["wave_width"]))
+	var width := Num.f(_cfg["wave_width"])
+	var front := t * (Num.f(_cfg["colony_radius"]) + width)
 	var juice := Color(_color("juice"), 0.0)
 	var rise := Vector3.UP * Num.i(_cfg["rise"]) * _voxel
 	while _taken < _spots.size() and _reach[_taken] <= front:
 		_colony.set_instance_color(_taken, juice)
 		_colony.set_instance_transform(_taken, Transform3D(Basis(), _spots[_taken] + rise))
 		_taken += 1
-	_glow.light_energy = Num.f(_cfg["lamp_energy"]) * t
+	var veins := Num.f(_cfg["veins"])
+	while _cooled < _taken and (_reach[_cooled] <= front - width or t >= 1.0):
+		var vein := float(absi(hash(_cooled + SALT)) % 1000) / 1000.0 < veins
+		_colony.set_instance_color(_cooled, juice if vein else _scales)
+		_cooled += 1
+	var flood := sin(PI * t)
+	_glow.light_energy = Num.f(_cfg["juice_light"]) * flood
 
 
 ## The camera (t 0..1): from the close-up over the bench it rushes down into the dish, faster and

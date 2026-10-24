@@ -83,6 +83,8 @@ func _add_view() -> void:
 	add_child(view)
 	var viewport := SubViewport.new()
 	viewport.own_world_3d = true
+	# The game's anti-aliasing and render scale (a bare SubViewport draws cracks between blocks).
+	GraphicsPresets.apply(PlayerSettings.graphics_row(), viewport)
 	view.add_child(viewport)
 	lab = CreationLab.new()
 	lab.setup(_titans)
