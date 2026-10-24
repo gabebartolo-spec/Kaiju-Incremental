@@ -10,6 +10,7 @@ const FlowLayout := preload("res://tests/lib/flow_layout.gd")
 const FlowSave := preload("res://tests/lib/flow_save.gd")
 const FlowStats := preload("res://tests/lib/flow_stats.gd")
 const FlowFps := preload("res://tests/lib/flow_fps.gd")
+const FlowSettingsRows := preload("res://tests/lib/flow_settings_rows.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 ## Rubble left after buying the first evolution (costs come from data, so city-growth's
 ## re-tuning cannot break these checks).
@@ -94,7 +95,7 @@ func _check_new_game() -> void:
 	var menu := GuiInput.find_script(rampage, PauseMenu)
 	layout.listen(rampage, "pause")
 	check.call(t.paused and menu != null, "Esc pauses the rampage and opens the pause menu")
-	check.call(_hint_hidden(rampage), "the HUD's hints hide behind the pause menu (lead review 3)")
+	check.call(_hint_hidden(rampage), "the HUD hides behind the pause menu (lead review 3)")
 	var clock := rampage.sim.time_left
 	await _frames(10)
 	check.call(rampage.sim.time_left == clock, "the rampage clock stands still while paused")
@@ -103,6 +104,8 @@ func _check_new_game() -> void:
 	await GuiInput.key(t, KEY_ESCAPE)
 	menu = GuiInput.find_script(rampage, PauseMenu)
 	await GuiInput.click(t, GuiInput.button(menu, "END RAMPAGE"))
+	check.call(not rampage.sim.over, "End Rampage asks first (Are you sure?) and the run goes on")
+	await GuiInput.click(t, GuiInput.button(menu, "YES"))
 	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
 	check.call(
 		rampage.sim.over and rampage.sim.end_reason == "ended" and not t.paused,
@@ -315,19 +318,20 @@ func _check_settings() -> void:
 	var main := await _main()
 	var title := _screen(main)
 	Sfx.ui_played.clear()
-	await GuiInput.click(t, GuiInput.button(title, "SETTINGS"))
+	await GuiInput.click(t, title.find_child("Gear", true, false) as Button)
 	var menu := GuiInput.find_script(title, SettingsMenu) as SettingsMenu
-	check.call(menu != null, "clicking SETTINGS opens the settings")
+	check.call(menu != null, "clicking the title gear opens the settings")
 	check.call(Sfx.ui_played == ["ui_click"], "a menu button clicks: %s" % [Sfx.ui_played])
 	if menu == null:
 		main.queue_free()
 		return
 	await layout.fits_at_scales(menu, "settings")
+	FlowSettingsRows.run(check, menu)
 	var was_full: bool = PlayerSettings.fullscreen
-	await GuiInput.click(t, GuiInput.button(menu, "ON" if was_full else "OFF"))
+	await GuiInput.click(t, GuiInput.button(menu, "< ON >" if was_full else "< OFF >"))
 	check.call(PlayerSettings.fullscreen != was_full, "clicking the fullscreen switch flips it")
 	PlayerSettings.set_fullscreen(was_full)
-	await GuiInput.click(t, GuiInput.button(menu, "100%"))
+	await GuiInput.click(t, GuiInput.button(menu, "< 100% >"))
 	check.call(
 		(
 			is_equal_approx(PlayerSettings.ui_scale, 1.15)
@@ -382,10 +386,7 @@ func _evolve_cost() -> int:
 	return UpgradeTree.new(Content.upgrades(), {}, "insectoid").cost("evolve1")
 
 
-## True when the HUD's control hints ("Move: WASD ...") are not showing.
+## True when the HUD (its rings and the biomass figure) is not showing.
 func _hint_hidden(rampage: Rampage) -> bool:
-	for node: Node in rampage.find_children("*", "Label", true, false):
-		var l: Label = node
-		if l.text.begins_with("Move:"):
-			return not l.is_visible_in_tree()
-	return false
+	var hud: RampageHud = GuiInput.find_script(rampage, RampageHud)
+	return not hud.breath_ring.is_visible_in_tree() and not hud.biomass.is_visible_in_tree()

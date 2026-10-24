@@ -1,5 +1,6 @@
 extends SceneTree
-## Pacing estimate for the upgrade tree (target 3-5 hours, zero AFK, D-035, D-039): a scripted
+## Pacing estimate for the upgrade tree (target about 2 hours to the last
+## unlock, 90 min to 2 h, D-156; zero AFK, D-035, D-039): a scripted
 ## player plays seeded rampages (walk to the nearest building, signature and ultimate when
 ## ready, glide half the time) and between runs buys the cheapest affordable upgrade until none
 ## is left. The city grows with each evolution (CityGrowth). Prints, per species, the play time
@@ -12,10 +13,10 @@ extends SceneTree
 ##     bought, how it ended; --landmark=id: the player heads for that landmark first, then the
 ##     nearest building, as a player who has learnt where the bonus is)
 
-const DT := 1.0 / 15.0
+const DT := PacingPlayer.DT
 const TREE_SECONDS := 20.0
-const MILESTONES: Array[String] = ["evolve1", "evolve2", "evolve3"]
-const STAGE_NAMES: Array[String] = ["young", "Behemoth", "Colossus", "Apex Titan"]
+const MILESTONES: Array[String] = ["evolve1", "evolve2"]
+const STAGE_NAMES: Array[String] = ["young", "Behemoth", "Colossus"]
 
 var _runs := 400
 var _only := ""
@@ -69,23 +70,9 @@ func _pace(species_id: String) -> void:
 		var ability: Dictionary = species["ability"]
 		sim.ability_type = str(ability["type"])
 		sim.body.use_species(species_id)
-		var target := Vector2(INF, INF)
-		var steps := 0
-		var goal := _goal(sim)
-		while not sim.over:
-			if steps % 8 == 0:
-				target = sim.nearest_standing(goal if goal.x < INF else sim.kaiju_pos)
-				if target.x < INF and goal.x < INF and target.distance_to(goal) > 20.0:
-					goal = Vector2(INF, INF)  # the landmark is down: on to the nearest
-			var move := Vector2.ZERO
-			if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
-				move = (target - sim.kaiju_pos).normalized()
-			var held := RampageSim.HELD if steps % 30 < 15 else 0
-			sim.step(
-				DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE | Dash.BUTTON
-			)
-			steps += 1
+		var steps := PacingPlayer.play(sim, _goal(sim))
 		var res := sim.result()
+		sim.dispose()  # its parts point back at it: else every run's sim stays in memory
 		clock += steps * DT + TREE_SECONDS
 		rubble += Num.i(res["rubble"])
 		run += 1
@@ -114,11 +101,11 @@ func _pace(species_id: String) -> void:
 					"  run %d (%s): +%d rubble in %.0f s, %.0f%% city, %s, bought %d"
 					% [
 						run,
-						STAGE_NAMES[mini(tier, 4) - 1],
+						STAGE_NAMES[mini(tier, STAGE_NAMES.size()) - 1],
 						Num.i(res["rubble"]),
 						steps * DT,
 						Num.f(res["destruction"]) * 100.0,
-						sim.end_reason,
+						res["reason"],
 						bought,
 					]
 				)
@@ -136,7 +123,7 @@ func _pace(species_id: String) -> void:
 			(
 				"  | %s | %d | %.2f | %d -> %d | %.0f%% -> %.0f%% | %d/%d/%d |"
 				% [
-					STAGE_NAMES[mini(tier, 4) - 1],
+					STAGE_NAMES[mini(tier, STAGE_NAMES.size()) - 1],
 					n,
 					Num.f(s["seconds"]) / 3600.0,
 					Num.i(s["first_rubble"]),

@@ -13,6 +13,7 @@ uniform float glow = 1.3;
 uniform vec3 haze_color : source_color = vec3(0.30, 0.45, 0.50);
 uniform float haze = 0.0;
 uniform float haze_start = 120.0;
+uniform float blackout = 0.0;  // share of window blocks dark (a power cut: whole floors at a time)
 uniform float grain = 4.0;  // facade cells per world unit (4 = the playable voxels)
 uniform bool plain = false;  // just the instance colour (concrete, hills)
 
@@ -93,7 +94,8 @@ void fragment() {
 			}
 			albedo = pane * jitter;
 			float lit = hash3(vec3(floor(cell / 2.0), floor(y4 / 4.0), seed * 31.0));
-			if (lit < v_custom.y) {
+			bool dark = hash3(vec3(floor(cell / 14.0), floor(y4 / 12.0), seed * 17.0 + 5.0)) < blackout;
+			if (lit < v_custom.y && !dark) {
 				vec3 l = lit_color;
 				albedo = l;
 				emit = l * glow;

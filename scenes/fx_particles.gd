@@ -4,6 +4,9 @@ extends RefCounted
 ## Presentation only.
 
 const EMBER := preload("res://scenes/ember.gdshader")
+## Share of a spark's life it stays white-hot before it cools to its tint, and its cone (degrees).
+const SPARK_WHITE := 0.15
+const SPARK_SPREAD := 35.0
 
 
 ## The glow left behind a leaping kaiju.
@@ -54,10 +57,18 @@ static func spray(radius: float, tint: Color) -> ParticleProcessMaterial:
 	return mat
 
 
-## A white-hot burst cooling to `tint`; set its direction after.
+## The game's one spark (docs/VFX_STYLE.md family 5): white-hot for the first SPARK_WHITE of its
+## life, then `tint` (orange for a shell or the breath), dimming as it dies; thrown up in a cone,
+## so set its direction after. Drawn as a glow cube (glow_cube) the bloom catches.
 static func sparks(tint: Color) -> ParticleProcessMaterial:
 	var mat := _base(Color.WHITE, tint)
-	mat.spread = 50.0
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, SPARK_WHITE, 1.0])
+	ramp.colors = PackedColorArray([Color.WHITE, tint, tint.darkened(0.45)])
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	mat.color_ramp = ramp_tex
+	mat.spread = SPARK_SPREAD
 	mat.initial_velocity_min = 8.0
 	mat.initial_velocity_max = 16.0
 	mat.gravity = Vector3(0, -18, 0)

@@ -67,6 +67,12 @@ func dip() -> void:
 	_head_pitch.y -= 2.5
 
 
+## How far ahead of the body the head looks (rad): the yaw still to turn when the sim gives it
+## (turn_ahead), else ahead of the body's own turn.
+func _lead() -> float:
+	return g.yaw_rate * HEAD_LEAD if g.turn_ahead == INF else g.turn_ahead
+
+
 func update(dt: float, standing: bool) -> void:
 	if not g.rig.has_bone("head1"):
 		return
@@ -78,7 +84,7 @@ func update(dt: float, standing: bool) -> void:
 			g.rng.randf_range(-SCAN_YAW, SCAN_YAW), g.rng.randf_range(-SCAN_PITCH, SCAN_PITCH * 0.5)
 		)
 	var glance := _scan if standing else Vector2.ZERO  # walking, it looks where it goes
-	var target_yaw := g.model_yaw + clampf(g.yaw_rate * HEAD_LEAD, -0.6, 0.6) + glance.x
+	var target_yaw := g.model_yaw + clampf(_lead(), -0.6, 0.6) + glance.x
 	var err := wrapf(target_yaw - _head_yaw, -PI, PI)
 	if not _head_started:
 		_head_yaw = target_yaw

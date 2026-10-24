@@ -13,7 +13,7 @@ static func past_edge(rect: Rect2, arena_half: float) -> float:
 ## No outer (stand-in) block of the street plan starts inside the band the camera shows past
 ## the arena's edge, at every size tier, for each street plan in map_seeds.
 static func check_plan(map_seeds: Array[int], check: Callable) -> void:
-	for tier: int in [1, 2, 3, 4]:
+	for tier: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
 		for map_seed: int in map_seeds:
 			var city: Dictionary = CityGrowth.tuning_for(Content.tuning(), tier)["city"]
 			city["map_seed"] = map_seed

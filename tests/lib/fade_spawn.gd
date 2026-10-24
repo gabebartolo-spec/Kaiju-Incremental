@@ -9,8 +9,7 @@ extends RefCounted
 ## is clear of them; it must be seen on SEEN_SHARE of the frames it is above the water, and its
 ## feet on SEEN_SHARE of the standing frames. Headless and sim-only: no shake, dip or breath move.
 
-const Growth := preload("res://tools/capture/capture_growth.gd")
-const STAGES := 4
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SECONDS := 4.0
 const SEEN_SHARE := 0.95
 ## A building still hides what is behind it while more of its screen door than this is drawn.
@@ -32,13 +31,13 @@ func _init(p_check: Callable) -> void:
 
 
 func run() -> void:
-	for stage: int in range(1, STAGES + 1):
+	for stage: int in range(1, CityGrowth.stage_count(Content.tuning()) + 1):
 		_stage(stage)
 
 
 func _stage(stage: int) -> void:
 	var species := Content.species_def("reptilian")
-	var tree := UpgradeTree.new(Content.upgrades(), Growth.LEVELS[stage - 1], "reptilian")
+	var tree := UpgradeTree.new(Content.upgrades(), Kit.STAGE_LEVELS[stage - 1], "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
@@ -61,8 +60,9 @@ func _stage(stage: int) -> void:
 		var at := Vector3(sim.kaiju_pos.x, sim.stand_y, sim.kaiju_pos.y)
 		body = body.lerp(at, minf(1.0, DT * BODY_FOLLOW))
 		follow.step(body, CameraTuning.offset() * zoom, DT)
+		follow.step_lead(body, sim.body_scale(), false, DT)
 		var eye := follow.eye()
-		fade.update(eye, BuildingFade.sight_of(sim), DT)
+		fade.update(eye, BuildingFade.sight_of(sim, eye), DT)
 		var hiding: Array[RampageSim.Building] = []
 		for n: int in sim.buildings.size():
 			if fade.opacity(n) > HIDES:

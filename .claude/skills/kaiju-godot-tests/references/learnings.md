@@ -7,3 +7,27 @@ id, capture), **Lesson**. If a finding contradicts SKILL.md, fix SKILL.md instea
 mark entries "promoted" once moved into it. A lesson that is true for every project goes to the
 general skill's log instead (github-hygiene, game-architecture, art-qa-critic, ask-the-director,
 ai-game-dev-playbook in ~/.claude/skills).
+
+## 2026-10-23 · pkill in Git Bash can't stop Windows Godot runs
+**Finding:** a builder ran `pkill -f probe_mil8` to stop its own probes. Git Bash's pkill can't see native Windows
+processes, so two runs sat hung for 30 minutes at 0 CPU until the lead stopped them by PID (wrappers and children).
+**Evidence:** lead stall watcher 2026-10-23 07:35 (PIDs 19068/34260 and 31776/29388).
+**Lesson:** record the PID your own run starts (wrapper and child), stop it with
+`powershell Stop-Process -Id <pid>`, and check it's gone. Never kill by name or pattern, which the rulebook bans
+anyway.
+
+## 2026-10-23 · A wait loop must match the suite's summary line, not "passed|FAILED"
+**Finding:** a VFX builder waited on a helideaths run with `until grep -qE "passed|FAILED|Some checks" <log>`. The
+run ended with "1 failures" (lower case, no "FAILED"), so the loop never ended and sat 90 minutes until the lead's
+stall watcher flagged it as a stale loop.
+**Evidence:** lead stall watcher 2026-10-23 14:55 (staleloop PIDs 6516/27388); helideaths run 13:27.
+**Lesson:** wait on the runner's own summary line (`grep -qE "tests: [0-9]+ checks, [0-9]+ failures"`) or on the
+process exiting (its PID), never on words that only one outcome prints; and give every wait loop a time limit.
+
+## 2026-10-23 · Split a red seeded metric by its source with a subclass probe, not a sim edit
+**Finding:** heliflight (D-183) stayed red for 7 runs of flight tuning. A probe that swapped a BodyContact subclass in
+as `sim.body` (no sim edit) split the kaiju's per-step displacement into walk, turn swing and other: the swing about
+the planted foot was 18-61 u/s against a walk of 2-4 u/s, so both failing bars came from the kaiju, not the flight.
+**Evidence:** lead scratchpad beamcost/kaiju_split.gd and kaiju_split_1/2.txt; claude/heli-standoff 2c0c2688; led to D-187.
+**Lesson:** when a seeded bar stays red after two variants, write a probe that splits the metric by where it comes
+from (a subclass or wrapper swapped into the sim, never a sim edit) before tuning again.

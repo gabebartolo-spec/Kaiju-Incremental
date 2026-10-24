@@ -40,21 +40,28 @@ func _process(delta: float) -> void:
 		repick(at)
 
 
-## The lights nearest `origin`, nearest first (energy-less lights never take a slot).
+## The lights nearest `origin`, nearest first (energy-less lights never take a slot). Keeps only
+## the best `pool_size` seen, in order, as it scans (no sort of every lamp): the order is the
+## distance, then the tree order, exactly as sorting them all by (distance, index) gave. The
+## distance is a 32-bit float, as it was when it was stored in a Vector2 to sort.
 func nearest(origin: Vector3) -> Array[PooledLight]:
 	var all := get_tree().get_nodes_in_group(PooledLight.GROUP)
-	var keyed: Array[Vector2] = []
+	var dist := PackedFloat32Array()  # the best so far, ascending
+	var best: Array[PooledLight] = []
 	for i: int in all.size():
 		var light: PooledLight = all[i]
-		if light.is_inside_tree() and light.energy > 0.0:
-			keyed.append(Vector2(light.global_position.distance_to(origin), i))
-	keyed.sort_custom(
-		func(a: Vector2, b: Vector2) -> bool: return a.x < b.x or (a.x == b.x and a.y < b.y)
-	)
-	var out: Array[PooledLight] = []
-	for k: Vector2 in keyed.slice(0, _size):
-		out.append(all[int(k.y)])
-	return out
+		if not light.is_inside_tree() or light.energy <= 0.0:
+			continue
+		var d := Vector2(light.global_position.distance_to(origin), 0.0).x  # 32-bit, as before
+		if best.size() == _size and d >= dist[_size - 1]:
+			continue  # ties go to the earlier light in the tree
+		var at := dist.bsearch(d, false)  # after any equal distance: later lights sort after
+		dist.insert(at, d)
+		best.insert(at, light)
+		if best.size() > _size:
+			dist.resize(_size)
+			best.resize(_size)
+	return best
 
 
 func repick(origin: Vector3) -> void:

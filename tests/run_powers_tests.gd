@@ -6,6 +6,7 @@ extends "res://tests/lib/powers_base.gd"
 ##   godot --headless --path . --script tests/run_powers_tests.gd
 
 const TailCity := preload("res://tests/lib/powers_tail_city.gd")
+const TurnWeight := preload("res://tests/lib/powers_turn_weight.gd")
 
 
 func suite_name() -> String:
@@ -16,6 +17,7 @@ func run_checks() -> void:
 	await _t("_check_branches")
 	await _t("_check_tail")
 	await _h("TailCity", func() -> void: TailCity.check(check))
+	await _h("TurnWeight", func() -> void: TurnWeight.check(check, _sim))
 	await _t("_check_momentum")
 	await _t("_check_shear")
 	await _t("_check_beam")
@@ -42,14 +44,14 @@ func _check_branches() -> void:
 			if owner == species_id:
 				own.append(id)
 				var requires: Array = def["requires"]
-				if str(def["name"]).begins_with("ULTIMATE") and requires.has("evolve3"):
+				if str(def["name"]).begins_with("ULTIMATE") and requires.has("evolve2"):
 					ultimate = id
 		if own.size() < 3 or ultimate == "":
 			missing.append("%s branch %s, ultimate '%s'" % [species_id, own, ultimate])
 	check(
 		missing.is_empty(),
 		(
-			"each species has its own branch of 3+ nodes ending in an ultimate after Apex Titan: %s"
+			"each species has its own branch of 3+ nodes ending in an ultimate after the Colossus: %s"
 			% [missing]
 		)
 	)
@@ -114,7 +116,7 @@ func _check_momentum() -> void:
 	)
 	var charged: RampageSim = out[1]["sim"]
 	var before := charged.powers.momentum
-	_run(charged, 0.1, -EAST)
+	_run(charged, 1.0, -EAST)  # the U-turn itself takes about a second (BodyContact.steer)
 	check(
 		before > 0.6 and charged.powers.momentum < 0.2,
 		"a U-turn bleeds momentum (%.2f to %.2f)" % [before, charged.powers.momentum]
@@ -135,7 +137,7 @@ func _check_shear() -> void:
 	)
 
 
-## Atomic Beam: E fires a long beam that burns a line of buildings, keeps burning after it
+## Thunder Beam: E fires a long beam that burns a line of buildings, keeps burning after it
 ## ends, and turns slowly to follow the stick. Without the node, E does nothing.
 func _check_beam() -> void:
 	var line: Array[Dictionary] = [_b(0, -6, Vector3i(3, 3, 4)), _b(0, -11, Vector3i(3, 3, 4))]
@@ -145,7 +147,7 @@ func _check_beam() -> void:
 	var on_seen := _run(on, 3.0, Vector2.ZERO, ULT)
 	check(
 		not off_seen.has("beam_start") and on_seen.has("beam_start") and on_seen.has("coated"),
-		"E fires the Atomic Beam only with the node, and it sets what it crosses burning"
+		"E fires the Thunder Beam only with the node, and it sets what it crosses burning"
 	)
 	check(
 		_alive(on, 1) < _alive(off, 1),

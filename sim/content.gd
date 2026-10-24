@@ -10,6 +10,8 @@ static var _looks: Array[Dictionary] = []
 static var _look_id := ""
 static var _times: Dictionary = {}
 static var _time_id := ""
+static var _weather: Dictionary = {}
+static var _weather_id := ""
 static var _merged: Dictionary = {}
 static var _landmarks: Dictionary = {}
 static var _sports: Dictionary = {}
@@ -97,6 +99,12 @@ static func times() -> Array:
 	return _times["order"]
 
 
+## The whole "times" table of data/looks.json (order, labels, each time's look overrides).
+static func time_table() -> Dictionary:
+	_load()
+	return _times
+
+
 static func set_time(id: String) -> void:
 	_load()
 	if id == _time_id:
@@ -105,7 +113,32 @@ static func set_time(id: String) -> void:
 	_merged = {}
 
 
-## Run n plays the next time of day, so the rampage goes on through dusk, night, morning, noon.
+## The weathers in rotation order (data/looks.json "weather").
+static func weathers() -> Array:
+	_load()
+	return _weather["order"]
+
+
+## The whole "weather" table of data/looks.json (order, labels).
+static func weather_table() -> Dictionary:
+	_load()
+	return _weather
+
+
+## The one current weather of the run in play (D-155): an id of weathers(). Main sets it when a
+## rampage starts (Weather.pick); presentation reads it. Before any run it is the first weather.
+static func weather_id() -> String:
+	_load()
+	return _weather_id
+
+
+static func set_weather(id: String) -> void:
+	_load()
+	_weather_id = id
+
+
+## The fixed order: run n plays the nth time of day. Captures and tests use it to land on a known
+## time; the game picks with TimeOfDay (D-145).
 static func time_for_run(run_index: int) -> String:
 	return str(times()[posmod(run_index, times().size())])
 
@@ -130,9 +163,14 @@ static func _load() -> void:
 	_look_id = str(looks_file.get("default", ""))
 	_times = looks_file.get("times", {"order": [""]})
 	_time_id = str(_times["order"][0])
+	_weather = looks_file.get("weather", {"order": [""], "labels": {}, "random_label": ""})
+	_weather_id = str(_weather["order"][0])
 	_landmarks = load_json("res://data/landmarks.json").get("landmarks", {})
 	_sports = load_json("res://data/sports.json")
 	_materials = _list("res://data/materials.json", "materials")
+	var names: Dictionary = _tuning.get("names", {})
+	for content: Variant in [_tuning, _upgrades, _species]:
+		_fill(content, names)
 	# The city plan reads landmark shapes from its config, so CityGen.map stays a function of cfg.
 	var city: Dictionary = _tuning.get("city", {})
 	city["landmark_shapes"] = _landmarks
@@ -144,3 +182,29 @@ static func _list(path: String, key: String) -> Array[Dictionary]:
 	for entry: Dictionary in raw:
 		out.append(entry)
 	return out
+
+
+## Player-facing names live once, in tuning "names" (a later rename is one line there); data text
+## writes {key} where one belongs ("{beam}" is the reptilian's signature beam).
+static func _fill(node: Variant, names: Dictionary) -> void:
+	if node is Dictionary:
+		var dict: Dictionary = node
+		for key: Variant in dict:
+			var value: Variant = dict[key]
+			if value is String:
+				dict[key] = _named(str(value), names)
+			else:
+				_fill(value, names)
+	elif node is Array:
+		var list: Array = node
+		for i: int in list.size():
+			if list[i] is String:
+				list[i] = _named(str(list[i]), names)
+			else:
+				_fill(list[i], names)
+
+
+static func _named(text: String, names: Dictionary) -> String:
+	for key: String in names:
+		text = text.replace("{%s}" % key, str(names[key]))
+	return text

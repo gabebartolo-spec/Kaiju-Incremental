@@ -195,11 +195,12 @@ func lash(centre: Vector3, reach: float, strength: float) -> void:
 	_city.flash(centre + Vector3(0, 2.0, 0), _tint, 5.0 * strength, 0.45)
 
 
-## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp.
-func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
+## Heavy stomps crack the street; the cracks glow molten, brighter the heavier the stomp. The
+## crack mark, or null when the stomp is too light.
+func stomp_cracks(at: Vector3, radius: float, strength: float) -> Decal:
 	var from := Num.f(_tune["crack_stomp_power"])
 	if strength < from:
-		return false
+		return null
 	played.append("cracks")
 	var look := {
 		"size": radius * 2.2,
@@ -209,8 +210,7 @@ func stomp_cracks(at: Vector3, radius: float, strength: float) -> bool:
 		"tint": MOLTEN,
 		"soot": 0.5,
 	}
-	FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
-	return true
+	return FxDecals.spawn(self, at, FxDecals.Shape.DISC, look)
 
 
 ## Signature ready again: the eyes flare in the species colour (not the whole body, which read
@@ -237,8 +237,15 @@ func deflect(at: Vector3, away: Vector3) -> void:
 	var burst := FxParticles.sparks(cold)
 	burst.direction = away.normalized()
 	_burst(burst, 70, 0.6).position = at
-	_flare(at, 4.5 * _scale, cold, 0.22)
-	_city.flash(at, cold, 6.0, 0.15)
+	# A glance, not a lens flare: one round soft white sprite (about 60 px core, nothing at the quad's
+	# edge, no rays), lifted clear of the road, gone in 0.12 s.
+	var flare := _flare(at + Vector3(0, 0.8 * _scale, 0), 5.5 * _scale, cold, 0.12)
+	flare.set_shader_parameter("streak", 1.0)
+	flare.set_shader_parameter("ray_gain", 0.0)
+	flare.set_shader_parameter("core_width", 3.2)
+	flare.set_shader_parameter("core_gain", 0.9)
+	flare.set_shader_parameter("halo_gain", 0.05)
+	_city.flash(at, cold, 1.0, 0.12)
 
 
 ## Fraction of `span` from `from` at which the line first meets a standing chunk (1: none).
@@ -265,7 +272,7 @@ func _first_hit(from: Vector3, span: Vector3) -> float:
 	return 1.0
 
 
-func _flare(at: Vector3, size: float, tint: Color, seconds: float) -> void:
+func _flare(at: Vector3, size: float, tint: Color, seconds: float) -> ShaderMaterial:
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE * size
 	var mat := ShaderMaterial.new()
@@ -282,6 +289,7 @@ func _flare(at: Vector3, size: float, tint: Color, seconds: float) -> void:
 		func(v: float) -> void: mat.set_shader_parameter("fade", 1.0 - v), 0.0, 1.0, seconds
 	)
 	tween.tween_callback(flare.queue_free)
+	return mat
 
 
 func _shader(shader: Shader, strength: float) -> ShaderMaterial:

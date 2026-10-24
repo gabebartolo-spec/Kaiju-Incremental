@@ -12,20 +12,17 @@ const COLUMNS := 8
 ## The species' own branch (docs/SPECIES.md) is the bottom row.
 const BRANCH_ROW := 5
 const GAP := Vector2(8, 16)
-## Room under the band for its caption.
-const CAPTION_HEIGHT := 34.0
 ## The capstone is this much taller than a node (its extra "[E / Y]" line).
 const CAPSTONE_EXTRA := 28.0
 const BRANCH_TINT_ALPHA := 0.18
 ## Smallest the area may get and still fit a node's three lines of text.
-const MIN_SIZE := Vector2(COLUMNS * 120, (BRANCH_ROW + 1) * 100 + CAPTION_HEIGHT)
+const MIN_SIZE := Vector2(COLUMNS * 120, (BRANCH_ROW + 1) * 100)
 
 var tree: UpgradeTree
 var buttons: Dictionary = {}
 var _species: Dictionary
 var _roles: Dictionary
 var _band: ColorRect
-var _caption: Label
 
 
 ## roles: id -> "plain" / "branch" / "evolve" / "ultimate" (UpgradeScreen.role_of).
@@ -43,13 +40,6 @@ func _ready() -> void:
 	_band.color = Color(eye, BRANCH_TINT_ALPHA)
 	_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_band)
-	var who := str(_species["name"])
-	_caption = UiKit.label(
-		"%s BRANCH  -  only the %s can grow these" % [who.to_upper(), who.to_lower()],
-		UiKit.SIZE_SMALL,
-		eye.lightened(0.3)
-	)
-	add_child(_caption)
 	for id: String in tree.order:
 		var def: Dictionary = tree.defs[id]
 		var b := UpgradeNode.new(id, str(_roles[id]), str(def["name"]))
@@ -63,7 +53,7 @@ func _ready() -> void:
 
 
 func _layout() -> void:
-	var cell := Vector2(size.x / COLUMNS, (size.y - CAPTION_HEIGHT) / (BRANCH_ROW + 1))
+	var cell := Vector2(size.x / COLUMNS, size.y / (BRANCH_ROW + 1))
 	var box := cell - GAP
 	for id: String in tree.order:
 		var def: Dictionary = tree.defs[id]
@@ -71,31 +61,13 @@ func _layout() -> void:
 		var at := Vector2(Num.f(pos[0]) * cell.x, Num.f(pos[1]) * cell.y) + GAP * 0.5
 		var b: UpgradeNode = buttons[id]
 		if b.role == "ultimate":
-			b.place(at - Vector2(0, CAPSTONE_EXTRA), box + Vector2(0, CAPSTONE_EXTRA))
+			b.place(at, box + Vector2(0, CAPSTONE_EXTRA))
 		else:
 			b.place(at, box)
-	_band.position = Vector2(0, BRANCH_ROW * cell.y - CAPSTONE_EXTRA)
+	# The band starts below the row above it (its boxes end GAP.y / 2 short of the row line).
+	_band.position = Vector2(0, BRANCH_ROW * cell.y)
 	_band.size = Vector2(size.x, cell.y + CAPSTONE_EXTRA)
-	_caption.position = _caption_spot(cell)
 	queue_redraw()
-
-
-## Where the branch caption goes: the first place along the band's top strip that no node
-## covers (screen critic: not at the screen's bottom edge), else just under the band.
-func _caption_spot(cell: Vector2) -> Vector2:
-	var text := _caption.get_combined_minimum_size()
-	var x := GAP.x
-	while x + text.x <= size.x:
-		var spot := Rect2(_band.position + Vector2(x, 0), text)
-		var free := true
-		for b: Button in buttons.values():
-			if b.get_rect().intersects(spot):
-				free = false
-				break
-		if free:
-			return spot.position
-		x += cell.x * 0.5
-	return Vector2(0, (BRANCH_ROW + 1) * cell.y + 4)
 
 
 func _draw() -> void:

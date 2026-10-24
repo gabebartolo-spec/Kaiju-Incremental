@@ -1,12 +1,14 @@
 """Lists the Godot pack inside an exported game and proves it holds the real assets.
 
-    python tools/pck_check.py out/windows/KaijuIncremental.exe [--list]
+    python tools/pck_check.py out/windows/KaijuEvolution.exe [--list]
 
 The pack is the one embedded at the end of the exe (export_presets.cfg embed_pck) or a
 .pck file. Checks, failing loudly with exit 1:
   - every assets/fonts/*.ttf in the checkout is a real font (not a Git LFS pointer) and its
     imported FontFile in the pack carries the font's own bytes;
-  - every assets/kaiju/*.kvox in the checkout is in the pack, byte for byte;
+  - every assets/kaiju/*.kvox and *.kclip (the baked animation clips the gait plays) in the
+    checkout is in the pack, byte for byte, and none is a Git LFS pointer (export_presets.cfg
+    include_filter: these are not Godot resources, so a missing filter drops them silently);
   - no dev tools ship: nothing under tools/ (export_presets.cfg exclude_filter).
 --list prints every path in the pack with its size.
 """
@@ -100,8 +102,9 @@ def main():
     bad = []
     fonts = sorted(Path("assets/fonts").glob("*.ttf"))
     kvox = sorted(Path("assets/kaiju").glob("*.kvox"))
-    if not fonts or not kvox:
-        bad.append("no assets/fonts/*.ttf or assets/kaiju/*.kvox in the checkout")
+    clips = sorted(Path("assets/kaiju").glob("*.kclip"))
+    if not fonts or not kvox or not clips:
+        bad.append("no assets/fonts/*.ttf, assets/kaiju/*.kvox or assets/kaiju/*.kclip in the checkout")
     for font in fonts:
         raw = font.read_bytes()
         if raw.startswith(LFS_POINTER) or raw[:4] not in TTF_MAGICS:
@@ -114,9 +117,11 @@ def main():
             bad.append(f"{font.as_posix()}: the pack's FontFile does not carry the font's bytes")
         else:
             print(f"ok  {font.as_posix()} ({len(raw)} B) -> imported FontFile ({len(imported[0])} B)")
-    for model in kvox:
+    for model in kvox + clips:
         name = model.as_posix()
-        if name not in files:
+        if model.read_bytes()[: len(LFS_POINTER)] == LFS_POINTER:
+            bad.append(f"{name} is a Git LFS pointer (run git lfs pull)")
+        elif name not in files:
             bad.append(f"{name}: not in the pack")
         elif hashlib.md5(files[name]).digest() != hashlib.md5(model.read_bytes()).digest():
             bad.append(f"{name}: differs from the checkout")
@@ -131,7 +136,7 @@ def main():
         print("FAIL:", line)
     if bad:
         sys.exit(1)
-    print(f"pack check passed: {len(fonts)} fonts, {len(kvox)} kaiju models")
+    print(f"pack check passed: {len(fonts)} fonts, {len(kvox)} kaiju models, {len(clips)} clips")
 
 
 if __name__ == "__main__":

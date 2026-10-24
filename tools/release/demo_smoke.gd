@@ -1,6 +1,7 @@
 extends SceneTree
 ## Demo build dry-run: drives the exported game's own screens (title -> NEW KAIJU -> species
-## select -> rampage -> the demo end card -> title) and prints one PASS/FAIL line per check.
+## select -> rampage -> the final upgrade -> the thanks screen -> Endless mode) and prints one
+## PASS/FAIL line per check.
 ## See tools/release/README.md for how to run it against a built exe.
 
 const MAIN_SCENE := "res://scenes/main.tscn"
@@ -20,9 +21,7 @@ func _run() -> void:
 	await _frames(12)
 	var title := _screen()
 	var texts := _texts(title)
-	_check(
-		"title shows text", texts.has("KAIJU INCREMENTAL") and texts.has("NEW KAIJU"), str(texts)
-	)
+	_check("title shows text", texts.has("KAIJU EVOLUTION") and texts.has("NEW KAIJU"), str(texts))
 	_check("title font is ours (Kaiju Claw/Block)", _font_ok(title), _font_names(title))
 	_press(title, "NEW KAIJU")
 	await _frames(12)
@@ -59,16 +58,34 @@ func _run() -> void:
 	quit(0 if _fails == 0 else 1)
 
 
-## The demo's end: a played save one evolution short (written through SaveFile, as
-## tools/capture/capture_demo.gd does; no cheat hook), Continue, buy evolve1 on the tree,
-## the reveal, the demo-complete card, MAIN MENU back to the title.
+## The demo's end: a save one level short of the whole tree (written through SaveFile, as
+## tools/capture/capture_demo.gd does; no cheat hook), Continue, buy the last node, the thanks
+## screen with its totals and buttons, TRY ENDLESS MODE into the endless rampage (no clock), then
+## a relaunch: Continue lands on the tree with ENDLESS MODE offered.
 func _walk_end() -> void:
 	_main.queue_free()
 	await _frames(2)
+	var defs: Array = Content.upgrades()
+	var needed: Dictionary = {}
+	for def: Dictionary in defs:
+		var requires: Array = def.get("requires", [])
+		for req: String in requires:
+			needed[req] = true
+	var levels: Dictionary = {}
+	var last := ""
+	for def: Dictionary in defs:
+		if def.has("species") and def["species"] != "reptilian":
+			continue
+		levels[str(def["id"])] = Num.i(def["max_level"])
+		var effects: Dictionary = def.get("effects", {})
+		if not needed.has(str(def["id"])) and not effects.has("size"):
+			last = str(def["id"])
+	levels[last] = Num.i(levels[last]) - 1
 	var save := SaveFile.new_save("reptilian")
+	save["demo"] = true
 	save["runs"] = 3
-	save["rubble"] = UpgradeTree.new(Content.upgrades(), {}, "reptilian").cost("evolve1") + 20
-	save["levels"] = {"claws": 2, "hide": 1, "rage": 1}
+	save["levels"] = levels
+	save["rubble"] = UpgradeTree.new(defs, levels, "reptilian").cost(last) + 20
 	SaveFile.save_game(save)
 	_main = (load(MAIN_SCENE) as PackedScene).instantiate()
 	root.add_child(_main)
@@ -79,24 +96,47 @@ func _walk_end() -> void:
 	_check("Continue lands on the tree", tree is UpgradeScreen, str(tree))
 	if not tree is UpgradeScreen:
 		return
-	(tree as UpgradeScreen).node_button("evolve1").pressed.emit()
-	var waited := 0
-	while _screen() == tree and waited < 1200:
-		await process_frame
-		waited += 1
+	(tree as UpgradeScreen).node_button(last).pressed.emit()
 	await _frames(30)
 	var card := _texts(_screen())
 	_check(
-		"demo-complete card renders",
-		card.has("DEMO COMPLETE") and card.has("MAIN MENU"),
-		"%s after %d frames" % [str(card), waited]
+		"the final upgrade shows the thanks screen with its buttons",
+		(
+			card.has("THANKS FOR PLAYING")
+			and card.has("Buildings destroyed")
+			and card.has("LEAVE FEEDBACK")
+			and card.has("TRY ENDLESS MODE")
+			and card.has("KEEP PLAYING")
+		),
+		str(card)
 	)
-	_check("card font is ours", _font_ok(_screen()), _font_names(_screen()))
-	_press(_screen(), "MAIN MENU")
+	_check("thanks font is ours", _font_ok(_screen()), _font_names(_screen()))
+	_press(_screen(), "TRY ENDLESS MODE")
 	await _frames(12)
+	var endless := _screen() as Rampage
 	_check(
-		"MAIN MENU returns to the title",
-		_texts(_screen()).has("KAIJU INCREMENTAL"),
+		"TRY ENDLESS MODE starts the endless rampage",
+		endless != null and endless.sim.endless != null,
+		str(_screen())
+	)
+	if endless != null:
+		await endless.wait_loaded()
+		await _frames(120)
+		_check(
+			"endless runs with no clock",
+			not endless.sim.over and endless.sim.elapsed > 1.0,
+			str(endless.sim.elapsed)
+		)
+	_main.queue_free()
+	await _frames(2)
+	_main = (load(MAIN_SCENE) as PackedScene).instantiate()
+	root.add_child(_main)
+	await _frames(12)
+	_press(_screen(), "CONTINUE")
+	await _frames(30)
+	_check(
+		"Continue lands on the tree with ENDLESS MODE",
+		_texts(_screen()).has("ENDLESS MODE"),
 		str(_texts(_screen())).left(120)
 	)
 	SaveFile.delete_save()

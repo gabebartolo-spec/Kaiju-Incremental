@@ -42,14 +42,14 @@ static func run(root: Node, check: Callable) -> void:
 	FlowSounds.crowd(check, sfx)
 	preload("res://tests/lib/flow_step_sounds.gd").check_walk(check, sfx)
 	var pitches: Array[float] = []
-	for tier: int in [1, 4]:
+	for tier: int in [1, 3]:
 		sfx.set_size_tier(tier)
 		sfx._process(1.0)  # past footstep_min_interval
 		sfx.footstep(1.0)
 		pitches.append(sfx.last_pitch())
 	check.call(
 		pitches[0] > pitches[1] * 1.2,
-		"a baby's steps sound higher than a Behemoth's (pitch %s)" % [pitches]
+		"a baby's steps sound higher than an adult's (pitch %s)" % [pitches]
 	)
 	FlowSounds.regen(check, sfx)
 	FlowVoices.check_tail(check, sfx)

@@ -7,6 +7,7 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 \
 ##     --write-movie <dir>/stomps.avi --script tools/capture/capture_stomps.gd
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const SECONDS_PER_TIER := 5.0
 const TIERS: Array[Dictionary] = [
 	{"label": "TIER 1  LIGHT  (no stomp upgrades)", "levels": {}},
@@ -16,6 +17,9 @@ const TIERS: Array[Dictionary] = [
 
 
 func _initialize() -> void:
+	if not Kit.window_ok():
+		quit(1)
+		return
 	_run.call_deferred()
 
 
@@ -28,14 +32,7 @@ func _run() -> void:
 
 
 func _tier(label: String, levels: Dictionary) -> void:
-	var species := Content.species_def("reptilian")
-	var stats := UpgradeTree.run_stats(
-		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
-	)
-	var rampage := Rampage.new()
-	rampage.setup(
-		species, stats, CityGen.generate(Seeds.make("city", 0), Content.section("city")), 1
-	)
+	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels), 1)
 	rampage.set_autoplay(true)
 	rampage.autoplay_signature = false
 	root.add_child(rampage)
@@ -45,8 +42,7 @@ func _tier(label: String, levels: Dictionary) -> void:
 	text.position = Vector2(40, 160)
 	layer.add_child(text)
 	root.add_child(layer)
-	for _i: int in roundi(SECONDS_PER_TIER * 60):
-		await process_frame
+	await Kit.frames(self, roundi(SECONDS_PER_TIER * 60))
 	rampage.queue_free()
 	layer.queue_free()
 	await process_frame

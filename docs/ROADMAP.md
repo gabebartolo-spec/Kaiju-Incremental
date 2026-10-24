@@ -71,8 +71,8 @@ worktree and branch cleanup. Gate: build 3.
 These change scale, density and framing for everything after, so they come first. b2-20 voxel vs a non-voxel look
 (labelled captures of the same street) · b2-19 voxel count down / today / up, same shot · b2-7 camera angle and
 distance (done: D-105 framing C, low and cinematic; open: how it grows per stage, his pick of A today plus
-look-ahead, B grows on screen to about 34%, C low hero at adult (pitch to about 15 deg), each a 2x2 clip of stages 1
-and 4 (R 19, framings)) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
+look-ahead, B grows on screen to about 34%, C low hero at adult (pitch to about 15 deg), each a 2x2 clip of the young and
+adult cities (R 19, framings; three steps, D-135)) · shaders: a few candidate looks (lighting/post/material shaders), side by side at
 morning, noon, dusk and night, he picks one (director 2026-10-20) · heli-cam A/B (parked; folded into the camera choice). Gate: his four picks
 recorded in DECISIONS.
 Research inputs to these boards: one shader candidate is Godot's own toon shading + a next_pass outline (R 7.1); every
@@ -153,10 +153,11 @@ How (research): an upgrade affordable after every rampage and the first purchase
 (rate about 1.07-1.15) in data, a seeded sim test over the first hour (R 1.1) · rampage timer starts short and grows
 through upgrades to a ceiling; start value set by his playtest (R 1.2) · about 1 node in 4 changes what the player
 does or sees (a verb, prey, district, the next stage); reveal only the next ring (R 1.4) · the city scales with the
-kaiju so the late game never goes AFK (taller blocks, more tanks and helicopters; prestige = harder enemies, bigger
-rewards), the genre's top complaint (R 1.3) · target 3-5 h to the ending.
+kaiju so the late game never goes AFK (taller blocks, more tanks and helicopters; no prestige: "it isnt relevant to
+our game", D-136), the genre's top complaint (R 1.3) · target 3-5 h to the ending.
 How (research 16, a beautiful tree whose paths set the pace, director 2026-10-21): today the tree thins as the
-kaiju grows (11 / 6 / 5 / 1 nodes per stage, 87 levels, gone in about 0.9 h); write 50-65 nodes per species as rings
+kaiju grows (11 / 6 / 5 / 1 nodes per stage, 87 levels, gone in about 0.9 h; the fourth step is cut, D-135: rings
+re-split over three steps); write 50-65 nodes per species as rings
 that grow outward (about 14 / 16 / 18 / 10), each node a `kind` (stat, verb, stage), a cheap 3-4 node burst just past
 each evolution and a dearer climb before the next; the pacing bot asserts 1-4 buys a visit, at most 5 runs between
 verb or stage nodes, evolutions within 20% of their target times (b2-28 and p1-8 are one sum) (R 16.1) · buying is an
@@ -176,8 +177,8 @@ first (spread rules that read and stay cheap, how it feeds the biomass curve), t
 How (research 26): first delete the view's random fire on 18% of collapses (city_view.gd, presentation RNG, burns rubble:
 breaks determinism and #111) (R 26.1) · a heat meter per building filled by neighbours (distance, wind, material), seeded
 ignition, windows glow 1-3 s first so a firebreak is possible; intact -> heating -> burning -> rubble (R 26.2) · biomass
-only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (R 26.3) · nodes Kindle,
-Fan the flames, Tailwind, Ember storm, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
+only on burn-out (~0.6 of rubble), a decaying conflagration multiplier, far burn-outs pay a quarter (his yes, D-136) (R 26.3) · the five
+headline-named nodes of D-126, Firestorm with explosive sites (R 26.4) · one pooled light per fire cluster, three
 visual tiers (R 26.5). His questions: a spark source for non-breath species; wind fixed/rotatable or drifting.
 Fire crews (director 2026-10-22, comment #50: "fire fighting crews including helicopters and firetrucks will attempt to fight
 the fires, bonus biomass awarded for killing these humans"): fire trucks and helicopters head for burning buildings and
@@ -213,7 +214,8 @@ in a settings menu that matches Phase F's UI. How (research 18): shadow splits, 
 to go below High), SSAO, SSIL and glow per preset in the live applier, city_view.gd reading them instead of its
 hard-coded values (R 18.2) · debris, fire, carve-physics, crowd and civilian caps and particle amount per preset,
 applied at the next rampage start (R 18.3) · light pool 8/12/16/24/32 by preset (R 18.4) · default chosen by renderer
-and GPU type, then a 4 s frame-time sample that only ever steps down, said once in settings (R 18.5) · Potato =
+and GPU type; quality NEVER drops on its own: "We have to optimise our game well, and graphics settings potato-max
+allow flexibility" (D-136) (R 18.5) · Potato =
 gl_compatibility behind a restart, last (R 18.6) · the shader baker on for exports, presets applied only from menus
 or pause (R 18.7) · CI shard timings (claude/ci-shards). Gate: build 8.
 
@@ -240,7 +242,7 @@ in Blender, five views per run (R 4.1) · organic stages from TripoSG image-to-3
 AMASS motion model (R 7, 3.6).
 City (research): one seeded density field per block drives height, lot size and tower chance, rising each stage
 (R 6.2) · district labels by simple rules (downtown, residential, industrial, docks) (R 6.3) · docks and cranes where
-the kaiju rises (R 6.4) · one headline landmark per stage placed by a data condition (R 6.5) · podium, shaft,
+the kaiju rises (R 6.4) · landmarks per D-133 (3 per stage from a ~12 pool, by seed) (R 6.5) · podium, shaft,
 setback and crown silhouettes by district (R 6.6).
 Species (research): a silhouette gate per stage (filled black at play zoom, told apart by shape) (R 2.6) · one
 signature verb per species tied to carving, cephalopod first: GRAB and DRAG (R 2.7) · cephalopod arms reach as a
@@ -248,7 +250,7 @@ bend travelling base to tip, haul back as a stiff three-segment fetch, wrap towe
 the target, idle sway from a hash not the sim RNG (R 9.2-9.7) · original species concepts for his pick: burrower
 (UNDERMINE), hermit crab that wears a building as its shell (WEAR), reef colony (ENCRUST), fungus walker (ROOT),
 pangolin roller (ROLL), tide ray (BREACH and SLAM) (research 02) · authored finale with a readability pass (R 1.5).
-Reptilian head evolutions (director 2026-10-22: "roadmap: python head reptilian evolution, and komodo dragon head reptilian evolution"): a python head and a Komodo dragon head as reptilian evolutions; how they unlock, and what each changes in play, are asked at their phase (after the croc ships, D-124).
+SUPERSEDED by D-197 (Komodo, croc and serpent picked at the baby stage, each its own powers). 2026-10-24 Komodo (D-196, D-197): Cascadeur walk prototype "looks fantastic apart from the tail clipping into the ground and the claws doing weird floppy twitchy things" (fixed: tail clearance, hands smoothed; owner lead). "id really like the komodo's saliva to drip in game": drool strands that sway with the jaw plus drips falling from them, a game effect (owner: VFX, after the Komodo is in the game; status: recorded). Baby and adolescent Komodo (board 2026-10-24): baby "B: four legs" (a real hatchling that rises onto two legs at the adolescent stage), adolescent "Yes, build it" (lanky, forward-leaning, oversized feet); 3D models by session tripo-komodo. New croc (D-197, board 2026-10-24: current titan, A powerhouse, B lean sprinter): "B with A's power" (B's lean nose-down sprinter line with A's heavier thighs and deeper chest; both feet down for the rig); session tripo-komodo. In game: "the animations could still be polished up, theyre often quite erratic when they should have more weight and smoothness" (today's procedural croc movement): answered by the D-193 pipeline (Cascadeur clips with physics and a smoothing pass on every species, judged in the Komodo test build), no more tuning of the procedural gait (owner lead; status: in progress). Reptilian head evolutions (director 2026-10-22: "roadmap: python head reptilian evolution, and komodo dragon head reptilian evolution"): a python head and a Komodo dragon head as reptilian evolutions; after the demo, unlocked with the Colossus (the evolve screen offers croc, Komodo or python), looks only first (D-171, D-166); what each changes in play is asked later (D-124).
 Rooftop mortars (research 24): a sibling of the rooftop squad, placed at sim start on tall topple-able non-landmark
 towers (2-5 per tier), firing beyond rifle range with a dead zone, one timed shell per 4-6 s aimed where the kaiju is,
 killed by losing its roof, with a sim review and pinned-seed suite (R 24.1) · "ride the fall": kill and pay at the
@@ -257,8 +259,8 @@ whistle, boom (CC0 only), 4K capture through the screen critic (R 24.3) · an ed
 off-screen mortar fires (R 24.4) · a tower dropped onto a mortar nest kills it, combo bounty (R 24.5) · tree hooks
 (bounty, topple radius, falling debris kills, shell-shrug) for his pick (R 24.6). Not now: mid-run spawns, lead aim.
 Mecha boss finale (research 23): one boss rampage in the player's own city after the last evolution, army stood
-down, beating it ends the game (R 23.1, his question) · sim/mecha.gd + data/boss.json, a greybox body, three
-attacks (charge, salvo, stamp) from a shuffle bag, phases with a minimum time, sim review (R 23.2) · telegraphs
+down, beating it ends the game (R 23.1, his question) · sim/mecha.gd + data/boss.json, a greybox body, attacks
+from a shuffle bag (PROPOSAL, his pick when the finale is planned: charge, salvo, stamp), phases with a minimum time, sim review (R 23.2) · telegraphs
 always visual, slow wind-ups, no feints, motion critic (R 23.3) · the city as the weapon: undercut a tower onto it,
 a charge that sticks in a building, thrown tanks after R 22's Flung (R 23.4) · two-target camera, a thin boss bar
 as the one HUD exception (his yes) (R 23.5) · it falls like the biggest tower, quiet, then results and credits
@@ -283,3 +285,265 @@ labelled concept board (R 23.1, research 23) · legal look check: the research s
 beam (Toho enforces the Godzilla look; research 02 finding 9, not legal advice). Answered in part (director
 2026-10-21): "we could have our croc shoot hot lightning instead of atomic theme", so the breath is re-themed (D,
 b2-18). Shape closed (director 2026-10-21): "ours is like a crocodile in a t-rex body, not godzilla shaped".
+Landmark stable (D-133, comment #62, director 2026-10-22): about 12 landmarks in a pool, each run picks 3 per stage by
+its seed, so runs differ; kinds: famous-style icons (original, never copies), city services, fun one-offs, industrial.
+Replaces D-071's fixed four as the set; stadium, wheel, spire and megatower join the pool. New 8 (picked): suspension bridge tower, opera-house shells, theme-park coaster, giant donut sign, power station,
+airport control tower with planes flying in and out, container port cranes, oil refinery. Tripo models voxelized into
+carvable cell grids; six-view check per model; look boards to him first.
+Itch demo (D-132, comment #61, director 2026-10-22): the 1.0 demo goes on an invite-only Itch page (download keys) when
+the reptilian stage is 100% done: bug free, polished visuals, good performance, fully featured. Earlier builds stay local.
+Atmosphere and city life (comment #63, director 2026-10-22): clouds and weather, birds flying round, one whale per run
+spouting in the bay, fire crews and ambulances (fire crews: comment #50), pet dogs on the streets, night clubs, banks, hotels,
+train stations with tracks and running trains, small boats on the water. First: sky and sea life (clouds and weather, birds, small boats, the whale); weather looks only; the whale is pure
+spectacle (can't be touched); birds scatter on roars and falling towers; dogs always escape; trains derail and smash;
+banks, hotels and clubs give small bonuses (comments #64-71).
+Light narrative (comment #76, director 2026-10-22): "light narrative to tie the carnage together": the kaiju are
+created in laboratories by a shadowy international organisation; you are the chief architect of the Kaiju Plan; your
+mission: bring the world's cities to their knees, create chaos, eliminate military threats, destroy cultural icons
+(the landmarks, D-133); the military copy your designs and create the mecha kaiju to fight your creation (the mecha
+boss finale above, R 23). Asked: short mission briefings (a 2-3 line dossier card from the organisation before each city and after each evolve); optional bonus goals (each city lists 1-3 targets such as an icon or a base; hitting them pays a bonus); built after the demo, with the mecha finale.
+Your adversaries (comment #78, director 2026-10-22): the Anti Kaiju Taskforce, "equipped with special anti-kaiju
+weaponry including: lazer railguns, frost grenades"; reference: Attack on Titan; "Special Agents fly around the city
+with jetpacks and grappling hooks". Asked (D-137): arrives from the adolescent city as the elite threat above police and tanks, escalating into the adult city; agents grapple onto BUILDINGS only (swing between towers, shoot from rooftops; you swat them or topple their perch); frost grenades slow the kaiju for a few seconds (ice on the legs); railguns charge with a visible glow, then hit hard (dodge it or knock the gunner over); built BEFORE the Itch demo.
+Textured surfaces (comment #80, director 2026-10-22): "audit for flat, or untextured objects/scenery/buildings; all
+surfaces must be textured and visually beautiful". Asked: textured = surface detail in the voxel look (concrete stains
+and panel lines, brick courses, window frames, road wear and markings, grass and soil tufts, roof gravel and vents;
+nothing a single flat colour); audit now (every object type captured, flat ones listed with images), fixes before the
+Itch demo (D-132 "polished visuals").
+Helicopter deaths (comment #86, director 2026-10-22): "currently, destroyed helicopters simpyl disappear". Asked: a mix,
+big hits blow them apart in the air, lighter kills spiral down smoking and explode where they land; the crash smashes
+what it hits (and can light a fire with City Ablaze) and pays biomass (sim change: seeded, tested).
+Name (comment #85): the game is called Kaiju Evolution everywhere players see it; the save folder keeps its old name.
+Graphics preview (comment #90, director 2026-10-22): "when players change their graphics setting, we should have a live
+example of what that will look like so players can choose their tolerance". Asked: a live preview "in the options menu as they choose" (a framed live view of the city that updates as each graphics option changes, with its frame rate); built "for the demo".
+Load-screen art (comment #92, for the demo): a rotation of staged, creative 4K screenshots of the game behind the
+loading screen (e.g. from inside the stadium, from above the tallest tower), full screen with INCOMING and the meter on
+a dark band on top; the lead proposes about 12 shots on one board, he picks.
+Achievements and skins (comment #95, after the demo): in-game achievements with progress bars in a menu (e.g. topple
+100 towers, down 50 helicopters, burn a district), mapped to Steam achievements when the Steam build comes; about 8
+recolour skins of the croc (palette swaps) unlocked on milestones, chosen in a skin picker. Turns D-119's skins on.
+
+## Post effects (D-142, 2026-10-22)
+- Subtle vignette, pulsing red at low health, on every preset; a split-second colour fringe on the biggest hits only. One short clip to the director before shipping. Owner: post-fx builder. Status: started 2026-10-22.
+- Screen-space reflections (wet streets, glass), max preset only. After the demo.
+
+## Playtest milestones (D-146, 2026-10-22)
+The director plays only at these; each gets an exported .exe in a fixed folder and an exhaustive survey for that game
+state. No director clips or per-change approvals in between; clips only where motion is the point, for the critics.
+- **M1 Feel pass:** fire spread + longer baby breath (#152), heavier turning (#149), bigger explosions, post effects,
+  the new title screen, the clumsy army, three growth steps with wider cities, random time of day.
+  Plus atmosphere (D-155): rampage escalation (haze, orange sky, blackouts), sky and sea life (clouds, birds, boats,
+  the whale), weather (rain, fog, storm, overcast/clear; random per run), city sound (panic then quiet) and layered
+  music from the director's Suno stems. Atmosphere (sky and sea life, weather looks, rampage escalation): the
+  atmosphere lead (D-189). Other visuals: VFX lead. Sound, music, weather pick and options: lead.
+- **M2 Taskforce agents:** jetpack agents with railgun and frost, in the adolescent city.
+- **M3 Demo complete:** the full Taskforce (gas soldiers, walking mechs, gunships), textured surfaces, helicopter
+  deaths, the graphics preview, load-screen art, the demo end screen and feedback button.
+- **M4 Itch release candidate:** M3 survey fixes only.
+
+## Threat Dossier (D-147, 2026-10-23, after the demo)
+- A bestiary named the Threat Dossier: the Kaiju Plan's classified files on every enemy (police, tanks, helicopters,
+  Taskforce agents, gas soldiers, walking mechs, gunships, and any later ones). Name and silhouette on first sight;
+  full stats, weaknesses and lore after the first kill. Opened from the main menu and the pause menu. Status: not started.
+
+## Leader's escape helicopter (D-149, 2026-10-23, after the demo)
+- "the president/prime minister/king/etc" attempts to escape in a fancy helicopter, you get a big payout if you kill
+  him but its a fast helicopter". Random time in any city; Mayor / Governor / President by city; ~15 s window; payout
+  about a city block; breath, Thunder Beam, grab, thrown tank or car, toppled building; headline + rotor sound, no
+  markers; escape loses only the payout; white and gold VIP look. Owner: unassigned. Status: not started.
+
+## Engineering upkeep (D-159, 2026-10-23)
+- Team and tests: about 4 builders at once in total; touched suites locally, the full suite on CI; at most 3 open PRs.
+  Owner: lead. Status: in force.
+- Clean as you go: every builder splits a crowded file (390-400 lines) at a natural seam and shrinks a grandfathered
+  long function (tools/lint/complexity_baseline.txt) when its work touches it. Owner: every builder. Status: ongoing.
+- Sim speed: measure where a sim step's time goes (tools/pacing.gd's 2-hour run), so balance answers take minutes;
+  any game change it suggests goes to the director. Owner: lead's builder, after current work. Status: measured
+  2026-10-23 (claude/sim-speed: tank road driving is about half of every step; three result-identical speed-ups
+  found, about 35% together); the speed-ups start after the director's return.
+- Chunks inside the body: chewing a tall tower down leaves standing chunks inside the kaiju's body at seeds 3, 8 and
+  22 (tests/lib/sim_body_contact.gd _chew_to_topple "worst"); a sim fix in BodyContact's chew and hold or Collapse.
+  Lifted pieces' missing cut faces stay with the VFX lead. Owner: lead's builder. Status: done 2026-10-23: it was the
+  test's start pose inside the neighbouring towers, not the sim (PR #168, tests only).
+
+## Overnight work (director 2026-10-23, about 03:25, asleep then at work)
+- His words: "work for 5 hours, if theres something you need my eye or a question you need to ask, add it to the
+  interview and continue working". Questions gather in the lead board's interview.md; the lead asks them on his return.
+  Owner: lead. Status: done 2026-10-23 afternoon (D-163 to D-170).
+- Heads and skins (D-162): a couple of snake and Komodo head options and a few croc skins, Tripo, 8000 credits, boards
+  for the interview. Owner: VFX lead's asset session. Status: round 1 shown; round 2 per D-164.
+- "get the githib hygeinic": stale branches, worktrees and PRs cleaned to the github-hygiene skill (manifest first, open
+  PRs and live worktrees excluded). Owner: lead's GitHub helper. Status: started.
+- Research (readers only, no engine; findings go to the interview as questions, never into the build). His words: "if
+  you run out of things to do, do bulk research on how to make the game better", narrowed to "research should be
+  focused on 3d animation of kaiju and methods of creating good pipelines for ai generated 3d models, good practice"
+  and "specifically search for how to generate good art and good animations using the tools we have, tripo, blender,
+  godot, local tools, yourself, mcp connections, plugins, skills you can learn, github repos with workflows already
+  designed, etc" ("i also have Aseprite"). Owner: lead's readers. Status: done; answers in D-164 and D-170.
+- The voxel look, again: "research again if it would be worth abandoning the voxel look. im worried that theres a mix
+  match of art styles in the game, the voxels are maybe clashing with the cinematic direction" (D-111 kept voxels on
+  2026-10-21). A reader's report plus labelled stills from the VFX lead go to the interview. Owner: lead, then VFX lead.
+  Status: decided, keep blocks, one look (D-163).
+- Croc idle audit: "do some audits on the posture and "idle" movements of our reptilian, does he breath? does he ever
+  sway at all? these things would be good for immersion". Audit done (barely breathes; only the tail sways; stops
+  dead); how much life to add is an interview question; no build before his answer. Owner: VFX lead. Status: decided
+  (D-165).
+- Tripo downloads: "you need to press save when these pop up" (the browser's Save dialog). That dialog belongs to the
+  Claude app, which computer use may not control, so agents fetch each model by its signed URL (read from the browser
+  pane's network requests) with curl instead. Owner: whoever downloads. Status: in force.
+- Thunder Beam sound (the lead's sound item): crack, crackle loop for the beam's length, rolling-thunder tail, made on
+  ElevenLabs (D-138); wired by the VFX lead's Thunder Beam builder. Status: files ready.
+
+## Interview answers (director 2026-10-23, afternoon; D-163 to D-170)
+- One look from blocks (D-163): props, ground, fire and blasts into the city's look; far blur on the kaiju; cool
+  shadows, warm fire; fine-block ground; blocks in close shots too. Owner: VFX lead. Status: not started.
+- Heads and skins (D-164, D-170): the Komodo head with its own shape goes forward; a serpentine python round 2 (snake
+  jaw and fangs); Obsidian, Abyssal and a new Albino as colour tables per body region. Heads are looks only first,
+  in game after the demo (D-171).
+  Owner: VFX lead's asset session. Status: skins r6 board waits for him; heads parked after 4 snake rounds
+  (Tripo regenerates the body; grafts seam), notes in the VFX notes folder heads/HEADS_PARKED.md; 580 credits used.
+- Living predator (D-165): breathing, weight shifts, head glances, blinks; heavier stride with size; tail, throat and
+  jowl swing; a short crouch before the dash. No panting, no eye tracking. Owner: VFX lead. Status: not started.
+- Damage on impact (D-166): breath and ultimate strike at 0.8 / 1.1 / 1.4 s by growth step, standing stomp 0.45 s
+  (VFX lead's clip timings, data values); dash after the D-165 crouch. Owner: lead's builder. Status: not started.
+- Railgun volleys: a squad locks on together and fires in turn, ~2 hits a second per squad (D-166, D-175, D-178).
+  Owner: lead's builder. Status: MERGED #170 (e4100548) after two non-author sim reviews; GitHub pacing workflow MERGED
+  #174 (f68caea1, D-179: push a pacing-run/<name> branch).
+- Thunder Beam at a third of its price, last unlock about 2.25 h (D-167 amended). Owner: lead's builder. Status: pacing run.
+- Heli wrecks crush tanks, rooftop squads and perched Taskforce agents too (D-167, D-173): MERGED #166 (3e4a7665),
+  look round 3 FIX flagged for the M3 survey; round 4 on claude/heli-look-r4. Owner: VFX lead.
+- The whale in the water between the play city and the distant city (D-168), with sky and sea life. Owner: demo-end
+  session. Status: not started.
+- Suno music this week (D-169), brooding and building, one mood growing heavier (D-172, briefs rewritten); the lead cuts and layers the stems. Owner: director, then lead. Status: waiting on
+  the downloads.
+- Rig test, up to 100 Tripo credits on the croc's tail (D-170). Owner: VFX lead's asset session. Status: not started.
+
+## Director comments (2026-10-23, afternoon)
+- "adolescent walking animations are fucked, his legs so twitchy, and he swivels rather than turns". Returning
+  complaint (DESIGN Motion; comments 2026-10-20 #16, 2026-10-21 #3/#4). Owner: VFX lead (diagnose from data and code,
+  exact fix and pass bar first; any sim part to the lead). Status: view fixes are PR #175 (the walk passes); two
+  critic rounds FIX on the turn, measured in the sim: the Behemoth and Colossus turn at 260-311 deg/s peaks, a snap
+  per planted step. D-187 "Heavier, slower": a U-turn about 2 s Behemoth, 3 s Colossus (re-asked after a wrong quote), spread evenly over the
+  steps. Owner: lead's fresh builder (sim); clip and a fresh motion critic before it merges. D-192: A (short steps)
+  ships; A and B looked the same and neither stops; the 10 s shore bar stays, met without changing the turn.
+- "Im sick of wasting time and usage on animation problems. It is sisyphus shit. We need a new pipeline. That UniMate
+  one looked promising" (D-193): a commercial animation tool makes the croc's moves; a Behemoth prototype (walk,
+  turns, stomp as finished moves) replaces foot placement only if it beats it. Owner: lead (tool pick, sim side),
+  VFX lead (clips on the rig). Status: tool research. Animation tuning (turns, breathing, claw arm) parked.
+- "in the night/dusk (i couldnt tell) scene the white glowing effect is terrible, it follows the camera around", "Is it
+  the light mist?": yes. A/B stills at 4K: the base depth fog (dusk 4d7380 at 0.012) veils the far city and the left
+  half (+25-29% contrast with it off); bloom, lamps and the tower fade change 0-3%. Fix: dusk and night fog 0.005,
+  dusk colour deeper (2f5566); bar: contrast within 10% of fog-off, brightness drop <= 8%. Owner: VFX lead. Status:
+  SHIP claude/night-fog 4524e90c (dusk fog 0.0035, night 0.005, toppled-tower dust dims at night; fresh critic: the
+  left haze is gone, dusk still reads as dusk) = PR #172, merging on green. Against the bar: far contrast vs fog-off
+  0.85-0.97 (dusk walk 0.85 misses 0.90), camera-left 0.70-0.91 (misses), frame brightness -4% night, -11 to -14%
+  dusk (misses 8%, but it now equals fog-off's, so the drop is the veil leaving, not murk). Better than today on
+  every number. VFX lead's ruling: no second pass; the camera-left gap is the dimmed dust (fog-off's undimmed white
+  dust inflates its contrast), the 2x crops match, far softness is depth. If he still sees a camera-following glow at
+  M1, the next suspect is the tower see-through cross-hatch. Found alongside, queued (VFX lead):
+  the tower see-through fade draws a cross-hatch that follows the camera beside the kaiju; the kaiju's silhouette is
+  weak at night; the D-154 late-rampage haze is unbuilt.
+- "the songs are way too intense" and the Suno guide "doesnt really seem to marry up to their interface": D-172,
+  briefs rewritten. Then "surely you can operate suno in your browser": the lead makes the takes (D-174, 800
+  credits), he picks by ear. Then, in order: "too 'heroic'" (D-176 darker, Godzilla), "all sound more or less the
+  same city to city" (D-181 one theme, Cover per city), "i need more menace", Isengard "peak reference", "too
+  'epic', too Nolan Batman" (D-182 Jaws, Godzilla, Imperial March), "too staccato, too endlessly building", "too
+  whimsicial, almsot Harry Potteresque, go harder on the Godzillla reference" (G1-G4, 1954 Godzilla takes).
+  Owner: lead. Status: 140 of 800 credits. Then "ok the music is much better, ship it": the G set ships (take and
+  per-city plan asked).
+- "make a note in the roadmap to revisit music later": the music gets another pass after this one ships (the
+  Godzilla-style theme is the starting point; takes and settings in docs/provenance/music.md). Owner: lead, with
+  him by ear. Status: parked until he calls it.
+- "are we in clip making purgatory again?", then "but if something has failed 7 times in a row then our method is
+  wrong, and needs to be reassessed": D-188, no round cap (reviews keep going until the critics pass), but two
+  failures in a row change the method. The fire and helicopter look (round 7) is reassessed before any round 8.
+  Owner: VFX lead. Status: reassessed (helicopter deaths r1-r6): the fire failed every round because the shared
+  Fire has never passed and was being fixed inside the helicopter work, so the Fire family becomes its own item (a
+  board of 2-3 building-fire treatments beside real fire photos, critics screen defects, he picks); the fall draws
+  an arc between the sim's death and crash points; "kill not caused" waits for the new claw rake, and every claimed
+  fix is measured in the rendered clip. Walk fix #175 SHIP, merging; the turn moves to D-187. Fire board: "Smooth
+  flames" (D-190), rolling out to every fire on claude/fire-smooth, the helicopter fall round on top; claw swipe
+  "Keep it straight ahead" (D-190): hit back on the snout line, stronger trail and sparks.
+- "interview me": D-189. M1's atmosphere starts now in a third session ("start them now, create a third session",
+  "Atmosphere"); builder cap "6 in total"; music "Low and creeping"; helicopters "Never block your view". Owners:
+  atmosphere lead (sky and sea life, weather looks, escalation), lead (layered music now; heliflight's camera bar
+  becomes the camera-to-kaiju corridor). Status: in progress. Atmosphere rulings A1-A16: D-191 (order: escalation,
+  weather, sky and sea life; #167 drew no weather yet).
+
+## Motion first (D-177, 2026-10-23)
+- Gait fix: per-stage step length in the sim (lead's builder) + the Behemoth's foot lift in the bake (VFX lead).
+  Cause measured: the Behemoth's knee pops twice a step (leg snaps straight in early swing, knee flips at heel strike;
+  shin jerk p99 32 vs the Colossus's 4) from IK at full stretch, fed by one step length for every stage; a held pad
+  curve turns 38 deg with no foot down (the swivel). Sim (lead): per-stage step length, held-curve turns stepped.
+  View (VFX lead): soft IK, Behemoth foot lift 0.15 -> 0.07. Owner: both. Status: sim PR #173 (841f93e2, two sim
+  reviews SHIP: hand-over lurch and dash slide fixed) merging on green; view claude/gait-fix c661d731 passes the whole
+  motion gate locally (motion 30/0: walking shin jerk young 6.0 -> 2.7, Behemoth 6.8 -> 4.3; catch steps 2.2 -> 0.2/s;
+  reach 0.93); clips and a fresh motion critic next, then its PR after #173.
+- Motion gate: the gait probe becomes a CI suite (planted-foot speed, steps/s vs clip speed, turn pivot vs planted
+  foot, foot lift) at all three growth steps; every body or movement change passes it. Owner: VFX lead's gait builder
+  writes it, the lead reviews and merges. Status: not started.
+- Motion pass on every growth step (walk, turn, stop, dash, stomp, standing still), measured bars + a fresh motion
+  critic at game speed, then the living predator (D-165), ahead of the one-look work. Owner: VFX lead. Status: queued.
+- Balance run on GitHub (D-179): a manual workflow runs tools/pacing.gd. Owner: lead's builder. Status: not started.
+- "helicopters are hovering way too close to our kaiju ... twitchy ... like an orbiting fly, they should move logically,
+  strategically, gracefully": stand-off gunships (D-183). Owner: lead's builder (sim/air_wing.gd), VFX lead for banking
+  and rotor look. Status: queued after the volley rework.
+- "these songs are too staccato, too endlessly building with very little relief or payoff": theme takes now ask for a
+  legato melody with tension and release (D-182). Owner: lead. Status: done; D-184 ships the Godzilla set: his
+  remaster of G2 (song 798f3c13) on the menu over the city sound and as the source of the three city Covers.
+- "the claw swipe animation for our kaiju looks really really odd, the way his arms dart out is reminiscent of a wind
+  up toy or somebody doing the chicken dance, its laughable, not dangerous"; "his arms dart out upward diagonally very
+  suddenly, defying his anatomy, it looks terrible". D-185: a heavy raking arc. Owner: VFX lead (diagnose, exact
+  fix, motion bars at all three growth steps, motion critic, one clip after SHIP). Cause (code): the upper arm is
+  scaled 1.25x (adult) to 1.6x (young) so the arm telescopes out; only the arm moves; 0.62 s at every size; the hand
+  lifts high; linear poses. Fix: no bone scaling, torso twist to load and whip, low wide arc, a strike of 0.1 s or
+  less on the sim's hit, follow-through longer with size. Bars: arm scale 1.0, chest yaw >= 15/25 deg, hand at or
+  below the shoulder, arc >= 120 deg, strike peak >= 3x the load's speed, hit within 1 frame, feet slide 0. Status:
+  next free VFX engine slot after the gait work. Risk: if the 0.3 s sim wind-up reads rushed at Colossus size, a
+  per-stage wind-up is a design question for him.
+- "the kaiju breathing animation is way too much, too much movement and too fast, should be deep and slow like a
+  behemoth" (D-165 living predator). Fix: slower, deeper breaths with less visible movement, still slower and
+  heavier as he grows; bars per growth step (breath period, back and flank movement), motion critic, one idle clip
+  after SHIP. Owner: VFX lead. Status: in progress (D-165 phase A builder, claude/living-predator). Seen on base,
+  where the breath is baked into the idle clip; it is damped at runtime. Bars: one breath every 4 / 6 / 8 s (young
+  croc / Behemoth / Colossus), inhale 40%, exhale 60% with a pause; back and flanks move 0.25-0.8 / 0.6 / 0.5% of
+  body height at most, no faster than 0.6% of body height a second; the belly barely moves. D-190 "Slow
+  chest-and-neck heave": neck, shoulders and flanks rise clearly every 6-8 s, deep and slow, the default idle
+  (replaces the movement caps above).
+
+## Kaiju Creation, the new-game opening (D-207, director 2026-10-24, in the demo)
+- "Kaiju Creation (aka NEW GAME) / laboratory setting, zoomed in petrie dish / you select which reptile genome to
+  place in the dish / then you inject the KAIJU juice into the dish and a brief animation vfx moment shows the kaiju
+  genome taking over the reptilian genome / camera rapidly zooms in into a black screen (the sound of an egg cracking
+  is heard) / the first baby run begins". Ties to the reptilian family (D-197, D-202: croc first, then the Komodo
+  dragon, then the serpent). Owner: lead (flow, UI), visuals per D-189 split. Rack: croc genome, Komodo and serpent greyed and locked;
+  replays to create each new titan on unlock. After the black screen the baby rises from the river as now.
+  Status: not started.
+
+## Reptilian models and skins (D-209, director 2026-10-24)
+- "i want to see all models soon: croc baby, croc teen, croc adult, dragon baby, dragon teen, dragon adult, serpent
+  baby, serpent teen, serpent adult / and i want to see skin mockups for all of them". Concepts that pass their critic
+  go straight to 3D; two Tripo sessions in parallel. Owners: tripo-komodo (Komodo baby, three croc stages),
+  tripo-serpent (three serpent stages, D-206), lead (skins: Blender recolours, about six palettes per titan, same
+  palette baby to adult, D-205; he picks three). Status: Komodo adult done, adolescent textured, baby texturing;
+  croc adult concept in its third round; serpent baby concept SHIP. Tracked on the "Reptilian models" page.
+- Also today (D-208): turning and steering must feel exceptional; carving keeps working with the new models; any
+  contact damages a building except the serpent's held climb. Owner: lead (komodo-test builder adds carve and turn
+  checks; serpent round 4). Status: in progress.
+- Reptilian sounds (director 2026-10-24): "croc: low clicking crocodile growl, clapping hollow sound of jaws
+  clunking together / dragon: cavernous nostril snorts, wet tongue flicks, short and brutal barking roars / serpent:
+  hissing noise obviously, faint slithering sounds as it climbs, deep menacing rattle". Owner: lead. Status: croc
+  takes made first ("Croc now, others later"); Komodo and serpent when their models are in the game.
+- Reptilian idle states (D-210, director 2026-10-24): "snake curls up into a defensive position, tongue flicking
+  dangerously / croc hunches guardedly, prepared to leap at anything nearby / the dragon breathes heavily and steadily,
+  tongue darting, drool dripping, snorting steamy gusts from its nostrils". Owners: serpent slither builder (coil on
+  stop), lead (Komodo idle in Cascadeur, steam and drool effects), croc with its new model. Status: not started.
+- Final boss, the mecha chimera (D-211, director 2026-10-24): "a strange chimera hybrid of all three, in a mecha form
+  as the final boss ... snake head, croc body and athleticism, dragon massive size and power and it shoots a tribeam of
+  corrosive acid, lightning and poison out of its mouth". A full machine built from your DNA; last city after 100% of
+  every reptilian's upgrades. Owner: tripo-komodo (free concepts now), lead. Status: concepts started.
+  Stretch goal: "after you unlock 100% of the achievements you unlock a secret: you can play as the mecha kaiju"
+  (no achievement list exists yet; designed with him later).
+- Scope (D-212, director 2026-10-24): "demo: full croc gameplay minus the mecha boss fight / full game: all 3
+  reptilians and mecha boss / ... an expansion with a mammal, an avian, an aquatic" (plus build-your-own kaiju);
+  mantis and octopus stay stretch goals. Owner: lead (milestones follow this). Status: recorded.

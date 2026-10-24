@@ -74,6 +74,7 @@ func _ready() -> void:
 	# D-065 greenery planted last, so the cars and trees before it keep their RNG draws.
 	greenery.plant()
 	green = greenery.green
+	RiverQuay.plant(self)
 	TrafficIsland.plant(self)  # last: an all-junction cell left with nothing gets an island
 	var palette := {
 		"glass": Color("2b3640"),
@@ -93,6 +94,9 @@ func _ready() -> void:
 	var island: Dictionary = sim.city["traffic_island"]["colors"]
 	for key: String in island:
 		palette[key] = Color(str(island[key]))
+	var quay: Dictionary = sim.city["river_quay"]["colors"]
+	for key: String in quay:
+		palette[key] = Color(str(quay[key]))
 	add_child(_props.build(palette, 31, 3.0))
 	_props.configure(sim.city)
 	add_child(_fx)
