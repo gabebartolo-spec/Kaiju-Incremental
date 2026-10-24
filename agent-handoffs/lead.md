@@ -64,7 +64,10 @@
   (E re-masked: ref orange was soil). Croc adult touchup adult2/touchup/ (tail restored, teeth, scutes v2 FAILED ->
   scutes v3-v6 all critic-FIX; critics misread D-108 'not godzilla shaped' (body, not plates): board
   croc_new/models/adult2/touchup/croc_scute_options.png (A tall v3 / B mid v5 / C tiles v6) = his taste call). Serpent set + mecha
-  board accepted; ask him: mecha pick, teen size, 3 skins, croc scutes A/B/C. #177 merged (exports now ship .kclip). casc-anim (D-214/D-216 Cascadeur stays; bridge Quick Rig
+  board accepted. 10-24 interview (06a3b5bc): D-217 mecha "B Lab-white" (tripo-komodo 3D, cap 400); D-218 serpent
+  size "A Today" + fix the hood from above (builder claude/serpent-hood); D-219 he HATES the fat adult croc: remake
+  "Teen's build, grown up" (tripo-komodo, chest/length <= 0.28, cap 800), plates re-asked on the new body. Still to
+  ask: haze/shadow/heli (capture builder -> cascadeur_bridge/look_boards/), 3 skins, croc teen size. #177 merged (exports now ship .kclip). casc-anim (D-214/D-216 Cascadeur stays; bridge Quick Rig
   works): adult idle body SHIP (tongue prop pending), turn v12 FIX (near hand), teen walk v7 FIX tail, teen idle v3.
   Sessions waiting on him: tripo-komodo (asked him directly), casc-anim (a prompt). Budget 10,000 (D-204, D-213). Parked: heli-standoff 2c0c2688 (handoff heli-standoff.md; camera red =
   director question with episodes), strike-delay (STOPPED; fresh builder from its handoff), sim-leak = PR #176 (needs CI
