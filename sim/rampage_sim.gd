@@ -224,13 +224,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
-	_stomp_timer -= dt
-	if _stomp_timer <= 0.0:
-		_stomp_timer += maxf(0.1, stat("stomp_interval"))
-		_stomp_due = not airborne
-	if _stomp_due and (body.footfall_now or not body.walking()):
-		_stomp_due = false
-		_stomp()
+	_stomp_clock(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
@@ -249,6 +243,18 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	if why != "":
 		end(why)
 	return _events
+
+
+## The stomp timer: a stomp comes due every stomp_interval, and falls when a walking body's foot
+## lands (a standing body stomps at once, D-166).
+func _stomp_clock(dt: float) -> void:
+	_stomp_timer -= dt
+	if _stomp_timer <= 0.0:
+		_stomp_timer += maxf(0.1, stat("stomp_interval"))
+		_stomp_due = not airborne
+	if _stomp_due and (body.footfall_now or not body.walking()):
+		_stomp_due = false
+		_stomp()
 
 
 ## Lets go of the rings between the sim and its parts (SimTeardown, D-179) so a dropped sim is
