@@ -2,6 +2,19 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-121 · Director · Camera growth: A (today's camera plus look-ahead); walk contact built now
+Why: picked from the A/B/C stage-4 boards (kaiju 51% / 33% / 47% of screen height). Falling towers fade like standing ones.
+The D-118 walk contact is built now, ahead of fire gameplay (his yes 2026-10-21).
+
+## 2026-10-21 · D-122 · Director · Water = the R 21 plan (presentation physics), built after fire gameplay
+Why: asked whether "proper water with physics" (#12) means the planned ripples, wakes, splashes and floating rubble with no
+gameplay effect, or gameplay water or a fluid sim: the plan. Order: fire gameplay (R 26), then water (R 21).
+
+## 2026-10-21 · D-123 · Director · One of the 3 cities is a water city; the octopus swims fast and can submerge
+Why: his words, "im planning the octopus to be in a city with lots of water so it can move quickly through it". Asked: the water
+city is one of the 3 every species plays; in water the octopus is fast and the others move normally; it can also dive to
+dodge the army and burst out under buildings. Water becomes gameplay for the cephalopod (amends D-122's 'no gameplay effect').
+
 ## 2026-10-21 · D-117 · Director · Run timer stays 40 s at the start, 100 s at most
 Why: Asked 2026-10-21 (R 1.2). No change to data.
 
