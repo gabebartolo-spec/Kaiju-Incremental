@@ -32,7 +32,7 @@
 
 ## In flight / next
 - casc-anim (local_2c36c792, handoff casc-anim.md): adult idle v20 -> fresh Sonnet motion critic on the mp4 -> on
-  SHIP show him ONE clip; then AutoPhysics click (his) on the walk and the .ktrack re-bake (bake_heavy_tracks.gd on
+  SHIP show him ONE clip; AutoPhysics on the walk (bridge, snapped 10-24, verify) and the .ktrack re-bake (bake_heavy_tracks.gd on
   claude/komodo-test from the w5+ joints fbx). Croc animations on adult3 come after (brief not written).
 - Main: claude/look-options is ~200 commits ahead of main. He asked (10-24) to "get main merged" at wind-down.
 - Parked branches: claude/turn-weight-d187 3483c993 (A/B turn clip faab304d), claude/heli-standoff 2c0c2688,
@@ -43,7 +43,8 @@
   scratchpad music_brief.md), sky and sea life (D-168), damage on impact (D-166), sim speed-ups (D-159).
 
 ## Sessions
-- casc-anim local_2c36c792 (Cascadeur; script server needs his Commands > MCP > Start; AutoPhysics = his click).
+- casc-anim local_2c36c792 (Cascadeur). AutoPhysics is NOT his click: bridge call_action("AutoPhysicsTool.Switch Auto
+  Physics"), wait, then call_action("AutoPhysicsTool.Snap to Auto Physics"). Never drive his screen while he is present.
 - tripo-komodo local_2d9f45c9, tripo-serpent local_cebec3c3: idle, no open work.
 
 ## Tools
