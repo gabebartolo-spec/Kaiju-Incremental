@@ -2,6 +2,10 @@
 
 Rolled from docs/DECISIONS.md (cap 400), newest first, unchanged.
 
+## 2026-10-21 · D-125 · Director · Music builds up in layers
+
+Asked how music reacts during a rampage (options: layers, switch tracks, one track per run), he picked "Layers build up": one track per city, split into stems (drums, bass, lead...) that fade in as the destruction ramps up, on one locked tempo (the Metal: Hellsinger model, research 011). Godot: AudioStreamSynchronized layers. Suno Pro stem split costs plan credits, no extra spend (D-114).
+
 ## 2026-10-21 · D-124 · Director · No octopus work until the croc is 100% shippable
 Why: his words, "no octopus work until the croc is 100% shippable". D-123 is recorded design only; no cephalopod builds, captures
 or assets start before the croc ships. The insectoid waits too. "Shippable" = a full croc playthrough: all 3 cities, the mecha

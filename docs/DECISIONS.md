@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-221 · Director · Sleek adult croc ridge kept; blue Komodo skin dropped
+
+Shown the remade adult croc (D-219, adult3 a3174b0f): its medium ridge of pale plates and dark spikes, "Keep it". The Blue Monitor skin failed two rounds of Tripo text texturing (D-220): "Drop it"; the Komodo ships with Melanistic Black and Bone White. Haze and shadow boards did not show a difference he could see ("today and half haze look identical, bad screenshots", "no screenshots for me to compare"): both stay as today, no change.
+
 ## 2026-10-24 · D-220 · Director · Komodo skins: Melanistic Black and Bone White, plus Blue by a new method
 
 Shown the four skins that passed (A Wild Olive, B Young Banded, C Melanistic Black, D Bone White) after he called eight rounds on the other two "what a waste": picks "C Melanistic Black, D Bone White". The two that never passed: "pursue only the blue one". Sand Monitor is dropped. Blue Monitor gets a new method, Tripo's own texturing from a text prompt (the CC BY-SA photo stays a critic reference only, never an input), not more recolour rounds; two failed rounds of it go back to him. The lead broke D-188 here (tweak rounds after two failures); the method change is now forced at round two.
@@ -392,7 +396,3 @@ After the minimal HUD (comments #45-47: "ui looks sooo much better, but id say m
 ## 2026-10-21 · D-126 · Director · Fire gameplay: a tree unlock, 60% payout, five headline-named nodes
 
 Asked before fire gameplay (R 26): spreading is unlocked by a tree node ("Tree node"); a building that burns down pays about 60% of a smashed one ("A bit less, ~60%"), so smashing stays the best payout; the five-node line fits, "but less AI slop names, more kaiju themed", then he picked the "Disaster headlines" set: City Ablaze (unlocks spread) / Five-Alarm (faster spread) / Fire Front (downwind, wind fixed per run, D-115) / Ember Rain (jumps streets) / Firestorm (explosive sites set off big fires).
-
-## 2026-10-21 · D-125 · Director · Music builds up in layers
-
-Asked how music reacts during a rampage (options: layers, switch tracks, one track per run), he picked "Layers build up": one track per city, split into stems (drums, bass, lead...) that fade in as the destruction ramps up, on one locked tempo (the Metal: Hellsinger model, research 011). Godot: AudioStreamSynchronized layers. Suno Pro stem split costs plan credits, no extra spend (D-114).
