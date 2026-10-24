@@ -4,6 +4,10 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-24 · D-223 · Director · Tails are a living limb: behaviours plus physics
+
+Asked "whats the plan for the tail": "all tails shouldnt be stiff, they are like an extra limb and should have their own behaviours as well as physics". Behaviours chosen (all four): a balance swing (side to side against the hips each step; leads into a turn, then drags and whips round after it); mood signals (lazy S-curls and tip flicks at rest, lifted and stiff when alert, lashing when angry before an attack or ultimate); attack wind-up (coils or cocks before a tail whip or swat, then snaps through with weight); ground contact (the heavy base drags and scrapes, the tip lifts, a small bounce off cars and buildings it passes over). Every titan's tail is an authored behaviour layer with physics follow-through on top, in every clip. Whether the tail's bumps damage what they touch is not decided (presentation only until asked).
+
 ## 2026-10-24 · D-222 · Director · Teen Komodo: steady head, smaller feet
 
 Shown the teen Komodo walk (v11, physics tail, 60-frame cycle): "his head wobbles too much, makes him look like his neck is too floppy. I also think his feet are too large". The teen's head is held steady like a predator's (the neck absorbs the body bob) in every clip, and the teen's feet are scaled down (about 80%, lead's call) across its walk, idle and turn.
@@ -392,7 +396,3 @@ Asked for fire gameplay (R 26, after D-126): with City Ablaze owned, the first f
 ## 2026-10-22 · D-128 · Director · Tripo Text to Motion: soldiers and crowd only, one 20-credit clip
 
 Asked after the Text to Motion research (side-session-notes tripo-motion/report.md: humanoid rig only, no tail chain, so a croc would read as "a man in a croc suit"): he picked "Soldiers and crowd". One 20-credit text clip for a soldier or civilian action the ~101 free biped presets lack, inside the D-127 budget, Private, a docs/provenance/tripo.md row; the croc keeps its Blender clips (D-047).
-
-## 2026-10-22 · D-127 · Director · HUD skill icons: Tripo-made kaiju moves, up to 3000 credits
-
-After the minimal HUD (comments #45-47: "ui looks sooo much better, but id say make the skill icons bottom left like 15% bigger. we can generate nice icons with tripo please"): the rings grow to 80 px; the icons show the move itself ("Kaiju moves": breath = croc jaws with lightning, dash = clawed foot mid-charge, ultimate likewise); render style "try both and show me" (voxelized in the game look vs smooth 3D render); spend "as many as you need, up to 3000" Tripo credits on the paid plan, every task Private, rows in docs/provenance/tripo.md.
