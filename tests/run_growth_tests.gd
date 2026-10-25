@@ -6,10 +6,6 @@ extends "res://tests/lib/runner.gd"
 ##   godot --headless --path . --script tests/run_growth_tests.gd
 
 const DT := 1.0 / 15.0
-## The army stream of the Colossus plays. Pinned: with the river banks free of alleys (road network
-## PR) army seed 1 loses the Colossus in its grown city before the clock (defeated); seeds 0, 4
-## and 5 run it to the clock as the check asks (probed 0-6: 0, 4, 5 time; 1, 2, 3, 6 defeated).
-const ARMY_SEED := 4
 ## Upgrades owned at the start of each stage (enough body to be that stage's kaiju).
 const COLOSSUS := {
 	"claws": 5,
@@ -219,7 +215,7 @@ func _play(tuning: Dictionary, layout: Array[Dictionary], levels: Dictionary) ->
 	var species := Content.species_def("reptilian")
 	var tree := UpgradeTree.new(Content.upgrades(), levels, "reptilian")
 	var stats := UpgradeTree.run_stats(Content.section("kaiju"), species, tree)
-	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", ARMY_SEED))
+	var sim := RampageSim.new(stats, tuning, layout, Seeds.make("army", 1))
 	var ability: Dictionary = species["ability"]
 	sim.ability_type = str(ability["type"])
 	var target := Vector2(INF, INF)
