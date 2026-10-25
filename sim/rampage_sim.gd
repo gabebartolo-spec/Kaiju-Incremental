@@ -243,7 +243,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	elapsed += dt
 	hp = minf(max_hp, hp + stat("regen") * dt)
 	var old_facing := facing
-	var moving := move.length() > 0.05
+	var moving := move.length() > 0.05 and not body.dash.on()  # a leap takes no stick
 	var stride := body.steer(dt, move.limit_length(1.0) * float(moving))  # a stick at rest: zero
 	if moving:  # along the body's heading as it turns (BodyContact.steer): a turn walks an arc
 		var speed := stat("speed") * powers.speed_mult() * stride

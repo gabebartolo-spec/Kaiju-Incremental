@@ -19,7 +19,7 @@ const ACTIONS: Array[Array] = [
 	["move_right", "Move right", false],
 	["signature", "Signature attack", true],
 	["stomp", "Stomp", true],
-	["dash", "Dash", true],
+	["dash", "Leap", true],
 	["ultimate", "Ultimate", true],
 	["pause", "Pause", true],
 ]
@@ -29,7 +29,7 @@ const ROWS := {
 	"Move": ["move_up", "move_left", "move_down", "move_right"],
 	"Signature attack": ["signature"],
 	"Stomp": ["stomp"],
-	"Dash": ["dash"],
+	"Leap": ["dash"],
 	"Ultimate": ["ultimate"],
 	"Pause": ["pause"],
 }
