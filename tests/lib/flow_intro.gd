@@ -138,7 +138,7 @@ static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 			live += 1
 		if Num.i(out["broke"]) >= 0 and live <= JERK_AFTER and skip_at < 0:
 			path.append(rampage._camera.global_position)
-			var n := Num.f(rampage._intro.get("_rate")) if sim.emerge.active else 1.0
+			var n := Num.f(rampage._rise.intro.get("_rate")) if sim.emerge.active else 1.0
 			_jerk(out, path, rampage._follow.offset.length() * n * n, frame)
 	out["state"] = (
 		"at %s, facing %s, clock %.3f, hp %.1f"

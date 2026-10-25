@@ -73,8 +73,7 @@ var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
 var _reader := RunInput.new()
-var _intro: RunIntro
-var _head := Vector2.ZERO  # the head's crown: ahead of the hips, over the feet (KaijuModel.head_at)
+var _rise: RampageRise  # the run's opening: the rise from the river and the intro
 
 
 ## stats: final run stats; layout: CityGrowth.layout for stats.size; run_index seeds the army and
@@ -146,7 +145,7 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	_add_rise()
+	_rise = RampageRise.new(self, _city.fx, _kaiju, full_intro)
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
@@ -174,18 +173,6 @@ func _ready() -> void:
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
 
-## The rise from the river: its splashes, the intro's ripples and fount, and the intro's pacing.
-func _add_rise() -> void:
-	var cfg: Dictionary = Content.section("intro")
-	var fallback := Vector2(
-		Num.f(cfg["aim_ahead"]), Num.f(cfg["aim_head"]) * Num.f(sim.city["kaiju_height"])
-	)
-	_head = _kaiju.head_at(fallback) * sim.body_scale()
-	add_child(RiverView.new(sim, _city.fx, _head.x))
-	add_child(IntroWater.new(sim, _city.fx, _head.x))
-	_intro = RunIntro.new(sim, full_intro)
-
-
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
@@ -204,7 +191,7 @@ func _physics_process(delta: float) -> void:
 	var buttons := (Dash.BUTTON if now["dash"] else 0) | (RampageSim.HELD if now["held"] else 0)
 	buttons |= RampageSim.ULTIMATE if now["ultimate"] else 0
 	var wading := sim.emerge.risen() >= 1.0 and sim.emerge.active
-	var ticks := _intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
+	var ticks := _rise.intro.ticks()  # the intro's short cut and skip run the rise's ticks faster
 	for k: int in ticks:
 		if k > 0 and not sim.emerge.active:
 			break  # the first live tick takes this frame's presses, once
@@ -228,8 +215,8 @@ func _step_sim(delta: float, move: Vector2, signature: bool, buttons: int) -> vo
 
 
 func _input(event: InputEvent) -> void:
-	if _intro != null:
-		_intro.on_input(event)
+	if _rise != null:
+		_rise.intro.on_input(event)
 
 
 func _process(delta: float) -> void:
@@ -263,14 +250,7 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
-			_land.lift(_kaiju, str(event.get("side", "")))
-			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
-			# delivers the stomp (_on_footfall), so they land where and when a foot does.
-			_stomp_radius = Num.f(event["radius"])
-			stomp_sim_at.append(event["at"])
-			_stomp_side = str(event["side"]) if event["on_foot"] else ""
-			_stomp_wait = STOMP_WAIT
-			add_trauma(shake.source("stomp"))
+			_on_stomp(event)
 		"ability":
 			_kaiju.roar()
 			_ability.play(event, _kaiju_at, _power("ability_damage"))
@@ -292,24 +272,19 @@ func _on_event(event: Dictionary) -> void:
 		"run_over":
 			_hud.run_over(str(event["reason"]))
 		_:
-			if not _on_rise(event):
+			if not _rise.on_event(event, _city, _kaiju, _hud):
 				_powers.on_event(event, _kaiju_at)
 
 
-## The rise from the river's events (Emergence); false for any other.
-func _on_rise(event: Dictionary) -> bool:
-	match str(event["type"]):
-		"deck_burst":
-			_city.deck_burst()
-			add_trauma(shake.source("drop"))
-		"surface_break":  # the head breaks the water: he roars with rage (#11, R 20.3)
-			_kaiju.roar(Num.f(Content.section("intro")["roar_jaw_seconds"]))
-			Sfx.roar(self)
-		"kaiju_emerged":
-			_hud.fade_in(Num.f(Content.section("intro")["hud_fade_seconds"]))
-		_:
-			return false
-	return true
+## The sim decides a stomp's damage now; the ring, cracks and crush wait for the foot that
+## delivers it (_on_footfall), so they land where and when a foot does.
+func _on_stomp(event: Dictionary) -> void:
+	_land.lift(_kaiju, str(event.get("side", "")))
+	_stomp_radius = Num.f(event["radius"])
+	stomp_sim_at.append(event["at"])
+	_stomp_side = str(event["side"]) if event["on_foot"] else ""
+	_stomp_wait = STOMP_WAIT
+	add_trauma(shake.source("stomp"))
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:
@@ -392,9 +367,7 @@ func _place_camera(delta: float) -> void:
 	var aim := _follow.aim(_kaiju, sim.body_scale(), Vector2(camera_fov, nod), delta)
 	var fov := camera_fov
 	if sim.emerge.active:  # the run intro's shot, ending exactly on this camera (RunIntro)
-		var view := {"body": _kaiju_at, "eye": eye, "aim": aim, "fov": fov, "head": _head}
-		view["head_box"] = _follow.head.head_box()
-		var shot := RunIntro.shot(sim, view, Engine.get_physics_interpolation_fraction())
+		var shot := _rise.shot({"body": _kaiju_at, "eye": eye, "aim": aim, "fov": fov}, _follow)
 		eye = shot["eye"]
 		aim = shot["aim"]
 		fov = Num.f(shot["fov"])
