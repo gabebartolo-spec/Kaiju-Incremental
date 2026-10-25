@@ -65,6 +65,9 @@ static func place(
 		"patches": {},
 		"gone": {},
 		"index": _index(entries),
+		"by": CityPoolPick.by_kind(book),
+		"suited": {},
+		"heights": CityPoolPick.heights(book),
 	}
 	var blocks: Array[Dictionary] = []
 	for block: Dictionary in plan["blocks"]:
@@ -83,15 +86,25 @@ static func place(
 	entries.assign(out)
 
 
-## Entry indices by INDEX_CELL square (a footprint is filed under every square it touches).
+## Lot indices (landmarks left out) by the INDEX_CELL square their centre stands in, and
+## "reach": the widest half-footprint, so a search grows its rect by it.
 static func _index(entries: Array[Dictionary]) -> Dictionary:
 	var out: Dictionary = {}
+	var rects: Array[Rect2] = []
+	rects.resize(entries.size())
+	var reach := 0.0
 	for n: int in entries.size():
-		for cell: Vector2i in _cells(footprint(entries[n])):
-			var list: Array = out.get(cell, [])
-			list.append(n)
-			out[cell] = list
-	return out
+		var e := entries[n]
+		if e.has("landmark"):
+			continue
+		var r := footprint(e)
+		rects[n] = r
+		reach = maxf(reach, maxf(r.size.x, r.size.y) * 0.5)
+		var cell := Vector2i((r.get_center() / INDEX_CELL).floor())
+		var list: Array = out.get(cell, [])
+		list.append(n)
+		out[cell] = list
+	return {"cells": out, "reach": reach, "rects": rects}
 
 
 static func _cells(rect: Rect2) -> Array[Vector2i]:
@@ -116,7 +129,7 @@ static func _block(entries: Array[Dictionary], block: Dictionary, ctx: Dictionar
 	if not hero and roll >= Num.f(pl["hero_chance"]) + Num.f(pl["big_chance"]):
 		return {}
 	var rect: Rect2 = block["rect"]
-	var under := _under(entries, rect, ctx)
+	var under := _under(rect, ctx)
 	if under.is_empty():
 		return {}
 	var tallest := 0
@@ -131,27 +144,28 @@ static func _block(entries: Array[Dictionary], block: Dictionary, ctx: Dictionar
 	var spot := _corner(rect, placed, pick)
 	placed["x"] = spot.get_center().x
 	placed["z"] = spot.get_center().y
-	_count(str(placed["model"]), spot.get_center(), ctx)
+	CityPoolPick.count(str(placed["model"]), spot.get_center(), ctx)
 	var gone: Dictionary = ctx["gone"]
+	var rects: Array[Rect2] = ctx["index"]["rects"]
 	for n: int in under:
-		if spot.grow(-0.01).intersects(footprint(entries[n])):
+		if spot.grow(-0.01).intersects(rects[n]):
 			gone[n] = true
 	return placed
 
 
 ## The lots (not landmarks, not already given way) whose footprints meet `rect`.
-static func _under(entries: Array[Dictionary], rect: Rect2, ctx: Dictionary) -> Array[int]:
+static func _under(rect: Rect2, ctx: Dictionary) -> Array[int]:
 	var index: Dictionary = ctx["index"]
+	var cells: Dictionary = index["cells"]
+	var rects: Array[Rect2] = index["rects"]
 	var gone: Dictionary = ctx["gone"]
-	var seen: Dictionary = {}
 	var out: Array[int] = []
-	for cell: Vector2i in _cells(rect):
-		var list: Array = index.get(cell, [])
+	for cell: Vector2i in _cells(rect.grow(Num.f(index["reach"]))):
+		var list: Array = cells.get(cell, [])
 		for n: int in list:
-			if seen.has(n) or gone.has(n):
+			if gone.has(n):
 				continue
-			seen[n] = true
-			if not entries[n].has("landmark") and rect.intersects(footprint(entries[n])):
+			if rect.intersects(rects[n]):
 				out.append(n)
 	out.sort()
 	return out
@@ -181,7 +195,7 @@ static func _filler(lot: Dictionary, ctx: Dictionary) -> Dictionary:
 	want["slack"] = Num.i(ctx["pl"]["fill_slack"])
 	var placed := _choose(rect, want, Num.i(lot["style"]), ctx)
 	if not placed.is_empty():
-		_count(str(placed["model"]), at, ctx)
+		CityPoolPick.count(str(placed["model"]), at, ctx)
 	return placed
 
 
@@ -216,7 +230,7 @@ static func _district(at: Vector2, ctx: Dictionary) -> String:
 ## floors and has no copy within reuse_m; the least used first (ties by id), want.pick choosing
 ## among equals and the facing, mirror and palette. {} when none qualifies.
 static func _choose(rect: Rect2, want: Dictionary, style: int, ctx: Dictionary) -> Dictionary:
-	var id := _best(rect, want, ctx)
+	var id := CityPoolPick.best(rect, want, ctx)
 	if id == "":
 		return {}
 	var book: Dictionary = ctx["book"]
@@ -264,67 +278,3 @@ static func _facings(row: Dictionary, rect: Rect2, want: Dictionary) -> Array[in
 		if w - rw <= slack and d - rd <= slack:
 			tight.append(facing)
 	return tight
-
-
-## The id _choose takes, or "".
-static func _best(rect: Rect2, want: Dictionary, ctx: Dictionary) -> String:
-	var book: Dictionary = ctx["book"]
-	var pool: Dictionary = book["pool"]
-	var pl: Dictionary = ctx["pl"]
-	var counts: Dictionary = ctx["count"]
-	var best: Array[String] = []
-	var best_uses := 1 << 30
-	var ids: Array = pool.keys()
-	ids.sort()
-	for id: Variant in ids:
-		var row: Dictionary = pool[id]
-		if str(row["district"]) != want["district"] or str(row["role"]) != want["role"]:
-			continue
-		if not row.has("w") or _facings(row, rect, want).is_empty():
-			continue
-		if (
-			want.get("big", false)
-			and mini(Num.i(row["w"]), Num.i(row["d"])) < Num.i(pl["big_side"])
-		):
-			continue
-		if not _height_ok(Num.i(row["h"]), want, pl):
-			continue
-		if _crowded(str(id), rect.get_center(), ctx):
-			continue
-		var uses := Num.i(counts.get(id, 0))
-		if uses < best_uses:
-			best_uses = uses
-			best.clear()
-		if uses == best_uses:
-			best.append(str(id))
-	return "" if best.is_empty() else best[Num.i(want["pick"]) % best.size()]
-
-
-static func _count(id: String, at: Vector2, ctx: Dictionary) -> void:
-	var counts: Dictionary = ctx["count"]
-	counts[id] = Num.i(counts.get(id, 0)) + 1
-	var used: Dictionary = ctx["used"]
-	var spots: Array = used.get(id, [])
-	spots.append(at)
-	used[id] = spots
-
-
-static func _crowded(id: String, at: Vector2, ctx: Dictionary) -> bool:
-	var reuse := Num.f(ctx["pl"]["reuse_m"])
-	var used: Dictionary = ctx["used"]
-	var spots: Array = used.get(id, [])
-	for spot: Vector2 in spots:
-		if spot.distance_to(at) < reuse:
-			return true
-	return false
-
-
-## A model suits want.h floors within height_fit of them (a share, never under height_fit_min
-## floors); a block model (hero or big filler) may stand up to hero_rise times taller than the
-## block's tallest lot.
-static func _height_ok(h: int, want: Dictionary, pl: Dictionary) -> bool:
-	var lot_h := Num.i(want["h"])
-	if want.has("big"):
-		return h <= maxf(lot_h * Num.f(pl["hero_rise"]), Num.f(pl["height_fit_min"]) + lot_h)
-	var slack := maxf(Num.f(pl["height_fit_min"]), lot_h * Num.f(pl["height_fit"]))
-	return absf(h - lot_h) <= slack

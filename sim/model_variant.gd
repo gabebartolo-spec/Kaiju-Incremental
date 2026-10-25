@@ -105,16 +105,19 @@ static func chunks(row: Dictionary, v: Dictionary) -> Array:
 			for _k: int in extra:
 				floors.append(str(layers[y]))
 	var dims := size(row, v)
+	var to := PackedInt32Array()  # each source column's index in the placed layer
+	to.resize(w * d)
+	for z: int in d:
+		for x: int in w:
+			var p := place(Vector3i(x, 0, z), w, d, v)
+			to[z * w + x] = p.z * dims.x + p.x
 	var out: Array = []
 	for layer: String in floors:
+		var src := layer.to_ascii_buffer()
 		var cells_out := PackedByteArray()
 		cells_out.resize(dims.x * dims.z)
-		cells_out.fill(48)  # "0"
-		for z: int in d:
-			for x: int in w:
-				if layer[z * w + x] == "1":
-					var p := place(Vector3i(x, 0, z), w, d, v)
-					cells_out[p.z * dims.x + p.x] = 49  # "1"
+		for n: int in to.size():
+			cells_out[to[n]] = src[n]
 		out.append(cells_out.get_string_from_ascii())
 	return out
 

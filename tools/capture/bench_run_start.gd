@@ -15,6 +15,8 @@ var _play := 0.0
 var _quit := false
 ## Build the way the game does (Rampage.staged: frame by frame behind the loading screen).
 var _staged := false
+## --stage=N: build growth stage N's city (CityGrowth.layout) instead of the body size's.
+var _stage := 0
 
 
 func _initialize() -> void:
@@ -29,6 +31,8 @@ func _initialize() -> void:
 			_quit = true
 		elif arg == "--staged":
 			_staged = true
+		elif arg.begins_with("--stage="):
+			_stage = arg.substr(8).to_int()
 	_run.call_deferred()
 
 
@@ -43,7 +47,8 @@ func _run() -> void:
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), {}, _species)
 	)
 	var t := Time.get_ticks_usec()
-	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
+	var tier := _stage if _stage > 0 else Num.i(stats["size"])
+	var layout := CityGrowth.layout(Content.tuning(), tier, Seeds.make("city", 0))
 	print("START layout: ", _ms(t))
 	t = Time.get_ticks_usec()
 	var rampage := Rampage.new()
