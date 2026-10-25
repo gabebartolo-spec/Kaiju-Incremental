@@ -27,7 +27,7 @@ class Result:
 	var tip := 0.0  # claw tip peak speed (hip heights/s)
 	var hit := 0  # the frame the sim's hit lands
 	var crossed := -1  # the frame the claw crosses the snout line
-	var off := 0.0  # the tip past the line at the hit (hip heights)
+	var off := 0.0  # the tip past the snout line at the hit (hip heights; negative: short of it)
 	var away := 0.0  # s the arm is off its held pose
 	var home := -1  # the frame it is back
 	var rows: Array[String] = []
@@ -111,8 +111,8 @@ func measure(root: Node, stage: String, body_scale: float) -> Result:
 ## The croc standing suite's checks (bars: data/motion_gate.json "claw_arm"): at every growth step
 ## no arm bone changes length, the elbow and wrist stay in a plausible range, the upper arm never
 ## swings far across the chest, no bone turns faster than the size's bar (bigger is slower), the
-## claw meets the snout line as the sim's hit lands (D-190), and the arm is home before the next
-## swipe.
+## claw lands as near the snout line as the stage's arm reaches as the sim's hit lands (D-190), and
+## the arm is home before the next swipe.
 func run(suite: SceneTree, check: Callable) -> void:
 	var bars: Dictionary = Content.load_json("res://data/motion_gate.json")["claw_arm"]
 	var scales: Array = bars["body_scales"]
@@ -128,7 +128,7 @@ func run(suite: SceneTree, check: Callable) -> void:
 			(
 				m.elbow.x >= Num.f(bars["elbow_min"])
 				and m.elbow.y <= Num.f(bars["elbow_max"])
-				and m.wrist.y <= Num.f(bars["wrist_max"])
+				and m.wrist.y <= Num.f(bars["wrist_max"][i])
 			),
 			"%s: elbow %.0f-%.0f deg, wrist up to %.0f" % [tag, m.elbow.x, m.elbow.y, m.wrist.y]
 		)
@@ -141,8 +141,8 @@ func run(suite: SceneTree, check: Callable) -> void:
 			m.fastest() <= bar, "%s: fastest bone %.0f deg/s (bar %.0f)" % [tag, m.fastest(), bar]
 		)
 		check.call(
-			m.crossed >= 0 and absi(m.crossed - m.hit) <= Num.i(bars["cross_frames"]),
-			"%s: the claw crosses the snout line at f%d, the hit at f%d" % [tag, m.crossed, m.hit]
+			absf(m.off) <= Num.f(bars["short_max"][i]),
+			"%s: at the hit the claw is %+.2f hip heights from the snout line" % [tag, m.off]
 		)
 		check.call(
 			m.home >= 0 and m.home * DT < Num.f(bars["home_s"]),

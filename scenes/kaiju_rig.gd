@@ -41,6 +41,13 @@ class SpringChain:
 var height_units: float
 ## "biped", "hexapod" or "radial" (rig.json "type"); picks the gait.
 var body_plan := "biped"
+## The hands are held in line with the forearms, never drooping at the wrist (rig.json "lock_wrist";
+## director 2026-10-25 on the young croc: short, stumpy arms with no dangle). BipedSwing keeps it.
+var lock_wrist := false
+## The arms' length against the sculpt they were rigged from (rig.json "arm_length",
+## tools/kaiju_skin/shorten_arms.py): below 1 the elbows and wrists sit nearer the shoulder than in
+## the baked clips' rest, which KaijuClips.fit allows.
+var arm_length := 1.0
 var gait: KaijuGait
 var chains: Array[SpringChain] = []
 ## name -> how far that bone turns about x to shut (rig.json "close": an open sculpted jaw).
@@ -89,7 +96,7 @@ static func from_spec(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: f
 func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> void:
 	_voxel = voxel
 	_glow = glow
-	body_plan = str(spec.get("type", "biped"))
+	_read_plan(spec)
 	var defs: Array = spec["bones"]
 	var heads: Dictionary = {}
 	for d: Dictionary in defs:
@@ -140,6 +147,13 @@ func _build(spec: Dictionary, vox: VoxelBuilder, voxel: float, glow: float) -> v
 			gait = RadialGait.new(self)
 		_:
 			gait = ClipGait.or_biped(self, spec.get("clips"))
+
+
+## The rig's body plan and arm shape from its spec (rig.json "type", "lock_wrist", "arm_length").
+func _read_plan(spec: Dictionary) -> void:
+	body_plan = str(spec.get("type", "biped"))
+	lock_wrist = spec.get("lock_wrist", false) == true
+	arm_length = Num.f(spec.get("arm_length", 1.0))
 
 
 ## Shows a set of voxels (rig-space cells) on a bone, positioned relative to its rest head.

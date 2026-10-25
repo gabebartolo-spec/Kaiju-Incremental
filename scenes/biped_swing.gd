@@ -172,6 +172,7 @@ func pose_rake(dt: float) -> void:
 	if _rake_t < 0.0:
 		if trail != null:
 			trail.update(Vector3.ZERO, false, dt)  # the last marks fade
+		hold_wrists()
 		return
 	var body := rig.global_transform.basis.orthonormalized()
 	for side: String in ["l", "r"]:
@@ -188,6 +189,7 @@ func pose_rake(dt: float) -> void:
 		if trail != null:  # the strike (and a beat after) leaves the streak
 			var swing := strike_window()
 			trail.update(rig.tail_world(names[-1]), _rake_t >= swing.x and _rake_t < swing.y, dt)
+	hold_wrists()  # the other arm, as the clip holds it
 
 
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
@@ -261,6 +263,19 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 		_aim_arm(names, dirs, out, body)
 
 
+## On a rig with lock_wrist, turns each hand back in line with its forearm (over a clip's pose).
+func hold_wrists() -> void:
+	if not rig.lock_wrist:
+		return
+	for side: String in ["l", "r"]:
+		var fore := "arm_%s1" % side
+		var hand := "arm_%s2" % side
+		if rig.has_bone(fore) and rig.has_bone(hand):
+			var from := rig.bone(hand).global_position
+			var along := (rig.tail_world(fore) - rig.bone(fore).global_position).normalized()
+			rig.aim(hand, from, from + along * (rig.tail_world(hand) - from).length())
+
+
 ## The bones of one side's arm (arm_<side>0..2 the rig has).
 func _arm_names(side: String) -> Array[String]:
 	var names: Array[String] = []
@@ -276,13 +291,15 @@ func _arm_out(names: Array[String]) -> float:
 	return signf(rig.dir_of(names[0]).x)
 
 
-## Aims each bone of an arm along its direction (heading frame, x outward on side `out`).
+## Aims each bone of an arm along its direction (heading frame, x outward on side `out`); a rig
+## with lock_wrist holds the hand along the forearm.
 func _aim_arm(names: Array[String], dirs: Array[Vector3], out: float, body: Basis) -> void:
 	for i: int in names.size():
 		var n := names[i]
 		var from := rig.bone(n).global_position
 		var length := (rig.tail_world(n) - from).length()
-		var d := (dirs[i] * Vector3(out, 1, 1)).normalized()
+		var held := i == 2 and rig.lock_wrist
+		var d := (dirs[1 if held else i] * Vector3(out, 1, 1)).normalized()
 		rig.aim(n, from, from + body * d * length)
 
 
@@ -328,7 +345,7 @@ func _rake_dir(t: float, i: int, rest: Array[Vector3]) -> Vector3:
 
 
 ## The turn about up (heading frame, x outward) of the contact and through poses that puts this
-## arm's claw tip on the snout line as the hit lands (D-190), whatever the stage's shoulder width:
+## arm's claw tip on the snout line as the hit lands (D-190), as far as the arm reaches:
 ## the arm as it is then (the shoulder a joint lag or two ahead) turns as one about the shoulder.
 func _contact_yaw(names: Array[String], body: Basis) -> float:
 	var shoulder := body.inverse() * (rig.bone(names[0]).global_position - rig.global_position)
@@ -341,8 +358,11 @@ func _contact_yaw(names: Array[String], body: Basis) -> float:
 	var r := Vector2(reach.x, reach.z).length()
 	if r < 0.0001:
 		return 0.0
-	# Turning by a about up takes the reach's sideways part from r sin(phi) to r sin(phi - a).
-	return atan2(reach.x, -reach.z) + asin(clampf(shoulder.x * _rake_side / r, -1.0, 1.0))
+	# Turning by a about up takes the reach's sideways part from r sin(phi) to r sin(phi - a); a
+	# short arm turns at most aim_max_deg and chops in front of its own shoulder short of the line.
+	var aim := atan2(reach.x, -reach.z) + asin(clampf(shoulder.x * _rake_side / r, -1.0, 1.0))
+	var most := deg_to_rad(Num.f(_claw["aim_max_deg"]))
+	return clampf(aim, -most, most)
 
 
 ## Bone i's direction k (0..1) of the way from pose `from` to pose `to`, along arcs: the upper arm

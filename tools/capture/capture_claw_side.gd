@@ -5,7 +5,8 @@ extends SceneTree
 ## off-screen no_focus override.cfg) and --write-movie.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
-##     --script tools/capture/capture_claw_side.gd
+##     --script tools/capture/capture_claw_side.gd [-- --still=<dir> --name=<shot>]
+## --still: no movie; one PNG of the young croc standing at rest (arms in their held pose) instead.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const DT := 1.0 / 60.0
@@ -21,8 +22,14 @@ const AIM_UP := 0.6
 const AIM_AHEAD := 0.35
 const SHOTS := [["baby", 0.5, "Young croc"], ["adult", 1.3, "Colossus"]]
 
+var _still := ""
+var _name := "rest"
+
 
 func _initialize() -> void:
+	var a := Kit.args({"still": "", "name": _name})
+	_still = str(a["still"])
+	_name = str(a["name"])
 	if not Kit.window_ok():
 		quit(1)
 		return
@@ -60,6 +67,13 @@ func _run() -> void:
 		cam.position = aim + Vector3(side * snout.y * CAM_DIST, 0, 0)
 		cam.look_at(aim)
 		label.text = str(shot[2])
+		if _still != "":
+			label.text = "%s, %s" % [shot[2], _name]
+			for f: int in 30:
+				kaiju.animate(DT, 0.0)
+				await process_frame
+			print(Kit.still(self, _still, _name))
+			break
 		for f: int in SHOT:
 			if f == WINDUP_AT:
 				kaiju.tail_sweep(side, "claw_windup")

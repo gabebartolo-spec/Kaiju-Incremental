@@ -114,21 +114,28 @@ func loops(clip: String) -> bool:
 
 
 ## Checks the clips were baked for this rig (same bones, same order, same rest shape) and fits
-## the metres -> rig-units map; returns why not, or "" when they fit.
+## the metres -> rig-units map; returns why not, or "" when they fit. A rig whose arms were
+## shortened after the clips were baked (rig.arm_length < 1) is fitted without its elbow and wrist
+## heads: the clips turn those bones, and only where they sit moved.
 func fit(rig: KaijuRig) -> String:
 	var names := rig.bone_names()
 	if names != bones:
 		return "bones %s, rig has %s" % [bones, names]
+	var used: Array[int] = []
+	for i: int in bones.size():
+		var moved := bones[i].begins_with("arm_") and not bones[i].ends_with("0")
+		if not (moved and rig.arm_length < 1.0):
+			used.append(i)
 	var cm := Vector3.ZERO
 	var cr := Vector3.ZERO
-	for i: int in bones.size():
+	for i: int in used:
 		cm += _rest_heads[i]
 		cr += rig.head_of(bones[i])
-	cm /= bones.size()
-	cr /= bones.size()
+	cm /= used.size()
+	cr /= used.size()
 	var num := 0.0
 	var den := 0.0
-	for i: int in bones.size():
+	for i: int in used:
 		num += (rig.head_of(bones[i]) - cr).dot(_rest_heads[i] - cm)
 		den += (_rest_heads[i] - cm).length_squared()
 	if den <= 0.0 or num <= 0.0:
@@ -136,7 +143,7 @@ func fit(rig: KaijuRig) -> String:
 	rig_scale = num / den
 	rig_origin = cr - cm * rig_scale
 	var worst := 0.0
-	for i: int in bones.size():
+	for i: int in used:
 		worst = maxf(worst, (to_rig(_rest_heads[i]) - rig.head_of(bones[i])).length())
 	if worst > REST_TOLERANCE * body_height_m * rig_scale:
 		return (
