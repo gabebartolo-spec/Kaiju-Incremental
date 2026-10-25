@@ -29,7 +29,7 @@ func _init(runner: SceneTree, p_check: Callable) -> void:
 
 
 func run() -> void:
-	SaveFile.delete_save()
+	SaveFile.wipe()
 	await _check_new_game()
 	await _check_results_compare()
 	await _check_evolution_and_continue()
@@ -39,7 +39,7 @@ func run() -> void:
 	layout.currency_named()
 	layout.fonts_ours()
 	FlowSave.migration(check)
-	SaveFile.delete_save()
+	SaveFile.wipe()
 
 
 func _frames(n: int) -> void:
@@ -183,14 +183,17 @@ func _check_results_compare() -> void:
 			results.is_new_best("rubble")
 			and results.is_new_best("toppled")
 			and not results.is_new_best("tanks")
-			and labels.count("NEW BEST") == 3
+			and labels.count(ResultsScreen.STAMP_TEXT) == 3
 		),
-		"new bests are marked, misses are not (%d marked)" % labels.count("NEW BEST")
+		(
+			"new records are stamped, misses are not (%d stamped)"
+			% labels.count(ResultsScreen.STAMP_TEXT)
+		)
 	)
 	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
 	check.call(
-		bests.size() + labels.count("NEW BEST") == ResultsScreen.ROWS.size() - 1,
-		"every row but the headline's shows its best or NEW BEST once: %s" % [bests]
+		bests.size() + labels.count(ResultsScreen.STAMP_TEXT) == result.size() - 2,
+		"every reported row but the headline's shows its best or NEW RECORD once: %s" % [bests]
 	)
 	var short := ResultsScreen.new({"rubble": 150}, {"rubble": 200.0})
 	check.call(short.verdict() == "50 BIOMASS SHORT OF YOUR BEST", "a miss says how far short")
@@ -216,6 +219,7 @@ func _check_evolution_and_continue() -> void:
 	await layout.fits_at_scales(title as Control, "title screen")
 	layout.listen(title, "title")
 	await GuiInput.click(t, cont)
+	await GuiInput.click(t, GuiInput.button(title, "SLOT 1"))
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(tree != null, "Continue on a played save opens the evolution tree")
@@ -297,6 +301,7 @@ func _check_evolution_and_continue() -> void:
 	await _frames(2)
 	var again := await _main()
 	await GuiInput.click(t, GuiInput.button(_screen(again), "CONTINUE"))
+	await GuiInput.click(t, GuiInput.button(_screen(again), "SLOT 1"))
 	await _frames(3)
 	var reloaded := _screen(again) as UpgradeScreen
 	check.call(
@@ -351,9 +356,11 @@ func _check_settings() -> void:
 			% [PlayerSettings.sfx_volume, sfx_db]
 		)
 	)
+	await GuiInput.click(t, GuiInput.button(menu, "CONTROLS"))  # its own page (D-259)
 	var texts: Array[String] = []
-	for node: Node in menu.find_children("*", "Label", true, false):
-		texts.append((node as Label).text)
+	for node: Node in menu.find_children("*", "Control", true, false):  # labels and buttons
+		texts.append(str(node.get("text")))
+	menu.page.close()
 	check.call(
 		texts.has("Ultimate") and texts.has("E") and texts.has("Y") and texts.has("Start"),
 		"the controls list shows keyboard and pad"

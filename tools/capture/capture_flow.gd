@@ -107,6 +107,7 @@ func _run() -> void:
 		select.queue_free()
 		await _frames(2)
 	_press(_screen(), "CONTINUE")
+	_press(_screen(), "SLOT 1")
 	await _frames(SETTLE)
 	var tree := _screen() as UpgradeScreen
 	tree.node_button("evolve1").grab_focus()
@@ -217,6 +218,7 @@ func _run() -> void:
 	_press(_screen(), "MAIN MENU")
 	await _frames(SETTLE)
 	_press(_screen(), "CONTINUE")
+	_press(_screen(), "SLOT 1")
 	await _frames(SETTLE)
 	_shot("11_tree_after")
 	SaveFile.delete_save()
