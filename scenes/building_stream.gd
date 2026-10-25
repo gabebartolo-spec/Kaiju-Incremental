@@ -83,8 +83,7 @@ func _ready() -> void:
 	_rank = StreamRank.new(_sim.buildings)
 	for n: int in count:
 		var b := _sim.buildings[n]
-		# a pool model (CityPool) costs the chunks its model keeps, not its whole box
-		_chunks[n] = b.frame.alive_count if b.model != "" else b.w * b.d * b.height
+		_chunks[n] = b.frame.alive_count if b.model != "" else b.w * b.d * b.height  # pool: kept
 	_budget = Num.i(_sim.city.get("stream_chunks", 1 << 30))
 	_party = BuildingView.party_walls(_sim.buildings)
 	var order: Array[int] = []
@@ -196,14 +195,17 @@ func _plan() -> void:
 				_evict.append(n)
 
 
-## The buildings not held, as sorted keys (rank, then index). The held ones (landmarks that stay
-## meshed, listed in `marks`, and touched buildings) add their chunks to _held.
+## The buildings not held, as sorted keys (rank, then index). The held ones (kept landmarks and
+## all within stream_view.hold_m, in `marks`; touched buildings) add their chunks to _held.
 func _rank_keys(from: Vector2, marks: Array[int]) -> PackedFloat64Array:
 	var keys := PackedFloat64Array()
 	var limit := _cutoff + _rank.outside + EVICT_MARGIN + PLAN_MOVE * 4.0  # INF while all fit
 	_held = 0
+	var reach := Num.f(_sim.city["stream_view"].get("hold_m", 0.0))
 	for n: int in _sim.buildings.size():
-		if _sim.buildings[n].landmark != "" and _rank.keeps_landmark(n, from):
+		var b := _sim.buildings[n]
+		var near := _pinned[n] == 0 and Vector2(b.x, b.z).distance_to(from) <= reach
+		if near or (b.landmark != "" and _rank.keeps_landmark(n, from)):
 			marks.append(n)
 			_held += _chunks[n]
 		elif _pinned[n] == 1:
