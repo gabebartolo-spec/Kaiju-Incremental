@@ -18,8 +18,8 @@ const FlowStadium := preload("res://tests/lib/flow_stadium.gd")
 const FlowStagedStart := preload("res://tests/lib/flow_staged_start.gd")
 const RAMPAGE_FRAMES := 60 * 75
 const POWER_FRAMES := 60 * 45
-## A kaiju that has not drawn tank fire by now is walked to the nearest tank (the sim's army holds
-## its standoff, and a rampage that clears the city fast may never pass in reach of one).
+## An armoured kaiju with no shell glanced off by now is walked to the nearest tank: a shell hits by
+## chance, and in city seed 0 all four missed (D-166; 4 of 5 seeds deflect, foot or not).
 const TANK_WALK_FRAMES := 60 * 30
 const SIGNATURE_SOUND := {"breath": "breath", "leap": "leap_land", "lash": "lash"}
 ## Upgrades whose look the power checks prove: heavy stomps, recharge, scales, regeneration.
@@ -142,12 +142,12 @@ func _check_upgrade_screen() -> void:
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
 		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
-		check(
-			tree.level("claws") == 1 and screen.rubble == 15,
-			"pressing Sharpened Claws buys it for 15 (rubble %d)" % screen.rubble
+		check(  # 15 at the species' price (cost_mult, D-167)
+			tree.level("claws") == 1 and screen.rubble == 30 - roundi(15 * tree.cost_mult),
+			"pressing Sharpened Claws buys it at its price (rubble %d)" % screen.rubble
 		)
 		Sfx.ui_played.clear()
-		await GuiInput.click(self, claws)  # level 2 costs more than the 15 left
+		await GuiInput.click(self, claws)  # level 2 costs more than what is left
 		check(
 			tree.level("claws") == 1 and Sfx.ui_played == ["ui_deny"],
 			"a purchase it can't afford buzzes: %s" % [Sfx.ui_played]
@@ -278,7 +278,7 @@ func _check_powers(species_id: String, kind: String, levels: Dictionary) -> void
 	while frames < POWER_FRAMES and not rampage.sim.over:
 		await physics_frame
 		frames += 1
-		if frames == TANK_WALK_FRAMES and not levels.is_empty() and not heard.has("tank_fire"):
+		if frames == TANK_WALK_FRAMES and not levels.is_empty() and not played.has("deflect"):
 			FlowTanks.walk_to_nearest(rampage.sim)
 		jets = maxi(jets, FlowBreath.jets(rampage))
 		FlowBreath.track_scorch_glow(rampage, scorch_glow)

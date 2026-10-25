@@ -140,6 +140,11 @@ func stomp() -> void:
 	_stomp.stomp(state == "idle")
 
 
+## The foot the next standing stomp lifts (the sim chose it: its damage is centred under that foot).
+func prefer_foot(side: String) -> void:
+	_stomp.prefer(side)
+
+
 ## The foot the latest stomp lifted ("left" or "right"); "" when it lifted none (walking, a roar).
 func stomped_side() -> String:
 	return "" if _stomp.lifted < 0 else ("left" if legs[_stomp.lifted].side < 0.0 else "right")

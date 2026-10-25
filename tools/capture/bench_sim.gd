@@ -50,7 +50,7 @@ func _run() -> void:
 			target = sim.nearest_standing(sim.kaiju_pos)
 		var to := target - sim.kaiju_pos
 		var move := Vector2.ZERO
-		if target.x != INF and to.length() >= sim.stomp_radius() * 0.5:
+		if target.x != INF and not sim.body.stomp_reaches(target):
 			move = to.normalized()
 		var buttons := RampageSim.ULTIMATE | (RampageSim.HELD if s % CYCLE < HELD else 0)
 		var t0 := Time.get_ticks_usec()
