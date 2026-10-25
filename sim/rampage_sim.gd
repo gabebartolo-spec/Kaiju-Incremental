@@ -68,6 +68,8 @@ var army: Dictionary
 var city: Dictionary
 var ability_type := "ring"
 var buildings: Array[Building] = []
+## The buildings filed by ground cell, for questions about one spot (BuildingGrid).
+var grid: BuildingGrid
 var tanks: Array[Tank] = []
 var kaiju_pos := Vector2.ZERO
 var facing := Vector2(0, -1)
@@ -136,6 +138,7 @@ func _init(
 		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
+	grid = BuildingGrid.new(buildings)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
 	collapse = Collapse.new(self)
 	carving = Carving.new(self, tuning)

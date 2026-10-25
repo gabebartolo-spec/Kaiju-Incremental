@@ -7,11 +7,14 @@ extends SceneTree
 ##
 ##   godot --headless --path . --script tools/capture/bench_sim.gd -- --seconds=60
 
+const Kit := preload("res://tools/capture/capture_kit.gd")
 const CYCLE := 90
 const HELD := 50
 
 var _seconds := 60.0
 var _slow := 50.0
+## --stage=N: growth stage N's city and body (capture_kit STAGE_LEVELS); 0: the mid-game build.
+var _stage := 0
 
 
 func _initialize() -> void:
@@ -20,6 +23,8 @@ func _initialize() -> void:
 			_seconds = arg.substr(10).to_float()
 		elif arg.begins_with("--slow="):
 			_slow = arg.substr(7).to_float()
+		elif arg.begins_with("--stage="):
+			_stage = arg.substr(8).to_int()
 	_run.call_deferred()
 
 
@@ -31,6 +36,12 @@ func _run() -> void:
 		Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
 	)
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
+	if _stage > 0:
+		levels = Kit.STAGE_LEVELS[_stage - 1]
+		stats = UpgradeTree.run_stats(
+			Content.section("kaiju"), species, UpgradeTree.new(Content.upgrades(), levels)
+		)
+		layout = CityGrowth.layout(Content.tuning(), _stage, Seeds.make("city", 0))
 	Content.set_time(Content.time_for_run(2))
 	var sim := RampageSim.new(stats, CityGrowth.for_stats(stats), layout, Seeds.make("army", 2))
 	var ability: Dictionary = species["ability"]

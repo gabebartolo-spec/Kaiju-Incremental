@@ -33,7 +33,7 @@ func near(from: Vector2, to: Vector2, reach: float) -> Array[int]:
 	var lo := Vector2(minf(from.x, to.x), minf(from.y, to.y)) - Vector2.ONE * reach
 	var hi := Vector2(maxf(from.x, to.x), maxf(from.y, to.y)) + Vector2.ONE * reach
 	var out: Array[int] = []
-	for i: int in sim.buildings.size():
+	for i: int in sim.grid.in_rect(lo, hi):
 		var b := sim.buildings[i]
 		if b.frame.alive_count == 0:
 			continue
