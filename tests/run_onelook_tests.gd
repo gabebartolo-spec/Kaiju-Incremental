@@ -1,10 +1,12 @@
 extends "res://tests/lib/runner.gd"
-## One look, phase 1 (D-163): the far blur and the block-grain ground (the grade and the haze stay as
-## today, D-221). The lowest presets drop the blur; the blur's focus follows the kaiju and never
-## blurs him or anything nearer; the ground shader takes its numbers from the look. Seeded by design:
-## nothing here is random.
+## One look, phase 1 (D-163): the far blur and the ground in the city's block grain (the grade and
+## the haze stay as today, D-221), plus the flat-surface programme's ground (P0): every surface a
+## texture, none a flat colour. The lowest presets drop the blur; the blur's focus follows the
+## kaiju and never blurs him or anything nearer; the ground shader takes its numbers and its seed
+## from the look. Seeded by design: nothing here is random.
 ##   godot --headless --path . --script tests/run_onelook_tests.gd
 
+const FlatSurfaces := preload("res://tests/lib/flat_surfaces.gd")
 const PHASE_ONE_KEYS: Array[String] = ["far_blur_amount", "far_blur_start", "far_blur_ramp"]
 
 
@@ -17,6 +19,10 @@ func run_checks() -> void:
 	await _t("_check_presets")
 	await _t("_check_far_depth")
 	await _t("_check_ground_numbers")
+	await _t("_check_ground_seeded")
+	await _t("_check_ground_kinds")
+	await _t("_check_wet_is_last")
+	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
 
 
 
@@ -101,7 +107,7 @@ func _check_far_depth() -> void:
 func _check_ground_numbers() -> void:
 	Content.set_time("dusk")
 	var uniforms: Array[String] = []
-	for u: Dictionary in CityGround.BLOCKS.get_shader_uniform_list():
+	for u: Dictionary in CityGround.SLAB_SHADER.get_shader_uniform_list():
 		uniforms.append(str(u["name"]))
 	var bad: Array[String] = []
 	for key: String in CityGround.BLOCK_KEYS:
@@ -112,10 +118,100 @@ func _check_ground_numbers() -> void:
 		is_equal_approx(Look.value("ground_block"), 0.125),
 		"the ground's block is the city's voxel grain, 0.125 m"
 	)
-	var mat := CityGround.block_material()
+	var mat := CityGround.ground_material(7301)
 	check(
 		is_equal_approx(
 			Num.f(mat.get_shader_parameter("block_noise")), Look.value("ground_block_noise")
 		),
 		"the material carries the look's numbers"
+	)
+
+
+## Same seed, same ground: the material carries the map seed and the same seed gives the same
+## numbers.
+func _check_ground_seeded() -> void:
+	Content.set_time("dusk")
+	var a := CityGround.ground_material(7301)
+	var b := CityGround.ground_material(7301)
+	var c := CityGround.ground_material(7302)
+	var same := true
+	for key: String in CityGround.BLOCK_KEYS + ["seed"]:
+		if a.get_shader_parameter(key) != b.get_shader_parameter(key):
+			same = false
+	check(same, "the same map seed gives the same ground numbers")
+	check(
+		not is_equal_approx(Num.f(a.get_shader_parameter("seed")), Num.f(c.get_shader_parameter("seed"))),
+		"another map seed shifts every hash of the ground (a different ground)"
+	)
+
+
+## The slabs the street plan lays: every surface kind is there with a measurable share of the
+## ground, each street slab knows its centre line to a few millimetres through the half-float
+## instance buffer, and a river wall knows the water line the damp band follows.
+func _check_ground_kinds() -> void:
+	Content.set_time("dusk")
+	var base: Dictionary = Content.tuning().duplicate(true)
+	var cfg: Dictionary = CityGrowth.tuning_for(base, 2)["city"]
+	var ground := CityGround.new(cfg)
+	root.add_child(ground)
+	var area := {}
+	var total := 0.0
+	var bad_centre := 0
+	var roads := 0
+	var walls_wet := 0
+	var walls := 0
+	for slab: Dictionary in ground.get("_slabs"):
+		var t: Transform3D = slab["t"]
+		var d: Color = slab["d"]
+		var kind := int(floorf(d.r))
+		var size := Vector2(t.basis.x.length(), t.basis.z.length())
+		var a := size.x * size.y
+		if t.origin.y > -0.5 and size.x < 1000.0:  # not the land under everything
+			area[kind] = Num.f(area.get(kind, 0.0)) + a
+			total += a
+		if kind == CityGround.K_ROAD or kind == CityGround.K_DECK:
+			var axis := roundi(fposmod(d.r, 1.0) * 8.0)
+			if axis != CityGround.TURNED:
+				roads += 1
+				var across := t.origin.z if axis == CityGround.ALONG_X else t.origin.x
+				var half := (size.y if axis == CityGround.ALONG_X else size.x) * 0.5
+				var centre := d.g + d.b
+				# A street or deck piece lies inside its street, in its width of the centre line.
+				if absf(across - centre) > d.a + 0.01 or absf(d.b) > 8.0 or half > d.a + 0.01:
+					bad_centre += 1
+		if kind == CityGround.K_CONCRETE:
+			walls += 1
+			if d.g < -0.5:
+				walls_wet += 1
+	for kind: int in [CityGround.K_ROAD, CityGround.K_PAVEMENT, CityGround.K_CONCRETE]:
+		var share := Num.f(area.get(kind, 0.0)) / maxf(total, 1.0)
+		check(
+			share > (0.0001 if kind == CityGround.K_CONCRETE else 0.01),
+			"kind %d covers a measurable share of the ground (%.1f%%)" % [kind, 100.0 * share]
+		)
+	check(roads > 20, "the street plan lays its streets as slabs of their own (%d)" % roads)
+	check(bad_centre == 0, "every street slab keeps its centre line and width (%d off)" % bad_centre)
+	check(
+		walls > 0 and walls_wet > 0,
+		"river walls carry their water line (%d of %d)" % [walls_wet, walls]
+	)
+	ground.queue_free()
+
+
+## Wet applies last: the rain darkens and glosses whatever the surface looks like, with the numbers
+## atm-rain-2 set (identity of `wet`).
+func _check_wet_is_last() -> void:
+	var code := CityGround.SLAB_SHADER.code
+	var wet_at := code.rfind("wet * WET_DARKEN")
+	var grain_at := code.rfind("sd_grain(")
+	check(
+		wet_at > 0 and grain_at > 0 and wet_at > grain_at,
+		"wet darkens after every surface look has run"
+	)
+	check(
+		code.contains("const float WET_DARKEN = 0.5;")
+		and code.contains("const float WET_ROUGHNESS = 0.18;")
+		and code.contains("const float WET_SPECULAR = 0.9;")
+		and code.contains("render_mode diffuse_burley;"),
+		"wet keeps its darken, roughness and specular, and the burley diffuse"
 	)
