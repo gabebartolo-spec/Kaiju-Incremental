@@ -68,6 +68,18 @@ static func at_t(line: PackedVector3Array, t: float) -> Vector3:
 	return line[i].lerp(line[i + 1], f - i)
 
 
+## The first `share` (0..1) of `line` by its points' own spacing, its last point cut part-way along
+## its segment, so a growing bolt creeps out smoothly instead of a point at a time.
+static func cut(line: PackedVector3Array, share: float) -> PackedVector3Array:
+	if line.size() < 2 or share >= 1.0:
+		return line
+	var f := clampf(share, 0.0, 1.0) * (line.size() - 1)
+	var i := mini(floori(f), line.size() - 2)
+	var out := line.slice(0, i + 1)
+	out.append(line[i].lerp(line[i + 1], f - i))
+	return out
+
+
 ## {"origin": Vector3 (xz used), "dir": flat unit Vector3, "reach": float, "half": radians,
 ## "y": float}. `p` pulled inside that cone (only the ground position moves; height stays).
 static func clamp_to_cone(p: Vector3, cone: Dictionary) -> Vector3:

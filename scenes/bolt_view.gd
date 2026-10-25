@@ -1,72 +1,64 @@
 class_name BoltView
 extends MeshInstance3D
-## One bolt drawn as camera-facing ribbons on a single ImmediateMesh with the game's one beam shader
-## (bolt.gdshader): a main channel and its branches, each as a narrow white-hot core strip over a
-## wide halo strip, so four surfaces. The same class draws the breath, the Thunder Beam and later
-## the Taskforce's lasers; only the widths and the colours differ by owner. The shader turns the
-## strips to the camera, so the mesh is rebuilt only when the shape changes. Presentation only.
+## One bolt drawn as capsules with the game's one beam shader (bolt.gdshader): every segment of the
+## main channel, its branches and the charge arcs is its own camera-facing quad, and the shader
+## rounds joints and caps by distance to the segment (no halo strips, no blobs: the glow is the
+## engine's own bloom on the HDR core, plus a thin tinted fringe). The same class draws the breath,
+## the Thunder Beam and later the Taskforce's lasers; only widths and colours differ by owner.
+## Presentation only.
 
 const SHADER := preload("res://scenes/bolt.gdshader")
 const CORE_COLOUR := Color(1.0, 0.97, 0.92)
-const BLOB_CORNERS: Array[Vector2] = [
-	Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)
-]
-## Which halo colours to draw instead of the tuning's choice ("" = the tuning's): a capture sets
+## The bolt's quads are cut by the camera's frustum only at their ends: keep them from being culled
+## by a bounding box that ignores the pixel floor.
+const CULL_MARGIN := 40.0
+## Which fringe colours to draw instead of the tuning's choice ("" = the tuning's): a capture sets
 ## this to show the director's three options (R 17.6) from the same frame.
 static var halo_mode_override := ""
 
-var _mesh := ImmediateMesh.new()
-var _halo_boost := 1.0
+var _mesh := ArrayMesh.new()
+var _main_tip: float
+var _mouth_share: float
 var _branch_tip: float
-var _blob_share: float
-var _halo_main := ShaderMaterial.new()
-var _core_main := ShaderMaterial.new()
-var _halo_branch := ShaderMaterial.new()
-var _halo_arc := ShaderMaterial.new()
-var _core_arc := ShaderMaterial.new()
-var _core_branch := ShaderMaterial.new()
+var _main := ShaderMaterial.new()
+var _branch := ShaderMaterial.new()
+var _arc := ShaderMaterial.new()
 
 
-## widths: Vector2(core, halo) in world units; eye: the species' eye colour (the "eye" halo mode);
+## core: the main channel's width in world units; eye: the species' eye colour (the "eye" mode);
 ## cfg: tuning "fx" "bolt".
-func _init(widths: Vector2, eye: Color, cfg: Dictionary) -> void:
+func _init(core: float, eye: Color, cfg: Dictionary) -> void:
 	mesh = _mesh
 	_branch_tip = Num.f(cfg["branch_tip"])
-	_blob_share = Num.f(cfg["blob_share"])
+	_main_tip = Num.f(cfg["main_tip"])
+	_mouth_share = Num.f(cfg["mouth_share"])
+	extra_cull_margin = CULL_MARGIN
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var colours := halo_colours(cfg, eye)
-	_halo_boost = halo_boost(cfg)
-	for mat: ShaderMaterial in [_halo_main, _halo_branch, _halo_arc]:
+	var fringe_boost := Num.f(cfg["fringe_boost"]) * halo_boost(cfg)
+	for mat: ShaderMaterial in all_materials():
 		mat.shader = SHADER
 		mat.set_shader_parameter("tint", colours[0])
 		mat.set_shader_parameter("fringe", colours[1])
-		mat.set_shader_parameter("width", widths.y)
-		mat.set_shader_parameter("boost", Num.f(cfg["boost_halo"]) * _halo_boost)
-		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_halo"]))
-		mat.set_shader_parameter("min_px", Num.f(cfg["halo_min_px"]))
-		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["alpha"]))
-		mat.set_shader_parameter("max_px", Num.f(cfg["halo_max_px"]))
-		mat.render_priority = 1
-	for mat: ShaderMaterial in [_core_main, _core_branch, _core_arc]:
-		mat.shader = SHADER
-		mat.set_shader_parameter("tint", CORE_COLOUR)
-		mat.set_shader_parameter("fringe", colours[0])
-		mat.set_shader_parameter("width", widths.x)
+		mat.set_shader_parameter("core_colour", CORE_COLOUR)
+		mat.set_shader_parameter("width", core)
 		mat.set_shader_parameter("boost", Num.f(cfg["boost_core"]))
-		mat.set_shader_parameter("falloff", Num.f(cfg["falloff_core"]))
+		mat.set_shader_parameter("fringe_boost", fringe_boost)
+		mat.set_shader_parameter("white_to", Num.f(cfg["white_to"]))
+		mat.set_shader_parameter("tint_to", Num.f(cfg["tint_to"]))
 		mat.set_shader_parameter("min_px", Num.f(cfg["core_min_px"]))
-		mat.set_shader_parameter("rim", Num.f(cfg["rim"]["core_alpha"]))
-		mat.set_shader_parameter("rim_band", Vector4(0.55, 0.75, 0.9, 1.0))
-		mat.render_priority = 2  # drawn after the glows, so its dark rim keeps it readable in them
-	for mat: ShaderMaterial in all_materials():
-		mat.set_shader_parameter("rim_tint", Color(str(cfg["rim"]["tint"])))
 		mat.set_shader_parameter("soft", Num.f(cfg["bolt_soft"]))
 		mat.set_shader_parameter("wobble", Num.f(cfg["wobble"]))
 		mat.set_shader_parameter("wobble_hz", Num.f(cfg["wobble_hz"]))
 		mat.set_shader_parameter("level", 0.0)
+	_arc.set_shader_parameter("alpha_scale", Num.f(cfg["arc_alpha"]))
+	_arc.set_shader_parameter("min_px", Num.f(cfg["arc_min_px"]))
+	_main.render_priority = 2
+	_branch.render_priority = 1
+	_arc.render_priority = 0
 
 
-## The halo's [inner, fringe] colours for the tuning's mode (or the capture's override).
+## The fringe's [inner, fringe] colours for the tuning's mode (or the capture's override).
 static func halo_colours(cfg: Dictionary, eye: Color) -> Array[Color]:
 	var mode := halo_mode_override if halo_mode_override != "" else str(cfg["halo_mode"])
 	var row: Dictionary = cfg["halo_modes"][mode]
@@ -78,8 +70,8 @@ static func halo_colours(cfg: Dictionary, eye: Color) -> Array[Color]:
 	return out
 
 
-## How bright the tuning's halo mode is (1: as is); a near-white halo is dimmed so it does not veil
-## pale ground.
+## How bright the tuning's fringe mode is (1: as is); a near-white fringe is dimmed so it does not
+## veil pale ground.
 static func halo_boost(cfg: Dictionary) -> float:
 	var mode := halo_mode_override if halo_mode_override != "" else str(cfg["halo_mode"])
 	var row: Dictionary = cfg["halo_modes"][mode]
@@ -88,25 +80,22 @@ static func halo_boost(cfg: Dictionary) -> float:
 
 ## Every material this bolt draws with (a ShaderKeep holds them so none compiles mid-rampage).
 func all_materials() -> Array[ShaderMaterial]:
-	return [_halo_main, _core_main, _halo_branch, _core_branch, _halo_arc, _core_arc]
+	return [_main, _branch, _arc]
 
 
 ## The brightness (0..1) of the main channel, of the branches and of the charge-up arcs.
 func set_levels(main: float, branch: float, arc: float) -> void:
-	for mat: ShaderMaterial in [_halo_arc, _core_arc]:
-		mat.set_shader_parameter("level", arc)
-	for mat: ShaderMaterial in [_halo_main, _core_main]:
-		mat.set_shader_parameter("level", main)
-	for mat: ShaderMaterial in [_halo_branch, _core_branch]:
-		mat.set_shader_parameter("level", branch)
+	_main.set_shader_parameter("level", main)
+	_branch.set_shader_parameter("level", branch)
+	_arc.set_shader_parameter("level", arc)
 
 
-## The colour multiplier for the next frames (the signature's power brightens the bolt).
-func set_power(boost_core: float, boost_halo: float) -> void:
-	for mat: ShaderMaterial in [_core_main, _core_branch, _core_arc]:
+## The colour multipliers for the next frames (the signature's power brightens the bolt): the
+## white-hot axis and the tinted fringe.
+func set_power(boost_core: float, boost_fringe: float) -> void:
+	for mat: ShaderMaterial in all_materials():
 		mat.set_shader_parameter("boost", boost_core)
-	for mat: ShaderMaterial in [_halo_main, _halo_branch, _halo_arc]:
-		mat.set_shader_parameter("boost", boost_halo * _halo_boost)
+		mat.set_shader_parameter("fringe_boost", boost_fringe)
 
 
 ## Redraws the bolt: `main` (world points), `branches` and `arcs` (each a world polyline), the
@@ -118,75 +107,56 @@ func rebuild(
 	widths: Vector2
 ) -> void:
 	_mesh.clear_surfaces()
-	_surface(_halo_main, [main], 1.0, 0.7)
-	_surface(_core_main, [main], 1.0, 0.7)
-	_surface(_halo_branch, branches, widths.x, _branch_tip)
-	_surface(_core_branch, branches, widths.x, _branch_tip)
-	_surface(_halo_arc, arcs, widths.y, _branch_tip)
-	_surface(_core_arc, arcs, widths.y, _branch_tip)
+	_surface(_main, [main], Vector2(1.0, _main_tip), Vector2(_mouth_share, 1.0))
+	_surface(
+		_branch, branches, Vector2(widths.x, widths.x * _branch_tip), Vector2(1.0, _branch_tip)
+	)
+	_surface(_arc, arcs, Vector2(widths.y, widths.y * _branch_tip), Vector2(1.0, _branch_tip))
 
 
 func hide_all() -> void:
 	_mesh.clear_surfaces()
 
 
-## One surface: every polyline as a strip of quads, tapering to `tip` of its width and brightness.
-func _surface(mat: ShaderMaterial, lines: Array, width: float, tip: float) -> void:
-	var any := false
+## One surface: every segment of every line as a capsule quad. `taper` is the width share at the
+## line's start and end, `bright` the brightness share there.
+func _surface(mat: ShaderMaterial, lines: Array, taper: Vector2, bright: Vector2) -> void:
+	var verts := PackedVector3Array()
+	var other := PackedFloat32Array()
+	var info := PackedFloat32Array()
+	var uvs := PackedVector2Array()
+	var idx := PackedInt32Array()
 	for line: PackedVector3Array in lines:
-		any = any or line.size() > 1
-	if not any:
+		var last := float(line.size() - 1)
+		for i: int in line.size() - 1:
+			var t0 := i / last
+			var t1 := (i + 1) / last
+			var share := lerpf(taper.x, taper.y, (t0 + t1) * 0.5)
+			var base := verts.size()
+			for end: int in 2:
+				var here := line[i + end]
+				var there := line[i + 1 - end]
+				var t := t1 if end == 1 else t0
+				for side: float in [-1.0, 1.0]:
+					verts.append(here)
+					other.append_array([there.x, there.y, there.z, 0.0])
+					info.append_array([share, lerpf(bright.x, bright.y, t), t, 0.0])
+					uvs.append(Vector2(float(end), side))
+			idx.append_array(
+				[base, base + 1, base + 2, base + 1, base + 3, base + 2]
+			)
+	if verts.is_empty():
 		return
-	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES, mat)
-	var glow := _glows(mat)
-	for line: PackedVector3Array in lines:
-		if not glow:
-			for i: int in line.size() - 1:
-				_quad(line, i, width, tip)
-			continue
-		# A glow is a chain of round soft blobs, never a ribbon: a ribbon turned sharply at a kink
-		# folds into a straight-edged wedge, and a blob has no edge to show.
-		for i: int in line.size():
-			var along := float(i) / (line.size() - 1)
-			_blob(line[i], width, lerpf(1.0, tip, along))
-			if i + 1 < line.size():
-				_blob(line[i].lerp(line[i + 1], 0.5), width, lerpf(1.0, tip, along))
-	_mesh.surface_end()
-
-
-## The segment i..i+1 as two triangles; joints share their tangent so the strip has no gaps.
-func _quad(line: PackedVector3Array, i: int, width: float, tip: float) -> void:
-	var last := float(line.size() - 1)
-	var ends: Array[Vector3] = []  # [a-, a+, b-, b+] as (side, along, taper)
-	for k: int in 2:
-		var taper := lerpf(1.0, tip, (i + k) / last)
-		for side: float in [-1.0, 1.0]:
-			ends.append(Vector3(side, (i + k) / last, taper))
-	var at: Array[int] = [0, 1, 2, 1, 3, 2]
-	for n: int in at:
-		var e := ends[n]
-		var p := line[i + n / 2]
-		_mesh.surface_set_color(Color(width * e.z, e.z, 0.0))
-		_mesh.surface_set_normal(_tangent(line, i + n / 2))
-		_mesh.surface_set_uv(Vector2(e.x, e.y))
-		_mesh.surface_add_vertex(p)
-
-
-## Whether `mat` is one of the glows (the halo strips): only they get blobs, the core stays a line.
-func _glows(mat: ShaderMaterial) -> bool:
-	return mat == _halo_main or mat == _halo_branch or mat == _halo_arc
-
-
-## A round camera-facing blob on a point of the line (UV = the quad's corner, COLOR.b = 1).
-func _blob(at: Vector3, width: float, taper: float) -> void:
-	for corner: Vector2 in BLOB_CORNERS:
-		_mesh.surface_set_color(Color(width * taper, taper * _blob_share, 1.0))
-		_mesh.surface_set_normal(Vector3.UP)
-		_mesh.surface_set_uv(corner)
-		_mesh.surface_add_vertex(at)
-
-
-static func _tangent(line: PackedVector3Array, i: int) -> Vector3:
-	var a := line[maxi(i - 1, 0)]
-	var b := line[mini(i + 1, line.size() - 1)]
-	return (b - a).normalized()
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_CUSTOM0] = other
+	arrays[Mesh.ARRAY_CUSTOM1] = info
+	arrays[Mesh.ARRAY_INDEX] = idx
+	var flags := (
+		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
+		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
+	)
+	_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
+	_mesh.surface_set_material(_mesh.get_surface_count() - 1, mat)

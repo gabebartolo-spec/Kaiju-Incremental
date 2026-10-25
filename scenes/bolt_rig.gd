@@ -42,6 +42,10 @@ var ends: Callable
 var fx: Fx
 ## Lit now (between play and the end).
 var live := false
+## The polylines drawn at the last rebuild (main channel, branches), world points: a capture
+## projects them to measure the bolt on screen.
+var drawn_main := PackedVector3Array()
+var drawn_lines: Array[PackedVector3Array] = []
 
 var _cfg: Dictionary
 var _row: Dictionary
@@ -74,8 +78,7 @@ func _init(kind: String, eye: Color, body_scale: float, cfg: Dictionary) -> void
 	_scale = body_scale
 	_arcs = BoltArcs.new(_row, cfg, body_scale)
 	_thrown = BoltImpact.new(_row, cfg, body_scale)
-	var widths := Vector2(Num.f(_row["core"]), Num.f(_row["halo"])) * body_scale
-	_view = BoltView.new(widths, eye, cfg)
+	_view = BoltView.new(Num.f(_row["core"]) * body_scale, eye, cfg)
 	add_child(_view)
 	var colours := BoltView.halo_colours(cfg, eye)
 	_setup_light(_mouth_light, HOT)
@@ -106,7 +109,7 @@ func play(seconds: float, rng: RandomNumberGenerator) -> void:
 	_branches.clear()
 	_arcs.clear()
 	var lift := lerpf(1.0, power, Num.f(_cfg["power_share"]))
-	_view.set_power(Num.f(_cfg["boost_core"]) * lift, Num.f(_cfg["boost_halo"]) * lift)
+	_view.set_power(Num.f(_cfg["boost_core"]) * lift, Num.f(_cfg["fringe_boost"]) * lift)
 	live = true
 	_dirty = true
 	for node: Node3D in [_view, _mouth_light, _hit_light, _muzzle, _strike]:
@@ -146,7 +149,6 @@ func _process(delta: float) -> void:
 	if _t >= _next:
 		_stroke()
 	_feel()
-	_grow()
 	if _arcs.step(delta, _mouth, _hit, _rng):
 		_dirty = true
 	_shine(delta)
@@ -154,7 +156,8 @@ func _process(delta: float) -> void:
 		_draw()
 
 
-## The dim feeler: the main channel creeping out of the mouth in steps until the first stroke.
+## The dim leader: the main channel growing from the mouth to the target, a frame at a time, until
+## the first stroke (a return stroke down a channel that is already there, never a bolt from nothing).
 func _feel() -> void:
 	if _index > 0:
 		return
@@ -163,18 +166,6 @@ func _feel() -> void:
 	var first := Num.f(_cfg["first_at"])
 	var done := floorf(_t / step) * step / first
 	var now := lerpf(Num.f(reach[0]), Num.f(reach[1]), clampf(done, 0.0, 1.0))
-	if not is_equal_approx(now, _reveal):
-		_reveal = now
-		_dirty = true
-
-
-## The first stroke runs the channel the rest of the way out to the target over `grow_seconds`.
-func _grow() -> void:
-	if _index != 1:
-		return
-	var reach: Array = _cfg["feeler_reach"]
-	var share := clampf(_since / Num.f(_cfg["grow_seconds"]), 0.0, 1.0)
-	var now := lerpf(Num.f(reach[1]), 1.0, share)
 	if not is_equal_approx(now, _reveal):
 		_reveal = now
 		_dirty = true
@@ -193,7 +184,9 @@ func _shine(delta: float) -> void:
 		main = hold + (1.0 - hold) * _env(Num.f(_cfg["stroke_decay"]))
 		if _since < attack:
 			main = lerpf(from, 1.0, _since / attack)
-		branch = Num.f(_cfg["branch_peak"]) * _env(Num.f(_cfg["branch_decay"]))
+		var peak := Num.f(_cfg["branch_peak"])
+		var held := Num.f(_cfg["branch_hold"])  # the forks stay lit between strokes
+		branch = held + (peak - held) * _env(Num.f(_cfg["branch_decay"]))
 		flash = _env(Num.f(_cfg["light_decay"]))
 	_view.set_levels(main * fade, branch * fade, Num.f(_cfg["arc_level"]) * fade)
 	var lights: Dictionary = _cfg["light"]
@@ -224,8 +217,7 @@ func _env(decay: float) -> float:
 func _stroke() -> void:
 	_index += 1
 	_since = 0.0
-	var reach: Array = _cfg["feeler_reach"]
-	_reveal = Num.f(reach[1]) if _index == 1 else 1.0
+	_reveal = 1.0
 	_roll_branches()
 	_dirty = true
 	var gap := Num.f(_cfg["stroke_gap"]) + _rng.randf() * Num.f(_cfg["gap_jitter"])
@@ -324,7 +316,7 @@ func _kept(line: PackedVector3Array) -> PackedVector3Array:
 	return line
 
 
-## Rebuilds the ribbons for the current shape, aim and reach.
+## Rebuilds the capsules for the current shape, aim and reach.
 func _draw() -> void:
 	_dirty = false
 	var main := _main_world()
@@ -338,9 +330,10 @@ func _draw() -> void:
 			lines.append(PackedVector3Array())
 			continue
 		lines.append(_kept(BoltShape.place(shape, BoltShape.at_t(host, Num.f(b["t"])), end)))
-	var shown := mini(main.size(), ceili(_reveal * (main.size() - 1)) + 1)
 	var widths := Vector2(Num.f(_row["branch_width"]), Num.f(_row["arc_width"]))
-	_view.rebuild(main.slice(0, shown), lines, _arcs.lines, widths)
+	drawn_main = BoltShape.cut(main, _reveal)
+	drawn_lines = lines
+	_view.rebuild(drawn_main, lines, _arcs.lines, widths)
 	var dir := (_hit - _mouth).normalized()
 	_muzzle.position = _clear_of_head() + Vector3.UP * Num.f(_cfg["muzzle_up"]) * _scale
 	_strike.position = _hit - dir * 0.6 + Vector3.UP * Num.f(_cfg["strike_lift"]) * _scale

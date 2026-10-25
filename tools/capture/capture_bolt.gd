@@ -34,6 +34,7 @@ var _halo := ""
 var _side := false
 var _young := false
 var _debug := false
+var _shots := ""
 var _step := 0
 var _fire_breath := -1
 var _fire_beam := -1
@@ -54,6 +55,7 @@ func _initialize() -> void:
 				"young": false,
 				"min_px": -1.0,
 				"debug": false,
+				"shots": "",
 			}
 		)
 	)
@@ -64,13 +66,13 @@ func _initialize() -> void:
 	_side = a["side"]
 	_young = a["young"]
 	_debug = a["debug"]
+	_shots = str(a["shots"])
 	if _halo == "debug":  # a pure green halo: proves which frame pixels are the bolt
 		var modes: Dictionary = Content.section("fx")["bolt"]["halo_modes"]
 		modes["debug"] = {"inner": "00ff00", "fringe": "00ff00"}
 	if Num.f(a["min_px"]) >= 0.0:  # try a different least width without editing the tuning
 		var bolt: Dictionary = Content.section("fx")["bolt"]
 		bolt["core_min_px"] = a["min_px"]
-		bolt["halo_min_px"] = Num.f(a["min_px"]) * 5.0
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
 		quit(1)
@@ -104,6 +106,10 @@ func _go() -> void:
 ## Stills a set number of frames after the fire.
 func _stills(rampage: Rampage) -> void:
 	var shots := BEAM_SHOTS if _mode == "beam" else BREATH_SHOTS
+	if _shots != "":  # --shots=1,2,3: other frames after the fire (the onset)
+		shots = []
+		for text: String in _shots.split(","):
+			shots.append(text.to_int())
 	var played := rampage.ability_fx.played if _mode != "beam" else rampage._powers.played
 	var event := "breath" if _mode != "beam" else "beam_start"
 	while not played.has(event):  # waits for the press to land (the kaiju out of the river)
@@ -123,6 +129,7 @@ func _stills(rampage: Rampage) -> void:
 			"%s_run%d_%s%s_f%03d" % [_mode, _run, halo, "_side" if _side else "", after]
 		)
 		var path := Kit.still(self, _out, shot_name)
+		_print_points(rampage, shot_name)
 		if _debug:
 			_print_rig(rampage)
 		_crop(rampage, path)
@@ -201,3 +208,28 @@ func _print_rig(rampage: Rampage) -> void:
 			% [cam.fov, root.get_visible_rect().size, view.global_transform]
 		)
 	)
+
+
+## The mouth, the struck point and the drawn polylines in the still (pixels), for measure_bolt.py.
+func _print_points(rampage: Rampage, shot_name: String) -> void:
+	var rig: BoltRig = (
+		rampage.ability_fx._beam.rig if _mode != "beam" else rampage._powers._thunder.rig
+	)
+	var cam := root.get_viewport().get_camera_3d()
+	var size := Vector2(root.get_texture().get_image().get_size())
+	var mouth := Kit.image_point(self, cam, rig._mouth, size)
+	var hit := Kit.image_point(self, cam, rig._hit, size)
+	print("POINTS %s mouth=%d,%d hit=%d,%d live=%s" % [shot_name, mouth.x, mouth.y, hit.x, hit.y, rig.live])
+	var lashes := 0  # branches that end up the wall above the struck point
+	for line: PackedVector3Array in rig.drawn_lines:
+		if line.size() > 1 and line[line.size() - 1].y > rig._hit.y + 1.0:
+			lashes += 1
+	print("LASHES %s %d" % [shot_name, lashes])
+	var lines: Array[PackedVector3Array] = [rig.drawn_main]
+	lines.append_array(rig.drawn_lines)
+	for i: int in lines.size():
+		var text := ""
+		for p: Vector3 in lines[i]:
+			var at := Kit.image_point(self, cam, p, size)
+			text += " %d,%d" % [at.x, at.y]
+		print("POLY %s %s%s" % [shot_name, "main" if i == 0 else "branch", text])
