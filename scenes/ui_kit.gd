@@ -258,9 +258,12 @@ static func button(
 	var room := BUTTON_BAND + HazardBox.CHEVRON_GAP + HazardBox.CHEVRON_WIDTH + 6.0
 	if not taped:
 		room = 10.0
+	# The plate's face stands PLATE_SHADOW short of its rect on the right and bottom: that much more
+	# room there centres the label on the face (director 2026-10-25: "centre the text").
 	for state: HazardBox in [normal, hover, focus, pressed, off]:
 		state.content_margin_left = room
-		state.content_margin_right = room
+		state.content_margin_right = room + HazardBox.PLATE_SHADOW.x
+		state.content_margin_bottom = state.content_margin_top + HazardBox.PLATE_SHADOW.y
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("focus", focus)
