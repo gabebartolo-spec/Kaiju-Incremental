@@ -15,6 +15,7 @@ const STAGES := {"young": {}, "Behemoth": {"evolve1": 1}, "Colossus": {"evolve1"
 ## The fixture: seconds walked before the press, then seconds watched after it.
 const FIXTURE_LEAD_S := 1.0
 const FIXTURE_WATCH_S := 4.0
+const FIXTURE_MAX_N := 600
 
 
 func suite_name() -> String:
@@ -351,7 +352,8 @@ func _check_effect() -> void:
 	)
 
 
-## The croc walks north into the seeded city FIXTURE_LEAD_S, then (with `leap`) presses the button,
+## The croc walks north into the seeded city FIXTURE_LEAD_S and on until a roof it can land on is
+## ahead (at most FIXTURE_MAX_N steps), then (with `leap`) presses the button,
 ## and is watched FIXTURE_WATCH_S with the stick held north.
 func _run_city(leap: bool) -> Dictionary:
 	var layout := CityGen.generate(Seeds.make("city", 0), Content.section("city"))
@@ -360,6 +362,10 @@ func _run_city(leap: bool) -> Dictionary:
 	var north := Vector2(0, -1)
 	for _n: int in roundi(FIXTURE_LEAD_S / DT):
 		sim.step(DT, north, false, 0)
+	var more := 0  # walks on until a roof it can land on is ahead (a tower is _check_tower_wall's)
+	while Num.f(sim.body.dash.aim_at(sim.kaiju_pos, north)["roof"]) <= 0.0 and more < FIXTURE_MAX_N:
+		sim.step(DT, north, false, 0)
+		more += 1
 	sim.step(DT, north, false, BUTTON if leap else 0)
 	var in_flight := 0  # chunks broken and building overlaps while the body is in the air
 	for _n: int in roundi(FIXTURE_WATCH_S / DT):

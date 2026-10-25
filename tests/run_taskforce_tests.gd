@@ -290,7 +290,7 @@ func _check_frost() -> void:
 	var cold := walled.army_units.taskforce.frost
 	cold.launch(4, Vector3.ZERO)
 	_run(walled, Num.f(cold.cfg["flight_s"]) + 0.1)
-	var rammed := walled.step(DT, _face_wall(walled), false, DASH_BUTTON)  # stood at a wall
+	var rammed := walled.step(DT, walled.facing, false, DASH_BUTTON)
 	check(
 		not _first(rammed, "leap").is_empty() and walled.body.dash.phase() == "crouch",
 		"the leap at a wall starts its crouch: %s" % [_types(rammed)]
