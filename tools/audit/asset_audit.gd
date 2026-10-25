@@ -27,6 +27,10 @@ const ARCHETYPES: Array[String] = ["office", "brick", "glass", "stone"]
 const GLASS := 2
 const SIGN_SHARE := 300  # of 1000: BuildingLayout.SIGN_CHANCE 0.3
 const SIGN_MIN_FLOORS := 3
+## Config sections that land with in-flight work (claude/tripo-buildings, city explosives): read
+## when present, so their assets count the day they merge.
+const POOL_KEY := "building_pool"
+const HAZARDS_KEY := "hazards"
 ## Assets placed only by a fill rule, never by chance: why they can be missing from a seed.
 const FILL_ONLY := {
 	"prop:traffic_island":
@@ -48,13 +52,13 @@ static func inventory(cfg: Dictionary) -> Dictionary:
 	var shapes: Dictionary = cfg.get("landmark_shapes", {})
 	for id: String in shapes:
 		out["landmark:" + id] = {"kind": "landmark", "hero": true, "allowed": id in listed}
-	var book: Dictionary = cfg.get("building_pool", {})
+	var book: Dictionary = cfg.get(POOL_KEY, {})
 	var pool: Dictionary = book.get("pool", {})
 	for id: String in pool:
 		var pool_row: Dictionary = pool[id]
 		var hero := str(pool_row.get("role", "")) == "hero"
 		out["pool:" + id] = {"kind": "pool", "hero": hero, "allowed": true}
-	var hazards: Dictionary = cfg.get("hazards", {})
+	var hazards: Dictionary = cfg.get(HAZARDS_KEY, {})
 	for kind: Variant in hazards.get("kinds", []):
 		out["hazard:" + str(kind)] = {"kind": "hazard", "hero": false, "allowed": true}
 	for sport: Dictionary in Content.sports()["sports"]:
@@ -125,7 +129,7 @@ static func stage(root: Node, base: Dictionary, tier: int, opts: Dictionary) -> 
 			_add(totals, id, Num.i(got[id]))
 		for e: Dictionary in layout:
 			largest = Vector2i(maxi(largest.x, Num.i(e["w"])), maxi(largest.y, Num.i(e["d"])))
-	var book: Dictionary = cfg.get("building_pool", {})
+	var book: Dictionary = cfg.get(POOL_KEY, {})
 	var pool: Dictionary = book.get("pool", {})
 	return {
 		"seen": seen,
