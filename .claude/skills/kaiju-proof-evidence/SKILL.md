@@ -16,7 +16,7 @@ passes on one lucky seed, a green validator on an art change nobody looked at.
 | Data, copy, docs | touched suites; schema validation; lint |
 | Sim rule or balance | seeded paired fixture (same seeds before and after); player-effect fixture |
 | UI flow | a real input at the control's screen position through the GUI; capture at 1920x1080 |
-| Visual or art | validators green, labelled capture at game scale, art-qa-critic pass, then the director's approval |
+| Visual or art | validators green, labelled capture at game scale, the lead looks at it itself (no critics, D-249), then the director's approval |
 | Animation | the assets suite plus a short clip |
 | Save or lifecycle | reload, old-save fixture, failure paths, `kaiju-sim-review` |
 | Performance | perf numbers against the budget in `data/`, before and after |
@@ -44,8 +44,8 @@ trusting its passes.
 
 ## A look is the director's
 
-Validators and green suites never approve a look. Labelled capture at game scale, the lead's
-art-qa-critic pass, then the director from labelled images (a clip for motion). Never write
+Validators and green suites never approve a look. Labelled capture at game scale, the lead opens and
+looks at it itself (art-qa-critic procedure; no critic agents, builders never judge art, D-249), then the director from labelled images (a clip for motion). Never write
 "looks right" on your own say-so.
 
 ## Write it down

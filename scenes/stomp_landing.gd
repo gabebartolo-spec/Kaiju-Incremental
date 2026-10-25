@@ -17,7 +17,8 @@ func _init(p_shake: CameraShake) -> void:
 
 
 ## A sim stomp reaches the kaiju: it stomps, and the foot that lifts lets go of its old crack.
-func lift(kaiju: KaijuModel) -> void:
+func lift(kaiju: KaijuModel, side: String = "") -> void:
+	kaiju.prefer_foot(side)
 	kaiju.stomp()
 	_lifted = kaiju.stomped_side()
 	var old := instance_from_id(Num.i(_under.get(_lifted, 0))) as Decal  # null once it has faded

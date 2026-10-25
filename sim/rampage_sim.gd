@@ -98,6 +98,7 @@ var air: AirWing
 ## The leader's escape helicopter (D-149), its own part beside the air wing.
 var vip: VipHeli
 var brood: Brood
+var stomp: RampageStomp
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
@@ -116,7 +117,6 @@ var events: Array[Dictionary]:
 	get:
 		return _events
 var _rng: RandomNumberGenerator
-var _stomp_timer := 0.0
 var _events: Array[Dictionary] = []
 
 
@@ -148,6 +148,7 @@ func _init(
 	var vip_cfg: Dictionary = tuning["vip"]
 	vip = VipHeli.new(self, vip_cfg, Seeds.derive(rng, 0x71B))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
+	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
 
@@ -229,11 +230,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 		body.walked(speed * dt, dt)
 	powers.after_move(dt, old_facing, moving)
 	body.step(dt, buttons & Dash.BUTTON != 0)
-	_stomp_timer -= dt
-	if _stomp_timer <= 0.0:
-		_stomp_timer += maxf(0.1, stat("stomp_interval"))
-		if not airborne:
-			_stomp()
+	stomp.step(dt)
 	ability_ready_in = maxf(0.0, ability_ready_in - dt)
 	if signature_pressed and ability_ready_in <= 0.0:
 		ability_ready_in = maxf(0.5, stat("ability_cooldown"))
@@ -278,18 +275,6 @@ func clamp_to_arena(pos: Vector2) -> Vector2:
 func _step_sky(dt: float) -> void:
 	air.step(dt)
 	vip.step(dt)
-
-
-func _stomp() -> void:
-	var radius := stomp_radius()
-	var centre := kaiju_pos
-	_events.append({"type": "stomp", "radius": radius, "lift": stand_y})
-	hit_area(
-		func(p: Vector2, r: float) -> float: return falloff(p.distance_to(centre) - r, radius),
-		stat("stomp_damage") * powers.hit_mult(),
-		maxi(0, floori(stand_y) - Num.i(powers_cfg["climb_dig"])),
-		ceili(reach_top())
-	)
 
 
 ## Full force within `radius`, fading to nothing at twice the radius: a harder blow breaks a

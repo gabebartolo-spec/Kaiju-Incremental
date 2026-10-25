@@ -6,9 +6,10 @@ extends Control
 const HEIGHT := 56.0
 ## Crawl speed in px per second at 1080p (the UI scales with the window).
 const SPEED := 120.0
-## The black tag bleeds off the screen's edge; its label starts the TV title-safe margin in
-## (UiKit.safe_margin: 96 px at 1080p, 192 at 4K) and the tag ends just past the label.
-const TAG_WIDTH := 290.0
+## The black tag bleeds off the screen's edge and its label is centred in it (director 2026-10-25:
+## "centre the text in black rectangle"), so the tag is the label's width plus the TV title-safe
+## margin (UiKit.safe_margin: 96 px at 1080p, 192 at 4K) on each side.
+const TAG_WIDTH := 350.0
 const SEPARATOR := "   ///   "
 ## The strip shows two cycles of headlines; each cycle is padded to at least the strip's width,
 ## so a short list never shows a headline twice at once and the loop has no empty stretch.
@@ -49,10 +50,9 @@ func _init(lines: PackedStringArray, scroll := true) -> void:
 	tag_box.size = Vector2(TAG_WIDTH, HEIGHT)
 	add_child(tag_box)
 	_tag = UiKit.label("BREAKING", UiKit.SIZE_HEAD, UiKit.ACCENT)
-	_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_tag.position.x = UiKit.safe_margin().x
-	_tag.size = Vector2(TAG_WIDTH - _tag.position.x, HEIGHT)
+	_tag.size = Vector2(TAG_WIDTH, HEIGHT)
 	tag_box.add_child(_tag)
 
 
