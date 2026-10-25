@@ -11,8 +11,9 @@ pr-body.md in the worktree, do NOT open the PR (lead opens it, max 3 open PRs).
   orbit (heli-red worktree, old air_wing + new data): closest 1.2-3.1 vs claw 7.3-18.5, speed 31-69 vs 14, turn 180 deg a step.
 - tentacles test: several passes at shifted swipe phases; octo gets time_left 1e9 + heal (the sim ended at 60 s: that was the
   "grab fails" cause, not the flight); grab proven with a heli held in reach.
-- Not done yet: see the end of this file.
 
 ## Local run
 bash ../hs2_run.sh <suites> (in Kaiju-Incremental-wt: engine slot, own APPDATA, tools/run_tests.sh --quick); the first import
 needs `godot --headless --path . --import` (the --editor import segfaults on a font).
+- Pushed c9ffdc48 + capture tweak; local green: heliflight, helideaths, military, tentacles. Clip: Kaiju-Incremental-wt/heli_clip/standoff_pass.mp4.
+- pr-body.md written (untracked) in the worktree; the lead opens the PR. Branch claude/heli-standoff (parked) is superseded.

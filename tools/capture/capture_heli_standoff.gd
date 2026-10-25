@@ -20,8 +20,8 @@ var _closest := INF
 
 func _initialize() -> void:
 	var a := Kit.args({"lead": _lead, "seconds": _seconds})
-	_lead = float(a["lead"])
-	_seconds = float(a["seconds"])
+	_lead = Num.f(a["lead"])
+	_seconds = Num.f(a["seconds"])
 	if not Kit.window_ok():
 		quit(1)
 		return
@@ -37,14 +37,19 @@ func _run() -> void:
 	await rampage.wait_loaded()
 	while rampage.sim.emerge.active:
 		await physics_frame
+	for node: Node in rampage.get_children():
+		if node is BreathAim:  # the ready breath's aim wedge is a play aid, not part of the shot
+			node.set_physics_process(false)
+			(node as Node3D).visible = false
 	var sim := rampage.sim
-	sim.time_left = 1.0e9
+	sim.time_left = 3600.0
 	sim.air.cfg["fire_interval"] = 999.0  # the shot is about the flight, not the strafing fire
 	for _n: int in HELIS:
 		sim.air.spawn()
 	for event: Dictionary in sim.events:
 		rampage._on_event(event)
 	var frames := 0
+	var passes := 0
 	var total := int((_lead + _seconds) * 60.0)
 	while frames < total:
 		await physics_frame
@@ -52,6 +57,9 @@ func _run() -> void:
 		sim.hp = sim.max_hp
 		if frames == int(_lead * 60.0):
 			print("clip starts at frame %d" % Engine.get_frames_drawn())
+		if sim.air.flight.passes != passes:
+			passes = sim.air.flight.passes
+			print("pass %d starts at frame %d" % [passes, Engine.get_frames_drawn()])
 		for heli: AirWing.Heli in sim.air.helis:
 			if not heli.passing:
 				_closest = minf(_closest, heli.pos.distance_to(sim.kaiju_pos))
