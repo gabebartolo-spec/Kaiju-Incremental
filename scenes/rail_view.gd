@@ -18,7 +18,12 @@ var _city: CityView
 var _cars: Dictionary = {}
 var _rumble: AudioStreamPlayer
 var _slide: AudioStreamPlayer
+## Train id -> when its horn may sound again (it blares while the kaiju is near).
 var _horned: Dictionary = {}
+## Wrecks whose survivors have not crawled out yet: [train, seconds left].
+var _pending: Array = []
+var _people_rng := Seeds.make("wreck_survivors", 0)
+var _clock := 0.0
 
 
 func _init(host: Rampage, sim: RampageSim, city: CityView) -> void:
@@ -59,7 +64,9 @@ func _play(sound: String, at: Vector3) -> void:
 		_host.sfx.play_at(sound, at)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_clock += delta
+	_crawl_out(delta)
 	var seen := {}
 	var loudest := 0.0
 	var sliding := false
@@ -113,12 +120,13 @@ func _heard(train: Rail.Train) -> float:
 	return near * train.v / Num.f(_sim.rail.cfg["cruise"])
 
 
-## The horn once per train when the kaiju first comes within horn_range of it.
+## The horn blares every horn_every seconds while the kaiju is within horn_range of a running
+## train (the director's answer, 022 update: it keeps running, no braking, the horn blares).
 func _horn_near(train: Rail.Train) -> void:
-	if train.state == Rail.WRECK or _horned.has(train.id):
+	if train.state == Rail.WRECK or _clock < Num.f(_horned.get(train.id, 0.0)):
 		return
 	if train.cars[0].pos.distance_to(_sim.kaiju_pos) < Num.f(_look()["horn_range"]):
-		_horned[train.id] = true
+		_horned[train.id] = _clock + Num.f(_look()["horn_every"])
 		_play("train_horn", _world(train.cars[0]))
 
 
@@ -154,3 +162,19 @@ func _derailed(event: Dictionary) -> void:
 	_host.add_trauma(_host.shake.source("topple"), pos)
 	_play("train_screech", pos)
 	_play("train_crash", pos)
+	for train: Rail.Train in _sim.rail.trains:
+		if train.id == Num.i(event["train"]):
+			_pending.append([train, Num.f(_look()["crawl_s"])])
+
+
+## Survivors crawl out of each car of a wreck once it has had crawl_s to come to rest, and flee.
+func _crawl_out(delta: float) -> void:
+	for entry: Array in _pending.duplicate():
+		entry[1] = Num.f(entry[1]) - delta
+		if Num.f(entry[1]) > 0.0:
+			continue
+		_pending.erase(entry)
+		var train: Rail.Train = entry[0]
+		for car: Rail.Car in train.cars:
+			var count := Num.i(_look()["survivors_per_car"])
+			WreckSurvivors.spill(_city.street, car.pos, count, _people_rng)

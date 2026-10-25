@@ -294,7 +294,10 @@ func derail(train: Train, hit_index: int, from: Vector2) -> void:
 		c.vel = ahead * train.v + side * fold * kick * near * _rng.randf_range(0.7, 1.2)
 		c.yaw_rate = fold * Num.f(cfg["yaw_rate"]) * _rng.randf_range(0.6, 1.3)
 		c.roll_rate = fold * Num.f(cfg["roll_rate"]) * _rng.randf_range(0.3, 1.2) * near
+	# Each car pays like a vehicle, and the derailment a big one-off bonus on top (the director's
+	# answer, 022 update: "well above a car").
 	var pay := Num.f(_sim.army["tank_rubble"]) * Num.f(cfg["rubble_share"]) * train.cars.size()
+	pay += Num.f(cfg["derail_bonus"])
 	_sim.rubble += pay * _sim.stat("rubble_mult")
 	train.v = 0.0
 	if from != Vector2.ZERO:
