@@ -3,7 +3,7 @@ extends RefCounted
 ## builder returns {data (JSON-able), markdown, summary (one line)}.
 
 const RULES: Array[String] = [
-	"stub", "arms", "close", "zero", "split", "angle", "aspect", "water", "kerb"
+	"stub", "arms", "close", "close!", "zero", "split", "angle", "aspect", "water", "kerb"
 ]
 
 

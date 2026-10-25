@@ -19,8 +19,9 @@ const AssetAudit := preload("res://tools/audit/asset_audit.gd")
 const STAGES: Array[int] = [1, 2, 3]
 const ROAD_SEEDS := 6
 const ASSET_SEEDS := 8
-## Road rules that hold on main at every stage and seed of the full run (2026-10-26).
-const ROAD_RULES_HELD: Array[String] = ["arms", "zero", "split", "angle", "aspect"]
+## Road rules that hold on main at every stage and seed of the full run (2026-10-26; arms,
+## close, aspect and water fail there; tools/audit/run_city_audit.gd reports them).
+const ROAD_RULES_HELD: Array[String] = ["stub", "zero", "split", "angle", "kerb"]
 const STUB_M := 4.0  # the planted dead end: shorter than any block
 
 

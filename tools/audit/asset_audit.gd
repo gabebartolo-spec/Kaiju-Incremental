@@ -27,6 +27,12 @@ const ARCHETYPES: Array[String] = ["office", "brick", "glass", "stone"]
 const GLASS := 2
 const SIGN_SHARE := 300  # of 1000: BuildingLayout.SIGN_CHANCE 0.3
 const SIGN_MIN_FLOORS := 3
+## Assets placed only by a fill rule, never by chance: why they can be missing from a seed.
+const FILL_ONLY := {
+	"prop:traffic_island":
+	"TrafficIsland fills only a ground cell that is all junction with nothing else in it",
+	"prop:bollard": "only on a traffic island (TrafficIsland)",
+}
 
 
 ## Every asset id the stage's config can spawn: {id: {kind, hero, allowed}}.
@@ -149,6 +155,8 @@ static func short_of_bar(result: Dictionary, count: int, with_view: bool) -> Arr
 ## Why an asset falls short, from what can be told without a designer: its weight, its fit.
 static func _why(id: String, result: Dictionary) -> String:
 	var kind := id.get_slice(":", 0)
+	if FILL_ONLY.has(id):
+		return "fill rule, not chance: " + str(FILL_ONLY[id])
 	if kind == "pool":
 		var pool: Dictionary = result["pool"]
 		var row: Dictionary = pool.get(id.get_slice(":", 1), {})

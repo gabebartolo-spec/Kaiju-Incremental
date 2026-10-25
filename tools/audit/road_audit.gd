@@ -39,9 +39,12 @@ static func run(cfg: Dictionary) -> Dictionary:
 	return {"plan": plan, "violations": violations, "metrics": found["metrics"]}
 
 
-## Violations counted by rule.
+## Violations counted by rule ("close!": close junctions whose boxes overlap).
 static func by_rule(violations: Array) -> Dictionary:
 	var out := {}
 	for v: Dictionary in violations:
-		out[v["rule"]] = Num.i(out.get(v["rule"], 0)) + 1
+		var rule := str(v["rule"])
+		if rule == "close" and str(v["note"]).contains("overlap"):
+			rule = "close!"  # junction boxes overlap: worse than a short block
+		out[rule] = Num.i(out.get(rule, 0)) + 1
 	return out

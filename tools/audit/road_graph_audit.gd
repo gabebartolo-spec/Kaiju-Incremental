@@ -258,15 +258,19 @@ static func _degrees(g: Net) -> Dictionary:
 	var hist := {}
 	var total := 0
 	var dead := 0
+	var inside := 0
 	for n: int in g.adj:
+		if maxf(absf(g.nodes[n].x), absf(g.nodes[n].y)) >= g.extent:
+			continue  # a piece's far end past the edge: cut by the audit, not a dead end
+		inside += 1
 		var c := g.arms(n).size()
 		hist[c] = Num.i(hist.get(c, 0)) + 1
 		total += c
 		if c == 1:
 			dead += 1
-	var count := maxi(1, g.adj.size())
+	var count := maxi(1, inside)
 	return {
-		"nodes": g.adj.size(),
+		"nodes": inside,
 		"streets_per_node": float(total) / count,
 		"degree_hist": hist,
 		"dead_end_share": float(dead) / count,
