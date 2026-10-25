@@ -4,9 +4,11 @@ extends SceneTree
 ## happens. Prints when the rise from the river ends (the frame to cut a clip from), and with
 ## --shots saves a still of the first stomp that plants a foot and of the first rake mid-swing,
 ## each with a 2x crop round the croc. Needs a window; pair with --write-movie for a clip.
+## --walk=S: he first walks north for S seconds of the rampage, then stands (walking, then
+## stomping, in one clip).
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
-##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots]
+##     --script tools/capture/capture_croc_standing.gd -- --out=<dir> --seconds=8 [--shots] [--walk=3]
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const ADULT_LEVELS := 2  ## Kit.STAGE_LEVELS: the Colossus
@@ -25,15 +27,19 @@ var _out := "user://croc_standing"
 var _seconds := 8.0
 var _shots := false
 var _log := false
+var _walk := 0.0
 var _last_cam := Vector3.ZERO
 
 
 func _initialize() -> void:
-	var a := Kit.args({"out": _out, "seconds": _seconds, "shots": false, "log": false})
+	var a := Kit.args(
+		{"out": _out, "seconds": _seconds, "shots": false, "log": false, "walk": _walk}
+	)
 	_out = str(a["out"])
 	_seconds = Num.f(a["seconds"])
 	_shots = a["shots"]
 	_log = a["log"]
+	_walk = Num.f(a["walk"])
 	DirAccess.make_dir_recursive_absolute(_out)
 	if not Kit.window_ok():
 		quit(1)
@@ -45,7 +51,9 @@ func _run() -> void:
 	await process_frame
 	var levels: Dictionary = Kit.STAGE_LEVELS[ADULT_LEVELS]
 	var rampage := Kit.rampage("reptilian", Kit.stats("reptilian", levels), 1)
-	rampage.scripted = func(_sim: RampageSim) -> Dictionary: return {}
+	var walk := _walk
+	rampage.scripted = func(sim: RampageSim) -> Dictionary:
+		return {"move": Vector2(0, -1)} if sim.elapsed < walk else {}
 	root.add_child(rampage)
 	await rampage.wait_loaded()
 	var aim: Node3D = rampage.find_child("BreathAim", false, false)
