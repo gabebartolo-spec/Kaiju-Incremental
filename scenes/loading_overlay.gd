@@ -23,10 +23,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	add_child(UiKit.backdrop())
-	var top := UiKit.tape(18.0)
-	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_bottom = 18.0
-	add_child(top)
+	# No tape along the top edge on any screen (director 2026-10-25: "remove yellow bar at top").
 	var col := VBoxContainer.new()
 	UiKit.full_rect(col)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
