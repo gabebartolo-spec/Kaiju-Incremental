@@ -63,6 +63,7 @@ var _spark_mat: ParticleProcessMaterial
 var _tree_mat: ParticleProcessMaterial
 var _tree_mesh: QuadMesh
 var _spark_mesh: BoxMesh
+var _hide_hit: HideHit
 
 
 func _ready() -> void:
@@ -105,6 +106,8 @@ func _ready() -> void:
 	_tree_mesh = _puff(1.0)
 	_clear_centre_off(_tree_mesh)
 	add_child(keep)
+	_hide_hit = HideHit.new()
+	add_child(_hide_hit)
 	var claws := ClawSlash.marks_material(Content.section("claw_fx"))
 	var kept: Array[Material] = [_dust_mat, _step_mat, _slam_mat, _spark_mat, _tree_mat]
 	kept.append_array([_tree_mesh.material, _spark_mesh.material, _step_mesh.material])
@@ -116,6 +119,7 @@ func _ready() -> void:
 	footfall(Vector3(0, -50, 0), 0.5)
 	sparks(Vector3(0, -50, 0))
 	shockwave(Vector3(0, -50, 0), 1.0)
+	hide_hit(Vector3(0, -50, 0), Vector3.UP, 0.12)
 
 
 ## A billowing dust cloud; size ~ the width of what came down.
@@ -194,6 +198,13 @@ func dust_line(from: Vector3, to: Vector3, width: float, tint := Color(0, 0, 0, 
 	var steps := maxi(2, ceili(from.distance_to(to) / 2.5))
 	for i: int in steps + 1:
 		dust(from.lerp(to, float(i) / steps) + Vector3(0, 0.5, 0), width * 0.6, tint)
+
+
+## A shot landing on the kaiju's hide (HideHit): `normal` is the surface's, `unit` one voxel of the
+## hide in the world. A glance (armour) throws its sparks along `away`. Use HideHit.land to find the
+## real hit point first.
+func hide_hit(at: Vector3, normal: Vector3, unit: float, glance := false, away := Vector3.ZERO) -> void:
+	_hide_hit.play(at, normal, unit, glance, away)
 
 
 func sparks(at: Vector3) -> void:

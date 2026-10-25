@@ -30,6 +30,8 @@ var _cubes: ShaderMaterial
 var _cube_node: MultiMeshInstance3D
 var _fill: ShaderMaterial
 var _hid_rig_voxels := 0
+## Where shots meet this skin, and the wounds they leave (SkinHits).
+var hits := SkinHits.new()
 
 
 ## Puts the skin on a rig built from <base> (KaijuModel does this); null when show_rigid_voxels is
@@ -146,6 +148,8 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 	mm.mesh = box
 	mm.instance_count = cells
 	mm.custom_aabb = BOUNDS
+	var tune: Dictionary = Content.section("fx")["hide_hit"]
+	hits.setup(_nodes.size(), voxel, Num.i(tune["max_wounds"]))
 	for i: int in cells:
 		var cell := Vector3i(raw.decode_s16(at), raw.decode_s16(at + 2), raw.decode_s16(at + 4))
 		var base := Color8(raw[at + 6], raw[at + 7], raw[at + 8])
@@ -154,11 +158,14 @@ func _setup(rig: KaijuRig, raw: PackedByteArray) -> void:
 		mm.set_instance_transform(i, Transform3D(Basis(), (Vector3(cell) + HALF_UP) * voxel))
 		mm.set_instance_color(i, tint)
 		mm.set_instance_custom_data(i, pack(raw[at + 9], raw.slice(at + 10, at + 14)))
+		hits.add_cell(raw[at + 10], cell, base)
 		at += 15
 	_cubes = ShaderMaterial.new()
 	_cubes.shader = CUBE_SHADER
 	_cubes.set_shader_parameter("voxel", voxel)
 	_cubes.set_shader_parameter("seam_dark", BipedHead.SEAM_DARK)
+	_cubes.set_shader_parameter("wound_radius", voxel * Num.f(tune["wound_radius_voxels"]))
+	_cubes.set_shader_parameter("wound_tint", Color(str(tune["wound_tint"])).srgb_to_linear())
 	# The kaiju's roughness doubles as its tag in the normal buffer: the crease pass skips it.
 	_cubes.set_shader_parameter("roughness_value", Look.value("kaiju_roughness"))
 	var cubes := MultiMeshInstance3D.new()
@@ -244,6 +251,7 @@ func sync() -> void:
 	_cubes.set_shader_parameter("to_skin", Projection(_cube_node.global_transform.affine_inverse()))
 	if _fill != null:
 		_fill.set_shader_parameter("bones", pose)
+	_cubes.set_shader_parameter("wounds", hits.wounds())
 	mouth_open = _mouth_showing()
 	_cubes.set_shader_parameter("mouth_open", 1.0 if mouth_open else 0.0)
 
