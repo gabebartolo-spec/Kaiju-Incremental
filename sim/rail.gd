@@ -61,6 +61,13 @@ var _next_id := 0
 var _dir := 1
 ## Broken track: along-line positions measured from the north end.
 var _breaks: Array[float] = []
+## The viaduct in bays (D-247 "pillars, deck and station break when the kaiju walks through"):
+## each bay is one column bent and its stretch of deck, aligned to multiples of bay_length on z;
+## `bay_first` is the index (z / bay_length) of the line's first bay. Hit points left per bay.
+var bay_first := 0
+var bay_hp: Array[float] = []
+## The station stands while every bay under it does.
+var station_standing := true
 
 
 func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> void:
@@ -74,6 +81,10 @@ func _init(sim: RampageSim, tuning: Dictionary, rng: RandomNumberGenerator) -> v
 	deck_y = Num.f(cfg["deck_y"])
 	_x = avenue_x(sim.city)
 	_next = Num.f(cfg["first_s"])
+	var bay := Num.f(cfg["bay_length"])
+	bay_first = floori(_z0 / bay)
+	for _i: int in ceili((_z0 + length) / bay) - bay_first:
+		bay_hp.append(Num.f(cfg["bay_hp"]))
 
 
 ## The x of the north-south avenue nearest the city's middle (not the ring), from the street plan.
@@ -128,6 +139,7 @@ func step(dt: float) -> void:
 			if train.s - _tail(train) > length:
 				trains.erase(train)
 	_body_contact()
+	_walk_through(dt)
 
 
 func _running() -> int:
@@ -254,12 +266,90 @@ func hit(force: Callable, damage: float) -> void:
 				derail(train, i, train.cars[i].pos)
 				break
 	var step_s := Num.f(cfg["car_length"])
+	var worst := {}
 	var s := 0.0
 	while s <= length:
 		var k: float = force.call(Vector2(_x, _z0 + s), 1.0)
-		if damage * k >= need:
-			break_track(s)
+		var bay := bay_at(s)
+		worst[bay] = maxf(Num.f(worst.get(bay, 0.0)), damage * k)
 		s += step_s
+	for bay: int in worst:
+		damage_bay(bay, Num.f(worst[bay]))
+
+
+## The bay index holding `s` along the line (from the north end).
+func bay_at(s: float) -> int:
+	return clampi(
+		floori((_z0 + s) / Num.f(cfg["bay_length"])) - bay_first, 0, bay_hp.size() - 1
+	)
+
+
+## The along-line span (from the north end) bay `i` covers, clipped to the line.
+func bay_span(i: int) -> Vector2:
+	var bay := Num.f(cfg["bay_length"])
+	var z0 := (bay_first + i) * bay
+	return Vector2(maxf(z0, _z0) - _z0, minf(z0 + bay, _z0 + length) - _z0)
+
+
+func bay_standing(i: int) -> bool:
+	return bay_hp[i] > 0.0
+
+
+## The viaduct's x centre (the deck and the station are built round it).
+func centre_x() -> float:
+	return (track_x(1) + track_x(-1)) * 0.5
+
+
+## The station's span along the line (from the north end): the platform's length round its stop.
+func station_span() -> Vector2:
+	var long := Num.i(cfg["cars"]) * (Num.f(cfg["car_length"]) + 0.3) + 2.0
+	var at := station_s(1)
+	return Vector2(at - long * 0.5, at + long * 0.5)
+
+
+## Damages one bay; when its pillar and deck are gone the track is broken there, and the station
+## goes with any bay under it.
+func damage_bay(i: int, amount: float) -> void:
+	if amount <= 0.0 or bay_hp[i] <= 0.0:
+		return
+	bay_hp[i] -= amount
+	if bay_hp[i] > 0.0:
+		return
+	var span := bay_span(i)
+	_sim.events.append(
+		{"type": "rail_bay_broken", "bay": i, "z0": span.x + _z0, "z1": span.y + _z0}
+	)
+	break_track((span.x + span.y) * 0.5)
+	var st := station_span()
+	if station_standing and span.x < st.y and span.y > st.x:
+		station_standing = false
+		_sim.events.append({"type": "station_broken", "at": point(station_s(1), 1)})
+
+
+## The kaiju's body walking through the viaduct (any size: the pillars stand at its feet).
+func _walk_through(dt: float) -> void:
+	var r := _sim.stomp_radius() * Num.f(cfg["body_share"])
+	var half_deck := Num.f(cfg["deck_width"]) * 0.5
+	var dx := maxf(0.0, absf(_sim.kaiju_pos.x - _x) - half_deck)
+	if dx >= r:
+		return
+	var reach := sqrt(r * r - dx * dx)
+	var lo := _sim.kaiju_pos.y - reach - _z0
+	var hi := _sim.kaiju_pos.y + reach - _z0
+	for i: int in bay_hp.size():
+		var span := bay_span(i)
+		if span.x < hi and span.y > lo:
+			damage_bay(i, Num.f(cfg["walk_dps"]) * dt)
+
+
+## A toppled tower landing on a strip (Collapse): `struck(centre, radius)` says whether a bay is
+## under it; each bay under it takes crush_damage.
+func crushed(struck: Callable) -> void:
+	var reach := Num.f(cfg["bay_length"]) * 0.5 + Num.f(cfg["deck_width"]) * 0.5
+	for i: int in bay_hp.size():
+		var span := bay_span(i)
+		if struck.call(Vector2(_x, _z0 + (span.x + span.y) * 0.5), reach):
+			damage_bay(i, Num.f(cfg["crush_damage"]))
 
 
 ## The kaiju's body walking into a train (when it stands tall enough to reach the deck).

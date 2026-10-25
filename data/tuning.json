@@ -902,7 +902,8 @@
 		"cruise": 8.0, "enter_share": 1.0, "accel": 1.5, "brake": 2.0, "emergency": 3.5, "dwell_s": 4.0,
 		"stop_short": 2.0, "crash_speed": 0.5, "derail_damage": 4.0, "car_radius": 1.6, "body_share": 0.6,
 		"kick": 5.0, "yaw_rate": 1.4, "roll_rate": 2.2, "friction": 0.5, "spin_damp": 1.5, "land_keep": 0.5,
-		"pile_share": 0.8, "rubble_share": 1.0, "derail_bonus": 40.0
+		"pile_share": 0.8, "rubble_share": 1.0, "derail_bonus": 40.0,
+		"bay_length": 6.0, "bay_hp": 4.0, "walk_dps": 8.0, "crush_damage": 60.0
 	},
 	"rail_look": {
 		"_note": "The railway's look (TrainModel, RailView): car_size (width, height in units) of a metro car; bent_every: the viaduct's column bents' spacing; platform: the station platforms' width; sounds: rumble_db and slide_db at full, the rumble heard within hear_range of the kaiju, the horn when the kaiju comes within horn_range of a running train, again every horn_every seconds (one-shots heard in 3D, unit_size) (it keeps running, the horn blares); survivors_per_car people crawl out of each wrecked car crawl_s after the derailment and flee. Colours are PLACEHOLDERS for the VFX lead.",

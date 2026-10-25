@@ -16,6 +16,9 @@ var _sim: RampageSim
 var _city: CityView
 ## Train id -> its car nodes, lead first.
 var _cars: Dictionary = {}
+## The viaduct's bay models (index = Rail bay) and the station; freed as the sim breaks them.
+var _bays: Array[Node3D] = []
+var _station: Node3D
 var _rumble: AudioStreamPlayer
 var _slide: AudioStreamPlayer
 ## Train id -> when its horn may sound again (it blares while the kaiju is near).
@@ -34,13 +37,18 @@ func _init(host: Rampage, sim: RampageSim, city: CityView) -> void:
 
 func _ready() -> void:
 	var rail := _sim.rail
-	var north := rail.point(0.0, 1)
-	var south := rail.point(rail.length, 1)
-	var mid := (north.x + rail.track_x(-1)) * 0.5
-	add_child(TrainModel.viaduct(mid, north.y, south.y, rail.cfg))
+	var mid := rail.centre_x()
+	var north := rail.point(0.0, 1).y
+	var cut := 0.2  # a bay stops under the next one's first voxel row
+	for i: int in rail.bay_hp.size():
+		var span := rail.bay_span(i)
+		var node := TrainModel.viaduct(mid, north + span.x, north + span.y - cut, rail.cfg)
+		_bays.append(node)
+		add_child(node)
 	var at := rail.point(rail.station_s(1), 1)
 	var long := Num.i(rail.cfg["cars"]) * (Num.f(rail.cfg["car_length"]) + 0.3) + 2.0
-	add_child(TrainModel.station(mid, at.y - long * 0.5, long, rail.cfg))
+	_station = TrainModel.station(mid, at.y - long * 0.5, long, rail.cfg)
+	add_child(_station)
 	_rumble = _loop("train_rumble")
 	_slide = _loop("train_slide")
 
@@ -147,6 +155,18 @@ func on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"train_derailed":
 			_derailed(event)
+		"rail_bay_broken":
+			var bay: Node3D = _bays[Num.i(event["bay"])]
+			if is_instance_valid(bay):
+				bay.queue_free()
+		"station_broken":
+			if is_instance_valid(_station):
+				_station.queue_free()
+			var where: Vector2 = event["at"]
+			for n: int in 10:
+				_city.debris(
+					Vector3(where.x, _sim.rail.deck_y, where.y), TrainModel._c("canopy"), Vector3.UP
+				)
 		"track_broken":
 			var at: Vector2 = event["at"]
 			var pos := Vector3(at.x, _sim.rail.deck_y, at.y)

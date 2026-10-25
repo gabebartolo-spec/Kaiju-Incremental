@@ -20,6 +20,9 @@ func run_checks() -> void:
 	await _t("_check_stomp_derails")
 	await _t("_check_train_behind_stops")
 	await _t("_check_seeded")
+	await _t("_check_walk_through_carves")
+	await _t("_check_station_breaks")
+	await _t("_check_falling_building_damages_track")
 
 
 ## The kaiju stands well clear of the line (its standing stomps would break the track).
@@ -131,3 +134,69 @@ func _check_seeded() -> void:
 	var a := _derail_run(true)
 	var b := _derail_run(true)
 	check(str(a) == str(b), "a derailment replays the same: %s / %s" % [a, b])
+
+
+## Steps a sim whose kaiju stands at `at` (AWAY: where _scene puts it) for `seconds`; returns it.
+func _stand_at(at: Vector2, seconds: float) -> RampageSim:
+	var sim := _scene()
+	sim.stats["stomp_damage"] = 0.0  # no stomps: only the body walking through breaks it
+	if at != AWAY:
+		sim.kaiju_pos = at
+	for _i: int in roundi(seconds / DT):
+		sim.step(DT, Vector2.ZERO, false, 0)
+	return sim
+
+
+func _standing(sim: RampageSim) -> int:
+	var n := 0
+	for i: int in sim.rail.bay_hp.size():
+		n += int(sim.rail.bay_standing(i))
+	return n
+
+
+## D-247 "pillars, deck and station break when the kaiju walks through": the kaiju on the
+## viaduct breaks the bays under it and the track with them; standing clear leaves it whole.
+func _check_walk_through_carves() -> void:
+	var probe := _scene()
+	var rail := probe.rail
+	var on_line := rail.point(rail.length * 0.3, 1)
+	on_line.x = rail.centre_x()
+	var hit := _stand_at(on_line, 0.7)
+	var clear := _stand_at(AWAY, 0.7)
+	check(clear.rail.broken().is_empty(), "the line stands when the kaiju is clear of it")
+	check(
+		not hit.rail.broken().is_empty(),
+		"railway.carve: walking into the railway breaks the track: %s" % [hit.rail.broken()]
+	)
+	check(
+		_standing(hit) < _standing(clear),
+		"railway.carve: bays under the kaiju are gone: %d of %d stand"
+			% [_standing(hit), hit.rail.bay_hp.size()]
+	)
+	check(
+		_standing(hit) > hit.rail.bay_hp.size() / 2,
+		"railway.carve: only the bays at its feet break: %d stand" % _standing(hit)
+	)
+
+
+## The station goes with the bay under it.
+func _check_station_breaks() -> void:
+	var probe := _scene()
+	var rail := probe.rail
+	var at := rail.point(rail.station_s(1), 1)
+	at.x = rail.centre_x()
+	var hit := _stand_at(at, 0.7)
+	check(not hit.rail.station_standing, "railway.carve: the station breaks when walked through")
+	check(_scene().rail.station_standing, "the station stands untouched")
+
+
+## A tower toppling onto the viaduct damages the bays under its strip.
+func _check_falling_building_damages_track() -> void:
+	var sim := _scene()
+	var rail := sim.rail
+	var mid := rail.point(rail.length * 0.5, 1).y
+	rail.crushed(func(p: Vector2, r: float) -> bool: return absf(p.y - mid) <= r)
+	check(
+		_standing(sim) < rail.bay_hp.size() and not rail.broken().is_empty(),
+		"railway.carve: a toppled building breaks the track under its strip"
+	)
