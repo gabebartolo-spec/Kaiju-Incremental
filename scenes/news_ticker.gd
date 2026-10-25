@@ -83,6 +83,12 @@ func unit_width() -> float:
 	return font.get_string_size(_unit, HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY).x
 
 
+## The width of the headlines once, without the padding (px).
+func headlines_width() -> float:
+	var font := _crawl.get_theme_font("font")
+	return font.get_string_size(_headlines, HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_BODY).x
+
+
 ## The width of strip the text crawls across (px).
 func visible_width() -> float:
 	return size.x - TAG_WIDTH

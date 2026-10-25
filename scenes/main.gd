@@ -151,6 +151,12 @@ func _base_stats() -> Dictionary:
 
 
 func _start_rampage(endless := false) -> void:
+	if SaveFile.take_lab_card(_save):  # it died last time: the lab card, then the new specimen
+		SaveSystem.save_game(_save)
+		var card := SpecimenCard.new(Num.i(_save.get("specimen", 1)))
+		card.done.connect(_start_rampage.bind(endless))
+		_swap(card)
+		return
 	var stats := UpgradeTree.run_stats(_base_stats(), _species(), _tree)
 	var tier := Num.i(stats["size"])
 	var layout := CityGrowth.layout(Content.tuning(), tier, Rng.make(CITY_STREAM, 0))

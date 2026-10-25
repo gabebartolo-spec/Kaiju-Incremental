@@ -102,6 +102,8 @@ var stomp: RampageStomp
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
 var body: BodyContact
+## The big moments (threat level, felled landmarks, tower totals) as events for the HUD.
+var news: RunNews
 var powers_cfg: Dictionary
 ## How high the kaiju stands (floors): 0 on the street, more on a roof it climbed.
 var stand_y := 0.0
@@ -150,6 +152,7 @@ func _init(
 	stomp = RampageStomp.new(self)
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
+	news = RunNews.new(self, tuning)
 
 
 func stat(stat_name: String) -> float:
@@ -245,6 +248,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	army_units.step(dt)
 	air.step(dt)
 	Endless.step(self, dt)
+	news.step(_events)
 	var why := Endless.over_reason(self)
 	if why != "":
 		end(why)
