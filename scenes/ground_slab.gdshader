@@ -62,6 +62,7 @@ void fragment() {
 	vec3 col;
 	float polish = 0.0;
 	float band_wet = 0.0;  // the river walls' damp band: a faint wet sheen
+	float band_glow = 0.0;  // ... and its night glow
 	if (kind < 0.5) {
 		col = sd_asphalt(base, pc, 0.0, 0.0, 1.0, 0.0, polish);
 	} else if (kind < 1.5) {
@@ -78,6 +79,7 @@ void fragment() {
 	} else if (kind < 4.5) {
 		col = sd_concrete(base, pc, world_pos.y, world_normal, data.y);
 		band_wet = sd_concrete_wet(pc, world_pos.y, world_normal, data.y);
+		band_glow = sd_band_glow(pc, world_pos.y, world_normal, data.y);
 	} else if (kind < 5.5) {
 		if (up) {
 			col = sd_asphalt(base, pc, along, lat, data.w, 1.0, polish);
@@ -85,6 +87,7 @@ void fragment() {
 			// The deck's fascia reaches down to the river, so it carries the same damp band as the walls.
 			col = sd_concrete(base, pc, world_pos.y, world_normal, river_y);
 			band_wet = sd_concrete_wet(pc, world_pos.y, world_normal, river_y);
+			band_glow = sd_band_glow(pc, world_pos.y, world_normal, river_y);
 		}
 	} else {
 		// A bar wears from its ends (the long axis), not its sides.
@@ -106,5 +109,7 @@ void fragment() {
 	// sharpened), so the road reads by its grain, not as a flat black block. Zero by day.
 	float ratio = dot(col, vec3(0.3, 0.55, 0.15)) / max(dot(base, vec3(0.3, 0.55, 0.15)), 0.0001);
 	EMISSION = base * night_floor * pow(ratio, 0.3) * (kind < 1.5 || (kind > 4.5 && (up || kind > 5.5)) ? 1.0 : 0.0) * (1.0 - wet * 0.5);
+	// The river walls' damp band keeps its grain at night too (the tonemap's toe would crush it to black).
+	EMISSION += base * night_floor * BAND_NIGHT_GLOW * band_glow * pow(max(ratio, 0.0), BAND_NIGHT_GRAIN) * (1.0 - wet * 0.5);
 	SPECULAR = mix(mix(0.5, BAND_SPECULAR, band_wet), WET_SPECULAR, wet);
 }

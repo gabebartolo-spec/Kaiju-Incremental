@@ -227,15 +227,20 @@ vec3 sd_lawn(vec3 base, vec2 pc) {
 }
 
 // The damp band's shape, shared by the look (sd_concrete) and the surface shaders' wet sheen (sd_concrete_wet).
-const float BAND_DARKEN = 0.62;     // how much darker the wet concrete is than the dry wall (full wetness)
-const float BAND_PATCHY = 0.18;     // how unevenly it is wet
+const float BAND_DARKEN = 0.78;     // how much darker the wet concrete is than the dry wall (full wetness)
+const float BAND_PATCHY = 0.4;      // how unevenly it is wet
+const float BAND_DARKEST = 0.85;    // never darker than this (so the albedo never reaches black)
+const float BAND_PORE = 0.4;        // block-to-block wet/dry blotches (wet concrete's pores)
 const vec3 BAND_ALGAE = vec3(0.72, 0.9, 0.5);  // the green-brown cast, multiplied into the concrete
 const float BAND_ALGAE_MIX = 0.7;
 const float BAND_TIDE_W = 0.07;     // the dried tide line's half height (m)
 const float BAND_TIDE_GAP = 0.1;    // its height above the wet edge (m)
 const float BAND_TIDE_LIFT = 0.35;  // how much paler it is
 const float BAND_ROUGHNESS = 0.42;  // the wet band's roughness, so the sun, moon and lamps show on it
-const float BAND_SPECULAR = 0.7;
+const float BAND_SPECULAR = 0.6;
+const float BAND_NIGHT_GLOW = 0.08; // at night (x night_floor): a faint glow so the band's grain is never crushed to black
+const float BAND_NIGHT_LOW = 0.3;   // ... stronger low down, where the water corner takes the ambient light
+const float BAND_NIGHT_GRAIN = -0.2; // below 0: the glow fills the darkest blocks more, so the dim band keeps its grain without the tonemap toe turning it to noise
 
 float sd_band_edge(vec2 uv) {
 	return band_h + 0.1 * (sd_vn(vec2(uv.x * 0.9, 4.0)) - 0.5) * 2.0;
@@ -252,6 +257,13 @@ float sd_concrete_wet(vec2 uv, float wy, vec3 n, float water_y) {
 		return 0.0;
 	}
 	return sd_band_wet(uv, wy - water_y) * damp;
+}
+
+// The damp band's night glow weight: its wetness, rising towards the water line.
+float sd_band_glow(vec2 uv, float wy, vec3 n, float water_y) {
+	float w = sd_concrete_wet(uv, wy, n, water_y);
+	float low = 1.0 - clamp((wy - water_y) / sd_band_edge(uv), 0.0, 1.0);
+	return w * (1.0 + BAND_NIGHT_LOW * low);
 }
 
 // Cast concrete: panels, joints, a lift line, tie holes, water streaks, a damp algae band at the water
@@ -303,8 +315,8 @@ vec3 sd_concrete(vec3 base, vec2 uv, float wy, vec3 n, float water_y) {
 		float edge = sd_band_edge(uv);
 		float wet_band = sd_band_wet(uv, h);
 		// Wetness is patchy (it dries unevenly), so the band keeps a soft mottle of its own.
-		float patchy = 1.0 - BAND_PATCHY * (sd_fbm(uv + 37.0, 1.1) - 0.5) * 2.0;
-		col *= 1.0 - BAND_DARKEN * damp * wet_band * patchy;
+		float patchy = 1.0 - BAND_PATCHY * (sd_fbm(uv + 37.0, 0.6) - 0.5) * 2.0 - BAND_PORE * (sd_h(uv * 3.7 + 11.0) - 0.5) * 2.0;
+		col *= 1.0 - min(BAND_DARKEN * damp * wet_band * patchy, BAND_DARKEST);
 		// Algae: thickest at the water, running up in uneven vertical drips.
 		float drips = sd_vn(vec2(uv.x * 3.1, uv.y * 0.35 + 9.0));
 		float algae_top = edge * mix(0.35, 0.8, drips);
