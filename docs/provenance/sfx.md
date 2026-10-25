@@ -73,3 +73,29 @@ Four loops for CitySound, generated in ElevenLabs Sound Effects on the director'
 | train_screech.ogg | screech take 1, 3.0 s (v3, 2026-10-25, no generation id shown) | Train wheels screeching on steel rails under emergency braking and derailment, harsh metallic squeal. |
 | train_crash.ogg | crash take 1, 4.0 s (v3, 2026-10-25, no generation id shown) | A heavy metro train car crashing off a viaduct onto a street: massive metal impact, crunching steel, shattering glass, debris. |
 | station_bell.ogg | bell take 1, 2.0 s (v3, 2026-10-25, no generation id shown) | Metro station platform chime, two clear electronic tones, departure announcement chime. |
+
+## Kaiju Creation lab sounds (2026-10-25, D-138; director's 10-sound list, cap 500 credits)
+
+Generated in ElevenLabs Sound Effects on the director's paid Starter plan (model eleven_text_to_sound_v3, prompt
+influence 0.5, fixed duration; the room tone with the web defaults: influence 0.3, auto duration, 4 takes). 2 takes
+per sound, 22 generations, 235 credits. Provisional picks from measurements (loudness, silence share, spectrum),
+for the director to change on `C:\Users\DANTE\Documents\KAIJU\sfx_shootout\index.html`. Processing
+(`process.py`, outside the repo): mono 44.1 kHz, gain so the loud-part RMS hits the target, a smooth 5 ms / 80 ms
+peak limiter at -1.5 dBFS, Vorbis 96 kb/s. Loops are cut to length and their 0.5 s overrun is crossfaded into the
+start; one-shots get a 30 ms tail fade. Raw takes stay outside the repo.
+
+| File | Prompt (shortened) | Take ids (pick first) | Length | Loud RMS |
+|---|---|---|---|---|
+| lab_room.ogg (loop) | clean sterile lab room tone: HVAC hum, freezer compressor drone, faint monitor beeps | jN2exUvfby9C1kYyX76D (of 4) | 12 s | -34 dB |
+| lab_screens.ogg (loop) | soft data chirps and blips, quiet heartbeat-monitor pulse | hfuxyK9ZyP7MZBl1Rz2J / vQVUW8yQVtxrT6uaUCNs | 6 s | -30 dB |
+| lab_latch.ogg | servo whir, crisp latch, vial slides up out of a metal rack | YJQ3JAYR5LQOagjXJkrT / wUZZTjAWtjyS2QEFPa9P | 1.6 s | -22 dB |
+| lab_arm.ogg | precision robotic arm servo whine swinging and lowering, soft pneumatic hiss | SHzmxkjpXkzJvGxOTjIi / F3E3nQYJxji2roptnGsk | 2.5 s | -22 dB |
+| lab_drawup.ogg | syringe injector draws liquid up: plunger servo, wet suction gurgle | blBMpHuvR6tvs09TeMGS / nB218sohH1JnNBTA6omd | 2 s | -22 dB |
+| lab_dispense.ogg | injector dispenses thick liquid into a glass dish: pneumatic push, viscous drips | 2uYW2EZTCi5PsmJHNzz6 / M1Fe2ABElkDTuDq7Giyd | 2 s | -22 dB |
+| lab_strike.ogg | needle clicks into glass, one bright violent electric snap | jbSfWVpLGJ1kMtuzEq00 / shS224HZMB0jjxDJgIR4 | 1 s | -17 dB |
+| lab_crackle.ogg (loop) | white-hot electrical arcing, branching lightning, tesla discharge | 4lkP6CQfG76unnvYIPyH / a4EEVE6JkM5qZfm1FKSO | 4 s | -21 dB |
+| lab_overload.ogg | power surge whining up to a deep electric bang with sub boom | YFnC1raLNpKHMbbmrBO5 / xgfok9ECRxnwODBCMFyt | 2.5 s | -15 dB |
+| lab_dive.ogg | fast rising cinematic whoosh, abrupt end | 3ar6lZF5csJz8xj8cbY4 / DHqvghaVznmDWdjVwTOC | 1.5 s | -18 dB |
+| egg_crack.ogg | reptile eggshell cracking in a dark silent space, wet split | dzPIKVrsf1UuA4XhFoqT / fBEUQq7cS0sNhNzPF7db | 2 s | -20 dB |
+
+(History lists a sound's two takes without saying which one became "a", so both ids are given per file.)

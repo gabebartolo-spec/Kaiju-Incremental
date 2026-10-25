@@ -1,22 +1,5 @@
-# Director comments, 2026-10-25
 
-| # | His words | Owner | Branch / PR | Status |
-|---|---|---|---|---|
-| 1 | "why is the short 2-3 second scene of the Kaiju emerging from the river not yet orchestratd and implemted? im sick of watching it from middle distance, side on. it needs to be as i directed multiple times" (direction: 2026-10-20 #11; the work sat unmerged on claude/intro-cinematic 9d795e26 since 2026-10-22) | lead's builder | claude/intro-cinematic-2 | in progress, top priority |
-| 2 | Komodo walk arms: "arms lifeless like a zombie" (w22), "no looks like a clown. use video reference of bipedal kaiju arms" (w25), "Still off" / "Too stiff / frozen" / "Pose itself wrong" (w26), picked "Raised and ready", then pose C | casc-anim | D-233, D-234 | walk w28 shipped |
-| 3 | "dude, we are overthinking it. I just want natural, non-janky arm behaviour" | lead | - | method: labelled stills before clips |
-| 4 | Nimbalyst joins as a developer, Opus 5.5 Medium, $100 | lead | D-232 | 019 done, 020 waiting |
-| 5 | "remember you can always do research ... search the web for techniques"; "use your own browser genius" | lead | RULEBOOK | done |
-| 6 | "Komodo clips in game", "Stand-off gunships", "Motion gate in CI", "Leader's escape heli" (all four picked to start now) | lead's builders | claude/komodo-clips, heli-standoff-2, motion-gate-ci, vip-heli | in progress |
-| 7 | Title: "remove the yellow bar at the top / make the 'new kaiju' button significantly smaller. / shift the settings button further into the corner"; "centre the text in black rectangle"; "same here"; loading screen "remove yellow bar at top" | lead | #185, #186 | merged |
-| 8 | "any other unpushed things that we've overlooked?" Branch audit; he picked "Thunder Beam bolt, Claw rake, Explosive sites", "Smoke grows with ruin, Rain + wet streets, One look (grade/haze)", then "Yes, flames first" (D-190 smooth fire before explosives). Declined: rubble slabs and cap, croc breathing idle | VFX lead, atmosphere lead | vfx-lead-3, atmosphere-lead-2 branches | in progress |
-| 9 | "45 tries for an idle animation is absurd"; tongue "should have been nailed in 2-3 tries"; "you can capture ONE clip of animations, make sure ones like these are sideon"; asked, "One side-on clip, no stills" | lead, casc-anim | RULEBOOK (Art) | rule in force; tongue rebuilt (v47), charge on a Godzilla reference (v8) |
-| 10 | "stop asking permission to download reference imagse just do it" | all | RULEBOOK | done |
-| 11 | "going afk, no questions, interview when i return"; "ffs i said you dont need my permission and not to ask questions" | lead | RULEBOOK (Asking) | in force; calls listed in the lead handoff for the interview |
-| 12 | "raindrops splash horizontally onto vertical surfaces which looks silly" | atmosphere lead | rain branch | must-fix before rain merges (splashes on upward surfaces only) |
-| 13 | "not happy with how flat the colours of the road asphalt is, or the concrete walls of the river are also flat" | VFX lead | one-look ground | must-fix (photo-based tonal variation, seeded per block) |
-| 14 | "the aim wedge should also be more opaque, its too loud"; "the wedge should be layered behind the kaiju ... dont ever approve work this clearly terrible again"; final still "good" | lead | #189 | MERGED (solid wash, depth-tested, flow check); RULEBOOK rule: never argue a defect into a design |
-| 15 | Tongue v48 "disgusting ... plan, research, implement"; "should be doable in 2-3 iterations"; clip 2 "root should be the back of his mouth, currently its rooted to the centre of his lower jaw" | tongue-anim session | claude/tongue-anim-3b5dd8 | clip 3 of 3 in progress (root at back of mouth, fork near tip, shading) |
-| 16 | Charge v10 "looks good, as long as he returns to a neutral state smoothly"; v13 "about 4 seconds in when he roars, his snout contorts and morphs in an unnatural way" | casc-anim | komodo anim | v14: rigid upper snout, jaw-only gape |
-| 17 | "the young crocs arms are too long, this dangling looks bizarre, realistically his arms are probably 40% long and dont require the dangle from the wrist, short and stumpy arms are the aim" | claw-anim session | claude/claw-anim-525a2a | in progress, before the swipe clip |
-| 18 | Claw swipe: "the arm movement during the claw swipe animation is really bad ... dont improvise, plan, research then implement, then iterate" | claw-anim session | claude/claw-anim-525a2a | plan approved; implementing |
+| 37 | "something funky going on with the distant city" (screenshot: skyline floats crisp above the haze) | lead (diagnosis), then owner | - | investigating |
+| 38 | "btw youre cooking the pc's ram too hard, ease up a bit" | all leads | - | 9 GB pool stopped; RAM limits in force; D-246 |
+| 39 | "what happened to our insectoid rampaging in the distant city? at one point it was in the game, but now i never see it anymore" | lead | - | investigating |
+| 40 | "im concerned that our serpent kaiju just resembles a giant snake, roadmap: revisit the serpent concepts and possibly make new models"; "dont do any serpent work until we decide on the final design"; asked: hood and frills + armour and horns; Tripo test models, 200 credits | VFX lead (Tripo) | - | serpent frozen; tests briefed; D-246 |

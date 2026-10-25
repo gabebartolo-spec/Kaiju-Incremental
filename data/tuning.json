@@ -671,6 +671,7 @@
 		"far_floor_db": -18.0,
 		"volume_db": {
 			"roar": -1.0,
+			"egg_crack": 6.0,
 			"ui_click": -12.0,
 			"ui_confirm": -6.0,
 			"ui_deny": -10.0,
@@ -915,6 +916,57 @@
 			"platform": "9c968c", "platform_edge": "e3c23a", "canopy": "3d5a6e", "canopy_rib": "2b4253",
 			"sign": "4fd1ff", "stair": "77736c"}
 	},
+	"creation": {
+		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject Special K (the kaiju juice, named by the director 2026-10-25), the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more (the unlock rules are not decided, D-207). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6; behind the takeover's front the cells cool to the species' body colour, veins of them still burning). crack_sound names assets/sfx/<name>.ogg (made on ElevenLabs 2026-10-25 in the director's lab-sound list); with no file the cue is silent.",
+		"titans": [
+			{"id": "croc", "name": "CROC", "species": "reptilian", "unlocked": true, "genome": "6f8a3e"},
+			{"id": "komodo", "name": "KOMODO DRAGON", "species": "", "unlocked": false, "genome": "c46a1f"},
+			{"id": "serpent", "name": "SERPENT", "species": "", "unlocked": false, "genome": "2e9e8a"}
+		],
+		"save_key": "titans_unlocked",
+		"timing": {"place_s": 4.2, "inject_s": 3.0, "takeover_s": 2.0, "zoom_s": 0.9, "black_s": 1.3},
+		"crack_sound": "egg_crack", "crack_from_s": 0.35, "sounds": {"_note": "the lab's sounds (director 2026-10-25: \"nice, clinical sfx for this scene, lab sounds and high-tech precision machinery whirring\"; ElevenLabs, D-138): loops play from the first frame to the black; pick on choosing a genome; trip: the cue on entering each phase of an injector trip (CreationInjector.phase: 1 turn to the source, 3 draw, 5 turn back, 7 dispense); strike and crackle (a loop) at the takeover, overload at the second hit-stop (started overload_lead_s early: its whine leads to the bang), dive at the zoom; assets/sfx/<name>.ogg", "loops": ["lab_room", "lab_screens"], "pick": "lab_latch", "trip": {"1": "lab_arm", "3": "lab_drawup", "5": "lab_arm", "7": "lab_dispense"}, "strike": "lab_strike", "crackle": "lab_crackle", "overload": "lab_overload", "overload_lead_s": 0.3, "dive": "lab_dive"},
+		"lab": {
+			"_note": "D-207 board (approved 2026-10-25): Tripo props voxelised at one block size (voxel, metres) under Shader Cinematic; the rack's vials, the monitor screens and the dish surface are located in each model's own cells. bolt: the takeover lightning drawn as branching white-hot cells (the croc breath's bolt shader is not on main yet). freeze_s: the hit-stops at the strike and the overload. Colours are PLACEHOLDERS for the VFX lead.",
+			"voxel": 0.005,
+			"props": {
+				"cradle": {"path": "res://assets/lab/cradle.kvox", "at": [0.0, 0.0, 0.0], "yaw": 0.0, "voxel": 0.0033051, "smooth": true},
+				"rack": {"path": "res://assets/lab/rack.kvox", "at": [-0.5, 0.0, -0.3], "yaw": 30.0, "voxel": 0.005, "smooth": false},
+				"monitors": {"path": "res://assets/lab/monitors.kvox", "at": [0.7, 0.0, -1.05], "yaw": -20.0, "voxel": 0.005, "smooth": false},
+				"injector": {"path": "res://assets/lab/injector.kvox", "at": [0.0, 0.0, 0.0], "yaw": 0.0, "voxel": 0.005, "smooth": false}, "canister": {"path": "res://assets/lab/canister.kvox", "at": [0.0, 0.0, 0.0], "yaw": -30.0, "voxel": 0.005, "smooth": false}
+			},
+			"vials": {"_note": "rack cells: a liquid cell is saturated and bright with hue in hue_range; slot by local x (left vial seen from the front = x above split_hi); titan_slots: the vial each titan of the rack list fills (the croc in the vial nearest the dish, where the injector reaches it); port: the hole cut in the rack's top over the croc's vial (port_radius cells round the middle of its column, from port_from_y up) that the needle goes down through; the model's pale DNA print counts as liquid only inside the liquid columns (columns_x, column_z).", "hue_range": [0.3, 0.95], "min_saturation": 0.3, "min_value": 0.35, "print_value": 0.78, "columns_x": [[12, 25], [-7, 6], [-26, -13]], "column_z": [-12, 3], "split_hi": 9, "split_lo": -9, "box_y": [9, 64], "titan_slots": [2, 1, 0], "port_radius": 4, "port_from_y": 52, "cap_dark": 0.12},
+			"canister": {"_note": "the Special K canister (director 2026-10-25: \"Own canister on the bench\"; Tripo e7912fc4): its liquid is the violet glass (hue, min_saturation), drawn by the injector through a port in its lid (port_radius cells round its axis, from port_from_y up).", "hue": [0.68, 0.88], "min_saturation": 0.35, "port_radius": 4, "port_from_y": 38},
+			"screens": {"x": [[-44, -8], [11, 47]], "y": [[42, 70], [90, 118]], "front_z": -16},
+			"dish": {"surface_y": 43, "radius": 51, "flat": 50, "band": 9, "glass": {"_note": "the glass petri dish standing on the agar (cells): a ring inner..outer from the dish axis, height cells tall, its top row the bright rim; the lightning stays inside it; glint: the arc (degrees round the axis, x towards z) where the rim catches the key lamp in pure white; the agar steps in three tones from its middle to a darker ring at the glass (pixel-art glass and liquid: a dark desaturated body, a white highlight, a liquid brighter in the middle and darker at the walls)", "inner": 46.1, "outer": 49.2, "height": 6, "glint": [215.0, 265.0]}},
+			"helix": {"length": 44, "radius": 9, "turns": 2.0, "rung_every": 3},
+			"bolt": {"branches": 5, "fork_chance": 0.05, "max_cells": 650, "cells_per_s": 70.0, "convert_reach": 3, "flicker_ticks": 3, "flicker_share": 0.35, "vein_reach": 1, "char": 0.78, "front_steps": 15, "glow": 1.5, "_note": "the bolt glows hotter than the set (glow) and flickers to an electric violet (colors.bolt_flicker), not grey: grey cells read as specks."},
+			"injector": {"_note": "the director 2026-10-25: \"injector rotates to the croc vial, drains it, moves to dish and puts croc gene into dish\", then the same from the Special K canister; \"Use image A whole\". The Tripo injector in cells: a static post (cells below split_y and left of split_x; its column cross-section at profile_y repeated post_extend cells up) and a carriage (the boom and the syringe head) that rises on the post, turns about its axis (pivot) and slides in and out through it so the needle reaches every vial (the director 2026-10-25: \"load the serpent and dragon serum into the vials, and ensure the clip is functional for all 3\"). tip: the model's needle tip cell, lengthened by needle cells of thin steel (colors.needle); barrel: the head's glass, which fills as it draws. The post stands where the needle reaches both the dish and the croc vial (behind them); the canister stands canister_turn degrees round the post from the dish. Heights in metres: where the needle tip goes in the dish, the vial (through a port cut in the rack's top) and the canister, where it parks over the dish, and the clearance it swings at over the tallest thing on its path.", "pivot": [-35, 0], "split_x": 26, "split_y": 94, "profile_y": 88, "post_extend": 84, "tip": [46, 26, 0], "barrel": {"centre": [46, 0], "radius": 8.5, "y": [61, 82], "min_light": 0.8}, "dish_tip": 0.135, "park_tip": 0.3, "vial_tip": 0.2, "vial_top": 0.35, "canister_tip": 0.16, "canister_top": 0.24, "cradle_top": 0.2, "clear": 0.06, "canister_turn": 62.0, "canister_draw": 0.4, "post_seat": 0.29, "needle": 12},
+			"trips": {"_note": "shares of a trip, in order: rise, turn to the source, lower into it, draw, rise, turn back to the dish, lower into the agar, dispense, park over the dish (the injection ends the moment the needle reaches the agar: the strike; the Special K drains in the takeover)", "place": [0.09, 0.15, 0.1, 0.16, 0.09, 0.15, 0.09, 0.1, 0.07], "inject": [0.1, 0.17, 0.11, 0.16, 0.1, 0.17, 0.19, 0.0, 0.0]},
+			"freeze_s": 0.08, "flash_ticks": 6, "shake": 0.02, "shake_s": 0.33,
+			"overload_at": 0.85,
+			"camera": {"_note": "from the front right, high, so the injector's boom crosses the shot in profile and is whole even raised over the vial; nothing sits under the KAIJU CREATION banner or the genome panel (checked by projecting every prop's box, 2026-10-25).", "position": [0.55, 0.9, 0.95], "look": [-0.23, 0.32, -0.3], "fov": 54.0},
+			"zoom": {"_note": "the dive plunges straight along the shot's line of sight into the white-hot dish (position on that line, close over the agar), then cuts to black (black_from)", "position": [0.049, 0.208, 0.085], "look": [0.0, 0.14, 0.0], "fov": 30.0, "black_from": 0.99},
+			"bench": {"size": [3.4, 2.8], "at": [-0.3, 0.0, 0.0]},
+			"room": {"_note": "the lab room round the bench (the director 2026-10-25: \"change the black interior to a laboratory setting\"; asked, \"Dark high-tech lab\"): back and left walls of steel panels (panel: width, height in metres; seams dark), a rail at rail_y, status LEDs (leds) on some panels, shelves on the back wall with sample jars (jar: width, height in cells; a liquid of one of tints, glowing), two cable runs (ys) on brackets and a conduit up the left wall (conduit_z), wall screens on the left wall (z, y spans), a cold strip light at strip_y and its wash (washes: light positions, wash energy, wash_range). The room's block is voxel metres (behind the set, in the haze). Colours are PLACEHOLDERS for the VFX lead.", "voxel": 0.01, "height": 2.2, "back": {"x": [-2.2, 1.9], "z": -1.24}, "left": {"x": -2.0, "z": [-1.24, 1.5]}, "panel": [0.4, 0.5], "rail_y": 0.92, "leds": ["3dff7a", "ffb21f", "ff3b30"], "shelves": {"x": [-1.95, -1.05], "ys": [0.42, 0.72, 1.02], "depth": 0.12, "jar_every": 0.07, "jar": [4, 7], "tints": ["3fae5a", "c46a1f", "2e9e8a", "8a3dff", "b8c43a"]}, "cables": {"ys": [1.5, 1.6], "bracket_every": 0.4, "conduit_z": -0.95}, "screens": [{"z": [-0.95, -0.45], "y": [0.4, 0.7]}, {"z": [-0.25, 0.1], "y": [0.44, 0.64]}], "strip_y": 1.95, "washes": [[-1.0, 1.8, -1.0], [0.6, 1.8, -1.0], [-1.7, 1.6, 0.0]], "wash": 0.18, "wash_range": 1.6, "colors": {"panel": "2b343e", "seam": "12171c", "rail": "47525d", "shelf": "3a444e", "glass": "5d7380", "cap": "1a1f24", "cable": "15191d", "readout": "40f266", "screen_glass": "051a0c", "strip": "cfe8ff"}},
+			"colors": {
+				"background": "06090d",
+				"ambient": "4a6078",
+				"bench": "2a3038",
+				"agar": "e4f4f7",
+				"key": "d8ecff",
+				"rim": "ff9a4a",
+				"screen": "40f266",
+				"screen_glass": "051a0c",
+				"locked": "33473d", "needle": "8f9aa1", "special_k": "8a3dff", "glass": "a3cbd8", "glass_rim": "eaf8fc", "glint": "ffffff", "agar_rim": "bcdbe4", "agar_mid": "d2eaf0", "agar_ring": "8fb3c0", "rack_cap": "56625e", "steel": "8d9aa3",
+				"bolt": "f6f3ff", "bolt_flicker": "9f8cff"
+			},
+			"energy": {"ambient": 0.35, "key": 2.6, "rim": 0.55, "focus": 0.05, "screens": 0.15, "bolt": 0.3},
+			"glow": 1.3,
+			"despeckle": 0.15,
+			"fog": 0.045
+		}
+	},
 	"chain": {
 		"step_hz": 60.0,
 		"max_substeps": 4,
@@ -993,7 +1045,18 @@
 			"footstep_3": "SFX",
 			"ui_click": "UI",
 			"ui_confirm": "UI",
-			"ui_deny": "UI"
+			"ui_deny": "UI",
+			"lab_room": "Ambience",
+			"lab_screens": "Ambience",
+			"lab_latch": "SFX",
+			"lab_arm": "SFX",
+			"lab_drawup": "SFX",
+			"lab_dispense": "SFX",
+			"lab_strike": "SFX",
+			"lab_crackle": "SFX",
+			"lab_overload": "SFX",
+			"lab_dive": "SFX",
+			"egg_crack": "SFX"
 		}
 	},
 	"claw_fx": {

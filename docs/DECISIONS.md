@@ -4,6 +4,26 @@ Cap: 400 lines; oldest roll to `docs/archive/`. One decision per entry, newest f
 that is not here does not exist. Format: date · id · who decided · the decision · why · what it
 changes. Only the merge role edits this file, from the "Board and log" section of merged PRs.
 
+## 2026-10-25 · D-246 · Director · Serpent redesign: hood, frills, armour, horns; Tripo test models (200 credits); serpent work frozen
+
+"im concerned that our serpent kaiju just resembles a giant snake, roadmap: revisit the serpent concepts and possibly make new models"; "so dont do any serpent work until we decide on the final design". Asked: what makes it a kaiju is "Hood and frills" (a huge cobra hood with patterns, dorsal frills and spines) and "Armour and horns" (plated scales, horns, a crested head: a dragon-snake); explore with "Tripo test models", spend "Up to 200" Tripo credits (about 3-4 textured variants; no rigging or final model). All other serpent work (mouth, animation, powers art) waits for his pick. Also: "btw youre cooking the pc's ram too hard, ease up a bit": every lead now runs at most 2 heavy jobs, python pools at most 2 workers, nothing new under 6 GB free RAM.
+
+## 2026-10-25 · D-245 · Director · Water details, rubble, shot impacts, real mouths, Komodo pace
+
+Water (extends D-244, asked): "Looks only" (never changes damage or score); bay "Gentle swell, whitecaps in storms"; he reviews "After each step" (surface, ripples and wake, debris). Rubble ("i dont like the tangled mess of rectangular ruins clipping into one another"; asked): "Pancaked floors + debris", piles "Well below his knees", feet make it "Crunches flatter"; built "Right after ground". Shot impacts ("look a bit flat, like theyre pasted on top ... it glows too much ... a toned down impact indicator with a tiny red blood mist at the impact site"): on-surface, no glow, tiny blood mist; plus "faint wounds" that build up over a run. Komodo mouth: after three failed rounds on the closed-mouth Tripo head, "Model a real mouth" (asset session, no credits). All kaiju ("we should give all our models the same detailed, functional mouths with real anatomic features"; asked): "Croc first, then Komodo, then serpent"; gums, rooted teeth, wet lining, a moving tongue, throat and palate; each from "Its own real animal". Komodo walk: in game it played at about 2.17x its authored pace; "Slow him to the clip" (D-201: he moves only as fast as his animations show), roughly halving his walk speed. Asked how upgrades then work: "Size lengthens stride; speed unlocks a heavier gait" (size upgrades lengthen his stride at the same leg pace; speed upgrades raise cadence up to about 1.25x; the top speed tiers unlock a lumbering-run clip).
+
+## 2026-10-25 · D-244 · Director · Real water; VIP escape headline
+
+"water also counts as a flat untextured surface. Not for the first time, Im asking you for real water, it needs physics, and should react to things falling in it, it should have ripples, currents, reflections, whitecaps, moss, debris etc"; "larger bodies of water in the bay need waves too". Asked: build it in parallel with the ground texturing ("Run both at once"); the kaiju makes a "Full wake" (bow wave, trailing wake, tail-slam splash and rings to the banks); debris is his wreckage plus ambient litter plus small moored boats that rock and capsize; moss is a "Waterline on quay walls". VFX lead owns it; presentation only. Also asked: if the governor escapes, the headline is "COWARD {rank} ESCAPES THE CITY".
+
+## 2026-10-25 · D-243 · Director · Trains, roar gape, claw trail, VIP headline, walk bob, next playtest
+
+He asked to be asked more. Answers: trains "Keep running" as the kaiju nears (horn blares, no braking or fleeing); derailing pays a "Big one-off bonus" well above a car (a new tuning row he judges in playtest); the line is an "Elevated viaduct" on pillars so a derailed train falls into the street; after a derail survivors crawl out and flee (existing crowd people); Nimbalyst's API budget for trains is $60 on top of the ~$70 spent on 019-021 (stop at about $54; extends D-240). Komodo roar gape "35-40°" (clear air between the jaws). Claw rake "Faint, short trail" (thin streak per claw tip, fades in about 0.25 s). The VIP kill headline stays 3 s while play continues (no slow-mo). Young croc walk gets a "slight bob" on top of the small arm swing. The next playtest build comes "After the flat-surface pass" (P0-P2 textured), surveyed on the 4K TV only.
+
+## 2026-10-25 · D-242 · Director · The visual vision critics judge by
+
+He asked for a summary of what critics keep pushing or rejecting, then an interview "so we can align our visions". Answers: effects intensity "Elegant, restrained" (ambient effects support the scene and never compete with the kaiju; only his own attacks go big); reference vs style "True to reference" (match real animals and physics; stylise only where it does not read at all); visceral detail (drool, wet teeth, scars, gore) "Keep and celebrate" (never a defect; only checked for clean anchoring); framing "Wide: city scale" (as charge v10 at 36 m); timing at kaiju scale "Slowed for mass" (bigger is heavier and slower; small details such as the tongue and blinks stay near real speed); night "Dark and moody" (windows, lamps and fires carry the image; the kaiju reads by rim and fire light); critic vs his pick "You win, critic notes" (an approved trait is locked; critics flag defects only: pops, clipping, slits, stretch, flat surfaces, unreadable at 4K). Also asked: VIP headlines "COWARD GOVERNOR FLEES CITY BY CHOPPER" / "GOVERNOR SWATTED FROM THE SKY"; the governor's heli "Same size, lit"; young croc arms "Small swing" with the walk; intro skip "1 s".
+
 ## 2026-10-25 · D-241 · Director · Kaiju Creation ships with the dark lab room and all three serums
 
 After the 020 clip: "looks great. change the black interior to a laboratory setting and its ready to ship"; "also load the serpent and dragon serum into the vials, and ensure the clip is functional for all 3". Asked: "Filled, still locked"; "Dark high-tech lab"; "3 clips, one per genome". On the dish: "make the dish metal a little less blocky, less speckled, more smooth"; "change the dish to be a more clear glass, less brown dirt". After the three 021 clips: "Ship it" (PR #192).
@@ -376,23 +396,3 @@ Asked ("ask me a lot of questions"). Milestones: builds go to Desktop\Kaiju Buil
 ## 2026-10-23 · D-151 · Director · Effect family rulings (asked by the VFX lead with a labelled board)
 
 Asked in the VFX lead's session (look sheet, PR #154): an explosion is a sudden tall burst of the game's own fire ("Fire's tongues"), then that fire stays burning; chemical gas is soft tinted smoke (the smoke family, also the Taskforce gas look); smoke is lit from below by its fire everywhere (game and title); on the title, burning floors' windows turn fire-orange; the Lightning Breath / Thunder Beam effect rework is IN M1; the Taskforce owns one electric blue nobody else uses (the tank-deflect flash becomes white); blasts and Taskforce hits use the same street dust as everything else; the VFX lead fixes the base mismatches now (tail-sweep yellow ring, tree-puff sprite, plain shell sparks) in #154.
-
-## 2026-10-23 · D-150 · Director · Title menu column stays high
-
-Asked (4K still shown) where the logo-and-buttons column sits vertically: keep it high, as in his mockup; the calm water below stays as deliberate space.
-
-## 2026-10-23 · D-149 · Director · The leader's escape helicopter, after the demo
-
-"roadmap item: "the president/prime minister/king/etc" attempts to escape in a fancy helicopter, you get a big payout if you kill him but its a fast helicopter". Asked: after the demo; it happens at a random time in any city; the rank grows with the city (Mayor in the baby city, Governor in the adolescent, President in the adult); the payout is about a city block's worth (worth chasing, never more than the rampage); the kaiju can bring it down with the breath or Thunder Beam, by grabbing it as it passes low, by throwing a tank or car at it, or by toppling a building into it at lift-off; about 15 seconds from lift-off (it circles once, then speeds to the map edge); a ticker headline and a distinct rotor sound only, no markers (as D-143); if it escapes only the payout is lost, with a mocking headline; look: white and gold VIP (a labelled board when built).
-
-## 2026-10-23 · D-148 · Director · Demo feedback link goes to the Itch page comments
-
-Asked where the demo thanks screen's feedback link (D-145) should send testers: the invite-only Itch page's comments (no new service to set up). The pause-menu bug report stays a local file (D-145).
-
-## 2026-10-23 · D-147 · Director · Threat Dossier (bestiary), after the demo
-
-"roadmap item (after demo): a beastiary (name must be thematically appropriate) to describe the multitude of enemies you encounter in the game". Asked: named the Threat Dossier (the Kaiju Plan organisation's classified files on every force sent against your kaiju); an entry's name and silhouette appear on first sight, its full stats, weaknesses and lore after the first kill; opened from the main menu and the pause menu. After the demo.
-
-## 2026-10-22 · D-146 · Director · Playtest milestones replace per-change clips and approvals
-
-"we are wasting our time making so many clips, its better for you to build, then i play and you give me an exhaustive survey to fill"; then "not NO more clips, but not so many, and i dont want to play every single update, you need to identify milestones in the roadmap that justify my playtest and craft a survey for that game state". Picked 4 milestones (ROADMAP "Playtest milestones"): M1 feel pass, M2 Taskforce agents, M3 demo complete, M4 Itch release candidate. Builds are exported .exe files in a fixed folder. The lead merges green, critic-passed work without a director gate.
