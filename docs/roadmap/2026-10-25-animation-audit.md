@@ -50,8 +50,8 @@ scenes/, sim/, autoload/ or assets/ mentions Cascadeur. The stomp is code (`scen
 
 ## Machines (cars, tanks, helicopters, trains)
 
-Driving, turret aim, rotor spin, recoil and crashes are all code. The director has been asked whether mechanical motion
-counts under the rule. Until he answers, they are marked QUESTION, not REPLACE.
+Driving, turret aim, rotor spin, recoil and crashes are all code. They stay code: the director ruled on 2026-10-25
+that the Cascadeur rule covers creatures and people, not machines (asked: "Creatures + people").
 
 ## Cascadeur clips made but not in the game
 
