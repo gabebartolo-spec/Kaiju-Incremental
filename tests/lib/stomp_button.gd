@@ -59,9 +59,11 @@ func _bindings() -> void:
 		for event: InputEvent in InputMap.action_get_events("stomp"):
 			kinds[event.get_class()] = true
 	_check.call(
-		kinds.has("InputEventKey")
-		and kinds.has("InputEventMouseButton")
-		and kinds.has("InputEventJoypadButton"),
+		(
+			kinds.has("InputEventKey")
+			and kinds.has("InputEventMouseButton")
+			and kinds.has("InputEventJoypadButton")
+		),
 		"the stomp is bound on keyboard, mouse and pad (%s)" % [kinds.keys()]
 	)
 

@@ -70,12 +70,18 @@ func run(kaiju: KaijuModel, rig: KaijuRig) -> void:
 		lead >= KNEE_LEAD.x - 0.5 and lead <= KNEE_LEAD.y + 0.5,
 		"adult clip stomp S2: the knee peaks %.1f keyed frames before the ankle (1-3)" % lead
 	)
-	_check.call(
-		contact > 0 and toe[contact] <= 0.02 and toe[contact - 1] > 0.03,
-		(
-			"adult clip stomp: the toe is on the street as the footfall goes out (%.3f hip), moving"
-			+ " before (%.3f)"
-		) % [toe[contact], toe[maxi(0, contact - 1)]]
+	(
+		_check
+		. call(
+			contact > 0 and toe[contact] <= 0.02 and toe[contact - 1] > 0.03,
+			(
+				(
+					"adult clip stomp: the toe is on the street as the footfall goes out (%.3f hip), moving"
+					+ " before (%.3f)"
+				)
+				% [toe[contact], toe[maxi(0, contact - 1)]]
+			)
+		)
 	)
 	_drive(ankle, top, contact)
 	_settle(pelvis, contact, states.find("idle") - 1)
@@ -93,9 +99,10 @@ func _drive(ankle: Array[float], top: int, contact: int) -> void:
 	var last: float = steps[-1] if not steps.is_empty() else 0.0
 	_check.call(
 		not steps.is_empty() and last >= Num.f(steps.max()) - 1e-6 and last >= DRIVE * mean,
-		"adult clip stomp S4: the last step down is the fastest, %.1fx the mean (>= %.1f)" % [
-			last / maxf(mean, 1e-6), DRIVE
-		]
+		(
+			"adult clip stomp S4: the last step down is the fastest, %.1fx the mean (>= %.1f)"
+			% [last / maxf(mean, 1e-6), DRIVE]
+		)
 	)
 
 
@@ -111,9 +118,10 @@ func _settle(pelvis: Array[float], contact: int, rest: int) -> void:
 	low -= pelvis[contact]
 	_check.call(
 		-low >= DROP and absf(back) <= SETTLE,
-		"adult clip stomp S7: the body drops %.3f hip (>= %.2f), back to %.4f by +8 (<= %.3f)" % [
-			-low, DROP, back, SETTLE
-		]
+		(
+			"adult clip stomp S7: the body drops %.3f hip (>= %.2f), back to %.4f by +8 (<= %.3f)"
+			% [-low, DROP, back, SETTLE]
+		)
 	)
 
 
@@ -126,9 +134,10 @@ func _hand_over(pelvis: Array[float], states: Array[String]) -> void:
 			worst = maxf(worst, absf(pelvis[f] - pelvis[f - 1]))
 	_check.call(
 		start > 0 and worst <= SETTLE,
-		"adult clip stomp: the hand-over to the idle moves the hips %.4f hip a frame (<= %.3f)" % [
-			worst, SETTLE
-		]
+		(
+			"adult clip stomp: the hand-over to the idle moves the hips %.4f hip a frame (<= %.3f)"
+			% [worst, SETTLE]
+		)
 	)
 
 

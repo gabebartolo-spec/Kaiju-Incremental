@@ -77,9 +77,12 @@ func _run() -> void:
 			_log_camera(rampage, gait, float(Engine.get_process_frames() - start) / 60.0)
 		if rampage.stomp_ring_at.size() > stomps:
 			stomps = rampage.stomp_ring_at.size()
-			print("stomp %d landed at %.2f s: %d street rings alive" % [
-				stomps, float(Engine.get_process_frames() - start) / 60.0, _rings(rampage)
-			])
+			print(
+				(
+					"stomp %d landed at %.2f s: %d street rings alive"
+					% [stomps, float(Engine.get_process_frames() - start) / 60.0, _rings(rampage)]
+				)
+			)
 			wait = STOMP_SHOT_DELAY + 1 if stomps <= STOMP_SHOTS else -1
 		if not _shots:
 			continue

@@ -208,7 +208,9 @@ func _read_input(delta: float) -> Dictionary:
 		out["ultimate"] = autoplay_signature
 		out["stomp"] = true  # stomps whenever the button is ready (once per stomp_interval)
 	var taps := {
-		"signature": out["signature"], "ultimate": out["ultimate"], "dash": out["dash"],
+		"signature": out["signature"],
+		"ultimate": out["ultimate"],
+		"dash": out["dash"],
 		"stomp": out["stomp"]
 	}
 	out.merge(_latch.through(sim.emerge.active, taps, delta), true)
