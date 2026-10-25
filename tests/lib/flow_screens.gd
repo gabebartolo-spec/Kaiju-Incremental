@@ -185,7 +185,10 @@ func _check_results_compare() -> void:
 			and not results.is_new_best("tanks")
 			and labels.count(ResultsScreen.STAMP_TEXT) == 3
 		),
-		"new records are stamped, misses are not (%d stamped)" % labels.count(ResultsScreen.STAMP_TEXT)
+		(
+			"new records are stamped, misses are not (%d stamped)"
+			% labels.count(ResultsScreen.STAMP_TEXT)
+		)
 	)
 	var bests := labels.filter(func(l: String) -> bool: return l.begins_with("best "))
 	check.call(

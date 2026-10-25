@@ -73,7 +73,10 @@ func _check_headlines() -> void:
 		var dies: bool = ENDINGS[reason]
 		check(
 			close.contains("REMAINS") == dies,
-			"ending '%s' closes the crawl on %s: %s" % [reason, "the remains" if dies else "it", close]
+			(
+				"ending '%s' closes the crawl on %s: %s"
+				% [reason, "the remains" if dies else "it", close]
+			)
 		)
 	check(
 		ResultsScreen.headline("") == ResultsScreen.DEFAULT_HEADLINE,
@@ -102,8 +105,10 @@ func _check_landmarks_felled() -> void:
 		sim.buildings[1].frame.remove(c)
 	check(
 		Num.i(sim.result()["landmarks"]) == 0,
-		"a landmark short of the share (%d of %d chunks gone) and a flattened block count 0"
-		% [under, cells.size()]
+		(
+			"a landmark short of the share (%d of %d chunks gone) and a flattened block count 0"
+			% [under, cells.size()]
+		)
 	)
 	mark.frame.remove(cells[under])
 	check(
@@ -173,7 +178,10 @@ func _check_record_stamps() -> void:
 	)
 	check(
 		texts.count(ResultsScreen.STAMP_TEXT) == screen.records().size(),
-		"one NEW RECORD stamp per beaten row: %d for %s" % [texts.count("NEW RECORD"), screen.records()]
+		(
+			"one NEW RECORD stamp per beaten row: %d for %s"
+			% [texts.count("NEW RECORD"), screen.records()]
+		)
 	)
 	check(texts.has("best 5") and texts.has("best 6"), "missed and tied rows show their best")
 	check(
@@ -187,7 +195,9 @@ func _check_record_stamps() -> void:
 ## Best combo: a dash and no best or stamp until the run reports it; then a multiplier.
 func _check_combo_hook() -> void:
 	var bare := ResultsScreen.new(SAMPLE, {"rubble": 1.0, "best_combo": 1.2})
-	var fed := ResultsScreen.new(SAMPLE.merged({"best_combo": 1.8}), {"rubble": 1.0, "best_combo": 1.2})
+	var fed := ResultsScreen.new(
+		SAMPLE.merged({"best_combo": 1.8}), {"rubble": 1.0, "best_combo": 1.2}
+	)
 	for screen: ResultsScreen in [bare, fed]:
 		root.add_child(screen)
 	await _frames(2)
@@ -361,7 +371,11 @@ func _slot_after_endings() -> void:
 	var save := SaveFile.load_game(1)
 	var best: Dictionary = save.get("best", {})
 	check(
-		Num.i(save.get("runs", 0)) == ENDINGS.size() and best.has("landmarks") and best.has("agents"),
+		(
+			Num.i(save.get("runs", 0)) == ENDINGS.size()
+			and best.has("landmarks")
+			and best.has("agents")
+		),
 		"slot 1 banked every run with the new bests: runs %s, best %s" % [save.get("runs"), best]
 	)
 	check(
