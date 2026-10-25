@@ -47,6 +47,35 @@ func _free_way(sim: RampageSim) -> Vector2:
 	return best
 
 
+## Stands the kaiju facing the nearest standing building, just clear of it: a wall within one dash
+## step of its body, so a dash there stops at once wherever the plan puts the spawn. Returns the
+## facing (0, 0 when no building stands).
+func _face_wall(sim: RampageSim) -> Vector2:
+	var cfg := sim.body.dash.cfg
+	var step := Num.f(cfg["lengths"]) * sim.body.length() / Num.f(cfg["seconds"]) * DT
+	var target := sim.nearest_standing(sim.kaiju_pos)
+	if target.x == INF:
+		return Vector2.ZERO
+	var way := (target - sim.kaiju_pos).normalized()
+	var start := sim.kaiju_pos
+	var reach := start.distance_to(target)
+	var t := 0.0
+	while t < reach:
+		var here := start + way * t
+		var ahead := start + way * (t + step)
+		if (
+			sim.body.inside(here, way).is_empty()
+			and not sim.body.inside(ahead, way).is_empty()
+			and sim.clamp_to_arena(here) == here
+		):
+			sim.kaiju_pos = here
+			sim.facing = way
+			sim.body.heading = way  # already turned to it
+			return way
+		t += 0.25
+	return Vector2.ZERO
+
+
 ## Turns the standing kaiju to a free way and lets the body settle on it, so a walk along it needs
 ## no turn (a real turn takes the body longer than a railgun's last 0.4 s); the way, or (0, 0).
 func _face_free_way(sim: RampageSim) -> Vector2:

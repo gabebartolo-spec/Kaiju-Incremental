@@ -290,7 +290,7 @@ func _check_frost() -> void:
 	var cold := walled.army_units.taskforce.frost
 	cold.launch(4, Vector3.ZERO)
 	_run(walled, Num.f(cold.cfg["flight_s"]) + 0.1)
-	var rammed := walled.step(DT, walled.facing, false, DASH_BUTTON)
+	var rammed := walled.step(DT, _face_wall(walled), false, DASH_BUTTON)  # stood at a wall
 	check(
 		not _first(rammed, "dash").is_empty() and not walled.body.dash.on(),
 		"the dash into a wall stopped at once: %s" % [_types(rammed)]
