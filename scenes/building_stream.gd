@@ -58,8 +58,7 @@ var _queue_at := 0
 var _planned_at := Vector2(INF, INF)
 var _since_plan := 0.0
 var _evict: Array[int] = []
-## What a building ranks by: its distance from the camera and the kaiju, and whether the camera
-## can see it (StreamRank).
+## What a building ranks by: its distance from the camera and the kaiju, and if seen (StreamRank).
 var _rank: StreamRank
 var _cutoff := INF  # the last plan's rank of the first building left out
 var _held := 0  # chunks of the buildings the last plan holds meshed
@@ -171,6 +170,7 @@ func _plan() -> void:
 	_since_plan = 0.0
 	var marks: Array[int] = []
 	var keys := _rank_keys(from, marks)
+	StreamRank.landmarks_first(_sim.buildings, marks)  # then the ones held for the kaiju's reach
 	var used := _held
 	_queue.clear()
 	for n: int in marks:

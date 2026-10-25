@@ -16,10 +16,16 @@ const SLOW_MS := 400.0  ## a frame this long is printed with where its time went
 var _rounds := 4
 var _seconds := 60.0
 var _window := 5.0
+## --hold=M: stream_view.hold_m for every take (the memory reference: --hold=0 is the old stream);
+## -1 keeps the data's.
+var _hold := -1.0
 
 
 func _initialize() -> void:
-	var a := Kit.args({"preset": "", "rounds": _rounds, "seconds": _seconds, "window": _window})
+	var a := Kit.args(
+		{"preset": "", "rounds": _rounds, "seconds": _seconds, "window": _window, "hold": _hold}
+	)
+	_hold = Num.f(a["hold"])
 	PlayerSettings.graphics = str(a["preset"])
 	_rounds = Num.i(a["rounds"])
 	_seconds = Num.f(a["seconds"])
@@ -42,6 +48,9 @@ func _run() -> void:
 		var city := cfg if on else _off(cfg)
 		var layout := CityGen.generate(Seeds.make("city", 0), city)
 		var rampage := Kit.autoplay(self, "reptilian", stats, 2, layout)
+		if _hold >= 0.0:
+			var view: Dictionary = rampage.sim.city["stream_view"]
+			view["hold_m"] = _hold
 		await rampage.wait_loaded()
 		await Kit.frames(self, SETTLE)
 		var start := await _take(_window)
@@ -58,6 +67,7 @@ func _run() -> void:
 			)
 		)
 		print("  worst costs (ms): ", _worst(rampage.cost_usec))
+		print("  ", _memory(rampage))
 		var s: PackedFloat64Array = sums[mode]
 		for n: int in 4:
 			s[n] += start[n] / (_rounds / 2.0)
@@ -126,6 +136,35 @@ static func _worst(costs: Dictionary) -> String:
 	for k: Variant in keys.slice(0, 6):
 		out.append("%s %.1f" % [k, Num.f(costs[k]) / 1000.0])
 	return ", ".join(out)
+
+
+## The stream's load at the take's end: buildings within stream_view.hold_m of the kaiju (held
+## meshed), meshed buildings and chunks, static and video memory.
+static func _memory(rampage: Rampage) -> String:
+	var hold := Num.f(rampage.sim.city["stream_view"].get("hold_m", 0.0))
+	var held := 0
+	for b: RampageSim.Building in rampage.sim.buildings:
+		held += int(Vector2(b.x, b.z).distance_to(rampage.sim.kaiju_pos) <= hold)
+	var meshed := 0
+	var chunks := 0
+	for node: Node in rampage.find_children("*", "", true, false):
+		if not node is BuildingStream:
+			continue
+		var stream: BuildingStream = node
+		chunks += stream.resident_chunks()
+		for n: int in rampage.sim.buildings.size():
+			meshed += int(stream.built(n) != null)
+	return (
+		"held within %.0f m: %d; meshed %d buildings, %d chunks; static %.0f MB, video %.0f MB"
+		% [
+			hold,
+			held,
+			meshed,
+			chunks,
+			Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0,
+			Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
+		]
+	)
 
 
 static func _line(t: PackedFloat64Array) -> String:
