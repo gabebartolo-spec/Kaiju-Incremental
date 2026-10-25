@@ -1,7 +1,7 @@
 # Handoff: vip-heli (leader's escape helicopter, D-149)
 
 ## State
-Building. Sim, view, data, tests written; local suites and the clip pending (see Unfinished).
+Done and pushed (claude/vip-heli); PR not opened (the lead opens it, body in pr-body.md). Awaiting lead review.
 
 ## Task
 ROADMAP "Leader's escape helicopter" (D-149), director go 2026-10-25 via the lead. Branch claude/vip-heli,
@@ -20,8 +20,7 @@ worktree ../Kaiju-Incremental-wt/vip-heli, no PR (the lead opens it; body in pr-
 - Tests: tests/run_vip_tests.gd (+ tests/lib/vip_block.gd, vip_view_check.gd). Capture: tools/capture/capture_vip_heli.gd.
 
 ## Unfinished
-Run touched suites (tentacles helideaths sim powers vip flow); clip (--windowed, override.cfg off-screen);
-pr-body.md; push; report to lead.
+Nothing; clip at scratchpad vip_clip/vip.avi (path in pr-body.md).
 
 ## Rules learnt
 gdformat on Windows writes CRLF: sed -i 's/\r$//' after it. Warnings are errors in GDScript here (type every var).
