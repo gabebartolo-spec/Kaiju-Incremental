@@ -21,6 +21,7 @@ var _view: SubViewport
 var _lens: Camera3D
 var _quad: MeshInstance3D
 var _mat: ShaderMaterial
+var _rim_lights: Array[DirectionalLight3D] = []
 
 
 ## cfg: tuning "skyline_rampage" (species: whose model walks there, height, picture_px: the
@@ -51,6 +52,10 @@ func _init(cfg: Dictionary, haze: float) -> void:
 	sun.light_color = Look.color("sun_color")
 	_view.add_child(sun)
 	var colors: Dictionary = Content.species_def(species)["colors"]
+	var fire := Color(str(cfg["fire"]))  # the burning towers' light on its back and belly
+	for yaw: float in [145.0, 215.0]:
+		_rim_light(Vector3(25.0, yaw, 0.0), fire, Num.f(cfg["rim_energy"]))
+	_rim_light(Vector3(30.0, 0.0, 0.0), fire, Num.f(cfg["rim_fill"]))
 	_model = KaijuModel.new(species, colors, "adult")
 	_view.add_child(_model)
 	_model.foot_planted.connect(_planted)
@@ -60,12 +65,18 @@ func _init(cfg: Dictionary, haze: float) -> void:
 	_lens.far = LENS_BACK * 2.0
 	_lens.current = true
 	_view.add_child(_lens)
+	for light: DirectionalLight3D in _rim_lights:  # they turn with the little camera
+		_view.remove_child(light)
+		_lens.add_child(light)
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
 	_mat.set_shader_parameter("view", _view.get_texture())
 	_mat.set_shader_parameter("haze", haze)
 	_mat.set_shader_parameter("haze_color", Look.color("fog_color"))
 	_mat.set_shader_parameter("shade", Num.f(cfg["shade"]))
+	_mat.set_shader_parameter("rim_color", Color(str(cfg["fire"])))
+	_mat.set_shader_parameter("rim", Num.f(cfg["rim_edge"]))
+	_mat.set_shader_parameter("px", float(px))
 	var quad := QuadMesh.new()
 	quad.material = _mat
 	_quad = MeshInstance3D.new()
@@ -94,6 +105,22 @@ func walk(delta: float, at: Vector3, yaw: float, eye: Vector3) -> void:
 	_quad.global_transform = Transform3D(
 		facing * Basis.from_scale(Vector3(frame, frame, 1.0)), centre
 	)
+
+
+## A warm light fixed to the little camera (`euler` from the camera's own axes), no shadows.
+func _rim_light(euler: Vector3, color: Color, energy: float) -> void:
+	var light := DirectionalLight3D.new()
+	light.rotation_degrees = euler
+	light.light_color = color
+	light.light_energy = energy
+	light.shadow_enabled = false
+	_view.add_child(light)
+	_rim_lights.append(light)
+
+
+## Measuring (capture tools): the picture drawn as flat magenta, hazeless.
+func set_probe(on: bool) -> void:
+	_mat.set_shader_parameter("probe", on)
 
 
 func _planted(side: String, strength: float, at: Vector3) -> void:
