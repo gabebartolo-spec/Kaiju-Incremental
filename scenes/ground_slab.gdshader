@@ -60,10 +60,11 @@ void fragment() {
 		lat = dot(d, vec2(-axes.y, axes.x));
 	}
 	vec3 col;
+	float polish = 0.0;
 	if (kind < 0.5) {
-		col = sd_asphalt(base, pc, 0.0, 0.0, 1.0, 0.0);
+		col = sd_asphalt(base, pc, 0.0, 0.0, 1.0, 0.0, polish);
 	} else if (kind < 1.5) {
-		col = sd_asphalt(base, pc, along, lat, data.w, 1.0);
+		col = sd_asphalt(base, pc, along, lat, data.w, 1.0, polish);
 	} else if (kind < 2.5) {
 		if (up) {
 			float kd = min(0.5 * length(MODEL_MATRIX[0].xyz) - abs(local_pos.x), 0.5 * length(MODEL_MATRIX[2].xyz) - abs(local_pos.z));
@@ -77,9 +78,10 @@ void fragment() {
 		col = sd_concrete(base, pc, world_pos.y, world_normal, data.y);
 	} else if (kind < 5.5) {
 		if (up) {
-			col = sd_asphalt(base, pc, along, lat, data.w, 1.0);
+			col = sd_asphalt(base, pc, along, lat, data.w, 1.0, polish);
 		} else {
-			col = sd_concrete(base, pc, world_pos.y, world_normal, -100.0);
+			// The deck's fascia reaches down to the river, so it carries the same damp band as the walls.
+			col = sd_concrete(base, pc, world_pos.y, world_normal, river_y);
 		}
 	} else {
 		// A bar wears from its ends (the long axis), not its sides.
@@ -95,6 +97,11 @@ void fragment() {
 	col *= grain;
 	// Wet goes last: the same darkening and gloss whatever the surface.
 	ALBEDO = col * (1.0 - wet * WET_DARKEN);
-	ROUGHNESS = mix(1.0, WET_ROUGHNESS, wet);
+	// Worn tracks, patches and oil are polished: the sky, the moon and the lamps show on them.
+	ROUGHNESS = mix(mix(1.0, 0.45, polish), WET_ROUGHNESS, wet);
+	// Night: a faint glow that follows the surface's own variation (the ratio of its look to its base,
+	// sharpened), so the road reads by its grain, not as a flat black block. Zero by day.
+	float ratio = dot(col, vec3(0.3, 0.55, 0.15)) / max(dot(base, vec3(0.3, 0.55, 0.15)), 0.0001);
+	EMISSION = base * night_floor * pow(ratio, 2.5) * (kind < 2.5 || (kind > 4.5 && (up || kind > 5.5)) ? 1.0 : 0.0) * (1.0 - wet * 0.5);
 	SPECULAR = mix(0.5, WET_SPECULAR, wet);
 }

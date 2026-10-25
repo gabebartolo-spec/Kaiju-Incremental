@@ -36,6 +36,9 @@ uniform float damp = 0.5;         // damp band and algae at the waterline
 uniform float streak = 0.28;      // vertical water streaks on walls
 uniform float soil = 0.55;        // bare soil showing through the lawn
 uniform float paving = 0.14;      // paving slab tone steps
+uniform float band_h = 1.2;       // height of the damp band above the water line (m)
+uniform float night_floor = 0.0;  // at night: a faint self-lit glow that follows the surface's own variation
+uniform float river_y = -1.6;     // the river's water height (city_ground's river_depth), for bridge fascias
 uniform float seed = 0.0;
 
 float sd_h(vec2 p) {
@@ -105,7 +108,8 @@ float sd_grain(vec3 q, float depth) {
 // Asphalt. pc: the block centre (world x, z); along / lat: where that is along the street and across it
 // from the centre line (m); half_w: half the street's width; road: 1 for a street (lanes, tracks, joints,
 // gutters), 0 for plain asphalt (a lot, the land).
-vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float road) {
+vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float road, out float polish) {
+	polish = 0.0;
 	float tone = sd_fbm(pc, 5.0) - 0.5;
 	float tone2 = sd_vn(pc / 1.3) - 0.5;
 	float k = 1.0 + tone * 2.0 * mottle + tone2 * mottle * 0.8;
@@ -135,6 +139,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 		float rim = inside * step(-0.13, dd);
 		vec3 fresh = base * vec3(0.62, 0.66, 0.76) * (0.85 + 0.3 * sd_h(cc + 71.0));
 		col = mix(col, fresh, clamp(inside * patch_dark * 2.0, 0.0, 1.0));
+		polish = max(polish, inside * 0.6);
 		col *= 1.0 + rim * 0.32;
 	}
 	// Oil and grime blobs.
@@ -146,6 +151,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 		oil_m *= smoothstep(0.55, 0.8, sd_vn(pc / 7.0 + 31.0));
 	}
 	col *= mix(vec3(1.0), vec3(0.62, 0.68, 0.8), oil_m * stain * 1.6);
+	polish = max(polish, clamp(oil_m * stain * 2.5, 0.0, 1.0));
 	if (road < 0.5) {
 		return col;
 	}
@@ -155,6 +161,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 	// Broken into short worn stretches and single blocks, so no cell is stretched along the road.
 	float tmod = smoothstep(0.52, 0.78, sd_vn(vec2(along / 1.5, li * 7.3 + 3.0)) * 0.55 + sd_vn(vec2(along / 6.0, li * 2.1 + 8.0)) * 0.5);
 	tmod *= 0.65 + 0.35 * sd_h(vec2(floor(along / block), li + 13.0));
+	polish = max(polish, tr * (0.25 + 0.75 * tmod));
 	col = col * (1.0 + track * 1.7 * tr * (0.1 + 0.9 * tmod)) + vec3(0.012, 0.012, 0.013) * track * tr * tmod;
 	// Tar seams: cracks across the street every ~9 m, wobbling and broken.
 	float sid = floor(along / 9.0);
@@ -177,11 +184,11 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 
 // Paving: 1 m flags with a tone each, joints, a darker kerb edge (kerb_d: m to the slab's edge), stains.
 vec3 sd_pavement(vec3 base, vec2 pc, float kerb_d) {
-	// Running bond: each row of flags is shifted by its own seeded amount, flags are 0.75-1.25 m long, so
-	// no joint lines up with the next row's and the pattern never repeats.
+	// True running bond: flags 1 m long, every second row shifted half a flag; the tone, grime and
+	// cracks are seeded per flag, so the pattern never repeats.
 	float row = floor(pc.y);
-	float shift = sd_h(vec2(row, 5.0)) * 3.0;
-	float len = 0.75 + 0.5 * sd_h(vec2(row, 21.0));
+	float shift = mod(row, 2.0) * 0.5;
+	float len = 1.0;
 	vec2 fp = vec2((pc.x + shift) / len, pc.y);
 	vec2 fc = vec2(floor(fp.x), row);
 	float flag = sd_h(fc * 1.3 + 7.0) * 2.0 - 1.0;
@@ -265,9 +272,9 @@ vec3 sd_concrete(vec3 base, vec2 uv, float wy, vec3 n, float water_y) {
 		float h = wy - water_y;
 		// A calm band about half a metre tall with a gently wavering top: damp dark concrete, green-brown
 		// algae thickest at the water, and a pale tide stain just above it.
-		float edge = 0.5 + 0.07 * (sd_vn(vec2(uv.x * 0.9, 4.0)) - 0.5) * 2.0;
-		float wet_band = 1.0 - smoothstep(edge - 0.1, edge + 0.04, h);
-		float slime = (1.0 - smoothstep(0.0, edge * 0.8, h)) * (0.7 + 0.3 * sd_vn(vec2(uv.x * 1.6, 9.0)));
+		float edge = band_h + 0.1 * (sd_vn(vec2(uv.x * 0.9, 4.0)) - 0.5) * 2.0;
+		float wet_band = 1.0 - smoothstep(edge - 0.15, edge + 0.05, h);
+		float slime = (1.0 - smoothstep(0.0, edge * 0.55, h)) * (0.7 + 0.3 * sd_vn(vec2(uv.x * 1.6, 9.0)));
 		col *= 1.0 - 0.7 * damp * wet_band;
 		col = mix(col, vec3(0.05, 0.09, 0.02), clamp(slime * damp * 0.9, 0.0, 0.75));
 		float dried = (1.0 - smoothstep(0.0, 0.08, abs(h - edge - 0.14))) * damp;

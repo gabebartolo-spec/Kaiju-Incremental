@@ -80,6 +80,8 @@ func _ready() -> void:
 		add_child(street)
 		if not await stages.next(self):
 			return
+	var spots: Array[Vector2] = _decor.get("_lamp_spots") if _decor != null else []
+	add_child(LampPools.new(spots))  # the lamps' pools on the ground, at night
 	# Where the kaiju's walk ends (comments #18).
 	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
 	while stages.on and not _stream.initial_done():

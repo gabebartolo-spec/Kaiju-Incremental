@@ -47,6 +47,8 @@
 			"fog_color": "1e2a46",
 			"fog_density": 0.005,
 			"window_lit": 0.55,
+			"ground_night_floor": 0.12,
+			"ground_lamp_pool": 0.05,
 			"lamp_energy": 4.0
 		},
 		"morning": {
@@ -127,6 +129,9 @@
 			"ground_streak": 0.28,
 			"ground_soil": 0.55,
 			"ground_paving": 0.14,
+			"ground_band_h": 1.2,
+			"ground_night_floor": 0.0,
+			"ground_lamp_pool": 0.0,
 			"styles": [
 				"9a9890",
 				"8a6a58",

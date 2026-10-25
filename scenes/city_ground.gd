@@ -37,7 +37,9 @@ const BLOCK_KEYS: Array[String] = [
 	"damp",
 	"streak",
 	"soil",
-	"paving"
+	"paving",
+	"band_h",
+	"night_floor"
 ]
 ## What a slab is (ground_slab.gdshader's kind, in the instance custom data) and which way a
 ## street runs.
@@ -341,7 +343,9 @@ func _build_slabs() -> MultiMeshInstance3D:
 	mm.use_colors = true
 	mm.use_custom_data = true
 	var box := BoxMesh.new()
-	box.material = ground_material(Num.i(cfg["map_seed"]))
+	var mat := ground_material(Num.i(cfg["map_seed"]))
+	mat.set_shader_parameter("river_y", -Num.f(cfg.get("river_depth", 0.0)))
+	box.material = mat
 	mm.mesh = box
 	mm.instance_count = _slabs.size()
 	for i: int in _slabs.size():
@@ -428,7 +432,7 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 		_abutments(deck, channels, depth, stone)
 		_slab(
 			deck,
-			Vector2(0.001, 0.5),
+			Vector2(0.001, depth - 0.2),
 			asphalt,
 			_road_kind(K_DECK, ALONG_Z, deck.get_center().x, deck.size.x * 0.5)
 		)
