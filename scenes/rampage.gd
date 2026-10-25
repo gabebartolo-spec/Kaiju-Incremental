@@ -50,6 +50,8 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
+## Pad rumble (D-259): footfalls, stomps, collapses, the breath (PadRumble).
+var rumble: PadRumble
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
@@ -77,6 +79,7 @@ var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
 ## Presses made while the rise from the river holds the sim back, kept for its first live tick.
+var _held := HeldButton.new()  # the held move: hold or toggle (D-259)
 var _latch := InputLatch.new(Num.f(Content.section("emerge")["input_latch_seconds"]))
 
 
@@ -181,6 +184,8 @@ func _add_overlays() -> void:
 	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
+	rumble = PadRumble.new(sim)
+	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
 
 
@@ -189,7 +194,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var signature := Input.is_action_just_pressed("signature")
-	var held := Input.is_action_pressed("signature")
+	var held := _held.read(Input.is_action_pressed("signature"), signature)
 	var ultimate := Input.is_action_just_pressed("ultimate")
 	var dash := Input.is_action_just_pressed("dash")
 	if scripted.is_valid():  # captures: {"move", "signature", "held", "ultimate", "dash"}
@@ -267,6 +272,7 @@ func _to_world(p: Vector2) -> Vector3:
 
 
 func _on_event(event: Dictionary) -> void:
+	rumble.on_event(event)
 	match str(event["type"]):
 		"stomp":
 			_land.lift(_kaiju, str(event.get("side", "")))
@@ -350,6 +356,7 @@ func _on_footfall(side: String, strength: float, at: Vector3) -> void:
 ## crushed around that foot, one dust ripple. Sound is released by the same footfall (Sfx.footstep).
 func _land_stomp(side: String, at: Vector3) -> void:
 	_stomp_wait = 0.0
+	rumble.stomp()
 	var heavy := _power("stomp_damage")
 	sfx.stomp(heavy, _land.landed(side, ability_fx.stomp_cracks(at, _stomp_radius, heavy)))
 	var street := _city.street  # the foot lands wider than its ring (stomp_catch)

@@ -1,6 +1,6 @@
 extends Node
-## The save, as an autoload for the flow (scenes/main.gd). The format, versions and migration
-## live in SaveFile (autoload/save_file.gd); this forwards to it.
+## The save, as an autoload for the flow (scenes/main.gd). The format, versions, slots and
+## migration live in SaveFile (autoload/save_file.gd); this forwards to it, on the slot in play.
 
 const VERSION := SaveFile.VERSION
 

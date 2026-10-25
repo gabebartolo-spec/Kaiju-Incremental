@@ -28,6 +28,7 @@ func _ready() -> void:
 	var presets: Dictionary = Content.section("display")["graphics"]
 	for problem: String in GraphicsPresets.errors(presets):
 		push_error("tuning.json: " + problem)
+	KeyBinds.snapshot()  # the defaults, before the player's own bindings go on top
 	PlayerSettings.load_saved(OS.has_feature("template"))
 	PlayerSettings.apply()
 

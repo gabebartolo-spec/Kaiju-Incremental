@@ -24,6 +24,8 @@ class Building:
 	var pay_share := 1.0
 	## A piece of the railway's viaduct or station (RailLayout: {"piece", "station"}), else empty.
 	var rail: Dictionary = {}
+	## Chunks it stood with when the rampage began (RunTally reads a landmark's against it).
+	var start_chunks := 0
 
 	func is_rail() -> bool:
 		return not rail.is_empty()
@@ -145,6 +147,7 @@ func _init(
 	for entry: Dictionary in layout:
 		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
 		b.in_arena = CityBand.touches(b.x, b.z, Vector2(b.w, b.d), arena_half)
+		b.start_chunks = b.frame.alive_count
 		buildings.append(b)
 		chunks_total += b.frame.alive_count if b.in_arena else 0
 	var rail_cfg: Dictionary = tuning["rail"]
@@ -152,6 +155,7 @@ func _init(
 	for entry: Dictionary in RailLayout.pieces(city, rail_cfg):  # the viaduct is built like the city
 		var b := Landmarks.building(entry, Num.f(city["chunk_hp"]))
 		b.rail = entry["rail"]
+		b.start_chunks = b.frame.alive_count
 		b.in_arena = false  # it breaks and pays, but the city's fall is its lots (CityBand's rule)
 		buildings.append(b)
 	kaiju_pos = Vector2(0.0, CityGen.half_extent(city))  # on the ring avenue, at the south edge
@@ -215,6 +219,8 @@ func destruction() -> float:
 	return Num.f(chunks_destroyed) / maxf(1.0, Num.f(chunks_total))
 
 
+## What the rampage did, for the results screen (and the save's bests). "best_combo" is the combo
+## system's hook (D-259): it is absent until the combo lands, and the screen shows a dash.
 func result() -> Dictionary:
 	return {
 		"rubble": Num.i(floor(rubble)),
@@ -228,6 +234,7 @@ func result() -> Dictionary:
 		"city_seconds": army_units.taskforce.city_seconds(),
 		"toppled": collapse.toppled,
 		"tallest_topple": collapse.tallest_topple,
+		"landmarks": RunTally.landmarks_felled(buildings),
 		"reason": end_reason,
 	}
 
