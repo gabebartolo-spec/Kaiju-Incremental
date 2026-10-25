@@ -32,7 +32,35 @@ static func read(name: String) -> VoxelBuilder:
 	var props: Dictionary = cfg()["props"]
 	var row: Dictionary = props[name]
 	var kv := Kvox.read(str(row["path"]))
-	return kv.frames[0] if not kv.frames.is_empty() else VoxelBuilder.new()
+	if kv.frames.is_empty():
+		return VoxelBuilder.new()
+	var vox: VoxelBuilder = kv.frames[0]
+	despeckle(vox)
+	return vox
+
+
+## Lone off-colour blocks (a voxelised texture's single bright or dark samples, which read as
+## specks) take their neighbours' average: a block unlike every one of its neighbours by more than
+## the data's step in brightness, with four or more of them around it. Stripes and edges keep
+## their colour (their blocks have like neighbours).
+static func despeckle(vox: VoxelBuilder) -> void:
+	var step := Num.f(cfg()["despeckle"])
+	var fixes := {}
+	for cell: Vector3i in vox.colors:
+		var col: Color = vox.colors[cell]
+		var sum := Color(0, 0, 0, 0)
+		var n := 0
+		var alike := false
+		for d: Vector3i in VoxelBuilder.NEIGHBOURS:
+			if vox.colors.has(cell + d):
+				var other: Color = vox.colors[cell + d]
+				sum += other
+				n += 1
+				alike = alike or absf(other.get_luminance() - col.get_luminance()) <= step
+		if n >= 4 and not alike:
+			fixes[cell] = Color(sum.r / n, sum.g / n, sum.b / n, 1.0)
+	for cell: Vector3i in fixes:
+		vox.colors[cell] = fixes[cell]
 
 
 ## A node placed and turned by the prop's data row, holding `vox` built as one MultiMesh. A .kvox
@@ -94,12 +122,14 @@ static func _glass_ring(cradle: VoxelBuilder, floor_y: int) -> void:
 			if r < r0 or r > r1:
 				continue
 			for dy: int in h:
-				var col := color("glass_rim") if dy == h - 1 else color("glass")
+				var col := color("glass")
+				if dy == h - 1:
+					col = color("glint") if _in_arc(x, z, g["glint"]) else color("glass_rim")
 				cradle.put_color(Vector3i(x, floor_y + dy, z), col)
 
 
-## Moves the agar's top cells out of the cradle and draws them flat, darkening softly to the rim:
-## the look's per-block colour grain read as speckle on the agar.
+## Moves the agar's top cells out of the cradle and draws them in clean tones (_agar_tone): the
+## look's per-block colour grain read as speckle on the agar.
 static func agar_node(cradle: VoxelBuilder) -> MultiMeshInstance3D:
 	var dish: Dictionary = cfg()["dish"]
 	var top := Num.i(dish["surface_y"]) - 1
@@ -112,11 +142,26 @@ static func agar_node(cradle: VoxelBuilder) -> MultiMeshInstance3D:
 			cradle.colors.erase(cell)
 	agar.inset = gapless()
 	var node := agar.build({}, Num.f(cfg()["voxel"]), Num.f(cfg()["glow"]), Vector3.ZERO)
+	var inner := Num.f(dish["glass"]["inner"])
 	for i: int in agar.built_cells.size():
-		var c := agar.built_cells[i]
-		var k := smoothstep(0.5, 1.0, Vector2(c.x, c.z).length() / r)
-		node.multimesh.set_instance_color(i, color("agar").lerp(color("agar_rim"), k))
+		node.multimesh.set_instance_color(i, _agar_tone(agar.built_cells[i], inner, inner))
 	return node
+
+
+static func _in_arc(x: int, z: int, raw: Variant) -> bool:
+	var arc: Array = raw
+	var a := fposmod(rad_to_deg(atan2(z, x)), 360.0)
+	return a >= Num.f(arc[0]) and a <= Num.f(arc[1])
+
+
+## The agar's tone at a block: three steps from the middle out and a dark ring against the glass.
+static func _agar_tone(c: Vector3i, r: float, inner: float) -> Color:
+	var d := Vector2(c.x, c.z).length()
+	if d >= inner - 1.0:
+		return color("agar_ring")
+	if d > r * 0.72:
+		return color("agar_rim")
+	return color("agar_mid") if d > r * 0.4 else color("agar")
 
 
 ## Repaints every cell of `vox` through fn(cell, colour) -> colour.

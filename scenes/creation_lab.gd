@@ -20,6 +20,8 @@ var special_k: CreationLiquid
 var _titans: Array[Dictionary] = []
 var _rack: Node3D
 var _canister_at := Vector3.ZERO
+var _agar: MultiMesh
+var _agar_tones: PackedColorArray = PackedColorArray()
 var _focus: OmniLight3D
 var _screens: OmniLight3D
 var _flash_age := -1
@@ -51,6 +53,9 @@ func _add_props() -> void:
 	var cradle := CreationSet.read("cradle")
 	CreationSet.clean_dish(cradle)
 	var agar := CreationSet.agar_node(cradle)
+	_agar = agar.multimesh
+	for i: int in _agar.instance_count:
+		_agar_tones.append(_agar.get_instance_color(i))
 	CreationSet.place(self, "cradle", cradle).add_child(agar)
 	var monitors := CreationSet.read("monitors")
 	CreationSet.paint(monitors, CreationSet.screen_color)
@@ -150,9 +155,8 @@ func _heights(source_tip: float, top: float) -> Vector3:
 func place(index: int, t: float) -> void:
 	if not _poured:
 		_poured = true
-		var colors: Dictionary = Content.species_def(str(_titans[index]["species"]))["colors"]
 		var dna: Color = _titans[index]["genome"]
-		genome.set_titan(dna, Color(str(colors["body"])))
+		genome.set_titan(dna)
 		injector.barrel.set_color(Color(dna, 0.0))
 	var cfg: Dictionary = CreationSet.cfg()["injector"]
 	var heights := _heights(Num.f(cfg["vial_tip"]), Num.f(cfg["vial_top"]))
@@ -197,11 +201,21 @@ func takeover(t: float) -> void:
 	elif t < ov:
 		genome.takeover((t - freeze) / (ov - freeze))
 	elif t >= ov + freeze:
-		genome.overload((t - ov - freeze) / (1.0 - ov - freeze))
+		var o := (t - ov - freeze) / (1.0 - ov - freeze)
+		genome.overload(o)
+		_burn_agar(o)
 	_hit(Num.i(cfg["flash_ticks"]), Num.f(cfg["shake"]), Num.f(cfg["shake_s"]))
 	_beat(1.0 + t)
 	injector.barrel.set_level(1.0 - smoothstep(freeze, 0.3, t))
 	injector.rest(smoothstep(0.3, 0.6, t), Num.f(cfg["injector"]["dish_tip"]))
+
+
+## The agar burns white at the overload (o 0..1), so the dive ends in white.
+func _burn_agar(o: float) -> void:
+	var hot := Color(CreationSet.color("bolt"), 0.0)
+	var k := smoothstep(0.0, 0.7, o)
+	for i: int in _agar_tones.size():
+		_agar.set_instance_color(i, _agar_tones[i].lerp(hot, k))
 
 
 ## A hit-stop's white (full on its first tick, fading over `ticks`) and camera shake (`amount`
@@ -235,6 +249,6 @@ func zoom(t: float) -> void:
 	var k := t * t
 	camera.position = CreationSet.vec(shot["position"]).lerp(CreationSet.vec(end["position"]), k)
 	camera.fov = lerpf(Num.f(shot["fov"]), Num.f(end["fov"]), k)
-	var turn := smoothstep(0.0, 0.5, t)
+	var turn := smoothstep(0.0, 0.25, t)
 	var aim := CreationSet.vec(shot["look"]).lerp(CreationSet.vec(end["look"]), turn)
 	camera.look_at(aim, Vector3.UP)

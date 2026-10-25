@@ -14,8 +14,8 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const SETTLE := 20
 ## Frames the rack is held before the pick, and the dish before the injection (the clip's beats).
-const RACK_HOLD := 60
-const DISH_HOLD := 40
+const RACK_HOLD := 30
+const DISH_HOLD := 25
 ## The takeover still is taken this far through the takeover, the draw still this far through
 ## the injector's trip to the vial (the needle down in it).
 const TAKEOVER_SHOT := 0.4

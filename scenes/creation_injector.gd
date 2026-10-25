@@ -35,28 +35,34 @@ func _ready() -> void:
 		else:
 			carriage.put_color(at, col)
 	_extend_post(post, Num.i(cfg["profile_y"]), Num.i(cfg["split_y"]), Num.i(cfg["post_extend"]))
+	_seat(post)
 	var voxel := Num.f(CreationSet.cfg()["voxel"])
 	var glow := Num.f(CreationSet.cfg()["glow"])
 	var post_node := Node3D.new()
 	add_child(post_node)
 	post.inset = CreationSet.gapless()
 	post_node.add_child(post.build({}, voxel, glow, Vector3.ZERO))
+	var tc: Array = cfg["tip"]
+	var tip_cell := Vector3i(Num.i(tc[0]), Num.i(tc[1]), Num.i(tc[2])) - pivot
+	tip_cell = _lengthen(carriage, tip_cell, Num.i(cfg["needle"]))
 	_carriage = Node3D.new()
 	add_child(_carriage)
 	carriage.inset = CreationSet.gapless()
 	_carriage.add_child(carriage.build({}, voxel, glow, Vector3.ZERO))
 	barrel = CreationLiquid.new(glass, CreationSet.color("special_k"), 0.0)
 	_carriage.add_child(barrel.node)
-	# It casts no shadow: under the key lamp the head's shadow lay on the agar as a blot.
-	for mmi: Node in find_children("*", "MultiMeshInstance3D", true, false):
-		(mmi as MultiMeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var tc: Array = cfg["tip"]
-	var tip_cell := Vector3i(Num.i(tc[0]), Num.i(tc[1]), Num.i(tc[2])) - pivot
+	_no_shadows()
 	_tip_local = Vector3(tip_cell) * voxel + Vector3(0.0, voxel * 0.5, 0.0)
 	# The base plate reaches out on the head's side: it is turned away from the dish.
 	var away := Vector2(position.x, position.z)
 	post_node.rotation.y = atan2(-away.y, away.x)
 	_pose(aim(Vector3.ZERO), lift_for(Num.f(cfg["park_tip"])))
+
+
+## It casts no shadow: under the key lamp the head's shadow lay on the agar as a blot.
+func _no_shadows() -> void:
+	for mmi: Node in find_children("*", "MultiMeshInstance3D", true, false):
+		(mmi as MultiMeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 static func _cfg() -> Dictionary:
@@ -89,6 +95,33 @@ static func _extend_post(post: VoxelBuilder, profile: int, from: int, cells: int
 		for cell: Vector3i in ring:
 			var col: Color = post.colors[cell]
 			post.put_color(Vector3i(cell.x, y, cell.z), col)
+
+
+## Drops the post's blocks that would sit inside the cradle's rim (post_seat metres from the dish's
+## axis), so the foot stands clear of it instead of fusing into it.
+func _seat(post: VoxelBuilder) -> void:
+	var voxel := Num.f(CreationSet.cfg()["voxel"])
+	var seat := Num.f(_cfg()["post_seat"])
+	var away := Vector2(position.x, position.z)
+	var turn := atan2(-away.y, away.x)
+	for cell: Vector3i in post.colors.keys():
+		var w := Vector3(cell.x, 0, cell.z).rotated(Vector3.UP, turn) * voxel
+		if Vector2(position.x + w.x, position.z + w.z).length() < seat:
+			post.cells.erase(cell)
+			post.colors.erase(cell)
+
+
+## The model's needle is a short stub that hid in the ports: it goes on `cells` further down in
+## thin steel (a cross, then one block at the point). Returns the new tip cell.
+static func _lengthen(carriage: VoxelBuilder, tip: Vector3i, cells: int) -> Vector3i:
+	var steel := CreationSet.color("needle")
+	for i: int in range(1, cells + 1):
+		var at := tip - Vector3i(0, i, 0)
+		carriage.put_color(at, steel)
+		if i <= cells - 3:
+			for d: Vector3i in [Vector3i.LEFT, Vector3i.RIGHT, Vector3i.FORWARD, Vector3i.BACK]:
+				carriage.put_color(at + d, steel)
+	return tip - Vector3i(0, cells, 0)
 
 
 ## How far the needle reaches from the post's axis (metres).
@@ -142,7 +175,8 @@ func trip(t: float, key: String, source: Vector3, heights: Vector3) -> Vector2:
 		var k := clampf((t - acc) / share, 0.0, 1.0)
 		progress[i] = k
 		if not placed and t <= acc + share:
-			var e := smoothstep(0.0, 1.0, k)
+			var last := i == shares.size() - 1 or _rest_zero(shares, i + 1)
+			var e := k * k if last else smoothstep(0.0, 1.0, k)
 			var a := poses[i]
 			var b := poses[i + 1]
 			pose = Vector2(lerp_angle(a.x, b.x, e), lerpf(a.y, b.y, e))
@@ -153,6 +187,13 @@ func trip(t: float, key: String, source: Vector3, heights: Vector3) -> Vector2:
 		pose = poses[end]
 	_pose(pose.x, pose.y)
 	return Vector2(progress[3], progress[7])
+
+
+static func _rest_zero(shares: Array, from: int) -> bool:
+	for j: int in range(from, shares.size()):
+		if Num.f(shares[j]) > 0.0:
+			return false
+	return true
 
 
 ## The trip's poses (turn, rise) at each phase's end, from the park over the dish.

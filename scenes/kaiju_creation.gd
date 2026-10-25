@@ -41,6 +41,8 @@ var _black: ColorRect
 ## trip phase whose cue last played.
 var _loops: Array[AudioStreamPlayer] = []
 var _crackle: AudioStreamPlayer
+## The takeover's one-shots, cut at the black so the egg crack is heard alone.
+var _shots: Array[AudioStreamPlayer] = []
 var _phase := -1
 ## The hit-stops' white flash (CreationLab.flash).
 var _white: ColorRect
@@ -217,11 +219,11 @@ func _begin(next: Step) -> void:
 			_play(str(s["strike"]))
 			_crackle = _play(str(s["crackle"]), true)
 		Step.ZOOM:
-			_play(str(s["dive"]))
+			_shots.append(_play(str(s["dive"])))
 		Step.BLACK:
-			for loop: AudioStreamPlayer in _loops:
-				if loop != null:
-					loop.stop()
+			for player: AudioStreamPlayer in _loops + _shots:
+				if is_instance_valid(player):
+					player.stop()
 
 
 func _physics_process(_delta: float) -> void:
@@ -270,7 +272,10 @@ func _advance() -> void:
 
 ## The egg crack in the black (tuning "creation" "crack_sound").
 func _crack() -> void:
-	_play(str(Content.section("creation")["crack_sound"]))
+	var cfg := Content.section("creation")
+	var crack := _play(str(cfg["crack_sound"]))
+	if crack != null:
+		crack.play(Num.f(cfg["crack_from_s"]))
 
 
 static func _sounds() -> Dictionary:
@@ -290,11 +295,13 @@ func _trip_cue(t: float, key: String) -> void:
 
 ## The crackle stops and the overload bangs at the second hit-stop.
 func _overload_cue(t: float) -> void:
-	if _crackle == null or t < Num.f(CreationSet.cfg()["overload_at"]):
+	var timing: Dictionary = Content.section("creation")["timing"]
+	var lead := Num.f(_sounds()["overload_lead_s"]) / Num.f(timing["takeover_s"])
+	if _crackle == null or t < Num.f(CreationSet.cfg()["overload_at"]) - lead:
 		return
 	_crackle.stop()
 	_crackle = null
-	_play(str(_sounds()["overload"]))
+	_shots.append(_play(str(_sounds()["overload"])))
 
 
 ## Plays assets/sfx/<sound>.ogg and notes the cue (with no file it is reached in silence). A loop

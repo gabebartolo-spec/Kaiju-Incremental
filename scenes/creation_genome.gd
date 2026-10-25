@@ -44,10 +44,10 @@ func _ready() -> void:
 	add_child(_light)
 
 
-## The picked titan's genome colour and its body colour (the takeover's dark scales).
-func set_titan(genome: Color, body: Color) -> void:
+## The picked titan's genome colour; behind the takeover's front it chars to a dark shade of it.
+func set_titan(genome: Color) -> void:
 	_genome = genome
-	_scales = body.darkened(Num.f(CreationSet.cfg()["bolt"]["char"]))
+	_scales = genome.darkened(Num.f(CreationSet.cfg()["bolt"]["char"]))
 	for i: int in _helix.size():
 		_helix_mm.set_instance_color(i, Color(_genome, 0.0))
 
@@ -177,17 +177,20 @@ func takeover(p: float) -> void:
 	_bolt_mm.visible_instance_count = shown
 	if _tick % Num.i(b["flicker_ticks"]) == 0:
 		_flicker(shown, Num.f(b["flicker_share"]))
+	# The front is Special K's violet, the trail behind it white-hot.
+	var juice := Color(CreationSet.color("special_k"), 0.0)
+	for i: int in shown:
+		if _bolt_step[i] > now - Num.f(b["front_steps"]):
+			_bolt_mm.set_instance_color(i, juice)
 	var hot := Color(CreationSet.color("bolt"), 0.0)
-	var lag := 0.03
 	for i: int in _helix.size():
 		if p < _turn_at[i]:
 			continue
 		var vein := _vein[i] == 1
-		var cooled := p >= _turn_at[i] + lag
-		_helix_mm.set_instance_color(i, (hot if vein else _scales) if cooled else hot)
-	_light.light_energy = (
-		CreationSet.energy("bolt") * (0.6 + 0.4 * _rng.randf()) * minf(p * 4.0, 1.0)
-	)
+		_helix_mm.set_instance_color(i, hot if vein else _scales)
+	var flicker := 0.6 + 0.4 * _rng.randf()
+	var grow := minf(p * 4.0, 1.0) * (0.6 + p)
+	_light.light_energy = CreationSet.energy("bolt") * flicker * grow
 
 
 func _flicker(shown: int, share: float) -> void:
