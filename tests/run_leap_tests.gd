@@ -25,6 +25,7 @@ func run_checks() -> void:
 	await _t("_check_aims_ahead")
 	await _t("_check_open_ground")
 	await _t("_check_tower_wall")
+	await _t("_check_nowhere_to_land")
 	await _t("_check_phases")
 	await _t("_check_ring_and_fling")
 	await _t("_check_cooldown_and_frost")
@@ -121,8 +122,8 @@ func _check_aims_ahead() -> void:
 	check(side > 0, "the building off to the side still stands (%d chunks)" % side)
 
 
-## D-091: at a tower that dwarfs the young croc the leap comes down against its wall, never inside
-## it, and the landing still chews into it.
+## D-091: at a tower that dwarfs the young croc the leap comes down on the street before it, never
+## inside it; the landing's ring reaches its wall and it is chewed, slowly.
 func _check_tower_wall() -> void:
 	var probe := _croc({}, [])
 	var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
@@ -131,18 +132,68 @@ func _check_tower_wall() -> void:
 	var sim := _croc({}, [tower])
 	var before := sim.buildings[0].frame.alive_count
 	var worst := 0
+	var ring := {}
 	sim.step(DT, Vector2.ZERO, false, BUTTON)
 	for _n: int in roundi(5.0 / DT):
 		if not sim.body.dash.on():
 			break
-		sim.step(DT, Vector2.ZERO, false, 0)
+		var land := _first(sim.step(DT, Vector2.ZERO, false, 0), "leap_land")
+		ring = ring if land.is_empty() else land
 		worst = maxi(worst, Dictionary(sim.body.inside(sim.kaiju_pos, sim.body.heading)).size())
-	var left := sim.buildings[0].frame.alive_count
 	check(
 		sim.body.dash.landings == 1 and worst == 0,
 		"the leap flies and lands clear of the tower, never inside it (%d inside)" % worst
 	)
-	check(left < before, "the landing chews the tower (%d of %d chunks left)" % [left, before])
+	var at: Vector2 = ring.get("at", Vector2.INF)
+	var b := sim.buildings[0]
+	var gap := Vector2(
+		maxf(absf(at.x - b.x) - b.w * 0.5, 0.0), maxf(absf(at.y - b.z) - b.d * 0.5, 0.0)
+	)
+	check(
+		gap.length() < 2.0 * Num.f(ring.get("radius", 0.0)),
+		"the landing's ring reaches the tower's wall (%.1f from it)" % gap.length()
+	)
+	for _n: int in roundi(3.0 / DT):
+		sim.step(DT, Vector2.ZERO, false, 0)  # standing at the wall: its stomps chew on (D-091)
+	var left := b.frame.alive_count
+	check(left < before, "the tower is chewed, slowly (%d of %d chunks left)" % [left, before])
+
+
+## A press with nowhere to land but where it stands starts no leap (no cooldown, no count): facing
+## out at the arena's edge, and with its snout at the wall of a tower it may not land on (D-091).
+func _check_nowhere_to_land() -> void:
+	var edge := _croc({}, [])
+	edge.kaiju_pos = Vector2(0.0, -edge.arena_half)
+	edge.facing = Vector2(0, -1)
+	edge.body.heading = edge.facing
+	var events := edge.step(DT, Vector2.ZERO, false, BUTTON)
+	check(
+		_first(events, "leap").is_empty() and edge.body.dash.dashes == 0,
+		"facing out at the arena edge, a press does not leap (%d)" % edge.body.dash.dashes
+	)
+	check(
+		edge.body.dash.ready_in == 0.0, "nor spends the cooldown (%.2f)" % edge.body.dash.ready_in
+	)
+	var probe := _croc({}, [])
+	var front := 0.0
+	for d: Array in probe.body.discs():
+		front = maxf(front, Num.f(d[0]) + Num.f(d[1]))
+	var face := 30.0 - front * probe.body_scale()  # the tower's near wall at the snout's tip
+	var tower := _block(Vector2(0.0, face - 3.0), 6, 12)
+	tower["tier"] = 3
+	var sim := _croc({}, [tower])
+	events = sim.step(DT, Vector2.ZERO, false, BUTTON)
+	check(
+		(
+			_first(events, "leap").is_empty()
+			and sim.body.dash.dashes == 0
+			and sim.body.dash.ready_in == 0.0
+		),
+		(
+			"snout at a tower's wall, a press does not leap or spend the cooldown (%d)"
+			% sim.body.dash.dashes
+		)
+	)
 
 
 ## With nothing standing ahead in reach, the leap flies its full reach along the facing.
@@ -170,14 +221,21 @@ func _check_phases() -> void:
 		var seen := {}
 		var apex := 0.0
 		var steps := 1
-		sim.step(DT, Vector2.ZERO, false, BUTTON)
+		var blows := 0  # stomps and claw rakes during the leap
+		for event: Dictionary in sim.step(DT, Vector2.ZERO, false, BUTTON):
+			blows += 1 if str(event["type"]) in ["stomp", "swipe", "swipe_windup"] else 0
 		var air_from := sim.kaiju_pos
 		while sim.body.dash.on() and steps < roundi(6.0 / DT):
 			var phase := sim.body.dash.phase()
 			seen[phase] = Num.i(seen.get(phase, 0)) + 1
 			apex = maxf(apex, sim.body.dash.height())
-			sim.step(DT, Vector2(1, 0), false, 0)  # pushed east the whole way
+			for event: Dictionary in sim.step(DT, Vector2(1, 0), false, 0):  # pushed east
+				var kind := str(event["type"])
+				blows += (
+					1 if kind in ["stomp", "swipe", "swipe_windup"] and sim.body.dash.on() else 0
+				)
 			steps += 1
+		check(blows == 0, "%s: no stomp or claw from crouch to recovery (%d)" % [stage, blows])
 		var sideways := absf(sim.kaiju_pos.x - air_from.x)
 		for phase: String in Dash.PHASES:
 			var want := Num.f(data[phase + "_s"])

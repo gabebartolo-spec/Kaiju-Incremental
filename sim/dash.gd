@@ -97,8 +97,8 @@ func height() -> float:
 ## Starts a leap when pressed and ready, then carries it through its phases. Before the sweep.
 func step(dt: float, pressed: bool) -> void:
 	ready_in = maxf(0.0, ready_in - dt)
-	if pressed and ready_in <= 0.0 and _phase < 0 and available() and not sim.airborne:
-		_start()
+	if pressed and can_leap():
+		_start(aim_at(sim.kaiju_pos, sim.facing))
 		return
 	if _phase < 0:
 		return
@@ -111,14 +111,29 @@ func step(dt: float, pressed: bool) -> void:
 		sim.kaiju_pos = from.lerp(to, phase_t())
 
 
-## The building ahead in reach the leap lands on, the landing spot, the crouch begins.
-func _start() -> void:
+## True when a press now would leap: ready, idle, on the ground, and with somewhere to land other
+## than where it stands (at the arena's edge, or against a tower it may not land on, it has none).
+func can_leap() -> bool:
+	if ready_in > 0.0 or _phase >= 0 or not available() or sim.airborne:
+		return false
+	var aim := aim_at(sim.kaiju_pos, sim.facing)
+	var to_pos: Vector2 = aim["to"]  # within a landing step of where it stands: nowhere to go
+	return to_pos.distance_to(sim.kaiju_pos) >= Num.f(cfg["landing_step"])
+
+
+## The building a press now would land on (-1 for none, or when it would not leap): the pacing
+## bot presses only for one.
+func target_ahead() -> int:
+	return Num.i(aim_at(sim.kaiju_pos, sim.facing)["building"]) if can_leap() else -1
+
+
+## The leap to `aim` (aim_at's) begins: the crouch, the cooldown.
+func _start(aim: Dictionary) -> void:
 	_stage = _now()
 	ready_in = Num.f(_stage["cooldown"])
 	dashes += 1
 	dir = sim.facing
 	from = sim.kaiju_pos
-	var aim := aim_at(from, dir)
 	target = Num.i(aim["building"])
 	to = aim["to"]
 	var numbers := Vector4(
