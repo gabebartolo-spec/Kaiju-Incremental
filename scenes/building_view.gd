@@ -88,7 +88,7 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 
 
 func _make_voxels() -> BuildingVoxels:
-	if b.landmark == "":
+	if b.landmark == "" and b.model == "":
 		return BuildingVoxels.new(b, _base, _party)
 	return LandmarkVoxels.new(b, _base)
 
@@ -123,11 +123,13 @@ static func cached() -> int:
 	return _baked.size()
 
 
-## What makes two buildings bake alike: place, size, floors, landmark, wall colour, party walls.
+## What makes two buildings bake alike: place, size, floors, landmark, wall colour, party walls,
+## and a pool building's model, variant and palette.
 static func _key(at: RampageSim.Building, base: Color, party: Dictionary) -> String:
+	var model := "%s|%s|%d" % [at.model, str(at.variant), at.palette]
 	return (
-		"%s|%s|%d|%d|%d|%s|%s|%s"
-		% [at.x, at.z, at.w, at.d, at.height, at.landmark, base.to_html(), str(party)]
+		"%s|%s|%d|%d|%d|%s|%s|%s|%s"
+		% [at.x, at.z, at.w, at.d, at.height, at.landmark, base.to_html(), str(party), model]
 	)
 
 

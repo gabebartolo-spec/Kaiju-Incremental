@@ -19,6 +19,7 @@ const MAGIC := "KVOX"
 
 ## A parsed model per landmark id: {"cells": PackedInt32Array x, y, z triples, "mats": names}.
 static var _cache: Dictionary = {}
+static var _lock := Mutex.new()
 
 var b: RampageSim.Building
 ## The chunk shape's arcs, or null for a landmark without them.
@@ -34,7 +35,7 @@ func _init(p_building: RampageSim.Building) -> void:
 	arcs = b.frame.arcs if b.frame != null else null
 	res = cell_res()
 	_shed_at = Num.i(Content.section("destruction").get("arc_shed_cells", 1))
-	var model := _model(b.landmark)
+	var model := _model(b.landmark) if b.model == "" else model_of(b)
 	var xyz: PackedInt32Array = model["xyz"]
 	var mats: PackedByteArray = model["mats"]
 	var lo := Vector3i.ZERO
@@ -140,6 +141,35 @@ static func material_of(c: Color, ground: Array) -> String:
 	if c.r > c.g + RED and c.r > c.b + RED:
 		return "landmark_seat"
 	return "landmark_other"
+
+
+## A pool building's model (data/city_buildings.json) as cells, turned, mirrored and stretched as
+## the building was placed (ModelVariant); the base read is kept once, the variant made per call
+## (only a building the rampage reaches is promoted).
+static func model_of(building: RampageSim.Building) -> Dictionary:
+	var v := building.variant if not building.variant.is_empty() else ModelVariant.of({})
+	var row := ModelVariant.row_of(building.model)
+	var out := {"xyz": PackedInt32Array(), "mats": PackedByteArray()}
+	var path := str(row.get("kvox", ""))
+	if path != "" and FileAccess.file_exists(path):
+		_lock.lock()
+		var base: Dictionary = _cache.get(path, {})
+		_lock.unlock()
+		if base.is_empty():
+			base = _read(path, [])
+			_lock.lock()
+			_cache[path] = base
+			_lock.unlock()
+		var base_xyz: PackedInt32Array = base["xyz"]
+		var turned := ModelVariant.cells(base_xyz, row, v, cell_res())
+		var src: PackedInt32Array = turned["src"]
+		var mats: PackedByteArray = base["mats"]
+		var picked := PackedByteArray()
+		picked.resize(src.size())
+		for i: int in src.size():
+			picked[i] = mats[src[i]]
+		out = {"xyz": turned["xyz"], "mats": picked}
+	return out
 
 
 ## The landmark's model as cells, read once: {"xyz": x, y, z per voxel, "mats": material ids}.

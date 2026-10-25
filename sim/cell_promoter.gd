@@ -4,7 +4,8 @@ extends RefCounted
 ## until its first hit; then its BuildingCells grid is made, once, with every chunk the
 ## Structure has already lost emptied, and kept for every later hit. A whole city of fine grids
 ## would be ~100 MB (docs/research/DESTRUCTION_SPIKE.md), so only buildings the kaiju touches
-## pay for one. A landmark gets a LandmarkCells grid (its baked model, and the arcs of a ring);
+## pay for one. A landmark or a pool building (CityPool) gets a LandmarkCells grid (its baked
+## model, and the arcs of a ring);
 ## a building a BuildingCells. RampageSim promotes through Carving (WP7).
 
 ## Building index -> BuildingCells or LandmarkCells, for the buildings hit so far.
@@ -25,7 +26,8 @@ func grid(n: int) -> CellGrid:
 func on_hit(n: int, b: RampageSim.Building, party: Dictionary = {}) -> CellGrid:
 	if grids.has(n):
 		return grids[n]
-	var cells: CellGrid = LandmarkCells.new(b) if b.landmark != "" else BuildingCells.new(b, party)
+	var baked := b.landmark != "" or b.model != ""  # a landmark or a pool building (D-253)
+	var cells: CellGrid = LandmarkCells.new(b) if baked else BuildingCells.new(b, party)
 	if b.frame != null:
 		for y: int in b.frame.h:
 			for z: int in b.frame.d:

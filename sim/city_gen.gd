@@ -23,11 +23,10 @@ const ALLEY := "alley"
 const DIAGONAL := "diagonal"
 
 
-## The buildings of the playable city, one dictionary each: x, z (centre), w, d, h, tier, style.
-## Blocks fill district by district, innermost first, so a district's lots draw the same
-## numbers whichever stage is in play (only the stage's height caps change them). The river's
-## blocks (CityRiver) still draw their lots and drop them, so every other building stays put;
-## its quay sheds come last, from their own numbers.
+## The playable city's buildings: x, z (centre), w, d, h, tier, style (CityPool's add a model).
+## Blocks fill district by district, innermost first, so a district's lots draw the same numbers
+## whichever stage is in play (only its height caps change them). The river's blocks (CityRiver)
+## still draw their lots and drop them; its quay sheds come last, from their own numbers.
 static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dictionary]:
 	var plan := map(cfg)
 	var out: Array[Dictionary] = []
@@ -41,6 +40,7 @@ static func generate(rng: RandomNumberGenerator, cfg: Dictionary) -> Array[Dicti
 					if lots.is_empty() and ring == 0:
 						bare.append(block)
 		out.append_array(CitySites.entries(plan, ring))
+	CityPool.place(out, rng, cfg, plan)  # lots take the pool's models (D-256), on their own stream
 	out.append_array(CityRiver.sheds(plan, bare, cfg))
 	return out
 
