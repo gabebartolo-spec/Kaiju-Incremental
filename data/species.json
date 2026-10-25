@@ -4,6 +4,7 @@
 			"id": "reptilian",
 			"name": "Reptilian",
 			"blurb": "Balanced brawler. Tough hide, heavy stomps.",
+			"cost_mult": 1.13,
 			"ability": {
 				"type": "cone",
 				"name": "{beam}",

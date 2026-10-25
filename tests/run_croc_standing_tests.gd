@@ -7,6 +7,7 @@ extends "res://tests/lib/runner.gd"
 ## steps, no clock, no randomness.
 ##   godot --headless --path . --script tests/run_croc_standing_tests.gd
 
+const CrocStompCentre := preload("res://tests/lib/croc_stomp_centre.gd")
 const STAGES: Array[String] = ["baby", "adolescent", "adult"]
 const DT := 1.0 / 60.0
 ## Stomps on the sim's 0.7 s beat, and the footfall weight below which a step is not a stomp.
@@ -25,6 +26,7 @@ func run_checks() -> void:
 	await _t("_check_stomp_landing")
 	await _t("_check_claw_rake")
 	await _t("_check_claw_trail")
+	await _h("CrocStompCentre", func() -> void: await CrocStompCentre.new(self, check).run())
 
 
 func _model(stage: String) -> KaijuModel:

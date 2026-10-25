@@ -24,17 +24,20 @@ const BUTTON_HEIGHT := 110.0
 const ROW_INSET := 6.0
 ## Continue takes three shares of the row and New Kaiju? one.
 const CONTINUE_SHARE := 3.0
-## The settings gear's side, how far it stands below the screen's top and the exit button above
-## the ticker, and the hazard tape along the top edge (the gear stands below it). Both stand the
-## row's margin in from the screen's side.
+## The settings gear's side and how far it stands in from the top-left corner (director
+## 2026-10-25: "shift the settings button further into the corner"), and how far the exit button
+## stands above the ticker.
 const GEAR_SIZE := 76.0
-const CORNER_MARGIN := 60.0
+const GEAR_CORNER := 32.0
 const EXIT_LIFT := 20.0
+## With no save, New Kaiju stands alone at this share of the row's width and this height
+## (director 2026-10-25: "make the 'new kaiju' button significantly smaller").
+const ALONE_SHARE := 0.42
+const ALONE_HEIGHT := 80.0
 ## The logo's size: its width is the button row's and ends clear of the skyline.
 const LOGO_SIZE := 86
 ## The gap between the logo and the row.
 const LOGO_GAP := 10
-const TAPE := 18.0
 ## The exit button's wording.
 const EXIT_TEXT := "RUN FOR YOUR LIFE!?"
 ## The left column's width (px); it stands the TV title-safe margin in from the screen's edge.
@@ -168,12 +171,9 @@ func _add_sky() -> void:
 		add_child(blob)
 
 
-## Hazard tape along the top edge and the news crawl along the bottom: the city has seen you.
+## The news crawl along the bottom: the city has seen you. No tape along the top (director
+## 2026-10-25: "remove the yellow bar at the top").
 func _add_broadcast_frame() -> void:
-	var top := UiKit.tape(18.0)
-	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_bottom = 18.0
-	add_child(top)
 	var news := Content.section("news")
 	var title_lines: Array = news.get("title", [])
 	var lines := PackedStringArray(title_lines)
@@ -202,7 +202,10 @@ func _show_main() -> void:
 		_wire_focus(cont, new_button)
 	else:
 		new_button = _add("NEW KAIJU", UiKit.ACCENT, _on_new, row)
-		new_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		new_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		new_button.custom_minimum_size = Vector2(
+			_buttons.custom_minimum_size.x * ALONE_SHARE, ALONE_HEIGHT
+		)
 		_wire_focus(null, new_button)
 
 
@@ -241,12 +244,10 @@ func _add_corner_buttons() -> void:
 	_gear.tooltip_text = "SETTINGS"
 	_gear.custom_minimum_size = Vector2(GEAR_SIZE, GEAR_SIZE)
 	_gear.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	var top := CORNER_MARGIN + TAPE
-	var side := _col.offset_left + ROW_INSET
-	_gear.offset_left = side
-	_gear.offset_top = top
-	_gear.offset_right = side + GEAR_SIZE
-	_gear.offset_bottom = top + GEAR_SIZE
+	_gear.offset_left = GEAR_CORNER
+	_gear.offset_top = GEAR_CORNER
+	_gear.offset_right = GEAR_CORNER + GEAR_SIZE
+	_gear.offset_bottom = GEAR_CORNER + GEAR_SIZE
 	var icon := GearIcon.new()
 	icon.color = UiKit.TEXT
 	UiKit.full_rect(icon)
@@ -262,6 +263,7 @@ func _add_corner_buttons() -> void:
 	_exit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_exit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_exit.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var side := _col.offset_left + ROW_INSET
 	_exit.offset_right = -(side - HazardBox.PLATE_SHADOW.x)  # the plate's face, not its shadow
 	_exit.offset_bottom = -(NewsTicker.HEIGHT + EXIT_LIFT)
 	_exit.pressed.connect(func() -> void: QuitGame.now(get_tree()))
