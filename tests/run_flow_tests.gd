@@ -142,12 +142,12 @@ func _check_upgrade_screen() -> void:
 		Sfx.ui_played.clear()
 		await GuiInput.click(self, claws)
 		check(Sfx.ui_played == ["ui_confirm"], "a purchase confirms: %s" % [Sfx.ui_played])
-		check(
-			tree.level("claws") == 1 and screen.rubble == 15,
-			"pressing Sharpened Claws buys it for 15 (rubble %d)" % screen.rubble
+		check(  # 15 at the species' price (cost_mult, D-167)
+			tree.level("claws") == 1 and screen.rubble == 30 - roundi(15 * tree.cost_mult),
+			"pressing Sharpened Claws buys it at its price (rubble %d)" % screen.rubble
 		)
 		Sfx.ui_played.clear()
-		await GuiInput.click(self, claws)  # level 2 costs more than the 15 left
+		await GuiInput.click(self, claws)  # level 2 costs more than what is left
 		check(
 			tree.level("claws") == 1 and Sfx.ui_played == ["ui_deny"],
 			"a purchase it can't afford buzzes: %s" % [Sfx.ui_played]
