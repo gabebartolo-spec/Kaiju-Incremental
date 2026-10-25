@@ -52,15 +52,14 @@ static func track_aim(rampage: Rampage, tally: Dictionary) -> void:
 	worst = maxf(worst, absf(dir_a.angle_to(dir_b)))
 	worst = maxf(worst, absf(Num.f(drawn["reach"]) - Num.f(sim["reach"])))
 	worst = maxf(worst, absf(Num.f(drawn["half_angle"]) - Num.f(sim["half_angle"])))
-	# It must not draw over his own body (director 2026-10-25): depth-tested, with only a ghost
-	# pass where something stands in front. Drawing over everything counts as a full miss.
+	# Layered behind the kaiju, never over him (director 2026-10-25): depth-tested, and no extra
+	# pass that could draw where his body stands in front. Anything else counts as a full miss.
 	var main := aim.material_override as BaseMaterial3D
-	var ghost := main.next_pass as BaseMaterial3D if main != null else null
 	var under := (
 		main != null
 		and not main.no_depth_test
-		and ghost != null
-		and ghost.depth_test == BaseMaterial3D.DEPTH_TEST_INVERTED
+		and main.depth_test == BaseMaterial3D.DEPTH_TEST_DEFAULT
+		and main.next_pass == null
 	)
 	tally["under_body"] = under
 	tally["worst"] = worst if under else 1.0

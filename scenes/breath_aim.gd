@@ -4,18 +4,15 @@ extends MeshInstance3D
 ## to land"), presentation only: while the breath is ready, a faint wedge on the street shows the
 ## very cone the sim burns when it fires (BreathCone.of(): from the snout along the facing, out
 ## to the ability's reach), outlined, with a line down its middle. It follows the kaiju's turns,
-## so the player aims by facing; it hides while the breath cools down. Depth-tested: where
-## anything stands in front (a building, his own body) only a faint ghost of it shows, so it never
-## paints over the scene, yet where the breath will land is never hidden. A solid, steady
-## wash, not an additive glow (director 2026-10-25: "the aim wedge should also be more opaque, its
-## too loud"; it glowed and pulsed over his legs).
+## so the player aims by facing; it hides while the breath cools down. A solid, steady wash on
+## the street, layered behind the kaiju and anything else in front of it, never over him
+## (director 2026-10-25: "the aim wedge should also be more opaque, its too loud"; "the wedge
+## should be layered behind the kaiju").
 
 const SEGMENTS := 24  # the far arc's pieces
 const EDGE := 0.04  # outline and middle line width, as a share of the reach
 const FILL_ALPHA := 0.22
 const LINE_ALPHA := 0.6
-## The ghost drawn where something stands in front of the wedge, as a share of the wedge's alpha.
-const GHOST := 0.35
 const LIFT := 0.15  # drawn this far over the kaiju's footing (no z-fight with the street)
 const PULSE_HZ := 1.2  # the outline breathes gently while ready
 const PULSE := 0.05  # how far the alpha breathes either side of 0.95
@@ -24,7 +21,6 @@ var _sim: RampageSim
 var _tint: Color
 var _built := Vector2(-1.0, -1.0)  # (reach, half angle) the mesh was built for
 var _material: StandardMaterial3D
-var _ghost: StandardMaterial3D
 var _age := 0.0
 
 
@@ -34,10 +30,12 @@ func _init(sim: RampageSim, tint: Color) -> void:
 	name = "BreathAim"
 	visible = false
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_material = _wedge_material()
-	_ghost = _wedge_material()
-	_ghost.depth_test = BaseMaterial3D.DEPTH_TEST_INVERTED  # only where something is in front
-	_material.next_pass = _ghost
+	_material = StandardMaterial3D.new()
+	_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_material.vertex_color_use_as_albedo = true
+	_material.disable_fog = true
+	_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material_override = _material
 
 
@@ -74,18 +72,6 @@ func _process(delta: float) -> void:
 	_age += delta
 	var alpha := 0.95 + PULSE * sin(_age * TAU * PULSE_HZ)
 	_material.albedo_color = Color(1, 1, 1, alpha)
-	_ghost.albedo_color = Color(1, 1, 1, alpha * GHOST)
-
-
-static func _wedge_material() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.vertex_color_use_as_albedo = true
-	m.disable_fog = true
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.render_priority = 1
-	return m
 
 
 ## A flat wedge (+Z forward, apex at the origin) of this reach and half angle: a faint fill, its
