@@ -9,12 +9,13 @@ extends RefCounted
 const RES := BuildingVoxels.RES
 ## A chunk's voxel shading salt is drawn below this (chunk()).
 const SALTS := 997
+const RUBBLE := preload("res://scenes/rubble.gdshader")
 
 
 ## Builds the ruin for a building whose palette and footprint come from `voxels`.
 static func build(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> MultiMeshInstance3D:
-	return heap(voxels, rng).build(
-		rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin()
+	return rubbled(
+		heap(voxels, rng).build(rubble_palette(voxels), BuildingVoxels.VOXEL, 2.0, voxels.origin())
 	)
 
 
@@ -44,6 +45,17 @@ static func heap(voxels: BuildingVoxels, rng: RandomNumberGenerator) -> VoxelBui
 				vox.put(Vector3i(x, y, z), key)
 	vox.salt = b.style + 91
 	return vox
+
+
+## Rubble's own look (rubble.gdshader: broken concrete, chips, dust, cracks) on a built heap's
+## cubes. Every heap builds its own cube mesh (Look.voxel_mesh), so the city's material is
+## untouched.
+static func rubbled(mmi: MultiMeshInstance3D) -> MultiMeshInstance3D:
+	var mat := ShaderMaterial.new()
+	mat.shader = RUBBLE
+	GroundKit.apply_look(mat, Num.i(Content.section("city")["map_seed"]))
+	(mmi.multimesh.mesh as BoxMesh).material = mat  # each heap builds its own cube mesh
+	return mmi
 
 
 ## Rubble is mostly pale broken concrete with a little of the building's own colour, and some
@@ -101,7 +113,7 @@ static func strip(
 		for key: String in palette:
 			var c: Color = palette[key]
 			palette[key] = Color(c.lerp(tint, Num.f(cfg["rubble_tint_mix"])), c.a)
-	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO)
+	return rubbled(vox.build(palette, BuildingVoxels.VOXEL, 1.0, Vector3.ZERO))
 
 
 ## One big wall chunk thrown from a toppled tower: a lump of the building's own facade voxels
@@ -127,4 +139,4 @@ static func chunk(voxels: BuildingVoxels, size: Vector3, salt: int) -> MultiMesh
 				vox.put(Vector3i(x, y, z), key)
 	vox.salt = salt
 	var centre := -Vector3(n) * 0.5 * BuildingVoxels.VOXEL
-	return vox.build(palette, BuildingVoxels.VOXEL, 1.0, centre)
+	return rubbled(vox.build(palette, BuildingVoxels.VOXEL, 1.0, centre))
