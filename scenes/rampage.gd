@@ -51,6 +51,7 @@ var shake := CameraShake.new()
 var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
+var _vip: VipView
 var _fade: VehicleFade
 var _cues: PowerCues
 var _hud: RampageHud
@@ -147,7 +148,7 @@ func _ready() -> void:
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
-	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
+	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _heli_nodes)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
 	_follow.focus = _kaiju_at
@@ -174,6 +175,8 @@ func _ready() -> void:
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
+	_vip = VipView.new(sim, _city, sfx)  # the leader's escape helicopter (D-149)
+	add_child(_vip)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
@@ -251,6 +254,8 @@ func _to_world(p: Vector2) -> Vector3:
 
 
 func _on_event(event: Dictionary) -> void:
+	if _vip.on_event(event):  # the leader's helicopter and its headlines
+		return
 	match str(event["type"]):
 		"stomp":
 			_land.lift(_kaiju)
@@ -281,6 +286,13 @@ func _on_event(event: Dictionary) -> void:
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
+
+
+## Every helicopter in the air for the see-through fade: the gunships and the leader's.
+func _heli_nodes() -> Array:
+	var out: Array = _powers.helis()
+	out.append_array(_vip.nodes())
+	return out
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

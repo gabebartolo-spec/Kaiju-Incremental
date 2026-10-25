@@ -95,6 +95,8 @@ var army_units: Army
 ## Species powers (SpeciesPowers), the helicopters (AirWing) and the insectoid's young (Brood).
 var powers: SpeciesPowers
 var air: AirWing
+## The leader's escape helicopter (D-149), its own part beside the air wing.
+var vip: VipHeli
 var brood: Brood
 var emerge: Emergence  # the rise from the river that starts a game's run (D-083)
 ## The body as a solid that breaks what it walks into; it steers the facing with weight.
@@ -143,6 +145,8 @@ func _init(
 	powers = SpeciesPowers.new(self, Seeds.derive(rng, 0x5EED))
 	var air_cfg: Dictionary = tuning["air"]
 	air = AirWing.new(self, air_cfg, Seeds.derive(rng, 0xA1))
+	var vip_cfg: Dictionary = tuning["vip"]
+	vip = VipHeli.new(self, vip_cfg, Seeds.derive(rng, 0x71B))
 	brood = Brood.new(self, Seeds.derive(rng, 0xB0))
 	emerge = Emergence.new(city, tuning)
 	body = BodyContact.new(self, tuning)
@@ -189,7 +193,7 @@ func destruction() -> float:
 
 
 func result() -> Dictionary:
-	return {
+	var out := {
 		"rubble": Num.i(floor(rubble)),
 		"destruction": destruction(),
 		"buildings": collapse.destroyed_buildings(),
@@ -203,6 +207,8 @@ func result() -> Dictionary:
 		"tallest_topple": collapse.tallest_topple,
 		"reason": end_reason,
 	}
+	out.merge(vip.summary())
+	return out
 
 
 ## Advances the rampage by dt (move, signature pressed, button flags HELD/ULTIMATE/Dash.BUTTON).
@@ -240,7 +246,7 @@ func step(dt: float, move: Vector2, signature_pressed: bool, buttons: int = 0) -
 	brood.step(dt)
 	collapse.step(dt)
 	army_units.step(dt)
-	air.step(dt)
+	_step_sky(dt)
 	Endless.step(self, dt)
 	var why := Endless.over_reason(self)
 	if why != "":
@@ -266,6 +272,12 @@ func end(reason: String) -> void:
 
 func clamp_to_arena(pos: Vector2) -> Vector2:
 	return pos.clamp(Vector2(-arena_half, -arena_half), Vector2(arena_half, arena_half))
+
+
+## The helicopters: the air wing's gunships, then the leader's escape (D-149).
+func _step_sky(dt: float) -> void:
+	air.step(dt)
+	vip.step(dt)
 
 
 func _stomp() -> void:
@@ -330,6 +342,7 @@ func hit_area(force: Callable, damage: float, y_lo: int = 0, y_hi: int = -1) -> 
 			tank.coat_dps = Num.f(hit_coat["dps"]) * Num.f(powers_cfg["ink_unit_mult"])
 	army_units.splash(force, maxi(0, y_lo), top)  # then clears dead tanks and squads
 	air.hit(force, damage, hit_air or reach_top() >= air.altitude())
+	vip.hit(force, damage)
 
 
 ## Nearest standing ground-floor chunk in the arena to `from` (an attacker's goal), or INF.
