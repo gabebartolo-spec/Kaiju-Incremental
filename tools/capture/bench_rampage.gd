@@ -53,9 +53,10 @@ func _run() -> void:
 	var logic_max := 0.0
 	var slow := 0
 	var gap_max := 0.0
-	# Frame time over the first and the last WINDOW_S seconds: [frames, gap sum ms, gpu sum ms].
-	var head := [0, 0.0, 0.0]
-	var tail := [0, 0.0, 0.0]
+	# Frame time over the first and the last WINDOW_S seconds: [frames, gap sum ms, gpu sum ms,
+	# process sum ms, physics sum ms].
+	var head := [0, 0.0, 0.0, 0.0, 0.0]
+	var tail := [0, 0.0, 0.0, 0.0, 0.0]
 	var last := Time.get_ticks_usec()
 	var start := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - start < _seconds * 1000.0 and not rampage.sim.over:
@@ -80,6 +81,8 @@ func _run() -> void:
 				win[0] += 1
 				win[1] += gap
 				win[2] += gpu
+				win[3] += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+				win[4] += Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
 		if gap > 33.4:
 			slow += 1
 			print("slow frame: %.1fms at %.1fs" % [gap, (Time.get_ticks_msec() - start) / 1000.0])
@@ -89,8 +92,16 @@ func _run() -> void:
 		var n := maxi(1, Num.i(got[0]))
 		print(
 			(
-				"frame time, %s %.0f s: %.2f ms (gpu %.2f ms) over %d frames"
-				% [win[0], WINDOW_S, Num.f(got[1]) / n, Num.f(got[2]) / n, got[0]]
+				"frame time, %s %.0f s: %.2f ms (gpu %.2f, process %.2f, physics %.2f ms) over %d frames"
+				% [
+					win[0],
+					WINDOW_S,
+					Num.f(got[1]) / n,
+					Num.f(got[2]) / n,
+					Num.f(got[3]) / n,
+					Num.f(got[4]) / n,
+					got[0]
+				]
 			)
 		)
 	print(

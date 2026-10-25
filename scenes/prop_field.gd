@@ -6,6 +6,7 @@ extends RefCounted
 ## (thrown like a building's) and a pale stump stays (critic on #55: a toppled tree never read).
 ## Presentation only: the sim never knows props exist.
 
+const TILE := 32.0  # props draw as one MultiMesh per ground square this size (culled apart)
 const BUCKET := 8.0  # props are filed by ground cell of this size, so a crush looks nearby only
 const STUMP := 2  # a crushed tree leaves its lowest cells this many high standing
 const LEAF_EVERY := 4  # a crushed tree throws one piece per this many of its leaf cells
@@ -31,7 +32,7 @@ var debris: Array[Array] = []
 var _rng := Seeds.make("tree_burst")  # where in its crown each leaf starts, and its spread
 var _groups: Array[Dictionary] = []
 var _buckets: Dictionary = {}  # Vector2i cell -> Array of group indices
-var _mmi: MultiMeshInstance3D
+var _tiles: Array[MultiMeshInstance3D] = []  # build(): one per TILE square of ground
 
 
 func _init(p_voxel: float) -> void:
@@ -75,43 +76,69 @@ func felled() -> Array[Vector2]:
 	return out
 
 
-## glow: strength for palette colours with alpha 0 (lamps).
-## glow: strength for palette colours with alpha 0 (lamps).
-func build(palette: Dictionary, salt: int, glow: float) -> MultiMeshInstance3D:
-	vox.salt = salt
-	_mmi = vox.build(palette, voxel, glow, Vector3.ZERO)
-	_mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Each prop remembers which instances are its voxels, so crushing touches only those.
-	var index_of := {}
-	for i: int in vox.built_cells.size():
-		index_of[vox.built_cells[i]] = i
-	for group: Dictionary in _groups:
-		var local: VoxelBuilder = group["local"]
-		var offset: Vector3i = group["offset"]
-		var ids := PackedInt32Array()
-		var heights := PackedInt32Array()  # each instance's prop-local cell height
-		var origins := PackedVector3Array()  # where each is drawn (kept here: headless keeps none)
-		var keys := PackedStringArray()  # and its palette key (bark or leaf, for debris)
-		for cell: Vector3i in local.cells:
-			if index_of.has(cell + offset):
-				var idx: int = index_of[cell + offset]
-				ids.append(idx)
-				heights.append(cell.y)
-				origins.append(Vector3(cell + offset) * voxel + Vector3(0, voxel * 0.5, 0))
-				keys.append(str(vox.cells[cell + offset]))
-		group["ids"] = ids
-		group["heights"] = heights
-		group["origins"] = origins
-		group["keys"] = keys
-		group.erase("local")
-	return _mmi
+## Builds the props into one MultiMesh per TILE m square of ground under one Node3D, so the camera
+## culls the tiles it does not see (one city-wide MultiMesh was drawn whole whenever any prop
+## showed; D-254's bigger city doubled that). Frustum culling only: what the camera shows is
+## unchanged. glow: strength for palette colours with alpha 0 (lamps).
+func build(palette: Dictionary, salt: int, glow: float) -> Node3D:
+	var holder := Node3D.new()
+	var by_tile := {}  # Vector2i -> group indices
+	for n: int in _groups.size():
+		var at: Vector3 = _groups[n]["at"]
+		var key := Vector2i(floori(at.x / TILE), floori(at.z / TILE))
+		if not by_tile.has(key):
+			by_tile[key] = []
+		var list: Array = by_tile[key]
+		list.append(n)
+	for key: Vector2i in by_tile:
+		var tile := VoxelBuilder.new()
+		tile.salt = salt
+		var members: Array = by_tile[key]
+		for n: int in members:
+			var local: VoxelBuilder = _groups[n]["local"]
+			var offset: Vector3i = _groups[n]["offset"]
+			for cell: Vector3i in local.cells:
+				tile.put(cell + offset, local.key_at(cell))
+		var mmi := tile.build(palette, voxel, glow, Vector3.ZERO)
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		holder.add_child(mmi)
+		_tiles.append(mmi)
+		# Each prop remembers which instances of its tile are its voxels, so crushing touches
+		# only those.
+		var index_of := {}
+		for i: int in tile.built_cells.size():
+			index_of[tile.built_cells[i]] = i
+		for n: int in members:
+			_index(_groups[n], index_of, tile, _tiles.size() - 1)
+	return holder
+
+
+func _index(group: Dictionary, index_of: Dictionary, tile: VoxelBuilder, at_tile: int) -> void:
+	var local: VoxelBuilder = group["local"]
+	var offset: Vector3i = group["offset"]
+	var ids := PackedInt32Array()
+	var heights := PackedInt32Array()  # each instance's prop-local cell height
+	var origins := PackedVector3Array()  # where each is drawn (kept here: headless keeps none)
+	var keys := PackedStringArray()  # and its palette key (bark or leaf, for debris)
+	for cell: Vector3i in local.cells:
+		if index_of.has(cell + offset):
+			var idx: int = index_of[cell + offset]
+			ids.append(idx)
+			heights.append(cell.y)
+			origins.append(Vector3(cell + offset) * voxel + Vector3(0, voxel * 0.5, 0))
+			keys.append(str(tile.cells[cell + offset]))
+	group["ids"] = ids
+	group["heights"] = heights
+	group["origins"] = origins
+	group["keys"] = keys
+	group["tile"] = at_tile
+	group.erase("local")
 
 
 ## Flattens every prop whose base is within `radius` of `at` (ground plane); trees burst.
 func crush(at: Vector3, radius: float) -> void:
-	if _mmi == null:
+	if _tiles.is_empty():
 		return
-	var mm := _mmi.multimesh
 	var lo := Vector2i(floori((at.x - radius) / BUCKET), floori((at.z - radius) / BUCKET))
 	var hi := Vector2i(floori((at.x + radius) / BUCKET), floori((at.z + radius) / BUCKET))
 	for bx: int in range(lo.x, hi.x + 1):
@@ -121,15 +148,14 @@ func crush(at: Vector3, radius: float) -> void:
 				var group: Dictionary = _groups[index]
 				var base: Vector3 = group["at"]
 				if Vector2(base.x - at.x, base.z - at.z).length() <= radius:
-					_crush_group(mm, group, at)
+					_crush_group(group, at)
 
 
 ## Flattens every prop whose base lies under a body: `foot` is its ground box (x across, y
 ## along) in the frame `body` (scale included), so the box turns and grows with it.
 func crush_box(body: Transform3D, foot: Rect2) -> void:
-	if _mmi == null:
+	if _tiles.is_empty():
 		return
-	var mm := _mmi.multimesh
 	var reach := maxf(foot.position.length(), foot.end.length()) * body.basis.get_scale().x
 	var at := body.origin
 	var into := body.affine_inverse()
@@ -143,7 +169,7 @@ func crush_box(body: Transform3D, foot: Rect2) -> void:
 				var base: Vector3 = group["at"]
 				var local := into * Vector3(base.x, at.y, base.z)
 				if foot.has_point(Vector2(local.x, local.z)):
-					_crush_group(mm, group, at)
+					_crush_group(group, at)
 
 
 ## Takes the crushed-tree look from tuning's city section.
@@ -181,9 +207,10 @@ func throw(fx: Fx) -> void:
 	stumps.clear()
 
 
-func _crush_group(mm: MultiMesh, group: Dictionary, at: Vector3) -> void:
+func _crush_group(group: Dictionary, at: Vector3) -> void:
 	if group.get("crushed", false):
 		return
+	var mm := _tiles[Num.i(group["tile"])].multimesh
 	group["crushed"] = true
 	if group.get("fells", false):
 		_burst(mm, group, at)

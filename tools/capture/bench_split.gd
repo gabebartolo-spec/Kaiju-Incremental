@@ -7,14 +7,21 @@ extends SceneTree
 ##     -- --stage=3 --preset=medium
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
+
+## --live: the rampage plays on while measuring (each hidden stretch is compared with the shown
+## stretches either side of it), else it is frozen.
+var _live := false
 ## Frames measured per state (shown, hidden).
 const FRAMES := 30
+## Savings under this (ms) are not printed: a tank or a helicopter, noise.
+const NOISE_MS := 0.3
 ## Frames left to settle after a visibility change.
 const SETTLE := 5
 
 
 func _initialize() -> void:
-	var a := Kit.args({"stage": 3, "preset": ""})
+	var a := Kit.args({"stage": 3, "preset": "", "live": false})
+	_live = a["live"] == true
 	PlayerSettings.graphics = str(a["preset"])
 	if not Kit.window_ok():
 		quit(1)
@@ -29,7 +36,8 @@ func _run(stage: int) -> void:
 	var rampage := Kit.autoplay(self, "reptilian", Kit.stats("reptilian", levels, "reptilian"), 2, layout)
 	Kit.measure_on(self)
 	await Kit.frames(self, 90)
-	rampage.process_mode = Node.PROCESS_MODE_DISABLED  # a still scene: only the drawing differs
+	if not _live:
+		rampage.process_mode = Node.PROCESS_MODE_DISABLED  # a still scene: only drawing differs
 	await Kit.frames(self, 20)
 	var nodes: Array[Node3D] = []
 	for node: Node in rampage.get_children():
@@ -44,13 +52,20 @@ func _run(stage: int) -> void:
 	for node: Node3D in nodes:
 		if not node.visible or node is Label3D:
 			continue
+		var shown := base
+		if _live:
+			shown = await _measure()
 		node.visible = false
 		var off := await _measure()
 		node.visible = true
+		if _live:
+			shown = (shown + await _measure()) * 0.5
+		if absf(shown.x - off.x) < NOISE_MS and absf(shown.y - off.y) < NOISE_MS:
+			continue
 		print(
 			(
 				"hide %s: gpu -%.2f ms, frame -%.2f ms"
-				% [_label(node), base.x - off.x, base.y - off.y]
+				% [_label(node), shown.x - off.x, shown.y - off.y]
 			)
 		)
 	quit()

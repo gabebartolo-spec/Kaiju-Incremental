@@ -1343,7 +1343,10 @@
 		"cops_per_blockade": 4,
 		"cop_hold_radius": 7.0,
 		"cop_fire_interval": 0.7,
-		"max_police_cars": 8
+		"max_police_cars": 8,
+		"far_radius": 60.0,
+		"far_every": 4,
+		"view_margin": 10.0
 	},
 	"vehicles": {
 		"tank_height": 1.61,
