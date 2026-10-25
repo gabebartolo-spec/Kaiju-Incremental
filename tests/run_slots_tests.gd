@@ -40,6 +40,9 @@ func run_checks() -> void:
 	await _t("_check_new_in_empty_slot")
 	await _t("_check_start_over_asks")
 	await _t("_check_delete_asks")
+	await _t("_check_legacy_full_slots")
+	await _t("_check_legacy_once")
+	await _t("_check_unreadable_slots")
 	SaveFile.wipe()
 	SaveFile.slot = 1
 
@@ -161,7 +164,8 @@ func _check_legacy_never_lost() -> void:
 	SaveFile.wipe()
 
 
-## K-01 on a new save; only a death ("defeated") moves it on; it survives save and reload.
+## K-01 on a new save; every death moves it on: killed ("defeated"), time's up (D-263) and End
+## rampage (director 2026-10-26, "Yes, he dies"); felling the city does not. Survives a reload.
 func _check_specimen() -> void:
 	var save := SaveFile.new_save("reptilian")
 	check(SaveFile.specimen_name(save) == "SPECIMEN K-01", "a new kaiju is SPECIMEN K-01")
@@ -169,12 +173,15 @@ func _check_specimen() -> void:
 	for reason: String in ["time", "ended", "city_fallen", "defeated"]:
 		moved.append(SaveFile.note_end(save, {"reason": reason}))
 	check(
-		moved == [false, false, false, true] and SaveFile.specimen_name(save) == "SPECIMEN K-02",
-		"only the kaiju's death makes the next specimen: %s, %s" % [moved, save["specimen"]]
+		moved == [true, true, false, true] and SaveFile.specimen_name(save) == "SPECIMEN K-04",
+		(
+			"time's up, End rampage and a kill each make the next specimen; a fallen city does not: %s, %s"
+			% [moved, save["specimen"]]
+		)
 	)
 	SaveFile.save_game(save, 3)
 	check(
-		SaveFile.specimen_name(SaveFile.load_game(3)) == "SPECIMEN K-02",
+		SaveFile.specimen_name(SaveFile.load_game(3)) == "SPECIMEN K-04",
 		"the specimen number lives in the slot (save, reload)"
 	)
 	SaveFile.wipe()
@@ -299,3 +306,86 @@ func _check_delete_asks() -> void:
 	)
 	check(SaveFile.has_save(1), "deleting slot 2 leaves slot 1's kaiju")
 	await _close(main)
+
+
+## Three full slots and a pre-slots save: the old save stays where it is and every slot keeps its
+## kaiju.
+func _check_legacy_full_slots() -> void:
+	SaveFile.wipe()
+	for n: int in [1, 2, 3]:
+		var save := SaveFile.new_save("reptilian")
+		save["runs"] = n
+		SaveFile.save_game(save, n)
+	_write_legacy(V4)
+	var runs: Array[int] = []
+	for n: int in [1, 2, 3]:
+		runs.append(Num.i(SaveFile.load_game(n).get("runs", -1)))
+	check(
+		runs == [1, 2, 3] and FileAccess.file_exists(SaveFile.LEGACY_PATH),
+		"with every slot full the old save waits on disk, no slot overwritten: %s" % [runs]
+	)
+	SaveFile.wipe()
+
+
+## A backup left from before (save.json.pre_slots exists): the old save is still adopted exactly
+## once, never again into a second slot on the next look.
+func _check_legacy_once() -> void:
+	SaveFile.wipe()
+	var stale := FileAccess.open(SaveFile.LEGACY_BACKUP, FileAccess.WRITE)
+	stale.store_string("{}")
+	stale.close()
+	_write_legacy(V4)
+	var first := SaveFile.has_save(1)
+	var again := SaveFile.has_save(2)
+	check(
+		first and not again and not FileAccess.file_exists(SaveFile.LEGACY_PATH),
+		(
+			"the old save is adopted once (slot 1 %s, slot 2 %s, save.json left %s)"
+			% [first, again, FileAccess.file_exists(SaveFile.LEGACY_PATH)]
+		)
+	)
+	SaveFile.wipe()
+
+
+## A slot file that cannot be read (corrupt, or from a newer version) never reads EMPTY: it says
+## UNREADABLE, cannot be continued, New Kaiju asks before replacing it, and the file is kept.
+func _check_unreadable_slots() -> void:
+	SaveFile.wipe()
+	var bad := FileAccess.open(SaveFile.path(1), FileAccess.WRITE)
+	bad.store_string("{ not json")
+	bad.close()
+	var newer := FileAccess.open(SaveFile.path(3), FileAccess.WRITE)
+	newer.store_string(JSON.stringify({"version": SaveFile.VERSION + 1, "runs": 4}))
+	newer.close()
+	var main := await _main()
+	var title := _screen(main) as TitleScreen
+	await GuiInput.click(self, GuiInput.button(title, "NEW KAIJU"))
+	await _frames(2)
+	check(
+		title.slot_list() != null and _screen(main) == title,
+		"with only unreadable slots NEW KAIJU still opens the slots, not the lab"
+	)
+	var one := GuiInput.button(title, "SLOT 1")
+	var three := GuiInput.button(title, "SLOT 3")
+	check(
+		(
+			one != null
+			and one.text.ends_with("UNREADABLE")
+			and three != null
+			and three.text.ends_with("UNREADABLE")
+		),
+		"corrupt and newer slot files read UNREADABLE, never EMPTY"
+	)
+	if one != null:
+		await GuiInput.click(self, one)
+		await _frames(2)
+	check(
+		GuiInput.button(title, "YES, START OVER") != null and _screen(main) == title,
+		"replacing an unreadable slot asks first"
+	)
+	check(
+		FileAccess.get_file_as_string(SaveFile.path(1)) == "{ not json",
+		"the unreadable file is kept untouched"
+	)
+	await _close(main)
+	SaveFile.wipe()

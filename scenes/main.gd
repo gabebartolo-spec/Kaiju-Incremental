@@ -54,7 +54,12 @@ func _slots() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for n: int in range(1, SaveFile.slot_count() + 1):
 		var save := SaveFile.load_game(n)
-		var info := {"slot": n, "taken": not save.is_empty()}
+		# A file that cannot be read (corrupt, newer) is still taken: never shown as EMPTY.
+		var info := {
+			"slot": n,
+			"taken": FileAccess.file_exists(SaveFile.path(n)),
+			"readable": not save.is_empty(),
+		}
 		if not save.is_empty():
 			info["continues"] = Demo.continues(save)
 			info["specimen"] = SaveFile.specimen_name(save)
@@ -172,7 +177,8 @@ func _start_rampage(endless := false) -> void:
 
 
 ## Banks the rampage, then shows the results over the wrecked city, against the best before it.
-## A kaiju that died makes the next rise specimen K-0n+1 (director 2026-10-26), Endless included.
+## Every death (killed, time's up, End rampage; SaveFile.DEATHS) makes the next rise a new
+## specimen, Endless included.
 ## An Endless run banks nothing; a demo rampage adds to the thanks screen's totals (Demo.add).
 func _on_rampage_finished(result: Dictionary) -> void:
 	var previous: Dictionary = _save.get("best", {})

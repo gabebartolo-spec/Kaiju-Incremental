@@ -18,6 +18,8 @@ const PICK_NEW := "Pick a slot for the new kaiju."
 const EMPTY := "EMPTY"
 ## A filled slot this build cannot play (a demo save in the full game, or a species it leaves out).
 const LOCKED := "NOT IN THIS VERSION"
+## A slot whose file cannot be read (corrupt, or saved by a newer version): kept, never EMPTY.
+const UNREADABLE := "UNREADABLE"
 ## A slot plate's height (px at 1080p): three rows and BACK fit above the news ticker.
 const ROW_HEIGHT := 96.0
 const BACK_HEIGHT := 72.0
@@ -62,6 +64,8 @@ static func plate_text(info: Dictionary) -> String:
 	var head := "SLOT %d" % Num.i(info["slot"])
 	if info.get("taken", false) != true:
 		return "%s\n%s" % [head, EMPTY]
+	if info.get("readable", true) != true:
+		return "%s\n%s" % [head, UNREADABLE]
 	var line := str(info["summary"]) if info.get("continues", false) == true else LOCKED
 	return "%s - %s\n%s" % [head, str(info["specimen"]), line.to_upper()]
 
@@ -146,6 +150,8 @@ func _ask(question: String, yes_text: String, yes: Callable) -> void:
 
 
 func _who(info: Dictionary) -> String:
+	if info.get("readable", true) != true:
+		return "unreadable save"
 	var species := str(info.get("species", ""))
 	return "%s (%s)" % [species, str(info["specimen"])] if species != "" else str(info["specimen"])
 

@@ -18,6 +18,10 @@ const BEST_KEYS: Array[String] = [
 	"rubble", "destruction", "toppled", "tallest_topple", "civilians", "tanks", "helis"
 ]
 
+## The rampage ends that count as the kaiju's death: killed, time's up (D-263) and End rampage
+## (director 2026-10-26, "Yes, he dies"). Felling the whole city ("city_fallen") is not one.
+const DEATHS: Array[String] = ["defeated", "time", "ended"]
+
 ## The slot the game is playing (1-based); main.gd sets it when a slot is picked.
 static var slot := 1
 
@@ -66,9 +70,10 @@ static func wipe() -> void:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
 
 
-## Moves the pre-slots save into the first empty slot, migrated to VERSION, then renames the old
-## file to LEGACY_BACKUP. Leaves it untouched when it cannot be read or no slot is empty, so
-## nothing is ever lost.
+## Moves the pre-slots save into the first empty slot, migrated to VERSION. The old file is
+## renamed to LEGACY_BACKUP first (a stale backup is removed), and only once that worked is the slot
+## written, so it is adopted exactly once; a failed write renames it back. Leaves it untouched when
+## it cannot be read or no slot is empty, so nothing is ever lost.
 static func adopt_legacy() -> void:
 	if not FileAccess.file_exists(LEGACY_PATH):
 		return
@@ -82,11 +87,15 @@ static func adopt_legacy() -> void:
 	var data := migrate(Content.load_json(LEGACY_PATH))
 	if data.is_empty():
 		return
+	var from := ProjectSettings.globalize_path(LEGACY_PATH)
+	var backup := ProjectSettings.globalize_path(LEGACY_BACKUP)
+	if FileAccess.file_exists(LEGACY_BACKUP) and DirAccess.remove_absolute(backup) != OK:
+		return
+	if DirAccess.rename_absolute(from, backup) != OK:
+		return
 	save_game(data, target)
 	if not FileAccess.file_exists(path(target)):
-		return
-	var from := ProjectSettings.globalize_path(LEGACY_PATH)
-	DirAccess.rename_absolute(from, ProjectSettings.globalize_path(LEGACY_BACKUP))
+		DirAccess.rename_absolute(backup, from)
 
 
 ## The slot written most recently among those holding a save that `keep` accepts, or 0.
@@ -125,10 +134,10 @@ static func specimen_name(save: Dictionary) -> String:
 	return "SPECIMEN K-%02d" % Num.i(save.get("specimen", 1))
 
 
-## After a rampage `result`: a kaiju that died ("defeated", Endless too) makes the next rise a
-## new specimen, one number up. True when the number moved.
+## After a rampage `result`: every death (DEATHS, Endless too) makes the next rise a new
+## specimen, one number up. True when the number moved.
 static func note_end(save: Dictionary, result: Dictionary) -> bool:
-	if str(result.get("reason", "")) != "defeated":
+	if not DEATHS.has(str(result.get("reason", ""))):
 		return false
 	save["specimen"] = Num.i(save.get("specimen", 1)) + 1
 	return true
