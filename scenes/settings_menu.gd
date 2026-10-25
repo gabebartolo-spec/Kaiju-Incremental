@@ -1,7 +1,8 @@
 class_name SettingsMenu
 extends Control
 ## Settings: volume and sound-effects volume, camera motion, fullscreen (F11), UI scale for the
-## TV, and the controls for keyboard and pad. An overlay over whatever opened it (title or
+## TV, and two pages it opens over itself: CONTROLS (rebinding, ControlsMenu) and ACCESSIBILITY
+## (AccessMenu). An overlay over whatever opened it (title or
 ## pause); Back or cancel reports `closed`. Every change goes through PlayerSettings, which
 ## applies and saves it.
 
@@ -36,6 +37,8 @@ var _fps: Button
 var _graphics: Button
 var _time: Button
 var _weather: Button
+## The page open over the settings (ControlsMenu, AccessMenu), or null.
+var page: OptionsPage
 
 
 func _ready() -> void:
@@ -85,7 +88,7 @@ func _ready() -> void:
 	_button_row(col, "Time of day", [_time])
 	_weather = _choice(func() -> void: PlayerSettings.next_weather())
 	_button_row(col, "Weather", [_weather])
-	_add_controls(col)
+	_add_pages(col)
 
 	var back := UiKit.button("BACK", UiKit.SIZE_HEAD)
 	HazardBox.trim_height(back, BACK_MARGIN)
@@ -129,24 +132,29 @@ func _gap(node: Control, top: int) -> Control:
 	return box
 
 
-## The controls list, keyboard and pad, at the body size.
-func _add_controls(col: Control) -> void:
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 40)
-	grid.add_theme_constant_override("v_separation", 0)
-	col.add_child(_gap(grid, BLOCK_GAP))
-	# The heading shares the column titles' row: the screen stays short enough for the TV (D-155).
-	grid.add_child(UiKit.label("CONTROLS", UiKit.SIZE_HEAD, UiKit.WARN))
-	for heading: String in ["Keyboard", "Pad"]:
-		grid.add_child(UiKit.label(heading, UiKit.SIZE_BODY, UiKit.MUTED))
-	var controls: Array[Array] = PlayerSettings.CONTROLS
-	for entry: Array in controls:
-		# A row tied to a species (its 4th entry) shows only when that species is playable.
-		if entry.size() > 3 and not Demo.allows(str(entry[3])):
-			continue
-		for at: int in 3:
-			grid.add_child(UiKit.label(str(entry[at]), UiKit.SIZE_BODY, UiKit.TEXT))
+## The CONTROLS and ACCESSIBILITY buttons, side by side across the card: each opens its page.
+func _add_pages(col: Control) -> void:
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", int(BUTTON_GAP))
+	var pages: Array[Array] = [
+		["CONTROLS", func() -> OptionsPage: return ControlsMenu.new()],
+		["ACCESSIBILITY", func() -> OptionsPage: return AccessMenu.new()],
+	]
+	for entry: Array in pages:
+		var b := UiKit.button(str(entry[0]), UiKit.SIZE_BODY)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		HazardBox.trim_height(b, CHOICE_MARGIN)
+		var make: Callable = entry[1]
+		b.pressed.connect(_open.bind(make, b))
+		line.add_child(b)
+	col.add_child(_gap(line, BLOCK_GAP))
+
+
+## Opens a page over the settings; focus comes back to `from` when it closes.
+func _open(make: Callable, from: Button) -> void:
+	page = make.call()
+	page.closed.connect(func() -> void: from.grab_focus.call_deferred())
+	add_child(page)
 
 
 func _process(_delta: float) -> void:

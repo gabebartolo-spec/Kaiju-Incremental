@@ -1,7 +1,8 @@
 extends RefCounted
 ## The settings menu's rows as the screen critic asked (round 2, D-145): the two-button rows split
 ## the sliders' span in equal halves and every right edge, time of day included, is the sliders'
-## right edge; 10 px between button rows; 20 px above CONTROLS and between the table and BACK;
+## right edge; 10 px between button rows; 20 px above the CONTROLS and ACCESSIBILITY buttons and
+## between them and BACK;
 ## every cycling button shows its < > cue. Read from real layout rects at 1x, in canvas px.
 
 const GuiInput := preload("res://tests/lib/gui_input.gd")
@@ -73,29 +74,28 @@ static func run(check: Callable, menu: SettingsMenu) -> void:
 
 
 static func _blocks(check: Callable, menu: SettingsMenu, time: Rect2) -> void:
-	var controls: Label
-	var last_row: Label
+	var controls: Button = GuiInput.button(menu, "CONTROLS")
+	var access: Button = GuiInput.button(menu, "ACCESSIBILITY")
 	var back: Button = GuiInput.button(menu, "BACK")
-	for found: Node in menu.find_children("*", "Label", true, false):
-		var l := found as Label
-		if l.text == "CONTROLS":
-			controls = l
-		elif l.text == "Back":
-			last_row = l
 	check.call(
-		controls != null and controls.get_global_rect().position.y - time.end.y >= BLOCK_GAP - EPS,
-		"settings: 20 px or more above the CONTROLS heading"
+		(
+			controls != null
+			and access != null
+			and controls.get_global_rect().position.y - time.end.y >= BLOCK_GAP - EPS
+			and absf(controls.get_global_rect().position.y - access.get_global_rect().position.y) < EPS
+		),
+		"settings: 20 px or more above the CONTROLS and ACCESSIBILITY buttons, side by side"
 	)
 	check.call(
 		(
-			last_row != null
+			controls != null
 			and back != null
 			and (
-				back.get_global_rect().position.y - last_row.get_global_rect().end.y
+				back.get_global_rect().position.y - controls.get_global_rect().end.y
 				>= BLOCK_GAP - EPS
 			)
 		),
-		"settings: 20 px or more between the table and BACK"
+		"settings: 20 px or more between the page buttons and BACK"
 	)
 	var names: Array[String] = []
 	for found: Node in menu.find_children("*", "Label", true, false):

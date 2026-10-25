@@ -328,7 +328,7 @@ func _broke(index: int, cells: Array[Vector3i]) -> void:
 func flash(at: Vector3, color: Color, energy: float, seconds: float) -> void:
 	var light := OmniLight3D.new()
 	light.light_color = color
-	light.light_energy = energy
+	light.light_energy = energy * PlayerSettings.flash_scale()  # Reduce flashing (D-259)
 	light.omni_range = 3.0 + energy
 	light.position = at
 	add_child(light)

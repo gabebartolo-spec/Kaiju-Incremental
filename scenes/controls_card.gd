@@ -1,7 +1,7 @@
 class_name ControlsCard
 extends PanelContainer
 ## The controls, keyboard and pad, on one broadcast card (b2-10): shown once at the start of
-## the first rampage (RampageHud) and from Settings > CONTROLS. Never on the HUD otherwise.
+## the first rampage (RampageHud). Settings > CONTROLS lists and rebinds them (ControlsMenu). Never on the HUD otherwise.
 
 ## The first-run card lists only these (the full list stays in Settings > CONTROLS).
 const FIRST_RUN: Array[String] = ["Move", "Signature attack", "Dash"]
@@ -60,5 +60,5 @@ static func rows(first_run: bool = false) -> Array[Array]:
 			continue
 		if first_run and not FIRST_RUN.has(str(entry[0])):
 			continue
-		out.append(entry)
+		out.append(KeyBinds.row_text(entry))  # the player's own keys where rebound (D-259)
 	return out
