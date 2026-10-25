@@ -278,22 +278,22 @@ func _check_frost() -> void:
 	)
 	frost.launch(3, Vector3.ZERO)
 	_run(sim, Num.f(frost.cfg["flight_s"]) + 0.1)
-	check(frost.frost_left > 0.0, "iced again for the dash test")
+	check(frost.frost_left > 0.0, "iced again for the leap test")
 	var dashed := sim.step(DT, way, false, DASH_BUTTON)
 	var shattered := _first(dashed, "frost_cracked")
 	check(
 		str(shattered.get("why", "")) == "dash" and frost.frost_left == 0.0,
-		"the dash shatters the ice early: %s" % [shattered]
+		"the leap (dash button) shatters the ice early: %s" % [shattered]
 	)
-	var walled := _adolescent()  # a dash into the wall ahead is over the step it starts
+	var walled := _adolescent()  # a leap pressed facing the wall ahead shatters it at the press
 	_open(walled)
 	var cold := walled.army_units.taskforce.frost
 	cold.launch(4, Vector3.ZERO)
 	_run(walled, Num.f(cold.cfg["flight_s"]) + 0.1)
 	var rammed := walled.step(DT, walled.facing, false, DASH_BUTTON)
 	check(
-		not _first(rammed, "dash").is_empty() and not walled.body.dash.on(),
-		"the dash into a wall stopped at once: %s" % [_types(rammed)]
+		not _first(rammed, "leap").is_empty() and walled.body.dash.phase() == "crouch",
+		"the leap at a wall starts its crouch: %s" % [_types(rammed)]
 	)
 	check(
 		str(_first(rammed, "frost_cracked").get("why", "")) == "dash" and cold.frost_left == 0.0,

@@ -1,19 +1,19 @@
 extends RefCounted
 ## The building stream follows the camera's view (BuildingStream): through the fastest camera
-## move the game allows (a walk or a dash; the breath's side orbit was cut, D-136) no stand-in box
+## move the game allows (a walk or a leap; the breath's side orbit was cut, D-136) no stand-in box
 ## shows inside the full-detail depth DEPTH_M. For stages 2 and 3 a real stream (the stage's city,
 ## the real chunk budget, its workers meshing) runs under the real camera path (CameraFollow, 60
 ## frames a second) with the kaiju at three spots. Every frame, each building left
 ## as a box whose bounding box meets the camera's frustum gives a distance from the camera; the
 ## smallest over a phase is the depth with full buildings ("depth"; "ahead" is the same within 10
-## degrees of the view axis). The rest at every spot must keep DEPTH_M. A dash
+## degrees of the view axis). The rest at every spot must keep DEPTH_M. A leap
 ## (a body length or more in 0.4 s) is run and reported only: the camera reaches
 ## ground the budget cannot have meshed ahead of it.
 ##
 ## Landmarks (the stadium and wheel at these stages) unload like ordinary buildings when the
 ## camera cannot see them (director 2026-10-22: "Yes, if no pop-in"), so every frame also counts
 ## the landmarks standing as a box whose bounding box meets the camera's frustum, at any
-## distance: none may show through rest, a walk from the junction each way, or a dash.
+## distance: none may show through rest, a walk from the junction each way, or a leap.
 ## Presentation only. Not exercised: camera shake, a GPU frame, a slower PC.
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
@@ -22,7 +22,7 @@ const StreamFrustum := preload("res://tests/lib/stream_frustum.gd")
 ## The full-detail depth every phase must keep (metres from the camera).
 const DEPTH_M := 48.0
 const DT := 1.0 / 60.0
-## The body the camera follows eases toward the sim's kaiju at this rate (Rampage._update_kaiju).
+## The body the camera follows eases toward the sim's kaiju at this rate (RampageAbility.place).
 const BODY_FOLLOW := 12.0
 const LOOK_M := StreamFrustum.LOOK_M
 ## Real time to wait for the stream to settle.
@@ -34,7 +34,7 @@ const STAGES: Array[int] = [2, 3]
 const WALKS: Array[Array] = [
 	["walk east", Vector2(1, 0), 150.0], ["walk north-east", Vector2(0.7071, -0.7071), 290.0]
 ]
-## Where the kaiju stands (the first also dashes): the central junction and two spots among blocks.
+## Where the kaiju stands (the first also leaps): the central junction and two spots among blocks.
 const SPOTS: Array[Vector2] = [Vector2(0, 0), Vector2(26, -14), Vector2(-30, 18)]
 
 var worst_step := 0
@@ -91,10 +91,10 @@ func _stage(stage: int) -> void:
 	var steps: Array[float] = []
 	worst_step = 0
 	var results := {}
-	var long := _sim.body.length()
-	var dash: Dictionary = _sim.body.dash.cfg
-	var seconds := Num.f(dash["seconds"])
-	var speed := Num.f(dash["lengths"]) * long / seconds
+	var stages: Array = _sim.body.dash.cfg["stages"]["reptilian"]  # the leap's flight (Dash)
+	var leap: Dictionary = stages[clampi(_sim.size_tier() - 1, 0, stages.size() - 1)]
+	var seconds := Num.f(leap["flight_s"])
+	var speed := Num.f(leap["reach"]) * _sim.body_scale() / seconds
 	for at: int in SPOTS.size():
 		_sim.kaiju_pos = SPOTS[at]
 		_body = Vector3(_sim.kaiju_pos.x, _sim.stand_y, _sim.kaiju_pos.y)
@@ -111,7 +111,7 @@ func _stage(stage: int) -> void:
 			results[way[0]] = await _walk(heading, metres)
 			results[way[0] + " and back"] = await _walk(-heading, metres)
 			await _settle()
-		for way: Array in [["dash ahead", Vector2(0, -1)], ["dash sideways", Vector2(1, 0)]]:
+		for way: Array in [["leap ahead", Vector2(0, -1)], ["leap sideways", Vector2(1, 0)]]:
 			var dir: Vector2 = way[1]
 			var from := _sim.kaiju_pos
 			var run := func(t: float) -> void:
@@ -146,7 +146,7 @@ func _stage(stage: int) -> void:
 		)
 	print(line)
 	for phase: String in results:
-		if not (phase.begins_with("dash") or phase.begins_with("walk")):  # reported, not held
+		if not (phase.begins_with("leap") or phase.begins_with("walk")):  # reported, not held
 			var depth: float = results[phase]["depth"]
 			_check.call(
 				depth >= DEPTH_M,

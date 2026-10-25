@@ -40,6 +40,7 @@ const K_LAWN := 3
 const K_CONCRETE := 4
 const K_DECK := 5
 const K_PAINT := 6
+const K_JUNCTION := 7  # a junction box: both streets' lanes, no gutter
 const ALONG_X := 0
 const ALONG_Z := 1
 const TURNED := 2

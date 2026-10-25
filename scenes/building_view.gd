@@ -88,6 +88,8 @@ func _init(p_building: RampageSim.Building, base: Color, party: Dictionary = {})
 
 
 func _make_voxels() -> BuildingVoxels:
+	if b.is_rail():
+		return RailVoxels.new(b, _base)
 	if b.landmark == "":
 		return BuildingVoxels.new(b, _base, _party)
 	return LandmarkVoxels.new(b, _base)

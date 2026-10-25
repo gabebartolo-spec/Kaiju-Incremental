@@ -3,7 +3,7 @@ extends RefCounted
 ## The Taskforce's frost grenades (D-137, D-139, D-145): an agent launches one at street level at
 ## the kaiju's feet (never its head); if the kaiju still stands there when it lands, ice crusts
 ## its legs and slows it for `seconds`. Another grenade refreshes the same ice and never stacks
-## (one slow, one clock); the dash shatters it early; otherwise it thaws and cracks off.
+## (one slow, one clock); a leap shatters it early; otherwise it thaws and cracks off.
 ## Part of Taskforce; pure. Events: frost_launched, frost_hit, frost_cracked.
 
 var sim: RampageSim
@@ -50,7 +50,7 @@ func step(dt: float) -> void:
 			_land(at)
 	grenades = flying
 	var dash := sim.body.dash
-	var dashed := dash.dashes != _dashes or dash.on()  # a dash into a wall is over the same step
+	var dashed := dash.dashes != _dashes or dash.on()  # a leap under way shatters it
 	_dashes = dash.dashes
 	if frost_left <= 0.0:
 		return
