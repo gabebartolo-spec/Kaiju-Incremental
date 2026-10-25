@@ -12,7 +12,7 @@ still read as claws), the upper arm and forearm take the rest of the cut:
 - the .kvox voxels the arm bones own (cells that land together keep the one nearest the hand, so the
   claws stay at the tip);
 - the arm bones' heads and tails in the .rig.json, which also gets "lock_wrist": true (the hand is
-  held in line with the forearm: BipedSwing.hold_wrists) and "arm_length" (KaijuClips.fit lets the
+  held in line with the forearm: BipedSwing.hold_arms) and "arm_length" (KaijuClips.fit lets the
   baked clips keep driving the moved elbows and wrists);
 - the listed Blender skin's positions weighted mostly to an arm bone (.skinw, via kvox_cell_to_skin),
   so the baked weights still match the shorter arm.

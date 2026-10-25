@@ -173,24 +173,21 @@ func pose_rake(dt: float) -> void:
 	if _rake_t < 0.0:
 		if trail != null:
 			trail.update(Vector3.ZERO, false, dt)  # the last marks fade
-		hold_wrists()
+		hold_arms()
 		return
 	var body := rig.global_transform.basis.orthonormalized()
 	for side: String in ["l", "r"]:
 		var names := _arm_names(side)
 		if names.is_empty() or _arm_out(names) != _rake_side:
 			continue
-		var held: Array[Vector3] = []
-		for n: String in names:
-			var d := body.inverse() * (rig.tail_world(n) - rig.bone(n).global_position)
-			held.append(d.normalized() * Vector3(_rake_side, 1, 1))
+		var held := _held(names, body)
 		if is_nan(_rake_yaw):
 			_rake_yaw = _contact_yaw(names, body)
 		_aim_arm(names, _rake_dirs(_rake_t, held), _rake_side, body)
 		if trail != null:  # the strike (and a beat after) leaves the streak
 			var swing := strike_window()
 			trail.update(rig.tail_world(names[-1]), _rake_t >= swing.x and _rake_t < swing.y, dt)
-	hold_wrists()  # the other arm, as the clip holds it
+	hold_arms(_rake_side)  # the other arm
 
 
 func update(time: float, hip_yaw: float, roar_open: float, dt: float) -> void:
@@ -264,17 +261,28 @@ func _pose_arms(roar_open: float, hip_yaw: float, dt: float) -> void:
 		_aim_arm(names, dirs, out, body)
 
 
-## On a rig with lock_wrist, turns each hand back in line with its forearm (over a clip's pose).
-func hold_wrists() -> void:
-	if not rig.lock_wrist:
+## Holds the arms over a clip's pose: a rig with an arm_pose stands them in it, a rig with
+## lock_wrist turns each hand back in line with its forearm. `skip`: the side a rake is posing.
+func hold_arms(skip: float = 0.0) -> void:
+	if rig.arm_pose.is_empty() and not rig.lock_wrist:
 		return
+	var body := rig.global_transform.basis.orthonormalized()
 	for side: String in ["l", "r"]:
-		var fore := "arm_%s1" % side
-		var hand := "arm_%s2" % side
-		if rig.has_bone(fore) and rig.has_bone(hand):
-			var from := rig.bone(hand).global_position
-			var along := (rig.tail_world(fore) - rig.bone(fore).global_position).normalized()
-			rig.aim(hand, from, from + along * (rig.tail_world(hand) - from).length())
+		var names := _arm_names(side)
+		if names.size() == 3 and _arm_out(names) != skip:
+			_aim_arm(names, _held(names, body), _arm_out(names), body)
+
+
+## Where an arm is held before a rake takes it (heading frame, x outward): the rig's arm_pose, else
+## where the clip has put it.
+func _held(names: Array[String], body: Basis) -> Array[Vector3]:
+	if not rig.arm_pose.is_empty():
+		return rig.arm_pose.duplicate()
+	var held: Array[Vector3] = []
+	for n: String in names:
+		var d := body.inverse() * (rig.tail_world(n) - rig.bone(n).global_position)
+		held.append(d.normalized() * Vector3(_arm_out(names), 1, 1))
+	return held
 
 
 ## The bones of one side's arm (arm_<side>0..2 the rig has).

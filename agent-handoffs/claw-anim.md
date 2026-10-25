@@ -15,11 +15,14 @@ Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake
   from the wrist, short and stumpy arms are the aim"; "his long arms are the reason the claw animation looks bizarre".
   Done, young only: `tools/kaiju_skin/shorten_arms.py reptilian_baby 0.4` (run ONCE; it cuts again if rerun) cut the
   .kvox, rig.json and Blender skin (assets/kaiju/test/croctitan_baby.*), then `bake_all.sh` rebaked the vskin.
-  rig.json `lock_wrist` (hands in line, BipedSwing.hold_wrists / _aim_arm) and `arm_length` (KaijuClips.fit skips
+  rig.json `lock_wrist` (hands in line, BipedSwing.hold_arms / _aim_arm) and `arm_length` (KaijuClips.fit skips
   the moved elbow/wrist heads; without it the young croc fell back to the procedural gait).
+- Lead FIX on clip 2 (arm fused into the chest): rig.json `arm_pose` holds the young croc's arms out and down, clear of
+  the chest (KaijuRig.arm_pose, BipedSwing.hold_arms/_held); `capture_claw_side.gd` prints the px bars (hand and
+  forearm outside the body silhouette at rest; claw tip ahead of the chest outline at the hit, in hand lengths).
 - Swipe = a short chop in front of the chest; poses/times in `data/tuning.json` "claw_fx" (arm_cocked/contact/
   through, aim_max_deg 45, hit_at 0.32 = where the hit falls in the strike so the chop is fastest on it, lift_s, strike_s, recover_s, joint_lag_s); `powers.swipe_windup` 0.7. Code:
-  `scenes/biped_swing.gd` (_rake_dirs/_rake_dir, _blend/_frame, _contact_yaw, strike_window, hold_wrists).
+  `scenes/biped_swing.gd` (_rake_dirs/_rake_dir, _blend/_frame, _contact_yaw, strike_window, hold_arms, _held).
 - Bars: `data/motion_gate.json` "claw_arm", checked by `tests/lib/claw_arm_probe.gd` from the croc standing suite
   (green, 5/5, 76 checks). Print numbers: `tools/claw_probe.gd` (`-- --frames` per frame). Plan: docs/claw_swipe_plan.md.
 - Clip: `tools/capture/capture_claw_side.gd` (windowed, untracked no_focus override.cfg; `-- --still=<dir>
