@@ -1,7 +1,7 @@
 # Handoff: claw-anim (the claw swipe's arm motion)
 
 Updated 2026-10-25. Session started by the Kaiju lead (local_293f5c32). Worktree `.claude/worktrees/casc-anim-f911ce`,
-branch `claude/claw-anim-525a2a` (pushed, 9506e1d9); the lead opens the PR.
+branch `claude/claw-anim-525a2a` (pushed, 476a9ede); the lead opens the PR.
 
 ## The job
 Director 2026-10-25: "the arm movement during the claw swipe animation is really bad ... Especially the baby's arm
@@ -30,11 +30,12 @@ Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake
   claw-anim-clip2.*); clip 1 superseded unreviewed. VFX lead told the new claw_arc reach.
 
 ## Next
-- Director asked for the young croc's swipe from the front: `capture_claw_side.gd -- --front` (4 s) sent as side-notes
-  claw-anim-young-front.mp4 + crops. Found and reported, NOT fixed (lead's call): a skin tear on the belly side under
-  the arm during the lift (f74-80), and the claws pressing into the belly at the end of the chop/return (f98-110;
-  the through pose crosses the midline). No wrist droop, no snout clip.
-- Lead check of clip 4 (its FIX on clip 3: chop too fast). FIX: retune, all bars must pass. Another failure = stop, find why,
+- Front view (director asked; `capture_claw_side.gd -- --front`): lead's FIX done: the belly tear is fixed in the bake
+  (rig.json `skin_blend`: `own_only` arm bones + shoulder/elbow/wrist lattice blend, `bake.py` own_only/blend_pairs),
+  and the young chop's aim is capped at 20 deg (rig.json `aim_max_deg`) so the claws stay off the belly (new bar
+  claw_arm.clear_min 2 voxels, probe `_clearance`). Sent: side-notes claw-anim-young-front-r2.*, claw-anim-side-r5.*,
+  and a flagged dark armpit gap (arm standing clear, not a tear) for the lead's eye.
+- Lead check of the front-r2 / side-r5 clips; then the lead opens the PR. FIX: retune, all bars must pass. Another failure = stop, find why,
   change method (a Cascadeur swipe clip per stage).
 
 ## Gotchas
