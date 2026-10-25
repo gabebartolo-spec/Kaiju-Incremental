@@ -1,7 +1,7 @@
 # Handoff: claw-anim (the claw swipe's arm motion)
 
 Updated 2026-10-25. Session started by the Kaiju lead (local_293f5c32). Worktree `.claude/worktrees/casc-anim-f911ce`,
-branch `claude/claw-anim-525a2a` (pushed, b2025ef9); the lead opens the PR.
+branch `claude/claw-anim-525a2a` (pushed, 3d69b9f7); the lead opens the PR.
 
 ## The job
 Director 2026-10-25: "the arm movement during the claw swipe animation is really bad ... Especially the baby's arm
@@ -26,11 +26,11 @@ Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake
 - Bars: `data/motion_gate.json` "claw_arm", checked by `tests/lib/claw_arm_probe.gd` from the croc standing suite
   (green, 5/5, 76 checks). Print numbers: `tools/claw_probe.gd` (`-- --frames` per frame). Plan: docs/claw_swipe_plan.md.
 - Clip: `tools/capture/capture_claw_side.gd` (windowed, untracked no_focus override.cfg; `-- --still=<dir>
-  --name=<x>` for the rest still). Clip 2 + before/after still + notes sent to the lead (side-notes
+  --name=<x>` for the rest still). Clip 3 + before/after still r3 + notes sent to the lead (side-notes claw-anim-clip3.*; earlier
   claw-anim-clip2.*); clip 1 superseded unreviewed. VFX lead told the new claw_arc reach.
 
 ## Next
-- Critic verdict via the lead. FIX: retune claw_fx, all bars must pass, clip 3. Clip 3 failing = stop, find why,
+- Lead check of clip 3 (its own FIX on clip 2 is answered). FIX: retune, all bars must pass. Another failure = stop, find why,
   change method (a Cascadeur swipe clip per stage).
 
 ## Gotchas
