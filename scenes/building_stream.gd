@@ -83,7 +83,8 @@ func _ready() -> void:
 	_rank = StreamRank.new(_sim.buildings)
 	for n: int in count:
 		var b := _sim.buildings[n]
-		_chunks[n] = b.w * b.d * b.height
+		# a pool model (CityPool) costs the chunks its model keeps, not its whole box
+		_chunks[n] = b.frame.alive_count if b.model != "" else b.w * b.d * b.height
 	_budget = Num.i(_sim.city.get("stream_chunks", 1 << 30))
 	_party = BuildingView.party_walls(_sim.buildings)
 	var order: Array[int] = []

@@ -117,8 +117,14 @@ static func voxels(id: String) -> VoxelBuilder:
 
 static func _read(path: String) -> Kvox:
 	_lock.lock()
+	var known: Kvox = _cache.get(path)
+	_lock.unlock()
+	if known != null:
+		return known
+	var read := Kvox.read(path)  # outside the lock: workers reading other models never wait
+	_lock.lock()
 	if not _cache.has(path):
-		_cache[path] = Kvox.read(path)
+		_cache[path] = read
 	var out: Kvox = _cache[path]
 	_lock.unlock()
 	return out
