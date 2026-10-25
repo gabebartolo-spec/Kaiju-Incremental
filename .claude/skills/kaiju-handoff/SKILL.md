@@ -7,7 +7,7 @@ description: Writing and starting from a Kaiju Incremental agent handoff - the f
 
 Fresh session at every task boundary for a lead; a lead hands off at about 500k (hard stop 600k).
 Write the handoff first, then start the new session from it.
-A helper (builder, critic, subagent) never stops or hands off for context size: it auto-compacts and keeps its
+A helper (builder, subagent) never stops or hands off for context size: it auto-compacts and keeps its
 handoff and commits current at each milestone. The lead respawns one with the same name from its handoff only if
 it cannot compact or drifts after compacting (director 2026-10-21). A top-level session
 starts its own successor only when safe (nothing of its own running, no half-done push or merge,
