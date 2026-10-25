@@ -7,35 +7,26 @@ extends "res://tests/lib/runner.gd"
 ## Behemoth, Colossus) the real sim drives his ClipGait at 60 Hz (tests/lib/motion_drive.gd) on
 ## five routes: a straight walk, 90 and 180 deg turns while walking, a turn from standing and a
 ## held curve. Bars:
-##   - a planted foot holds its spot (under SLIDE_MAX units/s);
-##   - no catch-step shuffle (at most CATCH_MAX a second; CATCH_SMOOTH_TURN in the young croc's
+##   - a planted foot holds its spot (under slide_max units/s);
+##   - no catch-step shuffle (at most catch_straight a second; catch_turn_smooth in the young croc's
 ##     smooth turns, D-131);
-##   - the legs step no faster than CADENCE_MAX times the walk clip's authored pace, and a stepping
-##     body's sim step is half its clip's stride (within STEP_TOL), so feet are passed at the pace
+##   - the legs step no faster than a band around the walk clip's authored pace, and a stepping
+##     body's sim step is half its clip's stride (within step_tol), so feet are passed at the pace
 ##     the body walks;
-##   - no knee pops (shin jerk p99 at most JERK_WALK, JERK_TURN in turns) and no leg locked straight
-##     (planted reach at most STRETCH_MAX);
+##   - no knee pops (shin jerk p99 at most jerk_walk, jerk_turn in turns) and no leg locked straight
+##     (planted reach at most stretch_max);
 ##   - a body that steps its turns (Behemoth, Colossus; D-131) never yaws with no foot down, the
-##     sim's pivot is the drawn planted foot (PIVOT_MAX) and the body turns about it (CENTRE_MAX);
-##   - the swing foot lifts no higher than its stage's share of hip height (LIFT_MAX).
+##     sim's pivot is the drawn planted foot (pivot_max) and the body turns about it (centre_max);
+##   - the swing foot lifts within its stage's band of hip height (lift_min..lift_max).
+## Bars are data/motion_gate.json (measured, each with its source in its _note).
 ## Deterministic: seeded sim, fixed step, no clock.
 ##   godot --headless --path . --script tests/run_motion_tests.gd
 
 const Drive := preload("res://tests/lib/motion_drive.gd")
-const SLIDE_MAX := 0.05
-const CATCH_MAX := 0.5
-const CATCH_SMOOTH_TURN := 1.0
-const CADENCE_MAX := 2.3
-const STEP_TOL := 0.02
-const JERK_WALK := 5.0
-const JERK_TURN := 8.0
-const STRETCH_MAX := 0.97
-const PIVOT_MAX := 0.1
-const CENTRE_MAX := 0.6
-## Toe-tip rise over the walk as a share of hip height: the Colossus lifts 2% (lead 2026-10-23: the
-## young croc may bounce a little, at most 5%).
-const LIFT_MAX := {"young": 0.05, "Behemoth": 0.03, "Colossus": 0.03}
 const CLIP_STAGE := {"young": "baby", "Behemoth": "adolescent", "Colossus": "adult"}
+
+## Every bar is data (data/motion_gate.json, its _note says where each number was measured).
+var _bars: Dictionary = Content.load_json("res://data/motion_gate.json")
 
 var _runs: Dictionary = {}  # "stage/route" -> Drive.drive()
 
@@ -53,6 +44,16 @@ func run_checks() -> void:
 	await _t("_check_turn_steps")
 	await _t("_check_turn_pivot")
 	await _t("_check_lift")
+
+
+func _g(key: String) -> float:
+	return Num.f(_bars[key])
+
+
+func _s(stage: String, key: String) -> float:
+	var stages: Dictionary = _bars["stages"]
+	var bars: Dictionary = stages[stage]
+	return Num.f(bars[key])
 
 
 func _run(stage: String, route: String) -> Dictionary:
@@ -78,14 +79,15 @@ func _check_feet_hold() -> void:
 	for stage: String in Drive.STAGES:
 		var w := _worst(stage, Drive.ROUTES, "slide")
 		check(
-			Num.f(w[0]) < SLIDE_MAX,
-			"%s: a planted foot holds its spot (%s units/s < %.2f)" % [stage, w[1], SLIDE_MAX]
+			Num.f(w[0]) < _g("slide_max"),
+			"%s: a planted foot holds its spot (%s units/s < %.2f)" % [stage, w[1], _g("slide_max")]
 		)
 
 
 ## A body that turns smoothly (the young croc, D-131 "Baby turns smoothly") turns over its planted
-## feet, and catch steps are how they keep up: in its turns it may take up to CATCH_SMOOTH_TURN a
-## second (lead 2026-10-23); walking straight, and for every body that steps its turns, CATCH_MAX.
+## feet, and catch steps are how they keep up: in its turns it may take up to catch_turn_smooth a
+## second (lead 2026-10-23); walking straight, and for every body that steps its turns,
+## catch_straight.
 ## Each catch step still answers to the slide, lift and jerk bars, and the motion critic judges
 ## the young croc's turn clip.
 func _check_no_shuffle() -> void:
@@ -94,16 +96,16 @@ func _check_no_shuffle() -> void:
 		var routes: Array = Drive.ROUTES if not smooth else ["straight"]
 		var w := _worst(stage, routes, "catch")
 		check(
-			Num.f(w[0]) <= CATCH_MAX,
-			"%s: no catch-step shuffle (%s a second <= %.1f)" % [stage, w[1], CATCH_MAX]
+			Num.f(w[0]) <= _g("catch_straight"),
+			"%s: no catch-step shuffle (%s a second <= %.1f)" % [stage, w[1], _g("catch_straight")]
 		)
 		if smooth:
 			var turns := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "catch")
 			check(
-				Num.f(turns[0]) <= CATCH_SMOOTH_TURN,
+				Num.f(turns[0]) <= _g("catch_turn_smooth"),
 				(
 					"%s: its smooth turns keep up with few catch steps (%s a second <= %.1f, D-131)"
-					% [stage, turns[1], CATCH_SMOOTH_TURN]
+					% [stage, turns[1], _g("catch_turn_smooth")]
 				)
 			)
 
@@ -113,11 +115,13 @@ func _check_cadence() -> void:
 		var run := _run(stage, "straight")
 		var steps := Num.f(run["steps"])
 		var ratio := steps / maxf(Num.f(run["authored_steps"]), 0.001)
+		var lo := _s(stage, "steps_ratio_min")
+		var hi := _s(stage, "steps_ratio_max")
 		check(
-			ratio <= CADENCE_MAX,
+			ratio >= lo and ratio <= hi,
 			(
-				"%s: walking, the legs step %.2f a second, %.2fx the clip's authored %.2f (<= %.1fx)"
-				% [stage, steps, ratio, run["authored_steps"], CADENCE_MAX]
+				"%s: walking, the legs step %.2f a second, %.2fx the clip's authored %.2f (%.2fx to %.2fx)"
+				% [stage, steps, ratio, run["authored_steps"], lo, hi]
 			)
 		)
 
@@ -131,10 +135,10 @@ func _check_step_len() -> void:
 		var step := Num.f(run["step"])
 		var half := Num.f(run["half_stride"])
 		check(
-			absf(step / half - 1.0) <= STEP_TOL,
+			absf(step / half - 1.0) <= _g("step_tol"),
 			(
 				"%s: the sim's step is half the clip's stride (%.3f vs %.3f, within %.0f%%)"
-				% [stage, step, half, STEP_TOL * 100]
+				% [stage, step, half, _g("step_tol") * 100]
 			)
 		)
 
@@ -143,21 +147,27 @@ func _check_knees() -> void:
 	for stage: String in Drive.STAGES:
 		var walk := Num.f(_run(stage, "straight")["jerk"])
 		check(
-			walk <= JERK_WALK,
+			walk <= _s(stage, "jerk_walk"),
 			(
 				"%s: walking, no knee pops (shin jerk p99 %.1f deg/frame^2 <= %.0f)"
-				% [stage, walk, JERK_WALK]
+				% [stage, walk, _s(stage, "jerk_walk")]
 			)
 		)
 		var turns := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "jerk")
 		check(
-			Num.f(turns[0]) <= JERK_TURN,
-			"%s: turning, no knee pops (shin jerk p99%s <= %.0f)" % [stage, turns[1], JERK_TURN]
+			Num.f(turns[0]) <= _s(stage, "jerk_turn"),
+			(
+				"%s: turning, no knee pops (shin jerk p99%s <= %.0f)"
+				% [stage, turns[1], _s(stage, "jerk_turn")]
+			)
 		)
 		var reach := _worst(stage, Drive.ROUTES, "stretch")
 		check(
-			Num.f(reach[0]) <= STRETCH_MAX,
-			"%s: no planted leg locked straight (reach%s <= %.2f)" % [stage, reach[1], STRETCH_MAX]
+			Num.f(reach[0]) <= _g("stretch_max"),
+			(
+				"%s: no planted leg locked straight (reach%s <= %.2f)"
+				% [stage, reach[1], _g("stretch_max")]
+			)
 		)
 
 
@@ -168,7 +178,7 @@ func _check_turn_steps() -> void:
 			continue
 		var w := _worst(stage, ["turn90", "turn180", "stand_turn", "curve"], "aloft_yaw")
 		check(
-			Num.f(w[0]) <= 0.0,
+			Num.f(w[0]) <= _g("aloft_yaw_max"),
 			"%s: the body never yaws with no foot down (%s deg == 0)" % [stage, w[1]]
 		)
 
@@ -181,18 +191,18 @@ func _check_turn_pivot() -> void:
 		var turns := ["turn90", "turn180", "stand_turn"]
 		var pivot := _worst(stage, turns, "pivot")
 		check(
-			Num.f(pivot[0]) <= PIVOT_MAX,
+			Num.f(pivot[0]) <= _g("pivot_max"),
 			(
 				"%s: the sim turns him about the drawn planted foot (%s hip heights <= %.1f)"
-				% [stage, pivot[1], PIVOT_MAX]
+				% [stage, pivot[1], _g("pivot_max")]
 			)
 		)
 		var centre := _worst(stage, turns, "centre")
 		check(
-			Num.f(centre[0]) <= CENTRE_MAX,
+			Num.f(centre[0]) <= _g("centre_max"),
 			(
 				"%s: the body turns about a planted foot, not its middle (%s hip heights <= %.1f)"
-				% [stage, centre[1], CENTRE_MAX]
+				% [stage, centre[1], _g("centre_max")]
 			)
 		)
 
@@ -209,11 +219,12 @@ func _check_lift() -> void:
 			hi = maxf(hi, y)
 		var hip: Vector3 = clips._rest_heads[clips.bones.find("leg_l0")]
 		var share := (hi - lo) / hip.y
-		var most: float = LIFT_MAX[stage]
+		var most := _s(stage, "lift_max")
+		var least := _s(stage, "lift_min")
 		check(
-			share <= most,
+			share >= least and share <= most,
 			(
-				"%s: the swing foot lifts %.1f%% of hip height (<= %.0f%%)"
-				% [stage, share * 100.0, most * 100.0]
+				"%s: the swing foot lifts %.1f%% of hip height (%.1f%% to %.1f%%)"
+				% [stage, share * 100.0, least * 100.0, most * 100.0]
 			)
 		)
