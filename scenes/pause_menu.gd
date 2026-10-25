@@ -1,8 +1,9 @@
 class_name PauseMenu
 extends CanvasLayer
 ## The rampage's pause menu. Runs while the tree is paused: Resume (or Pause / cancel again),
-## Settings, the bug / feedback report (D-145) or End Rampage after an Are-you-sure (D-155; the
-## rampage ends now and keeps what it earned).
+## Settings, Photo mode (D-259: the world stays frozen under a free camera, PhotoMode), the bug /
+## feedback report (D-145) or End Rampage after an Are-you-sure (D-155; the rampage ends now and
+## keeps what it earned).
 
 signal end_pressed
 
@@ -11,14 +12,21 @@ const LAYER := 30
 ## The rampage being paused and its species id: what a feedback report says about the run.
 var sim: RampageSim
 var species_id := ""
+## Builds this rampage's photo mode (Rampage.photo_mode); unset when the menu stands alone (UI
+## suites), and then there is no PHOTO MODE button.
+var photo: Callable
 var _dim: ColorRect
 var _centre: CenterContainer
 var _col: VBoxContainer
 var _resume: Button
 var _report: Button
+var _photo: Button
 
 
-func _init() -> void:
+func _init(p_sim: RampageSim = null, p_species_id := "", p_photo := Callable()) -> void:
+	sim = p_sim
+	species_id = p_species_id
+	photo = p_photo
 	layer = LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -40,6 +48,8 @@ func _ready() -> void:
 	_col.add_child(UiKit.header("PAUSED"))
 	_resume = _add("RESUME", UiKit.ACCENT, resume)
 	_add("SETTINGS", UiKit.PANEL_EDGE, _open_settings)
+	if photo.is_valid():
+		_photo = _add("PHOTO MODE", UiKit.PANEL_EDGE, _open_photo)
 	if sim != null:
 		_report = _add(str(Content.section("feedback")["label"]), UiKit.PANEL_EDGE, _open_report)
 	_add("END RAMPAGE", UiKit.PANEL_EDGE, _ask_end)
@@ -92,6 +102,22 @@ func _open_settings() -> void:
 			_resume.grab_focus.call_deferred()
 	)
 	add_child(settings)
+
+
+## Photo mode over the frozen world: the menu and its dim go; Esc / B there brings them back.
+func _open_photo() -> void:
+	var mode: PhotoMode = photo.call()
+	_col.visible = false
+	_centre.visible = false
+	_dim.visible = false
+	mode.closed.connect(
+		func() -> void:
+			_col.visible = true
+			_centre.visible = true
+			_dim.visible = true
+			_photo.grab_focus.call_deferred()
+	)
+	add_child(mode)
 
 
 ## Takes the picture first, with the menu hidden so neither it nor the panel is in it, then opens

@@ -1118,6 +1118,15 @@
 		"_note": "Settings > ACCESSIBILITY (D-259). flash_scale: while Reduce flashing is on, every flash of light (explosion, muzzle and breath lights, flares, the end beat's screen flash, the lab's lightning white) is drawn at this share of its brightness, and the colour fringe never shows.",
 		"flash_scale": 0.3
 	},
+	"photo_mode": {
+		"_note": "PhotoMode (D-259 'Photo mode: Yes, simple'): from the pause menu the world stays frozen and a free camera flies round the kaiju. radius_rest_multiple: how far from the kaiju's feet the camera may go, in multiples of the gameplay camera's distance at this body size (so it grows with the kaiju); min_height: the camera never sinks below this many world units over the ground (y 0); speed_rest_multiple: flying speed, those distances a second; look_deg_per_s: right-stick turn rate; mouse_deg_per_px: mouse turn per pixel moved; pitch_limit_deg: how far up or down the camera can tilt.",
+		"radius_rest_multiple": 2.5,
+		"min_height": 2.0,
+		"speed_rest_multiple": 0.8,
+		"look_deg_per_s": 90.0,
+		"mouse_deg_per_px": 0.15,
+		"pitch_limit_deg": 80.0
+	},
 	"rumble": {
 		"_note": "PadRumble (D-259 'Yes, scaled by size, with a toggle'): pad vibration, weak (high-frequency) and strong (low-frequency) motors 0..1 for seconds. footfall and stomp: one row per growth stage (baby, adolescent, adult), so the thud grows with the kaiju; collapse: a toppled building landing; breath: the buzz while the breath burns (its seconds) and, for the ultimate beam, for the beam's own seconds. Settings > ACCESSIBILITY > Rumble turns it off.",
 		"footfall": [

@@ -45,6 +45,7 @@ var vignette: HurtVignette
 ## The first-run controls card (null once it has gone, or when it was seen before).
 var controls_card: ControlsCard
 var city_meter: ProgressBar
+var photo: Callable  ## Rampage.photo_mode: the pause menu's photo mode (unset in HUD suites)
 var _time: Label
 ## The clock and its city meter: hidden while the end beat's headline is up.
 var _clock_column: Control
@@ -365,9 +366,7 @@ func beat_running() -> bool:
 func pause() -> void:
 	if sim.over or get_tree().paused:
 		return
-	var menu := PauseMenu.new()
-	menu.sim = sim
-	menu.species_id = str(species["id"])
+	var menu := PauseMenu.new(sim, str(species["id"]), photo)
 	menu.end_pressed.connect(_end_now)
 	_widgets.visible = false
 	menu.tree_exited.connect(func() -> void: _widgets.visible = not _beat_done)
