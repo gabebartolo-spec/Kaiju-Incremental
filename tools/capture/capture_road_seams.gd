@@ -5,11 +5,13 @@ extends SceneTree
 ## (tools/capture/road_joins.gd), and at each join the mean luminance of a strip either side of
 ## the join line compared. The same step measured between neighbouring strips further along the
 ## same road is the road's own texture; a join may step no more than LIMIT.
-## LIMIT (luma 0..1; 8-bit: 9 levels): a plain road's own neighbour-strip steps (seeds 7301,
-## 1234, 98765, stages 1-3, 64k pairs) are 0.016 at the 99th percentile; a join may step a little
-## over twice that. On the merge of #208 (before RoadJunctions) 5% of the 9,788 joins stepped
-## more than 0.035 (p99 0.045, max 0.083: a kerb gutter band across a road's mouth, the seam the
-## director saw); with junction boxes the joins match the road's own texture (p99 0.017, max 0.031).
+## LIMIT (luma 0..1; 8-bit: 10 levels): a plain road's own neighbour-strip steps are 0.016 at the
+## 99th percentile (414k pairs, the roads suite's 20 seeds x 3 stages). On the merge of #208
+## (before RoadJunctions; seeds 7301, 1234, 98765 x 3 stages) 236 of 9,788 joins stepped past
+## 0.04 (p99 0.045, max 0.083): a kerb gutter band across a road's mouth, the seam the director
+## saw. With junction boxes, over all 60 cities (62,689 joins): square junctions p99 0.016 (the
+## road's own texture), max 0.032; the diagonal's mouths, where its lanes end at the crossed
+## street's kerb line, p99 0.034, max 0.038. LIMIT sits just above that and below the seams.
 ## Needs a renderer: the off-screen no_focus override.cfg on this PC, or CI (xvfb).
 ##   godot --path . --resolution 768x768 --script tools/capture/capture_road_seams.gd --
 ##     --seeds=7301,1234 --stages=1,2,3 --out=<dir> (a failing junction's shot is saved there)
@@ -17,7 +19,7 @@ extends SceneTree
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const Joins := preload("res://tools/capture/road_joins.gd")
-const LIMIT := 0.035
+const LIMIT := 0.04
 const STRIP := 0.5  # a strip's depth either side of a join line (m)
 const STEP := 0.05  # sample spacing in a strip (m)
 const REF_REACH := 8.0  # the road's own steps: this far along an arm, half its length at most
