@@ -43,16 +43,19 @@ Why:
 
 ## 3. The fix (the simplest that meets the bars; procedural, no new system)
 1. Delete the reach scaling: bones keep their length (reach comes from the elbow opening, not a longer bone).
-2. Rotate, don't lerp: each bone's direction slerps along its arc between key poses.
-3. Four key poses, plausible joints: held (the clip's own arm) -> **cocked** (up, out and back, elbow ~75 deg, the
-   anticipation, eased in and out) -> **contact** (forward on the snout line, elbow opening, at the sim's hit) ->
-   **follow-through** (past the midline, no further across than the held pose) -> back to held (eased). No snap
-   back out wide.
-4. Successive joints: the upper arm leads, the forearm and hand trail by a short lag.
-5. Size-scaled timing: every phase times sqrt(body scale / the baby's); the baby's strike is 0.18 s (about 5 frames
-   at 30 fps, the 3-6 frame range), the Colossus's 0.29 s. The sim's windup cue (`powers.swipe_windup`, a
-   presentation cue only) moves to 0.7 s so even the Colossus has a full anticipation before the hit; the hit time
-   and damage are unchanged.
+2. Rotate, don't lerp: bones turn along arcs (slerp); the forearm and hand turn in the frame of the bone above
+   them, so the elbow and wrist bends move straight between poses and never flick open mid-way.
+3. Key poses: held (the clip's own arm) -> **cocked** (out to the side, back and down, elbow ~75 deg; the
+   anticipation, eased) -> **strike** along one smooth spherical curve bent toward **contact** (down and forward)
+   -> **follow-through** (past the midline, low) -> back to held (eased). No snap back out wide. The rake is low
+   and forward, below the jaw: on the croc the shoulder sits just under the jaw, so any raise (a bear's overhead
+   cock) put the claw beside its mouth.
+4. Successive joints: the shoulder leads, the forearm and hand trail by 15 ms each (x size).
+5. On the snout line at the hit (D-190): per rake the strike poses turn about up so the claw tip crosses the snout
+   line on the sim's hit frame, whatever the stage's shoulder width.
+6. Size-scaled timing: every phase times sqrt(body scale / the young croc's); the young croc's strike is 0.22 s,
+   the Colossus's 0.35 s. The sim's windup cue (`powers.swipe_windup`, a presentation cue only) moves to 0.7 s so
+   even the Colossus has a full anticipation before the hit; the hit time and damage are unchanged.
 A Cascadeur clip was weighed (D-216) and not chosen now: the swipe is laid over every stage's walk, idle and turn
 clips, so a clip per stage still needs this same layer; when the new croc's Cascadeur set gains a swipe, it
 replaces the poses here.
@@ -60,7 +63,7 @@ replaces the poses here.
 ## 4. Pass bars (per stage; `tools/claw_probe.gd`, kept as data in `data/motion_gate.json` "claw_arm")
 - Bone length within 1% of rest every frame.
 - Elbow 15-130 deg (never locked straight, never folded flat); wrist at most 60 deg.
-- Upper arm never further across the chest than its held pose.
+- Upper arm at most ~37 deg across the midline (x >= -0.6). (First drafted as "no further across than its held pose"; the probe showed the Behemoth and Colossus clips hold the arm outward, +0.13/+0.21, so no swipe reaching the snout line could meet it; the baby clip itself holds -0.43.)
 - Peak angular speed of any arm bone at most 1500 deg/s on the baby, falling as 1/sqrt(size) (Behemoth ~1120,
   Colossus ~930): no one-frame jumps.
 - The claw crosses the snout line within 1 frame of the sim's hit.

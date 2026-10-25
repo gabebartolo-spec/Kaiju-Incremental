@@ -346,13 +346,23 @@ func _contact_yaw(names: Array[String], body: Basis) -> float:
 
 
 ## Bone i's direction k (0..1) of the way from pose `from` to pose `to`, along arcs: the upper arm
-## turns along its own arc; a forearm or hand rides along with the bone above it and turns toward
-## its own target from there, so the elbow and wrist never fold mid-way.
+## turns along its own arc; a forearm or hand turns within the frame of the bone above it, so the
+## elbow and wrist bends move straight from one pose's to the next and never flick open mid-way.
 static func _blend(i: int, from: Array[Vector3], to: Array[Vector3], k: float) -> Vector3:
 	if i == 0:
 		return from[0].slerp(to[0], k)
-	var carried := Quaternion(from[i - 1], _blend(i - 1, from, to, k)) * from[i]
-	return carried.slerp(to[i], k)
+	var local_from := _frame(from[i - 1]).transposed() * from[i]
+	var local_to := _frame(to[i - 1]).transposed() * to[i]
+	return _frame(_blend(i - 1, from, to, k)) * local_from.slerp(local_to, k)
+
+
+## A frame along direction d (z = d), rolled so its x stays level: the same d gives the same frame.
+static func _frame(d: Vector3) -> Basis:
+	var side := Vector3.UP.cross(d)
+	if side.length() < 0.001:
+		side = Vector3.RIGHT
+	side = side.normalized()
+	return Basis(side, d.cross(side), d)
 
 
 ## A "claw_fx" arm pose: [upper, fore, hand] directions in the heading frame (x outward).
