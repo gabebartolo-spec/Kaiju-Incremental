@@ -20,7 +20,7 @@ static func play(sim: RampageSim, start_goal: Vector2, max_steps: int = 0) -> in
 			if target.x < INF and goal.x < INF and target.distance_to(goal) > 20.0:
 				goal = Vector2(INF, INF)  # the landmark is down: on to the nearest
 		var move := Vector2.ZERO
-		if target.x < INF and sim.kaiju_pos.distance_to(target) > sim.stomp_radius() * 0.5:
+		if target.x < INF and not sim.body.stomp_reaches(target):
 			move = (target - sim.kaiju_pos).normalized()
 		var held := RampageSim.HELD if steps % 30 < 15 else 0
 		sim.step(DT, move, sim.ability_ready_in <= 0.0, held | RampageSim.ULTIMATE | Dash.BUTTON)

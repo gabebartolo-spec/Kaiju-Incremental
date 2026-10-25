@@ -6,6 +6,7 @@ extends SceneTree
 ## --clip: records that many seconds from the first frame (add --write-movie <f>.avi --fixed-fps 60;
 ## movie mode mixes the audio itself): the clip starts at the printed frame, no still.
 ## --reveal=<seconds>: the still is taken that long after an explosion that reveals the colossus.
+## --no-save: the title with no save (one New Kaiju, no Continue).
 ## --rest: the still waits until the bay is at rest (no footfall shivering it).
 ## --measure: prints the tower, head and shore pixel numbers (tools/capture/title_measure.gd).
 ## --all: one run, one window: rest.png, reveal.png (with the --measure numbers) and, on a fresh
@@ -36,6 +37,7 @@ const SEGMENTS := [
 var _out := "user://title"
 var _clip := 0.0
 var _city := true
+var _summary := "Reptilian, 3 rampages"
 var _segments := false
 var _reveal := -1.0
 var _rest := false
@@ -59,6 +61,8 @@ func _initialize() -> void:
 			_out = arg.substr(6)
 		elif arg == "--no-city":
 			_city = false
+		elif arg == "--no-save":
+			_summary = ""
 		elif arg.begins_with("--variant="):
 			Content.section("title")["variant"] = arg.substr(10)
 		elif arg.begins_with("--reveal="):
@@ -91,7 +95,7 @@ func _run() -> void:
 		root.size = _size  # only once the window is up does the OS take a size past its work area
 		await _tick()
 	var title := TitleScreen.new()
-	title.setup("Reptilian, 3 rampages")
+	title.setup(_summary)
 	title.live_city = _city
 	var t0 := Time.get_ticks_msec()
 	root.add_child(title)

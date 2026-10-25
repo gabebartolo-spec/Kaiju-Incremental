@@ -64,10 +64,7 @@ var _spin := 0.0
 func _ready() -> void:
 	UiKit.full_rect(self)
 	add_child(UiKit.backdrop())
-	var top := UiKit.tape(18.0)
-	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_bottom = 18.0
-	add_child(top)
+	# No tape along the top edge on any screen (director 2026-10-25: "remove yellow bar at top").
 	_spin = Num.f(UiKit.ui()["species_spin_rate"])
 	var safe := MarginContainer.new()
 	UiKit.full_rect(safe)

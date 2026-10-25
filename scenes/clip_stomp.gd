@@ -73,6 +73,12 @@ func stomp(standing: bool) -> void:
 			return
 
 
+## The sim names the foot that stomps next ("left" or "right"; anything else leaves it be).
+func prefer(side: String) -> void:
+	if side == "left" or side == "right":
+		_next = 0 if side == "left" else 1
+
+
 ## Runs foot i's step on by dt; how far through it (0..1).
 func advance(i: int, dt: float) -> float:
 	left[i] = maxf(0.0, left[i] - dt)

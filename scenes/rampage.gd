@@ -43,6 +43,8 @@ var autoplay_signature := true
 var scripted: Callable
 ## Where each stomp landed (the foot's ground point), for the capture and the tests.
 var stomp_ring_at: Array[Vector3] = []
+## Where the sim centred each stomp (its event's "at"), in step with stomp_ring_at, for the tests.
+var stomp_sim_at: Array[Vector2] = []
 ## The gameplay camera at rest (data/tuning.json "camera"): offset from the kaiju's focus, FOV.
 var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
@@ -69,6 +71,8 @@ var _walk := AutoWalk.new()
 ## Physics steps run: autoplay paces on this, never the engine clock (same run every time).
 var _steps := 0
 var _stomp_radius := 0.0
+## The foot a walking stomp falls on (the sim names it from its step clock); "" when any will do.
+var _stomp_side := ""
 ## Seconds a sim stomp waits for the foot that delivers it; past that it is heard but not seen.
 var _stomp_wait := 0.0
 ## Presses made while the rise from the river holds the sim back, kept for its first live tick.
@@ -256,10 +260,12 @@ func _to_world(p: Vector2) -> Vector3:
 func _on_event(event: Dictionary) -> void:
 	match str(event["type"]):
 		"stomp":
-			_land.lift(_kaiju)
+			_land.lift(_kaiju, str(event.get("side", "")))
 			# The sim decides the damage now; the ring, cracks and crush wait for the foot that
 			# delivers the stomp (_on_footfall), so they land where and when a foot does.
 			_stomp_radius = Num.f(event["radius"])
+			stomp_sim_at.append(event["at"])
+			_stomp_side = str(event["side"]) if event["on_foot"] else ""
 			_stomp_wait = STOMP_WAIT
 			add_trauma(shake.source("stomp"))
 		"ability":
@@ -316,7 +322,7 @@ func _update_kaiju(delta: float, moving: float) -> void:
 ## Every footfall kicks a little dust, nudges the camera and sounds a step (or the stomp that
 ## was waiting for this foot), so what you hear lands with what you see.
 func _on_footfall(side: String, strength: float, at: Vector3) -> void:
-	var stomped := _stomp_wait > 0.0 and side != "tail"
+	var stomped := _stomp_wait > 0.0 and side != "tail" and _stomp_side in ["", side]
 	if stomped:
 		_land_stomp(side, at)
 	sfx.footstep(strength)
