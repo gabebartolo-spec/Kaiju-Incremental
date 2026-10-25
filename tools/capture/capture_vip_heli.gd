@@ -142,17 +142,17 @@ func _roof_ahead(sim: RampageSim) -> int:
 func _input(sim: RampageSim) -> Dictionary:
 	match _phase:
 		"walk":
-			sim._stomp_timer = 9.0  # a walk with no stomps, so the roofs ahead are untouched
+			sim.stomp._timer = 9.0  # a walk with no stomps, so the roofs ahead are untouched
 			return {"move": Vector2(0.0, -1.0)}
 		"turn":
-			sim._stomp_timer = 9.0  # the roof ahead must still stand when the leader lifts off
+			sim.stomp._timer = 9.0  # the roof ahead must still stand when the leader lifts off
 			return {"move": (_pad_at - sim.kaiju_pos).normalized() * TURN_ONLY}
 		"wait":
-			sim._stomp_timer = 9.0
+			sim.stomp._timer = 9.0
 			return {}
 		"fly":
 			if sim.vip.flying():
-				sim._stomp_timer = 9.0  # the kaiju's own stomps never reach the low leader
+				sim.stomp._timer = 9.0  # the kaiju's own stomps never reach the low leader
 				return _breath(sim)
 	return {}
 
