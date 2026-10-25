@@ -40,4 +40,6 @@ started unless stated. Owners: lead (sim, gameplay, UI, flow), VFX lead (looks),
 | 32 | Defeat: he collapses in the street (Cascadeur clip) | 260 | M3 | casc-anim |
 | 33 | "+N" pops for big payouts only | 260 | M3 | lead |
 | 34 | Specimen numbering: K-01, next number after each death; 2 s lab card + headline | 260 | M3 | lead |
+| 36 | Cities from shuffled authored building blocks (Tripo heroes + fillers) on 2-3 tested street plans per stage; landmarks and explosive sites shuffled per run (D-133) | 261 | M3 | lead |
+| 37 | Railgun lock warning scales to the leap crouch (~0.6/0.75/1.0 s) | 261 | M3 | lead (K1 leap builder) |
 | 35 | After the demo: mortars, the Taskforce commander mini-boss; Steam page not yet | 259/260 | - | - |
