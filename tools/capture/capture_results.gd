@@ -4,7 +4,8 @@ extends SceneTree
 ## (the city falls, time's up, the army wins, End rampage from the pause menu), Enter past the
 ## end beat, the count lands, a shot; EVOLVE and RAMPAGE start the next. The save starts played,
 ## with modest bests, so records and misses both show. Render it at 3840x2160 off screen
-## (the no_focus override.cfg), never in a window that takes focus.
+## (the no_focus override.cfg plus window/size/borderless=true, so the desktop does not clamp the
+## window below 4K), never in a window that takes focus.
 ##
 ##   godot --path . --script tools/capture/capture_results.gd -- --out=<dir>
 
@@ -12,6 +13,7 @@ const GuiInput := preload("res://tests/lib/gui_input.gd")
 const MAIN_SCENE := "res://scenes/main.tscn"
 const ENDINGS: Array[String] = ["city_fallen", "time", "defeated", "ended"]
 const SETTLE := 12
+const SHOT_SIZE := Vector2i(3840, 2160)
 ## Autoplayed frames before each ending, so the report has a rampage to count.
 const FIGHT_FRAMES := 900
 ## Capture only: at most this many 1/60 s steps to finish the rise, and frames for an ending.
@@ -37,6 +39,9 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	Engine.max_physics_steps_per_frame = 1
+	# A 4K shot even where the desktop clamps a framed window (the override is borderless).
+	root.size = SHOT_SIZE
+	await _frames(2)
 	SaveFile.wipe()
 	var save := SaveFile.new_save("reptilian")
 	save["runs"] = 3
@@ -115,3 +120,5 @@ func _shot(name: String) -> void:
 	var path := _out.path_join(name + ".png")
 	image.save_png(path)
 	print("saved ", path, " ", image.get_size())
+	if image.get_size() != SHOT_SIZE:
+		push_error("shot is %s, not %s" % [image.get_size(), SHOT_SIZE])
