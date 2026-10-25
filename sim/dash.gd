@@ -153,21 +153,36 @@ func aim_at(at: Vector2, ahead: Vector2) -> Dictionary:
 	return {"building": best, "to": _clear_of_towers(at, to, ahead)}
 
 
-## The landing nearest `land` on the way back to `start` where the body overlaps no building that
-## dwarfs it (D-091: such a building is chewed, never passed through, so the body comes down
-## against its wall; whatever else it lands in breaks under it, BodyContact's sweep).
+## How far the leap from `start` to `land` gets before its body, on its arc, would enter a building
+## that dwarfs it (D-091: such a building is chewed, never passed through): it comes down at the
+## last clear pose, against that wall. Whatever else the body flies or lands in breaks
+## (BodyContact's sweep, lifted by the arc).
 func _clear_of_towers(start: Vector2, land: Vector2, ahead: Vector2) -> Vector2:
 	var step := Num.f(cfg["landing_step"])
-	for n: int in ceili(start.distance_to(land) / step) + 1:
-		var pose := land.move_toward(start, n * step)
-		var dwarfed := false
-		var inside := body.inside(pose, ahead)
-		for index: int in inside:
-			var tier := sim.buildings[index].tier
-			dwarfed = dwarfed or Growth.dwarf_mult(sim.size_tier(), tier, sim.city) < 1.0
-		if not dwarfed:
-			return pose
-	return start
+	var span := start.distance_to(land)
+	var apex := Num.f(_now()["apex"]) * sim.body_scale()
+	var clear := start
+	for n: int in ceili(span / step) + 1:
+		var f := minf(1.0, n * step / maxf(span, 0.001))
+		var pose := start.lerp(land, f)
+		if _in_tower(pose, ahead, 4.0 * apex * f * (1.0 - f)):
+			break
+		clear = pose
+	if clear != land:  # it comes down short: that pose on the ground must be clear too
+		while clear != start and _in_tower(clear, ahead, 0.0):
+			clear = clear.move_toward(start, step)
+	return clear
+
+
+## Whether the body at `pose`, lifted `lift`, overlaps a standing building that dwarfs it.
+func _in_tower(pose: Vector2, ahead: Vector2, lift: float) -> bool:
+	body.set_lift(lift)
+	var inside := body.inside(pose, ahead)
+	body.set_lift(height())
+	for index: int in inside:
+		if Growth.dwarf_mult(sim.size_tier(), sim.buildings[index].tier, sim.city) < 1.0:
+			return true
+	return false
 
 
 func _next() -> void:

@@ -76,7 +76,7 @@ func _first(events: Array[Dictionary], kind: String) -> Dictionary:
 
 
 ## The leap picks the standing building ahead in reach (not one off to the side, not one beyond
-## reach), lands the feet on it, and breaks nothing of it until the contact; then it breaks.
+## reach) and lands the feet on it; the crouch breaks nothing, the contact's blow breaks it (D-166).
 func _check_aims_ahead() -> void:
 	var probe := _croc({}, [])
 	var reach := Num.f(_stage(probe)["reach"]) * probe.body_scale()
@@ -94,13 +94,18 @@ func _check_aims_ahead() -> void:
 	check(Num.i(leap.get("building", -2)) == 0, "the leap aims at the building ahead: %s" % [leap])
 	var early := 0
 	var landed := false
+	var at_contact := 0
 	for _n: int in roundi(5.0 / DT):
+		var was := sim.chunks_destroyed
+		var crouching := sim.body.dash.phase() == "crouch"
 		var step := sim.step(DT, Vector2.ZERO, false, 0)
 		if not _first(step, "leap_land").is_empty():
 			landed = true
+			at_contact = sim.chunks_destroyed - was
 			break
-		early += sim.chunks_destroyed
-	check(landed and early == 0, "nothing breaks before the contact (%d chunk-steps)" % early)
+		early += sim.chunks_destroyed if crouching else 0
+	check(landed and early == 0, "the crouch breaks nothing (%d chunk-steps)" % early)
+	check(at_contact > 0, "the landing blow breaks chunks on contact (%d)" % at_contact)
 	var feet := sim.kaiju_pos + sim.facing * sim.body.feet_ahead()
 	check(
 		feet.distance_to(ahead) < 0.05,
@@ -128,12 +133,11 @@ func _check_tower_wall() -> void:
 		if not sim.body.dash.on():
 			break
 		sim.step(DT, Vector2.ZERO, false, 0)
-		if not sim.airborne:
-			worst = maxi(worst, Dictionary(sim.body.inside(sim.kaiju_pos, sim.body.heading)).size())
+		worst = maxi(worst, Dictionary(sim.body.inside(sim.kaiju_pos, sim.body.heading)).size())
 	var left := sim.buildings[0].frame.alive_count
 	check(
 		sim.body.dash.landings == 1 and worst == 0,
-		"the leap lands against the tower, never inside it (%d steps inside)" % worst
+		"the leap flies and lands clear of the tower, never inside it (%d inside)" % worst
 	)
 	check(left < before, "the landing chews the tower (%d of %d chunks left)" % [left, before])
 

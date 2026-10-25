@@ -235,6 +235,11 @@ func stomp_foot(left: bool) -> Vector2:
 	return sim.kaiju_pos + (heading * _stomp_foot.x + across) * sim.body_scale()
 
 
+## Lifts the body volume off the ground (world units) for what it overlaps: a leap's arc.
+func set_lift(lift: float) -> void:
+	_volume.lift = lift
+
+
 ## How far ahead of kaiju_pos the feet come down (world units): a leap aims them at its target.
 func feet_ahead() -> float:
 	return _stomp_foot.x * sim.body_scale()
@@ -315,7 +320,8 @@ func walked(distance: float, dt: float) -> void:
 func step(dt: float, dash_pressed: bool = false) -> void:
 	dash.step(dt, dash_pressed)
 	_face(dt)
-	if not active() or sim.airborne:
+	_volume.lift = dash.height()  # a leap's flight breaks what its body passes through
+	if not active() or (sim.airborne and not dash.on()):
 		_last_pos = Vector2(INF, INF)
 		return
 	var from := sim.kaiju_pos if _last_pos.x == INF else _last_pos
