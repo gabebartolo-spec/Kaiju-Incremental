@@ -1,7 +1,7 @@
 # Handoff: claw-anim (the claw swipe's arm motion)
 
 Updated 2026-10-25. Session started by the Kaiju lead (local_293f5c32). Worktree `.claude/worktrees/casc-anim-f911ce`,
-branch `claude/claw-anim-525a2a` (pushed, 1628ad55); the lead opens the PR.
+branch `claude/claw-anim-525a2a` (pushed, b2025ef9); the lead opens the PR.
 
 ## The job
 Director 2026-10-25: "the arm movement during the claw swipe animation is really bad ... Especially the baby's arm
@@ -18,10 +18,10 @@ Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake
   rig.json `lock_wrist` (hands in line, BipedSwing.hold_wrists / _aim_arm) and `arm_length` (KaijuClips.fit skips
   the moved elbow/wrist heads; without it the young croc fell back to the procedural gait).
 - Swipe = a short chop in front of the chest; poses/times in `data/tuning.json` "claw_fx" (arm_cocked/contact/
-  through, aim_max_deg 45, lift_s, strike_s, recover_s, joint_lag_s); `powers.swipe_windup` 0.7. Code:
+  through, aim_max_deg 45, hit_at 0.32 = where the hit falls in the strike so the chop is fastest on it, lift_s, strike_s, recover_s, joint_lag_s); `powers.swipe_windup` 0.7. Code:
   `scenes/biped_swing.gd` (_rake_dirs/_rake_dir, _blend/_frame, _contact_yaw, strike_window, hold_wrists).
 - Bars: `data/motion_gate.json` "claw_arm", checked by `tests/lib/claw_arm_probe.gd` from the croc standing suite
-  (green, 5/5, 73 checks). Print numbers: `tools/claw_probe.gd` (`-- --frames` per frame). Plan: docs/claw_swipe_plan.md.
+  (green, 5/5, 76 checks). Print numbers: `tools/claw_probe.gd` (`-- --frames` per frame). Plan: docs/claw_swipe_plan.md.
 - Clip: `tools/capture/capture_claw_side.gd` (windowed, untracked no_focus override.cfg; `-- --still=<dir>
   --name=<x>` for the rest still). Clip 2 + before/after still + notes sent to the lead (side-notes
   claw-anim-clip2.*); clip 1 superseded unreviewed. VFX lead told the new claw_arc reach.
