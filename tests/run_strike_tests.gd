@@ -290,11 +290,20 @@ func _check_standing_stomp() -> void:
 		)
 	)
 	var walked := _croc({}, near, Vector2.ZERO)
-	var steps := _watch(walked, 0.2, Vector2(-1, 0))
-	var walking := _event(steps, "stomp")
+	var steps := _watch(walked, 3.0, Vector2(-1, 0))
+	var feet := 0
+	var late := 0
+	for entry: Dictionary in steps["events"]:
+		var event: Dictionary = entry["event"]
+		if str(event["type"]) == "stomp" and event["on_foot"] == true:
+			feet += 1
+			late += 1 if Num.f(event["strike_in"]) != 0.0 else 0
 	check(
-		Num.f(walking.get("strike_in", -1.0)) == 0.0 and _log(steps, "chunks", DT) > 0.0,
-		"walking, the stomp lands on its tick: %s" % [walking]
+		feet > 0 and late == 0,
+		(
+			"walking, the stomp falls on its footfall with no delay (%d on a foot, %d late)"
+			% [feet, late]
+		)
 	)
 	var mantis := _sim("insectoid", {}, near, Vector2.ZERO)
 	var legs := _event(_watch(mantis, 0.2, Vector2.ZERO), "stomp")

@@ -4,10 +4,10 @@ extends RefCounted
 ## foot land, a beat after the press, not on it. The breath's cone is read at the strike (where he
 ## faces then); the Thunder Beam's stream starts at the strike (its walk slow from the press); a
 ## standing stomp lands `stomp_standing` seconds after its tick (on the foot RampageStomp chose), a
-## walking one on its tick (the view syncs it to the footfall); the dash is instant. Cooldowns count from the press. A strike waits in
-## `pending` until its time is up and lands nothing if the size tier changed meanwhile (he
-## evolved); a rampage that ends stops stepping, so nothing lands either. Delays in
-## data/tuning.json "strike". Part of RampageSim; pure, no randomness.
+## walking one on its tick (the view syncs it to the footfall); the dash is instant. Cooldowns
+## count from the press. A strike waits in `pending` until its time is up and lands nothing if
+## the size tier changed meanwhile (he evolved); a rampage that ends stops stepping, so nothing
+## lands either. Delays in data/tuning.json "strike". Part of RampageSim; pure, no randomness.
 
 const BREATH := "breath"
 const BEAM := "beam"
@@ -76,7 +76,8 @@ func step(dt: float) -> void:
 	for strike: Dictionary in due:
 		pending.erase(strike)
 		if Num.i(strike["tier"]) == sim.size_tier():
-			_land(str(strike["kind"]), strike.get("centre", Vector2.ZERO))
+			var centre: Vector2 = strike.get("centre", Vector2.ZERO)
+			_land(str(strike["kind"]), centre)
 
 
 func _begin(kind: String, wait: float, centre := Vector2.ZERO) -> void:
