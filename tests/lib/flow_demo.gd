@@ -45,13 +45,13 @@ func run() -> void:
 		demo.get("enabled", false) == true and demo.get("endless") is Dictionary,
 		"the shipping data runs the demo, with its Endless mode rows: %s" % [demo]
 	)
-	SaveFile.delete_save()
+	SaveFile.wipe()
 	await _check_species_filter()
 	await _check_thanks_flow()
 	await _check_thanks_endless()
 	await _check_continue_after()
 	await FlowDemoMenus.new(t, check).run()
-	SaveFile.delete_save()
+	SaveFile.wipe()
 
 
 ## Loaded, and past the river rise that holds the sim back (D-083), so its clock runs.
@@ -134,6 +134,7 @@ func _near_final_save(last_out: Array[String]) -> Dictionary:
 ## Continue, then buy the last node by click: the thanks screen (or null).
 func _buy_final(main: Node, last: String) -> DemoEnd:
 	await GuiInput.click(t, GuiInput.button(_screen(main), "CONTINUE"))
+	await GuiInput.click(t, GuiInput.button(_screen(main), "SLOT 1"))
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(
@@ -158,6 +159,7 @@ func _check_thanks_flow() -> void:
 	SaveFile.save_game(save)
 	var main := await _main()
 	await GuiInput.click(t, GuiInput.button(_screen(main), "CONTINUE"))
+	await GuiInput.click(t, GuiInput.button(_screen(main), "SLOT 1"))
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
 	await GuiInput.click(t, tree.node_button("evolve1"))
@@ -331,6 +333,7 @@ func _check_continue_after() -> void:
 	SaveFile.save_game(save)
 	var main := await _main()
 	await GuiInput.click(t, GuiInput.button(_screen(main), "CONTINUE"))
+	await GuiInput.click(t, GuiInput.button(_screen(main), "SLOT 1"))
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(

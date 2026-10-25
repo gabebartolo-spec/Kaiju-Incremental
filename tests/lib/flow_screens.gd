@@ -29,7 +29,7 @@ func _init(runner: SceneTree, p_check: Callable) -> void:
 
 
 func run() -> void:
-	SaveFile.delete_save()
+	SaveFile.wipe()
 	await _check_new_game()
 	await _check_results_compare()
 	await _check_evolution_and_continue()
@@ -39,7 +39,7 @@ func run() -> void:
 	layout.currency_named()
 	layout.fonts_ours()
 	FlowSave.migration(check)
-	SaveFile.delete_save()
+	SaveFile.wipe()
 
 
 func _frames(n: int) -> void:
@@ -216,6 +216,7 @@ func _check_evolution_and_continue() -> void:
 	await layout.fits_at_scales(title as Control, "title screen")
 	layout.listen(title, "title")
 	await GuiInput.click(t, cont)
+	await GuiInput.click(t, GuiInput.button(title, "SLOT 1"))
 	await _frames(3)
 	var tree := _screen(main) as UpgradeScreen
 	check.call(tree != null, "Continue on a played save opens the evolution tree")
@@ -297,6 +298,7 @@ func _check_evolution_and_continue() -> void:
 	await _frames(2)
 	var again := await _main()
 	await GuiInput.click(t, GuiInput.button(_screen(again), "CONTINUE"))
+	await GuiInput.click(t, GuiInput.button(_screen(again), "SLOT 1"))
 	await _frames(3)
 	var reloaded := _screen(again) as UpgradeScreen
 	check.call(
