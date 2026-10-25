@@ -12,6 +12,7 @@ extends SceneTree
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const SETTLE := 120
 ## Seconds of flight the shot lasts, and the stills' moments (seconds after lift-off).
+const PAD_RANGE := [10.0, 20.0]
 const CLIP_SECONDS := 6.5
 const STILLS := [0.4, 1.5, 3.0, 4.5]
 const LEVELS := [
@@ -54,6 +55,7 @@ func _run(run: int, tier: int) -> void:
 	await Kit.frames(self, SETTLE)
 	var sim := _rampage.sim
 	sim.time_left = 600.0
+	sim.vip.cfg["pad_range"] = PAD_RANGE  # a roof near the kaiju, in the camera
 	sim.vip._spawn_at = 0.0
 	while not sim.vip.flying():
 		await physics_frame
@@ -83,7 +85,10 @@ func _input(sim: RampageSim) -> Dictionary:
 		absf(sim.facing.angle_to(to)) < Num.f(aim["half_angle"])
 		and to.length() < sim.ability_reach()
 	)
-	return {"move": to.normalized() * 0.3, "signature": in_cone and sim.ability_ready_in <= 0.0}
+	return {
+		"move": to.normalized() if to.length() > sim.ability_reach() * 0.7 else Vector2.ZERO,
+		"signature": in_cone and sim.ability_ready_in <= 0.0
+	}
 
 
 func _shots() -> void:
