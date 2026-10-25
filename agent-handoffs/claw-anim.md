@@ -1,7 +1,7 @@
 # Handoff: claw-anim (the claw swipe's arm motion)
 
 Updated 2026-10-25. Session started by the Kaiju lead (local_293f5c32). Worktree `.claude/worktrees/casc-anim-f911ce`,
-branch `claude/claw-anim-525a2a` (pushed, 3d69b9f7); the lead opens the PR.
+branch `claude/claw-anim-525a2a` (pushed, 67c1386a); the lead opens the PR.
 
 ## The job
 Director 2026-10-25: "the arm movement during the claw swipe animation is really bad ... Especially the baby's arm
@@ -21,16 +21,16 @@ Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake
   the chest (KaijuRig.arm_pose, BipedSwing.hold_arms/_held); `capture_claw_side.gd` prints the px bars (hand and
   forearm outside the body silhouette at rest; claw tip ahead of the chest outline at the hit, in hand lengths).
 - Swipe = a short chop in front of the chest; poses/times in `data/tuning.json` "claw_fx" (arm_cocked/contact/
-  through, aim_max_deg 45, hit_at 0.32 = where the hit falls in the strike so the chop is fastest on it, lift_s, strike_s, recover_s, joint_lag_s); `powers.swipe_windup` 0.7. Code:
+  through, aim_max_deg 45, strike_s 0.38 at every size (strike_size_power 0), strike_ease 0.7 (ease-out), hit_at 0.1 = where the hit falls in the strike so the chop is fastest on it, lift_s, strike_s, recover_s, joint_lag_s); `powers.swipe_windup` 0.7. Code:
   `scenes/biped_swing.gd` (_rake_dirs/_rake_dir, _blend/_frame, _contact_yaw, strike_window, hold_arms, _held).
 - Bars: `data/motion_gate.json` "claw_arm", checked by `tests/lib/claw_arm_probe.gd` from the croc standing suite
   (green, 5/5, 76 checks). Print numbers: `tools/claw_probe.gd` (`-- --frames` per frame). Plan: docs/claw_swipe_plan.md.
 - Clip: `tools/capture/capture_claw_side.gd` (windowed, untracked no_focus override.cfg; `-- --still=<dir>
-  --name=<x>` for the rest still). Clip 3 + before/after still r3 + notes sent to the lead (side-notes claw-anim-clip3.*; earlier
+  --name=<x>` for the rest still). Clip 4 (chop 16-17 frames, lead FIX on clip 3) sent; arms passed on clip 3 (side-notes claw-anim-clip3.*, clip4.mp4; earlier
   claw-anim-clip2.*); clip 1 superseded unreviewed. VFX lead told the new claw_arc reach.
 
 ## Next
-- Lead check of clip 3 (its own FIX on clip 2 is answered). FIX: retune, all bars must pass. Another failure = stop, find why,
+- Lead check of clip 4 (its FIX on clip 3: chop too fast). FIX: retune, all bars must pass. Another failure = stop, find why,
   change method (a Cascadeur swipe clip per stage).
 
 ## Gotchas
