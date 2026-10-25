@@ -254,13 +254,15 @@ vec3 sd_concrete(vec3 base, vec2 uv, float wy, vec3 n, float water_y) {
 	// The damp band: dark and wet at the water line, green-brown slime in its lower part, a pale dried line above.
 	if (water_y > -50.0 && !top) {
 		float h = wy - water_y;
-		float edge = 0.38 + 0.2 * (sd_vn(vec2(uv.x * 1.3, 4.0)) - 0.5) + 0.1 * (sd_h(vec2(floor(uv.x / block), 9.0)) - 0.5);
-		float wet_band = 1.0 - smoothstep(edge - 0.08, edge + 0.08, h);
-		float slime = (1.0 - smoothstep(edge * 0.3, edge * 0.8, h)) * step(0.28, sd_vn(vec2(uv.x * 2.1, h * 3.0) + 9.0));
-		col *= 1.0 - damp * 0.8 * wet_band;
-		col = mix(col, vec3(0.07, 0.085, 0.028), slime * damp * 1.1);
-		float dried = (1.0 - smoothstep(0.0, 0.06, abs(h - edge - 0.12))) * damp;
-		col *= 1.0 + 0.35 * dried;
+		// A calm band about half a metre tall with a gently wavering top: damp dark concrete, green-brown
+		// algae thickest at the water, and a pale tide stain just above it.
+		float edge = 0.5 + 0.07 * (sd_vn(vec2(uv.x * 0.9, 4.0)) - 0.5) * 2.0;
+		float wet_band = 1.0 - smoothstep(edge - 0.1, edge + 0.04, h);
+		float slime = (1.0 - smoothstep(0.0, edge * 0.8, h)) * (0.7 + 0.3 * sd_vn(vec2(uv.x * 1.6, 9.0)));
+		col *= 1.0 - 0.7 * damp * wet_band;
+		col = mix(col, vec3(0.06, 0.075, 0.03), clamp(slime * damp * 0.9, 0.0, 0.8));
+		float dried = (1.0 - smoothstep(0.0, 0.08, abs(h - edge - 0.14))) * damp;
+		col *= 1.0 + 0.3 * dried;
 	}
 	return col;
 }

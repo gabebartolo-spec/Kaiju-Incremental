@@ -425,6 +425,7 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 			_kind(K_CONCRETE, -depth)
 		)
 	for deck: Rect2 in bridges:
+		_abutments(deck, channels, depth, stone)
 		_slab(
 			deck,
 			Vector2(0.001, 0.5),
@@ -437,6 +438,21 @@ func _river(channels: Array[Rect2], asphalt: Color, stone: Color) -> void:
 				Vector2(PARAPET.x, 1.0),
 				stone,
 				_kind(K_CONCRETE, NO_WATER)
+			)
+
+
+## The bank walls carried on under a bridge deck, from the deck's underside down to the channel floor,
+## so nothing under the deck shows the clear colour behind (a pale slit at the deck's sides).
+func _abutments(deck: Rect2, channels: Array[Rect2], depth: float, stone: Color) -> void:
+	for channel: Rect2 in channels:
+		if not channel.intersects(deck):
+			continue
+		for z: float in [channel.position.y, channel.end.y - RIVER_QUAY]:
+			_slab(
+				Rect2(deck.position.x, z, deck.size.x, RIVER_QUAY),
+				Vector2(-0.4, depth),
+				stone,
+				_kind(K_CONCRETE, -depth)
 			)
 
 

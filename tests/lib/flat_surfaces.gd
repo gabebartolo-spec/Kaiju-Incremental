@@ -20,7 +20,11 @@ const EXEMPT_GROUP := "vfx_exempt"
 
 ## Types still flat, by phase. P1 water; P2 rooftops (flat black stripe, window panels); P3 trees,
 ## lamps, cars, people, gondolas; the sky belongs to the atmosphere lead. Delete lines as they are
-## fixed; never add one.
+## fixed; never add one. One row per entry (surface, owner, phase, next step) in docs/ROADMAP.md,
+## "Flat surfaces programme".
+## The cap on the list's size: it only ever goes DOWN. Lower it whenever an entry is removed; a
+## test fails when KNOWN_FLAT has more entries than this (a new flat type may never be added).
+const KNOWN_FLAT_MAX := 21
 const KNOWN_FLAT: Dictionary = {
 	# P0 (this phase; each is deleted when its surface is textured)
 	"CitySkyline:std": "P3 lamp heads (glow)",
@@ -204,6 +208,10 @@ static func run(tree: SceneTree, check_fn: Callable) -> void:
 		if not KNOWN_FLAT.has(type):
 			fresh.append("%s x%d (%s)" % [type, found[type]["count"], found[type]["node"]])
 	check_fn.call(fresh.is_empty(), "no flat-colour surface in the city: %s" % [fresh])
+	check_fn.call(
+		KNOWN_FLAT.size() <= KNOWN_FLAT_MAX,
+		"KNOWN_FLAT only shrinks: %d entries, cap %d" % [KNOWN_FLAT.size(), KNOWN_FLAT_MAX]
+	)
 	var gone: Array[String] = []
 	for type: String in KNOWN_FLAT:
 		if not found.has(type):
