@@ -158,6 +158,7 @@ func _build_ground() -> void:
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
+	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 

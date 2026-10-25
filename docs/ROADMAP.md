@@ -548,3 +548,33 @@ state. No director clips or per-change approvals in between; clips only where mo
 - Scope (D-212, director 2026-10-24): "demo: full croc gameplay minus the mecha boss fight / full game: all 3
   reptilians and mecha boss / ... an expansion with a mammal, an avian, an aquatic" (plus build-your-own kaiju);
   mantis and octopus stay stretch goals. Owner: lead (milestones follow this). Status: recorded.
+
+## Interviews 2026-10-26 (D-257 to D-260)
+Every ruling to build, with owner and milestone: `docs/roadmap/2026-10-26-interviews.md`.
+
+## Flat surfaces programme (director 2026-10-25: "flat textureless colour blocks need to go")
+P0 (roads, quays and river walls, bridge decks, pavements, lawns, expressway, rubble) is textured through scenes/surface_detail.gdshaderinc; the CI test tests/lib/flat_surfaces.gd fails any other untextured surface. Its KNOWN_FLAT list may only shrink (cap KNOWN_FLAT_MAX). Owner of every row: VFX lead. Target dates (VFX lead, 2026-10-25): P1 water 2026-10-28, P2 2026-10-31, P3 2026-11-04 (P1 water, P2 rooftops and building faces, P3 props, people, cars, the kaiju); next step for each row is to give the surface the surface_detail look or a texture, then delete its KNOWN_FLAT line and lower the cap.
+
+| KNOWN_FLAT entry | Surface | Owner | Phase | Target date |
+|---|---|---|---|---|
+| CitySkyline:std | lamp heads (glow boxes on the far skyline) | VFX lead | P3 | 2026-11-04 |
+| CitySkyline:shader:facade.gdshader | far-city towers, roof gear, lattice tower | VFX lead | P2 towers and roof gear, P3 tower | 2026-10-31 (P2), 2026-11-04 (P3 tower) |
+| CitySkyline:shader:facade_far.gdshader | hazy far towers, lattice tower | VFX lead | P2, P3 tower | 2026-10-31 (P2), 2026-11-04 (P3 tower) |
+| CityGround:std | river and bay water sheets | VFX lead | P1 | 2026-10-28 |
+| BuildingStream:shader:facade.gdshader | building faces (stream) | VFX lead | P2 | 2026-10-31 |
+| BuildingView:shader:voxel.gdshader | building faces (voxel) | VFX lead | P2 | 2026-10-31 |
+| RooftopView:shader:voxel.gdshader | rooftops (flat black stripe, window panels) | VFX lead | P2 | 2026-10-31 |
+| RooftopView:std | rooftop gear | VFX lead | P2 | 2026-10-31 |
+| Aircraft:std | aircraft | VFX lead | P3 | 2026-11-04 |
+| DebrisField:std | debris chunks | VFX lead | P3 | 2026-11-04 |
+| CityDecor:shader:voxel.gdshader | trees, lamps, props | VFX lead | P3 | 2026-11-04 |
+| Traffic:shader:voxel.gdshader | cars | VFX lead | P3 | 2026-11-04 |
+| StreetLife:shader:voxel.gdshader | people | VFX lead | P3 | 2026-11-04 |
+| Police:shader:voxel.gdshader | police | VFX lead | P3 | 2026-11-04 |
+| StadiumMatch:shader:voxel.gdshader | stadium | VFX lead | P3 | 2026-11-04 |
+| StadiumMatch:std | stadium | VFX lead | P3 | 2026-11-04 |
+| StadiumCrowd:shader:crowd.gdshader | stadium crowd | VFX lead | P3 | 2026-11-04 |
+| ArenaEdge:std | arena bollards | VFX lead | P3 | 2026-11-04 |
+| KaijuRig:shader:voxel.gdshader | the kaiju's own skin pipeline | VFX lead | P3 | 2026-11-04 |
+| VoxelSkin:shader:voxel_skin.gdshader | the kaiju's skin | VFX lead | P3 | 2026-11-04 |
+| VoxelSkin:shader:voxel_skin_fill.gdshader | the kaiju's skin fill | VFX lead | P3 | 2026-11-04 |

@@ -4,6 +4,10 @@ extends "res://tests/lib/powers_base.gd"
 ## fixtures as in run_powers_tests.gd. Headless, no autoloads.
 ##   godot --headless --path . --script tests/run_tentacles_tests.gd
 
+## Strafing passes a helicopter is sent on, and the seconds each is given (strafe_seconds).
+const PASSES := 8
+const PASS_SECONDS := 22.0
+
 
 func suite_name() -> String:
 	return "Tentacles"
@@ -126,9 +130,9 @@ func _check_ink() -> void:
 	)
 
 
-## Helicopters (D-037): they come once the city is burning, circle and strafe; a young kaiju
-## cannot reach them, a grown one swats them on their strafing dives, and a cephalopod
-## plucks them out of the air.
+## Helicopters (D-037, D-183): they come once the city is burning, hold their stand-off ring and
+## fire; a young kaiju cannot reach them, a grown one swats one on its strafing pass, and a
+## cephalopod plucks one out of the air on its pass.
 func _check_helicopters() -> void:
 	var calm := _sim("reptilian", {}, [], Vector2(0, 0))
 	_run(calm, 15.0, Vector2.ZERO)
@@ -139,52 +143,91 @@ func _check_helicopters() -> void:
 	var seen := _run(young, 8.0, Vector2.ZERO)
 	check(
 		heli.pos.distance_to(start) > 1.0 and seen.has("heli_fired") and young.hp < young.max_hp,
-		"a helicopter circles and strafes the kaiju (%d bursts)" % Num.i(seen.get("heli_fired", 0))
+		(
+			"a helicopter flies in and fires on the kaiju (%d bursts)"
+			% Num.i(seen.get("heli_fired", 0))
+		)
 	)
 	check(heli.hp > 0.0, "a young kaiju's stomps cannot reach a helicopter")
 	await _t("_check_heli_keeps_clear")
 	var grown := _sim("reptilian", {"evolve1": 1, "claws": 5, "hide": 5}, [], Vector2(0, 0))
-	grown.air.spawn()
-	var swatted := _run(grown, 12.0, Vector2.ZERO)
+	var diver := grown.air.spawn()
+	_face_away_from_camera(grown)
+	var swatted := {}
+	for pass_n: int in PASSES:
+		# A swipe lands every 2 s, so each pass starts a little later in that rhythm (a pass is
+		# in the claw's band for about 1.6 s of it).
+		_run(grown, 0.4 * pass_n, Vector2.ZERO)
+		grown.air.flight.start_pass(diver)
+		swatted = _run(grown, PASS_SECONDS, Vector2.ZERO)
+		if swatted.has("heli_destroyed"):
+			break
 	check(
 		swatted.has("heli_destroyed"),
-		"a grown kaiju (reach %.1f) swats a diving helicopter" % grown.reach_top()
+		"a grown kaiju (reach %.1f) swats a helicopter on its strafing pass" % grown.reach_top()
 	)
 	var octo := _sim("cephalopod", {"c_grab": 1}, [_b(0, -7, Vector3i(3, 3, 3))], Vector2(0, 0))
-	octo.air.spawn()
-	var grabbed := false
-	for i: int in 30 * 8:
+	var flyer := octo.air.spawn()
+	_face_away_from_camera(octo)
+	octo.time_left = 1.0e9  # the passes run longer than a short rampage
+	var reach := Num.f(octo.powers.tentacles.cfg["grab_reach"]) * octo.body_scale()
+	var closest := INF
+	for _pass: int in PASSES:
+		octo.air.flight.start_pass(flyer)
+		for _i: int in roundi(PASS_SECONDS / DT):
+			octo.hp = octo.max_hp  # the passes run on; the helicopters' fire is not what is measured
+			octo.step(DT, Vector2.ZERO, false)
+			closest = minf(closest, flyer.pos.distance_to(octo.kaiju_pos))
+	check(
+		closest <= reach,
+		(
+			"a strafing pass brings a helicopter within a tentacle's grab (%.1f of %.1f)"
+			% [closest, reach]
+		)
+	)
+	var grabbed := false  # and a tentacle plucks one that is in reach out of the sky
+	var low := octo.air.spawn()
+	for _i: int in roundi(PASS_SECONDS / DT):
+		octo.hp = octo.max_hp
+		low.pos = octo.kaiju_pos + octo.facing.orthogonal() * reach * 0.5
 		for event: Dictionary in octo.step(DT, Vector2.ZERO, false):
 			if str(event["type"]) == "grab" and str(event["kind"]) == "heli":
 				grabbed = true
 	check(grabbed, "a cephalopod plucks a helicopter out of the sky")
 
 
+## The kaiju faces away from the game camera, where the helicopters are allowed to be.
+func _face_away_from_camera(sim: RampageSim) -> void:
+	sim.facing = Vector2.from_angle(
+		deg_to_rad(Num.f(Content.section("air")["camera_bearing"])) + PI
+	)
+
+
 ## Helicopters keep off the camera's side of the kaiju (never between the player and it) and
-## cruise a helicopter-and-a-half beyond its body, for 20 s of sweeping and diving.
+## hold their stand-off ring (D-183) round a standing kaiju, for 20 s (before the first pass).
 func _check_heli_keeps_clear() -> void:
 	var sim := _sim("reptilian", {}, [], Vector2(0, 0))
 	var air: Dictionary = Content.section("air")
 	var bearing := deg_to_rad(Num.f(air["camera_bearing"]))
-	var body := Num.f(Content.section("powers")["body_radius"]) * sim.body_scale()
+	var ring := Num.f(air["standoff"]) * (1.0 - Num.f(air["standoff_jitter"])) * sim.body_scale()
 	for _n: int in 3:
 		sim.air.spawn()
 	var closest := PI
-	var cruise := INF
+	var nearest := INF
 	for i: int in roundi(20.0 / DT):
 		sim.step(DT, Vector2.ZERO, false)
 		for heli: AirWing.Heli in sim.air.helis:
 			var side := absf(wrapf((heli.pos - sim.kaiju_pos).angle() - bearing, -PI, PI))
 			closest = minf(closest, side)
-			cruise = minf(cruise, heli.cruise - body)
+			nearest = minf(nearest, heli.pos.distance_to(sim.kaiju_pos))
 	check(
 		(
 			closest >= deg_to_rad(Num.f(air["clear_arc"])) - 0.01
-			and cruise >= Num.f(air["clear_margin"])
+			and nearest >= ring - Num.f(air["arrive"])
 		),
 		(
-			"helicopters stay %.0f deg off the camera side and cruise %.1f beyond the body"
-			% [rad_to_deg(closest), cruise]
+			"helicopters stay %.0f deg off the camera side and hold %.1f out (ring %.1f)"
+			% [rad_to_deg(closest), nearest, ring]
 		)
 	)
 

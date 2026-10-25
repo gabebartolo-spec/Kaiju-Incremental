@@ -61,6 +61,7 @@ var _kaiju_at := Vector3.ZERO
 var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _ability := RampageAbility.new()
 var _camera: Camera3D
+var _far_depth: FarDepth  ## the far blur, locked on the kaiju (D-163)
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
@@ -177,6 +178,7 @@ func _ready() -> void:
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
+	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
 	add_child(_hud)
@@ -229,6 +231,7 @@ func _process(delta: float) -> void:
 	if not is_loaded:
 		return
 	_place_camera(delta)
+	_far_depth.follow(_kaiju_at)
 	_fade.update(_camera.global_position, _kaiju_at, sim.body_scale(), delta)
 	shake.update(delta)
 	if _stomp_wait > 0.0:

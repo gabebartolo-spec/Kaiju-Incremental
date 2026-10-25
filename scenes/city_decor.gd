@@ -91,17 +91,16 @@ func _ready() -> void:
 	for i: int in paints.size():
 		palette["car%d" % i] = paints[i]
 	palette.merge(CityGreenery.PALETTE)
-	var island: Dictionary = sim.city["traffic_island"]["colors"]
-	for key: String in island:
-		palette[key] = Color(str(island[key]))
-	var quay: Dictionary = sim.city["river_quay"]["colors"]
-	for key: String in quay:
-		palette[key] = Color(str(quay[key]))
+	for part: String in ["traffic_island", "river_quay"]:
+		var colors: Dictionary = sim.city[part]["colors"]
+		for key: String in colors:
+			palette[key] = Color(str(colors[key]))
 	add_child(_props.build(palette, 31, 3.0))
 	_props.configure(sim.city)
 	add_child(_fx)
 	add_child(_props.leaf_field)
 	add_child(_props.bark_field)
+	add_child(LampPools.new(_lamp_spots))  # the lamps' pools on the ground, at night
 
 
 ## Whatever the kaiju's body walks over goes down on that frame, not only what a stomp hits, so

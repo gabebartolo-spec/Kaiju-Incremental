@@ -4,6 +4,8 @@ shader_type spatial;
 
 uniform float glow = 0.0;
 uniform float roughness_value = 0.9;
+// A faint glow of the cell's own colour on every cell (night flyers: a silhouette that reads).
+uniform float self_light = 0.0;
 // Below 1, a screen-door fade (vehicles between the camera and the kaiju, D-025's rule): the
 // cells stay opaque and depth-sorted, a share of their pixels is dropped in a fixed pattern.
 uniform float opacity = 1.0;
@@ -24,5 +26,5 @@ void fragment() {
 	vec3 albedo = srgb_to_linear(COLOR.rgb);
 	ALBEDO = albedo;
 	ROUGHNESS = roughness_value;
-	EMISSION = albedo * glow * (1.0 - COLOR.a);
+	EMISSION = albedo * (glow * (1.0 - COLOR.a) + self_light);
 }
