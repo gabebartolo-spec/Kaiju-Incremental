@@ -29,14 +29,16 @@ Arm motion is mine; trail, flash and sparks are the VFX lead's (claude/claw-rake
   --name=<x>` for the rest still). Clip 4 (chop 16-17 frames, lead FIX on clip 3) sent; arms passed on clip 3 (side-notes claw-anim-clip3.*, clip4.mp4; earlier
   claw-anim-clip2.*); clip 1 superseded unreviewed. VFX lead told the new claw_arc reach.
 
-## Next
-- Front view (director asked; `capture_claw_side.gd -- --front`): lead's FIX done: the belly tear is fixed in the bake
-  (rig.json `skin_blend`: `own_only` arm bones + shoulder/elbow/wrist lattice blend, `bake.py` own_only/blend_pairs),
-  and the young chop's aim is capped at 20 deg (rig.json `aim_max_deg`) so the claws stay off the belly (new bar
-  claw_arm.clear_min 2 voxels, probe `_clearance`). Sent: side-notes claw-anim-young-front-r2.*, claw-anim-side-r5.*,
-  and a flagged dark armpit gap (arm standing clear, not a tear) for the lead's eye.
-- Lead check of the front-r2 / side-r5 clips; then the lead opens the PR. FIX: retune, all bars must pass. Another failure = stop, find why,
-  change method (a Cascadeur swipe clip per stage).
+## Next (ON HOLD, lead 2026-10-25)
+- PR 194 on hold: don't push or merge. Director: "I want 100% of our animation done with Casc". The BipedSwing
+  swipe, arm_arc and WalkLife (walk arm swing/head bob, D-243) are code animation, to be replaced by casc-anim's keys.
+- Rig commits for the lead's rig-only split: 1628ad55 (shorter arms: kvox, rig.json, vskin, test/croctitan_baby.*,
+  shorten_arms.py), 0645610f (arm_pose in rig.json + vskin), 476a9ede (belly tear: bake.py own_only/blend_pairs).
+  Each also carries swipe code; take only the asset and bake files.
+- d3006b8d (local, UNPUSHED WIP): bake.py tissue smoothing, turn_blend shader, skin bound in the held arm_pose
+  (biped_swing rest_arm_bases), slit_scan.py + dump_poses.gd, WalkLife. Last scan (front, step 230): idle widest 2.0
+  voxels, walk 1.5 (legs, spine1), down from 3.5 / 6.5. Bar is 0; armpit notch unchecked since.
+- RAM rule: slit_scan only with `--jobs 1`, one heavy process at a time, only with >= 6 GB free RAM.
 
 ## Gotchas
 - Python: numpy lives in the Roaming user site: keep APPDATA real when running bake.py (bake_all sets its own
