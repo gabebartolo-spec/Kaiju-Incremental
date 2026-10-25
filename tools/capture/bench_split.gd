@@ -11,8 +11,10 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 ## --live: the rampage plays on while measuring (each hidden stretch is compared with the shown
 ## stretches either side of it), else it is frozen.
 var _live := false
+## --at=N: frames played before measuring (90: past the start).
+var _at := 90
 ## Frames measured per state (shown, hidden).
-const FRAMES := 30
+var FRAMES := 30
 ## Savings under this (ms) are not printed: a tank or a helicopter, noise.
 const NOISE_MS := 0.3
 ## Frames left to settle after a visibility change.
@@ -20,8 +22,10 @@ const SETTLE := 5
 
 
 func _initialize() -> void:
-	var a := Kit.args({"stage": 3, "preset": "", "live": false})
+	var a := Kit.args({"stage": 3, "preset": "", "live": false, "at": 90, "frames": 30})
+	_at = Num.i(a["at"])
 	_live = a["live"] == true
+	FRAMES = Num.i(a.get("frames", 30))
 	PlayerSettings.graphics = str(a["preset"])
 	if not Kit.window_ok():
 		quit(1)
@@ -33,9 +37,10 @@ func _run(stage: int) -> void:
 	await process_frame
 	var levels: Dictionary = Kit.STAGE_LEVELS[stage - 1]
 	var layout := CityGrowth.layout(Content.tuning(), stage, Seeds.make("city", 0))
-	var rampage := Kit.autoplay(self, "reptilian", Kit.stats("reptilian", levels, "reptilian"), 2, layout)
+	var stats := Kit.stats("reptilian", levels, "reptilian")
+	var rampage := Kit.autoplay(self, "reptilian", stats, 2, layout)
 	Kit.measure_on(self)
-	await Kit.frames(self, 90)
+	await Kit.frames(self, _at)
 	if not _live:
 		rampage.process_mode = Node.PROCESS_MODE_DISABLED  # a still scene: only drawing differs
 	await Kit.frames(self, 20)
@@ -44,6 +49,11 @@ func _run(stage: int) -> void:
 		if node is Node3D:
 			nodes.append(node)
 		if node is CityView:
+			for sub: Node in node.get_children():
+				if sub is Node3D:
+					nodes.append(sub)
+	for node: Node3D in nodes.duplicate():
+		if node is StreetLife:  # its people, cars, police and matches one by one
 			for sub: Node in node.get_children():
 				if sub is Node3D:
 					nodes.append(sub)

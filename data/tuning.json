@@ -585,7 +585,7 @@
 		"alley_chance": 0.3,
 		"parking_chance": 0.0,
 		"plaza_blocks": 0,
-		"park_every": 10000,
+		"park_every": 8000,
 		"park_gap": 60,
 		"park_town": 0.1,
 		"river": true,

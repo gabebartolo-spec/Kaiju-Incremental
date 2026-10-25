@@ -9,6 +9,8 @@ extends SceneTree
 
 const Kit := preload("res://tools/capture/capture_kit.gd")
 const CYCLE := 90
+## The run's first steps (the first 5 s at 60 Hz) are summed apart: the start's own cost.
+const HEAD_STEPS := 300
 const HELD := 50
 
 var _seconds := 60.0
@@ -76,6 +78,10 @@ func _run() -> void:
 		for e: Dictionary in events:
 			if e["type"] != "cells_promoted":  # when a building is promoted is not an outcome
 				digest = hash([digest, str(e["type"])])
+	var head := 0
+	for k: int in mini(HEAD_STEPS, costs.size()):
+		head += costs[k]
+	print("first %d steps: mean %.2f ms" % [HEAD_STEPS, head / 1000.0 / maxi(1, HEAD_STEPS)])
 	var sorted := costs.duplicate()
 	sorted.sort()
 	var total := 0

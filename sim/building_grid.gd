@@ -11,11 +11,15 @@ extends RefCounted
 const CELL := 16.0
 
 var _cells := {}  # Vector2i -> PackedInt32Array of building indices, ascending
+## The largest half-diagonal of any footprint (m): a building whose centre lies within r of a spot
+## is always among around(spot, r + pad).
+var pad := 0.0
 
 
 func _init(buildings: Array) -> void:
 	for i: int in buildings.size():
 		var b: RampageSim.Building = buildings[i]
+		pad = maxf(pad, Vector2(b.w, b.d).length() * 0.5)
 		var lo := _cell(Vector2(b.x - b.w * 0.5, b.z - b.d * 0.5))
 		var hi := _cell(Vector2(b.x + b.w * 0.5, b.z + b.d * 0.5))
 		for cx: int in range(lo.x, hi.x + 1):

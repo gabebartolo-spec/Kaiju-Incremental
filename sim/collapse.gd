@@ -248,7 +248,10 @@ func _crush_strip(start: Vector2, finish: Vector2, half_width: float, own: int) 
 		var t := rel.dot(along)
 		var side := absf(rel.dot(Vector2(-along.y, along.x)))
 		return t >= -r and t <= length + r and side <= half_width + r
-	for i: int in sim.buildings.size():
+	var reach := Vector2.ONE * (half_width + sim.grid.pad)
+	var lo := Vector2(minf(start.x, finish.x), minf(start.y, finish.y)) - reach
+	var hi := Vector2(maxf(start.x, finish.x), maxf(start.y, finish.y)) + reach
+	for i: int in sim.grid.in_rect(lo, hi):  # the strip's buildings, in index order (D-254)
 		if i == own:
 			continue
 		var b := sim.buildings[i]

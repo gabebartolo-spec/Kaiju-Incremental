@@ -1,12 +1,12 @@
 class_name CitySites
 extends RefCounted
-## Landmark sites (part of CityGen.map, split out to keep files small). Each landmark the seeded
-## spread (CitySpread) places takes the street-grid cells round its anchor, as many as its baked footprint
-## (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a margin needs, as one
-## plaza: the streets inside it are never laid, so traffic and the ground go round it. A site
-## stays inside one district (it never swallows a ring avenue), clear of the diagonal avenue and
-## out of the river's row (CityRiver.river_row); a landmark that cannot get one is left out.
-## Pure: the same city config always gives the same sites.
+## Landmark sites (part of CityGen.map, split out to keep files small). Each landmark the
+## seeded spread (CitySpread) places takes the street-grid cells round its anchor, as many as its
+## baked footprint (city.landmark_shapes: data/landmarks.json, merged in by Content) plus a
+## margin needs, as one plaza: the streets inside it are never laid, so traffic and the ground
+## go round it. A site stays inside one district (it never swallows a ring avenue), clear of the
+## diagonal avenue and out of the river's row (CityRiver.river_row); a landmark that cannot get
+## one is left out. Pure: the same city config always gives the same sites.
 
 
 ## One site per landmark the seeded spread places (CitySpread.landmarks): {"id", "spec",

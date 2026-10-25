@@ -17,17 +17,31 @@ const WINDOW_S := 5.0
 var _species := "reptilian"
 var _seconds := 30.0
 var _stage := 0
+## --off=<script file>,...: nodes running those scripts are stopped and hidden (cost splits).
+var _off: PackedStringArray = []
+## --trace: every frame of the first window printed (gap, gpu, process, physics, render cpu).
+var _trace := false
 
 
 func _initialize() -> void:
 	var a := Kit.args(
-		{"species": _species, "seconds": _seconds, "stage": _stage, "nofx": false, "preset": ""}
+		{
+			"species": _species,
+			"seconds": _seconds,
+			"stage": _stage,
+			"nofx": false,
+			"preset": "",
+			"off": "",
+			"trace": false
+		}
 	)
 	PostFx.enabled = a["nofx"] != true
 	PlayerSettings.graphics = str(a["preset"])
 	_species = str(a["species"])
 	_seconds = Num.f(a["seconds"])
 	_stage = Num.i(a["stage"])
+	_off = str(a["off"]).split(",", false)
+	_trace = a["trace"] == true
 	if not Kit.window_ok():
 		quit(1)
 		return
@@ -44,6 +58,11 @@ func _run() -> void:
 	else:
 		rampage = Kit.autoplay(self, _species, Kit.stats(_species, Kit.BENCH_LEVELS), 2)
 	var vp := root.get_viewport_rid()
+	_switch_off(rampage)
+	var found := rampage.find_children("*", "BuildingStream", true, false)
+	var stream: BuildingStream = found[0] if not found.is_empty() else null
+	found = rampage.find_children("*", "StreetLife", true, false)
+	var life: StreetLife = found[0] if not found.is_empty() else null
 	Kit.measure_on(self)
 	await Kit.frames(self, 30)
 	var frames := 0
@@ -76,6 +95,22 @@ func _run() -> void:
 		last = now
 		gap_max = maxf(gap_max, gap)
 		var t := (Time.get_ticks_msec() - start) / 1000.0
+		if _trace and t < WINDOW_S:
+			print(
+				(
+					"trace %.2fs: gap %.1f gpu %.1f process %.1f physics %.1f render cpu %.1f stream %d people %d"
+					% [
+						t,
+						gap,
+						gpu,
+						Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+						Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+						RenderingServer.viewport_get_measured_render_time_cpu(vp),
+						stream.resident_chunks() if stream != null else -1,
+						_drawn(life)
+					]
+				)
+			)
 		for win: Array in [head if t < WINDOW_S else [], tail if t > _seconds - WINDOW_S else []]:
 			if not win.is_empty():
 				win[0] += 1
@@ -144,3 +179,24 @@ func _run() -> void:
 				)
 			)
 	quit()
+
+
+func _switch_off(node: Node) -> void:
+	for child: Node in node.get_children():
+		var script: Script = child.get_script()
+		if script != null and script.resource_path.get_file() in _off:
+			child.process_mode = Node.PROCESS_MODE_DISABLED
+			if child is Node3D:
+				(child as Node3D).visible = false
+			print("off: %s" % script.resource_path.get_file())
+		_switch_off(child)
+
+
+## How many people StreetLife drew this frame (-1 without one).
+func _drawn(life: StreetLife) -> int:
+	if life == null:
+		return -1
+	var sum := 0
+	for mm: MultiMesh in life._mms:
+		sum += mm.visible_instance_count
+	return sum
