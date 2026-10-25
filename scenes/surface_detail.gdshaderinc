@@ -126,7 +126,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 	vec2 cc = road > 0.5 ? vec2(floor(along / 11.0), li) : floor(pc / 9.0);
 	float span = road > 0.5 ? 11.0 : 9.0;
 	float lw = road > 0.5 ? lane_w : 9.0;
-	if (sd_h(cc * vec2(1.7, 3.1) + 5.0) < 0.42) {
+	if (patch_dark > 0.0 && sd_h(cc * vec2(1.7, 3.1) + 5.0) < 0.42) {
 		float a0 = road > 0.5 ? fract(along / 11.0) * 11.0 : fract(pc.x / 9.0) * 9.0;
 		float l0 = road > 0.5 ? lm : (fract(pc.y / 9.0) - 0.5) * 9.0;
 		float len = mix(1.4, 4.5, sd_h(cc + 11.0));
@@ -178,7 +178,7 @@ vec3 sd_asphalt(vec3 base, vec2 pc, float along, float lat, float half_w, float 
 	float kd = half_w - abs(lat);
 	float gut = 1.0 - smoothstep(0.12, 0.75, kd);
 	col *= 1.0 - gutter * gut * (0.7 + 0.5 * sd_vn(pc / 0.8));
-	col *= 1.0 + 0.5 * gut * step(sd_h(pc * 8.0 + 3.0), 0.12);
+	col *= 1.0 + 0.5 * gutter * gut * step(sd_h(pc * 8.0 + 3.0), 0.12);
 	return col;
 }
 
@@ -273,9 +273,9 @@ vec3 sd_concrete(vec3 base, vec2 uv, float wy, vec3 n, float water_y) {
 		// A calm band about half a metre tall with a gently wavering top: damp dark concrete, green-brown
 		// algae thickest at the water, and a pale tide stain just above it.
 		float edge = band_h + 0.1 * (sd_vn(vec2(uv.x * 0.9, 4.0)) - 0.5) * 2.0;
-		float wet_band = 1.0 - smoothstep(edge - 0.15, edge + 0.05, h);
+		float wet_band = 1.0 - smoothstep(edge - 0.1, edge + 0.03, h);
 		float slime = (1.0 - smoothstep(0.0, edge * 0.55, h)) * (0.7 + 0.3 * sd_vn(vec2(uv.x * 1.6, 9.0)));
-		col *= 1.0 - 0.7 * damp * wet_band;
+		col *= 1.0 - 0.9 * damp * wet_band;
 		col = mix(col, vec3(0.05, 0.09, 0.02), clamp(slime * damp * 0.9, 0.0, 0.75));
 		float dried = (1.0 - smoothstep(0.0, 0.08, abs(h - edge - 0.14))) * damp;
 		col *= 1.0 + 0.3 * dried;

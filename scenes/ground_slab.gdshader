@@ -102,6 +102,6 @@ void fragment() {
 	// Night: a faint glow that follows the surface's own variation (the ratio of its look to its base,
 	// sharpened), so the road reads by its grain, not as a flat black block. Zero by day.
 	float ratio = dot(col, vec3(0.3, 0.55, 0.15)) / max(dot(base, vec3(0.3, 0.55, 0.15)), 0.0001);
-	EMISSION = base * night_floor * pow(ratio, 2.5) * (kind < 2.5 || (kind > 4.5 && (up || kind > 5.5)) ? 1.0 : 0.0) * (1.0 - wet * 0.5);
+	EMISSION = base * night_floor * pow(ratio, 0.3) * (kind < 1.5 || (kind > 4.5 && (up || kind > 5.5)) ? 1.0 : 0.0) * (1.0 - wet * 0.5);
 	SPECULAR = mix(0.5, WET_SPECULAR, wet);
 }
