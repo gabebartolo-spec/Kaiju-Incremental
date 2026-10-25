@@ -177,7 +177,7 @@ func _check_record_stamps() -> void:
 	)
 	check(texts.has("best 5") and texts.has("best 6"), "missed and tied rows show their best")
 	check(
-		screen.title.text == ResultsScreen.headline("time"),
+		screen.title.text == _data_headline("time"),
 		"the report is headed by its ending: %s" % screen.title.text
 	)
 	screen.queue_free()
@@ -303,7 +303,7 @@ func _check_endings_by_input() -> void:
 		var results := await _end_by(rampage, reason)
 		var heading := results.title.text if results != null else "no report"
 		check(
-			heading == ResultsScreen.headline(reason),
+			heading == _data_headline(reason),
 			"ending '%s' by play shows its headline: %s" % [reason, heading]
 		)
 		if results == null:
@@ -320,6 +320,13 @@ func _check_endings_by_input() -> void:
 	_slot_after_endings()
 	main.queue_free()
 	await _frames(2)
+
+
+## The ending's headline as data writes it (tuning "results" "endings").
+func _data_headline(reason: String) -> String:
+	var endings: Dictionary = Content.section("results")["endings"]
+	var ending: Dictionary = endings[reason]
+	return str(ending["headline"])
 
 
 ## Ends `rampage` for `reason`: End rampage through the pause menu by clicks, else the sim's
