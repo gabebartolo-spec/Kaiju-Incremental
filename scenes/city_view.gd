@@ -49,7 +49,6 @@ func _ready() -> void:
 		process_mode = Node.PROCESS_MODE_DISABLED  # street life and traffic wait for the finished city
 	CityEnvironment.attach(self, sim)
 	_build_ground()
-	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if not await stages.next(self):
 		return
 	var colors: Array[Color] = []
@@ -80,8 +79,6 @@ func _ready() -> void:
 		add_child(street)
 		if not await stages.next(self):
 			return
-	var spots: Array[Vector2] = _decor.get("_lamp_spots") if _decor != null else []
-	add_child(LampPools.new(spots))  # the lamps' pools on the ground, at night
 	# Where the kaiju's walk ends (comments #18).
 	add_child(ArenaEdge.new(sim, ArenaEdge.trees_of(_decor)))
 	while stages.on and not _stream.initial_done():
@@ -161,6 +158,7 @@ func _build_ground() -> void:
 	add_child(ground)
 	var streets := CityGround.new(sim.city)
 	add_child(streets)
+	WeatherView.attach(self)  # the run's weather: rain streaks, wet streets, a duller sky
 	if _with_decor:
 		add_child(CitySkyline.new(streets, Seeds.make("skyline", 0)))
 

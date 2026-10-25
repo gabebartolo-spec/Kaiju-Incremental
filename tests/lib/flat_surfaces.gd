@@ -152,14 +152,12 @@ static func _with_includes(code: String, depth: int = 0) -> String:
 	if depth > 4:
 		return code
 	var out := code
-	for line: String in code.split("
-"):
+	for line: String in code.split("\n"):
 		var at := line.find("#include")
 		if at >= 0 and not line.strip_edges().begins_with("//"):
 			var path := line.substr(at + 8).strip_edges().trim_prefix('"').get_slice('"', 0)
 			if FileAccess.file_exists(path):
-				out += "
-" + _with_includes(FileAccess.get_file_as_string(path), depth + 1)
+				out += "\n" + _with_includes(FileAccess.get_file_as_string(path), depth + 1)
 	return out
 
 

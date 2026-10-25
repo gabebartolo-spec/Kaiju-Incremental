@@ -11,7 +11,8 @@ extends Node3D
 ##    screen centre and in front of the kaiju like smoke (D-018, view_clear.gdshaderinc);
 ##  - wet streets: the ground slabs' `wet` uniform (ground_slab.gdshader);
 ##  - a duller sky: the look's ambient, sun and fog multiplied down and the sky and fog colours
-##    pulled toward their own grey, over whatever the time of day is, so a later layer can sit on it.
+##    pulled toward their own grey, over whatever the time of day is, so a later layer can sit on
+##    it.
 ## Presentation only. Numbers: data/looks.json weather.layers, data/tuning.json rain.
 
 const RAIN_SHADER := preload("res://scenes/rain.gdshader")
@@ -160,11 +161,19 @@ func _build_rain() -> void:
 	streaks.process_material = flow
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE
+	quad.material = _streak_material(velocity.normalized())
+	streaks.draw_pass_1 = quad
+	add_child(streaks)
+	_build_splashes(ratio, streak_color())
+
+
+## The streaks' shader material (rain.gdshader): tint, fall direction, size and fades.
+func _streak_material(fall_dir: Vector3) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = RAIN_SHADER
 	var tint := streak_color()
 	mat.set_shader_parameter("tint", Color(tint.r, tint.g, tint.b, Num.f(_cfg["alpha"])))
-	mat.set_shader_parameter("fall_dir", velocity.normalized())
+	mat.set_shader_parameter("fall_dir", fall_dir)
 	mat.set_shader_parameter("streak_len", Num.f(_cfg["length"]))
 	mat.set_shader_parameter("streak_width", Num.f(_cfg["width"]))
 	mat.set_shader_parameter("min_px", Num.f(_cfg["min_px"]))
@@ -172,10 +181,7 @@ func _build_rain() -> void:
 		mat.set_shader_parameter(key, Num.f(_cfg[key]))
 	var table: Dictionary = _cfg["clear"]
 	_clearing(mat, table)
-	quad.material = mat
-	streaks.draw_pass_1 = quad
-	add_child(streaks)
-	_build_splashes(ratio, tint)
+	return mat
 
 
 func _build_splashes(ratio: float, tint: Color) -> void:

@@ -22,12 +22,14 @@ func _init(spots: Array[Vector2]) -> void:
 	mat.shader = SHADER
 	mat.set_shader_parameter("pool", strength)
 	mat.set_shader_parameter("radius", RADIUS)
-	CityGround.apply_look(mat, Num.i(Content.section("city")["map_seed"]))
+	GroundKit.apply_look(mat, Num.i(Content.section("city")["map_seed"]))
 	quad.material = mat
 	mm.mesh = quad
 	mm.instance_count = spots.size()
 	for i: int in spots.size():
-		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, Vector3(spots[i].x, LIFT, spots[i].y)))
+		mm.set_instance_transform(
+			i, Transform3D(Basis.IDENTITY, Vector3(spots[i].x, LIFT, spots[i].y))
+		)
 	multimesh = mm
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	name = "LampPools"

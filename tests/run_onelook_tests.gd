@@ -25,20 +25,16 @@ func run_checks() -> void:
 	await _h("FlatSurfaces", func() -> void: await FlatSurfaces.run(self, check))
 
 
-
 func _check_look_keys() -> void:
 	Content.set_time("dusk")
 	var missing: Array[String] = []
 	for key: String in PHASE_ONE_KEYS:
 		if not Content.look().has(key):
 			missing.append(key)
-	for key: String in CityGround.BLOCK_KEYS:
+	for key: String in GroundKit.BLOCK_KEYS:
 		if not Content.look().has("ground_" + key):
 			missing.append("ground_" + key)
 	check(missing.is_empty(), "the look carries every phase 1 number: %s" % [missing])
-
-
-
 
 
 func _check_presets() -> void:
@@ -103,14 +99,13 @@ func _check_far_depth() -> void:
 	PlayerSettings.graphics = saved
 
 
-
 func _check_ground_numbers() -> void:
 	Content.set_time("dusk")
 	var uniforms: Array[String] = []
-	for u: Dictionary in CityGround.SLAB_SHADER.get_shader_uniform_list():
+	for u: Dictionary in GroundKit.SLAB_SHADER.get_shader_uniform_list():
 		uniforms.append(str(u["name"]))
 	var bad: Array[String] = []
-	for key: String in CityGround.BLOCK_KEYS:
+	for key: String in GroundKit.BLOCK_KEYS:
 		if not key in uniforms:
 			bad.append(key)
 	check(bad.is_empty(), "every ground number is a uniform of the block shader: %s" % [bad])
@@ -118,7 +113,7 @@ func _check_ground_numbers() -> void:
 		is_equal_approx(Look.value("ground_block"), 0.125),
 		"the ground's block is the city's voxel grain, 0.125 m"
 	)
-	var mat := CityGround.ground_material(7301)
+	var mat := GroundKit.material(7301)
 	check(
 		is_equal_approx(
 			Num.f(mat.get_shader_parameter("block_noise")), Look.value("ground_block_noise")
@@ -131,16 +126,18 @@ func _check_ground_numbers() -> void:
 ## numbers.
 func _check_ground_seeded() -> void:
 	Content.set_time("dusk")
-	var a := CityGround.ground_material(7301)
-	var b := CityGround.ground_material(7301)
-	var c := CityGround.ground_material(7302)
+	var a := GroundKit.material(7301)
+	var b := GroundKit.material(7301)
+	var c := GroundKit.material(7302)
 	var same := true
-	for key: String in CityGround.BLOCK_KEYS + ["seed"]:
+	for key: String in GroundKit.BLOCK_KEYS + ["seed"]:
 		if a.get_shader_parameter(key) != b.get_shader_parameter(key):
 			same = false
 	check(same, "the same map seed gives the same ground numbers")
 	check(
-		not is_equal_approx(Num.f(a.get_shader_parameter("seed")), Num.f(c.get_shader_parameter("seed"))),
+		not is_equal_approx(
+			Num.f(a.get_shader_parameter("seed")), Num.f(c.get_shader_parameter("seed"))
+		),
 		"another map seed shifts every hash of the ground (a different ground)"
 	)
 
@@ -169,28 +166,30 @@ func _check_ground_kinds() -> void:
 		if t.origin.y > -0.5 and size.x < 1000.0:  # not the land under everything
 			area[kind] = Num.f(area.get(kind, 0.0)) + a
 			total += a
-		if kind == CityGround.K_ROAD or kind == CityGround.K_DECK:
+		if kind == GroundKit.K_ROAD or kind == GroundKit.K_DECK:
 			var axis := roundi(fposmod(d.r, 1.0) * 8.0)
-			if axis != CityGround.TURNED:
+			if axis != GroundKit.TURNED:
 				roads += 1
-				var across := t.origin.z if axis == CityGround.ALONG_X else t.origin.x
-				var half := (size.y if axis == CityGround.ALONG_X else size.x) * 0.5
+				var across := t.origin.z if axis == GroundKit.ALONG_X else t.origin.x
+				var half := (size.y if axis == GroundKit.ALONG_X else size.x) * 0.5
 				var centre := d.g + d.b
 				# A street or deck piece lies inside its street, in its width of the centre line.
 				if absf(across - centre) > d.a + 0.01 or absf(d.b) > 8.0 or half > d.a + 0.01:
 					bad_centre += 1
-		if kind == CityGround.K_CONCRETE:
+		if kind == GroundKit.K_CONCRETE:
 			walls += 1
 			if d.g < -0.5:
 				walls_wet += 1
-	for kind: int in [CityGround.K_ROAD, CityGround.K_PAVEMENT, CityGround.K_CONCRETE]:
+	for kind: int in [GroundKit.K_ROAD, GroundKit.K_PAVEMENT, GroundKit.K_CONCRETE]:
 		var share := Num.f(area.get(kind, 0.0)) / maxf(total, 1.0)
 		check(
-			share > (0.0001 if kind == CityGround.K_CONCRETE else 0.01),
+			share > (0.0001 if kind == GroundKit.K_CONCRETE else 0.01),
 			"kind %d covers a measurable share of the ground (%.1f%%)" % [kind, 100.0 * share]
 		)
 	check(roads > 20, "the street plan lays its streets as slabs of their own (%d)" % roads)
-	check(bad_centre == 0, "every street slab keeps its centre line and width (%d off)" % bad_centre)
+	check(
+		bad_centre == 0, "every street slab keeps its centre line and width (%d off)" % bad_centre
+	)
 	check(
 		walls > 0 and walls_wet > 0,
 		"river walls carry their water line (%d of %d)" % [walls_wet, walls]
@@ -201,7 +200,7 @@ func _check_ground_kinds() -> void:
 ## Wet applies last: the rain darkens and glosses whatever the surface looks like, with the numbers
 ## atm-rain-2 set (identity of `wet`).
 func _check_wet_is_last() -> void:
-	var code := CityGround.SLAB_SHADER.code
+	var code := GroundKit.SLAB_SHADER.code
 	var wet_at := code.rfind("wet * WET_DARKEN")
 	var grain_at := code.rfind("sd_grain(")
 	check(
@@ -209,9 +208,11 @@ func _check_wet_is_last() -> void:
 		"wet darkens after every surface look has run"
 	)
 	check(
-		code.contains("const float WET_DARKEN = 0.5;")
-		and code.contains("const float WET_ROUGHNESS = 0.18;")
-		and code.contains("const float WET_SPECULAR = 0.9;")
-		and code.contains("render_mode diffuse_burley;"),
+		(
+			code.contains("const float WET_DARKEN = 0.5;")
+			and code.contains("const float WET_ROUGHNESS = 0.18;")
+			and code.contains("const float WET_SPECULAR = 0.9;")
+			and code.contains("render_mode diffuse_burley;")
+		),
 		"wet keeps its darken, roughness and specular, and the burley diffuse"
 	)

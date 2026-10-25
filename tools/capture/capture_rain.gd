@@ -1,15 +1,18 @@
 extends SceneTree
 ## One mid-rampage frame at the game camera in a chosen time of day and weather (autoplay, city seed
-## 0, the run that plays that time of day, PLAY_FRAMES physics ticks, then paused) for the rain check: <out>/<name>.png, a 2x crop
+## 0, the run that plays that time of day, PLAY_FRAMES physics ticks, then paused) for the rain
+## check: <out>/<name>.png, a 2x crop
 ## round the kaiju (<name>_2x.png), a RAIN_FRAME line (kaiju pixel, GPU and CPU render ms over
-## TIME_FRAMES frames). The pause freezes the rain too: the still shows the streaks and splashes in place.
+## TIME_FRAMES frames). The pause freezes the rain too: the still shows the streaks and splashes
+## in place.
 ## --nokaiju also saves <name>_nokaiju.png (the kaiju hidden, same frame) for the contrast measure;
 ## --play=N sets the ticks played before the frame.
 ## --clip does not pause: it plays CLIP_FRAMES more frames for `--write-movie` (game speed, 60 fps).
 ## Run it once per shot, clear and rain, so the frame is the same seeded one:
 ##
 ##   godot --path . --windowed --fixed-fps 60 --resolution 3840x2160 \
-##     --script tools/capture/capture_rain.gd -- --time=night --weather=rain --name=night_rain --out=<dir>
+##     --script tools/capture/capture_rain.gd -- --time=night --weather=rain \
+##     --name=night_rain --out=<dir>
 ##
 ## Needs the off-screen no_focus override.cfg (Kit.window_ok).
 
@@ -23,18 +26,21 @@ const Kit := preload("res://tools/capture/capture_kit.gd")
 
 
 func _initialize() -> void:
-	var a := Kit.args(
-		{
-			"species": "reptilian",
-			"time": "dusk",
-			"weather": "clear",
-			"graphics": "medium",
-			"name": "shot",
-			"out": "user://rain",
-			"clip": false,
-			"play": PLAY_FRAMES,
-			"nokaiju": false,
-		}
+	var a := (
+		Kit
+		. args(
+			{
+				"species": "reptilian",
+				"time": "dusk",
+				"weather": "clear",
+				"graphics": "medium",
+				"name": "shot",
+				"out": "user://rain",
+				"clip": false,
+				"play": PLAY_FRAMES,
+				"nokaiju": false,
+			}
+		)
 	)
 	DirAccess.make_dir_recursive_absolute(str(a["out"]))
 	if not Kit.window_ok():
