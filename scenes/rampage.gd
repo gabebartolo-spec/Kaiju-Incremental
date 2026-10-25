@@ -64,9 +64,11 @@ var _follow := CameraFollow.new(Vector3.ZERO, camera_rest)
 var _ability := RampageAbility.new()
 var _camera: Camera3D
 var _far_depth: FarDepth  ## the far blur, locked on the kaiju (D-163)
+var _aim: BreathAim
 var _step_dip := 0.0
 var _tank_nodes: Dictionary = {}
 var _tanks: TankYard
+var _rail: RailView
 var _fx_rng: RandomNumberGenerator
 var _autoplay := false
 var _walk := AutoWalk.new()
@@ -141,7 +143,8 @@ func _ready() -> void:
 	add_child(ability_fx)
 	if not await stages.next(self):
 		return
-	add_child(BreathAim.new(sim, Color(str(colors["eye"]))))  # where a ready breath will burn
+	_aim = BreathAim.new(sim, Color(str(colors["eye"])))  # where a ready breath will burn
+	add_child(_aim)
 	add_child(sfx)
 	sfx.set_size_tier(sim.size_tier())
 	_kaiju = KaijuModel.new(str(species["id"]), colors, KaijuModel.stage_for(sim.size_tier()))
@@ -152,9 +155,7 @@ func _ready() -> void:
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
 	add_child(RiverView.new(sim, _city.fx))
-	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
-	HelicopterModel.new().free()
-	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
+	_add_vehicles()
 	_fade = VehicleFade.new(func() -> Array: return _tank_nodes.values(), _powers.helis)
 	_kaiju_at = _to_world(sim.kaiju_pos) + Vector3(0, sim.stand_y, 0)  # under the river at first
 	_kaiju.position = _kaiju_at
@@ -165,10 +166,7 @@ func _ready() -> void:
 	)
 	_kaiju.foot_planted.connect(_on_footfall)
 	_ability.bind(self, _city, _kaiju)
-	_camera = Camera3D.new()
-	_camera.fov = camera_fov
-	add_child(_camera)
-	_camera.current = true
+	_add_camera()
 	_start_sound()
 	_place_camera(1.0)
 	_add_overlays()
@@ -179,12 +177,20 @@ func _ready() -> void:
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
 
 
+func _add_camera() -> void:
+	_camera = Camera3D.new()
+	_camera.fov = camera_fov
+	add_child(_camera)
+	_camera.current = true
+
+
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
 func _add_overlays() -> void:
 	add_child(PostFx.new(self))
 	_far_depth = FarDepth.new(_camera)  # the far blur on the camera (D-163)
 	_hud = RampageHud.new(sim, species, _city.street)
 	_hud.beat_done.connect(finished.emit)
+	_hud.photo = photo_mode
 	rumble = PadRumble.new(sim)
 	_kaiju.foot_planted.connect(rumble.footfall)
 	add_child(_hud)
@@ -246,6 +252,16 @@ func _process(delta: float) -> void:
 			sfx.stomp(_power("stomp_damage"), false)
 
 
+## The pause menu's photo mode (PhotoMode, D-259): the gameplay camera flies free round the frozen
+## kaiju; the breath's aim and the floating numbers hide while it is up.
+func photo_mode() -> PhotoMode:
+	var hide: Array[Node3D] = [_aim]
+	for node: Node in get_tree().get_nodes_in_group(CityView.FLOAT_TEXT):
+		hide.append(node as Node3D)
+	var rest := (camera_rest * CameraTuning.zoom(sim.body_scale())).length()
+	return PhotoMode.new(_camera, _kaiju_at, rest, hide)
+
+
 ## Shakes the camera (CameraShake): `amount` trauma from a hit at `at` (Vector3.INF: at the
 ## kaiju), fading with its distance from the camera's focus. Explosions and every other hit use it.
 func add_trauma(amount: float, at := Vector3.INF) -> void:
@@ -256,6 +272,16 @@ func add_trauma(amount: float, at := Vector3.INF) -> void:
 func _note_cost(what: String, since: int) -> void:
 	var spent := Time.get_ticks_usec() - since
 	cost_usec[what] = maxi(Num.i(cost_usec.get(what, 0)), spent)
+
+
+## The army's tanks (their voxels built once now, so the first spawn reuses them), the
+## helicopters' voxels, and the railway.
+func _add_vehicles() -> void:
+	TankModel.new().free()
+	HelicopterModel.new().free()
+	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
+	_rail = RailView.new(self, sim, _city)
+	add_child(_rail)
 
 
 func _to_world(p: Vector2) -> Vector3:
@@ -296,6 +322,7 @@ func _on_event(event: Dictionary) -> void:
 			_hud.run_over(str(event["reason"]))
 		_:
 			_powers.on_event(event, _kaiju_at)
+			_rail.on_event(event)
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

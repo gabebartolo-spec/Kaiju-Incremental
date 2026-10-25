@@ -54,6 +54,8 @@ static func of(buildings: Array[RampageSim.Building]) -> Array[Dictionary]:
 ## The grid cells a building's footprint touches, grown a little so touching walls share one.
 static func _cells(b: RampageSim.Building) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
+	if b.is_rail():  # a viaduct shares no wall: it is in no bucket
+		return out
 	var lo := Vector2i(
 		floori((b.x - b.w * 0.5 - 0.1) / CELL), floori((b.z - b.d * 0.5 - 0.1) / CELL)
 	)
