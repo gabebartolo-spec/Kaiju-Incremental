@@ -67,16 +67,20 @@ static func model_voxels(at: RampageSim.Building) -> VoxelBuilder:
 	var model := _read(str(row.get("kvox", "")))
 	if not model.frames.is_empty():
 		var base := model.frames[0]
-		var xyz := PackedInt32Array()
 		var keys: Array[Vector3i] = []
-		for cell: Vector3i in base.colors:
-			keys.append(cell)
-			xyz.append_array(PackedInt32Array([cell.x, cell.y, cell.z]))
+		keys.assign(base.colors.keys())
+		var xyz := PackedInt32Array()
+		xyz.resize(keys.size() * 3)
+		for i: int in keys.size():
+			xyz[i * 3] = keys[i].x
+			xyz[i * 3 + 1] = keys[i].y
+			xyz[i * 3 + 2] = keys[i].z
 		var turned := ModelVariant.cells(xyz, row, v, RES)
 		var cells: PackedInt32Array = turned["xyz"]
 		var src: PackedInt32Array = turned["src"]
 		var shift := _shift(book, row, at.palette)
 		var shade: Dictionary = {}
+		var table := ModelVariant.flag_table(v)
 		for i: int in src.size():
 			var from := keys[src[i]]
 			var c: Color = base.colors[from]
@@ -89,7 +93,7 @@ static func model_voxels(at: RampageSim.Building) -> VoxelBuilder:
 			var cell := Vector3i(cells[i * 3], cells[i * 3 + 1], cells[i * 3 + 2])
 			var shaded: Color = shade[c]
 			out.put_color(cell, shaded)
-			out.flags[cell] = ModelVariant.flags(Num.i(base.flags.get(from, 0)), v)
+			out.flags[cell] = table[Num.i(base.flags.get(from, 0)) & 63]
 	return out
 
 

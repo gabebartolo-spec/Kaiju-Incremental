@@ -47,23 +47,50 @@ static func cells(xyz: PackedInt32Array, row: Dictionary, v: Dictionary, res: in
 	var w := Num.i(row["w"]) * res
 	var d := Num.i(row["d"]) * res
 	var extra := stretch_of(row, v)
-	var band_lo := Num.i(row.get("stretch_floor", -1)) * res
+	var band_lo := Num.i(row.get("stretch_floor", -1)) * res if extra > 0 else 1 << 30
 	var band_hi := band_lo + res
+	var n := xyz.size() / 3
+	var total := n
+	for i: int in n:
+		var y := xyz[i * 3 + 1]
+		total += extra if y >= band_lo and y < band_hi else 0
+	# the turn and mirror are affine in (x, z): p = p0 + x * px + z * pz
+	var p0 := place(Vector3i.ZERO, w, d, v)
+	var px := place(Vector3i(1, 0, 0), w, d, v) - p0
+	var pz := place(Vector3i(0, 0, 1), w, d, v) - p0
 	var out := PackedInt32Array()
+	out.resize(total * 3)
 	var src := PackedInt32Array()
-	for i: int in xyz.size() / 3:
-		var c := Vector3i(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2])
+	src.resize(total)
+	var k := 0
+	for i: int in n:
+		var x := xyz[i * 3]
+		var y := xyz[i * 3 + 1]
+		var z := xyz[i * 3 + 2]
 		var copies := 1
-		if extra > 0:
-			if c.y >= band_hi:
-				c.y += extra * res
-			elif c.y >= band_lo:
-				copies += extra
-		for k: int in copies:
-			var p := place(Vector3i(c.x, c.y + k * res, c.z), w, d, v)
-			out.append_array(PackedInt32Array([p.x, p.y, p.z]))
-			src.append(i)
+		if y >= band_hi:
+			y += extra * res
+		elif y >= band_lo:
+			copies += extra
+		var ox := p0.x + x * px.x + z * pz.x
+		var oz := p0.z + x * px.z + z * pz.z
+		for c: int in copies:
+			out[k * 3] = ox
+			out[k * 3 + 1] = y + c * res
+			out[k * 3 + 2] = oz
+			src[k] = i
+			k += 1
 	return {"xyz": out, "src": src}
+
+
+## Every open-face bit set (0..63) through the variant's mirror and turns: index by a cell's
+## baked flags (flags(m, v) for all m at once).
+static func flag_table(v: Dictionary) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(64)
+	for m: int in 64:
+		out[m] = flags(m, v)
+	return out
 
 
 ## One cell (already stretched) through the mirror and the quarter turns; w, d in cells.

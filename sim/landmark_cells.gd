@@ -204,19 +204,18 @@ static func _read(path: String, ground: Array) -> Dictionary:
 	f.get_16()  # model height
 	var voxels := first if version == 1 else f.get_32()
 	var by_class: Dictionary[int, int] = {}
-	for _v: int in voxels:
-		var x := _signed16(f.get_16())
-		var y := _signed16(f.get_16())
-		var z := _signed16(f.get_16())
-		var color := Color8(f.get_8(), f.get_8(), f.get_8())
-		f.get_8()  # face flags: a view look
-		var key := color.to_rgba32()
+	var buf := f.get_buffer(voxels * 10)  # per voxel: x, y, z int16, r, g, b, face flags
+	voxels = buf.size() / 10
+	xyz.resize(voxels * 3)
+	mats.resize(voxels)
+	for v: int in voxels:
+		var o := v * 10
+		xyz[v * 3] = buf.decode_s16(o)
+		xyz[v * 3 + 1] = buf.decode_s16(o + 2)
+		xyz[v * 3 + 2] = buf.decode_s16(o + 4)
+		var key := (buf[o + 6] << 16) | (buf[o + 7] << 8) | buf[o + 8]
 		if not by_class.has(key):
+			var color := Color8(buf[o + 6], buf[o + 7], buf[o + 8])
 			by_class[key] = Num.i(ids[material_of(color, ground)])
-		xyz.append_array(PackedInt32Array([x, y, z]))
-		mats.append(by_class[key])
+		mats[v] = by_class[key]
 	return {"xyz": xyz, "mats": mats}
-
-
-static func _signed16(v: int) -> int:
-	return v - 65536 if v >= 32768 else v
