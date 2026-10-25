@@ -253,7 +253,22 @@ func _row_fits(title: Node, cr: Rect2, fr: Rect2, gr: Rect2) -> void:
 	var tag_x := 0.0
 	for found: Node in title.find_children("*", "Label", true, false):
 		if (found as Label).text == "BREAKING":
-			tag_x = (found as Label).get_global_rect().position.x
+			# The ink's left edge: the tag is centred in its black box (director 2026-10-25).
+			var lab := found as Label
+			var ink := lab.get_theme_font("font").get_string_size(
+				lab.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lab.get_theme_font_size("font_size")
+			)
+			var r := lab.get_global_rect()
+			tag_x = r.position.x + (r.size.x - ink.x) * 0.5
+			var box := (lab.get_parent() as Control).get_global_rect()
+			check.call(
+				(
+					lab.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER
+					and absf(r.position.x - box.position.x) <= 0.5
+					and absf(r.size.x - box.size.x) <= 0.5
+				),
+				"BREAKING is centred in its black box (%s in %s)" % [r, box]
+			)
 			tag = "BREAKING"
 	check.call(
 		(

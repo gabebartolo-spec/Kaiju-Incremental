@@ -91,7 +91,7 @@ static func trim_height(button: Button, margin: float) -> void:
 	for state: String in ["normal", "hover", "focus", "pressed", "disabled"]:
 		var box := button.get_theme_stylebox(state) as HazardBox
 		box.content_margin_top = margin
-		box.content_margin_bottom = margin
+		box.content_margin_bottom = margin + PLATE_SHADOW.y  # centred on the face, not the rect
 
 
 ## The text material of the plated buttons: a faint stamped highlight on the letters' top edge.
