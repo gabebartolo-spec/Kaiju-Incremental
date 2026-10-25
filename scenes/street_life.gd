@@ -79,7 +79,7 @@ func _ready() -> void:
 	# A few people per building, spread over the blocks.
 	var per_lot := int(GraphicsPresets.cap("civilians"))
 	var blocks := _nodes.size() >> 2
-	for n: int in per_lot * sim.buildings.size():
+	for n: int in per_lot * sim.lot_buildings().size():
 		_spawn_civilian(n % maxi(1, blocks))
 	_capacity = pos.size() + Num.i(_cfg["max_blockades"]) * Num.i(_cfg["cops_per_blockade"])
 	_capacity += Num.i(_cfg["cops_per_blockade"]) * 4  # officers still running from old blockades
@@ -110,7 +110,7 @@ func ring_nodes() -> PackedVector2Array:
 
 
 ## One more person at the end of every array, standing at the origin; returns its index.
-func _add() -> int:
+func add_person() -> int:
 	pos.append(Vector2.ZERO)
 	heading.append(Vector2(0, -1))
 	outfit.append(0)
@@ -136,7 +136,7 @@ func _spawn_civilian(lot: int) -> void:
 			break
 		corner = (corner + 1) % 4
 		lot += 1 if corner == 0 else 0
-	var i := _add()
+	var i := add_person()
 	from_node[i] = (lot % blocks) * 4 + corner
 	to_node[i] = (from_node[i] & ~3) + ((from_node[i] + 1) & 3)
 	pos[i] = _nodes[from_node[i]].lerp(_nodes[to_node[i]], _rng.randf())
@@ -149,7 +149,7 @@ func _spawn_civilian(lot: int) -> void:
 
 ## An officer joins the street (Police): drawn and crushed with everyone else.
 func add_cop(officer: Police.Officer) -> void:
-	var i := _add()
+	var i := add_person()
 	pos[i] = officer.pos
 	heading[i] = officer.heading
 	outfit[i] = VoxelPerson.COP

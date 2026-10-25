@@ -928,6 +928,29 @@
 			}
 		}
 	},
+	"rail": {
+		"_note": "The elevated railway (Rail; the director 2026-10-21 #63 \"train stations + tracks with trains on them\", #69 \"Derail and smash\"; 2026-10-25 \"research train locomotion and derailment physics\", the 022 result). A two-track viaduct up the north-south avenue nearest the middle, deck_y up, deck_width wide, tracks track_gap apart, from span[0] to span[1] x the city's half extent along z (crossing the river), its station at station_share of the way. Trains of cars (the first a locomotive), car_length long, coupler_gap apart, at most max_trains running, one every headway_s (the first after first_s), entering at enter_share of cruise, speeding up at accel, braking at brake (emergency for broken track), dwelling dwell_s. Scaled from metro practice (1.0 m/s2 accel and brake, 1.3 emergency) to the city's scale. The viaduct and station are voxel structures (structure): they carve and fall like buildings, and the track is broken wherever its deck is gone. A hit of derail_damage or more on a car (car_radius) derails its train: the hit car kicked sideways at kick, the rest folding alternately (yaw_rate, roll_rate), sliding with friction (a share of g; post-derailment estimates 0.4-0.6), spin_damp, a car off the deck falling and keeping land_keep of its speed on landing, a car within pile_share of a length of the one ahead sharing its speed. A train behind stops stop_short before it, or derails if it reaches it above crash_speed. The kaiju's body derails a train when it reaches the deck (body_share of its stomp radius). Each car pays rubble_share of army.tank_rubble (the vehicle rule) and a derailment derail_bonus once on top (the director, 022 update: a big one-off bonus, well above a car; he judges it in playtest). PLACEHOLDER NUMBERS (tune).",
+		"span": [-0.95, 1.4], "deck_y": 1.8, "deck_width": 4.6, "track_gap": 1.8, "station_share": 0.4,
+		"cars": 5, "car_length": 4.0, "coupler_gap": 0.3, "max_trains": 2, "headway_s": 16.0, "first_s": 3.0,
+		"cruise": 8.0, "enter_share": 1.0, "accel": 1.5, "brake": 2.0, "emergency": 3.5, "dwell_s": 4.0,
+		"stop_short": 2.0, "crash_speed": 0.5, "derail_damage": 4.0, "car_radius": 1.6, "body_share": 0.6,
+		"kick": 5.0, "yaw_rate": 1.4, "roll_rate": 2.2, "friction": 0.5, "spin_damp": 1.5, "land_keep": 0.5,
+		"pile_share": 0.8, "rubble_share": 1.0, "derail_bonus": 40.0,
+		"bay_length": 6.0, "piece_bays": 2,
+		"structure": {"_note": "The viaduct and station as voxel structures in the city's buildings (RailLayout, D-247; the director 2026-10-26 \"carve is a universal feature for all buildings\"): pieces of piece_bays bays, column bents every bay_length; sizes in sim units: slab thick, parapet high and wide, column square, column_inset from the deck edge, cap under the deck, ballast_half and rail_offset round each track, sleeper_every and seam_every along it; the station's platform wide, canopy over the deck, post_every along it, stair wide. They carve, fall and pay like any building (tier).", "tier": 1, "slab": 0.5, "parapet": [0.5, 0.25], "column": 0.5, "column_inset": 0.6, "cap": 0.25, "ballast_half": 0.45, "rail_offset": 0.25, "sleeper_every": 0.5, "seam_every": 2.0, "platform": 1.5, "canopy": 2.25, "post_every": 2.0, "stair": 0.5}
+	},
+	"rail_look": {
+		"_note": "The railway's look (TrainModel, RailView): car_size (width, height in units) of a metro car; colours: the cars, and the viaduct and station (RailVoxels draws the rail structure materials with them); sounds: rumble_db and slide_db at full, the rumble heard within hear_range of the kaiju, the horn when the kaiju comes within horn_range of a running train, again every horn_every seconds (one-shots heard in 3D, unit_size) (it keeps running, the horn blares); survivors_per_car people crawl out of each wrecked car crawl_s after the derailment and flee. Colours are PLACEHOLDERS for the VFX lead.",
+		"car_size": [1.4, 1.6],
+		"rumble_db": -6.0, "slide_db": -4.0, "hear_range": 40.0, "horn_range": 14.0, "horn_every": 2.5, "unit_size": 12.0,
+		"crawl_s": 1.5, "survivors_per_car": 3,
+		"colors": {"body": "c9cdd2", "seam": "9aa0a6", "stripe": "d23b2f", "glass": "1d2a35", "roof": "7d848b",
+			"roof_gear": "4a5057", "door": "aab1b8", "door_frame": "5b6168", "skirt": "3a3f45", "headlamp": "fff2c4",
+			"bogie": "26292d", "wheel": "45494e", "concrete": "8e8a82", "seam_concrete": "6c6962",
+			"parapet": "a39f96", "ballast": "5d574f", "sleeper": "4a3a2c", "rail": "b8bcc0", "column": "85817a",
+			"platform": "9c968c", "platform_edge": "e3c23a", "canopy": "3d5a6e", "canopy_rib": "2b4253",
+			"sign": "4fd1ff", "stair": "77736c"}
+	},
 	"creation": {
 		"_note": "D-207 Kaiju Creation, the new-game opening: a lab close-up on a petri dish and a rack of genomes; pick a genome, inject Special K (the kaiju juice, named by the director 2026-10-25), the kaiju genome takes over, the camera rushes into black with an egg crack, then the first run's river rise. titans: the rack in order; species is the species.json id a genome plays (\"\" = no titan to play yet); unlocked is the state a new player starts with, and a save's titans_unlocked list (save_key) unlocks more (the unlock rules are not decided, D-207). timing in seconds (ticks at 60 a second). Lab sizes in metres, one voxel size for the whole set; colours are PLACEHOLDERS for the VFX lead (juice: the kaiju's white-hot, pending R 17.6; behind the takeover's front the cells cool to the species' body colour, veins of them still burning). crack_sound names assets/sfx/<name>.ogg (made on ElevenLabs 2026-10-25 in the director's lab-sound list); with no file the cue is silent.",
 		"titans": [
@@ -1025,6 +1048,12 @@
 			"stomp_crack": "Hero",
 			"collapse": "Hero",
 			"collapse_drop": "Debris",
+			"train_rumble": "Ambience",
+			"train_horn": "Ambience",
+			"train_screech": "Debris",
+			"train_crash": "Debris",
+			"train_slide": "Debris",
+			"station_bell": "Ambience",
 			"crowd_panic": "Crowd",
 			"city_siren": "Ambience",
 			"city_gunfire": "Military",

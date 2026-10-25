@@ -96,7 +96,7 @@ func _check_party_walls() -> void:
 	for a: RampageSim.Building in young:
 		var sides := {}
 		for other: RampageSim.Building in young:
-			if other == a:
+			if other == a or a.is_rail() or other.is_rail():  # a viaduct shares no wall
 				continue
 			var gap_x := absf(a.x - other.x) - (a.w + other.w) * 0.5
 			var gap_z := absf(a.z - other.z) - (a.d + other.d) * 0.5
