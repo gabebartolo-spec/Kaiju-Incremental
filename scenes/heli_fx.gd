@@ -28,9 +28,13 @@ static func flare(parent: Node3D, at: Vector3, size: float, seconds: float) -> v
 	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	flash.position = at
 	parent.add_child(flash)
+	var bright := PlayerSettings.flash_scale()  # Reduce flashing (D-259)
 	var tween := flash.create_tween()
 	tween.tween_method(
-		func(v: float) -> void: mat.set_shader_parameter("fade", 1.0 - v), 0.0, 1.0, seconds
+		func(v: float) -> void: mat.set_shader_parameter("fade", (1.0 - v) * bright),
+		0.0,
+		1.0,
+		seconds
 	)
 	tween.tween_callback(flash.queue_free)
 

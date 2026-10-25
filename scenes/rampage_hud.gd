@@ -319,7 +319,7 @@ func show_end_beat(reason: String) -> void:
 	_clock_column.visible = false
 	Engine.time_scale = END_SLOWMO
 	var flash := ColorRect.new()
-	flash.color = Color(1.0, 0.55, 0.25, 0.45)
+	flash.color = Color(1.0, 0.55, 0.25, 0.45 * PlayerSettings.flash_scale())  # Reduce flashing
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UiKit.full_rect(flash)
 	add_child(flash)

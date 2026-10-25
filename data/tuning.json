@@ -103,13 +103,25 @@
 			{"stat": "tallest_topple", "min": 10, "line": "{n}-FLOOR TOWER COMES DOWN - SKYLINE CHANGED FOREVER"},
 			{"stat": "toppled", "min": 1, "line": "INSURERS REFUSE CLAIMS: 'ACT OF MONSTER'"},
 			{"stat": "civilians", "min": 1, "line": "MASS EVACUATION ORDERED"},
-			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"}
-		],
-		"close": "THE CREATURE HAS RETREATED - FOR NOW"
+			{"stat": "tanks", "min": 1, "line": "GENERALS DEMAND BIGGER TANKS"},
+			{"stat": "landmarks", "min": 1, "line": "TOURISTS TOLD: 'THE LANDMARKS ARE CLOSED'"},
+			{"stat": "agents", "min": 1, "line": "TASKFORCE RECRUITING - NO EXPERIENCE NEEDED"}
+		]
+	},
+	"results": {
+		"_note": "The results screen (D-259, D-263, D-265). landmark_felled_share: a landmark counts as felled once it has lost this share of its chunks (a stadium never topples). endings: per way a rampage ends (the sim's end reason), the headline across the top and the last line of the news crawl; every ending but city_fallen is the kaiju's death.",
+		"landmark_felled_share": 0.5,
+		"endings": {
+			"city_fallen": {"headline": "CITY FALLS TO KAIJU", "close": "THE CREATURE HAS RETREATED - FOR NOW"},
+			"time": {"headline": "FINAL STRIKE FELLS KAIJU", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"},
+			"defeated": {"headline": "ARMY TAKES DOWN KAIJU", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"},
+			"ended": {"headline": "KAIJU COLLAPSES MID-RAMPAGE", "close": "SCIENTISTS RUSH TO STUDY THE REMAINS"}
+		}
 	},
 	"save": {
-		"_note": "v3 (D-135): upgrade nodes cut from the tree; a save holding one is refunded its rubble in full and the node removed. evolve3 (EVOLVE: Apex Titan) cost 444500.",
-		"refunds": {"evolve3": 444500}
+		"_note": "v3 (D-135): upgrade nodes cut from the tree; a save holding one is refunded its rubble in full and the node removed. evolve3 (EVOLVE: Apex Titan) cost 444500. slots: how many save slots the title offers (director 2026-10-26, 'Three slots (Recommended)').",
+		"refunds": {"evolve3": 444500},
+		"slots": 3
 	},
 	"demo": {
 		"_note": "D-050/D-145/D-152/D-156. The thanks screen appears when the final upgrade is bought (every node of the species' tree owned, Demo.complete). feedback_url is the invite-only Itch page's comments (D-148): PLACEHOLDER until the page exists. military_keys are the result counters that count as military destroyed. endless: the Endless mode the final upgrade unlocks (Endless): its own rows, never read by normal mode (balance is decided by normal mode). start_share and share_per_second: the extra escalation as a share of the city chunk total (at the start, and gained a second), with no cap so the army keeps worsening; max_tanks alive at once; regrow_interval seconds between regrowth passes, regrow_share_per_minute of the flattened buildings regrown a minute (about 5%, PLACEHOLDER for the director to judge at M3); regrow_clear units the kaiju must be away.",
@@ -1101,6 +1113,25 @@
 		"far_per_scale": 120.0,
 		"default_motion": 1.0,
 		"sources": {"stomp": 0.1, "topple": 1.0, "drop": 0.3, "tank_fire": 0.06, "ability": 0.6, "leap_land": 0.7}
+	},
+	"accessibility": {
+		"_note": "Settings > ACCESSIBILITY (D-259). flash_scale: while Reduce flashing is on, every flash of light (explosion, muzzle and breath lights, flares, the end beat's screen flash, the lab's lightning white) is drawn at this share of its brightness, and the colour fringe never shows.",
+		"flash_scale": 0.3
+	},
+	"rumble": {
+		"_note": "PadRumble (D-259 'Yes, scaled by size, with a toggle'): pad vibration, weak (high-frequency) and strong (low-frequency) motors 0..1 for seconds. footfall and stomp: one row per growth stage (baby, adolescent, adult), so the thud grows with the kaiju; collapse: a toppled building landing; breath: the buzz while the breath burns (its seconds) and, for the ultimate beam, for the beam's own seconds. Settings > ACCESSIBILITY > Rumble turns it off.",
+		"footfall": [
+			{"weak": 0.05, "strong": 0.0, "seconds": 0.08},
+			{"weak": 0.1, "strong": 0.12, "seconds": 0.1},
+			{"weak": 0.15, "strong": 0.3, "seconds": 0.12}
+		],
+		"stomp": [
+			{"weak": 0.25, "strong": 0.2, "seconds": 0.18},
+			{"weak": 0.35, "strong": 0.45, "seconds": 0.22},
+			{"weak": 0.45, "strong": 0.75, "seconds": 0.28}
+		],
+		"collapse": {"weak": 0.3, "strong": 0.6, "seconds": 0.5},
+		"breath": {"weak": 0.35, "strong": 0.05, "seconds": 0.9}
 	},
 	"post_fx": {
 		"_note": "PostFx (D-142, director 2026-10-22), presentation only, every graphics preset. Vignette: the screen edges darken (smoothstep from inner to outer of the corner distance, 0 = centre, 1 = corner) to alpha strength in color; below low_health.below of max health a red edge band (colour, alpha at the very edge, depth_px deep at 1080 lines, fading to nothing inside) beats on top of it pulse_hz times a second, sharpened by pulse_sharp, back to nothing between beats; the HUD sits above it. The colour fringe (red and blue split apart toward the screen edges, px at 1080 lines) lasts seconds, peaks at attack of that time, and fires only on a top-tier impact: a stomp of radius stomp_min_radius or more (world units, a full-quake Behemoth up), a toppling part collapse_min_length or more long, or a single step costing the kaiju hit_hp_fraction of its max health; never twice within cooldown_s. The camera-motion setting scales the fringe.",
