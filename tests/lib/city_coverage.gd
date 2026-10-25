@@ -88,7 +88,8 @@ static func measure(
 
 ## The bare cells without the river's bank row (the band plus half a cell each side: the cells
 ## touching the water). Fixtures that switch the riverside crates off use this: no alleys run on
-## the banks, so that row is bare without the crates, whatever the fixture tests. The real-game checks (crates on) keep the row.
+## the banks, so that row is bare without the crates, whatever the fixture tests. The real-game
+## checks (crates on) keep the row.
 static func off_bank(empty: Variant, sim: RampageSim) -> Array:
 	var river: Vector2 = CityGen.map(sim.city).get("river", Vector2(INF, -INF))
 	var pad := Num.f(sim.city["coverage_cell"]) * 0.5

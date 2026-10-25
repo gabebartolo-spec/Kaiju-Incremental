@@ -7,7 +7,7 @@ extends RefCounted
 ## off each lane line, both sides) and of every parked car.
 
 const Coverage := preload("res://tests/lib/city_coverage.gd")
-const SEEDS: Array[int] = [76, 55, 60]
+const SEEDS: Array[int] = [94, 55, 60]
 const TIER := 2
 const Rings := preload("res://tests/lib/fixture_rings.gd")
 
