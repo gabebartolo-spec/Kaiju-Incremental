@@ -1,4 +1,5 @@
 shader_type spatial;
+render_mode diffuse_burley;  // StandardMaterial3D's default diffuse (the shader default is lambert)
 // The street plan's slabs (CityGround): instance colour (sRGB) as albedo, matte, exactly the
 // StandardMaterial3D it replaces while wet is 0. `wet` (0..1, set only by WeatherView, D-155) is
 // the one weather switch: the road darkens and goes glossy, so lamps, fires and the sun lay soft

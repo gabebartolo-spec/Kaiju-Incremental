@@ -1,8 +1,10 @@
 extends SceneTree
 ## One mid-rampage frame at the game camera in a chosen time of day and weather (autoplay, city seed
-## 0, run 0, PLAY_FRAMES physics ticks, then paused) for the rain check: <out>/<name>.png, a 2x crop
+## 0, the run that plays that time of day, PLAY_FRAMES physics ticks, then paused) for the rain check: <out>/<name>.png, a 2x crop
 ## round the kaiju (<name>_2x.png), a RAIN_FRAME line (kaiju pixel, GPU and CPU render ms over
 ## TIME_FRAMES frames). The pause freezes the rain too: the still shows the streaks and splashes in place.
+## --nokaiju also saves <name>_nokaiju.png (the kaiju hidden, same frame) for the contrast measure;
+## --play=N sets the ticks played before the frame.
 ## --clip does not pause: it plays CLIP_FRAMES more frames for `--write-movie` (game speed, 60 fps).
 ## Run it once per shot, clear and rain, so the frame is the same seeded one:
 ##
@@ -30,6 +32,8 @@ func _initialize() -> void:
 			"name": "shot",
 			"out": "user://rain",
 			"clip": false,
+			"play": PLAY_FRAMES,
+			"nokaiju": false,
 		}
 	)
 	DirAccess.make_dir_recursive_absolute(str(a["out"]))
@@ -47,8 +51,11 @@ func _run(a: Dictionary) -> void:
 	var species := str(a["species"])
 	var stats := Kit.stats(species)
 	var layout := CityGrowth.layout(Content.tuning(), Num.i(stats["size"]), Seeds.make("city", 0))
-	var rampage := Kit.autoplay(self, species, stats, 0, layout)
-	await Kit.ticks(self, PLAY_FRAMES)
+	# Rampage.setup picks the time of day from the run index (the fixed order), so the time asked
+	# for is the run played; the city (layout) stays seed 0.
+	var run := maxi(0, Content.times().find(str(a["time"])))
+	var rampage := Kit.autoplay(self, species, stats, run, layout)
+	await Kit.ticks(self, Num.i(a["play"]))
 	if a["clip"] == true:
 		await Kit.frames(self, CLIP_FRAMES)  # the movie writer records these
 		quit()
@@ -68,6 +75,11 @@ func _run(a: Dictionary) -> void:
 		px = Kit.image_point(self, root.get_camera_3d(), at, size)
 		var crop := Vector2i(Vector2(CROP) * size.y / 1080.0)
 		Kit.crop_2x(shot, px, crop, out.path_join(str(a["name"]) + "_2x.png"))
+		if a["nokaiju"] == true:  # the same frame without him, for the contrast measure
+			for node: Node in kaiju:
+				(node as Node3D).visible = false
+			await Kit.frames(self, SETTLE_FRAMES)
+			root.get_texture().get_image().save_png(out.path_join(str(a["name"]) + "_nokaiju.png"))
 	print(
 		(
 			"RAIN_FRAME %s %s %s kaiju_px %d %d gpu %.2f ms cpu %.2f ms over %d frames"

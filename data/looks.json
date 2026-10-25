@@ -16,11 +16,11 @@
 			"rain": {
 				"rain": true,
 				"wet": 0.9,
-				"ambient_mul": 0.85,
-				"sun_mul": 0.55,
+				"ambient_mul": 0.97,
+				"sun_mul": 0.88,
 				"fog_mul": 1.5,
 				"sky_grey": 0.5,
-				"sky_dim": 0.78
+				"sky_dim": 0.85
 			},
 			"thunderstorm": {"like": "rain"}
 		}
