@@ -36,14 +36,24 @@ func _stage(stage: int) -> void:
 	var s := sim.body_scale()
 	print(
 		(
-			"stage %d tier %d scale %.2f reach %.1f water %.1f rise %s facing %s bank %s shore %s"
-			+ " break %.2f total %.2f"
+			(
+				"stage %d tier %d scale %.2f reach %.1f water %.1f rise %s facing %s bank %s shore %s"
+				+ " break %.2f total %.2f"
+			)
+			% [
+				stage,
+				tier,
+				s,
+				sim.reach_height(),
+				water,
+				sim.kaiju_pos,
+				sim.facing,
+				plan.get("river_bank"),
+				CityRiver.shore(plan, sim.city),
+				sim.emerge.break_at(sim),
+				sim.emerge.total()
+			]
 		)
-		% [
-			stage, tier, s, sim.reach_height(), water, sim.kaiju_pos, sim.facing,
-			plan.get("river_bank"), CityRiver.shore(plan, sim.city),
-			sim.emerge.break_at(sim), sim.emerge.total()
-		]
 	)
 	var stone := RiverSight.new(sim)
 	var fov := CameraTuning.fov()
@@ -69,13 +79,25 @@ func _stage(stage: int) -> void:
 			var span := rad_to_deg(atan2(top - eye.y, dist) - atan2(low - eye.y, dist))
 			print(
 				(
-					"  t %.2f eye %s (%.1f over ground, %.1f from body) aim %s fov %.0f | body above"
-					+ " water %.1f deg of %.0f | stone hides %d/%d parts | stand %.1f top %.1f"
+					(
+						"  t %.2f eye %s (%.1f over ground, %.1f from body) aim %s fov %.0f | body above"
+						+ " water %.1f deg of %.0f | stone hides %d/%d parts | stand %.1f top %.1f"
+					)
+					% [
+						t,
+						eye.snappedf(0.1),
+						eye.y - maxf(ground, water),
+						dist,
+						aim.snappedf(0.1),
+						shot["fov"],
+						span,
+						shot["fov"],
+						hidden,
+						parts.size(),
+						sim.stand_y,
+						top
+					]
 				)
-				% [
-					t, eye.snappedf(0.1), eye.y - maxf(ground, water), dist, aim.snappedf(0.1),
-					shot["fov"], span, shot["fov"], hidden, parts.size(), sim.stand_y, top
-				]
 			)
 			next += 1
 		sim.step(DT, Vector2.ZERO, false, 0)

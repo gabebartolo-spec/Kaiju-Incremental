@@ -34,4 +34,4 @@ func _splash(size: float) -> void:
 	# A foam ring on the water, never the street's dust puffs (they popped in at the break).
 	var spray: Dictionary = Content.section("intro")["water"]
 	var foam := IntroWater.foam(spray)
-	_fx.shockwave(at, RING * _sim.body_scale() * size, false, false, foam)
+	_fx.water_ring(at, RING * _sim.body_scale() * size, foam)

@@ -10,9 +10,10 @@ extends RefCounted
 ##
 ## Pacing (R 20.4): the full intro on a run with something new to show (Main: the first run, the
 ## first after an evolution); otherwise the short cut, which runs the rise's first ticks at once
-## and the rest a little faster, so it lasts "short_seconds". Any press skips: the rest of the
-## rise runs "skip_ticks" sim ticks a frame. Either way the sim runs the very same ticks with the
-## same (ignored) input, so a replay matches whether or not anyone skipped.
+## and the rest a whole number of ticks a frame, so it lasts at most "short_seconds". Any press
+## skips: the rest of the rise runs "skip_ticks" sim ticks a frame. Either way the sim runs the
+## very same ticks with the same (ignored) input, so a replay matches whether or not anyone
+## skipped.
 
 ## Whether this run plays the whole intro (false: the short cut).
 var full: bool
@@ -35,7 +36,8 @@ func _init(sim: RampageSim, p_full: bool) -> void:
 	var tps := float(Engine.physics_ticks_per_second)
 	var from := maxf(0.0, sim.emerge.break_at(sim) - Num.f(_cfg["short_lead_seconds"]))
 	_first_ticks = maxi(1, roundi(from * tps))
-	_rate = maxf(1.0, (sim.emerge.total() - from) / Num.f(_cfg["short_seconds"]))
+	# A whole number of ticks every frame: an uneven 1-2-1 cadence stuttered the body and camera.
+	_rate = maxf(1.0, ceilf((sim.emerge.total() - from) / Num.f(_cfg["short_seconds"])))
 
 
 ## How many sim ticks this physics frame runs: 1 once the kaiju is out (and in the full intro).
@@ -108,8 +110,7 @@ static func shot(sim: RampageSim, body: Vector3, rest: Array, frac: float) -> Di
 	var head := sim.stand_y + sim.reach_height() * Num.f(cfg["aim_head"])
 	var low := water + Num.f(cfg["aim_height"]) * s
 	var rise := head - low
-	var soft := Num.f(cfg["aim_soft"]) * s
-	var aim_y := low + 0.5 * (rise + sqrt(rise * rise + soft * soft))
+	var aim_y := low + 0.5 * (rise + sqrt(rise * rise + pow(Num.f(cfg["aim_soft"]) * s, 2.0)))
 	var head_aim := Vector3(head_at.x, aim_y, head_at.y)
 	var fov := lerpf(Num.f(cfg["fov"]), Num.f(rest[2]), w)
 	return {"eye": eye, "aim": head_aim.lerp(rest_aim, w), "fov": fov}

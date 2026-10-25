@@ -29,6 +29,7 @@ var _rise: float
 var _depth: float
 var _wade: float
 var _start_y := 0.0
+var _wade_from := Vector2.INF  # where the wade began (the rise point), once it has
 var _cap: float
 var _bed: float  # how far the river's water lies below the street (city "river_depth")
 var _spawn: Vector2
@@ -59,6 +60,7 @@ func start(sim: RampageSim) -> void:
 	active = true
 	_t = 0.0
 	surfaced = false
+	_wade_from = Vector2.INF
 	sim.kaiju_pos = _rise_point(sim)
 	# Wholly under the water at first, its top "depth" (per body scale) below the surface, so the
 	# water ripples and founts before anything shows (#11).
@@ -137,9 +139,13 @@ func _advance(sim: RampageSim, dt: float) -> bool:
 	_surface(sim)
 	var bank := sim.clamp_to_arena(_bank)
 	# The wade takes "wade_seconds" whatever the body's size, so the start's length never grows
-	# with the stage (a Behemoth wades further, in proportion to its body).
+	# with the stage (a Behemoth wades further, in proportion to its body). It eases in from the
+	# rise and out onto the bank (smoothstep), so the body (and the camera on it) never jolts.
+	if _wade_from.x == INF:
+		_wade_from = sim.kaiju_pos
 	var left := maxf(1.0, roundf((total() - _t) / dt) + 1.0)
-	var stride := sim.kaiju_pos.distance_to(bank) / left
+	var u := clampf((_t - _hold - _rise) / maxf(0.001, _wade), 0.0, 1.0)
+	var stride := sim.kaiju_pos.distance_to(_wade_from.lerp(bank, smoothstep(0.0, 1.0, u)))
 	var floor_y := CityRiver.floor_at(_plan, _city, sim.kaiju_pos)
 	var climb := maxf(stride, absf(floor_y - sim.stand_y) / left)
 	sim.stand_y = move_toward(sim.stand_y, floor_y, climb)  # climbs the shore

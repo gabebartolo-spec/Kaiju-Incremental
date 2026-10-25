@@ -47,6 +47,19 @@ func _ready() -> void:
 		_slab(land, Vector2(-0.01, 0.4), asphalt.darkened(0.25))
 	for land: Rect2 in _cut([Rect2(-outer, coast, outer * 2.0, outer - coast)], channels):
 		_slab(land, Vector2(0.001, 0.4), asphalt)
+	_lots(asphalt, pavement)
+	_river(channels, asphalt, pavement.lightened(0.12))
+	_diagonal(asphalt)
+	_markings()
+	_quay(pavement)
+	add_child(_build_slabs())
+	add_child(_build_paint())
+	add_child(_water())
+
+
+## Every block's pavement and lot: parks, plazas, parking, the rest paved; the river's own are
+## its water and quays (_river).
+func _lots(asphalt: Color, pavement: Color) -> void:
 	for block: Dictionary in plan["blocks"]:
 		var rect: Rect2 = block["rect"]
 		if rect.position.y < coast:
@@ -70,13 +83,6 @@ func _ready() -> void:
 				pass  # its water and quays: _river
 			_:
 				_lot(walk, Vector2(PAVE_TOP, 0.3), pavement)
-	_river(channels, asphalt, pavement.lightened(0.12))
-	_diagonal(asphalt)
-	_markings()
-	_quay(pavement)
-	add_child(_build_slabs())
-	add_child(_build_paint())
-	add_child(_water())
 
 
 ## A block's flat box (_slab), with the river's bay cut out of it.

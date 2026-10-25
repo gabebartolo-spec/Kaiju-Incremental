@@ -79,7 +79,9 @@ func _outer_blocks() -> void:
 		# Blocks differ: some rise, some sit low, so the skyline is never one flat field.
 		var scale := _rng.randf_range(0.5, 1.4)
 		for lot: Dictionary in CityLots.fill_block(_rng, ground.plan, block, outer_cfg, scale):
-			if _under_freeway(Vector2(Num.f(lot["x"]), Num.f(lot["z"]))):
+			var at2 := Vector2(Num.f(lot["x"]), Num.f(lot["z"]))
+			var size2 := Vector2(Num.f(lot["w"]), Num.f(lot["d"]))
+			if _under_freeway(at2) or EmergeReach.in_view(ground.plan, cfg, at2, size2):
 				continue
 			var h := Num.f(lot["h"])
 			var at := Vector3(Num.f(lot["x"]), h * 0.5, Num.f(lot["z"]))

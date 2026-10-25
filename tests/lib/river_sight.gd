@@ -30,7 +30,8 @@ func _init(sim: RampageSim) -> void:
 	_plan = CityGen.map(sim.city)
 	_across = CityRiver.bay_bridges(_plan, _cfg)
 	var inside := CityRiver.bay_bridges_ns(_plan, _cfg)
-	_along.assign(CityRiver.bridges(_plan, _cfg).filter(func(d: Rect2) -> bool: return not d in inside))
+	var outside := func(d: Rect2) -> bool: return not d in inside
+	_along.assign(CityRiver.bridges(_plan, _cfg).filter(outside))
 	_along.append_array(inside)
 	_water = CityRiver.water(_plan, _cfg)
 	_holes = sim.emerge.burst + sim.emerge.burst_ns
@@ -93,6 +94,8 @@ func _ground(at: Vector2) -> float:
 	for w: Rect2 in _water:
 		if w.has_point(at) and not w.grow(-QUAY).has_point(at):
 			# no wall where the bay opens off the channel (water inside other water)
-			var open := _water.any(func(o: Rect2) -> bool: return o != w and o.grow(-0.01).has_point(at))
+			var open := _water.any(
+				func(o: Rect2) -> bool: return o != w and o.grow(-0.01).has_point(at)
+			)
 			return top if open else 0.0
 	return top

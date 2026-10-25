@@ -1,8 +1,9 @@
 class_name CityShore
 extends RefCounted
 ## The sand shore the kaiju climbs out of the river on (CityRiver.shore; director 2026-10-21 #17:
-## "perhaps make a small shoreline that he can embark upon"): one sloped slab of sand with a grain of voxel-size speckles from the
-## river's floor up to the street across the bay's city-side edge, where the quay wall is open.
+## "perhaps make a small shoreline that he can embark upon"): one sloped slab of sand with a
+## grain of voxel-size speckles from the river's floor up to the street across the bay's
+## city-side edge, where the quay wall is open.
 ## Part of CityGround. Presentation only: the sim's Emergence climbs the same slope
 ## (CityRiver.floor_at).
 
@@ -54,6 +55,7 @@ static func _grain(
 	quad.material = mat
 	var mi := MeshInstance3D.new()
 	mi.mesh = quad
-	mi.transform = Transform3D(Basis(Vector3.RIGHT * width, down * length, Vector3.RIGHT.cross(down)), at)
+	var basis := Basis(Vector3.RIGHT * width, down * length, Vector3.RIGHT.cross(down))
+	mi.transform = Transform3D(basis, at)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi

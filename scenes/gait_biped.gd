@@ -141,6 +141,7 @@ func update(delta: float) -> void:
 	_step_feet(dt, root, standing)
 	body.update(dt, root, head.roar_lean())
 	_solve_legs(root)
+	head.tick_hold(dt)
 	head.update(dt, standing)
 	swing.hip_drop = body.pelvis_speed / maxf(0.001, hip_height)
 	swing.youth = youth

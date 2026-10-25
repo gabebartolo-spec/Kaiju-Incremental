@@ -52,12 +52,18 @@ static func run(tree: SceneTree, check: Callable) -> void:
 				)
 			)
 		)
-		check.call(
-			Num.f(r["jerk"]) <= JERK_SHARE,
-			(
-				"%s intro: from the break to %d frames past the handover the camera's step changes by"
-				+ " at most %.4f of its offset a frame (<= %.2f; worst on frame %d)"
-			) % [r["name"], JERK_AFTER, r["jerk"], JERK_SHARE, r["jerk_at"]]
+		(
+			check
+			. call(
+				Num.f(r["jerk"]) <= JERK_SHARE,
+				(
+					(
+						"%s intro: from the break to %d frames past the handover the camera's step changes by"
+						+ " at most %.4f of its offset a frame (<= %.2f; worst on frame %d)"
+					)
+					% [r["name"], JERK_AFTER, r["jerk"], JERK_SHARE, r["jerk_at"]]
+				)
+			)
 		)
 		check.call(
 			Num.f(r["pop"]) <= POP_SHARE,
@@ -118,18 +124,17 @@ static func _play(tree: SceneTree, full: bool, skip_at: int) -> Dictionary:
 			key.pressed = true
 			tree.root.push_input(key)
 		await tree.physics_frame
+		await tree.process_frame  # the camera is placed in _process (one a frame: --fixed-fps)
 		frame += 1
 		if Num.i(out["broke"]) < 0 and sim.emerge.surfaced:
 			out["broke"] = frame
 			out["roared"] = _roaring(rampage)
 		if Num.i(out["handover"]) < 0 and not sim.emerge.active:
 			out["handover"] = frame
-			await tree.process_frame  # the camera is placed in _process
 			out["pop"] = _pop(rampage)
 		if not sim.emerge.active:
 			live += 1
 		if Num.i(out["broke"]) >= 0 and live <= JERK_AFTER and skip_at < 0:
-			await tree.process_frame  # the camera is placed in _process
 			path.append(rampage._camera.global_position)
 			_jerk(out, path, rampage._follow.offset.length(), frame)
 	out["state"] = (

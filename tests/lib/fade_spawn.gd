@@ -97,12 +97,18 @@ func _stage(stage: int) -> void:
 			standing += 1
 			var feet := at + Vector3(0, FEET_SIGHT, 0)
 			feet_seen += 0 if inside or _blocked(eye, feet, hiding) else 1
-	_check.call(
-		parts_all > 0 and parts_seen == parts_all,
-		(
-			"stage %d: past the quay walls, decks and shore the head, neck and shoulders are in sight"
-			+ " on %d of %d samples in the roar (%.1f to %.1f s)"
-		) % [stage, parts_seen, parts_all, SHOT_END - SHOT_WHOLE, SHOT_END]
+	(
+		_check
+		. call(
+			parts_all > 0 and parts_seen == parts_all,
+			(
+				(
+					"stage %d: past the quay walls, decks and shore the head, neck and shoulders are in sight"
+					+ " on %d of %d samples in the roar (%.1f to %.1f s)"
+				)
+				% [stage, parts_seen, parts_all, SHOT_END - SHOT_WHOLE, SHOT_END]
+			)
+		)
 	)
 	_check.call(
 		shown >= SEEN_SHARE * above and feet_seen >= SEEN_SHARE * standing,

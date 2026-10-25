@@ -1,7 +1,8 @@
 extends SceneTree
 ## The start of a run (D-083): the kaiju rises from the city's river and steps out, on the game
-## camera, at a stage (1 hatchling, 2 adolescent, 3 adult: capture_kit STAGE_LEVELS). Prints the frame it emerged on. Pair with
-## --write-movie for the clip. Needs a window: CI, or off-screen with the no-focus override.
+## camera, at a stage (1 hatchling, 2 adolescent, 3 adult: capture_kit STAGE_LEVELS). Prints
+## the frame it emerged on. Pair with --write-movie for the clip. Needs a window: CI, or
+## off-screen with the no-focus override.
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 30 \
 ##     --write-movie <dir>/clip.avi --script tools/capture/capture_river.gd -- --stage=1

@@ -45,10 +45,10 @@ var camera_rest := CameraTuning.offset()
 var camera_fov := CameraTuning.fov()
 ## The camera's shake (trauma); any hit adds to it through add_trauma.
 var shake := CameraShake.new()
-var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 ## Main: whether this run plays the whole intro (the first run, the first after an evolution) or
 ## its short cut (RunIntro).
 var full_intro := true
+var _land := StompLanding.new(shake)  # a standing stomp's cracks and camera kick
 var _city: CityView
 var _powers: PowersView
 var _fade: VehicleFade
@@ -141,9 +141,7 @@ func _ready() -> void:
 	ability_fx.attach_body(_kaiju)
 	_powers = PowersView.new(sim, _city, _kaiju, Color(str(colors["eye"])))
 	add_child(_powers)
-	add_child(RiverView.new(sim, _city.fx))
-	add_child(IntroWater.new(sim, _city.fx))
-	_intro = RunIntro.new(sim, full_intro)
+	_add_rise()
 	TankModel.new().free()  # built once now, so the army's first spawn reuses their voxels
 	HelicopterModel.new().free()
 	_tanks = TankYard.new(self, sim, _city, _tank_nodes)
@@ -169,6 +167,13 @@ func _ready() -> void:
 	is_loaded = true
 	loaded.emit()
 	get_node("/root/EventBus").emit_signal("run_started", str(species["id"]))
+
+
+## The rise from the river: its splashes, the intro's ripples and fount, and the intro's pacing.
+func _add_rise() -> void:
+	add_child(RiverView.new(sim, _city.fx))
+	add_child(IntroWater.new(sim, _city.fx))
+	_intro = RunIntro.new(sim, full_intro)
 
 
 ## The vignette and colour fringe (D-142, they read the sim), then the HUD above them.
@@ -268,6 +273,20 @@ func _on_event(event: Dictionary) -> void:
 			var b := sim.buildings[Num.i(event["building"])]
 			var topple := str(event["kind"]) == "topple"
 			add_trauma(shake.source("topple" if topple else "drop"), Vector3(b.x, 0.0, b.z))
+		"tank_spawned", "tank_fired", "tank_destroyed", "stray_landed":
+			_tanks.on_event(event, _kaiju_at)
+		"building_regrown":
+			_city.regrow(Num.i(event["building"]))
+		"run_over":
+			_hud.run_over(str(event["reason"]))
+		_:
+			if not _on_rise(event):
+				_powers.on_event(event, _kaiju_at)
+
+
+## The rise from the river's events (Emergence); false for any other.
+func _on_rise(event: Dictionary) -> bool:
+	match str(event["type"]):
 		"deck_burst":
 			_city.deck_burst()
 			add_trauma(shake.source("drop"))
@@ -276,14 +295,9 @@ func _on_event(event: Dictionary) -> void:
 			Sfx.roar(self)
 		"kaiju_emerged":
 			_hud.fade_in(Num.f(Content.section("intro")["hud_fade_seconds"]))
-		"tank_spawned", "tank_fired", "tank_destroyed", "stray_landed":
-			_tanks.on_event(event, _kaiju_at)
-		"building_regrown":
-			_city.regrow(Num.i(event["building"]))
-		"run_over":
-			_hud.run_over(str(event["reason"]))
 		_:
-			_powers.on_event(event, _kaiju_at)
+			return false
+	return true
 
 
 func _on_chunks_broken(index: int, cells: Array[Vector3i], pay: float) -> void:

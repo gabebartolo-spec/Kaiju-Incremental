@@ -32,6 +32,18 @@ static func biggest(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) 
 	return out
 
 
+## The biggest body scale (Growth.body_scale) any species reaches at this size tier.
+static func biggest_scale(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) -> float:
+	var contact: Dictionary = tuning.get("contact", {})
+	var bodies: Dictionary = contact.get("bodies", {})
+	var city: Dictionary = tuning["city"]
+	var out := 0.0
+	for species_id: String in bodies:
+		var stats := {"size": tier, "growth": max_growth(upgrades, species_id, tier)}
+		out = maxf(out, Growth.body_scale(stats, city))
+	return out
+
+
 ## The most upgrade levels a kaiju of this species can own while at this size tier.
 static func max_growth(upgrades: Array[Dictionary], species_id: String, tier: int) -> int:
 	var tree := UpgradeTree.new(upgrades, {}, species_id)
@@ -59,3 +71,27 @@ static func fit(tuning: Dictionary, upgrades: Array[Dictionary], tier: int) -> v
 	var deep := Num.f(bay["beach"]) + Num.f(bay["nose_gap"]) + body.x + margin
 	bay["depth"] = maxf(Num.f(bay["depth"]), ceilf(deep))
 	bay["length"] = maxf(Num.f(bay["length"]), ceilf(body.y + margin * 2.0))
+	# No painted stand-in within the game camera's ground reach of the rise (its offset behind the
+	# kaiju plus "view_margin", for that biggest body: CitySkyline; playtest 2026-10-19).
+	var cam: Dictionary = tuning.get("camera", {})
+	var offset: Array = cam.get("offset", [0, 0, 0])
+	var behind := absf(Num.f(offset[2]))
+	var view := (
+		(behind + Num.f(bay.get("view_margin", 0.0))) * biggest_scale(tuning, upgrades, tier)
+	)
+	bay["view_clear"] = ceilf(view)
+
+
+## Whether a footprint (centre `at`, `size`) lies within the game camera's reach of where the
+## kaiju rises or the bank point it wades to (city "river_bay" "view_clear", set by fit): no
+## painted stand-in stands there, only real buildings (CitySkyline; playtest 2026-10-19).
+static func in_view(plan: Dictionary, city: Dictionary, at: Vector2, size: Vector2) -> bool:
+	var bay: Dictionary = city.get("river_bay", {})
+	var clear := Num.f(bay.get("view_clear", 0.0))
+	if clear <= 0.0 or not plan.has("river_spawn"):
+		return false
+	var foot := Rect2(at - size * 0.5, size)
+	for p: Vector2 in [plan["river_spawn"], plan.get("river_bank", plan["river_spawn"])]:
+		if p.clamp(foot.position, foot.end).distance_to(p) < clear:
+			return true
+	return false

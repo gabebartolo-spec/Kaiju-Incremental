@@ -30,13 +30,9 @@ func _init(sim: RampageSim) -> void:
 	var reach := CityGen.width_of(CityGen.DIAGONAL, sim.city) * 0.5
 	var bay := CityRiver.bay(plan, sim.city)
 	for block: Dictionary in plan["blocks"]:
-		var rect: Rect2 = block["rect"]
-		var use := str(block["use"])
-		if use in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
-			continue  # past the edge, or the river (CityRiver): no one walks on the water
-		# The pavement line, the same distance in from the kerb as round every other block.
-		var ring := CityGen.pavement(block, sim.city).grow(PAVEMENT - Num.f(sim.city["sidewalk"]))
-		ring = _off_bay(ring, bay)
+		var ring := _ring(block, sim.city, half, bay)
+		if not ring.has_area():
+			continue  # past the edge, the river, or no room left beside the bay
 		var size := ring.size * 0.5
 		var cut := CityGen.diagonal_distance(plan, ring.get_center()) < size.length() + reach
 		var first := nodes.size()
@@ -69,14 +65,22 @@ func _init(sim: RampageSim) -> void:
 				_link(a, best)
 
 
-## A pavement ring that would cross the river's bay (CityRiver.bay, on the far bank) starts
-## south of it instead, so no one walks on the water.
-func _off_bay(ring: Rect2, bay: Array[Rect2]) -> Rect2:
+## A block's pavement line, the same distance in from the kerb as round every other block; an
+## empty Rect2 past the edge or on the river (CityRiver: no one walks on the water). A ring that
+## would cross the river's bay (CityRiver.bay) starts south of it instead, and a block the bay
+## leaves no room in has none (it would sit in the street past the block).
+static func _ring(block: Dictionary, city: Dictionary, half: float, bay: Array[Rect2]) -> Rect2:
+	var rect: Rect2 = block["rect"]
+	if str(block["use"]) in ["outer", "river"] or maxf(absf(rect.end.x), absf(rect.end.y)) > half:
+		return Rect2()
+	var ring := CityGen.pavement(block, city).grow(PAVEMENT - Num.f(city["sidewalk"]))
 	var top := ring.position.y
 	for basin: Rect2 in bay:
 		if basin.intersects(ring):
 			top = maxf(top, basin.end.y + PAVEMENT)
-	return Rect2(ring.position.x, top, ring.size.x, maxf(ring.end.y - top, PAVEMENT))
+	if ring.end.y - top < PAVEMENT:
+		return Rect2()
+	return Rect2(ring.position.x, top, ring.size.x, ring.end.y - top)
 
 
 ## The corners people can walk between (4 per block, minus the ones in the road).

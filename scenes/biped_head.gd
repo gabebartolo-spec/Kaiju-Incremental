@@ -69,8 +69,8 @@ func hold_open(seconds: float) -> void:
 	_held_left = seconds
 
 
-## Counts down a hold_open; lets the maw go when it runs out (ClipGait calls it on its own: the
-## clips drive its head, so it never runs update).
+## Counts down a hold_open; lets the maw go when it runs out (each gait calls it every frame:
+## ClipGait's clips drive its head, so it never runs update).
 func tick_hold(dt: float) -> void:
 	if _held_left > 0.0:
 		_held_left -= dt
@@ -89,7 +89,6 @@ func _lead() -> float:
 
 
 func update(dt: float, standing: bool) -> void:
-	tick_hold(dt)
 	if not g.rig.has_bone("head1"):
 		return
 	# Where to look: ahead of a turn while moving, glances around while standing.
