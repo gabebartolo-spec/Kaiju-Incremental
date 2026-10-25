@@ -25,6 +25,8 @@ const CAP_KNEE := 0.6
 
 var cfg: Dictionary
 var ground: CityGround
+## The far skyline's boxes as drawn (instance i is _far[i]), for SkylineRampage to topple.
+var far_view: MultiMeshInstance3D
 var _rng: RandomNumberGenerator
 var _near: Array[Dictionary] = []  # boxes: size, centre, colour, custom
 var _far: Array[Dictionary] = []
@@ -54,9 +56,15 @@ func _ready() -> void:
 	var far_mat: ShaderMaterial = far_mesh.material
 	far_mat.set_shader_parameter("grain", FAR_GRAIN)
 	add_child(far)
+	far_view = far
 	add_child(_plain_boxes())
 	add_child(_lamp_heads())
 	add_child(Aircraft.new(_rng))
+
+
+## The far skyline's boxes, in far_view's instance order; a supertall's crown has "crown_of".
+func far_boxes() -> Array[Dictionary]:
+	return _far
 
 
 ## Every painted stand-in building (near and far), as {"size": Vector3, "at": Vector3 centre}.
@@ -226,6 +234,7 @@ func _far_shore() -> void:
 							"at": at + Vector3(0, tall * 0.56, 0),
 							"color": styles[style % styles.size()],
 							"custom": Color(style, _lit(), 1.0, _rng.randf()),
+							"crown_of": _far.size() - 1,
 						}
 					)
 				)
