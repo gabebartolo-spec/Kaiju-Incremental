@@ -4,20 +4,21 @@ extends MeshInstance3D
 ## to land"), presentation only: while the breath is ready, a faint wedge on the street shows the
 ## very cone the sim burns when it fires (BreathCone.of(): from the snout along the facing, out
 ## to the ability's reach), outlined, with a line down its middle. It follows the kaiju's turns,
-## so the player aims by facing; it hides while the breath cools down. Where nothing stands in
-## front it draws as usual, so his own legs and body cover it; where a building does, a faint
-## ghost of it shows through, so where the breath will land is never hidden. Quiet (director
-## 2026-10-25: "the aim wedge should also be more opaque, its too loud"; it drew over his legs).
+## so the player aims by facing; it hides while the breath cools down. Depth-tested: where
+## anything stands in front (a building, his own body) only a faint ghost of it shows, so it never
+## paints over the scene, yet where the breath will land is never hidden. A solid, steady
+## wash, not an additive glow (director 2026-10-25: "the aim wedge should also be more opaque, its
+## too loud"; it glowed and pulsed over his legs).
 
 const SEGMENTS := 24  # the far arc's pieces
 const EDGE := 0.04  # outline and middle line width, as a share of the reach
-const FILL_ALPHA := 0.06
-const LINE_ALPHA := 0.3
+const FILL_ALPHA := 0.22
+const LINE_ALPHA := 0.6
 ## The ghost drawn where something stands in front of the wedge, as a share of the wedge's alpha.
 const GHOST := 0.35
 const LIFT := 0.15  # drawn this far over the kaiju's footing (no z-fight with the street)
 const PULSE_HZ := 1.2  # the outline breathes gently while ready
-const PULSE := 0.1  # how far the alpha breathes either side of 0.9
+const PULSE := 0.05  # how far the alpha breathes either side of 0.95
 
 var _sim: RampageSim
 var _tint: Color
@@ -71,7 +72,7 @@ func _physics_process(_delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
-	var alpha := 0.9 + PULSE * sin(_age * TAU * PULSE_HZ)
+	var alpha := 0.95 + PULSE * sin(_age * TAU * PULSE_HZ)
 	_material.albedo_color = Color(1, 1, 1, alpha)
 	_ghost.albedo_color = Color(1, 1, 1, alpha * GHOST)
 

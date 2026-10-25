@@ -123,7 +123,7 @@ func _run(run: int) -> void:
 	)
 	_rampage.ability_fx.regen(Vector3.ZERO, false)
 	await _frames(GAP)
-	if not _only.is_empty():
+	if not _only.is_empty() and not _only.has("breath_aim"):
 		_finish()
 		return
 	_aim(true)
