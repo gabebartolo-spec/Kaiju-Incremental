@@ -12,7 +12,7 @@ extends SceneTree
 const DAY_RUN := 0
 ## How far beside the line the kaiju waits, how close the train comes before the clip starts,
 ## and the frames held after the stomp for the tumble and the wreck.
-const BESIDE := 3.2
+const BESIDE := 3.0
 const APPROACH := 26.0
 const TUMBLE := 36
 const WRECK := 200
@@ -48,23 +48,41 @@ func _run() -> void:
 		await physics_frame
 	var rail := _rampage.sim.rail
 	var station := rail.point(rail.station_s(1), 1)
-	_rampage.sim.kaiju_pos = Vector2(rail.track_x(-1) + BESIDE, station.y + 3.0)
-	await _frames(40)
+	_rampage.sim.kaiju_pos = Vector2(rail.track_x(-1) + BESIDE, station.y + 13.0)
+	await _frames(150)
 	_shot("01_station")
 	var train := await _train_near(APPROACH)
 	if train == null:
 		printerr("trains: no train came")
 		quit(1)
 		return
+	print("CLIP_FROM %d" % Engine.get_frames_drawn())
 	await _frames(50)
 	_shot("02_train")
-	_rampage.sim.kaiju_pos = train.cars[1].pos
+	await _walk_on(train)
 	await _frames(TUMBLE)
 	_shot("03_derail")
 	await _frames(WRECK)
 	_shot("04_wreck")
+	print("CLIP_TO %d" % Engine.get_frames_drawn())
 	print("TRAINS_CAPTURE derailed=%d -> %s" % [rail.derailed, _out])
 	quit(0)
+
+
+## The kaiju walks west onto the line (real input) as the train's lead car comes level, and
+## stops once it stands on the track; its footfalls stomp the train.
+func _walk_on(train: Rail.Train) -> void:
+	var rail := _rampage.sim.rail
+	for _i: int in 60 * 10:
+		if absf(train.cars[0].pos.y - _rampage.sim.kaiju_pos.y) < 6.0 or train.state == Rail.WRECK:
+			break
+		await process_frame
+	Input.action_press("move_left")
+	for _i: int in 60 * 3:
+		if _rampage.sim.kaiju_pos.x <= rail.track_x(train.dir) + 0.4 or train.state == Rail.WRECK:
+			break
+		await process_frame
+	Input.action_release("move_left")
 
 
 ## Waits for a running train whose lead car is within `within` of the kaiju.

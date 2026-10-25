@@ -59,9 +59,18 @@ func _loop(sound: String) -> AudioStreamPlayer:
 	return player
 
 
+## A one-shot at `at`, heard in 3D from the camera (its own player, freed when done).
 func _play(sound: String, at: Vector3) -> void:
-	if ResourceLoader.exists(SOUNDS % sound):
-		_host.sfx.play_at(sound, at)
+	if not ResourceLoader.exists(SOUNDS % sound):
+		return
+	var player := AudioStreamPlayer3D.new()
+	player.stream = load(SOUNDS % sound)
+	player.bus = AudioBuses.of(sound)
+	player.unit_size = Num.f(_look()["unit_size"])
+	player.position = at
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
 
 
 func _process(delta: float) -> void:
