@@ -290,6 +290,7 @@ func _check_standing_stomp() -> void:
 		)
 	)
 	var walked := _croc({}, near, Vector2.ZERO)
+	walked.stats["size"] = 2.0  # a Behemoth: the young croc has no planted feet (no step clock)
 	walked.body.use_species("reptilian")  # a body with planted feet walks by its step clock
 	var steps := _watch(walked, 3.0, Vector2(-1, 0))
 	var feet := 0
