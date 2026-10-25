@@ -93,6 +93,7 @@ func _spawn() -> void:
 	_model = HelicopterModel.new()
 	add_child(_model)
 	var look: Dictionary = _cfg["look"]
+	_model.scale = Vector3.ONE * Num.f(look["scale"])  # a fancier, bigger machine than a gunship
 	_model.vip_look(Color(str(look["white"])), Color(str(look["gold"])))
 	_model.position = Vector3(_sim.vip.pos.x, _sim.vip.altitude(), _sim.vip.pos.y)
 	_rotor = AudioStreamPlayer3D.new()
@@ -142,7 +143,6 @@ func _down(event: Dictionary) -> void:
 	_rotor.stop()
 	_beacon.queue_free()
 	_beacon = null
-	_model.vip_unlit()  # the wreck burns like any gunship's, nothing glows of its own
 	_wreck.downed(_model, event)
 	_model = null
 

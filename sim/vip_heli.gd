@@ -158,7 +158,7 @@ func _pick_pad() -> int:
 	for i: int in sim.buildings.size():
 		var b := sim.buildings[i]
 		var tall := b.height >= Num.i(heights[0]) and b.height <= Num.i(heights[1])
-		if not (tall and b.in_arena and b.frame.alive_count > 0):
+		if not (tall and b.in_arena and _standing(i)):
 			continue
 		any.append(i)
 		var gap := Vector2(b.x, b.z).distance_to(sim.kaiju_pos)
@@ -166,6 +166,13 @@ func _pick_pad() -> int:
 			near.append(i)
 	var pool := near if not near.is_empty() else any
 	return -1 if pool.is_empty() else pool[_rng.randi() % pool.size()]
+
+
+## Does building `i` still stand? A building the kaiju has been near is promoted to the fine
+## destruction grid (Carving), and its coarse frame then reads empty: ask the grid.
+func _standing(i: int) -> bool:
+	var grid := sim.carving.frame(i)
+	return (grid.alive_count if grid != null else sim.buildings[i].frame.alive_count) > 0
 
 
 ## A tower toppling this step that reaches its height sweeps its landing strip: it goes down.
