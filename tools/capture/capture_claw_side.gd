@@ -6,6 +6,7 @@ extends SceneTree
 ##
 ##   godot --path . --resolution 1920x1080 --windowed --fixed-fps 60 --write-movie <dir>/c.avi \
 ##     --script tools/capture/capture_claw_side.gd [-- --still=<dir> --name=<shot>]
+## --front: the young croc alone, 4 s, the camera in front of him at chest height looking back.
 ## --still: no movie; one PNG of the young croc standing at rest (arms in their held pose) instead.
 ## Both modes print where the near arm shows against the body's side-view silhouette, in px at the
 ## run's resolution: at rest, the share of the hand and of the forearm's outer half outside it; at
@@ -28,15 +29,26 @@ const SAMPLES := 11
 const VOXEL_PX := 2.0
 const SHOTS := [["baby", 0.5, "Young croc"], ["adult", 1.3, "Colossus"]]
 ## --only=<n>: just the first n shots (1: the young croc).
+## --front: its shot length (frames), windup frame, the camera's height, the height it looks at and
+## its distance in front of the snout (shares of the snout's height).
+const FRONT_SHOT := 240
+const FRONT_WINDUP := 40
+const FRONT_UP := 0.55
+const FRONT_LOOK := 0.72
+const FRONT_DIST := 1.8
 
 var _still := ""
 var _name := "rest"
 var _only := 0
+var _front := false
 
 
 func _initialize() -> void:
-	var a := Kit.args({"still": "", "name": _name, "only": 0})
-	_only = Num.i(a["only"])
+	var a := Kit.args({"still": "", "name": _name, "only": 0, "front": false})
+	_front = a["front"]
+	if _front:
+		_only = 1
+	_only = maxi(_only, Num.i(a["only"]))
 	_still = str(a["still"])
 	_name = str(a["name"])
 	if not Kit.window_ok():
@@ -74,6 +86,13 @@ func _run() -> void:
 		var snout := rig.tail_world("head1") - kaiju.global_position
 		var aim := Vector3(0, snout.y * AIM_UP, snout.z * AIM_AHEAD)
 		cam.position = aim + Vector3(side * snout.y * CAM_DIST, 0, 0)
+		var shot_frames := SHOT
+		var windup_at := WINDUP_AT
+		if _front:  # in front of him at chest height, looking back at him
+			cam.position = Vector3(0, snout.y * FRONT_UP, snout.z - snout.y * FRONT_DIST)
+			aim = Vector3(0, snout.y * FRONT_LOOK, 0)
+			shot_frames = FRONT_SHOT
+			windup_at = FRONT_WINDUP
 		cam.look_at(aim)
 		label.text = str(shot[2])
 		if _still != "":
@@ -84,14 +103,14 @@ func _run() -> void:
 			print(Kit.still(self, _still, _name))
 			print("%s at rest: %s" % [shot[2], _arm_px(rig, cam, side)])
 			break
-		for f: int in SHOT:
-			if f == WINDUP_AT:
+		for f: int in shot_frames:
+			if f == windup_at:
 				kaiju.tail_sweep(side, "claw_windup")
-			if f == WINDUP_AT + hit:
+			if f == windup_at + hit:
 				kaiju.tail_sweep(side, "claw")
 			kaiju.animate(DT, 0.0)
 			await process_frame
-			if f == WINDUP_AT + hit:
+			if f == windup_at + hit and not _front:
 				print("%s at the hit: %s" % [shot[2], _arm_px(rig, cam, side)])
 		kaiju.queue_free()
 	quit(0)
