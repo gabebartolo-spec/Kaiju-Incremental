@@ -141,7 +141,8 @@ static func _worst(costs: Dictionary) -> String:
 ## The stream's load at the take's end: buildings within stream_view.hold_m of the kaiju (held
 ## meshed), meshed buildings and chunks, static and video memory.
 static func _memory(rampage: Rampage) -> String:
-	var hold := Num.f(rampage.sim.city["stream_view"].get("hold_m", 0.0))
+	var view: Dictionary = rampage.sim.city["stream_view"]
+	var hold := Num.f(view.get("hold_m", 0.0))
 	var held := 0
 	for b: RampageSim.Building in rampage.sim.buildings:
 		held += int(Vector2(b.x, b.z).distance_to(rampage.sim.kaiju_pos) <= hold)
