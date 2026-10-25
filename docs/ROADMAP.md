@@ -90,6 +90,7 @@ real facades · WP6 follow-ups (landmarks promote to cells; stadium first hit 24
 at once: spread promotion, one per step) · b2-8 stadium crowd thins over time, never vanishes · stadium spectators on a broken stand fall or die, never hang with their feet in the air (comments #17) · b2-3 slow frames in heavy destruction
 (profiled 2026-10-21: every worst frame is sim.step, VoxelFrame.settle's ground flood 50-60% and Carving._promote
 20-25%; the 823-piece rubble cap is not wired into the game) · b2-30/b2-29 start and quit freezes (done, #116).
+Carve is universal (director 2026-10-26, "carve is a universal feature for all buildings"; held by tests/run_structures_tests.gd, which names these two as known failures and fails on any new type): **landmarks carve on cells** like every building (today Carving.takes skips them and they break by chunks; owner lead, queued after PR #209) · **river bridges become carved structures** (today a flat ground deck, not destructible; owner lead, queued after PR #209).
 How (research): settle becomes a bounded flood fill from the cut cells to ground anchors, on a coarse brick graph,
 cost scaling with the island not the building, in the C++ carve library if GDScript is still too slow (R 10.2) ·
 toppling stays a seeded hinge fall the sim owns; Jolt never decides an outcome (Godot's Jolt is not replayable) (R 10.1)

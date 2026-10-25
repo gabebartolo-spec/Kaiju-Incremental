@@ -23,6 +23,7 @@ var _cx := PackedFloat32Array()  # per building: its centre (x, z) and its footp
 var _cz := PackedFloat32Array()
 var _cr := PackedFloat32Array()
 var _keep := 0.0
+var _hold := 0.0
 var _ring := 0.0
 var _side := 0.0
 var _kaiju_extra := 0.0
@@ -85,6 +86,7 @@ func set_view(look: Array, city: Dictionary) -> void:
 	_side = Num.f(cfg["side_m"])
 	outside = Num.f(cfg["outside_m"])
 	_keep = Num.f(cfg["landmark_keep_m"])
+	_hold = Num.f(cfg.get("hold_m", 0.0))
 	_kaiju_extra = Num.f(cfg["kaiju_extra_m"])
 	var half: float = look[2]
 	var band := minf(PI, half + deg_to_rad(Num.f(cfg["margin_deg"])))
@@ -127,6 +129,23 @@ func _zone_of(dx: float, dz: float, far: float, reach: float) -> int:
 	if along >= _core_cos * c - _core_sin * s:
 		return 0
 	return 1 if along >= _band_cos * c - _band_sin * s else 2
+
+
+## Building b's cost against the stream budget: its chunks; a viaduct piece is mostly air (0),
+## and a pool model (CityPool) costs only the chunks its model keeps.
+static func chunks(b: RampageSim.Building) -> int:
+	if b.is_rail():
+		return 0
+	return b.frame.alive_count if b.model != "" else b.w * b.d * b.height
+
+
+## Whether building n (b) stays meshed wherever the plan's budget runs out: one Building.is_held
+## marks that keeps_landmark keeps, or any untouched one within stream_view.hold_m of the kaiju,
+## so a blow never waits on an on-the-spot build (D-256 frame bar).
+func holds(n: int, b: RampageSim.Building, kaiju: Vector2, touched: bool) -> bool:
+	if not touched and Vector2(_cx[n], _cz[n]).distance_to(kaiju) <= _hold:
+		return true
+	return b.is_held() and keeps_landmark(n, kaiju)
 
 
 ## Whether landmark n stays meshed: no camera, or the camera's wedge or margin band reaches it,
